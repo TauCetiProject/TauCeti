@@ -26,9 +26,6 @@ squared deviations required only eventually along the filter. In the other direc
 Chebyshev-type bounds with an auxiliary truncation level give measures tending to zero, and real
 functions tending to zero in measure have upper tails of measure tending to zero.
 
-Convergence in `Lᵖ` implies convergence in measure, hence almost everywhere convergence of a
-subsequence; so the `Lᵖ` classes vanishing almost everywhere off a fixed set form a closed set.
-
 Pairing preserves convergence in measure along arbitrary filters and for arbitrary measures.
 On finite measure spaces, continuous transformations preserve convergence along arbitrary
 filters whenever the transformed functions are eventually almost everywhere strongly
@@ -60,8 +57,6 @@ measurable.
   finite measure spaces along arbitrary filters.
 * `MeasureTheory.TendstoInMeasure.continuous_comp₂`: the corresponding binary transformation
   theorem, obtained by pairing and unary composition.
-* `MeasureTheory.Lp.isClosed_setOf_ae_notMem_imp_eq_zero`: the `Lᵖ` classes vanishing off a set
-  form a closed set.
 
 ## Source
 
@@ -325,21 +320,3 @@ theorem tendsto_measure_notMem_nhds_iff {X J E ι : Type*} [TopologicalSpace X]
     exact hδW j (hgood j hj)
 
 end Topology.IsInducing
-
-namespace MeasureTheory.Lp
-
-open Filter Topology
-open scoped ENNReal
-
-variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup F] {p : ℝ≥0∞}
-  [Fact (1 ≤ p)]
-
-/-- The `Lᵖ` classes vanishing almost everywhere off a set `s` form a closed set. -/
-theorem isClosed_setOf_ae_notMem_imp_eq_zero (s : Set α) :
-    IsClosed {f : Lp F p μ | ∀ᵐ x ∂μ, x ∉ s → f x = 0} := by
-  refine IsSeqClosed.isClosed fun g h hgs hg ↦ ?_
-  obtain ⟨ns, -, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hg).exists_seq_tendsto_ae
-  filter_upwards [hns, ae_all_iff.2 hgs] with x hx hgx hxs
-  exact tendsto_nhds_unique hx (tendsto_const_nhds.congr fun i ↦ (hgx (ns i) hxs).symm)
-
-end MeasureTheory.Lp

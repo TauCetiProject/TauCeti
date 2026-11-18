@@ -7,9 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
-import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Indicator
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.Multiplier
 import TauCeti.MeasureTheory.Measure.Regular
 
@@ -95,8 +95,8 @@ theorem ae_eq_indicator_apply_of_forall_ae_eq_zero (S : Lp E p μ →L[𝕜] Lp 
   rw [← map_sub] at h₃
   filter_upwards [h₁, h₂, h₃] with x hx₁ hx₂ hx₃
   by_cases hxs : x ∈ s
-  · rw [indicator_of_mem hxs, eq_comm, ← sub_eq_zero, ← Pi.sub_apply, ← hx₃,
-      hx₂ (not_not.2 hxs)]
+  · rw [indicator_of_mem hxs]
+    exact (sub_eq_zero.1 (hx₃.symm.trans (hx₂ (not_not.2 hxs)))).symm
   · rw [indicator_of_notMem hxs, hx₁ hxs]
 
 /-- On a set `t` of finite measure, a local operator acts on the indicator class `1_s v` of a set
@@ -158,10 +158,7 @@ theorem ae_norm_le_of_forall_apply_indicatorConstLp_ae_eq [SigmaFinite μ]
   have hclosed : IsClosed {v | ‖m x v‖ ≤ ‖S‖ * ‖v‖} :=
     isClosed_le (by fun_prop) (by fun_prop)
   refine hclosed.closure_subset_iff.2 (range_subset_iff.2 fun k ↦ ?_) (hu.closure_eq ▸ mem_univ v)
-  have := hx k
-  rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
-    ← ENNReal.ofReal_mul (norm_nonneg _), ENNReal.ofReal_le_ofReal_iff (by positivity)] at this
-  exact this
+  simpa [← ofReal_norm, ← ENNReal.ofReal_mul, ENNReal.ofReal_le_ofReal_iff, mul_nonneg] using hx k
 
 section Symbol
 
