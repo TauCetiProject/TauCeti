@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
-public import Mathlib.Analysis.Complex.HasPrimitives
+public import TauCeti.Analysis.Complex.HasPrimitives
 
 /-!
 # The complex error functions and Fresnel integrals
@@ -36,15 +36,13 @@ with the integrals from `0` to `z` taken along the straight segment (DLMF §7.2)
 
 ## Implementation notes
 
-A segment integral `z ∫₀¹ f(sz) ds` of an entire function `f` is `g(z) − g(0)` for any primitive
-`g` of `f`, by the fundamental theorem of calculus along the segment, and a primitive exists by
-Mathlib's `Differentiable.isExactOn_univ`. This gives the derivatives without differentiating
-under the integral sign.
+A segment integral `z ∫₀¹ f(sz) ds` of an entire function `f` is a primitive of `f`
+(`Differentiable.hasDerivAt_smul_integral_comp_mul`). This gives the derivatives without
+differentiating under the integral sign.
 
-The definitions and the segment-primitive argument are adapted from the lean-DLMF project
-(<https://github.com/bjbraams/lean-DLMF>), files `DLMF/ErrorFunctions/Basic/Functions.lean`,
-`DLMF/Confluent/Basic/ErrorFunctions.lean` and
-`DLMFMathlib/Analysis/Complex/SegmentPrimitive.lean`.
+The definitions and proofs are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), files `DLMF/ErrorFunctions/Basic/Functions.lean` and
+`DLMF/Confluent/Basic/ErrorFunctions.lean`.
 
 ## References
 
@@ -61,44 +59,19 @@ open scoped Real ComplexConjugate
 
 namespace TauCeti
 
-/-- Integrating a complex derivative along the straight segment from `0` to `z` recovers the
-endpoint difference. -/
-private theorem mul_integral_comp_mul_eq_sub {f g : ℂ → ℂ}
-    (hg : ∀ z, HasDerivAt g (f z) z) (z : ℂ) :
-    z * (∫ t : ℝ in 0..1, f (t * z)) = g z - g 0 := by
-  have hgd : Differentiable ℂ g := fun w => (hg w).differentiableAt
-  have he : deriv g = f := funext fun w => (hg w).deriv
-  have hf : Continuous f := he ▸ hgd.deriv.continuous
-  have hd (t : ℝ) : HasDerivAt (fun u : ℝ => g (u * z)) (z * f (t * z)) t := by
-    simpa [mul_comm] using
-      ((hg (t * z)).comp (t : ℂ) ((hasDerivAt_id (t : ℂ)).mul_const z)).comp_ofReal
-  have hi : IntervalIntegrable (fun t : ℝ => z * f (t * z)) volume 0 1 :=
-    (by fun_prop : Continuous (fun t : ℝ => z * f (t * z))).intervalIntegrable _ _
-  have h := intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ => hd t) hi
-  simpa [intervalIntegral.integral_const_mul] using h
-
 /-- The straight-segment integral `w ↦ ∫₀¹ w f(tw) dt` of an entire function `f` is a primitive
-of `f`. -/
+of `f`: `Differentiable.hasDerivAt_smul_integral_comp_mul` with `w` moved inside the integral,
+which is the form in which `erf`, `fresnelC` and `fresnelS` are defined. -/
 private theorem hasDerivAt_integral_mul_comp_mul {f : ℂ → ℂ} (hf : Differentiable ℂ f)
     (z : ℂ) : HasDerivAt (fun w : ℂ => ∫ t : ℝ in 0..1, w * f (t * w)) (f z) z := by
-  obtain ⟨g, hg⟩ := hf.isExactOn_univ
-  have hg' (w : ℂ) := hg w (mem_univ w)
-  have he : (fun w : ℂ => ∫ t : ℝ in 0..1, w * f (t * w)) = fun w => g w - g 0 := by
-    funext w
-    rw [intervalIntegral.integral_const_mul, mul_integral_comp_mul_eq_sub hg']
-  rw [he]
-  exact (hg' z).sub_const _
+  simpa only [intervalIntegral.integral_const_mul, smul_eq_mul] using
+    hf.hasDerivAt_smul_integral_comp_mul z
 
 /-- The segment integral of an odd-in-`z` integrand: `∫₀¹ (−z) f(t(−z)) dt = −∫₀¹ z f(tz) dt` for
 even `f`. -/
 private theorem integral_mul_comp_mul_neg {f : ℂ → ℂ} (hf : ∀ u, f (-u) = f u) (z : ℂ) :
     ∫ t : ℝ in 0..1, -z * f (t * -z) = -∫ t : ℝ in 0..1, z * f (t * z) := by
   simp only [mul_neg, hf, neg_mul, intervalIntegral.integral_neg]
-
-/-- Conjugation commutes with the integral over `[0, 1]`. -/
-private theorem intervalIntegral_conj (f : ℝ → ℂ) :
-    ∫ s in (0 : ℝ)..1, conj (f s) = conj (∫ s in (0 : ℝ)..1, f s) := by
-  simp only [intervalIntegral.integral_of_le zero_le_one, integral_conj]
 
 namespace Complex
 
@@ -176,7 +149,7 @@ theorem erf_conj (z : ℂ) : erf (conj z) = conj (erf z) := by
       conj (z * cexp (-((s : ℂ) * z) ^ 2)) := by
     rw [map_mul, ← exp_conj]
     simp [map_pow, map_neg, map_mul, conj_ofReal]
-  rw [erf_def, erf_def, funext hpt, intervalIntegral_conj, map_mul]
+  rw [erf_def, erf_def, funext hpt, intervalIntegral.intervalIntegral_conj, map_mul]
   congr 1
   simp [map_div₀, conj_ofReal, map_ofNat]
 
@@ -193,8 +166,10 @@ theorem erf_sqrt_pi_mul (w : ℂ) :
     rw [← ofReal_pow, Real.sq_sqrt Real.pi_pos.le]
   have hpt (s : ℝ) : (Real.sqrt π : ℂ) * w * cexp (-((s : ℂ) * ((Real.sqrt π : ℂ) * w)) ^ 2) =
       (Real.sqrt π : ℂ) * (w * cexp (-π * ((s : ℂ) * w) ^ 2)) := by
-    rw [show ((s : ℂ) * ((Real.sqrt π : ℂ) * w)) ^ 2 = (Real.sqrt π : ℂ) ^ 2 * ((s : ℂ) * w) ^ 2
-      by ring, hsq]
+    -- Pull the factor `√π` out of the square, so that `hsq` turns `√π ^ 2` into `π`.
+    have hfac : ((s : ℂ) * ((Real.sqrt π : ℂ) * w)) ^ 2 =
+        (Real.sqrt π : ℂ) ^ 2 * ((s : ℂ) * w) ^ 2 := by ring
+    rw [hfac, hsq]
     ring_nf
   rw [erf_def, funext hpt, intervalIntegral.integral_const_mul (Real.sqrt π : ℂ)
     (fun s : ℝ => w * cexp (-π * ((s : ℂ) * w) ^ 2)), ← mul_assoc, div_mul_cancel₀ _ hpi]
@@ -324,7 +299,7 @@ theorem fresnelC_conj (z : ℂ) : fresnelC (conj z) = conj (fresnelC z) := by
       conj (z * Complex.cos (π * ((s : ℂ) * z) ^ 2 / 2)) := by
     rw [map_mul, ← cos_conj]
     simp [map_pow, map_mul, map_div₀, conj_ofReal, map_ofNat]
-  rw [fresnelC, fresnelC, funext hpt, intervalIntegral_conj]
+  rw [fresnelC, fresnelC, funext hpt, intervalIntegral.intervalIntegral_conj]
 
 /-- `S(conj z) = conj (S z)`. -/
 theorem fresnelS_conj (z : ℂ) : fresnelS (conj z) = conj (fresnelS z) := by
@@ -332,7 +307,7 @@ theorem fresnelS_conj (z : ℂ) : fresnelS (conj z) = conj (fresnelS z) := by
       conj (z * Complex.sin (π * ((s : ℂ) * z) ^ 2 / 2)) := by
     rw [map_mul, ← sin_conj]
     simp [map_pow, map_mul, map_div₀, conj_ofReal, map_ofNat]
-  rw [fresnelS, fresnelS, funext hpt, intervalIntegral_conj]
+  rw [fresnelS, fresnelS, funext hpt, intervalIntegral.intervalIntegral_conj]
 
 /-- `ℱ(0) = (1 + i)/2`. -/
 @[simp]
