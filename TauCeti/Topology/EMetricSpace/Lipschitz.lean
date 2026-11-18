@@ -7,18 +7,27 @@ module
 
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.EMetricSpace.Lipschitz
+public import Mathlib.Topology.EMetricSpace.Weak
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+
+import Mathlib.Topology.MetricSpace.Isometry
+import Mathlib.Topology.MetricSpace.Lipschitz
 
 /-!
 # Lipschitz maps from extended metric spaces
 
 This file gives a real-valued Lipschitz estimate for the extended distance from a fixed point,
-shows that the inclusion of a subset into a larger subset is `1`-Lipschitz, records that a map
-Lipschitz on a set is locally Lipschitz on that set (`LipschitzOnWith.locallyLipschitzOn`), covers
-any set in a second-countable space on which a map is locally Lipschitz by countably many open sets
-on whose intersections with the set the map is Lipschitz
-(`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows that composing a function
-locally Lipschitz on a set with a locally Lipschitz map keeps it locally Lipschitz on that set.
+records non-expansiveness (`edist` contraction) of `ENNReal.toReal` and `ENNReal.ofReal`
+(`ENNReal.edist_toReal_le`, `ENNReal.edist_ofReal_le`; stated directly in terms of `edist` because
+`ℝ≥0∞` carries `WeakEMetricSpace` rather than `PseudoEMetricSpace`), derives the corresponding
+`ENNReal.ofReal` bounds for `LipschitzWith` maps (`LipschitzWith.edist_ofReal_le_mul`,
+`LipschitzWith.ofReal_le_add_mul_edist`), shows that the inclusion of a subset into a larger subset
+is `1`-Lipschitz, records that a map Lipschitz on a set is locally Lipschitz on that set
+(`LipschitzOnWith.locallyLipschitzOn`), covers any set in a second-countable space on which a map
+is locally Lipschitz by countably many open sets on whose intersections with the set the map is
+Lipschitz (`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows that composing a
+function locally Lipschitz on a set with a locally Lipschitz map keeps it locally Lipschitz on
+that set.
 
 The declaration `TauCeti.lipschitzWith_toReal_edist` and its proof follow
 [Mathlib pull request #41839](https://github.com/leanprover-community/mathlib4/pull/41839),
@@ -105,3 +114,38 @@ theorem LocallyLipschitz.comp_locallyLipschitzOn {α β γ : Type*} [PseudoEMetr
   obtain ⟨Kg, U, hU, hKg⟩ := hg (f x)
   refine ⟨Kg * Kf, t ∩ f ⁻¹' U, inter_mem ht (hf.continuousOn x hx hU), ?_⟩
   exact hKg.comp (hKf.mono inter_subset_left) fun _ hy => hy.2
+
+/-- `ENNReal.toReal` does not increase extended distances. Stated directly via `edist` because
+`ℝ≥0∞` carries `WeakEMetricSpace` rather than `PseudoEMetricSpace`. -/
+theorem ENNReal.edist_toReal_le (a b : ℝ≥0∞) : edist a.toReal b.toReal ≤ edist a b := by
+  rcases eq_or_ne a ∞ with rfl | ha
+  · rcases eq_or_ne b ∞ with rfl | hb
+    · simp
+    · rw [(ENNReal.edist_eq_top_iff ∞ b).2 ⟨Ne.symm hb, Or.inl rfl⟩]
+      exact le_top
+  · rcases eq_or_ne b ∞ with rfl | hb
+    · rw [(ENNReal.edist_eq_top_iff a ∞).2 ⟨ha, Or.inr rfl⟩]
+      exact le_top
+    · rw [← ENNReal.coe_toNNReal_eq_toReal a, ← ENNReal.coe_toNNReal_eq_toReal b,
+        NNReal.isometry_coe.edist_eq, ← ENNReal.edist_coe,
+        ENNReal.coe_toNNReal ha, ENNReal.coe_toNNReal hb]
+
+/-- `ENNReal.ofReal` does not increase extended distances. Stated directly via `edist` because
+`ℝ≥0∞` carries `WeakEMetricSpace` rather than `PseudoEMetricSpace`. -/
+theorem ENNReal.edist_ofReal_le (a b : ℝ) :
+    edist (ENNReal.ofReal a) (ENNReal.ofReal b) ≤ edist a b := by
+  rw [← ENNReal.ofNNReal_toNNReal, ← ENNReal.ofNNReal_toNNReal, ENNReal.edist_coe]
+  simpa only [ENNReal.coe_one, one_mul] using Real.lipschitzWith_toNNReal a b
+
+/-- Composing a `K`-Lipschitz real function with `ENNReal.ofReal` preserves the `K`-Lipschitz
+extended-distance bound. -/
+theorem LipschitzWith.edist_ofReal_le_mul {α : Type*} [PseudoEMetricSpace α] {K : ℝ≥0}
+    {f : α → ℝ} (hf : LipschitzWith K f) (x y : α) :
+    edist (ENNReal.ofReal (f x)) (ENNReal.ofReal (f y)) ≤ K * edist x y :=
+  (ENNReal.edist_ofReal_le (f x) (f y)).trans (hf x y)
+
+/-- One-sided extended-real Lipschitz bound for `ENNReal.ofReal ∘ f`. -/
+theorem LipschitzWith.ofReal_le_add_mul_edist {α : Type*} [PseudoEMetricSpace α] {K : ℝ≥0}
+    {f : α → ℝ} (hf : LipschitzWith K f) (x y : α) :
+    ENNReal.ofReal (f x) ≤ ENNReal.ofReal (f y) + K * edist x y :=
+  (ENNReal.le_add_edist _ _).trans (add_le_add le_rfl (hf.edist_ofReal_le_mul x y))

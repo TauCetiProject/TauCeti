@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Norm
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
@@ -17,6 +19,11 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 A map whose norm is locally constant has derivative orthogonal to its value. In particular, the
 derivative of a map into a sphere is tangent to the sphere. Away from the origin, a vanishing
 derivative of a norm-composition forces the one-dimensional profile derivative to vanish.
+Reflections in hyperplanes show that any radially invariant map on a real inner product space has
+constant operator norm of the Fréchet derivative along each sphere
+(`TauCeti.norm_fderiv_eq_of_norm_eq`), and on a real normed space, every level set of a radially
+nonincreasing map on which `fderiv` never vanishes lies on a single sphere
+(`TauCeti.norm_eq_of_eq_of_forall_fderiv_ne_zero`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -100,5 +107,48 @@ theorem hasFDerivAt_sqrt_sub_norm_sq {a : ℝ} {x : F} (hx : a - ‖x‖ ^ 2 ≠
 theorem hasFDerivAt_norm_sq_sub (x₀ x : F) :
     HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
   simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
+
+/-- A map on a real inner product space that depends only on the norm has equal Fréchet derivative
+operator norms at any two points of equal norm. At nondifferentiable points, the totalized `fderiv`
+is zero by definition. -/
+theorem norm_fderiv_eq_of_norm_eq {f : F → E} {x y : F}
+    (hrad : ∀ z w : F, ‖z‖ = ‖w‖ → f z = f w) (hxy : ‖x‖ = ‖y‖) :
+    ‖fderiv ℝ f x‖ = ‖fderiv ℝ f y‖ := by
+  let R : F ≃ₗᵢ[ℝ] F := Submodule.reflection (ℝ ∙ (x - y))ᗮ
+  have hcomp : f ∘ R.toContinuousLinearEquiv = f :=
+    funext fun z ↦ hrad (R z) z (R.norm_map z)
+  have hfderiv := R.toContinuousLinearEquiv.comp_right_fderiv (f := f) (x := x)
+  rw [hcomp] at hfderiv
+  rw [hfderiv]
+  simp [R, Submodule.reflection_sub hxy]
+
+/-- On a real normed space, every level set of a radially nonincreasing map along which `fderiv ℝ f`
+never vanishes lies on a single sphere. At nondifferentiable points, the totalized `fderiv` is zero
+by definition. -/
+theorem norm_eq_of_eq_of_forall_fderiv_ne_zero {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [PartialOrder G] {f : E → G} {x y : E}
+    (hrad : ∀ z w : E, ‖z‖ ≤ ‖w‖ → f w ≤ f z)
+    (hreg : ∀ z : E, f z = f x → fderiv ℝ f z ≠ 0) (hxy : f x = f y) :
+    ‖x‖ = ‖y‖ := by
+  have key {a b : E} (ha : f a = f x) (hb : f b = f x) (hlt : ‖a‖ < ‖b‖) : False := by
+    have hb_pos : 0 < ‖b‖ := (norm_nonneg a).trans_lt hlt
+    let w₀ : E := ((‖a‖ + ‖b‖) / (2 * ‖b‖)) • b
+    have hw₀ : ‖w₀‖ = (‖a‖ + ‖b‖) / 2 := by
+      rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+      field_simp
+    have hmem : w₀ ∈ {w : E | ‖a‖ < ‖w‖ ∧ ‖w‖ < ‖b‖} := ⟨by linarith, by linarith⟩
+    have hopen : IsOpen {w : E | ‖a‖ < ‖w‖ ∧ ‖w‖ < ‖b‖} :=
+      (isOpen_lt continuous_const continuous_norm).inter
+        (isOpen_lt continuous_norm continuous_const)
+    have hconst : ∀ w ∈ {w : E | ‖a‖ < ‖w‖ ∧ ‖w‖ < ‖b‖}, f w = f x := fun w hw ↦
+      le_antisymm (ha ▸ hrad a w hw.1.le) (hb ▸ hrad w b hw.2.le)
+    have hfd : HasFDerivAt f (0 : E →L[ℝ] G) w₀ :=
+      (hasFDerivAt_const (f x) w₀).congr_of_eventuallyEq
+        (Filter.eventually_of_mem (hopen.mem_nhds hmem) hconst)
+    exact hreg w₀ (hconst w₀ hmem) hfd.fderiv
+  rcases lt_trichotomy ‖x‖ ‖y‖ with h | h | h
+  · exact (key rfl hxy.symm h).elim
+  · exact h
+  · exact (key hxy.symm rfl h).elim
 
 end TauCeti
