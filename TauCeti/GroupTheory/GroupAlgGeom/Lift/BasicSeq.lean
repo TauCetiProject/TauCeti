@@ -73,8 +73,10 @@ with `γ₁ ^ p₁` and last with `γ_j ^ p_j` (`twistPoint_concat`).
 * `TauCeti.GroupAlgGeom.Lift.twistPoint`: the point `φ_{j,p} v`.
 * `TauCeti.GroupAlgGeom.Lift.basicWordSeqData`, `TauCeti.GroupAlgGeom.Lift.basicSeqData`: the basic
   sequences as lists of twist data, which also record the words of the twists
-  (`map_toMulAut_basicWordSeqData`, `map_toMulAut_basicSeqData`); their substitutions fix the
-  equation (`twistHom_toWord_of_mem_basicSeqData`).
+  (`map_toMulAut_basicWordSeqData`, `map_toMulAut_basicSeqData`), with one equation per
+  orientable form (`basicSeqData_orientable`, `basicSeqData_orientableCoeff_of_eq_zero`,
+  `basicSeqData_orientableCoeff_of_ne_zero`); their substitutions fix the equation
+  (`twistHom_toWord_of_mem_basicSeqData`).
 
 ## Main results
 
@@ -741,6 +743,44 @@ noncomputable def basicSeqData : (S : Standard G X) → S.IsOrientable → List 
   | .nonorientable _ hn _ inj, h => (not_isOrientable_nonorientable hn inj h).elim
   | .nonorientableCoeff _ _ hn _ _ inj _ hc _ hd, h =>
     (not_isOrientable_nonorientableCoeff hn inj hc hd h).elim
+
+variable {x y : Fin n → X} {z : Fin m → X} {c : Fin m → G} {d : G}
+
+/-- The twist data of the basic sequence of `∏ᵢ [xᵢ, yᵢ] = 1` are those of the word `S₀` of its
+variables. -/
+theorem basicSeqData_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    basicSeqData (G := G) (orientable n hn x y inj) (isOrientable_orientable hn inj) =
+      basicWordSeqData (inj.sumElim_of_isEmpty Fin.elim0) Fin.elim0 := (rfl)
+
+/-- The twist data of the basic sequence of `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1`: those of the word
+`S₀` of its variables if there are no coefficient atoms, of the mirrored variables and
+coefficients otherwise. -/
+theorem basicSeqData_orientableCoeff (hnm : 0 < n + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    basicSeqData (orientableCoeff n m hnm x y z inj c hc d hd)
+        (isOrientable_orientableCoeff hnm inj hc hd) =
+      if m = 0 then basicWordSeqData inj c else
+        basicWordSeqData (inj.sumElim_sumElim_swap_comp Fin.rev_injective Fin.rev_injective
+          Fin.rev_injective) fun j => (c j.rev)⁻¹ := (rfl)
+
+/-- Without coefficient atoms, the twist data of the basic sequence of `∏ᵢ [xᵢ, yᵢ] d = 1` are
+those of the word `S₀` of its variables. -/
+theorem basicSeqData_orientableCoeff_of_eq_zero (hnm : 0 < n + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) (hm : m = 0) :
+    basicSeqData (orientableCoeff n m hnm x y z inj c hc d hd)
+        (isOrientable_orientableCoeff hnm inj hc hd) = basicWordSeqData inj c := by
+  rw [basicSeqData_orientableCoeff, ite_eq_left hm]
+
+/-- With coefficient atoms, the twist data of the basic sequence of
+`∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` are those of the word `S₀` of the mirrored variables
+`y ∘ Fin.rev`, `x ∘ Fin.rev`, `z ∘ Fin.rev` and coefficients `fun j => (c j.rev)⁻¹`. -/
+theorem basicSeqData_orientableCoeff_of_ne_zero (hnm : 0 < n + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) (hm : m ≠ 0) :
+    basicSeqData (orientableCoeff n m hnm x y z inj c hc d hd)
+        (isOrientable_orientableCoeff hnm inj hc hd) =
+      basicWordSeqData (inj.sumElim_sumElim_swap_comp Fin.rev_injective Fin.rev_injective
+        Fin.rev_injective) fun j => (c j.rev)⁻¹ := by
+  rw [basicSeqData_orientableCoeff, ite_eq_right hm]
 
 /-- The basic sequence of a standard orientable quadratic equation is the list of automorphisms
 of its twist data. -/
