@@ -80,7 +80,7 @@ theorem exists_mul_add_mul_eq_subresultant {p q : R[X]} {m n j : ℕ}
     have hB : B.degree < (n - j : ℕ) := ofFn_degree_lt _
     -- The product degree bound handles coefficients beyond the matrix's coefficient window.
     have hdeg := degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le
-      hm hn (by omega : j ≤ m) (by omega : j ≤ n) hA hB
+      hm hn hA hB
     -- The first adjugate column maps to a vector supported in the first row only.
     have hMv (i : Fin ((m - j) + (n - j))) :
         M.mulVec v i = if i = i₀ then M.det else 0 := by
