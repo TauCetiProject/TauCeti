@@ -47,6 +47,8 @@ remains injective.
   component supplied by the inverse direct-sum equivalence is the internal projection.
 * `Submodule.apply_eq_sum_repr_projectionOnto`: a linear map vanishing on `F₀` is determined by
   its values on a basis of a complement of `F₀`.
+* `Submodule.projection_add_of_mem`, `Submodule.projection_add_of_mem'`: the projections along a
+  complementary pair recover the two summands of `x + y`.
 * `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
   multiple of `d`.
 
@@ -192,5 +194,16 @@ theorem apply_eq_sum_repr_projectionOnto {ι : Type*} [Fintype ι] {F₀ F₁ : 
     simpa using LinearMap.congr_fun (subtype_comp_projectionOnto_add_eq_id hF) v
   conv_lhs => rw [← hpq, map_add, hD, zero_add, ← b.sum_repr (F₁.projectionOnto F₀ hF.symm v)]
   simp only [coe_sum, coe_smul, map_sum, map_smul]
+
+/-- The projection onto `p` along `q` of `x + y`, for `x ∈ p` and `y ∈ q`, is `x`. -/
+theorem projection_add_of_mem {p q : Submodule R V} (hpq : IsCompl p q) {x y : V} (hx : x ∈ p)
+    (hy : y ∈ q) : p.projection q hpq (x + y) = x := by
+  rw [map_add, projection_apply_of_mem_left hpq hx, projection_apply_of_mem_right hpq hy, add_zero]
+
+/-- The projection onto `q` along `p` of `x + y`, for `x ∈ p` and `y ∈ q`, is `y`. -/
+theorem projection_add_of_mem' {p q : Submodule R V} (hpq : IsCompl p q) {x y : V} (hx : x ∈ p)
+    (hy : y ∈ q) : q.projection p hpq.symm (x + y) = y := by
+  rw [add_comm]
+  exact projection_add_of_mem hpq.symm hy hx
 
 end Submodule
