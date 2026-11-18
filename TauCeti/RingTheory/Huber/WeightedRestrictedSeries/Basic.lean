@@ -1047,7 +1047,7 @@ theorem weightedPolynomialHom_X [NonarchimedeanRing A] {T : Fin k → Set A}
   Subtype.ext (by simp)
 
 /-- A monomial `a Xν` lies in `U⟨X⟩` exactly when `a ∈ Tν · U`. -/
-theorem weightedPolynomialHom_monomial_mem_weightedNhd [NonarchimedeanRing A]
+@[simp 1100] theorem weightedPolynomialHom_monomial_mem_weightedNhd [NonarchimedeanRing A]
     {T : Fin k → Set A} {hT : IsWeightFamily T} {U : AddSubgroup A} {ν : Fin k →₀ ℕ} {a : A} :
     weightedPolynomialHom T hT (MvPolynomial.monomial ν a) ∈ weightedNhd T hT U ↔
       a ∈ weightMul T ν U := by
@@ -1068,8 +1068,8 @@ theorem weightedPolynomialHom_monomial_mem_weightedSubring [NonarchimedeanRing A
   mem_weightedSubring.trans weightedPolynomialHom_monomial_mem_weightedNhd
 
 /-- A monomial `c Xᵢ ^ j` lies in `U⟨X⟩` exactly when `c ∈ T(j eᵢ) · U`. -/
-theorem weightedC_mul_weightedX_pow_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
-    (hT : IsWeightFamily T) {U : AddSubgroup A} {c : A} {i : Fin k} {j : ℕ} :
+@[simp 1100] theorem weightedC_mul_weightedX_pow_mem_weightedNhd [NonarchimedeanRing A]
+    {T : Fin k → Set A} (hT : IsWeightFamily T) {U : AddSubgroup A} {c : A} {i : Fin k} {j : ℕ} :
     weightedC T hT c * weightedX T hT i ^ j ∈ weightedNhd T hT U ↔
       c ∈ weightMul T (Finsupp.single i j) U := by
   rw [← weightedPolynomialHom_monomial_mem_weightedNhd (hT := hT),
