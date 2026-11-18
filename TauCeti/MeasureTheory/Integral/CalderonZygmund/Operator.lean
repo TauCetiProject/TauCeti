@@ -28,11 +28,14 @@ basic theorems about this class.
   `(x, y) ↦ conj (K y x)` and the same constants (`TauCeti.HasStandardKernel.adjoint`).
 * **The Calderón–Zygmund theorem.** A Calderón–Zygmund operator is of weak type `(1, 1)`
   (`TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le`) and bounded in the `Lᵖ` norm for
-  every `1 < p < ∞` (`TauCeti.HasStandardKernel.exists_eLpNorm_le`). These are the real
-  Calderón–Zygmund theorems on `V`
-  (`ContinuousLinearMap.exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow`,
-  `ContinuousLinearMap.exists_eLpNorm_le_of_norm_sub_le_mul_rpow`), whose hypotheses on the
-  adjoint the adjoint theorem supplies.
+  every `1 < p < ∞` (`TauCeti.HasStandardKernel.exists_eLpNorm_le`), with constants depending
+  only on `p`, `C`, `δ`, a bound for `‖T‖` and the dimension of `V`
+  (`TauCeti.exists_mul_volume_lt_enorm_le_of_hasStandardKernel`,
+  `TauCeti.exists_eLpNorm_le_of_hasStandardKernel`). A standard kernel satisfies Hörmander's
+  condition with a bound depending only on `C`, `δ` and `V`, so these are the real
+  Calderón–Zygmund theorems under Hörmander's condition on `V`
+  (`TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`, `TauCeti.exists_eLpNorm_le_of_hormander`),
+  whose hypotheses on the adjoint the adjoint theorem supplies.
 * **Examples.** The identity has the kernel `0` (`TauCeti.hasStandardKernel_id`), and the Riesz
   transforms are Calderón–Zygmund operators (`TauCeti.hasStandardKernel_rieszTransform`).
 
@@ -226,6 +229,16 @@ private theorem norm_opKernel_sub_le (h : HasStandardKernel T K C δ) (x y y' : 
   rw [opKernel, opKernel, ← sub_smul]
   exact (ContinuousLinearMap.norm_smul_id_le _).trans (h.norm_offDiag_sub_le hy)
 
+/-- A standard kernel satisfies Hörmander's condition, with a bound depending only on `C`, `δ`
+and `V`. -/
+private theorem setLIntegral_enorm_opKernel_sub_le (h : HasStandardKernel T K C δ) (y y' : V) :
+    ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖opKernel F 𝕜 K x y - opKernel F 𝕜 K x y'‖ₑ ≤
+      C * volume (ball (0 : V) 1) *
+        ENNReal.ofReal (2 ^ (Module.finrank ℝ V : ℝ) / (2 ^ δ - 1)) :=
+  setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow
+    (fun r hr ↦ by rw [Measure.addHaar_closedBall _ _ hr.le, Real.rpow_natCast, mul_comm])
+    h.exponent_pos fun x hx ↦ h.norm_opKernel_sub_le x y y' hx
+
 private theorem ae_apply_eq_integral_opKernel (h : HasStandardKernel T K C δ)
     (f : Lp F 2 (volume : Measure V)) (s : Set V) (hs : IsCompact s)
     (hf : ∀ᵐ x, x ∉ s → f x = 0) :
@@ -274,37 +287,85 @@ theorem adjoint (h : HasStandardKernel T K C δ) :
       rw [opKernel, offDiag_of_ne hxz, offDiag_of_ne (Ne.symm hxz), map_smulₛₗ,
         ContinuousLinearMap.adjoint_id, smul_apply, ContinuousLinearMap.id_apply]
 
+/-- **Calderón–Zygmund operators are of weak type `(1, 1)`, uniformly.** Given `C`, `δ` and `M`,
+there is a constant `A` with `t · |{x | ‖T f x‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`,
+whenever `T` is a Calderón–Zygmund operator with constant `C`, exponent `δ` and `‖T‖ ≤ M`. So `A`
+depends only on `C`, `δ`, `M` and the dimension of `V`, and the bound holds uniformly over families
+of operators. -/
+theorem _root_.TauCeti.exists_mul_volume_lt_enorm_le_of_hasStandardKernel (C : ℝ≥0) (δ M : ℝ) :
+    ∃ A : ℝ≥0, ∀ (T : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V))
+      (K : V → V → ℂ), ‖T‖ ≤ M → HasStandardKernel T K C δ →
+      ∀ (f : Lp F 2 (volume : Measure V)) (t : ℝ≥0∞),
+        t * volume {x | t < ‖T f x‖ₑ} ≤ A * eLpNorm f 1 volume := by
+  have hB : C * volume (ball (0 : V) 1) *
+      ENNReal.ofReal (2 ^ (Module.finrank ℝ V : ℝ) / (2 ^ δ - 1)) ≠ ∞ :=
+    ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top measure_ball_lt_top.ne)
+      ENNReal.ofReal_ne_top
+  obtain ⟨A, hA⟩ := exists_mul_volume_lt_enorm_le_of_hormander (V := V) (E := F) (F := F)
+    (M := .ofReal M) ENNReal.ofReal_ne_top hB
+  refine ⟨A, fun T K hT h f t ↦ ?_⟩
+  rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f)]
+  simpa only [ContinuousLinearMap.coe_restrictScalars'] using
+    hA (T.restrictScalars ℝ) (opKernel F ℝ K)
+      (by
+        rw [← ofReal_norm, ContinuousLinearMap.norm_restrictScalars]
+        exact ENNReal.ofReal_le_ofReal hT)
+      h.stronglyMeasurable_opKernel h.setLIntegral_enorm_opKernel_sub_le
+      h.ae_restrictScalars_apply_eq_integral_opKernel f t
+
 /-- **Calderón–Zygmund operators are of weak type `(1, 1)`**: there is a constant `A` with
 `t · |{x | ‖T f x‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. A Calderón–Zygmund operator
-need not be bounded on `L¹`, and this is the substitute at the endpoint. -/
+need not be bounded on `L¹`, and this is the substitute at the endpoint. The constant depends only
+on `C`, `δ`, `‖T‖` and the dimension of `V`
+(`TauCeti.exists_mul_volume_lt_enorm_le_of_hasStandardKernel`). -/
 theorem exists_mul_volume_lt_enorm_le (h : HasStandardKernel T K C δ) :
     ∃ A : ℝ≥0, ∀ (f : Lp F 2 (volume : Measure V)) (t : ℝ≥0∞),
-      t * volume {x | t < ‖T f x‖ₑ} ≤ A * eLpNorm f 1 volume := by
-  obtain ⟨A, hA⟩ := ContinuousLinearMap.exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow
-    (T.restrictScalars ℝ) h.stronglyMeasurable_opKernel h.exponent_pos h.norm_opKernel_le
-    h.norm_opKernel_sub_le h.ae_restrictScalars_apply_eq_integral_opKernel
-  exact ⟨A, fun f t ↦ by
-    rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f)]
-    simpa only [ContinuousLinearMap.coe_restrictScalars'] using hA f t⟩
+      t * volume {x | t < ‖T f x‖ₑ} ≤ A * eLpNorm f 1 volume :=
+  let ⟨A, hA⟩ := exists_mul_volume_lt_enorm_le_of_hasStandardKernel (V := V) (F := F) C δ ‖T‖
+  ⟨A, hA T K le_rfl h⟩
+
+/-- **Calderón–Zygmund operators are bounded on `Lᵖ`, uniformly**, for `1 < p < ∞`. Given `C`, `δ`
+and `M`, there is a constant `A` with `‖T f‖_p ≤ A ‖f‖_p` for every `f ∈ L²`, whenever `T` is a
+Calderón–Zygmund operator with constant `C`, exponent `δ` and `‖T‖ ≤ M`. So `A` depends only on
+`p`, `C`, `δ`, `M` and the dimension of `V`, and the bound holds uniformly over families of
+operators. The adjoint of `T` is a Calderón–Zygmund operator with the same constants
+(`TauCeti.HasStandardKernel.adjoint`), which gives the range `p > 2` by duality. -/
+theorem _root_.TauCeti.exists_eLpNorm_le_of_hasStandardKernel (C : ℝ≥0) (δ M : ℝ) {p : ℝ≥0∞}
+    (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ A : ℝ≥0, ∀ (T : Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V))
+      (K : V → V → ℂ), ‖T‖ ≤ M → HasStandardKernel T K C δ →
+      ∀ f : Lp F 2 (volume : Measure V), eLpNorm (T f) p volume ≤ A * eLpNorm f p volume := by
+  -- The Calderón–Zygmund theorem is stated for real Hilbert spaces.
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have hB : C * volume (ball (0 : V) 1) *
+      ENNReal.ofReal (2 ^ (Module.finrank ℝ V : ℝ) / (2 ^ δ - 1)) ≠ ∞ :=
+    ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top measure_ball_lt_top.ne)
+      ENNReal.ofReal_ne_top
+  obtain ⟨A, hA⟩ := exists_eLpNorm_le_of_hormander (V := V) (H := F) (K := F)
+    (M := .ofReal M) ENNReal.ofReal_ne_top hB hB hp hp_top
+  refine ⟨A, fun T K hT h f ↦ ?_⟩
+  have h' := h.adjoint
+  simpa only [ContinuousLinearMap.coe_restrictScalars'] using
+    hA (T.restrictScalars ℝ) (opKernel F ℝ K) (opKernel F ℝ fun x y ↦ conj (K y x))
+      (by
+        rw [← ofReal_norm, ContinuousLinearMap.norm_restrictScalars]
+        exact ENNReal.ofReal_le_ofReal hT)
+      h.stronglyMeasurable_opKernel h'.stronglyMeasurable_opKernel
+      h.setLIntegral_enorm_opKernel_sub_le h'.setLIntegral_enorm_opKernel_sub_le
+      h.ae_restrictScalars_apply_eq_integral_opKernel
+      (fun f s hs hf ↦ by
+        rw [L2.adjoint_restrictScalars]
+        exact h'.ae_restrictScalars_apply_eq_integral_opKernel f s hs hf) f
 
 /-- **Calderón–Zygmund operators are bounded on `Lᵖ`** for `1 < p < ∞`: there is a constant `A`
-with `‖T f‖_p ≤ A ‖f‖_p` for every `f ∈ L²`. The adjoint of `T` is a Calderón–Zygmund operator
-(`TauCeti.HasStandardKernel.adjoint`), which gives the range `p > 2` by duality. -/
+with `‖T f‖_p ≤ A ‖f‖_p` for every `f ∈ L²`. The constant depends only on `p`, `C`, `δ`, `‖T‖` and
+the dimension of `V` (`TauCeti.exists_eLpNorm_le_of_hasStandardKernel`). -/
 theorem exists_eLpNorm_le (h : HasStandardKernel T K C δ) {p : ℝ≥0∞} (hp : 1 < p)
     (hp_top : p ≠ ∞) :
     ∃ A : ℝ≥0, ∀ f : Lp F 2 (volume : Measure V),
-      eLpNorm (T f) p volume ≤ A * eLpNorm f p volume := by
-  -- The Calderón–Zygmund theorem is stated for real Hilbert spaces.
-  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have h' := h.adjoint
-  simpa only [ContinuousLinearMap.coe_restrictScalars'] using
-    ContinuousLinearMap.exists_eLpNorm_le_of_norm_sub_le_mul_rpow (T.restrictScalars ℝ)
-      h.stronglyMeasurable_opKernel h'.stronglyMeasurable_opKernel h.exponent_pos
-      h'.exponent_pos h.norm_opKernel_le h'.norm_opKernel_le h.norm_opKernel_sub_le
-      h'.norm_opKernel_sub_le h.ae_restrictScalars_apply_eq_integral_opKernel
-      (fun f s hs hf ↦ by
-        rw [L2.adjoint_restrictScalars]
-        exact h'.ae_restrictScalars_apply_eq_integral_opKernel f s hs hf) hp hp_top
+      eLpNorm (T f) p volume ≤ A * eLpNorm f p volume :=
+  let ⟨A, hA⟩ := exists_eLpNorm_le_of_hasStandardKernel (V := V) (F := F) C δ ‖T‖ hp hp_top
+  ⟨A, hA T K le_rfl h⟩
 
 end HasStandardKernel
 
