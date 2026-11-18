@@ -1018,12 +1018,26 @@ jobs:
         && needs.build-site.result == 'success' && needs.deploy.result == 'success'
         && needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
+    permissions: {}
     steps:
+      # Not `github.token`: moving a ref across a change to .github/workflows/ needs the
+      # `workflows` permission, which the workflow token cannot be granted. GitHub lets the
+      # workflow token through when the target's workflow files match the commit being run, but
+      # `docgen` trails main, so its target usually does not, and the update fails with HTTP 403
+      # ("Resource not accessible by integration").
+      - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1; v1 ignores permission-* inputs
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-contents: write
+          permission-workflows: write
+
       - name: Point the docgen branch at the documented commit
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           CANDIDATE: ${{ needs.build-site.outputs.docs-source-sha }}
           REPO: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
