@@ -65,6 +65,9 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   for the test function `w = Op(b) u`, and
   `TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`: `a # b` is the only
   symbol, of any order, whose quantization is `Op(a) ∘ Op(b)`.
+* `TauCeti.Symbol.coordSub_smul_coefficient_sharp`: **commutator with a coordinate function**,
+  `(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`, where `(y - z)ⱼ b` is the composition
+  with the symbol `TauCeti.Symbol.coordSubSymbol z j` of multiplication by `(y - z)ⱼ`.
 * `TauCeti.Symbol.sharp_assoc`: **associativity**, `(a # b) # c = a # (b # c)` for `b` and `c` with
   compact spatial support, since both are the symbol of `Op(a) ∘ Op(b) ∘ Op(c)`.
 * `TauCeti.Symbol.quantizeSobolev_sharp`: if `a` also has compact spatial support, then
@@ -1037,6 +1040,93 @@ theorem coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq [CompleteSpace V
     (h u hu x).trans (quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u x).symm
 
 end Operator
+
+/-! ### Commutator with a coordinate function -/
+
+section Commutator
+
+/-- The symbol of order `0` of multiplication by the `j`-th coordinate `(y - z)ⱼ` of the
+displacement of the position `y` from a point `z`. -/
+def coordSubSymbol (z : CoordinateSpace n) (j : Fin n) : Symbol n W W 0 :=
+  ofSpatial (fun y ↦ (y - z) j • ContinuousLinearMap.id ℂ W)
+    (((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).contDiff.comp
+      (contDiff_id.sub contDiff_const)).smul contDiff_const)
+
+@[simp]
+theorem coefficient_coordSubSymbol (z : CoordinateSpace n) (j : Fin n)
+    (q : CoordinateSpace n × CoordinateSpace n) :
+    (coordSubSymbol (W := W) z j).coefficient q = (q.1 - z) j • ContinuousLinearMap.id ℂ W :=
+  coefficient_ofSpatial _ _ q
+
+/-- Multiplying a symbol by `(y - z)ⱼ` before quantizing multiplies the quantization by
+`(x - z)ⱼ`. -/
+theorem quantizeSchwartzValue_coordSubSymbol_comp (b : Symbol n V W m) (z : CoordinateSpace n)
+    (j : Fin n) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue ((coordSubSymbol z j).comp b).coefficient u x =
+      ((x - z) j : ℂ) • quantizeSchwartzValue b.coefficient u x :=
+  quantizeSchwartzValue_ofSpatial_smul_id_comp b _ u x
+
+/-- **Commutator with a coordinate function.** For a symbol `b` with compact spatial support,
+`(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`: multiplying `Op(a) (Op(b) u)` by
+`(x - z)ⱼ` either falls on `Op(b) u` or differentiates `a` in the frequency. -/
+theorem coordSub_smul_coefficient_sharp [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
+    (a : Symbol n W U m') {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
+    (z : CoordinateSpace n) (j : Fin n) (x ξ : CoordinateSpace n) :
+    ((x - z) j : ℂ) • (a.sharp b hb).coefficient (x, ξ) =
+      (a.sharp ((coordSubSymbol z j).comp b) (hb.comp_left _)).coefficient (x, ξ) +
+        Complex.I • ((frequencyDeriv j a).sharp b hb).coefficient (x, ξ) := by
+  set L := (coordSubSymbol z j).comp (a.sharp b hb)
+  set R := a.sharp ((coordSubSymbol z j).comp b) (hb.comp_left _) +
+    Complex.I • inclusion (by linarith) ((frequencyDeriv j a).sharp b hb)
+  have hLR : L.coefficient = R.coefficient := by
+    refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦ funext fun y ↦ ?_
+    set w := (hb.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+      (b.contDiff_quantizeSchwartzValue u)
+    have hb' := hb.comp_left (coordSubSymbol z j)
+    set w' := (hb'.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
+      (((coordSubSymbol z j).comp b).contDiff_quantizeSchwartzValue u)
+    have hw : ∀ y', w y' = quantizeSchwartzValue b.coefficient u y' :=
+      HasCompactSupport.toSchwartzMap_toFun _ _
+    -- The test function `w' = Op((y - z)ⱼ b) u` is `yⱼ w - zⱼ w`.
+    have hw' : w' = SchwartzMap.smulLeftCLM W (fun y' : CoordinateSpace n ↦ y' j) w -
+        ((z j : ℝ) : ℂ) • w := by
+      ext y'
+      have hg : (fun y' : CoordinateSpace n ↦ y' j).HasTemperateGrowth :=
+        (EuclideanSpace.proj j).hasTemperateGrowth
+      rw [HasCompactSupport.toSchwartzMap_toFun, quantizeSchwartzValue_coordSubSymbol_comp,
+        sub_apply, SchwartzMap.smulLeftCLM_apply_apply hg, smul_apply, hw, PiLp.sub_apply,
+        Complex.ofReal_sub, sub_smul, Complex.coe_smul]
+    obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice y
+    -- The left side is `(y - z)ⱼ Op(a) w (y)`.
+    have hL : quantizeSchwartzValue L.coefficient u y =
+        ((y - z) j : ℂ) • quantizeSchwartzValue a.coefficient w y := by
+      rw [quantizeSchwartzValue_coordSubSymbol_comp,
+        quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u y]
+    -- The right side is `Op(a) w' (y) + i Op(∂_{ξⱼ} a) w (y)`.
+    have hR : quantizeSchwartzValue R.coefficient u y =
+        quantizeSchwartzValue a.coefficient w' y +
+          Complex.I • quantizeSchwartzValue (frequencyDeriv j a).coefficient w y := by
+      rw [coefficient_add, quantizeSchwartzValue_coefficient_add, coefficient_smul,
+        quantizeSchwartzValue_smul_left, coefficient_inclusion,
+        quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb' u y,
+        quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb u y]
+    -- Expand `Op(a) w'` and move the coordinate `yⱼ` out of `Op(a)`.
+    have hw'y : quantizeSchwartzValue a.coefficient w' y =
+        y j • quantizeSchwartzValue a.coefficient w y -
+          Complex.I • quantizeSchwartzValue (frequencyDeriv j a).coefficient w y -
+          ((z j : ℝ) : ℂ) • quantizeSchwartzValue a.coefficient w y := by
+      rw [hw', sub_eq_add_neg (SchwartzMap.smulLeftCLM W _ w), ← neg_smul,
+        quantizeSchwartzValue_add_right (a.continuous_coefficient_slice y).aestronglyMeasurable hC,
+        quantizeSchwartzValue_smul_right, a.ofLp_smul_quantizeSchwartzValue j w y, neg_smul]
+      abel
+    rw [hL, hR, hw'y, PiLp.sub_apply, Complex.ofReal_sub, sub_smul, Complex.coe_smul]
+    abel
+  calc ((x - z) j : ℂ) • (a.sharp b hb).coefficient (x, ξ) = L.coefficient (x, ξ) := by
+        simp [L, RCLike.real_smul_eq_coe_smul (K := ℂ)]
+    _ = R.coefficient (x, ξ) := congrFun hLR _
+    _ = _ := by simp [R]
+
+end Commutator
 
 /-! ### Associativity -/
 
