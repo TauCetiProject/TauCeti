@@ -244,11 +244,9 @@ theorem exists_mul_abs_sub_le_norm_fderiv_sq [FiniteDimensional ℝ F]
     ∃ lam > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), lam * |f z - f (a, 0)| ≤ ‖fderiv ℝ f z‖ ^ 2 := by
   obtain ⟨c, hc, h1⟩ := exists_mul_norm_snd_le_norm_fderiv hf hcrit hker
   obtain ⟨C, hC, h2⟩ := exists_abs_sub_le_mul_norm_snd_sq hf hcrit
-  refine ⟨c ^ 2 / C, by positivity, ?_⟩
-  filter_upwards [h1, h2] with z hz1 hz2
-  calc c ^ 2 / C * |f z - f (a, 0)| ≤ c ^ 2 / C * (C * ‖z.2‖ ^ 2) := by gcongr
-    _ = (c * ‖z.2‖) ^ 2 := by field_simp
-    _ ≤ ‖fderiv ℝ f z‖ ^ 2 := by gcongr
+  exact exists_mul_le_sq_of_eventually_le_mul (g := fun z ↦ ‖z.2‖) (K := c⁻¹)
+    ⟨C⁻¹, by positivity, h2.mono fun _ hz ↦ by rwa [inv_mul_le_iff₀ hC]⟩
+    (.of_forall fun _ ↦ norm_nonneg _) (h1.mono fun _ hz ↦ by rwa [le_inv_mul_iff₀ hc])
 
 variable [FiniteDimensional ℝ P] [FiniteDimensional ℝ F] {W : Set (P × F)} {n : ℕ∞}
 

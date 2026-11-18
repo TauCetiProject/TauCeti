@@ -454,6 +454,24 @@ end ContDiffAt
 
 namespace TauCeti
 
+/-- **Łojasiewicz's inequality with exponent `1 / 2` survives a bounded comparison of slopes.** If
+`lam * u y ≤ g y ^ 2` eventually along `l`, for some `lam > 0`, and `0 ≤ g y ≤ K * h y`
+eventually, then `lam' * u y ≤ h y ^ 2` eventually, for some `lam' > 0`. This carries the
+inequality between coordinate systems, or from a differential to a gradient, whose norms are
+comparable. -/
+theorem exists_mul_le_sq_of_eventually_le_mul {α : Type*} {l : Filter α} {u g h : α → ℝ} {K : ℝ}
+    (hu : ∃ lam > 0, ∀ᶠ y in l, lam * u y ≤ g y ^ 2) (hg : ∀ᶠ y in l, 0 ≤ g y)
+    (hgh : ∀ᶠ y in l, g y ≤ K * h y) :
+    ∃ lam > 0, ∀ᶠ y in l, lam * u y ≤ h y ^ 2 := by
+  obtain ⟨lam, hlam, hu⟩ := hu
+  refine ⟨lam / (K ^ 2 + 1), by positivity, ?_⟩
+  filter_upwards [hu, hg, hgh] with y hy hgy hghy
+  have hK : 0 < K ^ 2 + 1 := by positivity
+  rw [div_mul_eq_mul_div, div_le_iff₀ hK]
+  calc lam * u y ≤ g y ^ 2 := hy
+    _ ≤ (K * h y) ^ 2 := pow_le_pow_left₀ hgy hghy 2
+    _ ≤ h y ^ 2 * (K ^ 2 + 1) := by nlinarith [sq_nonneg (h y)]
+
 section NormedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
@@ -484,34 +502,11 @@ theorem IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq
     ∃ lam > 0, ∀ᶠ y in 𝓝 x, lam * |f y - f x| ≤ ‖fderiv ℝ f y‖ ^ 2 := by
   obtain ⟨c, hc, h1⟩ := h.exists_mul_norm_sub_le_norm_fderiv
   obtain ⟨C, hC, h2⟩ := h.contDiffAt.exists_abs_sub_le_mul_norm_sub_sq h.fderiv_eq_zero
-  refine ⟨c ^ 2 / C, by positivity, ?_⟩
-  filter_upwards [h1, h2] with y hy1 hy2
-  have h3 : (c * ‖y - x‖) ^ 2 ≤ ‖fderiv ℝ f y‖ ^ 2 :=
-    pow_le_pow_left₀ (by positivity) hy1 2
-  calc c ^ 2 / C * |f y - f x| ≤ c ^ 2 / C * (C * ‖y - x‖ ^ 2) :=
-        mul_le_mul_of_nonneg_left hy2 (by positivity)
-    _ = (c * ‖y - x‖) ^ 2 := by field_simp
-    _ ≤ ‖fderiv ℝ f y‖ ^ 2 := h3
+  exact exists_mul_le_sq_of_eventually_le_mul (g := fun y ↦ ‖y - x‖) (K := c⁻¹)
+    ⟨C⁻¹, by positivity, h2.mono fun _ hy ↦ by rwa [inv_mul_le_iff₀ hC]⟩
+    (.of_forall fun _ ↦ norm_nonneg _) (h1.mono fun _ hy ↦ by rwa [le_inv_mul_iff₀ hc])
 
 end NormedSpace
-
-/-- **Łojasiewicz's inequality with exponent `1 / 2` survives a bounded comparison of slopes.** If
-`lam * u y ≤ g y ^ 2` eventually along `l`, for some `lam > 0`, and `0 ≤ g y ≤ K * h y`
-eventually, then `lam' * u y ≤ h y ^ 2` eventually, for some `lam' > 0`. This carries the
-inequality between coordinate systems, or from a differential to a gradient, whose norms are
-comparable. -/
-theorem exists_mul_le_sq_of_eventually_le_mul {α : Type*} {l : Filter α} {u g h : α → ℝ} {K : ℝ}
-    (hu : ∃ lam > 0, ∀ᶠ y in l, lam * u y ≤ g y ^ 2) (hg : ∀ᶠ y in l, 0 ≤ g y)
-    (hgh : ∀ᶠ y in l, g y ≤ K * h y) :
-    ∃ lam > 0, ∀ᶠ y in l, lam * u y ≤ h y ^ 2 := by
-  obtain ⟨lam, hlam, hu⟩ := hu
-  refine ⟨lam / (K ^ 2 + 1), by positivity, ?_⟩
-  filter_upwards [hu, hg, hgh] with y hy hgy hghy
-  have hK : 0 < K ^ 2 + 1 := by positivity
-  rw [div_mul_eq_mul_div, div_le_iff₀ hK]
-  calc lam * u y ≤ g y ^ 2 := hy
-    _ ≤ (K * h y) ^ 2 := pow_le_pow_left₀ hgy hghy 2
-    _ ≤ h y ^ 2 * (K ^ 2 + 1) := by nlinarith [sq_nonneg (h y)]
 
 end TauCeti
 
