@@ -32,6 +32,11 @@ A surjection `π : M → M'` with kernel `N` intertwining `d` with a square-zero
 (`LinearMap.quotientHomologyEquivOfSurjective`). It rests on the equivalence of homologies induced
 by a linear equivalence intertwining two square-zero endomorphisms (`LinearEquiv.homologyEquiv`).
 
+The restriction of `d` to such a submodule `N` squares to zero as well
+(`LinearMap.restrict_comp_restrict_eq_zero`), so `N` is a subcomplex with quotient complex
+`M ⧸ N`. If `d` also preserves `N'`, its restriction to `N'` preserves the trace of `N` on `N'`
+(`LinearMap.comap_subtype_le_comap_restrict`), which gives the subquotient complexes `N' ⧸ N`.
+
 ## Main definitions
 
 * `LinearMap.quotientHomology`: the homology of the endomorphism of `M ⧸ N` induced by `d`.
@@ -92,6 +97,20 @@ theorem mapQ_comp_mapQ_eq_zero (hd : d ∘ₗ d = 0) (N : Submodule S M) (hN : N
     N.mapQ N d hN ∘ₗ N.mapQ N d hN = 0 := by
   ext m
   simpa using congr(Submodule.Quotient.mk (p := N) ($hd m))
+
+/-- The restriction of a square-zero endomorphism `d` to a submodule `N` with `d N ⊆ N` squares to
+zero. -/
+theorem restrict_comp_restrict_eq_zero (hd : d ∘ₗ d = 0) (N : Submodule S M)
+    (hN : N ≤ N.comap d) : d.restrict hN ∘ₗ d.restrict hN = 0 := by
+  ext m
+  simpa using congr($hd m)
+
+variable {d} in
+/-- If an endomorphism `d` preserves the submodules `N` and `N'`, its restriction to `N'` preserves
+the trace `N ∩ N'` of `N` on `N'`. -/
+theorem comap_subtype_le_comap_restrict {N N' : Submodule S M} (hN : N ≤ N.comap d)
+    (hN' : N' ≤ N'.comap d) : N.comap N'.subtype ≤ (N.comap N'.subtype).comap (d.restrict hN') :=
+  fun _ hx ↦ hN hx
 
 /-- The homology of the square-zero endomorphism of `M ⧸ N` induced by `d`, for a submodule `N`
 with `d N ⊆ N`. -/

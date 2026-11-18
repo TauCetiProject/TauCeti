@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
 public import TauCeti.Analysis.PDE.Wave.Dispersive
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Integral.RieszThorin
 
@@ -174,10 +175,7 @@ private theorem two_le_of_admissible (hq : 2 < q)
   have hρ : (r⁻¹).toReal < 2⁻¹ := by
     have h : 0 < ((Module.finrank ℝ E : ℝ) - 1) * (2⁻¹ - (r⁻¹).toReal) := by linarith
     linarith [pos_of_mul_pos_right h (by linarith)]
-  rw [← ENNReal.inv_le_inv,
-    ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r r')),
-    ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
-  exact ENNReal.ofReal_le_ofReal (hρ.le.trans_eq (by simp))
+  exact ENNReal.two_le_of_toReal_inv_le (ENNReal.HolderConjugate.ne_zero r r') hρ.le
 
 /-- **Interpolated dispersive decay.** Let `(q, r)` be wave-admissible in dimension `n`, and let
 `T` be bounded on `L²` with `‖T‖ ≤ B₁` and `‖T f‖_∞ ≤ C₁ c^n (1 + c |τ|)^(-(n - 1)/2) ‖f‖₁`. Then
