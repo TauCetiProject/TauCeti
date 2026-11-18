@@ -74,17 +74,18 @@ def covers(sparse_entry, path):
 
 class WorkflowPins(unittest.TestCase):
     def test_every_tools_reference_is_main(self):
-        # TauCeti runs TauCetiTools main everywhere: no pinned revision anywhere.
-        texts = {path: path.read_text() for path in sorted(
-            [*WORKFLOW_DIR.glob("*.y*ml"), *ROOT.glob(".github/actions/*/action.y*ml"), *ROOT.glob("scripts/*.sh")])}
+        # TauCeti runs TauCetiTools main everywhere. The setup action runs its own code, so a
+        # `tools-ref` input would be ignored; none is written.
+        paths = [*WORKFLOW_DIR.glob("*.y*ml"), *ROOT.glob(".github/actions/*/action.y*ml"), *ROOT.glob("scripts/*.sh")]
         found = 0
-        for path, text in texts.items():
-            refs = re.findall(r"TauCetiProject/TauCetiTools(?:/\.github/(?:actions|workflows)/[^@\s'\"]+)?@([^\s'\"#]+)", text)
-            refs += re.findall(r"(?m)^\s*tools[-_]ref:\s*['\"]?([^\s'\"#]+)", text)
+        for path in sorted(paths):
+            text = path.read_text()
+            refs = re.findall(r"TauCetiProject/TauCetiTools[^@\s'\"]*@([^\s'\"#]+)", text)
             refs += re.findall(r"(?m)^\s*repository:\s*TauCetiProject/TauCetiTools\n\s*ref:\s*([^\s#]+)", text)
             found += len(refs)
             with self.subTest(path=path.relative_to(ROOT)):
                 self.assertEqual(set(refs) - {"main"}, set())
+                self.assertNotRegex(text, r"(?m)^\s*tools-ref:")
         self.assertGreater(found, 0)
         for name in ("tauceti.toml", ".tauceti/ci-source.toml"):
             with self.subTest(path=name):

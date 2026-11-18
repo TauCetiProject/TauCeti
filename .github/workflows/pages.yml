@@ -135,7 +135,6 @@ jobs:
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: main
           project-directory: .
       - name: Restore the last published data assets
         id: retained-data
@@ -559,7 +558,6 @@ jobs:
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: main
           project-directory: .
       - name: Lay down the generated data
         id: site-data

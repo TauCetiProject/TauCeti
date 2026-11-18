@@ -27,7 +27,6 @@ jobs:
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: main
           project-directory: .
       - name: Restore project-owned live CI contracts
         run: git restore --source=HEAD -- scripts/test_ci_live_browser.mjs scripts/test_ci_live_summary.py

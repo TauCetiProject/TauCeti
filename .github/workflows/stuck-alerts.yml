@@ -49,7 +49,6 @@ jobs:
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: main
           project-directory: .
       - name: Reconcile stuck-automation alerts
         # No continue-on-error: a broken Zulip integration must go red here too.

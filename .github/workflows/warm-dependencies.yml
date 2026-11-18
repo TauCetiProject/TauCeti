@@ -57,7 +57,6 @@ jobs:
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: main
           project-directory: .
       - name: Resolve immutable pins and validate before any dependency code executes
         env:

@@ -34,7 +34,6 @@ jobs:
       - uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: main
           project-directory: .
       - name: Cancel only builds whose live PR state makes them obsolete
         env:

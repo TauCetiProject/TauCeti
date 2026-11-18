@@ -2,7 +2,7 @@
 
 Reusable Python and shell implementations live in TauCetiProject/TauCetiTools. Every TauCeti
 workflow, script and service uses TauCetiTools `main`: `tauceti.toml` says `ref = "main"`, and
-workflows write `@main` and `tools-ref: main`. CI prepares the trusted project or gate checkout
+workflows write `@main`. CI prepares the trusted project or gate checkout
 with the setup action before invoking scripts. Local Python callers need `tauceti-tools`
 installed; shell entrypoints run the same `main` through uvx. To prepare all helpers locally:
 
@@ -14,9 +14,8 @@ tauceti-tools materialize scripts --conf tauceti.toml --policy-dir scripts
 Materialization is a local generated change: do not commit generated implementations over the
 thin callers. Project policy files (`*.txt`, `*.json`) stay here and override supplied defaults.
 Lean drivers and static data remain checked in so direct Lake commands work from a checkout.
-A change to common tooling is a TauCetiTools PR. Its CI runs this repository's infrastructure
-tests against the candidate before it can reach TauCeti. Review and progress pins, runner
-selection and merge policy are separate.
+A change to common tooling is a TauCetiTools PR, and it reaches TauCeti when it merges.
+Review and progress pins, runner selection and merge policy are separate.
 
 The complete installation inventory is in the [setup manual](https://github.com/TauCetiProject/TauCetiTools/blob/main/docs/project-setup.md).
 

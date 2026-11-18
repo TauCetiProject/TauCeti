@@ -49,7 +49,6 @@ jobs:
       uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
       with:
         tools-repository: TauCetiProject/TauCetiTools
-        tools-ref: main
         project-directory: .
     - name: Restore the project-owned toolchain-pin contract
       # Match infrastructure-tests: the older shared overlay must not replace

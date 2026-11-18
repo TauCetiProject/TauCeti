@@ -19,7 +19,6 @@ jobs:
     uses: TauCetiProject/TauCetiTools/.github/workflows/pr-build.yml@main
     with:
       tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: main
       project_ref: ${{ github.workflow_sha }}
       lean_root: TauCeti
       roadmap_dir: TauCetiRoadmap
