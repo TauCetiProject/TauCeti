@@ -12,10 +12,10 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.CosSqrt
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Manifold.Riemannian.Coercive
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
-import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The standard cap metric
@@ -31,8 +31,8 @@ so that the radial direction has unit length and the spheres about the tip are s
 `f(r) / r`. At the tip `a = f'(0)² = 1` and the metric is Euclidean.
 
 The norm `‖x‖` is not differentiable at the tip, and the two coefficients `a` and
-`(1 - a) / ‖x‖²` are smooth there only because `f` is the odd profile `2 sin (r / 2)` of a round
-sphere near the tip: then `a = 2 (1 - cos ‖x‖) / ‖x‖²` and
+`(1 - a) / ‖x‖²` are smooth there because, near the tip, `f` is the odd profile `2 sin (r / 2)` of
+a round sphere: then `a = 2 (1 - cos ‖x‖) / ‖x‖²` and
 `(1 - a) / ‖x‖² = 2 (‖x‖² - 2 (1 - cos ‖x‖)) / ‖x‖⁴` are analytic functions of `‖x‖²`, namely
 difference quotients at `0` of the entire function `TauCeti.cosSqrt` with
 `cosSqrt (r²) = cos r`.
@@ -100,6 +100,24 @@ theorem standardCapPolar_def :
     standardCapPolar V =
       fun q : standardCapRadialDomain × sphere (0 : V) 1 ↦ (q.1 : ℝ) • (q.2 : V) :=
   (rfl)
+
+/-- The point `r u` in polar coordinates has norm `r`. -/
+theorem norm_standardCapPolar (p : standardCapRadialDomain × sphere (0 : V) 1) :
+    ‖standardCapPolar V p‖ = p.1 := by
+  rw [standardCapPolar_apply, norm_smul, norm_eq_of_mem_sphere p.2, mul_one,
+    Real.norm_of_nonneg p.1.property.le]
+
+/-- Polar coordinates `(r, u) ↦ r u` on `(0, ∞) × Sⁿ` cover every point of `V` except the
+origin: `x ≠ 0` is `r u` for `r = ‖x‖` and `u = x / ‖x‖`. -/
+theorem range_standardCapPolar : range (standardCapPolar V) = {0}ᶜ := by
+  ext x
+  refine ⟨?_, fun hx ↦ ?_⟩
+  · rintro ⟨p, rfl⟩
+    exact norm_ne_zero_iff.1 ((norm_standardCapPolar p).trans_ne p.1.property.ne')
+  have hr : 0 < ‖x‖ := norm_pos_iff.2 hx
+  refine ⟨(⟨‖x‖, hr⟩, ⟨‖x‖⁻¹ • x, ?_⟩), ?_⟩
+  · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hr.ne']
+  · simp [smul_smul, mul_inv_cancel₀ hr.ne']
 
 variable {n : ℕ} [Fact (Module.finrank ℝ V = n + 1)]
 
@@ -297,19 +315,17 @@ private theorem min_mul_inner_self_le_capForm (x v : V) :
   rw [heq]
   nlinarith [mul_nonneg (sub_nonneg.2 hm₁) (sub_nonneg.2 ht₁), mul_nonneg (sub_nonneg.2 hm₂) ht₀]
 
-variable (f) in
-/-- The cap form at `x`, read on the tangent space of `V` at `x`. -/
-private def capFormTangent (x : V) :
-    TangentSpace 𝓘(ℝ, V) x →L[ℝ] TangentSpace 𝓘(ℝ, V) x →L[ℝ] ℝ :=
-  capForm V f x
+/-- The cap form is coercive at every point: it dominates `min (f(‖x‖) / ‖x‖)² 1` times the
+Euclidean form. -/
+private theorem isCoercive_capForm (x : V) : IsCoercive (capForm V f x) :=
+  ⟨_, lt_min (pow_pos (hf.dslope_zero_pos (norm_nonneg x)) 2) one_pos, fun v ↦ by
+    rw [mul_assoc, ← sq, ← real_inner_self_eq_norm_sq]
+    exact hf.min_mul_inner_self_le_capForm x v⟩
 
 omit hf in
-private theorem capFormTangent_apply (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
-    capFormTangent f x v w = dslope f 0 ‖x‖ ^ 2 *
-        ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫_ℝ +
-      (1 - dslope f 0 ‖x‖ ^ 2) / ‖x‖ ^ 2 *
-        (⟪x, NormedSpace.fromTangentSpace x v⟫_ℝ * ⟪x, NormedSpace.fromTangentSpace x w⟫_ℝ) :=
-  capForm_apply x v w
+private theorem capForm_symm (x v w : V) : capForm V f x v w = capForm V f x w v := by
+  rw [capForm_apply, capForm_apply, real_inner_comm v w]
+  ring
 
 variable (V) in
 /-- **The standard cap metric** on a real inner product space `V`. At `x`, tangent vectors
@@ -317,41 +333,12 @@ variable (V) in
 `(f(‖x‖) / ‖x‖)² ⟪v, w⟫ + ((1 - (f(‖x‖) / ‖x‖)²) / ‖x‖²) ⟪x, v⟫ ⟪x, w⟫`,
 the Euclidean metric at the tip `x = 0`. The radial direction has unit length and the sphere of
 radius `r` about the tip is scaled by `f(r) / r`, so in polar coordinates this is
-`dr² + f(r)² g_(Sⁿ)` (`TauCeti.IsStandardCapProfile.metric_inner_mfderiv_standardCapPolar`). It is
-smooth across the tip because near the tip `f(r) = 2 sin (r / 2)`, whose coefficients are
-analytic functions of `‖x‖²`. -/
-def metric : ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : V ↦ TangentSpace 𝓘(ℝ, V) x) where
-  inner x := capFormTangent f x
-  symm x v w := by
-    rw [capFormTangent_apply, capFormTangent_apply,
-      real_inner_comm (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w)]
-    ring
-  pos x v hv := by
-    have hm : 0 < min (dslope f 0 ‖x‖ ^ 2) 1 :=
-      lt_min (pow_pos (hf.dslope_zero_pos (norm_nonneg x)) 2) one_pos
-    exact (mul_pos hm (real_inner_self_pos.2 hv)).trans_le (hf.min_mul_inner_self_le_capForm x v)
-  isVonNBounded x :=
-    isVonNBounded_setOfPred_lt_one_of_le (V := V)
-      (lt_min (pow_pos (hf.dslope_zero_pos (norm_nonneg x)) 2) one_pos)
-      (fun v ↦ hf.min_mul_inner_self_le_capForm x v)
-      ((riemannianMetricVectorSpace V).isVonNBounded x)
-  contMDiff := by
-    intro x
-    refine (contMDiffAt_section_iff (F := V →L[ℝ] V →L[ℝ] ℝ)
-      (E := fun y : V ↦ TangentSpace 𝓘(ℝ, V) y →L[ℝ] TangentSpace 𝓘(ℝ, V) y →L[ℝ] ℝ) x).2 ?_
-    refine hf.contDiff_capForm.contMDiff.contMDiffAt.congr_of_eventuallyEq
-      (Eventually.of_forall fun y ↦ ?_)
-    ext v w
-    simp only [hom_trivializationAt_apply]
-    rw [inCoordinates_apply_eq₂ (by simp) (by simp) (by simp)]
-    -- The tangent coordinate changes of the model space `V` are the identity.
-    have h (u : V) : (trivializationAt V (TangentSpace 𝓘(ℝ, V)) x).symm y u = u := by
-      rw [← Trivialization.symmL_apply (R := ℝ) _ (by simp), TangentBundle.symmL_model_space]
-      rfl
-    simp only [h, Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
-      LinearMap.id_apply]
-    -- What remains differs only in reading `V` as its own tangent space.
-    rfl
+`dr² + f(r)² g_(Sⁿ)` (`TauCeti.IsStandardCapProfile.metric_inner_mfderiv_standardCapPolar`). Near
+the tip, where `f(r) = 2 sin (r / 2)`, its coefficients `(f(‖x‖) / ‖x‖)²` and
+`(1 - (f(‖x‖) / ‖x‖)²) / ‖x‖²` are analytic functions of `‖x‖²`, so it is smooth across the
+tip. -/
+def metric : ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : V ↦ TangentSpace 𝓘(ℝ, V) x) :=
+  coerciveRiemannianMetric (capForm V f) hf.contDiff_capForm capForm_symm hf.isCoercive_capForm
 
 /-- The standard cap metric pairs `v` and `w` at `x` to
 `a ⟪v, w⟫ + ((1 - a) / ‖x‖²) ⟪x, v⟫ ⟪x, w⟫`, where `a = (dslope f 0 ‖x‖)²` is `(f(‖x‖) / ‖x‖)²`
@@ -362,7 +349,7 @@ theorem metric_inner (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
         ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫_ℝ +
       (1 - dslope f 0 ‖x‖ ^ 2) / ‖x‖ ^ 2 *
         (⟪x, NormedSpace.fromTangentSpace x v⟫_ℝ * ⟪x, NormedSpace.fromTangentSpace x w⟫_ℝ) :=
-  capFormTangent_apply x v w
+  (coerciveRiemannianMetric_inner _ _ _ _ x v w).trans (capForm_apply _ _ _)
 
 /-- Away from the tip, the standard cap metric is
 `(f(‖x‖) / ‖x‖)² ⟪v, w⟫ + ((1 - (f(‖x‖) / ‖x‖)²) / ‖x‖²) ⟪x, v⟫ ⟪x, w⟫`. -/
@@ -399,9 +386,7 @@ theorem metric_inner_mfderiv_standardCapPolar (p : standardCapRadialDomain × sp
           (standardCapPolar V) p w) =
       (hf.puncturedMetric V).inner p v w := by
   have hr : 0 < (p.1 : ℝ) := p.1.property
-  have hnorm : ‖standardCapPolar V p‖ = p.1 := by
-    rw [standardCapPolar_apply, norm_smul, norm_eq_of_mem_sphere p.2, mul_one,
-      Real.norm_of_nonneg hr.le]
+  have hnorm := norm_standardCapPolar p
   have hx : standardCapPolar V p ≠ 0 := norm_ne_zero_iff.1 (hnorm.trans_ne hr.ne')
   have hu : ⟪(p.2 : V), (p.2 : V)⟫_ℝ = 1 := by
     rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p.2, one_pow]
@@ -454,16 +439,12 @@ open Module
 
 variable [FiniteDimensional ℝ V]
 
-omit hf [FiniteDimensional ℝ V] in
-/-- Every point away from the tip is `r u` for `r = ‖x‖ > 0` and `u = x / ‖x‖` in the unit
-sphere. -/
-private theorem exists_standardCapPolar_def {x : V} (hx : x ≠ 0) :
-    ∃ p : standardCapRadialDomain × sphere (0 : V) 1, standardCapPolar V p = x ∧
-      (p.1 : ℝ) = ‖x‖ := by
-  have hr : 0 < ‖x‖ := norm_pos_iff.2 hx
-  refine ⟨(⟨‖x‖, hr⟩, ⟨‖x‖⁻¹ • x, ?_⟩), ?_, rfl⟩
-  · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hr.ne']
-  · simp [smul_smul, mul_inv_cancel₀ hr.ne']
+omit hf in
+/-- A nontrivial finite-dimensional space has dimension `n + 1` for some `n`, recorded as the
+instance that the polar coordinates on `(0, ∞) × Sⁿ` take. -/
+private theorem exists_fact_finrank_eq_succ [Nontrivial V] :
+    ∃ n : ℕ, Fact (finrank ℝ V = n + 1) :=
+  (Nat.exists_eq_succ_of_ne_zero (finrank_pos (R := ℝ) (M := V)).ne').imp fun _ hn ↦ ⟨hn⟩
 
 /-- The scalar curvature of the standard cap at `r u`, for `r > 0` and `u` in the unit sphere,
 is the scalar curvature of the punctured standard cap at `(r, u)`. -/
@@ -474,27 +455,6 @@ theorem scalarCurvature_metric_standardCapPolar {n : ℕ} [Fact (finrank ℝ V =
   rw [← hf.pullback_metric_standardCapPolar,
     ContMDiffRiemannianMetric.scalarCurvature_pullback_of_isInvertible _ contMDiff_standardCapPolar
       isInvertible_mfderiv_standardCapPolar]
-
-/-- Away from the tip, the scalar curvature of the standard cap at `x` is that of the punctured
-standard cap at `(‖x‖, x / ‖x‖)`, with sphere dimension `n = dim V - 1`. -/
-private theorem exists_scalarCurvature_metric_eq_puncturedMetric [Nontrivial V] {x : V}
-    (hx : x ≠ 0) : ∃ (n : ℕ) (_ : Fact (finrank ℝ V = n + 1))
-      (p : standardCapRadialDomain × sphere (0 : V) 1), (p.1 : ℝ) = ‖x‖ ∧
-      (hf.metric V).scalarCurvature x = (hf.puncturedMetric (n := n) V).scalarCurvature p := by
-  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (finrank_pos (R := ℝ) (M := V)).ne'
-  have : Fact (finrank ℝ V = n + 1) := ⟨hn⟩
-  obtain ⟨p, rfl, hp⟩ := exists_standardCapPolar_def hx
-  exact ⟨n, this, p, hp, hf.scalarCurvature_metric_standardCapPolar p⟩
-
-/-- In dimension zero the scalar curvature vanishes: the Ricci tensor is a bilinear form on the
-zero space. -/
-private theorem scalarCurvature_metric_of_subsingleton [Subsingleton V] (x : V) :
-    (hf.metric V).scalarCurvature x = 0 := by
-  let _ : RiemannianBundle (fun z : V ↦ TangentSpace 𝓘(ℝ, V) z) :=
-    ⟨(hf.metric V).toRiemannianMetric⟩
-  have : Subsingleton (TangentSpace 𝓘(ℝ, V) x) := inferInstanceAs (Subsingleton V)
-  rw [ContMDiffRiemannianMetric.scalarCurvature_def, CovariantDerivative.scalarCurvature_apply,
-    Subsingleton.elim (CovariantDerivative.ricciTensor _ x) 0, map_zero]
 
 /-- A value taken by the scalar curvature at every point of a neighbourhood of the tip, except
 possibly the tip itself, is also taken at the tip, by continuity. -/
@@ -512,14 +472,12 @@ private theorem scalarCurvature_metric_zero_eq [Nontrivial V] {c : ℝ} {s : Set
 /-- **The standard cap has nonnegative scalar curvature**, also at its tip. -/
 theorem scalarCurvature_metric_nonneg (x : V) : 0 ≤ (hf.metric V).scalarCurvature x := by
   rcases subsingleton_or_nontrivial V with hV | hV
-  · exact (hf.scalarCurvature_metric_of_subsingleton x).ge
-  have hne (y : V) (hy : y ≠ 0) : 0 ≤ (hf.metric V).scalarCurvature y := by
-    obtain ⟨n, _, p, -, hp⟩ := hf.exists_scalarCurvature_metric_eq_puncturedMetric hy
-    rw [hp]
-    exact hf.scalarCurvature_puncturedMetric_nonneg p
-  have hy : x ∈ closure ({0}ᶜ : Set V) := by rw [closure_compl_singleton]; trivial
-  exact le_on_closure (fun z hz ↦ hne z hz) continuous_const.continuousOn
-    (hf.metric V).continuous_scalarCurvature.continuousOn hy
+  · exact ((hf.metric V).scalarCurvature_eq_zero_of_subsingleton x).ge
+  obtain ⟨n, _⟩ := exists_fact_finrank_eq_succ (V := V)
+  refine (hf.metric V).le_scalarCurvature_of_dense (dense_compl_singleton 0) (fun y hy ↦ ?_) x
+  obtain ⟨p, rfl⟩ : y ∈ range (standardCapPolar V) := by rwa [range_standardCapPolar]
+  rw [hf.scalarCurvature_metric_standardCapPolar (n := n)]
+  exact hf.scalarCurvature_puncturedMetric_nonneg p
 
 /-- **The cylindrical end of the standard cap**: far from the tip the scalar curvature of the
 standard cap on a space of dimension `d` is `(d - 1)(d - 2) / 2`, the scalar curvature of the round
@@ -529,12 +487,14 @@ theorem exists_scalarCurvature_metric_eq_cylinder :
       (hf.metric V).scalarCurvature x = (finrank ℝ V - 1) * (finrank ℝ V - 2) / 2 := by
   rcases subsingleton_or_nontrivial V with hV | hV
   · exact ⟨1, one_pos, fun x hx ↦ by simp [Subsingleton.elim x 0] at hx; linarith⟩
-  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (finrank_pos (R := ℝ) (M := V)).ne'
-  have : Fact (finrank ℝ V = n + 1) := ⟨hn⟩
+  obtain ⟨n, hn⟩ := exists_fact_finrank_eq_succ (V := V)
   obtain ⟨R, hR, h⟩ := hf.exists_scalarCurvature_puncturedMetric_eq_cylinder (V := V) (n := n)
   refine ⟨R, hR, fun x hx ↦ ?_⟩
-  obtain ⟨p, rfl, hp⟩ := exists_standardCapPolar_def (norm_pos_iff.1 (hR.trans_le hx))
-  rw [hf.scalarCurvature_metric_standardCapPolar (n := n), h p (hp ▸ hx), hn]
+  obtain ⟨p, rfl⟩ : x ∈ range (standardCapPolar V) := by
+    rw [range_standardCapPolar]
+    exact norm_pos_iff.1 (hR.trans_le hx)
+  rw [norm_standardCapPolar] at hx
+  rw [hf.scalarCurvature_metric_standardCapPolar (n := n), h p hx, hn.out]
   push_cast
   ring
 
@@ -546,14 +506,15 @@ theorem exists_scalarCurvature_metric_eq_round :
       (hf.metric V).scalarCurvature x = finrank ℝ V * (finrank ℝ V - 1) / 4 := by
   rcases subsingleton_or_nontrivial V with hV | hV
   · exact ⟨1, one_pos, fun x _ ↦ by
-    simp [hf.scalarCurvature_metric_of_subsingleton, Module.finrank_zero_of_subsingleton]⟩
-  obtain ⟨n, hn⟩ := Nat.exists_eq_succ_of_ne_zero (finrank_pos (R := ℝ) (M := V)).ne'
-  have : Fact (finrank ℝ V = n + 1) := ⟨hn⟩
+    simp [(hf.metric V).scalarCurvature_eq_zero_of_subsingleton,
+      Module.finrank_zero_of_subsingleton]⟩
+  obtain ⟨n, hn⟩ := exists_fact_finrank_eq_succ (V := V)
   obtain ⟨r₀, hr₀, h⟩ := hf.exists_scalarCurvature_puncturedMetric_eq_round (V := V) (n := n)
   have hne (x : V) (hx : ‖x‖ < r₀) (hx0 : x ≠ 0) :
       (hf.metric V).scalarCurvature x = finrank ℝ V * (finrank ℝ V - 1) / 4 := by
-    obtain ⟨p, rfl, hp⟩ := exists_standardCapPolar_def hx0
-    rw [hf.scalarCurvature_metric_standardCapPolar (n := n), h p (hp ▸ hx), hn]
+    obtain ⟨p, rfl⟩ : x ∈ range (standardCapPolar V) := by rwa [range_standardCapPolar]
+    rw [norm_standardCapPolar] at hx
+    rw [hf.scalarCurvature_metric_standardCapPolar (n := n), h p hx, hn.out]
     push_cast
     ring
   refine ⟨r₀, hr₀, fun x hx ↦ ?_⟩
