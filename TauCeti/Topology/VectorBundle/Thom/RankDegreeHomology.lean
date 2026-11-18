@@ -9,8 +9,6 @@ public import TauCeti.Topology.VectorBundle.MayerVietoris.RankDegree
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
-import TauCeti.Algebra.Module.Equiv.SpanSingleton
-import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 import TauCeti.Topology.Connected.PathConnected
 import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 
@@ -118,36 +116,6 @@ private theorem singularHomologyMap_prodThomPairFiberMap_complZeroPairPointHom_o
         (singularHomology₀Section (ModuleCat.of K K) (X := TopCat.of W) x 1) :=
   ConcreteCategory.congr_hom (complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap
     (ModuleCat.of K K) W F (finrank ℝ F) rfl x) (1 : K)
-
-private theorem span_complZeroPairPointHom_one :
-    Submodule.span K {complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)} = ⊤ :=
-  (ModuleCat.span_singleton_apply_eq_top_iff _).2 Ideal.span_singleton_one
-
-/-- Every generator of `Hᵣ(F, F ∖ {0}; K) ≅ K` is a unit multiple of the point class of `1`. -/
-private theorem exists_eq_units_smul_complZeroPairPointHom_one {x : ((TopPair.ofSubset
-    (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K) (finrank ℝ F) :
-      ModuleCat.{w} K)} (hx : Submodule.span K {x} = ⊤) :
-    ∃ u : Kˣ,
-      x = (u : K) • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K) := by
-  let φ := (singularHomologyComplSingletonFinrankIso (ModuleCat.of K K)
-    (OpenPartialHomeomorph.refl F) (mem_univ 0)).toLinearEquiv
-  have hx' := φ.span_singleton_eq_top_iff_isUnit.1 hx
-  have hg := φ.span_singleton_eq_top_iff_isUnit.1 (span_complZeroPairPointHom_one K F)
-  refine ⟨hx'.unit * hg.unit⁻¹, φ.injective ?_⟩
-  rw [map_smul, smul_eq_mul, Units.val_mul, mul_assoc, IsUnit.val_inv_mul, mul_one,
-    IsUnit.unit_spec]
-
-variable [Subsingleton Kˣ]
-
-/-- With coefficients in a ring whose only unit is `1`, the module `Hᵣ(F, F ∖ {0}; K) ≅ K` has a
-single generator. -/
-private theorem eq_complZeroPairPointHom_one {x : ((TopPair.ofSubset (X := TopCat.of F)
-    ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K)}
-    (hx : Submodule.span K {x} = ⊤) :
-    x = complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K) :=
-  LinearEquiv.eq_of_span_singleton_eq_top (singularHomologyComplSingletonFinrankIso
-      (ModuleCat.of K K) (OpenPartialHomeomorph.refl F) (mem_univ 0)).toLinearEquiv hx
-    (span_complZeroPairPointHom_one K F)
 
 end Fiber
 
@@ -442,7 +410,7 @@ private def fiberGenerator (b : B) :
     (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K))
 
 private theorem span_fiberGenerator (b : B) : Submodule.span K {fiberGenerator K F E b} = ⊤ :=
-  (ModuleCat.span_singleton_apply_eq_top_iff _).2 (span_complZeroPairPointHom_one K F)
+  (ModuleCat.span_singleton_apply_eq_top_iff _).2 (span_complZeroPairPointHom_one F K)
 
 variable [Subsingleton Kˣ]
 
@@ -453,8 +421,8 @@ private theorem eq_fiberGenerator {b : B} {x : ((TopPair.ofSubset (X := TopCat.o
   let L := (trivializationAt F E b).continuousLinearEquivAt ℝ b (mem_baseSet_trivializationAt F E b)
   apply (ModuleCat.mono_iff_injective (TopPair.singularHomologyMap L.complZeroPairIso.hom
     (ModuleCat.of K K) (finrank ℝ F))).1 inferInstance
-  rw [eq_complZeroPairPointHom_one K F ((ModuleCat.span_singleton_apply_eq_top_iff _).2 hx),
-    eq_complZeroPairPointHom_one K F
+  rw [eq_complZeroPairPointHom_one F K ((ModuleCat.span_singleton_apply_eq_top_iff _).2 hx),
+    eq_complZeroPairPointHom_one F K
       ((ModuleCat.span_singleton_apply_eq_top_iff _).2 (span_fiberGenerator b))]
 
 /-- With a single unit, the fibre generators are read as the generator of `Hᵣ(F, F ∖ {0}; K)` in
@@ -464,7 +432,7 @@ private theorem isLocalFiberGenerator_fiberGenerator :
   eventually_eq _ _ _ := .of_forall fun _ ↦ rfl
   map_eq c x hx := by
     simp only [Units.val_one, one_smul]
-    exact eq_complZeroPairPointHom_one K F
+    exact eq_complZeroPairPointHom_one F K
       ((ModuleCat.span_singleton_apply_eq_top_iff _).2 (span_fiberGenerator x))
 
 variable (K F E) in
@@ -614,7 +582,7 @@ def thomPairSingularHomologyFinrankIso (hγ : Submodule.span K {γ} = ⊤) :
       ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).obj (TopCat.of B) :=
   thomPairSingularHomologyFinrankIsoOfIsLocalFiberGenerator
     (o.isLocalFiberGenerator_orientedFiberGenerator hι ω
-      (exists_eq_units_smul_complZeroPairPointHom_one K F hγ).choose_spec)
+      (exists_eq_units_smul_complZeroPairPointHom_one F K hγ).choose_spec)
 
 /-- The oriented isomorphism `Hᵣ(E, E₀; K) ≅ H₀(B; K)` sends the class of the fibre pair over `b`
 which a linear trivialization reading `o b` as `ω` reads as `γ` to the class of `b`. -/

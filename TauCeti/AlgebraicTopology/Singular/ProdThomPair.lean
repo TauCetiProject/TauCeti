@@ -17,6 +17,7 @@ public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
@@ -73,6 +74,11 @@ The isomorphism is built from a choice of such a step for each proper subspace o
   `b` (`TauCeti.complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap`).
 * `TauCeti.isLocalOrientation_complZeroPairPointHom_one`: with integral coefficients the point
   class of `1` is a local orientation of `(F, F ∖ {0})`.
+* `TauCeti.span_complZeroPairPointHom_one`,
+  `TauCeti.exists_eq_units_smul_complZeroPairPointHom_one`: with coefficients in a commutative
+  ring `K`, the point class of `1` generates `Hᵣ(F, F ∖ {0}; K)`, and every generator is a unit
+  multiple of it; `TauCeti.eq_complZeroPairPointHom_one`: it is the only generator when `1` is
+  the only unit of `K`.
 * `TauCeti.singularHomologyMap_prodThomPairFiberMap_eq_of_joined`: fibre inclusions over points
   joined by a path agree on `Hᵣ`.
 * `TauCeti.singularHomology_prodThomPair_hom_ext`: morphisms out of
@@ -521,5 +527,40 @@ theorem singularHomology_prodThomPair_hom_ext {T : C}
   rw [← Category.assoc, ← Category.assoc,
     ← complZeroPairPointHom_comp_singularHomologyMap_prodThomPairFiberMap R B F _ rfl b,
     Category.assoc, Category.assoc, h b]
+
+section Generator
+
+variable (K : Type w) [CommRing K]
+
+/-- The point class of `1` generates `Hᵣ(F, F ∖ {0}; K) ≅ K`. -/
+theorem span_complZeroPairPointHom_one :
+    Submodule.span K {complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K)} = ⊤ :=
+  (ModuleCat.span_singleton_apply_eq_top_iff _).2 Ideal.span_singleton_one
+
+/-- Every generator of `Hᵣ(F, F ∖ {0}; K) ≅ K` is a unit multiple of the point class of `1`. -/
+theorem exists_eq_units_smul_complZeroPairPointHom_one {x : ((TopPair.ofSubset
+    (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K) (finrank ℝ F) :
+      ModuleCat.{w} K)} (hx : Submodule.span K {x} = ⊤) :
+    ∃ u : Kˣ,
+      x = (u : K) • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K) := by
+  let φ := (singularHomologyComplSingletonFinrankIso (ModuleCat.of K K)
+    (OpenPartialHomeomorph.refl F) (Set.mem_univ 0)).toLinearEquiv
+  have hx' := φ.span_singleton_eq_top_iff_isUnit.1 hx
+  have hg := φ.span_singleton_eq_top_iff_isUnit.1 (span_complZeroPairPointHom_one F K)
+  refine ⟨hx'.unit * hg.unit⁻¹, φ.injective ?_⟩
+  rw [map_smul, smul_eq_mul, Units.val_mul, mul_assoc, IsUnit.val_inv_mul, mul_one,
+    IsUnit.unit_spec]
+
+/-- With coefficients in a ring whose only unit is `1`, the point class of `1` is the only
+generator of `Hᵣ(F, F ∖ {0}; K) ≅ K`. -/
+theorem eq_complZeroPairPointHom_one [Subsingleton Kˣ] {x : ((TopPair.ofSubset
+    (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology (ModuleCat.of K K) (finrank ℝ F) :
+      ModuleCat.{w} K)} (hx : Submodule.span K {x} = ⊤) :
+    x = complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl (1 : K) :=
+  LinearEquiv.eq_of_span_singleton_eq_top (singularHomologyComplSingletonFinrankIso
+      (ModuleCat.of K K) (OpenPartialHomeomorph.refl F) (Set.mem_univ 0)).toLinearEquiv hx
+    (span_complZeroPairPointHom_one F K)
+
+end Generator
 
 end TauCeti

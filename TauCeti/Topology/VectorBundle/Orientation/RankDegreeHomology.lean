@@ -234,27 +234,17 @@ include hF in
 private theorem card_fin_eq_finrank : Fintype.card (Fin (n + 1)) = finrank ℝ F :=
   (Fintype.card_fin _).trans hF.symm
 
-/-- Some orientation of the model fibre selects the point class
-`TauCeti.complZeroPairPointHom` of `1`. -/
-private theorem exists_localOrientation_eq_complZeroPairPointHom :
-    ∃ ω : Orientation ℝ F (Fin (n + 1)), (ω.localOrientation hF).val =
-      complZeroPairPointHom (ModuleCat.of ℤ (ULift.{w} ℤ)) F (n + 1) hF (ULift.up 1) := by
-  let P := complZeroPairPointHom (ModuleCat.of ℤ (ULift.{w} ℤ)) F (n + 1) hF
-  let ω := (Module.finBasisOfFinrankEq ℝ F hF).orientation
-  rcases (ω.localOrientation hF).property.eq_or_eq_neg (asIso P).symm
-    (isLocalOrientation_complZeroPairPointHom_one F (n + 1) hF) with h | h
-  · exact ⟨ω, h.symm⟩
-  · exact ⟨-ω, by rw [Orientation.localOrientation_neg, LocalOrientation.coe_neg, h]⟩
-
-/-- An orientation of the model fibre selecting the point class of `1`
-(`TauCeti.localOrientation_modelOrientation`). -/
+/-- An orientation of the model fibre selecting the point class
+`TauCeti.complZeroPairPointHom` of `1` (`TauCeti.localOrientation_modelOrientation`). -/
 private def modelOrientation : Orientation ℝ F (Fin (n + 1)) :=
-  (exists_localOrientation_eq_complZeroPairPointHom hF).choose
+  (Orientation.localOrientation_surjective hF
+    ⟨_, isLocalOrientation_complZeroPairPointHom_one F (n + 1) hF⟩).choose
 
 private theorem localOrientation_modelOrientation :
     ((modelOrientation hF).localOrientation hF).val =
       complZeroPairPointHom (ModuleCat.of ℤ (ULift.{w} ℤ)) F (n + 1) hF (ULift.up 1) :=
-  (exists_localOrientation_eq_complZeroPairPointHom hF).choose_spec
+  congrArg Subtype.val (Orientation.localOrientation_surjective hF
+    ⟨_, isLocalOrientation_complZeroPairPointHom_one F (n + 1) hF⟩).choose_spec
 
 variable (E) in
 /-- A chosen orientation of the fibre over `b`: the one read as `TauCeti.modelOrientation` in the
