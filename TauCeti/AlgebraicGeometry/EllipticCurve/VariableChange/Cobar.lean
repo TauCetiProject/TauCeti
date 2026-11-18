@@ -23,26 +23,31 @@ adjoining `n` times the coordinates `u, u⁻¹, r, s, t` of a change of variable
 (`TauCeti.WeierstrassChange.ChangeRing`). A homomorphism `cobarRing n →+* R` is therefore a
 Weierstrass curve `W` over `R` together with `n` changes of variables `C₀, …, Cₙ₋₁` over `R`
 (`cobarRingEquiv`), that is, a string `W → C₀ • W → C₁ • C₀ • W → ⋯` of `n` composable arrows
-of the action groupoid of `VariableChange R` on `WeierstrassCurve R` (`cobarChainEquiv`). These
+of the action groupoid of `VariableChange R` on `WeierstrassCurve R` (`cobarNerveEquiv`). These
 are the `n`-simplices of the nerve of that groupoid. The structure maps `cobarMap` of the
 cosimplicial ring `cobarObject` are defined so that this identification is natural in `[n]`
-(`cobarChainEquiv_comp_cobarMap`) and in `R` (`cobarChainEquiv_comp`): the cobar construction
+(`cobarNerveEquiv_comp_cobarMap`) and in `R` (`cobarNerveEquiv_comp`): the cobar construction
 corepresents the nerve of the Weierstrass groupoid, as a functor of the coefficient ring. Every
 coefficient ring is allowed, including rings with nilpotents and the zero ring.
 
-In low degrees the structure maps are those of the Hopf algebroid: the two cofaces `A → Γ` are
+In every degree the structure maps are given by explicit formulas: the last coface is the
+inclusion `algebraMap` of the first factors, the last codegeneracy is the counit on the last
+factor, the coface merging the last two arrows is a coproduct on the last two factors, and the
+other cofaces and codegeneracies are `ChangeRing.map` of those one degree lower. In low degrees
+these are the structure maps of the Hopf algebroid: the two cofaces `A → Γ` are
 the right unit `η_R` and the left unit `η_L`, the codegeneracy `Γ → A` is the counit `ε`, and the
 three cofaces `Γ → Γ ⊗_A Γ` are the inclusion `ChangeRing.map η_R` of the second factor, the
 coproduct `Δ` and the inclusion `algebraMap` of the first factor. These are the cofaces of the
 unnormalised cobar complex of `(A, Γ)` with coefficients in `A`, whose `n`-cochains are
 `Γ^{⊗_A n}`; here every coface is the one dual to the corresponding face of the nerve. The
-alternating coface complex is `cobarComplex`. Its differential in degree `0` is `η_R - η_L`, and
-its degree `0` cocycles are the integral modular forms of weight `0`.
+alternating coface complex is `cobarComplex`, with differential `∑ᵢ (-1)ⁱ δⁱ`. Its differential
+in degree `0` is `η_R - η_L`, and its degree `0` cocycles are the integral modular forms of
+weight `0`.
 
 ## Main definitions
 
 * `TauCeti.WeierstrassHopfAlgebroid.cobarRing`: the ring `Γ^{⊗_A n}`.
-* `TauCeti.WeierstrassHopfAlgebroid.cobarChainEquiv`: homomorphisms `Γ^{⊗_A n} →+* R` classify
+* `TauCeti.WeierstrassHopfAlgebroid.cobarNerveEquiv`: homomorphisms `Γ^{⊗_A n} →+* R` classify
   strings of `n` composable arrows of Weierstrass curves over `R`.
 * `TauCeti.WeierstrassHopfAlgebroid.cobarObject`: the cosimplicial commutative ring
   `[n] ↦ Γ^{⊗_A n}`, with structure maps `cobarMap`.
@@ -50,17 +55,21 @@ its degree `0` cocycles are the integral modular forms of weight `0`.
 
 ## Main results
 
-* `cobarChainEquiv_comp_cobarMap`: precomposition with the structure map of `f : [m] ⟶ [n]` is
+* `cobarNerveEquiv_comp_cobarMap`: precomposition with the structure map of `f : [m] ⟶ [n]` is
   the simplicial operator of `f` on the nerve of the Weierstrass groupoid;
   `cobarRingEquiv_comp_cobarMap` is the same statement in coordinates.
+* `cobarMap_δ_last`, `cobarMap_δ_castSucc_castSucc`, `cobarMap_δ_castSucc_last`,
+  `cobarMap_σ_last`, `cobarMap_σ_castSucc`: the cofaces and codegeneracies in every degree.
 * `cobarMap_δ_zero_eq_rightUnit`, `cobarMap_δ_one_eq_algebraMap`, `cobarMap_σ_zero_eq_counit`:
   the cofaces `A → Γ` are `η_R` and `η_L`, and the codegeneracy `Γ → A` is `ε`.
 * `cobarMap_δ_zero_eq_map_rightUnit`, `cobarMap_δ_one_eq_coproduct`,
   `cobarMap_δ_two_eq_algebraMap`: the cofaces `Γ → Γ ⊗_A Γ` are the inclusion of the second
   factor, the coproduct `Δ` and the inclusion of the first factor.
-* `cobarComplex_d_zero_one`: the differential of the cobar complex in degree `0` is `η_R - η_L`.
-* `WeierstrassCurve.isIntegralModularForm_zero_iff_cobarComplex_d_eq_zero`: the degree `0`
-  cocycles of the cobar complex are the integral modular forms of weight `0`.
+* `cobarComplex_d_hom_apply`: the differential of the cobar complex is `∑ᵢ (-1)ⁱ δⁱ`;
+  `cobarComplex_d_zero_one_hom_apply` and `cobarComplex_d_one_two_hom_apply` make it explicit in
+  degrees `0` and `1`, where it is `η_R - η_L` and `x ↦ 1 ⊗ x - Δ x + x ⊗ 1`.
+* `WeierstrassCurve.isIntegralModularForm_zero_iff_cobarComplex_d_zero_one_hom_apply_eq_zero`:
+  the degree `0` cocycles of the cobar complex are the integral modular forms of weight `0`.
 
 ## References
 
@@ -77,7 +86,7 @@ noncomputable section
 
 universe u
 
-open CategoryTheory MvPolynomial
+open CategoryTheory MvPolynomial Simplicial
 
 namespace TauCeti.WeierstrassHopfAlgebroid
 
@@ -155,59 +164,135 @@ theorem cobarRingEquiv_comp {S : Type*} [CommRing S] (φ : R →+* S) :
       cobarRingEquiv_comp φ n, ← VariableChange.map_map]
     exact Prod.ext rfl (Fin.comp_snoc (fun C : VariableChange R ↦ C.map φ) _ _).symm
 
+/-- The curve classified by `k : Γ^{⊗_A (n + 1)} →+* R` is the curve classified by the restriction
+of `k` to the first `n` factors. -/
+@[simp]
+theorem cobarRingEquiv_succ_apply_fst (n : ℕ) (k : cobarRing (n + 1) →+* R) :
+    (cobarRingEquiv R (n + 1) k).1 =
+      (cobarRingEquiv R n (k.comp (algebraMap (cobarRing n) (cobarRing (n + 1))))).1 := by
+  rw [cobarRingEquiv_succ_apply]
+
+/-- The first `n` changes of variables classified by `k : Γ^{⊗_A (n + 1)} →+* R` are those
+classified by the restriction of `k` to the first `n` factors. -/
+@[simp]
+theorem cobarRingEquiv_succ_apply_snd_castSucc (n : ℕ) (k : cobarRing (n + 1) →+* R)
+    (i : Fin n) :
+    (cobarRingEquiv R (n + 1) k).2 i.castSucc =
+      (cobarRingEquiv R n (k.comp (algebraMap (cobarRing n) (cobarRing (n + 1))))).2 i := by
+  rw [cobarRingEquiv_succ_apply]
+  exact Fin.snoc_castSucc (α := fun _ ↦ VariableChange R) _ _ _
+
+/-- The last change of variables classified by `k : Γ^{⊗_A (n + 1)} →+* R` is the image of the
+universal change of variables of the last factor. -/
+@[simp]
+theorem cobarRingEquiv_succ_apply_snd_last (n : ℕ) (k : cobarRing (n + 1) →+* R) :
+    (cobarRingEquiv R (n + 1) k).2 (Fin.last n) = (universalChange (cobarRing n)).map k := by
+  rw [cobarRingEquiv_succ_apply]
+  exact Fin.snoc_last (α := fun _ ↦ VariableChange R) _ _
+
 /-! ### Strings of composable arrows -/
 
 /-- **The cobar rings corepresent the nerve of the Weierstrass groupoid**: homomorphisms
 `Γ^{⊗_A n} →+* R` classify strings of `n` composable arrows of the action groupoid of the changes
 of variables over `R` on the Weierstrass curves over `R`, the `n`-simplices of its nerve. -/
-def cobarChainEquiv (n : ℕ) : (cobarRing n →+* R) ≃
+def cobarNerveEquiv (n : ℕ) : (cobarRing n →+* R) ≃
     ComposableArrows (ActionCategory (VariableChange R) (WeierstrassCurve R)) n :=
   (cobarRingEquiv R n).trans (nerveEquiv _ _ n).symm
 
+/-- The string classified by `k` is the string with the curve and the changes of variables
+classified by `k` under `cobarRingEquiv`. -/
+theorem cobarNerveEquiv_apply (n : ℕ) (k : cobarRing n →+* R) :
+    cobarNerveEquiv R n k = (nerveEquiv _ _ n).symm (cobarRingEquiv R n k) :=
+  (rfl)
+
+/-- The homomorphism classifying a string is the one classifying its first curve and its
+consecutive changes of variables under `cobarRingEquiv`. -/
+theorem cobarNerveEquiv_symm_apply (n : ℕ)
+    (F : ComposableArrows (ActionCategory (VariableChange R) (WeierstrassCurve R)) n) :
+    (cobarNerveEquiv R n).symm F = (cobarRingEquiv R n).symm (nerveEquiv _ _ n F) :=
+  (rfl)
+
 /-- In the coordinates of `TauCeti.ActionGroupoid.nerveEquiv`, the string classified by `k` has
 the curve and the changes of variables classified by `k` under `cobarRingEquiv`. -/
-theorem nerveEquiv_cobarChainEquiv (n : ℕ) (k : cobarRing n →+* R) :
-    nerveEquiv _ _ n (cobarChainEquiv R n k) = cobarRingEquiv R n k :=
+theorem nerveEquiv_cobarNerveEquiv (n : ℕ) (k : cobarRing n →+* R) :
+    nerveEquiv _ _ n (cobarNerveEquiv R n k) = cobarRingEquiv R n k :=
   (nerveEquiv _ _ n).apply_symm_apply _
 
 variable {R} in
-/-- The classification of `cobarChainEquiv` is natural in the coefficient ring: composing with
+/-- The classification of `cobarNerveEquiv` is natural in the coefficient ring: composing with
 `φ : R →+* S` applies the functor induced by base change along `φ`. -/
-theorem cobarChainEquiv_comp {S : Type*} [CommRing S] (φ : R →+* S) (n : ℕ)
+theorem cobarNerveEquiv_comp {S : Type*} [CommRing S] (φ : R →+* S) (n : ℕ)
     (k : cobarRing n →+* R) :
-    cobarChainEquiv S n (φ.comp k) =
+    cobarNerveEquiv S n (φ.comp k) =
       ((ActionCategory.map (VariableChange.mapHom φ) (mapMulActionHom φ)).mapComposableArrows
-        n).obj (cobarChainEquiv R n k) := by
+        n).obj (cobarNerveEquiv R n k) := by
   apply (nerveEquiv _ _ n).injective
-  rw [nerveEquiv_cobarChainEquiv, nerveEquiv_mapComposableArrows_obj, nerveEquiv_cobarChainEquiv,
-    cobarRingEquiv_comp, mapMulActionHom_apply]
-  -- `VariableChange.mapHom φ` applies `VariableChange.map φ`.
-  rfl
+  simp only [nerveEquiv_cobarNerveEquiv, nerveEquiv_mapComposableArrows_obj, cobarRingEquiv_comp,
+    mapMulActionHom_apply, VariableChange.mapHom_apply]
+
+variable {R} in
+/-- The homomorphism classifying the base change of a string along `φ : R →+* S` is the
+composite of `φ` with the homomorphism classifying the string. -/
+theorem cobarNerveEquiv_symm_mapComposableArrows_obj {S : Type*} [CommRing S] (φ : R →+* S)
+    (n : ℕ) (F : ComposableArrows (ActionCategory (VariableChange R) (WeierstrassCurve R)) n) :
+    (cobarNerveEquiv S n).symm
+        (((ActionCategory.map (VariableChange.mapHom φ) (mapMulActionHom φ)).mapComposableArrows
+          n).obj F) =
+      φ.comp ((cobarNerveEquiv R n).symm F) := by
+  rw [Equiv.symm_apply_eq, cobarNerveEquiv_comp, Equiv.apply_symm_apply]
 
 /-! ### The cosimplicial ring -/
 
 /-- The structure map `Γ^{⊗_A m} →+* Γ^{⊗_A n}` of `f : [m] ⟶ [n]` of the cobar construction. It
 classifies the image of the universal string of `n` composable arrows under the simplicial
-operator of `f` on the nerve (`cobarChainEquiv_comp_cobarMap`). -/
+operator of `f` on the nerve (`cobarNerveEquiv_cobarMap`). -/
 def cobarMap {m n : SimplexCategory} (f : m ⟶ n) : cobarRing m.len →+* cobarRing n.len :=
-  (cobarChainEquiv _ m.len).symm
-    ((cobarChainEquiv _ n.len (RingHom.id (cobarRing n.len))).whiskerLeft
-      (SimplexCategory.toCat.map f).toFunctor)
+  (cobarNerveEquiv _ m.len).symm
+    ((nerve _).map f.op (cobarNerveEquiv _ n.len (RingHom.id (cobarRing n.len))))
+
+/-- The structure map `cobarMap f` classifies the image of the universal string under the
+simplicial operator of `f : [m] ⟶ [n]` on the nerve of the Weierstrass groupoid. -/
+theorem cobarNerveEquiv_cobarMap {m n : SimplexCategory} (f : m ⟶ n) :
+    cobarNerveEquiv _ m.len (cobarMap f) =
+      (nerve _).map f.op (cobarNerveEquiv _ n.len (RingHom.id (cobarRing n.len))) :=
+  Equiv.apply_symm_apply _ _
 
 /-- Precomposing with `cobarMap f` acts on strings of composable arrows by the simplicial operator
 of `f : [m] ⟶ [n]` on the nerve of the Weierstrass groupoid. -/
-theorem cobarChainEquiv_comp_cobarMap {m n : SimplexCategory} (f : m ⟶ n)
+theorem cobarNerveEquiv_comp_cobarMap {m n : SimplexCategory} (f : m ⟶ n)
     (k : cobarRing n.len →+* R) :
-    cobarChainEquiv R m.len (k.comp (cobarMap f)) =
-      (nerve _).map f.op (cobarChainEquiv R n.len k) := by
-  have hk : cobarChainEquiv R n.len k =
+    cobarNerveEquiv R m.len (k.comp (cobarMap f)) =
+      (nerve _).map f.op (cobarNerveEquiv R n.len k) := by
+  have hk : cobarNerveEquiv R n.len k =
       ((ActionCategory.map (VariableChange.mapHom k) (mapMulActionHom k)).mapComposableArrows
-        n.len).obj (cobarChainEquiv _ n.len (RingHom.id (cobarRing n.len))) := by
-    rw [← cobarChainEquiv_comp, RingHom.comp_id]
-  rw [cobarMap, cobarChainEquiv_comp, Equiv.apply_symm_apply, hk]
-  -- The simplicial operator precomposes with a functor out of `Fin (m.len + 1)`, while the
-  -- functor induced by `k` postcomposes, so the two commute definitionally.
-  rfl
+        n.len).obj (cobarNerveEquiv _ n.len (RingHom.id (cobarRing n.len))) := by
+    rw [← cobarNerveEquiv_comp, RingHom.comp_id]
+  rw [cobarNerveEquiv_comp, cobarNerveEquiv_cobarMap, hk]
+  -- The functor induced by `k` commutes with the simplicial operators of the nerve.
+  exact Functor.assoc _ _ _
+
+/-- The homomorphism classifying the image of a string under the simplicial operator of
+`f : [m] ⟶ [n]` is the composite of `cobarMap f` with the homomorphism classifying the string. -/
+theorem cobarNerveEquiv_symm_nerve_map {m n : SimplexCategory} (f : m ⟶ n)
+    (F : ComposableArrows (ActionCategory (VariableChange R) (WeierstrassCurve R)) n.len) :
+    (cobarNerveEquiv R m.len).symm ((nerve _).map f.op F) =
+      ((cobarNerveEquiv R n.len).symm F).comp (cobarMap f) :=
+  (Equiv.symm_apply_eq _).mpr <| by rw [cobarNerveEquiv_comp_cobarMap, Equiv.apply_symm_apply]
+
+/-- The structure map of the identity is the identity. -/
+@[simp]
+theorem cobarMap_id (n : SimplexCategory) : cobarMap (𝟙 n) = RingHom.id (cobarRing n.len) := by
+  apply (cobarNerveEquiv _ n.len).injective
+  rw [cobarNerveEquiv_cobarMap, op_id]
+  exact (nerve _).map_id_apply _ _
+
+/-- The structure maps compose contravariantly to the simplicial operators. -/
+@[simp]
+theorem cobarMap_comp {l m n : SimplexCategory} (f : l ⟶ m) (g : m ⟶ n) :
+    cobarMap (f ≫ g) = (cobarMap g).comp (cobarMap f) := by
+  apply (cobarNerveEquiv _ l.len).injective
+  rw [cobarNerveEquiv_comp_cobarMap, cobarNerveEquiv_cobarMap, cobarNerveEquiv_cobarMap, op_comp]
+  exact (nerve _).map_comp_apply _ _ _
 
 /-- **The cobar construction of the Weierstrass Hopf algebroid**: the cosimplicial commutative
 ring `[n] ↦ Γ^{⊗_A n}`, with structure maps `cobarMap`. -/
@@ -217,27 +302,32 @@ def cobarObject : CosimplicialObject CommRingCat.{0} where
   map f := CommRingCat.ofHom (cobarMap f)
   map_id n := by
     ext1
-    apply (cobarChainEquiv _ n.len).injective
-    rw [CommRingCat.hom_ofHom, ← RingHom.id_comp (cobarMap (𝟙 n)), cobarChainEquiv_comp_cobarMap,
-      op_id, CategoryTheory.Functor.map_id]
-    -- The identity simplicial operator acts as the identity function.
-    rfl
+    rw [CommRingCat.hom_ofHom, cobarMap_id, CommRingCat.hom_id]
   map_comp f g := by
     ext1
-    apply (cobarChainEquiv _ _).injective
-    have h₁ := cobarChainEquiv_comp_cobarMap _ (f ≫ g) (RingHom.id _)
-    have h₂ := cobarChainEquiv_comp_cobarMap _ f (cobarMap g)
-    have h₃ := cobarChainEquiv_comp_cobarMap _ g (RingHom.id _)
-    rw [RingHom.id_comp] at h₁ h₃
-    simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, h₁, h₂, h₃, op_comp,
-      CategoryTheory.Functor.map_comp]
-    -- Composition of simplicial operators is composition of functions.
-    rfl
+    rw [CommRingCat.hom_ofHom, cobarMap_comp, CommRingCat.hom_comp, CommRingCat.hom_ofHom,
+      CommRingCat.hom_ofHom]
+
+/-- The objects of `cobarObject` are the rings `Γ^{⊗_A n}`. -/
+theorem cobarObject_obj (n : SimplexCategory) : cobarObject.obj n = cobarRing n.len :=
+  (rfl)
 
 /-- The structure maps of `cobarObject` are the homomorphisms `cobarMap`. -/
 @[simp]
 theorem cobarObject_map_hom {m n : SimplexCategory} (f : m ⟶ n) :
     (cobarObject.map f).hom = cobarMap f :=
+  (rfl)
+
+/-- The cofaces of `cobarObject` are the homomorphisms `cobarMap (δ i)`. -/
+@[simp]
+theorem cobarObject_δ_hom {n : ℕ} (i : Fin (n + 2)) :
+    (cobarObject.δ i).hom = cobarMap (SimplexCategory.δ i) :=
+  (rfl)
+
+/-- The codegeneracies of `cobarObject` are the homomorphisms `cobarMap (σ i)`. -/
+@[simp]
+theorem cobarObject_σ_hom {n : ℕ} (i : Fin (n + 1)) :
+    (cobarObject.σ i).hom = cobarMap (SimplexCategory.σ i) :=
   (rfl)
 
 /-- **The structure maps in coordinates.** Let `k : Γ^{⊗_A n} →+* R` classify the string
@@ -253,9 +343,118 @@ theorem cobarRingEquiv_comp_cobarMap {m n : SimplexCategory} (f : m ⟶ n)
             (f.toOrderHom i.succ)).unop *
           (Fin.partialProd (fun i ↦ MulOpposite.op ((cobarRingEquiv R n.len k).2 i))
             (f.toOrderHom i.castSucc)).unop⁻¹) := by
-  rw [← nerveEquiv_cobarChainEquiv, cobarChainEquiv_comp_cobarMap, nerveEquiv_nerve_map]
-  exact Prod.ext (back_obj_nerveEquiv_symm _ _)
-    (funext fun i ↦ label_nerveEquiv_symm_homOfLE _ _)
+  rw [← nerveEquiv_cobarNerveEquiv, cobarNerveEquiv_comp_cobarMap, cobarNerveEquiv_apply,
+    nerveEquiv_nerve_map_nerveEquiv_symm]
+
+/-- `cobarRingEquiv_comp_cobarMap` for the universal string: `cobarMap f` classifies the string
+with first curve `D_{f 0} • W` and changes of variables `D_{f (i + 1)} D_{f i}⁻¹`, where `W` and
+`Dⱼ` are the universal curve and composite changes of variables over `Γ^{⊗_A n}`. -/
+theorem cobarRingEquiv_cobarMap {m n : SimplexCategory} (f : m ⟶ n) :
+    cobarRingEquiv _ m.len (cobarMap f) =
+      ((Fin.partialProd (fun i ↦ MulOpposite.op ((cobarRingEquiv _ n.len (RingHom.id _)).2 i))
+          (f.toOrderHom 0)).unop • (cobarRingEquiv _ n.len (RingHom.id (cobarRing n.len))).1,
+        fun i ↦ (Fin.partialProd
+            (fun i ↦ MulOpposite.op ((cobarRingEquiv _ n.len (RingHom.id _)).2 i))
+            (f.toOrderHom i.succ)).unop *
+          (Fin.partialProd (fun i ↦ MulOpposite.op ((cobarRingEquiv _ n.len (RingHom.id _)).2 i))
+            (f.toOrderHom i.castSucc)).unop⁻¹) := by
+  rw [← cobarRingEquiv_comp_cobarMap, RingHom.id_comp]
+
+/-! ### The cofaces and codegeneracies -/
+
+/-- The last coface `δⁿ⁺¹ : Γ^{⊗_A n} → Γ^{⊗_A (n + 1)}` is the inclusion `algebraMap` of the first
+`n` factors, classifying the first `n` arrows of a string of `n + 1` composable arrows. -/
+@[simp]
+theorem cobarMap_δ_last (n : ℕ) :
+    cobarMap (SimplexCategory.δ (Fin.last (n + 1))) =
+      algebraMap (cobarRing n) (cobarRing (n + 1)) := by
+  apply (cobarRingEquiv _ n).injective
+  rw [cobarRingEquiv_cobarMap]
+  refine Prod.ext ?_ (funext fun i ↦ ?_)
+  · simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
+      OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply, Fin.succAbove_last,
+      Fin.castSucc_zero, Fin.partialProd_zero, MulOpposite.unop_one, one_smul]
+    exact cobarRingEquiv_succ_apply_fst _ n (RingHom.id _)
+  · simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
+      OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply, Fin.succAbove_last,
+      Fin.castSucc_succ, Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op,
+      mul_inv_cancel_right]
+    exact cobarRingEquiv_succ_apply_snd_castSucc _ n (RingHom.id _) i
+
+/-- A coface `δⁱ : Γ^{⊗_A (n + 1)} → Γ^{⊗_A (n + 2)}` with `i ≤ n` is `ChangeRing.map` of the
+coface `δⁱ : Γ^{⊗_A n} → Γ^{⊗_A (n + 1)}`: it does not involve the last arrow. -/
+@[simp]
+theorem cobarMap_δ_castSucc_castSucc (n : ℕ) (i : Fin (n + 1)) :
+    cobarMap (SimplexCategory.δ i.castSucc.castSucc) =
+      ChangeRing.map (cobarMap (SimplexCategory.δ i.castSucc)) := by
+  refine ChangeRing.ringHom_ext ?_ ?_
+  · have h := congrArg cobarMap (SimplexCategory.δ_comp_δ (Fin.le_last i.castSucc)).symm
+    simp only [cobarMap_comp, Fin.succ_last, cobarMap_δ_last] at h
+    rw [ChangeRing.map_comp_algebraMap]
+    exact h
+  · rw [universalChange_map_map, ← cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_cobarMap]
+    simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
+      Fin.succ_last, OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply,
+      Fin.succAbove_ne_last_last (Fin.castSucc_ne_last _), Fin.castSucc_succAbove_castSucc]
+    rw [← Fin.succ_last (n + 1), Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op,
+      mul_inv_cancel_right, cobarRingEquiv_succ_apply_snd_last, VariableChange.map_id]
+
+/-- The coface `δⁿ⁺¹ : Γ^{⊗_A (n + 1)} → Γ^{⊗_A (n + 2)}` multiplies the last two arrows: it
+classifies the string whose first `n` arrows come from the first `n` factors and whose last
+change of variables is the composite of the last two. -/
+@[simp]
+theorem cobarMap_δ_castSucc_last (n : ℕ) :
+    cobarMap (SimplexCategory.δ (Fin.last (n + 1)).castSucc) =
+      lift ((algebraMap (cobarRing (n + 1)) (cobarRing (n + 2))).comp
+          (algebraMap (cobarRing n) (cobarRing (n + 1))),
+        universalChange (cobarRing (n + 1)) *
+          (universalChange (cobarRing n)).map
+            (algebraMap (cobarRing (n + 1)) (cobarRing (n + 2)))) := by
+  refine ChangeRing.ringHom_ext ?_ ?_
+  · have h := congrArg cobarMap (SimplexCategory.δ_comp_δ_self (i := Fin.last (n + 1)))
+    simp only [cobarMap_comp, Fin.succ_last, cobarMap_δ_last] at h
+    rw [lift_comp_algebraMap]
+    exact h
+  · rw [map_lift, ← cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_cobarMap]
+    simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
+      Fin.succ_last, OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply,
+      Fin.succAbove_ne_last_last (Fin.castSucc_ne_last _), Fin.castSucc_succAbove_castSucc,
+      Fin.succAbove_last]
+    rw [← Fin.succ_last (n + 1), Fin.partialProd_succ, ← Fin.succ_last n, ← Fin.succ_castSucc,
+      Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_mul, MulOpposite.unop_op,
+      MulOpposite.unop_op, mul_assoc, mul_inv_cancel_right, Fin.succ_last,
+      cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_succ_apply_snd_castSucc,
+      cobarRingEquiv_succ_apply_snd_last, VariableChange.map_id, RingHom.id_comp]
+
+/-- The last codegeneracy `σⁿ : Γ^{⊗_A (n + 1)} → Γ^{⊗_A n}` is the identity on the first `n`
+factors and the counit on the last: it classifies the string extended by an identity arrow. -/
+@[simp]
+theorem cobarMap_σ_last (n : ℕ) :
+    cobarMap (SimplexCategory.σ (Fin.last n)) = lift (RingHom.id (cobarRing n), 1) := by
+  refine ChangeRing.ringHom_ext ?_ ?_
+  · have h := congrArg cobarMap (SimplexCategory.δ_comp_σ_succ (i := Fin.last n))
+    simp only [cobarMap_comp, cobarMap_id, Fin.succ_last, cobarMap_δ_last] at h
+    rw [lift_comp_algebraMap]
+    exact h
+  · rw [map_lift, ← cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_cobarMap]
+    simp [SimplexCategory.σ]
+
+/-- A codegeneracy `σⁱ : Γ^{⊗_A (n + 2)} → Γ^{⊗_A (n + 1)}` with `i ≤ n` is `ChangeRing.map` of
+the codegeneracy `σⁱ : Γ^{⊗_A (n + 1)} → Γ^{⊗_A n}`: it does not involve the last arrow. -/
+@[simp]
+theorem cobarMap_σ_castSucc (n : ℕ) (i : Fin (n + 1)) :
+    cobarMap (SimplexCategory.σ i.castSucc) = ChangeRing.map (cobarMap (SimplexCategory.σ i)) := by
+  refine ChangeRing.ringHom_ext ?_ ?_
+  · have h := congrArg cobarMap (SimplexCategory.δ_comp_σ_of_gt (Fin.castSucc_lt_last i))
+    simp only [cobarMap_comp, Fin.succ_last, cobarMap_δ_last] at h
+    rw [ChangeRing.map_comp_algebraMap]
+    exact h
+  · rw [universalChange_map_map, ← cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_cobarMap]
+    simp only [SimplexCategory.σ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
+      Fin.succ_last, Fin.predAboveOrderHom_coe, Fin.predAbove_right_last,
+      Fin.castSucc_predAbove_castSucc]
+    rw [← Fin.succ_last n, Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op,
+      mul_inv_cancel_right, cobarRingEquiv_succ_apply_snd_last, VariableChange.map_id]
 
 /-! ### Comparison with the Hopf algebroid structure maps -/
 
@@ -266,86 +465,51 @@ theorem cobarRingEquiv_one_apply (k : ArrowRing →+* R) :
   rw [cobarRingEquiv_succ_apply, cobarRingEquiv_zero_apply, arrowEquiv_apply]
   exact Prod.ext rfl (funext fun i ↦ by rw [Fin.fin_one_eq_zero i]; rfl)
 
-/-- A homomorphism `k : Γ ⊗_A Γ →+* R` classifies the composable pair whose first arrow is
-classified by the left factor `algebraMap` and whose second change of variables is classified
-by `k`. -/
-theorem cobarRingEquiv_two_apply (k : ChangeRing ArrowRing →+* R) :
-    cobarRingEquiv R 2 k =
-      ((arrowEquiv R (k.comp (algebraMap ArrowRing _))).1,
-        ![(arrowEquiv R (k.comp (algebraMap ArrowRing _))).2,
-          (universalChange ArrowRing).map k]) := by
-  rw [cobarRingEquiv_succ_apply, cobarRingEquiv_one_apply]
-  refine Prod.ext rfl (funext fun i ↦ ?_)
-  fin_cases i <;> rfl
-
 /-- The coface `δ⁰ : A → Γ` of the cobar construction is the right unit `η_R`, classifying the
 target of an arrow. -/
+@[simp]
 theorem cobarMap_δ_zero_eq_rightUnit : cobarMap (SimplexCategory.δ (n := 0) 0) = rightUnit := by
   apply (cobarRingEquiv _ 0).injective
-  rw [← RingHom.id_comp (cobarMap _), cobarRingEquiv_comp_cobarMap, cobarRingEquiv_one_apply,
-    cobarRingEquiv_zero_apply]
+  rw [cobarRingEquiv_cobarMap, cobarRingEquiv_one_apply, cobarRingEquiv_zero_apply]
   refine Prod.ext ?_ (funext fun i ↦ i.elim0)
   simp [SimplexCategory.δ, Fin.partialProd, List.ofFn_succ, map_rightUnit]
 
 /-- The coface `δ¹ : A → Γ` of the cobar construction is the left unit `η_L = algebraMap`,
 classifying the source of an arrow. -/
+@[simp]
 theorem cobarMap_δ_one_eq_algebraMap :
-    cobarMap (SimplexCategory.δ (n := 0) 1) = algebraMap (MvPolynomial Coeff ℤ) ArrowRing := by
-  apply (cobarRingEquiv _ 0).injective
-  rw [← RingHom.id_comp (cobarMap _), cobarRingEquiv_comp_cobarMap, cobarRingEquiv_one_apply,
-    cobarRingEquiv_zero_apply]
-  refine Prod.ext ?_ (funext fun i ↦ i.elim0)
-  simp [SimplexCategory.δ]
+    cobarMap (SimplexCategory.δ (n := 0) 1) = algebraMap (MvPolynomial Coeff ℤ) ArrowRing :=
+  cobarMap_δ_last 0
 
 /-- The codegeneracy `σ⁰ : Γ → A` of the cobar construction is the counit `ε`, classifying the
 identity arrows. -/
+@[simp]
 theorem cobarMap_σ_zero_eq_counit : cobarMap (SimplexCategory.σ (n := 0) 0) = counit := by
-  apply (cobarRingEquiv _ 1).injective
-  rw [← RingHom.id_comp (cobarMap _), cobarRingEquiv_comp_cobarMap, cobarRingEquiv_one_apply,
-    cobarRingEquiv_zero_apply]
-  refine Prod.ext ?_ (funext fun i ↦ ?_)
-  · simp [Fin.partialProd]
-  · simp [SimplexCategory.σ, Fin.fin_one_eq_zero i]
+  refine (cobarMap_σ_last 0).trans (ringHom_ext ?_ ?_)
+  · rw [lift_comp_algebraMap, counit_comp_algebraMap]
+  · rw [map_lift, universalChange_map_counit]
 
 /-- The coface `δ⁰ : Γ → Γ ⊗_A Γ` of the cobar construction is the inclusion `ChangeRing.map η_R`
 of the second factor, classifying the second arrow of a composable pair. -/
+@[simp]
 theorem cobarMap_δ_zero_eq_map_rightUnit :
-    cobarMap (SimplexCategory.δ (n := 1) 0) = ChangeRing.map rightUnit := by
-  apply (cobarRingEquiv _ 1).injective
-  rw [← RingHom.id_comp (cobarMap _), cobarRingEquiv_comp_cobarMap, cobarRingEquiv_two_apply,
-    cobarRingEquiv_one_apply]
-  refine Prod.ext ?_ (funext fun i ↦ ?_)
-  · -- The source of the second arrow is the target `η_R` of the first.
-    have h : WeierstrassCurve.map Universal.curve
-        ((algebraMap ArrowRing (ChangeRing ArrowRing)).comp rightUnit) =
-          (universalChange _).map (algebraMap ArrowRing (ChangeRing ArrowRing)) •
-            WeierstrassCurve.map Universal.curve
-              ((algebraMap ArrowRing (ChangeRing ArrowRing)).comp (algebraMap _ ArrowRing)) := by
-      rw [← WeierstrassCurve.map_map, map_rightUnit, ← map_variableChange,
-        WeierstrassCurve.map_map]
-    simp [SimplexCategory.δ, Fin.partialProd, List.ofFn_succ, h]
-  · simp [SimplexCategory.δ, Fin.fin_one_eq_zero i, Fin.partialProd, List.ofFn_succ, Fin.succAbove]
+    cobarMap (SimplexCategory.δ (n := 1) 0) = ChangeRing.map rightUnit :=
+  (cobarMap_δ_castSucc_castSucc 0 0).trans (congrArg ChangeRing.map cobarMap_δ_zero_eq_rightUnit)
 
 /-- The coface `δ¹ : Γ → Γ ⊗_A Γ` of the cobar construction is the coproduct `Δ`, classifying the
 composite of a composable pair. -/
+@[simp]
 theorem cobarMap_δ_one_eq_coproduct : cobarMap (SimplexCategory.δ (n := 1) 1) = coproduct := by
-  apply (cobarRingEquiv _ 1).injective
-  rw [← RingHom.id_comp (cobarMap _), cobarRingEquiv_comp_cobarMap, cobarRingEquiv_two_apply,
-    cobarRingEquiv_one_apply]
-  refine Prod.ext ?_ (funext fun i ↦ ?_)
-  · simp [SimplexCategory.δ]
-  · simp [SimplexCategory.δ, Fin.fin_one_eq_zero i, Fin.partialProd, List.ofFn_succ, Fin.succAbove]
+  refine (cobarMap_δ_castSucc_last 0).trans (ringHom_ext ?_ ?_)
+  · rw [lift_comp_algebraMap, coproduct_comp_algebraMap]
+  · rw [map_lift, universalChange_map_coproduct]
 
 /-- The coface `δ² : Γ → Γ ⊗_A Γ` of the cobar construction is the inclusion `algebraMap` of the
 first factor, classifying the first arrow of a composable pair. -/
+@[simp]
 theorem cobarMap_δ_two_eq_algebraMap :
-    cobarMap (SimplexCategory.δ (n := 1) 2) = algebraMap ArrowRing (ChangeRing ArrowRing) := by
-  apply (cobarRingEquiv _ 1).injective
-  rw [← RingHom.id_comp (cobarMap _), cobarRingEquiv_comp_cobarMap, cobarRingEquiv_two_apply,
-    cobarRingEquiv_one_apply]
-  refine Prod.ext ?_ (funext fun i ↦ ?_)
-  · simp [SimplexCategory.δ, Fin.partialProd]
-  · simp [SimplexCategory.δ, Fin.fin_one_eq_zero i, Fin.partialProd, List.ofFn_succ, Fin.succAbove]
+    cobarMap (SimplexCategory.δ (n := 1) 2) = algebraMap ArrowRing (ChangeRing ArrowRing) :=
+  cobarMap_δ_last 1
 
 /-! ### The cobar complex -/
 
@@ -357,20 +521,59 @@ def cobarComplex : CochainComplex AddCommGrpCat.{0} ℕ :=
   (AlgebraicTopology.alternatingCofaceMapComplex AddCommGrpCat).obj
     (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat)
 
-/-- The differential `A → Γ` of the cobar complex in degree `0` is `η_R - η_L`. -/
-theorem cobarComplex_d_zero_one (x : MvPolynomial Coeff ℤ) :
-    (cobarComplex.d 0 1).hom x = rightUnit x - algebraMap (MvPolynomial Coeff ℤ) ArrowRing x := by
-  have h : cobarComplex.d 0 1 = AlgebraicTopology.AlternatingCofaceMapComplex.objD
-      (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) 0 :=
+/-- The `n`-cochains of the cobar complex are the additive group of `Γ^{⊗_A n}`. -/
+theorem cobarComplex_X (n : ℕ) : cobarComplex.X n = AddCommGrpCat.of (cobarRing n) :=
+  (rfl)
+
+/-- The forgetful functors to additive groups keep the underlying function of a structure map of
+`cobarObject`. -/
+private theorem hom_forget₂_map_cobarObject_map_apply {m n : SimplexCategory} (f : m ⟶ n)
+    (x : cobarRing m.len) :
+    ((forget₂ RingCat AddCommGrpCat).map ((forget₂ CommRingCat RingCat).map
+      (cobarObject.map f))).hom x = cobarMap f x :=
+  (rfl)
+
+/-- The differential `Γ^{⊗_A n} → Γ^{⊗_A (n + 1)}` of the cobar complex is the alternating sum
+`∑ᵢ (-1)ⁱ δⁱ` of the cofaces. -/
+theorem cobarComplex_d_hom_apply (n : ℕ) (x : cobarRing n) :
+    (cobarComplex.d n (n + 1)).hom x =
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • cobarMap (SimplexCategory.δ i) x := by
+  have h : cobarComplex.d n (n + 1) = AlgebraicTopology.AlternatingCofaceMapComplex.objD
+      (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n :=
     CochainComplex.of_d (fun n ↦ (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙
-      forget₂ RingCat AddCommGrpCat).obj (SimplexCategory.mk n)) _ 0
-  rw [h, sub_eq_add_neg, ← cobarMap_δ_zero_eq_rightUnit, ← cobarMap_δ_one_eq_algebraMap]
-  simp only [AlgebraicTopology.AlternatingCofaceMapComplex.objD, Fin.sum_univ_succ,
-    Fin.sum_univ_zero, Fin.val_zero, Fin.val_succ, pow_zero, pow_one, one_smul, neg_smul,
-    zero_add, add_zero]
-  -- Both forgetful functors keep the underlying function, and addition and negation of
-  -- morphisms of additive groups are pointwise.
-  rfl
+      forget₂ RingCat AddCommGrpCat).obj (SimplexCategory.mk n)) _ n
+  rw [h]
+  -- Restate the goal with the morphism typed by the cosimplicial object, not the complex.
+  change (AlgebraicTopology.AlternatingCofaceMapComplex.objD
+    (cobarObject ⋙ forget₂ CommRingCat RingCat ⋙ forget₂ RingCat AddCommGrpCat) n).hom x = _
+  rw [AlgebraicTopology.AlternatingCofaceMapComplex.objD]
+  -- Evaluating a morphism of additive groups is additive in the morphism.
+  refine (congrArg (fun g : cobarRing n →+ cobarRing (n + 1) ↦ g x)
+    (map_sum AddCommGrpCat.homAddEquiv _ Finset.univ)).trans ?_
+  refine (AddMonoidHom.finsetSum_apply _ _ x).trans (Finset.sum_congr rfl fun i _ ↦ ?_)
+  rw [map_zsmul]
+  exact congrArg ((-1 : ℤ) ^ (i : ℕ) • ·) (hom_forget₂_map_cobarObject_map_apply _ x)
+
+/-- The differential `A → Γ` of the cobar complex in degree `0` is `η_R - η_L`. -/
+theorem cobarComplex_d_zero_one_hom_apply (x : MvPolynomial Coeff ℤ) :
+    (cobarComplex.d 0 1).hom x = rightUnit x - algebraMap (MvPolynomial Coeff ℤ) ArrowRing x := by
+  have h := cobarComplex_d_hom_apply 0 x
+  rw [Fin.sum_univ_two, cobarMap_δ_zero_eq_rightUnit, cobarMap_δ_one_eq_algebraMap] at h
+  simp only [Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_smul,
+    ← sub_eq_add_neg] at h
+  exact h
+
+/-- The differential `Γ → Γ ⊗_A Γ` of the cobar complex in degree `1` is
+`x ↦ 1 ⊗ x - Δ x + x ⊗ 1`. -/
+theorem cobarComplex_d_one_two_hom_apply (x : ArrowRing) :
+    (cobarComplex.d 1 2).hom x =
+      ChangeRing.map rightUnit x - coproduct x + algebraMap ArrowRing (ChangeRing ArrowRing) x := by
+  have h := cobarComplex_d_hom_apply 1 x
+  rw [Fin.sum_univ_three, cobarMap_δ_zero_eq_map_rightUnit, cobarMap_δ_one_eq_coproduct,
+    cobarMap_δ_two_eq_algebraMap] at h
+  simp only [Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero, pow_one, one_smul, neg_smul,
+    neg_one_sq, ← sub_eq_add_neg] at h
+  exact h
 
 end TauCeti.WeierstrassHopfAlgebroid
 
@@ -380,9 +583,11 @@ open TauCeti.WeierstrassHopfAlgebroid
 
 /-- The degree `0` cocycles of the cobar complex of the Weierstrass Hopf algebroid are the
 integral modular forms of weight `0`. -/
-theorem isIntegralModularForm_zero_iff_cobarComplex_d_eq_zero (f : MvPolynomial Coeff ℤ) :
+theorem isIntegralModularForm_zero_iff_cobarComplex_d_zero_one_hom_apply_eq_zero
+    (f : MvPolynomial Coeff ℤ) :
     IsIntegralModularForm 0 f ↔ (cobarComplex.d 0 1).hom f = 0 := by
-  rw [cobarComplex_d_zero_one, isIntegralModularForm_iff_rightUnit, pow_zero, one_mul]
+  rw [cobarComplex_d_zero_one_hom_apply, isIntegralModularForm_iff_rightUnit, pow_zero, one_mul]
   exact sub_eq_zero.symm
 
 end WeierstrassCurve
+

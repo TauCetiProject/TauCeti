@@ -23,7 +23,9 @@ operators of the nerve (`TauCeti.ActionGroupoid.nerveEquiv_nerve_map`) and the f
 equivariant maps (`TauCeti.ActionGroupoid.nerveEquiv_mapComposableArrows_obj`) are explicit, and
 for a group action the arrow between any two points of a string is labelled by a quotient of
 partial products of the consecutive labels
-(`TauCeti.ActionGroupoid.label_nerveEquiv_symm_homOfLE`).
+(`TauCeti.ActionGroupoid.label_nerveEquiv_symm_homOfLE`), which makes the simplicial operators
+explicit on first points and labels
+(`TauCeti.ActionGroupoid.nerveEquiv_nerve_map_nerveEquiv_symm`).
 
 For an invariant subset `U`, a string of `G ⋉ X` comes from the full subcategory `G ⋉ U`
 exactly when its first point lies in `U`
@@ -200,6 +202,18 @@ theorem label_nerveEquiv_symm_homOfLE (p : X × (Fin n → G)) {i j : Fin (n + 1
   | succ i k hik ih =>
     rw [ComposableArrows.hom_map_homOfLE_succ _ hik, ih, label_nerveEquiv_symm,
       Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op, mul_assoc]
+
+/-- In the coordinates of `nerveEquiv`, the simplicial operator of `f : [m] ⟶ [n]` sends the
+string with first point `x` and consecutive labels `g` to the string with first point
+`D_{f 0} • x` and `k`-th label `D_{f (k + 1)} D_{f k}⁻¹`, where `Dⱼ = gⱼ₋₁ ⋯ g₀`. -/
+theorem nerveEquiv_nerve_map_nerveEquiv_symm {m n : SimplexCategory} (f : m ⟶ n)
+    (p : X × (Fin n.len → G)) :
+    nerveEquiv G X m.len ((nerve (ActionCategory G X)).map f.op ((nerveEquiv G X n.len).symm p)) =
+      ((Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) (f.toOrderHom 0)).unop • p.1,
+        fun k ↦ (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) (f.toOrderHom k.succ)).unop *
+          (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) (f.toOrderHom k.castSucc)).unop⁻¹) := by
+  rw [nerveEquiv_nerve_map]
+  exact Prod.ext (back_obj_nerveEquiv_symm _ _) (funext fun k ↦ label_nerveEquiv_symm_homOfLE _ _)
 
 end TauCeti.ActionGroupoid
 

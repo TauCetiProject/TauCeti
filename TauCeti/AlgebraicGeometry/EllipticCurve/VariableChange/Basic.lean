@@ -139,6 +139,10 @@ enough. -/
     (C * D).map φ = C.map φ * D.map φ :=
   _root_.map_mul (VariableChange.mapHom φ) C D
 
+/-- The bundled base change `VariableChange.mapHom φ` applies `VariableChange.map φ`. -/
+@[simp] lemma mapHom_apply (φ : R →+* A) (C : VariableChange R) : mapHom φ C = C.map φ :=
+  rfl
+
 /-! ### Components of `C * D⁻¹`
 
 `C * D⁻¹` is the change of variables carrying `D • W` to `C • W`. Its components are the
