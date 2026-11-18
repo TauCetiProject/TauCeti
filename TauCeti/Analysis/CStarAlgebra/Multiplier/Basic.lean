@@ -22,7 +22,8 @@ and `DoubleCentralizer.snd_mul`, injectivity of `A → 𝓜(𝕜, A)`, and `Doub
 is in `TauCeti.Analysis.Normed.Algebra.DoubleCentralizer`. It applies to every C⋆-ring, since a
 proper involution makes both annihilators zero (`TauCeti.faithfulSMul_mulOpposite_of_isProperStar`
 and `TauCeti.faithfulSMul_of_isProperStar`). For regular normed algebras
-(`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric.
+(`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric,
+so limits in `A` may be computed in `𝓜(𝕜, A)` (`DoubleCentralizer.tendsto_coe_iff`).
 
 A bounded operator `L` with an adjoint `L'` for the pairing `(x, y) ↦ star x * y` is the left
 centralizer of the multiplier `DoubleCentralizer.ofAdjoint L L'`, whose right centralizer is
@@ -38,9 +39,11 @@ records that `e ↦ congr e` is a monoid homomorphism of automorphism groups.
 
 Since `A` is an ideal of `𝓜(ℂ, A)`, conjugation `a ↦ u * a * u⋆` by a unitary multiplier `u`
 maps `A` to itself; `DoubleCentralizer.conjStarAlgAut` records it as a monoid homomorphism from
-the unitary multipliers to the automorphisms of `A`. As the inclusion of `A` is a linear isometry,
-a real path in `A` has derivative `v` exactly when its image in `𝓜(ℂ, A)` has derivative `↑v`,
-`DoubleCentralizer.hasDerivAt_coe_iff`, so derivatives may be computed in the multiplier algebra.
+the unitary multipliers to the automorphisms of `A`, and the norm of `u * a * u⋆ - b` may be
+measured in `A` (`DoubleCentralizer.norm_mul_coe_mul_star_sub_coe`). As the inclusion of `A` is
+a linear isometry, a real path in `A` has derivative `v` exactly when its image in `𝓜(ℂ, A)` has
+derivative `↑v`, `DoubleCentralizer.hasDerivAt_coe_iff`, so derivatives may be computed in the
+multiplier algebra.
 Consequently, conjugating a path in `A` by a path of multipliers `U` with `U 0 = 1` and
 `U' 0 = i Q`, for self-adjoint `Q ∈ A`, adds `i[Q, ·]` to its derivative at `0`,
 `DoubleCentralizer.hasDerivAt_conj_zero`.
@@ -57,7 +60,7 @@ public section
 
 noncomputable section
 
-open scoped MultiplierAlgebra
+open scoped MultiplierAlgebra Topology
 
 namespace DoubleCentralizer
 
@@ -112,6 +115,12 @@ theorem norm_coe (a : A) : ‖(a : 𝓜(𝕜, A))‖ = ‖a‖ := by
 theorem isometry_coe : Isometry (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) := by
   intro a b
   simp only [edist_dist, dist_eq_norm, ← coe_sub, norm_coe]
+
+/-- Convergence in `A` is convergence of the images in the multiplier algebra, since the
+inclusion is isometric. -/
+theorem tendsto_coe_iff {ι : Type*} {l : Filter ι} {f : ι → A} {a : A} :
+    Filter.Tendsto (fun i ↦ (f i : 𝓜(𝕜, A))) l (𝓝 (a : 𝓜(𝕜, A))) ↔ Filter.Tendsto f l (𝓝 a) :=
+  (isometry_coe (𝕜 := 𝕜)).isUniformInducing.isInducing.tendsto_nhds_iff.symm
 
 end RegularNormedAlgebra
 
@@ -269,6 +278,13 @@ algebra. -/
 theorem coe_conjStarAlgAut_apply (u : unitary 𝓜(ℂ, A)) (a : A) :
     ((conjStarAlgAut u a : A) : 𝓜(ℂ, A)) = u * a * star (u : 𝓜(ℂ, A)) :=
   (coeHom_conjAux_apply u a).trans (Unitary.conjStarAlgAut_apply u _)
+
+/-- The distance from a conjugate `u * a * u⋆` to `b`, measured in the multiplier algebra, is
+the distance from `conjStarAlgAut u a` to `b` in `A`. -/
+theorem norm_mul_coe_mul_star_sub_coe (u : unitary 𝓜(ℂ, A)) (a b : A) :
+    ‖(u : 𝓜(ℂ, A)) * (a : 𝓜(ℂ, A)) * star (u : 𝓜(ℂ, A)) - (b : 𝓜(ℂ, A))‖ =
+      ‖conjStarAlgAut u a - b‖ := by
+  rw [← coe_conjStarAlgAut_apply, ← coe_sub, norm_coe]
 
 end Conj
 
