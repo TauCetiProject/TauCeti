@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.ReImTopology
 public import Mathlib.Analysis.Convex.PathConnected
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.PairShift
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
 public import TauCeti.Analysis.Normed.Operator.Resolvent.Characterization
 public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
