@@ -130,9 +130,9 @@ Coefficients are an object `R` of an abelian category with coproducts.
   `ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ` gives the same ranks for the unit
   sphere of a real normed space of dimension `d + 1`.
 * `TauCeti.bettiNumber_sphere` and `TauCeti.bettiNumber_compl_singleton`: over a ring with the
-  strong rank condition, the unit sphere of a real normed space of dimension `n + 1`, and the
-  complement of a point in it, have Betti number `1` in degrees `0` and `n` (`2` in degree `0`
-  when `n = 0`) and `0` in every other degree.
+  strong rank condition, the unit sphere of a real normed space `E` of dimension `n + 1`, and the
+  complement `E ∖ {y}` of a point in `E`, have Betti number `1` in degrees `0` and `n` (`2` in
+  degree `0` when `n = 0`) and `0` in every other degree.
 
 ## References
 
