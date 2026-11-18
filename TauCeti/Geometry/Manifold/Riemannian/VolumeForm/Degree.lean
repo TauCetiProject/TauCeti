@@ -52,7 +52,7 @@ theorem integralTopForm_mpullback_riemannianVolumeForm_eq_degree_mul_volume
       degree o o' f * riemannianTotalVolume J N := by
   have : IsManifold J ((∞ : WithTop ℕ∞) + 1) N := by simpa using (inferInstance :
     IsManifold J ∞ N)
-  rw [integralTopForm_mpullback_eq_degree_mul o o' hf
+  rw [integralTopForm_mpullback_eq_degree_mul o o' hf hf.continuous.isProperMap
     (isSmoothForm_riemannianVolumeForm o')
     (isClosed_tsupport _).isCompact, integralTopForm_riemannianVolumeForm]
 
