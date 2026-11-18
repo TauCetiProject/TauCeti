@@ -339,7 +339,7 @@ theorem W1p.exists_restrictL_eq_of_sub_mem_w1p0Submodule (hsub : Omega ≤ Omega
   · have hext : (W1p.value (W1p0.extendByZeroL hsub v : W1p mu Omega' p) : E → ℝ)
         =ᵐ[mu.restrict Omega'] (Omega : Set E).indicator (W1p.value (v : W1p mu Omega p)) := by
       rw [W1p0.value_extendByZeroL]
-      exact coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.measurableSet _ _
+      exact coeFn_extendByZeroLpₗᵢ ℝ Omega.isOpen.nullMeasurableSet _ _
     filter_upwards [W1p.value_sub_ae (W1p.restrictL hsub' u)
       (W1p0.extendByZeroL hsub v : W1p mu Omega' p), W1p.value_restrictL_ae hsub' u, hext, hu]
       with x h1 h2 h3 h4 hx
