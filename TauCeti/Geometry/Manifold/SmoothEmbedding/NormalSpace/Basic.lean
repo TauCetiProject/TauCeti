@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
-public import TauCeti.Topology.Algebra.Module.Quotient
+public import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
@@ -15,7 +15,8 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 At a point of a smoothly embedded submanifold, the normal space is the ambient tangent space
 modulo the image of the differential of the embedding. This quotient is intrinsic: it needs no
 metric or choice of complementary subspace. It is the fibrewise linear object from which a normal
-bundle, and eventually a tubular neighbourhood, must be constructed.
+bundle, and eventually a tubular neighbourhood, must be constructed. It is the normal space
+`Manifold.IsImmersion.NormalSpace` of the underlying immersion.
 
 The differential is injective for an immersion of positive smoothness. Consequently the normal
 space has the expected codimension in finite dimensions. The quotient map also characterizes
@@ -46,9 +47,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The tangent subspace of the ambient manifold determined by a positive-regularity embedding
 at `x`. It is the range of the differential, regarded as a linear map of tangent spaces. -/
-@[expose] noncomputable def tangentRange (f : SmoothEmbedding I J n M N) (x : M) (_hn : n ≠ 0) :
+@[expose] noncomputable def tangentRange (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     Submodule 𝕜 (TangentSpace J (f x)) :=
-  (mfderiv I J (f : M → N) x).toLinearMap.range
+  f.isImmersion.tangentRange x hn
 
 /-- An ambient tangent vector is tangent to the embedding precisely when it is a differential
 image. -/
@@ -63,55 +64,47 @@ tangent to the embedded submanifold. -/
 @[expose]
 noncomputable def NormalSpace
     (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) : Type _ :=
-  TangentSpace J (f x) ⧸ f.tangentRange x hn
+  f.isImmersion.NormalSpace x hn
 
 /-- The tangent range is closed because the differential of an immersion has a continuous
 left inverse. -/
 theorem isClosed_tangentRange (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    IsClosed (f.tangentRange x hn : Set (TangentSpace J (f x))) := by
-  -- `tangentRange` is the linear range, whose carrier is the set range of `mfderiv`.
-  change IsClosed (Set.range (mfderiv I J (f : M → N) x))
-  exact ContinuousLinearMap.HasLeftInverse.isClosed_range
-    (isDiffImmersionAt_iff.mp (f.isImmersion.isDiffImmersionAt hn x))
+    IsClosed (f.tangentRange x hn : Set (TangentSpace J (f x))) :=
+  f.isImmersion.isClosed_tangentRange x hn
 
 noncomputable instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     AddCommGroup (f.NormalSpace x hn) :=
-  inferInstanceAs (AddCommGroup (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+  inferInstanceAs (AddCommGroup (f.isImmersion.NormalSpace x hn))
 
 noncomputable instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     Module 𝕜 (f.NormalSpace x hn) :=
-  inferInstanceAs (Module 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+  inferInstanceAs (Module 𝕜 (f.isImmersion.NormalSpace x hn))
 
 noncomputable instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TopologicalSpace (f.NormalSpace x hn) :=
-  inferInstanceAs (TopologicalSpace (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+  inferInstanceAs (TopologicalSpace (f.isImmersion.NormalSpace x hn))
 
 instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    T3Space (f.NormalSpace x hn) := by
-  have hclosed : IsClosed (f.tangentRange x hn : Set (TangentSpace J (f x))) :=
-    f.isClosed_tangentRange x hn
-  exact @Submodule.t3_quotient_of_isClosed 𝕜 (TangentSpace J (f x))
-    _ _ _ _ (f.tangentRange x hn) _ hclosed
+    T3Space (f.NormalSpace x hn) :=
+  inferInstanceAs (T3Space (f.isImmersion.NormalSpace x hn))
 
 instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     IsTopologicalAddGroup (f.NormalSpace x hn) :=
-  inferInstanceAs (IsTopologicalAddGroup (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+  inferInstanceAs (IsTopologicalAddGroup (f.isImmersion.NormalSpace x hn))
 
 instance (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     ContinuousSMul 𝕜 (f.NormalSpace x hn) :=
-  inferInstanceAs (ContinuousSMul 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+  inferInstanceAs (ContinuousSMul 𝕜 (f.isImmersion.NormalSpace x hn))
 
 /-- A normal space into a finite-dimensional model is finite-dimensional. -/
 instance [FiniteDimensional 𝕜 F] (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     FiniteDimensional 𝕜 (f.NormalSpace x hn) :=
-  -- Tangent spaces are their model spaces.
-  haveI : FiniteDimensional 𝕜 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕜 F)
-  inferInstanceAs (FiniteDimensional 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+  inferInstanceAs (FiniteDimensional 𝕜 (f.isImmersion.NormalSpace x hn))
 
 /-- Project an ambient tangent vector to its normal class. -/
-noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+@[expose] noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn :=
-  (f.tangentRange x hn).mkQ
+  f.isImmersion.normalClass x hn
 
 /-- The normal-class map is the linear quotient map by the tangent range. -/
 theorem normalClass_def (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
@@ -191,7 +184,7 @@ theorem normalLiftL_normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n 
 /-- Every normal vector has an ambient tangent representative. -/
 theorem normalClass_surjective (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     Function.Surjective (f.normalClass x hn) :=
-  (f.tangentRange x hn).mkQ_surjective
+  f.isImmersion.normalClass_surjective x hn
 
 section Equiv
 
@@ -341,13 +334,8 @@ finite-dimensional smooth embedding. -/
 theorem finrank_normalSpace_add_finrank (f : SmoothEmbedding I J n M N) (x : M)
     (hn : n ≠ 0) [FiniteDimensional 𝕜 F] :
     Module.finrank 𝕜 (f.NormalSpace x hn) + Module.finrank 𝕜 (TangentSpace I x) =
-      Module.finrank 𝕜 (TangentSpace J (f x)) := by
-  have hi := f.isImmersion.mfderiv_injective hn x
-  have hr : Module.finrank 𝕜 (f.tangentRange x hn) =
-      Module.finrank 𝕜 (TangentSpace I x) :=
-    LinearMap.finrank_range_of_inj hi
-  rw [← hr]
-  exact (f.tangentRange x hn).finrank_quotient_add_finrank
+      Module.finrank 𝕜 (TangentSpace J (f x)) :=
+  f.isImmersion.finrank_normalSpace_add_finrank x hn
 
 /-- The dimension of the normal space is the codimension of the embedded manifold. -/
 theorem finrank_normalSpace (f : SmoothEmbedding I J n M N) (x : M)

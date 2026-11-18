@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
+public import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
 
 /-!
 # Intrinsic normal spaces in tangent coordinates
 
-The intrinsic normal space of an embedding is the quotient of the ambient tangent space
+The intrinsic normal space of an immersion is the quotient of the ambient tangent space
 by the image of its differential. In tangent-bundle trivializations this becomes the
 quotient of the ambient model space by the range of `inTangentCoordinates` of the differential.
 The identification is a continuous linear equivalence and carries ambient tangent classes
@@ -33,7 +33,7 @@ noncomputable section
 open Bundle
 open scoped Manifold ContDiff
 
-namespace TauCeti.SmoothEmbedding
+namespace Manifold.IsImmersion
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -42,17 +42,17 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
-  {n : ℕ∞ω}
+  {n : ℕ∞ω} {f : M → N}
 
 /-- Ambient tangent coordinates send the intrinsic tangent range onto the range of the
 coordinate differential. The source coordinate change does not affect that range. -/
-theorem map_tangentRange_inTangentCoordinates (f : SmoothEmbedding I J n M N)
+theorem map_tangentRange_inTangentCoordinates (hf : IsImmersion I J n f)
     (hn : n ≠ 0) {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
     (hy : f x ∈ (chartAt G (f x₀)).source) :
-    (f.tangentRange x hn).map
+    (hf.tangentRange x hn).map
       ((trivializationAt F (TangentSpace J) (f x₀)).continuousLinearEquivAt 𝕜 (f x)
         (by simpa using hy)).toLinearMap =
-      (inTangentCoordinates I J _root_.id (f : M → N) (mfderiv I J (f : M → N)) x₀ x).range := by
+      (inTangentCoordinates I J _root_.id f (mfderiv I J f) x₀ x).range := by
   rw [inTangentCoordinates,
     ContinuousLinearMap.inCoordinates_eq (by simpa using hx) (by simpa using hy)]
   -- Pass from operator composition to the linear range, then remove the surjective
@@ -67,22 +67,22 @@ theorem map_tangentRange_inTangentCoordinates (f : SmoothEmbedding I J n M N)
 
 /-- The intrinsic normal fibre is the quotient of the ambient model by the coordinate
 differential's range on the overlap of the chosen source and target charts. -/
-def normalSpaceEquivInTangentCoordinates (f : SmoothEmbedding I J n M N)
+def normalSpaceEquivInTangentCoordinates (hf : IsImmersion I J n f)
     (hn : n ≠ 0) {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
     (hy : f x ∈ (chartAt G (f x₀)).source) :
-    f.NormalSpace x hn ≃L[𝕜]
-      (F ⧸ (inTangentCoordinates I J _root_.id (f : M → N) (mfderiv I J (f : M → N)) x₀ x).range) :=
+    hf.NormalSpace x hn ≃L[𝕜]
+      (F ⧸ (inTangentCoordinates I J _root_.id f (mfderiv I J f) x₀ x).range) :=
   ((trivializationAt F (TangentSpace J) (f x₀)).continuousLinearEquivAt 𝕜 (f x)
     (by simpa using hy)).quotientEquiv _ _
-      (f.map_tangentRange_inTangentCoordinates hn hx hy)
+      (hf.map_tangentRange_inTangentCoordinates hn hx hy)
 
 /-- Normal coordinates send an ambient tangent class to its tangent-chart class. -/
 @[simp]
 theorem normalSpaceEquivInTangentCoordinates_normalClass
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) {x₀ x : M}
+    (hf : IsImmersion I J n f) (hn : n ≠ 0) {x₀ x : M}
     (hx : x ∈ (chartAt H x₀).source) (hy : f x ∈ (chartAt G (f x₀)).source)
     (v : TangentSpace J (f x)) :
-    f.normalSpaceEquivInTangentCoordinates hn hx hy (f.normalClass x hn v) =
+    hf.normalSpaceEquivInTangentCoordinates hn hx hy (hf.normalClass x hn v) =
       Submodule.Quotient.mk
         ((trivializationAt F (TangentSpace J) (f x₀)) ⟨f x, v⟩).2 := by
   -- The intrinsic fibre's instances wrap the quotient instances; `erw` lets the
@@ -95,16 +95,16 @@ theorem normalSpaceEquivInTangentCoordinates_normalClass
 the corresponding ambient tangent vector. -/
 @[simp]
 theorem normalSpaceEquivInTangentCoordinates_symm_mk
-    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) {x₀ x : M}
+    (hf : IsImmersion I J n f) (hn : n ≠ 0) {x₀ x : M}
     (hx : x ∈ (chartAt H x₀).source) (hy : f x ∈ (chartAt G (f x₀)).source) (v : F) :
-    (f.normalSpaceEquivInTangentCoordinates hn hx hy).symm (Submodule.Quotient.mk v) =
-      f.normalClass x hn ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) v) := by
+    (hf.normalSpaceEquivInTangentCoordinates hn hx hy).symm (Submodule.Quotient.mk v) =
+      hf.normalClass x hn ((trivializationAt F (TangentSpace J) (f x₀)).symm (f x) v) := by
   rw [← Trivialization.continuousLinearEquivAt_symm_apply 𝕜 _ _ (by simpa using hy)]
-  apply (f.normalSpaceEquivInTangentCoordinates hn hx hy).injective
+  apply (hf.normalSpaceEquivInTangentCoordinates hn hx hy).injective
   simp only [ContinuousLinearEquiv.apply_symm_apply,
     normalSpaceEquivInTangentCoordinates_normalClass]
   exact congrArg Submodule.Quotient.mk
     (((trivializationAt F (TangentSpace J) (f x₀)).continuousLinearEquivAt 𝕜 (f x)
       (by simpa using hy)).apply_symm_apply v).symm
 
-end TauCeti.SmoothEmbedding
+end Manifold.IsImmersion
