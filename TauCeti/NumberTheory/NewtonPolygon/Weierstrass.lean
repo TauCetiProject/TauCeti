@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NewtonPolygon.GaussNorm
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 import TauCeti.Analysis.Convex.Sequence.Vertex
+import TauCeti.NumberTheory.NewtonPolygon.ActiveFace
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Polynomial
 
 /-!
@@ -30,18 +31,18 @@ additivity need not hold for a series restricted on only a single disc, so heigh
 reconstructed from supporting values at slopes `τ ≤ σ`, where `u` remains distinguished of degree
 `0`.
 
-Conversely, a series restricted at `b ^ σ` whose Newton polygon has a finite face of slope `σ`
-ending at `j` touches its supporting line at the right endpoint `j` and is therefore distinguished
-of degree `j` at `b ^ σ`. When that face begins at the order of vanishing of `f`, every finite
-slope of `P` equals `σ`, giving the first-segment pure-polynomial case.
+Conversely, a series whose Newton polygon has a finite face of slope `σ` ending at `j` is
+restricted at `b ^ σ`, touches its supporting line at the right endpoint `j`, and is therefore
+distinguished of degree `j` at `b ^ σ`. When that face begins at the order of vanishing of `f`,
+every finite slope of `P` equals `σ`, giving the first-segment pure-polynomial case.
 
 ## Main results
 
 * `Polynomial.Monic.isDistinguished_iff_forall_mem_newtonSlopes_le`: a monic polynomial `ω` is
   distinguished in its full degree at `b ^ σ` if and only if all of its finite Newton slopes are at
   most `σ`.
-* `PowerSeries.isDistinguished_of_isFiniteFace`: a series restricted at `b ^ σ` whose Newton
-  polygon has a finite face of slope `σ` ending at `j` is distinguished of degree `j` at `b ^ σ`.
+* `PowerSeries.isDistinguished_of_isFiniteFace`: a series whose Newton polygon has a finite face
+  of slope `σ` ending at `j` is distinguished of degree `j` at `b ^ σ`.
 * `PowerSeries.newtonPolygon_eq_add_of_isUnit_mul` and
   `PowerSeries.newtonPolygon_eq_of_mul_isUnit`: `f.newtonPolygon v n = P.newtonPolygon v n +
   v (u.coeff 0)` for `n ≤ j`, reducing to equality when `v (u.coeff 0) = 0`.
@@ -176,15 +177,17 @@ section Valuation
 
 include hb hv
 
-/-- A power series restricted at `b ^ σ` whose Newton polygon has a finite face of slope `σ` ending
-at `j` is distinguished of degree `j` at `b ^ σ`. -/
+/-- A power series whose Newton polygon has a finite face of slope `σ` ending at `j` is
+distinguished of degree `j` at `b ^ σ`. The face already makes the series restricted at
+`b ^ σ` (`PowerSeries.isRestricted_of_isFiniteFace_newtonPolygon`). -/
 theorem isDistinguished_of_isFiniteFace {f : K⟦X⟧} {σ : ℝ} {l j : ℕ}
-    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l j) :
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l j) :
     TauCeti.PowerSeries.IsDistinguished (b ^ σ) j f := by
   have hf0 : f ≠ 0 := by
     rintro rfl
     exact hface.right_ne_top (by simp)
-  have hfn := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hfr
+  have hfn := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
+    (isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface)
   have hadm : IsAdmissible (fun n => v (f.coeff n)) :=
     isAdmissible_iff_exists_supportingValue_ne_bot.mpr
       ⟨σ, (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv σ).mp hfn⟩
@@ -451,16 +454,16 @@ theorem le_of_mem_newtonSlopes_of_isUnit_mul {f : K⟦X⟧} {σ : ℝ} {j : ℕ}
     hdeg ▸ TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul (hmul.symm ▸ hf) hcσ hu
   exact P.le_of_mem_newtonSlopes_of_isDistinguished v hb hv hPd hm
 
-/-- **First-segment pure-polynomial factorisation.** If `f` is restricted at `b ^ σ` and its Newton
-polygon has a finite face of slope `σ` from its order of vanishing `l` (`f.order = l`) to `j`, then
-any polynomial factor `P` of degree at most `j` in `u * P = f`, with `u` a restricted unit at
-`b ^ σ`, is pure of slope `σ`. -/
+/-- **First-segment pure-polynomial factorisation.** If the Newton polygon of `f` has a finite face
+of slope `σ` from its order of vanishing `l` (`f.order = l`) to `j`, then any polynomial factor `P`
+of degree at most `j` in `u * P = f`, with `u` a restricted unit at `b ^ σ`, is pure of slope
+`σ`. -/
 theorem forall_mem_newtonSlopes_eq_of_isFiniteFace_of_order_eq {f : K⟦X⟧} {σ : ℝ} {l j : ℕ}
-    (hfr : f.IsRestricted (b ^ σ)) (hface : IsFiniteFace (f.newtonPolygon v) σ l j)
-    (hord : f.order = l) {u : IsRestricted.subring (R := K) (b ^ σ)} (hu : IsUnit u)
+    (hface : IsFiniteFace (f.newtonPolygon v) σ l j) (hord : f.order = l)
+    {u : IsRestricted.subring (R := K) (b ^ σ)} (hu : IsUnit u)
     {P : Polynomial K} (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) :
     ∀ m ∈ P.newtonSlopes v, m = σ := by
-  have hf := isDistinguished_of_isFiniteFace v hb hv hfr hface
+  have hf := isDistinguished_of_isFiniteFace v hb hv hface
   rintro m hm
   obtain ⟨i, hiP, rfl⟩ := (P.mem_newtonSlopes v).mp hm
   obtain ⟨hif, hij⟩ :=
@@ -522,8 +525,7 @@ theorem newtonSlopes_eq_filter_le_of_isFiniteFace {f P : K[X]} {σ : ℝ} {l j :
     (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = (f : K⟦X⟧)) :
     P.newtonSlopes v = (f.newtonSlopes v).filter (· ≤ σ) := by
   have hfd : TauCeti.PowerSeries.IsDistinguished (b ^ σ) j (f : K⟦X⟧) :=
-    PowerSeries.isDistinguished_of_isFiniteFace v hb hv
-      (TauCeti.PowerSeries.isRestricted_polynomial f) (f.newtonPolygon_coe v ▸ hface)
+    PowerSeries.isDistinguished_of_isFiniteFace v hb hv (f.newtonPolygon_coe v ▸ hface)
   rw [newtonSlopes_def, newtonSlopes_def, Multiset.filter_map, ← Finset.filter_val]
   have hfin_eq : (P.finite_finiteEdges_newtonPolygon v).toFinset =
       (f.finite_finiteEdges_newtonPolygon v).toFinset.filter

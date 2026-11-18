@@ -136,8 +136,9 @@ theorem isRestricted_of_isFirstBreak_newtonPolygon {m : ℝ} {j : ℕ}
 
 /-- **A first break gives distinguishedness.** If the Newton polygon of `f` has its first break at
 `j` with slope `m`, then at the radius `b ^ m` the series `f` is distinguished of degree `j`, and
-its order of vanishing `a` is its lowest dominant degree. No restrictedness is needed: the
-supporting line of slope `m` already bounds the weighted coefficients at `b ^ m`. -/
+its order of vanishing `a` is its lowest dominant degree. No restrictedness hypothesis is needed:
+a first break makes the weighted coefficients bounded at a strictly larger radius, so `f` is
+restricted at `b ^ m` (`isRestricted_of_isFirstBreak_newtonPolygon`). -/
 theorem isLowestDominant_and_isDistinguished_of_isFirstBreak_newtonPolygon {a : ℕ}
     (ha : f.order = a) {m : ℝ} {j : ℕ} (hbr : IsFirstBreak (f.newtonPolygon v) m j) :
     TauCeti.PowerSeries.IsLowestDominant (b ^ m) a f ∧
@@ -171,8 +172,7 @@ theorem forall_mem_newtonSlopes_eq_of_isFirstBreak [IsUltrametricDist K] {m : �
   have ha : f.order = f.order.toNat := (ENat.natCast_toNat (order_eq_top.not.mpr hf0)).symm
   obtain ⟨-, hface⟩ := (isFirstBreak_newtonPolygon_iff_isFiniteFace ha
     (v.ne_top_iff.mpr (order_eq_nat.mp ha).1)).mp hbr
-  exact forall_mem_newtonSlopes_eq_of_isFiniteFace_of_order_eq v hb hv
-    (isRestricted_of_isFirstBreak_newtonPolygon v hb hv hbr) hface ha hu hPdeg hmul
+  exact forall_mem_newtonSlopes_eq_of_isFiniteFace_of_order_eq v hb hv hface ha hu hPdeg hmul
 
 end NormedDivisionRing
 
@@ -193,10 +193,10 @@ theorem existsUnique_isUnit_isMonicOfDegree_mul_eq_of_isFiniteFace {σ : ℝ} {l
     (hface : IsFiniteFace (f.newtonPolygon v) σ l j) :
     ∃! p : IsRestricted.subring (R := K) (b ^ σ) × Polynomial K,
       IsUnit p.1 ∧ p.2.IsMonicOfDegree j ∧ (p.1 : K⟦X⟧) * (p.2 : K⟦X⟧) = f := by
-  have hfr := isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface
-  have hfd := isDistinguished_of_isFiniteFace v hb hv hfr hface
+  have hfd := isDistinguished_of_isFiniteFace v hb hv hface
   exact hfd.existsUnique_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit
-    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hfr
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)
+    (isRestricted_of_isFiniteFace_newtonPolygon f v hb hv hface)
 
 /-- **First-segment factorisation.** Over a complete ultrametric normed field, suppose the Newton
 polygon of `f` has its first break at `j` with slope `m`. Then `f` is in exactly one way a unit of
