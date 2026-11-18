@@ -45,19 +45,14 @@ theorem quadratic_equation_of_weber {α β γ s : ℂ} (hα : α ≠ 0) (hs : s 
     exact hα (by linear_combination hs / 4)
   set t := β / (2 * α) with ht
   clear_value t
-  have hin (w : ℂ) : HasDerivAt (fun z : ℂ => s * (z + t)) s w := by
-    simpa using ((hasDerivAt_id w).add_const t).const_mul s
-  have d1 : deriv (fun z => f (s * (z + t))) = fun z => deriv f (s * (z + t)) * s := by
-    funext w
-    exact ((hf _).hasDerivAt.comp w (hin w)).deriv
-  have d2 : deriv (fun z => deriv f (s * (z + t)) * s) z =
-      deriv (deriv f) (s * (z + t)) * s * s :=
-    ((hf.deriv _).hasDerivAt.comp z (hin z)).mul_const s |>.deriv
-  have h := hode (s * (z + t))
-  simp only [Function.iterate_succ, Function.iterate_zero, Function.comp_apply, id_eq] at h ⊢
-  rw [d1, d2, h]
+  -- Chain rule for the affine substitution, via Mathlib's iterated-derivative API.
+  have d2 : deriv^[2] (fun z => f (s * (z + t))) z = s ^ 2 * deriv^[2] f (s * (z + t)) := by
+    rw [← iteratedDeriv_eq_iterate, ← iteratedDeriv_eq_iterate,
+      iteratedDeriv_comp_add_const 2 (fun x => f (s * x)) t,
+      iteratedDeriv_comp_const_mul hf.contDiff s]
+  rw [d2, hode]
   have hβ : β = 2 * α * t := by rw [ht]; field_simp
-  have hq : (β ^ 2 / (4 * α) - γ) / s ^ 2 * s * s = α * t ^ 2 - γ := by
+  have hq : s ^ 2 * ((β ^ 2 / (4 * α) - γ) / s ^ 2) = α * t ^ 2 - γ := by
     rw [hβ]
     field_simp
     ring
