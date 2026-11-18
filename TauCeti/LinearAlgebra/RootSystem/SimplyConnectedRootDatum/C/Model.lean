@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Data.Fin.Basic
 public import Mathlib.LinearAlgebra.Matrix.Dual
-public import Mathlib.LinearAlgebra.Reflection
 
 /-!
 # The classical model of type `Cₙ` in the pinned coordinates
@@ -48,9 +47,12 @@ A pair `(p, q)` of signed basis vectors names a root only when `q ≠ signedNeg 
 diagonal `q = -p` the sum `p + q` is zero, which is no root, and there is no reflection in it, so
 outside that hypothesis `TauCeti.DynkinType.TypeC.pairRoot`,
 `TauCeti.DynkinType.TypeC.pairCoroot` and `TauCeti.DynkinType.TypeC.signedReflection` are total
-functions carrying auxiliary data with no root-theoretic meaning. Every substantive lemma below
-accordingly assumes `q ≠ signedNeg p`, and the root indices of the datum are built so that the
-hypothesis always holds.
+functions carrying auxiliary data with no root-theoretic meaning. On the diagonal
+`pairRoot p (signedNeg p) = 0`, `pairCoroot p (signedNeg p) = 0`, and
+`signedReflection p (signedNeg p)` is the identity, so the reflection lemmas and the bound on the
+pairings hold for every pair, trivially on the diagonal.
+The other pairing lemmas below assume `q ≠ signedNeg p`, and the root indices of the datum are
+built so that the hypothesis always holds.
 
 ## Main definitions
 
@@ -306,7 +308,7 @@ lemma pairRoot_def (x y : Signed n) : pairRoot x y = signedWeight x + signedWeig
 roots `p ≠ q`, and the halved `p` for the long roots `p = q`.
 
 This is the coroot of a root only under `y ≠ signedNeg x`; on the excluded diagonal `y = -x` there
-is no root `x + y` and the value here is auxiliary data. -/
+is no root `x + y`, and the value is `0` (`TauCeti.DynkinType.TypeC.pairCoroot_self_signedNeg`). -/
 def pairCoroot (x y : Signed n) : Fin n → ℤ :=
   if x = y then signedCoweight x else signedCoweight x + signedCoweight y
 
@@ -320,10 +322,27 @@ def pairCoroot (x y : Signed n) : Fin n → ℤ :=
 lemma pairRoot_comm (x y : Signed n) : pairRoot x y = pairRoot y x :=
   add_comm _ _
 
+/-- On the diagonal `q = signedNeg p` the vector `p + q` is zero. -/
+@[simp] lemma pairRoot_self_signedNeg (p : Signed n) : pairRoot p (signedNeg p) = 0 := by
+  rw [pairRoot_def, signedWeight_signedNeg, add_neg_cancel]
+
+/-- The diagonal `q = signedNeg p` with the arguments swapped. -/
+@[simp] lemma pairRoot_signedNeg_self (p : Signed n) : pairRoot (signedNeg p) p = 0 := by
+  rw [pairRoot_comm, pairRoot_self_signedNeg]
+
 lemma pairCoroot_comm (x y : Signed n) : pairCoroot x y = pairCoroot y x := by
   rcases eq_or_ne x y with rfl | h
   · rfl
   · rw [pairCoroot, pairCoroot, ite_eq_right h, ite_eq_right h.symm, add_comm]
+
+/-- On the diagonal `q = signedNeg p` the coroot vector is zero, like the root vector
+(`TauCeti.DynkinType.TypeC.pairRoot_self_signedNeg`). -/
+@[simp] lemma pairCoroot_self_signedNeg (p : Signed n) : pairCoroot p (signedNeg p) = 0 := by
+  rw [pairCoroot_of_ne (signedNeg_ne p).symm, signedCoweight_signedNeg, add_neg_cancel]
+
+/-- The diagonal `q = signedNeg p` with the arguments swapped. -/
+@[simp] lemma pairCoroot_signedNeg_self (p : Signed n) : pairCoroot (signedNeg p) p = 0 := by
+  rw [pairCoroot_comm, pairCoroot_self_signedNeg]
 
 lemma pairRoot_dotProduct_pairCoroot_self {p q : Signed n} (h : q ≠ signedNeg p) :
     pairRoot p q ⬝ᵥ pairCoroot p q = 2 := by
@@ -338,9 +357,11 @@ lemma pairRoot_dotProduct_pairCoroot_self {p q : Signed n} (h : q ≠ signedNeg 
 
 /-- Cartan integers between roots in the classical type `C` model have absolute value at most
 two. -/
-lemma abs_pairRoot_dotProduct_pairCoroot_le_two {x y p q : Signed n}
-    (hpq : q ≠ signedNeg p) :
+lemma abs_pairRoot_dotProduct_pairCoroot_le_two {x y p q : Signed n} :
     |pairRoot x y ⬝ᵥ pairCoroot p q| ≤ 2 := by
+  rcases eq_or_ne q (signedNeg p) with rfl | hpq
+  · rw [pairCoroot_self_signedNeg, dotProduct_zero, abs_zero]
+    norm_num
   have atom_le_one (z : Signed n) : |signedWeight z ⬝ᵥ pairCoroot p q| ≤ 1 := by
     rcases eq_or_ne p q with rfl | hpq_ne
     · rw [pairCoroot_self, signedWeight_dotProduct_signedCoweight, abs_le]
@@ -424,9 +445,10 @@ lemma one_le_pairRoot_dotProduct_iff {p q : Signed n} (h : q ≠ signedNeg p)
 `-p` with `q`, and fixes everything else. On a long root `p = q` the two exchanges coincide and this
 is the sign change at the index of `p`.
 
-This is the reflection in a root only under `q ≠ signedNeg p`, the hypothesis of every lemma below;
-on the excluded diagonal `q = -p` there is no root `p + q` to reflect in and the value here is
-auxiliary data. -/
+This is the reflection in a root only under `q ≠ signedNeg p`. On the diagonal `q = -p` there is
+no root `p + q` to reflect in; there the map is the identity
+(`TauCeti.DynkinType.TypeC.signedReflection_self_signedNeg`) and `p + q = 0`, so the reflection
+formulas below hold trivially. -/
 def signedReflection (p q z : Signed n) : Signed n :=
   if z = p then signedNeg q
   else if z = signedNeg q then p
@@ -438,12 +460,15 @@ def signedReflection (p q z : Signed n) : Signed n :=
     signedReflection p q p = signedNeg q := by
   rw [signedReflection, ite_eq_left rfl]
 
-@[simp] lemma signedReflection_signedNeg_right {p q : Signed n} (h : q ≠ signedNeg p) :
+@[simp] lemma signedReflection_signedNeg_right (p q : Signed n) :
     signedReflection p q (signedNeg q) = p := by
-  rw [signedReflection, ite_eq_right fun hc => h (by rw [← hc, signedNeg_signedNeg]),
-    ite_eq_left rfl]
+  rw [signedReflection]
+  by_cases hc : signedNeg q = p
+  · rw [ite_eq_left hc]
+    exact hc
+  · rw [ite_eq_right hc, ite_eq_left rfl]
 
-@[simp] lemma signedReflection_signedNeg_left {p q : Signed n} (h : q ≠ signedNeg p) :
+@[simp] lemma signedReflection_signedNeg_left (p q : Signed n) :
     signedReflection p q (signedNeg p) = q := by
   rcases eq_or_ne p q with rfl | hne
   · rw [signedReflection, ite_eq_right (signedNeg_ne p), ite_eq_left rfl]
@@ -451,16 +476,34 @@ def signedReflection (p q z : Signed n) : Signed n :=
       ite_eq_right fun hc => hne (by simpa only [signedNeg_signedNeg] using congrArg signedNeg hc),
       ite_eq_left rfl]
 
-@[simp] lemma signedReflection_right {p q : Signed n} (h : q ≠ signedNeg p) :
+@[simp] lemma signedReflection_right (p q : Signed n) :
     signedReflection p q q = signedNeg p := by
   rcases eq_or_ne p q with rfl | hne
   · rw [signedReflection, ite_eq_left rfl]
-  · rw [signedReflection, ite_eq_right hne.symm, ite_eq_right (Ne.symm (signedNeg_ne q)),
-      ite_eq_right h, ite_eq_left rfl]
+  · rw [signedReflection, ite_eq_right hne.symm, ite_eq_right (Ne.symm (signedNeg_ne q))]
+    by_cases h : q = signedNeg p
+    · rw [ite_eq_left h]
+      exact h
+    · rw [ite_eq_right h, ite_eq_left rfl]
 
 @[simp] lemma signedReflection_of_ne {p q z : Signed n} (h1 : z ≠ p) (h2 : z ≠ q)
     (h3 : z ≠ signedNeg p) (h4 : z ≠ signedNeg q) : signedReflection p q z = z := by
   rw [signedReflection, ite_eq_right h1, ite_eq_right h4, ite_eq_right h3, ite_eq_right h2]
+
+/-- On the diagonal `q = signedNeg p`, where `p + q` is not a root, `signedReflection p q` is the
+identity. -/
+@[simp] lemma signedReflection_self_signedNeg (p z : Signed n) :
+    signedReflection p (signedNeg p) z = z := by
+  by_cases h1 : z = p
+  · rw [h1, signedReflection_left, signedNeg_signedNeg]
+  by_cases h3 : z = signedNeg p
+  · rw [h3, signedReflection_signedNeg_left]
+  exact signedReflection_of_ne h1 h3 h3 (by rwa [signedNeg_signedNeg])
+
+/-- The diagonal `q = signedNeg p` with the arguments swapped. -/
+@[simp] lemma signedReflection_signedNeg_self (p z : Signed n) :
+    signedReflection (signedNeg p) p z = z := by
+  simpa only [signedNeg_signedNeg] using signedReflection_self_signedNeg (signedNeg p) z
 
 /-! ### The pairings of a root and its coroot against a signed basis vector -/
 
@@ -496,22 +539,23 @@ lemma pairRoot_dotProduct_of_ne {p q z : Signed n} (h1 : z ≠ p) (h2 : z ≠ q)
 /-- **The reflection in a root acts on signed basis vectors.** This is the whole content of the
 reflection axiom for the roots, and it is uniform in the shapes of both roots involved: the same
 five-case calculation covers the short and the long reflecting root. -/
-lemma signedWeight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
-    (z : Signed n) :
+lemma signedWeight_signedReflection (p q z : Signed n) :
     signedWeight (signedReflection p q z) =
       signedWeight z - (signedWeight z ⬝ᵥ pairCoroot p q) • pairRoot p q := by
+  rcases eq_or_ne q (signedNeg p) with rfl | h
+  · rw [signedReflection_self_signedNeg, pairRoot_self_signedNeg, smul_zero, sub_zero]
   rcases eq_or_ne z p with rfl | h1
   · rw [signedReflection_left, dotProduct_pairCoroot_left h, signedWeight_signedNeg, pairRoot]
     module
   · rcases eq_or_ne z q with rfl | h2
-    · rw [signedReflection_right h, dotProduct_pairCoroot_right h, signedWeight_signedNeg, pairRoot]
+    · rw [signedReflection_right, dotProduct_pairCoroot_right h, signedWeight_signedNeg, pairRoot]
       module
     · rcases eq_or_ne z (signedNeg p) with rfl | h3
-      · rw [signedReflection_signedNeg_left h, signedWeight_signedNeg, neg_dotProduct,
+      · rw [signedReflection_signedNeg_left, signedWeight_signedNeg, neg_dotProduct,
           dotProduct_pairCoroot_left h, pairRoot]
         module
       · rcases eq_or_ne z (signedNeg q) with rfl | h4
-        · rw [signedReflection_signedNeg_right h, signedWeight_signedNeg, neg_dotProduct,
+        · rw [signedReflection_signedNeg_right, signedWeight_signedNeg, neg_dotProduct,
             dotProduct_pairCoroot_right h, pairRoot]
           module
         · rw [signedReflection_of_ne h1 h2 h3 h4, dotProduct_pairCoroot_of_ne h1 h2 h3 h4]
@@ -519,10 +563,12 @@ lemma signedWeight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
 
 /-- The coroot half of `TauCeti.DynkinType.TypeC.signedWeight_signedReflection`. The long
 reflecting root is a genuine second case here, its coroot being the halved one. -/
-lemma signedCoweight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
-    (z : Signed n) :
+lemma signedCoweight_signedReflection (p q z : Signed n) :
     signedCoweight (signedReflection p q z) =
       signedCoweight z - (pairRoot p q ⬝ᵥ signedCoweight z) • pairCoroot p q := by
+  rcases eq_or_ne q (signedNeg p) with rfl | h
+  · rw [signedReflection_self_signedNeg, pairRoot_self_signedNeg, zero_dotProduct, zero_smul,
+      sub_zero]
   rcases eq_or_ne p q with rfl | hne
   · -- the long reflecting root `2 p`, with coroot `p`
     have hcoeff : pairRoot p p ⬝ᵥ signedCoweight p = 2 := by
@@ -532,7 +578,7 @@ lemma signedCoweight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
     · rw [signedReflection_left, hcoeff, signedCoweight_signedNeg, pairCoroot, ite_eq_left rfl]
       module
     · rcases eq_or_ne z (signedNeg p) with rfl | h3
-      · rw [signedReflection_signedNeg_left h, signedCoweight_signedNeg, dotProduct_neg, hcoeff,
+      · rw [signedReflection_signedNeg_left, signedCoweight_signedNeg, dotProduct_neg, hcoeff,
           pairCoroot, ite_eq_left rfl]
         module
       · rw [signedReflection_of_ne h1 h1 h3 h3, pairRoot_dotProduct_of_ne h1 h1 h3 h3]
@@ -548,45 +594,52 @@ lemma signedCoweight_signedReflection {p q : Signed n} (h : q ≠ signedNeg p)
     · rw [signedReflection_left, hleft, signedCoweight_signedNeg, pairCoroot, ite_eq_right hne]
       module
     · rcases eq_or_ne z q with rfl | h2
-      · rw [signedReflection_right h, hright, signedCoweight_signedNeg, pairCoroot,
+      · rw [signedReflection_right, hright, signedCoweight_signedNeg, pairCoroot,
           ite_eq_right hne]
         module
       · rcases eq_or_ne z (signedNeg p) with rfl | h3
-        · rw [signedReflection_signedNeg_left h, signedCoweight_signedNeg, dotProduct_neg, hleft,
+        · rw [signedReflection_signedNeg_left, signedCoweight_signedNeg, dotProduct_neg, hleft,
             pairCoroot, ite_eq_right hne]
           module
         · rcases eq_or_ne z (signedNeg q) with rfl | h4
-          · rw [signedReflection_signedNeg_right h, signedCoweight_signedNeg, dotProduct_neg,
+          · rw [signedReflection_signedNeg_right, signedCoweight_signedNeg, dotProduct_neg,
               hright, pairCoroot, ite_eq_right hne]
             module
           · rw [signedReflection_of_ne h1 h2 h3 h4, pairRoot_dotProduct_of_ne h1 h2 h3 h4]
             module
 
-lemma signedReflection_injective {p q : Signed n} (h : q ≠ signedNeg p) :
-    Injective (signedReflection p q) := by
-  intro z w hzw
-  -- In these coordinates `Module.preReflection` in the root `p + q` is definitionally the map
-  -- `v ↦ v - (v ⬝ᵥ pairCoroot p q) • pairRoot p q`; Mathlib provides no named bridge, so the
-  -- `change` below is what turns the goal left by its injectivity into the reflection formula.
-  refine signedWeight_injective ((Module.involutive_preReflection (x := pairRoot p q)
-    (f := (dotProductBilin ℤ ℤ).flip (pairCoroot p q))
-    (pairRoot_dotProduct_pairCoroot_self h)).injective ?_)
-  change signedWeight z - (signedWeight z ⬝ᵥ pairCoroot p q) • pairRoot p q
-      = signedWeight w - (signedWeight w ⬝ᵥ pairCoroot p q) • pairRoot p q
-  rw [← signedWeight_signedReflection h z, ← signedWeight_signedReflection h w, hzw]
+/-- Applying `TauCeti.DynkinType.TypeC.signedReflection p q` twice is the identity, for all `p`
+and `q`. -/
+@[simp] lemma signedReflection_signedReflection (p q z : Signed n) :
+    signedReflection p q (signedReflection p q z) = z := by
+  by_cases h1 : z = p
+  · rw [h1, signedReflection_left, signedReflection_signedNeg_right]
+  by_cases h2 : z = q
+  · rw [h2, signedReflection_right, signedReflection_signedNeg_left]
+  by_cases h3 : z = signedNeg p
+  · rw [h3, signedReflection_signedNeg_left, signedReflection_right]
+  by_cases h4 : z = signedNeg q
+  · rw [h4, signedReflection_signedNeg_right, signedReflection_left]
+  rw [signedReflection_of_ne h1 h2 h3 h4, signedReflection_of_ne h1 h2 h3 h4]
 
-lemma signedReflection_signedNeg {p q : Signed n} (h : q ≠ signedNeg p)
-    (z : Signed n) :
+/-- `TauCeti.DynkinType.TypeC.signedReflection p q` is an involution, for all `p` and `q`. -/
+lemma signedReflection_involutive (p q : Signed n) : Involutive (signedReflection p q) :=
+  signedReflection_signedReflection p q
+
+lemma signedReflection_injective (p q : Signed n) : Injective (signedReflection p q) :=
+  (signedReflection_involutive p q).injective
+
+@[simp] lemma signedReflection_signedNeg (p q z : Signed n) :
     signedReflection p q (signedNeg z) = signedNeg (signedReflection p q z) := by
   refine signedWeight_injective ?_
-  rw [signedWeight_signedReflection h (signedNeg z),
-    signedWeight_signedNeg (signedReflection p q z), signedWeight_signedReflection h z,
+  rw [signedWeight_signedReflection p q (signedNeg z),
+    signedWeight_signedNeg (signedReflection p q z), signedWeight_signedReflection p q z,
     signedWeight_signedNeg z, neg_dotProduct, neg_smul]
   module
 
 /-- Reflection in the root `p + q` transports the root of a pair to the root of the reflected
 pair. -/
-lemma pairRoot_reflection {p q : Signed n} (h : q ≠ signedNeg p) (x y : Signed n) :
+lemma pairRoot_reflection (p q x y : Signed n) :
     pairRoot x y - (pairRoot x y ⬝ᵥ pairCoroot p q) • pairRoot p q
       = pairRoot (signedReflection p q x) (signedReflection p q y) := by
   -- The targeted reflection lemmas are stated for the two summands, so expose just the outer
@@ -594,18 +647,19 @@ lemma pairRoot_reflection {p q : Signed n} (h : q ≠ signedNeg p) (x y : Signed
   change signedWeight x + signedWeight y -
       ((signedWeight x + signedWeight y) ⬝ᵥ pairCoroot p q) • pairRoot p q
     = signedWeight (signedReflection p q x) + signedWeight (signedReflection p q y)
-  rw [signedWeight_signedReflection h x, signedWeight_signedReflection h y, add_dotProduct]
+  rw [signedWeight_signedReflection p q x, signedWeight_signedReflection p q y, add_dotProduct]
   module
 
 /-- The coroot half of `TauCeti.DynkinType.TypeC.pairRoot_reflection`. -/
-lemma pairCoroot_reflection {p q : Signed n} (h : q ≠ signedNeg p) (x y : Signed n) :
+lemma pairCoroot_reflection (p q x y : Signed n) :
     pairCoroot x y - (pairRoot p q ⬝ᵥ pairCoroot x y) • pairCoroot p q
       = pairCoroot (signedReflection p q x) (signedReflection p q y) := by
   by_cases hxy : x = y
   · subst hxy
-    rw [pairCoroot_self, pairCoroot_self, signedCoweight_signedReflection h x]
-  · rw [pairCoroot_of_ne hxy, pairCoroot_of_ne fun hc => hxy (signedReflection_injective h hc),
-      signedCoweight_signedReflection h x, signedCoweight_signedReflection h y, dotProduct_add]
+    rw [pairCoroot_self, pairCoroot_self, signedCoweight_signedReflection p q x]
+  · rw [pairCoroot_of_ne hxy, pairCoroot_of_ne fun hc => hxy (signedReflection_injective p q hc),
+      signedCoweight_signedReflection p q x, signedCoweight_signedReflection p q y,
+      dotProduct_add]
     module
 
 end TypeC

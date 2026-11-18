@@ -112,14 +112,10 @@ private theorem eventually_closedBall (h : IsNondegenerateCriticalPoint f x) :
   filter_upwards [Ioo_mem_nhdsGT hε] with r hr
   have hsub (y : E) (hy : y ∈ closedBall x r) : y ∈ ball x ε :=
     mem_ball.2 ((mem_closedBall.1 hy).trans_lt hr.2)
-  have hgradfun : (∇ f : E → E) = fun y ↦ (InnerProductSpace.toDual ℝ E).symm (fderiv ℝ f y) := by
-    funext y
-    exact (InnerProductSpace.toDual ℝ E).eq_symm_apply.2 toDual_gradient
   refine ⟨fun y hy ↦ (hball y (hsub y hy)).1.differentiableAt (by simp), fun y hy ↦ ?_,
     fun y hy hy0 ↦ by_contra fun hyx ↦ (hball y (hsub y hy)).2 hyx ?_⟩
-  · rw [hgradfun]
-    exact ((InnerProductSpace.toDual ℝ E).symm.continuous.continuousAt.comp
-      ((hball y (hsub y hy)).1.continuousAt_fderiv two_ne_zero)).continuousWithinAt
+  · exact ((hball y (hsub y hy)).1.gradient_right (m := 0) (by simp)).continuousAt
+      |>.continuousWithinAt
   · rwa [← gradient_eq_zero_iff]
 
 /-- **Small balls isolate a nondegenerate critical point in forward time.** For every sufficiently
