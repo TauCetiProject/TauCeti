@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -15,6 +18,8 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 The first and second derivatives of `t ↦ cos (c t)` are `-c sin (c t)` and `-c² cos (c t)`
 (`TauCeti.deriv_cos_mul`, `TauCeti.deriv_deriv_cos_mul`).
+Where `cos t ≠ 0`, the first and second derivatives of `log (cos t)` are `-tan t` and
+`-(1 / cos t ^ 2)` (`TauCeti.deriv_log_cos`, `TauCeti.iteratedDeriv_two_log_cos`).
 
 For every real exponent `p`, the map `(k, θ) ↦ (1 - k² sin² θ) ^ p` is smooth on the open set
 `{(k, θ) | k ^ 2 < 1}`, where its base is positive, and its partial derivative in `k` there is
@@ -25,6 +30,7 @@ integrands of Legendre's elliptic integrals of the first and second kind.
 public section
 
 open Real
+open scoped Topology
 
 namespace TauCeti
 
@@ -57,5 +63,21 @@ theorem hasDerivAt_one_sub_sq_mul_sin_sq_rpow {k : ℝ} (hk : k ^ 2 < 1) (p θ :
   have h := (((hasDerivAt_pow 2 k).mul_const (sin θ ^ 2)).const_sub 1).rpow_const
     (p := p) (Or.inl (one_sub_mul_sin_sq_pos hk θ).ne')
   exact h.congr_deriv (by push_cast; ring)
+
+/-- The derivative of `log (cos t)` is `-tan t` wherever the cosine is nonzero. -/
+theorem deriv_log_cos {t : ℝ} (hc : cos t ≠ 0) :
+    deriv (fun s : ℝ ↦ log (cos s)) t = -tan t := by
+  simpa [Real.tan_eq_sin_div_cos, neg_div] using ((Real.hasDerivAt_cos t).log hc).deriv
+
+/-- The second derivative of `log (cos t)` is `-(1 / cos t ^ 2)` wherever the cosine is nonzero. -/
+theorem iteratedDeriv_two_log_cos {t : ℝ} (hc : cos t ≠ 0) :
+    iteratedDeriv 2 (fun s : ℝ ↦ log (cos s)) t = -(1 / cos t ^ 2) := by
+  rw [iteratedDeriv_succ, iteratedDeriv_succ, iteratedDeriv_zero]
+  have hne : ∀ᶠ s in 𝓝 t, cos s ≠ 0 :=
+    Real.continuous_cos.continuousAt.eventually_ne hc
+  have heq : deriv (fun s : ℝ ↦ log (cos s)) =ᶠ[𝓝 t] fun s ↦ -tan s :=
+    hne.mono fun s hs ↦ deriv_log_cos hs
+  rw [heq.deriv_eq]
+  exact (Real.hasDerivAt_tan hc).neg.deriv
 
 end TauCeti
