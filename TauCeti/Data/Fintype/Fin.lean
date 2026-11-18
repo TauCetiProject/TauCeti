@@ -19,7 +19,7 @@ analogue of `Fin.prod_univ_eq_prod_range`, and lets a statement about a family i
 be compared with one about an initial segment of `ℕ` without passing through lists.
 
 It also records that the cardinality of a nonempty `Fin n`, cast into a group with zero, is a unit
-as soon as `n` is invertible whenever it is nonzero (`isUnit_card_fin`).
+as soon as `n` is invertible whenever it is nonzero (`TauCeti.isUnit_card_fin`).
 -/
 
 public section
@@ -35,6 +35,8 @@ theorem univ_val_map_eq_map_range {α : Type*} (g : ℕ → α) (n : ℕ) :
 
 end Fin
 
+namespace TauCeti
+
 /-- If the rank is invertible whenever it is nonzero, then the cardinality of a nonempty `Fin n`
 is a unit. -/
 theorem isUnit_card_fin {K : Type*} [GroupWithZero K] [NatCast K] {n : ℕ}
@@ -42,3 +44,5 @@ theorem isUnit_card_fin {K : Type*} [GroupWithZero K] [NatCast K] {n : ℕ}
   fun h => by
   rw [Fintype.card_fin, isUnit_iff_ne_zero]
   exact hn (Fin.pos_iff_nonempty.mpr h).ne'
+
+end TauCeti
