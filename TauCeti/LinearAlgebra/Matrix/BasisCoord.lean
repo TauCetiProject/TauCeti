@@ -69,6 +69,12 @@ theorem basisCoord_add (A B : Matrix m n L) (b : Basis ι K L) :
   ext
   simp
 
+@[simp, grind =]
+theorem basisCoord_smul (c : K) (A : Matrix m n L) (b : Basis ι K L) :
+    (c • A).basisCoord b = c • A.basisCoord b := by
+  ext
+  simp
+
 /-- A matrix is determined by its coordinates in a basis. -/
 theorem basisCoord_injective (b : Basis ι K L) :
     Function.Injective fun A : Matrix m n L ↦ A.basisCoord b := by
@@ -93,12 +99,6 @@ end Module
 section CommSemiring
 
 variable [CommSemiring K] [AddCommMonoid L] [Module K L]
-
-@[simp, grind =]
-theorem basisCoord_smul (c : K) (A : Matrix m n L) (b : Basis ι K L) :
-    (c • A).basisCoord b = c • A.basisCoord b := by
-  ext
-  simp
 
 /-- With a finite second basis, each coordinate row for the first basis is a `K`-linear
 combination of the coordinate rows for the second basis. -/
