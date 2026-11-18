@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex.Quotient
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Normal.Rescaling
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 import TauCeti.LinearAlgebra.Complex.Module
-import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
 # Projecting pseudoholomorphic curves to the base of normal coordinates
@@ -34,14 +33,15 @@ consequences for a pseudoholomorphic map `u` into `E × N` and its base componen
   solves the target Beltrami equation `\bar∂f = -μ conj (∂f)`, where `μ` is the coefficient of
   `J_E(u)`. Its modulus is `|b - i| / |b + i|` for `b = J_E(u) 1`, so
   `|\bar∂f| |b + i| = |b - i| |∂f|`
-  (`TauCeti.norm_conjWirtingerDeriv_fst_mul_norm_add_I_eq`), and the projection is a
-  quasiregular map whose distortion is controlled by the distance of `b` from `i`
+  (`TauCeti.norm_conjWirtingerDeriv_fst_mul_norm_add_I_eq`), and the projection satisfies the
+  pointwise distortion bound `|\bar∂f| ≤ |b - i| |∂f|`
   (`TauCeti.norm_conjWirtingerDeriv_fst_le`). Its Jacobian `|∂f|² - |\bar∂f|²` is at least
   `(1 - |b - i|²) |∂f|²` (`TauCeti.mul_normSq_le_stdComplexSymplecticForm_fderiv_fst`).
 * **Small distortion after normal dilation.** The base structure of the normal dilation
   `δ_a^* J` at `(z, W)` is that of `J` at `(z, a W)`
-  (`TauCeti.fst_comp_normalDilation_comp_inl`), so it converges to the structure `J_E(z, 0)` of the
-  curve uniformly on compact sets as `a → 0`
+  (`TauCeti.fst_comp_normalDilation_comp_inl`, in
+  `TauCeti.Geometry.Symplectic.JHolomorphic.Normal.Rescaling`), so it converges to the structure
+  `J_E(z, 0)` of the curve uniformly on compact sets as `a → 0`
   (`TauCeti.tendstoUniformlyOn_fst_comp_normalDilation_comp_inl`); continuity of `J` along the
   zero section suffices. When the base coordinate is holomorphic along the curve,
   `J_E(z, 0) 1 = i`, the projections of all `δ_a^* J`-holomorphic curves through a fixed compact set
@@ -104,36 +104,6 @@ theorem IsJHolomorphicAt.apply_fderiv_fst_pos {j : U → AlmostComplexStructure 
   rw [h]
   exact hω _ (hf ▸ hv)
 
-/-- The base block of the normal dilation of `J` at `p` is the base block of `J` at the dilated
-point `(p.1, a p.2)`: the dilation only rescales the normal directions. -/
-theorem fst_comp_normalDilation_comp_inl (J : E × N → E × N →L[ℝ] E × N) (a : ℝ) (p : E × N) :
-    ContinuousLinearMap.fst ℝ E N ∘L normalDilation J a p ∘L ContinuousLinearMap.inl ℝ E N =
-      ContinuousLinearMap.fst ℝ E N ∘L J (p.1, a • p.2) ∘L ContinuousLinearMap.inl ℝ E N := by
-  ext v
-  simp
-
-/-- **The base structures of the normal dilations converge to that of the curve.** If `J` is
-continuous along the zero section over a compact set `K`, the base blocks of `δ_a^* J` converge to
-the base block of `J` on the zero section, uniformly on `K`, as `a → 0`. -/
-theorem tendstoUniformlyOn_fst_comp_normalDilation_comp_inl {J : E × N → E × N →L[ℝ] E × N}
-    {K : Set (E × N)} (hK : IsCompact K) (hJ : ∀ p ∈ K, ContinuousAt J (p.1, 0)) :
-    TendstoUniformlyOn
-      (fun a p ↦ ContinuousLinearMap.fst ℝ E N ∘L normalDilation J a p ∘L
-        ContinuousLinearMap.inl ℝ E N)
-      (fun p ↦ ContinuousLinearMap.fst ℝ E N ∘L J (p.1, 0) ∘L ContinuousLinearMap.inl ℝ E N)
-      (𝓝 0) K := by
-  simp only [fst_comp_normalDilation_comp_inl]
-  have h := hK.tendstoUniformlyOn_of_continuousAt (q := (0 : ℝ))
-    (Φ := fun a p ↦ ContinuousLinearMap.fst ℝ E N ∘L J (p.1, a • p.2) ∘L
-      ContinuousLinearMap.inl ℝ E N) fun p hp ↦ by
-    have hd : ContinuousAt (fun q : ℝ × (E × N) ↦ (q.2.1, q.1 • q.2.2)) (0, p) :=
-      (continuous_snd.fst.prodMk (continuous_fst.smul continuous_snd.snd)).continuousAt
-    have hJd : ContinuousAt (fun q : ℝ × (E × N) ↦ J (q.2.1, q.1 • q.2.2)) (0, p) := by
-      refine ContinuousAt.comp (g := J) ?_ hd
-      simpa using hJ p hp
-    exact continuousAt_const.clm_comp (hJd.clm_comp continuousAt_const)
-  simpa using h
-
 end General
 
 section Plane
@@ -184,39 +154,25 @@ theorem norm_conjWirtingerDeriv_fst_mul_norm_add_I_eq (hu : DifferentiableAt ℝ
     ‖conjWirtingerDeriv (fun y ↦ (u y).1) x 1‖ * ‖(J (u x) (1, 0)).1 + I‖ =
       ‖(J (u x) (1, 0)).1 - I‖ * ‖wirtingerDeriv (fun y ↦ (u y).1) x 1‖ := by
   obtain ⟨Jb, hb, hlin⟩ := exists_isComplexLinear_fderiv_fst hu hCR hsq hV
-  have hJb : stdComplexSymplecticForm.Tames Jb :=
-    (stdComplexSymplecticForm_tames_iff_im_pos Jb).2 (hb ▸ him)
-  have hpos : 0 < ‖Jb 1 + I‖ := by
-    refine norm_pos_iff.2 fun h ↦ ?_
-    have h' := congrArg Complex.im h
-    simp only [Complex.add_im, Complex.I_im, Complex.zero_im, hb] at h'
-    linarith
-  rw [(Beltrami.isComplexLinear_ofComplexModule_iff_conjWirtingerDeriv_eq Jb hJb _ x).1 hlin,
-    norm_mul, norm_neg, Complex.norm_conj, Beltrami.norm_coefficientEquiv, ← hb]
-  field_simp
+  exact hb ▸ Beltrami.norm_conjWirtingerDeriv_mul_norm_apply_one_add_I_eq_of_isComplexLinear Jb
+    ((stdComplexSymplecticForm_tames_iff_im_pos Jb).2 (hb ▸ him)) hlin
 
-/-- **The projection of a pseudoholomorphic curve is quasiregular.** Under the hypotheses of
-`TauCeti.norm_conjWirtingerDeriv_fst_mul_norm_add_I_eq`, the base component `f = u.1` satisfies
-`|\bar∂f| ≤ |b - i| |∂f|` at `x`, where `b = J_E(u x) 1`. -/
+/-- **Pointwise distortion bound for the projection of a pseudoholomorphic curve.** Under the
+hypotheses of `TauCeti.norm_conjWirtingerDeriv_fst_mul_norm_add_I_eq`, the base component
+`f = u.1` satisfies `|\bar∂f| ≤ |b - i| |∂f|` at `x`, where `b = J_E(u x) 1`. -/
 theorem norm_conjWirtingerDeriv_fst_le (hu : DifferentiableAt ℝ u x)
     (hCR : fderiv ℝ u x I = J (u x) (fderiv ℝ u x 1)) (hsq : ∀ w, J (u x) (J (u x) w) = -w)
     (hV : ∀ n, (J (u x) (0, n)).1 = 0) (him : 0 < (J (u x) (1, 0)).1.im) :
     ‖conjWirtingerDeriv (fun y ↦ (u y).1) x 1‖ ≤
       ‖(J (u x) (1, 0)).1 - I‖ * ‖wirtingerDeriv (fun y ↦ (u y).1) x 1‖ := by
-  have h := norm_conjWirtingerDeriv_fst_mul_norm_add_I_eq hu hCR hsq hV him
-  have h1 : 1 ≤ ‖(J (u x) (1, 0)).1 + I‖ := by
-    have h' := Complex.abs_im_le_norm ((J (u x) (1, 0)).1 + I)
-    rw [Complex.add_im, Complex.I_im, abs_of_pos (by linarith)] at h'
-    linarith
-  calc ‖conjWirtingerDeriv (fun y ↦ (u y).1) x 1‖
-      ≤ ‖conjWirtingerDeriv (fun y ↦ (u y).1) x 1‖ * ‖(J (u x) (1, 0)).1 + I‖ :=
-        le_mul_of_one_le_right (norm_nonneg _) h1
-    _ = _ := h
+  obtain ⟨Jb, hb, hlin⟩ := exists_isComplexLinear_fderiv_fst hu hCR hsq hV
+  exact hb ▸ Beltrami.norm_conjWirtingerDeriv_le_of_isComplexLinear Jb
+    ((stdComplexSymplecticForm_tames_iff_im_pos Jb).2 (hb ▸ him)) hlin
 
-/-- **The projection of a pseudoholomorphic curve preserves orientation.** Under the hypotheses of
-`TauCeti.norm_conjWirtingerDeriv_fst_mul_norm_add_I_eq`, the standard area form pulls back under
-the base component `f = u.1` to at least `(1 - |b - i|²) |∂f|²` on the coordinate frame, where
-`b = J_E(u x) 1`; it is nonnegative in any case. -/
+/-- **Lower bound for the Jacobian of the projection of a pseudoholomorphic curve.** Under the
+hypotheses of `TauCeti.norm_conjWirtingerDeriv_fst_mul_norm_add_I_eq`, the standard area form
+pulls back under the base component `f = u.1` to at least `(1 - |b - i|²) |∂f|²` on the coordinate
+frame, where `b = J_E(u x) 1`. -/
 theorem mul_normSq_le_stdComplexSymplecticForm_fderiv_fst (hu : DifferentiableAt ℝ u x)
     (hCR : fderiv ℝ u x I = J (u x) (fderiv ℝ u x 1)) (hsq : ∀ w, J (u x) (J (u x) w) = -w)
     (hV : ∀ n, (J (u x) (0, n)).1 = 0) (him : 0 < (J (u x) (1, 0)).1.im) :
@@ -224,11 +180,9 @@ theorem mul_normSq_le_stdComplexSymplecticForm_fderiv_fst (hu : DifferentiableAt
         Complex.normSq (wirtingerDeriv (fun y ↦ (u y).1) x 1) ≤
       stdComplexSymplecticForm (fderiv ℝ (fun y ↦ (u y).1) x 1)
         (fderiv ℝ (fun y ↦ (u y).1) x I) := by
-  have h := norm_conjWirtingerDeriv_fst_le hu hCR hsq hV him
-  rw [Beltrami.stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I,
-    Complex.normSq_eq_norm_sq, Complex.normSq_eq_norm_sq]
-  have h2 := pow_le_pow_left₀ (norm_nonneg _) h 2
-  nlinarith
+  obtain ⟨Jb, hb, hlin⟩ := exists_isComplexLinear_fderiv_fst hu hCR hsq hV
+  exact hb ▸ Beltrami.mul_normSq_le_stdComplexSymplecticForm_fderiv_of_isComplexLinear Jb
+    ((stdComplexSymplecticForm_tames_iff_im_pos Jb).2 (hb ▸ him)) hlin
 
 /-- **Small distortion of the projections after normal dilation.** Let `J` be continuous along the
 zero section over a compact set `K`, with base structure `i` there: `J_E(z, 0) 1 = i`, the

@@ -41,6 +41,10 @@ form pulls back to `|∂f|² - |\bar∂f|²` on the coordinate frame
 (`TauCeti.Beltrami.stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I`), such a map preserves
 orientation, with area factor `(1 - |μ_J|²) |∂f|²`
 (`TauCeti.Beltrami.stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I_of_isComplexLinear`).
+In terms of `J 1` alone it satisfies `|\bar∂f| ≤ |J 1 - i| |∂f|`
+(`TauCeti.Beltrami.norm_conjWirtingerDeriv_le_of_isComplexLinear`), and its area factor is at
+least `(1 - |J 1 - i|²) |∂f|²`
+(`TauCeti.Beltrami.mul_normSq_le_stdComplexSymplecticForm_fderiv_of_isComplexLinear`).
 
 This is the pointwise normalization used before solving the variable-coefficient Beltrami
 equation. It does not construct isothermal charts or assume a solution of that equation.
@@ -486,16 +490,20 @@ theorem coefficientEquiv_mul_conj_sub_I (J : AlmostComplexStructure ℂ)
   simp only [linearMap_apply, map_one, mul_one] at h
   linear_combination h
 
+/-- The value `J 1` of a tame structure lies in the upper half plane, so it is at distance at
+least one from `-i`. -/
+theorem one_le_norm_apply_one_add_I (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) : 1 ≤ ‖J 1 + I‖ := by
+  have him := (stdComplexSymplecticForm_tames_iff_im_pos J).1 hJ
+  have h := Complex.abs_im_le_norm (J 1 + I)
+  rw [Complex.add_im, Complex.I_im, abs_of_pos (by linarith)] at h
+  linarith
+
 /-- The modulus of the coefficient of a tame structure: `|μ_J| = |J 1 - i| / |J 1 + i|`. -/
 theorem norm_coefficientEquiv (J : AlmostComplexStructure ℂ)
     (hJ : stdComplexSymplecticForm.Tames J) :
     ‖(coefficientEquiv ⟨J, hJ⟩).val‖ = ‖J 1 - I‖ / ‖J 1 + I‖ := by
-  have him := (stdComplexSymplecticForm_tames_iff_im_pos J).1 hJ
-  have hpos : 0 < ‖J 1 + I‖ := by
-    refine norm_pos_iff.2 fun h ↦ ?_
-    have h' := congrArg Complex.im h
-    simp only [Complex.add_im, Complex.I_im, Complex.zero_im] at h'
-    linarith
+  have hpos := zero_lt_one.trans_le (one_le_norm_apply_one_add_I J hJ)
   have hc : ‖conj (J 1) - I‖ = ‖J 1 + I‖ := by
     rw [← Complex.norm_conj (J 1 + I), map_add, Complex.conj_I, sub_eq_add_neg]
   have h := congrArg norm (coefficientEquiv_mul_conj_sub_I J hJ)
@@ -507,13 +515,8 @@ theorem norm_coefficientEquiv (J : AlmostComplexStructure ℂ)
 theorem norm_coefficientEquiv_le (J : AlmostComplexStructure ℂ)
     (hJ : stdComplexSymplecticForm.Tames J) :
     ‖(coefficientEquiv ⟨J, hJ⟩).val‖ ≤ ‖J 1 - I‖ := by
-  have him := (stdComplexSymplecticForm_tames_iff_im_pos J).1 hJ
-  have h1 : 1 ≤ ‖J 1 + I‖ := by
-    have h := Complex.abs_im_le_norm (J 1 + I)
-    rw [Complex.add_im, Complex.I_im, abs_of_pos (by linarith)] at h
-    linarith
   rw [norm_coefficientEquiv]
-  exact div_le_self (norm_nonneg _) h1
+  exact div_le_self (norm_nonneg _) (one_le_norm_apply_one_add_I J hJ)
 
 /-- **Pointwise Beltrami equation on the target.** A real-linear map of the plane is complex linear
 from `i` to a tame structure `J` iff `A 1 + i A i = -μ_J conj (A 1 - i A i)`: composing with the
@@ -576,9 +579,7 @@ theorem stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I (f : ℂ → �
   have hI : fderiv ℝ f z I = I * (wirtingerDeriv f z 1 - conjWirtingerDeriv f z 1) := by
     rw [wirtingerDeriv_apply, conjWirtingerDeriv_apply]
     simp only [smul_eq_mul, mul_one]
-    ring_nf
-    rw [Complex.I_sq]
-    ring
+    linear_combination fderiv ℝ f z I * Complex.I_sq
   rw [h1, hI, stdComplexSymplecticForm_apply, Complex.normSq_apply, Complex.normSq_apply]
   simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.I_re,
     Complex.I_im, Complex.sub_re, Complex.sub_im]
@@ -598,6 +599,44 @@ theorem stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I_of_isComplexLin
     (isComplexLinear_ofComplexModule_iff_conjWirtingerDeriv_eq J hJ f z).1 hf]
   simp only [Complex.normSq_mul, Complex.normSq_neg, Complex.normSq_conj]
   ring
+
+/-- **Distortion of a solution of the target Beltrami equation.** If the differential of `f` at `z`
+is complex linear from `i` to a tame structure `J`, then
+`|\bar∂f(z)| |J 1 + i| = |J 1 - i| |∂f(z)|`. -/
+theorem norm_conjWirtingerDeriv_mul_norm_apply_one_add_I_eq_of_isComplexLinear
+    (J : AlmostComplexStructure ℂ) (hJ : stdComplexSymplecticForm.Tames J) {f : ℂ → ℂ} {z : ℂ}
+    (hf : IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap
+      (fderiv ℝ f z).toLinearMap) :
+    ‖conjWirtingerDeriv f z 1‖ * ‖J 1 + I‖ = ‖J 1 - I‖ * ‖wirtingerDeriv f z 1‖ := by
+  have hpos := zero_lt_one.trans_le (one_le_norm_apply_one_add_I J hJ)
+  rw [(isComplexLinear_ofComplexModule_iff_conjWirtingerDeriv_eq J hJ f z).1 hf, norm_mul,
+    norm_neg, Complex.norm_conj, norm_coefficientEquiv]
+  field_simp
+
+/-- **Pointwise distortion bound for the target Beltrami equation.** If the differential of `f` at
+`z` is complex linear from `i` to a tame structure `J`, then `|\bar∂f(z)| ≤ |J 1 - i| |∂f(z)|`. -/
+theorem norm_conjWirtingerDeriv_le_of_isComplexLinear (J : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) {f : ℂ → ℂ} {z : ℂ}
+    (hf : IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap
+      (fderiv ℝ f z).toLinearMap) :
+    ‖conjWirtingerDeriv f z 1‖ ≤ ‖J 1 - I‖ * ‖wirtingerDeriv f z 1‖ := by
+  rw [(isComplexLinear_ofComplexModule_iff_conjWirtingerDeriv_eq J hJ f z).1 hf, norm_mul,
+    norm_neg, Complex.norm_conj]
+  exact mul_le_mul_of_nonneg_right (norm_coefficientEquiv_le J hJ) (norm_nonneg _)
+
+/-- **Lower bound for the projected area of a solution of the target Beltrami equation.** If the
+differential of `f` at `z` is complex linear from `i` to a tame structure `J`, the standard area
+form pulls back to at least `(1 - |J 1 - i|²) |∂f(z)|²` on the coordinate frame. -/
+theorem mul_normSq_le_stdComplexSymplecticForm_fderiv_of_isComplexLinear
+    (J : AlmostComplexStructure ℂ) (hJ : stdComplexSymplecticForm.Tames J) {f : ℂ → ℂ} {z : ℂ}
+    (hf : IsComplexLinear (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap J.toLinearMap
+      (fderiv ℝ f z).toLinearMap) :
+    (1 - ‖J 1 - I‖ ^ 2) * Complex.normSq (wirtingerDeriv f z 1) ≤
+      stdComplexSymplecticForm (fderiv ℝ f z 1) (fderiv ℝ f z I) := by
+  rw [stdComplexSymplecticForm_fderiv_apply_one_fderiv_apply_I_of_isComplexLinear J hJ hf,
+    Complex.normSq_eq_norm_sq (coefficientEquiv ⟨J, hJ⟩).val]
+  have h := pow_le_pow_left₀ (norm_nonneg _) (norm_coefficientEquiv_le J hJ) 2
+  exact mul_le_mul_of_nonneg_right (by linarith) (Complex.normSq_nonneg _)
 
 section Families
 

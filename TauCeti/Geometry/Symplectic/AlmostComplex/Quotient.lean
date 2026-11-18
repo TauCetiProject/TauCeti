@@ -164,12 +164,6 @@ variable {U V : Type*}
   [AddCommGroup U] [Module ℝ U] [AddCommGroup V] [Module ℝ V]
   {j : AlmostComplexStructure U} {J : AlmostComplexStructure V} {f : U →ₗ[ℝ] V}
 
-/-- The kernel of a complex-linear map is invariant under the source structure: if `f v = 0`
-then `f (j v) = J (f v) = 0`. -/
-theorem IsComplexLinearMap.apply_apply_eq_zero_of_apply_eq_zero (hf : IsComplexLinearMap j J f)
-    {u : U} (hu : f u = 0) : f (j u) = 0 := by
-  rw [(isComplexLinearMap_iff_apply j J f).1 hf u, hu, J.apply_zero]
-
 /-- The almost complex structure on the quotient by the range of a complex-linear map. -/
 def IsComplexLinearMap.quotientRange (hf : IsComplexLinearMap j J f) :
     AlmostComplexStructure (V ⧸ LinearMap.range f) :=
