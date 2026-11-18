@@ -604,40 +604,35 @@ coordinate of the end `q`, agrees near the part `±s < c + 1/4` with a map which
 `S`: cut it off beyond the circle `±s = c + 3/4`. -/
 private theorem exists_contDiffOn_eventuallyEq (q : Puncture) {c : ℝ} {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 2 u {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1 ∧
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < c + 1}) :
+      Complex.equivRealProdCLM.symm z ≠ 1 ∧ endHeight q z < c + 1}) :
     ∃ v : ℝ × ℝ → V, ContDiffOn ℝ 2 v thricePuncturedSphereReal ∧
-      (∀ z, q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c + 1 / 4 →
-        v z = u z) ∧
-      ∀ z ∈ thricePuncturedSphereReal,
-        q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < c + 1 / 4 →
-        v =ᶠ[𝓝 z] u := by
-  set σ : ℝ × ℝ → ℝ := fun z ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
-  have hσ {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) : ContDiffAt ℝ 2 σ z :=
-    (funext (endHeight_apply q) : endHeight q = σ) ▸ contDiffAt_endHeight_of_mem q hz
-  set v : ℝ × ℝ → V := fun z ↦ (1 - smoothTransition (2 * (σ z - c) - 1 / 2)) • u z
-  have hv_eq {z : ℝ × ℝ} (hz : σ z ≤ c + 1 / 4) : v z = u z := by
-    simp only [v, smoothTransition.zero_of_nonpos (by linarith : 2 * (σ z - c) - 1 / 2 ≤ 0),
-      sub_zero, one_smul]
+      (∀ z, endHeight q z ≤ c + 1 / 4 → v z = u z) ∧
+      ∀ z ∈ thricePuncturedSphereReal, endHeight q z < c + 1 / 4 → v =ᶠ[𝓝 z] u := by
+  have hsmooth {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) : ContDiffAt ℝ 2 (endHeight q) z :=
+    contDiffAt_endHeight_of_mem q hz
+  set v : ℝ × ℝ → V := fun z ↦ (1 - smoothTransition (2 * (endHeight q z - c) - 1 / 2)) • u z
+  have hv_eq {z : ℝ × ℝ} (hz : endHeight q z ≤ c + 1 / 4) : v z = u z := by
+    simp only [v, smoothTransition.zero_of_nonpos
+      (by linarith : 2 * (endHeight q z - c) - 1 / 2 ≤ 0), sub_zero, one_smul]
   refine ⟨v, fun z hz ↦ ContDiffAt.contDiffWithinAt ?_, fun z ↦ hv_eq,
-    fun z hz hσz ↦ ((hσ hz).continuousAt.eventually (gt_mem_nhds hσz)).mono fun _ h ↦
+    fun z hz hzc ↦ ((hsmooth hz).continuousAt.eventually (gt_mem_nhds hzc)).mono fun _ h ↦
       hv_eq h.le⟩
-  by_cases hσz : σ z < c + 1
+  by_cases hzc : endHeight q z < c + 1
   · -- Inside the circle `±s = c + 1` both factors are `C²`.
     have hn : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1 ∧ σ z < c + 1} ∈ 𝓝 z := by
+        Complex.equivRealProdCLM.symm z ≠ 1 ∧ endHeight q z < c + 1} ∈ 𝓝 z := by
       filter_upwards [isOpen_thricePuncturedSphereReal.mem_nhds hz,
-        (hσ hz).continuousAt.eventually (gt_mem_nhds hσz)] with w hw hw'
+        (hsmooth hz).continuousAt.eventually (gt_mem_nhds hzc)] with w hw hw'
       exact ⟨hw.1, hw.2, hw'⟩
     exact (contDiffAt_const.sub (smoothTransition.contDiff.contDiffAt.comp z
-      ((contDiffAt_const.mul ((hσ hz).sub contDiffAt_const)).sub contDiffAt_const))).smul
+      ((contDiffAt_const.mul ((hsmooth hz).sub contDiffAt_const)).sub contDiffAt_const))).smul
         (hu.contDiffAt hn)
   · -- Beyond the circle `±s = c + 3/4` the cut-off map vanishes.
     refine (contDiffAt_const (c := (0 : V))).congr_of_eventuallyEq ?_
-    filter_upwards [(hσ hz).continuousAt.eventually (lt_mem_nhds
-      (by linarith : c + 3 / 4 < σ z))] with w hw
-    simp only [v, smoothTransition.one_of_one_le (by linarith : 1 ≤ 2 * (σ w - c) - 1 / 2),
-      sub_self, zero_smul]
+    filter_upwards [(hsmooth hz).continuousAt.eventually (lt_mem_nhds
+      (by linarith : c + 3 / 4 < endHeight q z))] with w hw
+    simp only [v, smoothTransition.one_of_one_le
+      (by linarith : 1 ≤ 2 * (endHeight q w - c) - 1 / 2), sub_self, zero_smul]
 
 /-- The curvature of the pair-of-pants perturbation along any map vanishes on `S` outside the
 part `±s ≤ c` of the end `q` of the truncation `S_R`, for `2 ≤ c` and `2 ≤ R`. -/
@@ -703,9 +698,9 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
             (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
             z (u z) := by
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R with hT
-  set σ : ℝ × ℝ → ℝ := fun z ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
-  set A := T ∩ {z | σ z ≤ c} with hA
-  obtain ⟨v, hv, hv_eq, hv_eventually⟩ := exists_contDiffOn_eventuallyEq q hu
+  set A := T ∩ {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c} with hA
+  obtain ⟨v, hv, hv_eq, hv_eventually⟩ :=
+    exists_contDiffOn_eventuallyEq q (by simpa only [← endHeight_apply] using hu)
   -- The energy identity on `S_R` for the cut-off map `v`.
   have hid :=
     integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
@@ -716,13 +711,15 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
   -- where the energy of `v` is the change of action.
   have hTm : MeasurableSet T := measurableSet_preimage_truncation R
   have hAm : MeasurableSet A := measurableSet_preimage_truncation_inter q R c
-  have hTAB : T = A ∪ (T ∩ {z | c < σ z}) := by
+  have hTAB : T = A ∪
+      (T ∩ {z | c < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re}) := by
     rw [← inter_union_distrib_left, ← ofPred_or]
     simp only [le_or_gt, ofPred_true, inter_univ]
-  have hdisj : Disjoint A (T ∩ {z | c < σ z}) :=
-    Set.disjoint_left.2 fun z hA hB ↦ by
-      have h₁ : σ z ≤ c := hA.2
-      have h₂ : c < σ z := hB.2
+  have hdisj : Disjoint A
+      (T ∩ {z | c < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re}) :=
+    Set.disjoint_left.2 fun z hz hB ↦ by
+      have h₁ : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c := hz.2
+      have h₂ : c < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := hB.2
       linarith
   obtain ⟨hE, -, -⟩ := integrableOn_truncation_pairOfPantsPerturbation ω hH hHs
     (hv.of_le one_le_two) R
@@ -734,7 +731,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
   -- On the inner part, and on its boundary loops, the cut-off map is `u`.
   have hSA {z : ℝ × ℝ} (hz : z ∈ A) : z ∈ thricePuncturedSphereReal :=
     truncation_subset _ hz.1
-  have hAσ {z : ℝ × ℝ} (hz : z ∈ A) : σ z ≤ c := hz.2
+  have hA_le {z : ℝ × ℝ} (hz : z ∈ A) : endHeight q z ≤ c := (endHeight_apply q z).trans_le hz.2
   have hEA : ∫ z in A, ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v z =
@@ -742,7 +739,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z :=
     setIntegral_congr_fun hAm fun z hz ↦ ω.floerEnergyDensity_congr_of_eventuallyEq _ _
-      (hv_eventually z (hSA hz) ((hAσ hz).trans_lt (by linarith)))
+      (hv_eventually z (hSA hz) ((hA_le hz).trans_lt (by linarith)))
   have hRA : ∫ z in A, ω.hamiltonianCurvature
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -751,15 +748,14 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z) :=
     setIntegral_congr_fun hAm fun z hz ↦ by
-      rw [hv_eq z ((hAσ hz).trans (by linarith))]
+      rw [hv_eq z ((hA_le hz).trans (by linarith))]
   have hloop_q : (fun t : ℝ ↦ v (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * c) + ↑t * Complex.I)))) =
       fun t : ℝ ↦ u (Complex.equivRealProdCLM
         (q.cylindricalEndLift (↑(q.endSign * c) + ↑t * Complex.I))) := by
     funext t
     refine hv_eq _ ?_
-    rw [← endChart_mk, re_endCoord_endChart, ← mul_assoc, endSign_mul_self,
-      one_mul]
+    rw [← endChart_mk, endHeight_endChart, ← mul_assoc, endSign_mul_self, one_mul]
     linarith
   have hloop {r : Puncture} (hr : r ∈ Finset.univ.erase q) :
       (fun t : ℝ ↦ v (Complex.equivRealProdCLM
@@ -769,9 +765,9 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
     funext t
     refine hv_eq _ ?_
     rw [← endChart_mk]
-    linarith [endSign_mul_re_endCoord_nonpos (Finset.ne_of_mem_erase hr) (q := r) (r := q)
-      (w := Complex.equivRealProdCLM.symm (endChart r (r.endSign * R, t)))
-      (by rw [re_endCoord_endChart, ← mul_assoc, endSign_mul_self, one_mul]; linarith)]
+    linarith [endHeight_nonpos_of_ne (Finset.ne_of_mem_erase hr) (q := r) (r := q)
+      (z := endChart r (r.endSign * R, t))
+      (by rw [endHeight_endChart, ← mul_assoc, endSign_mul_self, one_mul]; linarith)]
   rw [hEA, hRA, ← Finset.add_sum_erase _ _ (Finset.mem_univ q), hloop_q,
     Finset.sum_congr rfl fun r hr ↦ by rw [hloop hr]] at hid
   linarith
