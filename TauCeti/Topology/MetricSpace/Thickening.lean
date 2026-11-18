@@ -9,6 +9,7 @@ public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.MetricSpace.Thickening
 
 import Mathlib.Topology.Compactness.LocallyFinite
+import Mathlib.Topology.Metrizable.Uniformity
 import Mathlib.Topology.Order.AtTopBotIxx
 import Mathlib.Topology.Order.DenselyOrdered
 import TauCeti.Topology.ConnectedComponents
@@ -33,7 +34,7 @@ superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`).
 A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
 inside any set whose interior contains it, namely the intersections of that interior with
 thickenings of radii `1 / (n + 1)` (`IsClosed.exists_antitone_isOpen_iInter_eq`). In a locally
-compact, locally connected pseudometric space, a compact set has an antitone basis of open
+compact, locally connected pseudometrizable space, a compact set has an antitone basis of open
 neighbourhoods, each with compact closure inside the previous one and with every connected
 component meeting the set (`IsCompact.exists_hasAntitoneBasis_nhdsSet`). Holomorphic germs along
 a compact subset of `ℂⁿ` are the inductive limit of the bounded holomorphic functions on such a
@@ -158,15 +159,17 @@ theorem IsClosed.exists_antitone_isOpen_iInter_eq {X : Type*} [PseudoMetricSpace
   exact ⟨y, hy, hxy.trans hn⟩
 
 /-- **A shrinking neighbourhood basis of a compact set.** In a locally compact, locally connected
-pseudometric space, a compact set `K` inside an open set `W` has an antitone basis of open
+pseudometrizable space, a compact set `K` inside an open set `W` has an antitone basis of open
 neighbourhoods `U n` with compact closures, such that `closure (U 0) ⊆ W`,
 `closure (U (n + 1)) ⊆ U n`, and every connected component of every `U n` meets `K`. -/
-theorem IsCompact.exists_hasAntitoneBasis_nhdsSet {X : Type*} [PseudoMetricSpace X]
+theorem IsCompact.exists_hasAntitoneBasis_nhdsSet {X : Type*} [TopologicalSpace X]
+    [TopologicalSpace.PseudoMetrizableSpace X]
     [LocallyCompactSpace X] [LocallyConnectedSpace X] {K W : Set X} (hK : IsCompact K)
     (hW : IsOpen W) (hKW : K ⊆ W) :
     ∃ U : ℕ → Set X, (𝓝ˢ K).HasAntitoneBasis U ∧ closure (U 0) ⊆ W ∧
       ∀ n, IsOpen (U n) ∧ IsCompact (closure (U n)) ∧ closure (U (n + 1)) ⊆ U n ∧
         ∀ x ∈ U n, (connectedComponentIn (U n) x ∩ K).Nonempty := by
+  let := TopologicalSpace.pseudoMetrizableSpacePseudoMetric X
   -- One step: shrink an open neighbourhood `O` of `K` to one with compact closure inside `O`,
   -- all of whose components meet `K`.
   have step (O : Set X) (hO : IsOpen O) (hKO : K ⊆ O) : ∃ U, IsOpen U ∧ K ⊆ U ∧
@@ -192,17 +195,20 @@ theorem IsCompact.exists_hasAntitoneBasis_nhdsSet {X : Type*} [PseudoMetricSpace
     | succ n ih =>
       exact ⟨(hUO n ▸ huo _ ih.1 ih.2).inter isOpen_thickening,
         subset_inter (hUO n ▸ hKu _ ih.1 ih.2) (self_subset_thickening (by positivity) K)⟩
-  have hUo (n : ℕ) : IsOpen (U n) := hUO n ▸ huo _ (hO n).1 (hO n).2
-  have hclO (n : ℕ) : closure (U n) ⊆ O n := hUO n ▸ hu _ (hO n).1 (hO n).2
+  have hU (n : ℕ) : IsOpen (U n) ∧ K ⊆ U n ∧ closure (U n) ⊆ O n ∧
+      IsCompact (closure (U n)) ∧
+        ∀ x ∈ U n, (connectedComponentIn (U n) x ∩ K).Nonempty :=
+    hUO n ▸ ⟨huo _ (hO n).1 (hO n).2, hKu _ (hO n).1 (hO n).2,
+      hu _ (hO n).1 (hO n).2, hUc _ (hO n).1 (hO n).2, hcomp _ (hO n).1 (hO n).2⟩
+  have hclO (n : ℕ) := (hU n).2.2.1
   refine ⟨U, ⟨(hasBasis_nhdsSet_thickening hK).to_hasBasis (fun δ hδ => ?_) fun n _ => ?_,
     antitone_nat_of_succ_le fun n => subset_closure.trans ((hclO (n + 1)).trans
-      inter_subset_left)⟩, (hclO 0).trans inter_subset_left, fun n => ⟨hUo n,
-    hUO n ▸ hUc _ (hO n).1 (hO n).2, (hclO (n + 1)).trans inter_subset_left,
-    hUO n ▸ hcomp _ (hO n).1 (hO n).2⟩⟩
+      inter_subset_left)⟩, (hclO 0).trans inter_subset_left, fun n => ⟨(hU n).1,
+    (hU n).2.2.2.1, (hclO (n + 1)).trans inter_subset_left, (hU n).2.2.2.2⟩⟩
   · obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
     exact ⟨n, trivial, subset_closure.trans ((hclO n).trans ((hOB n).trans
       (thickening_mono hn.le K)))⟩
-  · exact hK.exists_thickening_subset_open (hUo n) (hUO n ▸ hKu _ (hO n).1 (hO n).2)
+  · exact hK.exists_thickening_subset_open (hU n).1 (hU n).2.1
 
 namespace LocallyFinite
 

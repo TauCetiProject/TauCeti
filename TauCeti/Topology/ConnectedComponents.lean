@@ -38,8 +38,8 @@ space by them.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
   component of an open set has its frontier in the complement of that set.
 * `IsOpen.exists_subset_forall_connectedComponentIn_inter_nonempty`: in a locally connected
-  space, discarding the components of an open set `U ⊇ K` that miss `K` leaves an open
-  neighbourhood of `K` all of whose components meet `K`.
+  space, an open set `U ⊇ K` contains an open neighbourhood `U'` of `K` all of whose
+  connected components meet `K`.
 * `IsOpen.joinedIn_of_mem_connectedComponentIn`: in a locally path-connected space, a point of an
   open set is joined to each point of its component by a path inside that component.
 * `IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset`: a preconnected set through
@@ -235,9 +235,8 @@ theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F 
     exact mem_connectedComponentIn hyF
   exact hy.2 (by rwa [hC.interior_eq])
 
-/-- **Discarding the components of an open set that miss `K`.** In a locally connected space, the
-union of the connected components of an open set `U ⊇ K` that meet `K` is an open subset of `U`
-containing `K`, each of whose connected components meets `K`. -/
+/-- In a locally connected space, every open set `U` containing `K` has an open subset
+`U' ⊆ U` containing `K`, each of whose connected components meets `K`. -/
 theorem _root_.IsOpen.exists_subset_forall_connectedComponentIn_inter_nonempty
     [LocallyConnectedSpace X] {K U : Set X} (hU : IsOpen U) (hKU : K ⊆ U) :
     ∃ U' ⊆ U, IsOpen U' ∧ K ⊆ U' ∧ ∀ x ∈ U', (connectedComponentIn U' x ∩ K).Nonempty := by
