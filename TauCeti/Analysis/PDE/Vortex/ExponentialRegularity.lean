@@ -118,8 +118,7 @@ theorem integral_inner_fun_smul_gaugeFixedAdjoint_eq (hx : Continuous x) {w : �
   have hwηL : MemLp (fun z ↦ w z • η z) 2 volume :=
     hwη.continuous.memLp_of_hasCompactSupport hwηc
   have hAL : MemLp (gaugeFixedAdjoint x fun t ↦ w t • η t) 2 volume :=
-    (continuous_gaugeFixedAdjoint hx (hwη.of_le h1)).memLp_of_hasCompactSupport
-      (hasCompactSupport_gaugeFixedAdjoint hwηc)
+    memLp_gaugeFixedAdjoint hx (hwη.of_le h1) hwηc
   -- Pointwise, both sides differ from the test against `w η` by the pairing of `y` with `S`.
   have hl (z : ℂ) : ⟪w z • y z, gaugeFixedAdjoint x η z⟫ =
       ⟪y z, gaugeFixedAdjoint x (fun t ↦ w t • η t) z⟫ - ⟪y z, S z⟫ := by

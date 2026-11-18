@@ -42,19 +42,20 @@ The elliptic estimate then gives the weighted Sobolev estimate
 
 `‖exp(c ρ) Q f‖_(H^(k+1)) ≤ K ‖exp(c ρ) f‖_(H^k)`
 
-for every `k` (`exists_norm_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq`). For `c > 0` it
-bounds the decay, with `k + 1` derivatives, of the correction `Q f` to an error `f` that decays
-like `exp(-c ρ)` with `k` derivatives. These are the estimates used to correct approximate
-solutions built from plane vortices, whose errors decay exponentially away from the vortex cores.
+for every `k` (`exists_norm_exp_mul_smul_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq`).
+For `c > 0` it bounds the decay, with `k + 1` derivatives, of the correction `Q f` to an error `f`
+that decays like `exp(-c ρ)` with `k` derivatives. These are the estimates used to correct
+approximate solutions built from plane vortices, whose errors decay exponentially away from the
+vortex cores.
 
 ## Main results
 
 * `exists_norm_le_mul_add_of_integral_inner_gaugeFixedAdjoint_eq_add`: the elliptic estimate for
   `L_x - A` from `H^(k+1)` to `H^k`, up to the `L²` norm.
-* `exists_norm_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq`: the weighted Sobolev estimate
-  for the right inverse at a smooth plane vortex with `|α| → 1`.
-* `exists_norm_le_mul_norm_of_forall_mem_framedFieldSpace`: the same at a continuous plane vortex
-  lying in `A_m^k` for every `k`.
+* `exists_norm_exp_mul_smul_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq`: the weighted
+  Sobolev estimate for the right inverse at a smooth plane vortex with `|α| → 1`.
+* `exists_norm_exp_mul_smul_le_mul_norm_of_forall_mem_framedFieldSpace`: the same at a continuous
+  plane vortex lying in `A_m^k` for every `k`.
 
 ## References
 
@@ -82,38 +83,28 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {A : Fin 4 → Fin 4 → ℂ �
 /-- The transpose `Aᵀ η` of a matrix of functions acting on a field. -/
 private def transposeMulVec (A : Fin 4 → Fin 4 → ℂ → ℝ) (η : ℂ → EuclideanSpace ℝ (Fin 4))
     (z : ℂ) : EuclideanSpace ℝ (Fin 4) :=
-  WithLp.toLp 2 fun j ↦ ∑ i : Fin 4, A i j z * η z i
+  (Matrix.of fun i j ↦ A i j z).transpose.toEuclideanLin (η z)
 
 /-- Pointwise, `⟪A y, η⟫ = ⟪y, Aᵀ η⟫`. -/
 private theorem inner_mulVec_eq_inner_transposeMulVec (A : Fin 4 → Fin 4 → ℂ → ℝ)
     (y η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ⟪WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j), η z⟫ =
       ⟪y z, transposeMulVec A η z⟫ := by
-  simp only [transposeMulVec, PiLp.inner_apply, RCLike.inner_apply, conj_trivial,
-    Finset.mul_sum, Finset.sum_mul]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+  rw [transposeMulVec, ← Matrix.conjTranspose_eq_transpose_of_trivial,
+    Matrix.toEuclideanLin_conjTranspose_eq_adjoint, LinearMap.adjoint_inner_right,
+    Matrix.toLpLin_apply, funext (Matrix.mulVec_apply_eq_sum _ _)]
+  simp only [Matrix.of_apply]
 
 /-- `Aᵀ η` is smooth with compact support when `A` is smooth and `η` is a test field. -/
 private theorem memLp_transposeMulVec (hA : ∀ i j, ContDiff ℝ ∞ (A i j))
     {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ ∞ η) (hηc : HasCompactSupport η) :
     MemLp (transposeMulVec A η) 2 volume := by
   have hc : ContDiff ℝ ∞ (transposeMulVec A η) := contDiff_euclidean.2 fun j ↦ by
-    simpa only [transposeMulVec] using
+    simpa [transposeMulVec, Matrix.toLpLin_apply, Matrix.mulVec, dotProduct] using
       ContDiff.sum (s := Finset.univ) fun i _ ↦ (hA i j).mul (contDiff_euclidean.1 hη i)
   refine hc.continuous.memLp_of_hasCompactSupport
     (hηc.mono (Function.support_subset_iff'.2 fun z hz ↦ ?_))
-  ext j
   simp [transposeMulVec, Function.notMem_support.1 hz]
-
-/-- `L_x* η` is continuous with compact support when `x` is continuous and `η` is a test
-field. -/
-private theorem memLp_gaugeFixedAdjoint (hx : Continuous x) {η : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hη : ContDiff ℝ ∞ η) (hηc : HasCompactSupport η) :
-    MemLp (gaugeFixedAdjoint x η) 2 volume :=
-  Continuous.memLp_of_hasCompactSupport
-    (continuous_gaugeFixedAdjoint hx (hη.of_le (by exact_mod_cast le_top)))
-    (hasCompactSupport_gaugeFixedAdjoint hηc)
 
 variable (k : ℕ)
 
@@ -159,8 +150,8 @@ private def weakSolutions (hx : Continuous x) (hA : ∀ i j, ContDiff ℝ ∞ (A
     Submodule ℝ (Triple k) :=
   (⨅ a, (reprCLM k a).ker) ⊓
     ⨅ (η : ℂ → EuclideanSpace ℝ (Fin 4)) (hη : ContDiff ℝ ∞ η) (hηc : HasCompactSupport η),
-      (testCLM (k := k) (memLp_gaugeFixedAdjoint hx hη hηc) (memLp_transposeMulVec hA hη hηc)
-        (hη.continuous.memLp_of_hasCompactSupport hηc)).ker
+      (testCLM (k := k) (memLp_gaugeFixedAdjoint hx (hη.of_le (by simp)) hηc)
+        (memLp_transposeMulVec hA hη hηc) (hη.continuous.memLp_of_hasCompactSupport hηc)).ker
 
 private theorem isClosed_weakSolutions (hx : Continuous x) (hA : ∀ i j, ContDiff ℝ ∞ (A i j)) :
     IsClosed (weakSolutions (k := k) hx hA : Set (Triple k)) := by
@@ -174,11 +165,11 @@ variable {k} in
 private theorem testCLM_apply (hx : Continuous x) (hA : ∀ i j, ContDiff ℝ ∞ (A i j))
     {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ ∞ η) (hηc : HasCompactSupport η)
     (p : Triple k) :
-    testCLM (k := k) (memLp_gaugeFixedAdjoint hx hη hηc) (memLp_transposeMulVec hA hη hηc)
-        (hη.continuous.memLp_of_hasCompactSupport hηc) p =
+    testCLM (k := k) (memLp_gaugeFixedAdjoint hx (hη.of_le (by simp)) hηc)
+        (memLp_transposeMulVec hA hη hηc) (hη.continuous.memLp_of_hasCompactSupport hηc) p =
       (∫ z, ⟪p.1 z, gaugeFixedAdjoint x η z⟫) -
         ∫ z, ⟪p.2.1 z + WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * p.1 z j), η z⟫ := by
-  have h₁ := memLp_gaugeFixedAdjoint hx hη hηc
+  have h₁ := memLp_gaugeFixedAdjoint (p := 2) (μ := volume) hx (hη.of_le (by simp)) hηc
   have h₂ := memLp_transposeMulVec hA hη hηc
   have h₃ := hη.continuous.memLp_of_hasCompactSupport (μ := volume) (p := 2) hηc
   have hY := Lp.memLp p.1
@@ -354,7 +345,7 @@ orthogonal to the weak kernel of `L_x`, that is the value at `f` of the weak rig
 `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K ‖v‖`. That is,
 
 `‖exp(c ρ) Q f‖_(H^(k+1)) ≤ K ‖exp(c ρ) f‖_(H^k)`. -/
-theorem exists_norm_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq (k : ℕ)
+theorem exists_norm_exp_mul_smul_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq (k : ℕ)
     (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
@@ -406,10 +397,11 @@ be a continuous solution of the plane vortex equations lying in the affine field
 every `k`, and let `ρ(z) = √(1 + |z|²)` and `|c| < 1/2`. For every `k` there is a constant `K`
 such that, if `y` is the square-integrable weak solution of `L_x y = f` orthogonal to the weak
 kernel, then `‖exp(c ρ) y‖_(H^(k+1)) ≤ K ‖exp(c ρ) f‖_(H^k)`, in the sense of
-`exists_norm_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq`. -/
-theorem exists_norm_le_mul_norm_of_forall_mem_framedFieldSpace {b : ContDiffBump (0 : ℝ)}
-    {m : ℕ} (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace b m k)
-    (hsol : ∀ z, equation x z = 0) {c : ℝ} (hc : |c| < 1 / 2) (k : ℕ) :
+`exists_norm_exp_mul_smul_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq`. -/
+theorem exists_norm_exp_mul_smul_le_mul_norm_of_forall_mem_framedFieldSpace
+    {b : ContDiffBump (0 : ℝ)} {m : ℕ} (hx : Continuous x)
+    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace b m k) (hsol : ∀ z, equation x z = 0) {c : ℝ}
+    (hc : |c| < 1 / 2) (k : ℕ) :
     ∃ K ≥ 0, ∀ f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume,
       (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
         ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫) →
@@ -423,7 +415,7 @@ theorem exists_norm_le_mul_norm_of_forall_mem_framedFieldSpace {b : ContDiffBump
       ∃ u : Fin 4 → H^{(k : ℝ) + 1}(ℂ),
         (∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume]
           fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • y z) a : ℂ)) ∧ ‖u‖ ≤ K * ‖v‖ :=
-  exists_norm_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq k
+  exists_norm_exp_mul_smul_le_mul_norm_of_integral_inner_gaugeFixedAdjoint_eq k
     (contDiff_of_forall_mem_framedFieldSpace hx hmem) hsol
     (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx)
     (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))) hc
