@@ -33,7 +33,7 @@ Since `H` may have torsion, neither Novikov ring need be a domain, and preservat
 non-zero-divisors is not automatic. The proof passes to a torsion-free subgroup `K ≤ H` of finite
 index, for which `Nov(S, K, N|K)` is a domain. Then `Nov(R, H, N)` is free over `Nov(R, K, N|K)` in
 the basis of coset monomials (`TauCeti.NovikovSeries.cosetBasis`), and a series is a
-non-zero-divisor exactly when its norm over `Nov(R, K, N|K)` is one
+non-zero-divisor exactly when its norm over `Nov(R, K, N|K)` is a non-zero-divisor
 (`Algebra.norm_mem_nonZeroDivisors_iff`). Changing coefficients commutes with taking coordinates
 in this basis, hence with the matrices of multiplication, the norm and the trace
 (`TauCeti.NovikovSeries.norm_mapRingHom`, `TauCeti.NovikovSeries.trace_mapRingHom`). The norm of
