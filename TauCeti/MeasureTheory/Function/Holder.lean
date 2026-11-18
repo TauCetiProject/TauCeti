@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.MeasureTheory.Function.Holder
 
 /-!
@@ -20,6 +21,9 @@ integration-by-parts arguments:
   `ContinuousLinearMap.memLp_of_bilin` to evaluation.
 * `MeasureTheory.MemLp.integrable_bilinear_apply`: more generally, an essentially bounded field of
   continuous bilinear maps applied to an `L^p` function and an `L^q` function is integrable.
+* `MeasureTheory.MemLp.integrable_inner`: the pointwise inner product of an `L^p` function and an
+  `L^q` function with `1/p + 1/q = 1` is integrable; in particular that of two square-integrable
+  functions.
 * `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing
   `ContinuousLinearMap.lpPairing` of the multiplication of a complete normed algebra is the
   integral of the product.
@@ -74,6 +78,23 @@ theorem integrable_bilinear_apply (hB : MemLp B ⊤ μ) (hf : MemLp f p μ) (hg 
 end Bilinear
 
 end MeasureTheory.MemLp
+
+namespace MeasureTheory
+
+open scoped InnerProductSpace
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- **Hölder's inequality for the inner product**: the pointwise inner product of `f ∈ Lᵖ` and
+`g ∈ L^q` with `1/p + 1/q = 1` is integrable. In particular the pointwise inner product of two
+square-integrable functions is integrable. -/
+theorem MemLp.integrable_inner {p q : ℝ≥0∞} [p.HolderTriple q 1] {f g : α → E}
+    (hf : MemLp f p μ) (hg : MemLp g q μ) : Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
+  memLp_one_iff_integrable.1 (hf.of_bilin (fun v w ↦ ⟪v, w⟫_𝕜) 1 hg continuous_inner
+    (ae_of_all _ fun x ↦ by simpa using nnNorm_inner_le_nnNorm (𝕜 := 𝕜) (f x) (g x)))
+
+end MeasureTheory
 
 namespace ContinuousLinearMap
 

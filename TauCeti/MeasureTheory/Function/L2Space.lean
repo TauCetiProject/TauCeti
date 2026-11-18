@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+public import TauCeti.MeasureTheory.Function.Holder
 public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.Normed.Affine.MazurUlam
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
@@ -21,10 +22,11 @@ import TauCeti.Algebra.Order.Ring.PosPart.Sq
 
 The pointwise inner product of two square-integrable functions with values in an inner product
 space is integrable. Mathlib states this for elements of `L²` (`MeasureTheory.L2.integrable_inner`);
-this file gives the Hölder form for functions `f ∈ Lᵖ` and `g ∈ L^q` with `1/p + 1/q = 1`
-(`MeasureTheory.MemLp.integrable_inner`), which covers `MemLp f 2 μ`, the way second-moment
-hypotheses on random vectors are usually stated, together with the special case of a quadratic
-form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
+the form for functions satisfying `MemLp f 2 μ`, which is how second-moment hypotheses on random
+vectors are usually stated, is the `p = q = 2` case of the Hölder estimate
+`MeasureTheory.MemLp.integrable_inner` in `TauCeti.MeasureTheory.Function.Holder`. This file adds
+the special case of a quadratic form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued
+function.
 Likewise the weighted squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially
 bounded weight `V` is integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`).
 For counting measure, singleton-supported vectors separate L² functions and determine
@@ -73,14 +75,6 @@ namespace MeasureTheory
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- **Hölder's inequality for the inner product**: the pointwise inner product of `f ∈ Lᵖ` and
-`g ∈ L^q` with `1/p + 1/q = 1` is integrable. In particular the pointwise inner product of two
-square-integrable functions is integrable. -/
-theorem MemLp.integrable_inner {p q : ℝ≥0∞} [p.HolderTriple q 1] {f g : α → E}
-    (hf : MemLp f p μ) (hg : MemLp g q μ) : Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
-  memLp_one_iff_integrable.1 (hf.of_bilin (fun v w ↦ ⟪v, w⟫_𝕜) 1 hg continuous_inner
-    (ae_of_all _ fun x ↦ by simpa using nnNorm_inner_le_nnNorm (𝕜 := 𝕜) (f x) (g x)))
 
 /-- The quadratic form of a matrix on a square-integrable Euclidean-valued function is
 integrable. -/

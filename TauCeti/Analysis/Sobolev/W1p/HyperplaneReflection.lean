@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # Sobolev functions under the reflection in a hyperplane
