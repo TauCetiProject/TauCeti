@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
+public import TauCeti.Topology.VectorBundle.Coordinates
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # Naturality of the first-jet bundle under bundle maps
@@ -16,8 +16,9 @@ import TauCeti.Topology.VectorBundle.Coordinates
 Let `V₁` and `V₂` be `C^1` vector bundles over `M` with model fibres `F₁` and `F₂`, and let
 `Φ x : V₁ x →L[𝕜] V₂ x` be a field of continuous linear maps, a section of the hom bundle. A
 section `s` of `V₁` is sent to the section `Φ s : x ↦ Φ x (s x)` of `V₂`, and the first jet of
-`Φ s` at `x` only depends on the first jet of `s` at `x` and on the first jet of `Φ` there. This
-file constructs the induced map of first jets, the *prolongation*
+`Φ s` at `x` only depends on the first jet of `s` at `x` and on the first jet of `Φ` there, for
+`Φ` and `s` differentiable at `x`. This file constructs the induced map of first jets, the
+*prolongation*
 
 `J¹Φ x : J¹V₁ x →L[𝕜] J¹V₂ x`
 
@@ -145,6 +146,17 @@ section Differentiable
 
 variable [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
 
+/-- The local representative of a field of linear maps is its local representative as a section of
+the hom bundle. -/
+theorem homLocalRep_eq_localRep (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) (i : M) :
+    homLocalRep I F₁ F₂ Φ i =
+      localRep I (F₁ →L[𝕜] F₂) (V := fun y ↦ V₁ y →L[𝕜] V₂ y) Φ i := by
+  funext z
+  rw [homLocalRep_apply, localRep_apply]
+  -- The preferred trivialization of the hom bundle at `i` reads a map in the trivializations of
+  -- `V₁` and `V₂` at `i`, which is `inCoordinates` (`Trivialization.continuousLinearMap_apply`).
+  rfl
+
 /-- The local representative at `i` of a field of linear maps that is `C^n` at a point `x` of the
 chart domains at `i`, as a section of the hom bundle, is `C^n` within `range I` at the image of
 `x`. -/
@@ -155,15 +167,10 @@ theorem contDiffWithinAt_homLocalRep {n : ℕ∞ω} [IsManifold I n M]
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ V₁ y →L[𝕜] V₂ y) y (Φ y)) x)
     (h₁ : x ∈ baseSet (H := H) F₁ V₁ i) (h₂ : x ∈ (trivializationAt F₂ V₂ i).baseSet) :
     ContDiffWithinAt 𝕜 n (homLocalRep I F₁ F₂ Φ i) (range I) (extChartAt I i x) := by
-  have hx := mem_extChartAt_source_of_mem_baseSet I h₁
-  have h : ContMDiffAt I 𝓘(𝕜, F₁ →L[𝕜] F₂) n
-      (fun y ↦ ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ i y i y (Φ y))
-      ((extChartAt I i).symm (extChartAt I i x)) := by
-    rw [(extChartAt I i).left_inv hx]
-    exact ((trivializationAt (F₁ →L[𝕜] F₂) (fun y ↦ V₁ y →L[𝕜] V₂ y) i).contMDiffAt_section_iff
-      ⟨((mem_baseSet_iff F₁ V₁).1 h₁).1, h₂⟩).1 hΦ
-  exact contMDiffWithinAt_iff_contDiffWithinAt.1 (h.comp_contMDiffWithinAt _
-    (contMDiffWithinAt_extChartAt_symm_range i ((extChartAt I i).map_source hx)))
+  rw [homLocalRep_eq_localRep]
+  exact contDiffWithinAt_localRep I (F₁ →L[𝕜] F₂) hΦ
+    ((mem_baseSet_iff _ _).2 ⟨Set.mem_inter ((mem_baseSet_iff F₁ V₁).1 h₁).1 h₂,
+      ((mem_baseSet_iff F₁ V₁).1 h₁).2⟩)
 
 variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F₁ V₁ I] [ContMDiffVectorBundle 1 F₂ V₂ I]
 
@@ -175,15 +182,10 @@ theorem differentiableWithinAt_homLocalRep {Φ : ∀ x, V₁ x →L[𝕜] V₂ x
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ V₁ y →L[𝕜] V₂ y) y (Φ y)) x)
     (h₁ : x ∈ baseSet (H := H) F₁ V₁ i) (h₂ : x ∈ (trivializationAt F₂ V₂ i).baseSet) :
     DifferentiableWithinAt 𝕜 (homLocalRep I F₁ F₂ Φ i) (range I) (extChartAt I i x) := by
-  have hx := mem_extChartAt_source_of_mem_baseSet I h₁
-  have h : MDifferentiableAt I 𝓘(𝕜, F₁ →L[𝕜] F₂)
-      (fun y ↦ ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ i y i y (Φ y))
-      ((extChartAt I i).symm (extChartAt I i x)) := by
-    rw [(extChartAt I i).left_inv hx]
-    exact ((trivializationAt (F₁ →L[𝕜] F₂) (fun y ↦ V₁ y →L[𝕜] V₂ y) i)
-      |>.mdifferentiableAt_section_iff I Φ ⟨((mem_baseSet_iff F₁ V₁).1 h₁).1, h₂⟩).1 hΦ
-  exact mdifferentiableWithinAt_iff_differentiableWithinAt.1 (h.comp_mdifferentiableWithinAt _
-    (mdifferentiableWithinAt_extChartAt_symm ((extChartAt I i).map_source hx)))
+  rw [homLocalRep_eq_localRep]
+  exact differentiableWithinAt_localRep I (F₁ →L[𝕜] F₂) hΦ
+    ((mem_baseSet_iff _ _).2 ⟨Set.mem_inter ((mem_baseSet_iff F₁ V₁).1 h₁).1 h₂,
+      ((mem_baseSet_iff F₁ V₁).1 h₁).2⟩)
 
 /-- **Product rule for local representatives.** In the chart and trivializations at `i`, the
 derivative of the local representative of `Φ s` is that of the local representative of `Φ`
@@ -222,8 +224,9 @@ variable [IsManifold I 1 M] [ContMDiffVectorBundle 1 F₁ V₁ I] [ContMDiffVect
 variable (I F₁ F₂) in
 /-- The **prolongation** `J¹Φ x : J¹V₁ x →L[𝕜] J¹V₂ x` of a field of continuous linear maps
 `Φ x : V₁ x →L[𝕜] V₂ x`. In the chart and trivializations at `x`, with `g` the local
-representative of `Φ`, it sends the first jet `(w, A)` to `(g w, Dg(·) w + g ∘ A)`, the first
-jet of `Φ s` for every section `s` with first jet `(w, A)` at `x` (`FirstJetBundle.map_jet`). -/
+representative of `Φ`, it sends the first jet `(w, A)` to `(g w, Dg(·) w + g ∘ A)`. When `Φ` is
+differentiable at `x`, this is the first jet of `Φ s` for every section `s` differentiable at `x`
+with first jet `(w, A)` (`FirstJetBundle.map_jet`). -/
 def map (Φ : ∀ x, V₁ x →L[𝕜] V₂ x) (x : M) :
     FirstJetBundle I F₁ V₁ x →L[𝕜] FirstJetBundle I F₂ V₂ x :=
   (homLocalRep I F₁ F₂ Φ x (extChartAt I x x)).firstJetPullback
@@ -390,7 +393,7 @@ theorem map_comp {Φ : ∀ x, V₁ x →L[𝕜] V₂ x} {Ψ : ∀ x, V₂ x →L
   refine (eq_map_of_forall_jet (hΨ.clm_bundle_comp hΦ) _ fun s hs ↦ ?_).symm
   have hs' := hs.mdifferentiableAt one_ne_zero
   rw [ContinuousLinearMap.comp_apply, map_jet hΦ hs', map_jet hΨ (hΦ.clm_bundle_apply hs')]
-  rfl
+  simp only [ContinuousLinearMap.comp_apply]
 
 end Comp
 
@@ -441,6 +444,18 @@ theorem coe_mapEquiv_symm :
     ((mapEquiv I F₁ F₂ Φ x hΦ hΦ').symm :
         FirstJetBundle I F₂ V₂ x →L[𝕜] FirstJetBundle I F₁ V₁ x) =
       map I F₂ F₁ (fun y ↦ (Φ y).symm) x :=
+  (rfl)
+
+/-- The equivalence `mapEquiv` applies the prolongation of `Φ`. -/
+@[simp]
+theorem mapEquiv_apply (j : FirstJetBundle I F₁ V₁ x) :
+    mapEquiv I F₁ F₂ Φ x hΦ hΦ' j = map I F₁ F₂ (fun y ↦ Φ y) x j :=
+  (rfl)
+
+/-- The inverse of `mapEquiv` applies the prolongation of the inverse of `Φ`. -/
+@[simp]
+theorem mapEquiv_symm_apply (j : FirstJetBundle I F₂ V₂ x) :
+    (mapEquiv I F₁ F₂ Φ x hΦ hΦ').symm j = map I F₂ F₁ (fun y ↦ (Φ y).symm) x j :=
   (rfl)
 
 end Equiv
