@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.Algebra.Group.Fin.Basic
-public import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -99,14 +98,6 @@ theorem exchangeMatrix_apply_col (n : ℕ) (i : Fin 4) :
   generalize i - (n : Fin 4) = r
   fin_cases r <;> decide
 
-/-- Every diagonal entry of a cyclic exchange matrix is zero. -/
-@[simp]
-theorem exchangeMatrix_apply_self (n : ℕ) (i : Fin 4) : exchangeMatrix n i i = 0 := by
-  rw [exchangeMatrix_eq_submatrix]
-  simp only [Matrix.submatrix_apply]
-  generalize i - (n : Fin 4) = r
-  fin_cases r <;> decide
-
 /-- All the exchange matrices admit the constant symmetrizer one. -/
 theorem isSkewSymmetrizer_exchangeMatrix (n : ℕ) :
     (exchangeMatrix n).IsSkewSymmetrizer (fun _ ↦ 1) := by
@@ -116,6 +107,11 @@ theorem isSkewSymmetrizer_exchangeMatrix (n : ℕ) :
     · intro i j; fin_cases i <;> fin_cases j <;> decide
   rw [exchangeMatrix_eq_submatrix]
   exact h.submatrix _
+
+/-- Every diagonal entry of a cyclic exchange matrix is zero. -/
+@[simp]
+theorem exchangeMatrix_apply_self (n : ℕ) (i : Fin 4) : exchangeMatrix n i i = 0 := by
+  exact (isSkewSymmetrizer_exchangeMatrix n).apply_self i
 
 /-- The positive column monomial, in the original row order, is the product of the two
 neighboring variables. -/
