@@ -102,28 +102,17 @@ noncomputable def krausMap (V : ι → Matrix n m ℂ) :
   map_cstarMatrix_nonneg' k M hM := by
     have h (i : ι) := (conjugateCP (V i)).map_cstarMatrix_nonneg M hM
     convert Finset.sum_nonneg (s := Finset.univ) (fun i _ => h i) using 1
-    -- Evaluation at four indices is additive, so it commutes with the finite sum.
-    let ev (i j : Fin k) (p q : m) :
-        CStarMatrix (Fin k) (Fin k) (CStarMatrix m m ℂ) →+ ℂ :=
-      { toFun := fun A => A i j p q
-        map_zero' := rfl
-        map_add' := fun _ _ => rfl }
     ext i j p q
-    -- `ev i j p q` is defined by `toFun := fun A => A i j p q`, so the `show` below is its defining
-    -- equation, proved by `rfl`; it lets `map_sum` move the evaluation inside the finite sum.
-    rw [← show (ev i j p q) (∑ d, M.map (conjugateCP (V d))) =
-        (∑ d, M.map (conjugateCP (V d))) i j p q from rfl, map_sum]
-    simp only [CStarMatrix.map, LinearMap.sum_apply]
-    -- Coercion reductions: `M.map f i j` is `f (M i j)` (`CStarMatrix.map_apply`), and a
-    -- `CompletelyPositiveMap` coerces to a function through its `toLinearMap`, so applying
-    -- `conjugateCP (V d)` is applying `(conjugateCP (V d)).toLinearMap`. `change` records both; the
-    -- entry evaluation `entry` below then commutes with the sum by `map_sum`.
-    change (∑ d, (conjugateCP (V d)).toLinearMap (M i j)) p q = _
-    let entry : CStarMatrix m m ℂ →+ ℂ :=
-      { toFun := fun A => A p q
-        map_zero' := rfl
-        map_add' := fun _ _ => rfl }
-    exact map_sum entry _ _
+    -- Unfold the Kraus map's linear-map coercion and read the block sum in `Matrix`.
+    change M.map (⇑(∑ d, (conjugateCP (V d)).toLinearMap)) i j p q =
+      (∑ d, ofMatrix.symm (M.map (conjugateCP (V d)))) i j p q
+    simp only [CStarMatrix.map_apply, LinearMap.sum_apply, Matrix.sum_apply, ofMatrix_symm_apply]
+    -- Read both sums of blocks in `Matrix` to evaluate their scalar entries.
+    change (∑ d, ofMatrix.symm ((conjugateCP (V d)).toLinearMap (M i j))) p q =
+      (∑ d, ofMatrix.symm (conjugateCP (V d) (M i j))) p q
+    simp only [Matrix.sum_apply, ofMatrix_symm_apply]
+    -- A completely positive map and its underlying linear map have the same `toFun`.
+    rfl
 
 
 /-- Evaluation of a Kraus map. It is not `@[simp]`, so that unitality `krausMap V 1 = 1` stays the
