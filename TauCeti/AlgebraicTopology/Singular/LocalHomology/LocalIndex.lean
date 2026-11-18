@@ -475,6 +475,7 @@ variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensiona
 
 /-- **Translations have degree one.** The translation by `v` of a finite-dimensional real normed
 space is properly homotopic to the identity, so its degree is that of the identity. -/
+@[simp]
 theorem degree_addRight (v : E) : o.degree o hE (ContinuousMap.addRight v) = 1 := by
   -- The straight-line homotopy from the identity to the translation is proper: it is the
   -- projection `[0, 1] × E → E` composed with the homeomorphism `(t, y) ↦ (t, y + t v)`.
