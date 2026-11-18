@@ -264,6 +264,18 @@ theorem continuous_apply_sub (x y : SobolevFieldSpace f m s) (j : Fin 4) :
   ((EuclideanSpace.proj j).continuous.comp x.continuous).sub
     ((EuclideanSpace.proj j).continuous.comp y.continuous)
 
+/-- The `L²` function of `subRef x j - subRef y j` is the complexification of the coordinate
+difference `z ↦ x(z)ⱼ - y(z)ⱼ`. -/
+theorem coeFn_inclusionLp_subRef_sub_subRef (h : 0 ≤ s) (x y : SobolevFieldSpace f m s)
+    (j : Fin 4) :
+    ⇑(inclusionLp h (subRef x j - subRef y j)) =ᵐ[volume] fun z ↦ ((x z j - y z j : ℝ) : ℂ) := by
+  filter_upwards [coeFn_toLp_inclusion_subRef h x j, coeFn_toLp_inclusion_subRef h y j,
+    Lp.coeFn_sub (inclusionLp h (subRef x j)) (inclusionLp h (subRef y j))] with z h₁ h₂ h₃
+  rw [toLp_inclusion] at h₁ h₂
+  rw [map_sub, h₃, Pi.sub_apply, h₁, h₂]
+  push_cast
+  ring
+
 /-- **Convergence in `A_m^s` gives `L²` convergence of the coordinates**, for `s ≥ 0`: if fields
 `xᵢ → x` in `A_m^s`, then each coordinate `xᵢ(z)ⱼ - x(z)ⱼ` tends to zero in `L²`. -/
 theorem tendsto_eLpNorm_sub_of_tendsto (h : 0 ≤ s) {ι : Type*} {l : Filter ι}
@@ -278,12 +290,7 @@ theorem tendsto_eLpNorm_sub_of_tendsto (h : 0 ≤ s) {ι : Type*} {l : Filter ι
     rw [sub_zero, norm_toLp_eq]
     exact norm_inclusion_apply_le h _
   have hae (i : ι) : (T i : ℂ → ℂ) =ᵐ[volume] fun z ↦ ((xs i z j - x z j : ℝ) : ℂ) := by
-    filter_upwards [coeFn_toLp_inclusion_subRef h (xs i) j, coeFn_toLp_inclusion_subRef h x j,
-      Lp.coeFn_sub (inclusion h (subRef (xs i) j)).toLp (inclusion h (subRef x j)).toLp]
-      with z h₁ h₂ h₃
-    simp only [T, map_sub, toLp_sub, h₃, Pi.sub_apply, h₁, h₂]
-    push_cast
-    ring
+    simpa only [T, toLp_inclusion] using coeFn_inclusionLp_subRef_sub_subRef h (xs i) x j
   have hlim := ((continuous_eNorm.tendsto 0).comp hT)
   rw [eNorm_zero] at hlim
   refine hlim.congr fun i ↦ ?_

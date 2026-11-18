@@ -186,17 +186,10 @@ theorem tendsto_one_of_tendsto_gaugeForm (hk : 1 < k) {ι : Type*} {l : Filter �
   rcases l.eq_or_neBot with rfl | hl
   · exact tendsto_bot
   -- The phases `Fᵢ = arg wᵢ`, defined where `|wᵢ - 1| < 1`.
-  obtain ⟨F, hF⟩ := Eventually.choice (r := fun i (F : realSubmodule ℂ h0) ↦
-    expGauge hs F = w i ∧
-      (∀ᵐ z ∂volume, ‖inclusionLp h0 (F : H^{(k : ℝ) + 1}(ℂ)) z‖ ≤
-        π / 2 * ‖((toSubgroup hs (w i) : ℂ → Circle) z : ℂ) - 1‖) ∧
-      ∀ v : ℂ, inclusionLp (Nat.cast_nonneg (α := ℝ) k)
-          (lineDerivCLM (by norm_num) (by norm_num) v (F : H^{(k : ℝ) + 1}(ℂ))) =ᵐ[volume]
-        fun z ↦ (gaugeForm (toSubgroup hs (w i)) z v : ℂ)) <| by
-    filter_upwards [Metric.tendstoUniformly_iff.1 hunif 1 one_pos] with i hi
-    refine exists_expGauge_eq_of_forall_norm_sub_one_lt hk (w i) fun z ↦ ?_
-    rw [← dist_eq_norm, dist_comm]
-    exact hi z
+  obtain ⟨F, hF⟩ := Eventually.choice <| (Metric.tendstoUniformly_iff.1 hunif 1 one_pos).mono
+    fun i hi ↦ exists_expGauge_eq_of_forall_norm_sub_one_lt hk (w i) fun z ↦ by
+      rw [← dist_eq_norm, dist_comm]
+      exact hi z
   -- The phases tend to zero in `L²`.
   have hFL2 : Tendsto (fun i ↦ inclusionLp h0 (F i : H^{(k : ℝ) + 1}(ℂ))) l (𝓝 0) := by
     rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
@@ -262,12 +255,7 @@ private theorem norm_coe_sub_coe_le {u v : ℂ → Circle} {x x' y y' : ℂ → 
     rw [← norm_mul, hid]
     refine (norm_add_le _ _).trans ?_
     rw [norm_mul, Circle.norm_coe, one_mul, norm_sub_rev]
-  have hpos : (0 : ℝ) < ‖sectionValue x z‖ := lt_of_lt_of_le (by norm_num) hz
-  rw [← le_div_iff₀ hpos] at hle
-  refine hle.trans ?_
-  rw [div_le_iff₀ hpos]
-  nlinarith [norm_nonneg (sectionValue x' z - sectionValue x z),
-    norm_nonneg (sectionValue y' z - sectionValue y z)]
+  nlinarith [mul_le_mul_of_nonneg_left hz (norm_nonneg ((v z : ℂ) - u z))]
 
 namespace SobolevFieldSpace
 
@@ -452,23 +440,16 @@ private theorem exists_tendsto_gaugeForm_inv_mul (hk : 2 < k)
   have h2 := two_lt_add_one hk
   have hdiff (v : SobolevTopologicalGaugeGroup hs) :=
     differentiable_of_mem_sobolevGaugeGroup h2 (toSubgroup hs v).2
-  have hsubRef (a : SobolevFieldSpace f m k) (j : Fin 4) :
-      (inclusionLp hk0 (subRef a j) : ℂ → ℂ) =ᵐ[volume]
-        fun z ↦ ((a z j - referenceField f m z j : ℝ) : ℂ) := by
-    rw [← toLp_inclusion]
-    exact coeFn_toLp_inclusion_subRef hk0 a j
   set G : ι → Fin 4 → H^{(k : ℝ)}(ℂ) := fun i j ↦
     subRef (xs i) j - subRef (ys i) j - (subRef x j - subRef y j)
   have hGae (i : ι) (j : Fin 4) : (inclusionLp hk0 (G i j) : ℂ → ℂ) =ᵐ[volume]
       fun z ↦ ((xs i z j - ys i z j - (x z j - y z j) : ℝ) : ℂ) := by
-    simp only [G, map_sub]
-    filter_upwards [hsubRef (xs i) j, hsubRef (ys i) j, hsubRef x j, hsubRef y j,
-      Lp.coeFn_sub (inclusionLp hk0 (subRef (xs i) j) - inclusionLp hk0 (subRef (ys i) j))
-        (inclusionLp hk0 (subRef x j) - inclusionLp hk0 (subRef y j)),
-      Lp.coeFn_sub (inclusionLp hk0 (subRef (xs i) j)) (inclusionLp hk0 (subRef (ys i) j)),
-      Lp.coeFn_sub (inclusionLp hk0 (subRef x j)) (inclusionLp hk0 (subRef y j))]
-      with z h₁ h₂ h₃ h₄ h₅ h₆ h₇
-    rw [h₅, Pi.sub_apply, h₆, h₇, Pi.sub_apply, Pi.sub_apply, h₁, h₂, h₃, h₄]
+    filter_upwards [coeFn_inclusionLp_subRef_sub_subRef hk0 (xs i) (ys i) j,
+      coeFn_inclusionLp_subRef_sub_subRef hk0 x y j,
+      Lp.coeFn_sub (inclusionLp hk0 (subRef (xs i) j - subRef (ys i) j))
+        (inclusionLp hk0 (subRef x j - subRef y j))] with z h₁ h₂ h₃
+    simp only [G]
+    rw [map_sub, h₃, Pi.sub_apply, h₁, h₂]
     push_cast
     ring
   have hgf (i : ι) (z v : ℂ) : gaugeForm (toSubgroup hs (u⁻¹ * us i) : ℂ → Circle) z v =
@@ -509,10 +490,10 @@ theorem tendsto_of_gaugeTransform_eq (hk : 2 < k)
   rcases l.eq_or_neBot with rfl | hl
   · exact tendsto_bot
   -- The quotients `wᵢ = u⁻¹ uᵢ` satisfy `|wᵢ - 1| = |uᵢ - u|`.
-  have hwn (i : ι) (z : ℂ) : ((toSubgroup hs (u⁻¹ * us i) : ℂ → Circle) z : ℂ) - 1 =
-      ((((toSubgroup hs u : ℂ → Circle) z)⁻¹ : Circle) : ℂ) *
-        (((toSubgroup hs (us i) : ℂ → Circle) z : ℂ) - (toSubgroup hs u : ℂ → Circle) z) := by
-    rw [coe_toSubgroup_inv_mul, Pi.mul_apply, Pi.inv_apply, Circle.coe_inv_mul_sub_one]
+  have hwn (i : ι) (z : ℂ) : ‖((toSubgroup hs (u⁻¹ * us i) : ℂ → Circle) z : ℂ) - 1‖ =
+      ‖((toSubgroup hs (us i) : ℂ → Circle) z : ℂ) - (toSubgroup hs u : ℂ → Circle) z‖ := by
+    rw [coe_toSubgroup_inv_mul, Pi.mul_apply, Pi.inv_apply, Circle.coe_inv_mul_sub_one, norm_mul,
+      Circle.norm_coe, one_mul]
   have hunif := tendstoUniformly_of_gaugeTransform_eq hk hxy huxy hx hy
   have hL2 := tendsto_eLpNorm_of_gaugeTransform_eq hk hxy huxy hx hy
   obtain ⟨g, hg, hg₀⟩ := exists_tendsto_gaugeForm_inv_mul hk hxy huxy hx hy
@@ -521,15 +502,14 @@ theorem tendsto_of_gaugeTransform_eq (hk : 2 < k)
     · rw [Metric.tendstoUniformly_iff] at hunif ⊢
       intro ε hε
       filter_upwards [hunif ε hε] with i hi z
-      rw [dist_comm, dist_eq_norm, hwn, norm_mul, Circle.norm_coe, one_mul, ← dist_eq_norm,
-        dist_comm]
+      rw [dist_comm, dist_eq_norm, hwn, ← dist_eq_norm, dist_comm]
       exact hi z
     · refine hL2.congr fun i ↦ eLpNorm_congr_norm_ae ?_ ?_ (Eventually.of_forall fun z ↦ ?_)
       · exact ((continuous_coe_toSubgroup (us i)).sub
           (continuous_coe_toSubgroup u)).aestronglyMeasurable
       · exact ((continuous_coe_toSubgroup (u⁻¹ * us i)).sub
           continuous_const).aestronglyMeasurable
-      · rw [hwn, norm_mul, Circle.norm_coe, one_mul]
+      · rw [hwn]
   simpa using (tendsto_const_nhds (x := u)).mul hw
 
 end Convergence
