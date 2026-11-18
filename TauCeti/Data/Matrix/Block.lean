@@ -112,6 +112,7 @@ public theorem IsStarProjection.fromBlocks_zero₁₂_zero₂₁ {m n α : Type*
       hq.isSelfAdjoint.isHermitian).isSelfAdjoint⟩
 
 /-- This is the `iff` version of `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁`. -/
+@[simp]
 public theorem Matrix.isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff {m n α : Type*} [Fintype m]
     [Fintype n] [NonUnitalNonAssocSemiring α] {e : Matrix m m α} {f : Matrix n n α} :
     IsIdempotentElem (Matrix.fromBlocks e 0 0 f) ↔ IsIdempotentElem e ∧ IsIdempotentElem f := by
@@ -119,6 +120,7 @@ public theorem Matrix.isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff {m n
     add_zero, zero_add, Matrix.fromBlocks_inj, true_and]
 
 /-- This is the `iff` version of `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`. -/
+@[simp]
 public theorem Matrix.isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff {m n α : Type*} [Fintype m]
     [Fintype n] [NonUnitalNonAssocSemiring α] [StarAddMonoid α] {p : Matrix m m α}
     {q : Matrix n n α} :
