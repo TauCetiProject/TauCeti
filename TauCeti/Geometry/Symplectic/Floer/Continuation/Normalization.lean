@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Continuation.Manifold
 
 A Hamiltonian is determined by its Hamiltonian vector field only up to a function of time:
 `H(t, x)` and `H(t, x) + c(t)` generate the same flow and have the same one-periodic orbits, while
-the action of a loop measured against a map changes by the time average `∫₀¹ c`
+the action of a loop measured against a map drops by the time average `∫₀¹ c`
 (`TauCeti.cylinderAction_add_const`). This file shows how the energy identity of a continuation
 cylinder absorbs a change of normalization of its two end Hamiltonians.
 
@@ -88,15 +88,15 @@ theorem fderiv_linearHomotopy_add_const_stdComplexLineReal {β : ℝ → ℝ} {z
   ring
 
 /-- **The integrated curvature of a normalized linear homotopy.** Let `β` be a `C¹` profile, let
-the end Hamiltonians `H₀`, `H₁` be differentiable in time, and let `c₀`, `c₁` be `C¹` functions of
-time. Along a map `u` for which the `s`-derivative of the linear homotopy of `H₀` and `H₁` is
-integrable over `[a, b] × [0, 1]`, `a ≤ b`, the integral of the `s`-derivative of the linear
-homotopy of `H₀ + c₀` and `H₁ + c₁` is the integral for `H₀` and `H₁` plus
+the end Hamiltonians `H₀`, `H₁` be differentiable in time, and let `c₀`, `c₁` be differentiable
+functions of time. Along a map `u` for which the `s`-derivative of the linear homotopy of `H₀` and
+`H₁` is integrable over `[a, b] × [0, 1]`, `a ≤ b`, the integral of the `s`-derivative of the
+linear homotopy of `H₀ + c₀` and `H₁ + c₁` is the integral for `H₀` and `H₁` plus
 `(β(b) - β(a)) ∫₀¹ (c₁ - c₀)`. -/
 theorem setIntegral_fderiv_linearHomotopy_add_const_stdComplexLineReal {β : ℝ → ℝ}
     (hβ : ContDiff ℝ 1 β) (hH₀ : ∀ x, Differentiable ℝ fun t ↦ H₀ t x)
-    (hH₁ : ∀ x, Differentiable ℝ fun t ↦ H₁ t x) (hc₀ : ContDiff ℝ 1 c₀)
-    (hc₁ : ContDiff ℝ 1 c₁) {u : ℝ × ℝ → V} {a b : ℝ} (hab : a ≤ b)
+    (hH₁ : ∀ x, Differentiable ℝ fun t ↦ H₁ t x) (hc₀ : Differentiable ℝ c₀)
+    (hc₁ : Differentiable ℝ c₁) {u : ℝ × ℝ → V} {a b : ℝ} (hab : a ≤ b)
     (hu : IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ linearHomotopy β H₀ H₁ w (u z)) z
       stdComplexLineReal) (Icc a b ×ˢ Icc 0 1)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ linearHomotopy β (fun t y ↦ H₀ t y + c₀ t)
@@ -110,7 +110,7 @@ theorem setIntegral_fderiv_linearHomotopy_add_const_stdComplexLineReal {β : ℝ
       continuous_snd)).continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
   rw [setIntegral_congr_fun (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦
       fderiv_linearHomotopy_add_const_stdComplexLineReal (hH₀ (u z) z.2) (hH₁ (u z) z.2)
-        (hc₀.differentiable one_ne_zero z.2) (hc₁.differentiable one_ne_zero z.2),
+        (hc₀ z.2) (hc₁ z.2),
     integral_add hu hk]
   congr 1
   -- The correction is a product of a function of `s` and a function of `t`.
