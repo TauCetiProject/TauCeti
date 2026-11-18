@@ -38,6 +38,8 @@ to `0` as
 * `Real.sqrt_one_add_sq_sub_one_le_sq_div_two`: for every real `t`, `√(1 + t²) - 1 ≤ t² / 2`.
 * `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`: for all reals `a` and `b`,
   `|√(1 + a²) - √(1 + b²)| ≤ |a - b| (|a| + |b|)`.
+* `Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub`: `t ↦ √(1 + t²)` is `1`-Lipschitz.
+* `Real.one_add_div_two_le_sqrt_one_add_sq`: for every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`.
 * `Real.le_sqrt_mul_of_sq_le_mul`: if `0 ≤ b` and `a² ≤ c b²` then `a ≤ √c * b`.
 * `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
   `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
@@ -177,6 +179,28 @@ theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le (a b : ℝ) :
         rw [← abs_of_pos (by linarith : 0 < √(1 + a ^ 2) + √(1 + b ^ 2)), ← abs_mul, key,
           abs_mul]
     _ ≤ |a - b| * (|a| + |b|) := mul_le_mul_of_nonneg_left (abs_add_le a b) (abs_nonneg _)
+
+/-- The function `t ↦ √(1 + t²)` is `1`-Lipschitz on the real line:
+`|√(1 + a²) - √(1 + b²)| ≤ |a - b|`. -/
+theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub (a b : ℝ) :
+    |√(1 + a ^ 2) - √(1 + b ^ 2)| ≤ |a - b| := by
+  have hpos : 0 < √(1 + a ^ 2) + √(1 + b ^ 2) := by
+    linarith [one_le_sqrt_one_add_sq a, one_le_sqrt_one_add_sq b]
+  have hA : √(1 + a ^ 2) ^ 2 = 1 + a ^ 2 := sq_sqrt (by positivity)
+  have hB : √(1 + b ^ 2) ^ 2 = 1 + b ^ 2 := sq_sqrt (by positivity)
+  -- `|a| ≤ √(1 + a²)` and `|b| ≤ √(1 + b²)`, so the sum of the roots dominates `|a + b|`.
+  have hab : |a + b| ≤ √(1 + a ^ 2) + √(1 + b ^ 2) :=
+    (abs_add_le a b).trans (add_le_add (abs_le_sqrt (by nlinarith)) (abs_le_sqrt (by nlinarith)))
+  refine le_of_mul_le_mul_right ?_ hpos
+  -- `(√(1 + a²) - √(1 + b²)) (√(1 + a²) + √(1 + b²)) = (a - b) (a + b)`.
+  rw [← abs_of_pos hpos, ← abs_mul, abs_of_pos hpos,
+    show (√(1 + a ^ 2) - √(1 + b ^ 2)) * (√(1 + a ^ 2) + √(1 + b ^ 2)) = (a - b) * (a + b) by
+      linear_combination hA - hB, abs_mul]
+  exact mul_le_mul_of_nonneg_left hab (abs_nonneg _)
+
+/-- For every real `t`, `(1 + t) / 2 ≤ √(1 + t²)`. -/
+theorem one_add_div_two_le_sqrt_one_add_sq (t : ℝ) : (1 + t) / 2 ≤ √(1 + t ^ 2) :=
+  le_sqrt_of_sq_le (by nlinarith [sq_nonneg (t - 1)])
 
 /-- If `a² ≤ c b²` with `0 ≤ b`, then `a ≤ √c * b`. -/
 theorem le_sqrt_mul_of_sq_le_mul {a b c : ℝ} (hb : 0 ≤ b) (h : a ^ 2 ≤ c * b ^ 2) :
