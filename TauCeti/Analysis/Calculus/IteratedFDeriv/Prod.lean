@@ -16,8 +16,9 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 The iterated derivative of a slice `x ↦ f (p, x)` is the total iterated derivative of `f`
 restricted to directions in the second factor, and likewise for a slice `p ↦ f (p, x)` in the
 first factor. Consequently these partial derivatives vary continuously in both variables when `f`
-is sufficiently differentiable. This gives the joint derivative continuity needed for smooth
-families in function spaces.
+is sufficiently differentiable, and smoothly when `f` is smooth
+(`ContDiff.contDiff_iteratedFDeriv_prod_right`). This gives the joint derivative continuity needed
+for smooth families in function spaces.
 
 The same holds for the iterated derivatives of `x ↦ F (x, p.2)` in the first variable of a `C^n`
 map `F` on an open subset `W` of `E × P`: they are continuous in `p` on `W`
@@ -154,6 +155,15 @@ theorem continuous_iteratedFDeriv_prod_right (hf : ContDiff 𝕜 n f) (m : ℕ) 
   exact (ContinuousMultilinearMap.compContinuousLinearMapL
     (fun _ : Fin m ↦ ContinuousLinearMap.inr 𝕜 P E)).continuous.comp
       (hf.continuous_iteratedFDeriv hm)
+
+/-- The iterated derivatives of order `m` in the second variable of a `C^n` function are jointly
+`C^k` in the parameter and the evaluation point when `k + m ≤ n`. -/
+theorem contDiff_iteratedFDeriv_prod_right {k : WithTop ℕ∞} (hf : ContDiff 𝕜 n f) (m : ℕ)
+    (hm : k + m ≤ n) :
+    ContDiff 𝕜 k (fun z : P × E ↦ iteratedFDeriv 𝕜 m (fun y ↦ f (z.1, y)) z.2) := by
+  simp_rw [hf.contDiffAt.iteratedFDeriv_prod_right m (le_add_self.trans hm)]
+  exact (ContinuousMultilinearMap.compContinuousLinearMapL
+    (fun _ : Fin m ↦ ContinuousLinearMap.inr 𝕜 P E)).contDiff.comp (hf.iteratedFDeriv_right hm)
 
 end ContDiff
 
