@@ -150,7 +150,7 @@ theorem commonFactorOrbitHomeomorph_mk {a' b' : ℕ} {ε' : ℝ} (hk : k ≠ 0) 
 
 /-- **The power map separates orbits exactly for coprime weights.** For positive weights and
 `ε > 0`, the weighted Hopf map `z ↦ [z₁ ^ b : z₂ ^ a]` has the orbits as its fibres exactly when
-`a` and `b` are coprime. If `g = gcd(a, b) > 1`, the points `(tᵃ, tᵇ)` and `(tᵃ, ζ tᵇ)` of the
+`a` and `b` are coprime. If `g = gcd(a, b) > 1`, the points `(z₁, z₂)` and `(z₁, ζ z₂)` of the
 ellipsoid, for a primitive `a`-th root of unity `ζ`, have the same image but lie in different
 orbits: a circle element `u` carrying one to the other has `uᵃ = 1` and `uᵇ = ζ`, so
 `ζ ^ (a / g) = (uᵃ) ^ (b / g) = 1`. -/
@@ -161,39 +161,27 @@ theorem forall_weightedHopf_eq_imp_mem_orbit_iff (ha : 0 < a) (hb : 0 < b) (hε 
   by_contra hab
   have hg : 1 < a.gcd b := lt_of_le_of_ne (Nat.gcd_pos_of_pos_left b ha) (Ne.symm hab)
   have hag : a / a.gcd b ≠ 0 := (Nat.div_pos (Nat.gcd_le_left b ha) (by omega)).ne'
-  obtain ⟨t, ht, hz⟩ := exists_pos_mem_weightedEllipsoid ha hb hε
-    (r := (1, 1)) (by simp [Prod.ext_iff])
-  set ζ : Circle := Circle.exp (2 * π / a)
-  have hprim : IsPrimitiveRoot ζ a := by
-    refine IsPrimitiveRoot.of_map_of_injective (f := Circle.coeHom) ?_ Circle.coe_injective
-    convert Complex.isPrimitiveRoot_exp a ha.ne' using 2
-    change Complex.exp _ = Complex.exp _
-    congr 1
-    push_cast
-    ring
-  have hζ : ζ ^ a = 1 := hprim.pow_eq_one
-  have hw : ((t : ℂ) ^ a * 1, (ζ : ℂ) * ((t : ℂ) ^ b * 1)) ∈ weightedEllipsoid a b ε := by
-    simpa using hz
-  have hhopf : weightedHopf hε ⟨_, hz⟩ = weightedHopf hε ⟨_, hw⟩ := by
+  obtain ⟨z, hz, h₁, h₂⟩ := exists_mem_weightedEllipsoid_ne_zero ha hb hε
+  have : NeZero a := ⟨ha.ne'⟩
+  obtain ⟨ζ, hprim⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Circle a
+  have hw : (z.1, (ζ : ℂ) * z.2) ∈ weightedEllipsoid a b ε := by simpa using hz
+  have hhopf : weightedHopf hε ⟨z, hz⟩ = weightedHopf hε ⟨_, hw⟩ := by
     rw [weightedHopf_def, weightedHopf_def]
     congr 1
     ext i
     fin_cases i
     · simp
-    · simp [mul_pow, ← Circle.coe_pow, hζ]
+    · simp [mul_pow, ← Circle.coe_pow, hprim.pow_eq_one]
   obtain ⟨u, hu⟩ := h _ _ hhopf.symm
   rw [← Subtype.coe_inj, coe_smul_weightedEllipsoid] at hu
-  have htb : (t : ℂ) ^ b ≠ 0 := pow_ne_zero _ (by exact_mod_cast ht.ne')
   have hua : u ^ a = 1 := by
-    have h₁ := congrArg Prod.fst hu
-    simp only [weightedRotation_fst, mul_one] at h₁
-    exact Circle.coe_eq_one.1 (by
-      rw [Circle.coe_pow]
-      exact mul_eq_right₀ (pow_ne_zero _ (by exact_mod_cast ht.ne')) |>.1 h₁)
+    have h₁' := congrArg Prod.fst hu
+    simp only [weightedRotation_fst] at h₁'
+    exact Circle.coe_eq_one.1 (by rw [Circle.coe_pow]; exact (mul_eq_right₀ h₁).1 h₁')
   have hub : u ^ b = ζ := by
-    have h₂ := congrArg Prod.snd hu
-    simp only [weightedRotation_snd, mul_one] at h₂
-    exact Circle.coe_injective (by rw [Circle.coe_pow]; exact mul_right_cancel₀ htb h₂)
+    have h₂' := congrArg Prod.snd hu
+    simp only [weightedRotation_snd] at h₂'
+    exact Circle.coe_injective (by rw [Circle.coe_pow]; exact mul_right_cancel₀ h₂ h₂')
   -- `ζ` has order `a`, but `ζ ^ (a / g) = 1` with `0 < a / g < a`.
   have hζg : ζ ^ (a / a.gcd b) = 1 := by
     rw [← hub, ← pow_mul, ← Nat.mul_div_assoc _ (a.gcd_dvd_left b), mul_comm b a,
