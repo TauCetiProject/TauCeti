@@ -127,9 +127,7 @@ theorem divisorCount_eq_sum : divisorCount f U (Rectangle z w) = ms.sum := by
   rw [divisorCount_eq_zeroCount h.divisor_nonneg, h.zeroCount_eq_sum]
 
 /-- **Order on the frontier of a smaller rectangle.** If a smaller rectangle contains all
-certified rectangles, then `f` has order `0` on its frontier: a frontier point is not a zero,
-since otherwise it would lie in the interior of a certified rectangle, and its order is not `⊤`
-by the identity theorem on the convex rectangle, where `f` has order `0` at the corner `z`. -/
+certified rectangles, then `f` has order `0` on its frontier. -/
 theorem meromorphicOrderAt_frontier_of_rectangle_subset (hsub : Rectangle z' w' ⊆ Rectangle z w)
     (hBs : ∀ B ∈ Bs, Rectangle B.1 B.2 ⊆ Rectangle z' w') :
     ∀ s ∈ frontier (Rectangle z' w'), meromorphicOrderAt f s = 0 := by
@@ -139,13 +137,13 @@ theorem meromorphicOrderAt_frontier_of_rectangle_subset (hsub : Rectangle z' w' 
   have hzfr : z ∈ frontier (Rectangle z w) := by
     rw [frontier_rectangle]; simp [mem_reProdIm]
   by_contra hne
-  have htop : meromorphicOrderAt f s ≠ ⊤ := by
-    intro htop
-    have hz := (h.meromorphicOn.mono_set
-      h.rectangle_subset).meromorphicOrderAt_eq_top_of_isPreconnected
-      (convex_rectangle z w).isPreconnected hsR hzR htop
-    rw [h.meromorphicOrderAt_frontier z hzfr] at hz
-    simp at hz
+  -- The order at `s` is not `⊤`: by the identity theorem on the convex rectangle, where `f` has
+  -- order `0` at the corner `z`.
+  have htop : meromorphicOrderAt f s ≠ ⊤ :=
+    (h.meromorphicOn.mono_set h.rectangle_subset).meromorphicOrderAt_ne_top_of_isPreconnected
+      (convex_rectangle z w).isPreconnected hzR hsR
+      (by simp [h.meromorphicOrderAt_frontier z hzfr])
+  -- Hence `s` is not a zero: otherwise it would lie in the interior of a certified rectangle.
   obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 htop
   have hdiv : MeromorphicOn.divisor f U s = n := by
     rw [h.meromorphicOn.divisor_apply (h.rectangle_subset hsR), ← hn, WithTop.untop₀_coe]
