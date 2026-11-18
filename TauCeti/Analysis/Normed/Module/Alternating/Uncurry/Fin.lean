@@ -32,6 +32,8 @@ be combined with other permutation sums, such as those defining wedge products.
   and subtraction, complementing Mathlib's `alternatizeUncurryFin_add`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft`: the identity
   above.
+* `ContinuousAlternatingMap.norm_curryLeftLI_toContinuousLinearMap_flip_apply_le`: the interior
+  product with `y` has norm at most `‖y‖`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap`: alternatization
   commutes with pullback along a continuous linear map.
 * `ContinuousAlternatingMap.factorial_smul_alternatizeUncurryFin_apply`: the permutation-sum
@@ -76,6 +78,15 @@ theorem alternatizeUncurryFin_curryLeft_comp_add_curryLeft
   rw [add_apply, curryLeft_apply_apply, alternatizeUncurryFin_apply, alternatizeUncurryFin_apply,
     Fin.sum_univ_succ (n := n + 1)]
   simp [hremove, pow_succ]
+
+/-- The interior product `ι_y = f ↦ f.curryLeft y` with a vector `y` has operator norm at most
+`‖y‖`. -/
+theorem norm_curryLeftLI_toContinuousLinearMap_flip_apply_le (y : E) :
+    ‖(curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := n)).toContinuousLinearMap.flip y‖ ≤ ‖y‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg y) fun f ↦ ?_
+  rw [ContinuousLinearMap.flip_apply, LinearIsometry.coe_toContinuousLinearMap, curryLeftLI_apply,
+    mul_comm]
+  exact (f.curryLeft.le_opNorm y).trans_eq (by rw [norm_curryLeft])
 
 /-- Alternatization commutes with pullback along a continuous linear map `L`: pulling back the
 alternatization of `f` is alternatizing `f` with its argument and its values pulled back. Applied
