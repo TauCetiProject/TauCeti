@@ -784,10 +784,11 @@ theorem transIsOpenEmbedding {G : Type*} [TopologicalSpace G] (h : IsLocallyFlat
 /-- The flattening step of `TauCeti.IsLocallyFlat.comp`. Assume that `g ∘ f` is an embedding, that
 `g` is injective, and that around each point `x` of the domain there is a compatible pair of charts:
 a chart `ψ` of `P` at `g (f x)` and a flattening chart `φ` of `M` for `f` such that `ψ` reads the
-intermediate coordinates off `φ` along `g`, in the sense `ψ (g y) = (φ y, 0)` on the source of `φ`,
-such that `ψ` sees no more of `range g` than `φ` charts, and such that on its source `ψ` detects
-`range g` from the vanishing of the outer coordinate. Then that same `ψ` flattens `g ∘ f`, whose
-complementary model is the product of the two complementary models. Only the stated half of the
+intermediate coordinates off `φ` along `g`, in the sense `ψ (g y) = (φ y, 0)` for `y` in the source
+of `φ` with `g y` in the source of `ψ`, such that `ψ` sees no more of `range g` than `φ` charts, and
+such that on its source `ψ` detects `range g` from the vanishing of the outer coordinate. Then
+that same `ψ` flattens `g ∘ f`, whose complementary model is the product of the two complementary
+models. Only the stated half of the
 flattening of `range g` by `ψ` is assumed: the other half follows from the agreement
 `ψ (g y) = (φ y, 0)` and the inclusion `ψ.source ∩ range g ⊆ g '' φ.source`. Likewise
 `f x ∈ φ.source` is not assumed, since that inclusion and injectivity of `g` already give it. -/
@@ -797,7 +798,8 @@ private theorem of_compatible_isSliceChart {G' : Type*} [TopologicalSpace G'] [Z
       ∃ φ : OpenPartialHomeomorph M (F × F'), g (f x) ∈ ψ.source ∧
         (∀ p ∈ ψ.source, (ψ p).2 = 0 → p ∈ range g) ∧
         IsSliceChart φ ((univ : Set F) ×ˢ ({0} : Set F')) (range f) ∧
-        ψ.source ∩ range g ⊆ g '' φ.source ∧ ∀ y ∈ φ.source, ψ (g y) = (φ y, 0)) :
+        ψ.source ∩ range g ⊆ g '' φ.source ∧
+        ∀ y ∈ φ.source, g y ∈ ψ.source → ψ (g y) = (φ y, 0)) :
     IsLocallyFlat F (F' × G') (g ∘ f) := by
   -- In the model `(F × F') × G'` of `P` the composite is flattened onto the iterated slice; the
   -- standard slice of `F × (F' × G')` is that one after reassociating the coordinates.
@@ -810,11 +812,11 @@ private theorem of_compatible_isSliceChart {G' : Type*} [TopologicalSpace G'] [Z
       obtain ⟨y, hy, rfl⟩ := hsub ⟨hp, range_comp_subset_range f g hpf⟩
       obtain ⟨x', hx'⟩ := hpf
       rw [Function.comp_apply] at hx'
-      rw [hagree y hy]
+      rw [hagree y hy hp]
       exact ⟨(hφ.mem_iff hy).1 ⟨x', hg hx'⟩, rfl⟩
     · intro hps
       obtain ⟨y, hy, rfl⟩ := hsub ⟨hp, hψ p hp hps.2⟩
-      rw [hagree y hy] at hps
+      rw [hagree y hy hp] at hps
       obtain ⟨x', hx'⟩ := (hφ.mem_iff hy).2 hps.1
       exact ⟨x', by rw [Function.comp_apply, hx']⟩
   have himage : Homeomorph.prodAssoc F F' G' ''
@@ -856,7 +858,7 @@ theorem comp {G' : Type*} [TopologicalSpace G'] [Zero G'] {g : M → P}
   · rintro p ⟨hp, y, rfl⟩
     have hy : y ∈ θ.source := (hθs y).2 (hΨs _ hp)
     exact ⟨y, ⟨(hΨ y hy).1 hp, hy⟩, rfl⟩
-  · rintro y ⟨-, hy⟩
+  · rintro y ⟨-, hy⟩ -
     simp [Ψ, ← hθ y hy, θ.left_inv hy]
 
 /-- A product of locally flat embeddings is locally flat, the models multiplying: the product of
