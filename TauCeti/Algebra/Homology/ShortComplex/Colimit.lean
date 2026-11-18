@@ -15,6 +15,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Limits
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
+public import TauCeti.CategoryTheory.Limits.Shapes.Products
 
 /-!
 # Homology and exact colimits
@@ -205,26 +206,18 @@ theorem quasiIsoAt_sigmaMap_iff {K L : β → HomologicalComplex C c} (f : ∀ b
   constructor
   · intro _ b
     -- `f b` is a retract of `Sigma.map f`: include the summand `b`, then project onto it.
-    let π (X : β → HomologicalComplex C c) : ∐ X ⟶ X b :=
-      Sigma.desc fun b' ↦ if h : b' = b then eqToHom (congrArg X h) else 0
-    have hπ (X : β → HomologicalComplex C c) : Sigma.ι X b ≫ π X = 𝟙 _ := by simp [π]
     have r : RetractArrow (f b) (Limits.Sigma.map f) :=
       { i := Arrow.homMk (Sigma.ι K b) (Sigma.ι L b) (Sigma.ι_map f b)
-        r := Arrow.homMk (π K) (π L) (Sigma.hom_ext _ _ fun b' ↦ by
-          simp only [Arrow.mk_hom, Sigma.ι_map_assoc]
+        r := Arrow.homMk (Sigma.π K b) (Sigma.π L b) (Sigma.hom_ext _ _ fun b' ↦ by
           by_cases h : b' = b
           · subst h
-            simp [π]
-          · simp [π, h])
-        retract := Arrow.hom_ext _ _ (hπ K) (hπ L) }
+            simp
+          · simp [Sigma.ι_π_of_ne _ h, Sigma.ι_π_of_ne_assoc _ h])
+        retract := Arrow.hom_ext _ _ (Sigma.ι_π_eq_id K b) (Sigma.ι_π_eq_id L b) }
     exact quasiIsoAt_of_retract r q
   · intro hf
     let G := HomologicalComplex.homologyFunctor C c q
-    have h : sigmaComparison G K ≫ G.map (Limits.Sigma.map f) =
-        Limits.Sigma.map (fun b ↦ G.map (f b)) ≫ sigmaComparison G L :=
-      Sigma.hom_ext _ _ fun b ↦ by
-        rw [ι_comp_sigmaComparison_assoc, ← G.map_comp, Sigma.ι_map, Sigma.ι_map_assoc,
-          G.map_comp, ι_comp_sigmaComparison]
+    have h := sigmaComparison_map_sigmaMap G f
     have (b : β) : IsIso (G.map (f b)) := (quasiIsoAt_iff_isIso_homologyMap (f b) q).mp (hf b)
     rw [quasiIsoAt_iff_isIso_homologyMap]
     have : IsIso (sigmaComparison G K ≫ G.map (Limits.Sigma.map f)) := by

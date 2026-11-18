@@ -102,6 +102,20 @@ def twistedComplexι (𝓕 : DGLocalSystemFamily.{uM} β R) (c : ZerothHomotopy 
     (m c).coefficientCochainComplex (𝓕 c).isDGRightModule ⟶ twistedComplex m 𝓕 :=
   Sigma.ι (fun c ↦ (m c).coefficientCochainComplex (𝓕 c).isDGRightModule) c
 
+theorem twistedComplexι_def (𝓕 : DGLocalSystemFamily.{uM} β R) (c : ZerothHomotopy B) :
+    twistedComplexι m 𝓕 c =
+      Sigma.ι (fun c ↦ (m c).coefficientCochainComplex (𝓕 c).isDGRightModule) c :=
+  (rfl)
+
+/-- A morphism out of the twisted complex of a family, given by its restrictions to the summands
+of the path components, restricts on the summand of `c` to the given map. -/
+@[reassoc (attr := simp)]
+theorem twistedComplexι_desc (𝓕 : DGLocalSystemFamily.{uM} β R)
+    {K : CochainComplex (ModuleCat.{uM} R) ℤ}
+    (f : ∀ c, (m c).coefficientCochainComplex (𝓕 c).isDGRightModule ⟶ K) (c : ZerothHomotopy B) :
+    twistedComplexι m 𝓕 c ≫ Sigma.desc f = f c :=
+  Sigma.ι_comp_desc f c
+
 /-- Morphisms out of the twisted complex of a family are determined by their restrictions to the
 summands of the path components. -/
 theorem twistedComplex_hom_ext {𝓕 : DGLocalSystemFamily.{uM} β R}
@@ -141,7 +155,7 @@ theorem twistedComplexMap_comp {𝓕 𝓖 𝓗 : DGLocalSystemFamily.{uM} β R} 
     ((m c).coefficientCochainComplexMap_comp _ _ _ (φ c) (ψ c))).trans (Category.assoc _ _ _)
 
 /-- The twisted complex as a functor of the coefficient family. -/
-def twistedComplexFunctor :
+@[expose] def twistedComplexFunctor :
     DGLocalSystemFamily.{uM} β R ⥤ CochainComplex (ModuleCat.{uM} R) ℤ where
   obj := twistedComplex m
   map := twistedComplexMap m
@@ -155,10 +169,8 @@ theorem twistedComplexFunctor_obj (𝓕 : DGLocalSystemFamily.{uM} β R) :
 
 @[simp]
 theorem twistedComplexFunctor_map {𝓕 𝓖 : DGLocalSystemFamily.{uM} β R} (φ : 𝓕 ⟶ 𝓖) :
-    (twistedComplexFunctor m).map φ =
-      eqToHom (twistedComplexFunctor_obj m 𝓕) ≫ twistedComplexMap m φ ≫
-        eqToHom (twistedComplexFunctor_obj m 𝓖).symm :=
-  ((Category.id_comp _).trans (Category.comp_id _)).symm
+    (twistedComplexFunctor m).map φ = twistedComplexMap m φ :=
+  (rfl)
 
 /-! ### Homology and quasi-isomorphisms -/
 
@@ -279,6 +291,7 @@ theorem twistedComplexContinuation_refl (𝓕 : DGLocalSystemFamily.{uM} β R) :
 variable {m} in
 /-- The composite of two families of continuation cocycles induces the composite of the morphisms
 of twisted complexes. -/
+@[reassoc, simp]
 theorem twistedComplexContinuation_comp (ν : ∀ c, RowFiniteContinuationCocycle (m c) (m' c))
     (μ : ∀ c, RowFiniteContinuationCocycle (m' c) (m'' c)) (𝓕 : DGLocalSystemFamily.{uM} β R) :
     twistedComplexContinuation
@@ -313,13 +326,10 @@ twisted complex of its single path component: the inclusion of that summand is a
 theorem isIso_twistedComplexι [Subsingleton (ZerothHomotopy B)]
     (𝓕 : DGLocalSystemFamily.{uM} β R) (c : ZerothHomotopy B) :
     IsIso (twistedComplexι m 𝓕 c) := by
-  refine ⟨Sigma.desc fun c' ↦ eqToHom (congrArg
-    (fun c ↦ (m c).coefficientCochainComplex (𝓕 c).isDGRightModule) (Subsingleton.elim c' c)),
-    ?_, ?_⟩
-  · rw [twistedComplexι, Sigma.ι_comp_desc, eqToHom_refl]
-  · refine Sigma.hom_ext _ _ fun c' ↦ ?_
-    obtain rfl := Subsingleton.elim c' c
-    rw [twistedComplexι, Sigma.ι_comp_desc_assoc, eqToHom_refl, Category.id_comp, Category.comp_id]
+  have : Unique (ZerothHomotopy B) := uniqueOfSubsingleton c
+  obtain rfl := Subsingleton.elim c default
+  rw [twistedComplexι_def, ← coproductUniqueIso_inv]
+  infer_instance
 
 end DGLocalSystemFamily
 
