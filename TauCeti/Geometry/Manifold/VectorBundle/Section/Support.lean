@@ -259,18 +259,22 @@ theorem tsupport_smul_function_subset (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I;
     simp [s.eq_zero_of_notMem_tsupport hs]
   · simp [_root_.image_eq_zero_of_notMem_tsupport hf]
 
+/-- Multiplication by a smooth scalar function does not enlarge the support of a section. -/
+theorem tsupport_smul_function_subset_right (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
+    (f • s).tsupport ⊆ s.tsupport :=
+  (tsupport_smul_function_subset f s).trans inter_subset_right
+
 /-- Smooth multiplication preserves each fixed-support stage. -/
 theorem smul_function_mem_supportedIn (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     {K : Set M} (hs : s ∈ supportedIn I F n V K) :
     f • s ∈ supportedIn I F n V K :=
-  (tsupport_smul_function_subset f s).trans (inter_subset_right.trans hs)
+  (tsupport_smul_function_subset_right f s).trans hs
 
 /-- Smooth multiplication preserves compact support of the section. -/
 theorem smul_function_mem_compactlySupported (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     (hs : s ∈ compactlySupported I F n V) :
     f • s ∈ compactlySupported I F n V :=
-  hs.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smul_function_subset f s).trans
-    inter_subset_right)
+  hs.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_function_subset_right f s)
 
 /-- A compactly supported smooth scalar function localizes any smooth section to compact
 support, even when the original section is not compactly supported. -/
