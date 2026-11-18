@@ -89,6 +89,25 @@ noncomputable def mayerVietorisDesc {K₁ K₂ K₃ K₄ : Compacts X}
   mappingCone.desc _ 0 (biprod.desc (F.map (opHomOfLE h.le₁₂)) (-F.map (opHomOfLE h.le₁₃)))
     (by simp [(F.commSq_map h).w])
 
+theorem mayerVietorisDesc_eq_desc {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄) :
+    F.mayerVietorisDesc h =
+      mappingCone.desc _ 0 (biprod.desc (F.map (opHomOfLE h.le₁₂)) (-F.map (opHomOfLE h.le₁₃)))
+        (by simp [(F.commSq_map h).w]) :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+theorem inl_v_mayerVietorisDesc_f {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄)
+    (p q : ℤ) (hpq : p + (-1) = q) :
+    (mappingCone.inl _).v p q hpq ≫ (F.mayerVietorisDesc h).f q = 0 := by
+  simp [mayerVietorisDesc_eq_desc]
+
+@[reassoc (attr := simp)]
+theorem inr_f_mayerVietorisDesc_f {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄)
+    (p : ℤ) :
+    (mappingCone.inr _).f p ≫ (F.mayerVietorisDesc h).f p =
+      (biprod.desc (F.map (opHomOfLE h.le₁₂)) (-F.map (opHomOfLE h.le₁₃))).f p :=
+  mappingCone.inr_f_desc_f ..
+
 @[reassoc (attr := simp)]
 theorem inr_mayerVietorisDesc {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄) :
     mappingCone.inr _ ≫ F.mayerVietorisDesc h =
