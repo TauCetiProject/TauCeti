@@ -63,6 +63,7 @@ theorem mapDomain_subtypeDomain_subtype {α M : Type*} [AddCommMonoid M] {s : Se
 
 /-- Restricting a finitely supported function to a predicate `p` and pushing it forward along the
 inclusion keeps the part of the function on `p`. -/
+@[simp]
 theorem mapDomain_subtypeDomain_eq_filter {α M : Type*} [AddCommMonoid M] (p : α → Prop)
     [DecidablePred p] (f : α →₀ M) : (f.subtypeDomain p).mapDomain Subtype.val = f.filter p := by
   ext a

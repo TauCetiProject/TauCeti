@@ -29,7 +29,8 @@ a finite sum over any finite set of components containing those that meet the su
 if and only if every `B_K` is (`CoxeterMatrix.geometricForm_posDef_iff_forall_connectedComponent`).
 Both statements hold more generally for any map `c : B → ι` whose distinct fibres are joined only
 by entries `2`, with the fibres of `c` in place of the components. The Coxeter graph of `M_K` is
-the induced graph on `K` (`CoxeterMatrix.graph_restrict`), and is connected. The decomposition
+the induced graph on `K` (`CoxeterMatrix.graph_restrict`), and is connected
+(`CoxeterMatrix.connected_graph_restrict_supp`). The decomposition
 rests on the orthogonality `CoxeterMatrix.geometricForm_eq_zero_of_eq_two` and on the description
 `CoxeterMatrix.geometricForm_restrict` of the canonical form of a restriction.
 
@@ -41,8 +42,6 @@ infinitely many pairwise commuting generators.
 
 ## Main results
 
-* `CoxeterMatrix.connected_graph_restrict_supp`: the restriction to a connected component of the
-  Coxeter graph has connected Coxeter graph.
 * `CoxeterMatrix.geometricForm_eq_sum_restrict` and
   `CoxeterMatrix.geometricForm_eq_sum_connectedComponent`: the canonical form is the sum of the
   canonical forms of the restrictions to the fibres, in particular to the connected components.
@@ -63,15 +62,6 @@ open Real
 namespace CoxeterMatrix
 
 variable {B : Type*} (M : CoxeterMatrix B)
-
-/-! ### Connectivity of the components -/
-
-/-- **The restriction to a connected component of the Coxeter graph has connected Coxeter
-graph.** -/
-theorem connected_graph_restrict_supp (K : M.graph.ConnectedComponent) :
-    (M.restrict K.supp).graph.Connected := by
-  rw [graph_restrict]
-  exact K.connected_toSimpleGraph
 
 /-- The canonical form of the restriction to `J`, evaluated on restrictions, is the canonical form
 of the parts supported on `J`. -/
