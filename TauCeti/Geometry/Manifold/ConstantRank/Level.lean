@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ConstantRank.Basic
 public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.Geometry.Manifold.Gluing.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
@@ -56,10 +57,10 @@ variable {𝕜 E F H G M N : Type*} [RCLike 𝕜]
   {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
   {f : M → N} {U : Set M} {x : M} {c : N} {r : ℕ}
 
-/-- Near a point of locally constant rank, the level has regular equations with values in a
-finite-dimensional vector space of dimension equal to the rank. This does not require that
-`f` itself be a submersion. -/
-theorem exists_regular_eq_of_constantRank
+/-- Near a point where the derivative rank bounds all nearby ranks, the level has regular
+equations with values in a finite-dimensional vector space of dimension equal to the rank.
+This does not require that `f` itself be a submersion. -/
+theorem _root_.ContMDiffOn.exists_isRegularValue_eq_zero_iff_eq_of_mfderivRank_le
     (hf : ContMDiffOn I J n f U) (hU : IsOpen U) (hx : x ∈ U) (hn : 1 ≤ n)
     (hrank : ∀ y ∈ U, mfderivRank I J f y ≤ mfderivRank I J f x) :
     ∃ (V : TopologicalSpace.Opens M) (_ : x ∈ V) (_ : (V : Set M) ⊆ U)
@@ -115,7 +116,8 @@ private theorem exists_levelPatch_of_constantRank
       Manifold.IsSmoothEmbedding 𝓘(𝕜, Fin (finrank 𝕜 E - r) → 𝕜) I n
         (fun y : {y : {x : M // f x = c} // y.1 ∈ V} ↦ y.1.1) := by
   obtain ⟨V, hzV, -, L, q, hfin, hdim, hq, hreg, heq⟩ :=
-    exists_regular_eq_of_constantRank hf hU hz hn (fun y hy ↦ by rw [hrank y hy, hrank z hz])
+    hf.exists_isRegularValue_eq_zero_iff_eq_of_mfderivRank_le hU hz hn
+      (fun y hy ↦ by rw [hrank y hy, hrank z hz])
   let := hfin
   have heq' (y : V) : q y = 0 ↔ f y = c := by rw [heq, z.2]
   have hdim' : finrank 𝕜 E - finrank 𝕜 L = finrank 𝕜 E - r := by rw [hdim, hrank z hz]
@@ -162,12 +164,13 @@ theorem exists_constantRankFiber_smoothEmbedding
   let K := 𝓘(𝕜, Fin (finrank 𝕜 E - r) → 𝕜)
   have hlocal (z : P) := exists_levelPatch_of_constantRank hf hU hn hrank z (hlevel z z.2)
   choose V hV a hman hemb using hlocal
-  let W (z : P) : TopologicalSpace.Opens P :=
-    ⟨{y | y.1 ∈ V z}, (V z).isOpen.preimage continuous_subtype_val⟩
+  let W (z : P) := {y : P // y.1 ∈ V z}
   let (z : P) : ChartedSpace (Fin (finrank 𝕜 E - r) → 𝕜) (W z) := a z
   have (z : P) : IsManifold K n (W z) := hman z
   let ι (z : P) : W z → P := Subtype.val
-  have hopen (z : P) : IsOpenEmbedding (ι z) := (W z).isOpen.isOpenEmbedding_subtypeVal
+  have hopen (z : P) : IsOpenEmbedding (ι z) :=
+    ((V z).isOpen.preimage continuous_subtype_val : IsOpen {y : P | y.1 ∈ V z})
+      |>.isOpenEmbedding_subtypeVal
   have hcover (z : P) : ∃ a q, ι a q = z := ⟨z, ⟨z, hV z⟩, rfl⟩
   have hdeck := exists_contMDiffAt_transition_of_isImmersion hopen
     (g := (Subtype.val : P → M)) (fun z ↦ (hemb z).isImmersion)
