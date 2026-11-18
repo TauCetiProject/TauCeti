@@ -39,6 +39,8 @@ Since `A` is congruent to a diagonal matrix, induction on the rank with the poin
 * `Matrix.IsSymm.natCard_isometryMatrices_eq_of_card_eq_two_mul_add_one`,
   `Matrix.IsSymm.natCard_isometryMatrices_eq_of_card_eq_two_mul_add_two`: the orders in odd and in
   even rank.
+* `Matrix.det_map_ne_zero_of_isUnit_det`: the reduction of a matrix with unit determinant to a
+  field has nonzero determinant.
 
 ## References
 
@@ -243,5 +245,18 @@ theorem natCard_isometryMatrices_eq_of_card_eq_two_mul_add_two [DecidableEq F] (
   (natCard_isometryMatrices_aux hF m).2 ι A hA hdet hι
 
 end IsSymm
+
+section Reduction
+
+variable {R K : Type*} [CommRing R] [Field K]
+
+/-- The reduction of a matrix with unit determinant along a ring homomorphism to a field has
+nonzero determinant. -/
+theorem det_map_ne_zero_of_isUnit_det {A : Matrix ι ι R} (f : R →+* K) (hdet : IsUnit A.det) :
+    (A.map f).det ≠ 0 := by
+  rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  exact (hdet.map _).ne_zero
+
+end Reduction
 
 end Matrix
