@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Chain
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Data.ZMod.Induction
 
 /-!
 # The cyclic action of a chain of strip maps and its diagonal quotient
@@ -25,14 +26,15 @@ This is the convention of `TauCeti.stripGeneratingFunction`; it is the negative 
 
 The **cyclic action** `W(x) = Σ_i S_i(x_i, x_(i+1))` (`TauCeti.cyclicAction`) of a configuration
 `x : ℤ/N → ℝ` has partial derivatives `∂_(x_i) W = Y_(i-1) - y_i`
-(`TauCeti.fderiv_cyclicAction_apply`), so its critical points are the configurations along which
-the outgoing momentum of each map is the incoming momentum of the next
-(`TauCeti.fderiv_cyclicAction_eq_zero_iff`). Taking positions is a bijection from the periodic
-chains `z_i`, `F_i(z_i) = z_(i+1)`, to the critical configurations
-(`TauCeti.exists_equiv_periodic_of_hasFDerivAt`). Such a chain records a fixed point `z_0` of the
-composite `F_(N-1) ∘ ⋯ ∘ F_0` together with its intermediate states. This is the strip form of
-the chain dictionary `TauCeti.CotangentBundle.exists_equiv_periodic_of_generating`, stated with
-the Fréchet derivative on `ℤ/N → ℝ` and in the sign convention above.
+(`TauCeti.hasFDerivAt_cyclicAction`, `TauCeti.fderiv_cyclicAction_apply`), so its critical
+points are the configurations along which the outgoing momentum of each map is the incoming
+momentum of the next (`TauCeti.fderiv_cyclicAction_eq_zero_iff`). When each `S_i` generates `F_i`
+(`TauCeti.IsStripGenerating`), taking positions is a bijection from the periodic chains `z_i`,
+`F_i(z_i) = z_(i+1)`, to the critical configurations
+(`TauCeti.exists_equiv_periodic_of_isStripGenerating`). Such a chain records a fixed point `z_0`
+of the composite `F_(N-1) ∘ ⋯ ∘ F_0` together with its intermediate states. This is the strip
+form of the chain dictionary `TauCeti.CotangentBundle.exists_equiv_periodic_of_generating`, stated
+with the Fréchet derivative on `ℤ/N → ℝ` and in the sign convention above.
 
 Lifts of annulus maps commute with the deck translation `(x, y) ↦ (x + 1, y)`, and their
 generating functions are invariant under the diagonal translation `(x, X) ↦ (x + 1, X + 1)`. Then
@@ -42,10 +44,10 @@ a critical configuration is its image in the quotient of `ℤ/N → ℝ` by the 
 `AddSubgroup.zmultiples 1`. On this quotient the dictionary is injective on the annulus point
 `(x_0 mod 1, y_0)`: two periodic chains have the same
 initial annulus point exactly when their positions differ by a diagonal integer translation
-(`TauCeti.map_coe_eq_map_coe_iff_mk_eq_mk`). Hence two distinct critical points of `W` on the
-quotient give two periodic chains whose fixed points `z_0` are distinct points of the annulus
-(`TauCeti.exists_periodic_map_coe_ne_of_mk_ne_mk`). Different lifts of one annulus point, and
-different markings of one periodic orbit, are not counted twice.
+(`TauCeti.prodMap_coe_eq_prodMap_coe_iff_mk_eq_mk_of_isStripGenerating`). Hence two distinct
+critical points of `W` on the quotient give two periodic chains whose fixed points `z_0` are
+distinct points of the annulus (`TauCeti.exists_periodic_prodMap_coe_ne_of_isStripGenerating`), so
+different lifts of one annulus point are not counted twice.
 
 ## References
 
@@ -123,26 +125,28 @@ theorem stripGeneratingSource_add_intCast (hS : Function.Periodic S (1, 1)) (x X
 
 /-! ### The derivative of the cyclic action -/
 
-variable {N : ℕ}
+variable {N : ℕ} [NeZero N]
 
-/-- The edge `q ↦ (q_i, q_(i+1))` of a configuration, as a continuous linear map. -/
-private def edgeCLM (i : ZMod N) : (ZMod N → ℝ) →L[ℝ] ℝ × ℝ :=
-  (proj i).prod (proj (i + 1))
-
-@[simp]
-private theorem edgeCLM_apply (i : ZMod N) (q : ZMod N → ℝ) : edgeCLM i q = (q i, q (i + 1)) :=
-  (rfl)
-
-variable [NeZero N]
-
-private theorem hasFDerivAt_cyclicAction {S : ZMod N → ℝ × ℝ → ℝ} {q : ZMod N → ℝ}
+/-- **The derivative of the cyclic action.** If each `S_i` is differentiable at the edge
+`(q_i, q_(i+1))`, then `W(q) = Σ_i S_i(q_i, q_(i+1))` has derivative
+`v ↦ Σ_i dS_i(q_i, q_(i+1)) (v_i, v_(i+1))` at `q`. -/
+theorem hasFDerivAt_cyclicAction {S : ZMod N → ℝ × ℝ → ℝ} {q : ZMod N → ℝ}
     (hS : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
-    HasFDerivAt (cyclicAction S) (∑ i, (fderiv ℝ (S i) (q i, q (i + 1))).comp (edgeCLM i)) q := by
-  have h : cyclicAction S = fun q' ↦ ∑ i, S i (edgeCLM i q') := by
+    HasFDerivAt (cyclicAction S)
+      (∑ i, (fderiv ℝ (S i) (q i, q (i + 1))).comp ((proj i).prod (proj (i + 1)))) q := by
+  have h : cyclicAction S = fun q' ↦ ∑ i, S i (q' i, q' (i + 1)) := by
     funext q'
     simp [cyclicAction_apply]
   rw [h]
-  exact HasFDerivAt.fun_sum fun i _ ↦ (hS i).hasFDerivAt.comp q (edgeCLM i).hasFDerivAt
+  exact HasFDerivAt.fun_sum fun i _ ↦ (hS i).hasFDerivAt.comp q
+    ((hasFDerivAt_apply i q).prodMk (hasFDerivAt_apply (i + 1) q))
+
+/-- If each `S_i` is differentiable at the edge `(q_i, q_(i+1))`, then the cyclic action
+`W(q) = Σ_i S_i(q_i, q_(i+1))` is differentiable at `q`. -/
+theorem differentiableAt_cyclicAction {S : ZMod N → ℝ × ℝ → ℝ} {q : ZMod N → ℝ}
+    (hS : ∀ i, DifferentiableAt ℝ (S i) (q i, q (i + 1))) :
+    DifferentiableAt ℝ (cyclicAction S) q :=
+  (hasFDerivAt_cyclicAction hS).differentiableAt
 
 /-- **The partial derivatives of the cyclic action.** If each `S_i` is differentiable at the edge
 `(q_i, q_(i+1))`, the derivative of `W(q) = Σ_i S_i(q_i, q_(i+1))` at `q` pairs `v` with
@@ -154,14 +158,15 @@ theorem fderiv_cyclicAction_apply {S : ZMod N → ℝ × ℝ → ℝ} {q : ZMod 
         fderiv ℝ (S (i - 1)) (q (i - 1), q i) (0, 1)) := by
   -- Split each edge derivative into its two partial derivatives.
   have hsplit (L : ℝ × ℝ →L[ℝ] ℝ) (a b : ℝ) : L (a, b) = a * L (1, 0) + b * L (0, 1) := by
-    rw [show ((a, b) : ℝ × ℝ) = a • (1, 0) + b • (0, 1) by ext <;> simp, map_add, map_smul,
-      map_smul, smul_eq_mul, smul_eq_mul]
+    rw [show ((a, b) : ℝ × ℝ) = a • (1, 0) + b • (0, 1) by ext <;> simp]
+    simp only [map_add, map_smul, smul_eq_mul]
   have hedge (i : ZMod N) : fderiv ℝ (S i) (q i, q (i + 1)) (v i, v (i + 1)) =
       v i * fderiv ℝ (S i) (q i, q (i + 1)) (1, 0) +
         v (i + 1) * fderiv ℝ (S i) (q i, q (i + 1)) (0, 1) :=
     hsplit _ _ _
   rw [(hasFDerivAt_cyclicAction hS).fderiv, sum_apply]
-  simp only [comp_apply, edgeCLM_apply, hedge, mul_add, Finset.sum_add_distrib]
+  simp only [comp_apply, ContinuousLinearMap.prod_apply, proj_apply, hedge, mul_add,
+    Finset.sum_add_distrib]
   -- Shift the index of the second partial derivatives by one.
   congr 1
   exact Fintype.sum_equiv (Equiv.addRight 1) _ _ fun i ↦ by simp
@@ -193,68 +198,70 @@ theorem fderiv_cyclicAction_eq_zero_iff {S : ZMod N → ℝ × ℝ → ℝ} {q :
 
 /-! ### Periodic chains and critical configurations -/
 
+/-- `S : ℝ × ℝ → ℝ` **generates** the map `F` of the plane on the set `D` over the set `W` of pairs
+of positions, in the strip convention `y = -∂₁ S`, `Y = ∂₂ S`: taking the pair of positions
+`(x, X)` of a point `(x, y) ∈ D` and of its image `(X, Y) = F(x, y)` maps `D` onto `W`, and at
+each such pair `S` has derivative `Y dX - y dx`. -/
+structure IsStripGenerating (S : ℝ × ℝ → ℝ) (F : ℝ × ℝ → ℝ × ℝ) (D W : Set (ℝ × ℝ)) :
+    Prop where
+  /-- The pair of positions of a point of `D` and of its image lies in `W`. -/
+  mapsTo : Set.MapsTo (fun p ↦ (p.1, (F p).1)) D W
+  /-- Every point of `W` is the pair of positions of a point of `D` and of its image. -/
+  surjOn : Set.SurjOn (fun p ↦ (p.1, (F p).1)) D W
+  /-- At the pair of positions of `p ∈ D`, `S` has derivative `Y dX - y dx`, where `(x, y) = p`
+  and `(X, Y) = F p`. -/
+  hasFDerivAt : ∀ p ∈ D, HasFDerivAt S ((F p).2 • snd ℝ ℝ ℝ - p.2 • fst ℝ ℝ ℝ) (p.1, (F p).1)
+
 variable {S : ZMod N → ℝ × ℝ → ℝ} {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {D W : ZMod N → Set (ℝ × ℝ)}
 
 omit [NeZero N] in
 /-- Along a periodic chain, each state is the source point over the positions of the state and
 its successor. -/
 private theorem stripGeneratingSource_eq_of_chain
-    (hgen : ∀ i, ∀ p ∈ D i, (p.1, (F i p).1) ∈ W i ∧
-      HasFDerivAt (S i) ((F i p).2 • snd ℝ ℝ ℝ - p.2 • fst ℝ ℝ ℝ) (p.1, (F i p).1))
+    (hgen : ∀ i, IsStripGenerating (S i) (F i) (D i) (W i))
     {z : ZMod N → ℝ × ℝ} (hz : ∀ i, z i ∈ D i ∧ F i (z i) = z (i + 1)) (i : ZMod N) :
     stripGeneratingSource (S i) ((z i).1, (z (i + 1)).1) = z i := by
   rw [← (hz i).2]
-  exact stripGeneratingSource_eq_of_hasFDerivAt (hgen i _ (hz i).1).2
-
-/-- A sequence indexed by `ℤ/N` with `z_(i+1) = F_i(z_i)` is determined by `z_0`. -/
-private theorem eq_of_chain {α : Type*} {G : ZMod N → α → α} {z z' : ZMod N → α}
-    (hz : ∀ i, G i (z i) = z (i + 1)) (hz' : ∀ i, G i (z' i) = z' (i + 1)) (h0 : z 0 = z' 0) :
-    z = z' := by
-  have key (n : ℕ) : z n = z' n := by
-    induction n with
-    | zero => simpa using h0
-    | succ n ih => rw [Nat.cast_succ, ← hz, ← hz', ih]
-  funext i
-  simpa using key i.val
+  exact stripGeneratingSource_eq_of_hasFDerivAt ((hgen i).hasFDerivAt _ (hz i).1)
 
 /-- **The chain dictionary on the strip.** Let `S_i`, `i ∈ ℤ/N`, be real functions on `ℝ × ℝ`
-generating maps `F_i` of the plane on sets `D_i` in the convention `y = -∂₁ S_i`, `Y = ∂₂ S_i`:
-every `p ∈ D_i` has its pair of positions `(p.1, (F_i p).1)` in a set `W_i`, at which `S_i` has
-derivative `Y dX - y dx` with `(x, y) = p` and `(X, Y) = F_i p`, and every point of `W_i` is such
-a pair of positions. Then taking positions is a bijection from the periodic chains `z_i ∈ D_i`,
-`F_i(z_i) = z_(i+1)`, onto the critical points of the cyclic action `Σ_i S_i(q_i, q_(i+1))` on the
-configurations with every edge `(q_i, q_(i+1))` in `W_i`. Its inverse sends a critical
+generating maps `F_i` of the plane on sets `D_i` over sets `W_i` in the convention
+`y = -∂₁ S_i`, `Y = ∂₂ S_i` (`TauCeti.IsStripGenerating`): every `p ∈ D_i` has its pair of
+positions `(p.1, (F_i p).1)` in `W_i`, at which `S_i` has derivative `Y dX - y dx` with
+`(x, y) = p` and `(X, Y) = F_i p`, and every point of `W_i` is such a pair of positions. Then
+taking positions is a bijection from the periodic chains `z_i ∈ D_i`, `F_i(z_i) = z_(i+1)`, onto
+the critical points of the cyclic action `Σ_i S_i(q_i, q_(i+1))` on the configurations with every
+edge `(q_i, q_(i+1))` in `W_i`. Its inverse sends a critical
 configuration to the source points `(q_i, -∂₁ S_i(q_i, q_(i+1)))`. -/
-theorem exists_equiv_periodic_of_hasFDerivAt
-    (hgen : ∀ i, ∀ p ∈ D i, (p.1, (F i p).1) ∈ W i ∧
-      HasFDerivAt (S i) ((F i p).2 • snd ℝ ℝ ℝ - p.2 • fst ℝ ℝ ℝ) (p.1, (F i p).1))
-    (hW : ∀ i, ∀ x ∈ W i, ∃ p ∈ D i, (p.1, (F i p).1) = x) :
+theorem exists_equiv_periodic_of_isStripGenerating
+    (hgen : ∀ i, IsStripGenerating (S i) (F i) (D i) (W i)) :
     ∃ e : {z : ZMod N → ℝ × ℝ // ∀ i, z i ∈ D i ∧ F i (z i) = z (i + 1)} ≃
         {q : ZMod N → ℝ // (∀ i, (q i, q (i + 1)) ∈ W i) ∧ fderiv ℝ (cyclicAction S) q = 0},
       (∀ z i, (e z : ZMod N → ℝ) i = (z.1 i).1) ∧
         ∀ q i, (e.symm q : ZMod N → ℝ × ℝ) i =
           stripGeneratingSource (S i) (q.1 i, q.1 (i + 1)) := by
   have hdiff (i : ZMod N) (x : ℝ × ℝ) (hx : x ∈ W i) : DifferentiableAt ℝ (S i) x := by
-    obtain ⟨p, hp, rfl⟩ := hW i x hx
-    exact (hgen i p hp).2.differentiableAt
+    obtain ⟨p, hp, rfl⟩ := (hgen i).surjOn hx
+    exact ((hgen i).hasFDerivAt p hp).differentiableAt
   -- Along a periodic chain the edges lie in the `W_i`.
   have hmem (z : ZMod N → ℝ × ℝ) (hz : ∀ i, z i ∈ D i ∧ F i (z i) = z (i + 1)) (i : ZMod N) :
       ((z i).1, (z (i + 1)).1) ∈ W i := by
     rw [← (hz i).2]
-    exact (hgen i _ (hz i).1).1
+    exact (hgen i).mapsTo (hz i).1
   -- Over each pair of positions in `W_i`, the source point lies in `D_i` and `F_i` sends it to
   -- the target point.
   have hedge (i : ZMod N) (x : ℝ × ℝ) (hx : x ∈ W i) :
       stripGeneratingSource (S i) x ∈ D i ∧
         F i (stripGeneratingSource (S i) x) = stripGeneratingTarget (S i) x := by
-    obtain ⟨p, hp, rfl⟩ := hW i x hx
-    rw [stripGeneratingSource_eq_of_hasFDerivAt (hgen i p hp).2,
-      stripGeneratingTarget_eq_of_hasFDerivAt (hgen i p hp).2]
+    obtain ⟨p, hp, rfl⟩ := (hgen i).surjOn hx
+    rw [stripGeneratingSource_eq_of_hasFDerivAt ((hgen i).hasFDerivAt p hp),
+      stripGeneratingTarget_eq_of_hasFDerivAt ((hgen i).hasFDerivAt p hp)]
     exact ⟨hp, rfl⟩
   refine ⟨
     { toFun := fun z ↦ ⟨fun i ↦ (z.1 i).1, hmem z.1 z.2,
         (fderiv_cyclicAction_eq_zero_iff fun i ↦ hdiff i _ (hmem z.1 z.2 i)).2 fun i ↦ by
-          have h := stripGeneratingTarget_eq_of_hasFDerivAt (hgen _ _ (z.2 (i - 1)).1).2
+          have h := stripGeneratingTarget_eq_of_hasFDerivAt
+            ((hgen _).hasFDerivAt _ (z.2 (i - 1)).1)
           rw [(z.2 (i - 1)).2, sub_add_cancel] at h
           rw [h, stripGeneratingSource_eq_of_chain hgen z.2]⟩
       invFun := fun q ↦ ⟨fun i ↦ stripGeneratingSource (S i) (q.1 i, q.1 (i + 1)), fun i ↦ by
@@ -296,41 +303,37 @@ positions differing by the diagonal translation by `k`: the translate by `k` of 
 the first chain is a critical configuration, whose chain starts at the initial state of the second
 chain. -/
 private theorem chain_fst_eq_add_of_eq_add
-    (hgen : ∀ i, ∀ p ∈ D i, (p.1, (F i p).1) ∈ W i ∧
-      HasFDerivAt (S i) ((F i p).2 • snd ℝ ℝ ℝ - p.2 • fst ℝ ℝ ℝ) (p.1, (F i p).1))
-    (hW : ∀ i, ∀ x ∈ W i, ∃ p ∈ D i, (p.1, (F i p).1) = x)
+    (hgen : ∀ i, IsStripGenerating (S i) (F i) (D i) (W i))
     (hS : ∀ i, Function.Periodic (S i) (1, 1)) (hWper : ∀ i x, x + (1, 1) ∈ W i ↔ x ∈ W i)
     {z z' : ZMod N → ℝ × ℝ} (hz : ∀ i, z i ∈ D i ∧ F i (z i) = z (i + 1))
     (hz' : ∀ i, z' i ∈ D i ∧ F i (z' i) = z' (i + 1)) {k : ℤ} (h0 : z' 0 = z 0 + ((k : ℝ), 0))
     (i : ZMod N) : (z' i).1 = (z i).1 + k := by
-  obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_hasFDerivAt hgen hW
+  obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_isStripGenerating hgen
   let r : {q : ZMod N → ℝ // (∀ i, (q i, q (i + 1)) ∈ W i) ∧
       fderiv ℝ (cyclicAction S) q = 0} :=
     ⟨e ⟨z, hz⟩ + k • (1 : ZMod N → ℝ), mem_of_add_zsmul_one hWper (e ⟨z, hz⟩).2.1 k,
       (((periodic_cyclicAction hS).zsmul k).fderiv (𝕜 := ℝ) _).trans (e ⟨z, hz⟩).2.2⟩
   -- The chain of `r` starts at `z'_0`, so by uniqueness of chains it is `z'`.
   have hr : (e.symm r).1 = z' := by
-    refine eq_of_chain (G := F) (fun i ↦ ((e.symm r).2 i).2) (fun i ↦ (hz' i).2) ?_
+    refine ZMod.eq_of_forall_add_one (G := F) (fun i ↦ ((e.symm r).2 i).2) (fun i ↦ (hz' i).2) ?_
     rw [he' r 0, h0]
     simp only [r, add_zsmul_one_apply, he]
     rw [stripGeneratingSource_add_intCast (hS 0), stripGeneratingSource_eq_of_chain hgen hz 0]
-    exact Prod.ext rfl (by simp)
+    ext <;> simp
   have h := he (e.symm r) i
   rw [Equiv.apply_symm_apply, hr] at h
   rw [← h]
   simp [r, he]
 
 /-- **The annulus point of a periodic chain determines it up to diagonal translation.** Let the
-`S_i` generate the maps `F_i` on the sets `D_i` over the `W_i`, as in
-`TauCeti.exists_equiv_periodic_of_hasFDerivAt`, and let the `S_i` and `W_i` be invariant under
-the diagonal translation `(x, X) ↦ (x + 1, X + 1)`. Then two periodic chains `z`, `z'` of the
-`F_i` have the same initial annulus point, `(x_0 mod 1, y_0) = (x'_0 mod 1, y'_0)`, exactly when
-their positions differ by a diagonal integer translation, that is, have the same image in the
-quotient of `ℤ/N → ℝ` by the diagonal integers. -/
-theorem map_coe_eq_map_coe_iff_mk_eq_mk
-    (hgen : ∀ i, ∀ p ∈ D i, (p.1, (F i p).1) ∈ W i ∧
-      HasFDerivAt (S i) ((F i p).2 • snd ℝ ℝ ℝ - p.2 • fst ℝ ℝ ℝ) (p.1, (F i p).1))
-    (hW : ∀ i, ∀ x ∈ W i, ∃ p ∈ D i, (p.1, (F i p).1) = x)
+`S_i` generate the maps `F_i` on the sets `D_i` over the `W_i` (`TauCeti.IsStripGenerating`), and
+let the `S_i` and `W_i` be invariant under the diagonal translation `(x, X) ↦ (x + 1, X + 1)`.
+Then two periodic chains `z`, `z'` of the `F_i` have the same initial annulus point,
+`(x_0 mod 1, y_0) = (x'_0 mod 1, y'_0)`, exactly when their positions differ by a diagonal
+integer translation, that is, have the same image in the quotient of `ℤ/N → ℝ` by the diagonal
+integers. -/
+theorem prodMap_coe_eq_prodMap_coe_iff_mk_eq_mk_of_isStripGenerating
+    (hgen : ∀ i, IsStripGenerating (S i) (F i) (D i) (W i))
     (hS : ∀ i, Function.Periodic (S i) (1, 1)) (hWper : ∀ i x, x + (1, 1) ∈ W i ↔ x ∈ W i)
     {z z' : ZMod N → ℝ × ℝ} (hz : ∀ i, z i ∈ D i ∧ F i (z i) = z (i + 1))
     (hz' : ∀ i, z' i ∈ D i ∧ F i (z' i) = z' (i + 1)) :
@@ -347,7 +350,7 @@ theorem map_coe_eq_map_coe_iff_mk_eq_mk
     have h0 : z' 0 = z 0 + ((k : ℝ), 0) :=
       Prod.ext (by simp [hk]) (by simpa using (congrArg Prod.snd hmap).symm)
     refine ⟨k, funext fun i ↦ ?_⟩
-    simp [chain_fst_eq_add_of_eq_add hgen hW hS hWper hz hz' h0 i]
+    simp [chain_fst_eq_add_of_eq_add hgen hS hWper hz hz' h0 i]
   · rintro ⟨k, hk⟩
     have hi (i : ZMod N) : (z' i).1 = (z i).1 + k := by
       have h := congrFun hk i
@@ -363,16 +366,15 @@ theorem map_coe_eq_map_coe_iff_mk_eq_mk
     exact ⟨k, by simp⟩
 
 /-- **Distinct critical points on the diagonal quotient give distinct annulus fixed points.**
-Under the hypotheses of `TauCeti.map_coe_eq_map_coe_iff_mk_eq_mk`, let `q` and `q'` be critical
-configurations of the cyclic action with edges in the `W_i` whose images in the quotient of
-`ℤ/N → ℝ` by the diagonal integers are distinct. Then they are the positions of periodic chains
+Under the hypotheses of
+`TauCeti.prodMap_coe_eq_prodMap_coe_iff_mk_eq_mk_of_isStripGenerating`, let `q` and `q'` be
+critical configurations of the cyclic action with edges in the `W_i` whose images in the quotient
+of `ℤ/N → ℝ` by the diagonal integers are distinct. Then they are the positions of periodic chains
 `z`, `z'` of the `F_i` whose initial states are distinct points `(x_0 mod 1, y_0)` of the annulus.
 These chains record fixed points `z_0`, `z'_0` of the composite `F_(N-1) ∘ ⋯ ∘ F_0`, with their
 intermediate states, which are not deck translates of each other. -/
-theorem exists_periodic_map_coe_ne_of_mk_ne_mk
-    (hgen : ∀ i, ∀ p ∈ D i, (p.1, (F i p).1) ∈ W i ∧
-      HasFDerivAt (S i) ((F i p).2 • snd ℝ ℝ ℝ - p.2 • fst ℝ ℝ ℝ) (p.1, (F i p).1))
-    (hW : ∀ i, ∀ x ∈ W i, ∃ p ∈ D i, (p.1, (F i p).1) = x)
+theorem exists_periodic_prodMap_coe_ne_of_isStripGenerating
+    (hgen : ∀ i, IsStripGenerating (S i) (F i) (D i) (W i))
     (hS : ∀ i, Function.Periodic (S i) (1, 1)) (hWper : ∀ i x, x + (1, 1) ∈ W i ↔ x ∈ W i)
     {q q' : ZMod N → ℝ} (hq : (∀ i, (q i, q (i + 1)) ∈ W i) ∧ fderiv ℝ (cyclicAction S) q = 0)
     (hq' : (∀ i, (q' i, q' (i + 1)) ∈ W i) ∧ fderiv ℝ (cyclicAction S) q' = 0)
@@ -382,13 +384,14 @@ theorem exists_periodic_map_coe_ne_of_mk_ne_mk
       (∀ i, z' i ∈ D i ∧ F i (z' i) = z' (i + 1)) ∧ (∀ i, (z i).1 = q i) ∧
       (∀ i, (z' i).1 = q' i) ∧
       Prod.map ((↑) : ℝ → AddCircle (1 : ℝ)) id (z 0) ≠ Prod.map (↑) id (z' 0) := by
-  obtain ⟨e, he, -⟩ := exists_equiv_periodic_of_hasFDerivAt hgen hW
+  obtain ⟨e, he, -⟩ := exists_equiv_periodic_of_isStripGenerating hgen
   have hpos (r : {q : ZMod N → ℝ // (∀ i, (q i, q (i + 1)) ∈ W i) ∧
       fderiv ℝ (cyclicAction S) q = 0}) (i : ZMod N) : ((e.symm r).1 i).1 = r.1 i := by
     rw [← he, Equiv.apply_symm_apply]
   refine ⟨(e.symm ⟨q, hq⟩).1, (e.symm ⟨q', hq'⟩).1, (e.symm _).2, (e.symm _).2, hpos _,
     hpos _, fun h ↦ hne ?_⟩
-  have h' := (map_coe_eq_map_coe_iff_mk_eq_mk hgen hW hS hWper (e.symm _).2 (e.symm _).2).1 h
+  have h' := (prodMap_coe_eq_prodMap_coe_iff_mk_eq_mk_of_isStripGenerating hgen hS hWper
+    (e.symm _).2 (e.symm _).2).1 h
   simpa only [hpos] using h'
 
 end TauCeti
