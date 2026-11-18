@@ -377,9 +377,9 @@ private theorem HasCompactSpatialSupport.continuous_fourierInv_shiftedMultiplier
 variable [FiniteDimensional ℂ V] [FiniteDimensional ℂ W]
 
 /-- **The Mihlin–Hörmander bound for each multiplier.** Let `1 < p < ∞` in positive dimension.
-There is a constant `C₀`, depending only on `n` and `p`, such that if the multipliers `N_η`
-satisfy Mihlin's condition `‖D^k N_η(ζ)‖ ≤ S ⟨ζ⟩ ^ (-k) ⟨η⟩ ^ (-(n + 1))` for `k ≤ n + 1`, then
-`‖𝓕⁻ (N_η 𝓕 w)‖_p ≤ C₀ S ⟨η⟩ ^ (-(n + 1)) ‖w‖_p`. -/
+There is a constant `C₀`, depending only on `n`, `p`, `V` and `W`, such that if the multipliers
+`N_η` satisfy Mihlin's condition `‖D^k N_η(ζ)‖ ≤ S ⟨ζ⟩ ^ (-k) ⟨η⟩ ^ (-(n + 1))` for `k ≤ n + 1`,
+then `‖𝓕⁻ (N_η 𝓕 w)‖_p ≤ C₀ S ⟨η⟩ ^ (-(n + 1)) ‖w‖_p`. -/
 private theorem exists_eLpNorm_fourierInv_shiftedMultiplier_le_mul [NeZero n] {p : ℝ≥0∞}
     (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ C₀ : ℝ≥0, ∀ (b : Symbol n V W t), b.HasCompactSpatialSupport → ∀ S : ℝ, 0 ≤ S →
@@ -414,11 +414,11 @@ private theorem exists_eLpNorm_fourierInv_shiftedMultiplier_le_mul [NeZero n] {p
   exact hC₀ hgrowth hA w
 
 /-- **The `Lᵖ` estimate in positive dimension.** Let `1 < p < ∞`. There is a constant `L`,
-depending only on `n` and `p`, such that if the multipliers `N_η` satisfy Mihlin's condition
-`‖D^k N_η(ζ)‖ ≤ S ⟨ζ⟩ ^ (-k) ⟨η⟩ ^ (-(n + 1))` for `k ≤ n + 1`, then the quantization of the
-composition symbol `⟨ξ⟩ ^ (-t) # b` satisfies `‖Op(⟨ξ⟩ ^ (-t) # b) w‖_p ≤ L S ‖w‖_p` on Schwartz
-functions: the superposition formula and Minkowski's integral inequality sum the bounds for the
-single multipliers over `η`. -/
+depending only on `n`, `p`, `V` and `W`, such that if the multipliers `N_η` satisfy Mihlin's
+condition `‖D^k N_η(ζ)‖ ≤ S ⟨ζ⟩ ^ (-k) ⟨η⟩ ^ (-(n + 1))` for `k ≤ n + 1`, then the quantization
+of the composition symbol `⟨ξ⟩ ^ (-t) # b` satisfies `‖Op(⟨ξ⟩ ^ (-t) # b) w‖_p ≤ L S ‖w‖_p` on
+Schwartz functions: the superposition formula and Minkowski's integral inequality sum the bounds
+for the single multipliers over `η`. -/
 private theorem exists_eLpNorm_quantizeSchwartzValue_sharp_le_mul_of_shiftedMultiplier [NeZero n]
     {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ L : ℝ≥0, ∀ (b : Symbol n V W t) (hb : b.HasCompactSpatialSupport) (S : ℝ), 0 ≤ S →
@@ -478,8 +478,8 @@ private theorem exists_eLpNorm_quantizeSchwartzValue_sharp_le_mul_of_shiftedMult
     _ = _ := by
         rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hI]
 
-/-- **The `Lᵖ` estimate.** Let `1 < p < ∞`. There is a constant `L`, depending only on `n`, `t`
-and `p`, with the following property. If `b` is a symbol of order `t` with compact spatial
+/-- **The `Lᵖ` estimate.** Let `1 < p < ∞`. There is a constant `L`, depending only on `n`, `t`,
+`p`, `V` and `W`, with the following property. If `b` is a symbol of order `t` with compact spatial
 support and the derivatives of order at most `n + 1` of `ξ ↦ b̂(η, ξ)` are bounded by
 `B ⟨ξ⟩ ^ (t - j) ⟨η⟩ ^ (-R)`, where `R = (n + 1) + |t| + (n + 1)`, then the quantization of the
 composition symbol `⟨ξ⟩ ^ (-t) # b` satisfies `‖Op(⟨ξ⟩ ^ (-t) # b) w‖_p ≤ L B ‖w‖_p` on Schwartz
