@@ -148,8 +148,7 @@ theorem exists_contDiff_conjWirtingerDeriv_eq {V : Type*} [NormedAddCommGroup V]
   -- Transport to the coordinates of a basis `B`, in which `B j` is `Pi.single j 1`.
   set B := Module.finBasis ℂ V
   set e : (Fin (Module.finrank ℂ V) → ℂ) ≃L[ℂ] V := B.equivFunL.symm
-  have he (j) : e (Pi.single j 1) = B j :=
-    (congrFun (Module.Basis.coe_ofEquivFun B.equivFun) j).symm.trans (by rw [B.ofEquivFun_equivFun])
+  have he (j) : e (Pi.single j 1) = B j := Basis.equivFun_symm_single B j
   have hcd (v : V) : ContDiff ℝ ∞ fun z ↦ c (e z) v :=
     (hc v).comp (e.contDiff.restrict_scalars ℝ)
   have hpull (v : V) (z : Fin (Module.finrank ℂ V) → ℂ) (w : Fin (Module.finrank ℂ V) → ℂ) :
