@@ -10,8 +10,8 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 /-!
 # The general quadratic equation reduces to Weber's equation (DLMF 12.2.1)
 
-The equation `w″ + (αz² + βz + γ) w = 0` with `α ≠ 0` (DLMF 12.2.1) reduces to Weber's equation
-`w″ − (z²/4 + a) w = 0` (DLMF 12.2.2) by an affine change of variable: if `s⁴ = −4α` and `f`
+The equation `w′′ + (αz² + βz + γ) w = 0` with `α ≠ 0` (DLMF 12.2.1) reduces to Weber's equation
+`w′′ − (z²/4 + a) w = 0` (DLMF 12.2.2) by an affine change of variable: if `s⁴ = −4α` and `f`
 solves Weber's equation with parameter `a = (β²/(4α) − γ)/s²`, then `z ↦ f(s (z + β/(2α)))` solves
 12.2.1 (DLMF §12.2(i)).
 
@@ -33,8 +33,8 @@ The proof is adapted from the lean-DLMF project (<https://github.com/bjbraams/le
 namespace TauCeti
 
 /-- **DLMF 12.2.1 from Weber's equation**: for `α ≠ 0` and `s⁴ = −4α`, if the entire function `f`
-solves `f″(z) = (z²/4 + (β²/(4α) − γ)/s²) f(z)` (DLMF 12.2.2), then `z ↦ f(s (z + β/(2α)))`
-solves `w″ + (αz² + βz + γ) w = 0`. -/
+solves `f′′(z) = (z²/4 + (β²/(4α) − γ)/s²) f(z)` (DLMF 12.2.2), then `z ↦ f(s (z + β/(2α)))`
+solves `w′′ + (αz² + βz + γ) w = 0`. -/
 theorem quadratic_equation_of_weber {α β γ s : ℂ} (hα : α ≠ 0) (hs : s ^ 4 = -4 * α)
     {f : ℂ → ℂ} (hf : Differentiable ℂ f)
     (hode : ∀ z, deriv^[2] f z = (z ^ 2 / 4 + (β ^ 2 / (4 * α) - γ) / s ^ 2) * f z) (z : ℂ) :
