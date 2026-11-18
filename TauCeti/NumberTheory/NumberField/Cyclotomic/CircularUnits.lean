@@ -11,6 +11,7 @@ import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 import Mathlib.RingTheory.RootsOfUnity.Minpoly
 import TauCeti.Algebra.GroupWithZero.Basic
 import TauCeti.Data.Int.LinearCongruence
+import TauCeti.NumberTheory.NumberField.Units.Basic
 
 /-!
 # Circular numbers and circular units
@@ -28,9 +29,10 @@ groups are the carriers of that index formula.
 The ratio `cyclotomicRatio ζ b = (ζ ^ b - 1) / (ζ - 1)` is the basic circular unit: for `ζ` a
 primitive `N`-th root of unity with `2 ≤ N` and `b` prime to `N` it is an integral unit, and it
 satisfies the cocycle law `cyclotomicRatio ζ (a * b) = cyclotomicRatio (ζ ^ b) a *
-cyclotomicRatio ζ b`. For odd `N`, multiplying by the power `ζ ^ (h * (1 - b))` with `2 * h ≡ 1`
-modulo `N` makes it real: this is `smoothedCyclotomicUnit ζ N b`, a unit of the maximal real
-subfield lying in `realCyclotomicUnits K ζ N`.
+cyclotomicRatio ζ b`. For odd `N > 1`, `ζ` a primitive `N`-th root of unity and `b` prime to `N`,
+multiplying by the power `ζ ^ (h * (1 - b))` with `2 * h ≡ 1` modulo `N` makes it real: this is
+`smoothedCyclotomicUnit ζ N b`, a unit of the maximal real subfield lying in
+`realCyclotomicUnits K ζ N`.
 
 ## Main definitions
 
@@ -214,12 +216,6 @@ circular number. -/
 def cyclotomicUnits (ζ : K) (N : ℕ) : Subgroup (𝓞 K)ˣ :=
   (cyclotomicNumbers ζ N).comap (Units.map (algebraMap (𝓞 K) K).toMonoidHom)
 
-/-- The image in `Kˣ` of an integral unit has the same value in `K`. -/
-theorem val_unitsMap_algebraMap_ringOfIntegers (u : (𝓞 K)ˣ) :
-    (Units.map (algebraMap (𝓞 K) K).toMonoidHom u : K) = ((u : 𝓞 K) : K) := by
-  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-    RingOfIntegers.coe_eq_algebraMap]
-
 /-- An integral unit is a circular unit exactly when its image in `K` is a circular number. -/
 theorem mem_cyclotomicUnits_iff {ζ : K} {N : ℕ} {u : (𝓞 K)ˣ} :
     u ∈ cyclotomicUnits K ζ N ↔
@@ -234,7 +230,8 @@ theorem neg_one_mem_cyclotomicUnits (ζ : K) (N : ℕ) : -1 ∈ cyclotomicUnits 
 /-- Every integral unit that is an integer power of `ζ` in `K` is a circular unit. -/
 theorem mem_cyclotomicUnits_of_val_eq_zpow {ζ : K} (N : ℕ) {u : (𝓞 K)ˣ} {k : ℤ}
     (hu : ((u : 𝓞 K) : K) = ζ ^ k) : u ∈ cyclotomicUnits K ζ N :=
-  mem_cyclotomicNumbers_of_val_eq_zpow N ((val_unitsMap_algebraMap_ringOfIntegers u).trans hu)
+  mem_cyclotomicNumbers_of_val_eq_zpow N
+    ((NumberField.Units.val_unitsMap_algebraMap_ringOfIntegers u).trans hu)
 
 /-- An `N`-th root of unity `ζ` with `N ≠ 0` is the value of a circular unit. -/
 theorem exists_mem_cyclotomicUnits_val_eq_self {ζ : K} {N : ℕ} [NeZero N] (hζ : ζ ^ N = 1) :
@@ -266,15 +263,6 @@ end CyclotomicUnits
 /-! ### Real circular units -/
 
 section RealCyclotomicUnits
-
-/-- The image in `(𝓞 K)ˣ` of an integral unit of a subfield `F` has the same value in `K`. -/
-theorem val_unitsMap_algebraMap_ringOfIntegers_subfield (F : Subfield K) (u : (𝓞 F)ˣ) :
-    (((Units.map (algebraMap (𝓞 F) (𝓞 K)).toMonoidHom u : (𝓞 K)ˣ) : 𝓞 K) : K) =
-      (((u : 𝓞 F) : F) : K) := by
-  rw [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-    RingOfIntegers.coe_eq_algebraMap, ← IsScalarTower.algebraMap_apply,
-    IsScalarTower.algebraMap_apply (𝓞 F) F K, Subfield.algebraMap_ofSubfield,
-    Subfield.subtype_apply, RingOfIntegers.coe_eq_algebraMap]
 
 variable (K) in
 /-- The real circular units attached to `ζ` and `N`: the units of the ring of integers of the
@@ -314,7 +302,7 @@ theorem mem_map_realCyclotomicUnits_iff {ζ : K} {N : ℕ} {u : (𝓞 K)ˣ} :
     -- read through the two subtype inclusions.
     have hxy : x * y = 1 := RingOfIntegers.ext (Subtype.ext hmul)
     refine ⟨Units.mkOfMulEqOne x y hxy, Units.ext (RingOfIntegers.ext ?_)⟩
-    rw [val_unitsMap_algebraMap_ringOfIntegers_subfield, Units.val_mkOfMulEqOne]
+    rw [NumberField.Units.val_unitsMap_algebraMap_ringOfIntegers_subfield, Units.val_mkOfMulEqOne]
     -- The value of `x` in `K` is that of `u` by construction.
     rfl
 
@@ -413,9 +401,9 @@ section SmoothedCyclotomicUnit
 /-- The smoothed circular unit `γ(b) = ζ ^ e * (ζ ^ b - 1) / (ζ - 1)`, where `e` is the
 representative in `[0, N)` of `2⁻¹ * (1 - b)` modulo `N`. When `ζ ^ N = 1` it equals
 `ζ ^ (h * (1 - b)) * cyclotomicRatio ζ b` for any integer `h` with `2 * h ≡ 1` modulo `N`
-(`smoothedCyclotomicUnit_eq_zpow_mul`). For an odd `N`, a primitive `N`-th root of unity `ζ`, and
-`b` prime to `N`, it is a real circular unit. This is the unit of Rodrigues Jacinto and Williams,
-Lemma 12.18. -/
+(`smoothedCyclotomicUnit_eq_zpow_mul`). For an odd `N > 1`, a primitive `N`-th root of unity `ζ`,
+and `b` prime to `N`, it is a real circular unit. This is the unit of Rodrigues Jacinto and
+Williams, Lemma 12.18. -/
 def smoothedCyclotomicUnit (ζ : K) (N b : ℕ) : K :=
   ζ ^ ((2 : ZMod N)⁻¹ * (1 - b)).val * cyclotomicRatio ζ b
 
@@ -534,7 +522,7 @@ theorem exists_mem_realCyclotomicUnits_val_eq_smoothedCyclotomicUnit {ζ : K} {N
     ⟨mul_mem (pow_mem hz _) hr,
       hw ▸ smoothedCyclotomicUnit_mem_maximalRealSubfield hζ.pow_eq_one hN b⟩
   refine ⟨v, hv, ?_⟩
-  rw [← hw, ← hvw, val_unitsMap_algebraMap_ringOfIntegers_subfield]
+  rw [← hw, ← hvw, NumberField.Units.val_unitsMap_algebraMap_ringOfIntegers_subfield]
 
 end SmoothedCyclotomicUnit
 
