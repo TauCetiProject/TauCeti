@@ -19,11 +19,12 @@ public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import Mathlib.LinearAlgebra.Complex.Determinant
-import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.LinearAlgebra.Orientation.Basic
+import TauCeti.Topology.Algebra.Module.Equiv.Prod
 
 /-!
 # The canonical orientation of a complex manifold
@@ -518,10 +519,8 @@ theorem map_orientationAt_prod_complexManifoldOrientation (n : ℕ∞ω) [NeZero
       (((complexManifoldOrientation E M).prod (complexManifoldOrientation E' M')).orientationAt
         x) = Orientation.reindex ℝ (E × E') (finCongr (by rw [finrank_prod]; ring))
           (complexOrientation (E × E')) := by
-    -- `ContinuousLinearEquiv.prodCongr` is built from `LinearEquiv.prodCongr`.
-    have hprod : (L₁.prodCongr L₂).toLinearEquiv =
-        L₁.toLinearEquiv.prodCongr L₂.toLinearEquiv := rfl
-    rw [Manifold.Orientation.orientationAt_prod, hprod, Orientation.map_prod, h₁, h₂]
+    rw [Manifold.Orientation.orientationAt_prod, ContinuousLinearEquiv.prodCongr_toLinearEquiv,
+      Orientation.map_prod, h₁, h₂]
     exact prod_complexOrientation
   rw [hLeq]
   exact key

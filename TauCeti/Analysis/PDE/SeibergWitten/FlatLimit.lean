@@ -26,9 +26,9 @@ equation
 `∑ₖ c(eₖ) ∇_{eₖ} χ = 0`,  `F + ⋆F = (r / 4) ω - q(√r χ)`,
 
 where `q` is the quadratic two-form `TauCeti.SeibergWitten.quadraticTwoForm`, indexed by real
-forms as in `TauCeti.SeibergWitten.LargeParameterCurvature`; the second equation is the
-large-parameter curvature equation of that file with no background curvature and no forcing.
-These are the leading-order equations of a large-parameter solution in a flat chart.
+forms as in `TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature`; the second equation
+is the large-parameter curvature equation of that file with no background curvature and no
+forcing. These are the leading-order equations of a large-parameter solution in a flat chart.
 
 When the spinor lies on the canonical line, `χ = α u₀`, this file identifies these equations with
 the plane vortex equations, and the parameter `r` with a dilation of the plane:

@@ -88,6 +88,10 @@ bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
   σ-finite for every `f`;
 * `TauCeti.mongeAmpereMeasure_ite_apply` — the formula for a finite convex function on an open
   set;
+* `TauCeti.mongeAmpereMeasure_ite_const` — in positive dimension, a constant extended by `⊤` off
+  any set has zero Monge–Ampère measure;
+* `TauCeti.mongeAmpereMeasure_ite_of_subsingleton` — in dimension zero, the Monge–Ampère measure
+  of a function extended by `⊤` off `Ω` is `μ` restricted to `Ω`;
 * `TauCeti.mongeAmpereMeasure_ite_eq_restrict` — the measure is local: restricting a convex
   function to an open convex subset restricts its Monge–Ampère measure;
 * `TauCeti.withDensity_restrict_le_mongeAmpereMeasure` and
@@ -369,6 +373,47 @@ theorem mongeAmpereMeasure_ite_apply (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) 
   ext y
   simp only [mem_subgradientImage_iff, mem_iUnion, exists_prop]
   exact exists_congr fun x => and_congr_right fun hx => mem_subdifferential_ite_iff _ hx.2
+
+/-- On a positive-dimensional space, a constant extended by `⊤` off any set `Ω` has zero
+Monge–Ampère measure with respect to any measure `μ`: at an interior point of `Ω` the real
+representative is locally constant, so its only subgradient is the gradient `0`, and a point is
+null for every additive Haar measure. -/
+theorem mongeAmpereMeasure_ite_const [Nontrivial E] (c : ℝ) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then (c : EReal) else ⊤) = 0 := by
+  by_cases hf : Convex ℝ {p : E × ℝ | (if p.1 ∈ Ω then (c : EReal) else ⊤) ≤ p.2}
+  swap
+  · exact mongeAmpereMeasure_eq_zero_of_not_convex μ hf
+  by_cases hμ : μ ≪ (addHaar : Measure E)
+  swap
+  · exact mongeAmpereMeasure_eq_zero_of_not_absolutelyContinuous μ hμ
+  ext s hs
+  rw [mongeAmpereMeasure_apply μ hf ite_ne_bot hμ hs, setOf_ite_ne_top, _root_.zero_apply]
+  refine measure_mono_null (fun y hy => ?_) (hμ (measure_singleton 0))
+  obtain ⟨x, hx, hxy⟩ := (mem_subgradientImage_iff _).1 hy
+  have hxΩ : ∀ᶠ x' in 𝓝 x, x' ∈ Ω := mem_interior_iff_mem_nhds.1 hx.2
+  have h0 : HasGradientAt (fun x' => (if x' ∈ Ω then (c : EReal) else ⊤).toReal) 0 x :=
+    (hasGradientAt_const (c := c) (x := x)).congr_of_eventuallyEq
+      (hxΩ.mono fun x' h => by simp [h])
+  exact (hasGradientAt_toReal_of_mem_subdifferential hxy (hxΩ.mono fun x' h => by simp [h])
+    h0.differentiableAt).unique h0
+
+/-- In a subsingleton space, the Monge–Ampère measure of a real function extended by `⊤` off a set
+`Ω` is the restriction of `μ` to `Ω`, for every measure `μ`: `Ω` is open, every function is convex
+on it, every measure is absolutely continuous with respect to an additive Haar measure, and every
+vector is a subgradient at the only point. -/
+theorem mongeAmpereMeasure_ite_of_subsingleton [Subsingleton E] :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) = μ.restrict Ω := by
+  have hu : ConvexOn ℝ Ω u := convexOn_iff_pairwise_pos.2
+    ⟨Set.subsingleton_of_subsingleton.convex, Set.subsingleton_of_subsingleton.pairwise _⟩
+  have hμ : μ ≪ (addHaar : Measure E) := fun s hs => by
+    simp [(isOpen_discrete s).eq_empty_of_measure_zero hs]
+  ext s hs
+  rw [mongeAmpereMeasure_ite_apply μ (isOpen_discrete Ω) hu hμ hs, Measure.restrict_apply hs]
+  congr 1
+  ext y
+  simp only [mem_iUnion, mem_ofPred_eq, exists_prop]
+  exact ⟨fun ⟨x, hx, _⟩ => Subsingleton.elim x y ▸ hx,
+    fun hy => ⟨y, hy, fun x' _ => by simp [Subsingleton.elim x' y]⟩⟩
 
 /-- **The Aleksandrov Monge–Ampère measure is local.** Let `u` be convex on a set `Ω`, and
 let `U ⊆ Ω` be open and convex. The Monge–Ampère measure of `u` restricted to `U` (extended by `⊤`

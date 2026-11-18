@@ -56,6 +56,8 @@ travel.
 
 ## Main results
 
+* `TauCeti.PerfectMatching.exists_val_eq_sumCongr`: a perfect matching of `α ⊕ β` containing
+  every arc of a permutation of `α` is that permutation together with a perfect matching of `β`.
 * `TauCeti.PerfectMatching.ext_of_eqOn`: two perfect matchings agreeing on a set containing a
   partner of every point are equal.
 * `TauCeti.even_card_of_nonempty_perfectMatching`: a matched type has even cardinality, and so
@@ -429,6 +431,22 @@ theorem congr_trans (e : α ≃ β) (e' : β ≃ γ) (D : PerfectMatching α) :
 theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=
   Equiv.ext fun D => by
     rw [Equiv.symm_apply_eq, congr_trans, Equiv.symm_trans_self, congr_refl]
+
+/-- A perfect matching of `α ⊕ β` containing every arc of a permutation `X` of `α` is
+`Equiv.Perm.sumCongr X π` for a perfect matching `π` of `β`. This is a converse to
+`TauCeti.PerfectMatching.restrictInl`. -/
+theorem exists_val_eq_sumCongr (M : PerfectMatching (α ⊕ β)) {X : Equiv.Perm α}
+    (hM : ∀ a, M.val (.inl a) = .inl (X a)) :
+    ∃ π : PerfectMatching β, M.val = Equiv.Perm.sumCongr X π.val := by
+  have hr (a : α) : ((congr (Equiv.sumComm α β) M).val (.inr a)).isRight := by
+    simp [hM]
+  refine ⟨(congr (Equiv.sumComm α β) M).restrictInl hr, Equiv.ext fun x ↦ ?_⟩
+  rcases x with a | b
+  · simp [hM]
+  · have h := (congr (Equiv.sumComm α β) M).inl_restrictInl_val hr b
+    simp only [congr_val_apply, Equiv.sumComm_symm, Equiv.sumComm_apply, Sum.swap_inl] at h
+    rw [Equiv.Perm.sumCongr_apply, Sum.map_inr, ← Sum.swap_swap (M.val (.inr b)), ← h,
+      Sum.swap_inl]
 
 end Congr
 
