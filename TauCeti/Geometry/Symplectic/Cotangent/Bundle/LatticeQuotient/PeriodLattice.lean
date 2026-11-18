@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.MFDeriv.Localized
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.VerticalFlow
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Lattice
 import Mathlib.Algebra.Group.Subgroup.Finsupp
@@ -83,7 +83,7 @@ theorem flowOf_hamiltonianVectorField_comp_proj_mk {g : B → ℝ} (hg : ContMDi
     flowOf ((symplecticForm hα hclosed).hamiltonianVectorField (g ∘ proj hα)) t (mk hα z) =
       mk hα ⟨z.proj, z.2 - t • mvfderiv I g z.proj⟩ := by
   have hσ := (isSymplectic_symplecticForm hα hclosed).isNondegenerate
-  have hgπ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (1 + 1) (g ∘ proj hα) :=
+  have hgπ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) 2 (g ∘ proj hα) :=
     hg.comp ((contMDiff_proj hα).of_le (by simp))
   -- The vertical line through `z` is a trajectory upstairs, and the quotient map carries it to a
   -- trajectory of the descended Hamiltonian vector field.
@@ -99,7 +99,8 @@ theorem flowOf_hamiltonianVectorField_comp_proj_mk {g : B → ℝ} (hg : ContMDi
       rw [← he]
       exact e.surjective)
     (fun s ↦ ((hgπ _).mdifferentiableAt (by simp))) hγ
-  have h := flowOf_eq_of_isMIntegralCurve (hσ.contMDiff_hamiltonianVectorField (by simp) hgπ) hγ' t
+  have h := flowOf_eq_of_isMIntegralCurve
+    ((isLagrangianTorusFibration_proj hα hclosed).contMDiff_hamiltonianVectorField_comp hg) hγ' t
   simpa using h
 
 /-- **The action of `T*_b B` on a fibre of `T*B/Λ`.** A covector `β` at `b` acts on the fibre of

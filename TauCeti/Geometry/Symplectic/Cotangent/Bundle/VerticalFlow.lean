@@ -116,11 +116,12 @@ theorem flowOf_hamiltonianVectorField_comp_proj {g : M → ℝ} (hg : ContMDiff 
     flowOf ((symplecticForm I M).hamiltonianVectorField (g ∘ TotalSpace.proj)) t z =
       (⟨z.proj, z.2 - t • mvfderiv I g z.proj⟩ : CotangentBundle I M) := by
   have hσ := (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate
-  have hgπ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (1 + 1) (g ∘ TotalSpace.proj) :=
+  have hgπ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) 2 (g ∘ TotalSpace.proj) :=
     hg.comp (Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ))
   have hγ := isMIntegralCurve_hamiltonianVectorField_comp_proj
     ((hg z.proj).mdifferentiableAt (by simp)) z.2
-  have h := flowOf_eq_of_isMIntegralCurve (hσ.contMDiff_hamiltonianVectorField (by simp) hgπ) hγ t
+  have h := flowOf_eq_of_isMIntegralCurve
+    (hσ.contMDiff_hamiltonianVectorField (by simp) (by rw [one_add_one_eq_two]; exact hgπ)) hγ t
   simpa using h
 
 end CotangentBundle
