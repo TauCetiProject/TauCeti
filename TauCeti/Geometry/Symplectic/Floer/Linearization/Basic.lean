@@ -96,6 +96,24 @@ theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
   -- The linear and continuous-linear coercions of `J` have the same underlying function.
   rfl
 
+/-- **The difference of two Floer operators.** At a point where `u` and `v` are differentiable,
+with `w = u - v`, the difference of their Floer operators is the Cauchy–Riemann operator
+`∂ₛw + J(z, u) ∂ₜw` of `w` for the structure along `u`, corrected by the differences of the
+Hamiltonian vector fields and of the structures at the two values:
+`F(u) - F(v) = ∂ₛw + J(z, u) ∂ₜw - (X_{K_s}(u) - X_{K_s}(v)) - J(z, u) (X_{K_t}(u) - X_{K_t}(v))
+  + (J(z, u) - J(z, v)) (∂ₜv - X_{K_t}(v))`. -/
+theorem floerOperator_sub_floerOperator (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    {u v : ℝ × ℝ → V} {z : ℝ × ℝ} (hu : DifferentiableAt ℝ u z) (hv : DifferentiableAt ℝ v z) :
+    ω.floerOperator J Ks Kt u z - ω.floerOperator J Ks Kt v z =
+      fderiv ℝ (u - v) z stdComplexLineReal + J z (u z) (fderiv ℝ (u - v) z stdComplexLineImag) -
+        (ω.hamiltonianVectorField (Ks z) (u z) - ω.hamiltonianVectorField (Ks z) (v z)) -
+        J z (u z) (ω.hamiltonianVectorField (Kt z) (u z) - ω.hamiltonianVectorField (Kt z) (v z)) +
+        (J z (u z) - J z (v z))
+          (fderiv ℝ v z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (v z)) := by
+  simp only [floerOperator_def, fderiv_sub hu hv, _root_.sub_apply, map_sub]
+  abel
+
 /-- **Translation invariance of the Floer operator.** For the cylindrical datum `K = H_t dt` and a
 structure `J_t` independent of `s`, the Floer operator of the translate `w ↦ f(w - (R, 0))` at `z`
 is the Floer operator of `f` at `z - (R, 0)`. -/
