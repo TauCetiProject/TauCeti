@@ -20,9 +20,9 @@ import TauCeti.MeasureTheory.Measure.Restrict
 /-!
 # Plancherel's identity for the `H^{1,2}` and `W^{1,2}` norms
 
-Mathlib's Bessel-potential space `H^{1,2}(E)` and Tau Ceti's weak-derivative Sobolev space
-`W^{1,2}(E)` on the whole space contain the same functions
-(`TauCeti.Wkp.toBesselPotentialSpace`), with equivalent norms. At the exponent `2` Plancherel's
+The map `TauCeti.Wkp.toBesselPotentialSpace` identifies Tau Ceti's weak-derivative Sobolev space
+`W^{1,2}(E)` on the whole space with the elements of Mathlib's Bessel-potential space
+`H^{1,2}(E, ℂ)` given by real functions, with equivalent norms. At the exponent `2` Plancherel's
 theorem computes both norms on the Fourier side, which makes the equivalence explicit. With
 Mathlib's normalisation of the Fourier transform, `e^{-2πi⟪x, ξ⟫}` in the exponent, the
 directional derivative `∂_m` has symbol `2πi⟪ξ, m⟫`, while the Bessel potential `J¹` of

@@ -30,8 +30,8 @@ the two endpoint estimates which the Riesz–Thorin theorem interpolates to the 
 inequality, in `TauCeti.Analysis.Fourier.HausdorffYoung`.
 
 The file also records the Fourier transform of an `L²` derivative: if the tempered distribution
-`f` has the `L²` Fourier transform `v` and the derivative `∂_m f` is an `L²` function `d`, then
-`𝓕 d(ξ) = 2πi⟪ξ, m⟫ v(ξ)` almost everywhere.
+`f` has a Fourier transform `v ∈ L^q`, `1 ≤ q`, and the derivative `∂_m f` is an `L²` function
+`d`, then `𝓕 d(ξ) = 2πi⟪ξ, m⟫ v(ξ)` almost everywhere.
 
 ## Main declarations
 
