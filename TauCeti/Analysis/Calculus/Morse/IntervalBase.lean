@@ -87,6 +87,8 @@ bijective.
   `TauCeti.eq_const_of_isIntegralCurve_intervalBasePotential`: for `C > 0`, the trajectories from
   `0` to `1` are the translates of `q`, and a trajectory with equal limits at both ends is
   constant.
+* `TauCeti.exists_eq_intervalBaseOrbit_of_hasDerivAt`: for `C ≠ 0`, every solution meeting
+  `(0, 1)` is a translate of `q`, using the equation only inside `(0, 1)`.
 * `TauCeti.index_trajectoryOperator_intervalBasePotential`,
   `TauCeti.exists_ker_trajectoryOperator_intervalBasePotential_eq_span`,
   `TauCeti.surjective_trajectoryOperator_intervalBasePotential` and
@@ -834,6 +836,38 @@ theorem exists_eq_intervalBaseOrbit_of_isIntegralCurve (hC : 0 < C) {γ : ℝ �
   obtain ⟨τ, hq⟩ := exists_intervalBaseOrbit_eq hC.ne' ⟨hpos, hlt⟩
   refine ⟨τ, funext fun s ↦ ?_⟩
   rw [congrFun hflow s, ← hq, intervalBaseFlow_intervalBaseOrbit]
+
+/-- **The solutions through `(0, 1)` are the translates of `q`.** For `C ≠ 0`, a continuous curve
+`γ` solving `γ' = C γ (1 - γ²)` at the times where it lies in `(0, 1)`, and lying in `(0, 1)` at
+some time, is `s ↦ q(s + τ)` for some `τ`. In particular it stays in `(0, 1)` forever. Unlike
+`TauCeti.exists_eq_intervalBaseOrbit_of_isIntegralCurve`, no limits at `±∞` are assumed, and the
+equation is only used inside `(0, 1)`. -/
+theorem exists_eq_intervalBaseOrbit_of_hasDerivAt (hC : C ≠ 0) {γ : ℝ → ℝ} (hγc : Continuous γ)
+    (hγ : ∀ s, γ s ∈ Ioo 0 1 → HasDerivAt γ (C * γ s * (1 - γ s ^ 2)) s) {s₀ : ℝ}
+    (h₀ : γ s₀ ∈ Ioo 0 1) : ∃ τ, γ = fun s ↦ intervalBaseOrbit C (s + τ) := by
+  obtain ⟨τ₀, hτ₀⟩ := exists_intervalBaseOrbit_eq hC h₀
+  set σ : ℝ → ℝ := fun s ↦ intervalBaseOrbit C (s + (τ₀ - s₀))
+  have hσ : ∀ s, HasDerivAt σ (C * σ s * (1 - σ s ^ 2)) s := fun s ↦
+    (hasDerivAt_intervalBaseOrbit C (s + (τ₀ - s₀))).comp_add_const s (τ₀ - s₀)
+  have hσc : Continuous σ := continuous_iff_continuousAt.2 fun s ↦ (hσ s).continuousAt
+  have hLip : LipschitzOnWith (2 * ‖C‖₊) (fun t : ℝ ↦ C * t * (1 - t ^ 2)) (Ioo 0 1) := by
+    have hv : (fun t : ℝ ↦ C * t * (1 - t ^ 2)) = fun t ↦ -∇ (intervalBasePotential C) t := by
+      funext t
+      rw [gradient_intervalBasePotential]
+      ring
+    exact hv ▸ (lipschitzOnWith_neg_gradient_intervalBasePotential C).mono
+      (Ioo_subset_Icc_self.trans (Icc_subset_Icc (by norm_num) le_rfl))
+  -- The set of times where `γ` and `σ` agree is open, by local uniqueness inside `(0, 1)`, and
+  -- closed, so it is everything.
+  have hclopen : IsClopen {s | γ s = σ s} := by
+    refine ⟨isClosed_eq hγc hσc, isOpen_iff_mem_nhds.2 fun s (hs : γ s = σ s) ↦ ?_⟩
+    have hmem : ∀ᶠ r in 𝓝 s, γ r ∈ Ioo 0 1 :=
+      hγc.continuousAt.eventually_mem (isOpen_Ioo.mem_nhds (hs ▸ intervalBaseOrbit_mem_Ioo _ _))
+    exact ODE_solution_unique_of_eventually (v := fun _ t ↦ C * t * (1 - t ^ 2))
+      (s := fun _ ↦ Ioo 0 1) (.of_forall fun _ ↦ hLip) (hmem.mono fun r hr ↦ ⟨hγ r hr, hr⟩)
+      (.of_forall fun r ↦ ⟨hσ r, intervalBaseOrbit_mem_Ioo _ _⟩) hs
+  have hall := hclopen.eq_univ ⟨s₀, show γ s₀ = σ s₀ by simp [σ, hτ₀]⟩
+  exact ⟨τ₀ - s₀, funext fun s ↦ Set.eq_univ_iff_forall.1 hall s⟩
 
 /-- **Trajectories with equal limits are constant.** For `C > 0`, a negative gradient trajectory
 of the base potential tending to the same point `a ∈ [-1, 1]` at `-∞` and at `+∞` is constant. -/
