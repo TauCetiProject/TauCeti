@@ -23,10 +23,6 @@ set of indices whose labels lie within `L` of that of `i`, then each `W i` has a
 elements and each index lies in at most `2 L` of the sets `W i`. These are the counting hypotheses
 of the banded Cauchy–Schwarz inequality `ENNReal.tsum_sum_mul_le_of_card_le`.
 
-If the members of one family of real functions labelled by integers `j` vanish outside balls of
-radius comparable to `2 ^ j`, and those of another vanish inside such balls, then members of the
-two families whose labels are far enough apart have disjoint supports.
-
 If the members of a family of real functions whose labels are at least `L` apart have disjoint
 supports, then at most `L` members are nonzero at each point, so that the sum of squares
 of the family is at most `L` when its values lie in `[-1, 1]`; and if the family is moreover a
@@ -39,8 +35,6 @@ support of the `i`-th member.
   most `2 L` elements.
 * `TauCeti.card_filter_mem_le_two_mul_of_abs_sub_lt`: if every `k ∈ W i` has label within `L` of
   that of `i`, then every index lies in at most `2 L` of the sets `W i`.
-* `TauCeti.exists_mul_eq_zero_of_dyadic_support`: members of two families supported in dyadic
-  annuli whose labels are far enough apart have disjoint supports.
 * `TauCeti.card_filter_ne_zero_le_of_mul_eq_zero`: at most `L` members of a family with
   `L`-separated disjoint supports are nonzero at each point.
 * `TauCeti.sum_sq_le_of_mul_eq_zero`: the sum of squares of such a family with values in
@@ -74,27 +68,6 @@ theorem card_filter_mem_le_two_mul_of_abs_sub_lt [DecidableEq ι] {c : ι → �
   card_le_two_mul_of_abs_sub_lt hc fun j hj ↦ by
     rw [abs_sub_comm]
     exact hWL j k (Finset.mem_filter.1 hj).2
-
-/-- **Finite overlap of dyadically supported families.** Let `ψ i` vanish where
-`2 ^ e i * R ≤ ρ ξ` and `ψ' k` vanish where `ρ ξ ≤ 2 ^ (e' k - 1) * r`, with `0 < r`. Then there
-is `L` such that `ψ i` and `ψ' k` have disjoint supports whenever `e i + L ≤ e' k`. -/
-theorem exists_mul_eq_zero_of_dyadic_support {κ : Type*} {ψ : ι → α → ℝ} {ψ' : κ → α → ℝ}
-    {e : ι → ℤ} {e' : κ → ℤ} {ρ : α → ℝ} {R r : ℝ} (hr : 0 < r)
-    (hψ : ∀ i ξ, 2 ^ e i * R ≤ ρ ξ → ψ i ξ = 0)
-    (hψ' : ∀ k ξ, ρ ξ ≤ 2 ^ (e' k - 1) * r → ψ' k ξ = 0) :
-    ∃ L : ℕ, ∀ i k, e i + L ≤ e' k → ∀ ξ, ψ i ξ * ψ' k ξ = 0 := by
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (R / r) (one_lt_two (α := ℝ))
-  have hn' : R ≤ 2 ^ n * r := ((div_lt_iff₀ hr).1 hn).le
-  refine ⟨n + 1, fun i k hik ξ ↦ ?_⟩
-  rcases le_or_gt (ρ ξ) (2 ^ (e' k - 1) * r) with hξ | hξ
-  · rw [hψ' k ξ hξ, mul_zero]
-  · refine mul_eq_zero_of_left (hψ i ξ (le_trans ?_ hξ.le)) _
-    calc (2 : ℝ) ^ e i * R ≤ 2 ^ e i * (2 ^ n * r) :=
-          mul_le_mul_of_nonneg_left hn' (zpow_nonneg zero_le_two _)
-      _ = 2 ^ (e i + n) * r := by rw [zpow_add₀ two_ne_zero, zpow_natCast, mul_assoc]
-      _ ≤ 2 ^ (e' k - 1) * r :=
-          mul_le_mul_of_nonneg_right (zpow_le_zpow_right₀ one_le_two (by push_cast at hik; omega))
-            hr.le
 
 /-- **Bounded overlap of a family labelled by integers.** Let the indices of `ψ : ι → α → ℝ` be
 labelled by an injective `e : ι → ℤ`, and let `ψ i` and `ψ k` have disjoint supports whenever

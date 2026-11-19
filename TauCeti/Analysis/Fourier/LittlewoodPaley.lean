@@ -26,8 +26,8 @@ import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 /-!
 # The Littlewood–Paley square function theorem
 
-Let `V` be a real inner product space of finite dimension `n ≥ 1` and let `φ` be a smooth bump
-function on `V`. Two families of Littlewood–Paley cutoffs are built from `φ`: the inhomogeneous
+Let `V` be a finite-dimensional real inner product space and let `φ` be a smooth bump function
+on `V`. Two families of Littlewood–Paley cutoffs are built from `φ`: the inhomogeneous
 partition `ψ₀ = φ, ψ₁, ψ₂, …` (`ContDiffBump.inhomogeneousLittlewoodPaley`), which sums to `1`
 everywhere, and the homogeneous cutoffs `ψⱼ = φ (2^{-j} ·) - φ (2^{1-j} ·)`, `j ∈ ℤ`
 (`ContDiffBump.littlewoodPaley`), which sum to `1` away from the origin. The Littlewood–Paley
@@ -46,9 +46,11 @@ for every `f ∈ L²(V, F)` (`TauCeti.exists_eLpNorm_tsum_enorm_fourierMultiplie
 the homogeneous square function
 (`TauCeti.exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow_le` and
 `TauCeti.exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow`).
-Neither side is assumed finite, so in particular `f ∈ Lᵖ` exactly when `S f ∈ Lᵖ`. The constants
-of the homogeneous inequalities do not see any scale, which is what estimates with homogeneous
-Sobolev and Besov norms, such as the Strichartz estimates for the wave equation, need.
+These assume `V` nontrivial, except the forward homogeneous inequality, which holds trivially in
+dimension `0`, where every homogeneous cutoff vanishes. Neither side is assumed finite, so in
+particular `f ∈ Lᵖ` exactly when `S f ∈ Lᵖ`. The constants of the homogeneous inequalities do not
+see any scale, which is what estimates with homogeneous Sobolev and Besov norms, such as the
+Strichartz estimates for the wave equation, need.
 
 At `p = 2` the first inequality is stated for finite sums of inhomogeneous blocks as
 `TauCeti.exists_sum_norm_fourierMultiplierCLM_sq_le`: `∑_{j ∈ s} ‖Δⱼ f‖₂² ≤ L ‖f‖₂²`.
@@ -105,7 +107,8 @@ The last section bounds a single homogeneous block `Pⱼ` on every `Lᵖ`, `1 �
 the scale: `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p` for `f ∈ L²`
 (`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and `‖Pⱼ‖ ≤ 1` on `L²`
 (`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`). In dimension `0` every block
-vanishes (`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero`).
+vanishes (`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero`, stated just before the
+homogeneous square function inequalities, which use it).
 
 ## References
 
@@ -875,8 +878,8 @@ private theorem isDyadic_littlewoodPaley (φ : ContDiffBump (0 : V)) :
 end LittlewoodPaleySquare
 
 open LittlewoodPaleySquare in
-/-- **The homogeneous Littlewood–Paley square function inequality.** Let `V` be a real inner
-product space of finite dimension `n ≥ 1`, let `φ` be a smooth bump function on `V`, and let
+/-- **The homogeneous Littlewood–Paley square function inequality.** Let `V` be a
+finite-dimensional real inner product space, let `φ` be a smooth bump function on `V`, and let
 `1 < p < ∞`. Let `Pⱼ`, `j ∈ ℤ`, be the `L²` Fourier multipliers with the homogeneous
 Littlewood–Paley cutoffs `ψⱼ = φ (2^{-j} ·) - φ (2^{1-j} ·)` as symbols. For every complex Hilbert
 space `F` there is a constant `C` such that for every `f ∈ L²(V, F)`,

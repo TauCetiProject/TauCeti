@@ -42,6 +42,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 
 ## Main declarations
 
+* `TauCeti.exists_mul_eq_zero_of_dyadic_support`: members of two families supported in dyadic
+  annuli whose labels are far enough apart have disjoint supports.
 * `ContDiffBump.littlewoodPaley`: the dyadic cutoff `ψⱼ`.
 * `ContDiffBump.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply`: `ψⱼ` is the rescaling
   `ψ₀ (2^{-j} ·)`.
@@ -99,6 +101,31 @@ public section
 
 open Metric Set TauCeti
 open scoped ContDiff
+
+namespace TauCeti
+
+/-- **Finite overlap of dyadically supported families.** Let `ψ i` vanish where
+`2 ^ e i * R ≤ ρ ξ` and `ψ' k` vanish where `ρ ξ ≤ 2 ^ (e' k - 1) * r`, with `0 < r`. Then there
+is `L` such that `ψ i` and `ψ' k` have disjoint supports whenever `e i + L ≤ e' k`. -/
+theorem exists_mul_eq_zero_of_dyadic_support {ι κ α : Type*} {ψ : ι → α → ℝ} {ψ' : κ → α → ℝ}
+    {e : ι → ℤ} {e' : κ → ℤ} {ρ : α → ℝ} {R r : ℝ} (hr : 0 < r)
+    (hψ : ∀ i ξ, 2 ^ e i * R ≤ ρ ξ → ψ i ξ = 0)
+    (hψ' : ∀ k ξ, ρ ξ ≤ 2 ^ (e' k - 1) * r → ψ' k ξ = 0) :
+    ∃ L : ℕ, ∀ i k, e i + L ≤ e' k → ∀ ξ, ψ i ξ * ψ' k ξ = 0 := by
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (R / r) (one_lt_two (α := ℝ))
+  have hn' : R ≤ 2 ^ n * r := ((div_lt_iff₀ hr).1 hn).le
+  refine ⟨n + 1, fun i k hik ξ ↦ ?_⟩
+  rcases le_or_gt (ρ ξ) (2 ^ (e' k - 1) * r) with hξ | hξ
+  · rw [hψ' k ξ hξ, mul_zero]
+  · refine mul_eq_zero_of_left (hψ i ξ (le_trans ?_ hξ.le)) _
+    calc (2 : ℝ) ^ e i * R ≤ 2 ^ e i * (2 ^ n * r) :=
+          mul_le_mul_of_nonneg_left hn' (zpow_nonneg zero_le_two _)
+      _ = 2 ^ (e i + n) * r := by rw [zpow_add₀ two_ne_zero, zpow_natCast, mul_assoc]
+      _ ≤ 2 ^ (e' k - 1) * r :=
+          mul_le_mul_of_nonneg_right (zpow_le_zpow_right₀ one_le_two (by push_cast at hik; omega))
+            hr.le
+
+end TauCeti
 
 namespace ContDiffBump
 
