@@ -39,7 +39,9 @@ is a base change for every `R`-algebra `S`. This is the form in which the kernel
 
 For compatible pairs `ker (f.coprod (-g))`, projection to the second factor also has an
 injective scalar-extension comparison if the comparisons for `f` and for multiplication on
-`ker g` are injective. This is the linear-algebra step in formal gluing
+`ker g` are injective. Dually, that comparison is surjective if the comparison for `f` is
+surjective and multiplication on the cokernel of `g` is injective. These are the linear-algebra
+steps in formal gluing
 ([Stacks, Proposition 15.91.16](https://stacks.math.columbia.edu/tag/05ER)).
 
 ## Main results
@@ -47,6 +49,7 @@ injective scalar-extension comparison if the comparisons for `f` and for multipl
 * `LinearMap.liftBaseChange_injective_of_isBaseChange`: injectivity of `S ⊗[R] M₁ → N₁`.
 * `LinearMap.injective_liftBaseChange_snd_ker_coprod`: injectivity of the comparison from
   compatible pairs to the second factor.
+* `LinearMap.surjective_liftBaseChange_snd_ker_coprod`: surjectivity of that comparison.
 * `IsBaseChange.of_left_exact_of_lTensor`: the five-lemma criterion for an arbitrary `R`-algebra
   `S`, assuming that tensoring the top row with `S` keeps it left exact.
 * `IsBaseChange.of_left_exact_of_injective`: the variant of `IsBaseChange.of_left_exact` with an
@@ -201,5 +204,56 @@ theorem injective_liftBaseChange_snd_ker_coprod (f : M →ₗ[R] P) (g : N →�
     (Module.Flat.lTensor_exact S hab)
     ((LinearMap.exact_zero_iff_injective Unit _).mpr g.ker.subtype_injective)
     (fun _ ↦ ⟨(), rfl⟩) hg hf
+
+/-- Scalar extension of the projection from compatible pairs to the second factor is
+surjective if the comparison for the first map is surjective and multiplication on the
+cokernel of the second map is injective. No finiteness or faithful flatness is required. -/
+theorem surjective_liftBaseChange_snd_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[S] P)
+    (hf : Surjective (f.liftBaseChange S))
+    (hg : Injective (((LinearMap.id : (P ⧸ g.range) →ₗ[S] (P ⧸ g.range)).restrictScalars
+      R).liftBaseChange S)) :
+    Surjective (((LinearMap.snd R M N).domRestrict
+      (f.coprod (-g.restrictScalars R)).ker).liftBaseChange S) := by
+  let K := (f.coprod (-g.restrictScalars R)).ker
+  let c : K →ₗ[R] N := (LinearMap.snd R M N).domRestrict K
+  have hK (k : K) : f k.val.1 = g k.val.2 := by
+    simpa only [K, LinearMap.mem_ker, LinearMap.coprod_apply,
+      LinearMap.neg_apply, LinearMap.coe_restrictScalars, sub_eq_zero, ← sub_eq_add_neg]
+      using k.property
+  -- The first factor modulo the image of `g`, and the elements of `M` it kills.
+  let ψ : M →ₗ[R] P ⧸ g.range := (g.range.mkQ.restrictScalars R) ∘ₗ f
+  let μ := ((LinearMap.id : (P ⧸ g.range) →ₗ[S] (P ⧸ g.range)).restrictScalars R).liftBaseChange S
+  have hμ (t : S ⊗[R] M) : μ (ψ.lTensor S t) = g.range.mkQ (f.liftBaseChange S t) := by
+    induction t with
+    | tmul s m => simp [μ, ψ]
+    | add x y hx hy => simp only [map_add, hx, hy]
+  -- Projection to the first factor maps the compatible pairs onto `ker ψ`.
+  let b : K →ₗ[R] ψ.ker := ((LinearMap.fst R M N).domRestrict K).codRestrict ψ.ker
+    fun k ↦ by simp [ψ, hK k]
+  have hb : Surjective b := by
+    rintro ⟨m, hm⟩
+    obtain ⟨n, hn⟩ : f m ∈ g.range := by
+      simpa [ψ, Submodule.Quotient.mk_eq_zero] using hm
+    refine ⟨⟨(m, n), ?_⟩, rfl⟩
+    simp [K, hn]
+  have hbk (k : K) : (b k : M) = k.val.1 := rfl
+  have hcb (v : S ⊗[R] K) :
+      g (c.liftBaseChange S v) =
+        f.liftBaseChange S ((ψ.ker.subtype.lTensor S) (b.lTensor S v)) := by
+    induction v with
+    | tmul s k => simp [c, hbk, hK k]
+    | add x y hx hy => simp only [map_add, hx, hy]
+  intro n
+  -- Lift `g n` to `S ⊗[R] ker ψ` by flatness, then to `S ⊗[R] K`; the error lies in `ker g`.
+  obtain ⟨t, ht⟩ := hf (g n)
+  have hψt : ψ.lTensor S t = 0 :=
+    hg (((hμ t).trans (by simp [ht])).trans (map_zero μ).symm)
+  obtain ⟨u, hu⟩ := (Module.Flat.lTensor_exact S ψ.exact_subtype_ker_map t).mp hψt
+  obtain ⟨v, rfl⟩ := LinearMap.lTensor_surjective S hb u
+  have hk : (0, n - c.liftBaseChange S v) ∈ K := by
+    simp [K, hcb, hu, ht]
+  refine ⟨v + (1 : S) ⊗ₜ[R] ⟨_, hk⟩, ?_⟩
+  simpa only [map_add, LinearMap.liftBaseChange_tmul, one_smul, LinearMap.domRestrict_apply,
+    LinearMap.snd_apply] using add_sub_cancel (c.liftBaseChange S v) n
 
 end LinearMap
