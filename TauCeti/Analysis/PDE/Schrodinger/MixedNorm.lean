@@ -14,17 +14,20 @@ import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 # Strichartz estimates for the Schrödinger equation in mixed norms
 
 On a finite-dimensional real inner product space `E` of dimension `n`, let `S(t) = exp(itΔ)` be
-the Schrödinger propagator and let `(q, r)` be a non-endpoint admissible pair with finite `r`:
-`2 < q < ∞`, `2 / q + n / r = n / 2` and `r < ∞`, with Hölder conjugates `q'` and `r'`. The `TT*`
+the Schrödinger propagator and let `(q, r)` be a non-endpoint admissible pair: `2 < q < ∞` and
+`2 / q + n / r = n / 2`, with Hölder conjugates `q'` and `r'`. This includes the pair `(4, ∞)` in
+dimension one, where `r' = 1`. The `TT*`
 argument of `TauCeti.Analysis.PDE.Schrodinger.Strichartz` bounds the pairings of `S(t) f` and of
 the retarded Duhamel integral with `L²`-valued test functions. Testing against truncated extremal
-functions
+functions, normalized in `L¹` at `r = ∞`
 (`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`) turns
 these weak estimates into bounds in the mixed norm
 `‖u‖_{L^q_t L^r_x} = ‖t ↦ ‖u(t)‖_{L^r}‖_{L^q}`:
 
 * the homogeneous estimate `‖S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖₂`
-  (`TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_le`);
+  (`TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_le`), with its case
+  `‖S(t) f‖_{L⁴_t L^∞_x} ≤ C ‖f‖₂` on the line
+  (`TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_le_of_finrank_eq_one`);
 * the retarded estimate `‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L^{q'}_t L^{r'}_x}`
   for forcing terms `F : ℝ → L²(E)` integrable in time
   (`TauCeti.exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le`);
@@ -35,8 +38,7 @@ these weak estimates into bounds in the mixed norm
 
 The forcing term is assumed integrable on `(0, T]` with values in `L²`, so that Duhamel's formula is
 a Bochner integral; the energy estimate `TauCeti.norm_schrodingerDuhamel_le` is the companion bound
-at the energy pair `(∞, 2)`. The endpoint `q = 2` and the pair `(4, ∞)` on the line are not covered
-here.
+at the energy pair `(∞, 2)`. The endpoint `q = 2` is not covered here.
 
 ## References
 
@@ -58,14 +60,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
 /-- **The Strichartz estimate for the Schrödinger equation** in every dimension `n`, at a
-non-endpoint admissible pair with finite `r`: `2 < q < ∞`, `2 / q + n / r = n / 2` and
-`0 < r < ∞`, with `p` the Hölder conjugate of `q`. There is `C` such that for every `f ∈ L²(E)`,
+non-endpoint admissible pair: `2 < q < ∞`, `2 / q + n / r = n / 2` and `r ≠ 0`, with `p` the Hölder
+conjugate of `q`. There is `C` such that for every `f ∈ L²(E)`,
 
-`‖S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖₂`. -/
+`‖S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖₂`.
+
+In dimension one this includes the pair `(4, ∞)`: `‖S(t) f‖_{L⁴_t L^∞_x} ≤ C ‖f‖₂`. -/
 theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le (hq : 2 < q)
     (hpq : p.HolderConjugate q)
     (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2)
-    (hr0 : r ≠ 0) (hr : r ≠ ∞) :
+    (hr0 : r ≠ 0) :
     ∃ C : ℝ≥0, ∀ f : Lp ℂ 2 (volume : Measure E),
       eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator ℂ t f) r volume) q volume ≤ C * ‖f‖ₑ := by
   have hr2 := two_le_of_admissible hq hr0 hqr
@@ -76,20 +80,33 @@ theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le (hq : 2 < q)
   have := hpq.symm.coe_ennreal
   exact ⟨C, fun f ↦ (continuous_phasePropagator_apply laplacianSymbol f).aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (q' := p) (r' := (1 - r⁻¹)⁻¹)
-      ENNReal.coe_ne_top hr hr2 fun G hG _ ↦
+      ENNReal.coe_ne_top hr2 fun G hG _ ↦
         hC f G hG.aestronglyMeasurable
           (integrable_phasePropagator_apply _ continuous_neg.aestronglyMeasurable hG)⟩
 
+/-- **The Strichartz estimate for the Schrödinger equation on the line**, at the admissible pair
+`(4, ∞)`. There is `C` such that for every `f ∈ L²(E)` on a one-dimensional space `E`,
+
+`‖S(t) f‖_{L⁴_t L^∞_x} ≤ C ‖f‖₂`. -/
+theorem exists_eLpNorm_eLpNorm_schrodingerPropagator_le_of_finrank_eq_one
+    (hE : Module.finrank ℝ E = 1) :
+    ∃ C : ℝ≥0, ∀ f : Lp ℂ 2 (volume : Measure E),
+      eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator ℂ t f) ∞ volume) 4 volume ≤ C * ‖f‖ₑ := by
+  have hpq : (4 / 3 : ℝ≥0).HolderConjugate 4 := by
+    rw [← NNReal.holderConjugate_coe_iff, Real.holderConjugate_iff]
+    norm_num
+  simpa using exists_eLpNorm_eLpNorm_schrodingerPropagator_le (E := E) (r := ∞)
+    (by norm_num : (2 : ℝ≥0) < 4) hpq (by simp [hE]; norm_num) ENNReal.top_ne_zero
+
 /-- **The retarded Strichartz estimate for the Schrödinger equation** in every dimension `n`, at a
-non-endpoint admissible pair with finite `r`: `2 < q < ∞`, `2 / q + n / r = n / 2` and `r < ∞`,
-with `p` and `r'` the Hölder conjugates of `q` and `r`. There is `C` such that for every forcing
-term `F : ℝ → L²(E)` that is integrable in time,
+non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` and `r'` the
+Hölder conjugates of `q` and `r`; in dimension one this includes `(4, ∞)`, with `r' = 1`. There
+is `C` such that for every forcing term `F : ℝ → L²(E)` that is integrable in time,
 
 `‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L^p_t L^{r'}_x}`. -/
 theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le (hq : 2 < q)
     (hpq : p.HolderConjugate q)
-    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2)
-    (hr : r ≠ ∞) :
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
     ∃ C : ℝ≥0, ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
       eLpNorm (fun t ↦ eLpNorm ((∫ s in Iio t, schrodingerPropagator ℂ (t - s) (F s) :
           Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
@@ -100,7 +117,7 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le (hq 
   refine ⟨C, fun F hF ↦ (aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub laplacianSymbol
     hF.aestronglyMeasurable
     |>.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := ℂ) (q' := p) (r' := r')
-      ENNReal.coe_ne_top hr (two_le_of_admissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr)
+      ENNReal.coe_ne_top (two_le_of_admissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr)
       fun G hG _ ↦ ?_)⟩
   -- Move the pairing with `G t` inside the integral over `s < t`.
   have hpair (t : ℝ) : ⟪(∫ s in Iio t, schrodingerPropagator ℂ (t - s) (F s) :
@@ -115,26 +132,26 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le (hq 
   exact hC F G hF.aestronglyMeasurable hG.aestronglyMeasurable
 
 /-- **The Strichartz estimate for the inhomogeneous Schrödinger equation** in every dimension `n`,
-at a non-endpoint admissible pair with finite `r`: `2 < q < ∞`, `2 / q + n / r = n / 2` and
-`r < ∞`, with `p` and `r'` the Hölder conjugates of `q` and `r`. There is `C` such that for every
-`T`, every initial value `f ∈ L²(E)` and every forcing term `F : ℝ → L²(E)` integrable on `(0, T]`,
+at a non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` and `r'` the
+Hölder conjugates of `q` and `r`; in dimension one this includes `(4, ∞)`, with `r' = 1`. There
+is `C` such that for every `T`, every initial value `f ∈ L²(E)` and every forcing term
+`F : ℝ → L²(E)` integrable on `(0, T]`,
 the mild solution `u = TauCeti.schrodingerDuhamel f F` of `i ∂ₜu + Δu = F`, `u(0) = f`, satisfies
 
 `‖u‖_{L^q([0, T]; L^r)} ≤ C (‖f‖₂ + ‖F‖_{L^p((0, T]; L^{r'})})`.
 
 The constant does not depend on `T`. -/
 theorem exists_eLpNorm_eLpNorm_schrodingerDuhamel_le (hq : 2 < q) (hpq : p.HolderConjugate q)
-    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2)
-    (hr : r ≠ ∞) :
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
     ∃ C : ℝ≥0, ∀ (f : Lp ℂ 2 (volume : Measure E)) (F : ℝ → Lp ℂ 2 (volume : Measure E))
       (T : ℝ), IntegrableOn F (Ioc 0 T) →
       eLpNorm (fun t ↦ eLpNorm (schrodingerDuhamel f F t) r volume) q
           (volume.restrict (Icc 0 T)) ≤
         C * (‖f‖ₑ + eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p (volume.restrict (Ioc 0 T))) := by
   obtain ⟨C₁, hC₁⟩ := exists_eLpNorm_eLpNorm_schrodingerPropagator_le hq hpq hqr
-    (ENNReal.HolderConjugate.ne_zero r r') hr
+    (ENNReal.HolderConjugate.ne_zero r r')
   obtain ⟨C₂, hC₂⟩ :=
-    exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le (r' := r') hq hpq hqr hr
+    exists_eLpNorm_eLpNorm_setIntegral_Iio_schrodingerPropagator_sub_le (r' := r') hq hpq hqr
   refine ⟨C₁ + C₂, fun f F T hF ↦ ?_⟩
   have hq1 : (1 : ℝ≥0∞) ≤ q := by exact_mod_cast one_le_two.trans hq.le
   set FT := (Ioc 0 T).indicator F
