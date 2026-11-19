@@ -33,8 +33,9 @@ comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-eleme
 * `exteriorPower.ιMulti_two_add_right` and `exteriorPower.ιMulti_two_smul_right`: the wedge
   `u ∧ w` of two vectors is linear in `w`.
 * `exteriorPower.ιMulti_two_smul_left`: the wedge `u ∧ w` is homogeneous in `u`.
-* `exteriorPower.ιMulti_two_neg_right` and `exteriorPower.ιMulti_two_swap`: `u ∧ (-w) = -(u ∧ w)`
-  and `w ∧ u = -(u ∧ w)`.
+* `exteriorPower.ιMulti_two_neg_right`, `exteriorPower.ιMulti_two_sub_right` and
+  `exteriorPower.ιMulti_two_swap`: `u ∧ (-w) = -(u ∧ w)`, `u ∧ (w - w') = u ∧ w - u ∧ w'` and
+  `w ∧ u = -(u ∧ w)`.
 -/
 
 public section
@@ -66,6 +67,11 @@ theorem ιMulti_two_neg_right (u w : M) :
     ιMulti R 2 ![u, -w] = -ιMulti R 2 ![u, w] := by
   apply Subtype.ext
   simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail]
+
+/-- The wedge `u ∧ w` is subtractive in `w`. -/
+theorem ιMulti_two_sub_right (u w w' : M) :
+    ιMulti R 2 ![u, w - w'] = ιMulti R 2 ![u, w] - ιMulti R 2 ![u, w'] := by
+  rw [sub_eq_add_neg w, ιMulti_two_add_right, ιMulti_two_neg_right, sub_eq_add_neg]
 
 /-- The wedge `u ∧ w` is antisymmetric: `w ∧ u = -(u ∧ w)`. -/
 theorem ιMulti_two_swap (u w : M) :

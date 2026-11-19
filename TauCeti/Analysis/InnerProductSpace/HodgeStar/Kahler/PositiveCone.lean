@@ -216,7 +216,7 @@ include hJ
 /-- **A positive `(1,1)`-form is a nonnegative combination of complex lines**:
 `κ = (1 / 2) ∑ᵢ μᵢ bᵢ ∧ J bᵢ` with `μᵢ ≥ 0`, for an orthonormal eigenbasis `b` of the symmetric
 operator `T` with `⟪T u, w⟫ = κ(u, J w)`. -/
-private theorem exists_eq_smul_sum_of_mem_positiveCone {κ : ⋀[ℝ]^2 V}
+theorem exists_eq_smul_sum_of_mem_positiveCone {κ : ⋀[ℝ]^2 V}
     (hκ : κ ∈ J.positiveCone) :
     ∃ (b : OrthonormalBasis (Fin (finrank ℝ V)) ℝ V) (μ : Fin (finrank ℝ V) → ℝ),
       (∀ i, 0 ≤ μ i) ∧ κ = (2⁻¹ : ℝ) • ∑ i, μ i • ιMulti ℝ 2 ![b i, J (b i)] := by
