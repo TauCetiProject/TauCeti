@@ -11,8 +11,8 @@ public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import Mathlib.Geometry.Manifold.Metrizable
 import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.Metrizable
 
 /-!
 # The Mayer–Vietoris sequence of de Rham complexes
@@ -300,14 +300,8 @@ theorem SmoothForm.surjective_mayerVietoris [FiniteDimensional ℝ E] [IsManifol
           (Opens.inclusion (inf_le_right : U ⊓ V ≤ V)) (contMDiff_inclusion _))) := by
   intro θ
   -- The open subset `U ⊔ V` is again a Hausdorff σ-compact manifold, hence normal.
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : SecondCountableTopology H := I.secondCountableTopology
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
-  have : LocallyCompactSpace (U ⊔ V : Opens M) := ChartedSpace.locallyCompactSpace H _
-  have : NormalSpace (U ⊔ V : Opens M) :=
-    have := Manifold.metrizableSpace I (U ⊔ V : Opens M)
-    inferInstance
+  have := Manifold.sigmaCompactSpace_opens I (U ⊔ V)
+  have := Manifold.normalSpace_opens I (U ⊔ V)
   -- A cut-off function vanishing near the points outside `V` and equal to one near the points
   -- outside `U`.
   have hA : IsClosed {x : (U ⊔ V : Opens M) | (x : M) ∉ V} :=

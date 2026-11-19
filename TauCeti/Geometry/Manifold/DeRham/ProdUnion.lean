@@ -24,10 +24,10 @@ connected; the Mayer–Vietoris sequence (`TauCeti.subsingleton_deRhamCohomology
 rest.
 
 For `M = N = S²` and discs `D = D'` around a point `∞`, this open set is a neighbourhood of the two
-transverse spheres `{∞} × S²` and `S² × {∞}`. Its vanishing first cohomology is what makes a
-primitive of a closed one-form there exact, so that the primitive can be cut off near the two
-spheres (`TauCeti.exists_eventuallyEq_mextDerivₗ_of_subsingleton_deRhamCohomology_one`), as in the
-relative form of Gromov's recognition of the standard symplectic `ℝ⁴`.
+transverse spheres `{∞} × S²` and `S² × {∞}`. Its vanishing first cohomology makes a one-form
+closed there exact, so that its primitive function can be cut off near the two spheres
+(`TauCeti.exists_eventuallyEq_mextDerivₗ_of_subsingleton_deRhamCohomology`), as in the relative
+form of Gromov's recognition of the standard symplectic `ℝ⁴`.
 
 ## References
 
@@ -64,11 +64,12 @@ theorem subsingleton_deRhamCohomology_one_prod_univ_sup_univ_prod [SimplyConnect
         ⟨univ ×ˢ (D' : Set N), isOpen_univ.prod D'.isOpen⟩ : Opens (M × N)) 1) := by
   set U : Opens (M × N) := ⟨(D : Set M) ×ˢ univ, D.isOpen.prod isOpen_univ⟩
   set V : Opens (M × N) := ⟨univ ×ˢ (D' : Set N), isOpen_univ.prod D'.isOpen⟩
-  -- Both pieces are products of simply connected spaces.
+  -- Both pieces are products of simply connected sets; as types, `U` and `V` are these products
+  -- by definition of the coercion of an open set.
   have : SimplyConnectedSpace U :=
-    hD.prod (Homeomorph.Set.univ N).toHomotopyEquiv.simplyConnectedSpace
+    (hD.prod (isSimplyConnected_univ_iff.mpr ‹_›)).simplyConnectedSpace
   have : SimplyConnectedSpace V :=
-    IsSimplyConnected.prod (Homeomorph.Set.univ M).toHomotopyEquiv.simplyConnectedSpace hD'
+    ((isSimplyConnected_univ_iff.mpr ‹_›).prod hD').simplyConnectedSpace
   -- They meet in `D × D'`, which is connected.
   have hUV : ((U ⊓ V : Opens (M × N)) : Set (M × N)) = (D : Set M) ×ˢ (D' : Set N) := by
     simp only [U, V, Opens.coe_inf, Opens.coe_mk, prod_inter_prod, inter_univ, univ_inter]

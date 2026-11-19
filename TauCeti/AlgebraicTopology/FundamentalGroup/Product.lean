@@ -29,6 +29,8 @@ from its coordinate loop classes by `Path.Homotopic.prod`, respectively `Path.Ho
 * `FundamentalGroup.piMulEquiv`: `π₁(Π i, X i, x) ≃* Π i, π₁(X i, x i)`.
 * `TauCeti.instSimplyConnectedSpaceProd`: a product of two simply connected spaces is simply
   connected, and `IsSimplyConnected.prod` is its form for subsets.
+* `TauCeti.isSimplyConnected_univ_iff`: the whole space is a simply connected set exactly when the
+  space is simply connected.
 -/
 
 public section
@@ -102,6 +104,11 @@ instance instSimplyConnectedSpaceProd [SimplyConnectedSpace X] [SimplyConnectedS
   refine simply_connected_iff_paths_homotopic.mpr ⟨inferInstance, fun a b ↦ ⟨fun p q ↦ ?_⟩⟩
   rw [← prod_projLeft_projRight p, ← prod_projLeft_projRight q,
     Subsingleton.elim (projLeft p) (projLeft q), Subsingleton.elim (projRight p) (projRight q)]
+
+/-- The whole space is a simply connected set exactly when the space is simply connected. -/
+theorem isSimplyConnected_univ_iff :
+    IsSimplyConnected (Set.univ : Set X) ↔ SimplyConnectedSpace X :=
+  (Homeomorph.Set.univ X).toHomotopyEquiv.simplyConnectedSpace_iff
 
 end TauCeti
 
