@@ -380,8 +380,8 @@ theorem veroneseIso_inv_toSpecZero :
     (veroneseIso 𝒜 d).inv ≫ toSpecZero (veroneseGrading 𝒜 d) = toSpecZero 𝒜 ≫
       Spec.map (CommRingCat.ofHom (veroneseGradingZeroEquiv 𝒜 d).toRingHom) := by
   rw [Iso.inv_comp_eq, veroneseIso_hom_toSpecZero_assoc, ← Spec.map_comp,
-    ← CommRingCat.ofHom_comp, RingEquiv.toRingHom_eq_coe, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.symm_comp, CommRingCat.ofHom_id, Spec.map_id, Category.comp_id]
+    ← CommRingCat.ofHom_comp]
+  simp
 
 end
 
