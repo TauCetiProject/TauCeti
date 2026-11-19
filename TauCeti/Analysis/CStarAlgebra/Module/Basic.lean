@@ -36,6 +36,7 @@ Riesz theorem.
   inner products `⟪z, z⟫_A`.
 * `CStarModule.ext_inner_left`, `CStarModule.ext_inner_right`: vectors are determined by their
   inner products against all vectors.
+* `CStarModule.inner_self_eq_norm_sq_complex`: over `ℂ`, `⟪x, x⟫_ℂ = (‖x‖ ^ 2 : ℂ)`.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`.
@@ -111,6 +112,21 @@ theorem ext_inner_right {x y : E} (h : ∀ z, inner A x z = inner A y z) : x = y
   simpa using congrArg star (h z)
 
 end Algebraic
+
+section Complex
+
+open scoped ComplexOrder
+
+variable {E : Type*} [AddCommGroup E] [Module ℂ E] [Norm E] [CStarModule ℂ E]
+
+/-- For a Hilbert C⋆-module over `ℂ`, the self inner product `⟪x, x⟫_ℂ` equals `(‖x‖ ^ 2 : ℂ)`. -/
+theorem inner_self_eq_norm_sq_complex (x : E) :
+    inner ℂ x x = ((‖x‖ ^ 2 : ℝ) : ℂ) := by
+  have hnn : (0 : ℂ) ≤ inner ℂ x x := inner_self_nonneg
+  rw [Complex.eq_re_of_ofReal_le (r := 0) (z := inner ℂ x x) (by simpa using hnn),
+    Complex.re_eq_norm.mpr hnn, norm_sq_eq ℂ]
+
+end Complex
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
