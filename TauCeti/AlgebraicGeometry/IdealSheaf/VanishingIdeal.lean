@@ -34,6 +34,9 @@ discrete valuation ring.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
+* `Scheme.IdealSheafData.isReduced_subscheme_nilradical` and `Scheme.Hom.nilradical_le_ker`: the
+  reduction `X.nilradical.subscheme` is reduced, and every morphism from a reduced scheme to `X`
+  kills the nilradical of `X`, so it factors through the reduction.
 * `Scheme.IdealSheafData.comap_vanishingIdeal_of_isOpenImmersion`,
   `Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range`, and
   `Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_apply`: pullback of vanishing
@@ -111,6 +114,19 @@ theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f 
       rw [← SetLike.mem_coe, coe_support_vanishingIdeal]
       exact h ⟨y, rfl⟩
   exact (X.mem_zeroLocus_iff _ _).mp hZ s hs hy
+
+/-- The reduction of a scheme, the closed subscheme cut out by its nilradical, is reduced: it is
+the reduced induced closed subscheme structure on the whole space. -/
+instance isReduced_subscheme_nilradical : IsReduced X.nilradical.subscheme := by
+  rw [← vanishingIdeal_top]
+  infer_instance
+
+/-- A morphism from a reduced scheme kills the nilradical of its target, so it factors through
+the reduction of the target (`IsClosedImmersion.lift` along `subschemeι`). -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nilradical_le_ker {Y : Scheme.{u}} [IsReduced Y]
+    (f : Y ⟶ X) : X.nilradical ≤ f.ker := by
+  rw [← vanishingIdeal_top]
+  exact vanishingIdeal_le_ker_of_range_subset f (Set.subset_univ _)
 
 /-- Along an open immersion `j : U ⟶ X`, `(vanishingIdeal Z).comap j` is
 `vanishingIdeal (j ⁻¹' Z)`. -/
