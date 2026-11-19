@@ -9,6 +9,8 @@ public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Data.Nat.BitField
+import TauCeti.Algebra.CharP.Two
+import TauCeti.Data.Nat.Bitwise
 
 /-!
 # Bit-packed square matrices in characteristic two
@@ -131,28 +133,11 @@ theorem toMatrix_ofNat_apply [Zero R] [One R] (M : ℕ) (i j : Fin n) :
 
 /-! ### Bits of the masks and of the product -/
 
-/-- The bits of a mask assembled from powers of two, as the column mask and the packed identity
-matrix are. -/
-private theorem testBit_foldl_or_two_pow (g : ℕ → ℕ) (m p : ℕ) :
-    ((List.range m).foldl (fun acc i ↦ acc ||| 2 ^ g i) 0).testBit p =
-      decide (∃ i < m, g i = p) := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil, Nat.testBit_or, ih,
-      Nat.testBit_two_pow]
-    rw [← Bool.decide_or]
-    refine decide_eq_decide.mpr ⟨?_, ?_⟩
-    · rintro (⟨i, hi, h⟩ | h)
-      exacts [⟨i, by omega, h⟩, ⟨m, by omega, h⟩]
-    · rintro ⟨i, hi, h⟩
-      rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
-      exacts [.inl ⟨i, hi, h⟩, .inr h]
-
 /-- The bits of the column mask: at an entry position, the bit is set exactly in column `0`. -/
 theorem testBit_columnMask {i k : ℕ} (hk : k < n) :
     (columnMask n).testBit (n * i + k) = decide (k = 0 ∧ i < n) := by
-  rw [columnMask, testBit_foldl_or_two_pow]
+  simp only [columnMask, Nat.testBit_foldl_or, Nat.zero_testBit, Bool.false_or, List.any_eq,
+    List.mem_range, Nat.testBit_two_pow, decide_eq_true_eq]
   refine decide_eq_decide.mpr ⟨?_, ?_⟩
   · rintro ⟨i', hi', h⟩
     -- Division of the position `n * i' = n * i + k` by `n` gives `i' = i` and `k = 0`.
@@ -201,19 +186,6 @@ private theorem testBit_column_mul_row (M N j : ℕ) {i k : ℕ} (hk : k < n) :
   by_cases hi : i < n <;> by_cases hb : M.testBit (n * i + j) <;>
     simp [hi, hb, hk, Nat.testBit_mod_two_pow, Nat.testBit_shiftRight]
 
-/-- In characteristic two, the indicator of a bit of the exclusive-or by which the packed product
-adds up its terms is the sum of the indicators of that bit of the terms. -/
-private theorem ite_testBit_foldl_xor [NonAssocSemiring R] [CharP R 2] (f : ℕ → ℕ) (m p : ℕ) :
-    (if ((List.range m).foldl (fun acc j ↦ acc ^^^ f j) 0).testBit p then (1 : R) else 0) =
-      ∑ j ∈ Finset.range m, if (f j).testBit p then 1 else 0 := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil, Nat.testBit_xor,
-      Finset.sum_range_succ, ← ih]
-    cases ((List.range m).foldl (fun acc j ↦ acc ^^^ f j) 0).testBit p <;>
-      cases (f m).testBit p <;> simp [CharTwo.add_self_eq_zero]
-
 /-! ### The matrix of a product and of the unit -/
 
 /-- The packed unit is the identity matrix. -/
@@ -229,18 +201,22 @@ theorem toMatrix_one [Zero R] [One R] : toMatrix R (1 : BitMatrix n) = 1 := by
       exact Fin.ext ((h1.1.symm.trans h2.1).trans (h2.2.symm.trans h1.2))
     · rintro rfl
       exact ⟨i, i.isLt, rfl⟩
-  simp only [BitMatrix.one_def, toMatrix_ofNat_apply, testBit_foldl_or_two_pow, decide_eq_true_eq,
-    hiff, Matrix.one_apply]
+  simp only [BitMatrix.one_def, toMatrix_ofNat_apply, Nat.testBit_foldl_or, Nat.zero_testBit,
+    Bool.false_or, List.any_eq_true, List.mem_range, Nat.testBit_two_pow, decide_eq_true_eq, hiff,
+    Matrix.one_apply]
 
 /-- **The packed product is the matrix product** over a semiring of characteristic two. -/
 @[simp]
 theorem toMatrix_mul [NonAssocSemiring R] [CharP R 2] (A B : BitMatrix n) :
     toMatrix R (A * B) = toMatrix R A * toMatrix R B := by
   ext i k
-  rw [BitMatrix.mul_def, toMatrix_ofNat_apply, Matrix.mul_apply, ite_testBit_foldl_xor,
-    Finset.sum_range]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [testBit_column_mul_row _ _ _ k.isLt]
+  -- Both sides are sums over the list of the indices `j`: the bit of the exclusive-or of the
+  -- terms of the packed product, and the entry of the matrix product.
+  rw [BitMatrix.mul_def, toMatrix_ofNat_apply, Matrix.mul_apply, ite_testBit_foldl_xor_of_charTwo,
+    Fin.sum_univ_def, ← List.map_coe_finRange_eq_range, List.map_map]
+  simp only [Nat.zero_testBit, Bool.false_eq_true, ite_false, zero_add]
+  refine congrArg List.sum (List.map_congr_left fun j _ ↦ ?_)
+  rw [Function.comp_apply, testBit_column_mul_row _ _ _ k.isLt]
   by_cases ha : A.toNat.testBit (n * i + j) <;> by_cases hb : B.toNat.testBit (n * j + k) <;>
     simp [ha, hb, i.isLt]
 

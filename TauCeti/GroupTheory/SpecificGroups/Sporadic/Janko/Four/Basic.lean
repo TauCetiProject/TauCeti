@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.LinearAlgebra.Matrix.BitMatrix
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
 
