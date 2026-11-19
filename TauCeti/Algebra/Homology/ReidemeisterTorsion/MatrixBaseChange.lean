@@ -80,26 +80,12 @@ section BasisChange
 variable {ι : Type*} {s : ComplexShape ι} {C : HomologicalComplex (ModuleCat A) s} {n : ι → ℕ}
   (c c' : ∀ i, Basis (Fin (n i)) A (C.X i))
 
-/-- The endomorphisms of a `K`-module given by the images under `φ` of the matrices of `e'` in `e`
-and of `e` in `e'` are inverse to each other. -/
-private theorem toLin_map_toMatrix_comp_toLin_map_toMatrix {m M V : Type*} [Fintype m]
-    [DecidableEq m] [AddCommGroup M] [Module A M] [AddCommGroup V] [Module K V] (b : Basis m K V)
-    (e e' : Basis m A M) :
-    (Matrix.toLin b b ((e.toMatrix e').map φ)).comp (Matrix.toLin b b ((e'.toMatrix e).map φ)) =
-      LinearMap.id := by
-  rw [← Matrix.toLin_mul, ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip,
-    Matrix.map_one _ φ.map_zero φ.map_one, Matrix.toLin_one]
-
 /-- The automorphism of the coordinate base change of `(C, c)` along `φ` in degree `i` whose
-matrix in the standard basis is the image under `φ` of the matrix of `c' i` in the basis `c i`;
-its inverse has the image of the matrix of `c i` in `c' i`. -/
+matrix in the standard basis is the image under `φ` of the matrix of `c' i` in the basis `c i`. -/
 private noncomputable def basisChangeEquiv (i : ι) :
     (C.matrixBaseChange c φ).X i ≃ₗ[K] (C.matrixBaseChange c φ).X i :=
-  let b := C.matrixBaseChangeBasis c φ i
-  LinearEquiv.ofLinearMap (Matrix.toLin b b (((c i).toMatrix (c' i)).map φ))
-    (Matrix.toLin b b (((c' i).toMatrix (c i)).map φ))
-    (toLin_map_toMatrix_comp_toLin_map_toMatrix φ b _ _)
-    (toLin_map_toMatrix_comp_toLin_map_toMatrix φ b _ _)
+  Matrix.toLinearEquiv (C.matrixBaseChangeBasis c φ i) (((c i).toMatrix (c' i)).map φ) <| by
+    simpa [Basis.det_apply, RingHom.map_det] using ((c i).isUnit_det (c' i)).map φ
 
 /-- The basis of the coordinate base change of `(C, c)` along `φ` corresponding to the basis
 `c' i` of `C.X i`: its vectors are the columns of the image under `φ` of the matrix of `c' i` in
@@ -119,7 +105,16 @@ private theorem toMatrix_basisChangeBasis_d (i j : ι) :
     LinearMap.toMatrix_comp _ (C.matrixBaseChangeBasis c φ i), toMatrix_matrixBaseChange_d,
     ← basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix (c' i) (c i) (c' j) (c j),
     Matrix.map_mul, Matrix.map_mul]
-  simp [basisChangeEquiv, Matrix.mul_assoc]
+  have h : (basisChangeEquiv φ c c' i).toLinearMap =
+      Matrix.toLin _ _ (((c i).toMatrix (c' i)).map φ) := rfl
+  have h' : (basisChangeEquiv φ c c' j).symm.toLinearMap =
+      Matrix.toLin (C.matrixBaseChangeBasis c φ j) (C.matrixBaseChangeBasis c φ j)
+        (((c' j).toMatrix (c j)).map φ) := by
+    have hmul : ((c' j).toMatrix (c j)).map φ * ((c j).toMatrix (c' j)).map φ = 1 := by
+      rw [← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip, Matrix.map_one _ φ.map_zero φ.map_one]
+    rw [← Matrix.inv_eq_left_inv hmul]
+    rfl
+  rw [h, h', LinearMap.toMatrix_toLin, LinearMap.toMatrix_toLin, Matrix.mul_assoc]
 
 /-- The determinant of `basisChangeBasis` with respect to the standard basis is the image under
 `φ` of the determinant of `c' i` with respect to `c i`. -/
