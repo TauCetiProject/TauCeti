@@ -47,6 +47,9 @@ map is multiplication by `p`, is exact (`Ideal.exact_mulLeft_mkₐ_span_singleto
 
 A linear endomorphism commuting with multiplication by each element of a set `s` induces an
 endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap_of_map_mul`).
+Multiplication by `a` descends to `R ⧸ (b) →ₗ[R] R ⧸ (a * b)`
+(`Ideal.mulLeftQuotientSpanSingleton`), and is injective when `a` is left-regular
+(`Ideal.mulLeftQuotientSpanSingleton_injective`).
 -/
 
 public section
@@ -174,6 +177,33 @@ theorem exact_mulLeft_mkₐ_span_singleton {B : Type*} [CommRing B] [Algebra R B
     simp only [AlgHom.toLinearMap_apply, Quotient.mkₐ_eq_mk, Quotient.eq_zero_iff_mem,
       mem_span_singleton', Set.mem_range, LinearMap.mulLeft_apply]
     exact exists_congr fun _ ↦ by rw [mul_comm]
+
+/-- Multiplication by `a` descends to an `R`-linear map `R ⧸ (b) →ₗ[R] R ⧸ (a * b)`. -/
+def mulLeftQuotientSpanSingleton (a b : R) : R ⧸ span {b} →ₗ[R] R ⧸ span {a * b} :=
+  Submodule.mapQ (span {b}) (span {a * b}) (LinearMap.lsmul R R a) fun _ hx ↦ by
+    obtain ⟨c, rfl⟩ := mem_span_singleton.mp hx
+    exact mem_span_singleton.mpr ⟨c, (mul_assoc a b c).symm⟩
+
+/-- `mulLeftQuotientSpanSingleton a b` sends the class of `r` modulo `(b)` to the class of `a * r`
+modulo `(a * b)`. -/
+@[simp]
+theorem mulLeftQuotientSpanSingleton_mk (a b r : R) :
+    mulLeftQuotientSpanSingleton a b (Quotient.mk (span {b}) r) =
+      Quotient.mk (span {a * b}) (a * r) := by
+  simp [mulLeftQuotientSpanSingleton, ← Quotient.mk_eq_mk]
+
+/-- Multiplication by a left-regular element `a` embeds `R ⧸ (b)` injectively into
+`R ⧸ (a * b)`. -/
+theorem mulLeftQuotientSpanSingleton_injective {a : R} (ha : IsLeftRegular a) (b : R) :
+    Function.Injective (mulLeftQuotientSpanSingleton a b) := by
+  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
+  intro q hq
+  obtain ⟨r, rfl⟩ := Quotient.mk_surjective q
+  rw [LinearMap.mem_ker, mulLeftQuotientSpanSingleton_mk, Quotient.eq_zero_iff_mem,
+    mem_span_singleton] at hq
+  rcases hq with ⟨c, hc⟩
+  rw [Submodule.mem_bot, Quotient.eq_zero_iff_mem, mem_span_singleton]
+  exact ⟨c, ha (hc.trans (mul_assoc a b c))⟩
 
 end Ideal
 

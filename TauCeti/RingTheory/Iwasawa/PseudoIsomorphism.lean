@@ -54,6 +54,8 @@ Chapter V, §3, Exercise 1).
   pseudo-isomorphism.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.restrict_torsion`: over a noetherian domain, a
   pseudo-isomorphism restricts to a pseudo-isomorphism between the torsion submodules.
+* `TauCeti.Iwasawa.IsPseudoIsomorphism.isTorsion_iff`: over a domain, the source of a
+  pseudo-isomorphism is torsion iff its target is.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.finite_iff`: over a noetherian ring, the source of a
   pseudo-isomorphism is finitely generated iff its target is.
 * `TauCeti.Iwasawa.isPseudoIsomorphism_lsmul`: multiplication by `a` on a finitely generated
@@ -232,6 +234,27 @@ theorem IsPseudoIsomorphism.restrict_torsion [IsDomain A] [IsNoetherianRing A] {
     refine ⟨⟨m, (Submodule.mem_torsion_iff m).mpr ⟨b * a, ?_⟩⟩, Subtype.ext hm⟩
     rw [mul_smul]
     exact congr(($hb : M))
+
+/-- Over a domain, a pseudo-isomorphism preserves and reflects torsion. -/
+theorem IsPseudoIsomorphism.isTorsion_iff [IsDomain A] {f : M →ₗ[A] N}
+    (hf : IsPseudoIsomorphism f) : Module.IsTorsion A M ↔ Module.IsTorsion A N := by
+  refine ⟨fun hM y ↦ ?_, fun hN x ↦ ?_⟩
+  · obtain ⟨a, ha⟩ := hf.isPseudoNull_coker.isTorsion
+      (x := (Submodule.Quotient.mk y : N ⧸ LinearMap.range f))
+    rw [Submonoid.smul_def, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at ha
+    obtain ⟨x, hx⟩ := ha
+    obtain ⟨b, hb⟩ := @hM x
+    rw [Submonoid.smul_def] at hb
+    exact ⟨b * a, by rw [Submonoid.smul_def, Submonoid.coe_mul, mul_smul, ← hx, ← map_smul, hb,
+      map_zero]⟩
+  · obtain ⟨a, ha⟩ := @hN (f x)
+    have hker : (a : A) • x ∈ LinearMap.ker f := by
+      rw [LinearMap.mem_ker, map_smul]
+      exact ha
+    obtain ⟨b, hb⟩ := hf.isPseudoNull_ker.isTorsion (x := ⟨(a : A) • x, hker⟩)
+    exact ⟨b * a, by
+      rw [mul_smul]
+      exact congr(($hb : M))⟩
 
 /-- The multiplication criterion: over a noetherian ring, multiplication by `a` on a finitely
 generated module `M` is a pseudo-isomorphism if `a` lies in no prime of height at most one in the
