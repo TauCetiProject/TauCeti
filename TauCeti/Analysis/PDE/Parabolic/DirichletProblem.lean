@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.PDE.Parabolic.Existence
 import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
+import TauCeti.Analysis.PDE.Parabolic.TimeRegularity
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.SeparableMeasure
 
@@ -78,6 +79,15 @@ solution is **unique**: Gårding's inequality above holds with a nonnegative `L�
 energy estimate `TauCeti.HasWeakLineDerivOn.norm_sq_add_mul_integral_le_of_gelfandDual` applies to
 the difference of two weak solutions with the same initial value.
 
+## Time regularity
+
+When the coefficients do not depend on time and `a` is symmetric, a forcing in
+`L²(t₀, t₁; L²(Ω))` and an initial value in `H¹₀(Ω)` give a solution with `∂ₜu ∈ L²(t₀, t₁; L²(Ω))`
+that is essentially bounded in `H¹₀(Ω)` (Evans, §7.1.3, Theorem 5). This is the abstract theorem
+`TauCeti.HasWeakLineDerivOn.exists_hasWeakLineDerivOn_of_gelfandDual` for the symmetric coercive
+part `-∂ᵢ(aⁱʲ ∂ⱼ ·) + λ/2`; the lower-order terms `⟪b, ∇u⟫ + c u`, a bounded operator
+`H¹₀(Ω) → L²(Ω)`, and the mass shift `λ/2 u` are moved into the `L²` forcing.
+
 ## Main declarations
 
 * `TauCeti.PDE.exists_memLp_forall_setIntegral_energyFormH1_eq_add_inner`: existence of a
@@ -87,12 +97,15 @@ the difference of two weak solutions with the same initial value.
   `TauCeti.PDE.ae_eq_of_hasWeakLineDerivOn_gelfandDual_energyFormH1`: uniqueness of weak
   solutions, for the continuous `L²(Ω)`-valued representative at every time and for the
   `H¹₀(Ω)`-valued solution almost everywhere.
+* `TauCeti.PDE.exists_hasWeakLineDerivOn_valueL_of_energyFormH1`: time regularity,
+  `∂ₜu ∈ L²(t₀, t₁; L²(Ω))` and `u ∈ L^∞(t₀, t₁; H¹₀(Ω))`, for time-independent coefficients with
+  symmetric principal part.
 
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., §7.1.1 and §7.1.2, Theorems 3 and 4,
   which prove existence of weak solutions of this problem by the Galerkin method, and uniqueness
-  by the energy estimate.
+  by the energy estimate; §7.1.3, Theorem 5, for the time regularity.
 * J.-L. Lions, *Équations différentielles opérationnelles et problèmes aux limites*,
   Grundlehren **111**, Springer, 1961, whose representation theorem underlies the abstract
   existence theorem consumed here.
@@ -382,6 +395,215 @@ theorem ae_eq_of_hasWeakLineDerivOn_gelfandDual_energyFormH1
     hw₂ hae₂ h₀
 
 end StandingHypotheses
+
+/-! ### Time regularity for time-independent symmetric principal coefficients -/
+
+section TimeRegularity
+
+variable {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+  {c : EuclideanSpace ℝ ι → ℝ}
+
+/-- With bounded lower-order coefficients, `⟪b, ∇u⟫ + c u` is square integrable. -/
+private theorem memLp_lowerOrder (hb : MemLp b ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x) 2 (mu.restrict Omega) :=
+  (memLp_inner_gradient hb u).add (hc.fun_mul (Lp.memLp _))
+
+/-- The lower-order part `u ↦ ⟪b, ∇u⟫ + c u` of a divergence-form operator, as a bounded operator
+`H¹(Ω) → L²(Ω)`. -/
+private def lowerOrderL (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma) :
+    W1p mu Omega 2 →L[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
+  LinearMap.mkContinuous
+    { toFun u := (memLp_lowerOrder hb hc u).toLp _
+      map_add' u v := by
+        refine Lp.ext ?_
+        filter_upwards [(memLp_lowerOrder hb hc (u + v)).coeFn_toLp,
+          Lp.coeFn_add ((memLp_lowerOrder hb hc u).toLp _) ((memLp_lowerOrder hb hc v).toLp _),
+          (memLp_lowerOrder hb hc u).coeFn_toLp, (memLp_lowerOrder hb hc v).coeFn_toLp,
+          W1p.value_add_ae u v, Lp.coeFn_add (W1p.gradient u) (W1p.gradient v)]
+          with x h1 h2 h3 h4 h5 h6
+        rw [h1, h2, Pi.add_apply, h3, h4, h5, W1p.gradient_add, h6]
+        simp only [Pi.add_apply, inner_add_right]
+        ring
+      map_smul' r u := by
+        refine Lp.ext ?_
+        filter_upwards [(memLp_lowerOrder hb hc (r • u)).coeFn_toLp,
+          Lp.coeFn_smul r ((memLp_lowerOrder hb hc u).toLp _),
+          (memLp_lowerOrder hb hc u).coeFn_toLp,
+          W1p.value_smul_ae r u, Lp.coeFn_smul r (W1p.gradient u)] with x h1 h2 h3 h4 h5
+        rw [h1, RingHom.id_apply, h2, Pi.smul_apply, h3, h4, W1p.gradient_smul, h5]
+        simp only [Pi.smul_apply, smul_eq_mul, inner_smul_right]
+        ring }
+    ((|beta| + |gamma|) * ‖(jetLpL : W1p mu Omega 2 →L[ℝ] _)‖) fun u => by
+      dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
+      rw [mul_assoc]
+      refine (Lp.norm_le_mul_norm_of_ae_le_mul ?_).trans
+        (mul_le_mul_of_nonneg_left (jetLpL.le_opNorm u) (by positivity))
+      filter_upwards [(memLp_lowerOrder hb hc u).coeFn_toLp, jetLpL_apply_ae u, hb_bound,
+        hc_bound] with x h1 h2 hbx hcx
+      rw [h1, h2, jetField_apply, Prod.norm_def, Real.norm_eq_abs]
+      calc |⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x|
+          ≤ ‖b x‖ * ‖W1p.gradient u x‖ + ‖c x‖ * ‖W1p.value u x‖ := by
+            refine (abs_add_le _ _).trans (add_le_add (abs_real_inner_le_norm _ _) ?_)
+            rw [abs_mul, Real.norm_eq_abs, Real.norm_eq_abs]
+        _ ≤ |beta| * ‖W1p.gradient u x‖ + |gamma| * ‖W1p.value u x‖ := by
+            gcongr
+            · exact hbx.trans (le_abs_self _)
+            · exact hcx.trans (le_abs_self _)
+        _ ≤ (|beta| + |gamma|) * max ‖W1p.value u x‖ ‖W1p.gradient u x‖ := by
+            rw [add_mul]
+            gcongr
+            · exact le_max_right _ _
+            · exact le_max_left _ _
+
+/-- Paired with the value of a function in `H¹₀(Ω)`, the lower-order part gives the lower-order
+terms of the energy form. -/
+private theorem inner_lowerOrderL_valueL (hb : MemLp b ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma) (u : W1p mu Omega 2)
+    (v : W1p0 mu Omega 2) :
+    ⟪lowerOrderL hb hc hb_bound hc_bound u, W1p0.valueL v⟫_ℝ =
+      ∫ x in Omega, (⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x) *
+        W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  rw [MeasureTheory.L2.inner_def, W1p0.valueL_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [(memLp_lowerOrder hb hc u).coeFn_toLp] with x hx
+  simp only [lowerOrderL, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk]
+  rw [hx, RCLike.inner_apply, conj_trivial, mul_comm]
+
+/-- The lower-order terms of a divergence-form operator with bounded measurable coefficients are
+an `L²` pairing: there is a bounded `M : H¹₀(Ω) → L²(Ω)`, namely `u ↦ ⟪b, ∇u⟫ + c u`, with
+`a(v, w) = ∫ ⟨a ∇v, ∇w⟩ + ⟪M v, w⟫_{L²}`. -/
+private theorem exists_energyFormH1_eq_add_inner [DecidableEq ι]
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hell : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
+    ∃ M : W1p0 mu Omega 2 →L[ℝ] Lp ℝ 2 (mu.restrict Omega), ∀ v w : W1p0 mu Omega 2,
+      energyFormH1 a b c (v : W1p mu Omega 2) (w : W1p mu Omega 2) =
+        energyFormH1 a 0 0 (v : W1p mu Omega 2) (w : W1p mu Omega 2) +
+          ⟪M v, W1p0.valueL w⟫_ℝ := by
+  have hmem := ae_restrict_mem (μ := mu) Omega.isOpen.measurableSet
+  have hb_ae : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta := hmem.mono hb_bound
+  have hc_ae : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma := hmem.mono hc_bound
+  have hbm : MemLp b ⊤ (mu.restrict Omega) := memLp_top_of_bound hb beta hb_ae
+  have hcm : MemLp c ⊤ (mu.restrict Omega) := memLp_top_of_bound hc gamma hc_ae
+  refine ⟨(lowerOrderL hbm hcm hb_ae hc_ae).comp (w1p0Submodule mu Omega 2).toSubmodule.subtypeL,
+    fun v w => ?_⟩
+  rw [energyFormH1_eq_principal_add_setIntegral (memLp_energyIntegrand_of_bounds
+      (b := fun _ => 0) (c := fun _ => 0) (beta := 0) (gamma := 0) hell.upper_nonneg ha
+      aestronglyMeasurable_const aestronglyMeasurable_const
+      (fun _x hx eta xi => hell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp))
+    hbm hcm, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+    inner_lowerOrderL_valueL hbm hcm hb_ae hc_ae]
+
+/-- Gårding's inequality for the symmetric part `-∂ᵢ(aⁱʲ ∂ⱼ ·) + λ/2`:
+`λ/2 ‖v‖²_{H¹} ≤ ∫ ⟨a ∇v, ∇v⟩ + λ/2 ‖v‖²_{L²}` on `H¹₀(Ω)`. -/
+private theorem le_energyFormH1_add_inner [DecidableEq ι]
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hell : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (v : W1p0 mu Omega 2) :
+    lam / 2 * ‖v‖ ^ 2 ≤ energyFormH1 a 0 0 (v : W1p mu Omega 2) (v : W1p mu Omega 2) +
+      lam / 2 * ⟪W1p0.valueL v, W1p0.valueL v⟫_ℝ := by
+  have hG := hell.garding_energyFormH1_self ha aestronglyMeasurable_const
+    aestronglyMeasurable_const (b := 0) (c := 0) (beta := 0) (gamma := 0)
+    (fun _ _ => by simp) (fun _ _ => by simp) (fun _ _ => le_rfl) (v : W1p mu Omega 2)
+  have hn := W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq (v : W1p mu Omega 2)
+  have hv : ‖v‖ = ‖(v : W1p mu Omega 2)‖ := rfl
+  have hi : ⟪W1p0.valueL v, W1p0.valueL v⟫_ℝ = ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 := by
+    rw [real_inner_self_eq_norm_sq, W1p0.valueL_apply]
+  simp only [zero_pow two_ne_zero, zero_div, zero_mul, sub_zero] at hG
+  rw [hv, hn, hi]
+  linarith
+
+/-- **Time regularity for the parabolic Dirichlet problem** (Evans, §7.1.3, Theorem 5). Let the
+coefficients of `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` be independent of time, with `a` uniformly
+elliptic on `Ω` and symmetric almost everywhere, and `b`, `c` bounded and measurable. Let `u` be a
+weak solution of `∂ₜu + L u = F` in `(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`, with forcing
+`F ∈ L²(t₀, t₁; L²(Ω))`, whose continuous `L²(Ω)`-valued representative starts at `u₀ ∈ H¹₀(Ω)`.
+Then `∂ₜu ∈ L²(t₀, t₁; L²(Ω))`: the `L²(Ω)`-valued map `t ↦ u(t)` has a weak time derivative
+`d ∈ L²(t₀, t₁; L²(Ω))`, which represents `u'` through the `L²(Ω)` pairing, and `u` is essentially
+bounded in `H¹₀(Ω)`. No regularity of `∂Ω`, no continuity of `a`, no boundedness of `Ω` and no
+sign condition on `c` is needed. -/
+theorem exists_hasWeakLineDerivOn_valueL_of_energyFormH1 [DecidableEq ι]
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hell : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hsymm : ∀ᵐ x ∂mu.restrict Omega, (a x).IsSymm)
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    {F : ℝ → Lp ℝ 2 (mu.restrict Omega)} (hF : MemLp F 2 (volume.restrict (Ioo t₀ t₁)))
+    {u₀ : W1p0 mu Omega 2} {u : ℝ → W1p0 mu Omega 2} {u' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)}
+    {w : ℝ → Lp ℝ 2 (mu.restrict Omega)}
+    (h : HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩
+      (fun t => (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual
+        (W1p0.valueL (u t))) u' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo t₀ t₁)))
+    (hu' : MemLp u' 2 (volume.restrict (Ioo t₀ t₁)))
+    (heq : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
+      u' t v + energyFormH1 a b c (u t : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        ⟪F t, W1p0.valueL v⟫_ℝ)
+    (hw : ContinuousOn w (Icc t₀ t₁))
+    (hae : (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Ioo t₀ t₁)] w)
+    (h₀ : w t₀ = W1p0.valueL u₀) :
+    ∃ d : ℝ → Lp ℝ 2 (mu.restrict Omega), MemLp d 2 (volume.restrict (Ioo t₀ t₁)) ∧
+      HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩ (fun t => W1p0.valueL (u t)) d 1 ∧
+      (∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
+        u' t v = ⟪d t, W1p0.valueL v⟫_ℝ) ∧
+      ∃ C, ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ‖u t‖ ≤ C := by
+  have hlam : 0 < lam := hell.pos
+  have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
+    memLp_energyIntegrand_of_bounds (b := fun _ => 0) (c := fun _ => 0) (beta := 0) (gamma := 0)
+      hell.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
+      (fun _x hx eta xi => hell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  -- The symmetric coercive part `A₀ = -div(a ∇ ·) + λ/2`; the rest goes into the forcing.
+  obtain ⟨A₀, hA₀⟩ : ∃ A₀ : W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2),
+      ∀ v w : W1p0 mu Omega 2, A₀ v w = energyFormH1 a 0 0 (v : W1p mu Omega 2)
+        (w : W1p mu Omega 2) + lam / 2 * ⟪W1p0.valueL v, W1p0.valueL w⟫_ℝ :=
+    ⟨(lam / 2) • ((W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual ∘L
+      W1p0.valueL) + energyFormH1L0 hcoeff, fun v w => by
+        simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+          ContinuousLinearMap.gelfandDual_apply, energyFormH1L0_apply, smul_eq_mul, Pi.zero_def]
+        ring⟩
+  have hsymm₀ (v w : W1p0 mu Omega 2) : A₀ v w = A₀ w v :=
+    (hA₀ v w).trans <| (congrArg₂ (· + ·)
+      (energyFormH1_comm_of_isSymm_ae (c := 0) hsymm (v : W1p mu Omega 2) (w : W1p mu Omega 2))
+      (congrArg (lam / 2 * ·) (real_inner_comm _ _))).trans (hA₀ w v).symm
+  have hcoer (v : W1p0 mu Omega 2) : lam / 2 * ‖v‖ ^ 2 ≤ A₀ v v :=
+    (le_energyFormH1_add_inner ha hell v).trans_eq (hA₀ v v).symm
+  -- The lower-order terms, moved into the `L²` forcing `g = F - (⟪b, ∇u⟫ + c u) + (λ/2) u`.
+  obtain ⟨M, hM⟩ := exists_energyFormH1_eq_add_inner ha hb hc hell hb_bound hc_bound
+  have hinj : Function.Injective (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) :=
+    fun v w hvw => Subtype.ext (W1p.ext_value (by simpa only [W1p0.valueL_apply] using hvw))
+  have : Fact ((2 : ENNReal) ≠ ⊤) := ⟨ENNReal.ofNat_ne_top⟩
+  have hg : MemLp (fun t => F t - M (u t) + (lam / 2) • W1p0.valueL (u t)) 2
+      (volume.restrict (Ioo t₀ t₁)) :=
+    (hF.sub (M.comp_memLp' hu)).add
+      (((W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).comp_memLp' hu).const_smul (lam / 2))
+  -- The equation for the symmetric part, with the lower-order terms in the forcing.
+  have heq₀ : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), u' t + A₀ (u t) =
+      (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual
+        (F t - M (u t) + (lam / 2) • W1p0.valueL (u t)) := by
+    filter_upwards [heq] with t ht
+    ext v
+    simp only [add_apply, ContinuousLinearMap.gelfandDual_apply, inner_add_left, inner_sub_left,
+      real_inner_smul_left, hA₀]
+    linarith [ht v, hM (u t) v]
+  have key := HasWeakLineDerivOn.exists_hasWeakLineDerivOn_of_gelfandDual
+    hinj hsymm₀ (half_pos hlam) hcoer hg h hu hu' heq₀ hw hae h₀
+  obtain ⟨d, hd, hdd, hu'd, hAu, -⟩ := key
+  refine ⟨d, hd, hdd, ?_, ?_⟩
+  · filter_upwards [hu'd] with t ht v
+    exact (DFunLike.congr_fun ht v).trans (ContinuousLinearMap.gelfandDual_apply _ _ _)
+  · exact ⟨_, hAu.mono fun t ht => (le_abs_self _).trans (Real.abs_le_sqrt
+      ((le_div_iff₀ (half_pos hlam)).2 ((mul_comm _ _).trans_le ((hcoer (u t)).trans ht))))⟩
+
+end TimeRegularity
 
 end PDE
 
