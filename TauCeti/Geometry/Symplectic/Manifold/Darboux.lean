@@ -198,8 +198,7 @@ theorem eval₂_mfderiv_eq_of_darbouxChart {σ : SmoothTwoForm I M}
   · have hD : mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x) :=
       ((hasMFDerivAt_id x).congr_of_eventuallyEq (hΦid x hx)).mfderiv
     simp only [hD]
-    rw [(hΦid x hx).eq_of_nhds]
-    rfl
+    rw [(hΦid x hx).eq_of_nhds, id_eq, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
 
 end Transport
 

@@ -154,20 +154,15 @@ theorem exists_diffeomorph_eq_symm_apply_apply (κ : PartialDiffeomorph I J M N 
     (hψ : ∀ y ∉ C, ψ y = y) :
     ∃ Φ : M ≃ₘ^n⟮I, I⟯ M, (∀ x ∈ κ.source, Φ x = κ.symm (ψ (κ x))) ∧
       ∀ x ∉ κ.symm '' C, Φ x = x := by
-  -- `ψ` maps `C` into itself, since it is injective and fixes the complement of `C`.
-  have hψC : MapsTo ψ C C := ψ.injective.mapsTo_of_eq_self hψ
-  have hψt (y : N) : y ∈ κ.target ↔ ψ y ∈ κ.target := by
-    by_cases hy : y ∈ C
-    · exact iff_of_true (hCt hy) (hCt (hψC hy))
-    · rw [hψ y hy]
+  -- `ψ` preserves the target of `κ`, since it is injective and fixes the complement of `C`.
+  have hψt (y : N) : y ∈ κ.target ↔ ψ y ∈ κ.target :=
+    (ψ.injective.apply_mem_iff_of_eq_self hψ hCt y).symm
   let S : TopologicalSpace.Opens M := ⟨κ.source, κ.open_source⟩
   let T : TopologicalSpace.Opens N := ⟨κ.target, κ.open_target⟩
   let Λ : S ≃ₘ^n⟮I, I⟯ S := κ.toDiffeomorphSourceTarget.trans
     ((ψ.subtype (U := T) (V := T) hψt).trans κ.toDiffeomorphSourceTarget.symm)
   have hΛ (z : S) : (Λ z : M) = κ.symm (ψ (κ z)) := by
-    rw [Diffeomorph.coe_trans, Diffeomorph.coe_trans, Function.comp_apply, Function.comp_apply,
-      toDiffeomorphSourceTarget_symm_apply_coe, Diffeomorph.subtype_apply_coe,
-      toDiffeomorphSourceTarget_apply_coe]
+    simp [Λ, S, T]
   have hCT : IsCompact (Subtype.val ⁻¹' C : Set T) := by
     rw [Subtype.isCompact_iff, image_preimage_eq_of_subset fun y hy ↦ ⟨⟨y, hCt hy⟩, rfl⟩]
     exact hC

@@ -34,14 +34,15 @@ preserves `σ`, so does `φ ∘ Φ`. The perturbation fixes `p` and the other po
 the orbit is unchanged and only its linearized return map changes. It is the transplant to `M` of
 the planar construction of `TauCeti.exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero`.
 
-In a Darboux chart at `p`, read in `ℂ` through a linear symplectomorphism, `Φ` is the radial
-Hamiltonian twist `TauCeti.exists_diffeomorph_eventuallyEq_rotation`, which rotates a small disc
-about `p` by an angle `θ` near its centre and is the identity outside it; it is extended to `M` by
-the identity (`PartialDiffeomorph.exists_diffeomorph_eq_symm_apply_apply`). Its derivative at `p`
-is the rotation by `θ` read through a fixed identification `L` of `T_p M` with `ℂ`
+In a Darboux chart at `p`, read in `ℂ` through a linear symplectomorphism, `Φ` is the
+area-preserving diffeomorphism `TauCeti.exists_diffeomorph_eventuallyEq_rotation`, constructed from
+a radial Hamiltonian twist (the results here assert only that `Φ` preserves `σ`). It rotates a
+small disc about `p` by an angle `θ` near its centre and is the identity outside it; it is extended
+to `M` by the identity (`PartialDiffeomorph.exists_diffeomorph_eq_symm_apply_apply`). Its
+derivative at `p` is the rotation by `θ` read through a fixed identification `L` of `T_p M` with `ℂ`
 (`TauCeti.SmoothTwoForm.IsSymplectic.exists_continuousLinearEquiv_forall_exists_diffeomorph`).
 Away from `p` the twist is the identity near the other points of the orbit, so the return map of
-`φ ∘ Φ` at `p` is `A` followed by the rotation by `θ`, and `L` conjugates it to `B e^(iθ)` with
+`φ ∘ Φ` at `p` is the rotation by `θ` followed by `A`, and `L` conjugates it to `B e^(iθ)` with
 `det B = 1`. Only countably many angles make some nonzero power of `B e^(iθ)` have the eigenvalue
 `1` (`LinearMap.countable_setOf_exists_det_one_sub_pow_mul_lmul_exp_eq_zero`), so some angle
 makes the orbit nondegenerate in all iterates.
@@ -96,8 +97,8 @@ private theorem exists_diffeomorph_of_symplectomorphism {ω₀ : SymplecticForm 
   · have hd : fderiv ℝ ((e.symm ∘ ψ₀) ∘ e) y = e.symm.toContinuousLinearMap.comp
         ((fderiv ℝ ψ₀ (e y)).comp e.toContinuousLinearMap) :=
       (e.symm.hasFDerivAt.comp y ((hψ₀d (e y)).hasFDerivAt.comp y e.hasFDerivAt)).fderiv
-    rw [Diffeomorph.coe_trans, Diffeomorph.coe_trans, ContinuousLinearEquiv.coe_toDiffeomorph,
-      ContinuousLinearEquiv.coe_toDiffeomorph, hd]
+    simp only [Diffeomorph.coe_trans, ContinuousLinearEquiv.coe_toDiffeomorph]
+    rw [hd]
     calc ω₀ _ _ = stdComplexSymplecticForm (fderiv ℝ ψ₀ (e y) (e u))
           (fderiv ℝ ψ₀ (e y) (e v)) := by
           rw [← he]
@@ -140,10 +141,8 @@ private theorem exists_diffeomorph_of_darbouxChart {σ : SmoothTwoForm I M}
   have hCt : C ⊆ κ.target := fun y hy ↦ by simpa using (hCV y hy).1
   have hψC (y : E) (hy : y ∉ C) : ψ y = y :=
     hψid y (le_of_lt (not_le.1 (by simpa [C] using hy)))
-  have hψt (y : E) (hy : y ∈ κ.target) : ψ y ∈ κ.target := by
-    by_cases hyC : y ∈ C
-    · exact hCt (ψ.injective.mapsTo_of_eq_self hψC hyC)
-    · rwa [hψC y hyC]
+  have hψt (y : E) (hy : y ∈ κ.target) : ψ y ∈ κ.target :=
+    (ψ.injective.apply_mem_iff_of_eq_self hψC hCt y).2 hy
   obtain ⟨Φ, hΦs, hΦC⟩ := κ.exists_diffeomorph_eq_symm_apply_apply ψ hCc hCt hψC
   have hKc : IsCompact (κ.symm '' C) :=
     hCc.image_of_continuousOn (κ.symm.contMDiffOn.continuousOn.mono hCt)
@@ -172,7 +171,8 @@ private theorem exists_diffeomorph_of_darbouxChart {σ : SmoothTwoForm I M}
 surface, `p` a point and `U` a neighbourhood of `p`. There is a real-linear identification `L` of
 `T_p M` with `ℂ` such that, for every angle `θ`, some diffeomorphism `Φ` of `M` preserving `σ`
 fixes `p` and every point outside a compact subset of `U`, and has derivative at `p` the rotation
-by `θ` read through `L`. In a Darboux chart at `p`, `Φ` is a radial Hamiltonian twist. -/
+by `θ` read through `L`. In a Darboux chart at `p`, `Φ` is constructed from a radial Hamiltonian
+twist; the statement asserts only that `Φ` preserves `σ`. -/
 theorem IsSymplectic.exists_continuousLinearEquiv_forall_exists_diffeomorph
     {σ : SmoothTwoForm I M} (hσ : σ.IsSymplectic) (hE : finrank ℝ E = 2) {p : M} {U : Set M}
     (hU : IsOpen U) (hpU : p ∈ U) :
@@ -206,6 +206,10 @@ theorem IsSymplectic.exists_continuousLinearEquiv_forall_exists_diffeomorph
     (κ.mfderiv_symm_apply_mfderiv_apply (by simp) hpκ) fun y ↦ by
       have h := κ.mfderiv_apply_mfderiv_symm_apply (by simp) hκt y
       rwa [hl] at h).trans e
+  -- `simp` and `rw` cannot apply `trans_apply` here: the middle space of `L` is the type synonym
+  -- `TangentSpace 𝓘(ℝ, E) (κ p)` while `e` is stated on `E`, so the instances only agree up to
+  -- unfolding. The lemmas are therefore chained as terms, with the function-valued motive in `hLs`
+  -- typed on the synonym for the same reason.
   have hLa (u : TangentSpace I p) : L u = e (mfderiv I 𝓘(ℝ, E) κ p u) :=
     (ContinuousLinearEquiv.trans_apply _ _ u).trans
       (congrArg e (ContinuousLinearEquiv.equivOfInverse_apply (mfderiv I 𝓘(ℝ, E) κ p) _ _ _ u))
@@ -242,8 +246,8 @@ theorem IsSymplectic.exists_diffeomorph_isNondegenerateFixedPt_iterate
       (∃ K, IsCompact K ∧ K ⊆ U ∧ ∀ x ∉ K, Φ x = x) ∧ Φ p = p ∧
       ∀ n, 0 < n → IsNondegenerateFixedPt I (φ ∘ Φ)^[k * n] p := by
   obtain ⟨L, hL⟩ := hσ.exists_continuousLinearEquiv_forall_exists_diffeomorph hE hU hpU
-  -- The return map read in `ℂ` through `L`, and an angle `θ` such that no nonzero power of it
-  -- followed by the rotation by `θ` has the eigenvalue `1`; all but countably many angles do.
+  -- The return map read in `ℂ` through `L`, and an angle `θ` such that no nonzero power of the
+  -- rotation by `θ` followed by it has the eigenvalue `1`; all but countably many angles do.
   set B : Module.End ℝ ℂ := (L.toLinearEquiv : TangentSpace I p →ₗ[ℝ] ℂ) ∘ₗ
     (A : TangentSpace I p →ₗ[ℝ] TangentSpace I p) ∘ₗ
       (L.toLinearEquiv.symm : ℂ →ₗ[ℝ] TangentSpace I p)
@@ -264,7 +268,7 @@ theorem IsSymplectic.exists_diffeomorph_isNondegenerateFixedPt_iterate
     rw [IsFixedPt, heq.eq_of_nhds, comp_apply, hΦp, hp]
   rw [iterate_mul, isNondegenerateFixedPt_iterate_iff hT hfix]
   intro v hv
-  -- `L` conjugates the return map to `B` followed by the rotation by `θ`.
+  -- `L` conjugates the return map to the rotation by `θ` followed by `B`.
   set Bθ : Module.End ℝ ℂ := B * Algebra.lmul ℝ ℂ (exp (θ * Complex.I))
   set D : TangentSpace I p →L[ℝ] TangentSpace I p :=
     A.comp ((L.symm : ℂ →L[ℝ] TangentSpace I p).comp

@@ -18,6 +18,8 @@ public import Mathlib.Data.Set.Function
   `s ∩ f ⁻¹' t`.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
+* `Function.Injective.apply_mem_iff_of_eq_self`: such a map preserves membership in every set
+  containing `K`.
 -/
 
 public section
@@ -54,5 +56,13 @@ theorem mapsTo_of_eq_self {α : Type*} {f : α → α} (hf : Injective f) {K : S
     (h : ∀ p ∉ K, f p = p) : MapsTo f K K := by
   have hs : SurjOn f Kᶜ Kᶜ := fun p hp ↦ ⟨p, hp, h p hp⟩
   simpa using hs.mapsTo_compl hf
+
+/-- An injective map fixing every point outside `K` preserves membership in every set `s`
+containing `K`. -/
+theorem apply_mem_iff_of_eq_self {α : Type*} {f : α → α} (hf : Injective f) {K s : Set α}
+    (h : ∀ p ∉ K, f p = p) (hKs : K ⊆ s) (x : α) : f x ∈ s ↔ x ∈ s := by
+  by_cases hx : x ∈ K
+  · exact iff_of_true (hKs (hf.mapsTo_of_eq_self h hx)) (hKs hx)
+  · rw [h x hx]
 
 end Function.Injective
