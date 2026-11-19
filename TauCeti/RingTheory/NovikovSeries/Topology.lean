@@ -331,9 +331,8 @@ theorem coeff_tsum_eq_zero {ι : Type*} {f : ι → NovikovSeries R H N} {h : H}
   exact hker.subset (tsum_mem (hker ▸ (isLocallyConstant_coeff h).isClosed_fiber 0)
     fun i => hker.superset (hf i))
 
-/-- **Coefficients of a convergent sum.** If a family of Novikov series has sum `a`, then only
-finitely many of its terms have a nonzero coefficient at the exponent `h`, and the coefficient of
-`a` at `h` is the sum of theirs. -/
+/-- **Coefficients of a convergent sum.** If a family of Novikov series has sum `a`, then the
+coefficient of `a` at the exponent `h` is the finsum of the coefficients of the terms at `h`. -/
 theorem coeff_eq_finsum_of_hasSum {ι : Type*} {f : ι → NovikovSeries R H N}
     {a : NovikovSeries R H N} (hf : HasSum f a) (h : H) : a.coeff h = ∑ᶠ i, (f i).coeff h := by
   classical
