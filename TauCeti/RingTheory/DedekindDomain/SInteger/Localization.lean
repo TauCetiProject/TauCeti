@@ -179,8 +179,8 @@ theorem exists_mem_submonoid_mem_asIdeal [Fact (IsMulTorsion (ClassGroup R))]
     (isLocalizationSInteger R S (FractionRing R))).2 v hv
 
 /-- For finite `S`, the ring of `S`-integers is obtained from `R` by inverting a single candidate
-denominator `s` exactly when every prime of `S` contains a candidate denominator; `s` is then the
-product of one candidate denominator from each prime of `S`. -/
+denominator `s` exactly when every prime of `S` contains a candidate denominator. For instance,
+the product of one candidate denominator from each prime of `S` works as `s`. -/
 theorem exists_integer_isLocalization_away_iff [Finite S] :
     (∃ s ∈ Localization.submonoid S, IsLocalization.Away s (S.integer K)) ↔
       ∀ v ∈ S, ∃ m ∈ Localization.submonoid S, m ∈ v.asIdeal := by
@@ -195,8 +195,8 @@ theorem exists_integer_isLocalization_away_iff [Finite S] :
   exact Ideal.IsPrime.prod_mem_iff.2 ⟨⟨v, hv⟩, Finset.mem_univ _, hmv ⟨v, hv⟩⟩
 
 /-- When the class group is torsion and `S` is finite, the ring of `S`-integers is obtained from
-`R` by inverting a single candidate denominator `s`: the product of one candidate denominator
-from each prime of `S`. -/
+`R` by inverting a single candidate denominator `s`. For instance, the product of one candidate
+denominator from each prime of `S` works as `s`. -/
 theorem exists_integer_isLocalization_away [Fact (IsMulTorsion (ClassGroup R))] [Finite S] :
     ∃ s ∈ Localization.submonoid S, IsLocalization.Away s (S.integer K) :=
   (exists_integer_isLocalization_away_iff K S).2 fun _ hv ↦ exists_mem_submonoid_mem_asIdeal S hv
