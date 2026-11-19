@@ -100,6 +100,36 @@ structure NovikovSeries (R H : Type*) [Zero R] [AddZeroClass H] (N : H →+ ℝ)
 
 namespace NovikovSeries
 
+section Cutoff
+
+variable {α β γ : Type*}
+
+/-- If only finitely many points `x` with `p x` have `f x` below a cutoff `C`, then `f` is bounded
+below on these points. -/
+theorem bddBelow_image_of_finite_setOf_lt [LinearOrder γ] {p : α → Prop} {f : α → γ} {C : γ}
+    (hf : {x | p x ∧ f x < C}.Finite) : BddBelow (f '' {x | p x}) := by
+  have : Nonempty γ := ⟨C⟩
+  obtain ⟨m, hm⟩ := (hf.image f).bddBelow
+  refine ⟨min m C, ?_⟩
+  rintro _ ⟨x, hx, rfl⟩
+  rcases lt_or_ge (f x) C with hC | hC
+  · exact (min_le_left _ _).trans (hm ⟨x, ⟨hx, hC⟩, rfl⟩)
+  · exact (min_le_right _ _).trans hC
+
+/-- If `f` and `g` have only finitely many values below each cutoff on the points satisfying `p`
+and `q`, then so does `f x + g y` on the pairs `(x, y)` satisfying both. -/
+theorem finite_setOf_and_add_lt {p : α → Prop} {q : β → Prop} {f : α → ℝ} {g : β → ℝ}
+    (hf : ∀ C : ℝ, {x | p x ∧ f x < C}.Finite) (hg : ∀ C : ℝ, {y | q y ∧ g y < C}.Finite)
+    (C : ℝ) : {z : α × β | (p z.1 ∧ q z.2) ∧ f z.1 + g z.2 < C}.Finite := by
+  obtain ⟨m, hm⟩ := bddBelow_image_of_finite_setOf_lt (hf 0)
+  obtain ⟨m', hm'⟩ := bddBelow_image_of_finite_setOf_lt (hg 0)
+  refine ((hf (C - m')).prod (hg (C - m))).subset fun z ⟨⟨hp, hq⟩, hC⟩ => ?_
+  have h₁ : m ≤ f z.1 := hm ⟨z.1, hp, rfl⟩
+  have h₂ : m' ≤ g z.2 := hm' ⟨z.2, hq, rfl⟩
+  exact ⟨⟨hp, by linarith⟩, ⟨hq, by linarith⟩⟩
+
+end Cutoff
+
 section Zero
 
 variable {R H : Type*} [Zero R] [AddZeroClass H] {N : H →+ ℝ}
@@ -139,13 +169,8 @@ theorem finite_support_of_bddAbove_image {a : NovikovSeries R H N}
   exact (a.finite_le C).subset fun h hh => ⟨hh, hC ⟨h, hh, rfl⟩⟩
 
 /-- The periods of the support of a Novikov series are bounded below. -/
-theorem bddBelow_image_support (a : NovikovSeries R H N) : BddBelow (N '' a.support) := by
-  obtain ⟨m, hm⟩ := ((a.finite_lt 0).image N).bddBelow
-  refine ⟨min m 0, ?_⟩
-  rintro _ ⟨h, hh, rfl⟩
-  rcases lt_or_ge (N h) 0 with hN | hN
-  · exact (min_le_left _ _).trans (hm ⟨h, ⟨hh, hN⟩, rfl⟩)
-  · exact (min_le_right _ _).trans hN
+theorem bddBelow_image_support (a : NovikovSeries R H N) : BddBelow (N '' a.support) :=
+  bddBelow_image_of_finite_setOf_lt (a.finite_lt 0)
 
 /-- A Novikov series with nonempty support attains a least period on its support. -/
 theorem exists_isLeast_image_support {a : NovikovSeries R H N} (ha : a.support.Nonempty) :
@@ -214,15 +239,9 @@ variable {R S H : Type*} [Zero R] [Zero S] [AddZeroClass H] {N : H →+ ℝ}
 pairs `(u, v)` of support exponents have `N (u + v) < C`. -/
 theorem finite_setOf_period_add_lt (a : NovikovSeries R H N) (b : NovikovSeries S H N)
     (C : ℝ) :
-    {p : H × H | N (p.1 + p.2) < C ∧ a.coeff p.1 ≠ 0 ∧ b.coeff p.2 ≠ 0}.Finite := by
-  obtain ⟨ma, hma⟩ := a.bddBelow_image_support
-  obtain ⟨mb, hmb⟩ := b.bddBelow_image_support
-  refine ((a.finite_lt (C - mb)).prod (b.finite_lt (C - ma))).subset ?_
-  rintro ⟨u, v⟩ ⟨huv, hu, hv⟩
-  have hu' : ma ≤ N u := hma ⟨u, hu, rfl⟩
-  have hv' : mb ≤ N v := hmb ⟨v, hv, rfl⟩
-  rw [map_add] at huv
-  exact ⟨⟨hu, by linarith⟩, ⟨hv, by linarith⟩⟩
+    {p : H × H | N (p.1 + p.2) < C ∧ a.coeff p.1 ≠ 0 ∧ b.coeff p.2 ≠ 0}.Finite :=
+  (finite_setOf_and_add_lt a.finite_lt b.finite_lt C).subset fun _ ⟨huv, hu, hv⟩ =>
+    ⟨⟨hu, hv⟩, by rwa [map_add] at huv⟩
 
 /-- For Novikov series `a` and `b` and an exponent `h`, only finitely many pairs `(u, v)` with
 `u + v = h` have both coefficients `a.coeff u` and `b.coeff v` nonzero. -/
@@ -515,6 +534,13 @@ theorem single_zero_coeff_zero [Subsingleton H] (a : NovikovSeries R H N) :
   ext fun h => by rw [Subsingleton.elim h 0, coeff_single_same]
 
 end Zero
+
+/-- A coefficient of a finite sum of monomials is the sum of the monomial coefficients at that
+exponent. -/
+theorem coeff_sum_single [AddCommMonoid R] [DecidableEq H] {ι : Type*} (s : Finset ι) (e : ι → H)
+    (w : ι → R) (h : H) :
+    (∑ i ∈ s, single (e i) (w i) : NovikovSeries R H N).coeff h = ∑ i ∈ s with e i = h, w i := by
+  simp [coeff_single, Pi.single_apply, Finset.sum_filter, eq_comm]
 
 @[simp]
 theorem single_add [AddZeroClass R] (h : H) (r s : R) :

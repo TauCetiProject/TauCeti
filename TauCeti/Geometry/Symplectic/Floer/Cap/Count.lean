@@ -32,11 +32,12 @@ of the family, whose coefficient at `A` is the signed count of the solutions of 
   `ω(A u) ≥ F₀(r₀) - F₁(r₁) - F₂(r₂) - C`, so the generating series lies in the period filtration
   at this level (`TauCeti.Floer.countSeries_mem_periodFiltration_of_energy`), and the product of
   the count matrix shifts action cutoffs by `C`
-  (`TauCeti.Floer.novikovProductOfMatrix_countSeries_mem_potentialFiltration`).
+  (`novikovProductOfMatrix_coefficientComparison_countSeries_mem_potentialFiltration`).
 * **Degree.** If every solution of nonzero sign satisfies the index condition
   `μ₀(r₀) - 2 c₁(A u) = μ₁(r₁) + μ₂(r₂) - n - ε`, so does every class counted by the generating
   series, and the product of the count matrix shifts the cochain degree `n - μ` and its residues
-  by `ε` (`TauCeti.Floer.novikovProductOfMatrix_countSeries_mem_map_cochain_gradeBy_add`).
+  by `ε`
+  (`novikovProductOfMatrix_coefficientComparison_countSeries_mem_map_cochain_gradeBy_add`).
 
 The moduli spaces, their compactness and the orientation signs are the geometric input; they are
 not constructed here.
@@ -67,8 +68,8 @@ energy at most each level, then only finitely many solutions have area below eac
 theorem finite_setOf_area_lt_of_energy (hE : ∀ u, E u = T + ωG (A u) - ρ u)
     (hρ : ∀ u, -C ≤ ρ u) (hfin : ∀ L, {u | E u ≤ L}.Finite) (L : ℝ) :
     {u | ωG (A u) < L}.Finite :=
-  (hfin (T + L + C)).subset fun u (hu : ωG (A u) < L) => by
-    change E u ≤ T + L + C
+  (hfin (T + L + C)).subset fun u hu => by
+    rw [Set.mem_ofPred_eq] at hu ⊢
     linarith [hE u, hρ u]
 
 /-- **Lower support bound from the energy.** If each solution `u` of class `A u` has nonnegative
@@ -102,7 +103,8 @@ solutions of each triple `(i, j, k)` have nonnegative energies
 `E u = F₁(r₁ i) + F₂(r₂ j) - F₀(r₀ k) + ω(A u) - ρ u` relative to the reference caps, with
 curvature terms `ρ u ≥ -C`. Then the product given by the generating series of the solutions sends
 combinations vanishing above the actions `D₁` and `D₂` to one vanishing above `D₁ + D₂ + C`. -/
-theorem novikovProductOfMatrix_countSeries_mem_potentialFiltration [CommRing R]
+theorem novikovProductOfMatrix_coefficientComparison_countSeries_mem_potentialFiltration
+    [CommRing R]
     (w : ∀ i j k, M i j k → R)
     (hfin : ∀ i j k, ∀ L : ℝ, {u | w i j k u ≠ 0 ∧ ωG (A i j k u) < L}.Finite)
     {E ρ : ∀ i j k, M i j k → ℝ} {C : ℝ} (hE₀ : ∀ i j k u, 0 ≤ E i j k u)
@@ -126,7 +128,8 @@ gradings obey the recapping law and every solution of nonzero sign satisfies the
 `μ₀(r₀ k) - 2 c₁(A u) = μ₁(r₁ i) + μ₂(r₂ j) - n - ε`, then the product given by the generating
 series of the solutions sends combinations of degrees `i'` and `j'` in an additive image `f` of the
 cochain degree `n - μ` to one of degree `i' + j' + f ε`. Rigid pairs of pants have `ε = 0`. -/
-theorem novikovProductOfMatrix_countSeries_mem_map_cochain_gradeBy_add [CommSemiring R]
+theorem novikovProductOfMatrix_coefficientComparison_countSeries_mem_map_cochain_gradeBy_add
+    [CommSemiring R]
     {μ₁ : (Σ i, P₁ i) → ℤ} {μ₂ : (Σ j, P₂ j) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
     (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
     (hμ₂ : ∀ j γ (D : P₂ j), μ₂ ⟨j, γ +ᵥ D⟩ = degree ω c γ + μ₂ ⟨j, D⟩)

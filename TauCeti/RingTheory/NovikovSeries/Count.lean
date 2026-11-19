@@ -64,6 +64,65 @@ namespace TauCeti.NovikovSeries
 
 variable {R S H H' ι κ : Type*}
 
+section Finite
+
+/-! ### Cutoff finiteness of combined families -/
+
+variable [AddZeroClass H] {N : H →+ ℝ} {e : ι → H}
+
+/-- If two weightings have finitely many objects of nonzero weight below each cutoff, so does
+their sum. -/
+theorem finite_setOf_add_ne_zero_and_lt [AddZeroClass R] {w w' : ι → R}
+    (hfin : ∀ C : ℝ, {i | w i ≠ 0 ∧ N (e i) < C}.Finite)
+    (hfin' : ∀ C : ℝ, {i | w' i ≠ 0 ∧ N (e i) < C}.Finite) (C : ℝ) :
+    {i | w i + w' i ≠ 0 ∧ N (e i) < C}.Finite :=
+  ((hfin C).union (hfin' C)).subset fun _ ⟨hw, hC⟩ =>
+    (not_and_or.1 fun h => hw (by rw [h.1, h.2, add_zero])).imp (⟨·, hC⟩) (⟨·, hC⟩)
+
+/-- Negating the weights does not change which objects have nonzero weight. -/
+theorem finite_setOf_neg_ne_zero_and_lt [SubtractionMonoid R] {w : ι → R}
+    (hfin : ∀ C : ℝ, {i | w i ≠ 0 ∧ N (e i) < C}.Finite) (C : ℝ) :
+    {i | -w i ≠ 0 ∧ N (e i) < C}.Finite := by
+  simpa only [neg_ne_zero] using hfin C
+
+/-- Reindexing along an injective map preserves finiteness of the objects of nonzero weight below
+each cutoff. -/
+theorem finite_setOf_comp_ne_zero_and_lt [Zero R] {w : ι → R} {σ : κ → ι} (hσ : Injective σ)
+    (hfin : ∀ C : ℝ, {i | w i ≠ 0 ∧ N (e i) < C}.Finite) (C : ℝ) :
+    {k | w (σ k) ≠ 0 ∧ N (e (σ k)) < C}.Finite :=
+  (hfin C).preimage hσ.injOn
+
+/-- The disjoint union of two families with finitely many objects of nonzero weight below each
+cutoff has the same property. -/
+theorem finite_setOf_sumElim_ne_zero_and_lt [Zero R] {w : ι → R} {e' : κ → H} {w' : κ → R}
+    (hfin : ∀ C : ℝ, {i | w i ≠ 0 ∧ N (e i) < C}.Finite)
+    (hfin' : ∀ C : ℝ, {k | w' k ≠ 0 ∧ N (e' k) < C}.Finite) (C : ℝ) :
+    {x | Sum.elim w w' x ≠ 0 ∧ N (Sum.elim e e' x) < C}.Finite :=
+  (((hfin C).image Sum.inl).union ((hfin' C).image Sum.inr)).subset fun
+    | .inl i, hi => Or.inl ⟨i, hi, rfl⟩
+    | .inr k, hk => Or.inr ⟨k, hk, rfl⟩
+
+/-- The union of finitely many families with finitely many objects of nonzero weight below each
+cutoff has the same property. -/
+theorem finite_setOf_sigma_ne_zero_and_lt [Zero R] {β : Type*} [Finite β] {γ : β → Type*}
+    {e : ∀ b, γ b → H} {w : ∀ b, γ b → R}
+    (hfin : ∀ b C, {i | w b i ≠ 0 ∧ N (e b i) < C}.Finite) (C : ℝ) :
+    {x : Σ b, γ b | w x.1 x.2 ≠ 0 ∧ N (e x.1 x.2) < C}.Finite :=
+  (finite_univ.sigma fun b _ => hfin b C).subset fun _ hx => ⟨mem_univ _, hx⟩
+
+/-- Mapping the weights by `ρ` and the classes by a period-rescaling homomorphism `φ` preserves
+finiteness of the objects of nonzero weight below each cutoff. -/
+theorem finite_setOf_map_ne_zero_and_lt [AddZeroClass H'] {N' : H' →+ ℝ} [AddZeroClass R]
+    [AddZeroClass S] {w : ι → R} (ρ : R →+ S) (φ : H →+ H')
+    (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+    (hfin : ∀ C : ℝ, {i | w i ≠ 0 ∧ N (e i) < C}.Finite) (C : ℝ) :
+    {i | ρ (w i) ≠ 0 ∧ N' (φ (e i)) < C}.Finite := by
+  obtain ⟨c, hc, hcφ⟩ := hφ
+  exact (hfin (C / c)).subset fun i ⟨hw, hC⟩ =>
+    ⟨fun h0 => hw (by rw [h0, map_zero]), (lt_div_iff₀' hc).2 (hcφ (e i) ▸ hC)⟩
+
+end Finite
+
 section AddCommMonoid
 
 variable [AddZeroClass H] {N : H →+ ℝ} [AddCommMonoid R]
@@ -105,11 +164,7 @@ theorem coeff_countSeries_eq_sum [DecidableEq H] {h : H} (s : Finset ι)
 theorem countSeries_eq_sum [Fintype ι] : countSeries e w hfin = ∑ i, single (e i) (w i) := by
   classical
   ext h
-  rw [coeff_countSeries_eq_sum Finset.univ fun i _ _ => Finset.mem_univ i, coeff_sum,
-    Finset.sum_filter]
-  exact Finset.sum_congr rfl fun i _ => by
-    rw [coeff_single, Pi.single_apply]
-    exact if_congr eq_comm rfl rfl
+  rw [coeff_countSeries_eq_sum Finset.univ fun i _ _ => Finset.mem_univ i, coeff_sum_single]
 
 /-- Every class in the support of a generating series is the class of an object of nonzero
 weight. -/
@@ -158,63 +213,60 @@ theorem hasSum_countSeries :
   classical
   refine tendsto_nhds_iff.2 fun C => ?_
   filter_upwards [Filter.eventually_ge_atTop (hfin C).toFinset] with s hs h hh
-  rw [coeff_sum, coeff_countSeries_eq_sum s fun i hi hw => hs ((hfin C).mem_toFinset.2
-    ⟨hw, by rw [hi]; exact hh⟩), Finset.sum_filter]
-  exact Finset.sum_congr rfl fun i _ => by
-    rw [coeff_single, Pi.single_apply]
-    exact if_congr eq_comm rfl rfl
+  rw [coeff_sum_single, coeff_countSeries_eq_sum s fun i hi hw => hs ((hfin C).mem_toFinset.2
+    ⟨hw, by rw [hi]; exact hh⟩)]
 
 /-- The generating series is the infinite sum of its monomials. -/
 theorem countSeries_eq_tsum : countSeries e w hfin = ∑' i, single (e i) (w i) :=
   hasSum_countSeries.tsum_eq.symm
 
 /-- The generating series is additive in the weights. -/
-theorem countSeries_add {w' : ι → R} (hfin' : ∀ C : ℝ, {i | w' i ≠ 0 ∧ N (e i) < C}.Finite)
-    (hfin'' : ∀ C : ℝ, {i | w i + w' i ≠ 0 ∧ N (e i) < C}.Finite) :
-    countSeries e (fun i => w i + w' i) hfin'' = countSeries e w hfin + countSeries e w' hfin' :=
+theorem countSeries_add {w' : ι → R} (hfin' : ∀ C : ℝ, {i | w' i ≠ 0 ∧ N (e i) < C}.Finite) :
+    countSeries e (fun i => w i + w' i) (finite_setOf_add_ne_zero_and_lt hfin hfin') =
+      countSeries e w hfin + countSeries e w' hfin' :=
   hasSum_countSeries.unique (by
     simpa only [single_add] using (hasSum_countSeries (hfin := hfin)).add hasSum_countSeries)
 
 /-- Reversing all weights, for instance all orientations, negates the generating series. -/
-theorem countSeries_neg (hfin' : ∀ C : ℝ, {i | -w i ≠ 0 ∧ N (e i) < C}.Finite) :
-    countSeries e (fun i => -w i) hfin' = -countSeries e w hfin :=
+theorem countSeries_neg :
+    countSeries e (fun i => -w i) (finite_setOf_neg_ne_zero_and_lt hfin) = -countSeries e w hfin :=
   hasSum_countSeries.unique (by
     simpa only [single_neg] using (hasSum_countSeries (hfin := hfin)).neg)
 
 /-- The generating series does not depend on how the objects are indexed. -/
-theorem countSeries_comp_equiv (σ : κ ≃ ι)
-    (hfin' : ∀ C : ℝ, {k | w (σ k) ≠ 0 ∧ N (e (σ k)) < C}.Finite) :
-    countSeries (e ∘ σ) (w ∘ σ) hfin' = countSeries e w hfin :=
+theorem countSeries_comp_equiv (σ : κ ≃ ι) :
+    countSeries (e ∘ σ) (w ∘ σ) (finite_setOf_comp_ne_zero_and_lt (σ := σ) σ.injective hfin) =
+      countSeries e w hfin :=
   hasSum_countSeries.unique ((σ.hasSum_iff (f := fun i => single (e i) (w i))).2
     hasSum_countSeries)
 
 /-- The generating series of a disjoint union is the sum of the generating series. -/
 theorem countSeries_sumElim {e' : κ → H} {w' : κ → R}
-    (hfin' : ∀ C : ℝ, {k | w' k ≠ 0 ∧ N (e' k) < C}.Finite)
-    (hfin'' : ∀ C : ℝ, {x | Sum.elim w w' x ≠ 0 ∧ N (Sum.elim e e' x) < C}.Finite) :
-    countSeries (Sum.elim e e') (Sum.elim w w') hfin'' =
+    (hfin' : ∀ C : ℝ, {k | w' k ≠ 0 ∧ N (e' k) < C}.Finite) :
+    countSeries (Sum.elim e e') (Sum.elim w w') (finite_setOf_sumElim_ne_zero_and_lt hfin hfin') =
       countSeries e w hfin + countSeries e' w' hfin' :=
   hasSum_countSeries.unique (HasSum.sum (f := fun x => single (Sum.elim e e' x) (Sum.elim w w' x))
     (hasSum_countSeries (hfin := hfin)) (hasSum_countSeries (hfin := hfin')))
 
 /-- The generating series of a finite union is the sum of the generating series of its parts. -/
 theorem sum_countSeries {β : Type*} [Fintype β] {γ : β → Type*} {e : ∀ b, γ b → H}
-    {w : ∀ b, γ b → R} (hfin : ∀ b C, {i | w b i ≠ 0 ∧ N (e b i) < C}.Finite)
-    (hfin' : ∀ C : ℝ, {x : Σ b, γ b | w x.1 x.2 ≠ 0 ∧ N (e x.1 x.2) < C}.Finite) :
+    {w : ∀ b, γ b → R} (hfin : ∀ b C, {i | w b i ≠ 0 ∧ N (e b i) < C}.Finite) :
     ∑ b, countSeries (e b) (w b) (hfin b) =
-      countSeries (fun x : Σ b, γ b => e x.1 x.2) (fun x => w x.1 x.2) hfin' :=
-  (((hasSum_countSeries (hfin := hfin')).sigma fun _ => hasSum_countSeries).unique
-    (hasSum_fintype _)).symm
+      countSeries (fun x : Σ b, γ b => e x.1 x.2) (fun x => w x.1 x.2)
+        (finite_setOf_sigma_ne_zero_and_lt hfin) :=
+  (((hasSum_countSeries (hfin := finite_setOf_sigma_ne_zero_and_lt hfin)).sigma
+    fun _ => hasSum_countSeries).unique (hasSum_fintype _)).symm
 
 /-- **Pushforward of a generating series.** Pushing a generating series forward along a
 coefficient map `ρ` and a period-rescaling homomorphism `φ` gives the generating series of the
 same objects, with classes mapped by `φ` and weights by `ρ`. -/
 theorem map_countSeries [AddZeroClass H'] {N' : H' →+ ℝ} [AddCommGroup S] (ρ : R →+ S)
-    (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
-    (hfin' : ∀ C : ℝ, {i | ρ (w i) ≠ 0 ∧ N' (φ (e i)) < C}.Finite) :
-    map ρ φ hφ (countSeries e w hfin) = countSeries (fun i => φ (e i)) (fun i => ρ (w i)) hfin' :=
+    (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) :
+    map ρ φ hφ (countSeries e w hfin) = countSeries (fun i => φ (e i)) (fun i => ρ (w i))
+      (finite_setOf_map_ne_zero_and_lt ρ φ hφ hfin) :=
   ((hasSum_countSeries (hfin := hfin)).map (map ρ φ hφ) (continuous_map ρ φ hφ)).unique (by
-    simpa only [comp_def, map_single] using hasSum_countSeries (hfin := hfin'))
+    simpa only [comp_def, map_single] using
+      hasSum_countSeries (hfin := finite_setOf_map_ne_zero_and_lt ρ φ hφ hfin))
 
 end AddCommGroup
 
@@ -225,29 +277,14 @@ section Finite
 variable [AddZeroClass H] {N : H →+ ℝ} [MulZeroClass R] {e : ι → H} {w : ι → R}
   {e' : κ → H} {w' : κ → R}
 
-/-- The periods of the objects of nonzero weight are bounded below. -/
-private theorem exists_le_period
-    (hfin : ∀ C : ℝ, {i | w i ≠ 0 ∧ N (e i) < C}.Finite) :
-    ∃ m : ℝ, ∀ i, w i ≠ 0 → m ≤ N (e i) := by
-  obtain ⟨m, hm⟩ := ((hfin 0).image fun i => N (e i)).bddBelow
-  refine ⟨min m 0, fun i hi => ?_⟩
-  rcases lt_or_ge (N (e i)) 0 with h0 | h0
-  · exact (min_le_left _ _).trans (hm ⟨i, ⟨hi, h0⟩, rfl⟩)
-  · exact (min_le_right _ _).trans h0
-
 /-- Only finitely many pairs of objects of nonzero weight product have total period below each
 cutoff: this is the finiteness hypothesis for the generating series of the pairs. -/
 theorem finite_setOf_mul_ne_zero_and_add_lt
     (hfin : ∀ C : ℝ, {i | w i ≠ 0 ∧ N (e i) < C}.Finite)
     (hfin' : ∀ C : ℝ, {k | w' k ≠ 0 ∧ N (e' k) < C}.Finite) (C : ℝ) :
-    {p : ι × κ | w p.1 * w' p.2 ≠ 0 ∧ N (e p.1 + e' p.2) < C}.Finite := by
-  obtain ⟨m, hm⟩ := exists_le_period hfin
-  obtain ⟨m', hm'⟩ := exists_le_period hfin'
-  refine ((hfin (C - m')).prod (hfin' (C - m))).subset fun p ⟨hw, hC⟩ => ?_
-  have h₁ := left_ne_zero_of_mul hw
-  have h₂ := right_ne_zero_of_mul hw
-  rw [map_add] at hC
-  exact ⟨⟨h₁, by linarith [hm' p.2 h₂]⟩, ⟨h₂, by linarith [hm p.1 h₁]⟩⟩
+    {p : ι × κ | w p.1 * w' p.2 ≠ 0 ∧ N (e p.1 + e' p.2) < C}.Finite :=
+  (finite_setOf_and_add_lt hfin hfin' C).subset fun _ ⟨hw, hC⟩ =>
+    ⟨⟨left_ne_zero_of_mul hw, right_ne_zero_of_mul hw⟩, by rwa [map_add] at hC⟩
 
 end Finite
 
