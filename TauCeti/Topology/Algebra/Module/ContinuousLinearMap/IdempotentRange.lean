@@ -37,6 +37,8 @@ A pseudo-inverse `g` of `f`, with `f ∘ g ∘ f = f`, gives the projection `g �
 
 * `ContinuousLinearMap.IsIdempotentElem.apply_coe_range`: an idempotent continuous linear map
   fixes every vector of its range.
+* `ContinuousLinearMap.IsIdempotentElem.completeSpace_range`: the range of an idempotent
+  continuous linear map on a complete space is complete.
 * `ContinuousLinearMap.IsIdempotentElem.mul_self_add_one_sub_mul_one_sub`: the operator
   `p * p + (1 - p) * (1 - p)` intertwining an idempotent `p` with itself is the identity.
 * `ContinuousLinearMap.isIdempotentElem_comp_comp_of_retract`: the extension of an idempotent
@@ -146,6 +148,12 @@ theorem coe_rangeEquiv_apply (w : p.range) :
 theorem coe_rangeEquiv_symm_apply (w : q.range) :
     ((rangeEquiv hp hq hU).symm w : M) = (q * p + (1 - q) * (1 - p))⁻¹ʳ w :=
   (rfl)
+
+/-- The range of an idempotent continuous linear map on a complete space is complete. -/
+theorem completeSpace_range {R M : Type*} [Ring R] [UniformSpace M] [T1Space M] [CompleteSpace M]
+    [AddCommGroup M] [IsTopologicalAddGroup M] [Module R M] {p : M →L[R] M}
+    (hp : IsIdempotentElem p) : CompleteSpace p.range :=
+  (isClosed_range hp).completeSpace_coe
 
 end ContinuousLinearMap.IsIdempotentElem
 

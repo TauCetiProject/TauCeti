@@ -284,12 +284,13 @@ unitary does not change its index pairing. -/
 theorem indexPairing_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace ℂ H']
     [CompleteSpace H'] (U : H ≃ₗᵢ[ℂ] H') (e : A) :
     (M.conj U).indexPairing e = M.indexPairing e := by
-  rw [indexPairing_eq_index, indexCompression_eq_compress, conj_toFredholmModule,
-    FredholmModule.conj_rep_apply, FredholmModule.conj_operator, conj_grading, ← map_neg,
-    ← map_halfOneAdd, ← map_halfOneAdd, ← map_mul, ← map_mul,
-    LinearIsometryEquiv.conjStarAlgEquiv_apply, LinearIsometryEquiv.conjStarAlgEquiv_apply,
-    LinearIsometryEquiv.conjStarAlgEquiv_apply, LinearIsometryEquiv.toContinuousLinearEquiv_symm,
-    index_compress_conj, indexPairing_eq_index, indexCompression_eq_compress]
+  -- The compressing idempotents of `M.conj U` are the conjugates by `U` of those of `M`.
+  have hP (ω : H →L[ℂ] H) : (M.conj U).rep e * halfOneAdd ℂ (U.conjStarAlgEquiv ω) =
+      U.conjStarAlgEquiv (M.rep e * halfOneAdd ℂ ω) := by
+    rw [map_mul, map_halfOneAdd, conj_toFredholmModule, FredholmModule.conj_rep_apply]
+  rw [indexPairing_eq_index, indexPairing_eq_index, indexCompression_eq_compress,
+    indexCompression_eq_compress, conj_grading, ← map_neg, hP, hP, conj_toFredholmModule,
+    FredholmModule.conj_operator, index_compress_conjStarAlgEquiv]
 
 end EvenFredholmModule
 
@@ -366,46 +367,15 @@ theorem oddIndexPairing_one (hF : M.operator * M.operator = 1) : M.oddIndexPairi
     compress_one (isIdempotentElem_halfOneAdd ℂ hF)]
   exact index_id
 
-/-- Up to a compact operator, compressing a product is the product of the compressions:
-`P S T P - (P S P) (P T P) = P S (T P - P T) P`. -/
-private theorem isCompactOperator_compress_mul_sub (hF : M.operator * M.operator = 1) (a b : A) :
-    IsCompactOperator (compress (halfOneAdd ℂ M.operator) (halfOneAdd ℂ M.operator)
-        (M.unitizedRep (a * b)) -
-      compress (halfOneAdd ℂ M.operator) (halfOneAdd ℂ M.operator) (M.unitizedRep a) ∘L
-        compress (halfOneAdd ℂ M.operator) (halfOneAdd ℂ M.operator) (M.unitizedRep b)) := by
-  have hP := isIdempotentElem_halfOneAdd ℂ hF
-  have hc : IsCompactOperator (M.unitizedRep b * halfOneAdd ℂ M.operator -
-      halfOneAdd ℂ M.operator * M.unitizedRep b) :=
-    isCompactOperator_sub_comm.1 (M.isCompactOperator_halfOneAdd_operator_unitizedRep_commutator b)
-  rw [map_mul]
-  set P := halfOneAdd ℂ M.operator
-  set S := M.unitizedRep a
-  set T := M.unitizedRep b
-  have h : compress P P (S * T) - compress P P S ∘L compress P P T =
-      compress P P (S * (T * P - P * T) * P) := by
-    rw [compress_comp_compress, ← compress_sub, ← compress_mul_self hP P (S * T - S * P * T)]
-    congr 1
-    rw [show S * (T * P - P * T) * P = S * T * (P * P) - S * P * T * P by noncomm_ring, hP.eq]
-    noncomm_ring
-  rw [h]
-  exact ((hc.mul_left S).mul_right P).compress P hP
-
 /-- **The odd index pairing is multiplicative.** When `F² = 1`, the index pairing with a product
 of units is the sum of the index pairings. -/
 theorem oddIndexPairing_mul (hF : M.operator * M.operator = 1) (u v : Aˣ) :
     M.oddIndexPairing (u * v) = M.oddIndexPairing u + M.oddIndexPairing v := by
-  have := (IsIdempotentElem.isClosed_range (isIdempotentElem_halfOneAdd ℂ hF)).completeSpace_coe
-  have hu := M.isFredholm_oddIndexCompression hF u
-  have hv := M.isFredholm_oddIndexCompression hF v
-  have hc : IsCompactOperator
-      (M.oddIndexCompression (u * v) - M.oddIndexCompression u ∘L M.oddIndexCompression v) :=
-    M.isCompactOperator_compress_mul_sub hF u v
-  have heq : M.oddIndexCompression (u * v) = M.oddIndexCompression u ∘L M.oddIndexCompression v +
-      (M.oddIndexCompression (u * v) - M.oddIndexCompression u ∘L M.oddIndexCompression v) := by
-    abel
-  rw [oddIndexPairing_eq_index, heq, index_add_of_isCompactOperator (hu.comp hv) hc,
-    oddIndexPairing_eq_index, oddIndexPairing_eq_index]
-  simpa only [index_def, toLinearMap_comp] using hu.index_comp hv
+  simp only [oddIndexPairing_eq_index, oddIndexCompression_eq_compress, Units.val_mul, map_mul]
+  exact index_compress_mul (isIdempotentElem_halfOneAdd ℂ hF)
+    (M.isFredholm_oddIndexCompression hF u) (M.isFredholm_oddIndexCompression hF v)
+    (isCompactOperator_sub_comm.1
+      (M.isCompactOperator_halfOneAdd_operator_unitizedRep_commutator v))
 
 /-- When `F² = 1`, the index pairing with the inverse of a unit is the negative of the index
 pairing with the unit. -/
@@ -424,10 +394,9 @@ theorem oddIndexPairing_conj {H' : Type*} [NormedAddCommGroup H'] [InnerProductS
   have hT : (M.conj U).unitizedRep u = U.conjStarAlgEquiv (M.unitizedRep u) := by
     rw [unitizedRep_apply, unitizedRep_apply, conj_rep_apply, conj_rep_apply, map_add, map_sub,
       map_one U.conjStarAlgEquiv]
-  rw [oddIndexPairing_eq_index, oddIndexCompression_eq_compress, conj_operator, ← map_halfOneAdd,
-    hT, LinearIsometryEquiv.conjStarAlgEquiv_apply, LinearIsometryEquiv.conjStarAlgEquiv_apply,
-    LinearIsometryEquiv.toContinuousLinearEquiv_symm, index_compress_conj, oddIndexPairing_eq_index,
-    oddIndexCompression_eq_compress]
+  rw [oddIndexPairing_eq_index, oddIndexPairing_eq_index, oddIndexCompression_eq_compress,
+    oddIndexCompression_eq_compress, conj_operator, ← map_halfOneAdd, hT,
+    index_compress_conjStarAlgEquiv]
 
 end FredholmModule
 

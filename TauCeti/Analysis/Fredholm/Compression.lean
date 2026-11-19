@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
 public import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
@@ -43,14 +44,20 @@ the Fredholm property of Toeplitz operators with invertible symbol.
   of compressions, and the compression of the identity by an idempotent.
 * `ContinuousLinearMap.compress_mul_self`: compression only depends on `T p`.
 * `IsCompactOperator.compress`: compressions of compact operators are compact.
+* `ContinuousLinearMap.isCompactOperator_compress_mul_sub`: if `T` commutes with an idempotent
+  `p` modulo compact operators, then compressing `S T` by `p` is the product of the compressions
+  modulo compact operators.
 * `ContinuousLinearMap.isFredholm_compress`: Atkinson's criterion for compressions.
 * `ContinuousLinearMap.isFredholm_compress_self`: the compression of an invertible operator by an
   idempotent commuting with it modulo compact operators is Fredholm.
 * `ContinuousLinearMap.isFredholm_compress_add_of_isCompactOperator`,
   `ContinuousLinearMap.index_compress_add_of_isCompactOperator`: perturbing `T` by an operator `K`
   with `K p` compact preserves the Fredholm property and the index of the compression.
-* `ContinuousLinearMap.index_compress_conj`: conjugating by an isomorphism preserves the index of
-  the compression.
+* `ContinuousLinearMap.index_compress_mul`: if `T` commutes with an idempotent `p` modulo compact
+  operators, the index of the compression of `S T` by `p` is the sum of the indices.
+* `ContinuousLinearMap.index_compress_conj`, `ContinuousLinearMap.index_compress_conjStarAlgEquiv`:
+  conjugating by an isomorphism, or by a unitary of Hilbert spaces, preserves the index of the
+  compression.
 
 ## References
 
@@ -146,6 +153,21 @@ theorem isCompactOperator_compress_of_isCompactOperator_mul [T1Space M] {p q K :
   rw [← compress_mul_self hp]
   exact hK.compress p hq
 
+/-- **Compressions of products.** If `T p - p T` is compact for an idempotent `p`, then the
+compression of `S T` by `p` is the product of the compressions of `S` and `T` modulo compact
+operators: `p S T p - (p S p) (p T p) = p S (T p - p T) p`. -/
+theorem isCompactOperator_compress_mul_sub [T1Space M] {p : M →L[R] M} (hp : IsIdempotentElem p)
+    (S : M →L[R] M) {T : M →L[R] M} (hT : IsCompactOperator (T * p - p * T)) :
+    IsCompactOperator (compress p p (S * T) - compress p p S ∘L compress p p T) := by
+  have h : compress p p (S * T) - compress p p S ∘L compress p p T =
+      compress p p (S * (T * p - p * T) * p) := by
+    rw [compress_comp_compress, ← compress_sub, ← compress_mul_self hp p (S * T - S * p * T)]
+    congr 1
+    rw [show S * (T * p - p * T) * p = S * T * (p * p) - S * p * T * p by noncomm_ring, hp.eq]
+    noncomm_ring
+  rw [h]
+  exact ((hT.mul_left S).mul_right p).compress p hp
+
 end Ring
 
 section Conj
@@ -157,9 +179,8 @@ variable {R M N : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module 
 theorem _root_.ContinuousLinearEquiv.map_range_eq_range_conj (p : M →L[R] M) :
     p.range.map (U : M →ₗ[R] N) = ((U : M →L[R] N) ∘L p ∘L (U.symm : N →L[R] M)).range := by
   rw [toLinearMap_comp, toLinearMap_comp, LinearMap.range_comp,
-    LinearMap.range_comp_of_range_eq_top]
-  · rfl
-  · exact LinearMap.range_eq_top.2 U.symm.surjective
+    LinearMap.range_comp_of_range_eq_top, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  exact LinearMap.range_eq_top.2 U.symm.surjective
 
 /-- **Conjugation of compressions.** Conjugating `p`, `q` and `T` by an isomorphism `U`
 conjugates the compression of `T` by the isomorphisms of ranges induced by `U`. -/
@@ -188,6 +209,23 @@ theorem index_compress_conj (p q T : M →L[R] M) :
   rw [compress_conj, index_equiv_comp, index_comp_equiv]
 
 end Conj
+
+section ConjStarAlgEquiv
+
+variable {𝕜 H K : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+  [CompleteSpace H] [NormedAddCommGroup K] [InnerProductSpace 𝕜 K] [CompleteSpace K]
+
+/-- Conjugating `p`, `q` and `T` by a unitary `U` of Hilbert spaces does not change the index of
+the compression. -/
+@[simp]
+theorem index_compress_conjStarAlgEquiv (U : H ≃ₗᵢ[𝕜] K) (p q T : H →L[𝕜] H) :
+    (compress (U.conjStarAlgEquiv p) (U.conjStarAlgEquiv q) (U.conjStarAlgEquiv T)).index =
+      (compress p q T).index := by
+  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply, LinearIsometryEquiv.conjStarAlgEquiv_apply,
+    LinearIsometryEquiv.conjStarAlgEquiv_apply, LinearIsometryEquiv.toContinuousLinearEquiv_symm,
+    index_compress_conj]
+
+end ConjStarAlgEquiv
 
 /-- For a left inverse `S` of `T` and an idempotent `p` of a ring, the defect `p S p T p - p` is
 `p S [p, T] p`. -/
@@ -222,8 +260,8 @@ theorem isFredholm_compress (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) 
     (hpq : IsCompactOperator (p * S * q * T * p - p))
     (hqp : IsCompactOperator (q * T * p * S * q - q)) :
     (compress p q T).IsFredholm := by
-  have := (IsIdempotentElem.isClosed_range hp).completeSpace_coe
-  have := (IsIdempotentElem.isClosed_range hq).completeSpace_coe
+  have := IsIdempotentElem.completeSpace_range hp
+  have := IsIdempotentElem.completeSpace_range hq
   exact .of_isCompactOperator_comp_sub_one (S := compress q p S)
     (isCompactOperator_compress_comp_compress_sub_one hp hpq)
     (isCompactOperator_compress_comp_compress_sub_one hq hqp)
@@ -252,8 +290,8 @@ and `K p` is compact, then the compression of `T + K` is Fredholm. -/
 theorem isFredholm_compress_add_of_isCompactOperator (hp : IsIdempotentElem p)
     (hq : IsIdempotentElem q) {T K : E →L[𝕜] E} (hT : (compress p q T).IsFredholm)
     (hK : IsCompactOperator (K * p)) : (compress p q (T + K)).IsFredholm := by
-  have := (IsIdempotentElem.isClosed_range hp).completeSpace_coe
-  have := (IsIdempotentElem.isClosed_range hq).completeSpace_coe
+  have := IsIdempotentElem.completeSpace_range hp
+  have := IsIdempotentElem.completeSpace_range hq
   rw [compress_add]
   exact hT.add_of_isCompactOperator (isCompactOperator_compress_of_isCompactOperator_mul hp hq hK)
 
@@ -262,11 +300,23 @@ and `K p` is compact, then the compression of `T + K` has the same index. -/
 theorem index_compress_add_of_isCompactOperator (hp : IsIdempotentElem p)
     (hq : IsIdempotentElem q) {T K : E →L[𝕜] E} (hT : (compress p q T).IsFredholm)
     (hK : IsCompactOperator (K * p)) : (compress p q (T + K)).index = (compress p q T).index := by
-  have := (IsIdempotentElem.isClosed_range hp).completeSpace_coe
-  have := (IsIdempotentElem.isClosed_range hq).completeSpace_coe
+  have := IsIdempotentElem.completeSpace_range hp
+  have := IsIdempotentElem.completeSpace_range hq
   rw [compress_add]
   exact index_add_of_isCompactOperator hT
     (isCompactOperator_compress_of_isCompactOperator_mul hp hq hK)
+
+/-- **Index of a compressed product.** If the compressions of `S` and `T` by an idempotent `p` are
+Fredholm and `T p - p T` is compact, then the index of the compression of `S T` is the sum of
+their indices. -/
+theorem index_compress_mul (hp : IsIdempotentElem p) {S T : E →L[𝕜] E}
+    (hS : (compress p p S).IsFredholm) (hT : (compress p p T).IsFredholm)
+    (hTc : IsCompactOperator (T * p - p * T)) :
+    (compress p p (S * T)).index = (compress p p S).index + (compress p p T).index := by
+  have := IsIdempotentElem.completeSpace_range hp
+  rw [← add_sub_cancel (compress p p S ∘L compress p p T) (compress p p (S * T)),
+    index_add_of_isCompactOperator (hS.comp hT) (isCompactOperator_compress_mul_sub hp S hTc)]
+  simpa only [index_def, toLinearMap_comp] using hS.index_comp hT
 
 end Fredholm
 
