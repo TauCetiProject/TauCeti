@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.MeasureTheory.Function.LpSection.Basic
+public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -22,9 +22,9 @@ over the total space, and let `μ` be a measure on the base. An essentially boun
 
 (`TauCeti.LpSection.norm_lpSMul_le`). This is the action of Mathlib's `L^∞(μ)` on the `Lᵖ` spaces
 of `MeasureTheory.Lp` (in `Mathlib.MeasureTheory.Function.Holder`) carried over to sections of a
-vector bundle. It is bilinear, compatible with products in `L^∞(μ)`, and gives a continuous bilinear
-map `TauCeti.LpSection.lpSMulL` whose value at `φ` is the multiplication operator `M_φ` of norm at
-most `‖φ‖_{L^∞}`.
+vector bundle. It makes `Lᵖ(E, μ)` a module over the ring `L^∞(μ)`, and gives a continuous
+bilinear map `TauCeti.LpSection.lpSMulL` whose value at `φ` is the multiplication operator `M_φ`
+of norm at most `‖φ‖_{L^∞}`.
 
 On `L²` sections of a bundle with fibre inner products, `⟪φ • f, g⟫ = ⟪f, star φ • g⟫`, so the
 adjoint of `M_φ` is `M_{star φ}` (`TauCeti.LpSection.adjoint_lpSMulL`), where `star φ` is the
@@ -45,10 +45,9 @@ operators `MeasureTheory.Lp.multiplicationOperator` on `MeasureTheory.Lp`.
 
 * `TauCeti.AEStronglyMeasurableSection.smul` (in `LpSection/Measurable.lean`): the product of a
   measurable scalar function and a measurable section is measurable.
-* The `SMul (Lp 𝕜 ∞ μ) (LpSection 𝕜 F E p μ)` instance, with `TauCeti.LpSection.coeFn_lpSMul`.
+* The `Module (Lp 𝕜 ∞ μ) (LpSection 𝕜 F E p μ)` instance, with `TauCeti.LpSection.coeFn_lpSMul`,
+  and the `IsScalarTower` and `SMulCommClass` instances relating it to the action of `𝕜`.
 * `TauCeti.LpSection.norm_lpSMul_le`: `‖φ • f‖ ≤ ‖φ‖ ‖f‖`.
-* `TauCeti.LpSection.lpSMul_add`, `add_lpSMul`, `lpSMul_smul`, `smul_lpSMul`, `lpSMul_lpSMul`:
-  bilinearity and compatibility with products of essentially bounded functions.
 * `TauCeti.LpSection.lpSMulL`: multiplication as a continuous bilinear map of norm at most `1`
   (`TauCeti.LpSection.norm_lpSMulL_le`), with `TauCeti.LpSection.norm_lpSMulL_apply_le`.
 * `TauCeti.LpSection.inner_lpSMul_left`, `inner_lpSMul_right` and `adjoint_lpSMulL`:
@@ -122,76 +121,51 @@ theorem norm_lpSMul_le : ‖φ • f‖ ≤ ‖φ‖ * ‖f‖ := by
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     f.memLp_norm.eLpNorm_ne_top) hle
 
-theorem lpSMul_add : φ • (f + g) = φ • f + φ • g := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul φ (f + g), coeFn_add f g, coeFn_add (φ • f) (φ • g),
-    coeFn_lpSMul φ f, coeFn_lpSMul φ g] with x h₁ h₂ h₃ h₄ h₅
-  rw [h₁, h₂, h₃, h₄, h₅, smul_add]
+/-- `L^∞(μ)` acts on `Lᵖ` sections as a module, by pointwise multiplication. -/
+instance : Module (Lp 𝕜 ∞ μ) (LpSection 𝕜 F E p μ) where
+  one_smul f := by
+    refine ext _ _ ?_
+    filter_upwards [coeFn_lpSMul 1 f, Lp.coeFn_one (E := 𝕜) (μ := μ)] with x h₁ h₂
+    rw [h₁, h₂, Pi.one_apply, one_smul]
+  mul_smul φ ψ f := by
+    refine ext _ _ ?_
+    filter_upwards [coeFn_lpSMul (φ * ψ) f, Lp.coeFn_mul φ ψ, coeFn_lpSMul φ (ψ • f),
+      coeFn_lpSMul ψ f] with x h₁ h₂ h₃ h₄
+    rw [h₁, h₂, h₃, h₄, Pi.mul_apply, mul_smul]
+  smul_zero φ := by
+    refine ext _ _ ?_
+    filter_upwards [coeFn_lpSMul φ (0 : LpSection 𝕜 F E p μ),
+      coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)] with x h₁ h₂
+    rw [h₁, h₂, smul_zero]
+  smul_add φ f g := by
+    refine ext _ _ ?_
+    filter_upwards [coeFn_lpSMul φ (f + g), coeFn_add f g, coeFn_add (φ • f) (φ • g),
+      coeFn_lpSMul φ f, coeFn_lpSMul φ g] with x h₁ h₂ h₃ h₄ h₅
+    rw [h₁, h₂, h₃, h₄, h₅, smul_add]
+  add_smul φ ψ f := by
+    refine ext _ _ ?_
+    filter_upwards [coeFn_lpSMul (φ + ψ) f, Lp.coeFn_add φ ψ, coeFn_add (φ • f) (ψ • f),
+      coeFn_lpSMul φ f, coeFn_lpSMul ψ f] with x h₁ h₂ h₃ h₄ h₅
+    rw [h₁, h₂, h₃, h₄, h₅, Pi.add_apply, add_smul]
+  zero_smul f := by
+    refine ext _ _ ?_
+    filter_upwards [coeFn_lpSMul (0 : Lp 𝕜 ∞ μ) f, Lp.coeFn_zero 𝕜 ∞ μ,
+      coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)] with x h₁ h₂ h₃
+    rw [h₁, h₂, h₃, Pi.zero_apply, zero_smul]
 
-theorem add_lpSMul : (φ + ψ) • f = φ • f + ψ • f := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul (φ + ψ) f, Lp.coeFn_add φ ψ, coeFn_add (φ • f) (ψ • f),
-    coeFn_lpSMul φ f, coeFn_lpSMul ψ f] with x h₁ h₂ h₃ h₄ h₅
-  rw [h₁, h₂, h₃, h₄, h₅, Pi.add_apply, add_smul]
+instance : IsScalarTower 𝕜 (Lp 𝕜 ∞ μ) (LpSection 𝕜 F E p μ) where
+  smul_assoc c φ f := by
+    refine ext _ _ ?_
+    filter_upwards [coeFn_lpSMul (c • φ) f, Lp.coeFn_smul c φ, coeFn_smul (φ • f) c,
+      coeFn_lpSMul φ f] with x h₁ h₂ h₃ h₄
+    rw [h₁, h₂, h₃, h₄, Pi.smul_apply, smul_eq_mul, mul_smul]
 
-theorem lpSMul_smul (c : 𝕜) : φ • (c • f) = c • (φ • f) := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul φ (c • f), coeFn_smul f c, coeFn_smul (φ • f) c,
-    coeFn_lpSMul φ f] with x h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄, smul_comm]
-
-theorem smul_lpSMul (c : 𝕜) : (c • φ) • f = c • (φ • f) := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul (c • φ) f, Lp.coeFn_smul c φ, coeFn_smul (φ • f) c,
-    coeFn_lpSMul φ f] with x h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄, Pi.smul_apply, smul_eq_mul, mul_smul]
-
-@[simp]
-theorem lpSMul_zero : φ • (0 : LpSection 𝕜 F E p μ) = 0 := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul φ (0 : LpSection 𝕜 F E p μ),
-    coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)] with x h₁ h₂
-  rw [h₁, h₂, smul_zero]
-
-@[simp]
-theorem zero_lpSMul : (0 : Lp 𝕜 ∞ μ) • f = 0 := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul (0 : Lp 𝕜 ∞ μ) f, Lp.coeFn_zero 𝕜 ∞ μ,
-    coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)] with x h₁ h₂ h₃
-  rw [h₁, h₂, h₃, Pi.zero_apply, zero_smul]
-
-@[simp]
-theorem lpSMul_neg : φ • -f = -(φ • f) := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul φ (-f), coeFn_neg f, coeFn_neg (φ • f), coeFn_lpSMul φ f]
-    with x h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄, smul_neg]
-
-@[simp]
-theorem neg_lpSMul : -φ • f = -(φ • f) := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul (-φ) f, Lp.coeFn_neg φ, coeFn_neg (φ • f), coeFn_lpSMul φ f]
-    with x h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄, Pi.neg_apply, neg_smul]
-
-theorem lpSMul_sub : φ • (f - g) = φ • f - φ • g := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul φ (f - g), coeFn_sub f g, coeFn_sub (φ • f) (φ • g),
-    coeFn_lpSMul φ f, coeFn_lpSMul φ g] with x h₁ h₂ h₃ h₄ h₅
-  rw [h₁, h₂, h₃, h₄, h₅, smul_sub]
-
-theorem sub_lpSMul : (φ - ψ) • f = φ • f - ψ • f := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul (φ - ψ) f, Lp.coeFn_sub φ ψ, coeFn_sub (φ • f) (ψ • f),
-    coeFn_lpSMul φ f, coeFn_lpSMul ψ f] with x h₁ h₂ h₃ h₄ h₅
-  rw [h₁, h₂, h₃, h₄, h₅, Pi.sub_apply, sub_smul]
-
-/-- Multiplying by `ψ` and then by `φ` is multiplying by their product `φ • ψ` in `L^∞(μ)`. -/
-theorem lpSMul_lpSMul : φ • (ψ • f) = (φ • ψ : Lp 𝕜 ∞ μ) • f := by
-  refine ext _ _ ?_
-  filter_upwards [coeFn_lpSMul φ (ψ • f), coeFn_lpSMul ψ f,
-    coeFn_lpSMul (φ • ψ : Lp 𝕜 ∞ μ) f, Lp.coeFn_lpSMul (r := ∞) φ ψ] with x h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄, Pi.smul_apply', smul_eq_mul, mul_smul]
+instance : SMulCommClass 𝕜 (Lp 𝕜 ∞ μ) (LpSection 𝕜 F E p μ) where
+  smul_comm c φ f := by
+    refine ext _ _ ?_
+    filter_upwards [coeFn_lpSMul φ (c • f), coeFn_smul f c, coeFn_smul (φ • f) c,
+      coeFn_lpSMul φ f] with x h₁ h₂ h₃ h₄
+    rw [h₁, h₂, h₃, h₄, smul_comm]
 
 variable (𝕜 F E p μ) in
 /-- Multiplication of `Lᵖ` sections by essentially bounded functions, as a continuous bilinear map
@@ -200,8 +174,7 @@ operator `M_φ`, of norm at most `‖φ‖_{L^∞}` (`TauCeti.LpSection.norm_lpS
 def lpSMulL [Fact (1 ≤ p)] :
     Lp 𝕜 ∞ μ →L[𝕜] LpSection 𝕜 F E p μ →L[𝕜] LpSection 𝕜 F E p μ :=
   LinearMap.mkContinuous₂
-    (LinearMap.mk₂ 𝕜 (· • ·) (fun φ ψ f ↦ add_lpSMul φ ψ f) (fun c φ f ↦ smul_lpSMul φ f c)
-      (fun φ f g ↦ lpSMul_add φ f g) (fun c φ f ↦ lpSMul_smul φ f c)) 1
+    (LinearMap.mk₂ 𝕜 (· • ·) add_smul smul_assoc smul_add fun c φ f ↦ (smul_comm c φ f).symm) 1
     fun φ f ↦ by rw [LinearMap.mk₂_apply, one_mul]; exact norm_lpSMul_le φ f
 
 @[simp]
