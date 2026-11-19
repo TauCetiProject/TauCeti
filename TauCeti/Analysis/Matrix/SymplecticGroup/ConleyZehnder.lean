@@ -66,7 +66,7 @@ full rotation `t ↦ e^{2π i t}` of `ℝ²` has `μ = 1` and Conley–Zehnder i
 Inverting a path pointwise negates the index, `CZ(t ↦ Ψ(t)⁻¹) = -CZ(Ψ)`
 (`TauCeti.GLSymplectic.conleyZehnderIndex_inv`). The graph of `A⁻¹` is the image of the graph of
 `A` under the involution `(u, v) ↦ (conj v, conj u)` of `ℂⁿ × ℂⁿ`
-(`Matrix.graphFrame_mul_map_ofReal_of_mul_eq_one`), which is anti-symplectic for `(-ω) ⊕ ω` and
+(`Matrix.graphFrame_mul_map_ofReal_of_mul_eq_one`), which is anti-symplectic for `Im ⟪·, ·⟫` and
 fixes the diagonal, and `T` turns it into complex conjugation, which negates the Maslov index of
 paths of unitary frames (`Matrix.UnitaryGroup.maslovIndex_map_map_star`). Consequently, for a path
 `Ψ` from `1` to `B`, the reflected path `t ↦ Ψ(1 - t) B⁻¹` has index `-CZ(Ψ)`

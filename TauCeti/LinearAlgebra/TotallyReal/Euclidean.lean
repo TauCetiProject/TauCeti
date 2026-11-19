@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Sum
 public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import TauCeti.Analysis.Matrix.Cayley
-import TauCeti.LinearAlgebra.Matrix.ConjTranspose
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The real subspace of `ℂⁿ` and its images under matrices
