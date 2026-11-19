@@ -101,7 +101,10 @@ converge to some `p₀ ∈ C`
 (`IsNondegenerate.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`, from the
 vector-space theorem
 `TauCeti.SymplecticForm.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`).
-The theorem for fixed data is the case of a one-point window.
+The theorem for fixed data is the case of a one-point window. For a family of Hamiltonian data
+on `X × (ℂ × M)` that is smooth jointly in the parameter, the domain point and the target point,
+reparametrized by a `Cⁿ` map `P → X`, the chart reading is `Cⁿ` jointly in `(p, z, y)`
+(`TauCeti.Floer.contDiffOn_comp_prodMap_equivRealProdCLM_symm_symm`).
 
 For smooth solutions and fixed data the convergence holds in `C¹`
 (`IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`): the
@@ -455,6 +458,41 @@ section
 
 open Filter Function MeasureTheory Metric Set Topology
 open scoped Manifold
+
+namespace TauCeti.Floer
+
+/-- **Families of data read in a chart.** Let `F` be a family on `X × (ℂ × M)` which is `Cⁿ` at
+the points `(a, (z, x))` with `z` in a set `S` (in real coordinates), such as the Hamiltonian data
+of a family of Floer problems on `S`, smooth jointly in the family parameter, the domain point and
+the target point. Read in a smooth partial diffeomorphism `φ : M ⊇ U → V` and reparametrized by a
+`Cⁿ` map `g : P → X`, the family `(p, z, y) ↦ F (g p, (z, φ⁻¹ y))` is `Cⁿ` on `P × S × φ(U)`. -/
+theorem contDiffOn_comp_prodMap_equivRealProdCLM_symm_symm {E H M V X P Y : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup Y] [NormedSpace ℝ Y] {n : ℕ∞} {F : X × (ℂ × M) → Y} {S : Set (ℝ × ℝ)}
+    (hF : ∀ a, ∀ z ∈ S, ∀ x,
+      ContMDiffAt (𝓘(ℝ, X).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, Y) n F
+        (a, (Complex.equivRealProdCLM.symm z, x)))
+    {g : P → X} (hg : ContDiff ℝ n g) (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) :
+    ContDiffOn ℝ n (fun q : P × ((ℝ × ℝ) × V) ↦
+      F (g q.1, (Complex.equivRealProdCLM.symm q.2.1, φ.symm q.2.2)))
+      (univ ×ˢ (S ×ˢ φ.target)) := by
+  have hm : ContMDiffOn 𝓘(ℝ, P × ((ℝ × ℝ) × V)) (𝓘(ℝ, X).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun q : P × ((ℝ × ℝ) × V) ↦ (g q.1, (Complex.equivRealProdCLM.symm q.2.1, φ.symm q.2.2)))
+      (univ ×ˢ (univ ×ˢ φ.target)) :=
+    (hg.comp contDiff_fst).contMDiff.contMDiffOn.prodMk
+      ((Complex.equivRealProdCLM.symm.contDiff.comp
+        (contDiff_fst.comp contDiff_snd)).contMDiff.contMDiffOn.prodMk
+          ((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp
+            (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffOn fun _ hq ↦ hq.2.2))
+  rintro ⟨p, z, y⟩ ⟨-, hz, hy⟩
+  have h := (hF (g p) z hz (φ.symm y)).comp_contMDiffWithinAt (p, (z, y))
+    (hm _ ⟨trivial, trivial, hy⟩)
+  exact (contMDiffWithinAt_iff_contDiffWithinAt.1 h).mono
+    (prod_mono subset_rfl (prod_mono (subset_univ _) subset_rfl))
+
+end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
 
