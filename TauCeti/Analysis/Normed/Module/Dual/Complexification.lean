@@ -21,6 +21,7 @@ vectors. The forward map sends `g + i h` to the functional
 `TauCeti.Complexification.strongDualEquiv` gives this comparison with forward norm at
 most two and inverse norm at most one. These are bounds, not an isometry assertion:
 the Taylor norm on the complexified dual need not equal the dual Taylor norm.
+`strongDualLineEquiv` instead retains the complexified real scalar line as its target.
 No completeness assumption is needed. `strongBidualEquiv` intertwines the canonical
 bidual embeddings. Consequently a real seminormed space is reflexive if and only if
 its complexification is reflexive, where reflexivity means surjectivity of the
@@ -208,5 +209,23 @@ theorem surjective_inclusionInDoubleDual_iff :
     refine ⟨⟨x, y⟩, ?_⟩
     rw [← strongBidualEquiv_complexify_inclusionInDoubleDual, heq]
     exact (strongBidualEquiv X).apply_symm_apply Φ
+
+variable (F : Type*) [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- Complexifying the real continuous dual identifies it with complex-linear maps into
+the complexified real scalar line. No finite rank or completeness is required. -/
+def strongDualLineEquiv : Complexification (F →L[ℝ] ℝ) ≃L[ℂ]
+    (Complexification F →L[ℂ] Complexification ℝ) :=
+  (Complexification.strongDualEquiv F).trans
+    ((ContinuousLinearEquiv.refl ℂ (Complexification F)).arrowCongr equivComplex.symm)
+
+@[simp] theorem strongDualLineEquiv_apply_re (u : Complexification (F →L[ℝ] ℝ))
+    (v : Complexification F) :
+    (strongDualLineEquiv F u v).re = u.re v.re - u.im v.im := by
+  simp [strongDualLineEquiv, Complexification.strongDualEquiv_apply]
+@[simp] theorem strongDualLineEquiv_apply_im (u : Complexification (F →L[ℝ] ℝ))
+    (v : Complexification F) :
+    (strongDualLineEquiv F u v).im = u.im v.re + u.re v.im := by
+  simp [strongDualLineEquiv, Complexification.strongDualEquiv_apply]
 
 end TauCeti.Complexification

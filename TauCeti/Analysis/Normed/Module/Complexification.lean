@@ -57,6 +57,8 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
 * `TauCeti.Complexification.instNormedSpace`, `TauCeti.Complexification.instCompleteSpace`: the
   complex seminormed space structure, complete when `X` is, and continuous conjugation
   `TauCeti.Complexification.conjCLE`.
+* `TauCeti.Complexification.equivComplex`: the complexified real line is complex-linearly
+  homeomorphic to `ℂ`.
 * `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`.
 * `TauCeti.Complexification.equivPi`: the complexification of `ι → ℝ` is complex-linearly
   homeomorphic to `ι → ℂ`.
@@ -357,6 +359,28 @@ instance instNormedAddCommGroup {X : Type*} [NormedAddCommGroup X] [NormedSpace 
     ext
     · exact sub_eq_zero.1 (norm_le_zero_iff.1 (h ▸ norm_re_le (z - w)))
     · exact sub_eq_zero.1 (norm_le_zero_iff.1 (h ▸ norm_im_le (z - w)))
+
+/-- The complexification of the real scalar line is complex-linearly homeomorphic to ℂ. -/
+def equivComplex : Complexification ℝ ≃L[ℂ] ℂ where
+  toFun z := ⟨z.re, z.im⟩
+  invFun z := ⟨z.re, z.im⟩
+  map_add' _ _ := (rfl)
+  map_smul' c z := by apply Complex.ext <;> simp [Complex.mul_re, Complex.mul_im, add_comm]
+  left_inv _ := (rfl)
+  right_inv _ := (rfl)
+  continuous_toFun := by
+    convert Complex.equivRealProdCLM.symm.continuous.comp (equivProd ℝ).continuous using 1
+    funext z
+    apply Complex.ext <;> simp [Complex.equivRealProdCLM_symm_apply, equivProd_apply]
+  continuous_invFun := by
+    simpa only [Function.comp_def, equivProd_symm_apply] using
+      ((equivProd ℝ).symm.continuous.comp
+        (Complex.continuous_re.prodMk Complex.continuous_im))
+
+@[simp] theorem equivComplex_apply (z : Complexification ℝ) :
+    equivComplex z = ⟨z.re, z.im⟩ := by rfl
+@[simp] theorem equivComplex_symm_re (z : ℂ) : (equivComplex.symm z).re = z.re := by rfl
+@[simp] theorem equivComplex_symm_im (z : ℂ) : (equivComplex.symm z).im = z.im := by rfl
 
 variable (ι : Type*) [Fintype ι]
 
