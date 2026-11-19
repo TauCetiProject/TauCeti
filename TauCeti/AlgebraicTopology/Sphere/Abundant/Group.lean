@@ -97,14 +97,6 @@ variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensiona
   {G : Type} [TopologicalSpace G] [T2Space G] [CompactSpace G] [ChartedSpace V G] [Group G]
   [IsTopologicalGroup G] (o : HomologicalOrientation G V n) (hn : Module.finrank ℝ V = n)
 
-/-- The identification of the coefficients `ℤ ⊗ ℤ` of a cross product of integral classes with
-`ℤ`, both written `ULift ℤ`. -/
-private def coefficientIso :
-    ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) ≅ ModuleCat.of ℤ (ULift.{0} ℤ) :=
-  let e : ModuleCat.of ℤ (ULift.{0} ℤ) ≅ 𝟙_ (ModuleCat.{0} ℤ) :=
-    (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
-  tensorIso e e ≪≫ λ_ (𝟙_ _) ≪≫ e.symm
-
 /-- The cross product `[G] × α ∈ Hₙ₊ₖ(G × Map_*(S², G); ℤ ⊗ ℤ)` of the fundamental class with a
 class `α ∈ Hₖ(Map_*(S², G); ℤ)`. -/
 private def crossFundamentalClass {k : ℕ}
@@ -130,7 +122,7 @@ private def sphereClass {k : ℕ}
       C(G × BasedMap Sphere2 G Sphere2.north 1, C(Sphere2, G))))) (ModuleCat.of ℤ (ULift.{0} ℤ))
         (n + k)).hom
     ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      coefficientIso.hom).app
+      uliftIntTensorIso.hom).app
         (TopCat.toSSet.obj (TopCat.of (G × BasedMap Sphere2 G Sphere2.north 1)))) (n + k)).hom
       (o.crossFundamentalClass hn α))
 
@@ -155,7 +147,7 @@ private theorem livesOverFundamentalClass_sphereClass_iff (b : G) {k : ℕ}
       α ≠ 0 :=
     o.livesOverFundamentalClass_singularHomologyCross_fundamentalClass_iff hn b rfl
   have hy := livesOverFundamentalClass_homologyMap_coefficient_iff
-    (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) coefficientIso
+    (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) uliftIntTensorIso
     (p := id ∘ Prod.fst) (b := b) (α := o.crossFundamentalClass hn α)
   refine (livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id (ModuleCat.of ℤ (ULift.{0} ℤ))
     (Ψ : C(G × BasedMap Sphere2 G Sphere2.north 1, C(Sphere2, G)))
@@ -228,14 +220,14 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
     simp [y.2]
   -- The identification of coefficients is natural in the space.
   have hcoeff : HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      coefficientIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) ≫
+      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) ≫
         SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) R (n + k) =
       SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) (R ⊗ R : ModuleCat.{0} ℤ) (n + k) ≫
         HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-          coefficientIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) := by
+          uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) := by
     rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
     exact congrArg (HomologicalComplex.homologyMap · (n + k))
-      (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map coefficientIso.hom).naturality
+      (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map uliftIntTensorIso.hom).naturality
         (TopCat.toSSet.map (TopCat.ofHom γ))).symm
   have hΨ' : SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) R (n + k) ≫
       SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Ψ)) R (n + k) =
@@ -246,7 +238,7 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
       ← TopCat.ofHom_comp, ← TopCat.ofHom_comp, hΨ]
   have e₁ := ConcreteCategory.congr_hom hcoeff (o.crossFundamentalClass hn α)
   have e₂ := ConcreteCategory.congr_hom hΨ' ((HomologicalComplex.homologyMap
-    (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map coefficientIso.hom).app
+    (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map uliftIntTensorIso.hom).app
       (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k)).hom (o.crossFundamentalClass hn α))
   simp only [ConcreteCategory.comp_apply] at e₁ e₂
   rw [sphereClass, sphereClass, ← o.homologyMap_prodMap_crossFundamentalClass hn c α, ← e₁, e₂]
@@ -326,11 +318,8 @@ theorem isAbundantWithTwoSpheres_of_not_isAspherical [PathConnectedSpace G] (b :
     obtain ⟨m, hm₀, hm⟩ := hG ((pathConnectedSpace_doubleLoopSpace_iff (1 : G)).2 h₂)
     -- Transport the nonzero homology group of `Ω (Ω G 1) (Path.refl 1)` to `Map_*(S², G)`, with
     -- coefficients `ULift ℤ`.
-    have hY : ¬IsZero ((TopCat.toSSet.obj (TopCat.of Y)).homology R m) := fun h ↦ hm (h.of_iso
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).mapIso
-        (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso.symm).app _ ≪≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).obj R).mapIso
-          (TopCat.isoOfHomeo e.symm)))
+    have hY : ¬IsZero ((TopCat.toSSet.obj (TopCat.of Y)).homology R m) := fun h ↦
+      hm (h.of_iso (doubleLoopSpaceHomologyIsoBasedMap (1 : G) m))
     rw [ModuleCat.isZero_iff_subsingleton, not_subsingleton_iff_nontrivial] at hY
     obtain ⟨α, hα⟩ := exists_ne (0 : ((TopCat.toSSet.obj (TopCat.of Y)).homology R m :
       ModuleCat ℤ))

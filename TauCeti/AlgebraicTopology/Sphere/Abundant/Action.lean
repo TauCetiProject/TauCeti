@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
 public import TauCeti.Topology.MappingSpace.Action
 import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
+import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FirstHomology
+import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Hurewicz
+import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 
 /-!
 # Abundance with 2-spheres from a group action
@@ -27,6 +32,26 @@ around every point, and that the stabilizer of `x₀` is path connected. If a cl
 (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_actionMap_singularHomologyCross`). For
 `B = S²` and `α` of positive degree, `M` is therefore abundant with 2-spheres
 (`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_ne_zero`).
+
+In degree zero the second condition of Definition 6.11 asks more: the localization of `Φ_*(A × α)`
+must not be that of a class of constant spheres. The self-map `f ↦ const (f(b₀))` of `Map(S², M)`
+lies over `M` and fixes the constant spheres, and it sends `Φ_*(A × α)` to `Φ_*(A × c_* α)`, where
+`c` is the constant self-map of `Map_*(S², M)` at the constant sphere: `g • u` and `g • const x₀`
+take the same value `g • x₀` at `b₀`. So if the localization of `Φ_*(A × α)` came from the
+constant spheres, `Φ_*(A × (α - c_* α))` would not live over the fundamental class. Hence a class
+`α ∈ H₀(Map_*(S², M); ℤ)` with `ℓ • (α - c_* α) ≠ 0` is a witness of abundance
+(`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_sub_homologyMap_const_ne_zero`).
+
+This gives both cases of Proposition 6.33 of the source, for a group action. If `π₂(M, x₀)` is
+nontrivial, the class of a based sphere outside the path component of the constant sphere is a
+witness of degree zero, for every `ℓ ≠ 0`
+(`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_nontrivial_homotopyGroup_two`). If
+`π₂(M, x₀)` vanishes and the first nontrivial higher homotopy group `π_k(M, x₀)`, `k ≥ 3`, has an
+element `g` with `g ^ ℓ ≠ 1`, the Hurewicz image of `g` in `H_{k-2}(Ω²M; ℤ)` is a witness of
+positive degree (`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_zpow_ne_one`). For
+`ℓ = 1` one of the two applies as soon as the path-connected manifold `M` is not aspherical, which
+is Proposition 6.29
+(`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_homologyMap_eq_fundamentalClass`).
 
 This is the argument of Propositions 6.29 and 6.33 of Barraud–Damian–Humilière–Oancea, for
 classes of diffeomorphisms coming from a group action. There the group is the identity component
@@ -67,6 +92,14 @@ localization of `A` with `α` (`TauCeti.fiberLocalization_singularHomologyCross_
 * `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_ne_zero`: a manifold with such
   an action, a class `A` with `π_* A = ℓ • [M]` and a class `α` of positive degree of
   `Map_*(S², M)` with `ℓ • α ≠ 0` is abundant with 2-spheres.
+* `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_sub_homologyMap_const_ne_zero`:
+  the same for a class `α` of degree zero with `ℓ • (α - c_* α) ≠ 0`.
+* `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_nontrivial_homotopyGroup_two`,
+  `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_zpow_ne_one`: Proposition 6.33, when
+  `π₂(M) ≠ 0`, or when the first nontrivial higher homotopy group is not `ℓ`-torsion.
+* `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_homologyMap_eq_fundamentalClass`:
+  Proposition 6.29, a non-aspherical manifold covered by such an action is abundant with
+  2-spheres.
 
 ## References
 
@@ -79,6 +112,7 @@ public section
 noncomputable section
 
 open CategoryTheory MonoidalCategory TensorProduct Module Set Topology
+open scoped Topology.Homotopy
 
 namespace TauCeti
 
@@ -334,6 +368,158 @@ theorem livesOverFundamentalClass_actionMap_singularHomologyCross {B : Type}
   exact (livesOverFundamentalClass_iff _ _ _ _).2 fun h0 ↦
     hX (hΘinj ((key.symm.trans h0).trans (map_zero _).symm))
 
+variable (G) in
+/-- The class `Φ_*(A × α)` of `Map(S², M)` carried by `A ∈ H_d(G; ℤ)` and a class `α` of the based
+mapping space `Map_*(S², M)` under the action map `Φ`, with the coefficients `ℤ ⊗ ℤ` of the cross
+product identified with `ℤ`. -/
+private def actionClass (x₀ : M)
+    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
+    ((TopCat.toSSet.obj (TopCat.of C(Sphere2, M))).homology (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (d + k) : ModuleCat.{0} ℤ) :=
+  (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of C(Sphere2, M)))) (d + k)).hom
+    ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+      (BasedMap.actionMap (G := G) Sphere2.north x₀)))
+        (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom
+      ((TopCat.singularHomologyCross (TopCat.of G)
+        (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom (A ⊗ₜ α)))
+
+omit [T2Space M] [CompactSpace M] [ChartedSpace V M] [IsTopologicalGroup G] in
+/-- `Φ_*(A × α)` is additive in `α`. -/
+private theorem actionClass_sub (x₀ : M)
+    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)) {k : ℕ}
+    (α β : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
+    actionClass G x₀ A (α - β) = actionClass G x₀ A α - actionClass G x₀ A β := by
+  -- The tensor product of `ModuleCat` is not syntactically `TensorProduct`, so `simp` does not
+  -- apply `TensorProduct.tmul_sub` here.
+  have h : (TopCat.singularHomologyCross (TopCat.of G)
+      (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom (A ⊗ₜ (α - β)) =
+      (TopCat.singularHomologyCross (TopCat.of G)
+        (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom (A ⊗ₜ α) -
+        (TopCat.singularHomologyCross (TopCat.of G)
+          (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom (A ⊗ₜ β) :=
+    (congrArg _ (TensorProduct.tmul_sub _ _ _)).trans (map_sub _ _ _)
+  exact (congrArg _ ((congrArg _ h).trans (map_sub _ _ _))).trans (map_sub _ _ _)
+
+omit [T2Space M] [CompactSpace M] [ChartedSpace V M] [Group G] [IsTopologicalGroup G]
+  [MulAction G M] [ContinuousSMul G M] in
+/-- The cross product with `A` is natural in the second factor: `(id × g)_*(A × α) = A × g_* α`. -/
+private theorem homologyMap_prodMap_singularHomologyCross {Y : Type} [TopologicalSpace Y]
+    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)) {k : ℕ} (g : C(Y, Y))
+    (α : ((TopCat.toSSet.obj (TopCat.of Y)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) k :
+      ModuleCat.{0} ℤ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ((ContinuousMap.id G).prodMap g)))
+      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) : ModuleCat.{0} ℤ)
+        (d + k)).hom ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of Y)
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
+            (A ⊗ₜ α)) =
+      (TopCat.singularHomologyCross (TopCat.of G) (TopCat.of Y) (ModuleCat.of ℤ (ULift.{0} ℤ))
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
+          (A ⊗ₜ (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g))
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom α) := by
+  have hg : 𝟙 (TopCat.of G) ⊗ₘ TopCat.ofHom g =
+      TopCat.ofHom ((ContinuousMap.id G).prodMap g) :=
+    TopCat.ext fun _ ↦ rfl
+  have := congrArg (fun φ ↦ φ.hom (A ⊗ₜ α))
+    (TopCat.singularHomologyCross_naturality (𝟙 (TopCat.of G)) (TopCat.ofHom g)
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl)
+  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
+    CategoryTheory.Functor.map_id, hg, ModuleCat.hom_tensorHom] at this
+  -- `this` is the claim up to the action of `𝟙 _ ⊗ₘ g_*` on a pure tensor and the functor map
+  -- as `SSet.homologyMap`; these cannot be rewritten in `this`, whose classes are typed by the
+  -- objects of the homology functor rather than by `SSet.homology`.
+  exact this.symm
+
+omit [T2Space M] [CompactSpace M] [ChartedSpace V M] [IsTopologicalGroup G] in
+/-- The constant spheres at the values at the base point, `f ↦ const (f north)`, send
+`Φ_*(A × α)` to `Φ_*(A × c_* α)`, where `c` is the constant self-map of `Map_*(S², M)` at the
+constant sphere at `x₀`: both `g • u ↦ const (g • x₀)` and `(g, u) ↦ g • const x₀` agree. -/
+private theorem homologyMap_const'_comp_mappingSpaceEval_actionClass (x₀ : M)
+    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+      (ContinuousMap.const'.comp (mappingSpaceEval (X := M) Sphere2.north))))
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom (actionClass G x₀ A α) =
+      actionClass G x₀ A ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+        (ContinuousMap.const (BasedMap Sphere2 M Sphere2.north x₀)
+          ⟨ContinuousMap.const Sphere2 x₀, rfl⟩))) (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom α) := by
+  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
+  let Y := BasedMap Sphere2 M Sphere2.north x₀
+  let c : C(Y, Y) := ContinuousMap.const Y ⟨ContinuousMap.const Sphere2 x₀, rfl⟩
+  let Φ : C(G × Y, C(Sphere2, M)) := BasedMap.actionMap Sphere2.north x₀
+  let ρ : C(C(Sphere2, M), C(Sphere2, M)) :=
+    ContinuousMap.const'.comp (mappingSpaceEval Sphere2.north)
+  let γ : C(G × Y, G × Y) := (ContinuousMap.id G).prodMap c
+  have hΦ : ρ.comp Φ = Φ.comp γ := by
+    ext ⟨g, y⟩ s
+    simp only [ρ, Φ, γ, c, ContinuousMap.comp_apply, ContinuousMap.prodMap_apply,
+      ContinuousMap.coe_id, ContinuousMap.const_apply, ContinuousMap.coe_const']
+    rw [BasedMap.actionMap_apply, BasedMap.actionMap_apply]
+    simp [y.2]
+  -- The cross product with `A` is natural in the second factor: `γ_*(A × α) = A × c_* α`.
+  have hcross := homologyMap_prodMap_singularHomologyCross A c α
+  -- The identification of coefficients is natural in the space.
+  have hcoeff : HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of C(Sphere2, M)))) (d + k) ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) R (d + k) =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) (R ⊗ R : ModuleCat.{0} ℤ) (d + k) ≫
+        HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+          uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of C(Sphere2, M)))) (d + k) := by
+    rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
+    exact congrArg (HomologicalComplex.homologyMap · (d + k))
+      (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map uliftIntTensorIso.hom).naturality
+        (TopCat.toSSet.map (TopCat.ofHom ρ))).symm
+  have hΦ' : SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) (R ⊗ R : ModuleCat.{0} ℤ)
+      (d + k) ≫ SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ)) (R ⊗ R : ModuleCat.{0} ℤ)
+        (d + k) =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ)) (R ⊗ R : ModuleCat.{0} ℤ) (d + k) ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) (R ⊗ R : ModuleCat.{0} ℤ)
+          (d + k) := by
+    rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
+      ← TopCat.ofHom_comp, ← TopCat.ofHom_comp, hΦ]
+  have e₁ := congrArg (fun φ ↦ φ.hom ((SSet.homologyMap (TopCat.toSSet.map
+    (TopCat.ofHom Φ)) (R ⊗ R : ModuleCat.{0} ℤ) (d + k)).hom
+      ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of Y) R R d k (d + k) rfl).hom
+        (A ⊗ₜ α)))) hcoeff
+  have e₂ := congrArg (fun φ ↦ φ.hom
+    ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of Y) R R d k (d + k) rfl).hom
+      (A ⊗ₜ α))) hΦ'
+  rw [actionClass, actionClass, ← hcross]
+  -- `e₁` and `e₂` are the two steps, read through `ModuleCat.hom_comp`.
+  exact e₁.trans (congrArg _ e₂.symm)
+
+include o hd in
+/-- `Φ_*(A × α)`, with its coefficients identified with `ℤ`, lives over the fundamental class at
+`x₀` when `π_* A = ℓ • [M]` and `ℓ • α ≠ 0`. -/
+private theorem livesOverFundamentalClass_actionClass {x₀ : M} (π : C(G, M))
+    (hπ : ∀ g, π g = g • x₀)
+    (hloc : ∀ y : M, ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ s : M → G, ContinuousOn s U ∧
+      ∀ z ∈ U, s z • x₀ = z)
+    (hstab : IsPathConnected {g : G | g • x₀ = x₀}) {ℓ : ℤ}
+    {A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)}
+    (hA : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom π)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+      d).hom A = ℓ • o.fundamentalClass hd) {k : ℕ}
+    {α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)} (hα : ℓ • α ≠ 0) :
+    LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (mappingSpaceEval Sphere2.north) x₀
+      (actionClass G x₀ A α) :=
+  (livesOverFundamentalClass_homologyMap_coefficient_iff _ uliftIntTensorIso).2
+    (o.livesOverFundamentalClass_actionMap_singularHomologyCross hd Sphere2.north π hπ hloc hstab
+      hA hα)
+
 include o hd in
 /-- **Abundance with 2-spheres from a group action** (Barraud–Damian–Humilière–Oancea,
 Propositions 6.29 and 6.33, for classes coming from a group action). Let a topological group `G`
@@ -353,15 +539,190 @@ theorem isAbundantWithTwoSpheres_of_smul_ne_zero {x₀ : M} (π : C(G, M))
       d).hom A = ℓ • o.fundamentalClass hd) {k : ℕ} (hk : 0 < k)
     {α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)} (hα : ℓ • α ≠ 0) :
+    IsAbundantWithTwoSpheres M d x₀ :=
+  isAbundantWithTwoSpheres_of_lt
+    (o.livesOverFundamentalClass_actionClass hd π hπ hloc hstab hA hα) (by omega)
+
+include o hd in
+/-- **Abundance with 2-spheres from a group action, in the dimension**
+(Barraud–Damian–Humilière–Oancea, Propositions 6.29 and 6.33, the case `π₂(M) ≠ 0`). In the
+setting of `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_smul_ne_zero`, let
+`α ∈ H₀(Map_*(S², M); ℤ)` be a class such that `ℓ • (α - c_* α) ≠ 0`, where `c` is the constant
+self-map of `Map_*(S², M)` at the constant sphere at `x₀`. For `ℓ = 1` this says that `α` is not
+a multiple of the class of the constant sphere, that is, it is nonzero in `H₀(Ω²M, pt)`. Then
+`Φ_*(A × α)` lives over the fundamental class of `M` and its localization at the fibre over `x₀` is
+not that of a class of constant spheres, so `M` is abundant with 2-spheres at `x₀`. -/
+theorem isAbundantWithTwoSpheres_of_smul_sub_homologyMap_const_ne_zero {x₀ : M} (π : C(G, M))
+    (hπ : ∀ g, π g = g • x₀)
+    (hloc : ∀ y : M, ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ s : M → G, ContinuousOn s U ∧
+      ∀ z ∈ U, s z • x₀ = z)
+    (hstab : IsPathConnected {g : G | g • x₀ = x₀}) {ℓ : ℤ}
+    {A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)}
+    (hA : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom π)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+      d).hom A = ℓ • o.fundamentalClass hd)
+    {α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) 0 : ModuleCat.{0} ℤ)}
+    (hα : ℓ • (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const
+      (BasedMap Sphere2 M Sphere2.north x₀) ⟨ContinuousMap.const Sphere2 x₀, rfl⟩)))
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) 0).hom α) ≠ 0) :
     IsAbundantWithTwoSpheres M d x₀ := by
   let R := ModuleCat.of ℤ (ULift.{0} ℤ)
-  have hx := o.livesOverFundamentalClass_actionMap_singularHomologyCross hd Sphere2.north π hπ
-    hloc hstab hA hα
-  -- Identify the coefficients `ℤ ⊗ ℤ` with `ℤ`.
-  let e : R ≅ 𝟙_ (ModuleCat.{0} ℤ) := (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
-  let φ : R ⊗ R ≅ R := tensorIso e e ≪≫ λ_ (𝟙_ _) ≪≫ e.symm
-  exact isAbundantWithTwoSpheres_of_lt
-    ((livesOverFundamentalClass_homologyMap_coefficient_iff (R ⊗ R) φ).2 hx) (by omega)
+  let c := (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.const
+    (BasedMap Sphere2 M Sphere2.north x₀)
+      (⟨ContinuousMap.const Sphere2 x₀, rfl⟩ : BasedMap Sphere2 M Sphere2.north x₀)))) R 0).hom
+  have hℓα : ℓ • α ≠ 0 := fun h ↦ hα <|
+    calc ℓ • (α - c α) = ℓ • α - ℓ • c α := zsmul_sub _ _ _
+      _ = 0 := by rw [← map_zsmul, h, map_zero, sub_zero]
+  let ρ : C(C(Sphere2, M), C(Sphere2, M)) :=
+    ContinuousMap.const'.comp (mappingSpaceEval Sphere2.north)
+  have hρ : mappingSpaceEval Sphere2.north ∘ ρ = mappingSpaceEval Sphere2.north := funext fun f ↦ by
+    simp [ρ]
+  have hρc : ρ.comp ContinuousMap.const' = ContinuousMap.const' := ContinuousMap.ext fun x ↦ by
+    simp [ρ]
+  refine isAbundantWithTwoSpheres_of_eq (n := d)
+    (o.livesOverFundamentalClass_actionClass hd π hπ hloc hstab hA hℓα) fun β hβ ↦ ?_
+  -- `ρ` lies over `M` and fixes the constant spheres, so if the localization of `Φ_*(A × α)` were
+  -- that of a class of constant spheres, it would equal that of `ρ_* Φ_*(A × α) = Φ_*(A × c_* α)`.
+  -- Then `Φ_*(A × (α - c_* α))` would not live over the fundamental class, although
+  -- `ℓ • (α - c_* α) ≠ 0`.
+  have key : (fiberLocalization R (mappingSpaceEval Sphere2.north) x₀ d).hom
+      ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) R d).hom
+        (actionClass G x₀ A α)) =
+        (fiberLocalization R (mappingSpaceEval Sphere2.north) x₀ d).hom (actionClass G x₀ A α) := by
+    rw [← ModuleCat.comp_apply, homologyMap_comp_fiberLocalization R ρ hρ, ModuleCat.comp_apply,
+      ← hβ, ← ModuleCat.comp_apply, localHomologyMap_comp, localHomologyMap_congr R hρc]
+  refine (livesOverFundamentalClass_iff _ _ _ _).1
+    (o.livesOverFundamentalClass_actionClass hd π hπ hloc hstab hA hα) ?_
+  rw [actionClass_sub, ← homologyMap_const'_comp_mappingSpaceEval_actionClass, map_sub]
+  exact sub_eq_zero.2 key.symm
+
+include o hd in
+/-- **A manifold covered by a group action with `π₂ ≠ 0` is abundant with 2-spheres**
+(Barraud–Damian–Humilière–Oancea, Proposition 6.33, the case `π₂(M) ≠ 0`). Let a topological group
+`G` act on a compact oriented `d`-manifold `M`, with orbit map `π : G → M`, `g ↦ g • x₀`, having
+continuous local sections around every point, and with path-connected stabilizer of `x₀`. If some
+`A ∈ H_d(G; ℤ)` satisfies `π_* A = ℓ • [M]` with `ℓ ≠ 0`, and `π₂(M, x₀)` is nontrivial, then `M`
+is abundant with 2-spheres at `x₀`: the class of a based sphere outside the path component of the
+constant sphere is a witness of degree zero. -/
+theorem isAbundantWithTwoSpheres_of_nontrivial_homotopyGroup_two {x₀ : M} (π : C(G, M))
+    (hπ : ∀ g, π g = g • x₀)
+    (hloc : ∀ y : M, ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ s : M → G, ContinuousOn s U ∧
+      ∀ z ∈ U, s z • x₀ = z)
+    (hstab : IsPathConnected {g : G | g • x₀ = x₀}) {ℓ : ℤ} (hℓ : ℓ ≠ 0)
+    {A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)}
+    (hA : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom π)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+      d).hom A = ℓ • o.fundamentalClass hd) [Nontrivial (π_ 2 M x₀)] :
+    IsAbundantWithTwoSpheres M d x₀ := by
+  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
+  let Y := BasedMap Sphere2 M Sphere2.north x₀
+  let y₀ : Y := ⟨ContinuousMap.const Sphere2 x₀, rfl⟩
+  let e := BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨M, x₀⟩
+    Sphere2.north
+  -- `Map_*(S², M) ≃ₜ Ω²M` is not path connected, so some `y₁` is not joined to the constant
+  -- sphere `y₀`.
+  have hY : ¬PathConnectedSpace Y := fun h ↦ not_subsingleton (π_ 2 M x₀)
+    ((pathConnectedSpace_doubleLoopSpace_iff x₀).1 (e.surjective.pathConnectedSpace e.continuous))
+  obtain ⟨y₁, hy₁⟩ : ∃ y₁ : Y, ¬Joined y₁ y₀ := by
+    by_contra! h
+    exact hY ⟨⟨y₀⟩, fun y y' ↦ (h y).trans (h y').symm⟩
+  refine o.isAbundantWithTwoSpheres_of_smul_sub_homologyMap_const_ne_zero hd π hπ hloc hstab hA
+    (α := (singularHomology₀Section R (X := TopCat.of Y) y₁).hom (ULift.up 1)) ?_
+  -- `c_* [y₁] = [y₀]`, and `ℓ • ([y₁] - [y₀]) ≠ 0`.
+  have hc := congrArg (fun φ ↦ φ.hom (ULift.up 1 : R))
+    (singularHomology₀Section_naturality R (TopCat.ofHom (ContinuousMap.const Y y₀)) y₁)
+  rw [ModuleCat.hom_comp, LinearMap.comp_apply, singularHomologyFunctor_obj_map] at hc
+  simp only [TopCat.hom_ofHom, ContinuousMap.const_apply] at hc
+  have key := smul_sub_singularHomology₀Section_apply_ne_zero (M := R) (X := TopCat.of Y)
+    (r := ULift.up 1) hy₁ (c := ℓ) fun h ↦ hℓ <| by
+      -- `ℓ • up 1` is `up (ℓ * 1)` by definition of the module structure of `ULift ℤ`.
+      have h' : ℓ * 1 = 0 := congrArg ULift.down h
+      simpa using h'
+  rw [← hc] at key
+  -- `key` uses the module scalar multiplication, the goal `zsmul`.
+  intro h0
+  rw [← Int.cast_smul_eq_zsmul ℤ, Int.cast_id] at h0
+  exact key h0
+
+include o hd in
+/-- **A manifold covered by a group action whose first nontrivial higher homotopy group is not
+`ℓ`-torsion is abundant with 2-spheres** (Barraud–Damian–Humilière–Oancea, Proposition 6.33, the
+case `π₂(M) = 0`). Let a topological group `G` act on a compact oriented `d`-manifold `M`, with
+orbit map `π : G → M`, `g ↦ g • x₀`, having continuous local sections around every point, and
+with path-connected stabilizer of `x₀`. Suppose that some `A ∈ H_d(G; ℤ)` satisfies
+`π_* A = ℓ • [M]`, that `π_j(M, x₀)` vanishes for `2 ≤ j ≤ n + 2`, and that some
+`g ∈ π_{n+3}(M, x₀)` satisfies `g ^ ℓ ≠ 1`. Then `M` is abundant with 2-spheres at `x₀`: the
+Hurewicz image of `g` in `H_{n+1}(Ω²M; ℤ)` is a witness of positive degree. -/
+theorem isAbundantWithTwoSpheres_of_zpow_ne_one {x₀ : M} (π : C(G, M))
+    (hπ : ∀ g, π g = g • x₀)
+    (hloc : ∀ y : M, ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ s : M → G, ContinuousOn s U ∧
+      ∀ z ∈ U, s z • x₀ = z)
+    (hstab : IsPathConnected {g : G | g • x₀ = x₀}) {ℓ : ℤ}
+    {A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)}
+    (hA : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom π)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+      d).hom A = ℓ • o.fundamentalClass hd) (n : ℕ)
+    (hlow : ∀ j < n + 1, Subsingleton (π_ (j + 2) M x₀)) (g : π_ (n + 3) M x₀) (hg : g ^ ℓ ≠ 1) :
+    IsAbundantWithTwoSpheres M d x₀ := by
+  -- The Hurewicz isomorphism `π_{n+3}(M) ≅ H_{n+1}(Ω²M; ℤ)`: in degree one for `n = 0`, through
+  -- the loop-space shift `π₃(M) ≅ π₂(ΩM)`.
+  obtain ⟨h⟩ : Nonempty (Additive (π_ (n + 3) M x₀) ≃+
+      ((singularChains ℤ).obj (TopCat.of (Ω (Ω M x₀) (Path.refl x₀)))).homology (n + 1)) := by
+    cases n with
+    | zero =>
+      have : Subsingleton (π_ 2 M x₀) := hlow 0 (by omega)
+      have := (pathConnectedSpace_doubleLoopSpace_iff x₀).2 this
+      exact ⟨(HomotopyGroup.pathLoopSpaceMulEquiv 1).symm.toAdditive.trans
+        (pathLoopSpaceFirstHomologyAddEquiv (Path.refl x₀))⟩
+    | succ m => exact ⟨doubleLoopSpaceHomologyAddEquiv x₀ m hlow⟩
+  -- Carry `H_{n+1}(Ω²M; ℤ)` to `Map_*(S², M)`, with coefficients `ULift ℤ`.
+  let ι := doubleLoopSpaceHomologyIsoBasedMap x₀ (n + 1)
+  refine o.isAbundantWithTwoSpheres_of_smul_ne_zero hd π hπ hloc hstab hA (Nat.succ_pos n)
+    (α := ι.hom (h (Additive.ofMul g))) ?_
+  rw [← map_zsmul, ← map_zsmul, ← ofMul_zpow]
+  intro h0
+  have hι : Function.Injective ι.hom := (ModuleCat.mono_iff_injective ι.hom).1 inferInstance
+  have h₁ : h (Additive.ofMul (g ^ ℓ)) = 0 := hι (h0.trans (map_zero _).symm)
+  exact hg (Additive.ofMul.injective (h.injective (h₁.trans (map_zero h).symm)))
+
+include o hd in
+/-- **A non-aspherical manifold covered by a group action is abundant with 2-spheres**
+(Barraud–Damian–Humilière–Oancea, Proposition 6.29, for a group action). Let a topological group
+`G` act on a path-connected compact oriented `d`-manifold `M`, with orbit map `π : G → M`,
+`g ↦ g • x₀`, having continuous local sections around every point, and with path-connected
+stabilizer of `x₀`. If some `A ∈ H_d(G; ℤ)` satisfies `π_* A = [M]` and `M` is not aspherical,
+then `M` is abundant with 2-spheres at `x₀`. -/
+theorem isAbundantWithTwoSpheres_of_homologyMap_eq_fundamentalClass [PathConnectedSpace M]
+    {x₀ : M} (π : C(G, M)) (hπ : ∀ g, π g = g • x₀)
+    (hloc : ∀ y : M, ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ s : M → G, ContinuousOn s U ∧
+      ∀ z ∈ U, s z • x₀ = z)
+    (hstab : IsPathConnected {g : G | g • x₀ = x₀})
+    {A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)}
+    (hA : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom π)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+      d).hom A = o.fundamentalClass hd) (hM : ¬IsAspherical M x₀) :
+    IsAbundantWithTwoSpheres M d x₀ := by
+  have hA' : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom π)) (ModuleCat.of ℤ (ULift.{0} ℤ))
+      d).hom A = (1 : ℤ) • o.fundamentalClass hd := by
+    rw [one_zsmul, hA]
+  -- The first nontrivial homotopy group `π_{n₀+2}(M, x₀)` above the fundamental group.
+  have hex : ∃ n, ¬Subsingleton (π_ (n + 2) M x₀) := by
+    by_contra! h
+    exact hM (IsAspherical.mk inferInstance h)
+  classical
+  obtain ⟨n₀, hn₀, hmin⟩ : ∃ n₀, ¬Subsingleton (π_ (n₀ + 2) M x₀) ∧
+      ∀ j < n₀, Subsingleton (π_ (j + 2) M x₀) :=
+    ⟨Nat.find hex, Nat.find_spec hex, fun j hj ↦ not_not.1 (Nat.find_min hex hj)⟩
+  cases n₀ with
+  | zero =>
+    have := not_subsingleton_iff_nontrivial.1 hn₀
+    exact o.isAbundantWithTwoSpheres_of_nontrivial_homotopyGroup_two hd π hπ hloc hstab one_ne_zero
+      hA'
+  | succ n =>
+    obtain ⟨g, hg⟩ := @exists_ne (π_ (n + 3) M x₀) (not_subsingleton_iff_nontrivial.1 hn₀) 1
+    exact o.isAbundantWithTwoSpheres_of_zpow_ne_one hd π hπ hloc hstab hA' n hmin g
+      (by rwa [zpow_one])
 
 end HomologicalOrientation
 

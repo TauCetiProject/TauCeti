@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
 public import TauCeti.Topology.MappingSpace.Evaluation
+public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import TauCeti.Topology.Sphere.Suspension
 
 /-!
@@ -41,12 +42,16 @@ does not lie in the image of `c_* : Hₙ(Q, Q ∖ {b}) → Hₙ(E, E ∖ F)`.
 The definition only uses the space `Q`, a point `b` and the dimension `n`; it is meant for closed
 connected oriented `n`-manifolds, where it is the source's definition. Coefficients are the
 integers, written `ULift ℤ` as for the integral fundamental classes of
-`TauCeti.HomologicalOrientation`.
+`TauCeti.HomologicalOrientation`. Witnesses are built as cross products of integral classes, with
+coefficients `ℤ ⊗ ℤ` identified with `ℤ` (`TauCeti.uliftIntTensorIso`), from classes of the double
+loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedMap`).
 
 ## Main definitions
 
 * `TauCeti.IsAbundantWithTwoSpheres Q n b`: `Q` is abundant with 2-spheres at `b`, in
   dimension `n`, characterized by `TauCeti.isAbundantWithTwoSpheres_iff`.
+* `TauCeti.uliftIntTensorIso`: `ℤ ⊗ ℤ ≅ ℤ`, for the coefficients `ULift ℤ`.
+* `TauCeti.doubleLoopSpaceHomologyIsoBasedMap`: `Hₘ(Ω²Q; ℤ) ≅ Hₘ(Map_*(S², Q); ℤ)`.
 
 ## Main results
 
@@ -66,7 +71,8 @@ public section
 
 noncomputable section
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory
+open scoped Topology.Homotopy
 
 namespace TauCeti
 
@@ -136,5 +142,28 @@ theorem isAbundantWithTwoSpheres_of_eq {n : ℕ} {b : Q}
           n).hom α) :
     IsAbundantWithTwoSpheres Q n b :=
   ⟨n, α, hα, Or.inr ⟨rfl, fun ⟨β, hβ⟩ ↦ hc β hβ⟩⟩
+
+/-- The identification of the coefficients `ℤ ⊗ ℤ` of a cross product of integral classes with
+`ℤ`, both written `ULift ℤ` as in `TauCeti.IsAbundantWithTwoSpheres`. -/
+def uliftIntTensorIso :
+    ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) ≅ ModuleCat.of ℤ (ULift.{0} ℤ) :=
+  let e : ModuleCat.of ℤ (ULift.{0} ℤ) ≅ 𝟙_ (ModuleCat.{0} ℤ) :=
+    (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
+  tensorIso e e ≪≫ λ_ (𝟙_ _) ≪≫ e.symm
+
+/-- The integral homology of the double loop space `Ω²Q` at `x` is that of the based mapping space
+`Map_*(S², Q)` of maps sending the north pole to `x`, with the coefficients `ULift ℤ` of
+`TauCeti.IsAbundantWithTwoSpheres`, through the homeomorphism of `Map_*(S², Q)` with the iterated
+loop space (`BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace`). -/
+def doubleLoopSpaceHomologyIsoBasedMap (x : Q) (m : ℕ) :
+    ((singularChains ℤ).obj (TopCat.of (Ω (Ω Q x) (Path.refl x)))).homology m ≅
+      (TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 Q Sphere2.north x))).homology
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) m :=
+  ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).mapIso
+    (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso.symm).app _ ≪≫
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).mapIso (TopCat.isoOfHomeo
+        (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩
+          Sphere2.north).symm)
 
 end TauCeti
