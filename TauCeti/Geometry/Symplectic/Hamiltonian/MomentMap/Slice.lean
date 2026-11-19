@@ -235,7 +235,7 @@ theorem tangentRepresentation_mem_orthogonal_orbitTangent
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)) :
     tangentRepresentation hd g u ∈ (hσ.symplecticFormAt x).orthogonal
       ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) := by
-  have : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+  have : ContMDiffConstSMul I' ∞ G M := ContMDiffSMul.contMDiffConstSMul I
   exact SymplecticForm.apply_mem_orthogonal (ρ := (tangentRepresentation hd).toRepresentation)
     (hσ.symplecticFormAt_tangentRepresentation hσG hd)
     (fun g _ hv ↦ tangentRepresentation_mem_orbitTangent_fundamental hd g hv) g hu
@@ -249,7 +249,7 @@ def symplecticSliceRepresentation :
     stabilizer G x →*
       hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x ≃ₗ[ℝ]
         hσ.SymplecticSlice (InfinitesimalAction.fundamental I G I' M) x :=
-  haveI : ContMDiffConstSMul I' ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+  haveI : ContMDiffConstSMul I' ∞ G M := ContMDiffSMul.contMDiffConstSMul I
   (hσ.symplecticFormAt x).reducedSpaceRepresentation
     (tangentAut fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g x)
     (hσ.isSymplectomorphism_tangentAut hσG
