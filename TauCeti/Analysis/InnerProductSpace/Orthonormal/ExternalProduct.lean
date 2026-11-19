@@ -165,8 +165,8 @@ theorem norm_externalProduct_le (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : F [⋀^F
   refine (norm_wedge_le _ _).trans ?_
   gcongr
 
-/-- **Graded commutativity of the external product**: exchanging the two factors of `E ⊕ F`
-and the two blocks of a frame multiplies the value by `(-1) ^ (k * l)`. -/
+/-- **Graded commutativity of the external product**: exchanging the two factors of the form and
+the two components of `E ⊕ F`, keeping the frame order, multiplies the value by `(-1) ^ (k * l)`. -/
 theorem externalProduct_apply_eq_neg_one_pow_mul (φ : E [⋀^Fin k]→L[ℝ] ℝ)
     (ψ : F [⋀^Fin l]→L[ℝ] ℝ) (u : Fin (k + l) → WithLp 2 (E × F)) :
     externalProduct φ ψ u = (-1) ^ (k * l) * externalProduct ψ φ
@@ -183,21 +183,40 @@ theorem externalProduct_apply_eq_neg_one_pow_mul (φ : E [⋀^Fin k]→L[ℝ] �
     compContinuousLinearMap_apply, ← externalProduct_def]
   simp only [σ, LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
 
+/-- One inequality of `norm_externalProduct_comm`. -/
+private lemma norm_externalProduct_le_norm_externalProduct_swap (φ : E [⋀^Fin k]→L[ℝ] ℝ)
+    (ψ : F [⋀^Fin l]→L[ℝ] ℝ) : ‖externalProduct φ ψ‖ ≤ ‖externalProduct ψ φ‖ := by
+  refine opNorm_le_bound _ (norm_nonneg _) fun u ↦ ?_
+  rw [externalProduct_apply_eq_neg_one_pow_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow,
+    one_mul]
+  refine ((externalProduct ψ φ).le_opNorm _).trans_eq ?_
+  simp only [Function.comp_apply, LinearIsometryEquiv.norm_map]
+  exact congrArg _ ((finCongr (Nat.add_comm l k)).prod_comp fun i ↦ ‖u i‖)
+
 /-- Exchanging the factors does not change the comass of an external product. -/
 theorem norm_externalProduct_comm (φ : E [⋀^Fin k]→L[ℝ] ℝ) (ψ : F [⋀^Fin l]→L[ℝ] ℝ) :
-    ‖externalProduct φ ψ‖ = ‖externalProduct ψ φ‖ := by
-  refine le_antisymm (opNorm_le_bound _ (norm_nonneg _) fun u ↦ ?_)
-    (opNorm_le_bound _ (norm_nonneg _) fun u ↦ ?_)
-  · rw [externalProduct_apply_eq_neg_one_pow_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow,
-      one_mul]
-    refine ((externalProduct ψ φ).le_opNorm _).trans_eq ?_
-    simp only [Function.comp_apply, LinearIsometryEquiv.norm_map]
-    exact congrArg _ ((finCongr (Nat.add_comm l k)).prod_comp fun i ↦ ‖u i‖)
-  · rw [externalProduct_apply_eq_neg_one_pow_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow,
-      one_mul]
-    refine ((externalProduct φ ψ).le_opNorm _).trans_eq ?_
-    simp only [Function.comp_apply, LinearIsometryEquiv.norm_map]
-    exact congrArg _ ((finCongr (Nat.add_comm k l)).prod_comp fun i ↦ ‖u i‖)
+    ‖externalProduct φ ψ‖ = ‖externalProduct ψ φ‖ :=
+  le_antisymm (norm_externalProduct_le_norm_externalProduct_swap φ ψ)
+    (norm_externalProduct_le_norm_externalProduct_swap ψ φ)
+
+/-- **The lower bound** for the comass of an external product: `‖φ‖ ‖ψ‖ ≤ ‖φ ⊠ ψ‖`. It is tested
+on product frames. -/
+theorem norm_mul_norm_le_norm_externalProduct (φ : E [⋀^Fin k]→L[ℝ] ℝ)
+    (ψ : F [⋀^Fin l]→L[ℝ] ℝ) : ‖φ‖ * ‖ψ‖ ≤ ‖externalProduct φ ψ‖ := by
+  set C := ‖externalProduct φ ψ‖
+  have hframe (v : Fin k → E) (w : Fin l → F) :
+      ‖φ v‖ * ‖ψ w‖ ≤ C * (∏ i, ‖v i‖) * ∏ j, ‖w j‖ := by
+    simpa [Fin.prod_univ_add, mul_assoc] using
+      (externalProduct φ ψ).le_opNorm (Fin.append (fun i ↦ WithLp.toLp 2 (v i, (0 : F)))
+        (fun j ↦ WithLp.toLp 2 ((0 : E), w j)))
+  have hψ (w : Fin l → F) : ‖ψ w‖ * ‖φ‖ ≤ C * ∏ j, ‖w j‖ := by
+    simpa [norm_smul] using (‖ψ w‖ • φ).opNorm_le_bound (by positivity) fun v ↦ by
+      rw [smul_apply, norm_smul, norm_norm, mul_comm]
+      exact (hframe v w).trans_eq (by ring)
+  simpa [norm_smul, mul_comm] using
+    (‖φ‖ • ψ).opNorm_le_bound (norm_nonneg (externalProduct φ ψ)) fun w ↦ by
+      rw [smul_apply, norm_smul, norm_norm, mul_comm]
+      exact hψ w
 
 end Normed
 
@@ -208,7 +227,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedA
 
 /-- A product frame `((v₁, 0), …, (v_k, 0), (0, w₁), …, (0, w_l))` of `E ⊕ F` is orthonormal
 exactly when `v` and `w` are. -/
-theorem _root_.orthonormal_append_toLp_iff {v : Fin k → E} {w : Fin l → F} :
+theorem _root_.TauCeti.orthonormal_append_toLp_iff {v : Fin k → E} {w : Fin l → F} :
     Orthonormal ℝ (Fin.append (fun i ↦ WithLp.toLp 2 (v i, (0 : F)))
       (fun j ↦ WithLp.toLp 2 ((0 : E), w j))) ↔ Orthonormal ℝ v ∧ Orthonormal ℝ w := by
   classical
@@ -225,27 +244,8 @@ theorem IsCalibratedFrame.externalProduct {φ : E [⋀^Fin k]→L[ℝ] ℝ} {ψ 
     {v : Fin k → E} {w : Fin l → F} (hv : φ.IsCalibratedFrame v) (hw : ψ.IsCalibratedFrame w) :
     (φ.externalProduct ψ).IsCalibratedFrame (Fin.append (fun i ↦ WithLp.toLp 2 (v i, (0 : F)))
       (fun j ↦ WithLp.toLp 2 ((0 : E), w j))) :=
-  ⟨orthonormal_append_toLp_iff.2 ⟨hv.orthonormal, hw.orthonormal⟩, by
+  ⟨TauCeti.orthonormal_append_toLp_iff.2 ⟨hv.orthonormal, hw.orthonormal⟩, by
     simp [hv.apply_eq_one, hw.apply_eq_one]⟩
-
-/-- **The lower bound** for the comass of an external product: `‖φ‖ ‖ψ‖ ≤ ‖φ ⊠ ψ‖`. -/
-theorem norm_mul_norm_le_norm_externalProduct (φ : E [⋀^Fin k]→L[ℝ] ℝ)
-    (ψ : F [⋀^Fin l]→L[ℝ] ℝ) : ‖φ‖ * ‖ψ‖ ≤ ‖externalProduct φ ψ‖ := by
-  have hframe (v : Fin k → E) (hv : Orthonormal ℝ v) (w : Fin l → F) (hw : Orthonormal ℝ w) :
-      |φ v| * |ψ w| ≤ ‖externalProduct φ ψ‖ := by
-    simpa [abs_mul] using
-      (opNorm_le_iff_le_orthonormal (ω := externalProduct φ ψ)
-        (norm_nonneg (externalProduct φ ψ))).1 le_rfl _
-      (orthonormal_append_toLp_iff.2 ⟨hv, hw⟩)
-  have hψ (w : Fin l → F) (hw : Orthonormal ℝ w) : |ψ w| * ‖φ‖ ≤ ‖externalProduct φ ψ‖ := by
-    have := (opNorm_le_iff_le_orthonormal (ω := |ψ w| • φ)
-      (C := ‖externalProduct φ ψ‖) (norm_nonneg (externalProduct φ ψ))).2 fun v hv ↦ by
-      simpa [abs_mul, mul_comm] using hframe v hv w hw
-    simpa [norm_smul] using this
-  have := (opNorm_le_iff_le_orthonormal (ω := ‖φ‖ • ψ)
-    (C := ‖externalProduct φ ψ‖) (norm_nonneg (externalProduct φ ψ))).2 fun w hw ↦ by
-    simpa [norm_smul, abs_mul, mul_comm] using hψ w hw
-  simpa [norm_smul] using this
 
 /-- An orthonormal `(k + l)`-frame `u` of `E ⊕ F` can be replaced by an orthonormal frame `(a, b)`
 whose first `k` vectors have second components orthogonal to the `l` vectors `w`, without
@@ -291,14 +291,8 @@ private lemma exists_orthonormal_append_le_of_orthonormal (w : Fin l → F)
       simp only [v₀, Fin.append_left]
       exact LinearMap.mem_ker.1 (B (Fin.castLE hK i)).2
     simpa [L] using congr_fun hmem j
-  · let x : Fin (k + l) → W := fun i ↦ ⟨u i, Submodule.subset_span (Set.mem_range_self i)⟩
-    let ΦW := Φ.compContinuousLinearMap W.subtypeL
-    have hx : ∏ i, ‖x i‖ = 1 := Finset.prod_eq_one fun i _ ↦ hu.1 i
-    calc |Φ u| = ‖ΦW x‖ := by simp [ΦW, x, Function.comp_def]
-      _ ≤ ‖ΦW‖ * ∏ i, ‖x i‖ := ΦW.le_opNorm x
-      _ = |Φ (Fin.append _ _)| := by
-        rw [hx, mul_one, ΦW.norm_eq_norm_apply_orthonormalBasis c, hcu]
-        simp [ΦW, Function.comp_def]
+  · rw [hcu, ← Real.norm_eq_abs, ← Real.norm_eq_abs]
+    exact (Φ.norm_apply_eq_norm_apply_orthonormalBasis_span hu c).le
 
 section Decomposable
 
@@ -325,7 +319,8 @@ theorem norm_externalProduct_alternatingFormEquiv_ιMulti (φ : E [⋀^Fin k]→
     (WithLp.norm_snd_le (x := b j)).trans (by simpa using (hab.1 (Fin.natAdd k j)).le)
   rw [Real.norm_eq_abs]
   calc |externalProduct φ ψ u| ≤ |externalProduct φ ψ (Fin.append a b)| := hle _
-    _ = ‖φ fun i ↦ (a i).fst‖ * ‖ψ fun j ↦ (b j).snd‖ := by rw [hsplit, abs_mul]; rfl
+    _ = ‖φ fun i ↦ (a i).fst‖ * ‖ψ fun j ↦ (b j).snd‖ := by
+      rw [hsplit, abs_mul, Real.norm_eq_abs, Real.norm_eq_abs]
     _ ≤ (‖φ‖ * ∏ i, ‖(a i).fst‖) * (‖ψ‖ * ∏ j, ‖(b j).snd‖) := by
       gcongr
       · exact φ.le_opNorm _

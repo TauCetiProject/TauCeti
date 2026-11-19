@@ -85,9 +85,12 @@ theorem pairedWedge_apply_append_of_forall (μ : F₁ →L[ℝ] F₂ →L[ℝ] F
     rcases Int.units_eq_one_or (Perm.sign p.1) with h₁ | h₁ <;>
       rcases Int.units_eq_one_or (Perm.sign p.2) with h₂ | h₂ <;> simp [h₁, h₂]
   rw [pairedWedge_apply, hreindex, ← Fintype.sum_of_injective _ Perm.sumCongrHom_injective
-    (fun _ ↦ μ (φ a) (ψ b)) g hout hin, Finset.sum_const, Finset.card_univ, Fintype.card_prod,
-    Fintype.card_perm, Fintype.card_perm, Fintype.card_fin, Fintype.card_fin,
-    ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.cast_mul, inv_mul_cancel₀ (by positivity),
-    one_smul]
+    (fun _ ↦ μ (φ a) (ψ b)) g hout hin]
+  -- The `k! l!` block-preserving permutations cancel the normalization.
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_prod, Fintype.card_perm,
+    Fintype.card_fin, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
+  convert one_smul ℝ (μ (φ a) (ψ b))
+  push_cast
+  field_simp
 
 end ContinuousAlternatingMap
