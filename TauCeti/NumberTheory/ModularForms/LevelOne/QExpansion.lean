@@ -12,7 +12,6 @@ public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
-import TauCeti.NumberTheory.ModularForms.LevelOne.GradedRing
 import TauCeti.NumberTheory.ModularForms.QExpansion.Graded
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 
@@ -342,7 +341,7 @@ theorem tendsto_discriminant_div_qParam_atImInfty :
       discriminant_qExpansion_coeff_zero
 
 /-- **Algebraic independence of the `q`-expansions of `E₄` and `E₆`.** Composing the injective
-evaluation `ModularForm.evalE₄E₆` (`TauCeti.ModularForm.evalE₄E₆_injective`) with the injective
+evaluation `ModularForm.evalE₄E₆` (`ModularForm.evalE₄E₆_injective`) with the injective
 graded `q`-expansion homomorphism `ModularForm.qExpansionAlgHom` (`qExpansionAlgHom_injective`)
 shows that `qExpansion 1 E₄` and `qExpansion 1 E₆` are algebraically independent over `ℂ`. -/
 theorem algebraicIndependent_qExpansion_E₄_E₆ :
@@ -353,6 +352,7 @@ theorem algebraicIndependent_qExpansion_E₄_E₆ :
     ext i
     fin_cases i <;> simp
   rw [hcomp, AlgHom.coe_comp]
-  exact (qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL).comp evalE₄E₆_injective
+  exact (qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL).comp
+    _root_.ModularForm.evalE₄E₆_injective
 
 end TauCeti.ModularForm
