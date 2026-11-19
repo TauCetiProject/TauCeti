@@ -44,7 +44,9 @@ satisfy the identity and cocycle laws over the relevant base sets
 `Bundle.Trivialization.coordChangeL_coordChangeL_apply`), equal the identity outside the overlap
 (`Bundle.Trivialization.coordChangeL_of_notMem`), and send the coordinate of a point in
 the first trivialization to its coordinate in the second
-(`Bundle.Trivialization.coordChangeL_apply_snd`). Convergence in the total space of a vector bundle
+(`Bundle.Trivialization.coordChangeL_apply_snd`); the fibrewise inverse of the second, after the
+coordinate change from the first, is the fibrewise inverse of the first
+(`Bundle.Trivialization.symmL_coordChangeL`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
 point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`). Over the base set, pulling continuous
 linear maps on the model fibre back to a fibre through a linear trivialization is injective
@@ -229,6 +231,13 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
   rw [← comp_continuousLinearEquivAt_eq_coord_change e e' ⟨hb, hb'⟩]
   ext x
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- Over the intersection of the base sets of two linear trivializations `e'` and `e`, the
+fibrewise inverse `e.symmL` after the coordinate change from `e'` to `e` is `e'.symmL`. -/
+theorem symmL_coordChangeL (hb : b ∈ e'.baseSet ∩ e.baseSet) (v : F) :
+    e.symmL 𝕜 b (e'.coordChangeL 𝕜 e b v) = e'.symmL 𝕜 b v := by
+  rw [e'.coordChangeL_apply e hb, e.symmL_apply hb.2, e.symm_apply_apply_mk hb.2,
+    e'.symmL_apply hb.1]
 
 end FiberBundle
 
