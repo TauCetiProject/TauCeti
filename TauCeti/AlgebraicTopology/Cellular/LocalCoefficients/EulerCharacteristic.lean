@@ -109,6 +109,19 @@ instance finite_twistedCellularChainGroup [∀ x, Module.Finite R (L.obj x)] (n 
     [Finite (cell C n)] : Module.Finite R (twistedCellularChainGroup C L n) :=
   .equiv (twistedCellularChainGroupLinearEquiv C L n).symm
 
+/-- The cellular chain complex with local coefficients vanishes in a degree without cells. -/
+theorem isZero_twistedCellularChainComplex_X (n : ℕ) [IsEmpty (cell C n)] :
+    IsZero ((twistedCellularChainComplex C L).X n) := by
+  rw [twistedCellularChainComplex_X]
+  exact isZero_twistedCellularChainGroup C L n
+
+/-- With finitely generated fibres, the cellular chain complex with local coefficients is finitely
+generated in a degree with finitely many cells. -/
+instance finite_twistedCellularChainComplex_X [∀ x, Module.Finite R (L.obj x)] (n : ℕ)
+    [Finite (cell C n)] : Module.Finite R ((twistedCellularChainComplex C L).X n) := by
+  rw [twistedCellularChainComplex_X]
+  infer_instance
+
 /-- If every fibre of `L` is free of rank `r`, the cellular chain group with coefficients in `L` in
 a degree with finitely many cells has rank `#(n-cells) · r`. -/
 theorem finrank_twistedCellularChainGroup [StrongRankCondition R] [∀ x, Module.Free R (L.obj x)]
@@ -124,9 +137,8 @@ coefficients in a degree with finitely many cells is finitely generated. -/
 theorem finite_twistedCellularHomology [IsNoetherianRing R] [∀ x, Module.Finite R (L.obj x)]
     (n : ℕ) [Finite (cell C n)] :
     Module.Finite R ((twistedCellularChainComplex C L).homology n) :=
-  have : Module.Finite R ((twistedCellularChainComplex C L).sc n).X₂ := by
-    rw [HomologicalComplex.shortComplexFunctor_obj_X₂, twistedCellularChainComplex_X]
-    infer_instance
+  have : Module.Finite R ((twistedCellularChainComplex C L).sc n).X₂ :=
+    finite_twistedCellularChainComplex_X C L n
   ((twistedCellularChainComplex C L).sc n).finite_homology
 
 /-- Over a noetherian ring, with finitely generated fibres, the relative homology with local
@@ -141,12 +153,10 @@ theorem finite_twistedHomology_complexBasePair [IsNoetherianRing R]
 /-- The relative homology with local coefficients of a relative CW complex vanishes in each degree
 without cells. -/
 theorem isZero_twistedHomology_complexBasePair_of_isEmpty_cell (n : ℕ) [IsEmpty (cell C n)] :
-    IsZero ((complexBasePair C).twistedHomology L n) := by
-  have hX : IsZero ((twistedCellularChainComplex C L).X n) := by
-    rw [twistedCellularChainComplex_X]
-    exact isZero_twistedCellularChainGroup C L n
-  exact (HomologicalComplex.ExactAt.of_isZero hX).isZero_homology.of_iso
-    (twistedCellularSingularHomologyIso C L n).symm
+    IsZero ((complexBasePair C).twistedHomology L n) :=
+  (HomologicalComplex.ExactAt.of_isZero
+    (isZero_twistedCellularChainComplex_X C L n)).isZero_homology.of_iso
+      (twistedCellularSingularHomologyIso C L n).symm
 
 /-- The relative homology with local coefficients of a finite-dimensional relative CW complex
 vanishes in all sufficiently large degrees. -/
@@ -169,15 +179,13 @@ dimensions of the cellular homology groups is `r` times the alternating count of
 theorem homologyEulerChar_twistedCellularChainComplex [RelCWComplex.Finite C]
     (hL : ∀ x, finrank k (L.obj x) = r) :
     (twistedCellularChainComplex C L).homologyEulerChar = r * cwEulerChar C := by
-  have (i : ℕ) : Module.Finite k ((twistedCellularChainComplex C L).X i) := by
+  have (i : ℕ) : Module.Finite k ((twistedCellularChainComplex C L).X i) :=
     have := FiniteType.finite_cell (C := C) (D := D) i
-    rw [twistedCellularChainComplex_X]
-    infer_instance
+    finite_twistedCellularChainComplex_X C L i
   have hzero : ∀ᶠ n in Filter.atTop, IsZero ((twistedCellularChainComplex C L).X n) :=
-    FiniteDimensional.eventually_isEmpty_cell.mono fun n hn ↦ by
+    FiniteDimensional.eventually_isEmpty_cell.mono fun n hn ↦
       have : IsEmpty (cell C n) := hn
-      rw [twistedCellularChainComplex_X]
-      exact isZero_twistedCellularChainGroup C L n
+      isZero_twistedCellularChainComplex_X C L n
   rw [← ChainComplex.eulerChar_eq_homologyEulerChar _ hzero, HomologicalComplex.eulerChar,
     GradedObject.eulerChar, cwEulerChar_def, mul_finsum]
   refine finsum_congr fun i ↦ ?_
@@ -254,17 +262,6 @@ section FiniteCWType
 
 variable {R : Type u} [Ring R] (X : Type w) [TopologicalSpace X] [h : FiniteCWType X]
 
-omit h in
-/-- A homotopy equivalence `e : Y ≃ₕ X` identifies the homology of `Y` with coefficients in the
-pulled-back system with the homology of `X` with coefficients in `L`. -/
-private def twistedHomologyIsoOfHomotopyEquiv {Y : Type w} [TopologicalSpace Y]
-    (e : ContinuousMap.HomotopyEquiv Y X)
-    (L : LocalCoefficientSystem.{u, w, max w v} R (TopCat.of X)) (n : ℕ) :
-    ((LocalCoefficientSystem.pullback (TopCat.ofHom e.toFun).hom).obj L).twistedHomology n ≅
-      L.twistedHomology n :=
-  have := e.isIso_twistedHomologyMap L n
-  asIso (LocalCoefficientSystem.twistedHomologyMap (TopCat.ofHom e.toFun) L n)
-
 /-- Over a noetherian ring, the homology of a space of finite CW type with coefficients in a local
 system of finitely generated modules is finitely generated in every degree. -/
 theorem finite_twistedHomology_of_finiteCWType [IsNoetherianRing R]
@@ -274,7 +271,7 @@ theorem finite_twistedHomology_of_finiteCWType [IsNoetherianRing R]
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
   have := finite_twistedHomology_of_cwComplex C
     ((LocalCoefficientSystem.pullback (TopCat.ofHom e.symm.toFun).hom).obj L) n
-  exact .equiv (twistedHomologyIsoOfHomotopyEquiv X e.symm L n).toLinearEquiv
+  exact .equiv (e.symm.twistedHomologyIso L n).toLinearEquiv
 
 /-- The homology of a space of finite CW type with coefficients in any local system vanishes in
 all sufficiently large degrees. -/
@@ -286,7 +283,7 @@ theorem eventually_isZero_twistedHomology_of_finiteCWType
   have : IsEmpty (cell C n) := hn
   exact (isZero_twistedHomology_of_isEmpty_cell C
     ((LocalCoefficientSystem.pullback (TopCat.ofHom e.symm.toFun).hom).obj L) n).of_iso
-      (twistedHomologyIsoOfHomotopyEquiv X e.symm L n).symm
+      (e.symm.twistedHomologyIso L n).symm
 
 /-- **Euler--Poincaré for homology with local coefficients of a space of finite CW type.** If
 every fibre of the local system `L` has dimension `r`, the alternating sum of the dimensions of the
@@ -299,7 +296,7 @@ theorem finsum_finrank_twistedHomology_of_finiteCWType {k : Type u} [DivisionRin
   rw [eulerChar_eq_cwEulerChar e, ← finsum_finrank_twistedHomology_of_finite_cwComplex C
     ((LocalCoefficientSystem.pullback (TopCat.ofHom e.symm.toFun).hom).obj L) fun x ↦ hL _]
   refine finsum_congr fun i ↦ ?_
-  rw [(twistedHomologyIsoOfHomotopyEquiv X e.symm L i).toLinearEquiv.finrank_eq]
+  rw [(e.symm.twistedHomologyIso L i).toLinearEquiv.finrank_eq]
 
 end FiniteCWType
 
