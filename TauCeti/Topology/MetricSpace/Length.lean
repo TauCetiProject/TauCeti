@@ -58,7 +58,8 @@ already has length `edist x y`, by `eVariationOn.edist_le`.
   infimum is attained, by `TauCeti.IsGeodesicSpace.exists_eVariationOn_eq`.
 * `TauCeti.IsLengthSpace.pathConnectedSpace` — a nonempty length space with finite distances is
   path connected.
-* `TauCeti.IsLengthSpace.isPreconnected_ball` — open balls in a length space are preconnected.
+* `TauCeti.IsLengthSpace.isPreconnected_eball` — open balls in an extended-metric length space
+  are preconnected; `TauCeti.IsLengthSpace.isPreconnected_ball` is the metric version.
 * `TauCeti.instIsGeodesicSpace` — a real seminormed space is a geodesic space, its geodesic
   segments being the affine ones (`TauCeti.isGeodesicSegment_lineMap`).
 * `TauCeti.IsGeodesicSegment.eq_lineMap` — in a strictly convex real normed torsor the affine
@@ -197,19 +198,23 @@ theorem IsLengthSpace.exists_eVariationOn_lt_ofReal {X : Type*} [PseudoMetricSpa
   rw [edist_dist]
   exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg dist_nonneg |>.2 hr
 
-/-- Every open ball in a length space is preconnected, including empty balls. -/
-theorem IsLengthSpace.isPreconnected_ball {X : Type*} [PseudoMetricSpace X] [IsLengthSpace X]
-    (p : X) (r : ℝ) : IsPreconnected (Metric.ball p r) := by
+/-- Every open extended-metric ball in a length space is preconnected, including empty balls. -/
+theorem IsLengthSpace.isPreconnected_eball [IsLengthSpace X] (p : X) (r : ℝ≥0∞) :
+    IsPreconnected (Metric.eball p r) := by
   refine isPreconnected_of_forall p fun y hy ↦ ?_
-  obtain ⟨γ, hγ, hlen⟩ := IsLengthSpace.exists_eVariationOn_lt_ofReal
-    (x := p) (y := y) (by simpa only [Metric.mem_ball, dist_comm] using hy)
+  obtain ⟨γ, hγ, hlen⟩ := IsLengthSpace.exists_eVariationOn_lt
+    (x := p) (y := y) (by simpa only [Metric.mem_eball, edist_comm] using hy)
   refine ⟨γ '' Icc 0 1, ?_, ?_, ?_, isPreconnected_Icc.image γ hγ.continuousOn⟩
   · rintro _ ⟨t, ht, rfl⟩
     have hdist := (eVariationOn.edist_le γ ht (left_mem_Icc.2 zero_le_one)).trans_lt hlen
-    rw [hγ.source, edist_dist] at hdist
-    exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg dist_nonneg).1 hdist
+    rwa [hγ.source] at hdist
   · exact ⟨0, left_mem_Icc.2 zero_le_one, hγ.source⟩
   · exact ⟨1, right_mem_Icc.2 zero_le_one, hγ.target⟩
+
+/-- Every open ball in a length space is preconnected, including empty balls. -/
+theorem IsLengthSpace.isPreconnected_ball {X : Type*} [PseudoMetricSpace X] [IsLengthSpace X]
+    (p : X) (r : ℝ) : IsPreconnected (Metric.ball p r) := by
+  simpa only [Metric.eball_ofReal] using IsLengthSpace.isPreconnected_eball p (ENNReal.ofReal r)
 
 end IsLengthSpace
 
