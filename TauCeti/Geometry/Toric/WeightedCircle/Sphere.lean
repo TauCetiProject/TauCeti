@@ -333,7 +333,7 @@ theorem coe_weightedEllipsoidSphereDiffeomorph_symm_apply (ha : 0 < a) (hb : 0 <
 
 /-- The weighted rotation `(w₁, w₂) ↦ (u ^ a w₁, u ^ b w₂)` of `ℂ²` with its Euclidean norm, as a
 homomorphism from the circle to the real linear isometries. Through
-`TauCeti.Sphere.instMulActionUnitSphere` it acts on the unit sphere `S³`. -/
+`LinearIsometryEquiv.instMulActionUnitSphere` it acts on the unit sphere `S³`. -/
 def euclideanWeightedRotation (a b : ℕ) :
     Circle →* (EuclideanSpace ℂ (Fin 2) ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin 2)) where
   toFun u := LinearIsometryEquiv.piLpCongrRight 2 ![rotation (u ^ a), rotation (u ^ b)]
