@@ -28,7 +28,7 @@ the skeletal filtration of a Serre fibration
 (`TauCeti.TopCat.isIso_singularHomologyMap_cellPullbackPairMap`), for the CW structure of the
 sphere, whose `n`-skeleton is the pole. So the Wang map of the top cell is bijective
 (`TauCeti.bijective_wangMap_sphere`), and by its computation
-`TauCeti.MoorePathPullback.wangMap_homologyπ`, right Pontryagin multiplication by `y` is an
+`TauCeti.wangMap_homologyπ_sphere`, right Pontryagin multiplication by `y` is an
 isomorphism `H_q(Ω Sⁿ⁺¹) ≅ H_{q+n}(Ω Sⁿ⁺¹)` of cubical homology with coefficients in any
 commutative ring, whenever `q + n ≥ 1`: it is onto
 (`TauCeti.exists_homologyπ_eq_mulCycles_sphereBoundaryLoopCycle`) and injective
@@ -49,6 +49,8 @@ for the computation of the Pontryagin ring of `Ω Sⁿ⁺¹` as a polynomial rin
 * `TauCeti.isIso_singularHomologyMap_toPathFromLoopPair_sphere`: the pullback over the top cell
   computes the homology of `(P_b Sⁿ⁺¹, Ω_b Sⁿ⁺¹)`.
 * `TauCeti.bijective_wangMap_sphere`: the Wang map of the top cell is bijective.
+* `TauCeti.wangMap_homologyπ_sphere`: the Wang map of the top cell is right multiplication by the
+  boundary loops, up to sign.
 * `TauCeti.exists_homologyπ_eq_mulCycles_sphereBoundaryLoopCycle`,
   `TauCeti.homologyπ_eq_zero_of_mulCycles_sphereBoundaryLoopCycle`: right multiplication by the
   boundary loops is onto and injective on homology.
@@ -259,9 +261,7 @@ private theorem isIso_skeletonPairHom : IsIso (skeletonPairHom h) := by
     ⟨⟨MooreLoopSpace.toMoorePathFrom ω, ?_⟩,
       MooreLoopSpace.ext (MooreLoopSpace.toMoorePath_toMoorePathFrom ω)⟩
   rw [Set.mem_preimage, skeletonLT_eq_pole h]
-  exact (MoorePathFrom.endpoint_apply _).trans
-    ((congrArg MoorePath.target (MooreLoopSpace.toMoorePath_toMoorePathFrom ω)).trans
-      ω.target_eq)
+  exact MooreLoopSpace.endpoint_toMoorePathFrom ω
 
 /-- The projection of the pullback over the top cell factors through the pullback over the disk of
 the top cell and the skeletal pair of the based path fibration. -/
@@ -322,12 +322,36 @@ variable (k : Type) [CommRing k]
 
 /-- The cycle of Moore loops at the pole of `Sⁿ⁺¹` swept out by the boundary of its top cell: the
 boundary of the cube of paths `TauCeti.sphereTopCellPaths`. -/
-abbrev sphereBoundaryLoopCycle :
+def sphereBoundaryLoopCycle :
     ((normalizedCubicalChainComplex k).obj
       (TopCat.of (MooreLoopSpace (sphere (0 : EuclideanSpace ℝ ι) 1) (spherePolePoint h)))).cycles
         n :=
   MoorePathPullback.boundaryLoopCycle (fun _ hd ↦ sphereTopCellCube_of_mem_boundary h hd)
     (sphereTopCellPaths h) (source_sphereTopCellPaths h) (target_sphereTopCellPaths h) k
+
+/-- The cycle of boundary loops of the top cell is the cycle of boundary loops of the cube of
+paths `TauCeti.sphereTopCellPaths`. -/
+theorem sphereBoundaryLoopCycle_def :
+    sphereBoundaryLoopCycle h k =
+      MoorePathPullback.boundaryLoopCycle (fun _ hd ↦ sphereTopCellCube_of_mem_boundary h hd)
+        (sphereTopCellPaths h) (source_sphereTopCellPaths h) (target_sphereTopCellPaths h) k :=
+  (rfl)
+
+/-- **The Wang map of the top cell of `Sⁿ⁺¹` is right multiplication by its boundary loops**, up to
+the sign `(-1) ^ q`: it sends the class of a cycle `z` of degree `q` to `(-1) ^ q [z · y]`, where
+`y` is `TauCeti.sphereBoundaryLoopCycle`. -/
+theorem wangMap_homologyπ_sphere (q : ℕ)
+    (z : ((normalizedCubicalChainComplex k).obj
+      (TopCat.of (MooreLoopSpace (sphere (0 : EuclideanSpace ℝ ι) 1) (spherePolePoint h)))).cycles
+        q) :
+    MoorePathPullback.wangMap (fun _ hd ↦ sphereTopCellCube_of_mem_boundary h hd)
+        (sphereTopCellPaths h) (source_sphereTopCellPaths h) (target_sphereTopCellPaths h) k q
+        ((((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace
+          (sphere (0 : EuclideanSpace ℝ ι) 1) (spherePolePoint h)))).homologyπ q).hom z) =
+      (-1 : k) ^ q • (((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace
+        (sphere (0 : EuclideanSpace ℝ ι) 1) (spherePolePoint h)))).homologyπ (q + n)).hom
+        (NormalizedCubicalChain.mulCycles k z (sphereBoundaryLoopCycle h k)) := by
+  rw [MoorePathPullback.wangMap_homologyπ, sphereBoundaryLoopCycle_def]
 
 /-- **Right multiplication by the boundary loops of the top cell is onto** the homology of
 `Ω Sⁿ⁺¹` in positive degrees: every cycle `w` of degree `q + n ≥ 1` is homologous to `z · y` for a
@@ -348,7 +372,7 @@ theorem exists_homologyπ_eq_mulCycles_sphereBoundaryLoopCycle (q : ℕ) (hq : q
     (((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace
       (sphere (0 : EuclideanSpace ℝ ι) 1) (spherePolePoint h)))).homologyπ q)) a
   refine ⟨z, ?_⟩
-  rw [MoorePathPullback.wangMap_homologyπ] at ha
+  rw [wangMap_homologyπ_sphere] at ha
   have hsq {M : Type} [AddCommGroup M] [Module k M] (x : M) :
       (-1 : k) ^ q • ((-1 : k) ^ q • x) = x := by
     rw [smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
@@ -369,7 +393,7 @@ theorem homologyπ_eq_zero_of_mulCycles_sphereBoundaryLoopCycle (q : ℕ) (hq : 
     (((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace
       (sphere (0 : EuclideanSpace ℝ ι) 1) (spherePolePoint h)))).homologyπ q).hom z = 0 := by
   refine (injective_iff_map_eq_zero _).1 (bijective_wangMap_sphere h k q hq).1 _ ?_
-  rw [MoorePathPullback.wangMap_homologyπ]
+  rw [wangMap_homologyπ_sphere]
   exact (congrArg ((-1 : k) ^ q • ·) hz).trans (smul_zero _)
 
 end TauCeti

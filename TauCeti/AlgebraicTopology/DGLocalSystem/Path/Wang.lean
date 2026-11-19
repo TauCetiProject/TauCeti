@@ -133,8 +133,8 @@ include hf in
 theorem mapsTo_pathCube :
     Set.MapsTo (pathCube τ h₀ h₁) (Cube.boundary (Fin (m + 1)))
       (Set.range (pathFromLoopPair X b).map) := fun d hd ↦
-  ⟨⟨τ d, h₀ d, (h₁ d).trans (hf d hd)⟩, MoorePathFrom.ext
-    ((MooreLoopSpace.toMoorePath_toMoorePathFrom _).trans (toMoorePath_pathCube τ h₀ h₁ d).symm)⟩
+  MooreLoopSpace.range_toMoorePathFrom.ge <| (MoorePathFrom.endpoint_apply _).trans <|
+    (congrArg MoorePath.target (toMoorePath_pathCube τ h₀ h₁ d)).trans ((h₁ d).trans (hf d hd))
 
 /-- The cycle of Moore loops at `b` swept out by the boundary of the cube of paths `τ`. -/
 def boundaryLoopCycle :

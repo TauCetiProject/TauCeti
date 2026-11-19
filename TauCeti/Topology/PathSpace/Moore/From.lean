@@ -192,6 +192,22 @@ theorem toMoorePath_toMoorePathFrom (ω : MooreLoopSpace X b) :
     (toMoorePathFrom ω).toMoorePath = ω.toMoorePath :=
   MoorePathFrom.toMoorePath_mk _ _
 
+/-- A loop read as a path ends at the base point. -/
+@[simp]
+theorem endpoint_toMoorePathFrom (ω : MooreLoopSpace X b) :
+    MoorePathFrom.endpoint X b (toMoorePathFrom ω) = b := by
+  rw [MoorePathFrom.endpoint_apply, toMoorePath_toMoorePathFrom, ω.target_eq]
+
+/-- The loops at `b`, read as paths, are the paths from `b` ending at `b`. -/
+theorem range_toMoorePathFrom :
+    Set.range (toMoorePathFrom : MooreLoopSpace X b → MoorePathFrom X b) =
+      MoorePathFrom.endpoint X b ⁻¹' {b} := by
+  ext γ
+  refine ⟨?_, fun hγ ↦ ⟨⟨γ.toMoorePath, γ.source, hγ⟩, MoorePathFrom.ext ?_⟩⟩
+  · rintro ⟨ω, rfl⟩
+    exact endpoint_toMoorePathFrom ω
+  · exact toMoorePath_toMoorePathFrom _
+
 /-- Reading loops as paths is an embedding. -/
 theorem isEmbedding_toMoorePathFrom :
     Topology.IsEmbedding (toMoorePathFrom : MooreLoopSpace X b → MoorePathFrom X b) :=
