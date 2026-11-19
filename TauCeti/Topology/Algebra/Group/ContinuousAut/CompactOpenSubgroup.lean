@@ -159,8 +159,11 @@ theorem exists_le_conj_smul_eq [SeparatelyContinuousMul G] (K₀ : CompactOpenSu
   let W' : OpenSubgroup K := W.comap K.subtype continuous_subtype_val
   let C : Subgroup K := W'.toSubgroup.normalCore
   have hCK : C.map K.subtype ≤ K := Subgroup.map_subtype_le C
-  let N₀ : OpenSubgroup G :=
-    ⟨C.map K.subtype, K₀.isOpen.isOpenMap_subtype_val _ W'.isOpen_normalCore⟩
+  let N₀ : OpenSubgroup G := ⟨C.map K.subtype, by
+    -- Restate the carrier through the set coercion, which `Subgroup.coe_map` computes as an image.
+    change IsOpen (C.map K.subtype : Set G)
+    rw [Subgroup.coe_map]
+    exact K₀.isOpen.isOpenMap_subtype_val _ W'.isOpen_normalCore⟩
   let N : CompactOpenSubgroup G := ⟨N₀, K₀.isCompact.of_isClosed_subset N₀.isClosed hCK⟩
   -- The core is normal in `K₀`, so `K₀` normalizes it.
   have hC : ((C.map K.subtype).subgroupOf K).Normal := by
