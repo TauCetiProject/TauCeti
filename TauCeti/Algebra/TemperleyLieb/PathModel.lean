@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.TemperleyLieb.Star
 public import TauCeti.Algebra.TemperleyLieb.Trace.Basic
 public import TauCeti.Combinatorics.SimpleGraph.WalkFrom
+public import TauCeti.RingTheory.TraceFunctional.Radical
 public import TauCeti.LinearAlgebra.Matrix.ExtendLast
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.LinearAlgebra.Matrix.PosDef
@@ -54,6 +55,15 @@ generator matrices are self-adjoint, so the representation carries the analytic 
 conjugate transpose, and the trace of `x⋆ * x` is a sum of absolute squares with nonnegative
 weights.
 
+The functions supported on the walks form an invariant subspace, and the restriction of the
+representation to it (`TauCeti.TemperleyLieb.walkRep`) carries the trace as a weighted matrix trace
+whose weights `(r v / r v₀) ^ 2` are nonzero. For self-adjoint weights over an ordered star field
+this weighted trace is faithful on squares: the trace of `x * x⋆` is the squared Hilbert–Schmidt
+norm of `diagonal c * walkRep x`, where `c` takes the walks ending at `v` to `r v / r v₀`. So the
+kernel of the representation on walks is exactly the trace radical, and the quotient of the
+Temperley–Lieb algebra by the trace radical of the Markov trace is the image of the path
+representation on walks.
+
 ## Main definitions
 
 * `TauCeti.TemperleyLieb.IsPathEigenvectorUpTo`: the squared weights satisfy the adjacency
@@ -62,6 +72,7 @@ weights.
 * `TauCeti.TemperleyLieb.pathRep`: the path representation of the Temperley–Lieb algebra.
 * `TauCeti.TemperleyLieb.pathWeight`: the weight of a vertex sequence in the trace.
 * `TauCeti.TemperleyLieb.pathTrace`: the trace of the path model.
+* `TauCeti.TemperleyLieb.walkRep`: the path representation restricted to the walks from `v₀`.
 
 ## Main results
 
@@ -79,6 +90,9 @@ weights.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_isPathEigenvectorUpTo`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_of_graph`: positivity of every
   Markov trace on `n` strands from a bounded-depth or global path model.
+* `TauCeti.TemperleyLieb.ker_walkRep`, `TauCeti.TemperleyLieb.IsMarkovTrace.ker_walkRep`: for
+  nonzero self-adjoint weights over an ordered star field, the kernel of the path representation
+  on walks is the trace radical, of the path-model trace and hence of every Markov trace.
 
 ## References
 
@@ -770,5 +784,169 @@ theorem IsMarkovTrace.map_star_mul_self_nonneg_of_graph [Nonempty V]
     (.of_forall (v₀ := Classical.arbitrary V) hδ n) x
 
 end Star
+
+section Walk
+
+variable (hr : ∀ v, r v ≠ 0) {δ : K} {n : ℕ}
+
+variable (G v₀) in
+/-- The **path representation on walks**: the path representation of the Temperley–Lieb algebra
+on `n` strands, restricted to the functions supported on the walks in `G` from `v₀` with `n`
+steps. This subspace is invariant, since a row of a walk has no entries in the columns of other
+vertex sequences (`TauCeti.TemperleyLieb.pathRep_apply_eq_zero`), so the restriction is again an
+algebra map. -/
+def walkRep (hδ : IsPathEigenvectorUpTo G v₀ r δ n) :
+    TemperleyLieb K δ n →ₐ[K]
+      Matrix {s : Fin (n + 1) → V // G.IsWalkFrom v₀ s} {s : Fin (n + 1) → V // G.IsWalkFrom v₀ s}
+        K where
+  toFun x := (pathRep G v₀ hr hδ x).submatrix Subtype.val Subtype.val
+  map_one' := by rw [map_one, submatrix_one _ Subtype.val_injective]
+  map_mul' x y := by
+    ext s t
+    rw [map_mul, submatrix_apply, Matrix.mul_apply, Matrix.mul_apply,
+      ← Fintype.sum_subtype_add_sum_subtype (G.IsWalkFrom v₀)]
+    -- The columns of other vertex sequences do not contribute to a row of a walk.
+    have h0 : ∑ u : {u // ¬G.IsWalkFrom v₀ u},
+        pathRep G v₀ hr hδ x s.1 u.1 * pathRep G v₀ hr hδ y u.1 t.1 = 0 :=
+      Finset.sum_eq_zero fun u _ ↦ by
+        rw [pathRep_apply_eq_zero hr hδ x fun h ↦ u.2 (h.1.1 s.2), zero_mul]
+    rw [h0, add_zero]
+    simp only [submatrix_apply]
+  map_zero' := by ext; simp
+  map_add' x y := by ext; simp
+  commutes' k := by
+    ext s t
+    simp [algebraMap_matrix_apply, Subtype.ext_iff]
+
+/-- The entries of the path representation on walks are those of the path representation. -/
+@[simp]
+theorem walkRep_apply (hδ : IsPathEigenvectorUpTo G v₀ r δ n) (x : TemperleyLieb K δ n)
+    (s t : {s : Fin (n + 1) → V // G.IsWalkFrom v₀ s}) :
+    walkRep G v₀ hr hδ x s t = pathRep G v₀ hr hδ x s t :=
+  (rfl)
+
+/-- The path representation on walks preserves endpoints: its entry at the walks `s` and `t`
+vanishes unless they end at the same vertex. -/
+theorem walkRep_apply_eq_zero (hδ : IsPathEigenvectorUpTo G v₀ r δ n) (x : TemperleyLieb K δ n)
+    {s t : {s : Fin (n + 1) → V // G.IsWalkFrom v₀ s}}
+    (h : s.1 (Fin.last n) ≠ t.1 (Fin.last n)) : walkRep G v₀ hr hδ x s t = 0 :=
+  pathRep_apply_eq_zero hr hδ x fun h' ↦ h h'.2
+
+/-- The trace of the path model is the trace of the path representation on walks, weighted by
+`TauCeti.TemperleyLieb.pathWeight`: the walks ending at `v` have weight `(r v / r v₀) ^ 2`. -/
+theorem pathTrace_eq_trace_walkRep (hδ : IsPathEigenvectorUpTo G v₀ r δ n)
+    (x : TemperleyLieb K δ n) :
+    pathTrace G v₀ hr hδ x =
+      trace (diagonal (fun s : {s : Fin (n + 1) → V // G.IsWalkFrom v₀ s} ↦
+        pathWeight G v₀ r s.1) * walkRep G v₀ hr hδ x) := by
+  rw [pathTrace_apply, trace, trace, ← Fintype.sum_subtype_add_sum_subtype (G.IsWalkFrom v₀)]
+  -- Every vertex sequence other than a walk has weight `0`.
+  have h0 : ∑ s : {s // ¬G.IsWalkFrom v₀ s},
+      (diagonal (pathWeight G v₀ r) * pathRep G v₀ hr hδ x).diag s.1 = 0 :=
+    Finset.sum_eq_zero fun s _ ↦ by
+      rw [Matrix.diag_apply, diagonal_mul, pathWeight_def, ite_eq_right s.2, zero_mul]
+  rw [h0, add_zero]
+  simp only [Matrix.diag_apply, diagonal_mul, walkRep_apply]
+
+section Star
+
+variable [StarRing K] (hrs : ∀ v, IsSelfAdjoint (r v))
+
+include hrs in
+/-- For self-adjoint weights `r`, the path representation on walks carries the analytic adjoint
+of the Temperley–Lieb algebra to the conjugate transpose of matrices. -/
+@[simp]
+theorem walkRep_star [Fact (IsSelfAdjoint δ)] (hδ : IsPathEigenvectorUpTo G v₀ r δ n)
+    (x : TemperleyLieb K δ n) :
+    walkRep G v₀ hr hδ (star x) = (walkRep G v₀ hr hδ x)ᴴ := by
+  ext s t
+  rw [walkRep_apply, pathRep_star hr hrs, conjTranspose_apply, conjTranspose_apply, walkRep_apply]
+
+include hrs in
+/-- For self-adjoint weights `r`, the image of the path representation on walks is closed under
+the conjugate transpose, since it is generated by self-adjoint matrices. Unlike
+`TauCeti.TemperleyLieb.walkRep_star`, this needs no analytic adjoint on the Temperley–Lieb
+algebra. -/
+private theorem exists_walkRep_eq_conjTranspose (hδ : IsPathEigenvectorUpTo G v₀ r δ n)
+    (x : TemperleyLieb K δ n) : ∃ y, walkRep G v₀ hr hδ y = (walkRep G v₀ hr hδ x)ᴴ := by
+  induction x using TemperleyLieb.induction with
+  | e i =>
+    refine ⟨e δ i, ?_⟩
+    ext s t
+    rw [conjTranspose_apply, walkRep_apply, walkRep_apply, pathRep_e, ← conjTranspose_apply,
+      conjTranspose_pathGenerator hrs rfl rfl]
+  | algebraMap k =>
+    refine ⟨algebraMap K _ (star k), ?_⟩
+    ext s t
+    simp [algebraMap_matrix_apply, Subtype.ext_iff, apply_ite star, eq_comm]
+  | add x y hx hy =>
+    obtain ⟨x', hx'⟩ := hx
+    obtain ⟨y', hy'⟩ := hy
+    exact ⟨x' + y', by rw [map_add, map_add, hx', hy', conjTranspose_add]⟩
+  | mul x y hx hy =>
+    obtain ⟨x', hx'⟩ := hx
+    obtain ⟨y', hy'⟩ := hy
+    exact ⟨y' * x', by rw [map_mul, map_mul, hx', hy', conjTranspose_mul]⟩
+
+variable [PartialOrder K] [StarOrderedRing K]
+
+include hrs in
+/-- **The kernel of the path representation on walks is the trace radical.** For nonzero
+self-adjoint weights `r`, an element of the Temperley–Lieb algebra on `n` strands acts by zero on
+the walks from `v₀` exactly when it lies in the trace radical of the trace of the path model.
+Faithfulness of the weighted trace on the walks gives the inclusion of the radical in the
+kernel. -/
+theorem ker_walkRep (hδ : IsPathEigenvectorUpTo G v₀ r δ n) :
+    RingHom.ker (walkRep G v₀ hr hδ) =
+      (pathTrace G v₀ hr hδ).traceRadical (pathTrace_mul_comm hr hδ) := by
+  ext x
+  rw [RingHom.mem_ker, LinearMap.mem_traceRadical]
+  refine ⟨fun hx y ↦ by rw [pathTrace_eq_trace_walkRep, map_mul, hx, zero_mul, mul_zero,
+    trace_zero], fun hx ↦ ?_⟩
+  -- The weight of a walk `s` is the square of the self-adjoint scalar `c s`.
+  set c : {s : Fin (n + 1) → V // G.IsWalkFrom v₀ s} → K :=
+    fun s ↦ r (s.1 (Fin.last n)) / r v₀
+  have hcs (s) : star (c s) = c s := ((hrs _).div (hrs _)).star_eq
+  have hw : diagonal (fun s : {s : Fin (n + 1) → V // G.IsWalkFrom v₀ s} ↦
+      pathWeight G v₀ r s.1) = diagonal c * (diagonal c)ᴴ := by
+    rw [diagonal_conjTranspose, diagonal_mul_diagonal]
+    congr 1
+    ext s
+    rw [pathWeight_def, ite_eq_left s.2, Pi.star_apply, hcs, sq]
+  -- So for `y` acting by the conjugate transpose of `x`, the trace of `x * y` is the squared
+  -- Hilbert–Schmidt norm of `(diagonal c)ᴴ * walkRep x`.
+  obtain ⟨y, hy⟩ := exists_walkRep_eq_conjTranspose hr hrs hδ x
+  have h : trace ((diagonal c)ᴴ * walkRep G v₀ hr hδ x *
+      ((diagonal c)ᴴ * walkRep G v₀ hr hδ x)ᴴ) = 0 := by
+    rw [conjTranspose_mul, conjTranspose_conjTranspose, ← mul_assoc, trace_mul_comm,
+      ← mul_assoc, ← mul_assoc, ← hw, mul_assoc, ← hy, ← map_mul,
+      ← pathTrace_eq_trace_walkRep]
+    exact hx y
+  rw [trace_mul_conjTranspose_self_eq_zero_iff] at h
+  ext s t
+  have hst := congr_fun₂ h s t
+  rw [diagonal_conjTranspose, diagonal_mul, Matrix.zero_apply, mul_eq_zero, Pi.star_apply,
+    hcs] at hst
+  rw [Matrix.zero_apply]
+  exact hst.resolve_left (div_ne_zero (hr _) (hr _))
+
+include hrs in
+/-- **The kernel of the path representation on walks is the trace radical of every Markov
+trace.** For nonzero self-adjoint weights `r` satisfying the eigenvector equation up to depth `n`,
+an element of the Temperley–Lieb algebra on `n` strands acts by zero on the walks from `v₀` exactly
+when it lies in the trace radical of a Markov trace at the loop value `δ`. Hence the trace-radical
+quotient on `n` strands is isomorphic to the image of the path representation on walks
+(`Ideal.kerLiftAlg`). -/
+theorem IsMarkovTrace.ker_walkRep {tr : ∀ k : ℕ, TemperleyLieb K δ k →ₗ[K] K}
+    (htr : IsMarkovTrace K δ tr) (hδ : IsPathEigenvectorUpTo G v₀ r δ n) :
+    RingHom.ker (walkRep G v₀ hr hδ) = (tr n).traceRadical (htr.map_mul_comm n) := by
+  rw [TemperleyLieb.ker_walkRep hr hrs]
+  ext x
+  simp only [LinearMap.mem_traceRadical,
+    htr.eq_pathTrace_of_isPathEigenvectorUpTo G v₀ hr hδ le_rfl]
+
+end Star
+
+end Walk
 
 end TauCeti.TemperleyLieb
