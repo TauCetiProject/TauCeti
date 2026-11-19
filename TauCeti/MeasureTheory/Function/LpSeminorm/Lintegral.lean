@@ -35,9 +35,9 @@ finiteness of the lower integral of its squared extended norm
 
 The same identification gives monotone convergence for the seminorm: the `Lᵖ` seminorm of the
 supremum of an increasing sequence of functions with values in `[0, ∞]` is the supremum of their
-seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`. Fatou's lemma gives
-the seminorm of an almost everywhere limit of such functions: if `‖h n‖_p ≤ C n` and `C n → M`, the
-limit has seminorm at most `M` (`MeasureTheory.eLpNorm_le_of_ae_tendsto_of_eLpNorm_le`).
+seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`. Fatou's lemma bounds
+the seminorm of an almost everywhere limit of such functions by the `liminf` of their seminorms
+(`MeasureTheory.eLpNorm_le_liminf_eLpNorm_of_ae_tendsto`), also for `p = ∞`.
 -/
 
 public section
@@ -145,29 +145,37 @@ theorem eLpNorm_iSup_eq_iSup_eLpNorm {f : ℕ → α → ℝ≥0∞} (hf : ∀ n
     (hmono.mono fun x hx m n hmn ↦ ENNReal.rpow_le_rpow (hx hmn) hr.le),
     ENNReal.iSup_rpow_of_pos (by positivity)]
 
-/-- **Fatou's lemma for the `Lᵠ` seminorm.** Let `q ≠ 0, ∞`. If functions `h n` with values in
-`[0, ∞]` converge almost everywhere to `H` and `‖h n‖_q ≤ C n` with `C n → M`, then `‖H‖_q ≤ M`. -/
-theorem eLpNorm_le_of_ae_tendsto_of_eLpNorm_le {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ∞)
-    {h : ℕ → α → ℝ≥0∞} {H : α → ℝ≥0∞} (hh : ∀ n, AEMeasurable (h n) μ) (hH : AEMeasurable H μ)
-    (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ h n x) atTop (𝓝 (H x))) {C : ℕ → ℝ≥0∞} {M : ℝ≥0∞}
-    (hC : Tendsto C atTop (𝓝 M)) (hbound : ∀ n, eLpNorm (h n) q μ ≤ C n) :
-    eLpNorm H q μ ≤ M := by
+/-- **Fatou's lemma for the `Lᵖ` seminorm.** If functions `h n` with values in `[0, ∞]` converge
+almost everywhere to `H`, then `‖H‖_q ≤ liminf ‖h n‖_q`, for every exponent `q`. -/
+theorem eLpNorm_le_liminf_eLpNorm_of_ae_tendsto {q : ℝ≥0∞} {h : ℕ → α → ℝ≥0∞} {H : α → ℝ≥0∞}
+    (hh : ∀ n, AEMeasurable (h n) μ) (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ h n x) atTop (𝓝 (H x))) :
+    eLpNorm H q μ ≤ liminf (fun n ↦ eLpNorm (h n) q μ) atTop := by
+  have hH : AEMeasurable H μ := aemeasurable_of_tendsto_metrizable_ae' hh hlim
+  rcases eq_or_ne q 0 with rfl | hq0
+  · simp [eLpNorm_exponent_zero hH.aestronglyMeasurable]
+  rcases eq_or_ne q ∞ with rfl | hq
+  · rw [eLpNorm_exponent_top hH.aestronglyMeasurable]
+    have hbd : ∀ᵐ x ∂μ, ∀ n, h n x ≤ eLpNorm (h n) ∞ μ := ae_all_iff.2 fun n ↦ by
+      simpa only [eLpNorm_exponent_top (hh n).aestronglyMeasurable, eNorm_eq_self] using
+        ae_le_eLpNormEssSup (f := h n) (μ := μ)
+    refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
+    filter_upwards [hlim, hbd] with x hx hb
+    rw [eNorm_eq_self, ← hx.liminf_eq]
+    exact liminf_le_liminf (.of_forall hb)
   have hq' : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
-  have hpow (n : ℕ) : ∫⁻ x, h n x ^ q.toReal ∂μ ≤ C n ^ q.toReal := by
-    have := lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq (hh n).aestronglyMeasurable
-    simp only [eNorm_eq_self] at this
-    rw [this]
-    exact ENNReal.rpow_le_rpow (hbound n) hq'.le
-  have hH' := lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq hH.aestronglyMeasurable
-  simp only [eNorm_eq_self] at hH'
-  rw [← ENNReal.rpow_le_rpow_iff hq', ← hH']
+  have hpow {f : α → ℝ≥0∞} (hf : AEMeasurable f μ) :
+      ∫⁻ x, f x ^ q.toReal ∂μ = eLpNorm f q μ ^ q.toReal := by
+    simpa only [eNorm_eq_self] using
+      lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq hf.aestronglyMeasurable
+  have hmono : Monotone fun t : ℝ≥0∞ ↦ t ^ q.toReal := fun _ _ hst ↦ ENNReal.rpow_le_rpow hst hq'.le
+  rw [← ENNReal.rpow_le_rpow_iff hq', ← hpow hH,
+    hmono.map_liminf_of_continuousAt _ (ENNReal.continuous_rpow_const.continuousAt)]
   calc ∫⁻ x, H x ^ q.toReal ∂μ = ∫⁻ x, liminf (fun n ↦ h n x ^ q.toReal) atTop ∂μ :=
         lintegral_congr_ae (hlim.mono fun x hx ↦
           ((ENNReal.continuous_rpow_const.tendsto _).comp hx).liminf_eq.symm)
     _ ≤ liminf (fun n ↦ ∫⁻ x, h n x ^ q.toReal ∂μ) atTop :=
         lintegral_liminf_le' fun n ↦ (hh n).pow_const _
-    _ ≤ liminf (fun n ↦ C n ^ q.toReal) atTop := liminf_le_liminf (Eventually.of_forall hpow)
-    _ = M ^ q.toReal := ((ENNReal.continuous_rpow_const.tendsto _).comp hC).liminf_eq
+    _ = _ := by simp only [hpow (hh _), Function.comp_def]
 
 end MeasureTheory
 

@@ -18,10 +18,12 @@ the Schrödinger propagator. A pair `(q, r)` is a non-endpoint admissible pair w
 `2 / q + n / r = n / 2`; then `2 ≤ r ≤ ∞`, and `r = ∞` occurs only on the line, at `(4, ∞)`. Write
 `p` for the Hölder conjugate of `q`. The `TT*` argument of
 `TauCeti.Analysis.PDE.Schrodinger.Strichartz` bounds the pairings of `S(t) f` and of the retarded
-Duhamel integral with `L²`-valued test functions. Testing against truncated extremal functions
-(`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`) turns
+Duhamel integral with `L²`-valued test functions. The norming theorem
+`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le` turns
 these weak estimates into bounds in the mixed norm
-`‖u‖_{L^q_t L^r_x} = ‖t ↦ ‖u(t)‖_{L^r}‖_{L^q}`, for every `r ≤ ∞`:
+`‖u‖_{L^q_t L^r_x} = ‖t ↦ ‖u(t)‖_{L^r}‖_{L^q}`, for every `r ≤ ∞` (for finite `r` by testing against
+truncated extremal functions, and at `r = ∞` as a limit of finite exponents on sets of finite
+measure):
 
 * the homogeneous estimate `‖S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖₂`
   (`TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_le`);

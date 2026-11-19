@@ -23,6 +23,12 @@ via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving
 * the `L²` adjoint `adjoint_operatorMultiplication` and `operatorMultiplicationStarAlgHom`;
 * `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` for `[SigmaFinite μ]`.
 
+Multiplication by the indicator of a measurable set `s` is the operator
+`MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs` on `Lp E p μ`, built from the class of `1_s` in
+scalar `L∞`. It acts as `f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`), the `Lʳ`
+seminorm of `1_s f` is that of `f` on `s` (`eLpNorm_indicatorMultiplication`), and it is symmetric
+on `L²` (`inner_indicatorMultiplication_left`).
+
 Compare `MeasureTheory.Lp.multiplicationOperator` and `BoundedContinuousFunction.mulLp`.
 -/
 
@@ -171,6 +177,51 @@ theorem isometry_operatorMultiplication [SigmaFinite μ] :
   AddMonoidHomClass.isometry_of_norm _ norm_operatorMultiplication
 
 end NormedSpace
+
+section Indicator
+
+variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)] {s : Set α}
+
+variable (𝕜 p) in
+/-- Multiplication by the indicator of a measurable set `s`, as a bounded operator on `Lp E p μ`:
+the Hölder product with the class of `1_s` in `L∞`. -/
+def indicatorMultiplication (hs : MeasurableSet s) : Lp E p μ →L[𝕜] Lp E p μ :=
+  (ContinuousLinearMap.lsmul 𝕜 𝕜).holderL μ ∞ p p
+    (((memLp_top_const (1 : 𝕜)).indicator hs.nullMeasurableSet).toLp (s.indicator fun _ ↦ 1))
+
+/-- `indicatorMultiplication` multiplies by the indicator of `s` almost everywhere. -/
+theorem indicatorMultiplication_ae (hs : MeasurableSet s) (f : Lp E p μ) :
+    indicatorMultiplication 𝕜 p hs f =ᵐ[μ] s.indicator f := by
+  filter_upwards [(ContinuousLinearMap.lsmul 𝕜 𝕜).coeFn_holder (r := p)
+    (((memLp_top_const (1 : 𝕜)).indicator hs.nullMeasurableSet).toLp (s.indicator fun _ ↦ 1)) f,
+    MemLp.coeFn_toLp ((memLp_top_const (1 : 𝕜) (μ := μ)).indicator hs.nullMeasurableSet)]
+    with x h h₁
+  rw [indicatorMultiplication, holderL_apply_apply, h, h₁]
+  by_cases hx : x ∈ s <;> simp [hx]
+
+/-- The `Lʳ` seminorm of `1_s f` is the `Lʳ` seminorm of `f` on `s`, for every exponent `r`. -/
+theorem eLpNorm_indicatorMultiplication (hs : MeasurableSet s) (f : Lp E p μ) (r : ℝ≥0∞) :
+    eLpNorm (indicatorMultiplication 𝕜 p hs f) r μ = eLpNorm f r (μ.restrict s) := by
+  rw [eLpNorm_congr_ae (indicatorMultiplication_ae hs f),
+    eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet]
+
+end Indicator
+
+section InnerProductSpace
+
+variable [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {s : Set α}
+
+/-- Multiplication by an indicator is symmetric on `L²`. -/
+theorem inner_indicatorMultiplication_left (hs : MeasurableSet s) (f g : Lp E 2 μ) :
+    ⟪indicatorMultiplication 𝕜 2 hs f, g⟫_𝕜 = ⟪f, indicatorMultiplication 𝕜 2 hs g⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [indicatorMultiplication_ae (𝕜 := 𝕜) hs f,
+    indicatorMultiplication_ae (𝕜 := 𝕜) hs g] with x hf hg
+  by_cases hx : x ∈ s <;> simp [hf, hg, hx]
+
+end InnerProductSpace
 
 section Hilbert
 

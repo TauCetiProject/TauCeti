@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.Analysis.Normed.Module.Normalize.Lipschitz
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
@@ -461,45 +462,18 @@ section Top
 
 variable {A : Set X}
 
-/-- Multiplication of `L²` functions by the indicator of a measurable set of finite measure, as
-the Hölder product with the indicator in `L^∞`. -/
-private def indicatorL2 (hA : MeasurableSet A) (hμA : μ A ≠ ∞) : Lp E 2 μ →L[𝕜] Lp E 2 μ :=
-  (ContinuousLinearMap.lsmul 𝕜 𝕜).holderL μ ∞ 2 2 (indicatorConstLp ∞ hA hμA (1 : 𝕜))
-
-private theorem coeFn_indicatorL2 (hA : MeasurableSet A) (hμA : μ A ≠ ∞) (u : Lp E 2 μ) :
-    indicatorL2 (𝕜 := 𝕜) hA hμA u =ᵐ[μ] A.indicator u := by
-  filter_upwards [ContinuousLinearMap.coeFn_holder (ContinuousLinearMap.lsmul 𝕜 𝕜) (r := 2)
-    (indicatorConstLp ∞ hA hμA (1 : 𝕜)) u, indicatorConstLp_coeFn (p := ∞) (hs := hA)
-    (hμs := hμA) (c := (1 : 𝕜))] with x h h₁
-  rw [indicatorL2, ContinuousLinearMap.holderL_apply_apply, h, h₁]
-  by_cases hx : x ∈ A <;> simp [hx]
-
-private theorem inner_indicatorL2_left (hA : MeasurableSet A) (hμA : μ A ≠ ∞) (u v : Lp E 2 μ) :
-    ⟪indicatorL2 (𝕜 := 𝕜) hA hμA u, v⟫_𝕜 = ⟪u, indicatorL2 (𝕜 := 𝕜) hA hμA v⟫_𝕜 := by
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_indicatorL2 (𝕜 := 𝕜) hA hμA u, coeFn_indicatorL2 (𝕜 := 𝕜) hA hμA v]
-    with x hu hv
-  by_cases hx : x ∈ A <;> simp [hu, hv, hx]
-
-private theorem eLpNorm_indicatorL2 (hA : MeasurableSet A) (hμA : μ A ≠ ∞) (u : Lp E 2 μ)
-    (r : ℝ≥0∞) :
-    eLpNorm (indicatorL2 (𝕜 := 𝕜) hA hμA u) r μ = eLpNorm u r (μ.restrict A) := by
-  rw [eLpNorm_congr_ae (coeFn_indicatorL2 hA hμA u),
-    eLpNorm_indicator_eq_eLpNorm_restrict hA.nullMeasurableSet]
-
 /-- Hölder's inequality on `A`: `‖1_A u‖₁ ≤ ‖u‖_{r'} μ(A) ^ (1 / r)` for the exponent `r = n` and
 its Hölder conjugate `r' = (1 - 1 / n)⁻¹`. -/
-private theorem eLpNorm_indicatorL2_one_le (hA : MeasurableSet A) (hμA : μ A ≠ ∞) (u : Lp E 2 μ)
+private theorem eLpNorm_indicatorMultiplication_one_le (hA : MeasurableSet A) (u : Lp E 2 μ)
     {n : ℕ} (hn : 2 ≤ n) :
-    eLpNorm (indicatorL2 (𝕜 := 𝕜) hA hμA u) 1 μ ≤
+    eLpNorm (Lp.indicatorMultiplication 𝕜 2 hA u) 1 μ ≤
       eLpNorm u (1 - (n : ℝ≥0∞)⁻¹)⁻¹ μ * μ A ^ (1 / (n : ℝ)) := by
   have hinv : (n : ℝ≥0∞)⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (by exact_mod_cast one_le_two.trans hn)
   have hexp : 1 / (1 : ℝ≥0∞).toReal - 1 / ((1 - (n : ℝ≥0∞)⁻¹)⁻¹).toReal = 1 / (n : ℝ) := by
     rw [ENNReal.toReal_inv, ENNReal.toReal_sub_of_le hinv ENNReal.one_ne_top, ENNReal.toReal_inv,
       ENNReal.toReal_natCast]
     simp
-  rw [eLpNorm_indicatorL2]
+  rw [Lp.eLpNorm_indicatorMultiplication]
   have h1 : (1 : ℝ≥0∞) ≤ (1 - (n : ℝ≥0∞)⁻¹)⁻¹ := ENNReal.one_le_inv.2 tsub_le_self
   refine (eLpNorm_le_eLpNorm_mul_rpow_measure_univ h1
     (Lp.aestronglyMeasurable u).restrict).trans ?_
@@ -514,21 +488,21 @@ private theorem eLpNorm_eLpNorm_restrict_natCast_le [SigmaFinite ρ] (hq : q ≠
     {Φ : β → Lp E 2 μ} (hΦ : AEStronglyMeasurable Φ ρ) {M : ℝ≥0∞}
     (hM : ∀ G : β → Lp E 2 μ, Integrable G ρ → Integrable (fun b ↦ ⟪Φ b, G b⟫_𝕜) ρ →
       ‖∫ b, ⟪Φ b, G b⟫_𝕜 ∂ρ‖ₑ ≤ M * eLpNorm (fun b ↦ eLpNorm (G b) 1 μ) q' ρ)
-    (hA : MeasurableSet A) (hμA : μ A ≠ ∞) {n : ℕ} (hn : 2 ≤ n) :
+    (hA : MeasurableSet A) {n : ℕ} (hn : 2 ≤ n) :
     eLpNorm (fun b ↦ eLpNorm (Φ b) n (μ.restrict A)) q ρ ≤ M * μ A ^ (1 / (n : ℝ)) := by
   have hr2 : (2 : ℝ≥0∞) ≤ n := by exact_mod_cast hn
   have := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr2)
-  have hΦA : AEStronglyMeasurable (fun b ↦ indicatorL2 (𝕜 := 𝕜) hA hμA (Φ b)) ρ :=
-    (indicatorL2 (𝕜 := 𝕜) hA hμA).continuous.comp_aestronglyMeasurable hΦ
+  have hΦA : AEStronglyMeasurable (fun b ↦ Lp.indicatorMultiplication 𝕜 2 hA (Φ b)) ρ :=
+    (Lp.indicatorMultiplication 𝕜 2 hA).continuous.comp_aestronglyMeasurable hΦ
   have hbound : ∀ G : β → Lp E 2 μ, Integrable G ρ →
-      Integrable (fun b ↦ ⟪indicatorL2 (𝕜 := 𝕜) hA hμA (Φ b), G b⟫_𝕜) ρ →
-      ‖∫ b, ⟪indicatorL2 (𝕜 := 𝕜) hA hμA (Φ b), G b⟫_𝕜 ∂ρ‖ₑ ≤
+      Integrable (fun b ↦ ⟪Lp.indicatorMultiplication 𝕜 2 hA (Φ b), G b⟫_𝕜) ρ →
+      ‖∫ b, ⟪Lp.indicatorMultiplication 𝕜 2 hA (Φ b), G b⟫_𝕜 ∂ρ‖ₑ ≤
         M * μ A ^ (1 / (n : ℝ)) * eLpNorm (fun b ↦ eLpNorm (G b) (1 - (n : ℝ≥0∞)⁻¹)⁻¹ μ) q' ρ := by
     intro G hG hpair
-    set GA : β → Lp E 2 μ := fun b ↦ indicatorL2 (𝕜 := 𝕜) hA hμA (G b)
-    have hGA : Integrable GA ρ := (indicatorL2 (𝕜 := 𝕜) hA hμA).integrable_comp hG
-    have heq : (fun b ↦ ⟪indicatorL2 (𝕜 := 𝕜) hA hμA (Φ b), G b⟫_𝕜) = fun b ↦ ⟪Φ b, GA b⟫_𝕜 :=
-      funext fun b ↦ inner_indicatorL2_left hA hμA (Φ b) (G b)
+    set GA : β → Lp E 2 μ := fun b ↦ Lp.indicatorMultiplication 𝕜 2 hA (G b)
+    have hGA : Integrable GA ρ := (Lp.indicatorMultiplication 𝕜 2 hA).integrable_comp hG
+    have heq : (fun b ↦ ⟪Lp.indicatorMultiplication 𝕜 2 hA (Φ b), G b⟫_𝕜) = fun b ↦ ⟪Φ b, GA b⟫_𝕜 :=
+      funext fun b ↦ Lp.inner_indicatorMultiplication_left hA (Φ b) (G b)
     rw [heq] at hpair ⊢
     have hle : eLpNorm (fun b ↦ eLpNorm (GA b) 1 μ) q' ρ ≤
         μ A ^ (1 / (n : ℝ)) * eLpNorm (fun b ↦ eLpNorm (G b) (1 - (n : ℝ≥0∞)⁻¹)⁻¹ μ) q' ρ := by
@@ -537,10 +511,10 @@ private theorem eLpNorm_eLpNorm_restrict_natCast_le [SigmaFinite ρ] (hq : q ≠
       refine eLpNorm_mono_eNorm
         (hGA.aestronglyMeasurable.aemeasurable_eLpNorm_Lp .rfl _).aestronglyMeasurable fun b ↦ ?_
       rw [eNorm_eq_self, eNorm_eq_self, mul_comm]
-      exact eLpNorm_indicatorL2_one_le hA hμA (G b) hn
+      exact eLpNorm_indicatorMultiplication_one_le hA (G b) hn
     calc _ ≤ M * eLpNorm (fun b ↦ eLpNorm (GA b) 1 μ) q' ρ := hM GA hGA hpair
       _ ≤ _ := by rw [mul_assoc]; gcongr
-  simpa only [eLpNorm_indicatorL2] using
+  simpa only [Lp.eLpNorm_indicatorMultiplication] using
     hΦA.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top (𝕜 := 𝕜) (q' := q') hq
       (ENNReal.natCast_ne_top _) hr2 hbound
 
@@ -562,15 +536,16 @@ private theorem eLpNorm_eLpNorm_restrict_top_le [SigmaFinite ρ] (hq : q ≠ ∞
   have hC : Tendsto (fun n : ℕ ↦ M * (μ A + 1) ^ (1 / ((n + 2 : ℕ) : ℝ))) atTop (𝓝 M) := by
     simpa only [mul_one, Function.comp_def] using ENNReal.Tendsto.const_mul
       ((ENNReal.tendsto_rpow_one_div_atTop (by simp) hc).comp hk) (.inl one_ne_zero)
-  refine eLpNorm_le_of_ae_tendsto_of_eLpNorm_le (ENNReal.HolderConjugate.ne_zero q q') hq
-    (fun n ↦ hΦ.aemeasurable_eLpNorm_Lp hAc ((n + 2 : ℕ) : ℝ≥0∞))
-    (hΦ.aemeasurable_eLpNorm_Lp hAc ∞) (ae_of_all _ fun b ↦ ?_) hC fun n ↦
-      (eLpNorm_eLpNorm_restrict_natCast_le hq hΦ hM hA hμA le_add_self).trans ?_
+  refine (eLpNorm_le_liminf_eLpNorm_of_ae_tendsto
+    (fun n ↦ hΦ.aemeasurable_eLpNorm_Lp hAc ((n + 2 : ℕ) : ℝ≥0∞)) (ae_of_all _ fun b ↦ ?_)).trans ?_
   · have hr : Tendsto (fun n : ℕ ↦ ((n + 2 : ℕ) : ℝ≥0)) atTop atTop :=
       tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 2)
     simpa only [Function.comp_def, ENNReal.coe_natCast] using
       (TauCeti.tendsto_eLpNorm_atTop (f := (Φ b : X → E)) (μ := μ.restrict A)).comp hr
-  · gcongr
+  · rw [← hC.liminf_eq]
+    refine liminf_le_liminf (.of_forall fun n ↦
+      (eLpNorm_eLpNorm_restrict_natCast_le hq hΦ hM hA le_add_self).trans ?_)
+    gcongr
     exact le_self_add
 
 /-- **Norming mixed norms at `r = ∞`.** If `Φ` satisfies the weak bound against test functions in
@@ -585,16 +560,7 @@ private theorem eLpNorm_eLpNorm_top_le_of_forall_enorm_integral_inner_le
   set S := spanningSets μ
   -- `‖u‖_∞` is the increasing limit of the `L^∞` norms over the sets `S k`, which exhaust `X`.
   have hsup (u : Lp E 2 μ) : eLpNorm u ∞ μ = ⨆ k, eLpNorm u ∞ (μ.restrict (S k)) := by
-    refine le_antisymm ?_ (iSup_le fun k ↦ eLpNorm_mono_measure _ Measure.restrict_le_self)
-    have hk (k : ℕ) : ∀ᵐ x ∂μ, x ∈ S k → ‖u x‖ₑ ≤ eLpNorm u ∞ (μ.restrict (S k)) :=
-      (ae_restrict_iff' (measurableSet_spanningSets μ k)).1 (by
-        rw [eLpNorm_exponent_top (Lp.aestronglyMeasurable u).restrict]
-        exact ae_le_eLpNormEssSup)
-    rw [eLpNorm_exponent_top (Lp.aestronglyMeasurable u)]
-    refine essSup_le_of_ae_le _ ?_
-    filter_upwards [ae_all_iff.2 hk] with x hx
-    obtain ⟨k, hxk⟩ := Set.mem_iUnion.1 ((iUnion_spanningSets μ).symm ▸ Set.mem_univ x)
-    exact (hx k hxk).trans (le_iSup (fun k ↦ eLpNorm u ∞ (μ.restrict (S k))) k)
+    rw [← eLpNorm_exponent_top_restrict_iUnion, iUnion_spanningSets, Measure.restrict_univ]
   simp_rw [hsup]
   rw [eLpNorm_iSup_eq_iSup_eLpNorm
     (fun k ↦ hΦ.aemeasurable_eLpNorm_Lp
