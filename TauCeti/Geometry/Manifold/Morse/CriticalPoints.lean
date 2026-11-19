@@ -26,6 +26,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.RegularValue.Open
 import TauCeti.Topology.Instances.Real.SeparatingGrid
+import TauCeti.Topology.Order.Sublevel
 
 /-!
 # The critical set of a real function on a manifold
@@ -119,7 +120,8 @@ polynomial in the Morse inequalities.
   points, with `TauCeti.natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
-  `TauCeti.IsMorse.criticalCount_neg`.
+  `TauCeti.IsMorse.criticalCount_neg`, and `TauCeti.IsMorse.setOf_neg_band_eq`: the critical
+  points of `-f` in a band, counted by index, are those of `f` counted by complementary index.
 * `TauCeti.IsMorse.criticalPointsIndexNegEquiv`: the critical points of `-f` of index `j` are those
   of `f` of index `dim M - j`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
@@ -1227,6 +1229,15 @@ theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
   · have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
       hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     exact ⟨⟨hx, h₂, h₁⟩, by omega⟩
+
+/-- The hypotheses on `f` over `[a, b]` hold for `-f` over `[-b, -a]`. -/
+theorem IsMorse.neg_band (hf : IsMorse I f) {a b : ℝ}
+    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) :
+    IsMorse I (-f) ∧ IsCompact ((-f) ⁻¹' Icc (-b) (-a)) ∧ IsRegularValue I 𝓘(ℝ) (-f) (-b) ∧
+      IsRegularValue I 𝓘(ℝ) (-f) (-a) :=
+  ⟨hf.neg, by rwa [preimage_neg_Icc_neg], isRegularValue_neg_iff.2 (by rwa [neg_neg]),
+    isRegularValue_neg_iff.2 (by rwa [neg_neg])⟩
 
 /-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a manifold of dimension `m`, the
 signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by the factor `(-1)ᵐ`,

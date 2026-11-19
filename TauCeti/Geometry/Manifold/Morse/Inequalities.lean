@@ -683,7 +683,9 @@ theorem IsMorse.finite_singularHomology_bandPair (hf : IsMorse I f) {a b : ℝ} 
     (nonempty_linearEquiv_singularHomology_bandPair V hf.contMDiff hab hcompact ha n).some.symm
 
 omit [Module.Finite k V] in
-private theorem finrank_singularHomology_bandPair (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ}
+/-- Above a regular value `a`, the relative homology of the band pair `(f⁻¹[a, b], f⁻¹(a))` has
+the dimension of that of the sublevel pair `({f ≤ b}, {f ≤ a})`. -/
+theorem finrank_singularHomology_bandPair (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ}
     (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
     (n : ℕ) :
     finrank k ((bandPair f hab).singularHomology V n : ModuleCat k) =
@@ -767,16 +769,6 @@ The band of `-f` between `-b` and `-a` is the band of `f` relative to its upper 
 `dim M - i` of `f`. So the statements for the band pair of `-f` give the Morse inequalities for the
 upper band pair `(f⁻¹[a, b], f⁻¹(b))`, with the critical points counted by their complementary
 index. -/
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
-/-- The hypotheses on `f` over `[a, b]` hold for `-f` over `[-b, -a]`. -/
-private theorem IsMorse.neg_band (hf : IsMorse I f) {a b : ℝ}
-    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
-    (hb : IsRegularValue I 𝓘(ℝ) f b) :
-    IsMorse I (-f) ∧ IsCompact ((-f) ⁻¹' Icc (-b) (-a)) ∧ IsRegularValue I 𝓘(ℝ) (-f) (-b) ∧
-      IsRegularValue I 𝓘(ℝ) (-f) (-a) :=
-  ⟨hf.neg, by rwa [preimage_neg_Icc_neg], isRegularValue_neg_iff.2 (by rwa [neg_neg]),
-    isRegularValue_neg_iff.2 (by rwa [neg_neg])⟩
 
 /-- **Finiteness of relative homology for a cobordism relative to its outgoing boundary.** Let `f`
 be a Morse function, and `a ≤ b` regular values with compact band `f⁻¹[a, b]`. Then the relative
