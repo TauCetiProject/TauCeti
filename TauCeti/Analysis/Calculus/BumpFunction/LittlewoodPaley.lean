@@ -41,6 +41,10 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 
 ## Main declarations
 
+* `TauCeti.card_filter_ne_zero_le_of_mul_eq_zero`: a family of functions, labelled injectively by
+  integers, whose members with labels at least `L` apart have disjoint supports has at most `L`
+  nonzero members at each point, so that `TauCeti.sum_sq_le_of_mul_eq_zero`: if its values lie
+  in `[-1, 1]`, its sum of squares is at most `L`. Both families of cutoffs below are instances.
 * `ContDiffBump.littlewoodPaley`: the dyadic cutoff `ψⱼ`.
 * `ContDiffBump.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply`: `ψⱼ` is the rescaling
   `ψ₀ (2^{-j} ·)`.
@@ -97,6 +101,43 @@ public section
 
 open Metric Set TauCeti
 open scoped ContDiff
+
+namespace TauCeti
+
+variable {ι α : Type*}
+
+/-- **Bounded overlap of a family labelled by integers.** Let the indices of `ψ : ι → α → ℝ` be
+labelled by an injective `e : ι → ℤ`, and let `ψ i` and `ψ k` have disjoint supports whenever
+`e i + L ≤ e k`. Then at every `ξ` at most `L` of the `ψ i` are nonzero, over any finite set of
+indices. -/
+theorem card_filter_ne_zero_le_of_mul_eq_zero {ψ : ι → α → ℝ} {e : ι → ℤ}
+    (he : Function.Injective e) {L : ℕ} (hL : ∀ i k, e i + L ≤ e k → ∀ ξ, ψ i ξ * ψ k ξ = 0)
+    (s : Finset ι) (ξ : α) : (s.filter fun i ↦ ψ i ξ ≠ 0).card ≤ L := by
+  set t := s.filter fun i ↦ ψ i ξ ≠ 0
+  rcases (t.image e).eq_empty_or_nonempty with ht | ht
+  · simp [Finset.image_eq_empty.1 ht]
+  -- The labels of the nonzero members lie in `[a, a + L)`, where `a` is the least of them.
+  obtain ⟨i₀, hi₀, hi₀a⟩ := Finset.mem_image.1 ((t.image e).min'_mem ht)
+  refine (Finset.card_le_card_of_injOn e (t := Finset.Ico ((t.image e).min' ht)
+    ((t.image e).min' ht + L)) (fun i hi ↦ ?_) he.injOn).trans (by simp)
+  refine Finset.mem_Ico.2 ⟨(t.image e).min'_le _ (Finset.mem_image_of_mem e hi),
+    lt_of_not_ge fun h ↦ ?_⟩
+  exact mul_ne_zero (Finset.mem_filter.1 hi₀).2 (Finset.mem_filter.1 hi).2
+    (hL i₀ i (hi₀a ▸ h) ξ)
+
+/-- **Bounded sum of squares of a family labelled by integers.** If, in addition to the hypotheses
+of `TauCeti.card_filter_ne_zero_le_of_mul_eq_zero`, every `ψ i` takes values in `[-1, 1]`, then
+`∑ᵢ ψ i ξ ² ≤ L` for every `ξ`, over any finite set of indices. -/
+theorem sum_sq_le_of_mul_eq_zero {ψ : ι → α → ℝ} {e : ι → ℤ} (he : Function.Injective e)
+    {L : ℕ} (hL : ∀ i k, e i + L ≤ e k → ∀ ξ, ψ i ξ * ψ k ξ = 0)
+    (habs : ∀ i ξ, |ψ i ξ| ≤ 1) (s : Finset ι) (ξ : α) : ∑ i ∈ s, ψ i ξ ^ 2 ≤ L := by
+  rw [← Finset.sum_filter_of_ne fun i _ h ↦ by simpa using h]
+  calc ∑ i ∈ s.filter (fun i ↦ ψ i ξ ≠ 0), ψ i ξ ^ 2
+      ≤ ∑ _i ∈ s.filter (fun i ↦ ψ i ξ ≠ 0), (1 : ℝ) :=
+        Finset.sum_le_sum fun i _ ↦ (sq_le_one_iff_abs_le_one _).2 (habs i ξ)
+    _ ≤ L := by simpa using card_filter_ne_zero_le_of_mul_eq_zero he hL s ξ
+
+end TauCeti
 
 namespace ContDiffBump
 
@@ -283,32 +324,14 @@ every `ξ` at most `L` cutoffs `ψⱼ` are nonzero, over any finite set of indic
 theorem exists_card_filter_littlewoodPaley_ne_zero_le :
     ∃ L : ℕ, ∀ (s : Finset ℤ) (ξ : E), (s.filter fun j ↦ φ.littlewoodPaley j ξ ≠ 0).card ≤ L := by
   obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
-  refine ⟨L, fun s ξ ↦ ?_⟩
-  set t := s.filter fun j ↦ φ.littlewoodPaley j ξ ≠ 0
-  rcases t.eq_empty_or_nonempty with ht | ht
-  · simp [ht]
-  -- The nonzero cutoffs at `ξ` have indices in `[j₀, j₀ + L)`, where `j₀` is the least of them.
-  have hsub : t ⊆ Finset.Ico (t.min' ht) (t.min' ht + L) := fun j hj ↦ by
-    refine Finset.mem_Ico.2 ⟨t.min'_le j hj, lt_of_not_ge fun hjL ↦ ?_⟩
-    exact mul_ne_zero (Finset.mem_filter.1 (t.min'_mem ht)).2 (Finset.mem_filter.1 hj).2
-      (hL _ _ hjL ξ)
-  exact (Finset.card_le_card hsub).trans (by simp)
+  exact ⟨L, card_filter_ne_zero_le_of_mul_eq_zero Function.injective_id hL⟩
 
 /-- **Bounded sum of squares of the dyadic cutoffs.** There is `L`, depending only on `φ`, with
 `∑ⱼ ψⱼ ξ ² ≤ L` for every `ξ`, over any finite set of indices `j ∈ ℤ`. -/
 theorem exists_sum_sq_littlewoodPaley_le :
     ∃ L : ℕ, ∀ (s : Finset ℤ) (ξ : E), ∑ j ∈ s, φ.littlewoodPaley j ξ ^ 2 ≤ L := by
-  obtain ⟨L, hL⟩ := φ.exists_card_filter_littlewoodPaley_ne_zero_le
-  refine ⟨L, fun s ξ ↦ ?_⟩
-  set t := s.filter fun j ↦ φ.littlewoodPaley j ξ ≠ 0
-  have hst : ∑ j ∈ t, φ.littlewoodPaley j ξ ^ 2 = ∑ j ∈ s, φ.littlewoodPaley j ξ ^ 2 :=
-    Finset.sum_filter_of_ne fun j _ h ↦ by simpa using h
-  rw [← hst]
-  calc ∑ j ∈ t, φ.littlewoodPaley j ξ ^ 2 ≤ ∑ _j ∈ t, (1 : ℝ) :=
-        Finset.sum_le_sum fun j _ ↦
-          (sq_le_one_iff_abs_le_one _).2 (φ.abs_littlewoodPaley_le_one j ξ)
-    _ = t.card := by simp
-    _ ≤ L := mod_cast hL s ξ
+  obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
+  exact ⟨L, sum_sq_le_of_mul_eq_zero Function.injective_id hL φ.abs_littlewoodPaley_le_one⟩
 
 /-- **The neighbouring cutoffs sum to `1` on the support of `ψⱼ`.** If the cutoffs whose indices
 differ by at least `L` have disjoint supports, then `(∑_{|k - j| < L} ψₖ) ψⱼ = ψⱼ`. -/
@@ -666,34 +689,17 @@ theorem exists_card_filter_inhomogeneousLittlewoodPaley_ne_zero_le :
     ∃ L : ℕ, ∀ (s : Finset ℕ) (ξ : E),
       (s.filter fun j ↦ φ.inhomogeneousLittlewoodPaley j ξ ≠ 0).card ≤ L := by
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
-  refine ⟨L, fun s ξ ↦ ?_⟩
-  set t := s.filter fun j ↦ φ.inhomogeneousLittlewoodPaley j ξ ≠ 0
-  rcases t.eq_empty_or_nonempty with ht | ht
-  · simp [ht]
-  -- The nonzero pieces at `ξ` have indices in `[j₀, j₀ + L)`, where `j₀` is the least of them.
-  have hsub : t ⊆ Finset.Ico (t.min' ht) (t.min' ht + L) := fun j hj ↦ by
-    refine Finset.mem_Ico.2 ⟨t.min'_le j hj, lt_of_not_ge fun hjL ↦ ?_⟩
-    exact mul_ne_zero (Finset.mem_filter.1 (t.min'_mem ht)).2 (Finset.mem_filter.1 hj).2
-      (hL _ _ hjL ξ)
-  exact (Finset.card_le_card hsub).trans (by simp)
+  exact ⟨L, card_filter_ne_zero_le_of_mul_eq_zero Nat.cast_injective
+    fun j k h ↦ hL j k (by exact_mod_cast h)⟩
 
 /-- **Bounded sum of squares.** There is `L`, depending only on `φ`, with `∑ⱼ ψⱼ ξ ² ≤ L` for every
 `ξ`, over any finite set of indices: at each `ξ` at most `L` consecutive pieces are nonzero, and
 each lies in `[-1, 1]`. -/
 theorem exists_sum_sq_inhomogeneousLittlewoodPaley_le :
     ∃ L : ℕ, ∀ (s : Finset ℕ) (ξ : E), ∑ j ∈ s, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 ≤ L := by
-  obtain ⟨L, hL⟩ := φ.exists_card_filter_inhomogeneousLittlewoodPaley_ne_zero_le
-  refine ⟨L, fun s ξ ↦ ?_⟩
-  set t := s.filter fun j ↦ φ.inhomogeneousLittlewoodPaley j ξ ≠ 0
-  have hst : ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 =
-      ∑ j ∈ s, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 :=
-    Finset.sum_filter_of_ne fun j _ h ↦ by simpa using h
-  rw [← hst]
-  calc ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 ≤ ∑ _j ∈ t, (1 : ℝ) :=
-        Finset.sum_le_sum fun j _ ↦
-          (sq_le_one_iff_abs_le_one _).2 (φ.abs_inhomogeneousLittlewoodPaley_le_one j ξ)
-    _ = t.card := by simp
-    _ ≤ L := mod_cast hL s ξ
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
+  exact ⟨L, sum_sq_le_of_mul_eq_zero Nat.cast_injective (fun j k h ↦ hL j k (by exact_mod_cast h))
+    φ.abs_inhomogeneousLittlewoodPaley_le_one⟩
 
 /-- At every `ξ` the squares `ψⱼ ξ ²` of the pieces are summable over `j`. -/
 theorem summable_inhomogeneousLittlewoodPaley_sq (ξ : E) :

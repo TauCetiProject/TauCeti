@@ -61,7 +61,10 @@ defined, it agrees with Mathlib's multipliers.
   `TauCeti.coeFn_fourier_convolutionLp`, its Fourier-side form `𝓕 (k ⋆ f) = 𝓕 k • 𝓕 f`.
 * `MeasureTheory.Lp.tendsto_fourierMultiplierCLM_apply`: if the symbols `m i` are eventually
   uniformly bounded and converge to `m₀` almost everywhere along a countably generated filter,
-  then `T_{m i} f → T_{m₀} f` in `L²`.
+  then `T_{m i} f → T_{m₀} f` in `L²`, and
+  `MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_of_tendsto`: if the partial sums of real
+  symbols take values in `[-1, 1]` and converge to `1` almost everywhere, the partial sums of the
+  multipliers converge to the identity in `L²`.
 
 ## Kernels of multipliers
 
@@ -396,6 +399,40 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
       coeFn_lpSMul (r := 2) m₀ (𝓕 f), hm] with ξ h₁ h₂ h₃
     simp only [h₁, h₂, Pi.smul_apply']
     exact h₃.smul_const _
+
+/-- If the partial sums `∑_{i ∈ t N} ψᵢ` of real symbols take values in `[-1, 1]` and converge to
+`1` almost everywhere, then the partial sums `∑_{i ∈ t N} T_{m i} f` of the Fourier multipliers
+with these symbols converge to `f` in `L²` for every `f ∈ L²`. -/
+theorem tendsto_sum_fourierMultiplierCLM_of_tendsto {ι : Type*} [Countable ι]
+    {ψ : ι → E → ℝ} {m : ι → Lp ℂ ∞ (volume : Measure E)}
+    (hm : ∀ i, m i =ᵐ[volume] fun ξ ↦ (ψ i ξ : ℂ))
+    (t : ℕ → Finset ι) (hle : ∀ N ξ, |∑ i ∈ t N, ψ i ξ| ≤ 1)
+    (hlim : ∀ᵐ ξ ∂(volume : Measure E), Tendsto (fun N ↦ ∑ i ∈ t N, ψ i ξ) atTop (𝓝 1))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun N ↦ ∑ i ∈ t N, fourierMultiplierCLM F (m i) f) atTop (𝓝 f) := by
+  -- The partial sums are the multipliers with the symbols `∑_{i ∈ t N} ψᵢ`.
+  have hae : ∀ᵐ ξ ∂(volume : Measure E), ∀ N,
+      (∑ i ∈ t N, m i) ξ = ∑ i ∈ t N, (ψ i ξ : ℂ) := by
+    refine ae_all_iff.2 fun N ↦ ?_
+    filter_upwards [coeFn_fun_finsetSum (t N) m, ae_all_iff.2 hm] with ξ h₁ h₂
+    rw [h₁]
+    exact Finset.sum_congr rfl fun i _ ↦ h₂ i
+  have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
+  have h := tendsto_fourierMultiplierCLM_apply (F := F) (l := atTop)
+    (m := fun N ↦ ∑ i ∈ t N, m i) (m₀ := h1.toLp _) (C := 1) ?_ ?_ f
+  · rw [fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp] at h
+    simpa only [one_smul, id_apply, fourierMultiplierCLM_sum, FunLike.coe_sum,
+      Finset.sum_apply] using h
+  · refine Eventually.of_forall fun N ↦ ?_
+    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
+    refine ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound ?_)
+    filter_upwards [hae] with ξ hξ
+    rw [hξ N, ← Complex.ofReal_sum, Complex.norm_real, Real.norm_eq_abs]
+    exact hle N ξ
+  · filter_upwards [hae, h1.coeFn_toLp, hlim] with ξ h₁ h₂ h₃
+    simp only [h₁, h₂]
+    simpa [Function.comp_def, Complex.ofReal_sum] using
+      (Complex.continuous_ofReal.tendsto _).comp h₃
 
 end MeasureTheory.Lp
 

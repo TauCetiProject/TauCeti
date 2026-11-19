@@ -94,7 +94,8 @@ Hence, for `f, g ∈ L²(V, F)` and a finite set `t` of indices,
 which Cauchy–Schwarz for the banded double sum (`ENNReal.tsum_sum_mul_le_of_card_le`) bounds by
 `2 L ∫ S f · S g`. The partial sums `∑_{j ∈ t} Δⱼ f` converge to `f` in `L²` along suitable
 finite sets `t` (`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`,
-`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_littlewoodPaley`), and Hölder's inequality and
+`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_littlewoodPaley`, both instances of
+`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_of_tendsto`), and Hölder's inequality and
 the first inequality at the exponent `q` give `|⟪f, g⟫| ≤ 2 L C_q ‖S f‖_p ‖g‖_q`.
 
 ## Homogeneous blocks on `Lᵖ`
@@ -557,16 +558,33 @@ private theorem inner_fourierMultiplierCLM_eq_sum [Countable ι] (hP : IsDyadic 
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   exact (isSelfAdjoint_fourierMultiplierCLM_toLp_symbol hP k).isSymmetric _ _
 
-/-- The pairing bound `|⟪∑_{i ∈ t} Δᵢ f, g⟫| ≤ L ∫ S f · S g` for the partial sums of `f`. -/
-private theorem enorm_inner_sum_fourierMultiplierCLM_le [DecidableEq ι] [Countable ι]
-    (hP : IsDyadic ψ σ e) (W : ι → Finset ι) {L : ℕ} (hWc : ∀ i, (W i).card ≤ L)
-    (hWc' : ∀ (s : Finset ι) k, (s.filter (k ∈ W ·)).card ≤ L)
+/-- Windows `W i` of indices whose labels under an injective `c : ι → ℤ` lie within `L` of the
+label of `i` have at most `2 L` elements, and every index lies in at most `2 L` of them. -/
+private theorem card_window_le [DecidableEq ι] {c : ι → ℤ} (hc : Function.Injective c) {L : ℕ}
+    {W : ι → Finset ι} (hWL : ∀ i k, k ∈ W i → |c k - c i| < L) :
+    (∀ i, (W i).card ≤ 2 * L) ∧ ∀ (s : Finset ι) k, (s.filter (k ∈ W ·)).card ≤ 2 * L := by
+  -- A set of indices whose labels lie within `L` of `a` injects into `(a - L, a + L)`.
+  have h : ∀ (u : Finset ι) (a : ℤ), (∀ k ∈ u, |c k - a| < L) → u.card ≤ 2 * L :=
+    fun u a hu ↦ (Finset.card_le_card_of_injOn c (t := Finset.Ioo (a - L) (a + L))
+      (fun k hk ↦ by
+        have := abs_sub_lt_iff.1 (hu k hk); rw [Finset.mem_coe, Finset.mem_Ioo]; omega)
+      hc.injOn).trans (by simp only [Int.card_Ioo]; omega)
+  refine ⟨fun i ↦ h _ (c i) (hWL i), fun s k ↦ h _ (c k) fun j hj ↦ ?_⟩
+  rw [abs_sub_comm]
+  exact hWL j k (Finset.mem_filter.1 hj).2
+
+/-- The pairing bound `|⟪∑_{i ∈ t} Δᵢ f, g⟫| ≤ 2 L ∫ S f · S g` for the partial sums of `f`. -/
+private theorem enorm_inner_sum_fourierMultiplierCLM_le [Countable ι]
+    (hP : IsDyadic ψ σ e) (W : ι → Finset ι) {c : ι → ℤ} (hc : Function.Injective c) {L : ℕ}
+    (hWL : ∀ i k, k ∈ W i → |c k - c i| < L)
     (hW : ∀ i ξ, (∑ k ∈ W i, ψ k ξ) * ψ i ξ = ψ i ξ) (t : Finset ι)
     (f g : Lp F 2 (volume : Measure V)) :
     ‖⟪∑ i ∈ t, Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume) f, g⟫_ℂ‖ₑ ≤
-      L * ∫⁻ x,
+      ↑(2 * L) * ∫⁻ x,
         (∑' i, ‖Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
           (∑' k, ‖Lp.fourierMultiplierCLM F ((σ k).toLp ∞ volume) g x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) := by
+  classical
+  obtain ⟨hWc, hWc'⟩ := card_window_le hc hWL
   set M : ι → Lp F 2 (volume : Measure V) →L[ℂ] Lp F 2 (volume : Measure V) :=
     fun i ↦ Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume)
   have hmeas : ∀ i k, AEMeasurable (fun x ↦ ‖M i f x‖ₑ * ‖M k g x‖ₑ) :=
@@ -585,19 +603,19 @@ private theorem enorm_inner_sum_fourierMultiplierCLM_le [DecidableEq ι] [Counta
         rw [lintegral_finsetSum' _ fun i _ ↦ Finset.aemeasurable_fun_sum _ fun k _ ↦ hmeas i k]
         exact Finset.sum_congr rfl fun i _ ↦
           (lintegral_finsetSum' _ fun k _ ↦ hmeas i k).symm
-    _ ≤ ∫⁻ x, L * ((∑' i, ‖M i f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
+    _ ≤ ∫⁻ x, ↑(2 * L) * ((∑' i, ‖M i f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ) *
           (∑' k, ‖M k g x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) :=
         lintegral_mono fun x ↦ (_root_.sum_le_tsum _).trans
           (ENNReal.tsum_sum_mul_le_of_card_le W hWc hWc' _ _)
     _ = _ := lintegral_const_mul' _ _ (by finiteness)
 
 /-- **The reverse square function inequality for a dyadic family**:
-`‖f‖_p ≤ C ‖(∑ᵢ ‖Δᵢ f‖²)^{1/2}‖_p`, given neighbourhoods `W i` of bounded size on which the
-symbols sum to `1` on the support of `ψᵢ`, and partial sums of the blocks converging to the
-identity in `L²`. -/
-private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [DecidableEq ι] [Countable ι] [Nontrivial V]
-    (hP : IsDyadic ψ σ e) (W : ι → Finset ι) {L : ℕ} (hWc : ∀ i, (W i).card ≤ L)
-    (hWc' : ∀ (s : Finset ι) k, (s.filter (k ∈ W ·)).card ≤ L)
+`‖f‖_p ≤ C ‖(∑ᵢ ‖Δᵢ f‖²)^{1/2}‖_p`, given neighbourhoods `W i`, of indices whose labels under
+an injective `c : ι → ℤ` lie within `L` of the label of `i`, on which the symbols sum to `1` on the
+support of `ψᵢ`, and partial sums of the blocks converging to the identity in `L²`. -/
+private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [Countable ι] [Nontrivial V]
+    (hP : IsDyadic ψ σ e) (W : ι → Finset ι) {c : ι → ℤ} (hc : Function.Injective c) {L : ℕ}
+    (hWL : ∀ i k, k ∈ W i → |c k - c i| < L)
     (hW : ∀ i ξ, (∑ k ∈ W i, ψ k ξ) * ψ i ξ = ψ i ξ) (t : ℕ → Finset ι)
     (ht : ∀ f : Lp F 2 (volume : Measure V),
       Tendsto (fun N ↦ ∑ i ∈ t N, Lp.fourierMultiplierCLM F ((σ i).toLp ∞ volume) f) atTop (𝓝 f))
@@ -614,7 +632,7 @@ private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [DecidableEq ι] [Countable �
   have hq : 1 < q := (ENNReal.HolderConjugate.lt_top_iff_one_lt p q).1 hp_top.lt_top
   have hq_top : q ≠ (∞ : ℝ≥0∞) := (ENNReal.HolderConjugate.ne_top_iff_ne_one q p).2 hp.ne'
   obtain ⟨C, hC⟩ := exists_eLpNorm_tsum_le (F := F) hP hq hq_top
-  refine ⟨L * C, fun m hm f ↦ ?_⟩
+  refine ⟨(2 * L : ℕ) * C, fun m hm f ↦ ?_⟩
   have hm' : ∀ i, m i = (σ i).toLp ∞ volume := fun i ↦ eq_toLp_symbol hP (hm i)
   simp_rw [hm']
   set S : Lp F 2 (volume : Measure V) → V → ℝ≥0∞ := fun f x ↦
@@ -644,15 +662,15 @@ private theorem exists_eLpNorm_le_mul_eLpNorm_tsum [DecidableEq ι] [Countable �
     rw [← eLpNorm_congr_ae hGg]
     exact hC _ (coeFn_toLp_symbol hP) G
   -- The pairing is the limit of the pairings of the partial sums of `f`.
-  have hlim : ‖⟪f, G⟫_ℂ‖ₑ ≤ L * ∫⁻ x, S f x * S G x :=
+  have hlim : ‖⟪f, G⟫_ℂ‖ₑ ≤ ↑(2 * L) * ∫⁻ x, S f x * S G x :=
     le_of_tendsto' ((continuous_eNorm.tendsto _).comp ((ht f).inner tendsto_const_nhds))
-      fun N ↦ enorm_inner_sum_fourierMultiplierCLM_le hP W hWc hWc' hW (t N) f G
+      fun N ↦ enorm_inner_sum_fourierMultiplierCLM_le hP W hc hWL hW (t N) f G
   rw [hpair]
-  calc ‖⟪f, G⟫_ℂ‖ₑ ≤ L * ∫⁻ x, S f x * S G x := hlim
-    _ ≤ L * (eLpNorm (S f) p volume * (C * eLpNorm g q volume)) := by
+  calc ‖⟪f, G⟫_ℂ‖ₑ ≤ ↑(2 * L) * ∫⁻ x, S f x * S G x := hlim
+    _ ≤ ↑(2 * L) * (eLpNorm (S f) p volume * (C * eLpNorm g q volume)) := by
         gcongr
         exact hHolder.trans (by gcongr)
-    _ = ↑((L : ℝ≥0) * C) * eLpNorm (S f) p volume * eLpNorm g q volume := by
+    _ = ↑(((2 * L : ℕ) : ℝ≥0) * C) * eLpNorm (S f) p volume * eLpNorm g q volume := by
         push_cast
         ring
 
@@ -735,39 +753,6 @@ variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
   [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
 
-/-- Partial sums of Fourier multipliers whose real symbols sum to values in `[-1, 1]` and converge
-to `1` almost everywhere converge to the identity in `L²`. -/
-private theorem tendsto_sum_fourierMultiplierCLM_of_tendsto {ι : Type*} [Countable ι]
-    {ψ : ι → V → ℝ} {m : ι → Lp ℂ ∞ (volume : Measure V)}
-    (hm : ∀ i, m i =ᵐ[volume] fun ξ ↦ (ψ i ξ : ℂ))
-    (t : ℕ → Finset ι) (hle : ∀ N ξ, |∑ i ∈ t N, ψ i ξ| ≤ 1)
-    (hlim : ∀ᵐ ξ ∂(volume : Measure V), Tendsto (fun N ↦ ∑ i ∈ t N, ψ i ξ) atTop (𝓝 1))
-    (f : Lp F 2 (volume : Measure V)) :
-    Tendsto (fun N ↦ ∑ i ∈ t N, fourierMultiplierCLM F (m i) f) atTop (𝓝 f) := by
-  -- The partial sums are the multipliers with the symbols `∑_{i ∈ t N} ψᵢ`.
-  have hae : ∀ᵐ ξ ∂(volume : Measure V), ∀ N,
-      (∑ i ∈ t N, m i) ξ = ∑ i ∈ t N, (ψ i ξ : ℂ) := by
-    refine ae_all_iff.2 fun N ↦ ?_
-    filter_upwards [coeFn_fun_finsetSum (t N) m, ae_all_iff.2 hm] with ξ h₁ h₂
-    rw [h₁]
-    exact Finset.sum_congr rfl fun i _ ↦ h₂ i
-  have h1 : MemLp (fun _ : V ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
-  have h := tendsto_fourierMultiplierCLM_apply (F := F) (l := atTop)
-    (m := fun N ↦ ∑ i ∈ t N, m i) (m₀ := h1.toLp _) (C := 1) ?_ ?_ f
-  · rw [fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp] at h
-    simpa only [one_smul, id_apply, fourierMultiplierCLM_sum, FunLike.coe_sum,
-      Finset.sum_apply] using h
-  · refine Eventually.of_forall fun N ↦ ?_
-    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-    refine ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound ?_)
-    filter_upwards [hae] with ξ hξ
-    rw [hξ N, ← Complex.ofReal_sum, Complex.norm_real, Real.norm_eq_abs]
-    exact hle N ξ
-  · filter_upwards [hae, h1.coeFn_toLp, hlim] with ξ h₁ h₂ h₃
-    simp only [h₁, h₂]
-    simpa [Function.comp_def, Complex.ofReal_sum] using
-      (Complex.continuous_ofReal.tendsto _).comp h₃
-
 /-- **Littlewood–Paley reconstruction in `L²`.** The partial sums `∑_{j < N} Δⱼ f` of the
 Littlewood–Paley blocks of `f ∈ L²(V, F)` converge to `f` in `L²`. Each symbol enters as any
 element of `L^∞` almost everywhere equal to the piece `ψⱼ` of the inhomogeneous partition. -/
@@ -847,18 +832,14 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow [N
   obtain ⟨e, hP⟩ := isDyadic_inhomogeneousLittlewoodPaley φ
   obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   refine exists_eLpNorm_le_mul_eLpNorm_tsum hP (fun j ↦ Finset.Ico (j + 1 - L) (j + L))
-    (L := 2 * L) (fun j ↦ by simp only [Nat.card_Ico]; omega) (fun s k ↦ ?_)
+    Nat.cast_injective (L := L)
+    (fun j k hk ↦ abs_sub_lt_iff.2 (by rw [Finset.mem_Ico] at hk; omega))
     (fun j ξ ↦ by
       rw [← φ.enlargedLittlewoodPaley_apply]
       exact φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL j ξ)
     (fun N ↦ Finset.range N)
     (fun f ↦ Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley φ
       (coeFn_toLp_symbol hP) f) hp hp_top
-  -- The indices `j` with `k` among their neighbours are themselves neighbours of `k`.
-  refine (Finset.card_le_card (t := Finset.Ico (k + 1 - L) (k + L)) fun j hj ↦ ?_).trans
-    (by simp only [Nat.card_Ico]; omega)
-  simp only [Finset.mem_filter, Finset.mem_Ico] at hj ⊢
-  omega
 
 /-! ### The homogeneous Littlewood–Paley cutoffs -/
 
@@ -942,16 +923,12 @@ theorem exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewood
   obtain ⟨e, hP⟩ := isDyadic_littlewoodPaley φ
   obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
   refine exists_eLpNorm_le_mul_eLpNorm_tsum hP (fun j ↦ Finset.Ico (j + 1 - L) (j + L))
-    (L := 2 * L) (fun j ↦ by simp only [Int.card_Ico]; omega) (fun s k ↦ ?_)
+    Function.injective_id (L := L)
+    (fun j k hk ↦ abs_sub_lt_iff.2 (by simp only [Finset.mem_Ico, id_eq] at hk ⊢; omega))
     (φ.sum_Ico_littlewoodPaley_mul_littlewoodPaley hL)
     (fun N ↦ Finset.Icc (-(N : ℤ)) N)
     (fun f ↦ Lp.tendsto_sum_fourierMultiplierCLM_littlewoodPaley φ (coeFn_toLp_symbol hP) f)
     hp hp_top
-  -- The indices `j` with `k` among their neighbours are themselves neighbours of `k`.
-  refine (Finset.card_le_card (t := Finset.Ico (k + 1 - L) (k + L)) fun j hj ↦ ?_).trans
-    (by simp only [Int.card_Ico]; omega)
-  simp only [Finset.mem_filter, Finset.mem_Ico] at hj ⊢
-  omega
 
 end TauCeti
 
