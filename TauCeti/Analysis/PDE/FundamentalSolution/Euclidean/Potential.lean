@@ -62,8 +62,8 @@ from `f` onto the kernel, which is smooth there. Uniqueness holds because a harm
   infinity.
 * `TauCeti.exists_norm_newtonianKernel_convolution_le`: for `n ≥ 3`, the potential of data bounded
   by `M` and vanishing outside `closedBall 0 R` is bounded by a constant times `M`, and
-  `TauCeti.exists_norm_iteratedFDeriv_newtonianKernel_convolution_le`: the derivatives of the
-  potential of smooth data with compact support are bounded.
+  `TauCeti.exists_norm_iteratedFDeriv_newtonianKernel_convolution_le`: the `i`-th derivative of
+  the potential of `C^i` data with compact support is bounded.
 * `TauCeti.newtonianKernel_convolution_sub`: the potential of a difference is the difference of
   the potentials.
 * `TauCeti.eq_newtonianKernel_convolution_of_laplacian_eq_neg`: uniqueness among solutions
@@ -271,18 +271,18 @@ theorem newtonianKernel_convolution_sub {a b : EuclideanSpace ℝ (Fin n) → F}
     (hbc.neg.convolutionExists_right (L := lsmul ℝ ℝ) hloc hb.neg), ← neg_one_smul ℝ b,
     convolution_smul, neg_one_smul, ← sub_eq_add_neg]
 
-/-- For `n ≥ 3`, the derivatives of every order of the Newtonian potential of a smooth function
-with compact support are bounded. -/
-theorem exists_norm_iteratedFDeriv_newtonianKernel_convolution_le (hn : 3 ≤ n)
-    {g : EuclideanSpace ℝ (Fin n) → F} (hg : ContDiff ℝ ∞ g) (hc : HasCompactSupport g) (i : ℕ) :
+/-- For `n ≥ 3`, the `i`-th derivative of the Newtonian potential of a `C^i` function with compact
+support is bounded. -/
+theorem exists_norm_iteratedFDeriv_newtonianKernel_convolution_le (hn : 3 ≤ n) (i : ℕ)
+    {g : EuclideanSpace ℝ (Fin n) → F} (hg : ContDiff ℝ i g) (hc : HasCompactSupport g) :
     ∃ C, ∀ x, ‖iteratedFDeriv ℝ i (newtonianKernel n ⋆ g) x‖ ≤ C := by
   obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
   obtain ⟨C₀, -, hC₀⟩ := exists_norm_newtonianKernel_convolution_le
     (G := EuclideanSpace ℝ (Fin n) [×i]→L[ℝ] F) (H := EuclideanSpace ℝ (Fin n) [×i]→L[ℝ] F) hn R
-  obtain ⟨M, hM⟩ := (hg.continuous_iteratedFDeriv (mod_cast le_top)
-    ).bounded_above_of_compact_support (hc.iteratedFDeriv i)
+  obtain ⟨M, hM⟩ := (hg.continuous_iteratedFDeriv le_rfl).bounded_above_of_compact_support
+    (hc.iteratedFDeriv i)
   rw [HasCompactSupport.iteratedFDeriv_convolution_right (L := lsmul ℝ ℝ) hc
-    (locallyIntegrable_newtonianKernel n) hg (n := i) (mod_cast le_top)]
+    (locallyIntegrable_newtonianKernel n) hg (n := i) le_rfl]
   exact ⟨_, hC₀ _ hM ((subset_tsupport _).trans
     ((tsupport_iteratedFDeriv_subset i).trans hR))⟩
 

@@ -90,8 +90,10 @@ is bounded and Lipschitz, so it is `β`-Hölder for every `β ≤ 1`. -/
 private theorem memHolder_iteratedFDeriv_two_newtonianKernel_convolution (hn : 3 ≤ n)
     (hg : ContDiff ℝ ∞ g) (hc : HasCompactSupport g) {β : ℝ≥0} (hβ : β ≤ 1) :
     MemHolder β (iteratedFDeriv ℝ 2 (newtonianKernel n ⋆ g)) := by
-  obtain ⟨C₂, hC₂⟩ := exists_norm_iteratedFDeriv_newtonianKernel_convolution_le hn hg hc 2
-  obtain ⟨C₃, hC₃⟩ := exists_norm_iteratedFDeriv_newtonianKernel_convolution_le hn hg hc 3
+  obtain ⟨C₂, hC₂⟩ := exists_norm_iteratedFDeriv_newtonianKernel_convolution_le hn 2
+    (hg.of_le (by norm_cast)) hc
+  obtain ⟨C₃, hC₃⟩ := exists_norm_iteratedFDeriv_newtonianKernel_convolution_le hn 3
+    (hg.of_le (by norm_cast)) hc
   have hw : ContDiff ℝ 3 (newtonianKernel n ⋆ g) :=
     (contDiff_newtonianKernel_convolution hg hc).of_le (by norm_cast)
   exact ⟨_, holderOnWith_univ.1 ((hw.contDiffOn (s := univ)).holderOnWith_iteratedFDeriv_of_lt
@@ -124,7 +126,8 @@ private theorem exists_norm_le_of_newtonianKernel_convolution (hn : 3 ≤ m + 1)
   have hc : HasCompactSupport g := .of_support_subset_isCompact (isCompact_closedBall _ _) hs
   let W : CkHolderSpace 2 β E ℝ :=
     CkHolderSpace.ofContDiff _ ((contDiff_newtonianKernel_convolution hg hc).of_le (by norm_cast))
-      (fun i _ ↦ exists_norm_iteratedFDeriv_newtonianKernel_convolution_le hn hg hc i)
+      (fun i _ ↦ exists_norm_iteratedFDeriv_newtonianKernel_convolution_le hn i
+        (hg.of_le (mod_cast le_top)) hc)
       (memHolder_iteratedFDeriv_two_newtonianKernel_convolution hn hg hc hβ1.le)
   refine ⟨W, CkHolderSpace.coe_ofContDiff _ _ _ _, ?_⟩
   -- The potential is bounded by `D C₀`.
