@@ -59,7 +59,6 @@ centre gives the `Γ.withCenter` readings.
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}` and `a ∉ Γ`.
-* `TauCeti.index_conjAct_smul`: conjugation preserves the index.
 -/
 
 
@@ -452,11 +451,5 @@ theorem isUnit_natCard_subgroup {k : Type*} {G : Type*} [Semiring k] [Group G]
   have h : IsUnit ((Nat.card S : k) * (S.index : k)) := by
     rwa [← Nat.cast_mul, S.card_mul_index]
   exact ((Nat.cast_commute _ _).isUnit_mul_iff.mp h).1
-
-open Pointwise in
-/-- Conjugation preserves the index of a subgroup. -/
-theorem index_conjAct_smul {G : Type*} [Group G] (g : G) (H : Subgroup G) :
-    (ConjAct.toConjAct g • H).index = H.index := by
-  simpa using Subgroup.relIndex_pointwise_smul (ConjAct.toConjAct g) H ⊤
 
 end TauCeti

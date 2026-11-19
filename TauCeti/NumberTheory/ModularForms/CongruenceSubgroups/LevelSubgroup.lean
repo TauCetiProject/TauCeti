@@ -14,8 +14,11 @@ public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.Algebra.Group.Subgroup.MulOpposite
 -- Non-public: `ZMod p` is a field, used only in the proof of `index_adjoinNegOne_GL2Borel_zmod`.
 import Mathlib.Algebra.Field.ZMod
--- Non-public: `TauCeti.index_conjAct_smul`, used in the proof of `index_adjoinNegOne_conjAct_smul`.
-import TauCeti.GroupTheory.Index.Basic
+-- Non-public: `Subgroup.index_smul`, used in the proof of `index_adjoinNegOne_conjAct_smul`.
+import TauCeti.GroupTheory.Index.Map
+-- Non-public: `CongruenceSubgroup.mem_Gamma1_iff`, used in the proof of
+-- `comap_mapGL_levelGamma1Mu`.
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
 # Level subgroups of `GL₂(ℤ/N)` and the standard levels
@@ -61,7 +64,7 @@ which is Mathlib's `Subgroup.adjoinNegOne H`. It is the degree of the coarse cur
   the determinant is surjective on these levels.
 * `TauCeti.index_adjoinNegOne_conjAct_smul`, `Matrix.GeneralLinearGroup.levelDet_conjAct_smul`:
   conjugation preserves the projective index and the determinant image; for the index itself see
-  `TauCeti.index_conjAct_smul`.
+  `Subgroup.index_smul`.
 * `TauCeti.index_adjoinNegOne_GL2Borel_zmod`: `[GL₂(𝔽_p) : ±Γ₀(p)] = p + 1`.
 
 ## References
@@ -93,7 +96,7 @@ theorem two_mul_index_adjoinNegOne {H : Subgroup G} (h : -1 ∉ H) :
 /-- Conjugation preserves the projective index. -/
 theorem index_adjoinNegOne_conjAct_smul (g : G) (H : Subgroup G) :
     (ConjAct.toConjAct g • H).adjoinNegOne.index = H.adjoinNegOne.index := by
-  rw [Subgroup.adjoinNegOne_conj, index_conjAct_smul]
+  rw [Subgroup.adjoinNegOne_conj, Subgroup.index_smul]
 
 end Projective
 
@@ -292,16 +295,8 @@ theorem comap_mapGL_levelGamma1Mu :
     (levelGamma1Mu (ZMod N)).comap (mapGL (ZMod N) : SL(2, ℤ) →* GL (Fin 2) (ZMod N)) =
       Gamma1 N := by
   ext g
-  -- `ad - bc = 1`, reduced modulo `N`
-  have hdet := (SpecialLinearGroup.map (Int.castRingHom (ZMod N)) g).det_coe
-  rw [det_fin_two] at hdet
-  simp only [Subgroup.mem_comap, mem_levelGamma1Mu_iff, mapGL_coe_matrix,
-    algebraMap_int_eq, Gamma1_mem]
-  constructor
-  · rintro ⟨hc, hd⟩
-    exact ⟨by simpa [hd, hc] using hdet, hd, hc⟩
-  · rintro ⟨-, hd, hc⟩
-    exact ⟨hc, hd⟩
+  rw [Subgroup.mem_comap, CongruenceSubgroup.mem_Gamma1_iff]
+  simp [Gamma0_mem]
 
 /-- The preimage of the trivial subgroup of `GL₂(ℤ/N)` in `SL₂(ℤ)` is `Γ(N)`. -/
 theorem comap_mapGL_bot :
