@@ -33,8 +33,9 @@ uses.
 The conjugation condition is the one feature of these weights that is arithmetic rather than
 combinatorial, and the file records its interaction with each operation: it is preserved by base
 change along restriction maps commuting with conjugation, it determines `w` once the family is
-nonempty, it moves `w` by `w'` under a twist whose exponents satisfy `b_τ + b_{τ∘c} = w'`, and it
-makes the Hodge–Tate numbers at `τ` and `τ∘c` reflections of each other about `w + n - 1`
+nonempty and of positive rank, it moves `w` by `w'` under a twist whose exponents satisfy
+`b_τ + b_{τ∘c} = w'`, and it pairs off the Hodge–Tate numbers at `τ` and `τ∘c` so that they sum to
+`w + n - 1`, a reflection about `(w + n - 1)/2`
 (`TauCeti.EmbeddingWeight.IsConjDual.hodgeMultiset_apply`).  For a CM field and `Ω = ℂ`,
 precomposing with complex conjugation and postcomposing with it are the same index map, so the
 condition can be stated either way (`TauCeti.EmbeddingWeight.isConjDual_comp_complexConj_iff`);
@@ -162,6 +163,14 @@ theorem twist_twist (a : EmbeddingWeight ι n) (b b' : ι → ℤ) :
   ext τ : 1
   simp
 
+/-- Base change of a twist is the twist of the base change by the restricted exponents. -/
+@[simp]
+theorem baseChange_twist {F F' Ω : Type*} [CommRing F] [CommRing F'] [CommRing Ω] [Algebra F F']
+    (a : EmbeddingWeight (F →+* Ω) n) (b : (F →+* Ω) → ℤ) :
+    (a.twist b).baseChange F' = (a.baseChange F').twist fun τ => b (τ.comp (algebraMap F F')) := by
+  ext τ : 1
+  simp
+
 /-! ### The conjugation condition -/
 
 /-- An embedding-indexed weight **lies in `(ℤⁿ)_w`** for the index map `c` when
@@ -228,8 +237,8 @@ theorem isConjDual_twist_iff (a : EmbeddingWeight ι n) {c : ι → ι} {w w' : 
   have := hb τ
   omega
 
-/-- The Hodge–Tate numbers at conjugate embeddings are reflections of each other about the
-purity weight `w + n - 1`: `HT_{c τ}(a) = {w + n - 1 - h : h ∈ HT_τ(a)}`. -/
+/-- The Hodge–Tate numbers at conjugate embeddings pair off to sum to `w + n - 1`, so they are
+reflections of each other about `(w + n - 1)/2`: `HT_{c τ}(a) = {w + n - 1 - h : h ∈ HT_τ(a)}`. -/
 theorem IsConjDual.hodgeMultiset_apply {a : EmbeddingWeight ι n} {c : ι → ι} {w : ℤ}
     (h : a.IsConjDual c w) (τ : ι) :
     (a (c τ)).hodgeMultiset = (a τ).hodgeMultiset.map (fun x => w + ((n : ℤ) - 1) - x) := by

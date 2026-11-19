@@ -26,14 +26,14 @@ representation is attached: in `Fin n` coordinates the shifted entries are
 The shift is the point.  The entries of a dominant weight may repeat, but the shifted ones never
 do, so the Hodge–Tate numbers are always distinct
 (`TauCeti.DominantWeight.nodup_hodgeMultiset`): a Galois representation with these Hodge–Tate
-numbers is regular.  The shift is the classical `λ + ρ`, and is
+numbers is regular.  The shift is the classical `λ + ρ` up to translation, and is
 `TauCeti.DominantWeight.rhoShift` translated by `n - 1`.
 
 The multiset records more than its sum: the sum `∑ λᵢ + n(n - 1)/2` is the Hodge–Tate number of
 the determinant, but different weights can share it.  A determinant twist `λ ↦ λ + m` translates
 every Hodge–Tate number by `m`, and the contragredient weight reflects them,
 `h ↦ n - 1 - h`.  These two rules are what makes the Hodge–Tate numbers at conjugate embeddings
-of a CM field symmetric about the purity weight.
+of a CM field pair off to sum to `w + n - 1`, for `w` the purity weight.
 
 Finally, a weight is **extremely regular** when equal-sized subsets of its shifted entries are
 determined by their sums (`TauCeti.DominantWeight.IsExtremelyRegular`).  This is stronger than the
@@ -76,7 +76,7 @@ namespace DominantWeight
 variable {n : ℕ}
 
 /-- The **Hodge shift** `λᵢ + (n - 1 - i)` of a dominant weight, in `Fin n` coordinates: the
-classical `λ + ρ`.  Its values are the Hodge–Tate numbers attached to `λ`. -/
+classical `λ + ρ` up to translation.  Its values are the Hodge–Tate numbers attached to `λ`. -/
 def hodgeShift (l : DominantWeight n) (i : Fin n) : ℤ := l.rhoShift i + ((n : ℤ) - 1)
 
 theorem hodgeShift_apply (l : DominantWeight n) (i : Fin n) :
@@ -92,31 +92,26 @@ theorem hodgeShift_injective (l : DominantWeight n) : Function.Injective l.hodge
 
 /-- A determinant twist `λ ↦ λ + m·(1, …, 1)` translates the Hodge shift by `m`. -/
 @[simp]
-theorem hodgeShift_shift (l : DominantWeight n) (m : ℤ) (i : Fin n) :
+theorem hodgeShift_shift_apply (l : DominantWeight n) (m : ℤ) (i : Fin n) :
     (l.shift m).hodgeShift i = l.hodgeShift i + m := by
   simp only [hodgeShift_apply, shift_apply]; ring
 
 /-- The contragredient weight reflects the Hodge shift: `h ↦ n - 1 - h`, with the index
 reversed. -/
 @[simp]
-theorem hodgeShift_dual (l : DominantWeight n) (i : Fin n) :
+theorem hodgeShift_dual_apply (l : DominantWeight n) (i : Fin n) :
     l.dual.hodgeShift i = ((n : ℤ) - 1) - l.hodgeShift i.rev := by
   simp only [hodgeShift_apply, dual_apply, Fin.val_rev]
   have : (i : ℕ) + 1 ≤ n := i.isLt
   push_cast [Nat.cast_sub this]
   ring
 
-/-- Reindexing a multiset of values over `Fin n` by `Fin.rev` does not change it. -/
-private theorem map_univ_val_rev {α : Type*} (f : Fin n → α) :
-    (univ : Finset (Fin n)).val.map (fun i => f i.rev) = univ.val.map f := by
-  rw [show (fun i : Fin n => f i.rev) = f ∘ Fin.revPerm from rfl, ← Multiset.map_map,
-    Multiset.map_univ_val_equiv]
-
 /-- The **Hodge–Tate multiset** `{λᵢ + n - i : 1 ≤ i ≤ n}` of a dominant weight: the multiset of
 values of `TauCeti.DominantWeight.hodgeShift`. -/
 def hodgeMultiset (l : DominantWeight n) : Multiset ℤ :=
   (univ : Finset (Fin n)).val.map l.hodgeShift
 
+@[simp]
 theorem mem_hodgeMultiset {l : DominantWeight n} {h : ℤ} :
     h ∈ l.hodgeMultiset ↔ ∃ i, l.hodgeShift i = h := by
   simp [hodgeMultiset]
@@ -154,14 +149,15 @@ theorem sum_hodgeMultiset (l : DominantWeight n) :
 @[simp]
 theorem hodgeMultiset_shift (l : DominantWeight n) (m : ℤ) :
     (l.shift m).hodgeMultiset = l.hodgeMultiset.map (· + m) := by
-  simp only [hodgeMultiset, Multiset.map_map, Function.comp_def, hodgeShift_shift]
+  simp only [hodgeMultiset, Multiset.map_map, Function.comp_def, hodgeShift_shift_apply]
 
 /-- The contragredient weight reflects the Hodge–Tate numbers, `h ↦ n - 1 - h`. -/
 @[simp]
 theorem hodgeMultiset_dual (l : DominantWeight n) :
     l.dual.hodgeMultiset = l.hodgeMultiset.map (((n : ℤ) - 1) - ·) := by
-  simp only [hodgeMultiset, Multiset.map_map, Function.comp_def, hodgeShift_dual]
-  exact map_univ_val_rev fun i => ((n : ℤ) - 1) - l.hodgeShift i
+  conv_rhs => rw [hodgeMultiset, ← Multiset.map_univ_val_equiv Fin.revPerm, Multiset.map_map,
+    Multiset.map_map]
+  simp only [hodgeMultiset, Function.comp_def, Fin.revPerm_apply, hodgeShift_dual_apply]
 
 /-- The zero weight has Hodge–Tate numbers `{0, 1, …, n - 1}`: the Hodge–Tate numbers of the
 `(n - 1)`-st symmetric power of the dual Tate module of an elliptic curve. -/
@@ -173,16 +169,18 @@ theorem hodgeMultiset_zero :
     simp only [hodgeShift_apply, zero_apply, Fin.val_rev]
     push_cast [Nat.cast_sub this]
     ring
-  rw [hodgeMultiset, ← map_univ_val_rev, funext h, ← Finset.range_val, ← Nat.Iio_eq_range,
-    ← Fin.map_valEmbedding_univ, Finset.map_val, Multiset.map_map]
-  rfl
+  rw [hodgeMultiset, ← Multiset.map_univ_val_equiv Fin.revPerm, Multiset.map_map]
+  simp only [Function.comp_def, Fin.revPerm_apply, h]
+  simp [Fin.univ_val_map, List.ofFn_eq_map, Multiset.range, ← List.map_coe_finRange_eq_range,
+    Function.comp_def]
 
 /-- For `GL 2` the Hodge–Tate multiset of `(λ₁, λ₂)` is `{λ₁ + 1, λ₂}`; for the weight
 `(k - 2, 0)` of a classical eigenform of weight `k` it is `{k - 1, 0}`. -/
 theorem hodgeMultiset_fin_two (l : DominantWeight 2) :
     l.hodgeMultiset = {l.1 0 + 1, l.1 1} := by
-  simp [hodgeMultiset, Fin.univ_val_map, hodgeShift_apply]
-  rfl
+  rw [hodgeMultiset, Fin.univ_val_map, List.ofFn_succ, List.ofFn_succ, List.ofFn_zero,
+    ← Multiset.cons_coe, Multiset.coe_singleton, Multiset.insert_eq_cons]
+  simp [hodgeShift_apply]
 
 /-- A dominant weight is **extremely regular** when equal-sized sets of its shifted entries
 `λᵢ + (n - 1 - i)` are determined by their sums.  Since the shifted entries are distinct, this
@@ -201,7 +199,7 @@ theorem isExtremelyRegular_iff (l : DominantWeight n) :
 theorem isExtremelyRegular_shift_iff (l : DominantWeight n) (m : ℤ) :
     (l.shift m).IsExtremelyRegular ↔ l.IsExtremelyRegular := by
   refine forall₂_congr fun S T => forall_congr' fun hST => ?_
-  simp only [hodgeShift_shift, Finset.sum_add_distrib, Finset.sum_const, hST, add_left_inj]
+  simp only [hodgeShift_shift_apply, Finset.sum_add_distrib, Finset.sum_const, hST, add_left_inj]
 
 /-- In rank one every dominant weight is extremely regular. -/
 theorem isExtremelyRegular_of_subsingleton [Subsingleton (Fin n)] (l : DominantWeight n) :
