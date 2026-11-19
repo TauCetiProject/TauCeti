@@ -100,8 +100,7 @@ theorem exists_norm_le_mul_norm_of_injective [SeminormedAddCommGroup F] (f : G �
 
 /-- **The winding estimate.** Let `n, b : G →+ (κ → ℤ)` be additive with `n` injective. There is
 a constant `B ≥ 0` such that every `g ≠ 0` has a coordinate `i` at which, for every real `t`,
-`b g i + t * |n g i| ≥ (t - B) * ‖n g‖` and `b g i - t * |n g i| ≤ -((t - B) * ‖n g‖)`. The
-coordinate is one where `|n g i|` attains the sup norm of `n g`, and `B` bounds `b` by `n`. -/
+`b g i + t * |n g i| ≥ (t - B) * ‖n g‖` and `b g i - t * |n g i| ≤ -((t - B) * ‖n g‖)`. -/
 theorem exists_forall_exists_le_add_mul_abs_and_sub_mul_abs_le {n : G →+ (κ → ℤ)}
     (hn : Function.Injective n) (b : G →+ (κ → ℤ)) :
     ∃ B : ℝ, 0 ≤ B ∧ ∀ g, g ≠ 0 → ∃ i, ∀ t : ℝ,
