@@ -69,6 +69,10 @@ def toGerm (hs : s ⊆ U) : holomorphicFunctions U →ₐ[ℂ] holomorphicGerms 
     rw [holomorphicGerms.coe_ofFun, Subalgebra.coe_algebraMap, Germ.algebraMap_eq]
     exact germ_extend_eq hs _ _ (fun z => by simp)
 
+/-- The germ of `f` on `U` near `s ⊆ U` is represented by its zero extension `extend f`. -/
+theorem toGerm_apply (hs : s ⊆ U) (f : holomorphicFunctions U) :
+    toGerm hs f = holomorphicGerms.ofFun (extend f) (analyticOnNhd_extend hs f) := (rfl)
+
 /-- Any ambient function agreeing on the open domain represents the same holomorphic germ. -/
 theorem toGerm_eq_ofFun (hs : s ⊆ U) (f : holomorphicFunctions U) (φ : ℂ → ℂ)
     (hφ : AnalyticOnNhd ℂ φ s) (h : ∀ z : U, f.val z = φ z) :
@@ -126,6 +130,19 @@ theorem toGerm_eq_iff (hsU : s ⊆ U) (hsV : s ⊆ V)
       ((heq z z.property.1.1).trans (extend_apply g ⟨z, z.property.2⟩))
   · rintro ⟨W, hsW, hWU, hWV, hfg⟩
     rw [← toGerm_restrict hsW hWU, ← toGerm_restrict hsW hWV, hfg]
+
+/-- Germ composition agrees with composition of holomorphic functions on open domains. -/
+@[simp]
+theorem comp_toGerm {t : Set ℂ} (hs : s ⊆ U) (ht : t ⊆ V) (f : holomorphicFunctions U)
+    (hf : MapsTo (extend f) U V) (hst : spectrum ℂ (toGerm hs f) ⊆ t)
+    (g : holomorphicFunctions V) :
+    holomorphicGerms.comp (toGerm hs f) hst (toGerm ht g) = toGerm hs (comp f hf g) := by
+  revert hst
+  rw [toGerm_apply hs f, toGerm_apply ht g]
+  intro hst
+  rw [holomorphicGerms.comp_ofFun]
+  exact (toGerm_eq_ofFun hs (comp f hf g) (extend g ∘ extend f) _ fun z =>
+    (extend_apply (comp f hf g) z).symm.trans (extend_comp f hf g z.property)).symm
 
 end TauCeti.HolomorphicFunctions
 
