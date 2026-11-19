@@ -78,8 +78,7 @@ theorem comap_mem_minimalPrimes_of_krullDimLE_zero {R : Type*} [CommRing R] {M :
     p.comap (algebraMap R S) ∈ minimalPrimes R := by
   have h := minimalPrimes_comap M S (⊥ : Ideal S)
   rw [Ideal.comap_bot_of_injective _ (IsLocalization.injective S hM)] at h
-  have hp : p.comap (algebraMap R S) ∈ (⊥ : Ideal R).minimalPrimes :=
-    h ▸ ⟨p, Ideal.mem_minimalPrimes_of_krullDimLE_zero p, rfl⟩
-  exact hp
+  exact (h ▸ ⟨p, Ideal.mem_minimalPrimes_of_krullDimLE_zero p, rfl⟩ :
+    p.comap (algebraMap R S) ∈ (⊥ : Ideal R).minimalPrimes)
 
 end IsLocalization

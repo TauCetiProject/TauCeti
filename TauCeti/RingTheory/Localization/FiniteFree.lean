@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Localization.FractionRing
+import Mathlib.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.Flat.NonZeroDivisors
 import TauCeti.RingTheory.Norm.NonZeroDivisors
 
@@ -97,7 +98,7 @@ include R S in
 free over `R`, is finite over the total ring of fractions of `R`. -/
 theorem finite_of_free : Module.Finite QR T :=
   have := (isLocalization_algebraMapSubmonoid_iff (S := S) R T).mpr inferInstance
-  .of_basis ((Module.Free.chooseBasis R S).localizationLocalization QR R⁰ T)
+  .of_isLocalization R S R⁰
 
 end Tower
 

@@ -19,6 +19,7 @@ import Mathlib.RingTheory.FiniteType
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import Mathlib.RingTheory.KrullDimension.Zero
 import Mathlib.RingTheory.Noetherian.Nilpotent
+import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.RingTheory.Localization.FiniteFree
@@ -48,7 +49,7 @@ let `R` be a domain. The total ring of fractions `Q(Nov(R, H, N))` is finite fre
 `Q(Nov(R, K, N|K))`, both are Artinian, and their primes contract to minimal primes of the Novikov
 rings. Two primes of `Q(Nov(R, H, N))` over the same prime of `Q(Nov(R, K, N|K))` meet `R[T]` in
 the same ideal, so they are equal. Hence contraction is a bijection between the primes of the two
-total rings of fractions (`TauCeti.NovikovSeries.bijective_comap_algebraMap_of_torsion_le`). When
+total rings of fractions (`TauCeti.NovikovSeries.comap_algebraMap_bijective_of_torsion_le`). When
 the Novikov rings are reduced, as for `R = ℤ`, these primes index the field components of the total
 rings of fractions. Reading the norm modulo a prime (`Algebra.norm_mem_iff_exists_liesOver`), the
 norm of the finite cover of an element lies in a prime of the base exactly when the element lies in
@@ -65,7 +66,7 @@ norm of the idempotent `(1 + g) / 2` is `0`, although its component in the first
 
 * `TauCeti.NovikovSeries.eq_of_mem_minimalPrimes_of_comap_eq`: minimal primes of `Nov(R, H, N)`
   are determined by their intersections with the group ring of the torsion subgroup.
-* `TauCeti.NovikovSeries.bijective_comap_algebraMap_of_torsion_le`: for `K` of finite index
+* `TauCeti.NovikovSeries.comap_algebraMap_bijective_of_torsion_le`: for `K` of finite index
   containing the torsion, contraction is a bijection between the primes of the two total rings
   of fractions.
 * `TauCeti.NovikovSeries.fractionNorm_mem_iff_mem_of_torsion_le`: the norm of `x` lies in a prime
@@ -125,13 +126,9 @@ private def splitPeriod (N : H →+ ℝ) (e : H ≃+ F × T) : F →+ ℝ :=
 /-- The period map vanishes on the finite factor, so it factors through the free factor. -/
 private theorem period_eq_splitPeriod (h : H) : N h = splitPeriod N e (e h).1 := by
   -- The image of `t : T` has finite order in `ℝ`, so it vanishes.
-  have hT (t : T) : N (e.symm (0, t)) = 0 := by
-    obtain ⟨n, hn, hnt⟩ := (isOfFinAddOrder_iff_nsmul_eq_zero (x := t)).1
-      (isOfFinAddOrder_of_finite t)
-    have : n • N (e.symm (0, t)) = 0 := by
-      rw [← map_nsmul, ← map_nsmul, Prod.smul_mk, smul_zero, hnt, Prod.mk_zero_zero, map_zero,
-        map_zero]
-    exact (smul_eq_zero.1 this).resolve_left hn.ne'
+  have hT (t : T) : N (e.symm (0, t)) = 0 :=
+    ((N.comp (e.symm.toAddMonoidHom.comp (AddMonoidHom.inr F T))).isOfFinAddOrder
+      (isOfFinAddOrder_of_finite t)).eq_zero'
   have hh : h = e.symm ((e h).1, 0) + e.symm (0, (e h).2) := by
     rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, e.symm_apply_apply]
   conv_lhs => rw [hh]
@@ -209,8 +206,8 @@ private theorem comap_splitKer (ψ : AddMonoidAlgebra R T →+* D) :
     (splitKer (N := N) e ψ).comap (splitInclusion e) = RingHom.ker ψ := by
   ext x
   rw [Ideal.mem_comap, splitKer, RingHom.mem_ker, ← RingHom.comp_apply,
-    splitReduction_comp_splitInclusion, RingHom.comp_apply, RingHom.mem_ker, algebraMap_apply,
-    Algebra.algebraMap_self, RingHom.id_apply, single_eq_zero_iff]
+    splitReduction_comp_splitInclusion]
+  simp
 
 /-- Over a domain, the kernel of the reduction is a prime ideal. -/
 private theorem isPrime_splitKer [IsDomain D] [UniqueSums F] (ψ : AddMonoidAlgebra R T →+* D) :
@@ -320,7 +317,6 @@ the same ideal. -/
 private theorem comap_algebraMap_injective_of_torsion_le (hK : AddCommGroup.torsion H ≤ K) :
     Function.Injective (PrimeSpectrum.comap (algebraMap QA QB)) := by
   have := isArtinianRing_of_isFractionRing R N QB
-  have : Ring.KrullDimLE 0 QB := .mk₀ fun I _ => IsArtinianRing.isMaximal_of_isPrime I
   intro m₁ m₂ h
   -- The inclusion of the torsion group ring factors through `Nov(R, K, N|K)`.
   let ι : AddMonoidAlgebra R (AddCommGroup.torsion H) →+* NovikovSeries R H N :=
@@ -346,20 +342,26 @@ private theorem comap_algebraMap_injective_of_torsion_le (hK : AddCommGroup.tors
   exact PrimeSpectrum.ext <|
     (IsLocalization.orderEmbedding (NovikovSeries R H N)⁰ QB).injective this
 
+omit [IsDomain R] [IsNoetherianRing R] [AddGroup.FG H] in
+include R N K in
+/-- The total ring of fractions of the cover is finite free over that of the base. -/
+private theorem free_and_finite : Module.Free QA QB ∧ Module.Finite QA QB :=
+  ⟨IsFractionRing.free_of_free (R := NovikovSeries R K (N.comp K.subtype))
+      (S := NovikovSeries R H N) (QR := QA) (T := QB),
+    IsFractionRing.finite_of_free (R := NovikovSeries R K (N.comp K.subtype))
+      (S := NovikovSeries R H N) (QR := QA) (T := QB)⟩
+
 include R N in
 /-- **Primes of a finite cover containing the torsion.** If a subgroup `K` of finite index contains
 the torsion of `H`, then contraction from the total ring of fractions of `Nov(R, H, N)` to that of
 `Nov(R, K, N|K)` is a bijection on prime ideals: over each prime of the base lies exactly one
 prime of the cover. When the Novikov rings are reduced, as for `R = ℤ`, these primes index the
 field components of the two total rings of fractions. -/
-theorem bijective_comap_algebraMap_of_torsion_le (hK : AddCommGroup.torsion H ≤ K) :
+theorem comap_algebraMap_bijective_of_torsion_le (hK : AddCommGroup.torsion H ≤ K) :
     Function.Bijective (PrimeSpectrum.comap (algebraMap QA QB)) := by
   refine ⟨comap_algebraMap_injective_of_torsion_le R N QA QB hK, fun n => ?_⟩
   -- Lying over: `QB` is finite free over `QA`, so integral over it and faithful.
-  have := IsFractionRing.free_of_free (R := NovikovSeries R K (N.comp K.subtype))
-    (S := NovikovSeries R H N) (QR := QA) (T := QB)
-  have := IsFractionRing.finite_of_free (R := NovikovSeries R K (N.comp K.subtype))
-    (S := NovikovSeries R H N) (QR := QA) (T := QB)
+  obtain ⟨_, _⟩ := free_and_finite R N (K := K) QA QB
   have : Nontrivial QB := IsFractionRing.nontrivial (NovikovSeries R H N) QB
   have : Algebra.IsIntegral QA QB := .of_finite QA QB
   obtain ⟨m, -, hm, hmn⟩ :=
@@ -378,15 +380,11 @@ theorem fractionNorm_mem_iff_mem_of_torsion_le (hK : AddCommGroup.torsion H ≤ 
     {m : Ideal QB} [m.IsPrime] [m.LiesOver n] (x : QB) :
     Algebra.fractionNorm (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) QA QB x ∈
       n ↔ x ∈ m := by
-  have := IsFractionRing.free_of_free (R := NovikovSeries R K (N.comp K.subtype))
-    (S := NovikovSeries R H N) (QR := QA) (T := QB)
-  have := IsFractionRing.finite_of_free (R := NovikovSeries R K (N.comp K.subtype))
-    (S := NovikovSeries R H N) (QR := QA) (T := QB)
+  obtain ⟨_, _⟩ := free_and_finite R N (K := K) QA QB
   have := isArtinianRing_of_isFractionRing R (N.comp K.subtype) QA
-  have : Ring.KrullDimLE 0 QA := .mk₀ fun I _ => IsArtinianRing.isMaximal_of_isPrime I
   have : n.IsMaximal := by
     rw [Ideal.over_def m n]
-    exact Ideal.IsPrime.isMaximal' inferInstance
+    infer_instance
   rw [Algebra.fractionNorm_eq_norm, Algebra.norm_mem_iff_exists_liesOver n x]
   refine ⟨fun ⟨P, hP, _, hxP⟩ => ?_, fun hx => ⟨m, inferInstance, inferInstance, hx⟩⟩
   -- The prime `P` over `n` containing `x` is `m`, the only prime over `n`.
