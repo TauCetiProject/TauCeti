@@ -29,6 +29,8 @@ complete: the formula is applied after embedding `V` into its completion.
 
 ## Main results
 
+* `ContinuousLinearMap.starProjection_range_eq_comp_comp_adjoint`: if `B† B G B† = B†`, the
+  orthogonal projection onto the range of `B` is `B G B†`.
 * `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
   projection onto the range of `B`.
 * `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
@@ -111,7 +113,7 @@ private theorem contDiffAt_gramLeftInverse
       ha.contDiffAt
 
 /-- If `B† B G B† = B†`, the orthogonal projection onto the range of `B` is `B G B†`. -/
-private theorem starProjection_range_eq_comp_comp_adjoint {B : F →L[𝕜] V}
+theorem starProjection_range_eq_comp_comp_adjoint {B : F →L[𝕜] V}
     [B.range.HasOrthogonalProjection] {G : F →L[𝕜] F}
     (hG : adjoint B ∘L B ∘L G ∘L adjoint B = adjoint B) :
     B.range.starProjection = B ∘L G ∘L adjoint B := by
@@ -130,7 +132,7 @@ theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProje
     (hB : IsUnit (adjoint B ∘L B)) :
     B.range.starProjection = B ∘L Ring.inverse (adjoint B ∘L B) ∘L adjoint B :=
   starProjection_range_eq_comp_comp_adjoint <| by
-    rw [← comp_assoc, ← comp_assoc, ← mul_def, Ring.mul_inverse_cancel _ hB, one_def, id_comp]
+    simp [← comp_assoc, ← mul_def, Ring.mul_inverse_cancel _ hB, one_def]
 
 /-- For an isometry `B`, the operator `B B†` is the orthogonal projection onto the range of `B`. -/
 theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
@@ -376,11 +378,19 @@ namespace ContinuousLinearMap
 
 variable {P : E →L[𝕜] E}
 
+/-- A star projection composed with itself is itself: idempotence, with `*` unfolded to `∘L`. -/
+private theorem _root_.IsStarProjection.comp_self (hP : IsStarProjection P) : P ∘L P = P := by
+  rw [← mul_def, hP.isIdempotentElem.eq]
+
+/-- Idempotence of a star projection, in the left-associated form `simp [← comp_assoc]` leaves. -/
+private theorem _root_.IsStarProjection.comp_comp_self {G : Type*} [AddCommMonoid G] [Module 𝕜 G]
+    [TopologicalSpace G] (hP : IsStarProjection P) (X : E →L[𝕜] G) : (X ∘L P) ∘L P = X ∘L P := by
+  rw [comp_assoc, hP.comp_self]
+
 /-- The adjoint of `L ∘L P` takes values in the range of `P`. -/
 private theorem starProjection_comp_adjoint_comp (L : E →L[𝕜] F) (hP : IsStarProjection P) :
     P ∘L adjoint (L ∘L P) = adjoint (L ∘L P) := by
-  rw [adjoint_comp, isSelfAdjoint_iff'.1 hP.isSelfAdjoint, ← comp_assoc, ← mul_def,
-    hP.isIdempotentElem.eq]
+  simp [adjoint_comp, hP.isSelfAdjoint.adjoint_eq, ← comp_assoc, hP.comp_self]
 
 /-- The corrected Gram operator `(L P)† (L P) + (1 - P)` of `L` and `P`. -/
 private noncomputable def imageGram (L : E →L[𝕜] F) (P : E →L[𝕜] E) : E →L[𝕜] E :=
@@ -389,8 +399,8 @@ private noncomputable def imageGram (L : E →L[𝕜] F) (P : E →L[𝕜] E) : 
 /-- `P` followed by the corrected Gram operator is the Gram operator of `L P`. -/
 private theorem starProjection_mul_imageGram (L : E →L[𝕜] F) (hP : IsStarProjection P) :
     P * imageGram L P = adjoint (L ∘L P) ∘L (L ∘L P) := by
-  rw [imageGram, mul_add, mul_sub, mul_one, hP.isIdempotentElem.eq, sub_self, add_zero, mul_def,
-    ← comp_assoc, starProjection_comp_adjoint_comp L hP]
+  simp only [imageGram, mul_add, mul_sub, mul_one, hP.isIdempotentElem.eq, sub_self, add_zero,
+    mul_def, ← comp_assoc, starProjection_comp_adjoint_comp L hP]
 
 /-- The orthogonal projection onto the image `L (range P)` of the range of a star projection `P`
 is `Q A⁻¹ Q†`, where `Q = L ∘L P` and `A = Q† Q + (1 - P)`, when `A` is invertible. -/
@@ -402,11 +412,11 @@ theorem starProjection_range_comp_eq (L : E →L[𝕜] F) (hP : IsStarProjection
   rw [← imageGram] at hA ⊢
   -- `Q† Q A⁻¹ = P A A⁻¹ = P`, and `P Q† = Q†`.
   have hQQ : adjoint (L ∘L P) ∘L (L ∘L P) ∘L Ring.inverse (imageGram L P) = P := by
-    rw [← comp_assoc, ← starProjection_mul_imageGram L hP, ← mul_def, mul_assoc,
-      Ring.mul_inverse_cancel _ hA, mul_one]
+    rw [← comp_assoc, ← starProjection_mul_imageGram L hP]
+    simp [← mul_def, mul_assoc, Ring.mul_inverse_cancel _ hA]
   exact starProjection_range_eq_comp_comp_adjoint <| by
-    rw [← comp_assoc (L ∘L P), ← comp_assoc (adjoint (L ∘L P)), hQQ,
-      starProjection_comp_adjoint_comp L hP]
+    simp only [← comp_assoc] at hQQ ⊢
+    rw [hQQ, starProjection_comp_adjoint_comp L hP]
 
 /-- For a star projection `P` of a finite-dimensional space, the corrected Gram operator
 `(L P)† (L P) + (1 - P)` is invertible exactly when `L` is injective on the range of `P`. -/
@@ -417,7 +427,7 @@ theorem isUnit_adjoint_comp_add_one_sub_iff_injOn [FiniteDimensional 𝕜 E] (L 
   have hinj : Set.InjOn L (P.range : Set E) ↔
       Disjoint P.range (LinearMap.ker (L : E →ₗ[𝕜] F)) := by
     rw [LinearMap.disjoint_ker_iff_injOn, coe_coe]
-  have hPP (y : E) : P (P y) = P y := by rw [← mul_apply_eq_comp, hP.isIdempotentElem.eq]
+  have hPP (y : E) : P (P y) = P y := congr($hP.comp_self y)
   rw [← imageGram, hinj, isUnit_iff_isUnit_toLinearMap,
     LinearMap.isUnit_iff_ker_eq_bot, LinearMap.ker_eq_bot', Submodule.disjoint_def]
   simp only [coe_coe, LinearMap.mem_range, LinearMap.mem_ker]
@@ -489,15 +499,12 @@ projection onto the image under `B` of the range of `P`. -/
 theorem comp_comp_adjoint_eq_starProjection_range_comp {B : E →L[𝕜] F} (hB : Isometry B)
     (hP : IsStarProjection P) [(B ∘L P).range.HasOrthogonalProjection] :
     B ∘L P ∘L adjoint B = (B ∘L P).range.starProjection := by
-  have hP' := isSelfAdjoint_iff'.1 hP.isSelfAdjoint
-  have hPP : P ∘L P = P := hP.isIdempotentElem.eq
-  have hBB := (isometry_iff_adjoint_comp_self B).1 hB
+  have hBB (X : E →L[𝕜] E) : (X ∘L adjoint B) ∘L B = X := by
+    rw [comp_assoc, (isometry_iff_adjoint_comp_self B).1 hB, one_def, comp_id]
   -- With `Q = B P`: `Q† Q = P B† B P = P`, so `Q† Q P Q† = P P B† = Q†` and `Q P Q† = B P B†`.
-  have hQQ : adjoint (B ∘L P) ∘L (B ∘L P) = P := by
-    rw [adjoint_comp, hP', comp_assoc, ← comp_assoc (adjoint B), hBB, one_def, id_comp, hPP]
-  refine Eq.symm <| (starProjection_range_eq_comp_comp_adjoint (G := P) ?_).trans ?_
-  · rw [← comp_assoc, ← comp_assoc, hQQ, hPP, adjoint_comp, hP', ← comp_assoc, hPP]
-  · rw [adjoint_comp, hP', comp_assoc, ← comp_assoc P P, hPP, ← comp_assoc P P, hPP]
+  refine Eq.symm <| (starProjection_range_eq_comp_comp_adjoint (G := P) ?_).trans ?_ <;>
+    simp [adjoint_comp, hP.isSelfAdjoint.adjoint_eq, ← comp_assoc, hBB, hP.comp_self,
+      hP.comp_comp_self]
 
 end ContinuousLinearMap
 
