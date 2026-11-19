@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Normalize
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ContactType
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
 
@@ -76,34 +75,6 @@ open scoped Manifold ContDiff
 
 namespace Diffeomorph
 
-section Normalize
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
-
-/-- The covector of norm one on the ray of a covector `q` (`NormedSpace.normalize` on fibres). -/
-private def normalize (q : CotangentBundle J N) : CotangentBundle J N :=
-  TotalSpace.mk' (F →L[ℝ] ℝ) q.proj (NormedSpace.normalize q.snd)
-
-/-- The normalization of a covector other than zero has norm one. -/
-private theorem norm_snd_normalize {q : CotangentBundle J N} (hq : q.snd ≠ 0) :
-    ‖(normalize q).snd‖ = 1 :=
-  NormedSpace.norm_normalize (V := TangentSpace J q.proj →L[ℝ] ℝ) hq
-
-/-- Normalization only depends on the ray of a covector. -/
-private theorem normalize_mk_smul (q : CotangentBundle J N) {c : ℝ} (hc : 0 < c) :
-    normalize (TotalSpace.mk' (F →L[ℝ] ℝ) q.proj (c • q.snd)) = normalize q := by
-  simp only [normalize, NormedSpace.normalize_smul_of_pos hc]
-
-/-- A covector of norm one is its own normalization. -/
-private theorem normalize_of_norm_eq_one {q : CotangentBundle J N} (hq : ‖q.snd‖ = 1) :
-    normalize q = q := by
-  rw [normalize, NormedSpace.normalize_eq_self_of_norm_eq_one hq]
-
-end Normalize
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -121,9 +92,9 @@ variable [IsManifold I 2 M] [IsManifold J 2 N]
 linear on fibres. -/
 private theorem normalize_cotangent_normalize (h : M ≃ₘ⟮I, J⟯ N) {q : CotangentBundle I M}
     (hq : q.snd ≠ 0) : normalize (h.cotangent (normalize q)) = normalize (h.cotangent q) := by
-  rw [normalize.eq_1 q, NormedSpace.normalize, cotangent_mk_smul,
-    normalize_mk_smul (h.cotangent q) (c := ‖q.snd‖⁻¹) (inv_pos.2 ((norm_pos_iff (a
-        := q.snd)).2 hq))]
+  rw [normalize_eq_mk_smul q, cotangent_mk_smul,
+    normalize_mk_smul_of_pos (h.cotangent q) (c := ‖q.snd‖⁻¹)
+      (inv_pos.2 ((norm_pos_iff (a := q.snd)).2 hq))]
 
 /-- The cotangent lift of a covector of norm one, normalized to norm one. -/
 private def cosphereRadialMap (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) : cosphereBundle J N :=
@@ -141,7 +112,7 @@ private theorem cosphereRadialMap_symm_cosphereRadialMap (h : M ≃ₘ⟮I, J⟯
   apply Subtype.ext
   -- Lifting back the normalized covector gives a positive multiple of `z`, by fibre linearity.
   rw [coe_cosphereRadialMap, coe_cosphereRadialMap, normalize_cotangent_normalize _ hz,
-    ← cotangent_symm, symm_apply_apply, normalize_of_norm_eq_one z.property]
+    ← cotangent_symm, symm_apply_apply, normalize_eq_self_of_norm_eq_one z.property]
 
 /-- The scale `‖T*h(z)‖⁻¹` of the radial identification is positive. -/
 private theorem inv_norm_cotangent_snd_pos (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) :
@@ -158,23 +129,10 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M]
 
 private theorem contMDiff_cosphereRadialMap (h : M ≃ₘ⟮I, J⟯ N) :
     ContMDiff 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ)
-      𝓘(ℝ, Fin (finrank ℝ (F × (F →L[ℝ] ℝ)) - 1) → ℝ) ∞ (cosphereRadialMap h) := by
-  have : IsManifold J (∞ + 1) N := IsManifold.of_le (n := ∞) (by simp)
-  have hψ : ContMDiff 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
-      fun z : cosphereBundle I M ↦ h.cotangent z.val :=
-    h.cotangent.contMDiff.comp isSmoothEmbedding_coe_cosphereBundle.contMDiff
-  have hc : ContMDiff 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) 𝓘(ℝ) ∞
-      fun z : cosphereBundle I M ↦ ‖(h.cotangent z.val).snd‖⁻¹ := fun z ↦ by
-    have hz : (h.cotangent z.val).snd ≠ 0 :=
-      (h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.property)
-    have hn : ContMDiffAt 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) 𝓘(ℝ) ∞
-        (fun z : cosphereBundle I M ↦ ‖(h.cotangent z.val).snd‖) z :=
-      ContMDiffAt.comp (g := fun q : CotangentBundle J N ↦ ‖q.snd‖) z
-        (contMDiffAt_norm_snd (n := ∞) hz) (hψ z)
-    exact hn.inv₀ ((norm_ne_zero_iff (a := (h.cotangent z.val).snd)).2 hz)
-  have hval := hc.smul_totalSpace hψ
-  exact (ContMDiff.iff_comp_isImmersion isSmoothEmbedding_coe_cosphereBundle.isImmersion).2
-    ⟨hval.continuous.subtype_mk _, hval⟩
+      𝓘(ℝ, Fin (finrank ℝ (F × (F →L[ℝ] ℝ)) - 1) → ℝ) ∞ (cosphereRadialMap h) :=
+  contMDiff_normalize_cosphereBundle
+    (h.cotangent.contMDiff.comp isSmoothEmbedding_coe_cosphereBundle.contMDiff)
+    fun z ↦ (h.cotangent_snd_eq_zero_iff).not.2 (snd_ne_zero_of_mem_cosphereBundle z.property)
 
 /-- The **radial identification** of the unit cosphere bundles of Riemannian manifolds along a
 smooth diffeomorphism `h : M → N`: it sends a unit covector `z` to `T*h(z) / ‖T*h(z)‖`, the unit
@@ -198,14 +156,15 @@ private theorem coe_cosphereRadial_eq_normalize (h : M ≃ₘ⟮I, J⟯ N) (z : 
 theorem coe_cosphereRadial_apply (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) :
     (h.cosphereRadial z : CotangentBundle J N) =
       TotalSpace.mk' (F →L[ℝ] ℝ) (h z.val.proj) (‖(h.cotangent z.val).snd‖⁻¹ •
-          (h.cotangent z.val).snd) :=
-  CotangentBundle.ext (proj_cotangent h z.val) fun _ ↦ rfl
+          (h.cotangent z.val).snd) := by
+  rw [coe_cosphereRadial_eq_normalize, normalize_eq_mk_smul]
+  exact CotangentBundle.ext (proj_cotangent h z.val) fun _ ↦ rfl
 
 /-- The radial identification covers the diffeomorphism of the bases. -/
 @[simp]
 theorem proj_cosphereRadial (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) :
-    (h.cosphereRadial z).val.proj = h z.val.proj :=
-  proj_cotangent h z.val
+    (h.cosphereRadial z).val.proj = h z.val.proj := by
+  rw [coe_cosphereRadial_eq_normalize, proj_normalize, proj_cotangent]
 
 /-- The inverse of the radial identification along `h` is the radial identification along the
 inverse of `h`. -/
@@ -220,7 +179,7 @@ theorem cosphereRadial_refl :
     (Diffeomorph.refl I M ∞).cosphereRadial =
       Diffeomorph.refl 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (cosphereBundle I M) ∞ :=
   Diffeomorph.ext fun z ↦ Subtype.ext <| by
-    simpa [coe_cosphereRadial_eq_normalize] using normalize_of_norm_eq_one z.property
+    simpa [coe_cosphereRadial_eq_normalize] using normalize_eq_self_of_norm_eq_one z.property
 
 /-- Radial identification is functorial: along a composite it is the composite of the radial
 identifications. -/
@@ -274,7 +233,8 @@ private theorem mpullback_coe_comp_cosphereRadial_liouvilleForm_apply (h : M ≃
           isSmoothEmbedding_coe_cosphereBundle.contMDiff (liouvilleForm I M)).val z := by
   rw [← mpullback_cotangent_coe_liouvilleForm h]
   exact mpullback_liouvilleForm_apply_of_eq_smul _ (contMDiff_cotangent_coe h)
-    (fun y ↦ ‖(h.cotangent y.val).snd‖⁻¹) (coe_cosphereRadial_eq_normalize h) z
+    (fun y ↦ ‖(h.cotangent y.val).snd‖⁻¹)
+    (fun y ↦ (coe_cosphereRadial_eq_normalize h y).trans (normalize_eq_mk_smul _)) z
 
 /-- **The radial identification rescales the contact form `λ|S*`.** It pulls the restriction of
 the Liouville form of `T*N` to `S*N` back to the restriction of the Liouville form of `T*M` to
