@@ -34,6 +34,8 @@ inverse of `e` and shows that it is also a left inverse.
 
 * `SSet.Quasicategory.hornFilling_zero`: **Joyal's theorem**, a horn `Λ[n + 2, 0]` in a
   quasicategory whose initial edge is an equivalence can be filled.
+* `SSet.Quasicategory.exists_fill_of_ne_last`: a horn `Λ[d + 1, i]` with `i` not the last vertex
+  can be filled when it is inner, or when `i = 0` and its initial edge is an equivalence.
 * `SSet.Edge.isEquivalence_iff_hornFilling_zero`: an edge of a quasicategory is an equivalence
   exactly when every horn `Λ[n + 2, 0]` with that initial edge can be filled.
 
@@ -120,6 +122,39 @@ theorem hornFilling_zero [Quasicategory C] {n : ℕ} (σ₀ : (Λ[n + 2, 0] : SS
     (h : (Edge.mk' (σ₀.app _ (horn.edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsEquivalence) :
     ∃ σ : Δ[n + 2] ⟶ C, σ₀ = Λ[n + 2, 0].ι ≫ σ :=
   hornFilling_zero_aux (n + 2) (by omega) σ₀ _ h
+
+/-- The horn `Λ[1, 0]` is the single vertex `0` of `Δ[1]`, so any map from it extends to `Δ[1]`
+by a constant map. -/
+private lemma exists_fill_horn_one_zero (σ₀ : (Λ[1, 0] : SSet) ⟶ C) :
+    ∃ σ : Δ[1] ⟶ C, σ₀ = Λ[1, 0].ι ≫ σ := by
+  let v : (Λ[1, 0] : SSet) _⦋0⦌ := ⟨stdSimplex.obj₀Equiv.symm 0, by
+    rw [mem_horn_iff_notMem_range]
+    refine ⟨1, by decide, ?_⟩
+    rintro ⟨k, hk⟩
+    simp [stdSimplex.obj₀Equiv_symm_apply] at hk⟩
+  -- `Λ[1, 0]` is the single vertex `v`: `Λ[1, 0].ι` is mono and constant.
+  have : 𝟙 (Λ[1, 0] : SSet) = const v := by
+    rw [← cancel_mono Λ[1, 0].ι, Category.id_comp, const_comp, horn_one_ι_eq_const]
+    rfl
+  refine ⟨const (σ₀.app _ v), ?_⟩
+  conv_lhs => rw [← Category.id_comp σ₀, this, const_comp]
+  rw [comp_const]
+
+/-- In a quasicategory, a horn `Λ[d + 1, i]` with `i` not the last vertex can be filled when it is
+inner, or when `i = 0` and its initial edge is an equivalence. This combines inner horn filling
+with `SSet.Quasicategory.hornFilling_zero`; the horn `Λ[1, 0]`, which has no initial edge, is a
+single vertex. -/
+lemma exists_fill_of_ne_last [Quasicategory C] {d : ℕ} {i : Fin (d + 2)}
+    (hi : i ≠ Fin.last _) (σ₀ : (Λ[d + 1, i] : SSet) ⟶ C)
+    (h0 : i = 0 → ∀ H, (Edge.mk' (σ₀.app _
+      (horn.edge (d + 1) i 0 1 (Fin.zero_le _) H))).IsEquivalence) :
+    ∃ σ : Δ[d + 1] ⟶ C, σ₀ = Λ[d + 1, i].ι ≫ σ := by
+  by_cases hi0 : i = 0
+  · subst hi0
+    obtain _ | d := d
+    · exact exists_fill_horn_one_zero σ₀
+    · exact hornFilling_zero σ₀ (h0 rfl _)
+  · exact hornFilling (Fin.pos_iff_ne_zero.2 hi0) (Fin.lt_last_iff_ne_last.2 hi) σ₀
 
 end Quasicategory
 
