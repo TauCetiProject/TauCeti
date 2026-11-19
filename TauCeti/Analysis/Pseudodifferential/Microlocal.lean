@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Basic
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
+import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Localization
@@ -522,8 +523,7 @@ theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantize
     have hφS : MemSobolev t 2 ((toDistribution Ω u.toDistr).cutoffTempered φ) := by
       rw [hTφ]
       exact v.memSobolev_toDistr
-    have hφv : hφS.toBesselPotentialSpace = v :=
-      BesselPotentialSpace.ext (by rw [MemSobolev.toBesselPotentialSpace_toDistr, hTφ])
+    have hφv : hφS.toBesselPotentialSpace = v := hφS.toBesselPotentialSpace_eq_of_toDistr_eq hTφ
     have hLc := hL φ (hφW.trans (inter_subset_left.trans interior_subset)) hφS c hc
     rw [hφv] at hLc
     have hAS : MemSobolev (t - (0 + m)) 2 (TemperedDistribution.smulLeftCLM ℂ
@@ -531,7 +531,7 @@ theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantize
       rw [hψc]
       exact BesselPotentialSpace.memSobolev_toDistr _
     have hAc : hAS.toBesselPotentialSpace = c.quantizeSobolev hc t v :=
-      BesselPotentialSpace.ext (by rw [MemSobolev.toBesselPotentialSpace_toDistr, hψc])
+      hAS.toBesselPotentialSpace_eq_of_toDistr_eq (hψc t v)
     refine TemperedDistribution.isMicrolocallySobolevAt_toDistribution_iff.2
       ⟨ψ, by simp [hψx], Γ, hΓo, hξΓ, hcone, _, hAS, ?_⟩
     rwa [hAc, show s - m - (t - (0 + m)) = s - t by ring]

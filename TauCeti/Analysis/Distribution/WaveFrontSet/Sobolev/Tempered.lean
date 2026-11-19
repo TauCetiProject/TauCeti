@@ -342,8 +342,9 @@ theorem isMicrolocallySobolevAt_toDistribution_iff {ξ : E} :
           (𝓕 hu.toBesselPotentialSpace.toLp : Lp ℂ 2 (volume : Measure E)) η := by
     have hT : MemSobolev r 2 ((toDistribution Ω u).cutoffTempered φ) := by
       rwa [cutoffTempered_toDistribution]
-    have hTu : hT.toBesselPotentialSpace = hu.toBesselPotentialSpace := BesselPotentialSpace.ext
-      (by simp only [MemSobolev.toBesselPotentialSpace_toDistr, cutoffTempered_toDistribution])
+    have hTu : hT.toBesselPotentialSpace = hu.toBesselPotentialSpace :=
+      hT.toBesselPotentialSpace_eq_of_toDistr_eq (by
+        simp only [MemSobolev.toBesselPotentialSpace_toDistr, cutoffTempered_toDistribution])
     simpa only [hTu] using one_add_norm_sq_rpow_smul_localFourier_ae_eq hT s
   rw [isMicrolocallySobolevAt_iff]
   constructor
