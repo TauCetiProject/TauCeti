@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Algebra.Basic
 public import Mathlib.FieldTheory.IntermediateField.Basic
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.NumberTheory.Padics.Basic
@@ -36,8 +37,8 @@ the completeness of `K^σ`.
 
 * `RingHom.completeSpace_padicFixedField`: the fixed field of a continuous endomorphism of a
   complete field is complete.
-* `RingHom.isDiscreteValuationRing_padicFixedField`: if `𝒪[K]` is a discrete valuation ring, so is
-  the valuation ring of the fixed field.
+* `RingHom.isDiscreteValuationRing_integer_padicFixedField`: if `𝒪[K]` is a discrete valuation
+  ring, so is the valuation ring of the fixed field.
 * `RingHom.finite_residueField_padicFixedField` and
   `RingHom.natCard_residueField_padicFixedField_le`: the residue field of the fixed field of a
   `q`-Frobenius lift is finite with at most `q` elements.
@@ -80,28 +81,13 @@ theorem completeSpace_padicFixedField [CompleteSpace K] :
     CompleteSpace (σ.padicFixedField p hσ) :=
   (isClosed_eq hσ continuous_id : IsClosed (σ.padicFixedField p hσ : Set K)).completeSpace_coe
 
-/-- The fixed field of a continuous ring endomorphism of a normed `ℚ_[p]`-algebra is nontrivially
-normed: it contains `p`, of norm `p⁻¹`. -/
-private theorem exists_padicFixedField_norm_ne_one :
-    ∃ x : σ.padicFixedField p hσ, x ≠ 0 ∧ ‖x‖ ≠ 1 := by
-  have hnorm : ‖(algebraMap ℚ_[p] (σ.padicFixedField p hσ) p)‖ = (p : ℝ)⁻¹ := by
-    rw [← Padic.norm_p]
-    exact norm_algebraMap' K (p : ℚ_[p])
-  have hp : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
-  refine ⟨algebraMap ℚ_[p] _ p, ?_, ?_⟩
-  · rw [← norm_ne_zero_iff, hnorm]
-    positivity
-  · rw [hnorm]
-    exact (inv_lt_one_of_one_lt₀ hp).ne
-
 variable [IsUltrametricDist K]
 
 /-- If the valuation ring of `K` is a discrete valuation ring, so is the valuation ring of the
 field fixed by a continuous ring endomorphism: `K^σ` is a discretely valued field. -/
-theorem isDiscreteValuationRing_padicFixedField [IsDiscreteValuationRing 𝒪[K]] :
-    IsDiscreteValuationRing 𝒪[σ.padicFixedField p hσ] := by
-  let := NontriviallyNormedField.ofNormNeOne (exists_padicFixedField_norm_ne_one (p := p) hσ)
-  exact (σ.padicFixedField p hσ).val.toRingHom.isDiscreteValuationRing_integer_of_norm_map_eq
+theorem isDiscreteValuationRing_integer_padicFixedField [IsDiscreteValuationRing 𝒪[K]] :
+    IsDiscreteValuationRing 𝒪[σ.padicFixedField p hσ] :=
+  (σ.padicFixedField p hσ).val.toRingHom.isDiscreteValuationRing_integer_of_norm_map_eq
     (K := K) fun _ ↦ rfl
 
 variable {q : ℕ} (hq : 1 < q) (hσq : ∀ a : K, ‖a‖ ≤ 1 → ‖σ a - a ^ q‖ < 1)
@@ -113,7 +99,7 @@ modulo the maximal ideal. -/
 private theorem norm_pow_sub_lt_one_of_mem_padicFixedField (a : σ.padicFixedField p hσ)
     (ha : ‖a‖ ≤ 1) : ‖a ^ q - a‖ < 1 := by
   have h := hσq a ha
-  rw [show σ a = a from a.2, ← norm_neg, neg_sub] at h
+  rw [(mem_padicFixedField hσ).1 a.2, ← norm_neg, neg_sub] at h
   exact h
 
 /-- The residue field of the field fixed by a `q`-Frobenius lift is finite. -/
@@ -130,8 +116,7 @@ theorem natCard_residueField_padicFixedField_le : Nat.card 𝓀[σ.padicFixedFie
 `K^σ` fixed by a `q`-Frobenius lift `σ` is a finite extension of `ℚ_[p]`. -/
 theorem finiteDimensional_padicFixedField [IsDiscreteValuationRing 𝒪[K]] :
     FiniteDimensional ℚ_[p] (σ.padicFixedField p hσ) := by
-  let := NontriviallyNormedField.ofNormNeOne (exists_padicFixedField_norm_ne_one (p := p) hσ)
-  have := isDiscreteValuationRing_padicFixedField (p := p) hσ
+  have := isDiscreteValuationRing_integer_padicFixedField (p := p) hσ
   have := finite_residueField_padicFixedField (p := p) hσ hq hσq
   exact Valued.integer.finiteDimensional_of_finite_residueField (K := σ.padicFixedField p hσ) ℚ_[p]
 
