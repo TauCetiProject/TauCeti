@@ -389,7 +389,7 @@ theorem self_trans_symm (e : StrictDoubleIso D₁ D₂) : e.trans e.symm = refl 
   ext e.hom_inv_id
 
 @[simp]
-theorem symm_self_trans (e : StrictDoubleIso D₁ D₂) : e.symm.trans e = refl D₂ :=
+theorem symm_trans_self (e : StrictDoubleIso D₁ D₂) : e.symm.trans e = refl D₂ :=
   ext e.inv_hom_id
 
 /-- A double isomorphism followed by its inverse fixes every object. -/
