@@ -5,14 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Cotangent
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Classification
+import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
-import Mathlib.NumberTheory.LegendreSymbol.ZModChar
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Small bounded families of Dirichlet L-functions
@@ -21,7 +19,9 @@ These examples include the empty bounded families at bounds zero and one with th
 radius one, and the first nonprincipal characters at levels three and four. Every nonprincipal
 complex character at level three or four is the cast of the native character
 `quadraticChar (ZMod 3)` or `ZMod.χ₄`, respectively. The cotangent formula gives their exact
-L-values at one as `π / (3√3)` and `π / 4`.
+L-values at one as `π / (3√3)` and `π / 4`. One positive radius gives a closed disk
+centered at one on which every nonprincipal complex Dirichlet L-function at levels three
+and four is nonzero.
 
 ## References
 
@@ -35,33 +35,13 @@ open Complex
 namespace DirichletCharacter
 
 /-- The odd character at level four has continued value `π / 4` at one. -/
-example (χ : DirichletCharacter ℂ 4) (hχ : χ.Odd) : χ.LFunction 1 = Real.pi / 4 := by
-  have h := χ.two_mul_LFunction_one_eq_sum_range_mul_cot hχ
-  have hres : (3 : ZMod 4) = -1 := by decide
-  have hneg : χ (3 : ZMod 4) = -1 := by simpa only [Odd, hres] using hχ
-  have htwo : χ (2 : ZMod 4) = 0 := χ.map_nonunit (by decide)
-  norm_num [Finset.sum_range_succ, hneg, htwo] at h
-  have ht : tan ((Real.pi : ℂ) / 4) = 1 := by exact_mod_cast Real.tan_pi_div_four
-  have hc : cot ((Real.pi : ℂ) / 4) = 1 := by
-    simpa only [tan_inv_eq_cot, inv_one] using congrArg Inv.inv ht
-  have hangle : (Real.pi : ℂ) * (3 / 4) = Real.pi - Real.pi / 4 := by ring
-  rw [mul_one_div, hangle, cot_pi_sub, hc] at h
-  linear_combination h / 2
+example (χ : DirichletCharacter ℂ 4) (hχ : χ.Odd) : χ.LFunction 1 = Real.pi / 4 :=
+  χ.LFunction_one_eq_pi_div_four hχ
 
 /-- The odd character at level three has continued value `π / (3√3)` at one. -/
 example (χ : DirichletCharacter ℂ 3) (hχ : χ.Odd) :
-    χ.LFunction 1 = Real.pi / (3 * (Real.sqrt 3 : ℂ)) := by
-  have h := χ.two_mul_LFunction_one_eq_sum_range_mul_cot hχ
-  have hres : (2 : ZMod 3) = -1 := by decide
-  have hneg : χ (2 : ZMod 3) = -1 := by simpa only [Odd, hres] using hχ
-  norm_num [Finset.sum_range_succ, hneg] at h
-  have ht : tan ((Real.pi : ℂ) / 3) = (Real.sqrt 3 : ℂ) := by
-    exact_mod_cast Real.tan_pi_div_three
-  have hc : cot ((Real.pi : ℂ) / 3) = (Real.sqrt 3 : ℂ)⁻¹ := by
-    simpa only [tan_inv_eq_cot] using congrArg Inv.inv ht
-  have hangle : (Real.pi : ℂ) * (2 / 3) = Real.pi - Real.pi / 3 := by ring
-  rw [mul_one_div, hangle, cot_pi_sub, hc] at h
-  linear_combination h / 2
+    χ.LFunction 1 = Real.pi / (3 * (Real.sqrt 3 : ℂ)) :=
+  χ.LFunction_one_eq_pi_div_three_mul_sqrt_three hχ
 
 /-- Radius one serves for the empty bounded family at bound zero. -/
 example : (0 : ℝ) < 1 ∧ ∀ (N : ℕ) [NeZero N], N ≤ 0 →
@@ -82,12 +62,15 @@ example {N : ℕ} [NeZero N] (hN : N ≤ 4) (χ : DirichletCharacter ℂ N) (hχ
   have := three_le_level_of_ne_one hχ
   omega
 
-/-- Casting the native integer-valued character modulo four gives the other nonprincipal member. -/
+/-- The complex cast of the native integer-valued character `ZMod.χ₄` is odd. -/
 example : Odd (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)) := by
-  have hneg : ZMod.χ₄ (-1) = -1 := by decide
+  have hneg : ZMod.χ₄ (-1) = -1 := by
+    simpa only [Int.cast_neg, Int.cast_one] using
+      (ZMod.χ₄_int_three_mod_four (n := -1) (by decide))
   simp only [Odd, MulChar.ringHomComp_apply, hneg, map_neg, map_one]
 
-/-- A single radius works simultaneously for the native functions at levels three and four. -/
+/-- One positive radius gives a closed disk centered at one where every nonprincipal complex
+Dirichlet L-function at levels three and four is nonzero. -/
 example : ∃ δ : ℝ, 0 < δ ∧ ∀ χ₃ : DirichletCharacter ℂ 3, χ₃ ≠ 1 →
     ∀ χ₄ : DirichletCharacter ℂ 4, χ₄ ≠ 1 → ∀ s : ℂ, ‖s - 1‖ ≤ δ →
       χ₃.LFunction s ≠ 0 ∧ χ₄.LFunction s ≠ 0 := by
@@ -98,18 +81,13 @@ example : ∃ δ : ℝ, 0 < δ ∧ ∀ χ₃ : DirichletCharacter ℂ 3, χ₃ �
 /-- Every nonprincipal complex character modulo four is the cast of the native quadratic one. -/
 example (χ : DirichletCharacter ℂ 4) (hχ : χ ≠ 1) :
     χ = ZMod.χ₄.ringHomComp (Int.castRingHom ℂ) := by
-  have hres : (3 : ZMod 4) = -1 := by decide
-  rcases χ.even_or_odd with he | ho
-  · apply (hχ ?_).elim
-    apply ext_of_level_four
-    simpa only [Even, hres, MulChar.one_apply (by decide : IsUnit (-1 : ZMod 4))]
-      using he
-  · apply ext_of_level_four
-    have hneg : ZMod.χ₄ (-1) = -1 := by decide
-    simpa only [Odd, hres, MulChar.ringHomComp_apply, hneg, map_neg, map_one] using ho
+  have hcard : Nat.totient 4 = 2 := by decide
+  have hquad : χ.IsQuadratic := MulChar.isQuadratic_iff_sq_eq_one.mpr (by
+    simpa only [ZMod.card_units_eq_totient, hcard] using χ.pow_card_eq_one)
+  exact (eq_one_or_eq_χ₄_of_isQuadratic hquad).resolve_left hχ
 
-/-- The native quadratic character modulo three is odd, and every nonprincipal complex character
-modulo three is its cast. Both assertions use the same value at minus one. -/
+/-- The complex cast of `quadraticChar (ZMod 3)` is odd and equals every nonprincipal
+complex character modulo three. -/
 example : Odd ((quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ)) ∧
     ∀ χ : DirichletCharacter ℂ 3, χ ≠ 1 →
       χ = (quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ) := by
@@ -119,11 +97,9 @@ example : Odd ((quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ)) ∧
   constructor
   · simp only [Odd, MulChar.ringHomComp_apply, hneg, map_neg, map_one]
   · intro χ hχ
-    rcases χ.even_or_odd with he | ho
-    · apply (hχ ?_).elim
-      apply ext_of_level_three
-      simpa only [Even, MulChar.one_apply (by decide : IsUnit (-1 : ZMod 3))] using he
-    · apply ext_of_level_three
-      simpa only [MulChar.ringHomComp_apply, hneg, map_neg, map_one, Odd] using ho
+    have hquad : χ.IsQuadratic := MulChar.isQuadratic_iff_sq_eq_one.mpr (by
+      simpa only [ZMod.card_units_eq_totient, Nat.totient_prime Nat.prime_three] using
+        χ.pow_card_eq_one)
+    exact ((isQuadratic_iff_eq_one_or_eq_quadraticChar χ).mp hquad).resolve_left hχ
 
 end DirichletCharacter
