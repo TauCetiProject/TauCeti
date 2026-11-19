@@ -239,7 +239,7 @@ omit [CompleteSpace V] in
 /-- The `∂_t J` coefficient `DJ · I` inherits local `Lᵖ` membership from `DJ`. -/
 private theorem IsSobolevCRCoefficients.memLpLoc_derivI
     (hc : IsSobolevCRCoefficients p Ω J DJ S) : MemLpLoc p Ω (fun z => DJ z I) :=
-  hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
+  hc.memLpLoc_deriv.clm_comp (𝕜 := ℝ) (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
 
 omit [CompleteSpace V] in
 /-- The four terms of the pairing `⟪D* φ, ξ⟫` (see `TauCeti.inner_crFormalAdjoint`) are

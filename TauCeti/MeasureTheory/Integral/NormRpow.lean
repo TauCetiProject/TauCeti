@@ -41,7 +41,8 @@ at most `|x - Re e| ^ s`.
   `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a power of the distance to a point is
-  never integrable over the whole space, for an additive Haar measure on a nontrivial space.
+  never integrable over the whole space, for an additive Haar measure on a nontrivial space; in
+  particular the identity is in no `Lᵖ` with `p ≠ 0` (`TauCeti.not_memLp_id`).
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
@@ -463,3 +464,33 @@ theorem not_integrable_norm_sub_rpow [Nontrivial E] (μ : Measure E) [μ.IsAddHa
   linarith
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- On a nontrivial finite-dimensional real normed space with an additive Haar measure, the
+identity map belongs to no global `Lᵖ` with `p ≠ 0`, although, being continuous, it is `Lᵖ` on
+every compact set. -/
+theorem not_memLp_id [Nontrivial E] {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞}
+    (hp : p ≠ 0) :
+    ¬ MemLp (id : E → E) p μ := by
+  intro h
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · have htop := h.eLpNorm_lt_top
+    rw [eLpNorm_exponent_top h.aestronglyMeasurable] at htop
+    obtain ⟨C, hC⟩ := eLpNormEssSup_lt_top_iff_isBoundedUnder.1 htop
+    obtain ⟨x, hx⟩ := exists_norm_eq E (by positivity : (0 : ℝ) ≤ (C : ℝ) + 1)
+    refine ((isOpen_lt continuous_const continuous_norm).measure_pos μ
+      (⟨x, by simp [hx]⟩ : {y : E | (C : ℝ) < ‖y‖}.Nonempty)).ne' ?_
+    rw [measure_eq_zero_iff_ae_notMem]
+    filter_upwards [hC] with y hy
+    exact not_lt.2 (NNReal.coe_le_coe.2 hy)
+  · exact μ.not_integrable_norm_sub_rpow p.toReal 0 <| by
+      simpa using (integrable_norm_rpow_iff h.aestronglyMeasurable hp hptop).2 h
+
+end TauCeti

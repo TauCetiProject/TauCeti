@@ -27,6 +27,7 @@ import TauCeti.Analysis.Sobolev.Local.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
+import TauCeti.MeasureTheory.Function.MemLpLoc.Examples
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -213,11 +214,7 @@ theorem memWkpLoc_two_norm_iff (h0 : (0 : ℂ) ∈ interior U) :
 /-- The indicator of the right half-plane is locally `Lᵖ` on every set, for every exponent. -/
 theorem memLpLoc_indicator_re_pos :
     MemLpLoc p U ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
-  refine memLpLoc_iff.2 fun K _ hK => ?_
-  have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
-  exact memLp_indicator_const p
-    (measurableSet_lt measurable_const Complex.measurable_re).nullMeasurableSet 1
-    (Or.inr (measure_ne_top _ _))
+  simpa using StrongDual.memLpLoc_indicator_pos (p := p) Complex.reCLM U
 
 /-- The indicator of the right half-plane has no weak derivative on any open set meeting the
 imaginary axis: its distributional derivative is a measure carried by the axis. -/
@@ -452,12 +449,7 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
 /-- **`‖z‖⁻¹` is locally `Lᵖ` near the origin exactly for `p < 2`.** -/
 theorem memLpLoc_norm_inv_iff (hU : U ∈ 𝓝 0) :
     MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
-  refine ⟨fun h => ?_, fun h => memLpLoc_iff.2 fun K _ hK =>
-    hK.memLp_norm_inv_restrict (by simpa [Complex.finrank_real_complex] using h)⟩
-  by_contra! hp2
-  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 hU
-  exact not_memLp_norm_inv_closedBall hε (by simpa [Complex.finrank_real_complex] using hp2)
-    (memLpLoc_iff.1 h _ hεU (isCompact_closedBall 0 ε))
+  simpa [Complex.finrank_real_complex] using memLpLoc_norm_inv_iff_lt_finrank (p := p) hU
 
 /-- **The components of the gradient of `log ‖z‖` are locally `Lᵖ` near the origin exactly for
 `p < 2`.** These are `Re z / ‖z‖²` and `Im z / ‖z‖²`, the divergence-form data of `log ‖z‖`. -/
