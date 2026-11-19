@@ -56,6 +56,8 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 
 * `TauCeti.AnalyticStage p h E`: the analytic stage `C₀(ZMod (pʰ) × ℕ, E)`.
 * `TauCeti.AnalyticStage.eval S`: evaluation `LA_h(E) →L[S] C(ℤ_p, E)`.
+* `TauCeti.AnalyticStage.transitionScalar b j k`: the re-expansion scalar
+  `(k choose j) b^(k - j) pʲ`, the coefficient of `vʲ` in `(b + p v)ᵏ`.
 * `TauCeti.AnalyticStage.transition S`: the re-expansion `LA_h(E) →L[S] LA_{h+1}(E)`.
 * `TauCeti.AnalyticStage.transitionLE S hhk`: re-expansion from level `h` to level `k` for `h ≤ k`.
 
@@ -70,7 +72,10 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
   compatible with `ℤ_p`.
 * `TauCeti.AnalyticStage.eval_injective`: evaluation is injective when multiplication by `p`
   on the coefficient module is injective.
-* `TauCeti.AnalyticStage.transition_apply`: the re-expansion formula for the transition.
+* `TauCeti.AnalyticStage.transition_apply`, `TauCeti.AnalyticStage.hasSum_transition_apply`: the
+  re-expansion formula for the transition.
+* `TauCeti.AnalyticStage.transitionScalar_def`: the value of the re-expansion scalars.
+* `TauCeti.AnalyticStage.transitionScalar_succ_succ`: Pascal's rule for the re-expansion scalars.
 * `TauCeti.AnalyticStage.norm_transition_apply_le`: the coefficient of `vʲ` after the transition
   has norm at most `‖p‖ʲ ‖c‖`.
 * `TauCeti.AnalyticStage.transition_apply_cast`: the same-centre coefficients recover
@@ -141,24 +146,20 @@ private noncomputable def discTerm (i : ZMod (p ^ h) × ℕ) (e : E) :
     · simp only [hb, ite_false]
       fun_prop
 
-private theorem norm_smul_le_of_norm_le_one {r : ℤ_[p]} (e : E) (hr : ‖r‖ ≤ 1) :
-    ‖r • e‖ ≤ ‖e‖ :=
-  (norm_smul_le r e).trans (mul_le_of_le_one_left (norm_nonneg e) hr)
-
 private theorem norm_discTerm_le (i : ZMod (p ^ h) × ℕ) (e : E) : ‖discTerm i e‖ ≤ ‖e‖ :=
   (ContinuousMap.norm_le _ (norm_nonneg e)).mpr fun y ↦ by
     simp only [discTerm, ContinuousMap.coe_mk]
     split_ifs
-    · exact norm_smul_le_of_norm_le_one e (PadicInt.norm_le_one _)
+    · exact PadicInt.norm_smul_le_norm _ e
     · simp
 
 variable [IsUltrametricDist E] [CompleteSpace E]
 
-private theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) {r : ℕ → ℤ_[p]}
-    (hr : ∀ n, ‖r n‖ ≤ 1) : Summable fun n ↦ r n • c (a, n) :=
+private theorem summable_smul_apply (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (r : ℕ → ℤ_[p]) :
+    Summable fun n ↦ r n • c (a, n) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| by
     rw [Nat.cofinite_eq_atTop]
-    exact squeeze_zero_norm (fun n ↦ norm_smul_le_of_norm_le_one _ (hr n))
+    exact squeeze_zero_norm (fun n ↦ PadicInt.norm_smul_le_norm (r n) _)
       (tendsto_zero_iff_norm_tendsto_zero.mp (tendsto_apply_mk_atTop c a))
 
 /-- The family of power series with coefficient vector `c`, as a continuous function of the
@@ -306,26 +307,22 @@ theorem eval_compLeft {F : Type*} [NormedAddCommGroup F] [Module ℤ_[p] F] [IsB
       ContinuousLinearMap.map_smul_of_tower] using (hasSum_eval_apply S c x).mapL φ
 
 private theorem summable_smul_apply_add (c : AnalyticStage p h E) (a : ZMod (p ^ h))
-    (n : ℕ) {r : ℕ → ℤ_[p]} (hr : ∀ k, ‖r k‖ ≤ 1) :
-    Summable fun k ↦ r k • c (a, k + n) := by
-  simpa using (summable_nat_add_iff n).mpr
-    (summable_smul_apply c a (r := fun k ↦ r (k - n)) fun k ↦ hr (k - n))
+    (n : ℕ) (r : ℕ → ℤ_[p]) : Summable fun k ↦ r k • c (a, k + n) := by
+  simpa using (summable_nat_add_iff n).mpr (summable_smul_apply c a fun k ↦ r (k - n))
 
 private theorem tsum_pow_smul_apply_add_eq_zero (hpE : IsSMulRegular E (p : ℤ_[p]))
     (c : AnalyticStage p h E) (hc : eval S c = 0) (a : ZMod (p ^ h)) (n : ℕ)
     (hn : ∀ k < n, c (a, k) = 0) (m : ℕ) :
     ∑' k, ((p : ℤ_[p]) ^ m) ^ k • c (a, k + n) = 0 := by
   set x : ℤ_[p] := p ^ m with hx
-  have hs := summable_smul_apply_add c a n (r := fun k ↦ x ^ k)
-    fun k ↦ PadicInt.norm_le_one _
+  have hs := summable_smul_apply_add c a n fun k ↦ x ^ k
   refine ((hpE.pow m).pow n).right_eq_zero_of_smul ?_
   rw [← hx, ← hs.tsum_const_smul]
   have hzero : ∑' k, x ^ k • c (a, k) = 0 := by
     rw [← eval_natCast_val_add_mul S, hc, ContinuousMap.zero_apply]
   have hprefix : ∑ k ∈ Finset.range n, x ^ k • c (a, k) = 0 :=
     Finset.sum_eq_zero fun k hk ↦ by rw [hn k (Finset.mem_range.mp hk), smul_zero]
-  have htail := (summable_smul_apply c a (r := fun k ↦ x ^ k)
-    fun k ↦ PadicInt.norm_le_one _).sum_add_tsum_nat_add n
+  have htail := (summable_smul_apply c a fun k ↦ x ^ k).sum_add_tsum_nat_add n
   rw [hprefix, zero_add, hzero] at htail
   simpa only [smul_smul, ← pow_add, Nat.add_comm n] using htail
 
@@ -334,8 +331,7 @@ private theorem norm_apply_le_of_eval_eq_zero (hpE : IsSMulRegular E (p : ℤ_[p
     (hn : ∀ k < n, c (a, k) = 0) (m : ℕ) :
     ‖c (a, n)‖ ≤ ‖(p : ℤ_[p])‖ ^ m * ‖c‖ := by
   set x : ℤ_[p] := p ^ m with hx
-  have hs := summable_smul_apply_add c a n (r := fun k ↦ x ^ k)
-    fun k ↦ PadicInt.norm_le_one _
+  have hs := summable_smul_apply_add c a n fun k ↦ x ^ k
   have hzero := tsum_pow_smul_apply_add_eq_zero S hpE c hc a n hn m
   rw [← hx, hs.tsum_eq_zero_add, pow_zero, one_smul, zero_add] at hzero
   have heq : c (a, n) = -∑' k, x ^ (k + 1) • c (a, k + 1 + n) :=
@@ -375,8 +371,13 @@ theorem eval_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
 
 /-- The re-expansion scalars `(k choose j) b^(k - j) pʲ`, the coefficient of `vʲ` in
 `(b + p v)ᵏ`. -/
-private noncomputable def transitionScalar (b : ℤ_[p]) (j k : ℕ) : ℤ_[p] :=
+noncomputable def transitionScalar (b : ℤ_[p]) (j k : ℕ) : ℤ_[p] :=
   (k.choose j : ℤ_[p]) * b ^ (k - j) * (p : ℤ_[p]) ^ j
+
+/-- The value of the re-expansion scalar `transitionScalar b j k`. -/
+theorem transitionScalar_def (b : ℤ_[p]) (j k : ℕ) :
+    transitionScalar b j k = (k.choose j : ℤ_[p]) * b ^ (k - j) * (p : ℤ_[p]) ^ j := by
+  rw [transitionScalar]
 
 private theorem norm_transitionScalar_le (b : ℤ_[p]) (j k : ℕ) :
     ‖transitionScalar b j k‖ ≤ ‖(p : ℤ_[p])‖ ^ j := by
@@ -385,6 +386,25 @@ private theorem norm_transitionScalar_le (b : ℤ_[p]) (j k : ℕ) :
         gcongr
         exacts [PadicInt.norm_le_one _, PadicInt.norm_le_one _]
     _ = _ := by ring
+
+/-- The constant re-expansion scalars are the powers `bᵏ`. -/
+@[simp]
+theorem transitionScalar_zero_left (b : ℤ_[p]) (k : ℕ) : transitionScalar b 0 k = b ^ k := by
+  simp [transitionScalar]
+
+/-- Pascal's rule for the re-expansion scalars:
+`T(j + 1, k + 1) = b T(j + 1, k) + p T(j, k)`. -/
+theorem transitionScalar_succ_succ (b : ℤ_[p]) (j k : ℕ) :
+    transitionScalar b (j + 1) (k + 1) =
+      b * transitionScalar b (j + 1) k + (p : ℤ_[p]) * transitionScalar b j k := by
+  simp only [transitionScalar, Nat.add_sub_add_right, Nat.choose_succ_succ', Nat.cast_add]
+  rcases lt_trichotomy j k with hjk | rfl | hjk
+  · obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hjk
+    rw [show j + m + 1 - (j + 1) = m by omega, show j + m + 1 - j = m + 1 by omega]
+    ring
+  · simp [Nat.choose_succ_self, pow_succ]
+    ring
+  · simp [Nat.choose_eq_zero_of_lt hjk, Nat.choose_eq_zero_of_lt (Nat.lt_succ_of_lt hjk)]
 
 /-- `(b + p v)ᵏ` is the sum of the re-expansion terms `vʲ (k choose j) b^(k - j) pʲ`. -/
 private theorem add_mul_pow_eq_sum_transitionScalar (b v : ℤ_[p]) (k : ℕ) :
@@ -401,7 +421,7 @@ private noncomputable def transitionCoeff (c : AnalyticStage p h E)
 
 private theorem summable_transitionScalar_smul (c : AnalyticStage p h E) (a : ZMod (p ^ h))
     (b : ℤ_[p]) (j : ℕ) : Summable fun k ↦ transitionScalar b j k • c (a, k) :=
-  summable_smul_apply c a fun _ ↦ PadicInt.norm_le_one _
+  summable_smul_apply c a _
 
 omit [CompleteSpace E] in
 private theorem norm_transitionCoeff_le (c : AnalyticStage p h E) (i : ZMod (p ^ (h + 1)) × ℕ) :
@@ -460,6 +480,14 @@ theorem transition_apply (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1))) (j 
         c ((a'.val : ZMod (p ^ h)), k) := by
   rw [coe_transition]
   rfl
+
+/-- The re-expansion formula for the transition, as a convergent series in the re-expansion
+scalars `transitionScalar`. -/
+theorem hasSum_transition_apply (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1))) (j : ℕ) :
+    HasSum (fun k ↦ transitionScalar ((a'.val / p ^ h : ℕ) : ℤ_[p]) j k •
+      c ((a'.val : ZMod (p ^ h)), k)) (transition S c (a', j)) := by
+  rw [coe_transition]
+  exact (summable_transitionScalar_smul c _ _ _).hasSum
 
 /-- On the subdisc with the same natural centre, re-expansion multiplies the degree-`j`
 coefficient by `p^j`. -/
@@ -539,10 +567,7 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
   set b : ℤ_[p] := ((a'.val / p ^ h : ℕ) : ℤ_[p])
   have hx : (a'.val : ℤ_[p]) + (p : ℤ_[p]) ^ (h + 1) * v =
       (a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (b + p * v) := by
-    have hval : a'.val = a.val + p ^ h * (a'.val / p ^ h) := by
-      rw [ZMod.val_natCast, Nat.mod_add_div]
-    rw [hval, Nat.cast_add, Nat.cast_mul, Nat.cast_pow]
-    simp only [b]
+    rw [PadicInt.natCast_val_eq_add a']
     ring
   rw [PadicInt.discHomeomorph_apply, eval_natCast_val_add_mul]
   conv_rhs => rw [hx, eval_natCast_val_add_mul]
