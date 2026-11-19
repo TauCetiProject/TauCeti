@@ -187,11 +187,11 @@ private theorem apply_natCast_eq_jacobiSym_squarefreePart_of_forall {N : ℕ}
   rw [hD.jacobiSym_squarefreePart hn, ← fundamentalDiscriminantChar_natCast_eq_jacobiSym hD hn,
     ← fundamentalDiscriminantCharCast_apply, ← hval n, Int.cast_natCast]
 
-/-- **Primitive quadratic characters are Kronecker symbols.** A nonprincipal primitive quadratic
-character `χ` of level `N ≠ 0` is the Jacobi symbol `(d / ·)` of a squarefree integer `d ≠ 1` with
-`|d| ≤ N` at every odd natural number; in particular `χ p = (d / p)` at every odd prime `p`. The
-proof takes `d` to be the squarefree part of the fundamental discriminant of `χ`, the radicand of
-the quadratic field cut out by `χ`; when `2 ≠ 0` this identification is
+/-- **Primitive quadratic characters are Jacobi symbols at odd arguments.** A nonprincipal
+primitive quadratic character `χ` of level `N ≠ 0` is the Jacobi symbol `(d / ·)` of a squarefree
+integer `d ≠ 1` with `|d| ≤ N` at every odd natural number; in particular `χ p = (d / p)` at every
+odd prime `p`. Here `d` can be taken to be the squarefree part of the fundamental discriminant of
+`χ`, the radicand of the quadratic field cut out by `χ`; when `2 ≠ 0` this is
 `DirichletCharacter.IsPrimitive.apply_natCast_eq_jacobiSym_squarefreePart`. -/
 theorem IsPrimitive.exists_squarefree_apply_natCast_eq_jacobiSym {N : ℕ} [NeZero N]
     {χ : DirichletCharacter R N} (hχ : χ.IsPrimitive) (hq : χ.IsQuadratic) (h1 : χ ≠ 1) :
@@ -244,9 +244,10 @@ theorem IsPrimitive.apply_eq_fundamentalDiscriminantCharCast_ite (hχ : χ.IsPri
   obtain ⟨D, hD, rfl, hval⟩ := hχ.exists_eq_ite_apply_eq hq
   exact hval n
 
-/-- **Primitive quadratic characters are Kronecker symbols, with their radicand.** When `2 ≠ 0`,
-a primitive quadratic character `χ` of level `N` is, at every odd natural number, the Jacobi
-symbol `(d / ·)` of the squarefree part `d` of its fundamental discriminant `D = χ (-1) N`. -/
+/-- **Primitive quadratic characters are Jacobi symbols of their radicand at odd arguments.**
+When `2 ≠ 0`, a primitive quadratic character `χ` of level `N` is, at every odd natural number, the
+Jacobi symbol `(d / ·)` of the squarefree part `d` of its fundamental discriminant
+`D = χ (-1) N`. -/
 theorem IsPrimitive.apply_natCast_eq_jacobiSym_squarefreePart (hχ : χ.IsPrimitive)
     (hq : χ.IsQuadratic) {n : ℕ} (hn : _root_.Odd n) :
     χ n = jacobiSym ((if χ (-1) = 1 then (N : ℤ) else -N : ℤ) : ℚ).squarefreePart n :=

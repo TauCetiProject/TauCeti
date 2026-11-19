@@ -108,7 +108,7 @@ theorem squarefreePart_intCast_dvd (n : ℤ) : (n : ℚ).squarefreePart ∣ n :=
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   obtain ⟨a, b, ha, hb, rfl⟩ := Int.exists_squarefree_mul_sq hn
-  rw [(squarefreePart_eq_iff ha).mpr ⟨b, by exact_mod_cast hb, by push_cast; rfl⟩]
+  rw [(squarefreePart_eq_iff ha).mpr ⟨b, by exact_mod_cast hb, by push_cast; ring⟩]
   exact dvd_mul_right a _
 
 /-- The squarefree part of an integer is at most the integer in absolute value. -/
