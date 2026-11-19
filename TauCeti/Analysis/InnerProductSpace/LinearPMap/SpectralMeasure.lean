@@ -254,8 +254,8 @@ theorem commute_spectralPVM_proj_resolvent (hA : IsSelfAdjoint A) {B : Set ℝ}
   -- Hence `P` commutes with `z - A` on the domain, and therefore with its inverse `R(z)`.
   ext y
   obtain ⟨x, rfl⟩ := (LinearPMap.isResolventAt_resolvent hz).smul_sub_surjective y
-  change P (A.resolvent z _) = A.resolvent z (P _)
-  rw [LinearPMap.resolvent_smul_sub_apply hz, map_sub, map_smul, ← hPA x]
+  rw [mul_apply_eq_comp, mul_apply_eq_comp, LinearPMap.resolvent_smul_sub_apply hz, map_sub,
+    map_smul, ← hPA x]
   exact (LinearPMap.resolvent_smul_sub_apply hz ⟨P x, hPdom x⟩).symm
 
 /-! ### Spectral support -/
