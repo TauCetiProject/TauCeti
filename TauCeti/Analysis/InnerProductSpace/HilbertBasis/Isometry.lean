@@ -68,11 +68,8 @@ theorem linearIsometryOfOrthonormal_apply_self (i : ι) :
 
 /-- A continuous linear map sending each `b i` to `v i` is the isometry `b i ↦ v i`. -/
 theorem eq_linearIsometryOfOrthonormal {T : E →L[𝕜] F} (hT : ∀ i, T (b i) = v i) :
-    T = (b.linearIsometryOfOrthonormal hv).toContinuousLinearMap := by
-  refine ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 b.dense_span)
-    ?_
-  rintro _ ⟨i, rfl⟩
-  simp [hT]
+    T = (b.linearIsometryOfOrthonormal hv).toContinuousLinearMap :=
+  b.ext_continuousLinearMap fun i ↦ by simp [hT]
 
 /-- The range of the isometry `b i ↦ v i` is the closed linear span of `v`. -/
 theorem range_linearIsometryOfOrthonormal :

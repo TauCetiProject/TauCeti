@@ -58,7 +58,9 @@ constant on the fibres factors through a unique `C^m` map
 * `Manifold.IsSubmersionAtOfComplement.mfderiv_eq_zero_iff`: the kernel of the derivative on the
   source of the normal-form chart.
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_section`,
-  `Manifold.IsSubmersionAt.exists_contMDiffOn_section`: local sections of a submersion.
+  `Manifold.IsSubmersionAt.exists_contMDiffOn_section`,
+  `Manifold.IsSubmersion.exists_contMDiffOn_section`, and
+  `Manifold.IsSubmersion.exists_contMDiffOn_section_of_surjective`: local sections of a submersion.
 * `Manifold.IsSubmersionAt.contMDiffAt_comp_iff`, `Manifold.IsSubmersion.contMDiff_comp_iff`:
   smoothness descends along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
@@ -322,6 +324,27 @@ theorem IsSubmersionAt.exists_contMDiffOn_section [I.Boundaryless] (h : IsSubmer
     ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
       ∀ y ∈ U, f (s y) = y :=
   h.isSubmersionAtOfComplement_complement.exists_contMDiffOn_section
+
+/-- **Local sections of a submersion.** If `f` is a `C^n` submersion and the model of `M` has no
+boundary, then through every `x : M` there is a `C^n` local section `s` of `f` over an open
+neighbourhood `U` of `f x` with `s (f x) = x`. No separation or countability assumption is
+needed. -/
+theorem IsSubmersion.exists_contMDiffOn_section [I.Boundaryless] (h : IsSubmersion I J n f)
+    (x : M) :
+    ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
+      ∀ y ∈ U, f (s y) = y :=
+  (h.isSubmersionAt x).exists_contMDiffOn_section
+
+/-- **Local sections of a surjective submersion.** If `f` is a surjective `C^n` submersion with
+boundaryless source, then every `y : N` has an open neighbourhood `U` carrying a `C^n` local
+section `s` of `f`. -/
+theorem IsSubmersion.exists_contMDiffOn_section_of_surjective [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f) (y : N) :
+    ∃ U : Set N, IsOpen U ∧ y ∈ U ∧ ∃ s : N → M, ContMDiffOn J I n s U ∧
+      ∀ z ∈ U, f (s z) = z := by
+  obtain ⟨x, rfl⟩ := hsurj y
+  obtain ⟨U, hU, hxU, s, _, hs, hfs⟩ := h.exists_contMDiffOn_section x
+  exact ⟨U, hU, hxU, s, hs, hfs⟩
 
 section Descent
 
