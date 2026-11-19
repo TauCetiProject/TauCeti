@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Decomposition
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.PiClassification
-import TauCeti.LinearAlgebra.FiniteBilinearModule.QuadraticRefinement
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 
 /-!
 # Symmetric pairings on finite abelian `p`-groups at odd `p`
