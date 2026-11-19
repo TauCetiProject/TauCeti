@@ -29,6 +29,8 @@ decomposition of [IFT], Definition 31.
 * `List.mem_maximalBlocks`: every block is an entry or an exception.
 * `List.maximalBlocks_append_of_maximal`: the first block is the longest exception at the front of
   the list, or its first entry if no exception of length at least two is a prefix of the list.
+* `List.maximalBlocks_eq_cons_iff`: the maximal blocks of a list are `u :: us` exactly when `u` is
+  such a first block and `us` are the maximal blocks of the rest.
 
 ## References
 
@@ -172,6 +174,26 @@ theorem maximalBlocks_append_of_maximal {E : Finset (List β)} {u l : List β}
       exact one_le_firstBlockLength _
     · exact le_firstBlockLength (by simp) h2 (by simpa using hE)
   rw [maximalBlocks_of_ne_nil (ne_nil_of_length_pos (by simp; lia)), hfirst, take_left, drop_left]
+
+/-- The maximal blocks of `l` are `u :: us` if and only if `l` is `u ++ us.flatten`, `u` is a single
+entry or an exception of length at least two, no longer exception of length at least two is a
+prefix of `l`, and `us` are the maximal blocks of their concatenation. -/
+theorem maximalBlocks_eq_cons_iff {E : Finset (List β)} {l u : List β} {us : List (List β)} :
+    maximalBlocks E l = u :: us ↔ l = u ++ us.flatten ∧ (u.length = 1 ∨ 2 ≤ u.length ∧ u ∈ E) ∧
+      (∀ v ∈ E, v <+: l → 2 ≤ v.length → v.length ≤ u.length) ∧
+      maximalBlocks E us.flatten = us := by
+  refine ⟨fun h => ?_, ?_⟩
+  · have hl : l ≠ [] := by rintro rfl; simp at h
+    rw [maximalBlocks_of_ne_nil hl, cons.injEq] at h
+    obtain ⟨rfl, rfl⟩ := h
+    refine ⟨by rw [flatten_maximalBlocks, take_append_drop], take_firstBlockLength hl, ?_,
+      by rw [flatten_maximalBlocks]⟩
+    -- The first block is at least as long as every exceptional prefix of length at least two.
+    rintro v hv ⟨t, rfl⟩ h2
+    rw [length_take_of_le (firstBlockLength_le_length hl)]
+    exact le_firstBlockLength (by simp) h2 (by simpa using hv)
+  · rintro ⟨rfl, hu, hmax, hus⟩
+    rw [maximalBlocks_append_of_maximal hu hmax, hus]
 
 /-- With the exceptions `0 1` and `0 1 2`, the list `0 1 2 0 3` is cut as `(0 1 2) 0 3`: the longest
 exception at the front is taken. -/
