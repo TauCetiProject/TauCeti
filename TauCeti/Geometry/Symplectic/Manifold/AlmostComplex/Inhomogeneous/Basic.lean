@@ -266,6 +266,23 @@ theorem tangentHom_apply_j (ν : InhomogeneousTerm j J) (q : P × M)
     DomainDependentHomSection.tangentHom_apply]
   exact h
 
+/-- A Hom section is an inhomogeneous term exactly when it satisfies the antilinearity equation
+read in the original domain and target tangent spaces. -/
+theorem _root_.TauCeti.mem_inhomogeneousTerms_iff_tangentHom
+    (j : ContMDiffAlmostComplexStructure IP n P)
+    (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (A : DomainDependentHomSection I M IP P n) :
+    A ∈ inhomogeneousTerms j J ↔ ∀ (q : P × M) (v : TangentSpace IP q.1),
+      A.tangentHom q (j q.1 v) = -J.tangentEndomorphism q (A.tangentHom q v) := by
+  refine ⟨fun hA q v ↦ tangentHom_apply_j ⟨A, hA⟩ q v, fun hA q ↦ ?_⟩
+  apply isComplexAntilinear_of_apply
+  intro v
+  have h := hA q v
+  rw [ContMDiffAlmostComplexStructureFamily.tangentEndomorphism_apply] at h
+  -- The horizontal fibre at `q` is a type synonym of `TangentSpace IP q.1`, and
+  -- `horizontalEndomorphism` and `tangentHom` are `j` and `A` read through it.
+  exact h
+
 /-- The raw tangent Hom map is antilinear for the domain structure and frozen target structure. -/
 theorem tangentHom_isComplexAntilinear (ν : InhomogeneousTerm j J) (q : P × M) :
     IsComplexAntilinear (j.almostComplexStructureAt q.1).toLinearMap
