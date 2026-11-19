@@ -179,11 +179,7 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (u ∘ positiveEndChart q) ζ : ℝ × ℝ →ₗ[ℝ] V) := by
   -- This is the manifold statement for the constant form.
-  have h (Ks Kt : ℝ × ℝ → V → ℝ) (v : ℝ × ℝ → V) (z : ℝ × ℝ) :
-      (ω.constSmooth.perturbedMFDeriv Ks Kt v z).toLinearMap =
-        (ω.perturbedFDeriv Ks Kt v z : ℝ × ℝ →ₗ[ℝ] V) :=
-    LinearMap.ext (ω.fromTangentSpace_perturbedMFDeriv_constSmooth_apply Ks Kt v z)
-  rw [← h] at hfloer ⊢
+  rw [← toLinearMap_perturbedMFDeriv_constSmooth] at hfloer ⊢
   exact SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
     (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) hζ hu.mdifferentiableAt
     hfloer
@@ -266,22 +262,18 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart_add
       (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z : ℝ × ℝ →ₗ[ℝ] V) := by
   -- This is the manifold statement for the constant form.
-  have h (Ks Kt : ℝ × ℝ → V → ℝ) (v : ℝ × ℝ → V) (z : ℝ × ℝ) :
-      (ω.constSmooth.perturbedMFDeriv Ks Kt v z).toLinearMap =
-        (ω.perturbedFDeriv Ks Kt v z : ℝ × ℝ →ₗ[ℝ] V) :=
-    LinearMap.ext (ω.fromTangentSpace_perturbedMFDeriv_constSmooth_apply Ks Kt v z)
   have hz' : max T₀ 0 < (z + (R, 0)).1 := by simpa using hz
   have hmem : positiveEndChart q (z + (R, 0)) ∈ thricePuncturedSphereReal :=
     positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt hz')
   have hJz := eq_comp_positiveEndChart hJ ((le_max_left _ _).trans hz'.le)
   simp only [Prod.snd_add, add_zero, comp_apply] at hJz
-  rw [← hJz, ← h]
+  rw [← hJz, ← toLinearMap_perturbedMFDeriv_constSmooth]
   exact SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_add
     (ω := ω.constSmooth) hKH hH (fun q t ↦ (hHd q t).mdifferentiable) R
     ((le_max_left _ _).trans hz'.le)
     ((hu _ hmem).differentiableAt
       (isOpen_thricePuncturedSphereReal.mem_nhds hmem)).mdifferentiableAt
-    (by rw [h]; exact hfloer _ hmem)
+    (by rw [toLinearMap_perturbedMFDeriv_constSmooth]; exact hfloer _ hmem)
 
 /-- **The energy of a translated end of a Floer pair of pants.** Under the hypotheses of
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, let `R` be a

@@ -917,9 +917,8 @@ theorem lintegral_enorm_hamiltonianCurvature_comp_add_right (ω : SmoothTwoForm 
   exact hv.lintegral_comp_emb (measurableEmbedding_addRight v)
     (fun z ↦ ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ)
 
-/-- **Translations preserve the energy.** Translating the map and the perturbation data by `v`
-preserves the energy: the energy of the translate over `(· + v) ⁻¹' S` is the energy of the
-original over `S`. -/
+/-- **Translations preserve the energy.** The energy of the translate of the map and the
+perturbation data by `v` over `(· + v) ⁻¹' S` is the energy of the original over `S`. -/
 theorem lintegral_floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M)
     (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (v : ℝ × ℝ) (S : Set (ℝ × ℝ)) :
     ∫⁻ z in (· + v) ⁻¹' S, ENNReal.ofReal
@@ -1376,6 +1375,12 @@ theorem fromTangentSpace_perturbedMFDeriv_constSmooth_apply (ω : SymplecticForm
     perturbedFDeriv_apply, hd']
   rw [NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
     hamiltonianVectorField_constSmooth, hamiltonianVectorField_constSmooth]
+
+/-- For a constant form, `perturbedMFDeriv` is `perturbedFDeriv` (`fromTangentSpace` is `id`). -/
+theorem toLinearMap_perturbedMFDeriv_constSmooth (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (z : ℝ × ℝ) : (ω.constSmooth.perturbedMFDeriv Ks Kt u z).toLinearMap =
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) :=
+  LinearMap.ext (ω.fromTangentSpace_perturbedMFDeriv_constSmooth_apply Ks Kt u z)
 
 /-- The intrinsic energy density for a constant form agrees with the vector-space density. -/
 @[simp]
