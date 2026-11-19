@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Detection
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Ladder
 import TauCeti.NumberTheory.LcmUpto
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.CurveX3AddX
 
 /-!
 # Examples of Montgomery reduction and stage-1 detection
@@ -35,30 +36,22 @@ public section
 
 namespace TauCeti.Montgomery
 
-open WeierstrassCurve
+open WeierstrassCurve TauCeti.Examples.Montgomery.CurveX3AddX
 
 local instance detectionPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
 local instance detectionPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
-private theorem nonsingular_one_three :
-    (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
+private theorem pointOneThreeSeven_double :
+    pointOneThreeSeven + pointOneThreeSeven = twoTorsionPoint 0 (by decide) :=
+  (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_three_seven).mpr (by decide)
 
-private noncomputable def pointSeven : (model (0 : ZMod 7) 1).toAffine.Point :=
-  .some 1 3 nonsingular_one_three
-
-private theorem pointSeven_double : pointSeven + pointSeven = twoTorsionPoint 0 (by decide) :=
-  (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_three).mpr (by decide)
-
-private theorem four_pointSeven : (4 : ℕ) • pointSeven = 0 := by
+private theorem four_pointOneThreeSeven : (4 : ℕ) • pointOneThreeSeven = 0 := by
   have h4 : (4 : ℕ) = 2 * 2 := rfl
-  simp only [h4, mul_nsmul, two_nsmul, pointSeven_double, twoTorsionPoint_add_self]
+  simp only [h4, mul_nsmul, two_nsmul, pointOneThreeSeven_double, twoTorsionPoint_add_self]
 
-private theorem addOrderOf_pointSeven : addOrderOf pointSeven = 4 := by
-  refine addOrderOf_eq_prime_pow (p := 2) (n := 1) ?_ four_pointSeven
-  rw [pow_one, two_nsmul, pointSeven_double]
+private theorem addOrderOf_pointOneThreeSeven : addOrderOf pointOneThreeSeven = 4 := by
+  refine addOrderOf_eq_prime_pow (p := 2) (n := 1) ?_ four_pointOneThreeSeven
+  rw [pow_one, two_nsmul, pointOneThreeSeven_double]
   exact twoTorsionPoint_ne_zero 0 (by decide)
 
 -- Modulo 5, (21, 25) represents infinity (1, 0); modulo 7 it reduces to (0, 4).
@@ -92,10 +85,10 @@ example : 1 < Nat.gcd (25 : ZMod 35).val 35 ∧ Nat.gcd (25 : ZMod 35).val 35 < 
 
 -- Over ZMod 7, (1, 3) has order 4: its only prime divisor is 2 ≤ 3, yet neither M(2) = 2 nor
 -- M(3) = 6 annihilates it, whereas M(4) = 12 does.
-example : ¬ addOrderOf pointSeven ∣ Nat.lcmUpto 2 ∧
-    ¬ addOrderOf pointSeven ∣ Nat.lcmUpto 3 ∧
-    addOrderOf pointSeven ∣ Nat.lcmUpto 4 := by
-  rw [addOrderOf_pointSeven]
+example : ¬ addOrderOf pointOneThreeSeven ∣ Nat.lcmUpto 2 ∧
+    ¬ addOrderOf pointOneThreeSeven ∣ Nat.lcmUpto 3 ∧
+    addOrderOf pointOneThreeSeven ∣ Nat.lcmUpto 4 := by
+  rw [addOrderOf_pointOneThreeSeven]
   decide
 
 -- Modulo 5, (21, 25) is already infinity (1, 0); modulo 7 it reduces to (0, 4), representing the
@@ -171,21 +164,12 @@ example :
 
 /-! ### The three gcd outcomes from `(22, 1)` modulo `35` -/
 
-private theorem nonsingular_two_zero :
-    (model (0 : ZMod 5) 1).toAffine.Nonsingular 2 0 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
-
-private noncomputable def pointFive : (model (0 : ZMod 5) 1).toAffine.Point :=
-  .some 2 0 nonsingular_two_zero
-
-private theorem two_pointFive : (2 : ℕ) • pointFive = 0 := by
+private theorem two_pointTwoZeroFive : (2 : ℕ) • pointTwoZeroFive = 0 := by
   rw [two_nsmul]
   exact Affine.Point.add_self_of_Y_eq (by simp [Affine.negY])
 
-private theorem addOrderOf_pointFive : addOrderOf pointFive = 2 :=
-  addOrderOf_eq_prime two_pointFive (Affine.Point.some_ne_zero _)
+private theorem addOrderOf_pointTwoZeroFive : addOrderOf pointTwoZeroFive = 2 :=
+  addOrderOf_eq_prime two_pointTwoZeroFive (Affine.Point.some_ne_zero _)
 
 private theorem map_castHom_twentyTwo_one {p : ℕ} (hp : p ∣ 35) {x y : ZMod p}
     (hns : (model (0 : ZMod p) 1).toAffine.Nonsingular x y)
@@ -260,18 +244,19 @@ example : double (2 : ZMod 35) 4 ⟨22, 1⟩ = ⟨21, 25⟩ ∧
     (1 < Nat.gcd (25 : ZMod 35).val 35 ∧ Nat.gcd (25 : ZMod 35).val 35 < 35) ∧
     Nat.gcd (25 : ZMod 35).val 35 = 5 := by
   have h5 := cross_double_twentyTwo_one (by decide) (by decide)
-    (map_castHom_twentyTwo_one (by decide) nonsingular_two_zero (by decide))
+    (map_castHom_twentyTwo_one (by decide) nonsingular_two_zero_five (by decide))
   have h7 := cross_double_twentyTwo_one (by decide) (by decide)
-    (map_castHom_twentyTwo_one (by decide) nonsingular_one_three (by decide))
-  have hm5 : addOrderOf pointFive ∣ 2 := by rw [addOrderOf_pointFive]
+    (map_castHom_twentyTwo_one (by decide) nonsingular_one_three_seven (by decide))
+  have hm5 : addOrderOf pointTwoZeroFive ∣ 2 := by rw [addOrderOf_pointTwoZeroFive]
   have h7_not_dvd : ¬ 7 ∣ Nat.gcd (25 : ZMod 35).val 35 :=
-    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointSeven ⟨21, 25⟩
-      h7.1 h7.2).not.mpr (by rw [addOrderOf_pointSeven]; decide)
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointOneThreeSeven ⟨21, 25⟩
+      h7.1 h7.2).not.mpr (by rw [addOrderOf_pointOneThreeSeven]; decide)
   exact ⟨double_twentyTwo_one,
-    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointFive ⟨21, 25⟩
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointTwoZeroFive ⟨21, 25⟩
       h5.1 h5.2).mpr hm5,
     h7_not_dvd,
-    one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd (by decide) pointFive ⟨21, 25⟩ hm5 h5.2 (by decide)
+    one_lt_gcd_and_gcd_lt_of_addOrderOf_dvd (by decide) pointTwoZeroFive ⟨21, 25⟩ hm5 h5.2
+      (by decide)
       (((25 : ZMod 35).dvd_gcd_val_iff_castHom_eq_zero (by decide)).not.mp h7_not_dvd),
     by decide⟩
 
@@ -281,14 +266,14 @@ example : diffAdd (double (2 : ZMod 35) 4 ⟨22, 1⟩) ⟨22, 1⟩ ⟨22, 1⟩ =
     ¬ 5 ∣ Nat.gcd (8 : ZMod 35).val 35 ∧ ¬ 7 ∣ Nat.gcd (8 : ZMod 35).val 35 ∧
     Nat.gcd (8 : ZMod 35).val 35 = 1 := by
   have h5 := cross_diffAdd_twentyOne_twentyFive (by decide) (by decide) (by decide)
-    (map_castHom_twentyTwo_one (by decide) nonsingular_two_zero (by decide))
+    (map_castHom_twentyTwo_one (by decide) nonsingular_two_zero_five (by decide))
   have h7 := cross_diffAdd_twentyOne_twentyFive (by decide) (by decide) (by decide)
-    (map_castHom_twentyTwo_one (by decide) nonsingular_one_three (by decide))
+    (map_castHom_twentyTwo_one (by decide) nonsingular_one_three_seven (by decide))
   exact ⟨by rw [double_twentyTwo_one, diffAdd_twentyOne_twentyFive],
-    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointFive ⟨1, 8⟩
-      h5.1 h5.2).not.mpr (by rw [addOrderOf_pointFive]; decide),
-    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointSeven ⟨1, 8⟩
-      h7.1 h7.2).not.mpr (by rw [addOrderOf_pointSeven]; decide),
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointTwoZeroFive ⟨1, 8⟩
+      h5.1 h5.2).not.mpr (by rw [addOrderOf_pointTwoZeroFive]; decide),
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointOneThreeSeven ⟨1, 8⟩
+      h7.1 h7.2).not.mpr (by rw [addOrderOf_pointOneThreeSeven]; decide),
     by decide⟩
 
 -- Outcome m = 4: double 2 4 (double 2 4 (22, 1)) = (9, 0); both order 2 over ZMod 5 and order 4
@@ -297,14 +282,14 @@ example : double (2 : ZMod 35) 4 (double 2 4 ⟨22, 1⟩) = ⟨9, 0⟩ ∧
     5 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧ 7 ∣ Nat.gcd (0 : ZMod 35).val 35 ∧
     Nat.gcd (0 : ZMod 35).val 35 = 35 := by
   have h5 := cross_double_twentyOne_twentyFive (by decide) (by decide)
-    (map_castHom_twentyTwo_one (by decide) nonsingular_two_zero (by decide))
+    (map_castHom_twentyTwo_one (by decide) nonsingular_two_zero_five (by decide))
   have h7 := cross_double_twentyOne_twentyFive (by decide) (by decide)
-    (map_castHom_twentyTwo_one (by decide) nonsingular_one_three (by decide))
+    (map_castHom_twentyTwo_one (by decide) nonsingular_one_three_seven (by decide))
   exact ⟨by rw [double_twentyTwo_one, double_twentyOne_twentyFive],
-    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointFive ⟨9, 0⟩
-      h5.1 h5.2).mpr (by rw [addOrderOf_pointFive]; decide),
-    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointSeven ⟨9, 0⟩
-      h7.1 h7.2).mpr (by rw [addOrderOf_pointSeven]),
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointTwoZeroFive ⟨9, 0⟩
+      h5.1 h5.2).mpr (by rw [addOrderOf_pointTwoZeroFive]; decide),
+    (prime_dvd_gcd_iff_addOrderOf_dvd one_ne_zero (by decide) pointOneThreeSeven ⟨9, 0⟩
+      h7.1 h7.2).mpr (by rw [addOrderOf_pointOneThreeSeven]),
     by decide⟩
 
 end TauCeti.Montgomery
