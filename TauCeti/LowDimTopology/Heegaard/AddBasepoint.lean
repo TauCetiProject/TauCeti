@@ -432,6 +432,13 @@ theorem addBasepointEuler_inr (χ : Region → ℤ) (r₀ : Region) (k : Fin 3) 
 
 variable [Fintype Point] [Fintype Region]
 
+/-- Lowering the Euler characteristic of the region `r₀` by `c` lowers the Euler sum
+`∑ χ(R) g(R)` by `c g(r₀)`. -/
+theorem sum_intCast_sub_single_mul (χ : Region → ℤ) (r₀ : Region) (c : ℤ) (g : Region → ℚ) :
+    ∑ r, ((χ r - (Pi.single r₀ c : Region → ℤ) r : ℤ) : ℚ) * g r =
+      ∑ r, (χ r : ℚ) * g r - c * g r₀ := by
+  simp [sub_mul, Finset.sum_sub_distrib, Pi.single_apply]
+
 /-- The Maslov index of a domain of the diagram with an added basepoint is
 `μ(D|_old) + D(C_α) + D(C_β) + D(L) - D(r₀)`, where `D|_old` is its restriction to the old
 regions. -/
@@ -441,13 +448,10 @@ theorem maslovIndex_addBasepoint (χ : Region → ℤ) (x y : H.Generator) (i j 
         (H.addBasepointGenerator r₀ y j) D =
       H.maslovIndex χ x y (D ∘ Sum.inl) + D (Sum.inr 0) + D (Sum.inr 1) + D (Sum.inr 2) -
         D (Sum.inl r₀) := by
-  have hχ : ∑ r, (((χ r - (Pi.single r₀ 1 : Region → ℤ) r : ℤ) : ℚ)) * D (Sum.inl r) =
-      ∑ r, (χ r : ℚ) * D (Sum.inl r) - D (Sum.inl r₀) := by
-    simp [sub_mul, Finset.sum_sub_distrib, Pi.single_apply]
   simp only [maslovIndex_apply, eulerMeasure_eq_sub_sum_pointMeasure,
     generatorPointMeasure_addBasepointGenerator, Fintype.sum_sum_type, addBasepointEuler_inl,
     addBasepointEuler_inr, pointMeasure_addBasepoint_inl, pointMeasure_addBasepoint_inr,
-    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply, hχ]
+    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply, sum_intCast_sub_single_mul]
   push_cast
   ring
 

@@ -318,18 +318,12 @@ theorem maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint (χ : Regio
       (H.addBasepoint r₀).maslovIndex (addBasepointEuler χ r₀) x y
         (D ∘ sumCircleTimesSphereRegion r₀) - 2 * D (Sum.inl r₀) := by
   rw [maslovIndex_mapRegion (χ := addBasepointEuler χ r₀)]
-  have hχ : ∑ r, (χ r : ℚ) * D (Sum.inl r) - ∑ r, ((Pi.single r₀ 2 : Region → ℤ) r : ℚ) *
-      D (Sum.inl r) = ∑ r, (χ r : ℚ) * D (Sum.inl r) - 2 * D (Sum.inl r₀) := by
-    simp [Pi.single_apply]
-  have hχ' : ∑ r, (χ r : ℚ) * D (Sum.inl r) - ∑ r, ((Pi.single r₀ 1 : Region → ℤ) r : ℚ) *
-      D (Sum.inl r) = ∑ r, (χ r : ℚ) * D (Sum.inl r) - D (Sum.inl r₀) := by
-    simp [Pi.single_apply]
   simp only [Fintype.sum_sum_type, sumCircleTimesSphereEuler_inl, sumCircleTimesSphereEuler_inr,
     addBasepointEuler_inl, addBasepointEuler_inr, Fin.sum_univ_two, Fin.sum_univ_three,
     sumCircleTimesSphereRegion_inl, sumCircleTimesSphereRegion_inr_zero,
-    sumCircleTimesSphereRegion_inr_one, sumCircleTimesSphereRegion_inr_two, Int.cast_sub,
-    sub_mul, Finset.sum_sub_distrib, Int.cast_one, one_mul]
-  rw [hχ, hχ']
+    sumCircleTimesSphereRegion_inr_one, sumCircleTimesSphereRegion_inr_two,
+    sum_intCast_sub_single_mul]
+  push_cast
   ring
 
 /-- The Maslov index of a domain `D` of the connected sum from `(x, i)` to `(y, j)` is
@@ -344,8 +338,7 @@ theorem maslovIndex_sumCircleTimesSphere (χ : Region → ℤ) (x y : H.Generato
   simp only [comp_apply, sumCircleTimesSphereRegion_inl, sumCircleTimesSphereRegion_inr_zero,
     sumCircleTimesSphereRegion_inr_one, sumCircleTimesSphereRegion_inr_two]
   -- The pullback restricted to the old regions is the restriction of `D`.
-  have : (D ∘ sumCircleTimesSphereRegion r₀) ∘ Sum.inl = D ∘ Sum.inl := rfl
-  rw [this]
+  rw [comp_assoc, sumCircleTimesSphereRegion, Sum.elim_comp_inl]
   ring
 
 end MaslovIndex
@@ -363,9 +356,7 @@ theorem mem_hatDomains_sumCircleTimesSphere_iff (hr₀ : r₀ ∈ Set.range H.ba
       D ∘ sumCircleTimesSphereRegion r₀ ∈
         (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀) x y := by
   have hnonneg : 0 ≤ D ↔ 0 ≤ D ∘ sumCircleTimesSphereRegion r₀ :=
-    ⟨fun h s => h _, fun h r' => by
-      obtain ⟨s, rfl⟩ := sumCircleTimesSphereRegion_surjective r₀ r'
-      exact h s⟩
+    (sumCircleTimesSphereRegion_surjective r₀).forall
   obtain ⟨z₀, rfl⟩ := hr₀
   rw [mem_hatDomains_iff, mem_hatDomains_iff, isDomainBetween_mapRegion_iff, hnonneg,
     maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint]
@@ -402,11 +393,8 @@ theorem hatDomains_addBasepoint_eq_image_hatDomains_sumCircleTimesSphere
         Region ⊕ Fin 2 → ℤ) ∘ sumCircleTimesSphereRegion r₀ = E := by
       funext s
       rcases s with r | k
-      · rfl
-      · fin_cases k
-        · rfl
-        · rfl
-        · exact hlens.symm
+      · simp
+      · fin_cases k <;> simp [hlens]
     refine ⟨_, ?_, hcomp⟩
     rw [H.mem_hatDomains_sumCircleTimesSphere_iff r₀ ⟨z₀, hz₀⟩, hcomp]
     exact hE
