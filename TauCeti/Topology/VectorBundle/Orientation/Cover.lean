@@ -530,11 +530,26 @@ theorem proj_coverSection (hι : Fintype.card ι = finrank ℝ F)
     (o : VectorBundleOrientation F E ι) (b : B) : (o.coverSection hι b).proj = b :=
   (rfl)
 
+/-- The section given by an orientation is injective. -/
+theorem coverSection_injective (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) : Function.Injective (o.coverSection hι) :=
+  Function.LeftInverse.injective (g := VectorBundleOrientationCover.proj) (o.proj_coverSection hι)
+
 /-- The deck involution exchanges the sections given by `o` and by the opposite orientation. -/
 theorem deck_coverSection (hι : Fintype.card ι = finrank ℝ F)
     (o : VectorBundleOrientation F E ι) (b : B) :
     VectorBundleOrientationCover.deck (o.coverSection hι b) = (-o).coverSection hι b :=
   (rfl)
+
+/-- The sheets of the sections given by `o` and by the opposite orientation are disjoint. -/
+theorem disjoint_range_coverSection_neg (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) :
+    Disjoint (Set.range (o.coverSection hι)) (Set.range ((-o).coverSection hι)) := by
+  refine Set.disjoint_left.2 ?_
+  rintro _ ⟨x, rfl⟩ ⟨y, h⟩
+  obtain rfl : y = x := by
+    simpa only [proj_coverSection] using congrArg VectorBundleOrientationCover.proj h
+  exact VectorBundleOrientationCover.deck_ne_self _ ((o.deck_coverSection hι y).trans h)
 
 /-- A bundle of rank `card ι` is orientable if and only if its orientation double cover has a
 continuous section. -/
