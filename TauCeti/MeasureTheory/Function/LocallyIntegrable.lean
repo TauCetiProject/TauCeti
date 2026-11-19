@@ -37,14 +37,6 @@ integrable on every interval `(a, b]`.
 On a space with continuous addition and zero, a locally integrable function on an open set agrees
 with a globally integrable one on any compact subset and on all sufficiently small translates of it.
 
-A function locally integrable on a set `s`, vanishing almost everywhere on `s` off a
-null-measurable compact `K ⊆ s`, is integrable on the whole space after extension by zero. This
-is the step that turns a local hypothesis plus compact support into a global one. The set `K` is
-asked to be null-measurable explicitly because nothing here ties the topology on `X` to its
-measurable space -- there is no `OpensMeasurableSpace` or `BorelSpace` assumption, so neither
-compactness nor closedness of `K` carries any measurability with it. (Absent a separation axiom
-`K` need not even be closed, but that is the lesser obstacle.) The set `s` needs no measurability.
-
 Pointwise suprema and infima of locally integrable functions are locally integrable in a
 normed lattice with solid norm, and finite sums of functions locally integrable on a set are
 locally integrable on it.
@@ -142,9 +134,7 @@ by the Radon–Nikodym derivative `dν/dρ` (`locallyIntegrable_toReal_rnDeriv_s
 ## Attribution
 
 The characterization uses Mathlib's `exists_open_between_and_isCompact_closure`
-to find relatively compact open neighborhoods of individual points. Extension by zero rests on
-Mathlib's `LocallyIntegrableOn.integrableOn_compact_subset`, which gives integrability on the
-compact support.
+to find relatively compact open neighborhoods of individual points.
 Compact localization adapts Mathlib's `LocallyIntegrable.integrableOn_nhds_isCompact` to
 an open domain and uses `compact_open_separated_add_right` for the translation neighborhood.
 Dilation rests on Mathlib's `map_addHaar_smul`, which computes the image of a Haar measure.
