@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue
 public import TauCeti.Geometry.Symplectic.Floer.Rescaling.Manifold
 public import TauCeti.MeasureTheory.Integral.EnergyConcentration
-import TauCeti.Topology.Separation.InvFunOn
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Floer solutions in a manifold converge off finitely many bubbling points
@@ -50,9 +50,9 @@ charts. Near a blow-up point, choose centres `cᵢ` and scales `εᵢ → 0` as 
 `TauCeti.SmoothTwoForm.IsNondegenerate.norm_fderiv_comp_le` this bounds the derivative of
 `e ∘ uᵢ` by a multiple of `εᵢ⁻¹`, so the disc of radius `η εᵢ` about `cᵢ` has image of size
 `O(η)` through `e`. Since `e` is injective on the compact set `K`, nearby images come from nearby
-points (`IsCompact.comap_nhds_inf_principal_le_nhds`), and for small `η`, fixed by the cover, the
-image of that disc lies in one chart of the cover. There the mean-value inequality on the disc of
-radius `r = η εᵢ`, at whose centre `r² ρ(uᵢ) = η²`, forces energy at least a fixed amount into
+points (`IsCompact.exists_mem_nhds_inter_preimage_subset`), and for small `η`, fixed by the cover,
+the image of that disc lies in one chart of the cover. There the mean-value inequality on the disc
+of radius `r = η εᵢ`, at whose centre `r² ρ(uᵢ) = η²`, forces energy at least a fixed amount into
 the disc. The finitely many charts give a uniform threshold, and counting concentration points
 (`TauCeti.exists_strictMono_finset_forall_le_of_concentration`) and the convergence where the
 energy density is bounded
@@ -122,13 +122,12 @@ private theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_o
   have hN : φ.source ∩ φ ⁻¹' ball (φ x) (κ / 2) ∈ 𝓝 x :=
     inter_mem (extChartAt_source_mem_nhds x)
       ((continuousAt_extChartAt x).preimage_mem_nhds (ball_mem_nhds _ (half_pos hκ)))
-  obtain ⟨V, hV, hVN⟩ := mem_inf_principal'.1 (hK.comap_nhds_inf_principal_le_nhds he he_inj hx hN)
-    |> mem_comap.1
+  obtain ⟨V, hV, hVN⟩ := hK.exists_mem_nhds_inter_preimage_subset he he_inj hx hN
   obtain ⟨ρ, hρ, hρV⟩ := Metric.mem_nhds_iff.1 hV
   refine ⟨δ, hδ, C, hC, ρ, hρ, fun Ω u z₀ r hΩ hr hBΩ hBD hu hfl hρu hint hE ↦ ?_⟩
   have huN {y : ℝ × ℝ} (hy : y ∈ closedBall z₀ r) :
       u y ∈ φ.source ∩ φ ⁻¹' ball (φ x) (κ / 2) :=
-    ((hVN (hρV (mem_ball.2 (hρu y hy).2))).resolve_left (not_not_intro (hρu y hy).1))
+    hVN ⟨(hρu y hy).1, hρV (mem_ball.2 (hρu y hy).2)⟩
   -- The coordinate expression of `u` is `C³` near the closed disc.
   set O := Ω ∩ u ⁻¹' φ.source
   have hO : IsOpen O := hu.continuousOn.isOpen_inter_preimage hΩ (isOpen_extChartAt_source x)
