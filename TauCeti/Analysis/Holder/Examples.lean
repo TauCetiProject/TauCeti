@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Examples of Hölder and Campanato spaces
@@ -98,15 +99,8 @@ theorem not_holderOnWith_abs_rpow_Ioo {α β C : ℝ≥0} (hα : 0 < α) (hαβ 
     ¬ HolderOnWith C β (fun x : ℝ ↦ |x| ^ (α : ℝ)) (Ioo (-1) 1) := by
   intro h
   have hβα : (0 : ℝ) < β - α := sub_pos.2 (by exact_mod_cast hαβ)
-  -- The factor `C t^(β - α)` tends to `0` as `t → 0⁺`.
-  have hlim : Tendsto (fun t : ℝ ↦ (C : ℝ) * t ^ ((β : ℝ) - α)) (𝓝[>] 0) (𝓝 0) := by
-    have h0 := ((continuous_id.rpow_const fun _ ↦ Or.inr hβα.le).tendsto (0 : ℝ)).const_mul
-      (C : ℝ)
-    simp only [id, Real.zero_rpow hβα.ne', mul_zero] at h0
-    exact h0.mono_left nhdsWithin_le_nhds
-  obtain ⟨t, ht, hCt⟩ :=
-    (Filter.Eventually.and (Ioo_mem_nhdsGT one_pos)
-      (hlim.eventually (gt_mem_nhds one_pos))).exists
+  obtain ⟨t, ht, hCt⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT one_pos)
+    (eventually_mul_rpow_lt_nhdsGT_zero hβα C one_pos)).exists
   have h1 := h.dist_le (x := t) (y := 0) ⟨by linarith [ht.1], ht.2⟩ ⟨by norm_num, by norm_num⟩
   have hα0 : (α : ℝ) ≠ 0 := by exact_mod_cast hα.ne'
   have hpos : 0 < t ^ (α : ℝ) := Real.rpow_pos_of_pos ht.1 _
@@ -131,16 +125,9 @@ theorem not_exists_ckHolderSpaceOn_zero_eq_sign {α : ℝ≥0} (hα : 0 < α)
     ¬ ∃ f : CkHolderSpaceOn 0 α Ω ℝ, ∀ x : Ω, f x = Real.sign x := by
   rintro ⟨f, hf⟩
   set K := nnHolderNorm α (f.iteratedFDeriv (Fin.last 0) : Ω → ℝ [×0]→L[ℝ] ℝ)
-  -- The factor `K (2 t)^α` tends to `0` as `t → 0⁺`.
-  have hlim : Tendsto (fun t : ℝ ↦ (K : ℝ) * (2 * t) ^ (α : ℝ)) (𝓝[>] 0) (𝓝 0) := by
-    have hα' : (0 : ℝ) < α := by exact_mod_cast hα
-    have h0 := (((continuous_const_mul 2).rpow_const fun _ ↦ Or.inr hα'.le).tendsto
-      (0 : ℝ)).const_mul (K : ℝ)
-    simp only [mul_zero, Real.zero_rpow hα'.ne'] at h0
-    exact h0.mono_left nhdsWithin_le_nhds
-  obtain ⟨t, ht, hKt⟩ :=
-    (Filter.Eventually.and (Ioo_mem_nhdsGT one_pos)
-      (hlim.eventually (gt_mem_nhds two_pos))).exists
+  obtain ⟨t, ht, hKt⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT one_pos)
+    (eventually_mul_rpow_lt_nhdsGT_zero (by exact_mod_cast hα) ((K : ℝ) * 2 ^ (α : ℝ))
+      two_pos)).exists
   have htΩ : t ∈ (Ω : Set ℝ) := by
     rw [hΩ]
     exact Or.inr ht
@@ -154,10 +141,11 @@ theorem not_exists_ckHolderSpaceOn_zero_eq_sign {α : ℝ≥0} (hα : 0 < α)
   have hfnt : f.extend (-t) = -1 := by
     rw [← Real.sign_of_neg (by linarith [ht.1] : -t < 0), ← hf ⟨-t, hntΩ⟩]
     exact f.extend_apply ⟨-t, hntΩ⟩
-  rw [hft, hfnt, Real.dist_eq, Real.dist_eq, sub_neg_eq_add, sub_neg_eq_add,
-    show (1 : ℝ) + 1 = 2 by norm_num, show t + t = 2 * t by ring, abs_of_pos two_pos,
-    abs_of_pos (by linarith [ht.1] : 0 < 2 * t)] at h1
-  linarith
+  have hd1 : dist (1 : ℝ) (-1) = 2 := by norm_num [Real.dist_eq]
+  have hdt : dist t (-t) = 2 * t := by
+    rw [Real.dist_eq, sub_neg_eq_add, ← two_mul, abs_of_pos (by linarith [ht.1])]
+  rw [hft, hfnt, hd1, hdt, Real.mul_rpow zero_le_two ht.1.le, ← mul_assoc] at h1
+  exact lt_irrefl _ (h1.trans_lt hKt)
 
 /-- For `k ≥ 1` and every `α`, the sign function lies in `C^{k,α}(Ω)` on `Ω = (-1, 0) ∪ (0, 1)`:
 it is bounded by `1` and its derivatives vanish on `Ω`, so the Hölder condition on the `k`-th

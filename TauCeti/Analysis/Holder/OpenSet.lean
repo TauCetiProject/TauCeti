@@ -584,11 +584,8 @@ theorem holderOnWith_iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) :
 with constant the Hölder seminorm of the derivative field of order zero. -/
 theorem holderOnWith_extend (f : CkHolderSpaceOn 0 α Ω F) :
     HolderOnWith (nnHolderNorm α (f.iteratedFDeriv (Fin.last 0) : Ω → E [×0]→L[ℝ] F)) α
-      f.extend Ω := by
-  have h := (continuousMultilinearCurryFin0 ℝ E F).isometry.comp_holderOnWith
-    f.holderOnWith_iteratedFDeriv_extend
-  rwa [iteratedFDeriv_zero_eq_comp, ← Function.comp_assoc, LinearIsometryEquiv.self_comp_symm,
-    Function.id_comp] at h
+      f.extend Ω :=
+  holderOnWith_iteratedFDeriv_zero_iff.1 f.holderOnWith_iteratedFDeriv_extend
 
 /-- **Hölder exponents above one.** For `α > 1` and a preconnected `Ω`, the derivative field of
 order `k` of an element of `C^{k,α}(Ω)` is constant on `Ω`. -/
