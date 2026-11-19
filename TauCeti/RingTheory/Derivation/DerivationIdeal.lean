@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Derivation.Basic
+public import TauCeti.RingTheory.Derivation.Basic
 public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
@@ -21,59 +21,13 @@ For a hypersurface `xy = s` over a base, the derivations vanish exactly along th
 locus `x = y = 0`, and the ideal pulled back to the base is `(s)`; this recovers a smoothing
 parameter from the algebra alone.
 
-Two constructions of derivations feed this ideal. A derivation over any scalars which vanishes on
-the image of `R` is `R`-linear (`Derivation.ofMapAlgebraMap`), so its values also lie in the
-derivation ideal (`Derivation.apply_mem_derivationIdeal_of_map_algebraMap`). An `R`-algebra
-isomorphism `e : A ≃ₐ[R] B` transports derivations of `A` to derivations `e ∘ D ∘ e⁻¹` of `B`
-(`Derivation.mapAlgEquiv`).
+A derivation over any scalars which vanishes on the image of `R` is `R`-linear
+(`Derivation.ofMapAlgebraMap`), so its values also lie in the derivation ideal
+(`Derivation.apply_mem_derivationIdeal_of_map_algebraMap`). Invariance under isomorphisms comes
+from transporting derivations along them (`Derivation.mapAlgEquiv`).
 -/
 
 public section
-
-namespace Derivation
-
-section OfMapAlgebraMap
-
-variable {S R A M : Type*} [CommSemiring S] [CommSemiring R] [CommSemiring A] [AddCommMonoid M]
-  [Algebra S A] [Algebra R A] [Module A M] [Module S M] [Module R M] [IsScalarTower R A M]
-
-/-- A derivation over `S` that vanishes on the image of `R` is `R`-linear. -/
-@[expose] def ofMapAlgebraMap (D : Derivation S A M) (hD : ∀ r : R, D (algebraMap R A r) = 0) :
-    Derivation R A M where
-  toFun := D
-  map_add' := D.map_add
-  map_smul' r a := by
-    rw [RingHom.id_apply, Algebra.smul_def, D.leibniz, hD, smul_zero, add_zero, algebraMap_smul]
-  map_one_eq_zero' := D.map_one_eq_zero
-  leibniz' := D.leibniz
-
-@[simp]
-theorem coe_ofMapAlgebraMap (D : Derivation S A M) (hD : ∀ r : R, D (algebraMap R A r) = 0) :
-    ⇑(D.ofMapAlgebraMap hD) = D :=
-  rfl
-
-end OfMapAlgebraMap
-
-section MapAlgEquiv
-
-variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B] [Algebra R A]
-  [Algebra R B]
-
-/-- A derivation of `A` transported along an `R`-algebra isomorphism `e : A ≃ₐ[R] B`: the
-derivation `e ∘ D ∘ e⁻¹` of `B`. -/
-@[expose] def mapAlgEquiv (D : Derivation R A A) (e : A ≃ₐ[R] B) : Derivation R B B where
-  toLinearMap := (e.toLinearMap : A →ₗ[R] B) ∘ₗ D.toLinearMap ∘ₗ (e.symm.toLinearMap : B →ₗ[R] A)
-  map_one_eq_zero' := by simp
-  leibniz' x y := by simp [D.leibniz, smul_eq_mul]
-
-@[simp]
-theorem mapAlgEquiv_apply (D : Derivation R A A) (e : A ≃ₐ[R] B) (x : B) :
-    D.mapAlgEquiv e x = e (D (e.symm x)) :=
-  rfl
-
-end MapAlgEquiv
-
-end Derivation
 
 namespace TauCeti
 
@@ -105,8 +59,8 @@ theorem TauCeti.derivationIdeal_le_iff {I : Ideal A} :
 lie in the derivation ideal. -/
 theorem Derivation.apply_mem_derivationIdeal_of_map_algebraMap {S : Type*} [CommSemiring S]
     [Algebra S A] (D : Derivation S A A) (hD : ∀ r : R, D (algebraMap R A r) = 0) (a : A) :
-    D a ∈ derivationIdeal R A :=
-  (D.ofMapAlgebraMap hD).apply_mem_derivationIdeal a
+    D a ∈ derivationIdeal R A := by
+  simpa using (D.ofMapAlgebraMap hD).apply_mem_derivationIdeal a
 
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 

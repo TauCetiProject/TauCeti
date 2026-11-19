@@ -111,13 +111,14 @@ private theorem dvd_nodeBaseRestriction_of_mem {ρ : R →+* B}
     (hPP' : P * P' = nodeFstCoordinate b * nodeSndCoordinate b) {s : A} {f c : R}
     (h : P * f + P' * c ∈ Ideal.span {nodeEquation b 0 0 s}) :
     s ∣ nodeBaseRestriction b f := by
-  set a := nodeBaseRestriction b f
-  have hker : f - nodeBaseExtension b a ∈ Ideal.span {P, P'} := by
-    rw [hspan, ← ker_nodeBaseRestriction, RingHom.mem_ker, map_sub,
-      nodeBaseRestriction_nodeBaseExtension, sub_self]
-  obtain ⟨g, g', hg⟩ := Ideal.mem_span_pair.1 hker
+  obtain ⟨g₀, g₀', hf₀⟩ := exists_eq_nodeBaseExtension_add b f
+  -- Rewrite the `(x, y)` part of `f` in the generators `P, P'`.
+  obtain ⟨g, g', hg⟩ := Ideal.mem_span_pair.1
+    (hspan ▸ Ideal.mem_span_pair.2 ⟨g₀, g₀', rfl⟩ : g₀ * nodeFstCoordinate b +
+      g₀' * nodeSndCoordinate b ∈ Ideal.span {P, P'})
   obtain ⟨k, hk⟩ := Ideal.mem_span_singleton'.1 h
-  have hf : f = nodeBaseExtension b a + (g * P + g' * P') := by rw [hg]; ring
+  have hf : f = nodeBaseExtension b (nodeBaseRestriction b f) + (g * P + g' * P') := by
+    rw [hg]; exact hf₀
   have hρk := congrArg ρ hk
   rw [nodeEquation_eq_mul_sub, ← hPP', hf] at hρk
   simp only [map_mul, map_add, map_sub, hP, hP', hρ] at hρk
@@ -125,17 +126,6 @@ private theorem dvd_nodeBaseRestriction_of_mem {ρ : R →+* B}
     (by linear_combination -hρk)
 
 end Divisibility
-
-/-- The local ring `𝒪 ⧸ (xy - s(b))` of the node is an algebra over the base germs at `b`, by
-pullback of base germs to the node chart. -/
-instance nodeLocalAlgebra (s : A) : Algebra A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) :=
-  ((Ideal.Quotient.mk _).comp (nodeBaseExtension b)).toAlgebra
-
-@[simp]
-theorem algebraMap_nodeLocalAlgebra (s a : A) :
-    algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) a =
-      Ideal.Quotient.mk _ (nodeBaseExtension b a) :=
-  rfl
 
 /-! ### The Euler derivation -/
 
@@ -227,9 +217,9 @@ private theorem le_derivationIdeal_nodeEquation (s : A) :
   have hD (f : R) : Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})
       (nodeEulerDerivation b f) ∈ derivationIdeal A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) := by
     rw [← nodeEulerQuotientDerivation_mk]
-    exact Derivation.apply_mem_derivationIdeal_of_map_algebraMap _ (fun a : A ↦
-      (nodeEulerQuotientDerivation_mk b s (nodeBaseExtension b a)).trans (by
-        rw [nodeEulerDerivation_nodeBaseExtension, map_zero])) _
+    exact Derivation.apply_mem_derivationIdeal_of_map_algebraMap _ (fun a : A ↦ by
+      rw [algebraMap_nodeLocalAlgebra, nodeEulerQuotientDerivation_mk,
+        nodeEulerDerivation_nodeBaseExtension, map_zero]) _
   have hx := hD (nodeFstCoordinate b)
   have hy := hD (nodeSndCoordinate b)
   rw [nodeEulerDerivation_nodeFstCoordinate] at hx
@@ -275,12 +265,7 @@ private theorem derivation_apply_mem_map_nodeCriticalIdeal {s : A}
       (restrictHyperplane_nodeFstCoordinate b) (restrictHyperplane_nodeSndCoordinate b) rfl rfl
       hrel)
   -- Decompose the representative `f` as a base germ plus an element of `(x, y)`.
-  have hker : f - nodeBaseExtension b (nodeBaseRestriction b f) ∈ Ideal.span {x, y} := by
-    rw [← ker_nodeBaseRestriction, RingHom.mem_ker, map_sub,
-      nodeBaseRestriction_nodeBaseExtension, sub_self]
-  obtain ⟨g, g', hg⟩ := Ideal.mem_span_pair.1 hker
-  have hf : f = nodeBaseExtension b (nodeBaseRestriction b f) + (g * x + g' * y) := by
-    rw [hg]; ring
+  obtain ⟨g, g', hf⟩ := exists_eq_nodeBaseExtension_add b f
   rw [hf]
   simp only [map_add, map_mul, Derivation.leibniz, smul_eq_mul, hbase, zero_add]
   -- Each Leibniz term has a factor `x`, `y`, `D x` or `D y`, all of which lie in `J`.
@@ -295,7 +280,8 @@ private theorem derivationIdeal_nodeEquation_le (s : A) :
     derivationIdeal A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) ≤
       (nodeCriticalIdeal b s).map (Ideal.Quotient.mk _) :=
   derivationIdeal_le_iff.2 fun D ↦ derivation_apply_mem_map_nodeCriticalIdeal b
-    (D.restrictScalars ℤ) fun a ↦ D.map_algebraMap a
+    (D.restrictScalars ℤ) fun a ↦ by
+      rw [Derivation.coe_restrictScalars, ← algebraMap_nodeLocalAlgebra, D.map_algebraMap]
 
 /-! ### The intrinsic smoothing ideal -/
 
@@ -320,8 +306,7 @@ theorem comap_derivationIdeal_nodeEquation (s : A) :
 `t` differ by a unit. The isomorphism need not respect any choice of node coordinates. -/
 theorem associated_of_ringEquiv_nodeEquation {s t : A}
     (e : R ⧸ Ideal.span {nodeEquation b 0 0 s} ≃+* R ⧸ Ideal.span {nodeEquation b 0 0 t})
-    (he : ∀ a, e (Ideal.Quotient.mk _ (nodeBaseExtension b a)) =
-      Ideal.Quotient.mk _ (nodeBaseExtension b a)) :
+    (he : ∀ a, e (algebraMap A _ a) = algebraMap A _ a) :
     Associated s t :=
   -- The base ideals cut out by the derivations of the two isomorphic algebras agree.
   Ideal.span_singleton_eq_span_singleton.1 <| (comap_derivationIdeal_nodeEquation b s).symm.trans <|

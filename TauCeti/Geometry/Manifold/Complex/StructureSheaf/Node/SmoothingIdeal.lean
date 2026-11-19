@@ -62,6 +62,17 @@ def nodeBaseExtension : A →+* R :=
     contDiff_fst.contMDiff ((b, (0 : ℂ)), 0)).comp
       (stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0))
 
+/-- The local ring `𝒪 ⧸ (xy - s(b))` of the node is an algebra over the base germs at `b`, by
+pullback of base germs to the node chart. -/
+instance nodeLocalAlgebra (s : A) : Algebra A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) :=
+  ((Ideal.Quotient.mk _).comp (nodeBaseExtension b)).toAlgebra
+
+@[simp]
+theorem algebraMap_nodeLocalAlgebra (s a : A) :
+    algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) a =
+      Ideal.Quotient.mk _ (nodeBaseExtension b a) :=
+  rfl
+
 /-- Restriction of a function representative evaluates both vertical coordinates at zero. -/
 theorem toFilterGerm_nodeBaseRestriction {s : R} {f : (E × ℂ) × ℂ → ℂ}
     (hs : toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) ((b, (0 : ℂ)), 0)
@@ -218,6 +229,18 @@ theorem ker_nodeBaseRestriction :
     Ideal.comap_map_of_surjective r (restrictHyperplane_surjective _ _),
     ← RingHom.ker_eq_comap_bot, ker_restrictHyperplane, Ideal.span_insert, nodeSndCoordinate]
 
+/-- Every germ is its value on the zero section, pulled back from the base, plus an element of
+`(x,y)`. -/
+theorem exists_eq_nodeBaseExtension_add (f : R) :
+    ∃ g g' : R, f = nodeBaseExtension b (nodeBaseRestriction b f) +
+      (g * nodeFstCoordinate b + g' * nodeSndCoordinate b) := by
+  have hker : f - nodeBaseExtension b (nodeBaseRestriction b f) ∈
+      Ideal.span {nodeFstCoordinate b, nodeSndCoordinate b} := by
+    rw [← ker_nodeBaseRestriction, RingHom.mem_ker, map_sub,
+      nodeBaseRestriction_nodeBaseExtension, sub_self]
+  obtain ⟨g, g', hg⟩ := Ideal.mem_span_pair.1 hker
+  exact ⟨g, g', by rw [hg]; ring⟩
+
 /-- In the ambient coordinates the node equation is `xy - s(b)`, with `s` pulled back from
 the base. -/
 theorem nodeEquation_eq_mul_sub (s : A) :
@@ -295,8 +318,11 @@ theorem map_mk_nodeCriticalIdeal (s : A) :
 pulls back to the ideal `(s)` of the base. -/
 theorem comap_map_mk_nodeCriticalIdeal (s : A) :
     ((nodeCriticalIdeal b s).map (Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s}))).comap
-      ((Ideal.Quotient.mk _).comp (nodeBaseExtension b)) = Ideal.span {s} := by
-  rw [← Ideal.comap_comap, Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
+      (algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s})) = Ideal.span {s} := by
+  rw [show algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) =
+      (Ideal.Quotient.mk _).comp (nodeBaseExtension b) from
+    RingHom.ext (algebraMap_nodeLocalAlgebra b s), ← Ideal.comap_comap,
+    Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
     ← RingHom.ker_eq_comap_bot, Ideal.mk_ker, sup_eq_left.2,
     comap_nodeBaseExtension_nodeCriticalIdeal]
   rw [nodeCriticalIdeal_eq_span_sup_ker]
