@@ -142,9 +142,9 @@ theorem card_fixedBy_poles {g : K} (hg : g ≠ 1) : Nat.card (fixedBy K.poles g)
     norm_num at h1
   let e : fixedBy K.poles g ≃ {x : Fin 3 → ℝ | x ⬝ᵥ x = 1 ∧
       ((g : specialOrthogonalGroup (Fin 3) ℝ) : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ x = x} :=
-    { toFun x := ⟨x.1.1, x.1.2.1, congrArg Subtype.val (mem_fixedBy.mp x.2)⟩
+    { toFun x := ⟨x.1.1, x.1.2.1, by rw [← coe_smul_poles, mem_fixedBy.mp x.2]⟩
       invFun x := ⟨⟨x.1, setOf_mulVec_eq_self_subset_poles g.2 hg1 x.2⟩,
-        mem_fixedBy.mpr (Subtype.ext x.2.2)⟩
+        mem_fixedBy.mpr (Subtype.ext (by rw [coe_smul_poles]; exact x.2.2))⟩
       left_inv _ := rfl
       right_inv _ := rfl }
   rw [Nat.card_congr e, hp, Nat.card_coe_set_eq, Set.ncard_pair hpp]
@@ -174,7 +174,8 @@ theorem poles_eq_empty_iff : K.poles = ∅ ↔ K = ⊥ := by
 theorem one_lt_card_stabilizer_poles [Finite K] (x : K.poles) :
     1 < Nat.card (stabilizer K x) := by
   obtain ⟨-, g, hg, hg1, hgx⟩ := x.2
-  have hmem : (⟨g, hg⟩ : K) ∈ stabilizer K x := Subtype.ext hgx
+  have hmem : (⟨g, hg⟩ : K) ∈ stabilizer K x :=
+    mem_stabilizer_iff.mpr (Subtype.ext (by rw [coe_smul_poles]; exact hgx))
   refine (one_lt_card_iff_ne_bot _).mpr fun h ↦ hg1 ?_
   rw [h, mem_bot] at hmem
   exact congrArg Subtype.val hmem

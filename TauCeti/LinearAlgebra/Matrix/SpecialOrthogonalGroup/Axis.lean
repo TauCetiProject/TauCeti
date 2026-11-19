@@ -8,12 +8,14 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.CrossProduct
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import Mathlib.Algebra.Order.Star.Real
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Matrix.CrossProduct
+import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Frame
 
 /-!
 # The axis of a rotation
@@ -25,7 +27,8 @@ different from two, `A` therefore fixes a nonzero vector.
 
 In dimension three over an ordered field, a rotation fixing two linearly independent vectors `u`
 and `v` is the identity: it also fixes their cross product `u ⨯₃ v`, and `u`, `v`, `u ⨯₃ v` are
-the rows of a matrix with determinant `(u ⨯₃ v) ⬝ᵥ (u ⨯₃ v) ≠ 0`. So the vectors fixed by a
+the columns of the frame matrix `TauCeti.Matrix.SpecialOrthogonalGroup.ofFrame u v`, whose
+determinant is `(u ⨯₃ v) ⬝ᵥ (u ⨯₃ v) ≠ 0`. So the vectors fixed by a
 nonidentity rotation form a line, its axis. Over `ℝ` the axis meets the unit sphere in exactly two
 antipodal points `p` and `-p`, the poles of the rotation. These are the poles counted in the
 classification of the finite rotation groups.
@@ -82,28 +85,20 @@ section OrderedField
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   {A : Matrix (Fin 3) (Fin 3) K}
 
+open TauCeti.Matrix.SpecialOrthogonalGroup in
 /-- A rotation of three-space over an ordered field which fixes two linearly independent vectors
 is the identity. -/
 theorem eq_one_of_mulVec_eq_self_of_linearIndependent
     (hA : A ∈ specialOrthogonalGroup (Fin 3) K) {u v : Fin 3 → K}
     (huv : LinearIndependent K ![u, v]) (hu : A *ᵥ u = u) (hv : A *ᵥ v = v) : A = 1 := by
-  -- `A` also fixes `w = u ⨯₃ v`, and the matrix `N` with rows `u`, `v`, `w` is invertible, its
-  -- determinant being `w ⬝ᵥ w ≠ 0`. Then `A Nᵀ = Nᵀ` forces `A = 1`.
-  set w := u ⨯₃ v with hw_def
-  have hw : A *ᵥ w = w := by
-    rw [hw_def, ← mulVec_cross_mulVec_of_mem_specialOrthogonalGroup hA, hu, hv]
-  have hw0 : w ≠ 0 := crossProduct_ne_zero_iff_linearIndependent.mpr huv
-  set N : Matrix (Fin 3) (Fin 3) K := ![u, v, w] with hN_def
-  have hdet : IsUnit Nᵀ.det := by
-    rw [det_transpose, hN_def, ← triple_product_eq_det, triple_product_permutation,
-      triple_product_permutation]
-    exact isUnit_iff_ne_zero.mpr (dotProduct_self_eq_zero.not.mpr hw0)
-  have hN : A * Nᵀ = Nᵀ := by
-    ext i j
-    have hfix : A *ᵥ N j = N j := by fin_cases j <;> simpa [N]
-    rw [Matrix.mul_apply]
-    simpa [mulVec, dotProduct] using congrFun hfix i
-  calc A = A * (Nᵀ * Nᵀ⁻¹) := by rw [mul_nonsing_inv _ hdet, mul_one]
+  -- `A` fixes the frame `(u, v, u ⨯₃ v)`, so `A N = N` for the frame matrix `N = ofFrame u v`,
+  -- which is invertible, its determinant being `(u ⨯₃ v) ⬝ᵥ (u ⨯₃ v) ≠ 0`. Hence `A = 1`.
+  have hN : A * ofFrame u v = ofFrame u v := by rw [← ofFrame_mulVec_mulVec hA, hu, hv]
+  have hdet : IsUnit (ofFrame u v).det := by
+    rw [det_ofFrame]
+    exact isUnit_iff_ne_zero.mpr (dotProduct_self_eq_zero.not.mpr
+      (crossProduct_ne_zero_iff_linearIndependent.mpr huv))
+  calc A = A * (ofFrame u v * (ofFrame u v)⁻¹) := by rw [mul_nonsing_inv _ hdet, mul_one]
     _ = 1 := by rw [← Matrix.mul_assoc, hN, mul_nonsing_inv _ hdet]
 
 /-- **The axis of a nonidentity rotation.** If a rotation `A ≠ 1` of three-space over an ordered
@@ -126,12 +121,13 @@ theorem exists_setOf_mulVec_eq_self_eq_pair {A : Matrix (Fin 3) (Fin 3) ℝ}
     ∃ p : Fin 3 → ℝ, p ⬝ᵥ p = 1 ∧ A *ᵥ p = p ∧ {x | x ⬝ᵥ x = 1 ∧ A *ᵥ x = x} = {p, -p} := by
   obtain ⟨v, hv0, hv⟩ := exists_mulVec_eq_self_of_mem_specialOrthogonalGroup two_ne_zero
     (by decide) hA
-  have hpos : 0 < v ⬝ᵥ v := lt_of_le_of_ne (Finset.sum_nonneg fun i _ ↦ mul_self_nonneg (v i))
+  have hpos : 0 < v ⬝ᵥ v := lt_of_le_of_ne (by simpa using dotProduct_star_self_nonneg v)
     (Ne.symm (dotProduct_self_eq_zero.not.mpr hv0))
   set p := (√(v ⬝ᵥ v))⁻¹ • v with hp_def
   have hp1 : p ⬝ᵥ p = 1 := by
-    rw [hp_def, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul, ← mul_assoc,
-      ← sq, inv_pow, Real.sq_sqrt hpos.le, inv_mul_cancel₀ hpos.ne']
+    simp only [hp_def, smul_dotProduct, dotProduct_smul, smul_eq_mul]
+    field_simp
+    exact (Real.sq_sqrt hpos.le).symm
   have hp0 : p ≠ 0 := by
     rintro h
     simp [h] at hp1

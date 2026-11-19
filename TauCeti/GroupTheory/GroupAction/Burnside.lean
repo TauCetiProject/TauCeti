@@ -176,9 +176,9 @@ theorem sum_one_sub_one_div_card_stabilizer_eq [Finite G] [Finite X]
       rw [← Nat.card_eq_fintype_card, fixedBy_one_eq_univ, Nat.card_univ]
     rw [hsum, h1, ← Nat.card_eq_fintype_card (α := G)] at h
     have hG : 1 ≤ Nat.card G := Nat.card_pos
-    have h' : ((Nat.card X + (Nat.card G - 1) * k : ℕ) : ℚ) =
-        ((Fintype.card (orbitRel.Quotient G X) * Nat.card G : ℕ) : ℚ) := congrArg _ h
-    rwa [Nat.cast_add, Nat.cast_mul, Nat.cast_sub hG, Nat.cast_one, Nat.cast_mul] at h'
+    rw [← Nat.cast_inj (R := ℚ)] at h
+    push_cast [hG] at h
+    exact h
   -- The class formula, with orbit sizes `|G| / mⱼ`.
   have hclass : (Nat.card X : ℚ) = ∑ ω : orbitRel.Quotient G X,
       (Nat.card G : ℚ) / Nat.card (stabilizer G ω.out) := by
