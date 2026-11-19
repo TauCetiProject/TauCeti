@@ -155,14 +155,26 @@ private def smoothSubmodule : Submodule ℝ (SobolevSection A μ p k) where
     exact ⟨c • s, hs.const_smul_section, map_smul _ c s⟩
 
 omit [T2Space M] in
+/-- Multiplying the Sobolev section of a `Cᵏ` section `s` by a smooth function `χ` gives the
+Sobolev section of the `Cᵏ` section `x ↦ χ x • s x`. -/
+theorem contMDiffSMulL_ofContMDiffSection {χ : M → ℝ} (hχ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ χ)
+    (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) :
+    contMDiffSMulL A μ p k hχ (ofContMDiffSection A μ p k s) =
+      ofContMDiffSection A μ p k
+        ⟨fun x ↦ χ x • s x, (hχ.of_le (by exact_mod_cast le_top)).smul_section s.contMDiff⟩ :=
+  eq_of_ae_eq_coord
+    (chartValueL_contMDiffSMulL_ae_coord hχ (chartValueL_ofContMDiffSection_ae A μ p k s))
+    (chartValueL_ofContMDiffSection_ae A μ p k _)
+
+omit [T2Space M] in
 /-- A multiplier equal to `1` wherever the `Cᵏ` section `s` is nonzero fixes its Sobolev
 section. -/
 private theorem contMDiffSMulL_ofContMDiffSection_of_smul_eq {χ : M → ℝ}
     (hχ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ χ) {s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯} (h : ∀ x, χ x • s x = s x) :
     contMDiffSMulL A μ p k hχ (ofContMDiffSection A μ p k s) = ofContMDiffSection A μ p k s := by
-  have hs := chartValueL_ofContMDiffSection_ae A μ p k s
-  refine eq_of_ae_eq_coord (fun j ↦ ?_) hs
-  simpa only [h] using chartValueL_contMDiffSMulL_ae_coord hχ hs j
+  rw [contMDiffSMulL_ofContMDiffSection]
+  congr
+  exact funext h
 
 omit [T2Space M] in
 /-- The chart-`i` components of the Sobolev section of the section
@@ -203,13 +215,9 @@ private theorem norm_coe_ofContMDiffSection_sub_le {i : Fin A.n} {ψ : M → ℝ
         (A.isCompact_closure_image i) (A.closure_image_subset_target i) k
         (A.contDiffOn_comp_chart_symm hψ i)‖ *
         dist ((z : A.sectionChartData.SobolevData μ p k) i l) (u l) := by
-  -- The components of a difference are the differences of the components. This holds by
-  -- definition; `Pi.sub_apply` does not fire through the coercion to `SobolevData`.
-  rw [show ((ofContMDiffSection A μ p k s - z : SobolevSection A μ p k) :
-      A.sectionChartData.SobolevData μ p k) i l =
-      (ofContMDiffSection A μ p k s : A.sectionChartData.SobolevData μ p k) i l -
-        (z : A.sectionChartData.SobolevData μ p k) i l from rfl,
-    coe_ofContMDiffSection_smul_triv_symm hψ hu hs l]
+  rw [Submodule.coe_sub,
+    Pi.sub_apply (ofContMDiffSection A μ p k s : A.sectionChartData.SobolevData μ p k) z i,
+    Pi.sub_apply, coe_ofContMDiffSection_smul_triv_symm hψ hu hs l]
   conv_lhs => rw [← hz, contMDiffSMulL_apply]
   exact (congrArg norm (ContinuousLinearMap.map_sub _ _ _).symm).trans_le
     ((ContinuousLinearMap.le_opNorm _ _).trans_eq (congrArg (_ * ·) (dist_eq_norm' _ _).symm))
