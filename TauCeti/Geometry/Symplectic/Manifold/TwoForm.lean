@@ -46,6 +46,8 @@ example.
   to the coordinate expression in the preferred chart at that point.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`: transport of tangent-fiber
   symplectic forms by the differential of a symplectomorphism.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_mfderivToContinuousLinearEquiv`: the
+  differential of a symplectomorphism is a linear symplectomorphism of the tangent-fiber forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
   diffeomorphism pulls a nondegenerate form back to a nondegenerate form.
 * `IsLocalDiffeomorph.isNondegenerate_mpullback_iff`: for a surjective
@@ -207,6 +209,14 @@ theorem IsNondegenerate.symplecticFormAt_transport (ψ : M ≃ₘ⟮I, I₂⟯ M
     SmoothForm.eval₂_mpullback,
     ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
     Diffeomorph.mfderivToContinuousLinearEquiv_coe]
+
+/-- At every point, the differential of a diffeomorphism pulling `σ₂` back to `σ` is a linear
+symplectomorphism from the tangent-space symplectic form of `σ` to that of `σ₂`. -/
+theorem IsNondegenerate.isSymplectomorphism_mfderivToContinuousLinearEquiv (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
+    (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (y : M) :
+    SymplecticForm.IsSymplectomorphism (hσ.symplecticFormAt y) (hσ₂.symplecticFormAt (ψ y))
+      (ψ.mfderivToContinuousLinearEquiv (by simp) y).toLinearEquiv :=
+  SymplecticForm.isSymplectomorphism_iff_transport_eq.2 (hσ.symplecticFormAt_transport ψ hψ y)
 
 include hσ in
 /-- A local diffeomorphism, such as a diffeomorphism, pulls a nondegenerate form back to a
