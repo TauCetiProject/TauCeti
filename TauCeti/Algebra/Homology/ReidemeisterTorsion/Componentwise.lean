@@ -436,7 +436,8 @@ theorem mk_componentwiseParityTorsion_eq_of_mk_det_eq_one
     mk m' (C.componentwiseParityTorsion c' f) = mk m' (C.componentwiseParityTorsion c f) := by
   -- The inverse change of bases has trivial class as well.
   have h₁ : mk m ((c' 1).det (c 1)) = 1 := by
-    simpa [h 1, Basis.det_self] using congrArg (mk m) ((c 1).det_mul_det (c' 1) (c 1))
+    rw [← (c 1).det_inv (c' 1), ← Units.coe_map_inv, Units.val_eq_one, inv_eq_one, Units.ext_iff]
+    exact h 1
   rw [componentwiseParityTorsion_eq_mul_det (c := c) c', map_mul, map_mul, ← map_mk f hf,
     ← map_mk f hf, h 0, h₁, map_one, mul_one, mul_one]
 

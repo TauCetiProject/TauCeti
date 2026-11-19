@@ -80,6 +80,16 @@ section BasisChange
 variable {ι : Type*} {s : ComplexShape ι} {C : HomologicalComplex (ModuleCat A) s} {n : ι → ℕ}
   (c c' : ∀ i, Basis (Fin (n i)) A (C.X i))
 
+/-- The endomorphisms of a `K`-module given by the images under `φ` of the matrices of `e'` in `e`
+and of `e` in `e'` are inverse to each other. -/
+private theorem toLin_map_toMatrix_comp_toLin_map_toMatrix {m M V : Type*} [Fintype m]
+    [DecidableEq m] [AddCommGroup M] [Module A M] [AddCommGroup V] [Module K V] (b : Basis m K V)
+    (e e' : Basis m A M) :
+    (Matrix.toLin b b ((e.toMatrix e').map φ)).comp (Matrix.toLin b b ((e'.toMatrix e).map φ)) =
+      LinearMap.id := by
+  rw [← Matrix.toLin_mul, ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip,
+    Matrix.map_one _ φ.map_zero φ.map_one, Matrix.toLin_one]
+
 /-- The automorphism of the coordinate base change of `(C, c)` along `φ` in degree `i` whose
 matrix in the standard basis is the image under `φ` of the matrix of `c' i` in the basis `c i`;
 its inverse has the image of the matrix of `c i` in `c' i`. -/
@@ -88,10 +98,8 @@ private noncomputable def basisChangeEquiv (i : ι) :
   let b := C.matrixBaseChangeBasis c φ i
   LinearEquiv.ofLinearMap (Matrix.toLin b b (((c i).toMatrix (c' i)).map φ))
     (Matrix.toLin b b (((c' i).toMatrix (c i)).map φ))
-    (by rw [← Matrix.toLin_mul, ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip,
-      Matrix.map_one _ φ.map_zero φ.map_one, Matrix.toLin_one])
-    (by rw [← Matrix.toLin_mul, ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip,
-      Matrix.map_one _ φ.map_zero φ.map_one, Matrix.toLin_one])
+    (toLin_map_toMatrix_comp_toLin_map_toMatrix φ b _ _)
+    (toLin_map_toMatrix_comp_toLin_map_toMatrix φ b _ _)
 
 /-- The basis of the coordinate base change of `(C, c)` along `φ` corresponding to the basis
 `c' i` of `C.X i`: its vectors are the columns of the image under `φ` of the matrix of `c' i` in
@@ -138,8 +146,7 @@ theorem parityTorsion_matrixBaseChange_eq_mul_det
       rw [toMatrix_matrixBaseChange_d, toMatrix_basisChangeBasis_d, RingHom.coe_id, Matrix.map_id],
     RingHom.id_apply, parityTorsion_eq_mul_det (C.matrixBaseChangeBasis c φ),
     det_basisChangeBasis, det_basisChangeBasis]
-  congr 2
-  exact inv_eq_of_mul_eq_one_right (by rw [← map_mul, Basis.det_mul_det, Basis.det_self, map_one])
+  rw [← (c 1).det_inv (c' 1), map_units_inv, IsUnit.unit_spec]
 
 /-- The basis-change formula for the torsion of a coordinate base change: replacing the bases
 `c i` of a based complex `C` over a commutative ring `A` by `c' i` multiplies the torsion of its
