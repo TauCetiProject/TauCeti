@@ -23,7 +23,7 @@ to `0` as
 `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
 `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
 `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`. Finally, it describes
-the sets `{x | x² ≤ a}` and `{x | -x² ≤ -a}` as an interval and a union of two rays.
+the sets `{x | x² ≤ a}` and `{x | a ≤ x²}` as an interval and a union of two rays.
 
 ## Main results
 
@@ -51,7 +51,7 @@ the sets `{x | x² ≤ a}` and `{x | -x² ≤ -a}` as an interval and a union of
 * `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
   `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 * `Real.setOf_sq_le_eq_Icc`: for `0 ≤ a`, `{x | x² ≤ a} = [-√a, √a]`.
-* `Real.setOf_neg_sq_le_neg_eq_union`: `{x | -x² ≤ -a} = (-∞, -√a] ∪ [√a, ∞)`.
+* `Real.setOf_le_sq_eq_union`: `{x | a ≤ x²} = (-∞, -√a] ∪ [√a, ∞)`.
 
 ## References
 
@@ -283,12 +283,12 @@ theorem setOf_sq_le_eq_Icc {a : ℝ} (ha : 0 ≤ a) : {x : ℝ | x ^ 2 ≤ a} = 
   ext x
   simp [sq_le ha]
 
-/-- The closed sublevel `{-x² ≤ -a}` of the negated square is the union of the two rays
+/-- The closed superlevel `{a ≤ x²}` of the square is the union of the two rays
 `(-∞, -√a]` and `[√a, ∞)`; for `a ≤ 0` they cover the line, since then `√a = 0`. -/
-theorem setOf_neg_sq_le_neg_eq_union (a : ℝ) :
-    {x : ℝ | -x ^ 2 ≤ -a} = Set.Iic (-√a) ∪ Set.Ici √a := by
+theorem setOf_le_sq_eq_union (a : ℝ) :
+    {x : ℝ | a ≤ x ^ 2} = Set.Iic (-√a) ∪ Set.Ici √a := by
   ext x
-  simp only [Set.mem_ofPred_eq, neg_le_neg_iff, Set.mem_union, Set.mem_Iic, Set.mem_Ici]
+  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_Iic, Set.mem_Ici]
   rw [← sqrt_le_sqrt_iff (sq_nonneg x), sqrt_sq_eq_abs, le_abs']
 
 end Real

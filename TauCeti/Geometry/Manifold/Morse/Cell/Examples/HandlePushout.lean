@@ -34,8 +34,8 @@ the theorem presents `M_{c+ε}` as the pushout of `M_{c-ε}` and one handle alon
   (`Real.setOf_sq_le_eq_Icc`): a handle of index `0` adds a new component, here the only one.
 * **Index `1` in dimension `1`: the inverted well.** For `f(x) = -x²` on `ℝ` at the level `0`, the
   critical point `0` has index `1` (`TauCeti.manifoldMorseIndex_neg_sq_real`). The lower sublevel
-  `{-x² ≤ -ε}` is the union of the two rays `(-∞, -√ε]` and `[√ε, ∞)`
-  (`Real.setOf_neg_sq_le_neg_eq_union`), and the line `{-x² ≤ ε} = ℝ` is the pushout of these rays
+  `{-x² ≤ -ε} = {ε ≤ x²}` is the union of the two rays `(-∞, -√ε]` and `[√ε, ∞)`
+  (`Real.setOf_le_sq_eq_union`), and the line `{-x² ≤ ε} = ℝ` is the pushout of these rays
   and the arc `𝔻 1 × 𝔻 0` along an attaching map `∂𝔻 1 × 𝔻 0 → {-x² ≤ -ε}` sending the two points
   of the attaching sphere to the two ends `-√ε` and `√ε` of the rays
   (`TauCeti.exists_isPushout_neg_sq_real`): the arc joins the two rays into the line.
@@ -132,7 +132,8 @@ attachment theorem (`TauCeti.IsMorse.exists_isPushout_sublevel_handles`) attache
 the attaching map `α : ∂𝔻 1 × 𝔻 0 → {-x² ≤ -ε}`, and `α` is a closed embedding sending the two
 points of the attaching sphere `∂𝔻 1` onto the two points `-√ε` and `√ε` of the level `-x² = -ε`.
 These are the ends of the two rays `(-∞, -√ε]` and `[√ε, ∞)` that make up the lower sublevel
-(`Real.setOf_neg_sq_le_neg_eq_union`), so the arc joins the two rays into the line. -/
+`{-x² ≤ -ε} = {ε ≤ x²}` (`Real.setOf_le_sq_eq_union`), so the arc joins the two rays into the
+line. -/
 theorem exists_isPushout_neg_sq_real :
     ∃ ε, 0 < ε ∧ ε ≤ 1 ∧
       ∃ (α : TopCat.of (TopCat.diskBoundary.{0} 1 × TopCat.disk.{0} 0) ⟶
