@@ -1013,8 +1013,8 @@ theorem totalCriticalCount_sumElim {M' : Type*} [TopologicalSpace M'] [ChartedSp
     {g : M' → ℝ} :
     totalCriticalCount I (Sum.elim f g) = totalCriticalCount I f + totalCriticalCount I g := by
   simp only [totalCriticalCount_def, criticalPoints_sumElim]
-  rw [encard_union_eq (isCompl_range_inl_range_inr.disjoint.mono (image_subset_range _ _)
-      (image_subset_range _ _)), Sum.inl_injective.encard_image, Sum.inr_injective.encard_image]
+  rw [encard_union_eq disjoint_image_inl_image_inr, Sum.inl_injective.encard_image,
+    Sum.inr_injective.encard_image]
 
 /-- **The critical count is additive over components.** If `M` has finitely many connected
 components, the number of critical points of `f` is the sum over the components of the numbers of

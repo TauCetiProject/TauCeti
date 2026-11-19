@@ -116,7 +116,7 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimens
 theorem lsCategoryCount_univ_sum_sphere :
     lsCategoryCount (sphere (0 : E) 1 ⊕ sphere (0 : E') 1) univ = 4 := by
   rw [lsCategoryCount_univ_sum, lsCategoryCount_univ_sphere, lsCategoryCount_univ_sphere]
-  rfl
+  norm_num
 
 /-- **Two disjoint spheres have normalized category `3`**, although each sphere has normalized
 category `1` (`TauCeti.normalizedLSCategory_sphere`): normalized category is not additive over
@@ -126,7 +126,7 @@ theorem normalizedLSCategory_sum_sphere :
   have : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   have : Nonempty (sphere (0 : E') 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
   rw [normalizedLSCategory_sum, normalizedLSCategory_sphere, normalizedLSCategory_sphere]
-  rfl
+  norm_num
 
 end Sphere
 

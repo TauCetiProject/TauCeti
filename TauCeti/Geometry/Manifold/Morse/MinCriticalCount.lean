@@ -253,7 +253,7 @@ theorem minCriticalCount_sum_sphere {E' : Type*} [NormedAddCommGroup E'] [InnerP
     [Fact (finrank ℝ E' = n + 1)] :
     minCriticalCount (𝓡 n) (sphere (0 : E) 1 ⊕ sphere (0 : E') 1) = 4 := by
   rw [minCriticalCount_sum, minCriticalCount_sphere, minCriticalCount_sphere]
-  rfl
+  norm_num
 
 end Sphere
 
