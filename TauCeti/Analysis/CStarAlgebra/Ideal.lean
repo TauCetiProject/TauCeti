@@ -172,6 +172,11 @@ theorem coe_toNonUnitalStarSubalgebra : (I.toNonUnitalStarSubalgebra : Set A) = 
 theorem mem_toNonUnitalStarSubalgebra {a : A} : a ∈ I.toNonUnitalStarSubalgebra ↔ a ∈ I :=
   Iff.rfl
 
+/-- `I.toNonUnitalStarSubalgebra` absorbs multiplication on the left by elements of `A`. -/
+theorem mul_mem_toNonUnitalStarSubalgebra :
+    ∀ a : A, ∀ x ∈ I.toNonUnitalStarSubalgebra, a * x ∈ I.toNonUnitalStarSubalgebra :=
+  I.mul_mem_left
+
 instance isClosed_toNonUnitalStarSubalgebra :
     IsClosed (I.toNonUnitalStarSubalgebra : Set A) :=
   hI
