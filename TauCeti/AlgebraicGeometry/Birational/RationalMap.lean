@@ -238,9 +238,8 @@ private theorem isOpenCover_domain_localExtension :
 
 variable [IsSeparated (Y ↘ S)]
 
-/-- Two local extensions agree on the overlap of their domains: both are `S`-morphisms into the
-separated `S`-scheme `Y` that restrict to `φ` on the generic point, which is dense in the
-overlap. -/
+/-- Two local extensions agree on the overlap of their domains: they are equivalent partial maps,
+since both restrict to `φ` on the generic point, and `Y` is separated over `S`. -/
 private theorem localExtension_compat (x y : X) :
     pullback.fst (localExtension hX φ hφ x).domain.ι (localExtension hX φ hφ y).domain.ι ≫
         (localExtension hX φ hφ x).hom =
@@ -251,21 +250,15 @@ private theorem localExtension_compat (x y : X) :
     (genericPoint_specializes x).mem_open g.domain.2 (mem_domain_localExtension hX φ hφ x)
   have hη' : genericPoint X ∈ g'.domain :=
     (genericPoint_specializes y).mem_open g'.domain.2 (mem_domain_localExtension hX φ hφ y)
-  -- the generic point of the overlap
-  let ι : Spec X.functionField ⟶ pullback g.domain.ι g'.domain.ι :=
-    pullback.lift (g.domain.fromSpecStalkOfMem _ hη) (g'.domain.fromSpecStalkOfMem _ hη')
-      (by rw [Opens.fromSpecStalkOfMem_ι, Opens.fromSpecStalkOfMem_ι])
-  have : IsReduced (pullback g.domain.ι g'.domain.ι) :=
-    isReduced_of_isOpenImmersion (pullback.fst _ _ ≫ g.domain.ι)
-  have : IsDominant (ι ≫ pullback.fst _ _ ≫ g.domain.ι) := by
-    rw [pullback.lift_fst_assoc, Opens.fromSpecStalkOfMem_ι]
-    infer_instance
-  have : IsDominant ι := IsDominant.of_comp_of_isOpenImmersion ι (pullback.fst _ _ ≫ g.domain.ι)
-  refine ext_of_isDominant_of_isSeparated (Y ↘ S) ?_ ι ?_
-  · simp only [Category.assoc, g, g', localExtension_hom_comp, pullback.condition_assoc]
-  · rw [pullback.lift_fst_assoc, pullback.lift_snd_assoc]
-    exact (fromSpecStalkOfMem_localExtension hX φ hφ x hη).trans
-      (fromSpecStalkOfMem_localExtension hX φ hφ y hη').symm
+  have : g.IsOver S := ⟨localExtension_hom_comp hX φ hφ x⟩
+  have : g'.IsOver S := ⟨localExtension_hom_comp hX φ hφ y⟩
+  have H := (PartialMap.equiv_iff_of_isSeparated (S := S)).mp
+    (PartialMap.equiv_of_fromSpecStalkOfMem_eq g g' hη hη'
+      ((fromSpecStalkOfMem_localExtension hX φ hφ x hη).trans
+        (fromSpecStalkOfMem_localExtension hX φ hφ y hη').symm))
+  rw [← cancel_epi (isPullback_opens_inf g.domain g'.domain).isoPullback.hom,
+    IsPullback.isoPullback_hom_fst_assoc, IsPullback.isoPullback_hom_snd_assoc]
+  exact H
 
 /-- **A morphism from the generic point extends to the whole scheme**: for an integral `S`-scheme
 `X` whose local rings are valuation rings and an `S`-scheme `Y` universally closed, locally of
@@ -316,11 +309,12 @@ section Sections
 variable [IsIntegral S] (hS : ∀ s : S, ValuationRing (S.presheaf.stalk s)) (f : X ⟶ S)
   [UniversallyClosed f] [LocallyOfFiniteType f] [IsSeparated f]
 
-/-- **Sections of a proper morphism are its generic points**: over an integral scheme `S` whose
-local rings are valuation rings, such as a Dedekind scheme, restriction to the generic point
-identifies the sections of a morphism `f : X ⟶ S` which is universally closed, separated and
-locally of finite type (for instance proper) with the morphisms `Spec K(S) ⟶ X` lying over the
-generic point of `S`. The base `S` need not be separated. -/
+/-- **Sections of a proper morphism are the rational points of its generic fibre**: over an
+integral scheme `S` whose local rings are valuation rings, such as a Dedekind scheme, restriction
+to the generic point identifies the sections of a morphism `f : X ⟶ S` which is universally
+closed, separated and locally of finite type (for instance proper) with the morphisms
+`Spec K(S) ⟶ X` lying over the generic point of `S`, that is with the `K(S)`-rational points of
+the generic fibre. The base `S` need not be separated. -/
 noncomputable def Hom.sectionEquivOfValuationRing :
     {σ : S ⟶ X // σ ≫ f = 𝟙 S} ≃
       {x : Spec S.functionField ⟶ X // x ≫ f = S.fromSpecStalk (genericPoint S)} :=
@@ -352,9 +346,9 @@ theorem Hom.fromSpecStalk_sectionEquivOfValuationRing_symm_apply_coe
   rw [← sectionEquivOfValuationRing_apply_coe hS f, Equiv.apply_symm_apply]
 
 include hS in
-/-- **A generic point of a proper scheme extends uniquely to a section**: over an integral scheme
-`S` whose local rings are valuation rings, a morphism `Spec K(S) ⟶ X` over the generic point of
-`S` is the restriction of a unique section of `f : X ⟶ S`, when `f` is universally closed,
+/-- **A rational point of the generic fibre extends uniquely to a section**: over an integral
+scheme `S` whose local rings are valuation rings, a morphism `Spec K(S) ⟶ X` over the generic point
+of `S` is the restriction of a unique section of `f : X ⟶ S`, when `f` is universally closed,
 separated and locally of finite type (for instance proper). -/
 theorem Hom.existsUnique_section_of_valuationRing (x : Spec S.functionField ⟶ X)
     (hx : x ≫ f = S.fromSpecStalk (genericPoint S)) :
