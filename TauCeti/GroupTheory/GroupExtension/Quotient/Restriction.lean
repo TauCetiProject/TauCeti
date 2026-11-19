@@ -28,15 +28,14 @@ Comparing this restriction with corestriction yields the cohomological proofs of
 splitting theorem and of Sylow complement detection:
 
 * If `N` has a local complement in `H`, then `[G : H]` kills the class of the quotient extension
-  of `G` (`Subgroup.IsLocalComplement.index_nsmul_cohomologyClass_eq_zero`). Since `|N|` also kills
-  that class (`TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero`), coprimality of `[G : H]`
-  and `|N|` forces the class to vanish
-  (`Subgroup.IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero`). More
-  generally, restriction to the image of `H` is injective in every degree when `[G : H]` is prime
-  to `|N|` (`Subgroup.map_subtype_injective_of_coprime_index`). The exponent of `N` also kills the
-  class (`TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero`), so it is enough that
-  `[G : H]` is prime to that exponent, and then `N` has a complement in `G`
-  (`Subgroup.IsLocalComplement.exists_isComplement'_of_coprime_exponent`). This covers infinite
+  of `G` (`Subgroup.IsLocalComplement.index_nsmul_cohomologyClass_eq_zero`). Since the exponent of
+  `N` also kills that class (`TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero`),
+  coprimality of `[G : H]` and that exponent forces the class to vanish
+  (`Subgroup.IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero`), and then `N`
+  has a complement in `G` (`Subgroup.IsLocalComplement.exists_isComplement'_of_coprime_exponent`).
+  Coprimality with `|N|` implies coprimality with the exponent. More generally, restriction to the
+  image of `H` is injective in every degree when `[G : H]` is prime to `|N|`
+  (`Subgroup.map_subtype_injective_of_coprime_index`). The exponent form covers infinite
   abelian normal subgroups of bounded exponent, which the transfer proof in
   `TauCeti/GroupTheory/Complement/Gaschutz.lean` does not; that proof, in turn, is
   universe-polymorphic and produces an explicit complement.
@@ -67,16 +66,15 @@ cohomological proofs of Gaschütz's splitting theorem and of Sylow complement de
   criteria.
 * `Subgroup.IsLocalComplement.index_nsmul_cohomologyClass_eq_zero`: a local complement in `H`
   forces `[G : H]` to kill the class of the quotient extension.
-* `Subgroup.map_subtype_injective_of_coprime_index`,
-  `Subgroup.IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero`, and
+* `Subgroup.map_subtype_injective_of_coprime_index` and
   `Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index`: injectivity
-  of restriction and vanishing of the extension class across an index prime to `|N|`.
+  of restriction and detection of the extension class across an index prime to `|N|`.
 * `IsPGroup.map_sylow_injective` and
   `IsPGroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow`: injectivity of
   restriction and detection of the extension class on a finite-index Sylow `p`-subgroup.
 * `Subgroup.IsLocalComplement.exists_isComplement'_of_coprime_exponent`, with its vanishing step
-  `IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero_of_coprime_exponent`:
-  Gaschütz's splitting theorem, proved cohomologically, for `[G : H]` prime to the exponent of `N`.
+  `Subgroup.IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero`: Gaschütz's
+  splitting theorem, proved cohomologically, for `[G : H]` prime to the exponent of `N`.
 
 ## References
 
@@ -293,16 +291,19 @@ theorem map_subtype_injective_of_coprime_index
     (hcard.symm ▸ hcop.of_dvd_left (H.index_map_dvd (QuotientGroup.mk'_surjective N))) n
 
 /-- **Cohomological Gaschütz vanishing.** If an abelian normal subgroup `N` has a local complement
-in a subgroup `H` whose index `[G : H]` is prime to `|N|`, then the class in `H²(G ⧸ N, N)` of the
-quotient extension of `G` by `N` vanishes. -/
+in a subgroup `H` whose index `[G : H]` is prime to the exponent of `N`, then the class in
+`H²(G ⧸ N, N)` of the quotient extension of `G` by `N` vanishes, since both the index and the
+exponent kill it. Neither `G` nor `N` need be finite; when the exponent of `N` is unbounded, the
+coprimality forces `H = ⊤`. Coprimality of `[G : H]` with `|N|` implies the hypothesis, by
+`Group.exponent_dvd_nat_card`. -/
 theorem IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero {K : Subgroup G}
-    (hK : N.IsLocalComplement K H) (hcop : Nat.Coprime H.index (Nat.card N))
+    (hK : N.IsLocalComplement K H) (hcop : Nat.Coprime H.index (Monoid.exponent N))
     (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
     (TauCeti.GroupExtension.factorSet σ hσ
       N.quotientExtension_inducesAction).cohomologyClass = 0 :=
   (nsmul_eq_zero_iff_of_coprime hcop).1
     ⟨hK.index_nsmul_cohomologyClass_eq_zero σ hσ,
-      TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero _⟩
+      TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero _⟩
 
 /-- When `[G : H]` is prime to `|N|`, the class of the quotient extension of `G` by `N` vanishes
 if and only if the class of the quotient extension of `H` by `N.subgroupOf H` vanishes. That
@@ -322,20 +323,6 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index
   exact (map_eq_zero_iff _ (map_subtype_injective_of_coprime_index hcop 2)).symm.trans
     (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff hNH σ hσ τ hτ)
 
-/-- **Gaschütz's splitting theorem, cohomologically.** If `N` has a local complement in `H` and
-`[G : H]` is prime to the exponent of `N`, then the class in `H²(G ⧸ N, N)` of the quotient
-extension of `G` by `N` vanishes, since both the index and the exponent kill it. Neither `G` nor
-`N` need be finite; when the exponent of `N` is unbounded, the coprimality forces `H = ⊤`. This
-generalizes `Subgroup.IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero`,
-whose hypothesis that `[G : H]` is prime to `|N|` implies this one. -/
-theorem IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero_of_coprime_exponent
-    {K : Subgroup G} (hK : N.IsLocalComplement K H) (hcop : Nat.Coprime H.index (Monoid.exponent N))
-    (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
-    (TauCeti.GroupExtension.factorSet σ hσ N.quotientExtension_inducesAction).cohomologyClass =
-      0 :=
-  (nsmul_eq_zero_iff_of_coprime hcop).1 ⟨hK.index_nsmul_cohomologyClass_eq_zero σ hσ,
-    TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero _⟩
-
 /-- **Gaschütz's splitting theorem for abelian normal subgroups of bounded exponent.** If `N` has
 a local complement in `H` and `[G : H]` is prime to the exponent of `N`, then `N` has a
 complement in `G`.
@@ -348,7 +335,7 @@ theorem IsLocalComplement.exists_isComplement'_of_coprime_exponent {K : Subgroup
     ∃ D : Subgroup G, N.IsComplement' D :=
   (N.exists_complement_iff_cohomologyClass_eq_zero _
       (TauCeti.GroupExtension.normalizeSection_one N.quotientExtension.surjInvRightHom)).2
-    (hK.cohomologyClass_factorSet_quotientExtension_eq_zero_of_coprime_exponent hcop _ _)
+    (hK.cohomologyClass_factorSet_quotientExtension_eq_zero hcop _ _)
 
 end Subgroup
 
@@ -409,7 +396,8 @@ example {G : Type} [Group G] {N K H : Subgroup G} [N.Normal] [IsMulCommutative N
   let σ := TauCeti.GroupExtension.normalizeSection N.quotientExtension.surjInvRightHom
   have hσ : σ 1 = 1 := TauCeti.GroupExtension.normalizeSection_one _
   exact (N.exists_complement_iff_cohomologyClass_eq_zero σ hσ).2
-    (hK.cohomologyClass_factorSet_quotientExtension_eq_zero hcop σ hσ)
+    (hK.cohomologyClass_factorSet_quotientExtension_eq_zero
+      (hcop.coprime_dvd_right Group.exponent_dvd_nat_card) σ hσ)
 
 /-- Self-contained cohomological proof of Sylow complement detection for `G : Type` (valid even for
 infinite abelian normal `p`-subgroups `N`), combining `IsPGroup.map_sylow_injective`,
