@@ -27,7 +27,8 @@ Over a field, Mathlib's diagonal--transvection induction and the arbitrary-index
 `diag2_decompose` factorization give the parallel generation theorem.
 
 The file also records the type-A relations for bare `Matrix.transvection` matrices and their
-determinant-one counterparts over an arbitrary commutative ring.
+determinant-one counterparts over an arbitrary commutative ring, and the action
+`Matrix.toLin'_transvection_single` of a transvection on the standard basis vectors.
 
 ## Main results
 
@@ -64,6 +65,18 @@ theorem Matrix.transpose_transvection {n A : Type*} [DecidableEq n] [CommRing A]
     (i j : n) (c : A) :
     (Matrix.transvection i j c).transpose = Matrix.transvection j i c := by
   simp [Matrix.transvection, Matrix.transpose_add, Matrix.transpose_single]
+
+/-- An elementary transvection fixes every standard basis vector except the `j`-th one, which it
+moves by `c` times the `i`-th one. -/
+theorem Matrix.toLin'_transvection_single {n A : Type*} [Fintype n] [DecidableEq n] [CommRing A]
+    (i j a : n) (c : A) :
+    Matrix.toLin' (Matrix.transvection i j c) (Pi.single a 1) =
+      Pi.single a 1 + if a = j then c • Pi.single i 1 else 0 := by
+  rw [Matrix.toLin'_apply]
+  ext r
+  by_cases h : a = j <;>
+    simp [Matrix.transvection, Matrix.single_apply, Matrix.one_apply, h, Pi.single_apply]
+  all_goals grind
 
 namespace Matrix.SpecialLinearGroup
 

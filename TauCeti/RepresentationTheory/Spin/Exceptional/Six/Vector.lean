@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.ExteriorPower
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
+import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.RepresentationTheory.Spin.Exceptional.Six.Hyperbolic
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Basic
 
@@ -78,30 +79,6 @@ variable {K : Type*} [Field K]
 
 section Wedge
 
-/-- An elementary transvection fixes every standard basis vector except the `j`-th one, which it
-moves by `c` times the `i`-th one. -/
-private theorem toLin'_transvection_single (i j a : Fin 4) (c : K) :
-    Matrix.toLin' (Matrix.transvection i j c) (Pi.single a 1) =
-      Pi.single a 1 + if a = j then c • Pi.single i 1 else 0 := by
-  rw [Matrix.toLin'_apply]
-  ext r
-  by_cases h : a = j <;>
-    simp [Matrix.transvection, Matrix.single_apply, Matrix.one_apply, h, Pi.single_apply]
-  all_goals grind
-
-/-- The exterior square of an elementary transvection on a wedge of standard basis vectors. -/
-private theorem map_toLin'_transvection_ιMulti (i j a b : Fin 4) (c : K) :
-    exteriorPower.map 2 (Matrix.toLin' (Matrix.transvection i j c))
-        (exteriorPower.ιMulti K 2 ![Pi.single a 1, Pi.single b 1]) =
-      exteriorPower.ιMulti K 2 ![Pi.single a 1 + if a = j then c • Pi.single i 1 else 0,
-        Pi.single b 1 + if b = j then c • Pi.single i 1 else 0] := by
-  rw [exteriorPower.map_apply_ιMulti]
-  congr 1
-  funext k
-  match k with
-  | 0 => exact toLin'_transvection_single i j a c
-  | 1 => exact toLin'_transvection_single i j b c
-
 /-- Wedges of standard basis vectors are normalized to increasing order. The order hypothesis lets
 `simp` use this rule only in that direction. -/
 private theorem ιMulti_single_swap {p q : Fin 4} (_ : q < p) :
@@ -116,35 +93,6 @@ private theorem ιMulti_comp_single (p : Fin 2 → Fin 4) :
   congr 1
   ext j : 1
   fin_cases j <;> rfl
-
-/-- Exterior powers carry an intertwining square `e ∘ f = g ∘ e` to an intertwining square. -/
-private theorem exteriorPower_map_map_of_comp_eq {M N : Type*} [AddCommGroup M] [Module K M]
-    [AddCommGroup N] [Module K N] {f : M →ₗ[K] M} {g : N →ₗ[K] N} {e : M →ₗ[K] N}
-    (h : e ∘ₗ f = g ∘ₗ e) (y : ⋀[K]^2 M) :
-    exteriorPower.map 2 e (exteriorPower.map 2 f y) =
-      exteriorPower.map 2 g (exteriorPower.map 2 e y) := by
-  rw [← LinearMap.comp_apply (exteriorPower.map 2 e), ← exteriorPower.map_comp, h,
-    exteriorPower.map_comp, LinearMap.comp_apply]
-
-/-- In coordinates of a basis `B`, an endomorphism acts by its matrix. -/
-private theorem equivFun_comp_eq_toLin'_toMatrix_comp {S : Type*} [AddCommGroup S] [Module K S]
-    (B : Basis (Fin 4) K S) (φ : Module.End K S) :
-    B.equivFun.toLinearMap ∘ₗ φ =
-      Matrix.toLin' (LinearMap.toMatrix B B φ) ∘ₗ B.equivFun.toLinearMap := by
-  refine LinearMap.ext fun s ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.toLin'_apply,
-    B.equivFun_apply, B.equivFun_apply, LinearMap.toMatrix_mulVec_repr]
-
-/-- The inverse coordinates of a basis `B` intertwine the matrix of an endomorphism with the
-endomorphism itself. -/
-private theorem comp_equivFun_symm_eq {S : Type*} [AddCommGroup S] [Module K S]
-    (B : Basis (Fin 4) K S) (φ : Module.End K S) :
-    φ ∘ₗ B.equivFun.symm.toLinearMap =
-      B.equivFun.symm.toLinearMap ∘ₗ Matrix.toLin' (LinearMap.toMatrix B B φ) := by
-  refine LinearMap.ext fun y ↦ B.equivFun.injective ?_
-  have h := LinearMap.congr_fun (equivFun_comp_eq_toLin'_toMatrix_comp B φ) (B.equivFun.symm y)
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at h ⊢
-  exact h
 
 end Wedge
 
@@ -221,12 +169,8 @@ theorem spinSixVectorEquivExteriorSquare_basis (a : Fin 3) :
         ![b.spinSixEvenMonomialBasis (spinPlus_def P) (![1, 1, 2] a),
           b.spinSixEvenMonomialBasis (spinPlus_def P) (![2, 3, 3] a)] := by
   rw [spinSixVectorEquivExteriorSquare_apply, vectorCoordEquiv_basis,
-    exteriorPower.map_apply_ιMulti]
-  congr 1
-  funext k
-  match k with
-  | 0 => exact Basis.equivFun_symm_single _ _
-  | 1 => exact Basis.equivFun_symm_single _ _
+    exteriorPower.map_apply_ιMulti_two]
+  simp only [LinearEquiv.coe_coe, Basis.equivFun_symm_single]
 
 /-- The comparison sends `f₀, f₁, f₂` to `e₁e₂ ∧ 1`, `1 ∧ e₀e₂` and `e₀e₁ ∧ 1`. -/
 @[simp]
@@ -236,12 +180,8 @@ theorem spinSixVectorEquivExteriorSquare_dualVector (a : Fin 3) :
         ![b.spinSixEvenMonomialBasis (spinPlus_def P) (![3, 0, 1] a),
           b.spinSixEvenMonomialBasis (spinPlus_def P) (![0, 2, 0] a)] := by
   rw [spinSixVectorEquivExteriorSquare_apply, vectorCoordEquiv_dualVector,
-    exteriorPower.map_apply_ιMulti]
-  congr 1
-  funext k
-  match k with
-  | 0 => exact Basis.equivFun_symm_single _ _
-  | 1 => exact Basis.equivFun_symm_single _ _
+    exteriorPower.map_apply_ιMulti_two]
+  simp only [LinearEquiv.coe_coe, Basis.equivFun_symm_single]
 
 variable [Invertible (2 : K)]
 
@@ -266,9 +206,10 @@ local macro "prove_liftIntertwines" : tactic => `(tactic|
    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, P.typeDBasis_inl, P.typeDBasis_inr,
      spinVectorAction_spinSixTransvectionLift_apply] <;>
    fin_cases a <;>
-   simp [-exteriorPower.map_apply_ιMulti, spinSixTransvectionFirstVector_apply,
-     spinSixTransvectionSecondVector_apply, vectorCoordEquiv_basis, vectorCoordEquiv_dualVector,
-     map_toLin'_transvection_ιMulti, P.polar_W_eq_zero, P.polar_W'_eq_zero,
+   simp [-exteriorPower.map_apply_ιMulti, -Matrix.toLin'_apply,
+     spinSixTransvectionFirstVector_apply, spinSixTransvectionSecondVector_apply,
+     vectorCoordEquiv_basis, vectorCoordEquiv_dualVector, exteriorPower.map_apply_ιMulti_two,
+     Matrix.toLin'_transvection_single, P.polar_W_eq_zero, P.polar_W'_eq_zero,
      polar_dualVector_basis, exteriorPower.ιMulti_two_add_left,
      exteriorPower.ιMulti_two_add_right, exteriorPower.ιMulti_two_smul_left,
      exteriorPower.ιMulti_two_smul_right, QuadraticMap.map_smul, ιMulti_single_swap] <;>
@@ -359,7 +300,8 @@ private theorem spinSixVectorEquivExteriorSquare_apply_of_toMatrix_eq (A : V ≃
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hx
   exact (spinSixVectorEquivExteriorSquare_apply P hline b (A x)).trans <|
     (congrArg (exteriorPower.map 2 _) hx).trans <|
-      (exteriorPower_map_map_of_comp_eq (comp_equivFun_symm_eq _ φ).symm _).trans <|
+      (exteriorPower.map_apply_map_of_comp_eq
+        (LinearMap.equivFun_symm_comp_toLin'_toMatrix _ _ φ) _).trans <|
         congrArg (exteriorPower.map 2 φ) (spinSixVectorEquivExteriorSquare_apply P hline b x).symm
 
 /-- The comparison intertwines the vector action of the lift of an elementary transvection with
@@ -484,7 +426,8 @@ theorem spin6_vector_equiv_exteriorSquare (hV : finrank K V = 6) :
             (spinSixVectorEquivExteriorSquare_spinVectorAction P hline b g v)
     _ = exteriorPower.map 2 (Matrix.toLin' (LinearMap.toMatrix B B φ))
           (exteriorPower.map 2 B.equivFun.toLinearMap (Ψ v)) :=
-        exteriorPower_map_map_of_comp_eq (equivFun_comp_eq_toLin'_toMatrix_comp B φ) _
+        exteriorPower.map_apply_map_of_comp_eq
+          (LinearMap.toLin'_toMatrix_comp_equivFun B B φ).symm _
     _ = exteriorPower.map 2 (stdSLRep K 4 (spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hV g))
           ((Ψ.trans (B.equivFun.exteriorPower 2)) v) :=
         (congrArg (fun L ↦ exteriorPower.map 2 L
