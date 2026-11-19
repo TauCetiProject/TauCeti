@@ -275,6 +275,16 @@ end GroupRing
 
 section Matrix
 
+/-- The matrices with entries in a subalgebra `S` are the image of the matrices over `S` under
+`S.val.mapMatrix`. -/
+theorem _root_.Subalgebra.toSubmodule_matrix_eq_range_mapMatrix {R A n : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Fintype n] [DecidableEq n] (S : Subalgebra R A) :
+    Subalgebra.toSubmodule (S.matrix : Subalgebra R (Matrix n n A)) =
+      LinearMap.range (S.val.mapMatrix : Matrix n n S →ₐ[R] Matrix n n A).toLinearMap :=
+  le_antisymm (fun M hM => ⟨fun i j => ⟨M i j, hM i j⟩, rfl⟩) <| by
+    rintro _ ⟨N, rfl⟩ i j
+    exact (N i j).2
+
 variable {R F E : Type*} [CommRing R] [CommRing F] [Ring E]
   [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
   {n : Type*} [Fintype n] [DecidableEq n]
@@ -288,12 +298,7 @@ theorem IsOrder.matrix {Λ : Subalgebra R E} (h : IsOrder F Λ) :
   refine isOrder_iff_isLattice.2 ⟨?_, eq_top_iff.2 fun M _ => ?_⟩
   · -- the matrices over `Λ` are the image of the finite module `Matrix n n Λ = n → n → Λ`
     have : Module.Finite R (Matrix n n Λ) := inferInstanceAs (Module.Finite R (n → n → Λ))
-    have hrange : Subalgebra.toSubmodule (Λ.matrix : Subalgebra R (Matrix n n E)) =
-        LinearMap.range (Λ.val.mapMatrix : Matrix n n Λ →ₐ[R] Matrix n n E).toLinearMap :=
-      le_antisymm (fun M hM => ⟨fun i j => ⟨M i j, hM i j⟩, rfl⟩) <| by
-        rintro _ ⟨N, rfl⟩ i j
-        exact (N i j).2
-    rw [hrange]
+    rw [Subalgebra.toSubmodule_matrix_eq_range_mapMatrix]
     exact Submodule.fg_range _
   -- every matrix is a sum of matrix units `single i j x` with `x` in the `F`-span of `Λ`
   rw [Matrix.matrix_eq_sum_single M]

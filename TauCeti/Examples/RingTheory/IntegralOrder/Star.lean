@@ -57,14 +57,13 @@ example : ∀ x ∈ (⊤ : Subalgebra ℤ ℚ), star x ∈ (⊤ : Subalgebra ℤ
 example : Submodule.span ℚ ((⊤ : Subalgebra ℤ ℚ) : Set ℚ) = ⊤ := by
   simp
 
--- ... but it is not an order, since `1 / 2` is not integral over `ℤ` ...
-example : ¬ IsOrder ℚ (⊤ : Subalgebra ℤ ℚ) := fun h =>
-  half_notMem_range <| IsIntegrallyClosed.isIntegral_iff.1 <| h.isIntegral Algebra.mem_top
+/-- The subring `ℚ ⊆ ℚ` is not an order, since `1 / 2` is not integral over `ℤ`. -/
+theorem not_isOrder_top : ¬ IsOrder ℚ (⊤ : Subalgebra ℤ ℚ) := fun h =>
+  half_notMem_range <| IsIntegrallyClosed.isIntegral_iff.1 <|
+    h.isIntegral (x := 1 / 2) Algebra.mem_top
 
 -- ... so it underlies no star-order.
-example (O : StarOrder ℤ ℚ ℚ) : O.toSubalgebra ≠ ⊤ := fun h =>
-  half_notMem_range <| IsIntegrallyClosed.isIntegral_iff.1 <| O.isIntegral (x := 1 / 2) <|
-    StarOrder.mem_toSubalgebra.1 (h ▸ Algebra.mem_top)
+example (O : StarOrder ℤ ℚ ℚ) : O.toSubalgebra ≠ ⊤ := fun h => not_isOrder_top (h ▸ O.isOrder)
 
 /-! ### The matrix star-order `M₂(ℤ) ⊆ M₂(ℚ)` -/
 
@@ -146,7 +145,7 @@ example : ∃ O : StarOrder ℤ ℚ (QuadraticAlgebra ℚ (-1) 0),
     StarOrder.ofSubalgebra_toSubalgebra .., ?_⟩
   · obtain ⟨m, k, rfl⟩ := mem_adjoin_two_omega.1 hx
     exact mem_adjoin_two_omega.2 ⟨m, -k, by ext <;> simp⟩
-  -- `ℤ[2i]` lies strictly inside the order `ℤ[i]`, which does not contain `i`
+  -- `ℤ[2i]` lies strictly inside the order `ℤ[i]`, since `i ∈ ℤ[i]` but `i ∉ ℤ[2i]`
   rw [StarOrder.ofSubalgebra_toSubalgebra]
   refine fun h => h.not_gt (isOrder_adjoin_of_im_ne_zero isIntegral_omega_neg_one (by simp)) ?_
   refine IsConcreteLE.lt_iff_le_and_exists.2
