@@ -34,8 +34,11 @@ When the class group is torsion, Mathlib's instance `IsDedekindDomain.isLocaliza
 shows that the full candidate monoid works for every `S`. The criterion then shows that each
 prime of `S` contains a candidate denominator (`exists_mem_submonoid_mem_asIdeal`), and for
 finite `S` the product of such denominators is a single element `s` with `S.integer K = R[1/s]`
-(`exists_integer_isLocalization_away`). No prime of `S` need be principal: in `ℤ[√-5]` the prime
-`p = (2, 1 + √-5)` is not principal, but `p ^ 2 = (2)` and inverting `2` gives the `{p}`-integers.
+(`exists_integer_isLocalization_away`). Without the torsion hypothesis, finite `S` admits such
+a single denominator exactly when each of its primes contains a candidate denominator
+(`exists_integer_isLocalization_away_iff`). No prime of `S` need be principal: in `ℤ[√-5]` the
+prime `p = (2, 1 + √-5)` is not principal, but `p ^ 2 = (2)` and inverting `2` gives the
+`{p}`-integers.
 
 ## References
 
@@ -63,10 +66,8 @@ lemma zero_notMem_submonoid [Nontrivial R] : (0 : R) ∉ Localization.submonoid 
 
 /-- The candidate denominator monoid grows with the set of primes allowed in the support. -/
 lemma submonoid_mono {S S' : Set (HeightOneSpectrum R)} (h : S ⊆ S') :
-    Localization.submonoid S ≤ Localization.submonoid S' := fun _ hr ↦
-  (Localization.mem_submonoid_iff S').2
-    ⟨fun v hv ↦ ((Localization.mem_submonoid_iff S).1 hr).1 v (fun hvS ↦ hv (h hvS)),
-      ((Localization.mem_submonoid_iff S).1 hr).2⟩
+    Localization.submonoid S ≤ Localization.submonoid S' :=
+  inf_le_inf_right _ (Ideal.sInfPrimeCompl_anti (Set.image_mono (Set.compl_subset_compl.2 h)) _)
 
 /-- With no prime allowed in the support, the candidate denominators are the units of `R`. -/
 @[simp]
@@ -162,11 +163,9 @@ theorem integer_isLocalization_iff (M : Submonoid R) :
       by_contra! hcon
       obtain ⟨P, hP, hDP, hPM⟩ := Ideal.exists_le_prime_disjoint _ M
         (Set.disjoint_left.2 fun m hmD hmM ↦ hcon m hmM hmD)
-      have hP0 : P ≠ ⊥ := fun h ↦ Algebra.denIdeal_ne_bot K R⁰ (z : K) (le_bot_iff.1 (h ▸ hDP))
-      by_cases hw : (⟨P, hP, hP0⟩ : HeightOneSpectrum R) ∈ S
-      · obtain ⟨m, hmM, hmP⟩ := hSM _ hw
-        exact Set.disjoint_left.1 hPM hmP hmM
-      · exact denIdeal_not_le K (Set.integer_valuation_le_one S K z hw) hDP
+      obtain ⟨v, hv, rfl⟩ := exists_mem_asIdeal_eq_of_denIdeal_le K S z.2 hDP
+      obtain ⟨m, hmM, hmP⟩ := hSM v hv
+      exact Set.disjoint_left.1 hPM hmP hmM
     obtain ⟨s, hs⟩ := (Algebra.mem_denIdeal_iff K).1 hmD
     exact ⟨(s, ⟨m, hmM⟩), Subtype.ext (by simpa [mul_comm] using hs)⟩
 
@@ -179,16 +178,27 @@ theorem exists_mem_submonoid_mem_asIdeal [Fact (IsMulTorsion (ClassGroup R))]
   ((integer_isLocalization_iff (FractionRing R) S _).1
     (isLocalizationSInteger R S (FractionRing R))).2 v hv
 
-/-- When the class group is torsion and `S` is finite, the ring of `S`-integers is obtained from
-`R` by inverting a single candidate denominator `s`: the product of one candidate denominator
-from each prime of `S`. -/
-theorem exists_integer_isLocalization_away [Fact (IsMulTorsion (ClassGroup R))] [Finite S] :
-    ∃ s ∈ Localization.submonoid S, IsLocalization.Away s (S.integer K) := by
-  choose m hmS hmv using fun v : S ↦ exists_mem_submonoid_mem_asIdeal S v.2
+/-- For finite `S`, the ring of `S`-integers is obtained from `R` by inverting a single candidate
+denominator `s` exactly when every prime of `S` contains a candidate denominator; `s` is then the
+product of one candidate denominator from each prime of `S`. -/
+theorem exists_integer_isLocalization_away_iff [Finite S] :
+    (∃ s ∈ Localization.submonoid S, IsLocalization.Away s (S.integer K)) ↔
+      ∀ v ∈ S, ∃ m ∈ Localization.submonoid S, m ∈ v.asIdeal := by
+  refine ⟨fun ⟨s, hs, hloc⟩ v hv ↦ ?_, fun h ↦ ?_⟩
+  · obtain ⟨m, hm, hmv⟩ := ((integer_isLocalization_iff K S _).1 hloc).2 v hv
+    exact ⟨m, Submonoid.powers_le.2 hs hm, hmv⟩
+  choose m hmS hmv using fun v : S ↦ h v v.2
   have := Fintype.ofFinite S
   have hs : ∏ v, m v ∈ Localization.submonoid S := prod_mem fun v _ ↦ hmS v
   refine ⟨∏ v, m v, hs, (integer_isLocalization_iff K S _).2
     ⟨Submonoid.powers_le.2 hs, fun v hv ↦ ⟨_, Submonoid.mem_powers _, ?_⟩⟩⟩
   exact Ideal.IsPrime.prod_mem_iff.2 ⟨⟨v, hv⟩, Finset.mem_univ _, hmv ⟨v, hv⟩⟩
+
+/-- When the class group is torsion and `S` is finite, the ring of `S`-integers is obtained from
+`R` by inverting a single candidate denominator `s`: the product of one candidate denominator
+from each prime of `S`. -/
+theorem exists_integer_isLocalization_away [Fact (IsMulTorsion (ClassGroup R))] [Finite S] :
+    ∃ s ∈ Localization.submonoid S, IsLocalization.Away s (S.integer K) :=
+  (exists_integer_isLocalization_away_iff K S).2 fun _ hv ↦ exists_mem_submonoid_mem_asIdeal S hv
 
 end IsDedekindDomain
