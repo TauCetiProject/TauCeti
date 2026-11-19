@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 
 import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.Cover.Open
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
@@ -82,33 +83,6 @@ private theorem exists_specMap_comp_fromSpec {A : Type u} [CommRing A] [Algebra 
   exact (TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset
     hU.fromSpec g (by rwa [hU.range_fromSpec])).exists
 
-/-- The elements `a` of `A` such that, over the basic open `D(a)`, the morphism `g`
-lands in an affine open of the scheme. -/
-private def affineSet {A : Type u} [CommRing A] (g : Spec (.of A) ⟶ X) : Set A :=
-  {a | ∃ U : X.Opens, IsAffineOpen U ∧
-    Set.range (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a))) ≫
-      g) ⊆ U}
-
-/-- The basic opens `D(a)`, `a ∈ affineSet g`, cover `Spec A`. -/
-private theorem span_affineSet {A : Type u} [CommRing A] (g : Spec (.of A) ⟶ X) :
-    Ideal.span (affineSet g) = ⊤ := by
-  by_contra hs
-  obtain ⟨m, hm, hsm⟩ := Ideal.exists_le_maximal _ hs
-  let p : Spec (.of A) := ⟨m, hm.isPrime⟩
-  obtain ⟨_, ⟨U, hU, rfl⟩, hpU, -⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open
-      (Set.mem_univ (g p)) isOpen_univ
-  -- a basic open `D(a)` around `p` which the morphism `g` maps into `U`
-  obtain ⟨_, ⟨a, rfl⟩, hpa, hsub⟩ :=
-    PrimeSpectrum.isTopologicalBasis_basic_opens.exists_subset_of_mem_open
-      (a := p) (u := g ⁻¹' U) hpU (U.2.preimage g.continuous)
-  have has : a ∈ affineSet g := by
-    refine ⟨U, hU, ?_⟩
-    rintro _ ⟨q, rfl⟩
-    exact hsub
-      ((PrimeSpectrum.localization_away_comap_range (Localization.Away a) a).le ⟨q, rfl⟩)
-  exact (PrimeSpectrum.mem_basicOpen _ _).1 hpa (hsm (Ideal.subset_span has))
-
 variable
   (I : ∀ {A : Type u} [CommRing A] [Algebra R A],
     {g : Spec (.of A) ⟶ X //
@@ -153,9 +127,12 @@ theorem comap_idealSheafOfAffinePoints {A : Type u} [CommRing A] [Algebra R A]
       g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
     (π.idealSheafOfAffinePoints I hI).comap g.1 =
       ofIdealTop ((I g).map (Scheme.ΓSpecIso (.of A)).inv.hom) := by
+  let s : Set A := {a | ∃ U : X.Opens, IsAffineOpen U ∧
+    Set.range (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a))) ≫ g.1) ⊆ U}
   refine ext_of_comap_openCover (Scheme.affineOpenCoverOfSpanRangeEqTop (R := .of A)
-    (fun a : affineSet g.1 ↦ a.1)
-    (by rw [Subtype.range_coe]; exact span_affineSet g.1)).openCover fun a ↦ ?_
+    (fun a : s ↦ a.1)
+    (by rw [Subtype.range_coe]; exact g.1.span_basicOpen_range_subset_affine_eq_top)).openCover
+    fun a ↦ ?_
   obtain ⟨U, hU, hgU⟩ := a.2
   let ι : A →ₐ[R] Localization.Away a.1 := IsScalarTower.toAlgHom R A _
   let g' : {g : Spec (.of (Localization.Away a.1)) ⟶ X //
