@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
+import TauCeti.Analysis.Distribution.LineDeriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -358,7 +359,7 @@ theorem sobolevSingularSupport_laplacianCLM (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
   have h := sobolevSingularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s
     Finset.univ (fun _ ↦ 1) (g := fun _ _ ↦ 1) (fun _ ↦ contDiff_const) (k := fun _ ↦ 2)
     (fun i ↦ ![b i, b i]) (M := 2) (fun _ _ ↦ le_rfl) (fun _ _ ξ hξ ↦ ?_) T
-  · simpa [laplacianCLM_eq_sum b, iteratedLineDerivOp_succ_left, Fin.tail] using h
+  · simpa [laplacianCLM_eq_sum_iteratedLineDerivOp b] using h
   simp only [ofReal_one, one_mul]
   rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
