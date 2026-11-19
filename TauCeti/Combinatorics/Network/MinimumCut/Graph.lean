@@ -28,6 +28,8 @@ tree joining vertices from different components.
 * `Graph.exists_isUnitCutTree`: finite multigraphs admit unit-capacity cut trees.
 * `IsFlowEquivalentTree.reachable_deleteEdges_iff_edgeReachability`: threshold components of a
   unit flow-equivalent tree are the local edge-connectivity classes of the multigraph.
+* `IsFlowEquivalentTree.connectedComponentMk_eq_iff_edgeReachability`: equality of those threshold
+  components is characterized directly by native local edge reachability.
 * `IsFlowEquivalentTree.exists_edge_edgeConnectivity_eq_weight`: the global edge connectivity is
   the minimum tree-edge weight.
 
@@ -110,6 +112,26 @@ theorem reachable_deleteEdges_iff_edgeReachability
   · simp only [hst, false_or]
     rw [G.edgeReachability_eq_pairMinimumValue hst]
     exact_mod_cast Iff.rfl
+
+/-- The connected components left after deleting tree edges of weight below `k` are exactly the
+native local `k`-edge-reachability classes of the multigraph. -/
+theorem connectedComponentMk_eq_iff_edgeReachability
+    (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w)
+    (k : ℕ) (s t : V(G)) :
+    (T.deleteEdges {e | w e < k}).connectedComponentMk s =
+        (T.deleteEdges {e | w e < k}).connectedComponentMk t ↔
+      s = t ∨ (k : ℕ∞) ≤ G.edgeReachability s t := by
+  rw [SimpleGraph.ConnectedComponent.eq, hT.reachable_deleteEdges_iff_edgeReachability]
+
+/-- The support of the threshold component containing `s` is its native local
+`k`-edge-reachability class in the multigraph. -/
+theorem mem_supp_connectedComponentMk_iff_edgeReachability
+    (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w)
+    (k : ℕ) (s t : V(G)) :
+    t ∈ ((T.deleteEdges {e | w e < k}).connectedComponentMk s).supp ↔
+      s = t ∨ (k : ℕ∞) ≤ G.edgeReachability s t := by
+  rw [SimpleGraph.ConnectedComponent.mem_supp_iff, eq_comm,
+    hT.connectedComponentMk_eq_iff_edgeReachability]
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 
