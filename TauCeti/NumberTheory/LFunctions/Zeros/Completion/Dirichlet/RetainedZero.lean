@@ -35,11 +35,11 @@ and of the completion agree with multiplicity, while for an even character the t
 
 ## Main results
 
-* `TauCeti.LFunctions.tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction`: the identity
+* `DirichletCharacter.tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction`: the identity
   above.
-* `TauCeti.LFunctions.finite_zero_sum_le_logDeriv`: the finite-sum inequality.
-* `TauCeti.LFunctions.analyticOrderNatAt_div_sub_le_logDeriv` and
-  `TauCeti.LFunctions.one_zero_le_logDeriv`: the inequality for one real zero, with its
+* `DirichletCharacter.finite_zero_sum_le_logDeriv`: the finite-sum inequality.
+* `DirichletCharacter.analyticOrderNatAt_div_sub_le_logDeriv` and
+  `DirichletCharacter.one_zero_le_logDeriv`: the inequality for one real zero, with its
   multiplicity and with a single copy.
 
 ## References
@@ -50,9 +50,9 @@ and of the completion agree with multiplicity, while for an even character the t
 
 public section
 
-open Complex
+open Complex TauCeti TauCeti.LFunctions
 
-namespace TauCeti.LFunctions
+namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
 
@@ -138,7 +138,7 @@ theorem one_zero_le_logDeriv (hne : χ ≠ 1) {β σ : ℝ} (hβ : 0 < β) (hLβ
     rw [← analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hβre]
     exact analyticOrderAt_dirichletData_entireCompletion_ne_top χ hχ hne β
   have hord₀ : analyticOrderAt χ.LFunction β ≠ 0 :=
-    ((DirichletCharacter.differentiable_LFunction hne).analyticAt _).analyticOrderAt_ne_zero.mpr
+    ((differentiable_LFunction hne).analyticAt _).analyticOrderAt_ne_zero.mpr
       hLβ
   have hm : (1 : ℝ) ≤ analyticOrderNatAt χ.LFunction β := by
     rw [Nat.one_le_cast, Nat.one_le_iff_ne_zero, analyticOrderNatAt, Ne, ENat.toNat_eq_zero]
@@ -157,7 +157,10 @@ theorem two_div_sub_le_logDeriv_of_analyticOrderNatAt_eq_two (hne : χ ≠ 1) {�
   have h := analyticOrderNatAt_div_sub_le_logDeriv χ hχ hne hβ hσ₁ hσ₂
   rwa [h₂, Nat.cast_ofNat] at h
 
-omit [NeZero N] hχ in
+end DirichletCharacter
+
+namespace TauCeti.LFunctions
+
 /-- A nonreal character: there is a primitive character `χ` modulo `5` of order `4`, so
 `χ⁻¹ ≠ χ`, and with `S = ∅` at `σ = 2` the finite-sum inequality reads
 `0 ≤ Re (L'/L)(2, χ) + ½ log 5 + C_Γ`. A statement restricted to real characters would say
@@ -182,7 +185,7 @@ theorem exists_quartic_dirichletCharacter_five_logDeriv :
     have := orderOf_dvd_of_pow_eq_one h2
     rw [hχ] at this
     exact absurd this (by norm_num)
-  · simpa using finite_zero_sum_le_logDeriv χ hprim hne ∅ (by simp) (σ := 2) (by norm_num)
-      le_rfl
+  · simpa using DirichletCharacter.finite_zero_sum_le_logDeriv χ hprim hne ∅ (by simp) (σ := 2)
+      (by norm_num) le_rfl
 
 end TauCeti.LFunctions
