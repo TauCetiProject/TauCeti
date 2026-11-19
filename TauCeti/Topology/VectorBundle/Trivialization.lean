@@ -328,7 +328,7 @@ theorem scalarCoordChange_def (q q' : F ≃L[𝕜] 𝕜) (x : B) :
     e.scalarCoordChange e' q q' x = q' (e.coordChangeL 𝕜 e' x (q.symm 1)) := by rfl
 
 /-- A scalar coordinate change multiplies every coordinate by its value on the unit vector. -/
-theorem scalarCoordChange_apply (q q' : F ≃L[𝕜] 𝕜) (x : B) (v : F) :
+theorem apply_coordChangeL_eq_scalarCoordChange_mul (q q' : F ≃L[𝕜] 𝕜) (x : B) (v : F) :
     q' (e.coordChangeL 𝕜 e' x v) = e.scalarCoordChange e' q q' x * q v := by
   have hv : q v • q.symm 1 = v := by
     rw [← map_smul, smul_eq_mul, mul_one, q.symm_apply_apply]
@@ -349,7 +349,7 @@ theorem scalarCoordChange_mul_coordinate [∀ x, TopologicalSpace (V x)] [FiberB
     (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet) (v : V x) :
     e.scalarCoordChange e' q q' x * q (e.continuousLinearMapAt 𝕜 x v) =
       q' (e'.continuousLinearMapAt 𝕜 x v) := by
-  rw [← scalarCoordChange_apply]
+  rw [← apply_coordChangeL_eq_scalarCoordChange_mul]
   rw [continuousLinearMapAt_apply_of_mem 𝕜 e hx v,
     continuousLinearMapAt_apply_of_mem 𝕜 e' hx' v,
     e.coordChangeL_apply_snd 𝕜 e' (p := ⟨x, v⟩) hx hx']
@@ -361,12 +361,13 @@ theorem scalarCoordChange_self (q : F ≃L[𝕜] 𝕜) {x : B} (hx : x ∈ e.bas
   rw [scalarCoordChange, e.coordChangeL_same_apply 𝕜 hx, q.apply_symm_apply]
 
 /-- Scalar coordinate changes satisfy the cocycle law on triple intersections. -/
-theorem scalarCoordChange_comp (e'' : Trivialization F (π F V)) [e''.IsLinear 𝕜]
+theorem scalarCoordChange_mul_scalarCoordChange (e'' : Trivialization F (π F V)) [e''.IsLinear 𝕜]
     (q q' q'' : F ≃L[𝕜] 𝕜) {x : B}
     (hx : x ∈ e.baseSet) (hx' : x ∈ e'.baseSet) (hx'' : x ∈ e''.baseSet) :
     e'.scalarCoordChange e'' q' q'' x * e.scalarCoordChange e' q q' x =
       e.scalarCoordChange e'' q q'' x := by
   simpa only [scalarCoordChange, e.coordChangeL_coordChangeL_apply 𝕜 e' e'' hx hx' hx''] using
-    (e'.scalarCoordChange_apply e'' q' q'' x (e.coordChangeL 𝕜 e' x (q.symm 1))).symm
+    (e'.apply_coordChangeL_eq_scalarCoordChange_mul e'' q' q'' x
+      (e.coordChangeL 𝕜 e' x (q.symm 1))).symm
 
 end Bundle.Trivialization
