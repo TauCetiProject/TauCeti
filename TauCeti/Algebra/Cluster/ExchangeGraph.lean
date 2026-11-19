@@ -82,7 +82,7 @@ noncomputable def _root_.LinearAlgebra.FreeProduct.ReducedWord.neighborSetEquiv
     (w : ReducedWord K) :
     K ≃ (mutationTree K).neighborSet w :=
   Equiv.ofBijective (fun k ↦ ⟨step k w, k, rfl⟩)
-    ⟨fun _ _ h ↦ step_inj.1 (congrArg Subtype.val h), fun ⟨_, k, hk⟩ ↦ ⟨k, Subtype.ext hk⟩⟩
+    ⟨fun _ _ h ↦ step_left_inj.1 (congrArg Subtype.val h), fun ⟨_, k, hk⟩ ↦ ⟨k, Subtype.ext hk⟩⟩
 
 /-- The neighbor with label `k` is the step in direction `k`. -/
 @[simp]
@@ -201,7 +201,7 @@ theorem _root_.LinearAlgebra.FreeProduct.ReducedWord.coe_reachableClass (w : Red
 
 /-- Two distinct reachable classes are adjacent exactly when a reachable state in either class
 has a mutation in the other. -/
-theorem exchangeGraph_adj_iff {x y : reachableClasses μ s π} :
+theorem exchangeGraph_adj {x y : reachableClasses μ s π} :
     (exchangeGraph μ s π).Adj x y ↔
       x ≠ y ∧
         ((∃ t, FoldReachable (fun t k ↦ μ k t) s t ∧ ∃ k, π t = x ∧ π (μ k t) = y) ∨
@@ -210,12 +210,12 @@ theorem exchangeGraph_adj_iff {x y : reachableClasses μ s π} :
 
 /-- For involutive mutations, two distinct classes are adjacent exactly when some reachable state
 of the first class has a mutation in the second. -/
-theorem exchangeGraph_adj (hμ : ∀ k, Function.Involutive (μ k))
+theorem exchangeGraph_adj_iff_exists (hμ : ∀ k, Function.Involutive (μ k))
     {x y : reachableClasses μ s π} :
     (exchangeGraph μ s π).Adj x y ↔
       x ≠ y ∧
         ∃ t, FoldReachable (fun t k ↦ μ k t) s t ∧ ∃ k, π t = x ∧ π (μ k t) = y := by
-  rw [exchangeGraph_adj_iff, or_iff_left_of_imp]
+  rw [exchangeGraph_adj, or_iff_left_of_imp]
   rintro ⟨t, ht, k, hx, hy⟩
   refine ⟨μ k t, ht.trans (foldReachable_apply _ t k), k, hy, ?_⟩
   rw [hμ k t, hx]
@@ -228,7 +228,7 @@ theorem exchangeGraph_adj_iff_forall (hμ : ∀ k, Function.Involutive (μ k))
     (exchangeGraph μ s π).Adj x y ↔
       x ≠ y ∧
         ∀ t, FoldReachable (fun t k ↦ μ k t) s t → π t = x → ∃ k, π (μ k t) = y := by
-  rw [exchangeGraph_adj hμ]
+  rw [exchangeGraph_adj_iff_exists hμ]
   refine and_congr_right fun _ ↦ ⟨?_, fun h ↦ ?_⟩
   · rintro ⟨t₀, -, k, hx, hy⟩ t - ht
     obtain ⟨j, hj⟩ := hπ t₀ t (hx.trans ht.symm) k
@@ -282,7 +282,7 @@ reduced words. -/
 theorem exchangeGraph_eq_map (hμ : ∀ k, Function.Involutive (μ k)) :
     exchangeGraph μ s π = (mutationTree K).map (ReducedWord.reachableClass μ s π) := by
   ext x y
-  rw [exchangeGraph_adj hμ, map_adj']
+  rw [exchangeGraph_adj_iff_exists hμ, map_adj']
   refine and_congr_right fun _ ↦ ⟨?_, ?_⟩
   · rintro ⟨t, ht, k, hx, hy⟩
     obtain ⟨w, rfl⟩ := (ReducedWord.foldReachable_iff_exists_eval hμ).1 ht

@@ -272,7 +272,7 @@ theorem step_ne (k : K) (w : ReducedWord K) : step k w ≠ w := by
 
 /-- Steps in different directions lead to different words. -/
 @[simp]
-theorem step_inj {j k : K} {w : ReducedWord K} : step j w = step k w ↔ j = k := by
+theorem step_left_inj {j k : K} {w : ReducedWord K} : step j w = step k w ↔ j = k := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
   rcases toList_step_cases j w with hj | hj <;> rcases toList_step_cases k w with hk | hk <;>
     first
