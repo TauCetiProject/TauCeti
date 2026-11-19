@@ -18,11 +18,11 @@ symplectic matrix: `CZ(P Ψ P⁻¹) = CZ(Ψ)` (`TauCeti.GLSymplectic.conleyZehnd
 This is the naturality axiom of the index.
 
 The proof goes through the homotopy axiom
-(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopy`). The symplectic group is path
-connected, so `P` is joined to the identity by a path `δ`, and `(s, t) ↦ δ s Ψ(t) (δ s)⁻¹` is a
-homotopy from `Ψ` to `P Ψ P⁻¹`. Its paths `s ↦ δ s Ψ(0) (δ s)⁻¹` and `s ↦ δ s Ψ(1) (δ s)⁻¹`
-through the endpoints run through conjugates of a fixed matrix, so the eigenvalue `1` keeps its
-multiplicity along them.
+(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopy_of_finrank_eigenspace_eq`). The
+symplectic group is path connected, so `P` is joined to the identity by a path `δ`, and
+`(s, t) ↦ δ s Ψ(t) (δ s)⁻¹` is a homotopy from `Ψ` to `P Ψ P⁻¹`. Its paths
+`s ↦ δ s Ψ(0) (δ s)⁻¹` and `s ↦ δ s Ψ(1) (δ s)⁻¹` through the endpoints run through conjugates
+of a fixed matrix, so the eigenvalue `1` keeps its multiplicity along them.
 
 Together with the loop axiom (`TauCeti.GLSymplectic.conleyZehnderIndex_mul`) it describes how the
 index changes under a change of symplectic trivialization. Two trivializations of a symplectic
@@ -75,7 +75,7 @@ theorem conleyZehnderIndex_map_conj (P : GLSymplectic n ℝ) {A B : GLSymplectic
       simp [F]
     rw [hF, Units.val_mul, Units.val_mul]
     exact finrank_eigenspace_toLin'_conj (δ s : GL (n ⊕ n) ℝ) _ 1
-  exact (conleyZehnderIndex_eq_of_homotopy γ _ F (fun t ↦ by simp [F, δ])
+  exact (conleyZehnderIndex_eq_of_homotopy_of_finrank_eigenspace_eq γ _ F (fun t ↦ by simp [F, δ])
     (fun t ↦ by simp [F, δ]) (hk 0) (hk 1)).symm
 
 /-- **Change of symplectic trivialization along a loop.** Let `Φ` be a loop of symplectic
