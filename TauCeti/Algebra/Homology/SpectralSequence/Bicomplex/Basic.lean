@@ -49,6 +49,8 @@ object stabilizes after finitely many pages to the corresponding graded piece of
 * `HomologicalComplex₂.rowFiltration`: the filtration of the total complex by rows.
 * `HomologicalComplex₂.ιTotalRowsGE`: the summand inclusions of the total complex of the rows
   `≥ s`, which describe the projection `HomologicalComplex₂.toTotalRowsGE` onto it.
+* `HomologicalComplex₂.totalRowCyclesIso`, `HomologicalComplex₂.totalRowHomologyIso`: the cycles
+  and the homology of a row placed in the degrees of the total complex are those of the row.
 * `HomologicalComplex₂.rowFiltrationGradedIso`: the graded pieces of the row filtration are the
   rows.
 * `HomologicalComplex₂.rowFiltrationSpectralSequence`: its spectral sequence.
@@ -129,6 +131,23 @@ def totalRowXIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) :
     (K.rowsSucc.totalRow s).extendXIso (embeddingDownNatAdd 1)
       (embeddingDownNatAdd_f 1 (p + s)) ≪≫
       totalRowXIso K.rowsSucc s p
+
+omit [HasFiniteCoproducts C] in
+/-- The identification of the terms of the row `0` placed in the degrees of the total complex is
+the identity. -/
+@[simp]
+lemma totalRowXIso_zero (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) (p : ℕ) :
+    K.totalRowXIso 0 p = Iso.refl _ :=
+  (rfl)
+
+omit [HasFiniteCoproducts C] in
+/-- The identification of the terms of the row `s + 1` placed in the degrees of the total complex
+goes through the row `s` of `K.rowsSucc`. -/
+lemma totalRowXIso_succ (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) (s p : ℕ) :
+    K.totalRowXIso (s + 1) p =
+      (K.rowsSucc.totalRow s).extendXIso (embeddingDownNatAdd 1)
+        (embeddingDownNatAdd_f 1 (p + s)) ≪≫ K.rowsSucc.totalRowXIso s p :=
+  (rfl)
 
 /-- The inclusion of the summand `(K.X p).X q`, for `s ≤ q`, into the total complex of the rows
 `≥ s` in degree `n = p + q`. -/
@@ -274,6 +293,64 @@ def totalRowHomologyIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : (s
     (K.rowsSucc.totalRow s).extendHomologyIso (embeddingDownNatAdd 1)
       (embeddingDownNatAdd_f 1 (k + s)) ≪≫
       totalRowHomologyIso K.rowsSucc s k
+
+/-- The identification of the homology of the row `0` placed in the degrees of the total complex
+is the identity. -/
+@[simp]
+lemma totalRowHomologyIso_zero (k : ℕ) : K.totalRowHomologyIso 0 k = Iso.refl _ :=
+  (rfl)
+
+/-- The identification of the homology of the row `s + 1` placed in the degrees of the total
+complex goes through the row `s` of `K.rowsSucc`. -/
+lemma totalRowHomologyIso_succ (s k : ℕ) :
+    K.totalRowHomologyIso (s + 1) k =
+      (K.rowsSucc.totalRow s).extendHomologyIso (embeddingDownNatAdd 1)
+        (embeddingDownNatAdd_f 1 (k + s)) ≪≫ K.rowsSucc.totalRowHomologyIso s k :=
+  (rfl)
+
+/-- The cycles of the row `s` placed in the degrees of the total complex: in degree `k + s` they
+are the cycles of the row `s` in degree `k`. -/
+def totalRowCyclesIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : (s k : ℕ) →
+    (K.totalRow s).cycles (k + s) ≅
+      (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K).cycles k
+  | 0, _ => Iso.refl _
+  | s + 1, k =>
+    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
+    (K.rowsSucc.totalRow s).extendCyclesIso (embeddingDownNatAdd 1)
+      (embeddingDownNatAdd_f 1 (k + s)) ≪≫
+      totalRowCyclesIso K.rowsSucc s k
+
+/-- The identification `HomologicalComplex₂.totalRowCyclesIso` is compatible with the inclusions
+of the cycles and with `HomologicalComplex₂.totalRowXIso`. -/
+@[reassoc (attr := simp)]
+lemma totalRowCyclesIso_hom_iCycles (s k : ℕ) :
+    (K.totalRowCyclesIso s k).hom ≫
+      (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K).iCycles k =
+    (K.totalRow s).iCycles (k + s) ≫ (K.totalRowXIso s k).hom := by
+  induction s generalizing K with
+  | zero => simp [totalRowCyclesIso]
+  | succ s ih =>
+    simp only [totalRowCyclesIso, totalRowXIso_succ, Iso.trans_hom, Category.assoc]
+    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
+    exact (congrArg _ (ih K.rowsSucc)).trans
+      (HomologicalComplex.extendCyclesIso_hom_iCycles_assoc _ _ _ _)
+
+/-- The identifications `HomologicalComplex₂.totalRowCyclesIso` and
+`HomologicalComplex₂.totalRowHomologyIso` are compatible with the projections of the cycles onto
+the homology. -/
+@[reassoc]
+lemma homologyπ_totalRowHomologyIso_hom (s k : ℕ) :
+    (K.totalRow s).homologyπ (k + s) ≫ (K.totalRowHomologyIso s k).hom =
+      (K.totalRowCyclesIso s k).hom ≫
+      (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K).homologyπ
+        k := by
+  induction s generalizing K with
+  | zero => simp [totalRowCyclesIso]
+  | succ s ih =>
+    simp only [totalRowCyclesIso, totalRowHomologyIso_succ, Iso.trans_hom, Category.assoc]
+    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
+    exact (HomologicalComplex.homologyπ_extendHomologyIso_hom_assoc _ _ _ _).trans
+      (congrArg _ (ih K.rowsSucc))
 
 /-- The row `s` placed in the degrees of the total complex has no homology below degree `s`. -/
 lemma isZero_totalRow_homology (s n : ℕ) (hn : n < s) : IsZero ((K.totalRow s).homology n) := by
@@ -427,6 +504,16 @@ def rowFiltrationSpectralSequenceFirstPageXIsoTotalRow (p : ℤ) (s : ℕ) :
   CochainComplex.spectralSequenceFirstPageXIsoCokernel _ (p, s) s (s + 1) rfl rfl (p + s) rfl ≪≫
     (HomologicalComplex.homologyFunctor C (up ℤ) (p + s)).mapIso (K.rowFiltrationGradedIso s)
 
+/-- The identification `HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIsoTotalRow` is
+that of the first page with the cohomology of the graded pieces, followed by
+`HomologicalComplex₂.rowFiltrationGradedIso`. -/
+lemma rowFiltrationSpectralSequenceFirstPageXIsoTotalRow_eq (p : ℤ) (s : ℕ) :
+    K.rowFiltrationSpectralSequenceFirstPageXIsoTotalRow p s =
+      CochainComplex.spectralSequenceFirstPageXIsoCokernel _ (p, s) s (s + 1) rfl rfl (p + s)
+        rfl ≪≫
+      HomologicalComplex.homologyMapIso (K.rowFiltrationGradedIso s) (p + s) :=
+  (rfl)
+
 /-- **The first page of the spectral sequence of the row filtration** is the homology of the rows:
 its object at `(p, s)`, with `p + 2s + k = 0`, is the homology in degree `k` of the row `s`
 `⋯ ⟶ (K.X 1).X s ⟶ (K.X 0).X s` of `K`, formed by the horizontal differentials. -/
@@ -436,6 +523,16 @@ def rowFiltrationSpectralSequenceFirstPageXIso (p : ℤ) (s k : ℕ) (hp : p + 2
   K.rowFiltrationSpectralSequenceFirstPageXIsoTotalRow p s ≪≫
     (K.totalRow s).extendHomologyIso embeddingDownNat (j := k + s) (by simp; omega) ≪≫
     K.totalRowHomologyIso s k
+
+/-- The identification `HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIso` is
+`HomologicalComplex₂.rowFiltrationSpectralSequenceFirstPageXIsoTotalRow` followed by the
+identifications of the homology of the row placed in the degrees of the total complex. -/
+lemma rowFiltrationSpectralSequenceFirstPageXIso_eq (p : ℤ) (s k : ℕ) (hp : p + 2 * s + k = 0) :
+    K.rowFiltrationSpectralSequenceFirstPageXIso p s k hp =
+      K.rowFiltrationSpectralSequenceFirstPageXIsoTotalRow p s ≪≫
+        (K.totalRow s).extendHomologyIso embeddingDownNat (j := k + s) (by simp; omega) ≪≫
+        K.totalRowHomologyIso s k :=
+  (rfl)
 
 /-! ### The column filtration -/
 
@@ -455,6 +552,27 @@ def columnFiltrationSpectralSequenceFirstPageXIso (p k : ℕ) :
       (K.X p).homology k :=
   K.flip.rowFiltrationSpectralSequenceFirstPageXIso (-(k : ℤ) - 2 * p) p k (by omega) ≪≫
     HomologicalComplex.homologyMapIso (K.flipRowIso p) k
+
+/-- The identification `HomologicalComplex₂.columnFiltrationSpectralSequenceFirstPageXIso` is that
+of the first page of the row filtration of `K.flip`, the rows of `K.flip` being the columns of
+`K`. -/
+lemma columnFiltrationSpectralSequenceFirstPageXIso_eq (p k : ℕ) :
+    K.columnFiltrationSpectralSequenceFirstPageXIso p k =
+      K.flip.rowFiltrationSpectralSequenceFirstPageXIso (-(k : ℤ) - 2 * p) p k (by omega) ≪≫
+        HomologicalComplex.homologyMapIso (K.flipRowIso p) k :=
+  (rfl)
+
+/-- The identification of a row of the flipped bicomplex with a column of `K` is the identity in
+each degree. -/
+@[simp]
+lemma flipRowIso_hom_f (p q : ℕ) : (K.flipRowIso p).hom.f q = 𝟙 _ :=
+  (rfl)
+
+/-- The inverse of the identification of a row of the flipped bicomplex with a column of `K` is the
+identity in each degree. -/
+@[simp]
+lemma flipRowIso_inv_f (p q : ℕ) : (K.flipRowIso p).inv.f q = 𝟙 _ :=
+  (rfl)
 
 /-- The first page of the spectral sequence of the row filtration vanishes at `(p, s)` when
 `p + 2s > 0`: the row `s` contributes nothing in total degree `-(p + s) < s`. -/
