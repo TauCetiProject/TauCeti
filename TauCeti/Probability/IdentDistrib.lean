@@ -38,7 +38,8 @@ variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
 norm greater than `R`. -/
 theorem integral_indicator_setOf_norm_le_eq (h : IdentDistrib f g μ ν) (R : ℝ) :
     ∫ x, {x | ‖f x‖ ≤ R}.indicator f x ∂μ = ∫ x, {x | ‖g x‖ ≤ R}.indicator g x ∂ν := by
-  simpa only [Function.comp_def, Set.indicator_apply, Set.mem_ofPred_eq, id_eq] using
+  simpa only [Function.comp_apply, ← Set.indicator_comp_right f (g := id),
+    ← Set.indicator_comp_right g (g := id), Function.id_comp, Set.preimage_ofPred_eq, id_eq] using
     (h.comp (measurable_id.indicator_setOf_norm_le R)).integral_eq
 
 end ProbabilityTheory.IdentDistrib

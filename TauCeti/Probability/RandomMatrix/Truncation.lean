@@ -57,10 +57,13 @@ theorem _root_.ProbabilityTheory.iIndepFun.wignerMatrix_centeredTruncation
     cases k
     · exact (measurable_id.indicator_setOf_norm_le R).sub_const _
     · exact measurable_id
-  convert h.comp g hg using 1
-  funext k ω
-  cases k <;> simp only [g, Function.comp_def, Sum.elim_inl, Sum.elim_inr,
-    centeredTruncation_def, Set.indicator_apply, Set.mem_ofPred_eq, id_eq]
+  have hcomp (k : StrictUpper ⊕ ℕ) :
+      Sum.elim (fun ij ↦ centeredTruncation (ξ ij) P R) (fun i ω ↦ (η i ω : ℂ)) k =
+        g k ∘ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k := by
+    cases k <;> simp only [g, Sum.elim_inl, Sum.elim_inr, centeredTruncation_eq_comp,
+      Function.id_comp]
+  simp_rw [hcomp]
+  exact h.comp g hg
 
 variable [IsProbabilityMeasure P] {X : Ω → ℂ} (hX : MemLp X 2 P) (hmean : ∫ ω, X ω ∂P = 0)
   (hd : ∀ ij, IdentDistrib (ξ ij) X P P)
@@ -74,8 +77,7 @@ theorem integrable_norm_wignerMatrix_sub_centeredTruncation_sq (R : ℝ≥0) (n 
       wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η n ω‖ ^ 2) P := by
   simp_rw [wignerMatrix_sub, sub_self]
   exact integrable_norm_wignerMatrix_sq
-    (fun ij _ ↦ ((hd ij).symm.memLp_snd hX).sub
-      (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.memLp_centeredTruncation R))
+    (fun ij _ ↦ ((hd ij).symm.memLp_snd hX).sub_centeredTruncation R)
     (fun _ _ ↦ memLp_const 0)
 
 include hmean
@@ -88,8 +90,7 @@ theorem inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le
       wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η (n + 1) ω‖ ^ 2 ∂P ≤
         ∫ ω, {ω | (R : ℝ) < ‖X ω‖}.indicator (fun ω ↦ ‖X ω‖ ^ 2) ω ∂P := by
   have hm (ij : StrictUpper) : MemLp (fun ω ↦ ξ ij ω - centeredTruncation (ξ ij) P R ω) 2 P :=
-    ((hd ij).symm.memLp_snd hX).sub
-      (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.memLp_centeredTruncation R)
+    ((hd ij).symm.memLp_snd hX).sub_centeredTruncation R
   rw [integral_norm_wignerMatrix_sub_sq hm
     (fun ij ↦ (((hd ij).sub_centeredTruncation R).comp
       (measurable_norm.pow_const 2)).integral_eq)]

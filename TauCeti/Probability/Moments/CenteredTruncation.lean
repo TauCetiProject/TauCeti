@@ -55,6 +55,15 @@ theorem centeredTruncation_def (R : ℝ≥0) :
     centeredTruncation X P R = fun ω ↦
       {ω | ‖X ω‖ ≤ R}.indicator X ω - ∫ ω, {ω | ‖X ω‖ ≤ R}.indicator X ω ∂P := (rfl)
 
+/-- Centered truncation is the composition of the original variable with the norm cutoff
+and a constant translation on the value space. -/
+theorem centeredTruncation_eq_comp (R : ℝ≥0) :
+    centeredTruncation X P R =
+      (fun z ↦ {z | ‖z‖ ≤ R}.indicator id z - ∫ ω, {ω | ‖X ω‖ ≤ R}.indicator X ω ∂P) ∘ X := by
+  funext ω
+  rw [centeredTruncation_def, Function.comp_apply,
+    ← Set.indicator_comp_right X (g := id), Function.id_comp, Set.preimage_ofPred_eq]
+
 variable {X P}
 
 /-- Truncation at radius zero is the zero variable. -/
@@ -79,6 +88,16 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.centeredTruncation
     AEStronglyMeasurable (centeredTruncation X P R) P :=
   (hX.indicator₀ (nullMeasurableSet_le hX.norm.aemeasurable aemeasurable_const)).sub
     aestronglyMeasurable_const
+
+/-- On a finite measure space, the error of centered truncation of an `Lᵖ` variable lies in
+the same `Lᵖ` space. -/
+theorem _root_.MeasureTheory.MemLp.sub_centeredTruncation [IsFiniteMeasure P] {p : ℝ≥0∞}
+    (hX : MemLp X p P) (R : ℝ≥0) :
+    MemLp (fun ω ↦ X ω - centeredTruncation X P R ω) p P := by
+  rw [centeredTruncation_def]
+  have hT : MemLp ({ω | ‖X ω‖ ≤ R}.indicator X) p P :=
+    hX.indicator (hX.aestronglyMeasurable.norm.nullMeasurableSet_le aestronglyMeasurable_const)
+  exact hX.sub (hT.sub (memLp_const _))
 
 variable [IsProbabilityMeasure P]
 
@@ -189,12 +208,10 @@ theorem IdentDistrib.prodMk_centeredTruncation (h : IdentDistrib X Y P Q) (R : �
     IdentDistrib (fun ω ↦ (X ω, centeredTruncation X P R ω))
       (fun ω ↦ (Y ω, centeredTruncation Y Q R ω)) P Q := by
   let T : E → E := {z | ‖z‖ ≤ R}.indicator id
-  simp only [centeredTruncation]
-  rw [h.integral_indicator_setOf_norm_le_eq R]
-  simpa only [Function.comp_def, T,
-    Set.indicator_apply, Set.mem_ofPred_eq, id_eq] using
-    h.comp (u := fun z ↦ (z, T z - ∫ ω, {ω | ‖Y ω‖ ≤ R}.indicator Y ω ∂Q))
-      (measurable_id.prodMk ((measurable_id.indicator_setOf_norm_le R).sub_const _))
+  rw [centeredTruncation_eq_comp X P R, centeredTruncation_eq_comp Y Q R,
+    h.integral_indicator_setOf_norm_le_eq R]
+  exact h.comp (u := fun z ↦ (z, T z - ∫ ω, {ω | ‖Y ω‖ ≤ R}.indicator Y ω ∂Q))
+    (measurable_id.prodMk ((measurable_id.indicator_setOf_norm_le R).sub_const _))
 
 /-- Equal laws preserve the law of the error of centered truncation, even for different
 source measures. -/
@@ -202,17 +219,16 @@ theorem IdentDistrib.sub_centeredTruncation (h : IdentDistrib X Y P Q) (R : ℝ�
     IdentDistrib (fun ω ↦ X ω - centeredTruncation X P R ω)
       (fun ω ↦ Y ω - centeredTruncation Y Q R ω) P Q := by
   let T : E → E := {z | ‖z‖ ≤ R}.indicator id
+  -- Use the discarded tail so that only a constant translation needs to be measurable.
+  have htail : Measurable (id - T) := by
+    rw [← Set.indicator_compl (s := {z : E | ‖z‖ ≤ R})]
+    exact measurable_id.indicator (measurableSet_le measurable_norm measurable_const).compl
   have hg : Measurable (fun z ↦ z - (T z - ∫ ω, {ω | ‖Y ω‖ ≤ R}.indicator Y ω ∂Q)) := by
-    -- The error is a constant translate of the discarded tail.
-    have hs : MeasurableSet {z : E | (R : ℝ) < ‖z‖} :=
-      measurableSet_lt measurable_const measurable_norm
-    convert (measurable_id.indicator hs).add_const
-      (∫ ω, {ω | ‖Y ω‖ ≤ R}.indicator Y ω ∂Q) using 1
-    ext z
-    by_cases hz : ‖z‖ ≤ R <;> simp [T, indicator, hz, not_lt.mpr, not_le.mp]
-  simp only [centeredTruncation]
-  rw [h.integral_indicator_setOf_norm_le_eq R]
-  simpa only [Function.comp_def, T, Set.indicator_apply, Set.mem_ofPred_eq, id_eq] using h.comp hg
+    simpa only [sub_sub_eq_add_sub, add_sub_right_comm, Pi.sub_apply, id_eq] using htail.add_const
+      (∫ ω, {ω | ‖Y ω‖ ≤ R}.indicator Y ω ∂Q)
+  rw [centeredTruncation_eq_comp X P R, centeredTruncation_eq_comp Y Q R,
+    h.integral_indicator_setOf_norm_le_eq R]
+  exact h.comp hg
 
 /-- Applying centered truncation separately to independent coordinates preserves independence.
 The cutoffs and coordinate laws may differ. -/
@@ -223,8 +239,7 @@ theorem iIndepFun.centeredTruncation {ι : Type*} {X : ι → Ω → E}
     ∫ ω, {ω | ‖X i ω‖ ≤ R i}.indicator (X i) ω ∂P
   have hg (i : ι) : Measurable (g i) :=
     (measurable_id.indicator_setOf_norm_le (R i)).sub_const _
-  simpa only [Function.comp_def, g, centeredTruncation_def, Set.indicator_apply,
-    Set.mem_ofPred_eq, id_eq]
-    using h.comp g hg
+  simp_rw [centeredTruncation_eq_comp]
+  exact h.comp g hg
 
 end ProbabilityTheory

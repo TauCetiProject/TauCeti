@@ -695,9 +695,8 @@ theorem integral_norm_wignerMatrix_sub_sq {ξ' : StrictUpper → Ω → ℂ}
     rw [(wignerMatrix_isHermitian d (fun _ _ ↦ 0) ω _).trace_mul_self_eq_sum_norm_sq,
       Matrix.frobenius_norm_sq_eq_sum_normSq]
     simp only [Complex.normSq_eq_norm_sq]
-    rw [← Complex.ofReal_re ((n + 1 : ℝ)⁻¹ * _)]
-    push_cast
-    rfl
+    rw [← Complex.ofReal_natCast, ← Complex.ofReal_one, ← Complex.ofReal_add,
+      ← Complex.ofReal_inv, Complex.re_ofReal_mul, Complex.ofReal_re]
   have h := integral_re_trace_wignerMatrix_mul_self (ξ := d) (η := fun _ _ ↦ 0) (σ2 := 0)
     (fun ij ↦ (memLp_two_iff_integrable_sq_norm (hξ ij).aestronglyMeasurable).mp (hξ ij))
     hs (fun _ ↦ by simp) (fun _ ↦ by simp) (n + 1)
