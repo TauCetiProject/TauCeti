@@ -23,8 +23,8 @@ set is empty. Holomorphic functions are `MDifferentiable I 𝓘(ℂ)` maps.
 A *Stein manifold* (`TauCeti.IsSteinManifold I M`) is a complex manifold which is
 * holomorphically convex: the holomorphic hull of every compact set is compact;
 * holomorphically separable: global holomorphic functions separate points;
-* supplied with holomorphic local coordinates by global functions: at every point some global
-  holomorphic map `M → E` to the model space has injective differential.
+* at every point some global holomorphic map `M → E` to the model space has injective
+  differential.
 
 We show that a complex normed space with compact closed balls, that is a finite-dimensional one
 such as `ℂⁿ` for every `n`, is a Stein manifold: continuous linear functionals separate points
@@ -163,8 +163,7 @@ theorem mholomorphicHull_eq_self_of_subsingleton [Subsingleton E] (K : Set M) :
 variable (I M) in
 /-- A complex manifold `M` modelled on `I` is a *Stein manifold* if it is holomorphically convex,
 global holomorphic functions separate its points, and at every point some global holomorphic map
-to the model space `E` has injective differential, so that global holomorphic functions supply
-local coordinates. Holomorphic maps are `MDifferentiable` maps. -/
+to the model space `E` has injective differential. Holomorphic maps are `MDifferentiable` maps. -/
 class IsSteinManifold : Prop where
   /-- Holomorphic convexity: the holomorphic hull of a compact set is compact. -/
   isCompact_mholomorphicHull {K : Set M} : IsCompact K → IsCompact (mholomorphicHull I K)
@@ -172,7 +171,7 @@ class IsSteinManifold : Prop where
   function. -/
   exists_mdifferentiable_apply_ne {x y : M} :
     x ≠ y → ∃ f : M → ℂ, MDifferentiable I 𝓘(ℂ) f ∧ f x ≠ f y
-  /-- Holomorphic local coordinates: at every point, some global holomorphic map to the model
+  /-- Injective differentials: at every point, some global holomorphic map to the model
   space has injective differential. -/
   exists_mdifferentiable_injective_mfderiv (x : M) :
     ∃ F : M → E, MDifferentiable I 𝓘(ℂ, E) F ∧ Injective (mfderiv I 𝓘(ℂ, E) F x)
