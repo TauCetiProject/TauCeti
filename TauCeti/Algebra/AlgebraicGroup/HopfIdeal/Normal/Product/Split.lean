@@ -30,6 +30,8 @@ a product `u t`.
 
 ## Main declarations
 
+* `TauCeti.CommHopfAlgCat.mapPointsFunctor_productMapOfNormal_app_grpObjPointsMulEquiv`:
+  multiplication `N ⋊ T → G` on points is `(u, t) ↦ u * t`.
 * `TauCeti.CommHopfAlgCat.bijective_mapPointsFunctor_productMapOfNormal_app_of_isIso`: on
   points over every commutative algebra, multiplication `N ⋊ T → G` is bijective.
 * `TauCeti.CommHopfAlgCat.isIso_productMapOfNormal_of_isIso`: multiplication `N ⋊ T → G` is an
@@ -72,6 +74,29 @@ private theorem bijective_mapPointsFunctor_app_of_isIso {H K : _root_.CommHopfAl
 variable {H K : _root_.CommHopfAlgCat.{u} R} (I J : HopfIdeal R H) (hI : I.IsNormal)
   (π : K ⟶ H)
 
+/-- Multiplication from the normal semidirect product sends a pair `(u, t)` of points of the two
+factors to the product `u * t` of their inclusions into the ambient group. -/
+theorem mapPointsFunctor_productMapOfNormal_app_grpObjPointsMulEquiv (A : CommAlgCat.{u} R)
+    (q : op A ⟶ (quotientNormalConjugation H I J hI).coordinateHopfAlgebra.grpObj) :
+    (mapPointsFunctor (productMapOfNormal H I J hI ≫
+        (normalSemidirectProductIso H I J hI).hom)).app A (grpObjPointsMulEquiv _ (op A) q) =
+      quotientPointsHom H I A (grpObjPointsMulEquiv _ (op A) (q ≫ fst _ _)) *
+        quotientPointsHom H J A (grpObjPointsMulEquiv _ (op A) (q ≫ snd _ _)) := by
+  let _ : IsMonHom.Normal (quotientGrpObjInclusion H I) :=
+    (quotientGrpObjInclusion_normal_iff H I).2 hI
+  refine mapPointsFunctor_app_grpObjPointsMulEquiv_normalSemidirect H I J hI A _ ?_ q
+  rw [grpObjMap_comp]
+  exact grpObjMap_productMapOfNormal H I J hI
+
+/-- A morphism `π` kills the points of the closed subgroup cut out by its kernel Hopf ideal. -/
+private theorem mapDomain_quotientPointsHom_eq_one (hπ : kernelHopfIdeal π = I)
+    (A : CommAlgCat.{u} R) (u : HopfAlgebra.points (R := R) (H := quotient H I) A) :
+    BialgHom.mapDomain (A := A) π.hom (quotientPointsHom H I A u) = 1 := by
+  subst hπ
+  rw [BialgHom.mapDomain_apply]
+  exact (mapPointsFunctor_app_eq_one_iff π A _).mpr
+    (quotientPointsHom_mem_quotientPointsSubgroup H _ A u)
+
 /-- **Split extensions are semidirect products, on points.** Let `I` be a normal Hopf ideal of
 `H` and `π : K ⟶ H` a Hopf-algebra morphism with kernel Hopf ideal `I`, so that `π` represents a
 homomorphism `G → Q` with kernel `N`. If the closed subgroup `T` cut out by `J` maps
@@ -83,29 +108,16 @@ theorem bijective_mapPointsFunctor_productMapOfNormal_app_of_isIso
       ((mapPointsFunctor (productMapOfNormal H I J hI ≫
         (normalSemidirectProductIso H I J hI).hom)).app A) := by
   let φ := productMapOfNormal H I J hI ≫ (normalSemidirectProductIso H I J hI).hom
-  let _ : IsMonHom.Normal (quotientGrpObjInclusion H I) :=
-    (quotientGrpObjInclusion_normal_iff H I).2 hI
-  have hφ : grpObjMap φ = (GrpObj.Action.normalSemidirectMul
-      (quotientGrpObjInclusion H I) (quotientGrpObjInclusion H J)).hom.hom := by
-    rw [grpObjMap_comp]
-    exact grpObjMap_productMapOfNormal H I J hI
   let e := grpObjPointsMulEquiv (quotientNormalConjugation H I J hI).coordinateHopfAlgebra (op A)
   let a := grpObjPointsMulEquiv (quotient H I) (op A)
   let b := grpObjPointsMulEquiv (quotient H J) (op A)
   let ιI := quotientPointsHom H I A
   let ιJ := quotientPointsHom H J A
   let p := BialgHom.mapDomain (A := A) π.hom
-  -- Multiplication sends a pair to the product of the two inclusions.
   have hmul (q) : (mapPointsFunctor φ).app A (e q) =
       ιI (a (q ≫ fst _ _)) * ιJ (b (q ≫ snd _ _)) :=
-    mapPointsFunctor_app_grpObjPointsMulEquiv_normalSemidirect H I J hI A φ hφ q
-  -- `π` kills the normal factor.
-  have hsub : quotientPointsSubgroup H I A = quotientPointsSubgroup H (kernelHopfIdeal π) A := by
-    rw [hπ]
-  have hker (u) : p (ιI u) = 1 := by
-    have hu := (mapPointsFunctor_app_eq_one_iff π A _).mpr
-      (hsub ▸ quotientPointsHom_mem_quotientPointsSubgroup H I A u)
-    rwa [← BialgHom.mapDomain_apply] at hu
+    mapPointsFunctor_productMapOfNormal_app_grpObjPointsMulEquiv I J hI A q
+  have hker (u) : p (ιI u) = 1 := mapDomain_quotientPointsHom_eq_one I π hπ A u
   -- On the acting factor, `π` is the bijective point map of `π ≫ mkQuotient H J`.
   have hcomp (t) : p (ιJ t) = (mapPointsFunctor (π ≫ mkQuotient H J)).app A t :=
     (mapPointsFunctor_comp_app_apply π (mkQuotient H J) A t).symm
