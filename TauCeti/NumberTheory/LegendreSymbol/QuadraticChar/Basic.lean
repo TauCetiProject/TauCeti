@@ -19,6 +19,7 @@ quadratic character sums to zero against any nonzero dilation, and the quadratic
 
 ## Main results
 
+* `quadraticChar_zmod_three_neg_one`: the quadratic character modulo three is odd.
 * `TauCeti.sum_comp_mul_sq`: `∑ₜ g(a t²) = ∑ᵤ (1 + χ(a u)) • g(u)` for `a ≠ 0`.
 * `TauCeti.sum_quadraticChar_mul`: `∑ᵤ χ(a u) = 0`.
 * `TauCeti.sum_quadraticChar_mul_sub`: the quadratic Jacobi sum `∑ᵤ χ(u (c - u))`.
@@ -27,6 +28,10 @@ quadratic character sums to zero against any nonzero dilation, and the quadratic
 public section
 
 open Finset
+
+/-- The quadratic character of the field with three elements is odd. -/
+theorem quadraticChar_zmod_three_neg_one : (quadraticChar (ZMod 3)) (-1) = -1 := by
+  exact quadraticChar_neg_one_iff_not_isSquare.mpr (by decide)
 
 namespace TauCeti
 

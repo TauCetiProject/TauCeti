@@ -31,6 +31,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 ## Main results
 
 * `DirichletCharacter.sum_range_eq_zero_of_ne_one`: cancellation over a full period.
+* `DirichletCharacter.ext_of_level_three`: a character at level three is determined by its
+  value at `-1`.
 * `DirichletCharacter.three_le_level_of_ne_one`: any nonprincipal character at a nonzero level has
   level at least `3`.
 * `DirichletCharacter.exists_alt_unit_in_coset_with_char_separation`: character separation within
@@ -177,6 +179,15 @@ theorem conductor_eq_eight_of_apply_one_ne_apply_five {R : Type*} [CommMonoidWit
     chi.conductor = 8 :=
   conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply (p := 2) (k := 3) Nat.prime_two chi
     isCoprime_one_left ⟨5, -3, by norm_num⟩ (by norm_num) hdist
+
+/-- Two characters of level three agreeing at `-1` are equal. -/
+theorem ext_of_level_three {R : Type*} [CommMonoidWithZero R] {χ ψ : DirichletCharacter R 3}
+    (hneg : χ (-1) = ψ (-1)) : χ = ψ := by
+  refine MulChar.ext fun u ↦ ?_
+  rcases (by decide : ∀ u : (ZMod 3)ˣ, (u : ZMod 3) = 1 ∨ (u : ZMod 3) = -1) u
+    with h | h
+  · simp only [h, map_one]
+  · simpa only [h] using hneg
 
 /-- Two characters of level four agreeing at `3` are equal. -/
 theorem ext_of_level_four {R : Type*} [CommMonoidWithZero R] {χ ψ : DirichletCharacter R 4}

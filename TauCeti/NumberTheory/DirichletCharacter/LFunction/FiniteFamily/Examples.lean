@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Cotangent
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import Mathlib.NumberTheory.LegendreSymbol.ZModChar
-import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
+import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.LinearCombination
@@ -17,8 +17,11 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Small bounded families of Dirichlet L-functions
 
-These examples include the empty bounded families at levels zero and one with the explicit
-radius one, and the first nonprincipal characters at levels three and four.
+These examples include the empty bounded families at bounds zero and one with the explicit
+radius one, and the first nonprincipal characters at levels three and four. Every nonprincipal
+complex character at level three or four is the cast of the native character
+`quadraticChar (ZMod 3)` or `ZMod.χ₄`, respectively. The cotangent formula gives their exact
+L-values at one as `π / (3√3)` and `π / 4`.
 
 ## References
 
@@ -33,42 +36,31 @@ namespace DirichletCharacter
 
 /-- The odd character at level four has continued value `π / 4` at one. -/
 example (χ : DirichletCharacter ℂ 4) (hχ : χ.Odd) : χ.LFunction 1 = Real.pi / 4 := by
-  have h := χ.two_mul_LFunction_one_eq_sum_mul_cot hχ
-  have hneg : χ (3 : ZMod 4) = -1 := hχ
+  have h := χ.two_mul_LFunction_one_eq_sum_range_mul_cot hχ
+  have hres : (3 : ZMod 4) = -1 := by decide
+  have hneg : χ (3 : ZMod 4) = -1 := by simpa only [Odd, hres] using hχ
   have htwo : χ (2 : ZMod 4) = 0 := χ.map_nonunit (by decide)
-  norm_num [show (Finset.univ : Finset (ZMod 4)) = {0, 1, 2, 3} by decide,
-    hneg, htwo] at h
-  rw [Finset.sum_insert (by decide), Finset.sum_insert (by decide), Finset.sum_singleton] at h
-  norm_num [-ZMod.natCast_val, ZMod.cast_eq_val, hneg, htwo] at h
-  norm_num only [show (1 : ZMod 4).val = 1 from rfl,
-    show (3 : ZMod 4).val = 3 from rfl] at h
+  norm_num [Finset.sum_range_succ, hneg, htwo] at h
+  have ht : tan ((Real.pi : ℂ) / 4) = 1 := by exact_mod_cast Real.tan_pi_div_four
   have hc : cot ((Real.pi : ℂ) / 4) = 1 := by
-    simpa only [tan_inv_eq_cot, inv_one] using congrArg Inv.inv
-      (show tan ((Real.pi : ℂ) / 4) = 1 by exact_mod_cast Real.tan_pi_div_four)
-  have hc' : cot ((Real.pi : ℂ) * (3 / 4)) = -1 := by
-    rw [show (Real.pi : ℂ) * (3 / 4) = Real.pi - Real.pi / 4 by ring,
-      cot_eq_cos_div_sin, cos_pi_sub, sin_pi_sub, neg_div, ← cot_eq_cos_div_sin, hc]
-  rw [mul_one_div, hc, hc'] at h
+    simpa only [tan_inv_eq_cot, inv_one] using congrArg Inv.inv ht
+  have hangle : (Real.pi : ℂ) * (3 / 4) = Real.pi - Real.pi / 4 := by ring
+  rw [mul_one_div, hangle, cot_pi_sub, hc] at h
   linear_combination h / 2
 
 /-- The odd character at level three has continued value `π / (3√3)` at one. -/
 example (χ : DirichletCharacter ℂ 3) (hχ : χ.Odd) :
     χ.LFunction 1 = Real.pi / (3 * (Real.sqrt 3 : ℂ)) := by
-  have h := χ.two_mul_LFunction_one_eq_sum_mul_cot hχ
-  have hneg : χ (2 : ZMod 3) = -1 := hχ
-  norm_num [show (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} by decide] at h
-  rw [Finset.sum_insert (by decide), Finset.sum_singleton] at h
-  norm_num [-ZMod.natCast_val, ZMod.cast_eq_val, hneg] at h
-  norm_num only [show (1 : ZMod 3).val = 1 from rfl,
-    show (2 : ZMod 3).val = 2 from rfl] at h
+  have h := χ.two_mul_LFunction_one_eq_sum_range_mul_cot hχ
+  have hres : (2 : ZMod 3) = -1 := by decide
+  have hneg : χ (2 : ZMod 3) = -1 := by simpa only [Odd, hres] using hχ
+  norm_num [Finset.sum_range_succ, hneg] at h
+  have ht : tan ((Real.pi : ℂ) / 3) = (Real.sqrt 3 : ℂ) := by
+    exact_mod_cast Real.tan_pi_div_three
   have hc : cot ((Real.pi : ℂ) / 3) = (Real.sqrt 3 : ℂ)⁻¹ := by
-    simpa only [tan_inv_eq_cot] using congrArg Inv.inv
-      (show tan ((Real.pi : ℂ) / 3) = (Real.sqrt 3 : ℂ) by
-        exact_mod_cast Real.tan_pi_div_three)
-  have hc' : cot ((Real.pi : ℂ) * (2 / 3)) = -(Real.sqrt 3 : ℂ)⁻¹ := by
-    rw [show (Real.pi : ℂ) * (2 / 3) = Real.pi - Real.pi / 3 by ring,
-      cot_eq_cos_div_sin, cos_pi_sub, sin_pi_sub, neg_div, ← cot_eq_cos_div_sin, hc]
-  rw [mul_one_div, hc, hc'] at h
+    simpa only [tan_inv_eq_cot] using congrArg Inv.inv ht
+  have hangle : (Real.pi : ℂ) * (2 / 3) = Real.pi - Real.pi / 3 := by ring
+  rw [mul_one_div, hangle, cot_pi_sub, hc] at h
   linear_combination h / 2
 
 /-- Radius one serves for the empty bounded family at bound zero. -/
@@ -92,13 +84,12 @@ example {N : ℕ} [NeZero N] (hN : N ≤ 4) (χ : DirichletCharacter ℂ N) (hχ
 
 /-- The native quadratic character modulo three supplies a nonprincipal member of the family. -/
 example : Odd ((quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ)) := by
-  norm_num [Odd, MulChar.ringHomComp_apply,
-    quadraticChar_neg_one (F := ZMod 3) (by norm_num [ZMod.ringChar_zmod_n]),
-    ZMod.card, ZMod.χ₄]
+  simp only [Odd, MulChar.ringHomComp_apply, quadraticChar_zmod_three_neg_one, map_neg, map_one]
 
 /-- Casting the native integer-valued character modulo four gives the other nonprincipal member. -/
 example : Odd (ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)) := by
-  norm_num [Odd, MulChar.ringHomComp_apply, show ZMod.χ₄ (-1) = -1 by decide]
+  have hneg : ZMod.χ₄ (-1) = -1 := by decide
+  simp only [Odd, MulChar.ringHomComp_apply, hneg, map_neg, map_one]
 
 /-- A single radius works simultaneously for the native functions at levels three and four. -/
 example : ∃ δ : ℝ, 0 < δ ∧ ∀ χ₃ : DirichletCharacter ℂ 3, χ₃ ≠ 1 →
@@ -111,26 +102,25 @@ example : ∃ δ : ℝ, 0 < δ ∧ ∀ χ₃ : DirichletCharacter ℂ 3, χ₃ �
 /-- Every nonprincipal complex character modulo four is the cast of the native quadratic one. -/
 example (χ : DirichletCharacter ℂ 4) (hχ : χ ≠ 1) :
     χ = ZMod.χ₄.ringHomComp (Int.castRingHom ℂ) := by
+  have hres : (3 : ZMod 4) = -1 := by decide
   rcases χ.even_or_odd with he | ho
-  · exact (hχ (ext_of_level_four ((show χ (3 : ZMod 4) = 1 from he).trans
-      (MulChar.one_apply (by decide)).symm))).elim
+  · apply (hχ ?_).elim
+    apply ext_of_level_four
+    simpa only [Even, hres, MulChar.one_apply (by decide : IsUnit (-1 : ZMod 4))]
+      using he
   · apply ext_of_level_four
-    simpa only [MulChar.ringHomComp_apply, show ZMod.χ₄ (3 : ZMod 4) = -1 by decide,
-      map_neg, map_one] using (show χ (3 : ZMod 4) = -1 from ho)
+    have hneg : ZMod.χ₄ (-1) = -1 := by decide
+    simpa only [Odd, hres, MulChar.ringHomComp_apply, hneg, map_neg, map_one] using ho
 
 /-- Every nonprincipal complex character modulo three is the cast of its quadratic character. -/
 example (χ : DirichletCharacter ℂ 3) (hχ : χ ≠ 1) :
     χ = (quadraticChar (ZMod 3)).ringHomComp (Int.castRingHom ℂ) := by
   rcases χ.even_or_odd with he | ho
-  · refine False.elim (hχ (MulChar.ext fun u ↦ ?_))
-    rcases (by decide : ∀ u : (ZMod 3)ˣ, (u : ZMod 3) = 1 ∨ (u : ZMod 3) = -1) u
-      with hu | hu
-    all_goals simp_all [Even, MulChar.one_apply (by decide : IsUnit (-1 : ZMod 3))]
-  · refine MulChar.ext fun u ↦ ?_
-    rcases (by decide : ∀ u : (ZMod 3)ˣ, (u : ZMod 3) = 1 ∨ (u : ZMod 3) = -1) u
-      with hu | hu
-    all_goals simp_all [Odd, MulChar.ringHomComp_apply,
-      quadraticChar_neg_one (F := ZMod 3) (by norm_num [ZMod.ringChar_zmod_n]),
-      ZMod.card, ZMod.χ₄]
+  · apply (hχ ?_).elim
+    apply ext_of_level_three
+    simpa only [Even, MulChar.one_apply (by decide : IsUnit (-1 : ZMod 3))] using he
+  · apply ext_of_level_three
+    simpa only [MulChar.ringHomComp_apply, quadraticChar_zmod_three_neg_one,
+      map_neg, map_one, Odd] using ho
 
 end DirichletCharacter

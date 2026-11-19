@@ -15,7 +15,9 @@ import TauCeti.Data.ZMod.Count
 
 For an odd Dirichlet character, the continued value at one is a finite cotangent sum.
 The identity uses ordered partial sums, not an unconditionally convergent Dirichlet series
-at one. It allows the nonvanishing of the L-value to be applied to the constant terms of
+at one. The form `DirichletCharacter.two_mul_LFunction_one_eq_sum_range_mul_cot` sums over the
+natural residue representatives, for explicit finite computations. It allows the nonvanishing of
+the L-value to be applied to the constant terms of
 weight-one Eisenstein series. The analytic inputs are the regularized partial-fraction
 expansion `TauCeti.hasSum_one_div_sub_intCast_add_one_div_intCast` and the ordered convergence
 `DirichletCharacter.tendsto_sum_Icc_div_LFunction_one`.
@@ -115,5 +117,15 @@ theorem two_mul_LFunction_one_eq_sum_mul_cot (hχ : χ.Odd) :
   refine hlim.congr fun K ↦ ?_
   simpa [Nat.cast_mul, mul_comm] using
     (ZMod.sum_Ico_mul (n := N) (-(K : ℤ)) K (fun k ↦ χ k / (k : ℂ)))
+
+/-- The finite cotangent formula for an odd character, summed over the natural residue
+representatives `0, …, N - 1`. -/
+theorem two_mul_LFunction_one_eq_sum_range_mul_cot (hχ : χ.Odd) :
+    2 * χ.LFunction 1 =
+      ∑ a ∈ range N, χ a / N * (π * cot (π * ((a : ℂ) / N))) := by
+  rw [χ.two_mul_LFunction_one_eq_sum_mul_cot hχ]
+  simpa only [ZMod.natCast_zmod_val] using
+    ZMod.sum_val_eq_sum_range (n := N)
+      (fun a ↦ χ a / N * (π * cot (π * ((a : ℂ) / N))))
 
 end DirichletCharacter
