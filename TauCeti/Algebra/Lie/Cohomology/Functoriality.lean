@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Cochain
 public import TauCeti.Algebra.Lie.Cohomology.ChevalleyEilenberg
 
 /-!
@@ -17,7 +18,8 @@ along `g`, `ω ↦ (v ↦ g (ω (f ∘ v)))`, commutes with the Chevalley–Eile
 (`d_cochainMap`). It is therefore a morphism of cochain complexes (`cochainComplexMap`), which
 induces the maps `H^n(L, M) → H^n(L', M')` on Lie algebra cohomology (`cohomologyMap`). The
 construction is contravariant in the Lie algebra and covariant in the coefficients, and respects
-identities and composition.
+identities and composition. In degree two it is the map `twoCochainMap` of 2-cochains
+(`twoCochainEquiv_cochainMap`).
 
 Taking `L' = L` and `f` a Lie algebra automorphism gives the action of a group of automorphisms
 of `(L, M)` on the cochains, which is how the relative complex of a pair `(𝔤, K)` is cut out.
@@ -33,6 +35,8 @@ of `(L, M)` on the cochains, which is how the relative complex of a pair `(𝔤,
 
 * `TauCeti.LieModule.Cohomology.d_cochainMap`: pullback and pushforward commute with the
   differential.
+* `TauCeti.LieModule.Cohomology.twoCochainEquiv_cochainMap`: in degree two, `cochainMap` is
+  `LieModule.Cohomology.twoCochainMap`.
 
 ## References
 
@@ -42,7 +46,7 @@ of `(L, M)` on the cochains, which is how the relative complex of a pair `(𝔤,
 
 public section
 
-open AlternatingMap CategoryTheory
+open AlternatingMap CategoryTheory _root_.LieModule.Cohomology
 
 namespace TauCeti.LieModule.Cohomology
 
@@ -79,6 +83,26 @@ theorem cochainMap_comp (g : M →ₗ[R] M') (g' : M' →ₗ[R] M'') (f : L' →
     (f' : L'' →ₗ⁅R⁆ L') (n : ℕ) :
     cochainMap g' f' n ∘ₗ cochainMap g f n = cochainMap (g' ∘ₗ g) (f.comp f') n :=
   (rfl)
+
+/-- In degree two, `cochainMap` is the map `twoCochainMap` of 2-cochains. -/
+@[simp]
+theorem twoCochainEquiv_cochainMap (g : M →ₗ[R] M') (f : L' →ₗ⁅R⁆ L)
+    (ω : L [⋀^Fin 2]→ₗ[R] M) :
+    twoCochainEquiv R L' M' (cochainMap g f 2 ω) = twoCochainMap g f (twoCochainEquiv R L M ω) := by
+  ext x y
+  change twoCochainEquiv R L' M' _ x y = twoCochainMap g f (twoCochainEquiv R L M ω) x y
+  rw [twoCochainEquiv_apply, twoCochainMap_apply_apply, twoCochainEquiv_apply, cochainMap_apply]
+  congr 2
+  ext i
+  fin_cases i <;> rfl
+
+/-- In degree two, `cochainMap` is the map `twoCochainMap` of 2-cochains, in terms of the
+inverse of `twoCochainEquiv`. -/
+theorem cochainMap_twoCochainEquiv_symm (g : M →ₗ[R] M') (f : L' →ₗ⁅R⁆ L)
+    (c : twoCochain R L M) :
+    cochainMap g f 2 ((twoCochainEquiv R L M).symm c) =
+      (twoCochainEquiv R L' M').symm (twoCochainMap g f c) := by
+  rw [LinearEquiv.eq_symm_apply, twoCochainEquiv_cochainMap, LinearEquiv.apply_symm_apply]
 
 variable [LieRingModule L M] [LieModule R L M] [LieRingModule L' M'] [LieModule R L' M']
 

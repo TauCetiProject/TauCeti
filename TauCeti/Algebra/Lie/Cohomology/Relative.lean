@@ -7,30 +7,32 @@ module
 
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.Quotient
-public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.Lie.Cohomology.Functoriality
-public import TauCeti.LinearAlgebra.Multilinear.Quotient
+public import TauCeti.Algebra.Lie.Quotient
+public import TauCeti.LinearAlgebra.Alternating.Conormal
+public import TauCeti.RepresentationTheory.LieHom
 
 /-!
 # Relative Lie algebra cohomology
 
 Let `L` be a Lie algebra over a commutative ring `R`, `H ⊆ L` a Lie subalgebra and `M` an
 `L`-module. The relative cochains of the pair `(L, H)` are the Chevalley–Eilenberg cochains
-`ω : L [⋀^Fin n]→ₗ[R] M` that vanish as soon as one argument lies in `H` and are annihilated by
-the Lie derivatives `⁅y, ω⁆` along `y ∈ H`. Pulling back along `L → L ⧸ H` identifies them with
-the `H`-invariant alternating maps on `L ⧸ H` (`relativeCochainsEquiv`), that is, with
-`Hom_H(⋀ⁿ(L/H), M)`. By Cartan's formula `ι_y d ω = ⁅y, ω⁆ - d ι_y ω` and the
-`L`-equivariance of the differential, the relative cochains form a subcomplex of the
-Chevalley–Eilenberg complex, the relative complex `C^•(L, H; M)`; its cohomology is the relative
-Lie algebra cohomology `H^•(L, H; M)`.
+`ω : L [⋀^Fin n]→ₗ[R] M` that vanish as soon as one argument lies in `H` (they are conormal to
+`H`, `Submodule.conormalForms`) and are annihilated by the Lie derivatives `⁅y, ω⁆` along
+`y ∈ H`. Pulling back along `L → L ⧸ H` identifies them with the `H`-invariant alternating maps
+on `L ⧸ H` (`relativeCochainsEquiv`), that is, with `Hom_H(⋀ⁿ(L/H), M)`. By Cartan's formula
+`ι_y d ω = ⁅y, ω⁆ - d ι_y ω` and the `L`-equivariance of the differential, the relative cochains
+form a subcomplex of the Chevalley–Eilenberg complex, the relative complex `C^•(L, H; M)`; its
+cohomology is the relative Lie algebra cohomology `H^•(L, H; M)`.
 
-For a pair `(𝔤, K)` with `K` a group acting on `𝔤` by Lie algebra automorphisms `Ad` and on `M`
-compatibly, `k • ⁅x, m⁆ = ⁅Ad k x, k • m⁆`, the relative complex `C^•(𝔤, K; M)` consists of the
-`K`-equivariant relative cochains: `Hom_K(⋀ⁿ(𝔤/𝔨), M)` for a subalgebra `𝔨`. When `K` is a
-compact Lie group with Lie algebra `𝔨` and `M` is a `(𝔤, K)`-module, `K`-equivariance implies
-`𝔨`-invariance; an abstract group carries no Lie algebra to differentiate, so here `𝔨` is a
-separate datum and the `𝔨`-invariance is imposed. The `K`-equivariant cochains are a subcomplex
-because the differential is natural (`d_cochainMap`). For `K` disconnected, as for `O(2)` inside
+Let a group `K` act on `𝔤` by Lie algebra automorphisms `Ad` and on `M` compatibly,
+`k • ⁅x, m⁆ = ⁅Ad k x, k • m⁆`, and let `𝔨` be a subalgebra. The `K`-equivariant
+`(𝔤, 𝔨)`-relative cochains form a subcomplex, because the differential is natural
+(`d_cochainMap`). When `𝔨` is `Ad(K)`-stable, they are `Hom_K(⋀ⁿ(𝔤/𝔨), M)` with `𝔨`-invariance
+imposed. When moreover `K` is a Lie group with Lie algebra `𝔨` and `M` is a `(𝔤, K)`-module,
+`K`-equivariance implies `𝔨`-invariance, and this is the relative complex `C^•(𝔤, K; M)` of the
+pair `(𝔤, K)`. An abstract group carries no Lie algebra to differentiate, so here `𝔨` is a
+separate datum and the `𝔨`-invariance is imposed. For `K` disconnected, as for `O(2)` inside
 `GL₂(ℝ)`, the `K`-equivariance cuts out more than the `𝔨`-invariance does.
 
 ## Main definitions
@@ -44,8 +46,9 @@ because the differential is natural (`d_cochainMap`). For `K` disconnected, as f
   alternating maps on `L ⧸ H`.
 * `TauCeti.LieModule.Cohomology.equivariantRelativeCochains`,
   `TauCeti.LieModule.Cohomology.equivariantRelativeCochainComplex`,
-  `TauCeti.LieModule.Cohomology.equivariantRelativeCohomology`: the relative complex of a pair
-  `(𝔤, K)` and its cohomology.
+  `TauCeti.LieModule.Cohomology.equivariantRelativeCohomology`: the complex of `K`-equivariant
+  relative cochains and its cohomology, the relative complex of a pair `(𝔤, K)` when `𝔨` is the
+  `Ad(K)`-stable Lie algebra of `K`.
 
 ## Main results
 
@@ -70,7 +73,7 @@ because the differential is natural (`d_cochainMap`). For `K` disconnected, as f
 
 public section
 
-open AlternatingMap
+open AlternatingMap CategoryTheory
 
 namespace TauCeti.LieModule.Cohomology
 
@@ -140,6 +143,16 @@ theorem cochainSubcomplexSubtype_f (n : ℕ) :
     (cochainSubcomplexSubtype S hS).f n = ModuleCat.ofHom (S n).subtype :=
   (rfl)
 
+/-- The inclusion of subcomplexes commutes with their inclusions into the Chevalley–Eilenberg
+complex. -/
+@[simp]
+theorem cochainSubcomplexInclusion_comp_subtype {S' : ∀ n, Submodule R (L [⋀^Fin n]→ₗ[R] M)}
+    (hS' : ∀ n, ∀ ω ∈ S' n, d R L M n ω ∈ S' (n + 1)) (h : ∀ n, S n ≤ S' n) :
+    cochainSubcomplexInclusion S hS hS' h ≫ cochainSubcomplexSubtype S' hS' =
+      cochainSubcomplexSubtype S hS := by
+  ext n : 2
+  rfl
+
 end Subcomplex
 
 /-! ### The relative complex of a pair `(L, H)` -/
@@ -151,27 +164,26 @@ variable (R M) (H : LieSubalgebra R L)
 /-- The relative `n`-cochains of the pair `(L, H)`: the cochains that vanish as soon as one
 argument lies in `H` and are annihilated by the Lie derivatives along `H`. These are the
 `H`-invariant alternating maps on `L ⧸ H` (`relativeCochainsEquiv`). -/
-def relativeCochains (n : ℕ) : Submodule R (L [⋀^Fin n]→ₗ[R] M) where
-  carrier := {ω | (∀ (v : Fin n → L) (i : Fin n), v i ∈ H → ω v = 0) ∧ ∀ y ∈ H, ⁅y, ω⁆ = 0}
-  add_mem' {ω ω'} hω hω' :=
-    ⟨fun v i hv ↦ by simp [hω.1 v i hv, hω'.1 v i hv],
-      fun y hy ↦ by rw [lie_add, hω.2 y hy, hω'.2 y hy, add_zero]⟩
-  zero_mem' := ⟨fun _ _ _ ↦ rfl, fun y _ ↦ lie_zero y⟩
-  smul_mem' c ω hω :=
-    ⟨fun v i hv ↦ by simp [hω.1 v i hv], fun y hy ↦ by rw [lie_smul, hω.2 y hy, smul_zero]⟩
+def relativeCochains (n : ℕ) : Submodule R (L [⋀^Fin n]→ₗ[R] M) :=
+  H.toLieSubmodule.toSubmodule.conormalForms (Fin n) M ⊓
+    { carrier := {ω | ∀ y ∈ H, ⁅y, ω⁆ = 0}
+      add_mem' {ω ω'} hω hω' y hy := by rw [lie_add, hω y hy, hω' y hy, add_zero]
+      zero_mem' y _ := lie_zero y
+      smul_mem' c ω hω y hy := by rw [lie_smul, hω y hy, smul_zero] }
 
 variable {R M H}
 
 theorem mem_relativeCochains_iff {n : ℕ} {ω : L [⋀^Fin n]→ₗ[R] M} :
     ω ∈ relativeCochains R M H n ↔
       (∀ (v : Fin n → L) (i : Fin n), v i ∈ H → ω v = 0) ∧ ∀ y ∈ H, ⁅y, ω⁆ = 0 :=
-  Iff.rfl
+  Submodule.mem_inf.trans <| and_congr (by simp) Iff.rfl
 
 /-- In positive degree, the first condition on relative cochains says that the interior
 products along `H` vanish. -/
 theorem mem_relativeCochains_succ_iff {n : ℕ} {ω : L [⋀^Fin (n + 1)]→ₗ[R] M} :
     ω ∈ relativeCochains R M H (n + 1) ↔
       (∀ y ∈ H, ω.curryLeft y = 0) ∧ ∀ y ∈ H, ⁅y, ω⁆ = 0 := by
+  rw [mem_relativeCochains_iff]
   refine and_congr_left' ⟨fun h y hy ↦ ?_, fun h v i hv ↦
     map_eq_zero_of_curryLeft_eq_zero (h _ hv) rfl⟩
   ext w
@@ -180,6 +192,7 @@ theorem mem_relativeCochains_succ_iff {n : ℕ} {ω : L [⋀^Fin (n + 1)]→ₗ[
 /-- A relative `0`-cochain is an element of `M` annihilated by `H`. -/
 theorem mem_relativeCochains_zero_iff {ω : L [⋀^Fin 0]→ₗ[R] M} :
     ω ∈ relativeCochains R M H 0 ↔ ∀ y ∈ H, ⁅y, ω ![]⁆ = 0 := by
+  rw [mem_relativeCochains_iff]
   refine ⟨fun h y hy ↦ ?_, fun h ↦ ⟨fun _ i ↦ i.elim0, fun y hy ↦ ?_⟩⟩
   · simpa using congr($(h.2 y hy) ![])
   · ext v
@@ -188,8 +201,10 @@ theorem mem_relativeCochains_zero_iff {ω : L [⋀^Fin 0]→ₗ[R] M} :
 /-- Relative to the zero subalgebra, every cochain is relative. -/
 @[simp]
 theorem relativeCochains_bot (n : ℕ) : relativeCochains R M (⊥ : LieSubalgebra R L) n = ⊤ := by
-  refine eq_top_iff.mpr fun ω _ ↦ ⟨fun v i hv ↦ ω.map_coord_zero i ?_, fun y hy ↦ ?_⟩
-  · simpa using hv
+  refine eq_top_iff.mpr fun ω _ ↦ ⟨?_, fun y hy ↦ ?_⟩
+  · have h : (⊥ : LieSubalgebra R L).toLieSubmodule.toSubmodule = ⊥ := by ext; simp
+    rw [h, Submodule.conormalForms_bot]
+    exact Submodule.mem_top
   · rw [(LieSubalgebra.mem_bot y).mp hy, zero_lie]
 
 /-- **The differential preserves relative cochains**, by Cartan's formula
@@ -238,11 +253,11 @@ theorem compLinearMap_mk'_mem_relativeCochains {n : ℕ}
     (η : LieModule.maxTrivSubmodule R H ((L ⧸ H.toLieSubmodule) [⋀^Fin n]→ₗ[R] M)) :
     (η : (L ⧸ H.toLieSubmodule) [⋀^Fin n]→ₗ[R] M).compLinearMap
       (LieSubmodule.Quotient.mk' H.toLieSubmodule : L →ₗ[R] _) ∈ relativeCochains R M H n := by
-  refine ⟨fun v i hv ↦ (η : (L ⧸ H.toLieSubmodule) [⋀^Fin n]→ₗ[R] M).map_coord_zero i ?_,
-    fun y hy ↦ ?_⟩
-  · simpa using hv
-  · rw [lie_compLinearMap_mk' ⟨y, hy⟩,
-      (LieModule.mem_maxTrivSubmodule R H _ _).mp η.2 ⟨y, hy⟩, zero_compLinearMap]
+  refine ⟨?_, fun y hy ↦ ?_⟩
+  · rw [LieSubmodule.Quotient.coe_mk', ← Submodule.conormalPullback_apply]
+    exact Submodule.conormalPullback_mem _ _
+  rw [lie_compLinearMap_mk' ⟨y, hy⟩,
+    (LieModule.mem_maxTrivSubmodule R H _ _).mp η.2 ⟨y, hy⟩, zero_compLinearMap]
 
 /-- Pullback along `L → L ⧸ H`, from `H`-invariant alternating maps on `L ⧸ H` to relative
 cochains. -/
@@ -263,8 +278,10 @@ theorem coe_relativeCochainsPullback_apply {n : ℕ}
 
 theorem relativeCochainsPullback_injective (n : ℕ) :
     Function.Injective (relativeCochainsPullback R M H n) := fun _ _ h ↦
-  Subtype.ext (compLinearMap_injective _ (LieSubmodule.Quotient.surjective_mk' _)
-    (congrArg Subtype.val h))
+  Subtype.ext <| H.toLieSubmodule.toSubmodule.conormalPullback_injective <| by
+    rw [Submodule.conormalPullback_apply, Submodule.conormalPullback_apply,
+      ← LieSubmodule.Quotient.coe_mk']
+    exact congrArg Subtype.val h
 
 variable {R M H} in
 /-- A relative cochain descends to an alternating map on `L ⧸ H`. -/
@@ -272,17 +289,8 @@ theorem exists_compLinearMap_mk'_eq {n : ℕ} {ω : L [⋀^Fin n]→ₗ[R] M}
     (hω : ω ∈ relativeCochains R M H n) :
     ∃ η : (L ⧸ H.toLieSubmodule) [⋀^Fin n]→ₗ[R] M,
       η.compLinearMap (LieSubmodule.Quotient.mk' H.toLieSubmodule : L →ₗ[R] _) = ω := by
-  classical
-  let N : Submodule R L := H.toLieSubmodule
-  have hf : ∀ [DecidableEq (Fin n)] (m : Fin n → L) (j : Fin n) (x : L),
-      x ∈ N → ω.toMultilinearMap (Function.update m j x) = 0 :=
-    fun _ j _ hx ↦ hω.1 _ j (by simpa [N] using hx)
-  refine ⟨{ ω.toMultilinearMap.liftQ (fun _ ↦ N) hf with
-    map_eq_zero_of_eq' := fun v i j hij hne ↦ ?_ }, AlternatingMap.ext fun v ↦ ?_⟩
-  · have := ω.toMultilinearMap.liftQ_apply (fun _ ↦ N) hf fun k ↦ (v k).out
-    simp only [Submodule.Quotient.mk_out] at this
-    exact this.trans (ω.map_eq_zero_of_eq _ (congrArg Quotient.out hij) hne)
-  · exact ω.toMultilinearMap.liftQ_apply (fun _ ↦ N) hf v
+  rw [LieSubmodule.Quotient.coe_mk']
+  exact Submodule.exists_compLinearMap_mkQ_eq hω.1
 
 theorem relativeCochainsPullback_surjective (n : ℕ) :
     Function.Surjective (relativeCochainsPullback R M H n) := by
@@ -326,10 +334,11 @@ section Equivariant
 variable (R M) {K : Type*} [Group K] (Ad : Representation R K L) (ρ : Representation R K M)
   (H : LieSubalgebra R L)
 
-/-- The relative `n`-cochains of the pair `(L, K)` for a group `K` acting on `L` through `Ad`
-and on `M` through `ρ`, with `H` playing the role of the Lie algebra of `K`: the relative
-cochains of `(L, H)` that are `K`-equivariant, `ω (Ad k ∘ v) = ρ k (ω v)`. For a compact Lie
-group `K` with Lie algebra `H` and a `(L, K)`-module `M`, these are `Hom_K(⋀ⁿ(L/H), M)`. -/
+/-- The `K`-equivariant `(L, H)`-relative `n`-cochains, for a group `K` acting on `L` through
+`Ad` and on `M` through `ρ`: the relative cochains of `(L, H)` with `ω (Ad k ∘ v) = ρ k (ω v)`.
+When `H` is `Ad(K)`-stable, these are `Hom_K(⋀ⁿ(L/H), M)` with `H`-invariance imposed, and when
+moreover `H` is the Lie algebra of a Lie group `K` acting on a `(L, K)`-module `M`, they are the
+relative `n`-cochains of the pair `(L, K)`. -/
 def equivariantRelativeCochains (n : ℕ) : Submodule R (L [⋀^Fin n]→ₗ[R] M) :=
   relativeCochains R M H n ⊓
     { carrier := {ω | ∀ (k : K) (v : Fin n → L), ω (fun i ↦ Ad k (v i)) = ρ k (ω v)}
@@ -349,14 +358,6 @@ theorem equivariantRelativeCochains_le_relativeCochains (n : ℕ) :
     equivariantRelativeCochains R M Ad ρ H n ≤ relativeCochains R M H n :=
   inf_le_left
 
-/-- `Ad k` as a Lie algebra automorphism, when `Ad` acts by Lie algebra automorphisms. -/
-private def adLieHom (hAd : ∀ k x y, Ad k ⁅x, y⁆ = ⁅Ad k x, Ad k y⁆) (k : K) : L →ₗ⁅R⁆ L :=
-  { Ad k with map_lie' := hAd k _ _ }
-
-private theorem adLieHom_apply (hAd : ∀ k x y, Ad k ⁅x, y⁆ = ⁅Ad k x, Ad k y⁆) (k : K) (x : L) :
-    adLieHom hAd k x = Ad k x :=
-  (rfl)
-
 /-- **The differential preserves `K`-equivariant relative cochains**, when `K` acts on `L` by
 Lie algebra automorphisms and on `M` compatibly. -/
 theorem d_mem_equivariantRelativeCochains (hAd : ∀ k x y, Ad k ⁅x, y⁆ = ⁅Ad k x, Ad k y⁆)
@@ -365,27 +366,32 @@ theorem d_mem_equivariantRelativeCochains (hAd : ∀ k x y, Ad k ⁅x, y⁆ = �
     d R L M n ω ∈ equivariantRelativeCochains R M Ad ρ H (n + 1) := by
   refine ⟨d_mem_relativeCochains hω.1, fun k v ↦ ?_⟩
   -- `ω` is fixed by pullback along `Ad k` and pushforward along `ρ k⁻¹`, which commute with `d`.
-  have hg : ∀ x m, ρ k⁻¹ ⁅adLieHom hAd k x, m⁆ = ⁅x, ρ k⁻¹ m⁆ := fun x m ↦ by
-    rw [hρ, adLieHom_apply, Representation.inv_self_apply]
-  have hfix : cochainMap (ρ k⁻¹) (adLieHom hAd k) n ω = ω := by
+  have hg : ∀ x m, ρ k⁻¹ ⁅Ad.toLieHom hAd k x, m⁆ = ⁅x, ρ k⁻¹ m⁆ := fun x m ↦ by
+    rw [hρ, Representation.toLieHom_apply, Representation.inv_self_apply]
+  have hfix : cochainMap (ρ k⁻¹) (Ad.toLieHom hAd k) n ω = ω := by
     ext w
-    simp only [cochainMap_apply, adLieHom_apply, hω.2 k w, Representation.inv_self_apply]
+    simp only [cochainMap_apply, Representation.toLieHom_apply, hω.2 k w,
+      Representation.inv_self_apply]
   have h := congr($(d_cochainMap hg ω) v)
   rw [hfix] at h
   simp only [cochainMap_apply] at h
   rw [h]
-  simp only [adLieHom_apply, Representation.self_inv_apply]
+  simp only [Representation.toLieHom_apply, Representation.self_inv_apply]
 
 variable (R M Ad ρ H)
 
-/-- The relative Chevalley–Eilenberg complex `C^•(L, K; M)` of the pair `(L, K)`. -/
+/-- The complex of `K`-equivariant `(L, H)`-relative cochains. When `H` is `Ad(K)`-stable and is
+the Lie algebra of `K`, this is the relative Chevalley–Eilenberg complex `C^•(L, K; M)` of the
+pair `(L, K)`. -/
 noncomputable abbrev equivariantRelativeCochainComplex
     (hAd : ∀ k x y, Ad k ⁅x, y⁆ = ⁅Ad k x, Ad k y⁆)
     (hρ : ∀ k x m, ρ k ⁅x, m⁆ = ⁅Ad k x, ρ k m⁆) : CochainComplex (ModuleCat R) ℕ :=
   cochainSubcomplex (equivariantRelativeCochains R M Ad ρ H) fun _ _ ↦
     d_mem_equivariantRelativeCochains hAd hρ
 
-/-- The `n`-th relative Lie algebra cohomology `H^n(L, K; M)` of the pair `(L, K)`. -/
+/-- The `n`-th cohomology of the complex of `K`-equivariant `(L, H)`-relative cochains. When `H`
+is `Ad(K)`-stable and is the Lie algebra of `K`, this is the relative Lie algebra cohomology
+`H^n(L, K; M)` of the pair `(L, K)`. -/
 noncomputable abbrev equivariantRelativeCohomology
     (hAd : ∀ k x y, Ad k ⁅x, y⁆ = ⁅Ad k x, Ad k y⁆)
     (hρ : ∀ k x m, ρ k ⁅x, m⁆ = ⁅Ad k x, ρ k m⁆) (n : ℕ) : ModuleCat R :=
