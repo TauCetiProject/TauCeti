@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
+public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.RingTheory.Finiteness.Basic
