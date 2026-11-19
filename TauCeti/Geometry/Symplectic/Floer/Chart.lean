@@ -150,9 +150,8 @@ theorem almostComplexInChartAt_apply (z : ℝ × ℝ) (y v : E) :
 theorem almostComplexInChartAt_apply_apply {y : E} (hy : y ∈ (extChartAt I α).target)
     (z : ℝ × ℝ) (v : E) :
     almostComplexInChartAt I α J (z, y) (almostComplexInChartAt I α J (z, y) v) = -v := by
-  have hx : (extChartAt I α).symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I] using
-      (extChartAt I α).map_target hy
+  have hx : (extChartAt I α).symm y ∈ (trivializationAt E (TangentSpace I) α).baseSet :=
+    TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
   rw [almostComplexInChartAt_apply, almostComplexInChartAt_apply,
     Trivialization.symmL_continuousLinearMapAt _ hx, AlmostComplexStructure.apply_apply, map_neg,
     Trivialization.continuousLinearMapAt_symmL _ hx]
