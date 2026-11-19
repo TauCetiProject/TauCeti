@@ -88,7 +88,7 @@ theorem exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection (hσ : Functi
     {ε : K} (hQ : (Q.map σ)ᵀ = ε • Q) {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K}
     (ha : a + ε * σ a = 0) :
     ∃ g ∈ Q.specialIsometryGroup σ, (g : Matrix n n K) = Q.unitaryTransvection σ v a := by
-  let t : SpecialLinearGroup n K := ⟨_, det_unitaryTransvection hv a⟩
+  let t : SpecialLinearGroup n K := .mk _ (det_unitaryTransvection hv a)
   refine ⟨t, ?_, rfl⟩
   rw [mem_specialIsometryGroup_iff, SpecialLinearGroup.coe_mk]
   exact transpose_map_unitaryTransvection_mul_mul_self hσ hQ hv ha

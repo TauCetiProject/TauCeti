@@ -42,6 +42,8 @@ and restriction along a monoid isomorphism is an equivalence of representation c
 
 ## Main results
 
+* `Rep.resMap_comp` and `Rep.resMap_eqToHom`: restriction of morphisms respects composition and
+  equality transports.
 * `MonoidHom.resFunctor_comp`: restriction along a composite is successive restriction.
 * `MonoidHom.resFunctor_id`: restriction along the identity is the identity functor.
 * `Representation.isTrivial_comp`: the restriction of a trivial representation along a
@@ -303,6 +305,31 @@ theorem Rep.isIntertwiningMap_tensor_res (N₁ N₂ : Rep.{u} R H) (f : G →* H
   (isIntertwiningMap_res N₁ f).tensor (isIntertwiningMap_res N₂ f)
 
 end Tensor
+
+section ResMap
+
+open CategoryTheory
+
+variable {k : Type u} [Semiring k] {G : Type uG} {H : Type uH} [Monoid G] [Monoid H]
+
+namespace Rep
+
+/-- `Rep.resMap` respects composition, matching the beta-reduced form of `(Rep.resFunctor φ).map`.
+-/
+@[reassoc, simp]
+theorem resMap_comp {M N P : Rep.{uV} k H} (φ : G →* H) (u : M ⟶ N) (v : N ⟶ P) :
+    Rep.resMap φ (u ≫ v) = Rep.resMap φ u ≫ Rep.resMap φ v :=
+  (Rep.resFunctor φ).map_comp u v
+
+/-- `Rep.resMap` carries `eqToHom` to `eqToHom` on restricted representations. -/
+@[simp]
+theorem resMap_eqToHom {M N : Rep.{uV} k H} (φ : G →* H) (h : M = N) :
+    Rep.resMap φ (eqToHom h) = eqToHom (congrArg (Rep.res φ) h) :=
+  eqToHom_map (Rep.resFunctor φ) h
+
+end Rep
+
+end ResMap
 
 namespace TauCeti
 
