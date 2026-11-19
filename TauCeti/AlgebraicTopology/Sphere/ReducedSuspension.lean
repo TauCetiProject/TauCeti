@@ -52,8 +52,6 @@ homology is the tensor algebra on the reduced homology of `Sⁿ` (Bott–Samelso
 
 ## Main declarations
 
-* `Cube.snoc_mem_boundary_iff`: appending a last coordinate lands on the boundary of the
-  cube exactly when the first coordinates or the last one do.
 * `TauCeti.sphereSuspensionMap`: the suspension map `Sⁿ × I → Sⁿ⁺¹`, characterized on the cube by
   `TauCeti.sphereSuspensionMap_cubeToSphere`, with its fibres
   `TauCeti.sphereSuspensionMap_eq_sphereNorthPole_iff` and
@@ -83,14 +81,6 @@ namespace TauCeti
 variable {n : ℕ}
 
 /-! ### Appending the interval coordinate -/
-
-/-- **Appending a last coordinate to a point of the cube.** The point `(y, t)` of `Iⁿ⁺¹` lies on
-its boundary exactly when `y` lies on the boundary of `Iⁿ` or `t` is an end point of `I`. -/
-theorem _root_.Cube.snoc_mem_boundary_iff {y : I^(Fin n)} {t : I} :
-    (Fin.snoc y t : I^(Fin (n + 1))) ∈ Cube.boundary (Fin (n + 1)) ↔
-      y ∈ Cube.boundary (Fin n) ∨ t = 0 ∨ t = 1 := by
-  simp only [Cube.boundary, mem_ofPred_eq, Fin.exists_fin_succ', Fin.snoc_castSucc,
-    Fin.snoc_last]
 
 variable (n) in
 /-- The cube map of `Iⁿ⁺¹` read on `I × Iⁿ`, the interval coordinate appended last. -/

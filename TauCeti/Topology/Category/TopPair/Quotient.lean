@@ -318,7 +318,7 @@ variable {Y : TopCat.{u}} (f : P.fst ⟶ Y) (y : Y)
 `y`, is injective off the subspace and reaches every point other than `y`, then the map it induces
 from the pointed quotient, sending the basepoint to `y`, is bijective. When the subspace is empty,
 `y` is the point that `f` misses. -/
-theorem bijective_ordinaryPairQuotientDesc (hy : ∀ x, f x = y ↔ x ∈ Set.range P.map)
+theorem ordinaryPairQuotientDesc_bijective (hy : ∀ x, f x = y ↔ x ∈ Set.range P.map)
     (hinj : ∀ x x', x ∉ Set.range P.map → f x = f x' → x = x')
     (hsurj : ∀ z, z ≠ y → ∃ x, f x = z) :
     Function.Bijective (P.ordinaryPairQuotientDesc f y fun b ↦ (hy _).2 ⟨b, rfl⟩) := by
@@ -363,7 +363,7 @@ def ordinaryPairQuotientHomeomorph (hy : ∀ x, f x = y ↔ x ∈ Set.range P.ma
     (hsurj : ∀ z, z ≠ y → ∃ x, f x = z) :
     P.ordinaryPairQuotient ≃ₜ Y :=
   Continuous.homeoOfEquivCompactToT2
-    (f := Equiv.ofBijective _ (P.bijective_ordinaryPairQuotientDesc f y hy hinj hsurj))
+    (f := Equiv.ofBijective _ (P.ordinaryPairQuotientDesc_bijective f y hy hinj hsurj))
     (P.ordinaryPairQuotientDesc f y fun b ↦ (hy _).2 ⟨b, rfl⟩).hom.continuous
 
 variable {f y}
