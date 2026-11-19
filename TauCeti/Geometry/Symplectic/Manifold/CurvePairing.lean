@@ -15,10 +15,10 @@ public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 
 import TauCeti.Geometry.Manifold.DeRham.Map
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
-import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.TwoForm.Closed
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 
 /-!
@@ -262,7 +262,7 @@ theorem apply_eq_of_isPseudoholomorphicAt_const {V : Type*} [NormedAddCommGroup 
     -- `NormedSpace.fromTangentSpace` is Mathlib's identification of `TangentSpace 𝓘(ℝ, V) x`
     -- with `V`, which is the identity map.
     exact hBJ v hv
-  · rw [mem_closedForms, SmoothTwoForm.const_eq]
-    exact (SmoothForm.isClosed_def _).mp (SmoothForm.isClosed_const _)
+  · exact (mem_closedForms _ _).mpr
+      ((SmoothForm.isClosed_def _).mp (SmoothTwoForm.isClosed_const B))
 
 end TauCeti
