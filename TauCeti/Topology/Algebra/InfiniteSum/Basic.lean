@@ -23,6 +23,8 @@ the defining predicates.
 
 public section
 
+namespace TauCeti
+
 /-- Two products over subtypes agree when their factors, extended by one, agree. -/
 @[to_additive /-- Two sums over subtypes agree when their summands, extended by zero, agree. -/]
 theorem tprod_subtype_eq_of_mulIndicator_eq {α β : Type*} [CommMonoid α] [TopologicalSpace α]
@@ -30,3 +32,5 @@ theorem tprod_subtype_eq_of_mulIndicator_eq {α β : Type*} [CommMonoid α] [Top
     (h : ∀ b, {b | p b}.mulIndicator g b = {b | q b}.mulIndicator g' b) :
     ∏' b : {b // p b}, g b = ∏' b : {b // q b}, g' b :=
   (tprod_subtype {b | p b} g).trans <| (tprod_congr h).trans (tprod_subtype {b | q b} g').symm
+
+end TauCeti
