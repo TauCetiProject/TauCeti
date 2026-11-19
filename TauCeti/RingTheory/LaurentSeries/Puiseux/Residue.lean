@@ -243,8 +243,8 @@ theorem primitive_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
       field_simp
     rw [coeff_ratHahnSeriesPrimitive, hk, coeff_ramifiedEmbedding_intCast_div,
       coeff_ramifiedEmbedding_intCast_div, coeff_laurentSeriesPrimitive, coeff_single_mul,
-      show k - 1 - ((n : ℤ) - 1) = k - n by ring, Rat.smul_def, inv_div]
-    push_cast
+      show k - 1 - ((n : ℤ) - 1) = k - n by ring, inv_div]
+    push_cast [Rat.smul_def]
     ring
   · rw [coeff_ramifiedEmbedding_of_not_den_dvd n _ hq, coeff_ratHahnSeriesPrimitive,
       coeff_ramifiedEmbedding_of_not_den_dvd n f (by rwa [← Int.cast_one, Rat.sub_intCast_den]),
