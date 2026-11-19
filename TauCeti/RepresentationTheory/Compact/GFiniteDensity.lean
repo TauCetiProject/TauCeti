@@ -111,14 +111,7 @@ private theorem isGFinite_smoothing [CompleteSpace E] (v : E) {a : C(G, 𝕜)}
     (ha : a ∈ representativeSubmodule 𝕜 G) :
     π.toRepresentation.IsGFinite (smoothing π hπ v a) := by
   have := finiteDimensional_span_range_comp_mulRight ha
-  rw [Representation.isGFinite_iff]
-  have hrange : (Set.range fun h : G =>
-      (π.toRepresentation : Representation 𝕜 G E) h (smoothing π hπ v a)) =
-      smoothing π hπ v '' Set.range fun h : G => a.comp (ContinuousMap.mulRight h) := by
-    rw [← Set.range_comp]
-    exact congrArg Set.range (funext fun h => apply_smoothing π hπ v a h)
-  rw [hrange, Submodule.span_image]
-  infer_instance
+  exact Representation.IsGFinite.of_apply_eq (smoothing π hπ v) (apply_smoothing π hπ v a)
 
 /-- The orbit map `g ↦ π g⁻¹ v`, as a continuous map; its uniform norm bounds the orbit. -/
 private noncomputable def invOrbit (v : E) : C(G, E) :=

@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Continuous.Character
 public import TauCeti.RepresentationTheory.Continuous.Conjugate
 public import TauCeti.RepresentationTheory.Continuous.TensorProduct
 public import TauCeti.RepresentationTheory.Continuous.Transport
+public import TauCeti.RepresentationTheory.GFinite
 
 /-!
 # The representative ring of a monoid with a topology
@@ -173,32 +174,21 @@ theorem finiteDimensional_span_range_comp_mulRight {f : C(G, 𝕜)}
     (hf : f ∈ representativeSubmodule 𝕜 G) :
     FiniteDimensional 𝕜
       (Submodule.span 𝕜 (Set.range fun g : G => f.comp (ContinuousMap.mulRight g))) := by
-  induction hf using Submodule.span_induction with
-  | mem f hf =>
-    obtain ⟨n, π, hπ, v, w, rfl⟩ := hf
-    refine Submodule.finiteDimensional_of_le (S₂ := LinearMap.range ((matrixCoeffₛₗ π hπ).flip w))
-      (Submodule.span_le.2 ?_)
-    rintro _ ⟨g, rfl⟩
-    exact ⟨π g v, by simp⟩
-  | zero =>
-    refine Submodule.finiteDimensional_of_le (S₂ := ⊥) (Submodule.span_le.2 ?_)
-    rintro _ ⟨g, rfl⟩
-    simp
-  | add f₁ f₂ _ _ h₁ h₂ =>
-    refine Submodule.finiteDimensional_of_le
-      (S₂ := Submodule.span 𝕜 (Set.range fun g : G => f₁.comp (ContinuousMap.mulRight g)) ⊔
-        Submodule.span 𝕜 (Set.range fun g : G => f₂.comp (ContinuousMap.mulRight g)))
-      (Submodule.span_le.2 ?_)
-    rintro _ ⟨g, rfl⟩
-    simp only [SetLike.mem_coe, ContinuousMap.add_comp]
-    exact Submodule.add_mem_sup (Submodule.subset_span ⟨g, rfl⟩) (Submodule.subset_span ⟨g, rfl⟩)
-  | smul c f _ h =>
-    refine Submodule.finiteDimensional_of_le
-      (S₂ := Submodule.span 𝕜 (Set.range fun g : G => f.comp (ContinuousMap.mulRight g)))
-      (Submodule.span_le.2 ?_)
-    rintro _ ⟨g, rfl⟩
-    simp only [SetLike.mem_coe, ContinuousMap.smul_comp]
-    exact Submodule.smul_mem _ c (Submodule.subset_span ⟨g, rfl⟩)
+  suffices hle : representativeSubmodule 𝕜 G ≤ finiteSpanRangeSubmodule fun g : G =>
+      (ContinuousMap.compRightAlgHom 𝕜 𝕜 (ContinuousMap.mulRight g)).toLinearMap by
+    have hT : (fun g : G =>
+        (ContinuousMap.compRightAlgHom 𝕜 𝕜 (ContinuousMap.mulRight g)).toLinearMap f) =
+        fun g => f.comp (ContinuousMap.mulRight g) := by
+      simp
+    have h := mem_finiteSpanRangeSubmodule.1 (hle hf)
+    rwa [hT] at h
+  refine Submodule.span_le.2 ?_
+  rintro _ ⟨n, π, hπ, v, w, rfl⟩
+  rw [SetLike.mem_coe, mem_finiteSpanRangeSubmodule]
+  refine Submodule.finiteDimensional_of_le (S₂ := LinearMap.range ((matrixCoeffₛₗ π hπ).flip w))
+    (Submodule.span_le.2 ?_)
+  rintro _ ⟨g, rfl⟩
+  exact ⟨π g v, by simp⟩
 
 end Translation
 

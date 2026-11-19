@@ -27,9 +27,14 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
 
 * `Representation.IsGFinite ρ v`: the orbit of `v` spans a finite-dimensional subspace.
 * `Representation.gFiniteSubmodule ρ`: the submodule of `G`-finite vectors.
+* `TauCeti.finiteSpanRangeSubmodule T`: for any family of linear maps `T`, the submodule of vectors
+  `x` whose images `T i x` span a finite-dimensional subspace. The `G`-finite vectors are the case
+  of the family `ρ`.
 
 ## Main statements
 
+* `Representation.IsGFinite.of_apply_eq`: a vector whose orbit is the image under a linear map of a
+  family spanning a finite-dimensional subspace is `G`-finite.
 * `Representation.IsGFinite.of_forall_apply_mem`: a vector whose orbit lies in a
   finite-dimensional submodule is `G`-finite.
 * `Representation.isGFinite_iff_exists_subrepresentation`: a vector is `G`-finite exactly when it
@@ -50,7 +55,44 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
 
 public section
 
+namespace TauCeti
+
+variable {k ι M N : Type*} [Field k] [AddCommGroup M] [Module k M] [AddCommGroup N] [Module k N]
+
+/-- For a family of linear maps `T`, the vectors `x` whose images `T i x` span a finite-dimensional
+subspace form a submodule. -/
+def finiteSpanRangeSubmodule (T : ι → M →ₗ[k] N) : Submodule k M where
+  carrier := {x | FiniteDimensional k (Submodule.span k (Set.range fun i => T i x))}
+  zero_mem' := Submodule.finiteDimensional_of_le (S₂ := ⊥)
+    (Submodule.span_le.2 (Set.range_subset_iff.2 fun i => by simp))
+  add_mem' {x y} hx hy := by
+    rw [Set.mem_ofPred_eq] at hx hy ⊢
+    refine Submodule.finiteDimensional_of_le (S₂ := Submodule.span k (Set.range fun i => T i x) ⊔
+      Submodule.span k (Set.range fun i => T i y)) (Submodule.span_le.2 ?_)
+    rintro _ ⟨i, rfl⟩
+    simp only [SetLike.mem_coe, map_add]
+    exact Submodule.add_mem_sup (Submodule.subset_span ⟨i, rfl⟩) (Submodule.subset_span ⟨i, rfl⟩)
+  smul_mem' c x hx := by
+    rw [Set.mem_ofPred_eq] at hx ⊢
+    refine Submodule.finiteDimensional_of_le
+      (S₂ := Submodule.span k (Set.range fun i => T i x)) (Submodule.span_le.2 ?_)
+    rintro _ ⟨i, rfl⟩
+    simp only [SetLike.mem_coe, map_smul]
+    exact Submodule.smul_mem _ c (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- Membership in `finiteSpanRangeSubmodule T`: the images `T i x` span a finite-dimensional
+subspace. -/
+@[simp]
+theorem mem_finiteSpanRangeSubmodule {T : ι → M →ₗ[k] N} {x : M} :
+    x ∈ finiteSpanRangeSubmodule T ↔
+      FiniteDimensional k (Submodule.span k (Set.range fun i => T i x)) :=
+  (Iff.rfl)
+
+end TauCeti
+
 namespace Representation
+
+open TauCeti
 
 variable {k G V W : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V] [AddCommGroup W]
   [Module k W] (ρ : Representation k G V) (σ : Representation k G W)
@@ -101,24 +143,16 @@ theorem IsGFinite.of_finiteDimensional [FiniteDimensional k V] (v : V) : ρ.IsGF
 /-- The zero vector is `G`-finite. -/
 @[simp]
 theorem IsGFinite.zero : ρ.IsGFinite 0 :=
-  IsGFinite.of_forall_apply_mem (W := ⊥) fun g => by simp
+  (finiteSpanRangeSubmodule fun g : G => ρ g).zero_mem
 
 /-- A sum of `G`-finite vectors is `G`-finite. -/
 theorem IsGFinite.add {v w : V} (hv : ρ.IsGFinite v) (hw : ρ.IsGFinite w) :
-    ρ.IsGFinite (v + w) := by
-  rw [isGFinite_iff] at hv hw
-  refine IsGFinite.of_forall_apply_mem (W := Submodule.span k (Set.range fun g : G => ρ g v) ⊔
-    Submodule.span k (Set.range fun g : G => ρ g w)) fun g => ?_
-  rw [map_add]
-  exact Submodule.add_mem_sup (Submodule.subset_span ⟨g, rfl⟩) (Submodule.subset_span ⟨g, rfl⟩)
+    ρ.IsGFinite (v + w) :=
+  (finiteSpanRangeSubmodule fun g : G => ρ g).add_mem hv hw
 
 /-- A scalar multiple of a `G`-finite vector is `G`-finite. -/
-theorem IsGFinite.smul {v : V} (hv : ρ.IsGFinite v) (c : k) : ρ.IsGFinite (c • v) := by
-  rw [isGFinite_iff] at hv
-  refine IsGFinite.of_forall_apply_mem
-    (W := Submodule.span k (Set.range fun g : G => ρ g v)) fun g => ?_
-  rw [map_smul]
-  exact Submodule.smul_mem _ c (Submodule.subset_span ⟨g, rfl⟩)
+theorem IsGFinite.smul {v : V} (hv : ρ.IsGFinite v) (c : k) : ρ.IsGFinite (c • v) :=
+  (finiteSpanRangeSubmodule fun g : G => ρ g).smul_mem c hv
 
 /-- The image of a `G`-finite vector under the representation is `G`-finite. -/
 theorem IsGFinite.apply {v : V} (hv : ρ.IsGFinite v) (g : G) : ρ.IsGFinite (ρ g v) := by
@@ -126,15 +160,22 @@ theorem IsGFinite.apply {v : V} (hv : ρ.IsGFinite v) (g : G) : ρ.IsGFinite (ρ
   exact IsGFinite.of_forall_apply_mem (W := Submodule.span k (Set.range fun g : G => ρ g v))
     fun h => Submodule.subset_span ⟨h * g, by simp⟩
 
+/-- A vector whose orbit is the image under a linear map `f` of a family `u` spanning a
+finite-dimensional subspace is `G`-finite. -/
+theorem IsGFinite.of_apply_eq {M : Type*} [AddCommGroup M] [Module k M] (f : M →ₗ[k] V)
+    {u : G → M} [FiniteDimensional k (Submodule.span k (Set.range u))] {v : V}
+    (h : ∀ g, ρ g v = f (u g)) : ρ.IsGFinite v := by
+  rw [isGFinite_iff, show Set.range (fun g : G => ρ g v) = f '' Set.range u by
+    rw [← Set.range_comp]
+    exact congrArg Set.range (funext h), Submodule.span_image]
+  infer_instance
+
 /-- An intertwining map carries `G`-finite vectors to `G`-finite vectors. -/
 theorem IsGFinite.map (f : IntertwiningMap ρ σ) {v : V} (hv : ρ.IsGFinite v) :
     σ.IsGFinite (f v) := by
-  rw [isGFinite_iff] at hv ⊢
-  have : Set.range (fun g : G => σ g (f v)) = f.toLinearMap '' Set.range fun g : G => ρ g v := by
-    rw [← Set.range_comp]
-    exact congrArg Set.range (funext fun g => (IntertwiningMap.isIntertwining _ _ f g v).symm)
-  rw [this, Submodule.span_image]
-  infer_instance
+  rw [isGFinite_iff] at hv
+  exact IsGFinite.of_apply_eq f.toLinearMap fun g =>
+    (IntertwiningMap.isIntertwining _ _ f g v).symm
 
 variable (ρ)
 
