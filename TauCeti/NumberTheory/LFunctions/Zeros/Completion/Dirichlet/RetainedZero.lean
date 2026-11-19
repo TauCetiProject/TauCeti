@@ -22,7 +22,8 @@ a double real zero contributes `2 / (σ - β)`.
 
 A concrete primitive character modulo `5` of order `4`, with `χ⁻¹ ≠ χ`, checks that the finite
 inequality applies beyond real characters. All bounds use the existing absolute constant
-`TauCeti.gammaLogDerivBound`.
+`TauCeti.gammaLogDerivBound`. A separate algebraic inverse-real-part calculation checks the
+positive sign of a discarded term without asserting that its literal point is an L-function zero.
 
 ## Main results
 
@@ -79,6 +80,13 @@ end DirichletCharacter
 namespace TauCeti.LFunctions
 
 open _root_.DirichletCharacter
+
+/-- This algebraic point checks the sign of a discarded term; it is not asserted to be an
+L-function zero. Reversing the denominator would give the negative real part. -/
+example :
+    (1 / ((2 : ℂ) - ((1 / 2 : ℂ) + 14 * I))).re = 6 / 793 ∧
+      0 < (1 / ((2 : ℂ) - ((1 / 2 : ℂ) + 14 * I))).re := by
+  norm_num [Complex.div_re, Complex.normSq_apply]
 
 /-- A nonreal character: there is a primitive character `χ` modulo `5` of order `4`, so
 `χ⁻¹ ≠ χ`, and with `S = ∅` at `σ = 2` the finite-sum inequality reads
