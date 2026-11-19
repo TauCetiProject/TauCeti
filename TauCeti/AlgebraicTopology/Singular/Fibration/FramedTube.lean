@@ -196,17 +196,19 @@ theorem singularHomologyComplPreimageCoreIso_hom_naturality (hε₀ : 0 < ε) (h
         (singularHomologyComplPreimageCoreIso hτ M hfc hε₀ hp n m h).hom =
       (singularHomologyComplFiberIso M e hb hε hε₀ hp' n m h).hom ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-          (_root_.TopCat.ofHom ⟨(g.mapsTo_preimage_of_comp_eq_comp hg
-            (mapsTo_singleton.2 (apply_mem_range hτ e hb hs hε₀))).restrict,
-            g.hom.continuous.restrict _⟩) := by
+          (g.preimageMapOver hg (mapsTo_singleton.2 (apply_mem_range hτ e hb hs hε₀))) := by
   rw [singularHomologyComplFiberIso_def]
-  exact singularHomologyComplPreimageIso_hom_naturality hτ.normalCoordinate_eq_zero_iff
+  refine (singularHomologyComplPreimageIso_hom_naturality hτ.normalCoordinate_eq_zero_iff
     (e.isoOfHomeo_chartBallHomeomorph_hom_eq_zero_iff hε hb)
     (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀)) (mapsTo_chartBall_tubeBall hg e hs)
     (normalCoordinate_apply_comp hτ hg e hε hs) (mapsTo_compl_preimage_range hg hsf) M
     (hτ.isOpen_tubeBall ε) hfc (hτ.range_subset_tubeBall hε₀) (e.isOpen_chartBall b' ε)
     isClosed_singleton hp hp' (mem_serreFibrations_normalCoordinate hτ ε)
-    (serreFibrations.of_isIso _) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) n m h
+    (serreFibrations.of_isIso _) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) n m h).trans ?_
+  -- Both restrictions of `g` send a point `x` of `p'⁻¹(b')` to `g x`.
+  congr 2
+  ext x
+  exact (g.coe_preimageMapOver_apply hg _ x).symm
 
 include hsf in
 /-- **The shriek maps of a framed submanifold and of a transverse point commute, on classes**
@@ -221,9 +223,7 @@ theorem singularHomologyComplPreimageCoreIso_singularHomologyπ_homologyMap (hε
         (((TopPair.ofSubset (p ⁻¹' range f)ᶜ).singularHomologyπ M m).hom
           ((SSet.homologyMap (_root_.TopCat.toSSet.map g) M m).hom α)) =
       (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-          (_root_.TopCat.ofHom ⟨(g.mapsTo_preimage_of_comp_eq_comp hg
-            (mapsTo_singleton.2 (apply_mem_range hτ e hb hs hε₀))).restrict,
-            g.hom.continuous.restrict _⟩)).hom
+          (g.preimageMapOver hg (mapsTo_singleton.2 (apply_mem_range hτ e hb hs hε₀)))).hom
         ((singularHomologyComplFiberIso M e hb hε hε₀ hp' n m h).hom.hom
           ((fiberLocalization M p' b' m).hom α)) := by
   have hπ := TopPair.singularHomologyπ_naturality
@@ -253,9 +253,7 @@ theorem not_isOfFinAddOrder_singularHomologyComplPreimageCoreIso (hε₀ : 0 < �
     (hp : serreFibrations p) (hp' : serreFibrations p') (n m : ℕ) (h : n + finrank ℝ V = m)
     (hinj : Function.Injective
       (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
-        (_root_.TopCat.ofHom ⟨(g.mapsTo_preimage_of_comp_eq_comp hg
-          (mapsTo_singleton.2 (apply_mem_range hτ e hb hs hε₀))).restrict,
-          g.hom.continuous.restrict _⟩)).hom)
+        (g.preimageMapOver hg (mapsTo_singleton.2 (apply_mem_range hτ e hb hs hε₀)))).hom)
     {α : ((_root_.TopCat.toSSet.obj E').homology M m : ModuleCat.{u} R)}
     (hα : ¬ IsOfFinAddOrder ((singularHomologyComplFiberIso M e hb hε hε₀ hp' n m h).hom.hom
       ((fiberLocalization M p' b' m).hom α))) :
@@ -281,10 +279,8 @@ theorem not_isOfFinAddOrder_singularHomologyComplPreimageCoreIso_of_subsingleton
     (hY : ∀ k ≤ N, Subsingleton (π_ k (range f) ⟨s b', apply_mem_range hτ e hb hs hε₀⟩))
     (hinj : Function.Injective
       (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-        (ModuleCat.of R R)).map (_root_.TopCat.ofHom
-          ⟨(g.mapsTo_preimage_of_comp_eq_comp (T := {b'}) hg
-            (mapsTo_singleton.2 (mem_singleton (s b')))).restrict,
-            g.hom.continuous.restrict _⟩)).hom)
+        (ModuleCat.of R R)).map
+          (g.preimageMapOver (T := {b'}) hg (mapsTo_singleton.2 (mem_singleton (s b'))))).hom)
     {α : ((_root_.TopCat.toSSet.obj E').homology (ModuleCat.of R R) m : ModuleCat.{u} R)}
     (hα : ¬ IsOfFinAddOrder
       ((singularHomologyComplFiberIso (ModuleCat.of R R) e hb hε hε₀ hp' n m h).hom.hom
@@ -297,15 +293,9 @@ theorem not_isOfFinAddOrder_singularHomologyComplPreimageCoreIso_of_subsingleton
     (ModuleCat.of R R) hfc hε₀ hp hp' n m h ?_ hα
   have := isIso_singularHomologyMap_preimageInclusion R
     (mem_serreFibrations_restrictPreimage hp (range f)) (apply_mem_range hτ e hb hs hε₀) hY hn
-  have hcomp : _root_.TopCat.ofHom ⟨(g.mapsTo_preimage_of_comp_eq_comp hg
-      (mapsTo_singleton.2 (apply_mem_range hτ e hb hs hε₀))).restrict,
-        g.hom.continuous.restrict _⟩ =
-      _root_.TopCat.ofHom ⟨(g.mapsTo_preimage_of_comp_eq_comp (T := {b'}) hg
-          (mapsTo_singleton.2 (mem_singleton (s b')))).restrict, g.hom.continuous.restrict _⟩ ≫
-        p.hom.preimageInclusion (apply_mem_range hτ e hb hs hε₀) := by
-    ext x
-    simp [ContinuousMap.hom_preimageInclusion]
-  rw [hcomp, Functor.map_comp, ModuleCat.hom_comp, LinearMap.coe_comp]
+  rw [← g.preimageMapOver_comp_preimageInclusion hg (T := {b'})
+      (mapsTo_singleton.2 (mem_singleton (s b'))) (apply_mem_range hτ e hb hs hε₀),
+    Functor.map_comp, ModuleCat.hom_comp, LinearMap.coe_comp]
   exact ((ModuleCat.mono_iff_injective _).1 inferInstance).comp hinj
 
 end Transverse
