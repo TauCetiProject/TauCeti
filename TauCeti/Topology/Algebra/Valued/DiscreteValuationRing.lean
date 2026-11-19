@@ -77,8 +77,7 @@ theorem _root_.RingHom.isDiscreteValuationRing_integer_of_norm_map_eq {L : Type*
   -- which is `‖·‖₊` by `NormedField.valuation_apply`.
   have hle : (Valued.v : Valuation L ℝ≥0).valueGroup ≤ (Valued.v : Valuation K ℝ≥0).valueGroup :=
     (Subgroup.closure_le _).2 fun _ ⟨x, hx⟩ ↦ MonoidWithZeroHom.mem_valueGroup _ ⟨φ x,
-      ((NormedField.valuation_apply (φ x)).trans (NNReal.eq (hφ x) : ‖φ x‖₊ = ‖x‖₊)).trans
-        ((NormedField.valuation_apply x).symm.trans hx)⟩
+      by simpa [NormedField.valuation_apply, ← NNReal.coe_inj, hφ] using hx⟩
   -- `L` is nontrivially normed, so its value group is nontrivial.
   have : (Valued.v : Valuation L ℝ≥0).RankOne :=
     inferInstanceAs (NormedField.valuation (K := L)).RankOne

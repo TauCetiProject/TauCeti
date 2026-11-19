@@ -98,9 +98,9 @@ omit [IsUltrametricDist K] hq in
 modulo the maximal ideal. -/
 private theorem norm_pow_sub_lt_one_of_mem_padicFixedField (a : σ.padicFixedField p hσ)
     (ha : ‖a‖ ≤ 1) : ‖a ^ q - a‖ < 1 := by
-  have h := hσq a ha
-  rw [(mem_padicFixedField hσ).1 a.2, ← norm_neg, neg_sub] at h
-  exact h
+  -- The norm of `K^σ` is that of `K` through the coercion (`SubfieldClass.toNormedField`), and
+  -- the coercion commutes with `^` and `-`, so `hσq` applies to `a` and closes the goal.
+  simpa [norm_sub_rev, (mem_padicFixedField hσ).1 a.2] using hσq a ha
 
 /-- The residue field of the field fixed by a `q`-Frobenius lift is finite. -/
 theorem finite_residueField_padicFixedField : _root_.Finite 𝓀[σ.padicFixedField p hσ] :=
