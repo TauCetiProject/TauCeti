@@ -66,6 +66,12 @@ open scoped MatrixGroups
 
 namespace CongruenceSubgroup
 
+/-- The conjugate of `Tʲ` by `S` is the lower translation `[1, 0; -j, 1]`. -/
+private theorem coe_S_mul_T_zpow_mul_S_inv (j : ℤ) :
+    (↑(S * T ^ j * S⁻¹) : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; -j, 1] := by
+  rw [coe_conj_T_zpow]
+  simp [coe_S]
+
 /-- Multiplying `δ = [a, b; c, d]` on the left by `S T^(u c) S⁻¹ = [1, 0; -u c, 1]` and on the
 right by `T^(-u b)`, where `u a ≡ 1` modulo `ν`, gives a matrix congruent to `diag(a, u)`
 modulo `ν`. -/
@@ -77,17 +83,16 @@ private theorem map_S_mul_T_zpow_mul_S_inv_mul_mul_T_zpow {ν : ℕ} {u : ℤ} (
   have hdet : ((δ 0 0 * δ 1 1 - δ 0 1 * δ 1 0 : ℤ) : ZMod ν) = 1 := by
     rw [← det_fin_two, δ.det_coe, Int.cast_one]
   push_cast at hdet
-  have hS : (↑(S * T ^ (u * δ 1 0) * S⁻¹) : Matrix (Fin 2) (Fin 2) ℤ) =
-      !![1, 0; -(u * δ 1 0), 1] := by
-    rw [coe_conj_T_zpow]
-    simp [coe_S]
-  rw [map_apply_coe, coe_mul, coe_mul, hS, coe_T_zpow]
+  rw [map_apply_coe, coe_mul, coe_mul, coe_S_mul_T_zpow_mul_S_inv, coe_T_zpow]
   ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
-  · linear_combination -(δ 0 1 : ZMod ν) * hu
-  · linear_combination -(δ 1 0 : ZMod ν) * hu
-  · linear_combination ((u : ZMod ν) * δ 0 1 * δ 1 0 - δ 1 1) * hu + (u : ZMod ν) * hdet
+  fin_cases i <;> fin_cases j
+  · simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
+  · simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
+    linear_combination -(δ 0 1 : ZMod ν) * hu
+  · simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
+    linear_combination -(δ 1 0 : ZMod ν) * hu
+  · simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
+    linear_combination ((u : ZMod ν) * δ 0 1 * δ 1 0 - δ 1 1) * hu + (u : ZMod ν) * hdet
 
 /-- A matrix congruent to `1` modulo `M` whose upper-left entry is a unit modulo `ν` lies in every
 subgroup containing `Γ(ν)` and every conjugate of every power `Tʲ` with `M ∣ j`. -/
@@ -104,16 +109,17 @@ private theorem mem_of_isCoprime {H : Subgroup SL(2, ℤ)} {M ν : ℕ}
     rw [H.mul_mem_cancel_right (by simpa using hT 1 _ (dvd_neg.2 (hb.mul_left u))),
       H.mul_mem_cancel_left (hT S _ (hc.mul_left u))]
   -- the conjugate `X` of `T ^ (1 - a)` by `[1, 0; 1, 1]` has upper-left entry `a`
-  have hσ : (↑(S * T ^ (-1 : ℤ) * S⁻¹) : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; 1, 1] := by
-    rw [coe_conj_T_zpow]
-    simp [coe_S]
   set X := S * T ^ (-1 : ℤ) * S⁻¹ * T ^ (1 - γ 0 0) * (S * T ^ (-1 : ℤ) * S⁻¹)⁻¹ with hXdef
   have hX : (X : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, 1 - γ 0 0; γ 0 0 - 1, 2 - γ 0 0] := by
     rw [hXdef, coe_conj_T_zpow]
-    simp only [hσ]
+    simp only [coe_S_mul_T_zpow_mul_S_inv, neg_neg]
     ext i j
-    fin_cases i <;> fin_cases j <;> simp
-    ring
+    fin_cases i <;> fin_cases j
+    · simp
+    · simp
+    · simp
+    · simp
+      ring
   have hX00 : X 0 0 = γ 0 0 := by simp [hX]
   have hXH : X ∈ H := hT _ _ (by simpa [neg_sub] using ha.neg_right)
   rw [← hred X (by simpa [hX, neg_sub] using ha.neg_right) (by simpa [hX] using ha)] at hXH
