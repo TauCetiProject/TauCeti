@@ -14,6 +14,8 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Meromorphic.Basic
 import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.Analysis.SpecialFunctions.Integrability.Log
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
@@ -21,7 +23,6 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Analysis.SpecialFunctions.Log.InvLog
 
 /-!
 # Integrability of logarithms
@@ -50,6 +51,8 @@ of the profile and the square of its derivative `-(r log (c / r))⁻¹`.
 
 ## Main declarations
 
+* `TauCeti.integrableOn_inv_norm_mul_log_const_div_sq`: the planar squared logarithmic gradient
+  profile is integrable on every disc of radius `R < c`.
 * `TauCeti.locallyIntegrable_log_norm_pow`: `x ↦ (log ‖x‖) ^ k` is locally integrable.
 * `TauCeti.locallyIntegrable_log_norm`: `x ↦ log ‖x‖` is locally integrable.
 * `TauCeti.intervalIntegrable_log_pow`: `t ↦ (log t) ^ k` is interval integrable.
@@ -289,5 +292,14 @@ theorem integrableOn_mul_inv_mul_log_const_div_sq {c R : ℝ} (hR : R < c) :
   have h0 : r ≠ 0 := hr.1.ne'
   simp only [Real.rpow_two]
   field_simp
+
+/-- For `R < c`, the squared logarithmic gradient profile is integrable on the planar disc
+of radius `R`. The condition permits nonpositive radii, for which the disc is empty. -/
+theorem integrableOn_inv_norm_mul_log_const_div_sq {c R : ℝ} (hR : R < c) :
+    IntegrableOn (fun z : ℂ => ((‖z‖ * Real.log (c / ‖z‖))⁻¹) ^ 2)
+      (Metric.ball (0 : ℂ) R) := by
+  refine (integrableOn_fun_norm_addHaar volume
+    (f := fun r => ((r * Real.log (c / r))⁻¹) ^ 2)).2 ?_
+  simpa [Complex.finrank_real_complex] using integrableOn_mul_inv_mul_log_const_div_sq hR
 
 end TauCeti

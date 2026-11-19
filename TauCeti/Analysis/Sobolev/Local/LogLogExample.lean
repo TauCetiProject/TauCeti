@@ -133,12 +133,6 @@ theorem norm_fderiv_logLogInterior {z : ℂ} (hz : z ∈ ball (0 : ℂ) 4) (hz0 
 
 namespace LogLogInterior
 
-private theorem integrableOn_inv_mul_log_sq {R : ℝ} (hR : R < 4) :
-    IntegrableOn (fun z : ℂ => ((‖z‖ * Real.log (4 / ‖z‖))⁻¹) ^ 2) (ball (0 : ℂ) R) := by
-  refine (integrableOn_fun_norm_addHaar volume
-    (f := fun r => ((r * Real.log (4 / r))⁻¹) ^ 2)).2 ?_
-  simpa [Complex.finrank_real_complex] using integrableOn_mul_inv_mul_log_const_div_sq hR
-
 /-- Away from the origin, `u` has the derivative of `log (log 4 - log ‖z‖)`. -/
 private theorem hasFDerivAt_logLogInterior_log_norm {z : ℂ} (hz : ‖z‖ < 4) (hz0 : z ≠ 0) :
     HasFDerivAt logLogInterior
@@ -215,7 +209,7 @@ theorem memLp_fderiv_logLogInterior {R : ℝ} (hR : R < 4) :
   have hm := (measurable_fderiv ℝ logLogInterior).aestronglyMeasurable
     (μ := volume.restrict (ball (0 : ℂ) R))
   refine (memLp_two_iff_integrable_sq_norm hm).2 ?_
-  refine (integrableOn_inv_mul_log_sq hR).mono' (hm.norm.pow 2) ?_
+  refine (integrableOn_inv_norm_mul_log_const_div_sq hR).mono' (hm.norm.pow 2) ?_
   filter_upwards [ae_restrict_mem measurableSet_ball, Measure.ae_ne _ 0] with z hz hz0
   have hz4 : z ∈ ball (0 : ℂ) 4 := ball_subset_ball hR.le hz
   rw [Real.norm_of_nonneg (sq_nonneg _), norm_fderiv_logLogInterior hz4 hz0]
