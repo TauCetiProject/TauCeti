@@ -190,7 +190,7 @@ theorem range_mfderiv_ofQuotientStabilizer {x : M}
     mfderiv_ofQuotientStabilizer_comp_mfderiv_quotientMk hx g]
   exact range_mfderiv_smul_const x g
 
-omit [FiniteDimensional ℝ E'] in
+omit [CompleteSpace E] [FiniteDimensional ℝ E'] in
 /-- **The differential of the orbit map of `G ⧸ G_x` is injective.** At every point of
 `G ⧸ G_x`, the differential of `[g] ↦ g • x` has the rank `dim 𝔤 - dim 𝔤_x` of the orbit map,
 which is the dimension of `G ⧸ G_x`, since the Lie algebra of `G_x` is the isotropy algebra
@@ -200,6 +200,7 @@ theorem injective_mfderiv_ofQuotientStabilizer [T2Space M] {x : M}
     letI := Subgroup.quotientChartedSpaceOfIsClosed I hx
     Injective (mfderiv 𝓘(ℝ, Subgroup.QuotientModelSpace I (MulAction.stabilizer G x)) I'
       (MulAction.ofQuotientStabilizer G x) q) := by
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
   let _ := Subgroup.quotientChartedSpaceOfIsClosed I hx
   -- The differential at `[g]` has the image of the differential of the orbit map at `g`.
@@ -207,8 +208,8 @@ theorem injective_mfderiv_ofQuotientStabilizer [T2Space M] {x : M}
         𝓘(ℝ, Subgroup.QuotientModelSpace I (MulAction.stabilizer G x)) I'
         (MulAction.ofQuotientStabilizer G x) (g : G ⧸ MulAction.stabilizer G x)).toLinearMap) =
       Module.finrank ℝ (LinearMap.range (mfderiv I I' (fun h : G ↦ h • x) g).toLinearMap) := by
-    rw [range_mfderiv_ofQuotientStabilizer, range_mfderiv_smul_const]
-    rfl
+    rw [range_mfderiv_ofQuotientStabilizer, range_mfderiv_smul_const,
+      MulAction.ofQuotientStabilizer_mk]
   have hrank := finrank_range_mfderiv_smul_const_add_finrank_isotropy (I := I) (I' := I') x g
   have hdim := Subgroup.finrank_quotientModelSpace_add_finrank_lieSubalgebraOfSubgroup I
     (MulAction.stabilizer G x) hx
@@ -220,7 +221,10 @@ theorem injective_mfderiv_ofQuotientStabilizer [T2Space M] {x : M}
       (MulAction.ofQuotientStabilizer G x) (g : G ⧸ MulAction.stabilizer G x)).toLinearMap
   rw [hrange] at hker
   rw [← ContinuousLinearMap.coe_coe, ← LinearMap.ker_eq_bot, ← Submodule.finrank_eq_zero]
-  -- `dim 𝔤 - dim 𝔤_x = dim (G ⧸ G_x)`, so the kernel is zero-dimensional.
+  -- `dim 𝔤 - dim 𝔤_x = dim (G ⧸ G_x)`, so the kernel is zero-dimensional. For `omega` to match
+  -- the dimension counts, `e₁` and `e₃` hold because `GroupLieAlgebra I G` and the tangent spaces
+  -- of `G ⧸ G_x` unfold to their model spaces, and `e₂` because a Lie subalgebra and its
+  -- underlying submodule have the same carrier.
   have e₁ : Module.finrank ℝ (GroupLieAlgebra I G) = Module.finrank ℝ E := rfl
   have e₂ : Module.finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I)
       (MulAction.stabilizer G x)).toSubmodule =
@@ -231,6 +235,7 @@ theorem injective_mfderiv_ofQuotientStabilizer [T2Space M] {x : M}
       Module.finrank ℝ (Subgroup.QuotientModelSpace I (MulAction.stabilizer G x)) := rfl
   omega
 
+omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **The orbit map of `G ⧸ G_x` is an injective immersion.** For any smooth action of a
 finite-dimensional Lie group on a Hausdorff manifold, `[g] ↦ g • x` is an immersion of the
 homogeneous space `G ⧸ G_x` onto the orbit of `x`; it is injective by the definition of `G_x`
@@ -240,6 +245,7 @@ theorem isImmersion_ofQuotientStabilizer [T2Space M] {x : M}
     letI := Subgroup.quotientChartedSpaceOfIsClosed I hx
     IsImmersion 𝓘(ℝ, Subgroup.QuotientModelSpace I (MulAction.stabilizer G x)) I' ∞
       (MulAction.ofQuotientStabilizer G x) := by
+  have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
   let _ := Subgroup.quotientChartedSpaceOfIsClosed I hx
   have := Subgroup.isManifold_quotientOfIsClosed (I := I) hx
   exact (contMDiff_ofQuotientStabilizer hx).isImmersion_of_injective_mfderiv (by simp)
@@ -265,8 +271,6 @@ theorem isSmoothEmbedding_ofQuotientStabilizer {x : M}
     letI := Subgroup.quotientChartedSpaceOfIsClosed I hx
     IsSmoothEmbedding 𝓘(ℝ, Subgroup.QuotientModelSpace I (MulAction.stabilizer G x)) I' ∞
       (MulAction.ofQuotientStabilizer G x) := by
-  have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   let _ := Subgroup.quotientChartedSpaceOfIsClosed I hx
