@@ -661,9 +661,9 @@ theorem hasPropagationLE_ofSpatial [CompleteSpace V] [CompleteSpace W]
 
 /-- A constant symbol has propagation at most every `ε > 0`. -/
 theorem hasPropagationLE_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W) (hε : 0 < ε) :
-    (const T : Symbol n V W 0).HasPropagationLE ε := fun u x hu ↦ by
-  rw [funext (coefficient_const (n := n) T), quantizeSchwartzValue_comp_fst (fun _ ↦ T),
-    hu x (Metric.mem_ball_self hε), map_zero]
+    (const T : Symbol n V W 0).HasPropagationLE ε := by
+  convert hasPropagationLE_ofSpatial (fun _ ↦ T) contDiff_const hε using 1
+  exact Symbol.ext <| funext fun p ↦ by rw [coefficient_const, coefficient_ofSpatial]
 
 end Propagation
 

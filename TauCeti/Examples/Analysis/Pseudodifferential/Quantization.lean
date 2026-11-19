@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Kernel
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport
 public import TauCeti.Analysis.Distribution.SchwartzKernel
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
