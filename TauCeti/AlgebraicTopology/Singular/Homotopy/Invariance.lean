@@ -273,7 +273,20 @@ end TopPair
 
 namespace ContinuousMap
 
-open TauCeti
+open AlgebraicTopology TauCeti
+
+/-- Homotopic continuous maps induce the same map on singular homology with coefficients in any
+object `R`. -/
+theorem singularHomologyFunctor_map_eq_of_homotopic {C : Type u} [Category.{v} C]
+    [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C] (R : C) (n : ℕ)
+    {Y Z : Type w} [TopologicalSpace Y] [TopologicalSpace Z] {g g' : C(Y, Z)}
+    (H : g.Homotopic g') :
+    ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom g) =
+      ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom g') :=
+  -- `((singularHomologyFunctor C n).obj R).map` is the homology of the map of singular chains by
+  -- definition.
+  TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
+    (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some R n
 
 variable (k : Type w) [Ring k] (n : ℕ)
 
@@ -281,9 +294,7 @@ variable (k : Type w) [Ring k] (n : ℕ)
 theorem singularHomologyMap_eq_of_homotopic {Y Z : Type w} [TopologicalSpace Y]
     [TopologicalSpace Z] {g g' : C(Y, Z)} (H : g.Homotopic g') :
     singularHomologyMap k n g = singularHomologyMap k n g' :=
-  congrArg ModuleCat.Hom.hom
-    (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
-      (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of k k) n)
+  congrArg ModuleCat.Hom.hom (singularHomologyFunctor_map_eq_of_homotopic (ModuleCat.of k k) n H)
 
 /-- A continuous map with a left inverse up to homotopy is injective on singular homology. -/
 theorem injective_singularHomologyMap_of_homotopic_comp_id {Y Z : Type w} [TopologicalSpace Y]
