@@ -49,8 +49,8 @@ operators `MeasureTheory.Lp.multiplicationOperator` on `MeasureTheory.Lp`.
 * `TauCeti.LpSection.norm_lpSMul_le`: `‖φ • f‖ ≤ ‖φ‖ ‖f‖`.
 * `TauCeti.LpSection.lpSMul_add`, `add_lpSMul`, `lpSMul_smul`, `smul_lpSMul`, `lpSMul_lpSMul`:
   bilinearity and compatibility with products of essentially bounded functions.
-* `TauCeti.LpSection.lpSMulL`: multiplication as a continuous bilinear map of norm at most `1`,
-  with `TauCeti.LpSection.norm_lpSMulL_apply_le`.
+* `TauCeti.LpSection.lpSMulL`: multiplication as a continuous bilinear map of norm at most `1`
+  (`TauCeti.LpSection.norm_lpSMulL_le`), with `TauCeti.LpSection.norm_lpSMulL_apply_le`.
 * `TauCeti.LpSection.inner_lpSMul_left`, `inner_lpSMul_right` and `adjoint_lpSMulL`:
   `M_φ† = M_{star φ}`.
 * `TauCeti.LpSection.sum_star_lpSMul_lpSMul` and `TauCeti.LpSection.sum_norm_lpSMul_sq`:
@@ -82,17 +82,6 @@ section Normed
 
 variable [∀ x, NormedAddCommGroup (E x)] [∀ x, NormedSpace 𝕜 (E x)] [FiberBundle F E]
   [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E]
-
-/-- The pointwise sum of finitely many `Lᵖ` sections represents their sum. -/
-theorem coeFn_sum {ι : Type*} (s : Finset ι) (f : ι → LpSection 𝕜 F E p μ) :
-    ∀ᵐ x ∂μ, (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    simpa using coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)
-  | insert a s ha ih =>
-    filter_upwards [coeFn_add (f a) (∑ i ∈ s, f i), ih] with x h₁ h₂
-    rw [Finset.sum_insert ha, h₁, h₂, Finset.sum_insert ha]
 
 variable (φ ψ : Lp 𝕜 ∞ μ) (f g : LpSection 𝕜 F E p μ)
 
@@ -171,6 +160,32 @@ theorem zero_lpSMul : (0 : Lp 𝕜 ∞ μ) • f = 0 := by
     coeFn_zero (𝕜 := 𝕜) (F := F) (E := E) (p := p) (μ := μ)] with x h₁ h₂ h₃
   rw [h₁, h₂, h₃, Pi.zero_apply, zero_smul]
 
+@[simp]
+theorem lpSMul_neg : φ • -f = -(φ • f) := by
+  refine ext _ _ ?_
+  filter_upwards [coeFn_lpSMul φ (-f), coeFn_neg f, coeFn_neg (φ • f), coeFn_lpSMul φ f]
+    with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, smul_neg]
+
+@[simp]
+theorem neg_lpSMul : -φ • f = -(φ • f) := by
+  refine ext _ _ ?_
+  filter_upwards [coeFn_lpSMul (-φ) f, Lp.coeFn_neg φ, coeFn_neg (φ • f), coeFn_lpSMul φ f]
+    with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, Pi.neg_apply, neg_smul]
+
+theorem lpSMul_sub : φ • (f - g) = φ • f - φ • g := by
+  refine ext _ _ ?_
+  filter_upwards [coeFn_lpSMul φ (f - g), coeFn_sub f g, coeFn_sub (φ • f) (φ • g),
+    coeFn_lpSMul φ f, coeFn_lpSMul φ g] with x h₁ h₂ h₃ h₄ h₅
+  rw [h₁, h₂, h₃, h₄, h₅, smul_sub]
+
+theorem sub_lpSMul : (φ - ψ) • f = φ • f - ψ • f := by
+  refine ext _ _ ?_
+  filter_upwards [coeFn_lpSMul (φ - ψ) f, Lp.coeFn_sub φ ψ, coeFn_sub (φ • f) (ψ • f),
+    coeFn_lpSMul φ f, coeFn_lpSMul ψ f] with x h₁ h₂ h₃ h₄ h₅
+  rw [h₁, h₂, h₃, h₄, h₅, Pi.sub_apply, sub_smul]
+
 /-- Multiplying by `ψ` and then by `φ` is multiplying by their product `φ • ψ` in `L^∞(μ)`. -/
 theorem lpSMul_lpSMul : φ • (ψ • f) = (φ • ψ : Lp 𝕜 ∞ μ) • f := by
   refine ext _ _ ?_
@@ -192,6 +207,11 @@ def lpSMulL [Fact (1 ≤ p)] :
 @[simp]
 theorem lpSMulL_apply_apply [Fact (1 ≤ p)] : lpSMulL 𝕜 F E p μ φ f = φ • f :=
   (rfl)
+
+variable (𝕜 F E p μ) in
+/-- The bilinear map `TauCeti.LpSection.lpSMulL` has norm at most `1`. -/
+theorem norm_lpSMulL_le [Fact (1 ≤ p)] : ‖lpSMulL 𝕜 F E p μ‖ ≤ 1 :=
+  LinearMap.mkContinuous₂_norm_le _ zero_le_one _
 
 /-- The multiplication operator `M_φ` has norm at most `‖φ‖_{L^∞}`. -/
 theorem norm_lpSMulL_apply_le [Fact (1 ≤ p)] : ‖lpSMulL 𝕜 F E p μ φ‖ ≤ ‖φ‖ :=
