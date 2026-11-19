@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Continuation
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.Line
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Continuation
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Normalization.Basic
 
 /-!
 # Normalizing the Hamiltonians of the pair of pants with continuation necks
@@ -74,7 +73,19 @@ namespace TauCeti
 
 namespace Floer
 
-variable {M : Type*} {L : Puncture → ℝ}
+variable {M : Type*} {c : Puncture → ℝ → ℝ} {L : Puncture → ℝ}
+
+/-- Periodic normalizations `c_q` give period-one target-independent Hamiltonians. -/
+theorem periodic_const_target (hc : ∀ q, Periodic (c q) 1) (q : Puncture) :
+    Periodic (fun t (_ : M) ↦ c q t) 1 :=
+  fun t ↦ funext fun _ ↦ hc q t
+
+/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians on a manifold `M`. -/
+theorem contMDiff_uncurry_const_target {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+    (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
+  (hcs q).contMDiff.comp contMDiff_fst
 
 /-- The components of the perturbation between target-independent Hamiltonians, as functions of
 the domain point alone: their values at any target point `y`. -/
