@@ -109,8 +109,11 @@ structure IsNondegeneratePoint (F : M → G) (x : M) : Prop where
 
 variable {hσ} {F : M → G} {x : M}
 
-/-- The manifold notion of a nondegenerate point, unbundled. -/
-private theorem isNondegeneratePoint_iff_isTransversallyNondegenerate :
+/-- The manifold notion of a nondegenerate point, unbundled: `F` is `C²` at `x` and the
+differential `dF_x` and the critical Hessians of the functions `ℓ ∘ F` are transversally
+nondegenerate for `σ` at `x`. This is the manifold counterpart of
+`TauCeti.SymplecticForm.isNondegeneratePoint_iff_of_fderiv_eq`. -/
+theorem isNondegeneratePoint_iff_isTransversallyNondegenerate :
     hσ.IsNondegeneratePoint F x ↔ ContMDiffAt I 𝓘(ℝ, G) 2 F x ∧
       SymplecticForm.IsTransversallyNondegenerate (hσ.symplecticFormAt x) (mvfderiv I F x)
         fun ℓ : G →L[ℝ] ℝ ↦ (criticalHessian I (ℓ ∘ F) x).toBilinForm.toQuadraticMap :=

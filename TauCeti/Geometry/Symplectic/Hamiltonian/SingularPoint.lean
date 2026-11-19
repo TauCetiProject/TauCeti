@@ -188,12 +188,16 @@ variable {V V' G : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
 /-- The common content of the linear and the manifold notion of a nondegenerate point, for the
 differential `T` of the map and the Hessians `Q ℓ` of the functions `ℓ ∘ F`: the forms `Q ℓ` with
 `ℓ ∘ T = 0` descend to the reduced space of `ker T` and form a nondegenerate family there. -/
-@[expose] def IsTransversallyNondegenerate (ω₁ : SymplecticForm V) (T : V →L[ℝ] G)
-    (Q : (G →L[ℝ] ℝ) → QuadraticForm ℝ V) : Prop :=
-  ∃ hQ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ T.ker ⊓ ω₁.orthogonal T.ker, ∀ u ∈ T.ker,
-      QuadraticMap.polar (Q ℓ) w u = 0,
-    (ω₁.reduction T.ker).IsNondegenerateQuadraticFamily
-      fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦ ω₁.reducedQuadraticForm _ (Q ℓ.1) (hQ ℓ.1 ℓ.2)
+structure IsTransversallyNondegenerate (ω₁ : SymplecticForm V) (T : V →L[ℝ] G)
+    (Q : (G →L[ℝ] ℝ) → QuadraticForm ℝ V) : Prop where
+  /-- The forms `Q ℓ` with `ℓ ∘ T = 0` vanish on `(U ∩ U^ω₁) × U` for `U = ker T`, so they
+  descend to the reduced space of `U`. -/
+  polar_eq_zero : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ T.ker ⊓ ω₁.orthogonal T.ker,
+    ∀ u ∈ T.ker, QuadraticMap.polar (Q ℓ) w u = 0
+  /-- The descended forms form a nondegenerate family on the reduced space of `ker T`. -/
+  isNondegenerateQuadraticFamily : (ω₁.reduction T.ker).IsNondegenerateQuadraticFamily
+    fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦
+      ω₁.reducedQuadraticForm _ (Q ℓ.1) (polar_eq_zero ℓ.1 ℓ.2)
 
 /-- **Transport of transversal nondegeneracy along a linear symplectomorphism.** Let
 `e : V ≃ V'` carry `ω₁` to `ω₂` and let `T : V' → G` be linear. If the forms `Q' ℓ` on `V` are the
