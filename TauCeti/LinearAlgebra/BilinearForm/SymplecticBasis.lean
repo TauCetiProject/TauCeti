@@ -258,11 +258,7 @@ theorem IsAlt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair {m : ℕ}
     Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a))
   have hd : ∀ x y, B (d x) (d y) = Matrix.J (Fin (m + 1)) K x y :=
     hB.apply_cons_cons_eq_J hfe hc hec hfc
-  have hG : (Matrix.of fun x y => B (d x) (d y)) = Matrix.J (Fin (m + 1)) K := Matrix.ext hd
-  have hli : LinearIndependent K d := by
-    refine B.linearIndependent_of_det_ne_zero ?_
-    rw [hG]
-    exact (Matrix.isUnit_det_J _ _).ne_zero
+  have hli : LinearIndependent K d := B.linearIndependent_of_apply_eq_J hd
   have hcard : Fintype.card (Fin (m + 1) ⊕ Fin (m + 1)) = finrank K V := by
     rw [← hB.finrank_orthogonal_span_pair_add_two hfe, finrank_eq_card_basis c]
     simp only [Fintype.card_sum, Fintype.card_fin]
