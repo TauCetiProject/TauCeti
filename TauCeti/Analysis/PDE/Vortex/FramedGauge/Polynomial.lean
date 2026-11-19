@@ -64,7 +64,7 @@ gauge makes the section `|α|` times the winding phase outside a radius that is 
 bounded set of coefficients
 (`TauCeti.Vortex.exists_forall_sectionValue_gaugeTransform_polynomialGauge`). A smooth framed
 vortex whose section is a real multiple of `P_c` has a positive multiple near infinity, so the
-gauged field lies in every `A_m^s`, with every derivative of `x - x_ref` decaying like
+gauged field lies in every `A_m^s`, with every derivative of `g_c · x - x_ref` decaying like
 `exp (-c |z|)` for each `c < 1 / 2`
 (`TauCeti.Vortex.gaugeTransform_polynomialGauge_mem_framedFieldSpace`). This is an explicit,
 coefficient-smooth choice of the normalizing gauge in
