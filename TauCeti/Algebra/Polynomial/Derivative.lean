@@ -49,6 +49,11 @@ Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
 
 In positive characteristic `p`, every iterated derivative `derivative^[k] f` of order `k ≥ p`
 vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`), since `p` divides `k !`.
+
+Over a division ring of characteristic zero the derivative is surjective
+(`Polynomial.derivative_surjective`): every polynomial has an antiderivative. In positive
+characteristic `p` it is not (`Polynomial.not_surjective_derivative_of_charP`), as `X ^ (p - 1)`
+has no antiderivative.
 -/
 
 public section
@@ -267,5 +272,31 @@ theorem iterate_derivative_eq_zero_of_charP {R : Type*} [Semiring R] {p : ℕ} [
     derivative^[k] f = 0 := by
   rw [iterate_derivative_eq_factorial_smul_sum, ← Nat.cast_smul_eq_nsmul R,
     Nat.cast_factorial_eq_zero_of_le hp (CharP.cast_eq_zero R p) hk, zero_smul]
+
+/-- Over a division ring of characteristic zero every polynomial is a derivative: the monomial
+`a X ^ n` is the derivative of `a / (n + 1) X ^ (n + 1)`. -/
+theorem derivative_surjective {K : Type*} [DivisionRing K] [CharZero K] :
+    Function.Surjective (derivative (R := K)) := by
+  intro p
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq =>
+    obtain ⟨p', rfl⟩ := hp
+    obtain ⟨q', rfl⟩ := hq
+    exact ⟨p' + q', derivative_add⟩
+  | monomial n a =>
+    refine ⟨monomial (n + 1) (a / (n + 1)), ?_⟩
+    rw [derivative_monomial, Nat.add_sub_cancel, Nat.cast_add_one,
+      div_mul_cancel₀ a (Nat.cast_add_one_ne_zero n)]
+
+/-- In characteristic `p`, the monomial `X ^ (p - 1)` is not a derivative: the coefficient of
+`X ^ (p - 1)` in the derivative of `q` is `p` times a coefficient of `q`. -/
+theorem not_surjective_derivative_of_charP {R : Type*} [Semiring R] [Nontrivial R] (p : ℕ)
+    [CharP R p] [NeZero p] : ¬Function.Surjective (derivative (R := R)) := fun h ↦ by
+  obtain ⟨q, hq⟩ := h (X ^ (p - 1))
+  have := congrArg (fun r : R[X] ↦ r.coeff (p - 1)) hq
+  simp only [coeff_derivative, coeff_X_pow_self] at this
+  rw [← Nat.cast_add_one, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (NeZero.ne p)),
+    CharP.cast_eq_zero, mul_zero] at this
+  exact zero_ne_one this
 
 end Polynomial
