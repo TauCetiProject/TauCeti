@@ -74,6 +74,7 @@ theorem gnsNonUnitalStarAlgHom_mem_gnsVonNeumannAlgebra (a : A) :
 
 /-- The GNS von Neumann algebra is the smallest von Neumann algebra containing the image of the
 GNS representation. -/
+@[simp]
 theorem gnsVonNeumannAlgebra_le_iff {M : VonNeumannAlgebra f.GNS} :
     f.gnsVonNeumannAlgebra ≤ M ↔ ∀ a, f.gnsNonUnitalStarAlgHom a ∈ M := by
   simp [gnsVonNeumannAlgebra_def, VonNeumannAlgebra.adjoin_le_iff, Set.range_subset_iff]
