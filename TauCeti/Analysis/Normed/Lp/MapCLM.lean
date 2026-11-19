@@ -42,6 +42,8 @@ adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
 * `lp.mapCLM_add`, `lp.mapCLM_smul`, `lp.mapCLM_id`, `lp.mapCLM_comp`: the algebraic laws.
 * `lp.norm_mapCLM`: `‖⊕ T i‖ = ⨆ i, ‖T i‖`.
 * `lp.ampliation`, `lp.norm_ampliation`, `lp.ampliation_comp`: the ampliation of one operator.
+* `lp.ampliation_mem_centralizer_centralizer`: ampliation maps `s''` into the double commutant of
+  the ampliation of `s`.
 
 ## References
 
@@ -245,6 +247,23 @@ theorem ampliation_one : ampliation ι p (1 : X →L[𝕜] X) = 1 :=
 theorem ampliation_mul (T S : X →L[𝕜] X) :
     ampliation ι p (T * S) = ampliation ι p T * ampliation ι p S :=
   ampliation_comp T S
+
+/-- **Ampliation and double commutants.** For `p ≠ ∞`, the ampliation of an operator in the double
+commutant `s''` of a set `s` of operators lies in the double commutant of the ampliation of `s`. -/
+theorem ampliation_mem_centralizer_centralizer (hp : p ≠ ∞) {s : Set (X →L[𝕜] X)}
+    {x : X →L[𝕜] X} (hx : x ∈ s.centralizer.centralizer) :
+    ampliation ι p x ∈ (ampliation ι p '' s).centralizer.centralizer := by
+  classical
+  intro T hT
+  -- The matrix entries of an operator commuting with the ampliation of `s` lie in `s'`.
+  have hentry (i j : ι) : evalCLM 𝕜 (fun _ ↦ X) p i ∘L T ∘L
+      singleContinuousLinearMap 𝕜 (fun _ ↦ X) p j ∈ s.centralizer := by
+    intro a ha
+    ext y
+    simpa using congr($(hT _ ⟨a, ha, rfl⟩) (lp.single p j y) i)
+  refine ext_continuousLinearMap hp fun j ↦ ?_
+  ext y i
+  simpa using congr($(hx _ (hentry i j)) y)
 
 end Ampliation
 
