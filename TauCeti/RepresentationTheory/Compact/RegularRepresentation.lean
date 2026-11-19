@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Compact.Haar
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
