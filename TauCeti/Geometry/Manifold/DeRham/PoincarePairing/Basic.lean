@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
+import TauCeti.Geometry.Manifold.DifferentialForm.Opens.Wedge
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
@@ -142,7 +143,7 @@ theorem integralTopForm_cast_mextDerivₗ_wedge (o : Manifold.Orientation I M (F
     refine Subtype.ext (funext fun x ↦ ?_)
     ext v
     rw [SmoothForm.cast_apply]
-    rfl
+    simp only [Function.comp_def, Fin.cast_eq_self]
   -- Stokes' theorem for `α ∧ a`, expanded by the Leibniz rule.
   have hstokes := integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
     (φ := mextDerivₗ I (k + l) (SmoothForm.wedge α a)) (by
@@ -152,37 +153,6 @@ theorem integralTopForm_cast_mextDerivₗ_wedge (o : Manifold.Orientation I M (F
     integralTopForm_add_of_mem_compactlySupportedForms o hA hB, Submodule.coe_smul,
     integralTopForm_smul] at hstokes
   linarith
-
-omit [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M] in
-/-- Reindexing an orientation along an equality `n = m` of dimensions and transporting a top form
-along the same equality do not change the integral over an open subset. -/
-theorem integralTopForm_restrict_reindex_finCongr {m : ℕ} (o : Manifold.Orientation I M (Fin n))
-    (h : n = m) (U : Opens M) (φ : SmoothForm I U ℝ n) :
-    integralTopForm ((o.reindex (finCongr h)).restrict U)
-        (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I U ℝ q) h φ).1 =
-      integralTopForm (o.restrict U) φ.1 := by
-  subst h
-  simp
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [BoundarylessManifold I M] [T2Space M]
-  [SigmaCompactSpace M] in
-/-- Wedging a form on `W` with the extension by zero of a form on an open subset `U ≤ W` is the
-extension by zero of the wedge of its restriction to `U` with that form:
-`φ ∧ ext ψ = ext (φ|_U ∧ ψ)`. -/
-theorem RoughForm.extendByZero_mpullback_inclusion_wedge {U W : Opens M} (h : U ≤ W)
-    (φ : RoughForm I W ℝ k) (ψ : RoughForm I U ℝ l) :
-    RoughForm.extendByZero W ((mpullback I I (Opens.inclusion h) φ).wedge ψ) =
-      φ.wedge (RoughForm.extendByZero W ψ) := by
-  funext x
-  rw [RoughForm.wedge_def φ, RoughForm.wedgeWith_apply']
-  by_cases hx : (x : M) ∈ U
-  · rw [RoughForm.extendByZero_apply_of_mem _ hx, RoughForm.extendByZero_apply_of_mem _ hx,
-      RoughForm.wedge_def, RoughForm.wedgeWith_apply', mpullback_inclusion_apply]
-    -- `Opens.inclusion h ⟨x, hx⟩` is `x` by structure eta for the subtype `W`. The point also
-    -- appears in the types of the tangent-space arguments, so `rw` cannot replace it.
-    rfl
-  · rw [RoughForm.extendByZero_apply_of_notMem _ hx, RoughForm.extendByZero_apply_of_notMem _ hx]
-    simp
 
 omit [BoundarylessManifold I M] [SigmaCompactSpace M] in
 /-- **Integration against an extension by zero.** For open subsets `U ≤ W`, a smooth form `φ` on
