@@ -55,7 +55,7 @@ Viewing `ℍ` as a real manifold, every `g ∈ GL(2, ℝ)` acts, antiholomorphic
   derivative `exp s`.
 * `Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul`: in model coordinates, the
   differential of the action of `g ∈ GL(2, ℝ)` is `UpperHalfPlane.smulFDeriv`; its smoothness is
-  `UpperHalfPlane.instContMDiffConstSMulGL2Real`.
+  `TauCeti.UpperHalfPlane.instContMDiffConstSMulGLReal`.
 * `Matrix.GeneralLinearGroup.norm_smulFDeriv_apply` and
   `Matrix.GeneralLinearGroup.inner_smulFDeriv_apply`:
   `UpperHalfPlane.smulFDeriv g z` multiplies lengths by `Im(g • z)/Im z` and real inner products
