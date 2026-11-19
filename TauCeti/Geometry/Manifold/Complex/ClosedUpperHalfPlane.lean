@@ -376,16 +376,8 @@ theorem mem_strictInwardCone_closedUpperHalfPlaneModel_iff (z v : ℂ) (hz : z.i
   · intro hv
     exact ⟨1, one_pos, by simpa using hv⟩
 
-/-- The native half-space normal coordinate becomes the imaginary coordinate. -/
-@[simp]
-theorem closedUpperHalfPlaneCoordinates_symm_im (v : EuclideanSpace ℝ (Fin 2)) :
-    (closedUpperHalfPlaneCoordinates.symm v).im = v 0 := by
-  rw [closedUpperHalfPlaneCoordinates_symm_apply]
-  simp
-
 /-- The native one-dimensional boundary parametrization reads as the real axis in complex
 coordinates. -/
-@[simp]
 theorem closedUpperHalfPlaneCoordinates_symm_boundaryParam
     (u : EuclideanSpace ℝ (Fin 1)) :
     closedUpperHalfPlaneCoordinates.symm (euclideanHalfSpaceBoundaryParam 1 u) = (u 0 : ℂ) := by
