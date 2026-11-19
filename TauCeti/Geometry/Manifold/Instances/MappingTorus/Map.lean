@@ -128,8 +128,8 @@ def mapFamily : SmoothMappingTorus φ → SmoothMappingTorus ψ :=
   MulAction.orbitRelQuotientLift
     (fun z ↦ mk ψ ((ofProd φ).symm z).1 (g ((ofProd φ).symm z).1 ((ofProd φ).symm z).2))
     fun k z ↦ by
-      rw [ofProd_symm_smul, mk_add_intCast, zpow_apply_add_intCast φ ψ g h,
-        ← Diffeomorph.mul_apply, ← zpow_add, add_neg_cancel, zpow_zero, Diffeomorph.one_apply]
+      rw [ofProd_symm_smul, mk_add_intCast, zpow_apply_add_intCast φ ψ g h]
+      simp
 
 /-- The induced map sends `[t, x]` to `[t, g t x]`. -/
 @[simp]
