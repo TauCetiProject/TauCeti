@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Contractible
 public import TauCeti.Analysis.Complex.NormalizedDeterminant
 public import TauCeti.Topology.Circle.Degree.Square
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
+public import TauCeti.Topology.VectorBundle.Complex.Structure
 public import TauCeti.Topology.VectorBundle.Contractible
 
 /-!
@@ -51,12 +52,19 @@ and any trivialization near `x`. It is invariant under homotopies relative to th
 restricting a frame along the homotopy (`TauCeti.clutchingNumber_eq_of_homotopic`), and it is
 additive under the concatenation `GenLoop.transAt 0` that defines the product of `π₂(X, x)`,
 because a frame along the concatenation restricts to frames along both halves
-(`TauCeti.clutchingNumber_transAt`).
+(`TauCeti.clutchingNumber_transAt`). It is invariant under isomorphisms of complex vector
+bundles, whose model fibres may differ (`TauCeti.clutchingNumber_eq_of_continuous`): an isomorphism
+`Φ` carries a frame along `p` to a frame, and on the boundary, where `p` is at `x`, the new
+clutching function is the old one conjugated by `Φ x` read in trivializations at `x`.
 
 The bundle may be the tangent bundle `(TX, J)` of a manifold with an almost complex structure `J`,
 made a complex vector bundle by
 `TauCeti.ContMDiffAlmostComplexStructure.toContinuousComplexStructure`; this gives the clutching
-number of the almost complex tangent bundle on spheres.
+number of the almost complex tangent bundle on spheres. Two continuous complex structures `J₀` and
+`J₁` on a real vector bundle for which `1 - J₁ J₀` is invertible on every fibre give isomorphic
+complex vector bundles (`TauCeti.Bundle.ContinuousComplexStructure.oneSubMulEquiv`), hence the
+same clutching numbers
+(`TauCeti.Bundle.ContinuousComplexStructure.clutchingNumberHom_eq_of_isUnit`).
 
 ## Main definitions
 
@@ -71,6 +79,10 @@ number of the almost complex tangent bundle on spheres.
   frame and any trivialization near `x`.
 * `TauCeti.clutchingNumber_eq_of_homotopic`: homotopy invariance.
 * `TauCeti.clutchingNumber_transAt`: additivity under concatenation.
+* `TauCeti.clutchingNumber_eq_of_continuous`, `TauCeti.clutchingNumberHom_eq_of_continuous`:
+  invariance under isomorphisms of complex vector bundles.
+* `TauCeti.Bundle.ContinuousComplexStructure.clutchingNumberHom_eq_of_isUnit`: complex structures
+  `J₀`, `J₁` with `1 - J₁ J₀` invertible have the same clutching numbers.
 
 ## References
 
@@ -85,7 +97,7 @@ public section
 
 noncomputable section
 
-open Bundle Set Topology Filter
+open Bundle Set Topology Filter Module
 open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
@@ -346,6 +358,85 @@ theorem clutchingNumberHom_apply_mk (p : Ω^ (Fin 2) X x) :
     clutchingNumberHom F E x (Additive.ofMul (Quotient.mk _ p)) = clutchingNumber F E p :=
   (rfl)
 
+/-! ### Invariance under isomorphisms of bundles -/
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] [FiniteDimensional ℂ F']
+  {E' : X → Type*} [∀ x, AddCommGroup (E' x)] [∀ x, Module ℂ (E' x)]
+  [∀ x, TopologicalSpace (E' x)] [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E']
+  [VectorBundle ℂ F' E'] [∀ x, IsTopologicalAddGroup (E' x)] [∀ x, ContinuousSMul ℂ (E' x)]
+
+/-- **Invariance under isomorphisms.** A continuous family of complex-linear isomorphisms
+`Φ b : E b ≃ E' b` between complex vector bundles over `X`, whose model fibres may differ,
+preserves clutching numbers. -/
+theorem clutchingNumber_eq_of_continuous (Φ : ∀ b, E b ≃L[ℂ] E' b)
+    (hΦ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj (Φ v.proj v.2))
+    (p : Ω^ (Fin 2) X x) :
+    clutchingNumber F' E' p = clutchingNumber F E p := by
+  obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)
+  set e := trivializationAt F E x
+  set e' := trivializationAt F' E' x
+  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F E x
+  have hx' : x ∈ e'.baseSet := mem_baseSet_trivializationAt F' E' x
+  -- `Φ x` read in the trivializations of `E` and `E'` at `x`, an isomorphism of model fibres.
+  set L : F ≃L[ℂ] F' :=
+    ((e.continuousLinearEquivAt ℂ x hx).symm.trans (Φ x)).trans
+      (e'.continuousLinearEquivAt ℂ x hx')
+  -- On the fibres over `x`, the frame `Φ ∘ φ` of `E'` read in `e'` is the frame `φ` of `E` read
+  -- in `e`, conjugated by `L`.
+  have key (b : X) (hb : b = x) (φb : F ≃L[ℂ] E b) (h : b ∈ e.baseSet) (h' : b ∈ e'.baseSet) :
+      ((L.symm.trans φb).trans (Φ b)).trans (e'.continuousLinearEquivAt ℂ b h') =
+        (L.symm.trans (φb.trans (e.continuousLinearEquivAt ℂ b h))).trans L := by
+    subst hb
+    ext v
+    simp [L, e.symm_apply_apply_mk h]
+  have hψ : Continuous fun q : (Fin 2 → I) × F' ↦
+      TotalSpace.mk' F' (p q.1) (((L.symm.trans (φ q.1)).trans (Φ (p q.1))) q.2) :=
+    hΦ.comp (hφ.comp (continuous_fst.prodMk (L.symm.continuous.comp continuous_snd)))
+  rw [clutchingNumber_eq_squareBoundaryDegree p e' hx'
+      (φ := fun y ↦ (L.symm.trans (φ y)).trans (Φ (p y))) hψ,
+    clutchingNumber_eq_squareBoundaryDegree p e hx hφ]
+  refine squareBoundaryDegree_congr fun y hy ↦ ?_
+  have hpy : p y = x := GenLoop.boundary p y hy
+  have h : p y ∈ e.baseSet := mem_of_eq_of_mem hpy hx
+  have h' : p y ∈ e'.baseSet := mem_of_eq_of_mem hpy hx'
+  rw [clutchingFunction_of_mem h', clutchingFunction_of_mem h, key (p y) hpy (φ y) h h',
+    ContinuousLinearEquiv.normalizedDet_conj]
+
+/-- **Invariance under isomorphisms.** A continuous family of complex-linear isomorphisms
+`Φ b : E b ≃ E' b` between complex vector bundles over `X`, whose model fibres may differ,
+preserves the clutching number homomorphism. -/
+theorem clutchingNumberHom_eq_of_continuous (Φ : ∀ b, E b ≃L[ℂ] E' b)
+    (hΦ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj (Φ v.proj v.2)) :
+    clutchingNumberHom F' E' x = clutchingNumberHom F E x := by
+  refine AddMonoidHom.ext fun a ↦ ?_
+  obtain ⟨p, hp⟩ := Quotient.exists_rep a.toMul
+  rw [← ofMul_toMul a, ← hp, clutchingNumberHom_apply_mk, clutchingNumberHom_apply_mk]
+  exact clutchingNumber_eq_of_continuous Φ hΦ p
+
 end ClutchingNumber
+
+/-! ### Clutching numbers of two complex structures on a real vector bundle -/
+
+namespace Bundle.ContinuousComplexStructure
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : X → Type*} [∀ b, AddCommGroup (V b)] [∀ b, Module ℝ (V b)] [∀ b, TopologicalSpace (V b)]
+  [∀ b, IsTopologicalAddGroup (V b)] [∀ b, ContinuousSMul ℝ (V b)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+  {J₀ J₁ : ContinuousComplexStructure F V}
+  (G G' : Type*) [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
+  [NormedAddCommGroup G'] [NormedSpace ℂ G'] [FiniteDimensional ℂ G']
+  [Fact (finrank ℝ F = 2 * finrank ℂ G)] [Fact (finrank ℝ F = 2 * finrank ℂ G')]
+
+/-- If `1 - J₁ J₀` is invertible on every fibre of a real vector bundle `V` with continuous complex
+structures `J₀` and `J₁`, for instance when `J₀` and `J₁` are tamed by a common fibrewise
+symplectic form, then the complex vector bundles given by `J₀` and `J₁` have the same clutching
+numbers, whatever their model fibres. -/
+theorem clutchingNumberHom_eq_of_isUnit (h : ∀ b, IsUnit (1 - J₁ b * J₀ b)) (x : X) :
+    clutchingNumberHom G' J₁.Fiber x = clutchingNumberHom G J₀.Fiber x :=
+  clutchingNumberHom_eq_of_continuous (fun b ↦ oneSubMulEquiv (h b))
+    (continuous_oneSubMulEquiv G G' h)
+
+end Bundle.ContinuousComplexStructure
 
 end TauCeti

@@ -23,6 +23,8 @@ loop of determinants.
 * `ContinuousLinearEquiv.det_eq_norm_mul_normalizedDet`: `det A = ‖det A‖ * normalizedDet A`.
 * `ContinuousLinearEquiv.normalizedDet_trans`, `ContinuousLinearEquiv.normalizedDet_refl`,
   `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
+* `ContinuousLinearEquiv.normalizedDet_conj`: the normalized determinant is invariant under
+  conjugation by an isomorphism.
 * `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
   has continuous normalized determinant.
 -/
@@ -79,6 +81,18 @@ theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 
 @[simp]
 theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
   eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
+
+/-- The normalized determinant is invariant under conjugation by an isomorphism `L : E ≃ E'`, as
+the determinant is (`LinearEquiv.det_conj`). -/
+@[simp]
+theorem normalizedDet_conj {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    (A : E ≃L[ℂ] E) (L : E ≃L[ℂ] E') :
+    ((L.symm.trans A).trans L).normalizedDet = A.normalizedDet := by
+  have hdet : LinearMap.det (((L.symm.trans A).trans L).toLinearEquiv : E' →ₗ[ℂ] E') =
+      LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) :=
+    LinearMap.det_conj (A.toLinearEquiv : E →ₗ[ℂ] E) L.toLinearEquiv
+  ext1
+  simp only [coe_normalizedDet, hdet]
 
 end ContinuousLinearEquiv
 
