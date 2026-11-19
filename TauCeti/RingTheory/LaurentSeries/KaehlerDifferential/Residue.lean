@@ -68,13 +68,8 @@ namespace TauCeti.ContinuousKaehlerDifferential
 variable (K : Type*) [Field K]
 
 /-- The **residue** of a continuous one-form: `Res (f dX)` is the coefficient of `X⁻¹` in `f`. -/
-noncomputable def residue : ContinuousKaehlerDifferential K →ₗ[K] K where
-  toFun ω := (equivLaurentSeries K ω).coeff (-1)
-  map_add' ω η := by rw [map_add, coeff_add]
-  map_smul' c ω := by
-    -- `c • ω` is `C c • ω`, and multiplication by `C c` acts coefficientwise.
-    rw [← algebraMap_smul K⸨X⸩ c ω, map_smul, smul_eq_mul, LaurentSeries.algebraMap_apply,
-      C_mul_eq_smul, coeff_smul, RingHom.id_apply]
+noncomputable def residue : ContinuousKaehlerDifferential K →ₗ[K] K :=
+  (coeff.linearMap (-1)).comp ((equivLaurentSeries K).toLinearMap.restrictScalars K)
 
 variable {K}
 
