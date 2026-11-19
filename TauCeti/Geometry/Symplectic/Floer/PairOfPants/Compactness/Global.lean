@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.End
+import TauCeti.Data.ENNReal.NatCastDiv
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.BubblingSet
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -223,18 +224,12 @@ private theorem concentration_and_tendstoLocallyUniformlyOn_image_positiveEndCha
     have hgsS : g '' (ball z ε ∩ Ω) ⊆ thricePuncturedSphereReal := by
       rintro _ ⟨y, hy, rfl⟩
       exact hgS y hy.2
-    calc ENNReal.ofReal δ ≤ ∫⁻ y in ball z ε ∩ Ω, ENNReal.ofReal (ω.floerEnergyDensity
-          (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2) (u (φ n) ∘ g) y) :=
-        (ENNReal.ofReal_le_ofReal hn).trans
-          TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal
-      _ = ∫⁻ y in g '' (ball z ε ∩ Ω), ENNReal.ofReal (ω.floerEnergyDensity
-          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x I) (u (φ n)) y) :=
-        setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq hKH hH hHd (hu _) q m hs
-          fun y hy ↦ hΩT y hy.2
-      _ = _ := by
-        rw [withDensity_apply _ hgs, Measure.restrict_restrict hgs, inter_eq_left.2 hgsS]
-      _ ≤ _ := measure_mono (image_subset_iff.2 (inter_subset_left.trans hεN))
+    refine TauCeti.MeasureTheory.le_withDensity_of_le_setLIntegral hgs hgsS
+      (image_subset_iff.2 (inter_subset_left.trans hεN)) ?_
+    rw [← setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq hKH hH hHd (hu _) q m hs
+      fun y hy ↦ hΩT y hy.2]
+    exact (ENNReal.ofReal_le_ofReal hn).trans
+      TauCeti.MeasureTheory.ofReal_integral_le_lintegral_ofReal
   · rw [← hinj.image_sdiff_subset hZ]
     exact hv.image_of_isOpenMap (hΩ.sdiff Z.finite_toSet.isClosed) hgo (hinj.mono sdiff_subset)
 
@@ -409,8 +404,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_thricePunc
       (hwin hu hfl ha hA huK)
   rw [iUnion_window (by positivity)] at hZ hconv
   refine ⟨φ, Z, v, hφ, hZ, ?_, fun z hz ε hε ↦ ?_, ?_, ?_, hconv⟩
-  · rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)] at hcard
-    exact (ENNReal.ofReal_le_ofReal_iff (hE 0).1).1 hcard
+  · exact (ENNReal.natCast_mul_ofReal_le_ofReal_iff (hE 0).1).1 hcard
   · -- The energy measure of a disc is the energy over its part in `S`.
     filter_upwards [hconc z hz _ (ball_mem_nhds z hε)] with n hn
     have h0 (y : ℝ × ℝ) (hy : y ∈ ball z ε ∩ thricePuncturedSphereReal) :=

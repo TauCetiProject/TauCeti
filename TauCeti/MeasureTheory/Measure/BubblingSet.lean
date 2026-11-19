@@ -103,9 +103,10 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_finset_iUnion [T2Space X]
   have hconcD (m : ℕ) (z : X) (hz : z ∈ Zw m) (N : Set X) (hN : N ∈ 𝓝 z) :
       ∀ᶠ n in atTop, δ ≤ μ (D n) N :=
     eventually_of_eq_apply_of_le (p := fun j ↦ δ ≤ μ j N) (hψD m) (hconc m z hz N hN)
-  have hvD (m : ℕ) : TendstoLocallyUniformlyOn (fun n ↦ F (D n)) (vw m) atTop (U (e m) \ Zw m) :=
-    fun u hu x hx ↦ (hvw m u hu x hx).imp fun _ ⟨ht, hev⟩ ↦
-      ⟨ht, eventually_of_eq_apply_of_le (p := fun j ↦ ∀ y ∈ _, (vw m y, F j y) ∈ u) (hψD m) hev⟩
+  have hvD (m : ℕ) : TendstoLocallyUniformlyOn (fun n ↦ F (D n)) (vw m) atTop (U (e m) \ Zw m) := by
+    obtain ⟨f, hf, hDf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le (hψD m)
+    exact ((hvw m).comp_tendsto hf).congr_inseparable
+      (hDf.mono fun n hn _ _ ↦ .of_eq (by simp [hn]))
   -- The bubbling set is the union of the bubbling sets of the windows, inside the windows.
   set Z : Set X := ⋃ m, Zw m ∩ U (e m)
   have hZW : Z ⊆ ⋃ i, U i :=

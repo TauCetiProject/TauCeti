@@ -10,6 +10,7 @@ public import Mathlib.Topology.Sequences
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.Topology.Order.Compact
+import TauCeti.Data.ENNReal.NatCastDiv
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.InterBall
@@ -176,8 +177,8 @@ theorem card_mul_le_of_forall_eventually_le_setIntegral_ball {ι : Type*} {l : F
       exact TauCeti.MeasureTheory.ofReal_le_withDensity_of_le_setIntegral
         (measurableSet_ball.inter hΩ) inter_subset_right (inter_subset_left.trans hεN) hi
   obtain ⟨i⟩ := l.nonempty_of_neBot
-  rw [← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _)] at hcard
-  exact (ENNReal.ofReal_le_ofReal_iff ((setIntegral_nonneg hΩ (he i)).trans (hE i))).1 hcard
+  exact (ENNReal.natCast_mul_ofReal_le_ofReal_iff
+    ((setIntegral_nonneg hΩ (he i)).trans (hE i))).1 hcard
 
 /-- **Concentration without the area term.** Let `e i ≥ 0` be integrable densities on a measurable
 set `Ω`, and let `z` be a point of measure zero about which some ball has finite measure. If for

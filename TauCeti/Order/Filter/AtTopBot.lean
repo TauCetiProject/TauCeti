@@ -74,8 +74,9 @@ theorem exists_tendsto_atTop_of_forall_eventually {P : ℕ → ℕ → Prop}
 `ψ : ℕ → ℕ`, for `j ∈ ℕ`. If every extraction has, for each `j`, a further extraction with property
 `P j`, then there is one extraction `D` which for every `j` is, from the index `j` on, a
 subsequence of an extraction `ψ` with property `P j`: each `D n` with `j ≤ n` is a term `ψ k` with
-`n ≤ k`. Properties of the form `∀ᶠ n in atTop, Q (ψ n)` therefore pass from `ψ` to `D`
-(`TauCeti.eventually_of_eq_apply_of_le`). -/
+`n ≤ k`. So `D` is eventually a reindexing of `ψ` along a map tending to infinity
+(`TauCeti.exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le`), and properties of the form
+`∀ᶠ n in atTop, Q (ψ n)` pass from `ψ` to `D` (`TauCeti.eventually_of_eq_apply_of_le`). -/
 theorem extraction_forall {P : ℕ → (ℕ → ℕ) → Prop}
     (h : ∀ j (ψ : ℕ → ℕ), StrictMono ψ → ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧ P j (ψ ∘ ψ')) :
     ∃ D : ℕ → ℕ, StrictMono D ∧
@@ -104,16 +105,24 @@ theorem extraction_forall {P : ℕ → (ℕ → ℕ) → Prop}
   rw [hθsucc]
   exact (θ n).2.monotone ((hψ' _ _ _).id_le _) |>.trans_lt' ((θ n).2 n.lt_succ_self)
 
-/-- A property eventually true along a sequence `ψ` is eventually true along a sequence `D` whose
-terms from some index on are terms `ψ k` with `k ≥ n`. This is how the properties of the
+/-- A sequence `D` whose terms from some index on are terms `ψ k` with `k ≥ n` is eventually the
+reindexing `ψ ∘ f` of `ψ` along a map `f` tending to infinity. This is how the properties of the
 extractions given by `TauCeti.extraction_forall` pass to the diagonal. -/
+theorem exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le {ψ D : ℕ → ℕ} {m : ℕ}
+    (hD : ∀ n, m ≤ n → ∃ k, n ≤ k ∧ D n = ψ k) :
+    ∃ f : ℕ → ℕ, Tendsto f atTop atTop ∧ D =ᶠ[atTop] ψ ∘ f := by
+  choose! f hf using hD
+  have hev : ∀ᶠ n in atTop, n ≤ f n ∧ D n = ψ (f n) := (eventually_ge_atTop m).mono hf
+  exact ⟨f, tendsto_atTop_mono' atTop (hev.mono fun _ h ↦ h.1) tendsto_id, hev.mono fun _ h ↦ h.2⟩
+
+/-- A property eventually true along a sequence `ψ` is eventually true along a sequence `D` whose
+terms from some index on are terms `ψ k` with `k ≥ n`. -/
 theorem eventually_of_eq_apply_of_le {p : ℕ → Prop} {ψ D : ℕ → ℕ} {m : ℕ}
     (hD : ∀ n, m ≤ n → ∃ k, n ≤ k ∧ D n = ψ k) (h : ∀ᶠ k in atTop, p (ψ k)) :
     ∀ᶠ n in atTop, p (D n) := by
-  obtain ⟨K, hK⟩ := eventually_atTop.1 h
-  refine eventually_atTop.2 ⟨max m K, fun n hn ↦ ?_⟩
-  obtain ⟨k, hnk, hk⟩ := hD n (le_of_max_le_left hn)
-  exact hk ▸ hK k ((le_of_max_le_right hn).trans hnk)
+  obtain ⟨f, hf, hDf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le hD
+  filter_upwards [hDf, hf.eventually h] with n hn hp
+  rwa [hn]
 
 /-- **Diagonal extraction.** Let `x j : ℕ → X` be countably many sequences and `l y` the filter of
 a convergence to `y` on `X`. If every subsequence of every `x j` has a further subsequence
@@ -128,7 +137,8 @@ theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : �
       exact ⟨ψ', hψ', y, hy⟩
   refine ⟨D, hD, fun j ↦ ?_⟩
   obtain ⟨ψ, ⟨z, hz⟩, hψD⟩ := hP j
-  exact ⟨z, fun s hs ↦ eventually_of_eq_apply_of_le (p := fun k ↦ x j k ∈ s) hψD (hz hs)⟩
+  obtain ⟨f, hf, hDf⟩ := exists_tendsto_eventuallyEq_comp_of_eq_apply_of_le hψD
+  exact ⟨z, (hz.comp hf).congr' (hDf.fun_comp (x j)).symm⟩
 
 /-- **Common extraction for finitely many properties.** Let `P i` be properties of extractions
 `ψ : ℕ → ℕ`, for `i` in a finite set `s`, each preserved by passing to a further extraction. If
