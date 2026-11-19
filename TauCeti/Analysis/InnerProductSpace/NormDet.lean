@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import Mathlib.Analysis.Normed.Operator.Conformal
 public import TauCeti.Analysis.Normed.Lp.GraphDomain
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
-# Continuity, adjoints, one-dimensional values, and orthogonal extensions of the Jacobian `normDet`
+# Continuity, adjoints, Hadamard bounds, and orthogonal extensions of the Jacobian `normDet`
 
 For finite-dimensional real inner product spaces `U` and `V`, the `m`-dimensional Jacobian
 `LinearMap.normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends continuously on the map.
@@ -33,6 +35,11 @@ of a piece of the unit sphere is `tᵐ` times the Jacobian of `ψ`.
 The Jacobian of the linear normal graph `x ↦ (A x, x)` of a functional `A` is
 `sqrt (1 + ‖A‖²)`: its Gram matrix in an orthonormal basis is a rank-one perturbation of the
 identity.
+
+Over any `RCLike` scalar field `𝕜` and arbitrary (possibly infinite-dimensional) inner product
+codomain `W`, Hadamard's inequality bounds `A.normDet` by `∏ i, ‖A (b i)‖` on any orthonormal
+basis `b` of `U`, and hence by `‖A‖ ^ Module.finrank 𝕜 U`. Equality holds if and only if `A = 0` or
+`A` is conformal (`IsConformalMap A`).
 
 ## Main declarations
 
@@ -58,6 +65,10 @@ identity.
 * `LinearMap.normDet_toSpanSingleton_coprod`: an orthogonal unit extension of a linear map has the
   same Jacobian.
 * `ContinuousLinearMap.normDet_normalGraphL`: the Jacobian of a linear normal graph.
+* `LinearMap.normDet_le_prod_norm`, `ContinuousLinearMap.normDet_le_norm_pow`,
+  `IsConformalMap.normDet_eq_norm_pow`, `ContinuousLinearMap.norm_apply_eq_of_normDet_eq_norm_pow`,
+  `ContinuousLinearMap.normDet_eq_norm_pow_iff`: Hadamard's inequality for `normDet` and its
+  conformality equality characterization.
 -/
 
 public section
@@ -305,3 +316,105 @@ theorem ContinuousLinearMap.normDet_adjoint_eq_norm [CompleteSpace U] (A : U →
   rw [LinearMap.normDet_eq_norm_apply_one, ContinuousLinearMap.coe_coe,
     ← ContinuousLinearMap.toSpanSingletonLIE_symm_apply ℝ U, LinearIsometryEquiv.norm_map,
     LinearIsometryEquiv.norm_map]
+
+section Hadamard
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- **Basis-wise Hadamard inequality for `normDet`**: on any orthonormal basis `b` of `E`,
+`A.normDet ≤ ∏ i, ‖A (b i)‖`. The codomain `F` need not be finite-dimensional. -/
+theorem LinearMap.normDet_le_prod_norm {ι : Type*} [Fintype ι] (A : E →ₗ[𝕜] F)
+    (b : OrthonormalBasis ι 𝕜 E) :
+    A.normDet ≤ ∏ i : ι, ‖A (b i)‖ := by
+  classical
+  have hsq : A.normDet ^ 2 ≤ (∏ i : ι, ‖A (b i)‖) ^ 2 := by
+    have hgram := congrArg RCLike.re (A.normDet_sq_eq_det_gram b)
+    rw [RCLike.ofReal_re] at hgram
+    rw [hgram, ← Finset.prod_pow]
+    exact Matrix.re_det_gram_le_prod_norm_sq (𝕜 := 𝕜) (fun i ↦ A (b i))
+  exact (sq_le_sq₀ A.normDet_nonneg (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)).mp hsq
+
+/-- **Hadamard's inequality for `normDet`**: `A.normDet ≤ ‖A‖ ^ Module.finrank 𝕜 E`. The codomain
+`F` need not be finite-dimensional. -/
+theorem ContinuousLinearMap.normDet_le_norm_pow (A : E →L[𝕜] F) :
+    A.normDet ≤ ‖A‖ ^ Module.finrank 𝕜 E := by
+  let b := stdOrthonormalBasis 𝕜 E
+  calc
+    A.normDet ≤ ∏ i : Fin (Module.finrank 𝕜 E), ‖A (b i)‖ := by
+      simpa only [ContinuousLinearMap.coe_coe] using A.toLinearMap.normDet_le_prod_norm b
+    _ ≤ ∏ _i : Fin (Module.finrank 𝕜 E), ‖A‖ := by
+      gcongr with i
+      simpa [b.orthonormal.1 i] using A.le_opNorm (b i)
+    _ = ‖A‖ ^ Module.finrank 𝕜 E := by simp
+
+/-- A conformal continuous linear map achieves equality in Hadamard's inequality for `normDet`:
+`A.normDet = ‖A‖ ^ Module.finrank 𝕜 E`. -/
+theorem IsConformalMap.normDet_eq_norm_pow {A : E →L[𝕜] F} (hA : IsConformalMap A) :
+    A.normDet = ‖A‖ ^ Module.finrank 𝕜 E := by
+  nontriviality E
+  obtain ⟨c, _, li, rfl⟩ := hA
+  simp [norm_smul]
+
+/-- Equality `A.normDet = ‖A‖ ^ Module.finrank 𝕜 E` in Hadamard's inequality forces `A` to scale
+the norm of every vector by `‖A‖`. -/
+theorem ContinuousLinearMap.norm_apply_eq_of_normDet_eq_norm_pow {A : E →L[𝕜] F}
+    (heq : A.normDet = ‖A‖ ^ Module.finrank 𝕜 E) (x : E) :
+    ‖A x‖ = ‖A‖ * ‖x‖ := by
+  rcases eq_or_ne A 0 with rfl | hA0
+  · simp
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
+  obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero (Module.finrank_pos (R := 𝕜) (M := E)).ne'
+  have hApos : 0 < ‖A‖ := norm_pos_iff.mpr hA0
+  have hx0 : ‖x‖ ≠ 0 := norm_ne_zero_iff.mpr hx
+  let u : E := ((‖x‖⁻¹ : ℝ) : 𝕜) • x
+  have hu : ‖u‖ = 1 := by
+    simp [u, norm_smul, inv_mul_cancel₀ hx0]
+  have horth : Orthonormal 𝕜 (({0} : Set (Fin (m + 1))).domRestrict (fun _ ↦ u)) :=
+    orthonormal_iff_ite.mpr fun ⟨i, hi⟩ ⟨j, hj⟩ ↦ by
+      simp only [Set.mem_singleton_iff] at hi hj
+      subst hi hj
+      simp [Set.domRestrict, hu]
+  obtain ⟨b, hb0⟩ := horth.exists_orthonormalBasis_extension_of_card_eq (by simp [hm])
+  have hprod : ‖A‖ ^ (m + 1) ≤ ∏ j : Fin (m + 1), ‖A (b j)‖ := by
+    have hle := A.toLinearMap.normDet_le_prod_norm b
+    simp only [ContinuousLinearMap.coe_coe] at hle
+    rwa [heq, hm] at hle
+  have hAu : ‖A u‖ = ‖A‖ := by
+    by_contra hne
+    have hlt : ‖A u‖ < ‖A‖ := lt_of_le_of_ne (by simpa [hu] using A.le_opNorm u) hne
+    have hrest : ∏ j ∈ Finset.univ.erase (0 : Fin (m + 1)), ‖A (b j)‖ ≤ ‖A‖ ^ m := by
+      calc
+        ∏ j ∈ Finset.univ.erase (0 : Fin (m + 1)), ‖A (b j)‖ ≤
+            ∏ _j ∈ Finset.univ.erase (0 : Fin (m + 1)), ‖A‖ := by
+          gcongr with j
+          simpa [b.orthonormal.1 j] using A.le_opNorm (b j)
+        _ = ‖A‖ ^ m := by simp
+    have hstrict : ∏ j : Fin (m + 1), ‖A (b j)‖ < ‖A‖ ^ (m + 1) := by
+      rw [← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ 0), hb0 0 rfl, pow_succ']
+      exact lt_of_le_of_lt (mul_le_mul_of_nonneg_left hrest (norm_nonneg _))
+        (mul_lt_mul_of_pos_right hlt (pow_pos hApos m))
+    exact hstrict.not_ge hprod
+  simpa [u, map_smul, norm_smul, inv_mul_eq_iff_eq_mul₀ hx0, mul_comm ‖x‖ ‖A‖] using hAu
+
+/-- **Equality case of Hadamard's inequality for `normDet`**: `A.normDet = ‖A‖ ^ Module.finrank 𝕜 E`
+holds if and only if `A = 0` or `A` is conformal (`IsConformalMap A`). -/
+theorem ContinuousLinearMap.normDet_eq_norm_pow_iff (A : E →L[𝕜] F) :
+    A.normDet = ‖A‖ ^ Module.finrank 𝕜 E ↔ A = 0 ∨ IsConformalMap A := by
+  refine ⟨fun heq ↦ ?_, ?_⟩
+  · rcases eq_or_ne A 0 with rfl | hA0
+    · exact .inl rfl
+    have hApos : 0 < ‖A‖ := norm_pos_iff.mpr hA0
+    have hc : (‖A‖ : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr hApos.ne'
+    refine .inr ⟨(‖A‖ : 𝕜), hc, ⟨(‖A‖ : 𝕜)⁻¹ • A.toLinearMap, fun x ↦ ?_⟩, ?_⟩
+    · simp [norm_smul, A.norm_apply_eq_of_normDet_eq_norm_pow heq x,
+        inv_mul_cancel_left₀ hApos.ne']
+    · ext x
+      simp [smul_smul, mul_inv_cancel₀ hc]
+  · rintro (rfl | hconf)
+    · simp
+    · exact hconf.normDet_eq_norm_pow
+
+end Hadamard
