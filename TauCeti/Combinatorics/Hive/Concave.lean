@@ -19,6 +19,11 @@ unit-rhombus inequalities behaves like a concave function on the lattice points 
 rhombus inequalities over a lattice parallelogram gives the parallelogram inequality, and an
 affine function that agrees with `f` on one unit triangle majorizes `f` on all of `Δₙ`.
 
+## Main definitions
+
+* `TauCeti.Hive.yzTriangle 𝕜 n`: the triangle `0 ≤ y, 0 ≤ z, y + z ≤ n` of the `(y, z)` chart,
+  in `𝕜 × 𝕜`.
+
 ## Main results
 
 * `TauCeti.Hive.IsRhombusConcave.parallelogram_le_yzStep`: the parallelogram inequality for every
@@ -47,24 +52,39 @@ namespace TauCeti.Hive
 
 variable {n : ℕ}
 
-/-! ### The lattice region of the `(y, z)` chart and the extension by zero -/
+/-! ### The triangle of the `(y, z)` chart and the extension by zero -/
 
-/-- The integer points of the `(y, z)` chart of `Δₙ`. -/
-private def yzRegion (n : ℕ) : Set (ℤ × ℤ) := {p | 0 ≤ p.1 ∧ 0 ≤ p.2 ∧ p.1 + p.2 ≤ n}
+section Triangle
 
-private theorem mem_yzRegion {p : ℤ × ℤ} :
-    p ∈ yzRegion n ↔ 0 ≤ p.1 ∧ 0 ≤ p.2 ∧ p.1 + p.2 ≤ n := Iff.rfl
+variable {𝕜 : Type*} [Semiring 𝕜] [PartialOrder 𝕜]
 
-private theorem yz_mem_yzRegion (p : Vertex n) : p.yz ∈ yzRegion n := by
-  have := p.sum_eq
-  simp only [mem_yzRegion, Vertex.yz_fst, Vertex.yz_snd]
-  omega
+variable (𝕜) in
+/-- The triangle `0 ≤ y, 0 ≤ z, y + z ≤ n` of the `(y, z)` chart of `Δₙ`, in `𝕜 × 𝕜`. -/
+def yzTriangle (n : ℕ) : Set (𝕜 × 𝕜) := {q | 0 ≤ q.1 ∧ 0 ≤ q.2 ∧ q.1 + q.2 ≤ n}
+
+@[simp] theorem mem_yzTriangle {q : 𝕜 × 𝕜} :
+    q ∈ yzTriangle 𝕜 n ↔ 0 ≤ q.1 ∧ 0 ≤ q.2 ∧ q.1 + q.2 ≤ n := Iff.rfl
+
+/-- Every vertex of `Δₙ` lies in the triangle, at its `(y, z)` chart coordinates. -/
+theorem natCast_mem_yzTriangle [IsOrderedRing 𝕜] (p : Vertex n) :
+    ((p.y : 𝕜), (p.z : 𝕜)) ∈ yzTriangle 𝕜 n := by
+  rw [mem_yzTriangle]
+  dsimp only
+  refine ⟨Nat.cast_nonneg _, Nat.cast_nonneg _, ?_⟩
+  have := Nat.mono_cast (α := 𝕜) (show p.y + p.z ≤ n by have := p.sum_eq; omega)
+  rwa [Nat.cast_add] at this
+
+end Triangle
+
+/-- `natCast_mem_yzTriangle` over `ℤ`, stated for the chart coordinates `Vertex.yz`. -/
+private theorem yz_mem_yzTriangle (p : Vertex n) : p.yz ∈ yzTriangle ℤ n :=
+  (Prod.ext p.yz_fst p.yz_snd : p.yz = ((p.y : ℤ), (p.z : ℤ))) ▸ natCast_mem_yzTriangle p
 
 /-- The vertex with given `(y, z)` chart coordinates. -/
-private def yzVertex (p : ℤ × ℤ) (hp : p ∈ yzRegion n) : Vertex n :=
+private def yzVertex (p : ℤ × ℤ) (hp : p ∈ yzTriangle ℤ n) : Vertex n :=
   Vertex.ofYZ n p.1.toNat p.2.toNat (by obtain ⟨_, _, _⟩ := hp; omega)
 
-private theorem yzVertex_yz (p : Vertex n) : yzVertex p.yz (yz_mem_yzRegion p) = p := by
+private theorem yzVertex_yz (p : Vertex n) : yzVertex p.yz (yz_mem_yzTriangle p) = p := by
   ext <;> simp [yzVertex]
 
 /-- Extend a lattice function by zero to all integer points of the `(y, z)` chart. -/
@@ -72,11 +92,11 @@ private def yzExtend {R : Type*} [Zero R] (f : Vertex n → R) (p : ℤ × ℤ) 
   if hp : 0 ≤ p.1 ∧ 0 ≤ p.2 ∧ p.1 + p.2 ≤ n then f (yzVertex p hp) else 0
 
 private theorem yzExtend_of_mem {R : Type*} [Zero R] (f : Vertex n → R) {p : ℤ × ℤ}
-    (hp : p ∈ yzRegion n) : yzExtend f p = f (yzVertex p hp) := dite_eq_left hp
+    (hp : p ∈ yzTriangle ℤ n) : yzExtend f p = f (yzVertex p hp) := dite_eq_left hp
 
 private theorem yzExtend_yz {R : Type*} [Zero R] (f : Vertex n → R) (p : Vertex n) :
     yzExtend f p.yz = f p := by
-  rw [yzExtend_of_mem f (yz_mem_yzRegion p), yzVertex_yz]
+  rw [yzExtend_of_mem f (yz_mem_yzTriangle p), yzVertex_yz]
 
 private theorem yzExtend_of_yz_eq {R : Type*} [Zero R] (f : Vertex n → R) {x : ℤ × ℤ}
     {p : Vertex n} (h : p.yz = x) : yzExtend f x = f p := by
@@ -93,11 +113,11 @@ private theorem fin6_add_four_add_one_add_one (k : Fin 6) : k + 4 + 1 + 1 = k :=
   fin_cases k <;> rfl
 
 /-- The lattice parallelogram spanned by two consecutive unit steps between two points of the
-region stays in the region: each barycentric coordinate is monotone along both steps. -/
-private theorem mem_yzRegion_of_parallelogram {k : Fin 6} {p : ℤ × ℤ} {s t i j : ℕ}
-    (hp : p ∈ yzRegion n) (hv : p + s • yzStep k + t • yzStep (k + 1) ∈ yzRegion n)
-    (hi : i ≤ s) (hj : j ≤ t) : p + i • yzStep k + j • yzStep (k + 1) ∈ yzRegion n := by
-  simp only [mem_yzRegion] at *
+triangle stays in the triangle: each barycentric coordinate is monotone along both steps. -/
+private theorem mem_yzTriangle_of_parallelogram {k : Fin 6} {p : ℤ × ℤ} {s t i j : ℕ}
+    (hp : p ∈ yzTriangle ℤ n) (hv : p + s • yzStep k + t • yzStep (k + 1) ∈ yzTriangle ℤ n)
+    (hi : i ≤ s) (hj : j ≤ t) : p + i • yzStep k + j • yzStep (k + 1) ∈ yzTriangle ℤ n := by
+  simp only [mem_yzTriangle] at *
   fin_cases k <;> simp [yzStep_def] at * <;> omega
 
 /-! ### Rhombus concavity in the chart -/
@@ -134,15 +154,15 @@ variable {R : Type*} [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
 /-- The unit-rhombus inequalities in the `(y, z)` chart: on the rhombus with acute corners `p` and
 `p + yzStep k + yzStep (k + 1)`, the acute sum is at most the obtuse sum. -/
 private def YZConcave (n : ℕ) (g : ℤ × ℤ → R) : Prop :=
-  ∀ (k : Fin 6) (p : ℤ × ℤ), p ∈ yzRegion n → p + yzStep k ∈ yzRegion n →
-    p + yzStep (k + 1) ∈ yzRegion n → p + yzStep k + yzStep (k + 1) ∈ yzRegion n →
+  ∀ (k : Fin 6) (p : ℤ × ℤ), p ∈ yzTriangle ℤ n → p + yzStep k ∈ yzTriangle ℤ n →
+    p + yzStep (k + 1) ∈ yzTriangle ℤ n → p + yzStep k + yzStep (k + 1) ∈ yzTriangle ℤ n →
     g p + g (p + yzStep k + yzStep (k + 1)) ≤ g (p + yzStep k) + g (p + yzStep (k + 1))
 
 /-- The barycentric vector of a chart displacement. -/
 private def baryStep (d : ℤ × ℤ) : Fin 3 → ℤ := ![-d.1 - d.2, d.1, d.2]
 
-private theorem hasStep_yzVertex {p q : ℤ × ℤ} (hp : p ∈ yzRegion n)
-    (hq : q ∈ yzRegion n) :
+private theorem hasStep_yzVertex {p q : ℤ × ℤ} (hp : p ∈ yzTriangle ℤ n)
+    (hq : q ∈ yzTriangle ℤ n) :
     HasStep (yzVertex p hp) (yzVertex q hq) (baryStep (q - p)) := by
   obtain ⟨_, _, _⟩ := hp
   obtain ⟨_, _, _⟩ := hq
@@ -177,8 +197,8 @@ omit [IsOrderedAddMonoid R] in
 /-- The rhombus whose short diagonal runs from `p` to `p + yzStep m`: its acute corners are
 `p + yzStep (m + 5)` and `p + yzStep (m + 1)`. -/
 private theorem YZConcave.corner (hg : YZConcave n g) (m : Fin 6) {p : ℤ × ℤ}
-    (hp : p ∈ yzRegion n) (hm : p + yzStep m ∈ yzRegion n)
-    (hm₁ : p + yzStep (m + 1) ∈ yzRegion n) (hm₅ : p + yzStep (m + 5) ∈ yzRegion n) :
+    (hp : p ∈ yzTriangle ℤ n) (hm : p + yzStep m ∈ yzTriangle ℤ n)
+    (hm₁ : p + yzStep (m + 1) ∈ yzTriangle ℤ n) (hm₅ : p + yzStep (m + 5) ∈ yzTriangle ℤ n) :
     g (p + yzStep (m + 5)) + g (p + yzStep (m + 1)) ≤ g (p + yzStep m) + g p := by
   have hm₂ := fin6_add_one_add_one m
   have e₅ : yzStep (m + 5) = yzStep m - yzStep (m + 1) := yzStep_add_five m
@@ -194,9 +214,9 @@ private theorem YZConcave.corner (hg : YZConcave n g) (m : Fin 6) {p : ℤ × �
 /-- Line concavity from the two corner rhombi at `q` on the side of `yzStep j` and
 `yzStep (j + 1)`, where `j` is `k + 1` or `k + 4`. -/
 private theorem YZConcave.line_of_side (hg : YZConcave n g) {k j : Fin 6} {q : ℤ × ℤ}
-    (hj : j = k + 1 ∨ j = k + 4) (h₁ : q - yzStep k ∈ yzRegion n) (h₂ : q ∈ yzRegion n)
-    (h₃ : q + yzStep k ∈ yzRegion n) (h₄ : q + yzStep j ∈ yzRegion n)
-    (h₅ : q + yzStep (j + 1) ∈ yzRegion n) :
+    (hj : j = k + 1 ∨ j = k + 4) (h₁ : q - yzStep k ∈ yzTriangle ℤ n) (h₂ : q ∈ yzTriangle ℤ n)
+    (h₃ : q + yzStep k ∈ yzTriangle ℤ n) (h₄ : q + yzStep j ∈ yzTriangle ℤ n)
+    (h₅ : q + yzStep (j + 1) ∈ yzTriangle ℤ n) :
     g (q - yzStep k) + g (q + yzStep k) ≤ g q + g q := by
   have hneg : q - yzStep k = q + yzStep (k + 3) := by
     rw [yzStep_add_three, sub_eq_add_neg]
@@ -224,23 +244,23 @@ private theorem YZConcave.line_of_side (hg : YZConcave n g) {k j : Fin 6} {q : �
 
 /-- Rhombus concavity implies concavity along every lattice line. -/
 private theorem YZConcave.line (hg : YZConcave n g) {k : Fin 6} {q : ℤ × ℤ}
-    (h₁ : q - yzStep k ∈ yzRegion n) (h₂ : q ∈ yzRegion n)
-    (h₃ : q + yzStep k ∈ yzRegion n) :
+    (h₁ : q - yzStep k ∈ yzTriangle ℤ n) (h₂ : q ∈ yzTriangle ℤ n)
+    (h₃ : q + yzStep k ∈ yzTriangle ℤ n) :
     g (q - yzStep k) + g (q + yzStep k) ≤ g q + g q := by
   -- the corner rhombi lie on the side of `yzStep (k + 1)` for even `k`, and on the side of
   -- `yzStep (k + 4)` for odd `k`
   fin_cases k <;>
     first
     | exact hg.line_of_side (Or.inl rfl) h₁ h₂ h₃
-        (by simp [mem_yzRegion, yzStep_def] at h₁ h₂ h₃ ⊢; omega)
-        (by simp [mem_yzRegion, yzStep_def] at h₁ h₂ h₃ ⊢; omega)
+        (by simp [mem_yzTriangle, yzStep_def] at h₁ h₂ h₃ ⊢; omega)
+        (by simp [mem_yzTriangle, yzStep_def] at h₁ h₂ h₃ ⊢; omega)
     | exact hg.line_of_side (Or.inr rfl) h₁ h₂ h₃
-        (by simp [mem_yzRegion, yzStep_def] at h₁ h₂ h₃ ⊢; omega)
-        (by simp [mem_yzRegion, yzStep_def] at h₁ h₂ h₃ ⊢; omega)
+        (by simp [mem_yzTriangle, yzStep_def] at h₁ h₂ h₃ ⊢; omega)
+        (by simp [mem_yzTriangle, yzStep_def] at h₁ h₂ h₃ ⊢; omega)
 
-/-- Along a lattice line inside the region, the function lies below its first secant. -/
+/-- Along a lattice line inside the triangle, the function lies below its first secant. -/
 private theorem YZConcave.le_line (hg : YZConcave n g) {k : Fin 6} {p : ℤ × ℤ} {s : ℕ}
-    (hmem : ∀ i ≤ s, p + i • yzStep k ∈ yzRegion n) :
+    (hmem : ∀ i ≤ s, p + i • yzStep k ∈ yzTriangle ℤ n) :
     g (p + s • yzStep k) ≤ g p + s • (g (p + yzStep k) - g p) := by
   set u := yzStep k
   have step : ∀ i, i + 1 ≤ s → g (p + (i + 1) • u) - g (p + i • u) ≤ g (p + u) - g p := by
@@ -273,7 +293,7 @@ private theorem YZConcave.le_line (hg : YZConcave n g) {k : Fin 6} {p : ℤ × �
 /-- Summing rhombus inequalities over a lattice parallelogram. -/
 private theorem YZConcave.parallelogram (hg : YZConcave n g) {k : Fin 6} {p : ℤ × ℤ}
     {s t : ℕ}
-    (hmem : ∀ i ≤ s, ∀ j ≤ t, p + i • yzStep k + j • yzStep (k + 1) ∈ yzRegion n) :
+    (hmem : ∀ i ≤ s, ∀ j ≤ t, p + i • yzStep k + j • yzStep (k + 1) ∈ yzTriangle ℤ n) :
     g p + g (p + s • yzStep k + t • yzStep (k + 1)) ≤
       g (p + s • yzStep k) + g (p + t • yzStep (k + 1)) := by
   set u := yzStep k
@@ -313,10 +333,10 @@ private theorem YZConcave.parallelogram (hg : YZConcave n g) {k : Fin 6} {p : �
 /-- In the sector of two consecutive unit steps, the function lies below the affine function
 with its slopes at the corner. -/
 private theorem YZConcave.le_sector (hg : YZConcave n g) {k : Fin 6} {p : ℤ × ℤ} {s t : ℕ}
-    (hp : p ∈ yzRegion n) (hv : p + s • yzStep k + t • yzStep (k + 1) ∈ yzRegion n) :
+    (hp : p ∈ yzTriangle ℤ n) (hv : p + s • yzStep k + t • yzStep (k + 1) ∈ yzTriangle ℤ n) :
     g (p + s • yzStep k + t • yzStep (k + 1)) ≤
       g p + s • (g (p + yzStep k) - g p) + t • (g (p + yzStep (k + 1)) - g p) := by
-  have hmem := fun i (hi : i ≤ s) j (hj : j ≤ t) => mem_yzRegion_of_parallelogram hp hv hi hj
+  have hmem := fun i (hi : i ≤ s) j (hj : j ≤ t) => mem_yzTriangle_of_parallelogram hp hv hi hj
   have hP := hg.parallelogram hmem
   have hs := hg.le_line (k := k) (s := s) fun i hi => by simpa using hmem i hi 0 (Nat.zero_le _)
   have ht := hg.le_line (k := k + 1) (s := t) fun j hj => by simpa using hmem 0 (Nat.zero_le _) j hj
@@ -330,11 +350,11 @@ private theorem YZConcave.le_sector (hg : YZConcave n g) {k : Fin 6} {p : ℤ ×
 /-- At a corner `p` of a unit triangle on which `g` agrees with an affine function, the slope of
 `g` along each unit step leaving `p` is at most the slope of the affine function. -/
 private theorem YZConcave.slope_le (hg : YZConcave n g) {k : Fin 6} {p : ℤ × ℤ}
-    (hp : p ∈ yzRegion n) (hk : p + yzStep k ∈ yzRegion n)
-    (hk₁ : p + yzStep (k + 1) ∈ yzRegion n) {α β : R}
+    (hp : p ∈ yzTriangle ℤ n) (hk : p + yzStep k ∈ yzTriangle ℤ n)
+    (hk₁ : p + yzStep (k + 1) ∈ yzTriangle ℤ n) {α β : R}
     (h₁ : yzLinear α β (yzStep k) = g (p + yzStep k) - g p)
     (h₂ : yzLinear α β (yzStep (k + 1)) = g (p + yzStep (k + 1)) - g p) (r : Fin 6)
-    (hr : p + yzStep (k + r) ∈ yzRegion n) :
+    (hr : p + yzStep (k + r) ∈ yzTriangle ℤ n) :
     g (p + yzStep (k + r)) - g p ≤ yzLinear α β (yzStep (k + r)) := by
   obtain rfl | rfl | rfl | rfl | rfl | rfl :=
     (by decide : ∀ r : Fin 6, r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3 ∨ r = 4 ∨ r = 5) r
@@ -374,28 +394,28 @@ private theorem YZConcave.slope_le (hg : YZConcave n g) {k : Fin 6} {p : ℤ × 
     simpa [add_comm] using M
 
 /-- Discrete supporting planes in the chart: an affine function agreeing with `g` on a unit
-triangle of the region majorizes `g` on the whole region. -/
+triangle of `yzTriangle ℤ n` majorizes `g` at all of its lattice points. -/
 private theorem YZConcave.le_affine (hg : YZConcave n g) {k : Fin 6} {p : ℤ × ℤ}
-    (hp : p ∈ yzRegion n) (hk : p + yzStep k ∈ yzRegion n)
-    (hk₁ : p + yzStep (k + 1) ∈ yzRegion n) {α β : R}
+    (hp : p ∈ yzTriangle ℤ n) (hk : p + yzStep k ∈ yzTriangle ℤ n)
+    (hk₁ : p + yzStep (k + 1) ∈ yzTriangle ℤ n) {α β : R}
     (h₁ : yzLinear α β (yzStep k) = g (p + yzStep k) - g p)
     (h₂ : yzLinear α β (yzStep (k + 1)) = g (p + yzStep (k + 1)) - g p) {v : ℤ × ℤ}
-    (hv : v ∈ yzRegion n) : g v ≤ g p + yzLinear α β (v - p) := by
+    (hv : v ∈ yzTriangle ℤ n) : g v ≤ g p + yzLinear α β (v - p) := by
   obtain ⟨m, s, t, hd⟩ := exists_yzStep_sector (v - p)
   obtain ⟨r, rfl⟩ : ∃ r, m = k + r := ⟨m - k, by abel⟩
   have hv' : p + s • yzStep (k + r) + t • yzStep (k + r + 1) = v := by
     rw [add_assoc, ← hd]; abel
   have hS := hg.le_sector (k := k + r) (s := s) (t := t) hp (by rwa [hv'])
   rw [hv'] at hS
-  have hslope : ∀ r' : Fin 6, ∀ c : ℕ, (0 < c → p + yzStep (k + r') ∈ yzRegion n) →
+  have hslope : ∀ r' : Fin 6, ∀ c : ℕ, (0 < c → p + yzStep (k + r') ∈ yzTriangle ℤ n) →
       c • (g (p + yzStep (k + r')) - g p) ≤ c • yzLinear α β (yzStep (k + r')) := by
     intro r' c hc
     rcases Nat.eq_zero_or_pos c with rfl | hc'
     · simp
     · exact nsmul_le_nsmul_right (hg.slope_le hp hk hk₁ h₁ h₂ r' (hc hc')) c
   have hmem : ∀ i ≤ s, ∀ j ≤ t, p + i • yzStep (k + r) + j • yzStep (k + r + 1) ∈
-      yzRegion n := fun i hi j hj =>
-    mem_yzRegion_of_parallelogram hp (by rwa [hv']) hi hj
+      yzTriangle ℤ n := fun i hi j hj =>
+    mem_yzTriangle_of_parallelogram hp (by rwa [hv']) hi hj
   have hs := hslope r s fun hs => by simpa using hmem 1 hs 0 (Nat.zero_le _)
   have ht := hslope (r + 1) t fun ht => by
     simpa [add_assoc] using hmem 0 (Nat.zero_le _) 1 ht
@@ -420,13 +440,13 @@ theorem IsRhombusConcave.le_barycentricLinear {R : Type*} [AddCommGroup R] [Part
     (hfq : f q = barycentricLinear c₀ α β γ q) (hfr : f r = barycentricLinear c₀ α β γ r)
     (v : Vertex n) : f v ≤ barycentricLinear c₀ α β γ v := by
   have hg := yzConcave_yzExtend hf
-  have hle := hg.le_affine (k := k) (p := p.yz) (α := β - α) (β := γ - α) (yz_mem_yzRegion p)
-    (by rw [← hq]; exact yz_mem_yzRegion q) (by rw [← hr]; exact yz_mem_yzRegion r)
+  have hle := hg.le_affine (k := k) (p := p.yz) (α := β - α) (β := γ - α) (yz_mem_yzTriangle p)
+    (by rw [← hq]; exact yz_mem_yzTriangle q) (by rw [← hr]; exact yz_mem_yzTriangle r)
     (by rw [← hq, yzExtend_yz, yzExtend_yz, hfp, hfq,
       barycentricLinear_sub_barycentricLinear, hq, add_sub_cancel_left])
     (by rw [← hr, yzExtend_yz, yzExtend_yz, hfp, hfr,
       barycentricLinear_sub_barycentricLinear, hr, add_sub_cancel_left])
-    (yz_mem_yzRegion v)
+    (yz_mem_yzTriangle v)
   rw [yzExtend_yz, yzExtend_yz, ← barycentricLinear_sub_barycentricLinear c₀ α β γ p v, hfp,
     add_sub_cancel] at hle
   exact hle
@@ -439,8 +459,8 @@ theorem IsRhombusConcave.parallelogram_le_yzStep {R : Type*} [AddCommGroup R] [P
     {p q r v : Vertex n} (hq : q.yz = p.yz + s • yzStep k) (hr : r.yz = p.yz + t • yzStep (k + 1))
     (hv : v.yz = p.yz + s • yzStep k + t • yzStep (k + 1)) : f p + f v ≤ f q + f r := by
   have h := (yzConcave_yzExtend hf).parallelogram (k := k) (p := p.yz) (s := s) (t := t)
-    fun i hi j hj => mem_yzRegion_of_parallelogram (yz_mem_yzRegion p)
-      (by rw [← hv]; exact yz_mem_yzRegion v) hi hj
+    fun i hi j hj => mem_yzTriangle_of_parallelogram (yz_mem_yzTriangle p)
+      (by rw [← hv]; exact yz_mem_yzTriangle v) hi hj
   rw [← hv, ← hq, ← hr] at h
   simpa only [yzExtend_yz] using h
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Analysis.Convex.Function
 public import TauCeti.Combinatorics.Hive.Concave
--- Reuse the private lattice region, extension by zero and discrete supporting planes of the chart.
+-- Reuse the private extension by zero and discrete supporting planes of the chart.
 import all TauCeti.Combinatorics.Hive.Concave
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
@@ -33,7 +33,6 @@ are compared with real geometry (honeycombs, Hermitian spectra).
 
 ## Main definitions
 
-* `TauCeti.Hive.yzTriangle 𝕜 n`: the triangle `0 ≤ y, 0 ≤ z, y + z ≤ n` in `𝕜 × 𝕜`.
 * `TauCeti.Hive.interpolation f`: the interpolation of `f : Vertex n → 𝕜` that is affine on unit
   triangles.
 
@@ -69,28 +68,12 @@ section Triangle
 
 variable {𝕜 : Type*} [Semiring 𝕜] [PartialOrder 𝕜]
 
-variable (𝕜) in
-/-- The triangle `0 ≤ y, 0 ≤ z, y + z ≤ n` of the `(y, z)` chart of `Δₙ`, in `𝕜 × 𝕜`. -/
-def yzTriangle (n : ℕ) : Set (𝕜 × 𝕜) := {q | 0 ≤ q.1 ∧ 0 ≤ q.2 ∧ q.1 + q.2 ≤ n}
-
-@[simp] theorem mem_yzTriangle {q : 𝕜 × 𝕜} :
-    q ∈ yzTriangle 𝕜 n ↔ 0 ≤ q.1 ∧ 0 ≤ q.2 ∧ q.1 + q.2 ≤ n := Iff.rfl
-
 theorem convex_yzTriangle [IsOrderedRing 𝕜] : Convex 𝕜 (yzTriangle 𝕜 n) := by
   convert ((convex_halfSpace_ge (LinearMap.fst 𝕜 𝕜 𝕜).isLinear 0).inter
     (convex_halfSpace_ge (LinearMap.snd 𝕜 𝕜 𝕜).isLinear 0)).inter
     (convex_halfSpace_le (LinearMap.fst 𝕜 𝕜 𝕜 + LinearMap.snd 𝕜 𝕜 𝕜).isLinear (n : 𝕜)) using 1
   ext q
   simp [and_assoc]
-
-/-- Every vertex of `Δₙ` lies in the triangle, at its `(y, z)` chart coordinates. -/
-theorem natCast_mem_yzTriangle [IsOrderedRing 𝕜] (p : Vertex n) :
-    ((p.y : 𝕜), (p.z : 𝕜)) ∈ yzTriangle 𝕜 n := by
-  rw [mem_yzTriangle]
-  dsimp only
-  refine ⟨Nat.cast_nonneg _, Nat.cast_nonneg _, ?_⟩
-  have := Nat.mono_cast (α := 𝕜) (show p.y + p.z ≤ n by have := p.sum_eq; omega)
-  rwa [Nat.cast_add] at this
 
 end Triangle
 
@@ -100,12 +83,12 @@ variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing �
 
 /-- `YZConcave.le_affine` for field-valued functions, with the affine function in coordinates. -/
 private theorem YZConcave.le_affine_of_corner {g : ℤ × ℤ → 𝕜} (hg : YZConcave n g)
-    {k : Fin 6} {p : ℤ × ℤ} (hp : p ∈ yzRegion n) (hk : p + yzStep k ∈ yzRegion n)
-    (hk₁ : p + yzStep (k + 1) ∈ yzRegion n) {α β : 𝕜}
+    {k : Fin 6} {p : ℤ × ℤ} (hp : p ∈ yzTriangle ℤ n) (hk : p + yzStep k ∈ yzTriangle ℤ n)
+    (hk₁ : p + yzStep (k + 1) ∈ yzTriangle ℤ n) {α β : 𝕜}
     (h₁ : ((yzStep k).1 : 𝕜) * α + ((yzStep k).2 : 𝕜) * β = g (p + yzStep k) - g p)
     (h₂ : ((yzStep (k + 1)).1 : 𝕜) * α + ((yzStep (k + 1)).2 : 𝕜) * β =
       g (p + yzStep (k + 1)) - g p) :
-    ∀ v ∈ yzRegion n, g v ≤ (g p - p.1 * α - p.2 * β) + α * v.1 + β * v.2 := by
+    ∀ v ∈ yzTriangle ℤ n, g v ≤ (g p - p.1 * α - p.2 * β) + α * v.1 + β * v.2 := by
   intro v hv
   have h := hg.le_affine hp hk hk₁ (α := α) (β := β) (by simpa [yzLinear_apply] using h₁)
     (by simpa [yzLinear_apply] using h₂) hv
@@ -117,21 +100,21 @@ function that majorizes it at all lattice points of `Δₙ`. -/
 private theorem YZConcave.exists_affine_of_add_eq {g : ℤ × ℤ → 𝕜} (hg : YZConcave n g)
     {i j : ℤ} (hi : 0 ≤ i) (hj : 0 ≤ j) (hij : i + j = n) :
     ∃ c₀ c₁ c₂ : 𝕜, g (i, j) = c₀ + c₁ * i + c₂ * j ∧
-      ∀ v ∈ yzRegion n, g v ≤ c₀ + c₁ * v.1 + c₂ * v.2 := by
+      ∀ v ∈ yzTriangle ℤ n, g v ≤ c₀ + c₁ * v.1 + c₂ * v.2 := by
   by_cases hj₁ : 1 ≤ j
   · -- the upward triangle below `(i, j)`
     refine ⟨_, _, _, ?_, hg.le_affine_of_corner (k := 4) (p := (i, j))
       (α := g (i + 1, j - 1) - g (i, j - 1)) (β := g (i, j) - g (i, j - 1)) ⟨hi, hj, by omega⟩
-      (by simp [yzStep_def, mem_yzRegion]; omega)
-      (by simp [yzStep_def, mem_yzRegion]; omega)
+      (by simp [yzStep_def, mem_yzTriangle]; omega)
+      (by simp [yzStep_def, mem_yzTriangle]; omega)
       (by simp [yzStep_def, sub_eq_add_neg]) (by simp [yzStep_def, sub_eq_add_neg])⟩
     ring
   by_cases hi₁ : 1 ≤ i
   · -- the upward triangle to the left of `(i, j)`
     refine ⟨_, _, _, ?_, hg.le_affine_of_corner (k := 2) (p := (i, j))
       (α := g (i, j) - g (i - 1, j)) (β := g (i - 1, j + 1) - g (i - 1, j)) ⟨hi, hj, by omega⟩
-      (by simp [yzStep_def, mem_yzRegion]; omega)
-      (by simp [yzStep_def, mem_yzRegion]; omega)
+      (by simp [yzStep_def, mem_yzTriangle]; omega)
+      (by simp [yzStep_def, mem_yzTriangle]; omega)
       (by simp [yzStep_def, sub_eq_add_neg]; ring) (by simp [yzStep_def, sub_eq_add_neg])⟩
     ring
   -- `n = 0`, and `Δₙ` is a single point
@@ -277,7 +260,7 @@ private theorem floor_cell {q : 𝕜 × 𝕜} (hq : q ∈ yzTriangle 𝕜 n) :
 /-- An affine function majorizing `g` at the lattice points of `Δₙ` majorizes its interpolation on
 the triangle. -/
 private theorem yzInterp_le_of_forall_le {g : ℤ × ℤ → 𝕜} {c₀ c₁ c₂ : 𝕜}
-    (hmaj : ∀ v ∈ yzRegion n, g v ≤ c₀ + c₁ * v.1 + c₂ * v.2) {x : 𝕜 × 𝕜}
+    (hmaj : ∀ v ∈ yzTriangle ℤ n, g v ≤ c₀ + c₁ * v.1 + c₂ * v.2) {x : 𝕜 × 𝕜}
     (hx : x ∈ yzTriangle 𝕜 n) : yzInterp g x ≤ c₀ + c₁ * x.1 + c₂ * x.2 := by
   obtain ⟨hi, hj, hcell⟩ := floor_cell hx
   have ha := Int.fract_nonneg x.1
@@ -286,13 +269,13 @@ private theorem yzInterp_le_of_forall_le {g : ℤ × ℤ → 𝕜} {c₀ c₁ c�
   have hb₁ := Int.fract_lt_one x.2
   have e₁ := Int.floor_add_fract x.1
   have e₂ := Int.floor_add_fract x.2
-  have term : ∀ (c : 𝕜) (v : ℤ × ℤ), 0 ≤ c → (0 < c → v ∈ yzRegion n) →
+  have term : ∀ (c : 𝕜) (v : ℤ × ℤ), 0 ≤ c → (0 < c → v ∈ yzTriangle ℤ n) →
       c * g v ≤ c * (c₀ + c₁ * v.1 + c₂ * v.2) := by
     intro c v hc hv
     rcases hc.lt_or_eq with hc | rfl
     · exact mul_le_mul_of_nonneg_left (hmaj v (hv hc)) hc.le
     · simp
-  have h₀ : (⌊x.1⌋, ⌊x.2⌋) ∈ yzRegion n :=
+  have h₀ : (⌊x.1⌋, ⌊x.2⌋) ∈ yzTriangle ℤ n :=
     ⟨hi, hj, by simpa using hcell 0 (by push_cast; linarith)⟩
   unfold yzInterp
   split_ifs with hab
@@ -326,7 +309,7 @@ affine function that majorizes the function at all lattice points of `Δₙ`. -/
 private theorem YZConcave.exists_affine {g : ℤ × ℤ → 𝕜} (hg : YZConcave n g) {q : 𝕜 × 𝕜}
     (hq : q ∈ yzTriangle 𝕜 n) :
     ∃ c₀ c₁ c₂ : 𝕜, yzInterp g q = c₀ + c₁ * q.1 + c₂ * q.2 ∧
-      ∀ v ∈ yzRegion n, g v ≤ c₀ + c₁ * v.1 + c₂ * v.2 := by
+      ∀ v ∈ yzTriangle ℤ n, g v ≤ c₀ + c₁ * v.1 + c₂ * v.2 := by
   obtain ⟨hi, hj, hcell⟩ := floor_cell hq
   have ha := Int.fract_nonneg q.1
   have hb := Int.fract_nonneg q.2
@@ -340,8 +323,8 @@ private theorem YZConcave.exists_affine {g : ℤ × ℤ → 𝕜} (hg : YZConcav
       refine ⟨_, _, _, ?_, hg.le_affine_of_corner (k := 0) (p := (⌊q.1⌋, ⌊q.2⌋))
         (α := g (⌊q.1⌋ + 1, ⌊q.2⌋) - g (⌊q.1⌋, ⌊q.2⌋))
         (β := g (⌊q.1⌋, ⌊q.2⌋ + 1) - g (⌊q.1⌋, ⌊q.2⌋)) ⟨hi, hj, by omega⟩
-        (by simp [yzStep_def, mem_yzRegion]; omega)
-        (by simp [yzStep_def, mem_yzRegion]; omega) (by simp [yzStep_def])
+        (by simp [yzStep_def, mem_yzTriangle]; omega)
+        (by simp [yzStep_def, mem_yzTriangle]; omega) (by simp [yzStep_def])
         (by simp [yzStep_def])⟩
       linear_combination (g (⌊q.1⌋ + 1, ⌊q.2⌋) - g (⌊q.1⌋, ⌊q.2⌋)) * e₁ +
         (g (⌊q.1⌋, ⌊q.2⌋ + 1) - g (⌊q.1⌋, ⌊q.2⌋)) * e₂
@@ -361,8 +344,8 @@ private theorem YZConcave.exists_affine {g : ℤ × ℤ → 𝕜} (hg : YZConcav
     refine ⟨_, _, _, ?_, hg.le_affine_of_corner (k := 3) (p := (⌊q.1⌋ + 1, ⌊q.2⌋ + 1))
       (α := g (⌊q.1⌋ + 1, ⌊q.2⌋ + 1) - g (⌊q.1⌋, ⌊q.2⌋ + 1))
       (β := g (⌊q.1⌋ + 1, ⌊q.2⌋ + 1) - g (⌊q.1⌋ + 1, ⌊q.2⌋)) ⟨by omega, by omega, by omega⟩
-      (by simp [yzStep_def, mem_yzRegion]; omega)
-      (by simp [yzStep_def, mem_yzRegion]; omega)
+      (by simp [yzStep_def, mem_yzTriangle]; omega)
+      (by simp [yzStep_def, mem_yzTriangle]; omega)
       (by simp [yzStep_def, sub_eq_add_neg]) (by simp [yzStep_def, sub_eq_add_neg])⟩
     push_cast
     linear_combination (g (⌊q.1⌋ + 1, ⌊q.2⌋ + 1) - g (⌊q.1⌋, ⌊q.2⌋ + 1)) * e₁ +
