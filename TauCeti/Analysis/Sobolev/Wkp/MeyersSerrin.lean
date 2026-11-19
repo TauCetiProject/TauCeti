@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Extension
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 public import TauCeti.Analysis.Sobolev.Wkp.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.SmoothSeries
 
 /-!
 # Smooth functions are dense in `W^{k,p}(Ω)` (Meyers–Serrin)
