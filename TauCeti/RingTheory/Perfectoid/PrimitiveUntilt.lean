@@ -431,16 +431,25 @@ theorem quotEquiv_mk (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.co
       Ideal.Quotient.mk _ (a.coeff 0) := by
   simp [quotEquiv]
 
+/-- `quotEquiv` sends the class of the image of `a ∈ 𝕎 R⁺`, written as an element of `A⁺` with
+any membership proof, to the class of its zeroth Witt coordinate. This is the form `simp` reaches
+from `♯x` after `TauCeti.Perfectoid.untilt.sharp_apply`. -/
+@[simp]
+theorem quotEquiv_mk_algebraMap (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0)
+    (a : 𝕎 P.plus)
+    (h : algebraMap _ _ (Ideal.Quotient.mk (Ideal.span {ξ}) a) ∈ untiltPlus p P (Ideal.span {ξ})) :
+    quotEquiv hξ hξ₀ (Ideal.Quotient.mk _ ⟨algebraMap _ _ (Ideal.Quotient.mk _ a), h⟩) =
+      Ideal.Quotient.mk _ (a.coeff 0) :=
+  quotEquiv_mk hξ hξ₀ a
+
 /-- `quotEquiv` sends the class of `♯x` to the class of `x`, for `x ∈ R⁺`. Not `@[simp]`: `simp`
-first rewrites `♯x` by `TauCeti.Perfectoid.untilt.sharp_apply`. -/
+first rewrites `♯x` by `TauCeti.Perfectoid.untilt.sharp_apply`, and then proves this by
+`TauCeti.Perfectoid.untilt.quotEquiv_mk_algebraMap`. -/
 theorem quotEquiv_mk_sharp (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0)
     (x : P.plus) :
     quotEquiv hξ hξ₀ (Ideal.Quotient.mk _ ⟨sharp p P _ x, sharp_mem_untiltPlus x⟩) =
       Ideal.Quotient.mk _ x := by
-  have : (⟨sharp p P _ x, sharp_mem_untiltPlus x⟩ : untiltPlus p P (Ideal.span {ξ})) =
-      untiltPlusEquiv hξ (Ideal.Quotient.mk _ (teichmuller p x)) :=
-    Subtype.ext (sharp_apply x)
-  rw [this, quotEquiv_mk, teichmuller_coeff_zero]
+  simp
 
 /-- **The sharp map is continuous** along a primitive element `ξ`, for `R` a perfect Tate ring of
 characteristic `p`. -/
