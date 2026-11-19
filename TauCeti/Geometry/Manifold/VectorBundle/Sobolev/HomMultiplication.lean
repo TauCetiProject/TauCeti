@@ -12,12 +12,13 @@ public import TauCeti.Analysis.Sobolev.W1p.CompactMultiplication.Basic
 /-!
 # Compact multiplication by rough sections of a real hom bundle
 
-For finite-dimensional real bundles over a compact manifold of positive dimension `n`, an
-order-zero Sobolev section of the real hom bundle with exponent `p > n` acts boundedly on
+For finite-dimensional real bundles over a compact boundaryless manifold of positive dimension
+`n`, an order-zero Sobolev section of the real hom bundle with exponent `p > n` acts boundedly on
 `W^{1,q}` sections with values in `W^{0,q}`, for every finite `1 ≤ q ≤ p`. For each fixed
-coefficient the operator is compact. On a surface this includes every finite `1 < q ≤ p`,
+coefficient the operator is compact. On a closed surface this includes every finite `1 < q ≤ p`,
 including `q = p`, `q = 2` and `q < 2`, as well as the natural endpoint `q = 1`. The surface case
-supplies the order-zero part of McDuff--Salamon, Lemma C.2.2.
+supplies the boundaryless case `ℓ = k = 1` of McDuff--Salamon, Lemma C.2.2. Bordered surfaces
+and higher-order cases are not covered here.
 
 The construction uses the native finite-atlas Sobolev spaces. Interior mixed multiplication and
 Rellich compactness are transferred between charts and glued over a finite cover. The hom bundle
@@ -467,9 +468,8 @@ theorem value_homMulL_component_ae (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q
   have hv := congrArg (fun v ↦ (finBasis ℝ F₂).repr v m) (hy.symm.trans hz)
   simpa only [(finBasis ℝ F₂).repr_sum_self] using hv
 
-/-- The multiplication estimate is uniform in both the rough coefficient and the input section.
-The constant is the norm of the native bounded bilinear operator, depending only on the atlas,
-measure and exponents. -/
+/-- There is one nonnegative constant `C`, independent of the coefficient `α` and section `ξ`,
+such that `‖homMulL A h μ hp hqp α ξ‖ ≤ C * ‖α‖ * ‖ξ‖` for every pair of native sections. -/
 theorem exists_norm_homMulL_apply_le (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (α : SobolevSection (A.hom (𝕜 := ℝ) h) μ p 0)
       (ξ : SobolevSection A μ q 1), ‖homMulL A h μ hp hqp α ξ‖ ≤ C * ‖α‖ * ‖ξ‖ := by

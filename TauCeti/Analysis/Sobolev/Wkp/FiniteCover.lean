@@ -44,6 +44,9 @@ from the gluing theorem `TauCeti.Wkp.exists_glue_of_restrictL_eq`.
   a finite open cover.
 * `TauCeti.Wkp.exists_continuousLinearMap_value_ae_eq`: continuous linear maps into the members
   of a finite open cover with almost everywhere matching values glue to one into `W^{k,p}(Ω)`.
+* `TauCeti.Wkp.exists_continuousBilinearMap_value_ae_eq`: continuous bilinear maps into the members
+  of a finite open cover, agreeing almost everywhere with one function, glue to a continuous
+  bilinear map into `W^{k,p}(Ω)`.
 
 ## References
 
