@@ -45,6 +45,8 @@ zero, but `H⁰(𝒪) = l`, `dim_k H¹(Ω) = 2` and its differentials have degre
 * `finrank_cohomology_zero_relativeDifferentials_of_smooth`: `dim_k H⁰(X, Ω_{X/k}) = g`;
 * `finrank_cohomology_one_relativeDifferentials_of_smooth`: `dim_k H¹(X, Ω_{X/k}) = 1`;
 * `eulerDegree_relativeDifferentials_of_smooth`: `deg Ω_{X/k} = 2g - 2`;
+* `finrank_cohomology_one_eq_finrank_cohomology_zero_differentials_tensor_dual_of_smooth`:
+  `dim H¹(X, L) = dim H⁰(X, Ω_{X/k} ⊗ L⁻¹)`;
 * `finrank_cohomology_zero_sub_finrank_cohomology_zero_differentials_tensor_dual_of_smooth`:
   Riemann–Roch with the sheaf of differentials.
 

@@ -42,8 +42,13 @@ functions with the ground field.
 
 * `InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus`: Riemann–Roch
   `χ(L) = deg L + 1 - g` for line bundles without a rational point;
-* the `SchemeWeilDivisor` results of the second section: Riemann–Roch for divisor sheaves,
-  Riemann's inequality and effectivity in degree at least the genus, without a rational point.
+* in the namespace `SchemeWeilDivisor`, without a rational point:
+  * `finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf_of_geometricallyIntegral`:
+    Riemann–Roch `dim H⁰(𝒪_X(D)) - dim H¹(𝒪_X(D)) = deg D + 1 - g` for divisor sheaves;
+  * `relativeDegree_add_one_sub_genus_le_finrank_cohomology_zero_sheaf_of_geometricallyIntegral`:
+    Riemann's inequality `deg D + 1 - g ≤ dim H⁰(𝒪_X(D))`;
+  * `nonempty_completeLinearSystem_of_genus_le_relativeDegree_of_geometricallyIntegral`:
+    every divisor of degree at least the genus is linearly equivalent to an effective divisor.
 
 ## References
 
