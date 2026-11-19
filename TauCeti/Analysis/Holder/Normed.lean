@@ -675,6 +675,20 @@ theorem norm_compLeftL_linearIsometry (e : Y →ₗᵢ[ℝ] Y') (f : HolderSpace
   rw [norm_def, norm_def, hsup, hcoe, nnHolderNorm, nnHolderNorm, eHolderNorm, eHolderNorm]
   simp only [HolderWith, Function.comp_apply, LinearIsometry.edist_map]
 
+/-- If the values of `f` are those of `g` under a `1`-Lipschitz map `e` that does not increase
+norms, then `‖f‖ ≤ ‖g‖`. The map `e` need not be linear. -/
+theorem norm_le_norm_of_apply_eq_comp {f : HolderSpace α X Y'} {g : HolderSpace α X Y}
+    {e : Y → Y'} (he : LipschitzWith 1 e) (hn : ∀ y, ‖e y‖ ≤ ‖y‖) (h : ∀ x, f x = e (g x)) :
+    ‖f‖ ≤ ‖g‖ := by
+  rw [norm_def g, coe_toBoundedContinuousFunction]
+  refine norm_le_of_norm_le_of_holderWith (norm_nonneg _) (fun x ↦ ?_) fun x y ↦ ?_
+  · rw [h, ← toBoundedContinuousFunction_apply]
+    exact (hn _).trans (g.toBoundedContinuousFunction.norm_coe_le_norm x)
+  · have he' := he (g x) (g y)
+    rw [ENNReal.coe_one, one_mul] at he'
+    rw [h, h]
+    exact he'.trans (g.holderWith x y)
+
 end compLeft
 
 end HolderSpace
