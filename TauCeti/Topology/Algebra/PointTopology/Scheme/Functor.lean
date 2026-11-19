@@ -160,9 +160,8 @@ theorem isPullback_pointsFunctor_map {P X Y Z : Over (Spec (.of k))} {p₁ : P �
 /-- The point functor preserves the chosen fibre product of two morphisms over `Spec k`. -/
 instance preservesPullback_pointsFunctor {X Y Z : Over (Spec (.of k))} (f : X ⟶ Z) (g : Y ⟶ Z) :
     PreservesLimit (cospan f g) (pointsFunctor k R) :=
-  preservesLimit_of_preserves_limit_cone (pullbackIsPullback f g)
-    ((isLimitMapConePullbackConeEquiv (pointsFunctor k R) pullback.condition).symm
-      (isPullback_pointsFunctor_map k R (IsPullback.of_hasPullback f g)).isLimit)
+  (IsPullback.of_hasPullback f g).preservesLimit_cospan_iff.mpr
+    (isPullback_pointsFunctor_map k R (IsPullback.of_hasPullback f g))
 
 /-- The point functor preserves all pullbacks of schemes over `Spec k`. -/
 instance preservesLimitsOfShape_walkingCospan_pointsFunctor :
