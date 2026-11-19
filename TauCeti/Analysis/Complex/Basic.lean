@@ -36,11 +36,23 @@ Two integers whose images in `ℂ` are at distance less than `1` are equal.
 
 Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
 whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
+
+A ball of radius `z.im / 2` around `z` stays above height `z.im / 2`
+(`Complex.im_gt_of_mem_ball`).
 -/
 
 public section
 
 open scoped ComplexConjugate
+
+/-- A ball of radius `z.im / 2` around `z` stays above height `z.im / 2`. -/
+theorem Complex.im_gt_of_mem_ball {z w : ℂ} (hw : w ∈ Metric.ball z (z.im / 2)) :
+    z.im / 2 < w.im := by
+  rw [Metric.mem_ball, dist_eq_norm] at hw
+  have h := Complex.abs_im_le_norm (w - z)
+  simp only [Complex.sub_im] at h
+  have := neg_abs_le (w.im - z.im)
+  linarith
 
 /-- A complex number and its inverse lie in the open right half-plane together. -/
 theorem Complex.inv_re_pos {z : ℂ} : 0 < z⁻¹.re ↔ 0 < z.re := by

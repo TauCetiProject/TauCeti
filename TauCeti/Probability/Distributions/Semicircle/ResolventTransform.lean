@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
-public import TauCeti.MeasureTheory.Measure.ResolventTransform.Atoms
 public import TauCeti.Probability.Distributions.Semicircle.Moments
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.Convex
@@ -261,6 +260,12 @@ private def standardSemicircleResolventAt (x ε : ℝ) : ℂ :=
 private def standardSemicircleResolventNormSq (x ε : ℝ) : ℝ :=
   Complex.normSq (standardSemicircleResolventAt x ε)
 
+private theorem standardSemicircleResolventNormSq_eq (x ε : ℝ) :
+    standardSemicircleResolventNormSq x ε =
+      (standardSemicircleResolventAt x ε).re ^ 2 +
+        (standardSemicircleResolventAt x ε).im ^ 2 := by
+  simp [standardSemicircleResolventNormSq, Complex.normSq_apply, pow_two]
+
 private theorem standard_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
     (standardSemicircleResolventAt x ε).re * (standardSemicircleResolventNormSq x ε + 1) =
         -x * standardSemicircleResolventNormSq x ε ∧
@@ -307,10 +312,8 @@ private theorem standard_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
     norm_cast at h
     nlinarith
   have hq : standardSemicircleResolventNormSq x ε = q := by
-    change Complex.normSq (standardSemicircleResolventAt x ε) = q
-    rw [Complex.normSq_apply]
+    rw [standardSemicircleResolventNormSq_eq]
     dsimp [q, a, b, z, standardSemicircleResolventAt, standardSemicircleResolvent]
-    ring
   have hresult : a * (q + 1) = -x * q ∧ b * (1 - q) = ε * q := by
     constructor <;> nlinarith [hreal, himag]
   constructor
@@ -329,8 +332,8 @@ private theorem standard_boundary_normSq_lt_one {x ε : ℝ} (hε : 0 < ε) :
     simpa [b, standardSemicircleResolventAt] using
       standardSemicircleResolvent_im_pos (by simpa [standardSemicircleResolventAt] using hε)
   have hq : 0 < q := by
-    rw [show q = Complex.normSq (standardSemicircleResolventAt x ε) by rfl,
-      Complex.normSq_apply]
+    dsimp only [q]
+    rw [standardSemicircleResolventNormSq_eq]
     have hb2 : 0 < (standardSemicircleResolventAt x ε).im ^ 2 := sq_pos_of_pos hb
     nlinarith [sq_nonneg (standardSemicircleResolventAt x ε).re]
   by_contra h
@@ -353,10 +356,8 @@ private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
     simpa [b, standardSemicircleResolventAt] using
       standardSemicircleResolvent_im_pos (by simpa [standardSemicircleResolventAt] using hε)
   have hqdef : q = a ^ 2 + b ^ 2 := by
-    rw [show q = Complex.normSq (standardSemicircleResolventAt x ε) by rfl,
-      Complex.normSq_apply]
-    simp [a, b]
-    ring
+    dsimp only [q]
+    rw [standardSemicircleResolventNormSq_eq]
   have hq : 0 < q := by rw [hqdef]; positivity
   have hq_lt : q < 1 := by
     have := standard_boundary_normSq_lt_one (x := x) hε
@@ -497,10 +498,8 @@ private theorem tendsto_standard_resolvent_im_of_mem_Icc {x : ℝ}
         standardSemicircleResolvent_im_pos
           (by simpa [standardSemicircleResolventAt] using hε)
     have hq : q = a ^ 2 + b ^ 2 := by
-      rw [show q = Complex.normSq (standardSemicircleResolventAt x ε) by rfl,
-        Complex.normSq_apply]
-      simp [a, b]
-      ring
+      dsimp only [q]
+      rw [standardSemicircleResolventNormSq_eq]
     have hEq' : b = Real.sqrt (q - a ^ 2) := by
       rw [show q - a ^ 2 = b ^ 2 by nlinarith [hq],
         Real.sqrt_sq_eq_abs, abs_of_pos hb]
@@ -552,27 +551,9 @@ theorem tendsto_resolventTransform_semicircleReal_of_mem_Icc {a x : ℝ} {v : �
   let s : ℝ := Real.sqrt v
   let x₀ : ℝ := (x - a) / s
   have hs : 0 < s := by dsimp [s]; exact Real.sqrt_pos.2 (by exact_mod_cast hv)
-  have hs2 : s ^ 2 = v := by
-    dsimp [s]
-    exact Real.sq_sqrt v.coe_nonneg
-  have hvar : Real.toNNReal (s ^ 2) * (1 : ℝ≥0) = v := by
-    apply NNReal.coe_injective
-    simp [hs2]
   have hmap : (semicircleReal 0 1).map (fun y : ℝ ↦ a + s * y) =
-      semicircleReal a v := by
-    calc
-      (semicircleReal 0 1).map (fun y : ℝ ↦ a + s * y) =
-          semicircleReal (a + s * 0) (Real.toNNReal (s ^ 2) * 1) :=
-        map_affine_semicircleReal 0 a s 1
-      _ = semicircleReal a v := by simp [hvar]
-  have hx₀ : x₀ ∈ Icc (-2) 2 := by
-    constructor
-    · apply (le_div_iff₀ hs).2
-      dsimp [x₀, s]
-      nlinarith [hx.1]
-    · apply (div_le_iff₀ hs).2
-      dsimp [x₀, s]
-      nlinarith [hx.2]
+      semicircleReal a v := map_standardSemicircleReal a v
+  have hx₀ : x₀ ∈ Icc (-2) 2 := sub_div_sqrt_mem_Icc_of_mem_Icc hv hx
   have hId : Tendsto (fun ε : ℝ ↦ ε) (𝓝[>] 0) (𝓝 0) :=
     tendsto_id.mono_left nhdsWithin_le_nhds
   have hscale0 : Tendsto (fun ε : ℝ ↦ ε / s) (𝓝[>] 0) (𝓝 0) :=
