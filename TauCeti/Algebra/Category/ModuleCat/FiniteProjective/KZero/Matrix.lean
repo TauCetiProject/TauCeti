@@ -159,11 +159,13 @@ theorem matrixK0Equiv_symm_of_finiteProjectiveModulesRegular :
       Fintype.card ι • SplitK0.of.{u} (finiteProjectiveModulesRegular R) := by
   rw [of_finiteProjectiveModulesRegular_matrix, map_nsmul, matrixK0Equiv_symm_of_matrixColumn]
 
+omit [Nonempty ι] in
 /-- **The column module is not stably free.** If `R` has invariant basis number and
 `card ι ≥ 2`, the column module `R^ι` over `Matrix ι ι R` is not stably free, and in particular not
 free. -/
 theorem not_isStablyFree_matrixColumn [InvariantBasisNumber R] (hι : 1 < Fintype.card ι) :
     ¬ IsStablyFree (Matrix ι ι R) (matrixColumn R ι).obj := by
+  have : Nonempty ι := Fintype.card_pos_iff.1 (by omega)
   intro _
   obtain ⟨z, hz⟩ := exists_zsmul_eq_of_isStablyFree (Matrix ι ι R) (matrixColumn R ι)
   have h := congrArg (matrixK0Equiv R ι).symm hz
