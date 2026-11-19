@@ -118,14 +118,14 @@ theorem span_image_D_eq_top [IsNoetherianType (CompletedTensor A B B)] {s : Set 
       obtain ⟨b, hb, rfl⟩ := hy
       exact Submodule.subset_span ⟨b, hb, D_apply A B b⟩
     | zero =>
-      rw [show (⟨0, _⟩ : ideal A B) = 0 from rfl, map_zero]
+      rw [(Submodule.mk_eq_zero _ _).mpr rfl, map_zero]
       exact N.zero_mem
     | add y z hy' hz' hy hz =>
       rw [show (⟨y + z, _⟩ : ideal A B) =
-        ⟨y, (ideal_eq_span hs).ge hy'⟩ + ⟨z, (ideal_eq_span hs).ge hz'⟩ from rfl, map_add]
+        ⟨y, (ideal_eq_span hs).ge hy'⟩ + ⟨z, (ideal_eq_span hs).ge hz'⟩ by ext; simp, map_add]
       exact N.add_mem hy hz
     | smul c y hy' hy =>
-      rw [show (⟨c • y, _⟩ : ideal A B) = c • ⟨y, (ideal_eq_span hs).ge hy'⟩ from rfl,
+      rw [show (⟨c • y, _⟩ : ideal A B) = c • ⟨y, (ideal_eq_span hs).ge hy'⟩ by ext; simp,
         map_smul, smul_eq_mulRingHom_smul]
       exact N.smul_mem _ hy
   refine eq_top_iff.mpr fun ω _ ↦ ?_
