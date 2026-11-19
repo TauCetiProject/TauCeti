@@ -146,8 +146,7 @@ theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
     toGL (map f g) = GeneralLinearGroup.map f (toGL g) := by
   apply GeneralLinearGroup.ext
   intro i j
-  simp only [coe_GL_coe_matrix, map_apply_coe, GeneralLinearGroup.map_apply,
-    RingHom.mapMatrix_apply, Matrix.map_apply]
+  simp only [coe_GL_coe_matrix, map_apply_coe, GeneralLinearGroup.map_apply, Matrix.map_apply]
 
 /-- Base change of special linear groups along an injective ring hom is injective. -/
 theorem map_injective {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
@@ -259,7 +258,7 @@ lemma coe_GL_eq_mapGL {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommR
 lemma coe_mapGL_int {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
     (σ : SpecialLinearGroup n ℤ) :
     (↑(mapGL S σ) : Matrix n n S) = (σ : Matrix n n ℤ).map (Int.cast : ℤ → S) := by
-  simp [mapGL_coe_matrix, algebraMap_int_eq, RingHom.mapMatrix_apply]
+  simp [mapGL_coe_matrix, algebraMap_int_eq]
 
 /-- The matrix of `mapGL S σ`, written entrywise for `σ ∈ SL₂(R)`. -/
 lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -601,8 +600,7 @@ private lemma exists_map_eq_of_col_eq (h : SpecialLinearGroup (Fin 2) (ZMod d))
     linear_combination hdet
   refine ⟨transvection (by decide : (0 : Fin 2) ≠ 1) t₀, ?_⟩
   ext i j
-  simp only [map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply, Int.coe_castRingHom,
-    transvection_coe]
+  simp only [map_apply_coe, Matrix.map_apply, Int.coe_castRingHom, transvection_coe]
   fin_cases i <;> fin_cases j <;> simp [h00, h10, h11, ht₀]
 
 /-- **Strong approximation for `SL₂` over `ℤ`**: the reduction map `SL₂(ℤ) → SL₂(ℤ/dℤ)` is
@@ -616,7 +614,7 @@ theorem map_intCast_zmod_surjective :
   set M := SpecialLinearGroup.map (Int.castRingHom (ZMod d)) σ with hMdef
   have hentry : ∀ i j, M i j = ((σ i j : ℤ) : ZMod d) := fun i j => by
     rw [hMdef]
-    simp only [map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply, Int.coe_castRingHom]
+    simp only [map_apply_coe, Matrix.map_apply, Int.coe_castRingHom]
   have hcol0 : M 0 0 = g 0 0 := by rw [hentry, hσ0, ha₀]
   have hcol1 : M 1 0 = g 1 0 := by rw [hentry, hσ1, hc₀]
   obtain ⟨τ, hτ⟩ := exists_map_eq_of_col_eq (M⁻¹ * g)

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
+public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
@@ -20,7 +21,10 @@ These bridges are useful when transporting `C^n` and `C^n`-on-a-set statements b
 chart coordinates and the self-model of the product model space.
 
 The file also records a tube lemma: a map from a product which is `C^n` at every point of a
-compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and of `K`.
+compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and of `K`. For a family
+`f : N → M → M` of self-maps, read as the map `(p, x) ↦ f p x` from `N × M`, joint smoothness along
+a slice `{p₀} × M` passes to the iterates `p ↦ (f p)^[k]`, since the orbits of `f p₀` stay in that
+slice.
 
 ## Main results
 
@@ -28,12 +32,18 @@ compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and
   for the product of the self-models if and only if it is `C^n` for the self-model of the product.
 * `contMDiffOn_prod_modelWithCornersSelf_iff`, `contMDiffAt_prod_modelWithCornersSelf_iff`: the
   same bridge for `C^n` maps on a set and at a point.
+* `ContMDiffAt.contMDiffAt_prod_fst_slice`, `ContMDiffAt.contMDiffAt_prod_snd_slice`: fixing
+  one of the last two factors of a three-factor product preserves joint regularity.
 * `TauCeti.contMDiff_prod_prod_modelWithCornersSelf_iff`,
   `TauCeti.contMDiffOn_prod_prod_modelWithCornersSelf_iff`,
   `TauCeti.contMDiffAt_prod_prod_modelWithCornersSelf_iff`: the same bridge on the left factor of
   a product `(E₁ × E₂) × N₃` with an arbitrary manifold `N₃`.
 * `TauCeti.exists_isOpen_prod_contMDiffOn`: the tube lemma for maps from a product which are
   `C^n` along a compact slice.
+* `TauCeti.contMDiffAt_uncurry_iterate`: the iterates of a family of self-maps which is jointly
+  `C^n` along a slice `{p₀} × M` are jointly `C^n` along it.
+* `TauCeti.contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm`: reading the complex factor of
+  `ℝ × ℂ × V` in real coordinates is `C^n` from the self-model of `ℝ × (ℝ × ℝ) × V`.
 
 -/
 
@@ -70,6 +80,30 @@ theorem contMDiffAt_prod_modelWithCornersSelf_iff {x : E₁ × E₂} :
     ContMDiffAt (𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)) I' n f x ↔
       ContMDiffAt 𝓘(𝕜, E₁ × E₂) I' n f x := by
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+section Slices
+
+variable {E₃ : Type*} [NormedAddCommGroup E₃] [NormedSpace 𝕜 E₃]
+
+/-- Fixing the last factor of a three-factor family preserves joint regularity in
+its first two factors. -/
+theorem ContMDiffAt.contMDiffAt_prod_fst_slice {f : E₁ → E₂ × E₃ → M}
+    {q : E₁} {z : E₂ × E₃}
+    (hf : ContMDiffAt 𝓘(𝕜, E₁ × (E₂ × E₃)) I' n (Function.uncurry f) (q, z)) :
+    ContMDiffAt 𝓘(𝕜, E₁ × E₂) I' n (fun p : E₁ × E₂ ↦ f p.1 (p.2, z.2)) (q, z.1) :=
+  hf.comp (q, z.1) (contMDiff_iff_contDiff.mpr (by fun_prop :
+    ContDiff 𝕜 n (fun p : E₁ × E₂ ↦ (p.1, (p.2, z.2))))).contMDiffAt
+
+/-- Fixing the middle factor of a three-factor family preserves joint regularity in
+its first and last factors. -/
+theorem ContMDiffAt.contMDiffAt_prod_snd_slice {f : E₁ → E₂ × E₃ → M}
+    {q : E₁} {z : E₂ × E₃}
+    (hf : ContMDiffAt 𝓘(𝕜, E₁ × (E₂ × E₃)) I' n (Function.uncurry f) (q, z)) :
+    ContMDiffAt 𝓘(𝕜, E₁ × E₃) I' n (fun p : E₁ × E₃ ↦ f p.1 (z.1, p.2)) (q, z.2) :=
+  hf.comp (q, z.2) (contMDiff_iff_contDiff.mpr (by fun_prop :
+    ContDiff 𝕜 n (fun p : E₁ × E₃ ↦ (p.1, (z.1, p.2))))).contMDiffAt
+
+end Slices
 
 namespace TauCeti
 
@@ -147,5 +181,39 @@ theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod [I'.Boundaryless] (a : 
     exact contMDiffWithinAt_extChartAt_symm_range_self a
   have hcomp := hinv.comp_of_eq hinner hφ0
   simpa only [Function.comp_def] using hcomp
+
+/-- **Iterates of a jointly `C^n` family.** If a family `f : N → M → M` of self-maps is jointly
+`C^n` at every point of the slice `{p₀} × M`, then so is the family of its `k`-th iterates
+`p ↦ (f p)^[k]`. -/
+theorem contMDiffAt_uncurry_iterate {f : N → M → M} {p₀ : N}
+    (hf : ∀ x, ContMDiffAt (J.prod I') I' n (Function.uncurry f) (p₀, x)) (k : ℕ) (x : M) :
+    ContMDiffAt (J.prod I') I' n (Function.uncurry fun p ↦ (f p)^[k]) (p₀, x) := by
+  induction k generalizing x with
+  | zero => exact contMDiffAt_snd
+  | succ k ih =>
+    have hk : (Function.uncurry fun p ↦ (f p)^[k + 1]) =
+        Function.uncurry f ∘ fun q ↦ (q.1, (f q.1)^[k] q.2) := by
+      funext ⟨p, y⟩
+      exact Function.iterate_succ_apply' (f p) k y
+    rw [hk]
+    exact (hf _).comp_of_eq (contMDiffAt_fst.prodMk (ih x)) rfl
+
+section RealCoords
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- Reading the domain point in real coordinates is smooth: the map `(c, z, x) ↦ (c, z, x)` from
+`ℝ × (ℝ × ℝ) × V` to `ℝ × ℂ × V` is `C^n` from the self-model of the product to the product of the
+self-models. Composing with it turns the smoothness of data on `ℝ × ℂ × V` into smoothness in real
+coordinates. -/
+theorem contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm :
+    ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
+      (Prod.map id (Prod.map Complex.equivRealProdCLM.symm id) :
+        ℝ × ((ℝ × ℝ) × V) → ℝ × (ℂ × V)) :=
+  contDiff_fst.contMDiff.prodMk
+    ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
+      (contDiff_snd.comp contDiff_snd).contMDiff)
+
+end RealCoords
 
 end TauCeti
