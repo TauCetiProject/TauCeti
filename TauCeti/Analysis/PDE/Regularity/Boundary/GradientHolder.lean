@@ -143,15 +143,15 @@ theorem
     ⟨_, rfl⟩
   have hg : MemLp g q (volume.restrict U) := hgdef ▸
     memLp_indicator_sub_indicator_comp_hyperplaneReflection H.isOpen.measurableSet
-      U.isOpen.measurableSet hU hfq
+      U.isOpen.measurableSet hU hfq hfq
   have hgf : (eLpNorm g q (volume.restrict (thickening R S))).toReal ≤
       2 * (eLpNorm f q (volume.restrict (U ⊓ H))).toReal := by
     rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
     refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hfq.eLpNorm_ne_top)
       ((eLpNorm_mono_measure _ (Measure.restrict_mono hRS le_rfl)).trans ?_)
     rw [hgdef]
-    exact eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (one_le_two.trans hq)
-      H.isOpen.measurableSet U.isOpen.measurableSet hU
+    exact (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (one_le_two.trans hq)
+      H.isOpen.measurableSet U.isOpen.measurableSet hU).trans_eq (two_mul _).symm
   -- The odd reflection `w = u - u ∘ ρ` solves `-∂ᵢ(aⁱʲ ∂ⱼw) = g` on `U`.
   have hw : ∀ φ : 𝓓(U, ℝ), energyFormH1 a 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u)

@@ -54,6 +54,8 @@ countable products of projective graded modules and is not treated here.
   totalizations of short exact sequences are right orthogonal to graded-projective modules.
 * `TauCeti.CurvedDGRightModuleCat.contraacyclic_le_rightOrthogonal_gradedProjective`:
   contraacyclic modules are right orthogonal to graded-projective modules.
+* `TauCeti.CurvedDGRightModuleCat.isZero_of_contraacyclic_of_gradedProjective`: every
+  contraacyclic graded-projective curved right module is zero in the curved homotopy category.
 * `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.map_bijective_of_gradedProjective`:
   morphisms out of a graded-projective module in the curved homotopy category are exactly the
   morphisms in the contraderived category.
@@ -350,6 +352,14 @@ zero. -/
 theorem contraacyclic_le_rightOrthogonal_gradedProjective :
     contraacyclic R h ≤ (gradedProjective R h).rightOrthogonal :=
   contraacyclic_le_iff.2 (totalizations_le_rightOrthogonal_gradedProjective R h)
+
+/-- Every contraacyclic graded-projective object of the curved homotopy category is zero. -/
+theorem isZero_of_contraacyclic_of_gradedProjective
+    {X : DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)}
+    (hX : contraacyclic R h X) (hP : gradedProjective R h X) :
+    IsZero X :=
+  (IsZero.iff_id_eq_zero X).mpr
+    (contraacyclic_le_rightOrthogonal_gradedProjective R h X hX (𝟙 X) hP)
 
 /-- The localization functor to the contraderived category is bijective on morphisms out of a
 graded-projective module. -/
