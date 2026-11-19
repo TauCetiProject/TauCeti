@@ -16,6 +16,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Calculus.PowerGrowth
+import TauCeti.Analysis.Analytic.Order
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -35,11 +36,13 @@ ball of radius `r` and is proper over that ball, then its area inside the ball i
 `u - u z₀`. In particular the area is at least `π r²` even when `z₀` is a critical point of `u`.
 
 Properness over the ball is the hypothesis that the sets `{z ∈ U | ‖u z - u z₀‖ ≤ t}`, `t < r`,
-are compact. It holds, for instance, when `U` is the preimage of the ball under a map from a
-closed Riemann surface which is holomorphic over the ball. This is the form in which the
-monotonicity lemma enters Gromov's proof of the nonsqueezing theorem: a holomorphic sphere
-through the centre of a symplectically embedded ball, on which the almost complex structure is
-standard, has area at least that of a flat disc through the centre.
+are compact. It holds, for instance, when `u` is a map from a closed Riemann surface which is
+holomorphic over the ball, and the preimage of the ball lies in a single coordinate chart,
+identified with the open set `U ⊆ ℂ`: for a map from `S² = ℂ ∪ {∞}` whose preimage of the ball
+avoids `∞`, `U` is that preimage. This is the form in which the monotonicity lemma enters
+Gromov's proof of the nonsqueezing theorem: a holomorphic sphere through the centre of a
+symplectically embedded ball, on which the almost complex structure is standard, has area at
+least that of a flat disc through the centre, once the preimage of the ball is read in a chart.
 
 The proof has three steps.
 
@@ -64,8 +67,8 @@ The proof has three steps.
 * `TauCeti.setIntegral_mul_norm_deriv_sq_eq`: the monotonicity identity.
 * `TauCeti.monotoneOn_setIntegral_mul_norm_deriv_sq_div_sq`: the weighted area divided by `t²` is
   nondecreasing.
-* `TauCeti.ofReal_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq`: the area over the ball of
-  radius `r` is at least `m π r²`, for the local multiplicity `m`.
+* `TauCeti.ofReal_analyticOrderNatAt_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq`: the area over
+  the ball of radius `r` is at least `m π r²`, for the local multiplicity `m`.
 * `TauCeti.ofReal_pi_mul_sq_le_setLIntegral_enorm_deriv_sq`: the area over the ball of radius `r`
   is at least `π r²`.
 
@@ -86,6 +89,31 @@ open MeasureTheory Set Filter Topology Complex Metric
 open scoped Real InnerProductSpace
 
 namespace TauCeti
+
+/-- A function vanishing on `(ρ, ∞)` has vanishing derivative there. -/
+private theorem deriv_eq_zero_of_lt {φ : ℝ → ℝ} {ρ s : ℝ} (hφρ : ∀ s, ρ < s → φ s = 0)
+    (hs : ρ < s) : deriv φ s = 0 :=
+  (eventuallyEq_of_mem (Ioi_mem_nhds hs) fun x hx ↦ hφρ x hx).deriv_eq.trans (deriv_const _ _)
+
+/-- A point of `U` outside the sublevel set `{z ∈ U | f z ≤ ρ}` lies above level `ρ`. -/
+private theorem lt_of_notMem_sep {U : Set ℂ} {f : ℂ → ℝ} {ρ : ℝ} {z : ℂ} (hz : z ∈ U)
+    (hzK : z ∉ {z ∈ U | f z ≤ ρ}) : ρ < f z :=
+  not_le.1 fun h ↦ hzK ⟨hz, h⟩
+
+/-- Beyond radius `t`, the squared ratio `a ^ 2 / t ^ 2` exceeds `1`. -/
+private theorem one_lt_sq_div_sq {a t : ℝ} (ht : 0 < t) (h : t < a) : 1 < a ^ 2 / t ^ 2 :=
+  (one_lt_div (by positivity)).2 (pow_lt_pow_left₀ h ht.le two_ne_zero)
+
+/-- A nonincreasing cutoff vanishing on `(1, ∞)` is nonnegative. -/
+private theorem cutoff_nonneg {χ : ℝ → ℝ} (hχa : Antitone χ) (hχ1 : ∀ s, 1 < s → χ s = 0)
+    (x : ℝ) : 0 ≤ χ x :=
+  (hχ1 (max x 2) (by linarith [le_max_right x 2])) ▸ hχa (le_max_left x 2)
+
+/-- The rescaled point `z₀ + s ζ` lies in the closed disc of radius `δ ≥ s ‖ζ‖` about `z₀`. -/
+private theorem add_smul_mem_closedBall {z₀ ζ : ℂ} {s δ : ℝ} (hs : 0 ≤ s) (hsζ : s * ‖ζ‖ ≤ δ) :
+    z₀ + s • ζ ∈ closedBall z₀ δ := by
+  rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
+    abs_of_nonneg hs]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 
@@ -145,17 +173,14 @@ private theorem hasLineDerivAt_indicator_radialField {U : Set ℂ} {u : ℂ → 
     (hφρ : ∀ s, ρ < s → φ s = 0) (hK : IsCompact {z ∈ U | ‖u z‖ ^ 2 ≤ ρ}) (v z : ℂ) :
     HasLineDerivAt ℝ ({z ∈ U | ‖u z‖ ^ 2 ≤ ρ}.indicator (radialField φ u))
       ({z ∈ U | ‖u z‖ ^ 2 ≤ ρ}.indicator (radialFieldDeriv φ u v) z) z v := by
-  set K := {z ∈ U | ‖u z‖ ^ 2 ≤ ρ} with hK_def
+  set K := {z ∈ U | ‖u z‖ ^ 2 ≤ ρ}
   by_cases hzK : z ∈ K
   · rw [indicator_of_mem hzK]
     refine (hasLineDerivAt_radialField hU hu hφ hzK.1 v).congr_of_eventuallyEq ?_
     filter_upwards [hU.mem_nhds hzK.1] with w hw
     by_cases hwK : w ∈ K
     · exact indicator_of_mem hwK _
-    · have : ρ < ‖u w‖ ^ 2 := by
-        simp only [hK_def, mem_ofPred_eq, not_and, not_le] at hwK
-        exact hwK hw
-      simp [indicator_of_notMem hwK, radialField, hφρ _ this]
+    · simp [indicator_of_notMem hwK, radialField, hφρ _ (lt_of_notMem_sep hw hwK)]
   · rw [indicator_of_notMem hzK]
     have h0 : HasLineDerivAt ℝ (fun _ ↦ (0 : ℂ)) 0 z v := by
       unfold HasLineDerivAt
@@ -262,16 +287,10 @@ theorem setIntegral_mul_norm_deriv_sq_eq {U : Set ℂ} {u : ℂ → E} {x₀ : E
   have key := setIntegral_mul_norm_deriv_sq_eq_aux hU hu' hφ hφρ hK
   rw [hd] at key
   have hKU : {z ∈ U | ‖u z - x₀‖ ^ 2 ≤ ρ} ⊆ U := fun z hz ↦ hz.1
-  have hlt : ∀ z ∈ U \ {z ∈ U | ‖u z - x₀‖ ^ 2 ≤ ρ}, ρ < ‖u z - x₀‖ ^ 2 := by
-    rintro z ⟨hz, hzK⟩
-    simp only [mem_ofPred_eq, not_and, not_le] at hzK
-    exact hzK hz
-  have hdφ : ∀ s, ρ < s → deriv φ s = 0 := fun s hs ↦
-    (eventuallyEq_of_mem (Ioi_mem_nhds hs) fun x hx ↦ hφρ x hx).deriv_eq.trans (deriv_const _ _)
   rw [setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hU.measurableSet hKU
-      (fun z hz ↦ by simp [hφρ _ (hlt z hz)]),
+      (fun z hz ↦ by simp [hφρ _ (lt_of_notMem_sep hz.1 hz.2)]),
     setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hU.measurableSet hKU
-      (fun z hz ↦ by simp [hdφ _ (hlt z hz)])]
+      (fun z hz ↦ by simp [deriv_eq_zero_of_lt hφρ (lt_of_notMem_sep hz.1 hz.2)])]
   exact key
 
 /-- The monotonicity inequality: for a nonincreasing cutoff, the weighted area is at most
@@ -285,19 +304,13 @@ private theorem setIntegral_mul_norm_deriv_sq_le {U : Set ℂ} {u : ℂ → E} {
       -∫ z in U, deriv φ (‖u z - x₀‖ ^ 2) * ‖u z - x₀‖ ^ 2 * ‖deriv u z‖ ^ 2 := by
   rw [setIntegral_mul_norm_deriv_sq_eq hU hu hφ hφρ hK, neg_le_neg_iff]
   have hKU : {z ∈ U | ‖u z - x₀‖ ^ 2 ≤ ρ} ⊆ U := fun z hz ↦ hz.1
-  have hlt : ∀ z ∈ U \ {z ∈ U | ‖u z - x₀‖ ^ 2 ≤ ρ}, ρ < ‖u z - x₀‖ ^ 2 := by
-    rintro z ⟨hz, hzK⟩
-    simp only [mem_ofPred_eq, not_and, not_le] at hzK
-    exact hzK hz
   have hcu : ContinuousOn u U := hu.continuousOn
   have hcdu : ContinuousOn (deriv u) U := (hu.analyticOnNhd hU).deriv.continuousOn
-  have hdφ : ∀ s, ρ < s → deriv φ s = 0 := fun s hs ↦
-    (eventuallyEq_of_mem (Ioi_mem_nhds hs) fun x hx ↦ hφρ x hx).deriv_eq.trans (deriv_const _ _)
   refine setIntegral_mono_on ?_ ?_ hU.measurableSet fun z _ ↦ ?_
   · exact ((ContinuousOn.mono (by fun_prop) hKU).integrableOn_compact hK).of_forall_sdiff_eq_zero
-      hU.measurableSet fun z hz ↦ by simp [hdφ _ (hlt z hz)]
+      hU.measurableSet fun z hz ↦ by simp [deriv_eq_zero_of_lt hφρ (lt_of_notMem_sep hz.1 hz.2)]
   · exact ((ContinuousOn.mono (by fun_prop) hKU).integrableOn_compact hK).of_forall_sdiff_eq_zero
-      hU.measurableSet fun z hz ↦ by simp [hdφ _ (hlt z hz)]
+      hU.measurableSet fun z hz ↦ by simp [deriv_eq_zero_of_lt hφρ (lt_of_notMem_sep hz.1 hz.2)]
   · have hφ' : deriv φ (‖u z - x₀‖ ^ 2) ≤ 0 := hφa.deriv_nonpos
     rw [mul_assoc]
     refine mul_le_mul_of_nonpos_left ?_ hφ'
@@ -329,11 +342,7 @@ private theorem integrableOn_cutoff {U : Set ℂ} {u : ℂ → E} {x₀ : E} {χ
   refine ((ContinuousOn.mono (by fun_prop) hKU).integrableOn_compact hK).of_forall_sdiff_eq_zero
     hU.measurableSet ?_
   rintro z ⟨hz, hzK⟩
-  simp only [mem_ofPred_eq, not_and, not_le] at hzK
-  have : 1 < ‖u z - x₀‖ ^ 2 / t ^ 2 := by
-    rw [one_lt_div (by positivity)]
-    exact pow_lt_pow_left₀ (hzK hz) ht.le two_ne_zero
-  simp [hχ1 _ this]
+  simp [hχ1 _ (one_lt_sq_div_sq ht (lt_of_notMem_sep hz hzK))]
 
 omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E] in
 /-- The bound on the `t`-derivative `χ'(f / t²) (-2 f / t³) N` of the weighted area density, for
@@ -397,16 +406,9 @@ private theorem hasDerivAt_integral_cutoff {U : Set ℂ} {u : ℂ → E} {x₀ :
     exact abs_deriv_cutoff_le ht₀ ht.1 (sq_nonneg _) (pow_le_pow_left₀ (norm_nonneg _) hzK.2 2)
       (by simpa using hM z hzK) hC
   · -- Outside `K`, `‖u - x₀‖ > ρ > t`, so `χ'` is evaluated beyond `1`, where it vanishes.
-    have hlt : ρ < ‖u z - x₀‖ := by
-      simp only [K, mem_ofPred_eq, not_and, not_le] at hzK
-      exact hzK hz
-    have h1 : 1 < ‖u z - x₀‖ ^ 2 / t ^ 2 := by
-      rw [one_lt_div (by nlinarith [ht.1])]
-      exact pow_lt_pow_left₀ (ht.2.trans hlt) (by linarith [ht.1]) two_ne_zero
-    have hχ' : deriv χ (‖u z - x₀‖ ^ 2 / t ^ 2) = 0 :=
-      (eventuallyEq_of_mem (Ioi_mem_nhds h1) fun x hx ↦ hχ1 x hx).deriv_eq.trans
-        (deriv_const _ _)
-    simp [indicator_of_notMem hzK, hχ']
+    have h1 : 1 < ‖u z - x₀‖ ^ 2 / t ^ 2 :=
+      one_lt_sq_div_sq (by linarith [ht.1]) (ht.2.trans (lt_of_notMem_sep hz hzK))
+    simp [indicator_of_notMem hzK, deriv_eq_zero_of_lt hχ1 h1]
 
 /-- The weighted area satisfies the Euler inequality `2 I(t) ≤ t I'(t)`: this is the monotonicity
 inequality `TauCeti.setIntegral_mul_norm_deriv_sq_le` for the cutoff `χ (· / t²)`. -/
@@ -577,9 +579,7 @@ private theorem rescaledDensity_eq_blowupProfile {U : Set ℂ} {u : ℂ → E} {
       deriv u z = ((m : ℂ) * (z - z₀) ^ (m - 1)) • g z + (z - z₀) ^ m • deriv g z)
     {s : ℝ} (hs : 0 < s) {ζ : ℂ} (hsζ : s * ‖ζ‖ ≤ δ) :
     rescaledDensity U u z₀ χ m s ζ = blowupProfile g z₀ χ m ζ s := by
-  have hz : z₀ + s • ζ ∈ closedBall z₀ δ := by
-    rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
-      abs_of_pos hs]
+  have hz : z₀ + s • ζ ∈ closedBall z₀ δ := add_smul_mem_closedBall hs.le hsζ
   obtain ⟨hfu, hfdu⟩ := hfac _ hz
   have hsub : z₀ + s • ζ - z₀ = (s : ℂ) * ζ := by rw [add_sub_cancel_left, real_smul]
   rw [hsub] at hfu hfdu
@@ -634,11 +634,8 @@ private theorem blowupProfile_le {g : ℂ → E} {z₀ : ℂ} {χ : ℝ → ℝ}
     (hMg : ∀ z ∈ closedBall z₀ δ, ‖g z‖ ≤ Mg) (hMdg : ∀ z ∈ closedBall z₀ δ, ‖deriv g z‖ ≤ Mdg)
     {s : ℝ} {ζ : ℂ} (hs : 0 < s) (hs1 : s ≤ 1) (hζ : ‖ζ‖ ≤ R) (hsζ : s * ‖ζ‖ ≤ δ) :
     ‖blowupProfile g z₀ χ m ζ s‖ ≤ χ 0 * (m * R ^ (m - 1) * Mg + R ^ m * Mdg) ^ 2 := by
-  have hz : z₀ + s • ζ ∈ closedBall z₀ δ := by
-    rwa [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
-      abs_of_pos hs]
-  have hχ0 : ∀ x, 0 ≤ χ x := fun x ↦
-    (hχ1 (max x 2) (by linarith [le_max_right x 2])) ▸ hχa (le_max_left x 2)
+  have hz : z₀ + s • ζ ∈ closedBall z₀ δ := add_smul_mem_closedBall hs.le hsζ
+  have hχ0 := cutoff_nonneg hχa hχ1
   rw [blowupProfile, Real.norm_eq_abs, abs_of_nonneg (mul_nonneg (hχ0 _) (sq_nonneg _))]
   refine mul_le_mul (hχa (sq_nonneg _)) (pow_le_pow_left₀ (norm_nonneg _) ?_ 2)
     (sq_nonneg _) (hχ0 0)
@@ -667,8 +664,8 @@ private theorem tendsto_setIntegral_rescaledDensity {U : Set ℂ} {u : ℂ → E
         χ ((‖ζ‖ ^ m * ‖g z₀‖) ^ 2) * (m * ‖ζ‖ ^ (m - 1) * ‖g z₀‖) ^ 2)) := by
   obtain ⟨Mg, hMg⟩ := (isCompact_closedBall z₀ δ).exists_bound_of_continuousOn hgc
   obtain ⟨Mdg, hMdg⟩ := (isCompact_closedBall z₀ δ).exists_bound_of_continuousOn hdgc
-  have hpow : Tendsto (fun s : ℝ ↦ s ^ m) (𝓝 0) (𝓝 0) := by
-    simpa [zero_pow (by omega : m ≠ 0)] using (continuous_pow m).tendsto (0 : ℝ)
+  have hpow : Tendsto (fun s : ℝ ↦ s ^ m) (𝓝 0) (𝓝 0) :=
+    (continuous_pow m).tendsto' 0 0 (zero_pow (by omega))
   refine tendsto_integral_filter_of_dominated_convergence
     (fun _ ↦ χ 0 * (m * R ^ (m - 1) * Mg + R ^ m * Mdg) ^ 2) ?_ ?_
     (integrableOn_const measure_ball_lt_top.ne) ?_
@@ -712,16 +709,15 @@ private theorem model_density_eq_zero {χ : ℝ → ℝ} (hχ1 : ∀ s, 1 < s �
 `m π ∫₀^∞ χ`, the normalized weighted area of the model branched cover `ζ ↦ ζ ^ m`. The
 normalized weighted area is nondecreasing in `t`, and as `t → 0` the rescalings
 `ζ ↦ (u (z₀ + t ^ (1 / m) ζ) - u z₀) / t` converge to `ζ ↦ ζ ^ m • g z₀`. -/
-private theorem mul_pi_mul_integral_le_integral_div_sq {U : Set ℂ} {u : ℂ → E} {z₀ : ℂ}
-    {χ : ℝ → ℝ} {r t : ℝ} (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hz₀ : z₀ ∈ U)
+private theorem analyticOrderNatAt_mul_pi_mul_integral_le_integral_div_sq {U : Set ℂ} {u : ℂ → E}
+    {z₀ : ℂ} {χ : ℝ → ℝ} {r t : ℝ} (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hz₀ : z₀ ∈ U)
     (hχ : ContDiff ℝ 1 χ) (hχa : Antitone χ) (hχ1 : ∀ s, 1 < s → χ s = 0)
     (hK : ∀ t < r, IsCompact {z ∈ U | ‖u z - u z₀‖ ≤ t}) (ht : t ∈ Ioo 0 r) :
     analyticOrderNatAt (fun z ↦ u z - u z₀) z₀ * π * ∫ s in Ioi 0, χ s ≤
       (∫ z in U, χ (‖u z - u z₀‖ ^ 2 / t ^ 2) * ‖deriv u z‖ ^ 2) / t ^ 2 := by
   set m := analyticOrderNatAt (fun z ↦ u z - u z₀) z₀ with hm_def
   set A : ℝ → ℝ := fun t ↦ (∫ z in U, χ (‖u z - u z₀‖ ^ 2 / t ^ 2) * ‖deriv u z‖ ^ 2) / t ^ 2
-  have hχ0 : ∀ x, 0 ≤ χ x := fun x ↦
-    (hχ1 (max x 2) (by linarith [le_max_right x 2])) ▸ hχa (le_max_left x 2)
+  have hχ0 := cutoff_nonneg hχa hχ1
   by_cases htop : analyticOrderAt (fun z ↦ u z - u z₀) z₀ = ⊤
   · simpa [m, analyticOrderNatAt, htop] using div_nonneg (setIntegral_nonneg hU.measurableSet
       fun z _ ↦ mul_nonneg (hχ0 _) (sq_nonneg _)) (sq_nonneg t)
@@ -739,8 +735,8 @@ private theorem mul_pi_mul_integral_le_integral_div_sq {U : Set ℂ} {u : ℂ �
   -- the normalized weighted area at radius `s ^ m < t`, hence at radius `t`.
   have hupper : ∀ᶠ s in 𝓝[>] (0 : ℝ), ∫ ζ in ball (0 : ℂ) R, rescaledDensity U u z₀ χ m s ζ ≤
       A t := by
-    have hpow : Tendsto (fun s : ℝ ↦ s ^ m) (𝓝 0) (𝓝 0) := by
-      simpa [zero_pow (by omega : m ≠ 0)] using (continuous_pow m).tendsto (0 : ℝ)
+    have hpow : Tendsto (fun s : ℝ ↦ s ^ m) (𝓝 0) (𝓝 0) :=
+      (continuous_pow m).tendsto' 0 0 (zero_pow (by omega))
     filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hpow.eventually (gt_mem_nhds ht.1))]
       with s (hs : 0 < s) hst
     obtain ⟨hint, heq⟩ := integral_rescaledDensity hU hu hχ.continuous hχ1 hK hs (hst.trans ht.2)
@@ -790,7 +786,7 @@ private theorem ofReal_integral_cutoff_le_lintegral {U : Set ℂ} {u : ℂ → E
   set S := {z ∈ U | ‖u z - x₀‖ < r}
   have hcu : ContinuousOn u U := hu.continuousOn
   have hS : MeasurableSet S := by
-    have : S = U ∩ (fun z ↦ ‖u z - x₀‖) ⁻¹' Iio r := rfl
+    have : S = U ∩ (fun z ↦ ‖u z - x₀‖) ⁻¹' Iio r := by ext; simp [S]
     rw [this]
     exact (ContinuousOn.isOpen_inter_preimage (by fun_prop) hU isOpen_Iio).measurableSet
   rw [ofReal_integral_eq_lintegral_ofReal (integrableOn_cutoff hU hu hχ hχ1 ht.1 hK)
@@ -804,10 +800,7 @@ private theorem ofReal_integral_cutoff_le_lintegral {U : Set ℂ} {u : ℂ → E
         · have hlt : t < ‖u z - x₀‖ := by
             simp only [S, mem_ofPred_eq, not_and, not_lt] at hzS
             exact ht.2.trans_le (hzS hz)
-          have : 1 < ‖u z - x₀‖ ^ 2 / t ^ 2 := by
-            rw [one_lt_div (pow_pos ht.1 2)]
-            exact pow_lt_pow_left₀ hlt ht.1.le two_ne_zero
-          simp [hχ1 _ this]
+          simp [hχ1 _ (one_lt_sq_div_sq ht.1 hlt)]
     _ = ∫⁻ z in S, ‖deriv u z‖ₑ ^ 2 := by
         rw [lintegral_indicator hS, Measure.restrict_restrict hS,
           inter_eq_left.2 fun z (hz : z ∈ S) ↦ hz.1]
@@ -815,8 +808,9 @@ private theorem ofReal_integral_cutoff_le_lintegral {U : Set ℂ} {u : ℂ → E
 /-- For each `ε ∈ (0, 1)`, the area over the preimage of the ball of radius `r` is at least
 `m π (1 - ε)³ r²`: apply the blow-up bound to the cutoff `smoothTransition ((1 - s) / ε)` at
 radius `(1 - ε) r`. -/
-private theorem ofReal_mul_pi_mul_le_lintegral_of_mem_Ioo {U : Set ℂ} {u : ℂ → E} {z₀ : ℂ}
-    {r : ℝ} (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hz₀ : z₀ ∈ U) (hr : 0 ≤ r)
+private theorem ofReal_analyticOrderNatAt_mul_pi_mul_le_lintegral_of_mem_Ioo {U : Set ℂ}
+    {u : ℂ → E} {z₀ : ℂ} {r : ℝ} (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hz₀ : z₀ ∈ U)
+    (hr : 0 ≤ r)
     (hK : ∀ t < r, IsCompact {z ∈ U | ‖u z - u z₀‖ ≤ t}) {ε : ℝ} (hε : ε ∈ Ioo 0 1) :
     ENNReal.ofReal (analyticOrderNatAt (fun z ↦ u z - u z₀) z₀ * π * ((1 - ε) ^ 3 * r ^ 2)) ≤
       ∫⁻ z in {z ∈ U | ‖u z - u z₀‖ < r}, ‖deriv u z‖ₑ ^ 2 := by
@@ -836,7 +830,7 @@ private theorem ofReal_mul_pi_mul_le_lintegral_of_mem_Ioo {U : Set ℂ} {u : ℂ
     (fun _ ↦ Real.smoothTransition.le_one _) hχ1 (hK t ht.2) ht)
   have h1 := sub_le_integral_smoothTransition hε hε1
   have h2 := (le_div_iff₀ (by positivity : (0 : ℝ) < t ^ 2)).1
-    (mul_pi_mul_integral_le_integral_div_sq hU hu hz₀ hχ hχa hχ1 hK ht)
+    (analyticOrderNatAt_mul_pi_mul_integral_le_integral_div_sq hU hu hz₀ hχ hχa hχ1 hK ht)
   calc analyticOrderNatAt (fun z ↦ u z - u z₀) z₀ * π * ((1 - ε) ^ 3 * r ^ 2)
       = analyticOrderNatAt (fun z ↦ u z - u z₀) z₀ * π * (1 - ε) * t ^ 2 := by
         simp only [t]; ring
@@ -846,17 +840,19 @@ private theorem ofReal_mul_pi_mul_le_lintegral_of_mem_Ioo {U : Set ℂ} {u : ℂ
 
 /-- **Monotonicity for holomorphic curves, with multiplicity.** Let `u` be holomorphic on an
 open set `U ⊆ ℂ` with values in a complex inner product space, and `z₀ ∈ U` a point such that
-the sets `{z ∈ U | ‖u z - u z₀‖ ≤ t}`, `t < r`, are compact; for instance `U` is the preimage under
-a map from a closed Riemann surface of a ball of radius `r` around `u z₀`. Then the area of `u`
+the sets `{z ∈ U | ‖u z - u z₀‖ ≤ t}`, `t < r`, are compact; for instance `U ⊆ ℂ = S² \ {∞}` is
+the preimage of a ball of radius `r` around `u z₀` under a map from `S²` holomorphic over the
+ball, when that preimage avoids `∞`. Then the area of `u`
 over the preimage of that open ball is at least `m π r²`, where `m` is the order of vanishing of
 `u - u z₀` at `z₀`, its local multiplicity. The area is the integral of `‖u'‖²`, the pullback of
 the standard symplectic form by the holomorphic map `u`. -/
-theorem ofReal_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq {U : Set ℂ} {u : ℂ → E} {z₀ : ℂ}
-    {r : ℝ} (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hz₀ : z₀ ∈ U) (hr : 0 ≤ r)
+theorem ofReal_analyticOrderNatAt_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq {U : Set ℂ}
+    {u : ℂ → E} {z₀ : ℂ} {r : ℝ} (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hz₀ : z₀ ∈ U)
+    (hr : 0 ≤ r)
     (hK : ∀ t < r, IsCompact {z ∈ U | ‖u z - u z₀‖ ≤ t}) :
     ENNReal.ofReal (analyticOrderNatAt (fun z ↦ u z - u z₀) z₀ * π * r ^ 2) ≤
       ∫⁻ z in {z ∈ U | ‖u z - u z₀‖ < r}, ‖deriv u z‖ₑ ^ 2 := by
-  -- Let `ε → 0` in `ofReal_mul_pi_mul_le_lintegral_of_mem_Ioo`.
+  -- Let `ε → 0` in `ofReal_analyticOrderNatAt_mul_pi_mul_le_lintegral_of_mem_Ioo`.
   set m := analyticOrderNatAt (fun z ↦ u z - u z₀) z₀
   have hlim : Tendsto (fun ε : ℝ ↦ ENNReal.ofReal (m * π * ((1 - ε) ^ 3 * r ^ 2))) (𝓝[>] 0)
       (𝓝 (ENNReal.ofReal (m * π * r ^ 2))) := by
@@ -865,42 +861,7 @@ theorem ofReal_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq {U : Set ℂ} {u : �
     simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
   exact le_of_tendsto hlim (by
     filter_upwards [Ioo_mem_nhdsGT (show (0 : ℝ) < 1 from one_pos)] with ε hε using
-      ofReal_mul_pi_mul_le_lintegral_of_mem_Ioo hU hu hz₀ hr hK hε)
-
-/-- Under the compactness hypothesis of
-`TauCeti.ofReal_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq` with `0 < r`, the map `u - u z₀`
-vanishes to finite positive order at `z₀`: otherwise `u` would be constant on the component of
-`U` through `z₀`, which would then be a compact open subset of the plane. -/
-private theorem one_le_analyticOrderNatAt {U : Set ℂ} {u : ℂ → E} {z₀ : ℂ} (hU : IsOpen U)
-    (hu : DifferentiableOn ℂ u U) (hz₀ : z₀ ∈ U)
-    (hK : IsCompact {z ∈ U | ‖u z - u z₀‖ ≤ 0}) :
-    1 ≤ analyticOrderNatAt (fun z ↦ u z - u z₀) z₀ := by
-  have han : AnalyticAt ℂ (fun z ↦ u z - u z₀) z₀ :=
-    (hu.analyticOnNhd hU z₀ hz₀).sub analyticAt_const
-  have hne0 : analyticOrderAt (fun z ↦ u z - u z₀) z₀ ≠ 0 :=
-    analyticOrderAt_ne_zero.2 ⟨han, sub_self _⟩
-  have hnetop : analyticOrderAt (fun z ↦ u z - u z₀) z₀ ≠ ⊤ := by
-    intro htop
-    have hev : u =ᶠ[𝓝 z₀] fun _ ↦ u z₀ := by
-      filter_upwards [analyticOrderAt_eq_top.1 htop] with z hz using sub_eq_zero.1 hz
-    set C := connectedComponentIn U z₀
-    have hCU : C ⊆ U := connectedComponentIn_subset U z₀
-    have hC : EqOn u (fun _ ↦ u z₀) C :=
-      ((hu.analyticOnNhd hU).mono hCU).eqOn_of_preconnected_of_eventuallyEq
-        analyticOnNhd_const isPreconnected_connectedComponentIn
-        (mem_connectedComponentIn hz₀) hev
-    have hCK : C ⊆ {z ∈ U | ‖u z - u z₀‖ ≤ 0} := fun z hz ↦ ⟨hCU hz, by simp [hC hz]⟩
-    have hclosed : IsClosed C := by
-      refine closure_subset_iff_isClosed.1 ?_
-      refine isPreconnected_connectedComponentIn.closure.subset_connectedComponentIn
-        (subset_closure (mem_connectedComponentIn hz₀)) ?_
-      exact (closure_minimal hCK hK.isClosed).trans fun z hz ↦ hz.1
-    have hCuniv : C = univ :=
-      IsClopen.eq_univ ⟨hclosed, hU.connectedComponentIn⟩ ⟨z₀, mem_connectedComponentIn hz₀⟩
-    exact noncompact_univ ℂ (hK.of_isClosed_subset isClosed_univ (hCuniv ▸ hCK))
-  have : (analyticOrderNatAt (fun z ↦ u z - u z₀) z₀ : ℕ∞) ≠ 0 := by
-    rwa [Nat.cast_analyticOrderNatAt hnetop]
-  exact Nat.one_le_iff_ne_zero.2 (by exact_mod_cast this)
+      ofReal_analyticOrderNatAt_mul_pi_mul_le_lintegral_of_mem_Ioo hU hu hz₀ hr hK hε)
 
 /-- **Monotonicity for holomorphic curves.** Let `u` be holomorphic on an open set `U ⊆ ℂ` with
 values in a complex inner product space, and `z₀ ∈ U` a point such that the sets
@@ -914,9 +875,12 @@ theorem ofReal_pi_mul_sq_le_setLIntegral_enorm_deriv_sq {U : Set ℂ} {u : ℂ �
   rcases hr.eq_or_lt with rfl | hr0
   · simp
   refine le_trans (ENNReal.ofReal_le_ofReal ?_)
-    (ofReal_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq hU hu hz₀ hr hK)
+    (ofReal_analyticOrderNatAt_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq hU hu hz₀ hr hK)
+  have hK0 : IsCompact {z ∈ U | u z - u z₀ = 0} := by
+    simpa using hK 0 hr0
   have hm : (1 : ℝ) ≤ analyticOrderNatAt (fun z ↦ u z - u z₀) z₀ := by
-    exact_mod_cast one_le_analyticOrderNatAt hU hu hz₀ (hK 0 hr0)
+    exact_mod_cast ((hu.analyticOnNhd hU).sub analyticOnNhd_const)
+      |>.one_le_analyticOrderNatAt_of_isCompact hU hz₀ (sub_self _) hK0
   rw [mul_assoc]
   exact le_mul_of_one_le_left (by positivity) hm
 
