@@ -118,10 +118,10 @@ theorem cyclotomicVirtualCharacterAction_apply (hζ : IsPrimitiveRoot ζ n)
     rw [pow_mul, Monoid.pow_exponent_eq_one, one_pow]
   have hpower := (hζ.autToPow_spec ℚ σ).symm
   congr 1
-  · exact Representation.map_character_eq_character_pow_of_isPrimitiveRoot A.ρ hζ
-      (Nat.cast_ne_zero.mpr (NeZero.ne n)) hg σ.toAlgHom.toRingHom hpower
-  · exact Representation.map_character_eq_character_pow_of_isPrimitiveRoot B.ρ hζ
-      (Nat.cast_ne_zero.mpr (NeZero.ne n)) hg σ.toAlgHom.toRingHom hpower
+  · exact Representation.map_character_eq_character_pow_of_isPrimitiveRoot A.ρ hζ hg
+      σ.toAlgHom.toRingHom hpower
+  · exact Representation.map_character_eq_character_pow_of_isPrimitiveRoot B.ρ hζ hg
+      σ.toAlgHom.toRingHom hpower
 
 /-- The cyclotomic Galois action preserves irreducible characters. -/
 theorem cyclotomicVirtualCharacterAction_mem_irreducibleCharacters

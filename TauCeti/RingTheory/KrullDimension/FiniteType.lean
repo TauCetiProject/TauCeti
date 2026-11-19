@@ -75,8 +75,9 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   `k[X₁, …, Xₛ] → A` forces `dim A = s`, the number of variables.
 * `RingHom.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial`: a surjection
   `k[X₁, …, Xₛ] → A` with `s ≤ dim A` is injective.
-* `TauCeti.finiteRingKrullDim_of_finiteType`: a nontrivial finitely generated algebra over a field
-  has finite Krull dimension.
+* `TauCeti.finiteRingKrullDim_of_finiteType` and `TauCeti.ringKrullDim_lt_top_of_finiteType`: a
+  nontrivial finitely generated algebra over a field has finite Krull dimension, and every finitely
+  generated algebra over a field has Krull dimension strictly below `⊤`.
 * `TauCeti.ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType`:
   `dim (K ⊗[k] A) = dim K + dim A` for a Noetherian `k`-algebra `K`.
 * `TauCeti.ringKrullDim_tensorProduct_field_of_finiteType`: `dim (K ⊗[k] A) = dim A` for a field
@@ -162,6 +163,17 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
     (ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hint)
 
 variable (k) in
+/-- Every finitely generated algebra over a field has Krull dimension strictly below `⊤` (including
+the zero ring, whose Krull dimension is `⊥`). -/
+theorem ringKrullDim_lt_top_of_finiteType (A : Type*) [CommRing A] [Algebra k A]
+    [Algebra.FiniteType k A] : ringKrullDim A < ⊤ := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · rw [ringKrullDim_eq_bot_of_subsingleton]
+    exact WithBot.bot_lt_coe _
+  · have := finiteRingKrullDim_of_finiteType k A
+    exact ringKrullDim_lt_top
+
+variable (k) in
 /-- An integral faithful extension of domains preserves ideal heights when the base is a finitely
 generated algebra over a field. -/
 theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_finiteType {R S : Type*}
@@ -224,7 +236,7 @@ theorem ringKrullDim_tensorProduct_field_of_finiteType (K A : Type*) [Field K] [
 
 variable (k) in
 /-- A finitely generated domain over a field `k` has Krull dimension its transcendence degree over
-`k`. The transcendence degree is finite by `Algebra.trdeg_lt_aleph0_of_finiteType`. -/
+`k`. The transcendence degree is finite by `trdeg_lt_aleph0_of_finiteType`. -/
 theorem ringKrullDim_eq_toNat_trdeg (A : Type*) [CommRing A] [IsDomain A] [Algebra k A]
     [Algebra.FiniteType k A] : ringKrullDim A = (Algebra.trdeg k A).toNat := by
   -- Noether normalization `k[X₁, …, Xₛ] → A` gives `dim A = s`, and the variables form a

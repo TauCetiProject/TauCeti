@@ -18,6 +18,7 @@ import Mathlib.Data.Nat.Factorization.Induction
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Data.Int.ChineseRemainder
 import TauCeti.Data.ZMod.Divisibility
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
 # Congruence subgroups: the pair `Γ₁(N) ⊴ Γ₀(N)`, the index of `Γ₀(N)`, and the level
@@ -84,8 +85,8 @@ infrastructure independent of the diamond operators.
   unit upper-left entry modulo `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
   level, a `Γ₀(N)` matrix has mutually inverse diagonal entries.
-* `CongruenceSubgroup.intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0` and
-  `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0`:
+* `CongruenceSubgroup.intCast_add_natCast_mul_of_mem_Gamma0` and
+  `CongruenceSubgroup.isUnit_intCast_add_natCast_mul_of_mem_Gamma0`:
   shearing the first column by a natural-number multiple of the lower-left entry changes nothing
   modulo the level, so the sheared entry is a unit too.
 * `CongruenceSubgroup.mem_Gamma1_iff_toHomUnits_eq_one`: inside `Γ₀(N)`, `Γ₁(N)` is the kernel of
@@ -349,19 +350,19 @@ theorem isUnit_intCast_apply_zero_zero_of_mem_Gamma0 {N : ℕ} {σ : SL(2, ℤ)}
 /-- **The first column of a `Γ₀(N)` matrix collapses under a natural-number shear**:
 `a + j c ≡ a` modulo `N` for every `j : ℕ`, because `c ≡ 0`. Stated with the casts already
 distributed, since that — not the cast of the sum — is the `simp` normal form. -/
-@[simp] theorem intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 {N : ℕ}
+@[simp] theorem intCast_add_natCast_mul_of_mem_Gamma0 {N : ℕ}
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (j : ℕ) :
     ((γ 0 0 : ℤ) : ZMod N) + (j : ZMod N) * ((γ 1 0 : ℤ) : ZMod N) = ((γ 0 0 : ℤ) : ZMod N) := by
   rw [Gamma0_mem.mp hγ, mul_zero, add_zero]
 
 /-- **The sheared entry is still a unit**, for every `j : ℕ`: it *is* the upper-left entry modulo
 `N`, which `isUnit_intCast_apply_zero_zero_of_mem_Gamma0` knows to be a unit. -/
-theorem isUnit_intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 {N : ℕ}
+theorem isUnit_intCast_add_natCast_mul_of_mem_Gamma0 {N : ℕ}
     {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) (j : ℕ) :
     IsUnit (((γ 0 0 + (j : ℕ) * γ 1 0 : ℤ) : ZMod N)) := by
   have h : ((γ 0 0 + (j : ℕ) * γ 1 0 : ℤ) : ZMod N) = ((γ 0 0 : ℤ) : ZMod N) := by
     push_cast
-    exact intCast_apply_zero_zero_add_natCast_mul_apply_one_zero_of_mem_Gamma0 hγ j
+    exact intCast_add_natCast_mul_of_mem_Gamma0 hγ j
   rw [h]
   exact isUnit_intCast_apply_zero_zero_of_mem_Gamma0 hγ
 
@@ -626,6 +627,27 @@ exactly when `N ∣ 2`. -/
 theorem neg_one_mem_Gamma_iff : (-1 : SL(2, ℤ)) ∈ Gamma N ↔ N ∣ 2 := by
   simp [Gamma_mem, ZMod.neg_one_eq_one_iff, Nat.dvd_prime Nat.prime_two]
 
+/-- The trace of an element of `Γ₁(N)` is congruent to `2` modulo `N`. -/
+theorem dvd_two_sub_trace_of_mem_Gamma1 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
+    (N : ℤ) ∣ 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace := by
+  apply (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp
+  obtain ⟨ha, hd, -⟩ := (Gamma1_mem N γ).mp hγ
+  simp only [Matrix.trace_fin_two, Int.cast_sub, Int.cast_add, Int.cast_ofNat, ha, hd]
+  ring
+
+/-- If a conjugate `γ g γ⁻¹` lies in `Γ₁(N)`, then the trace of `g` is congruent to `2` modulo
+`N`, as conjugation preserves the trace. -/
+theorem dvd_two_sub_trace_of_conj_mem_Gamma1 {γ g : SL(2, ℤ)} (h : γ * g * γ⁻¹ ∈ Gamma1 N) :
+    (N : ℤ) ∣ 2 - (g : Matrix (Fin 2) (Fin 2) ℤ).trace := by
+  simpa only [Matrix.SpecialLinearGroup.trace_mul_mul_inv] using dvd_two_sub_trace_of_mem_Gamma1 h
+
+/-- If a conjugate `γ g γ⁻¹` lies in `Γ(N)`, then `N` divides the lower-left entry of `g`: as
+`Γ(N)` is normal, `g` itself lies in `Γ(N)`. -/
+theorem dvd_apply_one_zero_of_conj_mem_Gamma {γ g : SL(2, ℤ)} (h : γ * g * γ⁻¹ ∈ Gamma N) :
+    (N : ℤ) ∣ g 1 0 := by
+  have hg : g ∈ Gamma N := by simpa [mul_assoc] using (Gamma_normal N).conj_mem _ h γ⁻¹
+  exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp (Gamma_mem.mp hg).2.2.1
+
 /-- **Every power of the translation matrix lies in `Γ₁(N)`, at every level.** `Tⁿ` has diagonal
 `(1, 1)` and vanishing lower-left entry, so the three congruences of `Gamma1_mem` hold with no
 condition on `n` or `N`. (In particular the width of the cusp `∞` for `Γ₁(N)` is `1`.) -/
@@ -701,11 +723,7 @@ private lemma Gamma0_prime_index_surj :
   · refine ⟨⟨p, p.lt_succ_self⟩, ?_⟩
     rw [QuotientGroup.eq, Gamma0_mem]
     simpa [Gamma0Rep] using h
-  · have hunit : IsUnit ((σ.1 1 0 : ℤ) : ZMod p) := by
-      have : Fact (Nat.Prime p) := ⟨hp⟩
-      obtain ⟨j, hj⟩ : ∃ j : ZMod p, j * ((σ.1 1 0 : ℤ) : ZMod p) = 1 :=
-        Finite.surjective_of_injective (mul_left_injective₀ h) 1
-      exact IsUnit.of_mul_eq_one _ (by rwa [mul_comm] at hj)
+  · have hunit : IsUnit ((σ.1 1 0 : ℤ) : ZMod p) := Ne.isUnit h
     obtain ⟨j₀, hj₀⟩ := ZMod.exists_dvd_sub_val_mul p (σ.1 0 0) (σ.1 1 0) hunit
     refine ⟨⟨j₀.val, Nat.lt_succ_of_lt (ZMod.val_lt j₀)⟩, ?_⟩
     rw [QuotientGroup.eq, mem_Gamma0_iff_dvd]

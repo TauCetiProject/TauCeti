@@ -40,7 +40,9 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
 * `Distribution.isVanishingOn_compl_dsupport`: an additive map on test functions vanishes on the
   complement of its support; `Distribution.isVanishingOn_iff_disjoint_dsupport` is the resulting
   characterization of the open sets on which it vanishes.
-* `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values.
+* `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values;
+  by `Distribution.map_eq_map_of_forall_eventuallyEq` it suffices that they agree near each point
+  of the support in `Ω`.
 * `Distribution.dsupport_eq_empty_iff`, `Distribution.eq_zero_of_dsupport_subset_empty`: an
   additive map on test functions vanishes when and only when its support is empty.
 * `Distribution.dsupport_comp_smulLeftCLM_subset`, `Distribution.dsupport_comp_cutoffCLM_subset`,
@@ -230,6 +232,18 @@ theorem map_eq_map_of_eventuallyEq {φ ψ : 𝓓^{n}(Ω, F)}
   have hx' : φ x = ψ x := hφψ hxU
   simp [hx']
 
+/-- The value of an additive map on test functions on `Ω` depends only on the germs of the test
+at the points of its support that lie in `Ω`: near the other points of the support every test
+function on `Ω` vanishes. -/
+theorem map_eq_map_of_forall_eventuallyEq {φ ψ : 𝓓^{n}(Ω, F)}
+    (h : ∀ x ∈ (Ω : Set E) ∩ dsupport T, (φ : E → F) =ᶠ[𝓝 x] ψ) : T φ = T ψ := by
+  refine map_eq_map_of_eventuallyEq T (eventually_nhdsSet_iff_forall.2 fun x hx ↦ ?_)
+  by_cases hxΩ : x ∈ Ω
+  · exact h x ⟨hxΩ, hx⟩
+  · have hφ := notMem_tsupport_iff_eventuallyEq.1 fun h' ↦ hxΩ (φ.tsupport_subset h')
+    have hψ := notMem_tsupport_iff_eventuallyEq.1 fun h' ↦ hxΩ (ψ.tsupport_subset h')
+    exact hφ.trans hψ.symm
+
 end Group
 
 section SmoothMultiple
@@ -275,6 +289,12 @@ theorem dsupport_comp_cutoffCLM_subset {Ω' : Opens E} {χ : E → ℝ} (hχ : C
     exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hT _
       (((TestFunction.tsupport_cutoffCLM_subset hχ hχΩ φ).trans inter_subset_right).trans hφ),
       hs, hxs⟩
+
+/-- Composing a map on test functions with a map that fixes zero does not enlarge its support. In
+particular `dsupport (mapCLM A T) ⊆ dsupport T` for a distribution `T`. -/
+theorem dsupport_comp_subset {W : Type*} [Zero W] (f : 𝓓^{n}(Ω, F) → V) {g : V → W}
+    (hg : g 0 = 0) : dsupport (g ∘ f) ⊆ dsupport f :=
+  sInter_subset_sInter fun _ hs ↦ ⟨fun φ hφ ↦ by simp [hs.1 φ hφ, hg], hs.2⟩
 
 end SmoothMultiple
 

@@ -143,6 +143,15 @@ theorem algebraMap_completionExtensionAlgebra :
     algebraMap P.Completion P'.Completion = P.completionExtension P' hP :=
   RingHom.algebraMap_toAlgebra _
 
+/-- Through the completed extension, the embedding of `F'` in its completion is semilinear over
+the embedding of `F` in its completion. -/
+theorem completionEmbedding_smul (c : F) (y : F') :
+    letI := P.completionExtensionAlgebra P' hP
+    P'.completionEmbedding (c • y) = P.completionEmbedding c • P'.completionEmbedding y := by
+  let _ := P.completionExtensionAlgebra P' hP
+  rw [Algebra.smul_def, Algebra.smul_def, map_mul, algebraMap_completionExtensionAlgebra,
+    completionExtension_completionEmbedding]
+
 /-- The extended embedding respects the original embeddings of the constant fields. -/
 theorem completionExtension_algebraMap (c : k) :
     P.completionExtension P' hP (algebraMap k P.Completion c) =
@@ -222,6 +231,29 @@ theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace
     (algebraMap P.completionPlace.integers P'.completionPlace.integers x : P'.Completion) =
       P.completionExtension P' hP x :=
   (rfl)
+
+/-- The completed valuation-ring extension forms a scalar tower inside the completed upper field. -/
+instance isScalarTower_completionIntegersExtensionAlgebra :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    IsScalarTower P.completionPlace.integers P'.completionPlace.integers P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine IsScalarTower.of_algebraMap_eq fun x ↦ ?_
+  rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
+    P.algebraMap_completionExtensionAlgebra P' hP, ValuationSubring.algebraMap_apply,
+    ValuationSubring.algebraMap_apply, P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP]
+
+/-- The completed valuation ring `𝒪̂_{P'}` is torsion-free over `𝒪̂_P`. -/
+instance isTorsionFree_completionIntegers :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine Module.isTorsionFree_iff_algebraMap_injective.mpr fun a b hab ↦ Subtype.ext ?_
+  have hab' := congrArg Subtype.val hab
+  rw [P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP,
+    P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP] at hab'
+  exact (P.completionExtension P' hP).injective hab'
 
 end Integers
 
