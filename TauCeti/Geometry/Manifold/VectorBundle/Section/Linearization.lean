@@ -352,7 +352,8 @@ variable {𝕜 X M F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
 a zero of `s` whose fibre coordinate in a trivialization `e` is differentiable at `z`, and let
 `Λ : X ≃ F` agree with the linearization of `s` at `z` read in `e`. Then in the chart
 `Λ ∘ chartAt X z` the fibre coordinate of `s` has derivative the identity at the image of `z`. -/
-theorem hasFDerivAt_comp_chartAt_transHomeomorph_symm_sectionLinearization_id
+theorem
+  _root_.Bundle.Trivialization.hasFDerivAt_comp_chartAt_transHomeomorph_symm_sectionLinearization_id
     (e : Trivialization F (π F E))
     [MemTrivializationAtlas e] {z : M} (hze : z ∈ e.baseSet) (hz : s z = 0)
     (hg : MDifferentiableAt 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e ⟨y, s y⟩).2) z) (Λ : X ≃L[𝕜] F)

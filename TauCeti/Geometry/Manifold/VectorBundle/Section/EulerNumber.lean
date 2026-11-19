@@ -106,8 +106,8 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
   let Λ : X ≃L[ℝ] F := D.trans (e.continuousLinearEquivAt ℝ z hze)
   let φ : OpenPartialHomeomorph M F := (chartAt X z).transHomeomorph Λ.toHomeomorph
   have hzφ : z ∈ φ.source := mem_chart_source X z
-  have hA := hasFDerivAt_comp_chartAt_transHomeomorph_symm_sectionLinearization_id
-    e hze hz hg Λ fun v ↦ by
+  have hA := e.hasFDerivAt_comp_chartAt_transHomeomorph_symm_sectionLinearization_id
+    hze hz hg Λ fun v ↦ by
     -- `Λ v` is `e_z (D v)` by definition of the composite.
     rw [← hD, ← e.coe_continuousLinearEquivAt_eq hze]
     rfl
