@@ -29,6 +29,9 @@ supplies the Hausdorff instance needed by the exponential API.
 * `TauCeti.Lie.ImmersedLieSubgroupData.injective_lieMapToHom`: the differential is injective.
 * `TauCeti.Lie.ImmersedLieSubgroupData.range_lieMapToHom_le`: its range lies in
   `TauCeti.Lie.lieSubalgebraOfSubgroup K`.
+* `TauCeti.Lie.ImmersedLieSubgroupData.range_mfderiv_toHom_one`: in the tangent space at the
+  identity, the range of the differential of the presenting homomorphism is the range of
+  `lieMapToHom`.
 
 * `TauCeti.Lie.ImmersedLieSubgroupData.toHom_lieExp`: exponential naturality.
 * `TauCeti.Lie.ImmersedLieSubgroupData.lieHomOfRangeLe`: the canonical Lie-algebra
@@ -126,6 +129,25 @@ theorem lieMapToHom_mem_lieSubalgebraOfSubgroup (d : ImmersedLieSubgroupData I K
     (X : LeftInvariantDerivation d.I' d.X) :
     d.lieMapToHom X ∈ lieSubalgebraOfSubgroup (I := I) K :=
   d.range_lieMapToHom_le ⟨X, rfl⟩
+
+omit [T2Space G] in
+/-- In the tangent space at the identity, the range of the differential of the presenting
+homomorphism is the image of the range of `lieMapToHom`. -/
+theorem range_mfderiv_toHom_one (d : ImmersedLieSubgroupData I K) :
+    LinearMap.range (mfderiv d.I' I d.toHom 1).toLinearMap =
+      (d.lieMapToHom.range.map (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I)
+        (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) (1 : G))).toLieHom).toSubmodule := by
+  let eX := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := d.I') (G := d.X) (n := ∞) (by simp) 1)
+  ext v
+  constructor
+  · rintro ⟨w, rfl⟩
+    obtain ⟨D, rfl⟩ := eX.surjective w
+    exact ⟨d.lieMapToHom D, ⟨D, rfl⟩,
+      leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap d.toContMDiffMonoidMorphism D⟩
+  · rintro ⟨_, ⟨D, rfl⟩, rfl⟩
+    exact ⟨eX D,
+      (leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap d.toContMDiffMonoidMorphism D).symm⟩
 
 
 section Factorization

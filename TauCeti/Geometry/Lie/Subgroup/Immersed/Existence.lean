@@ -89,21 +89,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
 
+-- `S.mulInvariantFoliation` is a `Foliation I 1 G`, whose type takes an `IsManifold I (1 + 1) G`
+-- instance. Instance search does not identify `1 + 1` with the `2` of the `IsManifold I 2 G`
+-- instance coming from `LieGroup I ∞ G`, so it is provided here, as in the file defining
+-- `LieSubalgebra.mulInvariantFoliation`.
 local instance : IsManifold I (1 + 1) G := inferInstanceAs (IsManifold I 2 G)
-
-/-- The tangent distribution of the left-invariant foliation of a Lie subalgebra is smooth. -/
-private theorem isContMDiff (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
-    IsContMDiffDistribution I ((⊤ : ℕ∞) : ℕ∞ω) (finrank ℝ S)
-      (S.mulInvariantFoliation (I := I)).distribution := by
-  let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-    (ContMDiffMul.isInteriorPoint (n := ∞) (by simp) 1)
-  have hD : (S.mulInvariantFoliation (I := I)).distribution =
-      mulInvariantDistribution (S.map e.toLieHom).toSubmodule :=
-    funext (mulInvariantFoliation_distribution S)
-  have hk : finrank ℝ (S.map e.toLieHom).toSubmodule = finrank ℝ S :=
-    e.toLinearEquiv.finrank_map_eq S.toSubmodule
-  rw [hD, ← hk]
-  exact isContMDiffDistribution_mulInvariantDistribution (n := ∞) (by simp)
 
 variable [I.Boundaryless]
 
@@ -113,24 +103,24 @@ private abbrev integralLeaf (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)
     IntegralManifold (I := I) ((⊤ : ℕ∞) : ℕ∞ω) (S.mulInvariantFoliation (I := I)).distribution
       (finrank ℝ S) :=
   (S.mulInvariantFoliation (I := I)).isInvolutiveDistribution.leaf (m := ⊤) (r := ∞) le_top
-    (by simp) (isContMDiff S) 1
+    (by simp) (S.isContMDiffDistribution_mulInvariantFoliation (by simp)) 1
 
 private instance (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
     ConnectedSpace (integralLeaf S).carrier :=
   (S.mulInvariantFoliation (I := I)).isInvolutiveDistribution.connectedSpace_leaf le_top
-    (by simp) (isContMDiff S) 1
+    (by simp) (S.isContMDiffDistribution_mulInvariantFoliation (by simp)) 1
 
 private theorem injective_integralLeaf (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
     Injective (integralLeaf S).map :=
   (S.mulInvariantFoliation (I := I)).isInvolutiveDistribution.map_leaf_injective le_top (by simp)
-    (isContMDiff S) 1
+    (S.isContMDiffDistribution_mulInvariantFoliation (by simp)) 1
 
 /-- The smooth leaf through the identity parametrizes the integral leaf subgroup. -/
 private theorem range_integralLeaf (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
     range (integralLeaf S).map = (S.integralLeafSubgroup (I := I) : Set G) := by
   rw [coe_integralLeafSubgroup]
   exact (S.mulInvariantFoliation (I := I)).range_leaf_distribution le_top (by simp)
-    (isContMDiff S) 1
+    (S.isContMDiffDistribution_mulInvariantFoliation (by simp)) 1
 
 /-- The smooth leaf through the identity is in bijection with the integral leaf subgroup. -/
 private def leafEquiv (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
@@ -187,7 +177,8 @@ private theorem contMDiff_of_leafHom_comp {F : Type*} [NormedAddCommGroup F] [No
     ContMDiff J (𝓡 (finrank ℝ S)) ∞ f := by
   obtain ⟨h, ⟨hh, hcomp⟩, -⟩ :=
     (S.mulInvariantFoliation (I := I)).isInvolutiveDistribution.existsUnique_contMDiff_factor_leaf
-      (m := ⊤) (r := ∞) le_top (by simp) (isContMDiff S) (n := ∞) le_rfl hf
+      (m := ⊤) (r := ∞) le_top (by simp) (S.isContMDiffDistribution_mulInvariantFoliation (by simp))
+      (n := ∞) le_rfl hf
       (by rintro _ ⟨p, rfl⟩; exact mem_range_self _)
   have hfh : f = h := funext fun p ↦ injective_integralLeaf S (congrFun hcomp p).symm
   exact hfh ▸ hh
@@ -237,36 +228,12 @@ has range `S`: the integral leaf subgroup has Lie algebra `S`. -/
 theorem range_lieMapToHom_integralLeafSubgroupData
     (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) :
     (S.integralLeafSubgroupData (I := I)).lieMapToHom.range = S := by
-  let d := S.integralLeafSubgroupData (I := I)
   let eG := leftInvariantDerivationLieEquivGroupLieAlgebra
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  let eX := leftInvariantDerivationLieEquivGroupLieAlgebra
-    (ContMDiffMul.isInteriorPoint (I := d.I') (G := d.X) (n := ∞) (by simp) 1)
-  -- In the tangent spaces at the identity, the differential of the presentation is the
-  -- differential of the parametrization of the leaf.
-  have hφ (D : LeftInvariantDerivation d.I' d.X) :
-      eG (d.lieMapToHom D) = mfderiv (𝓡 (finrank ℝ S)) I (leafHom S) 1 (eX D) := by
-    have hcoe : (d.toContMDiffMonoidMorphism : d.X → G) = leafHom S :=
-      funext d.toContMDiffMonoidMorphism_apply
-    rw [d.lieMapToHom_apply, ← hcoe]
-    exact leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap d.toContMDiffMonoidMorphism D
-  have hrange := range_mfderiv_leafHom_one S
-  ext D'
-  constructor
-  · rintro ⟨D, rfl⟩
-    have hmem : eG (d.lieMapToHom D) ∈ (S.map eG.toLieHom).toSubmodule := by
-      rw [hφ]
-      exact hrange.le (LinearMap.mem_range_self _ _)
-    obtain ⟨D'', hD'', heq⟩ := hmem
-    have h : D'' = d.lieMapToHom D := eG.injective heq
-    exact h ▸ hD''
-  · intro hD'
-    have hmem : eG D' ∈ LinearMap.range
-        (mfderiv (𝓡 (finrank ℝ S)) I (leafHom S) 1).toLinearMap :=
-      hrange.ge ⟨D', hD', rfl⟩
-    obtain ⟨v, hv⟩ := hmem
-    have hv' : eX (eX.symm v) = v := eX.apply_symm_apply v
-    exact ⟨eX.symm v, eG.injective ((hφ _).trans ((congrArg _ hv').trans hv))⟩
+  apply LieSubalgebra.toSubmodule_injective
+  apply Submodule.map_injective_of_injective eG.toLinearEquiv.injective
+  exact (S.integralLeafSubgroupData (I := I)).range_mfderiv_toHom_one.symm.trans
+    (range_mfderiv_leafHom_one S)
 
 /-- **Existence of connected immersed Lie subgroups.** Every Lie subalgebra `S` of the Lie algebra
 of a second-countable Lie group `G` is the range of the differential of a connected immersed Lie

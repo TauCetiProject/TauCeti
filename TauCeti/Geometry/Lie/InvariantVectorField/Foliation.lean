@@ -31,6 +31,8 @@ topology of the Frobenius leaf, and the resulting presentation is
 
 ## Main results
 
+* `LieSubalgebra.isContMDiffDistribution_mulInvariantFoliation`: the tangent distribution of the
+  foliation is smooth.
 * `LieSubalgebra.sameLeaf_mul_left_iff`: left multiplication preserves and reflects membership in
   the same leaf.
 * `LieSubalgebra.isPathConnected_integralLeafSubgroup`: the integral leaf subgroup is
@@ -105,6 +107,15 @@ theorem mulInvariantFoliation_distribution
         (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
           BoundarylessManifold.isInteriorPoint).toLieHom).toSubmodule g :=
   congrFun (mulInvariantFoliation_distribution_eq S) g
+
+/-- The tangent distribution of `S.mulInvariantFoliation` is `C^m` for every `m` with
+`m + 1 ≤ ∞`, although the foliation only records that it is `C¹`. -/
+theorem isContMDiffDistribution_mulInvariantFoliation
+    (S : LieSubalgebra ℝ (LeftInvariantDerivation I G)) {m : ℕ∞ω} (hm : m + 1 ≤ ∞) :
+    IsContMDiffDistribution I m (Module.finrank ℝ S)
+      (S.mulInvariantFoliation (I := I)).distribution := by
+  rw [mulInvariantFoliation_distribution_eq, ← finrank_tangentLieSubalgebra (I := I) S]
+  exact isContMDiffDistribution_mulInvariantDistribution (n := ∞) hm
 
 /-- Left multiplication carries a tangent curve of `S.mulInvariantFoliation` to another tangent
 curve of the same foliation. -/
