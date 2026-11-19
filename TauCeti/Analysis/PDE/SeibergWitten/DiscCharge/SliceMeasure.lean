@@ -141,6 +141,11 @@ theorem negSliceMeasure_def (f : ℂ → ℝ) (R : ℝ) :
     negSliceMeasure f R = (volume.restrict (closedBall 0 R)).withDensity fun w ↦
       ENNReal.ofReal ((f w)⁻ / (2 * π)) := (rfl)
 
+/-- The negative slice measure of `f` is the positive slice measure of `-f`. -/
+theorem negSliceMeasure_eq_posSliceMeasure_neg (f : ℂ → ℝ) (R : ℝ) :
+    negSliceMeasure f R = posSliceMeasure (-f) R := by
+  simp only [negSliceMeasure_def, posSliceMeasure_def, Pi.neg_apply, posPart_neg]
+
 /-- The positive slice measure is carried by the closed disc of radius `R`. -/
 @[simp]
 theorem posSliceMeasure_compl_closedBall : posSliceMeasure f R (closedBall 0 R)ᶜ = 0 :=
@@ -148,8 +153,9 @@ theorem posSliceMeasure_compl_closedBall : posSliceMeasure f R (closedBall 0 R)�
 
 /-- The negative slice measure is carried by the closed disc of radius `R`. -/
 @[simp]
-theorem negSliceMeasure_compl_closedBall : negSliceMeasure f R (closedBall 0 R)ᶜ = 0 :=
-  withDensity_restrict_apply_compl measurableSet_closedBall _
+theorem negSliceMeasure_compl_closedBall : negSliceMeasure f R (closedBall 0 R)ᶜ = 0 := by
+  rw [negSliceMeasure_eq_posSliceMeasure_neg]
+  exact posSliceMeasure_compl_closedBall
 
 /-- The positive slice measure of a density integrable on the closed disc of radius `R` is
 finite. -/
@@ -160,8 +166,9 @@ theorem isFiniteMeasure_posSliceMeasure (hf : IntegrableOn f (closedBall 0 R)) :
 /-- The negative slice measure of a density integrable on the closed disc of radius `R` is
 finite. -/
 theorem isFiniteMeasure_negSliceMeasure (hf : IntegrableOn f (closedBall 0 R)) :
-    IsFiniteMeasure (negSliceMeasure f R) :=
-  isFiniteMeasure_withDensity_ofReal (hf.neg_part.div_const _).2
+    IsFiniteMeasure (negSliceMeasure f R) := by
+  rw [negSliceMeasure_eq_posSliceMeasure_neg]
+  exact isFiniteMeasure_posSliceMeasure hf.neg
 
 /-- **Integrals against the positive slice measure.** Integrating `h` against `μ⁺` is integrating
 `(f⁺ / 2π) h` over the closed disc of radius `R`. -/
@@ -176,10 +183,9 @@ theorem integral_posSliceMeasure {F : Type*} [NormedAddCommGroup F] [NormedSpace
 `(f⁻ / 2π) h` over the closed disc of radius `R`. -/
 theorem integral_negSliceMeasure {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (hf : AEMeasurable f (volume.restrict (closedBall 0 R))) (h : ℂ → F) :
-    ∫ w, h w ∂negSliceMeasure f R = ∫ w in closedBall 0 R, ((f w)⁻ / (2 * π)) • h w :=
-  TauCeti.Probability.integral_withDensity_ofReal
-    ((continuous_negPart.measurable.comp_aemeasurable hf).div_const _)
-    (ae_of_all _ fun _ ↦ div_nonneg (negPart_nonneg _) (by positivity)) h
+    ∫ w, h w ∂negSliceMeasure f R = ∫ w in closedBall 0 R, ((f w)⁻ / (2 * π)) • h w := by
+  simpa only [negSliceMeasure_eq_posSliceMeasure_neg, Pi.neg_apply, posPart_neg] using
+    integral_posSliceMeasure hf.neg h
 
 /-- The mass of the positive slice measure is `(2π)⁻¹ ∫_{B_R} f⁺`. -/
 theorem measureReal_posSliceMeasure (hf : AEMeasurable f (volume.restrict (closedBall 0 R))) :
@@ -193,11 +199,8 @@ theorem measureReal_posSliceMeasure (hf : AEMeasurable f (volume.restrict (close
 /-- The mass of the negative slice measure is `(2π)⁻¹ ∫_{B_R} f⁻`. -/
 theorem measureReal_negSliceMeasure (hf : AEMeasurable f (volume.restrict (closedBall 0 R))) :
     (negSliceMeasure f R).real univ = (2 * π)⁻¹ * ∫ w in closedBall 0 R, (f w)⁻ := by
-  have h := integral_negSliceMeasure hf fun _ ↦ (1 : ℝ)
-  rw [integral_const, smul_eq_mul, mul_one] at h
-  rw [h, ← integral_const_mul]
-  congr 1 with w
-  rw [smul_eq_mul, mul_one, div_eq_inv_mul]
+  simpa only [negSliceMeasure_eq_posSliceMeasure_neg, Pi.neg_apply, posPart_neg] using
+    measureReal_posSliceMeasure hf.neg
 
 /-- **The integral against the normalized slice.** For a density `f` integrable on the closed disc
 of radius `R` and a weight `h` continuous on it, the difference of the integrals of `h` against
