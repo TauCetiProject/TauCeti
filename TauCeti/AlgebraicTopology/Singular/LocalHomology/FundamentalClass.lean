@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 
 /-!
 # Integral and rational fundamental classes of an oriented manifold
@@ -98,6 +99,9 @@ homology isomorphism directly, without requiring Poincaré duality.
   relative singular homology.
 * `TauCeti.isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top`: read with
   coefficients `ℤ`, the local orientations are the generators of the local homology.
+* `TauCeti.IsLocalOrientation.span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top`:
+  a class restricting to a local orientation restricts, read with coefficients `ℤ`, to a generator
+  of the local homology.
 
 ## Implementation notes
 
@@ -752,15 +756,25 @@ theorem isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top {M : 
     [TopologicalSpace M] {x : M} {d : ℕ}
     {z : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) ({x} : Set M) d} :
     IsLocalOrientation x d z ↔ ℤ ∙ (TopPair.uliftIntSingularHomologyIso _ d).hom z = ⊤ := by
-  let e := TopPair.uliftIntSingularHomologyIso (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))) d
-  rw [isLocalOrientation_iff, eq_top_iff]
-  refine ⟨fun h w _ ↦ ?_, fun h y ↦ ?_⟩
-  · obtain ⟨c, hc⟩ := h (e.inv w)
-    rw [← Iso.inv_hom_id_apply e w, ← hc, map_zsmul]
-    exact zsmul_mem (Submodule.mem_span_singleton_self _) c
-  · obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 (h (Submodule.mem_top (x := e.hom y)))
-    refine ⟨c, (ConcreteCategory.bijective_of_isIso e.hom).1 ?_⟩
-    rw [map_zsmul, ← hc]
-    exact (int_smul_eq_zsmul _ c _).symm
+  rw [ModuleCat.span_singleton_apply_eq_top_iff, Submodule.span_singleton_eq_top_iff,
+    isLocalOrientation_iff]
+  -- `IsLocalOrientation` uses the `ℤ`-action of the additive group, `span` the module action.
+  exact forall_congr' fun _ ↦ exists_congr fun c ↦
+    Eq.congr_left (int_smul_eq_zsmul _ c _).symm
+
+/-- A class of `Hₙ(M, M ∖ S; ULift ℤ)` restricting to a local orientation at `x ∈ S` restricts,
+read with coefficients `ℤ`, to a generator of `Hₙ(M, M ∖ {x}; ℤ)`, since the change of
+coefficients commutes with restriction. -/
+theorem IsLocalOrientation.span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+    {M : Type} [TopologicalSpace M] {x : M} {S : Set M} (hx : x ∈ S) {d : ℕ}
+    {γ : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) S d}
+    (hγ : IsLocalOrientation x d (localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (Set.singleton_subset_iff.2 hx) d γ)) :
+    ℤ ∙ (localHomologyRestriction (ModuleCat.of ℤ ℤ) (Set.singleton_subset_iff.2 hx) d).hom
+      ((TopPair.uliftIntSingularHomologyIso _ d).hom γ) = ⊤ := by
+  rw [isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top,
+    localHomologyRestriction_def, ← ConcreteCategory.comp_apply,
+    TopPair.singularHomologyMap_comp_uliftIntSingularHomologyIso_hom] at hγ
+  rwa [localHomologyRestriction_def]
 
 end TauCeti

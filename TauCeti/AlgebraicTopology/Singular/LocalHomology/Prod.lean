@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 import TauCeti.Algebra.Homology.PrincipalIdealRing
 import TauCeti.CategoryTheory.GradedObject.Monoidal
 
@@ -219,17 +220,12 @@ theorem span_singularHomologyKunnethPair_tmul_eq_top {x : X} {y : Y} {m n : ℕ}
     (B := ({y}ᶜ : Set (TopCat.of Y))) isOpen_compl_singleton isOpen_compl_singleton (m + n)
   have := GradedObject.Monoidal.isIso_ιTensorObj_of_isZero_left _
     (fun q ↦ localHomology (ModuleCat.of k k) ({y} : Set Y) q) hX n (m + n) rfl
-  have hsurj := (ModuleCat.epi_iff_surjective _).1 (inferInstance : Epi
-    (GradedObject.Monoidal.ιTensorObj _ _ m n (m + n) rfl ≫
-      singularHomologyKunnethPair k ({x}ᶜ : Set (TopCat.of X)) ({y}ᶜ : Set (TopCat.of Y))
-        (m + n)))
   -- The tensor product of the generators generates the tensor product.
   have htop : k ∙ z ⊗ₜ[k] z' = ⊤ := by
     have h := Submodule.map₂_span_span k (TensorProduct.mk k _ _) {z} {z'}
     rw [hz, hz', TensorProduct.map₂_mk_top_top_eq_top, image2_singleton] at h
     exact h.symm
-  rw [← image_singleton, ← Submodule.map_span, htop, Submodule.map_top, LinearMap.range_eq_top]
-  exact hsurj
+  exact (ModuleCat.span_singleton_apply_eq_top_iff _).2 htop
 
 variable {S : Set X} {T : Set Y} {x : X} {y : Y}
 
@@ -321,26 +317,14 @@ theorem span_cubicalHomologyKunnethPair_fundamentalClassRel_eq_top
     Projective.of_iso ((localHomologyIsoOfIsOpenEmbedding _ hι x _).symm ≪≫
       singularHomologyComplSingletonFinrankIso (ModuleCat.of ℤ ℤ) (chartAt E x)
         (mem_chart_source E x)).symm inferInstance
-  -- A class restricting to a local orientation restricts to a generator with coefficients `ℤ`,
-  -- since the change of coefficients commutes with restriction.
-  have hgen {Z : Type} [TopologicalSpace Z] {z₀ : Z} {S : Set Z} (hz₀ : z₀ ∈ S) {d : ℕ}
-      (γ : localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) S d)
-      (hγ : IsLocalOrientation z₀ d (localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ))
-        (singleton_subset_iff.2 hz₀) d γ)) :
-      ℤ ∙ (localHomologyRestriction (ModuleCat.of ℤ ℤ) (singleton_subset_iff.2 hz₀) d).hom
-        ((uliftIntSingularHomologyIso _ d).hom γ) = ⊤ := by
-    rw [isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top,
-      localHomologyRestriction_def, ← ConcreteCategory.comp_apply,
-      singularHomologyMap_comp_uliftIntSingularHomologyIso_hom] at hγ
-    rwa [localHomologyRestriction_def]
   exact span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (mem_range_self x)
     (mem_range_self x') hX _ _
-    (hgen (mem_range_self x) _
-      (o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι hιf hf
-        (mem_range_self x)))
-    (hgen (mem_range_self x') _
-      (o'.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι' hιf' hf'
-        (mem_range_self x')))
+    ((o.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι hιf hf
+      (mem_range_self x)).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+        (mem_range_self x))
+    ((o'.isLocalOrientation_localHomologyRestriction_fundamentalClassRel rfl hι' hιf' hf'
+      (mem_range_self x')).span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top
+        (mem_range_self x'))
 
 end HomologicalOrientation
 
