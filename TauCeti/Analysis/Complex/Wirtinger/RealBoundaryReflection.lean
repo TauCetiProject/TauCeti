@@ -59,9 +59,25 @@ below the axis; for `F = ℂ` it is `TauCeti.schwarzReflection`.
   satisfying `v (conj z) = star (v z)`. It is a weak analogue of
   `TauCeti.differentiableOn_schwarzReflection_of_symmetric`; recovering that lemma from it would
   also need the half-plane boundary-term computation for smooth data, which is not proved here.
+* `HasWeakConjWirtingerDerivRealBoundaryOn.mono`: restriction to a smaller open domain.
+* `HasWeakConjWirtingerDerivRealBoundaryOn.star_eq_of_continuousOn`: continuous weak solutions
+  with finite-dimensional coefficients and locally `Lᵖ` data for `p > 2` are pointwise real on
+  the real axis.
+* `HasWeakConjWirtingerDerivRealBoundaryOn.star_eq_of_continuousOn_clm`: the pointwise boundary
+  conclusion for the coefficient-field equation `∂ₛξ + i ∂ₜξ + C ξ = 0`.
 * Check: the even reflection `s + i|t|`, which omits the conjugation, is not a weak solution
   below the axis. The companion check that the reflection of `z` is `z` is
   `TauCeti.starSchwarzReflection_id`.
+* Check: `TauCeti.not_hasWeakConjWirtingerDerivRealBoundaryOn_const_I_of_memLpLoc` excludes the
+  constant `i` for every locally `Lᵖ` right-hand side with `p > 2`, on any domain containing a
+  real point.
+
+For finite-dimensional coefficients and data locally `Lᵖ` up to the axis with `p > 2`, a weak
+real-boundary solution continuous on the closed half-domain is pointwise real along the axis.
+Neither pointwise theorem requires a conjugation-invariant domain. The coefficient-field form
+`star_eq_of_continuousOn_clm` is the case `η = -½ C ξ` for
+`∂ₛξ + i ∂ₜξ + C ξ = 0`. Reflection, interior weak regularity and Morrey continuity identify
+the limits from the two sides.
 
 The proof of the reflection theorem splits a real test function `φ` on the doubled domain into
 `φ + φ ∘ conj`, which is an admissible test, and `φ - φ ∘ conj`, which vanishes on the axis, so
@@ -72,16 +88,6 @@ moved to the upper one by the measure-preserving substitution `z ↦ conj z`.
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
   AMS Colloquium Publications **52**, 2012, Appendix B.4, equation (B.4.3).
-
-## Pointwise boundary values
-
-For finite-dimensional coefficients and data locally `Lᵖ` up to the axis with `p > 2`, a weak
-real-boundary solution continuous on the closed half-domain is pointwise real along the axis
-(`HasWeakConjWirtingerDerivRealBoundaryOn.star_eq_of_continuousOn`). The coefficient-field form
-applies to the linear equation, without requiring a conjugation-invariant domain. Reflection,
-interior weak regularity and Morrey continuity identify the limits from the two sides. In
-particular, the constant `i` cannot solve the weak real-boundary equation for any such data.
-
 -/
 
 public noncomputable section
