@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.Zeta
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Zeta
 public import TauCeti.Geometry.Symplectic.Manifold.FixedPoint
+import TauCeti.Dynamics.PeriodicPts.PeriodicPair
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -290,8 +291,8 @@ theorem mapRingHom_tprod_fixedPointDerivative_eq_exp_tsum_single_sign_det_div
           ((SignType.sign (LinearMap.det (LinearMap.id -
             fixedPointDerivative I (⇑φ)^[q.1.1] ⟨q.1.2, q.2.2.eq⟩)) : ℤ) / q.1.1)) :
           NovikovSeries K _ (timePeriodHom φ))) := by
-  have hx : Injective x := fun i i' h ↦
-    (hrep _ (mk_mem_periodicPts (hd i) (hxd i))).unique ⟨0, rfl⟩ ⟨0, h.symm⟩
+  have hx : Injective x :=
+    injective_of_existsUnique_iterate (fun i ↦ mk_mem_periodicPts (hd i) (hxd i)) hrep
   rw [← orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative hφ hx hxd hd
     hE hσ hφσ K, orbitZeta_eq_exp_tsum_single_sign_det_div hφ hxd hd hmin hrep K]
 

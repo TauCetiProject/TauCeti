@@ -16,6 +16,8 @@ Let `f : α → α` and let `x i` be points of least periods `d i > 0`, one on e
 `(d i * (k + 1), f^[j] (x i))` with `k : ℕ` and `j < d i`, each exactly once
 (`Function.periodicPairEquiv`). Indeed the least period of a point `y` on the orbit of `x i` is
 `d i`, which divides every period of `y`, and the points `f^[j] (x i)`, `j < d i`, are distinct.
+Such a choice of representatives is automatically injective
+(`Function.injective_of_existsUnique_iterate`).
 
 This is the reindexing by which a sum over the fixed points of the iterates of `f`, such as the
 fixed-point form of a zeta function, becomes a sum over periodic orbits and their iterates.
@@ -27,11 +29,17 @@ namespace Function
 
 variable {α ι : Type*} {f : α → α} {x : ι → α} {d : ι → ℕ}
 
+/-- If the `x i` are periodic points of `f` and every periodic point lies on the orbit of exactly
+one `x i`, then the `x i` are pairwise distinct. -/
+theorem injective_of_existsUnique_iterate (hper : ∀ i, x i ∈ periodicPts f)
+    (hrep : ∀ y ∈ periodicPts f, ∃! i, ∃ j, f^[j] (x i) = y) : Injective x :=
+  fun i _ h ↦ (hrep _ (hper i)).unique ⟨0, rfl⟩ ⟨0, h.symm⟩
+
 /-- **The fixed points of the iterates, sorted by orbit.** If `x i` has least period `d i > 0` and
 every periodic point of `f` lies on the orbit of exactly one `x i`, then
 `(i, k, j) ↦ (d i * (k + 1), f^[j] (x i))`, `j < d i`, is an equivalence onto the pairs `(n, y)`
 with `n > 0` and `f^[n] y = y`. -/
-@[expose] noncomputable def periodicPairEquiv (hmin : ∀ i, minimalPeriod f (x i) = d i)
+noncomputable def periodicPairEquiv (hmin : ∀ i, minimalPeriod f (x i) = d i)
     (hd : ∀ i, 0 < d i) (hrep : ∀ y ∈ periodicPts f, ∃! i, ∃ j, f^[j] (x i) = y) :
     ((p : ι × ℕ) × Fin (d p.1)) ≃ {q : ℕ × α // 0 < q.1 ∧ IsPeriodicPt f q.1 q.2} :=
   Equiv.ofBijective (fun q ↦ ⟨(d q.1.1 * (q.1.2 + 1), f^[q.2] (x q.1.1)),
@@ -76,6 +84,6 @@ theorem coe_periodicPairEquiv_apply (hmin : ∀ i, minimalPeriod f (x i) = d i)
     (hd : ∀ i, 0 < d i) (hrep : ∀ y ∈ periodicPts f, ∃! i, ∃ j, f^[j] (x i) = y)
     (q : (p : ι × ℕ) × Fin (d p.1)) :
     (periodicPairEquiv hmin hd hrep q : ℕ × α) = (d q.1.1 * (q.1.2 + 1), f^[q.2] (x q.1.1)) :=
-  rfl
+  (rfl)
 
 end Function

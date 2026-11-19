@@ -100,8 +100,6 @@ computed in any chart, also on manifolds with boundary or corners
   excludes the eigenvalues `±1` of the return maps of all covers of period at most `N`.
 * `TauCeti.fixedPointDerivative_iterate`: at a fixed point where `f` is differentiable, the
   fixed-point derivative of `f^[n]` is the `n`-th power of that of `f`.
-* `TauCeti.mdifferentiableAt_iterate`: if `f` is differentiable at the first `n` points of the
-  orbit of `x`, then `f^[n]` is differentiable at `x`.
 * `TauCeti.det_id_sub_fixedPointDerivative_apply_iterate`: for a periodic point `x` of period `n`
   of a map differentiable along its orbit, `det (1 - d(f^[n]))` is the same at every point
   `f^[j] x` of the orbit.
@@ -487,15 +485,15 @@ theorem fixedPointDerivative_iterate_mul {d : ℕ} (hx : IsPeriodicPt f d x)
   rw [key _ (iterate_mul f d n)]
   exact fixedPointDerivative_iterate ⟨x, hx.eq⟩ hf n
 
-/-- **Iterates of a map differentiable along an orbit.** If `f` is differentiable at the points
-`f^[m] x`, `m < n`, of the orbit of `x`, then `f^[n]` is differentiable at `x`. -/
-theorem mdifferentiableAt_iterate {n : ℕ} (hf : ∀ m < n, MDifferentiableAt I I f (f^[m] x)) :
-    MDifferentiableAt I I f^[n] x := by
-  induction n with
-  | zero => exact mdifferentiableAt_id
-  | succ n ih =>
-    rw [iterate_succ']
-    exact (hf n n.lt_succ_self).comp x (ih fun m hm ↦ hf m (hm.trans n.lt_succ_self))
+/-- **The return determinant depends only on the map and the point.** The determinant
+`det (1 - d(g)_y)` at a fixed point `y` of `g` is unchanged when `g` and `y` are replaced by equal
+ones, whatever the proofs that they are fixed. -/
+theorem det_id_sub_fixedPointDerivative_congr {g g' : M → M} {y y' : M} (p : g y = y)
+    (p' : g' y' = y') (hg : g = g') (hy : y = y') :
+    LinearMap.det (LinearMap.id - fixedPointDerivative I g ⟨y, p⟩) =
+      LinearMap.det (LinearMap.id - fixedPointDerivative I g' ⟨y', p'⟩) := by
+  subst hg hy
+  rfl
 
 /-- **The return determinant at the next point of a periodic orbit.** Let `x` be a periodic point
 of `f` of period `n + 1`, with `f` differentiable at `x` and `f^[n]` differentiable at `f x`.
@@ -545,13 +543,8 @@ theorem det_id_sub_fixedPointDerivative_apply_iterate [FiniteDimensional 𝕜 E]
   | zero => rfl
   | succ j ih =>
     -- Move from `f^[j + 1] x = f (f^[j] x)` back to `f^[j] x`, then use the induction hypothesis.
-    have key : ∀ (y : M) (hy : y = f (f^[j] x)) (p : f^[n + 1] y = y),
-        LinearMap.det (LinearMap.id - fixedPointDerivative I f^[n + 1] ⟨y, p⟩) =
-          LinearMap.det (LinearMap.id -
-            fixedPointDerivative I f^[n + 1] ⟨f (f^[j] x), hy ▸ p⟩) := by
-      rintro _ rfl _
-      rfl
-    rw [key _ (iterate_succ_apply' f j x), ← ih]
+    rw [det_id_sub_fixedPointDerivative_congr _ (hx.apply_iterate j).apply.eq rfl
+      (iterate_succ_apply' f j x), ← ih]
     refine det_id_sub_fixedPointDerivative_iterate_succ_apply (hx.apply_iterate j) (hf j)
       (mdifferentiableAt_iterate fun m _ ↦ ?_)
     rw [← iterate_succ_apply' f j x, ← iterate_add_apply]

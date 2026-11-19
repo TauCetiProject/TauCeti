@@ -104,8 +104,8 @@ theorem hasSum_single_sign_det_div_orbitLog :
       (orbitLog K (timePeriodHom φ) (fun i ↦ closedOrbitHomologyClass (hxd i))
         (fun i n ↦ SignType.sign (LinearMap.det (LinearMap.id -
           fixedPointDerivative I (⇑φ)^[d i * n] ⟨x i, ((hxd i).mul_const n).eq⟩)))) := by
-  have hx : Injective x := fun i i' h ↦
-    (hrep _ (mk_mem_periodicPts (hd i) (hxd i))).unique ⟨0, rfl⟩ ⟨0, h.symm⟩
+  have hx : Injective x :=
+    injective_of_existsUnique_iterate (fun i ↦ mk_mem_periodicPts (hd i) (hxd i)) hrep
   have key := hasSum_orbitLog_sigma_fin (K := K)
     (fun i ↦ timePeriodHom_closedOrbitHomologyClass_pos (hxd i) (hd i))
     (tendsto_timePeriodHom_closedOrbitHomologyClass hφ hx hxd hd)
@@ -115,28 +115,19 @@ theorem hasSum_single_sign_det_div_orbitLog :
   rw [← (periodicPairEquiv hmin hd hrep).hasSum_iff]
   convert key using 2 with q
   obtain ⟨⟨i, k⟩, j⟩ := q
-  -- The closed orbit through `φ^[j] (x i)` of period `d i * (k + 1)` has class
-  -- `(k + 1) • [γ_(x i)]` and the Lefschetz sign of `x i`. Both are stated for an arbitrary
-  -- period `n` and point `y` equal to these, as the pair `(n, y)` is the image of `(i, k, j)`.
-  have hclass : ∀ (n : ℕ), n = (k + 1) * d i → ∀ (h : IsPeriodicPt φ n ((⇑φ)^[j] (x i))),
-      closedOrbitHomologyClass h = (k + 1) • closedOrbitHomologyClass (hxd i) := by
-    rintro _ rfl h
-    rw [← closedOrbitHomologyClass_const_mul (hxd i) (k + 1),
-      ← closedOrbitHomologyClass_apply_iterate ((hxd i).const_mul (k + 1)) j]
-  have hcoeff : ∀ (n : ℕ) (y : M), n = d i * (k + 1) → y = (⇑φ)^[j] (x i) →
-      ∀ (h : IsPeriodicPt φ n y),
-      algebraMap ℚ K ((SignType.sign (LinearMap.det (LinearMap.id -
-          fixedPointDerivative I (⇑φ)^[n] ⟨y, h.eq⟩)) : ℤ) / n) =
-        algebraMap ℚ K ((SignType.sign (LinearMap.det (LinearMap.id -
-          fixedPointDerivative I (⇑φ)^[d i * (k + 1)]
-            ⟨x i, ((hxd i).mul_const (k + 1)).eq⟩)) : ℤ) / (d i * (k + 1) : ℕ)) := by
-    rintro _ _ rfl rfl h
-    rw [det_id_sub_fixedPointDerivative_apply_iterate ((hxd i).mul_const (k + 1))
-      (fun _ ↦ φ.contMDiff.mdifferentiable (by simp) _) j]
+  -- The pair `(n, y)` is `(d i * (k + 1), φ^[j] (x i))`. The closed orbit through `y` of period
+  -- `n` has class `(k + 1) • [γ_(x i)]` and the Lefschetz sign of `x i`.
+  have hq := coe_periodicPairEquiv_apply hmin hd hrep ⟨(i, k), j⟩
+  have hn := congrArg Prod.fst hq
+  have hy := congrArg Prod.snd hq
   dsimp only [Function.comp_apply]
   congr 1
-  · exact hclass _ (Nat.mul_comm _ _) _
-  · exact hcoeff _ _ rfl rfl (((hxd i).mul_const (k + 1)).apply_iterate j)
+  · simp only [hn, hy, Nat.mul_comm (d i)]
+    rw [closedOrbitHomologyClass_apply_iterate ((hxd i).const_mul (k + 1)) j,
+      closedOrbitHomologyClass_const_mul]
+  · rw [det_id_sub_fixedPointDerivative_congr _ (((hxd i).mul_const (k + 1)).apply_iterate j).eq
+      (congrArg _ hn) hy, det_id_sub_fixedPointDerivative_apply_iterate
+      ((hxd i).mul_const (k + 1)) (fun _ ↦ φ.contMDiff.mdifferentiable (by simp) _) j, hn]
 
 include hφ hxd hd hmin hrep in
 /-- **The orbit zeta function as a sum over fixed points.** Under the hypotheses of
