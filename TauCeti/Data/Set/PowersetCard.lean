@@ -18,6 +18,9 @@ these induced maps respect identities and composition of embeddings.
 `Set.powersetCard.coe_ofSingleton` identifies the finite set underlying the singleton
 equivalence. It lets computations with fixed-cardinality subsets use the usual singleton API.
 
+`Set.powersetCard.val_ofFinEmb_fin_three` lists the three elements of the subset enumerated by an
+embedding of `Fin 3`.
+
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
 
@@ -58,6 +61,12 @@ theorem map_map {α β γ : Type*} (n : ℕ) (f : α ↪ β) (g : β ↪ γ) (s 
 @[simp]
 theorem coe_ofSingleton {α : Type*} (a : α) :
     ((ofSingleton a : powersetCard α 1) : Finset α) = {a} := rfl
+
+/-- The three-element subset enumerated by an embedding `f : Fin 3 ↪ α` is `{f 0, f 1, f 2}`. -/
+theorem val_ofFinEmb_fin_three {α : Type*} [DecidableEq α] (f : Fin 3 ↪ α) :
+    (ofFinEmb 3 α f : Finset α) = {f 0, f 1, f 2} := by
+  ext v
+  simp [val_ofFinEmb, Fin.exists_fin_succ, eq_comm]
 
 /-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
 noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
