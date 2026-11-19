@@ -18,8 +18,10 @@ tangent curves of this foliation and therefore preserves its leaves. It follows 
 through the identity is a subgroup. This file packages that subgroup and records its
 path-connectedness.
 
-The topology on the subgroup subtype is still the subspace topology. Constructing the generally
-finer manifold topology which makes this leaf an immersed Lie subgroup is separate work.
+The topology on the subgroup subtype is the subspace topology. The generally finer manifold
+topology which makes this leaf an immersed Lie subgroup with Lie algebra `S` is the intrinsic
+topology of the Frobenius leaf, and the resulting presentation is
+`LieSubalgebra.integralLeafSubgroupData` in `TauCeti.Geometry.Lie.Subgroup.Immersed.Existence`.
 
 ## Main definitions
 
