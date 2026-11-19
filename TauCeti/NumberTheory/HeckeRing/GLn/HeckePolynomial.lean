@@ -243,7 +243,7 @@ theorem C_coeff_zero_mul_glnHeckePolynomial_comp_C_mul_X {T' : Fin (n + 1) → A
   ext k
   rw [coeff_C_mul, coeff_C_mul, comp_C_mul_X_coeff, coeff_reflect]
   rcases le_or_gt k n with hk | hk
-  · obtain ⟨i, rfl⟩ : ∃ i : Fin (n + 1), k = n - i := ⟨⟨n - k, by omega⟩, by simp; omega⟩
+  · obtain ⟨i, rfl⟩ : ∃ i : Fin (n + 1), k = n - i := ⟨⟨n - k, by omega⟩, by rw [Fin.val_mk]; omega⟩
     have hi := i.is_le
     have h := coeff_glnHeckePolynomial_sub_mul_coeff_zero q T hT' i
     have hexp : (i : ℕ) * (n - 1) + (n - 1) * (n - i) = n * (n - 1) := by

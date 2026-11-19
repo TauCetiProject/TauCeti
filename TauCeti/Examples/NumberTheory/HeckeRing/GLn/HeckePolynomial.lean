@@ -80,7 +80,9 @@ example : ∀ i : Fin 3,
 -- The inverted polynomial is `X² - (5/3)X + 2/3 = (X - 1)(X - 2/3)`: its roots are `q / β`
 -- for the roots `β = 2, 3` of `P`.
 example : glnHeckePolynomial 2 (2 : ℚ) ![1, 5 / 3, 1 / 3] = (X - C 1) * (X - C (2 / 3)) := by
-  rw [glnHeckePolynomial_two, show (C (2 / 3) : ℚ[X]) = C 1 * C (2 / 3) by simp]
+  have h : (X - C 1) * (X - C (2 / 3)) =
+      C 1 * X ^ 2 - C (1 + 2 / 3) * X + C (1 * (2 / 3) : ℚ) := by
+    rw [C_add, C_mul, C_1]
+    ring
+  rw [glnHeckePolynomial_two, h]
   norm_num
-  rw [show (C (5 / 3) : ℚ[X]) = 1 + C (2 / 3) by rw [← C_1, ← C_add]; norm_num]
-  ring
