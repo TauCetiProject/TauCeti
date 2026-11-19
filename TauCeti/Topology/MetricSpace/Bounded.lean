@@ -22,6 +22,9 @@ infinity in the cobounded filter, `closedBall x r` is eventually contained in ev
 complement is bounded (`Metric.tendsto_closedBall_cobounded_smallSets`). So a property holding
 near infinity eventually holds on whole balls of radius `r`, which is the form in which local
 estimates on balls, such as mean-value inequalities, are applied near infinity.
+
+In a proper space the frontier of a bounded set is compact
+(`Bornology.IsBounded.isCompact_frontier`), as a closed subset of its compact closure.
 -/
 
 public section
@@ -58,3 +61,8 @@ theorem tendsto_closedBall_cobounded_smallSets (r : ℝ) :
   linarith [dist_triangle x y c, mem_closedBall'.1 hy]
 
 end Metric
+
+/-- In a proper space the frontier of a bounded set is compact. -/
+theorem Bornology.IsBounded.isCompact_frontier {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
+    {s : Set X} (hs : Bornology.IsBounded s) : IsCompact (frontier s) :=
+  hs.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure
