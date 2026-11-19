@@ -15,11 +15,11 @@ public import TauCeti.Algebra.Group.ElementaryTwoQuotient.Basic
 For a commutative group `A` with maximal elementary-2 quotient `B = A / A²`, this file studies the
 increasing filtration `B_t ⊆ B` by the images of the `2 ^ t`-torsion subgroups
 `A[2 ^ t] = {a | a ^ 2 ^ t = 1}`, and the **obstruction threshold** `t_A(b)` of an element `b`: the
-least `t` with the class of `b` in `B_t`. It answers a concrete question about power equations: for
-`r ≠ 0`, the equation `h ^ (2 * r) = b ^ r` has a solution `h ∈ A` exactly when
-`t_A(b) ≤ v₂(r)`, where `v₂ = multiplicity 2` is the `2`-adic valuation. Equivalently, for an odd
-`q > 1` the equation `h ^ (q - 1) = b ^ ((q - 1) / 2)` is solvable exactly when
-`t_A(b) < v₂(q - 1)`.
+least `t` with the class of `b` in `B_t`. It answers a concrete question about power equations:
+when `A` is torsion and `r ≠ 0`, the equation `h ^ (2 * r) = b ^ r` has a solution `h ∈ A` exactly
+when `t_A(b) ≤ v₂(r)`, where `v₂ = multiplicity 2` is the `2`-adic valuation. Equivalently, when
+`A` is torsion and `q > 1` is odd, the equation `h ^ (q - 1) = b ^ ((q - 1) / 2)` is solvable
+exactly when `t_A(b) < v₂(q - 1)`.
 
 Such equations describe the elements of a fiber of a finite central extension fixed by a `q`-th
 power map (Wood, *Nonabelian Cohen–Lenstra moments*, Duke Math. J. 168 (2019), §4.1,
@@ -181,8 +181,8 @@ theorem torsionImageFiltration_eq_top (hA : IsMulTorsion A) {e : ℕ}
 
 /-- **The two-primary obstruction threshold** `t_A(b)` of an element `b` of a commutative group:
 the least `t` such that the square class of `b` lies in the torsion-image filtration step `B_t`.
-In a torsion group this minimum exists (`obstructionThreshold_le_iff`); otherwise the value `0`
-is a junk value. -/
+In a torsion group this minimum exists (`obstructionThreshold_le_iff`); if no `B_t` contains the
+class of `b`, the value is the junk value `0`. -/
 noncomputable def obstructionThreshold (b : A) : ℕ :=
   sInf {t | elementaryTwoQuotientMk b ∈ torsionImageFiltration A t}
 
