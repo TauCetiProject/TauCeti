@@ -89,19 +89,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### The kinetic Lagrangian of a nondegenerate metric -/
 
-/-- The kinetic Lagrangian `v ↦ ½ g(v, v)` of a smooth metric is smooth. -/
-theorem contMDiff_mechanicalLagrangian :
-    ContMDiff I.tangent 𝓘(ℝ) ∞ (mechanicalLagrangian (⇑g) 0) :=
-  TauCeti.contMDiff_mechanicalLagrangian g.contMDiff contMDiff_const
-
-/-- **A nondegenerate metric gives a hyperregular mechanical Lagrangian.** On a finite-dimensional
-manifold, the Legendre map `v ↦ g(v, ·)` of `L(v) = ½ g(v, v) - V(x)` is a bijection `TM → T*M`,
-for every potential `V`. -/
-theorem isHyperregularLagrangian_mechanicalLagrangian [FiniteDimensional ℝ E] (V : M → ℝ) :
-    IsHyperregularLagrangian (mechanicalLagrangian (⇑g) V) :=
-  (isHyperregularLagrangian_mechanicalLagrangian_iff g.apply_comm V).2 fun x ↦
-    ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm.2 (g.nondegenerate x)
-
 /-- **The kinetic Lagrangian in a tangent-bundle chart.** Read in the tangent-bundle chart at `v`,
 the kinetic Lagrangian `½ g(w, w)` is the kinetic Lagrangian `(q, u) ↦ ½ G_q(u, u)` of the metric
 `G` read in the chart at the base point of `v`. -/
@@ -155,17 +142,6 @@ theorem eq_of_eval₂_cartanTwoForm_mechanicalLagrangian {v : TangentBundle I M}
     rw [← hΦv]
     filter_upwards [extChartAt_target_mem_nhds (I := I.tangent) v] with y hy
     exact g.mechanicalLagrangian_extChartAt_symm v hy
-  have hFL : linearLegendreMap (L ∘ (extChartAt I.tangent v).symm) =ᶠ[𝓝 (x₀, w₀)]
-      linearLegendreMap (kineticLagrangian G) := by
-    filter_upwards [hℓ.eventually_nhds] with y hy
-    refine Prod.ext (by rw [linearLegendreMap_fst, linearLegendreMap_fst]) ?_
-    rw [linearLegendreMap_snd, linearLegendreMap_snd]
-    exact Filter.EventuallyEq.fderiv_eq
-      (((continuous_const.prodMk continuous_id).tendsto y.2).eventually hy)
-  have hE : (fun y ↦ (linearLegendreMap (L ∘ (extChartAt I.tangent v).symm) y).2 y.2 -
-      (L ∘ (extChartAt I.tangent v).symm) y) =ᶠ[𝓝 (x₀, w₀)]
-      fun y ↦ (linearLegendreMap (kineticLagrangian G) y).2 y.2 - kineticLagrangian G y :=
-    (hFL.and hℓ).mono fun y hy ↦ by dsimp only; rw [hy.1, hy.2]
   -- The equation `ι_X ω_L = dE_L`, read in the chart, is that of the kinetic Lagrangian of `G`.
   have htarget : (extChartAt I v.proj).target ∈ 𝓝 x₀ := extChartAt_target_mem_nhds v.proj
   have key := snd_eq_neg_christoffelSecondKind_of_symplecticForm (x := (x₀, w₀)) (X := Y)
@@ -173,7 +149,8 @@ theorem eq_of_eval₂_cartanTwoForm_mechanicalLagrangian {v : TangentBundle I M}
         exact LinearMap.BilinForm.isSymm_iff.mpr (g.isSymm_chartMetric hy))
     (g.nondegenerate_chartMetric (mem_extChartAt_target v.proj))
     (((g.contDiffOn_chartMetric v.proj).contDiffAt htarget).of_le (by simp)) hY₁ fun W ↦ by
-      rw [← hFL.fderiv_eq, ← hE.fderiv_eq, ← hΦv]
+      rw [← hℓ.linearLegendreMap.fderiv_eq, ← hℓ.linearLegendreMap_snd_apply_sub.fderiv_eq,
+        ← hΦv]
       exact (eval₂_cartanTwoForm_eq_fderiv_linearLegendreMap hL v _ W).symm.trans
         ((hX W).trans
           (DFunLike.congr_fun (mvfderiv_lagrangianEnergy_eq_fderiv hL (by simp) v) W))
