@@ -23,7 +23,8 @@ The adjoint of the differential is the canonical isometric horizontal lift. Its 
 the differential is exactly the native orthogonal projection onto the horizontal space; the
 complementary projection is the vertical one. Thus the differential decreases norms, with
 equality exactly on horizontal vectors. The gradient of a pulled-back function is the horizontal
-lift of its gradient. Product projections give submersions with arbitrary-dimensional fibres.
+lift of its gradient, so it has the same length. Product projections give submersions with
+arbitrary-dimensional fibres.
 
 These are pointwise splitting and metric identities. They do not assert regularity of the
 horizontal distribution or construct horizontal lifts of curves.
@@ -192,6 +193,18 @@ theorem mfderiv_mgradient_comp {g : N → ℝ} {x : M}
     (hg : MDifferentiableAt J 𝓘(ℝ) g (f x)) :
     mfderiv I J f x (Manifold.mgradient I (g ∘ f) x) = Manifold.mgradient J g (f x) := by
   rw [h.mgradient_comp hg, h.mfderiv_horizontalLift]
+
+/-- A pulled-back negative gradient projects to the negative gradient on the base. -/
+theorem mfderiv_neg_mgradient_comp {g : N → ℝ} {x : M}
+    (hg : MDifferentiableAt J 𝓘(ℝ) g (f x)) :
+    mfderiv I J f x (-Manifold.mgradient I (g ∘ f) x) = -Manifold.mgradient J g (f x) := by
+  rw [map_neg, h.mfderiv_mgradient_comp hg]
+
+/-- A pulled-back gradient has the length of the gradient on the base. -/
+theorem norm_mgradient_comp {g : N → ℝ} {x : M}
+    (hg : MDifferentiableAt J 𝓘(ℝ) g (f x)) :
+    ‖Manifold.mgradient I (g ∘ f) x‖ = ‖Manifold.mgradient J g (f x)‖ := by
+  rw [h.mgradient_comp hg, LinearIsometry.norm_map]
 
 end IsRiemannianSubmersion
 

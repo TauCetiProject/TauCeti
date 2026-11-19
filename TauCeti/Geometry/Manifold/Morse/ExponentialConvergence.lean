@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.Morse.Basic
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Distance
 
 /-!
 # Exponential convergence of a negative gradient trajectory on a manifold
@@ -320,21 +321,9 @@ theorem exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
   have hx := Ici_subset_maximalIntegralCurveInterval_neg_mgradient_of_tendsto hp hconv
   refine ⟨K, hK, ?_⟩
   filter_upwards [hlen, eventually_ge_atTop 0] with t ht ht0
-  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
-  -- Compare with a later point `γ s` which is `ε`-close to `p`.
-  obtain ⟨s, hs, hts⟩ := ((hconv.eventually (eventually_riemannianEDist_lt I p
-    (c := ε) (by exact_mod_cast hε))).and (eventually_ge_atTop t)).exists
-  calc Manifold.riemannianEDist I (γ t) p
-      ≤ Manifold.riemannianEDist I (γ t) (γ s) + Manifold.riemannianEDist I (γ s) p :=
-        Manifold.riemannianEDist_triangle
-    _ ≤ Manifold.pathELength I γ t s + ε := by
-        gcongr
-        · exact Manifold.riemannianEDist_le_pathELength
-            ((contMDiffOn_maximalIntegralCurve_neg_mgradient hf).mono
-              fun u hu ↦ hx (ht0.trans hu.1)) rfl rfl hts
-        · rw [Manifold.riemannianEDist_comm]
-          exact hs.le
-    _ ≤ ENNReal.ofReal (K * √(f (γ t) - f p)) + ε := by gcongr; exact ht s
+  exact Manifold.riemannianEDist_le_of_tendsto_of_forall_pathELength_le
+    ((contMDiffOn_maximalIntegralCurve_neg_mgradient hf).mono fun u hu ↦ hx (ht0.trans hu)) hconv
+    ht
 
 /-- **A trajectory converging to a critical point with a Łojasiewicz inequality converges
 exponentially fast in the Riemannian distance.** If the maximal integral curve `γ` of `-grad f`
