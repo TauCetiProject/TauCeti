@@ -40,6 +40,8 @@ structural fact relating that subalgebra to the tensor product of representation
   coefficient of `N` is a coefficient of `M ⊗[R] N`.
 * `TauCeti.Comodule.matrixCoefficientSubmodule_mul_le`: the coefficient submodules multiply
   into the coefficient submodule of the tensor product.
+* `TauCeti.Comodule.matrixCoefficientSubmodule_tensor`: for finite projective comodules, the
+  coefficient submodule of the tensor product is the product of the two coefficient submodules.
 
 ## References
 
@@ -140,6 +142,38 @@ theorem matrixCoefficientSubmodule_mul_le :
   rw [matrixCoefficientSubmodule, matrixCoefficientSubmodule, matrixCoefficientSubmodule,
     Submodule.span_mul_span]
   exact Submodule.span_mono matrixCoefficientSet_mul_subset
+
+section Finite
+
+variable [Module.Finite R M] [Module.Projective R M] [Module.Finite R N] [Module.Projective R N]
+
+/-- **The coefficient submodule of a tensor product is the product.** For finite projective
+comodules, every functional on `M ⊗[R] N` is a sum of product functionals
+(`TensorProduct.dualDistribEquiv`), so every coefficient of `M ⊗[R] N` is a sum of products of a
+coefficient of `M` and a coefficient of `N`. The reverse inclusion is
+`matrixCoefficientSubmodule_mul_le`. -/
+@[simp]
+theorem matrixCoefficientSubmodule_tensor :
+    matrixCoefficientSubmodule (R := R) (C := C) (M := M ⊗[R] N) =
+      matrixCoefficientSubmodule (R := R) (C := C) (M := M) *
+        matrixCoefficientSubmodule (R := R) (C := C) (M := N) := by
+  refine le_antisymm (matrixCoefficientSubmodule_le fun φ z ↦ ?_) matrixCoefficientSubmodule_mul_le
+  obtain ⟨t, rfl⟩ := (dualDistribEquiv R M N).surjective φ
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht =>
+    rw [map_add, matrixCoefficient_add_functional]
+    exact add_mem hs ht
+  | tmul φ ψ =>
+    induction z using TensorProduct.inductionOn with
+    | add x y hx hy =>
+      rw [matrixCoefficient_add]
+      exact add_mem hx hy
+    | tmul m n =>
+      rw [← LinearEquiv.coe_toLinearMap, toLinearMap_dualDistribEquiv, matrixCoefficient_tensor]
+      exact Submodule.mul_mem_mul (matrixCoefficient_mem_submodule (R := R) (C := C) φ m)
+        (matrixCoefficient_mem_submodule (R := R) (C := C) ψ n)
+
+end Finite
 
 end Comodule
 
