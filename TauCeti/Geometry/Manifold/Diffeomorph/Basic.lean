@@ -178,6 +178,13 @@ theorem mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f 
     rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfh,
       ContinuousLinearMap.zero_comp]
 
+/-- The linear equivalence `Diffeomorph.mfderivToContinuousLinearEquiv` acts on tangent vectors
+by the differential. -/
+@[simp]
+theorem mfderivToContinuousLinearEquiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M)
+    (v : TangentSpace I x) : h.mfderivToContinuousLinearEquiv hn x v = mfderiv I J h x v := by
+  rw [← ContinuousLinearEquiv.coe_coe, h.mfderivToContinuousLinearEquiv_coe hn]
+
 /-- **Chain rule for conjugation by a diffeomorphism.** If `h ∘ f` and `g ∘ h` agree near `x`,
 then `dg_(h x) ∘ dh_x = dh_(f x) ∘ df_x`. No differentiability of `f` or `g` is assumed. -/
 theorem mfderiv_apply_mfderiv_of_comp_eventuallyEq (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)

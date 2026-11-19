@@ -194,10 +194,8 @@ theorem IsNondegenerate.symplecticFormAt_fixedTangentSubspaceEquiv_apply
     hτ.symplecticFormAt (ψ p) (ψ.fixedTangentSubspaceEquiv (by simp) hK v)
         (ψ.fixedTangentSubspaceEquiv (by simp) hK w) =
       hσ.symplecticFormAt p v w := by
-  rw [Diffeomorph.coe_fixedTangentSubspaceEquiv_apply,
-    Diffeomorph.coe_fixedTangentSubspaceEquiv_apply,
-    ← ψ.mfderivToContinuousLinearEquiv_coe (by simp), ContinuousLinearEquiv.coe_coe]
-  exact (hσ.isSymplectomorphism_mfderivToContinuousLinearEquiv ψ hψ p).apply
+  simpa using
+    (hσ.isSymplectomorphism_mfderivToContinuousLinearEquiv (hσ₂ := hτ) ψ hψ p).apply
     (v : TangentSpace I p) w
 
 /-- The restriction of `τ_(ψ p)` to the fixed tangent subspace at `ψ p` is nondegenerate when the

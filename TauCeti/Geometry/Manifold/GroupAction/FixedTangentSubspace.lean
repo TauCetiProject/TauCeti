@@ -206,11 +206,9 @@ theorem map_fixedTangentSubspace (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {p
   have hstab : MulAction.stabilizer K (ψ p) = MulAction.stabilizer K p :=
     TauCeti.MulAction.stabilizer_eq_of_injective ψ ψ.injective fun k ↦ (h k).self_of_nhds
   have hinj : Function.Injective (mfderiv I J ψ p) := (ψ.isInvertible_mfderiv hn).injective
-  have hder : (ψ.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.toLinearMap =
-      (mfderiv I J ψ p).toLinearMap :=
-    congrArg ContinuousLinearMap.toLinearMap (ψ.mfderivToContinuousLinearEquiv_coe hn)
   ext w
-  simp only [hder, Submodule.mem_map, ContinuousLinearMap.coe_coe, mem_fixedTangentSubspace, hstab]
+  simp only [Submodule.mem_map, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    Diffeomorph.mfderivToContinuousLinearEquiv_apply, mem_fixedTangentSubspace, hstab]
   constructor
   · rintro ⟨v, hv, rfl⟩ k hk
     rw [ψ.mfderiv_smul_mfderiv_of_mem_stabilizer hn (h k) hk, hv k hk]
@@ -232,9 +230,7 @@ def fixedTangentSubspaceEquiv (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {p : 
 theorem coe_fixedTangentSubspaceEquiv_apply (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {p : M}
     (h : ∀ k : K, ψ ∘ (k • ·) =ᶠ[𝓝 p] (k • ·) ∘ ψ) (v : fixedTangentSubspace I K p) :
     (ψ.fixedTangentSubspaceEquiv hn h v : TangentSpace J (ψ p)) = mfderiv I J ψ p v := by
-  rw [fixedTangentSubspaceEquiv, LinearEquiv.ofSubmodules_apply,
-    ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
-    ψ.mfderivToContinuousLinearEquiv_coe hn]
+  simp [fixedTangentSubspaceEquiv]
 
 /-- A diffeomorphism that commutes near `p` with the action of every element of `K` preserves the
 dimension of the fixed tangent subspace at `p`. -/
