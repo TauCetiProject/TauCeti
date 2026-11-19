@@ -123,10 +123,10 @@ theorem contDiffOn_two_of_forall_ne_zero_hasFDerivAt (hℓ : ℓ ≠ 0) {B : Set
     rw [(Filter.eventuallyEq_of_mem (hB.mem_nhds hx) heq).fderiv_eq]
     exact (hd₂ x hx).fderiv
   refine ⟨?_, fun x hx ↦ ⟨heq hx, heq₂ x hx⟩⟩
-  rw [show (2 : WithTop ℕ∞) = 1 + 1 from rfl, contDiffOn_succ_iff_fderiv_of_isOpen hB]
+  rw [← one_add_one_eq_two, contDiffOn_succ_iff_fderiv_of_isOpen hB]
   refine ⟨fun x hx ↦ (hd₁ x hx).differentiableAt.differentiableWithinAt, by simp, ?_⟩
   refine ContDiffOn.congr ?_ heq
-  rw [show (1 : WithTop ℕ∞) = 0 + 1 from rfl, contDiffOn_succ_iff_fderiv_of_isOpen hB]
+  rw [← zero_add (1 : WithTop ℕ∞), contDiffOn_succ_iff_fderiv_of_isOpen hB]
   refine ⟨fun x hx ↦ (hd₂ x hx).differentiableAt.differentiableWithinAt, by simp, ?_⟩
   rw [contDiffOn_zero]
   exact hf₂.congr fun x hx ↦ (hd₂ x hx).fderiv

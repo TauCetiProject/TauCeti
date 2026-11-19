@@ -52,28 +52,6 @@ namespace TauCeti
 variable {F G : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [NormedAddCommGroup G]
   [NormedSpace ℝ G] {v : F}
 
-/-- The foot `x - ⟪x, v⟫ v` of `x` on the hyperplane `⟪·, v⟫ = 0` lies on the hyperplane. -/
-theorem inner_sub_inner_smul_self {v : F} (hv : ‖v‖ = 1) (x : F) :
-    ⟪x - ⟪x, v⟫ • v, v⟫ = 0 := by
-  rw [inner_sub_left, inner_smul_left, real_inner_self_eq_norm_sq, hv]
-  simp
-
-/-- The orthogonal projection `x ↦ x - ⟪x, v⟫ v` onto the hyperplane `⟪·, v⟫ = 0` does not
-increase norms. -/
-theorem norm_sub_inner_smul_le {v : F} (hv : ‖v‖ = 1) (x : F) :
-    ‖x - ⟪x, v⟫ • v‖ ≤ ‖x‖ := by
-  have h := norm_add_sq_eq_norm_sq_add_norm_sq_real (x := x - ⟪x, v⟫ • v) (y := ⟪x, v⟫ • v)
-    (by rw [inner_smul_right, inner_sub_inner_smul_self hv, mul_zero])
-  rw [sub_add_cancel] at h
-  rw [mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _), h]
-  exact le_add_of_nonneg_right (mul_self_nonneg _)
-
-/-- The height `⟪x, v⟫` above the hyperplane is `1`-Lipschitz. -/
-theorem abs_inner_sub_inner_le {v : F} (hv : ‖v‖ = 1) (x y : F) :
-    |⟪x, v⟫ - ⟪y, v⟫| ≤ dist x y := by
-  rw [← inner_sub_left, dist_eq_norm]
-  simpa [hv] using abs_real_inner_le_norm (x - y) v
-
 /-- The case of the Hölder criterion in which `x` lies at height above twice its distance to `y`:
 the segment `[x, y]` stays at height at least `dist x y`, where the derivative is controlled. -/
 private theorem dist_le_of_two_mul_dist_lt {v : F} (hv : ‖v‖ = 1) {α : ℝ≥0} (hα1 : α ≤ 1)
@@ -145,8 +123,8 @@ theorem holderOnWith_of_norm_fderiv_le_mul_rpow (hv : ‖v‖ = 1) {α : ℝ≥0
   -- Both points are close to the hyperplane: pass through their feet.
   set x' := x - ⟪x, v⟫ • v
   set y' := y - ⟪y, v⟫ • v
-  have hx'H : x' ∈ {x ∈ S | ⟪x, v⟫ = 0} := ⟨hfoot x hx, inner_sub_inner_smul_self hv x⟩
-  have hy'H : y' ∈ {x ∈ S | ⟪x, v⟫ = 0} := ⟨hfoot y hy, inner_sub_inner_smul_self hv y⟩
+  have hx'H : x' ∈ {x ∈ S | ⟪x, v⟫ = 0} := ⟨hfoot x hx, inner_sub_inner_smul_self_eq_zero hv x⟩
+  have hy'H : y' ∈ {x ∈ S | ⟪x, v⟫ = 0} := ⟨hfoot y hy, inner_sub_inner_smul_self_eq_zero hv y⟩
   have hx'y' : dist x' y' ≤ d := by
     have : x' - y' = (x - y) - ⟪x - y, v⟫ • v := by
       simp only [x', y', inner_sub_left, sub_smul]
@@ -202,10 +180,8 @@ private theorem dist_ite_neg_comp_hyperplaneReflection_le {v : F} (hv : ‖v‖ 
     rw [← add_div, add_comm b a, div_self hab.ne']
   have hzS : z ∈ S := hS hx hy (by positivity) (by positivity) hsum
   have hz0 : ⟪z, v⟫ = 0 := by
-    simp only [z, inner_add_left, inner_smul_left, RCLike.conj_to_real]
-    change b / (a + b) * a + a / (a + b) * ⟪y, v⟫ = 0
-    have : ⟪y, v⟫ = -b := by simp [b]
-    rw [this]
+    have hy : ⟪y, v⟫ = -b := by simp [b]
+    simp only [z, inner_add_left, inner_smul_left, RCLike.conj_to_real, hy]
     field_simp
     ring
   have hxz : dist x z ≤ dist x y := by

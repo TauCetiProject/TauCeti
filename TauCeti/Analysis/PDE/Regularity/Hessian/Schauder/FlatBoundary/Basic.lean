@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.FlatBoundary.Corrector
 public import TauCeti.Analysis.Calculus.FDeriv.Hyperplane
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 /-!
@@ -128,7 +129,8 @@ private theorem exists_eq_add_smul (m : E) : ∃ (τ : E) (a : ℝ), τ 0 = 0 �
 
 private theorem reflection_add_smul {τ : E} (hτ : τ 0 = 0) (a : ℝ) :
     Rℓ (τ + a • e₀) = τ - a • e₀ := by
-  rw [reflection_single_apply]
+  rw [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    reflection_single_one_apply]
   simp only [PiLp.add_apply, PiLp.smul_apply, hτ, smul_eq_mul, zero_add]
   simp
   module
@@ -193,17 +195,6 @@ private theorem neg_hessian_sub_apply_reflection {U : Set E} (hU : IsOpen U) {u 
   · simp [htan τ τ' hτ hτ', hτ]
   · simp [hee]
 
-/-- The operator norm of a bilinear map is at most the norm of a multilinear map with the same
-values. -/
-private theorem norm_le_of_forall_apply_eq {B : E →L[ℝ] E →L[ℝ] ℝ}
-    {M : ContinuousMultilinearMap ℝ (fun _ : Fin 2 ↦ E) ℝ} (h : ∀ m, M m = B (m 0) (m 1)) :
-    ‖B‖ ≤ ‖M‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun a ↦ ?_
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun b ↦ ?_
-  have := M.le_opNorm ![a, b]
-  rw [h] at this
-  simpa [Fin.prod_univ_two, mul_assoc] using this
-
 /-! ### The odd reflection of `u - P` -/
 
 /-- A function bounded by a power of the height tends to zero at the hyperplane, from the closed
@@ -222,6 +213,84 @@ private theorem continuousAt_rpow_mul (C β : ℝ) (hβ : 0 ≤ β) :
     ContinuousAt (fun t : ℝ ↦ C * t ^ β) 0 :=
   (continuous_const.mul (continuous_id.rpow_const fun _ ↦ Or.inr hβ)).continuousAt
 
+/-- **The corrector is negligible at the hyperplane.** At a point `p` of the hyperplane, from the
+closed upper half-space, the corrector `P` and its first derivative tend to zero, and its second
+derivative minus `g(z') e₀* ⊗ e₀*` tends to zero, the derivatives taken above the hyperplane. -/
+private theorem tendsto_corrector_nhdsWithin {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {g : V → ℝ}
+    {Mg : ℝ} {Kg : ℝ≥0} (hgb : ∀ y, |g y| ≤ Mg) (hgH : HolderWith Kg α g) {p : E}
+    (hp0 : p 0 = 0) :
+    Tendsto (corrector g) (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 0) ∧
+    Tendsto (fun z : E ↦ if 0 < z 0 then fderiv ℝ (corrector g) z else 0)
+      (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 0) ∧
+    Tendsto (fun z : E ↦ if 0 < z 0 then
+        fderiv ℝ (fderiv ℝ (corrector g)) z -
+          g (halfSpaceFoot v₀ z) • ContinuousLinearMap.smulRight ℓ₀ ℓ₀ else 0)
+      (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 0) := by
+  obtain ⟨C, hC, hP⟩ := exists_corrector_bounds hα hα1 hgb hgH
+  have hev : ∀ᶠ z in 𝓝[{z : E | 0 ≤ z 0}] p, 0 ≤ z 0 := self_mem_nhdsWithin
+  refine ⟨?_, ?_, ?_⟩
+  · refine tendsto_nhdsWithin_of_norm_le hp0 (b := fun t ↦ C * t ^ 2) (by fun_prop) (by simp)
+      (hev.mono fun z hz ↦ ?_)
+    rcases hz.lt_or_eq with hz | hz
+    · exact (hP z hz).2.1
+    · simp [corrector_eq_zero g hz.symm, ← hz]
+  · refine tendsto_nhdsWithin_of_norm_le hp0 (b := fun t ↦ C * (t ^ ((α : ℝ) + 1) + t))
+      ((continuous_const.mul ((continuous_id.rpow_const fun _ ↦ Or.inr (by positivity)).add
+        continuous_id)).continuousAt) (by simp [Real.zero_rpow (by positivity : (α : ℝ) + 1 ≠ 0)])
+      (hev.mono fun z hz ↦ ?_)
+    by_cases hz0 : 0 < z 0
+    · simp only [hz0, ↓reduceIte]
+      rw [← norm_iteratedFDeriv_one]
+      exact (hP z hz0).2.2.1
+    · have : 0 ≤ z 0 ^ ((α : ℝ) + 1) := Real.rpow_nonneg hz _
+      simp only [hz0, ↓reduceIte, norm_zero]
+      positivity
+  · refine tendsto_nhdsWithin_of_norm_le (G := E →L[ℝ] E →L[ℝ] ℝ) hp0 (b := fun t ↦ C * t ^ (α : ℝ))
+      (continuousAt_rpow_mul C α α.2) (by simp [Real.zero_rpow (by positivity : (α : ℝ) ≠ 0)])
+      (hev.mono fun z hz ↦ ?_)
+    by_cases hz0 : 0 < z 0
+    · simp only [hz0, ↓reduceIte]
+      -- The second derivative, read as a bilinear map through the currying isometry.
+      refine le_of_eq_of_le ?_ (hP z hz0).2.2.2.1
+      rw [← (continuousMultilinearCurryFin2 ℝ E ℝ).symm.norm_map]
+      congr 1
+      ext m
+      simp [iteratedFDeriv_two_apply, fderiv_fderiv_halfSq]
+    · have : 0 ≤ z 0 ^ (α : ℝ) := Real.rpow_nonneg hz _
+      simp only [hz0, ↓reduceIte]
+      exact le_trans (le_of_eq ContinuousLinearMap.opNorm_zero) (by positivity)
+
+/-- Continuity at a point from continuity within the closed upper and the open lower half-space. -/
+private theorem continuousAt_of_continuousWithinAt_nonneg_of_neg {G : Type*} [TopologicalSpace G]
+    {f : E → G} {q : E} (h₁ : ContinuousWithinAt f {z | 0 ≤ z 0} q)
+    (h₂ : ContinuousWithinAt f {z | z 0 < 0} q) : ContinuousAt f q := by
+  have hunion : {z : E | 0 ≤ z 0} ∪ {z | z 0 < 0} = univ := by
+    ext z
+    simp [le_or_gt]
+  rw [← continuousWithinAt_univ, ← hunion]
+  exact h₁.union h₂
+
+/-- **Continuity of a reflected function at the hyperplane.** Let `q` be a point of the
+hyperplane and `f` continuous at `q` within the closed upper half-space. If below the hyperplane,
+and at `q`, `f` is obtained from its value at the reflected point by a continuous map `Φ`, then `f`
+is continuous at `q`. -/
+private theorem continuousAt_of_eq_comp_hyperplaneReflection {G : Type*} [TopologicalSpace G]
+    {f : E → G} {Φ : G → G} (hΦ : Continuous Φ) {q : E} (hq : q 0 = 0)
+    (hf : ContinuousWithinAt f {z | 0 ≤ z 0} q)
+    (hsym : ∀ z : E, z 0 < 0 → f z = Φ (f (hyperplaneReflection e₀ 0 z)))
+    (hfix : f q = Φ (f q)) : ContinuousAt f q := by
+  have hρq : hyperplaneReflection e₀ 0 q = q := hyperplaneReflection_eq_self_of_inner_eq
+    (by rw [EuclideanSpace.real_inner_single_one_right, hq])
+  have hmaps : MapsTo (hyperplaneReflection e₀ 0) {z : E | z 0 < 0} {z | 0 ≤ z 0} :=
+    fun z (hz : z 0 < 0) ↦ show 0 ≤ hyperplaneReflection e₀ 0 z 0 by
+      rw [hyperplaneReflection_single_one_apply_self]
+      linarith
+  have hf' : ContinuousWithinAt f {z | 0 ≤ z 0} (hyperplaneReflection e₀ 0 q) := by rwa [hρq]
+  refine continuousAt_of_continuousWithinAt_nonneg_of_neg hf ?_
+  exact (hΦ.continuousAt.comp_continuousWithinAt
+    (hf'.comp (hyperplaneReflection e₀ 0).continuous.continuousWithinAt hmaps)).congr
+    (fun z hz ↦ hsym z hz) (by rw [Function.comp_apply, Function.comp_apply, hρq]; exact hfix)
+
 /-- The odd reflection of `u - P` across the hyperplane, `P` the corrector. -/
 private def oddRemainder (u : E → ℝ) (g : V → ℝ) (z : E) : ℝ :=
   if 0 ≤ z 0 then u z - corrector g z
@@ -236,11 +305,12 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
     {Mg : ℝ} {Kg : ℝ≥0} (hgb : ∀ y, |g y| ≤ Mg) (hgH : HolderWith Kg α g) {U : Set E}
     (hU : IsOpen U) {u : E → ℝ} (hu : ContDiffOn ℝ 2 u U) (h0 : ∀ y ∈ U, y 0 = 0 → u y = 0)
     {x : E} (hx : x 0 = 0) {r : ℝ} (hrU : ball x r ⊆ U)
-    (hΔ : ∀ y ∈ ball x r, y 0 = 0 → Δ u y = g (footV y)) :
+    (hΔ : ∀ y ∈ ball x r, y 0 = 0 → Δ u y = g (halfSpaceFoot v₀ y)) :
     ContDiffOn ℝ 2 (oddRemainder u g) (ball x r) ∧ ∀ y ∈ ball x r, y 0 = 0 →
       iteratedFDeriv ℝ 2 (oddRemainder u g) y =
-        iteratedFDeriv ℝ 2 u y - g (footV y) • iteratedFDeriv ℝ 2 halfSq y := by
-  obtain ⟨C, hC, hP⟩ := exists_corrector_bounds hα hα1 hgb hgH
+        iteratedFDeriv ℝ 2 u y - g (halfSpaceFoot v₀ y) • iteratedFDeriv ℝ 2 halfSq y := by
+  obtain ⟨_, -, hP⟩ := exists_corrector_bounds hα hα1 hgb hgH
+  have hlimP := fun (p : E) (hp0 : p 0 = 0) ↦ tendsto_corrector_nhdsWithin hα hα1 hgb hgH hp0
   set B := ball x r
   set ρ := hyperplaneReflection e₀ 0
   set P := corrector g
@@ -249,14 +319,10 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
   set pre : (E →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] ℝ := (ContinuousLinearMap.compL ℝ E E ℝ).flip Rℓ
   have hpre : ∀ L : E →L[ℝ] ℝ, pre L = L.comp Rℓ := fun L ↦ rfl
   have hρ : ∀ z, HasFDerivAt ρ Rℓ z := hasFDerivAt_hyperplaneReflection e₀ 0
-  have hρ0 : ∀ z, ρ z 0 = -z 0 := hyperplaneReflection_single_apply_zero
-  have hρx : ρ x = x := hyperplaneReflection_eq_self_of_inner_eq (by rw [inner_single_zero, hx])
-  have hρB : ∀ z ∈ B, ρ z ∈ B := fun z hz ↦ by
-    rw [mem_ball, ← hρx, (hyperplaneReflection e₀ 0).dist_map]
-    exact hz
+  have hρ0 : ∀ z, ρ z 0 = -z 0 := hyperplaneReflection_single_one_apply_self 0
+  have hρB : ∀ z ∈ B, ρ z ∈ B := fun z hz ↦ (hyperplaneReflection_mem_ball_iff
+    (by rw [EuclideanSpace.real_inner_single_one_right, hx])).2 hz
   have hρc : Continuous ρ := (hyperplaneReflection e₀ 0).continuous
-  have hΩ : IsOpen {z : E | 0 < z 0} := isOpen_lt continuous_const (by fun_prop)
-  have hΩ' : IsOpen {z : E | z 0 < 0} := isOpen_lt (by fun_prop) continuous_const
   have hup : ∀ z : E, 0 ≤ z 0 → oddRemainder u g z = w z := fun z hz ↦ by
     simp only [oddRemainder, hz, ↓reduceIte, w, P]
   have hdown : ∀ z : E, z 0 < 0 → oddRemainder u g z = -w (ρ z) := fun z hz ↦ by
@@ -275,7 +341,8 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
       fderiv ℝ (fderiv ℝ w) z = fderiv ℝ (fderiv ℝ u) z - fderiv ℝ (fderiv ℝ P) z := by
     intro z hz hz0
     have hev : fderiv ℝ w =ᶠ[𝓝 z] fun z' ↦ fderiv ℝ u z' - fderiv ℝ P z' :=
-      eventually_of_mem (inter_mem (isOpen_ball.mem_nhds hz) (hΩ.mem_nhds hz0))
+      eventually_of_mem (inter_mem (isOpen_ball.mem_nhds hz)
+        ((EuclideanSpace.isOpen_setOf_pos_apply 0).mem_nhds hz0))
         fun z' hz' ↦ hfw z' hz'.1 hz'.2
     rw [hev.fderiv_eq]
     exact fderiv_sub (((hucd z hz).fderiv_right (m := 1) (by norm_num)).differentiableAt
@@ -286,7 +353,7 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
     if 0 < z 0 then fderiv ℝ w z else if z 0 = 0 then fderiv ℝ u z else -pre (fderiv ℝ w (ρ z))
   set F₂ : E → E →L[ℝ] E →L[ℝ] ℝ := fun z ↦
     if 0 < z 0 then fderiv ℝ (fderiv ℝ w) z
-    else if z 0 = 0 then fderiv ℝ (fderiv ℝ u) z - g (footV z) • Q₀'
+    else if z 0 = 0 then fderiv ℝ (fderiv ℝ u) z - g (halfSpaceFoot v₀ z) • Q₀'
     else -(pre.comp (fderiv ℝ (fderiv ℝ w) (ρ z))).comp Rℓ
   have hℓ : (ℓ₀ : E →L[ℝ] ℝ) ≠ 0 := fun h ↦ by
     have := congrArg (fun L : E →L[ℝ] ℝ ↦ L e₀) h
@@ -295,66 +362,31 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
   have hF₂p : ∀ z : E, 0 < z 0 → F₂ z = fderiv ℝ (fderiv ℝ w) z := fun z hz ↦ by simp [F₂, hz]
   have hF₁0 : ∀ z : E, z 0 = 0 → F₁ z = fderiv ℝ u z := fun z hz ↦ by simp [F₁, hz]
   have hF₂0 : ∀ z : E, z 0 = 0 →
-      F₂ z = fderiv ℝ (fderiv ℝ u) z - g (footV z) • Q₀' := fun z hz ↦ by simp [F₂, hz]
+      F₂ z = fderiv ℝ (fderiv ℝ u) z - g (halfSpaceFoot v₀ z) • Q₀' := fun z hz ↦ by simp [F₂, hz]
   have hF₁n : ∀ z : E, z 0 < 0 → F₁ z = -pre (fderiv ℝ w (ρ z)) := fun z hz ↦ by
     simp [F₁, hz.ne, not_lt.2 hz.le]
   have hF₂n : ∀ z : E, z 0 < 0 →
       F₂ z = -(pre.comp (fderiv ℝ (fderiv ℝ w) (ρ z))).comp Rℓ := fun z hz ↦ by
     simp [F₂, hz.ne, not_lt.2 hz.le]
   -- The corrector and its first two derivatives are negligible at the hyperplane.
-  have hPle : ∀ z : E, 0 ≤ z 0 → ‖P z‖ ≤ C * z 0 ^ 2 := by
-    intro z hz
-    rcases hz.lt_or_eq with hz | hz
-    · exact (hP z hz).2.1
-    · simp [P, corrector_eq_zero g hz.symm, ← hz]
   set D₁ : E → E →L[ℝ] ℝ := fun z ↦ if 0 < z 0 then fderiv ℝ P z else 0
   set D₂ : E → E →L[ℝ] E →L[ℝ] ℝ := fun z ↦
-    if 0 < z 0 then fderiv ℝ (fderiv ℝ P) z - g (footV z) • Q₀' else 0
-  have hD₁ : ∀ z : E, 0 ≤ z 0 → ‖D₁ z‖ ≤ C * (z 0 ^ ((α : ℝ) + 1) + z 0) := by
-    intro z hz
-    by_cases hz0 : 0 < z 0
-    · simp only [D₁, hz0, ↓reduceIte]
-      rw [← norm_iteratedFDeriv_one]
-      exact (hP z hz0).2.2.1
-    · have : 0 ≤ z 0 ^ ((α : ℝ) + 1) := Real.rpow_nonneg hz _
-      simp only [D₁, hz0, ↓reduceIte]
-      simp only [norm_zero]
-      positivity
-  have hD₂ : ∀ z : E, 0 ≤ z 0 → ‖D₂ z‖ ≤ C * z 0 ^ (α : ℝ) := by
-    intro z hz
-    by_cases hz0 : 0 < z 0
-    · simp only [D₂, hz0, ↓reduceIte]
-      refine (norm_le_of_forall_apply_eq fun m ↦ ?_).trans (hP z hz0).2.2.2.1
-      simp [iteratedFDeriv_two_apply, fderiv_fderiv_halfSq, Q₀']
-    · have : 0 ≤ z 0 ^ (α : ℝ) := Real.rpow_nonneg hz _
-      simp only [D₂, hz0, ↓reduceIte]
-      exact le_trans (le_of_eq ContinuousLinearMap.opNorm_zero) (by positivity)
+    if 0 < z 0 then fderiv ℝ (fderiv ℝ P) z - g (halfSpaceFoot v₀ z) • Q₀' else 0
   -- Continuity from above at a point of the hyperplane.
   have habove : ∀ p ∈ B, p 0 = 0 →
       ContinuousWithinAt (oddRemainder u g) {z | 0 ≤ z 0} p ∧
       ContinuousWithinAt F₁ {z | 0 ≤ z 0} p ∧ ContinuousWithinAt F₂ {z | 0 ≤ z 0} p := by
     intro p hp hp0
+    obtain ⟨hPt, hD₁t, hD₂t⟩ := hlimP p hp0
     have hBp : ∀ᶠ z in 𝓝[{z : E | 0 ≤ z 0}] p, z ∈ B ∧ 0 ≤ z 0 :=
       inter_mem (mem_nhdsWithin_of_mem_nhds (isOpen_ball.mem_nhds hp)) self_mem_nhdsWithin
-    have hPt : Tendsto P (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 0) :=
-      tendsto_nhdsWithin_of_norm_le hp0 (b := fun t ↦ C * t ^ 2) (by fun_prop) (by simp)
-        (hBp.mono fun z hz ↦ hPle z hz.2)
-    have hD₁t : Tendsto D₁ (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 0) :=
-      tendsto_nhdsWithin_of_norm_le (f := D₁) hp0 (b := fun t ↦ C * (t ^ ((α : ℝ) + 1) + t))
-        ((continuous_const.mul ((continuous_id.rpow_const fun _ ↦ Or.inr (by positivity)).add
-          continuous_id)).continuousAt) (by simp [Real.zero_rpow (by positivity : (α : ℝ) + 1 ≠ 0)])
-        (hBp.mono fun z hz ↦ hD₁ z hz.2)
-    have hD₂t : Tendsto D₂ (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 0) :=
-      tendsto_nhdsWithin_of_norm_le (f := D₂) hp0 (b := fun t ↦ C * t ^ (α : ℝ))
-        (continuousAt_rpow_mul C α α.2) (by simp [Real.zero_rpow (by positivity : (α : ℝ) ≠ 0)])
-        (hBp.mono fun z hz ↦ hD₂ z hz.2)
     have hu2 := hucd p hp
     have hfu : ContinuousAt (fderiv ℝ u) p :=
       (hu2.fderiv_right (m := 0) (by norm_num)).continuousAt
     have hffu : ContinuousAt (fderiv ℝ (fderiv ℝ u)) p :=
       ((hu2.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuousAt
-    have hgf : ContinuousAt (fun z ↦ g (footV z)) p :=
-      ((hgH.continuous hα).comp continuous_footV).continuousAt
+    have hgf : ContinuousAt (fun z ↦ g (halfSpaceFoot v₀ z)) p :=
+      ((hgH.continuous hα).comp (continuous_halfSpaceFoot v₀)).continuousAt
     have hP0 : P p = 0 := corrector_eq_zero g hp0
     refine ⟨?_, ?_, ?_⟩
     · have hw : Tendsto w (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 (u p - 0)) :=
@@ -385,52 +417,29 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
     simp only [Φ, ContinuousLinearMap.neg_comp]
   have hΦc : Continuous Φ :=
     (continuous_const.clm_comp continuous_id).clm_comp continuous_const
-  have hρp : ∀ q : E, q 0 = 0 → ρ q = q := fun q hq ↦
-    hyperplaneReflection_eq_self_of_inner_eq (by rw [inner_single_zero, hq])
   have hρpos : ∀ z : E, z 0 < 0 → 0 < ρ z 0 := fun z hz ↦ by rw [hρ0]; linarith
-  have hmaps : MapsTo ρ {z : E | z 0 < 0} {z | 0 ≤ z 0} := fun z hz ↦ (hρpos z hz).le
   have hsym0 : ∀ z : E, z 0 < 0 → oddRemainder u g z = -oddRemainder u g (ρ z) := fun z hz ↦ by
     rw [hdown z hz, hup (ρ z) (hρpos z hz).le]
   have hsym1 : ∀ z : E, z 0 < 0 → F₁ z = (-pre) (F₁ (ρ z)) := fun z hz ↦ by
     rw [hF₁n z hz, hF₁p (ρ z) (hρpos z hz), neg_apply]
   have hsym2 : ∀ z : E, z 0 < 0 → F₂ z = Φ (F₂ (ρ z)) := fun z hz ↦ by
     rw [hF₂n z hz, hF₂p (ρ z) (hρpos z hz), hΦ]
-  have hfix0 : ∀ q ∈ B, q 0 = 0 → oddRemainder u g q = -oddRemainder u g (ρ q) := fun q hq hq0 ↦ by
-    rw [hρp q hq0, hup q hq0.ge]
+  -- On the hyperplane the reflection fixes the point, and the values match.
+  have hfix0 : ∀ q ∈ B, q 0 = 0 → oddRemainder u g q = -oddRemainder u g q := fun q hq hq0 ↦ by
+    rw [hup q hq0.ge]
     simp [w, P, corrector_eq_zero g hq0, h0 q (hrU hq) hq0]
-  have hfix1 : ∀ q ∈ B, q 0 = 0 → F₁ q = (-pre) (F₁ (ρ q)) := fun q hq hq0 ↦ by
-    rw [hρp q hq0, hF₁0 q hq0, neg_apply, hpre, fderiv_comp_reflection hU (hrU hq) hq0
+  have hfix1 : ∀ q ∈ B, q 0 = 0 → F₁ q = (-pre) (F₁ q) := fun q hq hq0 ↦ by
+    rw [hF₁0 q hq0, neg_apply, hpre, fderiv_comp_reflection hU (hrU hq) hq0
       ((hucd q hq).differentiableAt (by norm_num)) h0, neg_neg]
-  have hfix2 : ∀ q ∈ B, q 0 = 0 → F₂ q = Φ (F₂ (ρ q)) := fun q hq hq0 ↦ by
-    rw [hρp q hq0, hF₂0 q hq0, hΦ]
+  have hfix2 : ∀ q ∈ B, q 0 = 0 → F₂ q = Φ (F₂ q) := fun q hq hq0 ↦ by
+    rw [hF₂0 q hq0, hΦ]
     ext m m'
     exact (neg_hessian_sub_apply_reflection hU hu (hrU hq) hq0 h0 (hΔ q hq hq0) m m').symm
-  have hbelow : ∀ q ∈ B, q 0 = 0 →
-      ContinuousWithinAt (oddRemainder u g) {z | z 0 < 0} q ∧
-      ContinuousWithinAt F₁ {z | z 0 < 0} q ∧ ContinuousWithinAt F₂ {z | z 0 < 0} q := by
-    intro q hq hq0
-    obtain ⟨h1, h2, h3⟩ := habove q hq hq0
-    have key : ∀ {G : Type} [TopologicalSpace G] (f : E → G),
-        ContinuousWithinAt f {z | 0 ≤ z 0} q → ContinuousWithinAt (f ∘ ρ) {z | z 0 < 0} q :=
-      fun f hf ↦ (show ContinuousWithinAt f {z | 0 ≤ z 0} (ρ q) by rwa [hρp q hq0]).comp
-        hρc.continuousWithinAt hmaps
-    exact ⟨(key _ h1).neg.congr (fun z hz ↦ hsym0 z hz) (hfix0 q hq hq0),
-      ((-pre).continuous.continuousAt.comp_continuousWithinAt (key _ h2)).congr
-        (fun z hz ↦ hsym1 z hz) (hfix1 q hq hq0),
-      (hΦc.continuousAt.comp_continuousWithinAt (key _ h3)).congr (fun z hz ↦ hsym2 z hz)
-        (hfix2 q hq hq0)⟩
-  -- Continuity at the points of the hyperplane, from the two sides.
-  have hunion : {z : E | 0 ≤ z 0} ∪ {z | z 0 < 0} = univ := by
-    ext z
-    simp [le_or_gt]
-  have htwo : ∀ {G : Type} [TopologicalSpace G] (f : E → G) (q : E),
-      ContinuousWithinAt f {z | 0 ≤ z 0} q → ContinuousWithinAt f {z | z 0 < 0} q →
-        ContinuousAt f q := fun f q h₁ h₂ ↦ by
-    rw [← continuousWithinAt_univ, ← hunion]
-    exact h₁.union h₂
   -- Local descriptions off the hyperplane.
-  have hevp : ∀ z : E, 0 < z 0 → ∀ᶠ z' in 𝓝 z, 0 < z' 0 := fun z hz ↦ hΩ.mem_nhds hz
-  have hevn : ∀ z : E, z 0 < 0 → ∀ᶠ z' in 𝓝 z, z' 0 < 0 := fun z hz ↦ hΩ'.mem_nhds hz
+  have hevp : ∀ z : E, 0 < z 0 → ∀ᶠ z' in 𝓝 z, 0 < z' 0 := fun z hz ↦
+    (EuclideanSpace.isOpen_setOf_pos_apply 0).mem_nhds hz
+  have hevn : ∀ z : E, z 0 < 0 → ∀ᶠ z' in 𝓝 z, z' 0 < 0 := fun z hz ↦
+    (EuclideanSpace.isOpen_setOf_apply_neg 0).mem_nhds hz
   have hd₁ : ∀ z ∈ B, ℓ₀ z ≠ 0 → HasFDerivAt (oddRemainder u g) (F₁ z) z := by
     intro z hz hz0
     replace hz0 : z 0 ≠ 0 := by simpa using hz0
@@ -469,8 +478,11 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
       · exact (hΦc.continuousAt.comp (hd2w.comp hρc.continuousAt)).congr_of_eventuallyEq
           ((hevn z hz0).mono fun z' hz' ↦ (hF₂n z' hz').trans (hΦ _).symm)
     · obtain ⟨a1, a2, a3⟩ := habove z hz hz0
-      obtain ⟨b1, b2, b3⟩ := hbelow z hz hz0
-      exact ⟨htwo _ z a1 b1, htwo _ z a2 b2, htwo _ z a3 b3⟩
+      exact ⟨continuousAt_of_eq_comp_hyperplaneReflection continuous_neg hz0 a1 hsym0
+          (hfix0 z hz hz0),
+        continuousAt_of_eq_comp_hyperplaneReflection (-pre).continuous hz0 a2 hsym1
+          (hfix1 z hz hz0),
+        continuousAt_of_eq_comp_hyperplaneReflection hΦc hz0 a3 hsym2 (hfix2 z hz hz0)⟩
     · refine ⟨(hdw z hz hz0).continuousAt.congr_of_eventuallyEq
         ((hevp z hz0).mono fun z' hz' ↦ hup z' hz'.le),
         (hdfw z hz hz0).continuousAt.congr_of_eventuallyEq
@@ -492,7 +504,7 @@ private theorem exists_boundaryData {α : ℝ≥0} {u : E → ℝ} {x : E} (hx :
     (hr : 0 < r) {T : Set E} (hrT : closedBall x r ⊆ T) {K₀ : ℝ≥0}
     (hK₀ : HolderOnWith K₀ α (Δ u) (T ∩ {y | 0 ≤ y 0})) :
     ∃ g : V → ℝ, ∃ Mg : ℝ, ∃ Kg : ℝ≥0, (∀ y, |g y| ≤ Mg) ∧ HolderWith Kg α g ∧
-      ∀ y ∈ closedBall x r, y 0 = 0 → g (footV y) = Δ u y := by
+      ∀ y ∈ closedBall x r, y 0 = 0 → g (halfSpaceFoot v₀ y) = Δ u y := by
   set p₀ : V := ⟨x, (mem_hyperplane_iff x).2 hx⟩
   set q : V → E := fun y ↦ ((p₀ + radialRetraction r (y - p₀) : V) : E)
   have hqx : ∀ y, dist (q y) x ≤ r := fun y ↦ by
@@ -519,10 +531,12 @@ private theorem exists_boundaryData {α : ℝ≥0} {u : E → ℝ} {x : E} (hx :
     rw [mul_one] at h
     exact holderOnWith_univ.1 h
   · simp only [q]
-    have hyx : ‖(footV y : V) - p₀‖ ≤ r := by
-      rw [← Submodule.norm_coe, Submodule.coe_sub, footV_of_apply_zero hy0, ← dist_eq_norm]
+    have hyx : ‖(halfSpaceFoot v₀ y : V) - p₀‖ ≤ r := by
+      rw [← Submodule.norm_coe, Submodule.coe_sub,
+        coe_halfSpaceFoot_unitNormal_of_apply_eq_zero hy0, ← dist_eq_norm]
       exact hy
-    rw [radialRetraction_of_norm_le hyx, add_sub_cancel, footV_of_apply_zero hy0]
+    rw [radialRetraction_of_norm_le hyx, add_sub_cancel,
+      coe_halfSpaceFoot_unitNormal_of_apply_eq_zero hy0]
 
 /-- **The boundary case.** At a point `x` of the hyperplane, a `C²` function vanishing on the
 hyperplane whose Laplacian is `α`-Hölder up to it near `x` has `α`-Hölder second derivatives up to
@@ -536,7 +550,7 @@ private theorem exists_mem_nhds_holderOnWith_of_apply_zero_eq_zero {α : ℝ≥0
   obtain ⟨g, Mg, Kg, hgb, hgH, hgΔ⟩ :=
     exists_boundaryData hx0 hr (hrUT.trans inter_subset_right) hK₀
   have hBU : ball x r ⊆ U := ball_subset_closedBall.trans (hrUT.trans inter_subset_left)
-  have hΔg : ∀ y ∈ ball x r, y 0 = 0 → Δ u y = g (footV y) := fun y hy hy0 ↦
+  have hΔg : ∀ y ∈ ball x r, y 0 = 0 → Δ u y = g (halfSpaceFoot v₀ y) := fun y hy hy0 ↦
     (hgΔ y (ball_subset_closedBall hy) hy0).symm
   obtain ⟨hC2, hhess⟩ := contDiffOn_oddRemainder hα hα1 hgb hgH hU hu h0 hx0 hBU hΔg
   obtain ⟨KΨ, hΨ⟩ := exists_holderOnWith_correctorHessian hα hα1 hgb hgH hx0 (r / 2)
@@ -545,68 +559,71 @@ private theorem exists_mem_nhds_holderOnWith_of_apply_zero_eq_zero {α : ℝ≥0
   set S := closedBall x (r / 2) ∩ {y : E | 0 ≤ y 0}
   set ur := oddRemainder u g
   set ρ := hyperplaneReflection e₀ 0
-  have hΩ : IsOpen {z : E | 0 < z 0} := isOpen_lt continuous_const (by fun_prop)
-  have hΩ' : IsOpen {z : E | z 0 < 0} := isOpen_lt (by fun_prop) continuous_const
+  have hx' : ⟪x, e₀⟫ = 0 := by rw [EuclideanSpace.real_inner_single_one_right, hx0]
   have hucd : ∀ z ∈ ball x r, ContDiffAt ℝ 2 u z := fun z hz ↦ hu.contDiffAt (hU.mem_nhds (hBU hz))
-  -- The Laplacian of `P` is the trace of `Ψ`, which is `g` on the hyperplane.
-  have hψ : HolderOnWith ((n + 1 : ℕ) * KΨ) α (fun y ↦ basisTrace (Ψ y)) S :=
-    holderOnWith_basisTrace hΨ
-  have hφ : HolderOnWith (K₀ + (n + 1 : ℕ) * KΨ) α (fun y ↦ Δ u y - basisTrace (Ψ y)) S :=
+  -- The Laplacian is the trace `L` of the second derivative; the trace of `Ψ` is `g` on the
+  -- hyperplane.
+  set L : ContinuousMultilinearMap ℝ (fun _ : Fin 2 ↦ E) ℝ →L[ℝ] ℝ :=
+    ∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 ↦ E) ℝ
+      ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]
+  have hL : ∀ (f : E → ℝ) y, Δ f y = L (iteratedFDeriv ℝ 2 f y) :=
+    laplacian_eq_traceL_iteratedFDeriv
+  have hψ : HolderOnWith (‖L‖₊ * KΨ) α (fun y ↦ L (Ψ y)) S :=
+    HolderOnWith.of_dist_le fun y hy y' hy' ↦ by
+      rw [NNReal.coe_mul, coe_nnNorm, mul_assoc]
+      exact (L.lipschitzWith.dist_le_mul _ _).trans
+        (mul_le_mul_of_nonneg_left (hΨ.dist_le hy hy') (norm_nonneg _))
+  have hφ : HolderOnWith (K₀ + ‖L‖₊ * KΨ) α (fun y ↦ Δ u y - L (Ψ y)) S :=
     (hK₀.mono fun y (hy : y ∈ S) ↦
       ⟨(hrUT (closedBall_subset_closedBall (by linarith) hy.1)).2, hy.2⟩).sub hψ
-  have hφ0 : ∀ y ∈ closedBall x (r / 2), y 0 = 0 → Δ u y - basisTrace (Ψ y) = 0 := by
+  have hφ0 : ∀ y ∈ closedBall x (r / 2), y 0 = 0 → Δ u y - L (Ψ y) = 0 := by
     intro y hy hy0
-    have : basisTrace (Ψ y) = g (footV y) := by
-      rw [show Ψ y = _ from correctorHessian_of_apply_eq_zero g hy0, basisTrace_smul,
-        basisTrace_iteratedFDeriv_two_halfSq, mul_one]
-    rw [this]
-    rw [hgΔ y (closedBall_subset_closedBall (by linarith) hy) hy0, sub_self]
+    have : L (Ψ y) = g (halfSpaceFoot v₀ y) := by
+      rw [show Ψ y = _ from correctorHessian_of_apply_eq_zero g hy0, map_smul, ← hL,
+        laplacian_halfSq, smul_eq_mul, mul_one]
+    rw [this, hgΔ y (closedBall_subset_closedBall (by linarith) hy) hy0, sub_self]
   -- The odd extension of `Δu - tr Ψ` is Hölder on the closed ball.
-  have hinS : {y : E | 0 ≤ ⟪y, e₀⟫} = {y | 0 ≤ y 0} := by simp_rw [inner_single_zero]
-  have hodd := holderOnWith_ite_neg_comp_hyperplaneReflection norm_single_zero
-    (convex_closedBall x (r / 2))
-    (fun y hy ↦ by
-      rw [mem_closedBall, ← hyperplaneReflection_eq_self_of_inner_eq (x := x) (ν := e₀) (c := 0)
-        (by rw [inner_single_zero, hx0]), (hyperplaneReflection e₀ 0).dist_map]
-      exact hy) (by rw [hinS]; exact hφ)
-    (fun y hy hy0 ↦ hφ0 y hy (by rwa [inner_single_zero] at hy0))
+  have hinS : {y : E | 0 ≤ ⟪y, e₀⟫} = {y | 0 ≤ y 0} := by
+    simp_rw [EuclideanSpace.real_inner_single_one_right]
+  have hodd := holderOnWith_ite_neg_comp_hyperplaneReflection (by simp)
+    (convex_closedBall x (r / 2)) (fun y hy ↦ (hyperplaneReflection_mem_closedBall_iff hx').2 hy)
+    (by rw [hinS]; exact hφ)
+    (fun y hy hy0 ↦ hφ0 y hy (by rwa [EuclideanSpace.real_inner_single_one_right] at hy0))
   -- Above the hyperplane `ur = u - P` near each point, below it `ur = -(u - P) ∘ ρ`.
   have hup : ∀ z : E, 0 < z 0 → ur =ᶠ[𝓝 z] (u - corrector g) := fun z hz ↦
-    eventually_of_mem (hΩ.mem_nhds hz) fun z' (hz' : 0 < z' 0) ↦ by
+    eventually_of_mem ((EuclideanSpace.isOpen_setOf_pos_apply 0).mem_nhds hz)
+      fun z' (hz' : 0 < z' 0) ↦ by
       simp only [ur, oddRemainder, hz'.le, ↓reduceIte, Pi.sub_apply]
   have hρL : ⇑ρ = ⇑((ℝ ∙ e₀)ᗮ.reflection) := funext fun z ↦ by
     simp [ρ, hyperplaneReflection_eq_reflection_add]
   have hdown : ∀ z : E, z 0 < 0 →
       ur =ᶠ[𝓝 z] -((u - corrector g) ∘ ((ℝ ∙ e₀)ᗮ.reflection)) := fun z hz ↦
-    eventually_of_mem (hΩ'.mem_nhds hz) fun z' (hz' : z' 0 < 0) ↦ by
+    eventually_of_mem ((EuclideanSpace.isOpen_setOf_apply_neg 0).mem_nhds hz)
+      fun z' (hz' : z' 0 < 0) ↦ by
       simp only [ur, oddRemainder, not_le.2 hz', ↓reduceIte, Pi.neg_apply, Function.comp_apply,
         Pi.sub_apply, ← hρL, ρ]
   have hΨp : ∀ z : E, 0 < z 0 → Ψ z = iteratedFDeriv ℝ 2 (corrector g) z := fun z hz ↦
     correctorHessian_of_pos g hz
-  have hΔp : ∀ z ∈ ball x r, 0 < z 0 → Δ ur z = Δ u z - basisTrace (Ψ z) := by
+  have hΔp : ∀ z ∈ ball x r, 0 < z 0 → Δ ur z = Δ u z - L (Ψ z) := by
     intro z hz hz0
     rw [(laplacian_congr_nhds (hup z hz0)).eq_of_nhds,
-      ContDiffAt.laplacian_sub (hucd z hz) (((hP z hz0).1).of_le le_top), laplacian_eq_basisTrace
-      (corrector g), hΨp z hz0]
-  have hΔur : ∀ y ∈ ball x (r / 2), Δ ur y = if 0 ≤ ⟪y, e₀⟫ then Δ u y - basisTrace (Ψ y)
-      else -(Δ u (ρ y) - basisTrace (Ψ (ρ y))) := by
+      ContDiffAt.laplacian_sub (hucd z hz) (((hP z hz0).1).of_le le_top), hL (corrector g),
+      hΨp z hz0]
+  have hΔur : ∀ y ∈ ball x (r / 2), Δ ur y = if 0 ≤ ⟪y, e₀⟫ then Δ u y - L (Ψ y)
+      else -(Δ u (ρ y) - L (Ψ (ρ y))) := by
     intro y hy
     have hyB : y ∈ ball x r := ball_subset_ball (by linarith) hy
-    rw [inner_single_zero]
+    rw [EuclideanSpace.real_inner_single_one_right]
     rcases lt_trichotomy (y 0) 0 with hy0 | hy0 | hy0
-    · have hρy : ρ y ∈ ball x r := by
-        rw [mem_ball, ← hyperplaneReflection_eq_self_of_inner_eq (x := x) (ν := e₀) (c := 0)
-          (by rw [inner_single_zero, hx0]), (hyperplaneReflection e₀ 0).dist_map]
-        exact hyB
-      have hρy0 : 0 < ρ y 0 := by rw [hyperplaneReflection_single_apply_zero]; linarith
+    · have hρy : ρ y ∈ ball x r := (hyperplaneReflection_mem_ball_iff hx').2 hyB
+      have hρy0 : 0 < ρ y 0 := by rw [hyperplaneReflection_single_one_apply_self]; linarith
       simp only [not_le.2 hy0, ↓reduceIte]
       rw [(laplacian_congr_nhds (hdown y hy0)).eq_of_nhds, laplacian_neg,
         laplacian_comp_linearIsometryEquiv_right, Pi.neg_apply, Function.comp_apply, ← hρL,
         ← (laplacian_congr_nhds (hup (ρ y) hρy0)).eq_of_nhds, hΔp (ρ y) hρy hρy0]
     · simp only [hy0.ge, ↓reduceIte]
-      rw [laplacian_eq_basisTrace, hhess y hyB hy0]
-      rw [basisTrace_sub, basisTrace_smul, ← laplacian_eq_basisTrace,
-        show Ψ y = _ from correctorHessian_of_apply_eq_zero g hy0, basisTrace_smul]
+      rw [hL, hhess y hyB hy0, map_sub, map_smul, ← hL,
+        show Ψ y = _ from correctorHessian_of_apply_eq_zero g hy0, map_smul]
     · simp only [hy0.le, ↓reduceIte]
       rw [hΔp y hyB hy0]
   -- The interior estimate for `ur`, whose Laplacian is Hölder on the whole ball.
@@ -642,7 +659,7 @@ theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_two_inter_of_laplacian {α :
     ∃ T ∈ 𝓝 x, ∃ K : ℝ≥0, HolderOnWith K α (iteratedFDeriv ℝ 2 u) (T ∩ {z | 0 ≤ z 0}) := by
   rcases hx0.lt_or_eq with hx0 | hx0
   · -- Above the hyperplane this is the interior estimate.
-    have hΩ : IsOpen {z : E | 0 < z 0} := isOpen_lt continuous_const (by fun_prop)
+    have hΩ := EuclideanSpace.isOpen_setOf_pos_apply (0 : Fin (n + 1))
     obtain ⟨T, hT, K, hK⟩ := exists_mem_nhds_holderOnWith_iteratedFDeriv_two_of_laplacian hα1
       (hU.inter hΩ) (hu.mono inter_subset_left) (fun z hz ↦ by
         obtain ⟨T, hT, K, hK⟩ := hΔ z hz.1 hz.2.le

@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.IteratedFDeriv
+import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
@@ -60,6 +61,7 @@ harmonic functions apply.
 
 * `TauCeti.integral_halfSpacePoissonKernel`: the Poisson kernel of the half-space has mass one.
 * `TauCeti.halfSpacePoissonIntegral`: the Poisson integral of data on the hyperplane.
+* `TauCeti.halfSpaceFoot`: the foot of a point on the hyperplane.
 * `TauCeti.abs_halfSpacePoissonIntegral_le`: the maximum principle for the Poisson integral.
 * `TauCeti.halfSpacePoissonIntegral_const`, `TauCeti.halfSpacePoissonIntegral_add`,
   `TauCeti.halfSpacePoissonIntegral_smul`, `TauCeti.halfSpacePoissonIntegral_mono`: in the open
@@ -110,12 +112,31 @@ private theorem finrank_orthogonal_unit (v : U) : finrank ℝ (ℝ ∙ (v : E))�
       (pos_of_ne_euclideanSpace (unit_ne_zero v))]⟩
   exact Submodule.finrank_orthogonal_span_singleton (unit_ne_zero v)
 
-/-- The foot `x - ⟪v, x⟫ v` of `x` on the hyperplane `⟪v, ·⟫ = 0`. -/
-private def foot (v : U) (x : E) : (ℝ ∙ (v : E))ᗮ :=
+/-- The foot `x - ⟪v, x⟫ v` of `x` on the bounding hyperplane `⟪v, ·⟫ = 0` of the half-space,
+its orthogonal projection onto the hyperplane. -/
+def halfSpaceFoot (v : U) (x : E) : (ℝ ∙ (v : E))ᗮ :=
   ⟨x - ⟪(v : E), x⟫ • (v : E), by
     rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_sub_right, inner_smul_right,
       real_inner_self_eq_norm_sq, v.2]
     ring⟩
+
+theorem coe_halfSpaceFoot (v : U) (x : E) :
+    (halfSpaceFoot v x : E) = x - ⟪(v : E), x⟫ • (v : E) := (rfl)
+
+/-- A point of the hyperplane is its own foot. -/
+theorem coe_halfSpaceFoot_of_inner_eq_zero (v : U) {x : E} (hx : ⟪(v : E), x⟫ = 0) :
+    (halfSpaceFoot v x : E) = x := by
+  rw [coe_halfSpaceFoot, hx, zero_smul, sub_zero]
+
+/-- Taking the foot is idempotent. -/
+@[simp]
+theorem halfSpaceFoot_halfSpaceFoot (v : U) (x : E) :
+    halfSpaceFoot v (halfSpaceFoot v x) = halfSpaceFoot v x :=
+  Subtype.ext (coe_halfSpaceFoot_of_inner_eq_zero v
+    (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (halfSpaceFoot v x).2))
+
+theorem continuous_halfSpaceFoot (v : U) : Continuous (halfSpaceFoot v) :=
+  continuous_induced_rng.2 (by simp only [Function.comp_def, coe_halfSpaceFoot]; fun_prop)
 
 /-- On the hyperplane, the Poisson kernel with a pole `x` at height `t > 0` is a rescaled and
 translated copy of the Japanese bracket `(1 + ‖·‖ ^ 2) ^ (-n / 2)`. -/
@@ -124,11 +145,11 @@ private theorem halfSpacePoissonKernel_eq_rpow_one_add (v : U) {x : E}
     halfSpacePoissonKernel n v x y =
       2 * ((n : ℝ) * volume.real (ball (0 : E) 1))⁻¹ *
         (⟪(v : E), x⟫ * (⟪(v : E), x⟫ ^ 2) ^ (-(n : ℝ) / 2)) *
-        (1 + ‖⟪(v : E), x⟫⁻¹ • (y - foot v x)‖ ^ 2) ^ (-(n : ℝ) / 2) := by
+        (1 + ‖⟪(v : E), x⟫⁻¹ • (y - halfSpaceFoot v x)‖ ^ 2) ^ (-(n : ℝ) / 2) := by
   have hy : ⟪(v : E), y⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2
-  have hnorm : ‖y - foot v x‖ = ‖(y : E) - (x - ⟪(v : E), x⟫ • (v : E))‖ := rfl
+  have hnorm : ‖y - halfSpaceFoot v x‖ = ‖(y : E) - (x - ⟪(v : E), x⟫ • (v : E))‖ := rfl
   have h1 : ‖(y : E) - x‖ ^ 2 =
-      ⟪(v : E), x⟫ ^ 2 * (1 + ‖⟪(v : E), x⟫⁻¹ • (y - foot v x)‖ ^ 2) := by
+      ⟪(v : E), x⟫ ^ 2 * (1 + ‖⟪(v : E), x⟫⁻¹ • (y - halfSpaceFoot v x)‖ ^ 2) := by
     rw [norm_smul, mul_pow, hnorm, norm_sub_sq_eq_of_inner_eq_zero v.2 x hy, Real.norm_eq_abs,
       abs_inv, abs_of_pos hx]
     field_simp
@@ -146,7 +167,7 @@ theorem integrable_halfSpacePoissonKernel (v : U) {x : E} (hx : 0 < ⟪(v : E), 
     linarith
   simp_rw [halfSpacePoissonKernel_eq_rpow_one_add v hx]
   exact (((integrable_rpow_neg_one_add_norm_sq hn).comp_smul (inv_ne_zero hx.ne')).comp_sub_right
-    (foot v x)).const_mul _
+    (halfSpaceFoot v x)).const_mul _
 
 /-- The powers of the height `t` of the pole cancel in the rescaled kernel:
 `t (t²)^(-n/2) t^(n-1) = 1`. -/
@@ -170,10 +191,10 @@ theorem integral_halfSpacePoissonKernel (v : U) {x : E} (hx : 0 < ⟪(v : E), x�
   have hfin : (finrank ℝ (ℝ ∙ (v : E))ᗮ : ℝ) = n - 1 := by
     rw [finrank_orthogonal_unit, Nat.cast_sub hn, Nat.cast_one]
   -- Translating by the foot of `x` and rescaling by `t` reduces to the Japanese bracket.
-  have hI : ∫ y : (ℝ ∙ (v : E))ᗮ, (1 + ‖t⁻¹ • (y - foot v x)‖ ^ 2) ^ (-(n : ℝ) / 2) =
+  have hI : ∫ y : (ℝ ∙ (v : E))ᗮ, (1 + ‖t⁻¹ • (y - halfSpaceFoot v x)‖ ^ 2) ^ (-(n : ℝ) / 2) =
       t ^ (n - 1) * (π ^ (((n : ℝ) - 1) / 2) * Real.Gamma (1 / 2) / Real.Gamma (n / 2)) := by
     rw [integral_sub_right_eq_self
-        (fun y : (ℝ ∙ (v : E))ᗮ ↦ (1 + ‖t⁻¹ • y‖ ^ 2) ^ (-(n : ℝ) / 2)) (foot v x),
+        (fun y : (ℝ ∙ (v : E))ᗮ ↦ (1 + ‖t⁻¹ • y‖ ^ 2) ^ (-(n : ℝ) / 2)) (halfSpaceFoot v x),
       Measure.integral_comp_inv_smul_of_nonneg (μ := volume)
         (fun y : (ℝ ∙ (v : E))ᗮ ↦ (1 + ‖y‖ ^ 2) ^ (-(n : ℝ) / 2)) hx.le,
       integral_rpow_neg_one_add_norm_sq (by rw [hfin]; linarith), hfin,
@@ -504,25 +525,22 @@ theorem exists_harmonicOnNhd_continuousOn_halfSpace_eq (v : U) {g : (ℝ ∙ (v 
 /-! ### Hölder continuous boundary data -/
 
 /-- The distance from the foot of `x` to a point `p` of the hyperplane is at most `‖x - p‖`. -/
-private theorem norm_foot_sub_le (v : U) (x : E) (p : (ℝ ∙ (v : E))ᗮ) :
-    ‖foot v x - p‖ ≤ ‖x - p‖ := by
-  have hfp : ⟪(v : E), ((foot v x - p : (ℝ ∙ (v : E))ᗮ) : E)⟫ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_right.1 (foot v x - p).2
-  have hx : x - (p : E) = ((foot v x - p : (ℝ ∙ (v : E))ᗮ) : E) + ⟪(v : E), x⟫ • (v : E) := by
-    simp only [Submodule.coe_sub, foot]
+theorem norm_halfSpaceFoot_sub_le (v : U) (x : E) (p : (ℝ ∙ (v : E))ᗮ) :
+    ‖halfSpaceFoot v x - p‖ ≤ ‖x - p‖ := by
+  have hp : ⟪(p : E), (v : E)⟫ = 0 := by
+    rw [real_inner_comm]
+    exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 p.2
+  have h : ((halfSpaceFoot v x - p : (ℝ ∙ (v : E))ᗮ) : E) =
+      (x - p) - ⟪x - p, (v : E)⟫ • (v : E) := by
+    rw [Submodule.coe_sub, coe_halfSpaceFoot, inner_sub_left, hp, sub_zero, real_inner_comm]
     abel
-  have h := norm_add_sq_eq_norm_sq_add_norm_sq_real
-    (x := ((foot v x - p : (ℝ ∙ (v : E))ᗮ) : E)) (y := ⟪(v : E), x⟫ • (v : E))
-    (by rw [inner_smul_right, real_inner_comm (v : E), hfp, mul_zero])
-  rw [← hx] at h
-  rw [← Submodule.norm_coe (foot v x - p),
-    mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _), h]
-  exact le_add_of_nonneg_right (mul_self_nonneg _)
+  rw [← Submodule.norm_coe, h]
+  exact norm_sub_inner_smul_le v.2 _
 
 /-- A point at height `t ≥ 0` above the hyperplane lies at distance `t` from its foot. -/
-private theorem norm_sub_foot (v : U) {x : E} (hx : 0 ≤ ⟪(v : E), x⟫) :
-    ‖x - foot v x‖ = ⟪(v : E), x⟫ := by
-  simp [foot, norm_smul, v.2, abs_of_nonneg hx]
+theorem norm_sub_halfSpaceFoot (v : U) {x : E} (hx : 0 ≤ ⟪(v : E), x⟫) :
+    ‖x - halfSpaceFoot v x‖ = ⟪(v : E), x⟫ := by
+  simp [halfSpaceFoot, norm_smul, v.2, abs_of_nonneg hx]
 
 /-- **Hölder moments of the Poisson kernel.** For `0 ≤ α < 1` there is a constant `A` with
 `∫_H K(x, y) ‖y - x'‖^α dy = A ⟪v, x⟫^α` for every pole `x` in the open half-space, `x'` its foot:
@@ -531,8 +549,9 @@ finite because `α < 1`. -/
 private theorem exists_integral_halfSpacePoissonKernel_mul_rpow (v : U) {α : ℝ} (hα0 : 0 ≤ α)
     (hα1 : α < 1) :
     ∃ A : ℝ, 0 ≤ A ∧ ∀ {x : E}, 0 < ⟪(v : E), x⟫ →
-      Integrable (fun y : (ℝ ∙ (v : E))ᗮ ↦ halfSpacePoissonKernel n v x y * ‖y - foot v x‖ ^ α) ∧
-      ∫ y : (ℝ ∙ (v : E))ᗮ, halfSpacePoissonKernel n v x y * ‖y - foot v x‖ ^ α =
+      Integrable (fun y : (ℝ ∙ (v : E))ᗮ ↦
+        halfSpacePoissonKernel n v x y * ‖y - halfSpaceFoot v x‖ ^ α) ∧
+      ∫ y : (ℝ ∙ (v : E))ᗮ, halfSpacePoissonKernel n v x y * ‖y - halfSpaceFoot v x‖ ^ α =
         A * ⟪(v : E), x⟫ ^ α := by
   have hn : 0 < n := pos_of_ne_euclideanSpace (unit_ne_zero v)
   have hfin : (finrank ℝ (ℝ ∙ (v : E))ᗮ : ℝ) < n - α := by
@@ -564,20 +583,21 @@ private theorem exists_integral_halfSpacePoissonKernel_mul_rpow (v : U) {α : �
     fun {x} hx ↦ ?_⟩
   set t := ⟪(v : E), x⟫
   -- The integrand is a rescaled and translated copy of `φ`.
-  have hform : (fun y : (ℝ ∙ (v : E))ᗮ ↦ halfSpacePoissonKernel n v x y * ‖y - foot v x‖ ^ α) =
-      fun y ↦ (c * (t * (t ^ 2) ^ (-(n : ℝ) / 2)) * t ^ α) * φ (t⁻¹ • (y - foot v x)) := by
+  have hform : (fun y : (ℝ ∙ (v : E))ᗮ ↦
+      halfSpacePoissonKernel n v x y * ‖y - halfSpaceFoot v x‖ ^ α) =
+      fun y ↦ (c * (t * (t ^ 2) ^ (-(n : ℝ) / 2)) * t ^ α) * φ (t⁻¹ • (y - halfSpaceFoot v x)) := by
     funext y
-    have hy : ‖y - foot v x‖ = t * ‖t⁻¹ • (y - foot v x)‖ := by
+    have hy : ‖y - halfSpaceFoot v x‖ = t * ‖t⁻¹ • (y - halfSpaceFoot v x)‖ := by
       rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hx, ← mul_assoc,
         mul_inv_cancel₀ hx.ne', one_mul]
     rw [halfSpacePoissonKernel_eq_rpow_one_add v hx, hy, Real.mul_rpow hx.le (norm_nonneg _)]
     simp only [φ]
     ring
-  have hint : Integrable fun y : (ℝ ∙ (v : E))ᗮ ↦ φ (t⁻¹ • (y - foot v x)) :=
-    (hφint.comp_smul (inv_ne_zero hx.ne')).comp_sub_right (foot v x)
+  have hint : Integrable fun y : (ℝ ∙ (v : E))ᗮ ↦ φ (t⁻¹ • (y - halfSpaceFoot v x)) :=
+    (hφint.comp_smul (inv_ne_zero hx.ne')).comp_sub_right (halfSpaceFoot v x)
   refine ⟨hform ▸ hint.const_mul _, ?_⟩
   rw [hform, integral_const_mul,
-    integral_sub_right_eq_self (fun y : (ℝ ∙ (v : E))ᗮ ↦ φ (t⁻¹ • y)) (foot v x),
+    integral_sub_right_eq_self (fun y : (ℝ ∙ (v : E))ᗮ ↦ φ (t⁻¹ • y)) (halfSpaceFoot v x),
     Measure.integral_comp_inv_smul_of_nonneg (μ := volume) φ hx.le, finrank_orthogonal_unit,
     smul_eq_mul]
   calc c * (t * (t ^ 2) ^ (-(n : ℝ) / 2)) * t ^ α * (t ^ (n - 1) * ∫ z, φ z)
@@ -604,19 +624,20 @@ theorem exists_abs_halfSpacePoissonIntegral_sub_le (v : U) {α : ℝ≥0} (hα0 
   obtain ⟨hint, hval⟩ := hmom hx
   have hgm : AEStronglyMeasurable g := (hg.continuous hα0).aestronglyMeasurable
   have hK0 := halfSpacePoissonKernel_pos_on_hyperplane (n := n) v hx
-  set d := ‖foot v x - p‖
+  set d := ‖halfSpaceFoot v x - p‖
   have hpt : ∀ y : (ℝ ∙ (v : E))ᗮ, |halfSpacePoissonKernel n v x y * (g y - g p)| ≤
-      K * (halfSpacePoissonKernel n v x y * ‖y - foot v x‖ ^ (α : ℝ) +
+      K * (halfSpacePoissonKernel n v x y * ‖y - halfSpaceFoot v x‖ ^ (α : ℝ) +
         d ^ (α : ℝ) * halfSpacePoissonKernel n v x y) := by
     intro y
     rw [abs_mul, abs_of_pos (hK0 y)]
     have h1 : |g y - g p| ≤ K * ‖y - p‖ ^ (α : ℝ) := by
       simpa [Real.dist_eq, dist_eq_norm] using hg.dist_le y p
-    have h2 : ‖y - p‖ ^ (α : ℝ) ≤ ‖y - foot v x‖ ^ (α : ℝ) + d ^ (α : ℝ) :=
-      (Real.rpow_le_rpow (norm_nonneg _) (norm_sub_le_norm_sub_add_norm_sub y (foot v x) p)
+    have h2 : ‖y - p‖ ^ (α : ℝ) ≤ ‖y - halfSpaceFoot v x‖ ^ (α : ℝ) + d ^ (α : ℝ) :=
+      (Real.rpow_le_rpow (norm_nonneg _) (norm_sub_le_norm_sub_add_norm_sub y (halfSpaceFoot v x) p)
         α.2).trans (Real.rpow_add_le_add_rpow (norm_nonneg _) (norm_nonneg _) α.2 hα1.le)
     calc halfSpacePoissonKernel n v x y * |g y - g p|
-        ≤ halfSpacePoissonKernel n v x y * (K * (‖y - foot v x‖ ^ (α : ℝ) + d ^ (α : ℝ))) :=
+        ≤ halfSpacePoissonKernel n v x y *
+            (K * (‖y - halfSpaceFoot v x‖ ^ (α : ℝ) + d ^ (α : ℝ))) :=
           mul_le_mul_of_nonneg_left (h1.trans (mul_le_mul_of_nonneg_left h2 K.2)) (hK0 y).le
       _ = _ := by ring
   have hgp : Integrable fun y : (ℝ ∙ (v : E))ᗮ ↦ halfSpacePoissonKernel n v x y * (g y - g p) :=
@@ -626,8 +647,9 @@ theorem exists_abs_halfSpacePoissonIntegral_sub_le (v : U) {α : ℝ≥0} (hα0 
   calc |∫ y : (ℝ ∙ (v : E))ᗮ, halfSpacePoissonKernel n v x y * (g y - g p)|
       ≤ ∫ y : (ℝ ∙ (v : E))ᗮ, |halfSpacePoissonKernel n v x y * (g y - g p)| :=
         abs_integral_le_integral_abs
-    _ ≤ ∫ y : (ℝ ∙ (v : E))ᗮ, K * (halfSpacePoissonKernel n v x y * ‖y - foot v x‖ ^ (α : ℝ) +
-          d ^ (α : ℝ) * halfSpacePoissonKernel n v x y) :=
+    _ ≤ ∫ y : (ℝ ∙ (v : E))ᗮ, K *
+          (halfSpacePoissonKernel n v x y * ‖y - halfSpaceFoot v x‖ ^ (α : ℝ) +
+            d ^ (α : ℝ) * halfSpacePoissonKernel n v x y) :=
         integral_mono hgp.abs ((hint.add ((integrable_halfSpacePoissonKernel v hx).const_mul
           _)).const_mul _) hpt
     _ = K * (A * ⟪(v : E), x⟫ ^ (α : ℝ) + d ^ (α : ℝ)) := by
@@ -640,7 +662,7 @@ theorem exists_abs_halfSpacePoissonIntegral_sub_le (v : U) {α : ℝ≥0} (hα0 
         rfl
     _ ≤ _ := by
         gcongr
-        exact norm_foot_sub_le v x p
+        exact norm_halfSpaceFoot_sub_le v x p
 
 /-- **Derivative estimates for the Poisson integral of Hölder data.** Let `0 < α < 1` and
 `k ≥ 1`. There is a constant `C`, depending only on `n`, `v`, `α` and `k`, such that for bounded
@@ -648,7 +670,7 @@ boundary data `g` that are `α`-Hölder with constant `K` and every `x` in the o
 
 `‖D^k P[g](x)‖ ≤ C K ⟪v, x⟫^(α - k)`.
 
-The derivatives blow up at the hyperplane exactly at the rate allowed by the Hölder exponent of
+The derivatives blow up at the hyperplane at most at the rate allowed by the Hölder exponent of
 the data. -/
 theorem exists_norm_iteratedFDeriv_halfSpacePoissonIntegral_le (v : U) {α : ℝ≥0} (hα0 : 0 < α)
     (hα1 : α < 1) (k : ℕ) :
@@ -660,7 +682,7 @@ theorem exists_norm_iteratedFDeriv_halfSpacePoissonIntegral_le (v : U) {α : ℝ
   refine ⟨(2 ^ (finrank ℝ E + 2) * finrank ℝ E * k) ^ k * (2 * (A + 1)), by positivity,
     fun {g M K} hM hg {x} hx hk ↦ ?_⟩
   set t := ⟪(v : E), x⟫
-  set c := g (foot v x)
+  set c := g (halfSpaceFoot v x)
   have hgm : AEStronglyMeasurable g := (hg.continuous hα0).aestronglyMeasurable
   have hP := harmonicOnNhd_halfSpacePoissonIntegral v hgm hM
   have hv : ‖(v : E)‖ = 1 := v.2
@@ -679,9 +701,10 @@ theorem exists_norm_iteratedFDeriv_halfSpacePoissonIntegral_le (v : U) {α : ℝ
       ‖halfSpacePoissonIntegral v g y - c‖ ≤ K * (2 * (A + 1)) * t ^ (α : ℝ) := by
     intro y hy
     obtain ⟨hy₁, hy₂⟩ := hheight y hy
-    have hyf : ‖y - foot v x‖ ≤ 3 / 2 * t := by
-      calc ‖y - foot v x‖ ≤ ‖y - x‖ + ‖x - foot v x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-        _ ≤ t / 2 + t := add_le_add (mem_ball_iff_norm.1 hy).le (norm_sub_foot v hx.le).le
+    have hyf : ‖y - halfSpaceFoot v x‖ ≤ 3 / 2 * t := by
+      calc ‖y - halfSpaceFoot v x‖ ≤ ‖y - x‖ + ‖x - halfSpaceFoot v x‖ :=
+            norm_sub_le_norm_sub_add_norm_sub _ _ _
+        _ ≤ t / 2 + t := add_le_add (mem_ball_iff_norm.1 hy).le (norm_sub_halfSpaceFoot v hx.le).le
         _ = 3 / 2 * t := by ring
     have h32 : (3 / 2 * t) ^ (α : ℝ) ≤ 2 * t ^ (α : ℝ) := by
       rw [Real.mul_rpow (by norm_num) hx.le]
@@ -690,8 +713,8 @@ theorem exists_norm_iteratedFDeriv_halfSpacePoissonIntegral_le (v : U) {α : ℝ
       rw [Real.rpow_one] at this
       nlinarith [Real.rpow_nonneg hx.le (α : ℝ)]
     rw [Real.norm_eq_abs]
-    refine (hdev hM hg (hball hy) (foot v x)).trans ?_
-    calc (K : ℝ) * (A * ⟪(v : E), y⟫ ^ (α : ℝ) + ‖y - foot v x‖ ^ (α : ℝ))
+    refine (hdev hM hg (hball hy) (halfSpaceFoot v x)).trans ?_
+    calc (K : ℝ) * (A * ⟪(v : E), y⟫ ^ (α : ℝ) + ‖y - halfSpaceFoot v x‖ ^ (α : ℝ))
         ≤ K * (A * (3 / 2 * t) ^ (α : ℝ) + (3 / 2 * t) ^ (α : ℝ)) := by
           gcongr
           · exact (half_pos hx).le.trans hy₁.le
@@ -701,17 +724,9 @@ theorem exists_norm_iteratedFDeriv_halfSpacePoissonIntegral_le (v : U) {α : ℝ
   have hest := InnerProductSpace.HarmonicOnNhd.norm_iteratedFDeriv_le_of_norm_le hharm hbound
     (half_pos hx) k
   -- The constant `c` does not affect derivatives of positive order.
-  have hcd : ContDiffAt ℝ k (halfSpacePoissonIntegral v g) x :=
-    (InnerProductSpace.HarmonicAt.analyticAt (hP x hx)).contDiffAt
-  have hsub : iteratedFDeriv ℝ k (fun y ↦ halfSpacePoissonIntegral v g y - c) x =
-      iteratedFDeriv ℝ k (halfSpacePoissonIntegral v g) x := by
-    have : (fun y ↦ halfSpacePoissonIntegral v g y - c) =
-        halfSpacePoissonIntegral v g + fun _ ↦ -c := by
-      funext y
-      simp [sub_eq_add_neg]
-    rw [this, iteratedFDeriv_add_apply hcd contDiffAt_const,
-      iteratedFDeriv_const_of_ne (by omega), Pi.zero_apply, add_zero]
-  rw [hsub] at hest
+  obtain ⟨j, hj⟩ := Nat.exists_eq_add_of_le' hk
+  simp_rw [sub_eq_add_neg] at hest
+  rw [hj, iteratedFDeriv_succ_add_const, ← hj] at hest
   refine hest.trans_eq ?_
   have hk' : (t ^ ((α : ℝ) - k)) = t ^ (α : ℝ) / t ^ k := by
     rw [Real.rpow_sub hx, Real.rpow_natCast]

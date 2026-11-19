@@ -39,11 +39,14 @@ normal vector and an offset.
 
 ## Main declarations
 
+* `TauCeti.norm_sub_inner_smul_le`: the orthogonal projection `x ↦ x - ⟪x, v⟫ v` onto the
+  hyperplane `⟪·, v⟫ = 0`, `v` a unit vector, does not increase norms.
 * `TauCeti.hyperplaneReflection`: the reflection in the hyperplane `{x | ⟪x, ν⟫ = c}`.
 * `TauCeti.hyperplaneReflection_apply`: the explicit formula.
 * `TauCeti.hyperplaneReflection_hyperplaneReflection`: it is an involution.
 * `TauCeti.inner_hyperplaneReflection`: it reverses the signed height `⟪x, ν⟫ - c`.
 * `TauCeti.hyperplaneReflection_eq_self_iff`: its fixed points are the points of the hyperplane.
+* `TauCeti.hyperplaneReflection_mem_ball_iff`: balls centred on the hyperplane are invariant.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
 * `TauCeti.fderiv_hyperplaneReflection` and `TauCeti.abs_det_fderiv_hyperplaneReflection`: its
@@ -71,6 +74,32 @@ namespace TauCeti
 open InnerProductSpace MeasureTheory
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-! ### The orthogonal projection onto a hyperplane through the origin -/
+
+/-- The foot `x - ⟪x, v⟫ v` of `x` on the hyperplane `⟪·, v⟫ = 0` lies on the hyperplane. -/
+theorem inner_sub_inner_smul_self_eq_zero {v : F} (hv : ‖v‖ = 1) (x : F) :
+    ⟪x - ⟪x, v⟫_ℝ • v, v⟫_ℝ = 0 := by
+  rw [inner_sub_left, inner_smul_left, real_inner_self_eq_norm_sq, hv]
+  simp
+
+/-- The orthogonal projection `x ↦ x - ⟪x, v⟫ v` onto the hyperplane `⟪·, v⟫ = 0` does not
+increase norms. -/
+theorem norm_sub_inner_smul_le {v : F} (hv : ‖v‖ = 1) (x : F) :
+    ‖x - ⟪x, v⟫_ℝ • v‖ ≤ ‖x‖ := by
+  have h := norm_add_sq_eq_norm_sq_add_norm_sq_real (x := x - ⟪x, v⟫_ℝ • v) (y := ⟪x, v⟫_ℝ • v)
+    (by rw [inner_smul_right, inner_sub_inner_smul_self_eq_zero hv, mul_zero])
+  rw [sub_add_cancel] at h
+  rw [mul_self_le_mul_self_iff (norm_nonneg _) (norm_nonneg _), h]
+  exact le_add_of_nonneg_right (mul_self_nonneg _)
+
+/-- The height `⟪x, v⟫` above the hyperplane `⟪·, v⟫ = 0` is `1`-Lipschitz. -/
+theorem abs_inner_sub_inner_le {v : F} (hv : ‖v‖ = 1) (x y : F) :
+    |⟪x, v⟫_ℝ - ⟪y, v⟫_ℝ| ≤ dist x y := by
+  rw [← inner_sub_left, dist_eq_norm]
+  simpa [hv] using abs_real_inner_le_norm (x - y) v
+
+/-! ### The reflection -/
 
 /-- The **reflection in the affine hyperplane** `{x | ⟪x, ν⟫ = c}`: the affine isometry
 `x ↦ x - (2 (⟪x, ν⟫ - c) / ‖ν‖²) ν`, whose linear part is the reflection `(ℝ ∙ ν)ᗮ.reflection` in
@@ -148,6 +177,20 @@ theorem hyperplaneReflection_eq_self_of_mem_closure {ν : F} {c : ℝ} {H : Set 
     exact closure_lt_subset_le continuous_const (continuous_id.inner continuous_const) hxc
   exact hyperplaneReflection_eq_self_of_inner_eq
     (le_antisymm (not_lt.1 fun h => hxH ((hH x).2 h)) hle)
+
+/-- A ball centred on the hyperplane `{x | ⟪x, ν⟫ = c}` is invariant under the reflection. -/
+theorem hyperplaneReflection_mem_ball_iff {ν : F} {c : ℝ} {x : F} (hx : ⟪x, ν⟫_ℝ = c) {y : F}
+    {r : ℝ} : hyperplaneReflection ν c y ∈ Metric.ball x r ↔ y ∈ Metric.ball x r := by
+  rw [Metric.mem_ball, Metric.mem_ball, ← hyperplaneReflection_eq_self_of_inner_eq hx,
+    (hyperplaneReflection ν c).dist_map, hyperplaneReflection_eq_self_of_inner_eq hx]
+
+/-- A closed ball centred on the hyperplane `{x | ⟪x, ν⟫ = c}` is invariant under the
+reflection. -/
+theorem hyperplaneReflection_mem_closedBall_iff {ν : F} {c : ℝ} {x : F} (hx : ⟪x, ν⟫_ℝ = c)
+    {y : F} {r : ℝ} :
+    hyperplaneReflection ν c y ∈ Metric.closedBall x r ↔ y ∈ Metric.closedBall x r := by
+  rw [Metric.mem_closedBall, Metric.mem_closedBall, ← hyperplaneReflection_eq_self_of_inner_eq hx,
+    (hyperplaneReflection ν c).dist_map, hyperplaneReflection_eq_self_of_inner_eq hx]
 
 /-- The hyperplane reflection maps the open half-space `{x | c < ⟪x, ν⟫}` onto the opposite
 open half-space `{x | ⟪x, ν⟫ < c}`, and conversely. -/
