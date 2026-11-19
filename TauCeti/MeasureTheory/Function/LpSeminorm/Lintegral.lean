@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 
 /-!
@@ -34,12 +35,14 @@ finiteness of the lower integral of its squared extended norm
 
 The same identification gives monotone convergence for the seminorm: the `Lᵖ` seminorm of the
 supremum of an increasing sequence of functions with values in `[0, ∞]` is the supremum of their
-seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`.
+seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`. Fatou's lemma gives
+the seminorm of an almost everywhere limit of such functions: if `‖h n‖_p ≤ C n` and `C n → M`, the
+limit has seminorm at most `M` (`MeasureTheory.eLpNorm_le_of_ae_tendsto_of_eLpNorm_le`).
 -/
 
 public section
 
-open MeasureTheory
+open Filter MeasureTheory Topology
 open scoped ENNReal NNReal
 
 variable {α ε : Type*} [MeasurableSpace α] {μ : Measure α} [TopologicalSpace ε] [ContinuousENorm ε]
@@ -141,6 +144,30 @@ theorem eLpNorm_iSup_eq_iSup_eLpNorm {f : ℕ → α → ℝ≥0∞} (hf : ∀ n
   rw [lintegral_iSup' (fun n ↦ (hf n).pow_const _)
     (hmono.mono fun x hx m n hmn ↦ ENNReal.rpow_le_rpow (hx hmn) hr.le),
     ENNReal.iSup_rpow_of_pos (by positivity)]
+
+/-- **Fatou's lemma for the `Lᵠ` seminorm.** Let `q ≠ 0, ∞`. If functions `h n` with values in
+`[0, ∞]` converge almost everywhere to `H` and `‖h n‖_q ≤ C n` with `C n → M`, then `‖H‖_q ≤ M`. -/
+theorem eLpNorm_le_of_ae_tendsto_of_eLpNorm_le {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ∞)
+    {h : ℕ → α → ℝ≥0∞} {H : α → ℝ≥0∞} (hh : ∀ n, AEMeasurable (h n) μ) (hH : AEMeasurable H μ)
+    (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ h n x) atTop (𝓝 (H x))) {C : ℕ → ℝ≥0∞} {M : ℝ≥0∞}
+    (hC : Tendsto C atTop (𝓝 M)) (hbound : ∀ n, eLpNorm (h n) q μ ≤ C n) :
+    eLpNorm H q μ ≤ M := by
+  have hq' : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  have hpow (n : ℕ) : ∫⁻ x, h n x ^ q.toReal ∂μ ≤ C n ^ q.toReal := by
+    have := lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq (hh n).aestronglyMeasurable
+    simp only [eNorm_eq_self] at this
+    rw [this]
+    exact ENNReal.rpow_le_rpow (hbound n) hq'.le
+  have hH' := lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq hH.aestronglyMeasurable
+  simp only [eNorm_eq_self] at hH'
+  rw [← ENNReal.rpow_le_rpow_iff hq', ← hH']
+  calc ∫⁻ x, H x ^ q.toReal ∂μ = ∫⁻ x, liminf (fun n ↦ h n x ^ q.toReal) atTop ∂μ :=
+        lintegral_congr_ae (hlim.mono fun x hx ↦
+          ((ENNReal.continuous_rpow_const.tendsto _).comp hx).liminf_eq.symm)
+    _ ≤ liminf (fun n ↦ ∫⁻ x, h n x ^ q.toReal ∂μ) atTop :=
+        lintegral_liminf_le' fun n ↦ (hh n).pow_const _
+    _ ≤ liminf (fun n ↦ C n ^ q.toReal) atTop := liminf_le_liminf (Eventually.of_forall hpow)
+    _ = M ^ q.toReal := ((ENNReal.continuous_rpow_const.tendsto _).comp hC).liminf_eq
 
 end MeasureTheory
 
