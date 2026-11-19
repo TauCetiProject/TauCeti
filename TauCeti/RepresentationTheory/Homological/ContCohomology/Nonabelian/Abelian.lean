@@ -169,16 +169,22 @@ theorem equiv_iff_sub_mem_B1 {f f' : Cocycle G (Multiplicative M)} :
 
 end Cocycle
 
+/-- Two nonabelian cocycles with values in `Multiplicative M` have the same class exactly when the
+corresponding explicit cocycles differ by a coboundary. -/
+private theorem mk_eq_mk_iff_sub_mem_B1 {f f' : Cocycle G (Multiplicative M)} :
+    mk f = mk f' ↔
+      (Cocycle.multiplicativeEquivZ1 f : G → M) - Cocycle.multiplicativeEquivZ1 f' ∈
+        ContCohomology.B1 G M := by
+  rw [mk_eq_mk_iff, ← Cocycle.equiv_iff, Cocycle.equiv_iff_sub_mem_B1, ← neg_mem_iff, neg_sub]
+
 variable [ContinuousSMul G M]
 
 /-- The class in `H¹(G, Multiplicative M)` of an explicit continuous cocycle class, the inverse of
 `TauCeti.NonabelianH1.multiplicativeEquivH1`. -/
 private def ofH1 (x : ContCohomology.H1 G M) : NonabelianH1 G (Multiplicative M) :=
   Quotient.liftOn' x (fun c ↦ mk (Cocycle.multiplicativeEquivZ1.symm c)) fun c c' h ↦
-    mk_eq_mk_iff.2 <| Cocycle.equiv_iff.1 <| Cocycle.equiv_iff_sub_mem_B1.2 <| by
-      rw [QuotientAddGroup.leftRel_apply, AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_add,
-        AddSubgroup.coe_neg, neg_add_eq_sub] at h
-      simpa only [Equiv.apply_symm_apply] using h
+    mk_eq_mk_iff_sub_mem_B1.2 <| by
+      simpa only [Equiv.apply_symm_apply] using ContCohomology.H1pi_eq_iff.1 (Quotient.sound h)
 
 private theorem ofH1_mk (f : Cocycle G (Multiplicative M)) :
     ofH1 (Cocycle.multiplicativeEquivZ1 f : ContCohomology.H1 G M) = mk f := by
@@ -186,15 +192,12 @@ private theorem ofH1_mk (f : Cocycle G (Multiplicative M)) :
 
 private theorem ofH1_bijective : Function.Bijective (ofH1 (G := G) (M := M)) := by
   refine ⟨fun x x' h ↦ ?_, fun c ↦ ?_⟩
-  · induction x using QuotientAddGroup.induction_on with | H c =>
-    induction x' using QuotientAddGroup.induction_on with | H c' =>
-    rw [← Equiv.apply_symm_apply Cocycle.multiplicativeEquivZ1 c,
-      ← Equiv.apply_symm_apply Cocycle.multiplicativeEquivZ1 c', ofH1_mk, ofH1_mk,
-      mk_eq_mk_iff, ← Cocycle.equiv_iff, Cocycle.equiv_iff_sub_mem_B1] at h
-    rw [ContCohomology.H1pi_eq_iff]
-    simp only [Equiv.apply_symm_apply] at h
-    rw [← neg_mem_iff, neg_sub]
-    exact h
+  · obtain ⟨f, rfl⟩ := (QuotientAddGroup.mk_surjective.comp
+      Cocycle.multiplicativeEquivZ1.surjective) x
+    obtain ⟨f', rfl⟩ := (QuotientAddGroup.mk_surjective.comp
+      Cocycle.multiplicativeEquivZ1.surjective) x'
+    exact ContCohomology.H1pi_eq_iff.2 <| mk_eq_mk_iff_sub_mem_B1.1 <| by
+      simpa only [Function.comp_apply, ofH1_mk] using h
   · induction c using induction_on with | mk f =>
     exact ⟨_, ofH1_mk f⟩
 
@@ -243,21 +246,11 @@ section Map
 variable {G' N : Type*} [Group G'] [TopologicalSpace G'] [AddCommGroup N] [TopologicalSpace N]
   [IsTopologicalAddGroup N] [DistribMulAction G' N] [ContinuousSMul G' N]
 
-omit [IsTopologicalAddGroup M] [ContinuousSMul G M] [IsTopologicalAddGroup N]
-  [ContinuousSMul G' N] in
-/-- An additive compatible pair `(ψ, φ)` is a compatible pair for the actions on the
-multiplicative type tags. -/
-theorem toMultiplicative_smul (ψ : G' →ₜ* G) (φ : M →ₜ+ N)
-    (h : ∀ (g : G') (m : M), φ (ψ g • m) = g • φ m) (g : G') (a : Multiplicative M) :
-    φ.toMultiplicative (ψ g • a) = g • φ.toMultiplicative a := by
-  simp only [ContinuousAddMonoidHom.toMultiplicative_apply_apply, Multiplicative.toAdd_smul, h,
-    Multiplicative.ofAdd_smul]
-
 /-- **Naturality of the comparison**: it intertwines the map induced by a compatible pair on
 nonabelian `H¹` with the explicit pullback `ContCohomology.explicitMap1` on abelian `H¹`. -/
 theorem multiplicativeEquivH1_map (ψ : G' →ₜ* G) (φ : M →ₜ+ N)
     (h : ∀ (g : G') (m : M), φ (ψ g • m) = g • φ m) (c : NonabelianH1 G (Multiplicative M)) :
-    multiplicativeEquivH1 (map ψ φ.toMultiplicative (toMultiplicative_smul ψ φ h) c) =
+    multiplicativeEquivH1 (map ψ φ.toMultiplicative (φ.toMultiplicative_map_smul ψ h) c) =
       ContCohomology.explicitMap1 G M G' N ψ φ φ.continuous h (multiplicativeEquivH1 c) := by
   induction c using induction_on with | mk f =>
   rw [map_mk, multiplicativeEquivH1_mk, multiplicativeEquivH1_mk,
