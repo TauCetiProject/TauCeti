@@ -42,11 +42,17 @@ The results below describe `u` through the original operator `P`:
   `|u(x, t) - u'(x, t)| ≤ w(x) exp (‖c_w‖ T) (1 + T) δ`. Since `C_b^{2,α}` is dense in the
   uniformly continuous functions, `u` is the limit in the weighted uniform norm of the classical
   weighted solutions with approximating initial data, and this property determines `u`.
-* **Agreement.** For `g ∈ C_b^{2,α}`, `u` is itself the classical weighted solution.
-* **The initial trace.** `u(x, 0) = w(x) g(x)` and `u(·, t) / w → g` uniformly on `ℝⁿ` as
-  `t → 0⁺`: the initial datum is attained in the weighted uniform norm.
-* **The maximum principle.** If `c_w ≤ γ` with `0 ≤ γ`, `|f| ≤ K` and `|g| ≤ M`, then
-  `|u(x, t)| ≤ w(x) exp (γ t) (M + t K)`. The sign condition is on `c_w`, not on `c`.
+* **Agreement.** For `g ∈ C_b^{2,α}`, `u` satisfies `P u = w f` pointwise on the slab.
+
+Since `u / w = V`, the statements about `u / w` alone are the unweighted results for
+`euclideanCauchySolutionBUC` with the coefficients `a`, `b_w`, `c_w`, and are not restated here:
+`TauCeti.ParabolicC2HolderSpace.euclideanCauchySolutionBUC_apply_slabMk_zero` gives the initial
+values `u(x, 0) = w(x) g(x)`,
+`TauCeti.ParabolicC2HolderSpace.tendstoUniformly_euclideanCauchySolutionBUC` gives
+`u(·, t) / w → g` uniformly on `ℝⁿ` as `t → 0⁺` (the initial trace in the weighted uniform norm),
+and `TauCeti.ParabolicC2HolderSpace.abs_euclideanCauchySolutionBUC_apply_le` with `c := c_w`
+gives the maximum principle `|u(x, t)| ≤ w(x) exp (γ t) (M + t K)` when `c_w ≤ γ`, `0 ≤ γ`,
+`|f| ≤ K` and `|g| ≤ M`.
 
 ## Main declarations
 
@@ -54,13 +60,8 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
 
 * `abs_sub_le_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the comparison with classical
   weighted solutions.
-* `derivWithin_sub_eq_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the solution is classical
-  for initial data in `C_b^{2,α}`.
-* `apply_zero_of_eq_exp_mul_euclideanCauchySolutionBUC` and
-  `tendstoUniformly_exp_neg_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the initial trace in the
-  weighted uniform norm.
-* `abs_le_exp_mul_exp_mul_mul_add_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the maximum
-  principle in the weighted uniform norm.
+* `derivWithin_sub_eq_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the solution satisfies
+  `P u = w f` pointwise for initial data in `C_b^{2,α}`.
 
 ## References
 
@@ -74,9 +75,9 @@ public section
 
 namespace TauCeti.ParabolicC2HolderSpace
 
-open Set Filter ParabolicSpaceTime Real BoundedContinuousFunction
+open Set ParabolicSpaceTime Real BoundedContinuousFunction
 open CkHolderSpace (toBUC toBUC_apply)
-open scoped NNReal Topology
+open scoped NNReal
 
 variable {α : ℝ≥0} {ι : Type*} [Fintype ι] [DecidableEq ι] {T : ℝ≥0}
   (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
@@ -142,7 +143,8 @@ theorem abs_sub_le_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC (hℓ : Cont
 
 /-- **Agreement with the classical weighted solution.** If the initial datum `g` of
 `abs_sub_le_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC` is a bounded `C^{2,α}` function `g'`,
-then `u = exp ℓ * V` is a classical solution of `P u = exp ℓ * f`. -/
+then `u = exp ℓ * V` satisfies `P u = exp ℓ * f` pointwise on the slab, with the derivatives of `u`
+taken by `derivWithin` and `fderiv`. -/
 theorem derivWithin_sub_eq_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC (hℓ : ContDiff ℝ 2 ℓ)
     (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
     (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
@@ -167,55 +169,5 @@ theorem derivWithin_sub_eq_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC (h�
       valueL_apply]
   exact ((eq_euclideanInitialDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ hd2ℓ _ hu' f
     g').1 rfl).1 x t
-
-/-- **The initial condition.** The solution `u = exp ℓ * V` of the weighted problem takes the
-initial values `exp ℓ * g`. -/
-theorem apply_zero_of_eq_exp_mul_euclideanCauchySolutionBUC
-    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
-    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
-      euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
-        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s))
-    (x : EuclideanSpace ℝ ι) : u x 0 = exp (ℓ x) * (g : EuclideanSpace ℝ ι →ᵇ ℝ) x := by
-  rw [← euclideanCauchySolutionBUC_apply_slabMk_zero hα₀ hα₁ hT ha f g x]
-  exact hu x ⟨0, left_mem_Icc.2 hT.le⟩
-
-/-- **Attainment of the initial datum in the weighted uniform norm.** As `t → 0⁺`, the solution
-`u = exp ℓ * V` of the weighted problem satisfies `u(·, t) / exp ℓ → g` uniformly on `ℝⁿ`. -/
-theorem tendstoUniformly_exp_neg_mul_of_eq_exp_mul_euclideanCauchySolutionBUC
-    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
-    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
-      euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
-        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s)) :
-    TendstoUniformly (fun (t : Icc (0 : ℝ) T) (x : EuclideanSpace ℝ ι) ↦ exp (-ℓ x) * u x t)
-      (fun x ↦ (g : EuclideanSpace ℝ ι →ᵇ ℝ) x) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) := by
-  have h : (fun (t : Icc (0 : ℝ) T) (x : EuclideanSpace ℝ ι) ↦ exp (-ℓ x) * u x t) =
-      fun t x ↦ euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
-        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk x t) := by
-    funext t x
-    rw [hu, ← mul_assoc, ← exp_add, neg_add_cancel, exp_zero, one_mul]
-  rw [h]
-  exact tendstoUniformly_euclideanCauchySolutionBUC hα₀ hα₁ hT ha f g
-
-/-- **The maximum principle in the weighted uniform norm.** Let the conjugated zeroth-order
-coefficient satisfy `c_w ≤ γ` with `0 ≤ γ`. If `|f| ≤ K` and `|g| ≤ M`, so that the data of the
-weighted problem satisfy `|P u| ≤ K exp ℓ` and `|u(·, 0)| ≤ M exp ℓ`, then the solution
-`u = exp ℓ * V` satisfies `|u(x, t)| ≤ exp (ℓ x) exp (γ t) (M + t K)`. -/
-theorem abs_le_exp_mul_exp_mul_mul_add_mul_of_eq_exp_mul_euclideanCauchySolutionBUC {γ M K : ℝ}
-    (hc : ∀ p, euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ p ≤ γ) (hγ : 0 ≤ γ)
-    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) (hf : ∀ p, |f p| ≤ K)
-    (hg : ∀ x, |(g : EuclideanSpace ℝ ι →ᵇ ℝ) x| ≤ M) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
-    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
-      euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
-        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s))
-    (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T) :
-    |u x t| ≤ exp (ℓ x) * (exp (γ * t) * (M + t * K)) := by
-  have h := abs_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT
-    (b := euclideanWeightedFirstOrderCoeff a b dℓ) ha hc hγ f g hf hg (slabMk x t)
-  rw [slabTime_slabMk] at h
-  rw [hu, abs_mul, abs_of_pos (exp_pos _)]
-  exact mul_le_mul_of_nonneg_left h (exp_pos _).le
 
 end TauCeti.ParabolicC2HolderSpace
