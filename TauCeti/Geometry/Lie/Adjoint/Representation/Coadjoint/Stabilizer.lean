@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
+import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 
 /-!
 # The coadjoint stabilizer and its Lie algebra
@@ -48,6 +49,8 @@ The computation of the Lie algebra rests on the derivative of the curve
 * `TauCeti.Lie.stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation`: for a
   nondegenerate `Ad`-invariant bilinear form `b`, the coadjoint stabilizer of `b(X, ·)` is the
   adjoint stabilizer of `X`.
+* `TauCeti.Lie.exists_stabilizer_coadjointRepresentation_eq`: for compact `G`, every coadjoint
+  stabilizer is an adjoint stabilizer.
 * `TauCeti.Lie.isClosed_stabilizer_coadjointRepresentation`: `G_ν` is closed.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_stabilizer_coadjointRepresentation`: `G_ν` is an embedded Lie
   subgroup.
@@ -123,6 +126,27 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+
+/-- **Coadjoint stabilizers of compact Lie groups are adjoint stabilizers.** For a compact
+finite-dimensional real Lie group, every coadjoint stabilizer `G_ν` is the adjoint stabilizer of
+some element of the Lie algebra: the one corresponding to `ν` under an `Ad`-invariant inner
+product. -/
+theorem exists_stabilizer_coadjointRepresentation_eq [CompactSpace G]
+    (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
+    ∃ X : GroupLieAlgebra I G, (coadjointRepresentation ℝ I G).stabilizer ν =
+      (adjointRepresentation ℝ I G).stabilizer X := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  obtain ⟨b, hsymm, hpos, hinv⟩ :=
+    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant (I := I) (G := G)
+  have hb (a : GroupLieAlgebra I G) (ha : ∀ c, b a c = 0) : a = 0 := by
+    by_contra h
+    exact (hpos a h).ne' (ha a)
+  -- The invariant inner product identifies the Lie algebra with its dual.
+  let B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G) := b.toLinearMap₁₂
+  have hB : B.Nondegenerate := ⟨hb, fun a ha ↦ hb a fun c ↦ (hsymm a c).trans (ha c)⟩
+  refine ⟨(B.toDual hB).symm ν, ?_⟩
+  have hν : B ((B.toDual hB).symm ν) = ν := (B.toDual hB).apply_symm_apply ν
+  rw [← stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation hB.1 hinv, hν]
 
 variable (I) in
 /-- **The coadjoint stabilizer is closed.** For a smooth real Lie group with finite-dimensional

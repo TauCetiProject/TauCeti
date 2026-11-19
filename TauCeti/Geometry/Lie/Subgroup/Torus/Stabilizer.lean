@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
-import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer
 import TauCeti.Geometry.Lie.Subgroup.OneParameter
 import TauCeti.Geometry.Lie.Subgroup.Torus.Centralizer
@@ -31,7 +30,8 @@ and the centralizer of a torus in a compact connected Lie group is connected
 For the coadjoint stabilizer, an `Ad`-invariant inner product `b` on `𝔤` identifies `𝔤` with `𝔤*`
 equivariantly, so that `G_ν` is the adjoint stabilizer of the element `X` with `ν = b(X, ·)`
 (`TauCeti.Lie.stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation`,
-`TauCeti.Lie.exists_stabilizer_coadjointRepresentation_eq`).
+`TauCeti.Lie.exists_stabilizer_coadjointRepresentation_eq`, both in
+`TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer`).
 
 Connectedness of `G` is needed: in `O(2)` the stabilizer of `0 ∈ 𝔰𝔬(2)` is all of `O(2)`. The
 statement is special to elements of the Lie algebra: in `SO(3)` the centralizer of the group
@@ -39,8 +39,6 @@ element `diag(1, -1, -1)` is a copy of `O(2)`, which is disconnected.
 
 ## Main results
 
-* `TauCeti.Lie.exists_stabilizer_coadjointRepresentation_eq`: for compact `G`, every coadjoint
-  stabilizer is an adjoint stabilizer.
 * `TauCeti.Lie.isConnected_stabilizer_adjointRepresentation`: `Z_G(ξ)` is connected.
 * `TauCeti.Lie.isConnected_stabilizer_coadjointRepresentation`: `G_ν` is connected.
 
@@ -66,28 +64,6 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable [CompactSpace G]
-
-omit [T2Space G] in
-/-- **Coadjoint stabilizers of compact Lie groups are adjoint stabilizers.** For a compact
-finite-dimensional real Lie group, every coadjoint stabilizer `G_ν` is the adjoint stabilizer of
-some element of the Lie algebra: the one corresponding to `ν` under an `Ad`-invariant inner
-product. -/
-theorem exists_stabilizer_coadjointRepresentation_eq
-    (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
-    ∃ X : GroupLieAlgebra I G, (coadjointRepresentation ℝ I G).stabilizer ν =
-      (adjointRepresentation ℝ I G).stabilizer X := by
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  obtain ⟨b, hsymm, hpos, hinv⟩ :=
-    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant (I := I) (G := G)
-  have hb (a : GroupLieAlgebra I G) (ha : ∀ c, b a c = 0) : a = 0 := by
-    by_contra h
-    exact (hpos a h).ne' (ha a)
-  -- The invariant inner product identifies the Lie algebra with its dual.
-  let B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G) := b.toLinearMap₁₂
-  have hB : B.Nondegenerate := ⟨hb, fun a ha ↦ hb a fun c ↦ (hsymm a c).trans (ha c)⟩
-  refine ⟨(B.toDual hB).symm ν, ?_⟩
-  have hν : B ((B.toDual hB).symm ν) = ν := (B.toDual hB).apply_symm_apply ν
-  rw [← stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation hB.1 hinv, hν]
 
 omit [T2Space G] in
 /-- **Adjoint stabilizers are connected.** In a compact connected finite-dimensional real Lie
