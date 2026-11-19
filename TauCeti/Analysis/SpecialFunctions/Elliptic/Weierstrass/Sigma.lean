@@ -109,6 +109,11 @@ private theorem eventually_norm_weierstrassFactor_two_div_sub_one_le (r : ℝ) :
     with l hl z hz
   exact (norm_weierstrassFactor_two_div_sub_one_le (hz.trans hl)).trans (by gcongr)
 
+/-- The majorant `c ‖l‖⁻³` of the factors of `σ` is summable over the lattice. -/
+private theorem summable_mul_norm_rpow_neg_three (c : ℝ) :
+    Summable fun l : L.lattice ↦ c * ‖(l : ℂ)‖ ^ (-3 : ℝ) :=
+  (ZLattice.summable_norm_rpow L.lattice (-3) (by norm_num)).mul_left c
+
 /-- The canonical product of `σ` converges uniformly on every compact set. -/
 theorem hasProdUniformlyOn_weierstrassFactor_two_div {K : Set ℂ} (hK : IsCompact K) :
     HasProdUniformlyOn (fun (l : L.lattice) z ↦ weierstrassFactor 2 (z / l))
@@ -116,10 +121,10 @@ theorem hasProdUniformlyOn_weierstrassFactor_two_div {K : Set ℂ} (hK : IsCompa
   obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall 0
   have h := Summable.hasProdUniformlyOn_one_add
     (f := fun (l : L.lattice) z ↦ weierstrassFactor 2 (z / l) - 1) hK
-    ((ZLattice.summable_norm_rpow L.lattice (-3) (by simp; norm_num)).mul_left (r ^ 3)) ?_ fun l ↦
+    (L.summable_mul_norm_rpow_neg_three (r ^ 3)) ?_ fun l ↦
       (((differentiable_weierstrassFactor 2).continuous.comp (continuous_id.div_const _)).sub
         continuous_const).continuousOn
-  · simpa only [← add_sub_assoc, add_sub_cancel_left] using h
+  · simpa only [add_sub_cancel] using h
   · filter_upwards [L.eventually_norm_weierstrassFactor_two_div_sub_one_le r] with l hl z hz
     exact hl z (by simpa using hr hz)
 
@@ -145,8 +150,7 @@ theorem differentiable_weierstrassSigma : Differentiable ℂ L.weierstrassSigma 
 
 private theorem summable_norm_weierstrassFactor_two_div_sub_one (z : ℂ) :
     Summable fun l : L.lattice ↦ ‖weierstrassFactor 2 (z / l) - 1‖ := by
-  refine ((ZLattice.summable_norm_rpow L.lattice (-3) (by simp; norm_num)).mul_left (‖z‖ ^ 3))
-    |>.of_norm_bounded_eventually ?_
+  refine (L.summable_mul_norm_rpow_neg_three (‖z‖ ^ 3)).of_norm_bounded_eventually ?_
   filter_upwards [L.eventually_norm_weierstrassFactor_two_div_sub_one_le ‖z‖] with l hl
   rw [Real.norm_eq_abs, abs_norm]
   exact hl z le_rfl
@@ -163,8 +167,8 @@ private theorem weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattic
 private theorem tprod_weierstrassFactor_two_div_ne_zero {z : ℂ} (hz : z ∉ L.lattice) :
     ∏' l : L.lattice, weierstrassFactor 2 (z / l) ≠ 0 := by
   have hne : ∀ l : L.lattice, 1 + (weierstrassFactor 2 (z / l) - 1) ≠ 0 := fun l ↦ by
-    simpa only [← add_sub_assoc, add_sub_cancel_left] using L.weierstrassFactor_two_div_ne_zero hz l
-  simpa only [← add_sub_assoc, add_sub_cancel_left] using
+    simpa only [add_sub_cancel] using L.weierstrassFactor_two_div_ne_zero hz l
+  simpa only [add_sub_cancel] using
     tprod_one_add_ne_zero_of_summable hne (L.summable_norm_weierstrassFactor_two_div_sub_one z)
 
 /-- **The zeros of `σ` are the lattice points.** -/
@@ -224,7 +228,7 @@ private theorem logDeriv_weierstrassFactor_two_div [DecidableEq L.lattice] {z : 
   have hl' : (l : ℂ) ≠ 0 := by simpa using hl
   have hzl : z - l ≠ 0 := sub_ne_zero.mpr fun h ↦ hz (h ▸ l.2)
   have hlz : (l : ℂ) - z ≠ 0 := fun h ↦ hzl (by linear_combination -h)
-  rw [show (fun w ↦ weierstrassFactor 2 (w / l)) = weierstrassFactor 2 ∘ (· / (l : ℂ)) from rfl,
+  rw [← Function.comp_def (weierstrassFactor 2) (· / (l : ℂ)),
     logDeriv_comp (differentiable_weierstrassFactor 2 _) (by fun_prop), logDeriv_weierstrassFactor,
     deriv_div_const, deriv_id'']
   field_simp
@@ -323,7 +327,7 @@ private theorem exists_weierstrassSigma_add_coe (l : L.lattice) :
       L.weierstrassSigma_eq_zero_iff.mpr (add_mem hz l.2)]
   have hcz : L.weierstrassSigma (z + l) = c * (cexp (η * z) * L.weierstrassSigma z) := hc hz
   rw [hcz, show cexp (η * z) = cexp (-(η * l / 2)) * cexp (η * (z + l / 2)) by
-    rw [← exp_add]; ring_nf]
+    rw [← exp_add]; congr 1; ring]
   ring
 
 /-- **Quasi-periodicity of `σ`** for `l ∈ Λ` with `l / 2 ∉ Λ`:
@@ -350,21 +354,8 @@ theorem weierstrassSigma_add_coe_of_div_two_mem (z : ℂ) {l : L.lattice}
   rw [hlm, map_add, Submodule.coe_add, ← add_assoc, h, h,
     show ∀ a b s : ℂ, ε * a * (ε * b * s) = ε ^ 2 * (a * b) * s by intros; ring, hε, one_mul,
     ← exp_add]
-  ring_nf
-
-/-- A lattice point `a ω₁ + b ω₂` is twice a lattice point exactly when `a` and `b` are even. -/
-private theorem div_two_mem_lattice_iff {l : ℂ} {a b : ℤ} (h : a * L.ω₁ + b * L.ω₂ = l) :
-    l / 2 ∈ L.lattice ↔ Even a ∧ Even b := by
-  rw [mem_lattice]
-  constructor
-  · rintro ⟨m, n, hmn⟩
-    have := LinearIndependent.pair_iff.mp L.indep (a - 2 * m) (b - 2 * n)
-      (by simp only [Complex.real_smul]; push_cast; linear_combination h - 2 * hmn)
-    simp only [sub_eq_zero] at this
-    norm_cast at this
-    exact ⟨⟨m, by lia⟩, ⟨n, by lia⟩⟩
-  · rintro ⟨⟨m, rfl⟩, ⟨n, rfl⟩⟩
-    exact ⟨m, n, by rw [← h]; push_cast; ring⟩
+  congr 2
+  ring
 
 /-- **Quasi-periodicity of `σ`** in terms of the periods: if `l = a ω₁ + b ω₂`, then
 `σ(z + l) = (-1)^(a + b + a b) exp(η(l) (z + l / 2)) σ(z)`. -/
@@ -377,11 +368,17 @@ theorem weierstrassSigma_add_coe (z : ℂ) (l : L.lattice) {a b : ℤ}
     rw [← not_iff_not, ← Int.even_add_one, show a + b + a * b + 1 = (a + 1) * (b + 1) by ring,
       Int.even_mul, Int.even_add_one, Int.even_add_one]
     tauto
+  have hdiv : (l : ℂ) / 2 ∈ L.lattice ↔ Even a ∧ Even b := by
+    rw [show (l : ℂ) / 2 = ((a / 2 : ℚ) : ℂ) * L.ω₁ + ((b / 2 : ℚ) : ℂ) * L.ω₂ by
+        rw [← h]; push_cast; ring,
+      mul_ω₁_add_mul_ω₂_mem_lattice, even_iff_two_dvd, even_iff_two_dvd,
+      ← Rat.den_div_intCast_eq_one_iff a 2 two_ne_zero,
+      ← Rat.den_div_intCast_eq_one_iff b 2 two_ne_zero, Int.cast_ofNat]
   by_cases hab : Even a ∧ Even b
-  · rw [L.weierstrassSigma_add_coe_of_div_two_mem z ((L.div_two_mem_lattice_iff h).mpr hab),
+  · rw [L.weierstrassSigma_add_coe_of_div_two_mem z (hdiv.mpr hab),
       Even.neg_one_zpow (hsign.mpr hab), one_mul]
   · rw [L.weierstrassSigma_add_coe_of_div_two_notMem z
-      (fun h' ↦ hab ((L.div_two_mem_lattice_iff h).mp h')),
+      (mt hdiv.mp hab),
       Odd.neg_one_zpow (Int.not_even_iff_odd.mp (mt hsign.mp hab)), neg_one_mul]
 
 /-- **The zeros of `σ` are simple.** -/
