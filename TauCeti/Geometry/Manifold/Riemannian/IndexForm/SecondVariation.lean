@@ -61,7 +61,8 @@ commutation of covariant derivatives on a surface
   (the second variation formula).
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 9, §2, Proposition 2.8.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018),
-  Proposition 10.4.
+  Ch. 10, section The Second Variation Formula (stated there for the length of unit-speed
+  geodesics rather than for the energy).
 -/
 
 public section
