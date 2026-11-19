@@ -620,6 +620,11 @@ def fixedIntegerHiveShiftEquiv (lam μ γ : DominantWeight n) (a b : ℤ) :
     GTPattern.shiftEquiv_apply, fixedIntegerHiveEquivGTPattern_apply_coe]
   rw [ofGTPattern_shift a b hP, hrec lam hb0 hP]
 
+@[simp] theorem fixedIntegerHiveShiftEquiv_symm_apply_coe (lam μ γ : DominantWeight n) (a b : ℤ)
+    (h : FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))) :
+    ⇑((fixedIntegerHiveShiftEquiv lam μ γ a b).symm h).1 = ⇑h.1 - ⇑(affine n a (a + b)) := by
+  rw [eq_sub_iff_add_eq, ← coe_add, ← fixedIntegerHiveShiftEquiv_apply_coe, Equiv.apply_symm_apply]
+
 /-- Determinant shifts of the inputs by `a, b` and of the output by `a + b` preserve hive
 counts. -/
 theorem hiveCount_productBoundary_shift (lam μ γ : DominantWeight n) (a b : ℤ) :

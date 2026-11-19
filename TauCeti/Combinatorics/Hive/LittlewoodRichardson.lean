@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Hive.GelfandTsetlin
 public import TauCeti.Combinatorics.Young.LittlewoodRichardson.Basic
-import Mathlib.Tactic.Linarith
 
 /-!
 # Hives and Littlewood–Richardson tableaux
@@ -124,6 +123,7 @@ theorem rowSum_toGTPattern {n : ℕ} (T : LRTableau lam γ μ) {j : ℕ} (hj : j
     Nat.cast_sub (YoungDiagram.rowLen_le_of_le T.1.le r)]
 
 /-- The weight of `T.toGTPattern n` is `γ - λ`. -/
+@[simp]
 theorem rowWeight_toGTPattern {n : ℕ} (T : LRTableau lam γ μ) :
     (T.toGTPattern n).rowWeight = (weightOfShape n γ).1 - (weightOfShape n lam).1 := by
   ext r
@@ -132,6 +132,7 @@ theorem rowWeight_toGTPattern {n : ℕ} (T : LRTableau lam γ μ) :
     weightOfShape_apply, weightOfShape_apply]
 
 /-- Column strictness of `T` is the remaining rhombus family of the hive chart completion. -/
+@[simp]
 theorem isGTCompletable_toGTPattern {n : ℕ} (T : LRTableau lam γ μ) :
     Hive.IsGTCompletable (weightOfShape n lam) (T.toGTPattern n) := by
   rw [Hive.isGTCompletable_iff_sum_sub_le]
@@ -183,13 +184,6 @@ private theorem sum_range_natCast_gtRowCount {P : GTPattern n}
   rw [sum_congr rfl fun r hr => natCast_gtRowCount hP ((mem_range.mp hr).trans_le hx) k,
     sum_range_sub (fun r => P k r), P.entry_eq_zero_of_le (Nat.zero_le k), sub_zero]
 
-/-- A sum of a row of `P` over any range containing the row is the row sum. -/
-private theorem sum_range_entry_of_le (P : GTPattern n) {j x : ℕ} (hjx : j ≤ x) :
-    ∑ k ∈ range x, P k j = P.rowSum j := by
-  rw [GTPattern.rowSum_def]
-  exact (sum_subset (range_subset_range.mpr hjx) fun k _ hk =>
-    P.entry_eq_zero_of_le (not_lt.mp (mem_range.not.mp hk))).symm
-
 /-- The row counts of a pattern with weight `γ - λ` fill row `r` of the skew shape `γ / λ`. -/
 private theorem sum_range_natCast_gtRowCount_of_lt {P : GTPattern n}
     (hP : ∀ i : Fin n, 0 ≤ P.topRow i)
@@ -200,7 +194,7 @@ private theorem sum_range_natCast_gtRowCount_of_lt {P : GTPattern n}
   rw [GTPattern.rowWeight_eq_rowSum_sub, Pi.sub_apply, weightOfShape_apply,
     weightOfShape_apply] at hw
   rw [sum_congr rfl fun k _ => natCast_gtRowCount hP hr k, sum_sub_distrib,
-    sum_range_entry_of_le P hrx, sum_range_entry_of_le P hrx.le]
+    P.sum_range_entry_eq_rowSum hrx, P.sum_range_entry_eq_rowSum hrx.le]
   exact hw
 
 end RowCount

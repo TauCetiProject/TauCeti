@@ -86,6 +86,14 @@ theorem rowSum_def (P : GTPattern n) (j : ℕ) :
 @[simp] theorem rowSum_eq_zero_of_lt (P : GTPattern n) {j : ℕ} (hj : n < j) : P.rowSum j = 0 := by
   simp [rowSum_def, P.entry_eq_zero_of_lt hj]
 
+/-- A sum of row `j` of `P` over any range containing the row is the row sum, since entries
+past the diagonal vanish. -/
+theorem sum_range_entry_eq_rowSum (P : GTPattern n) {j x : ℕ} (hjx : j ≤ x) :
+    ∑ k ∈ Finset.range x, P k j = P.rowSum j := by
+  rw [rowSum_def]
+  exact (Finset.sum_subset (Finset.range_subset_range.mpr hjx) fun k _ hk =>
+    P.entry_eq_zero_of_le (not_lt.mp (Finset.mem_range.not.mp hk))).symm
+
 /-- The sum of row `n` is the sum of `P.topRow`. -/
 theorem rowSum_top (P : GTPattern n) : P.rowSum n = ∑ i : Fin n, P.topRow i := by
   rw [rowSum_def, ← Fin.sum_univ_eq_sum_range]; simp [topRow_apply]
