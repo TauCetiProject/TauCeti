@@ -822,6 +822,14 @@ theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
   ext i
   fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hn]
 
+/-- `L_x* y` lies in every `Lᵖ` space, for a continuous field and a compactly supported `C¹`
+argument. -/
+theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y)
+    (hyc : HasCompactSupport y) {p : ENNReal} {μ : Measure ℂ} [IsFiniteMeasureOnCompacts μ] :
+    MemLp (gaugeFixedAdjoint x y) p μ :=
+  (continuous_gaugeFixedAdjoint hx hy).memLp_of_hasCompactSupport
+    (hasCompactSupport_gaugeFixedAdjoint hyc)
+
 /-- The gauge-fixed operator is `Cⁿ` when the background is `Cⁿ` and the argument is `Cⁿ⁺¹`. -/
 theorem contDiff_gaugeFixedOperator {n : WithTop ℕ∞}
     (hx : ContDiff ℝ n x) (hy : ContDiff ℝ (n + 1) y) :
