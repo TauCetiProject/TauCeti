@@ -33,8 +33,8 @@ comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-eleme
   `i < j` to `b i ∧ b j`.
 * `exteriorPower.ιMulti_two_add_left`, `exteriorPower.ιMulti_two_add_right`,
   `exteriorPower.ιMulti_two_smul_left`, `exteriorPower.ιMulti_two_smul_right`,
-  `exteriorPower.ιMulti_two_neg_right`, and `exteriorPower.ιMulti_two_swap`: the wedge `u ∧ w`
-  of two vectors is bilinear and antisymmetric.
+  `exteriorPower.ιMulti_two_neg_right`, `exteriorPower.ιMulti_two_swap`, and
+  `exteriorPower.ιMulti_two_self`: the wedge `u ∧ w` of two vectors is bilinear and alternating.
 * `exteriorPower.linearMap_ext_ιMulti_two`: linear maps out of `⋀²M` are determined on pure wedges
   `u ∧ v`.
 -/
@@ -78,6 +78,11 @@ theorem ιMulti_two_neg_right (u w : M) :
 theorem ιMulti_two_swap (u w : M) :
     ιMulti R 2 ![w, u] = -ιMulti R 2 ![u, w] := by
   simpa using (ιMulti R 2).map_swap ![u, w] (i := 0) (j := 1) Fin.zero_ne_one
+
+/-- The wedge `u ∧ u` of a vector with itself vanishes. -/
+@[simp]
+theorem ιMulti_two_self (u : M) : ιMulti R 2 ![u, u] = 0 :=
+  (ιMulti R 2).map_eq_zero_of_eq ![u, u] (i := 0) (j := 1) rfl zero_ne_one
 
 /-- Two linear maps out of `⋀[R]^2 M` agree if they agree on all pure wedges `u ∧ v`. -/
 theorem linearMap_ext_ιMulti_two {N : Type*} [AddCommGroup N] [Module R N]
