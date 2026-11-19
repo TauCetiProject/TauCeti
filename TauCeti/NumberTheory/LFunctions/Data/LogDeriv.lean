@@ -35,11 +35,8 @@ variable {d : AnalyticLFunctionData}
 including at poles. No condition on the value at the centre is imposed. -/
 theorem HasFunctionalEquation.logDeriv_eventuallyEq (h : d.HasFunctionalEquation) (s : ℂ) :
     logDeriv d.completed =ᶠ[𝓝[≠] s] fun z ↦ -logDeriv d.dual.completed (1 - z) := by
-  have hε : d.rootNumber ≠ 0 := by
-    intro he
-    simpa [he] using h.norm_rootNumber
   filter_upwards [logDeriv_congr_nhdsNE (h.eventuallyEq s)] with z hz
-  rw [hz, logDeriv_const_mul z _ hε, logDeriv_apply, logDeriv_apply,
+  rw [hz, logDeriv_const_mul z _ h.rootNumber_ne_zero, logDeriv_apply, logDeriv_apply,
     deriv_comp_const_sub, neg_div]
 
 /-- Where the two completed representatives are continuous, the logarithmic functional
@@ -47,13 +44,10 @@ equation holds pointwise, even at zeros. Continuity excludes arbitrary values as
 theorem HasFunctionalEquation.logDeriv_eq (h : d.HasFunctionalEquation) {s : ℂ}
     (hs : ContinuousAt d.completed s) (hd : ContinuousAt d.dual.completed (1 - s)) :
     logDeriv d.completed s = -logDeriv d.dual.completed (1 - s) := by
-  have hε : d.rootNumber ≠ 0 := by
-    intro he
-    simpa [he] using h.norm_rootNumber
   have hcont : ContinuousAt (fun z : ℂ ↦ d.rootNumber * d.dual.completed (1 - z)) s :=
     continuousAt_const.mul (hd.comp (by fun_prop))
   have hg := (hs.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hcont).mp (h.eventuallyEq s)
-  rw [(logDeriv_congr_nhds hg).eq_of_nhds, logDeriv_const_mul s _ hε,
+  rw [(logDeriv_congr_nhds hg).eq_of_nhds, logDeriv_const_mul s _ h.rootNumber_ne_zero,
     logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, neg_div]
 
 end TauCeti.LFunctions.AnalyticLFunctionData

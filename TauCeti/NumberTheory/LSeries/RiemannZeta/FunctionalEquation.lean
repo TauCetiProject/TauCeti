@@ -43,30 +43,31 @@ theorem logDeriv_completedRiemannZeta_one_sub (s : ℂ) :
   rw [completedRiemannZeta_one_sub]
   linear_combination -h
 
+/-- Away from the origin, a nonzero zeta value excludes a zero of the real-place gamma factor. -/
+theorem Gammaℝ_ne_zero_of_riemannZeta_ne_zero {s : ℂ} (hs : s ≠ 0)
+    (hζ : riemannZeta s ≠ 0) : Gammaℝ s ≠ 0 := by
+  intro hΓ
+  apply hζ
+  rw [riemannZeta_def_of_ne_zero hs, hΓ, div_zero]
+
 /-- Away from the pole and zeros, the logarithmic derivative of zeta is that of its completion
 minus the real-place gamma term. The origin is excluded because completion and gamma both
 have poles there. -/
-theorem logDeriv_riemannZeta_eq_completed_sub_gamma {s : ℂ} (hs₀ : s ≠ 0) (hs₁ : s ≠ 1)
+theorem logDeriv_riemannZeta_eq_completedRiemannZeta_sub_Gammaℝ {s : ℂ} (hs₀ : s ≠ 0) (hs₁ : s ≠ 1)
     (hζ : riemannZeta s ≠ 0) :
     logDeriv riemannZeta s =
       logDeriv completedRiemannZeta s - logDeriv Gammaℝ s := by
-  have hΓ : Gammaℝ s ≠ 0 := by
-    intro hz
-    apply hζ
-    rw [riemannZeta_def_of_ne_zero hs₀, hz, div_zero]
+  have hΓ := Gammaℝ_ne_zero_of_riemannZeta_ne_zero hs₀ hζ
   have hΛ : completedRiemannZeta s ≠ 0 := by
     intro hz
     apply hζ
     rw [riemannZeta_def_of_ne_zero hs₀, hz, zero_div]
-  have hΓdiff : DifferentiableAt ℂ Gammaℝ s := by
-    have h := (differentiable_Gammaℝ_inv s).inv (inv_ne_zero hΓ)
-    have hinv : (fun z ↦ (Gammaℝ z)⁻¹)⁻¹ = Gammaℝ := funext fun z ↦ inv_inv _
-    rwa [hinv] at h
   have heq : riemannZeta =ᶠ[𝓝 s] fun z ↦ completedRiemannZeta z / Gammaℝ z := by
     filter_upwards [eventually_ne_nhds hs₀] with z hz
     exact riemannZeta_def_of_ne_zero hz
   rw [(logDeriv_congr_nhds heq).eq_of_nhds,
-    logDeriv_fun_div s hΛ hΓ (differentiableAt_completedZeta hs₀ hs₁) hΓdiff]
+    logDeriv_fun_div s hΛ hΓ (differentiableAt_completedZeta hs₀ hs₁)
+      (differentiableAt_Gammaℝ_of_ne_zero hΓ)]
 
 /-- **The symmetric logarithmic functional equation.** At every point off the zeros and poles
 of the two zeta factors, including admissible integers, their logarithmic derivatives sum to
@@ -75,8 +76,8 @@ theorem logDeriv_riemannZeta_add_one_sub {s : ℂ} (hs₀ : s ≠ 0) (hs₁ : s 
     (hζ : riemannZeta s ≠ 0) (hζ' : riemannZeta (1 - s) ≠ 0) :
     logDeriv riemannZeta s + logDeriv riemannZeta (1 - s) =
       -logDeriv Gammaℝ s - logDeriv Gammaℝ (1 - s) := by
-  rw [logDeriv_riemannZeta_eq_completed_sub_gamma hs₀ hs₁ hζ,
-    logDeriv_riemannZeta_eq_completed_sub_gamma (sub_ne_zero.mpr hs₁.symm)
+  rw [logDeriv_riemannZeta_eq_completedRiemannZeta_sub_Gammaℝ hs₀ hs₁ hζ,
+    logDeriv_riemannZeta_eq_completedRiemannZeta_sub_Gammaℝ (sub_ne_zero.mpr hs₁.symm)
       (by simpa using hs₀) hζ', logDeriv_completedRiemannZeta_one_sub]
   ring
 
@@ -89,9 +90,7 @@ theorem logDeriv_riemannZeta_add_one_sub_eq_digamma {s : ℂ} (hs₀ : s ≠ 0) 
   have hp (z : ℂ) (hz : z ≠ 0) (h : riemannZeta z ≠ 0) :
       ∀ n : ℕ, z ≠ -(2 * (n : ℂ)) := by
     intro n hn
-    apply h
-    rw [riemannZeta_def_of_ne_zero hz,
-      Gammaℝ_eq_zero_iff.mpr ⟨n, hn⟩, div_zero]
+    exact Gammaℝ_ne_zero_of_riemannZeta_ne_zero hz h (Gammaℝ_eq_zero_iff.mpr ⟨n, hn⟩)
   rw [logDeriv_riemannZeta_add_one_sub hs₀ hs₁ hζ hζ',
     logDeriv_Gammaℝ (hp s hs₀ hζ),
     logDeriv_Gammaℝ (hp (1 - s) (sub_ne_zero.mpr hs₁.symm) hζ')]

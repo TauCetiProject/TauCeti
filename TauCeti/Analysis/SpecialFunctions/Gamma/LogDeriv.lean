@@ -32,6 +32,12 @@ public section
 
 namespace Complex
 
+/-- The real-place gamma factor is differentiable wherever it is nonzero. -/
+theorem differentiableAt_Gammaℝ_of_ne_zero {s : ℂ} (hs : Gammaℝ s ≠ 0) :
+    DifferentiableAt ℂ Gammaℝ s := by
+  simpa only [Pi.inv_def, inv_inv] using
+    (differentiable_Gammaℝ_inv s).inv (inv_ne_zero hs)
+
 /-- The logarithmic derivative of the real-place gamma factor, away from its poles. -/
 theorem logDeriv_Gammaℝ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(2 * n)) :
     logDeriv Gammaℝ s = digamma (s / 2) / 2 - (Real.log Real.pi : ℂ) / 2 := by
