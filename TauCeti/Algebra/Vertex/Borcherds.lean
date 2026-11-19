@@ -83,8 +83,7 @@ theorem field_ncoeff_apply [HasUniqueDiv V] (a b : V) (n : ℤ) :
   rw [A.ncoeff_neg_one_field_apply_vacuum] at hvac
   rw [← hvac]
   refine (A.eq_field_of_lie_translation (fun c ↦ ?_)
-    (lie_ncoeff_nthProduct (A.lie_translation_ncoeff a) (A.lie_translation_ncoeff b) n)
-    fun _ ↦ ncoeff_nthProduct_apply_of_nonneg hA hB n).symm
+    (lie_ncoeff_nthProduct (A.lie_translation_ncoeff a) (A.lie_translation_ncoeff b) n)).symm
   obtain ⟨r₀, h₀⟩ := A.exists_isLocalOfOrder a b
   obtain ⟨r₁, h₁⟩ := A.exists_isLocalOfOrder a c
   obtain ⟨r₂, h₂⟩ := A.exists_isLocalOfOrder b c
