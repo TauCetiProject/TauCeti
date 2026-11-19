@@ -81,8 +81,9 @@ theorem hasInvariantOutsideIrreducible_of_toLieSubalgebra_eq_top
     by_contra hcon
     push Not at hcon
     obtain ⟨x, m, hm⟩ := hact
-    refine hm (lie_eq_zero_of_lie_lie_eq_zero htop (fun y z w ↦ ?_) x m)
-    have hval := congrArg (Subtype.val : N → M) (hcon y ⟨⁅z, w⁆, htriv z w⟩)
+    have : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+    refine hm (lie_eq_zero_of_lie_lie_eq_zero htop (m := m) (fun y z ↦ ?_) x)
+    have hval := congrArg (Subtype.val : N → M) (hcon y ⟨⁅z, m⁆, htriv z m⟩)
     rw [LieSubmodule.coe_bracket] at hval
     simpa using hval
   have hinjN := sl2Casimir_injective (M := N) (t := t) htop hactN

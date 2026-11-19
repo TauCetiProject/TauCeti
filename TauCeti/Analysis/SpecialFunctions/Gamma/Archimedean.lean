@@ -127,4 +127,3 @@ theorem log_norm_Gammaℂ {z : ℂ} (hz : Gammaℂ z ≠ 0) :
   ring
 
 end Complex
-

@@ -80,13 +80,14 @@ open scoped ContDiff NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- **Parabolic scaling of the derivatives of the heat kernel.** For `t > 0`,
-`D^m K_t(x) = t^(-(n + m) / 2) D^m K_1(t^(-1/2) x)`, where `n = dim E`. -/
-theorem iteratedFDeriv_heatKernel_eq_rpow_smul {t : ℝ} (ht : 0 < t) (m : ℕ) (x : E) :
+/-- **Parabolic scaling of the derivatives of the heat kernel.** For `t ≥ 0`,
+`D^m K_t(x) = t^(-(n + m) / 2) D^m K_1(t^(-1/2) x)`, where `n = dim E`. At `t = 0` both sides are
+junk values, by Mathlib's conventions for real powers and division by zero. -/
+theorem iteratedFDeriv_heatKernel_eq_rpow_smul {t : ℝ} (ht : 0 ≤ t) (m : ℕ) (x : E) :
     iteratedFDeriv ℝ m (heatKernel t) x = t ^ (-(finrank ℝ E + m : ℝ) / 2) •
       iteratedFDeriv ℝ m (heatKernel 1) (t ^ (-1 / 2 : ℝ) • x) := by
   have hc : (√t)⁻¹ = t ^ (-1 / 2 : ℝ) := by
-    rw [sqrt_eq_rpow, ← rpow_neg ht.le]
+    rw [sqrt_eq_rpow, ← rpow_neg ht]
     norm_num
   have hK : heatKernel t =
       fun y : E => (t ^ (-1 / 2 : ℝ)) ^ finrank ℝ E • heatKernel 1 (t ^ (-1 / 2 : ℝ) • y) :=
@@ -95,7 +96,7 @@ theorem iteratedFDeriv_heatKernel_eq_rpow_smul {t : ℝ} (ht : 0 < t) (m : ℕ) 
     ((contDiff_heatKernel 1).comp (contDiff_const_smul _)).contDiffAt
   rw [hK, iteratedFDeriv_const_smul_apply' hsmooth,
     iteratedFDeriv_comp_const_smul _ (contDiff_heatKernel 1), smul_smul, ← pow_add,
-    ← rpow_natCast, ← rpow_mul ht.le]
+    ← rpow_natCast, ← rpow_mul ht]
   congr 2
   push_cast
   ring
@@ -140,7 +141,7 @@ theorem exists_norm_iteratedDeriv_iteratedFDeriv_heatKernel_le (j m : ℕ) :
       fun s => s ^ (-((finrank ℝ E + m : ℝ) / 2)) •
         iteratedFDeriv ℝ m (heatKernel 1) (s ^ (-1 / 2 : ℝ) • x) :=
     (eventually_gt_nhds ht).mono fun s hs => by
-      simp only [iteratedFDeriv_heatKernel_eq_rpow_smul hs, neg_div]
+      simp only [iteratedFDeriv_heatKernel_eq_rpow_smul hs.le, neg_div]
   have htwo : (-1 / 2 : ℝ) * (2 : ℕ) = -1 := by norm_num
   have hexp : -(1 / 8) * ‖t ^ (-1 / 2 : ℝ) • x‖ ^ 2 = -‖x‖ ^ 2 / (8 * t) := by
     rw [norm_smul, norm_of_nonneg (by positivity), mul_pow, ← rpow_natCast, ← rpow_mul ht.le,
@@ -165,7 +166,7 @@ theorem differentiableAt_iteratedFDeriv_heatKernel {t : ℝ} (ht : 0 < t) (m : �
   have heq : (fun s => s ^ (-(finrank ℝ E + m : ℝ) / 2) •
       iteratedFDeriv ℝ m (heatKernel 1) (s ^ (-1 / 2 : ℝ) • x)) =ᶠ[nhds t]
         fun s => iteratedFDeriv ℝ m (heatKernel s) x :=
-    (eventually_gt_nhds ht).mono fun s hs => (iteratedFDeriv_heatKernel_eq_rpow_smul hs m x).symm
+    (eventually_gt_nhds ht).mono fun s hs => (iteratedFDeriv_heatKernel_eq_rpow_smul hs.le m x).symm
   have hscale : DifferentiableAt ℝ (fun s : ℝ => s ^ (-1 / 2 : ℝ) • x) t :=
     (differentiableAt_id.rpow_const (Or.inl ht.ne')).smul_const x
   refine DifferentiableAt.congr_of_eventuallyEq ?_ heq.symm
