@@ -59,7 +59,9 @@ constant on the fibres factors through a unique `C^m` map
 * `Manifold.IsSubmersionAtOfComplement.mfderiv_eq_zero_iff`: the kernel of the derivative on the
   source of the normal-form chart.
 * `Manifold.IsSubmersionAtOfComplement.exists_contMDiffOn_section`,
-  `Manifold.IsSubmersionAt.exists_contMDiffOn_section`: local sections of a submersion.
+  `Manifold.IsSubmersionAt.exists_contMDiffOn_section`,
+  `Manifold.IsSubmersion.exists_contMDiffOn_section`, and
+  `Manifold.IsSubmersion.exists_contMDiffOn_section_of_surjective`: local sections of a submersion.
 * `Manifold.IsSubmersion.isOpenMap`: a submersion with boundaryless source is an open map.
 * `Manifold.IsSubmersion.finrank_le`: a submersion out of a nonempty manifold does not raise
   dimension.
@@ -336,11 +338,32 @@ theorem IsSubmersionAt.exists_contMDiffOn_section [I.Boundaryless] (h : IsSubmer
       ∀ y ∈ U, f (s y) = y :=
   h.isSubmersionAtOfComplement_complement.exists_contMDiffOn_section
 
+/-- **Local sections of a submersion.** If `f` is a `C^n` submersion and the model of `M` has no
+boundary, then through every `x : M` there is a `C^n` local section `s` of `f` over an open
+neighbourhood `U` of `f x` with `s (f x) = x`. No separation or countability assumption is
+needed. -/
+theorem IsSubmersion.exists_contMDiffOn_section [I.Boundaryless] (h : IsSubmersion I J n f)
+    (x : M) :
+    ∃ U : Set N, IsOpen U ∧ f x ∈ U ∧ ∃ s : N → M, s (f x) = x ∧ ContMDiffOn J I n s U ∧
+      ∀ y ∈ U, f (s y) = y :=
+  (h.isSubmersionAt x).exists_contMDiffOn_section
+
+/-- **Local sections of a surjective submersion.** If `f` is a surjective `C^n` submersion with
+boundaryless source, then every `y : N` has an open neighbourhood `U` carrying a `C^n` local
+section `s` of `f`. -/
+theorem IsSubmersion.exists_contMDiffOn_section_of_surjective [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f) (y : N) :
+    ∃ U : Set N, IsOpen U ∧ y ∈ U ∧ ∃ s : N → M, ContMDiffOn J I n s U ∧
+      ∀ z ∈ U, f (s z) = z := by
+  obtain ⟨x, rfl⟩ := hsurj y
+  obtain ⟨U, hU, hxU, s, _, hs, hfs⟩ := h.exists_contMDiffOn_section x
+  exact ⟨U, hU, hxU, s, hs, hfs⟩
+
 /-- A submersion with boundaryless source is an open map, since it has continuous local sections
 through every point. -/
 theorem IsSubmersion.isOpenMap [I.Boundaryless] (h : IsSubmersion I J n f) : IsOpenMap f :=
   .of_local_sections fun x ↦ by
-    obtain ⟨U, hU, hxU, s, hsx, hs, hfs⟩ := (h.isSubmersionAt x).exists_contMDiffOn_section
+    obtain ⟨U, hU, hxU, s, hsx, hs, hfs⟩ := h.exists_contMDiffOn_section x
     exact ⟨s, hs.continuousOn.continuousAt (hU.mem_nhds hxU), hsx,
       eventually_of_mem (hU.mem_nhds hxU) hfs⟩
 
