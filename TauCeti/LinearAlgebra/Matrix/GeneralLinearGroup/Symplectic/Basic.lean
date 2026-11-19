@@ -353,9 +353,9 @@ theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
   rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
     Matrix.vecMul_neg, dotProduct_neg, neg_neg]
 
-/-- The transported alternating form is a unit: it is Mathlib's `Matrix.isUnit_J` read through
-`JFin_eq_submatrix`. -/
+/-- The transported alternating form is invertible. -/
 theorem isUnit_JFin : IsUnit (JFin m R) := by
+  -- Mathlib's `Matrix.isUnit_J` read through `JFin_eq_submatrix`.
   rw [JFin_eq_submatrix, Matrix.isUnit_submatrix_equiv]
   exact Matrix.isUnit_J (Fin m) R
 
