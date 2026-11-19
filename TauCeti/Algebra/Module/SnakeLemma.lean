@@ -49,6 +49,8 @@ different universes.
 * `Function.Exact.snakeδ`: the connecting map `ker i₃ → coker i₁`, with exactness
   `Function.Exact.restrict_ker_snakeδ` at `ker i₃` and `Function.Exact.snakeδ_mapQ_range` at
   `coker i₁`.
+* `LinearMap.snakeδ_prodMap_eq_zero`: the connecting map of a direct sum, with split rows,
+  vanishes.
 * `LinearMap.finiteDimensional_ker₂_of_finiteDimensional_ker₁₃` and
   `LinearMap.finiteDimensional_coker₂_of_finiteDimensional_coker₁₃`: finiteness in the middle.
 * `LinearMap.finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁` and
@@ -162,6 +164,21 @@ theorem Function.Exact.snakeδ_mapQ_range (hf : Exact f₁ f₂) (hg : Exact g�
   SnakeLemma.exact_δ'_left i₁ i₂ i₃ f₁ f₂ hf g₁ g₂ hg h₁ h₂ (ker i₃).subtype
     (exact_subtype_ker_map i₃) (range i₁).mkQ (exact_map_mkQ_range i₁) (range i₂).mkQ
     (exact_map_mkQ_range i₂) hf₂ hg₁ _ (mapQ_mkQ ..) (range i₁).mkQ_surjective
+
+/-- **The connecting map of a direct sum vanishes.** For the split rows
+`0 → M₁ → M₁ × M₃ → M₃ → 0` and `0 → N₁ → N₁ × N₃ → N₃ → 0` and the vertical maps `j₁`,
+`j₁.prodMap j₃` and `j₃`, the connecting map `ker j₃ → coker j₁` is zero: `x ∈ ker j₃` lifts to
+`(0, x) ∈ ker (j₁.prodMap j₃)`. -/
+theorem LinearMap.snakeδ_prodMap_eq_zero (j₁ : M₁ →ₗ[R] N₁) (j₃ : M₃ →ₗ[R] N₃) :
+    Exact.inl_snd.snakeδ Exact.inl_snd (snd_surjective (R := R)) (inl_injective (R := R))
+      (by ext <;> simp : inl R N₁ N₃ ∘ₗ j₁ = j₁.prodMap j₃ ∘ₗ inl R M₁ M₃)
+      (by ext <;> simp : snd R N₁ N₃ ∘ₗ j₁.prodMap j₃ = j₃ ∘ₗ snd R M₁ M₃) = 0 := by
+  have h₁ : inl R N₁ N₃ ∘ₗ j₁ = j₁.prodMap j₃ ∘ₗ inl R M₁ M₃ := by ext <;> simp
+  have h₂ : snd R N₁ N₃ ∘ₗ j₁.prodMap j₃ = j₃ ∘ₗ snd R M₁ M₃ := by ext <;> simp
+  refine LinearMap.ext fun x ↦ ?_
+  rw [Exact.inl_snd.snakeδ_apply Exact.inl_snd (snd_surjective (R := R)) (inl_injective (R := R))
+    h₁ h₂ x (0, x) rfl 0 (by simp [mem_ker.1 x.2])]
+  simp
 
 end CommRing
 
