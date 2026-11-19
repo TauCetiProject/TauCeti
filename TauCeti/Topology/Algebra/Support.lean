@@ -34,6 +34,8 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `HasCompactSupport.mono_of_eq_zero`: a function vanishing wherever a compactly supported
   function vanishes is compactly supported, with multiplicative version
   `HasCompactMulSupport.mono_of_eq_one`.
+* `HasCompactSupport.of_forall_mem_support_eq_one`: a function is compactly supported when a
+  compactly supported function is equal to `1` on its support.
 * `TauCeti.hasCompactSupport_pi_iff`: a function with values in a finite product is compactly
   supported exactly when every coordinate is, with multiplicative version
   `TauCeti.hasCompactMulSupport_pi_iff`.
@@ -135,6 +137,15 @@ theorem HasCompactMulSupport.mono_of_eq_one {X β γ : Type*} [TopologicalSpace 
     {f : X → β} {g : X → γ} (hf : HasCompactMulSupport f) (hg : ∀ x, f x = 1 → g x = 1) :
     HasCompactMulSupport g :=
   hf.mono <| Function.mulSupport_subset_iff'.2 fun x hx ↦ hg x (Function.notMem_mulSupport.1 hx)
+
+/-- A function is compactly supported when a compactly supported function is equal to `1` on its
+support. -/
+theorem HasCompactSupport.of_forall_mem_support_eq_one {X β γ : Type*} [TopologicalSpace X]
+    [Zero β] [One β] [NeZero (1 : β)] [Zero γ] {f : X → β} {g : X → γ} (hf : HasCompactSupport f)
+    (hfg : ∀ x ∈ Function.support g, f x = 1) : HasCompactSupport g :=
+  hf.mono fun x hx ↦ by
+    rw [Function.mem_support, hfg x hx]
+    exact one_ne_zero
 
 namespace TauCeti
 
