@@ -29,16 +29,16 @@ compares the vortices of the different orders.
   `k ≥ 2`, is carried by an element of `G_(k+1)` to a smooth vortex lying in `A_m^s` for every real
   `s`, every derivative of whose difference with the reference field `x_m` is `O(exp (-c |z|))` at
   infinity for every rate `c < 1 / 2`
-  (`TauCeti.Vortex.exists_sobolevGaugeGroup_smul_mem_framedFieldSpace`). The representative is the
-  normalized smooth framed vortex with the divisor of `x`
-  (`TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace`), and it lies in the
-  `G_(k+1)`-orbit of `x` by Taubes's classification on the Sobolev scale. A `C²` vortex of `A_m^k`
-  need not itself lie in `A_m^(k+1)`: an element of `G_(k+1)` moves a field of `A_m^(k+1)` only
-  within `A_m^k`.
-* **The moduli of different orders agree.** For `4 ≤ k ≤ k'` the inclusion induces a bijection
-  from the Sobolev moduli of order `k'` onto those of order `k`
-  (`TauCeti.Vortex.sobolevVortexModuliEquivOfLE`), compatible with their identifications with
-  `Sym ℂ m` (`TauCeti.Vortex.sobolevVortexModuliDivisor_sobolevVortexModuliEquivOfLE`). These
+  (`TauCeti.Vortex.exists_sobolevGaugeGroup_smul_mem_framedFieldSpace`). The representative is a
+  smooth vortex with the divisor of `x` (`TauCeti.Vortex.exists_contDiff_sobolevVortexDivisor_eq`),
+  and it lies in the `G_(k+1)`-orbit of `x` by Taubes's classification on the Sobolev scale. A `C²`
+  vortex of `A_m^k` need not itself lie in `A_m^(k+1)`: an element of `G_(k+1)` moves a field of
+  `A_m^(k+1)` only within `A_m^k`.
+* **The moduli of different orders agree.** For `4 ≤ k ≤ k'` the identifications of the Sobolev
+  moduli of orders `k'` and `k` with `Sym ℂ m` compose to a bijection
+  (`TauCeti.Vortex.sobolevVortexModuliEquivOfLE`), which is induced by the inclusion
+  (`TauCeti.Vortex.sobolevVortexModuliEquivOfLE_mk`) and preserves the divisor
+  (`TauCeti.Vortex.sobolevVortexModuliDivisor_sobolevVortexModuliEquivOfLE`). These
   bijections compose along `k ≤ k' ≤ k''` (`TauCeti.Vortex.sobolevVortexModuliEquivOfLE_trans`),
   and for `k = k'` the bijection is the identity
   (`TauCeti.Vortex.sobolevVortexModuliEquivOfLE_refl`).
@@ -80,7 +80,7 @@ variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {k k' : ℕ}
 /-! ### Vortices of different orders -/
 
 /-- A `C²` vortex of `A_m^(k')` is a `C²` vortex of `A_m^k`, for `k ≤ k'`. -/
-private theorem inclusion_mem_sobolevVortices (h : k ≤ k') {x : framedFieldSpace f m k'}
+theorem inclusion_mem_sobolevVortices (h : k ≤ k') {x : framedFieldSpace f m k'}
     (hx : x ∈ sobolevVortices f m k') :
     Set.inclusion (framedFieldSpace_mono f m (by exact_mod_cast h)) x ∈ sobolevVortices f m k :=
   mem_sobolevVortices.2 ((mem_sobolevVortices (x := x)).1 hx)
@@ -91,9 +91,8 @@ variable [Fact (1 < k)] [Fact (1 < k')]
 same zero divisor as a vortex of `A_m^k`. -/
 @[simp]
 theorem sobolevVortexDivisor_inclusion (h : k ≤ k') (x : sobolevVortices f m k') :
-    sobolevVortexDivisor (k := k)
-        ⟨⟨x, framedFieldSpace_mono f m (by exact_mod_cast h) x.1.2⟩,
-          mem_sobolevVortices.2 ((mem_sobolevVortices (x := x.1)).1 x.2)⟩ =
+    sobolevVortexDivisor ⟨Set.inclusion (framedFieldSpace_mono f m (by exact_mod_cast h)) x.1,
+        inclusion_mem_sobolevVortices h x.2⟩ =
       sobolevVortexDivisor x :=
   sobolevVortexDivisor_eq_iff.2 (isZeroMultiplicity_sectionValue_sobolevVortexDivisor x)
 
@@ -133,88 +132,26 @@ theorem exists_sobolevGaugeGroup_smul_mem_framedFieldSpace {hs : 1 < (k : ℝ) +
         iteratedFDeriv ℝ n (((u • (x : framedFieldSpace f m k) : framedFieldSpace f m k) :
           ℂ → EuclideanSpace ℝ (Fin 4)) - referenceField f m) =O[cocompact ℂ]
           fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  -- The smooth framed vortex with the divisor of `x`, normalized at its end.
-  obtain ⟨y, hy⟩ := framedVortexDivisor_surjective m (sobolevVortexDivisor x)
-  obtain ⟨hyc, hysol, hyfr⟩ := mem_framedVortexSubMulAction.1 y.2
-  obtain ⟨v, hv, hdec⟩ := exists_framedGaugeGroup_smul_mem_framedFieldSpace f hyc hysol hyfr
-  obtain ⟨hvc, hvsol, -⟩ := mem_framedVortexSubMulAction.1 (v • y).2
-  rw [SubMulAction.val_smul] at hvc hvsol
-  -- It is a `C²` vortex of `A_m^k` with the divisor of `x`, hence in the orbit of `x`.
-  let y' : sobolevVortices f m k :=
-    ⟨⟨v • (y : ℂ → EuclideanSpace ℝ (Fin 4)), hv k⟩,
-      mem_sobolevVortices.2 ⟨hvc.of_le (by simp), hvsol⟩⟩
-  have hdiv : sobolevVortexDivisor y' = sobolevVortexDivisor x := by
-    rw [sobolevVortexDivisor_eq_framedVortexDivisor y' (v • y) (SubMulAction.val_smul v y).symm,
-      framedVortexDivisor_smul, hy]
-  obtain ⟨u, hu⟩ := sobolevVortexDivisor_eq_sobolevVortexDivisor_iff.1 hdiv
-  refine ⟨u, ?_, ?_, ?_⟩ <;> rw [hu]
-  · exact hvc
-  · exact hv
-  · exact hdec
+  -- The smooth vortex with the divisor of `x` is in the orbit of `x`.
+  obtain ⟨y, hy, hyc, hys, hdec⟩ :=
+    exists_contDiff_sobolevVortexDivisor_eq (f := f) (k := k) (sobolevVortexDivisor x)
+  obtain ⟨u, hu⟩ := sobolevVortexDivisor_eq_sobolevVortexDivisor_iff (hs := hs).1 hy
+  exact ⟨u, by rw [hu]; exact ⟨hyc, hys, hdec⟩⟩
 
 /-! ### The Sobolev moduli of different orders -/
 
-/-- The inclusion of the `C²` vortices of `A_m^(k')` into those of `A_m^k`, as a map of the
-sub-actions of `G_(k'+1)` and `G_(k+1)`. -/
-private def subMulActionOfLE {hs : 1 < (k : ℝ) + 1} {hs' : 1 < (k' : ℝ) + 1} (hk : 3 < k)
-    (h : k ≤ k') (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs')
-      (hk.trans_le h)) :
-    sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk :=
-  ⟨Set.inclusion (framedFieldSpace_mono f m (by exact_mod_cast h)) x.1,
-    mem_sobolevVortexSubMulAction.2
-      (inclusion_mem_sobolevVortices h ((mem_sobolevVortexSubMulAction (x := x.1)).1 x.2))⟩
-
-/-- The divisor of a `C²` vortex of `A_m^(k')` does not change when it is viewed in `A_m^k`. -/
-private theorem sobolevVortexModuliDivisor_mk_subMulActionOfLE {hs : 1 < (k : ℝ) + 1}
-    {hs' : 1 < (k' : ℝ) + 1} (hk : 3 < k) (h : k ≤ k')
-    (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs') (hk.trans_le h)) :
-    sobolevVortexModuliDivisor hk (Quotient.mk'' (subMulActionOfLE (hs := hs) hk h x)) =
-      sobolevVortexModuliDivisor (hk.trans_le h) (Quotient.mk'' x) := by
-  rw [sobolevVortexModuliDivisor_mk, sobolevVortexModuliDivisor_mk]
-  exact sobolevVortexDivisor_inclusion h ⟨x.1, (mem_sobolevVortexSubMulAction (x := x.1)).1 x.2⟩
-
-/-- The map from the Sobolev moduli of order `k'` to those of order `k` induced by the inclusion
-`A_m^(k') ⊆ A_m^k`. It is well defined because `G_(k'+1) ≤ G_(k+1)`. -/
-private def sobolevVortexModuliOfLE {hs : 1 < (k : ℝ) + 1} {hs' : 1 < (k' : ℝ) + 1} (hk : 3 < k)
-    (h : k ≤ k') :
-    MulAction.orbitRel.Quotient (sobolevGaugeGroup hs')
-        (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs') (hk.trans_le h)) →
-      MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
-        (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :=
-  Quotient.map (subMulActionOfLE hk h) fun x y hxy ↦ by
-    obtain ⟨u, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 hxy)
-    refine MulAction.orbitRel_apply.2 (MulAction.mem_orbit_iff.2
-      ⟨⟨u, sobolevGaugeGroup_mono hs (by norm_cast; omega) u.2⟩, ?_⟩)
-    exact Subtype.ext (Subtype.ext rfl)
-
 /-- **The Sobolev moduli of framed vortices do not depend on the order.** For `4 ≤ k ≤ k'`, the
-inclusion `A_m^(k') ⊆ A_m^k` induces a bijection from the `G_(k'+1)`-orbits of `C²` vortices of
-`A_m^(k')` onto the `G_(k+1)`-orbits of `C²` vortices of `A_m^k`. -/
+`G_(k'+1)`-orbits of `C²` vortices of `A_m^(k')` correspond bijectively to the `G_(k+1)`-orbits of
+`C²` vortices of `A_m^k`, through their identifications with `Sym ℂ m`
+(`sobolevVortexModuliEquiv`). The bijection is induced by the inclusion `A_m^(k') ⊆ A_m^k`
+(`sobolevVortexModuliEquivOfLE_mk`). -/
 def sobolevVortexModuliEquivOfLE {hs : 1 < (k : ℝ) + 1} {hs' : 1 < (k' : ℝ) + 1} (hk : 3 < k)
     (h : k ≤ k') :
     MulAction.orbitRel.Quotient (sobolevGaugeGroup hs')
         (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs') (hk.trans_le h)) ≃
       MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
         (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :=
-  Equiv.ofBijective (sobolevVortexModuliOfLE hk h) <| by
-    have hcomp : sobolevVortexModuliDivisor (hs := hs) hk ∘ sobolevVortexModuliOfLE hk h =
-        sobolevVortexModuliDivisor (f := f) (m := m) (hs := hs') (hk.trans_le h) :=
-      funext fun q ↦ Quotient.inductionOn q (sobolevVortexModuliDivisor_mk_subMulActionOfLE hk h)
-    refine (Function.Bijective.of_comp_iff'
-      ⟨sobolevVortexModuliDivisor_injective hk, sobolevVortexModuliDivisor_surjective hk⟩ _).1 ?_
-    rw [hcomp]
-    exact ⟨sobolevVortexModuliDivisor_injective _, sobolevVortexModuliDivisor_surjective _⟩
-
-/-- The bijection of moduli sends the orbit of a vortex of `A_m^(k')` to its orbit in `A_m^k`. -/
-@[simp]
-theorem sobolevVortexModuliEquivOfLE_mk {hs : 1 < (k : ℝ) + 1} {hs' : 1 < (k' : ℝ) + 1}
-    (hk : 3 < k) (h : k ≤ k')
-    (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs') (hk.trans_le h)) :
-    sobolevVortexModuliEquivOfLE (hs := hs) hk h (Quotient.mk'' x) =
-      Quotient.mk'' ⟨⟨x.1, framedFieldSpace_mono f m (by exact_mod_cast h) x.1.2⟩,
-        mem_sobolevVortexSubMulAction.2 (mem_sobolevVortices.2 ((mem_sobolevVortices (x := x.1)).1
-          ((mem_sobolevVortexSubMulAction (x := x.1)).1 x.2)))⟩ :=
-  (rfl)
+  (sobolevVortexModuliEquiv (hk.trans_le h)).trans (sobolevVortexModuliEquiv hk).symm
 
 /-- **The bijection of moduli preserves the divisor**: it is compatible with the identifications
 of the Sobolev moduli of both orders with `Sym ℂ m` (`sobolevVortexModuliEquiv`). -/
@@ -224,37 +161,68 @@ theorem sobolevVortexModuliDivisor_sobolevVortexModuliEquivOfLE {hs : 1 < (k : �
     (q : MulAction.orbitRel.Quotient (sobolevGaugeGroup hs')
       (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs') (hk.trans_le h))) :
     sobolevVortexModuliDivisor hk (sobolevVortexModuliEquivOfLE (hs := hs) hk h q) =
-      sobolevVortexModuliDivisor (hk.trans_le h) q :=
-  Quotient.inductionOn q (sobolevVortexModuliDivisor_mk_subMulActionOfLE hk h)
+      sobolevVortexModuliDivisor (hk.trans_le h) q := by
+  rw [sobolevVortexModuliEquivOfLE, Equiv.trans_apply, ← sobolevVortexModuliEquiv_apply hk,
+    Equiv.apply_symm_apply, sobolevVortexModuliEquiv_apply]
 
-/-- The bijection of moduli between orders `k'` and `k` is the composite of their
-identifications with `Sym ℂ m`. -/
-theorem sobolevVortexModuliEquivOfLE_eq {hs : 1 < (k : ℝ) + 1} {hs' : 1 < (k' : ℝ) + 1}
-    (hk : 3 < k) (h : k ≤ k') :
-    sobolevVortexModuliEquivOfLE (f := f) (m := m) (hs := hs) (hs' := hs') hk h =
-      (sobolevVortexModuliEquiv (hk.trans_le h)).trans (sobolevVortexModuliEquiv hk).symm :=
-  Equiv.ext fun q ↦ (Equiv.eq_symm_apply _).2 <| by
-    rw [sobolevVortexModuliEquiv_apply, sobolevVortexModuliEquiv_apply]
-    exact sobolevVortexModuliDivisor_sobolevVortexModuliEquivOfLE hk h q
+/-- The inverse bijection of moduli preserves the divisor: every `G_(k+1)`-orbit of `C²` vortices of
+`A_m^k` contains a vortex of `A_m^(k')` with the same divisor. -/
+@[simp]
+theorem sobolevVortexModuliDivisor_sobolevVortexModuliEquivOfLE_symm {hs : 1 < (k : ℝ) + 1}
+    {hs' : 1 < (k' : ℝ) + 1} (hk : 3 < k) (h : k ≤ k')
+    (q : MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
+      (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)) :
+    sobolevVortexModuliDivisor (hk.trans_le h)
+        ((sobolevVortexModuliEquivOfLE (hs := hs) (hs' := hs') hk h).symm q) =
+      sobolevVortexModuliDivisor hk q := by
+  rw [← sobolevVortexModuliDivisor_sobolevVortexModuliEquivOfLE hk h, Equiv.apply_symm_apply]
+
+/-- The bijection of moduli sends the orbit of a vortex of `A_m^(k')` to its orbit in `A_m^k`. -/
+@[simp]
+theorem sobolevVortexModuliEquivOfLE_mk {hs : 1 < (k : ℝ) + 1} {hs' : 1 < (k' : ℝ) + 1}
+    (hk : 3 < k) (h : k ≤ k')
+    (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs') (hk.trans_le h)) :
+    sobolevVortexModuliEquivOfLE (hs := hs) hk h (Quotient.mk'' x) =
+      Quotient.mk'' ⟨Set.inclusion (framedFieldSpace_mono f m (by exact_mod_cast h)) x.1,
+        mem_sobolevVortexSubMulAction.2
+          (inclusion_mem_sobolevVortices h ((mem_sobolevVortexSubMulAction (x := x.1)).1 x.2))⟩ :=
+  sobolevVortexModuliDivisor_injective hk <| by
+    rw [sobolevVortexModuliDivisor_sobolevVortexModuliEquivOfLE, sobolevVortexModuliDivisor_mk,
+      sobolevVortexModuliDivisor_mk]
+    exact (sobolevVortexDivisor_inclusion h
+      ⟨x.1, (mem_sobolevVortexSubMulAction (x := x.1)).1 x.2⟩).symm
 
 /-- For `k = k'` the bijection of moduli is the identity. -/
 @[simp]
 theorem sobolevVortexModuliEquivOfLE_refl {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
     sobolevVortexModuliEquivOfLE (f := f) (m := m) (hs := hs) (hs' := hs) hk le_rfl =
       Equiv.refl _ := by
-  rw [sobolevVortexModuliEquivOfLE_eq]
+  rw [sobolevVortexModuliEquivOfLE]
   exact Equiv.self_trans_symm _
 
 /-- **The bijections of moduli compose**: for `4 ≤ k ≤ k' ≤ k''`, passing from order `k''` to `k'`
 and then to `k` is passing from `k''` to `k`. -/
+@[simp]
 theorem sobolevVortexModuliEquivOfLE_trans {k'' : ℕ} [Fact (1 < k'')] {hs : 1 < (k : ℝ) + 1}
     {hs' : 1 < (k' : ℝ) + 1} {hs'' : 1 < (k'' : ℝ) + 1} (hk : 3 < k) (h : k ≤ k')
     (h' : k' ≤ k'') :
     (sobolevVortexModuliEquivOfLE (f := f) (m := m) (hs := hs') (hs' := hs'') (hk.trans_le h)
         h').trans (sobolevVortexModuliEquivOfLE (hs := hs) hk h) =
       sobolevVortexModuliEquivOfLE (hs' := hs'') hk (h.trans h') := by
-  simp only [sobolevVortexModuliEquivOfLE_eq]
-  ext q
-  simp
+  rw [sobolevVortexModuliEquivOfLE, sobolevVortexModuliEquivOfLE, sobolevVortexModuliEquivOfLE,
+    Equiv.trans_assoc, ← Equiv.trans_assoc (sobolevVortexModuliEquiv _).symm,
+    Equiv.symm_trans_self, Equiv.refl_trans]
+
+/-- Passing from order `k''` to `k'` and then to `k` is passing from `k''` to `k`, pointwise. -/
+@[simp]
+theorem sobolevVortexModuliEquivOfLE_trans_apply {k'' : ℕ} [Fact (1 < k'')]
+    {hs : 1 < (k : ℝ) + 1} {hs' : 1 < (k' : ℝ) + 1} {hs'' : 1 < (k'' : ℝ) + 1} (hk : 3 < k)
+    (h : k ≤ k') (h' : k' ≤ k'')
+    (q : MulAction.orbitRel.Quotient (sobolevGaugeGroup hs'')
+      (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs'') ((hk.trans_le h).trans_le h'))) :
+    sobolevVortexModuliEquivOfLE (hs := hs) hk h
+        (sobolevVortexModuliEquivOfLE (hs := hs') (hk.trans_le h) h' q) =
+      sobolevVortexModuliEquivOfLE (hs' := hs'') hk (h.trans h') q := by
+  rw [← sobolevVortexModuliEquivOfLE_trans hk h h', Equiv.trans_apply]
 
 end TauCeti.Vortex
