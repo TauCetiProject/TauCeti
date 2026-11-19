@@ -75,6 +75,8 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
   the weight-model rotation by `-t` for any representative `t` of `θ`.
 * `TauCeti.weightGenerator θ`: its infinitesimal generator `z_i ↦ i θ_i z_i`.
 * `TauCeti.weightMomentMap α`: the moment map `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i`.
+* `TauCeti.halfSqRadii`: the half squared radii `((q_i² + p_i²) / 2)_i`, through which `μ`
+  factors (`TauCeti.weightMomentMap_eq_linearCombination_comp_halfSqRadii`).
 * `TauCeti.weightModelCoords`: the real coordinates `(q_i)_i ⊔ (p_i)_i` of `ℂ^ι`, indexed by
   `ι ⊕ ι`.
 * `TauCeti.weightInfinitesimalAction α z`: the infinitesimal action `ξ ↦ ξ_M(z)` at `z`.
@@ -139,6 +141,34 @@ namespace TauCeti
 open Real
 
 variable {ι : Type*}
+
+/-- The half squared radii `Φ(q, p) = ((q_i² + p_i²) / 2)_i` of a point `(q, p)` of `ℂ^ι`, that
+is, the halved squared moduli `|z_i|² / 2` of its coordinates `z_i = q_i + i p_i`. -/
+def halfSqRadii (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) : ι → ℝ :=
+  fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2
+
+@[simp]
+theorem halfSqRadii_apply (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    halfSqRadii x i = (x.1 i ^ 2 + x.2 i ^ 2) / 2 :=
+  (rfl)
+
+/-- The half squared radii lie in the closed orthant. -/
+theorem halfSqRadii_nonneg (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) : 0 ≤ halfSqRadii x :=
+  fun i ↦ by rw [Pi.zero_apply, halfSqRadii_apply]; positivity
+
+/-- The half squared radii depend continuously on the point. -/
+@[fun_prop]
+theorem continuous_halfSqRadii : Continuous (halfSqRadii (ι := ι)) :=
+  continuous_pi fun i ↦ by simp only [halfSqRadii_apply]; fun_prop
+
+/-- The half squared radii take every value in the closed orthant. -/
+theorem range_halfSqRadii : Set.range (halfSqRadii (ι := ι)) = Set.Ici 0 := by
+  refine Set.Subset.antisymm (Set.range_subset_iff.2 halfSqRadii_nonneg) fun s hs ↦
+    ⟨(WithLp.toLp 2 fun i ↦ √(2 * s i), 0), ?_⟩
+  ext i
+  simp only [halfSqRadii_apply, PiLp.zero_apply]
+  rw [sq_sqrt (mul_nonneg zero_le_two (hs i))]
+  ring
 
 section WeightRotation
 
@@ -263,15 +293,14 @@ theorem weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱)
 theorem weightMomentMap_zero (α : ι → StrongDual ℝ 𝔱) : weightMomentMap α 0 = 0 := by
   simp [weightMomentMap]
 
-/-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` applied to the
+/-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` composed with the
 half squared radii `(q_i² + p_i²) / 2`. -/
-theorem weightMomentMap_eq_linearCombination (α : ι → StrongDual ℝ 𝔱)
-    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
-    weightMomentMap α x =
-      Fintype.linearCombination ℝ (-α) fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 := by
-  rw [weightMomentMap_def, Fintype.linearCombination_apply]
+theorem weightMomentMap_eq_linearCombination_comp_halfSqRadii (α : ι → StrongDual ℝ 𝔱) :
+    weightMomentMap α = Fintype.linearCombination ℝ (-α) ∘ halfSqRadii := by
+  ext x : 1
+  rw [weightMomentMap_def, Function.comp_apply, Fintype.linearCombination_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Pi.neg_apply, smul_neg, ← neg_smul]
+  rw [halfSqRadii_apply, Pi.neg_apply, smul_neg, ← neg_smul]
   congr 1
   ring
 
