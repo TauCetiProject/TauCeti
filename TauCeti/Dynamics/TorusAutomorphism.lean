@@ -328,9 +328,7 @@ theorem finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul (A :
       (1 - (A : Matrix ι ι ℤ)).det.natAbs :=
     (Nat.card_congr e).trans (nat_card_fixedPoints_generalLinearGroup_smul p A)
   -- A constant sum of `sgn d` over `|d|` points is `|d| sgn d = d`.
-  rw [finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card,
-    hcard, nsmul_eq_mul, Int.natCast_natAbs, ← Int.sign_eq_sign, mul_comm]
-  exact Int.sign_mul_abs _
+  simp [finsum_eq_sum_of_fintype, ← Nat.card_eq_fintype_card, hcard]
 
 /-- **Nondegeneracy up to a period.** The toral automorphism `x ↦ A • x` is nondegenerate up to
 period `N` exactly when `det (1 - Aᵏ) ≠ 0` for every `0 < k ≤ N`. -/

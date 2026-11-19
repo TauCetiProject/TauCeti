@@ -197,6 +197,12 @@ theorem coe_catMapUnit : (catMapUnit : Matrix (Fin 2) (Fin 2) ℤ) = catMap :=
 theorem det_one_sub_catMap_pow (n : ℕ) : (1 - catMap ^ n).det = 2 - (catMap ^ n).trace :=
   det_one_sub_eq_two_sub_trace_of_det_eq_one (by rw [det_pow, det_catMap, one_pow])
 
+/-- `det (1 - Pⁿ) = 2 - tr (Pⁿ)` for the `n`-th power of the cat map as an element of `GL(2, ℤ)`. -/
+theorem det_one_sub_coe_catMapUnit_pow (n : ℕ) :
+    (1 - ((catMapUnit ^ n : GL (Fin 2) ℤ) : Matrix (Fin 2) (Fin 2) ℤ)).det =
+      2 - (catMap ^ n).trace := by
+  rw [Units.val_pow_eq_pow_val, coe_catMapUnit, det_one_sub_catMap_pow]
+
 variable (p : ℝ) [Fact (0 < p)]
 
 /-- **Every iterate of the actual cat map is nondegenerate.** The cat map `x ↦ P • x` of the torus
@@ -215,7 +221,7 @@ theorem nat_card_fixedPoints_iterate_catMapUnit_smul (n : ℕ) :
     Nat.card (fixedPoints (fun x : Fin 2 → AddCircle p ↦ catMapUnit • x)^[n]) =
       (2 - (catMap ^ n).trace).natAbs := by
   rw [smul_iterate, AddCircle.nat_card_fixedPoints_generalLinearGroup_smul,
-    Units.val_pow_eq_pow_val, coe_catMapUnit, det_one_sub_catMap_pow]
+    det_one_sub_coe_catMapUnit_pow]
 
 /-- **The signed fixed-point counts of the cat map.** The fixed points of the `n`-th iterate `φⁿ`
 of the cat map of the torus, each counted with its Lefschetz sign `sgn det (1 - dφⁿ_x)`, add up to
@@ -234,10 +240,8 @@ theorem finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul (n :
           fixedPointDerivative (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) f x)) : ℤ) =
         2 - (catMap ^ n).trace := by
     rintro f rfl
-    have hdet : (1 - ((catMapUnit ^ n : GL (Fin 2) ℤ) : Matrix (Fin 2) (Fin 2) ℤ)).det =
-        2 - (catMap ^ n).trace := by
-      rw [Units.val_pow_eq_pow_val, coe_catMapUnit, det_one_sub_catMap_pow]
-    rw [AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul, hdet]
+    rw [AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul,
+      det_one_sub_coe_catMapUnit_pow]
   exact key _ (smul_iterate catMapUnit n)
 
 /-- **The dynamical zeta function of the cat map.** The zeta function
