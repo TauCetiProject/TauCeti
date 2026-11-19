@@ -171,6 +171,22 @@ section BallBound
 
 variable [Nontrivial E] {u : E → ℝ} {C ε R : ℝ}
 
+/-- The barrier `ε + C (R² - ‖y‖²) / (2 dim E)` has Laplacian `-C`. -/
+private theorem laplacian_barrier_ball (ε C R : ℝ) (y : E) :
+    Δ (fun y : E ↦ (ε + C * (R ^ 2 - ‖y‖ ^ 2) / (2 * Module.finrank ℝ E) : ℝ)) y = -C := by
+  have hfun : (fun y : E ↦ (ε + C * (R ^ 2 - ‖y‖ ^ 2) / (2 * Module.finrank ℝ E) : ℝ)) =
+      (fun _ ↦ ε + C * R ^ 2 / (2 * Module.finrank ℝ E)) +
+        (-(C / (2 * Module.finrank ℝ E))) • fun y : E ↦ ‖y‖ ^ 2 := by
+    funext y
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    ring
+  have h2 : ContDiffAt ℝ 2 ((-(C / (2 * Module.finrank ℝ E))) • fun y : E ↦ ‖y‖ ^ 2) y :=
+    contDiffAt_const.smul (contDiff_norm_sq ℝ).contDiffAt
+  rw [hfun, contDiffAt_const.laplacian_add h2, laplacian_smul _ (contDiff_norm_sq ℝ).contDiffAt,
+    laplacian_const, Pi.zero_apply, laplacian_norm_sq, smul_eq_mul, zero_add]
+  have : (Module.finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
+  field_simp
+
 /-- **A bounded Laplacian and smallness outside a ball bound a function.** Let `u` be continuous
 on the closed ball of radius `R ≥ 0` about the origin and `C²` on the open ball, with `|Δ u| ≤ C`
 there, and suppose `|u| ≤ ε` wherever `‖x‖ ≥ R`. Then `|u| ≤ ε + C R² / (2 dim E)` everywhere.
@@ -197,19 +213,7 @@ theorem abs_le_add_mul_sq_div_of_abs_laplacian_le (hR : 0 ≤ R)
   set g : E → ℝ := fun y ↦ ε + C * (R ^ 2 - ‖y‖ ^ 2) / (2 * Module.finrank ℝ E) with hg
   have hgd : ContDiff ℝ 2 g :=
     contDiff_const.add (((contDiff_const.sub (contDiff_norm_sq ℝ)).const_smul C).div_const _)
-  have hgΔ (y : E) : Δ g y = -C := by
-    have hfun : g = (fun _ ↦ ε + C * R ^ 2 / (2 * Module.finrank ℝ E)) +
-        (-(C / (2 * Module.finrank ℝ E))) • fun y : E ↦ ‖y‖ ^ 2 := by
-      funext y
-      simp only [hg, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-      ring
-    have h2 : ContDiffAt ℝ 2 ((-(C / (2 * Module.finrank ℝ E))) • fun y : E ↦ ‖y‖ ^ 2) y :=
-      contDiffAt_const.smul (contDiff_norm_sq ℝ).contDiffAt
-    rw [hfun, contDiffAt_const.laplacian_add h2,
-      laplacian_smul _ (contDiff_norm_sq ℝ).contDiffAt, laplacian_const, Pi.zero_apply,
-      laplacian_norm_sq, smul_eq_mul, zero_add]
-    have : (Module.finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
-    field_simp
+  have hgΔ (y : E) : Δ g y = -C := laplacian_barrier_ball ε C R y
   have hK : IsCompact (Metric.closedBall (0 : E) R) := isCompact_closedBall 0 R
   have hfr {y : E} (hy : y ∈ frontier (Metric.closedBall (0 : E) R)) : ‖y‖ = R := by
     simpa using Metric.frontier_closedBall_subset_sphere hy
