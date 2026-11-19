@@ -14,6 +14,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.NumberTheory.ModularForms.JacobiTheta.Bounds
+import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 
 /-!
 # The normalized Mellin continuation
@@ -173,12 +174,8 @@ theorem continuousOn_iteratedDerivWithin (hf : IsSmoothExpDecay f) (n : ℕ) :
 /-- At a positive point, the `n`-th derivative within `[0, ∞)` has the `(n + 1)`-st as its
 derivative. -/
 theorem hasDerivAt_iteratedDerivWithin (hf : IsSmoothExpDecay f) (n : ℕ) {t : ℝ} (ht : 0 < t) :
-    HasDerivAt (iteratedDerivWithin n f (Ici 0)) (iteratedDerivWithin (n + 1) f (Ici 0) t) t := by
-  have hmem : Ici (0 : ℝ) ∈ 𝓝 t := Ici_mem_nhds ht
-  have hd := hf.contDiffOn.differentiableOn_iteratedDerivWithin (m := n)
-    (mod_cast WithTop.coe_lt_top _) (uniqueDiffOn_Ici 0) t ht.le
-  rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds hmem]
-  exact (hd.differentiableAt hmem).hasDerivAt
+    HasDerivAt (iteratedDerivWithin n f (Ici 0)) (iteratedDerivWithin (n + 1) f (Ici 0) t) t :=
+  hf.contDiffOn.hasDerivAt_iteratedDerivWithin (mod_cast WithTop.coe_lt_top _) (Ici_mem_nhds ht)
 
 /-- Each derivative within `[0, ∞)` tends to zero at `+∞`. -/
 theorem tendsto_iteratedDerivWithin_atTop (hf : IsSmoothExpDecay f) (n : ℕ) :
