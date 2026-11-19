@@ -18,10 +18,12 @@ Let `a` be a measurable coefficient field on an open set of `ℝⁿ` which is un
 the almost-everywhere inverse-coercive sense (`TauCeti.PDE.IsUniformlyEllipticAE`): for almost
 every `x` and every `ξ`, `ξ · a(x)ξ ≥ λ‖ξ‖²` and `ξ · a(x)⁻¹ξ ≥ Λ⁻¹‖ξ‖²`, with no symmetry. This
 is the ellipticity hypothesis of the divergence-form theory. This file proves the interior
-regularity theorems for weak solutions, subsolutions and supersolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`
-under it, quantitative in a local norm of `u` and with constants depending only on an upper
-bound for the ellipticity ratio `Λ / λ`, the dimension and the normalization of the Haar measure,
-in every dimension.
+regularity theorems under it, in every dimension: the De Giorgi–Nash–Moser estimates for weak
+solutions, subsolutions and supersolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`, quantitative in a local norm
+of `u`, and Meyers' estimate for weak solutions of `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ`, quantitative in an
+average of `‖∇u‖²` and a datum term in `‖F‖ / λ`. The constants depend only on an upper bound for
+the ellipticity ratio `Λ / λ`, the dimension and the normalization of the Haar measure, and in
+addition on the exponent `s` for the weak Harnack inequality and on `ε` for Meyers' estimate.
 
 * **Local boundedness (De Giorgi).** A weak subsolution satisfies, above every level `k`,
   `u ≤ k + D R^(-n/2) ‖(u - k)⁺‖_{L²(B(x₀, R))}` on `B(x₀, R/2)`
@@ -309,8 +311,7 @@ theorem exists_setLAverage_enorm_gradient_rpow_le_divergence_of_isUniformlyEllip
   have key := hC h' (le_of_eq (mul_one ratio).symm) ha' (hF.const_smul lam⁻¹) hu' hball
   -- The datum `λ⁻¹ F` of the normalized equation has `‖λ⁻¹ F‖ / 1 = ‖F‖ / λ`.
   have hF' : ∀ x, ‖(lam⁻¹ • F) x‖ₑ / ENNReal.ofReal 1 = ‖F x‖ₑ / ENNReal.ofReal lam := fun x => by
-    rw [ENNReal.ofReal_one, div_one, Pi.smul_apply, eNorm_smul,
-      Real.eNorm_eq_ofReal (inv_nonneg.2 h.pos.le),
+    simp [eNorm_smul, Real.eNorm_eq_ofReal (inv_nonneg.2 h.pos.le),
       ENNReal.ofReal_inv_of_pos h.pos, div_eq_mul_inv, mul_comm]
   simpa only [hF'] using key
 
