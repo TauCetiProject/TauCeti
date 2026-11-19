@@ -18,6 +18,8 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLast
 public import TauCeti.Geometry.Sphere.LinearIsometry
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
+import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
 # The homology of spheres
@@ -127,6 +129,10 @@ Coefficients are an object `R` of an abelian category with coproducts.
   when `d = q = 0`), and vanishes otherwise.
   `ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ` gives the same ranks for the unit
   sphere of a real normed space of dimension `d + 1`.
+* `TauCeti.bettiNumber_sphere` and `TauCeti.bettiNumber_compl_singleton`: over a ring with the
+  strong rank condition, the unit sphere of a real normed space `E` of dimension `n + 1`, and the
+  complement `E ∖ {y}` of a point in `E`, have Betti number `1` in degrees `0` and `n` (`2` in
+  degree `0` when `n = 0`) and `0` in every other degree.
 
 ## References
 
@@ -1034,3 +1040,31 @@ theorem finrank_singularHomology_sphere_of_finrank_eq_succ [StrongRankCondition 
 end Free
 
 end ModuleCat
+
+namespace TauCeti
+
+section BettiNumber
+
+variable (k : Type w) [Ring k] [StrongRankCondition k] {E : Type w} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
+
+/-- **The Betti numbers of a sphere.** Over a ring with the strong rank condition, such as a
+division ring or a nontrivial commutative ring, the unit sphere of a real normed space of dimension
+`n + 1` has Betti number `1` in degree `n`, plus `1` in degree `0`, and `0` in every other degree.
+For `n = 0` the sphere is two points, with Betti number `2` in degree `0`. -/
+theorem bettiNumber_sphere (hE : finrank ℝ E = n + 1) (j : ℕ) :
+    bettiNumber k (sphere (0 : E) 1) j = (if j = n then 1 else 0) + if j = 0 then 1 else 0 := by
+  simp [bettiNumber_def, ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ _ hE]
+
+/-- **The Betti numbers of a punctured space.** Over a ring with the strong rank condition, the
+complement of a point in a real normed space of dimension `n + 1` has the Betti numbers of the
+sphere `Sⁿ`, to which it is homotopy equivalent: `1` in degree `n`, plus `1` in degree `0`, and `0`
+in every other degree. For instance `ℝ² ∖ {0}`, like the circle, has Betti number `1` in
+degree `1`. -/
+theorem bettiNumber_compl_singleton (hE : finrank ℝ E = n + 1) (y : E) (j : ℕ) :
+    bettiNumber k ({y}ᶜ : Set E) j = (if j = n then 1 else 0) + if j = 0 then 1 else 0 := by
+  rw [(complSingletonHomotopyEquivSphere y).bettiNumber_eq k j, bettiNumber_sphere k hE]
+
+end BettiNumber
+
+end TauCeti
