@@ -40,7 +40,10 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 (`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). The difference of two
 compositions obeys the three-term estimate
 `‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
-(`ContinuousLinearMap.enorm_comp_sub_comp_le`).
+(`ContinuousLinearMap.enorm_comp_sub_comp_le`). The conjugates `G ∘ K ∘ M` and `G' ∘ K' ∘ M'`,
+with `G` a left inverse of `M` and `G'` a right inverse of `M'`, differ by at most a combination of
+`‖K - K'‖` and `‖M - M'‖` (`ContinuousLinearMap.norm_comp_comp_sub_comp_comp_le`), using the
+triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`.
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
@@ -80,6 +83,12 @@ term to the squared norms (`TauCeti.norm_sq_add_norm_sq_add_norm_sq_le`).
 A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
+
+For a continuous linear map `c` valued in a normed algebra `𝕜'` over the scalars and a vector `f`
+of a normed `𝕜'`-space, the rank-one map `c.smulRight f : x ↦ c x • f` has norm at most `‖c‖ ‖f‖`
+(`ContinuousLinearMap.norm_smulRight_le`). Mathlib's `ContinuousLinearMap.norm_smulRight_apply`
+is the equality for scalar-valued `c`; the inequality applies for instance to the real-linear maps
+`(ContinuousLinearMap.id ℝ ℂ).smulRight f` into a complex normed space.
 
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
@@ -249,6 +258,42 @@ theorem enorm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpa
         (eNorm_add_le _ _).trans (add_le_add_left (eNorm_add_le _ _) _)
     _ ≤ _ := by gcongr <;> exact opENorm_comp_le _ _
 
+/-- The operator norm of a triple composition is at most the product of the operator norms. -/
+theorem opNorm_comp_comp_le {Z U : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    [SeminormedAddCommGroup U] [NormedSpace 𝕜 U] (f : Z →L[𝕜] U) (g : Y →L[𝕜] Z)
+    (h : X →L[𝕜] Y) : ‖f.comp (g.comp h)‖ ≤ ‖f‖ * ‖g‖ * ‖h‖ :=
+  (opNorm_comp_le _ _).trans <| by
+    rw [mul_assoc]
+    gcongr
+    exact opNorm_comp_le _ _
+
+/-- The conjugates `G ∘ K ∘ M` and `G' ∘ K' ∘ M'`, with `G` a left inverse of `M` and `G'` a
+right inverse of `M'`, differ by at most the differences of `K, K'` and of `M, M'`. -/
+theorem norm_comp_comp_sub_comp_comp_le {G G' : Y →L[𝕜] X} {K K' : Y →L[𝕜] Y}
+    {M M' : X →L[𝕜] Y} (hGM : G.comp M = ContinuousLinearMap.id 𝕜 X)
+    (hMG : M'.comp G' = ContinuousLinearMap.id 𝕜 Y) :
+    ‖G.comp (K.comp M) - G'.comp (K'.comp M')‖ ≤
+      ‖G‖ * ‖M - M'‖ * ‖G'‖ * ‖K‖ * ‖M‖ + ‖G'‖ * ‖K - K'‖ * ‖M‖ +
+        ‖G'‖ * ‖K'‖ * ‖M - M'‖ := by
+  -- `G - G' = G ∘ (M' - M) ∘ G'`, since `G ∘ M = id` and `M' ∘ G' = id`.
+  have hG : G - G' = G.comp ((M' - M).comp G') := by
+    simp [sub_comp, comp_sub, ← comp_assoc, hGM, hMG]
+  have hsplit : G.comp (K.comp M) - G'.comp (K'.comp M') =
+      (G - G').comp (K.comp M) + G'.comp ((K - K').comp M) + G'.comp (K'.comp (M - M')) := by
+    ext v
+    simp only [sub_apply, add_apply, coe_comp, Function.comp_apply, map_sub]
+    abel
+  have h₁ : ‖(G - G').comp (K.comp M)‖ ≤ ‖G‖ * ‖M - M'‖ * ‖G'‖ * ‖K‖ * ‖M‖ :=
+    calc ‖(G - G').comp (K.comp M)‖ ≤ ‖G - G'‖ * ‖K‖ * ‖M‖ := opNorm_comp_comp_le _ _ _
+      _ ≤ ‖G‖ * ‖M' - M‖ * ‖G'‖ * ‖K‖ * ‖M‖ := by
+          rw [hG]
+          gcongr
+          exact opNorm_comp_comp_le _ _ _
+      _ = ‖G‖ * ‖M - M'‖ * ‖G'‖ * ‖K‖ * ‖M‖ := by rw [norm_sub_rev]
+  rw [hsplit]
+  exact norm_add₃_le.trans (add_le_add (add_le_add h₁ (opNorm_comp_comp_le _ _ _))
+    (opNorm_comp_comp_le _ _ _))
+
 section Inverse
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -407,6 +452,21 @@ theorem norm_apply_apply_le_mul_add_sq (B : X →L[𝕜] Y →L[𝕜] Z) {c : �
   linarith
 
 end Young
+
+section SmulRight
+
+variable {𝕜 𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+
+/-- The rank-one map `x ↦ c x • f` has norm at most `‖c‖ ‖f‖`. -/
+theorem norm_smulRight_le (c : E →L[𝕜] 𝕜') (f : F) : ‖c.smulRight f‖ ≤ ‖c‖ * ‖f‖ :=
+  opNorm_le_bound _ (by positivity) fun x ↦ by
+    rw [smulRight_apply, norm_smul, mul_right_comm]
+    gcongr
+    exact c.le_opNorm x
+
+end SmulRight
 
 section Net
 
