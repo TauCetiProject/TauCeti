@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.Analysis.Polynomial.Order
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.LineBundle.Sections
+import TauCeti.Algebra.Polynomial.Roots
 import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
@@ -218,11 +219,9 @@ private theorem support_twistOrderAt_polynomialSection_subset_and_sum_eq {n : �
       simpa [rootsAndInfty, hp0] using hx.1
   · rw [rootsAndInfty, Finset.sum_cons, Finset.sum_map, twistOrderAt_polynomialSection_infty hp hp0]
     simp only [Embedding.coeFn_mk, twistOrderAt_polynomialSection_coe n hp0]
-    rw [← Nat.cast_sum]
-    have hsum : ∑ z ∈ p.roots.toFinset, p.rootMultiplicity z = p.natDegree := by
-      rw [← IsAlgClosed.card_roots_eq_natDegree, ← Multiset.toFinset_sum_count_eq]
-      exact Finset.sum_congr rfl fun z _ ↦ (count_roots p).symm
-    rw [hsum, ← Nat.cast_add, Nat.sub_add_cancel (mem_degreeLT_succ_iff_natDegree_le.1 hp)]
+    rw [← Nat.cast_sum, sum_rootMultiplicity_roots_toFinset_eq_card_roots,
+      IsAlgClosed.card_roots_eq_natDegree, ← Nat.cast_add,
+      Nat.sub_add_cancel (mem_degreeLT_succ_iff_natDegree_le.1 hp)]
 
 /-- The zeros of a nonzero holomorphic section of `𝒪(n)` lie in a finite set on which its orders
 of vanishing add up to `n`. -/
@@ -321,8 +320,9 @@ theorem holomorphicTwistSectionsEval_surjective [Finite ι] {n : ℕ} {x : ι �
   let e : ι → T := fun i ↦ ⟨x i, hST (Finset.mem_image_of_mem x (Finset.mem_univ i))⟩
   have he : Injective e := fun i j h ↦ hx (congrArg Subtype.val h)
   have hcomp : holomorphicTwistSectionsEval n x =
-      LinearMap.funLeft ℂ ℂ e ∘ₗ holomorphicTwistSectionsEval n ((↑) : T → OnePoint ℂ) :=
-    (rfl)
+      LinearMap.funLeft ℂ ℂ e ∘ₗ holomorphicTwistSectionsEval n ((↑) : T → OnePoint ℂ) := by
+    ext s i
+    simp [LinearMap.funLeft_apply, e]
   rw [hcomp, LinearMap.coe_comp]
   exact (LinearMap.funLeft_surjective_of_injective _ _ e he).comp
     (holomorphicTwistSectionsEval_bijective Subtype.val_injective
