@@ -48,6 +48,11 @@ theorem coeff_eisensteinGSeries (k n : ℕ) :
   rw [eisensteinGSeries_def, map_add, coeff_C, coeff_divisorSumSeries]
   split_ifs with hn <;> simp [hn]
 
+@[simp]
+theorem constantCoeff_eisensteinGSeries (k : ℕ) :
+    constantCoeff (eisensteinGSeries A k) = algebraMap ℚ A (-bernoulli k / (2 * k)) := by
+  simp [eisensteinGSeries_def]
+
 end TauCeti
 
 end
