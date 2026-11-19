@@ -31,7 +31,7 @@ operator of `P_w` for bounded uniformly continuous initial data
 (`TauCeti.ParabolicC2HolderSpace.euclideanCauchySolutionBUC`), multiplied by `w`, is therefore
 the solution operator of the weighted problem:
 
-* on data with `G / w ∈ C_b^{2,α}` it gives the classical weighted solution
+* on data with `G / w ∈ C_b^{2,α}` it agrees with the classical weighted solution `u = w v`
   (`exp_mul_euclideanCauchySolutionBUC_weightedCoeff_eq`), and it is the only continuous linear map
   `C_b^{α,α/2} × BUC → C_b` that sends the weighted data of every classical weighted solution
   `u = w v` to `v` (`eq_euclideanCauchySolutionBUC_weightedCoeff`);
@@ -44,9 +44,10 @@ the solution operator of the weighted problem:
   bounds on the coefficient norms and on the norms of `∂ᵢℓ`, `∂ᵢ∂ⱼℓ`, and a bound on the horizon
   (`exists_norm_euclideanCauchySolutionBUC_weightedCoeff_le`).
 
-On the line, the weight `1 + exp x` qualifies, and data growing like `exp x` as `x → ∞` have a
-solution attaining them in the norm `sup |u / (1 + exp x)|`
-(`tendstoUniformly_euclideanCauchySolutionBUC_weightedCoeff_one_add_exp`).
+On the line, the weight `1 + exp x` qualifies:
+`TauCeti.contDiff_log_one_add_exp_and_exists_fderiv_eq` supplies the derivatives `dℓ`, `d2ℓ` of
+`ℓ = log (1 + exp x)`, and with them the statements above cover data growing like `exp x` as
+`x → ∞`, attained in the norm `sup |u / (1 + exp x)|`.
 
 The regularity of the solution for `t > 0`, where it is classical, is not proved here; it rests on
 the corresponding statement for the unweighted problem.
@@ -59,8 +60,6 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
   solution.
 * `eq_euclideanCauchySolutionBUC_weightedCoeff`: uniqueness of the weighted solution operator.
 * `exists_norm_euclideanCauchySolutionBUC_weightedCoeff_le`: the uniform bound.
-* `tendstoUniformly_euclideanCauchySolutionBUC_weightedCoeff_one_add_exp`: the weight `1 + exp x`
-  on the line.
 
 ## References
 
@@ -200,64 +199,5 @@ theorem exists_norm_euclideanCauchySolutionBUC_weightedCoeff_le (hα₀ : 0 < α
   gcongr
 
 end Bound
-
-/-! ### The weight `1 + exp x` on the line -/
-
-section Line
-
-variable {ι : Type*} [Unique ι]
-
-/-- **The Cauchy problem on the line with the weight `1 + exp x` and uniformly continuous
-data.** On the line `ℝ¹ = EuclideanSpace ℝ ι`, let `dℓ`, `d2ℓ` be the first and second derivatives
-of the logarithm `ℓ x = log (1 + exp x)` of the weight, as provided by
-`TauCeti.contDiff_log_one_add_exp_and_exists_fderiv_eq`. For uniformly elliptic `a`,
-`f ∈ C_b^{α,α/2}` and a bounded uniformly continuous `g`, let `v` be the solution with data `(f, g)`
-of the conjugated problem for bounded uniformly continuous initial data. Then `u = (1 + exp x) v`
-takes the initial datum `G = (1 + exp x) g` and attains it uniformly in the norm
-`sup |u / (1 + exp x)|` as `t → 0⁺`, and `u` is the classical solution of `P u = (1 + exp x) f`,
-`u(·, 0) = G` whenever `g ∈ C_b^{2,α}`. The datum `G` may grow like `exp x` as `x → ∞`. -/
-theorem tendstoUniformly_euclideanCauchySolutionBUC_weightedCoeff_one_add_exp (hα₀ : 0 < α)
-    (hα₁ : α < 1) (hT : (0 : ℝ) < T)
-    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    {dℓ : ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ}
-    {d2ℓ : ι → ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ}
-    (hdℓ : ∀ i x, fderiv ℝ (fun x : EuclideanSpace ℝ ι ↦ log (1 + exp (x default))) x
-      (EuclideanSpace.single i 1) = dℓ i x)
-    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ fun x : EuclideanSpace ℝ ι ↦ log (1 + exp (x default))) x
-      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = d2ℓ i j x)
-    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) :
-    let v := euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
-      (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g)
-    (∀ x, v (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩) = (g : EuclideanSpace ℝ ι →ᵇ ℝ) x) ∧
-      TendstoUniformly (fun (t : Icc (0 : ℝ) T) x ↦ v (slabMk x t))
-        (fun x ↦ (g : EuclideanSpace ℝ ι →ᵇ ℝ) x) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) ∧
-      ∀ (g₂ : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ),
-        (∀ x, (g : EuclideanSpace ℝ ι →ᵇ ℝ) x = g₂ x) →
-        ∀ (v₂ : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT)
-          (u : EuclideanSpace ℝ ι → ℝ → ℝ),
-          (∀ y (s : Icc (0 : ℝ) T), u y s = (1 + exp (y default)) * v₂ (slabMk y s)) →
-          (∀ (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T), derivWithin (u x) (Icc 0 T) t -
-            (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
-                (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
-              ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
-              c (slabMk x t) * u x t) = (1 + exp (x default)) * f (slabMk x t)) →
-          (∀ x, u x 0 = (1 + exp (x default)) * g₂ x) →
-          ∀ (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T),
-            (1 + exp (x default)) * v (slabMk x t) = u x t := by
-  have hw (x : EuclideanSpace ℝ ι) : exp (log (1 + exp (x default))) = 1 + exp (x default) :=
-    exp_log (by positivity)
-  refine ⟨euclideanCauchySolutionBUC_apply_slabMk_zero hα₀ hα₁ hT ha f g,
-    tendstoUniformly_euclideanCauchySolutionBUC hα₀ hα₁ hT ha f g, fun g₂ hg₂ v₂ u hu hP h0 ↦ ?_⟩
-  simpa only [hw] using exp_mul_euclideanCauchySolutionBUC_weightedCoeff_eq hα₀ hα₁ hT ha
-    ((contDiff_log_one_add_exp_and_exists_fderiv_eq hα₁.le).1.of_le le_top) hdℓ hd2ℓ v₂
-    (by simpa only [hw] using hu) f g₂ g hg₂ (by simpa only [hw] using hP)
-    (by simpa only [hw] using h0)
-
-end Line
 
 end TauCeti.ParabolicC2HolderSpace
