@@ -18,7 +18,8 @@ import Mathlib.Geometry.Manifold.Algebra.Structures
 
 The reflection `t ↦ 1 - t` and the multiplication `(s, t) ↦ s t` are smooth for the
 manifold-with-boundary structure of the unit interval. The smooth transition function also gives
-smooth interval-valued maps, among them the collared transition
+smooth interval-valued maps: `unitInterval.smoothTransition` is the smooth transition function
+itself as a map into the unit interval, and the collared transition
 `TauCeti.collaredSmoothTransitionUnit`, which is `0` up to time `1 / 4` and `1` from time `3 / 4`
 on. Run at double speed on each half of the interval it gives the time maps
 `TauCeti.collaredFirstHalf` and `TauCeti.collaredSecondHalf` of a stationary-time concatenation,
@@ -58,6 +59,33 @@ instance : ContMDiffMul (𝓡∂ 1) ω I where
       ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_fst).mul
         ((contMDiff_subtypeVal_Icc (x := 0) (y := 1) (n := ω)).comp contMDiff_snd)
 
+/-- `Real.smoothTransition` as a map into the unit interval. -/
+noncomputable def smoothTransition (s : ℝ) : I :=
+  ⟨Real.smoothTransition s, Real.smoothTransition.nonneg s, Real.smoothTransition.le_one s⟩
+
+@[simp]
+theorem coe_smoothTransition (s : ℝ) : (smoothTransition s : ℝ) = Real.smoothTransition s :=
+  (rfl)
+
+theorem continuous_smoothTransition : Continuous smoothTransition :=
+  Real.smoothTransition.continuous.subtype_mk _
+
+@[simp]
+theorem smoothTransition_zero : smoothTransition 0 = 0 :=
+  Subtype.ext Real.smoothTransition.zero
+
+@[simp]
+theorem smoothTransition_one : smoothTransition 1 = 1 :=
+  Subtype.ext Real.smoothTransition.one
+
+/-- The smooth transition rests at `0` for `s ≤ 0`. -/
+theorem smoothTransition_of_nonpos {s : ℝ} (h : s ≤ 0) : smoothTransition s = 0 :=
+  Subtype.ext (Real.smoothTransition.zero_of_nonpos h)
+
+/-- The smooth transition rests at `1` for `1 ≤ s`. -/
+theorem smoothTransition_of_one_le {s : ℝ} (h : 1 ≤ s) : smoothTransition s = 1 :=
+  Subtype.ext (Real.smoothTransition.one_of_one_le h)
+
 end unitInterval
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -91,8 +119,7 @@ namespace TauCeti
 unit interval: a smooth transition from `0` to `1` which is constant on neighborhoods of both ends
 of the unit interval. -/
 noncomputable def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
-  ⟨Real.smoothTransition (2 * t - 1 / 2), Real.smoothTransition.nonneg _,
-    Real.smoothTransition.le_one _⟩
+  unitInterval.smoothTransition (2 * t - 1 / 2)
 
 /-- The collared smooth transition at `t` is `Real.smoothTransition (2 * t - 1 / 2)`. -/
 @[simp]
