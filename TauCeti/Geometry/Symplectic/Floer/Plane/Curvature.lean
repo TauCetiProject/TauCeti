@@ -218,10 +218,8 @@ theorem realChart_positive_mk (s t : ℝ) :
 plane. -/
 theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : a < z.1) :
     Real.exp (2 * π * a) <
-      ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ := by
-  rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, norm_cylindricalEndLift,
-    endSign_positive, one_mul, Complex.equivRealProdCLM_symm_apply_re, Real.exp_lt_exp]
-  nlinarith [Real.pi_pos]
+      ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ :=
+  positive.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 (by simpa using hz)
 
 /-- The end lift in real coordinates is injective on every strip `t₀ ≤ t < t₀ + 1` of angular
 width one. -/

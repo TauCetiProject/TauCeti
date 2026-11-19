@@ -13,8 +13,10 @@ import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Plane.ExponentialDecay
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Topology.MetricSpace.Pseudo.Basic
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # The linearized Floer operator on the end of a PSS plane
@@ -278,11 +280,11 @@ private theorem exists_setIntegral_le_mul_setIntegral_floerLinearization_comp_re
     eventually_map.2 ((eventually_gt_atTop r).mono fun s hs ↦ by
       rwa [← mul_assoc, endSign_mul_endSign, one_mul])
   have hux' : TendstoUniformlyOn (fun s t ↦ (u ∘ φ) (s, t)) x l (Icc 0 1) :=
-    fun U hU ↦ eventually_map.2 (hux U hU)
+    tendstoUniformlyOn_map_iff.2 hux
   obtain ⟨C₁, -, U, hU, hest⟩ :=
     ω.exists_mem_forall_setIntegral_le_mul_setIntegral_norm_floerLinearization_sq hX hHs hx hnd
       hJe hJex (u := u ∘ φ) (hlr.mono fun s hs t _ ↦ hu (s, t) hs) hux'
-      fun U hU ↦ eventually_map.2 (hδ U hU)
+      (tendstoUniformlyOn_map_iff.2 hδ)
   -- A bound for `J_e` along `u ∘ φ` far out on the end, where `u ∘ φ` is close to `x`.
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   obtain ⟨B, hB⟩ := (isCompact_Icc.prod ((isCompact_Icc.image hxc).cthickening (r := 1))
@@ -392,7 +394,8 @@ private theorem contDiffAt_of_comp_realChart_cylindricalEndLift_eq (p : PSSPlane
     have h₁ := hJeq (p.endSign * (r + 1), t + 1) (by simp [← mul_assoc])
     have h₂ := hJeq (p.endSign * (r + 1), t) (by simp [← mul_assoc])
     rw [realChart_cylindricalEndLift_add_one] at h₁
-    simp only [← h₁.symm.trans h₂]
+    have h : Je (t + 1) = Je t := h₁.symm.trans h₂
+    simp only [h]
   have h := p.contMDiffAt_comp_im_endCoord hper
     (contMDiff_prod_modelWithCornersSelf_iff.2 hJe.contMDiff)
     (norm_pos_iff.1 ((Real.exp_pos _).trans hz)) y
@@ -403,7 +406,7 @@ private theorem contDiffAt_of_comp_realChart_cylindricalEndLift_eq (p : PSSPlane
   have hΩ : IsOpen {w : ℝ × ℝ | Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm w‖} :=
     isOpen_lt continuous_const (by fun_prop)
   filter_upwards [(hΩ.preimage continuous_fst).mem_nhds hz] with q hq
-  replace hq : Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm q.1‖ := hq
+  rw [mem_preimage, mem_ofPred_eq] at hq
   have hφ : realChart p.cylindricalEndLift
       (Complex.equivRealProdCLM (p.endCoord (Complex.equivRealProdCLM.symm q.1))) = q.1 := by
     rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
@@ -510,12 +513,6 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
             (le_max_right _ _))
     _ = _ := by ring
 
-/-- The bound `c exp (-κ s)` with `κ > 0` tends to zero as `s → ∞`. -/
-private theorem tendsto_const_mul_exp_neg_mul_atTop (c : ℝ) {κ : ℝ} (hκ : 0 < κ) :
-    Tendsto (fun s ↦ c * Real.exp (-(κ * s))) atTop (𝓝 0) := by
-  simpa using
-    (Real.tendsto_exp_neg_atTop_nhds_zero.comp (tendsto_id.const_mul_atTop hκ)).const_mul c
-
 /-- **The slice defect at the end of a decaying plane.** If the loops of `u` along the end come
 within `A exp (-κ s)` of an orbit `x` of `H` in `C¹`, for large `s`, with `κ > 0`, and the suspended
 Hamiltonian vector field is `L`-Lipschitz, then the slice defect `∂t (u ∘ φ) - X_{H_t}(u ∘ φ)` at
@@ -531,7 +528,7 @@ private theorem tendstoUniformlyOn_sliceDefect_of_le_exp (ω : SymplecticForm V)
     TendstoUniformlyOn (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t))
       (u ∘ realChart p.cylindricalEndLift) (p.endSign * s, t)) 0 atTop S := by
   refine tendstoUniformlyOn_of_dist_le (u := fun s ↦ (1 + L) * A * Real.exp (-(κ * s)))
-    (tendsto_const_mul_exp_neg_mul_atTop _ hκ) ?_
+    (Real.tendsto_const_mul_exp_neg_mul_atTop _ hκ) ?_
   filter_upwards [hdecay] with s hs t _
   set y := u (realChart p.cylindricalEndLift (p.endSign * s, t))
   set d := fderiv ℝ (u ∘ realChart p.cylindricalEndLift) (p.endSign * s, t)
@@ -623,7 +620,7 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
   simp only [hrealChart] at hdecay
   have hloop (S : Set ℝ) : TendstoUniformlyOn
       (fun s t ↦ u (realChart p.cylindricalEndLift (p.endSign * s, t))) x atTop S :=
-    tendstoUniformlyOn_of_dist_le (tendsto_const_mul_exp_neg_mul_atTop A hκ)
+    tendstoUniformlyOn_of_dist_le (Real.tendsto_const_mul_exp_neg_mul_atTop A hκ)
       (hdecay.mono fun s hs t _ ↦ by
         rw [dist_eq_norm]
         exact (le_add_of_nonneg_right (norm_nonneg _)).trans (hs t))
