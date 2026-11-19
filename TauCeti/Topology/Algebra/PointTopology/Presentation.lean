@@ -44,22 +44,24 @@ open TauCeti.PointTopology
 evaluation topology, compatibly with projection to the coefficient point. -/
 noncomputable def pointsHomeomorph :
     (S →ₐ[k] E) ≃ₜ
-      {z : (R →ₐ[k] E) × (ι → E) // ∀ j, aevalTower z.1 z.2 (P.relation j) = 0} := by
-  let f := (aeval (R := R) P.val).restrictScalars k
-  have h := (mvPolynomialTowerHomeomorph (k := k) (A := R) (R := E) (ι := ι)).isEmbedding.comp
-    (isEmbedding_comap_of_surjective f P.aeval_val_surjective)
-  have hcoord : (mvPolynomialTowerHomeomorph ∘ (fun x : S →ₐ[k] E ↦ x.comp f)) =
-      fun x ↦ (x.comp (IsScalarTower.toAlgHom k R S), fun i ↦ x (P.val i)) := by
-    ext x <;> simp [f, AlgHom.comp_assoc]
-  rw [hcoord] at h
-  exact h.toHomeomorph.trans (Homeomorph.setCongr P.range_points_coordinates)
+      {z : (R →ₐ[k] E) × (ι → E) // ∀ j, aevalTower z.1 z.2 (P.relation j) = 0} :=
+  (IsEmbedding.toHomeomorph
+    (f := fun x : S →ₐ[k] E ↦
+      (x.comp (IsScalarTower.toAlgHom k R S), fun i ↦ x (P.val i))) (by
+        let f := (aeval (R := R) P.val).restrictScalars k
+        have h := (mvPolynomialTowerHomeomorph k R E ι).isEmbedding.comp
+          (isEmbedding_comap_of_surjective f P.aeval_val_surjective)
+        have hcoord : (mvPolynomialTowerHomeomorph k R E ι ∘
+            (fun x : S →ₐ[k] E ↦ x.comp f)) =
+            fun x ↦ (x.comp (IsScalarTower.toAlgHom k R S), fun i ↦ x (P.val i)) := by
+          ext x <;> simp [f, AlgHom.comp_assoc]
+        exact hcoord ▸ h)).trans (Homeomorph.setCongr P.range_points_coordinates)
 
 /-- The solution attached to a point records its restriction and its generator values. -/
 @[simp]
 theorem pointsHomeomorph_apply_coe (x : S →ₐ[k] E) :
     (P.pointsHomeomorph x).val =
-      (x.comp (IsScalarTower.toAlgHom k R S), fun i ↦ x (P.val i)) := by
-  simp [pointsHomeomorph, Homeomorph.setCongr]
+      (x.comp (IsScalarTower.toAlgHom k R S), fun i ↦ x (P.val i)) := (rfl)
 
 /-- Recovering a point from a solution gives the prescribed coefficient point. -/
 @[simp]

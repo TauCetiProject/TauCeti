@@ -196,8 +196,9 @@ theorem _root_.MvPolynomial.continuous_aevalTower {ι : Type*} (p : MvPolynomial
     simpa only [map_mul, MvPolynomial.aevalTower_X, Pi.mul_apply, Function.comp_def] using
       hp.fun_mul ((continuous_apply i).comp continuous_snd)
 
+variable (k A R) in
 /-- A polynomial-algebra point consists of a coefficient point and freely chosen coordinates. -/
-noncomputable def mvPolynomialTowerHomeomorph {ι : Type*} :
+noncomputable def mvPolynomialTowerHomeomorph (ι : Type*) :
     (MvPolynomial ι A →ₐ[k] R) ≃ₜ (A →ₐ[k] R) × (ι → R) where
   toFun x :=
     (x.comp (IsScalarTower.toAlgHom k A (MvPolynomial ι A)), fun i ↦ x (MvPolynomial.X i))
@@ -215,18 +216,18 @@ noncomputable def mvPolynomialTowerHomeomorph {ι : Type*} :
 /-- The coefficient component of a polynomial point is restriction to the coefficient algebra. -/
 @[simp]
 theorem mvPolynomialTowerHomeomorph_apply_fst {ι : Type*} (x : MvPolynomial ι A →ₐ[k] R) :
-    (mvPolynomialTowerHomeomorph x).1 =
+    (mvPolynomialTowerHomeomorph k A R ι x).1 =
       x.comp (IsScalarTower.toAlgHom k A (MvPolynomial ι A)) := (rfl)
 
 /-- The coordinate components of a polynomial point are its values on the variables. -/
 @[simp]
 theorem mvPolynomialTowerHomeomorph_apply_snd {ι : Type*} (x : MvPolynomial ι A →ₐ[k] R)
-    (i : ι) : (mvPolynomialTowerHomeomorph x).2 i = x (MvPolynomial.X i) := (rfl)
+    (i : ι) : (mvPolynomialTowerHomeomorph k A R ι x).2 i = x (MvPolynomial.X i) := (rfl)
 
 /-- The polynomial point with given coefficients and coordinates is algebra evaluation. -/
 @[simp]
 theorem mvPolynomialTowerHomeomorph_symm_apply {ι : Type*} (z : (A →ₐ[k] R) × (ι → R)) :
-    mvPolynomialTowerHomeomorph.symm z = MvPolynomial.aevalTower z.1 z.2 := (rfl)
+    (mvPolynomialTowerHomeomorph k A R ι).symm z = MvPolynomial.aevalTower z.1 z.2 := (rfl)
 
 /-- If the family `a` generates `A` as a `k`-algebra, then evaluation at `a` embeds the points
 `A →ₐ[k] R` in `ι → R`. -/

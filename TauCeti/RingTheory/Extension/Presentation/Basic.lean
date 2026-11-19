@@ -105,7 +105,7 @@ theorem range_points_coordinates :
     have hker : RingHom.ker f ≤ RingHom.ker (aevalTower z.1 z.2) := by
       have hfker : RingHom.ker f = P.ker := by
         rw [P.ker_eq_ker_aeval_val]
-        rfl
+        exact congrArg RingHom.ker (AlgHom.coe_restrictScalars k (aeval P.val))
       rw [hfker, ← P.span_range_relation_eq_ker]
       exact Ideal.span_le.2 (by rintro _ ⟨j, rfl⟩; exact hz j)
     have hmem : aevalTower z.1 z.2 ∈
