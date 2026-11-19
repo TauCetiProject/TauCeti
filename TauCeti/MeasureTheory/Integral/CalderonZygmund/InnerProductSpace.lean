@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StandardKernel
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StrongType
 import Mathlib.MeasureTheory.Group.Integral

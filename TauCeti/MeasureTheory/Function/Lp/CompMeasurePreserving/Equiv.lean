@@ -44,6 +44,14 @@ one-sided inverse has that inverse on both sides.
 * `MeasureTheory.Lp.coeFn_compMeasurePreservingₗᵢEquiv` and
   `MeasureTheory.Lp.coeFn_compMeasurePreservingₗᵢEquiv_symm` identify the equivalence and its
   inverse with precomposition by `f` and by `g` respectively.
+* `MeasureTheory.Lp.compMeasurePreserving_congr`: precomposition depends only on the almost
+  everywhere class of the map.
+* `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv_eq_refl`,
+  `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv_trans` and
+  `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv_symm`: the identity, composition and inverse laws,
+  for any maps agreeing almost everywhere with the expected ones. They reduce to Mathlib's
+  `MeasureTheory.Lp.compMeasurePreserving_id` and `MeasureTheory.Lp.compMeasurePreserving_comp`
+  through `MeasureTheory.Lp.compMeasurePreserving_congr`.
 * `MeasureTheory.Lp.leftInverse_compMeasurePreserving`: precomposition by `g` is a left inverse
   of precomposition by `f` when `f ∘ g` is almost everywhere the identity.
 * `MeasureTheory.Lp.compMeasurePreserving_toLp` identifies precomposition on the `Lp` class of a
@@ -59,6 +67,13 @@ namespace Lp
 
 variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
   {μb : Measure β} {p : ℝ≥0∞} [NormedAddCommGroup E] {f : α → β} {g : β → α}
+
+/-- Precomposition on `Lp` by a measure-preserving map depends only on the map's almost
+everywhere class: the `Lp` form of Mathlib's `MeasureTheory.AEEqFun.compMeasurePreserving_congr`. -/
+theorem compMeasurePreserving_congr {f' : α → β} (hf : MeasurePreserving f μ μb)
+    (hf' : MeasurePreserving f' μ μb) (h : f =ᵐ[μ] f') :
+    compMeasurePreserving (E := E) (p := p) f hf = compMeasurePreserving f' hf' :=
+  AddMonoidHom.ext fun _ ↦ Subtype.ext (AEEqFun.compMeasurePreserving_congr _ hf hf'.measurable h)
 
 /-- If `f` and `g` are measure-preserving and `f ∘ g` is the identity almost everywhere, then
 precomposition by `g` is a left inverse of precomposition by `f` on `Lp`. -/
@@ -200,6 +215,42 @@ theorem coeFn_compMeasurePreservingₗᵢEquiv_symm (hf : MeasurePreserving f μ
     ⇑((compMeasurePreservingₗᵢEquiv 𝕜 hf hg hfg).symm x) =ᵐ[μb] ⇑x ∘ g := by
   rw [compMeasurePreservingₗᵢEquiv_symm_apply]
   exact coeFn_compMeasurePreserving x hg
+
+/-- Precomposition by a map that is almost everywhere the identity is the identity of `Lp`. -/
+theorem compMeasurePreservingₗᵢEquiv_eq_refl {f g : α → α} (hf : MeasurePreserving f μ μ)
+    (hg : MeasurePreserving g μ μ) (hfg : f ∘ g =ᵐ[μ] id) (hid : f =ᵐ[μ] id) :
+    compMeasurePreservingₗᵢEquiv (E := E) (p := p) 𝕜 hf hg hfg = .refl 𝕜 _ :=
+  LinearIsometryEquiv.ext fun x ↦ by
+    rw [compMeasurePreservingₗᵢEquiv_apply, compMeasurePreserving_congr hf (.id μ) hid,
+      compMeasurePreserving_id_apply, LinearIsometryEquiv.coe_refl, id_eq]
+
+/-- Precomposition by `f` and then by `f'` is precomposition by any map almost everywhere equal
+to `f ∘ f'`. -/
+theorem compMeasurePreservingₗᵢEquiv_trans {γ : Type*} [MeasurableSpace γ] {μc : Measure γ}
+    {f' : γ → α} {g' : α → γ} {f'' : γ → β} {g'' : β → γ} (hf : MeasurePreserving f μ μb)
+    (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id) (hf' : MeasurePreserving f' μc μ)
+    (hg' : MeasurePreserving g' μ μc) (hfg' : f' ∘ g' =ᵐ[μ] id)
+    (hf'' : MeasurePreserving f'' μc μb) (hg'' : MeasurePreserving g'' μb μc)
+    (hfg'' : f'' ∘ g'' =ᵐ[μb] id) (h : f'' =ᵐ[μc] f ∘ f') :
+    (compMeasurePreservingₗᵢEquiv (E := E) (p := p) 𝕜 hf hg hfg).trans
+        (compMeasurePreservingₗᵢEquiv 𝕜 hf' hg' hfg') =
+      compMeasurePreservingₗᵢEquiv 𝕜 hf'' hg'' hfg'' :=
+  LinearIsometryEquiv.ext fun x ↦ by
+    rw [LinearIsometryEquiv.trans_apply, compMeasurePreservingₗᵢEquiv_apply,
+      compMeasurePreservingₗᵢEquiv_apply, compMeasurePreservingₗᵢEquiv_apply,
+      compMeasurePreserving_congr hf'' (hf.comp hf') h, compMeasurePreserving_comp_apply]
+
+/-- The inverse of precomposition by `f` is precomposition by any almost-everywhere inverse
+partner `g'` of `f` that agrees almost everywhere with `g`. -/
+theorem compMeasurePreservingₗᵢEquiv_symm {f' : α → β} {g' : β → α}
+    (hf : MeasurePreserving f μ μb) (hg : MeasurePreserving g μb μ) (hfg : f ∘ g =ᵐ[μb] id)
+    (hg' : MeasurePreserving g' μb μ) (hf' : MeasurePreserving f' μ μb) (hgf : g' ∘ f' =ᵐ[μ] id)
+    (h : g' =ᵐ[μb] g) :
+    (compMeasurePreservingₗᵢEquiv (E := E) (p := p) 𝕜 hf hg hfg).symm =
+      compMeasurePreservingₗᵢEquiv 𝕜 hg' hf' hgf :=
+  LinearIsometryEquiv.ext fun x ↦ by
+    rw [compMeasurePreservingₗᵢEquiv_symm_apply, compMeasurePreservingₗᵢEquiv_apply,
+      compMeasurePreserving_congr hg' hg h]
 
 section ContinuousMap
 
