@@ -19,19 +19,74 @@ A function on a real normed space which is bounded by `N₀`, with derivative bo
 set where the derivative bound holds, which is used between nearby points, and the bound `N₀`
 controls its oscillation between distant points (`HolderOnWith.of_le_of_dist_le`).
 
+Conversely, a Hölder bound with exponent `r > 1` forces the derivative to vanish: the increment
+`f y - f x` is `O(‖y - x‖ʳ)`, which is `o(‖y - x‖)`. So on a preconnected open set the only such
+functions are the constants, which is why Hölder exponents are taken in `(0, 1]`.
+
 ## Main declarations
 
 * `TauCeti.holderWith_of_norm_le_of_norm_fderiv_le`: on the whole space, the Hölder constant is
   `N₁ + 2 N₀`.
 * `TauCeti.holderOnWith_thickening_of_norm_fderiv_le`: if the bounds hold on an open set containing
   the `2δ`-thickening of a set `K`, the function is Hölder on the `δ`-thickening of `K`.
+* `HolderOnWith.hasFDerivAt_zero_of_one_lt`: a function `r`-Hölder near a point, with `r > 1`, has
+  derivative zero there.
+* `HolderOnWith.eq_of_one_lt`: a function `r`-Hölder on a preconnected open set, with `r > 1`, is
+  constant there.
 * `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
 -/
 
 public section
 
-open Metric Set
-open scoped NNReal
+open Filter Metric Set
+open scoped NNReal Topology
+
+section OneLt
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A function that is `r`-Hölder on a neighbourhood of `x`, with `r > 1`, has derivative zero at
+`x`: its increments are `O(‖y - x‖ʳ)`, hence `o(‖y - x‖)`. -/
+theorem HolderOnWith.hasFDerivAt_zero_of_one_lt {f : E → F} {C r : ℝ≥0} {s : Set E} {x : E}
+    (hf : HolderOnWith C r f s) (hr : 1 < r) (hs : s ∈ 𝓝 x) :
+    HasFDerivAt f (0 : E →L[𝕜] F) x := by
+  have hr' : (0 : ℝ) < r - 1 := by
+    rw [sub_pos]
+    exact_mod_cast hr
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero]
+  simp only [zero_apply, sub_zero]
+  refine Asymptotics.IsLittleO.of_bound fun ε hε ↦ ?_
+  -- The factor `C ‖h‖^(r - 1)` tends to `0` with `h`.
+  have hlim : Tendsto (fun h : E ↦ (C : ℝ) * ‖h‖ ^ ((r : ℝ) - 1)) (𝓝 0) (𝓝 0) := by
+    have h := ((continuous_norm.tendsto (0 : E)).rpow_const (p := (r : ℝ) - 1)
+      (Or.inr hr'.le)).const_mul (C : ℝ)
+    rwa [norm_zero, Real.zero_rpow hr'.ne', mul_zero] at h
+  have hs' : ∀ᶠ h : E in 𝓝 0, x + h ∈ s := by
+    have h := (continuous_const_add x).tendsto (0 : E)
+    rw [add_zero] at h
+    exact h hs
+  filter_upwards [hs', hlim.eventually (ge_mem_nhds hε)] with h hxh hC
+  calc ‖f (x + h) - f x‖ = dist (f (x + h)) (f x) := (dist_eq_norm _ _).symm
+    _ ≤ C * dist (x + h) x ^ (r : ℝ) := hf.dist_le hxh (mem_of_mem_nhds hs)
+    _ = C * ‖h‖ ^ ((r : ℝ) - 1) * ‖h‖ := by
+        rw [dist_eq_norm, add_sub_cancel_left, mul_assoc,
+          ← Real.rpow_add_one' (norm_nonneg h) (by linarith : (0 : ℝ) < r - 1 + 1).ne',
+          sub_add_cancel]
+    _ ≤ ε * ‖h‖ := mul_le_mul_of_nonneg_right hC (norm_nonneg h)
+
+end OneLt
+
+/-- **Hölder exponents above one.** A function that is `r`-Hölder on a preconnected open set, with
+`r > 1`, is constant there. -/
+theorem HolderOnWith.eq_of_one_lt {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} {C r : ℝ≥0} {s : Set E}
+    (hf : HolderOnWith C r f s) (hr : 1 < r) (hs : IsOpen s) (hs' : IsPreconnected s) {x y : E}
+    (hx : x ∈ s) (hy : y ∈ s) : f x = f y :=
+  hs.is_const_of_fderiv_eq_zero (𝕜 := ℝ) hs'
+    (fun _ hz ↦ (hf.hasFDerivAt_zero_of_one_lt hr (hs.mem_nhds hz)).differentiableAt
+      |>.differentiableWithinAt)
+    (fun _ hz ↦ (hf.hasFDerivAt_zero_of_one_lt hr (hs.mem_nhds hz)).fderiv) hx hy
 
 namespace TauCeti
 
