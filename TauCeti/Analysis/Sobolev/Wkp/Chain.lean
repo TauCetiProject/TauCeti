@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 
 /-!
 # Iterated weak gradient chains of `W^{k,p}`
@@ -29,6 +30,9 @@ of `Wkp` converge.
   graph norm.
 * `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto_of_chain`: convergence in `Wkp` gives `Lᵖ`
   convergence of the fields of weak derivative chains of the values.
+* `TauCeti.Wkp.ae_eq_of_hasWeakFDerivOn_chain`: weak derivative chains of a function are unique.
+* `TauCeti.Wkp.exists_hasWeakFDerivOn_chain_of_locally`: weak derivative chains defined near every
+  point glue to one on the whole domain.
 
 ## References
 
@@ -196,6 +200,69 @@ theorem tendsto_eLpNorm_sub_of_tendsto_of_chain (n : ℕ) {α : Type*} {l : Filt
   have h0 : Filter.Tendsto (fun a => ENNReal.ofReal ‖y a - w‖) l (nhds 0) := by
     simpa using ENNReal.tendsto_ofReal (tendsto_iff_norm_sub_tendsto_zero.1 hyw)
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h0 (fun _ => bot_le) hle
+
+omit [mu.IsAddHaarMeasure] in
+/-- **Weak derivative chains are unique.** Two chains of iterated weak gradients on `Ω` of the same
+function agree almost everywhere on `Ω`. -/
+theorem ae_eq_of_hasWeakFDerivOn_chain (n : ℕ) {f : E → ℝ}
+    {G H : (i : ℕ) → E → IteratedGradient E i}
+    (hG0 : HasWeakFDerivOn mu Omega f fun x => innerSL ℝ (G 0 x))
+    (hG : ∀ i < n, HasWeakFDerivOn mu Omega (G i) (G (i + 1)))
+    (hH0 : HasWeakFDerivOn mu Omega f fun x => innerSL ℝ (H 0 x))
+    (hH : ∀ i < n, HasWeakFDerivOn mu Omega (H i) (H (i + 1))) :
+    ∀ i ≤ n, G i =ᵐ[mu.restrict Omega] H i
+  | 0, _ => by
+    filter_upwards [hG0.ae_eq hH0] with x hx
+    exact innerSL_inj.1 hx
+  | i + 1, hi =>
+    ((hG i (by omega)).congr_ae
+      (ae_eq_of_hasWeakFDerivOn_chain n hG0 hG hH0 hH i (by omega))).ae_eq (hH i (by omega))
+
+omit [mu.IsAddHaarMeasure] in
+/-- **Weak derivative chains glue.** If every point of `Ω` has an open neighbourhood on which `f`
+has a chain `H 0, …, H n` of iterated weak gradients, then `f` has such a chain on all of `Ω`.
+The local chains need not agree anywhere: by uniqueness they agree almost everywhere on overlaps,
+and each field is glued from them with `TauCeti.exists_hasWeakFDerivOn_iff_locally`. -/
+theorem exists_hasWeakFDerivOn_chain_of_locally (n : ℕ) {f : E → ℝ}
+    (h : ∀ x ∈ Omega, ∃ W : Opens E, x ∈ W ∧ ∃ H : (i : ℕ) → E → IteratedGradient E i,
+      HasWeakFDerivOn mu W f (fun y => innerSL ℝ (H 0 y)) ∧
+        ∀ i < n, HasWeakFDerivOn mu W (H i) (H (i + 1))) :
+    ∃ G : (i : ℕ) → E → IteratedGradient E i,
+      HasWeakFDerivOn mu Omega f (fun x => innerSL ℝ (G 0 x)) ∧
+        ∀ i < n, HasWeakFDerivOn mu Omega (G i) (G (i + 1)) := by
+  induction n with
+  | zero =>
+    obtain ⟨D, hD⟩ := exists_hasWeakFDerivOn_iff_locally.2 fun x hx => by
+      obtain ⟨W, hxW, H, hH0, -⟩ := h x hx
+      exact ⟨W, hxW, _, hH0⟩
+    refine ⟨Function.update (fun _ _ => 0) 0 fun x => (InnerProductSpace.toDual ℝ E).symm (D x),
+      ?_, fun i hi => absurd hi (Nat.not_lt_zero i)⟩
+    refine hD.congr_ae_deriv (Filter.Eventually.of_forall fun x => ?_)
+    ext v
+    simp only [Function.update_self, innerSL_apply_apply, InnerProductSpace.toDual_symm_apply]
+  | succ n ih =>
+    obtain ⟨G, hG0, hG⟩ := ih fun x hx => by
+      obtain ⟨W, hxW, H, hH0, hH⟩ := h x hx
+      exact ⟨W, hxW, H, hH0, fun i hi => hH i (by omega)⟩
+    -- Near each point the top field `G n` agrees with that of a local chain, which has a weak
+    -- derivative there.
+    obtain ⟨D, hD⟩ := exists_hasWeakFDerivOn_iff_locally.2 fun x hx => by
+      obtain ⟨W, hxW, H, hH0, hH⟩ := h x hx
+      have hle : W ⊓ Omega ≤ W := inf_le_left
+      have hle' : W ⊓ Omega ≤ Omega := inf_le_right
+      have hGH := ae_eq_of_hasWeakFDerivOn_chain n (hG0.mono hle')
+        (fun i hi => (hG i hi).mono hle') (hH0.mono hle) (fun i hi => (hH i (by omega)).mono hle)
+        n le_rfl
+      exact ⟨W ⊓ Omega, ⟨hxW, hx⟩, _, ((hH n (by omega)).mono hle).congr_ae hGH.symm⟩
+    refine ⟨Function.update G (n + 1) D, ?_, fun i hi => ?_⟩
+    · rw [Function.update_of_ne (Nat.succ_ne_zero n).symm]
+      exact hG0
+    · rw [Function.update_of_ne (by omega)]
+      rcases Nat.lt_succ_iff_lt_or_eq.1 hi with hi | rfl
+      · rw [Function.update_of_ne (by omega)]
+        exact hG i hi
+      · rw [Function.update_self]
+        exact hD
 
 end Wkp
 
