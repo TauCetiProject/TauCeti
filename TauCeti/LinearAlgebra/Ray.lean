@@ -25,7 +25,9 @@ formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
 Negating a ray twice gives it back (`Module.Ray.neg_neg`), in a form that `rw` and `simp` find on
 orientations. Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`),
 complementing Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear
-equivalence (`Module.Ray.map_units_smul`). Over a linearly ordered ring, any map of rays
+equivalence (`Module.Ray.map_units_smul`). The sign comparing two signed copies `(-1) ^ m • x` and
+`(-1) ^ n • x` of a ray is `(-1) ^ m * (-1) ^ n` (`Module.Ray.ite_neg_one_pow_smul_eq`,
+`Module.Ray.ite_neg_one_pow_smul_eq_self`). Over a linearly ordered ring, any map of rays
 commuting with negation also commutes with scaling by units (`Module.Ray.units_smul_of_map_neg`).
 
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
@@ -127,6 +129,23 @@ theorem Module.Ray.neg_neg (v : Module.Ray R M) : - -v = v :=
 theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(u • v) := by
   induction v using Module.Ray.ind with | h v hv =>
     simp only [neg_rayOfNeZero, smul_rayOfNeZero, Units.smul_def, smul_neg]
+
+open Classical in
+/-- The sign comparing two signed copies `(-1) ^ m • x` and `(-1) ^ n • x` of a ray is
+`(-1) ^ m * (-1) ^ n`. -/
+theorem Module.Ray.ite_neg_one_pow_smul_eq [IsDomain R] [IsTorsionFree R M] (x : Module.Ray R M)
+    (m n : ℕ) :
+    (if (-1 : Rˣ) ^ m • x = (-1 : Rˣ) ^ n • x then (1 : ℤ) else -1) = (-1) ^ m * (-1) ^ n := by
+  rcases Nat.even_or_odd m with hm | hm <;> rcases Nat.even_or_odd n with hn | hn <;>
+    simp [hm.neg_one_pow, hn.neg_one_pow, Module.Ray.neg_units_smul, Module.Ray.ne_neg_self,
+      (Module.Ray.ne_neg_self x).symm]
+
+open Classical in
+/-- The sign comparing a signed copy `(-1) ^ n • x` of a ray with `x` is `(-1) ^ n`. -/
+theorem Module.Ray.ite_neg_one_pow_smul_eq_self [IsDomain R] [IsTorsionFree R M]
+    (x : Module.Ray R M) (n : ℕ) :
+    (if (-1 : Rˣ) ^ n • x = x then (1 : ℤ) else -1) = (-1) ^ n := by
+  simpa using ite_neg_one_pow_smul_eq x n 0
 
 end Neg
 

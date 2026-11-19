@@ -85,9 +85,9 @@ The rubrics are **adversarial**, including instructions to find mis-formalizatio
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
 Content CI builds and audits the mathematics without running regression suites for
-the CI machinery. **Infrastructure tests** runs those suites separately, only when
-`scripts/` or `.github/` changes. Its results do not gate content builds, merge
-statuses, lint, or cache publication.
+the CI machinery. Those suites live with the shared tooling and run in
+[TauCetiTools](https://github.com/TauCetiProject/TauCetiTools) CI. Their results do not
+gate content builds, merge statuses, lint, or cache publication.
 
 Operators can [enable, disable, or resize Namespace runners](scripts/namespace-controls.md)
 through Actions variables, without a source PR or staging batch.
@@ -104,7 +104,7 @@ Other users follow the existing review policy. See the
 [bors rollout and behavior documentation](https://github.com/TauCetiProject/bors-ng/blob/master/deploy/manual-approval.md).
 
 Stacked PRs are prohibited, including drafts: land prerequisites first, then rebase and
-submit a standalone diff. The trusted [no-stacking policy](scripts/stack-policy.md)
+submit a standalone diff. The trusted [no-stacking policy](https://github.com/TauCetiProject/TauCetiTools/blob/main/tauceti_tools/assets/scripts/stack-policy.md)
 checks current source evidence, comments and closes confirmed stacks, and blocks their
 bors admission. Keep/hold/human labels do not exempt stacks. Reviewers should follow
 the same policy; shared files, imports and roadmap areas alone do not establish stacking.
@@ -245,9 +245,9 @@ lake lint
 
 `lake test` runs the inexpensive local axiom checks on changed modules and the module-system
 check. `lake lint` runs source guards, source style, shim checks, changed-module environment
-and documentation lint, and PR CI's diff guards: review size (2000 added lines, 2000 removed
+and documentation lint, and PR CI's diff guards: review size (3000 added lines, 2000 removed
 lines, 2000 files; a Lake-pin bump is exempt from the line caps), new `.lean` files of at most
-1000 lines, and changes only under `TauCeti/`, `TauCeti.lean`, the Lake pins and
+1250 lines, and changes only under `TauCeti/`, `TauCeti.lean`, the Lake pins and
 `docbuild/docs/references.bib`. They calculate scope offline from local Git history, against the
 merge base with the canonical `main`, including edits and new library files; untracked files
 outside `TauCeti/` are ignored. `lake lint -- --base <rev>` measures from another base. Full

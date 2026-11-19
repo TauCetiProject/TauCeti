@@ -62,7 +62,8 @@ theorem map_matrix_mul {l m n : Type*} [Fintype m] (M : Matrix l m A) (N : Matri
 
 end CommSemiring
 
-variable [CommRing A] [Algebra R A] (D : Derivation R A A) {n : Type*} [Fintype n] [DecidableEq n]
+variable [CommRing A] [Algebra R A] (D : Derivation R A A)
+  {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- If a derivation acts on a square matrix `M` as the commutator with `B`, then it acts on every
 power of `M` as the commutator with `B`. -/
@@ -86,8 +87,8 @@ theorem trace_pow_eq_zero_of_map_eq_mul_sub_mul {M B : Matrix n n A}
 
 section Basis
 
-variable {S : Type*} [CommRing S] [Algebra A S] [Algebra R S] (D' : Derivation R S S)
-  (hD : ∀ a, D' (algebraMap A S a) = algebraMap A S (D a))
+variable {R' S : Type*} [CommSemiring R'] [CommRing S] [Algebra A S] [Algebra R' S]
+  (D' : Derivation R' S S) (hD : ∀ a, D' (algebraMap A S a) = algebraMap A S (D a))
 
 include hD
 
