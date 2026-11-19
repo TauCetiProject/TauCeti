@@ -41,7 +41,9 @@ Conley–Zehnder index.
 * **The same symplectic path.** In these two frames the linearized flows have the same matrix at
   every time and every base point, the realification of `e^{-it}`
   (`TauCeti.toMatrix_fderiv_hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two`,
-  `TauCeti.toMatrix_fderiv_hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two`). So, for
+  `TauCeti.toMatrix_fderiv_hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two`): a linearized
+  flow transported along a linear symplectomorphism has, in the transported frame, the same matrix
+  (`TauCeti.SymplecticForm.IsSymplectomorphism.toMatrix_fderiv_hamiltonianFlow`). So, for
   `t ∈ [0, 1]`, they are the same path `TauCeti.realCotangentRotationPath` of symplectic
   matrices, and its Conley–Zehnder index is `1`
   (`TauCeti.conleyZehnderIndex_realCotangentRotationPath`), as for the clockwise rotation path
@@ -418,11 +420,21 @@ theorem toMatrix_fderiv_hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two {K :
           (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) hX t) x) =
       ((realCotangentRotationPath t : GL (Fin 1 ⊕ Fin 1) ℝ) :
         Matrix (Fin 1 ⊕ Fin 1) (Fin 1 ⊕ Fin 1) ℝ) := by
-  rw [fderiv_hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two, coe_realCotangentRotationPath,
-    ← toMatrix_realCotangentRotation]
-  -- `ν` is an involution, so conjugating by it is the change from the frame `(∂_q, ∂_p)` to the
-  -- frame `(∂_q, -∂_p)`.
-  ext (i | i) j <;> fin_cases i <;> simp [LinearMap.toMatrix_apply]
+  obtain ⟨K₁, hX₁⟩ :=
+    exists_lipschitzWith_hamiltonianVectorField_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two
+  have hX₁' : LipschitzWith K₁
+      ((strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
+        ((-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) ∘
+          (cotangentFiberNeg (V := ℝ)).toLinearEquiv)) := by
+    rwa [ContinuousLinearEquiv.coe_toLinearEquiv, Pi.neg_comp,
+      real_sq_add_momentum_sq_div_two_comp_cotangentFiberNeg]
+  -- Transport along `ν` moves the frame `(∂_q, ∂_p)` to `(∂_q, -∂_p)` with the dynamics.
+  have h := isSymplectomorphism_cotangentFiberNeg.toMatrix_fderiv_hamiltonianFlow
+    realCotangentBasis _ hX₁' hX t (cotangentFiberNeg.symm x)
+  simp only [ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.apply_symm_apply,
+    Pi.neg_comp, real_sq_add_momentum_sq_div_two_comp_cotangentFiberNeg] at h
+  rw [realCotangentNegBasis, h]
+  exact toMatrix_fderiv_hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two _ t _
 
 /-- **The Conley–Zehnder index of the harmonic oscillator.** The linearized flow
 `realCotangentRotationPath` of the harmonic oscillator on `T*ℝ`, the same path of symplectic
