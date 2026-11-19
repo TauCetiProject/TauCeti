@@ -247,7 +247,7 @@ theorem coe_twoFieldEquatorsFiberHomeomorph_symm_apply
 
 variable (u v) in
 /-- The projection `(x, q) ↦ x` of the space of equators, as a morphism of `TopCat`. -/
-@[expose] def twoFieldEquatorsProj :
+def twoFieldEquatorsProj :
     _root_.TopCat.of (twoFieldEquators u v) ⟶ _root_.TopCat.of (sphere (0 : E) 1) :=
   _root_.TopCat.ofHom (ContinuousMap.fst.comp (ContinuousMap.subtypeVal (twoFieldEquators u v)))
 

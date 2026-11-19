@@ -163,6 +163,13 @@ private theorem nontrivial_singularHomology_equatorProj_fiber {n : ℕ} (hE : fi
   rw [hrank]
   simp
 
+variable (u v) in
+/-- The projection `TauCeti.twoFieldEquatorsProj` is `TopCat.ofHom` of the first projection. -/
+private theorem twoFieldEquatorsProj_eq :
+    twoFieldEquatorsProj u v =
+      TopCat.ofHom (ContinuousMap.fst.comp (ContinuousMap.subtypeVal (twoFieldEquators u v))) :=
+  TopCat.hom_ext hom_twoFieldEquatorsProj
+
 variable (hu : Continuous u) (hv : Continuous v)
 
 include h hu hv in
@@ -190,7 +197,8 @@ private theorem isZero_singularHomology_equatorProj_compl {n : ℕ} (hE : finran
   have hF := isZero_singularHomology_equatorProj_fiber h hE (by omega) (-x) (ModuleCat.of ℤ ℤ)
     (q := 2 * n - 4) (by omega)
   have hdeg : 2 * n - 4 + 1 = 2 * n - 3 := by omega
-  rw [hdeg] at hF
+  rw [hdeg, twoFieldEquatorsProj_eq] at hF
+  rw [twoFieldEquatorsProj_eq]
   have hZ := hF.of_iso (asIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (2 * n - 3)).obj
     (ModuleCat.of ℤ ℤ)).map ((ContinuousMap.fst.comp
       (ContinuousMap.subtypeVal (twoFieldEquators u v))).preimageInclusion hx))).symm
@@ -218,7 +226,8 @@ private abbrev twoFieldSphereFamilyHom :
 private theorem twoFieldSphereFamilyHom_comp :
     twoFieldSphereFamilyHom h hu hv ≫ TopCat.ofHom (mappingSpaceEval Sphere2.north) =
       twoFieldEquatorsProj u v :=
-  TopCat.hom_ext (mappingSpaceEval_comp_twoFieldSphereFamily h hu hv)
+  TopCat.hom_ext ((mappingSpaceEval_comp_twoFieldSphereFamily h hu hv).trans
+    hom_twoFieldEquatorsProj.symm)
 
 /-- Over `x`, the family of two-spheres is the family of based two-spheres
 `TauCeti.twoFieldSphereFamilyFiber`. -/
@@ -268,8 +277,10 @@ theorem isAbundantWithTwoSpheres_sphere_of_orthonormal {n : ℕ} (hE : finrank �
       rw [stereographic'_source]
       simpa using ne_neg_of_mem_unit_sphere ℝ x⟩
   obtain ⟨ε, hε₀, hε⟩ := Metric.isOpen_iff.1 e.open_target (e x) (e.map_source hb)
-  have hπ := TopCat.mem_serreFibrations_twoFieldEquators hu hv
-    fun y ↦ (orthonormal_vecCons_iff.1 (h y)).2.2
+  have hπ : TopCat.serreFibrations (twoFieldEquatorsProj u v) := by
+    rw [twoFieldEquatorsProj_eq]
+    exact TopCat.mem_serreFibrations_twoFieldEquators hu hv
+      fun y ↦ (orthonormal_vecCons_iff.1 (h y)).2.2
   have hdim : n - 2 + finrank ℝ (EuclideanSpace ℝ (Fin n)) = 2 * n - 2 := by
     simp only [finrank_euclideanSpace_fin]
     omega
