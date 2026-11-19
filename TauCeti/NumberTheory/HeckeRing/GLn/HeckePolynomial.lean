@@ -271,15 +271,22 @@ theorem glnHeckePolynomial_pow_mul_eq_scaleRoots {q : A} {T : Fin (n + 1) → A}
     ring
   · rw [coeff_glnHeckePolynomial_of_lt q _ hk, coeff_glnHeckePolynomial_of_lt q _ hk, zero_mul]
 
-/-- The exponent bookkeeping of the inversion formula, for `i + m = n`:
-`n(n-1)/2 + i(i-1)/2 + (n-1)m = n(n-1) + m(m-1)/2`. -/
-private theorem choose_two_add_choose_two_add_mul {i m : ℕ} :
-    (i + m).choose 2 + i.choose 2 + (i + m - 1) * m = (i + m) * (i + m - 1) + m.choose 2 := by
-  rcases Nat.eq_zero_or_pos (i + m) with h | h
+/-- The exponent bookkeeping of the inversion formula, for `n = m + i`:
+`n(n-1)/2 + i(i-1)/2 = (n-1)i + m(m-1)/2`. -/
+private theorem choose_two_add_choose_two {m i : ℕ} (hn : n = m + i) :
+    n.choose 2 + i.choose 2 = (n - 1) * i + m.choose 2 := by
+  subst hn
+  rcases Nat.eq_zero_or_pos (m + i) with h | h
   · simp [Nat.eq_zero_of_add_eq_zero_left h, Nat.eq_zero_of_add_eq_zero_right h]
   qify [h]
   push_cast [Nat.cast_choose_two]
   ring
+
+/-- The sign bookkeeping of the inversion formula, for `n = m + i`:
+`(-1)^n (-1)^m = (-1)^i`. -/
+private theorem neg_one_pow_mul_neg_one_pow {m i : ℕ} (hn : n = m + i) :
+    (-1 : A) ^ n * (-1) ^ m = (-1) ^ i := by
+  rw [hn, pow_add, mul_right_comm, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
 
 /-- **Inverting the Hecke operators**, integrally: replacing each `Tᵢ` by `T_{n-i}` and
 substituting `q^{n-1} X` for `X` turns the Hecke polynomial, after scaling by
@@ -300,14 +307,11 @@ theorem C_mul_glnHeckePolynomial_rev_comp (q : A) (T : Fin (n + 1) → A) :
     show n - i = m by omega]
   have hq : q ^ n.choose 2 * q ^ m.choose 2 * (q ^ (n - 1)) ^ (i : ℕ) =
       q ^ (n * (n - 1)) * q ^ (i : ℕ).choose 2 := by
-    generalize (i : ℕ) = j at hm ⊢
-    subst hm
-    rw [← pow_mul, ← pow_add, ← pow_add, ← pow_add, choose_two_add_choose_two_add_mul]
-  have hs : (-1 : A) ^ n * (-1) ^ m = (-1) ^ (i : ℕ) := by
-    generalize (i : ℕ) = j at hm ⊢
-    subst hm
-    rw [← pow_add, show m + j + m = 2 * m + j by ring, pow_add, pow_mul]
-    simp
+    rw [← pow_mul, ← pow_add, ← pow_add, ← pow_add,
+      choose_two_add_choose_two (hm.trans (add_comm m i)), add_right_comm, ← mul_add, ← hm,
+      mul_comm]
+  have hs : (-1 : A) ^ n * (-1) ^ m = (-1) ^ (i : ℕ) :=
+    neg_one_pow_mul_neg_one_pow hm
   linear_combination T i * (q ^ n.choose 2 * q ^ m.choose 2 * (q ^ (n - 1)) ^ (i : ℕ) * hs +
     (-1) ^ (i : ℕ) * hq)
 
@@ -328,16 +332,6 @@ theorem C_coeff_zero_mul_glnHeckePolynomial_rev_mul_comp (q : A) {T : Fin (n + 1
   linear_combination ((glnHeckePolynomial n q fun i => T i.rev).comp (C (q ^ (n - 1)) * X)) *
     C ((-1) ^ n) * C (q ^ n.choose 2) * hu'
 
-/-- The exponent bookkeeping of the inversion coefficients, for `m + i = n`:
-`n(n-1)/2 + i(i-1)/2 = (n-1)i + m(m-1)/2`. -/
-private theorem choose_two_add_choose_two {m i : ℕ} :
-    (m + i).choose 2 + i.choose 2 = (m + i - 1) * i + m.choose 2 := by
-  rcases Nat.eq_zero_or_pos (m + i) with h | h
-  · simp [Nat.eq_zero_of_add_eq_zero_left h, Nat.eq_zero_of_add_eq_zero_right h]
-  qify [h]
-  push_cast [Nat.cast_choose_two]
-  ring
-
 /-- **Inverting the Hecke operators**, coefficientwise: if `u` inverts `Tₙ` and `ι(P)` is the
 Hecke polynomial for the generator rule `Tᵢ ↦ T_{n-i} / Tₙ`, then
 `P(0) · [X^{n-i}] ι(P) = q^{(n-1)i} · [X^i] P`.  No hypothesis on `q` is needed. -/
@@ -350,14 +344,9 @@ theorem coeff_zero_mul_coeff_glnHeckePolynomial_rev_mul (q : A) {T : Fin (n + 1)
   obtain ⟨m, hm⟩ : ∃ m, n = m + i := ⟨n - i, by omega⟩
   rw [show n - i = m by omega]
   have hq : q ^ n.choose 2 * q ^ (i : ℕ).choose 2 = q ^ ((n - 1) * i) * q ^ m.choose 2 := by
-    generalize (i : ℕ) = j at hm ⊢
-    subst hm
-    rw [← pow_add, ← pow_add, choose_two_add_choose_two]
-  have hs : (-1 : A) ^ n * (-1) ^ (i : ℕ) = (-1) ^ m := by
-    generalize (i : ℕ) = j at hm ⊢
-    subst hm
-    rw [← pow_add, show m + j + j = m + 2 * j by ring, pow_add, pow_mul]
-    simp
+    rw [← pow_add, ← pow_add, choose_two_add_choose_two hm]
+  have hs : (-1 : A) ^ n * (-1) ^ (i : ℕ) = (-1) ^ m :=
+    neg_one_pow_mul_neg_one_pow (hm.trans (add_comm m i))
   linear_combination
     (-1) ^ n * (-1) ^ (i : ℕ) * q ^ n.choose 2 * q ^ (i : ℕ).choose 2 * T i.rev * hu +
       T i.rev * (q ^ n.choose 2 * q ^ (i : ℕ).choose 2 * hs + (-1) ^ m * hq)
