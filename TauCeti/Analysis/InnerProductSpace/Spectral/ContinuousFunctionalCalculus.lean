@@ -49,7 +49,8 @@ with closed range (`IsSelfAdjoint.exists_pos_spectrum_inter_Ioo_subset_of_isClos
   spectrum only at `0` is the projection onto the kernel.
 * `IsSelfAdjoint.eventually_rank_range_cfc_indicator_eq` and
   `IsPreconnected.rank_range_cfc_indicator_eq`: the rank of the spectral projection is locally
-  constant, and constant along paths.
+  constant, and constant along paths; `IsPreconnected.finrank_range_cfc_indicator_eq` is the
+  `Module.finrank` form of the latter.
 
 ## References
 
@@ -186,5 +187,17 @@ theorem IsPreconnected.rank_range_cfc_indicator_eq {X : Type*} [TopologicalSpace
         Eventually.of_forall fun w ↦ hsa w w.2⟩
     exact hz.eventually ((hsa z z.2).eventually_rank_range_cfc_indicator_eq (hΩ z z.2))
   exact hg.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
+
+/-- The finite rank of the spectral projection for a set `Ω` is constant along a continuous path of
+self-adjoint operators over a preconnected parameter set, as long as no spectrum along the path
+meets the frontier of `Ω`. -/
+theorem IsPreconnected.finrank_range_cfc_indicator_eq {X : Type*} [TopologicalSpace X]
+    {s : Set X} (hs : IsPreconnected s) {A : X → H →L[𝕜] H} (hA : ContinuousOn A s)
+    (hsa : ∀ x ∈ s, IsSelfAdjoint (A x)) {Ω : Set ℝ}
+    (hΩ : ∀ x ∈ s, Disjoint (frontier Ω) (spectrum ℝ (A x))) {x y : X} (hx : x ∈ s)
+    (hy : y ∈ s) :
+    Module.finrank 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) (A x)).range =
+      Module.finrank 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) (A y)).range := by
+  rw [Module.finrank, Module.finrank, hs.rank_range_cfc_indicator_eq hA hsa hΩ hx hy]
 
 end Rank

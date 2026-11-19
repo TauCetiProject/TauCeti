@@ -48,6 +48,7 @@ line.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
+* `Matrix.star_mulVec_eq_map_star_mulVec`: `star (M *ᵥ v) = M.map star *ᵥ star v`.
 -/
 
 public section
@@ -119,6 +120,13 @@ theorem comp_smul_dotProduct_mulVec_smul {R : Type*} [CommSemiring R] (Q : Matri
     (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
   rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
     smul_eq_mul, mul_assoc]
+
+/-- Conjugating a matrix-vector product conjugates the matrix entrywise and the vector:
+`star (M *ᵥ v) = M.map star *ᵥ star v`. -/
+theorem star_mulVec_eq_map_star_mulVec {R : Type*} [CommSemiring R] [StarRing R]
+    (M : Matrix m n R) (v : n → R) : star (M *ᵥ v) = M.map star *ᵥ star v := by
+  ext i
+  simp [mulVec, dotProduct]
 
 section OrderedSemiring
 

@@ -245,9 +245,9 @@ lake lint
 
 `lake test` runs the inexpensive local axiom checks on changed modules and the module-system
 check. `lake lint` runs source guards, source style, shim checks, changed-module environment
-and documentation lint, and PR CI's diff guards: review size (2000 added lines, 2000 removed
+and documentation lint, and PR CI's diff guards: review size (3000 added lines, 2000 removed
 lines, 2000 files; a Lake-pin bump is exempt from the line caps), new `.lean` files of at most
-1000 lines, and changes only under `TauCeti/`, `TauCeti.lean`, the Lake pins and
+1250 lines, and changes only under `TauCeti/`, `TauCeti.lean`, the Lake pins and
 `docbuild/docs/references.bib`. They calculate scope offline from local Git history, against the
 merge base with the canonical `main`, including edits and new library files; untracked files
 outside `TauCeti/` are ignored. `lake lint -- --base <rev>` measures from another base. Full
