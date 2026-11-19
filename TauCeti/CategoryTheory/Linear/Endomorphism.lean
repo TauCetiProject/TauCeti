@@ -138,16 +138,12 @@ is invertible on every cokernel of `f`. -/
 lemma Limits.CokernelCofork.IsColimit.isIso_smul_id_pt {X Y : C} {f : X ⟶ Y}
     {c : Limits.CokernelCofork f} (hc : Limits.IsColimit c) (r : R) [IsIso (r • 𝟙 X)]
     [IsIso (r • 𝟙 Y)] : IsIso (r • 𝟙 c.pt) := by
-  -- The inverse is induced by `inv (r • 𝟙 Y)`, which commutes with `f`.
-  obtain ⟨g, hg⟩ := Limits.CokernelCofork.IsColimit.desc' hc (inv (r • 𝟙 Y) ≫ c.π) (by
-    rw [← Category.assoc, Linear.comp_inv_smul_id, Category.assoc, Limits.CokernelCofork.condition,
-      Limits.comp_zero])
-  have hπ : c.π ≫ (r • 𝟙 c.pt) = (r • 𝟙 Y) ≫ c.π := by simp
-  refine ⟨g, Limits.Cofork.IsColimit.hom_ext hc ?_, Limits.Cofork.IsColimit.hom_ext hc ?_⟩
-  · rw [← Category.assoc, hπ, Category.assoc, hg, ← Category.assoc, IsIso.hom_inv_id,
-      Category.id_comp, Category.comp_id]
-  · rw [← Category.assoc, hg, Category.assoc, hπ, ← Category.assoc, IsIso.inv_hom_id,
-      Category.id_comp, Category.comp_id]
+  -- Multiplication by `r` on the arrow `f` induces multiplication by `r` on the cokernel.
+  let e := Limits.CokernelCofork.mapIsoOfIsColimit hc hc
+    (Arrow.isoMk (asIso (r • 𝟙 X)) (asIso (r • 𝟙 Y)) (by simp))
+  have he : e.hom = r • 𝟙 c.pt := Limits.Cofork.IsColimit.hom_ext hc (by simp [e])
+  rw [← he]
+  infer_instance
 
 end CategoryTheory
 

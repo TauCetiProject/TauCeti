@@ -57,6 +57,8 @@ Neither normality nor a separation axiom is needed.
   fibres.
 * `IsQuotientCoveringMap.image_smul_set`: the quotient covering map has the same image on a set
   and on its translates.
+* `IsQuotientCoveringMap.mapsTo_smul_preimage`: the preimage of a set under the quotient covering
+  map is invariant under the action.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
@@ -138,6 +140,11 @@ theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap 
     (s : Set E) : q '' (g • s) = q '' s := by
   rw [← Set.image_smul, Set.image_image]
   simp_rw [hq.map_smul]
+
+/-- The preimage of a set under the quotient covering map is invariant under the action. -/
+theorem _root_.IsQuotientCoveringMap.mapsTo_smul_preimage (hq : IsQuotientCoveringMap q G)
+    (s : Set X) (g : G) : Set.MapsTo (g • ·) (q ⁻¹' s) (q ⁻¹' s) :=
+  fun e he ↦ by rwa [Set.mem_preimage, hq.map_smul]
 
 /-- **Openness in a quotient covering map is detected on a single translate.** A subset `W` of the
 image of `U` is open as soon as the part of its preimage lying in `U` is open, because the whole

@@ -149,7 +149,7 @@ def pairTransferπ [Finite G] :
     refine (Category.id_comp _).trans ?_
     exact (hG.isCoveringMap.singularPairTransfer_comp_singularChainComplexMap_of_comp_eq
       hG.finite_fiber A R (f := TopCat.ofHom ⟨(g • ·), hG.continuous_const_smul g⟩)
-      (MulAction.bijective g) (by ext e; exact hG.map_smul g) _).symm
+      (MulAction.bijective g) (by ext e; exact hG.map_smul g)).symm
 
 /-- Each component of `hG.pairTransferπ A R` is the relative transfer
 `C(B, A; R) ⟶ C(E, p⁻¹ A; R)`. -/
