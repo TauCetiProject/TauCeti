@@ -18,10 +18,10 @@ import TauCeti.Analysis.Calculus.TangentCone.Basic
 
 Let `V` be a real inner product space, `J : V → (V →L[ℝ] V)` an almost complex structure on `V`
 written as a matrix-valued function, and `L ⊆ V` a closed linear subspace. Consider a solution
-`u` of the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` on a half-disc `{0 ≤ im z} ∩ ball x₀ r`
-centred on the real axis, regular up to the straight edge, with the boundary condition
-`u(s) ∈ L` on that edge. Derivatives are taken within the closed upper half-plane, so
-`∂ₛu = du(1)` and `∂ₜu = du(i)` make sense on the edge.
+`u` of the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` on `{0 ≤ im z} ∩ ball x₀ r`, for `x₀` in
+the closed upper half-plane, regular up to the real axis, with the boundary condition `u(s) ∈ L`
+on the axis. Derivatives are taken within the closed upper half-plane, so `∂ₛu = du(1)` and
+`∂ₜu = du(i)` make sense on the axis.
 
 Suppose that along `L` the structure `J` maps `L` into its orthogonal complement:
 `⟪a, J(p) b⟫ = 0` for `p, a, b ∈ L`. In the boundary analysis of holomorphic curves with
@@ -39,13 +39,14 @@ first, because the derivative of `J` along `L` inherits the orthogonality from `
 Together with the interior differential inequality `Δ w ≥ -A w²`
 (`TauCeti.neg_mul_norm_fderiv_one_pow_four_le_laplacian`), the boundary mean-value inequality
 `TauCeti.pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_neg_mul_sq_le_laplacian` then
-bounds `∂ₛu` at a point of the edge by its energy on the half-disc, when that energy is small:
+bounds `∂ₛu` at `x₀` by its energy on `{0 ≤ im z} ∩ ball x₀ r`, when that energy is small:
 
 `π r² ‖∂ₛu(x₀)‖² ≤ 16 ∫_{{0 ≤ im z} ∩ ball x₀ r} ‖∂ₛu‖²`.
 
 This is the boundary counterpart of the interior estimate
-`TauCeti.pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`. As there, one smallness
-threshold works for all curves with image in a fixed compact set.
+`TauCeti.pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball`, with constants that do
+not depend on the position of `x₀` relative to the axis. As there, one smallness threshold works
+for all curves with image in a fixed compact set.
 
 ## Main results
 
@@ -156,21 +157,22 @@ theorem fderivWithin_norm_fderivWithin_one_sq_apply_I_eq_zero {U : Set ℂ} (hU 
       (hJL.mono fun q hq ↦ hq _ hξ _ hξ) hξ
   simp [hsymm, hmix, inner_add_right, hJLx _ hξ _ hacc, hdJ]
 
-/-- **The boundary mean-value inequality for `J`-holomorphic half-discs.** Let `x₀` lie on the
-real axis, and let `u : ℂ → V` be `C³` on the half-disc `{0 ≤ im y} ∩ ball x₀ r`, up to its
-straight edge, with `∂ₛu` continuous on the closed half-disc, solving the Cauchy--Riemann equation
-`∂ₜu = J(u) ∂ₛu` and mapping the edge into a closed subspace `L`. Derivatives are taken within the
-closed upper half-plane. Suppose that `J` is `C²` along `u`, squares to `-1`, and `a`, `b`, `c`
-bound the norms of `J`, of its derivative and of its second derivative along `u`, and that at the
-boundary values `J(p)` maps `L` into `Lᗮ` for `p ∈ L` nearby. If the energy over the half-disc is
-small, `16 (4ac + 2b² + 8a²b²) ∫ ‖∂ₛu‖² < π`, then every point `z` of the closed upper half-plane
-and every disc `ball z ρ` inside `ball x₀ r` satisfy
+/-- **The boundary mean-value inequality for `J`-holomorphic half-discs.** Let `x₀` lie in the
+closed upper half-plane, and let `u : ℂ → V` be `C³` on `{0 ≤ im y} ∩ ball x₀ r`, up to the real
+axis, with `∂ₛu` continuous on `{0 ≤ im y} ∩ closedBall x₀ r`, solving the Cauchy--Riemann
+equation `∂ₜu = J(u) ∂ₛu` and mapping the points of the axis into a closed subspace `L`.
+Derivatives are taken within the closed upper half-plane. Suppose that `J` is `C²` along `u`,
+squares to `-1`, and `a`, `b`, `c` bound the norms of `J`, of its derivative and of its second
+derivative along `u`, and that at the boundary values `J(p)` maps `L` into `Lᗮ` for `p ∈ L`
+nearby. If the energy over `{0 ≤ im y} ∩ ball x₀ r` is small,
+`16 (4ac + 2b² + 8a²b²) ∫ ‖∂ₛu‖² < π`, then every point `z` of the closed upper half-plane and
+every disc `ball z ρ` inside `ball x₀ r` satisfy
 
 `π ρ² ‖∂ₛu(z)‖² ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} ‖∂ₛu‖²`.
 
 In particular `π r² ‖∂ₛu(x₀)‖² ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} ‖∂ₛu‖²` at the centre. -/
 theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_ball
-    {x₀ z : ℂ} {r ρ a b c : ℝ} (hx₀ : x₀.im = 0) (hz : 0 ≤ z.im) (hρ : 0 ≤ ρ)
+    {x₀ z : ℂ} {r ρ a b c : ℝ} (hx₀ : 0 ≤ x₀.im) (hz : 0 ≤ z.im) (hρ : 0 ≤ ρ)
     (hzρ : ball z ρ ⊆ ball x₀ r) (hL : IsClosed (L : Set V))
     (hu : ContDiffOn ℝ 3 u ({z | 0 ≤ z.im} ∩ ball x₀ r))
     (hu' : ContinuousOn (fun y ↦ fderivWithin ℝ u {z | 0 ≤ z.im} y 1)
@@ -228,10 +230,10 @@ theorem pi_mul_sq_mul_norm_fderivWithin_one_sq_le_sixteen_mul_setIntegral_inter_
 /-- **The boundary mean-value inequality for `J`-holomorphic half-discs in a compact set.** Let
 `J` be `C²` on an open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`, and let
 `L` be a closed subspace such that `J(p)` maps `L` into `Lᗮ` for every `p ∈ L ∩ W`. There is an
-energy threshold `δ > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` on a half-disc
-`{0 ≤ im y} ∩ ball x₀ r` centred on the real axis that is `C³` up to the straight edge, has
-`∂ₛu` continuous on the closed half-disc, maps the edge into `L` and the half-disc into `K`, and
-has energy `∫ ‖∂ₛu‖² < δ` over it, satisfies
+energy threshold `δ > 0` such that every solution `u` of `∂ₜu = J(u) ∂ₛu` on
+`{0 ≤ im y} ∩ ball x₀ r`, for `x₀` in the closed upper half-plane, that is `C³` up to the real
+axis, has `∂ₛu` continuous on `{0 ≤ im y} ∩ closedBall x₀ r`, maps the points of the axis into
+`L` and `{0 ≤ im y} ∩ ball x₀ r` into `K`, and has energy `∫ ‖∂ₛu‖² < δ` over it, satisfies
 `π ρ² ‖∂ₛu(z)‖² ≤ 16 ∫_{{0 ≤ im y} ∩ ball x₀ r} ‖∂ₛu‖²` at every point `z` of the closed upper
 half-plane with `ball z ρ ⊆ ball x₀ r`, in particular at the centre `z = x₀` with `ρ = r`.
 Derivatives are taken within the closed upper half-plane. -/
@@ -240,7 +242,7 @@ theorem
     {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
     (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) (hL : IsClosed (L : Set V))
     (hJL : ∀ p ∈ (L : Set V) ∩ W, ∀ v ∈ L, ∀ w ∈ L, ⟪v, J p w⟫_ℝ = 0) :
-    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃x₀ z : ℂ⦄ ⦃r ρ : ℝ⦄, x₀.im = 0 → 0 ≤ z.im → 0 ≤ ρ →
+    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃x₀ z : ℂ⦄ ⦃r ρ : ℝ⦄, 0 ≤ x₀.im → 0 ≤ z.im → 0 ≤ ρ →
       ball z ρ ⊆ ball x₀ r →
       ContDiffOn ℝ 3 u ({z | 0 ≤ z.im} ∩ ball x₀ r) →
       ContinuousOn (fun y ↦ fderivWithin ℝ u {z | 0 ≤ z.im} y 1)
