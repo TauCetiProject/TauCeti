@@ -29,10 +29,8 @@ function through a monoid homomorphism from `Multiplicative A`. Its conclusion u
 multiplicative predicate, including the cases of zero inputs. Natural powers are a specialization
 through Mathlib's `powersHom`; the output's value at zero is supplied by its arithmetic carrier.
 
-For complete additivity with an `AddZeroClass` target, Mathlib's non-unital homomorphisms from
-positive naturals to `Multiplicative A` express the unnormalized positive-product law; the unital
-homomorphisms also express the normalization at one. No separate complete-additive predicate is
-introduced here.
+Complete additivity, and natural powers along an additive function, are in
+`TauCeti.NumberTheory.ArithmeticFunction.CompletelyAdditive`.
 -/
 
 public section
