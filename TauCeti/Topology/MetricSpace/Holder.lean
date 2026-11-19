@@ -37,7 +37,8 @@ be continuous.
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
+Sums, differences and finite sums of Hölder functions, also with natural multiplicities, are
+Hölder, with the sum of the constants,
 the reciprocal of a Hölder function bounded away from zero is Hölder, and a pointwise limit of
 Hölder functions with a common constant is Hölder with that constant.
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
@@ -334,6 +335,23 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
     simp_rw [Finset.sum_insert ha]
     exact (hf a (Finset.mem_insert_self a s)).add
       (ih fun i hi => hf i (Finset.mem_insert_of_mem hi)) (g := fun x => ∑ i ∈ s, f i x)
+
+/-- A sum of `cᵢ` copies of maps `fᵢ` which are `r`-Hölder with a common constant `K` is
+`r`-Hölder with constant `(∑ cᵢ) K`. -/
+theorem HolderWith.sum_nsmul {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {K r : ℝ≥0} (s : Finset ι) (c : ι → ℕ) {f : ι → X → Y}
+    (hf : ∀ i ∈ s, HolderWith K r (f i)) :
+    HolderWith ((∑ i ∈ s, c i) * K) r fun x ↦ ∑ i ∈ s, c i • f i x := by
+  have hn (n : ℕ) {i : ι} (hi : i ∈ s) : HolderWith (n * K) r fun x ↦ n • f i x := by
+    induction n with
+    | zero =>
+      simp only [Nat.cast_zero, zero_mul, zero_smul]
+      exact HolderWith.const
+    | succ n ih =>
+      simp only [succ_nsmul, Nat.cast_succ, add_mul, one_mul]
+      exact ih.add (hf i hi)
+  have h := HolderWith.sum fun i hi ↦ hn (c i) hi
+  rwa [← Finset.sum_mul, ← Nat.cast_sum] at h
 
 /-- A function that agrees on `s` with a function Hölder on `s` is Hölder on `s`, with the same
 constant and exponent. -/

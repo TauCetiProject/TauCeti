@@ -10,7 +10,8 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Normed.Operator.Holder
-import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Interpolation
+import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.FieldHolder
+import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -52,10 +53,6 @@ through a bilinear map are Hölder, which gives the Hölder field and the Hölde
 
 ## Main declarations
 
-* `TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL`: every field of order at most `k` is
-  parabolically `α`-Hölder with constant `6 ‖u‖`.
-* `TauCeti.ParabolicCkHolderSpace.holderWith_mixedDerivL_slabMk`: every field of order at most
-  `k - 1` has `(1 + α) / 2`-Hölder time slices with constant `3 ‖u‖`.
 * `ContinuousLinearMap.compParabolicCkHolder₂`: pointwise application of `B` as a continuous
   bilinear map of the parabolic Hölder spaces of order `k`.
 * `ContinuousLinearMap.compParabolicCkHolder₂_apply` and
@@ -78,161 +75,13 @@ noncomputable section
 namespace TauCeti
 
 open Set Filter Topology ParabolicSpaceTime
-open scoped NNReal ENNReal BoundedContinuousFunction
+open scoped NNReal ENNReal BoundedContinuousFunction TauCeti.Jet
 
 variable {k : ℕ} {α : ℝ≥0} {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
   [NormedAddCommGroup H] [NormedSpace ℝ H] {a b : ℝ} {hab : a < b}
 
-variable (E) in
-/-- Shortcut instance for jets of multilinear maps, keeping instance search on the spaces of
-continuous linear maps between them shallow. -/
-local instance instNormedAddCommGroupJet (X : Type*) [NormedAddCommGroup X] [NormedSpace ℝ X]
-    (m : ℕ) : NormedAddCommGroup ((i : Fin m) → E [×i]→L[ℝ] X) :=
-  inferInstance
-
-variable (E) in
-/-- Shortcut instance for scalar operations on jets of multilinear maps. -/
-local instance instNormedSpaceJet (X : Type*) [NormedAddCommGroup X] [NormedSpace ℝ X]
-    (m : ℕ) : NormedSpace ℝ ((i : Fin m) → E [×i]→L[ℝ] X) :=
-  inferInstance
-
-variable (E) in
-/-- Shortcut instance for continuous linear maps from jets to multilinear maps. -/
-local instance instNormedAddCommGroupJetCLM (X Y : Type*) [NormedAddCommGroup X]
-    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] (m n : ℕ) :
-    NormedAddCommGroup (((i : Fin m) → E [×i]→L[ℝ] X) →L[ℝ] E [×n]→L[ℝ] Y) :=
-  inferInstance
-
-variable (E) in
-/-- Shortcut instance for scalar operations on continuous linear maps from jets to multilinear
-maps. -/
-local instance instNormedSpaceJetCLM (X Y : Type*) [NormedAddCommGroup X]
-    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] (m n : ℕ) :
-    NormedSpace ℝ (((i : Fin m) → E [×i]→L[ℝ] X) →L[ℝ] E [×n]→L[ℝ] Y) :=
-  inferInstance
-
 namespace ParabolicCkHolderSpace
-
-/-! ### Hölder bounds for the fields of every order -/
-
-/-- A field of order at most `k - 2` is Lipschitz in time, with constant `‖u‖`. -/
-private theorem timeEHolderNorm_one_mixedDerivL_le (u : ParabolicCkHolderSpace k α E F hab)
-    {r m : ℕ} (h : 2 * r + m + 2 ≤ k) :
-    timeEHolderNorm 1 (mixedDerivL r m u : slab (E := E) a b → E [×m]→L[ℝ] F) ≤ ‖u‖₊ := by
-  have key := timeEHolderNorm_one_le_of_hasDerivWithinAt (a := a) (b := b)
-    (w := ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL r m u))
-    (wₜ := fun y t ↦ mixedDerivL (r + 1) m u (slabMk y (projIcc a b hab.le t))) (C := ‖u‖₊)
-    (fun y t ht ↦ by
-      simpa only [projIcc_of_mem hab.le ht] using hasDerivWithinAt_mixedDerivL u h y ⟨t, ht⟩)
-    (fun y t _ ↦ by
-      rw [coe_nnNorm]
-      exact ((mixedDerivL (r + 1) m u).norm_coe_le_norm _).trans (norm_mixedDerivL_le u _ _))
-  rwa [ParabolicC2HolderSpace.timeExtension_space_slabTime] at key
-
-/-- A field of order at most `k - 1` is Lipschitz in space, with constant `‖u‖`. -/
-private theorem spaceEHolderNorm_one_mixedDerivL_le (u : ParabolicCkHolderSpace k α E F hab)
-    {r m : ℕ} (h : 2 * r + m + 1 ≤ k) :
-    spaceEHolderNorm 1 (mixedDerivL r m u : slab (E := E) a b → E [×m]→L[ℝ] F) ≤ ‖u‖₊ := by
-  have key := spaceEHolderNorm_one_le_of_hasFDerivAt (a := a) (b := b)
-    (w := ParabolicC2HolderSpace.timeExtension hab.le (mixedDerivL r m u))
-    (w' := fun y t ↦ (mixedDerivL r (m + 1) u (slabMk y (projIcc a b hab.le t))).curryLeft)
-    (C := ‖u‖₊)
-    (fun t ht y ↦ by
-      simpa only [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab.le ht] using
-        hasFDerivAt_mixedDerivL u h ⟨t, ht⟩ y)
-    (fun y t _ ↦ by
-      rw [coe_nnNorm, ContinuousMultilinearMap.curryLeft_norm]
-      exact ((mixedDerivL r (m + 1) u).norm_coe_le_norm _).trans (norm_mixedDerivL_le u _ _))
-  rwa [ParabolicC2HolderSpace.timeExtension_space_slabTime] at key
-
-/-- The time slices of a field of order exactly `k - 1` are `(1 + α) / 2`-Hölder with constant
-`‖u‖`. -/
-private theorem timeEHolderNorm_mixedDerivL_le_of_add_one_eq
-    (u : ParabolicCkHolderSpace k α E F hab) {r m : ℕ} (h : 2 * r + m + 1 = k) :
-    timeEHolderNorm ((1 + α) / 2) (mixedDerivL r m u : slab (E := E) a b → E [×m]→L[ℝ] F) ≤
-      ‖u‖₊ := by
-  refine timeEHolderNorm_le_iff.2 fun x t s ↦ ?_
-  have hx := (timeSliceL r m u x).holderWith_nnnorm t s
-  rw [coe_timeSliceL u h x] at hx
-  refine hx.trans ?_
-  gcongr
-  rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
-  exact (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x).trans (norm_timeSliceL_le u r m)
-
-/-- Values of a field lie within distance `2 ‖u‖` of each other. -/
-private theorem dist_mixedDerivL_le (u : ParabolicCkHolderSpace k α E F hab) (r m : ℕ)
-    (p q : slab (E := E) a b) :
-    dist (mixedDerivL r m u p) (mixedDerivL r m u q) ≤ ((2 * ‖u‖₊ : ℝ≥0) : ℝ) := by
-  push_cast
-  rw [two_mul]
-  exact (dist_le_norm_add_norm _ _).trans (add_le_add
-    (((mixedDerivL r m u).norm_coe_le_norm p).trans (norm_mixedDerivL_le u r m))
-    (((mixedDerivL r m u).norm_coe_le_norm q).trans (norm_mixedDerivL_le u r m)))
-
-/-- **Every field is parabolically Hölder.** For `α ≤ 1`, each field `D_t^r D_x^m u` of order
-`2 r + m ≤ k` is parabolically `α`-Hölder with constant `6 ‖u‖`. -/
-theorem holderWith_mixedDerivL (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
-    (h : 2 * r + m ≤ k) :
-    HolderWith (6 * ‖u‖₊) α (mixedDerivL r m u : slab (E := E) a b → E [×m]→L[ℝ] F) := by
-  rcases h.eq_or_lt with h | h
-  · intro p q
-    have hp := (mixedDerivHolderL r m u).holderWith_nnnorm p q
-    rw [mixedDerivHolderL_apply u h, mixedDerivHolderL_apply u h] at hp
-    refine hp.trans ?_
-    gcongr
-    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, coe_nnNorm]
-    have := norm_mixedDerivHolderL_le u r m
-    push_cast
-    linarith [norm_nonneg u]
-  · have hspace := spaceEHolderNorm_one_mixedDerivL_le u (r := r) (m := m) (by omega)
-    have hD := dist_mixedDerivL_le u r m
-    have hbound : eHolderNorm α (mixedDerivL r m u : slab (E := E) a b → E [×m]→L[ℝ] F) ≤
-        ↑(6 * ‖u‖₊) := by
-      by_cases h2 : 2 * r + m + 2 ≤ k
-      · refine (eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le hspace
-          (timeEHolderNorm_one_mixedDerivL_le u h2) hD hα (by
-            rw [← NNReal.coe_le_coe]
-            push_cast
-            have : (α : ℝ) ≤ 1 := by exact_mod_cast hα
-            linarith) one_pos one_pos).trans (le_of_eq ?_)
-        simp only [NNReal.one_rpow, mul_one]
-        congr 1
-        ring
-      · refine (eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le hspace
-          (timeEHolderNorm_mixedDerivL_le_of_add_one_eq u (by omega)) hD hα (by
-            rw [← NNReal.coe_le_coe]
-            push_cast
-            linarith) one_pos one_pos).trans (le_of_eq ?_)
-        simp only [NNReal.one_rpow, mul_one]
-        congr 1
-        ring
-    exact eHolderNorm_le_iff.1 hbound
-
-/-- **Every field below the top order has Hölder time slices.** For `α ≤ 1`, each field
-`D_t^r D_x^m u` of order `2 r + m ≤ k - 1` has `(1 + α) / 2`-Hölder time slices with constant
-`3 ‖u‖`. -/
-theorem holderWith_mixedDerivL_slabMk (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab)
-    {r m : ℕ} (h : 2 * r + m + 1 ≤ k) (x : E) :
-    HolderWith (3 * ‖u‖₊) ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m u (slabMk x t) := by
-  have hbound : timeEHolderNorm ((1 + α) / 2)
-      (mixedDerivL r m u : slab (E := E) a b → E [×m]→L[ℝ] F) ≤ ↑(3 * ‖u‖₊) := by
-    rcases h.eq_or_lt with h | h
-    · refine (timeEHolderNorm_mixedDerivL_le_of_add_one_eq u h).trans (ENNReal.coe_le_coe.2 ?_)
-      rw [← NNReal.coe_le_coe]
-      push_cast
-      linarith [norm_nonneg u]
-    · refine (timeEHolderNorm_le_of_timeEHolderNorm_le
-        (timeEHolderNorm_one_mixedDerivL_le u (r := r) (m := m) (by omega))
-        (dist_mixedDerivL_le u r m) (by
-          rw [← NNReal.coe_le_coe]
-          push_cast
-          have : (α : ℝ) ≤ 1 := by exact_mod_cast hα
-          linarith) one_pos).trans (le_of_eq ?_)
-      simp only [NNReal.one_rpow, mul_one]
-      congr 1
-      ring
-  exact fun t s ↦ timeEHolderNorm_le_iff.1 hbound x t s
 
 /-! ### Jets of the fields -/
 
@@ -242,10 +91,9 @@ private def jet (u : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) (p : slab 
   fun i ↦ mixedDerivL r i u p
 
 private theorem jetInit_jet (u : ParabolicCkHolderSpace k α E F hab) (r m : ℕ)
-    (p : slab (E := E) a b) : jetInit ℝ E F m (jet u r (m + 1) p) = jet u r m p :=
-  funext fun i ↦ by
-    rw [jetInit_apply]
-    rfl
+    (p : slab (E := E) a b) : jetInit ℝ E F m (jet u r (m + 1) p) = jet u r m p := by
+  unfold jet
+  exact jetInit_fun_coe m fun i ↦ mixedDerivL r i u p
 
 private theorem norm_jet_le (u : ParabolicCkHolderSpace k α E F hab) (r m : ℕ)
     (p : slab (E := E) a b) : ‖jet u r m p‖ ≤ ‖u‖ :=
@@ -275,19 +123,6 @@ private theorem hasDerivWithinAt_jet (u : ParabolicCkHolderSpace k α E F hab) {
     have hi := hasDerivWithinAt_mixedDerivL u (r := r) (m := i) (by omega) x t
     rwa [ParabolicC2HolderSpace.timeExtension_def] at hi
 
-/-! ### Finite sums of Hölder maps -/
-
-/-- A sum of `cᵢ` copies of maps `fᵢ` which are `r`-Hölder with a common constant `K` is
-`r`-Hölder with constant `(∑ cᵢ) K`. -/
-private theorem holderWith_sum_nsmul {X Y ι : Type*} [PseudoMetricSpace X]
-    [SeminormedAddCommGroup Y] [NormedSpace ℝ Y] {r K : ℝ≥0} (s : Finset ι) (c : ι → ℕ)
-    {f : ι → X → Y} (hf : ∀ i ∈ s, HolderWith K r (f i)) :
-    HolderWith ((∑ i ∈ s, c i) * K) r fun x ↦ ∑ i ∈ s, c i • f i x := by
-  have h := HolderWith.sum (s := s) (C := fun i ↦ K * ‖(c i : ℝ)‖₊)
-    (f := fun i x ↦ (c i : ℝ) • f i x) fun i hi ↦ (hf i hi).smul (c i : ℝ)
-  simp only [Real.nnNorm_natCast, Nat.cast_smul_eq_nsmul] at h
-  rwa [Nat.cast_sum, Finset.sum_mul, Finset.sum_congr rfl fun i _ ↦ mul_comm (c i : ℝ≥0) K]
-
 /-! ### The fields of the product -/
 
 variable (B : F →L[ℝ] G →L[ℝ] H)
@@ -297,10 +132,14 @@ private def productField (u : ParabolicCkHolderSpace k α E F hab)
     (v : ParabolicCkHolderSpace k α E G hab) (r m : ℕ) (p : slab (E := E) a b) : E [×m]→L[ℝ] H :=
   ∑ ij ∈ Finset.antidiagonal r, r.choose ij.1 • B.leibnizJet E m (jet u ij.1 m p) (jet v ij.2 m p)
 
-private theorem sum_antidiagonal_choose (r : ℕ) :
-    ∑ ij ∈ Finset.antidiagonal r, r.choose ij.1 = 2 ^ r := by
-  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  exact Nat.sum_range_choose r
+/-- The product field, with the jets written out. -/
+private theorem productField_eq (u : ParabolicCkHolderSpace k α E F hab)
+    (v : ParabolicCkHolderSpace k α E G hab) (r m : ℕ) (p : slab (E := E) a b) :
+    productField B u v r m p = ∑ ij ∈ Finset.antidiagonal r, r.choose ij.1 •
+      B.leibnizJet E m (fun i ↦ mixedDerivL ij.1 i u p) (fun i ↦ mixedDerivL ij.2 i v p) := by
+  rw [productField]
+  unfold jet
+  rfl
 
 private theorem continuous_productField (u : ParabolicCkHolderSpace k α E F hab)
     (v : ParabolicCkHolderSpace k α E G hab) (r m : ℕ) : Continuous (productField B u v r m) :=
@@ -323,7 +162,7 @@ private theorem norm_productField_le (u : ParabolicCkHolderSpace k α E F hab)
   refine (Finset.sum_le_sum fun ij _ ↦ norm_nsmul_le.trans
     (mul_le_mul_of_nonneg_left (norm_leibnizJet_jet_le B u v ij.1 ij.2 m p)
       (Nat.cast_nonneg _))).trans (le_of_eq ?_)
-  rw [← Finset.sum_mul, ← Nat.cast_sum, sum_antidiagonal_choose, pow_add]
+  rw [← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_antidiagonal_choose, pow_add]
   push_cast
   ring
 
@@ -387,8 +226,7 @@ private theorem hasDerivWithinAt_productField (u : ParabolicCkHolderSpace k α E
         (jet u ij.1 m (slabMk x (projIcc a b hab.le s)))
         (jet v ij.2 m (slabMk x (projIcc a b hab.le s))) := by
     funext s
-    simp only [ParabolicC2HolderSpace.timeExtension_def, productFieldBCF_apply]
-    rfl
+    simp only [ParabolicC2HolderSpace.timeExtension_def, productFieldBCF_apply, productField]
   rw [hfun]
   refine hsum.congr_deriv ?_
   unfold productField
@@ -399,48 +237,52 @@ private theorem hasDerivWithinAt_productField (u : ParabolicCkHolderSpace k α E
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
   rw [Nat.choose_symm_of_eq_add (Finset.mem_antidiagonal.1 hij).symm]
 
+/-- A binomially weighted sum of Leibniz maps of jets is Hölder: if the jets `f i` and `g j` are
+`γ`-Hölder with constants `Cf` and `Cg` and bounded by `Mf` and `Mg`, then
+`x ↦ ∑_{i + j = r} (r choose i) Λₘ (f i x, g j x)` is `γ`-Hölder with constant
+`2ʳ 2ᵐ ‖B‖ (Mf Cg + Mg Cf)`. -/
+private theorem holderWith_sum_leibnizJet {X : Type*} [PseudoMetricSpace X] {γ Cf Cg Mf Mg : ℝ≥0}
+    (r m : ℕ) (f : ℕ → X → (i : Fin (m + 1)) → E [×i]→L[ℝ] F)
+    (g : ℕ → X → (i : Fin (m + 1)) → E [×i]→L[ℝ] G) (hf : ∀ i ≤ r, HolderWith Cf γ (f i))
+    (hg : ∀ j ≤ r, HolderWith Cg γ (g j)) (hfM : ∀ i x, ‖f i x‖ ≤ Mf)
+    (hgM : ∀ j x, ‖g j x‖ ≤ Mg) :
+    HolderWith (2 ^ r * (2 ^ m * ‖B‖₊ * (Mf * Cg + Mg * Cf))) γ
+      fun x ↦ ∑ ij ∈ Finset.antidiagonal r,
+        r.choose ij.1 • B.leibnizJet E m (f ij.1 x) (g ij.2 x) := by
+  have hK : ∀ ij ∈ Finset.antidiagonal r, HolderWith (2 ^ m * ‖B‖₊ * (Mf * Cg + Mg * Cf)) γ
+      fun x ↦ B.leibnizJet E m (f ij.1 x) (g ij.2 x) := fun ij hij ↦ by
+    have hr := Finset.mem_antidiagonal.1 hij
+    have hP := (B.leibnizJet E m).holderWith_comp₂ (hf ij.1 (by omega)) (hg ij.2 (by omega))
+      (hfM ij.1) (hgM ij.2)
+    refine fun x y ↦ (hP x y).trans ?_
+    gcongr
+    rw [← NNReal.coe_le_coe]
+    push_cast
+    exact B.norm_leibnizJet_le m
+  have hsum := HolderWith.sum_nsmul (Finset.antidiagonal r) (fun ij ↦ r.choose ij.1) hK
+  rwa [Nat.sum_antidiagonal_choose, Nat.cast_pow, Nat.cast_ofNat] at hsum
+
 /-- The Hölder constant of the product fields of top order. -/
 private theorem holderWith_productField (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab)
     (v : ParabolicCkHolderSpace k α E G hab) {r m : ℕ} (h : 2 * r + m ≤ k) :
-    HolderWith (2 ^ r * (2 ^ m * ‖B‖₊ * (12 * ‖u‖₊ * ‖v‖₊))) α (productField B u v r m) := by
-  have hK : ∀ ij ∈ Finset.antidiagonal r, HolderWith (2 ^ m * ‖B‖₊ * (12 * ‖u‖₊ * ‖v‖₊)) α
-      fun p ↦ B.leibnizJet E m (jet u ij.1 m p) (jet v ij.2 m p) := fun ij hij ↦ by
-    have hr := Finset.mem_antidiagonal.1 hij
-    have hP := (B.leibnizJet E m).holderWith_comp₂ (holderWith_jet hα u (r := ij.1) (m := m)
-      (by omega)) (holderWith_jet hα v (r := ij.2) (m := m) (by omega))
-      (Mf := ‖u‖₊) (Mg := ‖v‖₊) (norm_jet_le u ij.1 m) (norm_jet_le v ij.2 m)
-    refine fun p q ↦ (hP p q).trans ?_
-    gcongr
-    · rw [← NNReal.coe_le_coe]
-      push_cast
-      exact B.norm_leibnizJet_le m
-    · exact le_of_eq (by ring)
-  have hsum := holderWith_sum_nsmul (Finset.antidiagonal r) (fun ij ↦ r.choose ij.1) hK
-  rwa [sum_antidiagonal_choose, Nat.cast_pow, Nat.cast_ofNat] at hsum
+    HolderWith (2 ^ r * (2 ^ m * ‖B‖₊ * (‖u‖₊ * (6 * ‖v‖₊) + ‖v‖₊ * (6 * ‖u‖₊)))) α
+      (productField B u v r m) := by
+  unfold productField
+  exact holderWith_sum_leibnizJet B r m (fun i ↦ jet u i m) (fun j ↦ jet v j m)
+    (fun i _ ↦ holderWith_jet hα u (by omega)) (fun j _ ↦ holderWith_jet hα v (by omega))
+    (fun i ↦ norm_jet_le u i m) (fun j ↦ norm_jet_le v j m)
 
 /-- The Hölder constant of the time slices of the product fields one order below the top. -/
 private theorem holderWith_productField_slabMk (hα : α ≤ 1)
     (u : ParabolicCkHolderSpace k α E F hab) (v : ParabolicCkHolderSpace k α E G hab)
     {r m : ℕ} (h : 2 * r + m + 1 ≤ k) (x : E) :
-    HolderWith (2 ^ r * (2 ^ m * ‖B‖₊ * (6 * ‖u‖₊ * ‖v‖₊))) ((1 + α) / 2)
+    HolderWith (2 ^ r * (2 ^ m * ‖B‖₊ * (‖u‖₊ * (3 * ‖v‖₊) + ‖v‖₊ * (3 * ‖u‖₊)))) ((1 + α) / 2)
       fun t : Icc a b ↦ productField B u v r m (slabMk x t) := by
-  have hK : ∀ ij ∈ Finset.antidiagonal r, HolderWith (2 ^ m * ‖B‖₊ * (6 * ‖u‖₊ * ‖v‖₊))
-      ((1 + α) / 2) fun t : Icc a b ↦
-        B.leibnizJet E m (jet u ij.1 m (slabMk x t)) (jet v ij.2 m (slabMk x t)) :=
-      fun ij hij ↦ by
-    have hr := Finset.mem_antidiagonal.1 hij
-    have hP := (B.leibnizJet E m).holderWith_comp₂
-      (holderWith_jet_slabMk hα u (r := ij.1) (m := m) (by omega) x)
-      (holderWith_jet_slabMk hα v (r := ij.2) (m := m) (by omega) x)
-      (Mf := ‖u‖₊) (Mg := ‖v‖₊) (fun t ↦ norm_jet_le u ij.1 m _) (fun t ↦ norm_jet_le v ij.2 m _)
-    refine fun t s ↦ (hP t s).trans ?_
-    gcongr
-    · rw [← NNReal.coe_le_coe]
-      push_cast
-      exact B.norm_leibnizJet_le m
-    · exact le_of_eq (by ring)
-  have hsum := holderWith_sum_nsmul (Finset.antidiagonal r) (fun ij ↦ r.choose ij.1) hK
-  rwa [sum_antidiagonal_choose, Nat.cast_pow, Nat.cast_ofNat] at hsum
+  unfold productField
+  exact holderWith_sum_leibnizJet B r m (fun i t ↦ jet u i m (slabMk x t))
+    (fun j t ↦ jet v j m (slabMk x t)) (fun i _ ↦ holderWith_jet_slabMk hα u (by omega) x)
+    (fun j _ ↦ holderWith_jet_slabMk hα v (by omega) x) (fun i _ ↦ norm_jet_le u i m _)
+    (fun j _ ↦ norm_jet_le v j m _)
 
 private theorem coe_productFieldBCF (u : ParabolicCkHolderSpace k α E F hab)
     (v : ParabolicCkHolderSpace k α E G hab) (r m : ℕ) :
@@ -483,15 +325,15 @@ private theorem compAux_apply (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α 
   simp [jet]
 
 /-- The real value of the Hölder constants of the product fields at order `2 r + m ≤ k` is at most
-`c 2ᵏ ‖B‖ ‖u‖ ‖v‖`. -/
+`2 c 2ᵏ ‖B‖ ‖u‖ ‖v‖`. -/
 private theorem coe_two_pow_mul_le (u : ParabolicCkHolderSpace k α E F hab)
     (v : ParabolicCkHolderSpace k α E G hab) {r m : ℕ} (h : 2 * r + m ≤ k) (c : ℝ≥0) :
-    ((2 ^ r * (2 ^ m * ‖B‖₊ * (c * ‖u‖₊ * ‖v‖₊)) : ℝ≥0) : ℝ) ≤
-      c * (2 ^ k * ‖B‖ * ‖u‖ * ‖v‖) := by
+    ((2 ^ r * (2 ^ m * ‖B‖₊ * (‖u‖₊ * (c * ‖v‖₊) + ‖v‖₊ * (c * ‖u‖₊))) : ℝ≥0) : ℝ) ≤
+      2 * c * (2 ^ k * ‖B‖ * ‖u‖ * ‖v‖) := by
   have h2 : (2 : ℝ) ^ r * 2 ^ m ≤ 2 ^ k := by
     rw [← pow_add]
     exact pow_le_pow_right₀ (by norm_num) (by omega)
-  have := mul_le_mul_of_nonneg_right h2 (by positivity : (0 : ℝ) ≤ c * ‖B‖ * ‖u‖ * ‖v‖)
+  have := mul_le_mul_of_nonneg_right h2 (by positivity : (0 : ℝ) ≤ 2 * c * ‖B‖ * ‖u‖ * ‖v‖)
   push_cast
   nlinarith
 
@@ -502,13 +344,12 @@ private theorem norm_timeSliceL_compAux_le (hα : α ≤ 1) (u : ParabolicCkHold
     ‖timeSliceL r m (compAux B hα u v)‖ ≤ 7 * (2 ^ k * ‖B‖ * ‖u‖ * ‖v‖) := by
   by_cases h1 : 2 * r + m + 1 = k
   · refine (norm_timeSliceL_le_of_holderWith _ h1
-      (C := 2 ^ r * (2 ^ m * ‖B‖₊ * (6 * ‖u‖₊ * ‖v‖₊))) fun x ↦ ?_).trans ?_
+      (C := 2 ^ r * (2 ^ m * ‖B‖₊ * (‖u‖₊ * (3 * ‖v‖₊) + ‖v‖₊ * (3 * ‖u‖₊)))) fun x ↦ ?_).trans ?_
     · rw [mixedDerivL_compAux B hα u v h]
       simpa only [productFieldBCF_apply] using holderWith_productField_slabMk B hα u v h1.le x
-    · have h6 : ((2 ^ r * (2 ^ m * ‖B‖₊ * (6 * ‖u‖₊ * ‖v‖₊)) : ℝ≥0) : ℝ) ≤
-          6 * (2 ^ k * ‖B‖ * ‖u‖ * ‖v‖) := by
-        exact_mod_cast coe_two_pow_mul_le B u v h 6
+    · have h6 := coe_two_pow_mul_le B u v h 3
       rw [mixedDerivL_compAux B hα u v h]
+      push_cast at h6 ⊢
       linarith [norm_productFieldBCF_le B u v h]
   · rw [timeSliceL_of_ne h1, zero_apply, norm_zero]
     positivity
@@ -529,24 +370,11 @@ private theorem norm_mixedDerivHolderL_compAux_le (hα : α ≤ 1)
     · rw [hcoe, ← productFieldBCF_apply]
       exact ((productFieldBCF B u v r m).norm_coe_le_norm q).trans
         (norm_productFieldBCF_le B u v h)
-    · have h12 : ((2 ^ r * (2 ^ m * ‖B‖₊ * (12 * ‖u‖₊ * ‖v‖₊)) : ℝ≥0) : ℝ) ≤
-          12 * (2 ^ k * ‖B‖ * ‖u‖ * ‖v‖) := by
-        exact_mod_cast coe_two_pow_mul_le B u v h 12
+    · have h12 := coe_two_pow_mul_le B u v h 6
+      push_cast at h12 ⊢
       linarith
   · rw [mixedDerivHolderL_of_ne h0, zero_apply, norm_zero]
     positivity
-
-/-- At most `(k + 1)²` pairs `(r, m)` have parabolic order `2 r + m ≤ k`. -/
-private theorem card_parabolicDerivPairs_le (k : ℕ) :
-    ((parabolicDerivPairs k).card : ℝ) ≤ (k + 1) ^ 2 := by
-  have : (parabolicDerivPairs k).card ≤ (k + 1) ^ 2 := by
-    refine (Finset.card_le_card (t := Finset.range (k + 1) ×ˢ Finset.range (k + 1))
-      fun q hq ↦ ?_).trans ?_
-    · have := mem_parabolicDerivPairs.1 hq
-      simp only [Finset.mem_product, Finset.mem_range]
-      omega
-    · rw [Finset.card_product, Finset.card_range, sq]
-  exact_mod_cast this
 
 private theorem norm_compAux_le (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab)
     (v : ParabolicCkHolderSpace k α E G hab) :
@@ -566,7 +394,7 @@ private theorem norm_compAux_le (hα : α ≤ 1) (u : ParabolicCkHolderSpace k �
   rw [Finset.sum_const, nsmul_eq_mul]
   calc ((parabolicDerivPairs k).card : ℝ) * (21 * M) ≤ (k + 1) ^ 2 * (21 * M) := by
         gcongr
-        exact card_parabolicDerivPairs_le k
+        exact_mod_cast card_parabolicDerivPairs_le k
     _ = 21 * (k + 1) ^ 2 * 2 ^ k * ‖B‖ * ‖u‖ * ‖v‖ := by rw [hM]; ring
 
 end ParabolicCkHolderSpace
@@ -618,8 +446,8 @@ theorem mixedDerivL_compParabolicCkHolder₂ (u : ParabolicCkHolderSpace k α E 
     mixedDerivL r m (B.compParabolicCkHolder₂ hα u v) p =
       ∑ ij ∈ Finset.antidiagonal r, r.choose ij.1 • B.leibnizJet E m
         (fun i ↦ mixedDerivL ij.1 i u p) (fun i ↦ mixedDerivL ij.2 i v p) := by
-  rw [compParabolicCkHolder₂_eq, mixedDerivL_compAux B hα u v h, productFieldBCF_apply]
-  rfl
+  rw [compParabolicCkHolder₂_eq, mixedDerivL_compAux B hα u v h, productFieldBCF_apply,
+    productField_eq]
 
 /-- **The product estimate.** Pointwise application of `B` to parabolic Hölder maps of order `k`
 has operator norm at most `21 (k + 1)² 2ᵏ ‖B‖`, uniformly over the exponent, the spaces and the

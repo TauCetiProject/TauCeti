@@ -18,9 +18,9 @@ family `J = (J₀, …, Jₙ)` of continuous multilinear maps `Jᵢ : E [×i]→
 iterated derivatives `Dⁱ f (x)` of a map `f : E → F` at a point. This file constructs the
 continuous bilinear map `ContinuousLinearMap.leibnizJet B E n`, from the `F`-valued and the
 `G`-valued jets of order `n` to `E [×n]→L H`, which computes the `n`-th derivative of
-`y ↦ B (f y) (g y)` from the jets of `f` and `g`: for `n` times differentiable `f` and `g`,
+`y ↦ B (f y) (g y)` from the jets of `f` and `g`: for `C^n` maps `f` and `g`, and `m ≤ n`,
 
-`Dⁿ (y ↦ B (f y) (g y)) (x) = leibnizJet B E n (D^• f (x)) (D^• g (x))`
+`Dᵐ (y ↦ B (f y) (g y)) (x) = leibnizJet B E m (D^• f (x)) (D^• g (x))`
 
 (`ContinuousLinearMap.iteratedFDeriv_bilinear_eq_leibnizJet`). It is defined by the recursion
 behind the Leibniz rule: `leibnizJet B E 0 J K = B J₀ K₀`, and `leibnizJet B E (n + 1) J K`,
@@ -35,9 +35,9 @@ where `init` forgets the top entry of a jet (`TauCeti.jetInit`) and `∂ₕ` shi
 The point of having the derivative as a bilinear function of the jets, rather than only as an
 iterated derivative, is that it applies to families of multilinear maps that are not known to be
 derivatives of anything in some of the variables. If `f y = (fᵢ y)ᵢ` is a family of jets whose
-entries are differentiable with `D fᵢ (x) h = fᵢ₊₁ (x) (h, ·)`, then
-`leibnizJet B E n (f y) (g y)` is differentiable with derivative
-`leibnizJet B E (n + 1) (f x) (g x)`, curried on the left
+entries of order at most `n` have derivative `D fᵢ (x) h = fᵢ₊₁ (x) (h, ·)` at `x`, and likewise
+for `g`, then `y ↦ leibnizJet B E n (init (f y)) (init (g y))` has derivative
+`leibnizJet B E (n + 1) (f x) (g x)` at `x`, curried on the left
 (`ContinuousLinearMap.hasFDerivAt_leibnizJet`). Since `leibnizJet B E n` is bilinear and
 continuous, derivatives in any other variable, such as time in a parabolic Hölder space, pass
 through it by the product rule.
@@ -46,6 +46,8 @@ through it by the product rule.
 
 * `TauCeti.jetInit`, `TauCeti.jetShift`: forgetting the top entry of a jet, and shifting a jet
   down by one in a direction `h`.
+* `TauCeti.Jet`: a scope of shortcut instances for spaces of jets and of continuous linear maps
+  between them, to be opened by files working with jets.
 * `ContinuousLinearMap.leibnizJet`: the Leibniz map from the jets of two maps to the derivatives
   of their bilinear product.
 * `ContinuousLinearMap.curryLeft_leibnizJet_succ`: its defining recursion.
@@ -64,22 +66,24 @@ variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
+namespace TauCeti.Jet
+
 variable (𝕜 E) in
 /-- Shortcut instance for jets of multilinear maps: without it, instance search for spaces of
 continuous linear maps between spaces of jets exceeds the default synthesis depth. -/
-local instance instNormedAddCommGroupJet (X : Type*) [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+scoped instance instNormedAddCommGroupJet (X : Type*) [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     (m : ℕ) : NormedAddCommGroup ((i : Fin m) → E [×i]→L[𝕜] X) :=
   inferInstance
 
 variable (𝕜 E) in
 /-- Shortcut instance for scalar operations on jets of multilinear maps. -/
-local instance instNormedSpaceJet (X : Type*) [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+scoped instance instNormedSpaceJet (X : Type*) [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     (m : ℕ) : NormedSpace 𝕜 ((i : Fin m) → E [×i]→L[𝕜] X) :=
   inferInstance
 
 variable (𝕜 E) in
 /-- Shortcut instance for continuous linear maps from jets to multilinear maps. -/
-local instance instNormedAddCommGroupJetCLM (X Y : Type*) [NormedAddCommGroup X]
+scoped instance instNormedAddCommGroupJetCLM (X Y : Type*) [NormedAddCommGroup X]
     [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (m n : ℕ) :
     NormedAddCommGroup (((i : Fin m) → E [×i]→L[𝕜] X) →L[𝕜] E [×n]→L[𝕜] Y) :=
   inferInstance
@@ -87,10 +91,14 @@ local instance instNormedAddCommGroupJetCLM (X Y : Type*) [NormedAddCommGroup X]
 variable (𝕜 E) in
 /-- Shortcut instance for scalar operations on continuous linear maps from jets to multilinear
 maps. -/
-local instance instNormedSpaceJetCLM (X Y : Type*) [NormedAddCommGroup X]
+scoped instance instNormedSpaceJetCLM (X Y : Type*) [NormedAddCommGroup X]
     [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (m n : ℕ) :
     NormedSpace 𝕜 (((i : Fin m) → E [×i]→L[𝕜] X) →L[𝕜] E [×n]→L[𝕜] Y) :=
   inferInstance
+
+end TauCeti.Jet
+
+open scoped TauCeti.Jet
 
 namespace TauCeti
 
@@ -104,6 +112,14 @@ def jetInit (n : ℕ) :
 theorem jetInit_apply (n : ℕ) (J : (i : Fin (n + 2)) → E [×i]→L[𝕜] F) (i : Fin (n + 1)) :
     jetInit 𝕜 E F n J i = J i.castSucc :=
   (rfl)
+
+/-- Forgetting the top entry of the jet `(φ i)ᵢ` of a family indexed by all orders `i : ℕ` gives
+its jet one order lower. -/
+theorem jetInit_fun_coe (n : ℕ) (φ : (i : ℕ) → E [×i]→L[𝕜] F) :
+    jetInit 𝕜 E F n (fun i : Fin (n + 2) ↦ φ i) = fun i : Fin (n + 1) ↦ φ i :=
+  -- The entry `φ (i.castSucc : ℕ)` is `φ (i : ℕ)`, since `Fin.val_castSucc` holds by definition;
+  -- `simp` cannot rewrite the index, on which the type of `φ` depends.
+  funext fun i ↦ jetInit_apply n _ i
 
 /-- The shift of a jet of order `n + 1` in a direction `h`: the jet of order `n` with entries
 `Jᵢ₊₁ (h, ·)`, the first variable of `Jᵢ₊₁` being set to `h`. -/
@@ -307,7 +323,7 @@ theorem hasFDerivAt_leibnizJet {n : ℕ} {f : E → (i : Fin (n + 2)) → E [×i
   refine ((leibnizJet B E n).hasFDerivAt_of_bilinear hf' hg').congr_fderiv ?_
   ext1 h
   rw [curryLeft_leibnizJet_succ, add_comm]
-  rfl
+  simp only [add_apply, precompR_apply, precompL_apply, compL_apply, comp_apply]
 
 /-- The `i`-th iterated derivative of a `C^n` map, `i < n`, has derivative the `(i + 1)`-th
 iterated derivative, curried on the left. -/
@@ -341,7 +357,10 @@ theorem iteratedFDeriv_bilinear_eq_leibnizJet {n : WithTop ℕ∞} {f : E → F}
     have hfun : iteratedFDeriv 𝕜 m (fun y ↦ B (f y) (g y)) = fun y ↦
         leibnizJet B E m (jetInit 𝕜 E F m fun i : Fin (m + 2) ↦ iteratedFDeriv 𝕜 i f y)
           (jetInit 𝕜 E G m fun i : Fin (m + 2) ↦ iteratedFDeriv 𝕜 i g y) :=
-      funext fun y ↦ ih (le_trans (by exact_mod_cast Nat.le_succ m) hm) y
+      funext fun y ↦ by
+        rw [jetInit_fun_coe m fun i ↦ iteratedFDeriv 𝕜 i f y,
+          jetInit_fun_coe m fun i ↦ iteratedFDeriv 𝕜 i g y]
+        exact ih (le_trans (by exact_mod_cast Nat.le_succ m) hm) y
     rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, hfun, hD.fderiv]
     exact ContinuousMultilinearMap.uncurry_curryLeft _
 
