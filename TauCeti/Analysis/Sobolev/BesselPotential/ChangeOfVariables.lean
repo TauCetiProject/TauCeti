@@ -299,8 +299,9 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
       CJ * (Cs * ‖toBesselPotentialSpaceCLM k 2 v‖) := by
     have hv : pushforwardCLM ℂ φ hφ hψ v = smulLeftCLM F J
         (compCLM ℂ hψ (hφ'.exists_norm_le_of_leftInverse φ.symm.left_inv) v) := by
-      simp only [pushforwardCLM_eq_smulLeftCLM_comp, ContinuousLinearMap.comp_apply,
-        RCLike.ofReal_eq_complex_ofReal, J]
+      ext y
+      simp only [pushforwardCLM_apply, smulLeftCLM_apply_apply hJ, compCLM_apply,
+        Function.comp_apply, J, RCLike.ofReal_eq_complex_ofReal]
     rw [hv]
     exact (hCJ _).trans (mul_le_mul_of_nonneg_left (hCs v) hCJ0)
   -- Duality turns the bound of the transpose `φ_*` on `H^k` into the bound on `H^{-k}`.

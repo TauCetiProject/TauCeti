@@ -15,6 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Topology.Instances.Sign
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -157,14 +158,17 @@ theorem exists_norm_le_of_leftInverse {g : F → E} (hg : g.HasTemperateGrowth)
   obtain ⟨k, C, hC⟩ := hg.2 0
   exact ⟨k, C, fun x ↦ by simpa [h x] using hC (f x)⟩
 
+/-- A continuous real function without zeros on `E` has the constant sign of its value at `0`. -/
+private theorem abs_eq_sign_mul {f : E → ℝ} (hf : Continuous f) (h0 : ∀ x, f x ≠ 0) (x : E) :
+    |f x| = (SignType.sign (f 0) : ℝ) * f x := by
+  rw [← sign_mul_self, isPreconnected_univ.sign_eq_of_continuousOn hf.continuousOn
+    (fun y _ ↦ h0 y) (Set.mem_univ x) (Set.mem_univ 0)]
+
 /-- The absolute value of a real function of temperate growth without zeros has temperate growth:
 by the intermediate value theorem the function has constant sign. -/
 theorem abs {f : E → ℝ} (hf : f.HasTemperateGrowth) (h0 : ∀ x, f x ≠ 0) :
     (fun x ↦ |f x|).HasTemperateGrowth := by
-  have hε (x : E) : |f x| = (SignType.sign (f 0) : ℝ) * f x := by
-    rw [← sign_mul_self, isPreconnected_univ.sign_eq_of_continuousOn hf.1.continuous.continuousOn
-      (fun y _ ↦ h0 y) (Set.mem_univ x) (Set.mem_univ 0)]
-  simpa only [hε] using (HasTemperateGrowth.const _).fun_mul hf
+  simpa only [abs_eq_sign_mul hf.1.continuous h0] using (HasTemperateGrowth.const _).fun_mul hf
 
 end Function.HasTemperateGrowth
 
@@ -218,22 +222,21 @@ theorem Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_abs_det_fderiv_sy
       (hψ.fderiv.1.of_le (by exact_mod_cast le_top))
       fun m hm ↦ (hb m hm).imp fun C hC x ↦ by rw [norm_iteratedFDeriv_fderiv]; exact hC x
   -- `det Dφ⁻¹` has no zeros on the connected space `E`, hence a constant sign `ε`.
-  have hcont : Continuous fun y ↦ (_root_.fderiv ℝ φ.symm y).det := hψ.det_fderiv.1.continuous
+  have hε := Function.HasTemperateGrowth.abs_eq_sign_mul hψ.det_fderiv.1.continuous
+    fun y ↦ φ.det_fderiv_symm_ne_zero (hφ.1.differentiable (by simp) _)
+      (hψ.1.differentiable (by simp) y)
   set ε : ℝ := (SignType.sign (_root_.fderiv ℝ φ.symm 0).det : ℝ)
-  have hε (y : E) : |(_root_.fderiv ℝ φ.symm y).det| = ε * (_root_.fderiv ℝ φ.symm y).det := by
-    rw [← sign_mul_self, isPreconnected_univ.sign_eq_of_continuousOn hcont.continuousOn
-      (fun y _ ↦ φ.det_fderiv_symm_ne_zero (hφ.1.differentiable (by simp) _)
-        (hψ.1.differentiable (by simp) y)) (Set.mem_univ y) (Set.mem_univ 0)]
   have hJ : (fun y ↦ ((|(_root_.fderiv ℝ φ.symm y).det| : ℝ) : ℂ)) =
-      (ε • Complex.ofRealCLM) ∘ ((fun A : E →L[ℝ] E ↦ A.det) ∘ _root_.fderiv ℝ φ.symm) := by
+      fun y ↦
+        (ε • Complex.ofRealCLM) (((fun A : E →L[ℝ] E ↦ A.det) ∘ _root_.fderiv ℝ φ.symm) y) := by
     funext y
     simp only [Function.comp_apply, _root_.smul_apply, Complex.ofRealCLM_apply,
       Complex.real_smul, hε y, Complex.ofReal_mul]
-  refine ⟨‖ε • Complex.ofRealCLM‖ * C, fun y ↦ ?_⟩
   rw [hJ]
-  exact ((ε • Complex.ofRealCLM).norm_iteratedFDeriv_comp_left
-    ((ContinuousLinearMap.hasTemperateGrowth_det.1.comp hψ.fderiv.1).contDiffAt) (by simp)).trans
-    (mul_le_mul_of_nonneg_left (hC y) (norm_nonneg _))
+  simpa only [mul_one] using
+    (ε • Complex.ofRealCLM).exists_norm_iteratedFDeriv_comp_left_le (w := fun _ ↦ 1)
+      ((ContinuousLinearMap.hasTemperateGrowth_det.1.comp hψ.fderiv.1).of_le
+        (by exact_mod_cast le_top)) ⟨C, fun y ↦ by simpa using hC y⟩
 
 namespace Function
 

@@ -91,16 +91,6 @@ theorem pushforwardCLM_apply (hφ : (φ : E → E).HasTemperateGrowth)
       ((RCLike.hasTemperateGrowth_ofReal 𝕜).comp (hφ.abs_det_fderiv_symm hψ)), compCLM_apply,
     Function.comp_apply]
 
-omit [FiniteDimensional ℝ E] in
-/-- The pushforward is multiplication by the Jacobian factor `|det Dφ⁻¹|` after composition with
-`φ⁻¹`. -/
-theorem pushforwardCLM_eq_smulLeftCLM_comp (hφ : (φ : E → E).HasTemperateGrowth)
-    (hψ : (φ.symm : E → E).HasTemperateGrowth) :
-    pushforwardCLM 𝕜 φ hφ hψ (F := F) =
-      smulLeftCLM F (fun y ↦ ((|(fderiv ℝ φ.symm y).det| : ℝ) : 𝕜)) ∘L
-        compCLM 𝕜 hψ (hφ.exists_norm_le_of_leftInverse φ.right_inv) := by
-  rw [pushforwardCLM]
-
 /-- **The pushforward is the transpose of composition.** For every function `u` and every
 additive Haar measure `μ`, `∫ (φ_* f)(y) • u(y) dμ(y) = ∫ f(x) • u(φ x) dμ(x)`. No integrability
 is needed: both sides are the two sides of the change of variables formula. -/
