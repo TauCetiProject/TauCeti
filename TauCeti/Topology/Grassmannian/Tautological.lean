@@ -128,8 +128,8 @@ theorem continuous_starProjection_toEuclidean :
 
 /-- The range of the complementary projection is the orthogonal complement. -/
 theorem range_one_sub_starProjection_toEuclidean (V : finiteGrassmannian 𝕜 r N) :
-    (1 - V.toEuclidean.starProjection).range = V.toEuclideanᗮ :=
-  V.toEuclidean.range_one_sub_starProjection
+    (1 - V.toEuclidean.starProjection).range = V.toEuclideanᗮ := by
+  simp
 
 /-- The complementary projections `1 - p` depend continuously on the point of the Grassmannian. -/
 theorem continuous_one_sub_starProjection_toEuclidean :

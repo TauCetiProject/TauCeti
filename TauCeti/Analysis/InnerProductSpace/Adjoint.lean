@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Compression
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
+public import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Affine.MazurUlam
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 
@@ -42,7 +43,8 @@ bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
 with the adjoint of the inverse as inverse.
 Conjugating an operator `P` by a linear isometry equivalence `U` gives an operator whose range is
-the image under `U` of the range of `P` (`LinearIsometryEquiv.range_conjStarAlgEquiv`).
+the image under `U` of the range of `P` (`LinearIsometryEquiv.range_conjStarAlgEquiv`), the
+isometric case of `ContinuousLinearEquiv.range_conjContinuousAlgEquiv`.
 For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
 preimages (`LinearIsometry.adjoint_apply_apply`).
 
@@ -541,13 +543,8 @@ variable [CompleteSpace E] [CompleteSpace F]
 /-- The range of the conjugate `U P U⁻¹` is the image under `U` of the range of `P`. -/
 @[simp]
 theorem range_conjStarAlgEquiv (U : E ≃ₗᵢ[𝕜] F) (P : E →L[𝕜] E) :
-    (U.conjStarAlgEquiv P).range = P.range.map (U.toLinearEquiv : E →ₗ[𝕜] F) := by
-  ext y
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨P (U.symm x), ⟨U.symm x, rfl⟩, rfl⟩
-  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
-    exact ⟨U x, by simp⟩
+    (U.conjStarAlgEquiv P).range = P.range.map (U.toLinearEquiv : E →ₗ[𝕜] F) :=
+  U.toContinuousLinearEquiv.range_conjContinuousAlgEquiv P
 
 end LinearIsometryEquiv
 

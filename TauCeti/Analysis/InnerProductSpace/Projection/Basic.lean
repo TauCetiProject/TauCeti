@@ -334,8 +334,11 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   abel
 
 /-- The range of the complementary projection `1 - P_U` is the orthogonal complement `Uᗮ`. -/
-theorem range_one_sub_starProjection : (1 - U.starProjection).range = Uᗮ := by
-  rw [← starProjection_orthogonal', range_starProjection]
+@[simp]
+theorem range_one_sub_starProjection :
+    LinearMap.range (1 - (U.starProjection : E →ₗ[𝕜] E)) = Uᗮ := by
+  rw [← ContinuousLinearMap.toLinearMap_one, ← ContinuousLinearMap.toLinearMap_sub,
+    ← starProjection_orthogonal', range_starProjection]
 
 /-- Restricting the orthogonal projection onto `U` to `U` itself gives the identity map. -/
 @[simp]
