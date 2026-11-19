@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Topology.UnitInterval
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Compactness.Normed
 import TauCeti.Topology.OpenPartialHomeomorph.Basic
 
@@ -56,51 +57,8 @@ open Function Set Topology Filter Metric
 
 namespace TauCeti
 
-variable {S V W E F : Type*} [TopologicalSpace S] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-! ### Two estimates for continuous linear maps -/
-
-/-- A first-order estimate at `t • v` rescales to one at `v`: if `w` is within `c ‖t • v‖` of
-`L (t • v)` with `t > 0`, then `t⁻¹ • w` is within `c ‖v‖` of `L v`. -/
-theorem norm_inv_smul_sub_le {t : ℝ} (ht : 0 < t) {w : F} {v : E} {L : E →L[ℝ] F} {c : ℝ}
-    (h : ‖w - L (t • v)‖ ≤ c * ‖t • v‖) : ‖t⁻¹ • w - L v‖ ≤ c * ‖v‖ := by
-  have : t⁻¹ • w - L v = t⁻¹ • (w - L (t • v)) := by
-    rw [map_smul, smul_sub, inv_smul_smul₀ ht.ne']
-  rw [this, norm_smul, norm_inv, Real.norm_of_nonneg ht.le]
-  rw [norm_smul, Real.norm_of_nonneg ht.le] at h
-  calc t⁻¹ * ‖w - L (t • v)‖ ≤ t⁻¹ * (c * (t * ‖v‖)) := by gcongr
-    _ = c * ‖v‖ := by field_simp
-
-/-- Let `B` invert `T` on `v`, with `‖B‖ ≤ K`, let `u` be within `ε' ‖v‖` of `T v` with
-`K ε' ≤ 1 / 2`, and let `B'` be within `η` of `B`. Then `v` is within `(2 K² ε' + η) ‖u‖` of
-`B' u`. -/
-theorem norm_sub_apply_le_of_apply_eq {T : E →L[ℝ] F} {B B' : F →L[ℝ] E} {u : F} {v : E}
-    {K ε' η : ℝ} (hBT : B (T v) = v) (hB : ‖B‖ ≤ K) (hKε : K * ε' ≤ 1 / 2) (hε' : 0 ≤ ε')
-    (hu : ‖u - T v‖ ≤ ε' * ‖v‖) (hη : ‖B' - B‖ ≤ η) :
-    ‖v - B' u‖ ≤ (2 * K ^ 2 * ε' + η) * ‖u‖ := by
-  have hK : 0 ≤ K := (norm_nonneg _).trans hB
-  have hTv : ‖T v‖ ≤ ‖u‖ + ε' * ‖v‖ :=
-    (norm_le_insert' (T v) u).trans (by rw [norm_sub_rev]; gcongr)
-  -- First, `‖v‖ ≤ 2 K ‖u‖`.
-  have hv : ‖v‖ ≤ 2 * K * ‖u‖ := by
-    have : ‖v‖ ≤ K * (‖u‖ + ε' * ‖v‖) :=
-      calc ‖v‖ = ‖B (T v)‖ := by rw [hBT]
-        _ ≤ ‖B‖ * ‖T v‖ := B.le_opNorm _
-        _ ≤ K * (‖u‖ + ε' * ‖v‖) := mul_le_mul hB hTv (norm_nonneg _) hK
-    nlinarith [norm_nonneg v, norm_nonneg u]
-  have key : v - B' u = B (T v - u) + (B - B') u := by
-    rw [map_sub, hBT, sub_apply]
-    abel
-  calc ‖v - B' u‖ ≤ ‖B‖ * ‖T v - u‖ + ‖B - B'‖ * ‖u‖ := by
-        rw [key]
-        exact norm_add_le_of_le (B.le_opNorm _) ((B - B').le_opNorm _)
-    _ ≤ K * (ε' * (2 * K * ‖u‖)) + η * ‖u‖ := by
-        rw [norm_sub_rev, norm_sub_rev B]
-        gcongr
-        exact hu.trans (by gcongr)
-    _ = (2 * K ^ 2 * ε' + η) * ‖u‖ := by ring
+variable {S V W : Type*} [TopologicalSpace S] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-! ### Rescaling a map of `S × V` along the zero section -/
 
@@ -198,7 +156,7 @@ theorem continuousOn_zeroSectionRescale {h : S × V → S × W}
     rw [zeroSectionRescale_of_ne_zero hp]
     have := hδε p.2.1 _ hpU (by rwa [norm_smul, Real.norm_of_nonneg hp0.le])
     calc ‖(p.1 : ℝ)⁻¹ • (h (p.2.1, (p.1 : ℝ) • p.2.2)).2 - L p.2.1 p.2.2‖
-        ≤ ε / 2 / (‖q.2.2‖ + 1) * ‖p.2.2‖ := norm_inv_smul_sub_le hp0 this
+        ≤ ε / 2 / (‖q.2.2‖ + 1) * ‖p.2.2‖ := ContinuousLinearMap.norm_inv_smul_sub_le hp0 this
       _ ≤ ε / 2 / (‖q.2.2‖ + 1) * (‖q.2.2‖ + 1) := by gcongr
       _ = ε / 2 := div_mul_cancel₀ _ (by positivity)
       _ < ε := half_lt_self hε
@@ -263,7 +221,7 @@ theorem exists_norm_snd_inverse_sub_le [CompactSpace S] {g g' : S × V → S × 
     calc 2 * K ^ 2 * ε' ≤ 2 * K ^ 2 * (ε / (4 * K ^ 2)) := by gcongr; exact min_le_right _ _
       _ = ε / 2 := by field_simp; ring
   calc ‖v - (↑(A x)⁻¹ : V →L[ℝ] V) u‖ ≤ (2 * K ^ 2 * ε' + ε / 2) * ‖u‖ :=
-        norm_sub_apply_le_of_apply_eq hBv (hAK y) hKε (by positivity) h₁ h₃.le
+        ContinuousLinearMap.norm_sub_apply_le_of_apply_eq hBv (hAK y) hKε (by positivity) h₁ h₃.le
     _ ≤ ε * ‖u‖ := by nlinarith [norm_nonneg u]
 
 /-- **The isotopy of an open embedding to its linearization.** Let `g` be an open embedding of
