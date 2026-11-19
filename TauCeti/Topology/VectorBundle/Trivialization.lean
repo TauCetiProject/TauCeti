@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.FiberBundle.Constructions
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Trivializations over the whole base
@@ -54,7 +56,9 @@ bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear t
 and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
 `Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
 fields has the same continuous linear map at every point over either field
-(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`). Subspaces of
+the fibres of a vector bundle with finite-dimensional model fibre are closed
+(`VectorBundle.isClosed_submodule`).
 -/
 
 public section
@@ -351,5 +355,16 @@ protected theorem continuousSMul [∀ x, AddCommMonoid (E x)] [∀ x, Module �
   let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
     (FiberBundle.mem_baseSet_trivializationAt' b)
   e.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ e.map_smul c x
+
+/-- A subspace of a fibre of a topological vector bundle with finite-dimensional model fibre over a
+complete field is closed: the preferred trivialization at `b` maps it onto a finite-dimensional
+subspace of the model fibre. -/
+theorem isClosed_submodule [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [∀ x, AddCommGroup (E x)]
+    [∀ x, Module 𝕜 (E x)] [VectorBundle 𝕜 F E] (b : B) (L : Submodule 𝕜 (E b)) :
+    IsClosed (L : Set (E b)) := by
+  let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
+    (FiberBundle.mem_baseSet_trivializationAt' b)
+  rw [← e.toHomeomorph.isClosed_image]
+  exact (L.map (e : E b →ₗ[𝕜] F)).isClosed_of_finiteDimensional
 
 end VectorBundle
