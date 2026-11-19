@@ -141,36 +141,36 @@ theorem a5FourthD4BlockRotation_apply_mk_four (h : 4 < a5FourthD4.components.len
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_zero (h : 0 < a5FourthD4.components.length) :
     a5FourthD4BlockRotation.symm ⟨0, h⟩ = ⟨0, h⟩ := by
-  rw [a5FourthD4BlockRotation_symm_eq]
-  exact List.formPerm_apply_of_notMem (x := (0 : Fin 5)) (by decide)
+  exact (Equiv.symm_apply_eq a5FourthD4BlockRotation).mpr
+    (a5FourthD4BlockRotation_apply_mk_zero h).symm
 
 /-- The inverse of the rotation of the marked block moves position `1` to position `3`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_one (h : 1 < a5FourthD4.components.length) :
     a5FourthD4BlockRotation.symm ⟨1, h⟩ = ⟨3, by decide⟩ := by
-  rw [a5FourthD4BlockRotation_symm_eq]
-  exact List.formPerm_apply_getElem [(1 : Fin 5), 3, 2] (by decide) 0 (by decide)
+  exact (Equiv.symm_apply_eq a5FourthD4BlockRotation).mpr
+    (a5FourthD4BlockRotation_apply_mk_three (by decide)).symm
 
 /-- The inverse of the rotation of the marked block moves position `2` to position `1`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_two (h : 2 < a5FourthD4.components.length) :
     a5FourthD4BlockRotation.symm ⟨2, h⟩ = ⟨1, by decide⟩ := by
-  rw [a5FourthD4BlockRotation_symm_eq]
-  exact List.formPerm_apply_getElem [(1 : Fin 5), 3, 2] (by decide) 2 (by decide)
+  exact (Equiv.symm_apply_eq a5FourthD4BlockRotation).mpr
+    (a5FourthD4BlockRotation_apply_mk_one (by decide)).symm
 
 /-- The inverse of the rotation of the marked block moves position `3` to position `2`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_three (h : 3 < a5FourthD4.components.length) :
     a5FourthD4BlockRotation.symm ⟨3, h⟩ = ⟨2, by decide⟩ := by
-  rw [a5FourthD4BlockRotation_symm_eq]
-  exact List.formPerm_apply_getElem [(1 : Fin 5), 3, 2] (by decide) 1 (by decide)
+  exact (Equiv.symm_apply_eq a5FourthD4BlockRotation).mpr
+    (a5FourthD4BlockRotation_apply_mk_two (by decide)).symm
 
 /-- The inverse of the rotation of the marked block fixes position `4`. -/
 @[simp]
 theorem a5FourthD4BlockRotation_symm_apply_mk_four (h : 4 < a5FourthD4.components.length) :
     a5FourthD4BlockRotation.symm ⟨4, h⟩ = ⟨4, h⟩ := by
-  rw [a5FourthD4BlockRotation_symm_eq]
-  exact List.formPerm_apply_of_notMem (x := (4 : Fin 5)) (by decide)
+  exact (Equiv.symm_apply_eq a5FourthD4BlockRotation).mpr
+    (a5FourthD4BlockRotation_apply_mk_four h).symm
 
 /-- A function on the component positions of `A₅⁴ D₄` lists its five values. -/
 private theorem ofFn_a5FourthD4 {α : Type*} (f : Fin a5FourthD4.components.length → α) :
