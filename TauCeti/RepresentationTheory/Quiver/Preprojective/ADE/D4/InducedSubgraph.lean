@@ -7,9 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
-public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.Basic
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
 
 /-!
 # Characteristic-two cyclic classes from induced `D₄` subdiagrams
@@ -42,29 +40,6 @@ attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 variable (k : Type*) [CommRing k] {V : Type*} [Finite V] {G : SimpleGraph V}
 
-private noncomputable def d4EmbeddingQuotient (f : zigzagD4Graph ↪g G) :
-    signlessPreprojectiveAlgebra k (DoubledQuiver G) →ₐ[k]
-      signlessPreprojectiveAlgebra k (DoubledQuiver zigzagD4Graph) :=
-  (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange.symm).toAlgHom.comp
-    (signlessPreprojectiveInducedSubgraphHom k G (Set.range f))
-
-private theorem d4EmbeddingQuotient_arrow (f : zigzagD4Graph ↪g G) {i j : Fin 4}
-    (h : zigzagD4Graph.Adj i j) :
-    d4EmbeddingQuotient k f
-        (signlessPreprojectiveMk k _ (ofArrow (arrow G (f.map_adj_iff.mpr h)))) =
-      signlessArrow k zigzagD4Graph i.val j.val := by
-  classical
-  have hi : f i ∈ Set.range f := ⟨i, rfl⟩
-  have hj : f j ∈ Set.range f := ⟨j, rfl⟩
-  rw [signlessArrow_of_adj k h]
-  apply (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange).injective
-  simp only [d4EmbeddingQuotient, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
-    signlessPreprojectiveInducedSubgraphHom_ofArrow, dite_eq_left hi, dite_eq_left hj,
-    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofArrow]
-  -- Both constructions identify i with the range vertex ⟨f i, ⟨i, rfl⟩⟩.
-  rfl
-
 /-- An induced `D₄` subdiagram detects a nonzero degree-four cyclic class in characteristic
 two. This holds over every nontrivial commutative coefficient ring. -/
 theorem exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule_of_d4_embedding
@@ -85,14 +60,16 @@ theorem exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule_of
   refine ⟨z, mul_mem_signlessPreprojectiveGrade k _ (ha h21)
     (mul_mem_signlessPreprojectiveGrade k _ (ha h12)
       (mul_mem_signlessPreprojectiveGrade k _ (ha h01) (ha h10))), fun h => ?_⟩
-  have hmap : d4EmbeddingQuotient k f z = signlessWord k zigzagD4Graph [1, 2, 1, 0, 1] := by
-    simp only [z, a, map_mul, d4EmbeddingQuotient_arrow k f h21,
-      d4EmbeddingQuotient_arrow k f h12, d4EmbeddingQuotient_arrow k f h01,
-      d4EmbeddingQuotient_arrow k f h10,
-      signlessWord_cons_cons, signlessWord_singleton,
-      signlessArrow_mul_vertexIdempotent, ↓reduceIte]
+  have hmap : signlessPreprojectiveEmbeddingHom k f z =
+      signlessWord k zigzagD4Graph [1, 2, 1, 0, 1] := by
+    simp only [z, a, map_mul, signlessPreprojectiveEmbeddingHom_ofArrow k f h21,
+      signlessPreprojectiveEmbeddingHom_ofArrow k f h12,
+      signlessPreprojectiveEmbeddingHom_ofArrow k f h01,
+      signlessPreprojectiveEmbeddingHom_ofArrow k f h10, ← signlessArrow_of_adj,
+      signlessWord_cons_cons, signlessWord_singleton, signlessArrow_mul_vertexIdempotent,
+      ↓reduceIte]
   apply signlessWord_D4_cyclicWord_not_mem_commutatorSubmodule k h2
   rw [← hmap]
-  exact map_mem_commutatorSubmodule (d4EmbeddingQuotient k f) h
+  exact map_mem_commutatorSubmodule (signlessPreprojectiveEmbeddingHom k f) h
 
 end TauCeti

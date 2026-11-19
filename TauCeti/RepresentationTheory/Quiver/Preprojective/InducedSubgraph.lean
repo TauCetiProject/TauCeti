@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Finite
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
@@ -24,16 +25,25 @@ finite-dimensionality descends from a graph to each of its induced subgraphs.  I
 this reduction lets a finite-dimensionality calculation for the exceptional diagram `E₈` supply
 the corresponding results for `E₇` and `E₆` after deleting end vertices.
 
+A graph embedding `f : H ↪g G` identifies `H` with the subgraph of `G` induced on its image, so
+it gives a surjection `Π⁺(G) ⟶ Π⁺(H)` sending the arrows and vertices of the image of `f` to
+those of `H`. Since algebra homomorphisms preserve sums of commutators, a class of `Π⁺(H)` which
+is not a sum of commutators lifts to such a class of `Π⁺(G)`.
+
 ## Main definitions
 
 * `TauCeti.signlessPreprojectiveInducedSubgraphHom`: the quotient map from the signless
   preprojective algebra of a graph to that of an induced subgraph.
+* `TauCeti.signlessPreprojectiveEmbeddingHom`: the quotient map from the signless preprojective
+  algebra of a graph to that of the source of a graph embedding.
 
 ## Main results
 
 * `TauCeti.signlessPreprojectiveInducedSubgraphHom_surjective`: the induced map is surjective.
 * `TauCeti.moduleFinite_signlessPreprojectiveAlgebra_induce`: finite generation over the
   coefficient ring descends to an induced subgraph.
+* `TauCeti.signlessPreprojectiveEmbeddingHom_signlessWord`: for graphs on `Fin m` and `Fin n`,
+  the embedding quotient sends the class of the image of a walk to the class of the walk.
 
 ## References
 
@@ -433,5 +443,93 @@ theorem moduleFinite_signlessPreprojectiveAlgebra_induce
     (signlessPreprojectiveInducedSubgraphHom_surjective k G S)
 
 end PathAlgebra
+
+section Embedding
+
+variable (k : Type w) [CommRing k] {V : Type u} [Finite V] {W : Type*} [Finite W]
+  {G : SimpleGraph V} {H : SimpleGraph W}
+
+/-- The quotient map from the signless preprojective algebra of a finite graph `G` to that of
+the source `H` of a graph embedding `f : H ↪g G`: it kills the vertices outside the image of `f`,
+with every arrow incident to them, and relabels the image by `f`. -/
+noncomputable def signlessPreprojectiveEmbeddingHom (f : H ↪g G) :
+    signlessPreprojectiveAlgebra k (DoubledQuiver G) →ₐ[k]
+      signlessPreprojectiveAlgebra k (DoubledQuiver H) :=
+  (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange.symm).toAlgHom.comp
+    (signlessPreprojectiveInducedSubgraphHom k G (Set.range f))
+
+/-- The embedding quotient sends the vertex idempotent at the image of a vertex to the vertex
+idempotent at that vertex. -/
+@[simp]
+theorem signlessPreprojectiveEmbeddingHom_vertexIdempotent (f : H ↪g G) (i : W) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _ (vertexIdempotent k (vertex G (f i)))) =
+      signlessPreprojectiveMk k _ (vertexIdempotent k (vertex H i)) := by
+  classical
+  have hi : f i ∈ Set.range f := ⟨i, rfl⟩
+  apply (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange).injective
+  simp only [signlessPreprojectiveEmbeddingHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
+    signlessPreprojectiveInducedSubgraphHom_vertexIdempotent, dite_eq_left hi,
+    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_vertexIdempotent]
+  -- Both sides use the range vertex `⟨f i, ⟨i, rfl⟩⟩`.
+  rfl
+
+/-- The embedding quotient sends the arrow between the images of two adjacent vertices to the
+arrow between those vertices. -/
+theorem signlessPreprojectiveEmbeddingHom_ofArrow (f : H ↪g G) {i j : W} (h : H.Adj i j) :
+    signlessPreprojectiveEmbeddingHom k f
+        (signlessPreprojectiveMk k _ (ofArrow (arrow G (f.map_adj_iff.mpr h)))) =
+      signlessPreprojectiveMk k _ (ofArrow (arrow H h)) := by
+  classical
+  have hi : f i ∈ Set.range f := ⟨i, rfl⟩
+  have hj : f j ∈ Set.range f := ⟨j, rfl⟩
+  apply (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange).injective
+  simp only [signlessPreprojectiveEmbeddingHom, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
+    signlessPreprojectiveInducedSubgraphHom_ofArrow, dite_eq_left hi, dite_eq_left hj,
+    signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofArrow]
+  -- Both sides use the range vertices `⟨f i, ⟨i, rfl⟩⟩` and `⟨f j, ⟨j, rfl⟩⟩`.
+  rfl
+
+/-- The quotient map attached to a graph embedding is surjective. -/
+theorem signlessPreprojectiveEmbeddingHom_surjective (f : H ↪g G) :
+    Function.Surjective (signlessPreprojectiveEmbeddingHom k f) :=
+  (signlessPreprojectiveAlgebraEquiv k f.isoInduceRange.symm).surjective.comp
+    (signlessPreprojectiveInducedSubgraphHom_surjective k G (Set.range f))
+
+end Embedding
+
+section FinEmbedding
+
+variable (k : Type w) [CommRing k] {m n : ℕ} {G : SimpleGraph (Fin n)} {H : SimpleGraph (Fin m)}
+
+/-- The embedding quotient sends the arrow class between the images of two vertices to the
+arrow class between them; both vanish when the vertices are not adjacent. -/
+@[simp]
+theorem signlessPreprojectiveEmbeddingHom_signlessArrow (f : H ↪g G) (i j : Fin m) :
+    signlessPreprojectiveEmbeddingHom k f (signlessArrow k G (f i) (f j)) =
+      signlessArrow k H i j := by
+  by_cases h : H.Adj i j
+  · rw [signlessArrow_of_adj k (f.map_adj_iff.mpr h), signlessArrow_of_adj k h,
+      signlessPreprojectiveEmbeddingHom_ofArrow]
+  · rw [signlessArrow_eq_zero k fun _ _ h' => h (f.map_adj_iff.mp (by simpa using h')),
+      signlessArrow_eq_zero k fun _ _ h' => h (by simpa using h'), map_zero]
+
+/-- The embedding quotient sends the class of the image of a walk to the class of the walk. -/
+@[simp]
+theorem signlessPreprojectiveEmbeddingHom_signlessWord (f : H ↪g G) (l : List (Fin m)) :
+    signlessPreprojectiveEmbeddingHom k f (signlessWord k G (l.map f)) = signlessWord k H l := by
+  induction l with
+  | nil => simp
+  | cons j l ih =>
+    cases l with
+    | nil => simp
+    | cons i r =>
+      rw [List.map_cons, List.map_cons, signlessWord_cons_cons, map_mul,
+        signlessPreprojectiveEmbeddingHom_signlessArrow, ← List.map_cons, ih,
+        signlessWord_cons_cons]
+
+end FinEmbedding
 
 end TauCeti
