@@ -40,6 +40,8 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.SymplecticForm.ofTames`: an alternating form `B` with `B v (J v) > 0` for every
   nonzero `v` is a symplectic form, which tames `J` (`TauCeti.SymplecticForm.tames_ofTames`).
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
+* `TauCeti.SymplecticForm.exists_tames_not_compatible`: a tame pair on `ℝ⁴` which is not
+  compatible, so taming is strictly weaker than compatibility.
 * `TauCeti.AlmostComplexStructure.product`: the standard almost complex structure on
   `V × V`, sending `(x, y)` to `(-y, x)`.
 * `TauCeti.cayleyFormula`: the Cayley coordinate expression `-(1 + A B)(1 - A B)⁻¹` in any ring,
@@ -646,6 +648,11 @@ lemma neg_eq (ω : SymplecticForm V) (v w : V) :
     -ω v w = ω w v :=
   ω.isAlt.neg_eq v w
 
+/-- A symplectic form is linear in its second argument; in particular it commutes with negation
+there. -/
+lemma apply_neg (ω : SymplecticForm V) (v w : V) : ω v (-w) = -ω v w :=
+  map_neg (ω.toBilinForm v) w
+
 /-- Bilinear expansion of `ω` on the plane spanned by a pair of vectors: only the mixed term
 `ω x y` survives. -/
 lemma apply_smul_add_smul (ω : SymplecticForm V) (x y : V) (a b c d : ℝ) :
@@ -822,6 +829,58 @@ theorem Tames.injective_add {ω : SymplecticForm V} {J₀ J₁ : AlmostComplexSt
 lemma Compatible.invariant_apply {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) (v w : V) : ω (J v) (J w) = ω v w :=
   (ω.invariant_iff J).mp h.invariant v w
+
+/-! ### A tame structure which is not compatible -/
+
+section TameNotCompatible
+
+/-- The alternating form on `ℝ⁴ = (ℝ × ℝ) × (ℝ × ℝ)` which is the sum of the standard form
+`ω₀ = da ∧ dc + db ∧ dd`, compatible with `J(x, y) = (-y, x)`, and the anti-invariant form
+`β = da ∧ db - dc ∧ dd`, for the coordinates `((a, b), (c, d))`. -/
+private def tameNotCompatibleBilinForm : LinearMap.BilinForm ℝ ((ℝ × ℝ) × (ℝ × ℝ)) :=
+  LinearMap.mk₂ ℝ
+    (fun v w ↦ v.1.1 * w.2.1 - v.2.1 * w.1.1 + v.1.2 * w.2.2 - v.2.2 * w.1.2 +
+      (v.1.1 * w.1.2 - v.1.2 * w.1.1) - (v.2.1 * w.2.2 - v.2.2 * w.2.1))
+    (fun _ _ _ ↦ by simp only [Prod.fst_add, Prod.snd_add]; ring)
+    (fun _ _ _ ↦ by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
+    (fun _ _ _ ↦ by simp only [Prod.fst_add, Prod.snd_add]; ring)
+    (fun _ _ _ ↦ by simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul]; ring)
+
+private theorem tameNotCompatibleBilinForm_apply (v w : (ℝ × ℝ) × (ℝ × ℝ)) :
+    tameNotCompatibleBilinForm v w =
+      v.1.1 * w.2.1 - v.2.1 * w.1.1 + v.1.2 * w.2.2 - v.2.2 * w.1.2 +
+        (v.1.1 * w.1.2 - v.1.2 * w.1.1) - (v.2.1 * w.2.2 - v.2.2 * w.2.1) :=
+  (rfl)
+
+/-- **Tameness does not imply compatibility.** On `ℝ⁴ = (ℝ × ℝ) × (ℝ × ℝ)` with the almost
+complex structure `J(x, y) = (-y, x)`, the form `ω = ω₀ + β`, where `ω₀` is the standard
+compatible form and `β = da ∧ db - dc ∧ dd` satisfies `β(J ·, J ·) = -β`, has
+`ω(v, J v) = ω₀(v, J v) = a² + b² + c² + d²` for `v = ((a, b), (c, d))`, so it tames `J`; but
+`ω(J v, J w) = ω₀(v, w) - β(v, w)` differs from `ω(v, w)` when `β(v, w) ≠ 0`, so it is not
+compatible with `J`. -/
+theorem exists_tames_not_compatible :
+    ∃ (ω : SymplecticForm ((ℝ × ℝ) × (ℝ × ℝ)))
+      (J : AlmostComplexStructure ((ℝ × ℝ) × (ℝ × ℝ))), ω.Tames J ∧ ¬ω.Compatible J := by
+  have hB : tameNotCompatibleBilinForm.IsAlt := fun v ↦ by
+    rw [tameNotCompatibleBilinForm_apply]
+    ring
+  have hJ : ∀ v, v ≠ 0 → 0 < tameNotCompatibleBilinForm v (AlmostComplexStructure.product _ v) := by
+    rintro ⟨⟨a, b⟩, ⟨c, d⟩⟩ hv
+    simp only [tameNotCompatibleBilinForm_apply, AlmostComplexStructure.product_apply,
+      Prod.fst_neg, Prod.snd_neg]
+    have : a ≠ 0 ∨ b ≠ 0 ∨ c ≠ 0 ∨ d ≠ 0 := by
+      by_contra! h
+      obtain ⟨rfl, rfl, rfl, rfl⟩ := h
+      exact hv rfl
+    rcases this with h | h | h | h <;>
+      nlinarith [sq_pos_of_ne_zero h, sq_nonneg a, sq_nonneg b, sq_nonneg c, sq_nonneg d]
+  refine ⟨ofTames _ hB hJ, AlmostComplexStructure.product _, tames_ofTames hB hJ, fun hc ↦ ?_⟩
+  have := hc.invariant_apply ((1, 0), (0, 0)) ((0, 1), (0, 0))
+  simp only [ofTames_apply, tameNotCompatibleBilinForm_apply,
+    AlmostComplexStructure.product_apply] at this
+  norm_num at this
+
+end TameNotCompatible
 
 /-- For a complex structure `J` preserving `ω`, the endomorphism `J` itself is skew-adjoint
 for `ω`. This is the form of invariance that is linear in `J`. -/
