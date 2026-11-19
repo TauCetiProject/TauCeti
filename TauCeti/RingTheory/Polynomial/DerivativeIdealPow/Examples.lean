@@ -51,8 +51,9 @@ example {R : Type*} [CommSemiring R] (g : R[X]) (a : R) (J : Ideal R) (K : ℕ) 
   ⟨derivative_prod_mem_ideal_pow (fun _ : Fin 1 ↦ 0) g a J K (by simp),
     hasseDeriv_prod_mem_ideal_pow (fun _ : Fin 1 ↦ 0) g a J K (by simp)⟩
 
-/-- At order bound zero two vanishing linear factors contribute `(0)²`; their second derivative
-is `2`, so the conclusion cannot be extended past the order bound. -/
+/-- At order bound zero two vanishing linear factors contribute `(0)²`. Their second derivative
+at zero is `2 ∉ (0)²`, so the conclusion need not hold at every order without hypotheses through
+that order. -/
 example :
     (∀ k ≤ 0, (derivative^[k] (1 * ∏ _ : Fin 2, (X : ℤ[X]))).eval 0 ∈
       (⊥ : Ideal ℤ) ^ 2) ∧
@@ -96,8 +97,8 @@ example : ∀ k ≤ 0,
   apply pderiv_prod_mem_ideal_pow (2 : Fin 3) (fun _ : Fin 2 ↦ X 2) (X 0) ![7, 7, 0] ⊥ 0
   simp
 
-/-- The second partial derivative in that third variable evaluates to `14`, outside `(0)²`;
-the variable and the finite order bound both matter. -/
+/-- The second partial derivative in that third variable evaluates to `14`, outside `(0)²`,
+so the finite order bound matters. -/
 example :
     eval ![7, 7, 0] ((pderiv (2 : Fin 3))^[2]
       (X 0 * ∏ _ : Fin 2, (X 2 : MvPolynomial (Fin 3) ℤ))) = 14 ∧
