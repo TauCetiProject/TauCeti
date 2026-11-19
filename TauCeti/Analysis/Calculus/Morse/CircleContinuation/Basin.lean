@@ -156,6 +156,17 @@ private theorem circleContinuationSlope_eq_of_sin_eq_zero {δ r₀ c t θ : ℝ}
     sin_add, hc, mul_zero, add_zero]
   ring
 
+/-- The maxima `r + j π` of `cos (2 (θ - r))` are critical points. -/
+private theorem sin_two_mul_add_int_mul_pi_sub (r : ℝ) (j : ℤ) : sin (2 * (r + j * π - r)) = 0 := by
+  rw [show 2 * (r + j * π - r) = ((2 * j : ℤ) : ℝ) * π by push_cast; ring]
+  exact sin_int_mul_pi _
+
+/-- The minima `r + π / 2 + j π` of `cos (2 (θ - r))` are critical points. -/
+private theorem sin_two_mul_add_pi_div_two_add_int_mul_pi_sub (r : ℝ) (j : ℤ) :
+    sin (2 * (r + π / 2 + j * π - r)) = 0 := by
+  rw [show 2 * (r + π / 2 + j * π - r) = ((2 * j + 1 : ℤ) : ℝ) * π by push_cast; ring]
+  exact sin_int_mul_pi _
+
 /-- Near a maximum `c = r₀ + j π` of `δ cos (2 (θ - r₀))` the slope is
 `2 δ sin (2 (θ - c)) / (t (1 - t²))`. -/
 private theorem circleContinuationSlope_eq_of_add_int_mul_pi {δ r₀ t θ : ℝ} {r : ℝ → ℝ}
@@ -163,8 +174,8 @@ private theorem circleContinuationSlope_eq_of_add_int_mul_pi {δ r₀ t θ : ℝ
     circleContinuationSlope δ r t θ =
       2 * δ * sin (2 * (θ - (r₀ + j * π))) / (t * (1 - t ^ 2)) := by
   have h : 2 * (r₀ + j * π - r₀) = j * (2 * π) := by ring
-  rw [circleContinuationSlope_eq_of_sin_eq_zero hr
-    (by rw [h, sin_periodic.int_mul_eq, sin_zero]), h, cos_int_mul_two_pi, mul_one]
+  rw [circleContinuationSlope_eq_of_sin_eq_zero hr (sin_two_mul_add_int_mul_pi_sub r₀ j), h,
+    cos_int_mul_two_pi, mul_one]
 
 /-- Near a minimum `c = r₀ + π / 2 + j π` of `δ cos (2 (θ - r₀))` the slope is
 `2 (-δ) sin (2 (θ - c)) / (t (1 - t²))`. -/
@@ -174,8 +185,8 @@ private theorem circleContinuationSlope_eq_of_add_pi_div_two_add_int_mul_pi {δ 
       2 * (-δ) * sin (2 * (θ - (r₀ + π / 2 + j * π))) / (t * (1 - t ^ 2)) := by
   have h : 2 * (r₀ + π / 2 + j * π - r₀) = j * (2 * π) + π := by ring
   rw [circleContinuationSlope_eq_of_sin_eq_zero hr
-    (by rw [h, sin_add_pi, sin_periodic.int_mul_eq, sin_zero, neg_zero]), h, cos_add_pi,
-    cos_int_mul_two_pi, mul_neg_one]
+    (sin_two_mul_add_pi_div_two_add_int_mul_pi_sub r₀ j), h, cos_add_pi, cos_int_mul_two_pi,
+    mul_neg_one]
 
 /-- Through every angle `v` at every parameter `s` passes an explicit solution on `(0, 1)` of the
 equation for a path which is `r₀` wherever the solution is used: the explicit trajectory around the
@@ -558,9 +569,8 @@ theorem exists_hasDerivAt_circleContinuationSlope_tendsto_add_pi_div_two (hδ : 
       (eqOn_of_hasDerivWithinAt_circleContinuationSlope ht.1 (hab.trans_lt hb)
         (fun u hu ↦ (hΘ u ⟨ht.1.trans_le hu.1, hu.2.trans_lt (hab.trans_lt hb)⟩).hasDerivWithinAt)
         (fun u hu ↦ (hasDerivAt_const_circleContinuationSlope (by
-          rw [hr₀ u ⟨ht.1.trans_le hu.1, hu.2⟩,
-            show 2 * (r₀ + π / 2 + j * π - r₀) = j * (2 * π) + π by ring, sin_add_pi,
-            sin_periodic.int_mul_eq, sin_zero, neg_zero])).hasDerivWithinAt)
+          rw [hr₀ u ⟨ht.1.trans_le hu.1, hu.2⟩]
+          exact sin_two_mul_add_pi_div_two_add_int_mul_pi_sub r₀ j)).hasDerivWithinAt)
         (right_mem_Icc.2 ht.2) hΘa (left_mem_Icc.2 ht.2)).symm)
   exact ⟨Θ, hΘ, hlim,
     tendsto_nhdsLT_one_of_tendsto_nhdsGT_zero_of_hasDerivAt_circleContinuationSlope hδ ha hab hb
@@ -584,8 +594,8 @@ theorem exists_hasDerivAt_circleContinuationSlope_tendsto_add_int_mul_pi (hδ : 
       (eqOn_of_hasDerivWithinAt_circleContinuationSlope (ha.trans_le hab) ht.2
         (fun u hu ↦ (hΘ u ⟨(ha.trans_le hab).trans_le hu.1, hu.2.trans_lt ht.2⟩).hasDerivWithinAt)
         (fun u hu ↦ (hasDerivAt_const_circleContinuationSlope (by
-          rw [hr₁ u ⟨hu.1, hu.2.trans_lt ht.2⟩, show 2 * (r₁ + k * π - r₁) = k * (2 * π) by ring,
-            sin_periodic.int_mul_eq, sin_zero])).hasDerivWithinAt)
+          rw [hr₁ u ⟨hu.1, hu.2.trans_lt ht.2⟩]
+          exact sin_two_mul_add_int_mul_pi_sub r₁ k)).hasDerivWithinAt)
         (left_mem_Icc.2 ht.1) hΘb (right_mem_Icc.2 ht.1)).symm)
   exact ⟨Θ, hΘ,
     tendsto_nhdsGT_zero_of_tendsto_nhdsLT_one_of_hasDerivAt_circleContinuationSlope hδ ha hab hb
