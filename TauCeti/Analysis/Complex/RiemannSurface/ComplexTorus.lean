@@ -44,6 +44,10 @@ the full automorphism group infinite (`Diffeomorph.finite_fixingSubgroup_iff_non
 genus-one component of a marked nodal curve, this is the statement that the component is stable,
 `2 g - 2 + n > 0`, exactly when its automorphisms fixing its special points form a finite group.
 
+A submodule containing the horizontal exponential period `2π` also gives a continuous
+logarithmic quotient coordinate `z ↦ [-i log z]` off zero. This remains continuous across the
+principal branch cut and requires neither discreteness nor a full lattice.
+
 ## Main results
 
 * `ContMDiff.exists_apply_mk_eq_mul_add`: holomorphic maps of one-dimensional complex tori are
@@ -242,4 +246,3 @@ theorem Submodule.continuousOn_orbitRelQuotient_mk_neg_I_mul_log
     rw [exp_log hw0, exp_log (div_ne_zero hw0 hz0), exp_log hz0, div_mul_cancel₀ _ hz0]
   have hcont := (continuous_quotient_mk'.continuousAt.comp hc).congr_of_eventuallyEq heq
   exact hcont.continuousWithinAt
-
