@@ -112,10 +112,12 @@ extension of `F'` with respect to the frame at the cusp:
   `q = 0`, the nonzero constant of `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_smul_cusp_eq`
   (`TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_automorphyExtension_automorphyFrame`);
 * for the chart of a local linearizing coordinate at a point `z'` of `ℍ`, on a precisely
-  invariant disc, the transition functions in the two directions are inverse to each other, also
-  at the orbit of `z'`, where the elliptic frame may vanish
+  invariant disc, the transition functions in the two directions are inverse to each other
   ([`automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one`](https://taucetiproject.org/docs/TauCeti/Analysis/Complex/Fuchsian/Cusp/Automorphy.html#TauCeti.Subgroup.CuspDatum.automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one)),
-  so they vanish nowhere on the overlap.
+  so they vanish nowhere on the overlap. The overlap contains no elliptic point: an element of
+  `Γ` fixing a point of a precisely invariant horodisc also fixes the cusp, so it is trivial.
+  Hence the overlap meets the orbit of `z'` only when `z'` has trivial stabilizer, and then
+  `r' = 0` and the elliptic frame vanishes nowhere.
 
 At a regular cusp, or in even weight, `ε ^ k = 1`, so `r = 0`: the frame is `denom s τ ^ (-k)` and
 the coefficient is the usual expansion of `f ∣[k] s⁻¹` in `q`. At an irregular cusp in odd weight
@@ -1164,9 +1166,10 @@ sign condition with `r < 2`, and let the horodisc of height `A` be precisely inv
 `r' < m'` satisfying the frame condition. If `τ` is a point of the horodisc and `σ = h • τ`, for
 `h ∈ Γ'`, is a point of the disc about `z'`, then the transition function from the chart of `ψ'`
 to that at the cusp, at the cusp coordinate of `τ`, times the transition function from the chart
-at the cusp to that of `ψ'`, at the quotient coordinate of `σ`, is `1`. This holds also when `σ`
-is the centre `z'`, where for `r' ≠ 0` the frame of `ψ'` vanishes; so both transition functions
-are units on the whole overlap of the two charts. -/
+at the cusp to that of `ψ'`, at the quotient coordinate of `σ`, is `1`; so both transition
+functions are units on the whole overlap of the two charts. Since every point of a precisely
+invariant horodisc has trivial stabilizer in `Γ`, the overlap contains no elliptic point, so
+`σ` is the centre `z'` only when `r' = 0`, and the frame of `ψ'` does not vanish there. -/
 theorem automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one
     (hs : (s : PSL(2, ℝ)) = D.scaling) (ψ' : Γ.LinearizingCoordinate z' ε')
     (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ)
@@ -1212,8 +1215,7 @@ theorem automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorp
 
 /-- **The transition function from an elliptic chart to the chart at a cusp vanishes nowhere
 on their overlap.** The horodisc and the elliptic disc are precisely invariant, and their
-exponents satisfy the frame conditions. Nonvanishing holds also at the elliptic centre,
-where the elliptic frame may vanish. -/
+exponents satisfy the frame conditions. -/
 theorem automorphyDescent_automorphyExtension_linearizingCoordinate_automorphyFrame_ne_zero
     (hs : (s : PSL(2, ℝ)) = D.scaling) (ψ' : Γ.LinearizingCoordinate z' ε')
     (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ)
