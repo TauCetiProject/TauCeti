@@ -10,10 +10,11 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 /-!
 # Elementary bounds for the real exponential
 
-Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`. For `0 < x`
-the function `x / (exp x - 1)`, the generating function of the Bernoulli numbers, lies between
-`exp (-x)` and `1`. With `q = exp (-x)` it is `x q / (1 - q)`, the rescaled mean of the geometric
-weights `(1 - q) q ^ k`, so these bounds control geometric averages as `q ↑ 1`.
+Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`, and
+`(A x + B) exp (-(a x))` tends to `0`. For `0 < x` the function `x / (exp x - 1)`, the generating
+function of the Bernoulli numbers, lies between `exp (-x)` and `1`. With `q = exp (-x)` it is
+`x q / (1 - q)`, the rescaled mean of the geometric weights `(1 - q) q ^ k`, so these bounds control
+geometric averages as `q ↑ 1`.
 
 Comparing a real power `y ^ ε` with an exponential level `exp (-t)` amounts to comparing `y`
 with the rescaled level `exp (-(t / ε))`. For `σ ≥ 0` and `c > 0` the function `x ^ σ exp (-c x)`
@@ -22,6 +23,8 @@ is bounded on `x ≥ 0`.
 ## Main results
 
 * `TauCeti.eventually_mul_add_lt_exp_mul`: `A x + B < exp (a x)` eventually, for `0 < a`.
+* `TauCeti.tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero`: `(A x + B) exp (-(a x)) → 0` as
+  `x → ∞`, for `0 < a`.
 * `TauCeti.exists_pos_eventually_forall_le_mul_exp`: finitely many eventual exponential bounds
   `f i s t ≤ A_i exp (-κ_i s)` combine into one, with the slowest rate and the largest constant.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
@@ -42,6 +45,7 @@ is bounded on `x ≥ 0`.
 public section
 
 open Filter Real
+open scoped Topology
 
 namespace TauCeti
 
@@ -53,6 +57,13 @@ theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :
   rw [rpow_one, lt_div_iff₀ (by linarith)] at hx
   nlinarith [mul_nonneg (sub_nonneg.2 (le_abs_self A)) (by linarith : (0 : ℝ) ≤ x),
     mul_nonneg (abs_nonneg B) (by linarith : (0 : ℝ) ≤ x - 1), le_abs_self B]
+
+/-- An affine function of `x` times `exp (-(a x))` tends to `0` as `x → ∞`, for `0 < a`. -/
+theorem tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero {a : ℝ} (ha : 0 < a) (A B : ℝ) :
+    Tendsto (fun x ↦ (A * x + B) * exp (-(a * x))) atTop (𝓝 0) := by
+  have h₁ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 1 a ha).const_mul A
+  have h₀ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 0 a ha).const_mul B
+  simpa [rpow_one, rpow_zero, add_mul, mul_assoc] using h₁.add h₀
 
 /-- Eventual exponential bounds `f i s t ≤ A_i exp (-κ_i s)` with rates `κ_i > 0`, for finitely
 many indices `i`, combine into one bound `f i s t ≤ A exp (-κ s)` for all `i`, with the slowest
