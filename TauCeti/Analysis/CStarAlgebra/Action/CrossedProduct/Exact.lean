@@ -88,24 +88,15 @@ theorem fullCrossedProductMap_exact :
   -- The range of `I ⋊ G` is a closed two-sided ideal `J` of `A ⋊ G`.
   have hmul (a : A) (y : A) (hy : y ∈ I) : a * y ∈ I :=
     (hker _).1 (by rw [map_mul, (hker y).2 hy, mul_zero])
-  let R := (hI.subtypeHom.fullCrossedProductMap μ).range
-  let J : TwoSidedIdeal (FullCrossedProduct α μ) := .mk' R R.zero_mem R.add_mem R.neg_mem
-    (fun hy => hI.mul_mem_range_fullCrossedProductMap_subtypeHom_left μ hmul _ hy)
-    (fun hy => hI.mul_mem_range_fullCrossedProductMap_subtypeHom_right μ hmul hy _)
-  have hJ (y : FullCrossedProduct α μ) : y ∈ J ↔ y ∈ R := TwoSidedIdeal.mem_mk' _ _ _ _ _ _ y
-  have : IsClosed (J : Set (FullCrossedProduct α μ)) := by
-    rw [TwoSidedIdeal.coe_mk']
-    exact NonUnitalStarAlgHom.isClosed_range _
+  let J := hI.fullCrossedProductIdeal μ hmul
   -- Represent `(A ⋊ G) ⧸ J` faithfully and pull the representation back to `A ⋊ G`.
   obtain ⟨H, _, _, _, L, hLinj, hLnd⟩ :=
     TauCeti.CStarAlgebra.exists_faithful_nondegenerate_representation
       (FullCrossedProduct α μ ⧸ J)
   let L' := L.comp (TwoSidedIdeal.Quotient.mkStarAlgHom J)
-  have hL' : L'.IsNondegenerate := by
-    rw [NonUnitalStarAlgHom.isNondegenerate_iff_dense] at hLnd ⊢
-    have hU := (TwoSidedIdeal.Quotient.mk_surjective J).iUnion_comp fun z => Set.range (L z)
-    simpa only [L', NonUnitalStarAlgHom.comp_apply,
-      TwoSidedIdeal.Quotient.mkStarAlgHom_apply, hU] using hLnd
+  have hL' : L'.IsNondegenerate :=
+    (NonUnitalStarAlgHom.isNondegenerate_comp_iff
+      (TwoSidedIdeal.Quotient.mkStarAlgHom_surjective J).denseRange).2 hLnd
   -- `L'` integrates a covariant pair whose coefficient representation vanishes on `I`.
   let P := L'.toCovariantRepresentation hL'
   have hP : P.integratedFull μ = L' := L'.integratedFull_toCovariantRepresentation hL'
@@ -113,7 +104,8 @@ theorem fullCrossedProductMap_exact :
     refine (hI.forall_mem_range_fullCrossedProductMap_subtypeHom_integratedFull_eq_zero_iff
       μ P).1 (fun y hy => ?_) a ((hker a).1 ha)
     rw [hP, NonUnitalStarAlgHom.comp_apply, TwoSidedIdeal.Quotient.mkStarAlgHom_apply,
-      TwoSidedIdeal.Quotient.eq_zero_iff_mem.2 ((hJ y).2 hy), map_zero]
+      TwoSidedIdeal.Quotient.eq_zero_iff_mem.2 ((hI.mem_fullCrossedProductIdeal μ hmul).2 hy),
+      map_zero]
   -- The pair descends along `q`, so `L'` factors through `q.fullCrossedProductMap μ`.
   have hLx : L' x = 0 := by
     rw [← hP, ← P.comap_descend q hq hPq,
@@ -121,6 +113,6 @@ theorem fullCrossedProductMap_exact :
   have hmk : TwoSidedIdeal.Quotient.mk J x = 0 :=
     hLinj (by simpa only [L', NonUnitalStarAlgHom.comp_apply,
       TwoSidedIdeal.Quotient.mkStarAlgHom_apply, map_zero] using hLx)
-  exact (hJ x).1 (TwoSidedIdeal.Quotient.eq_zero_iff_mem.1 hmk)
+  exact (hI.mem_fullCrossedProductIdeal μ hmul).1 (TwoSidedIdeal.Quotient.eq_zero_iff_mem.1 hmk)
 
 end TauCeti.CStarAction.Hom
