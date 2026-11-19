@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.Analysis.Complex.Sqrt
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Normalization
 
 /-!
@@ -46,31 +47,23 @@ namespace QuadraticForm
 
 variable {M ι : Type*} [AddCommGroup M] [Module ℂ M]
 
-/-- The principal square root of a nonzero complex number, as a unit. -/
-private noncomputable def sqrtUnit {z : ℂ} (hz : z ≠ 0) : ℂˣ :=
-  Units.mk0 (z ^ (2⁻¹ : ℂ)) (by simp [Complex.cpow_eq_zero_iff, hz])
-
-private theorem sqrtUnit_mul_self {z : ℂ} (hz : z ≠ 0) :
-    (sqrtUnit hz : ℂ) * sqrtUnit hz = z := by
-  rw [← _root_.sq, sqrtUnit, Units.val_mk0, Complex.cpow_ofNat_inv_pow]
-
 /-- The complex normalization of a basis `b` on which `Q` takes nonzero values: each `b i` is
 divided by the principal square root of `Q (b i)`. -/
 noncomputable def complexNormalizedBasis (Q : QuadraticForm ℂ M) (b : Basis ι ℂ M)
     (h0 : ∀ i, Q (b i) ≠ 0) : Basis ι ℂ M :=
-  b.unitsSMul fun i => (sqrtUnit (h0 i))⁻¹
+  b.unitsSMul fun i => (Complex.sqrtUnit (h0 i))⁻¹
 
 @[simp]
 theorem complexNormalizedBasis_apply (Q : QuadraticForm ℂ M) (b : Basis ι ℂ M)
     (h0 : ∀ i, Q (b i) ≠ 0) (i : ι) :
     Q.complexNormalizedBasis b h0 i = (Q (b i) ^ (2⁻¹ : ℂ))⁻¹ • b i := by
   rw [complexNormalizedBasis, Basis.unitsSMul_apply, Units.smul_def, Units.val_inv_eq_inv_val,
-    sqrtUnit, Units.val_mk0]
+    Complex.val_sqrtUnit, Complex.sqrt]
 
 /-- Each member of the complex normalized basis has value `1`. -/
 theorem apply_complexNormalizedBasis_eq_one (Q : QuadraticForm ℂ M) (b : Basis ι ℂ M)
     (h0 : ∀ i, Q (b i) ≠ 0) (i : ι) : Q (Q.complexNormalizedBasis b h0 i) = 1 :=
-  apply_unitsSMul_inv_eq_one (fun i => sqrtUnit_mul_self (h0 i)) i
+  apply_unitsSMul_inv_eq_one (fun i => Complex.sqrtUnit_mul_self (h0 i)) i
 
 /-- The complex normalization of an orthogonal basis is orthogonal. -/
 theorem isOrthoᵢ_complexNormalizedBasis {Q : QuadraticForm ℂ M} {b : Basis ι ℂ M}
@@ -84,7 +77,7 @@ variable [Fintype ι]
 theorem toMatrix_complexNormalizedBasis [DecidableEq ι] {Q : QuadraticForm ℂ M}
     {b : Basis ι ℂ M} (hb : (associated Q).IsOrthoᵢ b) (h0 : ∀ i, Q (b i) ≠ 0) :
     Q.toMatrix (Q.complexNormalizedBasis b h0) = 1 :=
-  toMatrix_unitsSMul_inv hb fun i => sqrtUnit_mul_self (h0 i)
+  toMatrix_unitsSMul_inv hb fun i => Complex.sqrtUnit_mul_self (h0 i)
 
 /-- The specified complex sum-of-squares normalization of an orthogonal basis `b` on which `Q`
 takes nonzero values: coordinates in `Q.complexNormalizedBasis b h0`, as an isometry from `Q` to
@@ -92,8 +85,8 @@ the standard sum of squares. -/
 noncomputable def complexIsometryEquivSumSquares (Q : QuadraticForm ℂ M) (b : Basis ι ℂ M)
     (hb : (associated Q).IsOrthoᵢ b) (h0 : ∀ i, Q (b i) ≠ 0) :
     Q.IsometryEquiv (weightedSumSquares ℂ (1 : ι → ℂ)) :=
-  Q.isometryEquivSumSquaresOfMulSelf b hb (fun i => sqrtUnit (h0 i))
-    fun i => sqrtUnit_mul_self (h0 i)
+  Q.isometryEquivSumSquaresOfMulSelf b hb (fun i => Complex.sqrtUnit (h0 i))
+    fun i => Complex.sqrtUnit_mul_self (h0 i)
 
 variable {Q : QuadraticForm ℂ M} {b : Basis ι ℂ M} (hb : (associated Q).IsOrthoᵢ b)
   (h0 : ∀ i, Q (b i) ≠ 0)
@@ -124,8 +117,8 @@ variable [DecidableEq ι]
 times the `i`-th standard coordinate vector. -/
 theorem complexIsometryEquivSumSquares_apply_basis (i : ι) :
     Q.complexIsometryEquivSumSquares b hb h0 (b i) = Q (b i) ^ (2⁻¹ : ℂ) • Pi.single i 1 := by
-  rw [complexIsometryEquivSumSquares, isometryEquivSumSquaresOfMulSelf_apply_basis, sqrtUnit,
-    Units.val_mk0]
+  rw [complexIsometryEquivSumSquares, isometryEquivSumSquaresOfMulSelf_apply_basis,
+    Complex.val_sqrtUnit, Complex.sqrt]
 
 /-- The inverse of the specified complex normalization sends the `i`-th standard coordinate vector
 to the `i`-th member of the complex normalized basis. -/

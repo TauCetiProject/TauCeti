@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.QuadraticForm.SepClosed
+public import TauCeti.LinearAlgebra.BilinearMap.Orthogonal
+public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
 # Normalized bases and the sum-of-squares normalization
@@ -21,7 +22,9 @@ Any orthogonal basis `b` becomes normalized once each `b i` is divided by a chos
 of the data `(b, c)`: it sends `b i` to `c i` times the `i`-th coordinate vector. Different square
 roots give different isometries, so the choice is part of the data and is retained in every
 statement. Over a separably closed field of characteristic different from two such square roots
-always exist, so a finite-dimensional nondegenerate form has a normalized basis.
+always exist, so a finite-dimensional nondegenerate form has a normalized basis; this is
+`QuadraticForm.exists_toMatrix_eq_one_of_isSepClosed` in
+`TauCeti.LinearAlgebra.QuadraticForm.SepClosed`.
 
 Normalized bases are the input of the coordinate comparisons for Clifford algebras: in a
 normalized basis the Clifford generators square to `1`, and transporting along the specified
@@ -36,7 +39,8 @@ normalization identifies the Clifford algebra of `Q` with that of the sum of squ
 
 ## Main results
 
-* `LinearMap.IsOrthoᵢ.unitsSMul`: rescaling an orthogonal basis by units keeps it orthogonal.
+* `QuadraticForm.apply_inv_smul_eq_one_of_mul_self`: dividing a vector by a unit square root of
+  its value normalizes that value to `1`.
 * `QuadraticForm.toMatrix_eq_diagonal_iff`, `QuadraticForm.toMatrix_eq_one_iff`: the Gram matrix of
   a basis is diagonal with prescribed entries exactly when the basis is orthogonal with those
   values; it is the identity exactly when the basis is normalized.
@@ -47,9 +51,17 @@ normalization identifies the Clifford algebra of `Q` with that of the sum of squ
 * `QuadraticForm.equivalent_weightedSumSquares_one_iff_exists_toMatrix_eq_one`: a form is
   equivalent to the sum of squares on `ι → R` exactly when it has a basis indexed by `ι` with
   identity Gram matrix.
-* `QuadraticForm.exists_toMatrix_eq_one_of_isSepClosed`: over a separably closed field of
-  characteristic different from two, a finite-dimensional nondegenerate form has a normalized
-  basis.
+
+## References
+
+* The coordinate isometry reuses Mathlib's `QuadraticMap.isometryEquivBasisRepr` and
+  `QuadraticForm.basisRepr_eq_of_iIsOrtho`, following Mathlib's
+  `QuadraticForm.isometryEquivWeightedSumSquares`, which treats bases indexed by
+  `Fin (finrank K V)` over a field and lands in the weighted sum of squares; here any finite index
+  type over a commutative ring is allowed and the basis is normalized first. The rescaling by
+  chosen unit square roots follows Mathlib's
+  `QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares`, carried out at the level of
+  bases so that the chosen square roots remain visible.
 -/
 
 public section
@@ -60,20 +72,18 @@ namespace QuadraticForm
 
 variable {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
+/-- Dividing a vector by a unit square root of its value normalizes that value to `1`. -/
+theorem apply_inv_smul_eq_one_of_mul_self {Q : QuadraticForm R M} {x : M} {c : Rˣ}
+    (hc : (c : R) * c = Q x) : Q (c⁻¹ • x) = 1 := by
+  rw [Units.smul_def, QuadraticMap.map_smul, ← hc, smul_eq_mul, mul_mul_mul_comm, Units.inv_mul,
+    one_mul]
+
 /-- Dividing a basis vector by a square root of its value normalizes that value to `1`. -/
 theorem apply_unitsSMul_inv_eq_one {Q : QuadraticForm R M} {b : Basis ι R M} {c : ι → Rˣ}
     (hc : ∀ i, (c i : R) * c i = Q (b i)) (i : ι) :
     Q (b.unitsSMul (fun j => (c j)⁻¹) i) = 1 := by
-  rw [Basis.unitsSMul_apply, Units.smul_def, QuadraticMap.map_smul, ← hc, smul_eq_mul,
-    mul_mul_mul_comm, Units.inv_mul, one_mul]
-
-/-- Rescaling the members of an orthogonal basis by units keeps it orthogonal. -/
-theorem _root_.LinearMap.IsOrthoᵢ.unitsSMul {N : Type*} [AddCommGroup N] [Module R N]
-    {B : M →ₗ[R] M →ₗ[R] N} {b : Basis ι R M} (hb : B.IsOrthoᵢ b) (c : ι → Rˣ) :
-    B.IsOrthoᵢ (b.unitsSMul c) := by
-  intro i j hij
-  simp only [Function.onFun, Basis.unitsSMul_apply, Units.smul_def, map_smul,
-    LinearMap.smul_apply, LinearMap.isOrthoᵢ_def.1 hb i j hij, smul_zero]
+  rw [Basis.unitsSMul_apply]
+  exact apply_inv_smul_eq_one_of_mul_self (hc i)
 
 variable [Invertible (2 : R)] [Fintype ι]
 
@@ -82,11 +92,12 @@ isometry from `Q` to the standard sum of squares. -/
 noncomputable def isometryEquivSumSquaresOfIsOrthoᵢ (Q : QuadraticForm R M) (b : Basis ι R M)
     (hb : (associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1) :
     Q.IsometryEquiv (weightedSumSquares R (1 : ι → R)) where
-  toLinearEquiv := b.equivFun
+  toLinearEquiv := (Q.isometryEquivBasisRepr b).toLinearEquiv
   map_app' x := by
-    have h : (fun i => Q (b i)) = (1 : ι → R) := funext hQ
-    rw [← h, ← basisRepr_eq_of_iIsOrtho Q b hb, basisRepr_apply]
-    exact congrArg Q (b.sum_equivFun x)
+    have h : Q.basisRepr b = weightedSumSquares R (1 : ι → R) := by
+      rw [basisRepr_eq_of_iIsOrtho Q b hb, show (fun i => Q (b i)) = 1 from funext hQ]
+    rw [← h]
+    exact (Q.isometryEquivBasisRepr b).map_app x
 
 /-- The specified sum-of-squares normalization of an orthogonal basis `b` of `Q` together with a
 chosen unit square root `c i` of each value `Q (b i)`: coordinates in the normalized basis
@@ -225,15 +236,5 @@ theorem equivalent_weightedSumSquares_one_iff_exists_toMatrix_eq_one (Q : Quadra
   · rintro ⟨b, hb⟩
     obtain ⟨ho, hQ⟩ := (toMatrix_eq_one_iff Q b).1 hb
     exact ⟨Q.isometryEquivSumSquaresOfIsOrthoᵢ b ho hQ⟩
-
-/-- Over a separably closed field of characteristic different from two, a finite-dimensional
-nondegenerate quadratic form has a basis indexed by `Fin (finrank K M)` whose Gram matrix is the
-identity. -/
-theorem exists_toMatrix_eq_one_of_isSepClosed {K : Type*} [Field K] [IsSepClosed K]
-    [Invertible (2 : K)] [Module K M] [FiniteDimensional K M] (Q : QuadraticForm K M)
-    (hQ : (associated Q).SeparatingLeft) :
-    ∃ b : Basis (Fin (finrank K M)) K M, Q.toMatrix b = 1 :=
-  (equivalent_weightedSumSquares_one_iff_exists_toMatrix_eq_one Q).1
-    (Q.equivalent_weightedSumSquares_of_isSepClosed hQ)
 
 end QuadraticForm
