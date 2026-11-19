@@ -64,10 +64,12 @@ their unfolding, restriction and monotonicity lemmas with the class for surfaces
 As for `TauCeti.MemWkpLocMapOn`, the charts tested are those of the maximal atlases and the
 definitions carry no manifold hypotheses; they are meant for
 `HasGroupoid X borderedHolomorphicGroupoid` and `IsManifold I ∞ M`. That it suffices to test one
-atlas of `X` near the boundary needs the change of variables for the half-disc classes along
-bordered holomorphic chart changes, which are smooth only up to the real axis, and is not part of
-this file. Neither is the converse of the comparison with the interior class, which tests charts
-of the interior with values anywhere in `ℂ`.
+atlas of `X` near the boundary, and the converse of the comparison with the interior class, are
+proved for orders `k ≤ 1` in `TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Atlas`:
+`TauCeti.memWkpLocMapOnBordered_iff_of_subset_maximalAtlas` changes variables along bordered
+holomorphic chart changes through their Schwarz reflection, and
+`TauCeti.MemWkpLocMapOnBordered.memWkpLocMapOn_preimage` restricts to the interior. Orders
+`k ≥ 2` remain open.
 
 ## References
 
