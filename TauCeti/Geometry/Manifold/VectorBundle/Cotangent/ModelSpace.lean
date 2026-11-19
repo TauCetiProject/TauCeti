@@ -147,8 +147,13 @@ theorem mfderiv_lineDiffeomorph_apply (z : CotangentBundle 𝓘(𝕜) 𝕜) (v :
     (e.toDiffeomorph.mdifferentiable (by simp) _)
     ((modelSpaceDiffeomorph 𝕜).mdifferentiable (by simp) z) v
   rw [mfderiv_modelSpaceDiffeomorph] at hcomp
+  -- `e` reads `p` as `p 1`.
+  have hev : (e : 𝕜 × (𝕜 →L[𝕜] 𝕜) →L[𝕜] 𝕜 × 𝕜) v = (v.1, v.2 1) := by
+    rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.prodCongr_apply,
+      ContinuousLinearEquiv.refl_apply, LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv,
+      ContinuousLinearMap.toSpanSingletonLIE_symm_apply]
+  -- The identity of the tangent space followed by `e`.
   rw [lineDiffeomorph, Diffeomorph.coe_trans, hcomp, ContinuousLinearEquiv.coe_toDiffeomorph, he]
-  -- The identity of the tangent space followed by `e`, which reads `p` as `p 1`.
-  rfl
+  exact hev
 
 end TauCeti.CotangentBundle

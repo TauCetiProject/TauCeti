@@ -127,9 +127,34 @@ theorem prodRealDiffeomorph_snd_snd (z : CotangentBundle (I.prod 𝓘(ℝ)) (Q �
   have h : mfderiv 𝓘(ℝ) (I.prod 𝓘(ℝ)) (fun t : ℝ ↦ (z.proj.1, t)) z.proj.2 (1 : ℝ) =
       ((0, 1) : E × ℝ) := by
     rw [mfderiv_prod_right]
-    rfl
+    exact ContinuousLinearMap.inr_apply (R := ℝ) (M₁ := E) (M₂ := ℝ) 1
   rw [prodRealDiffeomorph_apply, lineDiffeomorph_apply]
   exact (prodDiffeomorph_snd_snd_apply z (1 : ℝ)).trans (congrArg z.2 h)
+
+/-- The inverse of `prodRealDiffeomorph` reads the time coordinates `(t, e)` as the covector
+`v ↦ v e` at `t` and combines it with the covector on `Q` by the inverse of the splitting
+`T*(Q × ℝ) ≃ T*Q × T*ℝ`. -/
+theorem prodRealDiffeomorph_symm_apply (w : CotangentBundle I Q × (ℝ × ℝ)) :
+    (prodRealDiffeomorph I Q).symm w =
+      (prodDiffeomorph I 𝓘(ℝ) Q ℝ).symm (w.1, (lineDiffeomorph ℝ).symm w.2) :=
+  (rfl)
+
+/-- The inverse of `prodRealDiffeomorph` lies over the base point of the covector on `Q` and the
+time coordinate. -/
+@[simp]
+theorem proj_prodRealDiffeomorph_symm (w : CotangentBundle I Q × (ℝ × ℝ)) :
+    ((prodRealDiffeomorph I Q).symm w).proj = (w.1.proj, w.2.1) := by
+  rw [prodRealDiffeomorph_symm_apply, proj_prodDiffeomorph_symm, lineDiffeomorph_symm_apply]
+
+/-- The inverse of `prodRealDiffeomorph` combines a covector `a` on `Q` and the momentum `e`
+conjugate to the time into the covector `(δq, δt) ↦ a δq + δt e` on `Q × ℝ`. -/
+@[simp]
+theorem prodRealDiffeomorph_symm_snd_apply (w : CotangentBundle I Q × (ℝ × ℝ))
+    (v : TangentSpace (I.prod 𝓘(ℝ)) ((prodRealDiffeomorph I Q).symm w).proj) :
+    ((prodRealDiffeomorph I Q).symm w).2 v = w.1.2 v.1 + v.2 * w.2.2 := by
+  refine (prodDiffeomorph_symm_snd_apply (w.1, (lineDiffeomorph ℝ).symm w.2) v).trans ?_
+  rw [mfderiv_fst, mfderiv_snd, lineDiffeomorph_symm_apply]
+  exact congrArg (w.1.2 v.1 + ·) (smul_eq_mul v.2 w.2.2)
 
 /-- **The extended phase space is the cotangent bundle of `Q × ℝ`.** The diffeomorphism
 `T*(Q × ℝ) ≃ T*Q × (ℝ × ℝ)` pulls the form `ω_Q ⊕ (dt ∧ de)` of the extended phase space back to
