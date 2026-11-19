@@ -30,7 +30,7 @@ constant, is centred there.
 
 * `TauCeti.openUnitSquare`, `TauCeti.slitUnitDisc`, `TauCeti.sqrtAbsCusp`: the three planar sets,
   with membership lemmas `TauCeti.mem_openUnitSquare`, `TauCeti.mem_slitUnitDisc` and
-  `TauCeti.mem_sqrtAbsCusp`.
+  `TauCeti.mem_sqrtAbsCusp`; `TauCeti.isOpen_slitUnitDisc`: the slit disc is open.
 * `TauCeti.isLipschitzChartWith_openUnitSquare_zero`: the corner chart of the square at the
   origin, with graph `|s|` after the rotation by `π / 4`.
 * `TauCeti.isLipschitzDomainWith_openUnitSquare`: the open unit square is a Lipschitz domain
@@ -228,6 +228,22 @@ def slitUnitDisc : Set (WithLp 2 (ℝ × ℝ)) :=
 theorem mem_slitUnitDisc {x : WithLp 2 (ℝ × ℝ)} :
     x ∈ slitUnitDisc ↔ ‖x‖ < 1 ∧ (x.fst ∈ Ico 0 1 → x.snd ≠ 0) := by
   simp [slitUnitDisc]
+
+/-- The slit disc is open: it is the open unit disc minus the closed ray `[0, ∞) × {0}`. -/
+theorem isOpen_slitUnitDisc : IsOpen slitUnitDisc := by
+  have h : slitUnitDisc = ball 0 1 ∩ {x | x.fst < 0 ∨ x.snd ≠ 0} := by
+    ext x
+    simp only [mem_slitUnitDisc, mem_inter_iff, mem_ball_zero_iff, mem_ofPred_eq, mem_Ico]
+    refine and_congr_right fun hx => ⟨fun h => ?_, ?_⟩
+    · by_contra! H
+      exact h ⟨H.1, (le_abs_self _).trans_lt ((WithLp.norm_fst_le (x := x)).trans_lt hx)⟩ H.2
+    · rintro (h | h) h'
+      · exact absurd h'.1 (not_le.2 h)
+      · exact h
+  rw [h]
+  exact isOpen_ball.inter
+    ((isOpen_lt (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst continuous_const).union
+      (isOpen_ne_fun (WithLp.prod_continuous_ofLp 2 ℝ ℝ).snd continuous_const))
 
 /-- Every slit point lies on the frontier of the slit disc. -/
 theorem mem_frontier_slitUnitDisc {p : WithLp 2 (ℝ × ℝ)} (hp : p.fst ∈ Ico 0 1)
