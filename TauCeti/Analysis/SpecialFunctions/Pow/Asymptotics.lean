@@ -25,7 +25,8 @@ On a seminormed group, as `‖s‖ → ∞`:
 
 * `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` whenever `a < b`, for every real `c`;
 * every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`, and `o(exp (c ‖s‖))` whenever
-  `0 < c`;
+  `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
+  every `a < c`;
 * `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`;
   in particular `√‖s‖ = o(s)`.
 
@@ -133,6 +134,17 @@ theorem isBigO_norm_pow_exp_norm_rpow (n : ℕ) {b : ℝ} (hb : 0 < b) :
 theorem isLittleO_norm_pow_exp_mul_norm (n : ℕ) {c : ℝ} (hc : 0 < c) :
     (fun s : E ↦ ‖s‖ ^ n) =o[cobounded E] fun s ↦ Real.exp (c * ‖s‖) :=
   (isLittleO_pow_exp_pos_mul_atTop n hc).comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- A polynomial weight costs an arbitrarily small part of an exponential decay rate: if `f` is
+`O(exp (-c ‖s‖))` and `a < c`, then `‖s‖ ^ n • f s` is `O(exp (-a ‖s‖))` as `‖s‖ → ∞`. -/
+theorem isBigO_norm_pow_smul_of_isBigO_exp_neg_mul_norm {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℝ F] (n : ℕ) {a c : ℝ} (hac : a < c) {f : E → F}
+    (hf : f =O[cobounded E] fun s ↦ Real.exp (-(c * ‖s‖))) :
+    (fun s ↦ ‖s‖ ^ n • f s) =O[cobounded E] fun s ↦ Real.exp (-(a * ‖s‖)) := by
+  refine ((isLittleO_norm_pow_exp_mul_norm n (sub_pos.2 hac)).isBigO.smul hf).congr_right
+    fun s ↦ ?_
+  rw [smul_eq_mul, ← Real.exp_add]
+  ring_nf
 
 /-- For `a < b`, the real power `x ^ a` is `o(x ^ b)` as `x → ∞`. -/
 theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :

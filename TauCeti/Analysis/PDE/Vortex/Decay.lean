@@ -296,11 +296,9 @@ theorem isBigO_norm_pow_mul_one_sub_normSq
     rw [Real.norm_of_nonneg (sub_nonneg.2 (normSq_le_one_of_tendsto hp hq hsol hlim z)),
       Real.norm_of_nonneg (Real.exp_pos _).le]
     exact hK₀ z
-  have hpow : (fun z : ℂ ↦ ‖z‖ ^ j) =O[cocompact ℂ] fun z ↦ Real.exp (1 / 8 * ‖z‖) :=
-    cobounded_eq_cocompact (α := ℂ) ▸ (isLittleO_norm_pow_exp_mul_norm j (by norm_num)).isBigO
-  refine (hpow.mul hdef).congr_right fun z ↦ ?_
-  rw [← Real.exp_add]
-  ring_nf
+  rw [← cobounded_eq_cocompact] at hdef ⊢
+  simpa only [smul_eq_mul] using
+    isBigO_norm_pow_smul_of_isBigO_exp_neg_mul_norm j (by norm_num : (1 / 8 : ℝ) < 1 / 4) hdef
 
 variable (μ : Measure ℂ) [μ.IsAddHaarMeasure]
 

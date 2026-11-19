@@ -297,13 +297,10 @@ private theorem tendsto_norm_pow_smul_log_normSq
       fun z ↦ Real.exp (-(1 / 4 * ‖z‖)) := .of_norm_left <| by
     simpa only [norm_iteratedFDeriv_zero] using (isBigO_iteratedFDeriv_log_normSq hp hq hsol hlim
       (by norm_num : (1 / 4 : ℝ) < 1 / 2) 0).norm_left
-  have hpow : (fun z : ℂ ↦ ‖z‖ ^ j) =O[cocompact ℂ] fun z ↦ Real.exp (1 / 8 * ‖z‖) :=
-    cobounded_eq_cocompact (α := ℂ) ▸ (isLittleO_norm_pow_exp_mul_norm j (by norm_num)).isBigO
-  refine ((hpow.smul hlog).congr_right fun z ↦ ?_).trans_tendsto (Real.tendsto_exp_atBot.comp
-    (tendsto_neg_atTop_atBot.comp
-      (tendsto_norm_cocompact_atTop.const_mul_atTop (by norm_num : (0 : ℝ) < 1 / 8))))
-  rw [smul_eq_mul, ← Real.exp_add, Function.comp_apply, Function.comp_apply]
-  ring_nf
+  rw [← cobounded_eq_cocompact] at hlog ⊢
+  exact (isBigO_norm_pow_smul_of_isBigO_exp_neg_mul_norm j (by norm_num : (1 / 8 : ℝ) < 1 / 4)
+    hlog).trans_tendsto (Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp
+      (tendsto_norm_cobounded_atTop.const_mul_atTop (by norm_num : (0 : ℝ) < 1 / 8))))
 
 /-- **The moments of a plane vortex against a harmonic weight.** Let `x` be a `C²` vortex on the
 whole plane whose section satisfies `|α| → 1` at infinity, with zero multiplicities `n`. Let `h` be
