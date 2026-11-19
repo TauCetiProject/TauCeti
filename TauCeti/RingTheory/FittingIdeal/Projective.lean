@@ -10,8 +10,8 @@ public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.RingTheory.FittingIdeal.BaseChange
 public import TauCeti.RingTheory.FittingIdeal.LocalRing
 public import TauCeti.RingTheory.FittingIdeal.Matrix
+public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 public import TauCeti.RingTheory.LocalRing.Module
-public import TauCeti.RingTheory.Ideal.IdempotentFG
 
 /-!
 # Fitting ideals of projective modules
@@ -123,8 +123,8 @@ theorem projective_iff_forall_isIdempotentElem_fittingIdeal [Module.FinitePresen
     let Mₚ := LocalizedModule P.primeCompl M
     have hfg (k : ℕ) : (fittingIdeal Rₚ Mₚ k).FG := fittingIdeal_fg k
     have : Module.Free Rₚ Mₚ := free_of_forall_fittingIdeal_eq_bot_or_eq_top fun k ↦ by
-      rw [← Ideal.isIdempotentElem_iff_eq_bot_or_top_of_isLocalRing_of_fg _ (hfg k), hloc]
-      rw [IsIdempotentElem, ← Ideal.map_mul, (h k).eq]
+      refine or_iff_not_imp_right.2 (Ideal.eq_bot_of_isIdempotentElem_of_ne_top (hfg k) ?_)
+      rw [IsIdempotentElem, hloc, ← Ideal.map_mul, (h k).eq]
     infer_instance
 
 end TauCeti
