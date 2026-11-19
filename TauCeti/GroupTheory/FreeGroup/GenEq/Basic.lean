@@ -318,6 +318,17 @@ theorem isReduced_substituteVars_segment_iff (U : Fin Ω.numItems → List (A ×
   · rw [segment_false, substituteVars_invRev, FreeGroup.isReduced_invRev]
   · rfl
 
+/-- After substituting words for the items, a subword `h[i', j']` of `h[i, j]`, for `i ≤ i'` and
+`j' ≤ j`, is reduced as written if `h[i, j]` is. -/
+theorem isReduced_substituteVars_segment_of_le_of_le {w : Fin Ω.numItems → List (A × Bool)}
+    {i j i' j' : ℕ} (h : FreeGroup.IsReduced (substituteVars w (Ω.segment i j true)))
+    (hi : i ≤ i') (hj : j' ≤ j) :
+    FreeGroup.IsReduced (substituteVars w (Ω.segment i' j' true)) := by
+  obtain ⟨t, ht⟩ := Ω.segment_prefix_segment (i := i') hj
+  obtain ⟨t', ht'⟩ := Ω.segment_suffix_segment (k := j) hi
+  rw [← ht', ← ht, substituteVars_append, substituteVars_append] at h
+  exact h.infix ⟨substituteVars w t', substituteVars w t, List.append_assoc _ _ _⟩
+
 /-- The basic equation `h[α(μ), β(μ)] ^ ε(μ) = h[α(Δμ), β(Δμ)] ^ ε(Δμ)` of a variable base. -/
 def basicEquation (μ : Fin Ω.numBases) :
     List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool) :=
@@ -821,14 +832,8 @@ theorem isReduced_substituteVars_segment (μ : Fin Ω.numBases) :
 empty. -/
 theorem isReduced_substituteVars_segment_of_le (ν : Fin Ω.numBases) {i j : ℕ}
     (hi : Ω.left ν ≤ i) (hj : j ≤ Ω.right ν) :
-    FreeGroup.IsReduced (substituteVars U.word (Ω.segment i j true)) := by
-  rcases le_total i j with hij | hji
-  · have h := U.isReduced_substituteVars_segment ν
-    rw [← Ω.segment_append hi (hij.trans hj), ← Ω.segment_append hij hj, substituteVars_append,
-      substituteVars_append, ← List.append_assoc] at h
-    exact h.infix (List.infix_append _ _ _)
-  · rw [Ω.segment_eq_nil_of_le hji, FreeGroup.substituteVars_nil]
-    exact FreeGroup.IsReduced.nil
+    FreeGroup.IsReduced (substituteVars U.word (Ω.segment i j true)) :=
+  Ω.isReduced_substituteVars_segment_of_le_of_le (U.isReduced_substituteVars_segment ν) hi hj
 
 /-- When `ε(μ) = ε(Δμ)`, a solution assigns the same word to the bases `μ` and `Δ(μ)`. -/
 theorem substituteVars_segment_eq_of_sign_eq {μ : Fin Ω.numBases}
