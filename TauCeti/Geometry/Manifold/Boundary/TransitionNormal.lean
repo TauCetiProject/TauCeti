@@ -16,7 +16,8 @@ At a boundary point, the zeroth coordinate of a chart transition has a local min
 the model half-space. Fermat's theorem on the positive tangent cone makes its derivative vanish
 on the coordinate hyperplane and nonnegative in the inward direction. The inverse chart
 transition makes the inward coefficient strictly positive. Thus outward signs are independent
-of the preferred chart, including at boundary points. The Fermat step,
+of the preferred chart, including at boundary points. The minimum of the normal coordinate at a
+boundary point is `normal_le_of_mem_boundary`, and the Fermat step,
 `hasFDerivWithinAt_normal_nonneg`, holds for the normal coordinate of any half-space chart read
 in a preferred chart.
 -/
@@ -32,6 +33,14 @@ namespace TauCeti
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
+
+omit [IsManifold (𝓡∂ (n + 1)) 1 M] in
+/-- The normal coordinate `(e ·).1 0` of a half-space chart `e` attains its minimum at a boundary
+point `x` of the source of `e`: it vanishes there and is nonnegative everywhere. -/
+theorem normal_le_of_mem_boundary {e : OpenPartialHomeomorph M (EuclideanHalfSpace (n + 1))}
+    {x : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M) (hxe : x ∈ e.source) (y : M) :
+    (e x).1 0 ≤ (e y).1 0 :=
+  ((ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hxe).mp hx).trans_le (e y).2
 
 omit [IsManifold (𝓡∂ (n + 1)) 1 M] in
 /-- Fermat's theorem on the half-space at a boundary point. The normal coordinate `(e ·).1 0` of a
@@ -54,11 +63,10 @@ theorem hasFDerivWithinAt_normal_nonneg
       modelWithCornersEuclideanHalfSpace_toFun] using
       (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hc).mp hx
   have hmin : IsLocalMinOn (fun z ↦ (e ((extChartAt I α).symm z)).1 0) (range I)
-      (extChartAt I α x) := by
-    have hf0 : (e ((extChartAt I α).symm (extChartAt I α x))).1 0 = 0 := by
-      rw [(extChartAt I α).left_inv hα]
-      exact (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hxe).mp hx
-    exact Filter.Eventually.of_forall fun z ↦ hf0.trans_le (e ((extChartAt I α).symm z)).2
+      (extChartAt I α x) :=
+    Filter.Eventually.of_forall fun z ↦ by
+      simpa only [(extChartAt I α).left_inv hα] using
+        normal_le_of_mem_boundary hx hxe ((extChartAt I α).symm z)
   have hcone : v ∈ posTangentConeAt (range I) (extChartAt I α x) := by
     apply mem_posTangentConeAt_of_segment_subset
     apply I.convex_range.segment_subset (mem_range_self (chartAt _ α x))

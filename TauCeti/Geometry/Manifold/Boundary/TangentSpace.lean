@@ -160,17 +160,6 @@ theorem _root_.Diffeomorph.map_boundaryTangentSpace
 
 end Naturality
 
-/-- The preferred chart at a boundary point has vanishing normal coordinate there. -/
-private theorem normal_chartAt_self {q : M} (hq : q ∈ (𝓡∂ (n + 1)).boundary M) :
-    (chartAt (EuclideanHalfSpace (n + 1)) q q).1 0 = 0 :=
-  (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (mem_chart_source _ q)).mp hq
-
-/-- The normal coordinate of the preferred chart at a boundary point attains its minimum there. -/
-private theorem normal_chartAt_self_le {q : M} (hq : q ∈ (𝓡∂ (n + 1)).boundary M) (y : M) :
-    (chartAt (EuclideanHalfSpace (n + 1)) q q).1 0 ≤
-      (chartAt (EuclideanHalfSpace (n + 1)) q y).1 0 :=
-  (normal_chartAt_self hq).trans_le (chartAt (EuclideanHalfSpace (n + 1)) q y).2
-
 variable [IsManifold (𝓡∂ (n + 1)) 1 M]
 
 /-- In the preferred chart at a boundary point, the boundary tangent space is the kernel of the
@@ -246,13 +235,8 @@ theorem frontier_setOf_isOutwardPointing (q : (𝓡∂ (n + 1)).boundary M) :
       boundaryTangentSpace q := by
   set ℓ := mvfderiv (𝓡∂ (n + 1))
     (fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) (q : M) y).1 0) (q : M)
-  obtain ⟨w, hw⟩ := DFunLike.ne_iff.mp (mvfderiv_normal_ne_zero (n := n)
+  have hopen : IsOpenMap ℓ := ℓ.isOpenMap_of_ne_zero (mvfderiv_normal_ne_zero
     (IsManifold.chart_mem_maximalAtlas (q : M)) (mem_chart_source _ (q : M)))
-  have hsurj : Function.Surjective ℓ := fun r ↦
-    ⟨(r / ℓ w) • w, by rw [map_smul, smul_eq_mul, div_mul_cancel₀ r hw]⟩
-  have hopen : IsOpenMap ℓ :=
-    LinearMap.isOpenMap_of_finiteDimensional (ℓ : TangentSpace (𝓡∂ (n + 1)) (q : M) →ₗ[ℝ] ℝ)
-      hsurj
   have hset : {v | IsOutwardPointing (q : M) v} = ℓ ⁻¹' Iio 0 := by
     ext v
     exact isOutwardPointing_iff_chartAt q.2 v
@@ -295,7 +279,8 @@ theorem not_isOutwardPointing_curveVelocityWithin_Ici (c : ℝ → M) (t : ℝ) 
     (Manifold.hasMFDerivWithinAt_curveVelocityWithin hc)
   have hmin : IsLocalMinOn ((fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) (c t) y).1 0) ∘ c)
       (Ici t) t :=
-    Filter.Eventually.of_forall fun s ↦ normal_chartAt_self_le hq (c s)
+    Filter.Eventually.of_forall fun s ↦
+      normal_le_of_mem_boundary hq (mem_chart_source _ (c t)) (c s)
   have hcone : (1 : ℝ) ∈ posTangentConeAt (Ici t) t :=
     mem_posTangentConeAt_of_segment_subset (by
       rw [segment_eq_Icc (by linarith)]
@@ -314,7 +299,8 @@ theorem curveVelocity_mem_boundaryTangentSpace (c : ℝ → M) {t : ℝ}
       (Manifold.hasMFDerivAt_curveVelocity hc)
     have hmin : IsLocalMin ((fun y ↦ (chartAt (EuclideanHalfSpace (n + 1)) (c t) y).1 0) ∘ c)
         t :=
-      Filter.Eventually.of_forall fun s ↦ normal_chartAt_self_le hq (c s)
+      Filter.Eventually.of_forall fun s ↦
+        normal_le_of_mem_boundary hq (mem_chart_source _ (c t)) (c s)
     rw [mem_boundaryTangentSpace_iff_chartAt]
     exact hmin.hasDerivAt_eq_zero hderiv
   · rw [Manifold.curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hc]
