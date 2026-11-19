@@ -54,15 +54,18 @@ theorem SmoothIsotopy.exists_ambientVelocityField {n m : ℕ∞} [IsManifold I n
       ContMDiff (𝓘(ℝ, ℝ).prod J) J.tangent m
         (fun p : ℝ × N => (⟨p.2, X p.1 p.2⟩ : TangentBundle J N)) ∧
       ∀ t, ∀ x ∈ A, HasMFDerivAt 𝓘(ℝ, ℝ) J
-        (fun s => F (unitInterval.smoothTransition s, x)) t
-        ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (F (unitInterval.smoothTransition t, x)))) := by
-  let σ : ℝ → unitInterval := unitInterval.smoothTransition
+        (fun s => F (⟨Real.smoothTransition s, Real.smoothTransition.nonneg _,
+          Real.smoothTransition.le_one _⟩, x)) t
+        ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (F (⟨Real.smoothTransition t,
+          Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩, x)))) := by
+  let σ : ℝ → unitInterval := fun s =>
+    ⟨Real.smoothTransition s, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
   have hσ : ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) n σ :=
     contMDiff_id.smoothTransition (by exact_mod_cast le_top)
-  have hσ₀ : ∀ t ≤ 0, σ t = σ 0 := fun t ht => by
-    simp only [σ, unitInterval.smoothTransition_of_nonpos ht, unitInterval.smoothTransition_zero]
-  have hσ₁ : ∀ t, 1 ≤ t → σ t = σ 1 := fun t ht => by
-    simp only [σ, unitInterval.smoothTransition_of_one_le ht, unitInterval.smoothTransition_one]
+  have hσ₀ : ∀ t ≤ 0, σ t = σ 0 := fun t ht => Subtype.ext <| by
+    simp only [σ, Real.smoothTransition.zero_of_nonpos ht, Real.smoothTransition.zero]
+  have hσ₁ : ∀ t, 1 ≤ t → σ t = σ 1 := fun t ht => Subtype.ext <| by
+    simp only [σ, Real.smoothTransition.one_of_one_le ht, Real.smoothTransition.one]
   exact TauCeti.exists_ambientVelocityField (G := fun q => F (σ q.1, q.2))
     (F.contMDiff.comp ((hσ.comp contMDiff_fst).prodMk contMDiff_snd))
     (fun t => F.isSmoothEmbedding (σ t)) hA (fun t ht x _ => by rw [hσ₀ t ht])

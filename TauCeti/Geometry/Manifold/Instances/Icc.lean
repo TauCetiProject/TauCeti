@@ -90,7 +90,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- Applying the smooth transition function gives a smooth map into the unit interval.
 This applies to finite regularity and `C^∞`, without asserting analyticity. -/
 theorem ContMDiff.smoothTransition (hf : ContMDiff I 𝓘(ℝ) n f) (hn : n ≤ ∞) :
-    ContMDiff I (𝓡∂ 1) n (fun x => unitInterval.smoothTransition (f x)) := by
+    ContMDiff I (𝓡∂ 1) n (fun x => (⟨Real.smoothTransition (f x),
+      Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩ : unitInterval)) := by
   apply contMDiff_iff_comp_subtypeVal_Icc.mpr
   refine ⟨(Real.smoothTransition.continuous.comp hf.continuous).subtype_mk _, ?_⟩
   exact ((Real.smoothTransition.contDiff (n := ⊤)).contMDiff.of_le hn).comp hf

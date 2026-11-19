@@ -37,10 +37,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {f₀ f₁ f₂ : C^n⟮I, M; J, N⟯}
 
 private def firstTime (t : unitInterval) : unitInterval :=
-  unitInterval.smoothTransition (4 * t)
+  ⟨Real.smoothTransition (4 * t),
+    Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
 
 private def secondTime (t : unitInterval) : unitInterval :=
-  unitInterval.smoothTransition (4 * t - 3)
+  ⟨Real.smoothTransition (4 * t - 3),
+    Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
 
 private theorem contMDiff_firstTime (hn : n ≤ ∞) :
     ContMDiff (𝓡∂ 1) (𝓡∂ 1) n firstTime := by
@@ -53,12 +55,14 @@ private theorem contMDiff_secondTime (hn : n ≤ ∞) :
   exact (h.contMDiff.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))).smoothTransition hn
 
 private theorem firstTime_eq_one {t : unitInterval} (ht : 1 / 4 ≤ (t : ℝ)) :
-    firstTime t = 1 :=
-  unitInterval.smoothTransition_of_one_le (by linarith)
+    firstTime t = 1 := by
+  apply Subtype.ext
+  exact Real.smoothTransition.one_of_one_le (by linarith)
 
 private theorem secondTime_eq_zero {t : unitInterval} (ht : (t : ℝ) ≤ 3 / 4) :
-    secondTime t = 0 :=
-  unitInterval.smoothTransition_of_nonpos (by linarith)
+    secondTime t = 0 := by
+  apply Subtype.ext
+  exact Real.smoothTransition.zero_of_nonpos (by linarith)
 
 private def concatMotion (F : SmoothIsotopy f₀ f₁) (G : SmoothIsotopy f₁ f₂)
     (p : unitInterval × M) : N :=
@@ -99,13 +103,14 @@ def trans (F : SmoothIsotopy f₀ f₁) (G : SmoothIsotopy f₁ f₂) (hn : n �
   toContMDiffMap := ⟨concatMotion F G, contMDiff_concatMotion F G hn⟩
   map_zero_left x := by
     have htime : firstTime 0 = 0 := by
-      rw [firstTime, Set.Icc.coe_zero, mul_zero, unitInterval.smoothTransition_zero]
+      apply Subtype.ext
+      simp [firstTime, Real.smoothTransition.zero]
     dsimp [concatMotion]
     norm_num [htime]
   map_one_left x := by
     have htime : secondTime 1 = 1 := by
-      rw [secondTime, Set.Icc.coe_one]
-      norm_num
+      apply Subtype.ext
+      norm_num [secondTime, Real.smoothTransition.one]
     dsimp [concatMotion]
     norm_num [htime]
   isSmoothEmbedding t := by
@@ -121,15 +126,19 @@ theorem trans_apply (F : SmoothIsotopy f₀ f₁) (G : SmoothIsotopy f₁ f₂) 
     (p : unitInterval × M) :
     F.trans G hn p =
       if (p.1 : ℝ) ≤ 1 / 2 then
-        F (unitInterval.smoothTransition (4 * p.1), p.2)
-      else G (unitInterval.smoothTransition (4 * p.1 - 3), p.2) := (rfl)
+        F (⟨Real.smoothTransition (4 * p.1),
+          Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩, p.2)
+      else G (⟨Real.smoothTransition (4 * p.1 - 3),
+        Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩, p.2) := (rfl)
 
 /-- The concatenation is stationary at the common endpoint throughout the middle half. -/
 theorem trans_apply_of_mem_Icc (F : SmoothIsotopy f₀ f₁) (G : SmoothIsotopy f₁ f₂)
     (hn : n ≤ ∞) {t : unitInterval} (ht : (t : ℝ) ∈ Icc (1 / 4) (3 / 4)) (x : M) :
     F.trans G hn (t, x) = f₁ x := by
-  have hfirst : unitInterval.smoothTransition (4 * t) = 1 := firstTime_eq_one ht.1
-  have hsecond : unitInterval.smoothTransition (4 * t - 3) = 0 := secondTime_eq_zero ht.2
+  have hfirst : (⟨Real.smoothTransition (4 * t), Real.smoothTransition.nonneg _,
+      Real.smoothTransition.le_one _⟩ : unitInterval) = 1 := firstTime_eq_one ht.1
+  have hsecond : (⟨Real.smoothTransition (4 * t - 3), Real.smoothTransition.nonneg _,
+      Real.smoothTransition.le_one _⟩ : unitInterval) = 0 := secondTime_eq_zero ht.2
   simp only [trans_apply, hfirst, hsecond, apply_one, apply_zero, ite_self]
 
 /-- At each source point, the concatenation only takes values that one of the two isotopies takes

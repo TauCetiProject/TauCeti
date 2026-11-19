@@ -97,9 +97,10 @@ theorem SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem {n m : ℕ∞}
     (hA₀C : ∀ t, ∀ x ∈ A₀, F (t, x) ∉ C) (hstat : ∀ t, ∀ x ∈ A, x ∉ A₀ → F (t, x) = f₀ x)
     (hm : 1 ≤ m) (hmn : m + 1 ≤ n) :
     ∃ Φ : Diffeotopy J m N, ∃ K : Set N, IsCompact K ∧ (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧
-      (∀ t, ∀ x ∈ A, Φ (t, f₀ x) = F (unitInterval.smoothTransition t, x)) ∧
-        ∀ t, ∀ y ∈ C, Φ (t, y) = y := by
-  let σ : ℝ → unitInterval := unitInterval.smoothTransition
+      (∀ t, ∀ x ∈ A, Φ (t, f₀ x) = F (⟨Real.smoothTransition t, Real.smoothTransition.nonneg _,
+        Real.smoothTransition.le_one _⟩, x)) ∧ ∀ t, ∀ y ∈ C, Φ (t, y) = y := by
+  let σ : ℝ → unitInterval := fun s =>
+    ⟨Real.smoothTransition s, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
   obtain ⟨X, K, hK, hXK, hX, hvel⟩ := F.exists_ambientVelocityField hA hm hmn
   -- A cutoff equal to `1` on the motion of `A₀` and to `0` on `C`.
   have hT : IsCompact ((fun p : unitInterval × M => F p) '' (univ ×ˢ A₀)) :=
@@ -140,7 +141,7 @@ theorem SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem {n m : ℕ∞}
     timeDependentFlowDiffeotopy_apply_of_forall_eq_zero hm hY hcomplete
       (fun u => by simp only [Y, hρC hy, Pi.zero_apply, zero_smul]) t⟩
   -- The curve `s ↦ F (σ s, x)` solves the time-dependent equation and starts at `f₀ x`.
-  have h₀ : σ 0 = 0 := unitInterval.smoothTransition_zero
+  have h₀ : σ 0 = 0 := Subtype.ext Real.smoothTransition.zero
   have hsol := timeDependentFlowOf_eq_of_hasMFDerivAt hY₁ (a := -1) (b := 2) (s := 0) (t := t)
     (fun u _ => hvelY u x hx) ⟨by norm_num, by norm_num⟩ ⟨by linarith [t.2.1], by linarith [t.2.2]⟩
   rw [h₀, F.apply_zero] at hsol
@@ -156,7 +157,8 @@ theorem SmoothIsotopy.exists_diffeotopy_apply_eq {n m : ℕ∞} [IsManifold I n 
     {f₀ f₁ : C^n⟮I, M; J, N⟯} (F : SmoothIsotopy f₀ f₁) {A : Set M} (hA : IsCompact A)
     (hm : 1 ≤ m) (hmn : m + 1 ≤ n) :
     ∃ Φ : Diffeotopy J m N, ∃ K : Set N, IsCompact K ∧ (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧
-      ∀ t, ∀ x ∈ A, Φ (t, f₀ x) = F (unitInterval.smoothTransition t, x) := by
+      ∀ t, ∀ x ∈ A, Φ (t, f₀ x) = F (⟨Real.smoothTransition t, Real.smoothTransition.nonneg _,
+        Real.smoothTransition.le_one _⟩, x) := by
   obtain ⟨Φ, K, hK, hΦK, hΦ, -⟩ := F.exists_diffeotopy_apply_eq_of_forall_notMem (A₀ := A)
     (C := ∅) hA hA isClosed_empty (fun _ _ _ => notMem_empty _)
     (fun _ _ hx hx' => (hx' hx).elim) hm hmn
@@ -172,8 +174,10 @@ theorem SmoothIsotopy.exists_diffeotopy_final_apply_eq {n m : ℕ∞} [IsManifol
       ∀ x ∈ A, Φ.final (f₀ x) = f₁ x := by
   obtain ⟨Φ, K, hK, hΦK, hΦ⟩ := F.exists_diffeotopy_apply_eq hA hm hmn
   refine ⟨Φ, K, hK, hΦK, fun x hx => ?_⟩
-  rw [Diffeotopy.final_apply, hΦ 1 x hx, Set.Icc.coe_one, unitInterval.smoothTransition_one,
-    F.apply_one]
+  have h₁ : (⟨Real.smoothTransition ((1 : unitInterval) : ℝ), Real.smoothTransition.nonneg _,
+      Real.smoothTransition.le_one _⟩ : unitInterval) = 1 :=
+    Subtype.ext (by simp)
+  rw [Diffeotopy.final_apply, hΦ 1 x hx, h₁, F.apply_one]
 
 /-- **Smooth isotopy implies smooth ambient isotopy for a compact source.** Smoothly isotopic smooth
 maps of a compact boundaryless manifold into a finite-dimensional boundaryless manifold are

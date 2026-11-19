@@ -70,9 +70,12 @@ scalar curvature, then `g₀` and `g₁` are concordant. -/
 theorem concordant_of_forall_hasPositiveScalarCurvature_convexCombination [CompactSpace M]
     (h : ∀ s, (g₀.convexCombination g₁ s).HasPositiveScalarCurvature) : Concordant g₀ g₁ := by
   -- Run along the segment by the smooth transition `φ`, constant outside `[0, 1]`.
-  let φ : ℝ → unitInterval := unitInterval.smoothTransition
-  have hφ₀ {t : ℝ} (ht : t ≤ 0) : φ t = 0 := unitInterval.smoothTransition_of_nonpos ht
-  have hφ₁ {t : ℝ} (ht : 1 ≤ t) : φ t = 1 := unitInterval.smoothTransition_of_one_le ht
+  let φ : ℝ → unitInterval := fun t ↦
+    ⟨Real.smoothTransition t, Real.smoothTransition.nonneg t, Real.smoothTransition.le_one t⟩
+  have hφ₀ {t : ℝ} (ht : t ≤ 0) : φ t = 0 :=
+    Subtype.ext (Real.smoothTransition.zero_of_nonpos ht)
+  have hφ₁ {t : ℝ} (ht : 1 ≤ t) : φ t = 1 :=
+    Subtype.ext (Real.smoothTransition.one_of_one_le ht)
   -- The path is recorded by the interpolation of the cylinder metrics with weight `φ(t)`.
   let G := g₀.cylinder.convexCombinationFun g₁.cylinder
     (fun p : M × ℝ ↦ Real.smoothTransition p.2)
@@ -82,8 +85,7 @@ theorem concordant_of_forall_hasPositiveScalarCurvature_convexCombination [Compa
     (g := fun t ↦ g₀.convexCombination g₁ (φ t))
     (fun p ↦ by
       ext v w
-      simp only [G, φ, unitInterval.coe_smoothTransition, convexCombinationFun_inner,
-        cylinder_inner, convexCombination_inner]
+      simp only [G, φ, convexCombinationFun_inner, cylinder_inner, convexCombination_inner]
       ring)
     (fun t _ ↦ h (φ t)) (fun t ht ↦ by simp only [hφ₀ ht, hφ₀ le_rfl])
     (fun t ht ↦ by simp only [hφ₁ ht, hφ₁ le_rfl])
