@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Dual.Basis
-public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import TauCeti.LinearAlgebra.PerfectPairing.Basis
 
 /-!
 # The product of a trilinear form through a perfect pairing
@@ -36,8 +35,8 @@ This file develops the algebra that relates properties of `I` to properties of `
   in the left slot of `p`. When `p` is not symmetric, as for the Poincaré pairing on odd classes,
   the right dual basis, with `p (e_j) (e^i) = δ_ij`, is a different basis, and the reconstruction
   formula holds for the left one. For the intersection pairing on the first cohomology of the
-  two-torus, with `p(α, β) = 1`, the left duals of `(α, β)` are `(-β, α)`
-  (`LinearMap.leftDualBasis_eq_of_apply_eq_neg`). Mathlib's `LinearMap.BilinForm.dualBasis` is the
+  two-torus, with `p(α, β) = 1`, the left duals of `(α, β)` are `(-β, α)`, as the example at the
+  end of this file checks. Mathlib's `LinearMap.BilinForm.dualBasis` is the
   case of a nondegenerate bilinear form on a finite-dimensional vector space; here the scalars
   form any commutative semiring, such as a Novikov ring, which need not be a field.
 * **Commutativity.** If exchanging the first two arguments of `I` multiplies it by `ε`, then
@@ -47,9 +46,10 @@ This file develops the algebra that relates properties of `I` to properties of `
   `I(u, b, c) = p(b, c)` for all `b` and `c` then `u` is a left unit
   (`LinearMap.trilinearProduct_apply_eq_self_right`,
   `LinearMap.trilinearProduct_apply_eq_self_left`).
-* **Associativity.** The product on `M` defined by `I : M × M × M → R` is associative exactly
+* **Associativity.** The product on `M` defined by `I : M × M × N → R` is associative exactly
   when `I((a ⋆ b), c, d) = I(a, (b ⋆ c), d)` for all `a`, `b`, `c`, `d`
-  (`LinearMap.trilinearProduct_assoc_iff`). In a finite basis `e` with left dual basis `e^j` this
+  (`LinearMap.trilinearProduct_assoc_iff`). In a finite basis `e` of `N` with left dual basis `e^j`
+  this
   is the identity
 
   `∑_j I(a, b, e_j) I(e^j, c, d) = ∑_j I(b, c, e_j) I(a, e^j, d)`
@@ -119,83 +119,23 @@ theorem trilinearProduct_apply_eq_smul {I : V →ₗ[R] V →ₗ[R] N →ₗ[R] 
   intro c
   rw [map_smul₂, apply_trilinearProduct, smul_eq_mul, h]
 
-section DualBasis
-
-variable {ι : Type*} [DecidableEq ι] [Finite ι]
-
-/-- The **left dual basis** of a finite basis `e` of `N` for a perfect pairing `p : M × N → R`:
-the basis `e^i` of `M` with `p (e^i) (e_j) = δ_ij` (`LinearMap.apply_leftDualBasis`). It is the
-image of the dual basis of `e` under the identification of `Dual R N` with `M` given by `p`. -/
-def leftDualBasis (e : Basis ι R N) : Basis ι R M :=
-  e.dualBasis.map p.toPerfPair.symm
-
-/-- The defining property of the left dual basis: `p (e^i) (e_j) = δ_ij`. -/
-@[simp]
-theorem apply_leftDualBasis (e : Basis ι R N) (i j : ι) :
-    p (p.leftDualBasis e i) (e j) = if j = i then 1 else 0 := by
-  simp [leftDualBasis, Finsupp.single_apply]
-
-/-- The left dual basis is the only family `f` of `M` with `p (f i) (e j) = δ_ij`. -/
-theorem eq_leftDualBasis_iff (e : Basis ι R N) {f : ι → M} :
-    f = p.leftDualBasis e ↔ ∀ i j, p (f i) (e j) = if j = i then 1 else 0 := by
-  refine ⟨fun h ↦ h ▸ p.apply_leftDualBasis e, fun h ↦ funext fun i ↦ ?_⟩
-  exact (IsPerfPair.bijective_left p).injective (e.ext fun j ↦ by rw [h, apply_leftDualBasis])
-
-/-- The coordinates of `x ∈ M` in the left dual basis of `e` are the pairings `p x (e_i)`. -/
-@[simp]
-theorem leftDualBasis_repr_apply (e : Basis ι R N) (x : M) (i : ι) :
-    (p.leftDualBasis e).repr x i = p x (e i) := by
-  simp [leftDualBasis]
-
-/-- **The left-dual reconstruction.** Every `x ∈ M` is `∑_j p(x, e_j) e^j`, for the left dual
-basis `e^j` of a finite basis `e` of `N`. -/
-theorem sum_apply_smul_leftDualBasis [Fintype ι] (e : Basis ι R N) (x : M) :
-    ∑ j, p x (e j) • p.leftDualBasis e j = x := by
-  simpa using (p.leftDualBasis e).sum_repr x
-
-/-- **The product in a basis.** The product of a trilinear form is
-`a ⋆ b = ∑_j I(a, b, e_j) e^j`, for the left dual basis `e^j` of a finite basis `e` of `N`. -/
-theorem trilinearProduct_apply_eq_sum [Fintype ι] (e : Basis ι R N)
-    (I : V →ₗ[R] W →ₗ[R] N →ₗ[R] R) (a : V) (b : W) :
-    p.trilinearProduct I a b = ∑ j, I a b (e j) • p.leftDualBasis e j := by
-  simp_rw [← apply_trilinearProduct p I a b]
-  exact (p.sum_apply_smul_leftDualBasis e _).symm
-
-end DualBasis
-
-end Pairing
-
-/-- **Left duals of an antisymmetric pair.** If a basis `(α, β)` of `M` satisfies
-`p α α = p β β = 0`, `p α β = 1` and `p β α = -1`, as the intersection pairing does on the first
-cohomology of the two-torus, then its left dual basis is `(-β, α)`. The right dual basis, with
-`p (e_j) (e^i) = δ_ij`, would be `(β, -α)` instead. -/
-theorem leftDualBasis_eq_of_apply_eq_neg {R M : Type*} [CommRing R] [AddCommGroup M]
-    [Module R M] (p : M →ₗ[R] M →ₗ[R] R) [p.IsPerfPair] (e : Basis (Fin 2) R M)
-    (h₀₀ : p (e 0) (e 0) = 0) (h₁₁ : p (e 1) (e 1) = 0) (h₀₁ : p (e 0) (e 1) = 1)
-    (h₁₀ : p (e 1) (e 0) = -1) :
-    ⇑(p.leftDualBasis e) = ![-e 1, e 0] := by
-  refine ((p.eq_leftDualBasis_iff e).2 ?_).symm
-  simp [Fin.forall_fin_two, h₀₀, h₁₁, h₀₁, h₁₀]
-
-section Endo
-
-variable (p : M →ₗ[R] M →ₗ[R] R) [p.IsPerfPair] (I : M →ₗ[R] M →ₗ[R] M →ₗ[R] R)
-
 /-- **Right units.** If `I(a, u, c) = p(a, c)` for all `a` and `c`, then `a ⋆ u = a`. -/
-theorem trilinearProduct_apply_eq_self_right {u : M} (h : ∀ a c, I a u c = p a c) (a : M) :
+theorem trilinearProduct_apply_eq_self_right (I : M →ₗ[R] W →ₗ[R] N →ₗ[R] R) {u : W}
+    (h : ∀ a c, I a u c = p a c) (a : M) :
     p.trilinearProduct I a u = a := by
   rw [eq_comm, eq_trilinearProduct_apply_iff]
   exact fun c ↦ (h a c).symm
 
 /-- **Left units.** If `I(u, b, c) = p(b, c)` for all `b` and `c`, then `u ⋆ b = b`. -/
-theorem trilinearProduct_apply_eq_self_left {u : M} (h : ∀ b c, I u b c = p b c) (b : M) :
+theorem trilinearProduct_apply_eq_self_left (I : V →ₗ[R] M →ₗ[R] N →ₗ[R] R) {u : V}
+    (h : ∀ b c, I u b c = p b c) (b : M) :
     p.trilinearProduct I u b = b := by
   rw [eq_comm, eq_trilinearProduct_apply_iff]
   exact fun c ↦ (h b c).symm
 
 /-- **Associativity of the product.** The product of `I` is associative exactly when
 `I(a ⋆ b, c, d) = I(a, b ⋆ c, d)` for all `a`, `b`, `c` and `d`. -/
-theorem trilinearProduct_assoc_iff :
+theorem trilinearProduct_assoc_iff (I : M →ₗ[R] M →ₗ[R] N →ₗ[R] R) :
     (∀ a b c, p.trilinearProduct I (p.trilinearProduct I a b) c =
         p.trilinearProduct I a (p.trilinearProduct I b c)) ↔
       ∀ a b c d, I (p.trilinearProduct I a b) c d = I a (p.trilinearProduct I b c) d := by
@@ -205,14 +145,25 @@ theorem trilinearProduct_assoc_iff :
     intro d
     rw [apply_trilinearProduct, h]
 
-/-- **Associativity in a basis: the WDVV identity.** For a finite basis `e` of `M` with left dual
+section DualBasis
+
+variable {ι : Type*} [DecidableEq ι] [Fintype ι]
+
+/-- **The product in a basis.** The product of a trilinear form is
+`a ⋆ b = ∑_j I(a, b, e_j) e^j`, for the left dual basis `e^j` of a finite basis `e` of `N`. -/
+theorem trilinearProduct_apply_eq_sum (e : Basis ι R N)
+    (I : V →ₗ[R] W →ₗ[R] N →ₗ[R] R) (a : V) (b : W) :
+    p.trilinearProduct I a b = ∑ j, I a b (e j) • p.leftDualBasis e j := by
+  simp_rw [← apply_trilinearProduct p I a b]
+  exact (p.sum_apply_smul_leftDualBasis e _).symm
+
+/-- **Associativity in a basis: the WDVV identity.** For a finite basis `e` of `N` with left dual
 basis `e^j`, the product of `I` is associative exactly when
 
 `∑_j I(a, b, e_j) I(e^j, c, d) = ∑_j I(b, c, e_j) I(a, e^j, d)`
 
 for all `a`, `b`, `c` and `d`. -/
-theorem trilinearProduct_assoc_iff_sum {ι : Type*} [DecidableEq ι] [Fintype ι]
-    (e : Basis ι R M) :
+theorem trilinearProduct_assoc_iff_sum (e : Basis ι R N) (I : M →ₗ[R] M →ₗ[R] N →ₗ[R] R) :
     (∀ a b c, p.trilinearProduct I (p.trilinearProduct I a b) c =
         p.trilinearProduct I a (p.trilinearProduct I b c)) ↔
       ∀ a b c d, ∑ j, I a b (e j) * I (p.leftDualBasis e j) c d =
@@ -221,6 +172,19 @@ theorem trilinearProduct_assoc_iff_sum {ι : Type*} [DecidableEq ι] [Fintype ι
   simp only [p.trilinearProduct_apply_eq_sum e, map_sum, map_smul, LinearMap.sum_apply,
     LinearMap.smul_apply, smul_eq_mul]
 
-end Endo
+end DualBasis
+
+end Pairing
+
+/-! The left duals of the torus basis: if a basis `(α, β)` of `M` satisfies `p α α = p β β = 0`,
+`p α β = 1` and `p β α = -1`, as the intersection pairing does on the first cohomology of the
+two-torus, then its left dual basis is `(-β, α)`. The right dual basis, with
+`p (e_j) (e^i) = δ_ij`, would be `(β, -α)` instead. -/
+example {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] (p : M →ₗ[R] M →ₗ[R] R)
+    [p.IsPerfPair] (e : Basis (Fin 2) R M) (h₀₀ : p (e 0) (e 0) = 0) (h₁₁ : p (e 1) (e 1) = 0)
+    (h₀₁ : p (e 0) (e 1) = 1) (h₁₀ : p (e 1) (e 0) = -1) :
+    ⇑(p.leftDualBasis e) = ![-e 1, e 0] := by
+  refine ((p.eq_leftDualBasis_iff e).2 ?_).symm
+  simp [Fin.forall_fin_two, h₀₀, h₁₁, h₀₁, h₁₀]
 
 end LinearMap
