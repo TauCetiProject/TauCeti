@@ -245,7 +245,8 @@ theorem normalizedCoordinateFlux_add {g h : EuclideanSpace ℝ (Fin n) → Fin n
 
 /-! ### Rescaling the coordinates -/
 
-/-- Rescaling the coordinates by `s > 0` multiplies the flux density by `s`. -/
+/-- Rescaling the coordinates by `s > 0` turns the flux density at `x` into `s` times the flux
+density of `g` at `s • x`. -/
 theorem coordinateFluxIntegrand_comp_smul (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ)
     {s : ℝ} (hs : 0 < s) (x : EuclideanSpace ℝ (Fin n)) :
     coordinateFluxIntegrand (fun y ↦ g (s • y)) x = s * coordinateFluxIntegrand g (s • x) := by
@@ -258,9 +259,10 @@ theorem coordinateFluxIntegrand_comp_smul (g : EuclideanSpace ℝ (Fin n) → Fi
   simp only [coordinateFluxIntegrand_def, hd, hx, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
     ← mul_sub, ← Finset.mul_sum, mul_assoc]
 
-/-- **Scaling of the flux.** Rescaling the coordinates by `s > 0` multiplies the normalized flux
-by `s ^ (2 - n)`. For the metric `λ g` in the coordinates `√λ x`, whose coefficients are
-`g (x / √λ)`, this is the scaling law `m(λ g) = λ ^ ((n - 2) / 2) m(g)` of the mass. -/
+/-- **Scaling of the flux.** Rescaling the coordinates by `s > 0` turns the normalized flux at
+radius `r` into `s ^ (2 - n)` times the normalized flux of `g` at radius `s r`. For the metric
+`λ g` in the coordinates `√λ x`, whose coefficients are `g (x / √λ)`, this is the scaling law
+`m(λ g) = λ ^ ((n - 2) / 2) m(g)` of the mass. -/
 theorem normalizedCoordinateFlux_comp_smul (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ)
     {s : ℝ} (hs : 0 < s) (r : ℝ) :
     normalizedCoordinateFlux (fun y ↦ g (s • y)) r =
