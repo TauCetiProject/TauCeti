@@ -88,14 +88,15 @@ private theorem wignerQuadraticError_tail (hind : iIndepFun ξ P)
   let A (ω : Ω) : Matrix {j // j ≠ i} {j // j ≠ i} ℂ :=
     (wignerMatrix ξ (fun _ _ ↦ 0) (n + 1) ω).submatrix (↑) (↑)
   have hm (ij : StrictUpper) := (integrable_of_hasSubgaussianMGF_re_star_mul (hξ ij)).aemeasurable
-  have hW := aemeasurable_wignerMatrix (η := fun _ _ ↦ 0) hm (fun _ ↦ aemeasurable_const) (n + 1)
+  have hW := aemeasurable_wignerMatrix (n := n + 1) (η := fun _ _ ↦ 0)
+    (fun ij _ ↦ hm ij) (fun _ _ ↦ aemeasurable_const)
   have hA : AEMeasurable A P := .of_eval fun j ↦ .of_eval fun k ↦
     (Matrix.measurable_apply (i := j.val) (j := k.val)).comp_aemeasurable hW
   have hi : IndepFun A (fun ω j ↦ a j ω) P :=
     indepFun_submatrix_wignerMatrix_zero_column hind hm i
   have hia : iIndepFun a P := iIndepFun_wignerMatrix_apply_of_ne Subtype.val (fun _ ↦ i)
     Subtype.property (fun j k h ↦ Subtype.ext (((Sym2.eq_iff.mp h).resolve_right
-      fun he ↦ j.property he.1).1)) hind
+      fun he ↦ j.property he.1).1)) (hind.precomp Subtype.val_injective)
   have ha (j : {j // j ≠ i}) : ∫ ω, ‖a j ω‖ ^ 2 ∂P = (v : ℝ) / (n + 1) := by
     simp only [a, norm_wignerMatrix_apply_sq_of_ne _ _ _ j.property, integral_const_mul,
       hv, Nat.cast_add, Nat.cast_one]

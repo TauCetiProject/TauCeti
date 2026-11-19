@@ -48,6 +48,13 @@ instance Bundle.Pullback.instMulAction {M : Type*} [Monoid M] {E : B → Type*}
     [i : ∀ b, MulAction M (E b)] (f : B' → B) (x : B') : MulAction M ((f *ᵖ E) x) :=
   i (f x)
 
+/-- Scalar multiplication on a fibre of a pullback bundle `f *ᵖ E` agrees with the scalar
+multiplication on the corresponding fibre of `E`. -/
+theorem Bundle.Pullback.smul_eq {M : Type*} {E : B → Type*} [∀ b, SMul M (E b)] (f : B' → B)
+    (x : B') (m : M) (v : (f *ᵖ E) x) :
+    m • v = @HSMul.hSMul M (E (f x)) (E (f x)) _ m v :=
+  rfl
+
 section Lift
 
 variable {F : Type*} {E : B → Type*}
