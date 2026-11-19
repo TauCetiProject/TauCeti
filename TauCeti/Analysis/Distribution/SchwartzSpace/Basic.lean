@@ -54,6 +54,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   supported in `U`.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
   integrates to zero against every Schwartz function vanishes.
+* `SchwartzMap.closure_range_toLp_eq`: the closure of the Schwartz functions in `Lᵖ` is the
+  topological closure of the range of `SchwartzMap.toLpCLM`, a closed subspace.
 * `HasCompactSupport.toSchwartzMap_toLp`: the `Lᵖ` class of a smooth compactly supported function
   is the same whether built through `HasCompactSupport.toSchwartzMap` or from `MemLp`.
 -/
@@ -301,6 +303,19 @@ theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemp
   simp [smulLeftCLM, hg]
 
 end Smul
+
+open scoped ENNReal in
+/-- The closure of the Schwartz functions in `Lᵖ` is the topological closure of the range of the
+inclusion `SchwartzMap.toLpCLM`. In particular it is a closed subspace: sums and scalar multiples
+of `Lᵖ` limits of Schwartz functions are again such limits. -/
+theorem closure_range_toLp_eq {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [SecondCountableTopologyEither E F] {μ : Measure E} [μ.HasTemperateGrowth] (p : ℝ≥0∞)
+    [Fact (1 ≤ p)] :
+    closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p μ) =
+      ((LinearMap.range (toLpCLM ℝ F p μ).toLinearMap).topologicalClosure : Set (Lp F p μ)) := by
+  have hcoe : ⇑(toLpCLM ℝ F p μ) = fun f ↦ f.toLp p μ := funext fun _ ↦ toLpCLM_apply
+  rw [Submodule.topologicalClosure_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe, hcoe]
 
 section Conj
 
