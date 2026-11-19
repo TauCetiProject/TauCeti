@@ -8,17 +8,35 @@ module
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 
 /-!
-# Continuity out of the compactly generated topology
+# Continuity out of and universe lifting for compactly generated topologies
 
 Mathlib's `continuous_from_compactlyGenerated` shows that a map out of the compactly generated
 topology `TopologicalSpace.compactlyGenerated X` is continuous when its composites with the
-continuous maps from compact Hausdorff spaces are. Here we record the converse, giving the
-characterization `TauCeti.continuous_compactlyGenerated_iff`.
+continuous maps from compact Hausdorff spaces are. Here we record the converse
+(`TauCeti.continuous_compactlyGenerated_iff`), together with universe monotonicity of
+`UCompactlyGeneratedSpace` (`UCompactlyGeneratedSpace.ulift`) and its consequence for Hausdorff
+weakly locally compact spaces (`UCompactlyGeneratedSpace.of_t2Space_of_weaklyLocallyCompactSpace`).
 -/
 
 public section
 
 universe u v w
+
+/-- If `X` is `v`-compactly generated, then it is `(max v u)`-compactly generated for every
+universe `u`. -/
+theorem UCompactlyGeneratedSpace.ulift {X : Type w} [TopologicalSpace X]
+    [UCompactlyGeneratedSpace.{v} X] : UCompactlyGeneratedSpace.{max v u} X :=
+  uCompactlyGeneratedSpace_of_isClosed fun _ h ↦
+    UCompactlyGeneratedSpace.isClosed.{v} fun S f ↦
+      (h (CompHaus.of (ULift.{u} S)) (f.comp ⟨ULift.down, continuous_uliftDown⟩)).preimage
+        continuous_uliftUp
+
+/-- A Hausdorff weakly locally compact space `X : Type w` is `(max w u)`-compactly generated for
+every universe `u`. -/
+theorem UCompactlyGeneratedSpace.of_t2Space_of_weaklyLocallyCompactSpace
+    (X : Type w) [TopologicalSpace X] [T2Space X] [WeaklyLocallyCompactSpace X] :
+    UCompactlyGeneratedSpace.{max w u} X :=
+  UCompactlyGeneratedSpace.ulift.{u, w} (X := X)
 
 namespace TauCeti
 
