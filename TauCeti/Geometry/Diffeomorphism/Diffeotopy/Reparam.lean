@@ -125,8 +125,7 @@ theorem symm_reparam_apply (ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯) (p : I × 
 /-- When `ρ 0 = 0`, the reparametrized diffeotopy at `(t, x)` is `φ_{ρ t} x`. -/
 theorem reparam_apply_of_map_zero {ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯} (h₀ : ρ 0 = 0) (p : I × M) :
     Φ.reparam ρ p = Φ (ρ p.1, p.2) := by
-  rw [reparam_apply, h₀, ← Φ.symm_timeSlice_apply, timeSlice_zero, _root_.Diffeomorph.symm_refl,
-    _root_.Diffeomorph.coe_refl, id_eq]
+  rw [reparam_apply, h₀, Φ.symm.apply_zero]
 
 /-- The time slices of a reparametrized diffeotopy are `φ_{ρ t} ∘ φ_{ρ 0}⁻¹`. -/
 theorem timeSlice_reparam (ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯) (t : I) :
@@ -181,20 +180,18 @@ along the motion of `Φ`, from the identity to `φ₁⁻¹`. This is the reparam
 def reverse : Diffeotopy J n M :=
   Φ.reparam ⟨σ, contMDiff_symm⟩
 
+/-- The time reversal is the reparametrization by `t ↦ 1 - t`. -/
+theorem reverse_def : Φ.reverse = Φ.reparam ⟨σ, contMDiff_symm⟩ :=
+  (rfl)
+
 /-- The reversed diffeotopy at `(t, x)` is `φ_{1 - t} (φ₁⁻¹ x)`. -/
 @[simp]
 theorem reverse_apply (p : I × M) : Φ.reverse p = Φ (σ p.1, Φ.symm (1, p.2)) := by
-  -- `Φ.reverse` is by definition the reparametrization by `σ`, whose value at `0` is `1`.
-  have h := Φ.reparam_apply ⟨σ, contMDiff_symm⟩ p
-  rw [ContMDiffMap.coeFn_mk, symm_zero] at h
-  exact h
+  rw [reverse_def, Φ.reparam_apply ⟨σ, contMDiff_symm⟩, ContMDiffMap.coeFn_mk, symm_zero]
 
 /-- The inverse of the reversed diffeotopy at `(t, x)` is `φ₁ (φ_{1 - t}⁻¹ x)`. -/
 theorem symm_reverse_apply (p : I × M) : Φ.reverse.symm p = Φ (1, Φ.symm (σ p.1, p.2)) := by
-  -- `Φ.reverse` is by definition the reparametrization by `σ`, whose value at `0` is `1`.
-  have h := Φ.symm_reparam_apply ⟨σ, contMDiff_symm⟩ p
-  rw [ContMDiffMap.coeFn_mk, symm_zero] at h
-  exact h
+  rw [reverse_def, Φ.symm_reparam_apply ⟨σ, contMDiff_symm⟩, ContMDiffMap.coeFn_mk, symm_zero]
 
 /-- The time slices of the reversed diffeotopy are `φ_{1 - t} ∘ φ₁⁻¹`. -/
 theorem timeSlice_reverse (t : I) :
@@ -233,12 +230,18 @@ pointwise composite of the two reparametrizations. -/
 def concat (hn : n ≤ ∞) : Diffeotopy J n M :=
   (Φ.reparam (collaredFirstHalf hn)).trans (Ψ.reparam (collaredSecondHalf hn))
 
+/-- The concatenation is the pointwise composite of the reparametrizations of `Φ` and `Ψ` by the
+two collared half-interval time maps. -/
+theorem concat_def (hn : n ≤ ∞) :
+    Φ.concat Ψ hn = (Φ.reparam (collaredFirstHalf hn)).trans (Ψ.reparam (collaredSecondHalf hn)) :=
+  (rfl)
+
 /-- The concatenation at `(t, x)` is `ψ_{b t} (φ_{a t} x)`, where `a` and `b` are the two time
 maps of the concatenation. -/
 theorem concat_apply (hn : n ≤ ∞) (p : I × M) :
     Φ.concat Ψ hn p = Ψ (collaredSmoothTransitionUnit (2 * p.1 - 1),
       Φ (collaredSmoothTransitionUnit (2 * p.1), p.2)) := by
-  rw [concat, trans_apply, reparam_apply_of_map_zero _ (collaredFirstHalf_zero hn),
+  rw [concat_def, trans_apply, reparam_apply_of_map_zero _ (collaredFirstHalf_zero hn),
     reparam_apply_of_map_zero _ (collaredSecondHalf_zero hn), collaredFirstHalf_apply,
     collaredSecondHalf_apply]
 
@@ -320,10 +323,8 @@ theorem IsCollared.reverse (hΦ : Φ.IsCollared) : Φ.reverse.IsCollared := by
     simpa only [symm_zero] using continuous_symm.tendsto (0 : I)
   have hσ₁ : Tendsto σ (𝓝 (1 : I)) (𝓝 0) := by
     simpa only [symm_one] using continuous_symm.tendsto (1 : I)
-  -- `Φ.reverse` is by definition the reparametrization by `σ`.
-  have h := isCollared_reparam_iff (Φ := Φ) (ρ := ⟨σ, contMDiff_symm⟩)
-  rw [ContMDiffMap.coeFn_mk] at h
-  refine h.mpr ⟨(hσ₀.eventually hΦ.eventually_one).mono fun t ht ↦ ?_,
+  rw [reverse_def, isCollared_reparam_iff (ρ := ⟨σ, contMDiff_symm⟩), ContMDiffMap.coeFn_mk]
+  refine ⟨(hσ₀.eventually hΦ.eventually_one).mono fun t ht ↦ ?_,
     (hσ₁.eventually hΦ.eventually_zero).mono fun t ht ↦ ?_⟩
   · rw [ht, symm_zero, final_def]
   · rw [ht, symm_one, timeSlice_zero]
@@ -371,8 +372,9 @@ theorem reparam_homotopic {ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯} (h₀ : ρ 
 
 /-- **The path-class law of concatenation.** The concatenation of `Φ` and `Ψ` is homotopic to their
 pointwise composite `ψ_t ∘ φ_t`. -/
-theorem concat_homotopic_trans (hn : n ≤ ∞) : (Φ.concat Ψ hn).Homotopic (Φ.trans Ψ) :=
-  (Φ.reparam_homotopic (collaredFirstHalf_zero hn) (collaredFirstHalf_one hn)).trans_congr
+theorem concat_homotopic_trans (hn : n ≤ ∞) : (Φ.concat Ψ hn).Homotopic (Φ.trans Ψ) := by
+  rw [concat_def]
+  exact (Φ.reparam_homotopic (collaredFirstHalf_zero hn) (collaredFirstHalf_one hn)).trans_congr
     (Ψ.reparam_homotopic (collaredSecondHalf_zero hn) (collaredSecondHalf_one hn))
 
 /-- **The path-class law of time reversal.** The reversal `φ_{1 - t} ∘ φ₁⁻¹` is homotopic to the
