@@ -7,8 +7,10 @@ module
 
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.Topology.Maps.OpenQuotient
+public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Separation.Hausdorff
-import Mathlib.Topology.Maps.Proper.Basic
+import Mathlib.Topology.Algebra.ConstMulAction
+import TauCeti.Topology.Algebra.ProperAction.Basic
 
 /-!
 # The orbit space of a representation
@@ -20,17 +22,19 @@ topological space.
 
 The action of `G` on `V` through `ρ` is not registered as a `MulAction` instance, since it would
 compete with other actions on `V`: for instance the units `kˣ` of the scalars already act on `V` by
-scalar multiplication, and a representation of `kˣ` need not be that action. So Mathlib's orbit
-spaces `MulAction.orbitRel` do not apply directly, and this file proves the basic topology of the
-orbit space of `ρ`.
+scalar multiplication, and a representation of `kˣ` need not be that action. So
+`Representation.orbitRel ρ` is defined as Mathlib's `MulAction.orbitRel` for the action
+`MulAction.compHom V ρ`, and the results below restate Mathlib's orbit-space topology for that
+action with hypotheses on `ρ` itself.
 
 * When every `ρ g` is continuous, the quotient map `V → V / G` is open
-  (`Representation.isOpenQuotientMap_orbitRel_mk`): the saturation of an open set `U` is the union
-  of its translates.
+  (`Representation.isOpenQuotientMap_orbitRel_mk`), by `MulAction.isOpenQuotientMap_quotientMk`.
 * When `G` is a compact space and the action `(g, v) ↦ ρ g v` is jointly continuous, the quotient
   map is also closed (`Representation.isClosedMap_orbitRel_mk`), because the saturation of a closed
   set `A` is the projection to `V` of the closed set `{(g, v) | ρ g v ∈ A}` of `G × V`, and the
-  projection `G × V → V` is a closed map. If moreover `V` is Hausdorff, so is the orbit space
+  projection `G × V → V` is a closed map. Its fibres are orbits, continuous images of `G`, so the
+  quotient map is proper (`Representation.isProperMap_orbitRel_mk`). If moreover `V` is Hausdorff,
+  the action is proper, so the orbit space is Hausdorff
   (`Representation.t2Space_quotient_orbitRel`).
 
 These are the facts behind the identification of the adjoint orbit space of a compact Lie group
@@ -54,14 +58,12 @@ variable {k G V : Type*} [Semiring k] [Group G] [AddCommMonoid V] [Module k V]
 /-! ### The orbit relation -/
 
 /-- **The orbit relation of a representation.** Two vectors are related when some group element
-carries the second to the first; the classes are the orbits `{ρ g v | g ∈ G}`. As for
-`MulAction.orbitRel`, `v ≈ w` means that `v` lies in the orbit of `w`. -/
-def orbitRel : Setoid V where
-  r v w := ∃ g : G, ρ g w = v
-  iseqv :=
-    { refl := fun v ↦ ⟨1, by simp⟩
-      symm := fun {v w} ⟨g, h⟩ ↦ ⟨g⁻¹, by rw [← h, inv_self_apply]⟩
-      trans := fun {u v w} ⟨g, hg⟩ ⟨h, hh⟩ ↦ ⟨g * h, by rw [map_mul, mul_apply_eq_comp, hh, hg]⟩ }
+carries the second to the first; the classes are the orbits `{ρ g v | g ∈ G}`. This is
+`MulAction.orbitRel` for the action `MulAction.compHom V ρ` of `G` through `ρ`, so as there,
+`v ≈ w` means that `v` lies in the orbit of `w`. -/
+def orbitRel : Setoid V :=
+  letI := MulAction.compHom V ρ
+  MulAction.orbitRel G V
 
 theorem orbitRel_apply {v w : V} : ρ.orbitRel v w ↔ ∃ g : G, ρ g w = v :=
   Iff.rfl
@@ -78,29 +80,18 @@ theorem orbitRel_mk_apply (g : G) (v : V) :
     Quotient.mk ρ.orbitRel (ρ g v) = Quotient.mk ρ.orbitRel v :=
   ρ.orbitRel_mk_eq_mk_iff.mpr ⟨g, rfl⟩
 
-/-- The saturation of a set `A` under the orbit relation consists of the vectors that some group
-element carries into `A`. -/
-theorem preimage_image_orbitRel_mk (A : Set V) :
-    Quotient.mk ρ.orbitRel ⁻¹' (Quotient.mk ρ.orbitRel '' A) = {v | ∃ g : G, ρ g v ∈ A} := by
-  ext v
-  simp only [mem_preimage, mem_image, mem_ofPred_eq, orbitRel_mk_eq_mk_iff]
-  exact ⟨fun ⟨_, ha, g, hg⟩ ↦ ⟨g, hg ▸ ha⟩, fun ⟨g, hg⟩ ↦ ⟨_, hg, g, rfl⟩⟩
-
 /-! ### Topology of the orbit space -/
 
 section Topology
 
 variable [TopologicalSpace V]
 
-/-- **The orbit map of a representation by continuous operators is an open quotient map.** The
-saturation of an open set `U` is the union of the open sets `(ρ g)⁻¹(U)`. -/
+/-- **The orbit map of a representation by continuous operators is an open quotient map.** -/
 theorem isOpenQuotientMap_orbitRel_mk (hρ : ∀ g : G, Continuous (ρ g)) :
-    IsOpenQuotientMap (Quotient.mk ρ.orbitRel) := by
-  refine ⟨Quotient.mk_surjective, continuous_quotient_mk', fun U hU ↦ ?_⟩
-  rw [← isQuotientMap_quotient_mk'.isOpen_preimage]
-  change IsOpen (Quotient.mk ρ.orbitRel ⁻¹' (Quotient.mk ρ.orbitRel '' U))
-  rw [preimage_image_orbitRel_mk, ofPred_exists]
-  exact isOpen_iUnion fun g ↦ hU.preimage (hρ g)
+    IsOpenQuotientMap (Quotient.mk ρ.orbitRel) :=
+  letI := MulAction.compHom V ρ
+  haveI : ContinuousConstSMul G V := ⟨hρ⟩
+  MulAction.isOpenQuotientMap_quotientMk
 
 variable [TopologicalSpace G] [CompactSpace G]
 
@@ -109,25 +100,33 @@ compact group, the saturation of a closed set `A` is the projection to `V` of th
 `{(g, v) | ρ g v ∈ A}`, and the projection `G × V → V` is a closed map. -/
 theorem isClosedMap_orbitRel_mk (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2) :
     IsClosedMap (Quotient.mk ρ.orbitRel) := fun A hA ↦ by
-  rw [← isQuotientMap_quotient_mk'.isClosed_preimage]
-  change IsClosed (Quotient.mk ρ.orbitRel ⁻¹' (Quotient.mk ρ.orbitRel '' A))
-  rw [preimage_image_orbitRel_mk]
+  rw [← (ρ.isOpenQuotientMap_orbitRel_mk fun g ↦ hρ.comp (Continuous.prodMk_right g))
+    |>.isQuotientMap.isClosed_preimage]
   convert isClosedMap_snd_of_compactSpace _ (hA.preimage hρ)
-  simp
+  ext v
+  simp only [mem_preimage, mem_image, orbitRel_mk_eq_mk_iff, Prod.exists]
+  exact ⟨fun ⟨_, ha, g, hg⟩ ↦ ⟨g, v, hg ▸ ha, rfl⟩, fun ⟨g, _, ha, rfl⟩ ↦ ⟨_, ha, g, rfl⟩⟩
 
-/-- **The orbit space of a compact group acting on a Hausdorff space is Hausdorff.** The relation
-`{(v, w) | ∃ g, ρ g w = v}` is the projection of the closed set
-`{(g, v, w) | ρ g w = v}` of `G × V × V` along the compact factor `G`, so it is closed, and the
-orbit map is an open quotient map. -/
+/-- **The orbit map of a compact group is proper.** For a jointly continuous representation of a
+compact group, the orbit map is closed, and its fibres are orbits, which are compact as continuous
+images of the group. -/
+theorem isProperMap_orbitRel_mk (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2) :
+    IsProperMap (Quotient.mk ρ.orbitRel) := by
+  refine isProperMap_iff_isClosedMap_and_compact_fibers.mpr
+    ⟨continuous_quotient_mk', ρ.isClosedMap_orbitRel_mk hρ, fun y ↦ ?_⟩
+  induction y using Quotient.inductionOn with | h v => ?_
+  convert isCompact_range (hρ.comp (Continuous.prodMk_left v))
+  ext w
+  exact ρ.orbitRel_mk_eq_mk_iff
+
+/-- **The orbit space of a compact group acting on a Hausdorff space is Hausdorff.** A jointly
+continuous action of a compact group on a Hausdorff space is proper. -/
 theorem t2Space_quotient_orbitRel [T2Space V] (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2) :
-    T2Space (Quotient ρ.orbitRel) := by
-  have hρg (g : G) : Continuous (ρ g) := hρ.comp (Continuous.prodMk_right g)
-  rw [t2Space_iff_of_isOpenQuotientMap (ρ.isOpenQuotientMap_orbitRel_mk hρg)]
-  have hclosed : IsClosed {p : G × (V × V) | ρ p.1 p.2.2 = p.2.1} :=
-    isClosed_eq (hρ.comp (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))
-      (continuous_fst.comp continuous_snd)
-  convert isClosedMap_snd_of_compactSpace _ hclosed
-  simp [orbitRel_mk_eq_mk_iff]
+    T2Space (Quotient ρ.orbitRel) :=
+  letI := MulAction.compHom V ρ
+  haveI : ContinuousSMul G V := ⟨hρ⟩
+  haveI := TauCeti.properSMul_of_compactSpace G V
+  t2Space_quotient_mulAction_of_properSMul
 
 end Topology
 

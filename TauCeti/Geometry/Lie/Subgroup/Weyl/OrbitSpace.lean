@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Adjoint.Representation.OrbitSpace
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.AdjointOrbit
-public import TauCeti.RepresentationTheory.OrbitSpace
-public import Mathlib.Topology.Maps.Proper.Basic
-import TauCeti.Geometry.Lie.Subgroup.Weyl.Finite
 import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
@@ -24,14 +22,12 @@ Weyl representation on `𝔱`, with the quotient topologies.
 The inclusion `𝔱 → 𝔤` induces a map `𝔱 / W → 𝔤 / Ad G`. It is surjective because every adjoint
 orbit meets `𝔱` (`TauCeti.Lie.IsMaximalTorus.exists_Ad_mem_lieSubalgebraOfSubgroup`), and injective
 because two elements of `𝔱` in one adjoint orbit are related by the Weyl group
-(`TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_eq_iff`). Neither space is compact,
-so a continuous bijection between them need not be a homeomorphism. Instead, the map `𝔱 → 𝔤 / Ad G`
-is closed: `𝔱` is a closed subspace of `𝔤`, and the orbit map of the compact group `G` is closed
-(`Representation.isClosedMap_orbitRel_mk`). Its fibres are single Weyl orbits, which are finite
-because the Weyl group is finite (`TauCeti.Lie.IsMaximalTorus.finite_normalizerQuotient`), so this
-map is proper. The induced bijection `𝔱 / W → 𝔤 / Ad G` is then continuous and closed, hence a
-homeomorphism. The adjoint orbit space is Hausdorff, as the orbit space of a compact group acting
-on a Hausdorff space.
+(`TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_eq_iff`). Neither space need be
+compact, so a continuous bijection between them need not be a homeomorphism. Instead, the map
+`𝔱 → 𝔤 / Ad G` is proper: `𝔱` is a closed subspace of `𝔤`, and the orbit map of the compact
+group `G` is proper (`Representation.isProperMap_orbitRel_mk`). The induced bijection
+`𝔱 / W → 𝔤 / Ad G` is then continuous and closed, hence a homeomorphism. The adjoint orbit space
+is Hausdorff (`TauCeti.Lie.t2Space_quotient_orbitRel_continuousAdjointRepresentation`).
 
 No connectedness of `G` is needed. The restriction of the proper map `𝔱 → 𝔤 / Ad G` to a closed
 subset of `𝔱` meeting every Weyl orbit exactly once, such as a closed Weyl chamber, is again proper
@@ -43,8 +39,6 @@ and is bijective onto `𝔤 / Ad G`; this is how adjoint orbits are parametrized
   one Weyl orbit exactly when they are in one adjoint orbit.
 * `TauCeti.Lie.IsMaximalTorus.isProperMap_orbitRel_mk_coe`: the map `𝔱 → 𝔤 / Ad G` is proper.
 * `TauCeti.Lie.IsMaximalTorus.weylOrbitHomeomorph`: the homeomorphism `𝔱 / W ≃ₜ 𝔤 / Ad G`.
-* `TauCeti.Lie.t2Space_quotient_orbitRel_continuousAdjointRepresentation`: the adjoint orbit
-  space of a compact Lie group is Hausdorff.
 
 ## References
 
@@ -69,26 +63,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- The adjoint action `(g, X) ↦ Ad_g X`, read through the adjoint representation, is jointly
-continuous. -/
-private theorem continuous_continuousAdjointRepresentation_apply :
-    Continuous fun p : G × LeftInvariantDerivation I G ↦
-      ContRepresentation.toRepresentation ℝ G _ (continuousAdjointRepresentation (I := I) (G := G))
-        p.1 p.2 := by
-  simpa only [ContRepresentation.toRepresentation_apply, continuousAdjointRepresentation_apply]
-    using (contMDiff_Ad_apply (I := I) (G := G)).continuous
-
 /-! ### The adjoint orbit space -/
 
 section Compact
 
 variable [CompactSpace G]
-
-/-- **The adjoint orbit space of a compact Lie group is Hausdorff.** -/
-instance t2Space_quotient_orbitRel_continuousAdjointRepresentation :
-    T2Space
-      (Quotient (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel) :=
-  Representation.t2Space_quotient_orbitRel _ continuous_continuousAdjointRepresentation_apply
 
 variable {T : Subgroup G} [IsMulCommutative T]
 
@@ -104,38 +83,31 @@ theorem IsMaximalTorus.orbitRel_weylAdjointRepresentation_iff (hT : IsMaximalTor
     continuousAdjointRepresentation_apply]
   exact hT.exists_weylAdjointRepresentation_eq_iff Y X
 
+omit [IsMulCommutative T] in
 /-- **The map from a torus Lie algebra to the adjoint orbit space is proper.** For a maximal torus
-`T` of a compact Lie group `G`, the map `𝔱 → 𝔤 / Ad G` sending `X` to its adjoint orbit is
-closed, since `𝔱` is closed in `𝔤` and the orbit map of the compact group `G` is closed, and its
-fibres are single Weyl orbits, which are finite. -/
+`T` of a compact Lie group `G`, the map `𝔱 → 𝔤 / Ad G` sending `X` to its adjoint orbit is the
+restriction to the closed subspace `𝔱` of the orbit map of the compact group `G`, which is
+proper. -/
 theorem IsMaximalTorus.isProperMap_orbitRel_mk_coe (hT : IsMaximalTorus T) :
     IsProperMap fun X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule ↦
       Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
-        (X : LeftInvariantDerivation I G) := by
-  have := hT.finite_normalizerQuotient I
-  have hι : IsClosedEmbedding
-      ((↑) : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule → LeftInvariantDerivation I G) :=
-    (isClosed_lieSubalgebraOfSubgroup hT.isTorus.isClosed).isClosedEmbedding_subtypeVal
-  refine isProperMap_iff_isClosedMap_and_compact_fibers.mpr
-    ⟨continuous_quotient_mk'.comp hι.continuous,
-      (Representation.isClosedMap_orbitRel_mk _
-        continuous_continuousAdjointRepresentation_apply).comp hι.isClosedMap, fun y ↦ ?_⟩
-  obtain hy | ⟨X₀, hX₀⟩ := (_ ⁻¹' {y}).eq_empty_or_nonempty
-  · rw [hy]
-    exact isCompact_empty
-  -- A fibre that contains `X₀` lies in the Weyl orbit of `X₀`, which is finite.
-  refine ((Set.finite_range fun w ↦ T.weylAdjointRepresentation (I := I) w X₀).subset
-    fun X hX ↦ ?_).isCompact
-  rw [mem_preimage, mem_singleton_iff, ← hX₀, Representation.orbitRel_mk_eq_mk_iff] at hX
-  exact (Representation.orbitRel_apply _).mp
-    ((hT.orbitRel_weylAdjointRepresentation_iff X X₀).mpr
-      ((Representation.orbitRel_apply _).mpr hX))
+        (X : LeftInvariantDerivation I G) :=
+  (Representation.isProperMap_orbitRel_mk _ continuous_continuousAdjointRepresentation_apply).comp
+    (isClosed_lieSubalgebraOfSubgroup hT.isTorus.isClosed).isClosedEmbedding_subtypeVal.isProperMap
 
 /-- The map `𝔱 / W → 𝔤 / Ad G` induced by the inclusion of the Lie algebra of a maximal torus. -/
 private def IsMaximalTorus.weylOrbitMap (hT : IsMaximalTorus T) :
     Quotient (T.weylAdjointRepresentation (I := I)).orbitRel →
       Quotient (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel :=
   Quotient.map' (↑) fun X Y ↦ (hT.orbitRel_weylAdjointRepresentation_iff X Y).mp
+
+/-- `weylOrbitMap` sends the Weyl orbit of `X ∈ 𝔱` to the adjoint orbit of `X`. -/
+private theorem IsMaximalTorus.weylOrbitMap_mk (hT : IsMaximalTorus T)
+    (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
+    hT.weylOrbitMap (Quotient.mk'' X) =
+      Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
+        (X : LeftInvariantDerivation I G) :=
+  Quotient.map'_mk'' _ _ X
 
 private theorem IsMaximalTorus.bijective_weylOrbitMap (hT : IsMaximalTorus T) :
     Function.Bijective (hT.weylOrbitMap (I := I)) := by
@@ -161,12 +133,11 @@ def IsMaximalTorus.weylOrbitHomeomorph (hT : IsMaximalTorus T) :
     (continuous_subtype_val.quotient_map' fun X Y ↦
       (hT.orbitRel_weylAdjointRepresentation_iff X Y).mp) fun C hC ↦ by
       -- The image of `C` is that of its preimage in `𝔱` under the proper map `𝔱 → 𝔤 / Ad G`.
-      -- `Quotient.map'` computes on classes: `weylOrbitMap` sends the class of `X` to that of `X`.
       have hcomp : hT.weylOrbitMap (I := I) ∘ Quotient.mk'' =
           fun X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule ↦ Quotient.mk
             (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
             (X : LeftInvariantDerivation I G) :=
-        rfl
+        funext hT.weylOrbitMap_mk
       rw [Equiv.coe_ofBijective, ← Quotient.mk''_surjective.image_preimage C, ← image_comp, hcomp]
       exact hT.isProperMap_orbitRel_mk_coe.isClosedMap _
         (hC.preimage continuous_quotient_mk')
@@ -178,8 +149,8 @@ theorem IsMaximalTorus.weylOrbitHomeomorph_mk (hT : IsMaximalTorus T)
     (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
     hT.weylOrbitHomeomorph (Quotient.mk _ X) =
       Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
-        (X : LeftInvariantDerivation I G) := by
-  simp [weylOrbitHomeomorph, weylOrbitMap]
+        (X : LeftInvariantDerivation I G) :=
+  hT.weylOrbitMap_mk X
 
 end Compact
 
