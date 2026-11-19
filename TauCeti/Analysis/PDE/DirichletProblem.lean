@@ -108,7 +108,9 @@ the constructed one, so it is available before, and independently of, uniqueness
 * `TauCeti.PDE.UniformlyEllipticOn.norm_le_of_isWeakSolutionDirichlet_of_norm_le`: the energy
   estimate `‖u‖_{H¹} ≤ (2/λ) (‖f‖ + κ ‖u‖_{L²})` from Gårding's inequality, with no coercivity.
 * `TauCeti.PDE.dirichletGraph` and `TauCeti.PDE.isClosed_dirichletGraph`: the pairs `(u, f)` of
-  a weak solution and its datum form a closed subspace of `H¹(Ω) × L²(Ω)`.
+  a weak solution and its datum form a closed subspace of `H¹(Ω) × L²(Ω)`;
+  `TauCeti.PDE.mk_mem_dirichletGraph_iff` identifies membership with
+  `TauCeti.PDE.IsWeakSolutionDirichlet`.
 * `TauCeti.PDE.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq`: existence and
   uniqueness for prescribed boundary values `u = g` on `∂Ω`, `g ∈ H¹(Ω)`, and forcing
   `ℓ ∈ H⁻¹(Ω)`, with its case of a ball-contained domain
@@ -355,8 +357,8 @@ theorem norm_le_of_isWeakSolutionDirichlet (hC : 0 < C)
     nlinarith [hkey, hpos]
 
 /-- **The energy estimate without coercivity.** Let `a` be uniformly elliptic with lower constant
-`λ`, and let `‖b‖ ≤ β` and `|c| ≤ γ` on `Ω`, with no sign condition on `c`. Gårding's inequality
-and the equation tested against a weak solution `u` itself give
+`λ`, and let `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere on `Ω`, with no sign condition on `c`.
+Gårding's inequality and the equation tested against a weak solution `u` itself give
 
 `‖u‖_{H¹} ≤ (2/λ) (‖f‖_{L²} + (λ/2 + |γ| + β²/2λ) ‖u‖_{L²})`.
 
@@ -367,20 +369,38 @@ theorem UniformlyEllipticOn.norm_le_of_isWeakSolutionDirichlet_of_norm_le [Decid
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
     (hb : AEStronglyMeasurable b (mu.restrict Omega))
     (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma)
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
     (hu : IsWeakSolutionDirichlet a b c f u) :
     ‖(u : W1p mu Omega 2)‖ ≤ 2 / lam *
       (‖f‖ + (lam / 2 + |gamma| + beta ^ 2 / (2 * lam)) * ‖W1p.value (u : W1p mu Omega 2)‖) := by
+  classical
   have hlam : 0 < lam := h.pos
   set κ := lam / 2 + |gamma| + beta ^ 2 / (2 * lam) with hκ_def
   have hκ : 0 ≤ κ := by positivity
-  have hγ : lam / 2 + gamma + beta ^ 2 / (2 * lam) ≤ κ := by
+  -- Redefining `b` and `c` as `0` off the full-measure set where the bounds hold changes neither
+  -- the energy form nor measurability, and gives the bounds `max β 0` and `max γ 0` everywhere.
+  have hbb : b =ᵐ[mu.restrict Omega] fun x => if ‖b x‖ ≤ beta then b x else 0 :=
+    hb_bound.mono fun x hx => (ite_eq_left hx).symm
+  have hcc : c =ᵐ[mu.restrict Omega] fun x => if ‖c x‖ ≤ gamma then c x else 0 :=
+    hc_bound.mono fun x hx => (ite_eq_left hx).symm
+  have hβ : (max beta 0) ^ 2 ≤ beta ^ 2 := by
+    rcases le_total beta 0 with hb0 | hb0 <;> simp [hb0, sq_nonneg]
+  have hγ : lam / 2 + max gamma 0 + (max beta 0) ^ 2 / (2 * lam) ≤ κ := by
     rw [hκ_def]
-    linarith [le_abs_self gamma]
-  have hgar := h.garding_energyFormH1_self_norm_of_norm_le ha hb hc hb_bound hc_bound
+    linarith [max_le (le_abs_self gamma) (abs_nonneg gamma),
+      div_le_div_of_nonneg_right hβ (by positivity : (0 : ℝ) ≤ 2 * lam)]
+  have hgar := h.garding_energyFormH1_self_norm_of_norm_le (beta := max beta 0)
+    (gamma := max gamma 0) ha (hb.congr hbb) (hc.congr hcc)
+    (fun x _ => by
+      split_ifs with hx
+      exacts [hx.trans (le_max_left _ _), norm_zero.trans_le (le_max_right _ _)])
+    (fun x _ => by
+      split_ifs with hx
+      exacts [hx.trans (le_max_left _ _), norm_zero.trans_le (le_max_right _ _)])
     (u : W1p mu Omega 2)
+  rw [← energyFormH1_congr_ae .rfl hbb hcc] at hgar
   have hV := W1p.norm_value_le (u : W1p mu Omega 2)
   have heq : energyFormH1 a b c (u : W1p mu Omega 2) (u : W1p mu Omega 2) ≤
       ‖f‖ * ‖(u : W1p mu Omega 2)‖ := by
@@ -428,7 +448,7 @@ theorem coe_dirichletGraph
 
 /-- A pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly when `u ∈ H¹₀(Ω)`
 and `a(u, v) = ⟪f, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
-theorem mem_dirichletGraph_iff
+@[simp] theorem mem_dirichletGraph_iff
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     {p : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)} :
     p ∈ dirichletGraph hcoeff ↔ p.1 ∈ w1p0Submodule mu Omega 2 ∧
@@ -436,6 +456,14 @@ theorem mem_dirichletGraph_iff
         energyFormH1 a b c p.1 (v : W1p mu Omega 2) = dirichletForcing p.2 v := by
   rw [← SetLike.mem_coe, coe_dirichletGraph]
   simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, energyFormH1L_apply]
+
+/-- For `u ∈ H¹₀(Ω)`, the pair `(u, f)` lies in the graph of the weak Dirichlet problem exactly
+when `u` is a weak solution of `L u = f`. -/
+theorem mk_mem_dirichletGraph_iff
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u : W1p0 mu Omega 2) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ((u : W1p mu Omega 2), f) ∈ dirichletGraph hcoeff ↔ IsWeakSolutionDirichlet a b c f u :=
+  (mem_dirichletGraph_iff hcoeff).trans (and_iff_right u.2)
 
 /-- The graph of the weak Dirichlet problem is closed in `H¹(Ω) × L²(Ω)`. -/
 theorem isClosed_dirichletGraph

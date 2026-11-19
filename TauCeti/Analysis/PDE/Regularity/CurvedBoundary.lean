@@ -334,7 +334,7 @@ end Local
 section Estimate
 
 variable {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-  {lam Lam beta gamma : ℝ} {K : ℝ≥0} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+  {lam Lam : ℝ} {K : ℝ≥0} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Shortcut normed group instance on `W^{1,2}(Ω)`. Without it, the normed structure of a subspace
@@ -376,11 +376,6 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph
     memLp_energyIntegrand_of_memLp_top ha.upper_nonneg
       (aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
         Omega.isOpen.measurableSet) (fun _ hx => ha.upper_bound hx) hb hc
-  have hweak {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2} :
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u v = dirichletForcing f v) ↔
-        ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u v =
-          ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-    simp only [dirichletForcing_apply_eq_setIntegral]
   -- The map `(w, f) ↦ (w', f)`, where `w'` is the first-order part of `w`, from the closed
   -- subspace of solutions in `W^{2,2}(Ω) × L²(Ω)` onto the graph of the Dirichlet problem.
   let X := dirichletGraph hcoeff
@@ -401,16 +396,17 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph
   -- a preimage.
   have hsurj : Function.Surjective π := by
     rintro ⟨⟨u, f⟩, hX⟩
-    obtain ⟨hu0, hu⟩ := (mem_dirichletGraph_iff hcoeff).1 hX
+    have hu0 := ((mem_dirichletGraph_iff hcoeff).1 hX).1
     obtain ⟨w, hw⟩ := ha.exists_lowerOrder_eq_of_contDiff_graph hΩ hbdry hK hb hc hu0
-      (hweak.1 hu)
+      ((isWeakSolutionDirichlet_iff f ⟨u, hu0⟩).1 ((mk_mem_dirichletGraph_iff hcoeff _ f).1 hX))
     have hPwf : P (w, f) = (u, f) := (hP (w, f)).trans (Prod.ext hw rfl)
     have hmem : P (w, f) ∈ X := hPwf ▸ hX
     exact ⟨⟨(w, f), Submodule.mem_comap.2 hmem⟩, Subtype.ext ((hπ _).trans hPwf)⟩
   obtain ⟨C, hC, hpre⟩ := π.exists_preimage_norm_le hsurj
   refine ⟨C, fun {f u} hu0 hu => ?_⟩
   obtain ⟨⟨⟨w, g⟩, hq⟩, hwg, hnorm⟩ :=
-    hpre ⟨(u, f), (mem_dirichletGraph_iff hcoeff).2 ⟨hu0, hweak.2 hu⟩⟩
+    hpre ⟨(u, f), (mk_mem_dirichletGraph_iff hcoeff ⟨u, hu0⟩ f).2
+      ((isWeakSolutionDirichlet_iff f _).2 hu)⟩
   have hw : P (w, g) = (u, f) := (hπ _).symm.trans (congrArg Subtype.val hwg)
   rw [hP] at hw
   refine ⟨w, (Prod.ext_iff.1 hw).1, ?_⟩
@@ -424,7 +420,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph
 /-- **The global `H²` estimate up to a `C²` boundary** (Evans, §6.3.2, Theorem 4). Let `Ω` be a
 bounded open set with `C²` boundary, described as in
 `UniformlyEllipticOn.exists_lowerOrder_eq_of_contDiff_graph`, let `a` be uniformly elliptic and
-Lipschitz on `Ω`, and let `b, c` be measurable with `‖b‖ ≤ β` and `|c| ≤ γ` on `Ω`. There is a
+Lipschitz on `Ω`, and let `b, c` be essentially bounded on `Ω`. There is a
 constant `C` such that every weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, `u = 0` on `∂Ω`, with `f ∈ L²(Ω)`,
@@ -444,20 +440,23 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_norm_value_of_contD
           ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ γ z.snd < z.fst))
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
-    (hb : AEStronglyMeasurable b (mu.restrict Omega))
-    (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega)) :
     ∃ C : ℝ, ∀ {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2},
       u ∈ w1p0Submodule mu Omega 2 →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
         ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
       ∃ w : Wkp mu Omega 2 2, Wkp.lowerOrder 1 w = u ∧
         ‖w‖ ≤ C * (‖W1p.value u‖ + ‖f‖) := by
-  have hmem := ae_restrict_mem (μ := mu) Omega.isOpen.measurableSet
-  obtain ⟨C, hC⟩ := ha.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph hΩ hbdry hK
-    (memLp_top_of_bound hb beta (hmem.mono hb_bound))
-    (memLp_top_of_bound hc gamma (hmem.mono hc_bound))
+  obtain ⟨C, hC⟩ := ha.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph hΩ hbdry hK hb hc
+  -- The essential suprema of `‖b‖` and `|c|` bound them almost everywhere on `Ω`.
+  set beta := (eLpNormEssSup b (mu.restrict Omega)).toReal
+  set gamma := (eLpNormEssSup c (mu.restrict Omega)).toReal
+  have hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta :=
+    ae_le_eLpNormEssSup.mono fun x hx => (toReal_eNorm (b x)) ▸ ENNReal.toReal_mono
+      (eLpNorm_exponent_top hb.aestronglyMeasurable ▸ hb.eLpNorm_ne_top) hx
+  have hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma :=
+    ae_le_eLpNormEssSup.mono fun x hx => (toReal_eNorm (c x)) ▸ ENNReal.toReal_mono
+      (eLpNorm_exponent_top hc.aestronglyMeasurable ▸ hc.eLpNorm_ne_top) hx
   have hlam : 0 < lam := ha.pos
   set κ := lam / 2 + |gamma| + beta ^ 2 / (2 * lam)
   refine ⟨max C 0 * (1 + 2 / lam + 2 * κ / lam), fun {f u} hu0 hu => ?_⟩
@@ -467,7 +466,8 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_norm_value_of_contD
   have hu_le : ‖u‖ ≤ 2 / lam * (‖f‖ + κ * ‖W1p.value u‖) :=
     ha.norm_le_of_isWeakSolutionDirichlet_of_norm_le (u := ⟨u, hu0⟩)
       (aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
-        Omega.isOpen.measurableSet) hb hc hb_bound hc_bound
+        Omega.isOpen.measurableSet) hb.aestronglyMeasurable hc.aestronglyMeasurable
+      hb_bound hc_bound
       ((isWeakSolutionDirichlet_iff f _).2 hu)
   calc ‖w‖ ≤ C * (‖u‖ + ‖f‖) := hwle
     _ ≤ max C 0 * (‖u‖ + ‖f‖) := by gcongr; exact le_max_left _ _
