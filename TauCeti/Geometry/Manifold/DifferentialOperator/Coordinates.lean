@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Fin
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Support
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol
@@ -280,30 +281,7 @@ theorem smoothPrincipalSymbol_coordinateOperator (m : ℕ) (c : (ι → ℕ) →
     rw [smulCommutator_pow_eq_zero (hαk ▸ hmem α) (Finset.mem_range.1 hk)]
     simp
 
-/-! ### Multi-indices as words -/
-
 variable {n : ℕ}
-
-/-- The word in the indices `Fin n` listing each index `i` exactly `αᵢ` times, in increasing
-order. Evaluating the iterated derivative on the directions of this word computes `∂^α`
-(`TauCeti.multiIndexDeriv_apply_eq_iteratedFDeriv_multiIndexWord`). -/
-def multiIndexWord (α : Fin n → ℕ) (j : Fin (∑ i, α i)) : Fin n :=
-  (finSigmaFinEquiv.symm j).1
-
-/-- Each index `i` occurs exactly `αᵢ` times in `TauCeti.multiIndexWord α`. -/
-@[simp]
-theorem card_multiIndexWord (α : Fin n → ℕ) (i : Fin n) :
-    #{j | multiIndexWord α j = i} = α i := by
-  rw [card_filter, ← Fintype.sum_equiv finSigmaFinEquiv (fun p ↦ if p.1 = i then 1 else 0)
-    (fun j ↦ if multiIndexWord α j = i then 1 else 0) fun p ↦ by simp [multiIndexWord],
-    Fintype.sum_sigma]
-  simp [apply_ite]
-
-/-- A product over the letters of `TauCeti.multiIndexWord α` is the monomial `∏ᵢ gᵢ ^ αᵢ`. -/
-theorem prod_multiIndexWord {M : Type*} [CommMonoid M] (α : Fin n → ℕ) (g : Fin n → M) :
-    ∏ j, g (multiIndexWord α j) = ∏ i, g i ^ α i := by
-  rw [← Fintype.prod_equiv finSigmaFinEquiv (fun p ↦ g p.1) _ fun p ↦ by simp [multiIndexWord]]
-  simp [Fintype.prod_sigma]
 
 omit [FiniteDimensional ℝ E] in
 /-- **Monomials in directional derivatives are iterated derivatives.** For directions
