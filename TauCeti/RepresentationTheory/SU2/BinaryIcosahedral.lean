@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.RepresentationTheory.SU2.BinaryTetrahedral
-import TauCeti.Algebra.Quaternion.BaseChange
+import TauCeti.Algebra.Quaternion.Map
 import TauCeti.NumberTheory.Real.GoldenRatio
 
 /-!
