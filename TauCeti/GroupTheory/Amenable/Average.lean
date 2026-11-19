@@ -52,9 +52,9 @@ unspecified weak-* cluster point.
 * `TauCeti.Mean.average_leftTranslation`: `m_F (L_g f) = m_{g⁻¹F} f`.
 * `TauCeti.Mean.abs_average_leftTranslation_sub_le`: the estimate
   `|m_F (L_g f) - m_F f| ≤ ‖f‖ · |g⁻¹F △ F| / |F|`.
-* `TauCeti.Amenable.of_tendsto_card_smul_symmDiff_div_card`: a topological group with finite
-  nonempty sets `F i` such that `|g F i △ F i| / |F i| → 0` for every `g`, along a nontrivial
-  filter, is amenable.
+* `TauCeti.Amenable.of_tendsto_card_smul_symmDiff_div_card`: a topological group with eventually
+  nonempty finite sets `F i` such that `|g F i △ F i| / |F i| → 0` for every `g`, along a
+  nontrivial filter, is amenable.
 * `TauCeti.Amenable.of_isFoelner`: the same for a counting-measure Følner family.
 * `TauCeti.Amenable.of_hasFoelnerSets`: a group with Følner sets is amenable for every group
   topology.
@@ -170,18 +170,20 @@ end Mean
 
 end Discrete
 
-/-- A topological group is amenable when it has finite nonempty sets `F i` with
+/-- A topological group is amenable when it has eventually nonempty finite sets `F i` with
 `|g F i △ F i| / |F i| → 0` for every `g`, along a nontrivial filter. The averages over `F i` are
 then approximately left-invariant means. -/
 theorem Amenable.of_tendsto_card_smul_symmDiff_div_card [DecidableEq G] {ι : Type*}
-    {l : Filter ι} [l.NeBot] {F : ι → Finset G} (hne : ∀ i, (F i).Nonempty)
+    {l : Filter ι} [l.NeBot] {F : ι → Finset G} (hne : ∀ᶠ i in l, (F i).Nonempty)
     (h : ∀ g : G, Tendsto (fun i => (#((g • F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0)) :
-    Amenable G :=
-  .of_tendsto (l := l) (ms := fun i => Mean.average (F i) (hne i)) fun g f =>
-    squeeze_zero_norm (fun i => by
+    Amenable G := by
+  let s := {i | (F i).Nonempty}
+  have : (comap ((↑) : s → ι) l).NeBot := comap_coe_neBot_of_le_principal (le_principal_iff.2 hne)
+  exact .of_tendsto (l := comap ((↑) : s → ι) l) (ms := fun i : s => Mean.average (F i) i.2)
+    fun g f => squeeze_zero_norm (fun i => by
       simpa only [Real.norm_eq_abs, mul_div_assoc] using
-        Mean.abs_average_leftTranslation_sub_le (hne i) g f)
-      (by simpa using (h g⁻¹).const_mul ‖f‖)
+        Mean.abs_average_leftTranslation_sub_le i.2 g f)
+      (by simpa [Function.comp_def] using ((h g⁻¹).comp tendsto_comap).const_mul ‖f‖)
 
 /-- A topological group is amenable when it has a Følner family for counting measure, along a
 nontrivial filter. -/
@@ -199,7 +201,8 @@ theorem Amenable.of_isFoelner [MeasurableSpace G] {ι : Type*}
       (lt_top_iff_ne_top.2 i.2.2.2)).toFinset, by simp⟩
   have hne (i : s) : (F' i).Nonempty := by
     simpa [← coe_nonempty, hF', Set.nonempty_iff_ne_empty] using i.2.2.1
-  refine .of_tendsto_card_smul_symmDiff_div_card (l := comap (↑) l) hne fun g => ?_
+  refine .of_tendsto_card_smul_symmDiff_div_card (l := comap (↑) l) (Eventually.of_forall hne)
+    fun g => ?_
   have hF's : IsFoelner G MeasureTheory.Measure.count (comap ((↑) : s → ι) l)
       (fun i => (F' i : Set G)) := by
     simpa only [hF', Function.comp_def] using
