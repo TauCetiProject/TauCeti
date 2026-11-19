@@ -32,9 +32,10 @@ compatibility under linear equivalences.
 * `Orientation.map_eq_map_of_det_pos`: two linear equivalences whose relative map has positive
   determinant transport an orientation to the same orientation.
 * `Orientation.map_eq_det_inv_smul_of_card_eq_finrank`,
-  `Orientation.map_eq_iff_det_pos_of_card_eq_finrank` and
-  `Orientation.eq_or_eq_neg_of_card_eq_finrank`: the finite-dimensional facts about orientation
-  transport, valid without finite-dimensionality (the index type is then empty).
+  `Orientation.map_eq_iff_det_pos_of_card_eq_finrank`,
+  `Orientation.eq_or_eq_neg_of_card_eq_finrank`, and
+  `Orientation.ne_iff_eq_neg_of_card_eq_finrank`: the finite-dimensional facts about orientation
+  transport and equality, valid without finite-dimensionality (the index type is then empty).
 * `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
 * `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
 * `Orientation.reindex_perm`: reindexing along a permutation multiplies by its sign.
@@ -46,6 +47,8 @@ compatibility under linear equivalences.
 * `Orientation.eq_or_eq_neg_of_card_eq_finrank`: any two orientations are equal or opposite when
   the index type has the dimension of the space, without assuming finite dimension.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
+* `Orientation.exists_eq_neg_one_pow_smul`: every orientation is a signed copy `(-1) ^ i • y` of
+  any other orientation `y`.
 -/
 
 public section
@@ -198,6 +201,14 @@ theorem Orientation.eq_or_eq_neg_of_card_eq_finrank (x₁ x₂ : Orientation R M
   · have : FiniteDimensional R M := Module.finite_of_finrank_pos (h ▸ Fintype.card_pos)
     exact Orientation.eq_or_eq_neg x₁ x₂ h
 
+/-- If the index type has cardinality equal to the dimension, an orientation equals the negation of
+another orientation if and only if they are not equal. Unlike `Orientation.ne_iff_eq_neg`, this
+needs no `FiniteDimensional` hypothesis. -/
+theorem Orientation.ne_iff_eq_neg_of_card_eq_finrank (x₁ x₂ : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) : x₁ ≠ x₂ ↔ x₁ = -x₂ :=
+  ⟨fun hn ↦ (eq_or_eq_neg_of_card_eq_finrank x₁ x₂ h).resolve_left hn, fun he ↦
+    he.symm ▸ (Module.Ray.ne_neg_self x₂).symm⟩
+
 /-- When the index type has cardinality equal to the `finrank`, two self-equivalences transport an
 orientation to the same orientation if and only if their determinants have the same sign. No
 finite-dimensionality is needed: otherwise `ι` is empty and both determinants are `1`. -/
@@ -275,5 +286,13 @@ theorem Orientation.intCast_units_smul_ite_eq
     (Units.map (Int.castRingHom R).toMonoidHom (if o = model then 1 else -1)) • model = o := by
   rcases eq_or_eq_neg_of_card_eq_finrank o model hι with h | h <;>
     simp [h, (Module.Ray.ne_neg_self model).symm]
+
+/-- Every orientation is a signed copy `(-1) ^ i • y` of any other orientation `y`, when the index
+type has the dimension of the space. -/
+theorem Orientation.exists_eq_neg_one_pow_smul (x y : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) : ∃ i : ℕ, x = (-1 : Rˣ) ^ i • y := by
+  rcases eq_or_eq_neg_of_card_eq_finrank x y h with rfl | rfl
+  · exact ⟨0, by rw [pow_zero, one_smul]⟩
+  · exact ⟨1, by rw [pow_one, Module.Ray.neg_units_smul, one_smul]⟩
 
 end Field
