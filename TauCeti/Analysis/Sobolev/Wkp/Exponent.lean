@@ -213,26 +213,6 @@ theorem norm_ofExponentLEL_apply_le (hpq : p ≤ q) : ∀ (k : ℕ) (u : Wkp mu 
       exact add_le_add (pow_le_pow_left₀ (norm_nonneg _) hlow 2)
         (pow_le_pow_left₀ (norm_nonneg _) hgrad 2)
 
-/-- Two interpolation bounds `a ≤ a₀ ^ (1 - θ) a₁ ^ θ` and `b ≤ b₀ ^ (1 - θ) b₁ ^ θ` combine into
-the interpolation bound for the squared Euclidean norms of the pairs `(a, b)`, `(a₀, b₀)` and
-`(a₁, b₁)`, by Hölder's inequality for two terms. -/
-private theorem sq_add_sq_le_rpow_mul_rpow {a b a₀ a₁ b₀ b₁ θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
-    (ha : 0 ≤ a) (hb : 0 ≤ b) (ha₀ : 0 ≤ a₀) (ha₁ : 0 ≤ a₁) (hb₀ : 0 ≤ b₀) (hb₁ : 0 ≤ b₁)
-    (hal : a ≤ a₀ ^ (1 - θ) * a₁ ^ θ) (hbl : b ≤ b₀ ^ (1 - θ) * b₁ ^ θ) :
-    a ^ 2 + b ^ 2 ≤ (a₀ ^ 2 + b₀ ^ 2) ^ (1 - θ) * (a₁ ^ 2 + b₁ ^ 2) ^ θ := by
-  have key := Real.prod_rpow_add_prod_rpow_le_prod_add_rpow Finset.univ (w := ![1 - θ, θ])
-    (a := ![a₀ ^ 2, a₁ ^ 2]) (b := ![b₀ ^ 2, b₁ ^ 2])
-    (by simp [Fin.forall_fin_two, hθ.1, hθ.2]) (by simp [Fin.sum_univ_two])
-    (by simp [Fin.forall_fin_two, sq_nonneg]) (by simp [Fin.forall_fin_two, sq_nonneg])
-  simp only [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one] at key
-  calc a ^ 2 + b ^ 2 ≤ (a₀ ^ (1 - θ) * a₁ ^ θ) ^ 2 + (b₀ ^ (1 - θ) * b₁ ^ θ) ^ 2 :=
-        add_le_add (pow_le_pow_left₀ ha hal 2) (pow_le_pow_left₀ hb hbl 2)
-    _ = (a₀ ^ 2) ^ (1 - θ) * (a₁ ^ 2) ^ θ + (b₀ ^ 2) ^ (1 - θ) * (b₁ ^ 2) ^ θ := by
-        rw [mul_pow, mul_pow, Real.rpow_pow_comm ha₀, Real.rpow_pow_comm ha₁,
-          Real.rpow_pow_comm hb₀, Real.rpow_pow_comm hb₁]
-    _ ≤ _ := key
-
 /-- **Logarithmic convexity of the `W^{k,p}` norms.** If `p, q ≤ r` and
 `1 / q = (1 - θ) / p + θ / r` with `0 ≤ θ ≤ 1`, then the `W^{k,q}` norm of `u ∈ W^{k,r}(Ω)` is at
 most its `W^{k,p}` norm to the power `1 - θ` times its `W^{k,r}` norm to the power `θ`. The
@@ -263,7 +243,7 @@ theorem norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow (hpr : p ≤ r) (hqr : q �
         norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u,
         lowerOrder_ofExponentLEL, lowerOrder_ofExponentLEL, iteratedGradient_ofExponentLEL,
         iteratedGradient_ofExponentLEL]
-      exact sq_add_sq_le_rpow_mul_rpow hθ (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+      exact Real.sq_add_sq_le_rpow_mul_rpow hθ (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
         (norm_nonneg _) (norm_nonneg _) (norm_nonneg _) hlow hgrad
 
 /-- The operator norm of `W^{k,q}(Ω) → W^{k,p}(Ω)` is at most `μ(Ω) ^ (1/p - 1/q)`. -/
