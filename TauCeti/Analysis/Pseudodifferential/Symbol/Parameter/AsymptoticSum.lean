@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Evaluation
 
 /-!
@@ -92,16 +91,20 @@ on `(-∞, 0]` to `1` on `[1, ∞)`. -/
 private def model (ζ : CoordinateSpace n × ℂ) : ℝ :=
   Real.smoothTransition (‖ζ.1‖ ^ 4 + ‖ζ.2‖ ^ 2 - 1)
 
-private theorem contDiff_model : ContDiff ℝ ∞ (model : CoordinateSpace n × ℂ → ℝ) := by
+/-- `‖η‖⁴ + ‖μ‖²` is smooth. -/
+private theorem contDiff_norm_pow_four_add_norm_sq :
+    ContDiff ℝ ∞ fun ζ : CoordinateSpace n × ℂ => ‖ζ.1‖ ^ 4 + ‖ζ.2‖ ^ 2 := by
   have h₁ : ContDiff ℝ ∞ fun ζ : CoordinateSpace n × ℂ => ‖ζ.1‖ ^ 2 :=
     (contDiff_norm_sq ℝ).comp contDiff_fst
   have h₂ : ContDiff ℝ ∞ fun ζ : CoordinateSpace n × ℂ => ‖ζ.2‖ ^ 2 :=
     (contDiff_norm_sq ℝ).comp contDiff_snd
-  have h : ContDiff ℝ ∞ fun ζ : CoordinateSpace n × ℂ => ‖ζ.1‖ ^ 4 + ‖ζ.2‖ ^ 2 - 1 := by
-    rw [show (fun ζ : CoordinateSpace n × ℂ => ‖ζ.1‖ ^ 4 + ‖ζ.2‖ ^ 2 - 1) =
-        fun ζ => (‖ζ.1‖ ^ 2) ^ 2 + ‖ζ.2‖ ^ 2 - 1 by funext ζ; ring]
-    exact ((h₁.pow 2).add h₂).sub contDiff_const
-  exact (Real.smoothTransition.contDiff (n := ⊤)).comp h
+  rw [show (fun ζ : CoordinateSpace n × ℂ => ‖ζ.1‖ ^ 4 + ‖ζ.2‖ ^ 2) =
+      fun ζ => (‖ζ.1‖ ^ 2) ^ 2 + ‖ζ.2‖ ^ 2 by funext ζ; ring]
+  exact (h₁.pow 2).add h₂
+
+private theorem contDiff_model : ContDiff ℝ ∞ (model : CoordinateSpace n × ℂ → ℝ) :=
+  (Real.smoothTransition.contDiff (n := ⊤)).comp
+    (contDiff_norm_pow_four_add_norm_sq.sub contDiff_const)
 
 /-- The linear map `((x, ξ), z) ↦ (t⁻¹ ξ, t⁻² z)`. -/
 private def scaling (t : ℝ) :
@@ -131,18 +134,11 @@ private theorem cutoff_eq_model_comp {t : ℝ} (ht : t ≠ 0) :
 
 private theorem contDiff_cutoff (t : ℝ) :
     ContDiff ℝ ∞ (cutoff t : (CoordinateSpace n × CoordinateSpace n) × ℂ → ℝ) := by
+  have hp : ContDiff ℝ ∞ fun p : (CoordinateSpace n × CoordinateSpace n) × ℂ => (p.1.2, p.2) := by
+    fun_prop
+  have h := contDiff_norm_pow_four_add_norm_sq.comp hp
   unfold cutoff radius
-  have h₁ : ContDiff ℝ ∞ fun p : (CoordinateSpace n × CoordinateSpace n) × ℂ => ‖p.1.2‖ ^ 2 :=
-    (contDiff_norm_sq ℝ).comp (contDiff_snd.comp contDiff_fst)
-  have h₂ : ContDiff ℝ ∞ fun p : (CoordinateSpace n × CoordinateSpace n) × ℂ => ‖p.2‖ ^ 2 :=
-    (contDiff_norm_sq ℝ).comp contDiff_snd
-  have h : ContDiff ℝ ∞ fun p : (CoordinateSpace n × CoordinateSpace n) × ℂ =>
-      (‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2) / t ^ 4 - 1 := by
-    rw [show (fun p : (CoordinateSpace n × CoordinateSpace n) × ℂ =>
-        (‖p.1.2‖ ^ 4 + ‖p.2‖ ^ 2) / t ^ 4 - 1) =
-          fun p => ((‖p.1.2‖ ^ 2) ^ 2 + ‖p.2‖ ^ 2) / t ^ 4 - 1 by funext p; ring]
-    exact (((h₁.pow 2).add h₂).div_const _).sub contDiff_const
-  exact (Real.smoothTransition.contDiff (n := ⊤)).comp h
+  exact (Real.smoothTransition.contDiff (n := ⊤)).comp ((h.div_const _).sub contDiff_const)
 
 private theorem norm_cutoff_le (t : ℝ) (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
     ‖cutoff t p‖ ≤ 1 := by
@@ -212,11 +208,9 @@ private theorem scaling_mem_closedBall {t : ℝ} (ht : 0 < t)
 private theorem parameterIteratedFDeriv_cutoff_eq_zero {t : ℝ} (ht : 0 < t) {k : ℕ} (hk : k ≠ 0)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : 2 * t ^ 4 < radius p) :
     parameterIteratedFDeriv k (cutoff t) p = 0 := by
+  rw [(cutoff_eventuallyEq_one ht hp).parameterIteratedFDeriv_eq k]
   ext v
-  rw [parameterIteratedFDeriv_apply,
-    ((cutoff_eventuallyEq_one ht hp).iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds,
-    iteratedFDeriv_const_of_ne hk]
-  simp
+  simp [parameterIteratedFDeriv_apply, iteratedFDeriv_const_of_ne hk]
 
 /-- Where the cutoff does not vanish identically, the weight is at least `t / 2`. -/
 private theorem le_parameterWeight_of_le_radius {t : ℝ} {ξ : CoordinateSpace n}
@@ -317,6 +311,14 @@ private theorem contDiffAt_cutoff_smul (a : ParameterSymbol n Λ V W m) (t : ℝ
     ContDiffAt ℝ ∞ (fun q => cutoff t q • a.coefficient q) p :=
   (contDiff_cutoff t).contDiffAt.smul (contDiffAt_coefficient a hp)
 
+/-- A function vanishing near `((x, ξ), z)` satisfies every estimate there. -/
+private theorem norm_parameterIteratedFDeriv_le_of_eventuallyEq_zero
+    {f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V →L[ℂ] W} {x ξ : CoordinateSpace n}
+    {z : ℂ} (hf : f =ᶠ[𝓝 ((x, ξ), z)] fun _ => 0) (k : ℕ) {C : ℝ} (hC : 0 ≤ C) (μ : ℝ) :
+    ‖parameterIteratedFDeriv k f ((x, ξ), z)‖ ≤ C * parameterWeight ξ z ^ μ := by
+  rw [hf.parameterIteratedFDeriv_eq k, parameterIteratedFDeriv_fun_zero, norm_zero]
+  exact mul_nonneg hC (Real.rpow_pos_of_pos (parameterWeight_pos ξ z) _).le
+
 /-- The products `ψ_t a` of a parameter-dependent symbol of order `m` with the cutoffs, `t ≥ 1`,
 satisfy the estimates of order `m` uniformly in `t`. -/
 private theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_le
@@ -326,33 +328,12 @@ private theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_le
         C * parameterWeight ξ z ^ m := by
   obtain ⟨A, hA0, hA⟩ := exists_forall_le_norm_parameterIteratedFDeriv_cutoff_le (n := n) k
   obtain ⟨B, hB0, hB⟩ := a.exists_forall_le_norm_parameterIteratedFDeriv_le hK k
-  obtain ⟨E, hE0, hE⟩ := exists_norm_iteratedFDeriv_bilinear_le
-    ((CoordinateSpace n × CoordinateSpace n) × ℂ)
+  obtain ⟨E, hE0, hE⟩ := exists_norm_parameterIteratedFDeriv_bilinear_le (n := n)
     (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] (V →L[ℂ] W) →L[ℝ] (V →L[ℂ] W)) k
   refine ⟨E * (A * B), by positivity, fun t ht i hi x hx ξ z hz => ?_⟩
-  set D := parameterDilation n (parameterWeight ξ z)
-  have hU : IsOpen ((fun v => ((x, ξ), z) + D v) ⁻¹' (univ ×ˢ (Λ : Set ℂ))) :=
-    (isOpen_univ.prod Λ.isOpen).preimage (by fun_prop)
-  have h0 : (0 : (CoordinateSpace n × CoordinateSpace n) × ℂ) ∈
-      (fun v => ((x, ξ), z) + D v) ⁻¹' (univ ×ˢ (Λ : Set ℂ)) := by
-    simpa using hz
-  have hf : ContDiffOn ℝ k (fun v => cutoff t (((x, ξ), z) + D v))
-      ((fun v => ((x, ξ), z) + D v) ⁻¹' (univ ×ˢ (Λ : Set ℂ))) :=
-    ((contDiff_cutoff t).comp (contDiff_const.add D.contDiff)).contDiffOn.of_le
-      (by exact_mod_cast le_top)
-  have hg : ContDiffOn ℝ k (fun v => a.coefficient (((x, ξ), z) + D v))
-      ((fun v => ((x, ξ), z) + D v) ⁻¹' (univ ×ˢ (Λ : Set ℂ))) :=
-    (a.contDiffOn_coefficient.comp (contDiff_const.add D.contDiff).contDiffOn
-      (mapsTo_preimage _ _)).of_le (by exact_mod_cast le_top)
-  have h := hE _ _ _ 0 hU h0 hf hg A (B * parameterWeight ξ z ^ m)
-    (fun j hj => by
-      rw [← parameterIteratedFDeriv_mk_eq]
-      exact hA j hj t ht _)
-    (fun j hj => by
-      rw [← parameterIteratedFDeriv_mk_eq]
-      exact hB j hj x hx ξ z hz) i hi
-  rw [parameterIteratedFDeriv_mk_eq]
-  refine h.trans_eq ?_
+  refine (hE Λ.isOpen _ _ (contDiff_cutoff t).contDiffOn a.contDiffOn_coefficient ((x, ξ), z) hz
+    A (B * parameterWeight ξ z ^ m) (fun j hj => hA j hj t ht _)
+    (fun j hj => hB j hj x hx ξ z hz) i hi).trans_eq ?_
   ring
 
 /-- The cut-off products `ψ_t a` satisfy the estimates of order `m + 1` with constants `2 C / t`:
@@ -367,10 +348,9 @@ private theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_le_div
   have ht0 : 0 < t := one_pos.trans_le ht
   have hw := parameterWeight_pos ξ z
   by_cases hp : ‖ξ‖ ^ 4 + ‖z‖ ^ 2 < t ^ 4
-  · rw [Filter.EventuallyEq.parameterIteratedFDeriv_eq (p := ((x, ξ), z)) (g := fun _ => 0) (by
-      filter_upwards [cutoff_eventuallyEq_zero ht0 (p := ((x, ξ), z)) hp] with q hq
-      simp [hq]), parameterIteratedFDeriv_fun_zero, norm_zero]
-    exact mul_nonneg (by positivity) (Real.rpow_pos_of_pos hw _).le
+  · refine norm_parameterIteratedFDeriv_le_of_eventuallyEq_zero ?_ i (by positivity) _
+    filter_upwards [cutoff_eventuallyEq_zero ht0 (p := ((x, ξ), z)) hp] with q hq
+    simp [hq]
   push Not at hp
   have hwt := le_parameterWeight_of_le_radius hp
   have h2 : 1 ≤ 2 * parameterWeight ξ z / t := by
@@ -399,10 +379,9 @@ private theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_sub_le
   refine ⟨(A + B) * (5 * t) ^ |m - μ|, by positivity, fun x hx ξ z hz => ?_⟩
   have hw := parameterWeight_pos ξ z
   by_cases hp : 2 * t ^ 4 < ‖ξ‖ ^ 4 + ‖z‖ ^ 2
-  · rw [Filter.EventuallyEq.parameterIteratedFDeriv_eq (p := ((x, ξ), z)) (g := fun _ => 0) (by
-      filter_upwards [cutoff_eventuallyEq_one ht0 (p := ((x, ξ), z)) hp] with q hq
-      simp [hq]), parameterIteratedFDeriv_fun_zero, norm_zero]
-    exact mul_nonneg (by positivity) (Real.rpow_pos_of_pos hw _).le
+  · refine norm_parameterIteratedFDeriv_le_of_eventuallyEq_zero ?_ k (by positivity) _
+    filter_upwards [cutoff_eventuallyEq_one ht0 (p := ((x, ξ), z)) hp] with q hq
+    simp [hq]
   push Not at hp
   have hwt := parameterWeight_le_of_radius_le ht hp
   have hz' : (((x, ξ), z) : (CoordinateSpace n × CoordinateSpace n) × ℂ).2 ∈ Λ := hz
