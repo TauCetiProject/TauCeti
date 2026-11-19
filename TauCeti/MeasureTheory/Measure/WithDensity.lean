@@ -209,7 +209,6 @@ private theorem map_withDensity_eq_withDensity_of_measurable {μ : Measure α} {
   · rw [Set.indicator_of_notMem (Set.mem_preimage.not.mpr hzq), Pi.mul_apply,
       Set.indicator_of_notMem hzq, mul_zero]
 
-
 /-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
 which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to
 the two regions `f` maps onto each other. If a weight `h` upstairs factors almost everywhere as
