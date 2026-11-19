@@ -81,11 +81,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F
 
 /-! ### The weak derivative of the value -/
 
-/-- Almost-everywhere statements for `volume.restrict ⊤` hold for `volume`. -/
-private theorem ae_le_ae_restrict_top :
-    ae (volume : Measure ℝ) ≤ ae ((volume : Measure ℝ).restrict ((⊤ : Opens ℝ) : Set ℝ)) :=
-  ae_mono (Measure.restrict_coe_opens_top _).ge
-
 /-- The value of a path has weak derivative `s ↦ u' s 1` on the whole line. -/
 private theorem hasWeakLineDerivOn_prev
     (u : WeakDerivStep volume ⊤ p
@@ -197,14 +192,16 @@ private def toZeroAtInftyₗ (hp : p ≠ ∞) :
     refine eq_of_prev_ae_eq (u := u + w)
       (exists_zeroAtInftyContinuousMap_ae_eq (u + w) hp).choose_spec ?_
     rw [prev_add, FunLike.coe_add]
-    exact ((Lp.coeFn_add (prev _ u) (prev _ w)).filter_mono ae_le_ae_restrict_top).trans
+    exact ((Lp.coeFn_add (prev _ u) (prev _ w)).filter_mono
+      (Measure.ae_restrict_coe_opens_top _).ge).trans
       ((exists_zeroAtInftyContinuousMap_ae_eq u hp).choose_spec.add
       (exists_zeroAtInftyContinuousMap_ae_eq w hp).choose_spec)
   map_smul' c u := by
     refine eq_of_prev_ae_eq (u := c • u)
       (exists_zeroAtInftyContinuousMap_ae_eq (c • u) hp).choose_spec ?_
     rw [prev_smul, FunLike.coe_smul]
-    exact ((Lp.coeFn_smul c (prev _ u)).filter_mono ae_le_ae_restrict_top).trans
+    exact ((Lp.coeFn_smul c (prev _ u)).filter_mono
+      (Measure.ae_restrict_coe_opens_top _).ge).trans
       ((exists_zeroAtInftyContinuousMap_ae_eq u hp).choose_spec.const_smul c)
 
 private theorem prev_ae_eq_toZeroAtInftyₗ (hp : p ≠ ∞)
