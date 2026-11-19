@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 const source = readFileSync(
-  new URL("../web/static_files/ci-live.js", import.meta.url),
+  new URL("../static_files/ci-live.js", import.meta.url),
   "utf8",
 );
 class Element {
