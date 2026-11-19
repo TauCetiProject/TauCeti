@@ -35,8 +35,9 @@ orthogonality condition on simple orbits in Stembridge's construction of folded 
 * `TauCeti.graphPermA_apply_middle`: the reversal of `A₂ₙ₊₁` fixes the middle node, whereas
   the reversal of `A₂ₙ` fixes no node (`TauCeti.graphPermA_apply_ne_self`) and inverts the middle
   edge and no other (`TauCeti.diagramGraph_A_adj_graphPermA_iff`).
-* `TauCeti.DynkinType.apply_branchNode_D`, `TauCeti.DynkinType.apply_branchNode_E`: a diagram
-  symmetry of `Dₙ` or of `Eₙ` fixes the branch node.
+* `TauCeti.DynkinType.apply_eq_self_of_mem_diagramSymmetry_D`,
+  `TauCeti.DynkinType.apply_eq_self_of_cartanMatrix_E`: a diagram symmetry of `Dₙ` or of `Eₙ`
+  fixes the branch node.
 * `TauCeti.DynkinType.exists_apply_eq_self_of_mem_diagramSymmetry`: every diagram symmetry of a
   valid type other than `A₂ₙ` fixes a node.
 
@@ -138,7 +139,7 @@ theorem mem_diagramSymmetry_A_iff {ρ : Equiv.Perm (Fin n)} :
 
 /-- From rank four on, the branch node `n - 3` of the `Dₙ` diagram is the only node with three
 distinct neighbours, so every diagram symmetry of `Dₙ` fixes it. -/
-theorem apply_branchNode_D (hn : 4 ≤ n) {ρ : Equiv.Perm (Fin n)}
+theorem apply_eq_self_of_mem_diagramSymmetry_D (hn : 4 ≤ n) {ρ : Equiv.Perm (Fin n)}
     (hρ : ρ ∈ (D n).diagramSymmetry) : ρ ⟨n - 3, by omega⟩ = ⟨n - 3, by omega⟩ := by
   have hadj := diagramGraph_D_adj (n := n) (by omega)
   refine apply_eq_self_of_three_neighbours (B := Fin n) (mem_diagramSymmetry_iff.mp hρ)
@@ -152,7 +153,7 @@ theorem apply_branchNode_D (hn : 4 ≤ n) {ρ : Equiv.Perm (Fin n)}
 
 /-- From rank five on, the branch node `3` of the `Eₙ` diagram is the only node with three
 distinct neighbours, so every permutation preserving the `Eₙ` Cartan matrix fixes it. -/
-theorem apply_branchNode_E (hn : 5 ≤ n) {ρ : Equiv.Perm (Fin n)}
+theorem apply_eq_self_of_cartanMatrix_E (hn : 5 ≤ n) {ρ : Equiv.Perm (Fin n)}
     (hρ : ∀ i j, CartanMatrix.E n (ρ i) (ρ j) = CartanMatrix.E n i j) :
     ρ ⟨3, by omega⟩ = ⟨3, by omega⟩ := by
   refine apply_eq_self_of_three_neighbours hρ
@@ -179,10 +180,10 @@ theorem exists_apply_eq_self_of_mem_diagramSymmetry {t : DynkinType} (ht : t.Val
       rcases mem_diagramSymmetry_A_iff.mp hρ with rfl | rfl
       · exact ⟨⟨0, by simp⟩, rfl⟩
       · exact ⟨_, graphPermA_apply_middle m⟩
-    | D n => exact ⟨_, apply_branchNode_D (valid_D.mp ht) hρ⟩
-    | E6 => exact ⟨_, apply_branchNode_E (by norm_num) (by simpa using hρ')⟩
-    | E7 => exact ⟨_, apply_branchNode_E (by norm_num) (by simpa using hρ')⟩
-    | E8 => exact ⟨_, apply_branchNode_E (by norm_num) (by simpa using hρ')⟩
+    | D n => exact ⟨_, apply_eq_self_of_mem_diagramSymmetry_D (valid_D.mp ht) hρ⟩
+    | E6 => exact ⟨_, apply_eq_self_of_cartanMatrix_E (by norm_num) (by simpa using hρ')⟩
+    | E7 => exact ⟨_, apply_eq_self_of_cartanMatrix_E (by norm_num) (by simpa using hρ')⟩
+    | E8 => exact ⟨_, apply_eq_self_of_cartanMatrix_E (by norm_num) (by simpa using hρ')⟩
     | B _ | C _ | F4 | G2 => simp at hsl
   · rw [diagramSymmetry_eq_bot_of_not_isSimplyLaced hsl, Subgroup.mem_bot] at hρ
     exact ⟨⟨0, rank_pos ht⟩, by simp [hρ]⟩
