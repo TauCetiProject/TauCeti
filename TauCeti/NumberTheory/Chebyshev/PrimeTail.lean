@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
@@ -54,6 +55,32 @@ private theorem sum_prime_log_eq_theta (t : ℝ) :
     ∑ n ∈ Icc 0 ⌊t⌋₊, (if n.Prime then Real.log n else 0) = Chebyshev.theta t := by
   simp [Chebyshev.theta_eq_sum_Icc, sum_filter]
 
+private theorem sum_prime_indicator_eq_primeCounting (t : ℝ) :
+    ∑ n ∈ Icc 0 ⌊t⌋₊, (if n.Prime then (1 : ℝ) else 0) = Nat.primeCounting ⌊t⌋₊ := by
+  simp [← Nat.primesLE_card_eq_primeCounting, Nat.primesLE_eq_filter_Icc_zero]
+
+-- Reindexes the sums produced by partial summation over `(⌊a⌋₊, ⌊b⌋₊]` as prime sums on `(a, b]`.
+private theorem sum_Ioc_mul_ite_prime_eq_sum_filter_primesLE {a b : ℝ} (ha : 0 ≤ a)
+    (f g : ℕ → ℝ) :
+    ∑ n ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, f n * (if n.Prime then g n else 0) =
+      ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)), f p * g p := by
+  rw [Nat.primesLE_eq_filter_Icc_zero]
+  simp only [mul_ite, mul_zero, ← sum_filter]
+  congr 1
+  ext n
+  simp only [mem_filter, mem_Icc, mem_Ioc, zero_le, true_and]
+  rw [Nat.floor_lt ha]
+  tauto
+
+private theorem filter_primesLE_floor_gt_eq_empty {a b : ℝ} (hab : ¬ a ≤ b) :
+    (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)) = ∅ := by
+  refine filter_eq_empty_iff.mpr fun p hp hpa ↦ hab ?_
+  have hp' := Nat.mem_primesLE.mp hp
+  have hb : 0 ≤ b := by
+    by_contra hb
+    simp [Nat.floor_of_nonpos (le_of_not_ge hb), hp'.2.ne_zero] at hp'
+  exact hpa.le.trans ((Nat.le_floor_iff hb).mp hp'.1)
+
 /-- Partial summation for the logarithmic prime sum on `(a, b]`. -/
 theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)),
@@ -84,15 +111,8 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
   have hleft : ∑ n ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, ((n : ℝ) ^ 2)⁻¹ * c n =
       ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)),
         Real.log p / (p : ℝ) ^ 2 := by
-    rw [Nat.primesLE_eq_filter_Icc_zero]
-    simp only [c, mul_ite, mul_zero, ← sum_filter]
-    apply sum_congr
-    · ext n
-      simp only [mem_filter, mem_Icc, mem_Ioc, zero_le, true_and]
-      rw [Nat.floor_lt ha.le]
-      tauto
-    · intro n _
-      simp [div_eq_mul_inv, mul_comm]
+    rw [sum_Ioc_mul_ite_prime_eq_sum_filter_primesLE ha.le]
+    exact sum_congr rfl fun n _ ↦ by simp [div_eq_mul_inv, mul_comm]
   rw [hleft, sum_prime_log_eq_theta, sum_prime_log_eq_theta,
     ← intervalIntegral.integral_of_le hab] at h
   have heq : (∫ t in a..b, deriv (fun u : ℝ ↦ (u ^ 2)⁻¹) t *
@@ -174,16 +194,7 @@ theorem sum_primesLE_log_div_sq_le {a b : ℝ} (ha : 0 < a) :
       _ ≤ Real.log 4 / b + 2 * Real.log 4 * (a⁻¹ - b⁻¹) := by linarith
       _ = 2 * Real.log 4 / a - Real.log 4 / b := by ring
       _ ≤ 2 * Real.log 4 / a := sub_le_self _ hlogb
-  · have hempty : (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)) = ∅ := by
-      apply filter_eq_empty_iff.mpr
-      intro p hp hpa
-      have hb : 0 ≤ b := by
-        by_contra hb
-        simp [Nat.floor_of_nonpos (le_of_not_ge hb)] at hp
-      have hp_le : (p : ℝ) ≤ b :=
-        (Nat.le_floor_iff hb).mp (Nat.mem_primesLE.mp hp).1
-      linarith
-    rw [hempty, sum_empty]
+  · rw [filter_primesLE_floor_gt_eq_empty hab, sum_empty]
     positivity
 
 /-- For `y > 0`, the sum of `log p / p²` over any finite set of primes `p ≥ y`
@@ -372,8 +383,8 @@ theorem sum_primesLE_rpow_neg_eq (s : ℝ) {a b : ℝ} (ha : 0 < a) (hab : a ≤
       b ^ (-s) * Nat.primeCounting ⌊b⌋₊ - a ^ (-s) * Nat.primeCounting ⌊a⌋₊ +
         s * ∫ t in a..b, t ^ (-s - 1) * Nat.primeCounting ⌊t⌋₊ := by
   let c : ℕ → ℝ := fun n ↦ if n.Prime then 1 else 0
-  have hc (t : ℝ) : ∑ k ∈ Icc 0 ⌊t⌋₊, c k = Nat.primeCounting ⌊t⌋₊ := by
-    simp [c, ← Nat.primesLE_card_eq_primeCounting, Nat.primesLE_eq_filter_Icc_zero]
+  have hc (t : ℝ) : ∑ k ∈ Icc 0 ⌊t⌋₊, c k = Nat.primeCounting ⌊t⌋₊ :=
+    sum_prime_indicator_eq_primeCounting t
   have hd (t : ℝ) : deriv (fun u : ℝ ↦ u ^ (-s)) t = -s * t ^ (-s - 1) :=
     Real.deriv_rpow_const t (-s)
   have h := sum_mul_eq_sub_sub_integral_mul c ha.le hab (f := fun t : ℝ ↦ t ^ (-s))
@@ -382,19 +393,11 @@ theorem sum_primesLE_rpow_neg_eq (s : ℝ) {a b : ℝ} (ha : 0 < a) (hab : a ≤
     (by
       rw [show deriv (fun u : ℝ ↦ u ^ (-s)) = fun t ↦ -s * t ^ (-s - 1) from funext hd]
       refine ContinuousOn.integrableOn_Icc fun t ht ↦ ?_
-      exact (continuousAt_const.mul (Real.continuousAt_rpow_const _ _
-        (Or.inl (ha.trans_le ht.1).ne'))).continuousWithinAt)
+      have : t ≠ 0 := (ha.trans_le ht.1).ne'
+      fun_prop (disch := exact Or.inl this))
   have hleft : ∑ n ∈ Ioc ⌊a⌋₊ ⌊b⌋₊, (n : ℝ) ^ (-s) * c n =
       ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)), (p : ℝ) ^ (-s) := by
-    rw [Nat.primesLE_eq_filter_Icc_zero]
-    simp only [c, mul_ite, mul_one, mul_zero, ← sum_filter]
-    apply sum_congr
-    · ext n
-      simp only [mem_filter, mem_Icc, mem_Ioc, zero_le, true_and]
-      rw [Nat.floor_lt ha.le]
-      tauto
-    · intro n _
-      rfl
+    simp only [c, sum_Ioc_mul_ite_prime_eq_sum_filter_primesLE ha.le, mul_one]
   rw [hleft, hc, hc, ← intervalIntegral.integral_of_le hab] at h
   have heq : (∫ t in a..b, deriv (fun u : ℝ ↦ u ^ (-s)) t * ∑ k ∈ Icc 0 ⌊t⌋₊, c k) =
       -(s * ∫ t in a..b, t ^ (-s - 1) * Nat.primeCounting ⌊t⌋₊) := by
@@ -430,15 +433,16 @@ private theorem integral_rpow_sub_one_mul_primeCounting_le {s a b : ℝ} (hs : 1
   have hb0 : 0 < b := ha0.trans_le hab
   have hcont : ContinuousOn
       (fun t : ℝ ↦ (2 * Real.log 4 + 2) / Real.log a * t ^ (-s)) (Set.Icc a b) :=
-    fun t ht ↦ (continuousAt_const.mul (Real.continuousAt_rpow_const _ _
-      (Or.inl (ha0.trans_le ht.1).ne'))).continuousWithinAt
+    fun t ht ↦ by
+      have : t ≠ 0 := (ha0.trans_le ht.1).ne'
+      fun_prop (disch := exact Or.inl this)
   have hcont' : ContinuousOn (fun t : ℝ ↦ t ^ (-s - 1)) (Set.Icc a b) :=
-    fun t ht ↦ (Real.continuousAt_rpow_const _ _
-      (Or.inl (ha0.trans_le ht.1).ne')).continuousWithinAt
+    fun t ht ↦ by
+      have : t ≠ 0 := (ha0.trans_le ht.1).ne'
+      fun_prop (disch := exact Or.inl this)
   have hlhs := integrableOn_mul_sum_Icc (m := 0)
     (fun n : ℕ ↦ if n.Prime then (1 : ℝ) else 0) ha0.le hcont'.integrableOn_Icc
-  simp only [sum_boole, ← Nat.primesLE_eq_filter_Icc_zero,
-    Nat.primesLE_card_eq_primeCounting] at hlhs
+  simp_rw [sum_prime_indicator_eq_primeCounting] at hlhs
   calc _ ≤ ∫ t in a..b, (2 * Real.log 4 + 2) / Real.log a * t ^ (-s) := by
         refine intervalIntegral.integral_mono_on hab ?_ (hcont.intervalIntegrable_of_Icc hab)
           fun t ht ↦ rpow_sub_one_mul_primeCounting_le s ha ht.1
@@ -484,15 +488,14 @@ theorem sum_primesLE_rpow_neg_le {s a : ℝ} (hs : 1 < s) (ha : 1 < a) (b : ℝ)
           ring
       _ ≤ _ := sub_le_self _ hB
   · -- For `b < a` there is no prime in `(a, b]`.
-    have hempty : (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)) = ∅ := by
-      refine filter_eq_empty_iff.mpr fun p hp hpa ↦ hab ?_
-      have hp' := Nat.mem_primesLE.mp hp
-      have hb : 0 ≤ b := by
-        by_contra hb
-        simp [Nat.floor_of_nonpos (le_of_not_ge hb), hp'.2.ne_zero] at hp'
-      exact hpa.le.trans ((Nat.le_floor_iff hb).mp hp'.1)
-    rw [hempty, sum_empty]
+    rw [filter_primesLE_floor_gt_eq_empty hab, sum_empty]
     positivity
+
+/-- For `s > 1`, the series with terms `p ^ (-s)` over primes `p > y` is summable. -/
+theorem summable_prime_rpow_neg_gt {s : ℝ} (hs : 1 < s) (y : ℝ) :
+    Summable (fun n : ℕ ↦ if n.Prime ∧ y < (n : ℝ) then (n : ℝ) ^ (-s) else 0) :=
+  (Real.summable_nat_rpow.mpr (neg_lt_neg hs)).of_nonneg_of_le
+    (fun n ↦ by split_ifs <;> positivity) (fun n ↦ by split_ifs <;> simp [Real.rpow_nonneg])
 
 /-- For `s > 1` and `y > 1`, the sum of `p ^ (-s)` over primes `p > y` is at most
 `s / (s - 1) · (2 log 4 + 2) · y ^ (1 - s) / log y`. -/
