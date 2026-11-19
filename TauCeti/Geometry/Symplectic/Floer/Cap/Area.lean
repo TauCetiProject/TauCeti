@@ -156,59 +156,19 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 
 /-- The reparametrization of the unit interval under which the concatenation of the paths in the
 loop space of two smooth based homotopies becomes the path of their concatenation
-`TauCeti.rectangleTrans`. -/
-private def concatReparam (s : ℝ) : ℝ :=
-  if s ≤ 1 / 2 then Real.smoothTransition (3 * s) / 2
-  else (1 + Real.smoothTransition (3 * s - 2)) / 2
-
-private theorem concatReparam_of_le {s : ℝ} (hs : s ≤ 1 / 2) :
-    concatReparam s = Real.smoothTransition (3 * s) / 2 := by
-  simp only [concatReparam, hs, ↓reduceIte]
-
-private theorem concatReparam_of_lt {s : ℝ} (hs : 1 / 2 < s) :
-    concatReparam s = (1 + Real.smoothTransition (3 * s - 2)) / 2 := by
-  simp only [concatReparam, hs.not_ge, ↓reduceIte]
-
-private theorem continuous_concatReparam : Continuous concatReparam := by
-  refine Continuous.if_le (by fun_prop (disch := exact Real.smoothTransition.continuous))
-    (by fun_prop (disch := exact Real.smoothTransition.continuous)) continuous_id
-    continuous_const fun s hs ↦ ?_
-  rw [hs, Real.smoothTransition.one_of_one_le (by norm_num),
-    Real.smoothTransition.zero_of_nonpos (by norm_num)]
-  norm_num
-
-private theorem concatReparam_mem (s : ℝ) : concatReparam s ∈ unitInterval := by
-  have h₀ := Real.smoothTransition.nonneg (3 * s)
-  have h₁ := Real.smoothTransition.le_one (3 * s)
-  have h₂ := Real.smoothTransition.nonneg (3 * s - 2)
-  have h₃ := Real.smoothTransition.le_one (3 * s - 2)
-  rcases le_or_gt s (1 / 2) with hs | hs
-  · rw [concatReparam_of_le hs]
-    constructor <;> linarith
-  · rw [concatReparam_of_lt hs]
-    constructor <;> linarith
-
-/-- The reparametrization of the unit interval as a map of the unit interval. -/
-private def concatReparamI (s : unitInterval) : unitInterval :=
-  ⟨concatReparam s, concatReparam_mem s⟩
-
-private theorem coe_concatReparamI (s : unitInterval) :
-    (concatReparamI s : ℝ) = concatReparam s :=
-  (rfl)
+`TauCeti.rectangleTrans`: `Path.transReparam id id`, which is `s ↦ β (3 s) / 2` on `[0, 1/2]` and
+`s ↦ (1 + β (3 s - 2)) / 2` on `(1/2, 1]`, where `β = Real.smoothTransition`. -/
+private def concatReparamI : unitInterval → unitInterval :=
+  Path.transReparam id id
 
 private theorem continuous_concatReparamI : Continuous concatReparamI :=
-  (continuous_concatReparam.comp continuous_subtype_val).subtype_mk _
+  Path.continuous_transReparam continuous_id continuous_id (fun _ h ↦ h) fun _ h ↦ h
 
 private theorem concatReparamI_zero : concatReparamI 0 = 0 :=
-  Subtype.ext <| by
-    rw [coe_concatReparamI, Icc.coe_zero, concatReparam_of_le (by norm_num), mul_zero,
-      Real.smoothTransition.zero, zero_div]
+  Path.transReparam_zero le_rfl
 
 private theorem concatReparamI_one : concatReparamI 1 = 1 :=
-  Subtype.ext <| by
-    rw [coe_concatReparamI, Icc.coe_one, concatReparam_of_lt (by norm_num),
-      Real.smoothTransition.one_of_one_le (by norm_num)]
-    norm_num
+  Path.transReparam_one le_rfl
 
 /-! ### Smooth based homotopies of loops -/
 
@@ -316,10 +276,10 @@ private theorem trans_reparam_apply (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
   rcases le_or_gt (s : ℝ) (1 / 2) with hs | hs
   · -- First half: `w`.
     have hc : (concatReparamI s : ℝ) ≤ 1 / 2 := by
-      rw [coe_concatReparamI, concatReparam_of_le hs]
+      rw [concatReparamI, Path.coe_transReparam_of_le hs, id]
       linarith
     rw [dite_eq_left hc, rectangleTrans_eq_left h (by simp only; linarith)]
-    simp only [toPath_apply, coe_concatReparamI, concatReparam_of_le hs, Function.comp_apply,
+    simp only [toPath_apply, concatReparamI, Path.coe_transReparam_of_le hs, Function.comp_apply,
       Prod.map_apply, id_eq]
     congr 2
     ring
@@ -327,12 +287,12 @@ private theorem trans_reparam_apply (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
     simp only [Function.comp_apply, Prod.map_apply, id_eq]
     split_ifs with hc
     · -- Second half, while the path rests at `γ₂`.
-      rw [coe_concatReparamI, concatReparam_of_lt hs] at hc
+      rw [concatReparamI, Path.coe_transReparam_of_lt hs, id] at hc
       have hz : Real.smoothTransition (3 * (s : ℝ) - 2) = 0 := by linarith
-      simp only [toPath_apply, coe_concatReparamI, concatReparam_of_lt hs, hz]
+      simp only [toPath_apply, concatReparamI, Path.coe_transReparam_of_lt hs, id_eq, hz]
       norm_num [h]
     · -- Second half: `v`.
-      simp only [toPath_apply, coe_concatReparamI, concatReparam_of_lt hs]
+      simp only [toPath_apply, concatReparamI, Path.coe_transReparam_of_lt hs, id_eq]
       congr 2
       ring
 
@@ -349,10 +309,12 @@ theorem rectangleTrans (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w)
   apply_one t := by rw [rectangleTrans_apply_one, hv.apply_one]
   apply_seam s := by
     rcases lt_or_ge (s : ℝ) (2 / 3) with hs | hs
-    · rw [rectangleTrans_eq_left (hw.apply_one_eq_apply_zero hv) hs]
-      exact hw.apply_seam ⟨_, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
-    · rw [rectangleTrans_eq_right (hw.apply_one_eq_apply_zero hv) (by simp only; linarith)]
-      exact hv.apply_seam ⟨_, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+    · rw [rectangleTrans_eq_left (hw.apply_one_eq_apply_zero hv) hs, Function.comp_apply,
+        Prod.map_apply, ← unitInterval.coe_smoothTransition]
+      exact hw.apply_seam _
+    · rw [rectangleTrans_eq_right (hw.apply_one_eq_apply_zero hv) (by simp only; linarith),
+        Function.comp_apply, Prod.map_apply, ← unitInterval.coe_smoothTransition]
+      exact hv.apply_seam _
 
 /-- **The homotopy class of a glued homotopy.** The homotopy class of the concatenation of two
 smooth based homotopies is the composite of their homotopy classes. -/

@@ -32,6 +32,9 @@ the path space, an identity for constant paths (`Path.collaredTransHom_refl`).
 
 ## Main definitions
 
+* `Path.transReparam f g`: a reparametrization of the unit interval under which the
+  concatenation of two paths runs through them along `Real.smoothTransition ∘ f` and
+  `Real.smoothTransition ∘ g`.
 * `Path.collaredTransReparam`: the reparametrization of the unit interval.
 * `Path.collaredTrans γ₁ γ₂`: the collared concatenation of two paths.
 * `Path.collaredTransHom γ₁ γ₂`: the class joining the concatenation to the collared
@@ -49,84 +52,106 @@ namespace Path
 
 variable {X : Type*} [TopologicalSpace X] {a b c : X}
 
-/-- The real function underlying `Path.collaredTransReparam`: the curve concatenation
-`TauCeti.curveConcat` of `r ↦ β (2 r - 1) / 2` and `r ↦ (1 + β (2 r)) / 2`, where
-`β = Real.smoothTransition`. -/
-private def collaredTransReparamAux : ℝ → ℝ :=
-  TauCeti.curveConcat (fun r ↦ Real.smoothTransition (2 * r - 1) / 2)
-    (fun r ↦ (1 + Real.smoothTransition (2 * r)) / 2)
+/-- The reparametrization of the unit interval that is `t ↦ β (f (3 t)) / 2` on `[0, 1/2]` and
+`t ↦ (1 + β (g (3 t - 2))) / 2` on `(1/2, 1]`, where `β = Real.smoothTransition`
+(`Path.coe_transReparam_of_le`, `Path.coe_transReparam_of_lt`): the curve concatenation
+`TauCeti.curveConcat` of `r ↦ β (f r) / 2` and `r ↦ (1 + β (g r)) / 2`. Under it the
+concatenation `γ₁.trans γ₂` of two paths runs through `γ₁` along `β ∘ f` and then through `γ₂`
+along `β ∘ g`, each at triple speed. It is continuous and fixes `0` and `1` when `β ∘ f` rests at
+`1` from time `1` on, `β ∘ g` rests at `0` up to time `0`, `β (f 0) = 0` and `β (g 1) = 1`
+(`Path.continuous_transReparam`, `Path.transReparam_zero`, `Path.transReparam_one`). -/
+def transReparam (f g : ℝ → ℝ) (t : unitInterval) : unitInterval :=
+  ⟨TauCeti.curveConcat (fun r ↦ Real.smoothTransition (f r) / 2)
+    (fun r ↦ (1 + Real.smoothTransition (g r)) / 2) t, by
+    rcases le_or_gt (t : ℝ) 2⁻¹ with ht | ht
+    · rw [TauCeti.curveConcat_of_le ht]
+      have h₀ := Real.smoothTransition.nonneg (f (3 * t))
+      have h₁ := Real.smoothTransition.le_one (f (3 * t))
+      constructor <;> linarith
+    · rw [TauCeti.curveConcat_of_lt ht]
+      have h₀ := Real.smoothTransition.nonneg (g (3 * t - 2))
+      have h₁ := Real.smoothTransition.le_one (g (3 * t - 2))
+      constructor <;> linarith⟩
 
-private theorem collaredTransReparamAux_of_le {t : ℝ} (ht : t ≤ 1 / 2) :
-    collaredTransReparamAux t = Real.smoothTransition (6 * t - 1) / 2 := by
-  rw [collaredTransReparamAux, TauCeti.curveConcat_of_le (by linarith), ← mul_assoc]
-  norm_num
+variable {f g : ℝ → ℝ}
 
-private theorem collaredTransReparamAux_of_lt {t : ℝ} (ht : 1 / 2 < t) :
-    collaredTransReparamAux t = (1 + Real.smoothTransition (6 * t - 4)) / 2 := by
-  rw [collaredTransReparamAux, TauCeti.curveConcat_of_lt (by linarith), mul_sub, ← mul_assoc]
-  norm_num
+private theorem coe_transReparam (t : unitInterval) :
+    (transReparam f g t : ℝ) = TauCeti.curveConcat (fun r ↦ Real.smoothTransition (f r) / 2)
+      (fun r ↦ (1 + Real.smoothTransition (g r)) / 2) t :=
+  (rfl)
 
-private theorem continuous_collaredTransReparamAux : Continuous collaredTransReparamAux :=
-  (ContMDiff.curveConcat (I := 𝓘(ℝ, ℝ)) (n := 0) (y := 1 / 2)
-    ((Real.smoothTransition.contDiff.comp (by fun_prop)).div_const 2).contMDiff
-    ((contDiff_const.add (Real.smoothTransition.contDiff.comp (by fun_prop))).div_const
-      2).contMDiff
+/-- On `[0, 1/2]` the reparametrization `Path.transReparam f g` is `t ↦ β (f (3 t)) / 2`. -/
+theorem coe_transReparam_of_le {t : unitInterval} (ht : (t : ℝ) ≤ 1 / 2) :
+    (transReparam f g t : ℝ) = Real.smoothTransition (f (3 * t)) / 2 := by
+  rw [coe_transReparam, TauCeti.curveConcat_of_le (by linarith)]
+
+/-- On `(1/2, 1]` the reparametrization `Path.transReparam f g` is
+`t ↦ (1 + β (g (3 t - 2))) / 2`. -/
+theorem coe_transReparam_of_lt {t : unitInterval} (ht : 1 / 2 < (t : ℝ)) :
+    (transReparam f g t : ℝ) = (1 + Real.smoothTransition (g (3 * t - 2))) / 2 := by
+  rw [coe_transReparam, TauCeti.curveConcat_of_lt (by linarith)]
+
+/-- The reparametrization `Path.transReparam f g` is continuous when `f` and `g` are, `f` is at
+least `1` from time `1` on and `g` is at most `0` up to time `0`. -/
+theorem continuous_transReparam (hf : Continuous f) (hg : Continuous g)
+    (hf₁ : ∀ r, 1 ≤ r → 1 ≤ f r) (hg₀ : ∀ r ≤ 0, g r ≤ 0) : Continuous (transReparam f g) :=
+  ((ContMDiff.curveConcat (I := 𝓘(ℝ, ℝ)) (n := 0) (y := 1 / 2)
+    (γ₁ := fun r ↦ Real.smoothTransition (f r) / 2)
+    (γ₂ := fun r ↦ (1 + Real.smoothTransition (g r)) / 2)
+    (contMDiff_zero_iff.2 ((Real.smoothTransition.continuous.comp hf).div_const 2))
+    (contMDiff_zero_iff.2
+      ((continuous_const.add (Real.smoothTransition.continuous.comp hg)).div_const 2))
+    (fun r hr ↦ by rw [Real.smoothTransition.one_of_one_le (hf₁ r hr)])
     (fun r hr ↦ by
-      rw [Function.comp_apply, Real.smoothTransition.one_of_one_le (by linarith)])
-    (fun r hr ↦ by
-      rw [Function.comp_apply, Real.smoothTransition.zero_of_nonpos (by linarith)]
-      norm_num)).continuous
+      rw [Real.smoothTransition.zero_of_nonpos (hg₀ r hr)]
+      norm_num)).continuous.comp continuous_subtype_val).subtype_mk _
 
-private theorem collaredTransReparamAux_mem (t : ℝ) : collaredTransReparamAux t ∈ unitInterval := by
-  have h₀ := Real.smoothTransition.nonneg (6 * t - 1)
-  have h₁ := Real.smoothTransition.le_one (6 * t - 1)
-  have h₂ := Real.smoothTransition.nonneg (6 * t - 4)
-  have h₃ := Real.smoothTransition.le_one (6 * t - 4)
-  rcases le_or_gt t (1 / 2) with ht | ht
-  · rw [collaredTransReparamAux_of_le ht]
-    constructor <;> linarith
-  · rw [collaredTransReparamAux_of_lt ht]
-    constructor <;> linarith
+/-- The reparametrization `Path.transReparam f g` fixes `0` when `f 0 ≤ 0`. -/
+theorem transReparam_zero (hf : f 0 ≤ 0) : transReparam f g 0 = 0 :=
+  Subtype.ext <| by
+    rw [coe_transReparam_of_le (by norm_num), Icc.coe_zero, mul_zero,
+      Real.smoothTransition.zero_of_nonpos hf, zero_div]
+
+/-- The reparametrization `Path.transReparam f g` fixes `1` when `1 ≤ g 1`. -/
+theorem transReparam_one (hg : 1 ≤ g 1) : transReparam f g 1 = 1 :=
+  Subtype.ext <| by
+    rw [coe_transReparam_of_lt (by norm_num), Icc.coe_one]
+    norm_num [Real.smoothTransition.one_of_one_le hg]
 
 /-- The reparametrization of the unit interval under which the concatenation of two paths becomes
 their collared concatenation `Path.collaredTrans`: `t ↦ β (6 t - 1) / 2` on `[0, 1/2]` and
-`t ↦ (1 + β (6 t - 4)) / 2` on `(1/2, 1]`, where `β = Real.smoothTransition`. -/
-def collaredTransReparam (t : unitInterval) : unitInterval :=
-  ⟨collaredTransReparamAux t, collaredTransReparamAux_mem t⟩
-
-private theorem coe_collaredTransReparam (t : unitInterval) :
-    (collaredTransReparam t : ℝ) = collaredTransReparamAux t :=
-  (rfl)
+`t ↦ (1 + β (6 t - 4)) / 2` on `(1/2, 1]`, where `β = Real.smoothTransition`. It is
+`Path.transReparam` for `r ↦ 2 r - 1` and `r ↦ 2 r`. -/
+def collaredTransReparam : unitInterval → unitInterval :=
+  transReparam (fun r ↦ 2 * r - 1) (fun r ↦ 2 * r)
 
 /-- On `[0, 1/2]` the reparametrization of the collared concatenation is `t ↦ β (6 t - 1) / 2`. -/
 theorem coe_collaredTransReparam_of_le {t : unitInterval} (ht : (t : ℝ) ≤ 1 / 2) :
     (collaredTransReparam t : ℝ) = Real.smoothTransition (6 * t - 1) / 2 := by
-  rw [coe_collaredTransReparam, collaredTransReparamAux_of_le ht]
+  rw [collaredTransReparam, coe_transReparam_of_le ht, ← mul_assoc]
+  norm_num
 
 /-- On `(1/2, 1]` the reparametrization of the collared concatenation is
 `t ↦ (1 + β (6 t - 4)) / 2`. -/
 theorem coe_collaredTransReparam_of_lt {t : unitInterval} (ht : 1 / 2 < (t : ℝ)) :
     (collaredTransReparam t : ℝ) = (1 + Real.smoothTransition (6 * t - 4)) / 2 := by
-  rw [coe_collaredTransReparam, collaredTransReparamAux_of_lt ht]
+  rw [collaredTransReparam, coe_transReparam_of_lt ht, mul_sub, ← mul_assoc]
+  norm_num
 
 /-- The reparametrization of the collared concatenation is continuous. -/
 theorem continuous_collaredTransReparam : Continuous collaredTransReparam :=
-  (continuous_collaredTransReparamAux.comp continuous_subtype_val).subtype_mk _
+  continuous_transReparam (by fun_prop) (by fun_prop) (fun _ hr ↦ by linarith)
+    fun _ hr ↦ by linarith
 
 /-- The reparametrization of the collared concatenation fixes `0`. -/
 @[simp]
 theorem collaredTransReparam_zero : collaredTransReparam 0 = 0 :=
-  Subtype.ext <| by
-    rw [coe_collaredTransReparam, Icc.coe_zero, collaredTransReparamAux_of_le (by norm_num),
-      Real.smoothTransition.zero_of_nonpos (by norm_num), zero_div]
+  transReparam_zero (by norm_num)
 
 /-- The reparametrization of the collared concatenation fixes `1`. -/
 @[simp]
 theorem collaredTransReparam_one : collaredTransReparam 1 = 1 :=
-  Subtype.ext <| by
-    rw [coe_collaredTransReparam, Icc.coe_one, collaredTransReparamAux_of_lt (by norm_num),
-      Real.smoothTransition.one_of_one_le (by norm_num)]
-    norm_num
+  transReparam_one (by norm_num)
 
 /-- The **collared concatenation** of two paths: their concatenation `γ₁.trans γ₂`,
 reparametrized so that it runs through `γ₁` as `t ↦ γ₁ (β (6 t - 1))` on `[0, 1/2]` and through
@@ -151,13 +176,13 @@ theorem collaredTrans_apply_of_le (γ₁ : Path a b) (γ₂ : Path b c) {t : uni
   have hβ₀ := Real.smoothTransition.nonneg (6 * (t : ℝ) - 1)
   have hβ₁ := Real.smoothTransition.le_one (6 * (t : ℝ) - 1)
   have hc : (collaredTransReparam t : ℝ) ≤ 1 / 2 := by
-    rw [coe_collaredTransReparam, collaredTransReparamAux_of_le ht]
+    rw [coe_collaredTransReparam_of_le ht]
     linarith
   rw [collaredTrans_def, coe_reparam, Function.comp_apply, trans_apply, dite_eq_left hc,
     extend_apply _ ⟨hβ₀, hβ₁⟩]
   congr 1
   ext
-  simp only [coe_collaredTransReparam, collaredTransReparamAux_of_le ht]
+  simp only [coe_collaredTransReparam_of_le ht]
   ring
 
 /-- On `(1/2, 1]` the collared concatenation runs through the second path. -/
@@ -169,17 +194,17 @@ theorem collaredTrans_apply_of_lt (γ₁ : Path a b) (γ₂ : Path b c) {t : uni
   rw [collaredTrans_def, coe_reparam, Function.comp_apply, trans_apply, extend_apply _ ⟨hβ₀, hβ₁⟩]
   split_ifs with h
   · -- While `γ₂` has not started, the concatenation rests at the junction point.
-    rw [coe_collaredTransReparam, collaredTransReparamAux_of_lt ht] at h
+    rw [coe_collaredTransReparam_of_lt ht] at h
     have hz : Real.smoothTransition (6 * (t : ℝ) - 4) = 0 := by linarith
     have h₂ : 2 * (collaredTransReparam t : ℝ) = 1 := by
-      rw [coe_collaredTransReparam, collaredTransReparamAux_of_lt ht, hz]
+      rw [coe_collaredTransReparam_of_lt ht, hz]
       norm_num
     rw [← extend_apply, h₂, extend_one]
     exact ((congrArg γ₂ (Subtype.ext hz : (⟨_, hβ₀, hβ₁⟩ : unitInterval) = 0)).trans
       γ₂.source).symm
   · congr 1
     ext
-    simp only [coe_collaredTransReparam, collaredTransReparamAux_of_lt ht]
+    simp only [coe_collaredTransReparam_of_lt ht]
     ring
 
 /-- The collared concatenation of two constant paths is constant. -/
