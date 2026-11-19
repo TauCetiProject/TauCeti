@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import Mathlib.NumberTheory.ModularForms.JacobiTheta.Bounds
 
 /-!
 # The normalized Mellin continuation
@@ -48,6 +49,8 @@ function at negative integers: applied to the Bernoulli kernel `t / (e^t - 1)` i
 * `TauCeti.IsSmoothExpDecay.normalizedMellinContinuation_neg_nat`: `L_f(-n) = (-1)ⁿ f⁽ⁿ⁾(0)`.
 * `TauCeti.IsSmoothExpDecay.eq_normalizedMellinContinuation`: uniqueness among entire functions
   agreeing with `M(f, s) / Γ(s)` on `0 < Re s`.
+* `TauCeti.exists_normalizedMellinContinuation`: the existence statement, with the decay given by
+  explicit bounds `‖f⁽ⁿ⁾(t)‖ ≤ C e^{-c t}`.
 * `TauCeti.normalizedMellinContinuation_exp_neg_mul`: for `a > 0`, `f(t) = e^{-a t}` has
   `L_f(s) = a^{-s}`.
 
@@ -107,7 +110,7 @@ theorem normalizedMellinContinuation_const_mul (f : ℝ → ℂ) (a : ℂ) :
   ext s
   have hD : iteratedDerivWithin (⌊-s.re⌋₊ + 1) (fun t ↦ a * f t) (Ici 0) =
       fun t ↦ a • iteratedDerivWithin (⌊-s.re⌋₊ + 1) f (Ici 0) t :=
-    funext fun t ↦ iteratedDerivWithin_const_mul_field a f
+    funext fun t ↦ by rw [smul_eq_mul, iteratedDerivWithin_const_mul_field]
   rw [normalizedMellinContinuation, normalizedMellinContinuation, hD, mellin_const_smul,
     smul_eq_mul]
   ring
@@ -125,6 +128,19 @@ theorem congr (hf : IsSmoothExpDecay f) (h : EqOn f g (Ici 0)) : IsSmoothExpDeca
     filter_upwards [eventually_ge_atTop 0] with t ht
     exact iteratedDerivWithin_congr h ht
 
+/-- Smoothness on `[0, ∞)` together with explicit eventual bounds
+`‖f⁽ⁿ⁾(t)‖ ≤ C e^{-c t}` with `c > 0` for every derivative within `[0, ∞)` gives
+`IsSmoothExpDecay f`. -/
+theorem of_bound (hsmooth : ContDiffOn ℝ ∞ f (Ici 0))
+    (hdecay : ∀ n : ℕ, ∃ C c : ℝ, 0 < c ∧
+      ∀ᶠ t in atTop, ‖iteratedDerivWithin n f (Ici 0) t‖ ≤ C * Real.exp (-c * t)) :
+    IsSmoothExpDecay f where
+  contDiffOn := hsmooth
+  isBigO_exp n := by
+    obtain ⟨C, c, hc, h⟩ := hdecay n
+    refine ⟨c, hc, IsBigO.of_bound C <| h.mono fun t ht ↦ ?_⟩
+    rwa [Real.norm_of_nonneg (Real.exp_pos _).le]
+
 /-- Sums preserve smoothness with exponentially decaying derivatives. -/
 theorem add (hf : IsSmoothExpDecay f) (hg : IsSmoothExpDecay g) : IsSmoothExpDecay (f + g) where
   contDiffOn := hf.contDiffOn.add hg.contDiffOn
@@ -132,15 +148,10 @@ theorem add (hf : IsSmoothExpDecay f) (hg : IsSmoothExpDecay g) : IsSmoothExpDec
     obtain ⟨c, hc, hOf⟩ := hf.isBigO_exp n
     obtain ⟨d, hd, hOg⟩ := hg.isBigO_exp n
     -- a faster exponential decay is also a decay at the slower rate `min c d`
-    have hslow {c' : ℝ} (h : min c d ≤ c') :
-        (fun t : ℝ ↦ Real.exp (-c' * t)) =O[atTop] fun t ↦ Real.exp (-min c d * t) :=
-      Real.isBigO_exp_comp_exp_comp.mpr <| isBoundedUnder_of_eventually_le (a := 0) <| by
-        filter_upwards [eventually_ge_atTop 0] with t ht
-        simp only [Pi.sub_apply]
-        nlinarith
     refine ⟨min c d, lt_min hc hd, ?_⟩
-    refine ((hOf.trans (hslow (min_le_left c d))).add
-      (hOg.trans (hslow (min_le_right c d)))).congr' ?_ EventuallyEq.rfl
+    refine ((hOf.trans (HurwitzKernelBounds.isBigO_exp_neg_mul_of_le (min_le_left c d))).add
+      (hOg.trans (HurwitzKernelBounds.isBigO_exp_neg_mul_of_le (min_le_right c d)))).congr' ?_
+      EventuallyEq.rfl
     filter_upwards [eventually_ge_atTop 0] with t ht
     exact (iteratedDerivWithin_add ht (uniqueDiffOn_Ici 0)
       (hf.contDiffOn.of_le (mod_cast le_top) t ht)
@@ -355,6 +366,21 @@ theorem normalizedMellinContinuation_add (hf : IsSmoothExpDecay f) (hg : IsSmoot
     hg.normalizedMellinContinuation_eq_mellin_div hs, ← add_div, Pi.add_def, hadd]
 
 end IsSmoothExpDecay
+
+/-- **Normalized Mellin continuation.** If `f : ℝ → ℂ` is smooth on `[0, ∞)` and every derivative
+within `[0, ∞)` is eventually bounded by `C e^{-c t}` with `c > 0`, then `M(f, s) / Γ(s)` on
+`0 < Re s` extends to an entire function `F` with `F(-n) = (-1)ⁿ f⁽ⁿ⁾(0)`. The function `F` is
+`TauCeti.normalizedMellinContinuation f`. -/
+theorem exists_normalizedMellinContinuation (f : ℝ → ℂ) (hsmooth : ContDiffOn ℝ ∞ f (Ici 0))
+    (hdecay : ∀ n : ℕ, ∃ C c : ℝ, 0 < c ∧
+      ∀ᶠ t in atTop, ‖iteratedDerivWithin n f (Ici 0) t‖ ≤ C * Real.exp (-c * t)) :
+    ∃ F : ℂ → ℂ, Differentiable ℂ F ∧
+      (∀ s : ℂ, 0 < s.re → F s = mellin f s / Gamma s) ∧
+      ∀ n : ℕ, F (-(n : ℂ)) = (-1) ^ n * iteratedDerivWithin n f (Ici 0) 0 :=
+  have hf := IsSmoothExpDecay.of_bound hsmooth hdecay
+  ⟨normalizedMellinContinuation f, hf.differentiable_normalizedMellinContinuation,
+    fun _ hs ↦ hf.normalizedMellinContinuation_eq_mellin_div hs,
+    hf.normalizedMellinContinuation_neg_nat⟩
 
 /-- For `a > 0`, the exponential `t ↦ e^{-a t}` is smooth with exponentially decaying
 derivatives on `[0, ∞)`. -/
