@@ -150,7 +150,7 @@ variable {R : Type*} [NonUnitalRing R] [StarRing R] [IsProperStar R] {I J : TwoS
 
 /-- In a proper star ring, an element annihilating a self-adjoint ideal from the left also
 annihilates it from the right. -/
-theorem mul_eq_zero_of_mem_annihilator_of_star_mem_right (hI : ∀ x ∈ I, star x ∈ I)
+theorem mul_eq_zero_of_star_mem_of_mem_annihilator (hI : ∀ x ∈ I, star x ∈ I)
     (ha : a ∈ I.annihilator) {x : R} (hx : x ∈ I) : x * a = 0 := by
   -- `(x * a) * star (x * a) = x * (a * (star a * star x))`, and `star a * star x ∈ I`.
   rw [← mul_star_self_eq_zero, star_mul, mul_assoc,
@@ -161,7 +161,7 @@ theorem star_mem_annihilator (hI : ∀ x ∈ I, star x ∈ I) (ha : a ∈ I.anni
     star a ∈ I.annihilator :=
   mem_annihilator.2 fun x hx ↦ by
     rw [← star_star x, ← star_mul,
-      mul_eq_zero_of_mem_annihilator_of_star_mem_right hI ha (hI x hx), star_zero]
+      mul_eq_zero_of_star_mem_of_mem_annihilator hI ha (hI x hx), star_zero]
 
 theorem star_mem_annihilator_iff (hI : ∀ x ∈ I, star x ∈ I) :
     star a ∈ I.annihilator ↔ a ∈ I.annihilator :=
@@ -171,7 +171,7 @@ theorem star_mem_annihilator_iff (hI : ∀ x ∈ I, star x ∈ I) :
 annihilator. -/
 theorem mem_annihilator_iff_mul_left (hI : ∀ x ∈ I, star x ∈ I) :
     a ∈ I.annihilator ↔ ∀ x ∈ I, x * a = 0 := by
-  refine ⟨fun ha x hx ↦ mul_eq_zero_of_mem_annihilator_of_star_mem_right hI ha hx, fun ha ↦ ?_⟩
+  refine ⟨fun ha x hx ↦ mul_eq_zero_of_star_mem_of_mem_annihilator hI ha hx, fun ha ↦ ?_⟩
   rw [← star_mem_annihilator_iff hI]
   exact mem_annihilator.2 fun x hx ↦ by
     rw [← star_star x, ← star_mul, ha _ (hI x hx), star_zero]
