@@ -27,8 +27,11 @@ idelic archimedean component, which by Neukirch VII (6.13) is the inverse of the
 character in `χ((a)) = χ_f(a) χ_∞(a)` of VII (6.1) (see `Grossencharacter.compatibility`), so
 Neukirch's `χ_f(a) = χ((a)) χ_∞(a)⁻¹` becomes multiplication by the archimedean value. It is the
 monomial `∏_τ τ(a) ^ (n τ)` of the infinity type when `a` is positive at the real places of `𝔪`
-(`Grossencharacter.archimedeanValue_eq_embeddingCharacter`), and differs from it by a sign at a
-real place of `𝔪` where the parity of the Hecke character differs from that of `n`. With the
+(`Grossencharacter.archimedeanValue_eq_embeddingCharacter`). In general it is that monomial times,
+at each real place `w`, the sign of `a` at `w` raised to the difference between the parity of the
+Hecke character and that of `n` at `w`
+(`Grossencharacter.coe_archimedeanValue_eq_embeddingCharacter_mul_prod_sign`), a difference that
+vanishes outside `𝔪`. With the
 monomial alone, the odd character `χ₄` modulo `4∞` of `ℚ`, of exponent `0`, would give the even
 function `a ↦ χ₄(|a|)` on `ℤ`, which is `1` at `-1` and `-1` at `3`, so does not even factor
 through the residues modulo `4`.
@@ -50,7 +53,8 @@ character at the class of every nonzero integer
 
 The coefficient and the residue character must be kept apart at `0`. When `𝔪₀ = 𝓞 K`, the residue
 ring has one element, a unit, at which the residue character is `1`, while the coefficient at the
-integer `0` is `0`. Accordingly the comparison is stated for nonzero integers only.
+integer `0` is `0` (`Grossencharacter.residueCharacter_of_finitePart_eq_top`). Accordingly the
+comparison is stated for nonzero integers only.
 
 ## Main definitions
 
@@ -62,6 +66,9 @@ integer `0` is `0`. Accordingly the comparison is stated for nonzero integers on
 
 ## Main results
 
+* `TauCeti.LFunctions.Grossencharacter.coe_archimedeanValue_eq_embeddingCharacter_mul_prod_sign`:
+  the archimedean value is the monomial of the infinity type corrected by a sign at each real place
+  where the parities differ.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacterK_eq_one_of_residueHom_eq_one`: the finite
   character is trivial on the fractions congruent to `1` modulo `𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.coe_finiteCharacterK_of_algebraMap_eq`: on an algebraic
@@ -73,6 +80,8 @@ integer `0` is `0`. Accordingly the comparison is stated for nonzero integers on
   finite character is a function of the residue modulo `𝔪₀`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter_eq_zero_iff`: it vanishes exactly at the
   integers not prime to `𝔪`.
+* `TauCeti.LFunctions.Grossencharacter.finiteCharacter_eq_one_of_isCongrOne`: it is `1` on the
+  integers congruent to one modulo `𝔪`.
 * `TauCeti.LFunctions.Grossencharacter.finiteCharacter_unit`: on a unit it is the archimedean
   value.
 
@@ -123,6 +132,22 @@ theorem archimedeanValue_eq_embeddingCharacter (χ : Grossencharacter K 𝔪) {x
   exact χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_of_realParity
     χ.infinityType χ.agreesOnIdentityComponent x
     fun w hw ↦ hx w (not_imp_comm.mp (χ.realParity_eq w) hw)
+
+open scoped Classical in
+/-- **The archimedean value with its signs.** At any `x ∈ Kˣ` the archimedean value is the monomial
+`∏_τ τ(x) ^ (n τ)` times, at each real place `w`, the sign of `x` at `w` raised to the difference
+between the sign parity of the presented Hecke character and the parity of `n` at `w`. That
+difference vanishes at the real places outside `𝔪` (`realParity_eq`). -/
+theorem coe_archimedeanValue_eq_embeddingCharacter_mul_prod_sign (χ : Grossencharacter K 𝔪)
+    (x : Kˣ) :
+    (χ.archimedeanValue x : ℂ) = (χ.infinityType.embeddingCharacter x : ℂ) *
+      ∏ w : {w : InfinitePlace K // w.IsReal},
+        (SignType.sign (InfinitePlace.embedding_of_isReal w.2 (x : K)) : ℂ) ^
+          (χ.toHeckeCharacter.infinityType.realParity w -
+            (AlgebraicInfinityType.toContinuous χ.infinityType).realParity w).val := by
+  rw [archimedeanValue_apply, Units.coe_prod]
+  exact χ.toHeckeCharacter.coe_prod_infiniteComponent_eq_embeddingCharacter_mul_prod_sign
+    χ.infinityType χ.agreesOnIdentityComponent x
 
 /-! ### The finite character on the fractions prime to the modulus -/
 
@@ -278,6 +303,16 @@ theorem finiteCharacterK_unitsToPrimeToSubgroup (χ : Grossencharacter K 𝔪) (
   refine Units.ext ?_
   rw [← χ.finiteCharacter_eq_finiteCharacterK (a := u) _ (by simp), finiteCharacter_unit]
 
+/-- **The finite character is `1` on the integers congruent to one modulo `𝔪`**: this is Hecke's
+unit relation `compatibility`, the archimedean value being the monomial of the infinity type
+there. -/
+theorem finiteCharacter_eq_one_of_isCongrOne (χ : Grossencharacter K 𝔪) {a : 𝓞 K} {x : Kˣ}
+    (hx : IsCongrOne 𝔪 x) (ha : algebraMap (𝓞 K) K a = x) : χ.finiteCharacter a = 1 := by
+  rw [χ.finiteCharacter_apply_of_algebraMap_eq ha,
+    χ.archimedeanValue_eq_embeddingCharacter fun _ ↦ hx.pos,
+    AlgebraicInfinityType.coe_embeddingCharacter_apply]
+  exact χ.compatibility x hx a ha
+
 /-- **The finite character vanishes exactly at the integers not prime to `𝔪`.** -/
 theorem finiteCharacter_eq_zero_iff (χ : Grossencharacter K 𝔪) {a : 𝓞 K} :
     χ.finiteCharacter a = 0 ↔ ¬ 𝔪.IsCoprimeTo (Ideal.span {a}) := by
@@ -316,6 +351,14 @@ theorem existsUnique_residueCharacter (χ : Grossencharacter K 𝔪) :
     fun ψ hψ ↦ MulChar.ext' fun r ↦ ?_⟩
   obtain ⟨b, hb₀, rfl⟩ := Ideal.Quotient.exists_ne_zero_mk_eq 𝔪.finitePart_ne_bot r
   rw [hψ b hb₀, χ.finiteCharacter_eq_residueCharacter hb₀]
+
+/-- **At finite part `𝓞 K` the residue character is trivial**: the residue ring has a single
+element, the unit `1`. The finite character is nevertheless `0` at `0`. -/
+theorem residueCharacter_of_finitePart_eq_top (χ : Grossencharacter K 𝔪)
+    (h : 𝔪.finitePart = ⊤) : χ.residueCharacter = 1 := by
+  have : Subsingleton (𝓞 K ⧸ 𝔪.finitePart) := Ideal.Quotient.subsingleton_iff.mpr h
+  refine MulChar.ext fun u ↦ ?_
+  rw [Subsingleton.elim (u : 𝓞 K ⧸ 𝔪.finitePart) 1, MulChar.map_one, MulChar.map_one]
 
 end Grossencharacter
 
