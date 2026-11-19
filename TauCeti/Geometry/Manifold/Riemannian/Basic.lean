@@ -237,6 +237,17 @@ theorem mdifferentiableAt_of_inner_mfderiv {Φ : M → N} {x : M}
   rw [hv, inner_zero_left] at h
   exact inner_self_eq_zero (𝕜 := ℝ) (E := TangentSpace I x) |>.1 h.symm
 
+/-- The standard Riemannian metric of a real inner product space pairs two tangent vectors by the
+inner product of the corresponding vectors of the space. -/
+@[simp]
+theorem riemannianMetricVectorSpace_inner {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (x : V) (v w : TangentSpace 𝓘(ℝ, V) x) :
+    (riemannianMetricVectorSpace V).inner x v w =
+      ⟪NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w⟫_ℝ :=
+  -- The metric is `innerSL ℝ` on each fibre, and `TangentSpace` is a type synonym for `V` whose
+  -- identification `fromTangentSpace` with `V` is the identity.
+  rfl
+
 end TauCeti
 
 section NormMFDeriv
