@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.Localization.BaseChange
@@ -33,8 +34,11 @@ It also records three facts about Mathlib's extension of scalars `ModuleCat.exte
 
 Along the structure map `algebraMap R S` of an `R`-algebra, extension of scalars is the tensor
 product `S ⊗[R] M` taken with the algebra module structure of `S`
-(`ModuleCat.extendScalarsAlgebraMapIso`). An `R`-linear map `f : M → N` to an `S`-module
-exhibits `N` as the base change of `M` (`IsBaseChange S f`) exactly when its adjoint
+(`ModuleCat.extendScalarsAlgebraMapIso`), and through this identification it acts on morphisms by
+base change (`ModuleCat.extendScalars_map_comp_extendScalarsAlgebraMapIso_hom`). When `S` is flat
+over `R` it is exact, so it preserves homology
+(`ModuleCat.preservesHomology_extendScalars_algebraMap`). An `R`-linear map `f : M → N` to an
+`S`-module exhibits `N` as the base change of `M` (`IsBaseChange S f`) exactly when its adjoint
 `S ⊗[R] M → N` is bijective; in that case the adjoint morphism of modules is an isomorphism
 (`ModuleCat.isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange`).
 
@@ -229,6 +233,22 @@ theorem extendScalarsAlgebraMapIso_inv_tmul (M : ModuleCat.{w} R) (s : S) (m : M
   unfold extendScalarsAlgebraMapIso
   rfl
 
+/-- **Naturality of `ModuleCat.extendScalarsAlgebraMapIso`**: on `S ⊗[R] M`, extension of scalars
+along `algebraMap R S` acts on a morphism `g` by the base change of `g`. -/
+@[reassoc]
+theorem extendScalars_map_comp_extendScalarsAlgebraMapIso_hom {M N : ModuleCat.{w} R}
+    (g : M ⟶ N) :
+    (extendScalars (algebraMap R S)).map g ≫ (extendScalarsAlgebraMapIso N).hom =
+      (extendScalarsAlgebraMapIso M).hom ≫ ofHom (g.hom.baseChange S) :=
+  ExtendScalars.hom_ext fun m ↦ by
+    -- Evaluate both composites at `1 ⊗ m`, written in the tensor product of extension of scalars.
+    change (extendScalarsAlgebraMapIso N).hom
+        ((extendScalars (algebraMap R S)).map g ((1 : S) ⊗ₜ[R, algebraMap R S] m)) =
+      g.hom.baseChange S ((extendScalarsAlgebraMapIso M).hom ((1 : S) ⊗ₜ[R, algebraMap R S] m))
+    rw [ExtendScalars.map_tmul, extendScalarsAlgebraMapIso_hom_tmul]
+    exact ((congrArg (g.hom.baseChange S) (extendScalarsAlgebraMapIso_hom_tmul M 1 m)).trans
+      (LinearMap.baseChange_tmul _ _ _)).symm
+
 end AlgebraMap
 
 section BaseChange
@@ -271,6 +291,18 @@ theorem isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange
     rw [key]
     exact hf.equiv.toModuleIso.isIso_hom
   exact IsIso.of_isIso_comp_left (extendScalarsAlgebraMapIso _).inv _
+
+open Limits in
+/-- Extension of scalars along a flat algebra is exact, so it preserves homology. -/
+instance preservesHomology_extendScalars_algebraMap [Module.Flat R S] :
+    (extendScalars.{u, u, u} (algebraMap R S)).PreservesHomology := by
+  have := preservesFiniteLimits_extendScalars_of_flat
+    (RingHom.flat_algebraMap_iff.2 (inferInstance : Module.Flat R S))
+  have : PreservesColimitsOfSize.{0, 0} (extendScalars.{u, u, u} (algebraMap R S)) :=
+    (extendRestrictScalarsAdj.{u, u, u} (algebraMap R S)).leftAdjoint_preservesColimits
+  have : PreservesFiniteColimits (extendScalars.{u, u, u} (algebraMap R S)) :=
+    PreservesColimitsOfSize.preservesFiniteColimits _
+  infer_instance
 
 end BaseChange
 

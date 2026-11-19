@@ -48,9 +48,8 @@ torsion of `H₁(Y_φ; ℤ)` has order `|det (1 - φ_*)|`
 (`TauCeti.MappingTorus.card_torsion_homology_one_eq_natAbs_det`). By the splitting of the
 cohomology of a product with a circle (`TopCat.singularCohomologySphereProdEquiv`), this makes the
 summand `θ ⌣ pr₂^* H¹(Y_φ; ℤ)` of `H²(S¹ × Y_φ; ℤ)` a single copy of `ℤ`. The integral
-determinant is nonzero exactly when its rational counterpart is, which by
-`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff` over `ℚ` is the condition `b₁(Y_φ) = 1`;
-that base change from `ℤ` to `ℚ` is not made here.
+determinant is nonzero exactly when `b₁(Y_φ; k) = 1` over a field `k` of characteristic zero, such
+as `ℚ` or `ℝ` (`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff_det_int_ne_zero`).
 
 ## Main results
 
