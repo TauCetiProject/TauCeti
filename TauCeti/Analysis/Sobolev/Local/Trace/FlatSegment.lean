@@ -62,7 +62,7 @@ of the components (`TauCeti.hasRealAxisTraceIn_ker_im_iff`).
 * `TauCeti.HasRealAxisTraceIn.of_tendsto`: closedness under `W^{1,p}_loc` limits up to the axis.
 * `TauCeti.hasRealAxisTraceIn_ker_iff_forall_coord`, `TauCeti.hasRealAxisTraceIn_ker_im_iff`:
   the coordinate form.
-* `TauCeti.hasRealAxisTraceIn_bot_im`, `TauCeti.not_hasRealAxisTraceIn_ker_im_const_I`: the
+* `TauCeti.hasZeroRealAxisTrace_im`, `TauCeti.not_hasRealAxisTraceIn_ker_im_const_I`: the
   checks `Im z` has zero trace, and the constant `i` does not satisfy `u ∈ ℝ` on the axis.
 
 ## References
@@ -91,11 +91,13 @@ def halfDiscChart (x : ℂ) : ℂ ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × ℝ) :=
   (AffineIsometryEquiv.vaddConst ℝ x).symm.trans
     Complex.equivRealProdL2Swap.toAffineIsometryEquiv
 
+/-- The chart in coordinates. -/
 @[simp]
 theorem halfDiscChart_apply (x z : ℂ) :
     halfDiscChart x z = WithLp.toLp 2 ((z - x).im, (z - x).re) := by
   simp [halfDiscChart]
 
+/-- The inverse chart in coordinates. -/
 @[simp]
 theorem halfDiscChart_symm_apply (x : ℂ) (w : WithLp 2 (ℝ × ℝ)) :
     (halfDiscChart x).symm w = ⟨w.snd, w.fst⟩ + x := by
@@ -103,6 +105,7 @@ theorem halfDiscChart_symm_apply (x : ℂ) (w : WithLp 2 (ℝ × ℝ)) :
   cases w
   simp
 
+/-- The chart at `x` sends `x` to the origin. -/
 theorem halfDiscChart_self (x : ℂ) : halfDiscChart x x = 0 := by
   simp only [halfDiscChart_apply, sub_self, Complex.zero_im, Complex.zero_re]
   rfl
@@ -202,8 +205,10 @@ theorem HasZeroRealAxisTrace.congr_ae (h : HasZeroRealAxisTrace hp U f)
     (hfg : f =ᵐ[volume.restrict U] g) : HasZeroRealAxisTrace hp U g := by
   intro x hx r hr hxr
   obtain ⟨v, hv, hvf⟩ := h x hx r hr hxr
-  exact ⟨v, hv, hvf.trans (ae_eq_comp_halfDiscChart_symm hx ((upperHalfDisc_subset x r).trans hxr) hfg)⟩
+  exact ⟨v, hv,
+    hvf.trans (ae_eq_comp_halfDiscChart_symm hx ((upperHalfDisc_subset x r).trans hxr) hfg)⟩
 
+/-- The zero function has zero trace. -/
 theorem hasZeroRealAxisTrace_zero : HasZeroRealAxisTrace hp U 0 := fun _ _ r _ _ =>
   ⟨0, zero_mem _, by
     rw [W1p.value_zero]
@@ -212,6 +217,7 @@ theorem hasZeroRealAxisTrace_zero : HasZeroRealAxisTrace hp U 0 := fun _ _ r _ _
     rw [hw]
     rfl⟩
 
+/-- The zero-trace condition is closed under addition. -/
 theorem HasZeroRealAxisTrace.add (hf : HasZeroRealAxisTrace hp U f)
     (hg : HasZeroRealAxisTrace hp U g) : HasZeroRealAxisTrace hp U (f + g) := by
   intro x hx r hr hxr
@@ -222,6 +228,7 @@ theorem HasZeroRealAxisTrace.add (hf : HasZeroRealAxisTrace hp U f)
   filter_upwards [Lp.coeFn_add (W1p.value v) (W1p.value v'), hvf, hvg] with w h₁ h₂ h₃
   rw [h₁, Pi.add_apply, h₂, h₃, Pi.add_apply]
 
+/-- The zero-trace condition is closed under real multiples. -/
 theorem HasZeroRealAxisTrace.const_smul (hf : HasZeroRealAxisTrace hp U f) (c : ℝ) :
     HasZeroRealAxisTrace hp U (c • f) := by
   intro x hx r hr hxr
@@ -231,6 +238,7 @@ theorem HasZeroRealAxisTrace.const_smul (hf : HasZeroRealAxisTrace hp U f) (c : 
   filter_upwards [Lp.coeFn_smul c (W1p.value v), hvf] with w h₁ h₂
   rw [h₁, Pi.smul_apply, h₂, Pi.smul_apply]
 
+/-- The zero-trace condition is closed under finite sums. -/
 theorem HasZeroRealAxisTrace.sum {ι : Type*} {s : Finset ι} {f : ι → ℂ → ℝ}
     (hf : ∀ i ∈ s, HasZeroRealAxisTrace hp U (f i)) :
     HasZeroRealAxisTrace hp U (∑ i ∈ s, f i) := by
@@ -345,7 +353,8 @@ private theorem exists_w1p_halfDisc_enorm_le {x : ℂ} (hx : x.im = 0) {r : ℝ}
 /-- **The zero-trace condition is closed under `W^{1,p}_loc` limits up to the real axis.** If real
 functions `fs n` have zero trace on the real axis inside `U` and converge to `f` in `W^{1,p}(K)` for
 every compact `K ⊆ U`, then `f` has zero trace on the real axis inside `U`. -/
-theorem HasZeroRealAxisTrace.of_tendsto {fs : ℕ → ℂ → ℝ} (hfs : ∀ n, HasZeroRealAxisTrace hp U (fs n))
+theorem HasZeroRealAxisTrace.of_tendsto {fs : ℕ → ℂ → ℝ}
+    (hfs : ∀ n, HasZeroRealAxisTrace hp U (fs n))
     (hlim : ∀ K : Set ℂ, IsCompact K → K ⊆ U →
       Tendsto (fun n => eLpNormWkp p K 1 (fs n - f)) atTop (𝓝 0)) :
     HasZeroRealAxisTrace hp U f := by
@@ -415,17 +424,20 @@ theorem HasRealAxisTraceIn.congr_ae (h : HasRealAxisTraceIn hp U L u)
     (huu' : u =ᵐ[volume.restrict U] u') : HasRealAxisTraceIn hp U L u' :=
   fun ℓ hℓ => (h ℓ hℓ).congr_ae (huu'.fun_comp ℓ)
 
+/-- The zero map has boundary values in every subspace. -/
 theorem hasRealAxisTraceIn_zero : HasRealAxisTraceIn hp U L (0 : ℂ → V) := fun ℓ _ => by
   convert (hasZeroRealAxisTrace_zero : HasZeroRealAxisTrace hp U 0) using 1
   funext z
   simp
 
+/-- The boundary condition is closed under addition. -/
 theorem HasRealAxisTraceIn.add (h : HasRealAxisTraceIn hp U L u)
     (h' : HasRealAxisTraceIn hp U L u') : HasRealAxisTraceIn hp U L (u + u') := fun ℓ hℓ => by
   convert (h ℓ hℓ).add (h' ℓ hℓ) using 1
   funext z
   simp
 
+/-- The boundary condition is closed under real multiples. -/
 theorem HasRealAxisTraceIn.const_smul (h : HasRealAxisTraceIn hp U L u) (c : ℝ) :
     HasRealAxisTraceIn hp U L (c • u) := fun ℓ hℓ => by
   convert (h ℓ hℓ).const_smul c using 1
@@ -452,7 +464,8 @@ theorem hasRealAxisTraceIn_bot_iff {f : ℂ → ℝ} :
 finite-dimensional space, the boundary values of `u` lie in `ker A` exactly when those of `A ∘ u`
 are zero. -/
 theorem hasRealAxisTraceIn_ker_iff [FiniteDimensional ℝ W] (A : V →L[ℝ] W) :
-    HasRealAxisTraceIn hp U (LinearMap.ker (A : V →ₗ[ℝ] W)) u ↔ HasRealAxisTraceIn hp U ⊥ fun z => A (u z) := by
+    HasRealAxisTraceIn hp U (LinearMap.ker (A : V →ₗ[ℝ] W)) u ↔
+      HasRealAxisTraceIn hp U ⊥ fun z => A (u z) := by
   refine ⟨fun h μ _ => h (μ.comp A) fun y hy => by
     rw [ContinuousLinearMap.comp_apply, show A y = 0 from LinearMap.mem_ker.1 hy, map_zero],
     fun h ℓ hℓ => ?_⟩
@@ -468,9 +481,11 @@ theorem hasRealAxisTraceIn_ker_iff [FiniteDimensional ℝ W] (A : V →L[ℝ] W)
 
 /-- **The coordinate form for `L = 0`.** A map into a finite-dimensional space has zero boundary
 values exactly when each of its coordinates in a basis `b` has zero trace. -/
-theorem hasRealAxisTraceIn_bot_iff_forall_coord [FiniteDimensional ℝ W] {ι : Type*} [Fintype ι]
+theorem hasRealAxisTraceIn_bot_iff_forall_coord {ι : Type*} [Finite ι]
     (b : Basis ι ℝ W) {w : ℂ → W} :
     HasRealAxisTraceIn hp U ⊥ w ↔ ∀ i, HasZeroRealAxisTrace hp U fun z => b.coord i (w z) := by
+  have := Fintype.ofFinite ι
+  have := Module.Finite.of_basis b
   refine ⟨fun h i => h (LinearMap.toContinuousLinearMap (b.coord i)) fun y hy => by
     simp [(Submodule.mem_bot ℝ).1 hy], fun h μ _ => ?_⟩
   have hfun : (fun z => μ (w z)) = ∑ i, μ (b i) • fun z => b.coord i (w z) := by
@@ -483,10 +498,11 @@ theorem hasRealAxisTraceIn_bot_iff_forall_coord [FiniteDimensional ℝ W] {ι : 
 
 /-- **The coordinate form.** For `A : V →L[ℝ] W` and a basis `b` of `W`, the boundary values of
 `u` lie in `ker A` exactly when each coordinate of `A ∘ u` in `b` has zero trace. -/
-theorem hasRealAxisTraceIn_ker_iff_forall_coord [FiniteDimensional ℝ W] {ι : Type*} [Fintype ι]
+theorem hasRealAxisTraceIn_ker_iff_forall_coord {ι : Type*} [Finite ι]
     (A : V →L[ℝ] W) (b : Basis ι ℝ W) :
     HasRealAxisTraceIn hp U (LinearMap.ker (A : V →ₗ[ℝ] W)) u ↔
       ∀ i, HasZeroRealAxisTrace hp U fun z => b.coord i (A (u z)) :=
+  have := Module.Finite.of_basis b
   (hasRealAxisTraceIn_ker_iff A).trans (hasRealAxisTraceIn_bot_iff_forall_coord b)
 
 /-- **Check: `ℝⁿ ⊆ ℂⁿ`.** For `L = ℝ^ι ⊆ ℂ^ι`, the kernel of the imaginary parts of the components,
@@ -571,7 +587,8 @@ theorem hasZeroRealAxisTrace_im {Ω : Opens ℂ} :
 `i` does not have boundary values in `ℝ ⊆ ℂ`, the kernel of the imaginary part. -/
 theorem not_hasRealAxisTraceIn_ker_im_const_I {Ω : Opens ℂ} {x : ℂ} (hxΩ : x ∈ Ω)
     (hx : x.im = 0) :
-    ¬ HasRealAxisTraceIn hp ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (LinearMap.ker (Complex.imCLM : ℂ →ₗ[ℝ] ℝ))
+    ¬ HasRealAxisTraceIn hp ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})
+      (LinearMap.ker (Complex.imCLM : ℂ →ₗ[ℝ] ℝ))
       (fun _ => Complex.I) := by
   have hmem : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 (fun _ : ℂ => Complex.I) :=
     contDiffOn_const.memWkpLoc_inter_setOf_im_nonneg Ω.isOpen
