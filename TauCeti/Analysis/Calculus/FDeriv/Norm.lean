@@ -16,7 +16,9 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 A map whose norm is locally constant has derivative orthogonal to its value. In particular, the
 derivative of a map into a sphere is tangent to the sphere. Away from the origin, a vanishing
-derivative of a norm-composition forces the one-dimensional profile derivative to vanish.
+derivative of a norm-composition forces the one-dimensional profile derivative to vanish. The
+norm itself, being `1`-Lipschitz, has derivative of norm at most `1` everywhere
+(`TauCeti.norm_fderiv_norm_le`).
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -47,6 +49,11 @@ theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero {v : ℝ → E} {x : F} (hx : 
   have h := congr($(((differentiableAt_of_deriv_ne_zero hv).hasDerivAt.hasFDerivAt.comp x
     hn.hasFDerivAt).fderiv.symm.trans hcrit) x)
   exact hv (by simpa [hn.fderiv_norm_self, hx] using h)
+
+/-- The derivative of the norm has norm at most `1` at every point, including the points where the
+norm is not differentiable and its derivative is `0` by definition. -/
+theorem norm_fderiv_norm_le (x : E) : ‖fderiv ℝ (‖·‖ : E → ℝ) x‖ ≤ 1 := by
+  simpa using norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_one_norm (E := E))
 
 /-- A map whose norm is constant near `w` has Fréchet derivative at `w` orthogonal to its
 value. In particular, the derivative of a map into a sphere is tangent to the sphere.
