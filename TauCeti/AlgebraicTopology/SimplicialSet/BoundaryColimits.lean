@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
+public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.SubcomplexColimits
 
 /-!
@@ -28,6 +29,8 @@ This is the analogue for boundaries of Mathlib's description of horns in
 * `SSet.boundary.IsCompatible.of_hom`: the faces of a map `∂Δ[n + 1] ⟶ X` are compatible.
 * `SSet.boundary.eq_ι_comp_iff`: a map `∂Δ[n + 1] ⟶ X` is the restriction of a simplex `σ`
   exactly when its faces are the faces of `σ`.
+* `SSet.boundary.hom_ext_whiskerRight`: a map `∂Δ[n + 1] ⊗ Z ⟶ X` is determined by its
+  restrictions to the products of the faces with `Z`.
 * `SSet.boundary.vertex`, `SSet.boundary.vertex_val` and `SSet.boundary.map_const_yonedaEquiv_ι`:
   the vertices of `∂Δ[n + 1]`, their values in `Δ[n + 1]`, and the vertices of its faces.
 -/
@@ -38,7 +41,7 @@ universe u
 
 namespace SSet
 
-open CategoryTheory Limits Simplicial
+open CategoryTheory Limits Simplicial MonoidalCategory
 
 namespace boundary
 
@@ -163,6 +166,16 @@ lemma eq_ι_comp_iff (σ₀ : (∂Δ[n + 1] : SSet) ⟶ X) (σ : Δ[n + 1] ⟶ X
   · rintro rfl j
     rw [ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp]
   · rw [ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp, h]
+
+/-- Maps out of `∂Δ[n + 1] ⊗ Z` are determined by their restrictions to the products of the faces
+of `∂Δ[n + 1]` with `Z`. -/
+lemma hom_ext_whiskerRight {Z : SSet.{u}} {f g : (∂Δ[n + 1] : SSet) ⊗ Z ⟶ X}
+    (h : ∀ i : Fin (n + 2), ι i ▷ Z ≫ f = ι i ▷ Z ≫ g) : f = g := by
+  ext m ⟨⟨x, hx⟩, z⟩
+  simp only [boundary_eq_iSup, stdSimplex.face_singleton_compl, Subfunctor.iSup_obj,
+    Set.mem_iUnion, Subcomplex.mem_ofSimplex_obj_iff, Opposite.op_unop] at hx
+  obtain ⟨i, ⟨y, rfl⟩⟩ := hx
+  congrm $(h i).app _ ((stdSimplex.objEquiv.symm y, z) : ((Δ[n] : SSet.{u}) ⊗ Z).obj m)
 
 /-- The vertex `i` of the boundary `∂Δ[n + 1]`. -/
 def vertex (n : ℕ) (i : Fin (n + 2)) : (∂Δ[n + 1] : SSet.{u}) _⦋0⦌ :=
