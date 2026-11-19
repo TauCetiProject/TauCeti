@@ -186,9 +186,9 @@ private theorem sum_last_row (N : ℕ) (D E : ℕ → ℕ → G) (ha : ∀ l, l 
     exact neg_one_pow_succ_smul_add _ _
   rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ (fun l ↦ _ • E N l), hb,
     Even.neg_one_pow ⟨N + 1, rfl⟩, Odd.neg_one_pow ⟨N + 1, by omega⟩,
-    Odd.neg_one_pow ⟨N, by omega⟩, ← sub_eq_zero, ← hs]
+    Odd.neg_one_pow ⟨N, by omega⟩]
   simp only [one_smul, neg_smul]
-  abel
+  linear_combination (norm := abel) hs
 
 /-- The sign bookkeeping of a presimplicial homotopy: if `D l j` (the `l`-th face after the
 `j`-th homotopy operator) and `E j l` (the `j`-th homotopy operator after the `l`-th face) satisfy
