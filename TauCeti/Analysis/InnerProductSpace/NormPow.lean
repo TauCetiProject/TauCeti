@@ -53,6 +53,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `continuous_norm_rpow_smul_self`: for `p > -1` the radial field is continuous at the origin.
 * `DifferentiableAt.hasFDerivAt_comp_norm`, `ContDiff.comp_norm`: the derivative and the
   smoothness of a radial function `x ↦ ψ ‖x‖` when `ψ` vanishes near `0`.
+* `differentiableAt_comp_norm_iff`: away from the origin, a radial function `x ↦ ψ ‖x‖` is
+  differentiable exactly where `ψ` is differentiable at `‖x‖`.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
 * `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
@@ -333,6 +335,21 @@ theorem _root_.DifferentiableAt.hasFDerivAt_comp_norm {ψ : ℝ → ℝ} {x : E}
       (comp_norm_eventuallyEq_zero hψ0)
   · have h := hψ.hasDerivAt.comp_hasFDerivAt x (hasFDerivAt_norm_of_ne hx)
     rwa [div_eq_mul_inv, mul_smul]
+
+/-- Away from the origin, the radial function `y ↦ ψ ‖y‖` is differentiable at `x` if and only if
+`ψ` is differentiable at `‖x‖`: conversely to the chain rule, `ψ t = ψ ‖t u‖` for `t > 0` and the
+unit vector `u = x / ‖x‖`. -/
+theorem differentiableAt_comp_norm_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {ψ : ℝ → F} {x : E} (hx : x ≠ 0) :
+    DifferentiableAt ℝ (fun y : E ↦ ψ ‖y‖) x ↔ DifferentiableAt ℝ ψ ‖x‖ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp x (hasFDerivAt_norm_of_ne hx).differentiableAt⟩
+  have hx' : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
+  have hu : ‖x‖ • (‖x‖⁻¹ • x) = x := by rw [smul_smul, mul_inv_cancel₀ hx', one_smul]
+  refine DifferentiableAt.congr_of_eventuallyEq
+    ((hu.symm ▸ h).comp ‖x‖ (differentiableAt_id.smul_const (‖x‖⁻¹ • x))) ?_
+  filter_upwards [lt_mem_nhds (norm_pos_iff.2 hx)] with t ht
+  rw [Function.comp_apply, id, norm_smul, norm_smul, norm_inv, norm_norm,
+    inv_mul_cancel₀ hx', mul_one, Real.norm_of_nonneg ht.le]
 
 /-- The radial function `x ↦ ψ ‖x‖` of a `Cⁿ` function `ψ` on the line vanishing near `0` is
 `Cⁿ`, including at the origin. -/
