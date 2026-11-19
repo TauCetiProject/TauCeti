@@ -171,12 +171,8 @@ theorem snd_jetAlgebra_apply (P : σ → R) (f : MvPolynomial σ R) (j : σ) :
   | C a => simp [algebraMap_eq_inl]
   | add p q hp hq => simp [hp, hq]
   | mul_X p i hp =>
-    simp only [map_mul, snd_mul, fst_jetAlgebra, jetAlgebra_X, fst_add, fst_inl, fst_inr,
-      snd_add, snd_inl, snd_inr, add_zero, zero_add, Pi.add_apply, Pi.smul_apply, hp,
-      smul_eq_mul, MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, Derivation.leibniz,
-      pderiv_X, eval_X, map_add]
-    simp only [Pi.single_apply, eq_comm (a := j)]
-    split_ifs <;> simp [mul_comm]
+    simp [hp, Pi.single_apply, Derivation.leibniz, pderiv_X, eq_comm (a := j)]
+    split_ifs <;> simp
 
 /-- The first jet of `f` at `P` is its value plus its gradient at `P`. -/
 theorem jetAlgebra_apply (P : σ → R) (f : MvPolynomial σ R) :
