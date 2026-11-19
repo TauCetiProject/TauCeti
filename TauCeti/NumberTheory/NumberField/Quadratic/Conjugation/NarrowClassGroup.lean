@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Finite
 public import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.InfinitePlace
+import TauCeti.Algebra.Group.Hom.Lift
 import TauCeti.NumberTheory.NumberField.Quadratic.Conjugation.Norm.NegOne
 
 /-!
@@ -336,20 +337,8 @@ theorem existsUnique_comp_toClassGroup_eq_iff {M : Type*} [Monoid M]
     (χ : NarrowClassGroup K →* M) :
     (∃! ψ : ClassGroup (𝓞 K) →* M, ψ.comp toClassGroup = χ) ↔
       χ (mkPrincipal (Units.mk0 (θ : K) (coe_gen_ne_zero hmin))) = 1 := by
-  refine ⟨fun ⟨ψ, hψ, _⟩ => by
-    rw [← hψ, MonoidHom.comp_apply, toClassGroup_mkPrincipal, map_one], fun hχ => ?_⟩
-  -- A homomorphism out of a group lands in the units, where the forgetful surjection `π` lifts
-  -- through any homomorphism killing its kernel `⟨[θ]⁺⟩`.
-  have hker : (toClassGroup (K := K)).ker ≤ χ.toHomUnits.ker := by
-    rw [ker_toClassGroup_eq_zpowers hmin hgen, Subgroup.zpowers_le, MonoidHom.mem_ker]
-    simpa [Units.ext_iff] using hχ
-  have hcomp : ((Units.coeHom M).comp
-      (toClassGroup.liftOfSurjective toClassGroup_surjective ⟨χ.toHomUnits, hker⟩)).comp
-        toClassGroup = χ := by
-    ext A
-    simp
-  exact ⟨_, hcomp, fun ψ hψ => (MonoidHom.cancel_right toClassGroup_surjective).mp
-    (hψ.trans hcomp.symm)⟩
+  rw [MonoidHom.existsUnique_comp_eq_iff_ker_le χ _ toClassGroup_surjective,
+    ker_toClassGroup_eq_zpowers hmin hgen, Subgroup.zpowers_le, MonoidHom.mem_ker]
 
 /-- **If `[θ]⁺` is a square, every real character of `Cl⁺(K)` descends to `Cl(K)`.** For
 `K = ℚ(√d)` presented by `θ`, if the narrow class of `(θ)` is a square then every homomorphism
