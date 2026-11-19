@@ -84,20 +84,14 @@ theorem circleFourierIndexOperator_fourierLp (n : ℤ) :
 
 /-- On arbitrary `L²` inputs, the operator retains negative Fourier coefficients and shifts
 nonnegative coefficients up by one, leaving the zeroth output coefficient zero. -/
-theorem circleFourierIndexOperator_fourierCoeff (f : L²) (n : ℤ) :
+@[simp]
+theorem fourierCoeff_circleFourierIndexOperator (f : L²) (n : ℤ) :
     fourierCoeff (circleFourierIndexOperator f) n =
       if n < 0 then fourierCoeff f n else if n = 0 then 0 else fourierCoeff f (n - 1) := by
   rw [circleFourierIndexOperator_apply, ← fourierBasis_repr]
   simp only [map_add, map_sub, lp.coeFn_add, lp.coeFn_sub, Pi.add_apply, Pi.sub_apply,
     fourierBasis_repr, fourierCoeff_fourierLp_smul, fourierCoeff_hardySubmodule_starProjection]
-  obtain hn | rfl | hn := lt_trichotomy n 0
-  · have hprev : n - 1 < 0 := by omega
-    simp only [ite_eq_right (not_le.mpr hprev), ite_eq_right (not_le.mpr hn), ite_eq_left hn,
-      sub_zero, zero_add]
-  · norm_num
-  · have hprev : 0 ≤ n - 1 := by omega
-    simp only [ite_eq_left hprev, ite_eq_left hn.le, ite_eq_right (not_lt.mpr hn.le),
-      ite_eq_right hn.ne', sub_self, add_zero]
+  split_ifs <;> first | omega | simp
 
 /-- The circle Fourier operator is injective, since every input coefficient can be recovered from
 an output coefficient. -/
@@ -111,11 +105,9 @@ theorem ker_circleFourierIndexOperator : circleFourierIndexOperator.ker = ⊥ :=
   simp only [fourierBasis_repr]
   have hcoeff (k : ℤ) := congrArg (fun u : L² ↦ fourierCoeff u k) hfg
   by_cases hn : n < 0
-  · simpa only [circleFourierIndexOperator_fourierCoeff, ite_eq_left hn] using hcoeff n
-  · have hn₁ : ¬n + 1 < 0 := by omega
-    have hn₂ : n + 1 ≠ 0 := by omega
-    simpa only [circleFourierIndexOperator_fourierCoeff, ite_eq_right hn₁, ite_eq_right hn₂,
-      add_sub_cancel_right] using hcoeff (n + 1)
+  · simpa [hn] using hcoeff n
+  · have hpos : 0 < n + 1 := by omega
+    simpa [not_lt.mpr hpos.le, hpos.ne'] using hcoeff (n + 1)
 
 /-- A function belongs to the range of the circle Fourier operator exactly when its zeroth
 Fourier coefficient vanishes. -/
@@ -125,7 +117,7 @@ theorem mem_range_circleFourierIndexOperator {g : L²} :
   simp only [ContinuousLinearMap.coe_coe]
   constructor
   · rintro ⟨f, rfl⟩
-    simp [circleFourierIndexOperator_fourierCoeff]
+    simp
   · intro hg
     have hproj : hardySubmodule.orthogonalProjectionOnto g ∈
         LinearMap.range (toeplitz (fourierLp (T := 1) ∞ 1) : HardySpace →ₗ[ℂ] HardySpace) := by
@@ -141,31 +133,23 @@ theorem mem_range_circleFourierIndexOperator {g : L²} :
       Submodule.coe_orthogonalProjectionOnto_apply]
     abel
 
-private theorem innerSL_fourierBasis_zero_apply (f : L²) :
-    innerSL ℂ (fourierBasis (T := 1) (0 : ℤ)) f = fourierCoeff f 0 := by
-  rw [innerSL_apply_apply, ← HilbertBasis.repr_apply_apply, fourierBasis_repr]
-
 /-- The range of the circle Fourier operator is the kernel of the zeroth Fourier coefficient
 functional, the inner product with the constant mode. -/
 theorem range_circleFourierIndexOperator :
     circleFourierIndexOperator.range = (innerSL ℂ (fourierBasis (T := 1) (0 : ℤ))).ker := by
   ext g
   rw [mem_range_circleFourierIndexOperator, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    innerSL_fourierBasis_zero_apply]
-
-private theorem fourierCoeff_smul_fourierLp_zero (c : ℂ) :
-    fourierCoeff (c • fourierLp (T := 1) 2 (0 : ℤ) : L²) 0 = c := by
-  rw [← innerSL_fourierBasis_zero_apply, map_smul, innerSL_fourierBasis_zero_apply,
-    fourierCoeff_fourierLp, ite_eq_left rfl, smul_eq_mul, mul_one]
+    innerSL_fourierBasis_apply]
 
 /-- The cokernel of the circle Fourier operator is linearly equivalent to `ℂ` via the zeroth
 Fourier coefficient. -/
 def circleFourierIndexOperatorCokernelEquiv : (L² ⧸ circleFourierIndexOperator.range) ≃ₗ[ℂ] ℂ :=
   (Submodule.quotEquivOfEq _ _ range_circleFourierIndexOperator).trans
     ((innerSL ℂ (fourierBasis (T := 1) (0 : ℤ))).toLinearMap.quotKerEquivOfSurjective fun c ↦
-      ⟨c • fourierLp (T := 1) 2 (0 : ℤ), by
-        rw [ContinuousLinearMap.coe_coe, innerSL_fourierBasis_zero_apply,
-          fourierCoeff_smul_fourierLp_zero]⟩)
+      ⟨c • fourierBasis (T := 1) (0 : ℤ), by
+        rw [ContinuousLinearMap.coe_coe, map_smul, innerSL_apply_apply,
+          inner_self_eq_one_of_norm_eq_one ((fourierBasis (T := 1)).orthonormal.norm_eq_one 0)]
+        simp [smul_eq_mul]⟩)
 
 /-- The circle Fourier operator's cokernel equivalence sends a class to its representative's
 zeroth Fourier coefficient. -/
@@ -173,16 +157,26 @@ zeroth Fourier coefficient. -/
 theorem circleFourierIndexOperatorCokernelEquiv_mk (f : L²) :
     circleFourierIndexOperatorCokernelEquiv (Submodule.Quotient.mk f) = fourierCoeff f 0 := by
   rw [circleFourierIndexOperatorCokernelEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
-    ← innerSL_fourierBasis_zero_apply]
+    ← innerSL_fourierBasis_apply]
   exact LinearMap.quotKerEquivOfSurjective_apply_mk _ _ f
 
+/-- The class of the constant Fourier mode corresponds to `1` in the cokernel equivalence. -/
+@[simp high]
+theorem circleFourierIndexOperatorCokernelEquiv_mk_fourierLp_zero :
+    circleFourierIndexOperatorCokernelEquiv
+      (Submodule.Quotient.mk (fourierLp (T := 1) 2 0)) = 1 := by
+  rw [circleFourierIndexOperatorCokernelEquiv_mk, fourierCoeff_fourierLp]
+  simp
+
 /-- The inverse cokernel equivalence represents `c` by the constant function with value `c`. -/
+@[simp]
 theorem circleFourierIndexOperatorCokernelEquiv_symm_apply (c : ℂ) :
     circleFourierIndexOperatorCokernelEquiv.symm c =
       Submodule.Quotient.mk (c • fourierLp (T := 1) 2 (0 : ℤ)) := by
   apply circleFourierIndexOperatorCokernelEquiv.injective
-  rw [LinearEquiv.apply_symm_apply, circleFourierIndexOperatorCokernelEquiv_mk,
-    fourierCoeff_smul_fourierLp_zero]
+  rw [LinearEquiv.apply_symm_apply, Submodule.Quotient.mk_smul, map_smul,
+    circleFourierIndexOperatorCokernelEquiv_mk_fourierLp_zero]
+  simp [smul_eq_mul]
 
 /-- The circle Fourier operator is Fredholm on the whole circle `L²` space. -/
 theorem isFredholm_circleFourierIndexOperator : circleFourierIndexOperator.IsFredholm := by
