@@ -802,6 +802,9 @@ private theorem mvfderiv_comp_unstableFrame_eq {F : Type*} [NormedAddCommGroup F
     mdifferentiableAt_iff_differentiableAt.2 (hey ▸ hg)
   have hmv : mvfderiv 𝓘(ℝ, E) g y = mvfderiv 𝓘(ℝ, E) ((g ∘ e.symm) ∘ e) y := by
     simp only [mvfderiv, hloc.mfderiv_eq]
+    -- The `rfl` identifies the two `NormedSpace.fromTangentSpace` factors and drops the
+    -- `tangentSpaceCast` from `mfderiv_eq`: both are identities of `F`, at base points
+    -- `g y = ((g ∘ e.symm) ∘ e) y`.
     rfl
   ext c : 1
   have hL : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y (hX.unstableFrame φ y c) =
