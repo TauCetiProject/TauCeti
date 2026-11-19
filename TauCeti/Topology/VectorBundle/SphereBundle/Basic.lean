@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
+import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.VectorBundle.Smul
 
@@ -27,7 +28,11 @@ a continuous family of positive definite quadratic forms `Q_b`. Its disc bundle 
 be the unit disc bundle of any norm already carried by the fibres: for instance the negative disc
 bundle `{-½ Hess(v, v) ≤ ε}` of a Morse–Bott critical submanifold, where `q v = -Hess(v, v) / (2ε)`
 on the negative normal bundle. The unit sphere bundle projects continuously onto the base
-(`TauCeti.sphereBundleProj`).
+(`TauCeti.sphereBundleProj`). The pair `(D(E), S(E))` (`TauCeti.discSpherePair`) is the gauge
+disc-sphere pair of the fibre norm (`TauCeti.discSpherePair_eq_gaugeDiscSpherePair`). In rank zero
+every vector is zero, so the unit sphere bundle is empty and the unit disc bundle is the whole
+total space (`TauCeti.isEmpty_sphereBundle_of_subsingleton`,
+`TauCeti.discBundle_eq_univ_of_subsingleton`).
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -155,6 +160,10 @@ variable {F E} in
 theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.2‖ = 1 :=
   Iff.rfl
 
+/-- The unit sphere bundle lies in the unit disc bundle. -/
+theorem sphereBundle_subset_discBundle : sphereBundle F E ⊆ discBundle F E :=
+  gaugeSphereBundle_subset_gaugeDiscBundle _
+
 variable {F E} in
 /-- The vectors of norm less than one miss the sphere bundle. -/
 theorem disjoint_norm_lt_one_sphereBundle :
@@ -166,6 +175,18 @@ variable {F E} [TopologicalSpace (TotalSpace F E)]
 /-- The disc-sphere pair `(D_ρ(E), S_ρ(E))` of a function `ρ` on the total space of a bundle. -/
 abbrev gaugeDiscSpherePair (ρ : TotalSpace F E → ℝ) : TopPair.{w} :=
   TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) (gaugeSphereBundle_subset_gaugeDiscBundle ρ)
+
+variable (F E) in
+/-- The pair `(D(E), S(E))` of the unit disc bundle and the unit sphere bundle of a bundle with
+normed fibres. -/
+abbrev discSpherePair : TopPair.{w} :=
+  TopPair.ofInclusion (X := TopCat.of (TotalSpace F E)) (sphereBundle_subset_discBundle F E)
+
+variable (F E) in
+/-- The pair `(D(E), S(E))` is the disc-sphere pair of the fibre norm, as a fibre gauge. -/
+theorem discSpherePair_eq_gaugeDiscSpherePair :
+    discSpherePair F E = gaugeDiscSpherePair fun v : TotalSpace F E ↦ ‖v.2‖ :=
+  TopPair.ofInclusion_congr _ _ sphereBundle_def discBundle_def
 
 end Sets
 
@@ -308,6 +329,28 @@ theorem isEmbedding_sphereBundleFiberIncl (b : B) :
     fun _ _ h ↦ Subtype.ext (TotalSpace.mk_inj.1 (congrArg Subtype.val h))⟩
 
 end Proj
+
+section Subsingleton
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [Subsingleton F]
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [FiberBundle F E]
+
+/-- In rank zero every vector is zero, so the unit sphere bundle is empty. -/
+instance isEmpty_sphereBundle_of_subsingleton : IsEmpty (sphereBundle F E) := by
+  refine ⟨fun ⟨v, hv⟩ ↦ ?_⟩
+  have := subsingleton_fiber_of_subsingleton F E v.proj
+  rw [mem_sphereBundle, Subsingleton.elim v.2 0, norm_zero] at hv
+  exact zero_ne_one hv
+
+/-- In rank zero every vector is zero, so the unit disc bundle is the whole total space. -/
+theorem discBundle_eq_univ_of_subsingleton : discBundle F E = univ := by
+  refine eq_univ_of_forall fun v ↦ ?_
+  have := subsingleton_fiber_of_subsingleton F E v.proj
+  rw [mem_discBundle, Subsingleton.elim v.2 0, norm_zero]
+  exact zero_le_one
+
+end Subsingleton
 
 section Closed
 
