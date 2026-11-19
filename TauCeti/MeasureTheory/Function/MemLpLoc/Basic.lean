@@ -29,8 +29,9 @@ it is not determined by the scalar compositions `ℓ ∘ f` alone.
 
 The main case is a finite-dimensional real normed space `E` with an additive Haar measure
 `volume`, where the class does not depend on the choice of Haar measure
-(`TauCeti.memLpLoc_iff_of_isAddHaarMeasure`) and is carried along continuous linear equivalences
-(`ContinuousLinearEquiv.memLpLoc_comp_iff`). The planar class of `ℂ` is the case `E = ℂ`.
+(`MeasureTheory.Measure.memLpLoc_iff_of_isAddHaarMeasure`) and is carried along continuous
+linear equivalences (`ContinuousLinearEquiv.memLpLoc_comp_iff`). The planar class of `ℂ` is the
+case `E = ℂ`.
 
 ## Main declarations
 
@@ -41,10 +42,11 @@ The main case is a finite-dimensional real normed space `E` with an additive Haa
 * `TauCeti.MemLpLoc.locallyIntegrableOn`, `TauCeti.memLpLoc_one_iff_locallyIntegrableOn`:
   local integrability for `1 ≤ p`.
 * `TauCeti.MemLpLoc.add`, `.sub`, `.sum`, `.const_smul`, `.clm_comp`,
-  `ContinuousLinearEquiv.comp_memLpLoc_iff`: linear closure properties.
+  `ContinuousLinearEquiv.comp_memLpLoc_iff`: linear closure properties, over any nontrivially
+  normed field of scalars.
 * `TauCeti.memLpLoc_iff_locally`, `TauCeti.memLpLoc_iSup_iff`: the sheaf property.
 * `Module.Basis.memLpLoc_iff`: coordinates in a finite basis of the codomain.
-* `TauCeti.memLpLoc_iff_of_isAddHaarMeasure`: independence of the Haar measure.
+* `MeasureTheory.Measure.memLpLoc_iff_of_isAddHaarMeasure`: independence of the Haar measure.
 * `ContinuousLinearEquiv.memLpLoc_comp_iff`: transport along continuous linear equivalences.
 
 ## References
@@ -53,6 +55,12 @@ The main case is a finite-dimensional real normed space `E` with an additive Haa
   Appendix B.1 (local Lebesgue and Sobolev spaces).
 * W. Arendt and M. Kreuter, *Mapping theorems for Sobolev spaces of vector-valued functions*,
   Studia Math. 240 (2018), §2.
+* The layout of this file, most of the generalized API and the regular-space proof of the sheaf
+  property follow mo271's
+  [TauCeti#41136](https://github.com/TauCetiProject/TauCeti/pull/41136); the independence of the
+  Haar measure and the transport along continuous linear equivalences draw on the `Haar.lean`
+  files of chrisflav's [TauCeti#40283](https://github.com/TauCetiProject/TauCeti/pull/40283) and
+  [TauCeti#43530](https://github.com/TauCetiProject/TauCeti/pull/43530).
 -/
 
 public noncomputable section
@@ -92,12 +100,6 @@ contained in `U`. -/
 theorem MemLpLoc.memLp_of_closure_subset (hf : MemLpLoc p U f) (hV : IsCompact (closure V))
     (hVU : closure V ⊆ U) : MemLp f p (volume.restrict V) :=
   (hf _ hVU hV).mono_measure (Measure.restrict_mono subset_closure le_rfl)
-
-/-- Local `Lᵖ` membership on `U` gives `Lᵖ` membership on every set whose closure is compact and
-contained in `U`. -/
-theorem MemLpLoc.memLp_restrict_of_isCompact_closure (hf : MemLpLoc p U f) {W : Set X}
-    (hWc : IsCompact (closure W)) (hWU : closure W ⊆ U) : MemLp f p (volume.restrict W) :=
-  hf.memLp_of_closure_subset hWc hWU
 
 /-- A function that is `Lᵖ` on `U` is locally `Lᵖ` there. -/
 theorem _root_.MeasureTheory.MemLp.memLpLoc (hf : MemLp f p (volume.restrict U)) :
@@ -205,20 +207,20 @@ theorem memLpLoc_of_forall_opens [LocallyCompactSpace X] [RegularSpace X] {Ω : 
   obtain ⟨g, hg, hgf⟩ := h ⟨W, hWo⟩ hWc hWΩ
   exact (hg.ae_eq hgf).mono_measure (Measure.restrict_mono hKW le_rfl)
 
-variable [NormedSpace ℝ F] [NormedSpace ℝ G]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F] [NormedSpace 𝕜 G]
 
-/-- Real scalar multiplication preserves local `Lᵖ` membership. -/
-theorem MemLpLoc.const_smul (hf : MemLpLoc p U f) (c : ℝ) : MemLpLoc p U (c • f) :=
+/-- Scalar multiplication preserves local `Lᵖ` membership. -/
+theorem MemLpLoc.const_smul (hf : MemLpLoc p U f) (c : 𝕜) : MemLpLoc p U (c • f) :=
   fun K hK hc => (hf K hK hc).const_smul c
 
 /-- A continuous linear map on the codomain preserves local `Lᵖ` membership. -/
-theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[ℝ] G) :
+theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[𝕜] G) :
     MemLpLoc p U (fun z => A (f z)) :=
   fun K hK hc => A.comp_memLp' (hf K hK hc)
 
 /-- A continuous linear change of codomain preserves and reflects local `Lᵖ` membership. -/
 @[simp]
-theorem _root_.ContinuousLinearEquiv.comp_memLpLoc_iff (e : F ≃L[ℝ] G) :
+theorem _root_.ContinuousLinearEquiv.comp_memLpLoc_iff (e : F ≃L[𝕜] G) :
     MemLpLoc p U (fun z => e (f z)) ↔ MemLpLoc p U f := by
   refine ⟨fun h => ?_, fun h => h.clm_comp e.toContinuousLinearMap⟩
   simpa only [ContinuousLinearEquiv.coe_coe, e.symm_apply_apply] using
@@ -226,12 +228,12 @@ theorem _root_.ContinuousLinearEquiv.comp_memLpLoc_iff (e : F ≃L[ℝ] G) :
 
 /-- Pairing two locally `Lᵖ` fields of continuous linear maps into their product map preserves
 local `Lᵖ` membership. -/
-theorem MemLpLoc.clm_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {A : X → E →L[ℝ] F} {B : X → E →L[ℝ] G} (hA : MemLpLoc p U A) (hB : MemLpLoc p U B) :
+theorem MemLpLoc.clm_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {A : X → E →L[𝕜] F} {B : X → E →L[𝕜] G} (hA : MemLpLoc p U A) (hB : MemLpLoc p U B) :
     MemLpLoc p U (fun z => (A z).prod (B z)) := by
-  convert (hA.clm_comp (ContinuousLinearMap.compL ℝ E F (F × G)
-    (ContinuousLinearMap.inl ℝ F G))).add
-      (hB.clm_comp (ContinuousLinearMap.compL ℝ E G (F × G) (ContinuousLinearMap.inr ℝ F G)))
+  convert (hA.clm_comp (ContinuousLinearMap.compL 𝕜 E F (F × G)
+    (ContinuousLinearMap.inl 𝕜 F G))).add
+      (hB.clm_comp (ContinuousLinearMap.compL 𝕜 E G (F × G) (ContinuousLinearMap.inr 𝕜 F G)))
     using 1
   funext z
   ext v <;> simp
@@ -239,36 +241,36 @@ theorem MemLpLoc.clm_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- Composing a locally `Lᵖ` operator family on the left with one continuous on `U` preserves
 local `Lᵖ` membership, since the continuous factor is bounded on every compact subset of `U`. -/
 theorem MemLpLoc.continuousOn_clm_comp [OpensMeasurableSpace X] [T2Space X]
-    {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
-    {A : X → G →L[ℝ] H} {B : X → F →L[ℝ] G} (hB : MemLpLoc p U B) (hA : ContinuousOn A U) :
+    {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    {A : X → G →L[𝕜] H} {B : X → F →L[𝕜] G} (hB : MemLpLoc p U B) (hA : ContinuousOn A U) :
     MemLpLoc p U (fun z => A z ∘L B z) := fun K hKU hK =>
   (hB K hKU hK).clm_comp_of_continuousOn (hA.mono hKU) hK hK.measurableSet subset_rfl
 
 /-- Composing a locally `Lᵖ` operator family on the right with one continuous on `U` preserves
 local `Lᵖ` membership, since the continuous factor is bounded on every compact subset of `U`. -/
 theorem MemLpLoc.clm_comp_continuousOn [OpensMeasurableSpace X] [T2Space X]
-    {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
-    {B : X → G →L[ℝ] H} {E : X → F →L[ℝ] G} (hB : MemLpLoc p U B) (hE : ContinuousOn E U) :
+    {H : Type*} [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+    {B : X → G →L[𝕜] H} {E : X → F →L[𝕜] G} (hB : MemLpLoc p U B) (hE : ContinuousOn E U) :
     MemLpLoc p U (fun z => B z ∘L E z) := fun K hKU hK =>
-  (ContinuousLinearMap.compL ℝ F G H).memLp_of_bilin p (hB K hKU hK)
+  (ContinuousLinearMap.compL 𝕜 F G H).memLp_of_bilin p (hB K hKU hK)
     ((hE.mono hKU).memLp_top_restrict_of_subset_isCompact hK hK.measurableSet subset_rfl)
 
 /-- **Hölder's inequality on compact subsets**: a locally `Lᵖ` field of continuous linear maps
 applied to a locally `L^q` field is locally integrable on a locally closed set when
 `1/p + 1/q ≤ 1`. -/
 theorem MemLpLoc.locallyIntegrableOn_clm_apply [LocallyCompactSpace X]
-    [IsFiniteMeasureOnCompacts (volume : Measure X)] {A : X → F →L[ℝ] G} {w : X → F}
+    [IsFiniteMeasureOnCompacts (volume : Measure X)] {A : X → F →L[𝕜] G} {w : X → F}
     (hA : MemLpLoc p U A) (hw : MemLpLoc q U w) (hpq : p⁻¹ + q⁻¹ ≤ 1)
     (hU : IsLocallyClosed U) : LocallyIntegrableOn (fun z => A z (w z)) U volume := by
   have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
   exact MemLpLoc.locallyIntegrableOn
-    (fun K hK hc => (ContinuousLinearMap.id ℝ (F →L[ℝ] G)).memLp_of_bilin _ (hA K hK hc)
+    (fun K hK hc => (ContinuousLinearMap.id 𝕜 (F →L[𝕜] G)).memLp_of_bilin _ (hA K hK hc)
       (hw K hK hc))
     (ENNReal.one_le_inv.2 hpq) hU
 
 /-- A factor continuous on `U` preserves local `Lᵖ` membership on `U`, since it is bounded on
 every compact subset of `U`. -/
-theorem MemLpLoc.continuousOn_smul [OpensMeasurableSpace X] [T2Space X] {χ : X → ℝ}
+theorem MemLpLoc.continuousOn_smul [OpensMeasurableSpace X] [T2Space X] {χ : X → 𝕜}
     (hf : MemLpLoc p U f) (hχ : ContinuousOn χ U) :
     MemLpLoc p U (fun z => χ z • f z) := fun K hK hc =>
   ((hχ.mono hK).memLp_top_restrict_of_subset_isCompact hc hc.measurableSet subset_rfl).smul
@@ -277,7 +279,7 @@ theorem MemLpLoc.continuousOn_smul [OpensMeasurableSpace X] [T2Space X] {χ : X 
 /-- A locally `Lᵖ` field of continuous linear maps applied to a map continuous on `U` is locally
 `Lᵖ` on `U`, since the map is bounded on every compact subset of `U`. -/
 theorem MemLpLoc.clm_apply_continuousOn [OpensMeasurableSpace X] [T2Space X]
-    {A : X → F →L[ℝ] G} (hA : MemLpLoc p U A) (hf : ContinuousOn f U) :
+    {A : X → F →L[𝕜] G} (hA : MemLpLoc p U A) (hf : ContinuousOn f U) :
     MemLpLoc p U (fun z => A z (f z)) := fun K hK hc =>
   (hA K hK hc).of_bilin (fun B x => B x) 1
     ((hf.mono hK).memLp_top_restrict_of_subset_isCompact hc hc.measurableSet subset_rfl)
@@ -288,7 +290,7 @@ theorem MemLpLoc.clm_apply_continuousOn [OpensMeasurableSpace X] [T2Space X]
 `Lᵖ` function on the whole space: on a compact set `K` the product only sees
 `K ∩ tsupport χ`, a compact subset of `U`. -/
 theorem MemLpLoc.continuous_smul_of_tsupport_subset [OpensMeasurableSpace X] [T2Space X]
-    {χ : X → ℝ} (hf : MemLpLoc p U f) (hχ : Continuous χ) (hsupp : tsupport χ ⊆ U) :
+    {χ : X → 𝕜} (hf : MemLpLoc p U f) (hχ : Continuous χ) (hsupp : tsupport χ ⊆ U) :
     MemLpLoc p univ (fun z => χ z • f z) := by
   have hT := hf.continuousOn_smul hχ.continuousOn
   have hcl : IsClosed (tsupport χ) := isClosed_tsupport χ
@@ -303,8 +305,9 @@ theorem MemLpLoc.continuous_smul_of_tsupport_subset [OpensMeasurableSpace X] [T2
 /-- A continuous compactly supported factor whose support meets the closed set `T` inside `S`
 makes a function in `MemLpLoc 1 S` integrable on `T`, even though `T` may be unbounded or leave
 `S`. -/
-theorem MemLpLoc.integrableOn_smul [OpensMeasurableSpace X] [T2Space X] {S T : Set X}
-    {h : X → F} (hh : MemLpLoc 1 S h) {f : X → ℝ} (hf : Continuous f) (hfc : HasCompactSupport f)
+theorem MemLpLoc.integrableOn_smul [OpensMeasurableSpace X] [T2Space X]
+    [SecondCountableTopologyEither X 𝕜] {S T : Set X}
+    {h : X → F} (hh : MemLpLoc 1 S h) {f : X → 𝕜} (hf : Continuous f) (hfc : HasCompactSupport f)
     (hT : IsClosed T) (hfS : tsupport f ∩ T ⊆ S) : IntegrableOn (fun z => f z • h z) T := by
   have hK : IsCompact (tsupport f ∩ T) := hfc.isCompact.inter_right hT
   have hhK : IntegrableOn h (tsupport f ∩ T) := memLp_one_iff_integrable.1 (hh _ hfS hK)
@@ -355,18 +358,18 @@ end Locality
 
 /-- Local `Lᵖ` membership can be tested in the coordinates of any finite basis of the codomain.
 No completeness of the codomain is needed. -/
-theorem _root_.Module.Basis.memLpLoc_iff {X F ι : Type*} [TopologicalSpace X] [MeasureSpace X]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [Finite ι] {p : ℝ≥0∞} {U : Set X} {f : X → F}
-    (b : Module.Basis ι ℝ F) :
+theorem _root_.Module.Basis.memLpLoc_iff {X 𝕜 F ι : Type*} [TopologicalSpace X] [MeasureSpace X]
+    [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [Finite ι] {p : ℝ≥0∞} {U : Set X} {f : X → F} (b : Module.Basis ι 𝕜 F) :
     MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun x => b.repr (f x) i) := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
-  let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
+  let : FiniteDimensional 𝕜 F := b.finiteDimensional_of_finite
   refine ⟨fun h i => h.clm_comp
     ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap), fun h => ?_⟩
   have hs : MemLpLoc p U (fun x => ∑ i, b.repr (f x) i • b i) :=
     MemLpLoc.sum Finset.univ fun i _ =>
-      (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
+      (h i).clm_comp ((ContinuousLinearMap.id 𝕜 𝕜).smulRight (b i))
   simpa only [b.sum_repr] using hs
 
 /-! ### Independence of the Haar measure and linear changes of variables -/
@@ -378,8 +381,9 @@ variable {E F : Type*} [NormedAddCommGroup F] {p : ℝ≥0∞}
 /-- **Independence of the Haar measure.** On a locally compact second-countable topological
 additive group whose `volume` is an additive Haar measure, local `Lᵖ` membership can be tested
 with any other additive Haar measure `μ`. -/
-theorem memLpLoc_iff_of_isAddHaarMeasure [AddGroup E] [TopologicalSpace E]
-    [IsTopologicalAddGroup E] [LocallyCompactSpace E] [SecondCountableTopology E]
+theorem _root_.MeasureTheory.Measure.memLpLoc_iff_of_isAddHaarMeasure [AddGroup E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [LocallyCompactSpace E]
+    [SecondCountableTopology E]
     [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
     (μ : Measure E) [μ.IsAddHaarMeasure] {U : Set E} {f : E → F} :
     MemLpLoc p U f ↔ ∀ K : Set E, K ⊆ U → IsCompact K → MemLp f p (μ.restrict K) := by
@@ -403,7 +407,7 @@ theorem MemLpLoc.comp_continuousLinearEquiv {E₁ : Type*} [NormedAddCommGroup E
   have : ((volume : Measure E₁).map e).IsAddHaarMeasure := e.isAddHaarMeasure_map volume
   have hemb : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
   intro K hKU hK
-  have h := (memLpLoc_iff_of_isAddHaarMeasure ((volume : Measure E₁).map e)).1 hu (e '' K)
+  have h := ((volume : Measure E₁).map e).memLpLoc_iff_of_isAddHaarMeasure.1 hu (e '' K)
     ((image_mono hKU).trans hUV.image_subset) (hK.image e.continuous)
   rwa [hemb.restrict_map, preimage_image_eq _ e.injective, hemb.memLp_map_measure_iff] at h
 

@@ -17,14 +17,19 @@ On a nontrivial finite-dimensional real normed space `E` with an additive Haar m
 
 * `TauCeti.memLpLoc_norm_inv_iff_lt_finrank`: the singular kernel `x ↦ ‖x‖⁻¹` is locally `Lᵖ` on
   a neighbourhood of the origin exactly when `p < dim E`; in `ℝ³`, exactly when `p < 3`;
-* `TauCeti.not_memLp_id`: the identity of `E` is locally `Lᵖ` on `E` for every `p` but belongs to
-  no global `Lᵖ`, so the class is local;
-* `TauCeti.memLpLoc_indicator_pos`: the indicator of an open half-space is locally `Lᵖ` for every
-  `p`.
+* the identity of `E` is locally `Lᵖ` on `E` for every `p` but belongs to no global `Lᵖ` with
+  `p ≠ 0` (`TauCeti.not_memLp_id`), so the class is local;
+* `StrongDual.memLpLoc_indicator_pos`: the indicator of an open half-space is locally `Lᵖ` for
+  every `p`.
 
 The checks at the end test the independence of the Haar measure on the measure `2 • volume`, and
 the transport along the coordinate identification of `ℝ × ℝ`, whose norm `max (|y₁|, |y₂|)` is not
 an inner product norm, with `EuclideanSpace ℝ (Fin 2)`.
+
+## References
+
+* The inverse-norm and identity checks follow mo271's
+  [TauCeti#41136](https://github.com/TauCetiProject/TauCeti/pull/41136).
 -/
 
 public section
@@ -51,26 +56,6 @@ example : MemLpLoc p univ (fun x : EuclideanSpace ℝ (Fin 3) => ‖x‖⁻¹) �
   simpa using memLpLoc_norm_inv_iff_lt_finrank (E := EuclideanSpace ℝ (Fin 3)) (p := p)
     Filter.univ_mem
 
-omit [(volume : Measure E).IsAddHaarMeasure] in
-/-- On a nontrivial finite-dimensional real normed space with an additive Haar measure, the
-identity map belongs to no global `Lᵖ` with `p ≠ 0`, although it is locally `Lᵖ`
-(`Continuous.memLpLoc`). -/
-theorem not_memLp_id [Nontrivial E] {μ : Measure E} [μ.IsAddHaarMeasure] (hp : p ≠ 0) :
-    ¬ MemLp (id : E → E) p μ := by
-  intro h
-  rcases eq_or_ne p ∞ with rfl | hptop
-  · have htop := h.eLpNorm_lt_top
-    rw [eLpNorm_exponent_top h.aestronglyMeasurable] at htop
-    obtain ⟨C, hC⟩ := eLpNormEssSup_lt_top_iff_isBoundedUnder.1 htop
-    obtain ⟨x, hx⟩ := exists_norm_eq E (by positivity : (0 : ℝ) ≤ (C : ℝ) + 1)
-    refine ((isOpen_lt continuous_const continuous_norm).measure_pos μ
-      (⟨x, by simp [hx]⟩ : {y : E | (C : ℝ) < ‖y‖}.Nonempty)).ne' ?_
-    rw [measure_eq_zero_iff_ae_notMem]
-    filter_upwards [hC] with y hy
-    exact not_lt.2 (NNReal.coe_le_coe.2 hy)
-  · exact μ.not_integrable_norm_sub_rpow p.toReal 0 <| by
-      simpa using (integrable_norm_rpow_iff h.aestronglyMeasurable hp hptop).2 h
-
 /-- The identity of a nontrivial `E` is locally `Lᵖ` on `E` for every `p`, and not in `Lᵖ(E)`
 for any `p ≠ 0`: the class is local. -/
 example [Nontrivial E] (hp : p ≠ 0) :
@@ -80,7 +65,7 @@ example [Nontrivial E] (hp : p ≠ 0) :
 omit [FiniteDimensional ℝ E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure] in
 /-- The indicator of an open half-space `{x | 0 < ℓ x}` is locally `Lᵖ` on every set, for every
 exponent. -/
-theorem memLpLoc_indicator_pos [OpensMeasurableSpace E]
+theorem _root_.StrongDual.memLpLoc_indicator_pos [OpensMeasurableSpace E]
     [IsFiniteMeasureOnCompacts (volume : Measure E)] (ℓ : StrongDual ℝ E) (U : Set E) :
     MemLpLoc p U ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) := memLpLoc_iff.2 fun K _ hK =>
   have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
@@ -94,7 +79,7 @@ example {F : Type*} [NormedAddCommGroup F] {U : Set E} {f : E → F} :
       ∀ K : Set E, K ⊆ U → IsCompact K → MemLp f p (((2 : ℝ≥0∞) • volume).restrict K) :=
   have : ((2 : ℝ≥0∞) • (volume : Measure E)).IsAddHaarMeasure :=
     .smul _ two_ne_zero ENNReal.ofNat_ne_top
-  memLpLoc_iff_of_isAddHaarMeasure _
+  Measure.memLpLoc_iff_of_isAddHaarMeasure _
 
 /-- `ℝ × ℝ`, with the norm `max (|y₁|, |y₂|)` and product Lebesgue measure, has the local `Lᵖ`
 classes of `EuclideanSpace ℝ (Fin 2)` through the identification of coordinates. -/
