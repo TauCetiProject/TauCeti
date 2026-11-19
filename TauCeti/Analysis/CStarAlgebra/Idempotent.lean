@@ -19,7 +19,7 @@ commutes with `e`, and
 
 `p = e * star e * z⁻¹`.
 
-Idempotents with the same range are similar (`IsIdempotentElem.isConj_of_mul_eq`), so every
+Idempotents with the same range are similar (`TauCeti.isConj_of_mul_eq`), so every
 idempotent is similar to a star projection. This is how idempotents are replaced by projections
 before using constructions, such as unitary splittings, that make sense only for self-adjoint
 idempotents.
@@ -156,8 +156,7 @@ theorem eq_rangeStarProjection_iff (he : IsIdempotentElem e) (hq : IsSelfAdjoint
 /-- Every idempotent of a unital C*-algebra is similar to its range projection. -/
 theorem isConj_rangeStarProjection (he : IsIdempotentElem e) :
     IsConj (rangeStarProjection e) e :=
-  isConj_of_mul_eq he.isStarProjection_rangeStarProjection.isIdempotentElem he
-    he.mul_rangeStarProjection he.rangeStarProjection_mul
+  isConj_of_mul_eq he.mul_rangeStarProjection he.rangeStarProjection_mul
 
 end IsIdempotentElem
 
