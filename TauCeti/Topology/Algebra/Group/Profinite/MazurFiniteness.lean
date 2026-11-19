@@ -27,9 +27,11 @@ residual representation.
 
 The condition quantifies over every open subgroup, not only over `G` itself. A group can have no
 nonzero continuous homomorphism to `𝔽_p` while an open subgroup has infinitely many: for odd `p`
-the semidirect product of `∏_ℕ ℤ/p` by an involution acting by inversion is an example
+the semidirect product of `∏_ℕ ℤ/p` by an involution acting by inversion is an example, for any
+topology on it in which `∏_ℕ ℤ/p` is open and the projection to it is continuous
 (`TauCeti.subsingleton_continuousZModDual_semidirectProduct_zpowers_inv` and
-`TauCeti.not_mazurFiniteness_semidirectProduct_pi_zmod`).
+`TauCeti.not_mazurFiniteness_semidirectProduct_pi_zmod`). Such a topology is not constructed
+here.
 
 For a profinite group the condition is equivalent to the topological finite generation of the
 maximal pro-`p` quotient of every open subgroup: characters with values in `𝔽_p` factor through
@@ -63,7 +65,8 @@ coordinate characters are pairwise distinct.
 * `TauCeti.not_mazurFiniteness_pi_zmod`: the countable power of `ℤ/p` does not satisfy `Φ_p`.
 * `TauCeti.subsingleton_continuousZModDual_semidirectProduct_zpowers_inv`,
   `TauCeti.not_mazurFiniteness_semidirectProduct_pi_zmod`: for odd `p` the semidirect product of
-  `∏_ℕ ℤ/p` by inversion has no nonzero continuous `ZMod p`-character, yet does not satisfy `Φ_p`.
+  `∏_ℕ ℤ/p` by inversion has no nonzero continuous `ZMod p`-character, yet does not satisfy `Φ_p`
+  for any topology on it in which `∏_ℕ ℤ/p` is open and the projection to it is continuous.
 
 ## References
 
@@ -273,8 +276,8 @@ theorem MazurFiniteness.semidirectProduct_left {N H : Type*} [Group N] [Group H]
     (MulEquiv.surjective _)
 
 /-- **`Φ_p` is not a condition on `G` alone.** No semidirect product of `∏_ℕ ℤ/p` satisfies `Φ_p`
-for a topology in which `∏_ℕ ℤ/p` is open and the projection to it is continuous, such as the
-profinite product topology. For odd `p` and the involution acting by inversion such a group has no
+for a topology in which `∏_ℕ ℤ/p` is open and the projection to it is continuous; such a topology
+is not constructed here. For odd `p` and the involution acting by inversion such a group has no
 nonzero continuous character to `ZMod p`, by
 `TauCeti.subsingleton_continuousZModDual_semidirectProduct_zpowers_inv`, so a definition quantifying
 only over `G` would accept it. -/
