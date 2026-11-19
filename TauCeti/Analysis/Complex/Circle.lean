@@ -231,6 +231,11 @@ theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x
   push_cast
   rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
 
+/-- For unit complex numbers, `a⁻¹ b - 1 = a⁻¹ (b - a)`. -/
+theorem coe_inv_mul_sub_one (a b : Circle) :
+    ((a⁻¹ * b : Circle) : ℂ) - 1 = ((a⁻¹ : Circle) : ℂ) * ((b : ℂ) - a) := by
+  rw [mul_sub, ← coe_mul, ← coe_mul, inv_mul_cancel, coe_one]
+
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/
 theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
