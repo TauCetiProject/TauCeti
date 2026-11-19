@@ -18,6 +18,7 @@ import Mathlib.Data.Nat.Factorization.Induction
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Data.Int.ChineseRemainder
 import TauCeti.Data.ZMod.Divisibility
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 
 /-!
 # Congruence subgroups: the pair `Γ₁(N) ⊴ Γ₀(N)`, the index of `Γ₀(N)`, and the level
@@ -625,6 +626,27 @@ theorem neg_one_mem_Gamma1_iff : (-1 : SL(2, ℤ)) ∈ Gamma1 N ↔ N ∣ 2 := b
 exactly when `N ∣ 2`. -/
 theorem neg_one_mem_Gamma_iff : (-1 : SL(2, ℤ)) ∈ Gamma N ↔ N ∣ 2 := by
   simp [Gamma_mem, ZMod.neg_one_eq_one_iff, Nat.dvd_prime Nat.prime_two]
+
+/-- The trace of an element of `Γ₁(N)` is congruent to `2` modulo `N`. -/
+theorem dvd_two_sub_trace_of_mem_Gamma1 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
+    (N : ℤ) ∣ 2 - (γ : Matrix (Fin 2) (Fin 2) ℤ).trace := by
+  apply (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp
+  obtain ⟨ha, hd, -⟩ := (Gamma1_mem N γ).mp hγ
+  simp only [Matrix.trace_fin_two, Int.cast_sub, Int.cast_add, Int.cast_ofNat, ha, hd]
+  ring
+
+/-- If a conjugate `γ g γ⁻¹` lies in `Γ₁(N)`, then the trace of `g` is congruent to `2` modulo
+`N`, as conjugation preserves the trace. -/
+theorem dvd_two_sub_trace_of_conj_mem_Gamma1 {γ g : SL(2, ℤ)} (h : γ * g * γ⁻¹ ∈ Gamma1 N) :
+    (N : ℤ) ∣ 2 - (g : Matrix (Fin 2) (Fin 2) ℤ).trace := by
+  simpa only [Matrix.SpecialLinearGroup.trace_mul_mul_inv] using dvd_two_sub_trace_of_mem_Gamma1 h
+
+/-- If a conjugate `γ g γ⁻¹` lies in `Γ(N)`, then `N` divides the lower-left entry of `g`: as
+`Γ(N)` is normal, `g` itself lies in `Γ(N)`. -/
+theorem dvd_apply_one_zero_of_conj_mem_Gamma {γ g : SL(2, ℤ)} (h : γ * g * γ⁻¹ ∈ Gamma N) :
+    (N : ℤ) ∣ g 1 0 := by
+  have hg : g ∈ Gamma N := by simpa [mul_assoc] using (Gamma_normal N).conj_mem _ h γ⁻¹
+  exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ N).mp (Gamma_mem.mp hg).2.2.1
 
 /-- **Every power of the translation matrix lies in `Γ₁(N)`, at every level.** `Tⁿ` has diagonal
 `(1, 1)` and vanishing lower-left entry, so the three congruences of `Gamma1_mem` hold with no
