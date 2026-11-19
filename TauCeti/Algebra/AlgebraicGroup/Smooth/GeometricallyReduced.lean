@@ -35,6 +35,8 @@ reducedness nor smoothness is built into the category of commutative Hopf algebr
 * `TauCeti.geometricallyReducedCommHopfAlgProperty_of_smooth`: a smooth commutative Hopf algebra
   over a field is geometrically reduced.
 * `TauCeti.smoothCommHopfAlgProperty_iff_geometricallyReduced`: the finite-type equivalence.
+* `AlgHom.smoothCommHopfAlgProperty_of_injective`: smoothness descends to a finite-type
+  commutative Hopf algebra along an injective homomorphism into a smooth algebra.
 
 ## References
 
@@ -53,7 +55,7 @@ namespace TauCeti
 
 open AlgebraicGeometry
 
-universe u v
+universe u v w
 
 noncomputable section
 
@@ -115,6 +117,24 @@ theorem smoothCommHopfAlgProperty_of_geometricallyReduced
   let _ : Algebra.Smooth k K := Algebra.Smooth.of_equiv eK
   let _ : Algebra.Smooth k (K ⊗[k] H) := Algebra.Smooth.comp k K _
   exact Algebra.Smooth.of_equiv e.symm
+
+/-- Smoothness descends to a finite-type commutative Hopf algebra along an injective algebra
+homomorphism into a smooth algebra, in any universe. Contravariantly, a finite-type affine group
+receiving a schematically dominant morphism from a smooth affine scheme is smooth. -/
+theorem _root_.AlgHom.smoothCommHopfAlgProperty_of_injective
+    {k : Type u} [Field k] {H : CommHopfAlgCat.{v} k} [Algebra.FiniteType k H]
+    {A : Type w} [CommRing A] [Algebra k A] [Algebra.Smooth k A]
+    (f : (H : Type v) →ₐ[k] A) (hf : Function.Injective f) :
+    smoothCommHopfAlgProperty k H := by
+  refine smoothCommHopfAlgProperty_of_geometricallyReduced k H
+    ((geometricallyReducedCommHopfAlgProperty_iff k H).mpr fun K _ _ ↦ ?_)
+  let _ : Algebra.Smooth K (K ⊗[k] A) := Algebra.Smooth.baseChange k A K
+  let _ : IsReduced (K ⊗[k] A) := isReduced_of_smooth K (K ⊗[k] A)
+  exact isReduced_of_injective
+    ((Algebra.TensorProduct.comm k A K).toAlgHom.comp
+      (Algebra.TensorProduct.map f (AlgHom.id k K))).toRingHom
+    ((Algebra.TensorProduct.comm k A K).injective.comp
+      (Module.Flat.rTensor_preserves_injective_linearMap f.toLinearMap hf))
 
 /-- For a finite-type commutative Hopf algebra over a field, smoothness is equivalent to geometric
 reducedness. -/
