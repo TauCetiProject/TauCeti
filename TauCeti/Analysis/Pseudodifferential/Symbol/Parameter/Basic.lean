@@ -515,6 +515,47 @@ private theorem Bounds.fderiv_apply (hΛ : IsOpen Λ) (hf : ContDiffOn ℝ ∞ f
         mul_le_mul hL h₁ (norm_nonneg _) (by positivity)
     _ = ‖e‖ * C * (parameterWeight ξ z ^ m / parameterWeight ξ z ^ d) := by ring
 
+/-- A smooth function that is quasi-homogeneous of degree `m` has the estimates of order `m`: the
+dilated derivative at `p = ((x, ξ), z)` is `w ^ m` times the ordinary derivative at the point
+`parameterDilation n w⁻¹ p`, whose frequency and spectral parameter have norm at most `1`. -/
+private theorem bounds_of_quasiHomogeneous (Λ : Set ℂ)
+    (hf : ContDiff ℝ ∞ f)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ p, f (parameterDilation n t p) = t ^ m • f p) :
+    Bounds Λ m f := fun K hK k => by
+  obtain ⟨C, hC⟩ := ((hK.prod (isCompact_closedBall (0 : CoordinateSpace n) 1)).prod
+    (isCompact_closedBall (0 : ℂ) 1)).exists_bound_of_continuousOn
+    (hf.continuous_iteratedFDeriv (m := k) (by exact_mod_cast le_top)).continuousOn
+  refine ⟨max C 0, le_max_right _ _, fun x hx ξ z _ => ?_⟩
+  set t := parameterWeight ξ z with ht_def
+  have ht : 0 < t := parameterWeight_pos ξ z
+  set q := parameterDilation n t⁻¹ ((x, ξ), z) with hqdef
+  have hDq : parameterDilation n t q = ((x, ξ), z) := by
+    simp [hqdef, smul_smul, ht.ne']
+  -- The dilation by `t` takes `v + q` to `((x, ξ), z) + parameterDilation n t v`.
+  have hq : (fun v => f (((x, ξ), z) + parameterDilation n t v)) = fun v => t ^ m • f (v + q) := by
+    funext v
+    rw [← hhom t ht, map_add, hDq, add_comm]
+  have hmem : q ∈ (K ×ˢ Metric.closedBall (0 : CoordinateSpace n) 1) ×ˢ
+      Metric.closedBall (0 : ℂ) 1 := by
+    simp only [hqdef, parameterDilation_apply, mem_prod, mem_closedBall_zero_iff, norm_smul,
+      Real.norm_eq_abs, abs_inv, abs_pow, abs_of_pos ht, inv_pow]
+    refine ⟨⟨hx, ?_⟩, ?_⟩
+    · rw [inv_mul_le_one₀ ht]
+      exact norm_le_parameterWeight ξ z
+    · rw [inv_mul_le_one₀ (by positivity)]
+      exact norm_le_parameterWeight_sq ξ z
+  have hfq : ContDiff ℝ ∞ fun v => f (v + q) := hf.comp (contDiff_id.add contDiff_const)
+  have heq : parameterIteratedFDeriv k f ((x, ξ), z) = t ^ m • iteratedFDeriv ℝ k f q := by
+    rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+    dsimp only
+    rw [← ht_def, hq,
+      iteratedFDeriv_const_smul_apply' (hfq.contDiffAt.of_le (by exact_mod_cast le_top)),
+      iteratedFDeriv_comp_add_right, zero_add]
+  have htm := Real.rpow_pos_of_pos ht m
+  rw [heq, norm_smul, Real.norm_eq_abs, abs_of_pos htm, mul_comm]
+  gcongr
+  exact (hC q hmem).trans (le_max_left _ _)
+
 end Estimates
 
 /-! ### Strongly parameter-dependent symbols -/
@@ -906,44 +947,25 @@ private theorem contDiff_laplacianSymbol (s : ℝ) :
   exact (Complex.ofRealCLM.contDiff.comp (contDiff_const.add
     ((contDiff_norm_sq ℝ).comp (contDiff_snd.comp contDiff_fst)))).sub contDiff_snd
 
-/-- The scalar symbol `(s + ‖ξ‖²) - z` has order `2`: `‖ξ‖²` is a product of two functions of
-order `1`, and `z` has order `2`. -/
+/-- The scalar symbol `(s + ‖ξ‖²) - z` has order `2`: it is the constant `s` plus the function
+`‖ξ‖² - z`, which is quasi-homogeneous of degree `2`. -/
 private theorem bounds_laplacianSymbol (Λ : Set ℂ) (hΛ : IsOpen Λ) (s : ℝ) :
     Bounds Λ 2 (laplacianSymbol (n := n) s) := by
-  let π : (CoordinateSpace n × CoordinateSpace n) × ℂ →L[ℝ] CoordinateSpace n :=
-    (ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.fst ℝ _ _)
-  let ζ : (CoordinateSpace n × CoordinateSpace n) × ℂ →L[ℝ] ℂ := ContinuousLinearMap.snd ℝ _ _
-  let B : CoordinateSpace n →L[ℝ] CoordinateSpace n →L[ℝ] ℂ :=
-    (ContinuousLinearMap.compL ℝ (CoordinateSpace n) ℝ ℂ Complex.ofRealCLM).comp (innerSL ℝ)
-  have hπ : Bounds Λ 1 π := bounds_continuousLinearMap π (C := 1)
-    (fun x ξ z _ => by simpa [π] using norm_le_parameterWeight ξ z) (fun ξ z _ => by
-      rw [Real.rpow_one, one_mul]
-      refine ContinuousLinearMap.opNorm_le_bound _ (parameterWeight_pos ξ z).le fun v => ?_
-      simp only [π, ContinuousLinearMap.comp_apply, parameterDilation_apply,
-        ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', norm_smul,
-        Real.norm_eq_abs, abs_of_pos (parameterWeight_pos ξ z)]
-      exact mul_le_mul_of_nonneg_left ((norm_snd_le v.1).trans (norm_fst_le v))
-        (parameterWeight_pos ξ z).le)
-  have hζ : Bounds Λ 2 (-ζ) := bounds_continuousLinearMap (-ζ) (C := 1)
-    (fun x ξ z _ => by simpa [ζ, Real.rpow_two] using norm_le_parameterWeight_sq ξ z)
-    (fun ξ z _ => by
-      rw [Real.rpow_two, one_mul, ContinuousLinearMap.neg_comp, norm_neg]
-      refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v => ?_
-      simp only [ζ, ContinuousLinearMap.comp_apply, parameterDilation_apply,
-        ContinuousLinearMap.coe_snd', norm_smul, Real.norm_eq_abs,
-        abs_of_nonneg (sq_nonneg (parameterWeight ξ z))]
-      exact mul_le_mul_of_nonneg_left (norm_snd_le v) (sq_nonneg _))
-  have hππ : Bounds Λ 2 (fun p => B (π p) (π p)) :=
-    (Bounds.bilinear hΛ B π.contDiff.contDiffOn π.contDiff.contDiffOn hπ hπ).mono
-      (by norm_num)
-  have hBs : ContDiffOn ℝ ∞ (fun p => B (π p) (π p)) (univ ×ˢ Λ) :=
-    ((B.isBoundedBilinearMap.contDiff (n := ∞)).comp (π.contDiff.prodMk π.contDiff)).contDiffOn
-  have h₁ : Bounds Λ 2 (fun p => (s : ℂ) + B (π p) (π p)) :=
-    Bounds.add hΛ contDiffOn_const hBs ((bounds_const (Λ := Λ) (s : ℂ)).mono zero_le_two) hππ
-  have h₂ : Bounds Λ 2 (fun p => ((s : ℂ) + B (π p) (π p)) + (-ζ) p) :=
-    Bounds.add hΛ (contDiffOn_const.add hBs) (-ζ).contDiff.contDiffOn h₁ hζ
-  refine h₂.congr fun p _ => Filter.Eventually.of_forall fun q => ?_
-  simp [laplacianSymbol, B, π, ζ, sub_eq_add_neg]
+  have hg : ContDiff ℝ ∞ fun p : (CoordinateSpace n × CoordinateSpace n) × ℂ =>
+      ((‖p.1.2‖ ^ 2 : ℝ) : ℂ) - p.2 :=
+    (Complex.ofRealCLM.contDiff.comp ((contDiff_norm_sq ℝ).comp
+      (contDiff_snd.comp contDiff_fst))).sub contDiff_snd
+  have hhom (t : ℝ) (ht : 0 < t) (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
+      ((‖(parameterDilation n t p).1.2‖ ^ 2 : ℝ) : ℂ) - (parameterDilation n t p).2 =
+        t ^ (2 : ℝ) • (((‖p.1.2‖ ^ 2 : ℝ) : ℂ) - p.2) := by
+    simp [parameterDilation_apply, norm_smul, abs_of_pos ht, smul_sub, Complex.real_smul,
+      mul_pow]
+  refine (Bounds.add hΛ contDiffOn_const hg.contDiffOn
+    ((bounds_const (Λ := Λ) (s : ℂ)).mono zero_le_two)
+    (bounds_of_quasiHomogeneous Λ hg hhom)).congr fun p _ => Filter.Eventually.of_forall
+      fun q => ?_
+  simp only [laplacianSymbol, Complex.ofReal_add]
+  ring
 
 /-- The sector estimate for a real `q ≥ μ ‖ξ‖²`, `μ > 0`: for a spectral parameter `z` in the
 sector `Re z ≤ c ‖z‖`, `c < 1`, with `δ ≤ q + ‖z‖`, `δ > 0`, the modulus of `q - z` is at least a
@@ -1080,47 +1102,6 @@ theorem spatialDeriv_shiftedLaplacian (s : ℝ) (v : CoordinateSpace n) :
 
 /-! ### Quasi-homogeneous symbols -/
 
-/-- A smooth function that is quasi-homogeneous of degree `m` has the estimates of order `m`: the
-dilated derivative at `p = ((x, ξ), z)` is `w ^ m` times the ordinary derivative at the point
-`parameterDilation n w⁻¹ p`, whose frequency and spectral parameter have norm at most `1`. -/
-private theorem bounds_of_quasiHomogeneous (Λ : Set ℂ)
-    {f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
-    (hhom : ∀ t : ℝ, 0 < t → ∀ p, f (parameterDilation n t p) = t ^ m • f p) :
-    Bounds Λ m f := fun K hK k => by
-  obtain ⟨C, hC⟩ := ((hK.prod (isCompact_closedBall (0 : CoordinateSpace n) 1)).prod
-    (isCompact_closedBall (0 : ℂ) 1)).exists_bound_of_continuousOn
-    (hf.continuous_iteratedFDeriv (m := k) (by exact_mod_cast le_top)).continuousOn
-  refine ⟨max C 0, le_max_right _ _, fun x hx ξ z _ => ?_⟩
-  set t := parameterWeight ξ z with ht_def
-  have ht : 0 < t := parameterWeight_pos ξ z
-  set q := parameterDilation n t⁻¹ ((x, ξ), z) with hqdef
-  have hDq : parameterDilation n t q = ((x, ξ), z) := by
-    simp [hqdef, smul_smul, ht.ne']
-  -- The dilation by `t` takes `v + q` to `((x, ξ), z) + parameterDilation n t v`.
-  have hq : (fun v => f (((x, ξ), z) + parameterDilation n t v)) = fun v => t ^ m • f (v + q) := by
-    funext v
-    rw [← hhom t ht, map_add, hDq, add_comm]
-  have hmem : q ∈ (K ×ˢ Metric.closedBall (0 : CoordinateSpace n) 1) ×ˢ
-      Metric.closedBall (0 : ℂ) 1 := by
-    simp only [hqdef, parameterDilation_apply, mem_prod, mem_closedBall_zero_iff, norm_smul,
-      Real.norm_eq_abs, abs_inv, abs_pow, abs_of_pos ht, inv_pow]
-    refine ⟨⟨hx, ?_⟩, ?_⟩
-    · rw [inv_mul_le_one₀ ht]
-      exact norm_le_parameterWeight ξ z
-    · rw [inv_mul_le_one₀ (by positivity)]
-      exact norm_le_parameterWeight_sq ξ z
-  have hfq : ContDiff ℝ ∞ fun v => f (v + q) := hf.comp (contDiff_id.add contDiff_const)
-  have heq : parameterIteratedFDeriv k f ((x, ξ), z) = t ^ m • iteratedFDeriv ℝ k f q := by
-    rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
-    dsimp only
-    rw [← ht_def, hq,
-      iteratedFDeriv_const_smul_apply' (hfq.contDiffAt.of_le (by exact_mod_cast le_top)),
-      iteratedFDeriv_comp_add_right, zero_add]
-  have htm := Real.rpow_pos_of_pos ht m
-  rw [heq, norm_smul, Real.norm_eq_abs, abs_of_pos htm, mul_comm]
-  gcongr
-  exact (hC q hmem).trans (le_max_left _ _)
-
 open scoped Classical in
 /-- A smooth function `f((x, ξ), z)` that is quasi-homogeneous of degree `m`,
 `f((x, t ξ), t² z) = t ^ m f((x, ξ), z)` for `t > 0`, as a parameter-dependent symbol of order `m`
@@ -1134,7 +1115,7 @@ def ofQuasiHomogeneous (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → 
     (hhom : ∀ t : ℝ, 0 < t → ∀ p, f (parameterDilation n t p) = t ^ m • f p) :
     ParameterSymbol n Λ V W m where
   coefficient p := if p.2 ∈ Λ then f p else 0
-  contDiffOn_coefficient := hf.contDiffOn.congr fun p hp => by simp [show p.2 ∈ Λ from hp.2]
+  contDiffOn_coefficient := hf.contDiffOn.congr fun p hp => by simp [SetLike.mem_coe.1 hp.2]
   coefficient_of_notMem p hp := by simp [hp]
   exists_bound := by
     refine (bounds_of_quasiHomogeneous Λ hf hhom).congr fun p hp => ?_
@@ -1179,8 +1160,8 @@ theorem spatialDeriv_spectralParameter (v : CoordinateSpace n) :
 that is invertible with `‖a((x, ξ), z)⁻¹‖ ≤ C w ^ (-m)`, and `r` a symbol with
 `‖r((x, ξ), z)‖ ≤ D w ^ (m - 1)`, both uniformly in the position, where
 `w = 1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)`. If `2 C D ≤ 1 + ‖z‖ ^ (1 / 2)` for every `z ∈ Λ`, then `a + r` is
-elliptic with parameter, with `‖(a + r)⁻¹‖ ≤ 2 C w ^ (-m)`: the relative size `‖a⁻¹ r‖` of the
-perturbation is at most `C D / w`, at most `1 / 2` at spectral parameters of large modulus. -/
+elliptic with parameter: the relative size `‖a⁻¹ r‖` of the perturbation is at most `C D / w`,
+at most `1 / 2` at spectral parameters of large modulus. -/
 theorem isElliptic_add [CompleteSpace V] {a r : ParameterSymbol n Λ V W m} {C D : ℝ}
     (ha : ∀ x ξ, ∀ z ∈ Λ, (a.coefficient ((x, ξ), z)).IsInvertible)
     (hC : ∀ x ξ, ∀ z ∈ Λ,
