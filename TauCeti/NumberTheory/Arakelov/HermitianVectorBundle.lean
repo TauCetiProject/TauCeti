@@ -40,8 +40,9 @@ The structure is `TauCeti.HermitianVectorBundle`; the other names are in its nam
 * `rescale`: the bundle `Ē(c)` with norms `e^{-c} ‖·‖_σ`.
 * `Isometry`: `𝓞 K`-linear isomorphisms whose complexifications
   are unitary at every embedding.
-* `sectionDegree`: the Arakelov degree
-  `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` computed with a section `s`.
+* `sectionDegree`: the expression `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` attached to a section `s`.
+  For a nonzero section of a bundle of rank one it is the Arakelov degree of the bundle; for other
+  bundles or sections it is only this expression, not a degree of the bundle.
 
 ## References
 
@@ -354,10 +355,10 @@ section SectionDegree
 
 variable [NumberField K]
 
-/-- The Arakelov degree of a hermitian line bundle computed with a section `s`:
-`log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ`, the sum running over all field embeddings
-`σ : K →+* ℂ`. For a nonzero section of a hermitian line bundle this is the Arakelov degree of
-the bundle; its independence of the section is the product formula. -/
+/-- The expression `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` attached to a section `s`, the sum
+running over all field embeddings `σ : K →+* ℂ`. For a nonzero section of a hermitian vector
+bundle of rank one this is the Arakelov degree of the bundle; its independence of the section is
+the product formula. For other bundles or sections it is only this expression. -/
 def sectionDegree (s : E) : ℝ :=
   Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (E.norm σ s)
 
