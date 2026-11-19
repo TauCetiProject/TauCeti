@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Finiteness
+public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.GroupTheory.Torsion
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 
@@ -20,10 +21,12 @@ Mathlib has a substantial theory of finitely generated commutative groups in
 `Mathlib/GroupTheory/FiniteAbelian/Basic.lean` — the structure theorem, `finite_of_fg_isMulTorsion`,
 and `Subgroup.finiteIndex_range_powMonoidHom_of_fg`, which is the finiteness of `G ⧸ Gⁿ`. Three
 closure properties it does not carry are collected here, together with finiteness of the torsion
-subgroup and a `Fin`-indexed form of finite generation.
+subgroup, cyclic finite generation, and a `Fin`-indexed form of finite generation.
 
 ## Main results
 
+* `Group.instFGOfIsCyclic` and `AddGroup.instFGOfIsAddCyclic`: every cyclic group is finitely
+  generated.
 * `TauCeti.CommGroup.finite_torsion_of_fg` and `TauCeti.AddCommGroup.finite_torsion_of_fg`: the
   torsion subgroup of a finitely generated abelian group is finite, using Mathlib's
   `CommGroup.finite_of_fg_isMulTorsion`.
@@ -96,6 +99,15 @@ general, and `Subgroup.fg_of_fg_map_of_fg_inf_ker` has no counterpart there at a
 -/
 
 public section
+
+/-- Every cyclic group is finitely generated. -/
+@[to_additive /-- Every cyclic additive group is finitely generated. -/]
+instance (priority := 100) Group.instFGOfIsCyclic (G : Type*) [Group G] [IsCyclic G] :
+    Group.FG G := by
+  obtain ⟨g, hg⟩ := exists_zpow_surjective G
+  refine Group.fg_iff.mpr ⟨{g}, eq_top_iff.mpr fun x _ ↦ ?_, Set.finite_singleton g⟩
+  obtain ⟨k, rfl⟩ := hg x
+  exact zpow_mem (Subgroup.subset_closure (Set.mem_singleton g)) k
 
 /-- **A subgroup of a finitely generated additive commutative group is finitely generated.** The
 additive form of `Subgroup.fg_of_commGroup`. -/
