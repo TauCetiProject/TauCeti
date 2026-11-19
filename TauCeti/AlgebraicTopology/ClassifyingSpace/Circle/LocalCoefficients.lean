@@ -257,27 +257,6 @@ theorem isZero_circleTwistedCohomology_add_two (n : ℕ) :
 
 end Cohomology
 
-/-- In the sign representation, precomposition with `T - 𝟙` is multiplication by `-2` on
-`Hom(ℤ, ℤ)`. -/
-private theorem lcomp_intSignRep_apply (φ : ℤ →ₗ[ℤ] ℤ) :
-    LinearMap.lcomp ℤ ℤ (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id) φ = -2 • φ := by
-  ext
-  simpa [intSignRep_ρ_ofAdd_one_sub_id_apply] using φ.map_smul (2 : ℤ) 1
-
-/-- In the sign representation, the maps `φ ∘ (T - 𝟙)` correspond to `2ℤ` under the evaluation
-isomorphism `Hom(ℤ, ℤ) ≃ ℤ`. -/
-private theorem map_range_lcomp_intSignRep :
-    (LinearMap.range (LinearMap.lcomp ℤ ℤ
-        (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id))).map
-      (LinearMap.ringLmapEquivSelf ℤ ℤ ℤ : (ℤ →ₗ[ℤ] ℤ) →ₗ[ℤ] ℤ) = Ideal.span {(2 : ℤ)} := by
-  ext x
-  rw [Submodule.mem_map, Ideal.mem_span_singleton']
-  constructor
-  · rintro ⟨_, ⟨φ, rfl⟩, rfl⟩
-    exact ⟨-φ 1, by simp⟩
-  · rintro ⟨y, rfl⟩
-    exact ⟨_, ⟨-y • LinearMap.id, rfl⟩, by simp⟩
-
 /-- **The circle with integral coefficients of monodromy `-1` has `H⁰ = 0`** for the cochains with
 values in `ℤ`: a map `φ : ℤ → ℤ` with `φ ∘ (-1) = φ` vanishes. -/
 theorem isZero_circleTwistedCohomology_zero_intSignRep :
@@ -287,7 +266,7 @@ theorem isZero_circleTwistedCohomology_zero_intSignRep :
       (LinearMap.lcomp ℤ ℤ (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id)) = ⊥ := by
     rw [LinearMap.ker_eq_bot']
     intro φ hφ
-    rw [lcomp_intSignRep_apply] at hφ
+    rw [lcomp_intSignRep_ρ_ofAdd_one_sub_id_apply] at hφ
     exact (smul_eq_zero.1 hφ).resolve_left (by norm_num)
   rw [h]
   exact ModuleCat.isZero_of_subsingleton _
@@ -300,7 +279,7 @@ def circleTwistedCohomologyIntSignRepIso₁ZMod :
       ModuleCat.of ℤ (ZMod 2) :=
   circleTwistedCohomologyIso₁ intSignRep ℤ ≪≫
     (Submodule.Quotient.equiv _ _ (LinearMap.ringLmapEquivSelf ℤ ℤ ℤ)
-        (map_range_lcomp_intSignRep.trans (by rw [Nat.cast_ofNat])) ≪≫ₗ
+        (map_range_lcomp_intSignRep_ρ_ofAdd_one_sub_id.trans (by rw [Nat.cast_ofNat])) ≪≫ₗ
       (Int.quotientSpanNatEquivZMod 2).toAddEquiv.toIntLinearEquiv).toModuleIso
 
 end TauCeti
