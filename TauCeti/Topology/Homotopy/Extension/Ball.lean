@@ -42,6 +42,7 @@ hypothesis of the compression lemma for CW complexes.
   subspace and does not raise heights.
 * `TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`: **the unit sphere has the homotopy
   extension property inside the closed unit ball.**
+* `Metric.contractibleSpace_closedBall_one`: the closed unit ball is contractible.
 * `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`: a map out of the unit sphere is
   null-homotopic exactly when it extends over the closed unit ball.
 * `ContinuousMap.HomotopicWith.exists_homotopicRel_range_subset`: a map of pairs homotopic through
@@ -201,6 +202,15 @@ theorem hasHomotopyExtensionProperty_sphere_closedBall :
 
 end TauCeti
 
+namespace Metric
+
+/-- The closed unit ball of a real seminormed space is contractible, being convex. -/
+instance contractibleSpace_closedBall_one {E : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℝ E] {x : E} : ContractibleSpace (closedBall x 1) :=
+  (convex_closedBall x 1).contractibleSpace ⟨x, mem_closedBall_self zero_le_one⟩
+
+end Metric
+
 namespace ContinuousMap
 
 open Metric Set unitInterval
@@ -227,8 +237,6 @@ theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y
       (hK 1 ⟨⟨y, sphere_subset_closedBall y.2⟩, y.2⟩).trans (H.apply_one y)⟩
   · -- The closed ball is contractible, so every map out of it is null-homotopic.
     rintro ⟨G, hG⟩
-    have : ContractibleSpace (closedBall (0 : E) 1) :=
-      (convex_closedBall 0 1).contractibleSpace ⟨0, mem_closedBall_self zero_le_one⟩
     let ι : C(sphere (0 : E) 1, closedBall (0 : E) 1) :=
       ⟨fun y ↦ ⟨y, sphere_subset_closedBall y.2⟩, by fun_prop⟩
     have hg : g = (G.comp (ContinuousMap.id _)).comp ι := by

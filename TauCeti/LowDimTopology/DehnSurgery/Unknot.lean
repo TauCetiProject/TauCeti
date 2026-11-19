@@ -115,8 +115,6 @@ theorem framingNumber_unknotSolidTorus :
     FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap, ← singularHomologyMap_comp,
     singularHomologyMap_torusClass]
   -- The longitude is the boundary of a meridian disc of the exterior, which is contractible.
-  have : ContractibleSpace (closedBall (0 : ℂ) 1) :=
-    (convex_closedBall 0 1).contractibleSpace ⟨0, by simp⟩
   have hdisc := (SimplyConnectedSpace.paths_homotopic diskBoundaryLoop (Path.refl _)).map
     exteriorMeridianDisc
   rw [loopClass_eq_of_apply_eq _ (diskBoundaryLoop.map exteriorMeridianDisc.continuous) fun t ↦ ?_,

@@ -164,9 +164,6 @@ private lemma ballPoint_down (c : ℝ) (hc : |c| ≤ 1) :
     ((ballPoint.{u} c hc : ULift.{u} (Fin 1 → ℝ))).down = fun _ ↦ c :=
   (rfl)
 
-private instance : ContractibleSpace (closedBall (0 : ULift.{u} (Fin 1 → ℝ)) 1) :=
-  (convex_closedBall _ _).contractibleSpace ⟨0, mem_closedBall_self zero_le_one⟩
-
 omit [T2Space B] in
 private lemma cellULiftMap_ballPoint (j : cell C 1) (c : ℝ) (hc : |c| ≤ 1) :
     cellULiftMap C 1 j (ballPoint c hc) = map 1 j (fun _ ↦ c) :=
