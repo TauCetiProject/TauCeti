@@ -97,9 +97,9 @@ universe w v u
 
 namespace TauCeti
 
-section Pair
+section ZeroSectionCompl
 
-variable {B : Type w} (F : Type*) (E : B → Type w) [∀ b, Zero (E b)]
+variable {B : Type*} (F : Type*) (E : B → Type*) [∀ b, Zero (E b)]
 
 /-- The complement `E₀` of the zero section in the total space of a bundle: its nonzero
 vectors. -/
@@ -122,6 +122,12 @@ theorem zeroSectionCompl_eq_compl_range :
     exact hx rfl
   · intro h hx
     exact h b (by rw [hx]; rfl)
+
+end ZeroSectionCompl
+
+section Pair
+
+variable {B : Type w} (F : Type*) (E : B → Type w) [∀ b, Zero (E b)]
 
 variable [TopologicalSpace (TotalSpace F E)]
 
@@ -250,8 +256,8 @@ end Pair
 
 section Open
 
-variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
 
 variable (F E) in
@@ -617,19 +623,19 @@ theorem zeroSectionHom_comp_thomPairProj : zeroSectionHom F E ≫ thomPairProj F
 to the identity of the total space. -/
 def thomPairProjZeroSectionHomotopy :
     TopCat.Homotopy (thomPairProj F E ≫ zeroSectionHom F E) (𝟙 _) where
-  toFun p := TotalSpace.mk' F p.2.proj ((p.1 : ℝ) • p.2.2)
+  toFun p := TotalSpace.mk' F p.2.proj ((p.1 : ℝ) • p.2.snd)
   continuous_toFun := (TauCeti.VectorBundle.continuous_smul ℝ F E).comp
-    ((continuous_subtype_val.comp continuous_fst).prodMk continuous_snd)
+    ((continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd)
   map_zero_left v := by
-    refine (congrArg (TotalSpace.mk' F v.proj) (zero_smul ℝ v.2)).trans ?_
+    refine (congrArg (TotalSpace.mk' F v.proj) (zero_smul ℝ v.snd)).trans ?_
     rw [ConcreteCategory.comp_apply]
     exact ((zeroSectionHom_apply F E _).trans
       (congrArg (zeroSection F E) (thomPairProj_apply F E v))).symm
-  map_one_left v := congrArg (TotalSpace.mk' F v.proj) (one_smul ℝ v.2)
+  map_one_left v := congrArg (TotalSpace.mk' F v.proj) (one_smul ℝ v.snd)
 
 @[simp]
 theorem thomPairProjZeroSectionHomotopy_apply (p : unitInterval × (thomPair F E).fst) :
-    thomPairProjZeroSectionHomotopy F E p = TotalSpace.mk' F p.2.proj ((p.1 : ℝ) • p.2.2) :=
+    thomPairProjZeroSectionHomotopy F E p = TotalSpace.mk' F p.2.proj ((p.1 : ℝ) • p.2.snd) :=
   (rfl)
 
 /-- Pulling back along the projection and then along the zero section is the identity of the
