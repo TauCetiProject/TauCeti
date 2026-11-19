@@ -85,6 +85,8 @@ holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
   zero of infinite order.
 * `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_hasWeakConjWirtingerDerivOn`: a solution that is
   not identically zero on a connected open set has isolated zeros.
+* `TauCeti.exists_analyticOrderAt_eq_of_hasWeakConjWirtingerDerivOn`: each zero of such a
+  solution has a finite positive order `m`, with `‖ξ z‖ ≍ ‖z - z₀‖ ^ m` near it.
 * `TauCeti.exists_similarity_of_contDiffOn`, `TauCeti.hasSimilarityFactorizationAt_of_contDiffOn`,
   `TauCeti.eqOn_zero_of_contDiffOn_of_forall_isBigO` and
   `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn`: the same for classical solutions.
@@ -527,6 +529,23 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_hasWeakConjWirtingerDerivOn (hp : 
   have := FiniteDimensional.completeSpace ℂ V
   exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt Ω.isOpen hΩc hξ
     (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn hp hC hξ heq hz) hne
+
+/-- **Positive orders** of the zeros of weak solutions with `Lᵖ` coefficients, `p > 2`. On a
+connected open set `Ω`, let `ξ` be a continuous weak solution of `∂ₛξ + i ∂ₜξ + C ξ = 0` that is
+not identically zero. At a zero `z₀ ∈ Ω`, every similarity factorization `ξ = Φ σ` has `σ` of the
+same finite positive analytic order `m`, and `‖ξ z‖` is comparable to `‖z - z₀‖ ^ m` near
+`z₀`. -/
+theorem exists_analyticOrderAt_eq_of_hasWeakConjWirtingerDerivOn (hp : 2 < p)
+    (hΩc : IsPreconnected (Ω : Set ℂ)) (hC : MemLpLoc p Ω C) (hξ : ContinuousOn ξ Ω)
+    (heq : HasWeakConjWirtingerDerivOn volume Ω ξ (fun z ↦ (2 : ℂ)⁻¹ • -C z (ξ z)))
+    (hne : ∃ z ∈ Ω, ξ z ≠ 0) {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (hξ₀ : ξ z₀ = 0) :
+    ∃ m : ℕ, 0 < m ∧ (ξ =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m) ∧
+      ∀ (Φ : ℂ → V →L[ℝ] V) (σ : ℂ → V), ContinuousAt Φ z₀ → IsUnit (Φ z₀) →
+        AnalyticAt ℂ σ z₀ → (∀ᶠ z in 𝓝 z₀, ξ z = Φ z (σ z)) → analyticOrderAt σ z₀ = m := by
+  have := FiniteDimensional.completeSpace ℂ V
+  exact exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt Ω.isOpen hΩc hξ
+    (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn hp hC hξ heq hz)
+    hne hz₀ hξ₀
 
 /-! ### Classical solutions -/
 
