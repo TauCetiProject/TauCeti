@@ -105,6 +105,7 @@ theorem mk_apply (a b : M) : mk R M a b = Submodule.Quotient.mk (a ⊗ₜ[R] b) 
   (rfl)
 
 /-- The wedge is skew: `a ∧ b + b ∧ a = 0`. -/
+@[simp]
 theorem mk_add_mk_swap (a b : M) : mk R M a b + mk R M b a = 0 := by
   rw [mk_apply, mk_apply, ← Submodule.Quotient.mk_add, Submodule.Quotient.mk_eq_zero]
   exact ⟨a ⊗ₜ b, by simp⟩
@@ -114,6 +115,7 @@ theorem mk_swap (a b : M) : mk R M b a = -mk R M a b :=
   eq_neg_of_add_eq_zero_right (mk_add_mk_swap a b)
 
 /-- The diagonal class `a ∧ a` is `2`-torsion. -/
+@[simp]
 theorem two_nsmul_mk_self (a : M) : 2 • mk R M a a = 0 := by
   rw [two_nsmul, mk_add_mk_swap]
 
@@ -123,7 +125,8 @@ theorem mk_add_add (a b : M) : mk R M (a + b) (a + b) = mk R M a a + mk R M b b 
   abel
 
 variable (R M) in
-/-- The diagonal `a ↦ a ∧ a`, an additive map. It is not `R`-linear: it scales by `r ^ 2`. -/
+/-- The diagonal `a ↦ a ∧ a`, an additive map. It need not be `R`-linear;
+it satisfies `diag (r • a) = r ^ 2 • diag a`. -/
 def diag : M →+ antisymSquare R M where
   toFun a := mk R M a a
   map_zero' := by simp
