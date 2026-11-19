@@ -35,6 +35,8 @@ that pass to the limit from smooth data:
 
 * it agrees with the classical solution on `C_b^{2,α}` initial data, and it is the only continuous
   linear map that does;
+* it is within `exp (‖c‖ T) (1 + T) δ` of the classical solution whose `C_b^{2,α}` datum is
+  uniformly within `δ` of `g`;
 * the one-sided maximum principle bound `u ≤ exp (γ t) (M + t K)` for `f ≤ K`, `g ≤ M`, hence the
   two-sided bound and the comparison principle;
 * `u(·, 0) = g`, and `u(·, t) → g` uniformly as `t → 0⁺`.
@@ -237,6 +239,40 @@ theorem norm_euclideanCauchySolutionBUC_apply_le
   LinearMap.norm_extendOfNorm_apply_le (denseRange_dataMap hα₁.le) _
     (norm_solutionValue_le hα₀ hα₁ hT ha) d
 
+/-- **Comparison with a classical solution.** If the bounded `C^{2,α}` function `g` is uniformly
+within `δ` of the initial datum `w`, then the extended solution with data `(f, w)` is uniformly
+within `exp (‖c‖ T) (1 + T) δ` of the classical solution with data `(f, g)`. -/
+theorem abs_euclideanCauchySolutionBUC_apply_sub_le
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (w : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) {δ : ℝ}
+    (hg : ∀ x, |(w : EuclideanSpace ℝ ι →ᵇ ℝ) x - g x| ≤ δ)
+    (p : slab (E := EuclideanSpace ℝ ι) 0 T) :
+    |euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) p -
+        (euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g) p| ≤
+      Real.exp (‖c‖ * T) * (1 + T) * δ := by
+  have hδ : 0 ≤ δ := (abs_nonneg _).trans (hg 0)
+  have hnorm : ‖w - toBUC g‖ ≤ δ := by
+    rw [← ClosedSubmodule.norm_coe]
+    refine (norm_le hδ).2 fun x ↦ ?_
+    have hx := hg x
+    rwa [← toBUC_apply, ← Real.norm_eq_abs, ← _root_.sub_apply] at hx
+  -- By linearity, the difference is the extended solution with data `(0, w - g)`.
+  have hsub : euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) -
+      valueL ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) =
+        euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (0, w - toBUC g) := by
+    rw [← euclideanCauchySolutionBUC_toBUC, ← map_sub, Prod.mk_sub_mk, sub_self]
+  have hn := norm_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT (b := b) (c := c) ha
+    (0, w - toBUC g)
+  rw [Prod.norm_def, norm_zero, max_eq_right (norm_nonneg _)] at hn
+  calc _ = ‖(euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) -
+        valueL ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g))) p‖ := by
+        rw [Real.norm_eq_abs, _root_.sub_apply, valueL_apply]
+    _ ≤ _ := by
+      rw [hsub]
+      exact (norm_coe_le_norm _ p).trans
+        (hn.trans (mul_le_mul_of_nonneg_left hnorm (by positivity)))
+
 /-- Every initial datum in `BUC` is approximated, within any `δ > 0`, by a bounded `C^{2,α}`
 function, and the extended solutions are then within `exp (‖c‖ T) (1 + T) δ` of each other. -/
 private theorem exists_ckHolderSpace_approx
@@ -249,23 +285,11 @@ private theorem exists_ckHolderSpace_approx
         Real.exp (‖c‖ * T) * (1 + T) * δ := by
   obtain ⟨_, ⟨g, rfl⟩, hg⟩ := Metric.mem_closure_iff.1 (denseRange_toBUC hα₁.le w) δ hδ
   rw [dist_eq_norm] at hg
-  refine ⟨g, fun x ↦ ?_, fun p ↦ ?_⟩
-  · rw [← toBUC_apply, ← Real.norm_eq_abs, ← _root_.sub_apply]
+  have hgw (x) : |(w : EuclideanSpace ℝ ι →ᵇ ℝ) x - g x| < δ := by
+    rw [← toBUC_apply, ← Real.norm_eq_abs, ← _root_.sub_apply]
     exact (norm_coe_le_norm _ x).trans_lt hg
-  · have hsub : euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) -
-        valueL ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g)) =
-          euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (0, w - toBUC g) := by
-      rw [← euclideanCauchySolutionBUC_toBUC, ← map_sub, Prod.mk_sub_mk, sub_self]
-    have hn := norm_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT (b := b) (c := c) ha
-      (0, w - toBUC g)
-    rw [Prod.norm_def, norm_zero, max_eq_right (norm_nonneg _)] at hn
-    calc _ = ‖(euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha (f, w) -
-          valueL ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm (f, g))) p‖ := by
-          rw [Real.norm_eq_abs, _root_.sub_apply, valueL_apply]
-      _ ≤ _ := by
-        rw [hsub]
-        exact (norm_coe_le_norm _ p).trans
-          (hn.trans (mul_le_mul_of_nonneg_left hg.le (by positivity)))
+  exact ⟨g, hgw, abs_euclideanCauchySolutionBUC_apply_sub_le hα₀ hα₁ hT ha f w g
+    fun x ↦ (hgw x).le⟩
 
 /-- **The maximum principle for the extended solution.** Let `c ≤ γ` with `0 ≤ γ`. If the forcing
 satisfies `f ≤ K` and the initial datum `g ≤ M`, where `0 ≤ M` and `0 ≤ K`, then the extended
