@@ -133,16 +133,12 @@ theorem integral_ite_eq [IsFiniteMeasure Q] (h : IsMissingAtRandom Q π) {g : X 
   have hite : ∀ w : Bool × X × ℝ,
       (if w.1 then g w.2 else 0) = g w.2 * S.indicator (fun _ ↦ (1 : ℝ)) w := by
     intro w; by_cases hw : w.1 = true <;> simp [hSdef, hw]
-  have hπi : Integrable (fun w : Bool × X × ℝ ↦ π w.2.1) Q :=
-    (integrable_const (1 : ℝ)).mono' (h.measurable.comp (by fun_prop)).aestronglyMeasurable
-      (ae_of_all _ fun w ↦ by
-        rw [Real.norm_eq_abs, abs_of_nonneg (h.nonneg _)]; exact h.le_one _)
   simp_rw [hite]
   have key := MeasureTheory.integral_mul_eq_of_forall_setIntegral_eq (μ := Q)
     (measurable_snd.comap_le) (f := S.indicator fun _ ↦ (1 : ℝ))
-    (g := fun w ↦ π w.2.1) (h := fun w ↦ g w.2) ((integrable_const 1).indicator hS) hπi
-    ((h.measurable.comp measurable_fst).comp hsnd).stronglyMeasurable ?_
-    (hg.comp hsnd).stronglyMeasurable (by simpa only [hite] using hgi)
+    (g := fun w ↦ π w.2.1) (h := fun w ↦ g w.2) ((integrable_const 1).indicator hS)
+    ((h.measurable.comp measurable_fst).comp hsnd).aestronglyMeasurable ?_
+    (hg.comp hsnd).aestronglyMeasurable (by simpa only [hite] using hgi)
   · rw [key]; simp_rw [mul_comm]
   · rintro _ ⟨A, hA, rfl⟩
     -- The event `{(X, Y) ∈ A} ∩ {R = 1}` is the event of the defining identity.

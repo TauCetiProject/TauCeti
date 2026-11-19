@@ -40,9 +40,11 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
 - `integral_mul_le_of_condExp_le`: if `Z ≥ 0` is a.e. `m`-measurable and the conditional mean of
   `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`.
-- `integral_mul_eq_of_forall_setIntegral_eq`: if `g` is `m`-measurable with the same set integrals
-  as `f` over `m`-measurable sets, then `∫ h f = ∫ h g` for every `m`-measurable `h` with `h f`
-  integrable.
+- `integrable_of_forall_setIntegral_eq`: an a.e. `m`-measurable `g` with the same set integrals
+  as an integrable `f` over `m`-measurable sets is integrable.
+- `integral_mul_eq_of_forall_setIntegral_eq`: if `g` is a.e. `m`-measurable with the same set
+  integrals as `f` over `m`-measurable sets, then `∫ h f = ∫ h g` for every a.e. `m`-measurable
+  `h` with `h f` integrable.
 - `integral_comp_mul_eq_of_forall_setIntegral_preimage_eq`: the regression identity
   `E[f(X) Y] = E[f(X) g(X)]` when `g(X)` is a version of `E[Y | X]`, given by its set integrals
   over the events `{X ∈ A}`.
@@ -343,38 +345,95 @@ theorem integral_mul_le_of_condExp_le {Ω : Type*} {mΩ : MeasurableSpace Ω} {�
       simpa [mul_comm] using mul_le_mul_of_nonneg_left hω hω0
     _ = K * ∫ ω, Z ω ∂μ := integral_const_mul _ _
 
-/-- If `g` is `m`-measurable and has the same integral as `f` over every `m`-measurable set,
-then `∫ h f = ∫ h g` for every `m`-measurable `h` with `h f` integrable: `g` is a version of the
-conditional expectation of `f`, and `h` pulls out of it. -/
+/-- **Integrability from set-integral agreement.** If `g` is a.e. `m`-measurable and has the
+same integral as an integrable `f` over every `m`-measurable set, then `g` is integrable. No
+integrability of `g` is assumed: on the `m`-measurable sets where `g` is bounded and of finite
+measure it is integrable, there its `L¹` mass is at most that of `f`, and these sets exhaust the
+space. -/
+theorem integrable_of_forall_setIntegral_eq {Ω : Type*} {m mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] {f g : Ω → ℝ}
+    (hf : Integrable f μ) (hgm : AEStronglyMeasurable[m] g μ)
+    (hfg : ∀ s, MeasurableSet[m] s → ∫ x in s, g x ∂μ = ∫ x in s, f x ∂μ) :
+    Integrable g μ := by
+  -- Pass to an `m`-strongly measurable version `g'` of `g`.
+  set g' := hgm.mk g
+  have hg'm : StronglyMeasurable[m] g' := hgm.stronglyMeasurable_mk
+  refine Integrable.congr ?_ hgm.ae_eq_mk.symm
+  have hfg' : ∀ s, MeasurableSet[m] s → ∫ x in s, g' x ∂μ = ∫ x in s, f x ∂μ := fun s hs ↦
+    (integral_congr_ae (ae_restrict_of_ae hgm.ae_eq_mk)).symm.trans (hfg s hs)
+  -- On an `m`-measurable set where `g'` is integrable, its `L¹` mass is at most that of `f`.
+  have hbound : ∀ t, MeasurableSet[m] t → IntegrableOn g' t μ →
+      ∫⁻ x in t, ‖g' x‖ₑ ∂μ ≤ ∫⁻ x, ‖f x‖ₑ ∂μ := by
+    intro t ht hgt
+    have hP : MeasurableSet[m] {x | 0 ≤ g' x} :=
+      measurableSet_le measurable_const hg'm.measurable
+    have htm := hm _ ht
+    have hPm := hm _ hP
+    rw [← ofReal_integral_norm_eq_lintegral_eNorm hgt]
+    refine le_trans ?_ (setLIntegral_le_lintegral t _)
+    rw [← ofReal_integral_norm_eq_lintegral_eNorm hf.integrableOn]
+    refine ENNReal.ofReal_le_ofReal ?_
+    rw [← integral_inter_add_sdiff hPm hgt.norm,
+      ← integral_inter_add_sdiff hPm hf.integrableOn.norm]
+    have h1 : ∫ x in t ∩ {x | 0 ≤ g' x}, ‖g' x‖ ∂μ = ∫ x in t ∩ {x | 0 ≤ g' x}, f x ∂μ := by
+      rw [← hfg' _ (ht.inter hP)]
+      exact setIntegral_congr_fun (htm.inter hPm) fun x hx ↦ Real.norm_of_nonneg hx.2
+    have h2 : ∫ x in t \ {x | 0 ≤ g' x}, ‖g' x‖ ∂μ = -∫ x in t \ {x | 0 ≤ g' x}, f x ∂μ := by
+      rw [← hfg' _ (ht.diff hP), ← integral_neg]
+      exact setIntegral_congr_fun (htm.diff hPm) fun x hx ↦
+        Real.norm_of_nonpos (not_le.1 hx.2).le
+    rw [h1, h2]
+    refine add_le_add ((Real.le_norm_self _).trans (norm_integral_le_integral_norm _)) ?_
+    exact (neg_le_abs _).trans ((Real.norm_eq_abs _).ge.trans (norm_integral_le_integral_norm _))
+  -- Exhaust each finite-measure `m`-measurable set by the sets where `‖g'‖ ≤ n`.
+  refine integrable_of_forall_fin_meas_le' hm _ hf.2 (hg'm.mono hm).aestronglyMeasurable
+    fun s hs hμs ↦ ?_
+  have hsn : ∀ n : ℕ, MeasurableSet[m] (s ∩ {x | ‖g' x‖ ≤ n}) := fun n ↦
+    hs.inter (measurableSet_le hg'm.norm.measurable measurable_const)
+  have hs_eq : s = ⋃ n : ℕ, s ∩ {x | ‖g' x‖ ≤ n} := by
+    ext x
+    simpa using fun _ ↦ exists_nat_ge ‖g' x‖
+  have hmono : Monotone fun n : ℕ ↦ s ∩ {x | ‖g' x‖ ≤ n} := fun a b hab ↦
+    Set.inter_subset_inter_right _ fun x (hx : ‖g' x‖ ≤ a) ↦ hx.trans (by exact_mod_cast hab)
+  rw [hs_eq, setLIntegral_iUnion_of_directed _ hmono.directed_le]
+  refine iSup_le fun n ↦ hbound _ (hsn n) ?_
+  refine Measure.integrableOn_of_bounded (M := n)
+    (ne_top_of_le_ne_top hμs (measure_mono Set.inter_subset_left))
+    (hg'm.mono hm).aestronglyMeasurable ?_
+  exact (ae_restrict_iff' (hm _ (hsn n))).2 (ae_of_all _ fun x hx ↦ hx.2)
+
+/-- If `g` is a.e. `m`-measurable and has the same integral as `f` over every `m`-measurable set,
+then `∫ h f = ∫ h g` for every a.e. `m`-measurable `h` with `h f` integrable: `g` is a version of
+the conditional expectation of `f`, and `h` pulls out of it. -/
 theorem integral_mul_eq_of_forall_setIntegral_eq {Ω : Type*} {m mΩ : MeasurableSpace Ω}
     {μ : Measure Ω} (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] {f g h : Ω → ℝ}
-    (hf : Integrable f μ) (hg : Integrable g μ) (hgm : StronglyMeasurable[m] g)
+    (hf : Integrable f μ) (hgm : AEStronglyMeasurable[m] g μ)
     (hfg : ∀ s, MeasurableSet[m] s → ∫ x in s, g x ∂μ = ∫ x in s, f x ∂μ)
-    (hh : StronglyMeasurable[m] h) (hhf : Integrable (fun x ↦ h x * f x) μ) :
+    (hh : AEStronglyMeasurable[m] h μ) (hhf : Integrable (fun x ↦ h x * f x) μ) :
     ∫ x, h x * f x ∂μ = ∫ x, h x * g x ∂μ := by
+  have hg := integrable_of_forall_setIntegral_eq hm hf hgm hfg
   have hce : g =ᵐ[μ] μ[f | m] :=
     ae_eq_condExp_of_forall_setIntegral_eq hm hf (fun _ _ _ ↦ hg.integrableOn)
-      (fun s hs _ ↦ hfg s hs) hgm.aestronglyMeasurable
-  have hpull := condExp_mul_of_stronglyMeasurable_left (m := m) (μ := μ) hh hhf hf
+      (fun s hs _ ↦ hfg s hs) hgm
+  have hpull := condExp_mul_of_aestronglyMeasurable_left (m := m) (μ := μ) hh hhf hf
   rw [← integral_condExp hm]
   refine integral_congr_ae ?_
   filter_upwards [hpull, hce] with x h1 h2
   exact h1.trans (by rw [Pi.mul_apply, h2])
 
-/-- **The regression identity.** If `g(X)` is an integrable version of `E[Y | X]`, given by its
-set integrals over the events `{X ∈ A}`, then `E[f(X) Y] = E[f(X) g(X)]` for every measurable `f`
-with `f(X) Y` integrable. -/
+/-- **The regression identity.** If `g(X)` is a version of `E[Y | X]`, given by its set integrals
+over the events `{X ∈ A}`, then `E[f(X) Y] = E[f(X) g(X)]` for every measurable `f` with
+`f(X) Y` integrable. -/
 theorem integral_comp_mul_eq_of_forall_setIntegral_preimage_eq {Ω α : Type*}
     {mΩ : MeasurableSpace Ω} [MeasurableSpace α] {μ : Measure Ω}
     {X : Ω → α} (hX : Measurable X) [SigmaFinite (μ.trim hX.comap_le)] {Y : Ω → ℝ} {g f : α → ℝ}
-    (hY : Integrable Y μ)
-    (hg : Measurable g) (hgi : Integrable (fun ω ↦ g (X ω)) μ)
+    (hY : Integrable Y μ) (hg : Measurable g)
     (hreg : ∀ A : Set α, MeasurableSet A → ∫ ω in X ⁻¹' A, Y ω ∂μ = ∫ ω in X ⁻¹' A, g (X ω) ∂μ)
     (hf : Measurable f) (hfY : Integrable (fun ω ↦ f (X ω) * Y ω) μ) :
     ∫ ω, f (X ω) * Y ω ∂μ = ∫ ω, f (X ω) * g (X ω) ∂μ := by
   have hXc : Measurable[MeasurableSpace.comap X inferInstance] X := comap_measurable X
-  refine integral_mul_eq_of_forall_setIntegral_eq hX.comap_le hY hgi
-    (hg.comp hXc).stronglyMeasurable ?_ (hf.comp hXc).stronglyMeasurable hfY
+  refine integral_mul_eq_of_forall_setIntegral_eq hX.comap_le hY
+    (hg.comp hXc).aestronglyMeasurable ?_ (hf.comp hXc).aestronglyMeasurable hfY
   rintro _ ⟨A, hA, rfl⟩
   exact (hreg A hA).symm
 
