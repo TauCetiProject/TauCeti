@@ -72,15 +72,16 @@ It is the embedded punctured coordinate space. -/
 theorem isSimplyConnected_range_inl_inter_range_inr (h : 2 < Module.rank ℝ E)
     (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) :
     IsSimplyConnected (range (inl e₁ e₂) ∩ range (inr e₁ e₂)) := by
+  have hRadius : (0 : ℝ) < 1 := zero_lt_one
   have hs : IsSimplyConnected ({0}ᶜ : Set E) := by
     simpa only [compl_eq_univ_sdiff] using
       (starConvex_univ (𝕜 := ℝ) (x := (0 : E))).isSimplyConnected_sdiff_singleton h
-      (show (0 : ℝ) < 1 by norm_num) (subset_univ (Metric.sphere (0 : E) 1))
+        hRadius (subset_univ (Metric.sphere (0 : E) 1))
   have : SimplyConnectedSpace ({0}ᶜ : Set E) := hs.simplyConnectedSpace
+  have hUniv : IsSimplyConnected (univ : Set ({0}ᶜ : Set E)) :=
+    (Homeomorph.Set.univ _).toHomotopyEquiv.simplyConnectedSpace_iff.2 inferInstance
   rw [← range_neckMap h₁ h₂, ← image_univ]
-  exact (isEmbedding_neckMap h₁ h₂).isSimplyConnected_image.2
-    (show IsSimplyConnected (univ : Set ({0}ᶜ : Set E)) from
-    (Homeomorph.Set.univ _).toHomotopyEquiv.simplyConnectedSpace_iff.2 inferInstance)
+  exact (isEmbedding_neckMap h₁ h₂).isSimplyConnected_image.2 hUniv
 
 variable [ChartedSpace E M] [ChartedSpace E N] [ConnectedSpace M] [ConnectedSpace N]
   (h : 2 < Module.rank ℝ E) (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
@@ -89,13 +90,19 @@ variable [ChartedSpace E M] [ChartedSpace E N] [ConnectedSpace M] [ConnectedSpac
 private noncomputable def puncturedFundamentalGroupEquiv :
     Monoid.Coprod (FundamentalGroup (puncture e₁) x) (FundamentalGroup (puncture e₂) y) ≃*
       FundamentalGroup (ConnectedSum e₁ e₂) (inl e₁ e₂ x) := by
+  -- Compute the range-subtype basepoints before identifying them with the common point.
+  have hl : (isOpenEmbedding_inl h₁ h₂).isEmbedding.toHomeomorph x =
+      (⟨inl e₁ e₂ x, x, rfl⟩ : range (inl e₁ e₂)) := by
+    apply Subtype.ext
+    exact (isOpenEmbedding_inl h₁ h₂).isEmbedding.toHomeomorph_apply_coe x
+  have hr : (isOpenEmbedding_inr h₁ h₂).isEmbedding.toHomeomorph y =
+      (⟨inl e₁ e₂ x, y, hxy.symm⟩ : range (inr e₁ e₂)) := by
+    apply Subtype.ext
+    exact ((isOpenEmbedding_inr h₁ h₂).isEmbedding.toHomeomorph_apply_coe y).trans hxy.symm
   let l := FundamentalGroup.homeomorphMulEquivOfEq
-    (isOpenEmbedding_inl h₁ h₂).isEmbedding.toHomeomorph
-    (show _ = (⟨inl e₁ e₂ x, x, rfl⟩ : range (inl e₁ e₂)) from rfl)
+    (isOpenEmbedding_inl h₁ h₂).isEmbedding.toHomeomorph hl
   let r := FundamentalGroup.homeomorphMulEquivOfEq
-    (isOpenEmbedding_inr h₁ h₂).isEmbedding.toHomeomorph
-    (show _ = (⟨inl e₁ e₂ x, y, hxy.symm⟩ : range (inr e₁ e₂)) from
-      Subtype.ext hxy.symm)
+    (isOpenEmbedding_inr h₁ h₂).isEmbedding.toHomeomorph hr
   refine (l.coprodCongr r).trans (vanKampenEquiv ?_ ?_ ?_
     (isSimplyConnected_range_inl_inter_range_inr h h₁ h₂) ⟨x, rfl⟩ ⟨y, hxy.symm⟩)
   · rw [(isOpenEmbedding_inl h₁ h₂).isOpen_range.interior_eq,
@@ -165,8 +172,10 @@ noncomputable def fundamentalGroupMulEquiv :
       (puncture_map_bijective h e₂ y)).symm).trans
     (puncturedFundamentalGroupEquiv h h₁ h₂ x y hxy)
 
+-- Match the factor equations before simp changes the puncture carrier coercions.
 /-- A loop in the first punctured summand represents the first free factor after the puncture
 inclusion identifies its fundamental group with that of the original manifold. -/
+@[simp↓]
 theorem fundamentalGroupMulEquiv_inl_map (g : FundamentalGroup (puncture e₁) x) :
     fundamentalGroupMulEquiv h h₁ h₂ x y hxy
         (Monoid.Coprod.inl
@@ -180,6 +189,7 @@ theorem fundamentalGroupMulEquiv_inl_map (g : FundamentalGroup (puncture e₁) x
 
 /-- A loop in the second punctured summand represents the second free factor. The image is
 based at the first summand's point using the given identification `hxy`. -/
+@[simp↓]
 theorem fundamentalGroupMulEquiv_inr_map (g : FundamentalGroup (puncture e₂) y) :
     fundamentalGroupMulEquiv h h₁ h₂ x y hxy
         (Monoid.Coprod.inr
