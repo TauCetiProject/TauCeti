@@ -10,8 +10,8 @@ public import Mathlib.Geometry.Manifold.ContMDiffMap
 /-!
 # Basic lemmas on bundled `C^n` maps
 
-This file evaluates Mathlib's constant `C^n` map `ContMDiffMap.const` pointwise
-(`ContMDiffMap.const_apply`).
+This file evaluates Mathlib's constant `C^n` map `ContMDiffMap.const` and pair of `C^n` maps
+`ContMDiffMap.prodMk` pointwise (`ContMDiffMap.const_apply`, `ContMDiffMap.prodMk_apply`).
 -/
 
 public section
@@ -25,11 +25,19 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
   {I' : ModelWithCorners 𝕜 E' H'} {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
-  {n : WithTop ℕ∞}
+  {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {H'' : Type*}
+  [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''} {M'' : Type*} [TopologicalSpace M'']
+  [ChartedSpace H'' M''] {n : WithTop ℕ∞}
 
 /-- The constant `C^n` map with value `y` takes the value `y` at every point. -/
 @[simp]
 theorem const_apply (y : M') (x : M) : (const y : C^n⟮I, M; I', M'⟯) x = y :=
+  rfl
+
+/-- The pair of two `C^n` maps evaluates to the pair of their values. -/
+@[simp]
+theorem prodMk_apply (f : C^n⟮I, M; I', M'⟯) (g : C^n⟮I, M; I'', M''⟯) (x : M) :
+    f.prodMk g x = (f x, g x) :=
   rfl
 
 end ContMDiffMap
