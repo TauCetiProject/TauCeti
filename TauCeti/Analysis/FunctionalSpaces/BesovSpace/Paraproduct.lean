@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.ProductSpectrum
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Annulus
@@ -165,18 +166,18 @@ theorem lowPass_sub (u v : BesovSpace F φ s p q) (m : ℕ) :
     (u - v).lowPass m = u.lowPass m - v.lowPass m := by
   simp [lowPass_eq_sum]
 
-/-- The `Lᵖ` function `u.lowPass m` is the sum `∑_{k < m} Δₖ u` of the Littlewood–Paley blocks of
-the tempered distribution of `u`. -/
+/-- The `Lᵖ` function `u.lowPass m` is the low-frequency truncation `Sₘ = ∑_{k < m} Δₖ`
+(`TemperedDistribution.littlewoodPaleyLowPass`) of the tempered distribution of `u`. -/
 @[simp]
 theorem coe_lowPass (u : BesovSpace F φ s p q) (m : ℕ) :
-    (u.lowPass m : 𝓢'(E, F)) = ∑ k ∈ Finset.range m, littlewoodPaleyBlock F φ k u.toDistr := by
-  simp [lowPass_eq_sum]
+    (u.lowPass m : 𝓢'(E, F)) = littlewoodPaleyLowPass F φ m u.toDistr := by
+  simp [lowPass_eq_sum, littlewoodPaleyLowPass_def, _root_.sum_apply]
 
 /-- The low-frequency cut-off `S_{m+1}` is the Fourier multiplier by `φ (2^{-m} ·)`. -/
 theorem coe_lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
     (u.lowPass (m + 1) : 𝓢'(E, F)) =
       fourierMultiplierCLM F (fun ξ ↦ (φ (((2 : ℝ) ^ m)⁻¹ • ξ) : ℂ)) u.toDistr := by
-  rw [coe_lowPass, ← _root_.sum_apply, sum_littlewoodPaleyBlock_range]
+  rw [coe_lowPass, littlewoodPaleyLowPass_succ_eq_fourierMultiplierCLM]
 
 /-- Elements of two Besov spaces with the same tempered distribution have the same low-frequency
 cut-offs. -/
@@ -190,7 +191,7 @@ outside the closed ball of radius `2^m φ.rOut`. -/
 theorem isVanishingOn_fourier_lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ) :
     IsVanishingOn (𝓕 (u.lowPass (m + 1) : 𝓢'(E, F)) : 𝓢'(E, F))
       (closedBall 0 (2 ^ m * φ.rOut))ᶜ := by
-  rw [coe_lowPass]
+  rw [coe_lowPass, littlewoodPaleyLowPass_def, _root_.sum_apply]
   exact isVanishingOn_fourier_sum_littlewoodPaleyBlock φ
     (fun k hk ↦ Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)) _
 
@@ -202,12 +203,9 @@ theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
   rcases m with _ | m
   · simpa using mul_nonneg (MeasureTheory.integral_nonneg fun _ ↦ norm_nonneg _) (norm_nonneg f)
   obtain ⟨g, hg, hgf⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le φ m f
-  -- `S_{m+1} u` and `g` are the same tempered distribution, hence the same `Lᵖ` function.
-  have h : u.lowPass (m + 1) = g :=
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
-      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply]
-      rw [coe_lowPass, hf, hg]
-  rwa [h]
+  rwa [Lp.toTemperedDistribution_injective (by
+    rw [coe_lowPass, hf, littlewoodPaleyLowPass_def, _root_.sum_apply, hg] :
+    (u.lowPass (m + 1) : 𝓢'(E, F)) = g)]
 
 /-- **The low-frequency cut-offs at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then
 `‖S_m u‖_p ≤ 2^{-s m} ‖u‖ / (2^{-s} - 1)`. -/
@@ -319,35 +317,9 @@ theorem lowPass_smul_lowPass (N M : ℕ) (u : BesovSpace ℂ φ s p₁ q) (v : B
         ∑ j ∈ Finset.range M, (u.block j •
           ∑ k ∈ (Finset.range M).filter (fun k ↦ k ≤ j + N ∧ j ≤ k + N), v.block k :
             Lp F r (volume : Measure E)) := by
-  set g : ℕ → ℕ → Lp F r (volume : Measure E) := fun k l ↦ u.block k • v.block l
-  set P := Finset.range M ×ˢ Finset.range M
-  -- Expand every term as a sum of products of blocks over a set of pairs of indices.
-  have hL : (u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) = ∑ x ∈ P, g x.1 x.2 := by
-    rw [lowPass_eq_sum, lowPass_eq_sum, Lp.sum_smul, Finset.sum_product]
-    simp only [Lp.smul_sum, g]
-  have hT : ∑ j ∈ Finset.range M, (u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) =
-      ∑ x ∈ P.filter (fun x ↦ x.1 + N < x.2), g x.1 x.2 := by
-    rw [Finset.sum_finset_product_right' _ (Finset.range M) (fun l ↦ Finset.range (l - N))
-      fun x ↦ by simp only [P, Finset.mem_filter, Finset.mem_product, Finset.mem_range]; omega]
-    simp only [lowPass_eq_sum, Lp.sum_smul, g]
-  have hT' : ∑ j ∈ Finset.range M, (u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) =
-      ∑ x ∈ P.filter (fun x ↦ x.2 + N < x.1), g x.1 x.2 := by
-    rw [Finset.sum_finset_product' _ (Finset.range M) (fun k ↦ Finset.range (k - N))
-      fun x ↦ by simp only [P, Finset.mem_filter, Finset.mem_product, Finset.mem_range]; omega]
-    simp only [lowPass_eq_sum, Lp.smul_sum, g]
-  have hR : ∑ j ∈ Finset.range M, (u.block j •
-        ∑ k ∈ (Finset.range M).filter (fun k ↦ k ≤ j + N ∧ j ≤ k + N), v.block k :
-          Lp F r (volume : Measure E)) =
-      ∑ x ∈ P.filter (fun x ↦ x.2 ≤ x.1 + N ∧ x.1 ≤ x.2 + N), g x.1 x.2 := by
-    rw [Finset.sum_finset_product' _ (Finset.range M)
-      (fun k ↦ (Finset.range M).filter (fun l ↦ l ≤ k + N ∧ k ≤ l + N))
-      fun x ↦ by simp only [P, Finset.mem_filter, Finset.mem_product, Finset.mem_range]; tauto]
-    simp only [Lp.smul_sum, g]
-  -- The three conditions on a pair of indices are exclusive and exhaustive.
-  rw [hL, hT, hT', hR, Finset.sum_filter, Finset.sum_filter, Finset.sum_filter,
-    ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  split_ifs <;> first | (exfalso; omega) | simp
+  rw [lowPass_eq_sum, lowPass_eq_sum, Lp.sum_smul,
+    Finset.sum_congr rfl fun k _ ↦ Lp.smul_sum _ _ _, Finset.sum_range_sum_range_split_gap N]
+  simp only [lowPass_eq_sum, Lp.sum_smul, Lp.smul_sum]
 
 end Decomposition
 
