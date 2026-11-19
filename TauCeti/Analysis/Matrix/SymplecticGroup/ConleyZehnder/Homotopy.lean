@@ -89,6 +89,6 @@ theorem conleyZehnderIndex_eq_of_homotopy_of_one {B₀ B₁ : GLSymplectic n ℝ
   conleyZehnderIndex_eq_of_homotopy γ₀ γ₁ F h₀ h₁ (k₀ := finrank ℝ (eigenspace
       (toLin' (((1 : GLSymplectic n ℝ) : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) 1))
     (k₁ := 0) (fun s ↦ by rw [hF₀ s])
-    fun s ↦ Submodule.finrank_eq_zero.2 (not_ne_iff.1 (hF₁ s))
+    fun s ↦ Submodule.finrank_eq_zero.2 (not_ne_iff.1 (mt hasEigenvalue_iff.2 (hF₁ s)))
 
 end TauCeti.GLSymplectic
