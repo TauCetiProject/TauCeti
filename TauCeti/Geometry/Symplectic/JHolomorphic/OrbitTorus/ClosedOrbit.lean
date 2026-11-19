@@ -392,7 +392,8 @@ theorem orbitZeta_natCast_eq_mapRingHom_tprod_fixedPointDerivative
   -- Each specialized orbit-torus series is the series substituted at `t ^ d i`.
   congr 1
   refine tprod_congr fun i ↦ ?_
-  rw [Function.comp_apply, mapRingHom_ofPowerSeries _ _ _ (by simpa using hd i)]
+  rw [Function.comp_apply, mapRingHom_ofPowerSeries _ _ _ _ (by simpa using hd i),
+    PowerSeries.map_id]
   congr 1
   simp
 
