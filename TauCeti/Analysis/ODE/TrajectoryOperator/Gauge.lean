@@ -306,8 +306,8 @@ private theorem invDerivL_ae_eq (hΦ : ContDiffOn ℝ 1 Φ Omega)
     exact (isInvertible_and_inverse_eq hΨΦ ht).2.symm
   obtain ⟨hinv, hΨs'⟩ := isInvertible_and_inverse_eq hΨΦ hs
   rw [invDerivL, h₀, Pi.neg_apply, h₁, h₂, hΨs, hΦ's,
-    ((hd.clm_inverse_of_completeSpace hinv).congr_of_eventuallyEq hΨ).deriv, hΨs']
-  rfl
+    ((hd.clm_inverse_of_completeSpace hinv).congr_of_eventuallyEq hΨ).deriv, hΨs',
+    ContinuousLinearMap.compL_apply, ContinuousLinearMap.compL_apply]
 
 /-- **Multiplication by an invertible `C¹` path of operators** as a continuous linear
 automorphism of the weak-derivative graph over `Lᵖ`, with inverse the multiplication by the
@@ -393,19 +393,13 @@ theorem ker_trajectoryOperator_eq_map_gaugeL :
     LinearMap.ker (trajectoryOperator (p := p) A).toLinearMap =
       (LinearMap.ker (trajectoryOperator (p := p) B).toLinearMap).map
         (gaugeL (p := p) hΦ hΦL hΦ'L).toLinearMap := by
-  ext u
   rw [trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm hΦ hΦL hΦ'L hΨL hΨΦ hAB,
-    holderL_eq_pointwiseApplyEquiv hΦL hΨL hΨΦ]
-  constructor
-  · intro hu
-    refine ⟨(gaugeEquiv (p := p) hΦ hΦL hΦ'L hΨL hΨΦ).symm u, ?_,
-      (gaugeEquiv (p := p) hΦ hΦL hΦ'L hΨL hΨΦ).apply_symm_apply u⟩
-    simpa [LinearMap.mem_ker] using hu
-  · rintro ⟨w, hw, rfl⟩
-    have h := (gaugeEquiv (p := p) hΦ hΦL hΦ'L hΨL hΨΦ).symm_apply_apply w
-    rw [gaugeEquiv_apply] at h
-    simp only [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hw
-    simp [LinearMap.mem_ker, h, hw]
+    holderL_eq_pointwiseApplyEquiv hΦL hΨL hΨΦ, ContinuousLinearMap.toLinearMap_comp,
+    ContinuousLinearMap.toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearEquiv.ker_comp,
+    LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm,
+    ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.symm_symm]
+  exact congrArg (Submodule.map · _) (LinearMap.ext (gaugeEquiv_apply hΦ hΦL hΦ'L hΨL hΨΦ))
 
 /-- **The Fredholm property does not depend on the trivialization**: `D_A` is Fredholm exactly
 when `D_B` is. -/
