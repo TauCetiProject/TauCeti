@@ -54,6 +54,14 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
 * `TauCeti.ParameterSymbol.inverse`: **uniform inverse estimates**. If `a` has order `m` and is
   elliptic with parameter (`TauCeti.ParameterSymbol.IsElliptic`: it is invertible, with
   `‖a⁻¹‖ ≤ C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (-m)`), its pointwise inverse has order `-m`;
+* `TauCeti.ParameterSymbol.ofQuasiHomogeneous`: a smooth function on `ℝⁿ × ℝⁿ × ℂ` that is
+  quasi-homogeneous of degree `m`, `f((x, t ξ), t² z) = t ^ m f((x, ξ), z)` for `t > 0`, is a
+  symbol of order `m`; for instance the spectral parameter `z • id` has order `2`
+  (`TauCeti.ParameterSymbol.spectralParameter`);
+* `TauCeti.ParameterSymbol.isElliptic_add`: adding a perturbation bounded by a multiple of
+  `(1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (m - 1)` to a symbol of order `m` with inverse bounded by a
+  multiple of `(1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ (-m)`, both uniformly in the position, keeps it
+  elliptic with parameter at spectral parameters of large modulus;
 * `TauCeti.ParameterSymbol.shiftedLaplacian`, `TauCeti.ParameterSymbol.isElliptic_shiftedLaplacian`:
   for `s ≥ 0` the symbol `(s + ‖ξ‖²) - z` of `s - Δ - z` has order `2` and is elliptic with
   parameter on every sector `Re z ≤ c ‖z‖`, `c < 1`, on which `s + ‖z‖` is bounded below by a
@@ -1060,6 +1068,135 @@ theorem coefficient_inverse_shiftedLaplacian [CompleteSpace V] {s : ℝ}
 theorem spatialDeriv_shiftedLaplacian (s : ℝ) (v : CoordinateSpace n) :
     (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).spatialDeriv v = 0 :=
   ext_of_mem fun x ξ z hz => by simp [coefficient_spatialDeriv _ _ _ _ hz, hz]
+
+/-! ### Quasi-homogeneous symbols -/
+
+/-- A smooth function that is quasi-homogeneous of degree `m` has the estimates of order `m`: the
+dilated derivative at `p = ((x, ξ), z)` is `w ^ m` times the ordinary derivative at the point
+`parameterDilation n w⁻¹ p`, whose frequency and spectral parameter have norm at most `1`. -/
+private theorem bounds_of_quasiHomogeneous (Λ : Set ℂ)
+    {f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ p, f (parameterDilation n t p) = t ^ m • f p) :
+    Bounds Λ m f := fun K hK k => by
+  obtain ⟨C, hC⟩ := ((hK.prod (isCompact_closedBall (0 : CoordinateSpace n) 1)).prod
+    (isCompact_closedBall (0 : ℂ) 1)).exists_bound_of_continuousOn
+    (hf.continuous_iteratedFDeriv (m := k) (by exact_mod_cast le_top)).continuousOn
+  refine ⟨max C 0, le_max_right _ _, fun x hx ξ z _ => ?_⟩
+  set t := parameterWeight ξ z with ht_def
+  have ht : 0 < t := parameterWeight_pos ξ z
+  set q := parameterDilation n t⁻¹ ((x, ξ), z) with hqdef
+  have hDq : parameterDilation n t q = ((x, ξ), z) := by
+    simp [hqdef, smul_smul, ht.ne']
+  -- The dilation by `t` takes `v + q` to `((x, ξ), z) + parameterDilation n t v`.
+  have hq : (fun v => f (((x, ξ), z) + parameterDilation n t v)) = fun v => t ^ m • f (v + q) := by
+    funext v
+    rw [← hhom t ht, map_add, hDq, add_comm]
+  have hmem : q ∈ (K ×ˢ Metric.closedBall (0 : CoordinateSpace n) 1) ×ˢ
+      Metric.closedBall (0 : ℂ) 1 := by
+    simp only [hqdef, parameterDilation_apply, mem_prod, mem_closedBall_zero_iff, norm_smul,
+      Real.norm_eq_abs, abs_inv, abs_pow, abs_of_pos ht, inv_pow]
+    refine ⟨⟨hx, ?_⟩, ?_⟩
+    · rw [inv_mul_le_one₀ ht]
+      exact norm_le_parameterWeight ξ z
+    · rw [inv_mul_le_one₀ (by positivity)]
+      exact norm_le_parameterWeight_sq ξ z
+  have hfq : ContDiff ℝ ∞ fun v => f (v + q) := hf.comp (contDiff_id.add contDiff_const)
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+  dsimp only
+  rw [← ht_def, hq,
+    iteratedFDeriv_const_smul_apply' (hfq.contDiffAt.of_le (by exact_mod_cast le_top)),
+    iteratedFDeriv_comp_add_right, zero_add, norm_smul, Real.norm_eq_abs,
+    abs_of_pos (Real.rpow_pos_of_pos ht m), mul_comm]
+  exact mul_le_mul_of_nonneg_right ((hC q hmem).trans (le_max_left _ _))
+    (Real.rpow_pos_of_pos ht m).le
+
+open scoped Classical in
+/-- A smooth function `f((x, ξ), z)` that is quasi-homogeneous of degree `m`,
+`f((x, t ξ), t² z) = t ^ m f((x, ξ), z)` for `t > 0`, as a parameter-dependent symbol of order `m`
+on `Λ`. Examples are the spectral parameter `z` itself, of order `2`
+(`TauCeti.ParameterSymbol.spectralParameter`), and the symbols of differential operators of order
+`m`, polynomials in `ξ` with coefficients depending on the position. -/
+def ofQuasiHomogeneous (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ p, f (parameterDilation n t p) = t ^ m • f p) :
+    ParameterSymbol n Λ V W m where
+  coefficient p := if p.2 ∈ Λ then f p else 0
+  contDiffOn_coefficient := hf.contDiffOn.congr fun p hp => by simp [show p.2 ∈ Λ from hp.2]
+  coefficient_of_notMem p hp := by simp [hp]
+  exists_bound := by
+    refine (bounds_of_quasiHomogeneous Λ hf hhom).congr fun p hp => ?_
+    filter_upwards [(Λ.isOpen.preimage continuous_snd).mem_nhds hp] with q hq
+    have hq' : q.2 ∈ Λ := hq
+    simp [hq']
+
+@[simp]
+theorem coefficient_ofQuasiHomogeneous
+    (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ p, f (parameterDilation n t p) = t ^ m • f p)
+    (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (ofQuasiHomogeneous f hf hhom : ParameterSymbol n Λ V W m).coefficient ((x, ξ), z) =
+      f ((x, ξ), z) := by
+  simp [ofQuasiHomogeneous, hz]
+
+/-! ### The spectral parameter -/
+
+variable (V) in
+/-- The spectral parameter `z • id` as a parameter-dependent symbol of order `2`: a spectral
+parameter counts as two frequency orders. -/
+def spectralParameter : ParameterSymbol n Λ V V 2 :=
+  ofQuasiHomogeneous (fun p => p.2 • ContinuousLinearMap.id ℂ V)
+    (contDiff_snd.smul contDiff_const) fun t _ p => by
+      rw [parameterDilation_apply, Real.rpow_two, smul_assoc]
+
+@[simp]
+theorem coefficient_spectralParameter (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (spectralParameter V : ParameterSymbol n Λ V V 2).coefficient ((x, ξ), z) =
+      z • ContinuousLinearMap.id ℂ V :=
+  coefficient_ofQuasiHomogeneous _ _ _ x ξ hz
+
+/-! ### Lower-order perturbations -/
+
+/-- **Lower-order perturbations of parameter-elliptic symbols.** Let `a` be a symbol of order `m`
+that is invertible with `‖a((x, ξ), z)⁻¹‖ ≤ C w ^ (-m)`, and `r` a symbol with
+`‖r((x, ξ), z)‖ ≤ D w ^ (m - 1)`, both uniformly in the position, where
+`w = 1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)`. If `2 C D ≤ 1 + ‖z‖ ^ (1 / 2)` for every `z ∈ Λ`, then `a + r` is
+elliptic with parameter, with `‖(a + r)⁻¹‖ ≤ 2 C w ^ (-m)`: the relative size `‖a⁻¹ r‖` of the
+perturbation is at most `C D / w`, at most `1 / 2` at spectral parameters of large modulus. -/
+theorem isElliptic_add [CompleteSpace V] {a r : ParameterSymbol n Λ V W m} {C D : ℝ}
+    (ha : ∀ x ξ, ∀ z ∈ Λ, (a.coefficient ((x, ξ), z)).IsInvertible)
+    (hC : ∀ x ξ, ∀ z ∈ Λ,
+      ‖(a.coefficient ((x, ξ), z)).inverse‖ ≤ C * parameterWeight ξ z ^ (-m))
+    (hD : ∀ x ξ, ∀ z ∈ Λ, ‖r.coefficient ((x, ξ), z)‖ ≤ D * parameterWeight ξ z ^ (m - 1))
+    (hΛ : ∀ z ∈ Λ, 2 * C * D ≤ 1 + Real.sqrt ‖z‖) : (a + r).IsElliptic := by
+  have key (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+      C * parameterWeight ξ z ^ (-m) *
+        ‖(a + r).coefficient ((x, ξ), z) - a.coefficient ((x, ξ), z)‖ ≤ 1 / 2 := by
+    have ht := parameterWeight_pos ξ z
+    have hp (s : ℝ) := Real.rpow_pos_of_pos ht s
+    have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hC x ξ z hz)) (hp _)
+    have hw : 1 + Real.sqrt ‖z‖ ≤ parameterWeight ξ z := by
+      rw [parameterWeight_def]
+      linarith [norm_nonneg ξ]
+    rw [coefficient_add, Pi.add_apply, add_sub_cancel_left]
+    calc C * parameterWeight ξ z ^ (-m) * ‖r.coefficient ((x, ξ), z)‖
+        ≤ C * parameterWeight ξ z ^ (-m) * (D * parameterWeight ξ z ^ (m - 1)) := by
+          gcongr
+          exact hD x ξ z hz
+      _ = C * D * parameterWeight ξ z ^ (-m + (m - 1)) := by
+          rw [Real.rpow_add ht]
+          ring
+      _ = C * D / parameterWeight ξ z := by
+          rw [show -m + (m - 1) = -1 by ring, Real.rpow_neg_one, div_eq_mul_inv]
+      _ ≤ 1 / 2 := by
+          rw [div_le_iff₀ ht]
+          linarith [hΛ z hz]
+  refine ⟨fun x ξ z hz => (ha x ξ z hz).of_mul_norm_sub_lt (hC x ξ z hz)
+    ((key x ξ hz).trans_lt (by norm_num)), fun K _ => ⟨2 * C, fun x _ ξ z hz => ?_⟩⟩
+  refine ((ha x ξ z hz).norm_inverse_le_of_mul_norm_sub_lt (hC x ξ z hz)
+    ((key x ξ hz).trans_lt (by norm_num))).trans ?_
+  have hM : 0 ≤ C * parameterWeight ξ z ^ (-m) := (norm_nonneg _).trans (hC x ξ z hz)
+  rw [div_le_iff₀ (by linarith [key x ξ hz])]
+  nlinarith [key x ξ hz]
 
 end ParameterSymbol
 
