@@ -27,11 +27,11 @@ Conley–Zehnder index.
   is the clockwise rotation `(q, p) ↦ (q cos t + p sin t, -q sin t + p cos t)`, the evolution
   `TauCeti.oscillatorEvolution` of the oscillator on `ℝ × ℝ` read on `T*ℝ`
   (`TauCeti.realCotangentRotation`,
-  `TauCeti.hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator`). It is linear, so it is its
-  own linearization.
+  `TauCeti.hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two`). It is linear,
+  so it is its own linearization.
 * **After transport.** The flow of `-H ∘ ν⁻¹ = -H` for `ω` is the conjugate `ν ∘ φ_t ∘ ν⁻¹` of the
-  rotation (`TauCeti.hamiltonianFlow_neg_realCotangentOscillator`), by the general fact that a
-  linear symplectomorphism conjugates Hamiltonian flows
+  rotation (`TauCeti.hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two`), by the general fact
+  that a linear symplectomorphism conjugates Hamiltonian flows
   (`TauCeti.SymplecticForm.IsSymplectomorphism.map_hamiltonianFlow`).
 * **Frames.** The basis `(∂_q, ∂_p)` (`TauCeti.realCotangentBasis`) is symplectic for `dλ` in the
   convention `ω(b i, b j) = J i j` of `Matrix.J`
@@ -40,10 +40,10 @@ Conley–Zehnder index.
   (`TauCeti.toMatrix_realCotangentNegBasis`).
 * **The same symplectic path.** In these two frames the linearized flows have the same matrix at
   every time and every base point, the realification of `e^{-it}`
-  (`TauCeti.toMatrix_fderiv_hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator`,
-  `TauCeti.toMatrix_fderiv_hamiltonianFlow_neg_realCotangentOscillator`). So, for `t ∈ [0, 1]`,
-  they are the same path `TauCeti.realCotangentRotationPath` of symplectic matrices, and its
-  Conley–Zehnder index is `1`
+  (`TauCeti.toMatrix_fderiv_hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two`,
+  `TauCeti.toMatrix_fderiv_hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two`). So, for
+  `t ∈ [0, 1]`, they are the same path `TauCeti.realCotangentRotationPath` of symplectic
+  matrices, and its Conley–Zehnder index is `1`
   (`TauCeti.conleyZehnderIndex_realCotangentRotationPath`), as for the clockwise rotation path
   `exp (t J S)` with `S = -1` of `TauCeti.GLSymplectic.conleyZehnderIndex`.
 
@@ -161,7 +161,7 @@ theorem toMatrix_realCotangentNegBasis :
 angle `t`: the evolution `TauCeti.oscillatorEvolution t` of the harmonic oscillator on `ℝ × ℝ`,
 read on `T*ℝ` through `realCotangentProdEquiv`. It is the time-`t` map of the harmonic oscillator
 `(q² + p²) / 2` for `dλ` in the convention `dλ(X, ·) = -dH`
-(`TauCeti.hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator`). -/
+(`TauCeti.hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two`). -/
 def realCotangentRotation (t : ℝ) : (ℝ × StrongDual ℝ ℝ) →L[ℝ] (ℝ × StrongDual ℝ ℝ) :=
   (realCotangentProdEquiv : (ℝ × ℝ) →L[ℝ] (ℝ × StrongDual ℝ ℝ)).comp
     ((oscillatorEvolution t).comp
@@ -188,7 +188,7 @@ theorem realCotangentRotation_zero : realCotangentRotation 0 = ContinuousLinearM
 
 /-- The Hamiltonian vector field `p ∂_q - q ∂_p` of the harmonic oscillator for `dλ`, in the
 convention `dλ(X, ·) = -dH`, is the continuous linear map `(q, p) ↦ (p, -q)`. -/
-private theorem hamiltonianVectorField_rescale_neg_one_neg_realCotangentOscillator_eq :
+private theorem hamiltonianVectorField_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two_eq :
     (strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) =
       ⇑(((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).comp
@@ -201,30 +201,31 @@ private theorem hamiltonianVectorField_rescale_neg_one_neg_realCotangentOscillat
 
 /-- The Hamiltonian vector field of the harmonic oscillator for `dλ`, in the convention
 `dλ(X, ·) = -dH`, is globally Lipschitz, being linear. -/
-theorem exists_lipschitzWith_hamiltonianVectorField_rescale_neg_one_neg_realCotangentOscillator :
+theorem
+  exists_lipschitzWith_hamiltonianVectorField_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two :
     ∃ K : ℝ≥0, LipschitzWith K
       ((strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2)) := by
-  rw [hamiltonianVectorField_rescale_neg_one_neg_realCotangentOscillator_eq]
+  rw [hamiltonianVectorField_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two_eq]
   exact ⟨_, ContinuousLinearMap.lipschitzWith _⟩
 
 /-- The negated harmonic oscillator `-(q² + p²) / 2` has a globally Lipschitz Hamiltonian vector
 field for `ω`, being linear. -/
-theorem exists_lipschitzWith_hamiltonianVectorField_neg_realCotangentOscillator :
+theorem exists_lipschitzWith_hamiltonianVectorField_neg_real_sq_add_momentum_sq_div_two :
     ∃ K : ℝ≥0, LipschitzWith K
       (strongDualCotangentSymplecticForm.hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2)) := by
+  obtain ⟨K, hK⟩ :=
+    exists_lipschitzWith_hamiltonianVectorField_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two
+  -- The field for `ω` is the opposite of the field for `dλ`, its rescaling by `-1`.
   have h : strongDualCotangentSymplecticForm.hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) =
-      ⇑(-(((ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)).comp
-          (ContinuousLinearMap.snd ℝ ℝ (StrongDual ℝ ℝ))).prod
-        (-(ContinuousLinearMap.fst ℝ ℝ (StrongDual ℝ ℝ)).smulRight
-          (ContinuousLinearMap.id ℝ ℝ)))) := by
+      -(strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
+        (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) := by
     funext x
-    rw [hamiltonianVectorField_neg_real_sq_add_momentum_sq_div_two]
-    ext <;> simp
+    rw [Pi.neg_apply, hamiltonianVectorField_rescale_neg_one, neg_neg, hamiltonianVectorField_neg]
   rw [h]
-  exact ⟨_, ContinuousLinearMap.lipschitzWith _⟩
+  exact ⟨K, hK.neg⟩
 
 /-- The rotations solve Hamilton's equation `q' = p`, `p' = -q` of the harmonic oscillator for
 `dλ` in the convention `dλ(X, ·) = -dH`. -/
@@ -243,7 +244,7 @@ theorem hasDerivAt_realCotangentRotation (t : ℝ) (x : ℝ × StrongDual ℝ �
 /-- **The harmonic oscillator before transport.** For `H = (q² + p²) / 2` on `T*ℝ`, the flow of
 the field `X` with `dλ(X, ·) = -dH`, the Hamiltonian flow of `-H` for `dλ` in Tau Ceti's
 convention, is the clockwise rotation `realCotangentRotation t`. -/
-theorem hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator {K : ℝ≥0}
+theorem hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two {K : ℝ≥0}
     (hX : LipschitzWith K
       ((strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2)))
@@ -260,7 +261,7 @@ theorem hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator {K : ℝ≥0
 /-- **The harmonic oscillator after transport.** The Hamiltonian flow of `-H ∘ ν⁻¹ = -H` for
 `ω = -dλ`, with `H = (q² + p²) / 2`, is the conjugate `ν ∘ realCotangentRotation t ∘ ν⁻¹` of the
 flow before transport. -/
-theorem hamiltonianFlow_neg_realCotangentOscillator {K : ℝ≥0}
+theorem hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two {K : ℝ≥0}
     (hX : LipschitzWith K
       (strongDualCotangentSymplecticForm.hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2)))
@@ -275,7 +276,7 @@ theorem hamiltonianFlow_neg_realCotangentOscillator {K : ℝ≥0}
     funext y
     simp
   obtain ⟨K₁, hX₁⟩ :=
-    exists_lipschitzWith_hamiltonianVectorField_rescale_neg_one_neg_realCotangentOscillator
+    exists_lipschitzWith_hamiltonianVectorField_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two
   have hX₁' : LipschitzWith K₁
       ((strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         ((-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) ∘
@@ -286,11 +287,10 @@ theorem hamiltonianFlow_neg_realCotangentOscillator {K : ℝ≥0}
       (strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianFlow
         ((-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) ∘
           (cotangentFiberNeg (V := ℝ)).toLinearEquiv) hX₁' t y =
-        realCotangentRotation t y := by
-    revert hX₁'
-    rw [hHν]
-    intro hX₁'
-    exact hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator hX₁' t y
+        realCotangentRotation t y :=
+    (hamiltonianFlow_apply_eq_of_eventuallyEq _ _ hX₁' hX₁ fun _ _ ↦
+      Filter.EventuallyEq.of_eq hHν).trans
+      (hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two hX₁ t y)
   have h := isSymplectomorphism_cotangentFiberNeg.map_hamiltonianFlow _ hX₁' hX t
     (cotangentFiberNeg x)
   rw [hsrc] at h
@@ -299,7 +299,7 @@ theorem hamiltonianFlow_neg_realCotangentOscillator {K : ℝ≥0}
 /-! ### The linearized flows and their Conley–Zehnder index -/
 
 /-- The linearized flow of the harmonic oscillator before transport is the rotation itself. -/
-theorem fderiv_hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator {K : ℝ≥0}
+theorem fderiv_hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two {K : ℝ≥0}
     (hX : LipschitzWith K
       ((strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2)))
@@ -310,12 +310,12 @@ theorem fderiv_hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator {K : 
   have h : ((strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianFlow
       (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) hX t :
         ℝ × StrongDual ℝ ℝ → ℝ × StrongDual ℝ ℝ) = realCotangentRotation t :=
-    funext (hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator hX t)
+    funext (hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two hX t)
   rw [h, ContinuousLinearMap.fderiv]
 
 /-- The linearized flow of the harmonic oscillator after transport is the conjugate by `ν` of the
 rotation. -/
-theorem fderiv_hamiltonianFlow_neg_realCotangentOscillator {K : ℝ≥0}
+theorem fderiv_hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two {K : ℝ≥0}
     (hX : LipschitzWith K
       (strongDualCotangentSymplecticForm.hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2)))
@@ -331,7 +331,7 @@ theorem fderiv_hamiltonianFlow_neg_realCotangentOscillator {K : ℝ≥0}
       (cotangentFiberNeg (V := ℝ) : (ℝ × StrongDual ℝ ℝ) →L[ℝ] (ℝ × StrongDual ℝ ℝ)).comp
         ((realCotangentRotation t).comp
           (cotangentFiberNeg (V := ℝ) : (ℝ × StrongDual ℝ ℝ) →L[ℝ] (ℝ × StrongDual ℝ ℝ))) :=
-    funext (hamiltonianFlow_neg_realCotangentOscillator hX t)
+    funext (hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two hX t)
   rw [h, ContinuousLinearMap.fderiv]
 
 /-- In the frame `(∂_q, ∂_p)` the rotation `realCotangentRotation t` has the matrix
@@ -357,6 +357,12 @@ def realCotangentRotationUnitaryPath :
   source' := by simp
   target' := by simp
 
+/-- `realCotangentRotationUnitaryPath t` is `e^{-it}`. -/
+@[simp]
+theorem realCotangentRotationUnitaryPath_apply (t : I) :
+    realCotangentRotationUnitaryPath t = unitaryTorusHom (Fin 1) fun _ ↦ Circle.exp (-t) :=
+  (rfl)
+
 /-- The path `t ↦ [[cos t, sin t], [-sin t, cos t]]`, `t ∈ [0, 1]`, of symplectic matrices: the
 realification of `t ↦ e^{-it}`, the clockwise rotation `exp (t J S)` with `S = -1`. It is the
 linearized flow of the harmonic oscillator on `T*ℝ` in a symplectic frame, both before and after
@@ -367,18 +373,18 @@ def realCotangentRotationPath :
   realCotangentRotationUnitaryPath.map GLSymplectic.continuous_ofUnitary
 
 /-- The matrix of `realCotangentRotationPath t` is the realification of `e^{-it}`. -/
+@[simp]
 theorem coe_realCotangentRotationPath (t : I) :
     ((realCotangentRotationPath t : GL (Fin 1 ⊕ Fin 1) ℝ) :
         Matrix (Fin 1 ⊕ Fin 1) (Fin 1 ⊕ Fin 1) ℝ) =
       (diagonal fun _ : Fin 1 ↦ Complex.exp (((-t : ℝ) : ℂ) * Complex.I)).realify := by
-  simp [realCotangentRotationPath, realCotangentRotationUnitaryPath, Circle.coe_exp,
-    Complex.exp_neg]
+  simp [realCotangentRotationPath, Circle.coe_exp, Complex.exp_neg]
 
 /-- **The linearized flow before transport.** For `H = (q² + p²) / 2` on `T*ℝ`, the linearized
 flow of the field `X` with `dλ(X, ·) = -dH`, at any base point, has in the symplectic frame
 `(∂_q, ∂_p)` of `dλ` the matrix `realCotangentRotationPath t` at every time `t ∈ [0, 1]`. -/
-theorem toMatrix_fderiv_hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator {K : ℝ≥0}
-    (hX : LipschitzWith K
+theorem toMatrix_fderiv_hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two
+    {K : ℝ≥0} (hX : LipschitzWith K
       ((strongDualCotangentSymplecticForm.rescale (-1) (by norm_num)).hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2)))
     (t : I) (x : ℝ × StrongDual ℝ ℝ) :
@@ -387,14 +393,14 @@ theorem toMatrix_fderiv_hamiltonianFlow_rescale_neg_one_neg_realCotangentOscilla
           (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) hX t) x) =
       ((realCotangentRotationPath t : GL (Fin 1 ⊕ Fin 1) ℝ) :
         Matrix (Fin 1 ⊕ Fin 1) (Fin 1 ⊕ Fin 1) ℝ) := by
-  rw [fderiv_hamiltonianFlow_rescale_neg_one_neg_realCotangentOscillator,
+  rw [fderiv_hamiltonianFlow_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two,
     coe_realCotangentRotationPath, ← toMatrix_realCotangentRotation]
 
 /-- **The linearized flow after transport.** The linearized flow of the Hamiltonian
 `-H ∘ ν⁻¹ = -H` for `ω = -dλ`, at any base point, has in the symplectic frame `(∂_q, -∂_p)` of `ω`
 the same matrix `realCotangentRotationPath t` as the flow before transport in the frame
 `(∂_q, ∂_p)`, at every time `t ∈ [0, 1]`. -/
-theorem toMatrix_fderiv_hamiltonianFlow_neg_realCotangentOscillator {K : ℝ≥0}
+theorem toMatrix_fderiv_hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two {K : ℝ≥0}
     (hX : LipschitzWith K
       (strongDualCotangentSymplecticForm.hamiltonianVectorField
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2)))
@@ -404,7 +410,7 @@ theorem toMatrix_fderiv_hamiltonianFlow_neg_realCotangentOscillator {K : ℝ≥0
           (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) hX t) x) =
       ((realCotangentRotationPath t : GL (Fin 1 ⊕ Fin 1) ℝ) :
         Matrix (Fin 1 ⊕ Fin 1) (Fin 1 ⊕ Fin 1) ℝ) := by
-  rw [fderiv_hamiltonianFlow_neg_realCotangentOscillator, coe_realCotangentRotationPath,
+  rw [fderiv_hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two, coe_realCotangentRotationPath,
     ← toMatrix_realCotangentRotation]
   -- `ν` is an involution, so conjugating by it is the change from the frame `(∂_q, ∂_p)` to the
   -- frame `(∂_q, -∂_p)`.
@@ -421,7 +427,7 @@ theorem conleyZehnderIndex_realCotangentRotationPath :
       realCotangentRotationUnitaryPath (α := fun _ ↦ -1)
       (fun _ ↦ by rw [abs_neg, abs_one]; linarith [Real.two_le_pi])
       (fun t ↦ by
-        simp [realCotangentRotationUnitaryPath, Circle.coe_exp, Complex.exp_neg])]
+        simp [Circle.coe_exp, Complex.exp_neg])]
   simp [Real.sign_neg, Real.sign_one]
 
 end TauCeti
