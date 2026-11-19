@@ -71,11 +71,11 @@ once.
   change the set of entries.
 * `Fin.existsUnique_isLeft_castSucc_and_isRight_succ`: a tuple in `α ⊕ β` from the left summand to
   the right one that never steps back steps from left to right exactly once.
-* `TauCeti.contractNth_comp_val`: contracting two adjacent entries of a tuple read off a sequence
+* `Fin.contractNth_comp_val`: contracting two adjacent entries of a tuple read off a sequence
   indexed by `ℕ` is reading off the contracted sequence `TauCeti.natContract`.
 * `TauCeti.natRotate`: cyclic rotation of the first entries of a sequence indexed by `ℕ`.
 * `TauCeti.natInsert`: insertion of an entry into a sequence indexed by `ℕ`.
-* `TauCeti.insertNth_comp_val`: inserting an entry into a tuple read off a sequence indexed by `ℕ`
+* `Fin.insertNth_comp_val`: inserting an entry into a tuple read off a sequence indexed by `ℕ`
   is reading off the sequence with the entry inserted.
 -/
 
@@ -468,7 +468,7 @@ section Mul
 variable [Mul α]
 
 /-- Contraction `(b₀, …, bᵢ bᵢ₊₁, bᵢ₊₂, …)` of the entries `i` and `i + 1` of a sequence indexed
-by `ℕ`. On the first `n + 2` entries it is `Fin.contractNth` (`TauCeti.contractNth_comp_val`). -/
+by `ℕ`. On the first `n + 2` entries it is `Fin.contractNth` (`Fin.contractNth_comp_val`). -/
 def natContract (i : ℕ) (b : ℕ → α) (k : ℕ) : α :=
   if k < i then b k else if k = i then b k * b (k + 1) else b (k + 1)
 
@@ -491,14 +491,6 @@ theorem natContract_self (i : ℕ) (b : ℕ → α) : natContract i b i = b i * 
 @[simp]
 theorem natContract_of_gt {i k : ℕ} (h : i < k) (b : ℕ → α) : natContract i b k = b (k + 1) := by
   rw [natContract_apply, ite_eq_right (by omega), ite_eq_right (by omega)]
-
-/-- Contracting two adjacent entries of a tuple read off a sequence indexed by `ℕ` is reading off
-the contracted sequence. -/
-theorem contractNth_comp_val {n : ℕ} (j : Fin (n + 2)) (b : ℕ → α) :
-    Fin.contractNth j (· * ·) (fun k : Fin (n + 2) ↦ b k) =
-      fun k : Fin (n + 1) ↦ natContract j b k := by
-  funext k
-  simp only [Fin.contractNth, Fin.val_castSucc, Fin.val_succ, natContract_apply]
 
 end Mul
 
@@ -523,7 +515,7 @@ theorem natRotate_succ (n : ℕ) (b : ℕ → α) (k : ℕ) : natRotate n b (k +
   ite_eq_right k.succ_ne_zero
 
 /-- Insertion `(b₀, …, bᵢ₋₁, c, bᵢ, bᵢ₊₁, …)` of the entry `c` at position `i` of a sequence
-indexed by `ℕ`. On the first `m + 1` entries it is `Fin.insertNth` (`TauCeti.insertNth_comp_val`).
+indexed by `ℕ`. On the first `m + 1` entries it is `Fin.insertNth` (`Fin.insertNth_comp_val`).
 -/
 def natInsert (i : ℕ) (c : α) (b : ℕ → α) (k : ℕ) : α :=
   if k < i then b k else if k = i then c else b (k - 1)
@@ -549,20 +541,36 @@ theorem natInsert_of_gt {i k : ℕ} (h : i < k) (c : α) (b : ℕ → α) :
     natInsert i c b k = b (k - 1) := by
   rw [natInsert_apply, ite_eq_right (by omega), ite_eq_right (by omega)]
 
+end TauCeti
+
+namespace Fin
+
+open TauCeti
+
+variable {α : Type*}
+
+/-- Contracting two adjacent entries of a tuple read off a sequence indexed by `ℕ` is reading off
+the contracted sequence. -/
+theorem contractNth_comp_val [Mul α] {n : ℕ} (j : Fin (n + 2)) (b : ℕ → α) :
+    contractNth j (· * ·) (fun k : Fin (n + 2) ↦ b k) =
+      fun k : Fin (n + 1) ↦ natContract j b k := by
+  funext k
+  simp only [contractNth, val_castSucc, val_succ, natContract_apply]
+
 /-- Inserting an entry into a tuple read off a sequence indexed by `ℕ` is reading off the
 sequence with the entry inserted. -/
 theorem insertNth_comp_val {m : ℕ} (p : Fin (m + 1)) (v : α) (f : ℕ → α) :
     p.insertNth (α := fun _ ↦ α) v (fun s : Fin m ↦ f s) =
       fun t : Fin (m + 1) ↦ natInsert p v f t := by
   funext t
-  cases t using Fin.succAboveCases p with
+  cases t using succAboveCases p with
   | x => simp
   | p s =>
-    rw [Fin.insertNth_apply_succAbove]
+    rw [insertNth_apply_succAbove]
     rcases lt_or_ge s.castSucc p with h | h
-    · rw [Fin.succAbove_of_castSucc_lt _ _ h, Fin.val_castSucc,
-        natInsert_of_lt (by rwa [Fin.lt_def, Fin.val_castSucc] at h)]
-    · rw [Fin.succAbove_of_le_castSucc _ _ h, Fin.val_succ,
-        natInsert_of_gt (by rw [Fin.le_def, Fin.val_castSucc] at h; omega), Nat.add_sub_cancel]
+    · rw [succAbove_of_castSucc_lt _ _ h, val_castSucc,
+        natInsert_of_lt (by rwa [lt_def, val_castSucc] at h)]
+    · rw [succAbove_of_le_castSucc _ _ h, val_succ,
+        natInsert_of_gt (by rw [le_def, val_castSucc] at h; omega), Nat.add_sub_cancel]
 
-end TauCeti
+end Fin

@@ -116,7 +116,7 @@ private theorem clampIndex_insertNth {j : ℕ} (l : Fin (j + 2)) (c : ι) (k : F
   have ht' : min t (j + 1) = t := Nat.min_eq_left ht
   rw [clampIndex]
   conv_lhs => rw [hk]
-  rw [insertNth_comp_val]
+  rw [Fin.insertNth_comp_val]
   simp only [ht']
 
 variable [Monoid B] (x y : ι → B)
@@ -228,7 +228,8 @@ private theorem homotopyTerm_val {n : ℕ} (j : Fin (n + 1)) (k : Fin (j + 1) �
     MultilinearMap.curryMid_apply_apply]
   congr 1
   funext t
-  rw [insertNth_comp_val j.succ _ (fun s ↦ LinearMap.mulLeftRight R (homotopyPair x y k s) (g s))]
+  rw [Fin.insertNth_comp_val j.succ _
+    (fun s ↦ LinearMap.mulLeftRight R (homotopyPair x y k s) (g s))]
   simp only [natInsert_apply, natHomotopy, homotopyPair, Fin.val_succ]
   split_ifs <;> first | rfl | omega | simp [clampIndex_self]
 

@@ -157,7 +157,7 @@ private theorem contractNth_update_comp_val [Mul A] {n : ℕ} (j : Fin (n + 1)) 
         (natContract j (update b k x) (natContractPos j k)) := by
   have hupd : update (fun m : Fin (n + 2) ↦ b m) k x = fun m : Fin (n + 2) ↦ update b k x m :=
     (update_comp_eq_of_injective b Fin.val_injective k x).symm
-  rw [hupd, contractNth_comp_val]
+  rw [hupd, Fin.contractNth_comp_val]
   funext m
   by_cases hm : (m : ℕ) = natContractPos j k
   · obtain rfl : m = ⟨natContractPos j k, natContractPos_lt j.2 k.2⟩ := Fin.ext hm
@@ -218,7 +218,7 @@ theorem hochschildFace_last (a : Fin (n + 2) → A) :
       Fin.cons (a (Fin.last (n + 1)) * a 0) fun k ↦ a k.castSucc.succ := by
   obtain ⟨b, hb⟩ := Fin.val_injective.surjective_comp_right' (fun _ : ℕ ↦ a 0) a
   obtain rfl : a = fun k : Fin _ ↦ b k := hb.symm
-  rw [hochschildFace_last_eq_contractNth, comp_finRotate_symm_comp_val, contractNth_comp_val]
+  rw [hochschildFace_last_eq_contractNth, comp_finRotate_symm_comp_val, Fin.contractNth_comp_val]
   funext k
   cases k using Fin.cases <;> simp [natRotate_apply]
 
@@ -227,14 +227,14 @@ read off the contracted sequence. -/
 theorem hochschildFace_castSucc_comp_val (j : Fin (n + 1)) (b : ℕ → A) :
     hochschildFace j.castSucc (fun k : Fin (n + 2) ↦ b k) =
       fun k : Fin (n + 1) ↦ natContract j b k := by
-  rw [hochschildFace_castSucc, contractNth_comp_val, Fin.val_castSucc]
+  rw [hochschildFace_castSucc, Fin.contractNth_comp_val, Fin.val_castSucc]
 
 /-- The last Hochschild face, on a tuple read off a sequence indexed by `ℕ`, is read off the
 contraction of the first two entries of the rotated sequence. -/
 theorem hochschildFace_last_comp_val (b : ℕ → A) :
     hochschildFace (Fin.last (n + 1)) (fun k : Fin (n + 2) ↦ b k) =
       fun k : Fin (n + 1) ↦ natContract 0 (natRotate (n + 1) b) k := by
-  rw [hochschildFace_last_eq_contractNth, comp_finRotate_symm_comp_val, contractNth_comp_val,
+  rw [hochschildFace_last_eq_contractNth, comp_finRotate_symm_comp_val, Fin.contractNth_comp_val,
     Fin.val_zero]
 
 /-- The `l`-th Hochschild face of the first `m + 1` entries of a sequence indexed by `ℕ`: the
