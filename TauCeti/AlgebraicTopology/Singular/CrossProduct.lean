@@ -39,7 +39,7 @@ complexes.
 
 The class of a point is a unit for the cross product: for a point `y` of `Y`, the cross product
 `a × [y]` is the image of `a` under the inclusion `X → X × Y`, `x ↦ (x, y)`, with the coefficients
-`R ≅ R ⊗ 𝟙_ C` (`TopCat.singularHomologyCross_singularHomology₀Section`). On chains, the shuffle
+`R ≅ R ⊗ 𝟙_ C` (`TopCat.singularHomology₀Section_singularHomologyCross`). On chains, the shuffle
 product of a singular simplex with a vertex projects back onto the simplex.
 
 The cross product is associative: the map induced by the associators of the spaces and of the
@@ -69,7 +69,7 @@ with `𝟙_ C` through the left unitor, the statement needs no coefficient braid
 * `TopCat.singularHomologyCross_naturality` and
   `TopCat.singularHomologyCross_coefficient_naturality`: naturality in the spaces and in the
   coefficients.
-* `TopCat.singularHomologyCross_singularHomology₀Section`: the cross product with the class of a
+* `TopCat.singularHomology₀Section_singularHomologyCross`: the cross product with the class of a
   point is the inclusion of the first factor at that point.
 * `TopCat.singularHomologyCross_comp_homologyMap_alexanderWhitney`: under the Eilenberg–Zilber
   isomorphism, the homology cross product is the cross product of the singular chain complexes.
@@ -233,7 +233,7 @@ private lemma rightUnitor_inv_whiskerLeft_shuffle_f_fst (X Y : TopCat.{w}) (R S 
 
 /-- The cross product with the class of a point, followed by the projection to the first factor,
 is the coefficient map `r ↦ r ⊗ t`. -/
-private lemma singularHomologyCross_singularHomology₀Section_map_fst (X Y : TopCat.{w})
+private lemma singularHomology₀Section_singularHomologyCross_map_fst (X Y : TopCat.{w})
     (R S : C) (p : ℕ)
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorLeft (((toSSet.obj X).chainComplex R).homology p))]
@@ -293,7 +293,7 @@ private lemma singularHomologyCross_singularHomology₀Section_map_fst (X Y : To
 `a ∈ Hₚ(X; R)` with the class of `y` weighted by `t` is the image of `a` under the coefficient map
 `R ≅ R ⊗ 𝟙_ C ⟶ R ⊗ S`, `r ↦ r ⊗ t`, followed by the inclusion `X → X × Y`, `x ↦ (x, y)`. -/
 @[reassoc]
-lemma singularHomologyCross_singularHomology₀Section (X Y : TopCat.{w}) (R S : C) (p : ℕ)
+lemma singularHomology₀Section_singularHomologyCross (X Y : TopCat.{w}) (R S : C) (p : ℕ)
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorLeft (((toSSet.obj X).chainComplex R).homology p))]
     [PreservesColimitsOfShape WalkingParallelPair
@@ -318,7 +318,7 @@ lemma singularHomologyCross_singularHomology₀Section (X Y : TopCat.{w}) (R S :
   have hnat := singularHomologyCross_naturality (𝟙 X) c R S p 0 p (add_zero p)
   rw [CategoryTheory.Functor.map_id, id_tensorHom, hfac, CategoryTheory.Functor.map_comp] at hnat
   rw [hc, ← Category.assoc t, whiskerLeft_comp_assoc, hnat,
-    reassoc_of% (singularHomologyCross_singularHomology₀Section_map_fst X Y R S p y t)]
+    reassoc_of% (singularHomology₀Section_singularHomologyCross_map_fst X Y R S p y t)]
 
 /-- **The homology cross product under Eilenberg–Zilber**: following the homology cross product
 by the map induced by the Alexander–Whitney map gives the cross product of the singular chain
