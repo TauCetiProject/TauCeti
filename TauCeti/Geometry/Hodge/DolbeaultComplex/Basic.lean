@@ -130,6 +130,7 @@ theorem del_delBar_delBar (x : A) : X.del (X.delBar (X.delBar x)) = 0 := by
   rw [delBar_delBar, map_zero]
 
 /-- `∂∂bar` kills the image of the total differential. -/
+@[simp]
 theorem del_delBar_d (x : A) : X.del (X.delBar (X.d x)) = 0 := by
   simp [d_apply]
 
@@ -142,17 +143,13 @@ theorem d_del_delBar (x : A) : X.d (X.del (X.delBar x)) = 0 := by
 the shift by `(1, 0)` of every type in `S`. -/
 theorem del_mem_iSup {S T : Set (ℤ × ℤ)} (hST : ∀ i ∈ S, (i.1 + 1, i.2) ∈ T) {x : A}
     (hx : x ∈ ⨆ i : S, 𝒜 i) : X.del x ∈ ⨆ i : T, 𝒜 i :=
-  Submodule.iSup_induction _ (motive := fun x ↦ X.del x ∈ ⨆ i : T, 𝒜 i) hx
-    (fun i _ hx ↦ Submodule.mem_iSup_of_mem ⟨_, hST i i.property⟩ (X.del_mem hx))
-    (by simp) (fun _ _ hx hy ↦ by simpa only [map_add] using add_mem hx hy)
+  TauCeti.DirectSum.map_mem_iSup X.del (fun _ _ ↦ X.del_mem) hST hx
 
 /-- `∂bar` carries a sum of type pieces indexed by `S` into the sum indexed by `T` when `T` contains
 the shift by `(0, 1)` of every type in `S`. -/
 theorem delBar_mem_iSup {S T : Set (ℤ × ℤ)} (hST : ∀ i ∈ S, (i.1, i.2 + 1) ∈ T) {x : A}
     (hx : x ∈ ⨆ i : S, 𝒜 i) : X.delBar x ∈ ⨆ i : T, 𝒜 i :=
-  Submodule.iSup_induction _ (motive := fun x ↦ X.delBar x ∈ ⨆ i : T, 𝒜 i) hx
-    (fun i _ hx ↦ Submodule.mem_iSup_of_mem ⟨_, hST i i.property⟩ (X.delBar_mem hx))
-    (by simp) (fun _ _ hx hy ↦ by simpa only [map_add] using add_mem hx hy)
+  TauCeti.DirectSum.map_mem_iSup X.delBar (fun _ _ ↦ X.delBar_mem) hST hx
 
 /-- The total differential carries a sum of type pieces indexed by `S` into the sum indexed by
 `T` when `T` contains both shifts of every type in `S`. -/
@@ -166,9 +163,7 @@ theorem d_mem_iSup {S T : Set (ℤ × ℤ)} (hST : ∀ i ∈ S, (i.1 + 1, i.2) �
 contains the exchange of every type in `S`. -/
 theorem conj_mem_iSup {S T : Set (ℤ × ℤ)} (hST : ∀ i ∈ S, i.swap ∈ T) {x : A}
     (hx : x ∈ ⨆ i : S, 𝒜 i) : X.conj.toEquiv x ∈ ⨆ i : T, 𝒜 i :=
-  Submodule.iSup_induction _ (motive := fun x ↦ X.conj.toEquiv x ∈ ⨆ i : T, 𝒜 i) hx
-    (fun i _ hx ↦ Submodule.mem_iSup_of_mem ⟨_, hST i i.property⟩ (X.conj_mem hx))
-    (by simp) (fun _ _ hx hy ↦ by simpa only [map_add] using add_mem hx hy)
+  TauCeti.DirectSum.map_mem_iSup X.conj.toEquiv (fun _ _ ↦ X.conj_mem) hST hx
 
 section Decomposition
 
@@ -179,16 +174,8 @@ open TauCeti.DirectSum
 /-- Projection onto the types in a set stable under exchanging the two indices commutes with
 conjugation. -/
 theorem conj_supportedProj {S : Set (ℤ × ℤ)} (hS : ∀ i, i.swap ∈ S ↔ i ∈ S) (x : A) :
-    X.conj.toEquiv (supportedProj 𝒜 S x) = supportedProj 𝒜 S (X.conj.toEquiv x) := by
-  induction x using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | @homogeneous i x =>
-    have hx : X.conj.toEquiv x ∈ 𝒜 i.swap := X.conj_mem x.property
-    by_cases hi : i ∈ S
-    · rw [supportedProj_of_mem x.property hi, supportedProj_of_mem hx ((hS i).2 hi)]
-    · rw [supportedProj_of_notMem x.property hi, supportedProj_of_notMem hx (mt (hS i).1 hi),
-        map_zero]
-  | add x y hx hy => simp only [map_add, hx, hy]
+    X.conj.toEquiv (supportedProj 𝒜 S x) = supportedProj 𝒜 S (X.conj.toEquiv x) :=
+  map_supportedProj X.conj.toEquiv (e := Prod.swap) (fun _ _ ↦ X.conj_mem) hS x
 
 end Decomposition
 
@@ -259,23 +246,14 @@ theorem map_d (f : Hom X Y) (x : A) : f (X.d x) = Y.d (f x) := by
 the corresponding sum. -/
 theorem map_mem_iSup (f : Hom X Y) {S : Set (ℤ × ℤ)} {x : A} (hx : x ∈ ⨆ i : S, 𝒜 i) :
     f x ∈ ⨆ i : S, ℬ i :=
-  Submodule.iSup_induction _ (motive := fun x ↦ f x ∈ ⨆ i : S, ℬ i) hx
-    (fun i _ hx ↦ Submodule.mem_iSup_of_mem i (f.map_mem hx)) (by simp)
-    (fun _ _ hx hy ↦ by simpa only [map_add] using add_mem hx hy)
+  TauCeti.DirectSum.map_mem_iSup f (e := id) (fun _ _ ↦ f.map_mem) (fun _ ↦ id) hx
 
 /-- A morphism of real Dolbeault complexes commutes with the projections onto a set of types. -/
 theorem map_supportedProj [DirectSum.Decomposition 𝒜] [DirectSum.Decomposition ℬ]
     (f : Hom X Y) (S : Set (ℤ × ℤ)) (x : A) :
-    f (TauCeti.DirectSum.supportedProj 𝒜 S x) = TauCeti.DirectSum.supportedProj ℬ S (f x) := by
-  induction x using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | @homogeneous i x =>
-    by_cases hi : i ∈ S
-    · rw [TauCeti.DirectSum.supportedProj_of_mem x.property hi,
-        TauCeti.DirectSum.supportedProj_of_mem (f.map_mem x.property) hi]
-    · rw [TauCeti.DirectSum.supportedProj_of_notMem x.property hi,
-        TauCeti.DirectSum.supportedProj_of_notMem (f.map_mem x.property) hi, map_zero]
-  | add x y hx hy => simp only [map_add, hx, hy]
+    f (TauCeti.DirectSum.supportedProj 𝒜 S x) = TauCeti.DirectSum.supportedProj ℬ S (f x) :=
+  TauCeti.DirectSum.map_supportedProj f (ℳ := 𝒜) (𝒩 := ℬ) (e := id) (fun _ _ ↦ f.map_mem)
+    (fun _ ↦ Iff.rfl) x
 
 variable (X) in
 /-- The identity morphism of a real Dolbeault complex. -/

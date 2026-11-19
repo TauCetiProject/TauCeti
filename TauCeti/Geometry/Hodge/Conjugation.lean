@@ -47,6 +47,11 @@ models.
   exchanges conjugation with taking preimages of subspaces.
 * `TauCeti.Hodge.Conjugation.map_prod`: a conjugation acting componentwise on a product carries a
   product subspace to the product of the conjugate subspaces.
+* `TauCeti.Hodge.Conjugation.twist`: the twisted real structure `W_ℝ(p)`, the subspace on which a
+  conjugation acts by the sign `(-1) ^ p`, equal to `c ^ p • W_ℝ` for every nonzero purely
+  imaginary `c` (`TauCeti.Hodge.Conjugation.mem_twist_iff_exists`).
+* `Complex.conj_zpow_of_conj_eq_neg`: conjugating an integer power `c ^ p` of a purely imaginary
+  number multiplies it by the sign `(-1) ^ p`.
 * `TauCeti.Hodge.Conjugation.dual`: the twisted transpose of a conjugation, again a conjugation,
   on the complex dual space, with its pointwise description
   `TauCeti.Hodge.Conjugation.dual_toEquiv_apply`.
@@ -389,7 +394,7 @@ theorem map_mem_twist_add_one {W' : Type v} [AddCommGroup W'] [Module ℂ W'] (�
 
 /-- Conjugation of a power of a purely imaginary number is the power multiplied by the sign
 `(-1) ^ p`. -/
-private theorem conj_zpow_of_conj_eq_neg {c : ℂ} (hc : starRingEnd ℂ c = -c) (p : ℤ) :
+theorem _root_.Complex.conj_zpow_of_conj_eq_neg {c : ℂ} (hc : starRingEnd ℂ c = -c) (p : ℤ) :
     starRingEnd ℂ (c ^ p) = (p.negOnePow : ℂ) * c ^ p := by
   rw [map_zpow₀, hc]
   rcases Int.even_or_odd p with hp | hp
@@ -409,12 +414,12 @@ theorem mem_twist_iff_exists (ω : Conjugation W) {c : ℂ} (hc : starRingEnd �
   constructor
   · intro hx
     refine ⟨(c ^ p)⁻¹ • x, ?_, ?_⟩
-    · rw [map_smulₛₗ, hx, map_inv₀, conj_zpow_of_conj_eq_neg hc, smul_smul]
+    · rw [map_smulₛₗ, hx, map_inv₀, Complex.conj_zpow_of_conj_eq_neg hc, smul_smul]
       congr 1
       field_simp
     · rw [smul_smul, mul_inv_cancel₀ hcp, one_smul]
   · rintro ⟨y, hy, rfl⟩
-    rw [map_smulₛₗ, hy, conj_zpow_of_conj_eq_neg hc, smul_smul]
+    rw [map_smulₛₗ, hy, Complex.conj_zpow_of_conj_eq_neg hc, smul_smul]
 
 /-- The twisted transpose of a conjugation `ω`: a functional `φ` acts by conjugating the values
 of `φ` along `ω`. It is again an involution, so it packages as a conjugation on the dual space;

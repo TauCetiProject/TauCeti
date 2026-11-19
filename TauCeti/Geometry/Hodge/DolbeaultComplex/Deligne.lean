@@ -133,14 +133,13 @@ variable {X}
 types `(r, s)` with `r < p` and `s < p`. -/
 theorem deligneDiff_of_lt {p a : ℤ} (h : a + 1 < 2 * p) (x : A) :
     X.deligneDiff p a x = -supportedProj 𝒜 {i | i.1 < p ∧ i.2 < p} (X.d x) := by
-  rw [deligneDiff, ite_eq_left h]
-  rfl
+  rw [deligneDiff, ite_eq_left h, LinearMap.neg_apply, LinearMap.comp_apply]
 
 /-- In the critical degree `2p - 1` the Deligne differential is `-2 ∂∂bar`. -/
 theorem deligneDiff_of_eq {p a : ℤ} (h : a + 1 = 2 * p) (x : A) :
     X.deligneDiff p a x = -(2 • X.del (X.delBar x)) := by
-  rw [deligneDiff, ite_eq_right h.not_lt, ite_eq_left h]
-  rfl
+  rw [deligneDiff, ite_eq_right h.not_lt, ite_eq_left h, LinearMap.neg_apply,
+    LinearMap.smul_apply, LinearMap.comp_apply]
 
 /-- From degree `2p` on the Deligne differential is the total differential `d`. -/
 theorem deligneDiff_of_le {p a : ℤ} (h : 2 * p ≤ a) (x : A) :
@@ -273,7 +272,9 @@ theorem deligneComplex_d_apply (p a : ℤ) (x : X.delignePiece p a) :
     Subtype.val (p := (· ∈ X.delignePiece p (a + 1))) ((X.deligneComplex p).d a (a + 1) x) =
       X.deligneDiff p a x := by
   simp only [deligneComplex, CochainComplex.of_d, ModuleCat.hom_ofHom]
-  rfl
+  -- The terms of `CochainComplex.of` are only definitionally the subtypes `delignePiece`, so
+  -- `LinearMap.coe_restrict_apply` cannot be rewritten here and is applied up to that unfolding.
+  exact LinearMap.coe_restrict_apply _ x
 
 section Hom
 
@@ -327,17 +328,16 @@ theorem deligneMap_f_apply (f : Hom X Y) (p a : ℤ) (x : X.delignePiece p a) :
 @[simp]
 theorem deligneMap_id (p : ℤ) : deligneMap (Hom.id X) p = 𝟙 (X.deligneComplex p) := by
   ext a x
-  apply Subtype.ext
-  simp only [deligneMap, Hom.id_toLinearMap, HomologicalComplex.id_f, ModuleCat.hom_id]
-  rfl
+  -- The terms of `deligneComplex` are only definitionally the subtypes `delignePiece`, so
+  -- `deligneMap_f_apply` cannot be rewritten here and is applied up to that unfolding.
+  exact Subtype.ext ((deligneMap_f_apply (Hom.id X) p a x).trans (Hom.id_apply _))
 
 /-- The map of Deligne complexes induced by a composite is the composite of the induced maps. -/
 theorem deligneMap_comp (g : Hom Y Z) (f : Hom X Y) (p : ℤ) :
     deligneMap (g.comp f) p = deligneMap f p ≫ deligneMap g p := by
   ext a x
-  apply Subtype.ext
-  simp only [deligneMap, Hom.comp_toLinearMap, HomologicalComplex.comp_f]
-  rfl
+  -- As in `deligneMap_id`, `deligneMap_f_apply` is applied up to unfolding the terms.
+  exact Subtype.ext ((deligneMap_f_apply (g.comp f) p a x).trans (Hom.comp_apply g f _))
 
 end Hom
 
