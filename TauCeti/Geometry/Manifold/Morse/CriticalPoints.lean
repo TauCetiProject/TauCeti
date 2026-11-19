@@ -38,10 +38,11 @@ in the preferred extended chart at `x` has zero Fréchet derivative. That is the
 built into `TauCeti.IsMorseOn`, so a Morse function is exactly a smooth function all of whose
 critical points are nondegenerate.
 
-On a boundaryless manifold local extrema are critical points, so a continuous function on a
-nonempty compact boundaryless manifold has a critical point, and so does each nonempty compact
-sublevel of a continuous function. On a compact boundaryless manifold with at least two points it
-has at least two critical points, a maximum and a minimum.
+On a boundaryless manifold local extrema are critical points, and a function has zero derivative
+where it is not differentiable, so every function on a nonempty compact boundaryless manifold has a
+critical point, and so does each nonempty compact sublevel of a continuous function. On a compact
+boundaryless manifold with at least two points a continuous function has at least two critical
+points, a maximum and a minimum.
 The critical set of a `C¹` function is closed, and a nondegenerate critical point is isolated in
 it, so a Morse function has finitely many critical points in every compact set; for a proper
 function bounded below, this applies to every sublevel set. A compact band between regular
@@ -483,12 +484,15 @@ theorem _root_.IsMaxOn.eq_of_le_of_two_criticalPoints {x₀ x₁ y : M} (hx₁ :
   rintro rfl
   exact hy.not_gt hlt
 
-/-- A continuous function on a nonempty compact boundaryless manifold has a critical point, for
-instance a point where it attains its minimum. -/
-theorem criticalPoints_nonempty [CompactSpace M] [Nonempty M] (hf : Continuous f) :
-    (criticalPoints I f).Nonempty := by
-  obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuousOn
-  exact ⟨x, hx.mem_criticalPoints⟩
+/-- A function on a nonempty compact boundaryless manifold has a critical point: a point where it
+attains its minimum if it is continuous, and otherwise a point where it is not differentiable. -/
+theorem criticalPoints_nonempty [CompactSpace M] [Nonempty M] : (criticalPoints I f).Nonempty := by
+  by_cases hf : Continuous f
+  · obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuousOn
+    exact ⟨x, hx.mem_criticalPoints⟩
+  · obtain ⟨x, hx⟩ := not_forall.1 (mt continuous_iff_continuousAt.2 hf)
+    exact ⟨x, mem_criticalPoints_iff_mfderiv_eq_zero.2
+      (mfderiv_zero_of_not_mdifferentiableAt fun hd ↦ hx hd.continuousAt)⟩
 
 /-- A function on a boundaryless manifold has a critical point in each nonempty compact sublevel
 `{f ≤ t}` on which it is continuous, for instance a point where it attains its minimum. -/
