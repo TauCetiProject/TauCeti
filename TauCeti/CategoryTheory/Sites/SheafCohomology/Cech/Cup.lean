@@ -94,6 +94,13 @@ def cechComponent {m : ℕ} (a : Fin (m + 1) → ι) :
   (Pi.π (fun a : Fin (m + 1) → ι ↦ (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj
     (op (∏ᶜ fun j ↦ U (a j)))) a).hom
 
+/-- The factor indexed by `a` of a Čech cochain is its image under the projection of the product
+`(cechAlgebraComplex U F).X m` onto that factor. -/
+theorem cechComponent_apply {m : ℕ} (a : Fin (m + 1) → ι) (c : (cechAlgebraComplex U F).X m) :
+    cechComponent a c = (Pi.π (fun a : Fin (m + 1) → ι ↦ (F ⋙ forget₂ (AlgCat.{w} R)
+      (ModuleCat.{w} R)).obj (op (∏ᶜ fun j ↦ U (a j)))) a).hom c :=
+  (rfl)
+
 /-- A Čech cochain is determined by its factors. -/
 theorem cechCochain_ext {m : ℕ} {c c' : (cechAlgebraComplex U F).X m}
     (h : ∀ a, cechComponent a c = cechComponent a c') : c = c' := by

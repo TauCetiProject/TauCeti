@@ -48,6 +48,9 @@ composition (`Finset.neg_one_pow_card_inversions_comp`).
   the inversions involving `k`.
 * `Finset.neg_one_pow_card_univ_inversions_comp_succAbove`: the inversion sign of a tuple compared
   with the inversion sign of the tuple with its entry at `k` deleted.
+* `Finset.card_univ_inversions_comp_rev_add`, `Finset.neg_one_pow_card_univ_inversions_comp_rev`:
+  reversing an injective tuple of length `n + 1` exchanges its inversions and non-inversions, so
+  it multiplies the inversion sign by `(-1) ^ (n + 1).choose 2`.
 -/
 
 public section
@@ -316,6 +319,44 @@ theorem neg_one_pow_card_univ_inversions_comp_succAbove {R : Type*} [Monoid R] [
   have h := card_univ_inversions_eq_comp_succAbove b k
   rw [← pow_add, ← pow_add, show #{i | b i < b k} + (k : ℕ) + #(univ.inversions (b ∘ k.succAbove)) =
     #(univ.inversions b) + #{i | i < k ∧ b i = b k} + 2 * #{i | i < k ∧ b i < b k} by omega,
+    pow_add _ _ (2 * _), pow_mul, neg_one_sq, one_pow, mul_one]
+
+/-- **Reversing a tuple exchanges inversions and non-inversions.** For an injective tuple, the
+inversions of the reversed tuple are the non-inversions of the tuple, so the two counts add up
+to the number `(n + 1).choose 2` of pairs of positions. -/
+theorem card_univ_inversions_comp_rev_add {k : Fin (n + 1) → β} (hk : Injective k) :
+    #(univ.inversions (k ∘ Fin.rev)) + #(univ.inversions k) = (n + 1).choose 2 := by
+  have h := Fintype.card_product_filter_lt (α := Fin (n + 1))
+  rw [Fintype.card_fin, ← Finset.card_filter_add_card_filter_not
+    (fun x : Fin (n + 1) × Fin (n + 1) ↦ k x.1 < k x.2), Finset.filter_filter,
+    Finset.filter_filter] at h
+  rw [← h, inversions_univ, inversions_univ]
+  congr 1
+  · refine Finset.card_nbij' (fun x ↦ (Fin.rev x.2, Fin.rev x.1))
+      (fun x ↦ (Fin.rev x.2, Fin.rev x.1)) (fun x hx ↦ ?_) (fun x hx ↦ ?_) (fun x _ ↦ ?_)
+      (fun x _ ↦ ?_)
+    · simp only [coe_filter, mem_univ, true_and, Set.mem_ofPred_eq, comp_apply] at hx ⊢
+      exact ⟨Fin.rev_lt_rev.2 hx.1, hx.2⟩
+    · simp only [coe_filter, mem_univ, true_and, Set.mem_ofPred_eq, comp_apply,
+        Fin.rev_rev] at hx ⊢
+      exact ⟨Fin.rev_lt_rev.2 hx.1, hx.2⟩
+    · simp
+    · simp
+  · refine congrArg Finset.card (Finset.filter_congr fun x _ ↦ and_congr_right fun hx ↦ ?_)
+    rw [not_lt]
+    exact lt_iff_le_and_ne.trans (and_iff_left (hk.ne hx.ne'))
+
+/-- **Reversing a tuple multiplies its inversion sign by the sign of the reversal.** For an
+injective tuple `k` of length `n + 1`, the inversion sign of `k ∘ Fin.rev` is that of `k` times
+`(-1) ^ (n + 1).choose 2`. -/
+theorem neg_one_pow_card_univ_inversions_comp_rev {R : Type*} [Monoid R] [HasDistribNeg R]
+    {k : Fin (n + 1) → β} (hk : Injective k) :
+    (-1 : R) ^ (n + 1).choose 2 * (-1) ^ #(univ.inversions (k ∘ Fin.rev)) =
+      (-1) ^ #(univ.inversions k) := by
+  rw [← card_univ_inversions_comp_rev_add hk, ← pow_add,
+    show #(univ.inversions (k ∘ Fin.rev)) + #(univ.inversions k) +
+      #(univ.inversions (k ∘ Fin.rev)) =
+      #(univ.inversions k) + 2 * #(univ.inversions (k ∘ Fin.rev)) by omega,
     pow_add _ _ (2 * _), pow_mul, neg_one_sq, one_pow, mul_one]
 
 end Tuple
