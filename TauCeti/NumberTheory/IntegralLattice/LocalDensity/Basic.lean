@@ -15,6 +15,7 @@ import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.LinearAlgebra.Matrix.Defs
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -709,7 +710,7 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_one (hp : p ≠ 2)
       atTop (𝓝 (2 * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹))) := by
   convert tendsto_localDensityCount_div_of_isUnit_det hp hA hdet using 2
   have hsymm : (A.map PadicInt.toZMod).IsSymm := IsSymm.map hA _
-  have hdet' := det_map_ne_zero_of_isUnit_det PadicInt.toZMod hdet
+  have hdet' := RingHom.det_map_ne_zero_of_isUnit_det PadicInt.toZMod hdet
   have hchar : ringChar (ZMod p) ≠ 2 := by rwa [ZMod.ringChar_zmod_n]
   have h := hsymm.natCard_isometryMatrices_eq_of_card_eq_two_mul_add_one hchar hdet' hn
   rw [ZMod.card] at h
@@ -747,7 +748,7 @@ theorem tendsto_localDensityCount_div_of_card_eq_two_mul_add_two (hp : p ≠ 2)
         ((p : ℚ) ^ (m + 1))⁻¹) * ∏ i ∈ Finset.range m, (1 - ((p : ℚ) ^ (2 * (i + 1)))⁻¹))) := by
   convert tendsto_localDensityCount_div_of_isUnit_det hp hA hdet using 2
   have hsymm : (A.map PadicInt.toZMod).IsSymm := IsSymm.map hA _
-  have hdet' := det_map_ne_zero_of_isUnit_det PadicInt.toZMod hdet
+  have hdet' := RingHom.det_map_ne_zero_of_isUnit_det PadicInt.toZMod hdet
   have hchar : ringChar (ZMod p) ≠ 2 := by rwa [ZMod.ringChar_zmod_n]
   have h := hsymm.natCard_isometryMatrices_eq_of_card_eq_two_mul_add_two hchar hdet' hn
   rw [ZMod.card] at h
