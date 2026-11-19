@@ -323,6 +323,10 @@ theorem trace_mulLeft_eq_deg_mul_reducedTrace (a : A) :
     LinearMap.trace K A (LinearMap.mulLeft K a) = deg K A * reducedTrace K A a := by
   let e := sepClosureSplitting K A
   apply (algebraMap K (SeparableClosure K)).injective
+  -- `Algebra.baseChange_lmul` is stated with `Algebra.lmul R B f`, whose underlying map is
+  -- `LinearMap.mulLeft R f` by definition, so the `show` restates it in the `LinearMap.mulLeft`
+  -- form in which `LinearMap.trace_baseChange` leaves the goal and which
+  -- `AlgEquiv.linearEquivConj_mulLeft` rewrites.
   rw [map_mul, map_natCast, algebraMap_reducedTrace e, ← LinearMap.trace_baseChange,
     show (LinearMap.mulLeft K a).baseChange (SeparableClosure K) =
       LinearMap.mulLeft (SeparableClosure K) (1 ⊗ₜ a) from Algebra.baseChange_lmul a,
