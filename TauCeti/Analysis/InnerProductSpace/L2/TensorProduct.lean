@@ -118,7 +118,7 @@ theorem norm_tensorProdMul (x : Lp 𝕜 2 μ ⊗[𝕜] Lp 𝕜 2 ν) : ‖tensor
   simpa using tensorProdMulₗᵢ.norm_map x
 
 /-- `tensorProdMul` is injective. -/
-theorem injective_tensorProdMul :
+theorem tensorProdMul_injective :
     Function.Injective (tensorProdMul : Lp 𝕜 2 μ ⊗[𝕜] Lp 𝕜 2 ν → Lp 𝕜 2 (μ.prod ν)) := by
   simpa using (tensorProdMulₗᵢ (𝕜 := 𝕜) (μ := μ) (ν := ν)).injective
 
@@ -197,14 +197,10 @@ theorem eq_completedTensorProdEquiv_iff
         T ((F ⊗ₜ[𝕜] G : Lp 𝕜 2 μ ⊗[𝕜] Lp 𝕜 2 ν) : Completion (Lp 𝕜 2 μ ⊗[𝕜] Lp 𝕜 2 ν)) =
           prodMul F G := by
   refine ⟨fun h F G ↦ by simp [h], fun h ↦ ?_⟩
-  -- Both maps agree on the algebraic tensor product, which is dense in its completion.
-  refine ContinuousLinearMap.ext fun z ↦ ?_
-  induction z using Completion.induction_on with
-  | hp => exact isClosed_eq T.continuous (ContinuousLinearMap.continuous _)
-  | ih x =>
-    induction x using TensorProduct.inductionOn with
-    | add x₁ x₂ h₁ h₂ =>
-      rw [Completion.coe_add, map_add, map_add, h₁, h₂]
-    | tmul F G => simp [h F G]
+  -- Both maps extend `tensorProdMul` from the algebraic tensor product to its completion.
+  refine (ContinuousLinearMap.fromCompletion_unique _ T fun x ↦ ?_).symm
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ h₁ h₂ => rw [map_add, Completion.coe_add, map_add, h₁, h₂]
+  | tmul F G => simp [h F G]
 
 end MeasureTheory.Lp
