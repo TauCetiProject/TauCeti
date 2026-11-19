@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.FreeEndpoint
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
-import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 
@@ -48,7 +47,8 @@ identity, they compose, and the inverse of a shear is the shear back.
 * `TauCeti.cutoffChangePath`: the path `exp w • ∑ i, (χ i - χ' i) • v i`.
 * `TauCeti.WeakDerivStep.cutoffChangeL`: the change-of-cutoff path as a continuous linear map from
   the free variables to `W^{1,p}`, characterized by
-  `TauCeti.WeakDerivStep.prev_cutoffChangeL_ae_eq`.
+  `TauCeti.WeakDerivStep.prev_cutoffChangeL_ae_eq`, with `cutoffChangeL_self`,
+  `cutoffChangeL_add_cutoffChangeL` and `neg_cutoffChangeL`.
 * `TauCeti.WeakDerivStep.trajectoryOperator_cutoffChangeL`: its image under the weighted
   trajectory operator is the difference of the end tails.
 * `TauCeti.WeakDerivStep.cutoffChangeEquiv`: the shear `(ξ, v) ↦ (ξ + g, v)`, with
@@ -172,17 +172,22 @@ private theorem exists_prev_ae_eq_cutoffChangePath (hw : ContDiff ℝ 1 w)
     ∃ u : WeakDerivStep volume ⊤ p
         (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
       ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
-        =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] cutoffChangePath w χ χ' v := by
-  have hg := contDiff_cutoffChangePath hw hχ hχ' v
-  have hgs := hasCompactSupport_cutoffChangePath (w := w) hsupp v
-  -- A `C¹` compactly supported path solves `g' = g' - 0 • g`, with `g` and `g'` in `Lᵖ`.
-  obtain ⟨u, -, hu⟩ := exists_trajectoryOperator_ae_eq_of_hasDerivAt (p := p) (A := 0)
-    (Lp.coeFn_zero (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (v := cutoffChangePath w χ χ' v) (g := deriv (cutoffChangePath w χ χ' v))
-    (fun s ↦ by simpa using (hg.differentiable one_ne_zero s).hasDerivAt)
-    (hg.continuous.memLp_of_hasCompactSupport hgs)
-    ((hg.continuous_deriv le_rfl).memLp_of_hasCompactSupport hgs.deriv)
-  exact ⟨u, hu⟩
+        =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] cutoffChangePath w χ χ' v :=
+  exists_prev_ae_eq_of_contDiff_of_hasCompactSupport (contDiff_cutoffChangePath hw hχ hχ' v)
+    (hasCompactSupport_cutoffChangePath hsupp v)
+
+omit [∀ i, FiniteDimensional ℝ (K i)] in
+/-- The chosen element representing the change-of-cutoff path is the only one. -/
+private theorem eq_choose_of_prev_ae_eq (hw : ContDiff ℝ 1 w)
+    (hχ : ∀ i, ContDiff ℝ 1 (χ i)) (hχ' : ∀ i, ContDiff ℝ 1 (χ' i))
+    (hsupp : ∀ i, HasCompactSupport (χ i - χ' i)) {v : Π i, K i}
+    {u : WeakDerivStep volume ⊤ p
+      (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
+    (hu : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
+      =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] cutoffChangePath w χ χ' v) :
+    (exists_prev_ae_eq_cutoffChangePath hw hχ hχ' hsupp v).choose = u := by
+  ext1
+  exact Lp.ext ((exists_prev_ae_eq_cutoffChangePath hw hχ hχ' hsupp v).choose_spec.trans hu.symm)
 
 /-- The **change of cutoffs** on the free endpoint variables: the continuous linear map sending
 `v` to the change-of-cutoff path `exp w • ∑ i, (χ i - χ' i) • v i`, as an element of `W^{1,p}`
@@ -193,29 +198,15 @@ def cutoffChangeL (hw : ContDiff ℝ 1 w) (hχ : ∀ i, ContDiff ℝ 1 (χ i))
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :=
   LinearMap.toContinuousLinearMap
     { toFun v := (exists_prev_ae_eq_cutoffChangePath (p := p) hw hχ hχ' hsupp v).choose
-      map_add' v v' := by
-        ext1
-        refine Lp.ext ?_
-        filter_upwards [
-          (exists_prev_ae_eq_cutoffChangePath (p := p) hw hχ hχ' hsupp (v + v')).choose_spec,
-          (exists_prev_ae_eq_cutoffChangePath (p := p) hw hχ hχ' hsupp v).choose_spec,
-          (exists_prev_ae_eq_cutoffChangePath (p := p) hw hχ hχ' hsupp v').choose_spec,
-          Lp.coeFn_add
-            (prev _ (exists_prev_ae_eq_cutoffChangePath (p := p) hw hχ hχ' hsupp v).choose)
-            (prev _ (exists_prev_ae_eq_cutoffChangePath (p := p) hw hχ hχ' hsupp v').choose)]
-          with s h h₁ h₂ h₃
-        rw [prev_add, h₃, Pi.add_apply, h, h₁, h₂, cutoffChangePath_add, Pi.add_apply]
-      map_smul' c v := by
-        ext1
-        refine Lp.ext ?_
-        filter_upwards [
-          (exists_prev_ae_eq_cutoffChangePath (p := p) hw hχ hχ' hsupp (c • v)).choose_spec,
-          (exists_prev_ae_eq_cutoffChangePath (p := p) hw hχ hχ' hsupp v).choose_spec,
-          Lp.coeFn_smul c
-            (prev _ (exists_prev_ae_eq_cutoffChangePath (p := p) hw hχ hχ' hsupp v).choose)]
-          with s h h₁ h₂
-        rw [RingHom.id_apply, prev_smul, h₂, Pi.smul_apply, h, h₁, cutoffChangePath_smul,
-          Pi.smul_apply] }
+      map_add' v v' := eq_choose_of_prev_ae_eq hw hχ hχ' hsupp <| by
+        rw [prev_add, cutoffChangePath_add]
+        exact (Lp.coeFn_add _ _).trans
+          ((exists_prev_ae_eq_cutoffChangePath hw hχ hχ' hsupp v).choose_spec.add
+            (exists_prev_ae_eq_cutoffChangePath hw hχ hχ' hsupp v').choose_spec)
+      map_smul' c v := eq_choose_of_prev_ae_eq hw hχ hχ' hsupp <| by
+        rw [RingHom.id_apply, prev_smul, cutoffChangePath_smul]
+        exact (Lp.coeFn_smul _ _).trans
+          ((exists_prev_ae_eq_cutoffChangePath hw hχ hχ' hsupp v).choose_spec.const_smul c) }
 
 variable {hw : ContDiff ℝ 1 w} {hχ : ∀ i, ContDiff ℝ 1 (χ i)} {hχ' : ∀ i, ContDiff ℝ 1 (χ' i)}
   {hχ'' : ∀ i, ContDiff ℝ 1 (χ'' i)} {hsupp : ∀ i, HasCompactSupport (χ i - χ' i)}
@@ -234,9 +225,32 @@ theorem cutoffChangeL_eq_of_prev_ae_eq {v : Π i, K i}
       (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
     (hu : ⇑(prev (ContinuousLinearMap.id ℝ (Lp F p (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
       =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] cutoffChangePath w χ χ' v) :
-    cutoffChangeL hw hχ hχ' hsupp v = u := by
-  ext1
-  exact Lp.ext ((prev_cutoffChangeL_ae_eq v).trans hu.symm)
+    cutoffChangeL hw hχ hχ' hsupp v = u :=
+  eq_choose_of_prev_ae_eq hw hχ hχ' hsupp hu
+
+/-- The change of cutoffs from a family of cutoffs to itself vanishes. -/
+@[simp]
+theorem cutoffChangeL_self {hsupp : ∀ i, HasCompactSupport (χ i - χ i)} :
+    cutoffChangeL (p := p) (K := K) hw hχ hχ hsupp = 0 := by
+  refine ContinuousLinearMap.ext fun v ↦ cutoffChangeL_eq_of_prev_ae_eq ?_
+  rw [zero_apply, prev_zero, cutoffChangePath_self]
+  exact Lp.coeFn_zero ..
+
+/-- Changes of cutoffs add up. -/
+theorem cutoffChangeL_add_cutoffChangeL {hsupp' : ∀ i, HasCompactSupport (χ' i - χ'' i)}
+    {hsupp'' : ∀ i, HasCompactSupport (χ i - χ'' i)} :
+    cutoffChangeL (p := p) (K := K) hw hχ hχ' hsupp + cutoffChangeL hw hχ' hχ'' hsupp' =
+      cutoffChangeL hw hχ hχ'' hsupp'' := by
+  refine ContinuousLinearMap.ext fun v ↦ (cutoffChangeL_eq_of_prev_ae_eq ?_).symm
+  rw [add_apply, prev_add, ← cutoffChangePath_add_cutoffChangePath]
+  exact (Lp.coeFn_add _ _).trans ((prev_cutoffChangeL_ae_eq v).add (prev_cutoffChangeL_ae_eq v))
+
+/-- The negative of a change of cutoffs is the change of cutoffs back. -/
+theorem neg_cutoffChangeL {hsupp' : ∀ i, HasCompactSupport (χ' i - χ i)} :
+    -cutoffChangeL (p := p) (K := K) hw hχ hχ' hsupp = cutoffChangeL hw hχ' hχ hsupp' := by
+  refine ContinuousLinearMap.ext fun v ↦ (cutoffChangeL_eq_of_prev_ae_eq ?_).symm
+  rw [neg_apply, ← prevL_apply, map_neg, prevL_apply, cutoffChangePath_symm]
+  exact (Lp.coeFn_neg _).trans (prev_cutoffChangeL_ae_eq v).neg
 
 /-- **The weighted trajectory operator of the change of cutoffs.** For `AL` the class of
 `A - deriv w • id`, the change of cutoffs of `v` is sent to the difference of the end tails of
@@ -321,12 +335,8 @@ theorem coprod_endTailL_comp_cutoffChangeEquiv
 @[simp]
 theorem cutoffChangeEquiv_self {hsupp : ∀ i, HasCompactSupport (χ i - χ i)} :
     cutoffChangeEquiv (p := p) (K := K) hw hχ hχ hsupp = ContinuousLinearEquiv.refl ℝ _ := by
-  have h (v : Π i, K i) : cutoffChangeL (p := p) hw hχ hχ hsupp v = 0 :=
-    cutoffChangeL_eq_of_prev_ae_eq <| by
-      rw [prev_zero, cutoffChangePath_self]
-      exact Lp.coeFn_zero ..
   refine ContinuousLinearEquiv.ext (funext fun x ↦ ?_)
-  rw [cutoffChangeEquiv_apply, h]
+  rw [cutoffChangeEquiv_apply, cutoffChangeL_self]
   simp
 
 /-- Changes of cutoffs compose. -/
@@ -335,34 +345,18 @@ theorem cutoffChangeEquiv_trans {hsupp' : ∀ i, HasCompactSupport (χ' i - χ''
     (cutoffChangeEquiv (p := p) (K := K) hw hχ hχ' hsupp).trans
         (cutoffChangeEquiv hw hχ' hχ'' hsupp') =
       cutoffChangeEquiv hw hχ hχ'' hsupp'' := by
-  have h (v : Π i, K i) : cutoffChangeL (p := p) hw hχ hχ' hsupp v +
-      cutoffChangeL hw hχ' hχ'' hsupp' v = cutoffChangeL hw hχ hχ'' hsupp'' v := by
-    refine (cutoffChangeL_eq_of_prev_ae_eq ?_).symm
-    filter_upwards [prev_cutoffChangeL_ae_eq (p := p) (hw := hw) (hχ := hχ) (hχ' := hχ')
-        (hsupp := hsupp) v,
-      prev_cutoffChangeL_ae_eq (p := p) (hw := hw) (hχ := hχ') (hχ' := hχ'') (hsupp := hsupp') v,
-      Lp.coeFn_add (prev _ (cutoffChangeL (p := p) hw hχ hχ' hsupp v))
-        (prev _ (cutoffChangeL hw hχ' hχ'' hsupp' v))] with s h₁ h₂ h₃
-    rw [prev_add, h₃, Pi.add_apply, h₁, h₂, ← Pi.add_apply,
-      cutoffChangePath_add_cutoffChangePath]
   refine ContinuousLinearEquiv.ext (funext fun x ↦ ?_)
   simp only [ContinuousLinearEquiv.trans_apply, cutoffChangeEquiv_apply]
-  rw [add_assoc, h]
+  rw [add_assoc, ← cutoffChangeL_add_cutoffChangeL (hχ' := hχ') (hsupp := hsupp) (hsupp' := hsupp'),
+    add_apply]
 
 /-- The inverse of a change of cutoffs is the change of cutoffs back. -/
 theorem cutoffChangeEquiv_symm {hsupp' : ∀ i, HasCompactSupport (χ' i - χ i)} :
     (cutoffChangeEquiv (p := p) (K := K) hw hχ hχ' hsupp).symm =
       cutoffChangeEquiv hw hχ' hχ hsupp' := by
-  have h (v : Π i, K i) : -cutoffChangeL (p := p) hw hχ hχ' hsupp v =
-      cutoffChangeL hw hχ' hχ hsupp' v := by
-    refine (cutoffChangeL_eq_of_prev_ae_eq ?_).symm
-    filter_upwards [prev_cutoffChangeL_ae_eq (p := p) (hw := hw) (hχ := hχ) (hχ' := hχ')
-        (hsupp := hsupp) v,
-      Lp.coeFn_neg (prev _ (cutoffChangeL (p := p) hw hχ hχ' hsupp v))] with s h₁ h₂
-    rw [← prevL_apply, map_neg, prevL_apply, h₂, Pi.neg_apply, h₁,
-      cutoffChangePath_symm, Pi.neg_apply, neg_neg]
   refine ContinuousLinearEquiv.ext (funext fun x ↦ ?_)
-  rw [cutoffChangeEquiv_symm_apply, cutoffChangeEquiv_apply, sub_eq_add_neg, h]
+  rw [cutoffChangeEquiv_symm_apply, cutoffChangeEquiv_apply, sub_eq_add_neg,
+    ← neg_cutoffChangeL (hsupp := hsupp), neg_apply]
 
 section Consequences
 
@@ -383,11 +377,7 @@ theorem range_coprod_endTailL_eq_of_hasCompactSupport_sub (hw : ContDiff ℝ 1 w
       ((trajectoryOperator AL).coprod (endTailL w χ' A hmem')).range := by
   rw [← coprod_endTailL_comp_cutoffChangeEquiv (hw := hw) (hχ := hχ) (hχ' := hχ') (hsupp := hsupp)
     hAL hmem hmem']
-  ext y
-  simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe]
-  exact ⟨fun ⟨x, hx⟩ ↦ ⟨_, hx⟩,
-    fun ⟨x, hx⟩ ↦ ⟨(cutoffChangeEquiv hw hχ hχ' hsupp).symm x, by simpa⟩⟩
+  exact LinearEquiv.range_comp (cutoffChangeEquiv hw hχ hχ' hsupp).toLinearEquiv _
 
 /-- **The kernels of the extended operators correspond under the change of cutoffs**: the shear
 `(ξ, v) ↦ (ξ + g, v)` maps the kernel for the cutoffs `χ` onto the kernel for the cutoffs `χ'`. -/
@@ -397,17 +387,9 @@ theorem map_ker_coprod_endTailL_cutoffChangeEquiv :
       ((trajectoryOperator AL).coprod (endTailL w χ' A hmem')).ker := by
   rw [← coprod_endTailL_comp_cutoffChangeEquiv (hw := hw) (hχ := hχ) (hχ' := hχ') (hsupp := hsupp)
     hAL hmem hmem']
-  ext y
-  simp only [Submodule.mem_map, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, LinearEquiv.coe_coe,
-    ContinuousLinearEquiv.coe_toLinearEquiv]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    exact hx
-  · intro hy
-    refine ⟨(cutoffChangeEquiv hw hχ hχ' hsupp).symm y, ?_, ?_⟩
-    · rwa [ContinuousLinearEquiv.apply_symm_apply]
-    · exact ContinuousLinearEquiv.apply_symm_apply _ y
+  rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp]
+  exact Submodule.map_comap_eq_of_surjective
+    (cutoffChangeEquiv (p := p) (K := K) hw hχ hχ' hsupp).surjective _
 
 /-- **The index of the extended operator does not depend on the cutoffs**, as long as they differ
 on a compact set. -/
