@@ -26,9 +26,11 @@ via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving
 Multiplication by the indicator of a measurable set `s` is the operator
 `MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs` on `Lp E p μ`, built from the class of `1_s` in
 scalar `L∞`. It acts as `f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`,
-`indicatorMultiplication_eq_iff`), it is a contraction (`norm_indicatorMultiplication_le`), the `Lʳ`
-seminorm of `1_s f` is that of `f` on `s` (`eLpNorm_indicatorMultiplication`), and it is symmetric
-on `L²` (`inner_indicatorMultiplication_left`).
+`indicatorMultiplication_eq_iff`), it is the identity for `univ`, zero for `∅` and composes by
+intersection (`indicatorMultiplication_comp_indicatorMultiplication`), it is a contraction
+(`norm_indicatorMultiplication_le`), the `Lʳ` seminorm of `1_s f` is that of `f` on `s`
+(`eLpNorm_indicatorMultiplication`), and it is self-adjoint on `L²`
+(`inner_indicatorMultiplication_left`, `adjoint_indicatorMultiplication`).
 
 Compare `MeasureTheory.Lp.multiplicationOperator` and `BoundedContinuousFunction.mulLp`.
 -/
@@ -207,6 +209,28 @@ theorem indicatorMultiplication_eq_iff {hs : MeasurableSet s} {f g : Lp E p μ} 
   ⟨fun h ↦ h ▸ (indicatorMultiplication_ae hs f).symm,
     fun h ↦ Lp.ext ((indicatorMultiplication_ae hs f).trans h)⟩
 
+/-- Multiplication by the indicator of the whole space is the identity. -/
+@[simp] theorem indicatorMultiplication_univ :
+    indicatorMultiplication 𝕜 p MeasurableSet.univ = ContinuousLinearMap.id 𝕜 (Lp E p μ) := by
+  ext1 f; rw [indicatorMultiplication_eq_iff, Set.indicator_univ, id_apply]
+
+/-- Multiplication by the indicator of the empty set is zero. -/
+@[simp] theorem indicatorMultiplication_empty :
+    indicatorMultiplication 𝕜 p MeasurableSet.empty = (0 : Lp E p μ →L[𝕜] Lp E p μ) := by
+  ext1 f; rw [indicatorMultiplication_eq_iff, Set.indicator_empty, zero_apply]
+  exact (Lp.coeFn_zero E p μ).symm
+
+/-- Composing indicator multiplications multiplies by the indicator of the intersection. -/
+theorem indicatorMultiplication_comp_indicatorMultiplication {t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) :
+    indicatorMultiplication 𝕜 p hs ∘L indicatorMultiplication 𝕜 p ht =
+      (indicatorMultiplication 𝕜 p (hs.inter ht) : Lp E p μ →L[𝕜] Lp E p μ) := by
+  ext1 f; rw [comp_apply, indicatorMultiplication_eq_iff]
+  filter_upwards [indicatorMultiplication_ae (𝕜 := 𝕜) ht f,
+    indicatorMultiplication_ae (𝕜 := 𝕜) (hs.inter ht) f] with x hx hst
+  rw [hst, ← Set.indicator_indicator]
+  by_cases hxs : x ∈ s <;> simp [hxs, hx]
+
 /-- Applying `indicatorMultiplication` does not increase the `Lᵖ` norm. -/
 theorem norm_indicatorMultiplication_apply_le (hs : MeasurableSet s) (f : Lp E p μ) :
     ‖indicatorMultiplication 𝕜 p hs f‖ ≤ ‖f‖ :=
@@ -255,6 +279,17 @@ variable [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [Comple
   filter_upwards [operatorMultiplication_ae (p := 2) (star A) f,
     operatorMultiplication_ae (p := 2) A g, Lp.coeFn_star A] with x hf hg hA
   simp [hf, hg, hA, star_eq_adjoint, adjoint_inner_left]
+
+/-- Multiplication by an indicator is self-adjoint on Hilbert-valued `L²`. -/
+@[simp] theorem adjoint_indicatorMultiplication {s : Set α} (hs : MeasurableSet s) :
+    adjoint (indicatorMultiplication 𝕜 2 hs : Lp E 2 μ →L[𝕜] Lp E 2 μ) =
+      indicatorMultiplication 𝕜 2 hs :=
+  ((eq_adjoint_iff _ _).2 (inner_indicatorMultiplication_left hs)).symm
+
+/-- Multiplication by an indicator is a self-adjoint operator on Hilbert-valued `L²`. -/
+theorem isSelfAdjoint_indicatorMultiplication {s : Set α} (hs : MeasurableSet s) :
+    IsSelfAdjoint (indicatorMultiplication 𝕜 2 hs : Lp E 2 μ →L[𝕜] Lp E 2 μ) :=
+  adjoint_indicatorMultiplication hs
 
 variable (𝕜 E μ) in
 /-- Pointwise operator multiplication on `L²(μ, E)` as a unital ⋆-algebra homomorphism. -/
