@@ -175,6 +175,8 @@ private theorem hasLineDerivAt_radialField {U : Set ℂ} {u : ℂ → E} {φ : �
     simpa [inner_smul_left, inner_smul_right, inner_self_eq_norm_sq_to_K, add_comm] using this
   have := hφ'.ofReal_comp.mul hi
   simp only [zero_smul, add_zero] at this
+  rw [HasLineDerivAt]
+  unfold radialField radialFieldDeriv
   exact this
 
 /-- The radial field, cut off by a function `φ` vanishing on `(ρ, ∞)`, vanishes on `U` outside
@@ -195,8 +197,7 @@ private theorem hasLineDerivAt_indicator_radialField {U : Set ℂ} {u : ℂ → 
     · simp [indicator_of_notMem hwK, radialField, hφρ _ (lt_of_notMem_sep hw hwK)]
   · rw [indicator_of_notMem hzK]
     have h0 : HasLineDerivAt ℝ (fun _ ↦ (0 : ℂ)) 0 z v := by
-      unfold HasLineDerivAt
-      exact hasDerivAt_const _ _
+      simpa using (hasFDerivAt_const (𝕜 := ℝ) (0 : ℂ) z).hasLineDerivAt v
     refine h0.congr_of_eventuallyEq ?_
     filter_upwards [hK.isClosed.isOpen_compl.mem_nhds hzK] with w hw using
       indicator_of_notMem hw _
@@ -226,7 +227,7 @@ private theorem integral_indicator_radialFieldDeriv {U : Set ℂ} {u : ℂ → E
     (μ := volume) (f := fun _ ↦ (1 : ℂ)) (f' := fun _ ↦ 0) (g := K.indicator (radialField φ u))
     (g' := K.indicator (radialFieldDeriv φ u v)) (v := v) (B := ContinuousLinearMap.mul ℝ ℂ)
     (by simp) (by simpa using hint) (by simpa using hPint)
-    (fun z _ ↦ by unfold HasLineDerivAt; exact hasDerivAt_const _ _)
+    (fun z _ ↦ by simpa using (hasFDerivAt_const (𝕜 := ℝ) (1 : ℂ) z).hasLineDerivAt v)
     (fun z _ ↦ hasLineDerivAt_indicator_radialField hU hu hφ hφρ hK v z)
   simpa using this
 
