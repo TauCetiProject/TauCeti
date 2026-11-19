@@ -48,8 +48,6 @@ or a perfect set of pairwise non-isomorphic ones.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOf`: model classes are closed under
-  isomorphism.
 * `TauCeti.countableModelCount_eq_add_sum`: the count is the count on `ℕ` plus the sum of the
   counts on the finite carriers.
 * `TauCeti.countableModelCount_le_add_aleph0_mul` and `TauCeti.countableModelCount_le_aleph0_iff`:
@@ -115,14 +113,6 @@ abbrev isoSetoidOn (φ : L.SentenceInf ι) : Setoid (modelsOf (V := V) φ) :=
 theorem isoSetoidOn_apply {V : Type w} {φ : L.SentenceInf ι} {c d : modelsOf (V := V) φ} :
     isoSetoidOn V φ c d ↔ isoSetoid L V c d :=
   Iff.rfl
-
-/-- Model classes are closed under isomorphism: a configuration isomorphic to a model of `φ` is a
-model of `φ`. -/
-theorem isomorphismInvariant_modelsOf {V : Type w} (φ : L.SentenceInf ι) :
-    IsomorphismInvariant (modelsOf (V := V) φ) :=
-  isomorphismInvariant_iff.2 fun _ _ h hc => by
-    obtain ⟨e⟩ := isoSetoid_apply.1 h
-    exact (e.mem_modelsOf_iff φ).1 hc
 
 /-- If every model of `φ` on `V` is a model of `ψ`, the models of `φ` on `V` have at most as many
 isomorphism classes as those of `ψ`: the inclusion of model classes is injective on classes. -/
