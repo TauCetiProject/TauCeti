@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.CWComplex.Classical.Basic
 public import Mathlib.Topology.Category.TopCat.Basic
 public import Mathlib.Topology.Path
+public import TauCeti.Topology.UnitInterval
 
 /-!
 # Skeletal objects of relative CW complexes
@@ -83,8 +84,8 @@ def cellPath (j : cell C 1) : Path (map 1 j (fun _ ↦ -1)) (map 1 j (fun _ ↦ 
   toFun t := map 1 j (fun _ ↦ 2 * (t : ℝ) - 1)
   continuous_toFun := by
     refine (continuousOn 1 j).comp_continuous (by fun_prop) fun t ↦ ?_
-    rw [mem_closedBall_zero_iff, pi_norm_const, Real.norm_eq_abs, abs_le]
-    constructor <;> linarith [t.2.1, t.2.2]
+    rw [mem_closedBall_zero_iff, pi_norm_const, Real.norm_eq_abs]
+    exact unitInterval.abs_two_mul_sub_one_le t
   source' := by simp
   target' := by norm_num
 

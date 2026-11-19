@@ -88,7 +88,7 @@ variable (p C) in
 def fiberToPreimageSkeletonZero {b : B} (hb : b ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B)) :
     p.fiber b ⟶ (preimageSkeletonPair p C 0).fst :=
   _root_.TopCat.ofHom
-    ⟨fun e ↦ ⟨e.1, by rw [mem_preimage, show p e.1 = b from e.2]; exact hb⟩, by fun_prop⟩
+    ⟨fun e ↦ ⟨e.1, by rw [mem_preimage, p.apply_coe_fiber b e]; exact hb⟩, by fun_prop⟩
 
 @[simp]
 lemma coe_fiberToPreimageSkeletonZero_apply {b : B}
@@ -109,6 +109,17 @@ def fiberHomologyToPreimageSkeletonZero (q : ℕ) {b : B}
   ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map
       (fiberToPreimageSkeletonZero p C hb) ≫
     (preimageSkeletonPair p C 0).singularHomologyπ (ModuleCat.of R R) q
+
+/-- The map `Hq(p⁻¹(b); R) ⟶ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)` is induced by the inclusion of the fibre,
+followed by the quotient map from the absolute to the relative homology. -/
+@[reassoc]
+lemma fiberHomologyToPreimageSkeletonZero_def (q : ℕ) {b : B}
+    (hb : b ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B)) :
+    fiberHomologyToPreimageSkeletonZero p C R q hb =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+          (ModuleCat.of R R)).map (fiberToPreimageSkeletonZero p C hb) ≫
+        (preimageSkeletonPair p C 0).singularHomologyπ (ModuleCat.of R R) q :=
+  (rfl)
 
 variable (hp : serreFibrations p)
 
@@ -167,7 +178,7 @@ the part `∂Pⱼ` of the pullback `Pⱼ` of `p` along the characteristic map ov
 private def cellBoundaryFiberι (j : cell C 1) (c : ℝ) (hc : |c| = 1) :
     p.fiber (map 1 j fun _ ↦ c) ⟶ (cellDiskPullbackPair p C 1 j).snd :=
   _root_.TopCat.ofHom ⟨fun e ↦ ⟨⟨(ballPoint c hc.le, e.1),
-      (cellULiftMap_ballPoint j c hc.le).trans (show p e.1 = _ from e.2).symm⟩, by
+      (cellULiftMap_ballPoint j c hc.le).trans (p.apply_coe_fiber _ e).symm⟩, by
         -- Membership in `∂Pⱼ` is membership of the point of the ball in the unit sphere.
         change (ballPoint c hc.le : ULift.{u} (Fin 1 → ℝ)) ∈ sphere 0 1
         rw [mem_sphere_zero_iff_norm, ← ULift.norm_down, ballPoint_down, pi_norm_const,
@@ -202,18 +213,16 @@ private lemma fiberHomologyTransport_cellPath (q : ℕ) (j : cell C 1) :
         (cellULiftMap_ballPoint j 1 (by norm_num)) := by
   rw [fiberHomologyTransport_eq_pullbackFiberTransport]
   -- The interval `I` maps to the ball by `t ↦ 2t - 1`, over `B`.
-  have hb (t : unitInterval) : |2 * (t : ℝ) - 1| ≤ 1 := by
-    rw [abs_le]
-    constructor <;> linarith [t.2.1, t.2.2]
   let φ : _root_.TopCat.I.{u} ⟶ _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin 1 → ℝ)) 1) :=
-    _root_.TopCat.ofHom ⟨fun t ↦ ballPoint (2 * (_root_.TopCat.I.homeomorph t : ℝ) - 1) (hb _), by
+    _root_.TopCat.ofHom ⟨fun t ↦ ballPoint (2 * (_root_.TopCat.I.homeomorph t : ℝ) - 1)
+      (unitInterval.abs_two_mul_sub_one_le _), by
       unfold ballPoint
       fun_prop⟩
   refine pullbackFiberTransport_comp_left hp _ q _ _ φ ?_ (k₀ := 0) (k₁ := 1) ?_ ?_ _ _ _ _
   · ext t
     simp only [ConcreteCategory.comp_apply]
     rw [TopCat.pathEquiv_symm_hom_apply, cellPath_apply]
-    exact cellULiftMap_ballPoint j _ (hb _)
+    exact cellULiftMap_ballPoint j _ (unitInterval.abs_two_mul_sub_one_le _)
   · refine Subtype.ext (congrArg ULift.up (funext fun _ ↦ ?_))
     simp
   · refine Subtype.ext (congrArg ULift.up (funext fun _ ↦ ?_))
@@ -444,7 +453,7 @@ private lemma map_cellBoundaryFiberι_comp_cellBoundaryProj (q : ℕ) (j : cell 
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).map (cellBoundaryFiberι p j c hc) ≫ cellBoundaryProj p R q j =
       fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j hc) := by
-  rw [cellBoundaryProj, fiberHomologyToPreimageSkeletonZero, ← cellBoundaryFiberι_comp_snd]
+  rw [cellBoundaryProj, fiberHomologyToPreimageSkeletonZero_def, ← cellBoundaryFiberι_comp_snd]
   exact (Functor.map_comp_assoc _ _ _ _).symm
 
 omit [T2Space B] in
@@ -532,20 +541,6 @@ private def cokernelSkeletonTripleδIso (q : ℕ) :
   hom_inv_id := by rw [← cancel_epi (cokernel.π _)]; simp
   inv_hom_id := by rw [← cancel_epi (cokernel.π _)]; simp
 
-/-- The cokernel of a morphism `f` composed with isomorphisms on both sides is the cokernel of
-`f`. -/
-private def cokernelConjIso {X X' Y Y' : ModuleCat.{u} R} (a : X' ≅ X) (f : X ⟶ Y) (b : Y' ≅ Y) :
-    cokernel (a.hom ≫ f ≫ b.inv) ≅ cokernel f :=
-  cokernel.mapIso _ f a b (by simp)
-
-/-- On the quotient map, `TauCeti.TopCat.cokernelConjIso` is induced by the isomorphism on the
-target. -/
-private lemma π_comp_cokernelConjIso_trans_hom {X X' Y Y' W : ModuleCat.{u} R} (a : X' ≅ X)
-    (f : X ⟶ Y) (b : Y' ≅ Y) (e : cokernel f ≅ W) :
-    cokernel.π (a.hom ≫ f ≫ b.inv) ≫ (cokernelConjIso R a f b ≪≫ e).hom =
-      b.hom ≫ cokernel.π f ≫ e.hom := by
-  simp [cokernelConjIso]
-
 /-- The comparison `TauCeti.TopCat.cokernelSkeletonTripleδIso` for any triple of subsets equal to
 the first three stages of the skeletal filtration. -/
 private def cokernelTripleδIsoOfEq {s t w : Set E} (h₁ : s ⊆ t) (h₂ : t ⊆ w)
@@ -604,7 +599,14 @@ private def homologyIsoCokernel (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1) (ha
         (by simp only [Prod.snd_add]; lia)))).coconePointUniqueUpToIso (cokernelIsCokernel _) ≪≫
     cokernelIsoOfEq (filteredSpaceSpectralSequence_first_page_d_eq (ModuleCat.of R R)
       (monotone_preimageSkeleton p) 0 (-1 - q) q (by lia)) ≪≫
-    cokernelConjIso R _ _ _ ≪≫
+    -- The first differential reaches these isomorphisms only up to unfolding its intermediate
+    -- objects, so the square is closed by unification rather than by `simp`.
+    cokernel.mapIso _ _
+      (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R) (monotone_preimageSkeleton p)
+        (-1 - (q : ℤ), 0) 0 (0 + 1) rfl rfl (-1 - q + 0) rfl (q + 1) (by lia))
+      (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R) (monotone_preimageSkeleton p)
+        (-1 - (q : ℤ) + 2, 0 - 1) (0 - 1) 0 rfl (by lia) (-1 - q + 0 + 1) (by lia) q (by lia))
+      ((Iso.eq_comp_inv _).1 (Category.assoc _ _ _).symm) ≪≫
     cokernelTripleδIsoOfEq R hp _ _ (by rw [preimageSkeleton_def]; rfl)
       (by rw [preimageSkeleton_def]; rfl) (by rw [preimageSkeleton_def]; rfl) q
 
@@ -659,10 +661,15 @@ private lemma homologyπ_comp_homologyIsoCokernel_hom (q : ℕ) (pq : ℤ × ℤ
       (hc : IsColimit (CokernelCofork.ofπ π w)) (g : cokernel f ⟶ W) :
       π ≫ (hc.coconePointUniqueUpToIso (cokernelIsCokernel f)).hom ≫ g = cokernel.π f ≫ g := by
     simpa using hc.comp_coconePointUniqueUpToIso_hom (cokernelIsCokernel f) .one =≫ g
+  have hconj {X X' Y Y' W : ModuleCat.{u} R} (a : X' ≅ X) (f : X ⟶ Y) (b : Y' ≅ Y)
+      (w : (a.hom ≫ f ≫ b.inv) ≫ b.hom = a.hom ≫ f) (e : cokernel f ≅ W) :
+      cokernel.π (a.hom ≫ f ≫ b.inv) ≫ (cokernel.mapIso _ f a b w ≪≫ e).hom =
+        b.hom ≫ cokernel.π f ≫ e.hom := by
+    simp
   rw [hπ, π_comp_cokernelIsoOfEq_hom_assoc]
   -- The first differential is only stated up to unfolding its intermediate objects, so the
   -- composite is computed by unification rather than by rewriting.
-  refine (_ ≫= π_comp_cokernelConjIso_trans_hom R _ _ _ _).trans ?_
+  refine (_ ≫= hconj _ _ _ _ _).trans ?_
   refine (_ ≫= _ ≫= π_comp_cokernelTripleδIsoOfEq_hom R hp _ _ _ _ _ q).trans ?_
   exact _ ≫= (reassoc_of% (filteredSpaceSpectralSequenceFirstPageXIso_hom_comp_eqToHom R
     (a := 0 - 1) (b := 0) (b' := 0 - 1 + 1) _ _ _ _ _ _ _
