@@ -8,9 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 
 /-!
 # Multiplication operators on complex L²
@@ -89,26 +88,37 @@ theorem multiplicationOperator_smul (c : ℂ) (a : Lp ℂ ∞ μ) :
     multiplicationOperator (E := E) (c • a) = c • multiplicationOperator a := by
   simp [multiplicationOperator]
 
+/-- `multiplicationOperator a` is `operatorMultiplication 2` by `a • 1`. -/
+private theorem multiplicationOperator_eq_operatorMultiplication (a : Lp ℂ ∞ μ) :
+    multiplicationOperator (E := E) a =
+      operatorMultiplication 2 (a • (1 : Lp (E →L[ℂ] E) ∞ μ)) := by
+  ext1 f
+  rw [multiplicationOperator_apply, operatorMultiplication_lpSMul_left,
+    operatorMultiplication_one, id_apply]
+
+private theorem coeFn_lpSMul_one (a : Lp ℂ ∞ μ) :
+    (a • (1 : Lp (E →L[ℂ] E) ∞ μ) : Lp (E →L[ℂ] E) ∞ μ) =ᵐ[μ] fun x ↦ a x • 1 := by
+  filter_upwards [coeFn_lpSMul (r := ∞) a (1 : Lp (E →L[ℂ] E) ∞ μ),
+    coeFn_one (E := E →L[ℂ] E) (μ := μ)] with x hx h1
+  rw [hx, Pi.smul_apply', h1, Pi.one_apply]
+
 /-- Composing multiplication operators multiplies their symbols in the same order. -/
 theorem multiplicationOperator_comp_multiplicationOperator (a b : Lp ℂ ∞ μ) :
     multiplicationOperator (E := E) a ∘L multiplicationOperator b =
       multiplicationOperator (a * b) := by
-  ext f
-  filter_upwards [multiplicationOperator_ae a (multiplicationOperator b f),
-    multiplicationOperator_ae b f,
-    multiplicationOperator_ae (a * b) f,
-    coeFn_mul a b] with x ha hb hab hsmul
-  simp only [comp_apply, ha, hb, hab, hsmul, Pi.mul_apply]
-  rw [smul_smul]
+  simp only [multiplicationOperator_eq_operatorMultiplication,
+    operatorMultiplication_comp_operatorMultiplication]
+  congr 1; apply Lp.ext
+  filter_upwards [coeFn_mul (a • (1 : Lp (E →L[ℂ] E) ∞ μ)) (b • 1), coeFn_lpSMul_one (E := E) a,
+    coeFn_lpSMul_one (E := E) b, coeFn_lpSMul_one (E := E) (a * b), coeFn_mul a b]
+    with x h₁ h₂ h₃ h₄ h₅
+  rw [h₁, Pi.mul_apply, h₂, h₃, h₄, h₅, Pi.mul_apply, smul_mul_smul_comm, one_mul]
 
 /-- Multiplication operators commute with each other. -/
 theorem commute_multiplicationOperator (a b : Lp ℂ ∞ μ) :
     Commute (multiplicationOperator (E := E) a) (multiplicationOperator b) := by
-  refine (commute_iff_eq _ _).2 (ContinuousLinearMap.ext fun f ↦ Lp.ext ?_)
-  filter_upwards [multiplicationOperator_ae a (multiplicationOperator b f),
-    multiplicationOperator_ae b f, multiplicationOperator_ae b (multiplicationOperator a f),
-    multiplicationOperator_ae a f] with x hab hb hba ha
-  simp only [mul_apply_eq_comp, hab, hb, hba, ha, smul_smul, mul_comm]
+  rw [commute_iff_eq, mul_def, mul_def, multiplicationOperator_comp_multiplicationOperator,
+    multiplicationOperator_comp_multiplicationOperator, mul_comm]
 
 /-- Multiplication by a symbol of modulus one almost everywhere preserves the `L²` norm. -/
 theorem norm_multiplicationOperator_apply_of_ae_norm_eq_one {u : Lp ℂ ∞ μ}
@@ -133,8 +143,12 @@ theorem multiplicationOperator_of_ae_eq_const {a : Lp ℂ ∞ μ} {c : ℂ}
 theorem multiplicationOperator_algebraMap (c : ℂ) :
     multiplicationOperator (E := E) (algebraMap ℂ (Lp ℂ ∞ μ) c) =
       c • ContinuousLinearMap.id ℂ (Lp E 2 μ) := by
-  apply multiplicationOperator_of_ae_eq_const
-  simpa only [Algebra.algebraMap_self_apply] using coeFn_algebraMap (R := ℂ) (μ := μ) c
+  rw [multiplicationOperator_eq_operatorMultiplication,
+    ← operatorMultiplication_algebraMap (p := 2)]
+  congr 1; apply Lp.ext
+  filter_upwards [coeFn_lpSMul_one (E := E) _, coeFn_algebraMap (R := ℂ) (μ := μ) c,
+    coeFn_algebraMap (R := E →L[ℂ] E) (μ := μ) c] with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃, Algebra.algebraMap_self_apply, Algebra.algebraMap_eq_smul_one]
 
 end NormedSpace
 
@@ -148,12 +162,11 @@ theorem adjoint_multiplicationOperator (a : Lp ℂ ∞ μ) :
     ContinuousLinearMap.adjoint (𝕜 := ℂ) (E := Lp E 2 μ) (F := Lp E 2 μ)
       (multiplicationOperator (E := E) a) =
       multiplicationOperator (E := E) (star a) := by
-  refine ((eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [multiplicationOperator_ae (star a) f,
-    multiplicationOperator_ae a g, Lp.coeFn_star a] with x hf hg ha
-  simp [hf, hg, ha, inner_smul_left, inner_smul_right]
+  simp only [multiplicationOperator_eq_operatorMultiplication, adjoint_operatorMultiplication]
+  congr 1; apply Lp.ext
+  filter_upwards [coeFn_star (a • (1 : Lp (E →L[ℂ] E) ∞ μ)), coeFn_lpSMul_one (E := E) a,
+    coeFn_lpSMul_one (E := E) (star a), coeFn_star a] with x h₁ h₂ h₃ h₄
+  rw [h₁, Pi.star_apply, h₂, h₃, h₄, Pi.star_apply, star_smul, star_one]
 
 end InnerProductSpace
 
@@ -165,8 +178,8 @@ variable [IsFiniteMeasure μ]
 @[simp]
 theorem multiplicationOperator_const (c : ℂ) :
     multiplicationOperator (E := E) (Lp.const ∞ μ c) =
-      c • ContinuousLinearMap.id ℂ (Lp E 2 μ) :=
-  multiplicationOperator_of_ae_eq_const (Lp.coeFn_const (μ := μ) ∞ c)
+      c • ContinuousLinearMap.id ℂ (Lp E 2 μ) := by
+  rw [← multiplicationOperator_algebraMap, Lp.algebraMap_eq_const, Algebra.algebraMap_self_apply]
 
 end FiniteMeasure
 
@@ -174,63 +187,17 @@ section ExactNorm
 
 variable [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- If `c ≤ ‖a‖` pointwise on `s`, then multiplication by `a` scales the `L²` norm of a constant
-indicator of `s` by at least `c`. -/
-private theorem mul_norm_indicatorConstLp_le {a : Lp ℂ ∞ μ} {c : ℝ} (hc_nonneg : 0 ≤ c)
-    {s : Set α} (hs : MeasurableSet s) (hs_top : μ s ≠ ∞) (ha : ∀ x ∈ s, c ≤ ‖a x‖)
-    (v : E) :
-    c * ‖indicatorConstLp 2 hs hs_top v‖ ≤
-      ‖multiplicationOperator a (indicatorConstLp 2 hs hs_top v)‖ := by
-  set f := indicatorConstLp 2 hs hs_top v
-  set g := indicatorConstLp 2 hs hs_top ((c : ℂ) • v)
-  have hfg : c * ‖f‖ = ‖g‖ := by
-    simp only [f, g, norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top, norm_smul,
-      Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hc_nonneg, mul_assoc]
-  have hpoint : ∀ᵐ x ∂μ, ‖g x‖ ≤ ‖multiplicationOperator a f x‖ := by
-    filter_upwards [multiplicationOperator_ae a f, indicatorConstLp_coeFn (p := 2) (c := v),
-      indicatorConstLp_coeFn (p := 2) (c := (c : ℂ) • v)] with x hmul hf hg
-    rw [hmul, hf, hg]
-    by_cases hx : x ∈ s
-    · have hcx : c ≤ ‖a x‖ := ha x hx
-      simp only [Set.indicator_of_mem hx, norm_smul, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_nonneg hc_nonneg]
-      gcongr
-    · simp [Set.indicator_of_notMem hx]
-  rw [hfg]
-  exact Lp.norm_le_norm_of_ae_le hpoint
-
 /-- On a sigma-finite measure space, the operator norm of multiplication by `a` on `L²` with
 values in a nontrivial space is exactly the `L∞` norm of `a`. -/
 @[simp]
 theorem norm_multiplicationOperator [SigmaFinite μ] [Nontrivial E] (a : Lp ℂ ∞ μ) :
     ‖multiplicationOperator (E := E) a‖ = ‖a‖ := by
-  apply le_antisymm (norm_multiplicationOperator_le a)
-  by_contra hle
-  have _ : ‖multiplicationOperator (E := E) a‖ < ‖a‖ := lt_of_not_ge hle
-  -- Test the operator on the indicator of the set where `‖a‖` exceeds a level `c` strictly
-  -- between the operator norm and `‖a‖`.
-  set c := (‖multiplicationOperator (E := E) a‖ + ‖a‖) / 2 with hc_def
-  have hc_nonneg : 0 ≤ c := by positivity
-  have hop_lt_c : ‖multiplicationOperator (E := E) a‖ < c := by linarith [hc_def]
-  have hc_lt : c < ‖a‖ := by linarith [hc_def]
-  set s := {x | c < ‖a x‖}
-  have hs : MeasurableSet s :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable a).norm.measurable
-  have hμs : μ s ≠ 0 := measure_lt_norm_ne_zero hc_nonneg hc_lt
-  obtain ⟨t, ht, hts, hμt_pos, hμt_top⟩ :=
-    Measure.exists_subset_measure_lt_top hs (pos_iff_ne_zero.mpr hμs)
-  obtain ⟨v, hv⟩ := exists_ne (0 : E)
-  set f := indicatorConstLp 2 ht hμt_top.ne v
-  have hf_pos : 0 < ‖f‖ := by
-    rw [norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top]
-    have hμt_real_pos : 0 < μ.real t := ENNReal.toReal_pos hμt_pos.ne' hμt_top.ne
-    exact mul_pos (norm_pos_iff.mpr hv) (Real.rpow_pos_of_pos hμt_real_pos _)
-  -- Comparing the lower bound on `f` with the operator norm forces `c ≤ ‖M_a‖`.
-  have hcancel : c * ‖f‖ ≤ ‖multiplicationOperator (E := E) a‖ * ‖f‖ :=
-    (mul_norm_indicatorConstLp_le hc_nonneg ht hμt_top.ne
-      (fun _ hx ↦ le_of_lt (hts hx)) v).trans
-      (le_opNorm _ _)
-  exact (not_le_of_gt hop_lt_c) (le_of_mul_le_mul_right hcancel hf_pos)
+  rw [multiplicationOperator_eq_operatorMultiplication, norm_operatorMultiplication]
+  have h : ∀ᵐ x ∂μ, ‖(a • (1 : Lp (E →L[ℂ] E) ∞ μ) : Lp (E →L[ℂ] E) ∞ μ) x‖ = ‖a x‖ :=
+    (coeFn_lpSMul_one (E := E) a).mono fun x hx ↦ by
+      rw [hx, norm_smul, ContinuousLinearMap.one_def, ContinuousLinearMap.norm_id, mul_one]
+  exact le_antisymm (Lp.norm_le_norm_of_ae_le (h.mono fun _ hx ↦ hx.le))
+    (Lp.norm_le_norm_of_ae_le (h.mono fun _ hx ↦ hx.ge))
 
 end ExactNorm
 
