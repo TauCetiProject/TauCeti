@@ -64,7 +64,9 @@ and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_r
 and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
 is invertible if a sufficiently nearby operator is invertible
-(`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`).
+(`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`). On a Banach space, for
+`‖A‖ < 1` the Neumann series solves `v + A x = x` with `‖x‖ ≤ ‖v‖ / (1 - ‖A‖)`
+(`ContinuousLinearMap.exists_add_apply_eq_of_norm_lt_one`).
 A family of operators continuous at a point and invertible there changes the size of a
 function near that point only up to constant factors (`TauCeti.isTheta_clm_apply_of_isUnit`).
 
@@ -443,6 +445,22 @@ theorem isUnit_of_forall_mul_norm_le_of_norm_sub_lt [CompleteSpace E]
         have heq : (c / 2) * (2 / c) = 1 := by field_simp
         rwa [heq] at h
   exact (u.ofNearby A hnear).isUnit
+
+/-- **The Neumann series solves `v + A x = x`.** On a Banach space, if `‖A‖ < 1` then the
+equation `v + A x = x` has the solution `x = (1 - A)⁻¹ v`, and `‖x‖ ≤ ‖v‖ / (1 - ‖A‖)`. -/
+theorem exists_add_apply_eq_of_norm_lt_one [CompleteSpace E] (v : E) {A : E →L[𝕜] E}
+    (hA : ‖A‖ < 1) : ∃ x, v + A x = x ∧ ‖x‖ ≤ ‖v‖ / (1 - ‖A‖) := by
+  set u := Units.oneSub A hA
+  set x := (↑u⁻¹ : E →L[𝕜] E) v
+  have hx : x - A x = v := by
+    have h := congr($(u.mul_inv) v)
+    rwa [Units.val_oneSub, mul_apply_eq_comp, sub_apply, one_apply_eq_self,
+      one_apply_eq_self] at h
+  refine ⟨x, by rw [← hx, sub_add_cancel], ?_⟩
+  rw [le_div_iff₀ (sub_pos.2 hA), ← hx]
+  calc ‖x‖ * (1 - ‖A‖) = ‖x‖ - ‖A‖ * ‖x‖ := by ring
+    _ ≤ ‖x‖ - ‖A x‖ := by gcongr; exact le_opNorm A x
+    _ ≤ ‖x - A x‖ := norm_sub_norm_le _ _
 
 end Inverse
 

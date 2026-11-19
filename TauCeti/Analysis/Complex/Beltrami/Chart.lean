@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Beltrami.Holder
 public import TauCeti.Analysis.Complex.Beltrami.Linear
+public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
@@ -172,7 +173,7 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
           (fderiv ℝ (normalizedChart (cauchySolution h) c) z).toLinearMap) ∧
         ∃ e : OpenPartialHomeomorph ℂ ℂ, ⇑e = normalizedChart (cauchySolution h) c ∧
           c ∈ e.source ∧ e.source ⊆ ball c r ∧ ∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z := by
-  obtain ⟨δ, hδ, C, hsol⟩ := exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv hα hα1 c hr.le
+  obtain ⟨δ, hδ, C, hsol⟩ := exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv hα hα1 c r
   refine ⟨δ, hδ, C, fun J hJ μ hμ hμJ hμδ => ?_⟩
   obtain ⟨h, hh, hhμ, hC1, -, hbel, hnear, hhol, hinv⟩ := hsol μ hμ hμδ
   -- The solver states its conclusions for the explicit map `w ↦ w + T h(w)`; fold it.
