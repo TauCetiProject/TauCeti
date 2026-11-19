@@ -15,6 +15,7 @@ import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Cayley
 import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Zero
 import TauCeti.Analysis.Matrix.SymplecticGroup.L2OpNorm
 import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing
+import TauCeti.LinearAlgebra.Eigenspace.Matrix
 import TauCeti.LinearAlgebra.Matrix.Determinant.Smul
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -80,14 +81,6 @@ private theorem norm_smul_J_mul (t : ℝ) (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     ‖t • (J n ℝ * S)‖ = |t| * ‖S‖ := by
   rw [norm_smul, Real.norm_eq_abs, l2_opNorm_J_mul]
 
-/-- A matrix without eigenvalue `1` has a trivial `1`-eigenspace. -/
-private theorem finrank_eigenspace_one_eq_zero {M : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    (h : IsUnit (M - 1)) : finrank ℝ (End.eigenspace (toLin' M) 1) = 0 := by
-  refine Submodule.finrank_eq_zero.2 ((Submodule.eq_bot_iff _).2 fun v hv ↦ ?_)
-  rw [End.mem_eigenspace_iff, Matrix.toLin'_apply, one_smul] at hv
-  refine mulVec_injective_iff_isUnit.2 h ?_
-  rw [sub_mulVec, hv, one_mulVec, sub_self, mulVec_zero]
-
 /-- The symplectic Cayley transform `J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` of `exp (t J S)`. -/
 private noncomputable def cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) (t : ℝ) :
     Matrix (n ⊕ n) (n ⊕ n) ℝ :=
@@ -146,6 +139,13 @@ private theorem isUnit_one_add_exp_smul_J_mul {S : Matrix (n ⊕ n) (n ⊕ n) �
   rw [norm_smul_J_mul, abs_of_nonneg ht.1]
   exact mul_le_of_le_one_left (norm_nonneg S) ht.2
 
+/-- For `S` invertible, `0 < t` and `t ‖S‖ < 2π`, `exp (t J S)` has no eigenvalue `1`. -/
+private theorem isUnit_exp_smul_J_mul_sub_one {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet : S.det ≠ 0)
+    {t : ℝ} (ht : 0 < t) (hb : t * ‖S‖ < 2 * Real.pi) :
+    IsUnit (exp (t • (J n ℝ * S)) - 1) := by
+  refine isUnit_exp_sub_one_real ((isUnit_iff_isUnit_det _).2 (by simp [ht.ne', hdet])) ?_
+  rwa [norm_smul_J_mul, abs_of_pos ht]
+
 /-- For `S` symmetric with `‖S‖ < π`, the Cayley generator `cayleyGen S t` is symmetric for
 `0 ≤ t ≤ 1`. -/
 private theorem isSymm_cayleyGen {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hS : S.IsSymm)
@@ -161,9 +161,8 @@ private theorem det_cayleyGen_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet
     (hSπ : ‖S‖ < Real.pi) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (ht0 : t ≠ 0) :
     (cayleyGen S t).det ≠ 0 := by
   have h1 : IsUnit (exp (t • (J n ℝ * S)) - 1) :=
-    isUnit_exp_sub_one_real ((isUnit_iff_isUnit_det _).2 (by simp [ht0, hdet]))
-      (by rw [norm_smul_J_mul, abs_of_nonneg ht.1]
-          nlinarith [norm_nonneg S, ht.2, Real.pi_pos])
+    isUnit_exp_smul_J_mul_sub_one hdet (ht.1.lt_of_ne' ht0)
+      (by nlinarith [norm_nonneg S, ht.2, Real.pi_pos])
   rw [cayleyGen, symplecticCayley_def, det_mul]
   exact mul_ne_zero ((isUnit_iff_isUnit_det _).1 (isUnit_J_mul_one_sub h1)).ne_zero
     ((isUnit_iff_isUnit_det _).1 (isUnit_nonsing_inv_iff.2
@@ -255,15 +254,15 @@ theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two {S : Matrix (n
   have hnorm : ‖(2⁻¹ : ℝ) • S‖ < Real.pi := by
     rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by norm_num)]
     linarith
+  -- Along `δ` the matrices `exp (t X)`, `t ∈ [1/2, 1]`, have no eigenvalue `1`.
+  have hδ1 (s : I) : IsUnit (((δ s : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) - (1 : ℝ) • 1) := by
+    have hs : 0 < (1 + (s : ℝ)) / 2 := by linarith [s.2.1]
+    rw [one_smul, hδ]
+    exact isUnit_exp_smul_J_mul_sub_one hdet hs (by nlinarith [s.2.2, norm_nonneg S])
   rw [← hsplit, conleyZehnderIndex_trans, conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi hS'
     (det_smul_ne_zero (by norm_num) hdet) hnorm,
     signature_smul_of_pos (by norm_num), conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq δ
-    (k := 0) fun s ↦ finrank_eigenspace_one_eq_zero ?_, add_zero]
-  have hs : 0 < (1 + (s : ℝ)) / 2 := by linarith [s.2.1]
-  rw [hδ]
-  refine isUnit_exp_sub_one_real ((isUnit_iff_isUnit_det _).2 (by simp [X, hs.ne', hdet])) ?_
-  rw [norm_smul_J_mul, abs_of_pos hs]
-  nlinarith [s.2.2, norm_nonneg S]
+    (k := 0) fun s ↦ finrank_eigenspace_toLin'_eq_zero (hδ1 s), add_zero]
 
 end GLSymplectic
 
