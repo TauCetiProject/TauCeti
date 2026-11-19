@@ -89,24 +89,23 @@ theorem annihilator_eq_comap_toTwoSided_annihilator :
       (Unitization.inrNonUnitalAlgHom ℂ A) := by
   let _ : Module (Unitization ℂ A) I := I.unitizationModule
   ext a
-  simp only [mem_annihilator, mem_comap, Unitization.inrNonUnitalAlgHom_toFun,
-    Ideal.mem_toTwoSided, Module.mem_annihilator, Subtype.forall, ← Subtype.coe_inj,
-    coe_unitizationModule_smul, Unitization.fst_inr, zero_smul, Unitization.snd_inr, zero_add,
-    ZeroMemClass.coe_zero]
-
-variable (hmul : ∀ a : A, ∀ x ∈ I.toNonUnitalStarSubalgebra, a * x ∈ I.toNonUnitalStarSubalgebra)
+  simp [mem_comap, Module.mem_annihilator, ← Subtype.coe_inj]
 
 /-- The annihilator of a closed two-sided ideal `I` is the kernel of the canonical homomorphism
 from `A` into the multiplier algebra of `I`. -/
-theorem ker_multiplierHom : ker (I.toNonUnitalStarSubalgebra.multiplierHom hmul) = I.annihilator :=
+theorem ker_multiplierHom :
+    ker (I.toNonUnitalStarSubalgebra.multiplierHom fun a _ hx ↦ I.mem_toNonUnitalStarSubalgebra.2
+      (I.mul_mem_left a _ (I.mem_toNonUnitalStarSubalgebra.1 hx))) = I.annihilator :=
   ext fun _ ↦ by
     simp only [mem_ker, NonUnitalStarSubalgebra.multiplierHom_eq_zero_iff,
       mem_toNonUnitalStarSubalgebra, mem_annihilator]
 
 /-- The canonical homomorphism from `A` into the multiplier algebra of a closed two-sided ideal `I`
 is injective exactly when `I` is essential. -/
-theorem injective_multiplierHom_iff_isEssential :
-    Function.Injective (I.toNonUnitalStarSubalgebra.multiplierHom hmul) ↔ I.IsEssential := by
+theorem multiplierHom_injective_iff_isEssential :
+    Function.Injective (I.toNonUnitalStarSubalgebra.multiplierHom fun a _ hx ↦
+      I.mem_toNonUnitalStarSubalgebra.2
+        (I.mul_mem_left a _ (I.mem_toNonUnitalStarSubalgebra.1 hx))) ↔ I.IsEssential := by
   rw [← ker_eq_bot, ker_multiplierHom, annihilator_eq_bot_iff_isEssential_of_isClosed]
 
 end TwoSidedIdeal
