@@ -116,9 +116,9 @@ private theorem planeGenerator_sq (x : (R × R) × M) :
   set B : PlaneTensor Q a b := (⟨0, 0, 0, 1⟩ : ℍ[R,(a : R),(b : R)]) ⊗ₜ ι _ x.2 with hB
   have hAA : A * A = algebraMap R _ (CliffordAlgebraQuaternion.Q (a : R) b x.1) := by
     rw [hA, Algebra.TensorProduct.tmul_mul_tmul, mul_one, Algebra.TensorProduct.algebraMap_apply]
-    -- The pure quaternion `v₁ i + v₂ j` squares to `a v₁² + b v₂²`, componentwise.
-    congr 1
-    ext <;> simp [CliffordAlgebraQuaternion.Q_apply] <;> ring
+    -- `pureQuaternion a b v` is the image of the Clifford generator `ι v`, whose square is `Q v`.
+    rw [pureQuaternion, ← CliffordAlgebraQuaternion.toQuaternion_ι, ← map_mul, ι_sq_scalar,
+      AlgHom.commutes]
   have hBB : B * B = algebraMap R _ (Q x.2) := by
     have hs : -((a : R) * b) * (planeScale a b * Q x.2) = Q x.2 := by
       rw [mul_left_comm, ← mul_assoc, planeScale_mul, one_mul]
