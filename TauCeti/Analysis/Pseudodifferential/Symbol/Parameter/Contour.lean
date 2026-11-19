@@ -56,7 +56,8 @@ at every order (`hasFTaylorSeriesUpToOn_integral_of_le_bound`).
 * `TauCeti.ParameterSymbol.coefficient_contourIntegral`: its coefficient.
 * `TauCeti.ParameterSymbol.mixedDeriv_contourIntegral`: its mixed derivatives are the integrals of
   the mixed derivatives of the symbols `a(·, ·, γ(t))`.
-* `TauCeti.ParameterSymbol.contourIntegral_add`, `TauCeti.ParameterSymbol.contourIntegral_smul`:
+* `TauCeti.ParameterSymbol.contourIntegral_add`, `TauCeti.ParameterSymbol.contourIntegral_smul`,
+  `TauCeti.ParameterSymbol.contourIntegral_neg`, `TauCeti.ParameterSymbol.contourIntegral_sub`:
   it is linear in `a`, so a parametrix may be integrated term by term.
 
 ## References
@@ -99,9 +100,7 @@ private theorem lineWeight_le {σ μ : ℝ} (B : ℝ) (hμ : μ ≤ 0) (t : ℝ)
   have h : (Real.sqrt B + Real.sqrt (1 + |t|)) ^ μ ≤ (1 + |t|) ^ (μ / 2) := by
     calc (Real.sqrt B + Real.sqrt (1 + |t|)) ^ μ ≤ Real.sqrt (1 + |t|) ^ μ :=
           Real.rpow_le_rpow_of_nonpos hs (le_add_of_nonneg_left (Real.sqrt_nonneg B)) hμ
-      _ = (1 + |t|) ^ (μ / 2) := by
-          rw [Real.sqrt_eq_rpow, ← Real.rpow_mul ht.le]
-          ring_nf
+      _ = (1 + |t|) ^ (μ / 2) := (Real.rpow_div_two_eq_sqrt μ ht.le).symm
   calc lineWeight σ μ B t ≤ (1 + |t|) ^ σ * (1 + |t|) ^ (μ / 2) :=
         mul_le_mul_of_nonneg_left h (by positivity)
     _ = (1 + |t|) ^ (σ + μ / 2) := (Real.rpow_add ht _ _).symm
@@ -128,14 +127,14 @@ private theorem integrableOn_scaledWeight {σ μ : ℝ} (hσ : -1 < σ) (hμ : �
   have hsq (v : ℝ) (hv : 0 < v) : (1 + Real.sqrt v) ^ μ ≤ v ^ (μ / 2) := by
     calc (1 + Real.sqrt v) ^ μ ≤ Real.sqrt v ^ μ :=
           Real.rpow_le_rpow_of_nonpos (Real.sqrt_pos.2 hv) (by linarith) hμ
-      _ = v ^ (μ / 2) := by rw [Real.sqrt_eq_rpow, ← Real.rpow_mul hv.le]; ring_nf
+      _ = v ^ (μ / 2) := (Real.rpow_div_two_eq_sqrt μ hv.le).symm
   have hsq' (v : ℝ) (hv : 0 ≤ v) : (1 + Real.sqrt v) ^ μ ≤ (1 + v) ^ (μ / 2) := by
     have h1 : 0 < 1 + v := by linarith
     calc (1 + Real.sqrt v) ^ μ ≤ Real.sqrt (1 + v) ^ μ := by
           refine Real.rpow_le_rpow_of_nonpos (Real.sqrt_pos.2 h1) ?_ hμ
           rw [Real.sqrt_le_left (by positivity)]
           nlinarith [Real.sq_sqrt hv, Real.sqrt_nonneg v]
-      _ = (1 + v) ^ (μ / 2) := by rw [Real.sqrt_eq_rpow, ← Real.rpow_mul h1.le]; ring_nf
+      _ = (1 + v) ^ (μ / 2) := (Real.rpow_div_two_eq_sqrt μ h1.le).symm
   have hone (v : ℝ) : (1 + Real.sqrt v) ^ μ ≤ 1 :=
     Real.rpow_le_one_of_one_le_of_nonpos (by linarith [Real.sqrt_nonneg v]) hμ
   -- The term `(1 + v) ^ σ (1 + √v) ^ μ` is dominated by `(1 + v) ^ (σ + μ / 2)`.
@@ -200,9 +199,8 @@ private theorem lineWeight_le_scaledWeight {σ μ B : ℝ} (hμ : μ ≤ 0) (hB 
           gcongr
           linarith
       _ = B ^ (μ / 2) * (1 + Real.sqrt v) ^ μ := by
-          rw [Real.mul_rpow (Real.sqrt_nonneg B) (by positivity), Real.sqrt_eq_rpow,
-            ← Real.rpow_mul hB0.le]
-          ring_nf
+          rw [Real.mul_rpow (Real.sqrt_nonneg B) (by positivity),
+            ← Real.rpow_div_two_eq_sqrt μ hB0.le]
   calc lineWeight σ μ B (B * v) ≤ (B ^ σ * (v ^ σ + (1 + v) ^ σ)) *
         (B ^ (μ / 2) * (1 + Real.sqrt v) ^ μ) :=
         mul_le_mul h₁ h₂ (by positivity) (by positivity)
@@ -235,10 +233,15 @@ private theorem exists_integral_lineWeight_le {σ μ : ℝ} (hσ : -1 < σ) (hμ
       simp [lineWeight, abs_of_pos ht]
     · have h := lineWeight_le_scaledWeight (σ := σ) hμ hB (mul_pos (inv_pos.2 hB0) ht)
       rwa [mul_inv_cancel_left₀ hB0.ne', lineWeight, abs_of_pos ht] at h
-  rw [habs, integral_const_mul, integral_comp_mul_left_Ioi _ _ (inv_pos.2 hB0), mul_zero,
-    inv_inv, smul_eq_mul] at *
+  -- Undo the substitution in the dominating integral.
+  have hsub : ∫ t in Ioi 0, B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t) =
+      B ^ (σ + μ / 2) * (B * ∫ v in Ioi 0, scaledWeight σ μ v) := by
+    rw [integral_const_mul, integral_comp_mul_left_Ioi _ _ (inv_pos.2 hB0), mul_zero, inv_inv,
+      smul_eq_mul]
+  rw [habs]
   calc 2 * ∫ t in Ioi 0, (1 + t) ^ σ * (Real.sqrt B + Real.sqrt (1 + t)) ^ μ
-      ≤ 2 * (B ^ (σ + μ / 2) * (B * ∫ v in Ioi 0, scaledWeight σ μ v)) := by gcongr
+      ≤ 2 * (B ^ (σ + μ / 2) * (B * ∫ v in Ioi 0, scaledWeight σ μ v)) :=
+        mul_le_mul_of_nonneg_left (hle.trans_eq hsub) zero_le_two
     _ = 2 * (∫ v in Ioi 0, scaledWeight σ μ v) * B ^ (σ + μ / 2 + 1) := by
         rw [Real.rpow_add_one hB0.ne']
         ring
@@ -533,6 +536,7 @@ theorem contourIntegral_zero :
   Symbol.ext <| funext fun p ↦ by simp [coefficient_zero]
 
 /-- The contour integral is additive in the parameter-dependent symbol. -/
+@[simp]
 theorem contourIntegral_add (b : ParameterSymbol n Λ V W m) :
     (a + b).contourIntegral hγ hγΛ hg hγc hgσ hσ hm =
       a.contourIntegral hγ hγΛ hg hγc hgσ hσ hm + b.contourIntegral hγ hγΛ hg hγc hgσ hσ hm :=
@@ -542,12 +546,28 @@ theorem contourIntegral_add (b : ParameterSymbol n Λ V W m) :
       (b.integrable_smul_coefficient hγ hγΛ hg hγc hgσ hσ hm p)
 
 /-- The contour integral commutes with multiplication by a complex scalar. -/
+@[simp]
 theorem contourIntegral_smul (c : ℂ) :
     (c • a).contourIntegral hγ hγΛ hg hγc hgσ hσ hm =
       c • a.contourIntegral hγ hγΛ hg hγc hgσ hσ hm :=
   Symbol.ext <| funext fun p ↦ by
     simp only [coefficient_contourIntegral, coefficient_smul, Pi.smul_apply, smul_comm (g _) c]
     exact integral_smul c _
+
+/-- The contour integral commutes with negation. -/
+@[simp]
+theorem contourIntegral_neg :
+    (-a).contourIntegral hγ hγΛ hg hγc hgσ hσ hm = -a.contourIntegral hγ hγΛ hg hγc hgσ hσ hm :=
+  Symbol.ext <| funext fun p ↦ by
+    simp only [coefficient_contourIntegral, coefficient_neg, Pi.neg_apply, smul_neg]
+    exact integral_neg _
+
+/-- The contour integral commutes with subtraction. -/
+@[simp]
+theorem contourIntegral_sub (b : ParameterSymbol n Λ V W m) :
+    (a - b).contourIntegral hγ hγΛ hg hγc hgσ hσ hm =
+      a.contourIntegral hγ hγΛ hg hγc hgσ hσ hm - b.contourIntegral hγ hγΛ hg hγc hgσ hσ hm := by
+  rw [sub_eq_add_neg, contourIntegral_add, contourIntegral_neg, ← sub_eq_add_neg]
 
 end Contour
 
