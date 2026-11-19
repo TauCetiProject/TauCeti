@@ -74,37 +74,36 @@ lemma range_subset_tubeBall (h : IsFramedTube f τ) {ε : ℝ} (hε₀ : 0 < ε)
   rw [← h.apply_zero]
   exact apply_mem_tubeBall x (mem_ball_self hε₀)
 
-/-- The inverse `range τ → S × V` of a framed tube. -/
-private abbrev tubeInv (h : IsFramedTube f τ) : range τ ≃ₜ S × V :=
-  h.isOpenEmbedding.isEmbedding.toHomeomorph.symm
+/-- The framed tube `S × D ≃ₜ τ(S × D)` over the ball `D` of radius `ε` about `0`. -/
+private def tubeBallHomeomorph (h : IsFramedTube f τ) (ε : ℝ) :
+    S × ball (0 : V) ε ≃ₜ tubeBall τ ε :=
+  ((Homeomorph.Set.univ S).symm.prodCongr (.refl _)).trans <|
+    (Homeomorph.Set.prod univ (ball (0 : V) ε)).symm.trans <|
+      (Homeomorph.setCongr univ_prod).trans <|
+        h.isOpenEmbedding.isEmbedding.homeomorphImage _
 
-private lemma apply_tubeInv (h : IsFramedTube f τ) (w : range τ) : τ (h.tubeInv w) = w := by
-  have := congrArg Subtype.val (h.isOpenEmbedding.isEmbedding.toHomeomorph.apply_symm_apply w)
-  rwa [IsEmbedding.toHomeomorph_apply_coe] at this
-
-private lemma tubeInv_apply (h : IsFramedTube f τ) (q : S × V) (hq : τ q ∈ range τ) :
-    h.tubeInv ⟨τ q, hq⟩ = q :=
-  h.isOpenEmbedding.isEmbedding.toHomeomorph_symm_apply q
-
-private lemma tubeInv_snd_mem_ball (h : IsFramedTube f τ) {ε : ℝ} (w : tubeBall τ ε) :
-    (h.tubeInv (inclusion (tubeBall_subset_range ε) w)).2 ∈ ball (0 : V) ε := by
-  obtain ⟨_, ⟨q, hq, rfl⟩⟩ := w
-  rw [show h.tubeInv (inclusion (tubeBall_subset_range ε) ⟨τ q, q, hq, rfl⟩) = q from
-    h.tubeInv_apply q _]
-  exact hq
+private lemma coe_tubeBallHomeomorph_apply (h : IsFramedTube f τ) {ε : ℝ}
+    (q : S × ball (0 : V) ε) : (h.tubeBallHomeomorph ε q : N) = τ (q.1, q.2) :=
+  (rfl)
 
 /-- The **normal coordinate** `τ(x, v) ↦ v` of a framed tube `τ : S × V → N`, on the part of the
 tube over the ball of radius `ε` about `0`. -/
-def normalCoordinate (h : IsFramedTube f τ) (ε : ℝ) : C(tubeBall τ ε, ball (0 : V) ε) where
-  toFun w := ⟨(h.tubeInv (inclusion (tubeBall_subset_range ε) w)).2, h.tubeInv_snd_mem_ball w⟩
-  continuous_toFun := (continuous_snd.comp (h.tubeInv.continuous.comp
-    (continuous_inclusion (tubeBall_subset_range ε)))).subtype_mk _
+def normalCoordinate (h : IsFramedTube f τ) (ε : ℝ) : C(tubeBall τ ε, ball (0 : V) ε) :=
+  ⟨fun w ↦ ((h.tubeBallHomeomorph ε).symm w).2, by fun_prop⟩
+
+private lemma coe_normalCoordinate (h : IsFramedTube f τ) (ε : ℝ) :
+    ⇑(h.normalCoordinate ε) = Prod.fst ∘ ((h.tubeBallHomeomorph ε).symm.trans (.prodComm _ _)) :=
+  (rfl)
 
 @[simp]
 lemma normalCoordinate_apply (h : IsFramedTube f τ) {ε : ℝ} (x : S) (v : V)
     (hv : τ (x, v) ∈ tubeBall τ ε) : (h.normalCoordinate ε ⟨τ (x, v), hv⟩ : V) = v := by
-  simp only [normalCoordinate, ContinuousMap.coe_mk, inclusion_mk]
-  rw [tubeInv_apply]
+  have hv' : v ∈ ball (0 : V) ε := by
+    obtain ⟨q, hq, hqv⟩ := hv
+    rwa [h.isOpenEmbedding.injective hqv] at hq
+  have hw : (⟨τ (x, v), hv⟩ : tubeBall τ ε) = h.tubeBallHomeomorph ε (x, ⟨v, hv'⟩) :=
+    Subtype.ext (h.coe_tubeBallHomeomorph_apply (x, ⟨v, hv'⟩)).symm
+  simp [coe_normalCoordinate, hw]
 
 /-- The normal coordinate of a point `τ (x, v)` of the tube is `v`. -/
 lemma normalCoordinate_eq_of_eq (h : IsFramedTube f τ) {ε : ℝ} {w : tubeBall τ ε} {x : S}
@@ -117,7 +116,8 @@ lemma normalCoordinate_eq_of_eq (h : IsFramedTube f τ) {ε : ℝ} {w : tubeBall
 coordinate. -/
 lemma exists_apply_normalCoordinate (h : IsFramedTube f τ) {ε : ℝ} (w : tubeBall τ ε) :
     ∃ x, τ (x, h.normalCoordinate ε w) = w :=
-  ⟨(h.tubeInv (inclusion (tubeBall_subset_range ε) w)).1, h.apply_tubeInv _⟩
+  ⟨((h.tubeBallHomeomorph ε).symm w).1,
+    congrArg Subtype.val ((h.tubeBallHomeomorph ε).apply_symm_apply w)⟩
 
 /-- The zero set of the normal coordinate is the core `f(S)`. -/
 lemma normalCoordinate_eq_zero_iff (h : IsFramedTube f τ) {ε : ℝ} (w : tubeBall τ ε) :
@@ -132,22 +132,13 @@ lemma normalCoordinate_eq_zero_iff (h : IsFramedTube f τ) {ε : ℝ} (w : tubeB
     exact h.normalCoordinate_apply y 0 hwm
 
 /-- The normal coordinate of a framed tube has the homotopy lifting property with respect to every
-space: a homotopy of normal coordinates lifts by keeping the point of `S` fixed. -/
+space: it is the projection `S × D → D` of a trivial bundle. -/
 lemma hasHomotopyLiftingProperty_normalCoordinate (h : IsFramedTube f τ) (ε : ℝ) (A : Type*)
     [TopologicalSpace A] : HasHomotopyLiftingProperty (h.normalCoordinate ε) A := by
-  intro f₀ H hH
-  let x : C(A, S) := ContinuousMap.fst.comp ((h.tubeInv : C(range τ, S × V)).comp
-    ((ContinuousMap.inclusion (tubeBall_subset_range ε)).comp f₀))
-  refine ⟨⟨fun ta ↦ ⟨τ (x ta.2, H ta), (x ta.2, H ta), (H ta).2, rfl⟩, ?_⟩, ?_, fun a ↦ ?_⟩
-  · exact (h.isOpenEmbedding.continuous.comp ((x.continuous.comp continuous_snd).prodMk
-      (continuous_subtype_val.comp H.continuous))).subtype_mk _
-  · ext ta
-    exact h.normalCoordinate_apply _ _ _
-  · apply Subtype.ext
-    simp only [ContinuousMap.coe_mk]
-    have h0 : (H (0, a) : V) = h.normalCoordinate ε (f₀ a) := congrArg Subtype.val (hH a)
-    rw [h0]
-    exact h.apply_tubeInv (inclusion (tubeBall_subset_range ε) (f₀ a))
+  rw [coe_normalCoordinate]
+  exact (hasHomotopyLiftingProperty_fst S A).comp
+    (((h.tubeBallHomeomorph ε).symm.trans (.prodComm _ _)).hasHomotopyLiftingProperty A)
+    (Homeomorph.continuous _)
 
 end IsFramedTube
 

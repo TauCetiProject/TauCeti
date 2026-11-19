@@ -17,7 +17,9 @@ The fibre `TopCat.Hom.fiber p b` of a morphism `p : E ⟶ B` over a point `b` is
 A commutative square from `p` to `p'`, such as a map of fibrations, induces maps between the
 fibres (`CategoryTheory.CommSq.fiberMap`), functorially in horizontal composition of squares.
 More generally, a map `f` over `B` restricts to maps between the parts over any subset of `B`
-(`TopCat.Hom.preimageMap`). For a continuous map `p : E → B` and a point `y` of a subset `Y` of `B`,
+(`TopCat.Hom.preimageMap`), and a map over `s : B' ⟶ B` carries the part over `T` into the part
+over any subset into which `s` maps `T` (`TopCat.Hom.mapsTo_preimage_of_comp_eq_comp`). For a
+continuous map `p : E → B` and a point `y` of a subset `Y` of `B`,
 `ContinuousMap.preimageInclusion` is the inclusion `p⁻¹(y) → p⁻¹(Y)`, which is the fibre inclusion
 of the restriction `p⁻¹(Y) → Y` (`ContinuousMap.preimageInclusion_eq`) and is natural in maps over
 the base (`ContinuousMap.preimageInclusion_comp_ofHom_restrictPreimageMap`).
@@ -62,6 +64,14 @@ lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} 
     (hf : f ≫ p' = p) (S : Set B) : Set.MapsTo f (p ⁻¹' S) (p' ⁻¹' S) := fun e he ↦ by
   rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hf]
   exact he
+
+/-- A map `g` over `s`, that is with `g ≫ p = p' ≫ s`, carries the part of `E'` over a subset `T`
+of `B'` into the part of `E` over any subset `U` of `B` into which `s` maps `T`. -/
+lemma mapsTo_preimage_of_comp_eq_comp {E' B' : TopCat.{u}} (g : E' ⟶ E) {p : E ⟶ B}
+    {p' : E' ⟶ B'} {s : B' ⟶ B} (hg : g ≫ p = p' ≫ s) {T : Set B'} {U : Set B}
+    (hs : Set.MapsTo s T U) : Set.MapsTo g (p' ⁻¹' T) (p ⁻¹' U) := fun x hx ↦ by
+  rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hg, ConcreteCategory.comp_apply]
+  exact hs hx
 
 /-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B`, that is with `f ≫ p' = p`, to the
 parts over a subset `S` of `B`: the morphism of `TauCeti.restrictPreimageMap`. -/

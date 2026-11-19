@@ -123,6 +123,10 @@ lemma coe_normalCoordinateProjFiberHomeomorph_apply (hZW : Z ⊆ W)
     (normalCoordinateProjFiberHomeomorph hZ hZW z : E) = z.1.1 :=
   (rfl)
 
+lemma coe_normalCoordinateProjFiberHomeomorph_symm_apply (hZW : Z ⊆ W) (y : p ⁻¹' Z) :
+    ((normalCoordinateProjFiberHomeomorph hZ hZW).symm y).1.1 = y.1 :=
+  (rfl)
+
 variable {R : Type*} [Ring R] (M : ModuleCat.{u} R) (hW : IsOpen W) (hZc : IsClosed Z)
   (hZW : Z ⊆ W)
 
