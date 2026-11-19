@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Quotient
-public import TauCeti.Geometry.Manifold.GroupAction.Quotient
+public import TauCeti.Geometry.Manifold.GroupAction.BalancedProduct
 public import TauCeti.Topology.Covering.BalancedProduct.RightTranslation
-public import TauCeti.Algebra.GroupAction.DiagonalOrbits
-public import TauCeti.Topology.Algebra.ProperAction.Basic
 
 import TauCeti.Geometry.Manifold.Submersion.Basic
 
@@ -23,13 +21,14 @@ on a Hausdorff boundaryless manifold `Z`. The balanced product `G ×_K Z`, the q
 by `h • (g, z) = (g h⁻¹, h • z)`, is `TauCeti.BalancedProduct K (Subgroup.RightTranslation K) Z`;
 its algebra and topology are in `TauCeti.Topology.Covering.BalancedProduct.RightTranslation`.
 
-Right translation by `K` on `G` is smooth, free, and proper because `K` is closed. So the
-diagonal action of `K` on `G × Z` is free and proper (`TauCeti.isCancelSMul_prod`,
-`TauCeti.properSMul_prod`), and by the quotient manifold theorem `G ×_K Z` is a smooth manifold of
-dimension `dim G + dim Z - dim K` (`TauCeti.BalancedProduct.rightTranslationChartedSpace`), for
-which `(g, z) ↦ [g, z]` is a smooth submersion. The action `k • [g, z] = [k g, z]` of `G` and the
-three maps `[g, z] ↦ g K`, `[g, z] ↦ g • ι z` and `[g, z] ↦ [z]` are smooth, the last one when `K`
-acts freely and properly on `Z`, so that `Z ⧸ K` is itself a manifold.
+Right translation by `K` on `G` is smooth, free, and proper because `K` is closed. So `G ×_K Z`
+is a case of the smooth balanced product `P ×_K Z` of
+`TauCeti.Geometry.Manifold.GroupAction.BalancedProduct`: a smooth manifold of dimension
+`dim G + dim Z - dim K`
+(`TauCeti.BalancedProduct.rightTranslationChartedSpace`), for which `(g, z) ↦ [g, z]` is a smooth
+submersion, and whose projection `[g, z] ↦ [z]` onto `Z ⧸ K` is smooth when `K` acts freely and
+properly on `Z` (`TauCeti.BalancedProduct.contMDiff_orbitProj`). The action
+`k • [g, z] = [k g, z]` of `G` and the two maps `[g, z] ↦ g K` and `[g, z] ↦ g • ι z` are smooth.
 
 For a Hamiltonian action with coadjoint-equivariant moment map `μ` and a regular value `c` of
 `μ`, this is the space `G ×_{G_c} μ⁻¹(c)`, with its maps to the coadjoint orbit `G ⧸ G_c`, to the
@@ -43,13 +42,9 @@ compared with reduction at zero of the shifted moment map on the product with th
 
 ## Main results
 
-* `TauCeti.BalancedProduct.isManifold_rightTranslation`,
-  `TauCeti.BalancedProduct.isSubmersion_quotientMk_rightTranslation`: `G ×_K Z` is a smooth
-  manifold and the projection from `G × Z` is a smooth submersion.
 * `TauCeti.BalancedProduct.contMDiffSMul_rightTranslation`: `G` acts smoothly on `G ×_K Z`.
 * `TauCeti.BalancedProduct.contMDiff_proj_rightTranslation`,
-  `TauCeti.BalancedProduct.contMDiff_lift`, `TauCeti.BalancedProduct.contMDiff_orbitProj`: the
-  three maps are smooth.
+  `TauCeti.BalancedProduct.contMDiff_lift`: the maps to `G ⧸ K` and to a `G`-manifold are smooth.
 
 ## References
 
@@ -116,59 +111,19 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [ChartedSpace F K] [LieGroup 𝓘(ℝ, F) ∞ K] [ContMDiffSMul 𝓘(ℝ, F) I ∞ K G]
   [ContMDiffSMul 𝓘(ℝ, F) IZ ∞ K Z]
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [FiniteDimensional ℝ EZ] [IZ.Boundaryless]
-  [IsManifold IZ ∞ Z] [FiniteDimensional ℝ F] [LieGroup 𝓘(ℝ, F) ∞ K]
-  [ContMDiffSMul 𝓘(ℝ, F) I ∞ K G] in
-include I IZ F in
-/-- The hypotheses of the quotient manifold theorem for the diagonal action of `K` on `G × Z`,
-other than those found by instance search. -/
-private theorem quotient_hypotheses :
-    ProperSMul K (K.RightTranslation × Z) := by
-  have := topologicalGroup_of_lieGroup I ∞ (G := G)
-  have := ContMDiffSMul.continuousSMul (I := 𝓘(ℝ, F)) (I' := IZ) (G := K) (M := Z) ∞
-  infer_instance
-
 variable (K Z I IZ F) in
-/-- **The charts of the balanced product** `G ×_K Z`: the slice charts of the quotient manifold
-theorem `ProperSMul.orbitRelQuotientChartedSpace` for the free and proper diagonal action of `K`
-on `G × Z`, modelled on `ℝ^(dim G + dim Z - dim K)`. -/
+/-- **The charts of the balanced product** `G ×_K Z`: the charts
+`TauCeti.BalancedProduct.chartedSpace` of the quotient manifold theorem, for right translation by
+`K` on `G`, which is proper since `K` is closed. They are modelled on
+`ℝ^(dim G + dim Z - dim K)`; `TauCeti.BalancedProduct.isManifold`,
+`TauCeti.BalancedProduct.isSubmersion_quotientMk` and `TauCeti.BalancedProduct.contMDiff_iff`
+apply to them. -/
 @[instance_reducible]
 def rightTranslationChartedSpace :
     ChartedSpace (ProperSMul.QuotientModelSpace F (E × EZ))
       (BalancedProduct K K.RightTranslation Z) :=
-  haveI := quotient_hypotheses (I := I) (IZ := IZ) (F := F) (K := K) (Z := Z)
-  ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K (I.prod IZ) (K.RightTranslation × Z)
-
-/-- **The balanced product is a smooth manifold**, for the charts
-`TauCeti.BalancedProduct.rightTranslationChartedSpace`. -/
-theorem isManifold_rightTranslation :
-    letI := rightTranslationChartedSpace K Z I IZ F
-    IsManifold 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞
-      (BalancedProduct K K.RightTranslation Z) := by
-  have := quotient_hypotheses (I := I) (IZ := IZ) (F := F) (K := K) (Z := Z)
-  exact ProperSMul.instIsManifoldOrbitRelQuotient
-
-/-- The projection `G × Z → G ×_K Z` is a smooth submersion. -/
-theorem isSubmersion_quotientMk_rightTranslation :
-    letI := rightTranslationChartedSpace K Z I IZ F
-    IsSubmersion (I.prod IZ) 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞
-      (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z))) := by
-  have := quotient_hypotheses (I := I) (IZ := IZ) (F := F) (K := K) (Z := Z)
-  exact ProperSMul.isSubmersion_quotientMk
-
-/-- Smoothness descends from `G × Z` to `G ×_K Z`: a map out of the balanced product is `C^m`,
-for `m ≤ ∞`, exactly when its composite with the projection is. -/
-theorem contMDiff_iff_rightTranslation {EP HP : Type*} [NormedAddCommGroup EP]
-    [NormedSpace ℝ EP] [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP} {P : Type*}
-    [TopologicalSpace P] [ChartedSpace HP P] {m : ℕ∞ω} (hm : m ≤ ∞)
-    {f : BalancedProduct K K.RightTranslation Z → P} :
-    letI := rightTranslationChartedSpace K Z I IZ F
-    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IP m f ↔
-      ContMDiff (I.prod IZ) IP m
-        (f ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z))) := by
-  let _ := rightTranslationChartedSpace K Z I IZ F
-  exact ((isSubmersion_quotientMk_rightTranslation (I := I) (IZ := IZ)
-    (F := F)).contMDiff_comp_iff Quotient.mk_surjective hm).symm
+  haveI := topologicalGroup_of_lieGroup I ∞ (G := G)
+  chartedSpace 𝓘(ℝ, F) K I K.RightTranslation IZ Z
 
 /-- **`G` acts smoothly on the balanced product.** The action lifts along the submersion
 `(k, (g, z)) ↦ (k, [g, z])` to `(k, (g, z)) ↦ (k g, z)`, followed by the projection. -/
@@ -177,9 +132,11 @@ theorem contMDiffSMul_rightTranslation :
     ContMDiffSMul I 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞ G
       (BalancedProduct K K.RightTranslation Z) := by
   let _ := rightTranslationChartedSpace K Z I IZ F
-  have := isManifold_rightTranslation (I := I) (IZ := IZ) (K := K) (Z := Z) (F := F)
-  have hπ := isSubmersion_quotientMk_rightTranslation (I := I) (IZ := IZ) (K := K) (Z := Z)
-    (F := F)
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  have := isManifold (IK := 𝓘(ℝ, F)) (IP := I) (IZ := IZ) (K := K) (P := K.RightTranslation)
+    (Z := Z)
+  have hπ := isSubmersion_quotientMk (IK := 𝓘(ℝ, F)) (IP := I) (IZ := IZ) (K := K)
+    (P := K.RightTranslation) (Z := Z)
   refine ⟨((IsSubmersion.id.prodMap hπ).contMDiff_comp_iff
     (surjective_id.prodMap Quotient.mk_surjective) le_rfl).1 ?_⟩
   -- On representatives the action is left multiplication on the first factor.
@@ -204,7 +161,8 @@ theorem contMDiff_proj_rightTranslation :
       (proj Z (Subgroup.RightTranslation.quotientMk_smul (K := K))) := by
   let _ := rightTranslationChartedSpace K Z I IZ F
   let _ := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
-  rw [contMDiff_iff_rightTranslation (I := I) (IZ := IZ) (F := F) le_rfl]
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  rw [contMDiff_iff (IK := 𝓘(ℝ, F)) (IP := I) (IZ := IZ) le_rfl]
   have hcomp : proj Z (Subgroup.RightTranslation.quotientMk_smul (K := K)) ∘
       Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
         fun x ↦ (K.toRightTranslation.symm x.1 : G ⧸ K) :=
@@ -223,30 +181,14 @@ theorem contMDiff_lift {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ 
     letI := rightTranslationChartedSpace K Z I IZ F
     ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM ∞ (lift ι) := by
   let _ := rightTranslationChartedSpace K Z I IZ F
-  rw [contMDiff_iff_rightTranslation (I := I) (IZ := IZ) (F := F) le_rfl]
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  rw [contMDiff_iff (IK := 𝓘(ℝ, F)) (IP := I) (IZ := IZ) le_rfl]
   have hcomp : lift ι ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
       fun x ↦ K.toRightTranslation.symm x.1 • ι x.2 :=
     funext fun x ↦ lift_mk ι (K.toRightTranslation.symm x.1) x.2
   rw [hcomp]
   exact ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm (I := I) ∞).comp
     (contMDiff_fst (J := IZ) (N := Z))).smul (hι.comp contMDiff_snd)
-
-/-- **The projection onto `Z ⧸ K` is smooth** when `K` acts freely and properly on `Z`, for the
-charts `ProperSMul.orbitRelQuotientChartedSpace` of the quotient manifold theorem on `Z ⧸ K`. -/
-theorem contMDiff_orbitProj [ProperSMul K Z] [IsCancelSMul K Z] :
-    letI := rightTranslationChartedSpace K Z I IZ F
-    letI := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K IZ Z
-    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ))
-      𝓘(ℝ, ProperSMul.QuotientModelSpace F EZ) ∞
-      (orbitProj : BalancedProduct K K.RightTranslation Z → MulAction.orbitRel.Quotient K Z) := by
-  let _ := rightTranslationChartedSpace K Z I IZ F
-  let _ := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K IZ Z
-  rw [contMDiff_iff_rightTranslation (I := I) (IZ := IZ) (F := F) le_rfl]
-  have hcomp : orbitProj ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
-      Quotient.mk (MulAction.orbitRel K Z) ∘ Prod.snd :=
-    funext fun x ↦ orbitProj_mk x.1 x.2
-  rw [hcomp]
-  exact ProperSMul.contMDiff_quotientMk.comp (contMDiff_snd (I := I) (M := K.RightTranslation))
 
 end Manifold
 
