@@ -297,14 +297,12 @@ theorem IsGeodesicCurve.injective_of_nonconstant {γ : ℝ → F}
     (hγ : IsGeodesicCurve 𝓘(ℝ, F) γ) (hnot : ∃ s t, γ s ≠ γ t) :
     Function.Injective γ := by
   obtain ⟨p, v, rfl⟩ := isGeodesicCurve_iff_exists_eq_add_smul.mp hγ
-  obtain ⟨s, t, hst⟩ := hnot
   have hv : v ≠ 0 := by
-    intro hz
-    exact hst (by simp [hz])
-  intro s t hst'
-  change p + s • v = p + t • v at hst'
-  have hs : s • v = t • v := add_left_cancel hst'
-  exact smul_left_injective ℝ hv hs
+    rintro rfl
+    obtain ⟨s, t, hst⟩ := hnot
+    simp at hst
+  intro s t hst
+  exact smul_left_injective ℝ hv (add_left_cancel hst)
 
 /-! ### The exponential map and the logarithm -/
 
