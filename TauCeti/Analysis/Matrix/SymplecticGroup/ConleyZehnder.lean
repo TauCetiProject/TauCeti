@@ -187,6 +187,7 @@ omit [Fintype n] in
 /-- The diagonal straightening of `ℂ^{n ⊕ m} × ℂ^{n ⊕ m}` is the symplectic direct sum of the
 straightenings of `ℂⁿ × ℂⁿ` and `ℂᵐ × ℂᵐ`: the block-diagonal sum read in the coordinates
 `(n ⊕ m) ⊕ (n ⊕ m)` through `Equiv.sumSumSumComm`. -/
+@[simp]
 theorem diagonalStraightening_sum {m : Type*} [DecidableEq m] :
     diagonalStraightening (n ⊕ m) =
       symplecticSum (diagonalStraightening n) (diagonalStraightening m) := by
