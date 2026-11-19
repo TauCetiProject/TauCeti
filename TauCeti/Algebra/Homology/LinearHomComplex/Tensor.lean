@@ -518,7 +518,7 @@ lemma linearHomComplexDualDistrib_def (A B : CochainComplex (ModuleCat.{v} R) �
 
 /-- On the bidegree-`(i, j)` summand, `TauCeti.linearHomComplexDualDistrib` sends `g ⊗ₜ f` to the
 pairing `g.dualDistrib f`. -/
-lemma linearHomComplexDualDistrib_tmul (A B : CochainComplex (ModuleCat.{v} R) ℤ) (i j n : ℤ)
+lemma ι_linearHomComplexDualDistrib_tmul (A B : CochainComplex (ModuleCat.{v} R) ℤ) (i j n : ℤ)
     (h : ComplexShape.π (ComplexShape.up ℤ) (ComplexShape.up ℤ) (ComplexShape.up ℤ) (i, j) = n)
     (g : ModuleCat.of R (Cochain B (𝟙_ _) i)) (f : ModuleCat.of R (Cochain A (𝟙_ _) j)) :
     (dsimp% only [linearHomComplex_X]
