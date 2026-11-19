@@ -97,12 +97,6 @@ theorem singularHomologyMap_map_comp_wangClass {G : Type w} [TopologicalSpace G]
     (Category.assoc _ _ _).trans <|
       congrArg (wangδ φ R 0 ≫ ·) (singularHomologyMap_singularHomology₀ε R (TopCat.ofHom g))
 
-/-- The map from a space to a point intertwines every homeomorphism with the identity of the
-point. -/
-theorem semiconj_const_punit :
-    Function.Semiconj (ContinuousMap.const F PUnit.unit) φ (Homeomorph.refl PUnit.{w + 1}) :=
-  fun _ ↦ rfl
-
 /-- **The Wang sequence of a circle.** For the mapping torus of the identity of a point, the Wang
 connecting morphism `H₁(T) ⟶ H₀(pt)` is an isomorphism, since `H₁(pt)` vanishes. -/
 instance isIso_wangδ_refl_punit : IsIso (wangδ (Homeomorph.refl PUnit.{w + 1}) R 0) :=
@@ -179,9 +173,12 @@ theorem wangClass_eq_singularHomologyMap_proj_comp_circleWangClass {F : Type}
     wangClass R φ =
       ((singularHomologyFunctor A 1).obj R).map
           (TopCat.ofHom ⟨proj φ, continuous_proj φ⟩) ≫ circleWangClass R := by
-  -- The projection of `T_φ` factors through the mapping torus of the identity of a point.
-  rw [← proj_comp_map φ (Homeomorph.refl PUnit.{1}) (ContinuousMap.const F PUnit.unit)
-      (semiconj_const_punit φ), TopCat.ofHom_comp, Functor.map_comp, Category.assoc,
+  -- The projection of `T_φ` factors through the mapping torus of the identity of a point, since
+  -- the map to the point intertwines `φ` with the identity.
+  have h : Function.Semiconj (ContinuousMap.const F PUnit.unit) φ (Homeomorph.refl PUnit.{1}) :=
+    fun _ ↦ rfl
+  rw [← proj_comp_map φ (Homeomorph.refl PUnit.{1}) (ContinuousMap.const F PUnit.unit) h,
+    TopCat.ofHom_comp, Functor.map_comp, Category.assoc,
     singularHomologyMap_proj_comp_circleWangClass, singularHomologyMap_map_comp_wangClass]
 
 end Circle
