@@ -20,9 +20,9 @@ form** is the time integral of the contractions `α_t = ι_{X_t} σ`,
 `x ↦ ∫₀¹ σ_x(X_t x, ·) dt`
 
 (`TauCeti.Diffeotopy.eulerianFluxForm`). The flux form of `TauCeti.Diffeotopy.fluxForm` is instead
-the integral `∫₀¹ φ_t^* α_t dt` of the pulled back contractions. For a symplectic isotopy, one whose
-every time slice `φ_t` preserves `σ`, the two integrals have the same de Rham class: both
-represent the flux (`TauCeti.Diffeotopy.flux_eq_mk_eulerianFluxForm`).
+the integral `∫₀¹ φ_t^* α_t dt` of the pulled back contractions. For a closed two-form `σ` and a
+symplectic isotopy, one whose every time slice `φ_t` preserves `σ`, the two integrals have the same
+de Rham class: both represent the flux (`TauCeti.Diffeotopy.flux_eq_mk_eulerianFluxForm`).
 
 The comparison is through the inverse diffeotopy `φ_t⁻¹`. The time derivative of `φ_t⁻¹ x` is
 `-(dφ_t)⁻¹ (X_t x)` (`TauCeti.Diffeotopy.mfderiv_timeSlice_mfderiv_cylinderMap_symm`), and the
@@ -74,8 +74,9 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-- The **Eulerian flux form** `x ↦ ∫₀¹ σ_x(X_t x, ·) dt` of a diffeotopy with respect to a
 two-form `σ`: the time integral of the contractions `ι_{X_t} σ` of `σ` with the velocity field
-`X_t = (∂ₜ φ_t) ∘ φ_t⁻¹`. For a symplectic isotopy it is a smooth closed form representing the
-flux (`TauCeti.Diffeotopy.flux_eq_mk_eulerianFluxForm`). -/
+`X_t = (∂ₜ φ_t) ∘ φ_t⁻¹`. For an isotopy whose time slices preserve `σ` it is smooth; when `σ` is
+moreover closed it is closed and represents the flux
+(`TauCeti.Diffeotopy.flux_eq_mk_eulerianFluxForm`). -/
 def eulerianFluxForm (σ : SmoothForm J M ℝ 2) : RoughForm J M ℝ 1 :=
   fun x ↦ intervalIntegral (E := E [⋀^Fin 1]→L[ℝ] ℝ)
     (fun t ↦ RoughForm.interior (Φ.velocity (projIcc 0 1 zero_le_one t)) σ.1 x)
