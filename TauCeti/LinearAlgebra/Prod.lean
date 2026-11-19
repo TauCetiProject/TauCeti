@@ -217,6 +217,23 @@ theorem finrank_graph {R M M₂ : Type*} [Semiring R] [AddCommMonoid M] [Module 
   intro x y h
   exact congr(($h).1)
 
+/-- A product map `f × g` carries the graph of `φ` onto the graph of `ψ` when `f` is surjective
+and `g ∘ φ = ψ ∘ f`. For instance a surjective `f` acting diagonally, as `f × f`, carries the
+diagonal `LinearMap.id.graph` onto the diagonal and the antidiagonal `(-LinearMap.id).graph` onto
+the antidiagonal. -/
+theorem map_prodMap_graph {R M₁ M₂ M₃ M₄ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid M₃] [Module R M₃] [AddCommMonoid M₄]
+    [Module R M₄] {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} {φ : M₁ →ₗ[R] M₂} {ψ : M₃ →ₗ[R] M₄}
+    (hf : Function.Surjective f) (h : g ∘ₗ φ = ψ ∘ₗ f) :
+    (graph φ).map (f.prodMap g) = graph ψ := by
+  ext ⟨a, b⟩
+  simp only [Submodule.mem_map, mem_graph_iff, prodMap_apply, Prod.exists, Prod.mk.injEq]
+  refine ⟨?_, fun hb ↦ ?_⟩
+  · rintro ⟨x, y, rfl, rfl, rfl⟩
+    exact LinearMap.congr_fun h x
+  · obtain ⟨x, rfl⟩ := hf a
+    exact ⟨x, φ x, rfl, rfl, (LinearMap.congr_fun h x).trans hb.symm⟩
+
 section Semiring
 
 variable {R M₁ M₂ M₃ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂]
