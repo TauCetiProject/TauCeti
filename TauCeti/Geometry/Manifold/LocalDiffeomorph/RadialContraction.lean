@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-public import TauCeti.Analysis.InnerProductSpace.Euclidean.RadialContraction
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.Radial.Contraction
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
