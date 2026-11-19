@@ -32,6 +32,8 @@ This file develops the basic properties of the measure that need no reduction th
 * **Properness.** If `μ` is a proper map to a Hausdorff space, the measure is finite on compact
   sets (`TauCeti.SmoothTwoForm.isFiniteMeasureOnCompacts_duistermaatHeckmanMeasure`), hence locally
   finite when the target is locally compact, even when `M` is not compact.
+* **Constant maps.** The measure of a constant map is the symplectic volume at a single value
+  (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_const`).
 * **Moment map normalizations.** Composing `μ` with a measurable map `g` pushes the measure forward
   along `g` (`TauCeti.SmoothTwoForm.duistermaatHeckmanMeasure_comp`). This covers the two standard
   changes of moment map: shifting `μ` by a constant translates the measure
@@ -107,6 +109,12 @@ theorem duistermaatHeckmanMeasure_comp {G : Type*} [MeasurableSpace G] {g : F �
     (hg : Measurable g) (hμ : Measurable μ) :
     σ.duistermaatHeckmanMeasure n (g ∘ μ) = (σ.duistermaatHeckmanMeasure n μ).map g :=
   (Measure.map_map hg hμ).symm
+
+/-- **A constant map.** The Duistermaat–Heckman measure of the constant map with value `c`, the
+moment map of the trivial action, is the symplectic volume concentrated at `c`. -/
+theorem duistermaatHeckmanMeasure_const (c : F) :
+    σ.duistermaatHeckmanMeasure n (fun _ ↦ c) = σ.liouvilleMeasure n univ • Measure.dirac c :=
+  Measure.map_const _ c
 
 /-- **Shifting the moment map.** Adding a constant `c` to `μ` translates its Duistermaat–Heckman
 measure by `c`. -/

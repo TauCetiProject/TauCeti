@@ -32,15 +32,23 @@ The integral is computed through inverse stereographic projection from the south
 `q(x, y) = (2x, 2y, 1 - x² - y²) / (1 + x² + y²)`,
 
 Mathlib's `stereoInvFunAux` from `(0, 0, -1)` read on the equatorial plane through
-`(x, y) ↦ (2x, 2y, 0)`. It is a smooth injective parametrization of the sphere minus the south
-pole. Its derivative is given by `TauCeti.fderiv_stereoInvFunAux_apply`, and in coordinates the
-triple product of `q` with its two partial derivatives is `4 / (1 + x² + y²)²`. This is positive,
+`(x, y) ↦ (2x, 2y, 0)` (`TauCeti.stereoSphere`). It is a smooth injective parametrization of
+the sphere minus the south pole. Its derivative is given by `TauCeti.fderiv_stereoInvFunAux_apply`,
+and in coordinates the triple product of `q` with its two partial derivatives is
+`4 / (1 + x² + y²)²`. This is positive,
 so `q` is positively oriented for the outward normal, and the integral of the area form is the
 integral of this density over the plane. The density is `4π` times the Fubini–Study density,
 whose total integral is one (`OnePoint.integral_fubiniStudyDensity`).
 
+## Main definitions
+
+* `TauCeti.stereoSphere`: inverse stereographic projection from the south pole, a
+  parametrization of the sphere minus the south pole `TauCeti.southPole`.
+
 ## Main results
 
+* `TauCeti.sphereVolumeForm_mfderiv_stereoSphere`: the area form on the derivatives of the
+  parametrization is the density `4 / (1 + x² + y²)²`.
 * `Orientation.integralTopForm_sphereOrientation_sphereVolumeForm`: the outward-normal area form
   of the unit sphere of `ℝ³` integrates to `4π`.
 
@@ -151,11 +159,21 @@ private theorem dotProduct_cross_fderiv_stereoParam (z : ℝ²) :
   field_simp
   ring
 
-/-- Inverse stereographic projection from the south pole, as a map into the unit sphere. -/
-private def stereoSphere : ℝ² → S² :=
+/-- **Inverse stereographic projection from the south pole**, as a map from the plane into the
+unit sphere of `ℝ³`: `(x, y) ↦ (2x, 2y, 1 - x² - y²) / (1 + x² + y²)`
+(`TauCeti.coe_stereoSphere`). It is a smooth injective parametrization of the sphere minus the
+south pole (`TauCeti.range_stereoSphere`). -/
+def stereoSphere : ℝ² → S² :=
   Set.codRestrict stereoParam _ stereoParam_mem_sphere
 
-private theorem contMDiff_stereoSphere : ContMDiff 𝓘(ℝ, ℝ²) (𝓡 2) ∞ stereoSphere :=
+/-- In coordinates, `stereoSphere (x, y) = (2x, 2y, 1 - x² - y²) / (1 + x² + y²)`. -/
+theorem coe_stereoSphere (z : ℝ²) :
+    (stereoSphere z : ℝ³) = WithLp.toLp 2 ![2 * z 0 / (1 + z 0 ^ 2 + z 1 ^ 2),
+      2 * z 1 / (1 + z 0 ^ 2 + z 1 ^ 2), (1 - z 0 ^ 2 - z 1 ^ 2) / (1 + z 0 ^ 2 + z 1 ^ 2)] :=
+  stereoParam_eq z
+
+/-- Inverse stereographic projection from the south pole is smooth. -/
+theorem contMDiff_stereoSphere : ContMDiff 𝓘(ℝ, ℝ²) (𝓡 2) ∞ stereoSphere :=
   contDiff_stereoParam.contMDiff.codRestrict_sphere stereoParam_mem_sphere
 
 private theorem mvfderiv_coe_mfderiv_stereoSphere (z : ℝ²) (v : TangentSpace 𝓘(ℝ, ℝ²) z) :
@@ -166,9 +184,9 @@ private theorem mvfderiv_coe_mfderiv_stereoSphere (z : ℝ²) (v : TangentSpace 
     ((contMDiff_stereoSphere z).mdifferentiableAt (by simp)) v).symm.trans
       (mvfderiv_eq_fderiv_apply stereoParam z v)
 
-/-- On the derivatives of the parametrization, the area form is the density
-`4 / (1 + x² + y²)²`. -/
-private theorem sphereVolumeForm_mfderiv_stereoSphere (z : ℝ²) :
+/-- On the derivatives of inverse stereographic projection from the south pole, the outward-normal
+area form of the sphere is the density `4 / (1 + x² + y²)²`. -/
+theorem sphereVolumeForm_mfderiv_stereoSphere (z : ℝ²) :
     (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1 (stereoSphere z)
       (fun i ↦ mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z
         ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i)) =
@@ -267,16 +285,18 @@ private theorem stereoSphere_eq_comp :
     stereoSphere = (stereographic norm_southPoleVec).symm ∘ planeMk :=
   rfl
 
-private theorem injective_stereoSphere : Function.Injective stereoSphere := by
+/-- Inverse stereographic projection from the south pole is injective. -/
+theorem injective_stereoSphere : Function.Injective stereoSphere := by
   rw [stereoSphere_eq_comp]
   exact (isOpenEmbedding_stereographic_symm norm_southPoleVec).injective.comp injective_planeMk
 
-/-- The south pole `(0, 0, -1)` of the unit sphere. -/
-private def southPole : S² :=
+/-- The south pole `(0, 0, -1)` of the unit sphere of `ℝ³`. -/
+def southPole : S² :=
   ⟨southPoleVec, mem_sphere_zero_iff_norm.2 norm_southPoleVec⟩
 
-/-- The parametrization covers exactly the sphere minus the south pole. -/
-private theorem range_stereoSphere : Set.range stereoSphere = {southPole}ᶜ := by
+/-- Inverse stereographic projection from the south pole covers exactly the sphere minus the south
+pole. -/
+theorem range_stereoSphere : Set.range stereoSphere = {southPole}ᶜ := by
   rw [stereoSphere_eq_comp, Set.range_comp, surjective_planeMk.range_eq, Set.image_univ,
     range_stereographic_symm]
   rfl

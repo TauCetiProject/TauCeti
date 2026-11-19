@@ -53,6 +53,7 @@ this construction gives the Liouville measure of a symplectic manifold.
   finite.
 * `TauCeti.RoughForm.isOpenPosMeasure_measure`: the measure of a continuous nowhere-vanishing form
   is positive on nonempty open sets.
+* `TauCeti.RoughForm.nullSingletonClass_measure`: in positive dimension, points have measure zero.
 * `TauCeti.RoughForm.measure_eq_withDensity_addHaar`: on the model space `E`, `|φ|` is the Haar
   measure of a basis `b` with density `|φ(b)|`.
 * `Homeomorph.measurePreserving_measure_mpullback`: a differentiable homeomorphism `Φ` carries
@@ -300,6 +301,18 @@ theorem isOpenPosMeasure_measure {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm 
   have hnull : ∀ᵐ y ∂b.addHaar, y ∉ e '' V :=
     ((ae_restrict_iff' hA).1 h).mono fun y hy hyA ↦ hpos y hyA (hy hyA)
   exact hApos.ne' (measure_eq_zero_iff_ae_notMem.2 hnull)
+
+/-- **Points are null for the measure of a top form** on a manifold of positive dimension: in a
+chart a point has a single point as coordinate image, which is null for Lebesgue measure. -/
+instance nullSingletonClass_measure [Nontrivial E] (φ : RoughForm I M ℝ k) :
+    NullSingletonClass φ.measure := by
+  -- Manifolds are `T1`, since their model space is Hausdorff.
+  have : T2Space H := I.isClosedEmbedding.toIsEmbedding.t2Space
+  have : T1Space M := ChartedSpace.t1Space H M
+  refine ⟨fun x ↦ ?_⟩
+  rw [φ.measure_apply_of_subset (measurableSet_singleton x)
+    (singleton_subset_iff.2 (mem_extChartAt_source x)), image_singleton]
+  exact setLIntegral_measure_zero _ _ (measure_singleton _)
 
 /-! ### Top forms on the model space -/
 
