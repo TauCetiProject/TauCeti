@@ -1,0 +1,188 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
+
+import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
+
+/-!
+# Ideal sheaves from ideals on affine-valued points
+
+For a scheme `X` over `Spec R`, assign an ideal of `A` to each morphism `Spec A ⟶ X` over
+`Spec R`. If these ideals commute with extension along `R`-algebra homomorphisms, they glue to
+an ideal sheaf on `X`. Its pullback along any affine-valued point is the ideal sheaf generated
+by the assigned ideal. Consequently that point factors through the associated closed subscheme
+exactly when its ideal vanishes.
+
+This construction supplies closed incidence conditions on schemes represented by functors of
+points, including Grassmannians and flag schemes. It generalizes the affine-open gluing
+construction for `Module.Grassmannian.schemeIdealLocus`.
+-/
+
+public section
+
+universe u
+
+open CategoryTheory Limits AlgebraicGeometry Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {R : Type u} [CommRing R] {X : Scheme.{u}} (π : X ⟶ Spec (.of R))
+
+/-- The sections of the scheme over an open `U` form an `R`-algebra through the
+structure morphism to `Spec R`. -/
+@[instance_reducible]
+private noncomputable def sectionsAlgebra (U : X.Opens) :
+    Algebra R Γ(X, U) :=
+  ((Scheme.ΓSpecIso (.of R)).inv ≫ π.appLE ⊤ U fun _ _ ↦ trivial).hom.toAlgebra
+
+private theorem algebraMap_sections (U : X.Opens) :
+    @algebraMap R Γ(X, U) _ _ (sectionsAlgebra π U) =
+      ((Scheme.ΓSpecIso (.of R)).inv ≫ π.appLE ⊤ U fun _ _ ↦ trivial).hom :=
+  rfl
+
+/-- The inclusion `Spec Γ(X, U) ⟶ X` of an affine open lies over `Spec R`. -/
+private theorem fromSpec_toSpec {U : X.Opens} (hU : IsAffineOpen U) :
+    hU.fromSpec ≫ π =
+      Spec.map (CommRingCat.ofHom (@algebraMap R Γ(X, U) _ _ (sectionsAlgebra π U))) := by
+  rw [IsAffineOpen.fromSpec_comp_eq_SpecMap, algebraMap_sections, CommRingCat.ofHom_hom]
+
+/-- Restriction of sections of the scheme, as a map of `R`-algebras. -/
+private noncomputable def resₐ {U V : X.Opens} (h : V ≤ U) :
+    letI := sectionsAlgebra π U
+    letI := sectionsAlgebra π V
+    Γ(X, U) →ₐ[R] Γ(X, V) := by
+  letI := sectionsAlgebra π U
+  letI := sectionsAlgebra π V
+  exact {
+    toRingHom := (X.presheaf.map (homOfLE h).op).hom
+    commutes' := fun r ↦ by
+      exact congr(($(π.appLE_map (U := ⊤) (fun _ _ ↦ trivial) (homOfLE h).op)).hom
+        ((Scheme.ΓSpecIso (.of R)).inv.hom r)) }
+
+/-- Factor a point through an affine chart using the algebra-homomorphism correspondence. -/
+private theorem exists_specMap_comp_fromSpec {A : Type u} [CommRing A] [Algebra R A]
+    (g : Spec (.of A) ⟶ X)
+    (hg : g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R A)))
+    {U : X.Opens} (hU : IsAffineOpen U) (hgU : Set.range g ⊆ U) :
+    letI := sectionsAlgebra π U
+    ∃ φ : Γ(X, U) →ₐ[R] A,
+      Spec.map (CommRingCat.ofHom (φ : Γ(X, U) →+* A)) ≫ hU.fromSpec = g := by
+  let := sectionsAlgebra π U
+  let : X.Over (Spec (.of R)) := ⟨π⟩
+  let : hU.fromSpec.IsOver (Spec (.of R)) := ⟨fromSpec_toSpec π hU⟩
+  let : g.IsOver (Spec (.of R)) := ⟨hg⟩
+  exact (TauCeti.AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset
+    hU.fromSpec g (by rwa [hU.range_fromSpec])).exists
+
+/-- The elements `a` of `A` such that, over the basic open `D(a)`, the morphism `g`
+lands in an affine open of the scheme. -/
+private def affineSet {A : Type u} [CommRing A] (g : Spec (.of A) ⟶ X) : Set A :=
+  {a | ∃ U : X.Opens, IsAffineOpen U ∧
+    Set.range (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a))) ≫
+      g) ⊆ U}
+
+/-- The basic opens `D(a)`, `a ∈ affineSet g`, cover `Spec A`. -/
+private theorem span_affineSet {A : Type u} [CommRing A] (g : Spec (.of A) ⟶ X) :
+    Ideal.span (affineSet g) = ⊤ := by
+  by_contra hs
+  obtain ⟨m, hm, hsm⟩ := Ideal.exists_le_maximal _ hs
+  let p : Spec (.of A) := ⟨m, hm.isPrime⟩
+  obtain ⟨_, ⟨U, hU, rfl⟩, hpU, -⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open
+      (Set.mem_univ (g p)) isOpen_univ
+  -- a basic open `D(a)` around `p` which the morphism `g` maps into `U`
+  obtain ⟨_, ⟨a, rfl⟩, hpa, hsub⟩ :=
+    PrimeSpectrum.isTopologicalBasis_basic_opens.exists_subset_of_mem_open
+      (a := p) (u := g ⁻¹' U) hpU (U.2.preimage g.continuous)
+  have has : a ∈ affineSet g := by
+    refine ⟨U, hU, ?_⟩
+    rintro _ ⟨q, rfl⟩
+    exact hsub
+      ((PrimeSpectrum.localization_away_comap_range (Localization.Away a) a).le ⟨q, rfl⟩)
+  exact (PrimeSpectrum.mem_basicOpen _ _).1 hpa (hsm (Ideal.subset_span has))
+
+variable
+  (I : ∀ {A : Type u} [CommRing A] [Algebra R A],
+    {g : Spec (.of A) ⟶ X //
+      g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R A))} → Ideal A)
+  (hI : ∀ {A B : Type u} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+    (f : A →ₐ[R] B)
+    (g : {g : Spec (.of A) ⟶ X //
+      g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R A))})
+    (g' : {g : Spec (.of B) ⟶ X //
+      g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R B))}),
+    Spec.map (CommRingCat.ofHom f.toRingHom) ≫ g.1 = g'.1 → I g' = (I g).map f)
+
+/-- The ideal sheaf glued from a base-change-compatible ideal on every affine-valued point
+of `X` over `Spec R`. Its pullback at a point is generated by that point's assigned ideal. -/
+noncomputable def idealSheafOfAffinePoints : X.IdealSheafData where
+  ideal U := @I Γ(X, U) _ (sectionsAlgebra π U) ⟨U.2.fromSpec, fromSpec_toSpec π U.2⟩
+  map_ideal_basicOpen U f := by
+    let := sectionsAlgebra π U
+    let := sectionsAlgebra π (X.basicOpen f)
+    exact (hI (resₐ π (X.basicOpen_le f))
+      ⟨U.2.fromSpec, fromSpec_toSpec π U.2⟩
+      ⟨(X.affineBasicOpen f).2.fromSpec, fromSpec_toSpec π (X.affineBasicOpen f).2⟩
+      (U.2.map_fromSpec (X.affineBasicOpen f).2 (homOfLE (X.basicOpen_le f)).op)).symm
+
+private theorem comap_idealSheafOfAffinePoints_of_range_subset
+    {A : Type u} [CommRing A] [Algebra R A]
+    (g : {g : Spec (.of A) ⟶ X //
+      g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R A))})
+    {U : X.Opens} (hU : IsAffineOpen U) (hgU : Set.range g.1 ⊆ U) :
+    (π.idealSheafOfAffinePoints I hI).comap g.1 =
+      ofIdealTop ((I g).map (Scheme.ΓSpecIso (.of A)).inv.hom) := by
+  let := sectionsAlgebra π U
+  obtain ⟨φ, hφ⟩ := exists_specMap_comp_fromSpec π g.1 g.2 hU hgU
+  rw [← hφ, comap_SpecMap_fromSpec_eq_ofIdealTop]
+  exact congrArg (fun J : Ideal A ↦ ofIdealTop (J.map (Scheme.ΓSpecIso (.of A)).inv.hom))
+    (hI φ ⟨hU.fromSpec, fromSpec_toSpec π hU⟩ g hφ).symm
+
+/-- Pulling back the ideal sheaf associated to ideals on affine-valued points recovers the
+ideal assigned to the point, transported along the global-sections isomorphism of `Spec A`. -/
+theorem comap_idealSheafOfAffinePoints {A : Type u} [CommRing A] [Algebra R A]
+    (g : {g : Spec (.of A) ⟶ X //
+      g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
+    (π.idealSheafOfAffinePoints I hI).comap g.1 =
+      ofIdealTop ((I g).map (Scheme.ΓSpecIso (.of A)).inv.hom) := by
+  refine ext_of_comap_openCover (Scheme.affineOpenCoverOfSpanRangeEqTop (R := .of A)
+    (fun a : affineSet g.1 ↦ a.1)
+    (by rw [Subtype.range_coe]; exact span_affineSet g.1)).openCover fun a ↦ ?_
+  obtain ⟨U, hU, hgU⟩ := a.2
+  let ι : A →ₐ[R] Localization.Away a.1 := IsScalarTower.toAlgHom R A _
+  let g' : {g : Spec (.of (Localization.Away a.1)) ⟶ X //
+      g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away a.1)))} :=
+    ⟨Spec.map (CommRingCat.ofHom ι.toRingHom) ≫ g.1, by
+      rw [Category.assoc, g.2, ← Spec.map_comp]
+      congr 1⟩
+  rw [← comap_comp]
+  -- The chosen cover consists of the localization maps `Spec A[1/a] ⟶ Spec A`.
+  change (π.idealSheafOfAffinePoints I hI).comap g'.1 =
+    (ofIdealTop _).comap (Spec.map (CommRingCat.ofHom (algebraMap A _)))
+  rw [comap_idealSheafOfAffinePoints_of_range_subset π I hI g' hU hgU,
+    comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom, hI ι g g' rfl]
+  rfl
+
+/-- An affine-valued point factors through the closed subscheme defined by its point ideals
+if and only if the ideal assigned to that point is zero. -/
+theorem idealSheafOfAffinePoints_le_ker_iff {A : Type u} [CommRing A] [Algebra R A]
+    (g : {g : Spec (.of A) ⟶ X //
+      g ≫ π = Spec.map (CommRingCat.ofHom (algebraMap R A))}) :
+    π.idealSheafOfAffinePoints I hI ≤ g.1.ker ↔ I g = ⊥ := by
+  calc π.idealSheafOfAffinePoints I hI ≤ g.1.ker
+      _ ↔ (π.idealSheafOfAffinePoints I hI).comap g.1 = ⊥ := by
+        rw [← Scheme.IdealSheafData.map_bot, le_map_iff_comap_le, le_bot_iff]
+      _ ↔ (I g).map (Scheme.ΓSpecIso (.of A)).inv.hom = ⊥ := by
+        rw [comap_idealSheafOfAffinePoints, ofIdealTop_eq_bot_iff]
+      _ ↔ I g = ⊥ := Ideal.map_eq_bot_iff_of_injective
+        (ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso (.of A)).inv).1
+
+end AlgebraicGeometry.Scheme.Hom
