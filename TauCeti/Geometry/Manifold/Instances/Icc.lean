@@ -20,7 +20,9 @@ The reflection `t ↦ 1 - t` and the multiplication `(s, t) ↦ s t` are smooth 
 manifold-with-boundary structure of the unit interval. The smooth transition function also gives
 smooth interval-valued maps, among them the collared transition
 `TauCeti.collaredSmoothTransitionUnit`, which is `0` up to time `1 / 4` and `1` from time `3 / 4`
-on. These support reversal, rescaling and stationary-time concatenation of smooth isotopies.
+on. Convex combinations of smooth interval-valued maps are smooth (`ContMDiff.convexComb`). These
+support reversal, rescaling, straight-line homotopies and stationary-time concatenation of smooth
+isotopies.
 
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
 The preferred interval charts also expose their actual affine coordinate formulas and the
@@ -67,6 +69,18 @@ theorem ContMDiff.smoothTransition (hf : ContMDiff I 𝓘(ℝ) n f) (hn : n ≤ 
   apply contMDiff_iff_comp_subtypeVal_Icc.mpr
   refine ⟨(Real.smoothTransition.continuous.comp hf.continuous).subtype_mk _, ?_⟩
   exact ((Real.smoothTransition.contDiff (n := ⊤)).contMDiff.of_le hn).comp hf
+
+/-- A convex combination `(1 - h) f + h g` of `C^n` maps `f` and `g` into a closed interval, with a
+`C^n` weight `h` in the unit interval, is `C^n` (`Set.Icc.convexComb`). -/
+theorem ContMDiff.convexComb {a b : ℝ} [Fact (a < b)] {f g : M → Set.Icc a b} {h : M → unitInterval}
+    (hf : ContMDiff I (𝓡∂ 1) n f) (hg : ContMDiff I (𝓡∂ 1) n g) (hh : ContMDiff I (𝓡∂ 1) n h) :
+    ContMDiff I (𝓡∂ 1) n fun x ↦ Set.Icc.convexComb (f x) (g x) (h x) := by
+  have hval {c d : ℝ} [Fact (c < d)] {u : M → Set.Icc c d} (hu : ContMDiff I (𝓡∂ 1) n u) :
+      ContMDiff I 𝓘(ℝ) n fun x ↦ (u x : ℝ) :=
+    contMDiff_subtypeVal_Icc.comp hu
+  have hreal : ContMDiff I 𝓘(ℝ) n fun x ↦ (1 - (h x : ℝ)) * f x + h x * g x :=
+    ((contMDiff_const.sub (hval hh)).mul (hval hf)).add ((hval hh).mul (hval hg))
+  exact contMDiff_iff_comp_subtypeVal_Icc.mpr ⟨continuous_induced_rng.mpr hreal.continuous, hreal⟩
 
 namespace TauCeti
 

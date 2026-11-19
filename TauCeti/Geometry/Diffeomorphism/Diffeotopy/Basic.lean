@@ -411,6 +411,18 @@ theorem final_symm_trans (Ψ : Diffeotopy J n M) :
     (Ψ.symm.trans Φ).final = Φ.final * Ψ.final⁻¹ := by
   rw [final_trans, final_symm, _root_.Diffeomorph.mul_def, _root_.Diffeomorph.inv_def]
 
+/-- Applying the inverse diffeotopy at time `t` after the diffeotopy at time `t` returns the
+starting point. -/
+theorem symm_apply_apply_mk (t : I) (x : M) : Φ.symm (t, Φ (t, x)) = x := by
+  have h := (Φ.timeSlice t).symm_apply_apply x
+  rwa [timeSlice_apply, symm_timeSlice_apply] at h
+
+/-- Applying the diffeotopy at time `t` after the inverse diffeotopy at time `t` returns the
+starting point. -/
+theorem apply_symm_apply_mk (t : I) (x : M) : Φ (t, Φ.symm (t, x)) = x := by
+  have h := (Φ.timeSlice t).apply_symm_apply x
+  rwa [symm_timeSlice_apply, timeSlice_apply] at h
+
 /-- A point is fixed by the inverse diffeotopy at time `t` exactly when it is fixed by the
 diffeotopy at time `t`. -/
 theorem symm_apply_eq_self_iff {t : I} {x : M} : Φ.symm (t, x) = x ↔ Φ (t, x) = x := by
