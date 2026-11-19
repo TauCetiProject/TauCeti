@@ -205,6 +205,10 @@ def map (f : R →+* S) : ℍ[R] →+* ℍ[S] where
   map_mul' x y := by ext <;> simp <;> ring
 
 @[simp]
+theorem map_mk (f : R →+* S) (w x y z : R) :
+    map f (⟨w, x, y, z⟩ : ℍ[R]) = ⟨f w, f x, f y, f z⟩ := (rfl)
+
+@[simp]
 theorem re_map (f : R →+* S) (q : ℍ[R]) : (map f q).re = f q.re := (rfl)
 
 @[simp]
@@ -215,6 +219,21 @@ theorem imJ_map (f : R →+* S) (q : ℍ[R]) : (map f q).imJ = f q.imJ := (rfl)
 
 @[simp]
 theorem imK_map (f : R →+* S) (q : ℍ[R]) : (map f q).imK = f q.imK := (rfl)
+
+@[simp]
+theorem map_star (f : R →+* S) (q : ℍ[R]) : map f (star q) = star (map f q) := by
+  ext <;> simp
+
+@[simp]
+theorem map_coe (f : R →+* S) (r : R) : map f (r : ℍ[R]) = (f r : ℍ[S]) := by
+  ext <;> simp
+
+@[simp]
+theorem map_id : map (RingHom.id R) = RingHom.id ℍ[R] := (rfl)
+
+@[simp]
+theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
+    map (g.comp f) = (map g).comp (map f) := (rfl)
 
 end Quaternion
 
