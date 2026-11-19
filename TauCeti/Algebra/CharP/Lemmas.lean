@@ -114,12 +114,11 @@ theorem natCast_choose_sub_one_eq_neg_one_pow {R : Type*} [Ring R] (p : ℕ) [hp
 
 /-- In characteristic `p`, the natural-number representative `(m⁻¹ : ZMod p).val` of the inverse
 of `m` modulo `p` is a right inverse of `m` whenever `m` is prime to `p`. -/
-theorem natCast_mul_natCast_val_inv_eq_one {R : Type*} [NonAssocSemiring R] [IsRightCancelAdd R]
-    (p : ℕ) [CharP R p] {m : ℕ} (hm : m.Coprime p) : (m : R) * ((m⁻¹ : ZMod p).val : R) = 1 := by
-  rw [← Nat.cast_mul, ← Nat.cast_one, CharP.natCast_eq_natCast R p,
-    ← ZMod.natCast_eq_natCast_iff]
-  push_cast
-  exact ZMod.mul_val_inv hm
+theorem natCast_mul_natCast_val_inv_eq_one {R : Type*} [NonAssocSemiring R] (p : ℕ) [CharP R p]
+    {m : ℕ} (hm : m.Coprime p) : (m : R) * ((m⁻¹ : ZMod p).val : R) = 1 := by
+  rw [← Nat.cast_mul, ← Nat.cast_one]
+  exact CharP.natCast_eq_natCast' R p
+    ((ZMod.natCast_eq_natCast_iff _ _ _).1 (by push_cast; exact ZMod.mul_val_inv hm))
 
 variable {R : Type*} [Ring R] (p n : ℕ) [ExpChar R p]
 
