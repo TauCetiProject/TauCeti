@@ -26,13 +26,12 @@ test functions, the smooth compactly supported functions `C_c^∞(E; F)`, form a
 closure of the Laplacian on test functions is the whole generator. Equivalently, for every `f` in
 the domain of `A` there are test functions `φₙ` with `φₙ → f` and `Δφₙ → A f` in `Lᵖ`.
 
-The first step removes the compact support. A function `u` of class `C²` whose derivatives
-through order two lie in `Lᵖ` is in the domain of `A`, and `A u = Δu`: its expanding cutoffs
-`χ (x / R) • u x` are `C²` with compact support, so the generator sends them to their
-Laplacians, and as `R → ∞` they converge to `u` and their Laplacians to `Δu` in `Lᵖ`
-(`TauCeti.tendsto_eLpNorm_iteratedFDeriv_cutoff_sub`, using `‖Δv‖ ≤ dim E ‖D²v‖`); since the
-generator is closed, the limit lies in its graph. For smooth `u` the cutoffs are test functions,
-so `(u, Δu)` lies in the closure of the graph of `A` restricted to test functions.
+The first step treats smooth functions. Let `u` be smooth, with derivatives through order two in
+`Lᵖ`, representing `f` in the domain of `A`. Its Laplacian lies in `Lᵖ` (`‖Δu‖ ≤ dim E ‖D²u‖`), so
+`A f = Δu` (`TauCeti.mem_graph_weakLaplacianLp_of_contDiff`). Compactly supported smooth
+approximations `φₙ` of `u` (`TauCeti.exists_contDiff_hasCompactSupport_approximation`) are test
+functions with `φₙ → u` and `D²φₙ → D²u` in `Lᵖ`, hence `Δφₙ → Δu`. So `(f, A f)` lies in the
+closure of the graph of `A` restricted to test functions.
 
 The second step is heat smoothing. For `f` in the domain of `A` and `t > 0`, `e^{tΔ} f` is
 represented by a smooth function all of whose derivatives lie in `Lᵖ`
@@ -48,10 +47,6 @@ dense and the core is the space of smooth functions with bounded derivatives
 
 ## Main declarations
 
-* `TauCeti.mem_domain_heatSemigroup_of_memLp_iteratedFDeriv` and
-  `TauCeti.generator_heatSemigroup_of_memLp_iteratedFDeriv`: a `C²` function in `Lᵖ` whose
-  first and second derivatives lie in `Lᵖ` is in the domain of the generator, which sends it to
-  its Laplacian.
 * `TauCeti.generator_heatSemigroup_hasCore_range_ambientToLp`: the test functions form a core for
   the generator of the heat semigroup on `Lᵖ`.
 * `TauCeti.weakLaplacianLp_hasCore_range_ambientToLp`: equivalently, the distributional Laplacian
@@ -77,132 +72,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-omit [CompleteSpace F] [Fact (1 ≤ p)] in
-/-- **Expanding cutoffs of a `C²` function converge with their Laplacians.** If `u` is `C²` and
-its derivatives through order two lie in `Lᵖ`, then for a bump function `χ` the cutoffs
-`χ ((n + 1)⁻¹ • x) • u x` converge to `u` in `Lᵖ`, and their Laplacians converge to `Δ u`. -/
-private theorem tendsto_eLpNorm_cutoff_sub (hp : p ≠ ∞) (χ : ContDiffBump (0 : E)) {u : E → F}
-    (hu : ContDiff ℝ 2 u) (hmem : ∀ i ≤ 2, MemLp (iteratedFDeriv ℝ i u) p volume) :
-    Tendsto (fun n : ℕ => eLpNorm (fun x => χ (((n : ℝ) + 1)⁻¹ • x) • u x - u x) p volume)
-        atTop (𝓝 0) ∧
-      Tendsto (fun n : ℕ =>
-        eLpNorm (fun x => Δ (fun y => χ (((n : ℝ) + 1)⁻¹ • y) • u y) x - Δ u x) p volume)
-        atTop (𝓝 0) := by
-  choose B hB using fun i : ℕ =>
-    (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
-      (χ.hasCompactSupport.iteratedFDeriv i)
-  have hr : Tendsto (fun n : ℕ => (n : ℝ) + 1) atTop atTop :=
-    tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop
-  have h0 := tendsto_eLpNorm_iteratedFDeriv_cutoff_sub hp hr (k := 0) χ.contDiff
-    χ.eventuallyEq_one (fun i _ x => hB i x) (hu.of_le (by norm_num))
-    (fun i hi => hmem i (hi.trans (by norm_num)))
-  have h2 := tendsto_eLpNorm_iteratedFDeriv_cutoff_sub hp hr (k := 2) χ.contDiff
-    χ.eventuallyEq_one (fun i _ x => hB i x) hu hmem
-  have hcut (n : ℕ) : ContDiff ℝ 2 fun y => χ (((n : ℝ) + 1)⁻¹ • y) • u y :=
-    (χ.contDiff.comp (contDiff_const_smul _)).smul hu
-  refine ⟨h0.congr fun n => eLpNorm_congr_norm_ae
-      (((hcut n).continuous_iteratedFDeriv (by norm_num)).sub
-        (hu.continuous_iteratedFDeriv (by norm_num))).aestronglyMeasurable
-      ((hcut n).continuous.sub hu.continuous).aestronglyMeasurable
-      (ae_of_all _ fun x => ?_), ?_⟩
-  · simp only [Pi.sub_apply, iteratedFDeriv_zero_eq_comp, Function.comp_apply, ← map_sub,
-      LinearIsometryEquiv.norm_map]
-  · -- Pointwise `‖Δv‖ ≤ dim E ‖D²v‖` for the difference `v` of the cutoff and `u`.
-    have hle (n : ℕ) :
-        eLpNorm (fun x => Δ (fun y => χ (((n : ℝ) + 1)⁻¹ • y) • u y) x - Δ u x) p volume ≤
-          ENNReal.ofReal (Module.finrank ℝ E) * eLpNorm (iteratedFDeriv ℝ 2
-            (fun x => χ (((n : ℝ) + 1)⁻¹ • x) • u x) - iteratedFDeriv ℝ 2 u) p volume :=
-      eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-        ((hcut n).continuous_laplacian.sub hu.continuous_laplacian).aestronglyMeasurable
-        (ae_of_all _ fun x => by
-          have hc : ContDiff ℝ (2 : ℕ) fun y => χ (((n : ℝ) + 1)⁻¹ • y) • u y := hcut n
-          have hu' : ContDiff ℝ (2 : ℕ) u := hu
-          have h := norm_laplacian_le ((fun y => χ (((n : ℝ) + 1)⁻¹ • y) • u y) - u) x
-          rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv,
-            iteratedFDeriv_sub_apply hc.contDiffAt hu'.contDiffAt,
-            (hcut n).contDiffAt.laplacian_sub hu.contDiffAt] at h
-          simpa only [Pi.sub_apply] using h) p
-    have h := ENNReal.Tendsto.const_mul h2 (Or.inr ENNReal.ofReal_ne_top)
-      (a := ENNReal.ofReal (Module.finrank ℝ E))
-    rw [mul_zero] at h
-    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ => zero_le) hle
-
-/-- An `Lᵖ` class represented by a `C²` function whose first and second derivatives lie in `Lᵖ`
-lies in the domain of the heat generator, which sends it to the Laplacian: the limit of the
-expanding cutoffs, whose Laplacians converge, lies in the graph of the closed generator. -/
-private theorem exists_generator_heatSemigroup_ae_eq_laplacian (hp : p ≠ ∞) {u : E → F}
-    (hu : ContDiff ℝ 2 u) (h₁ : MemLp (iteratedFDeriv ℝ 1 u) p volume)
-    (h₂ : MemLp (iteratedFDeriv ℝ 2 u) p volume) {f : Lp F p (volume : Measure E)}
-    (hf : f =ᵐ[volume] u) :
-    ∃ h : f ∈ (heatSemigroup hp).generator.domain,
-      ((heatSemigroup hp).generator ⟨f, h⟩ : E → F) =ᵐ[volume] Δ u := by
-  set S := (heatSemigroup (E := E) (F := F) hp).toStronglyContinuousSemigroup
-  have hmem : ∀ i ≤ 2, MemLp (iteratedFDeriv ℝ i u) p volume := by
-    intro i hi
-    interval_cases i
-    · exact ((Lp.memLp f).ae_eq hf).of_le_mul (c := 1)
-        (hu.continuous_iteratedFDeriv (by norm_num)).aestronglyMeasurable
-        (ae_of_all _ fun x => by simp [norm_iteratedFDeriv_zero])
-    · exact h₁
-    · exact h₂
-  -- `‖Δu‖ ≤ dim E ‖D²u‖`, so `Δu ∈ Lᵖ`.
-  have hΔ : MemLp (Δ u) p volume := h₂.of_le_mul
-    hu.continuous_laplacian.aestronglyMeasurable (ae_of_all _ fun x => by
-      have h := norm_laplacian_le u x
-      rwa [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv] at h)
-  let χ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  set v : ℕ → E → F := fun n x => χ (((n : ℝ) + 1)⁻¹ • x) • u x
-  have hv (n : ℕ) : ContDiff ℝ 2 (v n) := (χ.contDiff.comp (contDiff_const_smul _)).smul hu
-  have hvc (n : ℕ) : HasCompactSupport (v n) :=
-    (χ.hasCompactSupport.comp_smul (by positivity)).smul_right
-  have hmemv (n : ℕ) : MemLp (v n) p volume :=
-    (hv n).continuous.memLp_of_hasCompactSupport (hvc n)
-  have hmemΔ (n : ℕ) : MemLp (Δ (v n)) p volume :=
-    (hv n).continuous_laplacian.memLp_of_hasCompactSupport (hvc n).laplacian
-  have hdom (n : ℕ) : (hmemv n).toLp _ ∈ S.generator.domain := by
-    rw [S.generator_domain]
-    exact mem_domain_heatSemigroup hp (hv n) (hvc n) (hmemv n).coeFn_toLp
-  have hgen (n : ℕ) : S.generator ⟨_, hdom n⟩ = (hmemΔ n).toLp _ :=
-    generator_heatSemigroup hp (hv n) (hvc n) (hmemv n).coeFn_toLp (hmemΔ n).coeFn_toLp
-  obtain ⟨h0, h2⟩ := tendsto_eLpNorm_cutoff_sub hp χ hu hmem
-  have hlim : Tendsto (fun n => (hmemv n).toLp _) atTop (𝓝 f) := by
-    rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-    refine h0.congr fun n => eLpNorm_congr_ae ?_
-    filter_upwards [(hmemv n).coeFn_toLp, hf] with x h₁ h₂
-    rw [Pi.sub_apply, h₁, h₂]
-  have hlimΔ : Tendsto (fun n => S.generator ⟨_, hdom n⟩) atTop (𝓝 (hΔ.toLp _)) := by
-    simp_rw [hgen]
-    rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-    refine h2.congr fun n => eLpNorm_congr_ae ?_
-    filter_upwards [(hmemΔ n).coeFn_toLp, hΔ.coeFn_toLp] with x h₁ h₂
-    rw [Pi.sub_apply, h₁, h₂]
-  obtain ⟨h, hAf⟩ := S.isClosed_generator.mem_domain_of_tendsto hdom hlim hlimΔ
-  exact ⟨h, hAf ▸ hΔ.coeFn_toLp⟩
-
-/-- **`C²` functions with derivatives in `Lᵖ` lie in the domain of the heat generator.** If `u` is
-of class `C²` and represents an element `f` of `Lᵖ`, and its first and second derivatives lie in
-`Lᵖ`, then `f` lies in the domain of the generator of the heat semigroup on `Lᵖ`. No compact
-support is needed. -/
-theorem mem_domain_heatSemigroup_of_memLp_iteratedFDeriv (hp : p ≠ ∞) {u : E → F}
-    (hu : ContDiff ℝ 2 u) (h₁ : MemLp (iteratedFDeriv ℝ 1 u) p volume)
-    (h₂ : MemLp (iteratedFDeriv ℝ 2 u) p volume) {f : Lp F p (volume : Measure E)}
-    (hf : f =ᵐ[volume] u) :
-    f ∈ (heatSemigroup hp).domain := by
-  obtain ⟨h, -⟩ := exists_generator_heatSemigroup_ae_eq_laplacian hp hu h₁ h₂ hf
-  rwa [StronglyContinuousSemigroup.generator_domain] at h
-
-/-- **The heat generator on `C²` functions with derivatives in `Lᵖ`.** If `u` is of class `C²`,
-its first and second derivatives lie in `Lᵖ`, and `f, g ∈ Lᵖ` are the classes of `u` and `Δ u`,
-then the generator of the heat semigroup sends `f` to `g`. -/
-theorem generator_heatSemigroup_of_memLp_iteratedFDeriv (hp : p ≠ ∞) {u : E → F}
-    (hu : ContDiff ℝ 2 u) (h₁ : MemLp (iteratedFDeriv ℝ 1 u) p volume)
-    (h₂ : MemLp (iteratedFDeriv ℝ 2 u) p volume) {f g : Lp F p (volume : Measure E)}
-    (hf : f =ᵐ[volume] u) (hg : g =ᵐ[volume] Δ u) :
-    (heatSemigroup hp).generator ⟨f, by
-      rw [StronglyContinuousSemigroup.generator_domain]
-      exact mem_domain_heatSemigroup_of_memLp_iteratedFDeriv hp hu h₁ h₂ hf⟩ = g :=
-  Lp.ext ((exists_generator_heatSemigroup_ae_eq_laplacian hp hu h₁ h₂ hf).2.trans hg.symm)
-
 /-- The classes of test functions lie in the domain of the heat generator. -/
 private theorem range_ambientToLp_le_domain_generator_heatSemigroup (hp : p ≠ ∞) :
     LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
@@ -215,7 +84,8 @@ private theorem range_ambientToLp_le_domain_generator_heatSemigroup (hp : p ≠ 
 
 /-- If an element `f` of the domain of the heat generator is represented by a smooth function `u`
 whose derivatives through order two lie in `Lᵖ`, then `(f, A f)` is a limit of points of the graph
-of the generator restricted to test functions: the expanding cutoffs of `u`. -/
+of the generator restricted to test functions: compactly supported smooth approximations of `u`
+whose derivatives through order two converge in `Lᵖ`. -/
 private theorem mem_closure_graph_domRestrict_range_ambientToLp (hp : p ≠ ∞)
     (f : (heatSemigroup (E := E) (F := F) hp).generator.domain) {u : E → F}
     (hu : ContDiff ℝ (⊤ : ℕ∞) u) (hmem : ∀ i ≤ 2, MemLp (iteratedFDeriv ℝ i u) p volume)
@@ -225,37 +95,53 @@ private theorem mem_closure_graph_domRestrict_range_ambientToLp (hp : p ≠ ∞)
         (LinearMap.range (TestFunction.ambientToLp p (volume : Measure E) :
           𝓓((⊤ : Opens E), F) →L[ℝ] Lp F p (volume : Measure E)).toLinearMap)).graph) := by
   have hD := range_ambientToLp_le_domain_generator_heatSemigroup (E := E) (F := F) hp
-  let χ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  let φ (n : ℕ) : 𝓓((⊤ : Opens E), F) :=
-    ⟨fun x => χ (((n : ℝ) + 1)⁻¹ • x) • u x, (χ.contDiff.comp (contDiff_const_smul _)).smul hu,
-      (χ.hasCompactSupport.comp_smul (by positivity)).smul_right, by simp⟩
+  obtain ⟨g, hg, -, hlim⟩ :=
+    exists_contDiff_hasCompactSupport_approximation hp (m := ⊤) hu 2 (by simp) hmem
+  let φ (n : ℕ) : 𝓓((⊤ : Opens E), F) := ⟨g n, (hg n).1, (hg n).2, by simp⟩
+  have hφ (n : ℕ) : TestFunction.ambientToLp p volume (φ n) =ᵐ[volume] g n := by
+    simpa [φ] using TestFunction.coeFn_ambientToLp (p := p) (ν := volume) (φ n)
   have hu2 : ContDiff ℝ 2 u := hu.of_le (by simp)
-  have hAf : ((heatSemigroup hp).generator f : E → F) =ᵐ[volume] Δ u :=
-    (exists_generator_heatSemigroup_ae_eq_laplacian hp hu2 (hmem 1 (by norm_num))
-      (hmem 2 le_rfl) hf).2
-  have hφ (n : ℕ) : ContDiff ℝ 2 (φ n) := (φ n).contDiff.of_le (by simp)
-  have hΔφ (n : ℕ) : MemLp (Δ (φ n : E → F)) p volume :=
-    (hφ n).continuous_laplacian.memLp_of_hasCompactSupport (φ n).hasCompactSupport.laplacian
-  have hgen (n : ℕ) : (heatSemigroup hp).generator ⟨_, hD ⟨φ n, rfl⟩⟩ = (hΔφ n).toLp _ :=
-    generator_heatSemigroup hp (hφ n) (φ n).hasCompactSupport
-      (TestFunction.coeFn_ambientToLp (φ n)) (hΔφ n).coeFn_toLp
-  obtain ⟨h0, h2⟩ := tendsto_eLpNorm_cutoff_sub hp χ hu2 hmem
+  have hg2 (n : ℕ) : ContDiff ℝ 2 (g n) := (hg n).1.of_le (by simp)
+  have hΔ : MemLp (Δ u) p volume := (hmem 2 le_rfl).of_le_mul
+    hu2.continuous_laplacian.aestronglyMeasurable
+    (ae_of_all _ (norm_laplacian_le_norm_iteratedFDeriv_two u))
+  -- The generator is the distributional Laplacian, which agrees with `Δ` on `C²` functions.
+  have hAf : (heatSemigroup hp).generator f = hΔ.toLp _ := by
+    have h := mem_graph_weakLaplacianLp_of_contDiff hu2 hf hΔ.coeFn_toLp
+    rw [← generator_heatSemigroup_eq_weakLaplacianLp hp] at h
+    exact (heatSemigroup hp).generator.mem_graph_snd_inj
+      ((heatSemigroup hp).generator.mem_graph f) h rfl
+  have hΔg (n : ℕ) : MemLp (Δ (g n)) p volume :=
+    (hg2 n).continuous_laplacian.memLp_of_hasCompactSupport (hg n).2.laplacian
+  have hgen (n : ℕ) : (heatSemigroup hp).generator ⟨_, hD ⟨φ n, rfl⟩⟩ = (hΔg n).toLp _ :=
+    generator_heatSemigroup hp (hg2 n) (hg n).2 (hφ n) (hΔg n).coeFn_toLp
   refine mem_closure_of_tendsto (b := atTop) (f := fun n => (TestFunction.ambientToLp p volume
       (φ n), (heatSemigroup hp).generator ⟨_, hD ⟨φ n, rfl⟩⟩)) (Tendsto.prodMk_nhds ?_ ?_)
     (Eventually.of_forall fun n => (LinearPMap.mem_graph_iff' _).mpr
       ⟨⟨_, ⟨φ n, rfl⟩, hD ⟨φ n, rfl⟩⟩, Prod.ext rfl (LinearPMap.domRestrict_apply rfl)⟩)
   · rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-    refine h0.congr fun n => eLpNorm_congr_ae ?_
-    filter_upwards [TestFunction.coeFn_ambientToLp (p := p) (ν := volume) (φ n), hf]
-      with x h₁ h₂
-    rw [Pi.sub_apply, h₁, h₂]
-    rfl
-  · simp_rw [hgen]
-    rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
-    refine h2.congr fun n => eLpNorm_congr_ae ?_
-    filter_upwards [(hΔφ n).coeFn_toLp, hAf] with x h₁ h₂
-    rw [Pi.sub_apply, h₁, h₂]
-    rfl
+    refine (hlim 0 (by norm_num)).congr fun n => eLpNorm_congr_norm_ae
+      (((hg n).1.continuous_iteratedFDeriv (by simp)).sub
+        (hu.continuous_iteratedFDeriv (by simp))).aestronglyMeasurable
+      ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _)) ?_
+    filter_upwards [hφ n, hf] with x h₁ h₂
+    simp only [Pi.sub_apply, h₁, h₂, iteratedFDeriv_zero_eq_comp, Function.comp_apply, ← map_sub,
+      LinearIsometryEquiv.norm_map]
+  · simp_rw [hgen, hAf]
+    rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'']
+    -- Pointwise `‖Δv‖ ≤ dim E ‖D²v‖` for the difference `v` of the approximation and `u`.
+    have hle (n : ℕ) : eLpNorm (Δ (g n) - Δ u) p volume ≤ ENNReal.ofReal (Module.finrank ℝ E) *
+        eLpNorm (iteratedFDeriv ℝ 2 (g n) - iteratedFDeriv ℝ 2 u) p volume :=
+      eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+        ((hg2 n).continuous_laplacian.sub hu2.continuous_laplacian).aestronglyMeasurable
+        (ae_of_all _ fun x => by
+          have h := norm_laplacian_le_norm_iteratedFDeriv_two (g n - u) x
+          rwa [iteratedFDeriv_sub_apply (hg2 n).contDiffAt hu2.contDiffAt,
+            (hg2 n).contDiffAt.laplacian_sub hu2.contDiffAt] at h) p
+    have h := ENNReal.Tendsto.const_mul (hlim 2 le_rfl) (Or.inr ENNReal.ofReal_ne_top)
+      (a := ENNReal.ofReal (Module.finrank ℝ E))
+    rw [mul_zero] at h
+    exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ => zero_le) hle
 
 /-- **Test functions form a core for the heat generator on `Lᵖ`.** For `1 ≤ p < ∞`, the classes
 of the test functions `C_c^∞(E; F)` lie in the domain of the generator of the heat semigroup on
