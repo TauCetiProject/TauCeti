@@ -1147,8 +1147,10 @@ theorem garding_energyFormH1_self_norm
   convert garding_energyFormH1_self h ha hb hc hb_bound hc_bound hc_nonneg u using 1
   ring
 
-/-- **Coercivity under a small drift.** If the drift is small against the gradient of `u`,
-`2β ‖u‖_{L²} ≤ λ ‖∇u‖_{L²}`, then Gårding's inequality absorbs the drift term:
+/-- **Coercivity under a small drift.** Let `a` be uniformly elliptic on `Ω` with constants
+`λ, Λ`, let the drift satisfy `‖b‖ ≤ β`, and let the mass coefficient satisfy `0 ≤ c ≤ γ` on `Ω`.
+If the drift is small against the gradient of `u`, `2β ‖u‖_{L²} ≤ λ ‖∇u‖_{L²}`, then Gårding's
+inequality absorbs the drift term:
 
 `(λ/4) ‖∇u‖²_{L²} ≤ a(u, u)`.
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.LowerOrder
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Function.EssSup
 
 /-!
@@ -162,6 +163,15 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le_lowerOrder [Nonempty ι
   exact mul_le_mul ((Real.norm_eq_abs _).symm.trans_le (hc_bound x (hball hxB))) hx
     (abs_nonneg _) hgamma
 
+/-- Shrinking the radius from `R` to `R / N`, `N ≥ 1`, costs at most a factor `N` in `R^(-α)` for
+`α ≤ 1`: `(R/N)^(-α) ≤ N R^(-α)`. -/
+private theorem div_rpow_neg_le_mul_rpow_neg {N R : ℝ} {α : ℝ≥0} (hα1 : α ≤ 1) (hN : 1 ≤ N)
+    (hR : 0 ≤ R) : (R / N) ^ (-(α : ℝ)) ≤ N * R ^ (-(α : ℝ)) := by
+  have hN0 : 0 ≤ N := zero_le_one.trans hN
+  rw [Real.div_rpow hR hN0, Real.rpow_neg hN0, div_inv_eq_mul, mul_comm]
+  gcongr
+  exact Real.rpow_le_self_of_one_le hN (by exact_mod_cast hα1)
+
 /-- Shrinking the radius from `R` to `R / N`, `N ≥ 1`, in the constant of the Hölder estimate: for
 `α ≤ 1`, `n ≥ 0` and nonnegative `C, Q, K₀, P`,
 
@@ -173,14 +183,9 @@ private theorem mul_div_rpow_mul_add_le {C N R Q K₀ P n : ℝ} {α : ℝ≥0} 
     C * (R / N) ^ (-(α : ℝ)) * ((R / N) ^ (-n / 2) * Q + (R / N) ^ (2 : ℝ) * (K₀ * P)) ≤
       C * N ^ (1 + n / 2) * max 1 K₀ * R ^ (-(α : ℝ)) * (R ^ (-n / 2) * Q + R ^ 2 * P) := by
   have hN0 : 0 < N := zero_lt_one.trans_le hN
-  have hRα : (R / N) ^ (-(α : ℝ)) ≤ N * R ^ (-(α : ℝ)) := by
-    rw [Real.div_rpow hR.le hN0.le, Real.rpow_neg hN0.le, div_inv_eq_mul, mul_comm]
-    gcongr
-    calc N ^ (α : ℝ) ≤ N ^ (1 : ℝ) :=
-          Real.rpow_le_rpow_of_exponent_le hN (by exact_mod_cast hα1)
-      _ = N := Real.rpow_one N
+  have hRα := div_rpow_neg_le_mul_rpow_neg hα1 hN hR.le
   have hRn : (R / N) ^ (-n / 2) = N ^ (n / 2) * R ^ (-n / 2) := by
-    rw [Real.div_rpow hR.le hN0.le, neg_div, Real.rpow_neg hN0.le, div_inv_eq_mul, mul_comm]
+    rw [neg_div, Real.div_rpow_eq_rpow_neg_mul_rpow hR.le hN0, neg_neg]
   have hR2 : (R / N) ^ (2 : ℝ) ≤ R ^ 2 := by
     rw [Real.rpow_two]
     gcongr
@@ -299,15 +304,9 @@ private theorem mul_half_rpow_mul_add_le {C₁ D R N gamma lam n : ℝ} {α : �
         gamma * (R / 2) ^ 2 * (D * (R ^ (-n / 2) * N)) / lam) ≤
       2 * C₁ * max (2 ^ (n / 2)) D * R ^ (-(α : ℝ)) * (1 + gamma * R ^ 2 / lam) *
         (R ^ (-n / 2) * N) := by
-  have hRα : (R / 2) ^ (-(α : ℝ)) ≤ 2 * R ^ (-(α : ℝ)) := by
-    rw [Real.div_rpow hR.le zero_le_two, Real.rpow_neg zero_le_two, div_inv_eq_mul, mul_comm]
-    gcongr
-    calc (2 : ℝ) ^ (α : ℝ) ≤ 2 ^ (1 : ℝ) :=
-          Real.rpow_le_rpow_of_exponent_le one_le_two (by exact_mod_cast hα1)
-      _ = 2 := Real.rpow_one 2
+  have hRα := div_rpow_neg_le_mul_rpow_neg hα1 one_le_two hR.le
   have hRn : (R / 2) ^ (-n / 2) = 2 ^ (n / 2) * R ^ (-n / 2) := by
-    rw [Real.div_rpow hR.le zero_le_two, neg_div, Real.rpow_neg zero_le_two, div_inv_eq_mul,
-      mul_comm]
+    rw [neg_div, Real.div_rpow_eq_rpow_neg_mul_rpow hR.le two_pos, neg_neg]
   set Q := R ^ (-n / 2) * N
   have hQ : 0 ≤ Q := by positivity
   set T := gamma * R ^ 2 / lam
@@ -393,9 +392,8 @@ theorem exists_holderOnWith_preciseRepresentative_lowerOrder (σ : ℝ) :
     refine hy.trans ?_
     rw [mul_assoc]
     simp only [M, D]
-    gcongr _ * (1 + ?_) ^ _ * (_ * ?_)
-    · exact pow_le_pow_left₀ (div_nonneg (mul_nonneg hbeta hR.le) hlam.le)
-        ((div_le_iff₀ hlam).2 hβR) 2
+    gcongr _ * ?_ * (_ * ?_)
+    · exact one_add_div_sq_pow_le _ hbeta hR.le hlam hβR
     · exact Real.sqrt_le_sqrt (setIntegral_mono_set (Lp.memLp (W1p.value u)).integrable_sq
         (ae_of_all _ fun y => sq_nonneg _) (hball x hx).eventuallySubset)
   have hRK' : cthickening (R / 2) K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=

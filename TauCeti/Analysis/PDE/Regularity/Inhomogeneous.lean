@@ -40,7 +40,7 @@ assumed.
 
 The right-hand side is split off one ball at a time. On `B = B(x₀, ρ) ⊆ Ω`, the Dirichlet problem
 `-∂ᵢ(aⁱʲ ∂ⱼw) = f` (or `= ∂ᵢFⁱ`) in `B`, `w ∈ H¹₀(B)`, has a solution, and Stampacchia's bounds
-`TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow` and
+`TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_drift` (at `b = 0`) and
 `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_divergence` give
 `|w| ≤ C ρ^γ ‖f‖_{Lʳ(B)} / λ` with `γ = 2 - n/r` (or `|w| ≤ C ρ^γ ‖F‖_{L^q(B)} / λ` with
 `γ = 1 - n/q`). The difference `h = u - w` solves the homogeneous equation on `B`, so De Giorgi's

@@ -82,24 +82,21 @@ De Giorgi's interior estimates absorb a divergence-form right-hand side.
 Only the coercivity of the energy form on `H¹₀(Ω)` enters the energy estimate: testing against
 `w = (u - l)⁺` gives `κ ‖∇w‖² ≤ ∫ f w` as soon as `κ ‖∇v‖² ≤ a(v, v)` on `H¹₀(Ω)`. A drift `b` with
 `‖b‖ ≤ β` keeps this coercivity, with `κ = λ/4`, when it is small against the Poincaré constant of
-`Ω`, `2β ‖v‖_{L²} ≤ λ ‖∇v‖_{L²}`; on a ball `B(x₀, ρ)` this is `2βρ ≤ λ`. So the bounds above hold
-for weak subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ f`, and the Dirichlet problem with a small
-drift on a ball is solvable with the same bound. This is what De Giorgi's interior estimates need
+`Ω`, `2β ‖v‖_{L²} ≤ λ ‖∇v‖_{L²}`; on a ball `B(x₀, ρ)` this is `2βρ ≤ λ`. So the bounds for a
+datum `f ∈ Lʳ` hold for weak subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ f`, and the Dirichlet
+problem with a small drift on a ball is solvable with the same bound. The bounds for a datum in
+divergence form are stated without a drift. This is what De Giorgi's interior estimates need
 to absorb a right-hand side in the presence of a drift: on balls small enough that `2βρ ≤ λ`.
 
 ## Main declarations
 
 * `TauCeti.PDE.ae_value_le_add_of_forall_eLpNorm_le_of_coercive`: the bound with an explicit
   constant for a coercive energy form, under a Sobolev inequality on `H¹₀(Ω)` with exponent `s`
-  and constant `S`.
-* `TauCeti.PDE.UniformlyEllipticOn.ae_value_le_add_of_forall_eLpNorm_le`: the same without a
-  drift, with the coercivity constant `λ`.
-* `TauCeti.PDE.exists_ae_value_le_add_mul_div_mul_rpow_drift` and
-  `TauCeti.PDE.exists_ae_value_le_add_mul_div_mul_rpow`: the scale-invariant bound in every
-  dimension, for `r > max 1 (n/2)`, with a small drift and without one.
-* `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_drift` and
-  `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow`: the two-sided bound for weak solutions
-  of the Dirichlet problem.
+  and constant `S`. Without a drift the coercivity constant is `λ`.
+* `TauCeti.PDE.exists_ae_value_le_add_mul_div_mul_rpow_drift`: the scale-invariant bound in every
+  dimension, for `r > max 1 (n/2)`, with a small drift; without a drift, `b = 0` and `β = 0`.
+* `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_drift`: the two-sided bound for weak
+  solutions of the Dirichlet problem, with a small drift or none.
 * `TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_ae_abs_le_drift` and
   `TauCeti.PDE.exists_forall_energyFormH1_eq_setIntegral_ae_abs_le`: on a ball `B(x₀, ρ)` with
   `2βρ ≤ λ`, the Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼw) + bⁱ ∂ᵢw = f`, `w ∈ H¹₀`, has a solution with
@@ -165,24 +162,6 @@ private theorem mul_norm_gradient_posPartAbove_sq_le
   have hw0 := W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary
   exact (hκ _ hw0).trans ((energyFormH1_posPartAbove_self_le hcoeff (hmem.mono hc_nonneg) hl
     u).trans (hu ⟨_, hw0⟩ hnonneg))
-
-/-- Without a drift, ellipticity and `c ≥ 0` make the energy form coercive on `H¹₀(Ω)` with the
-constant `λ`, in the form taken by `mul_norm_gradient_posPartAbove_sq_le`. -/
-private theorem mul_norm_gradient_sq_le_energyFormH1_zero_drift
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
-    (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) :
-    MemLp (fun x => energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-        (c x)) ⊤ (mu.restrict Omega) ∧
-      ∀ v ∈ w1p0Submodule mu Omega 2,
-        lam * ‖W1p.gradient v‖ ^ 2 ≤ energyFormH1 a 0 c v v :=
-  ⟨memLp_energyIntegrand_of_bounds (b := 0) (beta := 0) h.upper_nonneg ha
-    aestronglyMeasurable_const hc (fun x hx eta xi => h.upper_bound hx eta xi)
-    (fun _ _ => by simp) hc_bound,
-  fun v _ => h.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift ha hc (fun _ _ => rfl)
-    hc_bound hc_nonneg v⟩
 
 omit [DecidableEq ι] in
 /-- The energy estimate behind Stampacchia's method. For a weak subsolution `u` of
@@ -391,7 +370,8 @@ that is `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, and `
 `u ≤ k + 2 ^ (β / (β - 1)) S² ‖f‖_{Lʳ} / κ · |Ω| ^ (1 - 1/r - 2/s)`, where `β = s (1 - 1/r) - 1`.
 
 Without a drift, ellipticity gives the coercivity with `κ = λ`
-(`TauCeti.PDE.UniformlyEllipticOn.ae_value_le_add_of_forall_eLpNorm_le`); a small drift gives it
+(`TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift`); a
+small drift gives it
 with `κ = λ/4`
 (`TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sq_le_energyFormH1_self_of_small_drift`). -/
 theorem ae_value_le_add_of_forall_eLpNorm_le_of_coercive
@@ -426,44 +406,6 @@ theorem ae_value_le_add_of_forall_eLpNorm_le_of_coercive
   have hexp : 1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹ - (s : ℝ)⁻¹ = 1 - (r : ℝ)⁻¹ - 2 / s := by ring
   rw [hβ_eq, hexp, show (s : ℝ) * (1 - (r : ℝ)⁻¹) - 1 - 1 = s * (1 - (r : ℝ)⁻¹) - 2 by ring]
   ring
-
-/-- **Stampacchia's global bound.** Let `Ω` have finite measure, let `a` be measurable and
-uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `c` be bounded, measurable and
-nonnegative. Suppose that `W^{1,2}_0(Ω)` satisfies a Sobolev inequality `‖v‖_{Lˢ} ≤ S ‖∇v‖_{L²}`,
-and let `f ∈ Lʳ(Ω)` with `s (1 - 1/r) > 2`. If `u ∈ H¹(Ω)` is a weak subsolution of
-
-`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≤ f` in `Ω`,
-
-that is `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, and `u ≤ k` on `∂Ω` for a level
-`k ≥ 0`, in the sense that `(u - k)⁺ ∈ H¹₀(Ω)`, then almost everywhere in `Ω`
-
-`u ≤ k + 2 ^ (β / (β - 1)) S² ‖f‖_{Lʳ} / λ · |Ω| ^ (1 - 1/r - 2/s)`, where `β = s (1 - 1/r) - 1`.
-
-No regularity of `∂Ω` or of the coefficients beyond measurability is needed. -/
-theorem UniformlyEllipticOn.ae_value_le_add_of_forall_eLpNorm_le
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
-    (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x)
-    (hOmega : mu Omega ≠ ∞) {r s S : ℝ≥0} (hr : 0 < r) (hrs : 2 < (s : ℝ) * (1 - (r : ℝ)⁻¹))
-    (hS : ∀ v ∈ w1p0Submodule mu Omega 2,
-      eLpNorm (W1p.value v) s (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
-    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f r (mu.restrict Omega))
-    {u : W1p mu Omega 2}
-    (hu : ∀ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        energyFormH1 a 0 c u (v : W1p mu Omega 2) ≤
-          ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
-    {k : ℝ} (hk : 0 ≤ k)
-    (hboundary : W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule mu Omega 2) :
-    ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤
-      k + 2 ^ (((s : ℝ) * (1 - (r : ℝ)⁻¹) - 1) / ((s : ℝ) * (1 - (r : ℝ)⁻¹) - 2)) * S ^ 2 *
-        (eLpNorm f r (mu.restrict Omega)).toReal / lam *
-          mu.real Omega ^ (1 - (r : ℝ)⁻¹ - 2 / (s : ℝ)) :=
-  have hcoer := mul_norm_gradient_sq_le_energyFormH1_zero_drift h ha hc hc_bound hc_nonneg
-  ae_value_le_add_of_forall_eLpNorm_le_of_coercive hcoer.1 hc_nonneg h.pos hcoer.2 hOmega hr hrs
-    hS hf hu hk hboundary
 
 omit [DecidableEq ι] in
 /-- The Sobolev inequality behind the scale-invariant bounds: for `0 < δ < min (1/n) (1/2)`,
@@ -633,47 +575,6 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow_drift [Nonempty ι] {r : ℝ≥0
       rw [hpow]
       ring
 
-/-- **Stampacchia's global bound, in every dimension.** Let `n ≥ 1` be the dimension and let
-`r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the normalization of the
-additive Haar measure `mu`, with the following property. Let `Ω` have finite measure, let `a` be
-measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `c` be bounded,
-measurable and nonnegative, and let `f ∈ Lʳ(Ω)`. If `u ∈ H¹(Ω)` is a weak subsolution of
-
-`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≤ f` in `Ω`
-
-with `u ≤ k` on `∂Ω` for a level `k ≥ 0`, in the sense that `(u - k)⁺ ∈ H¹₀(Ω)`, then almost
-everywhere in `Ω`
-
-`u ≤ k + C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)`.
-
-The bound is invariant under dilations of `Ω`. This is the case `b = 0` of
-`TauCeti.PDE.exists_ae_value_le_add_mul_div_mul_rpow_drift`. -/
-theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr : 1 < r)
-    (hrn : (Fintype.card ι : ℝ) < 2 * r) :
-    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {lam Lam gamma : ℝ}
-      {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu Omega 2} {k : ℝ} (hk : 0 ≤ k),
-      mu Omega ≠ ∞ →
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) →
-      AEStronglyMeasurable c (mu.restrict Omega) →
-      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
-      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
-      MemLp f r (mu.restrict Omega) →
-      (∀ v : W1p0 mu Omega 2,
-        (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-          energyFormH1 a 0 c u (v : W1p mu Omega 2) ≤
-            ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
-      W1p.posPartAbove (by norm_num) hk u ∈ w1p0Submodule mu Omega 2 →
-      ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤
-        k + C * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
-          mu.real Omega ^ (2 / (Fintype.card ι : ℝ) - (r : ℝ)⁻¹) := by
-  obtain ⟨C, hC, hmain⟩ := exists_ae_value_le_add_mul_div_mul_rpow_drift (mu := mu) hr hrn
-  exact ⟨C, hC, fun hk hOmega h ha hc hc_bound hc_nonneg hf hu hboundary =>
-    hmain (b := 0) (beta := 0) hk hOmega h ha aestronglyMeasurable_const hc (fun _ _ => by simp)
-      hc_bound hc_nonneg (fun _ _ => by simpa using mul_nonneg h.pos.le (norm_nonneg _)) hf hu
-      hboundary⟩
-
 /-- **Global boundedness of weak Dirichlet solutions with a small drift, in every dimension.** Let
 `n ≥ 1` be the dimension and let `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`,
 `r` and the normalization of `mu`, such that on every `Ω` of finite measure, for measurable,
@@ -726,45 +627,10 @@ theorem exists_ae_abs_value_le_mul_div_mul_rpow_drift [Nonempty ι] {r : ℝ≥0
   rw [hnorm] at hlo
   simpa only [zero_add] using (W1p.ae_abs_value_le_iff subset_rfl).2 ⟨hup, hlo⟩
 
-/-- **Global boundedness of weak Dirichlet solutions, in every dimension.** Let `n ≥ 1` be the
-dimension and let `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the
-normalization of `mu`, such that on every `Ω` of finite measure, for measurable, uniformly
-elliptic `a` with constants `0 < λ ≤ Λ` and bounded, measurable, nonnegative `c`, the weak
-solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f` with `f ∈ Lʳ(Ω)`,
-that is `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, satisfies, almost everywhere in `Ω`,
-
-`|u| ≤ C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)`.
-
-No integrability of `f` beyond `Lʳ` is assumed; for `f ∈ L²(Ω)` the hypothesis on `u` is
-`TauCeti.PDE.IsWeakSolutionDirichlet a 0 c f u`, by `TauCeti.PDE.isWeakSolutionDirichlet_iff`.
-This is the case `b = 0` of `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_drift`. -/
-theorem exists_ae_abs_value_le_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr : 1 < r)
-    (hrn : (Fintype.card ι : ℝ) < 2 * r) :
-    ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {lam Lam gamma : ℝ}
-      {f : EuclideanSpace ℝ ι → ℝ} {u : W1p0 mu Omega 2},
-      mu Omega ≠ ∞ →
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) →
-      AEStronglyMeasurable c (mu.restrict Omega) →
-      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) →
-      (∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) →
-      MemLp f r (mu.restrict Omega) →
-      (∀ v : W1p0 mu Omega 2,
-        energyFormH1 a 0 c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
-          ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
-      ∀ᵐ x ∂mu.restrict Omega, |W1p.value (u : W1p mu Omega 2) x| ≤
-        C * (eLpNorm f r (mu.restrict Omega)).toReal / lam *
-          mu.real Omega ^ (2 / (Fintype.card ι : ℝ) - (r : ℝ)⁻¹) := by
-  obtain ⟨C, hC, hmain⟩ := exists_ae_abs_value_le_mul_div_mul_rpow_drift (mu := mu) hr hrn
-  exact ⟨C, hC, fun hOmega h ha hc hc_bound hc_nonneg hf hsol =>
-    hmain (b := 0) (beta := 0) hOmega h ha aestronglyMeasurable_const hc (fun _ _ => by simp)
-      hc_bound hc_nonneg (fun _ _ => by simpa using mul_nonneg h.pos.le (norm_nonneg _)) hf hsol⟩
-
 open Metric in
 /-- **The Dirichlet problem with a small drift on a ball.** On `B = B(x₀, ρ)` with `2βρ ≤ λ`, the
-Poincaré inequality `‖v‖_{L²} ≤ ρ ‖∇v‖_{L²}` on `H¹₀(B)`
-(`TauCeti.W1p.norm_value_le_mul_norm_gradient_of_eq_ball`) makes the energy form of
+Poincaré inequality `‖v‖_{L²} ≤ ρ ‖∇v‖_{L²}` on `H¹₀(B)`, taken as the hypothesis `hpoinc` and
+supplied by `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_eq_ball`, makes the energy form of
 `-∂ᵢ(aⁱʲ ∂ⱼ·) + bⁱ ∂ᵢ` coercive on `H¹₀(B)`
 (`TauCeti.PDE.UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_poincare`), so Lax--Milgram
 gives a weak solution `w ∈ H¹₀(B)` of `-∂ᵢ(aⁱʲ ∂ⱼw) + bⁱ ∂ᵢw = f` for every `f ∈ Lʳ(B)` with
@@ -775,25 +641,24 @@ private theorem exists_forall_energyFormH1_eq_setIntegral_ball_drift [Nonempty �
     (h : UniformlyEllipticOn (ball x₀ ρ) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict (ball x₀ ρ)))
     (hb : AEStronglyMeasurable b (mu.restrict (ball x₀ ρ)))
-    (hb_bound : ∀ x ∈ ball x₀ ρ, ‖b x‖ ≤ beta)
+    (hb_bound : ∀ x ∈ ball x₀ ρ, ‖b x‖ ≤ beta) (hbeta : 0 ≤ beta)
     (hsmall : 2 * beta * ρ ≤ lam) (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) * (2 - r) < 2 * r)
-    (hf : MemLp f r (mu.restrict (ball x₀ ρ))) (hρ : 0 < ρ) :
+    (hf : MemLp f r (mu.restrict (ball x₀ ρ))) (hρ : 0 ≤ ρ)
+    (hpoinc : ∀ v ∈ w1p0Submodule mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
+      ‖W1p.value v‖ ≤ ρ * ‖W1p.gradient v‖) :
     ∃ w : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
       ∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
         energyFormH1 a b 0 (w : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2)
             (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) =
           ∫ x in ball x₀ ρ, f x * W1p.value (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) x ∂mu := by
   set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ ρ, isOpen_ball⟩
-  have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x₀ (mem_ball_self hρ))
   have hcoeff := memLp_energyIntegrand_of_bounds (Omega := B) (c := 0) (gamma := 0)
     h.upper_nonneg ha hb aestronglyMeasurable_const (fun x hx eta xi => h.upper_bound hx eta xi)
     hb_bound (fun _ _ => by simp)
   have hBfin : mu B ≠ ∞ := measure_ball_lt_top.ne
-  have hpoinc : ∀ v ∈ w1p0Submodule mu B 2, ‖W1p.value v‖ ≤ ρ * ‖W1p.gradient v‖ :=
-    fun v hv => W1p.norm_value_le_mul_norm_gradient_of_eq_ball hρ rfl hv
   have hcoer : IsCoercive (energyFormH1L0 hcoeff) :=
     isCoercive_energyFormH1L0 hcoeff
-      (energyFormH1_poincare_constant_pos hbeta hρ.le (by linarith [h.pos])) fun w =>
+      (energyFormH1_poincare_constant_pos hbeta hρ (by linarith [h.pos])) fun w =>
         h.mul_norm_sq_le_energyFormH1_self_of_poincare (Omega := B) ha hb
           aestronglyMeasurable_const hb_bound (gamma := 0) (fun _ _ => by simp)
           (fun _ _ => le_rfl) (hpoinc w w.2)
@@ -858,8 +723,8 @@ theorem exists_forall_energyFormH1_eq_setIntegral_ae_abs_le_drift [Nonempty ι] 
           exact hpoinc v hv
       _ = 2 * beta * ρ * ‖W1p.gradient v‖ := by ring
       _ ≤ lam * ‖W1p.gradient v‖ := by gcongr
-  obtain ⟨w, hw⟩ := exists_forall_energyFormH1_eq_setIntegral_ball_drift h ha hb hb_bound hsmall
-    hr hrn' hf hρ
+  obtain ⟨w, hw⟩ := exists_forall_energyFormH1_eq_setIntegral_ball_drift h ha hb hb_bound hbeta
+    hsmall hr hrn' hf hρ.le hpoinc
   refine ⟨w, hw, ?_⟩
   -- `|B|^e = ρ^(n e) |B(0, 1)|^e`, with `n e = 2 - n/r`.
   have hmeas : mu.real (ball x₀ ρ) ^ e =
@@ -945,10 +810,14 @@ private theorem toReal_eLpNorm_posPartAbove_le_divergence
   have hw0 : w ∈ w1p0Submodule mu Omega 2 :=
     W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary
   -- Ellipticity and the subsolution inequality tested against `w`.
-  have hcoer := mul_norm_gradient_sq_le_energyFormH1_zero_drift h ha hc hc_bound hc_nonneg
+  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0) h.upper_nonneg ha
+    aestronglyMeasurable_const hc (fun x hx eta xi => h.upper_bound hx eta xi)
+    (fun _ _ => by simp) hc_bound
   have henergy : lam * ‖W1p.gradient w‖ ^ 2 ≤
       -∫ x in Omega, ⟪F x, W1p.gradient w x⟫ ∂mu :=
-    mul_norm_gradient_posPartAbove_sq_le hcoer.1 hc_nonneg hcoer.2 hu hk hboundary hkl
+    mul_norm_gradient_posPartAbove_sq_le hcoeff hc_nonneg
+      (fun v _ => h.mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift ha hc
+        (fun _ _ => rfl) hc_bound hc_nonneg v) hu hk hboundary hkl
   -- Cauchy–Schwarz pointwise, then Hölder's inequality on `{u > l}`, off which `∇w` vanishes.
   have hq2 : (2 : ℝ≥0∞) ≤ q := by
     have : (2 : ℝ≥0) ≤ q := by exact_mod_cast hq

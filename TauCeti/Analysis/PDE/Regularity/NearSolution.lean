@@ -56,9 +56,10 @@ All in the namespace `TauCeti.PDE`.
 * `exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le_drift`: the Hölder
   continuity of the precise representative of such a function.
 * `exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le`,
-  `exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le`,
   `exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_forall_ae_abs_sub_le` and
   `exists_holderOnWith_preciseRepresentative_of_forall_ae_abs_sub_le`: the same without a drift.
+  One step of oscillation decay without a drift is
+  `exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le_drift` at `b = 0`, `σ = 0`.
 
 ## References
 
@@ -85,7 +86,7 @@ namespace PDE
 
 /-- `(1 + (βR/λ)²)ⁿ ≤ (1 + σ²)ⁿ` for a drift bound `0 ≤ β` with `βR ≤ σλ`: the bound by which a
 drift enters De Giorgi's local boundedness on a ball of radius `R`. -/
-private theorem one_add_div_sq_pow_le {beta R lam σ : ℝ} (n : ℕ) (hbeta : 0 ≤ beta)
+theorem one_add_div_sq_pow_le {beta R lam σ : ℝ} (n : ℕ) (hbeta : 0 ≤ beta)
     (hR : 0 ≤ R) (hlam : 0 < lam) (hβR : beta * R ≤ σ * lam) :
     (1 + (beta * R / lam) ^ 2) ^ n ≤ (1 + σ ^ 2) ^ n := by
   gcongr
@@ -269,42 +270,6 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le_drift [Non
   calc _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ + W - (m - W)) + 2 * W := hosc
     _ = C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * (C₀ * (s / ρ) ^ α₀) + 2) * W := by ring
     _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * C₀ + 2) * W := by gcongr
-
-/-- **One step of oscillation decay near a solution of the homogeneous equation.** Let `n ≥ 1` be
-the dimension. There are `α ∈ (0, 1]` and `C, K > 0`, depending only on `λ`, `Λ`, `n` and the
-normalization of `mu`, such that the following holds. Let `a` be measurable and uniformly
-elliptic on `Ω` with constants `λ, Λ`, let `B(x₀, ρ) ⊆ Ω`, and let `u ∈ H¹(Ω)` be essentially
-bounded on `B(x₀, ρ)` and lie within `W` of a weak solution `h ∈ H¹(B(x₀, ρ))` of the homogeneous
-equation there. If `0 < s ≤ ρ`, then the essential oscillations `osc_s` and `osc_ρ` of `u` on
-`B(x₀, s)` and `B(x₀, ρ)` satisfy
-
-`osc_s ≤ C (s/ρ)^α osc_ρ + K W`.
-
-This is the case `b = 0` of
-`TauCeti.PDE.exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le_drift`. -/
-theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le [Nonempty ι]
-    {lam Lam : ℝ} :
-    ∃ α C K : ℝ, 0 < α ∧ α ≤ 1 ∧ 0 < C ∧ 0 < K ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
-      {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι}
-      {ρ s M W : ℝ} {g : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2},
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict Omega) →
-      (∀ v : W1p0 mu ⟨ball x₀ ρ, isOpen_ball⟩ 2,
-        energyFormH1 a 0 0 g (v : W1p mu ⟨ball x₀ ρ, isOpen_ball⟩ 2) = 0) →
-      (∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x - W1p.value g x| ≤ W) →
-      0 < s → s ≤ ρ → ball x₀ ρ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      (∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x| ≤ M) →
-      essSup (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ s)) -
-          essInf (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ s)) ≤
-        C * (s / ρ) ^ α *
-            (essSup (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ ρ)) -
-              essInf (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ ρ))) +
-          K * W := by
-  obtain ⟨α, C, K, hα, hα1, hC, hK, hmain⟩ :=
-    exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_ae_abs_sub_le_drift (mu := mu) (lam := lam)
-      (Lam := Lam) 0
-  exact ⟨α, C, K, hα, hα1, hC, hK, fun h ha hg hug hs hsρ hball hM => hmain (beta := 0) h ha
-    aestronglyMeasurable_const (fun _ _ => by simp) hg hug hs hsρ hball (by simp) hM⟩
 
 /-- **De Giorgi's interior oscillation estimate near solutions of the homogeneous equation with
 a drift.** Let `n ≥ 1` be the dimension, let `γ > 0`, and fix a bound `σ` for `βR/λ`. There are
