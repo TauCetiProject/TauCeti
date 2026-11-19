@@ -97,10 +97,7 @@ theorem coeff_curvatureOperator (hx : x ∈ u)
   simp only [sum_apply, add_apply,
     smul_apply, ContinuousLinearMap.smulRight_apply, map_sub, map_sum,
     map_add, map_smul, smul_eq_mul]
-  have hdual (k : ι) : hs.coeff l x (s k x) = if k = l then 1 else 0 := by
-    rw [IsLocalFrameOn.coeff, dite_eq_left hx, Module.Basis.coord_apply,
-      ← hs.toBasisAt_coe hx k, Module.Basis.repr_self_apply]
-  simp only [hdual]
+  simp only [hs.coeff_apply_self hx]
   simp only [mul_ite, mul_one, mul_zero, Finset.sum_add_distrib,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   rw [Finset.sum_sub_distrib]
