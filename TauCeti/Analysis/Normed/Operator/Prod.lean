@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
-# Operator norm of maps out of a product
+# Operator norms of maps into and out of a product
 
 The continuous linear map `(x, y) ↦ f x + g y` out of a product (`ContinuousLinearMap.coprod`) has
 operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le`). This bounds solution
@@ -16,6 +16,9 @@ operators assembled from separate operators for each component of the data, for 
 forcing and the initial datum of an evolution equation. A continuous linear map out of `𝕜 × 𝕜`
 has operator norm at most `‖f (1, 0)‖ + ‖f (0, 1)‖`
 (`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`).
+
+The map `x ↦ (x, f x)` into a product, the derivative of a graph map, has operator norm at most
+`max 1 ‖f‖` (`ContinuousLinearMap.opNorm_id_prod_le`).
 -/
 
 public section
@@ -45,5 +48,11 @@ theorem opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one (f : 𝕜 × 𝕜 
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, mul_comm]
   · exact mul_le_mul_of_nonneg_left (_root_.norm_fst_le p) (norm_nonneg _)
   · exact mul_le_mul_of_nonneg_left (_root_.norm_snd_le p) (norm_nonneg _)
+
+/-- The operator norm of `x ↦ (x, f x)` is at most `max 1 ‖f‖`. -/
+theorem opNorm_id_prod_le (f : E →L[𝕜] F) :
+    ‖(ContinuousLinearMap.id 𝕜 E).prod f‖ ≤ max 1 ‖f‖ := by
+  rw [opNorm_prod, Prod.norm_def]
+  exact max_le_max norm_id_le le_rfl
 
 end ContinuousLinearMap
