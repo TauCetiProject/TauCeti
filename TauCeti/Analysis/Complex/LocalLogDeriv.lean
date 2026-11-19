@@ -13,6 +13,7 @@ import TauCeti.Analysis.Complex.JensenFormula
 import TauCeti.Analysis.Complex.AbsMax
 import TauCeti.Analysis.Complex.BorelCaratheodory
 import TauCeti.Analysis.Complex.DivisorFactorization
+import TauCeti.Analysis.Meromorphic.FactorizedRational
 
 /-!
 # Landau's local logarithmic-derivative lemma

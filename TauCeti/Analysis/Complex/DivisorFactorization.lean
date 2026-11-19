@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.BranchLogRoot
 public import TauCeti.Analysis.Meromorphic.Order
 public import TauCeti.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.Meromorphic.NormalForm
-public import TauCeti.Analysis.Meromorphic.FactorizedRational
+public import Mathlib.Analysis.Meromorphic.FactorizedRational
 
 /-!
 # Holomorphic functions with equal divisors differ by an exponential factor
@@ -33,7 +33,7 @@ normalizes only on the divisor support, and preserves the raw quotient everywher
 factorization `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) • G` holds globally, including at the removed zeros.
 The product is stated as a function, in the normal form of Mathlib's
 `Function.FactorizedRational`, so the API of
-`TauCeti.Analysis.Meromorphic.FactorizedRational` applies to it directly.
+`Mathlib.Analysis.Meromorphic.FactorizedRational` applies to it directly.
 -/
 
 public section
