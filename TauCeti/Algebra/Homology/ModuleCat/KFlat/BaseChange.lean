@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Homology.Adjunction
 public import TauCeti.Algebra.Homology.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure
 import Mathlib.CategoryTheory.Functor.Derived.Adjunction
-import TauCeti.Algebra.Homology.ModuleCat.KFlat.Tensor
+import TauCeti.Algebra.Homology.Monoidal.KFlat.Tensor
 
 /-!
 # Derived extension of scalars and its adjunction with restriction of scalars
