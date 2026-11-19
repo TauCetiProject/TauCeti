@@ -147,6 +147,22 @@ theorem energyForm_apply_frame_eq_stdComplexLineEnergyDensity (c : C) (e : Tange
   rw [energyForm_apply_frame, stdComplexLineEnergyDensity_def]
   simp [stdComplexLineReal, stdComplexLineImag]
 
+omit [IsManifold I ∞ X] in
+/-- The map `(s, t) ↦ du (s • e + t • j e)` sends the real unit `(1, 0)` to `du e`. -/
+private theorem frameMap_apply_stdComplexLineReal (c : C) (e : TangentSpace I' c) :
+    ((mfderiv I' I u c).toLinearMap ∘ₗ
+      (LinearMap.toSpanSingleton ℝ _ e).coprod (LinearMap.toSpanSingleton ℝ _ (j c e)))
+        stdComplexLineReal = mfderiv I' I u c e := by
+  simp [stdComplexLineReal]
+
+omit [IsManifold I ∞ X] in
+/-- The map `(s, t) ↦ du (s • e + t • j e)` sends the imaginary unit `(0, 1)` to `du (j e)`. -/
+private theorem frameMap_apply_stdComplexLineImag (c : C) (e : TangentSpace I' c) :
+    ((mfderiv I' I u c).toLinearMap ∘ₗ
+      (LinearMap.toSpanSingleton ℝ _ e).coprod (LinearMap.toSpanSingleton ℝ _ (j c e)))
+        stdComplexLineImag = mfderiv I' I u c (j c e) := by
+  simp [stdComplexLineImag]
+
 /-- **The energy form of a pseudoholomorphic map is the pulled-back form.** At a point `c` of a
 surface where `u` is pseudoholomorphic, the energy form of `u` is `u^* form`. Both are top forms on
 the tangent plane at `c`, and they agree on a frame `(e, j e)`, where both equal
@@ -158,11 +174,8 @@ theorem energyForm_eq_mpullback_of_isPseudoholomorphicAt {c : C}
   obtain ⟨e, he⟩ := (finrank_pos_iff_exists_ne_zero (R := ℝ) (M := TangentSpace I' c)).1
     (by omega)
   -- The frame `(e, j e)` of the tangent plane at `c`.
-  set b₀ := basisOfLinearIndependentOfCardEqFinrank
-    ((j.almostComplexStructureAt c).linearIndependent_pair he) (by simp [hc])
-  have hb₀ : ⇑b₀ = ![e, j c e] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+  set b₀ := j.frameBasis he hc
+  have hb₀ : ⇑b₀ = ![e, j c e] := j.coe_frameBasis he hc
   rw [← sub_eq_zero]
   set η := form.energyForm J j u c - mpullback I' I u form.1 c
   have hη : η b₀ = 0 := by
@@ -199,9 +212,7 @@ theorem Compatible.mpullback_apply_frame_le_energyForm_apply_frame (hcompat : fo
   have h := hcompat.two_mul_twoForm_le_stdComplexLineEnergyDensity (u c)
     ((mfderiv I' I u c).toLinearMap ∘ₗ
       (LinearMap.toSpanSingleton ℝ _ e).coprod (LinearMap.toSpanSingleton ℝ _ (j c e)))
-  simp only [LinearMap.coe_comp, Function.comp_apply, stdComplexLineReal, stdComplexLineImag,
-    LinearMap.coprod_apply, LinearMap.toSpanSingleton_apply, one_smul, zero_smul, add_zero,
-    zero_add, ContinuousLinearMap.coe_coe] at h
+  rw [frameMap_apply_stdComplexLineReal, frameMap_apply_stdComplexLineImag] at h
   rw [energyForm_apply_frame_eq_stdComplexLineEnergyDensity, mpullback_apply_pair,
     ← SmoothBundleForm.eval₂_apply]
   linarith
@@ -215,9 +226,7 @@ theorem Compatible.energyForm_apply_frame_eq_mpullback_apply_frame_iff
   have h := hcompat.invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm (u c)
     ((mfderiv I' I u c).toLinearMap ∘ₗ
       (LinearMap.toSpanSingleton ℝ _ e).coprod (LinearMap.toSpanSingleton ℝ _ (j c e)))
-  simp only [LinearMap.coe_comp, Function.comp_apply, stdComplexLineReal, stdComplexLineImag,
-    LinearMap.coprod_apply, LinearMap.toSpanSingleton_apply, one_smul, zero_smul, add_zero,
-    zero_add, ContinuousLinearMap.coe_coe] at h
+  rw [frameMap_apply_stdComplexLineReal, frameMap_apply_stdComplexLineImag] at h
   rw [energyForm_apply_frame_eq_stdComplexLineEnergyDensity, mpullback_apply_pair,
     ← SmoothBundleForm.eval₂_apply]
   set w := mfderiv I' I u c e + J (u c) (mfderiv I' I u c (j c e))
@@ -240,7 +249,7 @@ theorem Compatible.energyForm_apply_frame_eq_mpullback_apply_frame_iff
     have := tames_iff.1 hcompat.tames (u c) w hw0
     linarith
   · intro hw0
-    rw [hw0, map_zero, SmoothBundleForm.eval₂_self] at h
+    simp only [hw0, map_zero, SmoothBundleForm.eval₂_self] at h
     linarith
 
 /-- **Continuity of the energy form.** The energy form of a `C¹` map is continuous. -/
@@ -291,6 +300,18 @@ theorem isSmoothForm_energyForm [FiniteDimensional ℝ E'] (hu : ContMDiff I' I 
       (2⁻¹ : ℝ)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y ↦ ?_)
   simp only [Pi.smul_apply, smul_eq_mul]
 
+/-- The pullback `u^* form` along a `C¹` map is continuous. -/
+private theorem isSmoothForm_mpullback (hu : ContMDiff I' I 1 u) :
+    IsSmoothForm I' 0 (mpullback I' I u form.1) :=
+  ((SmoothForm.isSmoothForm form).of_le (by simp)).mpullback (by simpa using hu)
+
+/-- The difference of the energy form and `u^* form`, evaluated pointwise. -/
+private theorem energyForm_add_neg_mpullback_apply (c : C) (v : Fin 2 → TangentSpace I' c) :
+    (form.energyForm J j u + -mpullback I' I u form.1) c v =
+      form.energyForm J j u c v - mpullback I' I u form.1 c v := by
+  rw [Pi.add_apply, Pi.neg_apply, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.neg_apply, ← sub_eq_add_neg]
+
 /-! ### The energy of a map from an oriented surface -/
 
 variable [FiniteDimensional ℝ E'] {o : Manifold.Orientation I' C (Fin 2)}
@@ -335,9 +356,8 @@ two forms. -/
 private theorem energy_sub_integralTopForm_mpullback (hu : ContMDiff I' I 1 u) :
     form.energy J j o u - integralTopForm o (mpullback I' I u form.1) =
       integralTopForm o (form.energyForm J j u + -mpullback I' I u form.1) := by
-  have hpb : IsSmoothForm I' 0 (mpullback I' I u form.1) :=
-    ((SmoothForm.isSmoothForm form).of_le (by simp)).mpullback (by simpa using hu)
-  rw [energy, integralTopForm_add_of_compactSpace o (isSmoothForm_energyForm hu) hpb.neg,
+  rw [energy, integralTopForm_add_of_compactSpace o (isSmoothForm_energyForm hu)
+      (isSmoothForm_mpullback hu).neg,
     ← neg_one_smul ℝ (mpullback I' I u form.1), integralTopForm_smul]
   ring
 
@@ -352,8 +372,7 @@ theorem Compatible.integralTopForm_mpullback_le_energy (hcompat : form.Compatibl
   rw [← sub_nonneg, energy_sub_integralTopForm_mpullback hu]
   refine integralTopForm_nonneg o fun c b hb ↦ j.apply_basis_nonneg_of_forall_nonneg (ho c)
     (fun e ↦ ?_) b hb
-  rw [Pi.add_apply, Pi.neg_apply, ContinuousAlternatingMap.add_apply,
-    ContinuousAlternatingMap.neg_apply, ← sub_eq_add_neg, sub_nonneg]
+  rw [energyForm_add_neg_mpullback_apply, sub_nonneg]
   exact hcompat.mpullback_apply_frame_le_energyForm_apply_frame c e
 
 /-- **The equality case of the Wirtinger inequality.** For a compatible pair, a `C¹` map from a
@@ -372,18 +391,15 @@ theorem Compatible.energy_eq_integralTopForm_mpullback_iff (hcompat : form.Compa
   -- the energy exceeds the area.
   have hnn (c : C) (e : TangentSpace I' c) :
       0 ≤ (form.energyForm J j u + -mpullback I' I u form.1) c ![e, j c e] := by
-    rw [Pi.add_apply, Pi.neg_apply, ContinuousAlternatingMap.add_apply,
-      ContinuousAlternatingMap.neg_apply, ← sub_eq_add_neg, sub_nonneg]
+    rw [energyForm_add_neg_mpullback_apply, sub_nonneg]
     exact hcompat.mpullback_apply_frame_le_energyForm_apply_frame c e
   have hpos : 0 < (form.energyForm J j u + -mpullback I' I u form.1) c ![e, j c e] := by
     refine (hnn c e).lt_of_ne fun h0 ↦
       hne ((hcompat.energyForm_apply_frame_eq_mpullback_apply_frame_iff c e).1 ?_)
-    rw [Pi.add_apply, Pi.neg_apply, ContinuousAlternatingMap.add_apply,
-      ContinuousAlternatingMap.neg_apply, ← sub_eq_add_neg] at h0
+    rw [energyForm_add_neg_mpullback_apply] at h0
     linarith
-  have hpb : IsSmoothForm I' 0 (mpullback I' I u form.1) :=
-    ((SmoothForm.isSmoothForm form).of_le (by simp)).mpullback (by simpa using hu)
-  have := j.integralTopForm_pos_of_forall_nonneg ho ((isSmoothForm_energyForm hu).add hpb.neg)
+  have := j.integralTopForm_pos_of_forall_nonneg ho
+    ((isSmoothForm_energyForm hu).add (isSmoothForm_mpullback hu).neg)
     (isClosed_tsupport _).isCompact hnn hpos
   rw [← energy_sub_integralTopForm_mpullback hu, h, sub_self] at this
   exact this.false
@@ -423,11 +439,12 @@ end Compact
 
 section Reparametrization
 
-variable {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E' H''} {C' : Type*}
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+  {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''} {C' : Type*}
   [TopologicalSpace C'] [ChartedSpace H'' C'] [IsManifold I'' ∞ C']
   {j' : SmoothAlmostComplexStructure I'' C'} {o' : Manifold.Orientation I'' C' (Fin 2)}
 
-omit [FiniteDimensional ℝ E'] in
+omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E''] in
 /-- **Naturality of the energy form.** If `φ` is pseudoholomorphic at `c'` and `u` is
 differentiable at `φ c'`, the energy form of `u ∘ φ` at `c'` is the pullback by `φ` of the
 energy form of `u`. -/
@@ -450,21 +467,23 @@ theorem energy_comp_diffeomorph
     {n : WithTop ℕ∞} (Φ : C' ≃ₘ^n⟮I'', I'⟯ C) (hn : n ≠ 0)
     (hΦ : ∀ c', IsPseudoholomorphicAt j' j Φ c') (hu : MDifferentiable I' I u) :
     form.energy J j' o' (u ∘ Φ) = form.energy J j o u := by
-  -- The derivative of `Φ` is an isomorphism of nonzero planes, so it is nonzero.
-  have mfderiv_ne_zero (c' : C') : mfderiv I'' I' Φ c' ≠ 0 := by
-    obtain ⟨v, hv⟩ := (finrank_pos_iff_exists_ne_zero (R := ℝ) (M := TangentSpace I'' c')).1
-      (by simp [o'.finrank_tangentSpace_eq c'])
-    have hev := (Φ.mfderivToContinuousLinearEquiv hn c').map_ne_zero_iff.2 hv
-    have key : Φ.mfderivToContinuousLinearEquiv hn c' v = mfderiv I'' I' Φ c' v := by
-      rw [← Diffeomorph.mfderivToContinuousLinearEquiv_coe Φ hn]
-      rfl
-    exact fun h ↦ hev (key.trans (by rw [h]; rfl))
+  -- The tangent planes of `C` are nontrivial, so the derivative of `Φ` is nonzero.
+  have (c : C) : Nontrivial (TangentSpace I' c) :=
+    Module.nontrivial_of_finrank_pos (by rw [o.finrank_tangentSpace_eq c]; simp)
   rw [energy, show form.energyForm J j' (u ∘ Φ) =
       mpullback I'' I' Φ (form.energyForm J j u) from
     funext fun c' ↦ energyForm_comp_apply (hΦ c') (hu _)]
   exact Φ.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt
-    (fun c' ↦ (hΦ c').isOrientationPreservingAt (ho' c') (ho (Φ c')) (mfderiv_ne_zero c'))
+    (fun c' ↦ (hΦ c').isOrientationPreservingAt (ho' c') (ho (Φ c')) (Φ.mfderiv_ne_zero hn))
     (by simp)
+
+end Reparametrization
+
+section DegreeScaling
+
+variable {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E' H''} {C' : Type*}
+  [TopologicalSpace C'] [ChartedSpace H'' C'] [IsManifold I'' ∞ C']
+  {j' : SmoothAlmostComplexStructure I'' C'} {o' : Manifold.Orientation I'' C' (Fin 2)}
 
 /-- **Degree scaling of energy.** Let `u` be a smooth pseudoholomorphic map from a compact
 connected boundaryless surface `C`, and `φ : C' → C` a proper smooth pseudoholomorphic map from a
@@ -482,7 +501,7 @@ theorem energy_comp_eq_degree_mul [BoundarylessManifold I'' C'] [T2Space C']
   exact integralTopForm_mpullback_eq_degree_mul o' o hφ hφp
     ((SmoothForm.isSmoothForm form).mpullback (by simpa using hu)) (isClosed_tsupport _).isCompact
 
-end Reparametrization
+end DegreeScaling
 
 end SmoothTwoForm
 

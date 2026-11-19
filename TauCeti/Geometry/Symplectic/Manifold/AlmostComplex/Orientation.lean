@@ -15,8 +15,9 @@ public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 # Top forms on the complex frames of an oriented almost complex surface
 
 Let `j` be an almost complex structure on a surface `C`, oriented at a point `c` so that every
-frame `(e, j e)` of the tangent plane is positive. Every nonzero `e` gives such a frame, so a
-top form `η` on the tangent plane is determined by its values `η (e, j e)`: on any basis `b`,
+frame `(e, j e)` of the tangent plane is positive. Every nonzero `e` gives such a frame
+(`TauCeti.SmoothAlmostComplexStructure.frameBasis`), so a top form `η` on the tangent plane is
+determined by its values `η (e, j e)`: on any basis `b`,
 
 `η b = η (b₀, j b₀) · det_{(b₀, j b₀)} b`,  `b₀ = b 0`.
 
@@ -55,6 +56,21 @@ variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace C] [ChartedSpace H C]
   [IsManifold I ∞ C] (j : SmoothAlmostComplexStructure I C) {o : Manifold.Orientation I C (Fin 2)}
 
+omit [FiniteDimensional ℝ E] in
+/-- The **complex frame** `(e, j e)` of a two-dimensional tangent space, a basis for every nonzero
+`e`. -/
+def frameBasis {c : C} {e : TangentSpace I c} (he : e ≠ 0)
+    (hc : finrank ℝ (TangentSpace I c) = 2) : Basis (Fin 2) ℝ (TangentSpace I c) :=
+  basisOfLinearIndependentOfCardEqFinrank ((j.almostComplexStructureAt c).linearIndependent_pair he)
+    (by simp [hc])
+
+omit [FiniteDimensional ℝ E] in
+/-- The complex frame built from `e` is `(e, j e)`. -/
+@[simp]
+theorem coe_frameBasis {c : C} {e : TangentSpace I c} (he : e ≠ 0)
+    (hc : finrank ℝ (TangentSpace I c) = 2) : ⇑(j.frameBasis he hc) = ![e, j c e] := by
+  rw [frameBasis, coe_basisOfLinearIndependentOfCardEqFinrank, almostComplexStructureAt_apply]
+
 /-- **Top forms nonnegative on complex frames.** Let `j` be an almost complex structure on a
 surface `C`, oriented at `c` so that every frame `(e, j e)` is positive. A top form `η` on the
 tangent plane at `c` with `η (e, j e) ≥ 0` for every `e` is nonnegative on every positively
@@ -67,11 +83,8 @@ theorem apply_basis_nonneg_of_forall_nonneg {c : C}
     (b : Basis (Fin 2) ℝ (TangentSpace I c)) (hb : b.orientation = o.orientationAt c) :
     0 ≤ η b := by
   -- The frame `b₀ = (b 0, j (b 0))`.
-  set b₀ := basisOfLinearIndependentOfCardEqFinrank
-    ((j.almostComplexStructureAt c).linearIndependent_pair (b.ne_zero 0))
-    (by simpa using (o.finrank_tangentSpace_eq c).symm)
-  have hb₀ : ⇑b₀ = ![b 0, j c (b 0)] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank, almostComplexStructureAt_apply]
+  set b₀ := j.frameBasis (b.ne_zero 0) (by simpa using o.finrank_tangentSpace_eq c)
+  have hb₀ : ⇑b₀ = ![b 0, j c (b 0)] := j.coe_frameBasis _ _
   -- A top form on the plane is its value on the frame `b₀` times `det_{b₀}`.
   have hη' : η b = η b₀ * b₀.det b := by
     simpa using congrArg (fun f ↦ f b) (η.toAlternatingMap.eq_smul_basis_det b₀)
@@ -96,11 +109,8 @@ theorem integralTopForm_pos_of_forall_nonneg
     rintro rfl
     exact hpos.ne ((η c₀).map_coord_zero 0 rfl).symm
   -- The positive frame `(e₀, j e₀)` at `c₀`.
-  set b₀ := basisOfLinearIndependentOfCardEqFinrank
-    ((j.almostComplexStructureAt c₀).linearIndependent_pair he₀)
-    (by simpa using (o.finrank_tangentSpace_eq c₀).symm)
-  have hb₀ : ⇑b₀ = ![e₀, j c₀ e₀] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank, almostComplexStructureAt_apply]
+  set b₀ := j.frameBasis he₀ (by simpa using o.finrank_tangentSpace_eq c₀)
+  have hb₀ : ⇑b₀ = ![e₀, j c₀ e₀] := j.coe_frameBasis _ _
   exact integralTopForm_pos o hη hc
     (fun c b hb ↦ j.apply_basis_nonneg_of_forall_nonneg (ho c) (hnn c) b hb)
     ⟨c₀, b₀, ho c₀ b₀ (by rw [hb₀]; simp), hb₀ ▸ hpos⟩
@@ -109,9 +119,10 @@ end SmoothAlmostComplexStructure
 
 namespace IsPseudoholomorphicAt
 
-variable {E H H' C C' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E E' H H' C C' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace C] [ChartedSpace H C]
-  [IsManifold I ∞ C] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'} [TopologicalSpace C']
+  [IsManifold I ∞ C] [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace C']
   [ChartedSpace H' C'] [IsManifold I' ∞ C'] {j : SmoothAlmostComplexStructure I C}
   {j' : SmoothAlmostComplexStructure I' C'} {o : Manifold.Orientation I C (Fin 2)}
   {o' : Manifold.Orientation I' C' (Fin 2)}
@@ -132,18 +143,10 @@ theorem isOrientationPreservingAt {φ : C' → C} {c' : C'} (hφ : IsPseudoholom
     rintro rfl
     exact hv (map_zero _)
   -- The frames `(v, j' v)` at `c'` and `(dφ v, j dφ v)` at `φ c'`, positive by hypothesis.
-  set b := basisOfLinearIndependentOfCardEqFinrank
-    ((j'.almostComplexStructureAt c').linearIndependent_pair hv0)
-    (by simpa using (o'.finrank_tangentSpace_eq c').symm)
-  set b' := basisOfLinearIndependentOfCardEqFinrank
-    ((j.almostComplexStructureAt (φ c')).linearIndependent_pair hv)
-    (by simpa using (o.finrank_tangentSpace_eq (φ c')).symm)
-  have hb : ⇑b = ![v, j' c' v] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-  have hb' : ⇑b' = ![mfderiv I' I φ c' v, j (φ c') (mfderiv I' I φ c' v)] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+  set b := j'.frameBasis hv0 (by simpa using o'.finrank_tangentSpace_eq c')
+  set b' := j.frameBasis hv (by simpa using o.finrank_tangentSpace_eq (φ c'))
+  have hb : ⇑b = ![v, j' c' v] := j'.coe_frameBasis _ _
+  have hb' : ⇑b' = ![mfderiv I' I φ c' v, j (φ c') (mfderiv I' I φ c' v)] := j.coe_frameBasis _ _
   refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_basis b b' fun i ↦ ?_).2
     (iff_of_true (ho' b (by simp [hb])) (ho b' (by simp [hb'])))
   fin_cases i
