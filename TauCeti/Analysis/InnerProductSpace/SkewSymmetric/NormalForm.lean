@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.JointEigenspace
-public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric
+public import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Cons
 
 /-!
 # The real normal form of commuting skew-symmetric maps
@@ -94,7 +95,7 @@ private theorem exists_norm_eq_one_apply_apply_eq_smul_of_skew [FiniteDimensiona
     ext x
     have hx : A i₀ (A i₀ x) = 0 := hle Submodule.mem_top
     have hsq : ‖A i₀ x‖ ^ 2 = 0 := by
-      rw [← real_inner_self_eq_norm_sq, hA, hx, inner_zero_right, neg_zero]
+      rw [norm_sq_apply_of_skew (hA i₀), hx, inner_zero_right, neg_zero]
     simpa using hsq
   obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
   refine ⟨‖v‖⁻¹ • v, χ, norm_smul_inv_norm hv0, hχ, fun i ↦ ?_⟩
@@ -113,7 +114,7 @@ private theorem exists_orthonormal_pair_apply_eq_smul_of_skew [FiniteDimensional
   -- `A i₀` moves `q` by the length `s`, with `s ^ 2 = -χ i₀`; the plane is `span(q, A i₀ q)`.
   set s : ℝ := ‖A i₀ q‖
   have hs2 : s ^ 2 = -χ i₀ := by
-    rw [← real_inner_self_eq_norm_sq, hA, hTq, real_inner_smul_right, real_inner_self_eq_norm_sq,
+    rw [norm_sq_apply_of_skew (hA i₀), hTq, real_inner_smul_right, real_inner_self_eq_norm_sq,
       hq]
     ring
   have hs : s ≠ 0 := fun h ↦ hχ (by rw [h] at hs2; linarith)
@@ -130,24 +131,6 @@ private theorem exists_orthonormal_pair_apply_eq_smul_of_skew [FiniteDimensional
     congr 1
     field_simp
     linear_combination χ i * hs2
-
-/-- Adjoining an orthonormal pair `(q₀, p₀)` orthogonal to an orthonormal family `Sum.elim q p`
-gives an orthonormal family. -/
-private theorem orthonormal_sum_elim_cons {r : ℕ} {q₀ p₀ : E} {q p : Fin r → E} (hq₀ : ‖q₀‖ = 1)
-    (hp₀ : ‖p₀‖ = 1) (hqp₀ : ⟪q₀, p₀⟫_ℝ = 0) (hon : Orthonormal ℝ (Sum.elim q p))
-    (hq : ∀ k, ⟪q₀, q k⟫_ℝ = 0 ∧ ⟪p₀, q k⟫_ℝ = 0) (hp : ∀ k, ⟪q₀, p k⟫_ℝ = 0 ∧ ⟪p₀, p k⟫_ℝ = 0) :
-    Orthonormal ℝ (Sum.elim (Fin.cons q₀ q : Fin (r + 1) → E) (Fin.cons p₀ p)) := by
-  have honE := orthonormal_iff_ite.1 hon
-  have hqq (k l : Fin r) : ⟪q k, q l⟫_ℝ = if k = l then 1 else 0 := by
-    simpa using honE (.inl k) (.inl l)
-  have hqp (k l : Fin r) : ⟪q k, p l⟫_ℝ = 0 := by simpa using honE (.inl k) (.inr l)
-  have hpq (k l : Fin r) : ⟪p k, q l⟫_ℝ = 0 := by simpa using honE (.inr k) (.inl l)
-  have hpp (k l : Fin r) : ⟪p k, p l⟫_ℝ = if k = l then 1 else 0 := by
-    simpa using honE (.inr k) (.inr l)
-  rw [orthonormal_iff_ite]
-  rintro (k | k) (l | l) <;> cases k using Fin.cases <;> cases l using Fin.cases <;>
-    simp [hq₀, hp₀, hqp₀, real_inner_comm q₀, real_inner_comm p₀, hq, hp, hqq, hqp, hpq, hpp,
-      (Fin.succ_ne_zero _).symm]
 
 end Plane
 
@@ -188,7 +171,7 @@ private theorem exists_orthonormal_apply_eq_smul_of_skew_aux (n : ℕ) :
     rw [real_inner_self_eq_norm_sq, hq₀] at h
     norm_num at h
   set B : ι → F →ₗ[ℝ] F := fun i ↦ (A i).restrict (hmaps i)
-  have hB (i : ι) (x : F) : (B i x : E) = A i x := rfl
+  have hB (i : ι) (x : F) : (B i x : E) = A i x := LinearMap.coe_restrict_apply (hmaps i) x
   obtain ⟨r, q, p, a, hon, hact, hne, hker⟩ := ih _ hlt F rfl B
     (fun i x y ↦ by simp only [Submodule.coe_inner, hB, hA])
     (fun i j ↦ LinearMap.ext fun x ↦ Subtype.ext <| by
@@ -197,8 +180,8 @@ private theorem exists_orthonormal_apply_eq_smul_of_skew_aux (n : ℕ) :
     convert hon.comp_linearIsometry F.subtypeₗᵢ using 1
     ext (k | k) <;> rfl
   refine ⟨r + 1, Fin.cons q₀ fun k ↦ (q k : E), Fin.cons p₀ fun k ↦ (p k : E), Fin.cons a₀ a,
-    orthonormal_sum_elim_cons hq₀ hp₀ hqp₀ hon' (fun k ↦ (hF _).1 (q k).2)
-      (fun k ↦ (hF _).1 (p k).2), fun k i ↦ ?_, fun k ↦ ?_, fun x hx i ↦ ?_⟩
+    orthonormal_sum_elim_cons_iff.2 ⟨⟨hq₀, hp₀, hqp₀⟩, fun k ↦ ⟨((hF _).1 (q k).2).1,
+      ((hF _).1 (q k).2).2, (hF _).1 (p k).2⟩, hon'⟩, fun k i ↦ ?_, fun k ↦ ?_, fun x hx i ↦ ?_⟩
   · cases k using Fin.cases with
     | zero => simpa using hA₀ i
     | succ k =>
