@@ -40,7 +40,7 @@ each composing with the motion and rotating the values by `fieldRotation u` or `
 `TauCeti.Vortex.coeFn_targetMotion`); the weak gradients of a moved variation are rotated by `u⁻¹`
 as well (`TauCeti.Vortex.gradient_variationMotion_ae`). The two isometries are built from the
 measure-preserving pullback `MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv` and the pointwise
-isometry `LinearIsometryEquiv.compLpₗᵢEquiv`. Each action is trivial at the identity, composes as
+isometry `LinearIsometryEquiv.compLpₗᵢ`. Each action is trivial at the identity, composes as
 the motions do, and has as inverse the motion by the inverse isometry `z ↦ u⁻¹ z - u⁻¹ a`.
 
 The realization at the moved coefficient is the conjugate of the realization at `c`:
@@ -96,15 +96,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞}
 /-- Precomposition with an affine isometry `g` followed by the pointwise isometry `R`, on `Lᵖ`
 for the measure `μ⊤` that `sobolevGaugeFixedOperator` uses. Its laws below are instances of the
 identity, composition, inverse and commutation laws of `Lp.compMeasurePreservingₗᵢEquiv` and
-`LinearIsometryEquiv.compLpₗᵢEquiv`. -/
+`LinearIsometryEquiv.compLpₗᵢ`. -/
 private def lpMotion (p : ℝ≥0∞) [Fact (1 ≤ p)] (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] ℂ) :
     Lp E p μ⊤ ≃ₗᵢ[ℝ] Lp E p μ⊤ :=
   (Lp.compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_top g) (measurePreserving_top g.symm)
-    (comp_symm_ae_eq_id g)).trans (R.compLpₗᵢEquiv p μ⊤)
+    (comp_symm_ae_eq_id g)).trans (R.compLpₗᵢ p μ⊤)
 
 private theorem coeFn_lpMotion (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] ℂ) (f : Lp E p μ⊤) :
     ⇑(lpMotion p R g f) =ᵐ[μ⊤] fun z ↦ R (f (g z)) := by
-  filter_upwards [R.coeFn_compLpₗᵢEquiv (Lp.compMeasurePreservingₗᵢEquiv ℝ
+  filter_upwards [R.coeFn_compLpₗᵢ (Lp.compMeasurePreservingₗᵢEquiv ℝ
       (measurePreserving_top g) (measurePreserving_top g.symm) (comp_symm_ae_eq_id g) f),
     Lp.coeFn_compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_top g)
       (measurePreserving_top g.symm) (comp_symm_ae_eq_id g) f] with z h₁ h₂
@@ -112,27 +112,27 @@ private theorem coeFn_lpMotion (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] 
 
 private theorem lpMotion_refl :
     lpMotion (E := E) p (.refl ℝ E) (.refl ℝ ℂ) = .refl ℝ _ := by
-  rw [lpMotion, LinearIsometryEquiv.compLpₗᵢEquiv_refl, LinearIsometryEquiv.trans_refl,
+  rw [lpMotion, LinearIsometryEquiv.compLpₗᵢ_refl, LinearIsometryEquiv.trans_refl,
     Lp.compMeasurePreservingₗᵢEquiv_eq_refl ℝ _ _ _ (.of_eq AffineIsometryEquiv.coe_refl)]
 
 /-- Successive motions compose. -/
 private theorem lpMotion_lpMotion (R R' : E ≃ₗᵢ[ℝ] E) (g g' : ℂ ≃ᵃⁱ[ℝ] ℂ) :
     (lpMotion p R' g').trans (lpMotion p R g) = lpMotion p (R'.trans R) (g.trans g') := by
-  rw [lpMotion, lpMotion, lpMotion, ← LinearIsometryEquiv.trans_assoc _ (R'.compLpₗᵢEquiv p μ⊤),
-    LinearIsometryEquiv.trans_assoc (R'.compLpₗᵢEquiv p μ⊤),
-    ← Lp.compMeasurePreservingₗᵢEquiv_trans_compLpₗᵢEquiv,
-    ← LinearIsometryEquiv.trans_assoc _ (R'.compLpₗᵢEquiv p μ⊤), LinearIsometryEquiv.trans_assoc,
+  rw [lpMotion, lpMotion, lpMotion, ← LinearIsometryEquiv.trans_assoc _ (R'.compLpₗᵢ p μ⊤),
+    LinearIsometryEquiv.trans_assoc (R'.compLpₗᵢ p μ⊤),
+    ← Lp.compMeasurePreservingₗᵢEquiv_trans_compLpₗᵢ,
+    ← LinearIsometryEquiv.trans_assoc _ (R'.compLpₗᵢ p μ⊤), LinearIsometryEquiv.trans_assoc,
     Lp.compMeasurePreservingₗᵢEquiv_trans ℝ _ _ _ _ _ _ (measurePreserving_top (g.trans g'))
       (measurePreserving_top (g.trans g').symm) (comp_symm_ae_eq_id (g.trans g'))
       (.of_eq (AffineIsometryEquiv.coe_trans g g')),
-    ← LinearIsometryEquiv.compLpₗᵢEquiv_trans]
+    ← LinearIsometryEquiv.compLpₗᵢ_trans]
 
 private theorem lpMotion_symm (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] ℂ) :
     (lpMotion p R g).symm = lpMotion p R.symm g.symm := by
-  rw [lpMotion, lpMotion, LinearIsometryEquiv.symm_trans, LinearIsometryEquiv.compLpₗᵢEquiv_symm,
+  rw [lpMotion, lpMotion, LinearIsometryEquiv.symm_trans, LinearIsometryEquiv.compLpₗᵢ_symm,
     Lp.compMeasurePreservingₗᵢEquiv_symm ℝ _ _ _ (measurePreserving_top g.symm)
       (measurePreserving_top g.symm.symm) (comp_symm_ae_eq_id g.symm) .rfl,
-    Lp.compMeasurePreservingₗᵢEquiv_trans_compLpₗᵢEquiv]
+    Lp.compMeasurePreservingₗᵢEquiv_trans_compLpₗᵢ]
 
 /-- Precomposition of the four coordinates with an affine isometry `g` followed by the pointwise
 isometry `R`, on `H¹(ℂ)⁴`. -/

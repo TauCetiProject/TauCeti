@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
 
 /-!
 # Sums, linear combinations, semilinear compositions, and `RCLike` coordinates in `Lᵖ`
@@ -23,14 +24,12 @@ transport almost-everywhere descriptions `⇑u =ᵐ[μ] g` of the summands, whic
 representatives of linear combinations.
 
 Mathlib composes `f : Lp E p μ` with `L : E →SL[σ] F` both as an element `L.compLp f` and through
-the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree. For
-`1 ≤ p`, lifting `ContinuousLinearMap.compLpL` to semilinear isometries gives
-`LinearIsometry.compLpₗᵢ`. Specializing `compLpₗᵢ` and `compLpL` to `RCLike.ofRealLI`,
+the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree, and
+that for `1 ≤ p` the postcomposition `LinearIsometry.compLpₗᵢ` by a semilinear isometry underlies
+`ContinuousLinearMap.compLpL`. Specializing `compLpₗᵢ` and `compLpL` to `RCLike.ofRealLI`,
 `RCLike.reCLM`, and `RCLike.imCLM` defines the scalar inclusion `MeasureTheory.Lp.ofRealLI` and the
 real and imaginary coordinate operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM`
 between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
-For a semilinear isometry equivalence `R` of the values, the composition `f ↦ R ∘ f` is a
-semilinear isometry equivalence of `Lp`, with inverse `f ↦ R.symm ∘ f`.
 
 ## Main declarations
 
@@ -41,12 +40,8 @@ semilinear isometry equivalence of `Lp`, with inverse `f ↦ R.symm ∘ f`.
   `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
   `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
-* `LinearIsometryEquiv.compLpₗᵢEquiv`: pointwise composition with a semilinear isometry
-  equivalence of the values, as a semilinear isometry equivalence of `Lp`, with
-  `LinearIsometryEquiv.coeFn_compLpₗᵢEquiv`, and its identity, composition and inverse laws
-  `LinearIsometryEquiv.compLpₗᵢEquiv_refl`, `LinearIsometryEquiv.compLpₗᵢEquiv_trans` and
-  `LinearIsometryEquiv.compLpₗᵢEquiv_symm`.
-* `LinearIsometry.compLpₗᵢ`: postcomposition of `Lp` classes by a semilinear isometry.
+* `LinearIsometry.toContinuousLinearMap_compLpₗᵢ`: postcomposition of `Lp` classes by a
+  semilinear isometry (`LinearIsometry.compLpₗᵢ`) underlies `ContinuousLinearMap.compLpL`.
 * `MeasureTheory.Lp.instUniqueZero`: `Unique (Lp E p (0 : Measure α))`.
 * `MeasureTheory.Lp.ofRealLI`, `MeasureTheory.Lp.reCLM`, `MeasureTheory.Lp.imCLM`: scalar inclusion
   and real/imaginary parts on `Lp 𝕜 p μ` for an `RCLike` field `𝕜`.
@@ -125,110 +120,19 @@ variable {α 𝕜₁ 𝕜₂ E F : Type*} {m : MeasurableSpace α}
   [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ]
   [NormedAddCommGroup E] [NormedSpace 𝕜₁ E] [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
 
-/-- Postcomposition of `Lᵖ` classes by a semilinear isometry is a semilinear isometry. -/
-def compLpₗᵢ (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : MeasureTheory.Measure α) (L : E →ₛₗᵢ[σ] F) :
-    MeasureTheory.Lp E p μ →ₛₗᵢ[σ] MeasureTheory.Lp F p μ where
-  toLinearMap := (L.toContinuousLinearMap.compLpL p μ).toLinearMap
-  norm_map' f := by
-    rw [MeasureTheory.Lp.norm_def, MeasureTheory.Lp.norm_def]
-    congr 1
-    refine MeasureTheory.eLpNorm_congr_norm_ae
-      (MeasureTheory.Lp.aestronglyMeasurable _) (MeasureTheory.Lp.aestronglyMeasurable f) ?_
-    filter_upwards [L.toContinuousLinearMap.coeFn_compLpL f] with x hx
-    rw [ContinuousLinearMap.coe_coe, hx, coe_toContinuousLinearMap, L.norm_map]
-
 /-- The continuous linear map underlying `LinearIsometry.compLpₗᵢ` is
 `ContinuousLinearMap.compLpL`. -/
 @[simp]
 theorem toContinuousLinearMap_compLpₗᵢ (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : MeasureTheory.Measure α)
     (L : E →ₛₗᵢ[σ] F) :
-    (L.compLpₗᵢ p μ).toContinuousLinearMap = L.toContinuousLinearMap.compLpL p μ :=
-  (rfl)
-
-/-- `LinearIsometry.compLpₗᵢ` acts almost everywhere pointwise. -/
-theorem coeFn_compLpₗᵢ (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : MeasureTheory.Measure α)
-    (L : E →ₛₗᵢ[σ] F) (f : MeasureTheory.Lp E p μ) :
-    L.compLpₗᵢ p μ f =ᵐ[μ] fun x ↦ L (f x) :=
-  L.toContinuousLinearMap.coeFn_compLpL f
+    (L.compLpₗᵢ p μ).toContinuousLinearMap = L.toContinuousLinearMap.compLpL p μ := by
+  ext1 f
+  refine MeasureTheory.Lp.ext ?_
+  filter_upwards [L.coeFn_compLpₗᵢ (p := p) (μ := μ) f,
+    L.toContinuousLinearMap.coeFn_compLpL (p := p) (μ := μ) f] with x h₁ h₂
+  rw [coe_toContinuousLinearMap, h₁, h₂, coe_toContinuousLinearMap]
 
 end LinearIsometry
-
-namespace LinearIsometryEquiv
-
-open MeasureTheory
-
-variable {α E F G 𝕜 𝕜₂ 𝕜₃ : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
-  [Fact (1 ≤ p)] [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
-  [NontriviallyNormedField 𝕜₃] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
-  [NormedSpace 𝕜₂ F] [NormedAddCommGroup G] [NormedSpace 𝕜₃ G]
-  {σ₁₂ : 𝕜 →+* 𝕜₂} {σ₂₁ : 𝕜₂ →+* 𝕜} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
-  [RingHomIsometric σ₁₂]
-
-/-- **Pointwise composition with a semilinear isometry equivalence, on `Lp`.** For
-`R : E ≃ₛₗᵢ[σ₁₂] F`, the map `f ↦ R ∘ f` is a semilinear isometry equivalence
-`Lp E p μ ≃ₛₗᵢ[σ₁₂] Lp F p μ`, with inverse `f ↦ R.symm ∘ f`. Following it or preceding it by
-`MeasureTheory.Lp.compMeasurePreservingₗᵢEquiv` moves the points and rotates the values. -/
-def compLpₗᵢEquiv (R : E ≃ₛₗᵢ[σ₁₂] F) (p : ℝ≥0∞) [Fact (1 ≤ p)]
-    (μ : Measure α) : Lp E p μ ≃ₛₗᵢ[σ₁₂] Lp F p μ :=
-  haveI : RingHomIsometric σ₂₁ := .inv σ₁₂
-  { toLinearEquiv := .ofLinearMap (R.toLinearIsometry.toContinuousLinearMap.compLpₗ p μ)
-      (R.symm.toLinearIsometry.toContinuousLinearMap.compLpₗ p μ)
-      (LinearMap.ext fun f ↦ Lp.ext <| by
-        filter_upwards [R.toLinearIsometry.toContinuousLinearMap.coeFn_compLp
-            (R.symm.toLinearIsometry.toContinuousLinearMap.compLp f),
-          R.symm.toLinearIsometry.toContinuousLinearMap.coeFn_compLp f] with a h₁ h₂
-        simp [h₁, h₂])
-      (LinearMap.ext fun f ↦ Lp.ext <| by
-        filter_upwards [R.symm.toLinearIsometry.toContinuousLinearMap.coeFn_compLp
-            (R.toLinearIsometry.toContinuousLinearMap.compLp f),
-          R.toLinearIsometry.toContinuousLinearMap.coeFn_compLp f] with a h₁ h₂
-        simp [h₁, h₂])
-    norm_map' := (R.toLinearIsometry.compLpₗᵢ p μ).norm_map }
-
-variable (R : E ≃ₛₗᵢ[σ₁₂] F)
-
-/-- `LinearIsometryEquiv.compLpₗᵢEquiv` is Mathlib's composition
-`ContinuousLinearMap.compLp` with the underlying continuous semilinear map. -/
-theorem compLpₗᵢEquiv_apply (f : Lp E p μ) :
-    R.compLpₗᵢEquiv p μ f = R.toLinearIsometry.toContinuousLinearMap.compLp f :=
-  (rfl)
-
-/-- `LinearIsometryEquiv.compLpₗᵢEquiv` is almost everywhere pointwise composition. -/
-theorem coeFn_compLpₗᵢEquiv (f : Lp E p μ) : ⇑(R.compLpₗᵢEquiv p μ f) =ᵐ[μ] fun a ↦ R (f a) := by
-  rw [compLpₗᵢEquiv_apply]
-  exact ContinuousLinearMap.coeFn_compLp R.toLinearIsometry.toContinuousLinearMap f
-
-/-- Composition with the identity is the identity of `Lp`. -/
-@[simp]
-theorem compLpₗᵢEquiv_refl :
-    (LinearIsometryEquiv.refl 𝕜 E).compLpₗᵢEquiv p μ = .refl 𝕜 (Lp E p μ) := by
-  refine LinearIsometryEquiv.ext fun f ↦ Lp.ext ?_
-  filter_upwards [(LinearIsometryEquiv.refl 𝕜 E).coeFn_compLpₗᵢEquiv f] with a ha
-  simp [ha]
-
-/-- Composition with `R` and then with `R'` is composition with `R.trans R'`. -/
-@[simp]
-theorem compLpₗᵢEquiv_trans {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₃₁ : 𝕜₃ →+* 𝕜} {σ₂₃ : 𝕜₂ →+* 𝕜₃}
-    {σ₃₂ : 𝕜₃ →+* 𝕜₂} [RingHomInvPair σ₁₃ σ₃₁] [RingHomInvPair σ₃₁ σ₁₃]
-    [RingHomInvPair σ₂₃ σ₃₂] [RingHomInvPair σ₃₂ σ₂₃] [RingHomCompTriple σ₁₂ σ₂₃ σ₁₃]
-    [RingHomCompTriple σ₃₂ σ₂₁ σ₃₁] [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
-    (R' : F ≃ₛₗᵢ[σ₂₃] G) :
-    (R.trans R').compLpₗᵢEquiv p μ = (R.compLpₗᵢEquiv p μ).trans (R'.compLpₗᵢEquiv p μ) := by
-  refine LinearIsometryEquiv.ext fun f ↦ Lp.ext ?_
-  filter_upwards [(R.trans R').coeFn_compLpₗᵢEquiv f,
-    R'.coeFn_compLpₗᵢEquiv (R.compLpₗᵢEquiv p μ f), R.coeFn_compLpₗᵢEquiv f] with a h₁ h₂ h₃
-  rw [LinearIsometryEquiv.trans_apply, h₁, h₂, h₃, LinearIsometryEquiv.trans_apply]
-
-/-- The inverse of composition with `R` is composition with `R.symm`. -/
-@[simp]
-theorem compLpₗᵢEquiv_symm [RingHomIsometric σ₂₁] :
-    (R.compLpₗᵢEquiv p μ).symm = R.symm.compLpₗᵢEquiv p μ := by
-  refine LinearIsometryEquiv.ext fun f ↦ (LinearIsometryEquiv.symm_apply_eq _).2 (Lp.ext ?_)
-  filter_upwards [R.coeFn_compLpₗᵢEquiv (R.symm.compLpₗᵢEquiv p μ f),
-    R.symm.coeFn_compLpₗᵢEquiv f] with a h₁ h₂
-  rw [h₁, h₂, LinearIsometryEquiv.apply_symm_apply]
-
-end LinearIsometryEquiv
 
 namespace MeasureTheory.Lp
 
@@ -260,7 +164,7 @@ variable {𝕜 p μ}
 /-- `Lp.ofRealLI` casts representatives from `ℝ` to `𝕜` almost everywhere. -/
 theorem coeFn_ofRealLI (f : Lp ℝ p μ) :
     ofRealLI 𝕜 p μ f =ᵐ[μ] fun x ↦ (f x : 𝕜) :=
-  (RCLike.ofRealLI : ℝ →ₗᵢ[ℝ] 𝕜).coeFn_compLpₗᵢ p μ f
+  (RCLike.ofRealLI : ℝ →ₗᵢ[ℝ] 𝕜).coeFn_compLpₗᵢ f
 
 /-- `Lp.reCLM` takes the real part almost everywhere. -/
 theorem coeFn_reCLM (f : Lp 𝕜 p μ) :
