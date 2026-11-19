@@ -51,7 +51,10 @@ with the smooth transition `χ` vanishing on `(-∞, 0]` and equal to one on `[1
   rotates the gauge, `g_(c^u)(z) = g_c(u z)` where `c^u` are the coefficients of
   `u⁻ᵐ P_c(u z)` (`TauCeti.Vortex.polynomialGauge_rotateCoeff`), so the rotation `R_u` of the
   plane carries `g_c · x` to `g_(c^u) · R_u x`
-  (`TauCeti.Vortex.rotateField_gaugeTransform_polynomialGauge`). The gauge of `Wᵐ` is trivial
+  (`TauCeti.Vortex.rotateField_gaugeTransform_polynomialGauge`). The polynomial with rotated
+  coefficients is `P_c` with roots scaled by `u⁻¹` (`TauCeti.Vortex.monicOfCoeff_rotateCoeff`),
+  and the rotations compose (`TauCeti.Vortex.rotateCoeff_one`,
+  `TauCeti.Vortex.rotateCoeff_mul`). The gauge of `Wᵐ` is trivial
   (`TauCeti.Vortex.polynomialGauge_zero`).
 
 Applied to a field whose section is a nonnegative multiple `ρ P_c` of the polynomial, such as
@@ -65,7 +68,8 @@ gauged field lies in every `A_m^s`, with every derivative of `x - x_ref` decayin
 (`TauCeti.Vortex.gaugeTransform_polynomialGauge_mem_framedFieldSpace`). This is an explicit,
 coefficient-smooth choice of the normalizing gauge in
 `TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace`, which is only shown to exist
-for each vortex separately.
+for each vortex separately; both follow from
+`TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq`.
 
 The translation gauge `TauCeti.Vortex.translationGauge m a` normalizes the phase of the single
 polynomial `(W + a)ᵐ`, with a cutoff adapted to `‖a‖`; the polynomial gauge does this for every
@@ -149,6 +153,10 @@ private theorem ne_zero_and_norm_tail_lt_one {c : Fin m → ℂ} {z : ℂ}
     simpa using sq_sum_le_card_mul_sum_sq (s := Finset.univ) (f := fun i ↦ ‖c i‖)
   have hsum : ∑ i, ‖c i‖ < ‖z‖ := lt_of_pow_lt_pow_left₀ 2 hz0.le (hcs.trans_lt (by linarith))
   exact ⟨norm_pos_iff.1 hz0, (norm_tail_le c hz1).trans_lt ((div_lt_one hz0).2 hsum)⟩
+
+private theorem tendsto_norm_sq_cocompact :
+    Tendsto (fun z : ℂ ↦ ‖z‖ ^ 2) (cocompact ℂ) atTop :=
+  (tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop
 
 private theorem one_add_tail_mem_slitPlane {c : Fin m → ℂ} {z : ℂ} (hz : 0 ≤ cutoffArg c z) :
     1 + tail c z ∈ slitPlane :=
@@ -291,8 +299,8 @@ theorem polynomialGauge_mul_eval {c : Fin m → ℂ} {z : ℂ}
   have hg : (polynomialGauge c z : ℂ) = ‖w‖ / w := by
     rw [polynomialGauge, Circle.coe_exp, polynomialPhase_eq hz, ← hw, ofReal_neg, neg_mul,
       exp_neg, he, inv_div]
-  rw [hg, eval_monicOfCoeff_eq_mul_tail c hz0, ← hw, coe_windingPhase m hz0, norm_mul, norm_pow,
-    ofReal_mul, ofReal_pow, div_pow]
+  rw [hg, eval_monicOfCoeff_eq_mul_tail c hz0, ← hw, coe_windingPhase m hz0]
+  simp only [norm_mul, norm_pow, ofReal_mul, ofReal_pow, div_pow]
   field_simp
 
 /-- Where `‖z‖² > m ∑ᵢ ‖cᵢ‖² + 2`, the phase of the polynomial gauge is `-arg (P_c / Wᵐ)` near `z`,
@@ -328,11 +336,7 @@ private theorem hasFDerivAt_polynomialPhase {c : Fin m → ℂ} {z : ℂ}
     isOpen_lt continuous_const (by fun_prop)
   refine harg.neg.congr_of_eventuallyEq ?_
   filter_upwards [hopen.mem_nhds hz] with w hw
-  have hw0 : w ≠ 0 := by
-    rintro rfl
-    have : (0 : ℝ) ≤ m * ∑ i, ‖c i‖ ^ 2 := by positivity
-    simp at hw
-    linarith
+  have hw0 := (ne_zero_and_norm_tail_lt_one (zero_le_cutoffArg hw.le)).1
   rw [polynomialPhase_eq hw.le, Pi.neg_apply, hP, eval_monicOfCoeff_eq_mul_tail c hw0,
     mul_div_cancel_left₀ _ (pow_ne_zero m hw0)]
 
@@ -412,23 +416,47 @@ def rotateCoeff (u : Circle) (c : Fin m → ℂ) (i : Fin m) : ℂ :=
 theorem rotateCoeff_apply (u : Circle) (c : Fin m → ℂ) (i : Fin m) :
     rotateCoeff u c i = c i * ((u⁻¹ : Circle) : ℂ) ^ (m - i) := (rfl)
 
+private theorem coe_inv_mul_coe (u : Circle) : ((u⁻¹ : Circle) : ℂ) * u = 1 := by
+  rw [← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
+
+/-- The identity rotation fixes the coefficients. -/
+@[simp]
+theorem rotateCoeff_one (c : Fin m → ℂ) : rotateCoeff 1 c = c := by
+  funext i
+  simp
+
+/-- Rotation fixes the coefficients of `Wᵐ`. -/
+@[simp]
+theorem rotateCoeff_zero (u : Circle) : rotateCoeff u (0 : Fin m → ℂ) = 0 := by
+  funext i
+  simp
+
+/-- Rotating by `u * v` is rotating by `u` and then by `v`. -/
+theorem rotateCoeff_mul (u v : Circle) (c : Fin m → ℂ) :
+    rotateCoeff (u * v) c = rotateCoeff v (rotateCoeff u c) := by
+  funext i
+  simp only [rotateCoeff_apply, mul_inv, Circle.coe_mul, mul_pow]
+  ring
+
+/-- The polynomial with rotated coefficients is `P_c` with its roots scaled by `u⁻¹`. -/
+theorem monicOfCoeff_rotateCoeff (u : Circle) (c : Fin m → ℂ) :
+    monicOfCoeff (rotateCoeff u c) = (monicOfCoeff c).scaleRoots ((u⁻¹ : Circle) : ℂ) := by
+  refine Eq.trans ?_ (monicOfCoeff_coeff
+    ((Polynomial.monic_scaleRoots_iff _).2 (monic_monicOfCoeff c))
+    (by rw [Polynomial.natDegree_scaleRoots, natDegree_monicOfCoeff]))
+  congr 1
+  funext i
+  rw [Polynomial.coeff_scaleRoots, coeff_monicOfCoeff, natDegree_monicOfCoeff, rotateCoeff_apply]
+
 /-- The polynomial with rotated coefficients is the rotated polynomial: `P_(c^u)(z) =
 u⁻ᵐ P_c(u z)`. -/
 theorem eval_monicOfCoeff_rotateCoeff (u : Circle) (c : Fin m → ℂ) (z : ℂ) :
     (monicOfCoeff (rotateCoeff u c)).eval z =
       ((u⁻¹ : Circle) : ℂ) ^ m * (monicOfCoeff c).eval ((u : ℂ) * z) := by
-  have hu : ((u⁻¹ : Circle) : ℂ) * u = 1 := by
-    rw [← Circle.coe_mul, inv_mul_cancel, Circle.coe_one]
-  rw [eval_monicOfCoeff, eval_monicOfCoeff, mul_add, Finset.mul_sum]
-  congr 1
-  · rw [mul_pow, ← mul_assoc, ← mul_pow, hu, one_pow, one_mul]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hpow : ((u⁻¹ : Circle) : ℂ) ^ m =
-      ((u⁻¹ : Circle) : ℂ) ^ (m - i) * ((u⁻¹ : Circle) : ℂ) ^ (i : ℕ) := by
-    rw [← pow_add, Nat.sub_add_cancel i.2.le]
-  have hu' : (((u⁻¹ : Circle) : ℂ) * u) ^ (i : ℕ) = 1 := by rw [hu, one_pow]
-  rw [rotateCoeff_apply, hpow]
-  linear_combination (-(c i * ((u⁻¹ : Circle) : ℂ) ^ (m - i) * z ^ (i : ℕ))) * hu'
+  have hz : ((u⁻¹ : Circle) : ℂ) * ((u : ℂ) * z) = z := by
+    rw [← mul_assoc, coe_inv_mul_coe, one_mul]
+  have h := Polynomial.scaleRoots_eval_mul (monicOfCoeff c) ((u : ℂ) * z) ((u⁻¹ : Circle) : ℂ)
+  rwa [hz, natDegree_monicOfCoeff, ← monicOfCoeff_rotateCoeff] at h
 
 /-- **Rotation law of the polynomial gauge.** The gauge of the rotated polynomial
 `u⁻ᵐ P_c(u z)` is the rotated gauge: `g_(c^u)(z) = g_c(u z)`. -/
@@ -441,12 +469,11 @@ theorem polynomialGauge_rotateCoeff (u : Circle) (c : Fin m → ℂ) (z : ℂ) :
     rcases eq_or_ne z 0 with rfl | hz
     · rcases m with _ | m <;> simp [tail]
     have huz : (u : ℂ) * z ≠ 0 := mul_ne_zero (Circle.coe_ne_zero u) hz
-    have h₁ := eval_monicOfCoeff_eq_mul_tail (rotateCoeff u c) hz
-    have h₂ := eval_monicOfCoeff_eq_mul_tail c huz
-    rw [eval_monicOfCoeff_rotateCoeff, h₂, mul_pow, ← mul_assoc, ← mul_assoc, ← mul_pow,
-      ← Circle.coe_mul, inv_mul_cancel, Circle.coe_one, one_pow, one_mul] at h₁
-    have := mul_left_cancel₀ (pow_ne_zero m hz) h₁
-    linear_combination -this
+    have h := eval_monicOfCoeff_rotateCoeff u c z
+    rw [eval_monicOfCoeff_eq_mul_tail _ hz, eval_monicOfCoeff_eq_mul_tail c huz] at h
+    have hu' : (((u⁻¹ : Circle) : ℂ) * u) ^ m = 1 := by rw [coe_inv_mul_coe, one_pow]
+    refine mul_left_cancel₀ (pow_ne_zero m hz) ?_
+    linear_combination h + z ^ m * (1 + tail c ((u : ℂ) * z)) * hu'
   simp only [polynomialGauge, polynomialPhase, harg, htail]
 
 /-- **Rotation law of the gauged fields.** Rotating the plane intertwines the polynomial gauge
@@ -510,12 +537,10 @@ private theorem eventually_nonneg_of_tendsto_sectionValue {c : Fin m → ℂ}
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
     (hsec : ∀ z, sectionValue x z = ρ z * (monicOfCoeff c).eval z) :
     ∀ᶠ z in cocompact ℂ, 0 ≤ ρ z := by
-  have ht : Tendsto (fun z : ℂ ↦ ‖z‖ ^ 2) (cocompact ℂ) atTop :=
-    (tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop
   have hre : Tendsto (fun z ↦ (sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹).re) (cocompact ℂ)
       (𝓝 1) := by
     simpa only [Function.comp_def, one_re] using (continuous_re.tendsto 1).comp hframe
-  filter_upwards [ht.eventually_ge_atTop (m * ∑ i, ‖c i‖ ^ 2 + 1),
+  filter_upwards [tendsto_norm_sq_cocompact.eventually_ge_atTop (m * ∑ i, ‖c i‖ ^ 2 + 1),
     hre.eventually (lt_mem_nhds one_pos)] with z hz h1
   obtain ⟨hz0, htail⟩ := ne_zero_and_norm_tail_lt_one (c := c) (z := z)
     (by unfold cutoffArg; linarith)
@@ -548,25 +573,10 @@ theorem gaugeTransform_polynomialGauge_mem_framedFieldSpace (f : ContDiffBump (0
       ∀ c' < 1 / 2, ∀ n : ℕ,
         iteratedFDeriv ℝ n (gaugeTransform (polynomialGauge c) x - referenceField f m)
           =O[cocompact ℂ] fun z ↦ Real.exp (-(c' * ‖z‖)) := by
-  obtain ⟨huc, hu1⟩ := (mem_framedGaugeGroup _).1 (polynomialGauge_mem_framedGaugeGroup c)
-  have hy : ContDiff ℝ ∞ (gaugeTransform (polynomialGauge c) x) :=
-    contDiff_gaugeTransform (by simpa using huc) hx
-  have hsol' (z : ℂ) : equation (gaugeTransform (polynomialGauge c) x) z = 0 :=
-    (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
-      fun i ↦ ((contDiff_euclidean.1 hx i).differentiable (by simp)).differentiableAt).2 (hsol z)
-  have hlim := tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow
-    (tendsto_sectionValue_gaugeTransform hu1 hframe)
-  have hphase : ∀ᶠ z in cocompact ℂ, sectionValue (gaugeTransform (polynomialGauge c) x) z =
-      ‖sectionValue (gaugeTransform (polynomialGauge c) x) z‖ * windingPhase m z := by
-    have ht : Tendsto (fun z : ℂ ↦ ‖z‖ ^ 2) (cocompact ℂ) atTop :=
-      (tendsto_pow_atTop two_ne_zero).comp tendsto_norm_cocompact_atTop
-    filter_upwards [ht.eventually_ge_atTop (m * ∑ i, ‖c i‖ ^ 2 + 2),
-      eventually_nonneg_of_tendsto_sectionValue hframe hsec] with z hz hρ
-    exact sectionValue_gaugeTransform_polynomialGauge hρ (hsec z) hz
-  have hdec := fun c' (hc' : c' < 1 / 2) n ↦
-    isBigO_iteratedFDeriv_sub_referenceField f (contDiff_euclidean.1 hy 2)
-      (contDiff_euclidean.1 hy 3) hsol' hlim hphase hc' n
-  exact ⟨mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField hy (c := 1 / 4)
-    (by norm_num) (hdec (1 / 4) (by norm_num)), hdec⟩
+  refine gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f
+    (polynomialGauge_mem_framedGaugeGroup c) hx hsol hframe ?_
+  filter_upwards [tendsto_norm_sq_cocompact.eventually_ge_atTop (m * ∑ i, ‖c i‖ ^ 2 + 2),
+    eventually_nonneg_of_tendsto_sectionValue hframe hsec] with z hz hρ
+  exact sectionValue_gaugeTransform_polynomialGauge hρ (hsec z) hz
 
 end TauCeti.Vortex
