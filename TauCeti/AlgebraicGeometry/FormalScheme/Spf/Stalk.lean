@@ -78,16 +78,6 @@ variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [I
 
 /-! ### The map from `A_𝔭` to the colimit of the completed localisations -/
 
-/-- The basic open neighbourhood `D(1)` of `p`, the whole formal spectrum. -/
-private def basicNeighbourhoodOne : BasicNeighbourhood p :=
-  ⟨1, (p : PrimeSpectrum A).asIdeal.one_notMem⟩
-
-omit [IsTopologicalRing A] [IsAdicRing A] in
-private theorem basicNeighbourhoodOne_le (f : BasicNeighbourhood p) :
-    basicNeighbourhoodOne p ≤ f := by
-  rw [BasicNeighbourhood.le_def, basicNeighbourhoodOne, basicOpen_one]
-  exact le_top
-
 /-- The leg `A_{f} → colim_{f ∉ 𝔭} A_{f}` of the colimit, as a ring homomorphism out of the
 completed localisation `A_{f}`. -/
 private noncomputable abbrev leg (f : BasicNeighbourhood p) :
@@ -102,20 +92,13 @@ private theorem exists_leg_eq (x : (colimit (completedNeighbourhoodDiagram p) : 
 /-- The image of `A` in `colim_{f ∉ 𝔭} A_{f}`, through the completed localisation at `1`. -/
 private noncomputable def toColimit :
     A →+* (colimit (completedNeighbourhoodDiagram p) : CommRingCat) :=
-  (leg p (basicNeighbourhoodOne p)).comp (algebraMap A (CompletedAway A 1))
-
-/-- The transition maps of the diagram of completed localisations are `A`-algebra maps. -/
-private theorem completedNeighbourhoodDiagram_map_algebraMap {f g : BasicNeighbourhood p}
-    (t : f ⟶ g) (a : A) :
-    (completedNeighbourhoodDiagram p).map t (algebraMap A (CompletedAway A f.elem) a) =
-      algebraMap A (CompletedAway A g.elem) a :=
-  (completedNeighbourhoodDiagram_map_apply p t _).trans ((CompletedAway.restrict _).commutes a)
+  (leg p ⊥).comp (algebraMap A (CompletedAway A 1))
 
 /-- The image of `a ∈ A` in the colimit does not depend on the completed localisation it is read
 in. -/
 private theorem leg_algebraMap (f : BasicNeighbourhood p) (a : A) :
     leg p f (algebraMap A (CompletedAway A f.elem) a) = toColimit p a := by
-  let t := homOfLE (basicNeighbourhoodOne_le p f)
+  let t := homOfLE (bot_le : ⊥ ≤ f)
   rw [← completedNeighbourhoodDiagram_map_algebraMap p t a]
   exact colimit.w_apply (completedNeighbourhoodDiagram p) t (algebraMap A (CompletedAway A 1) a)
 
@@ -163,7 +146,7 @@ private theorem flat_fromLocalization [IsNoetherianRing A] : (fromLocalization p
 private theorem stalkResidueIso_toColimit (a : A) :
     stalkResidueIso p (residue _ (toColimit p a)) =
       algebraMap (A ⧸ (p : PrimeSpectrum A).asIdeal) _ (Ideal.Quotient.mk _ a) := by
-  rw [← leg_algebraMap p (basicNeighbourhoodOne p)]
+  rw [← leg_algebraMap p ⊥]
   exact stalkResidueIso_coeff p _ a
 
 /-- The image of `a ∈ A` lies in the maximal ideal of the colimit exactly when `a ∈ 𝔭`. -/
