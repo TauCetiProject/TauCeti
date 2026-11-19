@@ -129,9 +129,8 @@ constant-curvature tensor. -/
 theorem curvatureFourTensor_eq_smul_constantCurvature (x : M) {κ : ℝ}
     (h : ∀ w u v : TangentSpace I x, curvature x w u v = κ • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u)) :
     cov.curvatureFourTensor x = κ • FourTensor.constantCurvature (TangentSpace I x) := by
-  ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
-  rw [hm, smul_apply, curvatureFourTensor_apply, smul_eq_mul]
+  refine FourTensor.ext_vec fun u v z w ↦ ?_
+  rw [smul_apply, curvatureFourTensor_apply, smul_eq_mul]
   exact FourTensor.inner_eq_mul_constantCurvature h _ _ _ _
 
 section MetricCompatible
