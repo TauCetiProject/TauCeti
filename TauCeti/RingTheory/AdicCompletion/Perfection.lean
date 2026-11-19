@@ -36,7 +36,6 @@ is `ϖ♭`-adically complete.
 
 * `Perfection.isAdicComplete_span_singleton_of_coeff_zero_eq_zero`: `Perfection R p` is
   `(w)`-adically complete whenever `coeff R p 0 w = 0`.
-* `PreTilt.isAdicComplete_span_singleton_of_coeff_zero_eq_zero`: the same for `PreTilt A p`.
 * `PreTilt.isAdicComplete_span_singleton`,
   `PreTilt.isAdicComplete_span_singleton_of_pow_dvd`: `PreTilt A p` is `(ϖ♭)`-adically complete when
   `ϖ♭.untilt ∣ p` (or `ϖ♭.untilt ^ k ∣ p` for `k ≠ 0`) and `A` is `(ϖ♭.untilt)`-adically complete.
@@ -186,15 +185,7 @@ end Perfection
 namespace PreTilt
 
 variable {A : Type*} [CommRing A] {p : ℕ} [hp : Fact p.Prime] [hpu : Fact ¬IsUnit (p : A)]
-
-/-- **`PreTilt A p` is `(x)`-adically complete when `coeff 0 x = 0`**, that is, when `x` reduces to
-zero in `A ⧸ p`; no completeness assumption on `A` is needed. This is
-`Perfection.isAdicComplete_span_singleton_of_coeff_zero_eq_zero` for `PreTilt A p`. -/
-theorem isAdicComplete_span_singleton_of_coeff_zero_eq_zero {x : PreTilt A p}
-    (hx : coeff 0 x = 0) : IsAdicComplete (span {x}) (PreTilt A p) :=
-  Perfection.isAdicComplete_span_singleton_of_coeff_zero_eq_zero hx
-
-variable [IsAdicComplete (span {(p : A)}) A]
+  [IsAdicComplete (span {(p : A)}) A]
 
 /-- **`PreTilt A p` is `(ϖ)`-adically complete.** If `ϖ : PreTilt A p` has `ϖ.untilt ∣ p` and
 `A` is `(ϖ.untilt)`-adically complete, then `PreTilt A p` is `(ϖ)`-adically complete and

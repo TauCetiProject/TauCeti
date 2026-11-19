@@ -105,7 +105,8 @@ theorem coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta {ξ : WittVector p (Pre
     (hξ : ξ ∈ RingHom.ker (fontaineTheta A p)) : ξ.coeff 0 ∈ Ring.jacobson (PreTilt A p) := by
   have h : PreTilt.coeff 0 (ξ.coeff 0) = 0 := by
     rw [← mk_fontaineTheta, RingHom.mem_ker.mp hξ, map_zero]
-  have := PreTilt.isAdicComplete_span_singleton_of_coeff_zero_eq_zero h
+  have : IsAdicComplete (span {ξ.coeff 0}) (PreTilt A p) :=
+    Perfection.isAdicComplete_span_singleton_of_coeff_zero_eq_zero h
   exact IsAdicComplete.le_jacobson _ (mem_span_singleton_self _)
 
 end Kernel
