@@ -54,7 +54,8 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
   `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
-  coordinates.
+  coordinates, and the `L²` pairing `⟪∇u, ∇v⟫` of two Sobolev functions is invariant under an
+  affine isometric change of coordinates (`TauCeti.W1p.inner_gradient_compAffineIsometryEquivL`).
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_mul`: a weak
   solution of `-Δu = f` stays a weak solution, of `-Δ(u ∘ e) = f ∘ e`, after a linear isometric
   change of coordinates `e`.
@@ -408,6 +409,28 @@ theorem W1p.setIntegral_inner_gradient_compAffineIsometryEquivL (e : F ≃ₗᵢ
     _ = ∫ x in V, ⟪W1p.gradient u x, ∇ (ψ : F' → ℝ) x⟫_ℝ :=
         e.measurePreserving.setIntegral_preimage_emb e.toHomeomorph.measurableEmbedding
           (fun x => ⟪W1p.gradient u x, ∇ (ψ : F' → ℝ) x⟫_ℝ) _
+
+/-- **The Dirichlet pairing of two Sobolev functions under an affine isometry.** For an affine
+isometry equivalence `e` and `U = e⁻¹(V)`, the `L²(U)` pairing of the gradients of `u ∘ e` and
+`v ∘ e` is the `L²(V)` pairing of the gradients of `u` and `v`. -/
+theorem W1p.inner_gradient_compAffineIsometryEquivL (e : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = e ⁻¹' V) (u v : W1p volume V 2) :
+    ⟪W1p.gradient (W1p.compAffineIsometryEquivL e hUV u),
+      W1p.gradient (W1p.compAffineIsometryEquivL e hUV v)⟫_ℝ =
+      ⟪W1p.gradient u, W1p.gradient v⟫_ℝ := by
+  rw [L2.inner_def, L2.inner_def]
+  calc ∫ y in U, ⟪W1p.gradient (W1p.compAffineIsometryEquivL e hUV u) y,
+        W1p.gradient (W1p.compAffineIsometryEquivL e hUV v) y⟫_ℝ
+      = ∫ y in e ⁻¹' V, ⟪W1p.gradient u (e y), W1p.gradient v (e y)⟫_ℝ := by
+        rw [← hUV]
+        refine integral_congr_ae ?_
+        filter_upwards [W1p.gradient_compAffineIsometryEquivL_ae e hUV u,
+          W1p.gradient_compAffineIsometryEquivL_ae e hUV v] with y hu hv
+        rw [hu, hv]
+        exact e.linearIsometryEquiv.symm.inner_map_map _ _
+    _ = ∫ x in V, ⟪W1p.gradient u x, W1p.gradient v x⟫_ℝ :=
+        e.measurePreserving.setIntegral_preimage_emb e.toHomeomorph.measurableEmbedding
+          (fun x => ⟪W1p.gradient u x, W1p.gradient v x⟫_ℝ) _
 
 open scoped Distributions Gradient in
 /-- **Poisson's equation under a linear isometry.** For a linear isometry equivalence `e` and

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.GradientHolder
+public import TauCeti.Analysis.PDE.Regularity.GradientHolder.Basic
 public import TauCeti.Analysis.PDE.Regularity.HigherOrder
 
 /-!

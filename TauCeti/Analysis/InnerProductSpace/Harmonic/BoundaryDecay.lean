@@ -75,6 +75,9 @@ estimates on half-balls.
 * `TauCeti.WeaklyHarmonicOn.setIntegral_ball_inter_normalHalfSpace_norm_sq_le` and
   `TauCeti.WeaklyHarmonicOn.setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le`: the two decay
   estimates for the weak gradient of a weakly harmonic function vanishing on the flat boundary.
+* `TauCeti.monotoneOn_setIntegral_ball_inter_normalHalfSpace_norm_sub_sq`: for any square
+  integrable field, the square distance to the best normal constant on `B_s⁺` is nondecreasing
+  in `s`.
 
 ## References
 
@@ -415,5 +418,36 @@ theorem WeaklyHarmonicOn.setIntegral_ball_inter_normalHalfSpace_norm_sub_sq_le
     (hint.congr_fun_ae (hKG.mono fun x hx => by simp only [hx])) ht htr
 
 end WeaklyHarmonic
+
+/-! ### Monotonicity of the excess -/
+
+/-- **The excess over normal constants is nondecreasing in the radius.** For a field `f` square
+integrable on `B_R⁺ = ball x₀ R ∩ H`, the square distance
+`∫_{B_s⁺} ‖f - ((f_s).fst, 0)‖²` from `f` to its best constant normal to the hyperplane, where
+`f_s` is the average of `f` over `B_s⁺`, is nondecreasing in `s ∈ (0, R]`. -/
+theorem monotoneOn_setIntegral_ball_inter_normalHalfSpace_norm_sub_sq
+    {f : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {x₀ : WithLp 2 (ℝ × E)} {R : ℝ}
+    (hf : MemLp f 2 (volume.restrict (ball x₀ R ∩ (normalHalfSpace (E := E) a : Set _)))) :
+    MonotoneOn (fun s => ∫ x in ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _),
+      ‖f x - WithLp.toLp 2
+        ((⨍ y in ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _), f y).fst, 0)‖ ^ 2)
+      (Ioc 0 R) := by
+  intro s _ s' hs' hss'
+  have hsub : ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _) ⊆
+      ball x₀ s' ∩ (normalHalfSpace (E := E) a : Set _) :=
+    inter_subset_inter_left _ (ball_subset_ball hss')
+  have hsubR : ball x₀ s' ∩ (normalHalfSpace (E := E) a : Set _) ⊆
+      ball x₀ R ∩ (normalHalfSpace (E := E) a : Set _) :=
+    inter_subset_inter_left _ (ball_subset_ball hs'.2)
+  have hfin' : volume (ball x₀ s' ∩ (normalHalfSpace (E := E) a : Set _)) ≠ ⊤ :=
+    ((measure_mono inter_subset_left).trans_lt measure_ball_lt_top).ne
+  have hfin : volume (ball x₀ s ∩ (normalHalfSpace (E := E) a : Set _)) ≠ ⊤ :=
+    ((measure_mono hsub).trans_lt hfin'.lt_top).ne
+  -- The best normal constant on `B_s⁺` beats the one on `B_{s'}⁺`, and `B_s⁺ ⊆ B_{s'}⁺`.
+  refine (setIntegral_norm_sub_toLp_fst_setAverage_sq_le hfin
+    (hf.mono_measure (Measure.restrict_mono (hsub.trans hsubR) le_rfl))
+    (⨍ y in ball x₀ s' ∩ (normalHalfSpace (E := E) a : Set _), f y).fst).trans ?_
+  exact setIntegral_mono_set (hf.integrableOn_norm_sub_sq_of_subset hsubR hfin' _)
+    (ae_of_all _ fun _ => sq_nonneg _) (ae_of_all _ hsub)
 
 end TauCeti
