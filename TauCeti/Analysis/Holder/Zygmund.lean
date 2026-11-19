@@ -1039,18 +1039,13 @@ private theorem toHolderSpace_mem_littleHolder_of_littlewoodPaleyBlock_eq_zero (
     toHolderSpace F φ hα0 hα1 v ∈ HolderSpace.littleHolder α E F := by
   obtain ⟨_, -, hband⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
   obtain ⟨w, hw, -⟩ := hband (((1 : ℕ) : ℝ) + α) M r hr
-  obtain ⟨C, hC⟩ :=
-    exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith (F := F) φ 1 hα0 hα1
-  obtain ⟨g, hg, hgC, hgD, -⟩ := hC w
-  have hgL : LipschitzWith (C * ‖w‖₊) g := by
-    refine lipschitzWith_of_nnNorm_fderiv_le (hgC.differentiable one_ne_zero) fun x ↦ ?_
-    have h := hgD 1 le_rfl x
-    rw [norm_iteratedFDeriv_one] at h
-    exact_mod_cast h
-  have hvg : (toHolderSpace F φ hα0 hα1 v).toBoundedContinuousFunction = g :=
-    repr_eq φ (toLpTop_toHolderSpace φ hα0 hα1) (by rw [hg, hw, hvr])
-  rw [HolderSpace.mem_littleHolder_iff, ← HolderSpace.coe_toBoundedContinuousFunction, hvg]
-  exact hgL.memLittleHolder hα1
+  set g := toCkHolderSpace F φ 1 hα0 hα1 w
+  have hvg : (toHolderSpace F φ hα0 hα1 v).toBoundedContinuousFunction =
+      g.toBoundedContinuousFunction :=
+    repr_eq φ (toLpTop_toHolderSpace φ hα0 hα1) (by rw [toLpTop_toCkHolderSpace, hw, hvr])
+  rw [HolderSpace.mem_littleHolder_iff, ← HolderSpace.coe_toBoundedContinuousFunction, hvg,
+    CkHolderSpace.coe_toBoundedContinuousFunction]
+  exact g.lipschitzWith.memLittleHolder hα1
 
 /-- If the weighted blocks of `u ∈ 𝒞^α` vanish at high frequency, then its Hölder representative
 is little Hölder: it is a limit in `C^{0,α}` of the representatives of the low-pass truncations
