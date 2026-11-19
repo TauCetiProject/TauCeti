@@ -30,6 +30,7 @@ explicitly. This follows the convention already used for `Comodule.trivial` and
 ## Main definitions
 
 * `TauCeti.Comodule.cofree`: the cofree right `C`-comodule structure on `M ⊗[R] C`.
+* `TauCeti.Comodule.cofreeCounit`: the counit projection `M ⊗[R] C → M`, `m ⊗ c ↦ ε(c) m`.
 * `TauCeti.Comodule.Hom.cofreeMap`: the functoriality of the cofree comodule in `M`, sending an
   `R`-linear map `f : M → N` to the comodule morphism `f ⊗ id`.
 * `TauCeti.Comodule.Hom.cofreeUnit`: the coaction `P → P ⊗[R] C` of a comodule `P`, viewed as a
@@ -89,6 +90,24 @@ theorem cofreeCoact_def :
     cofreeCoact R C M = (TensorProduct.assoc R M C C).symm.toLinearMap ∘ₗ
       Coalgebra.comul.lTensor M :=
   rfl
+
+variable (R C M) in
+/-- The counit projection `M ⊗[R] C → M`, `m ⊗ c ↦ ε(c) m`, applying the counit of `C` to the
+right factor. -/
+noncomputable def cofreeCounit : M ⊗[R] C →ₗ[R] M :=
+  (TensorProduct.rid R M).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := C)).lTensor M
+
+/-- The counit projection applies the counit to the right factor and then the right unitor. -/
+theorem cofreeCounit_def :
+    cofreeCounit R C M =
+      (TensorProduct.rid R M).toLinearMap ∘ₗ (Coalgebra.counit (R := R) (A := C)).lTensor M :=
+  rfl
+
+/-- The counit projection on a simple tensor. -/
+@[simp]
+theorem cofreeCounit_tmul (m : M) (c : C) :
+    cofreeCounit R C M (m ⊗ₜ c) = Coalgebra.counit (R := R) c • m := by
+  simp [cofreeCounit_def]
 
 /-- Applying the counit to the `C` factor commutes with `h ⊗ id`, for a linear map `h : M → N`. -/
 theorem rid_comp_lTensor_counit_comp_rTensor (h : M →ₗ[R] N) :

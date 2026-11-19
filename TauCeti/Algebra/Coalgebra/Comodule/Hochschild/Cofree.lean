@@ -69,13 +69,12 @@ the counit to the factor `H` of `N ⊗ H`, sending `n ⊗ h₀ ⊗ h₁ ⊗ ⋯ 
 `ε(h₀) n ⊗ h₁ ⊗ ⋯ ⊗ hₙ₊₁`. -/
 noncomputable def hochschildExtraCodegeneracy :
     ∀ n, hochschildCochains R H (N ⊗[R] H) (n + 1) →ₗ[R] hochschildCochains R H (N ⊗[R] H) n
-  | 0 => ((TensorProduct.rid R N).toLinearMap ∘ₗ Coalgebra.counit.lTensor N).rTensor H
+  | 0 => (cofreeCounit R H N).rTensor H
   | n + 1 => (hochschildExtraCodegeneracy n).rTensor H
 
 /-- In degree zero, the extra codegeneracy applies the counit to the factor `H` of `N ⊗ H`. -/
 theorem hochschildExtraCodegeneracy_zero :
-    hochschildExtraCodegeneracy R H N 0 =
-      ((TensorProduct.rid R N).toLinearMap ∘ₗ Coalgebra.counit.lTensor N).rTensor H :=
+    hochschildExtraCodegeneracy R H N 0 = (cofreeCounit R H N).rTensor H :=
   (rfl)
 
 /-- In degree `n + 1`, the extra codegeneracy is the one of degree `n` tensored with `H`. -/
@@ -106,6 +105,12 @@ variable [Semiring H] [Bialgebra R H]
 -- The Hochschild complex in this file is that of the cofree comodule `N ⊗ H`.
 attribute [local instance] cofree
 
+/-- The counit projection `N ⊗ H → N` is a left inverse of `x ↦ x ⊗ 1`. -/
+private theorem cofreeCounit_comp_mk_flip_one :
+    cofreeCounit R H N ∘ₗ (TensorProduct.mk R N H).flip 1 = LinearMap.id := by
+  ext x
+  simp
+
 /-- The extra codegeneracy is a left inverse of the coface applying the coaction. -/
 theorem hochschildExtraCodegeneracy_comp_hochschildCoface_zero (n : ℕ) :
     hochschildExtraCodegeneracy R H N n ∘ₗ hochschildCoface R H (N ⊗[R] H) n 0 =
@@ -113,12 +118,14 @@ theorem hochschildExtraCodegeneracy_comp_hochschildCoface_zero (n : ℕ) :
   induction n with
   | zero =>
     -- The coaction of the cofree comodule is `cofreeCoact`, and the identity is its counit law.
-    rw [← Fin.castSucc_zero, hochschildCoface_zero_castSucc]
+    rw [← Fin.castSucc_zero, hochschildCoface_zero_castSucc, hochschildExtraCodegeneracy_zero,
+      cofreeCounit_def]
     exact rTensor_rid_comp_lTensor_counit_comp_cofreeCoact
   | succ n ih =>
-    rw [← Fin.castSucc_zero, ← Fin.castSucc_zero, hochschildCoface_succ_castSucc_castSucc,
-      Fin.castSucc_zero, hochschildExtraCodegeneracy_succ, ← LinearMap.rTensor_comp, ih,
-      LinearMap.rTensor_id]
+    -- The coface `0` acts on all but the last factor `H`.
+    have h := hochschildCoface_succ_castSucc_castSucc R H (N ⊗[R] H) n 0
+    simp only [Fin.castSucc_zero] at h
+    simp [h, hochschildExtraCodegeneracy_succ, ← LinearMap.rTensor_comp, ih]
 
 /-- The extra codegeneracy commutes with the last coface, which appends the unit. -/
 private theorem hochschildExtraCodegeneracy_comp_hochschildCoface_last (n : ℕ) :
@@ -153,36 +160,29 @@ their index down by one. -/
 theorem hochschildExtraCodegeneracy_comp_hochschildCoface_succ (n : ℕ) (i : Fin (n + 2)) :
     hochschildExtraCodegeneracy R H N (n + 1) ∘ₗ hochschildCoface R H (N ⊗[R] H) (n + 1) i.succ =
       hochschildCoface R H (N ⊗[R] H) n i ∘ₗ hochschildExtraCodegeneracy R H N n := by
-  induction n with
-  | zero =>
-    induction i using Fin.lastCases with
-    | last => exact hochschildExtraCodegeneracy_comp_hochschildCoface_last R H N 0
-    | cast j =>
-      induction j using Fin.lastCases with
-      | last =>
-        rw [Fin.succ_castSucc, Fin.succ_last]
-        exact hochschildExtraCodegeneracy_comp_hochschildCoface_castSucc_last R H N 0
-      | cast k => exact k.elim0
-  | succ n ih =>
-    induction i using Fin.lastCases with
-    | last => exact hochschildExtraCodegeneracy_comp_hochschildCoface_last R H N (n + 1)
-    | cast j =>
-      induction j using Fin.lastCases with
-      | last =>
-        rw [Fin.succ_castSucc, Fin.succ_last]
-        exact hochschildExtraCodegeneracy_comp_hochschildCoface_castSucc_last R H N (n + 1)
-      | cast k =>
-        rw [Fin.succ_castSucc, Fin.succ_castSucc, hochschildCoface_succ_castSucc_castSucc,
-          hochschildExtraCodegeneracy_succ R H N (n + 1), ← LinearMap.rTensor_comp,
-          ← Fin.succ_castSucc, ih, hochschildCoface_succ_castSucc_castSucc,
-          hochschildExtraCodegeneracy_succ R H N n, LinearMap.rTensor_comp]
+  induction i using Fin.lastCases with
+  | last => exact hochschildExtraCodegeneracy_comp_hochschildCoface_last R H N n
+  | cast j =>
+    induction j using Fin.lastCases with
+    | last =>
+      rw [Fin.succ_castSucc, Fin.succ_last]
+      exact hochschildExtraCodegeneracy_comp_hochschildCoface_castSucc_last R H N n
+    | cast k =>
+      -- Both sides act on all but the last factor `H`, where this is the statement one degree
+      -- lower.
+      cases n with
+      | zero => exact k.elim0
+      | succ n =>
+        simpa only [Fin.succ_castSucc, hochschildCoface_succ_castSucc_castSucc,
+          hochschildExtraCodegeneracy_succ, LinearMap.rTensor_comp] using
+          congrArg (LinearMap.rTensor H)
+            (hochschildExtraCodegeneracy_comp_hochschildCoface_succ n k.castSucc)
 
 /-- In degree zero, the extra codegeneracy sends the last coface `x ↦ x ⊗ 1` to the map
 `x ↦ (id ⊗ ε) x ⊗ 1`. -/
 private theorem hochschildExtraCodegeneracy_zero_comp_hochschildCoface_last :
     hochschildExtraCodegeneracy R H N 0 ∘ₗ hochschildCoface R H (N ⊗[R] H) 0 (Fin.last 1) =
-      (TensorProduct.mk R N H).flip 1 ∘ₗ
-        (TensorProduct.rid R N).toLinearMap ∘ₗ Coalgebra.counit.lTensor N := by
+      (TensorProduct.mk R N H).flip 1 ∘ₗ cofreeCounit R H N := by
   rw [hochschildCoface_last, hochschildExtraCodegeneracy_zero]
   refine LinearMap.ext fun x ↦ ?_
   simp
@@ -191,15 +191,13 @@ private theorem hochschildExtraCodegeneracy_zero_comp_hochschildCoface_last :
 to the projection `x ↦ (id ⊗ ε) x ⊗ 1` onto the invariants. -/
 theorem hochschildExtraCodegeneracy_comp_hochschildDifferential_zero :
     hochschildExtraCodegeneracy R H N 0 ∘ₗ hochschildDifferential R H (N ⊗[R] H) 0 =
-      LinearMap.id - (TensorProduct.mk R N H).flip 1 ∘ₗ
-        (TensorProduct.rid R N).toLinearMap ∘ₗ Coalgebra.counit.lTensor N := by
+      LinearMap.id - (TensorProduct.mk R N H).flip 1 ∘ₗ cofreeCounit R H N := by
   refine LinearMap.ext fun x ↦ ?_
   have h₀ := LinearMap.congr_fun
     (hochschildExtraCodegeneracy_comp_hochschildCoface_zero R H N 0) x
   -- The last coface out of degree zero is the coface `1 = Fin.last 1`.
   have h₁ : hochschildExtraCodegeneracy R H N 0 (hochschildCoface R H (N ⊗[R] H) 0 1 x) =
-      ((TensorProduct.mk R N H).flip 1 ∘ₗ
-        (TensorProduct.rid R N).toLinearMap ∘ₗ Coalgebra.counit.lTensor N) x :=
+      ((TensorProduct.mk R N H).flip 1 ∘ₗ cofreeCounit R H N) x :=
     LinearMap.congr_fun (hochschildExtraCodegeneracy_zero_comp_hochschildCoface_last R H N) x
   simp only [LinearMap.comp_apply, LinearMap.id_apply] at h₀
   rw [LinearMap.comp_apply, hochschildDifferential_apply, Fin.sum_univ_two, map_add, map_zsmul,
@@ -230,15 +228,13 @@ theorem hochschildExtraCodegeneracy_comp_hochschildDifferential_succ (n : ℕ) :
 complex of `N ⊗ H`. -/
 theorem hochschildDifferential_zero_comp_mk_flip_one :
     hochschildDifferential R H (N ⊗[R] H) 0 ∘ₗ (TensorProduct.mk R N H).flip 1 = 0 := by
-  refine LinearMap.ext fun x ↦ ?_
-  rw [LinearMap.comp_apply, hochschildDifferential_zero_apply, LinearMap.flip_apply,
-    TensorProduct.mk_apply, cofree_coact_tmul, Bialgebra.comul_one, Algebra.TensorProduct.one_def,
-    TensorProduct.assoc_symm_tmul, sub_self, LinearMap.zero_apply]
+  ext x
+  rw [LinearMap.comp_apply, hochschildDifferential_zero_apply]
+  simp [Algebra.TensorProduct.one_def]
 
 /-- The homotopy condition in degree zero, on cochains. -/
 private theorem homotopy_comm_zero_apply (x : hochschildCochains R H (N ⊗[R] H) 0) :
-    ((TensorProduct.mk R N H).flip 1 ∘ₗ
-        (TensorProduct.rid R N).toLinearMap ∘ₗ Coalgebra.counit.lTensor N) x =
+    ((TensorProduct.mk R N H).flip 1 ∘ₗ cofreeCounit R H N) x =
       (-hochschildExtraCodegeneracy R H N 0) (hochschildDifferential R H (N ⊗[R] H) 0 x) + x := by
   have h := LinearMap.congr_fun
     (hochschildExtraCodegeneracy_comp_hochschildDifferential_zero R H N) x
@@ -267,7 +263,7 @@ noncomputable def hochschildComplexCofreeHomotopyEquiv :
       ((CochainComplex.single₀ (ModuleCat.{max v w} R)).obj (ModuleCat.of R N)) where
   hom := (CochainComplex.toSingle₀Equiv _ _).symm
     (ConcreteCategory.ofHom (C := ModuleCat R) (X := (hochschildComplex R H (N ⊗[R] H)).X 0)
-      ((TensorProduct.rid R N).toLinearMap ∘ₗ Coalgebra.counit.lTensor N))
+      (cofreeCounit R H N))
   inv := (CochainComplex.fromSingle₀Equiv _ _).symm
     ⟨ConcreteCategory.ofHom (C := ModuleCat R) (Y := (hochschildComplex R H (N ⊗[R] H)).X 0)
       ((TensorProduct.mk R N H).flip 1), by
@@ -304,18 +300,15 @@ noncomputable def hochschildComplexCofreeHomotopyEquiv :
     simp only [HomologicalComplex.comp_f, HomologicalComplex.id_f,
       CochainComplex.fromSingle₀Equiv_symm_apply_f_zero,
       CochainComplex.toSingle₀Equiv_symm_apply_f_zero]
-    refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
-    -- The object of degree zero of the single complex is `N` only up to unfolding
-    -- `CochainComplex.single₀ObjXSelf`, so the goal is closed by its form on `N`.
-    exact (by simp : ∀ y : N, ((TensorProduct.rid R N).toLinearMap ∘ₗ
-      Coalgebra.counit.lTensor N) ((TensorProduct.mk R N H).flip 1 y) = y) x)
+    -- In degree zero, this is the counit law of `x ↦ x ⊗ 1`.
+    exact ModuleCat.hom_ext (cofreeCounit_comp_mk_flip_one R H N))
 
 /-- In degree zero, the map from the Hochschild complex of `N ⊗ H` to `N` applies the counit. -/
 @[simp]
 theorem hochschildComplexCofreeHomotopyEquiv_hom_f_zero :
     (hochschildComplexCofreeHomotopyEquiv R H N).hom.f 0 =
       ConcreteCategory.ofHom (C := ModuleCat R) (X := (hochschildComplex R H (N ⊗[R] H)).X 0)
-        ((TensorProduct.rid R N).toLinearMap ∘ₗ Coalgebra.counit.lTensor N) :=
+        (cofreeCounit R H N) :=
   CochainComplex.toSingle₀Equiv_symm_apply_f_zero _
 
 /-- In degree zero, the map from `N` to the Hochschild complex of `N ⊗ H` is `x ↦ x ⊗ 1`. -/
@@ -348,16 +341,11 @@ theorem homologyπ_hochschildComplexCofreeHomologyZeroIso_hom :
         (hochschildComplexCofreeHomologyZeroIso R H N).hom =
       (hochschildComplex R H (N ⊗[R] H)).iCycles 0 ≫
         ConcreteCategory.ofHom (C := ModuleCat R) (X := (hochschildComplex R H (N ⊗[R] H)).X 0)
-          (Y := ModuleCat.of R N)
-          ((TensorProduct.rid R N).toLinearMap ∘ₗ Coalgebra.counit.lTensor N) := by
+          (Y := ModuleCat.of R N) (cofreeCounit R H N) := by
   simp only [hochschildComplexCofreeHomologyZeroIso, HomotopyEquiv.toHomologyIso,
     Iso.trans_hom, HomologicalComplex.homologyπ_naturality_assoc,
     HomologicalComplex.homologyπ_singleObjHomologySelfIso_hom,
     HomologicalComplex.singleObjCyclesSelfIso_hom, HomologicalComplex.cyclesMap_i_assoc]
-  -- The remaining step is `hochschildComplexCofreeHomotopyEquiv_hom_f_zero` followed by
-  -- `singleObjXSelf`, which is the identity of `N` (`CochainComplex.single₀ObjXSelf`). Neither can
-  -- be rewritten here, because the object of degree zero of the single complex is `N` only up to
-  -- that identification, so the goal is closed by `rfl`.
-  rfl
+  simp [hochschildComplexCofreeHomotopyEquiv_hom_f_zero, CochainComplex.single₀ObjXSelf]
 
 end TauCeti.Comodule
