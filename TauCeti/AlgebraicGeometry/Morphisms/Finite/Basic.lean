@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.LocalRing.Module
-import Mathlib.Tactic.Observe
 import TauCeti.RingTheory.QuasiFinite.Basic
 
 /-!
@@ -130,11 +129,12 @@ instance locallyOfFinitePresentation_respectsIso :
     (fun _ _ f (_ : IsIso f) ↦ inferInstance)
 
 /-- Finiteness of a morphism of schemes is local on the target. Instance search does not find
-this from Mathlib's affine description of `IsFinite`, so it is recorded here. -/
-instance isZariskiLocalAtTarget_isFinite : IsZariskiLocalAtTarget @IsFinite.{u} := by
-  observe h : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  exact @HasAffineProperty.instIsZariskiLocalAtTarget _ _ h
+this from Mathlib's affine description of `IsFinite`, so it is recorded here, using that finite
+means integral and locally of finite type (`AlgebraicGeometry.IsFinite.eq_inf`). -/
+instance isZariskiLocalAtTarget_isFinite : IsZariskiLocalAtTarget @IsFinite.{u} :=
+  IsFinite.eq_inf ▸ @MorphismProperty.IsLocalAtTarget.inf _ _ _ _ _
+    (@HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty)
+    (HasRingHomProperty.instIsZariskiLocalAtTarget @LocallyOfFiniteType)
 
 end TauCeti
 
