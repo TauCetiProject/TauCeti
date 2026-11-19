@@ -127,8 +127,9 @@ private lemma d_cupCochainHom (p q n : ℕ) (h : p + q = n) (φ : (A.linearYoned
           (((A.linearYonedaObj k M).d p (p + 1)).hom φ) ψ +
         (-1 : ℤ) ^ p • cupCochainHom k D μ p (q + 1) (n + 1)
           ((Nat.add_succ p q).trans (congrArg Nat.succ h)) φ
-          (((B.linearYonedaObj k N).d q (q + 1)).hom ψ) :=
-  d_comp_cupCochain D μ p q n h φ ψ
+          (((B.linearYonedaObj k N).d q (q + 1)).hom ψ) := by
+  simp only [cupCochainHom, linearYonedaObj_d_apply]
+  exact d_comp_cupCochain D μ p q n h φ ψ
 
 variable (k) in
 /-- **The cup product of cocycles**: the cup product `TauCeti.ChainComplex.cupCochain` of the
@@ -184,7 +185,11 @@ lemma cup_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
       homologyMap (K := E.linearYonedaObj k P) (L := E'.linearYonedaObj k P)
         ((linearYonedaFunctor k P).map e.op) n (cup k D μ p q n h α β) :=
   (TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂ _ _ _ _ _ _ _
-    (fun p q n h φ ψ ↦ (cupCochain_naturality D μ D' e f g hD p q n h φ ψ).symm) p q n h α β).symm
+    (fun p q n h φ ψ ↦ by
+      simp only [cupCochainHom]
+      rw [linearYonedaFunctor_map_f_hom_apply, linearYonedaFunctor_map_f_hom_apply,
+        linearYonedaFunctor_map_f_hom_apply]
+      exact (cupCochain_naturality D μ D' e f g hD p q n h φ ψ).symm) p q n h α β).symm
 
 /-- Precomposing a diagonal with a chain map pulls back its cup product on cohomology. -/
 lemma cup_precomp {E' : ChainComplex C ℕ} (e : E' ⟶ E)
