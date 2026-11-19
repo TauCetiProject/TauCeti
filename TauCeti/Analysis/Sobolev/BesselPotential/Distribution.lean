@@ -21,6 +21,9 @@ continuous linear map, so that the spaces `H^{s,p}` for different `s` can be com
 * `BesselPotentialSpace.toDistrCLM_injective`: it is injective.
 * `BesselPotentialSpace.norm_copy`, `BesselPotentialSpace.memSobolev_toDistr_of_eq`: moving an
   element along an equality of orders `s = s'`.
+* `BesselPotentialSpace.enorm_toLp_eq`, `BesselPotentialSpace.toLp_toLpₗᵢ_symm_apply`,
+  `BesselPotentialSpace.integrable_toLp_iff`: the isometry `u ↦ J^s u` of `H^{s,p}` onto `Lᵖ`
+  transfers extended norms and Bochner integrability of `H^{s,p}`-valued functions.
 -/
 
 public section
@@ -57,6 +60,26 @@ theorem toDistrCLM_injective {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] :
 theorem norm_copy {s s' : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, p}(E, F)) (hs : s = s') :
     ‖u.copy s' hs‖ = ‖u‖ := by
   rw [← norm_toLp_eq, toLp_copy _ hs, norm_toLp_eq]
+
+/-- The extended norm of an element `u` of `H^{s,p}` is that of its `Lᵖ` function `J^s u`. -/
+@[simp]
+theorem enorm_toLp_eq {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, p}(E, F)) :
+    ‖u.toLp‖ₑ = ‖u‖ₑ := by
+  rw [← ofReal_norm, ← ofReal_norm, norm_toLp_eq]
+
+/-- The `Lᵖ` function of the element of `H^{s,p}` with `Lᵖ` function `f` is `f`. -/
+@[simp]
+theorem toLp_toLpₗᵢ_symm_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (f : Lp F p (volume : Measure E)) : ((toLpₗᵢ E F s p).symm f).toLp = f := by
+  rw [← toLpₗᵢ_apply]
+  exact (toLpₗᵢ E F s p).apply_symm_apply f
+
+/-- A function with values in `H^{s,p}` is Bochner integrable exactly when the `Lᵖ` functions
+of its values are. -/
+theorem integrable_toLp_iff {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {G : α → H^{s, p}(E, F)} :
+    Integrable (fun a ↦ (G a).toLp) μ ↔ Integrable G μ := by
+  simpa only [toLpₗᵢ_apply] using (toLpₗᵢ E F s p).integrable_comp_iff
 
 /-- The tempered distribution of an element of `H^{t,p}` lies in `H^{s,p}` when `t = s`. -/
 theorem memSobolev_toDistr_of_eq {s t : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{t, p}(E, F))
