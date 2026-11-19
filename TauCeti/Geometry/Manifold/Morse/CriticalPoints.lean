@@ -121,7 +121,7 @@ polynomial in the Morse inequalities.
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
 * `TauCeti.isMorse_of_subsingleton` and `TauCeti.isMorse_const_iff`: every function is Morse in
-  dimension zero, and a constant function only there.
+  dimension zero and, on a nonempty manifold, a constant function only there.
 * `TauCeti.IsMorse.criticalPointsIndexNegEquiv`: the critical points of `-f` of index `j` are those
   of `f` of index `dim M - j`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
