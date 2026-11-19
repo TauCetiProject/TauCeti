@@ -262,10 +262,9 @@ to a fixed point of `A`. -/
 theorem connecting_eq_one_iff {c : FixedPoints.subgroup G A''} :
     hE.connecting c = 1 ↔ ∃ a ∈ FixedPoints.subgroup G A, p a = c := by
   obtain ⟨b, hb⟩ := hE.surjective c
-  have hmem : ∀ g : G, b⁻¹ * g • b ∈ Set.range i := fun g ↦ (hE.mulExact _).mp <| by
-    simp [hE.map_smul_right, hb, c.2 g]
-  set f := (Cocycle.mk (fun g ↦ b⁻¹ * g • b) (by fun_prop) fun g g' ↦ by
-    simp [mul_smul, mul_assoc]).liftOfMemRange i hE.isEmbedding hE.compatible_left hmem
+  have hmem : ∀ g : G, (1 : Cocycle G A).twist b g ∈ Set.range i := fun g ↦
+    (hE.mulExact _).mp <| by simp [hE.map_smul_right, hb, c.2 g]
+  set f := ((1 : Cocycle G A).twist b).liftOfMemRange i hE.isEmbedding hE.compatible_left hmem
   have hf : ∀ g, i (f g) = b⁻¹ * g • b := fun g ↦ by simp [f]
   rw [hE.connecting_eq_mk hb hf, mk_eq_one_iff]
   constructor
