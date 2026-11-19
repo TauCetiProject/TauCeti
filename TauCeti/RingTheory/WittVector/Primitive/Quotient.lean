@@ -42,6 +42,8 @@ zeroth Witt coordinate is divisible by `ϖ`; so these results apply to every pri
 * `WittVector.IsDistinguished.exists_mk_teichmuller_dvd_natCast_pow`: `[ϖ]` divides a power of
   `p` in `A⁺`.
 * `WittVector.IsDistinguished.isAdicComplete_quotient_natCast`: `A⁺` is `p`-adically complete.
+* `WittVector.IsDistinguished.exists_mk_teichmuller_sub_mem`: `a ↦ [a]` is uniformly continuous
+  from the `ϖ`-adic topology on `S` to the `[ϖ]`-adic topology on `A⁺`.
 * `WittVector.IsDistinguished.quotientTeichmullerEquiv`: `A⁺ ⧸ ([ϖ]) ≃+* S ⧸ (ϖ)`.
 * `WittVector.IsDistinguished.comap_map_algebraMap`: `ξ 𝕎 S [1/[ϖ]] ∩ 𝕎 S = ξ 𝕎 S`.
 
@@ -141,6 +143,29 @@ theorem isAdicComplete_quotient_natCast (hξ : ξ.IsDistinguished)
     exact .span_singleton_of_dvd hdvd
   exact .of_pow_le_of_pow_le (k := m + 1) le_rfl
     ((pow_one _).trans_le (Ideal.pow_le_self m.succ_ne_zero))
+
+/-- **The Teichmüller map `S → 𝕎 S ⧸ (ξ)` is uniformly continuous** from the `ϖ`-adic to the
+`[ϖ]`-adic topology, for `ξ` distinguished with zeroth Witt coordinate in the radical of `(ϖ)`:
+`[a] ≡ [b]` modulo `[ϖ]ⁿ` as soon as `a ≡ b` modulo a suitable power of `ϖ`. Indeed `[a] - [b]`
+lies in `(p, [ϖ]) ^ (k + 1)` when `ϖ ^ p ^ k` divides `a - b`, and modulo `ξ` a power of
+`(p, [ϖ])` lies in `([ϖ])`. -/
+theorem exists_mk_teichmuller_sub_mem (hξ : ξ.IsDistinguished)
+    (hξ₀ : ξ.coeff 0 ∈ (span {ϖ}).radical) (n : ℕ) :
+    ∃ N : ℕ, ∀ a b : S, ϖ ^ N ∣ a - b →
+      Ideal.Quotient.mk (span {ξ}) (teichmuller p a - teichmuller p b) ∈
+        span {Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ)} ^ n := by
+  obtain ⟨m, hm⟩ := hξ.exists_mk_teichmuller_dvd_natCast_pow hξ₀
+  -- The image of `(p, [ϖ]) ^ (m + 2)` modulo `ξ` lies in `([ϖ])`.
+  have hI : (span {(p : 𝕎 S), teichmuller p ϖ}).map (Ideal.Quotient.mk (span {ξ})) ^ (m + 1 + 1) ≤
+      span {Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ)} := by
+    rw [map_span, Set.image_pair, map_natCast, span_insert]
+    refine sup_pow_add_le_pow_sup_pow.trans (sup_le ?_ (pow_one _).le)
+    rwa [span_singleton_pow, span_singleton_le_span_singleton]
+  refine ⟨p ^ ((m + 1 + 1) * n), fun a b hab ↦ ?_⟩
+  have h := mem_map_of_mem (Ideal.Quotient.mk (span {ξ}))
+    (pow_le_pow_right (Nat.le_succ _) (teichmuller_sub_teichmuller_mem_span_p_teichmuller_pow hab))
+  rw [Ideal.map_pow, pow_mul] at h
+  exact pow_right_mono hI n h
 
 private theorem span_le_ker_mk_comp_constantCoeff (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0) :
     span {ξ} ≤ RingHom.ker ((Ideal.Quotient.mk (span {ϖ})).comp (constantCoeff : 𝕎 S →+* S)) := by

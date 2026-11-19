@@ -442,31 +442,6 @@ theorem quotEquiv_mk_sharp (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣
     Subtype.ext (sharp_apply x)
   rw [this, quotEquiv_mk, teichmuller_coeff_zero]
 
-/-- **The Teichmüller map `R⁺ → 𝕎 R⁺ ⧸ (ξ)` is uniformly continuous** from the `ϖ`-adic to the
-`[ϖ]`-adic topology: `[a] ≡ [b]` modulo `[ϖ]ⁿ` as soon as `a ≡ b` modulo a suitable power of
-`ϖ`. Indeed `[a] - [b]` lies in `(p, [ϖ]) ^ (k + 1)` when `ϖ ^ p ^ k` divides `a - b`, and modulo
-`ξ` a power of `(p, [ϖ])` lies in `([ϖ])`. -/
-private theorem exists_mk_teichmuller_sub_mem (hξ : ξ.IsPrimitive) {ϖ : P.plus}
-    (hϖ : IsPseudoUniformizer (ϖ : R)) (n : ℕ) :
-    ∃ N : ℕ, ∀ a b : P.plus, ϖ ^ N ∣ a - b →
-      Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p a - teichmuller p b) ∈
-        Ideal.span {Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p ϖ)} ^ n := by
-  obtain ⟨m, hm⟩ := hξ.isDistinguished.exists_mk_teichmuller_dvd_natCast_pow
-    (coeff_zero_mem_radical hξ hϖ)
-  -- The image of `(p, [ϖ]) ^ (m + 2)` modulo `ξ` lies in `([ϖ])`.
-  have hI : (Ideal.span {(p : 𝕎 P.plus), teichmuller p ϖ}).map
-      (Ideal.Quotient.mk (Ideal.span {ξ})) ^ (m + 1 + 1) ≤
-      Ideal.span {Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p ϖ)} := by
-    rw [Ideal.map_span, Set.image_pair, map_natCast, Ideal.span_insert]
-    refine Ideal.sup_pow_add_le_pow_sup_pow.trans (sup_le ?_ (pow_one _).le)
-    rwa [Ideal.span_singleton_pow, Ideal.span_singleton_le_span_singleton]
-  refine ⟨p ^ ((m + 1 + 1) * n), fun a b hab ↦ ?_⟩
-  have h := Ideal.mem_map_of_mem (Ideal.Quotient.mk (Ideal.span {ξ}))
-    (Ideal.pow_le_pow_right (Nat.le_succ _)
-      (teichmuller_sub_teichmuller_mem_span_p_teichmuller_pow hab))
-  rw [Ideal.map_pow, pow_mul] at h
-  exact Ideal.pow_right_mono hI n h
-
 /-- **The sharp map is continuous** along a primitive element `ξ`, for `R` a perfect Tate ring of
 characteristic `p`. -/
 theorem continuous_sharp (hξ : ξ.IsPrimitive) : Continuous (sharp p P (Ideal.span {ξ})) := by
@@ -479,7 +454,8 @@ theorem continuous_sharp (hξ : ξ.IsPrimitive) : Continuous (sharp p P (Ideal.s
   -- `♯ y - ♯ x ∈ [ϖ] ^ n A⁺`, after multiplying by the unit `♯ (ϖ) ^ k`.
   obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent
     P.isRingOfIntegralElements.isOpen x
-  obtain ⟨N, hN⟩ := exists_mk_teichmuller_sub_mem hξ hϖ (n + k)
+  obtain ⟨N, hN⟩ :=
+    hξ.isDistinguished.exists_mk_teichmuller_sub_mem (coeff_zero_mem_radical hξ hϖ) (n + k)
   obtain ⟨u, hu⟩ := hϖ.isUnit.pow N
   have hU : {y : R | ((u⁻¹ : Rˣ) : R) * (y - x) ∈ P.plus} ∈ 𝓝 x :=
     (continuous_const.mul (continuous_id.sub continuous_const)).continuousAt.preimage_mem_nhds
