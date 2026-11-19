@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Two
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
+public import TauCeti.Algebra.Homology.Periodic.Basic
 public import TauCeti.Algebra.Homology.Periodic.ModuleCat
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 
@@ -89,6 +90,7 @@ public section
 noncomputable section
 
 open CategoryTheory Module
+open CochainComplex (prev_zmod_two_zero next_zmod_two_zero prev_zmod_two_one next_zmod_two_one)
 
 namespace HomologicalComplex
 
@@ -107,12 +109,10 @@ lifts `s₀`, `s₁`, and `0` otherwise. The quotient does not depend on these c
 def parityTorsion : F := by
   classical
   exact if h : C.Acyclic then
-    torsionBracket c ((ComplexShape.up _).prev_eq' (zero_add 1))
-        ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1)
-        (chosenBoundaryBasis C c 0 1) (chosenBoundaryBasis C c 1 0) (chosenBoundaryLift C c 1 0)
+    torsionBracket c prev_zmod_two_one next_zmod_two_one (h 1) (chosenBoundaryBasis C c 0 1)
+        (chosenBoundaryBasis C c 1 0) (chosenBoundaryLift C c 1 0)
         (chosenBoundaryLift_spec C c 1 0) *
-      (torsionBracket c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-        ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) (chosenBoundaryBasis C c 1 0)
+      (torsionBracket c prev_zmod_two_zero next_zmod_two_zero (h 0) (chosenBoundaryBasis C c 1 0)
         (chosenBoundaryBasis C c 0 1) (chosenBoundaryLift C c 0 1)
         (chosenBoundaryLift_spec C c 0 1))⁻¹
   else 0
@@ -134,10 +134,8 @@ theorem parityTorsion_eq (h : C.Acyclic) {p q : ℕ}
     (s₀ : Fin q → C.X 0) (hs₀ : ∀ l, (C.d 0 1).hom (s₀ l) = b₁ l)
     (s₁ : Fin p → C.X 1) (hs₁ : ∀ l, (C.d 1 0).hom (s₁ l) = b₀ l) :
     C.parityTorsion c =
-      torsionBracket c ((ComplexShape.up _).prev_eq' (zero_add 1))
-          ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1) b₁ b₀ s₁ hs₁ *
-        (torsionBracket c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-          ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) b₀ b₁ s₀ hs₀)⁻¹ := by
+      torsionBracket c prev_zmod_two_one next_zmod_two_one (h 1) b₁ b₀ s₁ hs₁ *
+        (torsionBracket c prev_zmod_two_zero next_zmod_two_zero (h 0) b₀ b₁ s₀ hs₀)⁻¹ := by
   have hp : finrank F (LinearMap.range (C.d 1 0).hom) = p := by
     rw [finrank_eq_card_basis b₀, Fintype.card_fin]
   have hq : finrank F (LinearMap.range (C.d 0 1).hom) = q := by

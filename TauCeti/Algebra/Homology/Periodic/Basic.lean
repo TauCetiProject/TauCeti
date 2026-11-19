@@ -13,7 +13,7 @@ public import Mathlib.Data.ZMod.Defs
 
 A two-periodic complex is a homological complex indexed by `ZMod 2`, typically for the shape
 `ComplexShape.up (ZMod 2)`. Its morphisms are determined by their components in degrees `0`
-and `1`.
+and `1`. For that shape, each degree is both the previous and the next degree of the other one.
 -/
 
 public section
@@ -35,3 +35,23 @@ theorem hom_ext_two {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {c : Comp
   | 1 => exact h₁
 
 end HomologicalComplex
+
+namespace CochainComplex
+
+/-- For the shape `ComplexShape.up (ZMod 2)`, the degree before `0` is `1`. -/
+theorem prev_zmod_two_zero : (ComplexShape.up (ZMod 2)).prev 0 = 1 :=
+  (ComplexShape.up _).prev_eq' (by decide)
+
+/-- For the shape `ComplexShape.up (ZMod 2)`, the degree after `0` is `1`. -/
+theorem next_zmod_two_zero : (ComplexShape.up (ZMod 2)).next 0 = 1 :=
+  (ComplexShape.up _).next_eq' (zero_add 1)
+
+/-- For the shape `ComplexShape.up (ZMod 2)`, the degree before `1` is `0`. -/
+theorem prev_zmod_two_one : (ComplexShape.up (ZMod 2)).prev 1 = 0 :=
+  (ComplexShape.up _).prev_eq' (zero_add 1)
+
+/-- For the shape `ComplexShape.up (ZMod 2)`, the degree after `1` is `0`. -/
+theorem next_zmod_two_one : (ComplexShape.up (ZMod 2)).next 1 = 0 :=
+  (ComplexShape.up _).next_eq' (by decide)
+
+end CochainComplex

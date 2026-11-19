@@ -65,9 +65,11 @@ variable {k : Type u} [DivisionRing k] (K : ChainComplex (ModuleCat.{v} k) ℕ)
 /-- In degree `0`, every element is a cycle, so `dim K₀ = dim H₀(K) + dim im (K₁ ⟶ K₀)`. -/
 theorem finrank_X_zero [Module.Finite k (K.X 0)] :
     finrank k (K.X 0) = finrank k (K.homology 0) + finrank k (LinearMap.range (K.d 1 0).hom) := by
-  rw [K.finrank_X_eq_finrank_range_add_finrank_homology_add (i := 1) (ChainComplex.prev ℕ 0)
-    ChainComplex.next_nat_zero, K.shape 0 0 (by simp), ModuleCat.hom_zero, LinearMap.range_zero,
-    finrank_bot, add_zero, add_comm]
+  have h := K.finrank_X_eq_finrank_range_add_finrank_homology_add (i := 1) (ChainComplex.prev ℕ 0)
+    ChainComplex.next_nat_zero
+  -- `simp` cannot rewrite the submodule inside `finrank`, as the instances depend on it.
+  rw [K.shape 0 0 (by simp), ModuleCat.hom_zero, LinearMap.range_zero, finrank_bot] at h
+  omega
 
 /-- In degree `n + 1`, rank--nullity for `Kₙ₊₁ ⟶ Kₙ` gives
 `dim Kₙ₊₁ = dim Hₙ₊₁(K) + dim im (Kₙ₊₂ ⟶ Kₙ₊₁) + dim im (Kₙ₊₁ ⟶ Kₙ)`. -/

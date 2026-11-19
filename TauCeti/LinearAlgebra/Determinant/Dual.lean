@@ -236,10 +236,8 @@ theorem detLineEquivDualOfKerCoker_tmul_tmul (e₁ : ker g ≃ₗ[K] N ⧸ range
     (φ : Dual K (TauCeti.detLine K (N ⧸ range f))) :
     detLineEquivDualOfKerCoker e₁ e₂ (x ⊗ₜ ψ) (u ⊗ₜ φ) =
       φ (LinearEquiv.detLineCongr e₁ x) * ψ (LinearEquiv.detLineCongr e₂.symm u) := by
-  simp only [detLineEquivDualOfKerCoker, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
-    TensorProduct.dualFlipEquiv_tmul_tmul, LinearEquiv.dualMap_apply,
-    LinearEquiv.detLineCongr_symm]
-  exact mul_comm _ _
+  rw [mul_comm]
+  simp [detLineEquivDualOfKerCoker]
 
 /-- **The pairing is symmetric.** Exchanging the roles of `f` and `g`, with the inverse
 identifications, pairs `det f` with `det g` by the same values. -/

@@ -81,6 +81,7 @@ public section
 noncomputable section
 
 open CategoryTheory Module TensorProduct TauCeti
+open CochainComplex (prev_zmod_two_zero next_zmod_two_zero prev_zmod_two_one next_zmod_two_one)
 
 namespace HomologicalComplex
 
@@ -108,20 +109,6 @@ private theorem dualFlipEquiv_symm_dualMap_dualFlipEquiv_tmul {Z Q H₀ H₁ : T
     simp only [← smul_tmul', map_smul, hB, dualFlipEquiv_tmul_tmul, hξQ, hξ, hξ₀, smul_eq_mul,
       mul_one, one_mul]
 
-/-! ### The two-periodic shape -/
-
-private theorem up_prev_zero : (ComplexShape.up (ZMod 2)).prev 0 = 1 :=
-  (ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1)
-
-private theorem up_next_zero : (ComplexShape.up (ZMod 2)).next 0 = 1 :=
-  (ComplexShape.up _).next_eq' (zero_add 1)
-
-private theorem up_prev_one : (ComplexShape.up (ZMod 2)).prev 1 = 0 :=
-  (ComplexShape.up _).prev_eq' (zero_add 1)
-
-private theorem up_next_one : (ComplexShape.up (ZMod 2)).next 1 = 0 :=
-  (ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)
-
 variable (C : HomologicalComplex (ModuleCat K) (ComplexShape.up (ZMod 2)))
   [FiniteDimensional K (C.X 0)] [FiniteDimensional K (C.X 1)]
 
@@ -131,7 +118,8 @@ private def evenFourTermEquiv :
     detLine K (C.X 0) ⊗[K] Dual K (detLine K (C.X 1)) ≃ₗ[K]
       detLine K (C.cycles 0) ⊗[K] Dual K (detLine K (C.opcycles 1)) :=
   detLineFourTermEquiv (C.moduleCat_iCycles_injective 0)
-    (C.moduleCat_exact_iCycles_d up_next_zero) (C.moduleCat_exact_d_pOpcycles up_prev_one)
+    (C.moduleCat_exact_iCycles_d next_zmod_two_zero)
+    (C.moduleCat_exact_d_pOpcycles prev_zmod_two_one)
     (C.moduleCat_pOpcycles_surjective 1)
 
 /-- The isomorphism `det (C₁ / B₁) ⊗ (det Z₀)^* ≃ det H₁ ⊗ (det H₀)^*` of the exact sequence
@@ -185,8 +173,9 @@ omit [FiniteDimensional K (C.X 1)] in
 private theorem finrank_cycles_zero :
     finrank K (C.cycles 0) = finrank K (LinearMap.range (C.d 1 0).hom) +
       finrank K (C.homology 0) := by
-  have h₁ := C.finrank_X_eq_finrank_range_add_finrank_homology_add up_prev_zero up_next_zero
-  have h₂ := (C.moduleCat_exact_iCycles_d up_next_zero).rangeRestrict.finrank_eq_add
+  have h₁ :=
+    C.finrank_X_eq_finrank_range_add_finrank_homology_add prev_zmod_two_zero next_zmod_two_zero
+  have h₂ := (C.moduleCat_exact_iCycles_d next_zmod_two_zero).rangeRestrict.finrank_eq_add
     (C.moduleCat_iCycles_injective 0) (C.d 0 1).hom.surjective_rangeRestrict
   omega
 
@@ -195,8 +184,9 @@ omit [FiniteDimensional K (C.X 0)] in
 private theorem finrank_opcycles_one :
     finrank K (C.opcycles 1) = finrank K (C.homology 1) +
       finrank K (LinearMap.range (C.d 1 0).hom) := by
-  have h₁ := C.finrank_X_eq_finrank_range_add_finrank_homology_add up_prev_one up_next_one
-  have h₂ := (C.moduleCat_exact_d_pOpcycles up_prev_one).range_subtype.finrank_eq_add
+  have h₁ :=
+    C.finrank_X_eq_finrank_range_add_finrank_homology_add prev_zmod_two_one next_zmod_two_one
+  have h₂ := (C.moduleCat_exact_d_pOpcycles prev_zmod_two_one).range_subtype.finrank_eq_add
     (Submodule.injective_subtype _) (C.moduleCat_pOpcycles_surjective 1)
   omega
 
@@ -432,13 +422,13 @@ private theorem torsionBracket_smul_parityDetLineEquiv_tmul (h : C.Acyclic) {n :
     (hη₀ : (η₀ : ExteriorAlgebra K (C.homology 0)) = 1) {η₁ : detLine K (C.homology 1)}
     (hη₁ : (η₁ : ExteriorAlgebra K (C.homology 1)) = 1) {ξ : Dual K (detLine K (C.homology 1))}
     (hξ : ξ η₁ = 1) :
-    torsionBracket c up_prev_zero up_next_zero (h 0) b₀ b₁ s₀ hs₀ •
+    torsionBracket c prev_zmod_two_zero next_zmod_two_zero (h 0) b₀ b₁ s₀ hs₀ •
         C.parityDetLineEquiv (ω₀ ⊗ₜ ξ₁) =
-      torsionBracket c up_prev_one up_next_one (h 1) b₁ b₀ s₁ hs₁ • (η₀ ⊗ₜ ξ) := by
+      torsionBracket c prev_zmod_two_one next_zmod_two_one (h 1) b₁ b₀ s₁ hs₁ • (η₀ ⊗ₜ ξ) := by
   have : Subsingleton (C.homology 0) := ModuleCat.subsingleton_of_isZero (h 0).isZero_homology
   have : Subsingleton (C.homology 1) := ModuleCat.subsingleton_of_isZero (h 1).isZero_homology
-  have hβ := coe_torsionBracket_smul c up_prev_zero up_next_zero (h 0) b₀ b₁ s₀ hs₀ hω₀
-  have hγ := coe_torsionBracket_smul c up_prev_one up_next_one (h 1) b₁ b₀ s₁ hs₁ hω₁
+  have hβ := coe_torsionBracket_smul c prev_zmod_two_zero next_zmod_two_zero (h 0) b₀ b₁ s₀ hs₀ hω₀
+  have hγ := coe_torsionBracket_smul c prev_zmod_two_one next_zmod_two_one (h 1) b₁ b₀ s₁ hs₁ hω₁
   generalize torsionBracket c _ _ (h 0) b₀ b₁ s₀ hs₀ = B₀ at hβ ⊢
   generalize torsionBracket c _ _ (h 1) b₁ b₀ s₁ hs₁ = B₁ at hγ ⊢
   have hξB₁ : ξ₁ (B₁ • ω₁) = B₁ := by rw [map_smul, hξ₁, smul_eq_mul, mul_one]
@@ -474,7 +464,7 @@ theorem parityDetLineEquiv_tmul_eq_parityTorsion_smul (h : C.Acyclic) {n : ZMod 
     ⟨_, _, _, chosenBoundaryLift_spec C c 0 1⟩
   have key := torsionBracket_smul_parityDetLineEquiv_tmul h c b₀ b₁ s₀ hs₀ s₁ hs₁ hω₀ hω₁ hξ₁ hη₀
     hη₁ hξ
-  have hB₀ := torsionBracket_ne_zero c up_prev_zero up_next_zero (h 0) b₀ b₁ s₀ hs₀
+  have hB₀ := torsionBracket_ne_zero c prev_zmod_two_zero next_zmod_two_zero (h 0) b₀ b₁ s₀ hs₀
   rw [parityTorsion_eq h b₀ b₁ s₀ hs₀ s₁ hs₁, mul_comm, ← smul_smul, eq_inv_smul_iff₀ hB₀]
   exact key
 
