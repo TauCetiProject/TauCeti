@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
-import TauCeti.Analysis.AbsoluteValue.Archimedean
+import TauCeti.Analysis.Normed.Algebra.GelfandMazur
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
@@ -68,19 +68,15 @@ theorem isInfinitePlace_of_liesOver (v : InfinitePlace K) (w : AbsoluteValue F �
   -- `K_v` is `ℝ` or `ℂ`, so it contains an isometric copy of `ℝ`.
   obtain ⟨j, hj⟩ : ∃ j : ℝ →+* v.Completion, ∀ r, ‖j r‖ = ‖r‖ := by
     rcases v.isReal_or_isComplex with hv | hv
-    · let e := InfinitePlace.Completion.ringEquivRealOfIsReal hv
-      refine ⟨e.symm.toRingHom, fun r ↦ ?_⟩
-      have h := (AddMonoidHomClass.isometry_iff_norm _).mp
-        (InfinitePlace.Completion.isometry_extensionEmbeddingOfIsReal hv) (e.symm r)
-      rw [← InfinitePlace.Completion.ringEquivRealOfIsReal_apply, RingEquiv.apply_symm_apply] at h
-      exact h.symm
-    · let e := InfinitePlace.Completion.ringEquivComplexOfIsComplex hv
-      refine ⟨e.symm.toRingHom.comp Complex.ofRealHom, fun r ↦ ?_⟩
-      have h := (AddMonoidHomClass.isometry_iff_norm _).mp
-        (InfinitePlace.Completion.isometry_extensionEmbedding v) (e.symm r)
-      rw [← InfinitePlace.Completion.ringEquivComplexOfIsComplex_apply hv,
-        RingEquiv.apply_symm_apply] at h
-      simpa using h.symm
+    · exact ⟨(InfinitePlace.Completion.ringEquivRealOfIsReal hv).symm.toRingHom, fun r ↦
+        (InfinitePlace.Completion.isometryEquivRealOfIsReal hv).symm.isometry.norm_map_of_map_zero
+          (map_zero (InfinitePlace.Completion.ringEquivRealOfIsReal hv).symm) r⟩
+    · refine ⟨(InfinitePlace.Completion.ringEquivComplexOfIsComplex hv).symm.toRingHom.comp
+        Complex.ofRealHom, fun r ↦ ?_⟩
+      have h := (InfinitePlace.Completion.isometryEquivComplexOfIsComplex hv).symm.isometry
+        |>.norm_map_of_map_zero
+          (map_zero (InfinitePlace.Completion.ringEquivComplexOfIsComplex hv).symm) (r : ℂ)
+      rwa [Complex.norm_real] at h
   -- The copy of `ℝ` in `K_v` maps isometrically into `F_w`, making `F_w` a normed `ℝ`-algebra.
   let ι : ℝ →+* w.Completion := (Completion.map v.1 w).comp j
   have hι (r : ℝ) : ‖ι r‖ = ‖r‖ := by

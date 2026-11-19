@@ -25,10 +25,10 @@ and the corresponding lower bound by `(mulHeight₁ x)⁻¹` for the factors `mi
 nonzero `x`, with the relative height of `F`. The absolute values need not themselves be places
 of `F`. Above an infinite place `w v` is an infinite place of `F`
 (`NumberField.isInfinitePlace_of_liesOver`) whose multiplicity is at least that of `v`. Above a
-finite place it is a positive root, with exponent at most one, of a finite place of `F`. Raising
-the multiplicity or taking such a root only moves a truncated factor toward one, and absolute
-values over distinct places of `K` come from distinct places of `F`, so each bound follows from
-the fundamental inequality of `F`.
+finite place it is a positive root, with exponent at most one, of a finite place of `F`. Lowering
+the multiplicity from that of the place of `F` to that of `v`, or taking such a root, only moves a
+truncated factor toward one, and absolute values over distinct places of `K` come from distinct
+places of `F`, so each bound follows from the fundamental inequality of `F`.
 
 **Liouville's inequality over a number field** (`NumberField.inv_le_prod_min_one_sub`) is the
 lower bound at `x = β - α` for `α ∈ F` and `β ∈ K`, with the height of `β - α` bounded by

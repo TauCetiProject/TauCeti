@@ -5,38 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Algebra.GelfandMazur
-
-import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
-import Mathlib.Topology.Algebra.Ring.Basic
+public import Mathlib.Analysis.Complex.Basic
 
 /-!
-# Normed fields over `ℝ` and the absolute values of `ℂ`
+# The absolute values of `ℂ` extending `|·|`
 
-A normed field `E` that is a normed `ℝ`-algebra embeds into `ℂ` by an `ℝ`-algebra homomorphism
-that preserves the norm (`NormedAlgebra.Real.exists_algHom_complex_isometry`). This is the
-step that identifies an absolute value with an archimedean place: an absolute value whose
-completion contains a copy of `ℝ` is the norm of a complex embedding.
-
-Gelfand–Mazur (`NormedAlgebra.Real.nonempty_algEquiv_or`) gives `E ≃ₐ[ℝ] ℝ` or `E ≃ₐ[ℝ] ℂ` as
-algebras, but says nothing about the norm. In the first case the norm is forced, since every
-element of `E` is the image of a real number. In the second case it is forced by the uniqueness
-of the absolute value of `ℂ` extending `|·|` (`AbsoluteValue.eq_norm_of_apply_ofReal`): such an
-absolute value `f` satisfies `f (a + b i) ≤ |a| + |b| ≤ 2 ‖a + b i‖`, the power trick applied to
-`f (z ^ n) ≤ 2 ‖z‖ ^ n` removes the factor `2`, and the reverse inequality is the same bound for
-`z⁻¹`.
+An absolute value of `ℂ` that restricts to the usual absolute value on `ℝ` is the norm
+(`AbsoluteValue.eq_norm_of_apply_ofReal`). Such an absolute value `f` satisfies
+`f (a + b i) ≤ |a| + |b| ≤ 2 ‖a + b i‖`, the power trick applied to `f (z ^ n) ≤ 2 ‖z‖ ^ n`
+removes the factor `2`, and the reverse inequality is the same bound for `z⁻¹`. This is the
+uniqueness statement behind the isometric Gelfand–Mazur theorem
+`NormedAlgebra.Real.exists_algHom_complex_isometry`.
 
 ## Main results
 
 * `AbsoluteValue.eq_norm_of_apply_ofReal`: an absolute value of `ℂ` that restricts to `|·|` on
   `ℝ` is the norm.
-* `NormedAlgebra.Real.exists_algHom_complex_isometry`: a normed field that is a normed
-  `ℝ`-algebra embeds isometrically into `ℂ`.
 
 ## References
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
-  (2006), §1.2 (Ostrowski's theorem) and Proposition 1.3.1.
+  (2006), §1.2 (Ostrowski's theorem).
 -/
 
 public section
@@ -76,30 +65,3 @@ theorem eq_norm_of_apply_ofReal (f : AbsoluteValue ℂ ℝ) (h : ∀ r : ℝ, f 
   exact (inv_le_inv₀ (f.pos hz) (norm_pos_iff.mpr hz)).mp hinv
 
 end AbsoluteValue
-
-namespace NormedAlgebra.Real
-
-/-- A normed field that is a normed `ℝ`-algebra embeds into `ℂ` by an `ℝ`-algebra homomorphism
-preserving the norm. This strengthens the Gelfand–Mazur theorem
-`NormedAlgebra.Real.nonempty_algEquiv_or`, which identifies the field with `ℝ` or `ℂ` as an
-algebra only. -/
-theorem exists_algHom_complex_isometry (E : Type*) [NormedField E] [NormedAlgebra ℝ E] :
-    ∃ ψ : E →ₐ[ℝ] ℂ, Isometry ψ := by
-  rcases nonempty_algEquiv_or E with h | h
-  · obtain ⟨φ⟩ := h
-    refine ⟨(Algebra.ofId ℝ ℂ).comp φ.toAlgHom, (AddMonoidHomClass.isometry_iff_norm _).mpr
-      fun x ↦ ?_⟩
-    have hx : algebraMap ℝ E (φ x) = x := by simpa using (φ.symm.commutes (φ x)).symm
-    -- `‖(φ x : ℂ)‖ = |φ x| = ‖algebraMap ℝ E (φ x)‖ = ‖x‖`
-    conv_rhs => rw [← hx]
-    simp [norm_algebraMap']
-  · obtain ⟨φ⟩ := h
-    refine ⟨φ.toAlgHom, (AddMonoidHomClass.isometry_iff_norm _).mpr fun x ↦ ?_⟩
-    let f : AbsoluteValue ℂ ℝ :=
-      (NormedField.toAbsoluteValue E).comp (f := (φ.symm : ℂ →+* E)) φ.symm.injective
-    have hfz (z : ℂ) : f z = ‖φ.symm z‖ := rfl
-    have hf : ⇑f = norm := AbsoluteValue.eq_norm_of_apply_ofReal f fun r ↦ by
-      rw [hfz, ← Complex.coe_algebraMap, AlgEquiv.commutes, norm_algebraMap', Real.norm_eq_abs]
-    simpa [hfz] using (congrFun hf (φ x)).symm
-
-end NormedAlgebra.Real
