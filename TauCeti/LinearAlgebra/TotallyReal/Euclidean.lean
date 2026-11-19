@@ -175,11 +175,11 @@ theorem realImage_mul_map_ofReal (M : Matrix n n ℂ) {N : Matrix n n ℝ} (hN :
     (M * N.map ((↑) : ℝ → ℂ)).realImage = M.realImage := by
   rw [realImage_mul, realImage_map_ofReal hN, realImage]
 
-/-- Two invertible complex matrices with the same image of `ℝⁿ` differ by a real matrix on the
-right. -/
+/-- Two invertible complex matrices with the same image of `ℝⁿ` differ by an invertible real
+matrix on the right. -/
 theorem exists_eq_mul_map_ofReal {M M' : GL n ℂ}
     (h : (M : Matrix n n ℂ).realImage = (M' : Matrix n n ℂ).realImage) :
-    ∃ O : Matrix n n ℝ, (M' : Matrix n n ℂ) = M * O.map ((↑) : ℝ → ℂ) := by
+    ∃ O : Matrix n n ℝ, IsUnit O ∧ (M' : Matrix n n ℂ) = M * O.map ((↑) : ℝ → ℂ) := by
   set X : Matrix n n ℂ := ((M⁻¹ : GL n ℂ) : Matrix n n ℂ) * M'
   have hX : ∀ i j, (X i j).im = 0 := by
     intro i j
@@ -197,11 +197,17 @@ theorem exists_eq_mul_map_ofReal {M M' : GL n ℂ}
       mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true] at this
     rw [this]
     exact hw i
-  refine ⟨X.map Complex.re, ?_⟩
   have hX' : (X.map Complex.re).map ((↑) : ℝ → ℂ) = X := by
     ext i j
     apply Complex.ext <;> simp [hX i j]
-  rw [hX', ← mul_assoc, Units.mul_inv, one_mul]
+  refine ⟨X.map Complex.re, (isUnit_iff_isUnit_det _).2 ?_, ?_⟩
+  · -- `X = M⁻¹ M'` is invertible, and its determinant is that of its real part.
+    have hdet := (isUnit_iff_isUnit_det X).1 ((M⁻¹).isUnit.mul M'.isUnit)
+    have hre : ((X.map Complex.re).map ((↑) : ℝ → ℂ)).det = ((X.map Complex.re).det : ℂ) :=
+      (Complex.ofRealHom.map_det _).symm
+    rw [← hX', hre] at hdet
+    exact isUnit_iff_ne_zero.2 (Complex.ofReal_ne_zero.1 hdet.ne_zero)
+  · rw [hX', ← mul_assoc, Units.mul_inv, one_mul]
 
 /-- Two invertible complex matrices with the same image of `ℝⁿ`, whose columns are orthonormal for
 the real inner product `Re ⟪·, ·⟫`, differ by a real orthogonal matrix on the right. -/
@@ -210,7 +216,7 @@ theorem exists_mem_orthogonalGroup_eq_mul_map_ofReal {M M' : GL n ℂ}
     (hM : ((M : Matrix n n ℂ)ᴴ * M).map Complex.re = 1)
     (hM' : ((M' : Matrix n n ℂ)ᴴ * M').map Complex.re = 1) :
     ∃ O ∈ orthogonalGroup n ℝ, (M' : Matrix n n ℂ) = M * O.map ((↑) : ℝ → ℂ) := by
-  obtain ⟨O, hO⟩ := exists_eq_mul_map_ofReal h
+  obtain ⟨O, -, hO⟩ := exists_eq_mul_map_ofReal h
   refine ⟨O, (mem_orthogonalGroup_iff' n ℝ).2 ?_, hO⟩
   have := map_re_conjTranspose_mul_self_mul_map_ofReal (M : Matrix n n ℂ) O
   rwa [← hO, hM', hM, mul_one, eq_comm] at this

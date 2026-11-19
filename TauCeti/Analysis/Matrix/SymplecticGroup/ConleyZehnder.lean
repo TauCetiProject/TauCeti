@@ -324,16 +324,9 @@ private theorem exists_coe_graphUnitaryFrame_eq_mul (A : GLSymplectic n ℝ) :
       (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2))
   have hU : IsUnit (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).det :=
     isUnit_det_of_left_inverse (Unitary.star_mul_self_of_mem (graphUnitaryFrame A).2)
-  obtain ⟨O, hO⟩ := exists_eq_mul_map_ofReal (M := ((isUnit_iff_isUnit_det _).2 hT).unit)
-    (M' := ((isUnit_iff_isUnit_det _).2 hU).unit) (by
-      simpa only [IsUnit.unit_spec] using (realImage_graphUnitaryFrame A).symm)
-  simp only [IsUnit.unit_spec] at hO
-  refine ⟨O, ?_, hO⟩
-  -- `O` is invertible since `T Γ(A)` and the unitary graph frame are.
-  have hdet : (O.map ((↑) : ℝ → ℂ)).det = (O.det : ℂ) := (Complex.ofRealHom.map_det O).symm
-  rw [hO, det_mul, hdet] at hU
-  exact (isUnit_iff_isUnit_det _).2 <| isUnit_iff_ne_zero.2 fun h ↦ by
-    simp [h] at hU
+  simpa only [IsUnit.unit_spec] using exists_eq_mul_map_ofReal
+    (M := ((isUnit_iff_isUnit_det _).2 hT).unit) (M' := ((isUnit_iff_isUnit_det _).2 hU).unit)
+    (by simpa only [IsUnit.unit_spec] using (realImage_graphUnitaryFrame A).symm)
 
 /-- **The direct-sum axiom.** The direct sum of two paths of symplectic matrices has the sum of
 their Conley–Zehnder indices: the graph of `A ⊕ B` is the product of the graphs of `A` and `B`,
