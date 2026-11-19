@@ -46,6 +46,10 @@ built: properness of the action makes the slice map injective after shrinking th
 * `TauCeti.isLocalDiffeomorphAt_smul_extChartAt_symm`: at a locally free point `x`, the chart
   slice `w ↦ φ.symm (φ x + w)` along a complement `W` of `𝔤 · x` gives a slice map which is a
   local diffeomorphism at `(1, 0)`.
+* `TauCeti.surjective_mfderiv_smul_slice`, `TauCeti.mfderiv_smul_slice_eq_zero_iff`: for a slice
+  along a subspace `V` of `T_x M` with derivative the inclusion, the differential of the slice
+  map at `(1, 0)` is onto when `𝔤 · x + V = T_x M`, and vanishes exactly on `𝔤_x × 0` when
+  `𝔤 · x ∩ V = 0`.
 
 ## References
 
@@ -250,6 +254,75 @@ theorem isLocalDiffeomorphAt_smul_extChartAt_symm [FiniteDimensional ℝ E'] [I'
       exact W.range_subtype
     rw [hrange, hx0]
     exact hW
+
+section SliceDifferential
+
+omit [BoundarylessManifold I G]
+
+variable {x : M} {V : Submodule ℝ E'} {σ : V → M}
+
+/-- The differential of the slice map along a linear slice, as `(ξ, v) ↦ ξ_M(x) + ι v` for the
+inclusion `ι` of `V` into `T_x M`. -/
+private theorem mfderiv_smul_slice_eq_coprod (ι : V →ₗ[ℝ] TangentSpace I' x)
+    (hι : ∀ v, ι v = (v : E')) (hσd : MDifferentiableAt 𝓘(ℝ, V) I' σ 0) (hσ0 : σ 0 = x)
+    (hσL : ∀ v : V, mfderiv 𝓘(ℝ, V) I' σ 0 v = (v : E')) :
+    ⇑(mfderiv (I.prod 𝓘(ℝ, V)) I' (fun p : G × V ↦ p.1 • σ p.2) (1, 0)) =
+      ⇑(((InfinitesimalAction.fundamental I G I' M).eval x).coprod ι) := by
+  have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
+  refine funext fun p : GroupLieAlgebra I G × V ↦ ?_
+  refine (mfderiv_smul_slice_apply hσd p.1 p.2).trans ?_
+  rw [hσL, hσ0, LinearMap.coprod_apply, InfinitesimalAction.eval_apply,
+    InfinitesimalAction.fundamental_apply, hι]
+
+/-- **Linear slices are transverse.** Let `V` be a subspace of `T_x M` which together with the
+orbit tangent space `𝔤 · x` spans `T_x M`, and `σ : V → M` a slice through `σ 0 = x` with
+derivative the inclusion of `V` at `0`. Then the slice map `(g, v) ↦ g • σ v` has surjective
+differential at `(1, 0)`. -/
+theorem surjective_mfderiv_smul_slice
+    (hV : (InfinitesimalAction.fundamental I G I' M).orbitTangent x ⊔ V = ⊤)
+    (hσd : MDifferentiableAt 𝓘(ℝ, V) I' σ 0) (hσ0 : σ 0 = x)
+    (hσL : ∀ v : V, mfderiv 𝓘(ℝ, V) I' σ 0 v = (v : E')) :
+    Surjective (mfderiv (I.prod 𝓘(ℝ, V)) I' (fun p : G × V ↦ p.1 • σ p.2) (1, 0)) := by
+  let ι : V →ₗ[ℝ] TangentSpace I' x := V.subtype
+  have hι : LinearMap.range ι = V := Submodule.range_subtype V
+  have hrange : LinearMap.range (((InfinitesimalAction.fundamental I G I' M).eval x).coprod ι) =
+      ⊤ := by
+    rw [LinearMap.range_coprod, ← InfinitesimalAction.orbitTangent_eq_range, hι]
+    exact hV
+  intro w
+  obtain ⟨p, hp⟩ := LinearMap.range_eq_top.mp hrange w
+  exact ⟨p, (congrFun (mfderiv_smul_slice_eq_coprod (I := I) (G := G) ι (fun _ ↦ rfl) hσd hσ0
+    hσL) p).trans hp⟩
+
+/-- **The kernel of the differential of a slice map.** Let `V` be a subspace of `T_x M` meeting
+the orbit tangent space `𝔤 · x` only in `0`, and `σ : V → M` a slice through `σ 0 = x` with
+derivative the inclusion of `V` at `0`. Then the differential of `(g, v) ↦ g • σ v` at `(1, 0)`
+vanishes exactly on `𝔤_x × 0`, where `𝔤_x` is the isotropy algebra. -/
+theorem mfderiv_smul_slice_eq_zero_iff
+    (hV : Disjoint ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) V)
+    (hσd : MDifferentiableAt 𝓘(ℝ, V) I' σ 0) (hσ0 : σ 0 = x)
+    (hσL : ∀ v : V, mfderiv 𝓘(ℝ, V) I' σ 0 v = (v : E')) (ξ : GroupLieAlgebra I G) (v : V) :
+    mfderiv (I.prod 𝓘(ℝ, V)) I' (fun p : G × V ↦ p.1 • σ p.2) (1, 0) (ξ, v) = 0 ↔
+      ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x ∧ v = 0 := by
+  let ι : V →ₗ[ℝ] TangentSpace I' x := V.subtype
+  have hι : LinearMap.range ι = V := Submodule.range_subtype V
+  have hdisj : Disjoint (LinearMap.range ((InfinitesimalAction.fundamental I G I' M).eval x))
+      (LinearMap.range ι) := by
+    rw [← InfinitesimalAction.orbitTangent_eq_range, hι]
+    exact hV
+  have hker : LinearMap.ker (((InfinitesimalAction.fundamental I G I' M).eval x).coprod ι) =
+      (LinearMap.ker ((InfinitesimalAction.fundamental I G I' M).eval x)).prod ⊥ := by
+    rw [LinearMap.ker_coprod_of_disjoint_range _ _ hdisj]
+    congr 1
+    exact Submodule.ker_subtype V
+  rw [congrFun (mfderiv_smul_slice_eq_coprod (I := I) (G := G) ι (fun _ ↦ rfl) hσd hσ0 hσL)
+    (ξ, v)]
+  refine (LinearMap.mem_ker (f := ((InfinitesimalAction.fundamental I G I' M).eval x).coprod ι)
+    (y := (ξ, v))).symm.trans ?_
+  rw [hker, Submodule.mem_prod, Submodule.mem_bot, LinearMap.mem_ker,
+    InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.eval_apply]
+
+end SliceDifferential
 
 end Real
 
