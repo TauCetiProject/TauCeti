@@ -31,9 +31,9 @@ counting form. In particular the number of roots modulo `n` of an integer polyno
 of its numbers of roots modulo the prime powers exactly dividing `n`, by `ZMod.equivPi`.
 
 Sums over the residues modulo `n` of a function of the least nonnegative representative are sums
-over `range n`; in particular the reciprocals of the representatives sum to the harmonic number
-`H_{n-1}`. Summed over the representatives that are multiples of `n / m`, for `m ∣ n`, they
-become sums over the residues modulo `m`.
+over `range n`. Summed over the representatives that are multiples of `n / m`, for `m ∣ n`, they
+become sums over the residues modulo `m`. As a special case of the first identity, the reciprocals
+of the representatives sum to the harmonic number `H_{n-1}`.
 
 ## Main results
 
