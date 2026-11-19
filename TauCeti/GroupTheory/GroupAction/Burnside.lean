@@ -11,10 +11,19 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.Data.Set.Card
+public import Mathlib.Data.Rat.Defs
+import Mathlib.Algebra.BigOperators.Field
+import Mathlib.Data.Nat.Cast.Field
+import Mathlib.GroupTheory.GroupAction.FixedPoints
+import Mathlib.Algebra.Order.Field.Rat
+import Mathlib.GroupTheory.Coset.Card
+import Mathlib.GroupTheory.GroupAction.CardCommute
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
-# Burnside's lemma on a product of two `G`-sets
+# Burnside's lemma on products, and for constant fixed-point counts
 
 A point of a product `G`-set `X × Y` is fixed by `g` exactly when both of its components are, so
 Mathlib's Burnside lemma `MulAction.sum_card_fixedBy_eq_card_orbits_mul_card_group`, applied to
@@ -26,6 +35,15 @@ This is the shape in which Burnside's lemma computes the pairing of two permutat
 For disjoint unions, the analogous counting rules add the fixed-point counts, including for an
 indexed family of sets on which the action leaves the index fixed.
 
+When every nonidentity element of a finite group `G` fixes the same number `k` of points of a
+finite `G`-set `X`, Burnside's lemma together with the class formula `|X| = ∑ |G| / mⱼ` gives
+
+`∑ⱼ (1 - 1 / mⱼ) = k * (1 - 1 / |G|)`,
+
+the sum running over the orbits and `mⱼ` being the order of the stabilizer of a point of the
+`j`-th orbit. For `k = 2` this is the equation that classifies the finite groups of rotations of
+three-space through their action on poles.
+
 ## Main statements
 
 * `TauCeti.fixedBy_prod`: the fixed points of `g` on `X × Y` are the product of its fixed points
@@ -35,6 +53,8 @@ indexed family of sets on which the action leaves the index fixed.
   disjoint unions.
 * `TauCeti.sum_card_fixedBy_mul_card_fixedBy_eq_card_orbits_mul_card_group`: Burnside's lemma
   on `X × Y`.
+* `TauCeti.sum_one_sub_one_div_card_stabilizer_eq`: the orbit equation
+  `∑ⱼ (1 - 1 / mⱼ) = k * (1 - 1 / |G|)` when every nonidentity element fixes `k` points.
 
 ## Implementation notes
 
@@ -42,6 +62,10 @@ Counts are phrased with `Nat.card`, with `Set.ncard` simp forms for disjoint uni
 Mathlib's Burnside lemma is stated with `Fintype.card` and
 carries `Fintype` instances for each fixed-point set, which are supplied here from `Finite X` and
 `Finite Y` rather than assumed.
+
+## References
+
+* M. Artin, *Algebra*, second edition, Pearson, 2011, Section 6.12, for the orbit equation.
 -/
 
 public section
@@ -122,5 +146,54 @@ theorem sum_card_fixedBy_mul_card_fixedBy_eq_card_orbits_mul_card_group
   have := Fintype.ofFinite (orbitRel.Quotient G (X × Y))
   simpa only [← Nat.card_eq_fintype_card, card_fixedBy_prod] using
     sum_card_fixedBy_eq_card_orbits_mul_card_group G (X × Y)
+
+variable {X}
+
+/-- **The orbit equation for a constant fixed-point count.** If every nonidentity element of a
+finite group `G` fixes exactly `k` points of a finite `G`-set `X`, then summing `1 - 1 / mⱼ` over
+the orbits, where `mⱼ` is the order of the stabilizer of a point of the `j`-th orbit, gives
+`k * (1 - 1 / |G|)`. -/
+theorem sum_one_sub_one_div_card_stabilizer_eq [Finite G] [Finite X]
+    [Fintype (orbitRel.Quotient G X)] {k : ℕ}
+    (hk : ∀ g : G, g ≠ 1 → Nat.card (fixedBy X g) = k) :
+    ∑ ω : orbitRel.Quotient G X, (1 - 1 / (Nat.card (stabilizer G ω.out) : ℚ)) =
+      k * (1 - 1 / Nat.card G) := by
+  classical
+  have := Fintype.ofFinite G
+  have := Fintype.ofFinite X
+  have hN : (Nat.card G : ℚ) ≠ 0 := by exact_mod_cast Nat.card_pos.ne'
+  -- Burnside's lemma, with the identity fixing every point: `|X| + (|G| - 1) k = s |G|`.
+  have hburnside : (Nat.card X : ℚ) + (Nat.card G - 1) * k =
+      Fintype.card (orbitRel.Quotient G X) * Nat.card G := by
+    have h := sum_card_fixedBy_eq_card_orbits_mul_card_group G X
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ 1)] at h
+    have hsum : ∑ g ∈ Finset.univ.erase (1 : G), Fintype.card (fixedBy X g) =
+        (Nat.card G - 1) * k := by
+      rw [Finset.sum_congr rfl fun g hg ↦ by
+        rw [← Nat.card_eq_fintype_card, hk g (Finset.ne_of_mem_erase hg)]]
+      simp [Finset.card_erase_of_mem, Nat.card_eq_fintype_card]
+    have h1 : Fintype.card (fixedBy X (1 : G)) = Nat.card X := by
+      rw [← Nat.card_eq_fintype_card, fixedBy_one_eq_univ, Nat.card_univ]
+    rw [hsum, h1, ← Nat.card_eq_fintype_card (α := G)] at h
+    have hG : 1 ≤ Nat.card G := Nat.card_pos
+    have h' : ((Nat.card X + (Nat.card G - 1) * k : ℕ) : ℚ) =
+        ((Fintype.card (orbitRel.Quotient G X) * Nat.card G : ℕ) : ℚ) := congrArg _ h
+    rwa [Nat.cast_add, Nat.cast_mul, Nat.cast_sub hG, Nat.cast_one, Nat.cast_mul] at h'
+  -- The class formula, with orbit sizes `|G| / mⱼ`.
+  have hclass : (Nat.card X : ℚ) = ∑ ω : orbitRel.Quotient G X,
+      (Nat.card G : ℚ) / Nat.card (stabilizer G ω.out) := by
+    have h := card_eq_sum_card_group_div_card_stabilizer G X
+    simp only [← Nat.card_eq_fintype_card] at h
+    rw [h, Nat.cast_sum]
+    refine Finset.sum_congr rfl fun ω _ ↦ ?_
+    rw [Nat.cast_div (Subgroup.card_subgroup_dvd_card _) (by exact_mod_cast Nat.card_pos.ne')]
+  -- Hence `∑ⱼ (1 - 1 / mⱼ) = s - |X| / |G|`, and Burnside's lemma evaluates this.
+  have hinv (ω : orbitRel.Quotient G X) : 1 / (Nat.card (stabilizer G ω.out) : ℚ) =
+      (Nat.card G : ℚ) / Nat.card (stabilizer G ω.out) / Nat.card G := by
+    field_simp
+  simp_rw [Finset.sum_sub_distrib, hinv, ← Finset.sum_div, ← hclass, Finset.sum_const,
+    Finset.card_univ, nsmul_eq_mul, mul_one]
+  field_simp
+  linear_combination -hburnside
 
 end TauCeti
