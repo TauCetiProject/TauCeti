@@ -110,7 +110,8 @@ theorem duhamel_heatSemigroup_ae_eq_heatDuhamelPotential (hp : p ≠ ∞) (ht : 
   -- The representatives of `e^{(t-s)Δ} G(s)` are the heat convolutions `K_{t-s} ⋆ f(s, ·)`.
   have h := ((heatSemigroup hp).integrableOn_realOperator_sub_apply hG).coeFn_integral_Lp
     (X := fun s x => (heatKernel (t - s) ⋆ f s) x)
-    (stronglyMeasurable_heatKernel_sub_convolution hf t).aestronglyMeasurable <| by
+    (stronglyMeasurable_heatKernel_convolution (τ := (t - ·)) (by fun_prop)
+      hf).aestronglyMeasurable <| by
       filter_upwards [hGf, hIoo] with s hs hst
       rw [heatSemigroup_realOperator hp (sub_pos.2 hst.2)]
       exact (convolutionLp_ae_eq_convolution_coeFn hp (integrable_heatKernel (sub_pos.2 hst.2))
