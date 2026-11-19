@@ -38,9 +38,9 @@ its stabilizer of the standard frame is the block-diagonal subgroup `diag(1_r, S
 fibre of the special unitary Stiefel fibration
 `TauCeti.Topology.Grassmannian.StiefelFibration.SpecialUnitary`.
 
-Over `ℝ`, the special orthogonal group `SO(N)` is already transitive when `r < N`: the sign of
-the determinant can be corrected by a reflection in a coordinate not used by the standard frame.
-This gives `SO(N) ⧸ Stab(e) ≃ₜ V_r(ℝ^N)`
+Over `ℝ` the special unitary group is the special orthogonal group `SO(N)`, so the special
+orthogonal statements are those of the special unitary group over `ℝ`. In particular `SO(N)` is
+transitive when `r < N`, which gives `SO(N) ⧸ Stab(e) ≃ₜ V_r(ℝ^N)`
 (`TauCeti.finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph`), with stabilizer
 `diag(1_r, SO(m))` when `N = r + m`. In particular the ordered orthonormal two-frames of `ℝⁿ`,
 `n ≥ 3`, are `SO(n) / SO(n - 2)`, and those of `ℂⁿ`, `n ≥ 2`, are `U(n) / U(n - 2)`.
@@ -207,7 +207,7 @@ theorem coe_unitaryStabilizerHomeomorph_apply (m : ℕ) (B : unitaryGroup (Fin m
 
 variable (𝕜) in
 /-- The **stabilizer of the standard frame** in the special unitary group `SU(N)`. -/
-def specialUnitaryStabilizer (h : r ≤ N) : Subgroup (specialUnitaryGroup (Fin N) 𝕜) :=
+@[expose] def specialUnitaryStabilizer (h : r ≤ N) : Subgroup (specialUnitaryGroup (Fin N) 𝕜) :=
   letI := specialUnitaryMulAction 𝕜 r N
   MulAction.stabilizer _ (standard 𝕜 h)
 
@@ -243,6 +243,8 @@ theorem range_fromBlocksOne_eq_specialUnitaryStabilizer (m : ℕ) :
   ext A
   rw [specialUnitaryGroup.mem_range_fromBlocksOne_iff, mem_specialUnitaryStabilizer_iff,
     Subtype.ext_iff, funext_iff, coe_unitaryMap, coe_standard]
+  -- `Fin.castAdd m` is by definition `Fin.castLE` along `r ≤ r + m`, and there is no library lemma
+  -- rewriting one into the other.
   rfl
 
 variable (𝕜 r) in
@@ -263,42 +265,24 @@ theorem coe_specialUnitaryStabilizerHomeomorph_apply (m : ℕ) (B : specialUnita
 
 /-! ### Real frames and the special orthogonal group -/
 
-/-- The **stabilizer of the standard real frame** in the special orthogonal group `SO(N)`. -/
-def specialOrthogonalStabilizer (h : r ≤ N) : Subgroup (specialOrthogonalGroup (Fin N) ℝ) :=
-  letI := specialOrthogonalMulAction r N
-  MulAction.stabilizer _ (standard ℝ h)
+/-- The **stabilizer of the standard real frame** in the special orthogonal group `SO(N)`: the
+stabilizer `specialUnitaryStabilizer` over `ℝ`. -/
+@[expose] def specialOrthogonalStabilizer (h : r ≤ N) :
+    Subgroup (specialOrthogonalGroup (Fin N) ℝ) :=
+  specialUnitaryStabilizer ℝ h
 
 theorem mem_specialOrthogonalStabilizer_iff {h : r ≤ N} {A : specialOrthogonalGroup (Fin N) ℝ} :
     A ∈ specialOrthogonalStabilizer h ↔ unitaryMap ⟨A.1, A.2.1⟩ (standard ℝ h) = standard ℝ h :=
-  Iff.rfl
+  mem_specialUnitaryStabilizer_iff
 
 /-- **The special orthogonal group acts transitively on orthonormal real frames** of fewer than
 `N` vectors: for `r < N`, every orthonormal `r`-frame of `ℝ^N` is the image of the standard frame
-under a special orthogonal matrix. An orthogonal matrix of determinant `-1` is corrected by the
-reflection in the last coordinate, which fixes the standard frame. -/
+under a special orthogonal matrix: this is `specialUnitary_unitaryMap_standard_surjective` over
+`ℝ`. -/
 theorem specialOrthogonal_unitaryMap_standard_surjective (h : r < N) :
     Surjective fun A : specialOrthogonalGroup (Fin N) ℝ ↦
-      unitaryMap ⟨A.1, A.2.1⟩ (standard ℝ h.le) := by
-  intro f
-  obtain ⟨A, rfl⟩ := unitaryMap_standard_surjective h.le f
-  rcases mul_self_eq_one_iff.1 (by simpa using (det_of_mem_unitary A.2).2) with hA | hA
-  · exact ⟨⟨A.1, A.2, hA⟩, rfl⟩
-  -- The reflection `D` in the last coordinate `j`, which is not used by the standard frame.
-  let j : Fin N := ⟨N - 1, by omega⟩
-  let D : unitaryGroup (Fin N) ℝ := ⟨diagonal (Function.update 1 j (-1)),
-    diagonal_mem_unitary.2 <| by
-      rw [Unitary.mem_iff]
-      constructor <;> ext k <;> rcases eq_or_ne k j with rfl | hk <;> simp [*]⟩
-  have hD : unitaryMap D (standard ℝ h.le) = standard ℝ h.le := by
-    refine Subtype.ext <| funext fun i ↦ ?_
-    have hij : Fin.castLE h.le i ≠ j := fun hij ↦ by
-      have := congrArg Fin.val hij
-      simp only [Fin.val_castLE, j] at this
-      omega
-    simp [D, hij]
-  have hdet : (A * D).1.det = 1 := by
-    simp [D, hA, det_diagonal, Finset.prod_update_of_mem]
-  exact ⟨⟨(A * D).1, (A * D).2, hdet⟩, (unitaryMap_mul A D _).trans (congrArg _ hD)⟩
+      unitaryMap ⟨A.1, A.2.1⟩ (standard ℝ h.le) :=
+  specialUnitary_unitaryMap_standard_surjective h
 
 /-- **Orthonormal real frames form a homogeneous space of the special orthogonal group**: for
 `r < N`, the map `A ↦ A • e` sending a special orthogonal matrix to the image of the standard frame
@@ -351,36 +335,28 @@ space `SO(r + m) / SO(m)`; for instance the ordered orthonormal two-frames of `�
 `SO(n) / SO(n - 2)`. -/
 theorem range_fromBlocksOne_eq_specialOrthogonalStabilizer (m : ℕ) :
     (SpecialOrthogonalGroup.fromBlocksOne ℝ r m).range =
-      specialOrthogonalStabilizer (Nat.le_add_right r m) := by
-  ext A
-  rw [SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff, mem_specialOrthogonalStabilizer_iff,
-    Subtype.ext_iff, funext_iff, coe_unitaryMap, coe_standard]
-  rfl
+      specialOrthogonalStabilizer (Nat.le_add_right r m) :=
+  range_fromBlocksOne_eq_specialUnitaryStabilizer m
 
 /-- The block embedding `B ↦ diag(1_r, B)` of `SO(m)` in `SO(r + m)` is continuous. -/
 theorem continuous_fromBlocksOne (m : ℕ) :
-    Continuous (SpecialOrthogonalGroup.fromBlocksOne ℝ r m) := by
-  refine continuous_induced_rng.2 ?_
-  simp only [Function.comp_def, SpecialOrthogonalGroup.coe_fromBlocksOne]
-  exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
-    continuous_subtype_val).matrix_reindex _ _
+    Continuous (SpecialOrthogonalGroup.fromBlocksOne ℝ r m) :=
+  specialUnitaryGroup.continuous_fromBlocksOne m
 
 variable (r) in
 /-- The block embedding `B ↦ diag(1_r, B)` is a homeomorphism of `SO(m)` onto the stabilizer of
-the standard real `r`-frame in `SO(r + m)`. -/
-def specialOrthogonalStabilizerHomeomorph (m : ℕ) :
+the standard real `r`-frame in `SO(r + m)`: this is `specialUnitaryStabilizerHomeomorph` over `ℝ`.
+-/
+@[expose] def specialOrthogonalStabilizerHomeomorph (m : ℕ) :
     specialOrthogonalGroup (Fin m) ℝ ≃ₜ specialOrthogonalStabilizer (Nat.le_add_right r m) :=
-  ((continuous_fromBlocksOne m).rangeFactorization.homeoOfEquivCompactToT2
-    (f := Equiv.ofInjective _ (SpecialOrthogonalGroup.fromBlocksOne_injective ℝ r))).trans
-    (Homeomorph.setCongr <| by
-      rw [← range_fromBlocksOne_eq_specialOrthogonalStabilizer, MonoidHom.coe_range])
+  specialUnitaryStabilizerHomeomorph ℝ r m
 
 @[simp]
 theorem coe_specialOrthogonalStabilizerHomeomorph_apply (m : ℕ)
     (B : specialOrthogonalGroup (Fin m) ℝ) :
     (specialOrthogonalStabilizerHomeomorph r m B : specialOrthogonalGroup (Fin (r + m)) ℝ) =
       SpecialOrthogonalGroup.fromBlocksOne ℝ r m B :=
-  (rfl)
+  coe_specialUnitaryStabilizerHomeomorph_apply m B
 
 /-! ### Full frames -/
 

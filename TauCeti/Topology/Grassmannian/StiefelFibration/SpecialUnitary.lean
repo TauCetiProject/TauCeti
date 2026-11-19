@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Grassmannian.StiefelFibration.Unitary
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # The special unitary Stiefel fibration `SU(m) → SU(r + m) → V_r(𝕜^(r + m))`
@@ -18,7 +19,9 @@ orthonormal `r`-frames (`TauCeti.specialUnitaryFrameMap`): it reads off the firs
 subgroup. For `m ≥ 1` the map is surjective and a locally trivial bundle with fibre `SU(m)`, and
 hence a Serre fibration. Over `ℂ` and for `r = 1` this is the bundle `SU(n) → SU(n + 1) → S^(2n+1)`
 of `TauCeti.Topology.Grassmannian.SphereBundle.SpecialUnitary`, for instance
-`SU(2) → SU(3) → S⁵`.
+`SU(2) → SU(3) → S⁵`. Over `ℝ` it is the special orthogonal Stiefel fibration
+`SO(m) → SO(r + m) → V_r(ℝ^(r + m))` of `TauCeti.Topology.Grassmannian.StiefelFibration.Basic`,
+whose statements are specializations of these.
 
 The charts come from the local sections of the unitary Stiefel fibration
 (`TauCeti.exists_unitaryFrameMap_localSection`), given by the Gram–Schmidt process. Such a section
@@ -75,7 +78,7 @@ variable {𝕜 : Type*} [RCLike 𝕜] {r m : ℕ}
 variable (r m) in
 /-- The special unitary Stiefel map `SU(r + m) → V_r(𝕜^(r + m))`, `A ↦ (A e₀, …, A e_{r-1})`,
 sending a special unitary matrix to its first `r` columns. -/
-def specialUnitaryFrameMap (A : specialUnitaryGroup (Fin (r + m)) 𝕜) :
+@[expose] def specialUnitaryFrameMap (A : specialUnitaryGroup (Fin (r + m)) 𝕜) :
     finiteOrthonormalFrame 𝕜 r (r + m) :=
   unitaryMap ⟨A.1, A.2.1⟩ (standard 𝕜 (Nat.le_add_right r m))
 
@@ -109,22 +112,21 @@ theorem specialUnitaryFrameMap_one :
       standard 𝕜 (Nat.le_add_right r m) :=
   unitaryMap_one _
 
+/-- The frame map is the orbit map `A ↦ A • e` of the standard frame `e` under
+`specialUnitaryMulAction`. -/
+theorem specialUnitaryFrameMap_eq_smul_standard (A : specialUnitaryGroup (Fin (r + m)) 𝕜) :
+    letI := specialUnitaryMulAction 𝕜 r (r + m)
+    specialUnitaryFrameMap r m A = A • standard 𝕜 (Nat.le_add_right r m) :=
+  (specialUnitary_smul_def A _).symm
+
 /-- The fibres of the frame map are the left cosets of the stabilizer of the standard frame. -/
 theorem specialUnitaryFrameMap_eq_specialUnitaryFrameMap_iff
     {A B : specialUnitaryGroup (Fin (r + m)) 𝕜} :
     specialUnitaryFrameMap r m A = specialUnitaryFrameMap r m B ↔
       A⁻¹ * B ∈ specialUnitaryStabilizer 𝕜 (Nat.le_add_right r m) := by
-  have hmem : A⁻¹ * B ∈ specialUnitaryStabilizer 𝕜 (Nat.le_add_right r m) ↔
-      specialUnitaryFrameMap r m (A⁻¹ * B) = specialUnitaryFrameMap r m 1 := by
-    rw [specialUnitaryFrameMap_one]
-    exact mem_specialUnitaryStabilizer_iff
-  rw [hmem]
-  constructor
-  · intro h
-    rw [specialUnitaryFrameMap_mul, ← h, ← specialUnitaryFrameMap_mul, inv_mul_cancel]
-  · intro h
-    rw [← mul_inv_cancel_left A B, specialUnitaryFrameMap_mul A, h,
-      ← specialUnitaryFrameMap_mul, mul_one]
+  let := specialUnitaryMulAction 𝕜 r (r + m)
+  simpa only [specialUnitaryFrameMap_eq_smul_standard, specialUnitaryStabilizer] using
+    smul_eq_smul_iff_inv_mul_mem_stabilizer (standard 𝕜 (Nat.le_add_right r m)) A B
 
 /-- The fibre of the frame map over the standard frame is the block subgroup `diag(1_r, SU(m))`. -/
 theorem specialUnitaryFrameMap_eq_specialUnitaryFrameMap_one_iff
@@ -214,27 +216,26 @@ theorem exists_trivialization_specialUnitaryFrameMap [NeZero m]
       b ∈ e.baseSet := by
   -- `g` carries the standard frame to `b`; translating the local section by `g` gives a section
   -- near `b`.
+  let := specialUnitaryMulAction 𝕜 r (r + m)
+  have := continuousSMul_specialUnitaryMulAction 𝕜 r (r + m)
   obtain ⟨g, rfl⟩ := surjective_specialUnitaryFrameMap (𝕜 := 𝕜) (r := r) (m := m) b
   obtain ⟨U, hU, hstd, s, hs, hsec⟩ := exists_specialUnitaryFrameMap_localSection (𝕜 := 𝕜)
     (r := r) (m := m)
   let t : finiteOrthonormalFrame 𝕜 r (r + m) → finiteOrthonormalFrame 𝕜 r (r + m) :=
-    unitaryMap ⟨(g⁻¹ : specialUnitaryGroup (Fin (r + m)) 𝕜).1, (g⁻¹).2.1⟩
-  have ht : Continuous t := continuous_unitaryMap.comp (continuous_const.prodMk continuous_id)
-  have hgt (f : finiteOrthonormalFrame 𝕜 r (r + m)) : unitaryMap ⟨g.1, g.2.1⟩ (t f) = f := by
-    have h1 : (⟨g.1, g.2.1⟩ : unitaryGroup (Fin (r + m)) 𝕜) * ⟨(g⁻¹).1, (g⁻¹).2.1⟩ = 1 :=
-      Subtype.ext ((Submonoid.coe_mul _ g g⁻¹).symm.trans
-        (by rw [mul_inv_cancel, OneMemClass.coe_one]; rfl))
-    rw [← unitaryMap_mul, h1, unitaryMap_one]
+    fun f ↦ g⁻¹ • f
+  have ht : Continuous t := continuous_const_smul _
   let e := Subgroup.localSectionTrivializationOfCosetFibers
     (specialUnitaryStabilizer 𝕜 (Nat.le_add_right r m)) (continuous_specialUnitaryFrameMap 𝕜 r m)
     (fun _ _ ↦ specialUnitaryFrameMap_eq_specialUnitaryFrameMap_iff) (t ⁻¹' U)
     (hU.preimage ht) (fun f ↦ g * s (t f))
     (continuousOn_const.mul (hs.comp ht.continuousOn fun _ hf ↦ hf))
-    fun f hf ↦ by rw [specialUnitaryFrameMap_mul, hsec _ hf, hgt]
+    fun f hf ↦ by
+      rw [specialUnitaryFrameMap_eq_smul_standard, mul_smul,
+        ← specialUnitaryFrameMap_eq_smul_standard, hsec _ hf, smul_inv_smul]
   refine ⟨e.transFiberHomeomorph (specialUnitaryStabilizerHomeomorph 𝕜 r m).symm, ?_⟩
   simp only [Bundle.Trivialization.transFiberHomeomorph, e,
     Subgroup.localSectionTrivializationOfCosetFibers_baseSet, mem_preimage, t,
-    ← specialUnitaryFrameMap_mul, inv_mul_cancel, specialUnitaryFrameMap_one]
+    specialUnitaryFrameMap_eq_smul_standard, inv_smul_smul]
   exact hstd
 
 /-- For `m ≥ 1`, the frame map `SU(r + m) → V_r(𝕜^(r + m))`, `A ↦ (A e₀, …, A e_{r-1})`, is a

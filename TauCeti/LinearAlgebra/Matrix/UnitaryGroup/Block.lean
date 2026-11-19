@@ -39,7 +39,8 @@ spanned by `e₀`.
 
 * `Matrix.UnitaryGroup.fromBlocksOne`: the embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)`.
 * `Matrix.specialUnitaryGroup.fromBlocksOne`: the embedding of `SU(m)` in `SU(r + m)`.
-* `Matrix.SpecialOrthogonalGroup.fromBlocksOne`: the embedding of `SO(m)` in `SO(r + m)`.
+* `Matrix.SpecialOrthogonalGroup.fromBlocksOne`: the embedding of `SO(m)` in `SO(r + m)`, which is
+  `Matrix.specialUnitaryGroup.fromBlocksOne` for the trivial star.
 * `Matrix.UnitaryGroup.sum`: the block-diagonal sum `diag(U, V)` of two unitary matrices, as a
   group morphism `U(n) × U(m) →* U(n + m)`.
 * `Matrix.UnitaryGroup.prodBlockSucc`: the embedding `(c, B) ↦ diag(c, B)` of `U(1) × U(m)` in
@@ -417,53 +418,46 @@ variable (R : Type*) [CommRing R] (r : ℕ) {m : ℕ}
 
 variable (m) in
 /-- The **block-diagonal embedding** `B ↦ diag(1_r, B)` of the special orthogonal group `SO(m)`
-in `SO(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. -/
-def fromBlocksOne : specialOrthogonalGroup (Fin m) R →* specialOrthogonalGroup (Fin (r + m)) R where
-  toFun B := ⟨reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ R)),
-    submatrix_equiv_mem_unitary.2
-      (fromBlocks_zero_zero_mem_unitaryGroup_iff.2 ⟨one_mem _, B.2.1⟩),
-    by simpa [det_fromBlocks_zero₂₁] using B.2.2⟩
-  map_one' := Subtype.ext <| by simp [fromBlocks_one]
-  map_mul' A B := Subtype.ext <| by
-    simp only [reindex_apply, Submonoid.coe_mul, submatrix_mul_equiv, fromBlocks_multiply,
-      Matrix.mul_one, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
+in `SO(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. It is the
+special unitary embedding `Matrix.specialUnitaryGroup.fromBlocksOne` for the trivial star. -/
+@[expose] def fromBlocksOne :
+    specialOrthogonalGroup (Fin m) R →* specialOrthogonalGroup (Fin (r + m)) R :=
+  specialUnitaryGroup.fromBlocksOne R r m
 
 theorem coe_fromBlocksOne (B : specialOrthogonalGroup (Fin m) R) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) =
       reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ R)) :=
-  (rfl)
+  specialUnitaryGroup.coe_fromBlocksOne R r B
 
 @[simp]
 theorem fromBlocksOne_apply_castAdd_castAdd (B : specialOrthogonalGroup (Fin m) R) (i j : Fin r) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (castAdd m i) (castAdd m j) =
-      if i = j then 1 else 0 := by
-  simp [coe_fromBlocksOne, Matrix.one_apply]
+      if i = j then 1 else 0 :=
+  specialUnitaryGroup.fromBlocksOne_apply_castAdd_castAdd R r B i j
 
 @[simp]
 theorem fromBlocksOne_apply_castAdd_natAdd (B : specialOrthogonalGroup (Fin m) R) (i : Fin r)
     (k : Fin m) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (castAdd m i) (natAdd r k) =
-      0 := by
-  simp [coe_fromBlocksOne]
+      0 :=
+  specialUnitaryGroup.fromBlocksOne_apply_castAdd_natAdd R r B i k
 
 @[simp]
 theorem fromBlocksOne_apply_natAdd_castAdd (B : specialOrthogonalGroup (Fin m) R) (k : Fin m)
     (i : Fin r) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (natAdd r k) (castAdd m i) =
-      0 := by
-  simp [coe_fromBlocksOne]
+      0 :=
+  specialUnitaryGroup.fromBlocksOne_apply_natAdd_castAdd R r B k i
 
 @[simp]
 theorem fromBlocksOne_apply_natAdd_natAdd (B : specialOrthogonalGroup (Fin m) R) (k l : Fin m) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (natAdd r k) (natAdd r l) =
-      (B : Matrix (Fin m) (Fin m) R) k l := by
-  simp [coe_fromBlocksOne]
+      (B : Matrix (Fin m) (Fin m) R) k l :=
+  specialUnitaryGroup.fromBlocksOne_apply_natAdd_natAdd R r B k l
 
 /-- The block-diagonal embedding of special orthogonal groups is injective. -/
-theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne R r m) := fun A B h ↦
-  Subtype.ext <| funext fun k ↦ funext fun l ↦ by
-    simpa [coe_fromBlocksOne] using
-      congrFun (congrFun (congrArg Subtype.val h) (natAdd r k)) (natAdd r l)
+theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne R r m) :=
+  specialUnitaryGroup.fromBlocksOne_injective R r
 
 variable {R r}
 
@@ -472,26 +466,8 @@ vectors**: a special orthogonal matrix of size `r + m` lies in the image of `SO(
 it fixes the standard basis vectors `e₀, …, e_{r-1}`. -/
 theorem mem_range_fromBlocksOne_iff {A : specialOrthogonalGroup (Fin (r + m)) R} :
     A ∈ (fromBlocksOne R r m).range ↔
-      ∀ i : Fin r, A.1 *ᵥ Pi.single (castAdd m i) 1 = Pi.single (castAdd m i) 1 := by
-  refine ⟨?_, fun hA ↦ ?_⟩
-  · rintro ⟨B, rfl⟩
-    intro i
-    ext p
-    refine Fin.addCases (fun j ↦ ?_) (fun k ↦ ?_) p
-    · simp [coe_fromBlocksOne, Pi.single_apply, Matrix.one_apply, eq_comm]
-    · have hk : natAdd r k ≠ castAdd m i := fun h ↦ by
-        have := congrArg Fin.val h
-        simp only [val_natAdd, val_castAdd] at this
-        omega
-      simp [coe_fromBlocksOne, hk]
-  obtain ⟨B, hB⟩ := (UnitaryGroup.mem_range_fromBlocksOne_iff
-    (A := (⟨A.1, A.2.1⟩ : unitaryGroup (Fin (r + m)) R))).2 hA
-  have hdet : (B : Matrix (Fin m) (Fin m) R).det = 1 := by
-    have h := A.2.2
-    rw [← congrArg Subtype.val hB] at h
-    simpa [UnitaryGroup.coe_fromBlocksOne, det_fromBlocks_zero₂₁] using h
-  exact ⟨⟨B, B.2, hdet⟩, Subtype.ext <| (coe_fromBlocksOne R r _).trans <|
-    (UnitaryGroup.coe_fromBlocksOne R r B).symm.trans (congrArg Subtype.val hB)⟩
+      ∀ i : Fin r, A.1 *ᵥ Pi.single (castAdd m i) 1 = Pi.single (castAdd m i) 1 :=
+  specialUnitaryGroup.mem_range_fromBlocksOne_iff
 
 end SpecialOrthogonalGroup
 

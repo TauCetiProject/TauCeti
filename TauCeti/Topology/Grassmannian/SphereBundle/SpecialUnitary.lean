@@ -17,7 +17,8 @@ fibre of the map over `e₀` is the block subgroup `diag(1, SU(n))`, the image o
 `Matrix.specialUnitaryGroup.fromBlocksOne 𝕜 1 n`. For `n ≥ 1` the map is surjective and a locally
 trivial bundle with fibre `SU(n)`, and hence a Serre fibration. For `n = 2` and `𝕜 = ℂ` this is the
 bundle `SU(2) → SU(3) → S⁵`, with the block inclusion `B ↦ diag(1, B)` and the projection to the
-first column.
+first column. Over `ℝ` it is the bundle `SO(n) → SO(1 + n) → Sⁿ` of
+`TauCeti.Topology.Grassmannian.SphereBundle.Basic`.
 
 A unit vector is an orthonormal one-frame (`TauCeti.finiteOrthonormalFrame.sphereHomeomorph`), and
 under this identification `A ↦ A e₀` is the special unitary Stiefel map
@@ -29,6 +30,8 @@ surjective: `SU(1)` is trivial, while the unit sphere of `𝕜` is not a point.
 ## Main definitions
 
 * `TauCeti.specialUnitarySphereMap`: the evaluation map `SU(1 + n) → S`, `A ↦ A e₀`.
+* `TauCeti.specialUnitarySphereFiberHomeomorph`: `SU(n)` is homeomorphic to the fibre of
+  `A ↦ A e₀` over `e₀`, through `B ↦ diag(1, B)`.
 
 ## Main results
 
@@ -61,7 +64,7 @@ variable (n : ℕ)
 
 /-- The evaluation map `SU(1 + n) → S`, `A ↦ A e₀`, on the first coordinate vector `e₀`, to the
 unit sphere `S` of `EuclideanSpace 𝕜 (Fin (1 + n))`. -/
-def specialUnitarySphereMap (A : specialUnitaryGroup (Fin (1 + n)) 𝕜) :
+@[expose] def specialUnitarySphereMap (A : specialUnitaryGroup (Fin (1 + n)) 𝕜) :
     sphere (0 : EuclideanSpace 𝕜 (Fin (1 + n))) 1 :=
   finiteOrthonormalFrame.sphereHomeomorph 𝕜 (1 + n) (specialUnitaryFrameMap 1 n A)
 
@@ -83,6 +86,15 @@ theorem continuous_specialUnitarySphereMap :
   (finiteOrthonormalFrame.sphereHomeomorph 𝕜 (1 + n)).continuous.comp
     (continuous_specialUnitaryFrameMap 𝕜 1 n)
 
+/-- The evaluation map is equivariant: `(A B) e₀ = A (B e₀)`. -/
+theorem ofLp_specialUnitarySphereMap_mul (A B : specialUnitaryGroup (Fin (1 + n)) 𝕜) :
+    WithLp.ofLp (specialUnitarySphereMap n (A * B) : EuclideanSpace 𝕜 (Fin (1 + n))) =
+      (A : Matrix (Fin (1 + n)) (Fin (1 + n)) 𝕜) *ᵥ
+        WithLp.ofLp (specialUnitarySphereMap n B : EuclideanSpace 𝕜 (Fin (1 + n))) := by
+  rw [coe_specialUnitarySphereMap, coe_specialUnitarySphereMap, WithLp.ofLp_toLp,
+    WithLp.ofLp_toLp, ← mulVec_single_one, ← mulVec_single_one, Submonoid.coe_mul,
+    mulVec_mulVec]
+
 /-- The fibre of `A ↦ A e₀` over `e₀` is the block subgroup `diag(1, SU(n))`. -/
 theorem specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff
     {A : specialUnitaryGroup (Fin (1 + n)) 𝕜} :
@@ -97,6 +109,42 @@ theorem surjective_specialUnitarySphereMap [NeZero n] :
     Function.Surjective (specialUnitarySphereMap (𝕜 := 𝕜) n) :=
   (finiteOrthonormalFrame.sphereHomeomorph 𝕜 (1 + n)).surjective.comp
     surjective_specialUnitaryFrameMap
+
+/-! ### The fibre over `e₀` -/
+
+variable (𝕜 n) in
+/-- The fibre of `A ↦ A e₀` over `e₀` is `SU(n)`: the block embedding `B ↦ diag(1, B)` is a
+homeomorphism of `SU(n)` onto the special unitary matrices fixing `e₀`. -/
+@[expose] def specialUnitarySphereFiberHomeomorph :
+    specialUnitaryGroup (Fin n) 𝕜 ≃ₜ
+      specialUnitarySphereMap (𝕜 := 𝕜) n ⁻¹' {specialUnitarySphereMap n 1} :=
+  (finiteOrthonormalFrame.specialUnitaryStabilizerHomeomorph 𝕜 1 n).trans
+    (Homeomorph.setCongr <| by
+      ext A
+      rw [← finiteOrthonormalFrame.range_fromBlocksOne_eq_specialUnitaryStabilizer,
+        SetLike.mem_coe, mem_preimage, mem_singleton_iff,
+        specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff])
+
+@[simp]
+theorem coe_specialUnitarySphereFiberHomeomorph_apply (B : specialUnitaryGroup (Fin n) 𝕜) :
+    (specialUnitarySphereFiberHomeomorph 𝕜 n B : specialUnitaryGroup (Fin (1 + n)) 𝕜) =
+      specialUnitaryGroup.fromBlocksOne 𝕜 1 n B :=
+  finiteOrthonormalFrame.coe_specialUnitaryStabilizerHomeomorph_apply n B
+
+/-- A special unitary matrix fixing `e₀` is the block matrix `diag(1, B)` of its image `B` in
+`SU(n)`. -/
+@[simp]
+theorem fromBlocksOne_specialUnitarySphereFiberHomeomorph_symm_apply
+    (A : specialUnitarySphereMap (𝕜 := 𝕜) n ⁻¹' {specialUnitarySphereMap n 1}) :
+    specialUnitaryGroup.fromBlocksOne 𝕜 1 n ((specialUnitarySphereFiberHomeomorph 𝕜 n).symm A) =
+      A := by
+  rw [← coe_specialUnitarySphereFiberHomeomorph_apply, Homeomorph.apply_symm_apply]
+
+/-- The identity of `SU(n)` corresponds to the identity of `SU(1 + n)` in the fibre. -/
+@[simp]
+theorem specialUnitarySphereFiberHomeomorph_one :
+    specialUnitarySphereFiberHomeomorph 𝕜 n 1 = ⟨1, rfl⟩ :=
+  Subtype.ext (by simp)
 
 /-! ### Local triviality -/
 

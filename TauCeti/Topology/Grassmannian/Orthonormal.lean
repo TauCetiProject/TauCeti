@@ -227,24 +227,6 @@ abbrev unitaryMulAction : MulAction (unitaryGroup (Fin N) 𝕜) (finiteOrthonorm
   one_smul := unitaryMap_one
   mul_smul := unitaryMap_mul
 
-variable (r N) in
-/-- The action of `SO(N)` on orthonormal real `r`-frames, through the orthogonal group. Like
-`unitaryMulAction`, it is a definition rather than an instance. -/
-noncomputable abbrev specialOrthogonalMulAction :
-    MulAction (specialOrthogonalGroup (Fin N) ℝ) (finiteOrthonormalFrame ℝ r N) :=
-  letI := unitaryMulAction ℝ r N
-  MulAction.compHom _ (Submonoid.inclusion (S := specialOrthogonalGroup (Fin N) ℝ)
-    (T := unitaryGroup (Fin N) ℝ) fun _ hA ↦ hA.1)
-
-/-- Under `specialOrthogonalMulAction`, a special orthogonal matrix acts on frames by
-`unitaryMap`. -/
-@[simp]
-theorem specialOrthogonal_smul_def (A : specialOrthogonalGroup (Fin N) ℝ)
-    (f : finiteOrthonormalFrame ℝ r N) :
-    letI := specialOrthogonalMulAction r N
-    A • f = unitaryMap ⟨A.1, A.2.1⟩ f :=
-  (rfl)
-
 variable (𝕜 r N) in
 /-- The action of `SU(N)` on orthonormal `r`-frames, through the unitary group. Like
 `unitaryMulAction`, it is a definition rather than an instance. -/
@@ -261,14 +243,38 @@ theorem specialUnitary_smul_def (A : specialUnitaryGroup (Fin N) 𝕜)
     A • f = unitaryMap ⟨A.1, A.2.1⟩ f :=
   (rfl)
 
+variable (𝕜 r N) in
+/-- The action `specialUnitaryMulAction` of `SU(N)` on orthonormal frames is jointly continuous. -/
+theorem continuousSMul_specialUnitaryMulAction :
+    letI := specialUnitaryMulAction 𝕜 r N
+    ContinuousSMul (specialUnitaryGroup (Fin N) 𝕜) (finiteOrthonormalFrame 𝕜 r N) :=
+  letI := specialUnitaryMulAction 𝕜 r N
+  ⟨continuous_unitaryMap.comp
+    (((continuous_subtype_val.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
+
+variable (r N) in
+/-- The action of `SO(N)` on orthonormal real `r`-frames: the action `specialUnitaryMulAction` of
+`SU(N)` over `ℝ`, since `Matrix.specialOrthogonalGroup` is `Matrix.specialUnitaryGroup` for the
+trivial star. -/
+noncomputable abbrev specialOrthogonalMulAction :
+    MulAction (specialOrthogonalGroup (Fin N) ℝ) (finiteOrthonormalFrame ℝ r N) :=
+  specialUnitaryMulAction ℝ r N
+
+/-- Under `specialOrthogonalMulAction`, a special orthogonal matrix acts on frames by
+`unitaryMap`. -/
+@[simp]
+theorem specialOrthogonal_smul_def (A : specialOrthogonalGroup (Fin N) ℝ)
+    (f : finiteOrthonormalFrame ℝ r N) :
+    letI := specialOrthogonalMulAction r N
+    A • f = unitaryMap ⟨A.1, A.2.1⟩ f :=
+  specialUnitary_smul_def A f
+
 /-- The action `specialOrthogonalMulAction` of `SO(N)` on orthonormal real frames is jointly
 continuous. -/
 theorem continuousSMul_specialOrthogonalMulAction :
     letI := specialOrthogonalMulAction r N
     ContinuousSMul (specialOrthogonalGroup (Fin N) ℝ) (finiteOrthonormalFrame ℝ r N) :=
-  letI := specialOrthogonalMulAction r N
-  ⟨continuous_unitaryMap.comp
-    (((continuous_subtype_val.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
+  continuousSMul_specialUnitaryMulAction ℝ r N
 
 end UnitaryMap
 
