@@ -32,9 +32,10 @@ import Mathlib.Topology.MetricSpace.ProperSpace
 Fixing the clockwise edge-difference boundary `B : Fin 3 → Fin n → R` of a normalized hive cuts out
 a bounded slice of the hive cone. Summing unit-rhombus inequalities across any `(y, z)`-aligned
 parallelogram inside `Δₙ` gives `f(y₀, z₀) + f(y₁, z₁) ≤ f(y₁, z₀) + f(y₀, z₁)`
-(`TauCeti.Hive.IsRhombusConcave.parallelogram_le`). Evaluating on two boundary-anchored
-parallelograms traps every entry `h p` between explicit linear combinations `entryLowerBound` and
-`entryUpperBound` of the boundary differences, yielding four consequences:
+(`TauCeti.Hive.IsRhombusConcave.parallelogram_le`, in `TauCeti.Combinatorics.Hive.Concave`).
+Evaluating on two boundary-anchored parallelograms traps every entry `h p` between explicit linear
+combinations `entryLowerBound` and `entryUpperBound` of the boundary differences, yielding four
+consequences:
 
 1. **Zero-boundary uniqueness** (`TauCeti.Hive.boundary_eq_zero_iff`): the only normalized hive
    with zero boundary over any partially ordered abelian group is `0`.
@@ -70,8 +71,8 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
 
 ## Main results
 
-* `TauCeti.Hive.IsRhombusConcave.parallelogram_le`, `TauCeti.Hive.entryLowerBound_le`,
-  `TauCeti.Hive.le_entryUpperBound`, `TauCeti.Hive.boundary_eq_zero_iff`.
+* `TauCeti.Hive.entryLowerBound_le`, `TauCeti.Hive.le_entryUpperBound`,
+  `TauCeti.Hive.boundary_eq_zero_iff`.
 * `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
   `TauCeti.Hive.isProperMap_boundary_properCone`.
 * `TauCeti.Hive.finite_fixedIntegerHive`, `TauCeti.Hive.dominates_add_of_productBoundary`,
@@ -94,28 +95,11 @@ open scoped BigOperators Matrix
 
 namespace TauCeti.Hive
 
-/-! ### Parallelogram inequality in the `(y, z)` chart -/
+/-! ### Explicit two-sided entry bounds and zero-boundary uniqueness -/
 
-section Parallelogram
+section EntryBounds
 
 variable {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
-
-/-- **Parallelogram inequality** for rhombus-concave functions on `[y₀, y₁] × [z₀, z₁]`. -/
-theorem IsRhombusConcave.parallelogram_le {f : Vertex n → R} (hf : IsRhombusConcave f)
-    {y₀ y₁ z₀ z₁ : ℕ} (hy : y₀ ≤ y₁) (hz : z₀ ≤ z₁) (hsum : y₁ + z₁ ≤ n) :
-    f (Vertex.ofYZ n y₀ z₀ (by omega)) + f (Vertex.ofYZ n y₁ z₁ hsum) ≤
-      f (Vertex.ofYZ n y₁ z₀ (by omega)) + f (Vertex.ofYZ n y₀ z₁ (by omega)) := by
-  refine hf.parallelogram_le_yzStep (k := 0) (s := y₁ - y₀) (t := z₁ - z₀) ?_ ?_ ?_ <;>
-    ext <;> simp [yzStep_def] <;> omega
-
-/-- Parallelogram inequality specialized to a normalized `Hive`. -/
-theorem parallelogram_le (h : Hive n R) {y₀ y₁ z₀ z₁ : ℕ} (hy : y₀ ≤ y₁) (hz : z₀ ≤ z₁)
-    (hsum : y₁ + z₁ ≤ n) :
-    h (Vertex.ofYZ n y₀ z₀ (by omega)) + h (Vertex.ofYZ n y₁ z₁ hsum) ≤
-      h (Vertex.ofYZ n y₁ z₀ (by omega)) + h (Vertex.ofYZ n y₀ z₁ (by omega)) :=
-  h.isRhombusConcave.parallelogram_le hy hz hsum
-
-/-! ### Explicit two-sided entry bounds and zero-boundary uniqueness -/
 
 /-- Explicit linear lower bound on `h p` from the parallelogram `[p.y, n - p.z] × [0, p.z]`. -/
 def entryLowerBound {n : ℕ} {R : Type*} [AddCommGroup R] (B : Fin 3 → Fin n → R)
@@ -170,7 +154,7 @@ theorem le_entryUpperBound (h : Hive n R) (p : Vertex n) : h p ≤ entryUpperBou
   · simpa [hb] using le_entryUpperBound h p
   · simpa [hb] using entryLowerBound_le h p
 
-end Parallelogram
+end EntryBounds
 
 /-! ### Equality and inequality matrix presentations over rings -/
 

@@ -23,6 +23,8 @@ affine function that agrees with `f` on one unit triangle majorizes `f` on all o
 
 * `TauCeti.Hive.IsRhombusConcave.parallelogram_le_yzStep`: the parallelogram inequality for every
   lattice parallelogram spanned by two consecutive unit steps.
+* `TauCeti.Hive.IsRhombusConcave.parallelogram_le`, `TauCeti.Hive.parallelogram_le`: its
+  coordinate-aligned case `f(y₀, z₀) + f(y₁, z₁) ≤ f(y₁, z₀) + f(y₀, z₁)` on `[y₀, y₁] × [z₀, z₁]`.
 * `TauCeti.Hive.IsRhombusConcave.le_barycentricLinear`: discrete supporting planes.
 
 ## Implementation notes
@@ -441,5 +443,26 @@ theorem IsRhombusConcave.parallelogram_le_yzStep {R : Type*} [AddCommGroup R] [P
       (by rw [← hv]; exact yz_mem_yzRegion v) hi hj
   rw [← hv, ← hq, ← hr] at h
   simpa only [yzExtend_yz] using h
+
+section Parallelogram
+
+variable {R : Type*} [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
+
+/-- **Parallelogram inequality** for rhombus-concave functions on `[y₀, y₁] × [z₀, z₁]`. -/
+theorem IsRhombusConcave.parallelogram_le {f : Vertex n → R} (hf : IsRhombusConcave f)
+    {y₀ y₁ z₀ z₁ : ℕ} (hy : y₀ ≤ y₁) (hz : z₀ ≤ z₁) (hsum : y₁ + z₁ ≤ n) :
+    f (Vertex.ofYZ n y₀ z₀ (by omega)) + f (Vertex.ofYZ n y₁ z₁ hsum) ≤
+      f (Vertex.ofYZ n y₁ z₀ (by omega)) + f (Vertex.ofYZ n y₀ z₁ (by omega)) := by
+  refine hf.parallelogram_le_yzStep (k := 0) (s := y₁ - y₀) (t := z₁ - z₀) ?_ ?_ ?_ <;>
+    ext <;> simp [yzStep_def] <;> omega
+
+/-- Parallelogram inequality specialized to a normalized `Hive`. -/
+theorem parallelogram_le (h : Hive n R) {y₀ y₁ z₀ z₁ : ℕ} (hy : y₀ ≤ y₁) (hz : z₀ ≤ z₁)
+    (hsum : y₁ + z₁ ≤ n) :
+    h (Vertex.ofYZ n y₀ z₀ (by omega)) + h (Vertex.ofYZ n y₁ z₁ hsum) ≤
+      h (Vertex.ofYZ n y₁ z₀ (by omega)) + h (Vertex.ofYZ n y₀ z₁ (by omega)) :=
+  h.isRhombusConcave.parallelogram_le hy hz hsum
+
+end Parallelogram
 
 end TauCeti.Hive
