@@ -38,7 +38,9 @@ coefficient systems between the permutation local system and the constant system
   (`IsCoveringMap.chainComplexMap_comp_singularChainComplexPermutationIso_hom`);
 * for a continuous section `s` of `p`, `s_* : C(B; R) ⟶ C(E; R)` is induced by the morphism from
   the constant system sending `r` to `r • s x`
-  (`IsCoveringMap.chainComplexMap_comp_singularChainComplexPermutationIso_hom_of_section`).
+  (`IsCoveringMap.chainComplexMap_comp_singularChainComplexPermutationIso_hom_of_section`;
+  on homology, read back on `E`,
+  `IsCoveringMap.permutationLocalSystemSection_comp_singularHomologyPermutationIso_inv`).
 
 These descriptions do not need the covering to be regular, so they describe the transfer of an
 arbitrary finite covering through its permutation local system.
@@ -419,14 +421,13 @@ theorem chainComplexMap_comp_singularChainComplexPermutationIso_hom_of_section :
   refine (single_initialSheet_ιTwistedChainComplex hp R (σ := σ)
     (e := ⟨s (initialVertex σ).as, hs _⟩) ?_ rfl).trans ?_
   · rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, ← Functor.map_comp, hsp,
-      CategoryTheory.Functor.map_id]
-    rfl
+      CategoryTheory.Functor.map_id, NatTrans.id_app, ConcreteCategory.id_apply]
+  rw [← permutationLocalSystemSection_app]
   -- The summand inclusion of the constant system is only definitionally the degree-`k` term of
-  -- the singular chain complex, so the composite is reassociated by hand.
-  exact (congrArg (· ≫ _) (hp.permutationLocalSystemSection_app R s hs _)).symm.trans <|
-    (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f
-      (hp.permutationLocalSystemSection R s hs) k σ).symm.trans
-        ((congrArg (· ≫ _) hconst.symm).trans (Category.assoc _ _ _))
+  -- the singular chain complex, so `rw` cannot match the right-hand side; it is reassociated up
+  -- to that identification.
+  exact (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f _ k σ).symm.trans
+    ((congrArg (· ≫ _) hconst.symm).trans (Category.assoc _ _ _))
 
 /-- **The map on homology induced by a section, as a coefficient map**: under the comparison of
 singular homology of `E` with homology of `B` twisted by the permutation local system,
@@ -444,6 +445,20 @@ theorem homologyMap_comp_singularHomologyPermutationIso_hom_of_section (k : ℕ)
   -- The constant comparison is only definitionally a map out of the singular chain complex, so
   -- its composite with the coefficient map is split by `homologyMap_comp` up to that identity.
   exact h.trans (HomologicalComplex.homologyMap_comp _ _ k)
+
+/-- **The map on homology induced by a section, from the coefficient map**: the morphism from the
+constant system sending `r` to `r • s x`, read on `E` through the comparison of singular homology
+of `E` with homology of `B` twisted by the permutation local system, is
+`s_* : H(B; R) ⟶ H(E; R)`. -/
+theorem permutationLocalSystemSection_comp_singularHomologyPermutationIso_inv (k : ℕ) :
+    (twistedHomologyConstantIso B (ModuleCat.of R R) k).inv ≫
+        twistedHomologyCoefficientMap (hp.permutationLocalSystemSection R s hs) k ≫
+          (hp.singularHomologyPermutationIso R k).inv =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) (ModuleCat.of R R) k := by
+  -- The constant comparison is only definitionally a map out of singular homology, so `rw`
+  -- cannot match the composite; it is reassociated up to that identification.
+  exact (Category.assoc _ _ _).symm.trans ((Iso.comp_inv_eq _).2
+    (hp.homologyMap_comp_singularHomologyPermutationIso_hom_of_section R s hs k).symm)
 
 end Section
 

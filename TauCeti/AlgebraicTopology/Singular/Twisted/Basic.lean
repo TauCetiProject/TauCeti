@@ -1023,6 +1023,15 @@ lemma twistedHomologyConstantIso_hom_naturality {M N : ModuleCat.{max v w} R} (�
   ((CommSq.mk (twistedChainComplexConstantIso_hom_naturality X φ)).map
     (HomologicalComplex.homologyFunctor _ _ k)).w
 
+variable (X) in
+/-- The inverse comparison with singular homology is natural in the coefficient module. -/
+lemma twistedHomologyConstantIso_inv_naturality {M N : ModuleCat.{max v w} R} (φ : M ⟶ N) (k : ℕ) :
+    (twistedHomologyConstantIso X M k).inv ≫
+        twistedHomologyCoefficientMap ((constantFunctor X).map φ) k =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{max v w} R) k).map φ).app X ≫
+        (twistedHomologyConstantIso X N k).inv := by
+  rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv, twistedHomologyConstantIso_hom_naturality]
+
 end Constant
 
 section Map
