@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.Basic
 public import TauCeti.MeasureTheory.Measure.NewtonMoments
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
+import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.Probability.Density
 
 /-!
 # The slice measures of the cutoff current on a disc
@@ -22,19 +24,29 @@ is the two-form `f(w) dx ∧ dy` on the plane with *slice density*
 (`TauCeti.SeibergWitten.sliceDensity`). In Taubes's analysis of Seiberg–Witten solutions near a
 pseudoholomorphic curve `C`, `σ` runs over the dilated normal discs of `C`, and the normalized
 slice `f dλ / 2π` on the closed disc of radius `R` is the signed measure `μ_z` whose moments
-locate the local branches of the limiting curve. This file splits it into its positive and
-negative parts,
+locate the local branches of the limiting curve.
+
+For any density `f : ℂ → ℝ` this file splits the normalized slice into its positive and negative
+parts,
 
 `μ⁺ = (f⁺ / 2π) λ|_{B_R}`,  `μ⁻ = (f⁻ / 2π) λ|_{B_R}`
 
-(`TauCeti.SeibergWitten.posSliceMeasure`, `TauCeti.SeibergWitten.negSliceMeasure`), two finite
-measures carried by the closed disc `B_R = closedBall 0 R` whose difference integrates every
-continuous weight `g` to `(2π)⁻¹ ∫_{B_R} f g`
+(`TauCeti.SeibergWitten.posSliceMeasure`, `TauCeti.SeibergWitten.negSliceMeasure`), two measures
+carried by the closed disc `B_R = closedBall 0 R`, finite when `f` is integrable on it. Each
+integrates a weight `g` to `(2π)⁻¹ ∫_{B_R} f^± g` (`TauCeti.SeibergWitten.integral_posSliceMeasure`,
+`TauCeti.SeibergWitten.integral_negSliceMeasure`), so their difference integrates every weight `g`
+continuous on the disc to `(2π)⁻¹ ∫_{B_R} f g`
 (`TauCeti.SeibergWitten.integral_posSliceMeasure_sub_integral_negSliceMeasure`). They are the two
 measures in Mathlib's decomposition of the signed measure `(f / 2π) λ|_{B_R}`
 (`MeasureTheory.withDensityᵥ_eq_withDensity_pos_part_sub_withDensity_neg_part`), kept as a pair
-of finite measures because the compact moment lemma takes them in that form. The file proves the
-two facts that make them its input:
+of finite measures because the compact moment lemma takes them in that form: given `m`, `R` and an
+accuracy `ε > 0`, there is `δ > 0` such that for every density integrable on `B_R` whose slice has
+mass `m`, with negative mass and Newton variance at most `δ`, the slice is within `ε` in the
+bounded-Lipschitz distance of the counting measure of the roots of the Newton polynomial of its
+moments (`TauCeti.SeibergWitten.exists_forall_abs_setIntegral_mul_sub_sum_roots_le`).
+
+For the slice density of the cutoff current the file proves the two facts that make the slice an
+input of that lemma:
 
 * **Mass.** If the boundary circle of the disc lies in the vacuum region `χ(|α|²) = 1`, the
   total mass `μ⁺(ℂ) - μ⁻(ℂ)` is the winding number `n ∈ ℤ` of `α ∘ σ` around that circle
@@ -44,27 +56,21 @@ two facts that make them its input:
   below, `i F_a(v, J v) ≥ -K |v|²`, and `|∂bar_a α| ≤ D`, then
   `μ⁻(ℂ) ≤ (K + 2 M D²) / 2π · ∫_{B_R} |dσ(1)|²`, where `M` bounds `χ'`
   (`TauCeti.SeibergWitten.measureReal_negSliceMeasure_le`). If moreover `|dσ(1)| ≤ L` on the disc,
-  the energy is at most `π R² L²` (`TauCeti.SeibergWitten.integral_norm_fderiv_apply_one_sq_le`),
-  so `μ⁻(ℂ) ≤ (K + 2 M D²) L² R² / 2`
+  the energy is at most `π R² L²`, so `μ⁻(ℂ) ≤ (K + 2 M D²) L² R² / 2`
   (`TauCeti.SeibergWitten.measureReal_negSliceMeasure_le_of_norm_le`). For a dilated normal
   disc `w ↦ F(a • w)` the chain rule gives `dσ_w(1) = a dF_{a w}(1)`, so `|dF(1)| ≤ K'` allows
   `L = |a| K'`, and the negative mass is `O(a²)`.
 
-With these, the compact moment lemma `TauCeti.exists_forall_abs_integral_sub_sum_roots_le`
-applies to the slices: given `m`, `R` and an accuracy `ε > 0`, there is `δ > 0` such that every
-slice of mass `m` carried by `B_R`, with negative mass and Newton variance at most `δ`, is within
-`ε` in the bounded-Lipschitz distance of the counting measure of the roots of the Newton polynomial
-of its moments (`TauCeti.SeibergWitten.exists_forall_abs_integral_sliceDensity_sub_sum_roots_le`).
-The Newton-variance bound itself, which in Taubes's argument comes from the coupled
-Seiberg–Witten equations, is not proved here.
+The Newton-variance bound, which in Taubes's argument comes from the coupled Seiberg–Witten
+equations, is not proved here.
 
 ## Main definitions
 
 * `TauCeti.SeibergWitten.sliceDensity χ b α σ`: the density `(σ^* Θ)(1, i)` of the pullback of
   the cutoff current by a disc.
-* `TauCeti.SeibergWitten.posSliceMeasure χ b α σ R`,
-  `TauCeti.SeibergWitten.negSliceMeasure χ b α σ R`: the positive and negative parts of the
-  normalized slice `f dλ / 2π` on the closed disc of radius `R`.
+* `TauCeti.SeibergWitten.posSliceMeasure f R`, `TauCeti.SeibergWitten.negSliceMeasure f R`: the
+  positive and negative parts of the normalized slice `f dλ / 2π` on the closed disc of radius
+  `R`.
 
 ## References
 
@@ -82,7 +88,7 @@ open scoped Topology Real ENNReal
 namespace TauCeti.SeibergWitten
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {χ : ℝ → ℝ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : E → ℂ} {σ : ℂ → E} {R : ℝ}
+  {χ : ℝ → ℝ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : E → ℂ} {σ : ℂ → E} {f : ℂ → ℝ} {R : ℝ}
 
 /-! ### The slice density -/
 
@@ -115,107 +121,99 @@ theorem continuous_sliceDensity (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b
   rw [heq]
   exact continuous_eval_const _ |>.comp hΘ
 
-/-! ### The positive and negative slice measures -/
+/-! ### The positive and negative slice measures of a density -/
 
-private theorem continuous_posPart_sliceDensity (hf : Continuous (sliceDensity χ b α σ)) :
-    Continuous fun w ↦ (sliceDensity χ b α σ w)⁺ :=
-  continuous_posPart.comp hf
+/-- The **positive slice measure** of a density `f` on the plane: the positive part `(f⁺ / 2π) λ`
+of the normalized slice `f dλ / 2π` on the closed disc of radius `R`. -/
+def posSliceMeasure (f : ℂ → ℝ) (R : ℝ) : Measure ℂ :=
+  (volume.restrict (closedBall 0 R)).withDensity fun w ↦ ENNReal.ofReal ((f w)⁺ / (2 * π))
 
-private theorem continuous_negPart_sliceDensity (hf : Continuous (sliceDensity χ b α σ)) :
-    Continuous fun w ↦ (sliceDensity χ b α σ w)⁻ :=
-  continuous_negPart.comp hf
+/-- The **negative slice measure** of a density `f` on the plane: the negative part `(f⁻ / 2π) λ`
+of the normalized slice `f dλ / 2π` on the closed disc of radius `R`. -/
+def negSliceMeasure (f : ℂ → ℝ) (R : ℝ) : Measure ℂ :=
+  (volume.restrict (closedBall 0 R)).withDensity fun w ↦ ENNReal.ofReal ((f w)⁻ / (2 * π))
 
-/-- The **positive slice measure**: the positive part `(f⁺ / 2π) λ` of the normalized slice
-`f dλ / 2π` of the cutoff current on the closed disc of radius `R`, where `f` is the slice
-density. -/
-def posSliceMeasure (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (σ : ℂ → E)
-    (R : ℝ) : Measure ℂ :=
-  (volume.restrict (closedBall 0 R)).withDensity fun w ↦
-    ENNReal.ofReal ((sliceDensity χ b α σ w)⁺ / (2 * π))
+theorem posSliceMeasure_def (f : ℂ → ℝ) (R : ℝ) :
+    posSliceMeasure f R = (volume.restrict (closedBall 0 R)).withDensity fun w ↦
+      ENNReal.ofReal ((f w)⁺ / (2 * π)) := (rfl)
 
-/-- The **negative slice measure**: the negative part `(f⁻ / 2π) λ` of the normalized slice
-`f dλ / 2π` of the cutoff current on the closed disc of radius `R`, where `f` is the slice
-density. -/
-def negSliceMeasure (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (σ : ℂ → E)
-    (R : ℝ) : Measure ℂ :=
-  (volume.restrict (closedBall 0 R)).withDensity fun w ↦
-    ENNReal.ofReal ((sliceDensity χ b α σ w)⁻ / (2 * π))
-
-theorem posSliceMeasure_def (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ)
-    (σ : ℂ → E) (R : ℝ) :
-    posSliceMeasure χ b α σ R = (volume.restrict (closedBall 0 R)).withDensity fun w ↦
-      ENNReal.ofReal ((sliceDensity χ b α σ w)⁺ / (2 * π)) := (rfl)
-
-theorem negSliceMeasure_def (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ)
-    (σ : ℂ → E) (R : ℝ) :
-    negSliceMeasure χ b α σ R = (volume.restrict (closedBall 0 R)).withDensity fun w ↦
-      ENNReal.ofReal ((sliceDensity χ b α σ w)⁻ / (2 * π)) := (rfl)
-
-/-- A measure `(g / 2π) λ|_{B_R}` gives no mass outside the disc. -/
-private theorem withDensity_restrict_compl_closedBall (g : ℂ → ℝ) (R : ℝ) :
-    (volume.restrict (closedBall (0 : ℂ) R)).withDensity
-      (fun w ↦ ENNReal.ofReal (g w / (2 * π))) (closedBall 0 R)ᶜ = 0 :=
-  withDensity_absolutelyContinuous _ _ <| by
-    rw [Measure.restrict_apply measurableSet_closedBall.compl, compl_inter_self, measure_empty]
+theorem negSliceMeasure_def (f : ℂ → ℝ) (R : ℝ) :
+    negSliceMeasure f R = (volume.restrict (closedBall 0 R)).withDensity fun w ↦
+      ENNReal.ofReal ((f w)⁻ / (2 * π)) := (rfl)
 
 /-- The positive slice measure is carried by the closed disc of radius `R`. -/
 @[simp]
-theorem posSliceMeasure_compl_closedBall :
-    posSliceMeasure χ b α σ R (closedBall 0 R)ᶜ = 0 :=
-  withDensity_restrict_compl_closedBall _ R
+theorem posSliceMeasure_compl_closedBall : posSliceMeasure f R (closedBall 0 R)ᶜ = 0 :=
+  withDensity_restrict_apply_compl measurableSet_closedBall _
 
 /-- The negative slice measure is carried by the closed disc of radius `R`. -/
 @[simp]
-theorem negSliceMeasure_compl_closedBall :
-    negSliceMeasure χ b α σ R (closedBall 0 R)ᶜ = 0 :=
-  withDensity_restrict_compl_closedBall _ R
+theorem negSliceMeasure_compl_closedBall : negSliceMeasure f R (closedBall 0 R)ᶜ = 0 :=
+  withDensity_restrict_apply_compl measurableSet_closedBall _
 
-/-- For a continuous `g`, the measure `(g / 2π) λ|_{B_R}` is finite. -/
-private theorem isFiniteMeasure_withDensity_restrict {g : ℂ → ℝ} (hg : Continuous g) (R : ℝ) :
-    IsFiniteMeasure ((volume.restrict (closedBall (0 : ℂ) R)).withDensity
-      fun w ↦ ENNReal.ofReal (g w / (2 * π))) :=
-  isFiniteMeasure_withDensity_ofReal <|
-    ((hg.div_const _).continuousOn.integrableOn_compact (isCompact_closedBall 0 R)).2
+/-- The positive slice measure of a density integrable on the closed disc of radius `R` is
+finite. -/
+theorem isFiniteMeasure_posSliceMeasure (hf : IntegrableOn f (closedBall 0 R)) :
+    IsFiniteMeasure (posSliceMeasure f R) :=
+  isFiniteMeasure_withDensity_ofReal (hf.pos_part.div_const _).2
 
-/-- The positive slice measure of a continuous slice density is finite. -/
-theorem isFiniteMeasure_posSliceMeasure (hf : Continuous (sliceDensity χ b α σ)) :
-    IsFiniteMeasure (posSliceMeasure χ b α σ R) :=
-  isFiniteMeasure_withDensity_restrict (continuous_posPart_sliceDensity hf) R
+/-- The negative slice measure of a density integrable on the closed disc of radius `R` is
+finite. -/
+theorem isFiniteMeasure_negSliceMeasure (hf : IntegrableOn f (closedBall 0 R)) :
+    IsFiniteMeasure (negSliceMeasure f R) :=
+  isFiniteMeasure_withDensity_ofReal (hf.neg_part.div_const _).2
 
-/-- The negative slice measure of a continuous slice density is finite. -/
-theorem isFiniteMeasure_negSliceMeasure (hf : Continuous (sliceDensity χ b α σ)) :
-    IsFiniteMeasure (negSliceMeasure χ b α σ R) :=
-  isFiniteMeasure_withDensity_restrict (continuous_negPart_sliceDensity hf) R
+/-- **Integrals against the positive slice measure.** Integrating `h` against `μ⁺` is integrating
+`(f⁺ / 2π) h` over the closed disc of radius `R`. -/
+theorem integral_posSliceMeasure {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (hf : AEMeasurable f (volume.restrict (closedBall 0 R))) (h : ℂ → F) :
+    ∫ w, h w ∂posSliceMeasure f R = ∫ w in closedBall 0 R, ((f w)⁺ / (2 * π)) • h w :=
+  TauCeti.Probability.integral_withDensity_ofReal
+    ((continuous_posPart.measurable.comp_aemeasurable hf).div_const _)
+    (ae_of_all _ fun _ ↦ div_nonneg (posPart_nonneg _) (by positivity)) h
 
-/-- Integrals against `(g / 2π) λ|_{B_R}` for a continuous nonnegative density `g`. -/
-private theorem integral_withDensity_restrict {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {g : ℂ → ℝ} (hg : Continuous g) (hg₀ : ∀ w, 0 ≤ g w) (R : ℝ) (h : ℂ → F) :
-    ∫ w, h w ∂(volume.restrict (closedBall (0 : ℂ) R)).withDensity
-        (fun w ↦ ENNReal.ofReal (g w / (2 * π))) =
-      ∫ w in closedBall 0 R, (g w / (2 * π)) • h w := by
-  rw [integral_withDensity_eq_integral_toReal_smul (hg.div_const _).measurable.ennreal_ofReal
-    (Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+/-- **Integrals against the negative slice measure.** Integrating `h` against `μ⁻` is integrating
+`(f⁻ / 2π) h` over the closed disc of radius `R`. -/
+theorem integral_negSliceMeasure {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (hf : AEMeasurable f (volume.restrict (closedBall 0 R))) (h : ℂ → F) :
+    ∫ w, h w ∂negSliceMeasure f R = ∫ w in closedBall 0 R, ((f w)⁻ / (2 * π)) • h w :=
+  TauCeti.Probability.integral_withDensity_ofReal
+    ((continuous_negPart.measurable.comp_aemeasurable hf).div_const _)
+    (ae_of_all _ fun _ ↦ div_nonneg (negPart_nonneg _) (by positivity)) h
+
+/-- The mass of the positive slice measure is `(2π)⁻¹ ∫_{B_R} f⁺`. -/
+theorem measureReal_posSliceMeasure (hf : AEMeasurable f (volume.restrict (closedBall 0 R))) :
+    (posSliceMeasure f R).real univ = (2 * π)⁻¹ * ∫ w in closedBall 0 R, (f w)⁺ := by
+  have h := integral_posSliceMeasure hf fun _ ↦ (1 : ℝ)
+  rw [integral_const, smul_eq_mul, mul_one] at h
+  rw [h, ← integral_const_mul]
   congr 1 with w
-  rw [ENNReal.toReal_ofReal (div_nonneg (hg₀ w) (by positivity))]
+  rw [smul_eq_mul, mul_one, div_eq_inv_mul]
 
-/-- **The integral against the normalized slice.** For a continuous slice density and a weight
-`h` continuous on the closed disc of radius `R`, the difference of the integrals of `h` against
+/-- The mass of the negative slice measure is `(2π)⁻¹ ∫_{B_R} f⁻`. -/
+theorem measureReal_negSliceMeasure (hf : AEMeasurable f (volume.restrict (closedBall 0 R))) :
+    (negSliceMeasure f R).real univ = (2 * π)⁻¹ * ∫ w in closedBall 0 R, (f w)⁻ := by
+  have h := integral_negSliceMeasure hf fun _ ↦ (1 : ℝ)
+  rw [integral_const, smul_eq_mul, mul_one] at h
+  rw [h, ← integral_const_mul]
+  congr 1 with w
+  rw [smul_eq_mul, mul_one, div_eq_inv_mul]
+
+/-- **The integral against the normalized slice.** For a density `f` integrable on the closed disc
+of radius `R` and a weight `h` continuous on it, the difference of the integrals of `h` against
 the positive and negative slice measures is the integral of `h` against the normalized slice
 `f dλ / 2π` on the disc. -/
 theorem integral_posSliceMeasure_sub_integral_negSliceMeasure {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (hf : Continuous (sliceDensity χ b α σ)) {h : ℂ → F}
+    [NormedSpace ℝ F] (hf : IntegrableOn f (closedBall 0 R)) {h : ℂ → F}
     (hh : ContinuousOn h (closedBall 0 R)) :
-    ∫ w, h w ∂posSliceMeasure χ b α σ R - ∫ w, h w ∂negSliceMeasure χ b α σ R =
-      (2 * π)⁻¹ • ∫ w in closedBall 0 R, sliceDensity χ b α σ w • h w := by
-  have hint {g : ℂ → ℝ} (hg : Continuous g) :
+    ∫ w, h w ∂posSliceMeasure f R - ∫ w, h w ∂negSliceMeasure f R =
+      (2 * π)⁻¹ • ∫ w in closedBall 0 R, f w • h w := by
+  have hint {g : ℂ → ℝ} (hg : IntegrableOn g (closedBall 0 R)) :
       IntegrableOn (fun w ↦ (g w / (2 * π)) • h w) (closedBall 0 R) :=
-    ((hg.div_const _).continuousOn.integrableOn_compact
-      (isCompact_closedBall 0 R)).smul_continuousOn hh (isCompact_closedBall 0 R)
-  have hpos := continuous_posPart_sliceDensity hf
-  have hneg := continuous_negPart_sliceDensity hf
-  rw [posSliceMeasure, negSliceMeasure,
-    integral_withDensity_restrict hpos (fun _ ↦ posPart_nonneg _) R h,
-    integral_withDensity_restrict hneg (fun _ ↦ negPart_nonneg _) R h,
+    IntegrableOn.smul_continuousOn (hg.div_const _) hh (isCompact_closedBall 0 R)
+  have hpos : IntegrableOn (fun w ↦ (f w)⁺) (closedBall 0 R) := hf.pos_part
+  have hneg : IntegrableOn (fun w ↦ (f w)⁻) (closedBall 0 R) := hf.neg_part
+  rw [integral_posSliceMeasure hf.aemeasurable, integral_negSliceMeasure hf.aemeasurable,
     ← integral_sub (hint hpos) (hint hneg), ← integral_smul]
   congr 1 with w
   rw [← sub_smul, ← sub_div, posPart_sub_negPart, smul_smul, div_eq_inv_mul]
@@ -223,14 +221,44 @@ theorem integral_posSliceMeasure_sub_integral_negSliceMeasure {F : Type*} [Norme
 /-- The total mass of the normalized slice: the difference of the masses of the positive and
 negative slice measures is `(2π)⁻¹ ∫_{B_R} f`. -/
 theorem measureReal_posSliceMeasure_sub_measureReal_negSliceMeasure
-    (hf : Continuous (sliceDensity χ b α σ)) :
-    (posSliceMeasure χ b α σ R).real univ - (negSliceMeasure χ b α σ R).real univ =
-      (2 * π)⁻¹ * ∫ w in closedBall 0 R, sliceDensity χ b α σ w := by
-  have h := integral_posSliceMeasure_sub_integral_negSliceMeasure (R := R) hf
+    (hf : IntegrableOn f (closedBall 0 R)) :
+    (posSliceMeasure f R).real univ - (negSliceMeasure f R).real univ =
+      (2 * π)⁻¹ * ∫ w in closedBall 0 R, f w := by
+  have h := integral_posSliceMeasure_sub_integral_negSliceMeasure hf
     (h := fun _ ↦ (1 : ℝ)) continuousOn_const
   simpa using h
 
-/-! ### Mass and negative mass -/
+/-! ### The compact moment lemma for slices -/
+
+/-- **The compact moment lemma for slices.** For every accuracy `ε > 0` there is a tolerance
+`δ > 0`, depending only on `m`, `R` and `ε`, with the following property. Let `f` be a density
+integrable on the closed disc of radius `R`, and suppose that the normalized slice `f dλ / 2π` on
+that disc has total mass `m`, negative mass at most `δ`, and Newton variance `∫ |P(w)|² dμ⁺(w)` at
+most `δ`, where `P` is the Newton polynomial of degree `m` of its moments. Then for every
+`1`-Lipschitz `g : ℂ → ℝ` bounded by `1`, the integral of `g` against the normalized slice is
+within `ε` of the sum of `g` over the roots of `P`. -/
+theorem exists_forall_abs_setIntegral_mul_sub_sum_roots_le (m : ℕ) (R : ℝ) {ε : ℝ}
+    (hε : 0 < ε) :
+    ∃ δ > 0, ∀ f : ℂ → ℝ, IntegrableOn f (closedBall 0 R) →
+      (posSliceMeasure f R).real univ - (negSliceMeasure f R).real univ = m →
+      (negSliceMeasure f R).real univ ≤ δ →
+      ∫ w, ‖(newtonPolynomial (fun k ↦ ∫ w, w ^ k ∂posSliceMeasure f R -
+        ∫ w, w ^ k ∂negSliceMeasure f R) m).eval w‖ ^ 2 ∂posSliceMeasure f R ≤ δ →
+      ∀ g : ℂ → ℝ, LipschitzWith 1 g → (∀ w, |g w| ≤ 1) →
+        |(2 * π)⁻¹ * (∫ w in closedBall 0 R, f w * g w) -
+          ((newtonPolynomial (fun k ↦ ∫ w, w ^ k ∂posSliceMeasure f R -
+            ∫ w, w ^ k ∂negSliceMeasure f R) m).roots.map g).sum| ≤ ε := by
+  obtain ⟨δ, hδ, h⟩ := exists_forall_abs_integral_sub_sum_roots_le m R hε
+  refine ⟨δ, hδ, fun f hf hmass hneg hvar g hg hg₁ ↦ ?_⟩
+  have := isFiniteMeasure_posSliceMeasure hf
+  have := isFiniteMeasure_negSliceMeasure hf
+  have hint := integral_posSliceMeasure_sub_integral_negSliceMeasure hf hg.continuous.continuousOn
+  simp only [smul_eq_mul] at hint
+  rw [← hint]
+  exact h _ _ posSliceMeasure_compl_closedBall negSliceMeasure_compl_closedBall hmass hneg hvar
+    g hg hg₁
+
+/-! ### Mass and negative mass of the slices of the cutoff current -/
 
 /-- **The slice has integer mass.** If the cutoff is `1` along `σ` of the boundary circle of the
 closed disc of radius `R`, the total mass `μ⁺(ℂ) - μ⁻(ℂ)` of the normalized slice of the cutoff
@@ -239,32 +267,16 @@ theorem exists_int_measureReal_posSliceMeasure_sub (hR : 0 ≤ R) (hα : ContDif
     (hb : ContDiff ℝ 1 b) (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hσ : ContDiff ℝ 2 σ)
     (hbd : ∀ θ, χ (normSq (α (σ (circleMap 0 R θ)))) = 1) :
     ∃ n : ℤ, Contour.windingNumber (α ∘ σ ∘ circleMap 0 R) (-π) π 0 = n ∧
-      (posSliceMeasure χ b α σ R).real univ - (negSliceMeasure χ b α σ R).real univ = n := by
+      (posSliceMeasure (sliceDensity χ b α σ) R).real univ -
+        (negSliceMeasure (sliceDensity χ b α σ) R).real univ = n := by
   obtain ⟨n, hn, hint⟩ :=
     exists_int_integral_cutoffCurrent_comp_closedBall (b := b) hR hα hb hχ hχ₀ hσ hbd
   refine ⟨n, hn, ?_⟩
   rw [measureReal_posSliceMeasure_sub_measureReal_negSliceMeasure
-    (continuous_sliceDensity hα hb hχ hχ₀ hσ)]
+    ((continuous_sliceDensity hα hb hχ hχ₀ hσ).continuousOn.integrableOn_compact
+      (isCompact_closedBall 0 R))]
   simp only [sliceDensity_def, hint]
   field_simp
-
-/-- The directional energy `∫_{B_R} |dσ(1)|²` of a disc with `|dσ(1)| ≤ L` on the closed disc of
-radius `R` is at most `π R² L²`. -/
-theorem integral_norm_fderiv_apply_one_sq_le {L : ℝ}
-    (hL : ∀ w ∈ closedBall (0 : ℂ) R, ‖fderiv ℝ σ w 1‖ ≤ L) :
-    ∫ w in closedBall 0 R, ‖fderiv ℝ σ w 1‖ ^ 2 ≤ π * R ^ 2 * L ^ 2 := by
-  rcases lt_or_ge R 0 with hR | hR
-  · rw [closedBall_eq_empty.2 hR, Measure.restrict_empty, integral_zero_measure]
-    positivity
-  have hvol : volume.real (closedBall (0 : ℂ) R) = π * R ^ 2 := by
-    simp [measureReal_def, ENNReal.toReal_ofReal hR, mul_comm]
-  calc ∫ w in closedBall 0 R, ‖fderiv ℝ σ w 1‖ ^ 2
-      ≤ ∫ _ in closedBall (0 : ℂ) R, L ^ 2 :=
-        integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ sq_nonneg _)
-          (integrableOn_const measure_closedBall_lt_top.ne)
-          ((ae_restrict_iff' measurableSet_closedBall).2 <| Eventually.of_forall fun w hw ↦
-            pow_le_pow_left₀ (norm_nonneg _) (hL w hw) 2)
-    _ = π * R ^ 2 * L ^ 2 := by rw [setIntegral_const, smul_eq_mul, hvol]
 
 section AlmostComplex
 
@@ -283,9 +295,8 @@ theorem measureReal_negSliceMeasure_le (hα : ContDiff ℝ 2 α) (hb : ContDiff 
     (hF : ∀ w ∈ closedBall (0 : ℂ) R, -K * ‖fderiv ℝ σ w 1‖ ^ 2 ≤
       -extDeriv b (σ w) ![fderiv ℝ σ w 1, J (fderiv ℝ σ w 1)])
     (hD : ∀ w ∈ closedBall (0 : ℂ) R, ‖covariantDBar J b α (σ w)‖ ≤ D) :
-    (negSliceMeasure χ b α σ R).real univ ≤
+    (negSliceMeasure (sliceDensity χ b α σ) R).real univ ≤
       (K + 2 * M * D ^ 2) / (2 * π) * ∫ w in closedBall 0 R, ‖fderiv ℝ σ w 1‖ ^ 2 := by
-  have hf := continuous_sliceDensity hα hb hχ hχ₀ hσ
   have hσ' : Continuous fun w ↦ ‖fderiv ℝ σ w 1‖ ^ 2 :=
     ((hσ.continuous_fderiv two_ne_zero).clm_apply continuous_const).norm.pow 2
   have hneg := integral_negPart_cutoffCurrent_compContinuousLinearMap_le J
@@ -293,18 +304,10 @@ theorem measureReal_negSliceMeasure_le (hα : ContDiff ℝ 2 α) (hb : ContDiff 
     (fun _ _ ↦ hb.differentiable one_ne_zero _)
     (fun _ _ ↦ hχ.differentiable one_ne_zero _) hχ₀ hχ₁ hχ' hK hJ hF hD
     (hσ'.continuousOn.integrableOn_compact (isCompact_closedBall 0 R))
-  have hmass : (negSliceMeasure χ b α σ R).real univ =
-      (2 * π)⁻¹ * ∫ w in closedBall 0 R, (sliceDensity χ b α σ w)⁻ := by
-    have h := integral_withDensity_restrict (continuous_negPart_sliceDensity hf)
-      (fun _ ↦ negPart_nonneg _) R (fun _ ↦ (1 : ℝ))
-    rw [← negSliceMeasure_def] at h
-    simp only [integral_const, smul_eq_mul, mul_one] at h
-    rw [h, ← integral_const_mul]
-    congr 1 with w
-    rw [div_eq_inv_mul]
-  rw [hmass, div_eq_inv_mul, mul_assoc]
-  gcongr
-  exact hneg
+  rw [measureReal_negSliceMeasure (continuous_sliceDensity hα hb hχ hχ₀ hσ).aemeasurable,
+    div_eq_inv_mul, mul_assoc]
+  simp only [sliceDensity_def]
+  exact mul_le_mul_of_nonneg_left hneg (by positivity)
 
 /-- **The negative mass of a slice of bounded derivative.** Under the hypotheses of
 `TauCeti.SeibergWitten.measureReal_negSliceMeasure_le`, if moreover `|dσ(1)| ≤ L` on the closed
@@ -321,49 +324,24 @@ theorem measureReal_negSliceMeasure_le_of_norm_le (hR : 0 ≤ R) (hα : ContDiff
       -extDeriv b (σ w) ![fderiv ℝ σ w 1, J (fderiv ℝ σ w 1)])
     (hD : ∀ w ∈ closedBall (0 : ℂ) R, ‖covariantDBar J b α (σ w)‖ ≤ D)
     (hL : ∀ w ∈ closedBall (0 : ℂ) R, ‖fderiv ℝ σ w 1‖ ≤ L) :
-    (negSliceMeasure χ b α σ R).real univ ≤ (K + 2 * M * D ^ 2) * L ^ 2 * R ^ 2 / 2 := by
+    (negSliceMeasure (sliceDensity χ b α σ) R).real univ ≤
+      (K + 2 * M * D ^ 2) * L ^ 2 * R ^ 2 / 2 := by
   have hM : 0 ≤ M := (hχ' 0 (mem_closedBall_self hR)).1.trans (hχ' 0 (mem_closedBall_self hR)).2
-  calc (negSliceMeasure χ b α σ R).real univ
+  have hvol : volume.real (closedBall (0 : ℂ) R) = π * R ^ 2 := by
+    simp [measureReal_def, ENNReal.toReal_ofReal hR, mul_comm]
+  calc (negSliceMeasure (sliceDensity χ b α σ) R).real univ
       ≤ (K + 2 * M * D ^ 2) / (2 * π) * ∫ w in closedBall 0 R, ‖fderiv ℝ σ w 1‖ ^ 2 :=
         measureReal_negSliceMeasure_le J hα hb hχ hχ₀ hσ hχ₁ hχ' hK hJ hF hD
-    _ ≤ (K + 2 * M * D ^ 2) / (2 * π) * (π * R ^ 2 * L ^ 2) := by
+    _ ≤ (K + 2 * M * D ^ 2) / (2 * π) * (L ^ 2 * volume.real (closedBall (0 : ℂ) R)) := by
         gcongr
-        exact integral_norm_fderiv_apply_one_sq_le hL
+        refine (Real.le_norm_self _).trans <|
+          norm_setIntegral_le_of_norm_le_const measure_closedBall_lt_top fun w hw ↦ ?_
+        rw [norm_pow, norm_norm]
+        exact pow_le_pow_left₀ (norm_nonneg _) (hL w hw) 2
     _ = (K + 2 * M * D ^ 2) * L ^ 2 * R ^ 2 / 2 := by
+        rw [hvol]
         field_simp
 
 end AlmostComplex
-
-/-! ### The compact moment lemma for slices -/
-
-/-- **The compact moment lemma for the slices of the cutoff current.** For every accuracy
-`ε > 0` there is a tolerance `δ > 0`, depending only on `m`, `R` and `ε`, with the following
-property. Let `σ` be a disc whose slice density `f` is continuous, and suppose that the normalized
-slice `f dλ / 2π` on the closed disc of radius `R` has total mass `m`, negative mass at most `δ`,
-and Newton variance `∫ |P(w)|² dμ⁺(w)` at most `δ`, where `P` is the Newton polynomial of degree
-`m` of its moments. Then for every `1`-Lipschitz `g : ℂ → ℝ` bounded by `1`, the integral of `g`
-against the normalized slice is within `ε` of the sum of `g` over the roots of `P`. -/
-theorem exists_forall_abs_integral_sliceDensity_sub_sum_roots_le (m : ℕ) (R : ℝ) {ε : ℝ}
-    (hε : 0 < ε) :
-    ∃ δ > 0, ∀ (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (σ : ℂ → E),
-      Continuous (sliceDensity χ b α σ) →
-      (posSliceMeasure χ b α σ R).real univ - (negSliceMeasure χ b α σ R).real univ = m →
-      (negSliceMeasure χ b α σ R).real univ ≤ δ →
-      ∫ w, ‖(newtonPolynomial (fun k ↦ ∫ w, w ^ k ∂posSliceMeasure χ b α σ R -
-        ∫ w, w ^ k ∂negSliceMeasure χ b α σ R) m).eval w‖ ^ 2 ∂posSliceMeasure χ b α σ R ≤ δ →
-      ∀ g : ℂ → ℝ, LipschitzWith 1 g → (∀ w, |g w| ≤ 1) →
-        |(2 * π)⁻¹ * (∫ w in closedBall 0 R, sliceDensity χ b α σ w * g w) -
-          ((newtonPolynomial (fun k ↦ ∫ w, w ^ k ∂posSliceMeasure χ b α σ R -
-            ∫ w, w ^ k ∂negSliceMeasure χ b α σ R) m).roots.map g).sum| ≤ ε := by
-  obtain ⟨δ, hδ, h⟩ := exists_forall_abs_integral_sub_sum_roots_le m R hε
-  refine ⟨δ, hδ, fun χ b α σ hf hmass hneg hvar g hg hg₁ ↦ ?_⟩
-  have := isFiniteMeasure_posSliceMeasure (R := R) hf
-  have := isFiniteMeasure_negSliceMeasure (R := R) hf
-  have hint := integral_posSliceMeasure_sub_integral_negSliceMeasure (R := R) hf
-    hg.continuous.continuousOn
-  simp only [smul_eq_mul] at hint
-  rw [← hint]
-  exact h _ _ posSliceMeasure_compl_closedBall negSliceMeasure_compl_closedBall hmass hneg hvar
-    g hg hg₁
 
 end TauCeti.SeibergWitten
