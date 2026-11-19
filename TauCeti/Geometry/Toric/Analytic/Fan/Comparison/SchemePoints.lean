@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Fan.ProjectiveSpace.Proj
+public import TauCeti.Geometry.Toric.Analytic.AffinePoint.PointTopology
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.TorusAction
 public import TauCeti.Geometry.Toric.Analytic.Fan.ProjectiveSpace.Compact
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.Charts
@@ -21,8 +22,8 @@ monomial-embedding topologies of the charts of the cones of `Φ`. The general on
 from the evaluation topologies of all affine open charts. This file shows that they agree.
 
 On a single chart, the monomial-embedding topology of any finite generating family of the
-semigroup is the evaluation topology `TauCeti.PointTopology.topology`: every element of the
-semigroup algebra is a finite combination of monomials. Globally, the charts of the cones are
+semigroup is the evaluation topology `TauCeti.PointTopology.topology`
+(`TauCeti.Toric.affinePointTopology_eq_pointTopology`). Globally, the charts of the cones are
 open embeddings for the chart topology (`TauCeti.SchemePointTopology.isOpenEmbedding_chartPoint`)
 and cover all complex points, so continuity of the inverse comparison may be checked on them.
 
@@ -34,8 +35,8 @@ proper morphisms with proper maps on complex points.
 
 ## Main declarations
 
-* `TauCeti.Toric.affinePointTopology_eq_pointTopology`: on the complex points of an affine
-  semigroup, the monomial-embedding topology is the evaluation topology.
+* `TauCeti.Toric.Fan.analyticAffineChart_str_eq_pointTopology`: the analytic affine chart of a
+  cone carries the evaluation topology.
 * `TauCeti.Toric.Fan.algebraicComplexPointHomeomorph`: the toric complex points of `X_Φ` are
   homeomorphic, by the identity of underlying morphisms, to its points over `Spec ℂ` with the
   chart topology.
@@ -56,22 +57,6 @@ public section
 open AlgebraicGeometry CategoryTheory Multiplicative Topology
 
 namespace TauCeti.Toric
-
-variable {S : Type*} [AddCommMonoid S] {r : ℕ}
-
-/-- On the complex points of an affine semigroup, the topology induced by evaluation on a
-finite generating family is the evaluation topology of `TauCeti.PointTopology`, in which every
-evaluation `x ↦ x a` is continuous. -/
-theorem affinePointTopology_eq_pointTopology (g : AddGeneratingFamily S r) :
-    affinePointTopology g = PointTopology.topology := by
-  refine le_antisymm ?_ ?_
-  · let _ := affinePointTopology g
-    rw [← continuous_id_iff_le]
-    exact PointTopology.continuous_iff.2 (continuous_eval_const g)
-  · let _ := PointTopology.topology (k := ℂ) (A := MonoidAlgebra ℂ (Multiplicative S)) (R := ℂ)
-    rw [← continuous_id_iff_le]
-    exact (continuous_iff_forall_continuous_apply_single g id).2 fun s ↦
-      PointTopology.continuous_eval _
 
 namespace Fan
 
