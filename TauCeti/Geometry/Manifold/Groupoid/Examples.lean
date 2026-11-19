@@ -182,8 +182,7 @@ instance lieGroupoid [T2Space N] [SecondCountableTopology N] : LieGroupoid I I (
     fun p ↦ (arrowHomeomorph N).injective (by simp)
   t2Space_objects := inferInstance
   secondCountableTopology_arrows := inferInstance
-  t2Space_sourceFiber _ := ⟨fun a b hab ↦ (hab (Subtype.ext ((arrowHomeomorph N).injective
-    (by simp [a.2, b.2])))).elim⟩
+  t2Space_sourceFiber _ := inferInstance
 
 end TauCeti.UnitGroupoid
 
@@ -216,6 +215,10 @@ theorem objectDiffeomorph_apply (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) (
 theorem objectDiffeomorph_symm_apply (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) (x : N) :
     (objectDiffeomorph I n N).symm x = Codiscrete.mk x := by simp [objectDiffeomorph]
 
+@[simp]
+theorem objectDiffeomorph_toHomeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
+    (objectDiffeomorph I n N).toHomeomorph = objectHomeomorph N := by simp [objectDiffeomorph]
+
 /-- Total arrows of `Codiscrete N` carry the charted-space structure of `N × N` pulled back along
 `arrowHomeomorph`, in (target, source) coordinates. -/
 instance instChartedSpaceArrows : ChartedSpace (ModelProd H H) (Quiver.Total (Codiscrete N)) :=
@@ -241,6 +244,10 @@ theorem arrowDiffeomorph_apply (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω)
 @[simp]
 theorem arrowDiffeomorph_symm_apply (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) (p : N × N) :
     (arrowDiffeomorph I n N).symm p = ⟨⟨p.2⟩, ⟨p.1⟩, default⟩ := by simp [arrowDiffeomorph]
+
+@[simp]
+theorem arrowDiffeomorph_toHomeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) :
+    (arrowDiffeomorph I n N).toHomeomorph = arrowHomeomorph N := by simp [arrowDiffeomorph]
 
 section LieGroupoid
 

@@ -40,6 +40,8 @@ lift of the map to the covering manifold.
   fixed complement survives composing with a local diffeomorphism on the source or on the target.
 * `IsLocalDiffeomorph.isSubmersion_comp`, `IsLocalDiffeomorph.comp_isSubmersion`: the global
   statements, for composing with a local diffeomorphism everywhere.
+* `Manifold.IsSubmersion.isLocalDiffeomorph_iff_finrank_eq`: a submersion with boundaryless
+  source is a local diffeomorphism exactly when source and target have the same dimension.
 * `IsLocalDiffeomorphAt.isSubmersionAtOfComplement_comp_iff`: precomposing with a local
   diffeomorphism at `x` neither creates nor destroys the normal form at `x`.
 * `IsLocalDiffeomorphAt.isSubmersionAt_comp_iff`,
@@ -217,3 +219,42 @@ theorem comp_isSubmersion [IsManifold J n P] {k : N → P} (hk : IsLocalDiffeomo
     (h.isSubmersionOfComplement_complement.isSubmersionAt x)).isSubmersion
 
 end IsLocalDiffeomorph
+
+namespace Manifold.IsSubmersion
+
+open Module
+open scoped Manifold ContDiff
+
+variable {𝕂 : Type*} [RCLike 𝕂]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕂 E] [FiniteDimensional 𝕂 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F] [FiniteDimensional 𝕂 F]
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N] {f : M → N}
+
+/-- A `C^n` submersion, `1 ≤ n`, with boundaryless source between manifolds modelled on spaces of
+the same finite dimension is a `C^n` local diffeomorphism: its surjective differentials are
+injective. -/
+theorem isLocalDiffeomorph_of_finrank_eq (h : IsSubmersion I J n f) (hn : 1 ≤ n)
+    (hdim : finrank 𝕂 E = finrank 𝕂 F) : IsLocalDiffeomorph I J n f := fun x ↦ by
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕂 E
+  have hinj : Function.Injective (mfderiv I J f x) :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (f := (mfderiv I J f x).toLinearMap) hdim).2
+      (h.surjective_mfderiv (zero_lt_one.trans_le hn).ne' x)
+  exact TauCeti.isLocalDiffeomorphAt_of_injective_mfderiv (s := Set.univ) h.contMDiff.contMDiffOn
+    isOpen_univ (Set.mem_univ x) BoundarylessManifold.isInteriorPoint hn hinj hdim
+
+/-- A `C^n` submersion, `1 ≤ n`, out of a nonempty boundaryless manifold with finite-dimensional
+model is a `C^n` local diffeomorphism exactly when the source and target models have the same
+dimension. -/
+theorem isLocalDiffeomorph_iff_finrank_eq [Nonempty M] (h : IsSubmersion I J n f) (hn : 1 ≤ n) :
+    IsLocalDiffeomorph I J n f ↔ finrank 𝕂 E = finrank 𝕂 F := by
+  refine ⟨fun hf ↦ ?_, h.isLocalDiffeomorph_of_finrank_eq hn⟩
+  obtain ⟨x⟩ := ‹Nonempty M›
+  exact ((hf x).mfderivToContinuousLinearEquiv
+    (zero_lt_one.trans_le hn).ne').toLinearEquiv.finrank_eq
+
+end Manifold.IsSubmersion

@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.FiberProduct.Submersion
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
@@ -267,29 +266,17 @@ theorem surjective_mfderiv_target (a : Quiver.Total C) :
 include I J in
 /-- The arrow manifold of a Lie groupoid over a nonempty object manifold has dimension at least
 that of the object manifold. -/
-theorem finrank_le [Nonempty C] : finrank ℝ E ≤ finrank ℝ E' := by
-  obtain ⟨x⟩ := ‹Nonempty C›
-  exact LinearMap.finrank_le_finrank_of_surjective (f := (mfderiv J I
-    (Quiver.Total.left : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩).toLinearMap)
-    (surjective_mfderiv_source I J C _)
+theorem finrank_le [Nonempty C] : finrank ℝ E ≤ finrank ℝ E' :=
+  have : Nonempty (Quiver.Total C) := ‹Nonempty C›.map fun x ↦ ⟨x, x, 𝟙 x⟩
+  (isSubmersion_source (I := I) (J := J) (C := C)).finrank_le (by simp)
 
 /-- **Étale Lie groupoids.** The source of a Lie groupoid over a nonempty object manifold is a
 local diffeomorphism exactly when the arrow manifold has the dimension of the object manifold. -/
 theorem isLocalDiffeomorph_source_iff_finrank_eq [Nonempty C] :
     IsLocalDiffeomorph J I ∞ (Quiver.Total.left : Quiver.Total C → C) ↔
-      finrank ℝ E = finrank ℝ E' := by
-  refine ⟨fun h ↦ ?_, fun h a ↦ ?_⟩
-  · -- The differential of a local diffeomorphism at a unit is an isomorphism.
-    obtain ⟨x⟩ := ‹Nonempty C›
-    exact ((h ⟨x, x, 𝟙 x⟩).mfderivToContinuousLinearEquiv (by simp)).toLinearEquiv.finrank_eq.symm
-  · -- A surjective differential between spaces of equal dimension is injective.
-    have hinj : Injective (mfderiv J I (Quiver.Total.left : Quiver.Total C → C) a) :=
-      (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := (mfderiv J I
-        (Quiver.Total.left : Quiver.Total C → C) a).toLinearMap) h.symm).2
-        (surjective_mfderiv_source I J C a)
-    exact isLocalDiffeomorphAt_of_injective_mfderiv (s := Set.univ)
-      (contMDiff_source I J C).contMDiffOn isOpen_univ (Set.mem_univ a)
-      BoundarylessManifold.isInteriorPoint (by simp) hinj h.symm
+      finrank ℝ E = finrank ℝ E' :=
+  have : Nonempty (Quiver.Total C) := ‹Nonempty C›.map fun x ↦ ⟨x, x, 𝟙 x⟩
+  ((isSubmersion_source (I := I)).isLocalDiffeomorph_iff_finrank_eq (by simp)).trans eq_comm
 
 end LieGroupoid
 
