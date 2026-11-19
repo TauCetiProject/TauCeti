@@ -20,6 +20,10 @@ generalized loop into a `T1` space is constant, so there is only one generalized
 (`GenLoop.subsingleton_of_infinite`). In an arbitrary space every generalized loop is still
 homotopic relative to the boundary to the constant loop (`GenLoop.homotopic_const_of_infinite`),
 so the homotopy set is trivial (the instance `HomotopyGroup.subsingleton_of_infinite`).
+
+On classes of generalized loops, Mathlib's identification of `π_0` with the path components and
+of a homotopy group indexed by a singleton with the fundamental group are computed by
+`HomotopyGroup.pi0EquivZerothHomotopy_mk` and `homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom`.
 -/
 
 public section
@@ -76,3 +80,17 @@ instance HomotopyGroup.subsingleton_of_infinite {N X : Type*} [Infinite N] [Topo
     {x : X} : Subsingleton (HomotopyGroup N X x) :=
   ⟨Quotient.ind₂ fun f g ↦ Quotient.sound <|
     (GenLoop.homotopic_const_of_infinite f).trans (GenLoop.homotopic_const_of_infinite g).symm⟩
+
+/-- Mathlib's identification of `π_0` with the path components sends the class of a
+zero-dimensional generalized loop to the path component of its value. -/
+theorem HomotopyGroup.pi0EquivZerothHomotopy_mk {X : Type*} [TopologicalSpace X] {x : X}
+    (γ : Ω^ (Fin 0) X x) : HomotopyGroup.pi0EquivZerothHomotopy ⟦γ⟧ = ZerothHomotopy.mk (γ 0) :=
+  (rfl)
+
+/-- Mathlib's identification of a homotopy group indexed by a singleton with the fundamental
+group sends the class of a generalized loop to the class of the corresponding loop. -/
+theorem homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom {M X : Type*} [Unique M]
+    [TopologicalSpace X] {x : X} (γ : Ω^ M X x) :
+    (homotopyGroupEquivFundamentalGroupOfUnique M ⟦γ⟧).asHom =
+      Path.Homotopic.Quotient.mk (genLoopEquivOfUnique M γ) :=
+  (rfl)
