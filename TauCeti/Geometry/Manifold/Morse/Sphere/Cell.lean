@@ -158,15 +158,15 @@ theorem exists_homeomorph_sublevel_sphereHeight_disk (v : sphere (0 : E) 1) {a :
   -- `e₀` is the stereographic projection, restricted to the sublevel and the ball.
   have he₀ : ∀ x, (e₀ x : (ℝ ∙ (v : E))ᗮ) = stereographic (norm_eq_of_mem_sphere v) x :=
     fun _ ↦ rfl
-  refine ⟨e₀.trans <|
-    ((Homeomorph.smulOfNeZero R⁻¹ (inv_ne_zero hR.ne')).subtype fun w ↦ ?_).trans
-    U.closedBallHomeomorphDisk, fun x ↦ ?_⟩
-  · rw [mem_closedBall_zero_iff, mem_closedBall_zero_iff, Homeomorph.smulOfNeZero_apply,
-      norm_smul, norm_inv, Real.norm_of_nonneg hR.le, inv_mul_le_one₀ hR]
-  · have hx := sublevel_sphereHeight_subset_source v ha' x.2
-    rw [← (stereographic (norm_eq_of_mem_sphere v)).left_inv hx,
-      sphereHeight_stereographic_symm_apply, neg_stereographicHeight_eq_iff ha.le ha']
-    simp [he₀, norm_smul, abs_of_pos hR, inv_mul_eq_one₀ hR.ne', eq_comm, R]
+  -- Rescale the ball of radius `R` to the unit ball; the boundary spheres correspond.
+  obtain ⟨S, hS⟩ := exists_homeomorph_closedBall_one_norm_eq (V := (ℝ ∙ (v : E))ᗮ) hR
+  refine ⟨(e₀.trans S).trans U.closedBallHomeomorphDisk, fun x ↦ ?_⟩
+  have hx := sublevel_sphereHeight_subset_source v ha' x.2
+  rw [← (stereographic (norm_eq_of_mem_sphere v)).left_inv hx,
+    sphereHeight_stereographic_symm_apply, neg_stereographicHeight_eq_iff ha.le ha', ← he₀,
+    Homeomorph.trans_apply, Homeomorph.trans_apply,
+    LinearIsometryEquiv.coe_closedBallHomeomorphDisk_apply_down,
+    LinearIsometryEquiv.norm_map, hS]
 
 variable {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A)
 
