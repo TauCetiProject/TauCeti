@@ -100,7 +100,7 @@ theorem logDeriv_one_sub_absNorm_cpow_neg (P : HeightOneSpectrum (𝓞 K)) {s : 
       Complex.log (Ideal.absNorm P.asIdeal) / ((Ideal.absNorm P.asIdeal : ℂ) ^ s - 1) := by
   have h0 : (Ideal.absNorm P.asIdeal : ℂ) ≠ 0 := P.natCast_absNorm_ne_zero
   have hpow : (Ideal.absNorm P.asIdeal : ℂ) ^ s ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl h0)
-  have h := Complex.logDeriv_one_sub_mul_cpow_neg h0 1 s
+  have h := Complex.logDeriv_one_sub_mul_cpow_neg (q := (Ideal.absNorm P.asIdeal : ℂ)) 1 s
   simp only [one_mul] at h
   rw [h, Complex.cpow_neg]
   by_cases hsub : (Ideal.absNorm P.asIdeal : ℂ) ^ s - 1 = 0

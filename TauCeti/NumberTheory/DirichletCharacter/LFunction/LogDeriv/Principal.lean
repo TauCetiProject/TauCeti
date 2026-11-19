@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv
+public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import Mathlib.Analysis.Calculus.LogDeriv
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import Mathlib.Tactic.Linarith
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 
@@ -14,8 +16,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 
 Principal characters retain the higher prime powers away from the level's prime divisors.
 The complex logarithmic derivative differs from zeta's by the sum of the deleted Euler-factor
-logarithmic derivatives throughout `1 ≤ re s`, away from `s = 1`. On the real axis, the
-higher-prime-power remainder has a finite correction bounded by one absolute geometric majorant,
+logarithmic derivatives wherever the principal L-function is nonzero, away from `s = 1`.
+On the real axis, the higher-prime-power remainder has a finite correction bounded by one
+absolute geometric majorant,
 independently of the level.
 -/
 
@@ -23,12 +26,12 @@ public section
 
 open Complex DirichletCharacter ArithmeticFunction LSeries Filter Topology
 
-namespace TauCeti
+namespace Nat
 
 /-- Changing the principal character's level adds precisely the logarithmic derivatives of
-its finitely many deleted Euler factors on `1 ≤ re s`, away from the pole `s = 1`. -/
+its finitely many deleted Euler factors wherever it is nonzero, away from the pole `s = 1`. -/
 theorem logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta (N : ℕ) [NeZero N]
-    {s : ℂ} (hσ : 1 ≤ s.re) (hs1 : s ≠ 1) :
+    {s : ℂ} (hL : LFunctionTrivChar N s ≠ 0) (hs1 : s ≠ 1) :
     logDeriv (LFunctionTrivChar N) s - logDeriv riemannZeta s =
       ∑ p ∈ N.primeFactors, (Real.log p : ℂ) / ((p : ℂ) ^ s - 1) := by
   let f (p : ℕ) (z : ℂ) := 1 - (p : ℂ) ^ (-z)
@@ -36,8 +39,6 @@ theorem logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta (N : ℕ) [NeZero N]
   have heq : LFunctionTrivChar N =ᶠ[𝓝 s] P * riemannZeta := by
     filter_upwards [eventually_ne_nhds hs1] with z hz
     simpa only [P, f, Pi.mul_apply] using LFunctionTrivChar_eq_mul_riemannZeta (N := N) hz
-  have hL : LFunctionTrivChar N s ≠ 0 :=
-    LFunction_ne_zero_of_one_le_re 1 (.inr hs1) hσ
   have hPζ : P s * riemannZeta s ≠ 0 := by
     intro hz
     exact hL (heq.eq_of_nhds.trans hz)
@@ -65,7 +66,8 @@ private theorem re_logDeriv_LFunctionTrivChar_sub (N : ℕ) [NeZero N]
       ∑ p ∈ N.primeFactors, Real.log p / ((p : ℝ) ^ σ - 1) := by
   have h := congrArg Complex.re
     (logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta N (s := (σ : ℂ))
-      (by simpa only [Complex.ofReal_re] using hσ.le) (by exact_mod_cast hσ.ne'))
+      (LFunction_ne_zero_of_one_le_re 1 (.inr (by exact_mod_cast hσ.ne'))
+        (by simpa only [Complex.ofReal_re] using hσ.le)) (by exact_mod_cast hσ.ne'))
   simp only [Complex.sub_re, Complex.re_sum] at h
   rw [h]
   refine Finset.sum_congr rfl fun p hp ↦ ?_
@@ -74,30 +76,36 @@ private theorem re_logDeriv_LFunctionTrivChar_sub (N : ℕ) [NeZero N]
   rw [Complex.logDeriv_one_sub_cpow_neg] at he
   simpa only [Complex.ofReal_natCast, Complex.ofReal_log hp0.le] using he
 
-private theorem tsum_prime_principal_sub (N : ℕ) [NeZero N] {σ : ℝ} (hσ : 1 < σ) :
-    (∑' p : Nat.Primes, ((1 : DirichletCharacter ℂ N) p).re * Real.log p / (p : ℝ) ^ σ) -
-      (∑' p : Nat.Primes, Real.log p / (p : ℝ) ^ σ) =
-        -∑ p ∈ N.primeFactors, Real.log p / (p : ℝ) ^ σ := by
-  have hs := (1 : DirichletCharacter ℂ N).summable_prime_re_mul_log_div_rpow hσ
-  have ht : Summable fun p : Nat.Primes ↦ Real.log p / (p : ℝ) ^ σ := by
-    simpa only [MulChar.one_apply (isUnit_of_subsingleton _), Complex.one_re, one_mul] using
-      (1 : DirichletCharacter ℂ 1).summable_prime_re_mul_log_div_rpow hσ
-  rw [← hs.tsum_sub ht]
-  have hv (p : Nat.Primes) :
-      ((1 : DirichletCharacter ℂ N) p).re * Real.log p / (p : ℝ) ^ σ -
-        Real.log p / (p : ℝ) ^ σ =
-          if (p : ℕ) ∣ N then -(Real.log p / (p : ℝ) ^ σ) else 0 := by
+/-- For a nonzero level, the principal character deletes exactly the weights at its prime
+factors from any summable real prime series. No sign condition on the weights is needed. -/
+theorem tsum_prime_principal_sub (N : ℕ) [NeZero N] (w : ℕ → ℝ)
+    (hw : Summable fun p : Nat.Primes ↦ w p) :
+    (∑' p : Nat.Primes, ((1 : DirichletCharacter ℂ N) p).re * w p) -
+      (∑' p : Nat.Primes, w p) = -∑ p ∈ N.primeFactors, w p := by
+  classical
+  have hc (p : Nat.Primes) : ((1 : DirichletCharacter ℂ N) p).re =
+      if (p : ℕ) ∣ N then 0 else 1 := by
     split_ifs with hp
     · rw [MulChar.map_nonunit 1 ((ZMod.isUnit_prime_iff_not_dvd p.prop).not.mpr
         (not_not.mpr hp))]
       simp
     · rw [MulChar.one_apply (ZMod.isUnit_prime_of_not_dvd p.prop hp)]
       simp
+  have hs : Summable fun p : Nat.Primes ↦ ((1 : DirichletCharacter ℂ N) p).re * w p := by
+    apply (hw.indicator {p : Nat.Primes | ¬ (p : ℕ) ∣ N}).congr
+    exact fun p ↦ by simp [Set.indicator, hc]
+  rw [← hs.tsum_sub hw]
+  have hv (p : Nat.Primes) :
+      ((1 : DirichletCharacter ℂ N) p).re * w p -
+        w p =
+          if (p : ℕ) ∣ N then -(w p) else 0 := by
+    simp only [hc, ite_mul, zero_mul, one_mul]
+    split_ifs <;> ring
   simp_rw [hv]
   have hfinite : (∑' p : Nat.Primes,
-      if (p : ℕ) ∣ N then -(Real.log p / (p : ℝ) ^ σ) else 0) =
+      if (p : ℕ) ∣ N then -(w p) else 0) =
         ∑ p ∈ (N.primeFactors.subtype Nat.Prime : Finset Nat.Primes),
-          if (p : ℕ) ∣ N then -(Real.log p / (p : ℝ) ^ σ) else 0 := by
+          if (p : ℕ) ∣ N then -(w p) else 0 := by
     apply tsum_eq_sum
     intro p hp
     have hnd : ¬(p : ℕ) ∣ N := by
@@ -111,9 +119,9 @@ private theorem tsum_prime_principal_sub (N : ℕ) [NeZero N] {σ : ℝ} (hσ : 
   -- Nat.Primes is definitionally the prime subtype. Expose that subtype explicitly so the
   -- finite-sum lemma can infer its natural-number summand across module boundaries.
   change (∑ p ∈ N.primeFactors.subtype Nat.Prime,
-    if p.val ∣ N then -(Real.log p.val / (p.val : ℝ) ^ σ) else 0) = _
+    if p.val ∣ N then -(w p.val) else 0) = _
   rw [Finset.sum_subtype_of_mem
-    (fun p : ℕ ↦ if p ∣ N then -(Real.log p / (p : ℝ) ^ σ) else 0)
+    (fun p : ℕ ↦ if p ∣ N then -(w p) else 0)
     (fun p hp ↦ Nat.prime_of_mem_primeFactors hp)]
   rw [← Finset.sum_neg_distrib]
   exact Finset.sum_congr rfl fun p hp ↦ ite_eq_left (Nat.dvd_of_mem_primeFactors hp)
@@ -128,7 +136,11 @@ theorem neg_re_logDeriv_LFunctionTrivChar_remainder_sub_eq (N : ℕ) [NeZero N]
         ∑' p : Nat.Primes, Real.log p / (p : ℝ) ^ σ) =
       -∑ p ∈ N.primeFactors, Real.log p / ((p : ℝ) ^ σ * ((p : ℝ) ^ σ - 1)) := by
   have hd := re_logDeriv_LFunctionTrivChar_sub N hσ
-  have hp := tsum_prime_principal_sub N hσ
+  have hw : Summable fun p : Nat.Primes ↦ Real.log p / (p : ℝ) ^ σ := by
+    simpa only [MulChar.one_apply (isUnit_of_subsingleton _), Complex.one_re, one_mul] using
+      (1 : DirichletCharacter ℂ 1).summable_prime_re_mul_log_div_rpow hσ
+  have hp := N.tsum_prime_principal_sub (fun p ↦ Real.log p / (p : ℝ) ^ σ) hw
+  simp only [← mul_div_assoc] at hp
   have hf : (∑ p ∈ N.primeFactors, Real.log p / ((p : ℝ) ^ σ - 1)) -
       (∑ p ∈ N.primeFactors, Real.log p / (p : ℝ) ^ σ) =
       ∑ p ∈ N.primeFactors, Real.log p / ((p : ℝ) ^ σ * ((p : ℝ) ^ σ - 1)) := by
@@ -157,4 +169,4 @@ theorem abs_neg_re_logDeriv_LFunctionTrivChar_remainder_sub_le (N : ℕ) [NeZero
         (Real.one_le_rpow (by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).one_lt.le)
           (zero_lt_one.trans hσ).le))
 
-end TauCeti
+end Nat

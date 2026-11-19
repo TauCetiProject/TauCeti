@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import Mathlib.NumberTheory.PrimeCounting
-public import Mathlib.NumberTheory.EulerProduct.Basic
 import TauCeti.Analysis.SpecificLimits.ReciprocalSeries
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.SumPrimePow
@@ -21,8 +20,8 @@ most `2 log 4`. This explicit absolute constant bounds the higher-prime-power pa
 twisted von Mangoldt series on `1 ≤ re s` and separates the prime and von Mangoldt forms of
 Mertens' first theorem.
 
-The summability is the trivial residue class case of Mathlib's
-`ArithmeticFunction.vonMangoldt.summable_residueClass_non_primes_div`; the explicit bound regroups
+The summability at exponent one is a specialization of the real-exponent result below;
+the explicit bound regroups
 by the prime base (`Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log`), sums each geometric tail to
 `1 / (p (p - 1)) ≤ 2 / p ^ 2`, and applies Chebyshev's reciprocal-square prime tail bound
 (`TauCeti.sum_log_div_sq_le_of_prime`).
@@ -34,7 +33,7 @@ prime divisors of any level is bounded by the endpoint prime series, uniformly i
 ## Main results
 
 * `ArithmeticFunction.vonMangoldt.summable_nonprime_div`: `∑ₙ (if n is prime then 0 else Λ(n)) / n`
-  converges.
+  converges by specializing the real-exponent result at one.
 * `ArithmeticFunction.vonMangoldt.summable_nonprime_div_rpow` and
   `ArithmeticFunction.vonMangoldt.hasSum_prime_log_div_rpow_mul_sub_one`: convergence and the
   exact geometric expansion for `σ > 1/2`.
@@ -52,14 +51,6 @@ public section
 open ArithmeticFunction Finset
 
 namespace ArithmeticFunction.vonMangoldt
-
-/-- The von Mangoldt weights `Λ n / n` at the non-prime `n`, which are supported on the prime
-powers `p ^ k` with `k ≥ 2`, are summable. -/
-theorem summable_nonprime_div :
-    Summable fun n : ℕ ↦ (if n.Prime then 0 else vonMangoldt n) / n := by
-  have h (n : ℕ) : residueClass (1 : ZMod 1) n = vonMangoldt n :=
-    Set.indicator_of_mem (Subsingleton.elim (n : ZMod 1) 1) _
-  simpa only [h] using summable_residueClass_non_primes_div (1 : ZMod 1)
 
 private theorem summable_prime_geometric {σ : ℝ} (hσ : 1 / 2 < σ) :
     Summable fun p : Nat.Primes ↦ Real.log p / ((p : ℝ) ^ σ * ((p : ℝ) ^ σ - 1)) := by
@@ -147,6 +138,12 @@ theorem summable_nonprime_div_rpow {σ : ℝ} (hσ : 1 / 2 < σ) :
         exact False.elim (hp hnprime)
     | succ k => exact False.elim (hn ⟨(⟨p, Nat.prime_iff.mpr hprime⟩, k), heq⟩)
   · simp only [f, vonMangoldt_eq_zero_iff.mpr hpp, ite_self, zero_div]
+
+/-- The von Mangoldt weights at non-primes divided by `n` are summable, as the exponent-one
+case of convergence for every exponent greater than one half. -/
+theorem summable_nonprime_div :
+    Summable fun n : ℕ ↦ (if n.Prime then 0 else vonMangoldt n) / n := by
+  simpa only [Real.rpow_one] using summable_nonprime_div_rpow (σ := 1) (by norm_num)
 
 /-- Regrouping by the prime base evaluates the higher powers as a geometric prime series. -/
 theorem hasSum_prime_log_div_rpow_mul_sub_one {σ : ℝ} (hσ : 1 / 2 < σ) :

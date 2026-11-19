@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv
-public import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
+public import Mathlib.NumberTheory.LSeries.RiemannZeta
+public import Mathlib.Analysis.Calculus.LogDeriv
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import Mathlib.Tactic.Linarith
 
 /-!

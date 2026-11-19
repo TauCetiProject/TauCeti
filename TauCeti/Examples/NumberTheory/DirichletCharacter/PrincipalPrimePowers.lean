@@ -8,6 +8,7 @@ module
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Principal
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
+import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -53,7 +54,7 @@ example :
         ∑' p : Nat.Primes, ((1 : DirichletCharacter ℂ 6) p).re * Real.log p / (p : ℝ) ^ 2) -
       (-(logDeriv riemannZeta 2).re - ∑' p : Nat.Primes, Real.log p / (p : ℝ) ^ 2) =
       -Real.log 2 / 12 - Real.log 3 / 72 ∧ -Real.log 2 / 12 - Real.log 3 / 72 < 0 := by
-  have h := neg_re_logDeriv_LFunctionTrivChar_remainder_sub_eq 6 (σ := 2) (by norm_num)
+  have h := Nat.neg_re_logDeriv_LFunctionTrivChar_remainder_sub_eq 6 (σ := 2) (by norm_num)
   have hp : Nat.primeFactors 6 = {2, 3} := by
     have h6 : 6 = 2 * 3 := by norm_num
     rw [h6, Nat.primeFactors_mul (by norm_num) (by norm_num)]
@@ -73,11 +74,23 @@ example : ∃ C : ℝ, C ≤ 2 * Real.log 4 ∧ ∀ (N : ℕ) [NeZero N] (σ : �
       (-(logDeriv riemannZeta (σ : ℂ)).re -
         ∑' p : Nat.Primes, Real.log p / (p : ℝ) ^ σ)| ≤ C := by
   refine ⟨∑' p : Nat.Primes, Real.log p / ((p : ℝ) * ((p : ℝ) - 1)), ?_,
-    fun N _ σ hσ ↦ abs_neg_re_logDeriv_LFunctionTrivChar_remainder_sub_le N hσ⟩
+    fun N _ σ hσ ↦ Nat.abs_neg_re_logDeriv_LFunctionTrivChar_remainder_sub_le N hσ⟩
   have hg := vonMangoldt.hasSum_prime_log_div_rpow_mul_sub_one (σ := 1) (by norm_num)
   simp only [Real.rpow_one] at hg
   rw [hg.tsum_eq]
   exact vonMangoldt.tsum_nonprime_div_le
+
+/-- Deleting a negative prime weight reverses the sign of the finite correction. -/
+example :
+    (∑' p : Nat.Primes, ((1 : DirichletCharacter ℂ 2) p).re *
+      (if (p : ℕ) = 2 then (-1 : ℝ) else 0)) -
+      (∑' p : Nat.Primes, if (p : ℕ) = 2 then (-1 : ℝ) else 0) = 1 := by
+  have hw : Summable fun n : ℕ ↦ if n = 2 then (-1 : ℝ) else 0 := by
+    apply summable_of_ne_finset_zero (s := {2})
+    exact fun n hn ↦ ite_eq_right (by simpa only [Finset.mem_singleton] using hn)
+  have h := Nat.tsum_prime_principal_sub 2
+    (fun n ↦ if n = 2 then (-1 : ℝ) else 0) (hw.subtype Nat.Prime)
+  simpa [Nat.prime_two.primeFactors] using h
 
 /-- Adding the pole with the wrong sign diverges to positive infinity at one. -/
 example : Tendsto (fun η : ℝ ↦ -(logDeriv riemannZeta (1 + (η : ℂ))).re + η⁻¹)
