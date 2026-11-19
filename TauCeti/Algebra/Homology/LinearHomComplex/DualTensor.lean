@@ -17,8 +17,8 @@ public import TauCeti.Algebra.Homology.LinearHomComplex.Composition
 Let `A` and `B` be cochain complexes of modules over a commutative ring `R`, and let
 `A∨ = Hom(A, R[0])` be the `R`-linear Hom complex from `A` to the tensor unit `R[0]`, the dual
 complex. Its term of degree `q` consists of the linear forms on `A^(-q)`, and its differential is
-`d f = (-1)^(q + 1) f ∘ d_A`, the differential of Mathlib's `CochainComplex.HomComplex`. This file
-constructs the **dual-tensor comparison**
+`d f = (-1)^(q + 1) f ∘ d_A`, the differential of Mathlib's `CochainComplex.HomComplex`
+(`TauCeti.cochainToTensorUnitLinearEquiv_δ`). This file constructs the **dual-tensor comparison**
 
 `TauCeti.linearHomComplexDualTensor R A B : B ⊗ A∨ ⟶ Hom(A, B)`,
 
@@ -200,6 +200,17 @@ lemma cochainToTensorUnitLinearEquiv_symm_apply (A : CochainComplex (ModuleCat.{
     {i q : ℤ} (hi : i + q = 0) (f : Module.Dual R (A.X i)) :
     (cochainToTensorUnitLinearEquiv R A hi).symm f = Cochain.toSingleMk (ModuleCat.ofHom f) hi :=
   (rfl)
+
+/-- The differential of the dual complex: for `i + q = 0` and `i' + q' = 0`, the linear form of
+`δ φ` on `A^i'` is `(-1)^q'` times the linear form of `φ` composed with `d_A : A^i' ⟶ Aⁱ`. -/
+lemma cochainToTensorUnitLinearEquiv_δ (A : CochainComplex (ModuleCat.{v} R) ℤ)
+    {i i' q q' : ℤ} (hi : i + q = 0) (hi' : i' + q' = 0)
+    (φ : Cochain A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) q) :
+    cochainToTensorUnitLinearEquiv R A hi' (δ q q' φ) =
+      q'.negOnePow • cochainToTensorUnitLinearEquiv R A hi φ ∘ₗ (A.d i' i).hom := by
+  obtain ⟨f, rfl⟩ := Cochain.toSingleMk_surjective φ i hi
+  rw [Cochain.δ_toSingleMk f hi q' i' hi']
+  simp
 
 variable (R) in
 /-- The **dual-tensor comparison** `B ⊗ Hom(A, R[0]) ⟶ Hom(A, B)` of cochain complexes of
