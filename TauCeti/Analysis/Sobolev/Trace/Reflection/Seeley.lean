@@ -48,6 +48,10 @@ form a convergent product. Tannery's theorem passes the identities to the limit 
 * `TauCeti.HalfSpaceExtension.seeleyExtension`: Seeley's extension operator.
 * `TauCeti.HalfSpaceExtension.contDiff_seeleyExtension`: the extension of a function `C^∞` on the
   closed upper half-space is `C^∞`.
+* `TauCeti.HalfSpaceExtension.iteratedFDeriv_seeleyExtension_of_neg` and
+  `TauCeti.HalfSpaceExtension.norm_iteratedFDeriv_seeleyExtension_le_of_neg`: the derivatives of
+  the extension at negative times are the reflected derivatives of the cut-off input
+  `TauCeti.HalfSpaceExtension.seeleyCutoff`, with the resulting estimates.
 * `TauCeti.HalfSpaceExtension.exists_contDiff_infty_extension_halfSpace`: every function `C^∞` on
   the closed upper half-space is the restriction of a `C^∞` function.
 
@@ -403,16 +407,19 @@ theorem seeleyExtension_smul (c : ℝ) (f : ℝ × E → F) :
 
 /-! ### Smoothness of the extension -/
 
-/-- The input cut off at normal coordinates `t ≥ 2`, unchanged for `t ≤ 1`. -/
-private def seeleyCutoff (f : ℝ × E → F) (y : ℝ × E) : F := Real.smoothTransition (2 - y.1) • f y
+/-- The input cut off at normal coordinates `t ≥ 2`, unchanged for `t ≤ 1`. The extension at a
+negative time is the reflected series of this cut-off input. -/
+def seeleyCutoff (f : ℝ × E → F) (y : ℝ × E) : F := Real.smoothTransition (2 - y.1) • f y
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-private theorem seeleyCutoff_eq_zero (f : ℝ × E → F) {y : ℝ × E} (hy : 2 < y.1) :
+/-- The cut-off input vanishes at normal coordinates `t > 2`. -/
+theorem seeleyCutoff_eq_zero (f : ℝ × E → F) {y : ℝ × E} (hy : 2 < y.1) :
     seeleyCutoff f y = 0 := by
   rw [seeleyCutoff, Real.smoothTransition.zero_of_nonpos (by linarith), zero_smul]
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-private theorem seeleyCutoff_eq_self (f : ℝ × E → F) {y : ℝ × E} (hy : y.1 ≤ 1) :
+/-- The cut-off input agrees with the input at normal coordinates `t ≤ 1`. -/
+theorem seeleyCutoff_eq_self (f : ℝ × E → F) {y : ℝ × E} (hy : y.1 ≤ 1) :
     seeleyCutoff f y = f y := by
   rw [seeleyCutoff, Real.smoothTransition.one_of_one_le (by linarith), one_smul]
 
@@ -523,42 +530,55 @@ private theorem hasFTaylorSeriesUpToOn_tsum_seeleyCoeff_smul [CompleteSpace F] {
     nonempty_interior_lowerHalfSpace (fun N ↦ HasFTaylorSeriesUpToOn.sum fun k _ ↦ hT k)
     (fun m _ ↦ hloc m) fun z hz ↦ (hsum z hz).hasSum.tendsto_sum_nat
 
+/-- On the closed lower half-space, the reflected series of the cut-off input has the reflected
+Taylor series of the cut-off input. -/
+private theorem hasFTaylorSeriesUpToOn_tsum_seeleyCoeff_smul_seeleyCutoff [CompleteSpace F]
+    {f : ℝ × E → F} (hf : ContDiffOn ℝ ∞ f (upperHalfSpace E)) :
+    HasFTaylorSeriesUpToOn ∞
+      (fun z ↦ ∑' k, seeleyCoeff k • seeleyCutoff f (timeScale (-2 ^ k) z))
+      (fun z m ↦ ∑' k, seeleyCoeff k •
+        (iteratedFDerivWithin ℝ m (seeleyCutoff f) (upperHalfSpace E)
+          (timeScale (-2 ^ k) z)).compContinuousLinearMap fun _ ↦ timeScale (-2 ^ k))
+      (lowerHalfSpace E) := by
+  have hg : ContDiffOn ℝ ∞ (seeleyCutoff f) (upperHalfSpace E) :=
+    ((Real.smoothTransition.contDiff.comp (contDiff_const.sub contDiff_fst)).contDiffOn).smul hf
+  -- The Taylor coefficients of the cut-off input vanish at normal coordinates `t > 2`.
+  have hp0 (m : ℕ) (y : ℝ × E) (hy : 2 < y.1) :
+      ftaylorSeriesWithin ℝ (seeleyCutoff f) (upperHalfSpace E) y m = 0 := by
+    have hev : seeleyCutoff f =ᶠ[𝓝[upperHalfSpace E] y] 0 :=
+      eventually_nhdsWithin_of_eventually_nhds <|
+        ((isOpen_lt continuous_const continuous_fst).eventually_mem hy).mono
+          fun w hw ↦ seeleyCutoff_eq_zero f hw
+    simp only [ftaylorSeriesWithin, hev.iteratedFDerivWithin_eq (seeleyCutoff_eq_zero f hy) m,
+      iteratedFDerivWithin_zero, Pi.zero_apply]
+  exact hasFTaylorSeriesUpToOn_tsum_seeleyCoeff_smul
+    (hg.ftaylorSeriesWithin uniqueDiffOn_upperHalfSpace) hp0 fun z hz ↦ by
+      simpa only [seeleyCutoff_timeScale] using
+        summable_seeleyCoeff_smul_seeleyCutoff hf.continuousOn (mem_lowerHalfSpace.mp hz)
+
 /-- **Seeley's extension theorem.** If `f` is `C^∞` on the closed upper half-space, its Seeley
 extension is `C^∞` on the whole space. -/
 theorem contDiff_seeleyExtension [CompleteSpace F] {f : ℝ × E → F}
     (hf : ContDiffOn ℝ ∞ f (upperHalfSpace E)) : ContDiff ℝ ∞ (seeleyExtension f) := by
   classical
-  let g := seeleyCutoff f
-  have hg : ContDiffOn ℝ ∞ g (upperHalfSpace E) :=
-    ((Real.smoothTransition.contDiff.comp (contDiff_const.sub contDiff_fst)).contDiffOn).smul hf
-  let p := ftaylorSeriesWithin ℝ g (upperHalfSpace E)
-  have hp : HasFTaylorSeriesUpToOn ∞ g p (upperHalfSpace E) :=
-    hg.ftaylorSeriesWithin uniqueDiffOn_upperHalfSpace
-  -- The Taylor coefficients of the cut-off input vanish at normal coordinates `t > 2`.
-  have hp0 (m : ℕ) (y : ℝ × E) (hy : 2 < y.1) : p y m = 0 := by
-    have hev : g =ᶠ[𝓝[upperHalfSpace E] y] 0 := eventually_nhdsWithin_of_eventually_nhds <|
-      ((isOpen_lt continuous_const continuous_fst).eventually_mem hy).mono
-        fun w hw ↦ seeleyCutoff_eq_zero f hw
-    simp only [p, ftaylorSeriesWithin, hev.iteratedFDerivWithin_eq (seeleyCutoff_eq_zero f hy) m,
-      iteratedFDerivWithin_zero, Pi.zero_apply]
-  have hq := hasFTaylorSeriesUpToOn_tsum_seeleyCoeff_smul hp hp0 fun z hz ↦ by
-    simpa only [g, seeleyCutoff_timeScale] using
-      summable_seeleyCoeff_smul_seeleyCutoff hf.continuousOn (mem_lowerHalfSpace.mp hz)
+  have hq := hasFTaylorSeriesUpToOn_tsum_seeleyCoeff_smul_seeleyCutoff hf
   -- On the boundary the reflected Taylor series reproduces that of `f`, since the cutoff is `1`
   -- there and the coefficients reproduce multilinear maps.
   have hmatch : ∀ x ∈ upperHalfSpace E ∩ lowerHalfSpace E, ∀ m : ℕ, m ≤ (⊤ : ℕ∞) →
       ftaylorSeriesWithin ℝ f (upperHalfSpace E) x m = ∑' k, seeleyCoeff k •
-        (p (timeScale (-2 ^ k) x) m).compContinuousLinearMap fun _ ↦ timeScale (-2 ^ k) := by
+        (iteratedFDerivWithin ℝ m (seeleyCutoff f) (upperHalfSpace E)
+          (timeScale (-2 ^ k) x)).compContinuousLinearMap fun _ ↦ timeScale (-2 ^ k) := by
     intro x hx m _
     have htime : x.1 = 0 :=
       le_antisymm (mem_lowerHalfSpace.mp hx.2) (mem_upperHalfSpace.mp hx.1)
     have hτ (k : ℕ) : timeScale (-2 ^ k) x = x := by ext <;> simp [htime]
-    have hgf : g =ᶠ[𝓝[upperHalfSpace E] x] f := eventually_nhdsWithin_of_eventually_nhds <|
-      ((isOpen_lt continuous_fst continuous_const).eventually_mem (by linarith : x.1 < 1)).mono
-        fun w hw ↦ seeleyCutoff_eq_self f (le_of_lt hw)
+    have hgf : seeleyCutoff f =ᶠ[𝓝[upperHalfSpace E] x] f :=
+      eventually_nhdsWithin_of_eventually_nhds <|
+        ((isOpen_lt continuous_fst continuous_const).eventually_mem (by linarith : x.1 < 1)).mono
+          fun w hw ↦ seeleyCutoff_eq_self f (le_of_lt hw)
     simp only [hτ]
     rw [tsum_seeleyCoeff_smul_compContinuousLinearMap_timeScale]
-    simp only [p, ftaylorSeriesWithin,
+    simp only [ftaylorSeriesWithin,
       hgf.iteratedFDerivWithin_eq (seeleyCutoff_eq_self f (by linarith)) m]
   have hglue := (hf.ftaylorSeriesWithin uniqueDiffOn_upperHalfSpace).contDiff_piecewise hq
     isClosed_upperHalfSpace isClosed_lowerHalfSpace upperHalfSpace_union_lowerHalfSpace hmatch
@@ -568,7 +588,44 @@ theorem contDiff_seeleyExtension [CompleteSpace F] {f : ℝ × E → F}
   · rw [seeleyExtension_of_nonneg _ hx, piecewise_eq_of_mem _ _ _ (mem_upperHalfSpace.mpr hx)]
   · rw [seeleyExtension_of_neg _ (lt_of_not_ge hx),
       piecewise_eq_of_notMem _ _ _ fun h ↦ hx (mem_upperHalfSpace.mp h)]
-    exact tsum_congr fun k ↦ by simp only [g, seeleyCutoff_timeScale]
+    exact tsum_congr fun k ↦ by simp only [seeleyCutoff_timeScale]
+
+/-- **Derivatives of Seeley's extension.** At a negative time, the `m`-th derivative of the
+extension of a function `C^∞` on the closed upper half-space is the `aₖ`-weighted sum of the
+`m`-th derivatives of the cut-off input at the reflected points, precomposed with the dilations
+by `-2ᵏ`. -/
+theorem iteratedFDeriv_seeleyExtension_of_neg [CompleteSpace F] {f : ℝ × E → F}
+    (hf : ContDiffOn ℝ ∞ f (upperHalfSpace E)) {x : ℝ × E} (hx : x.1 < 0) (m : ℕ) :
+    iteratedFDeriv ℝ m (seeleyExtension f) x = ∑' k, seeleyCoeff k •
+      (iteratedFDerivWithin ℝ m (seeleyCutoff f) (upperHalfSpace E)
+        (timeScale (-2 ^ k) x)).compContinuousLinearMap fun _ ↦ timeScale (-2 ^ k) := by
+  have hopen : IsOpen {z : ℝ × E | z.1 < 0} := isOpen_lt continuous_fst continuous_const
+  have hev : seeleyExtension f =ᶠ[𝓝 x]
+      fun z ↦ ∑' k, seeleyCoeff k • seeleyCutoff f (timeScale (-2 ^ k) z) :=
+    (hopen.eventually_mem hx).mono fun z hz ↦ by
+      simp only [seeleyExtension_of_neg f hz, seeleyCutoff_timeScale]
+  have hlow : lowerHalfSpace E ∈ 𝓝 x :=
+    mem_of_superset (hopen.mem_nhds hx) fun z hz ↦ mem_lowerHalfSpace.mpr (le_of_lt hz)
+  have hq := hasFTaylorSeriesUpToOn_tsum_seeleyCoeff_smul_seeleyCutoff hf
+  rw [(hev.iteratedFDeriv ℝ m).eq_of_nhds, ← iteratedFDerivWithin_univ,
+    ← iteratedFDerivWithin_congr_set (eventuallyEqSet_univ.mpr hlow),
+    ← hq.eq_iteratedFDerivWithin_of_uniqueDiffOn (by simp) uniqueDiffOn_lowerHalfSpace
+      (mem_of_mem_nhds hlow)]
+
+/-- **Derivative estimates for Seeley's extension.** At a negative time, the `m`-th derivative of
+the extension is bounded by `∑ₖ |aₖ| (2ᵏ) ^ m` times any bound on the `m`-th derivatives of the
+cut-off input on the closed upper half-space. -/
+theorem norm_iteratedFDeriv_seeleyExtension_le_of_neg [CompleteSpace F] {f : ℝ × E → F}
+    (hf : ContDiffOn ℝ ∞ f (upperHalfSpace E)) {x : ℝ × E} (hx : x.1 < 0) {m : ℕ} {C : ℝ}
+    (hC : ∀ y ∈ upperHalfSpace E,
+      ‖iteratedFDerivWithin ℝ m (seeleyCutoff f) (upperHalfSpace E) y‖ ≤ C) :
+    ‖iteratedFDeriv ℝ m (seeleyExtension f) x‖ ≤
+      (∑' k, |seeleyCoeff k| * ((2 : ℝ) ^ k) ^ m) * C := by
+  rw [iteratedFDeriv_seeleyExtension_of_neg hf hx, ← tsum_mul_right]
+  refine tsum_of_norm_bounded ((summable_abs_seeleyCoeff_mul_pow m).mul_right C).hasSum
+    fun k ↦ (norm_seeleyCoeff_smul_compContinuousLinearMap_le _ k).trans ?_
+  gcongr
+  exact hC _ (timeScale_neg_two_pow_mem_upperHalfSpace k hx.le)
 
 /-- Every function which is `C^∞` on the closed upper half-space is the restriction of a `C^∞`
 function on the whole space, namely its Seeley extension. -/
