@@ -36,6 +36,8 @@ McDuff–Salamon's normalization `∂ₛ + i ∂ₜ = 2 \bar∂` this is `∂ₛ
   `R (C ξ) = (R C) (R ξ)`.
 * `TauCeti.MemLpLoc.starSchwarzReflectionCoeff`: a coefficient field locally `Lᵖ` up to the
   boundary reflects to one locally `Lᵖ` on the doubled domain.
+* `HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_starSchwarzReflectionCoeff`:
+  the reflection of a solution solves the reflected weak equation on `Ω`.
 * `HasWeakConjWirtingerDerivRealBoundaryOn.isWeakLinearCauchyRiemannOn_starSchwarzReflection`:
   for `1 < p < ∞` and finite-dimensional `F`, a continuous solution real on the axis with
   coefficient locally `Lᵖ` up to the boundary reflects to a weak solution
@@ -129,6 +131,27 @@ section Complex
 variable [NormedSpace ℂ F] [StarAddMonoid F] [StarModule ℂ F] [ContinuousStar F]
   {C : ℂ → F →L[ℝ] F} {ξ : ℂ → F}
 
+namespace HasWeakConjWirtingerDerivRealBoundaryOn
+
+/-- **The reflected weak equation.** Let `Ω` be conjugation invariant and let `ξ` solve
+`∂ₛξ + i ∂ₜξ + C(z) ξ = 0` weakly on `Ω ∩ {0 ≤ im}` with the real boundary condition. Then the
+reflection `R ξ` weakly solves `∂ₛ(R ξ) + i ∂ₜ(R ξ) + (R C)(R ξ) = 0` on all of `Ω`, in the form
+`\bar∂ (R ξ) = ½ (-(R C) (R ξ))` consumed by the interior similarity principle. -/
+theorem hasWeakConjWirtingerDerivOn_starSchwarzReflectionCoeff
+    {Ω : Opens ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ fun z ↦ -(2 : ℂ)⁻¹ • C z (ξ z)) :
+    HasWeakConjWirtingerDerivOn volume Ω (starSchwarzReflection ξ)
+      (fun z ↦ (2 : ℂ)⁻¹ • -starSchwarzReflectionCoeff C z (starSchwarzReflection ξ z)) := by
+  -- The normalizing factor `-1/2` is real, so it commutes with the reflection.
+  have hs (x : F) : -(2 : ℂ)⁻¹ • x = (-(2 : ℝ)⁻¹) • x := by
+    rw [← Complex.coe_smul]
+    norm_num
+  have hw := h.hasWeakConjWirtingerDerivOn_starSchwarzReflection hΩ
+  simp only [hs, starSchwarzReflection_const_smul, starSchwarzReflection_clm_apply] at hw
+  simpa only [smul_neg, ← neg_smul, hs] using hw
+
+end HasWeakConjWirtingerDerivRealBoundaryOn
+
 /-- **Reflection of the linear Cauchy–Riemann equation with a real boundary condition.** Let
 `1 < p < ∞`, let `F` be finite-dimensional, let `Ω` be conjugation invariant, and let `ξ` be
 continuous on `Ω ∩ {0 ≤ im}` and real on `Ω ∩ ℝ`, solving `∂ₛξ + i ∂ₜξ + C(z) ξ = 0` weakly on
@@ -143,18 +166,16 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.isWeakLinearCauchyRiemannOn_star
     (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ fun z ↦ -(2 : ℂ)⁻¹ • C z (ξ z)) :
     IsWeakLinearCauchyRiemannOn p Ω (fun _ ↦ I • ContinuousLinearMap.id ℝ F)
       (starSchwarzReflectionCoeff C) (starSchwarzReflection ξ) := by
-  -- The normalizing factor `-1/2` is real, so it commutes with the reflection.
-  have hs (x : F) : -(2 : ℂ)⁻¹ • x = (-(2 : ℝ)⁻¹) • x := by
-    rw [← Complex.coe_smul]
-    norm_num
   have hc := continuousOn_starSchwarzReflection_of_symmetric hΩ hξc hξr
-  have hw := h.hasWeakConjWirtingerDerivOn_starSchwarzReflection hΩ
-  simp only [hs, starSchwarzReflection_const_smul, starSchwarzReflection_clm_apply] at hw
+  have hw := h.hasWeakConjWirtingerDerivOn_starSchwarzReflectionCoeff hΩ
   have hf : MemLpLoc p Ω
-      (fun z ↦ (-(2 : ℝ)⁻¹) • starSchwarzReflectionCoeff C z (starSchwarzReflection ξ z)) :=
-    ((hC.starSchwarzReflectionCoeff hΩ).clm_apply_continuousOn hc).const_smul _
-  refine isWeakCauchyRiemannOn_I_smul_id_iff.2 ⟨hc, hw.memWkpLoc_one hp hp_top hc.memLpLoc hf, ?_⟩
-  simpa only [smul_neg, ← neg_smul, hs] using hw
+      (fun z ↦ (2 : ℂ)⁻¹ • -starSchwarzReflectionCoeff C z (starSchwarzReflection ξ z)) := by
+    -- The factor `1/2` is real.
+    convert ((hC.starSchwarzReflectionCoeff hΩ).clm_apply_continuousOn hc).neg.const_smul
+      ((2 : ℝ)⁻¹) using 2 with z
+    rw [Pi.smul_apply, Pi.neg_apply, ← Complex.coe_smul]
+    norm_num
+  exact isWeakCauchyRiemannOn_I_smul_id_iff.2 ⟨hc, hw.memWkpLoc_one hp hp_top hc.memLpLoc hf, hw⟩
 
 end Complex
 
