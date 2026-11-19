@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Manifold.Orientation.Basic
+public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
+public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 
 /-!
 # Top forms on the complex frames of an oriented almost complex surface
@@ -26,6 +28,11 @@ whose densities `(u^* ω)(e, j e)` are nonnegative when `ω` tames the target st
 with the positivity of integration, a continuous compactly supported top form that is nonnegative on
 every frame `(e, j e)` and positive on one has positive integral
 (`TauCeti.SmoothAlmostComplexStructure.integralTopForm_pos_of_forall_nonneg`).
+
+The same frames show that a pseudoholomorphic map between two such surfaces preserves the
+orientations wherever its derivative is nonzero
+(`TauCeti.IsPseudoholomorphicAt.isOrientationPreservingAt`): it carries a positive frame
+`(v, j' v)` to the frame `(du v, j du v)`, which is positive.
 
 ## References
 
@@ -99,5 +106,50 @@ theorem integralTopForm_pos_of_forall_nonneg
     ⟨c₀, b₀, ho c₀ b₀ (by rw [hb₀]; simp), hb₀ ▸ hpos⟩
 
 end SmoothAlmostComplexStructure
+
+namespace IsPseudoholomorphicAt
+
+variable {E H H' C C' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace C] [ChartedSpace H C]
+  [IsManifold I ∞ C] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'} [TopologicalSpace C']
+  [ChartedSpace H' C'] [IsManifold I' ∞ C'] {j : SmoothAlmostComplexStructure I C}
+  {j' : SmoothAlmostComplexStructure I' C'} {o : Manifold.Orientation I C (Fin 2)}
+  {o' : Manifold.Orientation I' C' (Fin 2)}
+
+/-- **Pseudoholomorphic maps preserve complex orientations.** Let `C'` and `C` be surfaces with
+almost complex structures `j'` and `j`, oriented so that every frame `(e, j' e)`, respectively
+`(e, j e)`, is positive. A map `φ : C' → C` pseudoholomorphic at `c'` with nonzero derivative
+there preserves the orientations at `c'`. -/
+theorem isOrientationPreservingAt {φ : C' → C} {c' : C'} (hφ : IsPseudoholomorphicAt j' j φ c')
+    (ho' : ∀ b : Basis (Fin 2) ℝ (TangentSpace I' c'), b 1 = j' c' (b 0) →
+      b.orientation = o'.orientationAt c')
+    (ho : ∀ b : Basis (Fin 2) ℝ (TangentSpace I (φ c')), b 1 = j (φ c') (b 0) →
+      b.orientation = o.orientationAt (φ c'))
+    (hne : mfderiv I' I φ c' ≠ 0) :
+    Manifold.Orientation.IsOrientationPreservingAt o' o φ c' := by
+  obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hne
+  have hv0 : v ≠ 0 := by
+    rintro rfl
+    exact hv (map_zero _)
+  -- The frames `(v, j' v)` at `c'` and `(dφ v, j dφ v)` at `φ c'`, positive by hypothesis.
+  set b := basisOfLinearIndependentOfCardEqFinrank
+    ((j'.almostComplexStructureAt c').linearIndependent_pair hv0)
+    (by simpa using (o'.finrank_tangentSpace_eq c').symm)
+  set b' := basisOfLinearIndependentOfCardEqFinrank
+    ((j.almostComplexStructureAt (φ c')).linearIndependent_pair hv)
+    (by simpa using (o.finrank_tangentSpace_eq (φ c')).symm)
+  have hb : ⇑b = ![v, j' c' v] := by
+    rw [coe_basisOfLinearIndependentOfCardEqFinrank,
+      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+  have hb' : ⇑b' = ![mfderiv I' I φ c' v, j (φ c') (mfderiv I' I φ c' v)] := by
+    rw [coe_basisOfLinearIndependentOfCardEqFinrank,
+      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
+  refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_basis b b' fun i ↦ ?_).2
+    (iff_of_true (ho' b (by simp [hb])) (ho b' (by simp [hb'])))
+  fin_cases i
+  · simp [hb, hb']
+  · simp [hb, hb', hφ.mfderiv_apply_commute]
+
+end IsPseudoholomorphicAt
 
 end TauCeti
