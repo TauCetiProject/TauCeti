@@ -103,11 +103,6 @@ namespace BesselPotentialSpace
 
 open TauCeti
 
-/-- A bounded continuous function is determined by its tempered distribution. -/
-private theorem eq_of_toLpTop_eq {f g : E →ᵇ F}
-    (h : (toLpTop volume ℂ f : 𝓢'(E, F)) = (toLpTop volume ℂ g : 𝓢'(E, F))) : f = g :=
-  toLpTop_injective volume (𝕜 := ℂ) (Lp.toTemperedDistribution_injective h)
-
 /-- The embedding `H^{s,p} ⊆ B^t_{∞,∞}` for `t ≤ s - n / p`, for the default Littlewood–Paley
 partition. -/
 private def toZygmund {t : ℝ} (h : t ≤ s - finrank ℝ E / p.toReal) :
@@ -158,8 +153,9 @@ exponent `α` of the Hölder space it is viewed in. -/
 theorem toCkHolderSpace_apply_congr {k' : ℕ} {α' : ℝ≥0} {hα0' : 0 < α'} {hα1' : α' < 1}
     {h' : k' + α' ≤ s - finrank ℝ E / p.toReal} (u : H^{s, p}(E, F)) (x : E) :
     toCkHolderSpace F k hα0 hα1 h u x = toCkHolderSpace F k' hα0' hα1' h' u x := by
-  have := eq_of_toLpTop_eq (f := (toCkHolderSpace F k hα0 hα1 h u).toBoundedContinuousFunction)
-    (g := (toCkHolderSpace F k' hα0' hα1' h' u).toBoundedContinuousFunction) (by simp)
+  have := toTemperedDistribution_toLpTop_injective (μ := volume)
+    (a₁ := (toCkHolderSpace F k hα0 hα1 h u).toBoundedContinuousFunction)
+    (a₂ := (toCkHolderSpace F k' hα0' hα1' h' u).toBoundedContinuousFunction) (by simp)
   simpa using DFunLike.congr_fun this x
 
 end BesselPotentialSpace
