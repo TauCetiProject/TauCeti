@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight.Basic
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight.Backward
 
 /-!
-# The weighted Cauchy problem for parabolic operators with Hölder coefficients
+# The weighted Cauchy and terminal-value problems for parabolic operators with Hölder coefficients
 
 On `ℝⁿ = EuclideanSpace ℝ ι` and a time slab `ℝⁿ × [0, T]`, let
 
@@ -32,11 +32,20 @@ the weighted problem: `u = w v` solves the weighted problem exactly when `v` is 
 `(F / w, G / w)` under its inverse. In particular the weighted problem has exactly one solution in
 the weighted class.
 
-The estimates transport in the same way. The weighted solution satisfies
+The terminal-value problem `P_back u = F`, `u(·, T) = G` for the backward operator
+`P_back u = ∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u` is solved in the same way. The weight does not depend
+on time, so `P_back (w v) = w P_back,w v` with the same conjugated coefficients
+(`TauCeti.ParabolicC2HolderSpace.exp_mul_euclideanBackwardParabolicOperatorL_eq`). The
+terminal-data map `v ↦ (P_back,w v, v(·, T))` of the conjugated operator is bijective
+(`TauCeti.ParabolicC2HolderSpace.bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL`),
+so the weighted terminal-value problem also has exactly one solution in the weighted class.
+
+For the Cauchy problem the estimates transport in the same way. Its weighted solution satisfies
 `‖u / w‖_{2+α,par} ≤ C max (‖F / w‖_{α,par}) (‖G / w‖_{2,α})`, with `C` depending only on the
 dimension, `α`, the ellipticity constant, bounds on the Hölder norms of the coefficients and of
-the derivatives of `ℓ`, and a bound on the horizon; and the weighted solution operator depends
+the derivatives of `ℓ`, and a bound on the horizon; and its weighted solution operator depends
 Lipschitz continuously on the coefficients `a`, `b`, `c` in operator norm, for a fixed weight.
+This file gives no such estimates for the terminal-value problem.
 
 ## Main declarations
 
@@ -49,6 +58,10 @@ All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
   class.
 * `existsUnique_one_add_exp_mul`: on the line, the Cauchy problem has exactly one solution in the
   class `u / (1 + exp x) ∈ C_b^{2+α,1+α/2}`.
+* `existsUnique_exp_mul_backward`: the weighted terminal-value problem has exactly one solution in
+  the weighted class.
+* `existsUnique_one_add_exp_mul_backward`: on the line, the terminal-value problem has exactly one
+  solution in the class `u / (1 + exp x) ∈ C_b^{2+α,1+α/2}`.
 * `exists_norm_euclideanInitialDataCLE_weighted_symm_le`: the uniform bound on the weighted
   solution operators.
 * `exists_norm_euclideanInitialDataCLE_weighted_symm_sub_le`: their Lipschitz dependence on the
@@ -154,6 +167,49 @@ theorem existsUnique_exp_mul (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ)
   exact (key v (fun y s ↦ exp (ℓ y) * timeExtension hT.le v y s) hext).2
     (hv (fun y s ↦ exp (ℓ y) * timeExtension hT.le v y s) hext)
 
+/-- **Unique solvability of the weighted terminal-value problem.** Let `w = exp ℓ` be a spatial
+weight as in `eq_euclideanInitialDataCLE_symm_iff_exp_mul`. For uniformly elliptic `a` and data
+`f ∈ C_b^{α,α/2}`, `g ∈ C_b^{2,α}`, there is exactly one `v ∈ C_b^{2+α,1+α/2}` such that `u = w v`
+is a classical solution of `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = w f`, `u(·, T) = w g`. -/
+theorem existsUnique_exp_mul_backward (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    {ℓ : EuclideanSpace ℝ ι → ℝ} (hℓ : ContDiff ℝ 2 ℓ)
+    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = d2ℓ i j x)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    ∃! v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT,
+      ∀ u : EuclideanSpace ℝ ι → ℝ → ℝ,
+        (∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) * v (slabMk y s)) →
+        (∀ (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T), derivWithin (u x) (Icc 0 T) t +
+          (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
+              (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+            ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
+            c (slabMk x t) * u x t) = exp (ℓ x) * f (slabMk x t)) ∧
+          ∀ x, u x T = exp (ℓ x) * g x := by
+  obtain ⟨lam, hlam, ha⟩ := ha
+  have key (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT)
+      (u : EuclideanSpace ℝ ι → ℝ → ℝ)
+      (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) * v (slabMk y s)) :=
+    euclideanBackwardParabolicOperatorL_prod_spatialTraceL_weightedCoeff_eq_iff hα₁.le (a := a)
+      (b := b) (c := c) hℓ hdℓ hd2ℓ v hu f g
+  have hbij := bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT
+    (euclideanWeightedFirstOrderCoeff a b dℓ) (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ)
+    hlam ha
+  obtain ⟨v, hv⟩ := hbij.2 (f, g)
+  refine ⟨v, fun u hu ↦ (key v u hu).1 hv, fun v' hv' ↦ hbij.1 ?_⟩
+  -- Any solution is the preimage of `(f, g)` under the injective terminal-data map.
+  have hext (y : EuclideanSpace ℝ ι) (s : Icc (0 : ℝ) T) :
+      exp (ℓ y) * timeExtension hT.le v' y s = exp (ℓ y) * v' (slabMk y s) := by
+    rw [timeExtension_of_mem]
+  exact ((key v' (fun y s ↦ exp (ℓ y) * timeExtension hT.le v' y s) hext).2
+    (hv' (fun y s ↦ exp (ℓ y) * timeExtension hT.le v' y s) hext)).trans hv.symm
+
 end Solution
 
 /-! ### The weight `1 + exp x` on the line -/
@@ -189,6 +245,34 @@ theorem existsUnique_one_add_exp_mul (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (
   have hw (x : EuclideanSpace ℝ ι) : exp (log (1 + exp (x default))) = 1 + exp (x default) :=
     exp_log (by positivity)
   simpa only [hw] using existsUnique_exp_mul hα₀ hα₁ hT b c ha (hℓ.of_le le_top) hdℓ hd2ℓ f g
+
+/-- **The terminal-value problem on the line with the weight `1 + exp x`.** On the line
+`ℝ¹ = EuclideanSpace ℝ ι`, for uniformly elliptic `a` and data `f ∈ C_b^{α,α/2}`,
+`g ∈ C_b^{2,α}`, there is exactly one `v ∈ C_b^{2+α,1+α/2}` such that `u = (1 + exp x) v` is a
+classical solution of `∂ₜu + a ∂ₓ²u + b ∂ₓu + c u = (1 + exp x) f`, `u(·, T) = (1 + exp x) g`. -/
+theorem existsUnique_one_add_exp_mul_backward (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    ∃! v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT,
+      ∀ u : EuclideanSpace ℝ ι → ℝ → ℝ,
+        (∀ y (s : Icc (0 : ℝ) T), u y s = (1 + exp (y default)) * v (slabMk y s)) →
+        (∀ (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T), derivWithin (u x) (Icc 0 T) t +
+          (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
+              (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+            ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
+            c (slabMk x t) * u x t) = (1 + exp (x default)) * f (slabMk x t)) ∧
+          ∀ x, u x T = (1 + exp (x default)) * g x := by
+  obtain ⟨hℓ, dℓ, d2ℓ, hdℓ, hd2ℓ⟩ :=
+    contDiff_log_one_add_exp_and_exists_fderiv_eq (ι := ι) (α := α) hα₁.le
+  have hw (x : EuclideanSpace ℝ ι) : exp (log (1 + exp (x default))) = 1 + exp (x default) :=
+    exp_log (by positivity)
+  simpa only [hw] using
+    existsUnique_exp_mul_backward hα₀ hα₁ hT b c ha (hℓ.of_le le_top) hdℓ hd2ℓ f g
 
 end Line
 
