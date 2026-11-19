@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.Euclidean.Prod
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -203,9 +204,9 @@ theorem norm_gradient_slitSolution {x : WithLp 2 (ℝ × ℝ)} (hx : x.fst < 0 �
       ‖Complex.reCLM.comp ((ContinuousLinearMap.toSpanSingleton ℂ c).restrictScalars ℝ)‖ = ‖c‖ := by
     rw [← ContinuousLinearMap.norm_toSpanSingleton (𝕜 := ℂ) c,
       ← (StrongDual.extendRCLikeₗᵢ (𝕜 := ℂ) (F := ℂ)).symm.norm_map,
-      StrongDual.extendRCLikeₗᵢ_symm_apply]
-    -- `RCLike.reCLM` at `ℂ` is `Complex.reCLM`; Mathlib states no lemma identifying them.
-    rfl
+      StrongDual.extendRCLikeₗᵢ_symm_apply,
+      show (RCLike.reCLM : ℂ →L[ℝ] ℝ) = Complex.reCLM from
+        ContinuousLinearMap.ext fun _ => RCLike.re_to_complex]
   rw [gradient, LinearIsometryEquiv.norm_map, hu.fderiv,
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e.symm, hre,
     show (2⁻¹ : ℂ) - 1 = ((-(2⁻¹ : ℝ) : ℝ) : ℂ) by push_cast; ring]
@@ -298,6 +299,15 @@ private theorem continuousOn_gradient_slitSolution :
     (contDiffOn_slitSolution.continuousOn_fderiv_of_isOpen
       isOpen_setOf_fst_lt_zero_or_snd_ne_zero le_rfl)
 
+/-- Powers of the length of the gradient of the slit-plane solution, off the ray
+`[0, ∞) × {0}`. -/
+private theorem norm_gradient_slitSolution_rpow {x : WithLp 2 (ℝ × ℝ)}
+    (hx : x.fst < 0 ∨ x.snd ≠ 0) (q : ℝ) :
+    ‖∇ slitSolution x‖ ^ q = 2⁻¹ ^ q * ‖x‖ ^ (-(2⁻¹ : ℝ) * q) := by
+  rw [norm_gradient_slitSolution hx, div_eq_mul_inv,
+    Real.mul_rpow (Real.rpow_nonneg (norm_nonneg x) _) (by norm_num),
+    ← Real.rpow_mul (norm_nonneg x), mul_comm]
+
 /-- The gradient of the slit-plane solution is `p`-integrable on a bounded set off the ray
 `[0, ∞) × {0}` when `p < 4`: its length `‖x‖ ^ (-1/2) / 2` is `p`-integrable near the origin of
 the plane exactly in this range. -/
@@ -313,13 +323,11 @@ private theorem memLp_gradient_slitSolution {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp
     ((continuousOn_gradient_slitSolution.mono hΩ).aestronglyMeasurable hΩm) hp0 hp').1 ?_
   have hker : IntegrableOn (fun x : WithLp 2 (ℝ × ℝ) => ‖x‖ ^ (-(2⁻¹ : ℝ) * p.toReal)) Ω :=
     (integrableOn_norm_rpow_ball (by
-      rw [(WithLp.linearEquiv 2 ℝ (ℝ × ℝ)).finrank_eq, Module.finrank_prod, Module.finrank_self]
+      rw [WithLp.finrank_prod, Module.finrank_self]
       push_cast
       linarith)).mono_set hR
-  refine IntegrableOn.congr_fun (hker.const_mul ((2 : ℝ)⁻¹ ^ p.toReal)) (fun x hx => ?_) hΩm
-  rw [norm_gradient_slitSolution (hΩ hx), div_eq_mul_inv,
-    Real.mul_rpow (Real.rpow_nonneg (norm_nonneg x) _) (by norm_num),
-    ← Real.rpow_mul (norm_nonneg x), mul_comm]
+  exact IntegrableOn.congr_fun (hker.const_mul ((2 : ℝ)⁻¹ ^ p.toReal))
+    (fun x hx => (norm_gradient_slitSolution_rpow (hΩ hx) _).symm) hΩm
 
 /-- If the gradient of the slit-plane solution is `p`-integrable on the slit disc, then `p < 4`:
 its length `‖x‖ ^ (-1/2) / 2` is not `4`-integrable near the tip. -/
@@ -332,14 +340,12 @@ private theorem lt_four_of_memLp_gradient_slitSolution {p : ℝ≥0∞} (hp0 : p
     refine IntegrableOn.congr_set_ae (IntegrableOn.congr_fun
       (hint.const_mul ((2 : ℝ) ^ p.toReal)) (fun x hx => ?_) isOpen_slitUnitDisc.measurableSet)
       slitUnitDisc_ae_eq_ball.symm
-    rw [norm_gradient_slitSolution (slitUnitDisc_subset_setOf_fst_lt_zero_or_snd_ne_zero hx),
-      div_eq_mul_inv,
-      Real.mul_rpow (Real.rpow_nonneg (norm_nonneg x) _) (by norm_num),
-      ← Real.rpow_mul (norm_nonneg x), mul_left_comm, ← Real.mul_rpow zero_le_two (by norm_num)]
+    rw [norm_gradient_slitSolution_rpow
+        (slitUnitDisc_subset_setOf_fst_lt_zero_or_snd_ne_zero hx), ← mul_assoc,
+      ← Real.mul_rpow zero_le_two (by norm_num)]
     norm_num
   have := (integrableOn_norm_rpow_ball_iff zero_lt_one).1 hpow
-  rw [(WithLp.linearEquiv 2 ℝ (ℝ × ℝ)).finrank_eq, Module.finrank_prod, Module.finrank_self]
-    at this
+  rw [WithLp.finrank_prod, Module.finrank_self] at this
   have hpr : p.toReal < 4 := by push_cast at this; linarith
   exact (ENNReal.toReal_lt_toReal hp (by norm_num)).1 (by simpa using hpr)
 
