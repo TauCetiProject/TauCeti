@@ -41,9 +41,10 @@ preserves `Q` has to be proved separately.
 
 Against the degree filtration `CliffordAlgebra.filtration`, whose first step is spanned by
 the scalars and the vectors, the disjointness of the two pins that step down to `R ⊕ M`:
-`CliffordAlgebra.filtrationOneEquiv`. When `R` is reduced, an algebra equivalence of Clifford
-algebras preserves that step exactly when it preserves the vectors: if `φ (ι v) = r + ι t`, the
-vector part of the generator square is `2 r • t`, which forces `r = 0`.
+`CliffordAlgebra.filtrationOneEquiv`. When `2` is invertible in `R` and `R` is reduced, an
+algebra equivalence of Clifford algebras preserves that step exactly when it preserves the
+vectors: if `φ (ι v) = r + ι t`, the vector part of the generator square is `2 r • t`, which
+forces `r = 0`.
 
 ## Main definitions
 
@@ -76,7 +77,7 @@ vector part of the generator square is `2 r • t`, which forces `r = 0`.
   more dimension than `M`.
 * `CliffordAlgebra.filtration_one_map_eq_iff`: an algebra equivalence maps the first filtration
   step onto the first filtration step if and only if it maps the vectors onto the vectors, when
-  `R` is reduced.
+  `2` is invertible in `R` and `R` is reduced.
 
 ## References
 
@@ -294,7 +295,7 @@ variable {R : Type u} [CommRing R] [Invertible (2 : R)]
 /-! ### Maps preserving the first step of the degree filtration -/
 
 /-- **An injective algebra map sending a generator into the first filtration step sends it to a
-vector**, when the base ring is reduced.
+vector**, when `2` is invertible and the base ring is reduced.
 
 Both hypotheses on `R` are needed. In characteristic `2`, over `𝔽₄ = 𝔽₂(ω)`, the Clifford algebra
 of `x ↦ x²` on a line has the automorphism `e ↦ ω + ω² e`. Over the dual numbers
@@ -324,9 +325,9 @@ theorem apply_ι_mem_range_ι_of_mem_filtration_one [IsReduced R]
 
 /-- **The first filtration step detects the vector-preserving equivalences.** An algebra
 equivalence of Clifford algebras maps the first filtration step `R ⊕ M₁` onto `R ⊕ M₂` if and
-only if it maps the vectors onto the vectors, when `R` is reduced; see
-`CliffordAlgebra.apply_ι_mem_range_ι_of_mem_filtration_one` for why the hypotheses on `R` are
-needed. No hypothesis on the forms or the modules is needed. -/
+only if it maps the vectors onto the vectors, when `2` is invertible in `R` and `R` is reduced;
+see `CliffordAlgebra.apply_ι_mem_range_ι_of_mem_filtration_one` for why the hypotheses on `R`
+are needed. No hypothesis on the forms or the modules is needed. -/
 theorem filtration_one_map_eq_iff [IsReduced R]
     (φ : CliffordAlgebra Q₁ ≃ₐ[R] CliffordAlgebra Q₂) :
     (filtration Q₁ 1).map φ.toLinearMap = filtration Q₂ 1 ↔

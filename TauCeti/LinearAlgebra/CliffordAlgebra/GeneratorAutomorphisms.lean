@@ -27,9 +27,9 @@ subgroup `CliffordAlgebra.vectorStabilizer Q` of all algebra automorphisms (the 
 vectors under the pointwise action), and `equivOfIsometry` identifies it with the orthogonal
 group of `Q`.
 
-The condition can be read on the degree filtration `CliffordAlgebra.filtration`: when `R` is
-reduced, preserving the vectors is equivalent to preserving its first step `R ⊕ M`
-(`CliffordAlgebra.filtration_one_map_eq_iff`, in the vector API), and so, by
+The condition can be read on the degree filtration `CliffordAlgebra.filtration`: when `2` is
+invertible and `R` is reduced, preserving the vectors is equivalent to preserving its first step
+`R ⊕ M` (`CliffordAlgebra.filtration_one_map_eq_iff`, in the vector API), and so, by
 `CliffordAlgebra.forall_filtration_map_eq_iff`, to preserving every step.
 
 ## Main definitions
