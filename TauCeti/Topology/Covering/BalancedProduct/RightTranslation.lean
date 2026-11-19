@@ -27,11 +27,13 @@ leave it:
   `TauCeti.BalancedProduct.proj` induced by the invariant map `g ↦ g K`
   (`Subgroup.RightTranslation.quotientMk_smul`); it is `G`-equivariant;
 * for a `K`-equivariant map `ι : Z → M` into a `G`-space, the map `[g, z] ↦ g • ι z`
-  (`TauCeti.BalancedProduct.lift`), the unique `G`-equivariant map sending `[1, z]` to `ι z`;
+  (`TauCeti.BalancedProduct.liftRightTranslation`), the unique `G`-equivariant map sending
+  `[1, z]` to `ι z`;
 * the projection `[g, z] ↦ [z]` onto the orbit space `Z ⧸ K`, the case of the projection
   `TauCeti.BalancedProduct.orbitProj` of any balanced product onto the orbit space of its second
   factor. It is `G`-invariant and its fibres are exactly the `G`-orbits, so that the orbit space
-  of `G` on `G ×_K Z` is `Z ⧸ K` (`TauCeti.BalancedProduct.orbitRelQuotientEquiv`).
+  of `G` on `G ×_K Z` is `Z ⧸ K`
+  (`TauCeti.BalancedProduct.orbitRelQuotientEquivRightTranslation`).
 
 For a topological group `G`, right translation by `K` is continuous, and it is proper when `K` is
 closed: it is the restriction of Mathlib's proper action of `Gᵐᵒᵖ` on `G` along the closed
@@ -41,17 +43,18 @@ embedding `h ↦ op h⁻¹`. The smooth structure of `G ×_K Z` for a Lie group 
 ## Main definitions
 
 * `Subgroup.RightTranslation K`: the group `G` as a `K`-space under `h • g = g h⁻¹`.
-* `TauCeti.BalancedProduct.lift`: the map `[g, z] ↦ g • ι z`.
+* `TauCeti.BalancedProduct.liftRightTranslation`: the map `[g, z] ↦ g • ι z`.
 
 ## Main results
 
 * `TauCeti.BalancedProduct.mk_toRightTranslation_eq_mk_toRightTranslation_iff`: when two classes
   agree.
 * `TauCeti.BalancedProduct.orbitProj_eq_orbitProj_iff`,
-  `TauCeti.BalancedProduct.orbitRelQuotientEquiv`: the fibres of the projection onto `Z ⧸ K` are
-  the `G`-orbits.
-* `TauCeti.BalancedProduct.eq_lift`, `TauCeti.BalancedProduct.liftEquiv`: `G`-equivariant maps
-  out of `G ×_K Z` correspond to `K`-equivariant maps out of `Z`.
+  `TauCeti.BalancedProduct.orbitRelQuotientEquivRightTranslation`: the fibres of the projection
+  onto `Z ⧸ K` are the `G`-orbits.
+* `TauCeti.BalancedProduct.eq_liftRightTranslation`,
+  `TauCeti.BalancedProduct.liftEquivRightTranslation`: `G`-equivariant maps out of `G ×_K Z`
+  correspond to `K`-equivariant maps out of `Z`.
 
 ## References
 
@@ -250,57 +253,61 @@ variable {M : Type*} [MulAction G M] (ι : Z →ₑ[((↑) : K → G)] M)
 
 /-- The map `[g, z] ↦ g • ι z` from `G ×_K Z` to a `G`-space `M`, for a `K`-equivariant map
 `ι : Z → M`. It is the unique `G`-equivariant map sending `[1, z]` to `ι z`
-(`TauCeti.BalancedProduct.eq_lift`). -/
-def lift : BalancedProduct K K.RightTranslation Z → M :=
+(`TauCeti.BalancedProduct.eq_liftRightTranslation`). -/
+def liftRightTranslation : BalancedProduct K K.RightTranslation Z → M :=
   Quotient.lift (fun x ↦ K.toRightTranslation.symm x.1 • ι x.2) fun _ _ ⟨h, hh⟩ ↦ by
     simp [← hh, map_smulₛₗ, mul_smul]
 
 @[simp]
-theorem lift_mk (g : G) (z : Z) : lift ι (mk K (K.toRightTranslation g) z) = g • ι z :=
+theorem liftRightTranslation_mk (g : G) (z : Z) :
+    liftRightTranslation ι (mk K (K.toRightTranslation g) z) = g • ι z :=
   (rfl)
 
-theorem lift_mk_one (z : Z) : lift ι (mk K (K.toRightTranslation 1) z) = ι z := by
+theorem liftRightTranslation_mk_one (z : Z) :
+    liftRightTranslation ι (mk K (K.toRightTranslation 1) z) = ι z := by
   simp
 
 /-- The action map is `G`-equivariant. -/
 @[simp]
-theorem lift_smul (k : G) (y : BalancedProduct K K.RightTranslation Z) :
-    lift ι (k • y) = k • lift ι y :=
+theorem liftRightTranslation_smul (k : G) (y : BalancedProduct K K.RightTranslation Z) :
+    liftRightTranslation ι (k • y) = k • liftRightTranslation ι y :=
   y.induction_on_toRightTranslation fun g z ↦ by simp [mul_smul]
 
 /-- **The universal property of the balanced product.** A `G`-equivariant map from `G ×_K Z`
-which sends `[1, z]` to `ι z` for every `z` is the action map `lift ι`. -/
-theorem eq_lift {f : BalancedProduct K K.RightTranslation Z → M}
+which sends `[1, z]` to `ι z` for every `z` is the action map `liftRightTranslation ι`. -/
+theorem eq_liftRightTranslation {f : BalancedProduct K K.RightTranslation Z → M}
     (hf : ∀ (k : G) y, f (k • y) = k • f y) (hι : ∀ z, f (mk K (K.toRightTranslation 1) z) = ι z) :
-    f = lift ι := by
+    f = liftRightTranslation ι := by
   funext y
   induction y using induction_on_toRightTranslation with
-  | h g z => rw [lift_mk, ← hι, ← hf, smul_mk_toRightTranslation, mul_one]
+  | h g z => rw [liftRightTranslation_mk, ← hι, ← hf, smul_mk_toRightTranslation, mul_one]
 
 variable (K Z M) in
 /-- **The universal property of the balanced product** as a bijection: `G`-equivariant maps
-`G ×_K Z → M` correspond to `K`-equivariant maps `Z → M`, through `TauCeti.BalancedProduct.lift`
-in one direction and restriction to `z ↦ [1, z]` in the other. -/
-def liftEquiv :
+`G ×_K Z → M` correspond to `K`-equivariant maps `Z → M`, through
+`TauCeti.BalancedProduct.liftRightTranslation` in one direction and restriction to `z ↦ [1, z]` in
+the other. -/
+def liftEquivRightTranslation :
     (Z →ₑ[((↑) : K → G)] M) ≃ (BalancedProduct K K.RightTranslation Z →[G] M) where
-  toFun ι := ⟨lift ι, lift_smul ι⟩
+  toFun ι := ⟨liftRightTranslation ι, liftRightTranslation_smul ι⟩
   invFun f := ⟨fun z ↦ f (mk K (K.toRightTranslation 1) z), fun h z ↦ by
     rw [mk_toRightTranslation_one_smul, map_smul]⟩
   left_inv ι := by
     ext z
-    exact lift_mk_one ι z
+    exact liftRightTranslation_mk_one ι z
   right_inv f := by
     ext y
-    exact congrFun (eq_lift _ (fun k y ↦ map_smul f k y) fun _ ↦ rfl).symm y
+    exact congrFun (eq_liftRightTranslation _ (fun k y ↦ map_smul f k y) fun _ ↦ rfl).symm y
 
 @[simp]
-theorem liftEquiv_apply_apply (y : BalancedProduct K K.RightTranslation Z) :
-    liftEquiv K Z M ι y = lift ι y :=
+theorem liftEquivRightTranslation_apply_apply (y : BalancedProduct K K.RightTranslation Z) :
+    liftEquivRightTranslation K Z M ι y = liftRightTranslation ι y :=
   (rfl)
 
 @[simp]
-theorem liftEquiv_symm_apply_apply (f : BalancedProduct K K.RightTranslation Z →[G] M) (z : Z) :
-    (liftEquiv K Z M).symm f z = f (mk K (K.toRightTranslation 1) z) :=
+theorem liftEquivRightTranslation_symm_apply_apply
+    (f : BalancedProduct K K.RightTranslation Z →[G] M) (z : Z) :
+    (liftEquivRightTranslation K Z M).symm f z = f (mk K (K.toRightTranslation 1) z) :=
   (rfl)
 
 end Lift
@@ -334,7 +341,7 @@ theorem orbitProj_eq_orbitProj_iff {y y' : BalancedProduct K K.RightTranslation 
 variable (K Z) in
 /-- **The orbit space of `G` on `G ×_K Z` is `Z ⧸ K`**: the projection `[g, z] ↦ [z]` induces a
 bijection from the `G`-orbits, with inverse `[z] ↦ G • [1, z]`. -/
-def orbitRelQuotientEquiv :
+def orbitRelQuotientEquivRightTranslation :
     MulAction.orbitRel.Quotient G (BalancedProduct K K.RightTranslation Z) ≃
       MulAction.orbitRel.Quotient K Z where
   toFun := Quotient.lift orbitProj fun _ _ hyy' ↦ (orbitProj_eq_orbitProj_iff.2 hyy').symm
@@ -352,13 +359,13 @@ def orbitRelQuotientEquiv :
     | h z => exact orbitProj_mk (K.toRightTranslation 1) z
 
 @[simp]
-theorem orbitRelQuotientEquiv_mk (y : BalancedProduct K K.RightTranslation Z) :
-    orbitRelQuotientEquiv K Z (Quotient.mk _ y) = orbitProj y :=
+theorem orbitRelQuotientEquivRightTranslation_mk (y : BalancedProduct K K.RightTranslation Z) :
+    orbitRelQuotientEquivRightTranslation K Z (Quotient.mk _ y) = orbitProj y :=
   (rfl)
 
 @[simp]
-theorem orbitRelQuotientEquiv_symm_mk (z : Z) :
-    (orbitRelQuotientEquiv K Z).symm (Quotient.mk _ z) =
+theorem orbitRelQuotientEquivRightTranslation_symm_mk (z : Z) :
+    (orbitRelQuotientEquivRightTranslation K Z).symm (Quotient.mk _ z) =
       Quotient.mk _ (mk K (K.toRightTranslation 1) z) :=
   (rfl)
 

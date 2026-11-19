@@ -52,7 +52,8 @@ compared with reduction at zero of the shifted moment map on the product with th
   smooth.
 * `TauCeti.BalancedProduct.contMDiffSMul_rightTranslation`: `G` acts smoothly on `G ×_K Z`.
 * `TauCeti.BalancedProduct.contMDiff_proj_rightTranslation`,
-  `TauCeti.BalancedProduct.contMDiff_lift`: the maps to `G ⧸ K` and to a `G`-manifold are smooth.
+  `TauCeti.BalancedProduct.contMDiff_liftRightTranslation`: the maps to `G ⧸ K` and to a
+  `G`-manifold are smooth.
 
 ## References
 
@@ -229,18 +230,20 @@ theorem contMDiff_proj_rightTranslation :
       (contMDiff_fst (J := IZ) (N := Z)))
 
 /-- **The action map to a `G`-manifold is smooth** when the `K`-equivariant map `ι` is. -/
-theorem contMDiff_lift {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM]
+theorem contMDiff_liftRightTranslation {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM]
     [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM} {M : Type*} [TopologicalSpace M]
     [ChartedSpace HM M] [MulAction G M] [ContMDiffSMul I IM ∞ G M]
     {ι : Z →ₑ[((↑) : K → G)] M} (hι : ContMDiff IZ IM ∞ ι) :
     letI := rightTranslationChartedSpace K Z I IZ F
-    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM ∞ (lift ι) := by
+    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM ∞ (liftRightTranslation ι) := by
   let _ := rightTranslationChartedSpace K Z I IZ F
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   rw [contMDiff_iff (IK := 𝓘(ℝ, F)) (IP := I) (IZ := IZ) le_rfl]
-  have hcomp : lift ι ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
-      fun x ↦ K.toRightTranslation.symm x.1 • ι x.2 :=
-    funext fun x ↦ by rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, lift_mk]
+  have hcomp :
+      liftRightTranslation ι ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
+        fun x ↦ K.toRightTranslation.symm x.1 • ι x.2 :=
+    funext fun x ↦ by
+      rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, liftRightTranslation_mk]
   rw [hcomp]
   exact ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm (I := I) ∞).comp
     (contMDiff_fst (J := IZ) (N := Z))).smul (hι.comp contMDiff_snd)
