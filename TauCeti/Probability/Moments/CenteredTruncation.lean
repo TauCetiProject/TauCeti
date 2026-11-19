@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Moments.Variance
 public import TauCeti.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
 
 /-!
 # Bounded centered approximations in mean square

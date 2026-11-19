@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.RandomMatrix.Wigner
 public import TauCeti.Probability.RandomMatrix.Perturbation
 public import TauCeti.Probability.Moments.CenteredTruncation
+import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
 
 /-!
 # Bounded centered approximation of Wigner off-diagonal entries
@@ -74,9 +75,9 @@ theorem integrable_norm_wignerMatrix_sub_centeredTruncation_sq (R : ℝ≥0) (n 
       wignerMatrix (fun ij ↦ centeredTruncation (ξ ij) P R) η n ω‖ ^ 2) P := by
   simp_rw [wignerMatrix_sub, sub_self]
   exact integrable_norm_wignerMatrix_sq
-    (fun ij ↦ ((hd ij).symm.memLp_snd hX).sub
+    (fun ij _ ↦ ((hd ij).symm.memLp_snd hX).sub
       (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.memLp_centeredTruncation R))
-    (fun _ ↦ memLp_const 0) n
+    (fun _ _ ↦ memLp_const 0)
 
 include hmean
 
@@ -118,10 +119,10 @@ theorem integral_norm_spectralMeasure_wignerMatrix_sub_centeredTruncation_sq_le
     (fun ω ↦ wignerMatrix_isHermitian ξ η ω _)
     (fun ω ↦ wignerMatrix_isHermitian _ η ω _)
     (integrable_norm_wignerMatrix_sub_centeredTruncation_sq hX hd R _) hf
-    (aemeasurable_wignerMatrix (fun ij ↦ (hd ij).aemeasurable_fst) hη _)
-    (aemeasurable_wignerMatrix (fun ij ↦
+    (aemeasurable_wignerMatrix (fun ij _ ↦ (hd ij).aemeasurable_fst) (fun i _ ↦ hη i))
+    (aemeasurable_wignerMatrix (fun ij _ ↦
       (((hd ij).symm.memLp_snd hX).aestronglyMeasurable.centeredTruncation R).aemeasurable)
-      hη _)).trans ?_
+      (fun i _ ↦ hη i))).trans ?_
   simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, div_eq_mul_inv, mul_assoc] using
     mul_le_mul_of_nonneg_left
       (inv_mul_integral_norm_wignerMatrix_sub_centeredTruncation_sq_le hX hmean hd R n)

@@ -393,9 +393,8 @@ theorem negativeChange_trans_negativeChange (hf : IsMorse 𝓘(ℝ, E) f) {φ'' 
   -- `x` is a rest point, so it lies in its own unstable manifold.
   have hx : x ∈ hX.flow.unstableSet x := Flow.self_mem_unstableSet_iff.2
     (hX.flow_apply_of_mfderiv_eq_zero ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl))
-  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ'' hf hx).exists
   ext c : 1
-  refine hX.injective_unstableFrame hφ'' hT ?_
+  refine hX.injective_unstableFrame_of_mem hφ'' hf hx ?_
   rw [LinearEquiv.trans_apply, unstableFrame_negativeChange hφ' hφ'' hf hx,
     unstableFrame_negativeChange hφ hφ' hf hx, unstableFrame_negativeChange hφ hφ'' hf hx]
 

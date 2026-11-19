@@ -326,16 +326,17 @@ variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` along a `C^n`
-family `f` of points of `ℂ`. -/
+family `f` of points of `ℂ` and a `C^n` family `c` of shifts. -/
 theorem contMDiffAt_smoothTransition_endCoord_comp {F G' N : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [TopologicalSpace G'] {I' : ModelWithCorners ℝ F G'} [TopologicalSpace N]
-    [ChartedSpace G' N] {n : WithTop ℕ∞} [ENat.LEInfty n] (q : Puncture) (c : ℝ) {f : N → ℂ}
-    {y₀ : N} (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (hq : f y₀ ≠ q.endCenter) :
-    ContMDiffAt I' 𝓘(ℝ) n (fun y => smoothTransition (q.endSign * (q.endCoord (f y)).re - c))
-      y₀ :=
-  (((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contDiffAt.comp (f y₀)
-    ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).sub contDiffAt_const)).contMDiffAt.comp
-    y₀ hf
+    [ChartedSpace G' N] {n : WithTop ℕ∞} [ENat.LEInfty n] (q : Puncture) {f : N → ℂ}
+    {c : N → ℝ} {y₀ : N} (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (hc : ContMDiffAt I' 𝓘(ℝ) n c y₀)
+    (hq : f y₀ ≠ q.endCenter) :
+    ContMDiffAt I' 𝓘(ℝ) n
+      (fun y => smoothTransition (q.endSign * (q.endCoord (f y)).re - c y)) y₀ :=
+  (((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contDiffAt.comp (f y₀, c y₀)
+    (((contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).comp (f y₀, c y₀) contDiffAt_fst).sub
+      contDiffAt_snd)).contMDiffAt.comp y₀ (hf.prodMk_space hc)
 
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` as a function
 on `ℂ × M` which ignores the point of `M`. -/
@@ -343,7 +344,7 @@ theorem contMDiffAt_smoothTransition_endCoord {n : ℕ∞} (q : Puncture) (c : �
     (hw : w ≠ q.endCenter) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
       (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - c)) (w, x) :=
-  contMDiffAt_smoothTransition_endCoord_comp q c contMDiffAt_fst hw
+  contMDiffAt_smoothTransition_endCoord_comp q contMDiffAt_fst contMDiffAt_const hw
 
 /-- **The perturbation is smooth.** For Hamiltonians of period one which are `C^n` on `ℝ × M`,
 the perturbation is `C^n` on `S × M`, where `S = ℂ ∖ {0, 1}` is the thrice-punctured sphere. -/
