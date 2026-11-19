@@ -146,22 +146,7 @@ section Chart
 
 variable [I.Boundaryless] [IsManifold I 1 M]
   {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  (J : ModelWithCorners ℝ E' H') [TopologicalSpace G] [ChartedSpace H' G]
-
-omit [MeasurableSpace G] [TopologicalSpace G] in
-/-- In the chart at `x₀`, the pullback of a form by the action of `a` is the pullback along
-`z ↦ a • (extChartAt I x₀).symm z`. -/
-private theorem inChartAt_mpullback_smul (hsmul : ∀ a : G, MDifferentiable I I (a • · : M → M))
-    (α : RoughForm I M F k) (a : G) (x₀ : M) {y : E} (hy : y ∈ (extChartAt I x₀).target) :
-    (mpullback I I (a • ·) α).inChartAt x₀ y =
-      mpullback 𝓘(ℝ, E) I (fun z ↦ a • (extChartAt I x₀).symm z) α y := by
-  rw [RoughForm.inChartAt_mpullback α _ x₀ hy (hsmul a _), I.range_eq_univ, mfderivWithin_univ]
-  ext v
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  exact (mpullback_apply (I := 𝓘(ℝ, E)) (I' := I) (fun z ↦ a • (extChartAt I x₀).symm z) α y
-    v).symm
-
-variable [IsManifold J 1 G]
+  (J : ModelWithCorners ℝ E' H') [TopologicalSpace G] [ChartedSpace H' G] [IsManifold J 1 G]
 
 omit [MeasurableSpace G] in
 /-- **Joint smoothness of the pulled-back forms.** For a `C^m` form `α` and a `C^n` action with
@@ -189,7 +174,7 @@ theorem contMDiffAt_inChartAt_mpullback_smul {m n : WithTop ℕ∞} [IsManifold 
   have hcoord := ((contMDiffAt_continuousAlternatingMap_bundle _).mp hfam).2
   refine hcoord.congr_of_eventuallyEq ?_
   filter_upwards [(hT.prod isOpen_univ).mem_nhds (mk_mem_prod hy (mem_univ a))] with p hp
-  exact (inChartAt_mpullback_smul hsmul α p.2 x₀ hp.1).trans
+  exact (RoughForm.inChartAt_mpullback_eq_mpullback_comp_symm α _ x₀ hp.1 (hsmul p.2 _)).trans
     (RoughForm.inCoordinates_modelSpace _ _ _).symm
 
 end Chart
