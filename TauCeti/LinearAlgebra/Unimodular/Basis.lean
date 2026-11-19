@@ -42,6 +42,8 @@ these are the bases `⟨1, ω, θ⟩` through which a binary cubic form is attac
 
 * `LinearMap.isCompl_span_singleton_ker`: if `f v = 1`, then `R ∙ v` and `ker f` are
   complementary.
+* `LinearMap.quotientSpanSingletonEquivKer`: if `f v = 1`, then `M ⧸ R ∙ v` is isomorphic to
+  `ker f`, the class of `x` corresponding to `x - f x • v`.
 * `Module.IsUnimodular.projective_quotient`: the quotient of a projective module by the line
   through a unimodular vector is projective.
 * `Module.IsUnimodular.free_quotient_of_isLocalRing`,
@@ -84,6 +86,30 @@ theorem LinearMap.isCompl_span_singleton_ker {f : M →ₗ[R] R} {v : M} (hf : f
   simp [hf] at hker
   simp [hker]
 
+/-- If a linear functional `f` takes the value one at `v`, then the quotient `M ⧸ R ∙ v` is
+isomorphic to the kernel of `f`: the class of `x` corresponds to `x - f x • v`, and the inverse is
+induced by the inclusion of the kernel. -/
+noncomputable def LinearMap.quotientSpanSingletonEquivKer {f : M →ₗ[R] R} {v : M} (hf : f v = 1) :
+    (M ⧸ R ∙ v) ≃ₗ[R] LinearMap.ker f :=
+  Submodule.quotientEquivOfIsCompl _ _ (LinearMap.isCompl_span_singleton_ker hf)
+
+/-- The vector of `ker f` attached to a class of `M ⧸ R ∙ v` lies in that class. -/
+@[simp]
+theorem LinearMap.mk_quotientSpanSingletonEquivKer_apply {f : M →ₗ[R] R} {v : M} (hf : f v = 1)
+    (x : M ⧸ R ∙ v) : Submodule.Quotient.mk (quotientSpanSingletonEquivKer hf x : M) = x :=
+  Submodule.mk_quotientEquivOfIsCompl_apply _ x
+
+/-- The class of `x` in `M ⧸ R ∙ v` corresponds to the vector `x - f x • v` of `ker f`. -/
+@[simp]
+theorem LinearMap.quotientSpanSingletonEquivKer_apply_mk {f : M →ₗ[R] R} {v : M} (hf : f v = 1)
+    (x : M) : (quotientSpanSingletonEquivKer hf (Submodule.Quotient.mk x) : M) = x - f x • v := by
+  have hx : x - f x • v ∈ LinearMap.ker f := by simp [hf]
+  have hmk : (Submodule.Quotient.mk x : M ⧸ R ∙ v) = Submodule.Quotient.mk (x - f x • v) := by
+    rw [Submodule.Quotient.eq, sub_sub_cancel]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self v)
+  rw [hmk]
+  exact congrArg Subtype.val (Submodule.quotientEquivOfIsCompl_apply_mk_right _ ⟨_, hx⟩)
+
 end Ring
 
 namespace Module.IsUnimodular
@@ -92,33 +118,25 @@ section Ring
 
 variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {v : M}
 
-/-- A unimodular vector `v` has a functional `f` taking the value one at `v`, and then the
-quotient `M ⧸ R ∙ v` is isomorphic to the kernel of `f`, by an equivalence whose inverse is induced
-by the inclusion of the kernel. -/
-private theorem exists_quotientEquiv_ker (hv : IsUnimodular R v) :
-    ∃ f : M →ₗ[R] R, f v = 1 ∧ ∃ e : (M ⧸ R ∙ v) ≃ₗ[R] LinearMap.ker f,
-      ∀ x, Submodule.Quotient.mk (e x : M) = x := by
-  obtain ⟨f, hf⟩ := isUnimodular_iff.mp hv
-  exact ⟨f, hf, Submodule.quotientEquivOfIsCompl _ _ (LinearMap.isCompl_span_singleton_ker hf),
-    Submodule.mk_quotientEquivOfIsCompl_apply _⟩
-
 /-- The quotient of a projective module by the line through a unimodular vector is projective:
 it is isomorphic to the kernel of a functional taking the value one at the vector, which is a
 direct summand. -/
 theorem projective_quotient [Module.Projective R M] (hv : IsUnimodular R v) :
     Module.Projective R (M ⧸ R ∙ v) := by
-  obtain ⟨f, -, e, he⟩ := hv.exists_quotientEquiv_ker
-  exact .of_split ((LinearMap.ker f).subtype ∘ₗ e.toLinearMap) (R ∙ v).mkQ
-    (LinearMap.ext fun x ↦ by simp [he])
+  obtain ⟨f, hf⟩ := isUnimodular_iff.mp hv
+  exact .of_split
+    ((LinearMap.ker f).subtype ∘ₗ (LinearMap.quotientSpanSingletonEquivKer hf).toLinearMap)
+    (R ∙ v).mkQ (LinearMap.ext fun x ↦ by simp)
 
 /-- A unimodular vector `v` followed by lifts of the vectors of any basis `b` of `M ⧸ R ∙ v` is a
 basis of `M`. -/
 theorem exists_basis_finCons (hv : IsUnimodular R v) {m : ℕ} (b : Basis (Fin m) R (M ⧸ R ∙ v)) :
     ∃ e : Basis (Fin (m + 1)) R M, e 0 = v ∧ ∀ i, (R ∙ v).mkQ (e i.succ) = b i := by
-  obtain ⟨f, hf, g, hg⟩ := hv.exists_quotientEquiv_ker
-  obtain ⟨e, he0, he⟩ := Basis.exists_basis_finCons_of_apply_eq_one hf (b.map g)
+  obtain ⟨f, hf⟩ := isUnimodular_iff.mp hv
+  obtain ⟨e, he0, he⟩ := Basis.exists_basis_finCons_of_apply_eq_one hf
+    (b.map (LinearMap.quotientSpanSingletonEquivKer hf))
   refine ⟨e, he0, fun i ↦ ?_⟩
-  rw [he, Basis.map_apply, Submodule.mkQ_apply, hg]
+  rw [he, Basis.map_apply, Submodule.mkQ_apply, LinearMap.mk_quotientSpanSingletonEquivKer_apply]
 
 end Ring
 
@@ -138,9 +156,9 @@ unimodular vector is free. -/
 theorem free_quotient_of_isPrincipalIdealRing [IsDomain R] [IsPrincipalIdealRing R]
     [Module.Finite R M] [Module.Free R M] (hv : IsUnimodular R v) :
     Module.Free R (M ⧸ R ∙ v) := by
-  obtain ⟨f, -, e, -⟩ := hv.exists_quotientEquiv_ker
+  obtain ⟨f, hf⟩ := isUnimodular_iff.mp hv
   -- The quotient is isomorphic to the kernel of `f`, a submodule of a finite free module.
-  exact .of_equiv e.symm
+  exact .of_equiv (LinearMap.quotientSpanSingletonEquivKer hf).symm
 
 /-- If the quotient of a finite module by the line through a unimodular vector is free, its rank
 is one less than that of the module. -/
