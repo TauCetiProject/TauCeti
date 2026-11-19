@@ -11,18 +11,19 @@ public import Mathlib.Topology.Algebra.Module.LinearPMap
 /-!
 # The graph Hilbert space of a partial linear map
 
-Let `f : E →ₗ.[𝕜] F` be a partial linear map between inner product spaces. Its **graph space**
+Let `f : E →ₗ.[𝕜] F` be a partial linear map between normed spaces. Its **graph space**
 `f.graphSpace` is the graph `{(x, f x) | x ∈ dom f}`, regarded as a subspace of the Hilbert direct
 sum `WithLp 2 (E × F)`. The graph map `x ↦ (x, f x)` identifies the domain of `f` with it
-(`LinearPMap.toGraphSpace`), and transports the *graph inner product*
+(`LinearPMap.toGraphSpace`), and transports the graph norm `(‖x‖² + ‖f x‖²)^(1/2)`
+(`LinearPMap.norm_toGraphSpace_sq`). When `E` and `F` are inner product spaces, this is the norm
+of the *graph inner product*
 
 `⟪(x, f x), (y, f y)⟫ = ⟪x, y⟫ + ⟪f x, f y⟫`
 
-(`LinearPMap.inner_toGraphSpace`), whose norm is the graph norm `(‖x‖² + ‖f x‖²)^(1/2)`. When `f`
-is closed and `E`, `F` are complete the graph space is complete
-(`LinearPMap.IsClosed.completeSpace_graphSpace`): the domain of a closed operator with its graph
-inner product is a Hilbert space, and `f` becomes a bounded operator on it
-(`LinearPMap.graphSnd`), of norm at most one.
+(`LinearPMap.inner_toGraphSpace`). When `f` is closed and `E`, `F` are complete the graph space is
+complete (`LinearPMap.IsClosed.completeSpace_graphSpace`): the domain of a closed operator with its
+graph norm is a Banach space, a Hilbert space when `E` and `F` are, and `f` becomes a bounded
+operator on it (`LinearPMap.graphSnd`), of norm at most one.
 
 This is how an unbounded operator, such as an elliptic differential operator on `L²` with its
 Sobolev domain, is made into a bounded operator between fixed Hilbert spaces, to which the theory
@@ -40,7 +41,7 @@ of bounded Fredholm operators applies. The bounded operator has the same range a
   the operator `f` itself, as continuous linear maps of norm at most one.
 * `LinearPMap.isClosed_graphSpace_iff`: the graph space is closed exactly when `f` is.
 * `LinearPMap.IsClosed.completeSpace_graphSpace`: the graph space of a closed operator between
-  Hilbert spaces is a Hilbert space.
+  complete spaces is complete; between Hilbert spaces it is a Hilbert space.
 * `LinearPMap.kerGraphSndEquiv`: the kernel of `f.graphSnd` is isometric to the kernel of `f`.
 
 ## References
@@ -55,8 +56,8 @@ open scoped InnerProductSpace
 
 namespace LinearPMap
 
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The **graph space** of a partial linear map `f`: its graph `{(x, f x) | x ∈ dom f}` as a
 subspace of the Hilbert direct sum `WithLp 2 (E × F)`. It carries the graph inner product
@@ -82,26 +83,25 @@ theorem toLp_mem_graphSpace (x : f.domain) : WithLp.toLp 2 ((x : E), f x) ∈ f.
   f.mem_graph x
 
 /-- The first coordinate of a vector of the graph space lies in the domain. -/
-theorem fst_mem_domain {z : WithLp 2 (E × F)} (hz : z ∈ f.graphSpace) : z.fst ∈ f.domain :=
+theorem fst_mem_domain_of_mem_graphSpace {z : WithLp 2 (E × F)} (hz : z ∈ f.graphSpace) :
+    z.fst ∈ f.domain :=
   mem_domain_of_mem_graph hz
 
 /-- The second coordinate of a vector of the graph space is the value of `f` at the first. -/
-theorem apply_fst_eq_snd {z : WithLp 2 (E × F)} (hz : z ∈ f.graphSpace) :
-    f ⟨z.fst, f.fst_mem_domain hz⟩ = z.snd :=
-  ((image_iff (f.fst_mem_domain hz)).2 hz).symm
+theorem apply_fst_eq_snd_of_mem_graphSpace {z : WithLp 2 (E × F)} (hz : z ∈ f.graphSpace) :
+    f ⟨z.fst, f.fst_mem_domain_of_mem_graphSpace hz⟩ = z.snd :=
+  ((image_iff (f.fst_mem_domain_of_mem_graphSpace hz)).2 hz).symm
 
 /-- The graph map `x ↦ (x, f x)`, a linear equivalence from the domain of `f` onto its graph
 space. Its inverse is the first projection. -/
 def toGraphSpace : f.domain ≃ₗ[𝕜] f.graphSpace where
   toFun x := ⟨WithLp.toLp 2 ((x : E), f x), f.toLp_mem_graphSpace x⟩
-  invFun z := ⟨(z : WithLp 2 (E × F)).fst, f.fst_mem_domain z.2⟩
+  invFun z := ⟨(z : WithLp 2 (E × F)).fst, f.fst_mem_domain_of_mem_graphSpace z.2⟩
   map_add' x y := Subtype.ext <| by simp [← WithLp.toLp_add, LinearPMap.map_add]
   map_smul' c x := Subtype.ext <| by simp [← WithLp.toLp_smul, LinearPMap.map_smul]
   left_inv x := rfl
   right_inv z := Subtype.ext <| by
-    change WithLp.toLp 2 ((z : WithLp 2 (E × F)).fst, f ⟨_, f.fst_mem_domain z.2⟩) = z
-    rw [f.apply_fst_eq_snd z.2]
-    exact WithLp.toLp_ofLp _ _
+    simp [f.apply_fst_eq_snd_of_mem_graphSpace z.2, WithLp.ext_iff, Prod.ext_iff]
 
 @[simp]
 theorem coe_toGraphSpace (x : f.domain) :
@@ -116,20 +116,7 @@ theorem coe_toGraphSpace_symm (z : f.graphSpace) :
 @[simp]
 theorem apply_toGraphSpace_symm (z : f.graphSpace) :
     f (f.toGraphSpace.symm z) = (z : WithLp 2 (E × F)).snd :=
-  f.apply_fst_eq_snd z.2
-
-/-- **The graph inner product.** -/
-theorem inner_toGraphSpace (x y : f.domain) :
-    ⟪f.toGraphSpace x, f.toGraphSpace y⟫_𝕜 = ⟪(x : E), (y : E)⟫_𝕜 + ⟪f x, f y⟫_𝕜 := by
-  rw [Submodule.coe_inner, coe_toGraphSpace, coe_toGraphSpace, WithLp.prod_inner_apply]
-
-/-- The inner product of two vectors of the graph space is the sum of the inner products of their
-coordinates. -/
-theorem inner_graphSpace (z w : f.graphSpace) :
-    ⟪z, w⟫_𝕜 = ⟪(z : WithLp 2 (E × F)).fst, (w : WithLp 2 (E × F)).fst⟫_𝕜 +
-      ⟪(z : WithLp 2 (E × F)).snd, (w : WithLp 2 (E × F)).snd⟫_𝕜 := by
-  rw [Submodule.coe_inner, WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_fst,
-    WithLp.ofLp_snd, WithLp.ofLp_snd]
+  f.apply_fst_eq_snd_of_mem_graphSpace z.2
 
 /-- **The graph norm.** -/
 theorem norm_toGraphSpace_sq (x : f.domain) :
@@ -186,7 +173,7 @@ theorem norm_graphSnd_le : ‖f.graphSnd‖ ≤ 1 :=
     simpa only [one_mul] using f.norm_graphSnd_apply_le z
 
 /-- A vector of the graph space is determined by its first coordinate. -/
-theorem injective_graphFst : Function.Injective f.graphFst := fun _ _ h ↦
+theorem graphFst_injective : Function.Injective f.graphFst := fun _ _ h ↦
   f.toGraphSpace.symm.injective (Subtype.ext h)
 
 @[simp]
@@ -194,7 +181,7 @@ theorem range_graphFst : f.graphFst.range = f.domain := by
   ext x
   refine ⟨?_, fun hx ↦ ⟨f.toGraphSpace ⟨x, hx⟩, rfl⟩⟩
   rintro ⟨z, rfl⟩
-  exact f.fst_mem_domain z.2
+  exact f.fst_mem_domain_of_mem_graphSpace z.2
 
 /-- The operator `f` and its bounded realization on the graph space have the same range. -/
 @[simp]
@@ -236,7 +223,7 @@ norm of `E`. -/
 noncomputable def kerGraphSndEquiv : f.graphSnd.ker ≃ₗᵢ[𝕜] f.ker where
   toLinearEquiv :=
     (f.graphSnd.ker.equivMapOfInjective (f.graphFst : f.graphSpace →ₗ[𝕜] E)
-      f.injective_graphFst).trans (LinearEquiv.ofEq _ _ f.map_ker_graphSnd)
+      f.graphFst_injective).trans (LinearEquiv.ofEq _ _ f.map_ker_graphSnd)
   norm_map' z := (f.norm_eq_norm_graphFst_of_graphSnd_eq_zero z.2).symm
 
 @[simp]
@@ -255,5 +242,27 @@ theorem isClosed_graphSpace_iff :
 theorem IsClosed.completeSpace_graphSpace [CompleteSpace E] [CompleteSpace F] {f : E →ₗ.[𝕜] F}
     (hf : f.IsClosed) : CompleteSpace f.graphSpace :=
   ((f.isClosed_graphSpace_iff.2 hf)).completeSpace_coe
+
+/-! ### The graph inner product -/
+
+section Inner
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] (f : E →ₗ.[𝕜] F)
+
+/-- **The graph inner product.** -/
+theorem inner_toGraphSpace (x y : f.domain) :
+    ⟪f.toGraphSpace x, f.toGraphSpace y⟫_𝕜 = ⟪(x : E), (y : E)⟫_𝕜 + ⟪f x, f y⟫_𝕜 := by
+  rw [Submodule.coe_inner, coe_toGraphSpace, coe_toGraphSpace, WithLp.prod_inner_apply]
+
+/-- The inner product of two vectors of the graph space is the sum of the inner products of their
+coordinates. -/
+theorem inner_graphSpace (z w : f.graphSpace) :
+    ⟪z, w⟫_𝕜 = ⟪(z : WithLp 2 (E × F)).fst, (w : WithLp 2 (E × F)).fst⟫_𝕜 +
+      ⟪(z : WithLp 2 (E × F)).snd, (w : WithLp 2 (E × F)).snd⟫_𝕜 := by
+  rw [Submodule.coe_inner, WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_fst,
+    WithLp.ofLp_snd, WithLp.ofLp_snd]
+
+end Inner
 
 end LinearPMap
