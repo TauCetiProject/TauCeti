@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
-import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
@@ -49,7 +48,8 @@ bundle independent of the chart. Each step of the proof is an induction on `k`, 
   `wᵢ` in `H^{-k,p}` (`TemperedDistribution.memSobolev_sub_one_iff`). The chain rule for `Φ⁻¹`
   gives `Φ^* (∂ᵢ wᵢ) = ∑ⱼ cᵢⱼ ∂ⱼ (Φ^* wᵢ)` (`TemperedDistribution.compCLM_lineDerivOp`), where
   `DΦ⁻¹(Φ x) bᵢ = ∑ⱼ cᵢⱼ(x) bⱼ`, and the Leibniz rule
-  `cᵢⱼ ∂ⱼ (Φ^* wᵢ) = ∂ⱼ (cᵢⱼ Φ^* wᵢ) - (∂ⱼ cᵢⱼ) Φ^* wᵢ` puts `Φ^* T` in the same form.
+  `cᵢⱼ ∂ⱼ (Φ^* wᵢ) = ∂ⱼ (cᵢⱼ Φ^* wᵢ) - (∂ⱼ cᵢⱼ) Φ^* wᵢ` puts `Φ^* T` in the same form
+  (`TemperedDistribution.compCLM_lineDerivOp_eq_sum_sub`).
 
 ## Main results
 
@@ -135,51 +135,6 @@ open scoped SchwartzMap LineDeriv
 
 variable {F : Type*} [NormedAddCommGroup F]
 
-open scoped ContDiff in
-omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
-/-- If the derivatives of `ψ` of orders `1` to `k + 1` are bounded, then so are the derivatives of
-order at most `k` of `x ↦ A (Dψ(x) v)`, for a continuous linear form `A`. -/
-private theorem exists_bound_iteratedFDeriv_clm_fderiv_apply (A : E →L[ℝ] ℂ) {ψ : E → E}
-    (hψ : ContDiff ℝ ∞ ψ) {k : ℕ}
-    (hbd : ∀ n, 1 ≤ n → n ≤ k + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n ψ x‖ ≤ C) (v : E) :
-    ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (fun x ↦ A (fderiv ℝ ψ x v)) x‖ ≤ C := by
-  intro n hn
-  obtain ⟨C, hC⟩ := hbd (n + 1) (by omega) (by omega)
-  have hd : ContDiff ℝ ∞ (fun x ↦ fderiv ℝ ψ x v) :=
-    (hψ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const
-  refine ⟨‖A‖ * (C * ‖v‖), fun x ↦ ?_⟩
-  refine (A.norm_iteratedFDeriv_comp_left (f := fun x ↦ fderiv ℝ ψ x v) hd.contDiffAt
-    (mod_cast le_top)).trans ?_
-  gcongr
-  exact (hψ.norm_iteratedFDeriv_fderiv_apply_le (by simp) v x).trans
-    (mul_le_mul_of_nonneg_right (hC x) (norm_nonneg v))
-
-open scoped ContDiff in
-omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
-/-- If the derivatives of `ψ` of orders `1` to `k + 1` and those of `φ` of orders `1` to `k` are
-bounded, then so are the derivatives of order at most `k` of `x ↦ A (Dψ(φ x) v)`, for a
-continuous linear form `A`. -/
-private theorem exists_bound_iteratedFDeriv_clm_fderiv_comp_apply (A : E →L[ℝ] ℂ) {φ ψ : E → E}
-    (hφ : ContDiff ℝ ∞ φ) (hψ : ContDiff ℝ ∞ ψ) {k : ℕ}
-    (hφb : ∀ n, 1 ≤ n → n ≤ k → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n φ x‖ ≤ C)
-    (hψb : ∀ n, 1 ≤ n → n ≤ k + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n ψ x‖ ≤ C) (v : E) :
-    ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (fun x ↦ A (fderiv ℝ ψ (φ x) v)) x‖ ≤ C := by
-  intro n hn
-  obtain ⟨G, hG⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_exists
-    (exists_bound_iteratedFDeriv_clm_fderiv_apply A hψ hψb v)
-  obtain ⟨L, hL⟩ : ∃ L, ∀ n, 1 ≤ n → n ≤ k → ∀ x, ‖iteratedFDeriv ℝ n φ x‖ ≤ L := by
-    rcases k with _ | k
-    · exact ⟨0, fun n h₁ h₂ ↦ absurd h₂ (by omega)⟩
-    · exact exists_forall_norm_iteratedFDeriv_le_of_forall_one_le hφb
-  have hg : ContDiff ℝ ∞ (fun y ↦ A (fderiv ℝ ψ y v)) :=
-    A.contDiff.comp ((hψ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const)
-  -- Faà di Bruno's bound for the composite with `φ`.
-  refine ⟨n.factorial * G * max 1 L ^ n, fun x ↦ ?_⟩
-  exact norm_iteratedFDeriv_comp_le (g := fun y ↦ A (fderiv ℝ ψ y v)) hg hφ (mod_cast le_top) x
-    (fun i hi ↦ hG i (hi.trans hn) (φ x))
-    (fun i hi₁ hi₂ ↦ ((hL i hi₁ (hi₂.trans hn) x).trans (le_max_right 1 L)).trans
-      (le_self_pow₀ (le_max_left 1 L) (by omega)))
-
 section NormedSpace
 
 variable [NormedSpace ℂ F] [CompleteSpace F]
@@ -229,8 +184,9 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : p �
     refine MemSobolev.sum fun i _ ↦ ?_
     have hc : ∀ n ≤ k, ∃ C, ∀ x,
         ‖iteratedFDeriv ℝ n (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ x v) i : ℝ) : ℂ)) x‖ ≤ C := by
-      simpa [b.repr_apply_apply] using exists_bound_iteratedFDeriv_clm_fderiv_apply
-        (Complex.ofRealCLM.comp (innerSL ℝ (b i))) hΦ.1 hΦb v
+      obtain ⟨L, hL⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_one_le hΦb
+      simpa [b.repr_apply_apply] using fun n hn ↦ ⟨_, hΦ.1.norm_iteratedFDeriv_clm_fderiv_apply_le
+        (by simp) (Complex.ofRealCLM.comp (innerSL ℝ (b i))) hL v n hn⟩
     exact MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
       (hΦ.basis_repr_fderiv_apply b.toBasis v i) hc
       (ih (fun n h₁ h₂ ↦ hΦb n h₁ (by omega)) (by simpa using hT'.2 (b i)))
@@ -255,15 +211,17 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_top : 
     have ih' {T : 𝓢'(E, F)} (hT : MemSobolev (-k) p T) :
         MemSobolev (-k) p (compCLM F Φ hΦ hΨ T) :=
       ih (fun n h₁ h₂ ↦ hΦb n h₁ (by omega)) (fun n h₁ h₂ ↦ hΨb n h₁ (by omega)) hT
-    -- The coefficients `cᵢⱼ` of `DΦ⁻¹(Φ x) bᵢ = ∑ⱼ cᵢⱼ(x) bⱼ` have bounded derivatives up to
-    -- order `k + 1`.
+    -- The coefficients `cᵢⱼ` of `DΦ⁻¹(Φ x) bᵢ` in `b` have bounded derivatives to order `k + 1`.
     have hct (v : E) (j : Fin (Module.finrank ℝ E)) :
         (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) j : ℝ) : ℂ)).HasTemperateGrowth :=
       (hΨ.basis_repr_fderiv_apply b.toBasis v j).comp hΦ
     have hcb (v : E) (j : Fin (Module.finrank ℝ E)) : ∀ n ≤ k + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n
         (fun x ↦ ((b.toBasis.repr (fderiv ℝ Φ.symm (Φ x) v) j : ℝ) : ℂ)) x‖ ≤ C := by
-      simpa [b.repr_apply_apply] using exists_bound_iteratedFDeriv_clm_fderiv_comp_apply
-        (Complex.ofRealCLM.comp (innerSL ℝ (b j))) hΦ.1 hΨ.1 hΦb hΨb v
+      obtain ⟨K, hK⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_one_le hΦb
+      obtain ⟨L, hL⟩ := exists_forall_norm_iteratedFDeriv_le_of_forall_one_le hΨb
+      have h := hΨ.1.norm_iteratedFDeriv_clm_fderiv_comp_apply_le hΦ.1 (by simp)
+        (Complex.ofRealCLM.comp (innerSL ℝ (b j))) hK hL v
+      simpa [b.repr_apply_apply] using fun n hn ↦ ⟨_, h n hn⟩
     -- Write `T = u + ∑ᵢ ∂ᵢ wᵢ` with `u` and `wᵢ` in `H^{-k,p}`. By the chain rule
     -- `Φ^* (∂ᵢ wᵢ) = ∑ⱼ cᵢⱼ ∂ⱼ (Φ^* wᵢ) = ∑ⱼ (∂ⱼ (cᵢⱼ Φ^* wᵢ) - (∂ⱼ cᵢⱼ) Φ^* wᵢ)`, so `Φ^* T` is
     -- again of this form.
@@ -281,10 +239,10 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_neg (hp : 1 < p) (hp_top : 
           (ih' (hw i)))
     · exact MemSobolev.sum fun i _ ↦ MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_neg hp hp_top
         (hct _ _) (fun n hn ↦ hcb _ _ n (by omega)) (ih' (hw i))
-    · simp only [map_add, map_sum, compCLM_lineDerivOp b.toBasis hΦ hΨ,
-        OrthonormalBasis.coe_toBasis, LineDeriv.lineDerivOp_sum, lineDerivOp_smulLeftCLM (hct _ _),
-        Finset.sum_add_distrib]
+    · simp only [map_add, map_sum, compCLM_lineDerivOp_eq_sum_sub b.toBasis hΦ hΨ,
+        OrthonormalBasis.coe_toBasis, LineDeriv.lineDerivOp_sum]
       conv_lhs => rw [Finset.sum_comm]
+      simp only [Finset.sum_sub_distrib]
       abel
 
 /-- **Pullback on `H^{k,p}` for every integer `k`.** Let `1 < p < ∞` and let `Φ` be a bijection
