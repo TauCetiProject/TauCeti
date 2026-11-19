@@ -219,7 +219,7 @@ private theorem isInvertible_coefficient_bracketAddOne (p : CoordinateSpace n ×
       Symbol n V V 1).coefficient p).IsInvertible := by
   rw [coefficient_besselPotential_add_one, ContinuousLinearMap.isInvertible_smul_iff
     (Complex.ofReal_ne_zero.2 (by linarith [Real.rpow_pos_of_pos (bracket_pos p.2) 1]))]
-  exact ⟨ContinuousLinearEquiv.refl ℂ V, rfl⟩
+  exact ContinuousLinearEquiv.coe_refl (R₁ := ℂ) (M₁ := V) ▸ ContinuousLinearMap.isInvertible_equiv
 
 private theorem inverse_coefficient_bracketAddOne (p : CoordinateSpace n × CoordinateSpace n) :
     ((besselPotential 1 + inclusion zero_le_one (const (ContinuousLinearMap.id ℂ V)) :
