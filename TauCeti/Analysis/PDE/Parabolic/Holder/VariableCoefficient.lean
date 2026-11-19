@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.ConstantCoefficient.CauchyProblem
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Freezing
-public import TauCeti.Analysis.Matrix.QuadraticBounds
 
 /-!
 # The parabolic Schauder estimate for maps of small support

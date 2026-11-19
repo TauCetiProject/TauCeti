@@ -121,6 +121,16 @@ private theorem nonneg_quadraticForm (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ 
   obtain ⟨lam, hlam, h⟩ := ha
   exact (mul_nonneg hlam.le (sq_nonneg _)).trans (h p ξ)
 
+/-- The classical solution is bounded at time `0` by the supremum of its initial datum. -/
+private theorem abs_euclideanInitialDataCLE_symm_apply_slabMk_zero_le
+    (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
+      CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) (x : EuclideanSpace ℝ ι) :
+    |(euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm d (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤
+      ‖toBUC d.2‖ := by
+  rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, ← toBUC_apply, ← Real.norm_eq_abs,
+    ← ClosedSubmodule.norm_coe]
+  exact norm_coe_le_norm _ x
+
 /-- The supremum bound for the classical solution: `‖u‖_∞ ≤ exp (‖c‖ T) (1 + T) ‖(f, g)‖`, where
 `g` is measured in the supremum norm. -/
 private theorem norm_solutionValue_le
@@ -139,10 +149,7 @@ private theorem norm_solutionValue_le
     (fun q ↦ by
       rw [euclideanParabolicOperatorL_euclideanInitialDataCLE_symm_apply]
       exact (Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le d.1 q))
-    (fun x ↦ by
-      rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, ← toBUC_apply, ← Real.norm_eq_abs,
-        ← ClosedSubmodule.norm_coe]
-      exact norm_coe_le_norm _ x) p
+    (abs_euclideanInitialDataCLE_symm_apply_slabMk_zero_le hα₀ hα₁ hT ha d) p
   have ht0 : (0 : ℝ) ≤ slabTime p := (slabTime p).2.1
   have htT : (slabTime p : ℝ) ≤ T := (slabTime p).2.2
   have hexp : Real.exp (‖c‖ * (slabTime p - 0)) ≤ Real.exp (‖c‖ * T) :=
@@ -416,10 +423,7 @@ private theorem exists_rpow_mul_norm_restrictL_euclideanInitialDataCLE_symm_le (
   intro T hT hTT₀ a b c hl hak hbk hck d δ hδ hδT
   have h := hest T hT hTT₀ a b c hl (toQuadraticForm'_le_of_forall_norm_le hak) hak hbk hck
     ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, hl⟩).symm d) (M := ‖toBUC d.2‖)
-    (fun x ↦ by
-      rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, ← toBUC_apply, ← Real.norm_eq_abs,
-        ← ClosedSubmodule.norm_coe]
-      exact norm_coe_le_norm _ x) hδ hδT
+    (abs_euclideanInitialDataCLE_symm_apply_slabMk_zero_le hα₀ hα₁ hT ⟨lam, hlam, hl⟩ d) hδ hδT
   -- Name the restriction, so that unification does not unfold the order-two norm.
   obtain ⟨r, hr⟩ : ∃ r, restrictL hδ.le le_rfl hδT
       ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, hl⟩).symm d) = r := ⟨_, rfl⟩
