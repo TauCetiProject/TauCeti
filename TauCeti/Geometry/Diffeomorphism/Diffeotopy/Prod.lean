@@ -40,7 +40,7 @@ diffeotopies is constant, and products commute with pointwise composition and in
   `TauCeti.Diffeotopy.semiconj_snd_timeSlice_prodCongr`: the projections intertwine the product
   with its factors.
 * `TauCeti.Diffeotopy.refl_prodCongr_refl`, `TauCeti.Diffeotopy.prodCongr_trans_prodCongr`,
-  `TauCeti.Diffeotopy.symm_prodCongr`: compatibility with the constant diffeotopy, pointwise
+  `TauCeti.Diffeotopy.prodCongr_symm`: compatibility with the constant diffeotopy, pointwise
   composition and inversion.
 * `TauCeti.Diffeotopy.toAmbientIsotopy_prodCongr`: forgetting smoothness gives the product of
   ambient isotopies.
@@ -143,7 +143,7 @@ theorem prodCongr_trans_prodCongr (Φ' : Diffeotopy J n M) (Ψ' : Diffeotopy J' 
 
 /-- The pointwise inverse of a product diffeotopy is the product of the pointwise inverses. -/
 @[simp]
-theorem symm_prodCongr : (Φ.prodCongr Ψ).symm = Φ.symm.prodCongr Ψ.symm :=
+theorem prodCongr_symm : (Φ.prodCongr Ψ).symm = Φ.symm.prodCongr Ψ.symm :=
   ext fun p ↦ by
     rw [symm_apply, prodCongr_apply, symm_apply, symm_apply]
     -- The inverse of the product's total diffeomorphism is its `invFun`, the pair of inverses.

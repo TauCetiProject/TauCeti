@@ -434,12 +434,9 @@ theorem HasHamiltonian.mpullback_of_semiconj (hg : ContMDiff J' J ∞ g)
       mfderiv_id, ContinuousLinearMap.id_apply] at this
     -- `(w.1, w.2)` is `w` by eta for pairs.
     exact this
-  -- On the cylinder, `g` intertwines the two motions: `g ∘ Φ' = Φ ∘ (g × id)`.
-  have hcomp : g ∘ Φ'.cylinderMap = Φ.cylinderMap ∘ Prod.map g id := funext fun q ↦ by
-    simpa only [Function.comp_apply, cylinderMap_apply, Prod.map_fst, Prod.map_snd, id_eq,
-      timeSlice_apply] using h q.2 q.1
   rw [SmoothForm.coe_mpullback, ← mpullback_comp
-      (Φ'.contMDiff_cylinderMap.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)), hcomp,
+      (Φ'.contMDiff_cylinderMap.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)),
+    Φ.comp_cylinderMap_of_semiconj h,
     mpullback_comp (hP.mdifferentiable (by simp))
       (Φ.contMDiff_cylinderMap.mdifferentiable (by simp)), mpullback_apply]
   refine (congrArg _ (funext fun i : Fin 2 ↦ ?_)).trans
@@ -460,11 +457,9 @@ theorem HasHamiltonian.transDiffeomorph {P : Type*} [TopologicalSpace P] [Charte
     [IsManifold J ∞ P] {σ : SmoothForm J P ℝ 2} (f : M ≃ₘ⟮J, J⟯ P)
     (hF : Φ.HasHamiltonian (SmoothForm.mpullback f f.contMDiff σ) F) :
     (Φ.transDiffeomorph f).HasHamiltonian σ (fun p ↦ F (f.symm p.1, p.2)) := by
-  -- `f⁻¹` intertwines the conjugated diffeotopy `f ∘ φ_t ∘ f⁻¹` with `φ_t`.
-  have h := hF.mpullback_of_semiconj (Φ' := Φ.transDiffeomorph f) f.symm.contMDiff
-    fun t y ↦ by simp only [timeSlice_apply, transDiffeomorph_apply, Diffeomorph.symm_apply_apply]
+  have h := hF.mpullback_of_semiconj f.symm.contMDiff
+    (Φ.semiconj_symm_timeSlice_transDiffeomorph f)
   rwa [SmoothForm.mpullback_symm_mpullback] at h
-
 
 /-- A diffeotopy `φ_t` is **Hamiltonian** for a two-form `σ` when every map `φ_t` preserves `σ`
 and `φ_t` has a Hamiltonian read along its motion (`TauCeti.Diffeotopy.HasHamiltonian`): it is

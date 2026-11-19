@@ -29,21 +29,19 @@ two-form.
 
 The same argument applies to Hamiltonians: if `F` and `G` are Hamiltonians of `φ_t` and `ψ_t`,
 read along their motions, then `((x, y), t) ↦ F (x, t) + G (y, t)` is a Hamiltonian of
-`φ_t × ψ_t` (`TauCeti.Diffeotopy.HasHamiltonian.prod`). Consequently products of Hamiltonian
+`φ_t × ψ_t` (`TauCeti.Diffeotopy.HasHamiltonian.prodCongr`). Consequently products of Hamiltonian
 diffeotopies are Hamiltonian, the product of Hamiltonian diffeomorphisms is Hamiltonian
 (`TauCeti.SmoothForm.prodCongr_mem_hamiltonianGroup`), and the flux groups satisfy
-`pr₁^* Γ_σ + pr₂^* Γ_τ ⊆ Γ_(σ ⊞ τ)` (`TauCeti.Diffeotopy.map_fst_add_map_snd_mem_fluxGroup`).
+`pr₁^* Γ_σ + pr₂^* Γ_τ ⊆ Γ_(σ ⊞ τ)` (`TauCeti.map_fst_add_map_snd_mem_fluxGroup`).
 
 ## Main results
 
 * `TauCeti.Diffeotopy.fluxForm_prodCongr`: the flux form of a product diffeotopy.
-* `TauCeti.Diffeotopy.final_prodCongr_mem_diffeomorphStabilizer`: the product of final
-  diffeomorphisms preserving `σ` and `τ` preserves `σ ⊞ τ`.
 * `TauCeti.Diffeotopy.flux_prodCongr`: the flux of a product diffeotopy.
-* `TauCeti.Diffeotopy.map_fst_add_map_snd_mem_fluxGroup`: the flux groups of the factors pull
-  back into the flux group of the product.
-* `TauCeti.Diffeotopy.HasHamiltonian.prod`, `TauCeti.Diffeotopy.IsHamiltonian.prod`: Hamiltonians
-  of product diffeotopies.
+* `TauCeti.Diffeotopy.HasHamiltonian.prodCongr`, `TauCeti.Diffeotopy.IsHamiltonian.prodCongr`:
+  Hamiltonians of product diffeotopies.
+* `TauCeti.map_fst_add_map_snd_mem_fluxGroup`: the flux groups of the factors pull back into the
+  flux group of the product.
 * `TauCeti.SmoothForm.prodCongr_mem_hamiltonianGroup`: products of Hamiltonian diffeomorphisms are
   Hamiltonian.
 
@@ -85,15 +83,6 @@ theorem fluxForm_prodCongr (σ : SmoothForm J M ℝ 2) (τ : SmoothForm J' N ℝ
 
 variable {Φ Ψ}
 
-/-- If the final diffeomorphisms of `φ_t` and `ψ_t` preserve `σ` and `τ`, the final
-diffeomorphism of `φ_t × ψ_t` preserves `σ ⊞ τ`. -/
-theorem final_prodCongr_mem_diffeomorphStabilizer {σ : SmoothForm J M ℝ 2} {τ : SmoothForm J' N ℝ 2}
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ)
-    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer τ) :
-    (Φ.prodCongr Ψ).final ∈ SmoothForm.diffeomorphStabilizer (SmoothTwoForm.prod σ τ) := by
-  rw [final_prodCongr, SmoothTwoForm.prod_def]
-  exact SmoothForm.prodCongr_mem_diffeomorphStabilizer hΦ hΨ
-
 /-- **The flux of a product diffeotopy.** If the final diffeomorphisms of `φ_t` and `ψ_t` preserve
 the closed forms `σ` and `τ`, the flux of `φ_t × ψ_t` for `σ ⊞ τ = pr₁^* σ + pr₂^* τ` is
 `pr₁^* Flux(φ) + pr₂^* Flux(ψ)`. -/
@@ -112,30 +101,6 @@ theorem flux_prodCongr (σ : closedForms J M 2) (τ : closedForms J' N 2)
   apply Subtype.ext
   simp only [Submodule.coe_add, closedForms.coe_mpullback]
   rw [← SmoothTwoForm.prod_def, fluxForm_prodCongr]
-
-/-- **Flux groups of products.** If `c` is the flux of a loop of `σ`-preserving diffeomorphisms of
-`M` and `d` the flux of a loop of `τ`-preserving diffeomorphisms of `N`, then
-`pr₁^* c + pr₂^* d` is the flux of a loop of `σ ⊞ τ`-preserving diffeomorphisms of `M × N`: the
-product of the two loops. -/
-theorem map_fst_add_map_snd_mem_fluxGroup {σ : closedForms J M 2} {τ : closedForms J' N 2}
-    {c : deRhamCohomology J M 1} {d : deRhamCohomology J' N 1} (hc : c ∈ fluxGroup σ)
-    (hd : d ∈ fluxGroup τ) :
-    deRhamCohomology.map Prod.fst contMDiff_fst 1 c +
-        deRhamCohomology.map Prod.snd contMDiff_snd 1 d ∈
-      fluxGroup (closedForms.mpullback Prod.fst contMDiff_fst 2 σ +
-        closedForms.mpullback Prod.snd contMDiff_snd 2 τ) := by
-  obtain ⟨Φ, hΦ, hΦ₁, rfl⟩ := mem_fluxGroup.1 hc
-  obtain ⟨Ψ, hΨ, hΨ₁, rfl⟩ := mem_fluxGroup.1 hd
-  have hΦΨ (t : unitInterval) : (Φ.prodCongr Ψ).timeSlice t ∈ SmoothForm.diffeomorphStabilizer
-      (closedForms.mpullback Prod.fst contMDiff_fst 2 σ +
-        closedForms.mpullback Prod.snd contMDiff_snd 2 τ).1 := by
-    rw [timeSlice_prodCongr, Submodule.coe_add, closedForms.coe_mpullback,
-      closedForms.coe_mpullback]
-    exact SmoothForm.prodCongr_mem_diffeomorphStabilizer (hΦ t) (hΨ t)
-  refine mem_fluxGroup.2 ⟨Φ.prodCongr Ψ, hΦΨ, ?_, flux_prodCongr σ τ _ _ _⟩
-  rw [final_prodCongr, hΦ₁, hΨ₁]
-  exact Diffeomorph.ext fun _ ↦ by
-    simp only [Diffeomorph.coe_prodCongr, Diffeomorph.coe_one, Prod.map_id, id_eq]
 
 /-! ### Hamiltonians of a product -/
 
@@ -158,11 +123,31 @@ theorem IsHamiltonian.prodCongr (hΦ : Φ.IsHamiltonian σ) (hΨ : Ψ.IsHamilton
     (Φ.prodCongr Ψ).IsHamiltonian (SmoothTwoForm.prod σ τ) := by
   obtain ⟨hΦσ, F, hF⟩ := isHamiltonian_iff.1 hΦ
   obtain ⟨hΨτ, G, hG⟩ := isHamiltonian_iff.1 hΨ
-  refine isHamiltonian_iff.2 ⟨fun t ↦ ?_, _, hF.prodCongr hG⟩
-  rw [timeSlice_prodCongr, SmoothTwoForm.prod_def]
-  exact SmoothForm.prodCongr_mem_diffeomorphStabilizer (hΦσ t) (hΨτ t)
+  refine isHamiltonian_iff.2 ⟨?_, _, hF.prodCongr hG⟩
+  rw [SmoothTwoForm.prod_def]
+  exact SmoothForm.timeSlice_prodCongr_mem_diffeomorphStabilizer hΦσ hΨτ
 
 end Diffeotopy
+
+/-- **Flux groups of products.** If `c` is the flux of a loop of `σ`-preserving diffeomorphisms of
+`M` and `d` the flux of a loop of `τ`-preserving diffeomorphisms of `N`, then
+`pr₁^* c + pr₂^* d` is the flux of a loop of `σ ⊞ τ`-preserving diffeomorphisms of `M × N`: the
+product of the two loops. -/
+theorem map_fst_add_map_snd_mem_fluxGroup {σ : closedForms J M 2} {τ : closedForms J' N 2}
+    {c : deRhamCohomology J M 1} {d : deRhamCohomology J' N 1} (hc : c ∈ fluxGroup σ)
+    (hd : d ∈ fluxGroup τ) :
+    deRhamCohomology.map Prod.fst contMDiff_fst 1 c +
+        deRhamCohomology.map Prod.snd contMDiff_snd 1 d ∈
+      fluxGroup (closedForms.mpullback Prod.fst contMDiff_fst 2 σ +
+        closedForms.mpullback Prod.snd contMDiff_snd 2 τ) := by
+  obtain ⟨Φ, hΦ, hΦ₁, rfl⟩ := mem_fluxGroup.1 hc
+  obtain ⟨Ψ, hΨ, hΨ₁, rfl⟩ := mem_fluxGroup.1 hd
+  refine mem_fluxGroup.2 ⟨Φ.prodCongr Ψ, fun t ↦ ?_, ?_, Diffeotopy.flux_prodCongr σ τ _ _ _⟩
+  · rw [Submodule.coe_add, closedForms.coe_mpullback, closedForms.coe_mpullback]
+    exact SmoothForm.timeSlice_prodCongr_mem_diffeomorphStabilizer hΦ hΨ t
+  · rw [Diffeotopy.final_prodCongr, hΦ₁, hΨ₁]
+    exact Diffeomorph.ext fun _ ↦ by
+      simp only [Diffeomorph.coe_prodCongr, Diffeomorph.coe_one, Prod.map_id, id_eq]
 
 namespace SmoothForm
 

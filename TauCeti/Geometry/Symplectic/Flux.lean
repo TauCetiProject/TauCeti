@@ -361,13 +361,10 @@ theorem fluxForm_mpullback_of_semiconj (hg : ContMDiff J' J ∞ g)
   have hprod : MDifferentiable (J'.prod (𝓡∂ 1)) (J.prod (𝓡∂ 1))
       (Prod.map g (id : unitInterval → unitInterval)) :=
     (hg.prodMap contMDiff_id).mdifferentiable (by simp)
-  -- On the cylinder, `g` intertwines the two motions: `g ∘ Φ' = Φ ∘ (g × id)`.
-  have hcomp : g ∘ Φ'.cylinderMap = Φ.cylinderMap ∘ Prod.map g id := funext fun p ↦ by
-    simpa only [Function.comp_apply, cylinderMap_apply, Prod.map_fst, Prod.map_snd, id_eq,
-      timeSlice_apply] using h p.2 p.1
   apply Subtype.ext
   rw [coe_fluxForm, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
-    ← TauCeti.mpullback_comp hcyl' hg', hcomp, TauCeti.mpullback_comp hprod hcyl,
+    ← TauCeti.mpullback_comp hcyl' hg', Φ.comp_cylinderMap_of_semiconj h,
+    TauCeti.mpullback_comp hprod hcyl,
     ← SmoothForm.coe_mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ,
     homotopyOperator_mpullback_prodMap_id_of_isSmoothForm hg'
       ((SmoothForm.mpullback Φ.cylinderMap Φ.contMDiff_cylinderMap σ).isSmoothForm.of_le
@@ -418,11 +415,8 @@ form of `φ_t` for `f^* σ`. -/
 theorem fluxForm_transDiffeomorph (f : M ≃ₘ⟮J, J⟯ P) (σ : SmoothForm J P ℝ 2) :
     (Φ.transDiffeomorph f).fluxForm σ = SmoothForm.mpullback f.symm f.symm.contMDiff
       (Φ.fluxForm (SmoothForm.mpullback f f.contMDiff σ)) := by
-  -- `f⁻¹` intertwines the conjugated diffeotopy `f ∘ φ_t ∘ f⁻¹` with `φ_t`.
-  rw [← Φ.fluxForm_mpullback_of_semiconj (Φ' := Φ.transDiffeomorph f) f.symm.contMDiff
-      fun t y ↦ by
-        simp only [timeSlice_apply, transDiffeomorph_apply, Diffeomorph.symm_apply_apply],
-    SmoothForm.mpullback_symm_mpullback]
+  rw [← Φ.fluxForm_mpullback_of_semiconj f.symm.contMDiff
+      (Φ.semiconj_symm_timeSlice_transDiffeomorph f), SmoothForm.mpullback_symm_mpullback]
 
 /-- **Naturality of the flux.** The flux of a diffeotopy conjugated by a diffeomorphism `f` is
 the pullback along `f⁻¹` of the flux of the original diffeotopy for `f^* σ`. -/

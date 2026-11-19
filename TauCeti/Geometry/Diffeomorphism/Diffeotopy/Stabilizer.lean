@@ -56,8 +56,9 @@ through the product diffeotopy `TauCeti.Diffeotopy.prodCongr`.
 * `TauCeti.SmoothForm.mem_diffeomorphStabilizer_mpullback_of_semiconj`: naturality of
   stabilizers under intertwining maps.
 * `TauCeti.SmoothForm.prodCongr_mem_diffeomorphStabilizer`,
+  `TauCeti.SmoothForm.timeSlice_prodCongr_mem_diffeomorphStabilizer`,
   `TauCeti.SmoothForm.prodCongr_mem_isotopyStabilizer`: products of form-preserving
-  diffeomorphisms preserve the sum of the pulled-back forms.
+  diffeomorphisms and diffeotopies preserve the sum of the pulled-back forms.
 
 ## References
 
@@ -200,6 +201,17 @@ theorem prodCongr_mem_diffeomorphStabilizer {τ : SmoothForm J' M' F k} {f : M �
   rw [mem_diffeomorphStabilizer] at hfst hsnd ⊢
   rw [map_add, hfst, hsnd]
 
+/-- If diffeotopies `φ_t` of `M` and `ψ_t` of `M'` preserve `σ` and `τ` at every time, their
+product `φ_t × ψ_t` preserves `pr₁^* σ + pr₂^* τ` at every time. -/
+theorem timeSlice_prodCongr_mem_diffeomorphStabilizer {τ : SmoothForm J' M' F k}
+    {Φ : Diffeotopy J ∞ M} {Ψ : Diffeotopy J' ∞ M'}
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ)
+    (hΨ : ∀ t, Ψ.timeSlice t ∈ diffeomorphStabilizer τ) (t : unitInterval) :
+    (Φ.prodCongr Ψ).timeSlice t ∈ diffeomorphStabilizer
+      (mpullback Prod.fst contMDiff_fst σ + mpullback Prod.snd contMDiff_snd τ) := by
+  rw [Diffeotopy.timeSlice_prodCongr]
+  exact prodCongr_mem_diffeomorphStabilizer (hΦ t) (hΨ t)
+
 /-- The product `f × f'` of a diffeomorphism `f` in the isotopy stabilizer of `σ` and a
 diffeomorphism `f'` in the isotopy stabilizer of `τ` lies in the isotopy stabilizer of
 `pr₁^* σ + pr₂^* τ`: the product of the two isotopies preserves this form at every time. -/
@@ -209,9 +221,8 @@ theorem prodCongr_mem_isotopyStabilizer {τ : SmoothForm J' M' F k} {f : M ≃�
       (mpullback Prod.fst contMDiff_fst σ + mpullback Prod.snd contMDiff_snd τ) := by
   obtain ⟨Φ, hΦ, rfl⟩ := hf
   obtain ⟨Ψ, hΨ, rfl⟩ := hf'
-  refine ⟨Φ.prodCongr Ψ, fun t ↦ ?_, Diffeotopy.final_prodCongr Φ Ψ⟩
-  rw [Diffeotopy.timeSlice_prodCongr]
-  exact prodCongr_mem_diffeomorphStabilizer (hΦ t) (hΨ t)
+  exact ⟨Φ.prodCongr Ψ, timeSlice_prodCongr_mem_diffeomorphStabilizer hΦ hΨ,
+    Diffeotopy.final_prodCongr Φ Ψ⟩
 
 end Naturality
 
