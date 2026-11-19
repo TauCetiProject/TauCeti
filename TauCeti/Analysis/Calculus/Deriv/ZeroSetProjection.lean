@@ -40,8 +40,8 @@ there. Applied to the successive vertical derivatives of a real analytic functio
 
 * `TauCeti.image_fst_inter_setOf_eq_zero_mem_nhds`: near a zero with nonvanishing vertical
   derivative, the zero set projects onto a neighbourhood of the base point.
-* `TauCeti.isOpenMap_domRestrict_fst_setOf_exists_eq_zero`: the common zero locus of a chain of
-  successive vertical derivatives ending in a nonvanishing function has property (P).
+* `TauCeti.isOpenMap_domRestrict_fst_setOf_exists_eq_zero`: the set where some function of a chain
+  of successive vertical derivatives ending in a nonvanishing function vanishes has property (P).
 
 ## References
 

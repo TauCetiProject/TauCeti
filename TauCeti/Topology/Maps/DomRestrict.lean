@@ -12,15 +12,17 @@ public import Mathlib.Topology.Constructions
 
 The restriction `s.domRestrict f` of a map `f : X → Y` to a subset `s ⊆ X` is an open map exactly
 when, for each point `x ∈ s`, the image under `f` of every neighbourhood of `x` in `s` is a
-neighbourhood of `f x` (`isOpenMap_domRestrict_iff`). The relatively open subsets of `s` are the
-traces `t ∩ s` of open sets of `X`, so this is a pointwise test that does not mention the subtype
-topology. When `f` is the projection of a cylinder to its base, it describes the sets whose
+neighbourhood of `f x` (`TauCeti.isOpenMap_domRestrict_iff`). The relatively open subsets of `s`
+are the traces `t ∩ s` of open sets of `X`, so this is a pointwise test that does not mention the
+subtype topology. When `f` is the projection of a cylinder to its base, it describes the sets whose
 projection is open on every relatively open subset.
 -/
 
 public section
 
 open Set Topology
+
+namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
@@ -35,3 +37,5 @@ theorem isOpenMap_domRestrict_iff {f : X → Y} {s : Set X} :
     rw [image_domRestrict, isOpen_iff_mem_nhds]
     rintro _ ⟨x, ⟨hxt, hxs⟩, rfl⟩
     exact h x hxs t (ht.mem_nhds hxt)
+
+end TauCeti
