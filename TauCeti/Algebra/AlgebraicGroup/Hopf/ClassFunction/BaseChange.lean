@@ -98,8 +98,9 @@ noncomputable def classFunctionsBaseChangeEquiv :
 /-- The comparison isomorphism sends a tensor `s ⊗ f` to `s ⊗ f` in `S ⊗[R] H`. -/
 @[simp]
 theorem coe_classFunctionsBaseChangeEquiv_tmul (s : S) (f : classFunctions R H) :
-    (classFunctionsBaseChangeEquiv R S H (s ⊗ₜ[R] f) : S ⊗[R] H) = s ⊗ₜ[R] (f : H) :=
-  (rfl)
+    (classFunctionsBaseChangeEquiv R S H (s ⊗ₜ[R] f) : S ⊗[R] H) = s ⊗ₜ[R] (f : H) := by
+  simp [classFunctionsBaseChangeEquiv, Subalgebra.equivOfEq_apply,
+    AlgHom.tensorEqualizerEquiv_apply, AlgHom.coe_tensorEqualizer]
 
 /-- The comparison isomorphism is the scalar extension of the inclusion `C(H) ⊆ H`. -/
 theorem coe_classFunctionsBaseChangeEquiv (z : S ⊗[R] classFunctions R H) :

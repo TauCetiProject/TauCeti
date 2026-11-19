@@ -106,13 +106,9 @@ theorem mem_classFunctions_iff_forall {f : H} :
     f ∈ classFunctions k H ↔ ∀ (A : Type v) [CommSemiring A] [Algebra k A]
       (g x : WithConv (H →ₐ[k] A)), (g * x * g⁻¹).ofConv f = x.ofConv f := by
   refine ⟨fun hf A _ _ g x ↦ apply_mul_mul_inv_of_mem_classFunctions hf g x, fun h ↦ ?_⟩
-  rw [mem_classFunctions_iff]
-  have := h (H ⊗[k] H) (toConv Algebra.TensorProduct.includeLeft)
-    (toConv Algebra.TensorProduct.includeRight)
-  rwa [← toConv_ofConv (_ * _ * _), ← Bialgebra.TensorProduct.includeLeft_toAlgHom,
-    ← Bialgebra.TensorProduct.includeRight_toAlgHom, ← toConv_conjugationAlgHom,
-    ofConv_toConv, ofConv_toConv, Bialgebra.TensorProduct.includeRight_toAlgHom,
-    Algebra.TensorProduct.includeRight_apply] at this
+  have hc := comp_conjugationAlgHom (R := k) (H := H) (AlgHom.id k (H ⊗[k] H))
+  simp only [AlgHom.id_comp] at hc
+  rw [mem_classFunctions_iff, hc, h, ofConv_toConv, Algebra.TensorProduct.includeRight_apply]
 
 /-- The class functions are the whole coordinate algebra exactly when the coordinate map of
 conjugation is the second-factor inclusion. -/
