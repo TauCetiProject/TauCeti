@@ -165,9 +165,17 @@ theorem multOneA_swap : D.swap.multOneA = D.multOneB := (rfl)
 @[simp]
 theorem multOneB_swap : D.swap.multOneB = D.multOneA := (rfl)
 
+@[simp]
+theorem multOneA_default : (default : CyclotomicData).multOneA = 0 := (rfl)
+
+@[simp]
+theorem multOneB_default : (default : CyclotomicData).multOneB = 0 := (rfl)
+
+@[simp]
 theorem multOneA_eq_zero_iff : D.multOneA = 0 ↔ 1 ∉ D.A :=
   Multiset.count_eq_zero
 
+@[simp]
 theorem multOneB_eq_zero_iff : D.multOneB = 0 ↔ 1 ∉ D.B :=
   Multiset.count_eq_zero
 
@@ -199,6 +207,14 @@ theorem phiA_swap : D.swap.phiA R = D.phiB R := (rfl)
 
 @[simp]
 theorem phiB_swap : D.swap.phiB R = D.phiA R := (rfl)
+
+/-- The empty datum has `Φ_A = 1`. -/
+@[simp]
+theorem phiA_default : (default : CyclotomicData).phiA R = 1 := (rfl)
+
+/-- The empty datum has `Φ_B = 1`. -/
+@[simp]
+theorem phiB_default : (default : CyclotomicData).phiB R = 1 := (rfl)
 
 theorem monic_phiA : (D.phiA R).Monic :=
   monic_multiset_prod_of_monic _ _ fun a _ ↦ cyclotomic.monic a R
