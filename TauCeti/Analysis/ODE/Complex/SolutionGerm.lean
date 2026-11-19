@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Complex.LinearEquation
-public import TauCeti.Analysis.Analytic.Germ
+public import TauCeti.Analysis.Calculus.IteratedDeriv.Germ
 
 /-!
 # Solution germs of analytic linear equations and the local initial-value theorem

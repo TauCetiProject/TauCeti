@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Order.Filter.Germ.Basic
 public import Mathlib.Algebra.Ring.Subring.Basic
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Rings of analytic function germs
@@ -23,9 +21,6 @@ ring equivalences (`TauCeti.analyticGerms.equivOfInverse`), without choosing rep
 The subring construction follows `TauCeti.meromorphicGerms`, using ordinary neighborhoods and
 `AnalyticAt` in place of punctured neighborhoods and `MeromorphicAt`. The local-inverse
 construction is analogous to `OpenPartialHomeomorph.meromorphicGermsEquiv`.
-
-For germs on a nontrivially normed field, `Filter.Germ.iteratedDerivJet` is the unscaled `n`-jet
-`(f(a), f'(a), …, f⁽ⁿ⁻¹⁾(a))` of a germ at `a`, computed on any representative `f`.
 -/
 
 public section
@@ -233,20 +228,3 @@ theorem equivOfInverse_symm_apply (g : E → F) (h : F → E)
 end analyticGerms
 
 end TauCeti
-
-namespace Filter.Germ
-
-variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {a : 𝕜}
-
-/-- The unscaled `n`-jet `(f(a), f'(a), …, f⁽ⁿ⁻¹⁾(a))` of a germ at `a`, computed on any
-representative `f`. No factorials enter it. -/
-noncomputable def iteratedDerivJet (n : ℕ) (φ : Germ (𝓝 a) F) : Fin n → F :=
-  φ.liftOn (fun f j ↦ iteratedDeriv j f a) fun _ _ h ↦ funext fun j ↦ h.iteratedDeriv_eq j
-
-/-- The jet of the germ of a function is its vector of unscaled iterated derivatives. -/
-@[simp]
-theorem iteratedDerivJet_coe (n : ℕ) (f : 𝕜 → F) :
-    (f : Germ (𝓝 a) F).iteratedDerivJet n = fun j : Fin n ↦ iteratedDeriv j f a := (rfl)
-
-end Filter.Germ
