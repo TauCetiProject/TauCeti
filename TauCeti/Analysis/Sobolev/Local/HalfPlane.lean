@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Sobolev.Local.Locality
@@ -25,7 +26,8 @@ real axis the map extends to a `Cᵏ` map across the axis, by
 * `TauCeti.exists_contDiffOn_eqOn_inter_setOf_im_nonneg`: near each point, a `Cᵏ` map on
   `Ω ∩ {z | 0 ≤ z.im}` agrees with a map that is `Cᵏ` on an open neighbourhood of the point.
 * `TauCeti.exists_contDiffOn_eqOn_inter_setOf_fst_im_nonneg`: the same for maps on relatively open
-  subsets `W ∩ {q | 0 ≤ q.1.im}` of `ℂ × E`, for finite-dimensional `E`.
+  subsets `W ∩ {q | 0 ≤ q.1.im}` of `ℂ × E`, whenever `ℝ × (ℝ × E)` has smooth bump functions
+  (for instance, for finite-dimensional `E`).
 * `IsOpen.measurableSet_inter_setOf_im_nonneg`: such relatively open sets are measurable.
 * `ContDiffOn.memWkpLoc_inter_setOf_im_nonneg`: `Cᵏ` maps on `Ω ∩ {z | 0 ≤ z.im}` are in the
   local Sobolev class of order `k` there.
@@ -62,14 +64,15 @@ private theorem im_fst_imReProdEquiv_symm (w : ℝ × (ℝ × E)) :
   obtain ⟨q, rfl⟩ := (imReProdEquiv E).surjective w
   rw [ContinuousLinearEquiv.symm_apply_apply, imReProdEquiv_apply]
 
-/-- Near every point of a relatively open subset `W ∩ {q | 0 ≤ q.1.im}` of `ℂ × E`, for `E`
-finite-dimensional, a `Cᵏ` map on it agrees with a map that is `Cᵏ` on an open neighbourhood of
-the point. At a point with `q.1.im = 0` the extension reflects across `{q | q.1.im = 0}`. This is
-the form of `TauCeti.exists_contDiffOn_eqOn_inter_setOf_im_nonneg` for maps that also depend on a
-point of `E`, such as the coefficients of a Cauchy-Riemann operator in a boundary chart. -/
-theorem exists_contDiffOn_eqOn_inter_setOf_fst_im_nonneg [FiniteDimensional ℝ E] {g : ℂ × E → G}
-    {W : Set (ℂ × E)} (hW : IsOpen W) (hg : ContDiffOn ℝ k g (W ∩ {q | 0 ≤ q.1.im}))
-    {q₀ : ℂ × E} (hq₀ : q₀ ∈ W ∩ {q | 0 ≤ q.1.im}) :
+/-- Near every point of a relatively open subset `W ∩ {q | 0 ≤ q.1.im}` of `ℂ × E`, a `Cᵏ` map on
+it agrees with a map that is `Cᵏ` on an open neighbourhood of the point. The only hypothesis on `E`
+is that `ℝ × (ℝ × E)` has smooth bump functions, as it does for finite-dimensional `E`. At a point
+with `q.1.im = 0` the extension reflects across `{q | q.1.im = 0}`. This is the form of
+`TauCeti.exists_contDiffOn_eqOn_inter_setOf_im_nonneg` for maps that also depend on a point of `E`,
+such as the coefficients of a Cauchy-Riemann operator in a boundary chart. -/
+theorem exists_contDiffOn_eqOn_inter_setOf_fst_im_nonneg [HasContDiffBump (ℝ × (ℝ × E))]
+    {g : ℂ × E → G} {W : Set (ℂ × E)} (hW : IsOpen W)
+    (hg : ContDiffOn ℝ k g (W ∩ {q | 0 ≤ q.1.im})) {q₀ : ℂ × E} (hq₀ : q₀ ∈ W ∩ {q | 0 ≤ q.1.im}) :
     ∃ T : Set (ℂ × E), IsOpen T ∧ q₀ ∈ T ∧ ∃ G' : ℂ × E → G, ContDiffOn ℝ k G' T ∧
       EqOn G' g ((W ∩ {q | 0 ≤ q.1.im}) ∩ T) := by
   rcases (mem_ofPred.1 hq₀.2).lt_or_eq with hpos | hzero
