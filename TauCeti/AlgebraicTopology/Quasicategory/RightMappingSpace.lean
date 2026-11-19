@@ -58,7 +58,8 @@ those of `X` and `Y`.
 
 ## Main results
 
-* `SSet.mem_rightMappingSpace_iff`: the description of the simplices of `Hom^R_X(x, y)`, and
+* `SSet.mem_rightMappingSpace_iff`: the description of the simplices of `Hom^R_X(x, y)` (at an
+  arbitrary object of the simplex category, `SSet.mem_rightMappingSpace_obj_iff`), and
   `SSet.rightMappingSpace.coe_δ`, `SSet.rightMappingSpace.coe_σ`: their faces and degeneracies
   are those in `X` avoiding, respectively fixing, the last vertex.
 * `SSet.rightMappingSpace.hornFilling`: if `X` is a quasicategory, the horns `Λ[n, i]` with
@@ -127,6 +128,15 @@ theorem mem_rightMappingSpace_iff {n : ℕ} (σ : X _⦋n + 1⦌) :
   -- (its `Membership` instance does not typecheck at `X _⦋n + 1⦌`); membership in the unfolded
   -- set-builder set is the defining predicate, closed by `Iff.rfl`.
   exact Iff.rfl
+
+/-- A simplex of `X` at `joinVertex.obj m` is an `m`-simplex of `Hom^R_X(x, y)` exactly when its
+restriction along `m ⟶ m ⋆ ⦋0⦌` is the constant simplex at `x` and its final vertex is `y`. This
+is the defining condition, for an arbitrary object `m` of the simplex category. -/
+theorem mem_rightMappingSpace_obj_iff {m : SimplexCategory} (σ : X.obj (op (joinVertex.obj m))) :
+    σ ∈ (X.rightMappingSpace x y).obj (op m) ↔
+      X.map (joinVertexInl m).op σ = X.map (SimplexCategory.const m ⦋0⦌ 0).op x ∧
+        X.map (joinVertexInr m).op σ = y :=
+  Iff.rfl
 
 namespace rightMappingSpace
 
