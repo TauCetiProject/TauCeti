@@ -46,7 +46,7 @@ not compact (`isProperMap_const_iff`).
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Springer, 2013, Proposition 2.28
   (smooth exhaustion functions).
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  Corollary 6.7.
+  §6, Corollary 6.8, for the existence of a Morse function with compact sublevels.
 -/
 
 public section
