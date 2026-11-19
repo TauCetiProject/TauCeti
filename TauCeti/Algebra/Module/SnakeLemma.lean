@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.LinearAlgebra.Exact
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.LinearMap.Range
+public import TauCeti.LinearAlgebra.Prod
 public import TauCeti.LinearAlgebra.Quotient.Basic
 
 import Mathlib.Algebra.Exact.Sequence
@@ -50,8 +51,7 @@ different universes.
   `Function.Exact.restrict_ker_snakeδ` at `ker i₃` and `Function.Exact.snakeδ_mapQ_range` at
   `coker i₁`.
 * `LinearMap.snakeδ_prodMap_eq_zero`: the connecting map of a direct sum, with split rows,
-  vanishes; `LinearMap.prodMap_comp_inl` and `LinearMap.snd_comp_prodMap` are the commuting
-  squares of these rows.
+  vanishes.
 * `LinearMap.finiteDimensional_ker₂_of_finiteDimensional_ker₁₃` and
   `LinearMap.finiteDimensional_coker₂_of_finiteDimensional_coker₁₃`: finiteness in the middle.
 * `LinearMap.finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁` and
@@ -73,25 +73,6 @@ open Function Module Submodule LinearMap
 variable {R M₁ M₂ M₃ N₁ N₂ N₃ : Type*}
   [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃]
   [AddCommGroup N₁] [AddCommGroup N₂] [AddCommGroup N₃]
-
-section Semiring
-
-variable [Semiring R] {P P' Q Q' : Type*} [AddCommMonoid P] [AddCommMonoid P'] [AddCommMonoid Q]
-  [AddCommMonoid Q'] [Module R P] [Module R P'] [Module R Q] [Module R Q']
-
-/-- The left square of the split rows `0 → P → P × P' → P' → 0` and `0 → Q → Q × Q' → Q' → 0`
-with vertical maps `f`, `f.prodMap g` and `g` commutes. -/
-theorem LinearMap.prodMap_comp_inl (f : P →ₗ[R] Q) (g : P' →ₗ[R] Q') :
-    f.prodMap g ∘ₗ inl R P P' = inl R Q Q' ∘ₗ f := by
-  ext <;> simp
-
-/-- The right square of the split rows `0 → P → P × P' → P' → 0` and `0 → Q → Q × Q' → Q' → 0`
-with vertical maps `f`, `f.prodMap g` and `g` commutes. -/
-theorem LinearMap.snd_comp_prodMap (f : P →ₗ[R] Q) (g : P' →ₗ[R] Q') :
-    snd R Q Q' ∘ₗ f.prodMap g = g ∘ₗ snd R P P' := by
-  ext <;> simp
-
-end Semiring
 
 section Ring
 
