@@ -29,9 +29,11 @@ intertwines `g^* J` with `J`. Read in a chart `φ` of `P` and the chart `g ≫ �
 ## Main declarations
 
 * `TauCeti.DomainDependentHomSection.pullback`: the pulled-back Hom section, with
-  `TauCeti.DomainDependentHomSection.mfderiv_tangentHom_pullback_apply`.
+  `TauCeti.DomainDependentHomSection.mfderiv_tangentHom_pullback_apply`; it is the only section
+  that `dg` carries to `A` (`TauCeti.DomainDependentHomSection.eq_pullback_iff`).
 * `TauCeti.InhomogeneousTerm.pullback`: the pulled-back inhomogeneous term, whose underlying
-  Hom section is the pulled-back Hom section (`TauCeti.InhomogeneousTerm.val_pullback`).
+  Hom section is the pulled-back Hom section (`TauCeti.InhomogeneousTerm.val_pullback`), with
+  the characterisation `TauCeti.InhomogeneousTerm.eq_pullback_iff`.
 * `TauCeti.InhomogeneousTerm.chartTerm_pullback`,
   `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts.
 
@@ -122,6 +124,19 @@ theorem mfderiv_tangentHom_pullback_apply (q : P × M) (v : TangentSpace IP q.1)
   rw [tangentHom_pullback, ContinuousLinearMap.comp_apply]
   exact (g.isInvertible_mfderiv (ENat.coe_ne_zero_of_add_one_le hnr)).self_apply_inverse _
 
+/-- **Characterisation of the pullback.** `g^* A` is the only Hom section that the differentials
+of `g` carry to `A`. -/
+theorem eq_pullback_iff {B : DomainDependentHomSection I M IP P n} :
+    B = A.pullback g hnr ↔ ∀ (q : P × M) (v : TangentSpace IP q.1),
+      mfderiv I I' g q.2 (B.tangentHom q v) = A.tangentHom (q.1, g q.2) v := by
+  refine ⟨fun hB q v ↦ hB ▸ mfderiv_tangentHom_pullback_apply g A hnr q v, fun hB ↦ ?_⟩
+  have h (q : P × M) (v : TangentSpace IP q.1) :
+      B.tangentHom q v = (A.pullback g hnr).tangentHom q v := by
+    rw [tangentHom_pullback, ContinuousLinearMap.comp_apply, ← hB,
+      (g.isInvertible_mfderiv (ENat.coe_ne_zero_of_add_one_le hnr)).inverse_apply_self]
+  ext q v
+  exact (tangentHom_apply B q v).symm.trans ((h q v).trans (tangentHom_apply _ q v))
+
 end DomainDependentHomSection
 
 namespace InhomogeneousTerm
@@ -135,23 +150,12 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
 `(p, x)` it is `(dg_x)⁻¹ ∘ ν(p, g x)`. -/
 def pullback (ν : InhomogeneousTerm j J) (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n + 1 ≤ r) :
     InhomogeneousTerm j (J.pullback g hnr) :=
-  ⟨ν.val.pullback g hnr, (mem_inhomogeneousTerms _ _ _).2 fun q ↦ by
-    apply isComplexAntilinear_of_apply
-    intro v
-    have hinj := (g.isInvertible_mfderiv (x := q.2)
+  ⟨ν.val.pullback g hnr, (mem_inhomogeneousTerms_iff_tangentHom _ _ _).2 fun q w ↦ by
+    apply (g.isInvertible_mfderiv (x := q.2)
       (ENat.coe_ne_zero_of_add_one_le hnr)).bijective.injective
-    have key (w : TangentSpace IP q.1) : (ν.val.pullback g hnr).tangentHom q (j q.1 w) =
-        -(J.pullback g hnr).tangentEndomorphism q ((ν.val.pullback g hnr).tangentHom q w) := by
-      apply hinj
-      rw [map_neg, ContMDiffAlmostComplexStructureFamily.mfderiv_pullback_apply,
-        DomainDependentHomSection.mfderiv_tangentHom_pullback_apply,
-        DomainDependentHomSection.mfderiv_tangentHom_pullback_apply, ν.tangentHom_apply_j]
-    have h := key v
-    erw [DomainDependentHomSection.tangentHom_apply, DomainDependentHomSection.tangentHom_apply,
-      ContMDiffAlmostComplexStructureFamily.tangentEndomorphism_apply] at h
-    simp only [ContinuousLinearMap.coe_coe]
-    erw [ContMDiffAlmostComplexStructure.horizontalEndomorphism_apply]
-    exact h⟩
+    rw [map_neg, ContMDiffAlmostComplexStructureFamily.mfderiv_pullback_apply,
+      DomainDependentHomSection.mfderiv_tangentHom_pullback_apply,
+      DomainDependentHomSection.mfderiv_tangentHom_pullback_apply, ν.tangentHom_apply_j]⟩
 
 /-- The underlying Hom section of the pulled-back term is the pullback of the Hom section. -/
 @[simp]
@@ -180,6 +184,13 @@ from `TauCeti.InhomogeneousTerm.val_pullback`). -/
 theorem mfderiv_tangentHom_pullback_apply (q : P × M) (v : TangentSpace IP q.1) :
     mfderiv I I' g q.2 ((ν.pullback g hnr).val.tangentHom q v) = ν.val.tangentHom (q.1, g q.2) v :=
   DomainDependentHomSection.mfderiv_tangentHom_pullback_apply g ν.val hnr q v
+
+/-- **Characterisation of the pullback.** `g^* ν` is the only inhomogeneous term for
+`(j, g^* J)` that the differentials of `g` carry to `ν`. -/
+theorem eq_pullback_iff {μ : InhomogeneousTerm j (J.pullback g hnr)} :
+    μ = ν.pullback g hnr ↔ ∀ (q : P × M) (v : TangentSpace IP q.1),
+      mfderiv I I' g q.2 (μ.val.tangentHom q v) = ν.val.tangentHom (q.1, g q.2) v := by
+  rw [← Subtype.coe_inj, val_pullback, DomainDependentHomSection.eq_pullback_iff]
 
 /-- **Transport in charts.** Let `χ` be a chart of `M` and `ψ` a chart of `N` with
 `χ = ψ ∘ g` and `χ⁻¹ = g⁻¹ ∘ ψ⁻¹`, such as `g ≫ ψ`. Read in a chart `φ` of the domain and in

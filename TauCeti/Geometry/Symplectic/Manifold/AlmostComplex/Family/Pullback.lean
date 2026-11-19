@@ -26,7 +26,8 @@ and the chart `g ≫ ψ` of `M`, the pulled-back structure is the original one r
 
 * `TauCeti.ContMDiffAlmostComplexStructureFamily.pullback`: the pulled-back family.
 * `TauCeti.ContMDiffAlmostComplexStructureFamily.mfderiv_pullback_apply`: the differentials of
-  `g` are complex linear from `g^* J` to `J`.
+  `g` are complex linear from `g^* J` to `J`, and `g^* J` is the only such family
+  (`TauCeti.ContMDiffAlmostComplexStructureFamily.eq_pullback_iff`).
 * `TauCeti.ContMDiffAlmostComplexStructureFamily.freeze_pullback`: freezing commutes with
   pullback.
 * `TauCeti.ContMDiffAlmostComplexStructureFamily.pullback_const`: pulling back commutes with
@@ -97,6 +98,21 @@ theorem mfderiv_pullback_apply (q : P × M) (v : TangentSpace I q.2) :
       J.tangentEndomorphism (q.1, g q.2) (mfderiv I I' g q.2 v) := by
   rw [← freeze_apply, freeze_pullback, ContMDiffAlmostComplexStructure.mfderiv_pullback_apply,
     freeze_apply]
+
+/-- **Characterisation of the pullback.** `g^* J` is the only family for which the differentials
+of `g` are complex linear to `J`. -/
+theorem eq_pullback_iff {K : ContMDiffAlmostComplexStructureFamily I M IP P n} :
+    K = J.pullback g hnr ↔ ∀ (q : P × M) (v : TangentSpace I q.2),
+      mfderiv I I' g q.2 (K.tangentEndomorphism q v) =
+        J.tangentEndomorphism (q.1, g q.2) (mfderiv I I' g q.2 v) := by
+  refine ⟨fun hK q v ↦ hK ▸ mfderiv_pullback_apply g J hnr q v, fun hK ↦ ?_⟩
+  have h (q : P × M) (v : TangentSpace I q.2) :
+      K.tangentEndomorphism q v = (J.pullback g hnr).tangentEndomorphism q v := by
+    rw [pullback_tangentEndomorphism_apply, ← hK,
+      (g.isInvertible_mfderiv (ENat.coe_ne_zero_of_add_one_le hnr)).inverse_apply_self]
+  ext q v
+  exact (tangentEndomorphism_apply K q v).symm.trans
+    ((h q v).trans (tangentEndomorphism_apply _ q v))
 
 /-- A structure independent of the domain point pulls back to the pullback of the structure. -/
 @[simp]
