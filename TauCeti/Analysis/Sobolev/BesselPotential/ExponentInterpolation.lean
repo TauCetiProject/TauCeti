@@ -15,8 +15,9 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 Let `E` be a finite-dimensional real inner product space and `H^{s,p} = H^{s,p}(E, F)` Mathlib's
 Bessel-potential spaces. For one order `s` and two exponents `1 ≤ p₀, p₁ ≤ ∞` the spaces
 `H^{s,p₀}` and `H^{s,p₁}` form a compatible couple inside the tempered distributions
-(`TauCeti.CompatibleCouple.besselPotentialSpaceOfOrder`). This file proves that for `0 < θ < 1`
-its complex interpolation space is again a Bessel-potential space of order `s`, isometrically:
+(`TauCeti.CompatibleCouple.besselPotentialSpace E F s p₀ s p₁`). This file proves that for
+`0 < θ < 1` its complex interpolation space is again a Bessel-potential space of order `s`,
+isometrically:
 
 `[H^{s,p₀}, H^{s,p₁}]_θ = H^{s,p}`, `1 / p = (1 - θ) / p₀ + θ / p₁`, `p < ∞`
 
@@ -42,8 +43,8 @@ for Bessel potentials of imaginary order.
 
 ## Main declarations
 
-* `TauCeti.CompatibleCouple.besselPotentialSpaceOfOrder E F s p₀ p₁`: the couple
-  `(H^{s,p₀}, H^{s,p₁})`, with `mem_besselPotentialSpaceOfOrder_inter_iff`.
+* `TauCeti.CompatibleCouple.mem_besselPotentialSpace_inter_iff`: the intersection
+  `H^{s,p₀} ∩ H^{s,p₁}` of the couple `(H^{s,p₀}, H^{s,p₁})`.
 * `TauCeti.CompatibleCouple.besselPotentialSpaceOfOrderLebesgueEquiv`: the isometric isomorphism
   `[H^{s,p₀}, H^{s,p₁}]_θ ≃ₗᵢ[ℂ] [L^{p₀}, L^{p₁}]_θ` induced by `J^s`, for every `θ`.
 * `TauCeti.CompatibleCouple.besselPotentialSpaceOfOrderComplexMethodEquiv`: the isometric
@@ -76,58 +77,38 @@ open BesselPotentialSpace
 
 section Couple
 
-variable (E F) (s : ℝ) (p₀ p₁ : ℝ≥0∞) [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] in
-/-- The compatible couple `(H^{s,p₀}, H^{s,p₁})` of Bessel-potential spaces of one order `s` and two
-exponents, both embedded into the tempered distributions. -/
-def besselPotentialSpaceOfOrder :
-    CompatibleCouple ℂ H^{s, p₀}(E, F) H^{s, p₁}(E, F) 𝓢'(E, F) where
-  embed₀ := toDistrCLM E F s p₀
-  embed₁ := toDistrCLM E F s p₁
-  embed₀_injective := toDistrCLM_injective
-  embed₁_injective := toDistrCLM_injective
-
 variable {s : ℝ} {p₀ p₁ : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)]
-
-@[simp]
-theorem besselPotentialSpaceOfOrder_embed₀_apply (u : H^{s, p₀}(E, F)) :
-    (besselPotentialSpaceOfOrder E F s p₀ p₁).embed₀ u = u.toDistr :=
-  toDistrCLM_apply u
-
-@[simp]
-theorem besselPotentialSpaceOfOrder_embed₁_apply (u : H^{s, p₁}(E, F)) :
-    (besselPotentialSpaceOfOrder E F s p₀ p₁).embed₁ u = u.toDistr :=
-  toDistrCLM_apply u
 
 /-- The intersection `H^{s,p₀} ∩ H^{s,p₁}` consists of the pairs whose `Lᵖ` functions `J^s u`
 agree almost everywhere. -/
-theorem mem_besselPotentialSpaceOfOrder_inter_iff
+theorem mem_besselPotentialSpace_inter_iff
     {x : H^{s, p₀}(E, F) × H^{s, p₁}(E, F)} :
-    x ∈ (besselPotentialSpaceOfOrder E F s p₀ p₁).inter ↔ x.1.toLp =ᵐ[volume] x.2.toLp := by
-  rw [mem_inter_iff, besselPotentialSpaceOfOrder_embed₀_apply,
-    besselPotentialSpaceOfOrder_embed₁_apply, toDistr_eq_toDistr_iff]
+    x ∈ (besselPotentialSpace E F s p₀ s p₁).inter ↔ x.1.toLp =ᵐ[volume] x.2.toLp := by
+  rw [mem_inter_iff, besselPotentialSpace_embed₀_apply,
+    besselPotentialSpace_embed₁_apply, toDistr_eq_toDistr_iff]
 
 /-- The Bessel potentials `J^s : H^{s,p₀} → L^{p₀}` and `J^s : H^{s,p₁} → L^{p₁}` agree on the
 intersection `H^{s,p₀} ∩ H^{s,p₁}`. -/
-theorem lebesgue_fstToSum_toLpₗᵢ_interFst (x : (besselPotentialSpaceOfOrder E F s p₀ p₁).inter) :
+theorem lebesgue_fstToSum_toLpₗᵢ_interFst (x : (besselPotentialSpace E F s p₀ s p₁).inter) :
     (lebesgue ℂ F (volume : Measure E) p₀ p₁).fstToSum ((toLpₗᵢ E F s p₀).toContinuousLinearEquiv
-        ((besselPotentialSpaceOfOrder E F s p₀ p₁).interFst x)) =
+        ((besselPotentialSpace E F s p₀ s p₁).interFst x)) =
       (lebesgue ℂ F (volume : Measure E) p₀ p₁).sndToSum ((toLpₗᵢ E F s p₁).toContinuousLinearEquiv
-        ((besselPotentialSpaceOfOrder E F s p₀ p₁).interSnd x)) :=
+        ((besselPotentialSpace E F s p₀ s p₁).interSnd x)) :=
   (lebesgue ℂ F (volume : Measure E) p₀ p₁).sumSpace_ext <| by
     simpa [toDistr_eq_toDistr_iff, L1AddLinfty.ofLp_eq_ofLp_iff] using
-      (besselPotentialSpaceOfOrder E F s p₀ p₁).embed₀_interFst x
+      (besselPotentialSpace E F s p₀ s p₁).embed₀_interFst x
 
 /-- The inverse Bessel potentials `J^{-s} : L^{p₀} → H^{s,p₀}` and `J^{-s} : L^{p₁} → H^{s,p₁}`
 agree on the intersection `L^{p₀} ∩ L^{p₁}`. -/
-theorem besselPotentialSpaceOfOrder_fstToSum_toLpₗᵢ_symm_interFst
+theorem besselPotentialSpace_fstToSum_toLpₗᵢ_symm_interFst
     (y : (lebesgue ℂ F (volume : Measure E) p₀ p₁).inter) :
-    (besselPotentialSpaceOfOrder E F s p₀ p₁).fstToSum
+    (besselPotentialSpace E F s p₀ s p₁).fstToSum
         ((toLpₗᵢ E F s p₀).toContinuousLinearEquiv.symm
           ((lebesgue ℂ F (volume : Measure E) p₀ p₁).interFst y)) =
-      (besselPotentialSpaceOfOrder E F s p₀ p₁).sndToSum
+      (besselPotentialSpace E F s p₀ s p₁).sndToSum
         ((toLpₗᵢ E F s p₁).toContinuousLinearEquiv.symm
           ((lebesgue ℂ F (volume : Measure E) p₀ p₁).interSnd y)) :=
-  (besselPotentialSpaceOfOrder E F s p₀ p₁).sumSpace_ext <| by
+  (besselPotentialSpace E F s p₀ s p₁).sumSpace_ext <| by
     -- Keep `(toLpₗᵢ _ _ s _).symm f` unexpanded and read its `toLp` as `toLpₗᵢ`, so that
     -- `apply_symm_apply` returns `f`.
     simpa [toDistr_eq_toDistr_iff, L1AddLinfty.ofLp_eq_ofLp_iff, -toLpₗᵢ_symm_apply,
@@ -139,11 +120,11 @@ variable (E F s) in
 the complex interpolation spaces of the couple of Bessel-potential spaces of order `s` and of the
 Lebesgue couple. It lies over the map `u₀ + u₁ ↦ J^s u₀ + J^s u₁` of sum spaces. -/
 def besselPotentialSpaceOfOrderLebesgueEquiv (θ : ℝ) :
-    (besselPotentialSpaceOfOrder E F s p₀ p₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ]
+    (besselPotentialSpace E F s p₀ s p₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ]
       (lebesgue ℂ F (volume : Measure E) p₀ p₁).ComplexMethodSpace θ where
   toLinearEquiv := (ComplexMethodSpace.mapEquiv θ (toLpₗᵢ E F s p₀).toContinuousLinearEquiv
     (toLpₗᵢ E F s p₁).toContinuousLinearEquiv lebesgue_fstToSum_toLpₗᵢ_interFst
-    besselPotentialSpaceOfOrder_fstToSum_toLpₗᵢ_symm_interFst).toLinearEquiv
+    besselPotentialSpace_fstToSum_toLpₗᵢ_symm_interFst).toLinearEquiv
   norm_map' := ComplexMethodSpace.norm_mapEquiv _ _ _ _ (toLpₗᵢ E F s p₀).norm_map
     (toLpₗᵢ E F s p₁).norm_map
 
@@ -151,9 +132,9 @@ def besselPotentialSpaceOfOrderLebesgueEquiv (θ : ℝ) :
 sum spaces. -/
 @[simp]
 theorem toSum_besselPotentialSpaceOfOrderLebesgueEquiv_apply {θ : ℝ}
-    (u : (besselPotentialSpaceOfOrder E F s p₀ p₁).ComplexMethodSpace θ) :
+    (u : (besselPotentialSpace E F s p₀ s p₁).ComplexMethodSpace θ) :
     ComplexMethodSpace.toSum (besselPotentialSpaceOfOrderLebesgueEquiv E F s θ u) =
-      (besselPotentialSpaceOfOrder E F s p₀ p₁).sumLift
+      (besselPotentialSpace E F s p₀ s p₁).sumLift
         ((lebesgue ℂ F (volume : Measure E) p₀ p₁).fstToSum.comp
           ((toLpₗᵢ E F s p₀).toContinuousLinearEquiv : H^{s, p₀}(E, F) →L[ℂ] _))
         ((lebesgue ℂ F (volume : Measure E) p₀ p₁).sndToSum.comp
@@ -169,14 +150,14 @@ theorem toSum_besselPotentialSpaceOfOrderLebesgueEquiv_symm_apply {θ : ℝ}
     (v : (lebesgue ℂ F (volume : Measure E) p₀ p₁).ComplexMethodSpace θ) :
     ComplexMethodSpace.toSum ((besselPotentialSpaceOfOrderLebesgueEquiv E F s θ).symm v) =
       (lebesgue ℂ F (volume : Measure E) p₀ p₁).sumLift
-        ((besselPotentialSpaceOfOrder E F s p₀ p₁).fstToSum.comp
+        ((besselPotentialSpace E F s p₀ s p₁).fstToSum.comp
           ((toLpₗᵢ E F s p₀).toContinuousLinearEquiv.symm :
             Lp F p₀ (volume : Measure E) →L[ℂ] _))
-        ((besselPotentialSpaceOfOrder E F s p₀ p₁).sndToSum.comp
+        ((besselPotentialSpace E F s p₀ s p₁).sndToSum.comp
           ((toLpₗᵢ E F s p₁).toContinuousLinearEquiv.symm :
             Lp F p₁ (volume : Measure E) →L[ℂ] _))
         (fun y ↦ by simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] using
-          besselPotentialSpaceOfOrder_fstToSum_toLpₗᵢ_symm_interFst y)
+          besselPotentialSpace_fstToSum_toLpₗᵢ_symm_interFst y)
         (ComplexMethodSpace.toSum v) :=
   ComplexMethodSpace.toSum_mapEquiv_symm _ _ _ _ v
 
@@ -200,7 +181,7 @@ Bessel-potential space `H^{s,p}(E, H)`, with equal norms. The isometry keeps the
 tempered distribution
 (`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceOfOrderComplexMethodEquiv_apply`). -/
 def besselPotentialSpaceOfOrderComplexMethodEquiv :
-    (besselPotentialSpaceOfOrder E H s p₀ p₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ] H^{s, p}(E, H) :=
+    (besselPotentialSpace E H s p₀ s p₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ] H^{s, p}(E, H) :=
   (besselPotentialSpaceOfOrderLebesgueEquiv E H s θ).trans
     ((lebesgueComplexMethodEquiv hθ hp hp_top).trans (toLpₗᵢ E H s p).symm)
 
@@ -209,7 +190,7 @@ element of `[H^{s,p₀}, H^{s,p₁}]_θ` with the same tempered distribution. -/
 @[simp]
 theorem sumSpaceEmbed_toSum_besselPotentialSpaceOfOrderComplexMethodEquiv_symm_apply
     (u : H^{s, p}(E, H)) :
-    (besselPotentialSpaceOfOrder E H s p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum
+    (besselPotentialSpace E H s p₀ s p₁).sumSpaceEmbed (ComplexMethodSpace.toSum
         ((besselPotentialSpaceOfOrderComplexMethodEquiv E H s p₀ p₁ hθ hp hp_top).symm u)) =
       u.toDistr := by
   set v := lpToLebesgueComplexMethod (Ioo_subset_Icc_self hθ) hp hp_top u.toLp
@@ -217,13 +198,9 @@ theorem sumSpaceEmbed_toSum_besselPotentialSpaceOfOrderComplexMethodEquiv_symm_a
   obtain ⟨f₀, f₁, hf⟩ :=
     (lebesgue ℂ H (volume : Measure E) p₀ p₁).exists_fstToSum_add_sndToSum_eq
       (ComplexMethodSpace.toSum v)
-  have hsum : ⇑f₀ + ⇑f₁ =ᵐ[volume] u.toLp := by
-    have h := congrArg (L1AddLinfty.toAEEqFun ℂ ∘
-      (lebesgue ℂ H (volume : Measure E) p₀ p₁).sumSpaceEmbed) hf
-    simp only [Function.comp_apply, map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum,
-      lebesgue_embed₀, lebesgue_embed₁, v, sumSpaceEmbed_toSum_lpToLebesgueComplexMethod,
-      L1AddLinfty.toAEEqFun_ofLp] at h
-    exact (AEEqFun.coeFn_add _ _).symm.trans (AEEqFun.ext_iff.1 h)
+  have hsum : ⇑f₀ + ⇑f₁ =ᵐ[volume] u.toLp :=
+    lebesgue_sumSpaceEmbed_fstToSum_add_sndToSum_eq_ofLp_iff.1 <| by
+      rw [hf, sumSpaceEmbed_toSum_lpToLebesgueComplexMethod]
   have hsymm : (besselPotentialSpaceOfOrderComplexMethodEquiv E H s p₀ p₁ hθ hp hp_top).symm u =
       (besselPotentialSpaceOfOrderLebesgueEquiv E H s θ).symm v := by
     simp only [besselPotentialSpaceOfOrderComplexMethodEquiv, LinearIsometryEquiv.symm_trans,
@@ -232,7 +209,7 @@ theorem sumSpaceEmbed_toSum_besselPotentialSpaceOfOrderComplexMethodEquiv_symm_a
   rw [hsymm, toSum_besselPotentialSpaceOfOrderLebesgueEquiv_symm_apply, ← hf, map_add,
     sumLift_fstToSum, sumLift_sndToSum, map_add]
   simp only [ContinuousLinearMap.comp_apply, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum,
-    besselPotentialSpaceOfOrder_embed₀_apply, besselPotentialSpaceOfOrder_embed₁_apply,
+    besselPotentialSpace_embed₀_apply, besselPotentialSpace_embed₁_apply,
     ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv,
     toLpₗᵢ_symm_apply]
   rw [← map_add, ← besselPotential_neg_toLp_eq (f := u),
@@ -243,9 +220,9 @@ an element of `[H^{s,p₀}, H^{s,p₁}]_θ` is sent to the element of `H^{s,p}` 
 distribution. -/
 @[simp]
 theorem toDistr_besselPotentialSpaceOfOrderComplexMethodEquiv_apply
-    (u : (besselPotentialSpaceOfOrder E H s p₀ p₁).ComplexMethodSpace θ) :
+    (u : (besselPotentialSpace E H s p₀ s p₁).ComplexMethodSpace θ) :
     (besselPotentialSpaceOfOrderComplexMethodEquiv E H s p₀ p₁ hθ hp hp_top u).toDistr =
-      (besselPotentialSpaceOfOrder E H s p₀ p₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) := by
+      (besselPotentialSpace E H s p₀ s p₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) := by
   conv_rhs =>
     rw [← (besselPotentialSpaceOfOrderComplexMethodEquiv E H s p₀ p₁ hθ hp hp_top).symm_apply_apply
       u]

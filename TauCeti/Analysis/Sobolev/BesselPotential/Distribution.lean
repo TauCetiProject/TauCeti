@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
@@ -24,6 +25,8 @@ continuous linear map, so that the spaces `H^{s,p}` for different `s` can be com
   same tempered distribution exactly when their `Lᵖ` functions agree almost everywhere.
 * `BesselPotentialSpace.norm_copy`, `BesselPotentialSpace.memSobolev_toDistr_of_eq`: moving an
   element along an equality of orders `s = s'`.
+* `TauCeti.CompatibleCouple.besselPotentialSpace E F s₀ p₀ s₁ p₁`: the compatible couple
+  `(H^{s₀,p₀}, H^{s₁,p₁})` inside `𝓢'(E, F)`.
 -/
 
 public section
@@ -82,3 +85,31 @@ theorem memSobolev_toDistr_of_eq {s t : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (
   h ▸ u.memSobolev_toDistr
 
 end BesselPotentialSpace
+
+namespace TauCeti.CompatibleCouple
+
+open BesselPotentialSpace
+
+variable (E F) in
+/-- The compatible couple `(H^{s₀,p₀}, H^{s₁,p₁})` of Bessel-potential spaces, both embedded into
+the tempered distributions. -/
+def besselPotentialSpace (s₀ : ℝ) (p₀ : ℝ≥0∞) (s₁ : ℝ) (p₁ : ℝ≥0∞) [Fact (1 ≤ p₀)]
+    [Fact (1 ≤ p₁)] : CompatibleCouple ℂ H^{s₀, p₀}(E, F) H^{s₁, p₁}(E, F) 𝓢'(E, F) where
+  embed₀ := toDistrCLM E F s₀ p₀
+  embed₁ := toDistrCLM E F s₁ p₁
+  embed₀_injective := toDistrCLM_injective
+  embed₁_injective := toDistrCLM_injective
+
+variable {s₀ s₁ : ℝ} {p₀ p₁ : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)]
+
+@[simp]
+theorem besselPotentialSpace_embed₀_apply (u : H^{s₀, p₀}(E, F)) :
+    (besselPotentialSpace E F s₀ p₀ s₁ p₁).embed₀ u = u.toDistr :=
+  toDistrCLM_apply u
+
+@[simp]
+theorem besselPotentialSpace_embed₁_apply (u : H^{s₁, p₁}(E, F)) :
+    (besselPotentialSpace E F s₀ p₀ s₁ p₁).embed₁ u = u.toDistr :=
+  toDistrCLM_apply u
+
+end TauCeti.CompatibleCouple
