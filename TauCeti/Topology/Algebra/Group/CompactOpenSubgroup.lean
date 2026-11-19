@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Filtered.Final
-public import Mathlib.Order.Filter.CountablyGenerated
-public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
-public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
 /-!
 # The refinement index of compact open subgroups
@@ -28,15 +25,10 @@ indexed by the opposite of the inclusion order. This file sets up that index.
   family is final, and a colimit over all levels may be computed along it
   (`CategoryTheory.Functor.Final.colimitIso`). The same holds inside the levels below a fixed
   compact open `K₀`.
-* A topological group isomorphism transports compact open subgroups. In particular the group of
-  continuous automorphisms acts on the index by order isomorphisms, and conjugation by `g`,
-  `U ↦ g U g⁻¹`, through `TauCeti.ContinuousAut.conj`. This is a reindexing of the levels, not an
-  arrow of the index: conjugation by `diag(p, 1)` moves `GL₂(ℤ_p)` to a different compact open
-  subgroup of `GL₂(ℚ_p)`. Transport by `g` followed by transport by `h` is transport by `h * g`.
-* In a first countable nonarchimedean group, such as a `p`-adic Lie group, every compact open
-  `K₀` contains a descending sequence of compact open subgroups, each normalized by `K₀`, that is
-  a neighbourhood basis of the identity. Their quotients `K₀ ⧸ U r` are the finite deck groups
-  of a tower over level `K₀`.
+* A topological group isomorphism transports compact open subgroups, as an order isomorphism of
+  the indices. The resulting action of continuous automorphisms, in particular conjugation, and
+  the normal bases below a fixed level are in
+  `TauCeti.Topology.Algebra.Group.ContinuousAut.CompactOpenSubgroup`.
 
 ## Main definitions
 
@@ -44,7 +36,6 @@ indexed by the opposite of the inclusion order. This file sets up that index.
   `TauCeti.CompactOpenAddSubgroup G`.
 * `ContinuousMulEquiv.compactOpenSubgroupOrderIso`: transport of compact open subgroups along an
   isomorphism of topological groups.
-* The action of `TauCeti.ContinuousAut G` on `TauCeti.CompactOpenSubgroup G` by images.
 
 ## Main results
 
@@ -55,10 +46,6 @@ indexed by the opposite of the inclusion order. This file sets up that index.
   `TauCeti.CompactOpenSubgroup.initial_functor_of_forall_mem_nhds` is the unconditional direction,
   and `TauCeti.CompactOpenSubgroup.initial_functor_Iic_of_forall_mem_nhds` its version below a
   fixed level.
-* `TauCeti.CompactOpenSubgroup.exists_le_conj_smul_eq`: every open subgroup contains a compact
-  open subgroup of a given compact open `K₀` which is normalized by `K₀`.
-* `TauCeti.CompactOpenSubgroup.exists_hasAntitoneBasis_conj_smul_eq`: a descending sequence of
-  compact open subgroups normalized by `K₀` forms a neighbourhood basis of the identity.
 
 ## References
 
@@ -140,6 +127,13 @@ theorem mem_toOpenSubgroup {x : G} : x ∈ U.toOpenSubgroup ↔ x ∈ U :=
 theorem mem_toSubgroup {x : G} : x ∈ U.toSubgroup ↔ x ∈ U :=
   Iff.rfl
 
+/-- A compact open subgroup is determined by its underlying subgroup. -/
+@[to_additive /-- A compact open additive subgroup is determined by its underlying additive
+subgroup. -/]
+theorem toSubgroup_injective :
+    Function.Injective (fun U : CompactOpenSubgroup G ↦ U.toSubgroup) :=
+  OpenSubgroup.toSubgroup_injective.comp toOpenSubgroup_injective
+
 /-- Compact open subgroups compare through their underlying open subgroups. -/
 @[to_additive (attr := simp) /-- Compact open additive subgroups compare through their underlying
 open additive subgroups. -/]
@@ -180,7 +174,7 @@ section Inf
 variable [SeparatelyContinuousMul G]
 
 /-- The intersection of two compact open subgroups, their common refinement, is a compact open
-subgroup: an open subgroup is closed, and a closed subset of a compact set is compact. -/
+subgroup. -/
 @[to_additive /-- The intersection of two compact open additive subgroups is a compact open
 additive subgroup. -/]
 instance : Min (CompactOpenSubgroup G) :=
@@ -302,40 +296,52 @@ namespace ContinuousMulEquiv
 
 variable {G H : Type*} [Group G] [TopologicalSpace G] [Group H] [TopologicalSpace H]
 
+/-- The image of a compact open subgroup under a topological group isomorphism. -/
+private def mapCompactOpenSubgroup (e : G ≃ₜ* H) (U : TauCeti.CompactOpenSubgroup G) :
+    TauCeti.CompactOpenSubgroup H where
+  toSubgroup := e.toMulEquiv.mapSubgroup U.toSubgroup
+  isOpen' := e.toHomeomorph.isOpen_image.mpr U.isOpen
+  isCompact' := U.isCompact.image e.continuous
+
 /-- A topological group isomorphism transports compact open subgroups, preserving inclusion. -/
 def compactOpenSubgroupOrderIso (e : G ≃ₜ* H) :
     TauCeti.CompactOpenSubgroup G ≃o TauCeti.CompactOpenSubgroup H where
-  toFun U :=
-    { toSubgroup := e.toMulEquiv.mapSubgroup U.toSubgroup
-      isOpen' := by
-        -- The carrier of `Subgroup.map` is stored as an existential rather than an image.
-        change IsOpen (e '' (U : Set G))
-        exact e.toHomeomorph.isOpen_image.mpr U.isOpen
-      isCompact' := by
-        -- The carrier of `Subgroup.map` is stored as an existential rather than an image.
-        change IsCompact (e '' (U : Set G))
-        exact U.isCompact.image e.continuous }
-  invFun V :=
-    { toSubgroup := e.toMulEquiv.mapSubgroup.symm V.toSubgroup
-      isOpen' := by
-        -- The carrier of `Subgroup.map` is stored as an existential rather than an image.
-        change IsOpen (e.symm '' (V : Set H))
-        exact e.symm.toHomeomorph.isOpen_image.mpr V.isOpen
-      isCompact' := by
-        -- The carrier of `Subgroup.map` is stored as an existential rather than an image.
-        change IsCompact (e.symm '' (V : Set H))
-        exact V.isCompact.image e.symm.continuous }
-  left_inv U := TauCeti.CompactOpenSubgroup.toOpenSubgroup_injective <|
-    OpenSubgroup.toSubgroup_injective (e.toMulEquiv.mapSubgroup.left_inv U.toSubgroup)
-  right_inv V := TauCeti.CompactOpenSubgroup.toOpenSubgroup_injective <|
-    OpenSubgroup.toSubgroup_injective (e.toMulEquiv.mapSubgroup.right_inv V.toSubgroup)
+  toFun := mapCompactOpenSubgroup e
+  invFun := mapCompactOpenSubgroup e.symm
+  left_inv U := TauCeti.CompactOpenSubgroup.toSubgroup_injective
+    (e.toMulEquiv.mapSubgroup.left_inv U.toSubgroup)
+  right_inv V := TauCeti.CompactOpenSubgroup.toSubgroup_injective
+    (e.toMulEquiv.mapSubgroup.right_inv V.toSubgroup)
   map_rel_iff' := e.toMulEquiv.mapSubgroup.map_rel_iff
+
+/-- The underlying subgroup transported by `ContinuousMulEquiv.compactOpenSubgroupOrderIso` is the
+image of the original subgroup. -/
+@[simp]
+theorem compactOpenSubgroupOrderIso_apply_toSubgroup (e : G ≃ₜ* H)
+    (U : TauCeti.CompactOpenSubgroup G) :
+    (e.compactOpenSubgroupOrderIso U).toSubgroup = U.toSubgroup.map e.toMulEquiv.toMonoidHom :=
+  (rfl)
+
+/-- The underlying subgroup of the inverse transport of a compact open subgroup is its image under
+the inverse topological group isomorphism. -/
+@[simp]
+theorem compactOpenSubgroupOrderIso_symm_apply_toSubgroup (e : G ≃ₜ* H)
+    (V : TauCeti.CompactOpenSubgroup H) :
+    (e.compactOpenSubgroupOrderIso.symm V).toSubgroup =
+      V.toSubgroup.map e.symm.toMulEquiv.toMonoidHom :=
+  (rfl)
 
 /-- The transport of a compact open subgroup is its image. -/
 @[simp, norm_cast]
 theorem coe_compactOpenSubgroupOrderIso (e : G ≃ₜ* H) (U : TauCeti.CompactOpenSubgroup G) :
     (e.compactOpenSubgroupOrderIso U : Set H) = e '' U :=
-  Set.ext fun _ ↦ Subgroup.mem_map
+  (rfl)
+
+/-- The inverse transport of a compact open subgroup is its image under the inverse isomorphism. -/
+@[simp, norm_cast]
+theorem coe_compactOpenSubgroupOrderIso_symm (e : G ≃ₜ* H) (V : TauCeti.CompactOpenSubgroup H) :
+    (e.compactOpenSubgroupOrderIso.symm V : Set G) = e.symm '' V :=
+  (rfl)
 
 /-- An element lies in a transported compact open subgroup exactly when its inverse image lies in
 the original one. -/
@@ -351,149 +357,11 @@ theorem mem_compactOpenSubgroupOrderIso_symm (e : G ≃ₜ* H) (V : TauCeti.Comp
     {g : G} : g ∈ e.compactOpenSubgroupOrderIso.symm V ↔ e g ∈ V :=
   Subgroup.mem_map_equiv
 
+/-- The image of an element lies in a transported compact open subgroup exactly when the element
+lies in the original one. This is not marked `@[simp]`: `simp` already reaches `g ∈ U` through
+`ContinuousMulEquiv.mem_compactOpenSubgroupOrderIso` and `ContinuousMulEquiv.symm_apply_apply`. -/
+theorem apply_mem_compactOpenSubgroupOrderIso (e : G ≃ₜ* H) (U : TauCeti.CompactOpenSubgroup G)
+    {g : G} : e g ∈ e.compactOpenSubgroupOrderIso U ↔ g ∈ U := by
+  rw [e.mem_compactOpenSubgroupOrderIso, e.symm_apply_apply]
+
 end ContinuousMulEquiv
-
-namespace TauCeti
-
-variable {G : Type*} [Group G] [TopologicalSpace G]
-
-namespace ContinuousAut
-
-/-- A continuous automorphism acts on compact open subgroups by taking images. -/
-instance : MulAction (ContinuousAut G) (CompactOpenSubgroup G) where
-  smul φ U := φ.compactOpenSubgroupOrderIso U
-  one_smul U :=
-    CompactOpenSubgroup.ext fun _ ↦ ContinuousMulEquiv.mem_compactOpenSubgroupOrderIso _ U
-  mul_smul φ ψ U := CompactOpenSubgroup.ext fun _ ↦
-    ((φ * ψ).mem_compactOpenSubgroupOrderIso U).trans <|
-      (ψ.mem_compactOpenSubgroupOrderIso U).symm.trans (φ.mem_compactOpenSubgroupOrderIso _).symm
-
-/-- The action of a continuous automorphism on compact open subgroups is transport along it by
-`ContinuousMulEquiv.compactOpenSubgroupOrderIso`, so that order isomorphism API applies to it. -/
-theorem smul_compactOpenSubgroup_def (φ : ContinuousAut G) (U : CompactOpenSubgroup G) :
-    φ • U = φ.compactOpenSubgroupOrderIso U :=
-  (rfl)
-
-/-- An element lies in `φ • U` exactly when its preimage under `φ` lies in `U`. -/
-@[simp]
-theorem mem_smul_compactOpenSubgroup_iff {φ : ContinuousAut G} {U : CompactOpenSubgroup G}
-    {x : G} : x ∈ φ • U ↔ φ.symm x ∈ U :=
-  φ.mem_compactOpenSubgroupOrderIso U
-
-/-- The underlying set of `φ • U` is the image of `U` under `φ`. -/
-@[simp, norm_cast]
-theorem coe_smul_compactOpenSubgroup (φ : ContinuousAut G) (U : CompactOpenSubgroup G) :
-    ((φ • U : CompactOpenSubgroup G) : Set G) = φ '' U :=
-  φ.coe_compactOpenSubgroupOrderIso U
-
-/-- Transport by a continuous automorphism preserves and reflects inclusion. -/
-@[simp]
-theorem smul_compactOpenSubgroup_le_smul_iff {φ : ContinuousAut G}
-    {U V : CompactOpenSubgroup G} : φ • U ≤ φ • V ↔ U ≤ V :=
-  φ.compactOpenSubgroupOrderIso.le_iff_le
-
-/-- Transport by a continuous automorphism commutes with common refinements. -/
-theorem smul_compactOpenSubgroup_inf [SeparatelyContinuousMul G] (φ : ContinuousAut G)
-    (U V : CompactOpenSubgroup G) : φ • (U ⊓ V) = φ • U ⊓ φ • V :=
-  φ.compactOpenSubgroupOrderIso.map_inf U V
-
-section Conj
-
-variable [SeparatelyContinuousMul G]
-
-/-- An element lies in the conjugate `g U g⁻¹` exactly when its conjugate `g⁻¹ x g` lies
-in `U`. -/
-theorem mem_conj_smul_compactOpenSubgroup_iff {g x : G} {U : CompactOpenSubgroup G} :
-    x ∈ conj g • U ↔ g⁻¹ * x * g ∈ U := by
-  rw [mem_smul_compactOpenSubgroup_iff, conj_symm_apply]
-
-/-- Conjugating a compact open subgroup by one of its own elements does not move it. -/
-theorem conj_smul_compactOpenSubgroup_eq_self_of_mem {g : G} {U : CompactOpenSubgroup G}
-    (hg : g ∈ U) : conj g • U = U :=
-  CompactOpenSubgroup.ext fun x ↦ by
-    rw [mem_conj_smul_compactOpenSubgroup_iff]
-    refine ⟨fun h ↦ ?_, fun h ↦ mul_mem (mul_mem (inv_mem hg) h) hg⟩
-    simpa [mul_assoc] using mul_mem (mul_mem hg h) (inv_mem hg)
-
-end Conj
-
-end ContinuousAut
-
-namespace CompactOpenSubgroup
-
-/-! ### Normal bases below a level -/
-
-section NormalBasis
-
-/-- **Normal cores below a level.** Every open subgroup `W` contains a compact open subgroup of a
-given compact open subgroup `K₀` which is normalized by `K₀`: the normal core in `K₀` of
-`W ∩ K₀`, which is open because `W ∩ K₀` has finite index in the compact group `K₀`. -/
-theorem exists_le_conj_smul_eq [SeparatelyContinuousMul G] (K₀ : CompactOpenSubgroup G)
-    (W : OpenSubgroup G) :
-    ∃ N : CompactOpenSubgroup G, N.toOpenSubgroup ≤ W ∧ N ≤ K₀ ∧
-      ∀ k ∈ K₀, ContinuousAut.conj k • N = N := by
-  set K := K₀.toSubgroup
-  -- The normal core in `K₀` of the trace of `W` on `K₀`, an open normal subgroup of `K₀`.
-  let W' : OpenSubgroup K := W.comap K.subtype continuous_subtype_val
-  let C : Subgroup K := W'.toSubgroup.normalCore
-  have hCK : ((C.map K.subtype : Subgroup G) : Set G) ⊆ K₀ := by
-    rintro _ ⟨c, -, rfl⟩
-    exact c.2
-  let N₀ : OpenSubgroup G :=
-    ⟨C.map K.subtype, K₀.isOpen.isOpenMap_subtype_val _ W'.isOpen_normalCore⟩
-  let N : CompactOpenSubgroup G := ⟨N₀, K₀.isCompact.of_isClosed_subset N₀.isClosed hCK⟩
-  have hmem (x : G) : x ∈ N ↔ x ∈ C.map K.subtype := Iff.rfl
-  -- Conjugation by elements of `K₀` maps the core into itself, hence onto itself.
-  have hle : ∀ k ∈ K₀, ∀ x ∈ N, k * x * k⁻¹ ∈ N := by
-    rintro k hk x hx
-    obtain ⟨c, hc, rfl⟩ := (hmem x).1 hx
-    exact (hmem _).2 ⟨⟨k, hk⟩ * c * ⟨k, hk⟩⁻¹,
-      (Subgroup.normalCore_normal _).conj_mem c hc ⟨k, hk⟩, rfl⟩
-  refine ⟨N, ?_, hCK, fun k hk ↦ CompactOpenSubgroup.ext fun x ↦ ?_⟩
-  · intro y hy
-    obtain ⟨c, hc, rfl⟩ := (hmem y).1 hy
-    exact Subgroup.normalCore_le W'.toSubgroup hc
-  rw [ContinuousAut.mem_conj_smul_compactOpenSubgroup_iff]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · simpa only [mul_assoc, mul_inv_cancel_left, mul_inv_cancel, mul_one] using hle k hk _ h
-  · simpa only [inv_inv] using hle k⁻¹ (inv_mem hk) x h
-
-/-- **A descending normal basis below a level.** In a first countable nonarchimedean group, every
-compact open subgroup `K₀` contains a descending sequence of compact open subgroups, each
-normalized by `K₀`, which is a basis of neighbourhoods of the identity. -/
-theorem exists_hasAntitoneBasis_conj_smul_eq [NonarchimedeanGroup G] [FirstCountableTopology G]
-    (K₀ : CompactOpenSubgroup G) :
-    ∃ U : ℕ → CompactOpenSubgroup G, (𝓝 (1 : G)).HasAntitoneBasis (fun r ↦ (U r : Set G)) ∧
-      (∀ r, U r ≤ K₀) ∧ ∀ r, ∀ k ∈ K₀, ContinuousAut.conj k • U r = U r := by
-  obtain ⟨x, hx⟩ := (𝓝 (1 : G)).exists_antitone_basis
-  -- An open subgroup inside each `x n`, and the normal core in `K₀` of its trace on `K₀`.
-  have hW (n : ℕ) : ∃ W : OpenSubgroup G, (W : Set G) ⊆ x n :=
-    NonarchimedeanGroup.is_nonarchimedean _ (hx.mem n)
-  choose W hW using hW
-  choose N hNW hNK hNc using fun n ↦ K₀.exists_le_conj_smul_eq (W n)
-  -- The running intersections of the normal cores.
-  let U : ℕ → CompactOpenSubgroup G := fun k ↦ Nat.rec (N 0) (fun i M ↦ M ⊓ N (i + 1)) k
-  have hUN (n : ℕ) : U n ≤ N n := by
-    cases n with
-    | zero => exact le_rfl
-    | succ i => exact inf_le_right
-  have hUc (n : ℕ) : ∀ k ∈ K₀, ContinuousAut.conj k • U n = U n := by
-    intro k hk
-    induction n with
-    | zero => exact hNc 0 k hk
-    | succ i ih =>
-      -- `U (i + 1)` is `U i ⊓ N (i + 1)` by the recursion defining `U`.
-      change ContinuousAut.conj k • (U i ⊓ N (i + 1)) = U i ⊓ N (i + 1)
-      rw [ContinuousAut.smul_compactOpenSubgroup_inf, ih, hNc _ k hk]
-  have hUx (n : ℕ) : ∀ y ∈ U n, y ∈ x n :=
-    fun _ h ↦ hW n (hNW n (hUN n h))
-  refine ⟨U, ⟨hx.1.to_hasBasis (fun n _ ↦ ⟨n, trivial, hUx n⟩)
-    fun n _ ↦ hx.1.mem_iff.1 (U n).mem_nhds_one,
-    antitone_nat_of_succ_le fun _ ↦ SetLike.coe_subset_coe.2 inf_le_left⟩,
-    fun n ↦ (hUN n).trans (hNK n), hUc⟩
-
-end NormalBasis
-
-end CompactOpenSubgroup
-
-end TauCeti
