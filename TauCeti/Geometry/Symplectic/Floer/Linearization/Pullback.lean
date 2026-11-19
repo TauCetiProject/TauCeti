@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Linearization
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Symplectic.Cayley.Tangent
 
@@ -16,7 +16,7 @@ A Riemann surface with cylindrical ends, such as the pair of pants, carries no g
 and the Fredholm theory of the linearized Floer operator on it is assembled chart by chart: an
 affine chart on the compact part, and the cylinder coordinates `(s, t)` on each end, where the
 operator converges to a translation-invariant one. This file shows how the coordinate operators of
-`TauCeti.Geometry.Symplectic.Floer.Linearization` change under a holomorphic change of domain
+`TauCeti.Geometry.Symplectic.Floer.Linearization.Basic` change under a holomorphic change of domain
 coordinates `φ : ℝ × ℝ → ℝ × ℝ`, so that the operator read in one chart can be compared with the
 operator read in another.
 
