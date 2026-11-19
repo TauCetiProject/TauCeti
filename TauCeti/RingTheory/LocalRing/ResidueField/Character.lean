@@ -79,9 +79,8 @@ theorem exists_algHom_algebraicClosure_ker_le [IsDomain O] [Algebra.HasGoingDown
     rw [RingHom.injective_iff_ker_eq_bot, ← hbot]
     ext x
     simp [Ideal.under, ← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.eq_zero_iff_mem]
-  have hΩ : Function.Injective (algebraMap O (AlgebraicClosure K)) := by
-    rw [IsScalarTower.algebraMap_eq O K (AlgebraicClosure K)]
-    exact (algebraMap K _).injective.comp (IsFractionRing.injective O K)
+  have hΩ := algebraMap_injective_of_field_isFractionRing O (AlgebraicClosure K) K
+    (AlgebraicClosure K)
   have := Module.isTorsionFree_iff_algebraMap_injective.mpr hinj
   have := Module.isTorsionFree_iff_algebraMap_injective.mpr hΩ
   have : Algebra.IsAlgebraic O (H ⧸ P) := Algebra.IsIntegral.isAlgebraic

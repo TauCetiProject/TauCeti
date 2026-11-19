@@ -97,19 +97,6 @@ private theorem exists_lift_of_isLocalization (χ : H →ₐ[O] ResidueField O) 
 
 end ValuationSubring
 
-section FractionRing
-
-variable (O K L : Type*) [CommRing O] [Field K] [Field L] [Algebra O K] [IsFractionRing O K]
-  [Algebra K L] [Algebra O L] [IsScalarTower O K L]
-
-include K in
-/-- A ring maps injectively into any field extension of its fraction field. -/
-private theorem algebraMap_injective_of_isFractionRing : Function.Injective (algebraMap O L) := by
-  rw [IsScalarTower.algebraMap_eq O K L]
-  exact (algebraMap K L).injective.comp (IsFractionRing.injective O K)
-
-end FractionRing
-
 section IntegralClosure
 
 variable {O H : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O] [CommRing H]
@@ -129,10 +116,7 @@ private theorem exists_lift_of_isIntegralClosure (χ : H →ₐ[O] ResidueField 
       (maximalIdeal V).under O = maximalIdeal O ∧ ∀ h, residue V (ψ h) = j (χ h) := by
   have : IsDedekindDomain B := TauCeti.IsIntegralClosure.isDedekindDomain O K L B
   have : IsFractionRing B L := IsIntegralClosure.isFractionRing_of_finite_extension O K L B
-  have hOB : Function.Injective (algebraMap O B) := by
-    refine Function.Injective.of_comp (f := algebraMap B L) ?_
-    rw [← RingHom.coe_comp, ← IsScalarTower.algebraMap_eq]
-    exact algebraMap_injective_of_isFractionRing O K L
+  have hOB := algebraMap_injective_of_field_isFractionRing O B K L
   -- `B` is integral over `H` through `ψB`, so `ker χ` is the pullback of a prime `𝔓` of `B`.
   have : Algebra.IsIntegral O B := IsIntegralClosure.isIntegral_algebra O L
   have hψB : (ψB : H →+* B).IsIntegral := RingHom.IsIntegral.tower_top (algebraMap O H) _ <| by
@@ -145,8 +129,7 @@ private theorem exists_lift_of_isIntegralClosure (χ : H →ₐ[O] ResidueField 
     obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
     intro h
     have : algebraMap O H ϖ ∈ RingHom.ker χ := by
-      rw [RingHom.mem_ker, χ.commutes, ResidueField.algebraMap_eq, residue_eq_zero_iff]
-      exact (mem_maximalIdeal _).mpr hϖ.not_isUnit
+      simpa [ResidueField.algebraMap_eq] using hϖ.not_isUnit
     rw [← hunder, h] at this
     simp [map_eq_zero_iff _ hOB, hϖ.ne_zero] at this
   obtain ⟨v, rfl⟩ : ∃ v : HeightOneSpectrum B, v.asIdeal = 𝔓 := ⟨⟨𝔓, h𝔓, hne⟩, rfl⟩
@@ -210,7 +193,8 @@ theorem exists_valuationSubring_lift [Algebra.HasGoingDown O H] (χ : H →ₐ[O
     exists_lift_of_isIntegralClosure (L := L) K χ ψB fun x hx ↦ hφ <| by
       rw [RingHom.mem_ker] at hx ⊢
       rw [← hψB, hx, ZeroMemClass.coe_zero, ZeroMemClass.coe_zero]
-  refine ⟨L, V, _, j, ψ, hL, hV, fun x y hxy ↦ algebraMap_injective_of_isFractionRing O K L ?_,
+  refine ⟨L, V, _, j, ψ, hL, hV, fun x y hxy ↦
+    algebraMap_injective_of_field_isFractionRing O L K L ?_,
     j.injective, fun x ↦ ?_, hres, hmax, hψ⟩
   · rw [← hcompat, ← hcompat, hxy]
   · rw [hcompat, IsScalarTower.algebraMap_apply O K L]
