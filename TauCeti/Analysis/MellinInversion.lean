@@ -42,7 +42,7 @@ that project's contour argument.
 The all-order height profile generalizes the first-order uniform estimates in the same PNT+
 file, which credits Lawrence Wu for its uniform little-o arguments. Here the denominator uses
 Mathlib's Pochhammer polynomial and its leading-monomial asymptotics. The profile supplies the
-horizontal-tail estimates for Landau's iterated Perron formula (ExplicitZetaBounds §6.1a).
+horizontal-tail estimates for Landau's iterated Perron formula.
 
 ## Main results
 
