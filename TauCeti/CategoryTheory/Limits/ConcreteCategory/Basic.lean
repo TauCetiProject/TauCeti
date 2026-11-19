@@ -32,13 +32,14 @@ category come from a common stage. -/
 theorem isColimit_exists_rep_fin {C : Type*} [Category C]
     {FC : C → C → Type*} {CC : C → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
     [ConcreteCategory C FC] {J : Type*} [Category J] [IsFiltered J] (F : J ⥤ C)
-    [PreservesColimit F (forget C)] {c : Cocone F} (hc : IsColimit c) {l : ℕ}
-    (x : Fin l → ToType c.pt) :
-    ∃ (k : J) (y : Fin l → ToType (F.obj k)), ∀ i, c.ι.app k (y i) = x i := by
+    [PreservesColimit F (forget C)] {c : Cocone F} (hc : IsColimit c) {ι : Type*} [Finite ι]
+    (x : ι → ToType c.pt) :
+    ∃ (k : J) (y : ι → ToType (F.obj k)), ∀ i, c.ι.app k (y i) = x i := by
   classical
+  cases nonempty_fintype ι
   choose j y hy using fun i => isColimit_exists_rep F hc (x i)
   let O : Finset J := Finset.univ.image j
-  have hO (i : Fin l) : j i ∈ O := Finset.mem_image_of_mem j (Finset.mem_univ i)
+  have hO (i : ι) : j i ∈ O := Finset.mem_image_of_mem j (Finset.mem_univ i)
   refine ⟨IsFiltered.sup O ∅, fun i => F.map (IsFiltered.toSup O ∅ (hO i)) (y i), fun i => ?_⟩
   rw [← hy i, ← c.w (IsFiltered.toSup O ∅ (hO i)), ConcreteCategory.comp_apply]
 

@@ -103,8 +103,7 @@ instance : IsDirectedOrder (BasicNeighbourhood p) :=
 instance : OrderBot (BasicNeighbourhood p) where
   bot := ⟨1, (p : PrimeSpectrum A).asIdeal.one_notMem⟩
   bot_le f := by
-    change basicOpen f.elem ≤ basicOpen 1
-    rw [basicOpen_one]
+    rw [le_def, basicOpen_one]
     exact le_top
 
 @[simp]
