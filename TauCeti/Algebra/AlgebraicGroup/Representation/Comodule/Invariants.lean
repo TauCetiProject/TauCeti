@@ -26,7 +26,7 @@ finite, and the test algebras include the nonreduced ones. A linear map whose sc
 intertwine two point representations sends invariants to invariants.
 
 The comodule form of these statements, for an explicit comodule and with no antipode, is in
-`TauCeti.Algebra.Coalgebra.Comodule.PointAction`.
+`TauCeti.Algebra.Coalgebra.Comodule.PointsAction`.
 
 ## Main declarations
 
