@@ -29,7 +29,8 @@ scale `M`* (`TauCeti.TangentIntegralSeries A M χ`) when `Mⁿ⁻¹ aₙ` is int
 Over a field this says that the normalized rescaling `χ(M X) / M` is `A`-integral
 (`TauCeti.tangentIntegralSeries_iff_integralSeries_inv_smul_rescale`). The tangent lattice is
 stronger than the ordinary lattice at the same integral scale: `X + X² / 4` lies in the ordinary
-lattice at scale `2`, but in the tangent lattice only from scale `4` on.
+lattice at scale `2`, and in the tangent lattice at scale `4` (and at its multiples) but not at
+scale `2`.
 
 These lattices measure the denominators of the Taylor coefficients of arithmetic power series,
 such as algebraic series and the inverse series of a normalized coordinate, in the arithmetic
@@ -165,11 +166,8 @@ theorem rescale_mem_scaledIntegralSeries_iff {M N : R} {f : R⟦X⟧} :
 /-- Multiplying the scale by an integral factor enlarges the integral lattice. -/
 theorem scaledIntegralSeries_le_mul (M : R) (c : A) :
     scaledIntegralSeries A M ≤ scaledIntegralSeries A (M * algebraMap A R c) := by
-  intro f hf
-  rw [mem_scaledIntegralSeries_iff] at hf ⊢
-  intro n
-  obtain ⟨b, hb⟩ := hf n
-  exact ⟨c ^ n * b, by rw [map_mul, map_pow, hb]; ring⟩
+  rintro f ⟨g, hg⟩
+  exact ⟨rescale c g, by rw [← rescale_map, hg, rescale_rescale]⟩
 
 /-- If `M` divides `N`, the integral lattice at scale `M` is contained in the one at scale `N`. -/
 theorem scaledIntegralSeries_le_of_dvd {M N : ℕ} (h : M ∣ N) :
@@ -282,8 +280,8 @@ example : 1 + C (1 / 2 : ℚ) * X ∈ scaledIntegralSeries ℤ (2 : ℚ) ∧
   · obtain ⟨a, ha⟩ := mem_scaledIntegralSeries_int_iff.mp h 1
     exact not_exists_intCast_eq_half ⟨a, by simpa [coeff_one] using ha⟩
 
-/-- `X + X² / 4` lies in the ordinary integral lattice at scale `2`, but in the tangent lattice
-only at scale `4`, not at scale `2`. -/
+/-- `X + X² / 4` lies in the ordinary integral lattice at scale `2`, and in the tangent lattice
+at scale `4`, but not at scale `2`. -/
 example : X + C (1 / 4 : ℚ) * X ^ 2 ∈ scaledIntegralSeries ℤ (2 : ℚ) ∧
     ¬ TangentIntegralSeries ℤ (2 : ℚ) (X + C (1 / 4 : ℚ) * X ^ 2) ∧
     TangentIntegralSeries ℤ (4 : ℚ) (X + C (1 / 4 : ℚ) * X ^ 2) := by
