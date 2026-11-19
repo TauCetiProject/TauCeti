@@ -255,7 +255,6 @@ theorem mem_holomorphyRing_iff_exists_mul_pow_mem_riemannRochSpace (hF : IsFunct
   · intro hz
     rcases eq_or_ne z 0 with rfl | hz0
     · exact ⟨0, by simp⟩
-    classical
     have hT : {P : Place k F | P.ord z < 0}.Finite := Place.finite_setOf_ord_neg hF z
     set r : ℕ := hT.toFinset.sup fun P ↦ (-P.ord z).toNat
     refine ⟨r, (mem_riemannRochSpace_iff_neg_le_ord (mul_ne_zero hz0 (pow_ne_zero r hf0))).mpr
@@ -488,7 +487,6 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
     (hbase : ∀ P : Place k F, ∃ i, P.valuation (s i) = WithZero.exp (D.coeff P)) {m : ℕ}
     (hm : 0 < m) {y : sectionRing D} (hy : y ∈ sectionRingGrade D m) :
     ∃ r : ℕ, y ^ r ∈ Ideal.span (Set.range fun i ↦ monomialDegreeOne (hs i)) := by
-  classical
   set a := (y : F[X]).coeff m
   have ha : a ∈ riemannRochSpace (m • D) := mem_coeffSubalgebra_iff.mp y.property m
   have hy_eq : (y : F[X]) = Polynomial.monomial m a :=
