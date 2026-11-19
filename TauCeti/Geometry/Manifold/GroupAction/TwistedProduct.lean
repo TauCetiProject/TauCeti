@@ -18,10 +18,10 @@ import TauCeti.Geometry.Manifold.Submersion.Basic
 Let `K` be a subgroup of a finite-dimensional real Lie group `G` which is a finite-dimensional
 Lie group for the subspace topology, such as a compact or, by Cartan's theorem
 (`TauCeti.Lie.isEmbeddedLieSubgroup_of_isClosed`), any closed subgroup; it is then closed
-(`TauCeti.Lie.isClosed_of_lieGroup`). Let `K` act smoothly on a boundaryless Hausdorff manifold
-`B`, for instance on a `K`-invariant open subset of a representation. The **twisted product**
-`G ×_K B` is the orbit space of the action `k • (g, b) = (g * k⁻¹, k • b)` of `K` on `G × B`.
-This action is free and proper, so the quotient manifold theorem
+(`TauCeti.Lie.isClosed_of_chartedSpace`). Let `K` act smoothly on a boundaryless Hausdorff
+manifold `B`, for instance on a `K`-invariant open subset of a representation. The **twisted
+product** `G ×_K B` is the orbit space of the action `k • (g, b) = (g * k⁻¹, k • b)` of `K` on
+`G × B`. This action is free and proper, so the quotient manifold theorem
 (`ProperSMul.instIsManifoldOrbitRelQuotient`) makes `G ×_K B` a smooth manifold of dimension
 `dim G + dim B - dim K` for which the projection `(g, b) ↦ [g, b]` is a smooth submersion. The
 group `G` acts on it smoothly from the left by `g • [g', b] = [g * g', b]`.
@@ -138,6 +138,7 @@ instance instSMulPairs : SMul K (Pairs G B) where
   smul k p := Pairs.mk (p.toProd.1 * (k : G)⁻¹) (k • p.toProd.2)
 
 /-- `k • (g, b) = (g * k⁻¹, k • b)`. -/
+@[simp]
 theorem Pairs.smul_mk (k : K) (g : G) (b : B) :
     k • (Pairs.mk g b : Pairs G B) = Pairs.mk (g * (k : G)⁻¹) (k • b) :=
   (rfl)
@@ -266,6 +267,7 @@ theorem proj_mk (g : G) (b : B) : proj (mk K g b) = mk K g () :=
   (rfl)
 
 /-- The projection is `G`-equivariant. -/
+@[simp]
 theorem proj_smul (g : G) (x : TwistedProduct K B) : proj (g • x) = g • proj x :=
   ind (motive := fun x ↦ proj (g • x) = g • proj x) (fun _ _ ↦ rfl) x
 
@@ -289,6 +291,7 @@ theorem proj_zeroSection : LeftInverse proj (zeroSection hb₀) :=
   fun x ↦ ind (motive := fun x ↦ proj (zeroSection hb₀ x) = x) (fun _ _ ↦ rfl) x
 
 /-- The zero section is `G`-equivariant. -/
+@[simp]
 theorem zeroSection_smul (g : G) (x : TwistedProduct K Unit) :
     zeroSection hb₀ (g • x) = g • zeroSection hb₀ x :=
   ind (motive := fun x ↦ zeroSection hb₀ (g • x) = g • zeroSection hb₀ x) (fun _ _ ↦ rfl) x
@@ -374,8 +377,9 @@ for the free proper action of `K` on `G × B`. It is a manifold
 abbrev chartedSpace :
     ChartedSpace (ProperSMul.QuotientModelSpace EK (EG × EB)) (TwistedProduct K B) :=
   letI : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
+  letI : T2Space G := IG.t2Space_of_lieGroup ∞
   letI : ContinuousSMul K B := ContMDiffSMul.continuousSMul (I := IK) (I' := IB) ∞
-  haveI : IsClosed (K : Set G) := Lie.isClosed_of_lieGroup IK IG
+  haveI : IsClosed (K : Set G) := Lie.isClosed_of_chartedSpace IK
   ProperSMul.orbitRelQuotientChartedSpace IK K (IG.prod IB) (Pairs G B)
 
 /-- **The twisted product `G ×_K B` is a smooth manifold.** -/
@@ -383,8 +387,9 @@ instance instIsManifold :
     let _ := chartedSpace K B IK IG IB
     IsManifold 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB)) ∞ (TwistedProduct K B) :=
   letI : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
+  letI : T2Space G := IG.t2Space_of_lieGroup ∞
   letI : ContinuousSMul K B := ContMDiffSMul.continuousSMul (I := IK) (I' := IB) ∞
-  haveI : IsClosed (K : Set G) := Lie.isClosed_of_lieGroup IK IG
+  haveI : IsClosed (K : Set G) := Lie.isClosed_of_chartedSpace IK
   ProperSMul.instIsManifoldOrbitRelQuotient
 
 /-- **The projection `G × B → G ×_K B` is a smooth submersion.** -/
@@ -393,8 +398,9 @@ theorem isSubmersion_mk :
     IsSubmersion (IG.prod IB) 𝓘(ℝ, ProperSMul.QuotientModelSpace EK (EG × EB)) ∞
       fun p : G × B ↦ mk K p.1 p.2 :=
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
+  let _ : T2Space G := IG.t2Space_of_lieGroup ∞
   let _ : ContinuousSMul K B := ContMDiffSMul.continuousSMul (I := IK) (I' := IB) ∞
-  have : IsClosed (K : Set G) := Lie.isClosed_of_lieGroup IK IG
+  have : IsClosed (K : Set G) := Lie.isClosed_of_chartedSpace IK
   have h := ProperSMul.isSubmersion_quotientMk (I := IK) (G := K) (I' := IG.prod IB)
     (M := Pairs G B)
   h
