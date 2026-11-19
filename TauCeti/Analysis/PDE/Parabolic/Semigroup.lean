@@ -22,8 +22,13 @@ Dirichlet realization `TauCeti.PDE.dirichletOperator` of `L`. The motivating exa
 
 `∂ₜu + L u = 0` in `Ω`, `u = 0` on `∂Ω`, `u(0) = u₀`.
 
-This file constructs the semigroup and describes its generator; it does not prove that
-`t ↦ e^{-tL} u₀` solves this parabolic problem.
+This file constructs the semigroup and describes its generator. The identification with the
+parabolic problem is in `TauCeti.Analysis.PDE.Parabolic.Autonomous`: the continuous
+`L²(Ω)`-valued representative of every weak solution is the orbit `t ↦ e^{-tL} u₀`
+(`TauCeti.PDE.eqOn_realOperator_dirichletSemigroup_of_hasWeakLineDerivOn_gelfandDual`), and,
+for the semigroup of any bounded coercive form on a Gelfand triple with separable `V`, every orbit
+is the continuous representative of a weak solution
+(`IsCoercive.exists_hasWeakLineDerivOn_gelfandDual_ae_eq_realOperator_formSemigroup`).
 
 The generator is `-TauCeti.PDE.dirichletOperator` (`TauCeti.PDE.dirichletSemigroup_generator`),
 so the description of the Dirichlet realization in `TauCeti.Analysis.PDE.Spectrum.Operator`
