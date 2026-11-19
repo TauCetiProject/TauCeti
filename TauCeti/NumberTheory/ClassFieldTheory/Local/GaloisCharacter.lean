@@ -184,10 +184,7 @@ theorem padicGaloisCharacter_geometricArtinMap (δ : ℚ_[p]ˣ →ₜ* A) (x : �
     padicGaloisCharacter δ (geometricArtinMap ℚ_[p] x) = δ x := by
   -- The cyclotomic factor gives `δ(x|x|)` and the unramified factor gives `δ(p) ^ v(x)`.
   conv_rhs => rw [DFunLike.congr_fun δ.eq_unramifiedCharacter_mul_comp_padicUnitPart x]
-  rw [padicGaloisCharacter_apply, abelianizedLocalCyclotomicCharacter_geometricArtinMap_padic,
-    unramifiedCoordinate_geometricArtinMap, map_inv, zHat.lift_ofInt, inv_zpow, inv_inv,
-    mul_apply, unramifiedCharacter_apply]
-  exact mul_comm _ _
+  simp [padicGaloisCharacter_apply, mul_comm]
 
 /-- **Uniqueness of the corresponding Galois character.** A continuous character of `G_{ℚ_p}^ab`
 that sends the geometric Artin symbol of every `x` to `δ(x)` is `padicGaloisCharacter δ`. -/

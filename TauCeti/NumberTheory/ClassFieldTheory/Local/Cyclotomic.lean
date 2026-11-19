@@ -196,7 +196,7 @@ theorem localArtinMap_cyclotomic_padic (p : ℕ) [Fact p.Prime] (L : Type*) [Fie
     {m : ℕ} (hm : p.Coprime m) {ζ : L} (hζ : ζ ^ m = 1) :
     σ ζ = ζ ^ p := by
   have h := localArtinMap_cyclotomic_uniformizer ℚ_[p] L ι
-    ((isUniformizer_def _).2 (normalizedValuation_padicPrimeUnit p)) hσ
+    (Padic.isUniformizer_natCast_self p) hσ
     (by rwa [Padic.natCard_residueField]) hζ
   rwa [Padic.natCard_residueField] at h
 
@@ -210,9 +210,7 @@ theorem localArtinMap_Q2_zeta5 (E : Type*) [Field E] [Algebra ℚ_[2] E]
       Additive.ofMul (Group.Abelianization.of σ))
     {ζ : E} (hζ : ζ ^ 5 = 1) :
     σ ζ = ζ ^ 2 :=
-  localArtinMap_cyclotomic_padic 2 E ι
-    (by rwa [show padicPrimeUnit 2 = Units.mk0 (2 : ℚ_[2]) two_ne_zero from Units.ext (by simp)])
-    (by norm_num) hζ
+  localArtinMap_cyclotomic_padic 2 E ι (by simpa [padicPrimeUnit_eq_mk0] using hσ) (by norm_num) hζ
 
 /-! ### The cyclotomic character of absolute Artin symbols -/
 
@@ -389,7 +387,7 @@ theorem exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one (u : ℤ_[p]�
     (artinMap ℚ_[p] (padicPrimeUnit p))
   have hτχ := localCyclotomicCharacter_artinMap_padic_uniformizer p τ hτ
   have hτF := isArithFrobeniusLift_of_mk_eq_artinMap_uniformizer ℚ_[p]
-    ((isUniformizer_def _).2 (normalizedValuation_padicPrimeUnit p)) τ hτ
+    (Padic.isUniformizer_natCast_self p) τ hτ
   have hτz (z : AlgebraicClosure ℚ_[p]) (hz : z ^ (p ^ f - 1) = 1) :
       DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) τ z = z ^ p := by
     -- The roots of unity of order `p ^ f - 1` are the nonzero roots of `X ^ (p ^ f) - X`.

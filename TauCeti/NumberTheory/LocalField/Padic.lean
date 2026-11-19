@@ -288,6 +288,24 @@ theorem irreducible_X_sq_add_X_add_one : Irreducible (X ^ 2 + X + 1 : ℚ_[5][X]
 
 end Padic
 
+namespace TauCeti
+
+/-- The residue prime `p` as a unit of `ℚ_[p]`. -/
+noncomputable def padicPrimeUnit : ℚ_[p]ˣ :=
+  Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)
+
+/-- The unit `TauCeti.padicPrimeUnit p` is `p`. -/
+@[simp]
+theorem coe_padicPrimeUnit : (padicPrimeUnit p : ℚ_[p]) = p :=
+  (rfl)
+
+/-- The unit `TauCeti.padicPrimeUnit p` is `Units.mk0 p`. -/
+theorem padicPrimeUnit_eq_mk0 :
+    padicPrimeUnit p = Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero) :=
+  (rfl)
+
+end TauCeti
+
 namespace TauCeti.Padic
 
 /-- The residue prime `p` is a uniformizer of the integer ring of `ℚ_[p]`. -/
@@ -313,13 +331,11 @@ theorem irreducible_intCast_mul_natCast_self {m : ℤ} (hm : ¬ (p : ℤ) ∣ m)
     (irreducible_natCast_self p)
 
 /-- The residue prime `p` is a uniformizer of `ℚ_[p]`. -/
-theorem isUniformizer_natCast_self :
-    IsUniformizer ℚ_[p]
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) := by
+theorem isUniformizer_natCast_self : IsUniformizer ℚ_[p] (padicPrimeUnit p) := by
   rw [isUniformizer_def]
   apply Multiplicative.toAdd.injective
-  rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, _root_.Padic.valuation_p,
-    toAdd_ofAdd]
+  rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, coe_padicPrimeUnit,
+    _root_.Padic.valuation_p, toAdd_ofAdd]
 
 variable {p} in
 /-- A unit of `ℤ_[p]` has valuation one in `ℚ_[p]`. -/
@@ -340,15 +356,6 @@ theorem spanSingleton_natCast_pow_eq_maximalIdeal_zpow (n : ℕ) :
 end TauCeti.Padic
 
 namespace TauCeti
-
-/-- The residue prime `p` as a unit of `ℚ_[p]`. -/
-noncomputable def padicPrimeUnit : ℚ_[p]ˣ :=
-  Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)
-
-/-- The unit `TauCeti.padicPrimeUnit p` is `p`. -/
-@[simp]
-theorem coe_padicPrimeUnit : (padicPrimeUnit p : ℚ_[p]) = p :=
-  (rfl)
 
 /-- The unit `p` of `ℚ_[p]` has normalized valuation one. -/
 @[simp]

@@ -115,7 +115,7 @@ theorem hilbertSymbol_formula_of_ne_two (hp : p ≠ 2) {a b : ℚ_[p]ˣ} {α β 
         (Units.map (PadicInt.toZMod (p := p) : ℤ_[p] →* ZMod p) v) ^ α := by
   let ι : ℤ_[p]ˣ → 𝒪[ℚ_[p]]ˣ :=
     Units.map ((_root_.Padic.integerRingEquiv p).symm : ℤ_[p] →* 𝒪[ℚ_[p]])
-  let π : ℚ_[p]ˣ := Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)
+  let π : ℚ_[p]ˣ := padicPrimeUnit p
   have hdecomp {c : ℚ_[p]ˣ} {γ : ℤ} {w : ℤ_[p]ˣ} (hc : (c : ℚ_[p]) = (p : ℚ_[p]) ^ γ * w) :
       c = π ^ γ * Units.map (Subring.subtype 𝒪[ℚ_[p]] : 𝒪[ℚ_[p]] →* ℚ_[p]) (ι w) :=
     Units.ext (by simp [hc, π, ι])
@@ -180,8 +180,10 @@ theorem isSquare_intCast_iff_legendreSym_eq_one (hp : p ≠ 2) {n : ℤ} (hn : �
   have hval := _root_.Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq
     (a := Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _)))
     (u := (PadicInt.isUnit_intCast_iff.2 hn).unit) (by simp)
+  have hπ := isUniformizer_natCast_self p
+  rw [padicPrimeUnit_eq_mk0] at hπ
   have h := hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer
-    (_root_.Padic.isUnit_two_integerRing hp) hval (isUniformizer_natCast_self p)
+    (_root_.Padic.isUnit_two_integerRing hp) hval hπ
   rw [← Units.val_eq_one, hilbertSymbol_intCast_self_eq_legendreSym hp hn] at h
   rw [h, ← Units.isSquare_coe_iff, Units.val_mk0]
 
@@ -200,9 +202,11 @@ theorem hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
   have hu : (normalizedValuation ℚ_[p] (-1 : ℚ_[p]ˣ)).toAdd = 0 := by
     rw [toAdd_normalizedValuation_eq_valuation]
     simpa [padicValInt] using valuation_intCast (p := p) (-1)
+  have hπ := TauCeti.Padic.isUniformizer_natCast_self p
+  rw [TauCeti.padicPrimeUnit_eq_mk0] at hπ
   rcases Int.units_eq_one_or (hilbertSymbol (-1 : ℚ_[p]ˣ) _) with h | h
   · have hsq := (hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer h2 hu
-      (TauCeti.Padic.isUniformizer_natCast_self p)).mp h
+      hπ).mp h
     exact absurd (Units.isSquare_coe_iff.mpr hsq)
       (by simpa using not_isSquare_neg_one_of_mod_four_ne_one p (by omega))
   · exact h

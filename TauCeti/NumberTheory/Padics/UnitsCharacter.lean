@@ -154,11 +154,6 @@ theorem padicUnits_hom_ext {M : Type*} [Monoid M] {f g : ℚ_[p]ˣ →* M}
   rw [hx, map_mul, map_mul, map_zpow, map_zpow]
   exact congr_arg₂ (· ^ _ * ·) (Units.ext hp) (Units.ext (hu _))
 
-/-- On `ℚ_p` the unramified character `μ_a` sends `p` to `a`. -/
-theorem unramifiedCharacter_padicPrimeUnit {G : Type*} [Group G] [TopologicalSpace G]
-    (a : G) : unramifiedCharacter ℚ_[p] a (padicPrimeUnit p) = a := by
-  simp
-
 end TauCeti
 
 namespace ContinuousMonoidHom
