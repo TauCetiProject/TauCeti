@@ -49,6 +49,8 @@ and so separate points.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
   algebra is, and `Module.Finite.of_surjective_end`: in particular once a finite-dimensional space
   maps linearly onto its endomorphism algebra.
+* `LinearMap.finrank_range_flip`: a pairing `B : V₁ →ₗ[K] V₂ →ₗ[K] K` with `V₂` reflexive and
+  its transpose `B.flip` have the same rank.
 * `LinearIndependent.exists_dual_forall_apply_eq_ite`: a linearly independent family of vectors
   has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
 * `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
@@ -282,6 +284,24 @@ theorem of_surjective_end {K E S F : Type*} [Field K] [AddCommMonoid E] [Module 
   .of_finite_end K S
 
 end Module.Finite
+
+namespace LinearMap
+
+variable {K V₁ V₂ : Type*} [Field K] [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂]
+  [Module K V₂] [Module.IsReflexive K V₂]
+
+/-- **A pairing and its transpose have the same rank**: for `B : V₁ →ₗ[K] V₂ →ₗ[K] K` with `V₂`
+reflexive, the transposed pairing `B.flip : V₂ →ₗ[K] Module.Dual K V₁` is `B.dualMap` composed
+with the evaluation isomorphism of `V₂`, so its rank is that of `B`
+(`LinearMap.finrank_range_dualMap_eq_finrank_range`). -/
+theorem finrank_range_flip (B : V₁ →ₗ[K] V₂ →ₗ[K] K) :
+    Module.finrank K (range B.flip) = Module.finrank K (range B) := by
+  -- `B.flip` is definitionally `B.dualMap ∘ₗ evalEquiv`, as in Mathlib's
+  -- `LinearMap.dualAnnihilator_ker_eq_range_flip`
+  change Module.finrank K (range (B.dualMap ∘ₗ (Module.evalEquiv K V₂).toLinearMap)) = _
+  rw [range_comp_of_range_eq_top _ (LinearEquiv.range _), finrank_range_dualMap_eq_finrank_range]
+
+end LinearMap
 
 namespace LinearIndependent
 

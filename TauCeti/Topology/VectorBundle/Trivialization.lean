@@ -40,7 +40,9 @@ satisfy the identity and cocycle laws over the relevant base sets
 the first trivialization to its coordinate in the second
 (`Bundle.Trivialization.coordChangeL_apply_snd`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
-point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`).
+point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`). Over the base set, pulling continuous
+linear maps on the model fibre back to a fibre through a linear trivialization is injective
+(`Bundle.Trivialization.injective_comp_continuousLinearMapAt`).
 
 We also record the product trivialization's fibrewise inverse
 (`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
@@ -162,6 +164,15 @@ theorem tendsto_mk_nhds_mk_iff {ι : Type*} {l : Filter ι} {x : ι → B} {x₀
   rw [e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx₀]
   exact Filter.tendsto_congr' (hb.mono fun i hi ↦
     (e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hi _).symm)
+
+/-- Over the base set of a linear trivialization `e`, pulling continuous linear maps on the model
+fibre back to the fibre over `b` through `e` is injective. -/
+theorem injective_comp_continuousLinearMapAt {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {b : B} (hb : b ∈ e.baseSet) :
+    Function.Injective fun c : F →L[𝕜] G ↦ c ∘L e.continuousLinearMapAt 𝕜 b := by
+  intro c c' h
+  ext v
+  simpa [e.continuousLinearMapAt_symmL hb] using DFunLike.congr_fun h (e.symmL 𝕜 b v)
 
 variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
 

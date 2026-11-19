@@ -76,6 +76,8 @@ namespace TauCeti
 
 open SmoothAlmostComplexStructure
 
+section
+
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(ℝ, ℂ) ∞ M]
 
 /-! ### Isothermal charts -/
@@ -317,6 +319,8 @@ theorem isPseudoholomorphic_homeomorph_symm :
       ((homeomorph j).symm_eventuallyEq_symm_transOpenPartialHomeomorph_comp hx)
 
 end IsothermalSurface
+
+end
 
 /-! ### Complex curves -/
 
