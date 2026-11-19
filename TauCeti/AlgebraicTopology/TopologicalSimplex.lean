@@ -9,8 +9,10 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularSet
 public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
+public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
+public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import TauCeti.Topology.Category.TopCat.Action
 
 import TauCeti.Topology.Homotopy.Contractible
@@ -19,10 +21,10 @@ import TauCeti.Topology.Homotopy.Contractible
 # The topological simplices and the singular simplices of a space
 
 The topological `n`-simplex is a standard simplex on a finite nonempty type, up to a universe
-lift, hence contractible and in particular simply connected, and locally path connected. The
-geometric realization `|Δ[n]|` of the standard simplicial simplex, being homeomorphic to it, is
-contractible as well.  This file also names its initial vertex, and the continuous map on the
-topological `n`-simplex that underlies a singular `n`-simplex of a space.
+lift, hence contractible and in particular simply connected, locally path connected, compact and
+Hausdorff. The geometric realization `|Δ[n]|` of the standard simplicial simplex, being
+homeomorphic to it, is contractible as well.  This file also names its initial vertex, and the
+continuous map on the topological `n`-simplex that underlies a singular `n`-simplex of a space.
 
 ## Main declarations
 
@@ -56,6 +58,15 @@ homeomorphic to a standard simplex on a finite nonempty type. -/
 instance contractibleSpace_toTop_stdSimplex (n : SimplexCategory) :
     ContractibleSpace |SSet.stdSimplex.{u}.obj n| :=
   n.toTopHomeo.contractibleSpace
+
+/-- Every topological simplex is compact, being a universe lift of a standard simplex on a finite
+type. -/
+instance compactSpace (n : SimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
+  inferInstanceAs (CompactSpace (ULift (StdSimplex ℝ (Fin (n.len + 1)))))
+
+/-- Every topological simplex is Hausdorff, being a universe lift of a standard simplex. -/
+instance t2Space (n : SimplexCategory) : T2Space (toTop.{u}.obj n) :=
+  inferInstanceAs (T2Space (ULift (StdSimplex ℝ (Fin (n.len + 1)))))
 
 /-- Every topological simplex is locally path connected, being a universe lift of a standard
 simplex on a finite type. -/
