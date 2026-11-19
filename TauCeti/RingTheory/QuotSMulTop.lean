@@ -40,6 +40,7 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 ## Main definitions
 
 * `Ideal.mapQSMulTop`: the `R ⧸ I`-linear map `M ⧸ I • M → N ⧸ I • N` induced by `f : M →ₗ[R] N`.
+* `QuotSMulTop.equivOfIsTorsionBy`: `M ⧸ x M ≃ M` when `x` kills `M`.
 * `QuotSMulTop.quotSpanSingletonComm`: `(R ⧸ (s)) ⧸ r (R ⧸ (s)) ≃ (R ⧸ (r)) ⧸ s (R ⧸ (r))`.
 * `QuotSMulTop.restrictScalarsEquiv`: `N ⧸ (algebraMap R A r) N ≃ N ⧸ r N` as `R`-modules.
 
@@ -134,6 +135,19 @@ theorem neg_eq_self (x : QuotSMulTop (2 : R) M) : -x = x := by
 /-- Modulo a unit, every module is trivial: `x • ⊤ = ⊤` for a unit `x`. -/
 theorem subsingleton_of_isUnit {x : R} (hx : IsUnit x) : Subsingleton (QuotSMulTop x M) :=
   Submodule.Quotient.subsingleton_iff.2 (Submodule.smul_eq_self_of_isUnit hx)
+
+/-- Modulo an element killing `M`, the module is unchanged: `M ⧸ x M ≃ M` when `x • M = 0`. -/
+noncomputable def equivOfIsTorsionBy {x : R} (hx : Module.IsTorsionBy R M x) :
+    QuotSMulTop x M ≃ₗ[R] M :=
+  Submodule.quotEquivOfEqBot _ <| eq_bot_iff.2 fun _ hy ↦ by
+    obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hy
+    exact (Submodule.mem_bot R).2 (@hx y)
+
+/-- The identification `M ⧸ x M ≃ M` sends the residue class of `m` to `m`. -/
+@[simp]
+theorem equivOfIsTorsionBy_mk {x : R} (hx : Module.IsTorsionBy R M x) (m : M) :
+    equivOfIsTorsionBy hx (Submodule.Quotient.mk m) = m :=
+  (rfl)
 
 /-- `Ideal.mapQSMulTop (x) f` is Mathlib's `QuotSMulTop.map x f`, up to the identification of
 `(x) • ⊤` with `x • ⊤`. -/
