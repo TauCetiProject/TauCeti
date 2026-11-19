@@ -43,6 +43,8 @@ This file develops the algebraic structure of `U(p, q)`:
 * `Matrix.IndefiniteUnitaryGroup.mk`: the element of `U(p, q)` given by a matrix `M` with
   `star M * J * M = J`, which is automatically invertible.
 * `Matrix.IndefiniteUnitaryGroup.ofUnitaryProd`: the block-diagonal embedding of `U(p) × U(q)`.
+* `Matrix.IndefiniteUnitaryGroup.reflection`: over a field, the `J`-reflection in a vector `v`
+  with `⟨v, v⟩ ≠ 0`.
 
 ## Main results
 
@@ -171,6 +173,13 @@ theorem star_diagonal_mul_indefiniteDiagonal_mul_diagonal_eq_iff {d : p ⊕ q �
 
 namespace IndefiniteUnitaryGroup
 
+/-- Two elements of `U(p, q)` are equal when their underlying matrices are equal. -/
+@[ext]
+theorem ext {g h : indefiniteUnitaryGroup p q R}
+    (H : ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) = ((h : GL (p ⊕ q) R) : Matrix _ _ R)) :
+    g = h :=
+  Subtype.ext <| Units.ext H
+
 /-- The element of `U(p, q)` given by a matrix `M` with `star M * J * M = J`. Such a matrix is
 invertible, with inverse `J * star M * J`. -/
 def mk (M : Matrix (p ⊕ q) (p ⊕ q) R)
@@ -205,8 +214,8 @@ def ofUnitaryProd : unitaryGroup p R × unitaryGroup q R →* indefiniteUnitaryG
   toFun AB := mk (UnitaryGroup.sum AB) <| by
     rw [UnitaryGroup.coe_sum]
     exact star_fromBlocks_mul_indefiniteDiagonal_mul_fromBlocks AB
-  map_one' := Subtype.ext <| Units.ext <| by simp [-UnitaryGroup.coe_sum]
-  map_mul' AB AB' := Subtype.ext <| Units.ext <| by simp [-UnitaryGroup.coe_sum]
+  map_one' := ext <| by simp [-UnitaryGroup.coe_sum]
+  map_mul' AB AB' := ext <| by simp [-UnitaryGroup.coe_sum]
 
 @[simp]
 theorem coe_ofUnitaryProd (AB : unitaryGroup p R × unitaryGroup q R) :
@@ -215,8 +224,7 @@ theorem coe_ofUnitaryProd (AB : unitaryGroup p R × unitaryGroup q R) :
   UnitaryGroup.coe_sum AB
 
 theorem ofUnitaryProd_injective : Function.Injective (ofUnitaryProd p q R) := fun _ _ h =>
-  UnitaryGroup.sum_injective <| Subtype.ext <| congrArg (fun g : indefiniteUnitaryGroup p q R =>
-    ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R)) h
+  UnitaryGroup.sum_injective <| Subtype.ext <| IndefiniteUnitaryGroup.ext_iff.mp h
 
 /-- **The image of `U(p) × U(q)`.** An element of `U(p, q)` is block diagonal, with unitary
 blocks, as soon as its lower left block vanishes. For `p` a singleton, these are the elements
@@ -227,8 +235,8 @@ theorem mem_range_ofUnitaryProd_iff {g : indefiniteUnitaryGroup p q R} :
   refine ⟨?_, fun h => ?_⟩
   · rintro ⟨AB, rfl⟩
     simp
+  have hM := mem_indefiniteUnitaryGroup_iff.mp g.2
   set M := ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R)
-  have hM : star M * indefiniteDiagonal p q R * M = indefiniteDiagonal p q R := g.2
   rw [← fromBlocks_toBlocks M, h, indefiniteDiagonal_eq_fromBlocks, star_eq_conjTranspose,
     fromBlocks_conjTranspose] at hM
   simp only [fromBlocks_multiply, conjTranspose_zero, Matrix.mul_zero, Matrix.zero_mul,
@@ -240,7 +248,7 @@ theorem mem_range_ofUnitaryProd_iff {g : indefiniteUnitaryGroup p q R} :
     rw [← Matrix.one_mul M.toBlocks₁₂, ← mem_unitaryGroup_iff.mp hAu, Matrix.mul_assoc,
       star_eq_conjTranspose, hB, Matrix.mul_zero]
   rw [hB0, conjTranspose_zero, Matrix.zero_mul, zero_add, neg_inj] at hD
-  refine ⟨(⟨_, hAu⟩, ⟨_, mem_unitaryGroup_iff'.mpr hD⟩), Subtype.ext <| Units.ext ?_⟩
+  refine ⟨(⟨_, hAu⟩, ⟨_, mem_unitaryGroup_iff'.mpr hD⟩), ext ?_⟩
   rw [coe_ofUnitaryProd, ← h, ← hB0]
   exact fromBlocks_toBlocks M
 
@@ -252,66 +260,73 @@ section Field
 
 variable [Field R] [StarRing R]
 
-/-- **A reflection in `U(p, q)`.** For a vector `v` whose value `s = ⟨v, v⟩` under the indefinite
-Hermitian form is nonzero, the reflection `H = 1 - (2 / s) • v (star v ᵥ* J)` in the
-`J`-orthogonal complement of `v` satisfies `star H * J * H = J`. -/
-private theorem star_reflection_mul_indefiniteDiagonal_mul_reflection {v : p ⊕ q → R}
-    (hs0 : star v ⬝ᵥ (indefiniteDiagonal p q R *ᵥ v) ≠ 0) :
-    star (1 - (2 / (star v ⬝ᵥ (indefiniteDiagonal p q R *ᵥ v))) •
-        vecMulVec v (star v ᵥ* indefiniteDiagonal p q R)) * indefiniteDiagonal p q R *
-      (1 - (2 / (star v ⬝ᵥ (indefiniteDiagonal p q R *ᵥ v))) •
-        vecMulVec v (star v ᵥ* indefiniteDiagonal p q R)) = indefiniteDiagonal p q R := by
-  set J := indefiniteDiagonal p q R
-  set s := star v ⬝ᵥ (J *ᵥ v)
-  set P := vecMulVec v (star v ᵥ* J)
-  set c := 2 / s
-  have hss : star s = s := isHermitian_indefiniteDiagonal.star_dotProduct_mulVec_comm v v
-  have hc : star c = c := by simp [c, hss]
-  have hPJ : star P * J = J * P := by
-    rw [star_eq_conjTranspose, conjTranspose_vecMulVec, star_vecMul, star_star,
-      ← star_eq_conjTranspose, star_indefiniteDiagonal, vecMulVec_mul, mul_vecMulVec]
-  have hPP : P * P = s • P := by
-    rw [vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, vecMulVec_smul]
-  have hcs : c * c * s = 2 * c := by
-    simp only [c]
-    field_simp
-  have hHJ : star (1 - c • P) * J = J * (1 - c • P) := by
-    rw [star_sub, star_one, star_smul, hc, sub_mul, Matrix.one_mul, smul_mul_assoc, hPJ,
-      Matrix.mul_sub, Matrix.mul_one, Matrix.mul_smul]
-  calc star (1 - c • P) * J * (1 - c • P) = J * ((1 - c • P) * (1 - c • P)) := by
-        rw [hHJ, Matrix.mul_assoc]
-    _ = J * (1 - (2 * c - c * c * s) • P) := by
-        congr 1
-        simp only [sub_mul, mul_sub, Matrix.mul_one, Matrix.one_mul, smul_mul_smul_comm, hPP,
-          smul_smul]
-        module
-    _ = J := by rw [hcs, sub_self, zero_smul, sub_zero, Matrix.mul_one]
+namespace IndefiniteUnitaryGroup
+
+/-- **The `J`-reflection in a vector `v`.** For a vector `v` whose value `s = ⟨v, v⟩` under the
+indefinite Hermitian form is nonzero, the reflection `1 - (2 / s) • v (star v ᵥ* J)` in the
+`J`-orthogonal complement of `v`, as an element of `U(p, q)`. -/
+def reflection (v : p ⊕ q → R) (hs : star v ⬝ᵥ (indefiniteDiagonal p q R *ᵥ v) ≠ 0) :
+    indefiniteUnitaryGroup p q R :=
+  mk (1 - (2 / (star v ⬝ᵥ (indefiniteDiagonal p q R *ᵥ v))) •
+      vecMulVec v (star v ᵥ* indefiniteDiagonal p q R)) <| by
+    set J := indefiniteDiagonal p q R
+    set s := star v ⬝ᵥ (J *ᵥ v)
+    set P := vecMulVec v (star v ᵥ* J)
+    set c := 2 / s
+    have hss : star s = s := isHermitian_indefiniteDiagonal.star_dotProduct_mulVec_comm v v
+    have hc : star c = c := by simp [c, hss]
+    have hPJ : star P * J = J * P := by
+      simp [P, J, star_eq_conjTranspose, conjTranspose_vecMulVec, star_vecMul, vecMulVec_mul,
+        mul_vecMulVec, isHermitian_indefiniteDiagonal.eq]
+    have hPP : P * P = s • P := by
+      rw [vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, vecMulVec_smul]
+    have hcs : c * c * s = 2 * c := by
+      simp only [c]
+      field_simp
+    have hHJ : star (1 - c • P) * J = J * (1 - c • P) := by simp [sub_mul, mul_sub, hc, hPJ]
+    calc star (1 - c • P) * J * (1 - c • P) = J * ((1 - c • P) * (1 - c • P)) := by
+          rw [hHJ, Matrix.mul_assoc]
+      _ = J * (1 - (2 * c - c * c * s) • P) := by
+          congr 1
+          simp only [sub_mul, mul_sub, Matrix.mul_one, Matrix.one_mul, smul_mul_smul_comm, hPP,
+            smul_smul]
+          module
+      _ = J := by rw [hcs, sub_self, zero_smul, sub_zero, Matrix.mul_one]
+
+@[simp]
+theorem coe_reflection (v : p ⊕ q → R) (hs : star v ⬝ᵥ (indefiniteDiagonal p q R *ᵥ v) ≠ 0) :
+    ((reflection v hs : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) =
+      1 - (2 / (star v ⬝ᵥ (indefiniteDiagonal p q R *ᵥ v))) •
+        vecMulVec v (star v ᵥ* indefiniteDiagonal p q R) :=
+  (rfl)
 
 variable [CharZero R]
 
-/-- A matrix commuting with every matrix `N` with `star N * J * N = J` is diagonal: it commutes
-with the sign change of each coordinate. -/
+/-- A matrix commuting with every element of `U(p, q)` is diagonal: it commutes with the sign
+change of each coordinate. -/
 private theorem eq_diagonal_of_forall_commute {M : Matrix (p ⊕ q) (p ⊕ q) R}
-    (comm : ∀ N : Matrix (p ⊕ q) (p ⊕ q) R,
-      star N * indefiniteDiagonal p q R * N = indefiniteDiagonal p q R → N * M = M * N) :
+    (comm : ∀ h : indefiniteUnitaryGroup p q R,
+      ((h : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) * M =
+        M * ((h : GL (p ⊕ q) R) : Matrix _ _ R)) :
     M = diagonal fun i => M i i := by
   ext i j
   rcases eq_or_ne i j with rfl | hij
   · simp
-  have h := congrFun (congrFun (comm (diagonal (Function.update 1 i (-1)))
+  have h := congrFun (congrFun (comm (mk (diagonal (Function.update 1 i (-1)))
     (star_diagonal_mul_indefiniteDiagonal_mul_diagonal_eq_iff.mpr fun k => by
-      rcases eq_or_ne k i with rfl | hk <;> simp [*])) i) j
-  simp only [diagonal_mul, mul_diagonal, Function.update_self, Function.update_of_ne hij.symm,
-    Pi.one_apply, mul_one, neg_one_mul] at h
+      rcases eq_or_ne k i with rfl | hk <;> simp [*]))) i) j
+  simp only [coe_mk, diagonal_mul, mul_diagonal, Function.update_self,
+    Function.update_of_ne hij.symm, Pi.one_apply, mul_one, neg_one_mul] at h
   rw [diagonal_apply_ne _ hij]
   exact neg_eq_self.mp h
 
-/-- A diagonal matrix commuting with every matrix `N` with `star N * J * N = J` has constant
-diagonal: it commutes with the reflection in `eᵢ + 2 eⱼ`, whose `(i, j)` entry is nonzero. -/
+/-- A diagonal matrix commuting with every element of `U(p, q)` has constant diagonal: it commutes
+with the reflection in `eᵢ + 2 eⱼ`, whose `(i, j)` entry is nonzero. -/
 private theorem apply_self_eq_of_forall_commute {d : p ⊕ q → R}
-    (comm : ∀ N : Matrix (p ⊕ q) (p ⊕ q) R,
-      star N * indefiniteDiagonal p q R * N = indefiniteDiagonal p q R →
-        N * diagonal d = diagonal d * N) (i j : p ⊕ q) :
+    (comm : ∀ h : indefiniteUnitaryGroup p q R,
+      ((h : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) * diagonal d =
+        diagonal d * ((h : GL (p ⊕ q) R) : Matrix _ _ R))
+    (i j : p ⊕ q) :
     d i = d j := by
   rcases eq_or_ne i j with rfl | hij
   · rfl
@@ -324,14 +339,11 @@ private theorem apply_self_eq_of_forall_commute {d : p ⊕ q → R}
   have he (k : p ⊕ q) : e k = 1 ∨ e k = -1 := by rcases k with k | k <;> simp [e]
   have hs0 : e i + 4 * e j ≠ 0 := by
     rcases he i with h1 | h1 <;> rcases he j with h2 | h2 <;> rw [h1, h2] <;> norm_num
-  have h := congrFun (congrFun (comm _
-    (star_reflection_mul_indefiniteDiagonal_mul_reflection (v := v) (hs ▸ hs0))) i) j
-  rw [hs, mul_diagonal, diagonal_mul, mul_comm (d i)] at h
+  have h := congrFun (congrFun (comm (reflection v (hs ▸ hs0))) i) j
+  rw [coe_reflection, hs, mul_diagonal, diagonal_mul, mul_comm (d i)] at h
   refine (mul_left_cancel₀ ?_ h).symm
   have hej : e j ≠ 0 := by rcases he j with h2 | h2 <;> simp [h2]
   simp [indefiniteDiagonal, vecMulVec_apply, vecMul_diagonal, v, hij, hij.symm, hs0, hej, e]
-
-namespace IndefiniteUnitaryGroup
 
 /-- **The centre of `U(p, q)`** over a field of characteristic zero consists of the unit
 scalars `c • 1` with `star c * c = 1`. -/
@@ -340,23 +352,22 @@ theorem mem_center_iff {g : indefiniteUnitaryGroup p q R} :
       ∃ c ∈ unitary R, ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) = scalar (p ⊕ q) c := by
   refine ⟨fun hg => ?_, fun ⟨c, _, hc⟩ => Subgroup.mem_center_iff.mpr fun h => ?_⟩
   swap
-  · refine Subtype.ext <| Units.ext ?_
+  · ext1
     simp only [Subgroup.coe_mul, Units.val_mul]
     rw [hc]
     exact ((scalar_commute c (fun _ => Commute.all _ _) _).eq).symm
+  have hg' := mem_indefiniteUnitaryGroup_iff.mp g.2
   set M := ((g : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R)
-  have comm (N : Matrix (p ⊕ q) (p ⊕ q) R)
-      (hN : star N * indefiniteDiagonal p q R * N = indefiniteDiagonal p q R) :
-      N * M = M * N :=
-    congrArg (fun h : indefiniteUnitaryGroup p q R =>
-      ((h : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R)) (Subgroup.mem_center_iff.mp hg (mk N hN))
+  have comm (h : indefiniteUnitaryGroup p q R) :
+      ((h : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) * M =
+        M * ((h : GL (p ⊕ q) R) : Matrix _ _ R) :=
+    IndefiniteUnitaryGroup.ext_iff.mp (Subgroup.mem_center_iff.mp hg h)
   have hdiag := eq_diagonal_of_forall_commute comm
   rcases isEmpty_or_nonempty (p ⊕ q) with hne | ⟨⟨i₀⟩⟩
   · exact ⟨1, one_mem _, Subsingleton.elim _ _⟩
   have hM : M = diagonal fun _ => M i₀ i₀ := hdiag.trans <| congrArg diagonal <| funext fun i =>
-    apply_self_eq_of_forall_commute (d := fun i => M i i) (fun N hN => hdiag ▸ comm N hN) i i₀
+    apply_self_eq_of_forall_commute (d := fun i => M i i) (fun h => hdiag ▸ comm h) i i₀
   refine ⟨M i₀ i₀, Unitary.mem_iff_star_mul_self.mpr ?_, by rw [scalar_apply]; exact hM⟩
-  have hg' : star M * indefiniteDiagonal p q R * M = indefiniteDiagonal p q R := g.2
   rw [hM] at hg'
   exact star_diagonal_mul_indefiniteDiagonal_mul_diagonal_eq_iff.mp hg' i₀
 

@@ -87,9 +87,8 @@ omit [Fintype p] [Fintype q] in
 /-- The Gram matrix of the indefinite form is the block matrix `diag(1, -1)`. -/
 theorem indefiniteDiagonal_eq_fromBlocks :
     indefiniteDiagonal p q R = Matrix.fromBlocks 1 0 0 (-1) := by
-  rw [indefiniteDiagonal, ← Matrix.fromBlocks_diagonal, Matrix.diagonal_one, ← Matrix.diagonal_one,
-    ← Matrix.diagonal_neg]
-  rfl
+  rw [indefiniteDiagonal, ← Matrix.fromBlocks_diagonal]
+  simp [← Matrix.diagonal_neg]
 
 omit [Fintype p] [Fintype q] in
 /-- The Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite form is self-adjoint. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Matrix.Hermitian
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Data.Matrix.Mul
 
@@ -16,6 +17,9 @@ For a square matrix `A : Matrix n n 𝕜` over an `RCLike` field `𝕜`, the ses
 off-diagonal form `star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v`
 (`Matrix.star_dotProduct_mulVec_eq_sum_diag_add`), with real-part counterpart
 `Matrix.re_star_dotProduct_mulVec_eq_sum_diag_add`.
+
+A Hermitian matrix is determined by its quadratic form: if `star x ⬝ᵥ A *ᵥ x` vanishes for every
+`x`, then `A = 0` (`Matrix.IsHermitian.eq_zero_of_forall_star_dotProduct_mulVec_self`).
 -/
 
 public section
@@ -42,5 +46,16 @@ theorem re_star_dotProduct_mulVec_eq_sum_diag_add (A : Matrix n n 𝕜) (v : n �
       (∑ i, RCLike.re (A i i) * ‖v i‖ ^ 2) + RCLike.re (star v ⬝ᵥ (A - diagonal A.diag) *ᵥ v) := by
   rw [A.star_dotProduct_mulVec_eq_sum_diag_add v, map_add, map_sum]
   simp [RCLike.mul_re]
+
+omit [DecidableEq n] in
+/-- **Polarization for Hermitian matrices.** Over an `RCLike` field, a Hermitian matrix whose
+quadratic form `x ↦ star x ⬝ᵥ (A *ᵥ x)` vanishes is zero. -/
+theorem IsHermitian.eq_zero_of_forall_star_dotProduct_mulVec_self {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (h : ∀ x : n → 𝕜, star x ⬝ᵥ (A *ᵥ x) = 0) : A = 0 := by
+  classical
+  have hT := (isSymmetric_toEuclideanLin_iff.mpr hA).inner_map_self_eq_zero.mp fun x => by
+    rw [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm, star_dotProduct]
+    simpa using congrArg star (h (WithLp.ofLp x))
+  exact toEuclideanLin.injective (by rw [hT, map_zero])
 
 end Matrix
