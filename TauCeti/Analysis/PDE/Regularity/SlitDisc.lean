@@ -13,8 +13,6 @@ import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import Mathlib.Analysis.Normed.Module.RCLike.Extend
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Complex.Euclidean.Prod
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.MeasureTheory.Integral.NormRpow
@@ -50,7 +48,7 @@ harmonic function vanishing on the nearby boundary can have its gradient outside
 
 * `TauCeti.PDE.slitSolution`: the function `√((‖x‖ - x₀) / 2)`, with
   `TauCeti.PDE.slitSolution_polar` (the polar form `r^{1/2} sin(θ/2)`),
-  `TauCeti.PDE.slitSolution_neg` (the value `√t` at `(-t, 0)`),
+  `TauCeti.PDE.slitSolution_toLp_neg_zero` (the value `√t` at `(-t, 0)`),
   `TauCeti.PDE.slitSolution_eq_zero_iff` (it vanishes exactly on `[0, ∞) × {0}`) and
   `TauCeti.PDE.slitSolution_le_sqrt_norm`.
 * `TauCeti.PDE.harmonicAt_slitSolution`, `TauCeti.PDE.harmonicOnNhd_slitSolution_slitUnitDisc`:
@@ -97,17 +95,6 @@ theorem slitSolution_nonneg (x : WithLp 2 (ℝ × ℝ)) : 0 ≤ slitSolution x :
 theorem continuous_slitSolution : Continuous slitSolution :=
   ((continuous_norm.sub (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst).div_const 2).sqrt
 
-/-- The first coordinate is at most the norm. -/
-private theorem fst_le_norm (x : WithLp 2 (ℝ × ℝ)) : x.fst ≤ ‖x‖ :=
-  (le_abs_self _).trans (WithLp.norm_fst_le (x := x))
-
-/-- The negative of the first coordinate is at most the norm. -/
-private theorem neg_fst_le_norm (x : WithLp 2 (ℝ × ℝ)) : -x.fst ≤ ‖x‖ :=
-  (neg_le_abs _).trans (WithLp.norm_fst_le (x := x))
-
-private theorem norm_sq_eq (x : WithLp 2 (ℝ × ℝ)) : ‖x‖ ^ 2 = x.fst ^ 2 + x.snd ^ 2 := by
-  rw [WithLp.prod_norm_sq_eq_of_L2, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs, sq_abs]
-
 /-- **The slit-plane solution vanishes exactly on the ray `[0, ∞) × {0}`.** -/
 theorem slitSolution_eq_zero_iff {x : WithLp 2 (ℝ × ℝ)} :
     slitSolution x = 0 ↔ 0 ≤ x.fst ∧ x.snd = 0 := by
@@ -117,7 +104,7 @@ theorem slitSolution_eq_zero_iff {x : WithLp 2 (ℝ × ℝ)} :
   · intro h
     have h0 : 0 ≤ x.fst := (norm_nonneg x).trans h
     refine ⟨h0, ?_⟩
-    have := norm_sq_eq x
+    have : ‖x‖ ^ 2 = x.fst ^ 2 + x.snd ^ 2 := by simp [WithLp.prod_norm_sq_eq_of_L2]
     nlinarith [norm_nonneg x, sq_nonneg x.snd]
   · rintro ⟨h0, h1⟩
     rw [WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero h1, Real.norm_of_nonneg h0]
@@ -132,8 +119,8 @@ theorem slitSolution_pos_iff {x : WithLp 2 (ℝ × ℝ)} :
 theorem slitSolution_polar {r θ : ℝ} (hr : 0 ≤ r) (hθ₀ : 0 ≤ θ) (hθ : θ ≤ 2 * π) :
     slitSolution (WithLp.toLp 2 (r * cos θ, r * sin θ)) = √r * sin (θ / 2) := by
   have hn : ‖WithLp.toLp 2 (r * cos θ, r * sin θ)‖ = r := by
-    rw [← sq_eq_sq₀ (norm_nonneg _) hr, norm_sq_eq]
-    simp only [WithLp.toLp_fst, WithLp.toLp_snd, mul_pow]
+    rw [← sq_eq_sq₀ (norm_nonneg _) hr, WithLp.prod_norm_sq_eq_of_L2]
+    simp only [WithLp.toLp_fst, WithLp.toLp_snd, Real.norm_eq_abs, sq_abs, mul_pow]
     rw [← mul_add, cos_sq_add_sin_sq, mul_one]
   have hs : 0 ≤ sin (θ / 2) := sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith)
   have hcos : cos θ = 1 - 2 * sin (θ / 2) ^ 2 := by
@@ -148,7 +135,7 @@ theorem slitSolution_polar {r θ : ℝ} (hr : 0 ≤ r) (hθ₀ : 0 ≤ θ) (hθ 
     Real.sqrt_sq (mul_nonneg (Real.sqrt_nonneg r) hs)]
 
 /-- On the negative first axis the slit-plane solution is `√t` at `(-t, 0)`. -/
-theorem slitSolution_neg {t : ℝ} (ht : 0 ≤ t) :
+theorem slitSolution_toLp_neg_zero {t : ℝ} (ht : 0 ≤ t) :
     slitSolution (WithLp.toLp 2 (-t, 0)) = √t := by
   rw [slitSolution, WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero rfl, WithLp.toLp_fst,
     Real.norm_eq_abs, abs_neg, abs_of_nonneg ht]
@@ -156,7 +143,7 @@ theorem slitSolution_neg {t : ℝ} (ht : 0 ≤ t) :
 
 /-- The slit-plane solution is at most `√‖x‖`. -/
 theorem slitSolution_le_sqrt_norm (x : WithLp 2 (ℝ × ℝ)) : slitSolution x ≤ √‖x‖ :=
-  Real.sqrt_le_sqrt (by linarith [neg_fst_le_norm x, norm_nonneg x])
+  Real.sqrt_le_sqrt (by linarith [(neg_le_abs x.fst).trans (WithLp.norm_fst_le (x := x))])
 
 /-! ### Harmonicity -/
 
@@ -190,18 +177,10 @@ theorem harmonicOnNhd_slitSolution :
     InnerProductSpace.HarmonicOnNhd slitSolution {x | x.fst < 0 ∨ x.snd ≠ 0} :=
   fun _ hx => harmonicAt_slitSolution hx
 
-/-- The slit disc lies in the slit plane `ℝ² ∖ [0, ∞) × {0}`. -/
-private theorem slitUnitDisc_subset : slitUnitDisc ⊆ {x | x.fst < 0 ∨ x.snd ≠ 0} := by
-  intro x hx
-  obtain ⟨h1, h2⟩ := mem_slitUnitDisc.1 hx
-  rcases lt_or_ge x.fst 0 with h | h
-  · exact Or.inl h
-  · exact Or.inr (h2 ⟨h, (fst_le_norm x).trans_lt h1⟩)
-
 /-- **The slit-plane solution is harmonic on the slit disc.** -/
 theorem harmonicOnNhd_slitSolution_slitUnitDisc :
     InnerProductSpace.HarmonicOnNhd slitSolution slitUnitDisc :=
-  fun _ hx => harmonicAt_slitSolution (slitUnitDisc_subset hx)
+  fun _ hx => harmonicAt_slitSolution (slitUnitDisc_subset_setOf_fst_lt_zero_or_snd_ne_zero hx)
 
 /-! ### The gradient -/
 
@@ -229,20 +208,14 @@ theorem norm_gradient_slitSolution {x : WithLp 2 (ℝ × ℝ)} (hx : x.fst < 0 �
     rfl
   rw [gradient, LinearIsometryEquiv.norm_map, hu.fderiv,
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e.symm, hre,
-    norm_mul, norm_mul, norm_neg, norm_one, mul_one,
-    show (2⁻¹ : ℂ) - 1 = ((-(2⁻¹ : ℝ) : ℝ) : ℂ) by push_cast; ring, Complex.norm_cpow_real,
-    norm_neg, LinearIsometryEquiv.norm_map, norm_inv, Complex.norm_ofNat]
-  ring
+    show (2⁻¹ : ℂ) - 1 = ((-(2⁻¹ : ℝ) : ℝ) : ℂ) by push_cast; ring]
+  simp only [norm_mul, Complex.norm_cpow_real]
+  simp [z, div_eq_inv_mul]
 
 /-- The slit-plane solution is continuously differentiable off the ray `[0, ∞) × {0}`. -/
 private theorem contDiffOn_slitSolution :
     ContDiffOn ℝ 1 slitSolution {x | x.fst < 0 ∨ x.snd ≠ 0} := fun _ hx =>
   ((harmonicAt_slitSolution hx).1.of_le (by norm_num)).contDiffWithinAt
-
-/-- The slit plane `ℝ² ∖ [0, ∞) × {0}` is open. -/
-private theorem isOpen_slitPlane : IsOpen {x : WithLp 2 (ℝ × ℝ) | x.fst < 0 ∨ x.snd ≠ 0} :=
-  (isOpen_lt (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst continuous_const).union
-    (isOpen_ne_fun (WithLp.prod_continuous_ofLp 2 ℝ ℝ).snd continuous_const)
 
 /-! ### Hölder continuity -/
 
@@ -304,30 +277,26 @@ theorem not_holderOnWith_slitSolution {α : ℝ≥0} (hα : 2⁻¹ < α) (C : �
   have ht0 : (0 : ℝ) < t := ht
   have hdist :
       dist (WithLp.toLp 2 (-(2 * t), (0 : ℝ))) (WithLp.toLp 2 (-(1 * t), (0 : ℝ))) = t := by
-    rw [dist_eq_norm, ← WithLp.toLp_sub, Prod.mk_sub_mk, sub_zero,
-      WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero rfl, WithLp.toLp_fst,
-      show -(2 * t) - -(1 * t) = -t by ring, norm_neg, Real.norm_of_nonneg ht0.le]
+    rw [dist_eq_norm, ← WithLp.toLp_sub, WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero (by simp)]
+    simp only [WithLp.toLp_fst, Prod.fst_sub, Real.norm_eq_abs]
+    rw [show -(2 * t) - -(1 * t) = -t by ring, abs_neg, abs_of_pos ht0]
   have hd := h.dist_le ht2 ht1
-  rw [hdist, Real.dist_eq, slitSolution_neg (by positivity), slitSolution_neg (by positivity),
-    one_mul, Real.sqrt_mul zero_le_two, show √2 * √t - √t = (√2 - 1) * √t by ring,
-    abs_of_pos (mul_pos (sub_pos.2 hsqrt2) (Real.sqrt_pos.2 ht0))] at hd
+  rw [hdist, Real.dist_eq, slitSolution_toLp_neg_zero (by positivity),
+    slitSolution_toLp_neg_zero (by positivity), one_mul, Real.sqrt_mul zero_le_two] at hd
   -- `(√2 - 1) √t ≤ C t ^ α = (C t ^ (α - 1/2)) √t < (√2 - 1) √t`.
   have : (C : ℝ) * t ^ (α : ℝ) = ((C : ℝ) * t ^ ((α : ℝ) - 2⁻¹)) * √t := by
     rw [Real.sqrt_eq_rpow, ← one_div, mul_assoc, ← Real.rpow_add ht0, one_div, sub_add_cancel]
   rw [this] at hd
-  nlinarith [Real.sqrt_pos.2 ht0]
+  nlinarith [Real.sqrt_pos.2 ht0, le_abs_self (√2 * √t - √t)]
 
 /-! ### Sobolev integrability -/
-
-/-- The Euclidean plane `WithLp 2 (ℝ × ℝ)` has dimension `2`. -/
-private theorem finrank_withLp : Module.finrank ℝ (WithLp 2 (ℝ × ℝ)) = 2 :=
-  Complex.equivRealProdLp.toLinearEquiv.finrank_eq.symm.trans Complex.finrank_real_complex
 
 /-- The gradient of the slit-plane solution is continuous off the ray `[0, ∞) × {0}`. -/
 private theorem continuousOn_gradient_slitSolution :
     ContinuousOn (∇ slitSolution) {x | x.fst < 0 ∨ x.snd ≠ 0} :=
   (InnerProductSpace.toDual ℝ (WithLp 2 (ℝ × ℝ))).symm.continuous.comp_continuousOn
-    (contDiffOn_slitSolution.continuousOn_fderiv_of_isOpen isOpen_slitPlane le_rfl)
+    (contDiffOn_slitSolution.continuousOn_fderiv_of_isOpen
+      isOpen_setOf_fst_lt_zero_or_snd_ne_zero le_rfl)
 
 /-- The gradient of the slit-plane solution is `p`-integrable on a bounded set off the ray
 `[0, ∞) × {0}` when `p < 4`: its length `‖x‖ ^ (-1/2) / 2` is `p`-integrable near the origin of
@@ -343,51 +312,34 @@ private theorem memLp_gradient_slitSolution {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp
   refine (integrable_norm_rpow_iff
     ((continuousOn_gradient_slitSolution.mono hΩ).aestronglyMeasurable hΩm) hp0 hp').1 ?_
   have hker : IntegrableOn (fun x : WithLp 2 (ℝ × ℝ) => ‖x‖ ^ (-(2⁻¹ : ℝ) * p.toReal)) Ω :=
-    (integrableOn_norm_rpow_ball (by rw [finrank_withLp]; push_cast; linarith)).mono_set hR
+    (integrableOn_norm_rpow_ball (by
+      rw [(WithLp.linearEquiv 2 ℝ (ℝ × ℝ)).finrank_eq, Module.finrank_prod, Module.finrank_self]
+      push_cast
+      linarith)).mono_set hR
   refine IntegrableOn.congr_fun (hker.const_mul ((2 : ℝ)⁻¹ ^ p.toReal)) (fun x hx => ?_) hΩm
   rw [norm_gradient_slitSolution (hΩ hx), div_eq_mul_inv,
     Real.mul_rpow (Real.rpow_nonneg (norm_nonneg x) _) (by norm_num),
     ← Real.rpow_mul (norm_nonneg x), mul_comm]
 
-/-- The axis `ℝ × {0}` is a null set of the plane. -/
-private theorem volume_setOf_snd_eq_zero :
-    volume {x : WithLp 2 (ℝ × ℝ) | x.snd = 0} = 0 := by
-  have h := (WithLp.volume_preserving_ofLp ℝ ℝ).measure_preimage (s := univ ×ˢ ({0} : Set ℝ))
-    (MeasurableSet.univ.prod (measurableSet_singleton 0)).nullMeasurableSet
-  rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_singleton, mul_zero] at h
-  convert h using 2
-  ext x
-  simp
-
-/-- The slit disc lies in the open unit disc. -/
-private theorem slitUnitDisc_subset_ball : slitUnitDisc ⊆ ball (0 : WithLp 2 (ℝ × ℝ)) 1 :=
-  fun _ hx => mem_ball_zero_iff.2 (mem_slitUnitDisc.1 hx).1
-
-/-- The slit disc differs from the open unit disc by a null set. -/
-private theorem slitUnitDisc_ae_eq_ball :
-    slitUnitDisc =ᵐ[volume] (ball (0 : WithLp 2 (ℝ × ℝ)) 1) := by
-  refine ae_eq_set.2 ⟨by rw [sdiff_eq_bot_iff.2 slitUnitDisc_subset_ball, bot_eq_empty,
-    measure_empty], measure_mono_null (fun x hx => ?_) volume_setOf_snd_eq_zero⟩
-  by_contra h
-  exact hx.2 (mem_slitUnitDisc.2 ⟨mem_ball_zero_iff.1 hx.1, fun _ => h⟩)
-
 /-- If the gradient of the slit-plane solution is `p`-integrable on the slit disc, then `p < 4`:
 its length `‖x‖ ^ (-1/2) / 2` is not `4`-integrable near the tip. -/
 private theorem lt_four_of_memLp_gradient_slitSolution {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
     (hmem : MemLp (∇ slitSolution) p (volume.restrict slitUnitDisc)) : p < 4 := by
-  have hint : IntegrableOn (fun x => ‖∇ slitSolution x‖ ^ p.toReal)
-      (ball (0 : WithLp 2 (ℝ × ℝ)) 1) :=
-    IntegrableOn.congr_set_ae (hmem.integrable_norm_rpow hp0 hp) slitUnitDisc_ae_eq_ball.symm
+  have hint : IntegrableOn (fun x => ‖∇ slitSolution x‖ ^ p.toReal) slitUnitDisc :=
+    hmem.integrable_norm_rpow hp0 hp
   have hpow : IntegrableOn (fun x : WithLp 2 (ℝ × ℝ) => ‖x‖ ^ (-(2⁻¹ : ℝ) * p.toReal))
       (ball 0 1) := by
-    refine IntegrableOn.congr_fun_ae (hint.const_mul ((2 : ℝ) ^ p.toReal)) ?_
-    filter_upwards [ae_restrict_of_ae (compl_mem_ae_iff.2 volume_setOf_snd_eq_zero)] with x hx
-    rw [norm_gradient_slitSolution (Or.inr hx), div_eq_mul_inv,
+    refine IntegrableOn.congr_set_ae (IntegrableOn.congr_fun
+      (hint.const_mul ((2 : ℝ) ^ p.toReal)) (fun x hx => ?_) isOpen_slitUnitDisc.measurableSet)
+      slitUnitDisc_ae_eq_ball.symm
+    rw [norm_gradient_slitSolution (slitUnitDisc_subset_setOf_fst_lt_zero_or_snd_ne_zero hx),
+      div_eq_mul_inv,
       Real.mul_rpow (Real.rpow_nonneg (norm_nonneg x) _) (by norm_num),
       ← Real.rpow_mul (norm_nonneg x), mul_left_comm, ← Real.mul_rpow zero_le_two (by norm_num)]
     norm_num
   have := (integrableOn_norm_rpow_ball_iff zero_lt_one).1 hpow
-  rw [finrank_withLp] at this
+  rw [(WithLp.linearEquiv 2 ℝ (ℝ × ℝ)).finrank_eq, Module.finrank_prod, Module.finrank_self]
+    at this
   have hpr : p.toReal < 4 := by push_cast at this; linarith
   exact (ENNReal.toReal_lt_toReal hp (by norm_num)).1 (by simpa using hpr)
 
@@ -435,12 +387,13 @@ theorem exists_w1p_value_ae_eq_slitSolution_iff {p : ℝ≥0∞} [Fact (1 ≤ p)
     (∃ u : W1p volume ⟨slitUnitDisc, isOpen_slitUnitDisc⟩ p,
       W1p.value u =ᵐ[volume.restrict slitUnitDisc] slitSolution) ↔ p < 4 := by
   refine ⟨fun ⟨u, hu⟩ => ?_, fun hp => exists_w1p_value_ae_eq_slitSolution hp
-    (isBounded_ball.subset slitUnitDisc_subset_ball) slitUnitDisc_subset⟩
+    (isBounded_ball.subset slitUnitDisc_subset_ball)
+    slitUnitDisc_subset_setOf_fst_lt_zero_or_snd_ne_zero⟩
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   have hmem : MemLp (∇ slitSolution) p (volume.restrict slitUnitDisc) :=
     (Lp.memLp (W1p.gradient u)).ae_eq
       (gradient_ae_eq_gradient_slitSolution (Ω := ⟨slitUnitDisc, isOpen_slitUnitDisc⟩)
-        slitUnitDisc_subset u hu)
+        slitUnitDisc_subset_setOf_fst_lt_zero_or_snd_ne_zero u hu)
   rcases eq_or_ne p ∞ with rfl | hp
   · have : IsFiniteMeasure (volume.restrict slitUnitDisc) :=
       isFiniteMeasure_restrict.2
