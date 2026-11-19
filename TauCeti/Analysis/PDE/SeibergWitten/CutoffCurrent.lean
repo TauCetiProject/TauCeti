@@ -20,6 +20,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
@@ -183,6 +184,19 @@ theorem continuous_covariantDeriv (hα : ContDiff ℝ 1 α) (hb : Continuous b) 
     Continuous (covariantDeriv b α) := by
   unfold covariantDeriv
   fun_prop
+
+/-- The covariant derivative at a point depends continuously on the `1`-jet of the section and on
+the value of the connection form there: if `α i y`, `fderiv ℝ (α i) y` and `b i y` tend to the
+corresponding data of `(b₀, α₀)`, then `∇_{b i} (α i)` at `y` tends to `∇_{b₀} α₀` at `y`. -/
+theorem tendsto_covariantDeriv {ι : Type*} {l : Filter ι} {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    {α : ι → E → ℂ} {b₀ : E → E [⋀^Fin 1]→L[ℝ] ℝ} {α₀ : E → ℂ} {y : E}
+    (hb : Tendsto (fun i ↦ b i y) l (𝓝 (b₀ y))) (hα : Tendsto (fun i ↦ α i y) l (𝓝 (α₀ y)))
+    (hdα : Tendsto (fun i ↦ fderiv ℝ (α i) y) l (𝓝 (fderiv ℝ α₀ y))) :
+    Tendsto (fun i ↦ covariantDeriv (b i) (α i) y) l (𝓝 (covariantDeriv b₀ α₀ y)) := by
+  have hg : Continuous fun p : (E →L[ℝ] ℂ) × (E [⋀^Fin 1]→L[ℝ] ℝ) × ℂ ↦
+      p.1 + ((ofSubsingletonLIE (0 : Fin 1)).symm p.2.1).smulRight (I * p.2.2) := by
+    fun_prop
+  exact (hg.tendsto _).comp (hdα.prodMk_nhds (hb.prodMk_nhds hα))
 
 /-- The derivative of `|α|²` is `2 Re (conj α ∇_a α)`, for every connection form `a = i b`: the
 connection term contributes `Re (conj α · i b α) = Re (i b |α|²) = 0`. This is the modulus
@@ -473,6 +487,18 @@ theorem cutoffCurrent_comp {y : F} (hα : ContDiffAt ℝ 2 α (f y)) (hb : ContD
     cutoffCurrent_apply]
   ext v
   simp
+
+/-- **The covariant derivative under an affine dilation.** Pulling a pair `(b, α)` back along
+`z ↦ x₀ + c • z`, which turns the connection form into `z ↦ c • b (x₀ + c • z)`, multiplies the
+covariant derivative by `c`. No differentiability is needed. -/
+theorem covariantDeriv_comp_add_smul (x₀ : E) (c : ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (y : E) :
+    covariantDeriv (fun z ↦ c • b (x₀ + c • z)) (fun z ↦ α (x₀ + c • z)) y =
+      c • covariantDeriv b α (x₀ + c • y) := by
+  ext v
+  simp only [covariantDeriv_apply, fderiv_comp_add_smul, FunLike.coe_smul, Pi.smul_apply,
+    ContinuousAlternatingMap.smul_apply, Complex.real_smul, smul_eq_mul, Complex.ofReal_mul]
+  ring
 
 end Pullback
 
