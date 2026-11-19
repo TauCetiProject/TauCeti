@@ -13,6 +13,8 @@ public import TauCeti.Geometry.Symplectic.Finrank
 public import TauCeti.LinearAlgebra.Complex.Module
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.RestrictScalars
+import TauCeti.Topology.VectorBundle.Section
+import TauCeti.Topology.VectorBundle.Smul
 
 /-!
 # Complex vector bundles from fibrewise complex structures
@@ -63,6 +65,11 @@ local trivializations form a `VectorPrebundle` over `ℂ`.
   `FiberBundle G J.Fiber` and `VectorBundle ℂ G J.Fiber`.
 * `TauCeti.Bundle.ContinuousComplexStructure.totalSpaceHomeomorph`: the total space of `J.Fiber`
   is homeomorphic to that of `V`, by the identity on fibres.
+* `TauCeti.Bundle.ContinuousComplexStructure.oneSubMulEquiv`: for two continuous complex
+  structures `J₀` and `J₁` with `1 - J₁ J₀` invertible on every fibre, the map `1 - J₁ J₀` is an
+  isomorphism of complex vector bundles from `J₀.Fiber` to `J₁.Fiber`
+  (`TauCeti.Bundle.ContinuousComplexStructure.continuous_oneSubMulEquiv`). It intertwines the two
+  complex structures because `(1 - J₁ J₀) J₀ = J₀ + J₁ = J₁ (1 - J₁ J₀)`.
 
 ## References
 
@@ -553,6 +560,72 @@ theorem totalSpaceHomeomorph_symm_apply (p : TotalSpace F V) :
   bundleHomeomorph_apply _ _ p
 
 end Model
+
+/-! ### Comparing two complex structures -/
+
+section Comparison
+
+variable {J₀ J₁ : ContinuousComplexStructure F V} {b : B}
+
+/-- Let `J₀` and `J₁` be continuous complex structures on `V` such that `1 - J₁ J₀` is invertible
+on the fibre over `b`. The map `1 - J₁ J₀`, twice the complex linear part of the identity of `V b`
+from `J₀` to `J₁`, intertwines `J₀` and `J₁`. So it is a complex-linear isomorphism from the fibre
+over `b` of the complex vector bundle given by `J₀` to that of the bundle given by `J₁`
+(`TauCeti.Bundle.ContinuousComplexStructure.fiberEquiv_oneSubMulEquiv`). -/
+def oneSubMulEquiv (h : IsUnit (1 - J₁ b * J₀ b)) : J₀.Fiber b ≃L[ℂ] J₁.Fiber b :=
+  let T : J₀.Fiber b ≃L[ℝ] J₁.Fiber b := (J₀.fiberEquiv b).trans
+    ((ContinuousLinearEquiv.unitsEquiv ℝ (V b) h.unit).trans (J₁.fiberEquiv b).symm)
+  { toFun := T
+    invFun := T.symm
+    map_add' := T.map_add
+    map_smul' := fun z v ↦ (J₁.fiberEquiv b).injective <| by
+      simp only [T, ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply,
+        ContinuousLinearEquiv.unitsEquiv_apply, IsUnit.unit_spec, RingHom.id_apply,
+        fiberEquiv_smul, sub_apply, one_apply_eq_self, mul_apply_eq_comp, map_add, map_sub,
+        map_neg, map_smul, apply_apply]
+      module
+    left_inv := T.symm_apply_apply
+    right_inv := T.apply_symm_apply
+    continuous_toFun := T.continuous
+    continuous_invFun := T.symm.continuous }
+
+/-- `oneSubMulEquiv h` is the map `1 - J₁ J₀` on `V b`. -/
+@[simp]
+theorem fiberEquiv_oneSubMulEquiv (h : IsUnit (1 - J₁ b * J₀ b)) (v : J₀.Fiber b) :
+    J₁.fiberEquiv b (oneSubMulEquiv h v) = J₀.fiberEquiv b v - J₁ b (J₀ b (J₀.fiberEquiv b v)) := by
+  simp [oneSubMulEquiv]
+
+variable (G G' : Type*) [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
+  [NormedAddCommGroup G'] [NormedSpace ℂ G'] [FiniteDimensional ℂ G'] [FiniteDimensional ℝ F]
+  [Fact (finrank ℝ F = 2 * finrank ℂ G)] [Fact (finrank ℝ F = 2 * finrank ℂ G')]
+
+/-- The isomorphisms `oneSubMulEquiv` between the fibres of the complex vector bundles given by
+`J₀` and `J₁`, with any model fibres `G` and `G'`, are continuous on total spaces: they form an
+isomorphism of complex vector bundles. -/
+theorem continuous_oneSubMulEquiv (h : ∀ b, IsUnit (1 - J₁ b * J₀ b)) :
+    Continuous fun v : TotalSpace G J₀.Fiber ↦
+      TotalSpace.mk' G' v.proj (oneSubMulEquiv (h v.proj) v.2) := by
+  -- On the total space of `V`, the map is `(b, w) ↦ (b, w + (-1) • J₁ b (J₀ b w))`.
+  have hJ₀ : Continuous fun p : TotalSpace F V ↦ TotalSpace.mk' F p.proj (J₀ p.proj p.2) :=
+    (J₀.continuous.comp (FiberBundle.continuous_proj F V)).clm_bundle_apply continuous_id
+  have hJ₁ : Continuous fun p : TotalSpace F V ↦
+      TotalSpace.mk' F p.proj (J₁ p.proj (J₀ p.proj p.2)) :=
+    (J₁.continuous.comp (FiberBundle.continuous_proj F V)).clm_bundle_apply hJ₀
+  have hU : Continuous fun p : TotalSpace F V ↦
+      TotalSpace.mk' F p.proj (p.2 + (-1 : ℝ) • J₁ p.proj (J₀ p.proj p.2)) :=
+    Continuous.add_totalSpace ℝ (b := TotalSpace.proj) (s := fun p ↦ p.2) continuous_id
+      (Continuous.smul_totalSpace (c := fun _ ↦ (-1 : ℝ))
+        (φ := fun p : TotalSpace F V ↦ TotalSpace.mk' F p.proj (J₁ p.proj (J₀ p.proj p.2)))
+        continuous_const hJ₁)
+  refine ((J₁.totalSpaceHomeomorph G').symm.continuous.comp
+    (hU.comp (J₀.totalSpaceHomeomorph G).continuous)).congr fun v ↦ ?_
+  rw [Function.comp_apply, Function.comp_apply, totalSpaceHomeomorph_apply,
+    totalSpaceHomeomorph_symm_apply]
+  congr 1
+  apply (J₁.fiberEquiv v.proj).injective
+  simp [sub_eq_add_neg]
+
+end Comparison
 
 end ContinuousComplexStructure
 

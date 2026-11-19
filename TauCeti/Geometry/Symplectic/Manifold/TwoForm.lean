@@ -14,6 +14,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Symplectic.Cayley.Basic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 
 /-!
 # Nondegenerate, tame, and compatible two-forms on manifolds
@@ -60,6 +62,8 @@ example.
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
   relations characterized fiber by fiber through the linear theory.
+* `TauCeti.SmoothTwoForm.Tames.isUnit_one_sub_toEndomorphism_mul`: for two structures tamed by the
+  same form, `1 - J₁ J₀` is invertible on every tangent space.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.injective_mvfderiv`: a map into a vector space pulling a
   constant symplectic form back to a nondegenerate form at a point, such as a Darboux chart, is an
   immersion there.
@@ -310,6 +314,17 @@ lemma Tames.isNondegenerate (h : form.Tames J) : form.IsNondegenerate := by
   intro x v hv
   by_contra hv0
   exact (h x v hv0).ne' (hv (J x v))
+
+/-- For two smooth almost complex structures tamed by `form`, the endomorphism `1 - J₁ J₀` of every
+tangent space is invertible. -/
+theorem Tames.isUnit_one_sub_toEndomorphism_mul [FiniteDimensional ℝ E]
+    {J₀ J₁ : SmoothAlmostComplexStructure I M} (h₀ : form.Tames J₀) (h₁ : form.Tames J₁) (x : M) :
+    IsUnit (1 - J₁.toEndomorphism x * J₀.toEndomorphism x) := by
+  have : FiniteDimensional ℝ (TangentSpace I x) := inferInstanceAs (FiniteDimensional ℝ E)
+  have hform := h₀.isNondegenerate
+  have h := ((hform.tames_iff.1 h₁) x).isUnit_one_sub_mul ((hform.tames_iff.1 h₀) x)
+  refine ContinuousLinearMap.isUnit_of_isUnit_toLinearMap_of_finiteDimensional ?_
+  simpa using h
 
 /-- A smooth two-form is invariant under a smooth almost complex structure when applying the
 structure in both tangent arguments leaves the form unchanged. -/
