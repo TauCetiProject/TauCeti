@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
@@ -24,6 +25,13 @@ the same norm with a real inner product are exchanged by the reflection in the h
 orthogonal to their difference (`Submodule.reflection_sub_of_inner_comm`). In Euclidean
 space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`-th coordinate and
 negates the others (`EuclideanSpace.reflection_singleton_single_apply`).
+
+Over `ℝ`, reflecting `x` across `K` changes its squared distance to `y` by `4 ⟪P x, y⟫`, where `P`
+is the orthogonal projection onto `Kᗮ` (`Submodule.norm_reflection_sub_sq`), and when `Kᗮ` is a line
+the sign of `⟪P x, y⟫` records whether `x` and `y` lie on the same side of `K`
+(`Submodule.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one`). In finite dimension,
+a linear map preserving the inner product whose fixed vectors form a hyperplane is the reflection in
+that hyperplane (`LinearMap.reflection_fixedSubmodule_apply`).
 
 The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
 inner product space. They supply the reflection identities used by the half-space Green kernel,
@@ -138,6 +146,84 @@ theorem reflection_sub_of_inner_comm {v w : E} (h : ‖v‖ = ‖w‖)
   · abel
 
 end Submodule
+
+namespace Submodule
+
+open scoped InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- Reflecting `x` across `K` changes its squared distance to `y` by four times the inner product
+of the `Kᗮ`-component of `x` with `y`, so the reflection brings `x` nearer to `y` exactly when that
+inner product is negative. -/
+theorem norm_reflection_sub_sq (K : Submodule ℝ F) [K.HasOrthogonalProjection] (x y : F) :
+    ‖K.reflection x - y‖ ^ 2 = ‖x - y‖ ^ 2 + 4 * ⟪Kᗮ.starProjection x, y⟫_ℝ := by
+  have hx : K.reflection x - y = (x - y) - (2 : ℝ) • Kᗮ.starProjection x := by
+    rw [reflection_apply, starProjection_orthogonal_val]
+    module
+  have hpx : ⟪Kᗮ.starProjection x, x⟫_ℝ = ‖Kᗮ.starProjection x‖ ^ 2 := by
+    simpa using Kᗮ.re_inner_starProjection_eq_normSq x
+  rw [hx, norm_sub_sq_real, inner_smul_right, norm_smul, inner_sub_left,
+    real_inner_comm (Kᗮ.starProjection x) x, real_inner_comm (Kᗮ.starProjection x) y, hpx]
+  norm_num
+  ring
+
+/-- For the orthogonal projection `P` onto a line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`: if `n`
+spans the line, both sides are `⟪n, x⟫ ⟪n, y⟫² ⟪n, z⟫ / ‖n‖⁴`. In particular, lying strictly on the
+same side of the orthogonal hyperplane is a transitive relation. -/
+theorem inner_starProjection_mul_inner_starProjection_of_finrank_eq_one (L : Submodule ℝ F)
+    [L.HasOrthogonalProjection] (hL : Module.finrank ℝ L = 1) (x y z : F) :
+    ⟪L.starProjection x, y⟫_ℝ * ⟪L.starProjection y, z⟫_ℝ =
+      ⟪L.starProjection y, y⟫_ℝ * ⟪L.starProjection x, z⟫_ℝ := by
+  obtain ⟨n, hnL, hn⟩ := L.exists_mem_ne_zero_of_ne_bot (by rintro rfl; simp at hL)
+  obtain rfl := eq_span_singleton_of_mem_of_finrank_eq_one hL hnL hn
+  simp only [starProjection_singleton, real_inner_smul_left, RCLike.ofReal_real_eq_id, id_eq]
+  ring
+
+end Submodule
+
+namespace LinearMap
+
+open scoped InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- A linear map preserving the inner product whose fixed vectors form a hyperplane is the
+orthogonal reflection in that hyperplane. -/
+theorem reflection_fixedSubmodule_apply {f : F →ₗ[ℝ] F} (hf : ∀ v w, ⟪f v, f w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (hfix : Module.finrank ℝ (F ⧸ f.fixedSubmodule) = 1) (x : F) :
+    f.fixedSubmodule.reflection x = f x := by
+  set H := f.fixedSubmodule
+  have hrank : Module.finrank ℝ Hᗮ = 1 := by
+    have h₁ := H.finrank_quotient_add_finrank
+    have h₂ := H.finrank_add_finrank_orthogonal
+    omega
+  -- `f` preserves the line `Hᗮ` and the length of its vectors, and fixes none of them but `0`.
+  have hneg : ∀ q ∈ Hᗮ, f q = -q := by
+    intro q hq
+    have hfq : f q ∈ Hᗮ := fun h hh ↦
+      calc ⟪h, f q⟫_ℝ = ⟪f h, f q⟫_ℝ := by rw [mem_fixedSubmodule_iff.1 hh]
+        _ = 0 := (hf h q).trans (hq h hh)
+    by_cases hq0 : q = 0
+    · simp [hq0]
+    obtain ⟨c, hc⟩ := exists_smul_eq_of_finrank_eq_one hrank (x := (⟨q, hq⟩ : Hᗮ))
+      (by simpa using hq0) ⟨f q, hfq⟩
+    have hc' : f q = c • q := by simpa using congrArg Subtype.val hc.symm
+    have hcc : c * c = 1 := by
+      have h := hf q q
+      rw [hc', real_inner_smul_left, real_inner_smul_right, ← mul_assoc] at h
+      exact mul_right_cancel₀ (by simpa using hq0) (h.trans (one_mul _).symm)
+    rcases mul_self_eq_one_iff.1 hcc with rfl | rfl
+    · have hqH : q ∈ H := mem_fixedSubmodule_iff.2 (by rw [hc', one_smul])
+      simpa [H.inf_orthogonal_eq_bot, hq0] using Submodule.mem_inf.2 ⟨hqH, hq⟩
+    · rw [hc', neg_one_smul]
+  have hx := H.starProjection_add_starProjection_orthogonal x
+  conv_rhs => rw [← hx]
+  rw [map_add, mem_fixedSubmodule_iff.1 (H.starProjection_apply_mem x),
+    hneg _ (Hᗮ.starProjection_apply_mem x), Submodule.reflection_apply]
+  linear_combination (norm := module) hx
+
+end LinearMap
 
 namespace EuclideanSpace
 
