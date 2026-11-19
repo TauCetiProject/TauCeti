@@ -122,20 +122,15 @@ private theorem mem_span_of_mem_integer_primesAbove {x : L}
     exact Submodule.subset_span ⟨b, rfl⟩
   suffices h : I.map (algebraMap R (S.integer K)) = ⊤ by
     simpa [N] using hIN (h ▸ Submodule.mem_top : (1 : S.integer K) ∈ _)
-  -- otherwise a maximal ideal of `𝒪_{K,S}` contains it; it lies over a prime `v ∉ S` of `R`
+  -- otherwise `I` lies in a prime `v ∉ S` of `R`
   by_contra h
-  obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ h
-  have hIP : I ≤ M.under R := Ideal.le_comap_map.trans (Ideal.comap_mono hle)
   have hden : Algebra.denIdeal (R := B) L x ≠ ⊥ := Algebra.denIdeal_ne_bot L (nonZeroDivisors B) x
-  have hP0 : M.under R ≠ ⊥ := fun h0 ↦ hden (Ideal.eq_bot_of_under_eq_bot
-    (le_bot_iff.mp (h0 ▸ hIP)))
-  let v : HeightOneSpectrum R := ⟨M.under R, hM.isPrime.under R, hP0⟩
-  have hv : v ∉ S := fun hv ↦ hM.ne_top
-    (top_le_iff.mp ((integer_map_asIdeal_eq_top K S hv).ge.trans Ideal.map_comap_le))
+  obtain ⟨v, hv, hIv⟩ := exists_notMem_le_of_integer_map_ne_top K S
+    (fun h0 ↦ hden (Ideal.eq_bot_of_under_eq_bot h0)) h
   -- by going up, a prime `w` of `B` over `v` contains the denominator ideal of `x`, but `x` is
   -- integral at `w` since `w` does not lie over `S`
-  obtain ⟨Q, hIQ, hQ, hQP⟩ := Ideal.exists_ideal_over_prime_of_isIntegral (M.under R)
-    (Algebra.denIdeal L x) hIP
+  obtain ⟨Q, hIQ, hQ, hQP⟩ := Ideal.exists_ideal_over_prime_of_isIntegral v.asIdeal
+    (Algebra.denIdeal L x) hIv
   let w : HeightOneSpectrum B := ⟨Q, hQ, fun h0 ↦ hden (le_bot_iff.mp (h0 ▸ hIQ))⟩
   have hw : w ∉ primesAbove R B S := by
     rwa [mem_primesAbove_iff, show under R w = v from HeightOneSpectrum.ext hQP]
@@ -178,8 +173,8 @@ instance [Module.Finite R B] : Module.Finite (S.integer K) ((primesAbove R B S).
   -- the span of `B` over `𝒪_{K,S}` is spanned by the images of the generators `s`
   let P := Submodule.span (S.integer K) (Set.range (algebraMap B L))
   have hspan : P = Submodule.span (S.integer K) (f '' s) := by
-    rw [← Submodule.span_span_of_tower R, ← Submodule.map_span, hs, Submodule.map_top,
-      LinearMap.coe_range, AlgHom.coe_toLinearMap, IsScalarTower.coe_toAlgHom']
+    rw [← Submodule.span_span_of_tower R, ← Submodule.map_span, hs]
+    simp [P, f, LinearMap.coe_range]
   have : IsNoetherian (S.integer K) P :=
     isNoetherian_of_fg_of_noetherian P (hspan ▸ Submodule.fg_span (s.finite_toSet.image f))
   -- the inclusion `𝒪_{L,T} → L` lands in that span
