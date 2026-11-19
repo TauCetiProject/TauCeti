@@ -47,6 +47,8 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
 * `PowerSeries.coeff_trunc_log_comp_trunc_exp_sub_one`: the identity `log (exp X) = X`, truncated
   to polynomials: the composite of the truncations of the two series agrees with `X` below both
   truncation degrees.
+* `PowerSeries.coeff_exp_sub_one_of_ne_zero`, `PowerSeries.coeff_log_eq_neg_one_pow_div`: over a
+  field, the coefficients `1 / n!` of `exp - 1` and `(-1) ^ (n + 1) / n` of the logarithm series.
 * `PowerSeries.subst_exp_logOf` and `PowerSeries.logOf_subst_exp`: `exp (log f) = f` and
   `log (exp g) = g`.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
@@ -115,6 +117,19 @@ theorem coeff_trunc_log_comp_trunc_exp_sub_one {M N k : ℕ} (hM : k < M) (hN : 
     coeff_X]
   grind
 
+/-- Over a field, the coefficient of `exp - 1` in degree `n ≠ 0` is `1 / n!`. -/
+theorem coeff_exp_sub_one_of_ne_zero {k : Type*} [Field k] [Algebra ℚ k] {n : ℕ} (hn : n ≠ 0) :
+    coeff n (exp k - 1) = (n.factorial : k)⁻¹ := by
+  simp [coeff_exp, coeff_one, hn]
+
+/-- Over a field, the coefficient of the logarithm series in degree `n` is `(-1) ^ (n + 1) / n`;
+in degree zero both sides vanish. -/
+theorem coeff_log_eq_neg_one_pow_div {k : Type*} [Field k] [Algebra ℚ k] (n : ℕ) :
+    coeff n (log k) = (-1) ^ (n + 1) / (n : k) := by
+  rw [coeff_log]
+  split_ifs with hn
+  · simp [hn]
+  · rw [map_div₀, map_pow, map_neg, map_one, map_natCast]
 
 /-! ## Logarithm and exponential as inverse operations -/
 

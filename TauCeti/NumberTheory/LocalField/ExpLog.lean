@@ -81,7 +81,7 @@ private theorem powValuation_coeff_exp_sub_one_mul_pow_le [CharZero K] {π : �
   · simp
   have hfac : (m.factorial : K) ≠ 0 := Nat.cast_ne_zero.mpr m.factorial_ne_zero
   have hcoeff : PowerSeries.coeff m (PowerSeries.exp K - 1) * x ^ m * m.factorial = x ^ m := by
-    simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hm]
+    rw [PowerSeries.coeff_exp_sub_one_of_ne_zero hm]
     field_simp
   have hv : valuation K (m.factorial : K) ≠ 0 := by simpa using hfac
   simp only [powValuation_apply]
@@ -163,7 +163,7 @@ private theorem hasSum_coeff_exp_sub_one_mul_pow [CharZero K]
   funext m
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hm, div_eq_inv_mul]
+  · simp [PowerSeries.coeff_exp_sub_one_of_ne_zero hm, hm, div_eq_inv_mul]
 
 /-- The valuation of an element of `𝓂[K] ^ i`, for a uniformizer `π`, is at most `v(π) ^ i`. -/
 private theorem valuation_le_pow_of_mem_maximalIdeal_pow {π : 𝒪[K]} (hπ : Irreducible π)
@@ -184,7 +184,8 @@ theorem valuation_exp_sub_one (hi : absoluteRamificationIndex K p < (p - 1) * i)
   set f := fun m => PowerSeries.coeff m (PowerSeries.exp K - 1) * (x : K) ^ m with hf_def
   have hf := hasSum_coeff_exp_sub_one_mul_pow hi x
   have hf1 : PowerSeries.coeff 1 (PowerSeries.exp K - 1) * (x : K) ^ 1 = x := by
-    simp [PowerSeries.coeff_exp, PowerSeries.coeff_one]
+    rw [PowerSeries.coeff_exp_sub_one_of_ne_zero one_ne_zero, Nat.factorial_one, Nat.cast_one,
+      inv_one, one_mul, pow_one]
   have hS1 : valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) < 1 :=
     pow_lt_one₀ zero_le (Valuation.integer.v_irreducible_lt_one hπ) (by omega)
   have hS0 : valuation K (π : K) ^ ((p - 1) * i - absoluteRamificationIndex K p) ≠ 0 :=

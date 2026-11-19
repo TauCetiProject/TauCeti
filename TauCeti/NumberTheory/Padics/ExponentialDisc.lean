@@ -10,11 +10,10 @@ public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Norm
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import TauCeti.Analysis.Normed.Ring.Ultra
-import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.UltrametricSubst
 import Mathlib.Algebra.CharP.Algebra
-import Mathlib.RingTheory.PowerSeries.Log
 
 /-!
 # The exponential and the logarithm on the `p`-adic disc
@@ -24,9 +23,11 @@ finite extension of `ℚ_[p]`. Its norm is ultrametric, and Mathlib's exponentia
 on the open disc `‖x‖ < r₀` of radius `r₀ = p ^ (-1 / (p - 1))`, which is
 `TauCeti.amiceRadius p 0`. For complete `L`, on this disc the exponential turns sums into
 products and preserves norms, `‖exp x - 1‖ = ‖x‖`, and Mathlib's logarithm series inverts it on
-the disc of radius `r₀` about `1`. Together, `TauCeti.norm_exp_sub_one_of_norm_lt` and
-`TauCeti.exp_log_of_norm_sub_one_lt` show that the exponential maps the first disc bijectively
-onto the second.
+the disc of radius `r₀` about `1`. Hence the exponential maps the first disc bijectively onto the
+second: it maps into the second disc by `TauCeti.norm_exp_sub_one_of_norm_lt`, it is injective by
+`TauCeti.injOn_exp_ball` (via `TauCeti.log_exp_of_norm_lt`), and it is onto because
+`TauCeti.norm_log_of_norm_sub_one_lt` puts `log y` in the first disc and
+`TauCeti.exp_log_of_norm_sub_one_lt` gives `exp (log y) = y`.
 
 The key estimate is the sharp factorial bound `r₀ ^ (n - 1) ≤ ‖n!‖` for `n ≥ 1`
 (`TauCeti.amiceRadius_zero_pow_sub_one_le_norm_factorial`): by Legendre's formula
@@ -265,8 +266,8 @@ theorem hasSum_log_of_norm_sub_one_lt {y : L} (hy : ‖y - 1‖ < amiceRadius p 
   convert hsum.hasSum using 1
   rw [log_eq_tsum ℚ_[p]]
   refine tsum_congr fun n ↦ ?_
-  simp [Algebra.smul_def]
-  ring
+  simp only [Algebra.smul_def, map_div₀, map_pow, map_neg, map_one, map_natCast,
+    div_mul_eq_mul_div]
 
 /-- **The `p`-adic logarithm preserves norms on the disc of radius `r₀` about `1`.** For
 `‖y - 1‖ < r₀`, `‖log y‖ = ‖y - 1‖`. -/
@@ -283,9 +284,7 @@ private theorem norm_coeff_exp_sub_one_mul_le [CharZero L] (n : ℕ) :
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   have hf := amiceRadius_zero_pow_sub_one_le_norm_factorial (p := p) (L := L) hn
-  have hc : PowerSeries.coeff n (PowerSeries.exp L - 1) = (n ! : L)⁻¹ := by
-    simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hn]
-  rw [hc, norm_inv, ← div_eq_inv_mul]
+  rw [PowerSeries.coeff_exp_sub_one_of_ne_zero hn, norm_inv, ← div_eq_inv_mul]
   exact div_le_one_of_le₀ hf (norm_nonneg _)
 
 omit [CompleteSpace L] in
@@ -295,9 +294,8 @@ private theorem norm_coeff_log_mul_le [CharZero L] (n : ℕ) :
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   have hf := amiceRadius_zero_pow_sub_one_le_norm_natCast (p := p) (L := L) hn
-  have hc : PowerSeries.coeff n (PowerSeries.log L) = (-1) ^ (n + 1) / (n : L) := by
-    simp [PowerSeries.coeff_log, hn]
-  rw [hc, norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div_mul_eq_div]
+  rw [PowerSeries.coeff_log_eq_neg_one_pow_div, norm_div, norm_pow, norm_neg, norm_one, one_pow,
+    one_div_mul_eq_div]
   exact div_le_one_of_le₀ hf (norm_nonneg _)
 
 /-- The series of `exp x - 1` on the disc, with the coefficients of the formal series `exp - 1`. -/
@@ -307,17 +305,14 @@ private theorem hasSum_coeff_exp_sub_one_mul_pow [CharZero L] {x : L}
   refine (hasSum_exp_sub_one hx).congr_fun fun n ↦ ?_
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  · simp [PowerSeries.coeff_exp, PowerSeries.coeff_one, hn, div_eq_inv_mul]
+  · simp [PowerSeries.coeff_exp_sub_one_of_ne_zero hn, hn, div_eq_inv_mul]
 
 /-- The series of `log y` on the disc about `1`, with the coefficients of the formal logarithm. -/
 private theorem hasSum_coeff_log_mul_pow [CharZero L] {y : L}
     (hy : ‖y - 1‖ < amiceRadius p 0) :
     HasSum (fun n ↦ PowerSeries.coeff n (PowerSeries.log L) * (y - 1) ^ n) (log y) := by
   refine (hasSum_log_of_norm_sub_one_lt hy).congr_fun fun n ↦ ?_
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · simp [PowerSeries.coeff_log, hn]
-    ring
+  rw [PowerSeries.coeff_log_eq_neg_one_pow_div, div_mul_eq_mul_div]
 
 /-- **The logarithm inverts the exponential on its disc.** For `‖x‖ < r₀`, `log (exp x) = x`. -/
 theorem log_exp_of_norm_lt {x : L} (hx : ‖x‖ < amiceRadius p 0) : log (exp x) = x := by
