@@ -196,6 +196,13 @@ theorem chartCkSeminorm_le_of_le (x : U) (K : Compacts (extChartAt I x).target)
       chartCkSeminorm e hU x K l hl :=
   Seminorm.comp_mono _ (ContMDiffMap.chartCkSeminorm_le_of_le x K hkl hl)
 
+/-- The compact chart/frame `C^k` seminorm bounds every derivative seminorm of order at most
+`k`. -/
+theorem chartDerivativeSeminorm_le_chartCkSeminorm (x : U) (K : Compacts (extChartAt I x).target)
+    {m k : ℕ} (hm : m ≤ n) (hk : k ≤ n) (hmk : m ≤ k) :
+    chartDerivativeSeminorm (I := I) e hU x K m hm ≤ chartCkSeminorm e hU x K k hk :=
+  Seminorm.comp_mono _ (ContMDiffMap.chartDerivativeSeminorm_le_chartCkSeminorm x K hm hk hmk)
+
 /-- The `C^k` seminorm on the empty compact set is zero. -/
 @[simp]
 theorem chartCkSeminorm_bot (x : U) (k : ℕ) (hk : k ≤ n) :
