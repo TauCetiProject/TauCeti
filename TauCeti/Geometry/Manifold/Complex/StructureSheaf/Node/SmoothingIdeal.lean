@@ -319,14 +319,14 @@ pulls back to the ideal `(s)` of the base. -/
 theorem comap_map_mk_nodeCriticalIdeal (s : A) :
     ((nodeCriticalIdeal b s).map (Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s}))).comap
       (algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s})) = Ideal.span {s} := by
-  rw [show algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) =
-      (Ideal.Quotient.mk _).comp (nodeBaseExtension b) from
-    RingHom.ext (algebraMap_nodeLocalAlgebra b s), ← Ideal.comap_comap,
-    Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
-    ← RingHom.ker_eq_comap_bot, Ideal.mk_ker, sup_eq_left.2,
+  have hle : Ideal.span {nodeEquation b 0 0 s} ≤ nodeCriticalIdeal b s :=
+    nodeCriticalIdeal_eq_span_sup_ker b s ▸ le_sup_left
+  have halg : algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) =
+      (Ideal.Quotient.mk _).comp (nodeBaseExtension b) :=
+    RingHom.ext (algebraMap_nodeLocalAlgebra b s)
+  rw [halg, ← Ideal.comap_comap, Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
+    ← RingHom.ker_eq_comap_bot, Ideal.mk_ker, sup_eq_left.2 hle,
     comap_nodeBaseExtension_nodeCriticalIdeal]
-  rw [nodeCriticalIdeal_eq_span_sup_ker]
-  exact le_sup_left
 
 /-- Restriction identifies the coordinate critical quotient with the base modulo `(s)`. -/
 def nodeCriticalQuotientEquiv (s : A) : (R ⧸ nodeCriticalIdeal b s) ≃+* (A ⧸ Ideal.span {s}) :=
