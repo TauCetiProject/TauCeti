@@ -70,7 +70,9 @@ places; those are not available over a general base.
   `IsIntegral (projectiveLineNormalization R u)`.
 * `TauCeti.AlgebraicGeometry.projectiveLineNormalization.functionFieldEquiv_germToFunctionField`:
   the function field isomorphism sends the germ of a function on the finite chart to that element
-  of `A₀ ⊆ B`.
+  of `A₀ ⊆ B`; its variants `functionFieldEquiv_germToFunctionField_infinity` and
+  `functionFieldEquiv_germToFunctionField_overlap` do the same for the chart at infinity and `A∞`,
+  and for the intersection of the charts and `A₀∞`.
 
 ## References
 
@@ -292,6 +294,11 @@ theorem isAffineOpen_image_ιInfinity_top : IsAffineOpen (ιInfinity R u ''ᵁ �
   rw [Scheme.Hom.image_top_eq_opensRange]
   exact isAffineOpen_opensRange _
 
+instance [Nontrivial B] : Nonempty (ιInfinity R u ''ᵁ ⊤) := by
+  obtain ⟨p⟩ : Nonempty (Spec (.of (infinityChart R u))) :=
+    inferInstanceAs (Nonempty (PrimeSpectrum _))
+  exact ⟨⟨ιInfinity R u p, p, trivial, rfl⟩⟩
+
 /-- The functions on the chart at infinity are the elements of `A∞`. -/
 noncomputable def infinityChartSectionsEquiv :
     Γ(projectiveLineNormalization R u, ιInfinity R u ''ᵁ ⊤) ≃+* infinityChart R u :=
@@ -317,6 +324,13 @@ theorem image_specMap_infinityChartRestriction_comp_ιInfinity_top :
     Scheme.preimage_opensRange_pushout_inl _ _
   simp only [Scheme.Hom.image_top_eq_opensRange, Scheme.Hom.opensRange_comp, ← hpre,
     Scheme.Hom.image_preimage_eq_opensRange_inf, inf_comm]
+
+instance [Nontrivial B] : Nonempty (ιFinite R u ''ᵁ ⊤ ⊓ ιInfinity R u ''ᵁ ⊤ :) := by
+  have := isOpenImmersion_specMap_infinityChartRestriction R u
+  rw [← image_specMap_infinityChartRestriction_comp_ιInfinity_top]
+  obtain ⟨p⟩ : Nonempty (Spec (.of (overlapChart R u))) :=
+    inferInstanceAs (Nonempty (PrimeSpectrum _))
+  exact ⟨⟨_, p, trivial, rfl⟩⟩
 
 /-- The functions on the intersection of the two charts are the elements of `A₀∞`. It is
 compatible with the chart restriction maps (`finiteChartRestriction_finiteChartSectionsEquiv` and
@@ -387,6 +401,44 @@ theorem functionFieldEquiv_germToFunctionField
   have := functionField_isFractionRing_of_isAffineOpen _ _ (isAffineOpen_image_ιFinite_top R u)
   -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `k(X)`.
   exact IsFractionRing.ringEquivOfRingEquiv_algebraMap _ a
+
+/-- `TauCeti.AlgebraicGeometry.projectiveLineNormalization.functionFieldEquiv` sends the germ of a
+function on the intersection of the two charts to the corresponding element of `A₀∞ ⊆ B`. -/
+@[simp]
+theorem functionFieldEquiv_germToFunctionField_overlap
+    (a : Γ(projectiveLineNormalization R u, ιFinite R u ''ᵁ ⊤ ⊓ ιInfinity R u ''ᵁ ⊤)) :
+    functionFieldEquiv R u ((projectiveLineNormalization R u).germToFunctionField _ a) =
+      overlapChartSectionsEquiv R u a := by
+  let := (finiteChartRestriction R u).toRingHom.toAlgebra
+  have : IsScalarTower (finiteChart R u) (overlapChart R u) B := .of_algebraMap_eq fun _ ↦ rfl
+  have := u.isLocalization_away_integralClosure_adjoin_insert_inv (R := R)
+  -- Both sides are ring maps out of `A₀∞`, the localization of `A₀` away from `u`, and they agree
+  -- on `A₀` by `functionFieldEquiv_germToFunctionField`.
+  have key := IsLocalization.ringHom_ext (Submonoid.powers
+      (⟨u, isIntegral_algebraMap (x := (⟨u, self_mem_adjoin_singleton R _⟩ :
+        adjoin R {(u : B)}))⟩ : finiteChart R u)) (S := overlapChart R u)
+    (j := (functionFieldEquiv R u).toRingHom.comp
+      (((projectiveLineNormalization R u).germToFunctionField _).hom.comp
+        (overlapChartSectionsEquiv R u).symm.toRingHom))
+    (k := algebraMap (overlapChart R u) B) (RingHom.ext fun x ↦ by
+      obtain ⟨a, rfl⟩ := (finiteChartSectionsEquiv R u).surjective x
+      change functionFieldEquiv R u ((projectiveLineNormalization R u).germToFunctionField _
+        ((overlapChartSectionsEquiv R u).symm
+          (finiteChartRestriction R u (finiteChartSectionsEquiv R u a)))) =
+        (finiteChartSectionsEquiv R u a : B)
+      rw [finiteChartRestriction_finiteChartSectionsEquiv, RingEquiv.symm_apply_apply,
+        TopCat.Presheaf.germ_res_apply, functionFieldEquiv_germToFunctionField])
+  simpa using congr($key (overlapChartSectionsEquiv R u a))
+
+/-- `TauCeti.AlgebraicGeometry.projectiveLineNormalization.functionFieldEquiv` sends the germ of a
+function on the chart at infinity to the corresponding element of `A∞ ⊆ B`. -/
+@[simp]
+theorem functionFieldEquiv_germToFunctionField_infinity
+    (a : Γ(projectiveLineNormalization R u, ιInfinity R u ''ᵁ ⊤)) :
+    functionFieldEquiv R u ((projectiveLineNormalization R u).germToFunctionField _ a) =
+      infinityChartSectionsEquiv R u a := by
+  rw [← coe_infinityChartRestriction, infinityChartRestriction_infinityChartSectionsEquiv,
+    ← functionFieldEquiv_germToFunctionField_overlap, TopCat.Presheaf.germ_res_apply]
 
 end projectiveLineNormalization
 
