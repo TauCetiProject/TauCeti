@@ -104,11 +104,19 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- Normalizing by a nonzero square converts a scale inequality into a bound on time. -/
+theorem two_mul_sq_inv_mul_lt_one_iff {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {r t : K} (hr : r ≠ 0) :
+    2 * (r ^ 2)⁻¹ * t < 1 ↔ t < r ^ 2 / 2 := by
+  rw [mul_right_comm, ← div_eq_mul_inv, div_lt_one (sq_pos_of_ne_zero hr),
+    lt_div_iff₀ zero_lt_two, mul_comm t]
 
 /-- A scalar inequality is equivalent to its sign-dependent bounds: a negative coefficient
 gives a lower bound, a positive coefficient gives an upper bound, and a zero coefficient
