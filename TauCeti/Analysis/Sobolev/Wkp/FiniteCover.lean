@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Operator.Bilinear
+public import TauCeti.Analysis.Normed.Operator.Restrict
 public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
@@ -270,6 +272,47 @@ theorem exists_continuousLinearMap_value_ae_eq [Finite ι] {X : Type*} [Topologi
     refine (value_restrictL_ae (hle i) k _).symm.trans ?_
     rw [restrictL_restrictCompatibleEquiv_symm]
     exact hf i x
+  have hsub : (Omega : Set E) ⊆ ⋃ i, (V i : Set E) := by
+    simpa only [Opens.coe_iSup] using SetLike.coe_subset_coe.2 hcov
+  exact ae_restrict_of_ae_restrict_of_subset hsub ((ae_restrict_iUnion_iff _ _).2 hV)
+
+/-- Continuous bilinear maps into `W^{k,p}` glue over a finite open cover when their values agree
+almost everywhere with one function. The resulting map is bounded in both inputs jointly. -/
+theorem exists_continuousBilinearMap_value_ae_eq [Finite ι] {X Y : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega) (hcov : Omega ≤ ⨆ i, V i) {k : ℕ}
+    (f : ∀ i, X →L[ℝ] Y →L[ℝ] Wkp mu (V i) p k) (g : X → Y → E → ℝ)
+    (hf : ∀ i x y, (value k (f i x y) : E → ℝ) =ᵐ[mu.restrict (V i)] g x y) :
+    ∃ F : X →L[ℝ] Y →L[ℝ] Wkp mu Omega p k,
+      ∀ x y, (value k (F x y) : E → ℝ) =ᵐ[mu.restrict Omega] g x y := by
+  have := Fintype.ofFinite ι
+  have hcomp (x : X) (y : Y) : (fun i ↦ f i x y) ∈ compatibleFamilies mu p V k :=
+    fun i j ↦ by
+      have hi : (value k (f i x y) : E → ℝ) =ᵐ[mu.restrict (V i ⊓ V j : Opens E)] g x y :=
+        ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_left) (hf i x y)
+      have hj : (value k (f j x y) : E → ℝ) =ᵐ[mu.restrict (V i ⊓ V j : Opens E)] g x y :=
+        ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 inf_le_right) (hf j x y)
+      exact Wkp.ext k (Lp.ext ((value_restrictL_ae inf_le_left k (f i x y)).trans <|
+        hi.trans <| hj.symm.trans (value_restrictL_ae inf_le_right k (f j x y)).symm))
+  let B := (ContinuousLinearMap.piBilin f).codRestrictBilin
+    (compatibleFamilies mu p V k) (fun x y ↦ by
+      convert hcomp x y using 1
+      exact funext fun i ↦ ContinuousLinearMap.piBilin_apply f x y i)
+  have hB (x : X) (y : Y) : B x y = ⟨fun i ↦ f i x y, hcomp x y⟩ := by
+    apply Subtype.ext
+    funext i
+    simp only [B, ContinuousLinearMap.coe_codRestrictBilin_apply,
+      ContinuousLinearMap.piBilin_apply]
+  let L : compatibleFamilies mu p V k →L[ℝ] Wkp mu Omega p k :=
+    (restrictCompatibleEquiv hle hcov k).symm.toContinuousLinearMap
+  refine ⟨((ContinuousLinearMap.compL ℝ Y _ _) L).comp B, fun x y ↦ ?_⟩
+  have hV (i : ι) :
+      (value k (L (B x y)) : E → ℝ) =ᵐ[mu.restrict (V i)] g x y := by
+    refine (value_restrictL_ae (hle i) k _).symm.trans ?_
+    dsimp only [L]
+    simp only [ContinuousLinearEquiv.coe_coe]
+    rw [hB, restrictL_restrictCompatibleEquiv_symm]
+    exact hf i x y
   have hsub : (Omega : Set E) ⊆ ⋃ i, (V i : Set E) := by
     simpa only [Opens.coe_iSup] using SetLike.coe_subset_coe.2 hcov
   exact ae_restrict_of_ae_restrict_of_subset hsub ((ae_restrict_iUnion_iff _ _).2 hV)
