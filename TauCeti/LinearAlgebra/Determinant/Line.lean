@@ -64,6 +64,7 @@ the linear algebra itself is standard.
 * `LinearMap.detLineCongrKerCoker`: the isomorphism of determinant lines induced by isomorphisms
   of kernels and of cokernels.
 * `LinearMap.detLineCongr`: transport of determinant lines along a commuting square.
+* `LinearMap.detLineCongrOfEq`: the identification of the determinant lines of equal maps.
 * `LinearMap.instNegRayDetLine`, `LinearMap.instInvolutiveNegRayDetLine`: the opposite orientation
   of the determinant line of `f`, as `Module.Ray`'s negation, found by instance search.
 
@@ -86,6 +87,11 @@ the linear algebra itself is standard.
   convention).
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
+* `LinearMap.detLineCongrOfEq_eq_detLineCongr`: the identification of the determinant lines of
+  equal maps is transport along the commuting square of identities.
+* `LinearMap.detLineCongrOfEq_rfl`, `LinearMap.detLineCongrOfEq_trans` and
+  `LinearMap.detLineCongrOfEq_symm`: the identifications of the determinant lines of equal maps are
+  functorial.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
   determinant line by the determinant on the kernel times the inverse determinant on the cokernel.
 * `LinearMap.detLineCongr_apply_of_forall_eq_smul`: multiplication by a unit `c` on source and
@@ -495,6 +501,40 @@ theorem detLineCongr_symm (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M �
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
   simp
 
+/-- The identification of the determinant lines of equal linear maps `f = g`: transport along the
+commuting square of identities. -/
+def detLineCongrOfEq {g : M →ₗ[R] N} (h : f = g) : f.detLine ≃ₗ[R] g.detLine :=
+  f.detLineCongr (LinearEquiv.refl R M) (LinearEquiv.refl R N)
+    (by rw [h, LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap, comp_id, id_comp])
+
+/-- The identification of the determinant lines of equal maps `f = g` is transport along the
+commuting square of identities, so it combines with `detLineCongr_trans` and `detLineCongr_symm`
+for other commuting squares. -/
+theorem detLineCongrOfEq_eq_detLineCongr {g : M →ₗ[R] N} (h : f = g) :
+    detLineCongrOfEq h = f.detLineCongr (LinearEquiv.refl R M) (LinearEquiv.refl R N)
+      (by rw [h, LinearEquiv.refl_toLinearMap, LinearEquiv.refl_toLinearMap, comp_id, id_comp]) :=
+  (rfl)
+
+/-- Identifying the determinant line of `f` with itself is the identity. -/
+@[simp]
+theorem detLineCongrOfEq_rfl : detLineCongrOfEq (rfl : f = f) = LinearEquiv.refl R _ :=
+  detLineCongr_refl
+
+/-- Identifying the determinant lines of equal maps twice is identifying them once. -/
+@[simp]
+theorem detLineCongrOfEq_trans {g k : M →ₗ[R] N} (h : f = g) (h' : g = k) :
+    (detLineCongrOfEq h).trans (detLineCongrOfEq h') = detLineCongrOfEq (h.trans h') := by
+  subst h h'
+  simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_trans]
+
+/-- Reversing the identification of the determinant lines of equal maps is the identification in
+the other direction. -/
+@[simp]
+theorem detLineCongrOfEq_symm {g : M →ₗ[R] N} (h : f = g) :
+    (detLineCongrOfEq h).symm = detLineCongrOfEq h.symm := by
+  subst h
+  simp only [detLineCongrOfEq_rfl, LinearEquiv.refl_symm]
+
 /-- Transport along a commuting square of automorphisms `e₁` of `M` and `e₂` of `N` multiplies the
 determinant line of `f` by `det k₁ * (det k₂)⁻¹`, where `k₁` and `k₂` are the automorphisms that
 `e₁` and `e₂` induce on the kernel and on the cokernel of `f`. -/
@@ -571,6 +611,16 @@ involutive negation, supplied for the same reason as `LinearMap.instNegRayDetLin
 instance instInvolutiveNegRayDetLine (f : M →ₗ[R] N) :
     InvolutiveNeg (Module.Ray R f.detLine) :=
   @Module.Ray.instInvolutiveNeg R _ _ _ f.detLine TensorProduct.addCommGroup _
+
+/-- Identifying the orientations of the determinant lines of equal maps twice is identifying them
+once. -/
+@[simp]
+theorem map_detLineCongrOfEq_map_detLineCongrOfEq {f g k : M →ₗ[R] N} (h : f = g) (h' : g = k)
+    (o : Module.Ray R f.detLine) :
+    Module.Ray.map (detLineCongrOfEq h') (Module.Ray.map (detLineCongrOfEq h) o) =
+      Module.Ray.map (detLineCongrOfEq (h.trans h')) o := by
+  subst h h'
+  simp only [detLineCongrOfEq_rfl, Module.Ray.map_refl, Equiv.refl_apply]
 
 end Orientation
 
