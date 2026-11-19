@@ -19,7 +19,8 @@ import TauCeti.NumberTheory.Modular.Relations
 For `γ = [a,b;c,d]` in `SL₂(ℤ)`, the conjugate `γ Tʲ γ⁻¹` depends only on the first
 column `(a,c)`. Its lower-left entry is `-j c²`. This calculation describes the
 translations fixing the rational cusp `γ ∞` and turns congruence-subgroup membership
-into a divisibility condition on the translation exponent. An element of `SL₂(ℤ)` with
+into a divisibility condition on the translation exponent. In particular, conjugating `Tʲ` by `S`
+gives the lower translation `[1, 0; -j, 1]`. An element of `SL₂(ℤ)` with
 vanishing lower-left entry, that is one fixing `∞` itself, is a signed translation `±Tʲ`.
 
 In `PSL(2, ℤ)`, distinct integer powers of `T` are pairwise non-conjugate
@@ -53,6 +54,13 @@ theorem _root_.Matrix.SpecialLinearGroup.coe_conj_T_zpow (γ : SL(2, ℤ)) (j : 
     simp [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_inv,
       ModularGroup.coe_T_zpow, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two] <;>
     ring_nf <;> nlinarith [hdet]
+
+/-- The conjugate of `Tʲ` by `S` is the lower translation `[1, 0; -j, 1]`. -/
+theorem ModularGroup.coe_S_mul_T_zpow_mul_S_inv (j : ℤ) :
+    (↑(ModularGroup.S * ModularGroup.T ^ j * ModularGroup.S⁻¹) : Matrix (Fin 2) (Fin 2) ℤ) =
+      !![1, 0; -j, 1] := by
+  rw [Matrix.SpecialLinearGroup.coe_conj_T_zpow]
+  simp [_root_.ModularGroup.coe_S]
 
 /-- An element of `SL₂(ℤ)` with vanishing lower-left entry fixes the cusp `∞`, so it is a
 translation up to sign: `Tᵇ` when its diagonal entries are `1`, and `-T⁻ᵇ` when they are `-1`,

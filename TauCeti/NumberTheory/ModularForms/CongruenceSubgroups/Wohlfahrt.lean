@@ -66,12 +66,6 @@ open scoped MatrixGroups
 
 namespace CongruenceSubgroup
 
-/-- The conjugate of `Tʲ` by `S` is the lower translation `[1, 0; -j, 1]`. -/
-private theorem coe_S_mul_T_zpow_mul_S_inv (j : ℤ) :
-    (↑(S * T ^ j * S⁻¹) : Matrix (Fin 2) (Fin 2) ℤ) = !![1, 0; -j, 1] := by
-  rw [coe_conj_T_zpow]
-  simp [coe_S]
-
 /-- Multiplying `δ = [a, b; c, d]` on the left by `S T^(u c) S⁻¹ = [1, 0; -u c, 1]` and on the
 right by `T^(-u b)`, where `u a ≡ 1` modulo `ν`, gives a matrix congruent to `diag(a, u)`
 modulo `ν`. -/
@@ -83,7 +77,8 @@ private theorem map_S_mul_T_zpow_mul_S_inv_mul_mul_T_zpow {ν : ℕ} {u : ℤ} (
   have hdet : ((δ 0 0 * δ 1 1 - δ 0 1 * δ 1 0 : ℤ) : ZMod ν) = 1 := by
     rw [← det_fin_two, δ.det_coe, Int.cast_one]
   push_cast at hdet
-  rw [map_apply_coe, coe_mul, coe_mul, coe_S_mul_T_zpow_mul_S_inv, coe_T_zpow]
+  rw [map_apply_coe, coe_mul, coe_mul, TauCeti.ModularGroup.coe_S_mul_T_zpow_mul_S_inv,
+    coe_T_zpow]
   ext i j
   fin_cases i <;> fin_cases j
   · simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two]
@@ -112,7 +107,7 @@ private theorem mem_of_isCoprime {H : Subgroup SL(2, ℤ)} {M ν : ℕ}
   set X := S * T ^ (-1 : ℤ) * S⁻¹ * T ^ (1 - γ 0 0) * (S * T ^ (-1 : ℤ) * S⁻¹)⁻¹ with hXdef
   have hX : (X : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, 1 - γ 0 0; γ 0 0 - 1, 2 - γ 0 0] := by
     rw [hXdef, coe_conj_T_zpow]
-    simp only [coe_S_mul_T_zpow_mul_S_inv, neg_neg]
+    simp only [TauCeti.ModularGroup.coe_S_mul_T_zpow_mul_S_inv, neg_neg]
     ext i j
     fin_cases i <;> fin_cases j
     · simp
