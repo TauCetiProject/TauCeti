@@ -154,6 +154,28 @@ private theorem exists_mem_nhdsWithin_memWkpLoc_one (hr : 1 < r) (hr_top : r ≠
 
 end Scalar
 
+/-- A continuous linear map `L` carries the weak identity `∫ Δφ • ξ = -∫ (∂ₛφ • f + ∂ₜφ • g)` for
+one test function `φ` to the same identity for `L ξ`, `L f`, `L g`. -/
+theorem _root_.ContinuousLinearMap.integral_laplacian_smul_comp_eq_neg_integral_fderiv_smul_add
+    {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    [NormedAddCommGroup W] [NormedSpace ℝ W] {μ : Measure ℂ} (L : V →L[ℝ] W) {ξ f g : ℂ → V}
+    (hξ : LocallyIntegrableOn ξ Ω μ) (hf : LocallyIntegrableOn f Ω μ)
+    (hg : LocallyIntegrableOn g Ω μ) {φ : 𝓓(Ω, ℝ)}
+    (h : ∫ z, Δ (φ : ℂ → ℝ) z • ξ z ∂μ =
+      -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z) ∂μ) :
+    ∫ z, Δ (φ : ℂ → ℝ) z • L (ξ z) ∂μ =
+      -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • L (f z) + fderiv ℝ (φ : ℂ → ℝ) z I • L (g z)) ∂μ := by
+  by_cases hW : CompleteSpace W
+  · have hint : Integrable (fun z ↦
+        fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z) μ :=
+      (integrable_fderiv_smul_of_locallyIntegrableOn hf φ 1).add
+        (integrable_fderiv_smul_of_locallyIntegrableOn hg φ I)
+    have e := congrArg L h
+    rw [map_neg, ← L.integral_comp_comm (integrable_laplacian_smul_of_locallyIntegrableOn hξ φ),
+      ← L.integral_comp_comm hint] at e
+    simpa only [map_add, map_smul] using e
+  · simp only [integral_of_not_completeSpace hW, neg_zero]
+
 /-- **Regularity for the divergence-form Laplace equation.** Let `V` be finite-dimensional and
 `1 < r < ∞`. If `ξ` is locally integrable on the open set `Ω`, `f` and `g` are locally `Lʳ` on
 `Ω`, and `Δξ = ∂ₛf + ∂ₜg` weakly on `Ω`, that is
@@ -168,18 +190,10 @@ theorem memWkpLoc_one_of_forall_integral_laplacian_smul_eq {V : Type*} [NormedAd
   let b := Module.finBasis ℝ V
   refine b.memWkpLoc_iff.2 fun i ↦ memWkpLoc_iff_locally.2 fun z₀ hz₀ ↦ ?_
   let L : V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (b.coord i)
-  refine exists_mem_nhdsWithin_memWkpLoc_one hr hr_top (L.locallyIntegrableOn_comp hξ)
+  exact exists_mem_nhdsWithin_memWkpLoc_one hr hr_top (L.locallyIntegrableOn_comp hξ)
     (hf.clm_comp L) (hg.clm_comp L)
-    (fun φ ↦ ?_) hz₀
-  have hfloc := hf.locallyIntegrableOn hr.le Ω.isOpen.isLocallyClosed
-  have hgloc := hg.locallyIntegrableOn hr.le Ω.isOpen.isLocallyClosed
-  have hint : Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z :=
-    (integrable_fderiv_smul_of_locallyIntegrableOn hfloc φ 1).add
-      (integrable_fderiv_smul_of_locallyIntegrableOn hgloc φ I)
-  have e := congrArg L (h φ)
-  rw [map_neg, ← L.integral_comp_comm (by
-      simpa only [TestFunction.laplacianCLM_apply] using
-        (laplacianCLM ℝ ℂ 𝓓(Ω, ℝ) φ).integrable_smul hξ), ← L.integral_comp_comm hint] at e
-  simpa only [map_add, map_smul, Function.comp_apply] using e
+    (fun φ ↦ L.integral_laplacian_smul_comp_eq_neg_integral_fderiv_smul_add hξ
+      (hf.locallyIntegrableOn hr.le Ω.isOpen.isLocallyClosed)
+      (hg.locallyIntegrableOn hr.le Ω.isOpen.isLocallyClosed) (h φ)) hz₀
 
 end TauCeti
