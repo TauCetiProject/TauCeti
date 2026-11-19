@@ -109,7 +109,7 @@ def pullbackBasepointChangeCompHom (M : DGLocalSystem.{v} B x R) :
     (pullbackComp R f g rfl rfl).inv.app ((basepointChange R x (f (g z))).obj M)
 
 /-- The composition law for a single DG local system, as a composite. -/
-theorem pullbackBasepointChangeCompHom_eq (M : DGLocalSystem.{v} B x R) :
+theorem pullbackBasepointChangeCompHom_def (M : DGLocalSystem.{v} B x R) :
     pullbackBasepointChangeCompHom f g y z M =
       (pullback R g rfl).map (changeBasepointPullbackHom f ((basepointChange R x (f y)).obj M)) ≫
         (pullback R g rfl).map ((pullback R f rfl).map (tensorPathChainConcat M (f y) (f (g z)))) ≫
@@ -168,7 +168,7 @@ def pullbackBasepointChangeCompApp (f : C(B', B)) (g : C(B'', B'))
         (pullbackBasepointChange_obj R (f.comp g) β'' 𝓕 c'').symm)
 
 /-- The component of `pullbackBasepointChangeComp`, as a composite. -/
-theorem pullbackBasepointChangeCompApp_eq (f : C(B', B)) (g : C(B'', B'))
+theorem pullbackBasepointChangeCompApp_def (f : C(B', B)) (g : C(B'', B'))
     (β' : PathComponentBasepoints B') (β'' : PathComponentBasepoints B'')
     (𝓕 : DGLocalSystemFamily.{v} β R) (c'' : ZerothHomotopy B'') :
     pullbackBasepointChangeCompApp R f g β' β'' 𝓕 c'' =
