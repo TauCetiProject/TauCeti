@@ -788,6 +788,13 @@ theorem sharp_add (a : Symbol n W U m') {b₁ b₂ : Symbol n V W m}
   simp only [compIntegrand, sharpIntegrand_apply, hb₁.fourier_slice_add hb₂,
     ContinuousLinearMap.comp_add, smul_add]
 
+/-- The composition `a # b` only depends on `b`, not on the proof of its compact spatial
+support. -/
+theorem sharp_congr {b' : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
+    (hb' : b'.HasCompactSpatialSupport) (h : b = b') : a.sharp b hb = a.sharp b' hb' := by
+  subst h
+  rfl
+
 @[simp]
 theorem smul_sharp (c : ℂ) (a : Symbol n W U m') (hb : b.HasCompactSpatialSupport) :
     (c • a).sharp b hb = c • a.sharp b hb := by
