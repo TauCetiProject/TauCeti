@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+-- Restrict the witness to an open neighborhood where the maps agree.
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
@@ -99,6 +101,21 @@ theorem restrOpen_target (hs : IsOpen s) :
 @[simp]
 theorem coe_restrOpen (hs : IsOpen s) : ⇑(Φ.restrOpen s hs) = Φ :=
   (rfl)
+
+/-- Being a local diffeomorphism at a point depends only on the germ of the map there. -/
+theorem _root_.IsLocalDiffeomorphAt.congr_of_eventuallyEq {f g : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) (h : g =ᶠ[nhds x] f) :
+    IsLocalDiffeomorphAt I J n g x := by
+  unfold IsLocalDiffeomorphAt at hf ⊢
+  obtain ⟨s, hfg, hs, hxs⟩ := eventually_nhds_iff.mp h
+  obtain ⟨Ψ, hx, hΨ⟩ := hf
+  refine ⟨Ψ.restrOpen s hs, ?_, ?_⟩
+  · rw [restrOpen_source]
+    exact ⟨hx, hxs⟩
+  · intro y hy
+    rw [restrOpen_source] at hy
+    rw [coe_restrOpen]
+    exact (hfg y hy.2).trans (hΨ hy.1)
 
 /-- The restriction has the same inverse map. -/
 @[simp]
