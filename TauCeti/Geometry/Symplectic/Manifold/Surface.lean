@@ -119,10 +119,8 @@ theorem IsNondegenerate.orientation_eq_ofTopForm [FiniteDimensional ℝ E] (hσ 
     rw [orientationAt_orientation] at hb
     have h : 0 < hσ.symplecticFormAt x (b 0) (b 1) :=
       (SymplecticForm.basis_orientation_eq_orientation_iff hx b).mp hb
-    simp only [symplecticFormAt_apply, SmoothBundleForm.eval₂_apply] at h
-    convert h using 2
-    ext i
-    fin_cases i <;> rfl
+    rw [show (⇑b : Fin 2 → TangentSpace I x) = ![b 0, b 1] from (FinVec.etaExpand_eq _).symm]
+    simpa only [symplecticFormAt_apply, SmoothBundleForm.eval₂_apply] using h
   rw [← hb, Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff]
   exact hpos
 

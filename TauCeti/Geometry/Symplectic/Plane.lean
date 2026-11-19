@@ -105,10 +105,8 @@ theorem basis_orientation_eq_orientation_iff [FiniteDimensional ℝ V] (hV : fin
   refine ⟨fun h ↦ ?_, hpos b⟩
   -- Otherwise `ω(e₀, e₁) < 0`, and `(-e₀, e₁)` is positively oriented, which reverses `b`.
   by_contra hb
-  have hne : ω (b 0) (b 1) ≠ 0 := fun h₀ ↦ not_linearIndependent_of_apply_eq_zero hV h₀ <| by
-    convert b.linearIndependent
-    ext i
-    fin_cases i <;> rfl
+  have hne : ω (b 0) (b 1) ≠ 0 := fun h₀ ↦ not_linearIndependent_of_apply_eq_zero hV h₀ <|
+    FinVec.etaExpand_eq (⇑b) ▸ b.linearIndependent
   have h' := hpos (b.unitsSMul ![-1, 1]) (by
     simpa [Basis.unitsSMul_apply, Units.smul_def] using lt_of_le_of_ne (not_lt.mp hb) hne)
   rw [Basis.orientation_unitsSMul, Module.Ray.units_smul_of_neg _ (by simp), h] at h'
