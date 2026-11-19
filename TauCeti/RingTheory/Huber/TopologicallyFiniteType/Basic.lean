@@ -242,8 +242,8 @@ theorem IsTopologicallyFiniteType.exists_finite_dense_adjoin [Algebra A B]
       exact Subalgebra.algebraMap_mem _ a)
     fun i ↦ Algebra.subset_adjoin ⟨i, rfl⟩
   refine (hπ.surjective.denseRange.dense_image hπ.continuous hR).mono ?_
-  rintro _ ⟨y, hy, rfl⟩
-  exact hy
+  rw [Subring.coe_comap, Subalgebra.coe_toSubring]
+  exact Set.image_preimage_subset _ _
 
 /-! ### Stability under a further open quotient
 
