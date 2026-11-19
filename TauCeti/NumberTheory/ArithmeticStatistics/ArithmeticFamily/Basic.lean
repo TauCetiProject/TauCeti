@@ -16,7 +16,8 @@ specifies the objects being counted: use a quotient carrier to count isomorphism
 and a pullback with its explicit fibre multiplicities to count representatives.
 
 Inclusive counts, strict counts and weighted counts are finite at every real cutoff.
-Quotient heights, finite-fibre pullbacks and positive rescalings preserve this finiteness.
+Finite-fibre pullbacks and positive rescalings preserve this finiteness; a quotient height
+defines a family once its own Northcott finiteness is supplied.
 Natural-valued heights recover `TauCeti.normLE` and `TauCeti.summatory`; multiplicative Weil
 height gives a family on the elements of a number field.
 -/
@@ -167,6 +168,43 @@ theorem countLT_le_count (S : Set ι) (X : ℝ) : F.countLT S X ≤ F.count S X 
   exact Finset.card_le_card fun i hi ↦ Finset.mem_filter.mpr
     ⟨(Finset.mem_filter.mp hi).1, (Finset.mem_filter.mp hi).2.1⟩
 
+/-- Inclusion of subfamilies gives an inequality of strict counts. -/
+theorem countLT_mono_set {S T : Set ι} (h : S ⊆ T) (X : ℝ) :
+    F.countLT S X ≤ F.countLT T X := by
+  classical
+  apply Finset.card_le_card
+  intro i hi
+  obtain ⟨hiX, hiS, hi⟩ := Finset.mem_filter.mp hi
+  exact Finset.mem_filter.mpr ⟨hiX, h hiS, hi⟩
+
+/-- Strict counts are monotone in the cutoff. -/
+theorem countLT_mono (S : Set ι) : Monotone (F.countLT S) := by
+  classical
+  intro X Y h
+  apply Finset.card_le_card
+  intro i hi
+  obtain ⟨hiX, hiS, hi⟩ := Finset.mem_filter.mp hi
+  exact Finset.mem_filter.mpr ⟨F.heightLE_mono h hiX, hiS, hi.trans_le h⟩
+
+/-- Strict counts add on disjoint subfamilies. -/
+theorem countLT_union_of_disjoint {S T : Set ι} (h : Disjoint S T) (X : ℝ) :
+    F.countLT (S ∪ T) X = F.countLT S X + F.countLT T X := by
+  classical
+  simp only [countLT, Set.mem_union, or_and_right, Finset.filter_or]
+  apply Finset.card_union_of_disjoint
+  exact Finset.disjoint_left.mpr fun i hi hj ↦
+    Set.disjoint_left.mp h (Finset.mem_filter.mp hi).2.1 (Finset.mem_filter.mp hj).2.1
+
+/-- An inclusive count is bounded by a strict count at any larger cutoff. -/
+theorem count_le_countLT_of_lt (S : Set ι) {X Y : ℝ} (h : X < Y) :
+    F.count S X ≤ F.countLT S Y := by
+  classical
+  apply Finset.card_le_card
+  intro i hi
+  obtain ⟨hiX, hiS⟩ := Finset.mem_filter.mp hi
+  exact Finset.mem_filter.mpr
+    ⟨F.heightLE_mono h.le hiX, hiS, ((mem_heightLE F).mp hiX).trans_lt h⟩
+
 /-- Descend an invariant height to a quotient, requiring finiteness on the quotient itself.
 Finiteness of representatives is neither required nor implied. -/
 def ofQuotient (s : Setoid ι) (h : ι → ℝ) (hinv : ∀ i j, s.r i j → h i = h j)
@@ -207,9 +245,7 @@ theorem count_comap (f : κ → ι) [Filter.TendstoCofinite f] (S : Set ι) (X :
     _ = ∑ i ∈ t, Nat.card {k // f k = i} := by
       apply Finset.sum_congr rfl
       intro i hi
-      rw [← Set.ncard_coe_finset]
-      have hcard : Nat.card {k // f k = i} = ({k | f k = i} : Set κ).ncard := rfl
-      rw [hcard]
+      rw [← Set.ncard_coe_finset, ← Set.ncard_ofPred]
       congr 1
       ext k
       have hi' : F.height i ≤ X ∧ i ∈ S := by simpa [t] using hi
