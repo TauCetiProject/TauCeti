@@ -21,7 +21,7 @@ easy to conflate.
 
 * **The identity.** The symbol `1` quantizes to the identity, so on the Gaussian
   `u(x) = exp(-x²)` it gives the value `1` at `x = 0`
-  (`TauCeti.QuantizationExample.quantizeSchwartzValue_one_gaussian_zero`).
+  (`TauCeti.QuantizationExample.quantizeSchwartzValue_id_gaussian_zero`).
 * **The sign and the `2π` rescaling.** The symbol `ξ` quantizes to `D = -i ∂`, so on the same
   Gaussian it gives `2 i x exp(-x²)`, with value `2i/e` at `x = 1`
   (`TauCeti.QuantizationExample.quantizeSchwartzValue_inner_gaussian`,
@@ -92,7 +92,7 @@ theorem lineDerivOp_gaussian (x : ℝ) : ∂_{(1 : ℝ)} gaussian x = -2 * x * c
 
 /-- The symbol `1` quantizes to the identity: on the Gaussian `exp(-x²)` its value at `0`
 is `1`. -/
-theorem quantizeSchwartzValue_one_gaussian_zero :
+theorem quantizeSchwartzValue_id_gaussian_zero :
     quantizeSchwartzValue (fun _ ↦ ContinuousLinearMap.id ℂ ℂ) gaussian 0 = 1 := by
   simp [gaussian_apply]
 
