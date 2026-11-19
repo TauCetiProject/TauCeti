@@ -19,9 +19,10 @@ inclusions, and defines the diagonal action of `Module.End R (ω X)` on `ω (⨁
 ## Main definitions and results
 
 * `CategoryTheory.Functor.map_π_map_ι_apply`, `CategoryTheory.Functor.sum_map_ι_map_π_apply`:
-  the biproduct identities `ιₖ ≫ πⱼ = δₖⱼ` and `∑ j, πⱼ ≫ ιⱼ = 𝟙` on elements of the fibre.
-* `CategoryTheory.Functor.ext_map_π_apply`: an element of `ω (⨁ fun _ : ι ↦ X)` is determined by
-  its images under the projections.
+  the biproduct identities `ιₖ ≫ πⱼ = δₖⱼ` and `∑ j, πⱼ ≫ ιⱼ = 𝟙` on elements of the fibre (the
+  latter for an arbitrary finite biproduct `⨁ F`).
+* `CategoryTheory.Functor.ext_map_π_apply`: an element of the fibre of a finite biproduct `⨁ F`
+  is determined by its images under the projections.
 * `CategoryTheory.Functor.powerAlgHom`: the diagonal action of `Module.End R (ω X)` on
   `ω (⨁ fun _ : ι ↦ X)`, characterized by `CategoryTheory.Functor.eq_powerAlgHom_iff`.
 -/
@@ -52,24 +53,25 @@ theorem map_π_map_ι_apply [DecidableEq ι] [Finite ι] (j k : ι) (x : ω.obj 
     simp
   · simp
 
-/-- The identity `∑ j, πⱼ ≫ ιⱼ = 𝟙` of a finite power of `X`, on elements of the fibre of an
+variable {ι} in
+/-- The identity `∑ j, πⱼ ≫ ιⱼ = 𝟙` of a finite biproduct, on elements of the fibre of an
 additive functor to modules. -/
-theorem sum_map_ι_map_π_apply [Fintype ι] (v : ω.obj (⨁ fun _ : ι ↦ X)) :
-    ∑ j, (ω.map (biproduct.ι (fun _ : ι ↦ X) j)).hom
-      ((ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v) = v := by
-  have h := congrArg (fun φ ↦ (ω.map φ).hom v) (biproduct.total (f := fun _ : ι ↦ X))
+theorem sum_map_ι_map_π_apply [Fintype ι] (F : ι → C) (v : ω.obj (⨁ F)) :
+    ∑ j, (ω.map (biproduct.ι F j)).hom ((ω.map (biproduct.π F j)).hom v) = v := by
+  have h := congrArg (fun φ ↦ (ω.map φ).hom v) (biproduct.total (f := F))
   simp only [Functor.map_sum, ModuleCat.hom_sum, LinearMap.sum_apply,
     Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply, Functor.map_id,
     ModuleCat.hom_id, LinearMap.id_apply] at h
   exact h
 
-variable {X ι} in
-/-- An element of `ω (⨁ fun _ : ι ↦ X)` is determined by its images under the projections. -/
-theorem ext_map_π_apply [Finite ι] {v v' : ω.obj (⨁ fun _ : ι ↦ X)}
-    (h : ∀ j, (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v =
-      (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v') : v = v' := by
+variable {ι} in
+/-- An element of the fibre `ω (⨁ F)` of a finite biproduct is determined by its images under
+the projections. -/
+theorem ext_map_π_apply [Finite ι] {F : ι → C} {v v' : ω.obj (⨁ F)}
+    (h : ∀ j, (ω.map (biproduct.π F j)).hom v = (ω.map (biproduct.π F j)).hom v') :
+    v = v' := by
   have := Fintype.ofFinite ι
-  rw [← sum_map_ι_map_π_apply ω X ι v, ← sum_map_ι_map_π_apply ω X ι v']
+  rw [← sum_map_ι_map_π_apply ω F v, ← sum_map_ι_map_π_apply ω F v']
   simp only [h]
 
 variable [Fintype ι]
