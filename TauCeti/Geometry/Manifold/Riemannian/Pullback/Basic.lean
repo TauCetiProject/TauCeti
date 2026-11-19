@@ -48,6 +48,8 @@ the metric that a manifold with a geometric structure receives through its chart
 * `Bundle.ContMDiffRiemannianMetric.pullback_id`,
   `Bundle.ContMDiffRiemannianMetric.pullback_comp_inner`, and
   `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for pullback metrics.
+* `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_pullback`: the metrics induced by a
+  jointly `C^(n+1)` family of immersions form a jointly `C^n` family.
 * `Bundle.ContMDiffRiemannianMetric.pullback_rescale`: pulling back commutes with conformal
   rescaling, `f^* (h g) = (h ∘ f) f^* g`.
 * `Bundle.ContMDiffRiemannianMetric.conformalClass_pullback`: along a map with a `C^n` left
@@ -319,6 +321,33 @@ theorem pullback_id
   intro x v w
   rw [pullback_inner]
   simp only [mfderiv_id, ContinuousLinearMap.id_apply, id_eq]
+
+/-- **Joint regularity of induced metrics.** The metrics `F_t^* g` induced by a jointly
+`C^(n+1)` family of immersions `F_t` from a `C^n` metric `g` have inner products that are `C^n`
+jointly in `(t, x)`. -/
+theorem contMDiffAt_uncurry_pullback
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : ℝ → M → N}
+    (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (Function.uncurry Φ))
+    (hinj : ∀ t x, Function.Injective (mfderiv I J (Φ t) x)) (p₀ : ℝ × M) :
+    ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
+        ((g.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2)) p₀ := by
+  have hb := (g.contMDiff (Φ p₀.1 p₀.2)).comp p₀ (hΦ.contMDiffAt.of_le le_self_add)
+  have hL := ContMDiffAt.mfderiv (fun (p : ℝ × M) (x : M) ↦ Φ p.1 x) Prod.snd
+    ((hΦ (p₀.1, p₀.2)).comp (p₀, p₀.2)
+      ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)) contMDiffAt_snd le_rfl
+  refine contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_snd, ?_⟩
+  refine (contMDiffAt_trivializationAt_bilinearForm_pullback continuousAt_snd hb hL
+    ).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ ?_)
+  have hp : (g.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2 =
+      (ContinuousLinearMap.precomp ℝ (mfderiv I J (Φ p.1) p.2)).comp
+        ((g.inner (Φ p.1 p.2)).comp (mfderiv I J (Φ p.1) p.2)) := by
+    ext v w
+    simp only [pullback_inner, ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply]
+  dsimp only
+  rw [hp]
+  rfl
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}

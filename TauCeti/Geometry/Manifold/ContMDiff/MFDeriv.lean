@@ -35,6 +35,8 @@ its regularity at a point also loses one derivative.
 
 * `ContMDiffAt.fderiv_right`: the derivative in the vector-space variable of a jointly `C^m`
   family is jointly `C^n` when `n + 1 ≤ m`.
+* `ContMDiffAt.deriv_uncurry`: the partial derivative in a scalar parameter of a jointly `C^m`
+  function is jointly `C^n` when `n + 1 ≤ m`.
 * `ContMDiffAt.iteratedFDeriv_right`: the `i`-th iterated derivative in the vector-space variable
   of a jointly `C^n` family is jointly `C^m` when `m + i ≤ n`.
 * `ContMDiff.contMDiff_tangentMap_family`: the tangent maps of a jointly `C^m` family of maps
@@ -157,6 +159,18 @@ theorem ContMDiffAt.iteratedFDeriv_right {i : ℕ}
     exact (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (i + 1) ↦ E) F).symm.contDiff
       |>.contMDiff.contMDiffAt.comp z
         (hi.fderiv_right (g := fun p ↦ iteratedFDeriv 𝕜 i (g p)) le_rfl)
+
+/-- **Regularity of the partial derivative in a scalar parameter.** If `(t, a) ↦ f t a` is `C^m`
+at `p₀` and `n + 1 ≤ m`, then the partial derivative `(t, a) ↦ ∂_t f t a` is `C^n` at `p₀`. -/
+theorem ContMDiffAt.deriv_uncurry {f : 𝕜 → P → F} {p₀ : 𝕜 × P}
+    (hf : ContMDiffAt (𝓘(𝕜).prod J) 𝓘(𝕜, F) m (Function.uncurry f) p₀) (hnm : n + 1 ≤ m) :
+    ContMDiffAt (𝓘(𝕜).prod J) 𝓘(𝕜, F) n (fun p : 𝕜 × P ↦ deriv (fun s ↦ f s p.2) p.1) p₀ := by
+  -- Swap the factors to use the derivative in the vector-space variable of a family.
+  have hswap : ContMDiffAt (J.prod 𝓘(𝕜)) 𝓘(𝕜, F) m
+      (Function.uncurry fun (a : P) (s : 𝕜) ↦ f s a) (p₀.2, p₀.1) :=
+    hf.comp (p₀.2, p₀.1) (contMDiffAt_snd.prodMk contMDiffAt_fst)
+  have h := (hswap.fderiv_right hnm).comp p₀ (contMDiffAt_snd.prodMk contMDiffAt_fst)
+  exact ((ContinuousLinearMap.apply 𝕜 F (1 : 𝕜)).contMDiff.contMDiffAt.comp p₀ h :)
 
 section TangentMap
 
