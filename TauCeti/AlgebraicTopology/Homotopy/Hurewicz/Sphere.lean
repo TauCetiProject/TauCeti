@@ -34,7 +34,7 @@ tautological loop (`GenLoop.hurewicz_eq_hurewicz_diskBoundaryGenLoop_comp`,
 up to its value on `π_{n+1}(Sⁿ⁺¹)`. In particular a generalized loop whose pointed map out of the
 sphere is bijective onto a Hausdorff space, that is a surjective loop identifying only points of
 the boundary of the cube, has a generating Hurewicz class
-(`GenLoop.isIso_hurewicz_of_bijective_toSphere`).
+(`GenLoop.isIso_hurewicz_of_bijective_toSphere`, `GenLoop.isIso_hurewicz_of_forall_ne`).
 
 Since a homotopy of generalized loops along a path is a free homotopy of the corresponding maps
 out of the sphere (`TauCeti.GenLoop.HomotopyAlong.homotopic_toSphere`), and homotopic maps induce
@@ -459,6 +459,21 @@ theorem isIso_hurewicz_of_bijective_toSphere [T2Space X] {p : Ω^ (Fin (n + 1)) 
       (diskBoundaryMap (X := TopCat.of X) p).hom.continuous.isClosedMap
   rw [hurewicz_eq_hurewicz_diskBoundaryGenLoop_comp]
   infer_instance
+
+/-- **A generalized loop that covers everything but the base point and identifies only boundary
+points has a generating Hurewicz class.** The base point is the image of the boundary, so such a
+loop is surjective, and `GenLoop.isIso_hurewicz_of_bijective_toSphere` applies. -/
+theorem isIso_hurewicz_of_forall_ne [T2Space X] {p : Ω^ (Fin (n + 1)) X x}
+    (hs : ∀ q, q ≠ x → ∃ y, p y = q)
+    (hi : ∀ y z, p y = p z → y = z ∨ y ∈ Cube.boundary (Fin (n + 1)) ∧
+      z ∈ Cube.boundary (Fin (n + 1))) :
+    IsIso (hurewicz R p) := by
+  have hs' : Function.Surjective p := fun q ↦ by
+    by_cases hq : q = x
+    · exact ⟨0, hq ▸ GenLoop.boundary p 0 ⟨0, Or.inl rfl⟩⟩
+    · exact hs q hq
+  exact isIso_hurewicz_of_bijective_toSphere R
+    ⟨(injective_toSphere_iff p).2 hi, (surjective_toSphere_iff p).2 hs'⟩
 
 end Universe
 
