@@ -26,6 +26,7 @@ maximal atlas is invariant under structomorphisms and diffeomorphisms.
 
 ## Main results
 
+* `Structomorph.symm_toHomeomorph`: the homeomorphism underlying the inverse structomorphism.
 * `Structomorph.symm_trans_trans_mem_of_mem_maximalAtlas`: read in a chart of `M` and a chart of
   the maximal atlas of `M'`, a structomorphism is in `G`.
 * `Structomorph.trans_mem_maximalAtlas`: the pullback `e ≫ φ` of a chart of the maximal atlas.
@@ -44,6 +45,11 @@ namespace Structomorph
 
 variable {H : Type*} [TopologicalSpace H] {G : StructureGroupoid H}
   {M M' : Type*} [TopologicalSpace M] [TopologicalSpace M'] [ChartedSpace H M] [ChartedSpace H M']
+
+/-- The homeomorphism underlying the inverse of a structomorphism is the inverse homeomorphism. -/
+@[simp]
+theorem symm_toHomeomorph (e : Structomorph G M M') : e.symm.toHomeomorph = e.toHomeomorph.symm :=
+  rfl
 
 /-- Read in a chart `c` of the atlas of `M` and a chart `φ` of the maximal `G`-atlas of `M'`, a
 `G`-structomorphism `e : M → M'` is in `G`: near each point it is `e` read in `c` and a chart `g`

@@ -127,9 +127,9 @@ theorem memWkpLocMapOnGroupoid_comp_iff (e : Structomorph G X' X) :
   refine ⟨fun h ↦ ?_, fun h ↦ h.comp_structomorph e⟩
   have h' := h.comp_structomorph e.symm
   have hu : (u ∘ e.toHomeomorph) ∘ e.symm.toHomeomorph = u :=
-    funext fun x ↦ congrArg u (e.toHomeomorph.apply_symm_apply x)
+    funext fun x ↦ by simp
   have hs : e.symm.toHomeomorph ⁻¹' (e.toHomeomorph ⁻¹' s) = s :=
-    ext fun x ↦ by simp [show e.symm.toHomeomorph = e.toHomeomorph.symm from rfl]
+    ext fun x ↦ by simp
   rwa [hu, hs] at h'
 
 /-- **Invariance under structomorphisms of the source.** For a `G`-structomorphism `e : X' → X`, a
