@@ -63,13 +63,13 @@ theorem diagonalMass_def (s : BoundingSieve) (z : ℝ) :
 /-- The strict diagonal mass is the inclusive truncated normalizer at `⌈z⌉₊ - 1`. -/
 theorem diagonalMass_eq_truncatedSelbergSum (s : BoundingSieve) (z : ℝ) :
     s.diagonalMass z = s.truncatedSelbergSum (⌈z⌉₊ - 1) := by
-  simp_rw [diagonalMass, truncatedSelbergSum_def, sum_filter, natCast_lt_iff_le_ceil_sub_one]
+  simp_rw [diagonalMass, truncatedSelbergSum_def, sum_filter, Nat.cast_lt_iff_le_ceil_sub_one]
 
 /-- The diagonal mass is positive once the cutoff exceeds one. -/
 theorem diagonalMass_pos (s : BoundingSieve) {z : ℝ} (hz : 1 < z) : 0 < s.diagonalMass z := by
   rw [diagonalMass_eq_truncatedSelbergSum]
   exact s.truncatedSelbergSum_pos <| by
-    simpa using (natCast_lt_iff_le_ceil_sub_one 1).mp (by simpa using hz)
+    simpa using (Nat.cast_lt_iff_le_ceil_sub_one 1).mp (by simpa using hz)
 
 /-- Selberg's optimal weights `λ_z`, the normalized upper-divisor sums of `selbergTerms` over
 divisors of the sieving product strictly below the cutoff. -/
@@ -94,14 +94,14 @@ theorem optimalSelbergWeights_eq_selbergWeights (s : BoundingSieve) (z : ℝ) :
     s.optimalSelbergWeights z = s.selbergWeights (⌈z⌉₊ - 1) := by
   funext d
   simp_rw [optimalSelbergWeights, selbergWeights_def, diagonalMass_eq_truncatedSelbergSum,
-    sum_filter, natCast_lt_iff_le_ceil_sub_one]
+    sum_filter, Nat.cast_lt_iff_le_ceil_sub_one]
 
 /-- The optimal weights are normalized at one once the cutoff exceeds one. -/
 @[simp] theorem optimalSelbergWeights_one (s : BoundingSieve) {z : ℝ} (hz : 1 < z) :
     s.optimalSelbergWeights z 1 = 1 := by
   rw [optimalSelbergWeights_eq_selbergWeights]
   exact s.selbergWeights_one <| by
-    simpa using (natCast_lt_iff_le_ceil_sub_one 1).mp (by simpa using hz)
+    simpa using (Nat.cast_lt_iff_le_ceil_sub_one 1).mp (by simpa using hz)
 
 /-- An optimal weight vanishes off the divisors of the sieving product. -/
 @[simp] theorem optimalSelbergWeights_eq_zero_of_not_dvd (s : BoundingSieve) (z : ℝ) {d : ℕ}
@@ -113,7 +113,7 @@ theorem optimalSelbergWeights_eq_selbergWeights (s : BoundingSieve) (z : ℝ) :
     (hd : z ≤ (d : ℝ)) : s.optimalSelbergWeights z d = 0 := by
   rw [optimalSelbergWeights_eq_selbergWeights]
   exact s.selbergWeights_eq_zero_of_lt _ d
-    (lt_of_not_ge ((natCast_lt_iff_le_ceil_sub_one d).not.mp (not_lt_of_ge hd)))
+    (lt_of_not_ge ((Nat.cast_lt_iff_le_ceil_sub_one d).not.mp (not_lt_of_ge hd)))
 
 /-- Every optimal weight has absolute value at most one, at every real cutoff. -/
 theorem abs_optimalSelbergWeights_le_one (s : BoundingSieve) (z : ℝ) (d : ℕ) :
@@ -134,7 +134,7 @@ theorem inv_diagonalMass_le_mainSum_lambdaSquared (s : BoundingSieve) {z : ℝ} 
     (s.diagonalMass z)⁻¹ ≤ s.mainSum (lambdaSquared w) := by
   rw [diagonalMass_eq_truncatedSelbergSum]
   exact s.inv_truncatedSelbergSum_le_mainSum_lambdaSquared w hw fun d hd hdz ↦
-    hsupp d hd (le_of_not_gt fun h ↦ not_le_of_gt hdz ((natCast_lt_iff_le_ceil_sub_one d).mp h))
+    hsupp d hd (le_of_not_gt fun h ↦ not_le_of_gt hdz ((Nat.cast_lt_iff_le_ceil_sub_one d).mp h))
 
 /-- Selberg's upper bound with its exact squared-weight remainder, for `1 < z`. -/
 theorem siftedSum_le_totalMass_div_diagonalMass_add_errSum (s : BoundingSieve) {z : ℝ}

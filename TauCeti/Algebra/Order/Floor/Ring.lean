@@ -33,7 +33,7 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   a remainder in `[0, 1)`.
 * `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
   its fractional part `Int.fract t`.
-* `TauCeti.natCast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
+* `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
@@ -62,7 +62,7 @@ theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrde
 
 /-- In an ordered ring with a natural ceiling, a natural number lies strictly below `a` exactly
 when it is at most `⌈a⌉₊ - 1`. This turns a strict cutoff into an inclusive one. -/
-theorem natCast_lt_iff_le_ceil_sub_one {R : Type*} [Ring R] [LinearOrder R]
+theorem _root_.Nat.cast_lt_iff_le_ceil_sub_one {R : Type*} [Ring R] [LinearOrder R]
     [IsStrictOrderedRing R] [FloorSemiring R] (n : ℕ) {a : R} :
     (n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1 := by
   rw [← Nat.lt_ceil, le_sub_iff_add_le, ← Nat.cast_add_one, Nat.cast_le, Nat.add_one_le_iff]
