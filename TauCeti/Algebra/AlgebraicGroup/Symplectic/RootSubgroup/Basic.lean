@@ -483,7 +483,7 @@ coordinate morphism through the symplectic quotient. -/
 theorem coordinateMap_comp_positiveLongRootSubgroupCoordinateMap (i : Fin m) :
     coordinateMap R m ≫ positiveLongRootSubgroupCoordinateMap i =
       GeneralLinear.rootSubgroupCoordinateMap
-        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) :=
+        (Fin.finSumFinEquiv_inl_ne_inr i i) :=
   coordinateMap_comp_rootSubgroupCoordinateMap_of_hom (.positiveLong i) _ fun A c => by
     rw [GLSymplecticFin.RootSubgroupIndex.hom_positiveLong,
       GLSymplecticFin.positiveLongRootTransvectionHom_apply,
@@ -495,7 +495,7 @@ coordinate morphism through the symplectic quotient. -/
 theorem coordinateMap_comp_negativeLongRootSubgroupCoordinateMap (i : Fin m) :
     coordinateMap R m ≫ negativeLongRootSubgroupCoordinateMap i =
       GeneralLinear.rootSubgroupCoordinateMap
-        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) :=
+        (Fin.finSumFinEquiv_inr_ne_inl i i) :=
   coordinateMap_comp_rootSubgroupCoordinateMap_of_hom (.negativeLong i) _ fun A c => by
     rw [GLSymplecticFin.RootSubgroupIndex.hom_negativeLong,
       GLSymplecticFin.negativeLongRootTransvectionHom_apply,
@@ -619,7 +619,7 @@ general-linear root subgroup. -/
 theorem positiveLongRootSubgroup_comp_inclusion (i : Fin m) :
     positiveLongRootSubgroup (R := R) i ≫ inclusion R m =
       GeneralLinear.rootSubgroup (R := R)
-        (GLSymplecticFin.finSumFinEquiv_inl_ne_inr i i) :=
+        (Fin.finSumFinEquiv_inl_ne_inr i i) :=
   rootSubgroup_comp_inclusion_of_coordinateMap (.positiveLong i) _
     (coordinateMap_comp_positiveLongRootSubgroupCoordinateMap i)
 
@@ -629,7 +629,7 @@ general-linear root subgroup. -/
 theorem negativeLongRootSubgroup_comp_inclusion (i : Fin m) :
     negativeLongRootSubgroup (R := R) i ≫ inclusion R m =
       GeneralLinear.rootSubgroup (R := R)
-        (GLSymplecticFin.finSumFinEquiv_inr_ne_inl i i) :=
+        (Fin.finSumFinEquiv_inr_ne_inl i i) :=
   rootSubgroup_comp_inclusion_of_coordinateMap (.negativeLong i) _
     (coordinateMap_comp_negativeLongRootSubgroupCoordinateMap i)
 
