@@ -83,11 +83,8 @@ theorem isIso_singularHomologyMap_basedMapMap_sphereBundleFiberIncl
     (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) (hB : ∀ j ≤ n + k, Subsingleton (π_ j B b))
     {m : ℕ} (hm : m < n) :
     IsIso (((singularHomologyFunctor (ModuleCat.{w} R) m).obj (ModuleCat.of R R)).map
-      (TopCat.ofHom (⟨BasedMap.map (sphereBundleFiberIncl F E b) rfl,
-          BasedMap.continuous_map (sphereBundleFiberIncl F E b) rfl⟩ :
-        C(BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (sphere (0 : E b) 1) s₀ x,
-          BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (sphereBundle F E) s₀
-            (sphereBundleFiberIncl F E b x))))) :=
+      (TopCat.ofHom (BasedMap.mapContinuousMap (B := sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
+        (b₀ := s₀) (x := x) (sphereBundleFiberIncl F E b) rfl))) :=
   ((isNConnected_sphereBundleFiberIncl F E hnorm hB).basedMapMap rfl s₀).isIso_singularHomologyMap
     R hm
 
@@ -98,11 +95,8 @@ theorem epi_singularHomologyMap_basedMapMap_sphereBundleFiberIncl
     (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) (hB : ∀ j ≤ n + k, Subsingleton (π_ j B b))
     {m : ℕ} (hm : m ≤ n) :
     Epi (((singularHomologyFunctor (ModuleCat.{w} R) m).obj (ModuleCat.of R R)).map
-      (TopCat.ofHom (⟨BasedMap.map (sphereBundleFiberIncl F E b) rfl,
-          BasedMap.continuous_map (sphereBundleFiberIncl F E b) rfl⟩ :
-        C(BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (sphere (0 : E b) 1) s₀ x,
-          BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (sphereBundle F E) s₀
-            (sphereBundleFiberIncl F E b x))))) :=
+      (TopCat.ofHom (BasedMap.mapContinuousMap (B := sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
+        (b₀ := s₀) (x := x) (sphereBundleFiberIncl F E b) rfl))) :=
   ((isNConnected_sphereBundleFiberIncl F E hnorm hB).basedMapMap rfl s₀).epi_singularHomologyMap
     R hm
 
@@ -130,10 +124,7 @@ theorem isIso_singularHomologyMap_basedMapMap_comp_twoFieldSphereFamilyFiber
     (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) {m : ℕ} (hE : finrank ℝ (E b) = m + 5)
     (hB : ∀ j ≤ m + 5, Subsingleton (π_ j B b)) (x : sphere (0 : E b) 1) :
     IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)).map
-      (TopCat.ofHom ((⟨BasedMap.map (sphereBundleFiberIncl F E b) rfl,
-          BasedMap.continuous_map (sphereBundleFiberIncl F E b) rfl⟩ :
-        C(BasedMap Sphere2 (sphere (0 : E b) 1) Sphere2.north x,
-          BasedMap Sphere2 (sphereBundle F E) Sphere2.north (sphereBundleFiberIncl F E b x))).comp
+      (TopCat.ofHom ((BasedMap.mapContinuousMap (sphereBundleFiberIncl F E b) rfl).comp
         (twoFieldSphereFamilyFiber h hu hv x)))) := by
   have := isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber h hu hv hE x
   have := isIso_singularHomologyMap_basedMapMap_sphereBundleFiberIncl F E (n := m + 3) (k := 2)

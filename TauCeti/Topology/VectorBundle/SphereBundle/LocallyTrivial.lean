@@ -326,10 +326,10 @@ theorem isNConnected_sphereBundleFiberIncl (hnorm : Continuous fun v : TotalSpac
     (TopCat.mem_serreFibrations_sphereBundleProj F E hnorm) hB
   have hcomp : (TopCat.Hom.fiberι (TopCat.ofHom (sphereBundleProj F E)) b).hom.comp
       h.toHomotopyEquiv.toFun = sphereBundleFiberIncl F E b :=
-    -- By construction `h x` is the point `sphereBundleFiberIncl F E b x` of the fibre; Mathlib has
-    -- no evaluation lemmas for `IsEmbedding.toHomeomorph` and `Homeomorph.setCongr`.
+    -- `Homeomorph.setCongr` has no evaluation lemma; its coercion is definitionally the identity.
     ContinuousMap.ext fun x ↦
-      (TopCat.Hom.fiberι_apply (TopCat.ofHom (sphereBundleProj F E)) b (h x)).trans rfl
+      (TopCat.Hom.fiberι_apply (TopCat.ofHom (sphereBundleProj F E)) b (h x)).trans
+        ((isEmbedding_sphereBundleFiberIncl F E b).toHomeomorph_apply_coe x)
   rw [← hcomp]
   exact h.toHomotopyEquiv.isWeakHomotopyEquivalence.isNConnected_comp_iff'.2 hfib
 

@@ -13,7 +13,7 @@ public import TauCeti.Topology.MappingSpace.Sphere.Basic
 
 For `k ≥ 1`, postcomposition with a based map `f : X → Y`, `f x = y`, induces the map
 `Map_*(Sᵏ, X) → Map_*(Sᵏ, Y)` of based mapping spaces out of the sphere `Sᵏ ⊆ ℝᵏ⁺¹`
-(`TauCeti.BasedMap.map`). If `f` is `(n + k)`-connected, this map is `n`-connected
+(`TauCeti.BasedMap.mapContinuousMap`). If `f` is `(n + k)`-connected, this map is `n`-connected
 (`ContinuousMap.IsNConnected.basedMapMap`).
 
 The based mapping space `Map_*(Sᵏ, X)` is the `k`-fold iterated loop space `Ω^[k] X`, naturally in
@@ -52,16 +52,15 @@ map `f : X → Y`, `f x = y`, that is `(n + k)`-connected, postcomposition with 
 `n`-connected map `Map_*(Sᵏ, X) → Map_*(Sᵏ, Y)` of based mapping spaces out of the sphere. -/
 theorem basedMapMap [NeZero k] (hf : f.IsNConnected (n + k)) (hx : f x = y)
     (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
-    (⟨BasedMap.map f hx, BasedMap.continuous_map f hx⟩ :
-      C(BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) X s₀ x,
-        BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) Y s₀ y)).IsNConnected n := by
+    (BasedMap.mapContinuousMap (B := sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (b₀ := s₀) f
+      hx).IsNConnected n := by
   -- Read through `Map_*(Sᵏ, -) ≃ₜ Ω^[k] -`, which is natural, the map is `Ω^[k] f`.
   let g : Hom ⟨X, x⟩ ⟨Y, y⟩ := ⟨f, hx⟩
   let eX := basedMapSphereHomeomorphIteratedLoopSpace k ⟨X, x⟩ s₀
   let eY := basedMapSphereHomeomorphIteratedLoopSpace k ⟨Y, y⟩ s₀
   refine (eX.toHomotopyEquiv.isWeakHomotopyEquivalence.isNConnected_iff_of_comp_eq
     eY.toHomotopyEquiv.isWeakHomotopyEquivalence
-    (i := ⟨BasedMap.map f hx, BasedMap.continuous_map f hx⟩)
+    (i := BasedMap.mapContinuousMap f hx)
     (j := (g.iteratedLoopSpace k).toContinuousMap)
     (ContinuousMap.ext fun φ ↦ basedMapSphereHomeomorphIteratedLoopSpace_map k g s₀ φ)).1 ?_
   exact iteratedLoopSpace (f := g) hf
