@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 
 /-!
 # Extending an operator from `L² ∩ Lᵖ` to `Lᵖ`
@@ -20,6 +22,12 @@ both spaces. A uniform estimate therefore gives a unique bounded operator on all
 This is the final density step in the Calderón–Zygmund strong-type theorem.
 
 The construction uses Mathlib's `Lp.simpleFunc.dense` and `LinearMap.extendOfNorm`.
+
+When the operator is composed with multiplication by an unbounded function `b`, as in a
+commutator `[b, T]`, the dense domain must also keep `b u` in `L^q`. On a σ-finite measure space
+the `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q` are dense in `Lᵖ` for every `q`
+(`MeasureTheory.dense_setOf_memLp_and_memLp_smul`): truncating `u` to the sets of finite measure
+where `‖u‖` and `|b|` are bounded gives such functions converging to `u` in `Lᵖ`.
 
 ## Bounds from simple functions
 
@@ -125,6 +133,70 @@ theorem dense_lpTwoSubmodule (hp : p ≠ ∞) :
   apply (Lp.simpleFunc.dense (E := E) (p := p) (μ := μ) hp).mono
   intro f hf
   exact Lp.simpleFunc.memLp_two hp ⟨f, hf⟩
+
+/-- A function `φ`, truncated to `Sₖ = spanningSets μ k ∩ {‖φ‖ ≤ k, |b| ≤ k}`, lies in every
+`Lʳ`, and so does its product with `b`: both are bounded and vanish off a set of finite measure.
+(The sup norm of `(φ x, b x)` is the larger of `‖φ x‖` and `|b x|`.) -/
+private theorem memLp_indicator_and_memLp_smul_indicator [SigmaFinite μ]
+    {φ : α → E} (hφ : StronglyMeasurable φ) {b : α → ℝ} (hb : StronglyMeasurable b) (k : ℕ)
+    (r : ℝ≥0∞) :
+    MemLp ((spanningSets μ k ∩ {x | ‖((φ x, b x) : E × ℝ)‖ ≤ k}).indicator φ) r μ ∧
+      MemLp (fun x => b x • (spanningSets μ k ∩ {x | ‖((φ x, b x) : E × ℝ)‖ ≤ k}).indicator
+        φ x) r μ := by
+  set S := spanningSets μ k ∩ {x | ‖((φ x, b x) : E × ℝ)‖ ≤ k}
+  have hS : MeasurableSet S := measurableSet_spanningSets_inter_norm_le (hφ.prodMk hb) k
+  have hzero (x : α) (hx : x ∉ spanningSets μ k) : S.indicator φ x = 0 :=
+    Set.indicator_of_notMem (s := S) (fun h => hx h.1) _
+  -- A bounded function supported in a spanning set lies in every `Lʳ`.
+  have hmem {u : α → E} (c : ℝ) (hu : AEStronglyMeasurable u μ) (hc : ∀ x, ‖u x‖ ≤ c)
+      (hsupp : ∀ x, x ∉ spanningSets μ k → u x = 0) : MemLp u r μ :=
+    (memLp_top_of_bound hu c (.of_forall hc)).mono_exponent_of_measure_support_ne_top hsupp
+      (measure_spanningSets_lt_top μ k).ne le_top
+  refine ⟨hmem k (hφ.indicator hS).aestronglyMeasurable (fun x => ?_) hzero,
+    hmem (k * k) (hb.aestronglyMeasurable.smul (hφ.indicator hS).aestronglyMeasurable)
+      (fun x => ?_) fun x hx => by rw [hzero x hx, smul_zero]⟩
+  · by_cases hx : x ∈ S
+    · simpa [hx] using (norm_fst_le ((φ x, b x) : E × ℝ)).trans hx.2
+    · simp [hx]
+  · by_cases hx : x ∈ S
+    · rw [norm_smul, Set.indicator_of_mem hx]
+      exact mul_le_mul ((norm_snd_le ((φ x, b x) : E × ℝ)).trans hx.2)
+        ((norm_fst_le ((φ x, b x) : E × ℝ)).trans hx.2) (norm_nonneg _) (Nat.cast_nonneg k)
+    · simp [hx, mul_nonneg]
+
+/-- On a σ-finite measure space, let `p < ∞` and let `b` be a real a.e. strongly measurable
+function. For every exponent `q`, the functions `u ∈ Lᵖ` with `u ∈ L^q` and `b u ∈ L^q` are dense
+in `Lᵖ`. This is a dense domain on which an operator given on `L^q` can be composed with
+multiplication by an unbounded `b`, as in the commutator `[b, T]` of a singular integral
+operator `T` with a function `b` of bounded mean oscillation. -/
+theorem dense_setOf_memLp_and_memLp_smul [SigmaFinite μ] {b : α → ℝ}
+    (hb : AEStronglyMeasurable b μ) (hp : p ≠ ∞) (q : ℝ≥0∞) :
+    Dense {u : Lp E p μ | MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ} := by
+  intro φ
+  -- Truncate `φ` to `Sₖ = spanningSets μ k ∩ {‖φ‖ ≤ k, |b'| ≤ k}`, where `b' = b` a.e. is
+  -- strongly measurable. The truncations converge to `φ` in `Lᵖ` by dominated convergence.
+  set b' := hb.mk b
+  set S : ℕ → Set α := fun k => spanningSets μ k ∩ {x | ‖((φ x, b' x) : E × ℝ)‖ ≤ k}
+  set φs : ℕ → α → E := fun k => (S k).indicator φ
+  have hφs (k : ℕ) (r : ℝ≥0∞) : MemLp (φs k) r μ ∧ MemLp (fun x => b' x • φs k x) r μ :=
+    memLp_indicator_and_memLp_smul_indicator (Lp.stronglyMeasurable φ)
+      hb.stronglyMeasurable_mk k r
+  have hmem (k : ℕ) : (hφs k p).1.toLp (φs k) ∈
+      {u : Lp E p μ | MemLp u q μ ∧ MemLp (fun x => b x • u x) q μ} := by
+    refine ⟨(hφs k q).1.ae_eq (hφs k p).1.coeFn_toLp.symm, (hφs k q).2.ae_eq ?_⟩
+    filter_upwards [hb.ae_eq_mk, (hφs k p).1.coeFn_toLp] with x h₁ h₂
+    rw [h₁, h₂]
+  refine mem_closure_of_tendsto (TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le (l := Filter.atTop)
+    hp (fun k => (hφs k p).1) Filter.EventuallyEq.rfl
+    (fun k => .of_forall fun x => norm_indicator_le_norm_self _ _) (.of_forall fun x => ?_))
+    (.of_forall hmem)
+  have hlim : Filter.Tendsto (fun k => (S k).indicator (fun x => ((φ x, b' x) : E × ℝ)) x)
+      Filter.atTop (nhds (φ x, b' x)) :=
+    tendsto_indicator_spanningSets_inter_norm_le _ x
+  refine ((continuous_fst.tendsto _).comp hlim).congr fun k => ?_
+  by_cases hx : x ∈ S k
+  · simp only [Function.comp_apply, φs, Set.indicator_of_mem hx]
+  · simp only [Function.comp_apply, φs, Set.indicator_of_notMem hx, Prod.fst_zero]
 
 end MeasureTheory
 
