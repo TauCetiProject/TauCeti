@@ -51,7 +51,7 @@ algebra; at a single vertex the algebra is the centralizer of the loops of `E` t
 ## Main results
 
 * `Prefunctor.mem_compatibleEnd_iff`: the defining commutation equations.
-* `Prefunctor.compatibleEnd_union`, `Prefunctor.compatibleEnd_anti`,
+* `Prefunctor.compatibleEnd_union`, `Prefunctor.compatibleEnd_antitone`,
   `Prefunctor.compatibleEnd_empty`: dependence on the edge set.
 * `Prefunctor.compatibleEnd_insert_of_forall`: an edge whose equation holds for every family
   imposes no condition; in particular so do zero edges
@@ -130,7 +130,7 @@ theorem compatibleEnd_union (E E' : Set (Quiver.Total D)) :
   simp only [Algebra.mem_inf, mem_compatibleEnd_iff, Set.mem_union, or_imp, forall_and]
 
 /-- More edges impose more conditions. -/
-theorem compatibleEnd_anti : Antitone (T.compatibleEnd S) :=
+theorem compatibleEnd_antitone : Antitone (T.compatibleEnd S) :=
   fun _ _ hE _ hx e he ↦ hx e (hE he)
 
 /-- With no edges, every family of endomorphisms is compatible. -/
@@ -144,7 +144,8 @@ theorem compatibleEnd_insert_of_forall {e : Quiver.Total D}
     (h : ∀ (x : ∀ v : S, Module.End R (T.obj v)) (hl : e.left ∈ S) (hr : e.right ∈ S),
       (T.map e.hom).hom ∘ₗ x ⟨e.left, hl⟩ = x ⟨e.right, hr⟩ ∘ₗ (T.map e.hom).hom)
     (E : Set (Quiver.Total D)) : T.compatibleEnd S (insert e E) = T.compatibleEnd S E := by
-  refine le_antisymm (T.compatibleEnd_anti S (Set.subset_insert _ _)) fun x hx e' he' hl hr ↦ ?_
+  refine le_antisymm (T.compatibleEnd_antitone S (Set.subset_insert _ _))
+    fun x hx e' he' hl hr ↦ ?_
   obtain rfl | he' := he'
   · exact h x hl hr
   · exact hx e' he' hl hr
