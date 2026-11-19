@@ -24,7 +24,9 @@ and the chart `g ≫ ψ` of `M`, the pulled-back structure is the original one r
 
 ## Main declarations
 
-* `TauCeti.ContMDiffAlmostComplexStructureFamily.pullback`: the pulled-back family.
+* `TauCeti.ContMDiffAlmostComplexStructureFamily.pullback`: the pulled-back family, with
+  identity and composition laws `TauCeti.ContMDiffAlmostComplexStructureFamily.pullback_refl`
+  and `TauCeti.ContMDiffAlmostComplexStructureFamily.pullback_trans`.
 * `TauCeti.ContMDiffAlmostComplexStructureFamily.mfderiv_pullback_apply`: the differentials of
   `g` are complex linear from `g^* J` to `J`, and `g^* J` is the only such family
   (`TauCeti.ContMDiffAlmostComplexStructureFamily.eq_pullback_iff`).
@@ -83,6 +85,30 @@ theorem freeze_pullback (p : P) :
     (J.pullback g hnr).freeze p = (J.freeze p).pullback g hnr := by
   ext x v
   simp only [freeze_toEndomorphism_apply, pullback, ofContMDiff_toEndomorphism_apply]
+
+/-- Pullback of a family along the identity diffeomorphism is the original family. -/
+@[simp]
+theorem pullback_refl (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
+    (hnr : n + 1 ≤ r) : J.pullback (Diffeomorph.refl I M r) hnr = J := by
+  apply ext_of_freeze
+  intro p
+  simp only [freeze_pullback, ContMDiffAlmostComplexStructure.pullback_refl]
+
+section Composition
+
+variable {E'' H'' Q : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+  [FiniteDimensional ℝ E''] [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+  [TopologicalSpace Q] [ChartedSpace H'' Q] [IsManifold I'' ∞ Q]
+
+/-- Pullback of a family along a composite is the iterated pullback. -/
+theorem pullback_trans (h : M ≃ₘ^r⟮I, I'⟯ N) (g : N ≃ₘ^r⟮I', I''⟯ Q)
+    (J : ContMDiffAlmostComplexStructureFamily I'' Q IP P n) (hnr : n + 1 ≤ r) :
+    J.pullback (h.trans g) hnr = (J.pullback g hnr).pullback h hnr := by
+  apply ext_of_freeze
+  intro p
+  simp only [freeze_pullback, ContMDiffAlmostComplexStructure.pullback_trans]
+
+end Composition
 
 /-- The pulled-back family at `(p, x)` is `(dg_x)⁻¹ ∘ J(p, g x) ∘ dg_x`. -/
 theorem pullback_tangentEndomorphism_apply (q : P × M) (v : TangentSpace I q.2) :

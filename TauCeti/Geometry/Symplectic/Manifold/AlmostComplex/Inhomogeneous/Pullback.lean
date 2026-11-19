@@ -30,10 +30,14 @@ intertwines `g^* J` with `J`. Read in a chart `φ` of `P` and the chart `g ≫ �
 
 * `TauCeti.DomainDependentHomSection.pullback`: the pulled-back Hom section, with
   `TauCeti.DomainDependentHomSection.mfderiv_tangentHom_pullback_apply`; it is the only section
-  that `dg` carries to `A` (`TauCeti.DomainDependentHomSection.eq_pullback_iff`).
+  that `dg` carries to `A` (`TauCeti.DomainDependentHomSection.eq_pullback_iff`). Its identity
+  and composition laws are `TauCeti.DomainDependentHomSection.pullback_refl` and
+  `TauCeti.DomainDependentHomSection.pullback_trans`.
 * `TauCeti.InhomogeneousTerm.pullback`: the pulled-back inhomogeneous term, whose underlying
   Hom section is the pulled-back Hom section (`TauCeti.InhomogeneousTerm.val_pullback`), with
-  the characterisation `TauCeti.InhomogeneousTerm.eq_pullback_iff`.
+  the characterisation `TauCeti.InhomogeneousTerm.eq_pullback_iff`. The identity and composition
+  laws `TauCeti.InhomogeneousTerm.pullback_refl` and `TauCeti.InhomogeneousTerm.pullback_trans`
+  use `ofEq` to identify the pulled-back target structures.
 * `TauCeti.InhomogeneousTerm.chartTerm_pullback`,
   `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts.
 
@@ -137,6 +141,41 @@ theorem eq_pullback_iff {B : DomainDependentHomSection I M IP P n} :
   ext q v
   exact (tangentHom_apply B q v).symm.trans ((h q v).trans (tangentHom_apply _ q v))
 
+/-- Pullback of a Hom section along the identity is the original section. -/
+@[simp]
+theorem pullback_refl (A : DomainDependentHomSection I M IP P n) (hnr : n + 1 ≤ r) :
+    A.pullback (Diffeomorph.refl I M r) hnr = A := by
+  refine ((eq_pullback_iff (Diffeomorph.refl I M r) A hnr).2 fun q v ↦ ?_).symm
+  simp only [Diffeomorph.coe_refl, mfderiv_id]
+  -- Reducing the identity base map also exposes the identity linear-map application.
+  rfl
+
+section Composition
+
+variable {E'' H'' Q : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+  [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+  [TopologicalSpace Q] [ChartedSpace H'' Q] [IsManifold I'' ∞ Q]
+
+/-- Pullback of a Hom section along a composite is the iterated pullback. -/
+theorem pullback_trans (h : M ≃ₘ^r⟮I, I'⟯ N) (g : N ≃ₘ^r⟮I', I''⟯ Q)
+    (A : DomainDependentHomSection I'' Q IP P n) (hnr : n + 1 ≤ r) :
+    A.pullback (h.trans g) hnr = (A.pullback g hnr).pullback h hnr := by
+  refine ((eq_pullback_iff (h.trans g) A hnr).2 fun q v ↦ ?_).symm
+  have hchain (w : TangentSpace I q.2) :
+      mfderiv I I'' (h.trans g) q.2 w =
+        mfderiv I' I'' g (h q.2) (mfderiv I I' h q.2 w) :=
+    mfderiv_comp_apply q.2
+      (g.mdifferentiable (ENat.coe_ne_zero_of_add_one_le hnr) (h q.2))
+      (h.mdifferentiable (ENat.coe_ne_zero_of_add_one_le hnr) q.2) w
+  refine (hchain _).trans ((congrArg
+    (fun w ↦ mfderiv I' I'' g (h q.2) w)
+    (mfderiv_tangentHom_pullback_apply h (A.pullback g hnr) hnr q v)).trans ?_)
+  exact (mfderiv_tangentHom_pullback_apply g A hnr (q.1, h q.2) v).trans
+    (congrArg (fun y ↦ A.tangentHom (q.1, y) v)
+      (congrFun (Diffeomorph.coe_trans h g) q.2).symm)
+
+end Composition
+
 end DomainDependentHomSection
 
 namespace InhomogeneousTerm
@@ -162,6 +201,32 @@ def pullback (ν : InhomogeneousTerm j J) (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n
 theorem val_pullback (ν : InhomogeneousTerm j J) (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n + 1 ≤ r) :
     (ν.pullback g hnr).val = ν.val.pullback g hnr :=
   (rfl)
+
+/-- Pullback along the identity preserves a term after identifying its target structure. -/
+@[simp]
+theorem pullback_refl (ν : InhomogeneousTerm j J) (hnr : n + 1 ≤ r) :
+    ν.pullback (Diffeomorph.refl I' N r) hnr =
+      ν.ofEq rfl (ContMDiffAlmostComplexStructureFamily.pullback_refl J hnr).symm := by
+  apply Subtype.ext
+  simp only [ofEq_val, val_pullback, DomainDependentHomSection.pullback_refl]
+
+section Composition
+
+variable {E'' H'' Q : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+  [FiniteDimensional ℝ E''] [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+  [TopologicalSpace Q] [ChartedSpace H'' Q] [IsManifold I'' ∞ Q]
+
+/-- Pullback along a composite agrees with iterated pullback after identifying target structures. -/
+theorem pullback_trans (h : M ≃ₘ^r⟮I, I'⟯ N) (g : N ≃ₘ^r⟮I', I''⟯ Q)
+    {K : ContMDiffAlmostComplexStructureFamily I'' Q IP P n}
+    (ν : InhomogeneousTerm j K) (hnr : n + 1 ≤ r) :
+    (ν.pullback (h.trans g) hnr).ofEq rfl
+      (ContMDiffAlmostComplexStructureFamily.pullback_trans h g K hnr) =
+        (ν.pullback g hnr).pullback h hnr := by
+  apply Subtype.ext
+  simp only [ofEq_val, val_pullback, DomainDependentHomSection.pullback_trans]
+
+end Composition
 
 variable (ν : InhomogeneousTerm j J) (g : M ≃ₘ^r⟮I, I'⟯ N) (hnr : n + 1 ≤ r)
 
