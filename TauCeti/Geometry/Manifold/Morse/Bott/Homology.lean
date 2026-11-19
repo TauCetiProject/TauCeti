@@ -396,31 +396,23 @@ private theorem exists_pos_pairwise_disjoint_image_negativeDiscBundle [T2Space M
       ((Θ l).contMDiffOn_toFun.continuousOn.isOpen_inter_preimage (Θ l).open_source hO)
       fun s ↦ ⟨hΘz l s, by rw [mem_preimage, hΘi]; exact hlO ⟨s, rfl⟩⟩
     exact ⟨δ, hδ, image_subset_iff.2 fun x hx ↦ (hδO hx).2⟩
-  -- Two distinct submanifolds have disjoint neighbourhoods, since their images are compact.
-  have key (j k : ι) (hjk : j ≠ k) : ∃ δ > 0, Disjoint
-      (Θ j '' (h j).negativeDiscBundle hn (P j) (g j).toRiemannianMetric δ)
-      (Θ k '' (h k).negativeDiscBundle hn (P k) (g k).toRiemannianMetric δ) := by
-    obtain ⟨U, U', hU, hU', hjU, hkU', hUU'⟩ := SeparatedNhds.of_isCompact_isCompact
+  -- The submanifolds have pairwise disjoint neighbourhoods, since their images are compact.
+  obtain ⟨U, hU, hUd⟩ := Pairwise.exists_mem_filter_of_disjoint fun j k hjk ↦
+    separatedNhds_iff_disjoint.1 (SeparatedNhds.of_isCompact_isCompact
       (isCompact_range (i j).isEmbedding.continuous)
-      (isCompact_range (i k).isEmbedding.continuous) (hd hjk)
-    obtain ⟨δ₁, hδ₁, h₁⟩ := hsmall j hU hjU
-    obtain ⟨δ₂, hδ₂, h₂⟩ := hsmall k hU' hkU'
-    exact ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, hUU'.mono
-      ((image_mono ((h j).negativeDiscBundle_mono hn (P j) _ (min_le_left _ _))).trans h₁)
-      ((image_mono ((h k).negativeDiscBundle_mono hn (P k) _ (min_le_right _ _))).trans h₂)⟩
-  choose! δ hδ hδd using key
-  -- A size below all the sizes for the finitely many pairs.
-  obtain ⟨δ₀, hδ₀, hδ₀le⟩ : ∃ δ₀ > 0, ∀ j k, j ≠ k → δ₀ ≤ δ j k := by
-    classical
+      (isCompact_range (i k).isEmbedding.continuous) (hd hjk))
+  choose δ hδ hδU using fun j ↦ hsmall j isOpen_interior (subset_interior_iff_mem_nhdsSet.2 (hU j))
+  -- A size below the sizes for the finitely many submanifolds.
+  obtain ⟨δ₀, hδ₀, hδ₀le⟩ : ∃ δ₀ > 0, ∀ j, δ₀ ≤ δ j := by
     rcases isEmpty_or_nonempty ι with hι | hι
     · exact ⟨1, one_pos, fun j ↦ isEmptyElim j⟩
-    obtain ⟨p, hp⟩ := Finite.exists_min fun p : ι × ι ↦ if p.1 = p.2 then 1 else δ p.1 p.2
-    refine ⟨if p.1 = p.2 then 1 else δ p.1 p.2, ?_, fun j k hjk ↦ by simpa [hjk] using hp (j, k)⟩
-    split_ifs with hp'
-    exacts [one_pos, hδ _ _ hp']
-  exact ⟨δ₀, hδ₀, fun ε hε j k hjk ↦ (hδd j k hjk).mono
-    (image_mono ((h j).negativeDiscBundle_mono hn (P j) _ (hε.trans (hδ₀le j k hjk))))
-    (image_mono ((h k).negativeDiscBundle_mono hn (P k) _ (hε.trans (hδ₀le j k hjk))))⟩
+    obtain ⟨l, hl⟩ := Finite.exists_min δ
+    exact ⟨δ l, hδ l, hl⟩
+  have hsub (j : ι) {ε : ℝ} (hε : ε ≤ δ₀) :
+      Θ j '' (h j).negativeDiscBundle hn (P j) (g j).toRiemannianMetric ε ⊆ U j :=
+    ((image_mono ((h j).negativeDiscBundle_mono hn (P j) _ (hε.trans (hδ₀le j)))).trans
+      (hδU j)).trans interior_subset
+  exact ⟨δ₀, hδ₀, fun ε hε j k hjk ↦ (hUd hjk).mono (hsub j hε) (hsub k hε)⟩
 
 /-- **The relative homology across a level of finitely many Morse–Bott submanifolds splits over
 the submanifolds.** Let `i j : S j → M`, for `j` in a finite index type, be nondegenerate critical
