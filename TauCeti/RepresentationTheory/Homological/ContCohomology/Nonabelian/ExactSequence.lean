@@ -205,6 +205,18 @@ protected theorem mul_smul (c c' : FixedPoints.subgroup G A'') (x : NonabelianH1
   intro g
   simp only [apply_smulCocycle, smul_mul', mul_inv_rev, mul_assoc]
 
+/-- Acting by `c⁻¹` and then by `c` is the identity on `H¹(G, A')`. -/
+@[simp]
+protected theorem smul_inv_smul (c : FixedPoints.subgroup G A'') (x : NonabelianH1 G A') :
+    hE.smul c (hE.smul c⁻¹ x) = x := by
+  rw [← hE.mul_smul, mul_inv_cancel, hE.one_smul]
+
+/-- Acting by `c` and then by `c⁻¹` is the identity on `H¹(G, A')`. -/
+@[simp]
+protected theorem inv_smul_smul (c : FixedPoints.subgroup G A'') (x : NonabelianH1 G A') :
+    hE.smul c⁻¹ (hE.smul c x) = x := by
+  rw [← hE.mul_smul, inv_mul_cancel, hE.one_smul]
+
 /-- The action of `A''ᴳ` on `H¹(G, A')` by `TauCeti.NonabelianH1.IsGroupExtension.smul`, as a
 `MulAction`. -/
 @[reducible] noncomputable def mulAction :
@@ -215,6 +227,7 @@ protected theorem mul_smul (c c' : FixedPoints.subgroup G A'') (x : NonabelianH1
 
 /-- The scalar action of `TauCeti.NonabelianH1.IsGroupExtension.mulAction` is
 `TauCeti.NonabelianH1.IsGroupExtension.smul`. -/
+@[simp]
 theorem mulAction_smul_def (c : FixedPoints.subgroup G A'') (x : NonabelianH1 G A') :
     letI := hE.mulAction
     c • x = hE.smul c x :=
@@ -278,12 +291,12 @@ theorem connecting_eq_connecting_iff {c c' : FixedPoints.subgroup G A''} :
   have key : hE.connecting (c * c'⁻¹) = hE.smul c' (hE.connecting c) := by
     rw [connecting_eq_smul, connecting_eq_smul, ← hE.mul_smul, mul_inv_rev, inv_inv]
   have hc' : hE.smul c' (hE.connecting c') = 1 := by
-    rw [connecting_eq_smul, ← hE.mul_smul, mul_inv_cancel, hE.one_smul]
+    rw [connecting_eq_smul, hE.smul_inv_smul]
   -- Acting by `c'` is injective, so `δ c = δ c'` exactly when `δ (c * c'⁻¹) = 1`.
   have hinj : hE.connecting c = hE.connecting c' ↔ hE.connecting (c * c'⁻¹) = 1 := by
     rw [key, ← hc']
     refine ⟨congrArg _, fun h ↦ ?_⟩
-    simpa only [← hE.mul_smul, inv_mul_cancel, hE.one_smul] using congrArg (hE.smul c'⁻¹) h
+    simpa only [hE.inv_smul_smul] using congrArg (hE.smul c'⁻¹) h
   simp only [hinj, hE.connecting_eq_one_iff, Subgroup.coe_mul, Subgroup.coe_inv,
     eq_mul_inv_iff_mul_eq]
 
@@ -324,9 +337,9 @@ theorem map_eq_one_iff_mem_range_connecting {x : NonabelianH1 G A'} :
   rw [← map_one (ContinuousMonoidHom.id G) i hE.compatible_left, hE.map_eq_map_iff]
   constructor
   · rintro ⟨c, hc⟩
-    exact ⟨c, by rw [connecting, ← hc, ← hE.mul_smul, inv_mul_cancel, hE.one_smul]⟩
+    exact ⟨c, by rw [connecting_eq_smul, ← hc, hE.inv_smul_smul]⟩
   · rintro ⟨c, rfl⟩
-    exact ⟨c, by rw [connecting, ← hE.mul_smul, mul_inv_cancel, hE.one_smul]⟩
+    exact ⟨c, by rw [connecting_eq_smul, hE.smul_inv_smul]⟩
 
 /-- **Exactness at `H¹(G, A)`**: a class maps to the base point of `H¹(G, A'')` exactly when it
 comes from `H¹(G, A')`. -/
@@ -340,8 +353,11 @@ theorem map_eq_one_iff_mem_range_map {x : NonabelianH1 G A} :
     rintro ⟨a, ha⟩
     obtain ⟨b, rfl⟩ := hE.surjective a
     have hmem : ∀ g, f.twist b⁻¹ g ∈ Set.range i := fun g ↦ (hE.mulExact _).mp <| by
-      simpa [hE.map_smul_right] using
-        (congrArg (fun y ↦ p b * y * (g • p b)⁻¹) (ha g)).trans (by group)
+      have hpf : p (f g) = (p b)⁻¹ * g • p b := by
+        simpa only [Cocycle.map_apply, ContinuousMonoidHom.id_toFun] using ha g
+      rw [Cocycle.twist_apply, inv_inv, _root_.map_mul, _root_.map_mul, hpf, hE.map_smul_right,
+        _root_.map_inv, smul_inv']
+      group
     refine ⟨NonabelianH1.mk ((f.twist b⁻¹).liftOfMemRange i hE.isEmbedding hE.compatible_left
       hmem), ?_⟩
     rw [map_mk, Cocycle.map_liftOfMemRange, mk_twist]
@@ -369,7 +385,7 @@ noncomputable def orbitRelQuotientEquiv :
       obtain ⟨c, hc⟩ := hE.map_eq_map_iff.mp (congrArg Subtype.val h)
       exact Quotient.sound ⟨c⁻¹, by
         rw [← hc]
-        exact (hE.mul_smul c⁻¹ c _).symm.trans (by rw [inv_mul_cancel, hE.one_smul])⟩,
+        exact hE.inv_smul_smul c _⟩,
     fun ⟨x, hx⟩ ↦ by
       obtain ⟨y, rfl⟩ := hE.map_eq_one_iff_mem_range_map.mp hx
       exact ⟨Quotient.mk _ y, rfl⟩⟩
