@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Sphere.TangentCircle
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Triple
 public import TauCeti.Topology.Homotopy.Cube.Sphere
 public import TauCeti.Topology.MappingSpace.Evaluation
 public import TauCeti.Topology.Sphere.Suspension
@@ -178,26 +179,9 @@ section Pointwise
 variable {x : sphere (0 : E) 1} (hx : Orthonormal ℝ ![(x : E), u x, v x])
 include hx
 
-/-! The orthonormality relations of `x`, `u x`, `v x`, read off from `hx` by index. -/
-
-private theorem inner_u_eq_zero : ⟪(x : E), u x⟫ = 0 := by
-  simpa using hx.inner_eq_zero (by decide : (0 : Fin 3) ≠ 1)
-
-private theorem inner_v_eq_zero : ⟪(x : E), v x⟫ = 0 := by
-  simpa using hx.inner_eq_zero (by decide : (0 : Fin 3) ≠ 2)
-
-private theorem inner_v_u_eq_zero : ⟪v x, u x⟫ = 0 := by
-  simpa using hx.inner_eq_zero (by decide : (2 : Fin 3) ≠ 1)
-
-private theorem norm_u_eq_one : ‖u x‖ = 1 := by
-  simpa using hx.norm_eq_one 1
-
-private theorem norm_v_eq_one : ‖v x‖ = 1 := by
-  simpa using hx.norm_eq_one 2
-
 /-- A point of the sphere lies on its own equator. -/
 theorem mk_self_mem_twoFieldEquators : (x, x) ∈ twoFieldEquators u v :=
-  ⟨inner_u_eq_zero hx, inner_v_eq_zero hx⟩
+  ⟨hx.inner_eq_zero_vecCons_zero_one, hx.inner_eq_zero_vecCons_zero_two⟩
 
 end Pointwise
 
@@ -257,23 +241,21 @@ include hx
 /-- The circle through `x` and `q` tangent to `v x` lies on the unit sphere. -/
 private theorem norm_tangentCircle_inner (θ : ℝ) :
     ‖tangentCircle (xq.val.1 : E) (v xq.val.1) (xq.val.2 : E) θ‖ = 1 :=
-  norm_tangentCircle (norm_eq_of_mem_sphere xq.val.1) (norm_v_eq_one hx)
-    (inner_v_eq_zero hx) (norm_eq_of_mem_sphere xq.val.2) xq.property.2 θ
+  norm_tangentCircle (norm_eq_of_mem_sphere xq.val.1) hx.norm_eq_one_vecCons_two
+    hx.inner_eq_zero_vecCons_zero_two (norm_eq_of_mem_sphere xq.val.2) xq.property.2 θ
 
 /-- The circle through `x` and `q` tangent to `v x` is orthogonal to `u x`. -/
 private theorem inner_tangentCircle_inner (θ : ℝ) :
     ⟪tangentCircle (xq.val.1 : E) (v xq.val.1) (xq.val.2 : E) θ, u xq.val.1⟫ = 0 :=
-  inner_tangentCircle_eq_zero (inner_u_eq_zero hx) (inner_v_u_eq_zero hx) xq.property.1 θ
+  inner_tangentCircle_eq_zero hx.inner_eq_zero_vecCons_zero_one
+    (inner_eq_zero_symm.1 hx.inner_eq_zero_vecCons_one_two) xq.property.1 θ
 
 /-- The **inner circle** of the two-sphere of `(x, q)`: the circle through `x` and `q` tangent to
 `v x`, `s ↦ tangentCircle x (v x) q (2π s)`, as a loop at `x` in the equator of the sphere
 orthogonal to `u x`. -/
 def twoFieldInnerLoop :
-    -- The witness is stated through `simpa`: the bare index term `hx.inner_eq_zero _` has type
-    -- `⟪![x, u x, v x] 0, ![x, u x, v x] 1⟫ = 0`, which `simp` rejects as ill-typed here.
     Ω^ (Fin 1) (sphereEquator (u xq.val.1))
-      ⟨xq.val.1, mem_sphereEquator.2
-          (by simpa using hx.inner_eq_zero (by decide : (0 : Fin 3) ≠ 1))⟩
+      ⟨xq.val.1, mem_sphereEquator.2 hx.inner_eq_zero_vecCons_zero_one⟩
     where
   val :=
     { toFun z := ⟨⟨tangentCircle (xq.val.1 : E) (v xq.val.1) (xq.val.2 : E) (2 * π * z 0),
@@ -300,8 +282,9 @@ include h hu hv
 `w` is the inner circle of `(x, q)`; this is `tangentCircleGenLoop` of `w` with the two cube
 coordinates exchanged. -/
 private def twoFieldSquare : C(twoFieldEquators u v × I^(Fin 2), sphere (0 : E) 1) where
-  toFun a := GenLoop.congr _ (Equiv.swap 0 1) (tangentCircleGenLoop (norm_u_eq_one (h a.1.val.1))
-    (twoFieldInnerLoop a.1 (h a.1.val.1))) a.2
+  toFun a := GenLoop.congr _ (Equiv.swap 0 1)
+    (tangentCircleGenLoop (h a.1.val.1).norm_eq_one_vecCons_one
+      (twoFieldInnerLoop a.1 (h a.1.val.1))) a.2
   continuous_toFun := by
     refine continuous_induced_rng.2 (Continuous.congr (f := fun a ↦
       tangentCircle (a.1.val.1 : E) (u a.1.val.1)
@@ -323,7 +306,8 @@ private theorem factorsThrough_twoFieldSquare :
   · rfl
   · -- both boundary points go to the base point of the generalized loop defining the square
     have hb := GenLoop.boundary (GenLoop.congr _ (Equiv.swap 0 1)
-      (tangentCircleGenLoop (norm_u_eq_one (h xq.val.1)) (twoFieldInnerLoop xq (h xq.val.1))))
+      (tangentCircleGenLoop (h xq.val.1).norm_eq_one_vecCons_one (twoFieldInnerLoop xq
+          (h xq.val.1))))
     exact (hb y hy).trans (hb y' hy').symm
 
 /-- **The family of two-spheres of two orthonormal tangent fields** (Barraud–Damian–Humilière–
@@ -339,10 +323,8 @@ tangent to `u x` and through the points of the inner circle `twoFieldInnerLoop`,
 coordinates exchanged so that the first one runs along the inner circle. -/
 theorem twoFieldSphereFamily_sphereCollapse (xq : twoFieldEquators u v) (y : I^(Fin 2)) :
     twoFieldSphereFamily h hu hv xq (sphereCollapse 2 Sphere2.north y) =
-      -- As in `twoFieldInnerLoop`, the bare index term `(h x).norm_eq_one 1` has type
-      -- `‖![x, u x, v x] 1‖ = 1`, which `simp` rejects as ill-typed after rewriting.
       GenLoop.congr _ (Equiv.swap 0 1) (tangentCircleGenLoop
-        (by simpa using (h xq.val.1).norm_eq_one 1) (twoFieldInnerLoop xq (h xq.val.1))) y :=
+        (h xq.val.1).norm_eq_one_vecCons_one (twoFieldInnerLoop xq (h xq.val.1))) y :=
   DFunLike.congr_fun ((isQuotientMap_prodMap_id_sphereCollapse 2
     Sphere2.north _).lift_comp _ (factorsThrough_twoFieldSquare h hu hv)) (xq, y)
 
