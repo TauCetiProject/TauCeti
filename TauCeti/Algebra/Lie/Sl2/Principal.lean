@@ -241,8 +241,9 @@ namespace IsSl2Triple
 
 variable {b : (rootSystem H).Base} {e f : L}
 
-/-- **The orbit of a principal nilpotent element has dimension `dim L - dim H`.** For an `sl₂`
-triple `(2ρ^∨, e, f)`, the range `[L, e]` of `ad e` has dimension `dim L - dim H`. -/
+/-- **`[L, e]` has dimension `dim L - dim H`.** For an `sl₂` triple `(2ρ^∨, e, f)`, the range
+`[L, e]` of `ad e`, the would-be tangent space of the adjoint orbit of `e`, has dimension
+`dim L - dim H`. -/
 theorem finrank_range_ad_e_add_finrank_cartan
     (t : IsSl2Triple ((TauCeti.twoWeylVector (rootSystem H).flip b.flip : H) : L) e f) :
     finrank K (LinearMap.range (ad K L e)) + finrank K H = finrank K L := by
@@ -287,16 +288,18 @@ the constant label `2` on every node of the Dynkin diagram exactly when it is `2
 theorem weightedDynkinDiagram_eq_two_iff (h : b.dominantNeutralElements) :
     b.weightedDynkinDiagram h = (fun _ ↦ 2) ↔
       (h : H) = TauCeti.twoWeylVector (rootSystem H).flip b.flip := by
-  constructor
-  · intro hd
-    -- the simple roots form a basis of the dual of `H`, and they agree on the two elements
-    apply Module.eval_apply_injective K
-    refine b.toWeightBasis.ext fun i ↦ ?_
-    have hi := (b.weightedDynkinDiagram_apply_eq_iff h i 2).mp (congrFun hd i)
-    simpa [TauCeti.root_apply_twoWeylVector_flip b i.2] using hi
-  · intro hh
+  have h2 : ∀ h' : b.dominantNeutralElements,
+      (h' : H) = TauCeti.twoWeylVector (rootSystem H).flip b.flip →
+        b.weightedDynkinDiagram h' = fun _ ↦ 2 := fun h' hh ↦ by
     funext i
     rw [weightedDynkinDiagram_apply_eq_iff, hh, TauCeti.root_apply_twoWeylVector_flip b i.2]
     simp
+  refine ⟨fun hd ↦ ?_, h2 h⟩
+  -- `h ≠ 0`, so the simple roots, a basis of the dual of `H`, are nonempty
+  have : Nontrivial H := ⟨h, 0, fun h0 ↦ b.zero_notMem_dominantNeutralElements (h0 ▸ h.2)⟩
+  have : Nonempty H.root := ⟨b.toWeightBasis.index_nonempty.some⟩
+  -- weighted Dynkin labels determine a dominant neutral element
+  exact congrArg Subtype.val <| b.weightedDynkinDiagram_injective (a₂ :=
+    ⟨_, b.twoWeylVector_flip_mem_dominantNeutralElements⟩) (hd.trans (h2 _ rfl).symm)
 
 end RootPairing.Base
