@@ -22,7 +22,8 @@ the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integ
 Normalizing by the inverse factor turns dilation into a linear isometric equivalence
 `f ↦ r ^ (-n / p) • f (r⁻¹ • ·)` of `Lᵖ`, and these equivalences form an action of the positive
 reals. They are linear over every normed field `𝕜` of scalars of the codomain that commute with
-the real scalars, for instance `ℂ`-linear on complex-valued functions. They describe the dilations
+the real scalars, for instance `ℂ`-linear on complex-valued functions, and their underlying maps do
+not depend on the choice of `𝕜`. They describe the dilations
 of scale-invariant problems such as the sharp Sobolev inequality: dilating a homogeneous Sobolev
 function acts by the normalized dilation at exponent `p` on its gradient and at the
 Sobolev-conjugate exponent `p⋆` on the function itself, so both the `Lᵖ` norm of the gradient and
@@ -98,7 +99,8 @@ equivalence: almost everywhere it sends `f` to `r ^ (-n / p) • f (r⁻¹ • �
 dimension of `E` (`MeasureTheory.Measure.coeFn_dilateLp`), and its inverse is the dilation by
 `r⁻¹` (`MeasureTheory.Measure.dilateLp_symm`). The exponent `n / p` is `n / p.toReal`, which is
 `0` at `p = ∞`, where the dilation is plain precomposition. It is `𝕜`-linear because the real
-normalizing factor `r ^ (-n / p)` commutes with the scalars `𝕜`. -/
+normalizing factor `r ^ (-n / p)` commutes with the scalars `𝕜`, and its underlying map is the
+same for every `𝕜` (`MeasureTheory.Measure.coe_dilateLp_eq_coe_dilateLp`). -/
 noncomputable def dilateLp (r : ℝ) (hr : 0 < r) : Lp F p μ ≃ₗᵢ[𝕜] Lp F p μ :=
   let P : Lp F p μ ≃L[𝕜] Lp F p μ :=
     Lp.compEquivOfMapLeSmul 𝕜 (measurable_const_smul r⁻¹) ENNReal.ofReal_ne_top
@@ -135,6 +137,18 @@ theorem coeFn_dilateLp (hr : 0 < r) (f : Lp F p μ) :
     Lp.coeFn_compOfMapLeSmul (𝕜 := 𝕜) (measurable_const_smul r⁻¹) ENNReal.ofReal_ne_top
       (map_addHaar_smul μ (inv_ne_zero hr.ne')).le f] with x hx hy
   rw [hx, Pi.smul_apply, hy, Function.comp_apply]
+
+variable (𝕜) in
+/-- The normalized dilation does not depend on the field of scalars: its `𝕜`-linear and
+`𝕜'`-linear versions have the same underlying map. For instance, the `ℂ`-linear dilation of
+complex-valued functions is the `ℝ`-linear one. -/
+theorem coe_dilateLp_eq_coe_dilateLp (𝕜' : Type*) [NormedField 𝕜'] [NormedSpace 𝕜' F]
+    [SMulCommClass ℝ 𝕜' F] (hr : 0 < r) :
+    ⇑(dilateLp (F := F) μ 𝕜 p r hr) = ⇑(dilateLp μ 𝕜' p r hr) := by
+  ext1 f
+  apply Lp.ext
+  filter_upwards [coeFn_dilateLp (𝕜 := 𝕜) hr f, coeFn_dilateLp (𝕜 := 𝕜') hr f] with x hx hy
+  rw [hx, hy]
 
 /-- The dilation by `1` is the identity. -/
 @[simp]
