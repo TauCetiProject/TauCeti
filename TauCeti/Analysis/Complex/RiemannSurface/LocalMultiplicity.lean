@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import Mathlib.Data.ENat.Monoid
 import TauCeti.Analysis.Analytic.Order
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -344,9 +345,8 @@ theorem localMultiplicity_eq_one_iff_isRegularPoint
   -- A linear functional on `ℂ` is surjective exactly when it is nonzero. The tangent spaces
   -- `TangentSpace 𝓘(ℂ) x` and `TangentSpace 𝓘(ℂ) (f x)` are by definition the model space `ℂ`,
   -- so `@id` reads `mfderiv 𝓘(ℂ) 𝓘(ℂ) f x` as a map `ℂ →L[ℂ] ℂ` without changing it.
-  exact ((LinearMap.surjective_iff_ne_zero
-    (f := (@id (ℂ →L[ℂ] ℂ) (mfderiv 𝓘(ℂ) 𝓘(ℂ) f x)).toLinearMap)).trans
-    (not_congr (ContinuousLinearMap.coe_inj (g := 0)))).symm
+  exact (ContinuousLinearMap.surjective_iff_ne_zero
+    (f := @id (ℂ →L[ℂ] ℂ) (mfderiv 𝓘(ℂ) 𝓘(ℂ) f x))).symm
 
 /-- **Multiplicity one means a local biholomorphism.** A map holomorphic near `x` has local
 multiplicity `1` at `x` exactly when it is a local biholomorphism at `x`. -/
