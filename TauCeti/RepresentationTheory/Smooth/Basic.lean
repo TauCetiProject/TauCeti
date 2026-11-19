@@ -49,6 +49,10 @@ open subgroups `U` of `G`.
 
 * J. Bernstein, *Representations of p-adic groups*, Harvard lectures 1992, written by
   K. Rumelhart, Chapter I, §1.1, Definition 2 and Proposition 1, p. 7.
+* JX-Mo, [mathlib4#41525](https://github.com/leanprover-community/mathlib4/pull/41525) (file
+  `Mathlib/RepresentationTheory/Smooth/Basic.lean`), whose design this file follows:
+  `IsSmooth` as a Prop-valued class asserting open stabilizers, and `smoothVectors` as a
+  `Subrepresentation`.
 -/
 
 public section
