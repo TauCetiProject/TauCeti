@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # Polar-coordinate derivatives and integration over a closed annulus
@@ -206,9 +207,8 @@ theorem integral_annulus_eq_integral_circleMap {f : ℂ → F} {z₀ : ℂ} {a b
     simp only [circleMap]
     fun_prop
   have hmem (p : ℝ × ℝ) (hp : p ∈ Icc a b ×ˢ Icc (-π) π) :
-      circleMap z₀ p.1 p.2 ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
-    simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-      abs_of_nonneg (ha.trans hp.1.1)] using (mem_Icc.mp hp.1)
+      circleMap z₀ p.1 p.2 ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
+    TauCeti.circleMap_mem_setOf_le_norm_sub_le ha hp.1 p.2
   have hint : IntegrableOn (fun p : ℝ × ℝ ↦ p.1 • f (circleMap z₀ p.1 p.2))
       (Icc a b ×ˢ Icc (-π) π) :=
     (continuous_fst.continuousOn.smul (hf.comp hP.continuousOn hmem)).integrableOn_compact

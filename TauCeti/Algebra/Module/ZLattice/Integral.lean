@@ -27,7 +27,8 @@ In a real inner product space, an even lattice is integral, by polarization:
 (`ZLattice.IsEven.isIntegral`). The converse fails: `ℤ ⊆ ℝ` is unimodular, hence integral, but not
 even (`ZLattice.not_isEven_span_one`), while `√2 ℤ ⊆ ℝ` is even (`ZLattice.isEven_span_sqrt_two`).
 More generally the `ℤ`-span of an orthonormal basis, the lattice `ℤⁿ ⊆ ℝⁿ`, is unimodular
-(`ZLattice.isUnimodular_span_orthonormalBasis`).
+(`ZLattice.isUnimodular_span_orthonormalBasis`). On the other hand, `½ ℤ ⊆ ℝ` is not integral
+(`ZLattice.not_isIntegral_span_one_half`).
 
 All three predicates are invariant under linear isometry equivalences
 (`ZLattice.isIntegral_comap_iff`, `ZLattice.isEven_comap_iff`, `ZLattice.isUnimodular_comap_iff`),
@@ -218,6 +219,11 @@ theorem IsEven.exists_natCast_mul_norm_add_sq_eq {L : Submodule ℤ E} (hL : IsE
   obtain ⟨n, hn⟩ := hNγ
   obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
   exact ⟨n + N * j, by push_cast; linear_combination (N : ℝ) * hj + hn⟩
+
+/-- The lattice `½ ℤ ⊆ ℝ` is not integral. -/
+theorem not_isIntegral_span_one_half :
+    ¬ IsIntegral (span ℤ {1 / 2} : Submodule ℤ ℝ) :=
+  mt isIntegral_iff_le_dual.mp dual_span_one_half_lt.not_ge
 
 /-! ### Unimodular lattices -/
 

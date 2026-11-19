@@ -123,24 +123,39 @@ end StellarEquivalent
 theorem IsStellarMove.stellarEquivalent (h : IsStellarMove K L) : StellarEquivalent K L :=
   Relation.EqvGen.rel _ _ h
 
+/-- A vertex map injective on the vertices of both sides carries a stellar move to a stellar
+move. -/
+theorem IsStellarMove.map_of_injOn {κ : Type*} [DecidableEq κ] {f : ι → κ}
+    (h : IsStellarMove K L)
+    (hf : {x | ({x} : Finset ι) ∈ K ∨ ({x} : Finset ι) ∈ L}.InjOn f) :
+    IsStellarMove (K.map f) (L.map f) := by
+  obtain ⟨σ, v, hσ, hv, rfl⟩ := isStellarMove_iff.mp h
+  have hvL : ({v} : Finset ι) ∈ stellarSubdivision K σ v :=
+    singleton_mem_stellarSubdivision_iff.mpr hσ
+  refine isStellarMove_iff.mpr ⟨σ.image f, f v, mem_map_iff.mpr ⟨σ, hσ, rfl⟩, fun hfv => ?_,
+    map_stellarSubdivision_of_injOn hf (fun x hx => Or.inl hx)
+      (fun x hx => Or.inl (singleton_mem_of_mem hσ hx)) (Or.inr hvL)⟩
+  obtain ⟨x, hx, hxv⟩ := singleton_mem_map_iff.mp hfv
+  rw [hf (Or.inl hx) (Or.inr hvL) hxv] at hx
+  exact hv hx
+
 /-- An injective relabeling carries a stellar move to the corresponding stellar move between the
 image complexes. -/
 theorem IsStellarMove.map {κ : Type*} [DecidableEq κ] (h : IsStellarMove K L)
-    (f : ι → κ) (hf : Function.Injective f) : IsStellarMove (K.map f) (L.map f) := by
-  obtain ⟨σ, v, hσ, hv, rfl⟩ := h
-  refine ⟨σ.image f, f v, mem_map_iff.mpr ⟨σ, hσ, rfl⟩, ?_,
-    map_stellarSubdivision f hf⟩
-  intro hfv
-  rw [mem_map_iff] at hfv
-  obtain ⟨τ, hτ, hτf⟩ := hfv
-  have hvτ : v ∈ τ := hf.mem_finset_image.mp
-    (hτf ▸ Finset.mem_singleton_self (f v))
-  exact hv (singleton_mem_of_mem hτ hvτ)
+    (f : ι → κ) (hf : Function.Injective f) : IsStellarMove (K.map f) (L.map f) :=
+  h.map_of_injOn hf.injOn
 
 /-- A complex is stellar equivalent to any of its starrings at a fresh vertex. -/
 theorem stellarEquivalent_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finset ι) ∉ K) :
     StellarEquivalent K (stellarSubdivision K σ v) :=
   (isStellarMove_stellarSubdivision hσ hv).stellarEquivalent
+
+/-- Starring any nonempty finset at a fresh vertex produces a stellar-equivalent complex. -/
+theorem stellarEquivalent_stellarSubdivision_of_nonempty (hσne : σ.Nonempty)
+    (hv : ({v} : Finset ι) ∉ K) : StellarEquivalent K (stellarSubdivision K σ v) := by
+  by_cases hσ : σ ∈ K
+  · exact stellarEquivalent_stellarSubdivision hσ hv
+  · rw [stellarSubdivision_eq_self_of_notMem hv hσne hσ]
 
 /-- Stellar equivalence is an equivalence relation. -/
 theorem equivalence_stellarEquivalent : Equivalence (StellarEquivalent (ι := ι)) :=
@@ -148,18 +163,28 @@ theorem equivalence_stellarEquivalent : Equivalence (StellarEquivalent (ι := ι
 
 namespace StellarEquivalent
 
+/-- Dependent eliminator for `StellarEquivalent`, supplying the intermediate equivalence witnesses
+in the symmetric and transitive steps. -/
+@[elab_as_elim]
+protected theorem induction {motive : ∀ A B, StellarEquivalent A B → Prop}
+    {K L : PreAbstractSimplicialComplex ι} (h : StellarEquivalent K L)
+    (rel : ∀ A B (hm : IsStellarMove A B), motive A B hm.stellarEquivalent)
+    (refl : ∀ A, motive A A (.refl A))
+    (symm : ∀ A B (hAB : StellarEquivalent A B), motive A B hAB → motive B A hAB.symm)
+    (trans : ∀ A B C (hAB : StellarEquivalent A B) (hBC : StellarEquivalent B C),
+      motive A B hAB → motive B C hBC → motive A C (hAB.trans hBC)) :
+    motive K L h :=
+  Relation.EqvGen.rec rel refl symm trans h
+
 /-- To prove a property of stellar equivalent complexes, it suffices to prove it for a stellar
 move and show that it is reflexive, symmetric, and transitive. -/
 theorem induction_on (h : StellarEquivalent K L)
     {P : PreAbstractSimplicialComplex ι → PreAbstractSimplicialComplex ι → Prop}
     (rel : ∀ A B, IsStellarMove A B → P A B) (refl : ∀ A, P A A)
     (symm : ∀ A B, P A B → P B A)
-    (trans : ∀ A B C, P A B → P B C → P A C) : P K L := by
-  induction h with
-  | rel A B h => exact rel A B h
-  | refl => exact refl _
-  | symm A B _ ih => exact symm A B ih
-  | trans A B C _ _ ih₁ ih₂ => exact trans A B C ih₁ ih₂
+    (trans : ∀ A B C, P A B → P B C → P A C) : P K L :=
+  h.induction (motive := fun A B _ => P A B) rel refl (fun A B _ => symm A B)
+    (fun A B C _ _ => trans A B C)
 
 /-- An injective relabeling carries a stellar equivalence to one between the image complexes. -/
 theorem map {κ : Type*} [DecidableEq κ] (h : StellarEquivalent K L)
@@ -233,20 +258,31 @@ theorem of_common_relabeling (f g : ι ↪ (ι ⊕ ℕ))
     (h : StellarEquivalent (K.map f) (L.map g)) : StellarEquivalentUpToRelabeling K L :=
   Relation.EqvGen.rel _ _ ⟨f, g, h⟩
 
+/-- Dependent eliminator for `StellarEquivalentUpToRelabeling`, supplying the intermediate
+equivalence witnesses in the symmetric and transitive steps. -/
+@[elab_as_elim]
+protected theorem induction {motive : ∀ A B, StellarEquivalentUpToRelabeling A B → Prop}
+    {K L : PreAbstractSimplicialComplex ι} (h : StellarEquivalentUpToRelabeling K L)
+    (rel : ∀ A B (f g : ι ↪ (ι ⊕ ℕ)) (he : StellarEquivalent (A.map f) (B.map g)),
+      motive A B (of_common_relabeling f g he))
+    (refl : ∀ A, motive A A (.refl A))
+    (symm : ∀ A B (hAB : StellarEquivalentUpToRelabeling A B),
+      motive A B hAB → motive B A hAB.symm)
+    (trans : ∀ A B C (hAB : StellarEquivalentUpToRelabeling A B)
+        (hBC : StellarEquivalentUpToRelabeling B C),
+      motive A B hAB → motive B C hBC → motive A C (hAB.trans hBC)) :
+    motive K L h :=
+  Relation.EqvGen.rec (fun A B ⟨f, g, he⟩ => rel A B f g he) refl symm trans h
+
 /-- To prove a property of intrinsically stellar equivalent complexes, it suffices to prove it
 for a common-relabeling generator and show that it is reflexive, symmetric, and transitive. -/
 theorem induction_on (h : StellarEquivalentUpToRelabeling K L)
     {P : PreAbstractSimplicialComplex ι → PreAbstractSimplicialComplex ι → Prop}
     (rel : ∀ A B (f g : ι ↪ (ι ⊕ ℕ)), StellarEquivalent (A.map f) (B.map g) → P A B)
     (refl : ∀ A, P A A) (symm : ∀ A B, P A B → P B A)
-    (trans : ∀ A B C, P A B → P B C → P A C) : P K L := by
-  induction h with
-  | rel A B h =>
-      obtain ⟨f, g, he⟩ := h
-      exact rel A B f g he
-  | refl => exact refl _
-  | symm A B _ ih => exact symm A B ih
-  | trans A B C _ _ ih₁ ih₂ => exact trans A B C ih₁ ih₂
+    (trans : ∀ A B C, P A B → P B C → P A C) : P K L :=
+  h.induction (motive := fun A B _ => P A B) rel refl (fun A B _ => symm A B)
+    (fun A B C _ _ => trans A B C)
 
 /-- An injective relabeling transports intrinsic stellar equivalence. -/
 theorem map {κ : Type*} [DecidableEq κ]

@@ -50,6 +50,8 @@ For a positive base `a`, the real powers `(a ^ (n + 1)) ^ B` and `(a ^ n) ^ C` m
 a geometric series.
 For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` costs at most the
 factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` at nearby indices.
+For `1 ≤ b`, `s ≤ 0` and `y ≤ x`, `b ^ (s x) b ^ (-s y) = b ^ (s (x - y)) ≤ 1`: a weight of
+nonpositive regularity at a larger index absorbs the inverse weight at a smaller one.
 For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`, the form of the
 off-diagonal decay `2 ^ (-M |j - k|)` between dyadic indices `j` and `k`.
 
@@ -111,6 +113,8 @@ with the corresponding integral of `q`-th powers.
   for `0 < a`.
 * `Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul`: `b ^ (s x) ≤ b ^ (|s| L) b ^ (s y)` when `1 ≤ b`
   and `|x - y| ≤ L`.
+* `Real.rpow_mul_mul_rpow_neg_mul_le_one`: `b ^ (s x) b ^ (-s y) ≤ 1` when `1 ≤ b`, `s ≤ 0` and
+  `y ≤ x`.
 * `Real.pow_div_pow_pow_eq_rpow_of_le`: `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))` for `0 < x`
   and `a ≤ b`.
 * `Real.rpow_mul_natCast_le_of_mem_Ico`, `Real.rpow_mul_natCast_le_of_mem_Ico'`:
@@ -129,6 +133,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.mul_rpow_of_nonneg_left`: `(a t) ^ z = a ^ z t ^ z` for `0 ≤ a` and every real `t`.
 * `Real.mul_rpow_one_sub_mul_mul_rpow`: `(c a) ^ (1 - θ) (c b) ^ θ = c a ^ (1 - θ) b ^ θ` for
   `0 ≤ c`.
+* `Real.le_rpow_mul_rpow_of_le_of_le`: `P ≤ A` and `P ≤ B` give `P ≤ A ^ δ B ^ (1 - δ)` for
+  `0 ≤ P` and `0 ≤ δ ≤ 1`.
 * `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
   `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -275,6 +281,13 @@ theorem rpow_mul_natCast_le_of_mem_Ico' {b : ℝ} (hb : 1 ≤ b) (s : ℝ) {j k 
   refine rpow_mul_le_rpow_abs_mul_mul_rpow_mul hb s (abs_sub_le_iff.2 ⟨?_, ?_⟩)
   all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
 
+/-- For `1 ≤ b`, `s ≤ 0` and `y ≤ x`, `b ^ (s x) b ^ (-s y) = b ^ (s (x - y)) ≤ 1`. -/
+theorem rpow_mul_mul_rpow_neg_mul_le_one {b : ℝ} (hb : 1 ≤ b) {s : ℝ} (hs : s ≤ 0) {x y : ℝ}
+    (hxy : y ≤ x) : b ^ (s * x) * b ^ (-s * y) ≤ 1 := by
+  rw [← rpow_add (by linarith)]
+  refine rpow_le_one_of_one_le_of_nonpos hb ?_
+  nlinarith
+
 /-- For `0 < b`, the geometric weight `(b ^ (-s)) ^ d` turns the dyadic weight `b ^ (s (d + k))`
 back into `b ^ (s k)`. -/
 theorem rpow_neg_pow_mul_rpow_mul_natCast_add {b : ℝ} (hb : 0 < b) (s : ℝ) (d k : ℕ) :
@@ -358,6 +371,16 @@ theorem mul_rpow_one_sub_mul_mul_rpow {c : ℝ} (hc : 0 ≤ c) (a b θ : ℝ) :
     (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) := by
   rw [mul_rpow_of_nonneg_left hc, mul_rpow_of_nonneg_left hc, mul_mul_mul_comm,
     ← rpow_add' hc (by simp), sub_add_cancel, rpow_one]
+
+/-- **Interpolating two upper bounds.** If `0 ≤ P ≤ A` and `P ≤ B`, then `P ≤ A^δ B^(1 - δ)` for
+every `0 ≤ δ ≤ 1`; in particular `min A B ≤ A^δ B^(1 - δ)` for `A, B ≥ 0`. -/
+theorem le_rpow_mul_rpow_of_le_of_le {P A B δ : ℝ} (hP : 0 ≤ P) (hA : P ≤ A) (hB : P ≤ B)
+    (hδ0 : 0 ≤ δ) (hδ1 : δ ≤ 1) : P ≤ A ^ δ * B ^ (1 - δ) := by
+  calc P = P ^ δ * P ^ (1 - δ) := by
+        rw [← rpow_add' hP (by norm_num), add_sub_cancel, rpow_one]
+    _ ≤ A ^ δ * B ^ (1 - δ) := mul_le_mul (rpow_le_rpow hP hA hδ0)
+        (rpow_le_rpow hP hB (by linarith)) (by positivity)
+        (rpow_nonneg (hP.trans hA) _)
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)
