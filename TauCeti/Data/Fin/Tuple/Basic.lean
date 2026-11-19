@@ -555,12 +555,14 @@ theorem insertNth_comp_val {m : ℕ} (p : Fin (m + 1)) (v : α) (f : ℕ → α)
     p.insertNth (α := fun _ ↦ α) v (fun s : Fin m ↦ f s) =
       fun t : Fin (m + 1) ↦ natInsert p v f t := by
   funext t
-  rw [natInsert_apply]
   cases t using Fin.succAboveCases p with
   | x => simp
   | p s =>
     rw [Fin.insertNth_apply_succAbove]
-    unfold Fin.succAbove
-    split_ifs <;> simp_all [Fin.lt_def] <;> omega
+    rcases lt_or_ge s.castSucc p with h | h
+    · rw [Fin.succAbove_of_castSucc_lt _ _ h, Fin.val_castSucc,
+        natInsert_of_lt (by rwa [Fin.lt_def, Fin.val_castSucc] at h)]
+    · rw [Fin.succAbove_of_le_castSucc _ _ h, Fin.val_succ,
+        natInsert_of_gt (by rw [Fin.le_def, Fin.val_castSucc] at h; omega), Nat.add_sub_cancel]
 
 end TauCeti
