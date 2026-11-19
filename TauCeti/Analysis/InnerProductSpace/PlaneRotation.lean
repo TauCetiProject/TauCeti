@@ -180,6 +180,7 @@ theorem planeRotation_neg_one : ι.planeRotation (-1) = ι.rangeᗮ.reflection :
     Circle.coe_neg, Circle.coe_one, neg_one_mul, map_neg]
 
 /-- **A rotation of the plane `ι ℂ` has determinant `1`.** -/
+@[simp]
 theorem det_planeRotation (c : Circle) : LinearMap.det (ι.planeRotation c).toLinearMap = 1 := by
   -- The rotation by `c` is the square of the rotation by a square root `d` of `c`, and a linear
   -- isometry has determinant `±1`.

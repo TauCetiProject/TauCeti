@@ -393,10 +393,7 @@ variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- **The homology of `Map_*(S², Sⁿ)` in degree `n - 2` is infinite cyclic** (a consequence of
 Proposition 6.21 of Barraud–Damian–Humilière–Oancea). For the unit sphere `Sⁿ` of a real inner
 product space of dimension `n + 1 ≥ 4` and every point `x₀` of it, the integral homology
-`Hₙ₋₂(Map_*(S², Sⁿ); ℤ)` of the maps `(S², north) → (Sⁿ, x₀)` is isomorphic to `ℤ`. The proof
-builds an isomorphism sending `1` to the image of the fundamental class of an equator
-`Σ ≅ Sⁿ⁻²` through `x₀` under the double loops of Example 6.20, read in
-`Map_*(S², Sⁿ) ≃ₜ Ω²Sⁿ`. -/
+`Hₙ₋₂(Map_*(S², Sⁿ); ℤ)` of the maps `(S², north) → (Sⁿ, x₀)` is isomorphic to `ℤ`. -/
 theorem nonempty_iso_singularHomology_basedMap_sphere {m : ℕ} (hE : Module.finrank ℝ E = m + 4)
     (x₀ : sphere (0 : E) 1) :
     Nonempty (ModuleCat.of ℤ (ULift.{0} ℤ) ≅
