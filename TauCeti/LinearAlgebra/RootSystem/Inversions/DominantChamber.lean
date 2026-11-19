@@ -16,10 +16,10 @@ dominant chamber sends no positive root to a negative root, so its inversion set
 element with an empty inversion set is the identity, such an element is the identity: the Weyl
 group acts freely on the interior of the dominant chamber.
 
-The same argument works when the coefficient ring `K` is not ordered but the simple coroots take
-positive values in an ordered subring `S`, as for weights of a complex root system on which the
-simple coroots take positive real values: every coroot then takes a nonzero value of `S`, and the
-Weyl group acts freely on such weights.
+When the coefficient ring `K` is not ordered but the simple coroots take positive values in an
+ordered subring `S`, as for weights of a complex root system on which the simple coroots take
+positive real values, every coroot still takes a nonzero value of `S`, so such weights are
+regular.
 
 ## Main results
 
@@ -34,7 +34,6 @@ Weyl group acts freely on such weights.
   and `TauCeti.exists_ne_zero_coroot'_eq`: if the simple coroots take positive values of an ordered
   subring `S` on a weight, every positive, negative, or arbitrary coroot takes a positive, negative,
   or nonzero value of `S` there.
-* `TauCeti.eq_one_of_smul_eq_self_of_coroot'_eq`: the Weyl group acts freely on such weights.
 
 ## References
 
@@ -105,22 +104,6 @@ theorem exists_ne_zero_coroot'_eq
   · obtain ⟨t, ht, hxt⟩ := exists_neg_coroot'_eq_of_mem_negRoots P b hx hi
     exact ⟨t, ht.ne, hxt⟩
 
-/-- **The Weyl group acts freely on the weights on which every simple coroot takes a positive value
-of the ordered subring `S`**: a positive root moved to a negative root would change the sign of
-the value of its coroot. -/
-theorem eq_one_of_smul_eq_self_of_coroot'_eq [FaithfulSMul S K]
-    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = algebraMap S K t)
-    {w : P.weylGroup} (hw : w • x = x) : w = 1 := by
-  by_contra hne
-  obtain ⟨i, hi⟩ := Set.nonempty_iff_ne_empty.2 fun h ↦ hne (eq_one_of_inversions_eq_empty h)
-  rw [mem_inversions] at hi
-  obtain ⟨t, ht, hxt⟩ := exists_pos_coroot'_eq_of_mem_posRoots P b hx ((mem_posRoots P b i).2 hi.1)
-  obtain ⟨t', ht', hxt'⟩ := exists_neg_coroot'_eq_of_mem_negRoots P b hx
-    ((mem_negRoots P b _).2 hi.2)
-  have h := coroot'_weylGroupToPerm_smul P w i x
-  rw [hw, hxt, hxt'] at h
-  exact (ht'.trans ht).ne (FaithfulSMul.algebraMap_injective S K h)
-
 end Ordered
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
@@ -166,7 +149,6 @@ theorem eq_one_of_smul_mem_dominantChamber (w : P.weylGroup)
 /-- **The Weyl group acts freely on the interior of the dominant chamber.** -/
 theorem eq_one_of_smul_eq_self_of_mem_openDominantChamber (w : P.weylGroup)
     (hx : x ∈ openDominantChamber P b) (hw : w • x = x) : w = 1 :=
-  eq_one_of_smul_eq_self_of_coroot'_eq P b (S := R)
-    (fun j hj ↦ ⟨_, (mem_openDominantChamber P b x).1 hx j hj, rfl⟩) hw
+  eq_one_of_inversions_eq_empty (inversions_eq_empty_of_smul_eq_self P b w hx hw)
 
 end TauCeti

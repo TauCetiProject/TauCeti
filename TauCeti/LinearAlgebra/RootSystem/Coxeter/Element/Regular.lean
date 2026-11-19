@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import Mathlib.Algebra.QuadraticDiscriminant
 import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Perron
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
 import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
@@ -307,8 +308,13 @@ private theorem pow_eq_one_of_pow_eq_one
       rw [this, smul_sub, h1, smul_comm, hg₀]
     rw [smul_comm] at h4
     exact smul_right_injective M ((map_ne_zero _).2 (sub_ne_zero.2 hκ2.ne')) h4
-  exact eq_one_of_smul_eq_self_of_coroot'_eq P b (exists_pos_coroot'_colorPart_add hy hy0 hκ)
+  refine P.eq_one_of_isRegularWeight_of_smul_eq b (x := u₀ + u₁)
+    ((P.isRegularWeight_iff _).2 fun i ↦ ?_)
     (by rw [smul_add, hg₀, hg₁])
+  obtain ⟨t, ht, hxt⟩ :=
+    exists_ne_zero_coroot'_eq P b (exists_pos_coroot'_colorPart_add hy hy0 hκ) i
+  rw [hxt]
+  exact (map_ne_zero _).2 ht
 
 end Plane
 
@@ -351,7 +357,7 @@ private theorem exists_isRegularWeight_smul_eq_of_subsingleton
   obtain ⟨j₀⟩ := ‹Nonempty ι›
   have hx0 : x ≠ 0 := fun h ↦ (P.isRegularWeight_iff x).1 hreg j₀ (by rw [h, map_zero])
   exact ⟨x, -1, hreg, hgx, isPrimitiveRoot_orderOf_of_smul_eq hx0 hgx fun l hl ↦
-    eq_one_of_smul_eq_self_of_coroot'_eq P b hx
+    P.eq_one_of_isRegularWeight_of_smul_eq b hreg
       (by rw [pow_smul_eq_of_smul_eq hgx, hl, one_smul])⟩
 
 /-- **Steinberg's regular eigenvector of the bipartite Coxeter element.** Let `b` be a base of a
