@@ -25,6 +25,8 @@ Here `Λ(t, dt)` is realised as the differential graded algebra of the derivatio
 ## Main definitions
 
 * `TauCeti.PolynomialInterval`: the underlying algebra `K[t] ⊕ K[t] dt` of `Λ(t, dt)`.
+* `TauCeti.PolynomialInterval.t` and `TauCeti.PolynomialInterval.dt`: its generators, of degrees
+  `0` and `1`, with `d t = dt`.
 * `TauCeti.PolynomialInterval.eval`: the evaluation `t ↦ a`, `dt ↦ 0` at a point `a : K`, an
   augmentation of `Λ(t, dt)`; `eval 0` and `eval 1` are the two ends of the interval.
 * `TauCeti.PolynomialInterval.pullback`: the pullback of polynomial forms along a polynomial map
@@ -33,11 +35,11 @@ Here `Λ(t, dt)` is realised as the differential graded algebra of the derivatio
 ## Main results
 
 * `TauCeti.PolynomialInterval.isDGAlgebra`: `Λ(t, dt)` is a differential graded algebra.
-* `TauCeti.PolynomialInterval.bijective_cohomologyMap_unitHom`: in characteristic zero the unit
+* `TauCeti.PolynomialInterval.unitHom_cohomologyMap_bijective`: in characteristic zero the unit
   `K → Λ(t, dt)` is a quasi-isomorphism, so `H(Λ(t, dt)) = K`.
-* `TauCeti.PolynomialInterval.bijective_cohomologyMap_eval`: in characteristic zero every
+* `TauCeti.PolynomialInterval.eval_cohomologyMap_bijective`: in characteristic zero every
   evaluation, in particular each end of the interval, is a quasi-isomorphism.
-* `TauCeti.PolynomialInterval.not_bijective_cohomologyMap_unitHom_of_charP`: in characteristic
+* `TauCeti.PolynomialInterval.unitHom_cohomologyMap_not_bijective_of_charP`: in characteristic
   `p > 0` the unit is not a quasi-isomorphism, since the form `t ^ (p - 1) dt` is not exact.
 * `TauCeti.PolynomialInterval.eval_comp_pullback` and
   `TauCeti.PolynomialInterval.pullback_comp_pullback`: pullback is compatible with evaluation and
@@ -73,6 +75,50 @@ theorem isDGAlgebra :
 
 variable {K}
 
+/-- The generator `t` of the polynomial interval `Λ(t, dt)`, in degree `0`. -/
+noncomputable def t : PolynomialInterval K :=
+  inl X
+
+/-- The generator `dt` of the polynomial interval `Λ(t, dt)`, in degree `1`. -/
+noncomputable def dt : PolynomialInterval K :=
+  inr 1
+
+@[simp]
+theorem fst_t : (t : PolynomialInterval K).fst = X :=
+  (rfl)
+
+@[simp]
+theorem snd_t : (t : PolynomialInterval K).snd = 0 :=
+  (rfl)
+
+@[simp]
+theorem fst_dt : (dt : PolynomialInterval K).fst = 0 :=
+  (rfl)
+
+@[simp]
+theorem snd_dt : (dt : PolynomialInterval K).snd = 1 :=
+  (rfl)
+
+theorem t_mem_grading_zero : (t : PolynomialInterval K) ∈ grading K K[X] K[X] 0 :=
+  inl_mem_grading_zero _
+
+theorem dt_mem_grading_one : (dt : PolynomialInterval K) ∈ grading K K[X] K[X] 1 :=
+  inr_mem_grading_one _
+
+/-- The form `q dt` is the product of the function `q` with `dt`. -/
+@[simp]
+theorem inl_mul_dt (q : K[X]) : inl q * (dt : PolynomialInterval K) = inr q := by
+  ext <;> simp [dt]
+
+/-- The defining relation `d t = dt` of the polynomial interval. -/
+theorem trivSqZeroExtDifferential_t :
+    (derivative' (R := K)).trivSqZeroExtDifferential t = dt := by
+  ext <;> simp
+
+theorem trivSqZeroExtDifferential_dt :
+    (derivative' (R := K)).trivSqZeroExtDifferential dt = 0 := by
+  ext <;> simp
+
 /-- The evaluation `t ↦ a`, `dt ↦ 0` of the polynomial interval at a point `a : K`, as an
 augmentation; `eval 0` and `eval 1` are the two ends of the interval. -/
 noncomputable def eval (a : K) : DGAlgAugmentation (isDGAlgebra K) :=
@@ -82,27 +128,33 @@ noncomputable def eval (a : K) : DGAlgAugmentation (isDGAlgebra K) :=
 theorem eval_apply (a : K) (x : PolynomialInterval K) : eval a x = x.fst.eval a := by
   simp [eval, aeval_def, eval₂_id]
 
+theorem eval_t (a : K) : eval a t = a := by
+  simp
+
+theorem eval_dt (a : K) : eval a dt = 0 := by
+  simp
+
 /-- **The polynomial interval is acyclic** in characteristic zero: the unit `K → Λ(t, dt)` is a
 quasi-isomorphism, since a polynomial with zero derivative is constant and every polynomial has an
 antiderivative. -/
-theorem bijective_cohomologyMap_unitHom [CharZero K] :
+theorem unitHom_cohomologyMap_bijective [CharZero K] :
     Function.Bijective (isDGAlgebra K).unitHom.cohomologyMap :=
-  derivative'.bijective_cohomologyMap_unitHom_iff.mpr
-    ⟨C_injective, fun p hp ↦ ⟨p.coeff 0, (eq_C_of_natDegree_eq_zero
-      (derivative_eq_zero.mp hp)).symm⟩, derivative_surjective⟩
+  derivative'.unitHom_cohomologyMap_bijective_iff.mpr
+    ⟨C_injective, fun p hp ↦ ⟨p.coeff 0, (eq_C_of_derivative_eq_zero hp).symm⟩,
+      derivative_surjective⟩
 
 /-- In characteristic zero every evaluation of the polynomial interval, in particular each of its
 two ends `eval 0` and `eval 1`, is a quasi-isomorphism `Λ(t, dt) → K`. -/
-theorem bijective_cohomologyMap_eval [CharZero K] (a : K) :
+theorem eval_cohomologyMap_bijective [CharZero K] (a : K) :
     Function.Bijective (eval a).cohomologyMap :=
-  (DGAlgAugmentation.bijective_cohomologyMap_iff _).mpr bijective_cohomologyMap_unitHom
+  (DGAlgAugmentation.cohomologyMap_bijective_iff _).mpr unitHom_cohomologyMap_bijective
 
 /-- In characteristic `p > 0` the polynomial interval is not acyclic: the form `t ^ (p - 1) dt`
 is a cycle that is not exact, so the unit `K → Λ(t, dt)` is not a quasi-isomorphism. -/
-theorem not_bijective_cohomologyMap_unitHom_of_charP (p : ℕ) [CharP K p] [NeZero p] :
+theorem unitHom_cohomologyMap_not_bijective_of_charP (p : ℕ) [CharP K p] [NeZero p] :
     ¬Function.Bijective (isDGAlgebra K).unitHom.cohomologyMap := fun h ↦
-  not_surjective_derivative_of_charP p
-    (derivative'.bijective_cohomologyMap_unitHom_iff.mp h).2.2
+  derivative_not_surjective_of_charP p
+    (derivative'.unitHom_cohomologyMap_bijective_iff.mp h).2.2
 
 /-- The algebra map underlying `TauCeti.PolynomialInterval.pullback`. -/
 private noncomputable def pullbackAlgHom (s : K[X]) :
@@ -141,6 +193,14 @@ theorem fst_pullback (s : K[X]) (x : PolynomialInterval K) :
 theorem snd_pullback (s : K[X]) (x : PolynomialInterval K) :
     (pullback s x).snd = x.snd.comp s * derivative s := by
   simp [pullback, pullbackAlgHom_apply]
+
+@[simp]
+theorem pullback_t (s : K[X]) : pullback s t = inl s := by
+  ext <;> simp
+
+@[simp]
+theorem pullback_dt (s : K[X]) : pullback s dt = inr (derivative s) := by
+  ext <;> simp
 
 /-- Evaluating a pulled-back form at `a` is evaluating it at `s a`; for the reflection `s = 1 - t`
 this exchanges the two ends `eval 0` and `eval 1` of the interval. -/

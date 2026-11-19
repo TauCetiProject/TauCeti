@@ -34,7 +34,7 @@ augmentation ideal rather than from the unit-containing algebra.
 
 ## Main results
 
-* `TauCeti.DGAlgAugmentation.bijective_cohomologyMap_iff`: an augmentation is a
+* `TauCeti.DGAlgAugmentation.cohomologyMap_bijective_iff`: an augmentation is a
   quasi-isomorphism exactly when the unit morphism is.
 
 ## References
@@ -159,7 +159,7 @@ theorem comp_unitHom :
 
 /-- An augmentation is a quasi-isomorphism exactly when the unit morphism is, since on cohomology
 the augmentation is a retraction of the unit. -/
-theorem bijective_cohomologyMap_iff :
+theorem cohomologyMap_bijective_iff :
     Function.Bijective e.cohomologyMap ↔ Function.Bijective h.unitHom.cohomologyMap := by
   have hinv : Function.LeftInverse e.cohomologyMap h.unitHom.cohomologyMap := fun x ↦ by
     rw [← GradedAlgHom.comp_apply, ← DGAlgHom.cohomologyMap_comp, e.comp_unitHom,
