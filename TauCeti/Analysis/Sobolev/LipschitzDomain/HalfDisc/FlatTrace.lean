@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.SurfaceMeasure
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Morrey
 public import TauCeti.Analysis.Sobolev.W1p.Translation
 import TauCeti.Geometry.Euclidean.Volume.Measure
-import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Flat traces on half-discs
@@ -66,7 +65,7 @@ on small half-discs around each real point.
   it is the restriction of the frontier trace, and of a representative continuous up to the
   boundary.
 * `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule`: its kernel, the functions of zero trace on the
-  flat segment (`TauCeti.W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero`).
+  flat segment (`TauCeti.W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero`).
 * `TauCeti.W1p.mem_halfDiscFlatTraceZeroSubmodule_iff`: membership in terms of the trace operator
   of any Lipschitz constant of the half-disc.
 * `TauCeti.W1p.isClosed_halfDiscFlatTraceZeroSubmodule`,
@@ -169,6 +168,19 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero
     u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔ W1p.halfDiscFlatTrace hp r u = 0 :=
   LinearMap.mem_ker
 
+/-- Membership in the flat zero-trace subspace is almost-everywhere vanishing of the flat
+trace for normalized one-dimensional Hausdorff measure on the flat segment, for every real
+radius. -/
+theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero
+    (hp : p ≠ (∞ : ℝ≥0∞)) {u : W1p volume (halfDisc r) p} :
+    u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔
+      ∀ᵐ x ∂(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r),
+        W1p.halfDiscFlatTrace hp r u x = 0 := by
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
+    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
+    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r)]
+  simp only [Pi.zero_apply]
+
 /-- A function lies in `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule` exactly when its trace, for
 any Lipschitz constant of the half-disc, vanishes almost everywhere on the flat segment for
 surface measure. -/
@@ -178,17 +190,15 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff (hp : p ≠ (∞ : ℝ≥0∞
     u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔
       ∀ᵐ x ∂(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r),
         W1p.frontierTrace hp hΩ (isBounded_halfDisc r) u x = 0 := by
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
-    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r)]
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero]
   have htr := W1p.halfDiscFlatTrace_ae_eq hp hΩ u
   constructor
   · intro h
     filter_upwards [htr, h] with x hx hx'
-    rw [← hx, hx', Pi.zero_apply]
+    rw [← hx, hx']
   · intro h
     filter_upwards [htr, h] with x hx hx'
-    rw [hx, hx', Pi.zero_apply]
+    rw [hx, hx']
 
 /-- **The zero-trace condition is closed** in `W^{1,p}(halfDisc r)`. -/
 theorem W1p.isClosed_halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) (r : ℝ) :
@@ -214,9 +224,7 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_of_continuousOn (hp : p ≠ (
     (hu : W1p.value u =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))] f) :
     u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r ↔ ∀ x ∈ halfDiscFlatSegment r, f x = 0 := by
   have htr := W1p.halfDiscFlatTrace_ae_eq_of_continuousOn hp hf hu
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
-    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r)]
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero]
   constructor
   · intro h
     refine eqOn_halfDiscFlatSegment_of_ae_eq (g := 0) hr
@@ -225,7 +233,7 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_of_continuousOn (hp : p ≠ (
     rw [← hx, hx', Pi.zero_apply]
   · intro h
     filter_upwards [htr, ae_restrict_mem (measurableSet_halfDiscFlatSegment r)] with x hx hxS
-    rw [hx, h x hxS, Pi.zero_apply]
+    rw [hx, h x hxS]
 
 /-- **The normal coordinate satisfies the boundary condition.** Every `u ∈ W^{1,p}(halfDisc r)`
 represented by the normal coordinate `x ↦ x.fst` (the function `t = Im z`) lies in
@@ -418,9 +426,7 @@ theorem W1p.translate_mem_halfDiscFlatTraceZeroSubmodule_iff (hp : p ≠ (∞ : 
       ∀ᵐ x ∂(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
         ((· + WithLp.toLp 2 ((0 : ℝ), c)) '' halfDiscFlatSegment ρ),
         W1p.halfDiscFlatTrace hp r u x = 0 := by
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
-    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment ρ),
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero,
     ← Isometry.map_euclideanHausdorffMeasure_restrict
       (isometry_add_right (WithLp.toLp 2 ((0 : ℝ), c))) (halfDiscFlatSegment ρ),
     (measurableEmbedding_addRight _).ae_map_iff]
@@ -428,10 +434,10 @@ theorem W1p.translate_mem_halfDiscFlatTraceZeroSubmodule_iff (hp : p ≠ (∞ : 
   constructor
   · intro h
     filter_upwards [htr, h] with x hx hx'
-    rw [← hx, hx', Pi.zero_apply]
+    rw [← hx, hx']
   · intro h
     filter_upwards [htr, h] with x hx hx'
-    rw [hx, hx', Pi.zero_apply]
+    rw [hx, hx']
 
 /-- **Zero trace passes to shifted half-discs.** If `u` has zero trace on the flat segment of
 `halfDisc r` and `|c| + ρ ≤ r`, its translate `x ↦ u (x + (0, c))` has zero trace on the flat
@@ -440,16 +446,11 @@ theorem W1p.translate_mem_halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ�
     (hc : |c| + ρ ≤ r) {u : W1p volume (halfDisc r) p}
     (hu : u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r) :
     W1p.translate (mapsTo_add_halfDisc hc) u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp ρ := by
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
-    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment ρ)]
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
-    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r)] at hu
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero]
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero] at hu
   filter_upwards [W1p.halfDiscFlatTrace_translate_ae hp hc u,
     (quasiMeasurePreserving_add_halfDiscFlatSegment hc).ae hu] with x hx hx'
   rw [hx, hx']
-  rfl
 
 /-- **Zero trace passes to smaller half-discs.** If `u` has zero trace on the flat segment of
 `halfDisc r` and `ρ ≤ r`, its restriction to `halfDisc ρ` has zero trace on the flat segment of
@@ -457,12 +458,8 @@ theorem W1p.translate_mem_halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ�
 theorem W1p.restrictL_mem_halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) (hρr : ρ ≤ r)
     {u : W1p volume (halfDisc r) p} (hu : u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r) :
     W1p.restrictL (halfDisc_mono hρr) u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp ρ := by
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
-    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment ρ)]
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
-    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r)] at hu
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero]
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero] at hu
   filter_upwards [W1p.halfDiscFlatTrace_restrictL_ae hp hρr u,
     ae_restrict_of_ae_restrict_of_subset (halfDiscFlatSegment_mono hρr) hu] with x hx hx'
   rw [hx, hx']
@@ -487,9 +484,7 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_of_forall_translate (hp : p ≠ (
     (H : ∀ t ∈ Ioo (-r) r, ∃ c ρ : ℝ, ∃ hc : |c| + ρ ≤ r, |t - c| < ρ ∧
       W1p.translate (mapsTo_add_halfDisc hc) u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp ρ) :
     u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r := by
-  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_eq_zero,
-    Lp.eq_zero_iff_ae_eq_zero, Filter.EventuallyEq,
-    congrArg ae (restrict_frontier_restrict_halfDiscFlatSegment r),
+  rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero,
     ae_restrict_halfDiscFlatSegment_iff, ← Measure.restrict_congr_set Ioo_ae_eq_Icc]
   choose! c ρ hc hct hmem using H
   -- On each shifted subsegment the trace vanishes.
@@ -505,8 +500,13 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_of_forall_translate (hp : p ≠ (
         W1p.halfDiscFlatTrace hp r u (WithLp.toLp 2 ((0 : ℝ), s + c t)) = 0 := by
       filter_upwards [h] with s hs
       simpa [← WithLp.toLp_add] using hs
-    simpa only [sub_eq_add_neg, add_comm] using
-      (ae_restrict_Icc_add_iff (a := -ρ t) (b := ρ t) (c := c t)).2 hshift
+    have hclosed : ∀ᵐ s ∂(volume.restrict (Icc (-ρ t) (ρ t))).map (· + c t),
+        W1p.halfDiscFlatTrace hp r u (WithLp.toLp 2 ((0 : ℝ), s)) = 0 :=
+      (measurableEmbedding_addRight (c t)).ae_map_iff.2 hshift
+    rw [((measurePreserving_add_right volume (c t)).restrict_image_emb
+      (measurableEmbedding_addRight _) _).map_eq, image_add_const_Icc,
+      neg_add_eq_sub, add_comm (ρ t) (c t)] at hclosed
+    exact hclosed
   -- Countably many of the subsegments cover `(-r, r)`.
   obtain ⟨T, hT, hTU⟩ := isOpen_iUnion_countable
     (fun t : Ioo (-r) r => Ioo (c t - ρ t) (c t + ρ t)) fun _ => isOpen_Ioo
