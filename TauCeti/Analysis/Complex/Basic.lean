@@ -20,7 +20,11 @@ domains for reflection across the real axis, for instance the even reflection
 Conjugation also preserves norms (Mathlib's `Complex.norm_conj`), so the norm of
 `1 - conj w * z` is symmetric in `z` and `w` (`Complex.norm_one_sub_conj_mul_comm`). This
 expression is the denominator of the Möbius automorphisms of the unit disc and of the
-pseudo-hyperbolic expression.
+pseudo-hyperbolic expression. For `w` on the unit circle it has the norm of `z - w`
+(`Complex.norm_one_sub_conj_mul`), and for `z` in the closed unit disc it lies in the closed right
+half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in the open disc,
+`Complex.re_one_sub_conj_mul_pos`), by the bound `re (conj u * e) ≤ ‖u‖ ‖e‖`
+(`Complex.re_conj_mul_le`).
 
 Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
 (respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
@@ -220,12 +224,32 @@ open ComplexConjugate
 theorem abs_im_conj_mul_le (u e : ℂ) : |(conj u * e).im| ≤ ‖u‖ * ‖e‖ := by
   simpa [norm_mul] using abs_im_le_norm (conj u * e)
 
+/-- The real part of a conjugate product is bounded by the product of the norms. -/
+theorem re_conj_mul_le (u e : ℂ) : (conj u * e).re ≤ ‖u‖ * ‖e‖ := by
+  simpa [norm_mul] using re_le_norm (conj u * e)
+
 /-- The norm of `1 - conj w * z` is symmetric in `z` and `w`: conjugation swaps the two
 expressions and preserves norms. -/
 theorem norm_one_sub_conj_mul_comm (z w : ℂ) : ‖1 - conj w * z‖ = ‖1 - conj z * w‖ := by
   rw [← norm_conj]
   simp [mul_comm]
 
+/-- For `‖w‖ = 1`, `1 - conj w * z` has the norm of `z - w`. -/
+theorem norm_one_sub_conj_mul {w z : ℂ} (hw : ‖w‖ = 1) : ‖1 - conj w * z‖ = ‖z - w‖ := by
+  have h : w * (1 - conj w * z) = w - z := by
+    rw [mul_sub, mul_one, ← mul_assoc, mul_conj, normSq_eq_norm_sq, hw]
+    simp
+  rw [norm_sub_rev z w, ← h, norm_mul, hw, one_mul]
+
+/-- For `‖w‖ = 1` and `‖z‖ ≤ 1`, `1 - conj w * z` has nonnegative real part. -/
+theorem re_one_sub_conj_mul_nonneg {w z : ℂ} (hw : ‖w‖ = 1) (hz : ‖z‖ ≤ 1) :
+    0 ≤ (1 - conj w * z).re := by
+  simpa [hw] using (re_conj_mul_le w z).trans (by simpa [hw] using hz)
+
+/-- For `‖w‖ = 1` and `‖z‖ < 1`, `1 - conj w * z` has positive real part. -/
+theorem re_one_sub_conj_mul_pos {w z : ℂ} (hw : ‖w‖ = 1) (hz : ‖z‖ < 1) :
+    0 < (1 - conj w * z).re := by
+  simpa [hw] using (re_conj_mul_le w z).trans_lt (by simpa [hw] using hz)
 
 /-- For a point `x` of the closed disc of radius `r` and a point `y` outside the open disc, the
 conjugate `conj x` is within `3 ‖x - y‖` of the point `r² / y`, the inversion of `y` in the circle
