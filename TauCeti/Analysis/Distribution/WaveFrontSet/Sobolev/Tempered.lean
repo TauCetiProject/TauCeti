@@ -69,7 +69,7 @@ elliptic regularity argument provides it, assembles into membership of a Bessel-
   `φ T`.
 * `Distribution.one_add_norm_sq_rpow_smul_localFourier_ae_eq`: for `φ T ∈ H^r`, the weighted
   localized Fourier transform `⟨η⟩ ^ s T (φ e_η)` is `⟨η⟩ ^ (s - r)` times the Fourier transform
-  of the `L²` representative of `φ T`.
+  of the `L²` function `⟨D⟩ ^ r (φ T)` representing `φ T ∈ H^r`.
 * `Distribution.isLocallySobolevAt_iff_exists_memSobolev_cutoffTempered`,
   `Distribution.IsLocallySobolevAt.exists_nhds_forall_memSobolev_cutoffTempered`: being `H^s` near
   a point in terms of Mathlib's Bessel-potential spaces.
@@ -79,7 +79,8 @@ elliptic regularity argument provides it, assembles into membership of a Bessel-
 * `Distribution.sobolevSingularSupport_eq_empty_iff_forall_memSobolev_cutoffTempered`: the
   distributions with empty `H^s` singular support are those with `φ T ∈ H^s` for every `φ`.
 * `TemperedDistribution.isMicrolocallySobolevAt_toDistribution_iff`: microlocal `H^s` regularity
-  of a tempered distribution in terms of the `L²` Fourier transforms of its products `φ u ∈ H^r`.
+  of a tempered distribution in terms of the Fourier transforms of the Bessel potentials
+  `⟨D⟩ ^ r (φ u)` of its products `φ u ∈ H^r`.
 * `TemperedDistribution.isLocallySobolevAt_toDistribution_iff`,
   `TemperedDistribution.MemSobolev.sobolevSingularSupport_toDistribution_eq_empty`,
   `TemperedDistribution.MemSobolev.sobolevWaveFrontSet_toDistribution_eq_empty`: local Sobolev
@@ -235,11 +236,11 @@ theorem memSobolev_cutoffTempered_iff :
   · exact fun hG ↦ ⟨hG.toLp G, smulLeftCLM_fourier_cutoffTempered_eq hG⟩
 
 /-- **The weighted localized Fourier transform of an element of `H^r`.** If `φ T ∈ H^r`, the
-`L²` representative `u.toLp` of the element `u = φ T` of `H^r` has Fourier transform
-`⟨η⟩ ^ r T (φ e_η)`. So for every real `s`, the weighted localized Fourier transform
-`η ↦ ⟨η⟩ ^ s T (φ e_η)` is almost everywhere `⟨η⟩ ^ (s - r) 𝓕 u.toLp`. This translates
-square integrability statements about `𝓕 u.toLp`, such as the mapping properties of operators on
-`H^r`, into microlocal Sobolev regularity of `T`. -/
+`L²` function `u.toLp = ⟨D⟩ ^ r (φ T)`, the Bessel potential of the element `u = φ T` of
+`H^r`, has Fourier transform `⟨η⟩ ^ r T (φ e_η)`. So for every real `s`, the weighted localized
+Fourier transform `η ↦ ⟨η⟩ ^ s T (φ e_η)` is almost everywhere `⟨η⟩ ^ (s - r) 𝓕 u.toLp`. This
+translates square integrability statements about `𝓕 u.toLp`, such as the mapping properties of
+operators on `H^r`, into microlocal Sobolev regularity of `T`. -/
 theorem one_add_norm_sq_rpow_smul_localFourier_ae_eq {r : ℝ}
     (hT : MemSobolev r 2 (T.cutoffTempered φ)) (s : ℝ) :
     (fun η ↦ (1 + ‖η‖ ^ 2) ^ (s / 2) • T.localFourier φ η) =ᵐ[volume]
@@ -325,8 +326,8 @@ theorem isLocallySobolevAt_toDistribution_iff :
 /-- **Microlocal Sobolev regularity of a tempered distribution.** A tempered distribution `u` is
 microlocally `H^s` at `(x, ξ)`, as a distribution on `Ω`, exactly when for some test function `φ`
 on `Ω` with `φ x ≠ 0` and some open cone `Γ` containing `ξ`, the product `φ u` lies in some `H^r`
-and the `L²` Fourier transform of its `L²` representative, weighted by `⟨η⟩ ^ (s - r)`, is square
-integrable on `Γ`. -/
+and the Fourier transform `⟨η⟩ ^ r 𝓕 (φ u)` of the `L²` function `⟨D⟩ ^ r (φ u)`, weighted by
+`⟨η⟩ ^ (s - r)`, is square integrable on `Γ`. -/
 theorem isMicrolocallySobolevAt_toDistribution_iff {ξ : E} :
     (toDistribution Ω u).IsMicrolocallySobolevAt s x ξ ↔
       ∃ φ : 𝓓(Ω, ℂ), φ x ≠ 0 ∧ ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧

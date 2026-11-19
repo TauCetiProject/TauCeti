@@ -16,7 +16,10 @@ symbol `a # b` (`TauCeti.Symbol.sharp`) quantizes on Schwartz functions to `Op(a
 (`TauCeti.Symbol.quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue`). This file transfers this
 to the bounded extensions `H^s → H^{s - m}` of `TauCeti.Symbol.quantizeSobolev`: the operator
 `Op(a # b) : H^s → H^{s - (m' + m)}` is `Op(a) ∘ Op(b)`, as maps of tempered distributions
-(`TauCeti.Symbol.toDistr_quantizeSobolev_sharp`).
+(`TauCeti.Symbol.toDistr_quantizeSobolev_sharp`). In particular, multiplying `Op(a) v` by a
+Schwartz function `ψ` gives `Op(ψ # a) v` (`TauCeti.Symbol.smulLeftCLM_toDistr_quantizeSobolev`),
+and `ψ # a` vanishes at positions outside `tsupport ψ`
+(`TauCeti.Symbol.coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport`).
 
 Combined with the locality of the composition symbol
 (`TauCeti.Symbol.isSmoothing_sharp_sub_comp`), this shows that `Op(c) v` only depends on `v` near
@@ -69,6 +72,32 @@ theorem toDistr_quantizeSobolev_sharp {a : Symbol n W U m'} {b : Symbol n V W m}
     simp [hb.quantizeSobolev_toBesselPotentialSpaceCLM,
       quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb]
   simpa using congrArg (fun T ↦ (T u).toDistr) key
+
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- The composition `ψ # a` of multiplication by a Schwartz function `ψ` with a symbol `a`
+vanishes at positions outside `tsupport ψ`. -/
+theorem coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)} {x : CoordinateSpace n}
+    (hx : x ∉ tsupport ψ) (ξ : CoordinateSpace n) :
+    ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).sharp a ha).coefficient (x, ξ) = 0 := by
+  set F := ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W) ((ψ.smooth ⊤).smul contDiff_const)
+  -- At a position where `ψ` vanishes, so does the left factor `F`, and with it `F # a`.
+  rw [coefficient_sharp_of_coefficient_eq_smul (a := F) (a' := F) ha (t := 0)
+    (fun η ↦ by simp [F, image_eq_zero_of_notMem_tsupport hx]), zero_smul]
+
+/-- **Multiplication after quantization.** For a Schwartz function `ψ` and a symbol `a` with
+compact spatial support, multiplying `Op(a) v` by `ψ` gives `Op(ψ # a) v` for every `v ∈ H^t`. -/
+theorem smulLeftCLM_toDistr_quantizeSobolev {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)}
+    (hψ : (ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
+      ((ψ.smooth ⊤).smul contDiff_const)).HasCompactSpatialSupport)
+    (t : ℝ) (v : H^{t}(CoordinateSpace n, V)) :
+    TemperedDistribution.smulLeftCLM W (ψ : CoordinateSpace n → ℂ)
+        (a.quantizeSobolev ha t v).toDistr =
+      (((ofSpatial _ _).sharp a ha).quantizeSobolev (hψ.sharp ha) t v).toDistr := by
+  rw [toDistr_quantizeSobolev_sharp hψ ha, toDistr_quantizeSobolev_ofSpatial_smul_id ψ hψ,
+    BesselPotentialSpace.toDistr_smulLeftCLM]
 
 /-- **Locality modulo smoothing operators.** Let the symbol `c` with compact spatial support
 vanish at positions outside `K`, and let the Schwartz function `χ` have compact support and equal

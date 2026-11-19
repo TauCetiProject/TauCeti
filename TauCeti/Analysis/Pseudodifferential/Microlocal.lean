@@ -471,25 +471,6 @@ variable {n : ℕ} {m : ℝ} {Ω : Opens (CoordinateSpace n)} {a : Symbol n ℂ 
 
 /-! ### The order shift of the `H^s` wave front set -/
 
-/-- Multiplying `Op(a)` on the left by a compactly supported Schwartz function `ψ` gives the
-quantization of a symbol with compact spatial support that vanishes at positions outside
-`tsupport ψ`, namely `ψ # a`. -/
-private theorem HasCompactSpatialSupport.exists_smulLeftCLM_toDistr_quantizeSobolev_eq
-    (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ : HasCompactSupport ψ) :
-    ∃ (c : Symbol n ℂ ℂ (0 + m)) (hc : c.HasCompactSpatialSupport),
-      (∀ y ∉ tsupport ψ, ∀ η, c.coefficient (y, η) = 0) ∧
-        ∀ (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)),
-          TemperedDistribution.smulLeftCLM ℂ (ψ : CoordinateSpace n → ℂ)
-            (a.quantizeSobolev ha t v).toDistr = (c.quantizeSobolev hc t v).toDistr := by
-  set F := ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ ℂ) ((ψ.smooth ⊤).smul contDiff_const)
-  have hF : F.HasCompactSpatialSupport := hasCompactSpatialSupport_ofSpatial_smul_id hψ
-  refine ⟨F.sharp a ha, hF.sharp ha, fun y hy η ↦ ?_, fun t v ↦ ?_⟩
-  · -- At a position where `ψ` vanishes, so does the left factor `F`, and with it `F # a`.
-    rw [coefficient_sharp_of_coefficient_eq_smul (a := F) (a' := F) ha (t := 0)
-      (fun η ↦ by simp [F, image_eq_zero_of_notMem_tsupport hy]), zero_smul]
-  · rw [toDistr_quantizeSobolev_sharp hF ha, toDistr_quantizeSobolev_ofSpatial_smul_id ψ hF,
-      BesselPotentialSpace.toDistr_smulLeftCLM]
-
 /-- **Pseudodifferential operators lose their order microlocally.** Let `a` be a scalar symbol of
 order `m` with compact spatial support and `u ∈ H^t`. If `u`, as a distribution on an open set
 `Ω ⊆ ℝⁿ`, is microlocally `H^s` at `(x, ξ)`, then `Op(a) u` is microlocally `H^{s - m}` at
@@ -509,27 +490,29 @@ theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantize
     TestFunction.exists_tsupport_subset_apply_eq (n := ⊤) hW inter_subset_right (1 : ℂ)
   obtain ⟨φ, hφ1, hφW⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
     ψ.hasCompactSupport (isOpen_interior.inter Ω.isOpen) hψW inter_subset_right
-  set φ' := TestFunction.toSchwartzMapCLM ℂ φ
-  -- `ψ Op(a) = Op(c)` for a symbol `c` vanishing outside `tsupport ψ`.
-  obtain ⟨c, hc, hcK, hψc⟩ := ha.exists_smulLeftCLM_toDistr_quantizeSobolev_eq
-    (ψ := TestFunction.toSchwartzMapCLM ℂ ψ) (by simpa using ψ.hasCompactSupport)
-  simp only [TestFunction.coe_toSchwartzMapCLM] at hcK hψc
-  set v := BesselPotentialSpace.smulLeftCLM t φ' u
+  -- `ψ Op(a) = Op(c)` for the symbol `c = ψ # a`, which vanishes outside `tsupport ψ`.
+  set ψ' := TestFunction.toSchwartzMapCLM ℂ ψ
+  have hψ' : (ψ' : CoordinateSpace n → ℂ) = ψ := TestFunction.coe_toSchwartzMapCLM ψ
+  have hF := hasCompactSpatialSupport_ofSpatial_smul_id (V := ℂ) (hψ' ▸ ψ.hasCompactSupport)
+  set c := (ofSpatial (fun y ↦ ψ' y • ContinuousLinearMap.id ℂ ℂ)
+    ((ψ'.smooth ⊤).smul contDiff_const)).sharp a ha
+  have hc := hF.sharp ha
+  have hψc (t : ℝ) (v : H^{t}(CoordinateSpace n, ℂ)) :
+      TemperedDistribution.smulLeftCLM ℂ (ψ : CoordinateSpace n → ℂ)
+        (a.quantizeSobolev ha t v).toDistr = (c.quantizeSobolev hc t v).toDistr :=
+    hψ' ▸ smulLeftCLM_toDistr_quantizeSobolev ha hF t v
+  set v := BesselPotentialSpace.smulLeftCLM t (TestFunction.toSchwartzMapCLM ℂ φ) u
   -- `Op(a) (φ u)` is microlocally `H^{s - m}` at `(x, ξ)`: `ψ Op(a) (φ u) = Op(c) (φ u)`, and
   -- `Op(c)` loses `m` orders in the cone `Γ` on the input `φ u`.
   have hA : (toDistribution Ω (a.quantizeSobolev ha t v).toDistr).IsMicrolocallySobolevAt
       (s - m) x ξ := by
-    have hTφ : (toDistribution Ω u.toDistr).cutoffTempered φ = v.toDistr := by simp [v, φ']
-    have hφS : MemSobolev t 2 ((toDistribution Ω u.toDistr).cutoffTempered φ) := by
-      rw [hTφ]
-      exact v.memSobolev_toDistr
+    have hTφ : (toDistribution Ω u.toDistr).cutoffTempered φ = v.toDistr := by simp [v]
+    have hφS := hTφ ▸ v.memSobolev_toDistr
     have hφv : hφS.toBesselPotentialSpace = v := hφS.toBesselPotentialSpace_eq_of_toDistr_eq hTφ
-    have hLc := hL φ (hφW.trans (inter_subset_left.trans interior_subset)) hφS c hc
-    rw [hφv] at hLc
+    have hLc := hφv ▸ hL φ (hφW.trans (inter_subset_left.trans interior_subset)) hφS c hc
     have hAS : MemSobolev (t - (0 + m)) 2 (TemperedDistribution.smulLeftCLM ℂ
-        (ψ : CoordinateSpace n → ℂ) (a.quantizeSobolev ha t v).toDistr) := by
-      rw [hψc]
-      exact BesselPotentialSpace.memSobolev_toDistr _
+        (ψ : CoordinateSpace n → ℂ) (a.quantizeSobolev ha t v).toDistr) :=
+      hψc t v ▸ BesselPotentialSpace.memSobolev_toDistr _
     have hAc : hAS.toBesselPotentialSpace = c.quantizeSobolev hc t v :=
       hAS.toBesselPotentialSpace_eq_of_toDistr_eq (hψc t v)
     refine TemperedDistribution.isMicrolocallySobolevAt_toDistribution_iff.2
@@ -541,8 +524,9 @@ theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantize
     refine (TemperedDistribution.isLocallySobolevAt_toDistribution_iff.2
       ⟨ψ, by simp [hψx], ?_⟩).isMicrolocallySobolevAt ξ
     rw [map_sub, hψc, hψc]
-    exact memSobolev_toDistr_quantizeSobolev_sub_quantizeSobolev_smulLeftCLM hc hcK
-      (by simpa [φ'] using φ.hasCompactSupport) (hφ1.mono fun y hy ↦ by simpa [φ'] using hy) t
+    exact memSobolev_toDistr_quantizeSobolev_sub_quantizeSobolev_smulLeftCLM hc
+      (fun y hy ↦ coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport ha (hψ' ▸ hy))
+      (by simpa using φ.hasCompactSupport) (hφ1.mono fun y hy ↦ by simpa using hy) t
       (s - m) u
   convert hA.add hB using 1
   rw [← map_add, add_sub_cancel]
