@@ -96,6 +96,26 @@ theorem reducedSource_def (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
       backgroundWeight (P.eval ·) z * (Real.exp (2 * w z) - 1) / 8 +
         backgroundSource (P.eval ·) z := (rfl)
 
+/-- The source of the reduced equation splits as `h (exp (2w) - 1) / 8 + (g - (1 + ‖P‖²)⁻¹ / 8)`,
+where `h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. -/
+theorem reducedSource_eq_add_sub_inv_div_eight (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
+    reducedSource P w z =
+      ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1) / 8 +
+        (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+          (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) := by
+  simp only [reducedSource_def, backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
+  field_simp
+  ring
+
+/-- The source of the reduced equation is `(exp (2w) h - 1) / 8 + g`, where
+`h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. -/
+theorem reducedSource_eq_exp_mul_sub_one_div_eight_add (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
+    reducedSource P w z =
+      (Real.exp (2 * w z) * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2)) - 1) / 8 +
+        2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := by
+  simp only [reducedSource_def, backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
+  ring
+
 /-- For `w ∈ H¹(ℂ)` and continuous `f`, `h (exp (2w) - 1) ∈ L²(ℂ)`, where
 `h = ‖f‖² / (1 + ‖f‖²) = TauCeti.Vortex.backgroundWeight f`: `exp (2w) - 1 ∈ L²(ℂ)` and
 `0 ≤ h ≤ 1`. -/
@@ -128,9 +148,7 @@ theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure �
     (memLp_backgroundWeight_mul_exp_two_mul_sub_one P.continuous u).const_mul (1 / 8)
   refine (hfirst.add (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm)).ae_eq
     (Eventually.of_forall fun z ↦ ?_)
-  simp only [Pi.add_apply, reducedSource_def, backgroundSource_def, backgroundWeight_def,
-    Polynomial.deriv]
-  field_simp
+  simp only [Pi.add_apply, reducedSource_eq_add_sub_inv_div_eight, backgroundWeight_def]
   ring
 
 /-- **Weak solutions of the reduced vortex equation lie in `H²`.** Let `P` be a polynomial of

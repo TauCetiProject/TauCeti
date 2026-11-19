@@ -100,6 +100,15 @@ private theorem integral_potential_add_le {u v : ℂ → ℝ}
   simp only
   linarith
 
+/-- For `u, v ∈ H¹(ℂ)`, `h (exp (2u) - 1) (v - u)` is integrable, where `h = ‖P‖² / (1 + ‖P‖²)`. -/
+private theorem integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_mul_sub
+    (u v : W1p (volume : Measure ℂ) ⊤ 2) :
+    Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value u z) - 1) * (W1p.value v z - W1p.value u z) := by
+  simpa only [backgroundWeight_def, Pi.mul_def, Pi.sub_apply] using
+    (memLp_backgroundWeight_mul_exp_two_mul_sub_one P.continuous u).integrable_mul
+      ((W1p.memLp_value v).sub (W1p.memLp_value u))
+
 /-- The zeroth-order term of the weak reduced equation in the direction `v - u` splits as
 `(1 / 8) ∫ h (exp (2u) - 1) (v - u) + ∫ (g - (1 + ‖P‖²)⁻¹ / 8) (v - u)`. -/
 private theorem integral_reducedSource_mul_value_sub (hm : 0 < P.natDegree)
@@ -115,17 +124,13 @@ private theorem integral_reducedSource_mul_value_sub (hm : 0 < P.natDegree)
     exact h.trans (ae_of_all _ fun _ ↦ rfl)
   have hd : MemLp (fun z ↦ W1p.value v z - W1p.value u z) 2 :=
     (W1p.memLp_value v).sub (W1p.memLp_value u)
-  have hB : Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * W1p.value u z) - 1) * (W1p.value v z - W1p.value u z) := by
-    simpa only [backgroundWeight_def, Pi.mul_def] using
-      (memLp_backgroundWeight_mul_exp_two_mul_sub_one P.continuous u).integrable_mul hd
+  have hB := integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_mul_sub (P := P) u v
   have hC : Integrable fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * (W1p.value v z - W1p.value u z) :=
     (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm).integrable_mul hd
   rw [← integral_div, ← integral_add (hB.div_const 8) hC]
   refine integral_congr_ae (hsub.mono fun z hz ↦ ?_)
-  simp only [hz, reducedSource_def, backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
-  field_simp
+  simp only [hz, reducedSource_eq_add_sub_inv_div_eight]
   ring
 
 /-- **The tangent inequality for Taubes's functional.** At `u ∈ H¹(ℂ)` which solves the weak
@@ -162,9 +167,8 @@ private theorem sobolevReducedFunctional_le_of_forall_integral_eq_zero (hm : 0 <
     rw [add_sub_cancel] at h
     nlinarith [sq_nonneg ‖W1p.gradient v - W1p.gradient u‖]
   -- So does the potential.
-  have hP := integral_potential_add_le hu hv (by
-    simpa only [backgroundWeight_def, Pi.mul_def] using
-      (memLp_backgroundWeight_mul_exp_two_mul_sub_one P.continuous u).integrable_mul hd)
+  have hP := integral_potential_add_le hu hv
+    (integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_mul_sub u v)
   -- The linear term is linear.
   have hL : (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
         (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z) =
@@ -208,12 +212,8 @@ theorem eq_reducedMinimizer_iff_forall_integral_inner_gradient_add_integral_mul_
       (∫ z, ⟪W1p.gradient u z, ∇ φ z⟫) + ∫ z, reducedSource P (W1p.value u) z * φ z = 0 := by
   refine ⟨?_, eq_reducedMinimizer_of_integral_inner_gradient_add_integral_mul_eq_zero hm⟩
   rintro rfl φ hφ hφc
-  refine Eq.trans ?_ (integral_inner_gradient_add_integral_mul_eq_zero hm
-    (forall_sobolevReducedFunctional_reducedMinimizer_le hm) (hφ.of_le (by simp)) hφc)
-  congr 2
-  funext z
-  simp only [reducedSource_def, backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
-  field_simp
-  ring
+  simpa only [reducedSource_eq_exp_mul_sub_one_div_eight_add] using
+    integral_inner_gradient_add_integral_mul_eq_zero hm
+      (forall_sobolevReducedFunctional_reducedMinimizer_le hm) (hφ.of_le (by simp)) hφc
 
 end TauCeti.Vortex
