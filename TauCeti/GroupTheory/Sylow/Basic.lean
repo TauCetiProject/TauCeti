@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Sylow
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Sylow subgroups and conjugacy of prime-power order elements
@@ -102,5 +103,24 @@ theorem exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (hsq : ¬ p ^ 2 ∣ Nat.car
   have hmem : (x : G) ∈ (Pg : Subgroup G) := x.property
   simp only [Pg, Sylow.coe_ofCard] at hmem
   exact ⟨y, hy ▸ hmem⟩
+
+/-- If `4` does not divide the order of a group, any two elements of order `2` are conjugate. For
+a finite group this applies exactly when the order is odd or twice an odd number. -/
+theorem isConj_of_orderOf_eq_two_of_not_four_dvd (h4 : ¬ 4 ∣ Nat.card G) {g h : G}
+    (hg : orderOf g = 2) (hh : orderOf h = 2) : IsConj g h := by
+  obtain ⟨y, hy⟩ := exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd (p := 2) (by norm_num [h4]) hg hh
+  rcases (Subgroup.mem_zpowers_iff_of_orderOf_eq_two hg).mp hy with h1 | hgy
+  · simp_all
+  · exact (isConj_iff.mpr ⟨y, hgy⟩).symm
+
+/-- If `4` does not divide the order of a group, the elements of order `2` form a single conjugacy
+class, the class of any one of them. -/
+theorem carrier_mk_eq_setOf_orderOf_eq_two (h4 : ¬ 4 ∣ Nat.card G) {g : G} (hg : orderOf g = 2) :
+    (ConjClasses.mk g).carrier = {x : G | orderOf x = 2} := by
+  ext x
+  rw [ConjClasses.mem_carrier_iff_mk_eq, ConjClasses.mk_eq_mk_iff_isConj, Set.mem_ofPred_eq]
+  refine ⟨fun hx => ?_, fun hx => isConj_of_orderOf_eq_two_of_not_four_dvd h4 hx hg⟩
+  obtain ⟨y, rfl⟩ := isConj_iff.mp hx.symm
+  rw [← MulAut.conj_apply, MulEquiv.orderOf_eq, hg]
 
 end TauCeti
