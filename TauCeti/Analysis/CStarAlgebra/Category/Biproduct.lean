@@ -104,29 +104,51 @@ private theorem sqrtGram_asHom_comp_sqrtGram_asHom (c : Bicone F) :
     (sqrtGram c).asHom ≫ (sqrtGram c).asHom = (gram c).asHom := by
   rw [← End.mul_asHom, sqrtGram, CFC.sqrt_mul_sqrt_self _ (gram_nonneg c)]
 
+/-- The square root `CFC.sqrt (∑ k, End.of (c.π k ≫ dagger (c.π k)))` in the definition of
+`orthogonalize` is `sqrtGram c`. -/
+private theorem sqrt_sum_eq_sqrtGram (c : Bicone F) :
+    CFC.sqrt (∑ k, End.of (c.π k ≫ dagger (c.π k))) = sqrtGram c :=
+  rfl
+
 /-- The orthogonal bicone on the point of a finite bicone `c` of a C*-category. With `u` the
 positive square root of `∑ j, π_j† π_j`, its inclusions are `c.ι j ≫ u` and its projections are
 their daggers `u ≫ dagger (c.ι j)`. It is a limit bicone when `c` is
 (`CategoryTheory.Limits.Bicone.isBilimitOrthogonalize`). -/
+@[expose]
 def orthogonalize (c : Bicone F) : Bicone F where
   pt := c.pt
-  π j := (sqrtGram c).asHom ≫ dagger (c.ι j)
-  ι j := c.ι j ≫ (sqrtGram c).asHom
+  π j := (CFC.sqrt (∑ k, End.of (c.π k ≫ dagger (c.π k)))).asHom ≫ dagger (c.ι j)
+  ι j := c.ι j ≫ (CFC.sqrt (∑ k, End.of (c.π k ≫ dagger (c.π k)))).asHom
   ι_π j k := by
-    rw [Category.assoc, sqrtGram_asHom_comp_sqrtGram_asHom_assoc, gram_asHom_comp_dagger_ι,
-      c.ι_π]
+    rw [sqrt_sum_eq_sqrtGram, Category.assoc, sqrtGram_asHom_comp_sqrtGram_asHom_assoc,
+      gram_asHom_comp_dagger_ι, c.ι_π]
 
 /-- The orthogonalization of a bicone has the same point. -/
 @[simp] theorem orthogonalize_pt (c : Bicone F) : c.orthogonalize.pt = c.pt := (rfl)
 
+/-- The inclusions of the orthogonalization of `c` are `c.ι j ≫ u`, with `u` the positive square
+root of `∑ k, c.π k ≫ dagger (c.π k)` in the C*-algebra `End c.pt`. -/
+@[simp, reassoc]
+theorem orthogonalize_ι (c : Bicone F) (j : J) :
+    c.orthogonalize.ι j = c.ι j ≫ (CFC.sqrt (∑ k, End.of (c.π k ≫ dagger (c.π k)))).asHom :=
+  (rfl)
+
+/-- The projections of the orthogonalization of `c` are `u ≫ dagger (c.ι j)`, with `u` the
+positive square root of `∑ k, c.π k ≫ dagger (c.π k)` in the C*-algebra `End c.pt`. -/
+@[simp, reassoc]
+theorem orthogonalize_π (c : Bicone F) (j : J) :
+    c.orthogonalize.π j = (CFC.sqrt (∑ k, End.of (c.π k ≫ dagger (c.π k)))).asHom ≫
+      dagger (c.ι j) :=
+  (rfl)
+
 /-- The orthogonalization of a finite bicone in a C*-category is orthogonal. -/
 theorem isOrthogonal_orthogonalize (c : Bicone F) : c.orthogonalize.IsOrthogonal :=
   (isOrthogonal_iff _).2 fun j => by
-    -- Stated for the defining formulas: rewriting `c.orthogonalize.π j` in place fails, since the
-    -- point `c.orthogonalize.pt` is only definitionally `c.pt`.
-    have h : dagger ((sqrtGram c).asHom ≫ dagger (c.ι j)) = c.ι j ≫ (sqrtGram c).asHom := by
-      rw [dagger_comp, dagger_dagger, dagger_sqrtGram_asHom]
-    exact h
+    rw [orthogonalize_π, orthogonalize_ι, sqrt_sum_eq_sqrtGram]
+    -- `rw [dagger_comp]` fails here: the point `c.orthogonalize.pt` is only definitionally `c.pt`.
+    exact (dagger_comp _ _).trans <| by
+      rw [dagger_dagger]
+      exact congrArg (c.ι j ≫ ·) (dagger_sqrtGram_asHom c)
 
 /-- The endomorphism `∑ j, ι_j ι_j†` of the point of a finite bicone, written
 `∑ j, dagger (c.ι j) ≫ c.ι j` in categorical order. -/
@@ -161,7 +183,7 @@ def isBilimitOrthogonalize {c : Bicone F} (hc : c.IsBilimit) : c.orthogonalize.I
     have := congrArg End.asHom key
     simp only [coGram, End.mul_asHom, End.sum_asHom, End.one_asHom, Preadditive.sum_comp,
       Preadditive.comp_sum, Category.assoc] at this
-    -- The summands of `this` are the defining formulas of `π j ≫ ι j` for `c.orthogonalize`.
+    simp only [orthogonalize_π, orthogonalize_ι, sqrt_sum_eq_sqrtGram]
     exact .trans (Finset.sum_congr rfl fun j _ => Category.assoc _ _ _) this
 
 /-- An orthogonal bicone is its own orthogonalization. -/
@@ -178,8 +200,16 @@ theorem orthogonalize_eq_self {c : Bicone F} (hc : c.IsOrthogonal) : c.orthogona
     conv_lhs => arg 2; rw [gram_asHom]
     simp only [Preadditive.comp_sum, reassoc_of% hπ]
     exact (gram_asHom c).symm
-  cases c
-  simp only [orthogonalize, hsqrt, hι, hc.dagger_ι, hπ]
+  have hι' (j : J) : c.orthogonalize.ι j = c.ι j := by
+    rw [orthogonalize_ι, sqrt_sum_eq_sqrtGram, hsqrt, hι]
+  have hπ' (j : J) : c.orthogonalize.π j = c.π j := by
+    rw [orthogonalize_π, sqrt_sum_eq_sqrtGram, hsqrt, hc.dagger_ι, hπ]
+  -- `c.orthogonalize` has the point of `c`, so it is determined by its projections and inclusions.
+  calc c.orthogonalize = ⟨c.pt, c.orthogonalize.π, c.orthogonalize.ι, c.orthogonalize.ι_π⟩ := rfl
+    _ = c := by
+      cases c
+      congr 1
+      exacts [funext hπ', funext hι']
 
 end CategoryTheory.Limits.Bicone
 
