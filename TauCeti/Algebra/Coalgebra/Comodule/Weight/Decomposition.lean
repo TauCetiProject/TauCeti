@@ -202,7 +202,7 @@ theorem iSup_groupLikeWeightSpace_le_comap_span_groupLike (N : Subcomodule k C C
   · rw [zero_smul]
     exact zero_mem _
   · refine Submodule.smul_mem _ _ (Submodule.subset_span ⟨g, ?_, rfl⟩)
-    have h := N.toSubmodule.smul_mem r⁻¹ n.2
+    have h := N.toSubmodule.smul_mem r⁻¹ n.property
     rwa [← Subcomodule.subtype_apply, hr, inv_smul_smul₀ hr0] at h
 
 end TauCeti.Subcomodule
