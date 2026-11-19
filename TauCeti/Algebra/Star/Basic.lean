@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Center
 public import Mathlib.Algebra.Star.Module
 
 /-!
@@ -12,9 +13,10 @@ public import Mathlib.Algebra.Star.Module
 
 In any magma `A` with an antimultiplicative involution (`StarMul A`), a subset closed under `star`
 (`StarMemClass S A`) that absorbs multiplication by ambient elements on the left also absorbs
-multiplication on the right via `x * a = star (star a * star x)`. Similarly, in a star module over
-`R` with `StarMul A` and `IsScalarTower R A A`, applying `star` shows that scalars commute with
-left multiplication (`x * (c • y) = c • (x * y)`), so `SMulCommClass R A A` is automatic.
+multiplication on the right via `x * a = star (star a * star x)`, and the double commutant of
+such a subset is again closed under `star`. Similarly, in a star module over `R` with `StarMul A`
+and `IsScalarTower R A A`, applying `star` shows that scalars commute with left multiplication
+(`x * (c • y) = c • (x * y)`), so `SMulCommClass R A A` is automatic.
 
 In a star ring whose star is proper (`IsProperStar`: `star x * x = 0` forces `x = 0`), such as a
 C⋆-algebra, an element killed by every two-sided multiplication `star d * X * c` vanishes. This is
@@ -34,6 +36,8 @@ equivalence of complex vector spaces is real-linear.
 
 * `StarMemClass.mul_mem_right_of_mul_mem_left`: left absorption implies right absorption on
   star-closed subsets.
+* `StarMemClass.star_mem_centralizer_centralizer`: the double commutant of a star-closed subset
+  is star-closed.
 * `TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and
   `d`, then `X = 0`.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
@@ -54,6 +58,14 @@ theorem StarMemClass.mul_mem_right_of_mul_mem_left {S A : Type*} [Mul A] [StarMu
     [SetLike S A] [StarMemClass S A] {s : S}
     (hmul : ∀ a : A, ∀ x ∈ s, a * x ∈ s) (a : A) {x : A} (hx : x ∈ s) : x * a ∈ s := by
   simpa only [star_mul, star_star] using star_mem (hmul (star a) (star x) (star_mem hx))
+
+/-- The double commutant `s''` of a subset closed under the involution is closed under the
+involution. -/
+theorem StarMemClass.star_mem_centralizer_centralizer {S A : Type*} [Mul A] [StarMul A]
+    [SetLike S A] [StarMemClass S A] (s : S) {x : A}
+    (hx : x ∈ (s : Set A).centralizer.centralizer) :
+    star x ∈ (s : Set A).centralizer.centralizer :=
+  Set.star_mem_centralizer' (fun _ ha => Set.star_mem_centralizer' (fun _ => star_mem) ha) hx
 
 namespace TauCeti
 

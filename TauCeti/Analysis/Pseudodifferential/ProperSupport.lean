@@ -38,7 +38,7 @@ removed, `(1 - χ(x - y)) K_b(x, y)`, vanishes near the diagonal, where all the 
 
 So every pseudodifferential operator is a properly supported one, with kernel supported within
 any prescribed distance `ε > 0` of the diagonal, up to an operator with a smoothing symbol
-(`TauCeti.Symbol.exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero`). Properly supported
+(`TauCeti.Symbol.exists_isSmoothing_sub_and_hasPropagationLE`). Properly supported
 operators preserve compact supports, so they can be composed when the symbols have no compact
 spatial support, and they are the pieces that are patched together on manifolds.
 
@@ -55,9 +55,14 @@ spatial support, and they are the pieces that are patched together on manifolds.
   `Op(c) u` lies in the sum of the supports of `u` and `χ`, so for compactly supported `χ` the
   operator `Op(c)` preserves compact supports.
 * `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, then `c - b` is smoothing.
-* `TauCeti.Symbol.exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero`: for every `ε > 0`,
-  every symbol is, up to a smoothing symbol, a symbol `c` such that `Op(c) u (x) = 0` whenever `u`
-  vanishes on the ball of radius `ε` about `x`.
+* `TauCeti.Symbol.HasPropagationLE a ε`: `Op(a) u (x) = 0` whenever `u` vanishes on the ball of
+  radius `ε` about `x`. Then `Op(a) u (x)` only depends on `u` near `x`
+  (`TauCeti.Symbol.HasPropagationLE.quantizeSchwartzValue_congr`) and `Op(a)` preserves compact
+  supports (`TauCeti.Symbol.HasPropagationLE.hasCompactSupport_quantizeSchwartzValue`). The kernel
+  cutoff by a `χ` supported in the ball of radius `ε` has propagation at most `ε`
+  (`TauCeti.Symbol.hasPropagationLE_kernelCutoff`).
+* `TauCeti.Symbol.exists_isSmoothing_sub_and_hasPropagationLE`: for every `ε > 0`, every symbol is,
+  up to a smoothing symbol, a symbol of propagation at most `ε`.
 
 ## Proof outline
 
@@ -557,6 +562,95 @@ theorem hasCompactSupport_quantizeSchwartzValue_kernelCutoff (hχ : HasCompactSu
 
 end Quantization
 
+/-! ### Operators of finite propagation -/
+
+section Propagation
+
+variable {m' : ℝ} {a b : Symbol n V W m} {ε ε' : ℝ}
+
+/-- A symbol `a` has **propagation at most `ε`** if `Op(a) u (x) = 0` whenever the Schwartz
+function `u` vanishes on the open ball of radius `ε` about `x`. Then the value of `Op(a) u` at `x`
+only depends on `u` near `x` (`TauCeti.Symbol.HasPropagationLE.quantizeSchwartzValue_congr`), and
+`Op(a) u` is supported within distance `ε` of the support of `u`
+(`TauCeti.Symbol.HasPropagationLE.tsupport_quantizeSchwartzValue_subset`): the distribution kernel
+of `Op(a)` is supported in the closed `ε`-neighbourhood of the diagonal, so `Op(a)` is properly
+supported. -/
+def HasPropagationLE (a : Symbol n V W m) (ε : ℝ) : Prop :=
+  ∀ (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n), (∀ y ∈ Metric.ball x ε, u y = 0) →
+    quantizeSchwartzValue a.coefficient u x = 0
+
+theorem hasPropagationLE_iff : a.HasPropagationLE ε ↔
+    ∀ (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n), (∀ y ∈ Metric.ball x ε, u y = 0) →
+      quantizeSchwartzValue a.coefficient u x = 0 :=
+  Iff.rfl
+
+theorem HasPropagationLE.mono (ha : a.HasPropagationLE ε) (h : ε ≤ ε') :
+    a.HasPropagationLE ε' :=
+  fun u x hu ↦ ha u x fun y hy ↦ hu y (Metric.ball_subset_ball h hy)
+
+/-- **Locality.** If `a` has propagation at most `ε`, then `Op(a) u (x)` only depends on the values
+of `u` on the ball of radius `ε` about `x`. -/
+theorem HasPropagationLE.quantizeSchwartzValue_congr (ha : a.HasPropagationLE ε)
+    {u v : 𝓢(CoordinateSpace n, V)} {x : CoordinateSpace n}
+    (h : ∀ y ∈ Metric.ball x ε, u y = v y) :
+    quantizeSchwartzValue a.coefficient u x = quantizeSchwartzValue a.coefficient v x := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  have hadd := quantizeSchwartzValue_add_right
+    (a.continuous_coefficient_slice x).aestronglyMeasurable hC v (u - v)
+  rw [add_sub_cancel] at hadd
+  rw [hadd, ha (u - v) x fun y hy ↦ by rw [sub_apply, h y hy, sub_self], add_zero]
+
+/-- If `a` has propagation at most `ε`, then `Op(a) u` is supported within distance `ε` of the
+support of `u`. -/
+theorem HasPropagationLE.tsupport_quantizeSchwartzValue_subset (ha : a.HasPropagationLE ε)
+    (u : 𝓢(CoordinateSpace n, V)) :
+    tsupport (quantizeSchwartzValue a.coefficient u) ⊆ Metric.cthickening ε (tsupport u) := by
+  refine (closure_mono fun x hx ↦ ?_).trans (Metric.closure_thickening_subset_cthickening ε _)
+  by_contra hns
+  refine hx (ha u x fun y hy ↦ image_eq_zero_of_notMem_tsupport fun hyu ↦ hns ?_)
+  exact Metric.mem_thickening_iff.2 ⟨y, hyu, Metric.mem_ball'.1 hy⟩
+
+/-- An operator of finite propagation preserves compact supports. -/
+theorem HasPropagationLE.hasCompactSupport_quantizeSchwartzValue (ha : a.HasPropagationLE ε)
+    {u : 𝓢(CoordinateSpace n, V)} (hu : HasCompactSupport u) :
+    HasCompactSupport (quantizeSchwartzValue a.coefficient u) :=
+  hu.isCompact.cthickening.of_isClosed_subset (isClosed_tsupport _)
+    (ha.tsupport_quantizeSchwartzValue_subset u)
+
+theorem hasPropagationLE_zero (ε : ℝ) : (0 : Symbol n V W m).HasPropagationLE ε :=
+  fun u x _ ↦ by rw [coefficient_zero, quantizeSchwartzValue_zero_left]
+
+theorem HasPropagationLE.add (ha : a.HasPropagationLE ε) (hb : b.HasPropagationLE ε) :
+    (a + b).HasPropagationLE ε := fun u x hu ↦ by
+  rw [coefficient_add, quantizeSchwartzValue_coefficient_add, ha u x hu, hb u x hu, add_zero]
+
+theorem HasPropagationLE.smul (ha : a.HasPropagationLE ε) (c : ℂ) :
+    (c • a).HasPropagationLE ε := fun u x hu ↦ by
+  rw [coefficient_smul, quantizeSchwartzValue_smul_left, ha u x hu, smul_zero]
+
+theorem HasPropagationLE.neg (ha : a.HasPropagationLE ε) : (-a).HasPropagationLE ε := by
+  simpa using ha.smul (-1)
+
+theorem HasPropagationLE.sub (ha : a.HasPropagationLE ε) (hb : b.HasPropagationLE ε) :
+    (a - b).HasPropagationLE ε := by
+  simpa [sub_eq_add_neg] using ha.add hb.neg
+
+theorem HasPropagationLE.inclusion (ha : a.HasPropagationLE ε) (h : m ≤ m') :
+    (inclusion h a).HasPropagationLE ε := fun u x hu ↦ by
+  rw [coefficient_inclusion]
+  exact ha u x hu
+
+/-- If `χ` vanishes outside the ball of radius `ε` about the origin, the kernel cutoff
+`kernelCutoff χ b`, with kernel `χ(x - y) K_b(x, y)`, has propagation at most `ε`. -/
+theorem hasPropagationLE_kernelCutoff [CompleteSpace V] [CompleteSpace W]
+    (χ : 𝓢(CoordinateSpace n, ℂ)) (b : Symbol n V W m)
+    (hχ : Function.support χ ⊆ Metric.ball 0 ε) : (kernelCutoff χ b).HasPropagationLE ε :=
+  fun u x hu ↦ quantizeSchwartzValue_kernelCutoff_eq_zero χ b fun y hy ↦ hu y <| by
+    have h := hχ hy
+    rwa [Metric.mem_ball, dist_zero_right, ← dist_eq_norm, dist_comm] at h
+
+end Propagation
+
 /-! ### The kernel cutoff differs from the symbol by a smoothing symbol -/
 
 section Smoothing
@@ -764,28 +858,24 @@ theorem isSmoothing_kernelCutoff_sub (hχ : ⇑χ =ᶠ[𝓝 0] 1) (b : Symbol n 
   linarith [Nat.le_ceil (m - m')]
 
 /-- **Every pseudodifferential operator is properly supported up to a smoothing operator.** For
-every `ε > 0`, every symbol `b` differs by a smoothing symbol from a symbol `c` whose
-quantization has kernel supported within distance `ε` of the diagonal: `Op(c) u (x) = 0` whenever
-`u` vanishes on the ball of radius `ε` about `x`. -/
-theorem exists_isSmoothing_sub_and_quantizeSchwartzValue_eq_zero [CompleteSpace V]
-    (b : Symbol n V W m) {ε : ℝ} (hε : 0 < ε) :
-    ∃ c : Symbol n V W m, (c - b).IsSmoothing ∧ ∀ (u : 𝓢(CoordinateSpace n, V))
-      (x : CoordinateSpace n), (∀ y ∈ Metric.ball x ε, u y = 0) →
-        quantizeSchwartzValue c.coefficient u x = 0 := by
+every `ε > 0`, every symbol `b` differs by a smoothing symbol from a symbol `c` of propagation at
+most `ε`: `Op(c) u (x) = 0` whenever `u` vanishes on the ball of radius `ε` about `x`, so the kernel
+of `Op(c)` is supported within distance `ε` of the diagonal. -/
+theorem exists_isSmoothing_sub_and_hasPropagationLE [CompleteSpace V] (b : Symbol n V W m)
+    {ε : ℝ} (hε : 0 < ε) : ∃ c : Symbol n V W m, (c - b).IsSmoothing ∧ c.HasPropagationLE ε := by
   let φ : ContDiffBump (0 : CoordinateSpace n) := ⟨ε / 2, ε, half_pos hε, half_lt_self hε⟩
   have hsmooth : ContDiff ℝ ∞ fun y ↦ (φ y : ℂ) := Complex.ofRealCLM.contDiff.comp φ.contDiff
   have hsupp : HasCompactSupport fun y ↦ (φ y : ℂ) :=
     φ.hasCompactSupport.comp_left Complex.ofReal_zero
   set χ := hsupp.toSchwartzMap hsmooth
   have hχ : ∀ y, χ y = (φ y : ℂ) := fun y ↦ rfl
-  refine ⟨kernelCutoff χ b, isSmoothing_kernelCutoff_sub χ ?_ b, fun u x hu ↦ ?_⟩
+  refine ⟨kernelCutoff χ b, isSmoothing_kernelCutoff_sub χ ?_ b,
+    hasPropagationLE_kernelCutoff χ b fun z hz ↦ ?_⟩
   · filter_upwards [Metric.ball_mem_nhds (0 : CoordinateSpace n) (half_pos hε)] with y hy
     rw [hχ, φ.one_of_mem_closedBall (Metric.ball_subset_closedBall hy), Complex.ofReal_one,
       Pi.one_apply]
-  · refine quantizeSchwartzValue_kernelCutoff_eq_zero χ b fun y hy ↦ hu y ?_
-    have hmem : x - y ∈ Function.support φ := fun h ↦ hy (by rw [hχ, h, Complex.ofReal_zero])
-    rw [φ.support_eq, Metric.mem_ball, dist_zero_right] at hmem
-    rwa [Metric.mem_ball, dist_eq_norm, ← norm_neg, neg_sub]
+  · have hmem : z ∈ Function.support φ := fun h ↦ hz (by rw [hχ, h, Complex.ofReal_zero])
+    rwa [φ.support_eq] at hmem
 
 end Smoothing
 
