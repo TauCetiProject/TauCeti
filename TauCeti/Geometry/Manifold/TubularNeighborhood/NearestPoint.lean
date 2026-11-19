@@ -206,8 +206,8 @@ theorem exists_continuousOn_nearestPoint_retraction [Nonempty M]
     rw [IsOpenEmbedding.toOpenPartialHomeomorph_target, hrange]
   · have hx : g ⟨(x, 0), mk_zero_mem_normalTube hε x⟩ = f x := by simp [g]
     simp only [e, ← hx, IsOpenEmbedding.toOpenPartialHomeomorph_left_inv]
-  · have hq' : f (e.symm q).val.1 + (e.symm q).val.2 = q :=
-      hemb.toOpenPartialHomeomorph_right_inv g (hrange ▸ hq)
+  · have hq' : g (e.symm q) = q := hemb.toOpenPartialHomeomorph_right_inv g (hrange ▸ hq)
+    simp only [g, domRestrict_apply] at hq'
     simpa only [hq'] using isMinOn_dist_add_iff_of_mem_normalTube hf hinj (e.symm q).2 (z := z)
 
 /-- **The nearest-point retraction is smooth.** Let `f` be a `C^(n + 1)` immersion of a compact
