@@ -17,14 +17,16 @@ import Mathlib.RingTheory.Noetherian.Basic
 
 
 /-!
-# Compatible endomorphisms of a representation of a diagram
+# Compatible endomorphisms of a representation of a quiver
 
-In Nori's construction of the universal abelian category attached to a representation of a
-diagram, a *diagram* is a quiver with a distinguished identity edge at each vertex, with no
-composition imposed; this is Mathlib's `ReflQuiver`. A representation `T` of a diagram `D` over a
-commutative ring `R` assigns an `R`-module to each vertex and a linear map to each edge, sending
-every distinguished identity edge to the identity; this is a
-`CategoryTheory.ReflPrefunctor D (ModuleCat R)`, written `D ⥤rq ModuleCat R`.
+A representation `T` of a quiver `D` over a commutative ring `R` assigns an `R`-module to each
+vertex and a linear map to each edge; this is a prefunctor `D ⥤q ModuleCat R`. In Nori's
+construction of the universal abelian category attached to a representation of a diagram, a
+*diagram* is a quiver with a distinguished identity edge at each vertex, with no composition
+imposed; this is Mathlib's `ReflQuiver`, and a representation of a diagram is a
+`CategoryTheory.ReflPrefunctor D (ModuleCat R)`, written `D ⥤rq ModuleCat R`, which sends every
+distinguished identity edge to the identity. Everything below except the treatment of identity
+edges applies to the underlying prefunctor.
 
 For a subdiagram, given by a set `S` of vertices and a set `E` of edges, the algebra `End(T|S,E)`
 consists of the families `(x_v)_{v ∈ S}` of endomorphisms `x_v` of `T v` that commute with `T f`
@@ -41,24 +43,26 @@ algebra; at a single vertex the algebra is the centralizer of the loops of `E` t
 
 ## Main definitions
 
-* `ReflPrefunctor.compatibleEnd T S E`: the subalgebra `End(T|S,E)` of
+* `Prefunctor.compatibleEnd T S E`: the subalgebra `End(T|S,E)` of
   `∀ v : S, Module.End R (T.obj v)`.
-* `ReflPrefunctor.compatibleEndRestrict T hS hE`: the restriction homomorphism
+* `Prefunctor.compatibleEndRestrict T hS hE`: the restriction homomorphism
   `End(T|S,E) →ₐ[R] End(T|S',E')` for `S' ⊆ S` and `E' ⊆ E`.
 
 ## Main results
 
-* `ReflPrefunctor.mem_compatibleEnd_iff`: the defining commutation equations.
-* `ReflPrefunctor.compatibleEnd_union`, `ReflPrefunctor.compatibleEnd_anti`,
-  `ReflPrefunctor.compatibleEnd_empty`: dependence on the edge set.
-* `ReflPrefunctor.compatibleEnd_insert_id`, `ReflPrefunctor.compatibleEnd_insert_of_map_eq_zero`,
-  `ReflPrefunctor.compatibleEnd_insert_of_notMem`: identity edges, zero edges and edges leaving the
-  vertex set impose no condition.
-* `ReflPrefunctor.mem_compatibleEnd_singleton_iff`: at a single vertex, the compatible
+* `Prefunctor.mem_compatibleEnd_iff`: the defining commutation equations.
+* `Prefunctor.compatibleEnd_union`, `Prefunctor.compatibleEnd_anti`,
+  `Prefunctor.compatibleEnd_empty`: dependence on the edge set.
+* `Prefunctor.compatibleEnd_insert_of_forall`: an edge whose equation holds for every family
+  imposes no condition; in particular so do zero edges
+  (`Prefunctor.compatibleEnd_insert_of_map_eq_zero`), edges leaving the vertex set
+  (`Prefunctor.compatibleEnd_insert_of_notMem`) and, for a representation of a diagram,
+  distinguished identity edges (`CategoryTheory.ReflPrefunctor.compatibleEnd_insert_id`).
+* `Prefunctor.mem_compatibleEnd_singleton_iff`: at a single vertex, the compatible
   endomorphisms are the centralizer of the loops of `E`.
-* `ReflPrefunctor.compatibleEndRestrict_id`, `ReflPrefunctor.compatibleEndRestrict_comp`:
+* `Prefunctor.compatibleEndRestrict_id`, `Prefunctor.compatibleEndRestrict_comp`:
   functoriality of restriction.
-* `ReflPrefunctor.instFiniteCompatibleEnd`: over a Noetherian ring, with finite vertex
+* `Prefunctor.instFiniteCompatibleEnd`: over a Noetherian ring, with finite vertex
   modules and finitely many vertices, `End(T|S,E)` is a finite module; in particular it is
   finite-dimensional over a field.
 
@@ -72,14 +76,14 @@ algebra; at a single vertex the algebra is the centralizer of the loops of `E` t
 
 public section
 
-namespace CategoryTheory.ReflPrefunctor
-
 universe w v u u'
 
-variable {R : Type u'} [CommRing R] {D : Type u} [ReflQuiver.{v} D]
-variable (T : D ⥤rq ModuleCat.{w} R)
+namespace Prefunctor
 
-/-- The algebra `End(T|S,E)` of compatible endomorphisms of a representation `T` of a diagram on
+variable {R : Type u'} [CommRing R] {D : Type u} [Quiver.{v} D]
+variable (T : D ⥤q ModuleCat.{w} R)
+
+/-- The algebra `End(T|S,E)` of compatible endomorphisms of a representation `T` of a quiver on
 the subdiagram with vertex set `S` and edge set `E`: the families `(x_v)_{v ∈ S}` of
 endomorphisms of the vertex modules with `T f ∘ x_a = x_b ∘ T f` for each edge `f : a ⟶ b` in
 `E` whose endpoints both lie in `S`. -/
@@ -134,30 +138,26 @@ theorem compatibleEnd_anti : Antitone (T.compatibleEnd S) :=
 theorem compatibleEnd_empty : T.compatibleEnd S ∅ = ⊤ :=
   eq_top_iff.2 fun _ _ _ he ↦ he.elim
 
-/-- A distinguished identity edge imposes no condition. -/
-@[simp]
-theorem compatibleEnd_insert_id (v : D) (E : Set (Quiver.Total D)) :
-    T.compatibleEnd S (insert ⟨v, v, 𝟙rq v⟩ E) = T.compatibleEnd S E := by
-  refine le_antisymm (T.compatibleEnd_anti S (Set.subset_insert _ _)) fun x hx e he hl hr ↦ ?_
-  obtain rfl | he := he
-  · simp
-  · exact hx e he hl hr
+/-- An edge whose commutation equation holds for every family of endomorphisms imposes no
+condition. -/
+theorem compatibleEnd_insert_of_forall {e : Quiver.Total D}
+    (h : ∀ (x : ∀ v : S, Module.End R (T.obj v)) (hl : e.left ∈ S) (hr : e.right ∈ S),
+      (T.map e.hom).hom ∘ₗ x ⟨e.left, hl⟩ = x ⟨e.right, hr⟩ ∘ₗ (T.map e.hom).hom)
+    (E : Set (Quiver.Total D)) : T.compatibleEnd S (insert e E) = T.compatibleEnd S E := by
+  refine le_antisymm (T.compatibleEnd_anti S (Set.subset_insert _ _)) fun x hx e' he' hl hr ↦ ?_
+  obtain rfl | he' := he'
+  · exact h x hl hr
+  · exact hx e' he' hl hr
 
 /-- An edge represented by the zero map imposes no condition. -/
 theorem compatibleEnd_insert_of_map_eq_zero {e : Quiver.Total D} (he : T.map e.hom = 0)
-    (E : Set (Quiver.Total D)) : T.compatibleEnd S (insert e E) = T.compatibleEnd S E := by
-  refine le_antisymm (T.compatibleEnd_anti S (Set.subset_insert _ _)) fun x hx e' he' hl hr ↦ ?_
-  obtain rfl | he' := he'
-  · simp [he]
-  · exact hx e' he' hl hr
+    (E : Set (Quiver.Total D)) : T.compatibleEnd S (insert e E) = T.compatibleEnd S E :=
+  T.compatibleEnd_insert_of_forall S (fun _ _ _ ↦ by simp [he]) E
 
 /-- An edge with an endpoint outside the vertex set imposes no condition. -/
 theorem compatibleEnd_insert_of_notMem {e : Quiver.Total D} (he : e.left ∉ S ∨ e.right ∉ S)
-    (E : Set (Quiver.Total D)) : T.compatibleEnd S (insert e E) = T.compatibleEnd S E := by
-  refine le_antisymm (T.compatibleEnd_anti S (Set.subset_insert _ _)) fun x hx e' he' hl hr ↦ ?_
-  obtain rfl | he' := he'
-  · exact (he.elim (· hl) (· hr)).elim
-  · exact hx e' he' hl hr
+    (E : Set (Quiver.Total D)) : T.compatibleEnd S (insert e E) = T.compatibleEnd S E :=
+  T.compatibleEnd_insert_of_forall S (fun _ hl hr ↦ (he.elim (· hl) (· hr)).elim) E
 
 end Edges
 
@@ -221,5 +221,18 @@ instance instFiniteCompatibleEnd [IsNoetherianRing R] {S : Set D} [Finite S]
     [∀ v : S, Module.Finite R (T.obj v)] (E : Set (Quiver.Total D)) :
     Module.Finite R (T.compatibleEnd S E) :=
   Module.IsNoetherian.finite R (Subalgebra.toSubmodule (T.compatibleEnd S E))
+
+end Prefunctor
+
+namespace CategoryTheory.ReflPrefunctor
+
+variable {R : Type u'} [CommRing R] {D : Type u} [ReflQuiver.{v} D]
+variable (T : D ⥤rq ModuleCat.{w} R) (S : Set D)
+
+/-- For a representation of a diagram, a distinguished identity edge imposes no condition. -/
+@[simp]
+theorem compatibleEnd_insert_id (v : D) (E : Set (Quiver.Total D)) :
+    T.compatibleEnd S (insert ⟨v, v, 𝟙rq v⟩ E) = T.compatibleEnd S E :=
+  T.compatibleEnd_insert_of_forall S (fun _ _ _ ↦ by simp) E
 
 end CategoryTheory.ReflPrefunctor
