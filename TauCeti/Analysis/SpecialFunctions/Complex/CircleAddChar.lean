@@ -63,7 +63,7 @@ open Finset Real
 variable {N : ℕ} [NeZero N]
 
 /-- **The distance from `1` of a value of the standard additive character.** With
-`(-b).val = N - b.val` for `b ≠ 0`, the value `e(b / N)` lies at distance
+`(-b).val = N - b.val` for `b ≠ 0`, the value `e(b)` lies at distance
 `2 sin (π b.val / N) ≥ 4 b.val (N - b.val) / N²` from `1`. -/
 theorem four_mul_val_mul_val_neg_div_sq_le_norm_stdAddChar_sub_one (b : ZMod N) :
     4 * ((b.val : ℕ) : ℝ) * (((-b).val : ℕ) : ℝ) / N ^ 2 ≤ ‖stdAddChar b - 1‖ := by
@@ -97,7 +97,7 @@ theorem four_mul_val_mul_val_neg_div_sq_le_norm_stdAddChar_sub_one (b : ZMod N) 
   nlinarith [le_abs_self (Real.sin (π * (v / N)))]
 
 /-- **Incomplete geometric sums of the standard additive character.** For a nonzero residue `b`
-modulo `N`, every partial sum of `k ↦ e(b k / N)` has norm at most
+modulo `N`, every partial sum of `k ↦ e(b k)` has norm at most
 `(N / 2) (1 / b.val + 1 / (N - b.val))`, written with `(-b).val = N - b.val`. -/
 theorem norm_sum_range_stdAddChar_mul_le {b : ZMod N} (hb : b ≠ 0) (H : ℕ) :
     ‖∑ k ∈ range H, stdAddChar (b * (k : ZMod N))‖ ≤
@@ -130,18 +130,8 @@ theorem norm_sum_range_stdAddChar_mul_le {b : ZMod N} (hb : b ≠ 0) (H : ℕ) :
       field_simp
       linear_combination -4 * (N : ℝ) * hvw
 
-/-- The reciprocals of the representatives of the residues modulo `N` sum to the harmonic number
-`H_{N-1}`; the residue `0` contributes `0⁻¹ = 0`. -/
-private theorem sum_inv_val_eq_harmonic :
-    ∑ b : ZMod N, ((b.val : ℕ) : ℝ)⁻¹ = harmonic (N - 1) := by
-  rw [sum_val_eq_sum_range (fun i ↦ ((i : ℕ) : ℝ)⁻¹)]
-  obtain ⟨n, rfl⟩ : ∃ n, N = n + 1 := Nat.exists_eq_succ_of_ne_zero (NeZero.ne N)
-  rw [sum_range_succ', harmonic]
-  push_cast
-  simp
-
 /-- **The total size of the incomplete geometric sums.** Summed over the nonzero residues `b`
-modulo `N`, the norms of the partial sums of `k ↦ e(b k / N)` of a fixed length are at most `N`
+modulo `N`, the norms of the partial sums of `k ↦ e(b k)` of a fixed length are at most `N`
 times the harmonic number `H_{N-1}`. -/
 theorem sum_norm_sum_range_stdAddChar_mul_le (H : ℕ) :
     ∑ b ∈ univ.erase (0 : ZMod N), ‖∑ k ∈ range H, stdAddChar (b * (k : ZMod N))‖ ≤
