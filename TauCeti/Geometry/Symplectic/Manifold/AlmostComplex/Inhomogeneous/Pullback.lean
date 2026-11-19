@@ -24,7 +24,8 @@ For an inhomogeneous term `ν` for a structure `j` on `P` and a domain-dependent
 `N`, the pullback is an inhomogeneous term `g^* ν` for `j` and the pulled-back structure `g^* J`
 (`TauCeti.InhomogeneousTerm.pullback`): complex antilinearity is transported because `dg`
 intertwines `g^* J` with `J`. Read in a chart `φ` of `P` and the chart `g ≫ ψ` of `M`, the term
-`g^* ν` is `ν` read in `φ` and `ψ` (`TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`).
+`g^* ν` is `ν` read in `φ` and `ψ`
+(`TauCeti.InhomogeneousTerm.chartTerm_pullback_toOpenPartialHomeomorph_trans`).
 
 ## Main declarations
 
@@ -39,7 +40,7 @@ intertwines `g^* J` with `J`. Read in a chart `φ` of `P` and the chart `g ≫ �
   laws `TauCeti.InhomogeneousTerm.pullback_refl` and `TauCeti.InhomogeneousTerm.pullback_trans`
   use `ofEq` to identify the pulled-back target structures.
 * `TauCeti.InhomogeneousTerm.chartTerm_pullback`,
-  `TauCeti.InhomogeneousTerm.chartTerm_pullback_trans`: transport in charts.
+  `TauCeti.InhomogeneousTerm.chartTerm_pullback_toOpenPartialHomeomorph_trans`: transport in charts.
 
 ## References
 
@@ -258,13 +259,14 @@ theorem chartTerm_pullback {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G
   have h := DomainDependentHomSection.mfderiv_tangentHom_pullback_apply g ν.val hnr (φ.symm z, y)
     (mfderiv 𝓘(ℝ, ℂ) IP φ.symm z (1 : ℂ))
   rw [g.mfderiv_comp_diffeomorph hr, ContinuousLinearMap.comp_apply]
-  -- `h` is stated at the base point `(φ.symm z, y).2`, which is `y` by definition.
-  erw [h]
+  exact congrArg (fun w : TangentSpace I' (g y) ↦
+    (2 : ℝ) • mfderiv I' 𝓘(ℝ, G) ψ (g y) w) h
 
 /-- **Transport in charts.** Read in a chart `φ` of the domain and the chart `g ≫ ψ` of `M`, the
 pulled-back term `g^* ν` is `ν` read in `φ` and `ψ`. -/
 @[simp]
-theorem chartTerm_pullback_trans {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+theorem chartTerm_pullback_toOpenPartialHomeomorph_trans {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G]
     (φ : OpenPartialHomeomorph P ℂ) (ψ : OpenPartialHomeomorph N G) :
     (ν.pullback g hnr).chartTerm φ (g.toHomeomorph.toOpenPartialHomeomorph.trans ψ) =
       ν.chartTerm φ ψ :=

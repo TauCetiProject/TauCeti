@@ -84,7 +84,7 @@ private theorem isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff (g : M ≃ₘ�
     funext fun w ↦ by simp [OpenPartialHomeomorph.extendTrans_symm_apply, hsymm]
   rw [J.chartField_pullback g le_top φ hfun' hsymm', ν.chartTerm_pullback g le_top φ hfun' hsymm',
     hfun', hsrc, preimage_comp]
-  rfl
+  simp only [Function.comp_assoc]
 
 /-- **Invariance under diffeomorphisms of the target.** For a diffeomorphism `g : M → N`, the
 map `g ∘ u` is weakly pseudoholomorphic on an open set `s` for `J` and `ν` exactly when `u` is
@@ -99,17 +99,11 @@ theorem isWeakPseudoholomorphicOn_diffeomorph_comp_iff (g : M ≃ₘ⟮I, I⟯ N
     refine (isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff g ?_ (fun x ↦ ?_) (fun w ↦ ?_)
       φ).1
       (h φ hφ _ (g.symm.toPartialDiffeomorph.trans_mem_maximalAtlas hψ))
-    · ext x
-      simp
-    · simp
-    · simp
+    all_goals first | (ext x; simp) | simp
   · -- Test `u` in the chart `g ≫ χ` of `M`.
     refine (isWeakCauchyRiemannOn_chart_diffeomorph_comp_iff g ?_ (fun x ↦ ?_) (fun w ↦ ?_)
       φ).2 (h φ hφ _ (g.toPartialDiffeomorph.trans_mem_maximalAtlas hχ))
-    · ext x
-      simp
-    · simp
-    · simp
+    all_goals first | (ext x; simp) | simp
 
 /-- **Invariance under diffeomorphisms of the target.** For a diffeomorphism `g : M → N`, the
 map `g ∘ u` is weakly pseudoholomorphic for `J` and `ν` exactly when `u` is weakly
@@ -147,13 +141,11 @@ private theorem pullback_twoSMulDiffeomorph_ofComplexManifold {ℓ : ℕ∞} :
       funext z
       simp [twoSMulDiffeomorph]
     rw [hg, ContinuousLinearMap.mfderiv_eq]
-  have key (D : ℂ →L[ℝ] ℂ) (hD : D = (2 : ℝ) • ContinuousLinearMap.id ℝ ℂ) (w : ℂ) :
-      D ((Complex.I • ContinuousLinearMap.id ℝ ℂ) w) =
-        (Complex.I • ContinuousLinearMap.id ℝ ℂ) (D w) := by
-    subst hD
-    simp only [smul_apply, ContinuousLinearMap.id_apply]
-    rw [smul_comm]
-  exact key _ hD v
+  -- Read the tangent vector in the fixed model before using its complex scalar action.
+  let w : ℂ := v
+  exact (congrArg (fun D : ℂ →L[ℝ] ℂ ↦ D (Complex.I • w)) hD).trans
+    ((smul_comm (2 : ℝ) Complex.I w).trans
+      (congrArg (fun D : ℂ →L[ℝ] ℂ ↦ Complex.I • D w) hD).symm)
 
 /-- **Check.** On `X = M = N = ℂ` with the structure `i`, the map `z ↦ 2 z` is weakly
 pseudoholomorphic: it is `g ∘ id` for the diffeomorphism `g = (2 ·)`, along which `i` pulls back

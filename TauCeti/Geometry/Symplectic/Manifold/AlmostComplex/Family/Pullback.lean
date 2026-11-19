@@ -35,7 +35,8 @@ and the chart `g ≫ ψ` of `M`, the pulled-back structure is the original one r
 * `TauCeti.ContMDiffAlmostComplexStructureFamily.pullback_const`: pulling back commutes with
   regarding a structure as a domain-independent family.
 * `TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_pullback`,
-  `TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_pullback_trans`: `g^* J` read in a
+  `TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_pullback_toOpenPartialHomeomorph_trans`:
+  `g^* J` read in a
   chart `χ = ψ ∘ g` of `M`, such as `g ≫ ψ`, is `J` read in `ψ`. No differentiability of the
   charts is needed, by the chain rules `Diffeomorph.mfderiv_comp_diffeomorph` and
   `Diffeomorph.mfderiv_diffeomorph_comp`.
@@ -171,20 +172,22 @@ theorem chartField_pullback (φ : OpenPartialHomeomorph P D) {χ : OpenPartialHo
   -- The chain rules hold without differentiability of the charts, since `g` is a diffeomorphism.
   have h1 (u : TangentSpace I y) : mfderiv I 𝓘(ℝ, G) (ψ ∘ g) y u =
       mfderiv I' 𝓘(ℝ, G) ψ (g y) (mfderiv I I' g y u) := by
-    rw [g.mfderiv_comp_diffeomorph hr]; rfl
+    rw [g.mfderiv_comp_diffeomorph hr, ContinuousLinearMap.comp_apply]
   have h2 (u : TangentSpace 𝓘(ℝ, G) v) : mfderiv 𝓘(ℝ, G) I (g.symm ∘ ψ.symm) v u =
       mfderiv I' I g.symm (ψ.symm v) (mfderiv 𝓘(ℝ, G) I' ψ.symm v u) := by
-    rw [g.symm.mfderiv_diffeomorph_comp hr]; rfl
+    rw [g.symm.mfderiv_diffeomorph_comp hr, ContinuousLinearMap.comp_apply]
   rw [h1]
-  -- `h2` is stated at the base point `(g.symm ∘ ψ.symm) v`, which is `y` by definition.
-  erw [h2]
+  have h2w := congrArg (fun u : TangentSpace I y ↦ mfderiv I' 𝓘(ℝ, G) ψ (g y)
+    (mfderiv I I' g y ((ContMDiffAlmostComplexStructure.pullback g
+      (J.freeze (φ.symm z)) hnr).toEndomorphism y u))) (h2 w)
+  refine h2w.trans ?_
   rw [ContMDiffAlmostComplexStructure.mfderiv_pullback_apply, ← hy,
     Diffeomorph.mfderiv_apply_mfderiv_symm_apply g hr]
 
 /-- **Transport in charts.** Read in a chart `φ` of the domain and the chart `g ≫ ψ` of `M`, the
 pulled-back structure `g^* J` is `J` read in `φ` and `ψ`. -/
 @[simp]
-theorem chartField_pullback_trans (φ : OpenPartialHomeomorph P D)
+theorem chartField_pullback_toOpenPartialHomeomorph_trans (φ : OpenPartialHomeomorph P D)
     (ψ : OpenPartialHomeomorph N G) :
     (J.pullback g hnr).chartField φ (g.toHomeomorph.toOpenPartialHomeomorph.trans ψ) =
       J.chartField φ ψ :=
