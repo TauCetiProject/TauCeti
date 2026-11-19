@@ -231,9 +231,8 @@ power of `p`. This sharpens the case `h = 0` of `TauCeti.amiceRadius_pow_le_norm
 theorem amiceRadius_zero_pow_sub_one_le_norm_factorial {L : Type*} [SeminormedRing L]
     [NormOneClass L] [NormedAlgebra ℚ_[p] L] {n : ℕ} (hn : n ≠ 0) :
     amiceRadius p 0 ^ (n - 1) ≤ ‖(n ! : L)‖ := by
-  have hL : ‖(n ! : L)‖ = ‖(n ! : ℚ_[p])‖ := by
-    simpa using norm_algebraMap' L (n ! : ℚ_[p])
-  rw [hL, amiceRadius_pow, norm_natCast_eq_rpow (factorial_ne_zero n)]
+  rw [norm_natCast_eq_norm_padic (p := p), amiceRadius_pow,
+    norm_natCast_eq_rpow (factorial_ne_zero n)]
   refine Real.rpow_le_rpow_of_exponent_le one_lt_natCast.le ?_
   -- Legendre's formula: `(p - 1) v_p(n!) = n - s_p(n) < n`.
   have hleg : (((p - 1) * padicValNat p n ! : ℕ) : ℝ) ≤ ((n - 1 : ℕ) : ℝ) := by
@@ -250,11 +249,9 @@ coefficients `(-1) ^ (n + 1) / n` of the logarithm series. -/
 theorem amiceRadius_zero_pow_sub_one_le_norm_natCast {L : Type*} [SeminormedRing L]
     [NormOneClass L] [NormedAlgebra ℚ_[p] L] {n : ℕ} (hn : n ≠ 0) :
     amiceRadius p 0 ^ (n - 1) ≤ ‖(n : L)‖ := by
-  have hL : ‖(n : L)‖ = ‖(n : ℚ_[p])‖ := by
-    simpa using norm_algebraMap' L (n : ℚ_[p])
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   refine (amiceRadius_zero_pow_sub_one_le_norm_factorial (L := ℚ_[p]) hn).trans ?_
-  rw [hL, factorial_succ, Nat.cast_mul, norm_mul]
+  rw [norm_natCast_eq_norm_padic (p := p) (K := L), factorial_succ, Nat.cast_mul, norm_mul]
   exact mul_le_of_le_one_right (norm_nonneg _)
     (IsUltrametricDist.norm_natCast_le_one ℚ_[p] _)
 

@@ -294,18 +294,14 @@ private theorem norm_coeff_log_mul_le [CharZero L] (n : ℕ) :
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   have hf := amiceRadius_zero_pow_sub_one_le_norm_natCast (p := p) (L := L) hn
-  rw [PowerSeries.coeff_log_eq_neg_one_pow_div, norm_div, norm_pow, norm_neg, norm_one, one_pow,
-    one_div_mul_eq_div]
-  exact div_le_one_of_le₀ hf (norm_nonneg _)
+  rw [PowerSeries.coeff_log_eq_neg_one_pow_div]
+  simpa [div_eq_inv_mul] using div_le_one_of_le₀ hf (norm_nonneg _)
 
 /-- The series of `exp x - 1` on the disc, with the coefficients of the formal series `exp - 1`. -/
 private theorem hasSum_coeff_exp_sub_one_mul_pow [CharZero L] {x : L}
     (hx : ‖x‖ < amiceRadius p 0) :
-    HasSum (fun n ↦ PowerSeries.coeff n (PowerSeries.exp L - 1) * x ^ n) (exp x - 1) := by
-  refine (hasSum_exp_sub_one hx).congr_fun fun n ↦ ?_
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  · simp [PowerSeries.coeff_exp_sub_one_of_ne_zero hn, hn, div_eq_inv_mul]
+    HasSum (fun n ↦ PowerSeries.coeff n (PowerSeries.exp L - 1) * x ^ n) (exp x - 1) :=
+  (hasSum_exp_sub_one hx).congr_fun fun n ↦ PowerSeries.coeff_exp_sub_one_mul_pow n x
 
 /-- The series of `log y` on the disc about `1`, with the coefficients of the formal logarithm. -/
 private theorem hasSum_coeff_log_mul_pow [CharZero L] {y : L}

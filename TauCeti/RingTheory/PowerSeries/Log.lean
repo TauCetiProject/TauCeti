@@ -49,6 +49,8 @@ finite field with `q` elements whose point counts are `1 + qⁿ - tₙ`.
   truncation degrees.
 * `PowerSeries.coeff_exp_sub_one_of_ne_zero`, `PowerSeries.coeff_log_eq_neg_one_pow_div`: over a
   field, the coefficients `1 / n!` of `exp - 1` and `(-1) ^ (n + 1) / n` of the logarithm series.
+* `PowerSeries.coeff_exp_sub_one_mul_pow`: over a field, the `n`-th term `xⁿ / n!` of `exp - 1`
+  at `x`, which vanishes in degree zero.
 * `PowerSeries.subst_exp_logOf` and `PowerSeries.logOf_subst_exp`: `exp (log f) = f` and
   `log (exp g) = g`.
 * `PowerSeries.logOf_mul`: `log (f g) = log f + log g`.
@@ -122,6 +124,14 @@ theorem coeff_exp_sub_one_of_ne_zero {k : Type*} [Field k] [Algebra ℚ k] {n : 
     coeff n (exp k - 1) = (n.factorial : k)⁻¹ := by
   simp [coeff_exp, coeff_one, hn]
 
+/-- Over a field, the `n`-th term of the series `exp - 1` at `x` is `x ^ n / n!`, except in degree
+zero, where it vanishes. -/
+theorem coeff_exp_sub_one_mul_pow {k : Type*} [Field k] [Algebra ℚ k] (n : ℕ) (x : k) :
+    coeff n (exp k - 1) * x ^ n = if n = 0 then 0 else x ^ n / (n.factorial : k) := by
+  split_ifs with hn
+  · simp [hn]
+  · simp [coeff_exp_sub_one_of_ne_zero hn, div_eq_inv_mul]
+
 /-- Over a field, the coefficient of the logarithm series in degree `n` is `(-1) ^ (n + 1) / n`;
 in degree zero both sides vanish. -/
 theorem coeff_log_eq_neg_one_pow_div {k : Type*} [Field k] [Algebra ℚ k] (n : ℕ) :
@@ -129,7 +139,7 @@ theorem coeff_log_eq_neg_one_pow_div {k : Type*} [Field k] [Algebra ℚ k] (n : 
   rw [coeff_log]
   split_ifs with hn
   · simp [hn]
-  · rw [map_div₀, map_pow, map_neg, map_one, map_natCast]
+  · simp [-eq_ratCast]
 
 /-! ## Logarithm and exponential as inverse operations -/
 
