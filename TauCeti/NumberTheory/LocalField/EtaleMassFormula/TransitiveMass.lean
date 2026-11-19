@@ -267,14 +267,14 @@ theorem tsum_splittingSymbol_eq_singleton {f e : ℕ} (i : Fin (f * e))
       ℝ≥0∞ := letI := ρ.mulAction; h (fixedField (stabilizer Gal(SeparableClosure K/K) i))
   have hρ : ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.splittingSymbol = {(f, e)}}, G g ρ =
       ∑' ρ : {ρ : GaloisSet K (f * e) // ρ.IsTransitive}, G g' ρ :=
-    tsum_subtype_congr fun ρ ↦ by
+    tsum_subtype_eq_of_indicator_eq fun ρ ↦ by
       by_cases h : ρ.IsTransitive <;>
         simp [Set.indicator, G, g', ρ.splittingSymbol_eq_singleton_iff i, h]
   have hL : ∑' L : {L : IntermediateField K (SeparableClosure K) //
       Module.finrank K L = f * e}, g' L =
       ∑' L : {L : IntermediateField K (SeparableClosure K) //
         Module.finrank K L = f * e ∧ L.inertiaDegree = f}, g L :=
-    tsum_subtype_congr fun L ↦ by
+    tsum_subtype_eq_of_indicator_eq fun L ↦ by
       by_cases h₁ : Module.finrank K L = f * e <;> by_cases h₂ : L.inertiaDegree = f <;>
         simp [Set.indicator, g', h₁, h₂]
   exact hρ.trans ((tsum_isTransitive i g').trans (congrArg _ hL))
