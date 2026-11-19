@@ -186,41 +186,36 @@ realization of its topological nerve, with degeneracies forgotten. -/
 
 variable {C}
 
-/-- The levels of the topological nerve of a category whose total arrows form a regular, `T1`,
-second-countable space are regular, `T1` and Lindelöf. -/
-private theorem fatClassifyingSpace.regularSpace_t1Space_lindelofSpace_obj
-    [RegularSpace (Quiver.Total C)] [T1Space (Quiver.Total C)]
-    [SecondCountableTopology (Quiver.Total C)] (n : SemiSimplexCategoryᵒᵖ) :
-    RegularSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) ∧
-      T1Space ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) ∧
-      LindelofSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
-  -- The levels of the topological nerve are spaces of strings of composable arrows.
-  ⟨inferInstanceAs (RegularSpace (ComposableArrows C _)),
-    inferInstanceAs (T1Space (ComposableArrows C _)),
-    inferInstanceAs (LindelofSpace (ComposableArrows C _))⟩
+section Paracompact
+
+variable [RegularSpace (Quiver.Total C)] [T1Space (Quiver.Total C)]
+  [SecondCountableTopology (Quiver.Total C)]
+
+-- The levels of the topological nerve are spaces of strings of composable arrows.
+private instance (n : SemiSimplexCategoryᵒᵖ) :
+    RegularSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  inferInstanceAs (RegularSpace (ComposableArrows C _))
+
+private instance (n : SemiSimplexCategoryᵒᵖ) :
+    T1Space ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  inferInstanceAs (T1Space (ComposableArrows C _))
+
+private instance (n : SemiSimplexCategoryᵒᵖ) :
+    LindelofSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  inferInstanceAs (LindelofSpace (ComposableArrows C _))
 
 /-- **Paracompactness of fat classifying spaces.** The fat classifying space of a category whose
 total arrows form a regular, `T1`, second-countable space, such as a groupoid whose arrows form a
 second-countable Hausdorff manifold, is paracompact. -/
-instance fatClassifyingSpace.paracompactSpace [RegularSpace (Quiver.Total C)]
-    [T1Space (Quiver.Total C)] [SecondCountableTopology (Quiver.Total C)] :
-    ParacompactSpace (fatClassifyingSpace C) :=
-  have h := fatClassifyingSpace.regularSpace_t1Space_lindelofSpace_obj (C := C)
-  have := fun n ↦ (h n).1
-  have := fun n ↦ (h n).2.1
-  have := fun n ↦ (h n).2.2
+instance fatClassifyingSpace.paracompactSpace : ParacompactSpace (fatClassifyingSpace C) :=
   fatRealization.paracompactSpace
 
 /-- The fat classifying space of a category whose total arrows form a regular, `T1`,
 second-countable space is normal and `T1`, in particular Hausdorff. -/
-instance fatClassifyingSpace.t4Space [RegularSpace (Quiver.Total C)]
-    [T1Space (Quiver.Total C)] [SecondCountableTopology (Quiver.Total C)] :
-    T4Space (fatClassifyingSpace C) :=
-  have h := fatClassifyingSpace.regularSpace_t1Space_lindelofSpace_obj (C := C)
-  have := fun n ↦ (h n).1
-  have := fun n ↦ (h n).2.1
-  have := fun n ↦ (h n).2.2
+instance fatClassifyingSpace.t4Space : T4Space (fatClassifyingSpace C) :=
   fatRealization.t4Space
+
+end Paracompact
 
 /-- Two maps out of the fat classifying space agree once they agree on every simplex. -/
 @[ext]

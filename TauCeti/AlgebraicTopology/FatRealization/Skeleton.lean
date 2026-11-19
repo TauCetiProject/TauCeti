@@ -214,6 +214,11 @@ def skeletonι (n : ℕ) :
     TopCat.of (X.obj (op ⦋n⦌ₛ) × toTop.{u}.obj ⦋n⦌ₛ) ⟶ TopCat.of (skeleton X n) :=
   skeletonιOfLE X le_rfl
 
+/-- The characteristic map of the level `n` into the `n`-skeleton is the case `k = n` of
+`skeletonιOfLE`. -/
+theorem skeletonι_eq_skeletonιOfLE (n : ℕ) : skeletonι X n = skeletonιOfLE X le_rfl :=
+  (rfl)
+
 @[simp]
 theorem coe_skeletonι_apply (n : ℕ) (p : X.obj (op ⦋n⦌ₛ) × toTop.{u}.obj ⦋n⦌ₛ) :
     (skeletonι X n p : fatRealization X) = ι X ⦋n⦌ₛ p :=
@@ -297,8 +302,11 @@ theorem isPushout_skeleton (n : ℕ) :
     rw [← isClosed_compl_iff] at hs hs' ⊢
     refine isClosed_of_preimage fun k hk ↦ ?_
     rcases Nat.of_le_succ hk with hk | rfl
-    · exact hs.preimage (skeletonιOfLE X hk).hom.continuous
-    · exact hs'
+    · -- The bonding map of the diagram of skeleta is `Set.inclusion`, so the characteristic map of
+      -- level `k` into the `(n + 1)`-skeleton is definitionally that into the `n`-skeleton
+      -- followed by the bonding map.
+      exact hs.preimage (skeletonιOfLE X hk).hom.continuous
+    · rwa [← skeletonι_eq_skeletonιOfLE]
 
 /-- The `0`-skeleton of the fat realization is a copy of `X₀ × Δ⁰`. -/
 theorem isHomeomorph_skeletonι_zero : IsHomeomorph (skeletonι X 0) := by
@@ -311,7 +319,8 @@ theorem isHomeomorph_skeletonι_zero : IsHomeomorph (skeletonι X 0) := by
   refine isHomeomorph_iff_continuous_isClosedMap_bijective.2
     ⟨(skeletonι X 0).hom.continuous, fun D hD ↦ isClosed_of_preimage fun k hk ↦ ?_, hinj, ?_⟩
   · obtain rfl : k = 0 := Nat.le_zero.1 hk
-    exact (congrArg IsClosed (hinj.preimage_image D)).mpr hD
+    rw [← skeletonι_eq_skeletonιOfLE, hinj.preimage_image]
+    exact hD
   · rintro ⟨p, hp⟩
     obtain ⟨k, hk, q, rfl⟩ := mem_skeleton_iff.1 hp
     obtain rfl : k = 0 := Nat.le_zero.1 hk
@@ -322,6 +331,8 @@ variable (X) in
 topology is coherent with the skeleta. -/
 def isColimitSkeleton : IsColimit (subspaceCocone (monotone_skeleton (X := X))) :=
   isColimitOfIsCoherentWith _ iUnion_skeleton <| .of_isClosed fun _ hC ↦ (isClosed_iff X).2 fun m ↦
+    -- As `m` is definitionally `⦋m.len⦌ₛ`, the characteristic map `ι X m` is definitionally the
+    -- corestriction `skeletonιOfLE X le_rfl` followed by `Subtype.val`.
     (hC _ ⟨m.len, rfl⟩).preimage (skeletonιOfLE X le_rfl).hom.continuous
 
 /-- The boundary inclusion `Xₙ × ∂Δⁿ → Xₙ × Δⁿ` is a closed embedding. -/
@@ -354,24 +365,27 @@ private theorem normalSpace_t1Space_lindelofSpace_skeleton (n : ℕ) :
       t1Space_of_isPushout (isPushout_skeleton X n) (isClosedEmbedding_boundary _),
       lindelofSpace_of_isPushout (isPushout_skeleton X n)⟩
 
+private instance normalSpace_skeleton (n : ℕ) :
+    NormalSpace ((subspaceDiagram (monotone_skeleton (X := X))).obj n) :=
+  (normalSpace_t1Space_lindelofSpace_skeleton n).1
+
+private instance t1Space_skeleton (n : ℕ) :
+    T1Space ((subspaceDiagram (monotone_skeleton (X := X))).obj n) :=
+  (normalSpace_t1Space_lindelofSpace_skeleton n).2.1
+
+private instance lindelofSpace_skeleton (n : ℕ) :
+    LindelofSpace ((subspaceDiagram (monotone_skeleton (X := X))).obj n) :=
+  (normalSpace_t1Space_lindelofSpace_skeleton n).2.2
+
 /-- **Paracompactness of fat realizations.** The fat realization of a semi-simplicial space whose
 levels are regular, `T1` and Lindelöf is paracompact. -/
-instance paracompactSpace : ParacompactSpace (fatRealization X) := by
-  have (n : ℕ) : NormalSpace ((subspaceDiagram (monotone_skeleton (X := X))).obj n) :=
-    (normalSpace_t1Space_lindelofSpace_skeleton n).1
-  have (n : ℕ) : T1Space ((subspaceDiagram (monotone_skeleton (X := X))).obj n) :=
-    (normalSpace_t1Space_lindelofSpace_skeleton n).2.1
-  have (n : ℕ) : LindelofSpace ((subspaceDiagram (monotone_skeleton (X := X))).obj n) :=
-    (normalSpace_t1Space_lindelofSpace_skeleton n).2.2
-  exact paracompactSpace_of_isColimit isClosedEmbedding_skeleton_map (isColimitSkeleton X)
+instance paracompactSpace : ParacompactSpace (fatRealization X) :=
+  paracompactSpace_of_isColimit isClosedEmbedding_skeleton_map (isColimitSkeleton X)
 
 /-- The fat realization of a semi-simplicial space whose levels are regular, `T1` and Lindelöf is
 normal and `T1`, in particular Hausdorff. -/
-instance t4Space : T4Space (fatRealization X) := by
-  have (n : ℕ) : T4Space ((subspaceDiagram (monotone_skeleton (X := X))).obj n) :=
-    let h := normalSpace_t1Space_lindelofSpace_skeleton (X := X) n
-    { toT1Space := h.2.1, toNormalSpace := h.1 }
-  exact t4Space_of_isColimit isClosedEmbedding_skeleton_map (isColimitSkeleton X)
+instance t4Space : T4Space (fatRealization X) :=
+  t4Space_of_isColimit isClosedEmbedding_skeleton_map (isColimitSkeleton X)
 
 end Paracompact
 
