@@ -851,11 +851,27 @@ def ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f
 theorem coefficient_ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
     (p : CoordinateSpace n × CoordinateSpace n) : (ofSpatial f hf).coefficient p = f p.1 := (rfl)
 
+/-- The coefficient of the symbol `ofSpatial f` of multiplication by `f`, as a function. -/
+theorem coefficient_ofSpatial_eq (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) :
+    (ofSpatial f hf).coefficient = fun p ↦ f p.1 := (rfl)
+
+@[simp]
+theorem ofSpatial_zero (hf : ContDiff ℝ ∞ (0 : CoordinateSpace n → V →L[ℂ] W)) :
+    ofSpatial 0 hf = 0 := Symbol.ext <| funext fun _ => by simp
+
+theorem ofSpatial_add {f g : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (hg : ContDiff ℝ ∞ g) : ofSpatial (f + g) (hf.add hg) = ofSpatial f hf + ofSpatial g hg :=
+  Symbol.ext <| funext fun _ => by simp
+
+theorem ofSpatial_sub {f g : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+    (hg : ContDiff ℝ ∞ g) : ofSpatial (f - g) (hf.sub hg) = ofSpatial f hf - ofSpatial g hg :=
+  Symbol.ext <| funext fun _ => by simp
+
 /-- The symbol of multiplication by `f` satisfies uniform estimates exactly when every
 coordinate derivative of `f` is bounded. -/
 theorem isUniform_ofSpatial_iff {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) :
     (ofSpatial f hf).IsUniform ↔ ∀ α : List (Fin n), ∃ C, ∀ x, ‖coordinateDeriv α f x‖ ≤ C := by
-  have hc : (ofSpatial f hf).coefficient = fun p => f p.1 := funext (coefficient_ofSpatial f hf)
+  have hc := coefficient_ofSpatial_eq f hf
   refine ⟨fun h α => ?_, fun h α β => ?_⟩
   · obtain ⟨C, -, hC⟩ := h α []
     refine ⟨C, fun x => ?_⟩
@@ -928,9 +944,8 @@ theorem mixedDeriv_cutoff {ψ : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ �
     (x ξ : CoordinateSpace n) :
     mixedDeriv α [] (cutoff V hψ).coefficient x ξ =
       coordinateDeriv α ψ x • ContinuousLinearMap.id ℂ V := by
-  have h : (cutoff V hψ).coefficient = fun p => ψ p.1 • ContinuousLinearMap.id ℂ V :=
-    funext (coefficient_cutoff hψ)
-  rw [h, mixedDeriv_nil_comp_fst (fun y => ψ y • ContinuousLinearMap.id ℂ V)]
+  rw [cutoff, coefficient_ofSpatial_eq,
+    mixedDeriv_nil_comp_fst (fun y => ψ y • ContinuousLinearMap.id ℂ V)]
   exact (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
     (ContinuousLinearMap.id ℂ V)).coordinateDeriv_comp_left α (hψ.of_le (by simp)) x
 
@@ -945,25 +960,18 @@ theorem mixedDeriv_cutoff_eq_zero {ψ : CoordinateSpace n → ℝ} (hψ : ContDi
 
 /-- The cutoff symbol is additive in the cutoff function. -/
 theorem cutoff_add {ψ ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
-    (hψ' : ContDiff ℝ ∞ ψ') : cutoff V (hψ.add hψ') = cutoff V hψ + cutoff V hψ' := by
-  ext1
-  funext p
-  simp [add_smul]
+    (hψ' : ContDiff ℝ ∞ ψ') : cutoff V (hψ.add hψ') = cutoff V hψ + cutoff V hψ' :=
+  Symbol.ext <| funext fun _ => by simp [add_smul]
 
 /-- The cutoff symbol commutes with subtraction of cutoff functions. -/
 theorem cutoff_sub {ψ ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
-    (hψ' : ContDiff ℝ ∞ ψ') : cutoff V (hψ.sub hψ') = cutoff V hψ - cutoff V hψ' := by
-  ext1
-  funext p
-  simp [sub_smul]
+    (hψ' : ContDiff ℝ ∞ ψ') : cutoff V (hψ.sub hψ') = cutoff V hψ - cutoff V hψ' :=
+  Symbol.ext <| funext fun _ => by simp [sub_smul]
 
 /-- The cutoff symbol of the zero function is zero. -/
 @[simp]
 theorem cutoff_zero (hψ : ContDiff ℝ ∞ (0 : CoordinateSpace n → ℝ)) :
-    cutoff V hψ = 0 := by
-  ext1
-  funext p
-  simp
+    cutoff V hψ = 0 := Symbol.ext <| funext fun _ => by simp
 
 end Spatial
 
