@@ -50,6 +50,9 @@ spectrum of a colimit of Tate pairs with the inverse limit of the adic spectra.
   the `ϖ'`-adic topology.
 * `TauCeti.Huber.DirectLimit.isRingOfIntegralElements_of_hasBasis`: the colimit of the plus rings
   is a ring of integral elements.
+* `TauCeti.Huber.DirectLimit.isTateRing_of_hasBasis`: the colimit Tate-ring instance.
+* `TauCeti.Huber.DirectLimit.pair`, `TauCeti.Huber.DirectLimit.pairHom`: the bundled colimit
+  Huber pair and the morphisms into it from stage Huber pairs.
 
 ## References
 
@@ -207,6 +210,62 @@ theorem isRingOfIntegralElements_of_hasBasis [NonarchimedeanRing L]
     rw [← hφt i j hij]
     exact mem_powerBoundedSubring.mpr (isPowerBounded_map hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hi₀j
       (hAplus j _ (htplus i j hij a ha)))
+
+include hφt ht hA₀ hφA₀ hϖ hϖ' h in
+/-- The colimit is a Tate ring for the topology with basis `ϖ'ⁿ L₀`. This supplies the
+ambient instance for the bundled colimit pair and its morphisms. -/
+theorem isTateRing_of_hasBasis [IsTopologicalRing L] (hcover : ∀ x : L, ∃ i a, φ i a = x) :
+    IsTateRing L := by
+  let := isLocalization_away hφt ht A₀ hA₀ hφA₀ hϖ hϖ' hcover
+  exact TauCeti.Huber.isTateRing_of_hasBasis h
+
+section Bundled
+
+variable [IsTopologicalRing L] (hcover : ∀ x : L, ∃ i a, φ i a = x)
+  (hker : ∀ i (a b : A i), φ i a = φ i b → ∃ j, ∃ h : i ≤ j, t i j h a = t i j h b)
+  (hL₀ : ∀ x ∈ L₀, ∃ i, ∃ a ∈ A₀ i, φ i a = x) (Aplus : ∀ i, Subring (A i))
+  [∀ i, IsIntegrallyClosedIn (Aplus i) (A i)] (hAplus : ∀ i, ∀ a ∈ Aplus i, IsPowerBounded a)
+  (hA₀plus : ∀ i, A₀ i ≤ Aplus i) (htplus : ∀ i j (h : i ≤ j), ∀ a ∈ Aplus i, t i j h a ∈ Aplus j)
+  {Lplus : Subring L} (hφplus : ∀ i, ∀ a ∈ Aplus i, φ i a ∈ Lplus)
+  (hLplus : ∀ x ∈ Lplus, ∃ i, ∃ a ∈ Aplus i, φ i a = x)
+
+/-- The colimit Huber pair for the topology with basis `ϖ'ⁿ L₀`, with plus ring the union
+of the images of the stage plus rings. Its Huber structure is supplied by
+`isTateRing_of_hasBasis`. -/
+def pair :
+    letI := isTateRing_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hcover
+    Pair L :=
+  letI := isTateRing_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hcover
+  { plus := Lplus
+    isRingOfIntegralElements := isRingOfIntegralElements_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h
+      hcover hker hL₀ Aplus hAplus hA₀plus htplus hφplus hLplus }
+
+/-- The plus ring of the colimit pair is `Lplus`. -/
+@[simp]
+theorem pair_plus :
+    letI := isTateRing_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hcover
+    (pair hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hcover hker hL₀ Aplus hAplus hA₀plus htplus
+      hφplus hLplus).plus = Lplus := (rfl)
+
+/-- The map from a stage Huber pair to the colimit pair. The source may have any ring of
+integral elements contained in the chosen stage plus ring. -/
+def pairHom (i : ι) [IsHuberRing (A i)] (S : Pair (A i)) (hS : S.plus ≤ Aplus i) :
+    letI := isTateRing_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hcover
+    Pair.Hom S (pair hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hcover hker hL₀ Aplus hAplus hA₀plus htplus
+      hφplus hLplus) :=
+  letI := isTateRing_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hcover
+  { toRingHom := φ i
+    continuous_toRingHom := continuous_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h i
+    map_mem_plus a ha := hφplus i a (hS ha) }
+
+/-- The underlying ring homomorphism of the stage morphism is `φ i`. -/
+@[simp]
+theorem pairHom_toRingHom (i : ι) [IsHuberRing (A i)] (S : Pair (A i)) (hS : S.plus ≤ Aplus i) :
+    letI := isTateRing_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hcover
+    (pairHom hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hcover hker hL₀ Aplus hAplus hA₀plus htplus
+      hφplus hLplus i S hS).toRingHom = φ i := (rfl)
+
+end Bundled
 
 end Tate
 
