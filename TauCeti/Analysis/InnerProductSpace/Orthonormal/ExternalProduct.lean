@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.Comass
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
 import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Append
 
 /-!
@@ -224,19 +225,6 @@ section InnerProduct
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
   [InnerProductSpace ℝ F] {k l : ℕ}
-
-/-- A product frame `((v₁, 0), …, (v_k, 0), (0, w₁), …, (0, w_l))` of `E ⊕ F` is orthonormal
-exactly when `v` and `w` are. -/
-theorem _root_.TauCeti.orthonormal_append_toLp_iff {v : Fin k → E} {w : Fin l → F} :
-    Orthonormal ℝ (Fin.append (fun i ↦ WithLp.toLp 2 (v i, (0 : F)))
-      (fun j ↦ WithLp.toLp 2 ((0 : E), w j))) ↔ Orthonormal ℝ v ∧ Orthonormal ℝ w := by
-  classical
-  have hne (i : Fin k) (j : Fin l) : Fin.castAdd l i ≠ Fin.natAdd k j := by
-    rw [Ne, Fin.ext_iff]
-    simp only [Fin.val_castAdd, Fin.val_natAdd]
-    omega
-  simp [orthonormal_iff_ite, Fin.forall_fin_add, forall_and, hne, (hne _ _).symm,
-    (Fin.castAdd_injective _ _).eq_iff, (Fin.natAdd_injective _ _).eq_iff]
 
 /-- **Products of calibrated frames are calibrated**: if `v` is calibrated by `φ` and `w` by
 `ψ`, the product frame `((v₁, 0), …, (v_k, 0), (0, w₁), …, (0, w_l))` is calibrated by `φ ⊠ ψ`. -/
