@@ -436,8 +436,8 @@ theorem mk_componentwiseParityTorsion_eq_of_mk_det_eq_one
     mk m' (C.componentwiseParityTorsion c' f) = mk m' (C.componentwiseParityTorsion c f) := by
   -- The inverse change of bases has trivial class as well.
   have h₁ : mk m ((c' 1).det (c 1)) = 1 := by
-    rw [← (c 1).det_inv (c' 1), ← Units.coe_map_inv, Units.val_eq_one, inv_eq_one, Units.ext_iff]
-    exact h 1
+    rw [← (c 1).det_inv (c' 1), mk_coe_eq_one_iff]
+    exact inv_mem ((mk_coe_eq_one_iff m _).1 (h 1))
   rw [componentwiseParityTorsion_eq_mul_det (c := c) c', map_mul, map_mul, ← map_mk f hf,
     ← map_mk f hf, h 0, h₁, map_one, mul_one, mul_one]
 
@@ -453,13 +453,11 @@ theorem mk_componentwiseReidemeisterTorsion_eq_of_mk_det_eq_one
     mk m' (C.componentwiseReidemeisterTorsion c' f) =
       mk m' (C.componentwiseReidemeisterTorsion c f) := by
   rw [componentwiseReidemeisterTorsion_eq_mul_finprod_det (c := c) c', map_mul, ← map_mk f hf]
-  -- The units whose class is trivial form a subgroup, which contains the product.
-  let χ : Aˣ →* TorsionClass m := (mk m).comp (Units.coeHom A)
-  have hU : (∏ᶠ i : ℤ, ((c i).isUnit_det (c' i)).unit ^ (i.negOnePow : ℤ)) ∈ χ.ker :=
-    finprod_induction (· ∈ χ.ker) (one_mem _) (fun _ _ ↦ mul_mem)
-      fun i ↦ zpow_mem (χ.mem_ker.2 (h i)) _
-  have hU₁ := χ.mem_ker.1 hU
-  rw [MonoidHom.comp_apply, Units.coeHom_apply] at hU₁
-  rw [hU₁, map_one, mul_one]
+  -- The units whose class is trivial are the signed deck monomials, which contain the product.
+  have hU : (∏ᶠ i : ℤ, ((c i).isUnit_det (c' i)).unit ^ (i.negOnePow : ℤ)) ∈
+      signedMonomialSubgroup m :=
+    finprod_induction (· ∈ signedMonomialSubgroup m) (one_mem _) (fun _ _ ↦ mul_mem)
+      fun i ↦ zpow_mem ((mk_coe_eq_one_iff m _).1 (h i)) _
+  rw [(mk_coe_eq_one_iff m _).2 hU, map_one, mul_one]
 
 end TauCeti.TorsionClass
