@@ -23,11 +23,12 @@ the boundary, while it is perturbed elsewhere.
 Evaluation at a point is continuous for the compact derivative topology
 `ContMDiffSection.frameTopology` of any covering system of smooth frames, so both are closed
 (`ContMDiffSection.isClosed_vanishingOn`, `ContMDiffSection.isClosed_fixedOn`); no hypothesis
-on `S` is needed, since the conditions are imposed pointwise. Over a Lindelöf boundaryless base,
-with complete model fibre, the section space is completely metrizable, and so is each of these
-closed subsets (`ContMDiffSection.isCompletelyMetrizableSpace_fixedOn`); in particular they are
-Baire spaces (`ContMDiffSection.baireSpace_fixedOn`), in which countable intersections of open
-dense subsets are dense.
+on `S` is needed, since the conditions are imposed pointwise. Over a Lindelöf boundaryless base
+modelled on a locally compact space, with complete model fibre and finite or smooth regularity
+`n`, the section space is completely metrizable, and so is each of these closed subsets
+(`ContMDiffSection.isCompletelyMetrizableSpace_fixedOn`); in particular they are Baire spaces
+(`ContMDiffSection.baireSpace_fixedOn`), in which countable intersections of open dense subsets
+are dense.
 
 ## Main definitions
 
@@ -40,9 +41,10 @@ dense subsets are dense.
 * `ContMDiffSection.isClosed_vanishingOn`, `ContMDiffSection.isClosed_fixedOn`: both are
   closed in the compact derivative topology.
 * `ContMDiffSection.isComplete_fixedOn`: `fixedOn s₀ S` is complete for the uniform structure
-  of the section space, over a boundaryless base with complete model fibre.
+  of the section space, over a boundaryless base modelled on a locally compact space, with
+  complete model fibre and finite or smooth regularity `n`.
 * `ContMDiffSection.isCompletelyMetrizableSpace_fixedOn`,
-  `ContMDiffSection.baireSpace_fixedOn`: over a Lindelöf boundaryless base, `fixedOn s₀ S` is
+  `ContMDiffSection.baireSpace_fixedOn`: if moreover the base is Lindelöf, `fixedOn s₀ S` is
   completely metrizable, hence a Baire space.
 
 ## References
@@ -167,20 +169,19 @@ theorem isClosed_fixedOn (hcover : ∀ x, ∃ i, x ∈ U i) (s₀ : Cₛ^n⟮I; 
     IsClosed (fixedOn s₀ S : Set Cₛ^n⟮I; F, V⟯) := by
   let _ := frameTopology (I := I) (n := n) e U hU
   have := isTopologicalAddGroup_frameTopology (I := I) (n := n) e U hU
-  have h : (fixedOn s₀ S : Set Cₛ^n⟮I; F, V⟯) =
-      (· - s₀) ⁻¹' (vanishingOn I F n V S : Set Cₛ^n⟮I; F, V⟯) := by
-    ext s
-    simp [sub_eq_zero]
-  rw [h]
-  exact (isClosed_vanishingOn e U hU hcover S).preimage (continuous_id.sub continuous_const)
+  have := t2Space_frameTopology (I := I) (n := n) e U hU hcover
+  refine (AffineSubspace.isClosed_direction_iff _).1 ?_
+  rw [direction_fixedOn]
+  exact isClosed_vanishingOn e U hU hcover S
 
 section Complete
 
 variable [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E] [I.Boundaryless] [CompleteSpace F]
   [ENat.LEInfty n]
 
-/-- Over a boundaryless base with complete model fibre, the sections equal to a given section on
-a set form a complete subset of the section space. -/
+/-- Over a boundaryless base modelled on a locally compact space, with complete model fibre and
+finite or smooth regularity `n`, the sections equal to a given section on a set form a complete
+subset of the section space. -/
 theorem isComplete_fixedOn (hcover : ∀ x, ∃ i, x ∈ U i) (s₀ : Cₛ^n⟮I; F, V⟯) (S : Set M) :
     let _ := frameUniformSpace (I := I) (n := n) e U hU
     IsComplete (fixedOn s₀ S : Set Cₛ^n⟮I; F, V⟯) := by
@@ -190,8 +191,9 @@ theorem isComplete_fixedOn (hcover : ∀ x, ∃ i, x ∈ U i) (s₀ : Cₛ^n⟮I
   rw [← frameUniformSpace_toTopologicalSpace (I := I) (n := n) e U hU] at h
   exact h.isComplete
 
-/-- Over a Lindelöf boundaryless base with complete model fibre, the sections equal to a given
-section on a set form a completely metrizable space for the compact derivative topology. -/
+/-- Over a Lindelöf boundaryless base modelled on a locally compact space, with complete model
+fibre and finite or smooth regularity `n`, the sections equal to a given section on a set form a
+completely metrizable space for the compact derivative topology. -/
 theorem isCompletelyMetrizableSpace_fixedOn [LindelofSpace M] (hcover : ∀ x, ∃ i, x ∈ U i)
     (s₀ : Cₛ^n⟮I; F, V⟯) (S : Set M) :
     let _ := frameTopology (I := I) (n := n) e U hU
@@ -201,9 +203,9 @@ theorem isCompletelyMetrizableSpace_fixedOn [LindelofSpace M] (hcover : ∀ x, �
   exact (isClosed_fixedOn (I := I) (n := n) e U hU hcover s₀ S).isCompletelyMetrizableSpace
 
 /-- **Sections with prescribed values form a Baire space.** Over a Lindelöf boundaryless base
-with complete model fibre, the sections equal to a given section on a set form a Baire space for
-the compact derivative topology: a countable intersection of relatively open dense subsets is
-dense. -/
+modelled on a locally compact space, with complete model fibre and finite or smooth regularity
+`n`, the sections equal to a given section on a set form a Baire space for the compact derivative
+topology: a countable intersection of relatively open dense subsets is dense. -/
 theorem baireSpace_fixedOn [LindelofSpace M] (hcover : ∀ x, ∃ i, x ∈ U i)
     (s₀ : Cₛ^n⟮I; F, V⟯) (S : Set M) :
     let _ := frameTopology (I := I) (n := n) e U hU

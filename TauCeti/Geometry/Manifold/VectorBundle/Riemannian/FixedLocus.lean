@@ -32,7 +32,8 @@ form `fixedOn g₁ (⋃ i, A i)` for any one of them `g₁`, and such a `g₁` e
 theorem `TauCeti.exists_contMDiffRiemannianMetric_inner_eq_of_locallyFinite`
 (`Bundle.ContMDiffRiemannianMetric.exists_fixedOn_iUnion_eq_setOf`).
 
-On a compact boundaryless base the cone is open in the section space, which is completely
+On a compact boundaryless base modelled on a locally compact space, for a finite-rank bundle
+and finite or smooth regularity `n`, the cone is open in the section space, which is completely
 metrizable, so the space of metrics is completely metrizable
 (`Bundle.ContMDiffRiemannianMetric.isCompletelyMetrizableSpace_frameTopology`), and so is its
 closed subset `fixedOn g₀ S`
@@ -56,8 +57,9 @@ sets of metrics, each obtained by perturbing away from `S`, is dense.
 * `Bundle.ContMDiffRiemannianMetric.isClosed_fixedOn`: it is closed for the compact derivative
   topology.
 * `Bundle.ContMDiffRiemannianMetric.isCompletelyMetrizableSpace_frameTopology`,
-  `Bundle.ContMDiffRiemannianMetric.baireSpace_frameTopology`: on a compact boundaryless base the
-  space of `C^n` metrics on a finite-rank bundle is completely metrizable, hence Baire.
+  `Bundle.ContMDiffRiemannianMetric.baireSpace_frameTopology`: on a compact boundaryless base
+  modelled on a locally compact space, for finite or smooth regularity `n`, the space of `C^n`
+  metrics on a finite-rank bundle is completely metrizable, hence Baire.
 * `Bundle.ContMDiffRiemannianMetric.isCompletelyMetrizableSpace_fixedOn`,
   `Bundle.ContMDiffRiemannianMetric.baireSpace_fixedOn`: so is `fixedOn g₀ S`.
 
@@ -99,26 +101,43 @@ theorem self_mem_fixedOn (g₀ : ContMDiffRiemannianMetric IB n F V) (S : Set B)
     g₀ ∈ fixedOn g₀ S :=
   fun _ _ ↦ rfl
 
+/-- A metric is equal to `g₀` on `S` exactly when its symmetric section is equal to that of `g₀`
+on `S`. -/
+theorem toSymmetricSection_mem_fixedOn_iff {g₀ g : ContMDiffRiemannianMetric IB n F V}
+    {S : Set B} :
+    g.toSymmetricSection ∈ ContMDiffSection.fixedOn g₀.toSymmetricSection S ↔
+      g ∈ fixedOn g₀ S := by
+  simp only [ContMDiffSection.mem_fixedOn, mem_fixedOn]
+  refine forall₂_congr fun x _ ↦ ⟨fun h ↦ ?_, fun h ↦ Subtype.ext ?_⟩
+  · simpa using congrArg Subtype.val h
+  · simpa using h
+
+theorem fixedOn_eq_preimage (g₀ : ContMDiffRiemannianMetric IB n F V) (S : Set B) :
+    fixedOn g₀ S =
+      toSymmetricSection ⁻¹' (ContMDiffSection.fixedOn g₀.toSymmetricSection S : Set _) := by
+  ext g
+  exact toSymmetricSection_mem_fixedOn_iff.symm
+
 @[simp]
-theorem fixedOn_empty (g₀ : ContMDiffRiemannianMetric IB n F V) : fixedOn g₀ (∅ : Set B) = univ :=
-  eq_univ_of_forall fun _ _ hx ↦ hx.elim
+theorem fixedOn_empty (g₀ : ContMDiffRiemannianMetric IB n F V) :
+    fixedOn g₀ (∅ : Set B) = univ := by
+  rw [fixedOn_eq_preimage, ContMDiffSection.fixedOn_empty, AffineSubspace.top_coe, preimage_univ]
 
 theorem fixedOn_antitone (g₀ : ContMDiffRiemannianMetric IB n F V) :
     Antitone (fixedOn g₀ : Set B → Set _) :=
-  fun _ _ hST _ hg x hx ↦ hg x (hST hx)
+  fun _ _ hST ↦ by
+    simp only [fixedOn_eq_preimage]
+    exact preimage_mono (SetLike.coe_subset_coe.2 (ContMDiffSection.fixedOn_antitone _ hST))
 
 theorem fixedOn_union (g₀ : ContMDiffRiemannianMetric IB n F V) (S T : Set B) :
     fixedOn g₀ (S ∪ T) = fixedOn g₀ S ∩ fixedOn g₀ T := by
-  ext g
-  simp only [mem_fixedOn, mem_union, mem_inter_iff]
-  exact ⟨fun h ↦ ⟨fun x hx ↦ h x (.inl hx), fun x hx ↦ h x (.inr hx)⟩,
-    fun h x hx ↦ hx.elim (h.1 x) (h.2 x)⟩
+  rw [fixedOn_eq_preimage, ContMDiffSection.fixedOn_union, AffineSubspace.coe_inf, preimage_inter,
+    ← fixedOn_eq_preimage, ← fixedOn_eq_preimage]
 
 theorem fixedOn_eq_of_mem {g₀ g₁ : ContMDiffRiemannianMetric IB n F V} {S : Set B}
     (h : g₁ ∈ fixedOn g₀ S) : fixedOn g₁ S = fixedOn g₀ S := by
-  ext g
-  simp only [mem_fixedOn] at h ⊢
-  exact forall₂_congr fun x hx ↦ by rw [h x hx]
+  rw [fixedOn_eq_preimage, fixedOn_eq_preimage,
+    ContMDiffSection.fixedOn_eq_of_mem (toSymmetricSection_mem_fixedOn_iff.2 h)]
 
 /-- **Metrics with prescribed models on closed sets.** Let `A i` be a locally finite family of
 pairwise disjoint closed subsets of a σ-compact Hausdorff smooth manifold modelled on a
@@ -154,23 +173,6 @@ theorem convexCombination_mem_fixedOn [FiniteDimensional ℝ F]
   ext v w
   simp [hg x hx, hh x hx, ← add_mul]
 
-/-- A metric is equal to `g₀` on `S` exactly when its symmetric section is equal to that of `g₀`
-on `S`. -/
-theorem toSymmetricSection_mem_fixedOn_iff {g₀ g : ContMDiffRiemannianMetric IB n F V}
-    {S : Set B} :
-    g.toSymmetricSection ∈ ContMDiffSection.fixedOn g₀.toSymmetricSection S ↔
-      g ∈ fixedOn g₀ S := by
-  simp only [ContMDiffSection.mem_fixedOn, mem_fixedOn]
-  refine forall₂_congr fun x _ ↦ ⟨fun h ↦ ?_, fun h ↦ Subtype.ext ?_⟩
-  · simpa using congrArg Subtype.val h
-  · simpa using h
-
-theorem fixedOn_eq_preimage (g₀ : ContMDiffRiemannianMetric IB n F V) (S : Set B) :
-    fixedOn g₀ S =
-      toSymmetricSection ⁻¹' (ContMDiffSection.fixedOn g₀.toSymmetricSection S : Set _) := by
-  ext g
-  exact toSymmetricSection_mem_fixedOn_iff.symm
-
 /-- As symmetric sections, the metrics equal to `g₀` on `S` are the positive-definite sections
 equal to the section of `g₀` on `S`. -/
 theorem image_toSymmetricSection_fixedOn [FiniteDimensional ℝ F]
@@ -204,10 +206,10 @@ theorem isClosed_fixedOn (hcover : ∀ x, ∃ i, x ∈ U i) (g₀ : ContMDiffRie
 variable [LocallyCompactSpace EB] [IB.Boundaryless] [ENat.LEInfty n] [FiniteDimensional ℝ F]
   [CompactSpace B]
 
-/-- On a compact boundaryless base, the `C^n` metrics on a finite-rank bundle form a completely
-metrizable space for the compact derivative topology of any covering frame system: they are
-homeomorphic to the positive-definite cone, an open subset of the completely metrizable section
-space. -/
+/-- On a compact boundaryless base modelled on a locally compact space, for finite or smooth
+regularity `n`, the `C^n` metrics on a finite-rank bundle form a completely metrizable space for
+the compact derivative topology of any covering frame system: they are homeomorphic to the
+positive-definite cone, an open subset of the completely metrizable section space. -/
 theorem isCompletelyMetrizableSpace_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology IB n e U hU
     IsCompletelyMetrizableSpace (ContMDiffRiemannianMetric IB n F V) := by
@@ -220,9 +222,9 @@ theorem isCompletelyMetrizableSpace_frameTopology (hcover : ∀ x, ∃ i, x ∈ 
   exact (positiveDefiniteSymmetricSectionHomeomorph e U hU).isClosedEmbedding
     |>.IsCompletelyMetrizableSpace
 
-/-- **Metrics form a Baire space.** On a compact boundaryless base, the `C^n` metrics on a
-finite-rank bundle form a Baire space for the compact derivative topology of any covering frame
-system. -/
+/-- **Metrics form a Baire space.** On a compact boundaryless base modelled on a locally compact
+space, for finite or smooth regularity `n`, the `C^n` metrics on a finite-rank bundle form a Baire
+space for the compact derivative topology of any covering frame system. -/
 theorem baireSpace_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology IB n e U hU
     BaireSpace (ContMDiffRiemannianMetric IB n F V) := by
@@ -230,9 +232,9 @@ theorem baireSpace_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i) :
   have := isCompletelyMetrizableSpace_frameTopology (IB := IB) (n := n) e U hU hcover
   infer_instance
 
-/-- On a compact boundaryless base, the `C^n` metrics on a finite-rank bundle equal to `g₀` on a
-set form a completely metrizable space for the compact derivative topology of any covering frame
-system. -/
+/-- On a compact boundaryless base modelled on a locally compact space, for finite or smooth
+regularity `n`, the `C^n` metrics on a finite-rank bundle equal to `g₀` on a set form a
+completely metrizable space for the compact derivative topology of any covering frame system. -/
 theorem isCompletelyMetrizableSpace_fixedOn (hcover : ∀ x, ∃ i, x ∈ U i)
     (g₀ : ContMDiffRiemannianMetric IB n F V) (S : Set B) :
     let _ := frameTopology IB n e U hU
@@ -241,10 +243,11 @@ theorem isCompletelyMetrizableSpace_fixedOn (hcover : ∀ x, ∃ i, x ∈ U i)
   have := isCompletelyMetrizableSpace_frameTopology (IB := IB) (n := n) e U hU hcover
   exact (isClosed_fixedOn e U hU hcover g₀ S).isCompletelyMetrizableSpace
 
-/-- **Metrics with prescribed values form a Baire space.** On a compact boundaryless base, the
-`C^n` metrics on a finite-rank bundle equal to `g₀` on a set form a Baire space for the compact
-derivative topology of any covering frame system: a countable intersection of relatively open
-dense sets of such metrics is dense. -/
+/-- **Metrics with prescribed values form a Baire space.** On a compact boundaryless base
+modelled on a locally compact space, for finite or smooth regularity `n`, the `C^n` metrics on a
+finite-rank bundle equal to `g₀` on a set form a Baire space for the compact derivative topology
+of any covering frame system: a countable intersection of relatively open dense sets of such
+metrics is dense. -/
 theorem baireSpace_fixedOn (hcover : ∀ x, ∃ i, x ∈ U i)
     (g₀ : ContMDiffRiemannianMetric IB n F V) (S : Set B) :
     let _ := frameTopology IB n e U hU
