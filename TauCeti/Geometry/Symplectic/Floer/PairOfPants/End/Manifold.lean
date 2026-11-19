@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
+import TauCeti.Topology.Instances.Real.Periodic
 
 /-!
 # Asymptotic orbits at the ends of a finite-energy Floer pair of pants in a manifold
@@ -502,12 +503,8 @@ theorem exists_mem_periodicSolutions_integral_floerEnergyDensity_pairOfPantsPert
   choose y hy hyu hyt using hy
   -- On a compact manifold the periodic Hamiltonians are bounded.
   have hbd : ∀ q, ∃ B, ∀ t x, |H q t x| ≤ B := fun q ↦ by
-    obtain ⟨B, hB⟩ := ((isCompact_Icc (a := (0 : ℝ)) (b := 1)).prod
-      (isCompact_univ (X := M))).exists_bound_of_continuousOn (hHs q).continuous.continuousOn
-    refine ⟨B, fun t x ↦ ?_⟩
-    obtain ⟨t', ht', hHt⟩ := (hH q).exists_mem_Ico₀ one_pos t
-    simpa only [hHt, uncurry_apply_pair, Real.norm_eq_abs] using
-      hB (t', x) ⟨Ico_subset_Icc_self ht', mem_univ x⟩
+    simpa only [Real.norm_eq_abs] using
+      (hH q).exists_bound_of_continuous_uncurry one_ne_zero (hHs q).continuous
   choose B hB using hbd
   refine ⟨y, fun q ↦ ⟨hy q, hyu q, hyt q⟩, ?_⟩
   exact hω.integral_floerEnergyDensity_pairOfPantsPerturbation hH
