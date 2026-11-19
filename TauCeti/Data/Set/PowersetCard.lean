@@ -24,6 +24,9 @@ embedding to disjointness and `disjUnion`, `Set.powersetCard.le_card` and
 of a finite type, and `Set.powersetCard.subsingleton_of_card_eq` together with the
 `Unique`/`Subsingleton` instances witness uniqueness at cardinalities `0` and `Fintype.card α`.
 
+`Set.powersetCard.val_ofFinEmb_fin_three` lists the three elements of the subset enumerated by an
+embedding of `Fin 3`.
+
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
 
@@ -140,6 +143,12 @@ theorem subsingleton_of_card_eq {α : Type*} [Fintype α] {d : ℕ} (hd : d = Fi
 instance instSubsingletonCard {α : Type*} [Fintype α] :
     Subsingleton (powersetCard α (Fintype.card α)) :=
   subsingleton_of_card_eq rfl
+
+/-- The three-element subset enumerated by an embedding `f : Fin 3 ↪ α` is `{f 0, f 1, f 2}`. -/
+theorem val_ofFinEmb_fin_three {α : Type*} [DecidableEq α] (f : Fin 3 ↪ α) :
+    (ofFinEmb 3 α f : Finset α) = {f 0, f 1, f 2} := by
+  ext v
+  simp [val_ofFinEmb, Fin.exists_fin_succ, eq_comm]
 
 /-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
 noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
