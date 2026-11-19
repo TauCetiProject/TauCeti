@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
-# The degree of a compositum of finitely many intermediate fields
+# Degrees of composita of intermediate fields
 
 The degree of the compositum of two intermediate fields is at most the product of their degrees
 (`IntermediateField.finrank_sup_le`). This file iterates that bound over finitely many
@@ -18,6 +18,12 @@ degree at most the product of the degrees of their minimal polynomials.
 
 Neither bound needs an algebraicity hypothesis: an infinite-dimensional compositum has `finrank`
 equal to `0`, and so does the minimal polynomial of a transcendental element.
+
+The file also shows that degrees of composita descend to finite subextensions: if `L / K` is
+algebraic and `F` is a finite subextension of `M / K`, then `[L(F) : L]` is already attained as
+`[L₀(F) : L₀]` for some finite subextension `L₀` of `L / K`. Unlike the bounds above, this
+result needs the algebraicity hypothesis. It is the step used in the tower law for
+`P`-extensions.
 
 ## Main results
 
