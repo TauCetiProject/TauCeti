@@ -9,7 +9,6 @@ public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
-import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
@@ -295,28 +294,11 @@ theorem memSobolev_neg_of_norm_le {u : 𝓢'(E, ℂ)} {t C : ℝ}
     (hu : ∀ φ : 𝓢(E, ℂ), ‖u φ‖ ≤ C * ‖SchwartzMap.toBesselPotentialSpaceCLM t 2 φ‖) :
     u.MemSobolev (-t) 2 := by
   set A := (SchwartzMap.toBesselPotentialSpaceCLM t 2 : 𝓢(E, ℂ) →L[ℂ] H^{t}(E, ℂ)).toLinearMap
-  have hker : LinearMap.ker A ≤ LinearMap.ker (u : 𝓢(E, ℂ) →L[ℂ] ℂ).toLinearMap := fun φ hφ ↦ by
-    have h := hu φ
-    rw [LinearMap.mem_ker] at hφ
-    simp only [A, ContinuousLinearMap.coe_coe] at hφ
-    rw [hφ, norm_zero, mul_zero] at h
-    exact LinearMap.mem_ker.2 (norm_le_zero_iff.1 h)
-  -- The functional `A φ ↦ u φ` on the range of `A`, bounded in the `H^t` norm.
-  set f₀ : LinearMap.range A →ₗ[ℂ] ℂ :=
-    (LinearMap.ker A).liftQ (u : 𝓢(E, ℂ) →L[ℂ] ℂ).toLinearMap hker ∘ₗ
-      (LinearMap.quotKerEquivRange A).symm.toLinearMap
-  have hf₀ (φ : 𝓢(E, ℂ)) : f₀ ⟨A φ, LinearMap.mem_range_self A φ⟩ = u φ := by
-    simp only [f₀, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-      LinearMap.quotKerEquivRange_symm_apply_image, Submodule.mkQ_apply, Submodule.liftQ_apply]
-    exact congrFun (ContinuousLinearMap.coe_coe (u : 𝓢(E, ℂ) →L[ℂ] ℂ)) φ
-  have hbound (v : LinearMap.range A) : ‖f₀ v‖ ≤ C * ‖v‖ := by
-    obtain ⟨_, φ, rfl⟩ := v
-    rw [hf₀]
-    exact hu φ
-  obtain ⟨ℓ, hℓ, -⟩ := exists_extension_norm_eq (LinearMap.range A) (f₀.mkContinuous C hbound)
+  -- Schwartz functions are dense in `H^t`, so `A φ ↦ u φ` extends to a functional `ℓ` on `H^t`.
+  set ℓ := (u : 𝓢(E, ℂ) →L[ℂ] ℂ).toLinearMap.extendOfNorm A
   have hℓA (φ : 𝓢(E, ℂ)) : ℓ (A φ) = u φ :=
-    (hℓ ⟨A φ, LinearMap.mem_range_self A φ⟩).trans
-      ((LinearMap.mkContinuous_apply f₀ C hbound _).trans (hf₀ φ))
+    LinearMap.extendOfNorm_eq
+      (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (p := 2) t ENNReal.ofNat_ne_top) ⟨C, hu⟩ φ
   -- By duality, `ℓ` is the density pairing with some `w ∈ H^{-t}(E, ℂ⋆)`; evaluating `w` at `1`
   -- pointwise gives a scalar element `v ∈ H^{-t}(E, ℂ)`.
   set w := (BesselPotentialSpace.dualEquiv t).symm ℓ
