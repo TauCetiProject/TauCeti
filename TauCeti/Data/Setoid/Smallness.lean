@@ -26,16 +26,12 @@ open Set
 
 namespace Setoid
 
-/-- If a non-small set meets countably many equivalence classes and every class cut has a small
-side, one class meets it in a non-small set with small complement. Only closure under countable
-unions is needed; downward closure of smallness is not required. -/
-theorem exists_class_not_small_and_small_sdiff {X : Type*} (E : Setoid X) (K : Set X)
-    (small : Set X → Prop)
+/-- If a non-small set meets countably many equivalence classes, one class meets it in a
+non-small set. Only closure of smallness under countable unions is needed. -/
+theorem exists_class_not_small {X : Type*} (E : Setoid X) (K : Set X) (small : Set X → Prop)
     (hUnion : ∀ S : Set (Set X), S.Countable → (∀ s ∈ S, small s) → small (⋃₀ S))
-    [Countable (Quotient (E.comap (Subtype.val : K → X)))] (hK : ¬ small K)
-    (hsplit : ∀ x ∈ K, small (K ∩ {y | E x y}) ∨ small (K \ {y | E x y})) :
-    ∃ x ∈ K, ¬ small (K ∩ {y | E x y}) ∧ small (K \ {y | E x y}) := by
-  classical
+    [Countable (Quotient (E.comap (Subtype.val : K → X)))] (hK : ¬ small K) :
+    ∃ x ∈ K, ¬ small (K ∩ {y | E x y}) := by
   let F (q : Quotient (E.comap (Subtype.val : K → X))) := K ∩ {y | E q.out.val y}
   have hcover : ⋃₀ range F = K := by
     ext x
@@ -52,6 +48,18 @@ theorem exists_class_not_small_and_small_sdiff {X : Type*} (E : Setoid X) (K : S
       rintro s ⟨q, rfl⟩
       exact h q))
   obtain ⟨q, hq⟩ := hex
-  exact ⟨q.out.val, q.out.prop, hq, (hsplit q.out.val q.out.prop).resolve_left hq⟩
+  exact ⟨q.out.val, q.out.prop, hq⟩
+
+/-- If a non-small set meets countably many equivalence classes and every class cut has a small
+side, one class meets it in a non-small set with small complement. Only closure under countable
+unions is needed; downward closure of smallness is not required. -/
+theorem exists_class_not_small_and_small_sdiff {X : Type*} (E : Setoid X) (K : Set X)
+    (small : Set X → Prop)
+    (hUnion : ∀ S : Set (Set X), S.Countable → (∀ s ∈ S, small s) → small (⋃₀ S))
+    [Countable (Quotient (E.comap (Subtype.val : K → X)))] (hK : ¬ small K)
+    (hsplit : ∀ x ∈ K, small (K ∩ {y | E x y}) ∨ small (K \ {y | E x y})) :
+    ∃ x ∈ K, ¬ small (K ∩ {y | E x y}) ∧ small (K \ {y | E x y}) :=
+  let ⟨x, hx, hxs⟩ := E.exists_class_not_small K small hUnion hK
+  ⟨x, hx, hxs, (hsplit x hx).resolve_left hxs⟩
 
 end Setoid
