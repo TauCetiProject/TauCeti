@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Map
+import TauCeti.GroupTheory.Index.Map
 
 /-!
 # Completed group algebras are free over open subgroups
@@ -44,6 +45,10 @@ generation over `R[[H]]` (`module_finite_iff_of_isOpen`).
 
 The coefficient ring `R` is any commutative ring, so this covers the Iwasawa algebras `ℤ_p[[Γ]]`
 and `𝒪[[Γ]]` and the residual algebras `𝔽_p[[Γ]]` and `k[[Γ]]` alike.
+
+The formal model for the inclusion-induced scalar action and inverse-representative convention
+is the discrete coset basis `TauCeti.MonoidAlgebra.basisCosets` in
+`TauCeti/Algebra/MonoidAlgebra/CosetBasis.lean`.
 
 ## Main definitions
 
@@ -148,14 +153,11 @@ private theorem levelRes_single_of_notMem {U : OpenNormalSubgroup Γ} (hU : U.to
   rw [levelRes_apply,
     MonoidAlgebra.comapDomain_single_of_notMem_range (mt (mk_mem_range_levelMap_iff hU γ).mp hγ)]
 
-private theorem comap_subtype_mono {U U' : OpenNormalSubgroup Γ} (hUU' : U ≤ U') :
-    U.comap H.subtype continuous_subtype_val ≤ U'.comap H.subtype continuous_subtype_val :=
-  fun _ hg ↦ OpenNormalSubgroup.mem_comap.mpr (hUU' (OpenNormalSubgroup.mem_comap.mp hg))
-
 /-- Restricting to `H` commutes with passing from the level `U` to a larger level `U' ≤ H`. -/
 private theorem mapDomain_mapOfLE_levelRes {U U' : OpenNormalSubgroup Γ} (hUU' : U ≤ U')
     (hU' : U'.toSubgroup ≤ H) (z : MonoidAlgebra R (Γ ⧸ U.toSubgroup)) :
-    MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE (comap_subtype_mono (H := H) hUU'))
+    MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE
+        (OpenNormalSubgroup.comap_mono H.subtype continuous_subtype_val hUU'))
         (levelRes R U z) =
       levelRes R U' (MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE hUU') z) := by
   have hU : U.toSubgroup ≤ H := (OpenNormalSubgroup.toSubgroup_le.mpr hUU').trans hU'
@@ -178,7 +180,8 @@ private theorem mapDomain_levelRes_eq_of_le {U₀ U : OpenNormalSubgroup Γ} (hU
     (hU : U.toSubgroup ≤ H) (V : OpenNormalSubgroup H)
     (hV : (U.comap H.subtype continuous_subtype_val) ≤ V) (x : completedGroupAlgebra R Γ) :
     MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE hV) (levelRes R U (proj R Γ U x)) =
-      MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE ((comap_subtype_mono hU₀U).trans hV))
+      MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE
+        ((OpenNormalSubgroup.comap_mono H.subtype continuous_subtype_val hU₀U).trans hV))
         (levelRes R U₀ (proj R Γ U₀ x)) := by
   rw [← mapDomain_mapOfLE_proj hU₀U, ← mapDomain_mapOfLE_levelRes R hU₀U hU,
     MonoidAlgebra.mapDomain_mapDomain, ← MonoidHom.coe_comp, QuotientGroup.mapOfLE_comp]
@@ -189,22 +192,12 @@ section Restrict
 
 variable [SeparatelyContinuousMul Γ] {H : Subgroup Γ} (hH : IsOpen (H : Set Γ)) [H.FiniteIndex]
 
-omit [SeparatelyContinuousMul Γ] in
-/-- The open normal subgroup `V` of `H` is normalized by `H`, and so is its image in `Γ`. -/
-private theorem finiteIndex_normalizer_map (V : OpenNormalSubgroup H) :
-    (Subgroup.normalizer (V.toSubgroup.map H.subtype : Set Γ)).FiniteIndex := by
-  have : ((V.toSubgroup.map H.subtype).subgroupOf H).Normal := by
-    rw [← Subgroup.comap_subtype, Subgroup.comap_map_eq_self_of_injective H.subtype_injective]
-    infer_instance
-  exact Subgroup.finiteIndex_of_le
-    (Subgroup.le_normalizer_of_normal_subgroupOf (Subgroup.map_subtype_le _))
-
 /-- The normal core in `Γ` of an open normal subgroup `V` of `H`: an open normal subgroup of `Γ`
 contained in `V`. -/
 private noncomputable def core (V : OpenNormalSubgroup H) : OpenNormalSubgroup Γ where
   toSubgroup := (V.toSubgroup.map H.subtype).normalCore
   isOpen' :=
-    have := finiteIndex_normalizer_map V
+    have := H.finiteIndex_normalizer_map_subtype V.toSubgroup
     Subgroup.isOpen_normalCore_of_finiteIndex_normalizer <| by
       rw [Subgroup.coe_map, Subgroup.coe_subtype]
       exact hH.isOpenMap_subtype_val _ V.isOpen
@@ -238,7 +231,8 @@ private theorem restrictLevel_eq (x : completedGroupAlgebra R Γ) (U : OpenNorma
 of `R[[Γ]]` as measures on `Γ`, it restricts a measure to the clopen subset `H`. At the level of an
 open normal subgroup `U ≤ H` of `Γ` it keeps the coefficients of `R[Γ ⧸ U]` on `H ⧸ U`
 (`proj_restrict`). It is left `R[[H]]`-linear (`restrict_map_mul`), and the coordinates of `x`
-in the coset basis `basisCosets R hH` are the restrictions of the translates `x * q.out`. -/
+in the coset basis `basisCosets R hH s hs` are `restrict R hH (x * of R Γ (s q))`, where `s q`
+is the chosen representative of `q`. -/
 noncomputable def restrict : completedGroupAlgebra R Γ →ₗ[R] completedGroupAlgebra R H where
   toFun x := mk R H (restrictLevel R hH x) fun V W hVW ↦ by
     rw [restrictLevel_eq R hH x (core hH V) (core_le hH V) W
