@@ -327,44 +327,61 @@ theorem MemWkpLoc.hasZeroRealAxisTrace_iff_of_continuousOn {Ω : Opens ℂ}
 
 /-! ### Closedness under `W^{1,p}` limits -/
 
+/-- A real function of finite `W^{1,p}` norm on the upper half-disc `D_r(x) ∩ {0 < im}` about a real
+point is represented on the model half-disc by an element of no larger norm. -/
+private theorem exists_w1p_halfDisc_enorm_le {x : ℂ} (hx : x.im = 0) {r : ℝ}
+    (hfin : eLpNormWkp p (upperHalfDisc x r) 1 f ≠ ∞) :
+    ∃ w : W1p volume (halfDisc r) p,
+      W1p.value w =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))]
+        (fun y => f ((halfDiscChart x).symm y)) ∧
+      ‖w‖ₑ ≤ eLpNormWkp p (upperHalfDisc x r) 1 f := by
+  obtain ⟨w, hw, hwn⟩ := exists_w1p_enorm_le_eLpNormWkp hfin
+  refine ⟨W1p.compAffineIsometryEquivL (halfDiscChart x).symm (halfDiscChart_symm_preimage hx r) w,
+    (W1p.value_compAffineIsometryEquivL_ae _ _ w).trans
+      (ae_eq_comp_halfDiscChart_symm hx subset_rfl hw), le_trans ?_ hwn⟩
+  rw [← ofReal_norm, ← ofReal_norm]
+  exact ENNReal.ofReal_le_ofReal (W1p.norm_compAffineIsometryEquivL_le _ _ w)
+
 /-- **The zero-trace condition is closed under `W^{1,p}_loc` limits up to the real axis.** If real
-functions `f n ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` have zero trace on the real axis and converge to
-`f ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` in `W^{1,p}(K)` for every compact `K ⊆ Ω ∩ {0 ≤ im}`, then `f`
-has zero trace on the real axis. -/
-theorem HasZeroRealAxisTrace.of_tendsto {Ω : Opens ℂ} {fs : ℕ → ℂ → ℝ}
-    (hfs : ∀ n, HasZeroRealAxisTrace hp ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (fs n))
-    (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 f)
-    (hlim : ∀ K : Set ℂ, IsCompact K → K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} →
+functions `fs n` have zero trace on the real axis inside `U` and converge to `f` in `W^{1,p}(K)` for
+every compact `K ⊆ U`, then `f` has zero trace on the real axis inside `U`. -/
+theorem HasZeroRealAxisTrace.of_tendsto {fs : ℕ → ℂ → ℝ} (hfs : ∀ n, HasZeroRealAxisTrace hp U (fs n))
+    (hlim : ∀ K : Set ℂ, IsCompact K → K ⊆ U →
       Tendsto (fun n => eLpNormWkp p K 1 (fs n - f)) atTop (𝓝 0)) :
-    HasZeroRealAxisTrace hp ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) f := by
+    HasZeroRealAxisTrace hp U f := by
   intro x hx r hr hxr
-  obtain ⟨v, hv⟩ := hf.exists_w1p_halfDisc hx hxr
-  refine ⟨v, ?_, hv⟩
   choose vs hvs hvsf using fun n => hfs n x hx r hr hxr
-  refine (W1p.isClosed_halfDiscFlatTraceZeroSubmodule hp r).mem_of_tendsto (b := atTop) ?_
-    (Eventually.of_forall hvs)
-  -- The difference `vs n - v` is the transport of a representative of `fs n - f` on the upper
-  -- half-disc, whose norm is at most the `W^{1,p}` norm of `fs n - f` there.
   have hK := (isCompact_closedBall x r).inter_right (t := {z : ℂ | 0 ≤ z.im})
     (isClosed_le continuous_const Complex.continuous_im)
   have hD := upperHalfDisc_subset x r
+  -- A representative of `fs n - f` on the model half-disc, for `n` where its norm is finite.
+  have hw : ∀ n, eLpNormWkp p (closedBall x r ∩ {z | 0 ≤ z.im}) 1 (fs n - f) ≠ ∞ →
+      ∃ w : W1p volume (halfDisc r) p,
+        W1p.value w =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))]
+          (fun y => (fs n - f) ((halfDiscChart x).symm y)) ∧
+        ‖w‖ₑ ≤ eLpNormWkp p (closedBall x r ∩ {z | 0 ≤ z.im}) 1 (fs n - f) := fun n hn => by
+    obtain ⟨w, hw, hwn⟩ := exists_w1p_halfDisc_enorm_le hx
+      (ne_top_of_le_ne_top hn (eLpNormWkp_mono_set hD))
+    exact ⟨w, hw, hwn.trans (eLpNormWkp_mono_set hD)⟩
+  -- The limit is represented as `vs N - w` for one `N` with finite norm.
+  obtain ⟨N, hN⟩ := ((hlim _ hK hxr).eventually (gt_mem_nhds ENNReal.zero_lt_top)).exists
+  obtain ⟨wN, hwN, -⟩ := hw N hN.ne
+  set v := vs N - wN
+  have hv : W1p.value v =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))]
+      fun y => f ((halfDiscChart x).symm y) := by
+    filter_upwards [W1p.value_sub_ae (vs N) wN, hvsf N, hwN] with y h₁ h₂ h₃
+    rw [h₁, Pi.sub_apply, h₂, h₃, Pi.sub_apply, sub_sub_cancel]
+  refine ⟨v, (W1p.isClosed_halfDiscFlatTraceZeroSubmodule hp r).mem_of_tendsto (b := atTop) ?_
+    (Eventually.of_forall hvs), hv⟩
+  -- `vs n - v` represents `fs n - f`, so its norm is at most the `W^{1,p}` norm of `fs n - f`.
   have hbound : ∀ n, ‖vs n - v‖ₑ ≤ eLpNormWkp p (closedBall x r ∩ {z | 0 ≤ z.im}) 1 (fs n - f) := by
     intro n
-    by_cases hfin : eLpNormWkp p (upperHalfDisc x r) 1 (fs n - f) = ∞
-    · exact (top_le_iff.1 (hfin ▸ eLpNormWkp_mono_set hD)).symm ▸ le_top
-    obtain ⟨w, hw, hwn⟩ := exists_w1p_enorm_le_eLpNormWkp hfin
-    have heq : vs n - v = W1p.compAffineIsometryEquivL (halfDiscChart x).symm
-        (halfDiscChart_symm_preimage hx r) w := by
-      refine W1p.ext_value (Lp.ext_iff.2 ?_)
-      filter_upwards [W1p.value_sub_ae (vs n) v, hvsf n, hv,
-        W1p.value_compAffineIsometryEquivL_ae (halfDiscChart x).symm
-          (halfDiscChart_symm_preimage hx r) w,
-        ae_eq_comp_halfDiscChart_symm hx subset_rfl hw] with y h₁ h₂ h₃ h₄ h₅
-      rw [h₁, Pi.sub_apply, h₂, h₃, h₄, h₅, Pi.sub_apply]
-    rw [heq]
-    refine le_trans ?_ (hwn.trans (eLpNormWkp_mono_set hD))
-    rw [← ofReal_norm, ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (W1p.norm_compAffineIsometryEquivL_le _ _ w)
+    by_cases hfin : eLpNormWkp p (closedBall x r ∩ {z | 0 ≤ z.im}) 1 (fs n - f) = ∞
+    · exact hfin ▸ le_top
+    obtain ⟨w, hw, hwn⟩ := hw n hfin
+    refine le_of_eq_of_le (congrArg _ (W1p.ext_value (Lp.ext_iff.2 ?_))) hwn
+    filter_upwards [W1p.value_sub_ae (vs n) v, hvsf n, hv, hw] with y h₁ h₂ h₃ h₄
+    rw [h₁, Pi.sub_apply, h₂, h₃, h₄, Pi.sub_apply]
   have hlim' : Tendsto (fun n => ‖vs n - v‖ₑ) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hlim _ hK hxr)
       (fun _ => zero_le) hbound
@@ -518,17 +535,16 @@ theorem MemWkpLoc.hasRealAxisTraceIn_iff_halfPlanePreciseRepresentative [FiniteD
     (hu.ae_eq_halfPlanePreciseRepresentative Fact.out)
 
 /-- **The boundary condition is closed under `W^{1,p}_loc` limits up to the real axis.** If maps
-`us n ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` have boundary values in `L` and converge to
-`u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` in `W^{1,p}(K)` for every compact `K ⊆ Ω ∩ {0 ≤ im}`, then the
-boundary values of `u` lie in `L`. This recovers the boundary condition of a limit from the trace. -/
-theorem HasRealAxisTraceIn.of_tendsto [CompleteSpace V] {Ω : Opens ℂ} {us : ℕ → ℂ → V}
-    (hus : ∀ n, HasRealAxisTraceIn hp ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) L (us n))
-    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u)
-    (hlim : ∀ K : Set ℂ, IsCompact K → K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} →
+`us n` have boundary values in `L` on the real axis inside `U` and converge to `u` in `W^{1,p}(K)`
+for every compact `K ⊆ U`, then the boundary values of `u` lie in `L`. This recovers the boundary
+condition of a limit from the trace. -/
+theorem HasRealAxisTraceIn.of_tendsto {us : ℕ → ℂ → V}
+    (hus : ∀ n, HasRealAxisTraceIn hp U L (us n))
+    (hlim : ∀ K : Set ℂ, IsCompact K → K ⊆ U →
       Tendsto (fun n => eLpNormWkp p K 1 (us n - u)) atTop (𝓝 0)) :
-    HasRealAxisTraceIn hp ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) L u := by
+    HasRealAxisTraceIn hp U L u := by
   refine fun ℓ hℓ => HasZeroRealAxisTrace.of_tendsto (fs := fun n z => ℓ (us n z))
-    (fun n => hus n ℓ hℓ) (hu.clm_comp ℓ) fun K hK hKU => ?_
+    (fun n => hus n ℓ hℓ) fun K hK hKU => ?_
   have hmul := ENNReal.Tendsto.const_mul (a := ‖ℓ‖ₑ) (hlim K hK hKU) (Or.inr eNorm_ne_top)
   rw [mul_zero] at hmul
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hmul (fun _ => zero_le)
