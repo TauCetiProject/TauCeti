@@ -71,16 +71,22 @@ theorem volume_real_closedBall_of_finrank_eq_one (h : finrank ℝ V = 1) (x : V)
   rw [measureReal_def, InnerProductSpace.volume_closedBall_of_dim_odd (k := 0) h, h]
   simp [ENNReal.toReal_ofReal hr, mul_comm]
 
-/-- Balls of the same radius in two finite-dimensional real inner product spaces of the same
-dimension `k` have the same volume; here the second space is `EuclideanSpace ℝ (Fin k)`. -/
-theorem volume_ball_eq_of_finrank_eq {k : ℕ} (hk : finrank ℝ V = k) (x : V)
-    (y : EuclideanSpace ℝ (Fin k)) (r : ℝ) : volume (ball x r) = volume (ball y r) := by
-  subst hk
+/-- A ball in a finite-dimensional real inner product space has the same volume as the ball of the
+same radius about the origin of `EuclideanSpace ℝ (Fin (finrank ℝ V))`. -/
+private theorem volume_ball_eq_volume_ball_euclideanSpace (x : V) (r : ℝ) :
+    volume (ball x r) = volume (ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ V))) r) := by
   -- An orthonormal basis identifies `V` with `ℝ^k`, preserving volume and balls about `0`.
   let e := (stdOrthonormalBasis ℝ V).repr
-  rw [Measure.addHaar_ball_center, Measure.addHaar_ball_center volume y,
+  rw [Measure.addHaar_ball_center,
     ← e.measurePreserving.measure_preimage measurableSet_ball.nullMeasurableSet, e.preimage_ball,
     map_zero]
+
+/-- Balls of the same radius in two finite-dimensional real inner product spaces of the same
+dimension have the same volume. -/
+theorem volume_ball_eq_of_finrank_eq {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [FiniteDimensional ℝ W] [MeasurableSpace W] [BorelSpace W] (h : finrank ℝ V = finrank ℝ W)
+    (x : V) (y : W) (r : ℝ) : volume (ball x r) = volume (ball y r) := by
+  rw [volume_ball_eq_volume_ball_euclideanSpace, volume_ball_eq_volume_ball_euclideanSpace y, h]
 
 end TauCeti
 

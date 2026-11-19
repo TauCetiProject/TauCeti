@@ -52,8 +52,9 @@ of `s` (`AffineSubspace.volume_preimage_coe_vadd`). These coordinates `v ↦ v +
 `IsometryEquiv.vaddConst q` followed by the inclusion of `s`
 (`AffineSubspace.val_comp_vaddConst`), so they form an isometry onto `s`
 (`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`). Balls of the same radius
-in a real inner product space of dimension `k` and in `EuclideanSpace ℝ (Fin k)` have the same
-volume (`TauCeti.volume_ball_eq_of_finrank_eq`). Hence the isodiametric inequality holds on `s`:
+in two real inner product spaces of the same dimension, such as a `k`-dimensional one and
+`EuclideanSpace ℝ (Fin k)`, have the same volume (`TauCeti.volume_ball_eq_of_finrank_eq`).
+Hence the isodiametric inequality holds on `s`:
 `μHE[k] (t ∩ s) ≤ (ediam t / 2) ^ k ω_k` for every set `t`, where `k` is the dimension of `s`
 (`AffineSubspace.euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul`). In particular, for a
 unit vector `ν` of a finite-dimensional real inner product space of dimension `n`, the
@@ -402,7 +403,7 @@ theorem euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul (s : AffineSubs
   gcongr
   · rw [← (s.isometry_coe_vadd q).ediam_image]
     exact Metric.ediam_mono (image_preimage_subset _ _)
-  · exact (TauCeti.volume_ball_eq_of_finrank_eq rfl _ _ _).le
+  · exact (TauCeti.volume_ball_eq_of_finrank_eq (finrank_euclideanSpace_fin).symm _ _ _).le
 
 end AffineSubspace
 
@@ -492,7 +493,8 @@ theorem euclideanHausdorffMeasure_ball_inter_setOf_inner_eq (hν : ‖ν‖ = 1)
     convert hι.preimage_ball ⟨x - c • ν, hx₀⟩ r
     simp
   have hball := volume_ball_eq_of_finrank_eq
-    (Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0) (0 : (ℝ ∙ ν)ᗮ)
+    ((Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0).trans
+      finrank_euclideanSpace_fin.symm) (0 : (ℝ ∙ ν)ᗮ)
     (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1
   rw [← Measure.restrict_apply' (measurableSet_eq_fun (by fun_prop) measurable_const),
     euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
