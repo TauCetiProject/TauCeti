@@ -119,17 +119,6 @@ private theorem eq_cast_of_pv {n m n' m' : ℕ} (hn : n = n') (hm : m = m') {f :
   rw [cast_refl, Equiv.refl_apply]
   exact TLDiagram.ext (eq_of_pv_eq hp.symm) hc.symm
 
-private theorem comp_cast {n m p p' : ℕ} (f : TLDiagram n m) (g : TLDiagram m p) (h : p = p') :
-    f.comp (cast rfl h g) = cast rfl h (f.comp g) := by
-  subst h
-  simp
-
-private theorem cast_comp_cast {n m p n' m' p' : ℕ} (hn : n = n') (hm : m = m') (hp : p = p')
-    (f : TLDiagram n m) (g : TLDiagram m p) :
-    (cast hn hm f).comp (cast hm hp g) = cast hn hp (f.comp g) := by
-  subst hn hm hp
-  simp
-
 /-! #### A cup around nested cups -/
 
 /-- Joining the second point of a cup to the first point of a matching with partner function `γ`
@@ -494,7 +483,7 @@ theorem diagram_coevaluation (n : ℕ) :
         MonoidalCoherence.assoc'_iso, MonoidalCoherence.whiskerLeft_iso,
         MonoidalCoherence.whiskerRight_iso, MonoidalCoherence.right'_iso, Iso.trans_hom,
         Iso.refl_hom, Iso.symm_hom, whiskerLeftIso_hom, whiskerRightIso_hom]
-      simp [associator_hom, associator_inv, rightUnitor_inv, TLDiagram.comp_cast]
+      simp [associator_hom, associator_inv, rightUnitor_inv]
     rw [hη]
     refine TLDiagram.ext (PlanarMatching.eq_of_pv_eq ?_) ?_
     · rw [TLDiagram.matching_cast, PlanarMatching.pv_cast_eq, hp, PlanarMatching.pv_cast_eq,
