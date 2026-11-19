@@ -72,8 +72,10 @@ is uniformly at most `η` there, and `μ K ^ (1/p) η` is made small by the choi
   `TauCeti.isCompact_closure_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl`: the criterion for a
   family vanishing almost everywhere off a fixed bounded set, in totally bounded and in relatively
   compact form.
-* `TauCeti.totallyBounded_setOf_ae_eq_of_contDiff`: `C¹` functions vanishing off a fixed bounded
-  set, with uniformly bounded values and derivatives in `Lᵖ`, form a totally bounded family.
+* `TauCeti.totallyBounded_setOf_ae_eq_of_contDiff`,
+  `TauCeti.isCompact_closure_setOf_ae_eq_of_contDiff`: `C¹` functions vanishing off a fixed bounded
+  set, with uniformly bounded values and derivatives in `Lᵖ`, form a totally bounded and relatively
+  compact family.
 
 ## References
 
@@ -422,6 +424,18 @@ theorem totallyBounded_setOf_ae_eq_of_contDiff [NormedSpace ℝ E] (hp' : p ≠ 
       _ = ENNReal.ofReal r := by
           rw [← ENNReal.ofReal_mul (by positivity), div_mul_cancel₀ _ (by positivity)]
       _ ≤ ε := hrε.le
+
+/-- **Compactness of bounded families of `C¹` functions with bounded derivatives**, relatively
+compact form. `C¹` functions vanishing off a fixed bounded set, whose values and derivatives are
+uniformly bounded in `Lᵖ`, `1 ≤ p < ∞`, form a relatively compact subset of `Lᵖ`. -/
+theorem isCompact_closure_setOf_ae_eq_of_contDiff [NormedSpace ℝ E] (hp' : p ≠ ∞)
+    {S : Set (E → F)} (hS : ∀ g ∈ S, ContDiff ℝ 1 g)
+    {s : Set E} (hs : Bornology.IsBounded s) (hsupp : ∀ g ∈ S, ∀ x ∉ s, g x = 0)
+    {M A : ℝ≥0∞} (hM : M ≠ ∞) (hA : A ≠ ∞) (hbdd : ∀ g ∈ S, eLpNorm g p mu ≤ M)
+    (hder : ∀ g ∈ S, eLpNorm (fderiv ℝ g) p mu ≤ A) :
+    IsCompact (closure {f : Lp F p mu | ∃ g ∈ S, f =ᵐ[mu] g}) :=
+  ((totallyBounded_setOf_ae_eq_of_contDiff hp' hS hs hsupp hM hA hbdd
+    hder).closure).isCompact_of_isClosed isClosed_closure
 
 end FrechetKolmogorov
 

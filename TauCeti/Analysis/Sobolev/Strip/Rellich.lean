@@ -7,12 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Sobolev.Strip.Basic
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Sobolev.Poincare.TransverseBoundary
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
-import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
 /-!
@@ -36,20 +34,18 @@ Unlike the cylinder, the strip has a boundary, so a section cannot be cut off ne
 * **Interior.** A smooth cutoff `χ` equal to `1` on `[-T, T] × [δ, 1 - δ]` and supported in a
   bounded subset of the open strip turns a test section `ξ` into a `C¹` function `χ ξ` on the
   plane, supported in a fixed bounded set, whose value and derivative are bounded in `L²(ℝ²)` by
-  the `W^{1,2}` norm of `ξ` on the strip. These form a totally bounded family by the
-  Fréchet–Kolmogorov criterion, in the form `TauCeti.totallyBounded_setOf_ae_eq_of_contDiff`.
+  the `W^{1,2}` norm of `ξ` on the strip (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`). These
+  form a totally bounded family by the Fréchet–Kolmogorov criterion, in the form
+  `TauCeti.totallyBounded_setOf_ae_eq_of_contDiff`.
 * **Boundary layers.** On every segment `{s} × [0, 1]` the squared norm of `ξ` is at most
-  `2 ∫₀¹ (‖ξ‖² + ‖∂t ξ‖²)`, by the fundamental theorem of calculus. Integrating over `s` and over
-  a set `L ⊆ [0, 1]` of times bounds `∫_{ℝ × L} ‖ξ‖²` by `4 |L|` times the squared `W^{1,2}` norm
-  of `ξ`, which is small when `L` is the union of the two layers of width `δ`.
+  `2 ∫₀¹ (‖ξ‖² + ‖∂t ξ‖²)`, by the fundamental theorem of calculus
+  (`TauCeti.ofReal_mul_eNorm_sq_le_lintegral_eNorm_sq_add_lintegral_eNorm_deriv_sq`). Integrating
+  over `s` and over a set `L ⊆ [0, 1]` of times bounds `∫_{ℝ × L} ‖ξ‖²` by `4 |L|` times the
+  squared `W^{1,2}` norm of `ξ`, which is small when `L` is the union of the two layers of
+  width `δ`.
 
 Hence the restricted values of the unit ball lie within any `ε > 0` of a totally bounded set, and
 are totally bounded. No boundary condition is used, so the theorem holds for every `F₀` and `F₁`.
-
-## Main definitions
-
-* `TauCeti.StripSobolev.restrictValue`: the value of an `L²` jet on the strip, restricted to
-  `[-T, T] × [0, 1]`.
 
 ## Main results
 
@@ -75,71 +71,7 @@ namespace TauCeti.StripSobolev
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-! ### The restricted value -/
-
-/-- The value of an `L²` jet on the strip, restricted to the compact piece `[-T, T] × [0, 1]`. -/
-def restrictValue (T : ℝ) :
-    Lp (V × V × V) 2 stripMeasure →L[ℝ]
-      Lp V 2 (stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)) :=
-  (LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 (Icc (-T) T ×ˢ Icc 0 1)).comp
-    ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure)
-
-/-- The restricted value of an `L²` jet is represented by the first component of the jet. -/
-theorem coeFn_restrictValue (T : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
-    restrictValue T f =ᵐ[stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)] fun z ↦ (f z).1 :=
-  (LpToLpRestrictCLM_coeFn ℝ _ _).trans
-    (ae_restrict_of_ae ((ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f))
-
 /-! ### The boundary layers -/
-
-/-- On the unit interval, the squared norm of a `C¹` path at any time is at most twice the sum of
-its value and speed energies. -/
-private theorem enorm_sq_le_lintegral {v : ℝ → V} (hv : ContDiffOn ℝ 1 v (Icc 0 1)) {t : ℝ}
-    (ht : t ∈ Icc (0 : ℝ) 1) :
-    ‖v t‖ₑ ^ 2 ≤ 2 * (∫⁻ u in Icc (0 : ℝ) 1, ‖v u‖ₑ ^ 2) +
-      2 * ∫⁻ u in Icc (0 : ℝ) 1, ‖deriv v u‖ₑ ^ 2 := by
-  set J := ∫⁻ u in Icc (0 : ℝ) 1, ‖deriv v u‖ₑ ^ 2
-  have key : ∀ a ∈ Icc (0 : ℝ) 1, ∀ b ∈ Icc (0 : ℝ) 1, a ≤ b →
-      ‖v b - v a‖ₑ ≤ ∫⁻ x in Icc (0 : ℝ) 1, ‖deriv v x‖ₑ := fun a ha b hb hab ↦
-    (eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc (hv.mono (Icc_subset_Icc ha.1 hb.2))
-      hab).trans (lintegral_mono_set (Icc_subset_Icc ha.1 hb.2))
-  -- Jensen's inequality costs no factor, since the unit interval has measure one.
-  have hJ : (∫⁻ x in Icc (0 : ℝ) 1, ‖deriv v x‖ₑ) ^ 2 ≤ J := by
-    have h := rpow_lintegral_le_measure_univ_rpow_mul
-      (μ := volume.restrict (Icc (0 : ℝ) 1)) (u := fun x ↦ ‖deriv v x‖ₑ) (r := 2) (by norm_num)
-    norm_num at h
-    exact h
-  have hpt : ∀ u ∈ Icc (0 : ℝ) 1, ‖v t‖ₑ ^ 2 ≤ 2 * ‖v u‖ₑ ^ 2 + 2 * J := by
-    intro u hu
-    have hd : ‖v t - v u‖ₑ ≤ ∫⁻ x in Icc (0 : ℝ) 1, ‖deriv v x‖ₑ := by
-      rcases le_total u t with h | h
-      · exact key u hu t ht h
-      · rw [eNorm_sub_rev]
-        exact key t ht u hu h
-    calc ‖v t‖ₑ ^ 2 ≤ (‖v u‖ₑ + ‖v t - v u‖ₑ) ^ 2 := by
-          gcongr
-          calc ‖v t‖ₑ = ‖v u + (v t - v u)‖ₑ := by rw [add_sub_cancel]
-            _ ≤ _ := eNorm_add_le _ _
-      _ ≤ 2 * ‖v u‖ₑ ^ 2 + 2 * ‖v t - v u‖ₑ ^ 2 := by
-          -- `(a + b)² ≤ 2 a² + 2 b²`, read in `ℝ≥0` when both terms are finite.
-          rcases eq_or_ne ‖v u‖ₑ ⊤ with h | h
-          · simp [h]
-          rcases eq_or_ne ‖v t - v u‖ₑ ⊤ with h' | h'
-          · simp [h']
-          lift ‖v u‖ₑ to ℝ≥0 using h with a
-          lift ‖v t - v u‖ₑ to ℝ≥0 using h' with b
-          have h := add_sq_le (a := a) (b := b)
-          rw [mul_add] at h
-          exact_mod_cast h
-      _ ≤ 2 * ‖v u‖ₑ ^ 2 + 2 * J := by
-          gcongr
-          exact (pow_le_pow_left' hd 2).trans hJ
-  calc ‖v t‖ₑ ^ 2 = ∫⁻ _ in Icc (0 : ℝ) 1, ‖v t‖ₑ ^ 2 := by simp [Real.volume_Icc]
-    _ ≤ ∫⁻ u in Icc (0 : ℝ) 1, (2 * ‖v u‖ₑ ^ 2 + 2 * J) :=
-        setLIntegral_mono' measurableSet_Icc hpt
-    _ = 2 * (∫⁻ u in Icc (0 : ℝ) 1, ‖v u‖ₑ ^ 2) + 2 * J := by
-        rw [lintegral_add_right _ measurable_const, lintegral_const_mul' _ _ (by simp)]
-        simp [Real.volume_Icc]
 
 /-- **The boundary-layer estimate.** For a `C¹` map `ξ` and a measurable set `L ⊆ [0, 1]` of
 times, `∫_{ℝ × L} ‖ξ‖² ≤ 4 |L| ∫_{ℝ × [0, 1]} ‖jet ξ‖²`. -/
@@ -160,7 +92,10 @@ private theorem lintegral_enorm_sq_le {ξ : ℝ × ℝ → V} (hξ : ContDiff �
       (hasDerivAt_slice_right ((hξ.differentiable one_ne_zero) (s, t))).deriv
     have hbound : ∀ t ∈ L, ‖ξ (s, t)‖ₑ ^ 2 ≤ 4 * ∫⁻ u in Icc (0 : ℝ) 1, ‖jet ξ (s, u)‖ₑ ^ 2 := by
       intro t ht
-      refine (enorm_sq_le_lintegral hv.contDiffOn (hL₁ ht)).trans ?_
+      have h := ofReal_mul_eNorm_sq_le_lintegral_eNorm_sq_add_lintegral_eNorm_deriv_sq
+        (a := 0) (b := 1) hv.contDiffOn (hL₁ ht)
+      simp only [sub_zero, ENNReal.ofReal_one, one_mul, one_pow, mul_one] at h
+      refine h.trans ?_
       simp only [hderiv]
       rw [show (4 : ℝ≥0∞) = 2 + 2 by norm_num, add_mul]
       gcongr with u u
@@ -183,47 +118,6 @@ private theorem lintegral_enorm_sq_le {ξ : ℝ × ℝ → V} (hξ : ContDiff �
         ring
 
 /-! ### The interior cutoff -/
-
-/-- Multiplying a `C¹` map by a `C¹` cutoff with values in `[0, 1]`, supported in the strip, gives a
-map whose derivative is bounded in `L²(ℝ × ℝ)` by the jet on the strip. -/
-private theorem eLpNorm_fderiv_smul_le {χ : ℝ × ℝ → ℝ} {C : ℝ} (hχ : ContDiff ℝ 1 χ)
-    (hχ01 : ∀ z, 0 ≤ χ z ∧ χ z ≤ 1) (hC : ∀ z, ‖fderiv ℝ χ z‖ ≤ C)
-    (hχP : tsupport χ ⊆ univ ×ˢ Icc 0 1) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) 2 volume ≤
-      ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) 2 stripMeasure := by
-  set P : Set (ℝ × ℝ) := univ ×ˢ Icc 0 1
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  have hpt : ∀ z, ‖fderiv ℝ (fun z ↦ χ z • ξ z) z‖ ≤ (C + 2) * ‖P.indicator (jet ξ) z‖ := by
-    intro z
-    by_cases hz : z ∈ P
-    · rw [indicator_of_mem hz,
-        fderiv_fun_smul (hχ.differentiable one_ne_zero z) (hξ.differentiable one_ne_zero z)]
-      calc _ ≤ ‖χ z‖ * ‖fderiv ℝ ξ z‖ + ‖fderiv ℝ χ z‖ * ‖ξ z‖ := by
-            refine (norm_add_le _ _).trans ?_
-            rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
-        _ ≤ 1 * (2 * ‖jet ξ z‖) + C * ‖jet ξ z‖ := by
-            gcongr
-            · rw [Real.norm_eq_abs, abs_of_nonneg (hχ01 z).1]
-              exact (hχ01 z).2
-            · linarith [(fderiv ℝ ξ z).opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one,
-                norm_fderiv_one_zero_le_norm_jet ξ z, norm_fderiv_zero_one_le_norm_jet ξ z]
-            · exact hC z
-            · exact norm_le_norm_jet ξ z
-        _ = (C + 2) * ‖jet ξ z‖ := by ring
-    · have h0 : (fun z ↦ χ z • ξ z) =ᶠ[𝓝 z] 0 := by
-        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hχP h)] with w hw
-        simp [hw]
-      rw [h0.fderiv_eq]
-      simp only [fderiv_zero, Pi.zero_apply, norm_zero]
-      positivity
-  calc eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) 2 volume
-      ≤ ENNReal.ofReal (C + 2) * eLpNorm (P.indicator (jet ξ)) 2 volume :=
-        eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-          ((hχ.smul hξ).continuous_fderiv one_ne_zero).aestronglyMeasurable
-          (Eventually.of_forall hpt) 2
-    _ = ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) 2 stripMeasure := by
-        rw [eLpNorm_indicator_eq_eLpNorm_restrict
-          (MeasurableSet.univ.prod measurableSet_Icc).nullMeasurableSet]
 
 /-- A smooth cutoff on `ℝ × ℝ`, equal to `1` on `[-T, T] × [δ, 1 - δ]` and supported in a bounded
 subset of the open strip, multiplies `C¹` maps into `C¹` maps whose value and derivative are
@@ -250,7 +144,9 @@ private theorem exists_cutoff (T : ℝ) {δ : ℝ} (hδ : 0 < δ) : ∃ (χ : �
   refine ⟨χ, C + 2, fun z hz ↦ (hχ1 z hz).self_of_nhds, hχ01, hχ.continuous,
     fun z hz ↦ prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self (hχU (subset_tsupport χ hz)),
     fun ξ hξ ↦ ⟨(hχ.of_le (by simp)).smul hξ, ?_,
-      eLpNorm_fderiv_smul_le (hχ.of_le (by simp)) hχ01 hC hχP hξ⟩⟩
+      eLpNorm_fderiv_smul_le (hχ.of_le (by simp))
+        (fun z ↦ abs_le.2 ⟨by linarith [(hχ01 z).1], (hχ01 z).2⟩) hC
+        (MeasurableSet.univ.prod measurableSet_Icc) hχP hξ⟩⟩
   have hf : Continuous fun z ↦ χ z • ξ z := hχ.continuous.smul hξ.continuous
   have hsub : Function.support (fun z ↦ χ z • ξ z) ⊆ univ ×ˢ Icc 0 1 := fun z hz ↦
     hχP (subset_tsupport χ (left_ne_zero_of_smul hz))
