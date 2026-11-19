@@ -70,14 +70,16 @@ which is `O(H 2^{-jα})` since `κ` is an `L¹`-normalised dilate at scale `2^j`
 derivatives lie in `𝒞^{k-1+α}` lies in `𝒞^{k+α}`
 (`TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_lineDerivOp_eq`).
 
-For `0 < α < 1` the isomorphism also matches the little spaces. A bounded continuous function
+For `0 < α < 1` the isomorphism takes the little Hölder functions exactly to the elements whose
+weighted blocks vanish at high frequency. A bounded continuous function
 representing `u ∈ 𝒞^α` is little `α`-Hölder, with `α`-Hölder difference quotients tending to zero
 at small scales, exactly when the weighted blocks vanish at high frequency, `2^{jα} ‖Δⱼ u‖_∞ → 0`.
 If they do, `u` is the limit in `𝒞^α` of its low-pass truncations, which are represented by
 Lipschitz functions; conversely a little Hölder function is the limit in `C^{0,α}` of smooth
-Lipschitz functions, whose weighted blocks of order `α < 1` vanish at high frequency. Hence every
-element of the little Hölder–Zygmund space `c^α`, the closure of the Schwartz functions in `𝒞^α`, is
-little Hölder. The cusp `x ↦ ‖x‖ ^ α`, truncated at height `1`, is not: its weighted blocks are
+Lipschitz functions, whose weighted blocks of order `α < 1` vanish at high frequency. The little
+Hölder–Zygmund space `c^α`, the closure of the Schwartz functions in `𝒞^α`, lies inside this
+block-decay subspace (strictly so, as nonzero constants show), so every element of `c^α` is little
+Hölder. The cusp `x ↦ ‖x‖ ^ α`, truncated at height `1`, is not: its weighted blocks are
 bounded but do not tend to zero, so `c^α` is a proper closed subspace of `𝒞^α`.
 
 ## Main declarations
@@ -1045,9 +1047,7 @@ private theorem toHolderSpace_mem_littleHolder_of_littlewoodPaleyBlock_eq_zero (
     rw [norm_iteratedFDeriv_one] at h
     exact_mod_cast h
   have hvg : (toHolderSpace F φ hα0 hα1 v).toBoundedContinuousFunction = g :=
-    toTemperedDistribution_toLpTop_injective (μ := volume) <| by
-      dsimp only
-      rw [toLpTop_toHolderSpace, hg, hw, hvr]
+    repr_eq φ (toLpTop_toHolderSpace φ hα0 hα1) (by rw [hg, hw, hvr])
   rw [HolderSpace.mem_littleHolder_iff, ← HolderSpace.coe_toBoundedContinuousFunction, hvg]
   exact hgL.memLittleHolder hα1
 
@@ -1126,7 +1126,7 @@ private theorem tendsto_of_toHolderSpace_mem_littleHolder (hα0 : 0 < α) (hα1 
         exact rpow_mul_norm_block_le _ j
     _ < ε := by linarith
 
-/-- **The little Hölder–Zygmund space is the little Hölder space.** Let `0 < α < 1` and let `f` be
+/-- **Little Hölder continuity is block decay.** Let `0 < α < 1` and let `f` be
 a bounded continuous function representing `u ∈ 𝒞^α = B^α_{∞,∞}`. Then `f` is little
 `α`-Hölder, its `α`-Hölder difference quotients tending to zero at small scales, exactly when the
 weighted blocks of `u` vanish at high frequency, `2^{jα} ‖Δⱼ u‖_∞ → 0`. -/
@@ -1135,9 +1135,7 @@ theorem memLittleHolder_iff_tendsto_rpow_mul_norm_block (hα0 : 0 < α) (hα1 : 
     (hf : (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr) :
     MemLittleHolder α f ↔ Tendsto (fun j : ℕ ↦ 2 ^ ((α : ℝ) * j) * ‖u.block j‖) atTop (𝓝 0) := by
   have huf : (toHolderSpace F φ hα0 hα1 u).toBoundedContinuousFunction = f :=
-    toTemperedDistribution_toLpTop_injective (μ := volume) <| by
-      dsimp only
-      rw [toLpTop_toHolderSpace, hf]
+    repr_eq φ (toLpTop_toHolderSpace φ hα0 hα1) hf
   rw [← huf, HolderSpace.coe_toBoundedContinuousFunction, ← HolderSpace.mem_littleHolder_iff]
   exact ⟨tendsto_of_toHolderSpace_mem_littleHolder φ hα0 hα1,
     toHolderSpace_mem_littleHolder_of_tendsto φ hα0 hα1⟩
