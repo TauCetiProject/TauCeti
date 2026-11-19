@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.BiproductPower
 public import TauCeti.CategoryTheory.Abelian.SubquotientHull
 public import TauCeti.CategoryTheory.Linear.FullSubcategory
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
@@ -27,9 +28,10 @@ with an exact faithful fibre functor is assembled, by dualizing and passing to t
 colimit over nested hulls.
 
 An endomorphism `f` of `ω X` acts diagonally on `ω (⨁ (fun _ : ι ↦ X))`
-(`CategoryTheory.Functor.powerAlgHom`). The subalgebra `CategoryTheory.Functor.hullAlgebra`
-of `Module.End R (ω X)` consists of those `f` whose diagonal actions preserve the image of
-`ω Z` for every subobject `Z` of every finite power of `X`. Evaluation at `X` identifies the
+(`CategoryTheory.Functor.powerAlgHom`, from `TauCeti.Algebra.Category.ModuleCat.BiproductPower`).
+The subalgebra `CategoryTheory.Functor.hullAlgebra` of `Module.End R (ω X)` consists of those
+`f` whose diagonal actions preserve the image of `ω Z` for every subobject `Z` of every finite
+power of `X`. Evaluation at `X` identifies the
 natural endomorphisms with this subalgebra when `ω` is exact
 (`CategoryTheory.Functor.hullEndAlgEquiv`). Preservation of the images of subobjects of `X`
 alone would not suffice: subobjects of `X ⊞ X` include graphs of endomorphisms of `X`, and these
@@ -37,8 +39,6 @@ force the commutation with `ω` of morphisms in `⟨X⟩`.
 
 ## Main definitions and results
 
-* `CategoryTheory.Functor.powerAlgHom`: the diagonal action of `Module.End R (ω X)` on
-  `ω (⨁ fun _ : ι ↦ X)`, characterized by `CategoryTheory.Functor.eq_powerAlgHom_iff`.
 * `CategoryTheory.Functor.hullAlgebra`: the endomorphisms of `ω X` whose diagonal actions
   preserve the images of all subobjects of finite powers of `X`.
 * `CategoryTheory.Functor.hullEvalAlgHom`: evaluation at `X` of natural endomorphisms of
@@ -71,115 +71,8 @@ variable {R : Type u'} [CommRing R] {C : Type u} [Category.{v} C]
 
 section Power
 
-/-- A monomorphism of modules is injective on underlying linear maps. -/
-private lemma injective_hom_of_mono {M N : ModuleCat.{w} R} (g : M ⟶ N) [Mono g] :
-    Function.Injective g.hom :=
-  (ModuleCat.mono_iff_injective g).1 inferInstance
-
-/-- An epimorphism of modules is surjective on underlying linear maps. -/
-private lemma surjective_hom_of_epi {M N : ModuleCat.{w} R} (g : M ⟶ N) [Epi g] :
-    Function.Surjective g.hom :=
-  (ModuleCat.epi_iff_surjective g).1 inferInstance
-
 variable [Preadditive C] [HasFiniteBiproducts C] (ω : C ⥤ ModuleCat.{w} R) [ω.Additive]
-  (X : C) (ι : Type*)
-
-private lemma map_π_map_ι_apply [DecidableEq ι] [Finite ι] (j k : ι) (x : ω.obj X) :
-    (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom ((ω.map (biproduct.ι (fun _ : ι ↦ X) k)).hom x) =
-      if k = j then x else 0 := by
-  have h := congrArg (fun φ ↦ (ω.map φ).hom x)
-    (biproduct.ι_π (fun _ : ι ↦ X) k j)
-  simp only [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at h
-  rw [h]
-  split_ifs with hkj
-  · subst hkj
-    simp
-  · simp
-
-private lemma sum_map_ι_map_π_apply [Fintype ι] (v : ω.obj (⨁ fun _ : ι ↦ X)) :
-    ∑ j, (ω.map (biproduct.ι (fun _ : ι ↦ X) j)).hom
-      ((ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v) = v := by
-  have h := congrArg (fun φ ↦ (ω.map φ).hom v) (biproduct.total (f := fun _ : ι ↦ X))
-  simp only [Functor.map_sum, ModuleCat.hom_sum, LinearMap.sum_apply,
-    Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply, Functor.map_id,
-    ModuleCat.hom_id, LinearMap.id_apply] at h
-  exact h
-
-variable {X ι} in
-/-- An element of `ω (⨁ fun _ : ι ↦ X)` is determined by its images under the projections. -/
-theorem ext_map_π_apply [Finite ι] {v v' : ω.obj (⨁ fun _ : ι ↦ X)}
-    (h : ∀ j, (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v =
-      (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v') : v = v' := by
-  have := Fintype.ofFinite ι
-  rw [← sum_map_ι_map_π_apply ω X ι v, ← sum_map_ι_map_π_apply ω X ι v']
-  simp only [h]
-
-variable [Fintype ι]
-
-/-- The underlying linear map of `powerAlgHom`. -/
-private noncomputable def powerEnd (f : Module.End R (ω.obj X)) :
-    Module.End R (ω.obj (⨁ fun _ : ι ↦ X)) :=
-  ∑ j, (ω.map (biproduct.ι (fun _ : ι ↦ X) j)).hom ∘ₗ f ∘ₗ
-    (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom
-
-private lemma map_π_powerEnd_apply (f : Module.End R (ω.obj X)) (j : ι)
-    (v : ω.obj (⨁ fun _ : ι ↦ X)) :
-    (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom (powerEnd ω X ι f v) =
-      f ((ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v) := by
-  classical
-  simp [powerEnd, map_π_map_ι_apply]
-
-/-- The diagonal action of an endomorphism `f` of `ω X` on `ω (⨁ fun _ : ι ↦ X)`, namely
-`∑ j, ω(ιⱼ) ∘ f ∘ ω(πⱼ)`. -/
-noncomputable def powerAlgHom :
-    Module.End R (ω.obj X) →ₐ[R] Module.End R (ω.obj (⨁ fun _ : ι ↦ X)) where
-  toFun := powerEnd ω X ι
-  map_one' := LinearMap.ext fun v ↦ ext_map_π_apply ω fun j ↦ by
-    simp [map_π_powerEnd_apply]
-  map_mul' f g := LinearMap.ext fun v ↦ ext_map_π_apply ω fun j ↦ by
-    simp [map_π_powerEnd_apply]
-  map_zero' := LinearMap.ext fun v ↦ ext_map_π_apply ω fun j ↦ by
-    simp [map_π_powerEnd_apply]
-  map_add' f g := LinearMap.ext fun v ↦ ext_map_π_apply ω fun j ↦ by
-    simp [map_π_powerEnd_apply]
-  commutes' c := LinearMap.ext fun v ↦ ext_map_π_apply ω fun j ↦ by
-    simp [map_π_powerEnd_apply, Module.algebraMap_end_apply]
-
-variable {X ι}
-
-/-- The defining formula `∑ j, ω(ιⱼ) ∘ f ∘ ω(πⱼ)` of the diagonal action. -/
-theorem powerAlgHom_apply (f : Module.End R (ω.obj X)) (v : ω.obj (⨁ fun _ : ι ↦ X)) :
-    ω.powerAlgHom X ι f v = ∑ j, (ω.map (biproduct.ι (fun _ : ι ↦ X) j)).hom
-      (f ((ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v)) := by
-  simp [powerAlgHom, powerEnd]
-
-/-- The diagonal action commutes with the projections. -/
-@[simp]
-theorem map_π_powerAlgHom_apply (f : Module.End R (ω.obj X)) (j : ι)
-    (v : ω.obj (⨁ fun _ : ι ↦ X)) :
-    (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom (ω.powerAlgHom X ι f v) =
-      f ((ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v) :=
-  map_π_powerEnd_apply ω X ι f j v
-
-/-- The diagonal action commutes with the inclusions. -/
-@[simp]
-theorem powerAlgHom_map_ι_apply (f : Module.End R (ω.obj X)) (j : ι) (x : ω.obj X) :
-    ω.powerAlgHom X ι f ((ω.map (biproduct.ι (fun _ : ι ↦ X) j)).hom x) =
-      (ω.map (biproduct.ι (fun _ : ι ↦ X) j)).hom (f x) := by
-  classical
-  refine ext_map_π_apply ω fun k ↦ ?_
-  rw [map_π_powerAlgHom_apply, map_π_map_ι_apply, map_π_map_ι_apply]
-  split_ifs <;> simp
-
-/-- The diagonal action of `f` is the unique endomorphism of `ω (⨁ fun _ : ι ↦ X)` intertwining
-every projection with `f`. -/
-theorem eq_powerAlgHom_iff (f : Module.End R (ω.obj X))
-    (φ : Module.End R (ω.obj (⨁ fun _ : ι ↦ X))) :
-    φ = ω.powerAlgHom X ι f ↔ ∀ j v, (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom (φ v) =
-      f ((ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom v) := by
-  refine ⟨?_, fun h ↦ LinearMap.ext fun v ↦ ext_map_π_apply ω fun j ↦ by simp [h]⟩
-  rintro rfl j v
-  exact map_π_powerAlgHom_apply ω f j v
+  {X : C}
 
 variable (X) in
 /-- The endomorphisms `f` of `ω X` whose diagonal action on every finite power
@@ -278,12 +171,12 @@ theorem hullEvalAlgHom_injective [ω.PreservesMonomorphisms] [ω.PreservesEpimor
     (h ▸ (hom_app_biproduct_eq_powerAlgHom ω η' ι).symm)
   have hZeq : (η.asHom.app ⟨Z, hZ⟩).hom = (η'.asHom.app ⟨Z, hZ⟩).hom := by
     ext z
-    apply injective_hom_of_mono (ω.map i)
+    apply (ModuleCat.mono_iff_injective (ω.map i)).1 inferInstance
     rw [ω.map_hom_app_hom_apply η (Y := ⟨Z, hZ⟩) (Y' := ⟨_, subquotientHull_biproduct_const ι⟩),
       ω.map_hom_app_hom_apply η' (Y := ⟨Z, hZ⟩) (Y' := ⟨_, subquotientHull_biproduct_const ι⟩),
       hpow]
   ext v
-  obtain ⟨z, rfl⟩ := surjective_hom_of_epi (ω.map p) v
+  obtain ⟨z, rfl⟩ := (ModuleCat.epi_iff_surjective (ω.map p)).1 inferInstance v
   rw [← ω.map_hom_app_hom_apply η (Y := ⟨Z, hZ⟩) (Y' := Y),
     ← ω.map_hom_app_hom_apply η' (Y := ⟨Z, hZ⟩) (Y' := Y), hZeq]
 
@@ -325,7 +218,7 @@ diagonal action of `f`. -/
 private noncomputable def subEnd {ι : Type} [Fintype ι] {Z : C} (i : Z ⟶ ⨁ fun _ : ι ↦ X)
     [Mono i] [ω.PreservesMonomorphisms] : Module.End R (ω.obj Z) :=
   let e := LinearEquiv.ofInjective (ω.map i).hom
-    (injective_hom_of_mono (ω.map i))
+    ((ModuleCat.mono_iff_injective (ω.map i)).1 inferInstance)
   e.symm.toLinearMap ∘ₗ (ω.powerAlgHom X ι f).restrict (mapsTo_range hf i) ∘ₗ e.toLinearMap
 
 private lemma map_subEnd {ι : Type} [Fintype ι] {Z : C} (i : Z ⟶ ⨁ fun _ : ι ↦ X) [Mono i]
@@ -348,7 +241,7 @@ private lemma map_eq_subEnd [ω.PreservesMonomorphisms] {ι κ : Type} [Fintype 
       ((ω.map m).hom x) = (ω.map (biproduct.π (fun _ : ι ↦ X) j)).hom
         ((ω.map i).hom ((ω.map q).hom x)) := fun j x ↦ by
     simpa using congrArg (fun φ ↦ (ω.map φ).hom x) (hm j)
-  apply injective_hom_of_mono (ω.map i)
+  apply (ModuleCat.mono_iff_injective (ω.map i)).1 inferInstance
   refine ext_map_π_apply ω fun j ↦ ?_
   rw [map_subEnd, map_π_powerAlgHom_apply, ← hcomp, ← hcomp, hw, map_π_powerAlgHom_apply]
 
@@ -396,7 +289,7 @@ private lemma exists_hullAction {Y : C} (hY : subquotientHull X Y) :
       g ((ω.map p).hom z) = (ω.map p).hom (subEnd hf i z) := by
   obtain ⟨ι₀, _, Z₀, i₀, p₀, _, _⟩ := subquotientHull_iff.1 hY
   have := Fintype.ofFinite ι₀
-  have hp₀ := surjective_hom_of_epi (ω.map p₀)
+  have hp₀ := (ModuleCat.epi_iff_surjective (ω.map p₀)).1 inferInstance
   refine ⟨(ω.map p₀).hom.liftOfSurjective hp₀
     ⟨(ω.map p₀).hom ∘ₗ subEnd hf i₀, fun z hz ↦ ?_⟩, fun ι _ Z i _ p z ↦ ?_⟩
   · rw [LinearMap.mem_ker] at hz ⊢
@@ -415,7 +308,7 @@ private noncomputable def hullEndOfMem : End ((subquotientHull X).ι ⋙ ω) := 
       obtain ⟨ι, _, Z, i, p, _, _⟩ := subquotientHull_iff.1 hY
       have := Fintype.ofFinite ι
       ext v
-      obtain ⟨z, rfl⟩ := surjective_hom_of_epi (ω.map p) v
+      obtain ⟨z, rfl⟩ := (ModuleCat.epi_iff_surjective (ω.map p)).1 inferInstance v
       have h₁ := (exists_hullAction hf hY).choose_spec ι Z i p z
       have h₂ := (exists_hullAction hf hY').choose_spec ι Z i (p ≫ g.hom) z
       simp only [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at h₂
@@ -426,7 +319,8 @@ private lemma hullEvalAlgHom_hullEndOfMem : ω.hullEvalAlgHom X (hullEndOfMem hf
   have h := (exists_hullAction hf (subquotientHull_self (X := X))).choose_spec Unit X
     (biproduct.ι (fun _ : Unit ↦ X) ()) (𝟙 X) x
   simp only [Functor.map_id, ModuleCat.hom_id, LinearMap.id_apply] at h
-  refine h.trans (injective_hom_of_mono (ω.map (biproduct.ι (fun _ : Unit ↦ X) ())) ?_)
+  refine h.trans ((ModuleCat.mono_iff_injective (ω.map (biproduct.ι (fun _ : Unit ↦ X) ()))).1
+    inferInstance ?_)
   rw [map_subEnd, powerAlgHom_map_ι_apply]
 
 end Construction

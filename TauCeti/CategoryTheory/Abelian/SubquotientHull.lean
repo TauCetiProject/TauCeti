@@ -121,6 +121,17 @@ open ZeroObject in
 instance [HasZeroObject C] : (subquotientHull X).ContainsZero where
   exists_zero := ⟨0, isZero_zero C, subquotientHull_of_isZero (isZero_zero C)⟩
 
+/-- The hull of `X` is contained in every property of objects containing `X` and closed under
+subobjects, quotients and finite products. In an abelian category the hull is itself such a
+property, so it is the smallest one. -/
+theorem subquotientHull_le (P : ObjectProperty C) [P.IsClosedUnderSubobjects]
+    [P.IsClosedUnderQuotients] [P.IsClosedUnderFiniteProducts] (hX : P X) :
+    subquotientHull X ≤ P := by
+  rintro Y ⟨ι, _, Z, i, p, _, _⟩
+  have hsum : P (⨁ fun _ : ι ↦ X) :=
+    P.prop_of_iso (biproduct.isoProduct _).symm (P.prop_product fun _ ↦ hX)
+  exact P.prop_of_epi p (P.prop_of_mono i hsum)
+
 end Definition
 
 section Abelian
@@ -135,16 +146,6 @@ instance : (subquotientHull X).IsClosedUnderSubobjects where
   prop_of_mono {W Y} f _ := by
     rintro ⟨ι, _, Z, i, p, _, _⟩
     exact subquotientHull.mk (pullback.fst p f ≫ i) (pullback.snd p f)
-
-/-- The hull of `X` is the smallest property of objects containing `X` and closed under
-subobjects, quotients and finite products. -/
-theorem subquotientHull_le (P : ObjectProperty C) [P.IsClosedUnderSubobjects]
-    [P.IsClosedUnderQuotients] [P.IsClosedUnderFiniteProducts] (hX : P X) :
-    subquotientHull X ≤ P := by
-  rintro Y ⟨ι, _, Z, i, p, _, _⟩
-  have hsum : P (⨁ fun _ : ι ↦ X) :=
-    P.prop_of_iso (biproduct.isoProduct _).symm (P.prop_product fun _ ↦ hX)
-  exact P.prop_of_epi p (P.prop_of_mono i hsum)
 
 /-- If `Y` lies in the hull of `X`, then so does every member of the hull of `Y`. -/
 theorem subquotientHull_le_of_mem (h : subquotientHull X Y) :
