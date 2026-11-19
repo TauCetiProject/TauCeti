@@ -574,14 +574,15 @@ end Directional
 
 section ChangeOfVariables
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
 
 namespace NonstationaryPhase
 
 /-- Where `(Df(x))†` is within `c / 2` of `B` and `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖`, the derivative of
 the phase in the direction of `B ζ - ξ` is at least `c / 2 (‖ξ‖ + ‖ζ‖)`. -/
-private theorem le_inner_adjoint_sub {A B : E →L[ℝ] E} {c : ℝ} (hAB : ‖A† - B‖ ≤ c / 2)
-    {ξ ζ : E} (hξζ : c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖) :
+private theorem le_inner_adjoint_sub {A : E →L[ℝ] F} {B : F →L[ℝ] E} {c : ℝ}
+    (hAB : ‖A† - B‖ ≤ c / 2) {ξ : E} {ζ : F} (hξζ : c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖) :
     c / 2 * (‖ξ‖ + ‖ζ‖) ≤ ⟪‖B ζ - ξ‖⁻¹ • (B ζ - ξ), (A†) ζ - ξ⟫ := by
   set d := ‖B ζ - ξ‖ with hd_def
   have hsplit : (A†) ζ - ξ = (B ζ - ξ) + (A† - B) ζ := by
@@ -613,13 +614,13 @@ namespace NonstationaryPhase
 /-- The non-stationary phase estimate for the phases `⟪f x, ζ⟫ - ⟪x, ξ⟫` on the frequencies with
 `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖` and `1 ≤ ‖ξ‖ + ‖ζ‖`, integrating by parts in the direction of
 `B ζ - ξ`. -/
-private theorem exists_norm_integral_mul_fourierChar_inner_sub_le_div {f : E → E}
+private theorem exists_norm_integral_mul_fourierChar_inner_sub_le_div {f : E → F}
     (hf : ContDiff ℝ ∞ f) {φ : E → ℂ} (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ)
-    {B : E →L[ℝ] E} {c : ℝ} (hc : 0 < c)
+    {B : F →L[ℝ] E} {c : ℝ} (hc : 0 < c)
     (hfB : ∀ x ∈ tsupport φ, ‖(fderiv ℝ f x)† - B‖ ≤ c / 2) (N : ℕ) :
-    ∃ C, ∀ ξ ζ : E, c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖ → 1 ≤ ‖ξ‖ + ‖ζ‖ →
+    ∃ C, ∀ (ξ : E) (ζ : F), c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖ → 1 ≤ ‖ξ‖ + ‖ζ‖ →
       ‖∫ x, φ x * 𝐞 (⟪f x, ζ⟫ - ⟪x, ξ⟫)‖ ≤ C / (c / 2 * (‖ξ‖ + ‖ζ‖)) ^ N := by
-  set S := {p : E × E // c * (‖p.1‖ + ‖p.2‖) ≤ ‖B p.2 - p.1‖ ∧ 1 ≤ ‖p.1‖ + ‖p.2‖}
+  set S := {p : E × F // c * (‖p.1‖ + ‖p.2‖) ≤ ‖B p.2 - p.1‖ ∧ 1 ≤ ‖p.1‖ + ‖p.2‖}
   have hsum (p : S) : 0 < ‖p.1.1‖ + ‖p.1.2‖ := one_pos.trans_le p.2.2
   have hf' : Differentiable ℝ f := hf.differentiable (by simp)
   have hM (k : ℕ) : ∃ M, 0 ≤ M ∧ ∀ x ∈ tsupport φ, ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ M := by
@@ -658,10 +659,10 @@ frequencies `(ξ, ζ)` with `c (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖`, where
 away from zero:
 
 `‖∫ φ(x) 𝐞(⟪f x, ζ⟫ - ⟪x, ξ⟫) dx‖ ≤ C_N (1 + ‖ξ‖ + ‖ζ‖)^(-N)`. -/
-theorem exists_norm_integral_mul_fourierChar_inner_sub_le {f : E → E} (hf : ContDiff ℝ ∞ f)
-    {φ : E → ℂ} (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) {B : E →L[ℝ] E} {c : ℝ}
+theorem exists_norm_integral_mul_fourierChar_inner_sub_le {f : E → F} (hf : ContDiff ℝ ∞ f)
+    {φ : E → ℂ} (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) {B : F →L[ℝ] E} {c : ℝ}
     (hc : 0 < c) (hfB : ∀ x ∈ tsupport φ, ‖(fderiv ℝ f x)† - B‖ ≤ c / 2) (N : ℕ) :
-    ∃ C, ∀ ξ ζ : E, c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖ →
+    ∃ C, ∀ (ξ : E) (ζ : F), c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖ →
       ‖∫ x, φ x * 𝐞 (⟪f x, ζ⟫ - ⟪x, ξ⟫)‖ ≤ C / (1 + ‖ξ‖ + ‖ζ‖) ^ N := by
   obtain ⟨C₁, hC₁⟩ := exists_norm_integral_mul_fourierChar_inner_sub_le_div hf hφ hφc hc hfB N
   refine ⟨max (C₁ * (4 / c) ^ N) ((∫ x, ‖φ x‖) * 2 ^ N), fun ξ ζ hξζ ↦ ?_⟩

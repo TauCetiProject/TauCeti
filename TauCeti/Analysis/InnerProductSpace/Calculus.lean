@@ -128,12 +128,13 @@ section Phase
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
+  [InnerProductSpace ℝ F]
 
 /-- The derivatives of order at least one of the phase `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫` are bounded by
 `‖ζ‖` times those of `f`, plus `‖ξ‖`. -/
-theorem norm_iteratedFDeriv_succ_inner_sub_inner_le {f : E → E} {x : E} {k : ℕ}
-    (hf : ContDiffAt ℝ (k + 1 : ℕ) f x) (ξ ζ : E) :
+theorem norm_iteratedFDeriv_succ_inner_sub_inner_le {f : E → F} {x : E} {k : ℕ}
+    (hf : ContDiffAt ℝ (k + 1 : ℕ) f x) (ξ : E) (ζ : F) :
     ‖iteratedFDeriv ℝ (k + 1) (fun y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫) x‖ ≤
       ‖ζ‖ * ‖iteratedFDeriv ℝ (k + 1) f x‖ + ‖ξ‖ := by
   have hζ : (fun y ↦ ⟪f y, ζ⟫) = innerSL ℝ ζ ∘ f := by
@@ -152,8 +153,8 @@ theorem norm_iteratedFDeriv_succ_inner_sub_inner_le {f : E → E} {x : E} {k : �
 
 /-- The derivative of the phase `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫` at `x` in the direction `v` is
 `⟪v, (Df(x))† ζ - ξ⟫`. -/
-theorem fderiv_inner_sub_inner_apply [CompleteSpace E] {f : E → E} {x : E}
-    (hf : DifferentiableAt ℝ f x) (ξ ζ v : E) :
+theorem fderiv_inner_sub_inner_apply [CompleteSpace E] [CompleteSpace F] {f : E → F} {x : E}
+    (hf : DifferentiableAt ℝ f x) (ξ : E) (ζ : F) (v : E) :
     fderiv ℝ (fun y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫) x v = ⟪v, ((fderiv ℝ f x)†) ζ - ξ⟫ := by
   rw [fderiv_fun_sub (hf.inner ℝ (differentiableAt_const ζ))
       (differentiableAt_fun_id.inner ℝ (differentiableAt_const ξ)),
