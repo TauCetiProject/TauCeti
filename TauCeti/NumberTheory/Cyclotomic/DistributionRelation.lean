@@ -15,6 +15,7 @@ import TauCeti.NumberTheory.Cyclotomic.Aut
 import TauCeti.NumberTheory.Cyclotomic.Basic
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.RingTheory.Norm.Basic
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # The distribution relation for `1 - ζ`
