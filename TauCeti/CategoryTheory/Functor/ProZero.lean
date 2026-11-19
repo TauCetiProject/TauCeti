@@ -44,7 +44,8 @@ the error terms that derived limits of towers cannot see.
   kills as pro-objects, with the same reindexing lemmas, closure of the killing scalars under
   addition and multiplication (`CategoryTheory.Functor.IsProTorsionBy.add`,
   `CategoryTheory.Functor.IsProTorsionBy.mul_left`), the case `r = 1`
-  (`CategoryTheory.Functor.isProTorsionBy_one_iff`) and closure under subobjects and quotients.
+  (`CategoryTheory.Functor.isProTorsionBy_one_iff`) and closure under subobjects, quotients and
+  extensions (`CategoryTheory.Functor.IsProTorsionBy.of_shortExact`).
 * `CategoryTheory.Functor.isSerreClass_isProZero`: in an abelian category, pro-zero diagrams form a
   Serre class.
 * `CategoryTheory.Functor.proIsomorphisms`: the pro-isomorphisms of diagrams.
@@ -251,50 +252,6 @@ section Abelian
 
 variable [Abelian C]
 
-/-- In an abelian category, pro-zero diagrams form a Serre class of the functor category: they
-contain zero and are closed under subobjects, quotients and extensions. -/
-instance isSerreClass_isProZero : ObjectProperty.IsSerreClass (IsProZero (J := J) (C := C)) where
-  exists_zero := ⟨0, isZero_zero _, isProZero_zero⟩
-  prop_of_mono {X Y} f _ hY j := by
-    obtain ⟨i, g, hg⟩ := hY j
-    refine ⟨i, g, (cancel_mono (f.app j)).1 ?_⟩
-    rw [f.naturality, hg]
-    simp
-  prop_of_epi {X Y} f _ hX j := by
-    obtain ⟨i, g, hg⟩ := hX j
-    refine ⟨i, g, (cancel_epi (f.app i)).1 ?_⟩
-    rw [← f.naturality, hg]
-    simp
-  prop_X₂_of_shortExact {S} hS h₁ h₃ j := by
-    -- Kill `S.X₁ j` by `a : i ⟶ j` and `S.X₃ i` by `b : k ⟶ i`; then `S.X₂.map b` factors through
-    -- `S.X₁ i` by exactness at `i`, so `S.X₂.map (b ≫ a)` factors through `S.X₁.map a = 0`.
-    obtain ⟨i, a, ha⟩ := h₁ j
-    obtain ⟨k, b, hb⟩ := h₃ i
-    have hSi := hS.map_of_exact ((evaluation J C).obj i)
-    have := hSi.mono_f
-    have hk : S.X₂.map b ≫ S.g.app i = 0 := by rw [S.g.naturality, hb]; simp
-    refine ⟨k, b ≫ a, ?_⟩
-    rw [S.X₂.map_comp, ← hSi.exact.lift_f (S.X₂.map b) hk]
-    dsimp
-    rw [Category.assoc, ← S.f.naturality, ha]
-    simp
-
-/-- The *pro-isomorphisms* of diagrams `J ⥤ C`: the morphisms whose kernel and cokernel are
-pro-zero (`proIsomorphisms_iff`). This is Mathlib's class `ObjectProperty.isoModSerre` of
-isomorphisms modulo the Serre class of pro-zero diagrams, so pro-isomorphisms are stable under
-composition and retracts and satisfy two-out-of-three. -/
-abbrev proIsomorphisms (J : Type u₁) [Category.{v₁} J] (C : Type u₂) [Category.{v₂} C]
-    [Abelian C] : MorphismProperty (J ⥤ C) :=
-  ObjectProperty.isoModSerre (IsProZero (J := J) (C := C))
-
-lemma proIsomorphisms_iff {F G : J ⥤ C} (f : F ⟶ G) :
-    proIsomorphisms J C f ↔ (Limits.kernel f).IsProZero ∧ (Limits.cokernel f).IsProZero :=
-  Iff.rfl
-
-example : (proIsomorphisms J C).IsMultiplicative := inferInstance
-
-example : (proIsomorphisms J C).HasTwoOutOfThreeProperty := inferInstance
-
 section Linear
 
 variable {R : Type w} [Semiring R] [Linear R C] {r : R}
@@ -314,6 +271,62 @@ lemma IsProTorsionBy.of_epi {X Y : J ⥤ C} (f : X ⟶ Y) [Epi f] (hX : X.IsProT
   refine ⟨i, g, (cancel_epi (f.app i)).1 ?_⟩
   rw [Linear.comp_smul, ← f.naturality, ← Linear.smul_comp, hg]
   simp
+
+/-- In a short exact sequence of diagrams, if `b` kills the subdiagram and `a` kills the quotient
+as pro-objects, then `a * b` kills the middle term as a pro-object. -/
+lemma IsProTorsionBy.of_shortExact {T : ShortComplex (J ⥤ C)} (hT : T.ShortExact) {a b : R}
+    (h₁ : T.X₁.IsProTorsionBy b) (h₃ : T.X₃.IsProTorsionBy a) : T.X₂.IsProTorsionBy (a * b) := by
+  intro j
+  -- Let `b` kill `T.X₁.map α` for some `α : i ⟶ j` and `a` kill `T.X₃.map β` for some
+  -- `β : k ⟶ i`. Then `a • T.X₂.map β` factors through `T.X₁ i` by exactness at `i`, and
+  -- `(a * b) • T.X₂.map (β ≫ α)` factors through `b • T.X₁.map α = 0`.
+  obtain ⟨i, α, hα⟩ := h₁ j
+  obtain ⟨k, β, hβ⟩ := h₃ i
+  have hTi := hT.map_of_exact ((evaluation J C).obj i)
+  have := hTi.mono_f
+  have hk : (a • T.X₂.map β) ≫ T.g.app i = 0 := by
+    rw [Linear.smul_comp, T.g.naturality, ← Linear.comp_smul, hβ, comp_zero]
+  refine ⟨k, β ≫ α, ?_⟩
+  rw [T.X₂.map_comp, mul_smul, ← Linear.comp_smul, ← Linear.smul_comp,
+    ← hTi.exact.lift_f _ hk]
+  dsimp
+  rw [Category.assoc, Linear.comp_smul, ← T.f.naturality, ← Linear.smul_comp, hα]
+  simp
+
+end Linear
+
+/-- In an abelian category, pro-zero diagrams form a Serre class of the functor category: they
+contain zero and are closed under subobjects, quotients and extensions. These are the cases
+`r = 1` of the closure properties of pro-`r`-torsion diagrams, for the `ℕ`-linear structure. -/
+instance isSerreClass_isProZero : ObjectProperty.IsSerreClass (IsProZero (J := J) (C := C)) where
+  exists_zero := ⟨0, isZero_zero _, isProZero_zero⟩
+  prop_of_mono f _ hY :=
+    isProTorsionBy_one_iff.mp (((isProTorsionBy_one_iff (R := ℕ)).mpr hY).of_mono f)
+  prop_of_epi f _ hX :=
+    isProTorsionBy_one_iff.mp (((isProTorsionBy_one_iff (R := ℕ)).mpr hX).of_epi f)
+  prop_X₂_of_shortExact hS h₁ h₃ := by
+    simpa using
+      ((isProTorsionBy_one_iff (R := ℕ)).mpr h₁).of_shortExact hS (isProTorsionBy_one_iff.mpr h₃)
+
+/-- The *pro-isomorphisms* of diagrams `J ⥤ C`: the morphisms whose kernel and cokernel are
+pro-zero (`proIsomorphisms_iff`). This is Mathlib's class `ObjectProperty.isoModSerre` of
+isomorphisms modulo the Serre class of pro-zero diagrams, so pro-isomorphisms are stable under
+composition and retracts and satisfy two-out-of-three. -/
+abbrev proIsomorphisms (J : Type u₁) [Category.{v₁} J] (C : Type u₂) [Category.{v₂} C]
+    [Abelian C] : MorphismProperty (J ⥤ C) :=
+  ObjectProperty.isoModSerre (IsProZero (J := J) (C := C))
+
+lemma proIsomorphisms_iff {F G : J ⥤ C} (f : F ⟶ G) :
+    proIsomorphisms J C f ↔ (Limits.kernel f).IsProZero ∧ (Limits.cokernel f).IsProZero :=
+  Iff.rfl
+
+example : (proIsomorphisms J C).IsMultiplicative := inferInstance
+
+example : (proIsomorphisms J C).HasTwoOutOfThreeProperty := inferInstance
+
+section Linear
+
+variable {R : Type w} [Semiring R] [Linear R C]
 
 /-- **Torsion subdiagrams.** In an `R`-linear abelian category, the inclusion of the kernel of
 `r • 𝟙 F` (for a tower of modules, the subtower of `r`-torsion elements) is a pro-isomorphism

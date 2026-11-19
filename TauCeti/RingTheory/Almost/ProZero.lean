@@ -31,7 +31,8 @@ tower of its bounded functions on the rational annuli `{|tⁿ| ≤ |g|}`.
 
 ## Main declarations
 
-* `TauCeti.Almost.BasicSetup.IsAlmostProZero`: almost-pro-zero diagrams.
+* `TauCeti.Almost.BasicSetup.IsAlmostProZero`: almost-pro-zero diagrams, that is, pro-`ε`-torsion
+  ones for every `ε ∈ m` (`TauCeti.Almost.BasicSetup.isAlmostProZero_iff_forall_isProTorsionBy`).
 * `TauCeti.Almost.BasicSetup.isAlmostProZero_iff_forall_proIsomorphisms_kernel_ι`: a diagram is
   almost-pro-zero iff, for every `ε ∈ m`, the inclusion of the kernel of `ε • 𝟙 F` (the subtower
   of `ε`-torsion) is a pro-isomorphism.
@@ -40,7 +41,8 @@ tower of its bounded functions on the rational annuli `{|tⁿ| ≤ |g|}`.
   setup it suffices to test the roots, elementwise on the transitions of a tower.
 * `TauCeti.Almost.BasicSetup.isAlmostProZero_of_isProZero` and
   `TauCeti.Almost.BasicSetup.isAlmostProZero_classical_iff`: pro-zero diagrams are almost-pro-zero,
-  and conversely for the classical setup.
+  and conversely for the classical setup; for the zero setup every diagram is almost-pro-zero
+  (`TauCeti.Almost.BasicSetup.isAlmostProZero_zero`).
 * `TauCeti.Almost.BasicSetup.isAlmostProZero_of_forall_isAlmostZero` and
   `TauCeti.Almost.BasicSetup.isAlmostProZero_const_iff`: diagrams of almost zero modules are
   almost-pro-zero, and a constant diagram is almost-pro-zero iff its value is almost zero.
@@ -83,6 +85,11 @@ def IsAlmostProZero (F : J ⥤ C) : Prop :=
 
 variable {S}
 
+/-- A diagram is almost-pro-zero exactly when it is pro-`ε`-torsion for every `ε ∈ m`. -/
+theorem isAlmostProZero_iff_forall_isProTorsionBy (F : J ⥤ C) :
+    S.IsAlmostProZero F ↔ ∀ ε ∈ S.ideal, F.IsProTorsionBy ε :=
+  Iff.rfl
+
 theorem isAlmostProZero_iff (F : J ⥤ C) :
     S.IsAlmostProZero F ↔ ∀ ε ∈ S.ideal, ∀ j, ∃ (i : J) (f : i ⟶ j), ε • F.map f = 0 :=
   forall₂_congr fun ε _ ↦ F.isProTorsionBy_iff ε
@@ -107,8 +114,16 @@ theorem isAlmostProZero_of_isProZero {F : J ⥤ C} (hF : F.IsProZero) : S.IsAlmo
 @[simp]
 theorem isAlmostProZero_classical_iff {F : J ⥤ C} :
     (classical V).IsAlmostProZero F ↔ F.IsProZero :=
-  ⟨fun hF ↦ Functor.isProTorsionBy_one_iff.mp (hF 1 (by simp [classical_ideal])),
+  ⟨fun hF ↦ Functor.isProTorsionBy_one_iff.mp
+    ((isAlmostProZero_iff_forall_isProTorsionBy F).mp hF 1 (by simp [classical_ideal])),
     isAlmostProZero_of_isProZero⟩
+
+/-- For the zero setup `m = 0`, every diagram is almost-pro-zero. -/
+@[simp]
+theorem isAlmostProZero_zero (F : J ⥤ C) : (zero V).IsAlmostProZero F :=
+  (isAlmostProZero_iff_forall_isProTorsionBy F).mpr fun ε hε ↦ by
+    rw [zero_ideal, Ideal.mem_bot] at hε
+    exact hε ▸ F.isProTorsionBy_zero
 
 section RootSetup
 
@@ -190,29 +205,16 @@ category: they contain zero and are closed under subobjects, quotients and exten
 instance isSerreClass_isAlmostProZero :
     ObjectProperty.IsSerreClass (S.IsAlmostProZero (J := J) (C := C)) where
   exists_zero := ⟨0, isZero_zero _, isAlmostProZero_of_isProZero (Functor.isProZero_zero)⟩
-  prop_of_mono f _ hY ε hε := (hY ε hε).of_mono f
-  prop_of_epi f _ hX ε hε := (hX ε hε).of_epi f
-  prop_X₂_of_shortExact {T} hT h₁ h₃ ε hε := by
+  prop_of_mono f _ hY := (isAlmostProZero_iff_forall_isProTorsionBy _).mpr fun ε hε ↦
+    ((isAlmostProZero_iff_forall_isProTorsionBy _).mp hY ε hε).of_mono f
+  prop_of_epi f _ hX := (isAlmostProZero_iff_forall_isProTorsionBy _).mpr fun ε hε ↦
+    ((isAlmostProZero_iff_forall_isProTorsionBy _).mp hX ε hε).of_epi f
+  prop_X₂_of_shortExact {T} hT h₁ h₃ := by
+    rw [isAlmostProZero_iff_forall_isProTorsionBy] at h₁ h₃ ⊢
     -- Since `m * m = m`, it suffices to treat products `a * b` with `a, b ∈ m`, and sums, which
     -- the cofiltered index category handles.
-    refine S.mul_induction_on (p := T.X₂.IsProTorsionBy) hε
-      (fun a ha b hb ↦ (T.X₂.isProTorsionBy_iff _).mpr fun j ↦ ?_)
-      fun _ _ hx hy ↦ hx.add hy
-    -- Let `b` kill `T.X₁.map α` for some `α : i ⟶ j` and `a` kill `T.X₃.map β` for some
-    -- `β : k ⟶ i`. Then `a • T.X₂.map β` factors through `T.X₁ i` by exactness at `i`, and
-    -- `(a * b) • T.X₂.map (β ≫ α)` factors through `b • T.X₁.map α = 0`.
-    obtain ⟨i, α, hα⟩ := (isAlmostProZero_iff _).mp h₁ b hb j
-    obtain ⟨k, β, hβ⟩ := (isAlmostProZero_iff _).mp h₃ a ha i
-    have hTi := hT.map_of_exact ((evaluation J C).obj i)
-    have := hTi.mono_f
-    have hk : (a • T.X₂.map β) ≫ T.g.app i = 0 := by
-      rw [Linear.smul_comp, T.g.naturality, ← Linear.comp_smul, hβ, comp_zero]
-    refine ⟨k, β ≫ α, ?_⟩
-    rw [T.X₂.map_comp, mul_smul, ← Linear.comp_smul, ← Linear.smul_comp,
-      ← hTi.exact.lift_f _ hk]
-    dsimp
-    rw [Category.assoc, Linear.comp_smul, ← T.f.naturality, ← Linear.smul_comp, hα]
-    simp
+    exact fun ε hε ↦ S.mul_induction_on (p := T.X₂.IsProTorsionBy) hε
+      (fun a ha b hb ↦ (h₁ b hb).of_shortExact hT (h₃ a ha)) fun _ _ hx hy ↦ hx.add hy
 
 /-- The *almost-pro-isomorphisms* of diagrams `J ⥤ C` over a cofiltered index category: the
 morphisms whose kernel and cokernel are almost-pro-zero (`almostProIsomorphisms_iff`). This is

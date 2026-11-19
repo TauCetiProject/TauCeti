@@ -42,7 +42,7 @@ example [Nontrivial V] :
 
 -- For the zero setup every tower is almost-pro-zero.
 example (F : ModuleTower.{0} V) : (zero V).IsAlmostProZero F :=
-  (isAlmostProZero_iff F).mpr fun ε hε j ↦ ⟨j, 𝟙 j, by simp_all [zero_ideal]⟩
+  isAlmostProZero_zero F
 
 -- Almost-pro-isomorphisms of towers of modules satisfy two-out-of-three.
 example (S : BasicSetup V) :
