@@ -290,8 +290,7 @@ omit [DirectSum.Decomposition 𝒜] [DirectSum.Decomposition ℬ] in
 one. -/
 theorem Hom.map_mem_delignePiece (f : Hom X Y) {p a : ℤ} {x : A}
     (hx : x ∈ X.delignePiece p a) : f x ∈ Y.delignePiece p a := by
-  have hf : ∀ y, Y.conj.toEquiv (f.toLinearMap y) = f.toLinearMap (X.conj.toEquiv y) :=
-    fun y ↦ (f.map_conj y).symm
+  have hf : ∀ y, Y.conj.toEquiv (f y) = f (X.conj.toEquiv y) := fun y ↦ (f.map_conj y).symm
   by_cases h : a < 2 * p
   · rw [mem_delignePiece_of_lt h] at hx ⊢
     exact ⟨f.map_mem_iSup hx.1, X.conj.map_mem_twist Y.conj hf hx.2⟩
@@ -333,6 +332,7 @@ theorem deligneMap_id (p : ℤ) : deligneMap (Hom.id X) p = 𝟙 (X.deligneCompl
   exact Subtype.ext ((deligneMap_f_apply (Hom.id X) p a x).trans (Hom.id_apply _))
 
 /-- The map of Deligne complexes induced by a composite is the composite of the induced maps. -/
+@[reassoc, simp]
 theorem deligneMap_comp (g : Hom Y Z) (f : Hom X Y) (p : ℤ) :
     deligneMap (g.comp f) p = deligneMap f p ≫ deligneMap g p := by
   ext a x

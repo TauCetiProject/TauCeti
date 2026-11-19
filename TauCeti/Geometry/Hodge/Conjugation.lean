@@ -376,17 +376,19 @@ theorem twist_zero (ω : Conjugation W) : ω.twist 0 = realPoints ω.toEquiv.toL
   ext x
   simp
 
-/-- A complex-linear map intertwining two conjugations carries each real twist of the first into
-the same real twist of the second. -/
-theorem map_mem_twist {W' : Type v} [AddCommGroup W'] [Module ℂ W'] (ω : Conjugation W)
-    (ω' : Conjugation W') {f : W →ₗ[ℂ] W'} (hf : ∀ x, ω'.toEquiv (f x) = f (ω.toEquiv x))
+/-- An additive map intertwining two conjugations carries each real twist of the first into the
+same real twist of the second. -/
+theorem map_mem_twist {W' : Type v} [AddCommGroup W'] [Module ℂ W'] {F : Type*}
+    [FunLike F W W'] [AddMonoidHomClass F W W'] (ω : Conjugation W) (ω' : Conjugation W') {f : F}
+    (hf : ∀ x, ω'.toEquiv (f x) = f (ω.toEquiv x))
     {p : ℤ} {x : W} (hx : x ∈ ω.twist p) : f x ∈ ω'.twist p := by
   rw [mem_twist] at hx ⊢
   rw [hf, hx, Units.smul_def, map_zsmul, ← Units.smul_def]
 
-/-- A complex-linear map anti-intertwining two conjugations raises real twists by one. -/
-theorem map_mem_twist_add_one {W' : Type v} [AddCommGroup W'] [Module ℂ W'] (ω : Conjugation W)
-    (ω' : Conjugation W') {f : W →ₗ[ℂ] W'} (hf : ∀ x, ω'.toEquiv (f x) = -f (ω.toEquiv x))
+/-- An additive map anti-intertwining two conjugations raises real twists by one. -/
+theorem map_mem_twist_add_one {W' : Type v} [AddCommGroup W'] [Module ℂ W'] {F : Type*}
+    [FunLike F W W'] [AddMonoidHomClass F W W'] (ω : Conjugation W) (ω' : Conjugation W') {f : F}
+    (hf : ∀ x, ω'.toEquiv (f x) = -f (ω.toEquiv x))
     {p : ℤ} {x : W} (hx : x ∈ ω.twist p) : f x ∈ ω'.twist (p + 1) := by
   rw [mem_twist] at hx ⊢
   rw [hf, hx, Int.negOnePow_succ, Units.smul_def, map_zsmul, Units.smul_def, Units.val_neg,

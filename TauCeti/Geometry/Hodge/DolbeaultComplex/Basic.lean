@@ -292,6 +292,25 @@ theorem comp_toLinearMap (g : Hom Y Z) (f : Hom X Y) :
 theorem comp_apply (g : Hom Y Z) (f : Hom X Y) (x : A) : g.comp f x = g (f x) :=
   (rfl)
 
+/-- Left identity law for morphisms of real Dolbeault complexes. -/
+@[simp]
+theorem id_comp (f : Hom X Y) : (Hom.id Y).comp f = f := by
+  ext x
+  rfl
+
+/-- Right identity law for morphisms of real Dolbeault complexes. -/
+@[simp]
+theorem comp_id (f : Hom X Y) : f.comp (Hom.id X) = f := by
+  ext x
+  rfl
+
+/-- Associativity of composition of morphisms of real Dolbeault complexes. -/
+theorem comp_assoc {D : Type*} [AddCommGroup D] [Module ℂ D] {𝒟 : ℤ × ℤ → Submodule ℂ D}
+    {W : DolbeaultComplex 𝒟} (h : Hom Z W) (g : Hom Y Z) (f : Hom X Y) :
+    (h.comp g).comp f = h.comp (g.comp f) := by
+  ext x
+  rfl
+
 end Hom
 
 end Hom
