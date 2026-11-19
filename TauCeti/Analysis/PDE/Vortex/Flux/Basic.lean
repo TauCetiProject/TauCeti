@@ -21,6 +21,7 @@ import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.PDE.Vortex.Divisor
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
 /-!
@@ -297,8 +298,7 @@ private theorem tendsto_norm_pow_smul_log_normSq
     simpa only [norm_iteratedFDeriv_zero] using (isBigO_iteratedFDeriv_log_normSq hp hq hsol hlim
       (by norm_num : (1 / 4 : ℝ) < 1 / 2) 0).norm_left
   have hpow : (fun z : ℂ ↦ ‖z‖ ^ j) =O[cocompact ℂ] fun z ↦ Real.exp (1 / 8 * ‖z‖) :=
-    ((isLittleO_pow_exp_pos_mul_atTop j (by norm_num : (0 : ℝ) < 1 / 8)).comp_tendsto
-      tendsto_norm_cocompact_atTop).isBigO
+    cobounded_eq_cocompact (α := ℂ) ▸ (isLittleO_norm_pow_exp_mul_norm j (by norm_num)).isBigO
   refine ((hpow.smul hlog).congr_right fun z ↦ ?_).trans_tendsto (Real.tendsto_exp_atBot.comp
     (tendsto_neg_atTop_atBot.comp
       (tendsto_norm_cocompact_atTop.const_mul_atTop (by norm_num : (0 : ℝ) < 1 / 8))))

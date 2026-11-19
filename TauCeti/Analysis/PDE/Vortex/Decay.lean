@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -297,8 +297,7 @@ theorem isBigO_norm_pow_mul_one_sub_normSq
       Real.norm_of_nonneg (Real.exp_pos _).le]
     exact hK₀ z
   have hpow : (fun z : ℂ ↦ ‖z‖ ^ j) =O[cocompact ℂ] fun z ↦ Real.exp (1 / 8 * ‖z‖) :=
-    ((isLittleO_pow_exp_pos_mul_atTop j (by norm_num : (0 : ℝ) < 1 / 8)).comp_tendsto
-      tendsto_norm_cocompact_atTop).isBigO
+    cobounded_eq_cocompact (α := ℂ) ▸ (isLittleO_norm_pow_exp_mul_norm j (by norm_num)).isBigO
   refine (hpow.mul hdef).congr_right fun z ↦ ?_
   rw [← Real.exp_add]
   ring_nf

@@ -130,16 +130,18 @@ theorem integral_one_sub_normSq_smul_eval_eq
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • P.eval z = 16 * π * (D.map fun z ↦ P.eval z).sum := by
   have hint := integrable_one_sub_normSq_smul_of_isBigO volume hp hq hsol hlim P.continuous
     (isBigO_cocompact_eval_norm_pow_of_natDegree_le le_rfl)
+  have h16 : (16 * π * (D.map fun z ↦ P.eval z).sum : ℂ) =
+      (16 * π : ℝ) • (D.map fun z ↦ P.eval z).sum := by
+    rw [Complex.real_smul]
+    push_cast
+    ring
   -- Both sides have the same image under every real linear functional `L`.
   have hL (L : ℂ →L[ℝ] ℝ) : L (∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • P.eval z) =
       L (16 * π * (D.map fun z ↦ P.eval z).sum) := by
-    rw [← L.integral_comp_comm hint, show (16 * π * (D.map fun z ↦ P.eval z).sum : ℂ) =
-      (16 * π : ℝ) • (D.map fun z ↦ P.eval z).sum by rw [Complex.real_smul]; push_cast; ring,
-      map_smul, map_multiset_sum, Multiset.map_map, Function.comp_def, smul_eq_mul,
-      ← integral_clm_eval_mul_one_sub_normSq_eq hb₁ hb₂ hp hq hsol hlim hD P L]
-    exact integral_congr_ae (.of_forall fun z ↦ by
-      simp only [map_smul, smul_eq_mul]
-      ring)
+    simp only [← L.integral_comp_comm hint, h16, map_smul, map_multiset_sum, Multiset.map_map,
+      Function.comp_def, smul_eq_mul]
+    rw [← integral_clm_eval_mul_one_sub_normSq_eq hb₁ hb₂ hp hq hsol hlim hD P L]
+    exact integral_congr_ae (.of_forall fun z ↦ by ring)
   exact Complex.ext (hL reCLM) (hL imCLM)
 
 /-- **The holomorphic moments of the curvature of a plane vortex.** Let `x` be a `C²` vortex on the
