@@ -28,6 +28,11 @@ derivatives there, so it applies at boundary and corner points. The degrees `k +
 With this rule the wedge product descends to closed and exact forms, which is what makes de Rham
 cohomology a ring.
 
+For a smooth function `f`, the rule reads `d (f φ) = df ∧ φ + f dφ`
+(`TauCeti.SmoothForm.mextDerivₗ_funSMulₗ`), so the commutator `[d, f] = df ∧ ·` is
+fibrewise and `d` has order one: `[[d, f], g] = 0`
+(`TauCeti.SmoothForm.mextDerivₗ_lie_lie_funSMulₗ_eq_zero`).
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition 14.23.
@@ -278,6 +283,21 @@ theorem mextDerivₗ_funSMulₗ [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ⟯) (�
     ContinuousAlternatingMap.add_apply, cast_apply, coe_wedge, coe_funSMulₗ,
     ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   simp only [mextDerivₗ_apply, coe_ofFunction]
+
+/-- **The exterior derivative has order one**: its double commutator with multiplication by
+smooth functions `f` and `g` vanishes, `[[d, f], g] = 0`. Since `d` changes the degree, the
+commutators are written out as differences of composites. -/
+theorem mextDerivₗ_lie_lie_funSMulₗ_eq_zero [IsManifold I 2 M] (f g : C^∞⟮I, M; ℝ⟯) (k : ℕ) :
+    (mextDerivₗ I k ∘ₗ funSMulₗ (F := ℝ) f - funSMulₗ f ∘ₗ mextDerivₗ I k) ∘ₗ funSMulₗ g -
+      funSMulₗ g ∘ₗ (mextDerivₗ I k ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ mextDerivₗ I k) = 0 := by
+  refine LinearMap.ext fun α ↦ Subtype.ext (funext fun x ↦ ?_)
+  ext v
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, LinearMap.zero_apply, Submodule.coe_zero, Pi.zero_apply,
+    ContinuousAlternatingMap.coe_zero, mextDerivₗ_funSMulₗ_apply, coe_funSMulₗ,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul, RoughForm.wedge_def,
+    RoughForm.wedgeWith_apply', ContinuousAlternatingMap.pairedWedge_smul_right]
+  ring
 
 end SmoothForm
 
