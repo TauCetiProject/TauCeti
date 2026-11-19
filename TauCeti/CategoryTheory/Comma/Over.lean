@@ -28,6 +28,8 @@ induced morphism `A ×_S T ⟶ B ×_S T`, which is the pullback of `g` along the
 
 * `CategoryTheory.Over.isIso_left`: the underlying morphism of an isomorphism over a base is
   an isomorphism.
+* `CategoryTheory.Over.mapMkIso`: an object `Z` over `S` is the image under `Over.map p` of
+  `Over.mk a`, for a lift `a` of its structure morphism through `p : S' ⟶ S`.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
   pullback of it.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
@@ -48,6 +50,13 @@ namespace Over
 instance isIso_left {T : Type u} [Category.{v} T] {X : T} {f g : Over X} (φ : f ⟶ g)
     [IsIso φ] : IsIso φ.left :=
   (Over.forget X).map_isIso φ
+
+/-- An object `Z` over `S` is the image under `Over.map p` of `Over.mk a`, for a lift
+`a : Z.left ⟶ S'` of its structure morphism through `p : S' ⟶ S`. -/
+@[expose, simps! hom_left inv_left]
+def mapMkIso {T : Type u} [Category.{v} T] {S S' : T} {p : S' ⟶ S} {Z : Over S}
+    (a : Z.left ⟶ S') (ha : a ≫ p = Z.hom) : (Over.map p).obj (Over.mk a) ≅ Z :=
+  Over.isoMk (Iso.refl Z.left) (by simp [ha])
 
 /-- Base change along `f : T ⟶ S` of a morphism `g : A ⟶ B` over `S` is the pullback of `g.left`
 along the projection `B ×_S T ⟶ B`: the square formed by `A ×_S T ⟶ B ×_S T`, the two first

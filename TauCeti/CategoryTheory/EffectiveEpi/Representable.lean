@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.EffectiveEpi.Basic
 public import Mathlib.CategoryTheory.Sites.IsSheafFor
+public import TauCeti.CategoryTheory.Comma.Over
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.DescentDatum
 
 /-!
@@ -65,18 +66,12 @@ section Sections
 
 variable (e : ((Over.map p).op ⋙ F).RepresentableBy X)
 
-/-- An object `Z` over `S` is the image under `Over.map p` of `(Z, a)`, for a lift `a` of its
-structure morphism. -/
-private noncomputable def mapMkIso {Z : Over S} (a : Z.left ⟶ S') (ha : a ≫ p = Z.hom) :
-    (Over.map p).obj (Over.mk a) ≅ Z :=
-  Over.isoMk (Iso.refl Z.left) (by simp [ha])
-
 /-- For an object `Z` over `S` and a lift `a : Z ⟶ S'` of its structure morphism through `p`,
 the representation `e` identifies the sections of `F` over `Z` with the morphisms `(Z, a) ⟶ X`
 over `S'`. -/
 noncomputable def sectionsEquiv {Z : Over S} (a : Z.left ⟶ S') (ha : a ≫ p = Z.hom) :
     F.obj (op Z) ≃ (Over.mk a ⟶ X) :=
-  (F.mapIso (mapMkIso a ha).op).toEquiv.trans e.homEquiv.symm
+  (F.mapIso (Over.mapMkIso a ha).op).toEquiv.trans e.homEquiv.symm
 
 variable {e}
 
@@ -86,11 +81,11 @@ theorem sectionsEquiv_map {Z Z' : Over S} (g : Z' ⟶ Z) (a : Z.left ⟶ S')
     (ha : a ≫ p = Z.hom) (ζ : F.obj (op Z)) :
     sectionsEquiv e (g.left ≫ a) (by simp [ha]) (F.map g.op ζ) =
       (Over.homMk g.left : Over.mk (g.left ≫ a) ⟶ Over.mk a) ≫ sectionsEquiv e a ha ζ := by
-  have hsq : (mapMkIso (g.left ≫ a) (by simp [ha])).hom ≫ g =
+  have hsq : (Over.mapMkIso (g.left ≫ a) (by simp [ha])).hom ≫ g =
       (Over.map p).map (Over.homMk g.left : Over.mk (g.left ≫ a) ⟶ Over.mk a) ≫
-        (mapMkIso a ha).hom := by
+        (Over.mapMkIso a ha).hom := by
     ext
-    simp [mapMkIso]
+    simp
   simp only [sectionsEquiv, Equiv.trans_apply, Iso.toEquiv_fun, Functor.mapIso_hom,
     Iso.op_hom, e.comp_homEquiv_symm]
   rw [← Functor.map_comp_apply, ← op_comp, hsq, op_comp, Functor.map_comp_apply]
@@ -216,23 +211,6 @@ section Representable
 
 variable [HasPullbacks C] {e : ((Over.map p).op ⋙ F).RepresentableBy X} {X₀ : Over S}
 
-/-- A morphism of descent data from a canonical descent datum intertwines the actions. -/
-private lemma lift_comp_act_of_hom {Z : C} {D : DescentDatum p X}
-    (f : (DescentDatum.baseChange p X₀).Hom D)
-    (c : Z ⟶ S') (y : Z ⟶ pullback X₀.hom p)
-    (h : c ≫ p = (y ≫ f.hom.left) ≫ X.hom ≫ p) :
-    pullback.lift c (y ≫ f.hom.left) h ≫ D.act =
-      pullback.lift (y ≫ pullback.fst X₀.hom p) c
-        (by rw [Category.assoc, pullback.condition, h]; simp) ≫ f.hom.left := by
-  have : pullback.lift c (y ≫ f.hom.left) h =
-      pullback.lift c y (by simpa using h) ≫
-        pullback.map p (((Over.pullback p).obj X₀).hom ≫ p) p (X.hom ≫ p) (𝟙 S') f.hom.left
-          (𝟙 S) (by simp) (by simp) := by
-    apply pullback.hom_ext <;> simp
-  rw [this, Category.assoc, f.map_act, ← Category.assoc]
-  congr 1
-  apply pullback.hom_ext <;> simp
-
 /-- The section of `F` over `X₀ ×_S S'` corresponding, under `e`, to the isomorphism
 `f : X₀ ×_S S' ⟶ X`. -/
 private noncomputable def baseChangeSection
@@ -264,19 +242,9 @@ private lemma baseChangeSection_compatible
   refine sectionsEquiv_left_injective (e := e) _ hc₁ ?_
   dsimp only
   rw [h₁, ← lift_descentAct e _ _ hc₁ hc₂ _ _ h₂ (by rw [hc₁, ← hc₂]; simp)]
-  refine Eq.trans ?_ (lift_comp_act_of_hom f _ _ _).symm
+  refine Eq.trans ?_ (f.lift_comp_act _ _ _).symm
   congr 1
   apply pullback.hom_ext <;> simp [hfst]
-
-/-- A morphism of descent data to a canonical descent datum, followed by the projection to `X₀`,
-is invariant under the action. -/
-private lemma lift_act_comp_fst {Z : C} {D : DescentDatum p X}
-    (f : D.Hom (DescentDatum.baseChange p X₀))
-    (c : Z ⟶ S') (y : Z ⟶ X.left) (h : c ≫ p = y ≫ X.hom ≫ p) :
-    pullback.lift c y h ≫ D.act ≫ f.hom.left ≫ pullback.fst X₀.hom p =
-      y ≫ f.hom.left ≫ pullback.fst X₀.hom p := by
-  rw [← f.map_act_assoc, DescentDatum.baseChange_act_fst]
-  simp
 
 variable (hF : ∀ T : Over S,
   Presieve.IsSheafFor F (.singleton ((Over.mapPullbackAdj p).counit.app T)))
@@ -351,7 +319,7 @@ private lemma descent_condition (f : e.descentDatum.Hom (DescentDatum.baseChange
       (by simp [φ, h₁, Z', ← pullback.condition, reassoc_of% hg]) ≫
       (descentDatum e).act :=
     n₁.symm.trans (lift_descentAct e _ _ _ _ _ _ n₂ _).symm
-  rw [← Category.assoc, key, Category.assoc, lift_act_comp_fst, Category.assoc]
+  rw [← Category.assoc, key, Category.assoc, f.lift_act_comp_fst, Category.assoc]
 
 variable [∀ T : Over S, EffectiveEpi (pullback.fst T.hom p)]
 

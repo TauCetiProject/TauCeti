@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Sites.Fpqc
+public import TauCeti.AlgebraicGeometry.Sites.Fpqc
 public import TauCeti.AlgebraicGeometry.Descent.Fpqc
 public import TauCeti.CategoryTheory.Adjunction.Representable
 public import TauCeti.CategoryTheory.EffectiveEpi.Representable
@@ -33,8 +33,6 @@ represented by the base change of `G` to `S'`. Hence `P` is represented by a sch
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.generate_singleton_counit_mem_fppfTopology_over`: the base change
-  `T ×_S S' ⟶ T` of an fppf morphism generates a covering sieve of the big fppf site.
 * `AlgebraicGeometry.Scheme.Hom.exists_isAffineHom_nonempty_representableBy`: an fppf sheaf which
   is represented by a scheme affine over `S'` after base change along `p` is represented by a
   scheme affine over `S`.
@@ -46,6 +44,8 @@ represented by the base change of `G` to `S'`. Hence `P` is represented by a sch
 
 * A. Grothendieck, *Revêtements étales et groupe fondamental* (SGA 1), Exposé VIII, §1.
 * J. S. Milne, *Étale cohomology*, Chapter III, Theorem 4.3.
+* B. Poonen, *Rational points on varieties*, Theorem 6.5.10 (i), for the representability of
+  torsors under an fppf group scheme affine over the base.
 -/
 
 public section
@@ -57,18 +57,6 @@ universe w u
 namespace AlgebraicGeometry.Scheme.Hom
 
 variable {S S' : Scheme.{u}} (p : S' ⟶ S)
-
-/-- The base change `T ×_S S' ⟶ T` of a surjective flat morphism `p : S' ⟶ S`, locally of finite
-presentation, generates a covering sieve of `T` on the big fppf site of `S`. -/
-theorem generate_singleton_counit_mem_fppfTopology_over [Surjective p] [Flat p]
-    [LocallyOfFinitePresentation p] (T : Over S) :
-    Sieve.generate (.singleton ((Over.mapPullbackAdj p).counit.app T)) ∈
-      (fppfTopology.over S) T := by
-  rw [← Presieve.ofArrows_pUnit.{0}, GrothendieckTopology.mem_over_iff,
-    Sieve.overEquiv_ofArrows]
-  refine Precoverage.generate_mem_toGrothendieck ?_
-  rw [Presieve.ofArrows_pUnit, Over.mapPullbackAdj_counit_app]
-  exact (pullback.fst T.hom p).singleton_mem_fppfPrecoverage
 
 /-- **Fppf sheaves locally representable by affine schemes are representable.** Let
 `p : S' ⟶ S` be surjective, flat, quasi-compact and locally of finite presentation, and let `F`
