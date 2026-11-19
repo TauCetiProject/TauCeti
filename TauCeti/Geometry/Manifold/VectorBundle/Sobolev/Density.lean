@@ -157,6 +157,7 @@ private def smoothSubmodule : Submodule ℝ (SobolevSection A μ p k) where
 omit [T2Space M] in
 /-- Multiplying the Sobolev section of a `Cᵏ` section `s` by a smooth function `χ` gives the
 Sobolev section of the `Cᵏ` section `x ↦ χ x • s x`. -/
+@[simp]
 theorem contMDiffSMulL_ofContMDiffSection {χ : M → ℝ} (hχ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ χ)
     (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) :
     contMDiffSMulL A μ p k hχ (ofContMDiffSection A μ p k s) =
