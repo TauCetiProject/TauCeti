@@ -6,17 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
+public import Mathlib.AlgebraicGeometry.Sites.Proetale
+public import TauCeti.CategoryTheory.Sites.ComparableTopologies
 
 /-!
-# Fppf covers are jointly surjective
+# Fppf covers are jointly surjective, and fpqc sheaves are étale sheaves
 
 Every point of a scheme lies in the image of some member of any fppf covering sieve, since the
 sieve contains a jointly surjective fppf covering family.
+
+The étale topology is coarser than the fpqc topology, so on the big site `Over S` of a scheme `S`
+the identity functor is continuous from the étale to the fpqc topology, and Mathlib's
+`sheafPushforwardContinuous` regards fpqc sheaves on `Over S` as étale sheaves.
 
 ## Main results
 
 * `AlgebraicGeometry.Scheme.exists_mem_range_of_mem_fppfTopology`: fppf covering sieves of a
   scheme are jointly surjective.
+* the instance `(𝟭 (Over S)).IsContinuous (etaleTopology.over S) (fpqcTopology.over S)`.
 -/
 
 public section
@@ -38,5 +45,12 @@ theorem exists_mem_range_of_mem_fppfTopology {T : Scheme.{u}} {S : Sieve T}
   obtain ⟨_, _, hg, ht⟩ := hsurj t
   cases hg with
   | @of Y g hg => exact ⟨Y, g, hRS Y g hg, ht⟩
+
+/-- Every sheaf on the big fpqc site `Over S` is a sheaf for the étale topology, which is
+coarser. -/
+instance (S : Scheme.{u}) :
+    (𝟭 (Over S)).IsContinuous (etaleTopology.over S) (fpqcTopology.over S) :=
+  TauCeti.CategoryTheory.isContinuous_id_of_le fun _ _ hR ↦
+    (etaleTopology_le_proetaleTopology.trans proetaleTopology_le_fpqcTopology) _ hR
 
 end AlgebraicGeometry.Scheme

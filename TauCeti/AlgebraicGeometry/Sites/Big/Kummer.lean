@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Sites.Proetale
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Kummer
 public import TauCeti.AlgebraicGeometry.Sites.Big.StructureSheaf
-public import TauCeti.CategoryTheory.Sites.ComparableTopologies
-public import TauCeti.CategoryTheory.Sites.Continuous
+public import TauCeti.AlgebraicGeometry.Sites.Fpqc
 
 /-!
 # The Kummer sequence on the big étale site
@@ -19,9 +17,9 @@ sequence `0 → μ_n → 𝔾_m → 𝔾_m → 0`, whose second map is the `n`-t
 étale site `Over S` (Stacks, Lemma 59.28.1 (03PL)): `μ_n` is the kernel of the `n`-th power map,
 and the `n`-th power map is an epimorphism of étale sheaves.
 
-The kernel part holds on every site coarser than the fpqc site: `μ_n` is the kernel of the
-`n`-th power map of fpqc sheaves (`AlgebraicGeometry.Scheme.isLimitMuKernelFork`), and regarding an
-fpqc sheaf as a sheaf for a coarser topology preserves finite limits. The surjectivity is étale
+The kernel part holds on every site coarser than the fpqc site
+(`AlgebraicGeometry.Scheme.isLimitMuKernelForkMap`, in
+`TauCeti.AlgebraicGeometry.Sites.Big.StructureSheaf`). The surjectivity is étale
 local: a unit `s` of `Γ(T, 𝒪_T)` acquires an `n`-th root on the Kummer cover
 `Spec R[x]/(x ^ n - s) ⟶ Spec R` of each affine open `Spec R` of `T`
 (`TauCeti.FiniteEtaleScheme.kummerCover`), which is a finite étale surjection because `n` is
@@ -39,8 +37,6 @@ coarser than the fpqc topology, such as the étale topology itself.
 * `AlgebraicGeometry.Scheme.epi_sheafPushforwardContinuous_map_powHom`: for `n` invertible on `S`,
   the `n`-th power map of `𝔾_m`, regarded as a map of sheaves for such a topology coarser than
   the fpqc topology, for instance the étale topology, is an epimorphism.
-* `AlgebraicGeometry.Scheme.isLimitMuKernelForkMap`: on every such site, `μ_n` is the kernel of the
-  `n`-th power map of `𝔾_m`.
 
 ## References
 
@@ -110,12 +106,6 @@ theorem isLocallySurjective_powHom {J : GrothendieckTopology Scheme.{u}}
     rw [Sieve.overEquiv_iff]
     exact imageSieve_powHom_arrows S _ s v hv
 
-/-- Every sheaf on the big fpqc site `Over S` is a sheaf for the étale topology, which is
-coarser. -/
-instance : (𝟭 (Over S)).IsContinuous (etaleTopology.over S) (fpqcTopology.over S) :=
-  TauCeti.CategoryTheory.isContinuous_id_of_le fun _ _ hR ↦
-    (etaleTopology_le_proetaleTopology.trans proetaleTopology_le_fpqcTopology) _ hR
-
 /-- **Surjectivity in the Kummer sequence.** For `n` invertible on `S` and a topology `J` on
 schemes between the étale and the fpqc topology, such as the étale topology itself, the `n`-th
 power map `𝔾_m ⟶ 𝔾_m`, regarded as a map of sheaves on the site `Over S` for `J`, is an
@@ -130,16 +120,5 @@ theorem epi_sheafPushforwardContinuous_map_powHom {J : GrothendieckTopology Sche
       (J.over S) (fpqcTopology.over S)).map (powHom S n)) :=
     isLocallySurjective_powHom S hJ hn
   inferInstance
-
-/-- **`μ_n` is the kernel in the Kummer sequence.** For every topology `J` on schemes coarser
-than the fpqc topology, such as the étale topology, the sheaf `μ_n` on the site `Over S` for `J`
-is the kernel of the `n`-th power map `𝔾_m ⟶ 𝔾_m`. -/
-@[stacks 03PL]
-noncomputable def isLimitMuKernelForkMap (J : GrothendieckTopology Scheme.{u})
-    [(𝟭 (Over S)).IsContinuous (J.over S) (fpqcTopology.over S)] (n : ℕ) :
-    IsLimit ((KernelFork.ofι (muToGm S n) (muToGm_comp_powHom S n)).map
-      ((𝟭 (Over S)).sheafPushforwardContinuous AddCommGrpCat.{u} (J.over S)
-        (fpqcTopology.over S))) :=
-  KernelFork.mapIsLimit _ (isLimitMuKernelFork S n) _
 
 end AlgebraicGeometry.Scheme
