@@ -48,6 +48,10 @@ variables; no action-angle chart on the phase space is constructed here.
 * `TauCeti.effectivePotential_isotropicOscillator_sub_min`,
   `TauCeti.effectivePotential_isotropicOscillator_min_le`: the minimum `ν |ℓ|` of the effective
   potential.
+* `TauCeti.isotropicOscillatorPeriapsisRadius_nonneg`,
+  `TauCeti.isotropicOscillatorApoapsisRadius_nonneg`,
+  `TauCeti.isotropicOscillatorPeriapsisRadius_zero`: the turning radii are nonnegative, and for
+  `ℓ = 0` the periapsis is the collision radius `0`.
 * `TauCeti.isotropicOscillatorPeriapsisRadius_pos`,
   `TauCeti.isotropicOscillatorPeriapsisRadius_le_apoapsisRadius`,
   `TauCeti.isotropicOscillatorPeriapsisRadius_lt_apoapsisRadius`: the turning radii are
@@ -161,6 +165,23 @@ private theorem isotropicOscillator_discriminant_circular (ν ℓ : ℝ) :
     (ν * |ℓ|) ^ 2 - ν ^ 2 * ℓ ^ 2 = 0 := by
   rw [isotropicOscillator_discriminant_eq, sub_self]
 
+/-- The periapsis radius is nonnegative. -/
+theorem isotropicOscillatorPeriapsisRadius_nonneg (m ν ℓ E : ℝ) :
+    0 ≤ isotropicOscillatorPeriapsisRadius m ν ℓ E :=
+  sqrt_nonneg _
+
+/-- The apoapsis radius is nonnegative. -/
+theorem isotropicOscillatorApoapsisRadius_nonneg (m ν ℓ E : ℝ) :
+    0 ≤ isotropicOscillatorApoapsisRadius m ν ℓ E :=
+  sqrt_nonneg _
+
+/-- For zero angular momentum and nonnegative energy the periapsis radius is the collision
+radius `0`. -/
+theorem isotropicOscillatorPeriapsisRadius_zero (m ν : ℝ) (hE : 0 ≤ E) :
+    isotropicOscillatorPeriapsisRadius m ν 0 E = 0 := by
+  rw [isotropicOscillatorPeriapsisRadius_def, zero_pow two_ne_zero, mul_zero, sub_zero,
+    sqrt_sq hE, sub_self, zero_div, sqrt_zero]
+
 /-- For nonzero angular momentum the periapsis radius is positive: the orbit avoids collision. -/
 theorem isotropicOscillatorPeriapsisRadius_pos (hm : 0 < m) (hν : 0 < ν) (hℓ : ℓ ≠ 0)
     (hmin : ν * |ℓ| ≤ E) : 0 < isotropicOscillatorPeriapsisRadius m ν ℓ E := by
@@ -237,15 +258,16 @@ private theorem effectivePotential_isotropicOscillator_sub_eq_mul (hm : 0 < m) (
     isotropicOscillator_radialPolynomial_eq hm hν hmin, mul_div_right_comm]
 
 /-- The only positive turning points of the isotropic oscillator are its periapsis and
-apoapsis. For `ℓ = 0` the periapsis radius is the collision radius `0`, so the apoapsis is
-then the only positive turning point. -/
+apoapsis. For `ℓ = 0` the periapsis radius is the collision radius `0`
+(`isotropicOscillatorPeriapsisRadius_zero`), so the apoapsis is then the only positive turning
+point. -/
 theorem effectivePotential_isotropicOscillator_eq_iff (hm : 0 < m) (hν : 0 < ν)
     (hmin : ν * |ℓ| ≤ E) (hr : 0 < r) :
     effectivePotential m ℓ (fun r ↦ m * ν ^ 2 * r ^ 2 / 2) r = E ↔
       r = isotropicOscillatorPeriapsisRadius m ν ℓ E ∨
         r = isotropicOscillatorApoapsisRadius m ν ℓ E := by
-  have h₁ : 0 ≤ isotropicOscillatorPeriapsisRadius m ν ℓ E := sqrt_nonneg _
-  have h₂ : 0 ≤ isotropicOscillatorApoapsisRadius m ν ℓ E := sqrt_nonneg _
+  have h₁ := isotropicOscillatorPeriapsisRadius_nonneg m ν ℓ E
+  have h₂ := isotropicOscillatorApoapsisRadius_nonneg m ν ℓ E
   have hc : 0 < (m * ν) ^ 2 / (2 * m * r ^ 2) := by positivity
   -- Cancelling the positive factor, the turning-point equation says that `r²` is a root of the
   -- factored quadratic ...
@@ -265,8 +287,8 @@ theorem effectivePotential_isotropicOscillator_le_iff (hm : 0 < m) (hν : 0 < ν
     effectivePotential m ℓ (fun r ↦ m * ν ^ 2 * r ^ 2 / 2) r ≤ E ↔
       r ∈ Icc (isotropicOscillatorPeriapsisRadius m ν ℓ E)
         (isotropicOscillatorApoapsisRadius m ν ℓ E) := by
-  have h₁ : 0 ≤ isotropicOscillatorPeriapsisRadius m ν ℓ E := sqrt_nonneg _
-  have h₂ : 0 ≤ isotropicOscillatorApoapsisRadius m ν ℓ E := sqrt_nonneg _
+  have h₁ := isotropicOscillatorPeriapsisRadius_nonneg m ν ℓ E
+  have h₂ := isotropicOscillatorApoapsisRadius_nonneg m ν ℓ E
   have hle := isotropicOscillatorPeriapsisRadius_le_apoapsisRadius (ν := ν) (ℓ := ℓ) (E := E)
     hm.le
   have hc : 0 < (m * ν) ^ 2 / (2 * m * r ^ 2) := by positivity
