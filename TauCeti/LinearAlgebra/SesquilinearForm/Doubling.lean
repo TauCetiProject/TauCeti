@@ -56,7 +56,7 @@ split quadratic algebra `F × F` with the coordinate swap, where no field struct
   doubled form is `Matrix.fromBlocks H 0 0 (-H)`.
 * `LinearMap.graph_le_orthogonalBilin_doubled_iff`: the graph of `φ` is isotropic exactly when
   `φ` is an isometry of `B`.
-* `LinearMap.orthogonalBilin_graph_doubled_eq_iff`: the graph of an invertible isometry is its own
+* `LinearMap.orthogonalBilin_graph_doubled_eq_iff`: the graph of a surjective isometry is its own
   orthogonal if and only if `B` is right-separating.
 * `LinearMap.orthogonalBilin_graph_id_doubled_eq_iff`,
   `LinearMap.orthogonalBilin_graph_neg_id_doubled_eq_iff`: the diagonal and the antidiagonal are
@@ -154,22 +154,21 @@ theorem graph_le_orthogonalBilin_doubled_iff (φ : M →ₗ[R] M) :
   · simp only [mem_graph_iff] at hu hv
     simp [hu, hv, h]
 
-/-- The graph of an isometry `φ` of `B` is its own orthogonal for the doubled form exactly when
-`B` is right-separating. -/
-theorem orthogonalBilin_graph_doubled_eq_iff (φ : M ≃ₗ[R] M)
+/-- The graph of a surjective isometry `φ` of `B` is its own orthogonal for the doubled form
+exactly when `B` is right-separating. -/
+theorem orthogonalBilin_graph_doubled_eq_iff (φ : M →ₗ[R] M) (hφs : Function.Surjective φ)
     (hφ : ∀ x y, B (φ x) (φ y) = B x y) :
-    (φ : M →ₗ[R] M).graph.orthogonalBilin B.doubled = (φ : M →ₗ[R] M).graph ↔
-      B.SeparatingRight := by
+    φ.graph.orthogonalBilin B.doubled = φ.graph ↔ B.SeparatingRight := by
   refine ⟨fun h y hy ↦ ?_, fun h ↦ le_antisymm (fun ⟨x, y⟩ hxy ↦ ?_)
     ((B.graph_le_orthogonalBilin_doubled_iff φ).2 hφ)⟩
-  · have hmem : ((y, 0) : M × M) ∈ (φ : M →ₗ[R] M).graph.orthogonalBilin B.doubled := by
+  · have hmem : ((0, y) : M × M) ∈ φ.graph.orthogonalBilin B.doubled := by
       intro u _
       simp [hy]
     rw [h, mem_graph_iff] at hmem
-    simpa using hmem.symm
+    simpa using hmem
   · rw [mem_graph_iff, eq_comm, ← sub_eq_zero]
     refine h _ fun z ↦ ?_
-    obtain ⟨x', rfl⟩ := φ.surjective z
+    obtain ⟨x', rfl⟩ := hφs z
     have := hxy (x', φ x') (by simp)
     rw [doubled_apply, sub_eq_zero, ← hφ x' x] at this
     simpa [sub_eq_zero] using this
@@ -189,14 +188,14 @@ right-separating. -/
 theorem orthogonalBilin_graph_id_doubled_eq_iff :
     (LinearMap.id.graph).orthogonalBilin B.doubled = (LinearMap.id : M →ₗ[R] M).graph ↔
       B.SeparatingRight :=
-  B.orthogonalBilin_graph_doubled_eq_iff (LinearEquiv.refl R M) fun _ _ ↦ rfl
+  B.orthogonalBilin_graph_doubled_eq_iff _ Function.surjective_id fun _ _ ↦ rfl
 
 /-- The antidiagonal is its own orthogonal for the doubled form exactly when `B` is
 right-separating. -/
 theorem orthogonalBilin_graph_neg_id_doubled_eq_iff :
     ((-LinearMap.id).graph).orthogonalBilin B.doubled = (-LinearMap.id : M →ₗ[R] M).graph ↔
       B.SeparatingRight :=
-  B.orthogonalBilin_graph_doubled_eq_iff (LinearEquiv.neg R) fun _ _ ↦ by simp
+  B.orthogonalBilin_graph_doubled_eq_iff _ neg_surjective fun _ _ ↦ by simp
 
 /-! ### Similitudes acting blockwise -/
 
