@@ -29,7 +29,7 @@ preimages. These apply to arbitrary open subgroups, without normality. Separate 
 multiplication makes the target coset spaces discrete; the preimage criterion only needs this
 on the target group of the homomorphism.
 
-## Main instances
+## Main instances and results
 
 * `OpenSubgroup.instSeparatelyContinuousMul`, `OpenSubgroup.instContinuousMul`,
   `OpenSubgroup.instContinuousInv`, `OpenSubgroup.instIsTopologicalGroup`: topological group
@@ -37,6 +37,9 @@ on the target group of the homomorphism.
 * `OpenSubgroup.instLocallyCompactSpace`, `OpenSubgroup.instWeaklyLocallyCompactSpace`,
   `OpenSubgroup.instCompactSpace`: local compactness and compactness inherited from the ambient
   group, with additive versions on `OpenAddSubgroup`.
+* `OpenSubgroup.directedOn_ge_isCompact_and_le`, `OpenSubgroup.isCoinitial_isCompact_and_le`:
+  compact open subgroups below a given open subgroup `U₀` are downward-directed, and when `U₀` is
+  compact they form a coinitial family in `OpenSubgroup G`.
 -/
 
 public section
@@ -93,6 +96,28 @@ addition is compact, since it is closed. -/]
 instance instCompactSpace [SeparatelyContinuousMul G] [CompactSpace G] (U : OpenSubgroup G) :
     CompactSpace U :=
   isCompact_iff_compactSpace.mp U.isClosed.isCompact
+
+/-- For any open subgroup `U₀`, the compact open subgroups contained in `U₀` are downward-directed
+(directed under `≥`). -/
+@[to_additive /-- For any open additive subgroup `U₀`, the compact open additive subgroups
+contained in `U₀` are downward-directed (directed under `≥`). -/]
+theorem directedOn_ge_isCompact_and_le [SeparatelyContinuousMul G] (U₀ : OpenSubgroup G) :
+    DirectedOn (· ≥ ·) {V : OpenSubgroup G | IsCompact (V : Set G) ∧ V ≤ U₀} :=
+  directedOn_of_inf_mem fun V₁ V₂ h₁ _ ↦
+    ⟨h₁.1.of_isClosed_subset (V₁ ⊓ V₂).isClosed inf_le_left, inf_le_of_left_le h₁.2⟩
+
+/-- **Cofinality under reverse inclusion.** The compact open subgroups contained in a given compact
+open subgroup `U₀` are coinitial in `OpenSubgroup G` (that is, cofinal in `(OpenSubgroup G)ᵒᵈ`
+under reverse inclusion `≥`): every open subgroup `W` contains `U₀ ⊓ W`. -/
+@[to_additive /-- **Cofinality under reverse inclusion.** The compact open additive subgroups
+contained in a given compact open additive subgroup `U₀` are coinitial in `OpenAddSubgroup G` (that
+is, cofinal in `(OpenAddSubgroup G)ᵒᵈ` under reverse inclusion `≥`): every open additive subgroup
+`W` contains `U₀ ⊓ W`. -/]
+theorem isCoinitial_isCompact_and_le [SeparatelyContinuousMul G] {U₀ : OpenSubgroup G}
+    (hU₀ : IsCompact (U₀ : Set G)) :
+    IsCoinitial {V : OpenSubgroup G | IsCompact (V : Set G) ∧ V ≤ U₀} :=
+  fun W ↦ ⟨U₀ ⊓ W, ⟨hU₀.of_isClosed_subset (U₀ ⊓ W).isClosed inf_le_left, inf_le_left⟩,
+    inf_le_right⟩
 
 variable {H X : Type*} [Group H] [TopologicalSpace H] [TopologicalSpace X]
 
