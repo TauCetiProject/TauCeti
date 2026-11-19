@@ -484,7 +484,8 @@ theorem convex_yzTriangle [IsOrderedRing 𝕜] : Convex 𝕜 (yzTriangle 𝕜 n)
   ext q
   simp [and_assoc]
 
-private theorem natCast_mem_yzTriangle [IsOrderedRing 𝕜] (p : Vertex n) :
+/-- Every vertex of `Δₙ` lies in the triangle, at its `(y, z)` chart coordinates. -/
+theorem natCast_mem_yzTriangle [IsOrderedRing 𝕜] (p : Vertex n) :
     ((p.y : 𝕜), (p.z : 𝕜)) ∈ yzTriangle 𝕜 n := by
   rw [mem_yzTriangle]
   dsimp only
@@ -660,14 +661,26 @@ theorem interpolation_down (f : Vertex n → 𝕜) {p q r : Vertex n} (hq : q.yz
 
 /-! ### The concavity criterion -/
 
+/-- The unit cell of a point `q` of the triangle: its corner `(⌊q.1⌋, ⌊q.2⌋)` has nonnegative
+coordinates, and moving it `k` steps along `y + z` stays in `Δₙ` whenever `k` is less than
+`fract q.1 + fract q.2 + 1`. -/
+private theorem floor_cell {q : 𝕜 × 𝕜} (hq : q ∈ yzTriangle 𝕜 n) :
+    0 ≤ ⌊q.1⌋ ∧ 0 ≤ ⌊q.2⌋ ∧
+      ∀ k : ℤ, (k : 𝕜) < Int.fract q.1 + Int.fract q.2 + 1 → ⌊q.1⌋ + ⌊q.2⌋ + k ≤ n := by
+  obtain ⟨hq₁, hq₂, hq₃⟩ := hq
+  refine ⟨Int.floor_nonneg.mpr hq₁, Int.floor_nonneg.mpr hq₂, fun k hk => ?_⟩
+  have e₁ := Int.floor_add_fract q.1
+  have e₂ := Int.floor_add_fract q.2
+  have : ((⌊q.1⌋ + ⌊q.2⌋ + k - 1 : ℤ) : 𝕜) < n := by push_cast; linarith
+  have : ⌊q.1⌋ + ⌊q.2⌋ + k - 1 < (n : ℤ) := by exact_mod_cast this
+  omega
+
 /-- An affine function majorizing `g` at the lattice points of `Δₙ` majorizes its interpolation on
 the triangle. -/
 private theorem yzInterp_le_of_forall_le {g : ℤ × ℤ → 𝕜} {c₀ c₁ c₂ : 𝕜}
     (hmaj : ∀ v ∈ yzRegion n, g v ≤ c₀ + c₁ * v.1 + c₂ * v.2) {x : 𝕜 × 𝕜}
     (hx : x ∈ yzTriangle 𝕜 n) : yzInterp g x ≤ c₀ + c₁ * x.1 + c₂ * x.2 := by
-  obtain ⟨hx₁, hx₂, hx₃⟩ := hx
-  have hi : 0 ≤ ⌊x.1⌋ := Int.floor_nonneg.mpr hx₁
-  have hj : 0 ≤ ⌊x.2⌋ := Int.floor_nonneg.mpr hx₂
+  obtain ⟨hi, hj, hcell⟩ := floor_cell hx
   have ha := Int.fract_nonneg x.1
   have hb := Int.fract_nonneg x.2
   have ha₁ := Int.fract_lt_one x.1
@@ -680,16 +693,12 @@ private theorem yzInterp_le_of_forall_le {g : ℤ × ℤ → 𝕜} {c₀ c₁ c�
     rcases hc.lt_or_eq with hc | rfl
     · exact mul_le_mul_of_nonneg_left (hmaj v (hv hc)) hc.le
     · simp
-  have hsum : ((⌊x.1⌋ + ⌊x.2⌋ : ℤ) : 𝕜) + (Int.fract x.1 + Int.fract x.2) ≤ n := by
-    push_cast; linarith
   have h₀ : (⌊x.1⌋, ⌊x.2⌋) ∈ yzRegion n :=
-    ⟨hi, hj, by exact_mod_cast (show ((⌊x.1⌋ + ⌊x.2⌋ : ℤ) : 𝕜) ≤ n by linarith)⟩
+    ⟨hi, hj, by simpa using hcell 0 (by push_cast; linarith)⟩
   unfold yzInterp
   split_ifs with hab
-  · have hlt : 0 < Int.fract x.1 + Int.fract x.2 → ⌊x.1⌋ + ⌊x.2⌋ + 1 ≤ n := fun h => by
-      have : ((⌊x.1⌋ + ⌊x.2⌋ : ℤ) : 𝕜) < n := by linarith
-      have : ⌊x.1⌋ + ⌊x.2⌋ < (n : ℤ) := by exact_mod_cast this
-      omega
+  · have hlt (h : 0 < Int.fract x.1 + Int.fract x.2) : ⌊x.1⌋ + ⌊x.2⌋ + 1 ≤ n :=
+      hcell 1 (by push_cast; linarith)
     calc _ ≤ (1 - Int.fract x.1 - Int.fract x.2) * (c₀ + c₁ * ⌊x.1⌋ + c₂ * ⌊x.2⌋) +
           Int.fract x.1 * (c₀ + c₁ * ((⌊x.1⌋ + 1 : ℤ) : 𝕜) + c₂ * ⌊x.2⌋) +
           Int.fract x.2 * (c₀ + c₁ * ⌊x.1⌋ + c₂ * ((⌊x.2⌋ + 1 : ℤ) : 𝕜)) := by
@@ -700,10 +709,7 @@ private theorem yzInterp_le_of_forall_le {g : ℤ × ℤ → 𝕜} {c₀ c₁ c�
       _ = c₀ + c₁ * x.1 + c₂ * x.2 := by
           push_cast
           linear_combination c₁ * e₁ + c₂ * e₂
-  · have hlt : ⌊x.1⌋ + ⌊x.2⌋ + 2 ≤ n := by
-      have : ((⌊x.1⌋ + ⌊x.2⌋ : ℤ) : 𝕜) + 1 < n := by linarith
-      have : ⌊x.1⌋ + ⌊x.2⌋ + 1 < (n : ℤ) := by exact_mod_cast this
-      omega
+  · have hlt : ⌊x.1⌋ + ⌊x.2⌋ + 2 ≤ n := hcell 2 (by push_cast; linarith)
     calc _ ≤ (Int.fract x.1 + Int.fract x.2 - 1) *
           (c₀ + c₁ * ((⌊x.1⌋ + 1 : ℤ) : 𝕜) + c₂ * ((⌊x.2⌋ + 1 : ℤ) : 𝕜)) +
           (1 - Int.fract x.2) * (c₀ + c₁ * ((⌊x.1⌋ + 1 : ℤ) : 𝕜) + c₂ * ⌊x.2⌋) +
@@ -722,17 +728,12 @@ private theorem YZConcave.exists_affine {g : ℤ × ℤ → 𝕜} (hg : YZConcav
     (hq : q ∈ yzTriangle 𝕜 n) :
     ∃ c₀ c₁ c₂ : 𝕜, yzInterp g q = c₀ + c₁ * q.1 + c₂ * q.2 ∧
       ∀ v ∈ yzRegion n, g v ≤ c₀ + c₁ * v.1 + c₂ * v.2 := by
-  obtain ⟨hq₁, hq₂, hq₃⟩ := hq
-  have hi : 0 ≤ ⌊q.1⌋ := Int.floor_nonneg.mpr hq₁
-  have hj : 0 ≤ ⌊q.2⌋ := Int.floor_nonneg.mpr hq₂
+  obtain ⟨hi, hj, hcell⟩ := floor_cell hq
   have ha := Int.fract_nonneg q.1
   have hb := Int.fract_nonneg q.2
   have e₁ := Int.floor_add_fract q.1
   have e₂ := Int.floor_add_fract q.2
-  have hsum : ((⌊q.1⌋ + ⌊q.2⌋ : ℤ) : 𝕜) + (Int.fract q.1 + Int.fract q.2) ≤ n := by
-    push_cast; linarith
-  have hle : ⌊q.1⌋ + ⌊q.2⌋ ≤ n := by
-    exact_mod_cast (show ((⌊q.1⌋ + ⌊q.2⌋ : ℤ) : 𝕜) ≤ n by linarith)
+  have hle : ⌊q.1⌋ + ⌊q.2⌋ ≤ n := by simpa using hcell 0 (by push_cast; linarith)
   unfold yzInterp
   split_ifs with hab
   · by_cases hn : ⌊q.1⌋ + ⌊q.2⌋ + 1 ≤ n
@@ -746,7 +747,8 @@ private theorem YZConcave.exists_affine {g : ℤ × ℤ → 𝕜} (hg : YZConcav
       linear_combination (g (⌊q.1⌋ + 1, ⌊q.2⌋) - g (⌊q.1⌋, ⌊q.2⌋)) * e₁ +
         (g (⌊q.1⌋, ⌊q.2⌋ + 1) - g (⌊q.1⌋, ⌊q.2⌋)) * e₂
     · -- `q` is a lattice point on the side `y + z = n`
-      have hn' : ((⌊q.1⌋ + ⌊q.2⌋ : ℤ) : 𝕜) ≥ n := by exact_mod_cast (show (n : ℤ) ≤ _ by omega)
+      have hs : ¬0 < Int.fract q.1 + Int.fract q.2 := fun h =>
+        hn (hcell 1 (by push_cast; linarith))
       have hfa : Int.fract q.1 = 0 := by linarith
       have hfb : Int.fract q.2 = 0 := by linarith
       obtain ⟨c₀, c₁, c₂, hc, hmaj⟩ := hg.exists_affine_of_add_eq hi hj (by omega)
@@ -756,10 +758,7 @@ private theorem YZConcave.exists_affine {g : ℤ × ℤ → 𝕜} (hg : YZConcav
       simp only [hfa, hfb, sub_zero, one_mul, zero_mul, add_zero, hc]
       linear_combination c₁ * e₁ + c₂ * e₂
   · -- the downward triangle with top corner `(⌊y⌋ + 1, ⌊z⌋ + 1)`
-    have hlt : ⌊q.1⌋ + ⌊q.2⌋ + 2 ≤ n := by
-      have : ((⌊q.1⌋ + ⌊q.2⌋ : ℤ) : 𝕜) + 1 < n := by linarith
-      have : ⌊q.1⌋ + ⌊q.2⌋ + 1 < (n : ℤ) := by exact_mod_cast this
-      omega
+    have hlt : ⌊q.1⌋ + ⌊q.2⌋ + 2 ≤ n := hcell 2 (by push_cast; linarith)
     refine ⟨_, _, _, ?_, hg.le_affine_of_corner (k := 3) (p := (⌊q.1⌋ + 1, ⌊q.2⌋ + 1))
       (α := g (⌊q.1⌋ + 1, ⌊q.2⌋ + 1) - g (⌊q.1⌋, ⌊q.2⌋ + 1))
       (β := g (⌊q.1⌋ + 1, ⌊q.2⌋ + 1) - g (⌊q.1⌋ + 1, ⌊q.2⌋)) ⟨by omega, by omega, by omega⟩
@@ -797,7 +796,7 @@ private theorem yzInterp_midpoint (g : ℤ × ℤ → 𝕜) {x x' : ℤ × ℤ}
       (by norm_num) ?_ ?_] <;>
     first
     | ext <;> simp [yzStep_def] <;> ring1
-    | simp [yzStep_def]; ring_nf
+    | simp [yzStep_def]; ring1!
 
 /-- **The concavity criterion.** The interpolation of `f : Vertex n → 𝕜` is concave on the
 triangle exactly when `f` satisfies every unit-rhombus inequality. -/
