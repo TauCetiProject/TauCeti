@@ -39,6 +39,8 @@ by uniqueness of limits, and glue to one function by
 * `TauCeti.exists_subseq_memWkpLoc_tendsto_wkp`: local Rellich for real functions.
 * `Module.Basis.exists_subseq_memWkpLoc_tendsto_wkp`: local Rellich for functions valued in a
   finite-dimensional real vector space, through the coordinates in a basis.
+* `TauCeti.memWkpLoc_of_forall_exists_wkp_norm_le`: the boundedness hypothesis places every member
+  of the sequence in the local Sobolev class.
 
 ## References
 
@@ -60,6 +62,19 @@ namespace TauCeti
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens ℂ} {k : ℕ}
 
 /-! ### Local Rellich compactness -/
+
+/-- Under the boundedness hypothesis of `TauCeti.exists_subseq_memWkpLoc_tendsto_wkp`, every member
+of the family lies in `MemWkpLoc p Ω k`: only the existence of a representative on each relatively
+compact open subset is used, not the uniform bound. -/
+theorem memWkpLoc_of_forall_exists_wkp_norm_le {ι : Type*} {u : ι → ℂ → ℝ}
+    (hu : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ R : ℝ, ∀ m, ∃ y : Wkp volume W p k,
+        ‖y‖ ≤ R ∧ Wkp.value k y =ᵐ[volume.restrict W] u m) (m : ι) :
+    MemWkpLoc p Ω k (u m) :=
+  memWkpLoc_of_forall_wkp fun W hWc hWΩ => by
+    obtain ⟨R, hR⟩ := hu W hWc hWΩ
+    obtain ⟨y, -, hy⟩ := hR m
+    exact ⟨y, hy⟩
 
 /-- **Local Rellich compactness for a countable family of sequences.** A countable family of
 sequences of real functions, each bounded in `W^{k+1,p}` on every relatively compact open subset

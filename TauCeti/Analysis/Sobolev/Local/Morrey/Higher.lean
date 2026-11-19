@@ -45,7 +45,8 @@ maps needed by the order-one estimates is `ContinuousMultilinearMap.instModuleFi
 
 ## Main declarations
 
-* `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`: `W^{k+1,p}_loc ⊆ Cᵏ` for `p > 2`.
+* `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`: `W^{k+1,p}_loc ⊆ Cᵏ` for `p > 2`, and
+  `TauCeti.MemWkpLoc.contDiffOn_of_continuousOn`: every continuous representative is `Cᵏ`.
 * `TauCeti.MemWkpLoc.exists_dist_iteratedFDeriv_le`: the local Morrey inequality for the top
   derivative.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact`: Hölder continuity of the
@@ -92,6 +93,14 @@ theorem MemWkpLoc.exists_contDiffOn_ae_eq (hp : 2 < p) (hu : MemWkpLoc p Ω (k +
     obtain ⟨h, hh, hDh⟩ := ih hDk
     obtain ⟨g, hg, hug, -⟩ := (hD.congr_ae_deriv hDh).exists_contDiffOn_succ_ae_eq (n := k) hh
     exact ⟨g, by exact_mod_cast hg, hug⟩
+
+/-- **Continuous representatives are `Cᵏ`.** For `p > 2`, every representative of
+`u ∈ MemWkpLoc p Ω (k + 1)` that is continuous on `Ω` is `Cᵏ` on `Ω`: it agrees on `Ω` with the
+`Cᵏ` representative of `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`. -/
+theorem MemWkpLoc.contDiffOn_of_continuousOn (hp : 2 < p) (hu : MemWkpLoc p Ω (k + 1) u)
+    (hg : ContinuousOn g Ω) (hug : u =ᵐ[volume.restrict Ω] g) : ContDiffOn ℝ k g Ω := by
+  obtain ⟨g', hg', hug'⟩ := hu.exists_contDiffOn_ae_eq hp
+  exact hg'.congr (Measure.eqOn_open_of_ae_eq (hug.symm.trans hug') Ω.isOpen hg hg'.continuousOn)
 
 /-- The `k`-th derivative of a `Cᵏ` representative of `u ∈ MemWkpLoc p Ω (k + 1)` lies in
 `MemWkpLoc p Ω 1`, is continuous on `Ω`, and therefore equals its precise representative there. -/
