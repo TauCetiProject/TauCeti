@@ -56,6 +56,8 @@ distance.
 * `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_of_lipschitzWith`: reparametrizing time by a
   `1`-Lipschitz map, such as a restriction or a time reversal, does not increase the temporal
   seminorm.
+* `TauCeti.ParabolicSpaceTime.timeEHolderNorm_comp_isometry`: postcomposition with an isometry
+  preserves the temporal seminorm.
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_div_two_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm`: the
@@ -245,6 +247,17 @@ theorem timeEHolderNorm_le_of_lipschitzWith {a' b' : ℝ} {γ : ℝ≥0} {v : sl
     _ ≤ timeEHolderNorm γ v * edist t s ^ (γ : ℝ) := by
         gcongr
         simpa using hφ t s
+
+/-- Postcomposition with an isometry preserves the temporal Hölder seminorm. -/
+theorem timeEHolderNorm_comp_isometry {G : Type*} [PseudoEMetricSpace G] {γ : ℝ≥0}
+    {e : F → G} (he : Isometry e) (v : slab (E := E) a b → F) :
+    timeEHolderNorm γ (e ∘ v) = timeEHolderNorm γ v := by
+  refine le_antisymm (timeEHolderNorm_le_iff.2 fun x t s ↦ ?_)
+    (timeEHolderNorm_le_iff.2 fun x t s ↦ ?_)
+  · simpa only [Function.comp_apply, he.edist_eq] using
+      timeEHolderNorm_le_iff.1 (le_refl (timeEHolderNorm γ v)) x t s
+  · simpa only [Function.comp_apply, ← he.edist_eq] using
+      timeEHolderNorm_le_iff.1 (le_refl (timeEHolderNorm γ (e ∘ v))) x t s
 
 variable [MetricSpace E]
 
