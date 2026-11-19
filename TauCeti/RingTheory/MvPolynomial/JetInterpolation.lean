@@ -47,6 +47,7 @@ matrix has full row rank `|ι| (|σ| + 1)`.
   jet of `f`.
 * `TauCeti.firstJetMap_surjective_iff_mulVec_surjective`: the first-jet map is onto iff
   multiplication by its matrix is onto.
+* `TauCeti.wellPoised_iff`: the points are well poised iff the first-jet map is surjective.
 * `TauCeti.wellPoised_iff_rank`: over a field, the points are well poised iff the first-jet
   matrix has rank `|ι| (|σ| + 1)`.
 * `TauCeti.firstJetMap_comp`, `TauCeti.firstJetValueMap_comp`, `TauCeti.firstJetDerivMap_comp`:
@@ -238,6 +239,11 @@ def WellPoised : Prop :=
   Function.Surjective (firstJetMap P d)
 
 variable {P d}
+
+/-- Well-poisedness is surjectivity of the first-jet map. The definition of
+`TauCeti.WellPoised` is not exposed, so importing modules introduce and eliminate it here. -/
+theorem wellPoised_iff : WellPoised P d ↔ Function.Surjective (firstJetMap P d) :=
+  Iff.rfl
 
 /-- Points well poised in some degree are well poised in every higher degree. -/
 theorem WellPoised.mono (hP : WellPoised P d) {e : ℕ} (h : d ≤ e) : WellPoised P e := by
