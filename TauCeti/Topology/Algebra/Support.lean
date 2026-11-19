@@ -29,6 +29,9 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
   in `U`, times a function continuous on `U`, is continuous.
 * `TauCeti.tsupport_snd_smul_fst_subset`: the topological support of `(x, y) ↦ f y • g x` lies in
   `tsupport g ×ˢ tsupport f`.
+* `TauCeti.tsupport_subset_of_forall_notMem_eq_zero`: a function vanishing off a closed set `s`
+  has topological support in `s`, with multiplicative version
+  `TauCeti.mulTSupport_subset_of_forall_notMem_eq_one`.
 * `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
   compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
 * `HasCompactSupport.mono_of_eq_zero`: a function vanishing wherever a compactly supported
@@ -81,6 +84,12 @@ theorem tsupport_snd_smul_fst_subset [TopologicalSpace Y] (f : Y → R) (g : X �
     ((isClosed_tsupport _).prod (isClosed_tsupport _))
 
 end Prod
+
+/-- A function equal to `1` off a closed set `s` has topological multiplicative support in `s`. -/
+@[to_additive /-- A function vanishing off a closed set `s` has topological support in `s`. -/]
+theorem mulTSupport_subset_of_forall_notMem_eq_one {Y M : Type*} [TopologicalSpace Y] [One M]
+    {f : Y → M} {s : Set Y} (hf : ∀ x ∉ s, f x = 1) (hs : IsClosed s) : mulTSupport f ⊆ s :=
+  hs.closure_subset_iff.2 (Function.mulSupport_subset_iff'.2 hf)
 
 end TauCeti
 

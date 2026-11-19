@@ -105,6 +105,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
   `Δ ‖f‖² = 2 ∑ᵢ ‖Df (bᵢ)‖² + 2 ⟪f, Δf⟫` for an orthonormal basis `b`.
 * `TauCeti.tsupport_laplacian_subset`: `tsupport (Δ f) ⊆ tsupport f`.
+* `TauCeti.laplacian_of_notMem_tsupport`: the Laplacian vanishes off the topological support.
 * `HasCompactSupport.laplacian`: the Laplacian of a compactly supported function is compactly
   supported.
 -/
@@ -670,6 +671,11 @@ theorem tsupport_laplacian_subset (f : E → F) : tsupport (Δ f) ⊆ tsupport f
   have h0 : Δ f =ᶠ[𝓝 x] Δ (fun _ : E => (0 : F)) :=
     laplacian_congr_nhds (notMem_tsupport_iff_eventuallyEq.mp hxf)
   exact hx (by simpa using h0.eq_of_nhds)
+
+/-- The Laplacian vanishes off the topological support of the function. -/
+@[simp]
+theorem laplacian_of_notMem_tsupport {f : E → F} {x : E} (h : x ∉ tsupport f) : Δ f x = 0 :=
+  image_eq_zero_of_notMem_tsupport fun h' ↦ h (tsupport_laplacian_subset f h')
 
 /-- The Laplacian of a function with compact support has compact support. -/
 theorem _root_.HasCompactSupport.laplacian {f : E → F} (hf : HasCompactSupport f) :
