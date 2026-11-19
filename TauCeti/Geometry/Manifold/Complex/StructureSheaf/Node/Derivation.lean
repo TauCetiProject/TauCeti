@@ -15,7 +15,8 @@ import TauCeti.RingTheory.Derivation.Quotient
 # The smoothing ideal of a node is intrinsic
 
 Let `Q = 𝒪 ⧸ (xy - s(b))` be the local ring at the node `((b, 0), 0)` of the smoothing family
-`xy = s(b)`, an algebra over the base germs `𝒪_{E, b}` by pullback. This file shows that the
+`xy = s(b)`, an algebra over the base germs `𝒪_{E, b}` by pullback
+(`TauCeti.holomorphicStructureSheaf.nodeLocalAlgebra`). This file shows that the
 ideal `(s)` of the base is determined by this algebra alone. Hence two node families over the
 same base germ whose local rings at the node are isomorphic over the base have smoothing
 parameters that differ by a unit
@@ -59,63 +60,6 @@ local notation "B" => TopCat.Presheaf.stalk (C := CommRingCat)
 local notation "R" => TopCat.Presheaf.stalk (C := CommRingCat)
   (TopCat.Sheaf.presheaf (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ)
     ((E × ℂ) × ℂ))) ((b, (0 : ℂ)), (0 : ℂ))
-
-/-! ### Restriction to the two coordinate planes -/
-
-/-- Restriction of an ambient node-chart germ to the plane `x = 0`, with coordinates `(b, y)`. -/
-private def restrictFstZero : R →+* B :=
-  stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) (fun w ↦ ((w.1, (0 : ℂ)), w.2))
-    (contMDiff_iff_contDiff.mpr (by fun_prop)) (b, 0)
-
-private theorem restrictFstZero_nodeFstCoordinate :
-    restrictFstZero b (nodeFstCoordinate b) = 0 := by
-  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [restrictFstZero, toFilterGerm_stalkPrecomp, toFilterGerm_nodeFstCoordinate,
-    Germ.coe_compTendsto, map_zero]
-  rfl
-
-private theorem restrictFstZero_nodeSndCoordinate :
-    restrictFstZero b (nodeSndCoordinate b) = hyperplaneCoordinateGerm b 0 := by
-  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [restrictFstZero, toFilterGerm_stalkPrecomp, toFilterGerm_nodeSndCoordinate,
-    Germ.coe_compTendsto, OpenPartialHomeomorph.toFilterGerm_holomorphicLinearCoordinateGerm]
-  congr 1
-  funext w
-  simp
-
-private theorem restrictFstZero_nodeBaseExtension (a : A) :
-    restrictFstZero b (nodeBaseExtension b a) =
-      stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0) a := by
-  obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq b a
-  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [restrictFstZero, toFilterGerm_stalkPrecomp, toFilterGerm_nodeBaseExtension b (hf _ le_rfl),
-    toFilterGerm_stalkPrecomp, hf _ le_rfl, Germ.coe_compTendsto, Germ.coe_compTendsto]
-  rfl
-
-private theorem restrictHyperplane_nodeFstCoordinate :
-    restrictHyperplane (b, (0 : ℂ)) 0 (nodeFstCoordinate b) = hyperplaneCoordinateGerm b 0 := by
-  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [toFilterGerm_restrictHyperplane, toFilterGerm_nodeFstCoordinate, Germ.coe_compTendsto,
-    OpenPartialHomeomorph.toFilterGerm_holomorphicLinearCoordinateGerm]
-  congr 1
-  funext w
-  simp
-
-private theorem restrictHyperplane_nodeSndCoordinate :
-    restrictHyperplane (b, (0 : ℂ)) 0 (nodeSndCoordinate b) = 0 := by
-  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [toFilterGerm_restrictHyperplane, toFilterGerm_nodeSndCoordinate, Germ.coe_compTendsto,
-    map_zero]
-  rfl
-
-private theorem restrictHyperplane_nodeBaseExtension (a : A) :
-    restrictHyperplane (b, (0 : ℂ)) 0 (nodeBaseExtension b a) =
-      stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0) a := by
-  obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq b a
-  apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [toFilterGerm_restrictHyperplane, toFilterGerm_nodeBaseExtension b (hf _ le_rfl),
-    toFilterGerm_stalkPrecomp, hf _ le_rfl, Germ.coe_compTendsto, Germ.coe_compTendsto]
-  rfl
 
 /-! ### Derivations take values in `(x, y)` -/
 
@@ -182,23 +126,16 @@ private theorem dvd_nodeBaseRestriction_of_mem {ρ : R →+* B}
 
 end Divisibility
 
-/-- The image of the coordinate critical ideal in the local ring of the node is `(x, y)`. -/
-private theorem map_nodeCriticalIdeal (s : A) :
-    (nodeCriticalIdeal b s).map (Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})) =
-      Ideal.span {Ideal.Quotient.mk _ (nodeFstCoordinate b),
-        Ideal.Quotient.mk _ (nodeSndCoordinate b)} := by
-  rw [nodeCriticalIdeal_eq_span_sup_ker, Ideal.map_sup, Ideal.map_quotient_self, bot_sup_eq,
-    ker_nodeBaseRestriction, Ideal.map_span, Set.image_pair]
+/-- The local ring `𝒪 ⧸ (xy - s(b))` of the node is an algebra over the base germs at `b`, by
+pullback of base germs to the node chart. -/
+instance nodeLocalAlgebra (s : A) : Algebra A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) :=
+  ((Ideal.Quotient.mk _).comp (nodeBaseExtension b)).toAlgebra
 
-/-- The ideal pulled back from the image of the coordinate critical ideal is `(s)`. -/
-private theorem comap_map_nodeCriticalIdeal (s : A) :
-    ((nodeCriticalIdeal b s).map (Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s}))).comap
-      ((Ideal.Quotient.mk _).comp (nodeBaseExtension b)) = Ideal.span {s} := by
-  rw [← Ideal.comap_comap, Ideal.comap_map_of_surjective _ Ideal.Quotient.mk_surjective,
-    ← RingHom.ker_eq_comap_bot, Ideal.mk_ker, sup_eq_left.2,
-    comap_nodeBaseExtension_nodeCriticalIdeal]
-  rw [nodeCriticalIdeal_eq_span_sup_ker]
-  exact le_sup_left
+@[simp]
+theorem algebraMap_nodeLocalAlgebra (s a : A) :
+    algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) a =
+      Ideal.Quotient.mk _ (nodeBaseExtension b a) :=
+  rfl
 
 /-! ### The Euler derivation -/
 
@@ -283,19 +220,14 @@ private theorem nodeEulerQuotientDerivation_mk (s : A) (f : R) :
 
 /-- The local ring of the node has derivations over the base reaching both branch coordinates. -/
 private theorem le_derivationIdeal_nodeEquation (s : A) :
-    letI := ((Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})).comp
-      (nodeBaseExtension b)).toAlgebra
     (nodeCriticalIdeal b s).map (Ideal.Quotient.mk _) ≤
-      derivationIdeal A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) :=
-  letI := ((Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})).comp
-    (nodeBaseExtension b)).toAlgebra
-  by
-  rw [map_nodeCriticalIdeal, Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+      derivationIdeal A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) := by
+  rw [map_mk_nodeCriticalIdeal, Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
   -- The descended Euler derivation sends `x` to `x` and `y` to `-y`, and kills the base.
   have hD (f : R) : Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})
       (nodeEulerDerivation b f) ∈ derivationIdeal A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) := by
     rw [← nodeEulerQuotientDerivation_mk]
-    exact apply_mem_derivationIdeal_of_map_algebraMap _ (fun a : A ↦
+    exact Derivation.apply_mem_derivationIdeal_of_map_algebraMap _ (fun a : A ↦
       (nodeEulerQuotientDerivation_mk b s (nodeBaseExtension b a)).trans (by
         rw [nodeEulerDerivation_nodeBaseExtension, map_zero])) _
   have hx := hD (nodeFstCoordinate b)
@@ -306,13 +238,14 @@ private theorem le_derivationIdeal_nodeEquation (s : A) :
 
 variable [FiniteDimensional ℂ E]
 
-/-- An additive derivation of the local ring `R ⧸ I` of the node that kills the base germs takes
-values in the image of the coordinate critical ideal `(xy - s, x, y)`. -/
-private theorem derivation_apply_mem_map_nodeCriticalIdeal {s : A} {I : Ideal R}
-    (hI : I = Ideal.span {nodeEquation b 0 0 s}) (D : Derivation ℤ (R ⧸ I) (R ⧸ I))
-    (hbase : ∀ a, D (Ideal.Quotient.mk I (nodeBaseExtension b a)) = 0) (q : R ⧸ I) :
-    D q ∈ (nodeCriticalIdeal b s).map (Ideal.Quotient.mk I) := by
-  subst hI
+/-- An additive derivation of the local ring `𝒪 ⧸ (xy - s)` of the node that kills the base germs
+takes values in the image of the coordinate critical ideal `(xy - s, x, y)`. -/
+private theorem derivation_apply_mem_map_nodeCriticalIdeal {s : A}
+    (D : Derivation ℤ (R ⧸ Ideal.span {nodeEquation b 0 0 s})
+      (R ⧸ Ideal.span {nodeEquation b 0 0 s}))
+    (hbase : ∀ a, D (Ideal.Quotient.mk _ (nodeBaseExtension b a)) = 0)
+    (q : R ⧸ Ideal.span {nodeEquation b 0 0 s}) :
+    D q ∈ (nodeCriticalIdeal b s).map (Ideal.Quotient.mk _) := by
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective q
   set J := (nodeCriticalIdeal b s).map (Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s}))
   set π := Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})
@@ -334,8 +267,8 @@ private theorem derivation_apply_mem_map_nodeCriticalIdeal {s : A} {I : Ideal R}
     rw [← Ideal.Quotient.eq_zero_iff_mem, map_add, map_mul, map_mul, hc, hd, ← smul_eq_mul,
       ← smul_eq_mul, ← D.leibniz, hxy, hbase]
   have hDx : D (π x) ∈ J := hc ▸ hdvd c
-    (dvd_nodeBaseRestriction_of_mem (restrictFstZero_nodeBaseExtension b)
-      (restrictFstZero_nodeSndCoordinate b) (restrictFstZero_nodeFstCoordinate b)
+    (dvd_nodeBaseRestriction_of_mem (nodeFstZeroRestriction_nodeBaseExtension b)
+      (nodeFstZeroRestriction_nodeSndCoordinate b) (nodeFstZeroRestriction_nodeFstCoordinate b)
       Ideal.span_pair_comm (mul_comm _ _) (by rwa [add_comm] at hrel))
   have hDy : D (π y) ∈ J := hd ▸ hdvd d
     (dvd_nodeBaseRestriction_of_mem (restrictHyperplane_nodeBaseExtension b)
@@ -359,13 +292,9 @@ private theorem derivation_apply_mem_map_nodeCriticalIdeal {s : A} {I : Ideal R}
 /-- Every derivation of the local ring of the node over the base takes values in the image of the
 coordinate critical ideal `(xy - s, x, y)`. -/
 private theorem derivationIdeal_nodeEquation_le (s : A) :
-    letI := ((Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})).comp
-      (nodeBaseExtension b)).toAlgebra
     derivationIdeal A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) ≤
       (nodeCriticalIdeal b s).map (Ideal.Quotient.mk _) :=
-  letI := ((Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})).comp
-    (nodeBaseExtension b)).toAlgebra
-  derivationIdeal_le_iff.2 fun D ↦ derivation_apply_mem_map_nodeCriticalIdeal b rfl
+  derivationIdeal_le_iff.2 fun D ↦ derivation_apply_mem_map_nodeCriticalIdeal b
     (D.restrictScalars ℤ) fun a ↦ D.map_algebraMap a
 
 /-! ### The intrinsic smoothing ideal -/
@@ -374,8 +303,6 @@ private theorem derivationIdeal_nodeEquation_le (s : A) :
 local ring `𝒪 ⧸ (xy - s(b))` of the node over the base germs is the image of the coordinate critical
 ideal `(xy - s, x, y)`, that is, the ideal `(x, y)` of the node. -/
 theorem derivationIdeal_nodeEquation (s : A) :
-    letI := ((Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})).comp
-      (nodeBaseExtension b)).toAlgebra
     derivationIdeal A (R ⧸ Ideal.span {nodeEquation b 0 0 s}) =
       (nodeCriticalIdeal b s).map (Ideal.Quotient.mk _) :=
   le_antisymm (derivationIdeal_nodeEquation_le b s) (le_derivationIdeal_nodeEquation b s)
@@ -383,11 +310,10 @@ theorem derivationIdeal_nodeEquation (s : A) :
 /-- **The smoothing ideal from derivations.** The ideal of the node ring generated by the values of
 its derivations over the base pulls back to the ideal `(s)` of the base. -/
 theorem comap_derivationIdeal_nodeEquation (s : A) :
-    letI := ((Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})).comp
-      (nodeBaseExtension b)).toAlgebra
     (derivationIdeal A (R ⧸ Ideal.span {nodeEquation b 0 0 s})).comap
       (algebraMap A (R ⧸ Ideal.span {nodeEquation b 0 0 s})) = Ideal.span {s} := by
-  rw [derivationIdeal_nodeEquation, RingHom.algebraMap_toAlgebra, comap_map_nodeCriticalIdeal]
+  rw [derivationIdeal_nodeEquation]
+  exact comap_map_mk_nodeCriticalIdeal b s
 
 /-- **The smoothing parameter is intrinsic up to a unit.** If the local rings at the node of
 `xy = s(b)` and of `xy = t(b)` are isomorphic as algebras over the base germs at `b`, then `s` and
@@ -397,13 +323,9 @@ theorem associated_of_ringEquiv_nodeEquation {s t : A}
     (he : ∀ a, e (Ideal.Quotient.mk _ (nodeBaseExtension b a)) =
       Ideal.Quotient.mk _ (nodeBaseExtension b a)) :
     Associated s t :=
-  letI := ((Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 s})).comp
-    (nodeBaseExtension b)).toAlgebra
-  letI := ((Ideal.Quotient.mk (Ideal.span {nodeEquation b 0 0 t})).comp
-    (nodeBaseExtension b)).toAlgebra
   -- The base ideals cut out by the derivations of the two isomorphic algebras agree.
   Ideal.span_singleton_eq_span_singleton.1 <| (comap_derivationIdeal_nodeEquation b s).symm.trans <|
-    (comap_algebraMap_derivationIdeal ({ e with commutes' := he } : _ ≃ₐ[A] _)).symm.trans
+    (AlgEquiv.comap_algebraMap_derivationIdeal ({ e with commutes' := he } : _ ≃ₐ[A] _)).symm.trans
       (comap_derivationIdeal_nodeEquation b t)
 
 end TauCeti.holomorphicStructureSheaf

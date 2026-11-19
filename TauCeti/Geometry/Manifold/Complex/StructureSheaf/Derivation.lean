@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
 public import Mathlib.RingTheory.Derivation.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import TauCeti.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
@@ -19,9 +19,10 @@ derivation of the holomorphic stalk at `p`
 (`TauCeti.holomorphicStructureSheaf.stalkDerivative`), computed on any function representative
 (`TauCeti.holomorphicStructureSheaf.toFilterGerm_stalkDerivative`).
 
-A derivation that maps an ideal into itself descends to the quotient of the stalk by that
-ideal. This is how derivations of the local rings of analytic hypersurfaces are produced from
-vector fields tangent to them.
+Composed with the quotient map by an ideal, such a derivation descends to the quotient once the
+composite kills that ideal (`Derivation.liftQuotient`, in `TauCeti.RingTheory.Derivation.Quotient`).
+This is how derivations of the local rings of analytic hypersurfaces are produced from vector
+fields tangent to them.
 -/
 
 public noncomputable section
@@ -34,13 +35,6 @@ namespace TauCeti.holomorphicStructureSheaf
 variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
   {p : V} {ξ : V → V}
 
-/-- The derivative of a function analytic at `p` along a vector field analytic at `p` is
-analytic at `p`. -/
-private theorem analyticAt_fderiv_apply {f : V → ℂ} (hf : AnalyticAt ℂ f p)
-    (hξ : AnalyticAt ℂ ξ p) : AnalyticAt ℂ (fun z ↦ fderiv ℂ f z (ξ z)) p :=
-  ((ContinuousLinearMap.apply ℂ ℂ : V →L[ℂ] (V →L[ℂ] ℂ) →L[ℂ] ℂ).analyticAt_bilinear _).comp
-    (hξ.prod hf.fderiv)
-
 /-- A holomorphic germ whose representatives are the derivatives along `ξ` of the
 representatives of a given germ. -/
 private theorem exists_toFilterGerm_eq_fderiv (hξ : AnalyticAt ℂ ξ p)
@@ -49,7 +43,7 @@ private theorem exists_toFilterGerm_eq_fderiv (hξ : AnalyticAt ℂ ξ p)
       toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl s = f →
         toFilterGerm 𝓘(ℂ, V) V p (𝓝 p) le_rfl t = (fun z ↦ fderiv ℂ f z (ξ z) : V → ℂ) := by
   obtain ⟨f₀, hf₀, hs⟩ := exists_analyticAt_toFilterGerm_eq p s
-  obtain ⟨t, ht⟩ := exists_toFilterGerm_eq_of_analyticAt (analyticAt_fderiv_apply hf₀ hξ)
+  obtain ⟨t, ht⟩ := exists_toFilterGerm_eq_of_analyticAt (hf₀.fderiv_apply hξ)
   refine ⟨t, fun f hf ↦ ?_⟩
   have hff₀ : f =ᶠ[𝓝 p] f₀ := Germ.coe_eq.1 (hf.symm.trans (hs _ le_rfl))
   rw [ht _ le_rfl, Germ.coe_eq]
