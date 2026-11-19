@@ -7,9 +7,9 @@ module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Ordered.HomotopyEquiv
+import TauCeti.Data.Fin.Rev
 import TauCeti.Data.Nat.Choose.Basic
 import Mathlib.SetTheory.Cardinal.Order
-import Mathlib.Tactic.Ring
 
 /-!
 # The order-reversing operator on Čech cochains
@@ -84,24 +84,6 @@ namespace TauCeti.CategoryTheory
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {A : Type u'} [Category.{v'} A]
   [Preadditive A] [HasProducts.{w} A] {ι : Type w} (U : ι → C)
 
-/-! ### Signs -/
-
-/-- The sign of the reversal of `n + 1` vertices in two steps. -/
-private lemma neg_one_pow_choose_two_succ (n : ℕ) :
-    (-1 : ℤ) ^ (n + 2).choose 2 = (-1) ^ (n + 1).choose 2 * (-1) ^ (n + 1) := by
-  rw [Nat.choose_succ_succ', Nat.choose_one_right, pow_add, mul_comm]
-
-/-- The sign comparing the coface `j` of the reversal of `n + 2` vertices with the coface `rev j`
-of the reversal of `n + 1` vertices. -/
-private lemma neg_one_pow_val_rev_mul (n : ℕ) (j : Fin (n + 2)) :
-    (-1 : ℤ) ^ (j.rev : ℕ) * (-1) ^ (n + 1).choose 2 =
-      (-1) ^ (n + 2).choose 2 * (-1) ^ (j : ℕ) := by
-  have hj := j.isLt
-  rw [neg_one_pow_choose_two_succ, Fin.val_rev, mul_comm _ ((-1 : ℤ) ^ (n + 1).choose 2),
-    mul_assoc, ← pow_add (-1 : ℤ) (n + 1),
-    show n + 1 + (j : ℕ) = (n + 2 - (j + 1)) + 2 * j by omega, pow_add _ _ (2 * (j : ℕ)), pow_mul,
-    neg_one_sq, one_pow, mul_one]
-
 /-! ### The operator -/
 
 section Reverse
@@ -169,7 +151,7 @@ private lemma reverseX_comm (n : ℕ) :
   have hσ : j.rev.succAbove ∘ Fin.rev = Fin.rev ∘ j.succAbove :=
     funext fun x ↦ (Fin.rev_succAbove j x).symm
   rw [Preadditive.comp_zsmul, reverseX_comp_restrict, Fin.revPerm_apply, hσ, smul_smul, smul_smul,
-    neg_one_pow_val_rev_mul]
+    Fin.neg_one_pow_val_rev_mul]
 
 private lemma restrict_id {n : ℕ} (k : Fin (n + 1) → ι) : restrict U P k id = factor U P k := by
   simp [restrict]
@@ -255,10 +237,11 @@ theorem cechReverse_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (k : Fin (n + 1) → 
 theorem cechReverse_comp_cechReverse : cechReverse A U ≫ cechReverse A U = 𝟙 _ := by
   ext P n : 3
   refine hom_ext U P fun k ↦ ?_
-  rw [NatTrans.comp_app, NatTrans.id_app, HomologicalComplex.comp_f, HomologicalComplex.id_f,
-    Category.assoc, cechReverse_app_f, reverseX_comp_factor, Preadditive.comp_zsmul,
-    reverseX_comp_restrict, Fin.rev_involutive.comp_self, restrict_id, smul_smul, ← mul_pow,
-    neg_one_mul, neg_neg, one_pow, one_smul, Category.id_comp]
+  simp only [NatTrans.comp_app, NatTrans.id_app, HomologicalComplex.comp_f,
+    HomologicalComplex.id_f, Category.assoc, cechReverse_app_f, reverseX_comp_factor,
+    Preadditive.comp_zsmul, reverseX_comp_restrict, Fin.rev_involutive.comp_self, restrict_id,
+    Category.id_comp]
+  simp [smul_smul, ← mul_pow]
 
 /-- The order-reversing operator on the Čech complex of a presheaf is an involution. -/
 @[reassoc (attr := simp)]
@@ -384,6 +367,10 @@ theorem cechComponent_cechReverse {n : ℕ} (k : Fin (n + 1) → ι)
   rw [cechComponent_apply, cechFace_apply, cechComponent_apply]
   refine h.trans ?_
   rw [Functor.comp_map, AlgCat.forget₂_module_map]
+  -- both sides agree by definition: the linear map underlying `ModuleCat.ofHom f.hom.toLinearMap`
+  -- is the algebra map `f.hom` by which `cechFace` restricts, and the factors of the Čech complex
+  -- `(Functor.rightOp _).cech` in degree `n` unfold to `∏ᶜ fun j ↦ U (a j)`, the factors of
+  -- `cechComponent`; the second unfolding is not visible to `rw` at reducible transparency
   rfl
 
 /-- The restrictions of `τ c` along a map `σ` of vertices are the restrictions of `c` along
@@ -395,17 +382,6 @@ theorem cechFace_cechReverse {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m +
       (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f m).hom c) =
       (-1 : ℤ) ^ (m + 1).choose 2 • cechFace k (σ ∘ Fin.rev) c := by
   rw [cechFace_apply, cechComponent_cechReverse, map_zsmul, map_cechFace]
-
-/-- The signs of the order-reversing operators in degrees `p + q`, `p` and `q` multiply to the
-Koszul sign `(-1) ^ (p q)`. -/
-private lemma neg_one_pow_choose_two_mul (p q : ℕ) :
-    (-1 : ℤ) ^ (p + q + 1).choose 2 * ((-1) ^ (q + 1).choose 2 * (-1) ^ (p + 1).choose 2) =
-      (-1) ^ (p * q) := by
-  rw [← pow_add, ← pow_add, add_right_comm, Nat.add_choose_two, Nat.choose_succ_succ' q,
-    Nat.choose_one_right,
-    show (p + 1).choose 2 + q.choose 2 + (p + 1) * q + (q + q.choose 2 + (p + 1).choose 2) =
-      p * q + 2 * ((p + 1).choose 2 + q.choose 2 + q) by ring,
-    pow_add, pow_mul (-1 : ℤ) 2, neg_one_sq, one_pow, mul_one]
 
 /-- **The order-reversing operator reverses cup products.** For a presheaf of commutative
 algebras, `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b` for Čech cochains `a` of degree `p` and `b` of
@@ -429,7 +405,7 @@ theorem cechReverse_cechCup_cechReverse (hF : ∀ X (x y : F.obj X), x * y = y *
     rw [show σ = σ' from funext fun i ↦ Fin.ext (h i)]
   rw [cechComponent_cechReverse, cechFace_cechCup, cechFace_cechReverse, cechFace_cechReverse,
     map_zsmul, cechComponent_cechCup, smul_mul_smul_comm, hF, smul_smul,
-    neg_one_pow_choose_two_mul]
+    Nat.neg_one_pow_add_add_one_choose_two_mul]
   congr 2 <;> exact key _ fun i ↦ by simp [Fin.val_rev]; omega
 
 end Cup
