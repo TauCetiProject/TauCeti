@@ -34,7 +34,7 @@ integral elements of a perfectoid Tate ring, a distinguished element of `ker θ`
 
 * `TauCeti.WittVector.fontaineTheta_cyclotomicMu_eq_zero`,
   `TauCeti.WittVector.fontaineTheta_cyclotomicXiTilde_eq_natCast`: `θ(μ) = 0` and `θ(ξ') = p`.
-* `TauCeti.WittVector.isDistinguished_cyclotomicXi_of_geom_sum_eq_zero`: `ξ` is distinguished.
+* `TauCeti.WittVector.isDistinguished_cyclotomicXi_of_untilt_eq_one`: `ξ` is distinguished.
 * `TauCeti.WittVector.ker_fontaineTheta_eq_span_cyclotomicXi`,
   `TauCeti.WittVector.ker_fontaineTheta_comp_frobeniusEquiv_symm_eq_span_cyclotomicXiTilde`:
   `ker θ = (ξ)` and `ker (θ ∘ φ⁻¹) = (ξ')` in the regular `π`-adic setting.
@@ -80,29 +80,23 @@ theorem fontaineTheta_cyclotomicXiTilde (ε : A♭) :
     fontaineTheta A p (cyclotomicXiTilde p ε) = ∑ j ∈ Finset.range p, ε.untilt ^ j := by
   simp [cyclotomicXiTilde_eq_sum, fontaineTheta_teichmuller]
 
-/-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then Fontaine's map kills
-`μ = [ε] - 1`. -/
-theorem fontaineTheta_cyclotomicMu_eq_zero {ε : A♭}
-    (hε : ∑ j ∈ Finset.range p, ((_root_.frobeniusEquiv A♭ p).symm ε).untilt ^ j = 0) :
+/-- If `ε♯ = 1`, then Fontaine's map kills `μ = [ε] - 1`. -/
+theorem fontaineTheta_cyclotomicMu_eq_zero {ε : A♭} (hε : ε.untilt = 1) :
     fontaineTheta A p (cyclotomicMu p ε) = 0 := by
-  rw [fontaineTheta_cyclotomicMu, PreTilt.untilt_eq_one_of_geom_sum_eq_zero hε, sub_self]
+  rw [fontaineTheta_cyclotomicMu, hε, sub_self]
 
-/-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then Fontaine's map sends
-`ξ' = φ(ξ)` to `p`. -/
-theorem fontaineTheta_cyclotomicXiTilde_eq_natCast {ε : A♭}
-    (hε : ∑ j ∈ Finset.range p, ((_root_.frobeniusEquiv A♭ p).symm ε).untilt ^ j = 0) :
+/-- If `ε♯ = 1`, then Fontaine's map sends `ξ' = φ(ξ)` to `p`. -/
+theorem fontaineTheta_cyclotomicXiTilde_eq_natCast {ε : A♭} (hε : ε.untilt = 1) :
     fontaineTheta A p (cyclotomicXiTilde p ε) = p := by
-  simp [PreTilt.untilt_eq_one_of_geom_sum_eq_zero hε]
+  simp [hε]
 
-/-- **`ξ` is distinguished** (Bhatt–Morrow–Scholze, Example 3.16). If `ζ = (ε ^ (1 / p))♯`
-satisfies `∑_{j < p} ζ ^ j = 0`, then `ε♯ = 1`, so the zeroth coordinate of `ε - 1` in `A ⧸ p`
-vanishes; hence `ε - 1` lies in the Jacobson radical of `A♭` and `ξ` is distinguished. -/
-theorem isDistinguished_cyclotomicXi_of_geom_sum_eq_zero {ε : A♭}
-    (hε : ∑ j ∈ Finset.range p, ((_root_.frobeniusEquiv A♭ p).symm ε).untilt ^ j = 0) :
+/-- **`ξ` is distinguished** (Bhatt–Morrow–Scholze, Example 3.16). If `ε♯ = 1`, then the zeroth
+coordinate of `ε - 1` in `A ⧸ p` vanishes; hence `ε - 1` lies in the Jacobson radical of `A♭` and
+`ξ` is distinguished. -/
+theorem isDistinguished_cyclotomicXi_of_untilt_eq_one {ε : A♭} (hε : ε.untilt = 1) :
     (cyclotomicXi p ε).IsDistinguished := by
   refine isDistinguished_cyclotomicXi p (RingHom.ker_le_jacobson_of_isLocalHom (PreTilt.coeff 0) ?_)
-  rw [RingHom.mem_ker, map_sub, map_one, ← PreTilt.mk_untilt_eq_coeff_zero,
-    PreTilt.untilt_eq_one_of_geom_sum_eq_zero hε, map_one, sub_self]
+  rw [RingHom.mem_ker, map_sub, map_one, ← PreTilt.mk_untilt_eq_coeff_zero, hε, map_one, sub_self]
 
 /-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then `ξ` lies in the kernel of
 Fontaine's map. -/
@@ -134,7 +128,7 @@ theorem ker_fontaineTheta_eq_span_cyclotomicXi {π : A} {hdvd : π ^ p ∣ (p : 
     RingHom.ker (fontaineTheta A p) = span {cyclotomicXi p ε} :=
   (ker_fontaineTheta_eq_span_iff_isDistinguished hreg hbij
     (cyclotomicXi_mem_ker_fontaineTheta hε)).mpr
-    (isDistinguished_cyclotomicXi_of_geom_sum_eq_zero hε)
+    (isDistinguished_cyclotomicXi_of_untilt_eq_one (PreTilt.untilt_eq_one_of_geom_sum_eq_zero hε))
 
 /-- **The cyclotomic generator of the kernel of `θ ∘ φ⁻¹`.** Under the hypotheses of
 `ker_fontaineTheta_eq_span_cyclotomicXi`, the kernel of the Frobenius twist
@@ -170,7 +164,7 @@ theorem ker_fontaineTheta_eq_span_cyclotomicXi (hplus : IsRingOfIntegralElements
       ((_root_.frobeniusEquiv (PreTilt Rplus p) p).symm ε).untilt ^ j = 0) :
     RingHom.ker (fontaineTheta Rplus p) = span {cyclotomicXi p ε} :=
   (hplus.ker_fontaineTheta_eq_span_iff_isDistinguished (cyclotomicXi_mem_ker_fontaineTheta hε)).mpr
-    (isDistinguished_cyclotomicXi_of_geom_sum_eq_zero hε)
+    (isDistinguished_cyclotomicXi_of_untilt_eq_one (PreTilt.untilt_eq_one_of_geom_sum_eq_zero hε))
 
 /-- **The cyclotomic generator of the kernel of `θ ∘ φ⁻¹` for a perfectoid Tate ring.** Under the
 hypotheses of `ker_fontaineTheta_eq_span_cyclotomicXi`, the kernel of the Frobenius twist
