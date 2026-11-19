@@ -5,20 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.Renewal.Blackwell
 public import TauCeti.Probability.Renewal.Excess.Escape
 public import TauCeti.Probability.Renewal.Lattice.InfiniteMean
 
 /-!
-# Excess-life escape for infinite-mean lattice renewals
+# Excess-life escape for infinite-mean renewals
 
-For i.i.d. nonnegative lattice increments of infinite extended mean, the probability
-that the excess life lies in any fixed bounded interval tends to zero. The conclusion
-holds as the observation time tends to infinity through all nonnegative real times,
-not just along lattice points. Genuine zero increments and their arrival clusters are
-retained, and the process can be realized on any measurable probability space.
+For i.i.d. nonnegative increments of infinite extended mean, the probability that the
+excess life lies in any fixed bounded interval tends to zero. No lattice or nonlattice
+assumption is made. The conclusion holds as the observation time tends to infinity
+through all nonnegative real times, not just along lattice points. Genuine zero
+increments and their arrival clusters are retained, and the process can be realized on
+any measurable probability space.
 
 The result combines vanishing fixed-window renewal increments with the bound of the
-excess distribution function by the expected number of arrivals in that window.
+excess distribution function by the expected number of arrivals in that window. The
+increments vanish by the Blackwell renewal theorem in its lattice or nonlattice form,
+since the reciprocal of an infinite mean is zero.
 
 ## References
 
@@ -33,14 +37,13 @@ open scoped NNReal ENNReal Topology
 
 namespace TauCeti.Probability
 
-/-- **Infinite-mean lattice excess escape.** For i.i.d. lattice increments of infinite
-extended mean, the excess eventually exceeds any fixed bound in probability. Observation
+/-- **Infinite-mean excess escape.** For i.i.d. increments of infinite extended mean,
+lattice or not, the excess eventually exceeds any fixed bound in probability. Observation
 times are arbitrary, and zero increments are allowed. -/
-theorem tendsto_measureReal_renewalExcess_le_of_isLattice_of_mean_eq_top
+theorem tendsto_measureReal_renewalExcess_le_of_mean_eq_top
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
     (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hlattice : (P.map (T 0)).IsLattice)
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
@@ -48,8 +51,13 @@ theorem tendsto_measureReal_renewalExcess_le_of_isLattice_of_mean_eq_top
     (f := fun u ↦ (u : ℝ≥0∞)) (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
   have hzero : P {ω | T 0 ω = 0} < 1 := by
     rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)] at hF
+  have hlim : Tendsto (fun t ↦ ((P.map (T 0)).renewalFunction (t + x)).toReal -
+      ((P.map (T 0)).renewalFunction t).toReal) atTop (𝓝 0) := by
+    by_cases hlattice : (P.map (T 0)).IsLattice
+    · exact hlattice.tendsto_renewalFunction_add_sub_of_mean_eq_top hmean x
+    · simpa only [hmean, ENNReal.inv_top, ENNReal.toReal_zero, zero_mul] using
+        (P.map (T 0)).tendsto_renewalFunction_add_sub hlattice x
   exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
-    hT hindep hid hzero x
-    (hlattice.tendsto_renewalFunction_add_sub_of_mean_eq_top hmean x)
+    hT hindep hid hzero x hlim
 
 end TauCeti.Probability
