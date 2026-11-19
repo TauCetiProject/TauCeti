@@ -114,7 +114,7 @@ extension of `F'` with respect to the frame at the cusp:
 * for the chart of a local linearizing coordinate at a point `z'` of `ℍ`, on a precisely
   invariant disc, the transition functions in the two directions are inverse to each other, also
   at the orbit of `z'`, where the elliptic frame may vanish
-  (`automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one`),
+  ([`automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one`](https://taucetiproject.org/docs/TauCeti/Analysis/Complex/Fuchsian/Cusp/Automorphy.html#TauCeti.Subgroup.CuspDatum.automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one)),
   so they vanish nowhere on the overlap.
 
 At a regular cusp, or in even weight, `ε ^ k = 1`, so `r = 0`: the frame is `denom s τ ^ (-k)` and
@@ -168,10 +168,10 @@ formulas of Diamond–Shurman §3.5.
   `TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_automorphyExtension_automorphyFrame`: the
   exponent is an invariant of the cusp orbit, and the transition function between the charts at
   two cusps of the same orbit is constant, also at the cusp.
-* `automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one`:
+* [`automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one`](https://taucetiproject.org/docs/TauCeti/Analysis/Complex/Fuchsian/Cusp/Automorphy.html#TauCeti.Subgroup.CuspDatum.automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one):
   the transition functions between the chart at the cusp and an elliptic chart are inverse to
   each other.
-* `automorphyDescent_automorphyExtension_linearizingCoordinate_automorphyFrame_ne_zero`:
+* [`automorphyDescent_automorphyExtension_linearizingCoordinate_automorphyFrame_ne_zero`](https://taucetiproject.org/docs/TauCeti/Analysis/Complex/Fuchsian/Cusp/Automorphy.html#TauCeti.Subgroup.CuspDatum.automorphyDescent_automorphyExtension_linearizingCoordinate_automorphyFrame_ne_zero):
   the transition from an elliptic chart to the chart at a cusp vanishes nowhere on the overlap.
 
 ## References
