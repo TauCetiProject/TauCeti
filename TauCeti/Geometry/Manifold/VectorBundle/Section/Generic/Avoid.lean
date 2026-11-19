@@ -14,8 +14,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Generic
 Let `s₀ + ∑ i, a i • s i` be the affine finite-parameter perturbation of a smooth section of a
 real vector bundle by a family `s` spanning every fiber (`ContMDiffSection.affineFamily`). For a
 point `x`, the parameters whose section does not vanish at `x` form an open set, and a dense one
-when the model fiber is nontrivial: its complement is the preimage of a point under an affine map
-whose linear part is onto the fiber at `x`. Intersecting countably many of these open dense sets
+when one perturbing section is nonzero there: its complement is a proper affine subspace of the
+parameter space. Intersecting countably many of these open dense sets
 with the residual set of regular parameters with finitely many zeros
 (`ContMDiffSection.mem_residual_setOf_regular_and_finite_zero_affineFamily`) shows that a generic
 smooth section with regular, finitely many zeros is nonzero on a given countable set.
@@ -29,8 +29,9 @@ in the proof of the Riemann–Roch formula for real Cauchy–Riemann operators
 (McDuff–Salamon, Theorem C.1.10). Applied to the zero set of a section of
 another bundle, the finite-set form gives two sections with disjoint zero sets.
 
-The model fiber must be nontrivial: on a bundle of rank zero over a nonempty base every section
-vanishes everywhere.
+For the generic-section existence theorems the model fiber must be nontrivial: on a bundle of
+rank zero over a nonempty base every section vanishes everywhere. The density and residual
+avoidance lemmas instead ask directly for a nonzero perturbation direction at each avoided point.
 
 ## Main results
 
@@ -85,42 +86,38 @@ theorem isOpen_setOf_affineFamily_apply_ne_zero (s₀ : ContMDiffSection I F ∞
   rw [hset]
   exact hc.isOpen_preimage _ isOpen_compl_singleton
 
-/-- If the family spans the fiber at `x` and the model fiber is nontrivial, the parameters whose
-perturbed section does not vanish at `x` are dense: the others form a proper affine subspace. -/
-theorem dense_setOf_affineFamily_apply_ne_zero [Nontrivial F] (s₀ : ContMDiffSection I F ∞ V)
-    (s : ι → ContMDiffSection I F ∞ V) {x : M}
-    (hspan : Submodule.span ℝ (range fun i ↦ s i x) = ⊤) :
+/-- If one perturbing section is nonzero at `x`, the parameters whose perturbed section does not
+vanish at `x` are dense: the others form a proper affine subspace. -/
+theorem dense_setOf_affineFamily_apply_ne_zero (s₀ : ContMDiffSection I F ∞ V)
+    (s : ι → ContMDiffSection I F ∞ V) {x : M} (hdir : ∃ i, s i x ≠ 0) :
     Dense {a | affineFamily s₀ s a x ≠ 0} := by
-  have : Nontrivial (V x) :=
-    ((trivializationAt F V x).continuousLinearEquivAt ℝ x
-      (mem_baseSet_trivializationAt F V x)).toEquiv.nontrivial
-  obtain ⟨w, hw⟩ := exists_ne (0 : V x)
-  obtain ⟨b, hb⟩ := (span_range_eq_top_iff_surjective_fintypeLinearCombination ℝ
-    (fun i ↦ s i x)).mp hspan w
-  rw [Fintype.linearCombination_apply] at hb
+  classical
+  obtain ⟨i, hi⟩ := hdir
+  let b : ι → ℝ := Pi.single i 1
+  have hb : ∑ j, b j • s j x = s i x := by simp [b]
   intro a
   by_cases ha : affineFamily s₀ s a x = 0
   · refine mem_closure_of_tendsto (f := fun t : ℝ ↦ a + t • b) (b := 𝓝[≠] 0) ?_ ?_
     · exact ((continuous_const.add (continuous_id.smul continuous_const)).tendsto' 0 a
         (by simp)).mono_left nhdsWithin_le_nhds
     · filter_upwards [self_mem_nhdsWithin] with t ht
-      have h : affineFamily s₀ s (a + t • b) x = t • w := by
-        rw [← zero_add (t • w), ← ha, ← hb]
+      have h : affineFamily s₀ s (a + t • b) x = t • s i x := by
+        rw [← zero_add (t • s i x), ← ha, ← hb]
         simp only [affineFamily_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, add_smul,
           mul_smul, Finset.sum_add_distrib, Finset.smul_sum, add_assoc]
       rw [h]
-      exact smul_ne_zero ht hw
+      exact smul_ne_zero ht hi
   · exact subset_closure ha
 
-/-- If the family spans the fibers over a countable set and the model fiber is nontrivial, the
-parameters whose perturbed section does not vanish on that set form a residual set. -/
-theorem mem_residual_setOf_forall_mem_affineFamily_ne_zero [Nontrivial F]
+/-- If at least one perturbing section is nonzero at every point of a countable set, the parameters
+whose perturbed section does not vanish on that set form a residual set. -/
+theorem mem_residual_setOf_forall_mem_affineFamily_ne_zero
     (s₀ : ContMDiffSection I F ∞ V) (s : ι → ContMDiffSection I F ∞ V) {S : Set M}
-    (hS : S.Countable) (hspan : ∀ x ∈ S, Submodule.span ℝ (range fun i ↦ s i x) = ⊤) :
+    (hS : S.Countable) (hdir : ∀ x ∈ S, ∃ i, s i x ≠ 0) :
     {a | ∀ x ∈ S, affineFamily s₀ s a x ≠ 0} ∈ residual (ι → ℝ) := by
   refine mem_of_superset ((countable_bInter_mem hS).2 fun x hx ↦ residual_of_dense_open
     (isOpen_setOf_affineFamily_apply_ne_zero s₀ s x)
-    (dense_setOf_affineFamily_apply_ne_zero s₀ s (hspan x hx))) fun a ha ↦ ?_
+    (dense_setOf_affineFamily_apply_ne_zero s₀ s (hdir x hx))) fun a ha ↦ ?_
   simpa using ha
 
 end ContMDiffSection
@@ -149,10 +146,19 @@ theorem exists_contMDiffSection_regular_finite_zero_forall_mem_ne_zero
         {x | s x = 0}.Finite ∧ ∀ x ∈ S, s x ≠ 0 := by
   let : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact X M
   obtain ⟨n, s, hspan⟩ := exists_fin_spanning_contMDiffSection (I := 𝓘(ℝ, X)) (F := F) (V := V)
+  have hdir (x : M) : ∃ i, s i x ≠ 0 := by
+    classical
+    have : Nontrivial (V x) :=
+      ((trivializationAt F V x).continuousLinearEquivAt ℝ x
+        (mem_baseSet_trivializationAt F V x)).toEquiv.nontrivial
+    by_contra! hall
+    have hz : Submodule.span ℝ (range fun i ↦ s i x) = ⊥ :=
+      Submodule.span_eq_bot.mpr (by rintro y ⟨i, rfl⟩; exact hall i)
+    exact top_ne_bot ((hspan x).symm.trans hz)
   obtain ⟨a, ha, hS⟩ := (dense_of_mem_residual
     (inter_mem
       (mem_residual_setOf_regular_and_finite_zero_affineFamily 0 s hspan hdim)
-      (mem_residual_setOf_forall_mem_affineFamily_ne_zero 0 s hS fun x _ ↦ hspan x))).nonempty
+      (mem_residual_setOf_forall_mem_affineFamily_ne_zero 0 s hS fun x _ ↦ hdir x))).nonempty
   exact ⟨affineFamily 0 s a, TauCeti.isRegularSectionParameter_iff.mp ha.1, ha.2, hS⟩
 
 end Real
