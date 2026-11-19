@@ -186,7 +186,7 @@ theorem smoothTopJet_surjective (hx : I.IsInteriorPoint x) (m : ℕ) :
   have hA : ∀ i (v : Fin i.val → E) (σ : Equiv.Perm (Fin i.val)), A i (v ∘ σ) = A i v := by
     intro i
     induction i using Fin.lastCases with
-    | last => simpa [A] using ContinuousMultilinearMap.mem_symmetric.mp L.2
+    | last => simp [A]
     | cast i => simp [A]
   obtain ⟨u, hu, -, -, huA⟩ :=
     exists_contDiff_hasCompactSupport_iteratedFDeriv_eq m A hA (extChartAt I x x) Filter.univ_mem

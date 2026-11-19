@@ -41,6 +41,7 @@ theorem mem_symmetric {f : ContinuousMultilinearMap R (fun _ : ι ↦ M) N} :
   Iff.rfl
 
 /-- A symmetric map takes the same value on a tuple and on any permutation of it. -/
+@[simp]
 theorem symmetric_apply_comp_perm (f : symmetric R M N ι) (v : ι → M) (σ : Equiv.Perm ι) :
     (f : ContinuousMultilinearMap R (fun _ : ι ↦ M) N) (v ∘ σ) =
       (f : ContinuousMultilinearMap R (fun _ : ι ↦ M) N) v :=
