@@ -128,6 +128,7 @@ theorem upperHalfPlanePoissonKernel_pos {z : ℂ} (hz : 0 < z.im) (x : ℝ) :
   positivity
 
 /-- At the pole `i`, `P(i, x) = 1 / (π (1 + x ^ 2))`. -/
+@[simp]
 theorem upperHalfPlanePoissonKernel_I (x : ℝ) :
     upperHalfPlanePoissonKernel I x = (π * (1 + x ^ 2))⁻¹ := by
   rw [upperHalfPlanePoissonKernel_eq, normSq_ofReal_sub]
@@ -191,6 +192,7 @@ theorem poissonMeasure_def :
   rw [poissonMeasure]
 
 /-- The Poisson measure has total mass `π`. -/
+@[simp]
 theorem poissonMeasure_univ : poissonMeasure univ = ENNReal.ofReal π := by
   rw [poissonMeasure_def, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
     ← ofReal_integral_eq_lintegral_ofReal integrable_inv_one_add_sq
@@ -287,6 +289,7 @@ theorem upperHalfPlanePoissonIntegral_nonneg (ν : Measure ℝ) {z : ℂ} (hz : 
   integral_nonneg (upperHalfPlanePoissonKernel_nonneg hz)
 
 /-- The Poisson integral of Lebesgue measure is `1` on the upper half-plane. -/
+@[simp]
 theorem upperHalfPlanePoissonIntegral_volume {z : ℂ} (hz : 0 < z.im) :
     upperHalfPlanePoissonIntegral volume z = 1 :=
   integral_upperHalfPlanePoissonKernel hz
@@ -361,6 +364,7 @@ theorem im_upperHalfPlaneSchwarzKernel (z : ℂ) (x : ℝ) :
   · field_simp
 
 /-- At the pole `i`, the Schwarz kernel is `i / (1 + x ^ 2)`. -/
+@[simp]
 theorem upperHalfPlaneSchwarzKernel_I (x : ℝ) :
     upperHalfPlaneSchwarzKernel I x = (((1 + x ^ 2)⁻¹ : ℝ) : ℂ) * I := by
   have h' : (x : ℂ) - I ≠ 0 := fun h ↦ by simpa using congrArg im h
@@ -431,6 +435,7 @@ theorem upperHalfPlaneSchwarzIntegral_def (ν : Measure ℝ) (z : ℂ) :
   rw [upperHalfPlaneSchwarzIntegral]
 
 /-- At `z = i` the Schwarz integral is real: `S[ν](i) = (1 / π) ∫ dν / (1 + x ^ 2)`. -/
+@[simp]
 theorem upperHalfPlaneSchwarzIntegral_I (ν : Measure ℝ) :
     upperHalfPlaneSchwarzIntegral ν I = ((π⁻¹ * ∫ x, (1 + x ^ 2)⁻¹ ∂ν : ℝ) : ℂ) := by
   simp_rw [upperHalfPlaneSchwarzIntegral_def, upperHalfPlaneSchwarzKernel_I, integral_mul_const,
