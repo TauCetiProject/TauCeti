@@ -16,7 +16,7 @@ import TauCeti.Topology.Algebra.Polynomial.Basic
 import TauCeti.Topology.Algebra.Polynomial.Root.Extension
 
 /-!
-# Roots and factorizations at a puncture
+# Roots at a puncture
 
 Let `F y` be polynomials over a proper algebraically closed normed field, such as `ℂ`, whose
 coefficients are continuous at a point `c`. If `F y` has degree exactly `d` near `c`, a root of
@@ -25,10 +25,7 @@ one, converges at `c` to a root of `F c`
 (`TauCeti.Polynomial.exists_isRoot_tendsto_of_continuousOn`): near `c` the roots of `F y` lie close
 to the roots of `F c` (`Polynomial.eventually_rel_roots_norm_sub_lt`), so the root is bounded there,
 and the cluster set at `c` of a bounded root over the connected punctured balls is a single root
-of `F c` (`TauCeti.subsingleton_clusterSetOn_of_polynomial_root`). Over any infinite Hausdorff
-topological domain, if `F y` has degree at most `d` near `c`, a splitting of `F y` into `d`
-linear factors with roots continuous at `c` passes to the limit
-(`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`).
+of `F c` (`TauCeti.subsingleton_clusterSetOn_of_polynomial_root`).
 -/
 
 public section
@@ -89,26 +86,5 @@ theorem exists_isRoot_tendsto_of_continuousOn {K E : Type*} [NormedField K] [IsA
   refine ⟨w, eval_eq_zero_of_mem_clusterSetOn (hp w) hroot' ?_, hUc ▸ hw⟩
   rw [clusterSetOn_eq_singleton_of_tendsto hc hw]
   exact mem_singleton w
-
-/-- **Splitting passes to the limit.** Let `F y` be polynomials over an infinite Hausdorff
-topological domain, of degree at most `d` near `c`, with coefficients continuous at `c`, that split
-into linear factors `X - u_i(y)` on a punctured neighbourhood of `c`, the roots `u_i` being
-continuous at `c`. Then `F c` splits into the limiting factors `X - u_i(c)`. -/
-theorem eq_prod_X_sub_C_of_continuousAt {R B : Type*} [CommRing R] [IsDomain R] [Infinite R]
-    [TopologicalSpace R] [IsTopologicalRing R] [T2Space R] [TopologicalSpace B] {F : B → R[X]}
-    {c : B} [(𝓝[≠] c).NeBot] {d : ℕ} {u : Fin d → B → R}
-    (hF : ∀ i ≤ d, ContinuousAt (fun y => (F y).coeff i) c)
-    (hdeg : ∀ᶠ y in 𝓝 c, (F y).natDegree ≤ d) (hu : ∀ i, ContinuousAt (u i) c)
-    (hsplit : ∀ᶠ y in 𝓝[≠] c, F y = ∏ i, (X - C (u i y))) :
-    F c = ∏ i, (X - C (u i c)) := by
-  refine Polynomial.funext fun z => tendsto_nhds_unique (f := fun y => (F y).eval z)
-    (l := 𝓝[≠] c) ?_ ?_
-  · exact (continuousAt_eval hF hdeg continuousAt_const).tendsto.mono_left nhdsWithin_le_nhds
-  · have hprod : Tendsto (fun y => (∏ i, (X - C (u i y))).eval z) (𝓝[≠] c)
-        (𝓝 ((∏ i, (X - C (u i c))).eval z)) := by
-      simp only [eval_prod, eval_sub, eval_X, eval_C]
-      exact tendsto_finsetProd _ fun i _ =>
-        tendsto_const_nhds.sub ((hu i).tendsto.mono_left nhdsWithin_le_nhds)
-    exact hprod.congr' (hsplit.mono fun y hy => by simp only [hy])
 
 end TauCeti.Polynomial

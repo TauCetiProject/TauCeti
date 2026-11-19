@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Topology.Instances.Matrix
 
 /-!
@@ -42,6 +43,8 @@ the monic polynomial `TauCeti.Polynomial.monicOfCoeff a` as a function of its co
 * `Polynomial.continuous_evalEval`: joint continuity of bivariate polynomial evaluation.
 * `Polynomial.tendsto_resultant`: continuity of the resultant at fixed formal degrees in the
   coefficients of its arguments.
+* `TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`: over an infinite Hausdorff topological
+  domain, a splitting into linear factors with roots continuous at a point passes to the limit.
 * `TauCeti.Polynomial.continuous_coeff_monicOfCoeff`: the coefficients of `monicOfCoeff a` are
   continuous in `a`.
 * `TauCeti.Polynomial.continuous_coeff_prod_X_sub_C`: the coefficients of `∏ i ∈ s, (X - C (f i))`
@@ -167,6 +170,27 @@ end Polynomial
 namespace TauCeti.Polynomial
 
 open _root_.Polynomial
+
+/-- **Splitting passes to the limit.** Let `F y` be polynomials over an infinite Hausdorff
+topological domain, of degree at most `d` near `c`, with coefficients continuous at `c`, that split
+into linear factors `X - u_i(y)` on a punctured neighbourhood of `c`, the roots `u_i` being
+continuous at `c`. Then `F c` splits into the limiting factors `X - u_i(c)`. -/
+theorem eq_prod_X_sub_C_of_continuousAt {R B : Type*} [CommRing R] [IsDomain R] [Infinite R]
+    [TopologicalSpace R] [IsTopologicalRing R] [T2Space R] [TopologicalSpace B] {F : B → R[X]}
+    {c : B} [(𝓝[≠] c).NeBot] {d : ℕ} {u : Fin d → B → R}
+    (hF : ∀ i ≤ d, ContinuousAt (fun y => (F y).coeff i) c)
+    (hdeg : ∀ᶠ y in 𝓝 c, (F y).natDegree ≤ d) (hu : ∀ i, ContinuousAt (u i) c)
+    (hsplit : ∀ᶠ y in 𝓝[≠] c, F y = ∏ i, (X - C (u i y))) :
+    F c = ∏ i, (X - C (u i c)) := by
+  refine Polynomial.funext fun z => tendsto_nhds_unique (f := fun y => (F y).eval z)
+    (l := 𝓝[≠] c) ?_ ?_
+  · exact (continuousAt_eval hF hdeg continuousAt_const).tendsto.mono_left nhdsWithin_le_nhds
+  · have hprod : Tendsto (fun y => (∏ i, (X - C (u i y))).eval z) (𝓝[≠] c)
+        (𝓝 ((∏ i, (X - C (u i c))).eval z)) := by
+      simp only [eval_prod, eval_sub, eval_X, eval_C]
+      exact tendsto_finsetProd _ fun i _ =>
+        tendsto_const_nhds.sub ((hu i).tendsto.mono_left nhdsWithin_le_nhds)
+    exact hprod.congr' (hsplit.mono fun y hy => by simp only [hy])
 
 /-- Each coefficient of the monic polynomial `monicOfCoeff a` is a continuous function of the
 coefficient tuple `a`: it is either constant or a coordinate of `a`. -/

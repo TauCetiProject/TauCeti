@@ -25,8 +25,8 @@ continuous roots extend across the centre
 off the centre, and listing at `ζ = 0` the roots of the central member with their multiplicities.
 Each root function converges at the centre to a root of the central member
 (`TauCeti.Polynomial.exists_isRoot_tendsto_of_continuousOn`), and the factorization passes to the
-limit (`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`), both in
-`TauCeti.Analysis.Polynomial.ContinuityOfRoots.Limit`.
+limit (`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`, in
+`TauCeti.Topology.Algebra.Polynomial.Basic`).
 
 The analytic version, with ambient root functions on an open simply connected domain, is
 `TauCeti.Polynomial.exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution` in
