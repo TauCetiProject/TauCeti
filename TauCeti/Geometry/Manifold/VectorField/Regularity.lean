@@ -137,7 +137,11 @@ theorem contMDiff_tangentBundle_mk_modelSpace {f v : N → E}
       (fun p => TotalSpace.mk' E (f p) (v p) : N → TangentBundle 𝓘(𝕜, E) E) := by
   have hpair : ContMDiff J 𝓘(𝕜, E).tangent n (fun p : N ↦ (f p, v p)) := hf.prodMk hv
   rw [chartedSpaceSelf_prod] at hpair
-  exact contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair
+  have h := contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair
+  -- The inverse homeomorphism is `(TotalSpace.toProd E E).symm`, whose inverse function sends
+  -- `(a, b)` to the bundle point `⟨a, b⟩` by definition, so `h` is the claim.
+  rw [tangentBundleModelSpaceHomeomorph_coe_symm] at h
+  exact h
 
 end TangentBundleInputs
 
