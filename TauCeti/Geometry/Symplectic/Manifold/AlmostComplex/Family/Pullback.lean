@@ -34,8 +34,8 @@ and the chart `g ≫ ψ` of `M`, the pulled-back structure is the original one r
 * `TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_pullback`,
   `TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_pullback_trans`: `g^* J` read in a
   chart `χ = ψ ∘ g` of `M`, such as `g ≫ ψ`, is `J` read in `ψ`. No differentiability of the
-  charts is needed: where `ψ` or `ψ⁻¹` is not differentiable, neither is its composite with `g`
-  or `g⁻¹`, and both sides vanish.
+  charts is needed, by the chain rules `Diffeomorph.mfderiv_comp_diffeomorph` and
+  `Diffeomorph.mfderiv_diffeomorph_comp`.
 
 ## References
 
@@ -126,29 +126,13 @@ theorem chartField_pullback (φ : OpenPartialHomeomorph P D) {χ : OpenPartialHo
     ← hy_def]
   beta_reduce
   rw [← hy]
-  -- Where `ψ` or `ψ⁻¹` is not differentiable, neither is its composite with `g` or `g⁻¹`, and
-  -- both sides vanish.
-  by_cases hψ : MDifferentiableAt I' 𝓘(ℝ, G) ψ (g y)
-  swap
-  · have hψg : ¬MDifferentiableAt I 𝓘(ℝ, G) (ψ ∘ g) y := by
-      rwa [g.mdifferentiableAt_comp_diffeomorph_iff hr]
-    rw [mfderiv_zero_of_not_mdifferentiableAt hψ, mfderiv_zero_of_not_mdifferentiableAt hψg]
-    rfl
-  by_cases hψs : MDifferentiableAt 𝓘(ℝ, G) I' ψ.symm v
-  swap
-  · have hψgs : ¬MDifferentiableAt 𝓘(ℝ, G) I (g.symm ∘ ψ.symm) v := by
-      rwa [g.symm.mdifferentiableAt_comp_iff hr]
-    rw [mfderiv_zero_of_not_mdifferentiableAt hψs, mfderiv_zero_of_not_mdifferentiableAt hψgs]
-    -- Both sides apply linear maps to the zero vector, read in tangent spaces equal to `E`.
-    erw [zero_apply]
-    simp only [map_zero]
-    erw [map_zero, map_zero]
+  -- The chain rules hold without differentiability of the charts, since `g` is a diffeomorphism.
   have h1 (u : TangentSpace I y) : mfderiv I 𝓘(ℝ, G) (ψ ∘ g) y u =
-      mfderiv I' 𝓘(ℝ, G) ψ (g y) (mfderiv I I' g y u) :=
-    mfderiv_comp_apply y hψ (g.mdifferentiable hr y) u
+      mfderiv I' 𝓘(ℝ, G) ψ (g y) (mfderiv I I' g y u) := by
+    rw [g.mfderiv_comp_diffeomorph hr]; rfl
   have h2 (u : TangentSpace 𝓘(ℝ, G) v) : mfderiv 𝓘(ℝ, G) I (g.symm ∘ ψ.symm) v u =
-      mfderiv I' I g.symm (ψ.symm v) (mfderiv 𝓘(ℝ, G) I' ψ.symm v u) :=
-    mfderiv_comp_apply v (g.symm.mdifferentiable hr _) hψs u
+      mfderiv I' I g.symm (ψ.symm v) (mfderiv 𝓘(ℝ, G) I' ψ.symm v u) := by
+    rw [g.symm.mfderiv_diffeomorph_comp hr]; rfl
   rw [h1]
   -- `h2` is stated at the base point `(g.symm ∘ ψ.symm) v`, which is `y` by definition.
   erw [h2]

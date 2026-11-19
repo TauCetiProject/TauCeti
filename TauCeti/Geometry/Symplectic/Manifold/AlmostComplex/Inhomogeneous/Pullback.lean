@@ -194,16 +194,9 @@ theorem chartTerm_pullback {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G
   have hy : g y = ψ.symm v := g.apply_symm_apply _
   rw [chartTerm_apply, chartTerm_apply, hχs, Function.comp_apply, ← hy_def, hχ,
     mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, ← hy]
-  -- Where `ψ` is not differentiable, neither is `ψ ∘ g`, and both sides vanish.
-  by_cases hψ : MDifferentiableAt I' 𝓘(ℝ, G) ψ (g y)
-  swap
-  · have hψg : ¬MDifferentiableAt I 𝓘(ℝ, G) (ψ ∘ g) y := by
-      rwa [g.mdifferentiableAt_comp_diffeomorph_iff hr]
-    rw [mfderiv_zero_of_not_mdifferentiableAt hψ, mfderiv_zero_of_not_mdifferentiableAt hψg]
-    rfl
   have h := ν.mfderiv_tangentHom_pullback_apply g hnr (φ.symm z, y)
     (mfderiv 𝓘(ℝ, ℂ) IP φ.symm z (1 : ℂ))
-  rw [mfderiv_comp_apply y hψ (g.mdifferentiable hr y)]
+  rw [g.mfderiv_comp_diffeomorph hr, ContinuousLinearMap.comp_apply]
   -- `h` is stated at the base point `(φ.symm z, y).2`, which is `y` by definition.
   erw [h]
 
