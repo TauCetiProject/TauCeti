@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.Analytic.Basic
@@ -51,8 +52,6 @@ of the profile and the square of its derivative `-(r log (c / r))⁻¹`.
 
 ## Main declarations
 
-* `TauCeti.integrableOn_inv_norm_mul_log_const_div_sq`: the planar squared logarithmic gradient
-  profile is integrable on every disc of radius `R < c`.
 * `TauCeti.locallyIntegrable_log_norm_pow`: `x ↦ (log ‖x‖) ^ k` is locally integrable.
 * `TauCeti.locallyIntegrable_log_norm`: `x ↦ log ‖x‖` is locally integrable.
 * `TauCeti.intervalIntegrable_log_pow`: `t ↦ (log t) ^ k` is interval integrable.
@@ -65,6 +64,9 @@ of the profile and the square of its derivative `-(r log (c / r))⁻¹`.
 * `TauCeti.integrableOn_mul_log_log_const_div_sq`,
   `TauCeti.integrableOn_mul_inv_mul_log_const_div_sq`: the planar radial integrands
   `r (log log (c / r))²` and `r (r log (c / r))⁻²` are integrable on `(0, R)`.
+
+* `TauCeti.integrableOn_inv_norm_mul_log_const_div_sq`: the planar squared logarithmic gradient
+  profile is integrable on every disc of radius `R < c`.
 
 ## References
 

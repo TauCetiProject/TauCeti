@@ -67,6 +67,8 @@ The radial calculus is shared with `TauCeti.logLogTraceExample`, the same profil
 boundary point of the unit disc: `Real.hasDerivAt_log_log_const_div`,
 `Real.tendsto_log_log_const_div_nhdsNE_zero`, `TauCeti.integrableOn_mul_log_log_const_div_sq` and
 `TauCeti.integrableOn_mul_inv_mul_log_const_div_sq`, all with `c = 4`.
+The interior gradient estimate uses the planar form
+`TauCeti.integrableOn_inv_norm_mul_log_const_div_sq`.
 
 ## References
 
