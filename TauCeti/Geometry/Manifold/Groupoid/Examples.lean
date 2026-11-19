@@ -305,7 +305,7 @@ instance lieGroupoid [T2Space N] [SecondCountableTopology N] :
       ((arrowDiffeomorph I ∞ N).symm.contMDiff.comp
         ((ha.comp contMDiff_snd).fst.prodMk (ha.comp contMDiff_fst).snd))
       fun p ↦ (arrowHomeomorph N).injective (by simp)
-  t2Space_objects := (objectHomeomorph N).symm.t2Space
+  t2Space_objects := inferInstance
   secondCountableTopology_arrows := inferInstance
   t2Space_sourceFiber _ := inferInstance
 
