@@ -629,16 +629,14 @@ section Commuting
 
 open Module
 
-variable {k A B M : Type*} [Field k] [Ring A] [Ring B] [Algebra k A] [Algebra k B]
-  [AddCommGroup M] [Module k M]
-variable [Module A M] [Module B M] [SMulCommClass A B M] [IsScalarTower k A M]
-variable {S : Type*} [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable {k A B M : Type*} [Ring A] [Ring B] [AddCommGroup M] [Module A M] [Module B M]
+  [SMulCommClass A B M]
 
-omit [Algebra k B] in
 /-- Let `A` and `B` act on `M` by commuting actions with no common invariant `k`-subspace other
 than `⊥` and `⊤`. Then the isotypic component of any simple `A`-submodule `V` is stable under `B`,
 so it is all of `M`. -/
-theorem isotypicComponent_eq_top_of_commuting
+theorem isotypicComponent_eq_top_of_commuting [CommSemiring k] [Algebra k A] [Module k M]
+    [IsScalarTower k A M]
     (hM : ∀ p : Submodule k M, (∀ (a : A), ∀ m ∈ p, a • m ∈ p) →
       (∀ (b : B), ∀ m ∈ p, b • m ∈ p) → p = ⊥ ∨ p = ⊤)
     (V : Submodule A M) [IsSimpleModule A V] : isotypicComponent A M V = ⊤ := by
@@ -651,6 +649,9 @@ theorem isotypicComponent_eq_top_of_commuting
   have : Nontrivial V := IsSimpleModule.nontrivial A V
   rw [Submodule.restrictScalars_eq_bot_iff k A M] at h
   exact (Submodule.nontrivial_iff_ne_bot.mp this) (eq_bot_iff.mpr (h ▸ V.le_isotypicComponent))
+
+variable [Field k] [Algebra k A] [Algebra k B] [Module k M] [IsScalarTower k A M]
+variable {S : Type*} [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
 
 /-- Evaluation `S ⊗ W' → M` on a subspace `W'` of the multiplicity space has range stable under
 both actions when `W'` is stable under `B`. -/
