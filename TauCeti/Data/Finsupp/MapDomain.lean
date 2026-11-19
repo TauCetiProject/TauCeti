@@ -20,7 +20,8 @@ pushing forward along `f` when the predicate on the source is the pullback along
 predicate on the target (`Finsupp.mapDomain_subtypeDomain`). Pushing forward along the inclusion
 of a subtype is a section of restricting to it (`Finsupp.subtypeDomain_mapDomain_subtype`), and
 restricting and then pushing forward filters by the predicate
-(`Finsupp.mapDomain_subtypeDomain_eq_filter`).
+(`Finsupp.mapDomain_subtypeDomain_eq_filter`); for the complement of a pair `{x, y}` this subtracts
+the components at `x` and `y` (`Finsupp.mapDomain_subtypeDomain_compl_pair`).
 
 Pushing forward along a strictly monotone map of linearly ordered indices preserves and reflects
 the strict and non-strict lexicographic orders, since the relabeled functions vanish off the image
@@ -81,6 +82,27 @@ theorem mapDomain_subtypeDomain_eq_filter {α M : Type*} [AddCommMonoid M] {p : 
     rw [mapDomain_apply_of_injective Subtype.val_injective, subtypeDomain_apply,
       filter_apply_pos _ _ a.2]
   · rw [filter_apply_neg _ _ ha, mapDomain_of_notMem_range _ _ (by simpa using ha)]
+
+/-- Restricting to the complement of a pair `{x, y}` of distinct indices and pushing forward along
+the inclusion subtracts the components at `x` and `y`. -/
+theorem mapDomain_subtypeDomain_compl_pair {α M : Type*} [AddCommGroup M] {x y : α} (hxy : x ≠ y)
+    (f : α →₀ M) :
+    (f.subtypeDomain (· ∈ ({x, y}ᶜ : Set α))).mapDomain Subtype.val =
+      f - single x (f x) - single y (f y) := by
+  classical
+  ext i
+  rw [mapDomain_subtypeDomain_eq_filter]
+  by_cases hi : i ∈ ({x, y}ᶜ : Set α)
+  · have hix : i ≠ x := fun h ↦ hi (by simp [h])
+    have hiy : i ≠ y := fun h ↦ hi (by simp [h])
+    rw [filter_apply_pos _ _ hi]
+    simp [single_eq_of_ne hix, single_eq_of_ne hiy]
+  · rw [filter_apply_neg _ _ hi]
+    by_cases hix : i = x
+    · subst hix
+      simp [single_eq_of_ne hxy]
+    · obtain rfl : i = y := by simpa [hix] using hi
+      simp [single_eq_of_ne hix]
 
 /-- If the predicate `p` on the source is the pullback along `f` of the predicate `q` on the
 target, restricting to `p` and then pushing forward along `f` is pushing forward along `f` and

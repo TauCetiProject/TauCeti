@@ -172,24 +172,6 @@ private theorem subtypeDomain_homotopy (z : ι →₀ R) :
   have hjx : j ≠ x := fun h ↦ hj (by simp [h])
   simp [gaussianEliminationHomotopy_apply, single_eq_of_ne hjx]
 
-private theorem mapDomain_subtypeDomain_compl_pair (hxy : x ≠ y) (z : ι →₀ R) :
-    (z.subtypeDomain (· ∈ ({x, y}ᶜ : Set ι))).mapDomain (↑) =
-      z - Finsupp.single x (z x) - Finsupp.single y (z y) := by
-  classical
-  ext i
-  rw [mapDomain_subtypeDomain_eq_filter]
-  by_cases hi : i ∈ ({x, y}ᶜ : Set ι)
-  · have hix : i ≠ x := fun h ↦ hi (by simp [h])
-    have hiy : i ≠ y := fun h ↦ hi (by simp [h])
-    rw [filter_apply_pos _ _ hi]
-    simp [single_eq_of_ne hix, single_eq_of_ne hiy]
-  · rw [filter_apply_neg _ _ hi]
-    by_cases hix : i = x
-    · subst hix
-      simp [single_eq_of_ne hxy]
-    · obtain rfl : i = y := by simpa [hix] using hi
-      simp [single_eq_of_ne hix]
-
 variable (hd : d ∘ₗ d = 0) (hxy : x ≠ y) (hu : IsUnit (d (Finsupp.single x 1) y))
 
 include hxy hu in
