@@ -173,9 +173,12 @@ private theorem abs_seeleyHead_succ_le (k : ℕ) :
       rw [pow_succ]; linarith [pow_pos (two_pos : (0 : ℝ) < 2) j]
     -- The denominator at least doubles from `k` to `k + 1`, so the factor at least halves.
     have hd2 : 0 < (2 : ℝ) ^ (k + 1) - 2 ^ j := by linarith
-    rw [seeleyFactor, seeleyFactor, abs_div, abs_div, abs_of_pos hd, abs_of_pos hd2,
-      div_le_iff₀ hd2, mul_comm, ← mul_assoc, mul_div_assoc', le_div_iff₀ hd]
-    nlinarith [abs_nonneg (-1 - (2 : ℝ) ^ j)]
+    rw [seeleyFactor, seeleyFactor, abs_div, abs_div, abs_of_pos hd, abs_of_pos hd2]
+    calc |-1 - (2 : ℝ) ^ j| / (2 ^ (k + 1) - 2 ^ j)
+        ≤ |-1 - (2 : ℝ) ^ j| / (2 * (2 ^ k - 2 ^ j)) :=
+          div_le_div_of_nonneg_left (abs_nonneg _) (by positivity) hd'
+      _ = 1 / 2 * (|-1 - (2 : ℝ) ^ j| / (2 ^ k - 2 ^ j)) := by
+          rw [div_mul_eq_div_div_swap]; ring
   have hlast : |seeleyFactor (k + 1) k| ≤ 2 := by
     have hk : (0 : ℝ) < 2 ^ k := by positivity
     rw [seeleyFactor, pow_succ, abs_div, abs_of_pos (by linarith : (0 : ℝ) < 2 ^ k * 2 - 2 ^ k),

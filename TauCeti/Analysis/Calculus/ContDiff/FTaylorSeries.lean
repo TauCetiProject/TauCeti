@@ -25,6 +25,7 @@ isometry’s range; this lifting does not require the range to be closed.
 Over a real or complex normed field, locally uniform limits of the coefficients of Taylor
 derivative series are again Taylor derivative series, provided the underlying functions converge
 pointwise. This is the derivative-compatibility step in completeness of smooth function spaces.
+On any set, the zero-order and continuity conditions already pass to such limits.
 The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`. Over `ℝ` the same
 holds on a closed convex set with nonempty interior, such as a closed half-space: the derivatives
 within the set at its boundary points are recovered from the interior by Mathlib's
@@ -77,7 +78,7 @@ theorem HasFTaylorSeriesUpTo.apply_mem_of_range_subset
 
 /-- On any set, the zero-order and continuity conditions of Taylor derivative series pass to
 locally uniform limits whose zero-order terms are the pointwise limits of the functions. -/
-private theorem HasFTaylorSeriesUpToOn.zero_eq_and_cont_of_tendstoLocallyUniformlyOn
+theorem HasFTaylorSeriesUpToOn.zero_eq_and_cont_of_tendstoLocallyUniformlyOn
     {s : Set D} {ι : Type*} {l : Filter ι} [l.NeBot]
     {fᵢ : ι → D → F} {qᵢ : ι → D → FormalMultilinearSeries 𝕜 D F}
     (h : ∀ i, HasFTaylorSeriesUpToOn n (fᵢ i) (qᵢ i) s)
