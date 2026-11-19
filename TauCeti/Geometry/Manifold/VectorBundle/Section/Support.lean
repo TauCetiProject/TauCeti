@@ -17,7 +17,7 @@ map into the total space: the zero vector varies with the base point. We define 
 support on native `ContMDiffSection`, the submodules of sections supported in a prescribed set,
 and their compactly supported submodule. The latter is the directed supremum of the
 fixed-compact stages. These are algebraic carriers; no topology on section spaces is installed
-here.
+here. Support-preserving linear equivalences preserve both native support submodules.
 
 Smooth scalar multiplication preserves support and compact support. A compactly supported
 scalar function localizes even a section without compact support, and a cutoff equal to one
@@ -227,6 +227,22 @@ theorem compactlySupported_eq_top [CompactSpace M] : compactlySupported I F n V 
   apply top_unique
   intro s _
   exact s.isClosed_tsupport.isCompact
+
+/-- A support-preserving linear equivalence maps each prescribed-support submodule to itself. -/
+theorem map_supportedIn_of_tsupport_eq (e : Cₛ^n⟮I; F, V⟯ ≃ₗ[𝕜] Cₛ^n⟮I; F, V⟯)
+    (he : ∀ s, (e s).tsupport = s.tsupport) (K : Set M) :
+    (supportedIn I F n V K).map e.toLinearMap = supportedIn I F n V K := by
+  ext s
+  rw [Submodule.mem_map_equiv, mem_supportedIn, mem_supportedIn,
+    ← he (e.symm s), e.apply_symm_apply]
+
+/-- A support-preserving linear equivalence maps the compactly supported submodule to itself. -/
+theorem map_compactlySupported_of_tsupport_eq (e : Cₛ^n⟮I; F, V⟯ ≃ₗ[𝕜] Cₛ^n⟮I; F, V⟯)
+    (he : ∀ s, (e s).tsupport = s.tsupport) :
+    (compactlySupported I F n V).map e.toLinearMap = compactlySupported I F n V := by
+  ext s
+  rw [Submodule.mem_map_equiv, mem_compactlySupported, mem_compactlySupported,
+    ← he (e.symm s), e.apply_symm_apply]
 
 /-- Multiplication of sections by a smooth scalar function as a linear map. -/
 def smulLinearMap (f : C^n⟮I, M; 𝕜⟯) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^n⟮I; F, V⟯ where

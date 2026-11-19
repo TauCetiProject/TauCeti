@@ -410,11 +410,13 @@ def SupportedIn.realPointsConjCLE (K : Compacts M) :
     refine (L.symm.continuous.comp (continuous_id.prodMk
       (continuous_const (y := (0 : supportedIn I F n V K))))).congr fun φ ↦ ?_
     simpa only [Function.comp_apply, id_eq, L, SupportedIn.complexificationCLEProd_symm_apply]
-      using (SupportedIn.coe_realPointsConjEquiv_apply K φ).symm
+      using (SupportedIn.coe_realPointsConjEquiv_apply (n := n) (I := I)
+        (F := F) (V := V) (K : Set M) φ).symm
   · rw [LinearEquiv.invFun_eq_symm]
     refine (continuous_fst.comp (L.continuous.comp continuous_subtype_val)).congr fun φ ↦ ?_
     simpa only [Function.comp_apply, L, SupportedIn.complexificationCLEProd_apply] using
-      (SupportedIn.realPointsConjEquiv_symm_apply K φ).symm
+      (SupportedIn.realPointsConjEquiv_symm_apply (n := n) (I := I)
+        (F := F) (V := V) (K : Set M) φ).symm
 
 include hcover in
 /-- The original real tests identify continuously with the native fixed subspace. -/
@@ -460,7 +462,8 @@ def CompactlySupported.realPointsConjCLE :
       (SupportedIn.complexificationEquivProd (n := n) (I := I) (F := F) (V := V) K).symm (φ, 0) :=
         by
   simpa only [SupportedIn.realPointsConjCLE, ContinuousLinearEquiv.coe_mk] using
-    SupportedIn.coe_realPointsConjEquiv_apply K φ
+    SupportedIn.coe_realPointsConjEquiv_apply (n := n) (I := I)
+      (F := F) (V := V) (K : Set M) φ
 
 include hcover in
 /-- Multiplication by i as a real continuous linear equivalence of native compact tests. -/

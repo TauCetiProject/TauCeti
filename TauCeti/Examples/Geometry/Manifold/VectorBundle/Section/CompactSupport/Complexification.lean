@@ -354,6 +354,31 @@ def analyticFixed :=
   CompactlySupported.realPointsConjEquiv (n := ω) (I := 𝓘(ℝ, ℝ))
     (F := F) (V := Bundle.Trivial ℝ F)
 
+/-- The analytic fixed comparison accepts arbitrary support sets, not only compact stages. -/
+def analyticSupportedFixed (K : Set ℝ) :=
+  SupportedIn.realPointsConjEquiv (n := ω) (I := 𝓘(ℝ, ℝ))
+    (F := F) (V := Bundle.Trivial ℝ F) K
+
+/-- An analytic real section with prescribed support in the noncompact set `univ`. -/
+def analyticUnboundedOne :
+    supportedIn 𝓘(ℝ, ℝ) ℝ ω (Bundle.Trivial ℝ ℝ) Set.univ := by
+  refine ⟨⟨fun _ ↦ 1, ?_⟩, mem_supportedIn.mpr (Set.subset_univ _)⟩
+  intro x
+  rw [Bundle.contMDiffAt_section_iff]
+  simpa only [Bundle.Trivial.fiberBundle_trivializationAt',
+    Bundle.Trivialization.coe_coe, Bundle.Trivial.trivialization_apply] using
+    (contMDiffAt_const : ContMDiffAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ω (fun _ : ℝ ↦ (1 : ℝ)) x)
+
+/-- The arbitrary-support fixed comparison contains the actual nonzero constant section. -/
+theorem analytic_unbounded_fixed_value :
+    (SupportedIn.realPointsConjEquiv (n := ω) (I := 𝓘(ℝ, ℝ)) (F := ℝ)
+      (V := Bundle.Trivial ℝ ℝ) Set.univ analyticUnboundedOne).val.val 0 =
+        1 ⊗ₜ[ℝ] (1 : ℝ) := by
+  simp only [SupportedIn.coe_realPointsConjEquiv_apply,
+    SupportedIn.complexificationEquivProd_symm_apply, Submodule.coe_zero,
+    ContMDiffSection.coe_zero, Pi.zero_apply, TensorProduct.tmul_zero, add_zero]
+  rfl
+
 /-- The analytic-order fixed endpoint includes empty support on a nonempty base. -/
 def analyticEmptySupportFixed :=
   SupportedIn.realPointsConjEquiv (n := ω) (I := 𝓘(ℝ, ℝ))

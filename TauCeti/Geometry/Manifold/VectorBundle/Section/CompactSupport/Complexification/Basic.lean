@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+import TauCeti.Algebra.Star.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
-public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 
 /-!
 # Algebra of compactly supported complexified sections
@@ -15,13 +15,15 @@ public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 The native compactly supported and prescribed-support submodules identify with real pairs.
 These algebraic maps, conjugation and the real quarter-turn are defined at every regularity
 order, including analytic order. No topology on the section submodules or chart cover is needed.
-The fixed submodules are pullbacks of the existing native `TauCeti.realPoints`.
+The actions restrict the native all-section actions, with exact support preservation proved
+once at section level. The fixed submodules are pullbacks of the existing native
+`TauCeti.realPoints`.
 -/
 
 public section
 noncomputable section
 open Bundle Set TopologicalSpace TauCeti ContMDiffSection
-open scoped ContDiff Manifold TensorProduct Topology Distributions
+open scoped ContDiff Manifold TensorProduct Topology
 
 namespace ContMDiffSection
 
@@ -216,24 +218,24 @@ def SupportedIn.complexificationEquivProd (K : Set M) :
 
 
 /-- Support forgetting into the exact real module underlying the native complex section module. -/
-def CompactlySupported.toComplexSectionRealLinearMap :
+private def toComplexSectionRealLinearMap :
     @LinearMap ℝ ℝ _ _ (RingHom.id ℝ)
-      (compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x))
+      Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯
       Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ _ _ _
       (Module.complexToReal Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) where
-  toFun φ := φ.val
-  map_add' φ ψ := Submodule.coe_add φ ψ
+  toFun φ := φ
+  map_add' _ _ := rfl
   map_smul' r φ := by
-    rw [Submodule.coe_smul]
     -- The target is exactly Module.complexToReal; compare the original real action with
     -- its complex coefficient action before the induced real action.
-    exact (RCLike.real_smul_eq_coe_smul (K := ℂ) r φ.val).trans (Complex.coe_smul r φ.val)
+    exact (RCLike.real_smul_eq_coe_smul (K := ℂ) r φ).trans (Complex.coe_smul r φ)
 
 /-- The native real-points submodule pulled back along support forgetting. -/
 def CompactlySupported.realPointsConj : Submodule ℝ
     (compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :=
   (TauCeti.realPoints (ContMDiffSection.conjEquiv I F n V).toLinearMap).comap
-    (CompactlySupported.toComplexSectionRealLinearMap (n := n) (I := I) (F := F) (V := V))
+    ((ContMDiffSection.toComplexSectionRealLinearMap (n := n) (I := I) (F := F) (V := V)).comp
+      (compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)).subtype)
 
 /-- Membership is the stated native fixed-point condition. -/
 @[simp] theorem CompactlySupported.mem_realPointsConj
@@ -241,7 +243,7 @@ def CompactlySupported.realPointsConj : Submodule ℝ
     φ ∈ CompactlySupported.realPointsConj (n := n) (I := I) (F := F) (V := V) ↔
       ContMDiffSection.conjEquiv I F n V φ.val = φ.val := by
   simp [CompactlySupported.realPointsConj, TauCeti.mem_realPoints,
-    CompactlySupported.toComplexSectionRealLinearMap]
+    ContMDiffSection.toComplexSectionRealLinearMap]
 
 /-- Real tests identify with the pullback of the native real-points submodule. -/
 def CompactlySupported.realPointsConjEquiv : compactlySupported I F n V ≃ₗ[ℝ]
@@ -351,22 +353,22 @@ theorem CompactlySupported.tsupport_complexificationEquivProd_symm (p : compactl
   rw [hr, hi]
 
 /-- The same native real-points submodule, now pulled back to the prescribed support stage. -/
-def SupportedIn.realPointsConj (K : Compacts M) : Submodule ℝ
+def SupportedIn.realPointsConj (K : Set M) : Submodule ℝ
     (supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :=
   (TauCeti.realPoints (ContMDiffSection.conjEquiv I F n V).toLinearMap).comap
-    ((CompactlySupported.toComplexSectionRealLinearMap (n := n) (I := I) (F := F) (V := V)).comp
-      (ofSupportedIn K))
+    ((ContMDiffSection.toComplexSectionRealLinearMap (n := n) (I := I) (F := F) (V := V)).comp
+      (supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K).subtype)
 
 /-- Membership is the stated native fixed-point condition. -/
-@[simp] theorem SupportedIn.mem_realPointsConj (K : Compacts M)
+@[simp] theorem SupportedIn.mem_realPointsConj (K : Set M)
     (φ : supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
     φ ∈ SupportedIn.realPointsConj (n := n) (I := I) (F := F) (V := V) K ↔
       ContMDiffSection.conjEquiv I F n V φ.val = φ.val := by
   simp [SupportedIn.realPointsConj, TauCeti.mem_realPoints,
-    CompactlySupported.toComplexSectionRealLinearMap]
+    ContMDiffSection.toComplexSectionRealLinearMap]
 
 /-- The original real support stage identifies with the native fixed subspace at that stage. -/
-def SupportedIn.realPointsConjEquiv (K : Compacts M) : supportedIn I F n V K ≃ₗ[ℝ]
+def SupportedIn.realPointsConjEquiv (K : Set M) : supportedIn I F n V K ≃ₗ[ℝ]
     SupportedIn.realPointsConj (n := n) (I := I) (F := F) (V := V) K where
   toFun φ := ⟨(SupportedIn.complexificationEquivProd (n := n) (I := I) (F := F) (V := V) K).symm
     (φ, 0), by
@@ -380,22 +382,12 @@ def SupportedIn.realPointsConjEquiv (K : Compacts M) : supportedIn I F n V K ≃
     apply Subtype.ext
     apply ContMDiffSection.ext
     intro x
-    let ψ : CompactlySupported.realPointsConj (n := n) (I := I) (F := F) (V := V) :=
-      ⟨ofSupportedIn K φ.val, by
-        simpa only [CompactlySupported.mem_realPointsConj, ofSupportedIn_apply] using
-          (SupportedIn.mem_realPointsConj K φ.val).mp φ.property⟩
-    have h := congrArg (fun θ : CompactlySupported.realPointsConj
-        (n := n) (I := I) (F := F) (V := V) ↦ θ.val.val x)
-      ((CompactlySupported.realPointsConjEquiv (n := n) (I := I)
-        (F := F) (V := V)).apply_symm_apply ψ)
-    simpa only [CompactlySupported.coe_realPointsConjEquiv_apply,
-      CompactlySupported.realPointsConjEquiv_symm_apply, CompactlySupported.coe_oneTmul,
-        oneTmulLinearMap_apply,
-      CompactlySupported.coe_realPart, realPartLinearMap_apply,
-        SupportedIn.complexificationEquivProd_symm_apply,
-      SupportedIn.complexificationEquivProd_fst_apply, Submodule.coe_zero,
-      ContMDiffSection.coe_zero, Pi.zero_apply, TensorProduct.tmul_zero, add_zero,
-      ofSupportedIn_apply, ψ] using h
+    have hfix := congrArg (fun σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ ↦ σ x)
+      ((SupportedIn.mem_realPointsConj K φ.val).mp φ.property)
+    have hfix' : tmulConj (V x) (φ.val.val x) = φ.val.val x := by
+      simpa only [ContMDiffSection.conjEquiv_apply] using hfix
+    obtain ⟨v, hv⟩ := (tmulConj_eq_self_iff (V x) (φ.val.val x)).mp hfix'
+    simp [hv]
   map_add' φ ψ := by
     apply Subtype.ext
     simpa using map_add (SupportedIn.complexificationEquivProd (n := n) (I := I) (F := F) (V := V)
@@ -406,28 +398,29 @@ def SupportedIn.realPointsConjEquiv (K : Compacts M) : supportedIn I F n V K ≃
       V) K).symm r (φ, 0)
 
 /-- The inverse stage fixed-point comparison is its original real coordinate. -/
-@[simp] theorem SupportedIn.realPointsConjEquiv_symm_apply (K : Compacts M)
+@[simp] theorem SupportedIn.realPointsConjEquiv_symm_apply (K : Set M)
     (φ : SupportedIn.realPointsConj (n := n) (I := I) (F := F) (V := V) K) :
     (SupportedIn.realPointsConjEquiv (n := n) (I := I) (F := F) (V := V) K).symm φ =
       (SupportedIn.complexificationEquivProd (n := n) (I := I) (F := F) (V := V) K φ.val).1 :=
   by rfl
 
 /-- The bundled map evaluates by the stated original-fibre formula. -/
-@[simp] theorem SupportedIn.coe_realPointsConjEquiv_apply (K : Compacts M) (φ : supportedIn I F n
+@[simp] theorem SupportedIn.coe_realPointsConjEquiv_apply (K : Set M) (φ : supportedIn I F n
   V K) :
     (SupportedIn.realPointsConjEquiv (n := n) K φ).val = (SupportedIn.complexificationEquivProd (n
       := n) (I := I) (F := F) (V := V) K).symm (φ, 0) := by rfl
 
 /-- The fixed-subspace inclusion commutes with native inclusion of a compact support stage. -/
 theorem SupportedIn.realPointsConjEquiv_ofSupportedIn (K : Compacts M) (φ : supportedIn I F n V K) :
-    ofSupportedIn K (SupportedIn.realPointsConjEquiv (n := n) K φ).val =
+    ofSupportedIn K (SupportedIn.realPointsConjEquiv (n := n) (I := I)
+      (F := F) (V := V) (K : Set M) φ).val =
       (CompactlySupported.realPointsConjEquiv (n := n) (ofSupportedIn K φ)).val := by
   apply Subtype.ext
   ext x
   simp [SupportedIn.coe_realPointsConjEquiv_apply, CompactlySupported.realPointsConjEquiv]
 
 /-- The pair map commutes with native inclusion of a compact support stage. -/
- theorem SupportedIn.complexificationEquivProd_ofSupportedIn (K : Compacts M)
+theorem SupportedIn.complexificationEquivProd_ofSupportedIn (K : Compacts M)
     (φ : supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
     (ofSupportedIn K (SupportedIn.complexificationEquivProd (n := n) (I := I) (F := F) (V := V) K
       φ).1,
@@ -455,195 +448,123 @@ theorem SupportedIn.complexificationEquivProd_symm_ofSupportedIn (K : Compacts M
   simp only [LinearEquiv.apply_symm_apply]
 
 
-/-- Native tensor conjugation as a real linear equivalence preserving support. -/
+/-- Native all-section conjugation preserves exact closed support. -/
+@[simp] theorem tsupport_conjEquiv
+    (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
+    (ContMDiffSection.conjEquiv I F n V σ).tsupport = σ.tsupport := by
+  rw [tsupport_def, tsupport_def]
+  congr 1
+  ext x
+  simp only [Set.mem_ofPred_eq, ContMDiffSection.conjEquiv_apply]
+  exact not_congr (map_eq_zero_iff (tmulConj (V x))
+    (Function.LeftInverse.injective (tmulConj_tmulConj (V x))))
+
+/-- Native nonzero complex scalar multiplication preserves exact section support. -/
+theorem tsupport_complex_smul (z : ℂ)
+    (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) (hz : z ≠ 0) :
+    (z • σ).tsupport = σ.tsupport := by
+  rw [tsupport_def, tsupport_def]
+  congr 1
+  ext x
+  simp only [Set.mem_ofPred_eq, coe_smul_of_normedAlgebra, Pi.smul_apply]
+  exact not_congr (smul_eq_zero_iff_right hz)
+
+/-- Multiplication by i preserves native section support. -/
+@[simp] theorem tsupport_I_smul
+    (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
+    (Complex.I • σ).tsupport = σ.tsupport :=
+  tsupport_complex_smul Complex.I σ Complex.I_ne_zero
+
+private def smulIRealLinearEquiv :
+    Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ ≃ₗ[ℝ]
+      Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ :=
+  (LinearEquiv.smulOfNeZero ℂ
+    Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ Complex.I
+      Complex.I_ne_zero).restrictScalars ℝ
+
+/-- Restriction of the native all-section action to its support submodule. -/
 def CompactlySupported.conjEquiv :
     compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) ≃ₗ[ℝ]
-      compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) := by
-  let L := CompactlySupported.complexificationEquivProd (n := n) (I := I) (F := F) (V := V)
-  exact (L.trans ((LinearEquiv.refl ℝ _).prodCongr (LinearEquiv.neg ℝ))).trans L.symm
+      compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) :=
+  ((ContMDiffSection.conjEquiv I F n V).restrictScalarsₛₗ ℝ).ofSubmodules _ _
+    (map_compactlySupported_of_tsupport_eq _ (fun σ ↦ by
+      simpa only [LinearEquiv.coe_restrictScalarsₛₗ] using ContMDiffSection.tsupport_conjEquiv σ))
 
-/-- The real quarter-turn on native complexified sections preserving support. -/
-def CompactlySupported.smulIEquiv :
-    compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) ≃ₗ[ℝ]
-      compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) := by
-  let L := CompactlySupported.complexificationEquivProd (n := n) (I := I) (F := F) (V := V)
-  exact (L.trans ((LinearEquiv.prodComm ℝ _ _).trans
-    ((LinearEquiv.neg ℝ).prodCongr (LinearEquiv.refl ℝ _)))).trans L.symm
+/-- Forgetting support recovers the original native section action. -/
+theorem CompactlySupported.coe_conjEquiv_apply (φ : compactlySupported I (Complexification F) n
+  (fun x ↦ ℂ ⊗[ℝ] V x)) :
+    (CompactlySupported.conjEquiv (n := n) (I := I) (F := F) (V := V) φ).val =
+      ContMDiffSection.conjEquiv I F n V φ.val := by
+  simp only [CompactlySupported.conjEquiv, LinearEquiv.ofSubmodules_apply,
+    LinearEquiv.coe_restrictScalarsₛₗ]
 
-/-- The real equivalence has the native original-fibre action. -/
-@[simp] theorem CompactlySupported.conjEquiv_apply
-    (φ : compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) (x : M) :
+/-- The restricted action evaluates in the original native fibre. -/
+@[simp] theorem CompactlySupported.conjEquiv_apply (φ : compactlySupported I (Complexification F)
+  n (fun x ↦ ℂ ⊗[ℝ] V x)) (x : M) :
     (CompactlySupported.conjEquiv (n := n) (I := I) (F := F) (V := V) φ).val x =
       tmulConj (V x) (φ.val x) := by
-  simp only [CompactlySupported.conjEquiv, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,
-    LinearEquiv.refl_apply, LinearEquiv.neg_apply]
-  rw [CompactlySupported.complexificationEquivProd_symm_apply]
-  simp only [CompactlySupported.complexificationEquivProd_apply,
-    Submodule.coe_add, ContMDiffSection.coe_add, Pi.add_apply,
-    CompactlySupported.coe_oneTmul, oneTmulLinearMap_apply,
-    CompactlySupported.coe_ITmul, ITmulLinearMap_apply,
-    Submodule.coe_neg, ContMDiffSection.coe_neg, Pi.neg_apply,
-    CompactlySupported.coe_realPart, realPartLinearMap_apply,
-    CompactlySupported.coe_imaginaryPart, imaginaryPartLinearMap_apply]
-  apply complexification_ext <;> simp
+  rw [CompactlySupported.coe_conjEquiv_apply]
+  exact ContMDiffSection.conjEquiv_apply _ _
 
-/-- The real equivalence has the native original-fibre action. -/
-@[simp] theorem CompactlySupported.smulIEquiv_apply
-    (φ : compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) (x : M) :
-    (CompactlySupported.smulIEquiv (n := n) (I := I) (F := F) (V := V) φ).val x =
-      Complex.I • φ.val x := by
-  simp only [CompactlySupported.smulIEquiv, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,
-    LinearEquiv.refl_apply, LinearEquiv.neg_apply, LinearEquiv.prodComm_apply, Prod.swap]
-  rw [CompactlySupported.complexificationEquivProd_symm_apply]
-  simp only [CompactlySupported.complexificationEquivProd_apply,
-    Submodule.coe_add, ContMDiffSection.coe_add, Pi.add_apply,
-    CompactlySupported.coe_oneTmul, oneTmulLinearMap_apply,
-    CompactlySupported.coe_ITmul, ITmulLinearMap_apply,
-    Submodule.coe_neg, ContMDiffSection.coe_neg, Pi.neg_apply,
-    CompactlySupported.coe_realPart, realPartLinearMap_apply,
-    CompactlySupported.coe_imaginaryPart, imaginaryPartLinearMap_apply]
-  conv_rhs =>
-    rw [← one_tmul_realPart_add_I_tmul_imaginaryPart (V x) (φ.val x),
-      I_smul_one_tmul_add_I_tmul]
-
-/-- Conjugation preserves exact closed support. -/
+/-- The restriction preserves the native section's exact closed support. -/
 @[simp] theorem CompactlySupported.tsupport_conjEquiv (φ : compactlySupported I (Complexification
   F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     (CompactlySupported.conjEquiv (n := n) (I := I) (F := F) (V := V) φ).val.tsupport =
       φ.val.tsupport := by
-  rw [tsupport_def, tsupport_def]
-  congr 1
-  ext x
-  simp only [Set.mem_ofPred_eq, CompactlySupported.conjEquiv_apply]
-  exact not_congr (map_eq_zero_iff (tmulConj (V x))
-    (Function.LeftInverse.injective (tmulConj_tmulConj (V x))))
+  rw [CompactlySupported.coe_conjEquiv_apply, ContMDiffSection.tsupport_conjEquiv]
 
-/-- The quarter-turn preserves exact closed support. -/
+/-- Restriction of the native all-section action to its support submodule. -/
+def CompactlySupported.smulIEquiv :
+    compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) ≃ₗ[ℝ]
+      compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) :=
+  (smulIRealLinearEquiv (n := n) (I := I) (F := F) (V := V)).ofSubmodules _ _
+    (map_compactlySupported_of_tsupport_eq _ (fun σ ↦ by
+      simpa only [smulIRealLinearEquiv, LinearEquiv.restrictScalars_apply,
+        LinearEquiv.smulOfNeZero_apply] using tsupport_I_smul σ))
+
+/-- Forgetting support recovers the original native section action. -/
+theorem CompactlySupported.coe_smulIEquiv_apply (φ : compactlySupported I (Complexification F) n
+  (fun x ↦ ℂ ⊗[ℝ] V x)) :
+    (CompactlySupported.smulIEquiv (n := n) (I := I) (F := F) (V := V) φ).val =
+      Complex.I • φ.val := by
+  simp only [CompactlySupported.smulIEquiv, LinearEquiv.ofSubmodules_apply,
+    smulIRealLinearEquiv, LinearEquiv.restrictScalars_apply, LinearEquiv.smulOfNeZero_apply]
+
+/-- The restricted action evaluates in the original native fibre. -/
+@[simp] theorem CompactlySupported.smulIEquiv_apply (φ : compactlySupported I (Complexification F)
+  n (fun x ↦ ℂ ⊗[ℝ] V x)) (x : M) :
+    (CompactlySupported.smulIEquiv (n := n) (I := I) (F := F) (V := V) φ).val x =
+      Complex.I • φ.val x := by
+  rw [CompactlySupported.coe_smulIEquiv_apply]
+  simp only [coe_smul_of_normedAlgebra, Pi.smul_apply]
+
+/-- The restriction preserves the native section's exact closed support. -/
 @[simp] theorem CompactlySupported.tsupport_smulIEquiv (φ : compactlySupported I (Complexification
   F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     (CompactlySupported.smulIEquiv (n := n) (I := I) (F := F) (V := V) φ).val.tsupport =
       φ.val.tsupport := by
-  rw [tsupport_def, tsupport_def]
-  congr 1
-  ext x
-  simp only [Set.mem_ofPred_eq, CompactlySupported.smulIEquiv_apply]
-  apply not_congr
-  constructor
-  · intro h
-    have h' := congrArg (fun u : ℂ ⊗[ℝ] V x ↦ -Complex.I • u) h
-    simpa [smul_smul] using h'
-  · intro h
-    rw [h, smul_zero]
+  rw [CompactlySupported.coe_smulIEquiv_apply, tsupport_I_smul]
 
-/-- Native supported conjugation squares to the identity. -/
+/-- Supported conjugation is the restriction of the native involution. -/
 @[simp] theorem CompactlySupported.conjEquiv_conjEquiv (φ : compactlySupported I (Complexification
   F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     CompactlySupported.conjEquiv (n := n) (I := I) (F := F) (V := V)
       (CompactlySupported.conjEquiv (n := n) (I := I) (F := F) (V := V) φ) = φ := by
   apply Subtype.ext
-  ext x
-  simp only [CompactlySupported.conjEquiv_apply, tmulConj_tmulConj]
+  rw [CompactlySupported.coe_conjEquiv_apply, CompactlySupported.coe_conjEquiv_apply]
+  simpa only [ContMDiffSection.conjEquiv_symm] using
+    (ContMDiffSection.conjEquiv I F n V).symm_apply_apply φ.val
 
-/-- Native supported multiplication by i squares to negation. -/
+/-- The supported quarter-turn inherits the native scalar square. -/
 @[simp] theorem CompactlySupported.smulIEquiv_smulIEquiv (φ : compactlySupported I
   (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     CompactlySupported.smulIEquiv (n := n) (I := I) (F := F) (V := V)
       (CompactlySupported.smulIEquiv (n := n) (I := I) (F := F) (V := V) φ) = -φ := by
   apply Subtype.ext
-  ext x
-  simp [CompactlySupported.smulIEquiv_apply, smul_smul]
+  rw [CompactlySupported.coe_smulIEquiv_apply, CompactlySupported.coe_smulIEquiv_apply,
+    smul_smul, Complex.I_mul_I, neg_one_smul, Submodule.coe_neg]
 
-/-- Native tensor conjugation as a real linear equivalence preserving support. -/
-def SupportedIn.conjEquiv (K : Set M) :
-    supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K ≃ₗ[ℝ]
-      supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K := by
-  let L := SupportedIn.complexificationEquivProd (n := n) (I := I) (F := F) (V := V) K
-  exact (L.trans ((LinearEquiv.refl ℝ _).prodCongr (LinearEquiv.neg ℝ))).trans L.symm
-
-/-- The real quarter-turn on native complexified sections preserving support. -/
-def SupportedIn.smulIEquiv (K : Set M) :
-    supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K ≃ₗ[ℝ]
-      supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K := by
-  let L := SupportedIn.complexificationEquivProd (n := n) (I := I) (F := F) (V := V) K
-  exact (L.trans ((LinearEquiv.prodComm ℝ _ _).trans
-    ((LinearEquiv.neg ℝ).prodCongr (LinearEquiv.refl ℝ _)))).trans L.symm
-
-/-- The real equivalence has the native original-fibre action. -/
-@[simp] theorem SupportedIn.conjEquiv_apply (K : Set M)
-    (φ : supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) (x : M) :
-    (SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K φ).val x =
-      tmulConj (V x) (φ.val x) := by
-  simp only [SupportedIn.conjEquiv, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,
-    LinearEquiv.refl_apply, LinearEquiv.neg_apply]
-  rw [SupportedIn.complexificationEquivProd_symm_apply]
-  simp only [Submodule.coe_neg, ContMDiffSection.coe_neg, Pi.neg_apply,
-    SupportedIn.complexificationEquivProd_fst_apply,
-    SupportedIn.complexificationEquivProd_snd_apply]
-  apply complexification_ext <;> simp
-
-/-- The real equivalence has the native original-fibre action. -/
-@[simp] theorem SupportedIn.smulIEquiv_apply (K : Set M)
-    (φ : supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) (x : M) :
-    (SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K φ).val x =
-      Complex.I • φ.val x := by
-  simp only [SupportedIn.smulIEquiv, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,
-    LinearEquiv.refl_apply, LinearEquiv.neg_apply, LinearEquiv.prodComm_apply, Prod.swap]
-  rw [SupportedIn.complexificationEquivProd_symm_apply]
-  simp only [Submodule.coe_neg, ContMDiffSection.coe_neg, Pi.neg_apply,
-    SupportedIn.complexificationEquivProd_fst_apply,
-    SupportedIn.complexificationEquivProd_snd_apply]
-  conv_rhs =>
-    rw [← one_tmul_realPart_add_I_tmul_imaginaryPart (V x) (φ.val x),
-      I_smul_one_tmul_add_I_tmul]
-
-/-- Conjugation preserves exact closed support. -/
-@[simp] theorem SupportedIn.tsupport_conjEquiv (K : Set M) (φ : supportedIn I (Complexification F)
-  n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
-    (SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K φ).val.tsupport =
-      φ.val.tsupport := by
-  rw [tsupport_def, tsupport_def]
-  congr 1
-  ext x
-  simp only [Set.mem_ofPred_eq, SupportedIn.conjEquiv_apply]
-  exact not_congr (map_eq_zero_iff (tmulConj (V x))
-    (Function.LeftInverse.injective (tmulConj_tmulConj (V x))))
-
-/-- The quarter-turn preserves exact closed support. -/
-@[simp] theorem SupportedIn.tsupport_smulIEquiv (K : Set M) (φ : supportedIn I (Complexification
-  F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
-    (SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K φ).val.tsupport =
-      φ.val.tsupport := by
-  rw [tsupport_def, tsupport_def]
-  congr 1
-  ext x
-  simp only [Set.mem_ofPred_eq, SupportedIn.smulIEquiv_apply]
-  apply not_congr
-  constructor
-  · intro h
-    have h' := congrArg (fun u : ℂ ⊗[ℝ] V x ↦ -Complex.I • u) h
-    simpa [smul_smul] using h'
-  · intro h
-    rw [h, smul_zero]
-
-/-- Native supported conjugation squares to the identity. -/
-@[simp] theorem SupportedIn.conjEquiv_conjEquiv (K : Set M) (φ : supportedIn I (Complexification
-  F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
-    SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K
-      (SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K φ) = φ := by
-  apply Subtype.ext
-  ext x
-  simp only [SupportedIn.conjEquiv_apply, tmulConj_tmulConj]
-
-/-- Native supported multiplication by i squares to negation. -/
-@[simp] theorem SupportedIn.smulIEquiv_smulIEquiv (K : Set M) (φ : supportedIn I (Complexification
-  F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
-    SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K
-      (SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K φ) = -φ := by
-  apply Subtype.ext
-  ext x
-  simp [SupportedIn.smulIEquiv_apply, smul_smul]
-
-/-- The inverse action has the expected real algebraic formula. -/
+/-- The inverse of the restricted action has the native algebraic formula. -/
 @[simp] theorem CompactlySupported.conjEquiv_symm_apply (φ : compactlySupported I
   (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     (CompactlySupported.conjEquiv (n := n) (I := I) (F := F) (V := V)).symm φ =
@@ -651,7 +572,8 @@ def SupportedIn.smulIEquiv (K : Set M) :
   apply (CompactlySupported.conjEquiv (n := n) (I := I) (F := F) (V := V)).injective
   rw [LinearEquiv.apply_symm_apply, CompactlySupported.conjEquiv_conjEquiv]
 
-/-- The inverse action has the expected real algebraic formula. -/
+
+/-- The inverse of the restricted action has the native algebraic formula. -/
 @[simp] theorem CompactlySupported.smulIEquiv_symm_apply (φ : compactlySupported I
   (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     (CompactlySupported.smulIEquiv (n := n) (I := I) (F := F) (V := V)).symm φ =
@@ -659,7 +581,89 @@ def SupportedIn.smulIEquiv (K : Set M) :
   apply (CompactlySupported.smulIEquiv (n := n) (I := I) (F := F) (V := V)).injective
   rw [LinearEquiv.apply_symm_apply, map_neg, CompactlySupported.smulIEquiv_smulIEquiv, neg_neg]
 
-/-- The inverse action has the expected real algebraic formula. -/
+/-- Restriction of the native all-section action to its support submodule. -/
+def SupportedIn.conjEquiv (K : Set M) :
+    supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K ≃ₗ[ℝ]
+      supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K :=
+  ((ContMDiffSection.conjEquiv I F n V).restrictScalarsₛₗ ℝ).ofSubmodules _ _
+    (map_supportedIn_of_tsupport_eq _ (fun σ ↦ by
+      simpa only [LinearEquiv.coe_restrictScalarsₛₗ] using ContMDiffSection.tsupport_conjEquiv σ) K)
+
+/-- Forgetting support recovers the original native section action. -/
+theorem SupportedIn.coe_conjEquiv_apply (K : Set M) (φ : supportedIn I (Complexification F) n (fun
+  x ↦ ℂ ⊗[ℝ] V x) K) :
+    (SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K φ).val =
+      ContMDiffSection.conjEquiv I F n V φ.val := by
+  simp only [SupportedIn.conjEquiv, LinearEquiv.ofSubmodules_apply,
+    LinearEquiv.coe_restrictScalarsₛₗ]
+
+/-- The restricted action evaluates in the original native fibre. -/
+@[simp] theorem SupportedIn.conjEquiv_apply (K : Set M) (φ : supportedIn I (Complexification F) n
+  (fun x ↦ ℂ ⊗[ℝ] V x) K) (x : M) :
+    (SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K φ).val x =
+      tmulConj (V x) (φ.val x) := by
+  rw [SupportedIn.coe_conjEquiv_apply]
+  exact ContMDiffSection.conjEquiv_apply _ _
+
+/-- The restriction preserves the native section's exact closed support. -/
+@[simp] theorem SupportedIn.tsupport_conjEquiv (K : Set M) (φ : supportedIn I (Complexification F)
+  n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
+    (SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K φ).val.tsupport =
+      φ.val.tsupport := by
+  rw [SupportedIn.coe_conjEquiv_apply, ContMDiffSection.tsupport_conjEquiv]
+
+/-- Restriction of the native all-section action to its support submodule. -/
+def SupportedIn.smulIEquiv (K : Set M) :
+    supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K ≃ₗ[ℝ]
+      supportedIn I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) K :=
+  (smulIRealLinearEquiv (n := n) (I := I) (F := F) (V := V)).ofSubmodules _ _
+    (map_supportedIn_of_tsupport_eq _ (fun σ ↦ by
+      simpa only [smulIRealLinearEquiv, LinearEquiv.restrictScalars_apply,
+        LinearEquiv.smulOfNeZero_apply] using tsupport_I_smul σ) K)
+
+/-- Forgetting support recovers the original native section action. -/
+theorem SupportedIn.coe_smulIEquiv_apply (K : Set M) (φ : supportedIn I (Complexification F) n
+  (fun x ↦ ℂ ⊗[ℝ] V x) K) :
+    (SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K φ).val =
+      Complex.I • φ.val := by
+  simp only [SupportedIn.smulIEquiv, LinearEquiv.ofSubmodules_apply,
+    smulIRealLinearEquiv, LinearEquiv.restrictScalars_apply, LinearEquiv.smulOfNeZero_apply]
+
+/-- The restricted action evaluates in the original native fibre. -/
+@[simp] theorem SupportedIn.smulIEquiv_apply (K : Set M) (φ : supportedIn I (Complexification F) n
+  (fun x ↦ ℂ ⊗[ℝ] V x) K) (x : M) :
+    (SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K φ).val x =
+      Complex.I • φ.val x := by
+  rw [SupportedIn.coe_smulIEquiv_apply]
+  simp only [coe_smul_of_normedAlgebra, Pi.smul_apply]
+
+/-- The restriction preserves the native section's exact closed support. -/
+@[simp] theorem SupportedIn.tsupport_smulIEquiv (K : Set M) (φ : supportedIn I (Complexification
+  F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
+    (SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K φ).val.tsupport =
+      φ.val.tsupport := by
+  rw [SupportedIn.coe_smulIEquiv_apply, tsupport_I_smul]
+
+/-- Supported conjugation is the restriction of the native involution. -/
+@[simp] theorem SupportedIn.conjEquiv_conjEquiv (K : Set M) (φ : supportedIn I (Complexification
+  F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
+    SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K
+      (SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K φ) = φ := by
+  apply Subtype.ext
+  rw [SupportedIn.coe_conjEquiv_apply, SupportedIn.coe_conjEquiv_apply]
+  simpa only [ContMDiffSection.conjEquiv_symm] using
+    (ContMDiffSection.conjEquiv I F n V).symm_apply_apply φ.val
+
+/-- The supported quarter-turn inherits the native scalar square. -/
+@[simp] theorem SupportedIn.smulIEquiv_smulIEquiv (K : Set M) (φ : supportedIn I (Complexification
+  F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
+    SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K
+      (SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K φ) = -φ := by
+  apply Subtype.ext
+  rw [SupportedIn.coe_smulIEquiv_apply, SupportedIn.coe_smulIEquiv_apply,
+    smul_smul, Complex.I_mul_I, neg_one_smul, Submodule.coe_neg]
+
+/-- The inverse of the restricted action has the native algebraic formula. -/
 @[simp] theorem SupportedIn.conjEquiv_symm_apply (K : Set M) (φ : supportedIn I (Complexification
   F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
     (SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K).symm φ =
@@ -667,7 +671,8 @@ def SupportedIn.smulIEquiv (K : Set M) :
   apply (SupportedIn.conjEquiv (n := n) (I := I) (F := F) (V := V) K).injective
   rw [LinearEquiv.apply_symm_apply, SupportedIn.conjEquiv_conjEquiv]
 
-/-- The inverse action has the expected real algebraic formula. -/
+
+/-- The inverse of the restricted action has the native algebraic formula. -/
 @[simp] theorem SupportedIn.smulIEquiv_symm_apply (K : Set M) (φ : supportedIn I (Complexification
   F) n (fun x ↦ ℂ ⊗[ℝ] V x) K) :
     (SupportedIn.smulIEquiv (n := n) (I := I) (F := F) (V := V) K).symm φ =
