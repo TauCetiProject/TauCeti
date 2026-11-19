@@ -105,15 +105,10 @@ theorem exists_bound_iteratedFDeriv_pos_and_hasTemperateGrowth_of_eqOn_affine
     funext x
     simp
   have hd : HasCompactSupport (fun x ↦ fderiv ℝ f x - L) := by
-    apply HasCompactSupport.of_support_subset_isCompact hK
-    intro x hx
-    by_contra hxK
-    have hevent : f =ᶠ[𝓝 x] (fun y ↦ a + L y) :=
-      Filter.Eventually.mono (hK.isClosed.isOpen_compl.mem_nhds hxK) fun y hy ↦ heq hy
-    have hder : fderiv ℝ f x = L := by
-      rw [hevent.fderiv_eq]
-      exact ((L.hasFDerivAt.const_add a).fderiv)
-    exact hx (sub_eq_zero.mpr hder)
+    convert hs.fderiv ℝ using 1
+    funext x
+    rw [fderiv_fun_sub (hf.differentiable (by simp) x) (hA.differentiable (by simp) x),
+      (L.hasFDerivAt.const_add a).fderiv]
   have hdcd : ContDiff ℝ ∞ (fun x ↦ fderiv ℝ f x - L) :=
     (hf.fderiv_right (by simp)).sub contDiff_const
   refine ⟨?_, htemp⟩

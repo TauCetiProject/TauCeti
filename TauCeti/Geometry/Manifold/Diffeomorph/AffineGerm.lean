@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Germ
 public import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 
 /-!
 # Affine extensions of local diffeomorphisms
 
-A smooth map with invertible derivative on an open neighborhood extends, after shrinking the
-neighborhood, to a global diffeomorphism between its model spaces. The extension agrees outside
+A smooth germ with invertible derivative between finite-dimensional real normed spaces extends
+to a global diffeomorphism between the model spaces. The extension agrees outside
 a compact set with its affine tangent map. Both directions have bounded derivatives of every
 positive order and temperate growth. These extensions supply the global coordinate changes
 used in compactly localized Sobolev estimates.
@@ -39,12 +40,12 @@ namespace ContinuousLinearEquiv
 variable [FiniteDimensional ℝ E]
 
 /-- A smooth local diffeomorphism extends near the base point to a global diffeomorphism equal
-to its affine tangent map outside a compact subset of the prescribed open neighborhood.
+to its affine tangent map outside a compact subset of any prescribed neighborhood.
 The inverse is affine off the image of this compact set. Both maps have uniformly bounded
 positive-order derivatives and temperate growth. No orientation hypothesis is needed. -/
 theorem exists_diffeomorph_eventuallyEq_affine (e : E ≃L[ℝ] F)
-    {f : E → F} {U : Set E} (hU : IsOpen U) {x₀ : E} (hx₀ : x₀ ∈ U)
-    (hf : ContDiffOn ℝ ∞ f U) (he : HasFDerivAt f (e : E →L[ℝ] F) x₀) :
+    {f : E → F} {U : Set E} {x₀ : E} (hU : U ∈ 𝓝 x₀)
+    (hf : ∀ᶠ x in 𝓝 x₀, ContDiffAt ℝ ∞ f x) (he : HasFDerivAt f (e : E →L[ℝ] F) x₀) :
     ∃ (Φ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ F) (K : Set E),
       IsCompact K ∧ K ⊆ U ∧ ⇑Φ =ᶠ[𝓝 x₀] f ∧
       EqOn Φ (fun x ↦ f x₀ + e (x - x₀)) Kᶜ ∧
@@ -54,10 +55,8 @@ theorem exists_diffeomorph_eventuallyEq_affine (e : E ≃L[ℝ] F)
       Function.HasTemperateGrowth Φ ∧ Function.HasTemperateGrowth Φ.symm := by
   let g : E → E := fun x ↦ x₀ + e.symm (f x - f x₀)
   have hg : ∀ᶠ x in 𝓝 x₀, ContDiffAt ℝ ∞ g x := by
-    filter_upwards [hU.mem_nhds hx₀] with x hx
-    exact contDiffAt_const.add
-      (e.symm.contDiff.contDiffAt.comp x
-        (((hf x hx).contDiffAt (hU.mem_nhds hx)).sub contDiffAt_const))
+    filter_upwards [hf] with x hx
+    exact contDiffAt_const.add (e.symm.contDiff.contDiffAt.comp x (hx.sub contDiffAt_const))
   have hgd : HasFDerivAt g (ContinuousLinearMap.id ℝ E) x₀ := by
     simpa only [g, Function.comp_def, ContinuousLinearEquiv.coe_symm_comp_coe] using
       (e.symm.hasFDerivAt.comp x₀ (he.sub_const (f x₀))).const_add x₀
@@ -65,19 +64,14 @@ theorem exists_diffeomorph_eventuallyEq_affine (e : E ≃L[ℝ] F)
     TauCeti.exists_diffeomorph_eventuallyEq_of_det_fderiv_pos (n := ⊤) (by simp)
       hg (by simp [g]) (by
         rw [hgd.fderiv]
-        simp [ContinuousLinearMap.det]) (hU.mem_nhds hx₀)
+        simp [ContinuousLinearMap.det]) hU
   let A : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ F :=
-    { toEquiv :=
-        { toFun := fun x ↦ f x₀ + e (x - x₀)
-          invFun := fun y ↦ x₀ + e.symm (y - f x₀)
-          left_inv x := by simp
-          right_inv y := by simp }
-      contMDiff_toFun :=
-        (contDiff_const.add (e.contDiff.comp (contDiff_id.sub contDiff_const))).contMDiff
-      contMDiff_invFun :=
-        (contDiff_const.add (e.symm.contDiff.comp (contDiff_id.sub contDiff_const))).contMDiff }
-  have hA (x : E) : A x = f x₀ + e (x - x₀) := rfl
-  have hAi (y : F) : A.symm y = x₀ + e.symm (y - f x₀) := rfl
+    ((Diffeomorph.smulAdd ∞ (1 : ℝ) (-x₀) one_ne_zero).trans e.toDiffeomorph).trans
+      (Diffeomorph.smulAdd ∞ (1 : ℝ) (f x₀) one_ne_zero)
+  have hA (x : E) : A x = f x₀ + e (x - x₀) := by
+    simp [A, Diffeomorph.coe_trans, sub_eq_add_neg, add_comm]
+  have hAi (y : F) : A.symm y = x₀ + e.symm (y - f x₀) := by
+    simp [A, Diffeomorph.coe_trans, Diffeomorph.symm_trans', add_comm]
   let Φ := φ.trans A
   have hΦK : EqOn Φ (fun x ↦ f x₀ + e (x - x₀)) Kᶜ := by
     intro x hx
