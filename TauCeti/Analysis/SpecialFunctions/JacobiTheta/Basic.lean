@@ -199,10 +199,6 @@ private lemma cexp_even_index (n : ℕ) (z τ : ℂ) :
       cexp (π * I * τ * ((n : ℂ) + 1) ^ 2) := by
   refine ⟨?_, ?_, ?_⟩ <;> congr 1 <;> push_cast <;> ring
 
-/-- The sign `(-1)^m` is unchanged by `m ↦ -m`. -/
-private lemma neg_one_zpow_neg (m : ℤ) : (-1 : ℂ) ^ (-m) = (-1) ^ m := by
-  rw [← inv_zpow', inv_neg_one]
-
 /-- The Fourier series `θ₁(z|τ) = 2 ∑_{n≥0} (-1)ⁿ q^{(n+½)²} sin((2n + 1)z)` (Whittaker–Watson
 §21.11; DLMF 20.2.1). -/
 theorem hasSum_jacobiThetaOne (z : ℂ) {τ : ℂ} (hτ : 0 < τ.im) :
@@ -212,8 +208,8 @@ theorem hasSum_jacobiThetaOne (z : ℂ) {τ : ℂ} (hτ : 0 < τ.im) :
   rw [← mul_assoc, neg_mul, I_mul_I, neg_neg, one_mul] at h
   refine h.congr_fun fun n ↦ ?_
   obtain ⟨e₁, e₂, e₃⟩ := cexp_odd_index n z τ
-  rw [e₁, e₂, e₃, neg_one_zpow_neg, zpow_add_one₀ (neg_ne_zero.2 one_ne_zero), zpow_natCast,
-    Int.cast_natCast]
+  rw [e₁, e₂, e₃, ← inv_zpow', inv_neg_one, zpow_add_one₀ (neg_ne_zero.2 one_ne_zero),
+    zpow_natCast, Int.cast_natCast]
   linear_combination (-1) ^ n * cexp (π * I * τ * ((n : ℂ) + 1 / 2) ^ 2) * two_sin ((2 * n + 1) * z)
 
 /-- The Fourier series `θ₂(z|τ) = 2 ∑_{n≥0} q^{(n+½)²} cos((2n + 1)z)` (Whittaker–Watson §21.11;
@@ -250,7 +246,7 @@ theorem hasSum_jacobiThetaFour (z : ℂ) {τ : ℂ} (hτ : 0 < τ.im) :
   convert h using 1
   · funext n
     obtain ⟨e₁, e₂, e₃⟩ := cexp_even_index n z τ
-    rw [e₁, e₂, e₃, neg_one_zpow_neg, zpow_natCast, Int.cast_natCast, Nat.cast_succ]
+    rw [e₁, e₂, e₃, ← inv_zpow', inv_neg_one, zpow_natCast, Int.cast_natCast, Nat.cast_succ]
     linear_combination (-1) ^ (n + 1) * cexp (π * I * τ * ((n : ℂ) + 1) ^ 2) *
       two_cos (2 * ((n : ℂ) + 1) * z)
   · simp
