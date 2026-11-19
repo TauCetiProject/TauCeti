@@ -60,8 +60,8 @@ namespace Derivation
 
 variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
 
-/-- **A derivation maps elements nilpotent modulo a stable ideal, up to a unit multiplier, into
-every prime of residual characteristic zero above that ideal.** Let `D I ⊆ I`, let `p` be a prime
+/-- **A derivation maps `x` into a prime `p` of residual characteristic zero above a stable ideal
+whenever some `s ∉ p` carries a power of `x` into that ideal.** Let `D I ⊆ I`, let `p` be a prime
 containing `I` and no positive integer, and let `s * x ^ n ∈ I` for some `s ∉ p`. Then
 `D x ∈ p`. -/
 theorem apply_mem_of_mul_pow_mem (D : Derivation R A A) {I p : Ideal A} [hp : p.IsPrime]
