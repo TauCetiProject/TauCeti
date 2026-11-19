@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Topology.LocallyConstant.Algebra
 public import TauCeti.Algebra.Colimit.Ring
+public import TauCeti.RingTheory.Etale.DirectLimit
 public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
-public import TauCeti.RingTheory.Etale.NoetherianDescent
 
 /-!
 # Filtered colimits of rings without nonsplit finite étale covers
@@ -131,16 +131,14 @@ theorem isFiniteEtaleSplit_of_forall_exists_isTotallySplit [∀ i, Algebra.Etale
   isTotallySplit C _ _ _ _ := by
     -- The zero algebra splits at some stage, so the index set is nonempty.
     have : Nonempty ι := have ⟨i, _⟩ := h PUnit; ⟨i⟩
-    -- The colimit lemmas below take ring homomorphisms as transition maps. Forgetting `f` to
+    -- The descent lemma below takes ring homomorphisms as transition maps. Forgetting `f` to
     -- ring homomorphisms does not change the underlying functions, so the directed system and
     -- its colimit are literally the same.
-    let f' (i j : ι) (hij : i ≤ j) : B i →+* B j := f i j hij
-    have : DirectedSystem B (f' · · ·) := ‹DirectedSystem B (f · · ·)›
+    have : DirectedSystem B fun i j h ↦ (f i j h).toRingHom := ‹DirectedSystem B (f · · ·)›
     let R := DirectLimit B (f · · ·)
     -- `C` is the base change of a finite étale algebra `Cᵢ` over some `B i`.
     obtain ⟨i, Cᵢ, _, _, _, _, ⟨e⟩⟩ :=
-      TauCeti.Algebra.exists_etale_finite_algEquiv_tensorProduct_of_factorization B
-        (of B (f · · ·)) (fun _ _ _ g ↦ exists_of_comp_eq_of_finitePresentation (f := f') g) C
+      exists_etale_finite_algEquiv_tensorProduct (f := fun i j h ↦ (f i j h).toRingHom) C
     let : Algebra A Cᵢ := ((algebraMap (B i) Cᵢ).comp (algebraMap A (B i))).toAlgebra
     have : IsScalarTower A (B i) Cᵢ := .of_algebraMap_eq fun _ ↦ rfl
     have : Algebra.Etale A Cᵢ := .comp A (B i) Cᵢ
