@@ -537,8 +537,8 @@ theorem isComplexLinear_ofComplexModule_iff_apply_one_add_I_mul_apply_I
         (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
         ((e : ℂ →L[ℝ] ℂ).comp A).toLinearMap := by
     rw [← isComplexLinearMap_iff_isComplexLinear, ← isComplexLinearMap_iff_isComplexLinear, hJe,
-      e.toLinearEquiv.isComplexLinearMap_transport_symm_iff]
-    rfl
+      e.toLinearEquiv.isComplexLinearMap_transport_symm_iff, ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
   rw [hiff, isComplexLinear_iff_apply_one_add_I_mul_apply_I _ stdComplexSymplecticForm_tames,
     coefficientEquiv_std]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, he_def,

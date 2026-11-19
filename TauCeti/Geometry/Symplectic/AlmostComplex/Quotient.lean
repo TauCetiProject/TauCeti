@@ -154,8 +154,8 @@ on the base `E` is the block `J_E v = (J (v, 0)).1`. -/
 theorem descend_fst_apply {E N : Type*} [AddCommGroup E] [Module ℝ E] [AddCommGroup N]
     [Module ℝ N] (J : AlmostComplexStructure (E × N))
     (hJ : ∀ v : E × N, v.1 = 0 → (J v).1 = 0) (v : E) :
-    J.descend (LinearMap.fst ℝ E N) LinearMap.fst_surjective hJ v = (J (v, 0)).1 :=
-  descend_apply J (LinearMap.fst ℝ E N) LinearMap.fst_surjective hJ (v, 0)
+    J.descend (LinearMap.fst ℝ E N) LinearMap.fst_surjective hJ v = (J (v, 0)).1 := by
+  simpa using descend_apply J (LinearMap.fst ℝ E N) LinearMap.fst_surjective hJ (v, 0)
 
 end TauCeti.AlmostComplexStructure
 
