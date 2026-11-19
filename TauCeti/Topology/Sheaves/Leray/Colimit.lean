@@ -49,9 +49,6 @@ a compact Riemann surface, where coordinate discs have vanishing `H¹` for the s
 * `CategoryTheory.Sheaf.isZero_cechCohomology_one_of_subsingleton_H`: if every open cover is
   refined by such a finite cover and `H¹(X, F) = 0`, the degree one Čech cohomology of `F`
   vanishes.
-* `CategoryTheory.Sheaf.isIso_homologyMap_cechComplexMap_one_of_subsingleton_H'`: with module
-  coefficients, a refinement between finite covers whose members have vanishing `H¹` induces an
-  isomorphism on degree one Čech cohomology.
 * `CategoryTheory.Sheaf.isIso_toCechCohomology_one_of_subsingleton_H'` and
   `CategoryTheory.Sheaf.isIso_toCechCohomology_one_of_subsingleton_H'_addCommGrpCat`: if every
   open cover is refined by such a finite cover, every such cover computes the degree one Čech
@@ -125,27 +122,6 @@ theorem isZero_cechCohomology_one_of_subsingleton_H
   exact (congrArg (· ≫ _) (hz.eq_of_tgt _ 0)).trans zero_comp
 
 /-! ### Finite Leray covers compute degree one Čech cohomology -/
-
-/-- **Refinements between finite Leray covers, with module coefficients.** For a sheaf of modules
-`F`, a refinement between finite covers whose members have vanishing `H¹` induces an isomorphism on
-degree one Čech cohomology. -/
-theorem isIso_homologyMap_cechComplexMap_one_of_subsingleton_H' {ι κ : Type u} [Finite ι]
-    [Finite κ] {U : ι → Opens X} {V : κ → Opens X} (hU : ⨆ i, U i = ⊤) (hV : ⨆ i, V i = ⊤)
-    (hFU : ∀ i, Subsingleton (Sheaf.H'
-      ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) 1 (U i)))
-    (hFV : ∀ i, Subsingleton (Sheaf.H'
-      ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) 1 (V i)))
-    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
-    IsIso (HomologicalComplex.homologyMap (cechComplexMap F.obj φ) 1) := by
-  let G := forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}
-  have : IsIso (HomologicalComplex.homologyMap (cechComplexMap (F.obj ⋙ G) φ) 1) :=
-    isIso_homologyMap_cechComplexMap_one U V hU hV ((sheafCompose _ G).obj F) hFU hFV φ
-  -- `G` conjugates the map to the one for the underlying sheaf of abelian groups
-  have : IsIso (G.map (HomologicalComplex.homologyMap (cechComplexMap F.obj φ) 1)) := by
-    rw [(Iso.eq_comp_inv _).2
-      (cechComplexFunctorMapHomologyIso_hom_comp_homologyMap_cechComplexMap U G F.obj φ 1)]
-    infer_instance
-  exact isIso_of_reflects_iso _ G
 
 /-- **A finite Leray cover computes degree one Čech cohomology.** Let `F` be a sheaf of modules
 such that every open cover of `X` is refined by a finite open cover whose members `W i` have

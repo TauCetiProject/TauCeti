@@ -11,6 +11,7 @@ public import TauCeti.Topology.Sheaves.Flasque.Basic
 import Mathlib.Algebra.Category.Grp.AB
 import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.CategoryTheory.Limits.Lattice
+import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Coefficients
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Exact
 
 /-!
@@ -32,6 +33,8 @@ cokernel of the same global-sections map.
 * `homologyMap_comp_homologyCechComplexIsoHOne_hom`: naturality in the coefficient sheaf.
 * `homologyMap_cechComplexMap_comp_homologyCechComplexIsoHOne_hom`: refinement compatibility.
 * `isIso_homologyMap_cechComplexMap_one`: refinement maps between such covers are isomorphisms.
+* `CategoryTheory.Sheaf.isIso_homologyMap_cechComplexMap_one_of_subsingleton_H'`: the
+  corresponding refinement isomorphism for sheaves of modules.
 
 The existing `cechComplexHomologyMap_eq` makes these maps independent of the refinement morphism.
 
@@ -436,3 +439,33 @@ theorem isIso_homologyMap_cechComplexMap_one
 end Naturality
 
 end TauCeti.Topology
+
+namespace CategoryTheory.Sheaf
+
+open TauCeti.Topology
+
+variable {X : TopCat.{u}} {R : Type u} [Ring R]
+  (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+
+/-- **Refinements between finite Leray covers, with module coefficients.** For a sheaf of modules
+`F`, a refinement between finite covers whose members have vanishing `H¹` induces an isomorphism on
+degree one Čech cohomology. -/
+theorem isIso_homologyMap_cechComplexMap_one_of_subsingleton_H' {ι κ : Type u} [Finite ι]
+    [Finite κ] {U : ι → Opens X} {V : κ → Opens X} (hU : ⨆ i, U i = ⊤) (hV : ⨆ i, V i = ⊤)
+    (hFU : ∀ i, Subsingleton (Sheaf.H'
+      ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) 1 (U i)))
+    (hFV : ∀ i, Subsingleton (Sheaf.H'
+      ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) 1 (V i)))
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    IsIso (HomologicalComplex.homologyMap (cechComplexMap F.obj φ) 1) := by
+  let G := forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}
+  have : IsIso (HomologicalComplex.homologyMap (cechComplexMap (F.obj ⋙ G) φ) 1) :=
+    isIso_homologyMap_cechComplexMap_one U V hU hV ((sheafCompose _ G).obj F) hFU hFV φ
+  -- `G` conjugates the map to the one for the underlying sheaf of abelian groups
+  have : IsIso (G.map (HomologicalComplex.homologyMap (cechComplexMap F.obj φ) 1)) := by
+    rw [(Iso.eq_comp_inv _).2
+      (cechComplexFunctorMapHomologyIso_hom_comp_homologyMap_cechComplexMap U G F.obj φ 1)]
+    infer_instance
+  exact isIso_of_reflects_iso _ G
+
+end CategoryTheory.Sheaf
