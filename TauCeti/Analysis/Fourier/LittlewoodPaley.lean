@@ -628,11 +628,11 @@ private theorem sum_toLp_symbol_smul_toLp_symbol {L : ℕ}
           (φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞ volume : Lp ℂ ∞ (volume : Measure V)) =
       (φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞ volume := by
   simp only [Lp.smul_eq_mul]
-  refine Lp.sum_mul_eq_of_ae_eq_ofReal (fun k ↦
+  refine Lp.sum_mul_eq_of_ae_eq (fun k ↦
     ((φ.inhomogeneousLittlewoodPaleySchwartz k).coeFn_toLp ∞ volume).trans
       (.of_forall (φ.inhomogeneousLittlewoodPaleySchwartz_apply k))) (.of_forall fun ξ ↦ ?_)
-  rw [← Finset.sum_mul, ← φ.enlargedLittlewoodPaley_apply,
-    φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
+  rw [← Finset.sum_mul, ← Complex.ofReal_sum, ← φ.enlargedLittlewoodPaley_apply,
+    ← Complex.ofReal_mul, φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
 
 /-- The block `Δⱼ f` only sees the blocks of `g` whose indices are within `L` of `j`:
 `⟪Δⱼ f, g⟫ = ∑_{|k - j| < L} ⟪Δⱼ f, Δₖ g⟫`. -/
@@ -915,8 +915,8 @@ theorem sum_fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley {L : ℕ}
   -- As symbols in `L^∞`, `∑_{j - L < k < j + L} ψₖ ψⱼ = ψⱼ`.
   have hsym : ∑ k ∈ Finset.Ioo (j - L) (j + L), (m k • m j : Lp ℂ ∞ (volume : Measure V)) =
       m j := by
-    simpa only [Lp.smul_eq_mul] using
-      Lp.sum_mul_eq_of_ae_eq_ofReal hm (.of_forall (φ.sum_littlewoodPaley_mul_littlewoodPaley hL j))
+    simpa only [Lp.smul_eq_mul] using Lp.sum_mul_eq_of_ae_eq hm (.of_forall fun ξ ↦ by
+      exact_mod_cast φ.sum_littlewoodPaley_mul_littlewoodPaley hL j ξ)
   simp only [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
   conv_rhs => rw [← hsym]
   rw [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply]
