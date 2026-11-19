@@ -130,6 +130,12 @@ theorem hodgeMultiset_eq_image_val (l : DominantWeight n) :
   rw [image_val_of_injOn l.hodgeShift_injective.injOn]
   rfl
 
+/-- The Hodge–Tate multiset read along the reversed indices `Fin.rev`. -/
+theorem hodgeMultiset_eq_map_rev (l : DominantWeight n) :
+    l.hodgeMultiset = (univ : Finset (Fin n)).val.map (fun i => l.hodgeShift i.rev) := by
+  conv_lhs => rw [hodgeMultiset, ← Multiset.map_univ_val_equiv Fin.revPerm, Multiset.map_map]
+  simp only [Function.comp_def, Fin.revPerm_apply]
+
 /-- The sum of the Hodge–Tate numbers is `∑ λᵢ + n(n - 1)/2`, the Hodge–Tate number of the
 determinant.  It does not determine the multiset. -/
 theorem sum_hodgeMultiset (l : DominantWeight n) :
@@ -152,9 +158,8 @@ theorem hodgeMultiset_shift (l : DominantWeight n) (m : ℤ) :
 @[simp]
 theorem hodgeMultiset_dual (l : DominantWeight n) :
     l.dual.hodgeMultiset = l.hodgeMultiset.map (((n : ℤ) - 1) - ·) := by
-  conv_rhs => rw [hodgeMultiset, ← Multiset.map_univ_val_equiv Fin.revPerm, Multiset.map_map,
-    Multiset.map_map]
-  simp only [hodgeMultiset, Function.comp_def, Fin.revPerm_apply, hodgeShift_dual_apply]
+  rw [l.hodgeMultiset_eq_map_rev, Multiset.map_map]
+  simp [hodgeMultiset]
 
 /-- The zero weight has Hodge–Tate numbers `{0, 1, …, n - 1}`: the Hodge–Tate numbers of the
 `(n - 1)`-st symmetric power of the dual Tate module of an elliptic curve. -/
@@ -164,12 +169,9 @@ theorem hodgeMultiset_zero :
   have h : ∀ i : Fin n, (0 : DominantWeight n).hodgeShift i.rev = ((i : ℕ) : ℤ) := fun i => by
     simp only [hodgeShift_apply, zero_apply, Fin.natCast_val_rev]
     ring
-  have hval : ((univ : Finset (Fin n)).map Fin.valEmbedding).val.map ((↑) : ℕ → ℤ) =
-      (Multiset.range n).map (↑) := by
-    rw [Fin.map_valEmbedding_univ, Nat.Iio_eq_range, Finset.range_val]
-  rw [hodgeMultiset, ← Multiset.map_univ_val_equiv Fin.revPerm, Multiset.map_map, ← hval,
-    Finset.map_val, Multiset.map_map]
-  simp only [Function.comp_def, Fin.revPerm_apply, Fin.valEmbedding_apply, h]
+  refine ((nodup_hodgeMultiset 0).ext ((Multiset.nodup_range n).map Nat.cast_injective)).2
+    fun x => ?_
+  simp [hodgeMultiset_eq_map_rev, h, Fin.exists_iff]
 
 /-- For `GL 2` the Hodge–Tate multiset of `(λ₁, λ₂)` is `{λ₁ + 1, λ₂}`; for the weight
 `(k - 2, 0)` of a classical eigenform of weight `k` it is `{k - 1, 0}`. -/
