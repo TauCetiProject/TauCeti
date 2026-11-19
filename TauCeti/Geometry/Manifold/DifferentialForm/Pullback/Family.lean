@@ -26,7 +26,8 @@ The main instance is the family of **slices** of a form `α` on a product `N × 
 the slices of the exterior derivative (`TauCeti.SmoothForm.contMDiff_mextDeriv_mpullback_prodMk`).
 A smooth form on `ℝ × M` is how a smooth time-dependent family of forms on `M` is represented,
 and this joint smoothness is what makes pointwise constructions from the slices, such as Reeb and
-Moser vector fields, into smooth time-dependent vector fields.
+Moser vector fields, into smooth time-dependent vector fields. The basic example is the linear
+interpolation `α₀ + c(t) (α₁ - α₀)` of two forms (`TauCeti.SmoothForm.lineMapFamily`).
 
 In coordinates, the coordinate expression of a slice in a chart of `M` is that of `α` in a product
 chart, precomposed with the inclusion of the second factor (`TauCeti.inChartAt_mpullback_prodMk`).
@@ -48,6 +49,8 @@ coordinates of the parameter and the point
 * `TauCeti.IsSmoothForm.contDiffOn_inChartAt_mpullback_prodMk`: the coordinate expressions of the
   slices of a `C^m` form on `N × M` are jointly `C^m` in the chart coordinates of the parameter and
   the point, on the product chart target.
+* `TauCeti.SmoothForm.lineMapFamily`, `TauCeti.SmoothForm.mpullback_prodMk_lineMapFamily`: the
+  family `t ↦ α₀ + c(t) (α₁ - α₀)` interpolating two forms, as a form on `ℝ × M`.
 -/
 
 public section
@@ -221,5 +224,42 @@ theorem IsSmoothForm.contDiffOn_inChartAt_mpullback_prodMk [IsManifold J 1 N]
   rw [inChartAt_mpullback_prodMk φ a ((extChartAt J a.1).map_target hX'.1) hX'.2,
     (extChartAt J a.1).right_inv hX'.1]
   exact ContinuousAlternatingMap.compContinuousLinearMapCLM_apply _ _
+/-! ### Linear interpolation of two forms -/
+
+/-- **The linear interpolation of two forms, as a form on `ℝ × M`.** For smooth forms `α₀`, `α₁`
+on `M` and a smooth function `c : ℝ → ℝ`, the smooth form on `ℝ × M` whose slice at time `t` is
+`α₀ + c(t) (α₁ - α₀)` (`TauCeti.SmoothForm.mpullback_prodMk_lineMapFamily`). It is the pullback
+of `α₀` along the projection to `M`, plus `c(t)` times the pullback of `α₁ - α₀`. Reparametrizing
+the segment by a smooth step function `c` gives a family which is constant for `t ≤ 0` and for
+`t ≥ 1`, as Moser's and Gray's arguments use. -/
+def SmoothForm.lineMapFamily (α₀ α₁ : SmoothForm I M F k) {c : ℝ → ℝ} (hc : ContDiff ℝ ∞ c) :
+    SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k :=
+  mpullback Prod.snd contMDiff_snd α₀ +
+    funSMulₗ ⟨fun p ↦ c p.1, by exact hc.contMDiff.comp contMDiff_fst⟩
+      (mpullback Prod.snd contMDiff_snd (α₁ - α₀))
+
+/-- The slices of `TauCeti.SmoothForm.lineMapFamily α₀ α₁ hc` are the forms
+`α₀ + c(t) (α₁ - α₀)`. -/
+@[simp]
+theorem SmoothForm.mpullback_prodMk_lineMapFamily (α₀ α₁ : SmoothForm I M F k) {c : ℝ → ℝ}
+    (hc : ContDiff ℝ ∞ c) (t : ℝ) :
+    mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (lineMapFamily α₀ α₁ hc) =
+      α₀ + c t • (α₁ - α₀) := by
+  -- `Prod.snd ∘ Prod.mk t` is the identity of `M`.
+  have hcomp (τ : SmoothForm I M F k) : mpullback (Prod.mk t)
+      (contMDiff_const.prodMk contMDiff_id) (mpullback Prod.snd contMDiff_snd τ) = τ :=
+    (mpullback_mpullback (Prod.mk t) Prod.snd (I' := 𝓘(ℝ, ℝ).prod I)
+      (contMDiff_const.prodMk contMDiff_id) contMDiff_snd τ).trans
+        (LinearMap.congr_fun mpullback_id τ)
+  rw [lineMapFamily, map_add, hcomp]
+  congr 1
+  apply Subtype.ext
+  -- `erw`: the coercion of `funSMulₗ` carries the `IsManifold _ 1` instance derived from the
+  -- product, which differs syntactically from the one in the goal.
+  erw [coe_mpullback, coe_funSMulₗ, mpullback_fun_smul,
+    ← coe_mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id), hcomp]
+  -- The bundled function evaluates at `(t, x)` to `c t` by definition, and the scalar multiple of
+  -- a smooth form is computed pointwise.
+  rfl
 
 end TauCeti

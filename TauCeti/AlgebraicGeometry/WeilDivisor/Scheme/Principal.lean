@@ -24,7 +24,10 @@ The main results are:
 * `WeilDivisor.OrderSystem.ofScheme`: the resulting order system, whose generic
   `OrderSystem.principalDivisor` is the scheme-theoretic principal divisor;
 * `SchemeWeilDivisor.add_principalDivisor_nonneg_iff`: the coefficientwise criterion for a
-  divisor plus a principal divisor to be effective.
+  divisor plus a principal divisor to be effective;
+* `AlgebraicGeometry.Scheme.Hom.pullback_principalDivisor_of_isOpenImmersion`: pulling back a
+  principal Weil divisor along a dominant open immersion corresponds to pulling back the defining
+  rational function along `functionFieldMap`.
 
 This file completes the global step left open by
 `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`. The proof reuses Mathlib's
@@ -111,3 +114,27 @@ end SchemeWeilDivisor
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open CategoryTheory TauCeti.AlgebraicGeometry
+
+/-- Pulling back a principal Weil divisor along a dominant open immersion `j : U ⟶ X`
+corresponds to pulling back the defining rational function along `j.functionFieldMap`. -/
+theorem pullback_principalDivisor_of_isOpenImmersion {U X : Scheme.{u}}
+    [IsIntegral U] [IsNoetherian U] [IsIntegral X] [IsNoetherian X]
+    (j : U ⟶ X) [IsOpenImmersion j] [IsDominant j] (g : Additive X.functionFieldˣ) :
+    WeilDivisor.pullback (CodimensionOnePoint.mapOfIsOpenImmersion_injective j)
+        ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) =
+      (WeilDivisor.OrderSystem.ofScheme U).principalDivisor
+        (Additive.ofMul (Units.map j.functionFieldMap.hom.toMonoidHom g.toMul)) := by
+  refine WeilDivisor.ext fun y ↦ ?_
+  rw [WeilDivisor.coeff_pullback, WeilDivisor.OrderSystem.coeff_principalDivisor,
+    WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
+    WeilDivisor.OrderSystem.ofScheme_ord, SchemeWeilDivisor.orderAt_apply,
+    SchemeWeilDivisor.orderAt_apply, toMul_ofMul, Units.coe_map,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    CodimensionOnePoint.coe_mapOfIsOpenImmersion]
+  exact (TauCeti.AlgebraicGeometry.Scheme.ord_functionFieldMap j _ ↑y).symm
+
+end AlgebraicGeometry.Scheme.Hom
