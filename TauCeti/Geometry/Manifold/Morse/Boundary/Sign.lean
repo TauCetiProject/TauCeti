@@ -512,6 +512,13 @@ theorem continuousWithinAt_trajectoryComparison (hf : IsMorse 𝓘(ℝ, E) f) {y
     simp only [C, ContinuousLinearMap.comp_apply, smul_apply,
       LinearMap.coe_toContinuousLinearMap', stableNormal_apply hφq (hyT hy.2)]
     rw [mvfderiv_apply_eq_mfderiv_apply]
+  -- The comparison map is the pairing of its two components by `ContinuousLinearMap.prodₗᵢ`.
+  have hprod : hX.trajectoryComparison φp φq = fun y ↦ ContinuousLinearMap.prodₗᵢ ℝ
+      ((mvfderiv 𝓘(ℝ, E) f y).comp (hX.unstableFrame φp y),
+        (hX.stableNormal φq y).comp (hX.unstableFrame φp y)) :=
+    funext fun y ↦ ContinuousLinearMap.ext fun v ↦ by
+      simp [trajectoryComparison_apply, ContinuousLinearMap.prodₗᵢ, LinearIsometryEquiv.coe_mk]
+  rw [hprod]
   exact (ContinuousLinearMap.prodₗᵢ ℝ).continuous.continuousAt.comp_continuousWithinAt
     (h₁.prodMk h₂)
 
