@@ -18,6 +18,9 @@ import Mathlib.Analysis.Calculus.FDeriv.Add
 -- `TauCeti.isNondegenerateCriticalPoint_comp_iff` and
 -- `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`.
 import TauCeti.Analysis.Calculus.FDeriv.Comp
+-- Private: the comparison of Łojasiewicz inequalities is used only inside the proof of
+-- `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`.
+import TauCeti.Analysis.Calculus.Lojasiewicz.Comparison
 
 /-!
 # Nondegenerate critical points
@@ -482,14 +485,9 @@ theorem IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq
     ∃ lam > 0, ∀ᶠ y in 𝓝 x, lam * |f y - f x| ≤ ‖fderiv ℝ f y‖ ^ 2 := by
   obtain ⟨c, hc, h1⟩ := h.exists_mul_norm_sub_le_norm_fderiv
   obtain ⟨C, hC, h2⟩ := h.contDiffAt.exists_abs_sub_le_mul_norm_sub_sq h.fderiv_eq_zero
-  refine ⟨c ^ 2 / C, by positivity, ?_⟩
-  filter_upwards [h1, h2] with y hy1 hy2
-  have h3 : (c * ‖y - x‖) ^ 2 ≤ ‖fderiv ℝ f y‖ ^ 2 :=
-    pow_le_pow_left₀ (by positivity) hy1 2
-  calc c ^ 2 / C * |f y - f x| ≤ c ^ 2 / C * (C * ‖y - x‖ ^ 2) :=
-        mul_le_mul_of_nonneg_left hy2 (by positivity)
-    _ = (c * ‖y - x‖) ^ 2 := by field_simp
-    _ ≤ ‖fderiv ℝ f y‖ ^ 2 := h3
+  exact exists_mul_le_sq_of_eventually_le_mul (g := fun y ↦ ‖y - x‖) (K := c⁻¹)
+    ⟨C⁻¹, by positivity, h2.mono fun _ hy ↦ by rwa [inv_mul_le_iff₀ hC]⟩
+    (.of_forall fun _ ↦ norm_nonneg _) (h1.mono fun _ hy ↦ by rwa [le_inv_mul_iff₀ hc])
 
 end NormedSpace
 
