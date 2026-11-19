@@ -119,8 +119,7 @@ example : Nat.card {χ : DirichletCharacter ℂ 16 // χ.IsQuadratic} = 4 ∧
   refine ⟨?_, ?_⟩
   · rw [← Nat.card_congr (Equiv.subtypeEquiv (p := fun u ↦ u ^ 2 = 1)
       (TauCeti.conreyCharacter 16).toEquiv (fun u ↦ by
-        -- The underlying equivalence evaluates the same character.
-        change u ^ 2 = 1 ↔ ((TauCeti.conreyCharacter 16) u).IsQuadratic
+        rw [MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv]
         rw [MulChar.isQuadratic_iff_sq_eq_one, ← map_pow (TauCeti.conreyCharacter 16) u 2,
           (TauCeti.conreyCharacter 16).map_eq_one_iff]))]
     exact Nat.card_eq_fintype_card.trans (by decide)

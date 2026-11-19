@@ -77,9 +77,7 @@ example :
   let χ : DirichletCharacter ℂ 16 := MulChar.ofUnitHom f
   have h5 : χ 5 = Complex.I := by
     rw [← ZMod.coe_unitFive (n := 4), MulChar.ofUnitHom_coe]
-    -- Coercing the unit hom recovers the circle-valued Conrey pairing.
-    change (TauCeti.conreyLocal 2 4 (ZMod.unitFive (n := 4))
-      (ZMod.unitFive (n := 4)) : ℂ) = Complex.I
+    rw [MonoidHom.comp_apply, Circle.toUnits_apply, Units.val_mk0]
     rw [TauCeti.conreyLocal_two_apply (e := 2) (x := 0) (y := 0)
       (a := 1) (b := 1) (by simp) (by simp)]
     norm_num only [Nat.cast_zero, Nat.cast_one, zero_mul, mul_zero, zero_div,
