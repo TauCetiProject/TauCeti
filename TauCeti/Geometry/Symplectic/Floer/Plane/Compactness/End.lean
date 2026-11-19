@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Plane.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Manifold
+import TauCeti.Order.Interval.Set.Prod
 
 /-!
 # Compactness along the end of PSS planes
@@ -15,15 +16,15 @@ public import TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Manifold
 The Piunikhin–Salamon–Schwarz maps count solutions `u : ℂ → X` of the perturbed Cauchy–Riemann
 equation `(du - X_K)^{0,1} = 0` for the perturbation `K` of a PSS plane `p`
 (`TauCeti.Floer.PSSPlane.perturbation`), built from a period-one Hamiltonian `H`. The compactness
-theorems of `TauCeti.Geometry.Symplectic.Floer.Plane.Compactness` apply on a fixed compact window
-of the plane. Breaking along the end concerns windows that move off to `∞` instead: a sequence of
-solutions `uₖ` is read along the end at heights `Rₖ`, through the translated ends
+theorems of `TauCeti.Geometry.Symplectic.Floer.Plane.Compactness.Basic` apply on a fixed compact
+window of the plane. Breaking along the end concerns windows that move off to `∞` instead: a
+sequence of solutions `uₖ` is read along the end at heights `Rₖ`, through the translated ends
 
 `vₖ(s, t) = uₖ(φ(s + Rₖ, t))`,
 
 where `φ(s, t) = exp (2π (s + i t))` is the end lift of the positive plane in real coordinates.
-When `Rₖ → ∞` the limits of the `vₖ` are the Floer cylinders that break off at the end of the
-plane.
+These windows are where Floer cylinders break off when `Rₖ → ∞`; showing that the limits of the
+`vₖ` are such cylinders is not done here.
 
 Both planes are read in the coordinates of the positive plane: the perturbation of a plane `p`
 with end sign `ε` given by `H` is the perturbation of the positive plane given by the Hamiltonian
@@ -40,8 +41,9 @@ finitely many bubbling points, uniformly in the heights, from two facts.
 * **Energy.** The energy of a translated end over a window of angular width one is the energy of
   `uₖ ∘ φ` over the translated window, so it is at most the energy of `uₖ` over the plane
   (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_positive_add_le`).
-* **Compactness.** The compactness theorem for Floer solutions of bounded energy therefore applies
-  to the `vₖ` on a fixed window, with a threshold `δ` that does not depend on the heights.
+
+The compactness theorem for Floer solutions of bounded energy therefore applies to the `vₖ` on a
+fixed window, with a threshold `δ` that does not depend on the heights.
 
 The results are stated for a fixed compact window `D ⊆ (max T₀ 2, ∞) × (t₀, t₀ + 1)`, of angular
 width less than one so that `φ` is injective on it; two such windows cover any compact part of the
@@ -140,9 +142,6 @@ private theorem contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_p
     simp only [Prod.snd_add, add_zero, comp_apply] at heq
     rw [heq]
     simpa using h
-  have hf0 : 0 ≤ᵐ[volume.restrict Ω] ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) v :=
-    ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦
-      ω.floerEnergyDensity_nonneg (hJt _ _ (huB hz)) (hvfl z hz)
   -- The energy of `v` over `Ω` is at most the energy of `u` over the plane.
   have hlin : ∫⁻ z in Ω, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) v z) ≤
       ENNReal.ofReal E :=
@@ -152,13 +151,9 @@ private theorem contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_p
         Ioo_subset_Ico_self (hΩT z hz).2⟩).trans ((setLIntegral_le_lintegral _ _).trans hE)
   have hKt : ContDiff ℝ 1 (uncurry fun w : ℝ × ℝ ↦ H w.2) :=
     (hHs.of_le (by norm_num)).comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
-  have hint : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) v) Ω :=
-    ⟨(ω.continuousOn_floerEnergyDensity hΩ (hvC.of_le (by norm_num)).contDiffOn contDiffOn_const
-      hKt.contDiffOn).aestronglyMeasurable hΩ.measurableSet,
-      (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hvC, hvfl, hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0 hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+  exact ⟨hvC, hvfl, ω.integrableOn_and_setIntegral_floerEnergyDensity_le hΩ hΩ.measurableSet
+    subset_rfl (hvC.of_le (by norm_num)).contDiffOn contDiffOn_const hKt.contDiffOn
+    (fun z hz ↦ ω.floerEnergyDensity_nonneg (hJt _ _ (huB hz)) (hvfl z hz)) hE0 hlin⟩
 
 /-- **The translated ends of PSS planes converge off finitely many bubbling points.** Let `p` be a
 PSS plane with end sign `ε`, `H` a period-one `C³` Hamiltonian on `V`, and `J(z, x)` structures on
@@ -219,11 +214,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
   rw [perturbation_eq_positive p H] at hfl hE
   -- The translated windows lie in the band `(max T₀ 2, ∞) × (t₀, t₀ + 1)` of the end.
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
-      z + (R k, 0) ∈ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1) := by
-    obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
-    refine ⟨?_, by simpa using h₂⟩
-    simp only [Prod.fst_add, mem_Ioi]
-    linarith [hR k, mem_Ioi.1 h₁]
+      z + (R k, 0) ∈ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1) :=
+    add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
   have h (k : ℕ) :=
     contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add ω
       (p.periodic_endSign_mul hH) hHs' hJ hJt hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k) (huB k)
@@ -237,31 +229,6 @@ section Manifold
 variable {E G M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [NormedAddCommGroup V]
   {H : ℝ → M → ℝ}
-
-namespace Floer
-
-variable [NormedSpace ℝ V]
-
-/-- **The cylindrical datum read in a chart is smooth.** For a Hamiltonian `H` which is `C^n` on
-`ℝ × M` and a `C^m` partial diffeomorphism `φ` from `M` to a normed space `V`, with `n ≤ m`, the
-Hamiltonian `((s, t), y) ↦ H(t, φ⁻¹ y)` of the cylindrical datum `H(t) dt` read in the chart is
-`C^n` jointly in the cylinder coordinates `(s, t)` and the chart coordinate `y` in the target of
-`φ`. -/
-theorem contDiffOn_cylindrical_comp_symm {n : ℕ∞} {m : WithTop ℕ∞}
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry H))
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V m) (hnm : (n : WithTop ℕ∞) ≤ m) :
-    ContDiffOn ℝ n (fun q : (ℝ × ℝ) × V ↦ H q.1.2 (φ.symm q.2)) (univ ×ˢ φ.target) := by
-  rintro ⟨z, y⟩ ⟨-, hy⟩
-  refine ContDiffAt.contDiffWithinAt ?_
-  have hsymm : ContMDiffAt 𝓘(ℝ, V) I n φ.symm y :=
-    (φ.symm.contMDiffOn.of_le hnm).contMDiffAt (φ.open_target.mem_nhds hy)
-  have hpair : ContMDiffAt 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℝ).prod I) n
-      (fun q : (ℝ × ℝ) × V ↦ (q.1.2, φ.symm q.2)) (z, y) :=
-    ((contDiff_snd.comp contDiff_fst).contMDiff.contMDiffAt).prodMk
-      (hsymm.comp (z, y) contDiff_snd.contMDiff.contMDiffAt)
-  exact contMDiffAt_iff_contDiffAt.1 ((hHs (z.2, φ.symm y)).comp (z, y) hpair)
-
-end Floer
 
 namespace SmoothTwoForm.IsNondegenerate
 
@@ -327,9 +294,6 @@ private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_
     simp only [Prod.snd_add, add_zero, comp_apply] at heq
     rw [heq]
     simpa using h
-  have hf0 : 0 ≤ᵐ[volume.restrict Ω] ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) v :=
-    ae_restrict_of_forall_mem hΩ.measurableSet fun z hz ↦
-      floerEnergyDensity_nonneg (u := v) hω (hJt _ _ (huC hz)) (hvfl z hz)
   -- The energy of `v` over `Ω` is at most the energy of `u` over the plane.
   have hlin : ∫⁻ z in Ω, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) v z) ≤
       ENNReal.ofReal E :=
@@ -346,13 +310,9 @@ private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_
   have hH₂ : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 2 (uncurry fun (w : ℝ × ℝ) x ↦ H w.2 x) :=
     (hHs.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)).of_le
       (by norm_num)
-  have hint : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) v) Ω :=
-    ⟨(ω.continuousOn_floerEnergyDensity hΩ (hvC.of_le (by norm_num)).contMDiffOn
-      (hX contMDiff_const) (hX hH₂)).aestronglyMeasurable hΩ.measurableSet,
-      (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hvC, hvfl, hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0 hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+  exact ⟨hvC, hvfl, ω.integrableOn_and_setIntegral_floerEnergyDensity_le hΩ hΩ.measurableSet
+    subset_rfl (hvC.of_le (by norm_num)).contMDiffOn (hX contMDiff_const) (hX hH₂)
+    (fun z hz ↦ floerEnergyDensity_nonneg (u := v) hω (hJt _ _ (huC hz)) (hvfl z hz)) hE0 hlin⟩
 
 /-- **The translated ends of PSS planes in a symplectic chart of a manifold converge off finitely
 many bubbling points.** Let `p` be a PSS plane with end sign `ε`, `H` a period-one `C³`
@@ -428,18 +388,16 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset φ
     (Ks := fun _ _ ↦ 0) (Kt := fun w x ↦ p.endSign * H (p.endSign * w.2) x)
     (J := fun z ↦ Jend z.2) hφ hJJ' hW' contDiffOn_const
-    ((contDiffOn_cylindrical_comp_symm hHs' φ (WithTop.coe_le_coe.2 le_top)).mono
-      inter_subset_right)
+    ((contDiffOn_comp_symm (K := fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x)
+      isOpen_univ (hHs'.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk
+        contMDiff_snd)).contMDiffOn φ (WithTop.coe_le_coe.2 le_top)).mono inter_subset_right)
     (hJ'.mono inter_subset_left) hD hC hCφ hDCW' fun z _ x hx ↦ hJt z.2 x hx
   refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huC ↦ ?_⟩
   rw [perturbation_eq_positive p H] at hfl hE
   -- The translated windows lie in the band `(max T₀ 2, ∞) × (t₀, t₀ + 1)` of the end.
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
-      z + (R k, 0) ∈ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1) := by
-    obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
-    refine ⟨?_, by simpa using h₂⟩
-    simp only [Prod.fst_add, mem_Ioi]
-    linarith [hR k, mem_Ioi.1 h₁]
+      z + (R k, 0) ∈ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1) :=
+    add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
   have h (k : ℕ) :=
     contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add hω
       (p.periodic_endSign_mul hH) hHs' hJ hJt hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k) (huC k)

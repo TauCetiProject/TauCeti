@@ -159,18 +159,11 @@ theorem contDiffOn_perturbation_comp_symm (p : PSSPlane) {n : ℕ∞} {m : WithT
     (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry H))
     (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V m) (hnm : (n : WithTop ℕ∞) ≤ m) (v : ℂ) :
     ContDiffOn ℝ n (fun q : (ℝ × ℝ) × V ↦
-        p.perturbation H (equivRealProdCLM.symm q.1) (φ.symm q.2) v) (univ ×ˢ φ.target) := by
-  rintro ⟨z, y⟩ ⟨-, hy⟩
-  refine ContDiffAt.contDiffWithinAt ?_
-  -- The point `z` of the plane and the chart inverse `φ⁻¹` are `C^n` into `ℂ × M`.
-  have hsymm : ContMDiffAt 𝓘(ℝ, V) I n φ.symm y :=
-    (φ.symm.contMDiffOn.of_le hnm).contMDiffAt (φ.open_target.mem_nhds hy)
-  have hpair : ContMDiffAt 𝓘(ℝ, (ℝ × ℝ) × V) (𝓘(ℝ, ℂ).prod I) n
-      (fun q : (ℝ × ℝ) × V ↦ (equivRealProdCLM.symm q.1, φ.symm q.2)) (z, y) :=
-    ((equivRealProdCLM.symm.contDiff.comp contDiff_fst).contMDiff.contMDiffAt).prodMk
-      (hsymm.comp (z, y) contDiff_snd.contMDiff.contMDiffAt)
-  have hK := (contMDiff_perturbation (p := p) hH hHs _).comp (z, y) hpair
-  exact (contMDiffAt_iff_contDiffAt.1 hK).clm_apply contDiffAt_const
+        p.perturbation H (equivRealProdCLM.symm q.1) (φ.symm q.2) v) (univ ×ˢ φ.target) :=
+  (contDiffOn_comp_symm (K := fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x) isOpen_univ
+    ((contMDiff_perturbation (p := p) hH hHs).comp
+      ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+        contMDiff_snd)).contMDiffOn φ hnm).clm_apply contDiffOn_const
 
 end Floer.PSSPlane
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Orbit
+import TauCeti.Order.Interval.Set.Prod
 
 /-!
 # Compactness along the ends of pairs of pants
@@ -141,11 +142,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_posit
   -- The translated windows lie in the band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of the positive end
   -- chart.
   have hΩT (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ Ω) :
-      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) := by
-    obtain ⟨h₁, h₂⟩ := hDT (hΩD hz)
-    refine ⟨?_, by simpa using h₂⟩
-    simp only [Prod.fst_add, mem_Ioi]
-    linarith [hR k, mem_Ioi.1 h₁]
+      z + (R k, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1) :=
+    add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
   have hvC (k : ℕ) : ContDiffOn ℝ 3 (fun z ↦ u k (positiveEndChart q (z + (R k, 0)))) Ω :=
     (hu k).comp ((contDiff_positiveEndChart q 3).comp (contDiff_id.add contDiff_const)).contDiffOn
       fun z hz ↦ positiveEndChart_mem_thricePuncturedSphereReal
