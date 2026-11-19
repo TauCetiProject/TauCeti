@@ -7,8 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.DiophantineApproximation.ContinuedFractions.Basic
-import Mathlib.Algebra.ContinuedFractions.ContinuantsRecurrence
-import Mathlib.Tactic.LinearCombination
+public import TauCeti.NumberTheory.Real.GoldenRatio
 
 /-!
 # The continued fraction of the golden ratio
@@ -27,15 +26,14 @@ for `φ`.
 
 ## Main results
 
-* `Real.floor_goldenRatio`, `Real.fract_goldenRatio`: `⌊φ⌋ = 1` and `Int.fract φ = φ - 1`.
-* `Real.partDens_of_goldenRatio`: every partial denominator of `GenContFract.of φ` is `1`.
-* `Real.dens_of_goldenRatio`, `Real.nums_of_goldenRatio`: the continuants of `φ` are
+* `TauCeti.partDens_of_goldenRatio`: every partial denominator of `GenContFract.of φ` is `1`.
+* `TauCeti.dens_of_goldenRatio`, `TauCeti.nums_of_goldenRatio`: the continuants of `φ` are
   `fib (n + 1)` and `fib (n + 2)`.
-* `Real.den_convergent_goldenRatio`, `Real.num_convergent_goldenRatio`,
-  `Real.convergent_goldenRatio`: the convergents of `φ` are `fib (n + 2) / fib (n + 1)`, in
+* `TauCeti.den_convergent_goldenRatio`, `TauCeti.num_convergent_goldenRatio`,
+  `TauCeti.convergent_goldenRatio`: the convergents of `φ` are `fib (n + 2) / fib (n + 1)`, in
   lowest terms.
-* `Real.den_convergent_goldenRatio_mul_sub_num`, `Real.goldenRatio_sub_convergent`: the exact
-  error of the `n`-th convergent.
+* `TauCeti.den_convergent_goldenRatio_mul_sub_num`, `TauCeti.goldenRatio_sub_convergent`: the
+  exact error of the `n`-th convergent.
 
 ## References
 
@@ -46,23 +44,9 @@ public section
 
 open GenContFract (of IntFractPair)
 open scoped goldenRatio
+open Real
 
-namespace Real
-
-/-- The integer part of the golden ratio is `1`. -/
-@[simp]
-theorem floor_goldenRatio : ⌊φ⌋ = 1 :=
-  Int.floor_eq_iff.mpr ⟨by simpa using one_lt_goldenRatio.le, by
-    norm_num; linarith [goldenRatio_lt_two]⟩
-
-/-- The fractional part of the golden ratio is `φ - 1`. -/
-theorem fract_goldenRatio : Int.fract φ = φ - 1 := by
-  simp [Int.fract]
-
-/-- The golden ratio is a fixed point of the Gauss map `x ↦ (Int.fract x)⁻¹`. -/
-theorem inv_fract_goldenRatio : (Int.fract φ)⁻¹ = φ := by
-  rw [fract_goldenRatio]
-  exact inv_eq_of_mul_eq_one_left (by linear_combination goldenRatio_sq)
+namespace TauCeti
 
 /-- Every step of the continued fraction algorithm for the golden ratio returns the integer part
 `1` and the fractional part `φ - 1`. -/
@@ -81,10 +65,12 @@ private theorem s_of_goldenRatio (n : ℕ) : (of φ).s.get? n = some ⟨1, 1⟩ 
 
 /-- Every partial denominator of the continued fraction of the golden ratio is `1`: the
 continued fraction is `[1; 1, 1, …]`. -/
+@[simp]
 theorem partDens_of_goldenRatio (n : ℕ) : (of φ).partDens.get? n = some 1 :=
   GenContFract.partDen_eq_s_b (s_of_goldenRatio n)
 
 /-- The denominator continuants of the golden ratio are the Fibonacci numbers. -/
+@[simp]
 theorem dens_of_goldenRatio (n : ℕ) : (of φ).dens n = Nat.fib (n + 1) := by
   induction n using Nat.twoStepInduction with
   | zero => simp [GenContFract.zeroth_den_eq_one]
@@ -96,6 +82,7 @@ theorem dens_of_goldenRatio (n : ℕ) : (of φ).dens n = Nat.fib (n + 1) := by
     ring
 
 /-- The numerator continuants of the golden ratio are the Fibonacci numbers, shifted by one. -/
+@[simp]
 theorem nums_of_goldenRatio (n : ℕ) : (of φ).nums n = Nat.fib (n + 2) := by
   induction n using Nat.twoStepInduction with
   | zero => simp [GenContFract.zeroth_num_eq_h, GenContFract.of_h_eq_floor]
@@ -156,4 +143,4 @@ theorem convergent_goldenRatio_lt_iff (n : ℕ) : (convergent φ n : ℝ) < φ �
   · exact iff_of_true (h.add_one.pow_neg goldenConj_neg) h
   · exact iff_of_false (not_lt.mpr (h.add_one.pow_nonneg ψ)) (Nat.not_even_iff_odd.mpr h)
 
-end Real
+end TauCeti
