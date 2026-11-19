@@ -256,6 +256,15 @@ theorem castDegree_castDegree {m'' : ℝ} (h : m = m') (h' : m' = m'')
     (a.castDegree h).castDegree h' = a.castDegree (h.trans h') :=
   (rfl)
 
+/-- In a family `a i` of homogeneous symbols on `U` whose degrees depend on the index, the
+coefficient of `a i` depends only on the value of `i`, although the types of `a i` and `a i'`
+differ. -/
+theorem coefficient_congr_index {ι : Type*} {d : ι → ℝ}
+    (a : (i : ι) → LocalHomogeneousSymbol U V W (d i)) {i i' : ι} (h : i = i') :
+    (a i).coefficient = (a i').coefficient := by
+  subst h
+  rfl
+
 @[simp]
 theorem castDegree_zero (h : m = m') :
     (0 : LocalHomogeneousSymbol U V W m).castDegree h = 0 :=
@@ -482,6 +491,17 @@ variable (hψ : ContDiff ℝ ∞ ψ) (hψU : tsupport ψ ⊆ U)
 theorem coefficient_extend (a : LocalHomogeneousSymbol U V W m)
     (p : CoordinateSpace n × CoordinateSpace n) :
     (extend ψ hψ hψU a).coefficient p = ψ p.1 • a.coefficient p := (rfl)
+
+/-- A homogeneous symbol on `U` is determined by its cut-off extensions to `ℝⁿ`: two homogeneous
+symbols on `U` are equal if their extensions agree for every smooth cutoff supported in `U`. -/
+theorem ext_of_extend {a b : LocalHomogeneousSymbol U V W m}
+    (h : ∀ (ψ : CoordinateSpace n → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψU : tsupport ψ ⊆ U),
+      extend ψ hψ hψU a = extend ψ hψ hψU b) : a = b := by
+  refine ext_of_mem fun x hx ξ _ => ?_
+  obtain ⟨ψ, hψ, -, hψ1, -, hψU⟩ := isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one
+    U.isOpen (singleton_subset_iff.2 hx)
+  simpa [(hψ1 x rfl).self_of_nhds] using
+    congrArg (fun c : HomogeneousSymbol _ _ V W m => c.coefficient (x, ξ)) (h ψ hψ hψU)
 
 @[simp]
 theorem extend_castDegree {m' : ℝ} (h : m = m') (a : LocalHomogeneousSymbol U V W m) :
