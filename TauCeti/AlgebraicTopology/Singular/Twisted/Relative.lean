@@ -92,7 +92,7 @@ def twistedChainComplexπ :
     L.twistedChainComplex ⟶ P.twistedChainComplex L :=
   cokernel.π _
 
-instance : Epi (P.twistedChainComplexπ L) := coequalizer.π_epi
+instance epi_twistedChainComplexπ : Epi (P.twistedChainComplexπ L) := coequalizer.π_epi
 
 @[reassoc (attr := simp)]
 lemma twistedChainComplexMap_comp_twistedChainComplexπ :
