@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.Analysis.MellinTransform.UpperTail
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The continuation of `ζ` by the first-order Euler–Maclaurin formula
@@ -56,41 +57,26 @@ open scoped Topology
 
 namespace TauCeti
 
+/-- The sawtooth `B₁({x})`, viewed in `ℂ`, has norm at most `1/2`. -/
+private theorem norm_sawtooth_le (x : ℝ) : ‖(bernoulliFun 1 (Int.fract x) : ℂ)‖ ≤ 1 / 2 := by
+  rw [norm_real, Real.norm_eq_abs]
+  exact abs_bernoulliFun_one_fract_le x
+
 /-- The tail integral of the sawtooth `B₁({x}) = {x} - 1/2` against `x^(-s-1)` converges
 absolutely on `(a, ∞)` for `a > 0` and `0 < Re s`. -/
 theorem integrableOn_sawtooth_mul_cpow {a : ℝ} (ha : 0 < a) {s : ℂ} (hs : 0 < s.re) :
     IntegrableOn (fun x : ℝ ↦ (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1)))
-      (Set.Ioi a) := by
-  refine Integrable.mono' (((integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1)
-    ha).const_mul (1 / 2))) ?_ ?_
-  · exact ((continuous_ofReal.comp (continuous_bernoulliFun 1)).measurable.comp
-      measurable_fract).aestronglyMeasurable.mul
-      ((measurable_ofReal.pow_const _).aestronglyMeasurable)
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
-    rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (ha.trans hx), norm_real, Real.norm_eq_abs]
-    simp only [neg_re, add_re, one_re]
-    exact mul_le_mul_of_nonneg_right (abs_bernoulliFun_one_fract_le x)
-      (Real.rpow_nonneg (ha.trans hx).le _)
+      (Set.Ioi a) :=
+  integrableOn_mul_cpow_of_bound ha
+    ((continuous_ofReal.comp (continuous_bernoulliFun 1)).measurable.comp
+      measurable_fract).aestronglyMeasurable (fun x _ ↦ norm_sawtooth_le x) hs
 
 /-- **The bound for the sawtooth tail.** For `a > 0` and `σ = Re s > 0`,
 `‖∫_a^∞ B₁({x}) x^(-s-1) dx‖ ≤ a^(-σ)/(2σ)`, where `B₁({x}) = {x} - 1/2`. -/
 theorem norm_integral_sawtooth_mul_cpow_le {a : ℝ} (ha : 0 < a) {s : ℂ} (hs : 0 < s.re) :
     ‖∫ x in Set.Ioi a, (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))‖ ≤
-      a ^ (-s.re) / (2 * s.re) := by
-  calc
-    _ ≤ ∫ x in Set.Ioi a, 1 / 2 * x ^ (-(s.re + 1)) := by
-      refine norm_integral_le_of_norm_le ((integrableOn_Ioi_rpow_of_lt
-        (by linarith : -(s.re + 1) < -1) ha).const_mul _) ?_
-      filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
-      rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (ha.trans hx), norm_real, Real.norm_eq_abs]
-      simp only [neg_re, add_re, one_re]
-      exact mul_le_mul_of_nonneg_right (abs_bernoulliFun_one_fract_le x)
-        (Real.rpow_nonneg (ha.trans hx).le _)
-    _ = a ^ (-s.re) / (2 * s.re) := by
-      rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) ha]
-      have : -(s.re + 1) + 1 = -s.re := by ring
-      rw [this]
-      field_simp
+      a ^ (-s.re) / (2 * s.re) :=
+  (norm_integral_mul_cpow_le_of_bound ha (fun x _ ↦ norm_sawtooth_le x) hs).trans_eq (by ring)
 
 /-- The right side of the Euler–Maclaurin formula for `ζ(s)` cut at `a`. -/
 private noncomputable def zetaSawtooth (a : ℝ) (s : ℂ) : ℂ :=
@@ -140,16 +126,6 @@ private theorem zetaSawtooth_eq_of_le {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) {
   field_simp
   ring
 
-/-- `‖c * N^(-y)‖ → 0` along the natural numbers for `0 < y`. -/
-private theorem tendsto_mul_natCast_cpow_neg {c : ℂ} {y : ℂ} (hy : 0 < y.re) :
-    Tendsto (fun N : ℕ ↦ c * (N : ℂ) ^ (-y)) atTop (𝓝 0) := by
-  rw [tendsto_zero_iff_norm_tendsto_zero]
-  have h := ((tendsto_rpow_neg_atTop hy).comp tendsto_natCast_atTop_atTop).const_mul ‖c‖
-  rw [mul_zero] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_gt_atTop 0] with N hN
-  rw [norm_mul, norm_natCast_cpow_of_pos hN, neg_re, Function.comp_apply]
-
 /-- On `1 < Re s` the right side of the formula is `ζ(s)`: it does not depend on the cut point,
 and along the integers `N → ∞` its sum tends to `ζ(s)` while its other terms tend to `0`. -/
 private theorem zetaSawtooth_one_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
@@ -166,19 +142,22 @@ private theorem zetaSawtooth_one_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
     refine Finset.sum_congr rfl fun n _ ↦ ?_
     rw [cpow_neg, one_div, Nat.cast_add, Nat.cast_one, add_comm]
   have hpole : Tendsto (fun N : ℕ ↦ ((N : ℝ) : ℂ) ^ (1 - s) / (s - 1)) atTop (𝓝 0) := by
-    have h := tendsto_mul_natCast_cpow_neg (c := (s - 1)⁻¹) (y := s - 1) (by simpa using hs)
+    have h := (tendsto_natCast_cpow_neg_atTop (y := s - 1) (by simpa using hs)).const_mul (s - 1)⁻¹
+    rw [mul_zero] at h
     refine h.congr fun N ↦ ?_
     rw [ofReal_natCast, neg_sub, div_eq_inv_mul]
   have hboundary : Tendsto (fun N : ℕ ↦
       (bernoulliFun 1 (Int.fract (N : ℝ)) : ℂ) * ((N : ℝ) : ℂ) ^ (-s)) atTop (𝓝 0) := by
-    have h := tendsto_mul_natCast_cpow_neg (c := (bernoulliFun 1 0 : ℂ)) hs₀
+    have h := (tendsto_natCast_cpow_neg_atTop hs₀).const_mul (bernoulliFun 1 0 : ℂ)
+    rw [mul_zero] at h
     refine h.congr fun N ↦ ?_
     rw [ofReal_natCast, Int.fract_natCast]
   have htail : Tendsto (fun N : ℕ ↦ s * ∫ x in Set.Ioi (N : ℝ),
       (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1))) atTop (𝓝 0) := by
     rw [tendsto_zero_iff_norm_tendsto_zero]
-    have h := (tendsto_mul_natCast_cpow_neg (c := (‖s‖ / (2 * s.re) : ℝ)) hs₀).norm
-    rw [norm_zero] at h
+    have h := ((tendsto_natCast_cpow_neg_atTop hs₀).const_mul
+      ((‖s‖ / (2 * s.re) : ℝ) : ℂ)).norm
+    rw [mul_zero, norm_zero] at h
     refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ h
     filter_upwards [eventually_gt_atTop 0] with N hN
     have hN' : (0 : ℝ) < N := Nat.cast_pos.mpr hN
@@ -196,22 +175,28 @@ private theorem zetaSawtooth_one_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
   filter_upwards [eventually_ge_atTop 1] with N hN
   exact zetaSawtooth_eq_of_le one_pos (by exact_mod_cast hN) hs₀ hs₁
 
+/-- The right side of the formula cut at `1`, where the sum is `1` and `B₁({1}) = -1/2`. -/
+private theorem zetaSawtooth_one_eq (z : ℂ) :
+    zetaSawtooth 1 z = 1 + 1 / (z - 1) - 1 / 2 -
+      z * ∫ x in Set.Ioi (1 : ℝ), (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(z + 1)) := by
+  simp only [zetaSawtooth, Nat.floor_one, Finset.Icc_self, Finset.sum_singleton,
+    Nat.cast_one, ofReal_one, one_cpow, Int.fract_one, bernoulliFun_one]
+  push_cast
+  ring
+
 /-- On `0 < Re s`, `s ≠ 1`, the right side of the formula cut at `1` is `ζ(s)`, by the identity
 theorem applied to its product with `s - 1`. -/
 private theorem zetaSawtooth_one {s : ℂ} (hs : 0 < s.re) (hs₁ : s ≠ 1) :
     zetaSawtooth 1 s = riemannZeta s := by
   set I : ℂ → ℂ := fun z ↦
     ∫ x in Set.Ioi (1 : ℝ), (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(z + 1))
-  have hone (z : ℂ) : zetaSawtooth 1 z = 1 + 1 / (z - 1) - 1 / 2 - z * I z := by
-    simp only [zetaSawtooth, I, Nat.floor_one, Finset.Icc_self, Finset.sum_singleton,
-      Nat.cast_one, ofReal_one, one_cpow, Int.fract_one, bernoulliFun_one]
-    push_cast
-    ring
+  have hone (z : ℂ) : zetaSawtooth 1 z = 1 + 1 / (z - 1) - 1 / 2 - z * I z :=
+    zetaSawtooth_one_eq z
   have hO : (fun x : ℝ ↦ (bernoulliFun 1 (Int.fract x) : ℂ)) =O[atTop]
       fun x : ℝ ↦ x ^ (0 : ℝ) :=
     Asymptotics.IsBigO.of_bound (1 / 2) (Eventually.of_forall fun x ↦ by
-      rw [norm_real, Real.norm_eq_abs, Real.rpow_zero, norm_one, mul_one]
-      exact abs_bernoulliFun_one_fract_le x)
+      rw [Real.rpow_zero, norm_one, mul_one]
+      exact norm_sawtooth_le x)
   have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
   have hI : DifferentiableOn ℂ I {z : ℂ | 0 < z.re} :=
     differentiableOn_integral_mul_cpow_of_isBigO hO
@@ -306,13 +291,11 @@ theorem riemannZeta_eq_one_add_inv_sub_integral_fract {s : ℂ} (hs : 0 < s.re) 
     ring
   have hexp : -(s + 1) + 1 = -s := by ring
   rw [hsplit, integral_Ioi_cpow_of_lt (by simpa using hs) one_pos, hexp,
-    riemannZeta_eq_sum_add_integral_sawtooth one_pos hs hs₁]
+    ← zetaSawtooth_one hs hs₁, zetaSawtooth_one_eq]
   generalize ∫ x in Set.Ioi (1 : ℝ),
     (bernoulliFun 1 (Int.fract x) : ℂ) * (x : ℂ) ^ (-(s + 1)) = J
-  simp only [Nat.floor_one, Finset.Icc_self, Finset.sum_singleton, Nat.cast_one, ofReal_one,
-    one_cpow, Int.fract_one, bernoulliFun_one]
+  rw [ofReal_one, one_cpow]
   field_simp
-  push_cast
   ring
 
 end TauCeti
