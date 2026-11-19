@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
+import TauCeti.Analysis.MellinTransform
 
 /-!
 # The complex Gamma function on vertical lines
@@ -42,6 +43,9 @@ its coefficients.
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
 * `Complex.verticalIntegrable_Gamma`: `Γ` is integrable on every vertical line `Re s = σ` with
   `σ` not a nonpositive integer.
+* `VerticalIntegrable.mul_Gamma_comp`: multiplying a function integrable on `Re s = σ` by
+  `Γ(w(s))`, where `w` maps that line continuously into a vertical line avoiding the poles of `Γ`,
+  keeps it integrable.
 * `Complex.mellinInv_Gamma`: Mellin inversion of `Γ` on `Re s = σ > 0` gives `e⁻ˣ`.
 * `Complex.integral_cpow_neg_mul_Gamma`: the same formula as the unnormalised vertical integral
   `∫ y^{-(σ + i t)} Γ(σ + i t) dt = 2π e⁻ʸ`.
@@ -144,19 +148,36 @@ theorem verticalIntegrable_Gamma {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n) :
   refine (differentiableAt_Gamma _ fun m h ↦ hσ m ?_).continuousAt.comp (by fun_prop)
   simpa using congrArg re h
 
+end Complex
+
+/-- If `f` is integrable on the vertical line `Re s = σ` and `w` maps that line continuously into
+the vertical line `Re s = τ`, with `τ` not a nonpositive integer, then `s ↦ f s Γ(w s)` is
+integrable on `Re s = σ`, since `Γ` is continuous and bounded on `Re s = τ`. -/
+theorem VerticalIntegrable.mul_Gamma_comp {f w : ℂ → ℂ} {σ τ : ℝ} (hf : VerticalIntegrable f σ)
+    (hτ : ∀ n : ℕ, τ ≠ -n) (hw : Continuous w) (hwτ : ∀ y : ℝ, (w (σ + y * I)).re = τ) :
+    VerticalIntegrable (fun s ↦ f s * Complex.Gamma (w s)) σ := by
+  have hline (y : ℝ) : w (σ + y * I) = ↑τ + ↑(w (σ + y * I)).im * I := by
+    apply Complex.ext <;> simp [hwτ]
+  obtain ⟨C, hC⟩ := Complex.exists_norm_Gamma_le_mul_inv_one_add_sq_pow hτ 0
+  refine hf.mul_bdd (c := C) ?_
+    (Eventually.of_forall fun y ↦ by simpa [← hline] using hC (w (σ + y * I)).im)
+  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
+  refine (Complex.differentiableAt_Gamma _ fun m h ↦ hτ m ?_).continuousAt.comp (by fun_prop)
+  simpa [hwτ] using congrArg re h
+
+namespace Complex
+
 /-- Mellin inversion for the Gamma function: on every vertical line `Re s = σ > 0`,
 `(1 / 2π) ∫ x^{-(σ + i t)} Γ(σ + i t) dt = e⁻ˣ` for `x > 0`. -/
 theorem mellinInv_Gamma {σ : ℝ} (hσ : 0 < σ) {x : ℝ} (hx : 0 < x) :
     mellinInv σ Gamma x = Real.exp (-x) := by
-  have hline : ∀ t : ℝ, Gamma (σ + t * I) = mellin (fun u : ℝ ↦ (Real.exp (-u) : ℂ)) (σ + t * I) :=
-    fun t ↦ by rw [← GammaIntegral_eq_mellin, Gamma_eq_integral (by simpa using hσ)]
+  have hM (t : ℝ) := TauCeti.hasMellin_exp_neg (z := σ + t * I) (by simpa using hσ)
+  have hline (t : ℝ) : Gamma (σ + t * I) = mellin (fun u : ℝ ↦ (Real.exp (-u) : ℂ)) (σ + t * I) :=
+    (hM t).2.symm
   have hint : VerticalIntegrable (mellin fun u : ℝ ↦ (Real.exp (-u) : ℂ)) σ := by
     refine (verticalIntegrable_Gamma fun n h ↦ ?_).congr (Eventually.of_forall hline)
     linarith [show (0 : ℝ) ≤ n from n.cast_nonneg]
-  have hconv : MellinConvergent (fun u : ℝ ↦ (Real.exp (-u) : ℂ)) σ := by
-    refine (GammaIntegral_convergent (s := σ) (by simpa using hσ)).congr_fun (fun u _ ↦ ?_)
-      measurableSet_Ioi
-    simp [smul_eq_mul, mul_comm]
+  have hconv : MellinConvergent (fun u : ℝ ↦ (Real.exp (-u) : ℂ)) σ := by simpa using (hM 0).1
   have h := mellinInv_mellin_eq σ _ hx hconv hint (by fun_prop)
   rw [← h, mellinInv, mellinInv]
   simp_rw [hline]

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.MellinTransform.Convolution
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 
 /-!
@@ -72,14 +73,6 @@ open scoped Nat
 
 namespace Complex
 
-/-- For `x, s > 0`, the factor `e^{-x/s}` is at most `n! x⁻ⁿ sⁿ`. -/
-private lemma exp_neg_div_le {x s : ℝ} (hx : 0 < x) (hs : 0 < s) (n : ℕ) :
-    Real.exp (-(x / s)) ≤ n ! / x ^ n * s ^ n := by
-  have h := inv_anti₀ (by positivity) (Real.pow_div_factorial_le_exp (x / s) (div_pos hx hs).le n)
-  rw [← Real.exp_neg, inv_div, div_pow] at h
-  calc Real.exp (-(x / s)) ≤ n ! / (x ^ n / s ^ n) := h
-    _ = n ! / x ^ n * s ^ n := by field_simp
-
 /-- For `0 < c ≤ x`, Macdonald's integrand is dominated by `n! c⁻ⁿ e^{-s} s^{Re a + n - 1}`,
 uniformly in `x`. -/
 private lemma norm_cpow_mul_exp_neg_sub_div_le (a : ℂ) {c x s : ℝ} (hc : 0 < c) (hcx : c ≤ x)
@@ -91,7 +84,9 @@ private lemma norm_cpow_mul_exp_neg_sub_div_le (a : ℂ) {c x s : ℝ} (hc : 0 <
   have hexp : Real.exp (-s - x / s) ≤ Real.exp (-s) * (n ! / c ^ n * s ^ n) := by
     rw [sub_eq_add_neg, Real.exp_add]
     gcongr
-    exact (Real.exp_le_exp.mpr (neg_le_neg (by gcongr))).trans (exp_neg_div_le hc hs n)
+    calc Real.exp (-(x / s)) ≤ Real.exp (-(c / s)) := Real.exp_le_exp.mpr (neg_le_neg (by gcongr))
+      _ ≤ n ! / (c / s) ^ n := TauCeti.exp_neg_le_factorial_div_pow (div_pos hc hs) n
+      _ = n ! / c ^ n * s ^ n := by rw [div_pow]; field_simp
   have hpow : s ^ (a.re + n - 1) = s ^ (a.re - 1) * s ^ n := by
     rw [show a.re + n - 1 = (a.re - 1) + n by ring, Real.rpow_add hs, Real.rpow_natCast]
   calc s ^ (a.re - 1) * Real.exp (-s - x / s)
@@ -166,15 +161,8 @@ theorem hasMellin_integral_cpow_mul_exp_neg_sub_div {a t : ℂ} (ht : 0 < t.re)
 product `Γ(t) Γ(t + a)` is integrable. -/
 theorem verticalIntegrable_Gamma_mul_Gamma_add {a : ℂ} {σ : ℝ} (hσ : ∀ n : ℕ, σ ≠ -n)
     (hσa : ∀ n : ℕ, σ + a.re ≠ -n) :
-    VerticalIntegrable (fun t ↦ Gamma t * Gamma (t + a)) σ := by
-  have hadd (y : ℝ) : σ + y * I + a = ↑(σ + a.re) + ↑(y + a.im) * I := by
-    apply Complex.ext <;> simp
-  obtain ⟨C, hC⟩ := exists_norm_Gamma_le_mul_inv_one_add_sq_pow hσa 0
-  refine (verticalIntegrable_Gamma hσ).mul_bdd (c := C) ?_
-    (Eventually.of_forall fun y ↦ by simpa [hadd] using hC (y + a.im))
-  refine Continuous.aestronglyMeasurable (continuous_iff_continuousAt.mpr fun y ↦ ?_)
-  refine (differentiableAt_Gamma _ fun m h ↦ hσa m ?_).continuousAt.comp (by fun_prop)
-  simpa using congrArg re h
+    VerticalIntegrable (fun t ↦ Gamma t * Gamma (t + a)) σ :=
+  VerticalIntegrable.mul_Gamma_comp (verticalIntegrable_Gamma hσ) hσa (by fun_prop) fun y ↦ by simp
 
 /-- **The Mellin–Barnes integral of Macdonald's integral.** On every vertical line `Re t = σ` with
 `σ > 0` and `σ + Re a > 0`, Mellin inversion of `Γ(t) Γ(t + a)` gives, for `x > 0`,
@@ -211,7 +199,7 @@ private lemma cexp_smul_exp_neg_sub_sq_div {x : ℝ} (hx : 0 < x) (a : ℂ) (u :
     field_simp
     ring
   rw [hreal, smul_eq_mul, cpow_def_of_ne_zero (ofReal_ne_zero.mpr hb.ne'), ← ofReal_log hb.le,
-    mul_left_comm, ← mul_assoc, ← Complex.exp_add]
+    ← mul_assoc, ← Complex.exp_add]
   congr 2
   push_cast
   ring
@@ -273,10 +261,13 @@ theorem integral_exp_neg_mul_cosh_mul_cosh (a : ℂ) {x : ℝ} (hx : 0 < x) :
   obtain ⟨hG, hint⟩ := integrable_and_integral_cexp_mul_exp_neg_mul_cosh hx a
   -- the integral over `ℝ` is the integral over `(0, ∞)` of the even part, doubled
   have hsplit := intervalIntegral.integral_Iic_add_Ioi (b := 0) hG.integrableOn hG.integrableOn
-  rw [← neg_zero, ← integral_comp_neg_Ioi, neg_zero, ← integral_add hG.comp_neg.integrableOn
-    hG.integrableOn, hint] at hsplit
+  -- reflect the integral over `(-∞, 0]` to one over `(0, ∞)`
+  have hneg := integral_comp_neg_Ioi (0 : ℝ)
+    fun u : ℝ ↦ cexp (-a * u) * (Real.exp (-(x * Real.cosh u)) : ℂ)
+  simp only [neg_zero] at hneg
+  rw [← hneg, ← integral_add hG.comp_neg.integrableOn hG.integrableOn, hint] at hsplit
   simp only [cexp_mul_exp_neg_mul_cosh_even, integral_const_mul] at hsplit
-  rw [cpow_neg, div_eq_mul_inv, mul_right_comm, ← hsplit]
-  ring
+  rw [cpow_neg]
+  linear_combination hsplit / 2
 
 end Complex
