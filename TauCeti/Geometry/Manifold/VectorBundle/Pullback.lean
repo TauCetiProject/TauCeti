@@ -47,19 +47,20 @@ they are fibrewise linear, and over a complex model at `n = ∞` they are holomo
 equivalences between holomorphic vector bundles, which Mathlib's `ContMDiffVectorBundle.pullback`
 makes `f *ᵖ E` when `E` is one.
 
-## References
-
-* D. Husemoller, *Fibre Bundles*, 3rd ed., Graduate Texts in Mathematics 20, Springer, 1994,
-  Chapter 2 (induced bundles).
-
-The native Hom section between two pullbacks by the same map is `Cⁿ` exactly when its original
-Hom field along that map is `Cⁿ` (`Bundle.Pullback.contMDiff_hom_section_iff`). This dictionary
-requires neither finite rank nor a smooth bundle structure on the fibres.
+The native Hom section between two pullbacks by the same map is `Cⁿ` at a point exactly when its
+original Hom field along that map is `Cⁿ` there, provided the map is `Cⁿ` at that point
+(`Bundle.Pullback.contMDiffAt_hom_section_iff`, with the global form
+`Bundle.Pullback.contMDiff_hom_section_iff`). This dictionary requires neither finite rank nor a
+smooth bundle structure on the fibres.
 
 The pullback of a `C^n` vector bundle along a `C^n` map `f`, given as an element of any
 `ContinuousMapClass` rather than as a bundled `C^n` map, is a `C^n` vector bundle
 (`Bundle.Pullback.contMDiffVectorBundle`).
 
+## References
+
+* D. Husemoller, *Fibre Bundles*, 3rd ed., Graduate Texts in Mathematics 20, Springer, 1994,
+  Chapter 2 (induced bundles).
 -/
 
 public section
@@ -240,8 +241,6 @@ end Bundle.Pullback
 
 section HomSection
 
-open Bundle
-
 variable {𝕜 B X F G K EB HB EX HX : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
   {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
@@ -256,6 +255,34 @@ variable {𝕜 B X F G K EB HB EX HX : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
   [FunLike K X B] [ContinuousMapClass K X B] {n : WithTop ℕ∞}
 
+/-- A section of Hom between two pullbacks is `Cⁿ` at a point where the base map is `Cⁿ` exactly
+when its field of maps along the base map is `Cⁿ` there in the original hom bundle. No rank or
+smooth-bundle assumption is needed. -/
+theorem Bundle.Pullback.contMDiffAt_hom_section_iff (f : K) {x : X}
+    (hf : ContMDiffAt IX IB n f x) (A : ∀ x, V (f x) →L[𝕜] W (f x)) :
+    ContMDiffAt IX (IX.prod 𝓘(𝕜, F →L[𝕜] G)) n
+        (fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
+          (E := fun x ↦ ((f : X → B) *ᵖ V) x →L[𝕜] ((f : X → B) *ᵖ W) x) x (A x)) x ↔
+      ContMDiffAt IX (IB.prod 𝓘(𝕜, F →L[𝕜] G)) n
+        (fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
+          (E := fun b ↦ V b →L[𝕜] W b) (f x) (A x)) x := by
+  -- Near `x`, the hom coordinates of `A` between the pullbacks are its coordinates between the
+  -- original bundles at the image points.
+  have heq :
+      (fun y ↦ ContinuousLinearMap.inCoordinates F ((f : X → B) *ᵖ V)
+        G ((f : X → B) *ᵖ W) x y x y (A y)) =ᶠ[nhds x]
+      (fun y ↦ ContinuousLinearMap.inCoordinates F V G W (f x) (f y) (f x) (f y) (A y)) := by
+    filter_upwards [hf.continuousAt.preimage_mem_nhds
+      ((trivializationAt F V (f x)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt F V (f x))),
+      hf.continuousAt.preimage_mem_nhds
+      ((trivializationAt G W (f x)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt G W (f x)))] with y hyV hyW
+    exact ContinuousLinearMap.inCoordinates_pullback_of_mem f f x y (A y) hyV hyW
+  rw [contMDiffAt_hom_bundle, contMDiffAt_hom_bundle]
+  exact ⟨fun h ↦ ⟨hf, h.2.congr_of_eventuallyEq heq.symm⟩,
+    fun h ↦ ⟨contMDiffAt_id, h.2.congr_of_eventuallyEq heq⟩⟩
+
 /-- A section of Hom between two pullbacks is `Cⁿ` exactly when its field of maps along the
 base map is `Cⁿ` in the original hom bundle. No rank or smooth-bundle assumption is needed. -/
 theorem Bundle.Pullback.contMDiff_hom_section_iff (f : K) (hf : ContMDiff IX IB n f)
@@ -265,27 +292,8 @@ theorem Bundle.Pullback.contMDiff_hom_section_iff (f : K) (hf : ContMDiff IX IB 
           (E := fun x ↦ ((f : X → B) *ᵖ V) x →L[𝕜] ((f : X → B) *ᵖ W) x) x (A x)) ↔
       ContMDiff IX (IB.prod 𝓘(𝕜, F →L[𝕜] G)) n
         (fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
-          (E := fun b ↦ V b →L[𝕜] W b) (f x) (A x)) := by
-  have heq (x : X) :
-      (fun y ↦ ContinuousLinearMap.inCoordinates F ((f : X → B) *ᵖ V)
-        G ((f : X → B) *ᵖ W) x y x y (A y)) =ᶠ[nhds x]
-      (fun y ↦ ContinuousLinearMap.inCoordinates F V G W (f x) (f y) (f x) (f y) (A y)) := by
-    filter_upwards [hf.continuous.continuousAt.preimage_mem_nhds
-      ((trivializationAt F V (f x)).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt F V (f x))),
-      hf.continuous.continuousAt.preimage_mem_nhds
-      ((trivializationAt G W (f x)).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt G W (f x)))] with y hyV hyW
-    exact ContinuousLinearMap.inCoordinates_pullback_of_mem f f x y (A y) hyV hyW
-  constructor
-  · intro h x
-    have hx := (contMDiffAt_hom_bundle _).mp (h x)
-    rw [contMDiffAt_hom_bundle]
-    exact ⟨hf x, hx.2.congr_of_eventuallyEq (heq x).symm⟩
-  · intro h x
-    have hx := (contMDiffAt_hom_bundle _).mp (h x)
-    rw [contMDiffAt_hom_bundle]
-    exact ⟨contMDiffAt_id, hx.2.congr_of_eventuallyEq (heq x)⟩
+          (E := fun b ↦ V b →L[𝕜] W b) (f x) (A x)) :=
+  forall_congr' fun x ↦ Bundle.Pullback.contMDiffAt_hom_section_iff f (hf x) A
 
 end HomSection
 
