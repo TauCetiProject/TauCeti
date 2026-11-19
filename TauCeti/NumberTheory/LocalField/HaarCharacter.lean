@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.MeasureTheory.Group.LocalFieldScaling
 import TauCeti.NumberTheory.LocalField.Topology
+import TauCeti.RingTheory.Valuation.Integers
 import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
@@ -103,6 +104,23 @@ open TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
+/-- Carrying a left-invariant measure on `K` to `Unit → K` along the constant map, an additive
+bijection, gives a left-invariant measure that assigns each box `Set.univ.pi fun _ ↦ S` the mass
+of `S`. This transports the box formulas on `Unit → K` to `K`. -/
+private theorem map_constAddMonoidHom_unit [MeasurableSpace K] [BorelSpace K]
+    (μ : Measure K) [μ.IsAddLeftInvariant] :
+    (μ.map (Pi.constAddMonoidHom Unit K)).IsAddLeftInvariant ∧
+      ∀ S : Set K, MeasurableSet S →
+        μ.map (Pi.constAddMonoidHom Unit K) (Set.univ.pi fun _ ↦ S) = μ S := by
+  have hc : Measurable (Pi.constAddMonoidHom Unit K) :=
+    continuous_pi (fun _ ↦ continuous_id) |>.measurable
+  refine ⟨isAddLeftInvariant_map (Pi.constAddMonoidHom Unit K).toAddHom hc
+    fun g ↦ ⟨g (), funext fun _ ↦ rfl⟩, fun S hS ↦ ?_⟩
+  rw [map_apply hc (MeasurableSet.univ_pi fun _ ↦ hS)]
+  congr 1
+  ext x
+  simp
+
 /-- For every left-invariant measure on `K` and every uniformizer `ϖ`, the maximal ideal
 `ϖ • 𝒪[K]` has `q⁻¹` times the mass of `𝒪[K]`, where `q` is the cardinality of the residue field:
 the box formula `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow` in one
@@ -110,30 +128,14 @@ coordinate. -/
 private theorem measure_smul_integer_of_irreducible [MeasurableSpace K] [BorelSpace K]
     (μ : Measure K) [μ.IsAddLeftInvariant] {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
     μ ((ϖ : K) • (𝒪[K] : Set K)) = (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ * μ 𝒪[K] := by
-  -- Carry `μ` to `Unit → K` along the constant map, an additive bijection.
-  let c : K →+ (Unit → K) := Pi.constAddMonoidHom Unit K
-  have hc : Measurable c := continuous_pi (fun _ ↦ continuous_id) |>.measurable
-  have _ : (μ.map c).IsAddLeftInvariant :=
-    isAddLeftInvariant_map c.toAddHom hc fun g ↦ ⟨g (), funext fun _ ↦ rfl⟩
-  have hbox (S : Set K) (hS : MeasurableSet S) : μ.map c (Set.univ.pi fun _ ↦ S) = μ S := by
-    rw [map_apply hc (MeasurableSet.univ_pi fun _ ↦ hS)]
-    congr 1
-    ext x
-    simp [c]
+  obtain ⟨_, hbox⟩ := map_constAddMonoidHom_unit μ
   have hm : ((↑) : 𝒪[K] → K) '' ↑𝓂[K] = (ϖ : K) • (𝒪[K] : Set K) := by
     simpa using hϖ.image_maximalIdeal_pow_eq_smul (A := K) 1
-  have h := measure_univ_pi_image_maximalIdeal_pow (μ.map c) (fun _ ↦ 1)
+  have h := measure_univ_pi_image_maximalIdeal_pow (μ.map (Pi.constAddMonoidHom Unit K))
+    (fun _ ↦ 1)
   rw [integerBox_def, hbox _ Valuation.isClosed_integer.measurableSet, pow_one, hm,
     hbox _ ((Valuation.isClosed_integer (v := valuation K)).smul₀ (ϖ : K)).measurableSet] at h
   simpa using h
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- A unit of `𝒪[K]`, that is an element of valuation one, maps `𝒪[K]` onto itself. -/
-private theorem smul_integer_of_valuation_eq_one {u : Kˣ} (hu : valuation K (u : K) = 1) :
-    u • (𝒪[K] : Set K) = 𝒪[K] := by
-  ext y
-  rw [Set.mem_smul_set_iff_inv_smul_mem]
-  simp [Units.smul_def, Valuation.mem_integer_iff, hu]
 
 /-- **The Haar character of a local field.** Multiplication by `x ∈ Kˣ` scales additive Haar
 measure on `K` by `q ^ (-v_K(x))`, where `q` is the cardinality of the residue field and `v_K`
@@ -151,7 +153,7 @@ theorem distribHaarChar_eq_zpow (x : Kˣ) :
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   obtain ⟨u, n, hu, rfl⟩ := exists_eq_mul_zpow_of_irreducible hϖ x
   have hu' : distribHaarChar K u = 1 :=
-    hchar u 1 (by rw [smul_integer_of_valuation_eq_one hu, ENNReal.coe_one, one_mul])
+    hchar u 1 (by rw [(valuation K).units_smul_integer hu, ENNReal.coe_one, one_mul])
   have hϖ' : distribHaarChar K (Units.mk0 (ϖ : K) fun h ↦ hϖ.ne_zero (Subtype.ext h)) =
       (Nat.card 𝓀[K] : ℝ≥0)⁻¹ :=
     hchar _ _ (by simpa [Units.smul_def] using measure_smul_integer_of_irreducible μ hϖ)
@@ -194,20 +196,18 @@ theorem addHaar_smul_eq_normalizedAbsoluteValue_mul (a : K) (s : Set K) :
   · exact hunit a ha s
   rcases s.eq_empty_or_nonempty with rfl | hs
   · simp
-  -- `0 • s = {0}`, which lies in `ϖ ^ n • 𝒪[K]` and so has mass at most `q ^ (-n) μ 𝒪[K]`.
+  -- `0 • s = {0}`, a coordinate hyperplane of the integer box of `Unit → K`.
   rw [Set.zero_smul_set hs, AbsoluteValue.map_zero, NNRat.cast_zero, ENNReal.coe_zero, zero_mul]
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  have hϖ0 : (ϖ : K) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
-  have hq : (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ < 1 :=
-    ENNReal.inv_lt_one.2 (by exact_mod_cast (Finite.one_lt_card : 1 < Nat.card 𝓀[K]))
-  have h𝒪 : μ 𝒪[K] ≠ ∞ := (integerPositiveCompacts K).isCompact.measure_ne_top
-  refine ENNReal.eq_zero_of_le_mul_pow (ε := (μ 𝒪[K]).toNNReal) hq fun n ↦ ?_
-  calc μ {0} ≤ μ (((ϖ : K) ^ n) • (𝒪[K] : Set K)) :=
-        measure_mono (Set.singleton_subset_iff.2 ⟨0, zero_mem _, smul_zero _⟩)
-    _ = _ := by
-        rw [hunit _ (pow_ne_zero n hϖ0), map_pow, normalizedAbsoluteValue_irreducible hϖ,
-          ENNReal.coe_toNNReal h𝒪, mul_comm]
-        simp [ENNReal.inv_pow]
+  obtain ⟨_, hbox⟩ := map_constAddMonoidHom_unit μ
+  have h0 : integerBox K Unit ∩ {a | a () = 0} = Set.univ.pi fun _ ↦ ({0} : Set K) := by
+    ext a
+    refine ⟨fun h _ _ ↦ h.2, fun h ↦ ⟨mem_integerBox.2 fun i ↦ ?_, h () trivial⟩⟩
+    rw [h i trivial]
+    exact zero_mem _
+  have h := measure_integerBox_inter_coord_eq_zero (μ.map (Pi.constAddMonoidHom Unit K))
+    (by rw [integerBox_def, hbox _ Valuation.isClosed_integer.measurableSet]
+        exact (integerPositiveCompacts K).isCompact.measure_ne_top) ()
+  rwa [h0, hbox _ (measurableSet_singleton 0)] at h
 
 /-- **Pushforward of Haar measure on a local field.** For `a ≠ 0`, multiplication by `a` pushes
 every additive Haar measure `μ` on `K` forward to `|a|_K⁻¹ • μ`. -/
