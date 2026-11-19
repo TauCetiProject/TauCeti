@@ -46,6 +46,20 @@ evaluation through the composite transport maps and lose that defeq.
 
 public section
 
+namespace MonoidHom
+
+variable {σ : Type*}
+
+/-- A homomorphism from finitely supported integer exponents is determined by its values on the
+standard generators. -/
+@[ext]
+theorem ext_finsupp_mint {N : Type*} [Monoid N] ⦃f g : Multiplicative (σ →₀ ℤ) →* N⦄
+    (h : ∀ i, f (Multiplicative.ofAdd (Finsupp.single i 1)) =
+      g (Multiplicative.ofAdd (Finsupp.single i 1))) : f = g :=
+  Finsupp.mulHom_ext' fun i => MonoidHom.ext_mint (h i)
+
+end MonoidHom
+
 namespace TauCeti
 
 variable {σ : Type*} {M : Type*} [CommGroup M]

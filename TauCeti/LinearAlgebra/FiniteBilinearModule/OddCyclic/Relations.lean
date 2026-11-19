@@ -99,25 +99,25 @@ theorem nonempty_isometry_oddCyclic_prod {p : ℕ} [Fact p.Prime] (hp : Odd p) (
       ((oddCyclic (p ^ e) hp.pow c).prod (oddCyclic (p ^ e) hp.pow d))) := by
   have hχ (t : ℤ) (ht : IsCoprime (p : ℤ) t) : legendreSym p t = 1 ∨ legendreSym p t = -1 :=
     legendreSym.eq_one_or_neg_one p ((ZMod.isUnit_intCast_iff_isCoprime t p).2 ht).ne_zero
-  have hcyc := fun {s t : ℤ} (hs : IsCoprime (p : ℤ) s) (ht : IsCoprime (p : ℤ) t)
+  have hcyc := fun {s t : ℤ} (hs : IsCoprime (p : ℤ) s)
     (hst : legendreSym p s = legendreSym p t) ↦
-      nonempty_isometry_oddCyclic_of_legendreSym_eq hp e hs ht hst
+      nonempty_isometry_oddCyclic_of_legendreSym_eq hp e hs hst
   -- Every `q_s ⊕ q_t` is isometric to `q_1 ⊕ q_{st}`.
   have key (s t : ℤ) (hs : IsCoprime (p : ℤ) s) (ht : IsCoprime (p : ℤ) t) :
       Nonempty (Isometry ((oddCyclic (p ^ e) hp.pow s).prod (oddCyclic (p ^ e) hp.pow t))
         ((oddCyclic (p ^ e) hp.pow 1).prod (oddCyclic (p ^ e) hp.pow (s * t)))) := by
     have h1 : IsCoprime (p : ℤ) 1 := isCoprime_one_right
-    have hst : IsCoprime (p : ℤ) (s * t) := hs.mul_right ht
     rcases hχ s hs with hs1 | hs1
-    · obtain ⟨f⟩ := hcyc hs h1 (by rw [hs1, legendreSym.at_one])
-      obtain ⟨g⟩ := hcyc ht hst (by rw [legendreSym.mul, hs1, one_mul])
+    · obtain ⟨f⟩ := hcyc (t := 1) hs (by rw [hs1, legendreSym.at_one])
+      obtain ⟨g⟩ := hcyc (t := s * t) ht (by rw [legendreSym.mul, hs1, one_mul])
       exact ⟨f.prod g⟩
     rcases hχ t ht with ht1 | ht1
-    · obtain ⟨f⟩ := hcyc ht h1 (by rw [ht1, legendreSym.at_one])
-      obtain ⟨g⟩ := hcyc hs hst (by rw [legendreSym.mul, ht1, mul_one])
+    · obtain ⟨f⟩ := hcyc (t := 1) ht (by rw [ht1, legendreSym.at_one])
+      obtain ⟨g⟩ := hcyc (t := s * t) hs (by rw [legendreSym.mul, ht1, mul_one])
       exact ⟨(QuadraticMap.IsometryEquiv.prodComm _ _).trans (f.prod g)⟩
-    · obtain ⟨f⟩ := hcyc ht hs (by rw [hs1, ht1])
-      obtain ⟨g⟩ := hcyc h1 hst (by rw [legendreSym.mul, hs1, ht1, legendreSym.at_one]; norm_num)
+    · obtain ⟨f⟩ := hcyc (t := s) ht (by rw [hs1, ht1])
+      obtain ⟨g⟩ := hcyc (t := s * t) h1
+        (by rw [legendreSym.mul, hs1, ht1, legendreSym.at_one]; norm_num)
       have hpe (u : ℤ) (hu : IsCoprime (p : ℤ) u) : IsCoprime ((p ^ e : ℕ) : ℤ) u := by
         simpa using hu.pow_left
       exact ⟨((QuadraticMap.IsometryEquiv.refl _).prod f).trans
@@ -125,7 +125,7 @@ theorem nonempty_isometry_oddCyclic_prod {p : ℕ} [Fact p.Prime] (hp : Odd p) (
           ((QuadraticMap.IsometryEquiv.refl _).prod g))⟩
   obtain ⟨f⟩ := key a b ha hb
   obtain ⟨g⟩ := key c d hc hd
-  obtain ⟨u⟩ := hcyc (ha.mul_right hb) (hc.mul_right hd)
+  obtain ⟨u⟩ := hcyc (t := c * d) (ha.mul_right hb)
     (by rw [legendreSym.mul, legendreSym.mul, h])
   exact ⟨f.trans (((QuadraticMap.IsometryEquiv.refl _).prod u).trans g.symm)⟩
 

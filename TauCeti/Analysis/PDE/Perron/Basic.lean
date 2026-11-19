@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Subharmonic
 import Mathlib.Order.PartialSups
+import Mathlib.Topology.ExtendFrom
 import Mathlib.Topology.Order.IsLUB
 import TauCeti.Analysis.InnerProductSpace.Laplacian.StrongMaximumPrinciple
 import TauCeti.Analysis.PDE.Harnack.Convergence
@@ -48,11 +49,21 @@ principle `W' = W` on `B`, contradicting `W' z ≥ v z > W z`. Hence `u = W` is 
 * `TauCeti.perronFamily_nonempty`: the Perron family is nonempty when the boundary data is
   bounded below.
 * `TauCeti.sup_mem_perronFamily`: the Perron family is closed under pointwise maxima.
+* `TauCeti.perronFamily_mono`, `TauCeti.sub_const_mem_perronFamily`: the Perron family grows with
+  the boundary data, and a member lowered by `δ` lies in the family of any data exceeding the
+  original data minus `δ`.
 * `TauCeti.perronSolution`: the Perron solution, the pointwise supremum of the Perron family.
 * `TauCeti.le_perronSolution`, `TauCeti.perronSolution_le`: the Perron solution lies above every
   member of the Perron family and below every upper bound of the boundary data.
 * `TauCeti.perronSolution_le_of_forall_le`: the Perron solution at `x` is at most every common
   upper bound of the values at `x` of the members of a nonempty Perron family.
+* `TauCeti.perronSolution_mono`, `TauCeti.perronSolution_le_perronSolution_add` and
+  `TauCeti.abs_perronSolution_sub_perronSolution_le`: the Perron solution is monotone in the
+  boundary data and depends on it `1`-Lipschitz continuously in the supremum norm.
+* `TauCeti.eqOn_closure_perronSolution_of_continuousOn` and
+  `TauCeti.eqOn_perronSolution_of_tendsto`: for `E` nontrivial, a function harmonic in `Ω` that
+  attains the data as boundary limits is the Perron solution, in particular the Perron solution is
+  the only solution of the Dirichlet problem continuous on `closure Ω`.
 * `TauCeti.harmonicOnNhd_perronSolution`: **Perron's theorem**, the Perron solution of a
   nonempty Perron family is harmonic in `Ω`.
 
@@ -166,6 +177,20 @@ theorem sup_mem_perronFamily (hΩ : IsOpen Ω) (hv : v ∈ perronFamily Ω g)
     (hw : w ∈ perronFamily Ω g) : v ⊔ w ∈ perronFamily Ω g :=
   ⟨hv.1.sup hw.1 hΩ, hv.2.1.sup hw.2.1, fun x hx ↦ sup_le (hv.2.2 x hx) (hw.2.2 x hx)⟩
 
+/-- The Perron family is monotone in the boundary data: raising the data on `frontier Ω` enlarges
+the family. -/
+theorem perronFamily_mono {g' : E → ℝ} (h : ∀ x ∈ frontier Ω, g x ≤ g' x) :
+    perronFamily Ω g ⊆ perronFamily Ω g' :=
+  fun _ hv ↦ ⟨hv.1, hv.2.1, fun x hx ↦ (hv.2.2 x hx).trans (h x hx)⟩
+
+/-- Lowering a member of the Perron family of `g` by `δ` gives a member of the Perron family of
+any `g'` with `g ≤ g' + δ` on `frontier Ω`. -/
+theorem sub_const_mem_perronFamily (hΩ : IsOpen Ω) {g' : E → ℝ} {δ : ℝ}
+    (hv : v ∈ perronFamily Ω g) (h : ∀ x ∈ frontier Ω, g x ≤ g' x + δ) :
+    (v - fun _ ↦ δ) ∈ perronFamily Ω g' :=
+  ⟨hv.1.sub_harmonicOnNhd (harmonicOnNhd_const δ) hΩ, hv.2.1.sub continuousOn_const,
+    fun x hx ↦ by simpa using (hv.2.2 x hx).trans (h x hx)⟩
+
 /-- If the Perron family is nonempty, the Perron solution at `x` is at most any common upper bound
 of the values at `x` of the members of the family. -/
 theorem perronSolution_le_of_forall_le (hne : (perronFamily Ω g).Nonempty)
@@ -199,6 +224,84 @@ theorem perronSolution_le (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
     (hne : (perronFamily Ω g).Nonempty) (hM : ∀ x ∈ frontier Ω, g x ≤ M) (hx : x ∈ closure Ω) :
     perronSolution Ω g x ≤ M :=
   perronSolution_le_of_forall_le hne fun _ hv ↦ le_of_mem_perronFamily hΩ hb hM hv hx
+
+/-- **Comparison of Perron solutions.** If `g ≤ g' + δ` on `frontier Ω`, the Perron family of
+`g` is nonempty and `g'` is bounded above on `frontier Ω`, then the Perron solution of `g` is at
+most the Perron solution of `g'` plus `δ` on `closure Ω`. -/
+theorem perronSolution_le_perronSolution_add (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
+    {g' : E → ℝ} {δ : ℝ} (hne : (perronFamily Ω g).Nonempty) (hg' : BddAbove (g' '' frontier Ω))
+    (h : ∀ x ∈ frontier Ω, g x ≤ g' x + δ) (hx : x ∈ closure Ω) :
+    perronSolution Ω g x ≤ perronSolution Ω g' x + δ :=
+  perronSolution_le_of_forall_le hne fun _ hv ↦ by
+    simpa using le_perronSolution hΩ hb hg' (sub_const_mem_perronFamily hΩ hv h) hx
+
+/-- **Perron's solution is monotone in the boundary data.** If `g ≤ g'` on `frontier Ω`, the
+Perron family of `g` is nonempty and `g'` is bounded above on `frontier Ω`, then the Perron
+solution of `g` lies below that of `g'` on `closure Ω`. -/
+theorem perronSolution_mono (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω) {g' : E → ℝ}
+    (hne : (perronFamily Ω g).Nonempty) (hg' : BddAbove (g' '' frontier Ω))
+    (h : ∀ x ∈ frontier Ω, g x ≤ g' x) (hx : x ∈ closure Ω) :
+    perronSolution Ω g x ≤ perronSolution Ω g' x := by
+  simpa using perronSolution_le_perronSolution_add hΩ hb (δ := 0) hne hg'
+    (fun y hy ↦ by simpa using h y hy) hx
+
+/-- **Perron's solution depends Lipschitz continuously on the boundary data**, in the supremum
+norm: if `|g - g'| ≤ δ` on `frontier Ω`, the Perron family of `g` is nonempty and `g` is bounded
+above on `frontier Ω`, then the two Perron solutions differ by at most `δ` on `closure Ω`. -/
+theorem abs_perronSolution_sub_perronSolution_le (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
+    {g' : E → ℝ} {δ : ℝ} (hne : (perronFamily Ω g).Nonempty) (hg : BddAbove (g '' frontier Ω))
+    (h : ∀ x ∈ frontier Ω, |g x - g' x| ≤ δ) (hx : x ∈ closure Ω) :
+    |perronSolution Ω g x - perronSolution Ω g' x| ≤ δ := by
+  have hle (y : E) (hy : y ∈ frontier Ω) : g y ≤ g' y + δ := by linarith [(abs_le.1 (h y hy)).2]
+  have hge (y : E) (hy : y ∈ frontier Ω) : g' y ≤ g y + δ := by linarith [(abs_le.1 (h y hy)).1]
+  -- The data `g'` inherit the hypotheses on `g`.
+  have hne' : (perronFamily Ω g').Nonempty :=
+    hne.elim fun _ hv ↦ ⟨_, sub_const_mem_perronFamily hΩ hv hle⟩
+  have hg' : BddAbove (g' '' frontier Ω) := hg.elim fun M hM ↦ ⟨M + δ, forall_mem_image.2
+    fun y hy ↦ (hge y hy).trans (by linarith [hM (mem_image_of_mem g hy)])⟩
+  have h₁ := perronSolution_le_perronSolution_add hΩ hb hne hg' hle hx
+  have h₂ := perronSolution_le_perronSolution_add hΩ hb hne' hg hge hx
+  exact abs_le.2 ⟨by linarith, by linarith⟩
+
+/-- **Uniqueness for the Dirichlet problem.** A function harmonic in the bounded open set `Ω`,
+continuous on `closure Ω` and equal to `g` on `frontier Ω` is the Perron solution of `g` on
+`closure Ω`: it is a member of the Perron family, and lies above every other member by the
+comparison principle. -/
+theorem eqOn_closure_perronSolution_of_continuousOn (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω)
+    {u : E → ℝ} (hu : HarmonicOnNhd u Ω) (huc : ContinuousOn u (closure Ω))
+    (hug : EqOn u g (frontier Ω)) : EqOn u (perronSolution Ω g) (closure Ω) := by
+  have hmem : u ∈ perronFamily Ω g := ⟨hu.subharmonicOn, huc, fun x hx ↦ (hug hx).le⟩
+  have hg : BddAbove (g '' frontier Ω) := by
+    rw [← hug.image_eq]
+    exact ((hb.isCompact_closure.image_of_continuousOn huc).isBounded.subset
+      (image_mono frontier_subset_closure)).bddAbove
+  intro x hx
+  refine le_antisymm (le_perronSolution hΩ hb hg hmem hx)
+    (perronSolution_le_of_forall_le ⟨u, hmem⟩ fun v hv ↦ ?_)
+  exact hv.1.le_of_le_frontier hΩ hb hv.2.1 hu huc
+    (fun y hy ↦ (hv.2.2 y hy).trans (hug hy).ge) x hx
+
+/-- **Uniqueness for the Dirichlet problem with boundary limits.** Let `Ω` be a bounded open set,
+and let `u` be harmonic in `Ω` with `u x → g ξ` as `x → ξ` within `Ω`, for every
+`ξ ∈ frontier Ω`. Then `u` is the Perron solution of `g` on `Ω`. Neither the continuity of `g` on
+`frontier Ω` nor the boundedness of `u` is assumed: both follow from the boundary limits. -/
+theorem eqOn_perronSolution_of_tendsto (hΩ : IsOpen Ω) (hb : Bornology.IsBounded Ω) {u : E → ℝ}
+    (hu : HarmonicOnNhd u Ω) (hlim : ∀ ξ ∈ frontier Ω, Tendsto u (𝓝[Ω] ξ) (𝓝 (g ξ))) :
+    EqOn u (perronSolution Ω g) Ω := by
+  -- Extend `u` to `closure Ω` by its boundary limits; the extension is continuous there, harmonic
+  -- in `Ω` and equal to `g` on `frontier Ω`.
+  set ū := extendFrom Ω u
+  have hū : ContinuousOn ū (closure Ω) := continuousOn_extendFrom subset_rfl fun x hx ↦ by
+    by_cases hxΩ : x ∈ Ω
+    · exact ⟨u x, (hu x hxΩ).1.continuousAt.continuousWithinAt⟩
+    · exact ⟨g x, hlim x (hΩ.frontier_eq ▸ ⟨hx, hxΩ⟩)⟩
+  have hūΩ : EqOn ū u Ω := extendFrom_extends hu.continuousOn
+  have hūh : HarmonicOnNhd ū Ω := fun x hx ↦
+    (harmonicAt_congr_nhds (eventually_of_mem (hΩ.mem_nhds hx) hūΩ)).2 (hu x hx)
+  intro x hx
+  rw [← hūΩ hx]
+  exact eqOn_closure_perronSolution_of_continuousOn hΩ hb hūh hū
+    (fun ξ hξ ↦ extendFrom_eq (frontier_subset_closure hξ) (hlim ξ hξ)) (subset_closure hx)
 
 end Nontrivial
 
@@ -318,13 +421,12 @@ private lemma exists_harmonicOnNhd_eqOn_perronSolution (hΩ : IsOpen Ω)
     fun v hv x hx ↦ le_perronSolution hΩ hb ⟨M, hM⟩ hv (hball x hx)
   obtain ⟨w, hw, hmono, hcw⟩ :=
     exists_monotone_perronFamily_le_iSup_ballLift hΩ hb ⟨M, hM⟩ hne hr hrΩ
-  obtain ⟨hW, hWbdd⟩ := harmonicOnNhd_iSup_ballLift hΩ hb hM' hr hrΩ hw hmono
+  obtain ⟨hW, _⟩ := harmonicOnNhd_iSup_ballLift hΩ hb hM' hr hrΩ hw hmono
   -- `W`, the limit of the lifts of the monotone sequence, lies below the Perron solution on the
   -- ball and agrees with it at `c`.
   set W := fun x ↦ ⨆ n, ballLift c r (w n) x
   have hWu : ∀ x ∈ ball c r, W x ≤ perronSolution Ω g x := fun x hx ↦
     ciSup_le fun n ↦ hle _ (ballLift_mem_perronFamily hΩ hr hrΩ (hw n)) x hx
-  have hWc : W c = perronSolution Ω g c := le_antisymm (hWu c hc) hcw
   refine ⟨W, hW, fun z hz ↦ ?_⟩
   by_contra hzne
   -- Otherwise some member `v'` of the Perron family has `W z < v' z`.

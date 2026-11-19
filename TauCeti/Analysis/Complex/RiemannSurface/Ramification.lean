@@ -41,6 +41,8 @@ form of Riemann–Hurwitz. The ramification divisor of a composite satisfies the
 * `TauCeti.RiemannSurface.ramificationDegree`: the ramification degree, and
   `TauCeti.RiemannSurface.degree_ramificationDivisor`: it is the degree of the ramification
   divisor.
+* `TauCeti.RiemannSurface.ramificationDegree_eq_zero_iff`: the ramification degree vanishes
+  exactly when the map is unramified.
 * `TauCeti.RiemannSurface.card_fiber_add_sum_localMultiplicity_sub_one` and
   `TauCeti.RiemannSurface.coeff_pushforward_ramificationDivisor`: the fibre count.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.ncard_preimage_add_finsum_localMultiplicity_sub_one`:
@@ -194,6 +196,18 @@ theorem degree_ramificationDivisor (f : FiniteHolomorphicMap X Y) :
     rw [support_ramificationDivisor]
     exact Nat.lt_of_sub_ne_zero hx
 
+/-- A finite holomorphic map from a compact Riemann surface has ramification degree `0` exactly
+when it is unramified, that is, has local multiplicity `1` everywhere. -/
+theorem ramificationDegree_eq_zero_iff (f : FiniteHolomorphicMap X Y) :
+    ramificationDegree f = 0 ↔ ∀ x, localMultiplicity f x = 1 := by
+  rw [ramificationDegree_def, finsum_eq_sum _ f.finite_support_localMultiplicity_sub_one,
+    Finset.sum_eq_zero_iff]
+  refine ⟨fun h x ↦ ?_, fun h x _ ↦ by simp [h x]⟩
+  have hpos := localMultiplicity_pos f x
+  by_contra hx
+  have := h x (by simp only [Set.Finite.mem_toFinset, mem_support]; omega)
+  omega
+
 section Fiber
 
 variable [T2Space X] [T2Space Y] [PreconnectedSpace Y]
@@ -276,10 +290,12 @@ theorem ramificationDivisor_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolom
   push_cast
   ring
 
+omit [CompactSpace Y] in
 /-- The ramification degree of a composite of finite holomorphic maps between compact Riemann
 surfaces, with `Y` connected, is `deg R_f + deg f · deg R_g`. -/
 theorem ramificationDegree_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     ramificationDegree (g.comp f) = ramificationDegree f + degree f * ramificationDegree g := by
+  have : CompactSpace Y := f.surjective.compactSpace f.holomorphic.continuous
   have h := congrArg WeilDivisor.degree (ramificationDivisor_comp g f)
   rw [map_add, degree_divisorPullback, degree_ramificationDivisor, degree_ramificationDivisor,
     degree_ramificationDivisor] at h

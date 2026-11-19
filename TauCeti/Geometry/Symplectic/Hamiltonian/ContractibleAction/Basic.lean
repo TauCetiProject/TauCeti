@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
 # The action functional on contractible loops of a weakly exact manifold
@@ -16,8 +17,9 @@ coordinate `t`, with `w (0, ·) = γ₀` and `w (1, ·) = γ₁`. Cylinders comp
 (`TauCeti.IsLoopCylinder.trans`, by `TauCeti.rectangleTrans`) and reverse
 (`TauCeti.IsLoopCylinder.symm`), and their images under `C²` maps are cylinders
 (`TauCeti.IsLoopCylinder.comp`). A **cap** of `γ` (`TauCeti.IsCap`) is a cylinder from `γ` to a
-constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. A cylinder between two
-constant loops is a **sphere**.
+constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. Every `C²` map of the
+plane, read in polar coordinates on the closed unit disc, caps its boundary loop
+(`TauCeti.isLoopCylinder_comp_polar`). A cylinder between two constant loops is a **sphere**.
 
 The integral `∫ w^* φ` of a two-form `φ` over a cylinder is `TauCeti.rectangleIntegral φ w (0, 0)
 (1, 1)`, oriented by the coordinates `(s, t)`.
@@ -28,7 +30,7 @@ the capped loop** `(γ, u)`, where `u` is a cap of `γ = u (0, ·)`, is
 `A_H(γ, u) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt`,
 
 the action `TauCeti.cylinderAction ω H u` of `γ` measured against `u`. Its gluing, recapping and
-homotopy laws are proved in `TauCeti.Geometry.Symplectic.Hamiltonian.Action`; in general it
+homotopy laws are proved in `TauCeti.Geometry.Symplectic.Hamiltonian.Action.Basic`; in general it
 depends on the cap.
 
 The form `φ` is **weakly exact**
@@ -201,6 +203,21 @@ theorem isLoopCylinder_comp_prodMap {w : ℝ × ℝ → M} (hwc : ContMDiff 𝓘
   apply_zero t := by simp
   apply_one t := by simp
 
+open Real in
+/-- **Every disc is a cap of its boundary loop.** For a `C²` map `u` of the plane, the map
+`(s, t) ↦ u ((1 - s) cos 2πt, (1 - s) sin 2πt)`, which runs over the closed unit disc in polar
+coordinates, is a cylinder from the boundary loop `t ↦ u (cos 2πt, sin 2πt)` to the constant loop
+at the centre `u 0`; in particular it is a cap of the boundary loop. -/
+theorem isLoopCylinder_comp_polar {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) :
+    IsLoopCylinder I (fun z ↦ u ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2)))
+      (fun t ↦ u (cos (2 * π * t), sin (2 * π * t))) fun _ ↦ u 0 where
+  contMDiff := hu.comp (by fun_prop : ContDiff ℝ 2 fun z : ℝ × ℝ ↦
+    ((1 - z.1) * cos (2 * π * z.2), (1 - z.1) * sin (2 * π * z.2))).contMDiff
+  apply_add_one z := by simp only [mul_add, mul_one, cos_add_two_pi, sin_add_two_pi]
+  apply_zero t := by simp
+  apply_one t := by simp [← Prod.mk_zero_zero]
+
 /-! ### Weakly exact forms and the cap area -/
 
 /-- A two-form is **weakly exact** when its integral over every sphere, a cylinder between two
@@ -279,12 +296,16 @@ theorem IsWeaklyExact.capArea_eq_rectangleIntegral_add (hφ : IsSmoothForm I 0 �
     rectangleIntegral_rectangleTrans hφ (hwc.contMDiff.of_le one_le_two)
       (hv'.contMDiff.of_le one_le_two) fun t ↦ (hwc.apply_one t).trans (hv'.apply_zero t).symm]
 
-/-- For a continuous weakly exact form, a constant loop has cap area `0`: the constant map is a
-cap of it. -/
+omit [IsManifold I 1 M] in
+/-- For a weakly exact form, a constant loop has cap area `0`: any cap of it is a sphere. -/
 @[simp]
-theorem IsWeaklyExact.capArea_const (hφ : IsSmoothForm I 0 φ) (hw : IsWeaklyExact φ) (x : M) :
+theorem IsWeaklyExact.capArea_const (hw : IsWeaklyExact φ) (x : M) :
     capArea φ (fun _ ↦ x) = 0 := by
-  rw [hw.capArea_eq hφ (isLoopCylinder_const x).isCap, rectangleIntegral_const]
+  by_cases h : ∃ u, IsCap I u (fun _ ↦ x)
+  · obtain ⟨y, hy⟩ := h.choose_spec
+    rw [capArea, dite_eq_left h]
+    exact hw hy
+  · exact capArea_of_not_exists_isCap h
 
 end Continuous
 
@@ -375,13 +396,13 @@ theorem IsWeaklyExact.contractibleLoopAction_sub (hω : IsSmoothForm I 0 ω) (hw
     hw.capArea_eq_rectangleIntegral_add hω hwc hv]
   ring
 
-/-- For a continuous weakly exact form, the action of the constant loop at `x` is
-`-∫₀¹ H(t, x) dt`. -/
+omit [IsManifold I 1 M] in
+/-- For a weakly exact form, the action of the constant loop at `x` is `-∫₀¹ H(t, x) dt`. -/
 @[simp]
-theorem IsWeaklyExact.contractibleLoopAction_const (hω : IsSmoothForm I 0 ω)
+theorem IsWeaklyExact.contractibleLoopAction_const
     (hw : IsWeaklyExact ω) (H : ℝ → M → ℝ) (x : M) :
     contractibleLoopAction ω H (fun _ ↦ x) = -∫ t in 0..1, H t x := by
-  rw [contractibleLoopAction_def, hw.capArea_const hω, zero_sub]
+  rw [contractibleLoopAction_def, hw.capArea_const, zero_sub]
 
 end Continuous
 

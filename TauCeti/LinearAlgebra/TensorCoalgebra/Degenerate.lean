@@ -27,7 +27,10 @@ keeps the letter `e`, up to the sign of the Koszul twist.  Hence the brace and t
 bracket of two such maps vanish on degenerate words again; these are the normalized Hochschild
 cochains.  Degenerate words are also spanned by the pure words of homogeneous letters with a
 letter equal to `e`, so vanishing on them may be tested on homogeneous inputs
-(`degenerateWords_le_iff_of_mem_piece`).
+(`degenerateWords_le_iff_of_mem_piece`).  Letterwise maps killing `e` vanish on degenerate words
+(`degenerateWords_le_ker_map`), and subtracting the letterwise action of a linear endomorphism that
+modifies every element by a scalar multiple of `e` lands in the degenerate words
+(`sub_map_mem_degenerateWords`).
 
 ## References
 
@@ -75,9 +78,13 @@ theorem of_tprod_mem_degenerateWords {e : M} (n : {n : ℕ // 0 < n})
 
 /-- A block containing `e` is degenerate. -/
 theorem subword_mem_degenerateWords {e : M} {n : ℕ} (x : Fin n → M) {a b : ℕ}
-    (hab : a + b ≤ n) (hx : ∃ i : Fin n, a ≤ i.1 ∧ i.1 < a + b ∧ x i = e) :
+    (hx : ∃ i : Fin n, a ≤ i.1 ∧ i.1 < a + b ∧ x i = e) :
     subword R x a b ∈ degenerateWords R M e := by
   obtain ⟨i, hai, hib, hi⟩ := hx
+  by_cases hab : a + b ≤ n
+  swap
+  · rw [subword_eq_zero_of_lt_add R x (by omega)]
+    exact zero_mem _
   have hb : 0 < b := by omega
   rw [subword_eq_of_tprod R x hb hab]
   apply of_tprod_mem_degenerateWords
@@ -92,7 +99,7 @@ theorem subword_mem_degenerateWords {e : M} {n : ℕ} (x : Fin n → M) {a b : �
 theorem ofLetter_mem_degenerateWords (e : M) :
     ofLetter R M e ∈ degenerateWords R M e := by
   rw [← subword_one R M (fun _ : Fin 1 ↦ e) Nat.one_pos]
-  exact subword_mem_degenerateWords _ (by omega) ⟨0, by omega, by omega, rfl⟩
+  exact subword_mem_degenerateWords _ ⟨0, by omega, by omega, rfl⟩
 
 /-- Prepending an arbitrary letter preserves degeneracy. -/
 theorem prepend_mem_degenerateWords {e : M} (a : M) {z : ReducedTensorWords R M}
@@ -170,9 +177,9 @@ theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[
     have hb : 0 < b := by omega
     have hvanish : ∀ c, 1 < c → a + c ≤ n → i.1 < a + c →
         f (subword R x a c) = 0 := by
-      intro c hc hac hic
+      intro c hc _ hic
       rw [apply_eq_comp_letter_of_mem_degenerateWords f hf
-        (subword_mem_degenerateWords x hac ⟨i, hai, hic, hi⟩),
+        (subword_mem_degenerateWords x ⟨i, hai, hic, hi⟩),
         letter_subword_of_ne_one R M x a (by omega), map_zero, map_zero]
     -- The recursion separates the single-letter output from the proper cuts.
     rw [coalgHom_subword]
@@ -232,6 +239,13 @@ theorem coalgHom_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[R] N)
   | add x y _ _ hx hy => simpa using Submodule.add_mem _ hx hy
   | smul c x _ hx => simpa using Submodule.smul_mem _ c hx
 
+/-- The letterwise map of a linear map killing `e` vanishes on degenerate words. -/
+theorem degenerateWords_le_ker_map (f : M →ₗ[R] N) {e : M} (he : f e = 0) :
+    degenerateWords R M e ≤ LinearMap.ker (ReducedTensorWords.map (R := R) f) :=
+  degenerateWords_le_iff.2 fun _ _ ⟨i, hi⟩ ↦ by
+    rw [LinearMap.mem_ker, map_of_tprod,
+      (PiTensorProduct.tprod R).map_coord_zero i (by simp [hi, he]), map_zero]
+
 /-! ### Graded Taylor expansions and homogeneous spanning words -/
 
 section Graded
@@ -246,9 +260,36 @@ theorem of_tprod_mem_degenerateWords_of_eq_smul {e : M} (n : {n : ℕ // 0 < n})
   rw [hx, (PiTensorProduct.tprod R).map_update_smul, map_smul]
   exact Submodule.smul_mem _ _ (of_tprod_mem_degenerateWords _ _ ⟨i, by simp⟩)
 
+section Sub
+
+variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- Subtracting the letterwise action of a linear endomorphism that modifies every element by a
+scalar multiple of `e` lands in `degenerateWords R M e`. -/
+theorem sub_map_mem_degenerateWords (P : M →ₗ[R] M) {e : M}
+    (hP : ∀ a, ∃ c : R, a - P a = c • e) (z : ReducedTensorWords R M) :
+    z - ReducedTensorWords.map (R := R) P z ∈ degenerateWords R M e := by
+  suffices hle : (⊤ : Submodule R (ReducedTensorWords R M)) ≤
+      (degenerateWords R M e).comap (LinearMap.id - ReducedTensorWords.map (R := R) P) from
+    hle Submodule.mem_top
+  rw [← iSup_range_of R M, iSup_le_iff]
+  rintro n _ ⟨t, rfl⟩
+  induction t using PiTensorProduct.induction_on with
+  | smul_tprod r x =>
+    have hsub := (PiTensorProduct.tprod R).map_sub_map_piecewise x (fun j ↦ P (x j)) Finset.univ
+    rw [Finset.piecewise_univ] at hsub
+    simp only [Submodule.mem_comap, map_smul, LinearMap.sub_apply, LinearMap.id_apply,
+      map_of_tprod, ← map_sub, hsub, map_sum]
+    refine Submodule.smul_mem _ r (Submodule.sum_mem _ fun i _ ↦ ?_)
+    obtain ⟨c, hc⟩ := hP (x i)
+    exact of_tprod_mem_degenerateWords_of_eq_smul n _ (i := i) (c := c) (by simp [hc])
+  | add _ _ ht hu => rw [map_add]; exact Submodule.add_mem _ ht hu
+
+end Sub
+
 /-- Vanishing on degenerate words may be tested on pure words of homogeneous letters, one of which
 is the homogeneous element `e` with its degree. -/
-theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M) {e : M} {E : ℤ}
+theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ}
     (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} :
     degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.1 → M) (𝒟 : Fin n.1 → ℤ)
       (i : Fin n.1), (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
@@ -288,7 +329,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommMonoid M] [Module R M]
 /-- The graded Taylor expansion of a map vanishing on the degenerate words of a homogeneous `e`
 preserves those words: a collapsed block containing `e` is killed, and every other collapse keeps
 the letter `e`, possibly twisted by a sign. -/
-theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M)
+theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M ℤ)
     {F : ReducedTensorWords R M →ₗ[R] M} (q : ℤ) {e : M} {E : ℤ} (he : e ∈ G.piece E)
     (hF : degenerateWords R M e ≤ LinearMap.ker F) {z : ReducedTensorWords R M}
     (hz : z ∈ degenerateWords R M e) : gradedCoderiv G F q z ∈ degenerateWords R M e := by
@@ -296,7 +337,6 @@ theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M)
     hle hz
   rw [degenerateWords_le_iff]
   rintro ⟨n, hn⟩ x ⟨i, hi⟩
-  have hin : i.1 < n := i.isLt
   rw [Submodule.mem_comap, gradedCoderiv_of_tprod]
   refine Submodule.sum_mem _ fun p _ ↦ Submodule.sum_mem _ fun d _ ↦ ?_
   by_cases hfit : 0 < d ∧ p + d ≤ n
@@ -305,10 +345,10 @@ theorem gradedCoderiv_mem_degenerateWords (G : InternalGrading R M)
     exact Submodule.zero_mem _
   by_cases hblock : p ≤ i.1 ∧ i.1 < p + d
   · -- The collapsed block contains `e`, so `F` kills it.
-    rw [hF (subword_mem_degenerateWords x hfit.2 ⟨i, hblock.1, hblock.2, hi⟩), splice_zero]
+    rw [hF (subword_mem_degenerateWords x ⟨i, hblock.1, hblock.2, hi⟩), splice_zero]
     exact Submodule.zero_mem _
   -- Otherwise the letter `e` survives, twisted by a sign when it precedes the collapsed block.
-  obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R _ hfit.1 hfit.2
+  obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R _ hfit.2
     (F (subword R x p d)) hblock
   rw [hy]
   refine of_tprod_mem_degenerateWords_of_eq_smul _ _ (i := k)
@@ -328,7 +368,7 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The brace of two maps vanishing on the degenerate words of a homogeneous `e` vanishes on
 them. -/
-theorem degenerateWords_le_ker_brace (G : InternalGrading R M)
+theorem degenerateWords_le_ker_brace (G : InternalGrading R M ℤ)
     {F g : ReducedTensorWords R M →ₗ[R] M} (q : ℤ) {e : M} {E : ℤ} (he : e ∈ G.piece E)
     (hF : degenerateWords R M e ≤ LinearMap.ker F)
     (hg : degenerateWords R M e ≤ LinearMap.ker g) :
@@ -338,7 +378,7 @@ theorem degenerateWords_le_ker_brace (G : InternalGrading R M)
 
 /-- The Gerstenhaber bracket of two maps vanishing on the degenerate words of a homogeneous `e`
 vanishes on them. -/
-theorem degenerateWords_le_ker_gerstenhaberBracket (G : InternalGrading R M)
+theorem degenerateWords_le_ker_gerstenhaberBracket (G : InternalGrading R M ℤ)
     {F g : ReducedTensorWords R M →ₗ[R] M} (p q : ℤ) {e : M} {E : ℤ} (he : e ∈ G.piece E)
     (hF : degenerateWords R M e ≤ LinearMap.ker F)
     (hg : degenerateWords R M e ≤ LinearMap.ker g) :

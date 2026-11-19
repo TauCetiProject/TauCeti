@@ -28,12 +28,16 @@ rather than formulas. The stabilization ordinal lives in the universe of the str
 
 * `bfEquiv_of_le_of_forall_add_one`: between two structures, one-step stabilization at every tuple
   length propagates to all later levels.
-* `SelfStabilizesCompletely.bfEquiv_of_le`: one-step stabilization propagates to all later levels.
+* `SelfStabilizesCompletely.bfEquiv_of_bfEquiv`: one-step stabilization makes equivalence at the
+  stabilizing level hold at every level.
 * `SelfStabilizesCompletely.bfEquiv_add_one_of_isSuccLimit`: internal stabilization at `α`
   upgrades equivalence with a tuple of any structure at every limit `β > α` to `β + 1`.
 * `exists_selfStabilizesCompletely`: every structure has a stabilizing level.
 * `exists_complete_self_stabilization`: a countable structure has one below `ω₁`.
 * `selfStabilizationOrdinal_lt_omega_one`: the least stabilizing level is below `ω₁`.
+* `FirstOrder.Language.Equiv.selfStabilizesCompletely_iff` and
+  `FirstOrder.Language.Equiv.selfStabilizationOrdinal_eq`: internal stabilization and the least
+  stabilizing level are isomorphism invariants.
 
 ## References
 
@@ -105,17 +109,20 @@ variable {M}
 
 namespace SelfStabilizesCompletely
 
-/-- Once all tuple lengths stabilize, equivalence at that level persists at every later level. -/
-theorem bfEquiv_of_le {α β : Ordinal.{o}} (h : SelfStabilizesCompletely (L := L) M α)
-    (hαβ : α ≤ β) {n : ℕ} {a b : Fin n → M} (hab : BFEquiv (L := L) α n a b) :
-    BFEquiv (L := L) β n a b :=
-  bfEquiv_of_le_of_forall_add_one (fun n a b => (h n a b).mp) hαβ hab
+/-- Once all tuple lengths stabilize, equivalence at that level holds at every level: it persists
+at every later level and descends to every earlier one. -/
+theorem bfEquiv_of_bfEquiv {α β : Ordinal.{o}} (h : SelfStabilizesCompletely (L := L) M α)
+    {n : ℕ} {a b : Fin n → M} (hab : BFEquiv (L := L) α n a b) :
+    BFEquiv (L := L) β n a b := by
+  by_cases hαβ : α ≤ β
+  · exact bfEquiv_of_le_of_forall_add_one (fun n a b => (h n a b).mp) hαβ hab
+  · exact hab.mono (le_of_not_ge hαβ)
 
 /-- At every level above a stabilizing level, the internal equivalence relations agree. -/
 theorem bfEquiv_iff {α β : Ordinal.{o}} (h : SelfStabilizesCompletely (L := L) M α)
     (hαβ : α ≤ β) {n : ℕ} {a b : Fin n → M} :
     BFEquiv (L := L) β n a b ↔ BFEquiv (L := L) α n a b :=
-  ⟨fun hab => hab.mono hαβ, h.bfEquiv_of_le hαβ⟩
+  ⟨fun hab => hab.mono hαβ, h.bfEquiv_of_bfEquiv⟩
 
 /-- Every level above a stabilizing level is itself stabilizing. -/
 theorem mono {α β : Ordinal.{o}} (h : SelfStabilizesCompletely (L := L) M α)
@@ -128,12 +135,14 @@ section Partner
 variable {N : Type w'} [L.Structure N] {α : Ordinal.{o}}
 
 /-- In a structure stabilizing internally at `α`, a tuple `α`-equivalent to an outside tuple `v`
-is equivalent to `v` at every level `δ ≥ α` at which some tuple of the structure is. -/
-theorem bfEquiv_of_bfEquiv_of_le (h : SelfStabilizesCompletely (L := L) M α) {n : ℕ}
-    {u w : Fin n → M} {v : Fin n → N} {δ : Ordinal.{o}} (hαδ : α ≤ δ)
+is equivalent to `v` at every level `δ` at which some tuple of the structure is. -/
+theorem bfEquiv_of_bfEquiv_of_bfEquiv (h : SelfStabilizesCompletely (L := L) M α) {n : ℕ}
+    {u w : Fin n → M} {v : Fin n → N} {δ : Ordinal.{o}}
     (huv : BFEquiv (L := L) α n u v) (hwv : BFEquiv (L := L) δ n w v) :
-    BFEquiv (L := L) δ n u v :=
-  (h.bfEquiv_of_le hαδ (huv.trans (hwv.mono hαδ).symm)).trans hwv
+    BFEquiv (L := L) δ n u v := by
+  by_cases hαδ : α ≤ δ
+  · exact (h.bfEquiv_of_bfEquiv (huv.trans (hwv.mono hαδ).symm)).trans hwv
+  · exact huv.mono (le_of_not_ge hαδ)
 
 /-- **Internal stabilization gives external stabilization at limits.** If `M` stabilizes
 internally at `α`, then at every limit level `β > α`, back-and-forth equivalence at `β` between
@@ -150,7 +159,7 @@ theorem bfEquiv_add_one_of_isSuccLimit (h : SelfStabilizesCompletely (L := L) M 
     intro x y hxy
     refine (BFEquiv.limit hβ _ _).mpr fun γ hγ => ?_
     obtain ⟨x', hx'⟩ := ((BFEquiv.add_one _ a b).mp (hlt (max γ α) (max_lt hγ hαβ))).2.2 y
-    exact (h.bfEquiv_of_bfEquiv_of_le (le_max_right γ α) hxy hx').mono (le_max_left γ α)
+    exact (h.bfEquiv_of_bfEquiv_of_bfEquiv hxy hx').mono (le_max_left γ α)
   obtain ⟨-, hforth, hback⟩ := (BFEquiv.add_one α a b).mp (hlt α hαβ)
   refine (BFEquiv.add_one β a b).mpr ⟨hab, fun x => ?_, fun y => ?_⟩
   · obtain ⟨y, hy⟩ := hforth x
@@ -234,3 +243,35 @@ theorem selfStabilizationOrdinal_lt_omega_one [Countable M] :
   exact (selfStabilizationOrdinal_le M hs).trans_lt hα
 
 end TauCeti
+
+namespace FirstOrder.Language.Equiv
+
+open TauCeti
+
+variable {L : Language.{u, v}} [L.IsRelational]
+variable {M : Type w} {N : Type w'} [L.Structure M] [L.Structure N]
+
+/-- Internal stabilization transfers along an isomorphism. -/
+private theorem selfStabilizesCompletely_of_equiv {α : Ordinal.{o}}
+    (h : SelfStabilizesCompletely (L := L) M α) (e : M ≃[L] N) :
+    SelfStabilizesCompletely (L := L) N α := by
+  intro n a b
+  have ha := e.symm.bfEquiv α a
+  have hb := e.symm.bfEquiv α b
+  have ha' := e.symm.bfEquiv (α + 1) a
+  have hb' := e.symm.bfEquiv (α + 1) b
+  refine ⟨fun hab => ha'.trans (((h n _ _).mp (ha.symm.trans (hab.trans hb))).trans hb'.symm),
+    fun hab => hab.mono le_self_add⟩
+
+/-- Internal stabilization at a level is invariant under isomorphism. -/
+theorem selfStabilizesCompletely_iff (e : M ≃[L] N) {α : Ordinal.{o}} :
+    SelfStabilizesCompletely (L := L) M α ↔ SelfStabilizesCompletely (L := L) N α :=
+  ⟨fun h => selfStabilizesCompletely_of_equiv h e,
+    fun h => selfStabilizesCompletely_of_equiv h e.symm⟩
+
+/-- The least internal stabilization ordinal is an isomorphism invariant. -/
+theorem selfStabilizationOrdinal_eq {N : Type w} [L.Structure N] (e : M ≃[L] N) :
+    selfStabilizationOrdinal (L := L) M = selfStabilizationOrdinal (L := L) N := by
+  simp only [selfStabilizationOrdinal_def, e.selfStabilizesCompletely_iff]
+
+end FirstOrder.Language.Equiv

@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Data.Nat.Log
-import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
+import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.Substitution
@@ -341,15 +341,7 @@ domain, if `f` is a nonzero homomorphism of formal group laws from `F` to `G`, t
 substitution. -/
 theorem order_nsmulSeries_eq (f : FormalGroupHom F G) (hf : f.toPowerSeries ≠ 0) (n : ℕ) :
     (F.nsmulSeries n).order = (G.nsmulSeries n).order := by
-  have h := congrArg PowerSeries.order (f.subst_nsmulSeries n)
-  rw [PowerSeries.order_subst (F.constantCoeff_nsmulSeries n),
-    PowerSeries.order_subst f.zero_constantCoeff, mul_comm] at h
-  -- `ord f` is a positive natural number, so it can be cancelled
-  have h0 : f.toPowerSeries.order ≠ 0 :=
-    PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.mpr f.zero_constantCoeff
-  have ht : f.toPowerSeries.order ≠ ⊤ := PowerSeries.order_eq_top.not.mpr hf
-  exact le_antisymm ((ENat.mul_le_mul_left_iff h0 ht).mp h.le)
-    ((ENat.mul_le_mul_left_iff h0 ht).mp h.ge)
+  simpa only [FormalGroup.zsmulSeries_natCast] using f.order_zsmulSeries_eq hf n
 
 end Order
 
@@ -397,7 +389,7 @@ order, since `[n]_G = e ∘ [n]_F ∘ e⁻¹` and substitution into or of a seri
 does not lower the order. -/
 theorem FormalGroupIso.order_nsmulSeries_eq {R : Type*} [CommRing R] {F G : FormalGroup R}
     (e : FormalGroupIso F G) (n : ℕ) : (F.nsmulSeries n).order = (G.nsmulSeries n).order := by
-  suffices h : ∀ {F G : FormalGroup R} (e : FormalGroupIso F G),
+  suffices h : ∀ {F G : FormalGroup R}, FormalGroupIso F G →
       (F.nsmulSeries n).order ≤ (G.nsmulSeries n).order from le_antisymm (h e) (h e.symm)
   intro F G e
   have hn₀ := F.constantCoeff_nsmulSeries n

@@ -49,7 +49,7 @@ involved are trivial.
 * `TauCeti.localCyclotomicCharacter_absoluteGaloisGroupExtend`,
   `TauCeti.localCyclotomicCharacter_comp_absoluteGaloisGroupExtend`: the cyclotomic character of
   `G_L` is that of `G_K` read through `absoluteGaloisGroupExtend K L σ`.
-* `TauCeti.relIndex_range_localCyclotomicCharacter_dvd_finrank`: for a finite separable extension
+* `TauCeti.relIndex_range_localCyclotomicCharacter_dvd_finrank`: for a separable extension
   `L/K`, the relative index of these images divides `[L : K]`.
 * `TauCeti.range_localCyclotomicCharacter_le_ratPadic`: the comparison with `ℚ_p`; the
   cyclotomic image of a finite extension `K` of `ℚ_p` has relative index dividing `[K : ℚ_p]`
@@ -78,7 +78,7 @@ theorem cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv (g : Field.absolute
   -- (`IntermediateField.algebraMap_apply`), so restriction intertwines the two automorphisms.
   exact (cyclotomicCharacter_eq_of_injective p
     (algebraMap (SeparableClosure K) (AlgebraicClosure K)).injective
-    (fun x ↦ (coe_absoluteGaloisGroupRestrictEquiv_apply K g x).symm)
+    (fun _ x _ ↦ (coe_absoluteGaloisGroupRestrictEquiv_apply K g x).symm)
     fun H i ↦ let ⟨_, hζ⟩ := H i; hζ.exists_isPrimitiveRoot_of_isSepClosed K).symm
 
 variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
@@ -93,7 +93,7 @@ theorem localCyclotomicCharacter_absoluteGaloisGroupExtend (τ : Field.absoluteG
     ← cyclotomicCharacter_absoluteGaloisGroupRestrictEquiv]
   exact cyclotomicCharacter_eq_of_injective p
     (f := (separableClosureRingEquiv K L σ).toRingHom) (separableClosureRingEquiv K L σ).injective
-    (absoluteGaloisGroupExtend_apply_separableClosureRingEquiv K L σ τ)
+    (fun _ x _ ↦ absoluteGaloisGroupExtend_apply_separableClosureRingEquiv K L σ τ x)
     fun H i ↦ let ⟨ζ, hζ⟩ := H i
       ⟨_, hζ.map_of_injective (separableClosureRingEquiv K L σ).symm.injective⟩
 
@@ -107,12 +107,17 @@ theorem localCyclotomicCharacter_comp_absoluteGaloisGroupExtend :
 
 /-! ### The cyclotomic image along a finite extension -/
 
-/-- **The cyclotomic image of `G_L` has index dividing `[L : K]` in that of `G_K`**, for a finite
-separable extension `L/K`: it is the image of the subgroup `G_L` of `G_K`, which has index
-`[L : K]`. -/
+omit [FiniteDimensional K L] in
+/-- **The cyclotomic image of `G_L` has index dividing `[L : K]` in that of `G_K`**, for a
+separable extension `L/K`: when it is finite, it is the image of the subgroup `G_L` of `G_K`, which
+has index `[L : K]`; otherwise `[L : K] = 0` by convention. -/
 theorem relIndex_range_localCyclotomicCharacter_dvd_finrank [Algebra.IsSeparable K L] :
     (localCyclotomicCharacter p L).range.relIndex (localCyclotomicCharacter p K).range ∣
       Module.finrank K L := by
+  by_cases hL : FiniteDimensional K L
+  swap
+  · rw [Module.finrank_of_not_finite hL]
+    exact dvd_zero _
   -- Both images are images under `χ_K`, of `G_L` and of `G_K`, so the relative index is that of
   -- `G_L ⊔ ker χ_K` in `G_K`, which divides the index `[L : K]` of `G_L`.
   rw [← localCyclotomicCharacter_comp_absoluteGaloisGroupExtend p K L IsSepClosed.lift,

@@ -42,6 +42,11 @@ into a relative error bound for `F - w / c`.
 
 public section
 
+/-- The inverse of an element of norm greater than one has norm less than one. -/
+theorem TauCeti.norm_inv_lt_one_of_one_lt_norm {K : Type*} [NormedDivisionRing K]
+    {j : K} (hj : 1 < ‖j‖) : ‖j⁻¹‖ < 1 := by
+  simpa only [norm_inv] using inv_lt_one_of_one_lt₀ hj
+
 namespace NormedField
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜]

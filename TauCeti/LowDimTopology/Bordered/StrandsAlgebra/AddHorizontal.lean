@@ -250,7 +250,7 @@ private theorem inversionCount_addHorizontal {φ : StrandDiagram α} {W : Finset
     ext ⟨i, k⟩
     simp only [mem_union, mem_inversions, mem_horizontalCrossings, mem_addHorizontal]
     constructor
-    · rintro ⟨hik, a, (⟨hiW, rfl⟩ | ⟨hiW, haW, hia⟩), b, (⟨hkW, rfl⟩ | ⟨hkW, hbW, hkb⟩), hba⟩
+    · rintro ⟨hik, a, (⟨hiW, rfl⟩ | ⟨_, _, hia⟩), b, (⟨hkW, rfl⟩ | ⟨_, _, hkb⟩), hba⟩
       · exact absurd (hik.trans hba) (lt_irrefl _)
       · exact absurd (hik.trans_le (φ.le_of_mem hkb)) (not_lt.2 hba.le)
       · exact Or.inr ⟨hkW, hik, a, hia, hba⟩

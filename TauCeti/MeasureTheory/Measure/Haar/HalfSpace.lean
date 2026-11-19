@@ -131,15 +131,15 @@ theorem ae_eq_setOf_inner_lt_of_forall_inner_nonpos {s : Set E} (hs : NullMeasur
     have hle : s ≤ᵐ[μ] (· + h) ⁻¹' s := H h hh
     simpa [S, essentialInterior_preimage_add_right] using essentialInterior_mono_ae hle hx
   rcases eq_setOf_inner_lt_or_le_of_forall_inner_nonpos hS with h0 | h1 | ⟨c, hc | hc⟩
-  · exact Or.inl (hSs.trans (h0 ▸ Filter.EventuallyEq.rfl))
-  · exact Or.inr (Or.inl (hSs.trans (h1 ▸ Filter.EventuallyEq.rfl)))
-  · exact Or.inr (Or.inr ⟨c, hSs.trans (hc ▸ Filter.EventuallyEq.rfl)⟩)
+  · exact Or.inl (hSs.trans (h0 ▸ Filter.EventuallyEqSet.rfl))
+  · exact Or.inr (Or.inl (hSs.trans (h1 ▸ Filter.EventuallyEqSet.rfl)))
+  · exact Or.inr (Or.inr ⟨c, hSs.trans (hc ▸ Filter.EventuallyEqSet.rfl)⟩)
   rcases eq_or_ne ν 0 with rfl | hν
   · -- For `ν = 0` the closed half-space `{y | 0 ≤ c}` is empty or the whole space.
     by_cases hc0 : 0 ≤ c
     · exact Or.inr (Or.inl (hSs.trans (by simp [hc, hc0])))
     · exact Or.inl (hSs.trans (by simp [hc, hc0]))
-  · exact Or.inr (Or.inr ⟨c, (hSs.trans (hc ▸ Filter.EventuallyEq.rfl)).trans
+  · exact Or.inr (Or.inr ⟨c, (hSs.trans (hc ▸ Filter.EventuallyEqSet.rfl)).trans
       (setOf_inner_le_ae_eq_setOf_inner_lt hν c)⟩)
 
 /-! ### Density and essential boundary -/

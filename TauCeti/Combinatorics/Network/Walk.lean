@@ -130,8 +130,8 @@ abbrev vertices {s t : V} (p : ArrowWalk Q s t) : List V :=
 /-- The arrows traversed by a walk, in order and with repetitions, each recorded with its
 endpoints. -/
 def arrows {s : V} : ∀ {t : V}, ArrowWalk Q s t → List (Σ x y, Q x y)
-  | _, @Quiver.Path.nil _ .(_) _ => []
-  | _, @Quiver.Path.cons _ .(_) _ _ _ p e => arrows p ++ [⟨_, _, e⟩]
+  | _, @Quiver.Path.nil _ .(_) .(s) => []
+  | _, @Quiver.Path.cons _ .(_) .(s) _ _ p e => arrows p ++ [⟨_, _, e⟩]
 
 @[simp]
 theorem arrows_nil (s : V) : (nil s : ArrowWalk Q s s).arrows = [] :=
@@ -178,6 +178,16 @@ theorem arrows_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
   induction p' with
   | nil => simp [comp]
   | cons p' e ih => simp [comp, ← List.append_assoc, ← ih]
+
+/-- Pushing a walk along a prefunctor maps its arrows, in order, along the prefunctor. -/
+theorem _root_.Prefunctor.arrows_mapPath {W : Type*} {R : W → W → Type*}
+    (φ : @Prefunctor V ⟨Q⟩ W ⟨R⟩) {s t : V} (p : ArrowWalk Q s t) :
+    ArrowWalk.arrows (Q := R) (@Prefunctor.mapPath V ⟨Q⟩ W ⟨R⟩ φ s t p) =
+      p.arrows.map fun a ↦ ⟨@Prefunctor.obj V ⟨Q⟩ W ⟨R⟩ φ a.1,
+        @Prefunctor.obj V ⟨Q⟩ W ⟨R⟩ φ a.2.1, @Prefunctor.map V ⟨Q⟩ W ⟨R⟩ φ _ _ a.2.2⟩ := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [ih]
 
 @[simp]
 theorem length_arrows {s t : V} (p : ArrowWalk Q s t) : p.arrows.length = p.length := by

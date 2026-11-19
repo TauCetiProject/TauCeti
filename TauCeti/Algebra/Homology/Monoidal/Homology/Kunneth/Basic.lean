@@ -236,7 +236,7 @@ variable {K L K' L' : HomologicalComplex C c} [HasTensor K L] [HasTensor K' L'] 
   [∀ q, PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
   [∀ q, PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.X (c.prev q)))]
   [GradedObject.HasTensor (fun p ↦ K.homology p) (fun q ↦ L.homology q)]
-  [∀ p, K'.HasHomology p] [∀ q, L'.HasHomology q] [(tensorObj K' L').HasHomology n]
+  [∀ p, K'.HasHomology p] [∀ q, L'.HasHomology q]
   [∀ p, PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K'.homology p))]
   [∀ q, PreservesColimitsOfShape WalkingParallelPair (tensorRight (L'.cycles q))]
   [∀ q, PreservesColimitsOfShape WalkingParallelPair (tensorRight (L'.X (c.prev q)))]
@@ -247,8 +247,12 @@ differentials.**  Every chain complex of vector spaces over a field is of this k
 cycles and boundaries split off as direct summands. -/
 theorem isIso_homologyKunneth_of_homotopyEquiv_of_d_eq_zero (eK : HomotopyEquiv K K')
     (eL : HomotopyEquiv L L') (hK' : ∀ i j, K'.d i j = 0) (hL' : ∀ i j, L'.d i j = 0) :
-    IsIso (homologyKunneth K L n) :=
-  (isIso_homologyKunneth_iff_of_homotopyEquiv n eK eL).mpr
+    IsIso (homologyKunneth K L n) := by
+  -- a complex with zero differentials has homology everywhere
+  have : (tensorObj K' L').HasHomology n :=
+    ShortComplex.HasHomology.mk' (ShortComplex.HomologyData.ofZeros _
+      (tensorObj_d_eq_zero hK' hL' _ _) (tensorObj_d_eq_zero hK' hL' _ _))
+  exact (isIso_homologyKunneth_iff_of_homotopyEquiv n eK eL).mpr
     (isIso_homologyKunneth_of_d_eq_zero n hK' hL')
 
 end HomotopyEquiv
@@ -498,5 +502,38 @@ theorem isIso_homologyKunneth_of_d_eq_zero_of_flat (n : ℕ) : IsIso (homologyKu
       reassoc_of% hψ, Category.comp_id, IsIso.inv_comp_eq, hnat]
 
 end FlatZeroDifferential
+
+section ModuleCatCross
+
+/-! ### The cross product on classes of cycles of complexes of modules -/
+
+universe u
+
+open scoped TensorProduct
+
+variable {R : Type u} [CommRing R] {I : Type*} [AddMonoid I] {c : ComplexShape I}
+  [c.TensorSigns] [DecidableEq I] (K L : HomologicalComplex (ModuleCat.{u} R) c)
+  {M : HomologicalComplex (ModuleCat.{u} R) c} [HasTensor K L] (p q n : I) (h : p + q = n)
+  [K.HasHomology p] [L.HasHomology q] [(tensorObj K L).HasHomology n] [M.HasHomology n]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorLeft (K.homology p))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.cycles q))]
+  [PreservesColimitsOfShape WalkingParallelPair (tensorRight (L.X (c.prev q)))]
+
+/-- Element-wise form of `HomologicalComplex.homologyπ_tensorHom_homologyCross`, followed by a
+chain map `φ` out of the tensor product: `φ` sends the cross product of the classes of cycles `z`
+and `w` to the class of the image under `φ` of the cycle `z ⊗ w`. -/
+theorem moduleCat_homologyMap_homologyCross_tmul (φ : tensorObj K L ⟶ M) (z : K.cycles p)
+    (w : L.cycles q) :
+    (homologyMap φ n).hom
+        ((homologyCross K L p q n h).hom (K.homologyπ p z ⊗ₜ L.homologyπ q w)) =
+      M.homologyπ n ((cyclesMap φ n).hom ((cyclesCross K L p q n h).hom (z ⊗ₜ w))) := by
+  have h' := congrArg (fun f ↦ f.hom (z ⊗ₜ w))
+    (homologyπ_tensorHom_homologyCross_assoc K L p q n h (homologyMap φ n))
+  rw [homologyπ_naturality] at h'
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.MonoidalCategory.tensorHom_tmul] at h'
+  exact h'
+
+end ModuleCatCross
 
 end HomologicalComplex

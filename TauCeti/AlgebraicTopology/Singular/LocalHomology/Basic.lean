@@ -43,7 +43,9 @@ The computation has three steps.
 
 ## Main definitions and results
 
-* `TauCeti.singularHomologyComplSingletonIsoOfChart`: `Hₖ(M, M ∖ {x}) ≅ Hₖ(E, E ∖ {φ x})`.
+* `TauCeti.singularHomologyComplSingletonIsoOfChart`: `Hₖ(M, M ∖ {x}) ≅ Hₖ(E, E ∖ {φ x})`, with
+  `TauCeti.singularHomologyComplSingletonIsoOfChart_refl` and
+  `TauCeti.singularHomologyComplSingletonIsoOfChart_transHomeomorph_hom`.
 * `TauCeti.singularHomologyComplSingletonIso`: `Hₖ₊₁(M, M ∖ {x})` is isomorphic to the
   degree-`k` reduced homology of `S`.
 * `TauCeti.isZero_singularHomology_complSingleton_zero`: `H₀(M, M ∖ {x}) = 0` when `E ≠ 0`.
@@ -179,6 +181,42 @@ lemma singularHomologyComplSingletonIsoOfChart_refl {p : E}
   rw [TopPair.Hom.fst_comp]
   erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply,
     TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst_apply]
+  rfl
+
+/-- Composing a chart with a homeomorphism of the model composes its local homology isomorphism
+with the map induced by the homeomorphism on the pair `(E, E ∖ {φ x})`. -/
+theorem singularHomologyComplSingletonIsoOfChart_transHomeomorph_hom
+    {F : Type w} [TopologicalSpace F] [T1Space F] (g : E ≃ₜ F)
+    (hx' : x ∈ (φ.transHomeomorph g).source) (k : ℕ) :
+    (singularHomologyComplSingletonIsoOfChart R (φ.transHomeomorph g) hx' k).hom =
+      (singularHomologyComplSingletonIsoOfChart R φ hx k).hom ≫
+        TopPair.singularHomologyMap
+          (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of F)
+            (TopCat.ofHom ⟨g, g.continuous⟩) (B := {φ x}ᶜ) (B' := {(φ.transHomeomorph g) x}ᶜ)
+            (fun _ hy h ↦ hy (g.injective h))) R k := by
+  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R
+    (X := TopCat.of M) φ.open_source isClosed_singleton (Set.singleton_subset_iff.2 hx) k
+  apply (cancel_epi (TopPair.singularHomologyMap
+    (TopPair.excisionMap (X := TopCat.of M) φ.source {x}ᶜ) R k)).1
+  -- `(φ.transHomeomorph g).source` is `φ.source` only after unfolding `transHomeomorph`.
+  erw [singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom
+    R (φ.transHomeomorph g) hx' k]
+  rw [singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom_assoc
+      R φ hx k,
+    ← TopPair.singularHomologyMap_comp, ← TopPair.singularHomologyMap_comp,
+    ← TopPair.singularHomologyMap_comp]
+  congr 1
+  apply TopPair.hom_ext_of_fst
+  ext z
+  rw [TopPair.Hom.fst_comp, TopPair.Hom.fst_comp, TopPair.Hom.fst_comp]
+  -- Unfold the ambient carrier of `TopPair.ofSubset` to evaluate `TopCat` composites on `z`.
+  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+    TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply,
+    TopPair.ofSubsetIso_hom, TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst_apply,
+    TopPair.ofSubsetMap_fst_apply, TopPair.ofSubsetMap_fst_apply,
+    OpenPartialHomeomorph.toHomeomorphSourceTarget_apply_coe,
+    OpenPartialHomeomorph.toHomeomorphSourceTarget_apply_coe,
+    OpenPartialHomeomorph.transHomeomorph_apply]
   rfl
 
 end Chart
@@ -440,25 +478,12 @@ theorem isIso_singularHomologyMap_compl_of_starConvex (hK : StarConvex ℝ y K) 
       TopCat.ofHom e₁.toFun
     let g₂ : TopCat.of (sphere y r) ⟶ (TopPair.ofSubset ({y}ᶜ : Set (TopCat.of E))).snd :=
       TopCat.ofHom e₂.toFun
-    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := by
-      ext z
-      rw [ConcreteCategory.comp_apply]
-      exact Subtype.ext <| (TopPair.ofSubsetMap_snd_apply _ _ _).trans <|
-        (hK.coe_complSphereHomotopyEquiv_apply hy hKr z).trans
-          ((starConvex_singleton y).coe_complSphereHomotopyEquiv_apply rfl _ z).symm
-    -- `((singularHomologyFunctor A n).obj R).map g` is `SSet.homologyMap (TopCat.toSSet.map g) R n`
-    -- by definition of `singularChainComplexFunctor`, so the homotopy equivalences give
-    -- isomorphisms in the latter form.
-    have h₁ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n) := by
-      have := (e₁.singularHomologyIso R n).isIso_hom
-      rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-      exact this
+    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := hK.ofHom_complSphereHomotopyEquiv_comp_snd hy hKr
+    have h₁ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n) := e₁.isIso_homologyMap R n
     have h₂ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n ≫
         SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.snd f)) R n) := by
       rw [← SSet.homologyMap_comp, ← Functor.map_comp, hfac]
-      have := (e₂.singularHomologyIso R n).isIso_hom
-      rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-      exact this
+      exact e₂.isIso_homologyMap R n
     exact IsIso.of_isIso_comp_left (SSet.homologyMap (TopCat.toSSet.map g₁) R n) _
   exact TopPair.isIso_singularHomologyMap_of_isIso R f k (hfst k) (hsnd k) (fun m _ ↦ hfst m)
     fun m _ ↦ hsnd m

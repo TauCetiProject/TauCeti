@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.IteratedGradient
+public import Mathlib.MeasureTheory.Measure.SeparableMeasure
+public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 
@@ -35,6 +36,9 @@ so the norm of `W^{k,2}(Ω)` with `k ≥ 2` need not be induced by an inner prod
 `Ω = (0,1)² ⊆ ℝ²`, for instance, `x²/2` and `y²/2` violate the parallelogram law.  It is a
 Banach-space norm, not in general the Hilbert-space norm of `H^k(Ω)`.
 
+For finite `p`, the full iterated weak-derivative graph topology is second countable, hence
+separable. No separability assertion is made for `p = ∞`.
+
 ## Implementation notes
 
 The bundled stage machinery `TauCeti.SobolevStage`, `TauCeti.firstSobolevStage`,
@@ -60,11 +64,14 @@ The projections below are sealed instead, and are used through their characteris
 
 * `TauCeti.Wkp`: `W^{k,p}(Ω)`, with `Wkp 0 = Lᵖ(Ω)` and `Wkp 1 = W1p`.
 * `TauCeti.Wkp.lowerOrder`: the continuous projection `W^{k+1,p} → W^{k,p}`.
+* `TauCeti.Wkp.toOrderL`: continuous linear truncation `W^{k,p}(Ω) →L[ℝ] W^{j,p}(Ω)` for `j ≤ k`.
 * `TauCeti.Wkp.iteratedGradient`: the highest weak derivative of a positive-order Sobolev function.
 * `TauCeti.Wkp.hasWeakFDerivOn_iteratedGradient`: adjacent recorded derivatives satisfy the weak
   derivative identity.
 * `TauCeti.Wkp.ae_value_add_sum_eq`: almost everywhere, the value of a sum of Sobolev functions is
   the sum of the almost-everywhere values of the summands.
+* `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto`: convergence in `W^{k,p}(Ω)` gives convergence in
+  `Lᵖ(Ω)` of any almost-everywhere representatives of the values.
 
 ## References
 
@@ -141,6 +148,21 @@ theorem SobolevStage.instCompleteSpace (j : ℕ) :
 
 attribute [instance] SobolevStage.instCompleteSpace
 
+/-- At finite exponent, every iterated weak-derivative graph stage is second countable. -/
+instance SobolevStage.instSecondCountableTopology [Fact (p ≠ ⊤)] (j : ℕ) :
+    SecondCountableTopology
+      (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).Space := by
+  induction j with
+  | zero =>
+    -- The first stage is definitionally the value-gradient `Lᵖ` subspace `W1p`.
+    exact (inferInstance : SecondCountableTopology (W1p mu Omega p))
+  | succ j ih =>
+    have := ih
+    -- The next stage is a graph in the product of the preceding stage and an `Lᵖ` space.
+    exact (inferInstance : SecondCountableTopology
+      (WeakDerivStep mu Omega p
+        (sobolevStage (mu := mu) (Omega := Omega) (p := p) j).iteratedGradientL))
+
 /-- The arbitrary-order, real-valued weak Sobolev space `W^{k,p}(Ω)`.  At order zero this is
 `Lᵖ(Ω)`; order one is `W1p`; every further order adjoins the weak derivative of the highest
 derivative field from the preceding order. -/
@@ -170,6 +192,12 @@ theorem Wkp.instCompleteSpace :
   | k + 1 => (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).completeSpace
 
 attribute [instance] Wkp.instCompleteSpace
+
+/-- At every order and finite exponent, the full weak Sobolev topology is second countable. -/
+instance Wkp.instSecondCountableTopology [Fact (p ≠ ⊤)] :
+    (k : ℕ) → SecondCountableTopology (Wkp mu Omega p k)
+  | 0 => inferInstance
+  | k + 1 => SobolevStage.instSecondCountableTopology k
 
 namespace Wkp
 
@@ -249,6 +277,12 @@ theorem value_add (k : ℕ) (u v : Wkp mu Omega p k) :
     value k (u + v) = value k u + value k v :=
   map_add (valueL k) u v
 
+/-- The value component preserves subtraction. -/
+@[simp]
+theorem value_sub (k : ℕ) (u v : Wkp mu Omega p k) :
+    value k (u - v) = value k u - value k v :=
+  map_sub (valueL k) u v
+
 /-- The value component preserves scalar multiplication. -/
 @[simp]
 theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
@@ -296,6 +330,17 @@ theorem value_zero (u : Wkp mu Omega p 0) : value 0 u = u :=
 theorem value_succ (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     value (k + 1) u = value k (lowerOrder k u) :=
   (rfl)
+
+/-- If `u i → v` in `W^{k,p}(Ω)` along a filter `l` and the values of `u i` and `v` represent
+`f i` and `g` almost everywhere on `Ω`, then `f i → g` in `Lᵖ(Ω)` along `l`. -/
+theorem tendsto_eLpNorm_sub_of_tendsto {α : Type*} {l : Filter α} {k : ℕ}
+    {u : α → Wkp mu Omega p k} {v : Wkp mu Omega p k} {f : α → E → ℝ} {g : E → ℝ}
+    (huv : Filter.Tendsto u l (nhds v)) (hu : ∀ i, value k (u i) =ᵐ[mu.restrict Omega] f i)
+    (hv : value k v =ᵐ[mu.restrict Omega] g) :
+    Filter.Tendsto (fun i => eLpNorm (f i - g) p (mu.restrict Omega)) l (nhds 0) := by
+  refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (((valueL k).continuous.tendsto v).comp huv)).congr fun i => eLpNorm_congr_ae ?_
+  simpa only [Function.comp_apply, valueL_apply] using (hu i).sub hv
 
 /-- At first order, the generic lower-order projection is the `W1p` value projection. -/
 @[simp]
@@ -479,6 +524,12 @@ theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → 
   | 0, _, _, h => by simpa only [value_zero] using h
   | k + 1, _, _, h => ext_lowerOrder k (ext k (by simpa only [value_succ] using h))
 
+/-- On an empty domain every Sobolev space is trivial. -/
+theorem subsingleton_of_eq_empty (k : ℕ) (h : (Omega : Set E) = ∅) :
+    Subsingleton (Wkp mu Omega p k) :=
+  ⟨fun _ _ ↦ ext k (Lp.ext (Filter.Eventually.filter_mono
+    (ae_eq_bot.2 (Measure.restrict_eq_zero.2 (by simp [h]))).le Filter.eventually_bot))⟩
+
 /-- The graph norm controls the one-order-lower Sobolev component. -/
 theorem norm_lowerOrder_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     ‖lowerOrder k u‖ ≤ ‖u‖ := by
@@ -528,9 +579,9 @@ theorem norm_le_norm_lowerOrder_add_norm_iteratedGradient (k : ℕ)
       rw [lowerOrder_zero, iteratedGradient_zero]
       exact W1p.norm_le_norm_value_add_norm_gradient u
   | succ k =>
-      have h := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
-      nlinarith [norm_nonneg u, norm_nonneg (lowerOrder (k + 1) u),
-        norm_nonneg (iteratedGradient (k + 1) u)]
+      rw [lowerOrder_succ, iteratedGradient_succ]
+      exact WeakDerivStep.norm_le_norm_prev_add_norm_weakFDeriv
+        (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative.  The
@@ -575,6 +626,189 @@ theorem continuous_iff_lowerOrder_iteratedGradient (k : ℕ) {Y : Type*} [Topolo
   exact ⟨fun h => ⟨fun y => ((tendsto_iff_lowerOrder_iteratedGradient k).1 (h y)).1,
       fun y => ((tendsto_iff_lowerOrder_iteratedGradient k).1 (h y)).2⟩,
     fun h y => (tendsto_iff_lowerOrder_iteratedGradient k).2 ⟨h.1 y, h.2 y⟩⟩
+
+/-- Approximations defined at every order converge at every order once they converge at order
+zero and in each highest weak derivative, provided they commute with `lowerOrder`. For each `u`
+of order `k` satisfying a side condition `P k u` inherited by `lowerOrder`, `v k u hu` is a family
+of approximations of `w k u`. -/
+theorem tendsto_of_tendsto_iteratedGradient {U : Opens E} {I : Type*} {l : Filter I}
+    {P : ∀ k, Wkp mu Omega p k → Prop} (hP : ∀ k u, P (k + 1) u → P k (lowerOrder k u))
+    {v : ∀ k (u : Wkp mu Omega p k), P k u → I → Wkp mu U p k}
+    {w : ∀ k, Wkp mu Omega p k → Wkp mu U p k}
+    (hv : ∀ k u hu i, lowerOrder k (v (k + 1) u hu i) = v k (lowerOrder k u) (hP k u hu) i)
+    (hw : ∀ k u, lowerOrder k (w (k + 1) u) = w k (lowerOrder k u))
+    (hzero : ∀ u hu, Filter.Tendsto (v 0 u hu) l (nhds (w 0 u)))
+    (hgrad : ∀ k u hu, Filter.Tendsto (fun i => iteratedGradient k (v (k + 1) u hu i)) l
+      (nhds (iteratedGradient k (w (k + 1) u)))) :
+    ∀ k u hu, Filter.Tendsto (v k u hu) l (nhds (w k u)) := by
+  intro k
+  induction k with
+  | zero => exact hzero
+  | succ k ih =>
+      intro u hu
+      refine (tendsto_iff_lowerOrder_iteratedGradient k).2 ⟨?_, hgrad k u hu⟩
+      simpa only [hv, hw] using ih _ (hP k u hu)
+
+/-! ### Order truncation -/
+
+/-- Forget weak derivatives above order `j`, as a continuous linear map
+`W^{k,p}(Ω) →L[ℝ] W^{j,p}(Ω)` for `j ≤ k`. At `j = k` this is the identity, and each step in `k`
+precomposes with `TauCeti.Wkp.lowerOrderL`. -/
+def toOrderL {j k : ℕ} (h : j ≤ k) : Wkp mu Omega p k →L[ℝ] Wkp mu Omega p j :=
+  Nat.leRec (motive := fun k _ => Wkp mu Omega p k →L[ℝ] Wkp mu Omega p j)
+    (ContinuousLinearMap.id ℝ _) (fun k _ ih => ih.comp (lowerOrderL k)) h
+
+/-- Truncating a Sobolev space to its own order is the identity operator. -/
+@[simp]
+theorem toOrderL_self {k : ℕ} (h : k ≤ k) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h = ContinuousLinearMap.id ℝ _ := by
+  obtain rfl : h = le_rfl := Subsingleton.elim _ _
+  exact Nat.leRec_self _ _
+
+/-- Truncation from order `k + 1` to order `j ≤ k` factors through forgetting the top derivative at
+order `k + 1` followed by truncation from `k` to `j`. -/
+theorem toOrderL_succ {j k : ℕ} (h₁ : j ≤ k) (h₂ : j ≤ k + 1) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h₂ = (toOrderL h₁).comp (lowerOrderL k) := by
+  obtain rfl : h₂ = Nat.le_succ_of_le h₁ := Subsingleton.elim _ _
+  exact Nat.leRec_succ _ _ _
+
+/-- One-step truncation from `k + 1` to `k` is `TauCeti.Wkp.lowerOrderL`. -/
+theorem toOrderL_le_succ (k : ℕ) (h : k ≤ k + 1) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h = lowerOrderL k := by
+  rw [toOrderL_succ le_rfl h, toOrderL_self, ContinuousLinearMap.id_comp]
+
+/-- Order truncations compose transitively as continuous linear maps. -/
+@[simp]
+theorem toOrderL_comp_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) :
+    (toOrderL (mu := mu) (Omega := Omega) (p := p) hij).comp (toOrderL hjk) =
+      toOrderL (hij.trans hjk) := by
+  induction hjk with
+  | refl => simp
+  | @step m hm ih =>
+      rw [toOrderL_succ hm (Nat.le_succ_of_le hm), ← ContinuousLinearMap.comp_assoc, ih,
+        ← toOrderL_succ (hij.trans hm) (hij.trans (Nat.le_succ_of_le hm))]
+
+/-- Applying two successive order truncations equals truncating directly to the lowest order. -/
+@[simp]
+theorem toOrderL_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (u : Wkp mu Omega p k) :
+    toOrderL hij (toOrderL hjk u) = toOrderL (hij.trans hjk) u := by
+  rw [← ContinuousLinearMap.comp_apply, toOrderL_comp_toOrderL]
+
+/-- Precomposing truncation with `lowerOrderL` increases the source order by one. -/
+theorem toOrderL_comp_lowerOrderL {j k : ℕ} (h : j ≤ k) :
+    (toOrderL (mu := mu) (Omega := Omega) (p := p) h).comp (lowerOrderL k) =
+      toOrderL (Nat.le_succ_of_le h) :=
+  (toOrderL_succ h (Nat.le_succ_of_le h)).symm
+
+/-- Truncating after `lowerOrder` equals truncating directly from order `k + 1`. -/
+@[simp]
+theorem toOrderL_lowerOrder {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p (k + 1)) :
+    toOrderL h (lowerOrder k u) = toOrderL (Nat.le_succ_of_le h) u := by
+  rw [← lowerOrderL_apply, ← ContinuousLinearMap.comp_apply, toOrderL_comp_lowerOrderL]
+
+/-- Postcomposing truncation to order `j + 1` with `lowerOrderL j` truncates to order `j`. -/
+theorem lowerOrderL_comp_toOrderL {j k : ℕ} (h : j + 1 ≤ k) :
+    (lowerOrderL (mu := mu) (Omega := Omega) (p := p) j).comp (toOrderL h) =
+      toOrderL (Nat.le_of_succ_le h) := by
+  rw [← toOrderL_le_succ j (Nat.le_succ j), toOrderL_comp_toOrderL]
+
+/-- Forgetting one further derivative after truncating to `j + 1` truncates to `j`. -/
+theorem lowerOrder_toOrderL {j k : ℕ} (h : j + 1 ≤ k) (u : Wkp mu Omega p k) :
+    lowerOrder j (toOrderL h u) = toOrderL (Nat.le_of_succ_le h) u := by
+  rw [← lowerOrderL_apply, ← ContinuousLinearMap.comp_apply, lowerOrderL_comp_toOrderL]
+
+/-- Evaluating truncation to order zero yields the `Lᵖ` value component. -/
+theorem toOrderL_zero_left_apply (k : ℕ) (h : 0 ≤ k) (u : Wkp mu Omega p k) :
+    toOrderL h u = value k u := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+      rw [toOrderL_succ (Nat.zero_le k) h, ContinuousLinearMap.comp_apply, lowerOrderL_apply,
+        ih (Nat.zero_le k), ← value_succ]
+
+/-- Truncating to order zero is the continuous `Lᵖ` value projection `valueL`. -/
+theorem toOrderL_zero_left (k : ℕ) (h : 0 ≤ k) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h = valueL k :=
+  ContinuousLinearMap.ext fun u => (toOrderL_zero_left_apply k h u).trans (valueL_apply k u).symm
+
+/-- Evaluating truncation to order one on `W^{k+1,p}` agrees with `firstOrder`. -/
+theorem toOrderL_one_left_apply (k : ℕ) (h : 1 ≤ k + 1) (u : Wkp mu Omega p (k + 1)) :
+    toOrderL h u = firstOrder k u := by
+  induction k with
+  | zero =>
+      rw [toOrderL_self, ContinuousLinearMap.id_apply]
+      exact (firstOrder_zero u).symm
+  | succ k ih =>
+      rw [toOrderL_succ (Nat.succ_le_succ (Nat.zero_le k)) h, ContinuousLinearMap.comp_apply,
+        lowerOrderL_apply, ih (Nat.succ_le_succ (Nat.zero_le k)) (lowerOrder (k + 1) u),
+        ← firstOrder_succ]
+
+/-- Truncating a positive-order Sobolev space to order one is `firstOrderL`. -/
+theorem toOrderL_one_left (k : ℕ) (h : 1 ≤ k + 1) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h = firstOrderL k :=
+  ContinuousLinearMap.ext fun u =>
+    (toOrderL_one_left_apply k h u).trans (firstOrderL_apply k u).symm
+
+/-- The `Lᵖ` value projection commutes with order truncation at the operator level. -/
+@[simp]
+theorem valueL_comp_toOrderL {j k : ℕ} (h : j ≤ k) :
+    (valueL (mu := mu) (Omega := Omega) (p := p) j).comp (toOrderL h) = valueL k := by
+  rw [← toOrderL_zero_left j (Nat.zero_le j), toOrderL_comp_toOrderL, toOrderL_zero_left]
+
+/-- Order truncation preserves the `Lᵖ` value component. -/
+@[simp]
+theorem value_toOrderL {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
+    value j (toOrderL h u) = value k u := by
+  rw [← valueL_apply, ← ContinuousLinearMap.comp_apply, valueL_comp_toOrderL, valueL_apply]
+
+/-- Truncating `mk k u D hw` to any order `j ≤ k + 1` forgets the adjoined derivative `D` and
+truncates `u`. -/
+theorem toOrderL_mk {j k : ℕ} (h₁ : j ≤ k + 1) (h₂ : j ≤ k + 2) (u : Wkp mu Omega p (k + 1))
+    (D : Lp (IteratedGradient E (k + 1)) p (mu.restrict Omega))
+    (hw : HasWeakFDerivOn mu Omega (iteratedGradient k u) D) :
+    toOrderL h₂ (mk k u D hw) = toOrderL h₁ u := by
+  rw [toOrderL_succ h₁ h₂, ContinuousLinearMap.comp_apply, lowerOrderL_apply, lowerOrder_mk]
+
+/-- Order truncation is injective because weak derivatives are determined uniquely by the `Lᵖ`
+value component. -/
+theorem toOrderL_injective {j k : ℕ} (h : j ≤ k) :
+    Function.Injective (toOrderL (mu := mu) (Omega := Omega) (p := p) h) := by
+  intro u v huv
+  apply ext k
+  rw [← value_toOrderL h u, ← value_toOrderL h v, huv]
+
+/-- Order truncation is norm-nonincreasing. -/
+theorem norm_toOrderL_le {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
+    ‖toOrderL h u‖ ≤ ‖u‖ := by
+  induction h with
+  | refl => simp
+  | @step m hm ih =>
+      rw [toOrderL_succ hm (Nat.le_succ_of_le hm), ContinuousLinearMap.comp_apply,
+        lowerOrderL_apply]
+      exact (ih (lowerOrder m u)).trans (norm_lowerOrder_le m u)
+
+/-- The operator norm of `toOrderL` is at most one. -/
+theorem norm_toOrderL_le_one {j k : ℕ} (h : j ≤ k) :
+    ‖toOrderL (mu := mu) (Omega := Omega) (p := p) h‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
+    simpa only [one_mul] using norm_toOrderL_le h u
+
+/-- For `1 ≤ k`, the `Lᵖ` value of `u ∈ W^{k,p}(Ω)` has weak Fréchet derivative given by pairing
+with the first weak gradient `iteratedGradient 0 (toOrderL h u)`. -/
+theorem hasWeakFDerivOn_value_toOrderL {k : ℕ} (h : 1 ≤ k) (u : Wkp mu Omega p k) :
+    HasWeakFDerivOn mu Omega (value k u)
+      (fun x => innerSL ℝ (iteratedGradient 0 (toOrderL h u) x)) := by
+  simpa only [value_toOrderL h u] using hasWeakFDerivOn_value (toOrderL h u)
+
+/-- Adjacent intermediate weak derivatives extracted via `toOrderL` satisfy the weak Fréchet
+derivative relation on `Ω`. -/
+theorem hasWeakFDerivOn_iteratedGradient_toOrderL {j k : ℕ} (h : j + 2 ≤ k)
+    (u : Wkp mu Omega p k) :
+    HasWeakFDerivOn mu Omega
+      (iteratedGradient j (toOrderL (Nat.le_of_succ_le h) u))
+      (iteratedGradient (j + 1) (toOrderL h u)) := by
+  rw [← lowerOrder_toOrderL h u]
+  exact hasWeakFDerivOn_iteratedGradient j (toOrderL h u)
 
 end Wkp
 

@@ -134,7 +134,6 @@ private theorem mul_apply_sub_apply_self_nonneg (he : ∑ j, m j • C j = e)
   rcases lt_or_ge (B (C i) (C i)) 0 with hi | hi
   · linarith [hgood i hi]
   have hs := sum_erase_mul_apply_nonneg (m := m) hpos i
-  have hm' : (1 : ℤ) ≤ m i := by exact_mod_cast hm
   rw [cycle_apply_eq_add_sum he]
   nlinarith
 
@@ -351,14 +350,12 @@ theorem apply_self_eq_zero_of_one_lt_mult (hB : B.IsSymm) (h : IsGoodCycle B κ 
     {i : ι} (hi : 1 < m i) : B (C i) (C i) = 0 := by
   have hsq : 0 ≤ B (C i) (C i) := not_lt.1 fun hneg ↦
     hi.ne' (h.mult_eq_one_of_apply_self_neg hB hneg)
-  have hm : (1 : ℤ) < m i := by exact_mod_cast hi
   exact (mul_eq_zero.1 (h.rigid_of_apply_self_nonneg hsq).2).resolve_left (by linarith)
 
 /-- An image occurring with multiplicity at least two has virtual dimension zero. -/
 theorem apply_self_sub_apply_canonical_eq_zero_of_one_lt_mult
     (h : IsGoodCycle B κ e C m δ pts) {i : ι} (hi : 1 < m i) :
     B (C i) (C i) - B κ (C i) = 0 := by
-  have hm : (1 : ℤ) < m i := by exact_mod_cast hi
   exact (mul_eq_zero.1 (h.rigid.mult_sub_one_mul_eq_zero i)).resolve_left (by linarith)
 
 /-- An image occurring with multiplicity at least two is orthogonal to the canonical class. -/

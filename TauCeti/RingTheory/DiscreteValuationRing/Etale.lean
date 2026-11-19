@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import TauCeti.RingTheory.LocalRing.Etale
 import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Smooth.Flat
+import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.Flat
+import TauCeti.RingTheory.Spectrum.Prime.Finite
 
 /-!
 # Étale extensions of a discrete valuation ring with prescribed residue field
@@ -38,6 +41,9 @@ unchanged.
 * `TauCeti.IsDiscreteValuationRing.exists_isDiscreteValuationRing_of_etale`: a local étale
   extension of a discrete valuation ring, with local structure map, is a discrete valuation ring
   in which every uniformizer of `R` remains a uniformizer.
+* `TauCeti.IsDiscreteValuationRing.exists_notMem_isLocalization_atPrime_away_of_etale`: an étale
+  algebra over a discrete valuation ring is, after inverting one element, a discrete valuation ring
+  around any point of its special fibre.
 * `TauCeti.IsDiscreteValuationRing.exists_etale_residueField_algEquiv`: every finite separable
   extension of the residue field is the residue field of a finite étale extension of discrete
   valuation rings in which every uniformizer of `R` remains a uniformizer.
@@ -104,6 +110,32 @@ theorem exists_isDiscreteValuationRing_of_etale [IsLocalRing S] [Algebra.Etale R
   have : IsDiscreteValuationRing S := of_flat_of_map_maximalIdeal_eq h
   exact ⟨inferInstance, inferInstance,
     fun _ hπ ↦ irreducible_algebraMap_of_map_maximalIdeal_eq h hπ⟩
+
+/-- **An étale algebra over a discrete valuation ring is a discrete valuation ring around a point
+of its special fibre.** Let `S` be an étale algebra over the discrete valuation ring `R` and `p` a
+prime of `S` lying over the maximal ideal of `R`. Then for some `g ∉ p` the localization `S[1/g]`
+is the localization of `S` at `p`; it is a discrete valuation ring, étale over `R` with local
+structure map, in which every uniformizer of `R` remains a uniformizer.
+
+Geometrically, the point `p` of `Spec S` has a principal open neighbourhood which is the spectrum
+of a discrete valuation ring étale over `R`: an étale extension of discrete valuation rings. -/
+theorem exists_notMem_isLocalization_atPrime_away_of_etale [Algebra.Etale R S] (p : Ideal S)
+    [p.IsPrime] (hp : p.comap (algebraMap R S) = maximalIdeal R) :
+    ∃ g ∉ p, IsLocalization.AtPrime (Localization.Away g) p ∧
+      ∃ (_ : IsDomain (Localization.Away g)) (_ : IsDiscreteValuationRing (Localization.Away g)),
+        IsLocalHom (algebraMap R (Localization.Away g)) ∧
+          ∀ π : R, Irreducible π → Irreducible (algebraMap R (Localization.Away g) π) := by
+  -- `S` is quasi-finite over `R`, which has two primes, so `S` has finitely many primes.
+  have : Finite (PrimeSpectrum S) := Algebra.QuasiFinite.finite_primeSpectrum R S
+  obtain ⟨g, hg, _⟩ := PrimeSpectrum.exists_notMem_isLocalization_atPrime_away ⟨p, ‹_›⟩
+  have : IsLocalRing (Localization.Away g) := IsLocalization.AtPrime.isLocalRing _ p
+  have : IsLocalHom (algebraMap R (Localization.Away g)) := by
+    have h := IsLocalization.AtPrime.under_maximalIdeal (Localization.Away g) p
+    rw [Ideal.under_def] at h
+    refine ((local_hom_tfae _).out 1 5).mpr ?_
+    rw [IsScalarTower.algebraMap_eq R S (Localization.Away g), ← Ideal.comap_comap, h, hp]
+  obtain ⟨_, _, hπ⟩ := exists_isDiscreteValuationRing_of_etale (R := R) (S := Localization.Away g)
+  exact ⟨g, hg, ‹_›, ‹_›, ‹_›, ‹_›, hπ⟩
 
 /-- **Every finite separable extension of the residue field of a discrete valuation ring lifts to
 an étale extension of discrete valuation rings.** For a discrete valuation ring `R` with residue

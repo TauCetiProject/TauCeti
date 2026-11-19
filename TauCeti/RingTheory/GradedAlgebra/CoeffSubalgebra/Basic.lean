@@ -101,7 +101,7 @@ theorem mem_coeffSubalgebra_iff {f : B[X]} : f ∈ coeffSubalgebra M ↔ ∀ n, 
 theorem monomial_mem_coeffSubalgebra_iff {n : ℕ} {b : B} :
     Polynomial.monomial n b ∈ coeffSubalgebra M ↔ b ∈ M n := by
   refine ⟨fun h ↦ by simpa using h n, fun hb m ↦ ?_⟩
-  rw [coeff_monomial]
+  rw [coeff_monomial_apply]
   split_ifs with h
   · exact h ▸ hb
   · exact zero_mem _
@@ -174,6 +174,14 @@ theorem coe_algebraMap (p : R[X]) :
   refine (Polynomial.aeval_subalgebra_coe p _ (X M h1)).trans ?_
   rw [coe_X]
   exact Polynomial.mapAlg_eq_map B p
+
+/-- A scalar polynomial acts on the coefficient subalgebra by multiplication in `B[X]`. -/
+@[simp]
+theorem coe_smul (p : R[X]) (f : coeffSubalgebra M) :
+    letI := algebra M h1
+    ((p • f : coeffSubalgebra M) : B[X]) = p.map (algebraMap R B) * f := by
+  let := algebra M h1
+  rw [Algebra.smul_def, Subalgebra.coe_mul, coe_algebraMap]
 
 /-- The parameter-ring algebra structure extends the coefficient-ring algebra structure. -/
 theorem isScalarTower :
@@ -293,7 +301,7 @@ private theorem decomposeAux_coe (x : ⨁ n, grade M n) :
   | zero => ext1; ext1; simp [component]
   | of m y =>
     rw [coeAddMonoidHom_of, component_of_mem y.2, of_apply]
-  | add x y hx hy => rw [map_add, component_add, hx, hy, add_apply]
+  | add x y hx hy => rw [map_add, component_add, hx, hy, DirectSum.add_apply]
 
 variable (M) in
 /-- `coeffSubalgebra M` is the internal direct sum of its graded pieces. -/

@@ -30,7 +30,7 @@ public section
 open Set InnerProductSpace TauCeti
 open scoped ContDiff Gradient
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- **A normalized defining function for a regular superlevel set.** Let `u` be smooth and
 compactly supported, and let `t > 0` be a regular value of `u`. Then
@@ -40,6 +40,18 @@ theorem ContDiff.exists_contDiff_setOf_pos_eq_setOf_lt {u : E → ℝ} (hu : Con
     (huc : HasCompactSupport u) {t : ℝ} (ht : 0 < t) (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) :
     ∃ w : E → ℝ, ContDiff ℝ ∞ w ∧ IsCompact {x | -(1 / 2 : ℝ) ≤ w x} ∧
       (∀ x, w x = 0 → ‖fderiv ℝ w x‖ = 1) ∧ {x | 0 < w x} = {x | t < u x} := by
+  -- If `{u > t}` is empty, the constant `-1` works.
+  by_cases hne : ∃ x₀, t < u x₀
+  swap
+  · refine ⟨fun _ => -1, contDiff_const, ?_, fun x hx => absurd hx (by norm_num), ?_⟩
+    · norm_num
+    · exact Set.ext fun x => iff_of_false (by norm_num) fun h => hne ⟨x, h⟩
+  -- Otherwise `u ≠ 0`, so the compact support forces `E` to be finite-dimensional, hence complete.
+  have : CompleteSpace E := by
+    rcases huc.eq_zero_or_finiteDimensional ℝ hu.continuous with rfl | hfin
+    · obtain ⟨x₀, hx₀⟩ := hne
+      exact absurd (ht.trans hx₀) (lt_irrefl _)
+    · exact FiniteDimensional.completeSpace ℝ E
   -- `G` is the gradient of `u` and `g = √(‖∇u‖² + (u - t)²)` is a smooth positive normalizer.
   let G : E → E := ∇ u
   have hG : ContDiff ℝ ∞ G := hu.gradient_right le_rfl

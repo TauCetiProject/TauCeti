@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
@@ -38,6 +40,8 @@ to manifolds, including manifolds with boundary or corners.
   of the set of non-regular points.
 * `TauCeti.IsRegularValue.restrict`: restricting the source to an open subset preserves regular
   values.
+* `TauCeti.IsRegularValue.comp`: precomposing with a map regular on the fibre preserves regular
+  values.
 * `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
   manifold takes all its values strictly above one regular value and at most another.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
@@ -49,6 +53,10 @@ to manifolds, including manifolds with boundary or corners.
   regularity is injectivity of the manifold derivative.
 * `TauCeti.isRegularPoint_iff_isInvertible_mfderiv`: between models of the same finite dimension
   over a complete field, regularity is invertibility of the manifold derivative.
+* `TauCeti.isRegularPoint_comp_iff`: a composite of differentiable maps is regular exactly when
+  the derivative of the outer map sends the tangent image of the inner map onto the target.
+* `Diffeomorph.isRegularPoint_comp_iff`, `Diffeomorph.isRegularValue_comp_iff`: precomposing
+  with a diffeomorphism preserves regular points and regular values.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
 * `TauCeti.range_mfderiv_le_ker_mfderiv_of_eventually_eq`: a map into a level set `f ⁻¹' {y}`
@@ -249,6 +257,24 @@ theorem IsRegularPoint.comp (hf : IsRegularPoint I J f (g p))
     exact isRegularPoint_iff.2
       (Function.surjective_to_subsingleton (β := TangentSpace J (f (g p))) _)
 
+/-- A composite `f ∘ g` of differentiable maps is regular at `p` exactly when the derivative of
+`f` at `g p` maps the tangent image of `g` at `p` onto the tangent space of the target. For the
+inclusion `g` of a submanifold this reads regularity of the restriction of `f` on the tangent
+space of the submanifold. -/
+theorem isRegularPoint_comp_iff (hfd : MDifferentiableAt I J f (g p))
+    (hgd : MDifferentiableAt K I g p) :
+    IsRegularPoint K J (f ∘ g) p ↔
+      (mfderiv K I g p).range.map (mfderiv I J f (g p)).toLinearMap = ⊤ := by
+  rw [isRegularPoint_iff, mfderiv_comp p hfd hgd, ← LinearMap.range_comp, LinearMap.range_eq_top,
+    ← ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_coe]
+
+/-- A composite `f ∘ g` has `y` as a regular value if `y` is a regular value of `f` and `g` is
+regular at every point of the fibre `(f ∘ g) ⁻¹' {y}`. -/
+theorem IsRegularValue.comp (hf : IsRegularValue I J f y)
+    (hg : ∀ p, f (g p) = y → IsRegularPoint K I g p) :
+    IsRegularValue K J (f ∘ g) y :=
+  fun p hp ↦ (hf (g p) hp).comp (hg p hp)
+
 end Composition
 
 /-- Every point of an open subset is a regular point of its inclusion. -/
@@ -337,7 +363,7 @@ theorem IsRegularPoint.surjective_fderiv_comp_extChartAt_symm {g : M → E'}
   · -- Without differentiability the manifold derivative is `0`, so `E'` is the zero space.
     rw [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hg] at h
     intro v
-    obtain ⟨u, hu⟩ := h v
+    obtain ⟨_, hu⟩ := h v
     exact ⟨0, by rw [map_zero]; exact hu⟩
 
 /-- At a regular point of a map into a normed space on a boundaryless manifold, the kernel of the
@@ -353,13 +379,20 @@ theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
 
 /-- At a regular point of a scalar function on a boundaryless manifold, the kernel of the
 preferred-chart derivative has codimension one. -/
-theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm [FiniteDimensional 𝕜 E]
+theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm
     {g : M → 𝕜} (h : IsRegularPoint I 𝓘(𝕜) g x) :
     Module.finrank 𝕜 (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)).ker =
       Module.finrank 𝕜 E - 1 := by
-  have := h.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
-  rw [Module.finrank_self] at this
-  omega
+  by_cases hE : FiniteDimensional 𝕜 E
+  · have := h.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
+    rw [Module.finrank_self] at this
+    omega
+  · -- A finite-dimensional kernel of a surjection onto `𝕜` would make `E` finite-dimensional.
+    have hker : ¬ Module.Finite 𝕜
+        (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)).ker := fun hk ↦
+      hE (Module.Finite.of_exact (LinearMap.exact_subtype_ker_map _)
+        h.surjective_fderiv_comp_extChartAt_symm)
+    rw [Module.finrank_of_not_finite hker, Module.finrank_of_not_finite hE]
 
 end Boundaryless
 
@@ -380,3 +413,40 @@ theorem exists_isRegularValue_forall_mem_Ioc {E H M : Type*} [NormedAddCommGroup
     isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (hb x).ne hx, fun x ↦ ⟨ha x, (hb x).le⟩⟩
 
 end TauCeti
+
+/-! ### Precomposition with a diffeomorphism -/
+
+namespace Diffeomorph
+
+open TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+  {n : WithTop ℕ∞} {f : M → N}
+
+/-- Precomposing with a `C^n` diffeomorphism, `n ≠ 0`, preserves regular points: `f ∘ ψ` is
+regular at `p` exactly when `f` is regular at `ψ p`. -/
+theorem isRegularPoint_comp_iff (ψ : P ≃ₘ^n⟮K, I⟯ M) (hn : n ≠ 0) {p : P} :
+    IsRegularPoint K J (f ∘ ψ) p ↔ IsRegularPoint I J f (ψ p) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp (ψ.isInvertible_mfderiv hn).surjective⟩
+  -- Undo the precomposition with the inverse diffeomorphism, which is regular at `ψ p`.
+  have h' : IsRegularPoint K J (f ∘ ψ) (ψ.symm (ψ p)) := by rwa [ψ.symm_apply_apply]
+  have hcomp := h'.comp (ψ.symm.isInvertible_mfderiv hn (x := ψ p)).surjective
+  rwa [show (f ∘ ψ) ∘ ψ.symm = f from funext fun x ↦ by simp] at hcomp
+
+/-- Precomposing with a `C^n` diffeomorphism, `n ≠ 0`, preserves regular values: `y` is a regular
+value of `f ∘ ψ` exactly when it is a regular value of `f`. -/
+theorem isRegularValue_comp_iff (ψ : P ≃ₘ^n⟮K, I⟯ M) (hn : n ≠ 0) {y : N} :
+    IsRegularValue K J (f ∘ ψ) y ↔ IsRegularValue I J f y := by
+  simp only [isRegularValue_iff, ψ.isRegularPoint_comp_iff hn, Function.comp_apply]
+  exact ⟨fun h x hx ↦ by simpa using h (ψ.symm x) (by simpa using hx), fun h p hp ↦ h _ hp⟩
+
+end Diffeomorph

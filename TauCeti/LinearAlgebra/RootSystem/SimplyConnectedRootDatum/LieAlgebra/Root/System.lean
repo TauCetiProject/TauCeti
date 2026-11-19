@@ -36,9 +36,10 @@ weight included, so the file also translates a family indexed by the root number
   the root numbered `α` takes the values of root `α` of the pinned datum on the Cartan generators,
   and is characterized by them.
 * `TauCeti.DynkinType.rootEquiv_simpleIndex`,
+  `TauCeti.DynkinType.pairingIn_rootEquiv`,
   `TauCeti.DynkinType.rootEquiv_reflectionPerm_self` and
   `TauCeti.DynkinType.rootEquiv_reflectionPerm`: the enumeration matches the numbered simple
-  roots and commutes with negation and with reflections.
+  roots, preserves the integer Cartan pairing, and commutes with negation and with reflections.
 * `TauCeti.DynkinType.coe_rootEquiv_eq_add`: the enumeration carries sums of roots of the
   rational root system to sums of weights.
 * `TauCeti.DynkinType.coe_rootEquiv_eq_add_iff`: a weight sum of enumerated roots is an enumerated
@@ -107,6 +108,15 @@ with this equation makes the general `RootPairing.Hom` API available for the enu
 theorem rootEquiv_eq_indexEquiv :
     t.rootEquiv ht = (t.rationalRootSystemEquiv ht).indexEquiv := (rfl)
 
+/-- The Killing root system of the pinned rational Lie algebra has the exact Cartan integers of
+`TauCeti.DynkinType.simplyConnectedRootDatum` under `TauCeti.DynkinType.rootEquiv`. -/
+@[simp] theorem pairingIn_rootEquiv (i j : Fin t.numRoots) :
+    (rootSystem (t.cartanSubalgebra ht)).pairingIn ℤ (t.rootEquiv ht i) (t.rootEquiv ht j) =
+      (t.simplyConnectedRootDatum ht).pairing i j :=
+  FaithfulSMul.algebraMap_injective ℤ ℚ <| by
+    rw [RootPairing.algebraMap_pairingIn, rootEquiv_eq_indexEquiv,
+      (t.rationalRootSystemEquiv ht).toHom.pairing, t.pairing_rationalRootSystem ht, eq_intCast]
+
 /-- The enumeration, the index bijection of the pinned root-system equivalence, sends a
 Bourbaki-numbered simple root to the simple root of the correspondingly numbered Chevalley
 generator. -/
@@ -132,22 +142,51 @@ of the correspondingly numbered Lie-algebra generator. -/
         (t.rationalRootSystemEquiv ht).toHom
     _ = _ := congrArg _ (t.rootEquiv_simpleIndex ht i)
 
-/-- On a Bourbaki-numbered simple coroot, the covariant inverse coweight equivalence lands at the
+/-- On a standard coordinate vector, the covariant inverse coweight equivalence lands at the
 simple Killing coroot of the correspondingly numbered Lie-algebra generator. -/
-@[simp] theorem rationalRootSystemEquiv_coweightEquiv_symm_coroot_simpleIndex (i : Fin t.rank) :
-    (t.rationalRootSystemEquiv ht).coweightEquiv.symm
-        ((t.rationalRootSystem ht).coroot (t.simpleIndex ht i)) =
+@[simp] theorem rationalRootSystemEquiv_coweightEquiv_symm_single (i : Fin t.rank) :
+    (t.rationalRootSystemEquiv ht).coweightEquiv.symm (Pi.single i 1) =
       (rootSystem (t.cartanSubalgebra ht)).coroot
         ((t.lieBasis ht).baseSupportEquiv i) := by
-  simpa only [rationalRootSystemEquiv, rationalLieBaseSupportEquiv, Equiv.trans_apply,
-    Equiv.symm_apply_apply, coe_simpleSupportEquiv] using
-    equivOfCartanMatrixEq_coweightEquiv_symm_apply_coroot (t.rationalBase ht) (t.lieBasis ht).base
-      (t.rationalLieBaseSupportEquiv ht) (t.cartanMatrix_rationalLieBaseSupportEquiv ht)
-      (t.simpleSupportEquiv ht i)
+  have h : (t.rationalRootSystemEquiv ht).coweightEquiv.symm
+      ((t.rationalRootSystem ht).coroot (t.simpleIndex ht i)) =
+      (rootSystem (t.cartanSubalgebra ht)).coroot
+        ((t.lieBasis ht).baseSupportEquiv i) := by
+    simpa only [rationalRootSystemEquiv, rationalLieBaseSupportEquiv, Equiv.trans_apply,
+      Equiv.symm_apply_apply, coe_simpleSupportEquiv] using
+      equivOfCartanMatrixEq_coweightEquiv_symm_apply_coroot (t.rationalBase ht) (t.lieBasis ht).base
+        (t.rationalLieBaseSupportEquiv ht) (t.cartanMatrix_rationalLieBaseSupportEquiv ht)
+        (t.simpleSupportEquiv ht i)
+  simpa only [coroot_rationalRootSystem_simpleIndex] using h
 
 /-- The `i`-th vector of the Cartan basis is the `i`-th coroot generator of the numbered basis. -/
 private theorem cartanBasis_eq_h' (i : Fin t.rank) : t.cartanBasis ht i = (t.lieBasis ht).h' i :=
   Subtype.ext (t.coe_cartanBasis ht i)
+
+/-- Every Killing coroot has the simple-coroot coordinates of the pinned integral datum. -/
+theorem coroot_rootEquiv_eq_sum (α : Fin t.numRoots) :
+    ((coroot (t.rootEquiv ht α : Weight ℚ (t.cartanSubalgebra ht)
+        (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht) =
+      ∑ i, (t.simplyConnectedRootDatum ht).coroot α i • (t.lieBasis ht).h i := by
+  let E := t.rationalRootSystemEquiv ht
+  have hcoroot : E.coweightEquiv.symm ((t.rationalRootSystem ht).coroot α) =
+      (rootSystem (t.cartanSubalgebra ht)).coroot (t.rootEquiv ht α) := by
+    apply E.coweightEquiv.injective
+    rw [LinearEquiv.apply_symm_apply, RootPairing.Equiv.coweightEquiv_apply]
+    simpa only [rootEquiv_eq_indexEquiv, Equiv.symm_apply_apply] using
+      (RootPairing.Hom.coroot_coweightMap_apply _ _ (E.indexEquiv α) E.toHom).symm
+  have hsimple (i : Fin t.rank) :
+      E.coweightEquiv.symm (Pi.single i 1) = t.cartanBasis ht i := by
+    rw [rationalRootSystemEquiv_coweightEquiv_symm_single, rootSystem_coroot_apply,
+      (t.lieBasis ht).coroot_eq_h', cartanBasis_eq_h']
+  have hexp := congrArg E.coweightEquiv.symm
+    (pi_eq_sum_univ' ((t.rationalRootSystem ht).coroot α))
+  rw [map_sum] at hexp
+  simp only [map_smul, hsimple, coroot_rationalRootSystem] at hexp
+  rw [hcoroot] at hexp
+  simpa only [rootSystem_coroot_apply, Int.cast_smul_eq_zsmul ℚ,
+    AddSubmonoidClass.coe_finsetSum, SetLike.val_smul_of_tower, coe_cartanBasis] using
+    congrArg Subtype.val hexp
 
 /-- **The enumerated roots are the roots of the pinned root datum.** Root number `α` takes the
 value `⟨α, αᵢ^∨⟩` on the `i`-th Cartan generator `hᵢ = αᵢ^∨`, which is the `i`-th coordinate of
@@ -221,8 +260,7 @@ private theorem chainBotCoeff_rootSystem_rootEquiv (α β : Fin t.numRoots) :
     (rootSystem (t.cartanSubalgebra ht)).chainBotCoeff (t.rootEquiv ht α) (t.rootEquiv ht β) =
       (t.rationalRootSystem ht).chainBotCoeff α β := by
   simp only [rootEquiv_eq_indexEquiv]
-  exact (t.rationalRootSystemEquiv ht).toHom.chainBotCoeff_indexEquiv
-    (t.rationalRootSystemEquiv ht).bijective_weightMap.injective α β
+  exact (t.rationalRootSystemEquiv ht).toHom.chainBotCoeff_indexEquiv α β
 
 /-- The Lie-weight root string agrees with the Killing root system's, read at enumerated roots. -/
 private theorem chainBotCoeff_eq_rootSystem_chainBotCoeff {α β : Fin t.numRoots}

@@ -30,11 +30,13 @@ dimension of the Eisenstein part of `M_k(Γ₁(N))` through the constant terms, 
 Diamond–Shurman show that the series span that part (Theorem 4.5.2); this file supplies the
 count of the series.
 
-The count goes through a bijection. Raising `ψ` and `φ` to the levels `g = t u` and `N / g`
-sends an index to a divisor `g ∣ N` and a pair of characters modulo `g` and `N / g` of
+For `N ≠ 0` the count goes through a bijection. Raising `ψ` and `φ` to the levels `g = t u` and
+`N / g` sends an index to a divisor `g ∣ N` and a pair of characters modulo `g` and `N / g` of
 product parity `(-1)^k`; conversely, `u` and `v` are the conductors of such a pair, `ψ` and `φ`
-their primitive characters, and `t = g / u`. This gives the count `card_eq_sum` at every
-level. When `g` or `N / g` exceeds `2`, an odd character at that level exchanges the two
+their primitive characters, and `t = g / u`. This gives the count `card_eq_sum`. At level `0`
+there is no such correspondence: the indices are infinite and `0` has no divisors, so
+`card_eq_sum` holds there only because `Nat.card` of an infinite type and the empty divisor sum
+are both `0`. When `g` or `N / g` exceeds `2`, an odd character at that level exchanges the two
 parities, so exactly half of the `totient(g) totient(N / g)` pairs have parity `(-1)^k`
 (`DirichletCharacter.two_mul_card_apply_neg_one_mul_apply_neg_one_eq`). Every divisor `g` of
 `N ∉ {1, 2, 4}` has this property.
@@ -140,10 +142,8 @@ private theorem card_factorsThrough {g : ℕ} (hg : g ∣ N) :
 instance : Finite (CharIndex N k) :=
   Finite.of_injective _ toLevel_injective
 
-/-- **The number of Eisenstein indices** at level `N`: indices `(ψ, φ, t)` correspond to the
-divisors `g = t u` of `N` together with a pair of characters modulo `g` and `N / g` whose product
-parity is `(-1)^k`. -/
-theorem card_eq_sum :
+/-- The count of Eisenstein indices at a nonzero level. -/
+private theorem card_eq_sum_of_neZero :
     Nat.card (CharIndex N k) = ∑ g ∈ N.divisors,
       Nat.card {q : DirichletCharacter ℂ g × DirichletCharacter ℂ (N / g) //
         q.1 (-1) * q.2 (-1) = (-1) ^ (k : ℤ)} := by
@@ -152,6 +152,41 @@ theorem card_eq_sum :
   exact Finset.sum_congr rfl fun g _ ↦ card_factorsThrough (Nat.dvd_of_mem_divisors g.2)
 
 end NeZero
+
+/-- At level `0` there is an Eisenstein index of every weight: the trivial pair for even `k`, and
+for odd `k` the odd primitive character induced by `ZMod.χ₄` paired with the trivial one. -/
+private theorem nonempty_charIndex_zero : Nonempty (CharIndex 0 k) := by
+  rcases Nat.even_or_odd k with hk | hk
+  · exact ⟨one hk⟩
+  · let ψ₀ : DirichletCharacter ℂ 4 := ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)
+    have hψ₀ : ψ₀ (-1) = -1 := by
+      have : (-1 : ZMod 4) = ((3 : ℕ) : ZMod 4) := by decide
+      simp [ψ₀, this]
+    refine ⟨⟨ψ₀.conductor, 1, 0, ψ₀.primitiveCharacter, 1, ψ₀.primitiveCharacter_isPrimitive,
+      DirichletCharacter.isPrimitive_one_level_one, ?_, dvd_zero _⟩⟩
+    rw [← changeLevel_apply_neg_one ψ₀.conductor_dvd_level, changeLevel_primitiveCharacter]
+    simp [hψ₀, hk.natCast.neg_one_zpow]
+
+/-- At level `0` there are infinitely many Eisenstein indices, since the raising parameter `t` is
+unconstrained. -/
+private theorem infinite_charIndex_zero : Infinite (CharIndex 0 k) := by
+  obtain ⟨b⟩ := nonempty_charIndex_zero (k := k)
+  exact Infinite.of_injective (fun n : ℕ ↦ ({ b with t := n, level_dvd := dvd_zero _ } :
+    CharIndex 0 k)) fun m n h ↦ congrArg CharIndex.t h
+
+/-- **The number of Eisenstein indices** at level `N ≠ 0`: indices `(ψ, φ, t)` correspond to the
+divisors `g = t u` of `N` together with a pair of characters modulo `g` and `N / g` whose product
+parity is `(-1)^k`. At level `0` there is no such correspondence; the equality holds because both
+sides are `0`, `Nat.card` of the infinite type of indices and the empty divisor sum. -/
+theorem card_eq_sum :
+    Nat.card (CharIndex N k) = ∑ g ∈ N.divisors,
+      Nat.card {q : DirichletCharacter ℂ g × DirichletCharacter ℂ (N / g) //
+        q.1 (-1) * q.2 (-1) = (-1) ^ (k : ℤ)} := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · have := infinite_charIndex_zero (k := k)
+    rw [Nat.card_eq_zero_of_infinite, Nat.divisors_zero, Finset.sum_empty]
+  · have : NeZero N := ⟨hN⟩
+    exact card_eq_sum_of_neZero
 
 /-- **Twice the number of Eisenstein indices** is `∑_{g ∣ N} totient(g) totient(N / g)` away from
 the levels `1`, `2` and `4`. -/

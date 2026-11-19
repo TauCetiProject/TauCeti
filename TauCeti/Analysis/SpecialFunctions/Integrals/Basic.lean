@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Matteo Cipollina. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Matteo Cipollina
 -/
 module
 
@@ -27,6 +27,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `r > -1`;
 * `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
+* `TauCeti.integral_abs_sub_rpow_of_le`: for `r > -1` and `a ≤ c ≤ b`,
+  `∫ x in a..b, |x - c|^r = ((c - a)^(r + 1) + (b - c)^(r + 1)) / (r + 1)`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
 * `TauCeti.integral_const_mul_rpow_le`: `∫ t in δ..1, c * t ^ T ≤ c / (T + 1)` for `T > -1`,
@@ -53,6 +55,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
 * `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
   over an interval is a difference of arctangents.
+* `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
+  `b ≥ 0`.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
@@ -89,6 +93,32 @@ theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
     ∫ x in a..b, (b - x) ^ r = (b - a) ^ (r + 1) / (r + 1) := by
   rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_self,
     integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
+
+/-- The exact two-sided power integral, allowing the singularity at either endpoint. -/
+theorem integral_abs_sub_rpow_of_le {r c a b : ℝ}
+    (hr : -1 < r) (ha : a ≤ c) (hb : c ≤ b) :
+    (∫ x in a..b, |x - c| ^ r) =
+      ((c - a) ^ (r + 1) + (b - c) ^ (r + 1)) / (r + 1) := by
+  have hl : Set.EqOn (fun x : ℝ ↦ |x - c| ^ r) (fun x ↦ (c - x) ^ r)
+      (Set.uIcc a c) := by
+    intro x hx
+    dsimp only
+    rw [Set.uIcc_of_le ha] at hx
+    rw [abs_of_nonpos (sub_nonpos.mpr hx.2), neg_sub]
+  have hh : Set.EqOn (fun x : ℝ ↦ |x - c| ^ r) (fun x ↦ (x - c) ^ r)
+      (Set.uIcc c b) := by
+    intro x hx
+    dsimp only
+    rw [Set.uIcc_of_le hb] at hx
+    rw [abs_of_nonneg (sub_nonneg.mpr hx.1)]
+  have hli := (TauCeti.intervalIntegrable_sub_rpow hr a c).congr
+    (hl.symm.mono Set.uIoc_subset_uIcc)
+  have hri := (TauCeti.intervalIntegrable_sub_const_rpow hr c c b).congr
+    (hh.symm.mono Set.uIoc_subset_uIcc)
+  rw [← intervalIntegral.integral_add_adjacent_intervals hli hri,
+    intervalIntegral.integral_congr hl,
+    intervalIntegral.integral_congr hh,
+    TauCeti.integral_sub_rpow hr a c, TauCeti.integral_sub_const_rpow hr c b, add_div]
 
 open MeasureTheory Set in
 /-- Away from the singularity, the weight `(b - x)^r` with `r < -1` has integral at most
@@ -140,7 +170,6 @@ theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGr
     [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hA : 0 ≤ A) (hh : 0 < h) (hht : h < t')
     (hα : α < 2) (hg : ∀ᵐ s, s ∈ Ioc 0 (t' - h) → ‖g s‖ ≤ A * h * (t' - s) ^ ((α - 4) / 2)) :
     ‖∫ s in 0..t' - h, g s‖ ≤ 2 / (2 - α) * A * h ^ (α / 2) := by
-  have h2α : 0 < 2 - α := by linarith
   have hcont : ContinuousOn (fun s => (t' - s) ^ ((α - 4) / 2)) [[0, t' - h]] :=
     fun s hs => by
       rw [uIcc_of_le (by linarith)] at hs
@@ -443,6 +472,26 @@ theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
   simp_rw [← neg_sub _ t, neg_sq, add_comm _ (η ^ 2)]
   rw [intervalIntegral.integral_comp_sub_right (fun x => η / (η ^ 2 + x ^ 2)),
     integral_div_sq_add_sq]
+
+open Set intervalIntegral in
+/-- The reciprocal-square kernel has an elementary integral on each nonnegative interval:
+`∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and `b ≥ 0`. -/
+theorem integral_one_div_add_sq {a b : ℝ} (ha : 0 < a) (hb : 0 ≤ b) :
+    ∫ t : ℝ in 0..b, 1 / (a + t) ^ 2 = a⁻¹ - (a + b)⁻¹ := by
+  have hd (t : ℝ) (ht : t ∈ uIcc 0 b) :
+      HasDerivAt (fun u : ℝ ↦ -(a + u)⁻¹) (1 / (a + t) ^ 2) t := by
+    rw [uIcc_of_le hb] at ht
+    have h := (((hasDerivAt_id t).const_add a).inv
+      (by linarith [ht.1] : a + t ≠ 0)).neg
+    convert h using 1
+    · ext u
+      rfl
+    · simp [neg_div]
+  have hc : ContinuousOn (fun t : ℝ ↦ 1 / (a + t) ^ 2) (Icc 0 b) :=
+    continuousOn_const.div ((continuousOn_const.add continuousOn_id).pow 2)
+      (fun t ht ↦ pow_ne_zero _ (by linarith [ht.1] : a + t ≠ 0))
+  simpa [sub_eq_add_neg, add_comm] using integral_eq_sub_of_hasDerivAt hd
+    (hc.intervalIntegrable_of_Icc hb)
 
 /-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
 Fourier character `exp (n θ i)` over `[-π, π]`. -/

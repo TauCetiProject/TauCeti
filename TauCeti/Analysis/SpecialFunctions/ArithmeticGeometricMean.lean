@@ -65,10 +65,10 @@ theorem agmSequences_fst_pos {x y : ℝ≥0} (hx : 0 < x) (hy : 0 < y) (n : ℕ)
 the input gap, with the smaller positive input controlling the denominator. -/
 theorem half_add_sub_sqrt_mul_le {a b : ℝ≥0} (hb : 0 < b) (hba : b ≤ a) :
     (a + b) / 2 - sqrt (a * b) ≤ (a - b) ^ 2 / (8 * b) := by
-  apply NNReal.coe_le_coe.mp
+  apply coe_le_coe.mp
   simp only [NNReal.coe_sub (sqrt_mul_le_half_add _ _), NNReal.coe_div,
     NNReal.coe_add, NNReal.coe_ofNat, Real.coe_sqrt, NNReal.coe_mul,
-    NNReal.coe_pow, NNReal.coe_sub hba]
+    coe_pow, NNReal.coe_sub hba]
   exact Real.half_add_sub_sqrt_mul_le (by exact_mod_cast hb) (by exact_mod_cast hba)
 
 /-- For `0 < y ≤ x`, the gap between the arithmetic and geometric AGM sequences is
@@ -112,7 +112,7 @@ theorem agmSequences_snd_sub_fst_le {x y : ℝ≥0} (hy : 0 < y) (hxy : y ≤ x)
 /-- The square of any geometric AGM mean is at most the square of any arithmetic AGM mean. -/
 theorem agmSequences_fst_sq_le_snd_sq (x y : ℝ≥0) (n m : ℕ) :
     ((agmSequences x y n).1 : ℝ) ^ 2 ≤ ((agmSequences x y m).2 : ℝ) ^ 2 :=
-  pow_le_pow_left₀ (by positivity) (NNReal.coe_le_coe.2 (agmSequences_fst_le_snd n m)) 2
+  pow_le_pow_left₀ (by positivity) (coe_le_coe.2 (agmSequences_fst_le_snd n m)) 2
 
 /-- An AGM step turns the difference of squares into one quarter of the squared gap. -/
 theorem agmSequences_succ_snd_sq_sub_fst_sq (x y : ℝ≥0) (n : ℕ) :
@@ -132,10 +132,10 @@ theorem two_pow_mul_agmSequences_snd_sq_sub_fst_sq_le (x y : ℝ≥0) (n : ℕ) 
     (2 : ℝ) ^ (n + 1) * (((agmSequences x y (n + 1)).2 : ℝ) ^ 2 -
         ((agmSequences x y (n + 1)).1 : ℝ) ^ 2) ≤
       dist x y ^ 2 / 8 * (1 / 2 : ℝ) ^ n := by
-  have hnonneg := sub_nonneg.2 (NNReal.coe_le_coe.2
+  have hnonneg := sub_nonneg.2 (coe_le_coe.2
     (agmSequences_fst_le_snd (x := x) (y := y) n n))
   have hgap := dist_agmSequences_fst_snd (x := x) (y := y) n
-  rw [dist_comm, NNReal.dist_eq, abs_of_nonneg hnonneg] at hgap
+  rw [dist_comm, dist_eq, abs_of_nonneg hnonneg] at hgap
   rw [agmSequences_succ_snd_sq_sub_fst_sq]
   calc
     _ ≤ 2 ^ (n + 1) * ((dist x y / 2 ^ (n + 1)) ^ 2 / 4) := by

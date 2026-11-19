@@ -143,6 +143,15 @@ theorem algebraMap_completionExtensionAlgebra :
     algebraMap P.Completion P'.Completion = P.completionExtension P' hP :=
   RingHom.algebraMap_toAlgebra _
 
+/-- Through the completed extension, the embedding of `F'` in its completion is semilinear over
+the embedding of `F` in its completion. -/
+theorem completionEmbedding_smul (c : F) (y : F') :
+    letI := P.completionExtensionAlgebra P' hP
+    P'.completionEmbedding (c • y) = P.completionEmbedding c • P'.completionEmbedding y := by
+  let _ := P.completionExtensionAlgebra P' hP
+  rw [Algebra.smul_def, Algebra.smul_def, map_mul, algebraMap_completionExtensionAlgebra,
+    completionExtension_completionEmbedding]
+
 /-- The extended embedding respects the original embeddings of the constant fields. -/
 theorem completionExtension_algebraMap (c : k) :
     P.completionExtension P' hP (algebraMap k P.Completion c) =
@@ -171,6 +180,19 @@ theorem coe_completionIntegersExtension (x : P.completionPlace.integers) :
     (P.completionIntegersExtension P' hP x : P'.Completion) = P.completionExtension P' hP x :=
   (rfl)
 
+/-- Completing the valuation-ring embedding agrees with first completing both rings
+and then applying the completed extension. -/
+@[simp]
+theorem completionIntegersExtension_completionIntegersEmbedding
+    (x : (P'.restrict k F).integers) :
+    (P'.restrict k F).completionIntegersExtension P' rfl
+        ((P'.restrict k F).completionIntegersEmbedding x) =
+      P'.completionIntegersEmbedding
+        (algebraMap (P'.restrict k F).integers P'.integers x) := by
+  apply Subtype.ext
+  simp only [coe_completionIntegersExtension, completionIntegersEmbedding_apply,
+    completionExtension_completionEmbedding, coe_algebraMap_integers]
+
 /-- The map of completed valuation rings is local. -/
 instance isLocalHom_completionIntegersExtension :
     IsLocalHom (P.completionIntegersExtension P' hP) where
@@ -195,12 +217,43 @@ theorem algebraMap_completionIntegersExtensionAlgebra :
       P.completionIntegersExtension P' hP :=
   RingHom.algebraMap_toAlgebra _
 
+/-- The algebra map of the chosen completed valuation-ring extension is local, so
+it induces the canonical extension of completed residue fields. -/
+instance isLocalHom_algebraMap_completionIntegersExtensionAlgebra :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    IsLocalHom (algebraMap P.completionPlace.integers P'.completionPlace.integers) := by
+  rw [algebraMap_completionIntegersExtensionAlgebra]
+  infer_instance
+
 /-- The chosen algebra map of completed valuation rings is the completed extension. -/
 theorem coe_algebraMap_completionIntegersExtensionAlgebra (x : P.completionPlace.integers) :
     letI := P.completionIntegersExtensionAlgebra P' hP
     (algebraMap P.completionPlace.integers P'.completionPlace.integers x : P'.Completion) =
       P.completionExtension P' hP x :=
   (rfl)
+
+/-- The completed valuation-ring extension forms a scalar tower inside the completed upper field. -/
+instance isScalarTower_completionIntegersExtensionAlgebra :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    IsScalarTower P.completionPlace.integers P'.completionPlace.integers P'.Completion := by
+  let _ := P.completionExtensionAlgebra P' hP
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine IsScalarTower.of_algebraMap_eq fun x ↦ ?_
+  rw [IsScalarTower.algebraMap_apply P.completionPlace.integers P.Completion P'.Completion,
+    P.algebraMap_completionExtensionAlgebra P' hP, ValuationSubring.algebraMap_apply,
+    ValuationSubring.algebraMap_apply, P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP]
+
+/-- The completed valuation ring `𝒪̂_{P'}` is torsion-free over `𝒪̂_P`. -/
+instance isTorsionFree_completionIntegers :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    Module.IsTorsionFree P.completionPlace.integers P'.completionPlace.integers := by
+  let _ := P.completionIntegersExtensionAlgebra P' hP
+  refine Module.isTorsionFree_iff_algebraMap_injective.mpr fun a b hab ↦ Subtype.ext ?_
+  have hab' := congrArg Subtype.val hab
+  rw [P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP,
+    P.coe_algebraMap_completionIntegersExtensionAlgebra P' hP] at hab'
+  exact (P.completionExtension P' hP).injective hab'
 
 end Integers
 

@@ -94,6 +94,15 @@ theorem isotypicComponent_le_iff (S : Type*) [AddCommGroup S] [Module R S]
       ∀ P : LieSubmodule R L M, Nonempty (P ≃ₗ⁅R,L⁆ S) → P ≤ N := by
   simp [isotypicComponent_def]
 
+/-- A Noetherian module has trivial isotypic component for a type that is not finitely
+generated. -/
+theorem isotypicComponent_eq_bot_of_not_finite [IsNoetherian R M] (S : Type*) [AddCommGroup S]
+    [Module R S] [LieRingModule L S] (hS : ¬ Module.Finite R S) :
+    isotypicComponent R L M S = ⊥ := by
+  rw [isotypicComponent_def, sSup_eq_bot]
+  rintro P ⟨e⟩
+  exact absurd (Module.Finite.equiv e.toLinearEquiv) hS
+
 end LieModule
 
 namespace LieSubmodule

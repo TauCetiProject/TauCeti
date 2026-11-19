@@ -195,7 +195,6 @@ private theorem fderiv_track_left_fst_ne_zero (F : Concordance K K')
     (fderiv ℝ (track F) (θ₀, t) (1, 0)).1 ≠ 0 := by
   rw [fderiv_track_left_apply]
   exact deriv_coe_fst_comp_circleExp_ne_zero
-    (F.toSmoothEmbedding.contMDiff.mdifferentiableAt (by simp))
     ((F.toSmoothEmbedding.isImmersion.isDiffImmersionAt (by simp) _).mfderiv_injective) h₀
 
 /-- The circle velocity of the straight line over `exp (θ₀ i)` is orthogonal to the point `v`. -/
@@ -314,10 +313,10 @@ theorem exists_mfderiv_eq_prodMap (hn : 3 ≤ n) (F : Concordance K K')
   obtain ⟨εr, hεr, hFr⟩ := F.isCollaredTrack.exists_pos_apply_eq_right
   -- `L` is differentiable at `exp θ₀`, and its velocity there is that of `K` and of `K'`.
   obtain ⟨hLd, hKW, hK'W⟩ := mdifferentiableAt_and_deriv_eq_of_collars F hK hK' h₀ hFl hFr hεl hεr
-  set W : E := deriv (fun θ => (L (Circle.exp θ) : E)) θ₀ with hW_def
+  set W : E := deriv (fun θ => (L (Circle.exp θ) : E)) θ₀
   -- The velocity `(A t, b t)` of the slice of `F` at time `t`, read in `E × ℝ`.
-  set A : ℝ → E := fun t => (fderiv ℝ (track F) (θ₀, t) (1, 0)).1 with hA_def
-  set b : ℝ → ℝ := fun t => (fderiv ℝ (track F) (θ₀, t) (1, 0)).2 with hb_def
+  set A : ℝ → E := fun t => (fderiv ℝ (track F) (θ₀, t) (1, 0)).1
+  set b : ℝ → ℝ := fun t => (fderiv ℝ (track F) (θ₀, t) (1, 0)).2
   have hAb := contDiff_fderiv_track_left F θ₀
   -- On the collars, the slices are those of `K` and `K'`.
   have hAl (t : ℝ) (ht : t ≤ εl) : A t = W :=
@@ -328,7 +327,7 @@ theorem exists_mfderiv_eq_prodMap (hn : 3 ≤ n) (F : Concordance K K')
     (norm_eq_of_mem_sphere _) (contDiff_fst.comp hAb) (fderiv_track_left_fst_ne_zero F h₀)
     (inner_fderiv_track_left_fst F h₀) (hAl 0 hεl.le)
   -- A time shear by `β = -b` removes the time component of the slice velocity.
-  set β : ℝ → ℝ := fun t => -b t with hβ_def
+  set β : ℝ → ℝ := fun t => -b t
   have hβ : ContDiff ℝ ∞ β := (contDiff_snd.comp hAb).neg
   have hβl (t : ℝ) (ht : t ≤ εl) : β t = 0 :=
     neg_eq_zero.2 (congrArg Prod.snd (fderiv_track_left_eq_of_slice F fun x => hFl x t ht))

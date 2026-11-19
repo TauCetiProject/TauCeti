@@ -43,14 +43,13 @@ witness-free representation theorems for contractable and exchangeable processes
 
 ## Final representation
 
-The Layer 6 bullet in `TauCetiRoadmap/Exchangeability/README.md` asks for the mixture form with `π`
-the **unique** law of `ν`. That uniqueness is `mixedIID_mixingLaw_unique`, proved alongside the
-generic representation in `Exchangeability/MixedIID/Mixture.lean`; it is stated for `MixedIIDWith`
-witnesses and so does not mention `deFinettiMeasure`. The theorem `deFinetti_mixture` in
+The final form of the representation is the mixture form with `π` the **unique** law of `ν`. That
+uniqueness is `mixedIID_mixingLaw_unique`, proved alongside the generic representation in
+`Exchangeability/MixedIID/Mixture.lean`; it is stated for `MixedIIDWith` witnesses and so does not
+mention `deFinettiMeasure`. The theorem `deFinetti_mixture` in
 `TauCeti.Probability.DeFinetti.Representation` derives the unique mixing-law representation from
-exchangeability without assuming a witness, and
-`eq_deFinettiMeasure_of_pathLaw_eq_bind_infinitePi` in
-`TauCeti.Probability.DeFinetti.CanonicalMixture` identifies its witness with `deFinettiMeasure`.
+exchangeability without assuming a witness, and `eq_deFinettiMeasure_of_pathLaw_eq_bind_infinitePi`
+in `TauCeti.Probability.DeFinetti.CanonicalMixture` identifies its witness with `deFinettiMeasure`.
 -/
 
 public section

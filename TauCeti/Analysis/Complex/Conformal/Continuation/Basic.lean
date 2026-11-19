@@ -49,11 +49,16 @@ at whatever generality Mathlib provides; the conformal-mapping theorems that con
 the monodromy theorem (`Conformal/Monodromy.lean`) and global branches
 (`Conformal/GlobalBranch.lean`) — are scalar and stay scalar, instantiating `E = ℂ`.
 
-Completeness of `E` is asked for exactly where those Mathlib inputs ask for it, and nowhere else:
-the definition itself, the gluing and reparametrisation lemmas, and the closure of continuations
-under sums and products need none, while everything resting on the identity principle —
-`TauCeti.IsAnalyticContinuationAlong.eventuallyEq` and all of its consequences — needs `E` to be a
-Banach space.
+Completeness of `E` is asked for only where the Mathlib inputs ask for it: the derivative closure
+`TauCeti.IsAnalyticContinuationAlong.deriv`, the construction from holomorphy
+`TauCeti.IsAnalyticContinuationAlong.of_differentiableOn` (with their `ContinuesAlong` and
+`ContinuesInside` counterparts), and the comparison lemma
+`TauCeti.IsAnalyticContinuationAlong.eventuallyEq_of_mapsTo`. The definition itself, the gluing and
+reparametrisation lemmas, the closure under sums and products, and the whole uniqueness theorem
+`TauCeti.IsAnalyticContinuationAlong.eventuallyEq` with its consequences hold for every complex
+normed space `E`: the uniqueness argument passes to `UniformSpace.Completion E`, which is complete
+and into which `E` embeds injectively, so that `AnalyticAt.exists_ball_analyticOnNhd` applies to the
+composites with the embedding.
 
 The *domain* stays `ℂ`: a path in a higher-dimensional domain is not the object the monodromy
 theorem and its consumers are about, and `deriv` — under which continuations are closed below — is
@@ -67,10 +72,12 @@ of `E`, again the generality at which Mathlib states `AnalyticAt.mul`.
 preconnected parameter set whose germs agree at one parameter time agree at every parameter time.
 
 The proof is the standard connectedness argument. Germ agreement is a *locally constant* property
-of the parameter: at a time `t`, both `f t` and `g t` are analytic on a common disc `D` about
-`γ t`, so by the identity principle (`AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`) their
-germs agree at one point of `D` exactly when they agree at every point of `D` — and for `u` near
-`t` the point `γ u` lies in `D` while the germs of `f u, g u` at `γ u` are those of `f t, g t`.
+of the parameter: at a time `t`, both `f t` and `g t`, composed with the embedding into the
+completion of `E`, are analytic on a common disc `D` about `γ t`, so by the identity principle
+(`AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`) their germs agree at one point of `D` exactly
+when they agree at every point of `D` (the embedding is injective, so agreement of the composites is
+agreement of the germs) — and for `u` near `t` the point `γ u` lies in `D` while the germs of
+`f u, g u` at `γ u` are those of `f t, g t`.
 A locally constant property on a preconnected parameter set is constant
 (`IsLocallyConstant.apply_eq_of_preconnectedSpace`).
 
@@ -161,18 +168,24 @@ theorem eventuallyEq_nhds_of_analyticOnNhd_ball {F G : ℂ → E} {c : ℂ} {r :
 
 /-- **Germ agreement is locally constant.** If `F` and `G` are both analytic at `z`, then for all
 `w` near `z` the germs of `F` and `G` agree at `w` exactly when they agree at `z`. -/
-theorem eventually_eventuallyEq_iff_of_analyticAt [CompleteSpace E] {F G : ℂ → E} {z : ℂ}
+theorem eventually_eventuallyEq_iff_of_analyticAt {F G : ℂ → E} {z : ℂ}
     (hF : AnalyticAt ℂ F z) (hG : AnalyticAt ℂ G z) :
     ∀ᶠ w in 𝓝 z, ((F =ᶠ[𝓝 w] G) ↔ (F =ᶠ[𝓝 z] G)) := by
-  obtain ⟨r₁, hr₁, hF'⟩ := hF.exists_ball_analyticOnNhd
-  obtain ⟨r₂, hr₂, hG'⟩ := hG.exists_ball_analyticOnNhd
+  -- pass to the completion, which is complete, and use that the embedding is injective
+  let e : E →L[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplL
+  have hiff : ∀ w, (F =ᶠ[𝓝 w] G) ↔ (e ∘ F =ᶠ[𝓝 w] e ∘ G) := fun w =>
+    ⟨fun h => h.mono fun _ hx => congrArg e hx,
+      fun h => h.mono fun _ hx => UniformSpace.Completion.coe_injective E hx⟩
+  obtain ⟨r₁, hr₁, hF'⟩ := (e.analyticAt (F z) |>.comp hF).exists_ball_analyticOnNhd
+  obtain ⟨r₂, hr₂, hG'⟩ := (e.analyticAt (G z) |>.comp hG).exists_ball_analyticOnNhd
   have hr : 0 < min r₁ r₂ := lt_min hr₁ hr₂
-  have hFr : AnalyticOnNhd ℂ F (ball z (min r₁ r₂)) :=
+  have hFr : AnalyticOnNhd ℂ (e ∘ F) (ball z (min r₁ r₂)) :=
     hF'.mono (ball_subset_ball (min_le_left _ _))
-  have hGr : AnalyticOnNhd ℂ G (ball z (min r₁ r₂)) :=
+  have hGr : AnalyticOnNhd ℂ (e ∘ G) (ball z (min r₁ r₂)) :=
     hG'.mono (ball_subset_ball (min_le_right _ _))
   have hz : z ∈ ball z (min r₁ r₂) := mem_ball_self hr
   filter_upwards [ball_mem_nhds z hr] with w hw
+  rw [hiff, hiff]
   exact ⟨fun h => eventuallyEq_nhds_of_analyticOnNhd_ball hFr hGr hw hz h,
     fun h => eventuallyEq_nhds_of_analyticOnNhd_ball hFr hGr hz hw h⟩
 
@@ -267,7 +280,7 @@ theorem of_differentiableOn [CompleteSpace E] {U : Set ℂ} {F : ℂ → E} (hU 
 
 /-- **A continuation depends only on the germs it carries.** Replacing each `f t` by a function
 with the same germ at `γ t` again gives a continuation along `γ`. -/
-protected theorem congr [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s) {f' : X → ℂ → E}
+protected theorem congr (hf : IsAnalyticContinuationAlong f γ s) {f' : X → ℂ → E}
     (h : ∀ t ∈ s, f' t =ᶠ[𝓝 (γ t)] f t) : IsAnalyticContinuationAlong f' γ s where
   continuousOn := hf.continuousOn
   analyticAt t ht := (hf.analyticAt t ht).congr (h t ht).symm
@@ -348,7 +361,7 @@ end Algebra
 
 /-- Agreement of two continuations along the same path is a locally constant property of the
 parameter. This is the local step of the uniqueness theorem. -/
-theorem eventually_eventuallyEq_iff [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s)
+theorem eventually_eventuallyEq_iff (hf : IsAnalyticContinuationAlong f γ s)
     (hg : IsAnalyticContinuationAlong g γ s) {t : X} (ht : t ∈ s) :
     ∀ᶠ u in 𝓝[s] t, ((f u =ᶠ[𝓝 (γ u)] g u) ↔ (f t =ᶠ[𝓝 (γ t)] g t)) := by
   have hball := eventually_eventuallyEq_iff_of_analyticAt (hf.analyticAt t ht) (hg.analyticAt t ht)
@@ -363,7 +376,7 @@ same germ at every parameter time.
 
 Preconnectedness of the parameter set cannot be dropped: over a two-point parameter set the
 hypotheses put no relation at all between the germs carried at its two points. -/
-theorem eventuallyEq [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s)
+theorem eventuallyEq (hf : IsAnalyticContinuationAlong f γ s)
     (hg : IsAnalyticContinuationAlong g γ s) (hs : IsPreconnected s) {a b : X} (ha : a ∈ s)
     (hb : b ∈ s) (hab : f a =ᶠ[𝓝 (γ a)] g a) :
     f b =ᶠ[𝓝 (γ b)] g b :=
@@ -373,7 +386,7 @@ theorem eventuallyEq [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s)
 
 /-- Two continuations along the same path that carry the same germ at one parameter time take the
 same value at every parameter time. -/
-theorem eq_of_eventuallyEq [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s)
+theorem eq_of_eventuallyEq (hf : IsAnalyticContinuationAlong f γ s)
     (hg : IsAnalyticContinuationAlong g γ s) (hs : IsPreconnected s) {a b : X} (ha : a ∈ s)
     (hb : b ∈ s) (hab : f a =ᶠ[𝓝 (γ a)] g a) :
     f b (γ b) = g b (γ b) :=

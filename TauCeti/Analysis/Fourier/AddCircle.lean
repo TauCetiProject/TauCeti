@@ -5,10 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.MeasureTheory.Function.Lp.PiLp
+
+import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.MeasureTheory.Integral.Bochner.Star
 
 /-!
 # The continuous characters of the circle are the Fourier monomials
@@ -62,6 +68,11 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   nowhere, and `fourier (-n)` is the pointwise inverse of `fourier n`.
 * `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
   `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
+* `TauCeti.fourier_apply_eq_coe_toCircle_zpow`: `fourier n` is the `n`-th power of the point of
+  the unit circle, and `TauCeti.coe_toCircle_coe_eq_circleMap` identifies that point with
+  `circleMap 0 1 θ` for the period `2π`.
+* `TauCeti.exists_polynomial_of_mem_span_fourier`: every trigonometric polynomial on `AddCircle T`
+  factors as `fourier (-N) x * P.eval (fourier 1 x)`.
 * `ContinuousMap.eq_zero_of_forall_fourierCoeff_eq_zero`: a continuous function on the circle all
   of whose Fourier coefficients vanish is the zero function.
 * `AddChar.exists_fourierAddChar_eq`: **every continuous additive character of the circle is a
@@ -70,18 +81,26 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   circle takes values of modulus one.
 * `ContinuousMonoidHom.existsUnique_circle_eq_zpow`: every continuous character of the
   multiplicative unit circle is a unique integer power.
+* `TauCeti.norm_fourierLp`, `TauCeti.fourierLp_smul_fourierLp`, `TauCeti.star_fourierLp`: norm,
+  multiplication, and conjugation of `Lᵖ` Fourier monomials.
 * `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
   shifts its Fourier coefficients by `n`.
-* `TauCeti.fourierCoeff_star`: the Fourier coefficients of the complex conjugate of an `Lᵖ`
-  function are the conjugates of its reflected coefficients.
+* `TauCeti.fourierCoeff_star`, `MeasureTheory.Lp.fourierCoeff_star`: in a complex normed star
+  module, the Fourier coefficients of `star f` are `star` of the reflected coefficients of `f`.
 * `TauCeti.fourierCoeff_fourierLp`: the Fourier coefficients of the `Lᵖ` monomial `e_n` are `1`
   at `n` and `0` elsewhere.
+* `TauCeti.fourierCoeff_sub`: the Fourier coefficients of a difference of integrable functions.
+* `TauCeti.fourierCoeff_fourier_mul_conj`: twisting by `fourier k` and conjugating sends the
+  `n`-th Fourier coefficient to the conjugate of the `(k - n)`-th one.
 * `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
-* `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
-  maps.
+* `ContinuousLinearMap.fourierCoeff_comp`, `ContinuousLinearMap.fourierCoeff_compLpL`: Fourier
+  coefficients commute with continuous linear maps on integrable and `Lᵖ` functions.
+* `MeasureTheory.Integrable.fourierCoeff_piLp_apply`, `MeasureTheory.Lp.fourierCoeff_piLp_apply`:
+  the `i`-th coordinate of the `n`-th Fourier coefficient of an integrable or `Lᵖ` `PiLp`-valued
+  circle function is the `n`-th Fourier coefficient of its `i`-th coordinate.
 
 ## Tags
 
@@ -153,6 +172,18 @@ theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 :=
 theorem fourier_neg_mul_fourier (n : ℤ) (x : AddCircle T) : fourier (-n) x * fourier n x = 1 := by
   rw [← fourier_add, neg_add_cancel, fourier_zero]
 
+/-- The Fourier monomial `fourier n` is the `n`-th power of the point `toCircle x` of the unit
+circle. -/
+theorem fourier_apply_eq_coe_toCircle_zpow (n : ℤ) (x : AddCircle T) :
+    fourier n x = (toCircle x : ℂ) ^ n := by
+  rw [fourier_apply, toCircle_zsmul, Circle.coe_zpow]
+
+/-- For the period `2π`, the point `toCircle θ` of the unit circle is `e^{iθ} = circleMap 0 1 θ`. -/
+theorem coe_toCircle_coe_eq_circleMap (θ : ℝ) :
+    (toCircle (θ : AddCircle (2 * Real.pi)) : ℂ) = circleMap 0 1 θ := by
+  rw [toCircle_apply_mk, Circle.coe_exp, circleMap, div_self Real.two_pi_pos.ne']
+  simp
+
 /-- **The `n`-th Fourier monomial as a bundled additive character of the circle.** It is Mathlib's
 `AddCircle.toCircle_addChar` precomposed with multiplication by `n` and postcomposed with the
 inclusion of the unit circle into `ℂ`; `TauCeti.fourierAddChar_apply` identifies its value with
@@ -201,6 +232,29 @@ theorem fourierAddChar_injective (hT : T ≠ 0) :
     Function.Injective (fourierAddChar (T := T)) := fun _ _ h =>
   fourier_injective hT (ContinuousMap.ext fun x => DFunLike.congr_fun h x)
 
+/-- Every trigonometric polynomial on `AddCircle T` has the form
+`x ↦ fourier (-N) x * P.eval (fourier 1 x)` for some `N : ℕ` and `P : Polynomial ℂ`. -/
+theorem exists_polynomial_of_mem_span_fourier
+    {q : C(AddCircle T, ℂ)} (hq : q ∈ Submodule.span ℂ (Set.range (fourier (T := T)))) :
+    ∃ (N : ℕ) (P : Polynomial ℂ), ∀ x, q x = fourier (-N) x * P.eval (fourier 1 x) := by
+  rw [Finsupp.mem_span_range_iff_exists_finsupp] at hq
+  obtain ⟨c, rfl⟩ := hq
+  let N : ℕ := c.support.sup fun k => (-k).toNat
+  let P : Polynomial ℂ := ∑ k ∈ c.support, Polynomial.C (c k) * Polynomial.X ^ (k + N).toNat
+  have heval (z : ℂ) : P.eval z = ∑ k ∈ c.support, c k * z ^ (k + N).toNat := by
+    simp [P, Polynomial.eval_finsetSum]
+  refine ⟨N, P, fun x => ?_⟩
+  rw [Finsupp.sum, ContinuousMap.coe_sum, Finset.sum_apply, heval, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  simp only [ContinuousMap.smul_apply, smul_eq_mul]
+  have hkN : 0 ≤ k + (N : ℤ) := by
+    have hle : (-k).toNat ≤ N := Finset.le_sup (f := fun k : ℤ => (-k).toNat) hk
+    omega
+  rw [← ContinuousMap.pow_apply, fourier_one_pow, Int.toNat_of_nonneg hkN,
+    mul_left_comm (fourier (T := T) (-↑N) x), ← fourier_add]
+  have hsub : -(N : ℤ) + (k + N) = k := by omega
+  rw [hsub]
+
 end TauCeti
 
 open TauCeti
@@ -226,6 +280,12 @@ end ContinuousMap
 
 namespace TauCeti
 
+/-- The zero-frequency Fourier coefficient is the integral against normalized Haar measure. -/
+theorem fourierCoeff_zero_eq_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (f : AddCircle T → E) :
+    fourierCoeff f 0 = ∫ x, f x ∂haarAddCircle := by
+  simp only [fourierCoeff, neg_zero, fourier_zero, one_smul]
+
 /-- Reflection of a circle function reverses its Fourier indices. -/
 theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (f : AddCircle T → E) (n : ℤ) :
@@ -235,6 +295,29 @@ theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   funext x
   simp only [fourier_apply, smul_neg, neg_smul, neg_neg]
 
+/-- The Fourier coefficients of a difference of integrable functions. -/
+theorem fourierCoeff_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f g : AddCircle T → E} (hf : Integrable f haarAddCircle) (hg : Integrable g haarAddCircle)
+    (n : ℤ) :
+    fourierCoeff (fun x ↦ f x - g x) n = fourierCoeff f n - fourierCoeff g n := by
+  have hfg : (fun x ↦ f x - g x) = f + (-1 : ℂ) • g := by
+    ext
+    simp [sub_eq_add_neg]
+  rw [hfg, fourierCoeff.add hf (hg.smul (-1 : ℂ)), Pi.add_apply, fourierCoeff.const_smul]
+  simp [sub_eq_add_neg]
+
+/-- Twisting by the monomial `fourier k` and conjugating reflects the Fourier coefficients about
+`k / 2`: the `n`-th coefficient of `fourier k x * conj (g x)` is the conjugate of the `(k - n)`-th
+coefficient of `g`. -/
+theorem fourierCoeff_fourier_mul_conj (g : AddCircle T → ℂ) (k n : ℤ) :
+    fourierCoeff (fun x ↦ fourier k x * starRingEnd ℂ (g x)) n =
+      starRingEnd ℂ (fourierCoeff g (k - n)) := by
+  rw [fourierCoeff, fourierCoeff, ← integral_conj]
+  congr 1
+  funext x
+  rw [smul_eq_mul, smul_eq_mul, map_mul, ← fourier_neg, ← mul_assoc, ← fourier_add, neg_neg,
+    neg_add_eq_sub]
+
 /-- Fourier coefficients commute with continuous linear maps: the coefficients of `x ↦ φ (f x)`
 are the images under `φ` of those of an integrable `f`. -/
 theorem _root_.ContinuousLinearMap.fourierCoeff_comp {E F : Type*} [NormedAddCommGroup E]
@@ -243,6 +326,33 @@ theorem _root_.ContinuousLinearMap.fourierCoeff_comp {E F : Type*} [NormedAddCom
     (n : ℤ) :
     fourierCoeff (fun x ↦ φ (f x)) n = φ (fourierCoeff f n) := by
   simp only [fourierCoeff, ← φ.integral_comp_comm (hf.fourier_smul (-n)), map_smul]
+
+/-- Fourier coefficients commute with `ContinuousLinearMap.compLpL` on `Lᵖ` (`1 ≤ p ≤ ∞`). -/
+theorem _root_.ContinuousLinearMap.fourierCoeff_compLpL {p : ℝ≥0∞} [Fact (1 ≤ p)] {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F]
+    [NormedSpace ℂ F] [CompleteSpace F] (φ : E →L[ℂ] F) (f : Lp E p (haarAddCircle (T := T)))
+    (n : ℤ) : fourierCoeff (φ.compLpL p (haarAddCircle (T := T)) f) n = φ (fourierCoeff f n) := by
+  rw [fourierCoeff_congr_ae (φ.coeFn_compLpL f),
+    φ.fourierCoeff_comp ((Lp.memLp f).integrable Fact.out) n]
+
+/-- The `i`-th coordinate of the `n`-th Fourier coefficient of an integrable `PiLp`-valued function
+on `AddCircle T` is the `n`-th Fourier coefficient of its `i`-th coordinate. -/
+theorem _root_.MeasureTheory.Integrable.fourierCoeff_piLp_apply {ι : Type*} [Fintype ι] {q : ℝ≥0∞}
+    [Fact (1 ≤ q)] {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
+    [∀ i, CompleteSpace (E i)] {f : AddCircle T → PiLp q E}
+    (hf : Integrable f (haarAddCircle (T := T))) (n : ℤ) (i : ι) :
+    fourierCoeff f n i = fourierCoeff (fun x ↦ f x i) n := by
+  simpa only [PiLp.proj_apply] using ((PiLp.proj (𝕜 := ℂ) q E i).fourierCoeff_comp hf n).symm
+
+/-- The `i`-th coordinate of the `n`-th Fourier coefficient of a `PiLp`-valued `Lᵖ` function on
+`AddCircle T` (`1 ≤ p ≤ ∞`) is the `n`-th Fourier coefficient of its `i`-th coordinate under
+`MeasureTheory.Lp.piLpEquiv`. -/
+theorem _root_.MeasureTheory.Lp.fourierCoeff_piLp_apply {ι : Type*} [Fintype ι] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
+    [∀ i, CompleteSpace (E i)] (f : Lp (PiLp p E) p (haarAddCircle (T := T))) (n : ℤ) (i : ι) :
+    fourierCoeff f n i = fourierCoeff (Lp.piLpEquiv p ℂ E (haarAddCircle (T := T)) f i) n := by
+  rw [Lp.piLpEquiv_apply_eq_compLpL, (PiLp.proj (𝕜 := ℂ) p E i).fourierCoeff_compLpL f n,
+    PiLp.proj_apply]
 
 /-- Pulling back an `Lᵖ` function by circle reflection reverses its Fourier indices. -/
 theorem _root_.MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg {p : ℝ≥0∞}
@@ -260,6 +370,22 @@ theorem ae_norm_fourierLp_eq_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
   rw [hx]
   exact Circle.norm_coe _
 
+/-- Every `Lp` Fourier monomial on `AddCircle T` (`1 ≤ p`) has `Lp` norm `1` with respect to
+normalized Haar measure. -/
+@[simp]
+theorem norm_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
+    ‖fourierLp (T := T) p n‖ = 1 := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  have hae : (fun x => ‖fourierLp (T := T) p n x‖) =ᵐ[haarAddCircle (T := T)]
+      fun x => ‖Lp.const p (haarAddCircle (T := T)) (1 : ℂ) x‖ := by
+    filter_upwards [ae_norm_fourierLp_eq_one (T := T) p n,
+      Lp.coeFn_const p (haarAddCircle (T := T)) (1 : ℂ)] with x hx h1
+    rw [hx, h1, Function.const_apply, norm_one]
+  rw [Lp.norm_def,
+    eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) hae,
+    ← Lp.norm_def, Lp.norm_const p (haarAddCircle (T := T)) (1 : ℂ) hp0]
+  simp
+
 /-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_n` multiplies it pointwise
 by `fourier n`, almost everywhere. -/
 theorem coeFn_fourierLp_smul {p : ℝ≥0∞} (n : ℤ)
@@ -269,6 +395,16 @@ theorem coeFn_fourierLp_smul {p : ℝ≥0∞} (n : ℤ)
   filter_upwards [Lp.coeFn_lpSMul (r := p) (fourierLp (T := T) ∞ n) f,
     coeFn_fourierLp (T := T) ∞ n] with x h hn
   rw [h, Pi.smul_apply', hn, smul_eq_mul]
+
+/-- Multiplying the `Lᵖ` Fourier monomial `fourierLp p n` by the bounded monomial `fourierLp ∞ m`
+gives `fourierLp p (m + n)`. -/
+theorem fourierLp_smul_fourierLp {p : ℝ≥0∞} [Fact (1 ≤ p)] (m n : ℤ) :
+    (fourierLp (T := T) ∞ m • fourierLp (T := T) p n : Lp ℂ p (haarAddCircle (T := T))) =
+      fourierLp (T := T) p (m + n) := by
+  apply Lp.ext
+  filter_upwards [coeFn_fourierLp_smul m (fourierLp (T := T) p n),
+    coeFn_fourierLp (T := T) p n, coeFn_fourierLp (T := T) p (m + n)] with x hx hn hmn
+  rw [hx, hn, hmn, fourier_add]
 
 /-- Multiplying the `L²` Fourier mode `e_n` by the bounded monomial `e_m` gives `e_(m+n)`. -/
 theorem fourierLp_smul_fourierBasis (m n : ℤ) :
@@ -333,16 +469,24 @@ theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (haarAddCircle (T := T)))
     rw [hx, Pi.smul_apply', coe_fourierBasis, hm, hma, smul_eq_mul, mul_comm]
   rw [fourierCoeff_congr_ae hae, fourierCoeff_fourierLp_smul]
 
-/-- The Fourier coefficients of the complex conjugate of an `Lᵖ` function are the conjugates of
-its reflected coefficients. -/
+/-- In a complex normed star module with continuous `star`, the Fourier coefficients of
+`x ↦ star (f x)` are `star` of the reflected Fourier coefficients of `f`. -/
+theorem fourierCoeff_star {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [StarAddMonoid E] [ContinuousStar E] [StarModule ℂ E] (f : AddCircle T → E) (n : ℤ) :
+    fourierCoeff (fun x ↦ star (f x)) n = star (fourierCoeff f (-n)) := by
+  rw [fourierCoeff, fourierCoeff, ← integral_star]
+  congr 1; funext x
+  rw [neg_neg, star_smul, fourier_neg, RCLike.star_def]
+
+/-- In a normed complex star module, the Fourier coefficients of `star f` are `star` of the
+reflected Fourier coefficients of `f`. -/
 @[simp]
-theorem fourierCoeff_star {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := T))) (n : ℤ) :
-    fourierCoeff (star f : Lp ℂ p (haarAddCircle (T := T))) n =
-      starRingEnd ℂ (fourierCoeff f (-n)) := by
-  rw [fourierCoeff_congr_ae (Lp.coeFn_star f), fourierCoeff, fourierCoeff, ← integral_conj]
-  congr 1
-  funext x
-  rw [neg_neg, Pi.star_apply, smul_eq_mul, smul_eq_mul, map_mul, fourier_neg, RCLike.star_def]
+theorem _root_.MeasureTheory.Lp.fourierCoeff_star {p : ℝ≥0∞} {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [StarAddMonoid E] [NormedStarGroup E]
+    [StarModule ℂ E] (f : Lp E p (haarAddCircle (T := T))) (n : ℤ) :
+    fourierCoeff (star f : Lp E p (haarAddCircle (T := T))) n =
+      star (fourierCoeff f (-n)) :=
+  (congrFun (fourierCoeff_congr_ae (Lp.coeFn_star f)) n).trans (TauCeti.fourierCoeff_star f n)
 
 /-- The Fourier coefficients of the `Lᵖ` monomial `e_n` are those of the continuous monomial
 `e_n`: `1` at `n` and `0` elsewhere. -/

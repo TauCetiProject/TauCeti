@@ -76,16 +76,6 @@ namespace Point
 
 variable {F : Type*} [Field F] {W : Projective F}
 
-/-- A representative of the sum `add P Q` of two nonsingular representatives represents the sum
-of their points. -/
-private theorem exists_mk_eq_mk_add_mk {P Q R : Fin 3 → F} (hP : W.Nonsingular P)
-    (hQ : W.Nonsingular Q) (hR : R ≈ W.add P Q) :
-    ∃ h : W.Nonsingular R, Point.mk ((nonsingularLift_iff R).mpr h) =
-      Point.mk ((nonsingularLift_iff P).mpr hP) + Point.mk ((nonsingularLift_iff Q).mpr hQ) := by
-  refine ⟨(nonsingular_of_equiv hR).mpr (nonsingular_add hP hQ), ?_⟩
-  rw [Point.ext_iff, add_point, addMap_eq]
-  exact Quotient.sound hR
-
 variable [TopologicalSpace F] [IsTopologicalRing F]
 
 /-- Negation of points is continuous: on homogeneous coordinates it is a linear map. -/

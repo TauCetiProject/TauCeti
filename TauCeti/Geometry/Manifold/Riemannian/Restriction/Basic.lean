@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.ProdIcc
 
 /-!
 # Restrictions of Riemannian metrics
@@ -29,11 +28,16 @@ pullback along the inclusion, whose differential is invertible also at the bound
   metric.
 * `Bundle.ContMDiffRiemannianMetric.restrictOpenTangentSpace_eq_of_inner_eq`: metrics that agree
   on an open set have equal restrictions to it.
+* `Bundle.ContMDiffRiemannianMetric.restrictOpenTangentSpace_rescale`: restricting a conformally
+  rescaled metric commutes with rescaling.
 * `TauCeti.Manifold.contMDiffRiemannianMetricOpen`: the ambient instance metric restricted to an
   open submanifold.
 * `TauCeti.Manifold.instRiemannianBundleOpen`,
   `TauCeti.Manifold.instIsContinuousRiemannianBundleOpen`, and
   `TauCeti.Manifold.instIsContMDiffRiemannianBundleOpen`: the corresponding scoped instances.
+* `Bundle.ContMDiffRiemannianMetric.riemannianBundle_restrictOpenTangentSpace_eq`: restricting the
+  ambient `RiemannianBundle` of a bundled metric `g` to an open submanifold agrees with installing
+  `g.restrictOpenTangentSpace`.
 * `TauCeti.Manifold.pathELength_subtypeVal_comp`: the length of a curve in an open submanifold
   equals the length of its composition with the inclusion into the ambient manifold.
 * `TopologicalSpace.Opens.riemannianEDist_le_riemannianEDist_subtype`: restriction to an open
@@ -169,6 +173,18 @@ theorem restrictOpenTangentSpace_eq_of_inner_eq
   ext x v w
   simp only [restrictOpenTangentSpace_inner, h x x.2]
 
+/-- Restricting a conformally rescaled metric `f g` to an open submanifold `U` equals rescaling
+the restricted metric by `f ∘ Subtype.val`. -/
+@[simp]
+theorem restrictOpenTangentSpace_rescale
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M)
+    (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x) :
+    (g.rescale f hf hf_pos).restrictOpenTangentSpace U =
+      (g.restrictOpenTangentSpace U).rescale (f ∘ Subtype.val)
+        (hf.comp contMDiff_subtype_val) (fun y ↦ hf_pos y.1) := by
+  ext y v w
+  simp only [restrictOpenTangentSpace_inner, rescale_inner, Function.comp_apply]
+
 end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti.Manifold
@@ -301,9 +317,20 @@ theorem enorm_tangentSpace_open
     (x : U) (v : TangentSpace I x) :
     letI := instRiemannianBundleOpen (I := I) U
     ‖v‖ₑ = ‖tangentSpaceOpenEquiv (I := I) x v‖ₑ := by
-  simp only [enorm, nnnorm, norm_tangentSpace_open]
+  simp only [eNorm, nnNorm, norm_tangentSpace_open]
 
 end Manifold
+
+/-- Installing a bundled `C^n` Riemannian metric `g` as the ambient `RiemannianBundle` instance and
+restricting to an open submanifold `U` gives the same `RiemannianBundle` instance on `U` as
+installing `g.restrictOpenTangentSpace U`. -/
+theorem _root_.Bundle.ContMDiffRiemannianMetric.riemannianBundle_restrictOpenTangentSpace_eq
+    {n : ℕ∞ω} [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      TauCeti.Manifold.instRiemannianBundleOpen (I := I) U) =
+      ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩ := by
+  rfl
 
 end TauCeti
 
@@ -326,7 +353,7 @@ theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ} :
     pathELength I γ a b = pathELength I ((Subtype.val : U → M) ∘ γ) a b := by
   rw [pathELength_eq_lintegral_mfderiv_Icc, pathELength_eq_lintegral_mfderiv_Icc,
     ← MeasureTheory.restrict_Ioo_eq_restrict_Icc]
-  refine MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
+  refine MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo fun t _ ↦ ?_
   by_cases hd : MDiffAt γ t
   swap
   · rw [mfderiv_zero_of_not_mdifferentiableAt hd, mfderiv_zero_of_not_mdifferentiableAt

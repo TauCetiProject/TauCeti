@@ -42,9 +42,11 @@ independence of the `gₖ` makes their Hasse Wronskian nonzero.
 
 Write `P = ∑_{j ≤ N} Qⱼ Xᵢ ^ j` with `Qⱼ` free of `Xᵢ`, where `N = deg_{Xᵢ} P`. The `fₖ` are a basis
 of the span of the `Qⱼ`, and `gₖ = ∑ⱼ cⱼₖ X ^ j` (built with `Polynomial.ofFn`) where `cⱼₖ` is the
-`k`-th coordinate of `Qⱼ`. A
-linear relation among the `gₖ` gives a linear form on the span vanishing on every `Qⱼ`, hence
-identically, which forces the relation to be trivial.
+`k`-th coordinate of `Qⱼ`. Substituting `Qⱼ = ∑ₖ cⱼₖ fₖ` regroups `∑ⱼ Qⱼ Xᵢ ^ j` as
+`∑ₖ fₖ · gₖ(Xᵢ)` (`TauCeti.sum_mul_X_pow_eq_sum_mul_toMvPolynomial`). The `gₖ` are linearly
+independent (`TauCeti.linearIndependent_ofFn_repr`): a linear relation among them gives a linear
+form on the span vanishing on every `Qⱼ`, hence identically, which forces the relation to be
+trivial.
 
 ## References
 
@@ -60,10 +62,10 @@ open MvPolynomial Finset
 
 variable {R σ : Type*} [CommSemiring R]
 
-/-- Rewriting `∑ⱼ Qⱼ Xᵢʲ` along the expansions `Qⱼ = ∑ₖ cⱼₖ bₖ` of the coefficients in a family
-`b`, as `∑ₖ bₖ · gₖ(Xᵢ)` with `gₖ = ∑ⱼ cⱼₖ Tʲ`. -/
-theorem sum_mul_X_pow_eq_sum_mul_toMvPolynomial [DecidableEq R] {r N : ℕ} (i : σ)
-    (Q : Fin N → MvPolynomial σ R) (b : Fin r → MvPolynomial σ R) (c : Fin N → Fin r → R)
+/-- Rewriting `∑ⱼ Qⱼ Xᵢʲ` along the expansions `Qⱼ = ∑ₖ cⱼₖ bₖ` of the coefficients in a finite
+family `b`, as `∑ₖ bₖ · gₖ(Xᵢ)` with `gₖ = ∑ⱼ cⱼₖ Tʲ`. -/
+theorem sum_mul_X_pow_eq_sum_mul_toMvPolynomial [DecidableEq R] {κ : Type*} [Fintype κ] {N : ℕ}
+    (i : σ) (Q : Fin N → MvPolynomial σ R) (b : κ → MvPolynomial σ R) (c : Fin N → κ → R)
     (hQb : ∀ j, Q j = ∑ k, c j k • b k) :
     ∑ j, Q j * X i ^ (j : ℕ) = ∑ k, b k * (Polynomial.ofFn N fun j ↦ c j k).toMvPolynomial i := by
   simp only [hQb, Polynomial.ofFn_eq_sum_monomial, ← Polynomial.C_mul_X_pow_eq_monomial,
@@ -137,9 +139,8 @@ theorem exists_sum_mul_linearIndependent (P : MvPolynomial σ K) (i : σ) :
     b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩
   set g : Fin (finrank K V) → Polynomial K := fun k ↦ Polynomial.ofFn (N + 1) fun j ↦ c j k
   have hQb (j : Fin (N + 1)) : Q j = ∑ k, c j k • (b k : MvPolynomial σ K) := by
-    have := congr_arg Subtype.val (b.sum_repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩)
-    simp only [Submodule.coe_sum, Submodule.coe_smul] at this
-    exact this.symm
+    simpa only [Submodule.coe_sum, Submodule.coe_smul] using
+      (congr_arg Subtype.val (b.sum_repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩)).symm
   have hbS (k : Fin (finrank K V)) {x : σ →₀ ℕ} (hx : x ∈ (b k : MvPolynomial σ K).support) :
       x ∈ S :=
     (mem_restrictSupport_iff K).1 (hVS (b k).2) hx

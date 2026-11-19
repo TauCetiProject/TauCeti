@@ -38,9 +38,10 @@ formalised here.) In degree zero it is restriction of global sections:
 * `CategoryTheory.Sheaf.H.addEquiv₀_pullback`: in degree zero, a map `f : ℤ_J ⟶ G` goes to
   `c ≫ pb.map f`.
 * `CategoryTheory.Sheaf.H.pullback_naturality`, `pullback_id`, `pullback_comp_apply`,
-  `pullback_δ`:
+  `pullback_δ`, `map_pullback_δ`:
   naturality in the coefficient sheaf, the identity, composition, and compatibility with the
-  connecting homomorphisms of a short exact sequence and its image under `pb`.
+  connecting homomorphisms of a short exact sequence and its image under `pb`, also followed by
+  a morphism of short exact sequences.
 * `CategoryTheory.Sheaf.H.equiv₀_pullback_sheafPullback`: for a morphism of sites, the pullback
   in degree zero is restriction of global sections along the unit of `u^* ⊣ u_*`.
 
@@ -156,6 +157,16 @@ lemma pullback_δ {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortEx
   simp only [pullback_apply, H.δ, AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply,
     Ext.mapExactFunctor_comp, Ext.mapExactFunctor_extClass]
   exact (Ext.comp_assoc _ _ _ (zero_add n₀) h (by lia)).symm
+
+/-- Pullback followed by a morphism of short exact sequences commutes with the connecting
+homomorphisms. -/
+lemma map_pullback_δ {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortExact)
+    {T : ShortComplex (Sheaf K AddCommGrpCat.{w})} (hT : T.ShortExact) (φ : S.map pb ⟶ T)
+    (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (x : H S.X₃ n₀) :
+    H.map φ.τ₁ n₁ (pullback pb c S.X₁ n₁ (H.δ hS n₀ n₁ h x)) =
+      H.δ hT n₀ n₁ h (H.map φ.τ₃ n₀ (pullback pb c S.X₃ n₀ x)) := by
+  rw [pullback_δ]
+  exact (H.δ_naturality n₀ n₁ h (hS.map_of_exact pb) hT φ _).symm
 
 end
 

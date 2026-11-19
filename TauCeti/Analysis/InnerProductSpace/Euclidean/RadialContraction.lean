@@ -9,6 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+
 /-!
 # Radial contractions of a finite-dimensional real normed space
 
@@ -96,13 +100,8 @@ after the affine normalization `y ↦ r⁻¹ • toEuclidean (y - c)`, where `κ
 theorem toEuclidean_radialContraction_eq_univBall (c y : E) {r : ℝ} (hr : 0 < r) :
     toEuclidean (radialContraction c (r⁻¹ ^ 2) y) =
       univBall (toEuclidean c) r (r⁻¹ • toEuclidean (y - c)) := by
-  -- For `r > 0`, `univBall c r` is `univUnitBall` followed by `x ↦ r • x + c`, by definition.
-  have hball (x : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) :
-      univBall (toEuclidean c) r x = r • univUnitBall x + toEuclidean c := by
-    simp only [univBall, hr, ↓reduceDIte]
-    rfl
-  rw [hball, univUnitBall_apply, toEuclidean_radialContraction, norm_smul, Real.norm_eq_abs,
-    abs_inv, abs_of_pos hr, smul_smul, smul_smul, mul_pow, add_comm (toEuclidean c)]
+  rw [univBall_apply hr, vadd_eq_add, toEuclidean_radialContraction, norm_smul, Real.norm_eq_abs,
+    abs_inv, abs_of_pos hr, smul_smul, mul_pow, add_comm (toEuclidean c)]
   congr 2
   field_simp
 
@@ -218,11 +217,37 @@ theorem hasFDerivAt_radialContraction_self (c : E) (κ : ℝ) :
 
 /-- Precomposing with a radial contraction does not change the derivative at its centre. -/
 theorem fderiv_comp_radialContraction_self {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {h : E → F} (c : E) (κ : ℝ) (hh : DifferentiableAt ℝ h c) :
+    {h : E → F} (c : E) (κ : ℝ) :
     fderiv ℝ (h ∘ radialContraction c κ) c = fderiv ℝ h c := by
-  have hh' : HasFDerivAt h (fderiv ℝ h c) (radialContraction c κ c) := by
-    rw [radialContraction_self]
-    exact hh.hasFDerivAt
-  simpa using (hh'.comp c (hasFDerivAt_radialContraction_self c κ)).fderiv
+  by_cases hh : DifferentiableAt ℝ h c
+  · have hh' : HasFDerivAt h (fderiv ℝ h c) (radialContraction c κ c) := by
+      rw [radialContraction_self]
+      exact hh.hasFDerivAt
+    simpa using (hh'.comp c (hasFDerivAt_radialContraction_self c κ)).fderiv
+  -- Otherwise neither side is differentiable: the radial contraction is a local diffeomorphism
+  -- at its centre, so `h` is differentiable there as soon as `h ∘ radialContraction c κ` is.
+  have hq : (κ, c) ∈ {q : ℝ × E | 0 < 1 + q.1 * ‖toEuclidean (q.2 - c)‖ ^ 2} := by simp
+  have hopen : IsOpen {q : ℝ × E | 0 < 1 + q.1 * ‖toEuclidean (q.2 - c)‖ ^ 2} :=
+    isOpen_lt continuous_const (by fun_prop)
+  have hρ : ContDiffAt ℝ 1 (radialContraction c κ) c :=
+    (((contDiffOn_radialContraction c).contDiffAt (hopen.mem_nhds hq)).of_le
+      (by simp)).comp c (contDiffAt_const.prodMk contDiffAt_id)
+  have hs : HasStrictFDerivAt (radialContraction c κ)
+      ((ContinuousLinearEquiv.refl ℝ E : E ≃L[ℝ] E) : E →L[ℝ] E) c := by
+    exact hρ.hasStrictFDerivAt (hasFDerivAt_radialContraction_self c κ) one_ne_zero
+  have hd : ¬ DifferentiableAt ℝ (h ∘ radialContraction c κ) c := by
+    intro hd
+    obtain ⟨g, hg, hgc, hginv⟩ : ∃ g : E → E, DifferentiableAt ℝ g c ∧ g c = c ∧
+        ∀ᶠ y in nhds c, radialContraction c κ (g y) = y :=
+      ⟨_, by simpa only [radialContraction_self] using hs.to_localInverse.differentiableAt,
+        by simpa only [radialContraction_self] using hs.localInverse_apply_image,
+        by simpa only [radialContraction_self] using hs.eventually_right_inverse⟩
+    have hd' : DifferentiableAt ℝ (h ∘ radialContraction c κ) (g c) := by
+      rw [hgc]
+      exact hd
+    refine hh ((hd'.comp c hg).congr_of_eventuallyEq ?_)
+    filter_upwards [hginv] with y hy
+    simp only [Function.comp_apply, hy]
+  rw [fderiv_zero_of_not_differentiableAt hh, fderiv_zero_of_not_differentiableAt hd]
 
 end TauCeti

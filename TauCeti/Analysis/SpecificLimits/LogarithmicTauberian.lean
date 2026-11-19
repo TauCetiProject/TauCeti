@@ -385,11 +385,10 @@ private lemma summable_rpow_and_le_of_levelSum_le (hμ0 : ∀ j, 0 ≤ μ j) (h�
     Summable (fun j ↦ μ j ^ (1 + ε)) ∧
       ∑' k : ℕ, (1 - exp (-ε)) * exp (-ε) ^ k * levelSum μ k ≤ ∑' j, μ j ^ (1 + ε) ∧
       ∑' j, μ j ^ (1 + ε) ≤ exp ε * ∑' k : ℕ, (1 - exp (-ε)) * exp (-ε) ^ k * levelSum μ k := by
-  set q := exp (-ε) with hq
+  set q := exp (-ε)
   have hq0 : 0 ≤ q := (exp_pos _).le
   have hq1 : q < 1 := Real.exp_lt_one_iff.2 (by linarith)
   set F : ℕ → ℕ → ℝ := fun k j ↦ (1 - q) * q ^ k * (if exp (-(k : ℝ)) ≤ μ j then μ j else 0)
-    with hF
   have hF0 : 0 ≤ Function.uncurry F := fun p ↦
     mul_nonneg (mul_nonneg (sub_nonneg.2 hq1.le) (pow_nonneg hq0 _)) (ite_nonneg (hμ0 _) le_rfl)
   have hrow : ∀ k, Summable (F k) := fun k ↦ (summable_levelTerm hμ hμt k).mul_left _

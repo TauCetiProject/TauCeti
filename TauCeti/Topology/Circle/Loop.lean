@@ -28,6 +28,8 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 
 * `TauCeti.unitToCircle`: the standard quotient `C(I, Circle)`, `t ↦ Circle.exp (2 * π * t)`.
 * `Path.toCircle`: a loop, read as a map from the unit circle.
+* `ContinuousMap.toBasedLoop`: the loop `t ↦ f(e^{2πit})` at `f 1` of a circle map `f`, a right
+  inverse of `Path.toCircle` (`ContinuousMap.toBasedLoop_toCircle`).
 * `TauCeti.torusCurve p q`: the `(p, q)` curve on `S¹ × S¹`, a loop at `(1, 1)`.
 * `TauCeti.torusGluing`: a torus homeomorphism given by a determinant-one integer matrix.
 
@@ -35,6 +37,8 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 
 * `TauCeti.unitToCircle_surjective`, `TauCeti.unitToCircle_eq_one_iff`,
   `TauCeti.eq_or_of_unitToCircle_eq`: quotient properties of `unitToCircle`.
+* `ContinuousMap.ext_unitToCircle`: maps out of the circle agreeing on the image of
+  `unitToCircle` are equal.
 * `Path.toCircle_unitToCircle`, `Path.toCircle_exp`: `unitToCircle t = exp (2πit)` goes to `γ t`.
 * `Path.toCircle_one`: the point `1` goes to the base point.
 -/
@@ -118,6 +122,13 @@ theorem eq_or_of_unitToCircle_eq {s t : I} (h : unitToCircle s = unitToCircle t)
 
 end TauCeti
 
+/-- Two maps out of the circle agreeing on every `unitToCircle t = exp (2πit)` are equal. -/
+theorem ContinuousMap.ext_unitToCircle {X : Type*} [TopologicalSpace X] {f g : C(Circle, X)}
+    (h : ∀ t, f (TauCeti.unitToCircle t) = g (TauCeti.unitToCircle t)) : f = g := by
+  ext1 w
+  obtain ⟨t, rfl⟩ := TauCeti.unitToCircle_surjective w
+  exact h t
+
 namespace Path
 
 variable {X : Type*} [TopologicalSpace X] {x : X}
@@ -156,6 +167,31 @@ theorem toCircle_one (γ : Path x x) : γ.toCircle 1 = x := by
   simpa using γ.toCircle_unitToCircle 0
 
 end Path
+
+namespace ContinuousMap
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- The loop `t ↦ f(e^{2πit})` at `f 1` of a free loop `f : S¹ → X`. It is a right inverse of
+`Path.toCircle` (`ContinuousMap.toBasedLoop_toCircle`). -/
+def toBasedLoop (f : C(Circle, X)) : Path (f 1) (f 1) where
+  toContinuousMap := f.comp TauCeti.unitToCircle
+  source' := by simp
+  target' := by simp
+
+@[simp]
+theorem toBasedLoop_apply (f : C(Circle, X)) (t : I) :
+    f.toBasedLoop t = f (TauCeti.unitToCircle t) :=
+  (rfl)
+
+/-- A free loop is recovered from its loop at `f 1` by `Path.toCircle`. -/
+@[simp]
+theorem toBasedLoop_toCircle (f : C(Circle, X)) : f.toBasedLoop.toCircle = f := by
+  ext z
+  obtain ⟨t, rfl⟩ := TauCeti.unitToCircle_surjective z
+  rw [Path.toCircle_unitToCircle, toBasedLoop_apply]
+
+end ContinuousMap
 
 namespace TauCeti
 

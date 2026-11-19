@@ -69,6 +69,18 @@ theorem topRegularRefinementBound_def (t r : ℕ) (η ε : ℝ) (m : ℕ) :
       (fun m ↦ m * 2 ^ (6 * r * (t ^ 3 * m ^ 3)))^[⌊1 / (η ^ 3 * ε)⌋₊ + 1] m :=
   (rfl)
 
+/-- The bound on the number of pair colors produced by top regularization is monotone in the
+initial number of pair colors. -/
+theorem topRegularRefinementBound_mono (t r : ℕ) (η ε : ℝ) :
+    Monotone (topRegularRefinementBound t r η ε) := by
+  refine Monotone.iterate (fun a b hab ↦ ?_) _
+  gcongr
+
+/-- Top regularization never lowers the number of pair colors. -/
+theorem le_topRegularRefinementBound (t r : ℕ) (η ε : ℝ) (m : ℕ) :
+    m ≤ topRegularRefinementBound t r η ε m :=
+  Function.id_le_iterate_of_id_le (fun m ↦ Nat.le_mul_of_pos_right m (by positivity)) _ m
+
 namespace Colored3Graph
 
 variable [DecidableEq κ] (H : Colored3Graph κ V)
@@ -215,8 +227,7 @@ theorem exists_topRegularOverMostPolyads [Finite κ] [Fintype κ₂] (S : PairSk
   have hgood := hT.resolve_right fun h ↦ by
     linarith only [h, hK, H.polyadEnergy_nonneg S, H.polyadEnergy_le_one T]
   let C : TriadicComplex3 V := ⟨m, T, univ⟩
-  have hdec : C.IsPolyadDecomposition :=
-    C.isPolyadDecomposition_iff_ofTriple_mem.2 fun _ ↦ mem_univ _
+  have hdec : C.IsPolyadDecomposition := C.isPolyadDecomposition_of_polyads_eq_univ rfl
   refine ⟨C, π, by rw [topRegularRefinementBound_def, ← hKdef]; exact hm, hV, hπ, hrev, rfl, ?_⟩
   have hsum : ∑ P ∈ C.polyads, (#P.support : ℝ) = (Fintype.card V).descFactorial 3 := by
     exact_mod_cast hdec.sum_card_support

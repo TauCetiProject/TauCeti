@@ -53,6 +53,11 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
   image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
+* `Subgroup.mem_of_pow_mem_of_coprime_index`, and its additive counterpart: a normal subgroup
+  contains `g` as soon as it contains a power of `g` with exponent coprime to its index.
+* `TauCeti.mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd`: for a prime `p` whose square does not
+  divide the order of the group, a normal subgroup of order divisible by `p` contains every
+  element whose `p`-th power is `1`.
 * `Subgroup.liftClass`, `AddSubgroup.liftClass`: the power `g ^ d` of `g` lying in a normal
   subgroup `K`, where `d` is the order of `g` in `G ⧸ K`; it is the least positive such power when
   `d` is positive, and `1` when the image of `g` has infinite order.
@@ -64,6 +69,8 @@ the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
   additive counterpart.
 * `TauCeti.eq_one_of_pow_ordCompl_eq_one`, `TauCeti.eq_of_pow_ordCompl_eq`: an element `x` with
   `x ^ n = 1` is determined by its powers `x ^ ordCompl[ℓ] n` at the primes `ℓ ∣ n`.
+* `TauCeti.exists_forall_pow_ne_of_not_isOfFinOrder`, and its additive counterpart: an element `H`
+  of infinite order has `H ^ k ≠ a` for all large `k`.
 * `TauCeti.mul_pow_eq_of_sq_eq_one`: in a commutative monoid, exponents of elements squaring to
   `1` only matter modulo `2`.
 * `TauCeti.coprime_orderOf_of_mul_mul_inv_eq_pow`,
@@ -117,6 +124,18 @@ end IsOfFinOrder
 theorem QuotientGroup.orderOf_mk_dvd_iff_pow_mem {G : Type*} [Group G] (K : Subgroup G)
     [K.Normal] (g : G) (n : ℕ) : orderOf (g : G ⧸ K) ∣ n ↔ g ^ n ∈ K := by
   rw [orderOf_dvd_iff_pow_eq_one, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+
+/-- A normal subgroup `K` contains `g` as soon as it contains a power `g ^ n` whose exponent is
+coprime to the index of `K`. -/
+@[to_additive
+/-- A normal additive subgroup `K` contains `g` as soon as it contains a multiple `n • g` whose
+coefficient is coprime to the index of `K`. -/]
+theorem Subgroup.mem_of_pow_mem_of_coprime_index {G : Type*} [Group G] {K : Subgroup G}
+    [K.Normal] {n : ℕ} (hn : K.index.Coprime n) {g : G} (hg : g ^ n ∈ K) : g ∈ K := by
+  have horder : orderOf (g : G ⧸ K) = 1 :=
+    Nat.eq_one_of_dvd_coprimes hn (K.index_eq_card ▸ _root_.orderOf_dvd_natCard _)
+      ((QuotientGroup.orderOf_mk_dvd_iff_pow_mem K g n).mpr hg)
+  exact (QuotientGroup.eq_one_iff g).mp (orderOf_eq_one_iff.mp horder)
 
 namespace Subgroup
 
@@ -219,6 +238,26 @@ theorem mul_pow_eq_of_sq_eq_one {G : Type*} [CommMonoid G] {S u v w z : G}
     pow_eq_pow_of_modEq hBC hw, ← pow_one z, pow_eq_pow_of_modEq hB hz]
   simp only [mul_pow, pow_add]
   ac_rfl
+
+/-- An element of infinite order has `H ^ k ≠ a` for all large `k`: the equation `H ^ k = a` holds
+for at most one `k`. -/
+@[to_additive]
+theorem exists_forall_pow_ne_of_not_isOfFinOrder {G : Type*} [LeftCancelMonoid G] {H : G}
+    (hH : ¬IsOfFinOrder H) (a : G) :
+    ∃ N : ℕ, ∀ k, N ≤ k → H ^ k ≠ a := by
+  exact Filter.eventually_atTop.1 (Nat.cofinite_eq_atTop ▸
+    (injective_pow_iff_not_isOfFinOrder.2 hH).tendsto_cofinite.eventually
+      (Filter.eventually_cofinite_ne a))
+
+/-- For a prime `p`, if `p ^ 2` does not divide the order of a group, then a normal subgroup
+whose order is divisible by `p` contains every element whose `p`-th power is `1`. -/
+theorem mem_of_pow_eq_one_of_dvd_natCard_of_not_sq_dvd {G : Type*} [Group G] {p : ℕ}
+    (hp : p.Prime) {N : Subgroup G} [N.Normal] {a : G} (ha : a ^ p = 1) (hN : p ∣ Nat.card N)
+    (hsq : ¬ p ^ 2 ∣ Nat.card G) : a ∈ N := by
+  refine Subgroup.mem_of_pow_mem_of_coprime_index
+    (Nat.Coprime.symm (hp.coprime_iff_not_dvd.mpr fun hi ↦ hsq ?_)) (ha ▸ N.one_mem)
+  rw [← N.card_mul_index, pow_two]
+  exact Nat.mul_dvd_mul hN hi
 
 section Conj
 

@@ -26,7 +26,9 @@ Since right duals are unique up to unique isomorphism, the image `F.obj Xᘁ` of
 mates, are identities for the identity functor, and compose along a composite of functors. They
 are the comparisons against which a monoidal functor between pivotal categories is required to
 preserve the pivotal structure. They are also natural in the functor: a monoidal natural
-transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`.
+transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X`. Likewise the image
+`F.obj (ᘁY)` of a left dual of `Y` is canonically isomorphic to the left dual `ᘁ(F.obj Y)`
+(`CategoryTheory.Functor.mapLeftDualIso`), characterized through the two evaluations.
 
 Between right rigid categories, applying the comparison twice gives the bidual comparison
 `κ_X = δ_{Xᘁ} ≫ ((δ_X)ᘁ)⁻¹ : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`
@@ -76,6 +78,10 @@ equivalence.
   `CategoryTheory.Functor.mapRightDualIso_hom_naturality`, and computed for identities and
   composites by `CategoryTheory.Functor.mapRightDualIso_id` and
   `CategoryTheory.Functor.mapRightDualIso_comp`;
+* `CategoryTheory.Functor.mapLeftDualIso`: the comparison `F.obj (ᘁY) ≅ ᘁ(F.obj Y)`,
+  characterized by `CategoryTheory.Functor.whiskerLeft_mapLeftDualIso_hom_evaluation`, with its
+  inverse compatible with coevaluation by
+  `CategoryTheory.Functor.coevaluation_mapLeftDualIso_inv_whiskerRight`;
 * `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate` and
   `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`: the comparison is natural with respect to
   monoidal natural transformations and isomorphisms;
@@ -191,7 +197,7 @@ variable (F)
 /-- The canonical isomorphism `F.obj Xᘁ ≅ (F.obj X)ᘁ` between the image of the right dual of `X`
 under a strong monoidal functor and the right dual of `F.obj X`: both are right duals of
 `F.obj X`, the first through the image pairing `F.mapExactPairing X Xᘁ`. -/
-noncomputable def mapRightDualIso (X : C) [HasRightDual X] [hFX : HasRightDual (F.obj X)] :
+noncomputable def mapRightDualIso (X : C) [HasRightDual X] [_hFX : HasRightDual (F.obj X)] :
     F.obj Xᘁ ≅ (F.obj X)ᘁ :=
   rightDualIso (F.mapExactPairing X Xᘁ) HasRightDual.exact
 
@@ -202,7 +208,7 @@ evaluation of `(X, Xᘁ)`. This characterizes `F.mapRightDualIso X`, by
 `CategoryTheory.ExactPairing.rightHom_ext`. -/
 @[reassoc]
 theorem mapRightDualIso_hom_whiskerRight_evaluation (X : C) [HasRightDual X]
-    [hFX : HasRightDual (F.obj X)] :
+    [_hFX : HasRightDual (F.obj X)] :
     (F.mapRightDualIso X).hom ▷ F.obj X ≫ ε_ (F.obj X) (F.obj X)ᘁ =
       μ F Xᘁ X ≫ F.map (ε_ X Xᘁ) ≫ η F :=
   ExactPairing.rightDualIso_hom_whiskerRight_evaluation _ _
@@ -243,10 +249,10 @@ is the identity. Only `X` needs a right dual; it is passed explicitly as the rig
 `(𝟭 C).obj X`, which instance search does not unfold to `X`. -/
 @[simp]
 theorem mapRightDualIso_id (X : C) [hX : HasRightDual X] :
-    (𝟭 C).mapRightDualIso X (hFX := hX) = Iso.refl _ := by
+    (𝟭 C).mapRightDualIso X (_hFX := hX) = Iso.refl _ := by
   ext
   refine ExactPairing.rightHom_ext (X := X) (Y := Xᘁ) ?_
-  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := 𝟭 C) X (hFX := hX)).trans ?_
+  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := 𝟭 C) X (_hFX := hX)).trans ?_
   simp
 
 /-- For a composite `F ⋙ G`, the comparison between the image of a dual and the dual of an image
@@ -257,15 +263,47 @@ dual of `(F ⋙ G).obj X`, which instance search does not unfold. -/
 theorem mapRightDualIso_comp {E : Type*} [Category* E] [MonoidalCategory E]
     (G : D ⥤ E) [G.Monoidal] (X : C) [HasRightDual X] [HasRightDual (F.obj X)]
     [hGFX : HasRightDual (G.obj (F.obj X))] :
-    (F ⋙ G).mapRightDualIso X (hFX := hGFX) =
+    (F ⋙ G).mapRightDualIso X (_hFX := hGFX) =
       G.mapIso (F.mapRightDualIso X) ≪≫ G.mapRightDualIso (F.obj X) := by
   ext
   refine ExactPairing.rightHom_ext (X := G.obj (F.obj X)) (Y := (G.obj (F.obj X))ᘁ) ?_
-  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := F ⋙ G) X (hFX := hGFX)).trans ?_
+  refine (mapRightDualIso_hom_whiskerRight_evaluation (F := F ⋙ G) X (_hFX := hGFX)).trans ?_
   -- Unfold the objects of the composite, so that the evaluation identities of `F` and `G` apply.
   dsimp only [Functor.comp_obj, Iso.trans_hom, Functor.mapIso_hom]
   rw [comp_whiskerRight_assoc, mapRightDualIso_hom_whiskerRight_evaluation, μ_natural_left_assoc,
     ← G.map_comp_assoc, mapRightDualIso_hom_whiskerRight_evaluation]
+  simp
+
+variable (F)
+
+/-- The canonical isomorphism `F.obj (ᘁY) ≅ ᘁ(F.obj Y)` between the image of the left dual of `Y`
+under a strong monoidal functor and the left dual of `F.obj Y`: both are left duals of
+`F.obj Y`, the first through the image pairing `F.mapExactPairing (ᘁY) Y`. -/
+noncomputable def mapLeftDualIso (Y : C) [HasLeftDual Y] [_hFY : HasLeftDual (F.obj Y)] :
+    F.obj (ᘁY) ≅ ᘁ(F.obj Y) :=
+  leftDualIso (F.mapExactPairing (ᘁY) Y) HasLeftDual.exact
+
+variable {F}
+
+/-- Through `F.mapLeftDualIso Y`, the evaluation of `(ᘁ(F.obj Y), F.obj Y)` is the image of the
+evaluation of `(ᘁY, Y)`. This characterizes `F.mapLeftDualIso Y`, by
+`CategoryTheory.ExactPairing.leftDualHom_ext`. -/
+@[reassoc]
+theorem whiskerLeft_mapLeftDualIso_hom_evaluation (Y : C) [HasLeftDual Y]
+    [_hFY : HasLeftDual (F.obj Y)] :
+    F.obj Y ◁ (F.mapLeftDualIso Y).hom ≫ ε_ (ᘁ(F.obj Y)) (F.obj Y) =
+      μ F Y (ᘁY) ≫ F.map (ε_ (ᘁY) Y) ≫ η F := by
+  rw [mapLeftDualIso, ExactPairing.leftDualIso_hom, ExactPairing.leftMate_comp_evaluation,
+    id_whiskerRight, Category.id_comp, mapExactPairing_evaluation]
+
+/-- Through the inverse of `F.mapLeftDualIso Y`, the coevaluation of `(ᘁ(F.obj Y), F.obj Y)` is
+the image of the coevaluation of `(ᘁY, Y)`. -/
+@[reassoc]
+theorem coevaluation_mapLeftDualIso_inv_whiskerRight (Y : C) [HasLeftDual Y]
+    [_hFY : HasLeftDual (F.obj Y)] :
+    η_ (ᘁ(F.obj Y)) (F.obj Y) ≫ (F.mapLeftDualIso Y).inv ▷ F.obj Y =
+      ε F ≫ F.map (η_ (ᘁY) Y) ≫ δ F (ᘁY) Y := by
+  rw [mapLeftDualIso, ExactPairing.leftDualIso_inv, ExactPairing.coevaluation_comp_leftMate]
   simp
 
 /-! ### Internal Hom comparisons -/

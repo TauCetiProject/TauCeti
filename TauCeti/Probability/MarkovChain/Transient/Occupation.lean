@@ -12,8 +12,9 @@ public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 # Vanishing occupation of transient states
 
 If the probability of a positive-time return to `y` is less than one, visits to `y` are
-almost surely finite from every finite initial measure. Consequently the fraction of times
-`1, …, n` spent at `y` tends to zero, both almost surely and in expectation. The Green-function
+almost surely finite from every initial measure. Consequently the fraction of times
+`1, …, n` spent at `y` tends to zero almost surely, and in expectation from every finite initial
+measure. The Green-function
 identity also implies that the time-`n` mass of `y` tends to zero, without irreducibility or
 aperiodicity. No convergence in total variation to the zero measure is asserted.
 As a corollary, every positive-mass atom of a finite invariant measure is recurrent.
@@ -35,9 +36,9 @@ open scoped Topology
 namespace MeasureTheory.Measure
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-  (ν : Measure α) [IsFiniteMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ] {y : α}
+  (ν : Measure α) (κ : Kernel α α) [IsMarkovKernel κ] {y : α}
 
-/-- **The occupation fraction of a transient state vanishes almost surely**, from every finite
+/-- **The occupation fraction of a transient state vanishes almost surely**, from every
 initial measure. The count includes times `1` through `n`, not time zero. -/
 theorem ae_tendsto_visitCount_div_of_return_lt_one
     (hy : markovChainLaw (dirac y) κ
@@ -63,11 +64,11 @@ end MeasureTheory.Measure
 namespace ProbabilityTheory.Kernel
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-  (κ : Kernel α α) [IsMarkovKernel κ] {y : α}
 
 /-- **The transition mass of a transient state tends to zero**, from every finite initial
 measure. Neither irreducibility nor aperiodicity is required. -/
 theorem tendsto_pow_comp_apply_singleton_zero_of_return_lt_one
+    (κ : Kernel α α) [IsMarkovKernel κ] {y : α}
     (hy : markovChainLaw (Measure.dirac y) κ
       {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} < 1)
     (ν : Measure α) [IsFiniteMeasure ν] :
@@ -93,8 +94,11 @@ end ProbabilityTheory.Kernel
 namespace ProbabilityTheory.HasLaw
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-  [MeasurableSingletonClass α] {P : Measure Ω} {ν : Measure α} [IsFiniteMeasure ν]
-  {X : Ω → ℕ → α} {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
+  [MeasurableSingletonClass α] {P : Measure Ω} {ν : Measure α}
+
+section AE
+
+variable {X : Ω → ℕ → α} {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
 
 /-- The transient-state occupation limit holds for every realization with the given path law. -/
 theorem ae_tendsto_visitCount_div_of_return_lt_one
@@ -106,6 +110,12 @@ theorem ae_tendsto_visitCount_div_of_return_lt_one
   have h := ν.ae_tendsto_visitCount_div_of_return_lt_one κ hy
   rw [← hX.map_eq] at h
   exact ae_of_ae_map hX.aemeasurable h
+
+end AE
+
+section Finite
+
+variable [IsFiniteMeasure ν] {X : Ω → ℕ → α} {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
 
 /-- **Expected occupation fractions of a transient state tend to zero.** This holds on any
 realization of the chain, with any finite initial measure. -/
@@ -147,5 +157,7 @@ theorem tendsto_measureReal_apply_eq_zero_of_return_lt_one
   simpa only [Measure.real, hm, ENNReal.toReal_zero, Function.comp_def] using
     (ENNReal.continuousAt_toReal ENNReal.zero_ne_top).tendsto.comp
       (κ.tendsto_pow_comp_apply_singleton_zero_of_return_lt_one hy ν)
+
+end Finite
 
 end ProbabilityTheory.HasLaw

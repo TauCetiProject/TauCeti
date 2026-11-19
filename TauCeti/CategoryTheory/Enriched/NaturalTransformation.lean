@@ -59,31 +59,8 @@ theorem unitGradedNaturality_iff
       aX ▷ (G.obj X ⟶[V] G.obj Y) = aX ⊗ₘ G.map X Y := by
     rw [← leftUnitor_inv_comp_tensorHom]
     simp
-  constructor
-  · intro h
-    apply (cancel_epi (λ_ (X ⟶[V] Y)).hom).mp
-    calc
-      _ = (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫
-          (F.map X Y ⊗ₘ aY) ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) := by
-            simpa only [Category.assoc] using
-              (congrArg (fun q => q ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y)) hl)
-      _ = (aX ⊗ₘ G.map X Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y) := h
-      _ = _ := by simpa only [Category.assoc] using
-        (congrArg (fun q => q ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) hr.symm)
-  · intro hs
-    calc
-      _ = (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y ≫
-        (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
-        (F.obj X ⟶[V] F.obj Y) ◁ aY ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) := by
-          simpa only [Category.assoc] using
-            (congrArg (fun q => q ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y)) hl.symm)
-      _ = (λ_ (X ⟶[V] Y)).hom ≫ G.map X Y ≫
-        (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
-        aX ▷ (G.obj X ⟶[V] G.obj Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y) := by
-          simpa only [Category.assoc] using
-            (congrArg (fun q => (λ_ (X ⟶[V] Y)).hom ≫ q) hs)
-      _ = _ := by simpa only [Category.assoc] using
-        (congrArg (fun q => q ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) hr)
+  -- Rewrite the graded square by `hl` and `hr`, then cancel the left unitor.
+  rw [← reassoc_of% hl, ← reassoc_of% hr, cancel_epi]
 
 private theorem unitGradedNaturality
     (F G : EnrichedFunctor V C' D') (X Y : C')
@@ -114,15 +91,8 @@ private theorem unitGradedNaturality
         aX ▷ (G.obj X ⟶[V] G.obj Y) := by
     rw [leftUnitor_inv_comp_tensorHom]
     simp only [Category.assoc]
-  calc
-    _ = f ≫ F.map X Y ≫ (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
-        (F.obj X ⟶[V] F.obj Y) ◁ aY ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) := by
-      simpa only [Category.assoc] using
-        (congrArg (fun q => q ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y)) hL)
-    _ = f ≫ G.map X Y ≫ (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
-        aX ▷ (G.obj X ⟶[V] G.obj Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y) := hs'
-    _ = _ := by simpa only [Category.assoc] using
-      (congrArg (fun q => q ≫ eComp V (F.obj X) (G.obj X) (G.obj Y)) hR.symm)
+  rw [reassoc_of% hL, reassoc_of% hR]
+  exact hs'
 
 namespace UnitGradedNatTrans
 
@@ -148,7 +118,7 @@ noncomputable def toOrdinary
         (unitGradedNaturality F G (ForgetEnrichment.to V X) (ForgetEnrichment.to V Y)
           (α.app _) (α.app _) (α.naturality _ _) (ForgetEnrichment.homTo V f))
     · intro a b hab
-      exact hab
+      simpa using congrArg (ForgetEnrichment.homOf V) hab
 
 /-- Forgetting enrichment leaves the component of a unit-graded transformation unchanged. -/
 @[simp]
@@ -164,7 +134,7 @@ end UnitGradedNatTrans
 
 omit [BraidedCategory V] in
 /-- Two enriched whiskering squares compose along their ordinary components. -/
-theorem composeNaturalSquares
+theorem comp_eHomWhiskerLeft_comp_eq_comp_eHomWhiskerRight_comp
     {E : Type u₂} [Category E] [EnrichedOrdinaryCategory V E]
     {FX GX HX FY GY HY : E} {M : V}
     (fMap : M ⟶ FX ⟶[V] FY) (gMap : M ⟶ GX ⟶[V] GY)
@@ -177,20 +147,13 @@ theorem composeNaturalSquares
       hMap ≫ eHomWhiskerRight V bX HY) :
     fMap ≫ eHomWhiskerLeft V FX (aY ≫ bY) =
       hMap ≫ eHomWhiskerRight V (aX ≫ bX) HY := by
-  rw [eHomWhiskerLeft_comp, eHomWhiskerRight_comp]
-  calc
-    _ = gMap ≫ eHomWhiskerRight V aX GY ≫ eHomWhiskerLeft V FX bY := by
-      simpa only [Category.assoc] using
-        (congrArg (fun q => q ≫ eHomWhiskerLeft V FX bY) ha)
-    _ = gMap ≫ eHomWhiskerLeft V GX bY ≫ eHomWhiskerRight V aX HY := by
-      rw [eHom_whisker_exchange]
-    _ = _ := by simpa only [Category.assoc] using
-      (congrArg (fun q => q ≫ eHomWhiskerRight V aX HY) hb)
+  rw [eHomWhiskerLeft_comp, eHomWhiskerRight_comp, reassoc_of% ha, ← eHom_whisker_exchange,
+    reassoc_of% hb]
 
 namespace UnitGradedNatTrans
 
 /-- Composition of graded natural transformations at the monoidal unit. -/
-noncomputable def unitComp {F G H : EnrichedFunctor V C' D'}
+noncomputable def comp {F G H : EnrichedFunctor V C' D'}
     (α : UnitGradedNatTrans F G)
     (γ : UnitGradedNatTrans G H) :
     UnitGradedNatTrans F H where
@@ -210,56 +173,40 @@ noncomputable def unitComp {F G H : EnrichedFunctor V C' D'}
         (aY ≫ bY) =
       H.map X Y ≫ eHomWhiskerRight V (aX ≫ bX)
         (ForgetEnrichment.of V (H.obj Y))
-    exact composeNaturalSquares (V := V) (F.map X Y) (G.map X Y) (H.map X Y)
-      aX aY bX bY hα hγ
+    exact comp_eHomWhiskerLeft_comp_eq_comp_eHomWhiskerRight_comp (V := V)
+      (F.map X Y) (G.map X Y) (H.map X Y) aX aY bX bY hα hγ
 
 /-- A component of the composite at the monoidal unit. -/
--- This remains outside `simp`: it would make `unitComp_app_homOf` fail `simpNF`.
-theorem unitComp_app {F G H : EnrichedFunctor V C' D'}
+-- This remains outside `simp`: it would make `comp_app_homOf` fail `simpNF`.
+theorem comp_app {F G H : EnrichedFunctor V C' D'}
     (α : UnitGradedNatTrans F G)
     (γ : UnitGradedNatTrans G H) (X : C') :
-    (unitComp α γ).app X = eHomEquiv V
+    (comp α γ).app X = eHomEquiv V
       (ForgetEnrichment.homOf V (α.app X) ≫ ForgetEnrichment.homOf V (γ.app X)) := by
-  unfold unitComp
+  unfold comp
   rfl
 
 /-- The ordinary component of a composite is the composite of ordinary components. -/
 @[simp]
-theorem unitComp_app_homOf {F G H : EnrichedFunctor V C' D'}
+theorem comp_app_homOf {F G H : EnrichedFunctor V C' D'}
     (α : UnitGradedNatTrans F G)
     (γ : UnitGradedNatTrans G H) (X : C') :
-    ForgetEnrichment.homOf V ((unitComp α γ).app X) =
+    ForgetEnrichment.homOf V ((comp α γ).app X) =
       ForgetEnrichment.homOf V (α.app X) ≫ ForgetEnrichment.homOf V (γ.app X) := by
-  rw [unitComp_app]
+  rw [comp_app]
+  -- `eHomEquiv` is the identity equivalence on `ForgetEnrichment`.
   rfl
-
-end UnitGradedNatTrans
-
-namespace UnitGradedNatTrans
 
 /-- Identity graded natural transformation at the monoidal unit. -/
 noncomputable def id (F : EnrichedFunctor V C' D') : UnitGradedNatTrans F F where
   app X := eId V (F.obj X)
   naturality X Y := by
     dsimp [Center.ofBraided, Center.ofBraidedObj]
-    simp only [tensorHom_def, Category.assoc]
-    conv_rhs => rw [← whisker_exchange_assoc]
-    have hcomp : ((F.obj X ⟶[V] F.obj Y) ◁ eId V (F.obj Y)) ≫
-        eComp V (F.obj X) (F.obj Y) (F.obj Y) =
-        (ρ_ (F.obj X ⟶[V] F.obj Y)).hom := by
-      simpa using ((ρ_ (F.obj X ⟶[V] F.obj Y)).inv_comp_eq).mp
-        (e_comp_id V (F.obj X) (F.obj Y))
-    have hid : (eId V (F.obj X) ▷ (F.obj X ⟶[V] F.obj Y)) ≫
-        eComp V (F.obj X) (F.obj X) (F.obj Y) =
-        (λ_ (F.obj X ⟶[V] F.obj Y)).hom := by
-      simpa using ((λ_ (F.obj X ⟶[V] F.obj Y)).inv_comp_eq).mp
-        (e_id_comp V (F.obj X) (F.obj Y))
-    rw [hcomp, hid, rightUnitor_naturality]
-    calc
-      _ = ((β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫
-          (ρ_ (X ⟶[V] Y)).hom) ≫ F.map X Y := by rw [Category.assoc]
-      _ = (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y := by rw [braiding_rightUnitor]
-      _ = _ := by rw [leftUnitor_naturality]
+    -- Put `eId` next to `eComp` on both sides; `simp` then closes the goal with the enriched
+    -- unit laws `e_comp_id` and `e_id_comp` and the unit braiding `braiding_tensorUnit_left`.
+    rw [tensorHom_def]
+    conv_rhs => rw [tensorHom_def']
+    simp
 
 /-- A component of the identity at the monoidal unit. -/
 @[simp]

@@ -414,8 +414,8 @@ theorem sub_mem_tripleMasseyIndeterminacy {w w' : 𝒜.Cohomology}
   -- boundaries, which does not change the value, and then the bounding cochains by cycles.
   obtain ⟨S, rfl⟩ := hw
   obtain ⟨S', rfl⟩ := hw'
-  obtain ⟨T₁, ha₁, hb₁, hc₁, hv₁⟩ := S.exists_a_eq S'.a_mem_cycles S'.cohomologyClass_a
-  obtain ⟨T₂, ha₂, hb₂, hc₂, hv₂⟩ := T₁.exists_b_eq S'.b_mem_cycles S'.cohomologyClass_b
+  obtain ⟨T₁, ha₁, _, _, hv₁⟩ := S.exists_a_eq S'.a_mem_cycles S'.cohomologyClass_a
+  obtain ⟨T₂, ha₂, hb₂, _, hv₂⟩ := T₁.exists_b_eq S'.b_mem_cycles S'.cohomologyClass_b
   obtain ⟨T₃, ha₃, hb₃, hc₃, hv₃⟩ := T₂.exists_c_eq S'.c_mem_cycles S'.cohomologyClass_c
   rw [← hv₁, ← hv₂, ← hv₃]
   exact T₃.value_sub_value_mem S' (by rw [ha₃, ha₂, ha₁]) (by rw [hb₃, hb₂])
@@ -599,13 +599,19 @@ theorem mem_tripleMasseyIndeterminacy_and_mem_piece_iff {p r n : ℤ}
 degrees `p`, `q`, `r` and a value `w` of a homogeneous defining system, `w'` is the value of a
 homogeneous defining system exactly when `w' - w` lies in
 `x · H^{q + r - 1} + H^{p + q - 1} · z`. -/
-theorem exists_isHomogeneous_value_eq_iff_sub_mem {p q r : ℤ}
-    (hx : x ∈ 𝒜.cohomologyGrading.piece p) (hy : y ∈ 𝒜.cohomologyGrading.piece q)
-    (hz : z ∈ 𝒜.cohomologyGrading.piece r) {w w' : 𝒜.Cohomology}
+theorem exists_isHomogeneous_value_eq_iff_sub_mem {p q r : ℤ} {w w' : 𝒜.Cohomology}
     (hw : ∃ S : 𝒜.TripleMasseyDefiningSystem x y z, S.IsHomogeneous p q r ∧ S.value = w) :
     (∃ S : 𝒜.TripleMasseyDefiningSystem x y z, S.IsHomogeneous p q r ∧ S.value = w') ↔
       ∃ s ∈ 𝒜.cohomologyGrading.piece (q + r - 1), ∃ t ∈ 𝒜.cohomologyGrading.piece (p + q - 1),
         x * s + t * z = w' - w := by
+  -- The classes are homogeneous because they are the classes of the homogeneous cycles of `hw`.
+  obtain ⟨S, hS, -⟩ := id hw
+  have hx : x ∈ 𝒜.cohomologyGrading.piece p :=
+    S.cohomologyClass_a ▸ 𝒜.cohomologyClass_mem_cohomologyGrading_piece S.a_mem_cycles hS.a_mem
+  have hy : y ∈ 𝒜.cohomologyGrading.piece q :=
+    S.cohomologyClass_b ▸ 𝒜.cohomologyClass_mem_cohomologyGrading_piece S.b_mem_cycles hS.b_mem
+  have hz : z ∈ 𝒜.cohomologyGrading.piece r :=
+    S.cohomologyClass_c ▸ 𝒜.cohomologyClass_mem_cohomologyGrading_piece S.c_mem_cycles hS.c_mem
   obtain ⟨hwM, hwn⟩ := (exists_isHomogeneous_value_eq_iff hx hy hz).1 hw
   -- Subtract the endpoint degrees to identify the two classical indeterminacy components.
   rw [exists_isHomogeneous_value_eq_iff hx hy hz, mem_tripleMasseyProduct_iff_sub_mem hwM,

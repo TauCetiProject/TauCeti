@@ -17,13 +17,22 @@ Mathlib proves this for rings of characteristic `p` with surjective Frobenius
 (`Perfection.coeff_surjective`); the statement here needs no ring structure, and applies for
 instance to the multiplicative monoid of an algebraically closed field of any characteristic.
 
+## Main definitions
+
+* `PreTilt.equivPerfection`: the ring isomorphism `PreTilt O p ≃+* Perfection (ModP O p) p`.
+
 ## Main results
 
 * `Perfection.coeffMonoidHom_surjective`: if `x ↦ x ^ p` is surjective on `M`, so is every
   coordinate map `Perfection.coeffMonoidHom M p n`.
+* `Perfection.coeff_lift_apply`: the coordinates of `Perfection.lift p k R φ x` are the values of
+  `φ` at the `p ^ n`-th roots of `x`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
   element vanishes as soon as one of its coordinates does.
-* `PreTilt.coeff_eq_zero_iff`: the same for the tilt `PreTilt O p` when `O ⧸ p` is reduced.
+* `PreTilt.ext`, `PreTilt.coeff_equivPerfection`, `PreTilt.coeff_equivPerfection_symm`: coordinate
+  extensionality and coordinate formulas for `PreTilt.equivPerfection`.
+* `PreTilt.coeff_eq_zero_iff`: in `PreTilt O p`, each coordinate detects zero when `O ⧸ p` is
+  reduced.
 * `TauCeti.dvd_of_compatible_roots`: in a compatible root sequence, later roots divide earlier ones.
 -/
 
@@ -47,6 +56,14 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   have hf := coeffMonoidHom_pow_p_pow f 0 n
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
+
+/-- The `n`-th coordinate of `Perfection.lift p k R φ x` is `φ` applied to the `p ^ n`-th root of
+`x` in the perfect ring `k`. -/
+theorem coeff_lift_apply [Fact p.Prime] {k R : Type*} [CommSemiring k] [CharP k p]
+    [PerfectRing k p] [CommSemiring R] [CharP R p] (φ : k →+* R) (n : ℕ) (x : k) :
+    coeff R p n (lift p k R φ x) = φ ((iterateFrobeniusEquiv k p n).symm x) := by
+  rw [iterateFrobeniusEquiv_symm, RingAut.coe_pow]
+  rfl
 
 section Reduced
 
@@ -72,12 +89,35 @@ end Perfection
 namespace PreTilt
 
 variable {O : Type*} [CommRing O] {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : O)]
-  [IsReduced (ModP O p)]
+
+/-- Two elements of `PreTilt O p` are equal if all of their `ModP O p` coordinates agree. -/
+@[ext]
+theorem ext {f g : PreTilt O p} (h : ∀ n, coeff n f = coeff n g) : f = g :=
+  Perfection.ext h
+
+/-- The ring isomorphism `PreTilt O p ≃+* Perfection (ModP O p) p`. -/
+def equivPerfection : PreTilt O p ≃+* Perfection (ModP O p) p :=
+  RingEquiv.refl (Perfection (ModP O p) p)
+
+/-- `PreTilt.equivPerfection` preserves coordinates in `ModP O p`. -/
+@[simp]
+theorem coeff_equivPerfection (x : PreTilt O p) (n : ℕ) :
+    Perfection.coeff (ModP O p) p n (equivPerfection x) = coeff n x := by
+  rw [equivPerfection, coeff_def]
+  rfl
+
+/-- `PreTilt.equivPerfection.symm` preserves coordinates in `ModP O p`. -/
+@[simp]
+theorem coeff_equivPerfection_symm (x : Perfection (ModP O p) p) (n : ℕ) :
+    coeff n (equivPerfection.symm x) = Perfection.coeff (ModP O p) p n x := by
+  rw [equivPerfection, coeff_def]
+  rfl
 
 /-- **If `O ⧸ p` is reduced, each coordinate of the tilt detects zero.** For `f` in
 `PreTilt O p`, `coeff n f = 0` if and only if `f = 0`. -/
 @[simp]
-theorem coeff_eq_zero_iff (n : ℕ) {f : PreTilt O p} : coeff n f = 0 ↔ f = 0 :=
+theorem coeff_eq_zero_iff [IsReduced (ModP O p)] (n : ℕ) {f : PreTilt O p} :
+    coeff n f = 0 ↔ f = 0 :=
   -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
   Perfection.coeff_eq_zero_iff (R := ModP O p) n
 

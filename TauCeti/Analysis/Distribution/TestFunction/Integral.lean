@@ -57,6 +57,8 @@ zero, by Mathlib's integration by parts against the constant function `1`.
 * `TestFunction.neg_integral_smul_neg_add_eq`: the integral of a test function against the
   right-hand side `-(f + ∑ᵢⱼ Gᵢⱼ)` of a weak derivative equation.
 
+* `TestFunction.integral_smul_congr_of_eqOn`: `∫ φ • g₁ ∂μ = ∫ φ • g₂ ∂μ` whenever `g₁ = g₂` on `Ω`.
+
 * `TestFunction.integrable_inner_subtype`: the pairing `⟪φ x, v x⟫` of a test vector field with a
   locally integrable field is integrable.
 
@@ -162,6 +164,15 @@ theorem neg_integral_smul_neg_add_eq [OpensMeasurableSpace E] {κ κ' : Type*} [
     simp only [smul_eq_mul, mul_comm]
   · exact Finset.sum_congr rfl fun i _ => integral_finsetSum _ fun j _ => hIG i j
 
+/-- Integrating against a test function on `Ω` only sees the integrand on `Ω`: if `g₁ = g₂` on `Ω`,
+then `∫ φ • g₁ ∂μ = ∫ φ • g₂ ∂μ`. -/
+theorem integral_smul_congr_of_eqOn (φ : 𝓓^{n}(Ω, ℝ)) {μ : Measure E} {g₁ g₂ : E → F}
+    (h : Set.EqOn g₁ g₂ Ω) : ∫ x, (φ : E → ℝ) x • g₁ x ∂μ = ∫ x, (φ : E → ℝ) x • g₂ x ∂μ := by
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  by_cases hx : x ∈ (Ω : Set E)
+  · simp only [h hx]
+  · simp [φ.zero_on_compl hx]
+
 section InnerPairing
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [OpensMeasurableSpace E]
@@ -181,7 +192,7 @@ theorem enorm_integral_inner_le_withDensity {U : Set E} (hU : MeasurableSet U)
       m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' U) := by
   rw [withDensity_apply _ (hU.preimage measurable_subtype_coe),
     ← lintegral_indicator (hU.preimage measurable_subtype_coe)]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
   by_cases hx : x ∈ ((↑) ⁻¹' U : Set Ω)
   · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans

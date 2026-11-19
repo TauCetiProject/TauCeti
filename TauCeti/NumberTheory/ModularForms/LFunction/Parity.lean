@@ -59,11 +59,11 @@ theorem neg_one_pow_analyticRank (hf : f.IsSelfDual) (hk : 0 < k) :
     rw [horder]
     exact f.analyticOrderAt_L_ne_top hk _
   have hF := (CuspForm.differentiable_frickeCompletedL f.toCuspForm
-    (N.toPNat (NeZero.pos N)) hk).analyticAt ((k : ℂ) / 2)
+    (N.toPNat (NeZero.pos N))).analyticAt ((k : ℂ) / 2)
   have hreflect := hF.neg_one_pow_analyticOrderNatAt_eq_of_reflection hfinite
         (Filter.Eventually.of_forall fun s ↦ by
           have hcenter : 2 * ((k : ℂ) / 2) = k := by ring
-          simpa only [hcenter, smul_eq_mul] using hf.frickeCompletedL_sub_eq hk s)
+          simpa only [hcenter, smul_eq_mul] using hf.frickeCompletedL_sub_eq s)
   simpa only [analyticRank_def, analyticOrderNatAt, horder] using hreflect
 
 /-- A self-dual newform has even analytic rank exactly when its root number is `1`. -/

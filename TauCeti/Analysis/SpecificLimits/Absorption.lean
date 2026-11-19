@@ -231,7 +231,7 @@ Then `(R - r)² k(r)` is bounded by `R² a₀` and `z` alone. The proof absorbs 
 `sup (R - σ) h(σ)` and `sup (R - σ)² k(σ)` over `0 < σ < R`, applying both inequalities at `σ` and
 the midpoint `(σ + R) / 2`. -/
 theorem sq_mul_le_of_forall_le {R z a₀ K cA cB N : ℝ} {k h y : ℝ → ℝ} (hR0 : 0 < R)
-    (hz0 : 0 ≤ z) (ha₀ : 0 ≤ a₀) (hK1 : 1 ≤ K) (hcA : 0 ≤ cA) (hcB : 0 ≤ cB) (hN : 0 ≤ N)
+    (ha₀ : 0 ≤ a₀) (hK1 : 1 ≤ K) (hcA : 0 ≤ cA) (hcB : 0 ≤ cB) (hN : 0 ≤ N)
     (hk0 : ∀ σ, 0 ≤ k σ) (hh0 : ∀ σ, 0 ≤ h σ) (hkR : ∀ σ ∈ Set.Ioo 0 R, k σ ≤ k R)
     (hhR : ∀ σ ∈ Set.Ioo 0 R, h σ ≤ h R) (hyz : ∀ σ ∈ Set.Ioo 0 R, y σ ≤ z)
     (hA : ∀ {s t : ℝ}, 0 < s → s < t → t ≤ R →
@@ -241,6 +241,28 @@ theorem sq_mul_le_of_forall_le {R z a₀ K cA cB N : ℝ} {k h y : ℝ → ℝ} 
     {r : ℝ} (hr : 0 < r) (hrR : r < R) :
     (R - r) ^ 2 * k r ≤
       2 * (R ^ 2 * a₀) + (8 * cA + 256 * cA ^ 2 * N + 16 * cA * N * (4 * cB + 1)) * K ^ 2 * z := by
+  -- A negative `z` is excluded by `hA` unless `cA = 0`, and then `hA` gives the bound directly.
+  by_cases hz0 : 0 ≤ z
+  swap
+  · rcases hcA.eq_or_lt with rfl | hcApos
+    · have h1 : k r ≤ a₀ := by simpa using hA hr hrR le_rfl
+      calc (R - r) ^ 2 * k r ≤ R ^ 2 * a₀ :=
+            mul_le_mul (pow_le_pow_left₀ (by linarith) (by linarith) 2) h1 (hk0 r) (sq_nonneg R)
+        _ ≤ 2 * (R ^ 2 * a₀) := by nlinarith [mul_nonneg (sq_nonneg R) ha₀]
+        _ = _ := by ring
+    · exfalso
+      have hneg : K * cA * z < 0 := mul_neg_of_pos_of_neg (by positivity) (not_le.1 hz0)
+      have hc : Continuous fun u : ℝ => a₀ * u ^ 2 + K * cA * h R * u + K * cA * z := by fun_prop
+      obtain ⟨u, hu, hu0, huR⟩ := (((hc.tendsto 0).mono_left nhdsWithin_le_nhds).eventually
+        (gt_mem_nhds (by simpa using hneg))).and (Ioo_mem_nhdsGT hR0) |>.exists
+      have hstep := hA (s := R - u) (t := R) (by linarith) (by linarith) le_rfl
+      rw [sub_sub_cancel] at hstep
+      have e : a₀ * u ^ 2 + K * cA * h R * u + K * cA * z =
+          u ^ 2 * (a₀ + K * (cA / u * h R + cA / u ^ 2 * z)) := by
+        field_simp
+        ring
+      have := mul_nonneg (sq_nonneg u) ((hk0 (R - u)).trans hstep)
+      linarith
   -- The weighted suprema `Φ₁ = sup (R - σ) h(σ)` and `Φ₂ = sup (R - σ)² k(σ)` over `0 < σ < R`.
   set I := Set.Ioo (0 : ℝ) R
   have hI : R / 2 ∈ I := ⟨by positivity, by linarith⟩
@@ -336,19 +358,13 @@ theorem le_add_mul_of_le_add_of_le_add_mul_add_mul {k G F h z a K cA β γ R s t
       have := mul_le_mul_of_nonneg_left hzW hγ
       linarith
     have h2 : β * R * P + γ * R ^ 2 * W ≤ (β * R + γ * R ^ 2) * (P + W) := by
-      have hexp : (β * R + γ * R ^ 2) * (P + W) =
-          β * R * P + γ * R ^ 2 * W + (β * R * W + γ * R ^ 2 * P) := by ring
       linarith [mul_nonneg hβR hW0, mul_nonneg hγR hP0]
     rw [mul_assoc]
     exact mul_le_mul_of_nonneg_left (h1.trans h2) ha
   have haG := mul_le_mul_of_nonneg_left hG ha
   have hPW : 0 ≤ P + W := add_nonneg hP0 hW0
-  have hexp : (K + a * (β * R + γ * R ^ 2)) * ((cA + 1) * P + (cA + 1) * W) =
-      K * (cA * P + cA * W) + a * (β * R + γ * R ^ 2) * (P + W) +
-        (K * (P + W) + a * (β * R + γ * R ^ 2) * cA * (P + W)) := by ring
   have hrest : 0 ≤ K * (P + W) + a * (β * R + γ * R ^ 2) * cA * (P + W) :=
     add_nonneg (mul_nonneg hK hPW) (mul_nonneg (mul_nonneg hQ0 hcA) hPW)
-  have hdist : a * (F + β * h + γ * z) = a * F + a * (β * h + γ * z) := by ring
   linarith
 
 end TauCeti

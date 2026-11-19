@@ -34,6 +34,8 @@ than compact and the product is an open subspace, is
 * `Sym.isClosedEmbedding_ofFn_subtypeVal`: for a pairwise disjoint family of compact sets
   in a Hausdorff space, the parametrization by ordered tuples is a closed embedding.
 * `Sym.piHomeomorph`: the resulting homeomorphism with the product of the members.
+* `Sym.isClosedEmbedding_ofFn_map`: the same parametrization through continuous injective maps of
+  compact spaces with pairwise disjoint ranges.
 
 ## References
 
@@ -78,6 +80,19 @@ theorem isClosedEmbedding_ofFn_subtypeVal (hA : ∀ i, IsCompact (A i))
     IsClosedEmbedding fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
   have (i : Fin n) : CompactSpace ↥(A i) := isCompact_iff_compactSpace.1 (hA i)
   continuous_ofFn_subtypeVal.isClosedEmbedding (ofFn_subtypeVal_injective h)
+
+/-- **Disjoint embedded compact pieces give an embedded product.** If `f i : X i → α` are
+continuous injective maps of compact spaces into a Hausdorff space, with pairwise disjoint
+ranges, then `x ↦ {f₁(x₁), …, fₙ(xₙ)}` is a closed embedding of the product into the symmetric
+power. For the parametrizations of the attaching circles of a Heegaard diagram, this is the
+parametrization of the torus `T_α` by `(S¹)ⁿ`. -/
+theorem isClosedEmbedding_ofFn_map {X : Fin n → Type*} [∀ i, TopologicalSpace (X i)]
+    [∀ i, CompactSpace (X i)] {f : ∀ i, X i → α} (hc : ∀ i, Continuous (f i))
+    (hf : ∀ i, Function.Injective (f i))
+    (h : Pairwise (Function.onFun Disjoint fun i => Set.range (f i))) :
+    IsClosedEmbedding fun x : ∀ i, X i => ofFn fun i => f i (x i) :=
+  (continuous_ofFn.comp (continuous_pi fun i => (hc i).comp (continuous_apply i))).isClosedEmbedding
+    (ofFn_map_injective f hf h)
 
 /-- **The subspace `Sym.pi A` is the product of the members of the family**, for a pairwise
 disjoint family of compact sets in a Hausdorff space: the topological refinement of

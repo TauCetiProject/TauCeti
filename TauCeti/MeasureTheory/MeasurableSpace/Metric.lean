@@ -78,52 +78,26 @@ of approximation points and a measurable map assigning every point to a nearby o
 theorem exists_measurable_dist_lt (X : Type u) [PseudoMetricSpace X] [MeasurableSpace X]
     [OpensMeasurableSpace X] (hX : TotallyBounded (Set.univ : Set X)) {δ : ℝ} (hδ : 0 < δ) :
     ∃ (n : ℕ) (v : Fin n → X) (q : X → Fin n), Measurable q ∧ ∀ x, dist x (v (q x)) < δ := by
-  classical
-  cases isEmpty_or_nonempty X with
-  | inl h =>
-      let _ := h
-      exact ⟨0, isEmptyElim, isEmptyElim, measurable_of_countable _, isEmptyElim⟩
-  | inr h =>
-      let _ := h
-      obtain ⟨s, -, hs, hcover⟩ :=
-        Metric.finite_approx_of_totallyBounded (s := (Set.univ : Set X))
-          hX δ hδ
-      let t := hs.toFinset
-      set n := t.card
-      set v : Fin n → X := fun i ↦ (t.equivFin.symm i : X) with hv
-      have hcover : ∀ x : X, ∃ i : Fin n, dist x (v i) < δ := by
-        intro x
-        obtain ⟨z, hz, hxz⟩ := Set.mem_iUnion₂.1 (hcover (Set.mem_univ x))
-        have hzt : z ∈ t := by simpa [t] using hz
-        exact ⟨t.equivFin ⟨z, hzt⟩, by simpa [hv] using hxz⟩
-      have hn : 0 < n := by
-        obtain ⟨i, -⟩ := hcover (Classical.arbitrary X)
-        exact Fin.pos_iff_nonempty.2 ⟨i⟩
-      let e : ℕ → X := fun k ↦ if hk : k < n then v ⟨k, hk⟩ else Classical.arbitrary X
-      let N := n - 1
-      have hN : N < n := Nat.sub_one_lt hn.ne'
-      let nearest := MeasureTheory.SimpleFunc.nearestPtInd e N
-      set q : X → Fin n := fun x ↦
-        ⟨nearest x, (MeasureTheory.SimpleFunc.nearestPtInd_le e N x).trans_lt hN⟩ with hq
-      refine ⟨n, v, q, ?_, fun x ↦ ?_⟩
-      · refine measurable_to_countable' fun i ↦ ?_
-        have hfib : q ⁻¹' {i} = nearest ⁻¹' {i.val} := by
-          ext x
-          simp only [Set.mem_preimage, Set.mem_singleton_iff, hq]
-          constructor
-          · exact fun h ↦ congrArg Fin.val h
-          · exact fun h ↦ Fin.ext h
-        rw [hfib]
-        exact nearest.measurable (MeasurableSet.singleton i.val)
-      · obtain ⟨i, hi⟩ := hcover x
-        have hle : i.val ≤ N := Nat.le_sub_one_of_lt i.isLt
-        have hnear := MeasureTheory.SimpleFunc.edist_nearestPt_le e x hle
-        have he : e i.val = v i := by simp [e, i.isLt]
-        have hqv : v (q x) = MeasureTheory.SimpleFunc.nearestPt e N x := by
-          simp [MeasureTheory.SimpleFunc.nearestPt, hq, nearest, e,
-            (MeasureTheory.SimpleFunc.nearestPtInd_le e N x).trans_lt hN]
-        rw [← edist_lt_ofReal, hqv, edist_comm]
-        exact hnear.trans_lt (edist_lt_ofReal.2 (by simpa [he, dist_comm] using hi))
+  rcases isEmpty_or_nonempty X with h | ⟨⟨x₀⟩⟩
+  · exact ⟨0, isEmptyElim, isEmptyElim, measurable_of_countable _, isEmptyElim⟩
+  obtain ⟨s, -, hs, hcover⟩ := finite_approx_of_totallyBounded hX δ hδ
+  have := hs.to_subtype
+  obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin s
+  have hcover (x : X) : ∃ i : Fin n, dist x (e.symm i) < δ := by
+    obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.1 (hcover (mem_univ x))
+    exact ⟨e ⟨z, hz⟩, by simpa using hxz⟩
+  have : NeZero n := ⟨fun hn ↦ (hn ▸ (hcover x₀).choose).elim0⟩
+  -- enumerate the approximation points along `ℕ` and take the index of a nearest one
+  set v : ℕ → X := fun k ↦ e.symm (Fin.ofNat n k) with hv
+  set r := MeasureTheory.SimpleFunc.nearestPtInd v n
+  refine ⟨n, fun i ↦ e.symm i, fun x ↦ Fin.ofNat n (r x),
+    (measurable_of_countable (Fin.ofNat n)).comp r.measurable, fun x ↦ ?_⟩
+  obtain ⟨i, hi⟩ := hcover x
+  have hle : edist (v (r x)) x ≤ edist (v i) x := by
+    simpa [MeasureTheory.SimpleFunc.nearestPt] using
+      MeasureTheory.SimpleFunc.edist_nearestPt_le v x i.isLt.le
+  rw [← edist_lt_ofReal, edist_comm]
+  exact hle.trans_lt (by simpa [hv, edist_comm, edist_lt_ofReal] using hi)
 
 /-- **A measurable partition of a totally bounded set into small cells.** In a pseudometric space
 whose open sets are measurable, a measurable totally bounded set `s` admits, for every `δ > 0`, a
@@ -135,10 +109,8 @@ theorem _root_.TotallyBounded.exists_measurable_dist_lt {X : Type u} [PseudoMetr
     ∃ (n : ℕ) (q : X → Fin (n + 1)), Measurable q ∧ (∀ x, q x = Fin.last n ↔ x ∉ s) ∧
       ∀ x ∈ s, ∀ y ∈ s, q x = q y → dist x y < δ := by
   classical
-  have hs' : TotallyBounded (univ : Set s) := by
-    have :=
-      totallyBounded_preimage (isUniformEmbedding_subtype_val (p := (· ∈ s))).isUniformInducing hs
-    rwa [Subtype.coe_preimage_self] at this
+  have hs' : TotallyBounded (univ : Set s) :=
+    (totallyBounded_image_iff isUniformEmbedding_subtype_val.isUniformInducing).1 (by simpa)
   obtain ⟨n, v, r, hr, hrv⟩ := TauCeti.exists_measurable_dist_lt s hs' (half_pos hδ)
   refine ⟨n, fun x ↦ if hx : x ∈ s then (r ⟨x, hx⟩).castSucc else Fin.last n,
     ((measurable_of_countable Fin.castSucc).comp hr).dite measurable_const hsm,
@@ -207,11 +179,8 @@ theorem _root_.IsCompact.exists_enorm_sub_sum_indicator_le {α β E : Type*} [Me
         rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
         exact (hPs i hi).2)
       simpa using h.le
-    · rw [hK0 x y fun h ↦ hy h.2, hK0 (c i) y fun h ↦ hy h.2, sub_zero, ← ofReal_norm,
-        norm_zero, ENNReal.ofReal_zero]
-      exact zero_le
-  · rw [Finset.sum_eq_zero fun i _ ↦ indicator_of_notMem (fun h ↦ hx (hPs i h).1) _,
-      hK0 x y fun h ↦ hx h.1, sub_zero, ← ofReal_norm, norm_zero, ENNReal.ofReal_zero]
-    exact zero_le
+    · simp [hK0 x y fun h ↦ hy h.2, hK0 (c i) y fun h ↦ hy h.2]
+  · simp [Finset.sum_eq_zero fun i _ ↦ indicator_of_notMem (fun h ↦ hx (hPs i h).1) _,
+      hK0 x y fun h ↦ hx h.1]
 
 end TauCeti

@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
 public import TauCeti.Combinatorics.Hypergraph.Colored.Counting
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Density
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Density
-public import TauCeti.Data.Fintype.CardEmbedding
+public import TauCeti.Data.Fintype.Card.Embedding
 import TauCeti.Order.Partition.Pi
 import Mathlib.Data.Rat.BigOperators
 import Mathlib.Data.Rat.Cast.Order
@@ -264,6 +264,13 @@ theorem polyad_color₀₂ :
 @[simp]
 theorem polyad_color₁₂ : (ψ.polyad i j l hij hjl).color₁₂ = ψ.pairColor ⟨(j, l), hjl⟩ :=
   Polyad3.ofData_color₁₂ ..
+
+/-- The support of the polyad of a triple of vertices has at most as many elements as the product
+of the sizes of the vertex cells at the three vertices. -/
+theorem card_support_polyad_le :
+    #(ψ.polyad i j l hij hjl).support ≤
+      #(φ.vertexCell i) * #(φ.vertexCell j) * #(φ.vertexCell l) := by
+  simpa only [polyad_c₀, polyad_c₁, polyad_c₂] using (ψ.polyad i j l hij hjl).card_support_le
 
 end PairColorPlacement3
 

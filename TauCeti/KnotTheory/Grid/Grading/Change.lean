@@ -60,10 +60,7 @@ marking-local because the state self-pairing cancels there.
 
 ## References
 
-This supplies the rectangle grading-change part of
-`TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.2, "Gradings. The `J`-function,
-`M_O`, `M_X`, `A`; integer-valuedness of `A`; grading-change formulas across a rectangle." The
-formulas follow the `J`-function bookkeeping in Ozsváth--Stipsicz--Szabó, *Grid Homology for
+The formulas follow the `J`-function bookkeeping in Ozsváth--Stipsicz--Szabó, *Grid Homology for
 Knots and Links*, Chapters 3 and 4.
 -/
 

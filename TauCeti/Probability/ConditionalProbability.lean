@@ -12,6 +12,8 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
+public import TauCeti.MeasureTheory.Measure.Support
+public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 /-!
 # Conditional measures and the law of total probability
@@ -29,7 +31,9 @@ singletons, where the finite sum of measures becomes `MeasureTheory.Measure.sum`
 zero contribute nothing, so no positivity hypothesis on the fibres is needed.
 
 Conditioning on almost-everywhere equal events gives equal conditional measures, and a function
-bounded on a measurable event is integrable for the conditional measure on it. A measurable map
+bounded on a measurable event is integrable for the conditional measure on it. Conditioning a
+measure on any set on which its restriction has null singletons preserves null singletons. A
+measurable map
 that scales measure by a constant factor carries conditional measures to conditional measures.
 Conditional measures also depend measurably on a measurable family of finite measures and a
 jointly measurable family of conditioning events. In particular, conditioning between measurable
@@ -48,11 +52,14 @@ recovers the law.
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
 * `ProbabilityTheory.cond_congr_ae`
+* `ProbabilityTheory.instNullSingletonClass_cond`
 * `MeasureTheory.Measure.toNNReal_smul_integral_cond_eq_setIntegral`
 * `Measurable.cond`, `Measurable.cond_const`, and `Measurable.cond_preimage_Ioc` (with the
   corresponding `Icc`, `Ioo`, and `Ico` forms)
 * `ProbabilityTheory.integrable_cond_of_norm_le`
+* `MeasurableEmbedding.map_cond`
 * `ProbabilityTheory.map_cond_preimage`
+* `ProbabilityTheory.cond_univ_restrict`
 * `ProbabilityTheory.cond_compl_singleton_real`,
   `ProbabilityTheory.cond_compl_singleton_real_singleton`,
   `ProbabilityTheory.integrable_cond_compl_singleton_iff`,
@@ -68,9 +75,29 @@ public section
 open MeasureTheory Set
 open scoped ENNReal NNReal
 
+/-- On a discrete space, conditioning on a finite-mass event retains precisely the original
+support points in that event. A null event gives empty support. -/
+theorem MeasureTheory.Measure.support_cond {X : Type*} [TopologicalSpace X]
+    [DiscreteTopology X] [MeasurableSpace X] [MeasurableSingletonClass X]
+    (μ : Measure X) (s : Set X) (hμs : μ s ≠ ⊤) :
+    (ProbabilityTheory.cond μ s).support = μ.support ∩ s := by
+  rw [ProbabilityTheory.cond,
+    Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr hμs)]
+  ext x
+  simp only [Measure.mem_support_iff_measure_singleton_pos, Set.mem_inter_iff,
+    Measure.restrict_apply (measurableSet_singleton x)]
+  by_cases hx : x ∈ s <;> simp [hx]
+
 namespace ProbabilityTheory
 
 variable {Ω β : Type*} [MeasurableSpace Ω] [MeasurableSpace β]
+
+/-- Conditioning a measure whose restriction to `s` has null singletons preserves null singletons,
+including when `s` has zero or infinite mass or `μ` has atoms outside `s`. -/
+instance instNullSingletonClass_cond {μ : Measure Ω} {s : Set Ω}
+    [NullSingletonClass (μ.restrict s)] : NullSingletonClass (μ[|s]) := by
+  rw [cond]
+  infer_instance
 
 /-- Conditioning on almost-everywhere equal events gives equal conditional measures. -/
 theorem cond_congr_ae {μ : Measure Ω} {s t : Set Ω} (h : s =ᵐ[μ] t) :
@@ -215,6 +242,14 @@ theorem integrable_cond_of_norm_le {E : Type*} [NormedAddCommGroup E] {μ : Meas
   rw [hx]
   exact not_lt.1 hx'
 
+/-- A measurable embedding carries a conditional measure to the image measure conditioned on the
+image of the event. The event need not be measurable. -/
+theorem _root_.MeasurableEmbedding.map_cond {μ : Measure Ω} {f : Ω → β}
+    (hf : MeasurableEmbedding f) (s : Set Ω) :
+    (μ[|s]).map f = (μ.map f)[|f '' s] := by
+  rw [cond, Measure.map_smul _ hf.measurable.aemeasurable, cond, hf.map_apply,
+    hf.restrict_map, preimage_image_eq _ hf.injective]
+
 /-- A measurable map that scales measure by a constant factor transports conditional measures:
 if `μ (f ⁻¹' A) = k * ν A` for every measurable `A`, with `k ≠ 0` finite, then `f` carries `μ`
 conditioned on `f ⁻¹' t` to `ν` conditioned on `t`. Translations and linear isometries of a
@@ -349,6 +384,11 @@ theorem integral_cond_compl_singleton_of_eq_zero {E : Type*} [NormedAddCommGroup
 
 end ComplSingleton
 
+/-- Conditioning the restriction of a measure to `s` on the whole space is conditioning on `s`. -/
+@[simp]
+theorem cond_univ_restrict (μ : Measure Ω) (s : Set Ω) : (μ.restrict s)[|univ] = μ[|s] := by
+  rw [cond, cond, Measure.restrict_apply_univ, Measure.restrict_univ]
+
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure
@@ -386,7 +426,7 @@ theorem tvDist_cond_self {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
       · rw [ProbabilityTheory.cond, Measure.restrict_smul, Measure.restrict_restrict hA,
           inter_self]
         apply Measure.le_iff.mpr
-        intro B hB
+        intro B _
         rw [_root_.smul_apply, smul_eq_mul]
         have hi : 1 ≤ (μ A)⁻¹ := by
           simpa using ENNReal.inv_le_inv.mpr (prob_le_one (μ := μ) (s := A))

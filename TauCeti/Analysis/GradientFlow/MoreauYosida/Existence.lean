@@ -161,7 +161,6 @@ theorem edist_sq_div_le_add (hττ₀ : τ < τ₀) (x x₀ z : X) :
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
     ENNReal.coe_toReal, ENNReal.toReal_sub_of_le (ENNReal.coe_le_coe.2 hττ₀.le)
       ENNReal.coe_ne_top]
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hτ)
   have hsr : (0 : ℝ) < τ₀ - τ := sub_pos.2 (NNReal.coe_lt_coe.2 hττ₀)
   calc (edist x₀ z).toReal ^ 2 / (2 * τ₀)
       ≤ ((edist x x₀).toReal + (edist x z).toReal) ^ 2 / (2 * τ₀) := by gcongr
@@ -240,15 +239,12 @@ private theorem toReal_edist_sq_mul_le (hττ' : τ < τ') {A B : ℝ}
   have hτ' : 0 < τ' := zero_le.trans_lt hττ'
   have hP' : edist x v ^ 2 / (2 * τ') ≠ ⊤ :=
     ENNReal.div_ne_top (by finiteness) (by simp [hτ'.ne'])
-  have hA' := hA ▸ moreauYosida_le φ τ' hv
   have htop : φ v ≠ ⊤ := by
     rintro h
     rw [h, EReal.top_add_of_ne_bot (EReal.coe_ennreal_ne_bot _), top_le_iff] at hB
     exact EReal.coe_ne_top _ hB
-  have hbot : φ v ≠ ⊥ := by
-    rintro h
-    rw [h, EReal.bot_add, le_bot_iff] at hA'
-    exact EReal.coe_ne_bot _ hA'
+  have hbot : φ v ≠ ⊥ := apply_ne_bot_of_moreauYosida_ne_bot hv (hA ▸ EReal.coe_ne_bot A)
+  have hA' := hA ▸ moreauYosida_le φ τ' hv
   obtain ⟨a, ha⟩ : ∃ a : ℝ, φ v = a := ⟨_, (EReal.coe_toReal htop hbot).symm⟩
   -- With `τ = 0` the penalty is `⊤` away from `x`, so `v` is at distance `0` from `x`.
   rcases eq_or_ne τ 0 with rfl | hτ
@@ -264,7 +260,6 @@ private theorem toReal_edist_sq_mul_le (hττ' : τ < τ') {A B : ℝ}
   rw [ha, EReal.coe_le_coe_add_coe_ennreal_iff hP'] at hA'
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
     ENNReal.coe_toReal] at hB hA'
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   have hττ'r : (τ : ℝ) < τ' := NNReal.coe_lt_coe.2 hττ'
   have key : (edist x v).toReal ^ 2 * (τ' - τ) / (2 * τ * τ') ≤ B - A := by
     have : (edist x v).toReal ^ 2 * (τ' - τ) / (2 * τ * τ') =

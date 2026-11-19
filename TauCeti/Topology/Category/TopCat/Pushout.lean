@@ -12,6 +12,7 @@ import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Pullbacks
 import Mathlib.CategoryTheory.Limits.Types.Pushouts
 import Mathlib.Topology.LocallyFinite
+import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 
 /-!
 # Maps and homotopies out of pushouts in `TopCat`
@@ -39,10 +40,14 @@ closed embedding.
   compatible maps out of `I × Y` and `I × Z`.
 * `CategoryTheory.IsPushout.homotopyDesc`: the homotopy between maps out of `P` glued from
   compatible homotopies of their restrictions to `Y` and to `Z`.
+* `TopCat.sigmaCylinderDesc`: the map out of the cylinder `I × ∐ⱼ F j` glued from maps out of the
+  cylinders `I × F j`.
 * `TopCat.exists_glue_of_isClosedEmbedding`: maps out of the pieces of a finite closed cover which
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
+* `CategoryTheory.IsPushout.of_isClosedEmbedding_of_range_union_range`: a cover by two closed
+  subspaces meeting along a prescribed subspace is a pushout square.
 * `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`,
   `TauCeti.TopCat.exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma`: every point of a pushout of
   `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`.
@@ -150,6 +155,34 @@ open CategoryTheory Set Topology
 
 universe u
 
+section Sigma
+
+open Limits
+
+variable {J : Type u} (F : J → TopCat.{u})
+
+/-- Every point of a coproduct in `TopCat` lies in the image of one of the coprojections. -/
+theorem exists_sigma_ι_eq (z : (∐ F : TopCat.{u})) : ∃ j x, Sigma.ι F j x = z :=
+  let ⟨⟨j⟩, x, hx⟩ := Concrete.colimit_exists_rep _ z; ⟨j, x, hx⟩
+
+variable {W : Type u} [TopologicalSpace W] {F}
+
+/-- The map `I × ∐ⱼ F j → W` which is `C j` on the cylinder `I × F j`: the uncurried form of the
+map `∐ⱼ F j → C(I, W)` glued from the curried maps. -/
+def sigmaCylinderDesc (C : ∀ j, C(I × F j, W)) : C(I × (∐ F : TopCat.{u}), W) :=
+  (Sigma.desc fun j ↦ TopCat.ofHom ((C j).comp ContinuousMap.prodSwap).curry :
+    (∐ F) ⟶ TopCat.of C(I, W)).hom.uncurry.comp ContinuousMap.prodSwap
+
+@[simp]
+theorem sigmaCylinderDesc_ι (C : ∀ j, C(I × F j, W)) (t : I) (j : J) (x : F j) :
+    sigmaCylinderDesc C (t, Sigma.ι F j x) = C j (t, x) := by
+  have hx := ConcreteCategory.congr_hom
+    (Sigma.ι_comp_desc (fun j ↦ TopCat.ofHom ((C j).comp ContinuousMap.prodSwap).curry :
+      ∀ j, F j ⟶ TopCat.of C(I, W)) j) x
+  exact congrArg (fun g : C(I, W) ↦ g t) hx
+
+end Sigma
+
 /-- **Gluing along a finite closed cover.** Let `X` be covered by the ranges of a closed embedding
 `i : A ⟶ X` and of finitely many closed embeddings `j k : B k ⟶ X`, any two of which meet only
 inside the range of `i`. Maps `a : A ⟶ Y` and `b k : B k ⟶ Y` which agree wherever `i` meets
@@ -249,6 +282,26 @@ theorem of_isClosedEmbedding (w : ∀ k, g k ≫ i = m k ≫ j k) (hi : IsClosed
       rw [Sigma.ι_comp_desc_assoc] at hk
       rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, hk,
         (desc s).choose_spec.2 k]
+
+/-- **A cover by two closed subspaces is a pushout.** Let `X` be covered by the ranges of two
+closed embeddings `i : A ⟶ X` and `j : B ⟶ X` which meet exactly along `S`: the square
+`g ≫ i = m ≫ j` commutes, and every point `i a = j b` comes from a point `s` of `S` with `g s = a`
+and `m s = b`. Then `X` is the pushout of `A` and `B` along `S`. This is the one-piece case of
+`CategoryTheory.IsPushout.of_isClosedEmbedding`, without the coproducts. -/
+theorem of_isClosedEmbedding_of_range_union_range {S A B X : TopCat.{u}} {g : S ⟶ A}
+    {m : S ⟶ B} {i : A ⟶ X} {j : B ⟶ X} (w : g ≫ i = m ≫ j) (hi : IsClosedEmbedding i)
+    (hj : IsClosedEmbedding j) (hcover : range i ∪ range j = univ)
+    (hij : ∀ a b, i a = j b → ∃ s, g s = a ∧ m s = b) :
+    IsPushout g m i j := by
+  let desc (s : PushoutCocone g m) : X ⟶ s.pt :=
+    TopCat.ofHom (ContinuousMap.glueClosedEmbeddings s.inl.hom s.inr.hom hi hj hcover
+      fun a b h ↦ by
+        obtain ⟨t, rfl, rfl⟩ := hij a b h
+        exact ConcreteCategory.congr_hom s.condition t)
+  refine IsPushout.of_isColimit' ⟨w⟩ (PushoutCocone.IsColimit.mk w desc
+    (fun s ↦ by ext; simp [desc]) (fun s ↦ by ext; simp [desc]) fun s d h₁ h₂ ↦
+      TopCat.hom_ext (ContinuousMap.eq_glueClosedEmbeddings (ConcreteCategory.congr_hom h₁)
+        (ConcreteCategory.congr_hom h₂)))
 
 end ClosedCover
 

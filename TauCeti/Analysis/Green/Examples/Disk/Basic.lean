@@ -34,7 +34,7 @@ local notation "D" => closedBall (0 : ℂ) 1
 local notation "B" => ModelWithCorners.boundary (I := (𝓡∂ (1 + 1))) D
 local notation "E₁" => EuclideanSpace ℝ (Fin 1)
 
-local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D (by simp)
+local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D
 
 /-- Green's formula on the actual closed-disk manifold and its counterclockwise induced
 boundary. Both integrabilities follow from the global manifold comparison theorem. -/
@@ -48,7 +48,7 @@ theorem green_unitDisk (P Q : ℂ → ℝ) (hP : ContDiff ℝ 1 P) (hQ : ContDif
   classical
   let o := Manifold.Orientation.closedBall (n := 2) Complex.basisOneI.orientation
   have hparam (z : E₁) : ∃ e : E₁ ≃L[ℝ] TangentSpace (𝓡 1)
-      (unitDiskBoundaryLoop.extend (z 0)), ∀ hz : z 0 ∈ Ioo (0 : ℝ) 1,
+      (unitDiskBoundaryLoop.extend (z 0)), ∀ _ : z 0 ∈ Ioo (0 : ℝ) 1,
       HasMFDerivAt (𝓡 1) (𝓡 1) (fun w : E₁ ↦ unitDiskBoundaryLoop.extend (w 0)) z
         (e.toContinuousLinearMap.comp (NormedSpace.fromTangentSpace z).toContinuousLinearMap) ∧
       Orientation.map (Fin 1) e.toLinearEquiv

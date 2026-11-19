@@ -39,6 +39,8 @@ The trace is the contraction of the bilinear map `∇²σ` against the canonical
 
 * `CovariantDerivative.roughLaplacian`: the rough Laplacian `∇*∇ σ` at a point.
 * `CovariantDerivative.roughLaplacian_eq_sum`: its value in an orthonormal basis.
+* `CovariantDerivative.roughLaplacian_eq_zero_of_apply_eq_zero`: parallel sections have zero rough
+  Laplacian.
 * `CovariantDerivative.roughLaplacian_smul_smul_sub`: the double commutator of `∇*∇` with
   multiplication by two functions is `-2 ⟪grad f, grad g⟫ σ`.
 * `CovariantDerivative.roughLaplacian_smul`: the Leibniz rule for the rough Laplacian of the
@@ -113,16 +115,18 @@ theorem roughLaplacian_add {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hτ 
   simp only [roughLaplacian, secondCovariantDerivative_add cov covT hσ hτ x, map_add,
     LinearMap.add_apply, neg_add]
 
-/-- The rough Laplacian commutes with multiplication of a smooth section by a constant. -/
-theorem roughLaplacian_const_smul (c : ℝ) (hσ : CMDiff ∞ (T% σ)) (x : M) :
+/-- The rough Laplacian commutes with multiplication of a section by a constant. -/
+@[simp]
+theorem roughLaplacian_const_smul (c : ℝ) (x : M) :
     cov.roughLaplacian covT (c • σ) x = c • cov.roughLaplacian covT σ x := by
-  simp only [roughLaplacian, secondCovariantDerivative_const_smul cov covT c hσ x, map_smul,
+  simp only [roughLaplacian, secondCovariantDerivative_const_smul cov covT c x, map_smul,
     LinearMap.smul_apply, smul_neg]
 
-/-- The rough Laplacian commutes with negation of a smooth section. -/
-theorem roughLaplacian_neg (hσ : CMDiff ∞ (T% σ)) (x : M) :
+/-- The rough Laplacian commutes with negation of a section. -/
+@[simp]
+theorem roughLaplacian_neg (x : M) :
     cov.roughLaplacian covT (-σ) x = -cov.roughLaplacian covT σ x := by
-  simpa using roughLaplacian_const_smul cov covT (-1) hσ x
+  rw [← neg_one_smul ℝ σ, roughLaplacian_const_smul, neg_one_smul]
 
 /-- The rough Laplacian commutes with differences of smooth sections. -/
 theorem roughLaplacian_sub {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hτ : CMDiff ∞ (T% τ))
@@ -131,8 +135,19 @@ theorem roughLaplacian_sub {τ : Π y : M, V y} (hσ : CMDiff ∞ (T% σ)) (hτ 
       cov.roughLaplacian covT σ x - cov.roughLaplacian covT τ x := by
   have hτ' : CMDiff ∞ (T% (-τ)) := by
     simpa using (hτ.const_smul_section (a := (-1 : ℝ)) :)
-  rw [sub_eq_add_neg, roughLaplacian_add cov covT hσ hτ' x, roughLaplacian_neg cov covT hτ x,
+  rw [sub_eq_add_neg, roughLaplacian_add cov covT hσ hτ' x, roughLaplacian_neg cov covT x,
     sub_eq_add_neg]
+
+/-- The rough Laplacian of a smooth parallel section is zero: `∇σ = 0` implies `∇*∇ σ = 0`. -/
+theorem roughLaplacian_eq_zero_of_apply_eq_zero (hσ : CMDiff ∞ (T% σ)) (h : cov σ = 0) :
+    cov.roughLaplacian covT σ = 0 := by
+  funext x
+  rw [cov.roughLaplacian_eq_sum covT σ x (stdOrthonormalBasis ℝ _)]
+  refine neg_eq_zero.2 (Finset.sum_eq_zero fun i _ ↦ ?_)
+  obtain ⟨W, hW, hWx⟩ := exists_contMDiff_section_eq I E ∞ (stdOrthonormalBasis ℝ _ i)
+  have hW0 : (fun y ↦ cov σ y (W y)) = 0 := funext fun y ↦ by simp [h]
+  rw [← hWx, cov.secondCovariantDerivative_apply covT hσ x hW, hW0]
+  simp [h]
 
 /-- **The principal symbol of the rough Laplacian.** For smooth functions `f`, `g` and a smooth
 section `σ`, the double commutator of `∇*∇` with multiplication by `f` and `g` is
@@ -226,7 +241,7 @@ theorem roughLaplacian_trivial (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x : M) :
   set one : Π y : M, Trivial M ℝ y := fun _ ↦ (1 : ℝ)
   have hone : ContMDiff I (I.prod 𝓘(ℝ, ℝ)) ∞ (fun y ↦ (⟨y, one y⟩ : TotalSpace ℝ (Trivial M ℝ))) :=
     fun y ↦ by
-      simp only [contMDiffAt_section, Trivial.fiberBundle_trivializationAt',
+      simp only [contMDiffAt_section_iff, Trivial.fiberBundle_trivializationAt',
         Trivial.trivialization_apply]
       exact contMDiffAt_const
   have hpar (y : M) : trivial (I := I) ℝ one y = 0 := by

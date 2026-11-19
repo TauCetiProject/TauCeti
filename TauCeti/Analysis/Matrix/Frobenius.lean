@@ -23,6 +23,8 @@ and the inner product together.
 
 ## Main declarations
 
+* `Matrix.re_trace_mul_conjTranspose_self` — the real trace of `X * Xᴴ` is the sum of the
+  squared entry norms.
 * `Matrix.frobeniusInnerProductSpace` — the Frobenius inner product, compatible with
   `Matrix.frobeniusSeminormedAddCommGroup`.
 * `Matrix.frobenius_inner_def` — the inner product is the sum of the entrywise inner products.
@@ -49,6 +51,12 @@ open scoped ComplexConjugate InnerProductSpace
 namespace Matrix
 
 variable {𝕜 E m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
+
+/-- The real part of the trace of `X * Xᴴ` is the sum of the squared entry norms. -/
+theorem re_trace_mul_conjTranspose_self (X : Matrix m n 𝕜) :
+    RCLike.re (Matrix.trace (X * X.conjTranspose)) = ∑ i, ∑ j, ‖X i j‖ ^ 2 := by
+  simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
+    RCLike.star_def, RCLike.mul_conj]
 
 section Def
 
@@ -125,15 +133,15 @@ theorem frobenius_norm_sq_eq_sum_normSq (A : Matrix m n ℂ) :
 
 /-- Unitary conjugation preserves the squared Frobenius norm. -/
 theorem frobenius_norm_sq_conj_unitary {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (U A : Matrix ι ι ℂ) (hU : U ∈ Matrix.unitaryGroup ι ℂ) :
+    (U A : Matrix ι ι 𝕜) (hU : U ∈ Matrix.unitaryGroup ι 𝕜) :
     ‖Uᴴ * A * U‖ ^ 2 = ‖A‖ ^ 2 := by
   have hright : U * Uᴴ = 1 := by
     simpa only [star_eq_conjTranspose] using (mem_unitaryGroup_iff.mp hU)
-  have hnorm (B : Matrix ι ι ℂ) : ((‖B‖ ^ 2 : ℝ) : ℂ) = (Bᴴ * B).trace := by
+  have hnorm (B : Matrix ι ι 𝕜) : ((‖B‖ ^ 2 : ℝ) : 𝕜) = (Bᴴ * B).trace := by
     rw [← frobenius_inner_eq_trace_conjTranspose_mul, inner_self_eq_norm_sq_to_K]
     push_cast
-    rfl
-  apply Complex.ofReal_injective
+    ring
+  apply RCLike.ofReal_injective (K := 𝕜)
   rw [hnorm, hnorm]
   have hmul : (Uᴴ * A * U)ᴴ * (Uᴴ * A * U) = Uᴴ * (Aᴴ * A) * U := by
     simp only [conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc,

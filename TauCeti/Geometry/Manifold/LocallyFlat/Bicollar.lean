@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.HasGroupoid
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.CoordinateBall
 
 /-!
 # Locally flat embeddings are locally bicollared
@@ -40,12 +43,10 @@ an embedding that is locally bicollared. The embedding hypothesis cannot be drop
 figure-eight immersion of a line into the plane is locally bicollared and is not an embedding,
 since bicollars only see the domain locally.
 
-This is the codimension-one collaring bullet of layer 2 of the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`). What remains of that bullet is its global sphere
-conclusion: a locally flat `(n-1)`-sphere in `Sⁿ` is bicollared. That conclusion needs a genuinely
-global collaring argument and is not proved here. Positive-codimension normal bundles, the
-companion notion, are flagged by the roadmap as a dependency to be taken from elsewhere rather
-than built in this layer.
+The global statement for spheres, Brown's theorem that a locally flat `(n-1)`-sphere in `Sⁿ` is
+bicollared, needs a genuinely global collaring argument and is not proved here; it is stated in
+`TauCeti.Geometry.Manifold.LocallyFlat.Sphere`. Positive-codimension normal bundles, the
+companion notion, are not treated here.
 
 ## Main definitions
 
@@ -70,6 +71,8 @@ eliminate them downstream.
   the complement of the image inside the collar.
 * `TauCeti.IsBicollared.exists_isOpen_sdiff_range_eq_union`: a bicollared map with nonempty
   domain is two-sided.
+* `TauCeti.isBicollared_prodMkRight_of_finrank_eq_one`: a point fiber `Prod.mk x₀ : Y → X × Y` in
+  a product with a 1-manifold `X` is globally bicollared.
 * `TauCeti.IsLocallyBicollared.restrict`, `TauCeti.IsLocallyBicollared.isOpenEmbedding_comp`, and
   `TauCeti.IsLocallyBicollared.comp_homeomorph`: the local predicate's basic closure API.
 
@@ -196,6 +199,20 @@ theorem apply_mem_closure_image (h : IsBicollar f b) {s : Set ℝ} (hs : (0 : �
   rw [closure_prod_eq, closure_univ]
   exact ⟨mem_univ _, hs⟩
 
+/-- The slice of a bicollar through a point `x` of the domain, at a preconnected set `s` of
+nonzero depths, misses the collared image and so lies in a single connected component of its
+complement. -/
+theorem image_singleton_prod_subset_connectedComponentIn (h : IsBicollar f b) (x : N)
+    {s : Set ℝ} (hs : IsPreconnected s) (h0 : (0 : ℝ) ∉ s) {t : ℝ} (ht : t ∈ s) :
+    b '' ({x} ×ˢ s) ⊆ connectedComponentIn (range f)ᶜ (b (x, t)) := by
+  refine ((isPreconnected_singleton.prod hs).image b
+    h.isOpenEmbedding.continuous.continuousOn).subset_connectedComponentIn
+    (mem_image_of_mem b ⟨rfl, ht⟩) ?_
+  rintro _ ⟨⟨y, r⟩, ⟨-, hr⟩, rfl⟩ hmem
+  have : (y, r) ∈ b ⁻¹' range f := hmem
+  rw [h.preimage_range] at this
+  exact h0 (this.2 ▸ hr)
+
 /-- A bicollar restricts to a bicollar over any open subset of the domain. -/
 theorem restrict (h : IsBicollar f b) {U : Set N} (hU : IsOpen U) :
     IsBicollar (f ∘ ((↑) : U → N)) (b ∘ Prod.map ((↑) : U → N) id) where
@@ -248,6 +265,27 @@ the identity. -/
 theorem isBicollar_prodMkLeft : IsBicollar (fun x : N => (x, (0 : ℝ))) id where
   isOpenEmbedding := IsOpenEmbedding.id
   apply_zero _ := rfl
+
+/-- **A point fiber in a product with a 1-manifold is globally bicollared.** For any `x₀ : X` in a
+topological space `X` charted on a one-dimensional real normed space `H` (`Module.finrank ℝ H = 1`)
+and any topological space `Y`, the fiber inclusion `Prod.mk x₀ : Y → X × Y` admits a global
+bicollar. -/
+theorem isBicollared_prodMkRight_of_finrank_eq_one {X Y H : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [ChartedSpace H X]
+    (hH : Module.finrank ℝ H = 1) (x₀ : X) :
+    IsBicollared (Prod.mk x₀ : Y → X × Y) := by
+  have : FiniteDimensional ℝ H := .of_finrank_pos (by omega)
+  let L : ℝ ≃L[ℝ] H :=
+    (FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq
+      ((Module.finrank_self ℝ).trans hH.symm)).some
+  obtain ⟨κU, hκU, hκU0⟩ := isOpen_univ.exists_isOpenEmbedding_apply_zero_eq (E := H) (mem_univ x₀)
+  let κ : ℝ → X := Subtype.val ∘ κU ∘ L
+  have hκ : IsOpenEmbedding κ :=
+    isOpen_univ.isOpenEmbedding_subtypeVal.comp (hκU.comp L.toHomeomorph.isOpenEmbedding)
+  have hκ0 : κ 0 = x₀ := by simp [κ, hκU0]
+  refine isBicollared_iff.2 ⟨fun q ↦ (κ q.2, q.1), ?_, fun y ↦ by simp [hκ0]⟩
+  exact (Homeomorph.prodComm Y X).isOpenEmbedding.comp (IsOpenEmbedding.id.prodMap hκ)
 
 namespace IsBicollared
 

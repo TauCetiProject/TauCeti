@@ -27,7 +27,8 @@ In a real inner product space, an even lattice is integral, by polarization:
 (`ZLattice.IsEven.isIntegral`). The converse fails: `ℤ ⊆ ℝ` is unimodular, hence integral, but not
 even (`ZLattice.not_isEven_span_one`), while `√2 ℤ ⊆ ℝ` is even (`ZLattice.isEven_span_sqrt_two`).
 More generally the `ℤ`-span of an orthonormal basis, the lattice `ℤⁿ ⊆ ℝⁿ`, is unimodular
-(`ZLattice.isUnimodular_span_orthonormalBasis`).
+(`ZLattice.isUnimodular_span_orthonormalBasis`). On the other hand, `½ ℤ ⊆ ℝ` is not integral
+(`ZLattice.not_isIntegral_span_one_half`).
 
 All three predicates are invariant under linear isometry equivalences
 (`ZLattice.isIntegral_comap_iff`, `ZLattice.isEven_comap_iff`, `ZLattice.isUnimodular_comap_iff`),
@@ -116,6 +117,10 @@ theorem isEven_comap_iff [NormedSpace ℝ E] [NormedSpace ℝ F] (L : Submodule 
   simp only [isEven_iff, mem_comap, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
   refine ⟨fun h y hy ↦ ?_, fun h x hx ↦ e.norm_map x ▸ h _ hx⟩
   simpa using h (e.symm y) (by rwa [e.apply_symm_apply])
+
+/-- An even lattice is discrete: a nonzero vector has squared norm at least `2`. -/
+theorem IsEven.discreteTopology {L : Submodule ℤ E} (hL : IsEven L) : DiscreteTopology L :=
+  discreteTopology_of_norm_sq_mem_int_mul (c := 2) (by norm_num) hL
 
 variable [InnerProductSpace ℝ E] [InnerProductSpace ℝ F]
 
@@ -215,6 +220,11 @@ theorem IsEven.exists_natCast_mul_norm_add_sq_eq {L : Submodule ℤ E} (hL : IsE
   obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
   exact ⟨n + N * j, by push_cast; linear_combination (N : ℝ) * hj + hn⟩
 
+/-- The lattice `½ ℤ ⊆ ℝ` is not integral. -/
+theorem not_isIntegral_span_one_half :
+    ¬ IsIntegral (span ℤ {1 / 2} : Submodule ℤ ℝ) :=
+  mt isIntegral_iff_le_dual.mp dual_span_one_half_lt.not_ge
+
 /-! ### Unimodular lattices -/
 
 /-- A lattice is unimodular if it is equal to its dual. -/
@@ -246,7 +256,6 @@ theorem IsUnimodular.span_eq_top [FiniteDimensional ℝ E] {L : Submodule ℤ E}
     rw [real_inner_smul_left, real_inner_comm,
       Submodule.inner_right_of_mem_orthogonal (subset_span hy) hv]
     simp
-  have hnorm : (0 : ℝ) < ‖v‖ := norm_pos_iff.2 hv0
   obtain ⟨m, hm⟩ := isIntegral_iff.1 h.isIntegral _ (hmem (1 / (√2 * ‖v‖))) _
     (hmem (1 / (√2 * ‖v‖)))
   rw [real_inner_smul_left, real_inner_smul_right, real_inner_self_eq_norm_sq] at hm

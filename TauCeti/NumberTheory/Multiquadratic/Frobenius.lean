@@ -13,19 +13,19 @@ import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 # Frobenius actions on multiquadratic generators
 
 Let `K = ℚ(√d₁, …, √dₙ)` be a number field generated over `ℚ` by square roots `r i` of
-integers `d i`, and let `p` be an odd prime dividing none of the `d i`. The multiquadratic
-roadmap's Layer 1 states the splitting law in two forms: `p` splits completely iff every `d i`
-is a quadratic residue mod `p` (`NumberField.ncard_primesOver_multiquadratic_iff`),
-and, more precisely, the Frobenius at `p` acts on the generators by the Legendre symbols. This
-file supplies the second, finer form. An arithmetic Frobenius exists at every prime `Q` of
-`𝓞 K` above `p` and acts on each generator by the corresponding symbol,
+integers `d i`, and let `p` be an odd prime dividing none of the `d i`. The splitting law
+comes in two forms: `p` splits completely iff every `d i` is a quadratic residue mod `p`
+(`NumberField.ncard_primesOver_multiquadratic_iff`), and, more precisely, the Frobenius at `p`
+acts on the generators by the Legendre symbols. This file supplies the second, finer form. An
+arithmetic Frobenius exists at every prime `Q` of `𝓞 K` above `p` and acts on each generator by
+the corresponding symbol,
 
 `σ (r i) = legendreSym p (d i) • r i`
 
 (`NumberField.exists_isArithFrobAt_multiquadratic`), and the Frobenius is trivial iff
 every symbol is `1` (`isArithFrobAt_multiquadratic_eq_one_iff`).
 
-The roadmap's actual sign-vector statement — the Frobenius equals `((d₁/p), …, (dₙ/p))` under
+The sign-vector statement — the Frobenius equals `((d₁/p), …, (dₙ/p))` under
 the identification `Gal ≅ (ℤ/2)ⁿ` — is then proved for the multiquadratic field taken as the
 intermediate field `M = ℚ(√dᵢ : i) = adjoin ℚ (Set.range root)` itself, where
 `TauCeti.Multiquadratic.galoisGroupEquiv` lives (its automorphisms are of `M`, not of an
@@ -102,8 +102,8 @@ theorem exists_isArithFrobAt_multiquadratic [IsGalois ℚ K] (d : ι → ℤ) (r
 /-! ### The Frobenius as a sign vector under `Gal ≅ (ℤ/2)ⁿ`
 
 The `signPattern`/`galoisGroupEquiv` API of `TauCeti.NumberTheory.Multiquadratic.Galois.Group`
-is stated for automorphisms of the intermediate field `M = adjoin ℚ (Set.range root)`. To match
-the roadmap's `Gal(K/ℚ) ≅ (ℤ/2)ⁿ` Frobenius-vector statement we take that intermediate field
+is stated for automorphisms of the intermediate field `M = adjoin ℚ (Set.range root)`. To state
+the Frobenius as a vector under `Gal(K/ℚ) ≅ (ℤ/2)ⁿ` we take that intermediate field
 (a number field when `L` is, `NumberField.of_intermediateField`) as the multiquadratic field itself,
 and compute the Frobenius sign pattern there. Only characteristic zero of `L` is used. -/
 
@@ -156,8 +156,7 @@ theorem signPattern_frobenius (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i
 /-- **The Frobenius of a multiquadratic field is the Legendre sign vector.** Under square-class
 independence of the `dᵢ` (so `TauCeti.Multiquadratic.galoisGroupEquiv` is the identification
 `Gal(M/ℚ) ≅ (ℤ/2)ⁿ`), an arithmetic Frobenius `σ` at a prime `Q` above the odd prime `p ∤ dᵢ`
-maps to the vector of Legendre symbols `i ↦ (dᵢ/p)`. This is the roadmap's Layer 1 Frobenius
-statement. -/
+maps to the vector of Legendre symbols `i ↦ (dᵢ/p)`. -/
 theorem galoisGroupEquiv_frobenius [Finite ι] (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
     (p : ℕ) [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)

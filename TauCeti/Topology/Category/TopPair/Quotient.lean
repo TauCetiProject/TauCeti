@@ -157,6 +157,21 @@ lemma isQuotientMap_ordinaryPairQuotient (P : TopPair.{u}) :
     simp only [isClosed_sum_iff]
     constructor <;> intro h <;> exact ⟨h.1, h.2⟩
 
+/-- When the subspace is nonempty, the collapse map alone is a quotient map: the added point is
+then the image of any point of the subspace. -/
+lemma isQuotientMap_ordinaryPairQuotientπ (P : TopPair.{u}) [Nonempty P.snd] :
+    IsQuotientMap P.ordinaryPairQuotientπ := by
+  obtain ⟨b⟩ := ‹Nonempty P.snd›
+  refine isQuotientMap_iff_isClosed.2 ⟨fun z => ?_, fun s => ⟨fun hs => ?_, fun hs => ?_⟩⟩
+  · obtain h | rfl := P.exists_ordinaryPairQuotientπ_or_eq_basepoint z
+    · exact h
+    · exact ⟨P.map b, P.ordinaryPairQuotientπ_map b⟩
+  · exact hs.preimage P.ordinaryPairQuotientπ.hom.continuous
+  · refine (P.isQuotientMap_ordinaryPairQuotient.isClosed_preimage).1 ?_
+    refine isClosed_sum_iff.2 ⟨hs, ?_⟩
+    -- The other summand is a point.
+    exact isClosed_discrete _
+
 /-- Maps out of the quotient are determined by the ambient space and the basepoint. -/
 @[ext]
 lemma ordinaryPairQuotient_hom_ext {P : TopPair.{u}} {Y : TopCat.{u}}
@@ -164,7 +179,7 @@ lemma ordinaryPairQuotient_hom_ext {P : TopPair.{u}} {Y : TopCat.{u}}
     (hπ : P.ordinaryPairQuotientπ ≫ f = P.ordinaryPairQuotientπ ≫ g)
     (hpoint : f P.ordinaryPairQuotientBasepoint = g P.ordinaryPairQuotientBasepoint) : f = g := by
   apply pushout.hom_ext hπ
-  ext x
+  ext _
   exact hpoint
 
 /-- Descend an ambient map constant on the subspace, with specified value at the added point.
@@ -214,7 +229,7 @@ def ordinaryPairQuotientEmptyHomeomorph (P : TopPair.{u}) [IsEmpty P.snd] :
       rw [ordinaryPairQuotientπ_desc]
       rfl
     · exact congrArg (fun z ↦ g z) (ordinaryPairQuotientDesc_basepoint _ _ _ _)
-  · ext (x | x)
+  · ext (x | _)
     · exact ordinaryPairQuotientπ_desc_apply _ _ _ _ x
     · exact ordinaryPairQuotientDesc_basepoint _ _ _ _
 

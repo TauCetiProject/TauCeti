@@ -59,6 +59,8 @@ zigzag algebra is not intrinsically formal (`TauCeti.not_isIntrinsicallyFormal_a
 
 * `TauCeti.liuWangAffineD4Walk`: the closed walk `β₄ α₁ β₁ α₄`, as four darts in product order.
 * `TauCeti.liuWangAffineD4AInfinityAlgebra`: Liu--Wang's `A∞` algebra with scalar `c`.
+* `TauCeti.zigzagAlgebraLiuWangAffineD4`: Liu--Wang's Example 4.7 transported to the public affine
+  `D₄` zigzag algebra.
 * `TauCeti.liuWangAffineD4BacktrackPairs`: the pairs `(β₁, α₄)` and `(β₄, α₁)`, whose backtrack
   cochain bounds `m₄`.
 
@@ -75,6 +77,9 @@ zigzag algebra is not intrinsically formal (`TauCeti.not_isIntrinsicallyFormal_a
 * `TauCeti.exists_isIso_liuWangAffineD4AInfinityAlgebra` and
   `TauCeti.isFormal_liuWangAffineD4AInfinityAlgebra`: the algebra is `A∞` isomorphic to the strict
   zigzag algebra, and formal.
+* `TauCeti.isZigzagAInfinityDeformation_zigzagAlgebraLiuWangAffineD4` and
+  `TauCeti.isFormal_zigzagAlgebraLiuWangAffineD4`: the transported algebra is a formal minimal
+  strictly unital `A∞` deformation of the public affine `D₄` zigzag algebra.
 * `TauCeti.not_exists_hochschildDifferential_eq_obstruction_liuWangAffineD4Walk` and
   `TauCeti.not_hochschildVanishesAt_four_affineD4`: the loop operation of the walk alone is not a
   Hochschild coboundary, so `HH^{4, -2}` of the affine `D₄` zigzag algebra is nonzero.
@@ -325,7 +330,7 @@ theorem exists_isIso_liuWangAffineD4AInfinityAlgebra (c : k) :
         (zigzagStrictAInfinityAlgebra k
           (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))),
       f.IsIso ∧ f.linearPart = LinearMap.id := by
-  have hcongr : ∀ (c₁ c₂ : (Fin 4 → (AffineDynkinType.D 4).graph.Dart) →₀ k) (h : c₁ = c₂) hc₁ hc₂,
+  have hcongr : ∀ (c₁ c₂ : (Fin 4 → (AffineDynkinType.D 4).graph.Dart) →₀ k) (_ : c₁ = c₂) hc₁ hc₂,
       zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide)) c₁
         hc₁ =
       zigzagLoopAInfinityAlgebra (AffineDynkinType.exists_adj_graph (t := .D 4) (by decide)) c₂
@@ -347,6 +352,56 @@ theorem isFormal_liuWangAffineD4AInfinityAlgebra (c : k) :
     (liuWangAffineD4AInfinityAlgebra k c).IsFormal := by
   simp only [liuWangAffineD4AInfinityAlgebra,
     liuWangAffineD4Coefficients_eq_zigzagBacktrackCoefficients]
+  exact isFormal_zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients _ _
+    fst_eq_snd_of_mem_liuWangAffineD4BacktrackPairs ne_symm_of_mem_liuWangAffineD4BacktrackPairs
+
+/-! ### Transport to the public affine `D₄` zigzag algebra -/
+
+private instance : (AffineDynkinType.D 4).nodes.AtLeastTwo := ⟨by decide⟩
+
+variable (k) in
+/-- **Liu--Wang's quartic `A∞` algebra on the public affine `D₄` zigzag algebra** (Example 4.7),
+with scalar `c`: the transport of `TauCeti.liuWangAffineD4AInfinityAlgebra` along
+`zigzagAlgebraEquivNonisolated`. -/
+noncomputable def zigzagAlgebraLiuWangAffineD4 (c : k) :
+    AInfinityAlgebra k (zigzagAlgebra k (AffineDynkinType.D 4).graph) :=
+  zigzagAlgebraLoopAInfinityAlgebra
+    (AffineDynkinType.graph_connected (AffineDynkinType.valid_D.2 le_rfl))
+    (liuWangAffineD4Coefficients k c) (fst_eq_snd_of_mem_support_liuWangAffineD4Coefficients c)
+
+/-- The internal grading of `zigzagAlgebraLiuWangAffineD4` is `zigzagAlgebraInternalGrading`. -/
+@[simp]
+theorem zigzagAlgebraLiuWangAffineD4_grading (c : k) :
+    (zigzagAlgebraLiuWangAffineD4 k c).grading =
+      zigzagAlgebraInternalGrading k (AffineDynkinType.D 4).graph :=
+  zigzagAlgebraLoopAInfinityAlgebra_grading _ _ _
+
+/-- The binary operation of `zigzagAlgebraLiuWangAffineD4` is multiplication in
+`zigzagAlgebra k (AffineDynkinType.D 4).graph`. -/
+@[simp]
+theorem zigzagAlgebraLiuWangAffineD4_m_two_apply (c : k)
+    (x : Fin 2 → zigzagAlgebra k (AffineDynkinType.D 4).graph) :
+    (zigzagAlgebraLiuWangAffineD4 k c).m 2 x = x 0 * x 1 :=
+  (isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra _ _ _).m_two x
+
+/-- Every operation of `zigzagAlgebraLiuWangAffineD4` other than `m₂` and `m₄` vanishes. -/
+theorem zigzagAlgebraLiuWangAffineD4_m_eq_zero (c : k) {m : ℕ} (h₂ : m ≠ 2) (h₄ : m ≠ 4) :
+    (zigzagAlgebraLiuWangAffineD4 k c).m m = 0 :=
+  zigzagAlgebraLoopAInfinityAlgebra_m_eq_zero _ _ _ h₂ h₄
+
+/-- Liu--Wang's affine `D₄` algebra is a minimal strictly unital `A∞` deformation of the public
+affine `D₄` zigzag algebra. -/
+theorem isZigzagAInfinityDeformation_zigzagAlgebraLiuWangAffineD4 (c : k) :
+    IsZigzagAInfinityDeformation k (AffineDynkinType.D 4).graph
+      (zigzagAlgebraLiuWangAffineD4 k c) :=
+  isZigzagAInfinityDeformation_zigzagAlgebraLoopAInfinityAlgebra _ _ _
+
+/-- Liu--Wang's symmetric four-rotation quartic algebra on the public affine `D₄` zigzag algebra is
+formal for every scalar `c` (its `m₄` is a backtrack coboundary). -/
+theorem isFormal_zigzagAlgebraLiuWangAffineD4 (c : k) :
+    (zigzagAlgebraLiuWangAffineD4 k c).IsFormal := by
+  rw [zigzagAlgebraLiuWangAffineD4, isFormal_zigzagAlgebraLoopAInfinityAlgebra_iff]
+  simp only [liuWangAffineD4Coefficients_eq_zigzagBacktrackCoefficients]
   exact isFormal_zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients _ _
     fst_eq_snd_of_mem_liuWangAffineD4BacktrackPairs ne_symm_of_mem_liuWangAffineD4BacktrackPairs
 

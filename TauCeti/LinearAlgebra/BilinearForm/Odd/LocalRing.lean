@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.BilinearForm.LocalRing
 public import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Odd unimodular forms over local rings
@@ -200,7 +203,7 @@ theorem IsSymm.exists_equivalent_weightedSumSquares_of_isUnit_det (hB : B.IsSymm
     simpa only [hw] using hc.toMatrix_eq_diagonal
   refine ⟨w, ?_, (b.toMatrix c).det, ?_⟩
   · simpa only [QuadraticMap.weightedSumSquares_units, hw] using
-      hB.equivalent_weightedSumSquares_of_iIsOrtho c hc
+      hc.equivalent_weightedSumSquares
   · rw [← Matrix.det_diagonal, ← hmatrix, det_toMatrix_eq_det_sq_mul_det b c]
 
 end LinearMap.BilinForm

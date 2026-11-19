@@ -36,8 +36,7 @@ isomorphism criterion using sections over the members of a basis.
 
 `TauCeti/AlgebraicGeometry/Cohomology/Basic.lean` defines the cohomology of an `𝒪_X`-module as
 the sheaf cohomology of its underlying abelian sheaf, so this exactness is what puts that
-cohomology into a long exact sequence; it is Layer B infrastructure for
-`TauCetiRoadmap/JacobianChallenge/README.md`. No formalization is vendored: the functor is
+cohomology into a long exact sequence. No formalization is vendored: the functor is
 Mathlib's `SheafOfModules.toSheaf` for the sheaf of rings `X.ringCatSheaf`, and its exactness is
 `TauCeti/Algebra/Category/ModuleCat/Sheaf/Exactness.lean`.
 -/
@@ -59,7 +58,8 @@ noncomputable section
 theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.comp_val_app_apply
     {X : Scheme.{u}} {M N P : X.Modules}
     (f : M ⟶ N) (g : N ⟶ P) (U : X.Opens) (m : M.val.obj (.op U)) :
-    (f ≫ g).val.app (.op U) m = g.val.app (.op U) (f.val.app (.op U) m) := rfl
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((f ≫ g).val.app (.op U) m = g.val.app (.op U) (f.val.app (.op U) m)) := rfl
 
 namespace Scheme.Modules
 

@@ -43,7 +43,10 @@ taking invariants under it.
   intertwining map of the attached representations over `ℤ`.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
+* `Representation.Equiv.intertwiningMapCongr`: transport of intertwining maps along equivalences
+  of the source and of the target.
 * `Representation.Equiv.ofBasisAction`: build an equivalence from matching coordinate actions.
+* `Representation.Equiv.ofClosureEqTop`: build an equivalence from equivariance on generators.
 
 ## Main results
 
@@ -53,6 +56,8 @@ taking invariants under it.
   action of the monoid algebra, not only with that of the group elements.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
   the dual representations.
+* `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
+  generating set of the group.
 
 -/
 
@@ -76,10 +81,6 @@ theorem prod_ext {A G V W U : Type*} [Semiring A] [Monoid G]
   · exact congrArg IntertwiningMap.toLinearMap hl
   · exact congrArg IntertwiningMap.toLinearMap hr
 
-variable {A G V W : Type*} [CommSemiring A] [Monoid G]
-  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
-  {ρ : Representation A G V} {σ : Representation A G W}
-
 /-- **Evaluation of the `k[G]`-linear map attached to an intertwining map.** The map
 `Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f` is `f` itself on the underlying
 types, so it too may be erased from an application. -/
@@ -91,6 +92,12 @@ theorem equivLinearMapAsModule_apply
     (f : IntertwiningMap ρ σ) (x : ρ.asModule) :
     equivLinearMapAsModule ρ σ f x = (f (x : V) : W) :=
   (rfl)
+
+section codRestrict
+
+variable {A G V W : Type*} [Semiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- Corestrict an intertwining map to a subrepresentation of the target containing its image. -/
 def codRestrict (f : IntertwiningMap ρ σ) (P : Subrepresentation σ)
@@ -105,6 +112,12 @@ theorem codRestrict_apply_coe (f : IntertwiningMap ρ σ) (P : Subrepresentation
     (hP : ∀ v, f v ∈ P.toSubmodule) (v : V) :
     ((f.codRestrict P hP v : P.toSubmodule) : W) = f v := by
   rfl
+
+end codRestrict
+
+variable {A G V W : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
 
 /-- **An injective intertwining map is an isomorphism onto its image**, here onto any
 subrepresentation `P` that the image fills. -/
@@ -154,7 +167,7 @@ end lcomp
 
 section Restriction
 
-variable {A G H V W U : Type*} [CommSemiring A] [Monoid G] [Monoid H]
+variable {A G H V W U : Type*} [Semiring A] [Monoid G] [Monoid H]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
   {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
 
@@ -233,7 +246,7 @@ end Basis
 
 section Restriction
 
-variable {A G H V W U : Type*} [CommSemiring A] [Monoid G] [Monoid H]
+variable {A G H V W U : Type*} [Semiring A] [Monoid G] [Monoid H]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] [AddCommMonoid U] [Module A U]
   {ρ : Representation A G V} {σ : Representation A G W} {τ : Representation A G U}
 
@@ -314,6 +327,40 @@ theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
 
 end Dual
 
+section Congr
+
+variable {A G V V' W W' : Type*} [CommSemiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid V'] [Module A V']
+  [AddCommMonoid W] [Module A W] [AddCommMonoid W'] [Module A W']
+  {ρ : Representation A G V} {ρ' : Representation A G V'}
+  {σ : Representation A G W} {σ' : Representation A G W'}
+
+/-- **Transport of intertwining maps along equivalences**: equivalences `e₁ : ρ ≃ ρ'` and
+`e₂ : σ ≃ σ'` identify the intertwining maps `ρ → σ` with the intertwining maps `ρ' → σ'` by
+`f ↦ e₂ ∘ f ∘ e₁⁻¹`. This is the unbundled form of `CategoryTheory.Iso.homCongr`, as a linear
+equivalence. -/
+def intertwiningMapCongr (e₁ : Equiv ρ ρ') (e₂ : Equiv σ σ') :
+    IntertwiningMap ρ σ ≃ₗ[A] IntertwiningMap ρ' σ' where
+  toFun f := e₂.toIntertwiningMap.comp (f.comp e₁.symm.toIntertwiningMap)
+  invFun f := e₂.symm.toIntertwiningMap.comp (f.comp e₁.toIntertwiningMap)
+  map_add' f g := IntertwiningMap.ext <| LinearMap.ext fun v => by simp
+  map_smul' c f := IntertwiningMap.ext <| LinearMap.ext fun v => by simp
+  left_inv f := IntertwiningMap.ext <| LinearMap.ext fun v => by simp
+  right_inv f := IntertwiningMap.ext <| LinearMap.ext fun v => by simp
+
+@[simp]
+theorem intertwiningMapCongr_apply (e₁ : Equiv ρ ρ') (e₂ : Equiv σ σ') (f : IntertwiningMap ρ σ)
+    (v : V') : intertwiningMapCongr e₁ e₂ f v = e₂ (f (e₁.symm v)) :=
+  (rfl)
+
+@[simp]
+theorem intertwiningMapCongr_symm_apply (e₁ : Equiv ρ ρ') (e₂ : Equiv σ σ')
+    (f : IntertwiningMap ρ' σ') (v : V) :
+    (intertwiningMapCongr e₁ e₂).symm f v = e₂.symm (f (e₁ v)) :=
+  (rfl)
+
+end Congr
+
 end Representation.Equiv
 
 namespace Representation
@@ -326,6 +373,55 @@ theorem IsIntertwiningMap.dualMap {A G V W : Type*} [CommSemiring A] [Group G]
     {σ : Representation A G W} {f : V →ₗ[A] W} (hf : IsIntertwiningMap ρ σ f) :
     IsIntertwiningMap σ.dual ρ.dual f.dualMap :=
   ⟨fun g φ ↦ LinearMap.ext fun v ↦ congrArg φ (hf.isIntertwining g⁻¹ v).symm⟩
+
+/-- **Equivariance may be tested on a generating set**: if `s` generates the group `G`, a linear
+map intertwines `ρ` and `σ` exactly when it commutes with the action of every element of `s`. -/
+theorem isIntertwiningMap_iff_of_closure_eq_top {A G V W : Type*} [Semiring A] [Group G]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] (ρ : Representation A G V)
+    (σ : Representation A G W) {s : Set G} (hs : Subgroup.closure s = ⊤) (f : V →ₗ[A] W) :
+    IsIntertwiningMap ρ σ f ↔ ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v) := by
+  refine ⟨fun hf g _ v ↦ hf.isIntertwining g v, fun h ↦ ⟨fun g ↦ ?_⟩⟩
+  induction hs.ge (Subgroup.mem_top g) using Subgroup.closure_induction with
+  | mem g hg => exact h g hg
+  | one => simp
+  | mul g g' _ _ hg hg' =>
+    intro v
+    rw [map_mul, mul_apply_eq_comp, hg, hg', map_mul, mul_apply_eq_comp]
+  | inv g _ hg =>
+    intro v
+    calc f (ρ g⁻¹ v) = σ g⁻¹ (σ g (f (ρ g⁻¹ v))) := (σ.inv_self_apply g _).symm
+      _ = σ g⁻¹ (f v) := by rw [← hg, ρ.self_inv_apply]
+
+namespace Equiv
+
+variable {A G V W : Type*} [Semiring A] [Group G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- A linear equivalence commuting with the action of a generating set is an equivalence of
+representations. -/
+def ofClosureEqTop (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v)) : ρ.Equiv σ :=
+  .mk f fun g => LinearMap.ext
+    (((isIntertwiningMap_iff_of_closure_eq_top ρ σ hs f.toLinearMap).2 h).isIntertwining g)
+
+/-- The equivalence constructed from equivariance on generators acts by the given linear
+equivalence. -/
+@[simp]
+theorem ofClosureEqTop_apply (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v)) (v : V) :
+    ofClosureEqTop f hs h v = f v :=
+  (rfl)
+
+/-- The inverse of the equivalence constructed from equivariance on generators acts by the inverse
+of the given linear equivalence. -/
+@[simp]
+theorem ofClosureEqTop_symm_apply (f : V ≃ₗ[A] W) {s : Set G} (hs : Subgroup.closure s = ⊤)
+    (h : ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v)) (w : W) :
+    (ofClosureEqTop f hs h).symm w = f.symm w :=
+  (rfl)
+
+end Equiv
 
 end Representation
 

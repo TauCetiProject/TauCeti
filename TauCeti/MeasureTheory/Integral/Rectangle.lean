@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.MeasureTheory.Measure.Haar.Prod
 
 /-!
 # Integrals over closed rectangles in the plane
@@ -33,21 +35,34 @@ a doubly (twisted) periodic map are used.
   equal values on the two opposite sides integrates to zero over the rectangle.
 * `TauCeti.eqOn_zero_of_setIntegral_rect_eq_zero`: a continuous nonnegative function with zero
   integral over a nondegenerate rectangle vanishes on it.
+* `TauCeti.setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero`: a function vanishing outside
+  the strip `[a₁, b₁] × I` has the same integral over every wider strip `[c, d] × I`.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: an inequality between the integrals
   over the vertical segments `{s} × [a₂, b₂]` integrates to the same inequality over the rectangle.
+* `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le_symm`: the same for the horizontal
+  segments `[a₁, b₁] × {t}`.
 * `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
   `-B(t) ≤ f`, the lower bound `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f`.
+* `TauCeti.setLIntegral_univ_prod_Icc_add_one_eq`,
+  `TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`,
+  `TauCeti.eLpNorm_restrict_univ_prod_Icc_neg_one_two_le`: for a function of period one in the
+  second coordinate, integrals over the horizontal strips `ℝ × [k, k + 1]` agree, and those over
+  `ℝ × [-1, 2]` are controlled by those over the fundamental strip `ℝ × [0, 1]`.
+
+Translation invariance of Lebesgue measure on `ℝ × ℝ` comes from
+`TauCeti.isAddHaarMeasure_volume_prod`.
 -/
 
 public section
 
 open Set MeasureTheory
+open scoped ENNReal
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {a₁ b₁ a₂ b₂ : ℝ}
 
 /-- **The fundamental theorem of calculus in the first coordinate.** The integral of a continuous
@@ -57,6 +72,9 @@ theorem setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst {Φ φ : ℝ × �
     (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun s ↦ Φ (s, t)) (φ (s, t)) s)
     (hab : a₁ ≤ b₁) :
     ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, φ z = ∫ t in Icc a₂ b₂, (Φ (b₁, t) - Φ (a₁, t)) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   have hint : Integrable φ ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
     exact hφ.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
@@ -84,6 +102,9 @@ theorem setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_snd {Φ φ : ℝ × �
     (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun t ↦ Φ (s, t)) (φ (s, t)) t)
     (hab : a₂ ≤ b₂) :
     ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, φ z = ∫ s in Icc a₁ b₁, (Φ (s, b₂) - Φ (s, a₂)) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   have hint : Integrable φ ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
     exact hφ.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
@@ -121,6 +142,16 @@ theorem eqOn_zero_of_setIntegral_rect_eq_zero {f : ℝ × ℝ → ℝ} (h₁ : a
   rw [← hcl]
   exact hU.of_subset_closure hf.continuousOn continuousOn_const subset_closure subset_rfl
 
+/-- **Enlarging a strip.** If `f` vanishes at every point whose first coordinate lies outside
+`[a₁, b₁]`, then its integrals over a wider strip `[c, d] × I ⊇ [a₁, b₁] × I` and over
+`[a₁, b₁] × I` agree. -/
+theorem setIntegral_Icc_prod_eq_of_forall_fst_notMem_eq_zero {X : Type*} [MeasurableSpace X]
+    {μ : Measure (ℝ × X)} {f : ℝ × X → E} {c d : ℝ} {I : Set X} (hI : MeasurableSet I)
+    (hc : c ≤ a₁) (hd : b₁ ≤ d) (hf : ∀ z : ℝ × X, z.1 ∉ Icc a₁ b₁ → f z = 0) :
+    ∫ z in Icc c d ×ˢ I, f z ∂μ = ∫ z in Icc a₁ b₁ ×ˢ I, f z ∂μ :=
+  setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (measurableSet_Icc.prod hI)
+    (prod_mono (Icc_subset_Icc hc hd) subset_rfl) fun z hz ↦ hf z fun h ↦ hz.2 ⟨h, hz.1.2⟩
+
 /-- **Comparison of integrals over a translated strip.** If `f` at the translate `z + (L, 0)` is
 pointwise bounded by `M z` on the strip `[c, d] × I`, with `M` integrable on that strip and `f`
 integrable on the translated strip `[c + L, d + L] × I`, then the integral of `f` over the
@@ -130,12 +161,8 @@ theorem setIntegral_Icc_prod_le_of_comp_add_le {f M : ℝ × ℝ → ℝ} {c d L
     (hMi : IntegrableOn M (Icc c d ×ˢ I))
     (hfM : ∀ z ∈ Icc c d ×ˢ I, f (z + (L, 0)) ≤ M z) :
     ∫ z in Icc (c + L) (d + L) ×ˢ I, f z ≤ ∫ z in Icc c d ×ˢ I, M z := by
-  have he : MeasurePreserving (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) := by
-    -- Translation invariance of `volume` on `ℝ × ℝ` is found on the product measure.
-    have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-      rw [Measure.volume_eq_prod]
-      infer_instance
-    exact measurePreserving_add_right volume (L, 0)
+  have he : MeasurePreserving (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) :=
+    measurePreserving_add_right volume (L, 0)
   have hemb : MeasurableEmbedding (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) :=
     measurableEmbedding_addRight (L, 0)
   have hpre : (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) ⁻¹' (Icc (c + L) (d + L) ×ˢ I) = Icc c d ×ˢ I := by
@@ -163,6 +190,24 @@ theorem setIntegral_rect_le_mul_of_forall_setIntegral_le {f g : ℝ × ℝ → �
     exact h.integral_prod_left
   rw [Measure.volume_eq_prod, setIntegral_prod _ hf, setIntegral_prod _ hg, ← integral_const_mul]
   exact setIntegral_mono_on (hslice hf) ((hslice hg).const_mul c) measurableSet_Icc h
+
+/-- **Integrating a slicewise inequality, horizontal slices.** If `f` and `g` are integrable over
+the rectangle `[a₁, b₁] × [a₂, b₂]` and, for every `t ∈ [a₂, b₂]`, the integral of `f (·, t)` over
+`[a₁, b₁]` is at most `c` times that of `g (·, t)`, then the integral of `f` over the rectangle is
+at most `c` times that of `g`. -/
+theorem setIntegral_rect_le_mul_of_forall_setIntegral_le_symm {f g : ℝ × ℝ → ℝ} {c : ℝ}
+    (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) (hg : IntegrableOn g (Icc a₁ b₁ ×ˢ Icc a₂ b₂))
+    (h : ∀ t ∈ Icc a₂ b₂, ∫ s in Icc a₁ b₁, f (s, t) ≤ c * ∫ s in Icc a₁ b₁, g (s, t)) :
+    ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z ≤ c * ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, g z := by
+  -- Fubini, integrating first over the horizontal segments and then in `t`.
+  have hprod {k : ℝ × ℝ → ℝ} (hk : IntegrableOn k (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) :
+      Integrable k ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
+    rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
+    exact hk
+  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod_symm _ (hprod hf),
+    integral_prod_symm _ (hprod hg), ← integral_const_mul]
+  exact setIntegral_mono_on (hprod hf).integral_prod_right
+    ((hprod hg).integral_prod_right.const_mul c) measurableSet_Icc h
 
 /-- **The integrated curvature bound of a monotone profile.** Let `β` be a monotone `C¹` profile
 and `f` a function continuous on `[a₁, b₁] × [a₂, b₂]` with `-B(t) ≤ f` there, for a function `B`
@@ -192,6 +237,74 @@ theorem neg_mul_setIntegral_le_setIntegral_deriv_mul {β : ℝ → ℝ} (hβ : C
       intervalIntegral.integral_deriv_eq_sub (fun x _ ↦ hβ.differentiable one_ne_zero x)
         (hβ'.intervalIntegrable _ _)]
   rwa [integral_neg, hvol, setIntegral_prod_mul (deriv β) B, ← hvol, hftc] at hle
+
+/-! ### Periodicity in the second coordinate -/
+
+/-- For a function invariant under translation by `(0, k)`, the integrals over the strips
+`ℝ × [k, k + 1]` and `ℝ × [0, 1]` agree. -/
+theorem setLIntegral_univ_prod_Icc_add_one_eq {g : ℝ × ℝ → ℝ≥0∞} (k : ℝ)
+    (hg : ∀ z, g (z + ((0 : ℝ), k)) = g z) :
+    ∫⁻ z in univ ×ˢ Icc k (k + 1), g z = ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
+  have hφ := measurePreserving_add_right (volume : Measure (ℝ × ℝ)) ((0 : ℝ), k)
+  have hpre : (· + ((0 : ℝ), k)) ⁻¹' (univ ×ˢ Icc k (k + 1)) = univ ×ˢ Icc (0 : ℝ) 1 := by
+    ext ⟨s, t⟩
+    simp only [mem_preimage, Prod.mk_add_mk, add_zero, mem_prod, mem_univ, mem_Icc, true_and]
+    constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+  rw [← hφ.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight _) g, hpre]
+  simp only [hg]
+
+/-- For a function of period one in `t`, the integral over `ℝ × [-1, 2]` is at most three times
+the integral over the strip `ℝ × [0, 1]`. -/
+theorem setLIntegral_univ_prod_Icc_neg_one_two_le {g : ℝ × ℝ → ℝ≥0∞}
+    (hg : ∀ s t, g (s, t + 1) = g (s, t)) :
+    ∫⁻ z in univ ×ˢ Icc (-1) 2, g z ≤ 3 * ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
+  have h₁ : ∀ z, g (z + ((0 : ℝ), (1 : ℝ))) = g z := fun ⟨s, t⟩ ↦ by simpa using hg s t
+  have hm₁ : ∀ z, g (z + ((0 : ℝ), (-1 : ℝ))) = g z := fun ⟨s, t⟩ ↦ by
+    simpa [sub_eq_add_neg] using (hg s (t - 1)).symm
+  have hU : (univ : Set ℝ) ×ˢ Icc (-1 : ℝ) 2 ⊆ ((univ : Set ℝ) ×ˢ Icc (-1) (-1 + 1)) ∪
+      ((univ : Set ℝ) ×ˢ Icc 0 1) ∪ ((univ : Set ℝ) ×ˢ Icc 1 (1 + 1)) := by
+    rintro ⟨s, t⟩ ⟨-, ht₁, ht₂⟩
+    simp only [mem_union, mem_prod, mem_univ, mem_Icc, true_and]
+    by_cases h0 : t ≤ 0
+    · exact Or.inl (Or.inl ⟨ht₁, by linarith⟩)
+    · by_cases h1 : t ≤ 1
+      · exact Or.inl (Or.inr ⟨by linarith, h1⟩)
+      · exact Or.inr ⟨by linarith, by linarith⟩
+  calc ∫⁻ z in univ ×ˢ Icc (-1) 2, g z
+      ≤ ∫⁻ z in ((univ : Set ℝ) ×ˢ Icc (-1) (-1 + 1)) ∪ ((univ : Set ℝ) ×ˢ Icc 0 1) ∪
+          ((univ : Set ℝ) ×ˢ Icc 1 (1 + 1)), g z :=
+        lintegral_mono_set hU
+    _ ≤ (∫⁻ z in univ ×ˢ Icc (-1) (-1 + 1), g z) + (∫⁻ z in univ ×ˢ Icc 0 1, g z) +
+          ∫⁻ z in univ ×ˢ Icc 1 (1 + 1), g z :=
+        (lintegral_union_le _ _ _).trans (add_le_add_left (lintegral_union_le _ _ _) _)
+    _ = 3 * ∫⁻ z in univ ×ˢ Icc 0 1, g z := by
+        rw [setLIntegral_univ_prod_Icc_add_one_eq _ hm₁, setLIntegral_univ_prod_Icc_add_one_eq _ h₁]
+        ring
+
+/-- For a function of period one in `t`, the `L²` norm over `ℝ × [-1, 2]` is at most twice the
+`L²` norm over the strip `ℝ × [0, 1]`. -/
+theorem eLpNorm_restrict_univ_prod_Icc_neg_one_two_le {F : Type*} [NormedAddCommGroup F]
+    {f : ℝ × ℝ → F}
+    (hfm : AEStronglyMeasurable f volume) (hf : ∀ s t, f (s, t + 1) = f (s, t)) :
+    eLpNorm f 2 (volume.restrict (univ ×ˢ Icc (-1) 2)) ≤
+      2 * eLpNorm f 2 (volume.restrict (univ ×ˢ Icc 0 1)) := by
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hfm.restrict,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hfm.restrict]
+  have h := setLIntegral_univ_prod_Icc_neg_one_two_le (g := fun z ↦ ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal)
+    fun s t ↦ by simp only [hf]
+  calc (∫⁻ z in univ ×ˢ Icc (-1) 2, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal)
+      ≤ (3 * ∫⁻ z in univ ×ˢ Icc 0 1, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal) :=
+        ENNReal.rpow_le_rpow h (by norm_num)
+    _ = 3 ^ (1 / (2 : ℝ≥0∞).toReal) *
+          (∫⁻ z in univ ×ˢ Icc 0 1, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal) :=
+        ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)
+    _ ≤ 2 * (∫⁻ z in univ ×ˢ Icc 0 1, ‖f z‖ₑ ^ (2 : ℝ≥0∞).toReal) ^ (1 / (2 : ℝ≥0∞).toReal) := by
+        gcongr
+        calc (3 : ℝ≥0∞) ^ (1 / (2 : ℝ≥0∞).toReal) ≤ 4 ^ (1 / (2 : ℝ≥0∞).toReal) :=
+              ENNReal.rpow_le_rpow (by norm_num) (by norm_num)
+          _ = 2 := by
+              rw [show (4 : ℝ≥0∞) = 2 ^ (2 : ℝ) by norm_num, ← ENNReal.rpow_mul]
+              norm_num
 
 end TauCeti
 

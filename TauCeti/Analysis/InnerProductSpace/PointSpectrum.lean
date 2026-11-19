@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Semisimple
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
+import TauCeti.LinearAlgebra.Dimension.DirectSum
 
 /-!
 # Restricted point spectra and point-spectral subspaces
@@ -75,8 +77,24 @@ spectrum from that of its orthogonal complement.
   point-spectral subspaces.
 * `Module.End.map_pointSpectralSubspace_le_of_commute`: an endomorphism commuting with `A`
   preserves the point-spectral subspaces of `A`.
+* `Module.End.pointSpectralSubspace_sub_smul_id`: the point-spectral subspaces of `A - c` are those
+  of `A` with the selected set shifted by `c`.
+* `Module.End.pointSpectralSubspace_eq_eigenspace`: if `μ` is the only eigenvalue in `Ω`, the
+  point-spectral subspace selected by `Ω` is the eigenspace at `μ`;
+  `Module.End.pointSpectralSubspace_Ico_eq_eigenspace` specialises this to `[a, b)`.
+* `Module.End.finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace`: in finite dimension, the
+  dimension of `A.pointSpectralSubspace Ω` is the sum of the dimensions of `A.eigenspace μ` over
+  `μ ∈ Ω`.
+* `Module.End.finrank_pointSpectralSubspace_union` and
+  `Module.End.finrank_pointSpectralSubspace_Iio_eq_add`: in finite dimension, these dimensions are
+  additive over disjoint unions, so the eigenvalues below `b` are those below `a` and those in
+  `[a, b)`.
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace`: for symmetric `A` in finite dimension,
   `(A.pointSpectralSubspace Ω)ᗮ = A.pointSpectralSubspace Ωᶜ`.
+* `LinearMap.IsSymmetric.finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl`:
+  the dimensions of the point-spectral subspaces selected by `Ω` and `Ωᶜ` add up to `dim E`; for
+  injective `A` the same holds for `Iio 0` and `Ioi 0`
+  (`IsSymmetric.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero`).
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace_Iio_zero` and
   `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace_Ioi_zero`: for injective symmetric `A`,
   the negative and positive spectral subspaces are orthogonal complements.
@@ -135,6 +153,7 @@ public section
 
 open Module.End
 open scoped InnerProductSpace
+open scoped Pointwise
 
 namespace Module.End
 
@@ -253,6 +272,11 @@ theorem pointSpectralSubspace_eq_span :
   · rintro x ⟨μ, hμ, hx, -⟩
     exact eigenspace_le_pointSpectralSubspace hμ hx
 
+/-- The point-spectral subspace selected by a single value is the eigenspace there. -/
+@[simp]
+theorem pointSpectralSubspace_singleton : A.pointSpectralSubspace {μ} = A.eigenspace (μ : 𝕜) :=
+  iSup_singleton
+
 /-- The point-spectral subspace is monotone in the selected set of eigenvalues. -/
 theorem pointSpectralSubspace_mono (h : Ω ⊆ Ω') :
     A.pointSpectralSubspace Ω ≤ A.pointSpectralSubspace Ω' :=
@@ -335,6 +359,66 @@ theorem pointSpectralSubspace_neg :
   · simpa only [h, neg_neg] using
       eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
 
+/-- The point-spectral subspace of `A - c` selected by `Ω` is the point-spectral subspace of `A`
+selected by `Ω + c`: shifting an endomorphism by a real scalar shifts its eigenvalues. -/
+@[simp]
+theorem pointSpectralSubspace_sub_smul_id (c : ℝ) :
+    (A - (c : 𝕜) • LinearMap.id).pointSpectralSubspace Ω =
+      A.pointSpectralSubspace ((fun μ ↦ μ - c) ⁻¹' Ω) := by
+  have h (μ : ℝ) :
+      (A - (c : 𝕜) • LinearMap.id).eigenspace (μ : 𝕜) = A.eigenspace ((μ + c : ℝ) : 𝕜) := by
+    ext x
+    simp only [mem_eigenspace_iff, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply,
+      RCLike.ofReal_add, add_smul, sub_eq_iff_eq_add]
+  refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_) (iSup₂_le fun μ hμ ↦ ?_)
+  · rw [h]
+    exact eigenspace_le_pointSpectralSubspace (by simpa using hμ)
+  · have hμc := h (μ - c)
+    rw [sub_add_cancel] at hμc
+    rw [← hμc]
+    exact eigenspace_le_pointSpectralSubspace hμ
+
+/-- If `μ ∈ Ω` is the only eigenvalue of `A` in `Ω`, the point-spectral subspace selected by `Ω`
+is the eigenspace at `μ`. -/
+theorem pointSpectralSubspace_eq_eigenspace (hμ : μ ∈ Ω)
+    (h : ∀ ν ∈ Ω, ν ≠ μ → A.eigenspace (ν : 𝕜) = ⊥) :
+    A.pointSpectralSubspace Ω = A.eigenspace (μ : 𝕜) := by
+  refine le_antisymm (iSup₂_le fun ν hν ↦ ?_) (eigenspace_le_pointSpectralSubspace hμ)
+  rcases eq_or_ne ν μ with rfl | hνμ
+  · exact le_rfl
+  · simp [h ν hν hνμ]
+
+/-- If `μ ∈ [a, b)` is the only eigenvalue of `A` in `(a, b)` and `a` is not an eigenvalue, the
+point-spectral subspace selected by `[a, b)` is the eigenspace at `μ`. -/
+theorem pointSpectralSubspace_Ico_eq_eigenspace {a b : ℝ} (hμ : μ ∈ Set.Ico a b)
+    (ha : ¬A.HasEigenvalue (a : 𝕜))
+    (h : ∀ ν ∈ Set.Ioo a b, ν ≠ μ → ¬A.HasEigenvalue (ν : 𝕜)) :
+    A.pointSpectralSubspace (Set.Ico a b) = A.eigenspace (μ : 𝕜) := by
+  refine pointSpectralSubspace_eq_eigenspace hμ fun ν hν hνμ ↦ ?_
+  rw [← not_ne_iff, ← hasEigenvalue_iff]
+  rcases eq_or_lt_of_le hν.1 with rfl | hν₁
+  · exact ha
+  · exact h ν ⟨hν₁, hν.2⟩ hνμ
+
+/-- The point-spectral subspace of the scalar `c` selected by a set containing `c` is the whole
+space. -/
+theorem pointSpectralSubspace_smul_id_of_mem {c : ℝ} (hc : c ∈ Ω) :
+    ((c : 𝕜) • LinearMap.id : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ eigenspace_le_pointSpectralSubspace hc (mem_eigenspace_iff.mpr rfl)
+
+/-- The point-spectral subspace of the scalar `c` selected by a set not containing `c` is zero. -/
+theorem pointSpectralSubspace_smul_id_of_notMem {c : ℝ} (hc : c ∉ Ω) :
+    ((c : 𝕜) • LinearMap.id : Module.End 𝕜 E).pointSpectralSubspace Ω = ⊥ := by
+  refine eq_bot_iff.mpr (iSup₂_le fun μ hμ x hx ↦ ?_)
+  have hμc : (μ : 𝕜) ≠ c := by
+    rw [Ne, RCLike.ofReal_inj]
+    rintro rfl
+    exact hc hμ
+  rw [mem_eigenspace_iff, LinearMap.smul_apply, LinearMap.id_apply] at hx
+  rw [Submodule.mem_bot]
+  by_contra hx0
+  exact hμc (smul_left_injective 𝕜 hx0 hx.symm)
+
 /-- Conjugating an endomorphism by a linear equivalence transports its point-spectral subspaces:
 the point-spectral subspace of `e ∘ A ∘ e⁻¹` selected by `Ω` is the image under `e` of that of
 `A`. -/
@@ -354,6 +438,56 @@ theorem pointSpectralSubspace_insert_zero (hA : LinearMap.ker A = ⊥) :
     A.pointSpectralSubspace (insert 0 Ω) = A.pointSpectralSubspace Ω := by
   rw [Set.insert_eq, pointSpectralSubspace_union]
   simp [pointSpectralSubspace, eigenspace_zero, hA]
+
+/-- **Spectral dimension sum formula.** For any endomorphism of a finite-dimensional space, the
+dimension of the point-spectral subspace selected by `Ω` is the sum of the dimensions of its
+eigenspaces at eigenvalues in `Ω` (only finitely many of which are nonzero). -/
+theorem finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace [FiniteDimensional 𝕜 E]
+    (A : Module.End 𝕜 E) (Ω : Set ℝ) :
+    Module.finrank 𝕜 (A.pointSpectralSubspace Ω) =
+      ∑ᶠ μ ∈ Ω, Module.finrank 𝕜 (A.eigenspace (μ : 𝕜)) := by
+  let S : Set ℝ := Ω ∩ {μ : ℝ | A.HasEigenvalue (μ : 𝕜)}
+  have hS : S.Finite :=
+    (A.finite_hasEigenvalue.preimage RCLike.ofReal_injective.injOn).subset Set.inter_subset_right
+  have hiSup : A.pointSpectralSubspace Ω = ⨆ μ : hS.toFinset, A.eigenspace (μ.1 : 𝕜) := by
+    refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_)
+      (iSup_le fun μ ↦ eigenspace_le_pointSpectralSubspace (hS.mem_toFinset.mp μ.2).1)
+    by_cases h : A.HasEigenvalue (μ : 𝕜)
+    · exact le_iSup (fun ν : hS.toFinset ↦ A.eigenspace (ν.1 : 𝕜))
+        ⟨μ, hS.mem_toFinset.mpr ⟨hμ, h⟩⟩
+    · rw [Module.End.hasEigenvalue_iff, not_not] at h
+      simp [h]
+  have hind : iSupIndep (fun μ : hS.toFinset ↦ A.eigenspace (μ.1 : 𝕜)) :=
+    (A.eigenspaces_iSupIndep.comp RCLike.ofReal_injective).comp Subtype.val_injective
+  rw [hiSup, TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep hind,
+    Finset.sum_coe_sort hS.toFinset (fun μ : ℝ ↦ Module.finrank 𝕜 (A.eigenspace (μ : 𝕜)))]
+  refine (finsum_mem_eq_sum_of_subset _ ?_ ?_).symm
+  · rintro μ ⟨hμΩ, hμ0⟩
+    rw [Set.Finite.coe_toFinset]
+    refine ⟨hμΩ, ?_⟩
+    rw [Set.mem_ofPred_eq, Module.End.hasEigenvalue_iff]
+    rintro hbot
+    exact hμ0 (by simp [hbot])
+  · rw [Set.Finite.coe_toFinset]
+    exact Set.inter_subset_left
+
+/-- In finite dimension, the point-spectral subspace selected by a disjoint union of two sets has
+the sum of the dimensions of the point-spectral subspaces selected by each. -/
+theorem finrank_pointSpectralSubspace_union [FiniteDimensional 𝕜 E] (h : Disjoint Ω Ω') :
+    Module.finrank 𝕜 (A.pointSpectralSubspace (Ω ∪ Ω')) =
+      Module.finrank 𝕜 (A.pointSpectralSubspace Ω) +
+        Module.finrank 𝕜 (A.pointSpectralSubspace Ω') := by
+  rw [pointSpectralSubspace_union, ← Submodule.finrank_sup_add_finrank_inf_eq,
+    (disjoint_pointSpectralSubspace (A := A) h).eq_bot, finrank_bot, add_zero]
+
+/-- In finite dimension, for `a ≤ b` the eigenvalues of `A` below `b`, counted with multiplicity,
+are those below `a` together with those in `[a, b)`. -/
+theorem finrank_pointSpectralSubspace_Iio_eq_add [FiniteDimensional 𝕜 E] {a b : ℝ} (hab : a ≤ b) :
+    Module.finrank 𝕜 (A.pointSpectralSubspace (Set.Iio b)) =
+      Module.finrank 𝕜 (A.pointSpectralSubspace (Set.Iio a)) +
+        Module.finrank 𝕜 (A.pointSpectralSubspace (Set.Ico a b)) := by
+  rw [← finrank_pointSpectralSubspace_union, Set.Iio_union_Ico_eq_Iio hab]
+  exact Set.disjoint_left.mpr fun _ hx hx' ↦ (Set.mem_Iio.mp hx).not_ge hx'.1
 
 end Module.End
 
@@ -396,7 +530,7 @@ theorem isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero (hA : A.IsSymmetric)
     IsCompl (A.pointSpectralSubspace (Set.Iio 0)) (A.pointSpectralSubspace (Set.Ioi 0)) := by
   refine ⟨Module.End.disjoint_pointSpectralSubspace Set.Iio_disjoint_Ioi_same, ?_⟩
   rw [codisjoint_iff, ← Module.End.pointSpectralSubspace_insert_zero (Ω := Set.Ioi 0) hker,
-    Set.Ioi_insert, ← Set.compl_Iio]
+    Set.insert_Ioi, ← Set.compl_Iio]
   exact hA.pointSpectralSubspace_sup_compl_eq_top _
 
 /-- For a symmetric operator on a finite-dimensional space, the orthogonal complement of the
@@ -411,12 +545,30 @@ theorem orthogonal_pointSpectralSubspace (hA : A.IsSymmetric) (Ω : Set ℝ) :
     _ = A.pointSpectralSubspace Ωᶜ := by
         rw [sup_inf_assoc_of_le _ hle, Submodule.inf_orthogonal_eq_bot, sup_bot_eq]
 
+/-- For a symmetric operator on a finite-dimensional space, the dimensions of the point-spectral
+subspaces selected by `Ω` and by its complement add up to the dimension of the space. -/
+theorem finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl (hA : A.IsSymmetric)
+    (Ω : Set ℝ) :
+    Module.finrank 𝕜 (A.pointSpectralSubspace Ω) + Module.finrank 𝕜 (A.pointSpectralSubspace Ωᶜ) =
+      Module.finrank 𝕜 E := by
+  rw [← hA.orthogonal_pointSpectralSubspace]
+  exact Submodule.finrank_add_finrank_orthogonal _
+
+/-- For an injective symmetric operator on a finite-dimensional space, the numbers of negative and
+of positive eigenvalues, counted with multiplicity, add up to the dimension of the space. -/
+theorem finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero
+    (hA : A.IsSymmetric) (hker : LinearMap.ker A = ⊥) :
+    Module.finrank 𝕜 (A.pointSpectralSubspace (Set.Iio 0)) +
+        Module.finrank 𝕜 (A.pointSpectralSubspace (Set.Ioi 0)) =
+      Module.finrank 𝕜 E :=
+  Submodule.finrank_add_eq_of_isCompl (hA.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero hker)
+
 /-- For an injective symmetric operator on a finite-dimensional space, the orthogonal complement of
 the negative spectral subspace is the positive spectral subspace. -/
 theorem orthogonal_pointSpectralSubspace_Iio_zero (hA : A.IsSymmetric)
     (hA' : LinearMap.ker A = ⊥) :
     (A.pointSpectralSubspace (Set.Iio 0))ᗮ = A.pointSpectralSubspace (Set.Ioi 0) := by
-  rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Iio, ← Set.Ioi_insert,
+  rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Iio, ← Set.insert_Ioi,
     Module.End.pointSpectralSubspace_insert_zero hA']
 
 /-- For an injective symmetric operator on a finite-dimensional space, the orthogonal complement of
@@ -424,7 +576,7 @@ the positive spectral subspace is the negative spectral subspace. -/
 theorem orthogonal_pointSpectralSubspace_Ioi_zero (hA : A.IsSymmetric)
     (hA' : LinearMap.ker A = ⊥) :
     (A.pointSpectralSubspace (Set.Ioi 0))ᗮ = A.pointSpectralSubspace (Set.Iio 0) := by
-  rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Ioi, ← Set.Iio_insert,
+  rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Ioi, ← Set.insert_Iio,
     Module.End.pointSpectralSubspace_insert_zero hA']
 
 /-- For a symmetric operator on a finite-dimensional space, the point-spectral subspace selected by
@@ -1025,5 +1177,23 @@ theorem eigenvalues_ne_eigenvalues_of_disjoint (hA : A.IsSymmetric) (hB : B.IsSy
   rw [restrictedPointSpectrum_top, restrictedPointSpectrum_top] at h
   exact fun hij ↦ Set.disjoint_left.mp h (hA.hasEigenvalue_eigenvalues hn i)
     (hij ▸ hB.hasEigenvalue_eigenvalues hm j)
+
+
+/-- The trial-space spectral bound on the Ritz compression `X† A X`, in quadratic-form shape. -/
+theorem re_inner_ritz_le_of_pointSpectrumIn (hA : A.IsSymmetric) (X : F →ₗ[𝕜] E) {α : ℝ}
+    (h : Module.End.PointSpectrumIn
+      (X.adjoint ∘ₗ A ∘ₗ X) ⊤ (Set.Iic α)) (y : F) :
+    RCLike.re ⟪(X.adjoint ∘ₗ A ∘ₗ X) y, y⟫_𝕜 ≤ α * ‖y‖ ^ 2 :=
+  (hA.adjoint_conj X).re_inner_apply_self_le_of_pointSpectrumIn
+    (fun _ _ => Submodule.mem_top) h Submodule.mem_top
+
+/-- The separated spectral bound on the orthogonal complement of an invariant subspace, in
+quadratic-form shape. -/
+theorem le_re_inner_of_pointSpectrumIn_orthogonal (hA : A.IsSymmetric)
+    {U : Submodule 𝕜 E} (hU : U ∈ Module.End.invtSubmodule A) {β : ℝ}
+    (h : Module.End.PointSpectrumIn A Uᗮ (Set.Ici β)) {y : E} (hy : y ∈ Uᗮ) :
+    β * ‖y‖ ^ 2 ≤ RCLike.re ⟪A y, y⟫_𝕜 :=
+  hA.le_re_inner_apply_self_of_pointSpectrumIn
+    (hA.orthogonalComplement_mem_invtSubmodule hU) h hy
 
 end LinearMap.IsSymmetric

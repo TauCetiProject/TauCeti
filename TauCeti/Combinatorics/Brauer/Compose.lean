@@ -29,15 +29,15 @@ followed by a fixed-point-free involution, so a strand cannot return to its own 
 Stacking a permutation diagram onto a diagram creates no new strand, because a permutation diagram
 has neither a cap nor a cup: it only renames the boundary points that the strands of the other
 diagram end at, that is, it relabels that boundary in the sense of
-`TauCeti.BrauerDiagram.relabel`. The consequence that Layer 9 of the Schur--Weyl roadmap is after
-is the multiplicativity `TauCeti.composeDiagram_permToBrauer`: stacking two permutation diagrams
-gives the permutation diagram of the product, so `σ ↦ permToBrauer σ` turns the group law of `Sₖ`
-into the multiplication of the Brauer algebra on the diagram basis. That is the sense in which the
-symmetric group sits inside the Brauer algebra: once the loop-weighted multiplication of the
-Brauer algebra is available, this is what will make it restrict to the group algebra `ℂ[Sₖ]` along
-`permToBrauer`, since no loop can close up in the middle when one of the two diagrams has only
-through strands. The middle-loop count itself is built in
-`TauCeti/Combinatorics/Brauer/LoopCount.lean`.
+`TauCeti.BrauerDiagram.relabel`. The main consequence is the multiplicativity
+`TauCeti.composeDiagram_permToBrauer`: stacking two permutation diagrams gives the permutation
+diagram of the product, so `σ ↦ permToBrauer σ` turns the group law of `Sₖ` into the
+multiplication of the Brauer algebra on the diagram basis. That is the sense in which the
+symmetric group sits inside the Brauer algebra: since no loop can close up in the middle when one
+of the two diagrams has only through strands, the loop-weighted multiplication of the Brauer
+algebra multiplies permutation diagrams as `Sₖ` multiplies permutations, so the group algebra of
+`Sₖ` maps into the Brauer algebra along `permToBrauer` (`TauCeti.BrauerAlgebra.ofPerm`). The
+middle-loop count itself is built in `TauCeti/Combinatorics/Brauer/LoopCount.lean`.
 
 ## Main definitions
 
@@ -75,8 +75,6 @@ through strands. The middle-loop count itself is built in
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
 -/
 
 public section
@@ -717,7 +715,7 @@ extended past the middle boundary, because the permutation diagram has no cap: a
 which leaves at the top point `σ a`. -/
 @[simp]
 theorem composeDiagram_permToBrauer_left : composeDiagram (permToBrauer σ) D = D.relabel 1 σ := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rcases h : D.val (Sum.inl i) with i' | a
     · rw [composeDiagram_val_inl_eq_inl_of_cap_lower _ D h]
@@ -741,7 +739,7 @@ is extended past the middle boundary, because the permutation diagram has no cup
 @[simp]
 theorem composeDiagram_permToBrauer_right :
     composeDiagram D (permToBrauer τ) = D.relabel τ⁻¹ 1 := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rcases h : D.val (Sum.inl (τ i)) with a' | j'
     · rw [composeDiagram_val_inl_eq_inl_of_cap_upper (D₁ := D) (D₂ := permToBrauer τ) (a := τ i)

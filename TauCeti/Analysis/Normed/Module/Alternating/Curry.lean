@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
+public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 
 /-!
@@ -13,11 +14,16 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 
 The normed `ContinuousAlternatingMap.curryLeft` agrees pointwise with the norm-free
 `ContinuousAlternatingMap.curryLeftTopological`. This comparison lets normed applications use
-the topological interior-product API without importing wedge constructions.
+the topological interior-product API without importing wedge constructions. Currying commutes
+with subtraction (`ContinuousAlternatingMap.curryLeft_sub`), and the difference of two curried maps
+`f(u, ·)` and `g(v, ·)` is bounded by `‖f - g‖ ‖u‖ + ‖g‖ ‖u - v‖`
+(`ContinuousAlternatingMap.norm_curryLeft_sub_curryLeft_le`).
 
-Currying a continuous alternating map of two vectors in its first slot and reading the result as
-a linear map gives its **flat map** `f ↦ (v ↦ f(v, ·))`, a continuous linear map
-`ContinuousAlternatingMap.flatL`.
+A continuous alternating map of one vector is read as a continuous linear functional by
+`ContinuousAlternatingMap.toDual`. Currying a continuous alternating map of two vectors in its
+first slot and reading the result as a linear map gives its **flat map** `f ↦ (v ↦ f(v, ·))`, a
+continuous linear map `ContinuousAlternatingMap.flatL`, an alternating bilinear map
+(`ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL`).
 -/
 
 public section
@@ -34,6 +40,52 @@ theorem curryLeft_eq_curryLeftTopological {n : ℕ}
   ext v
   simp only [ContinuousAlternatingMap.curryLeft_apply_apply,
     ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+
+section Lipschitz
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Currying commutes with subtraction. -/
+@[simp]
+theorem curryLeft_sub {n : ℕ} (f g : E [⋀^Fin (n + 1)]→L[𝕜] F) :
+    (f - g).curryLeft = f.curryLeft - g.curryLeft := by
+  simpa using (curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := n)).map_sub f g
+
+/-- The difference of the curried maps `f(u, ·)` and `g(v, ·)` is bounded by
+`‖f - g‖ ‖u‖ + ‖g‖ ‖u - v‖`. -/
+theorem norm_curryLeft_sub_curryLeft_le {n : ℕ} (f g : E [⋀^Fin (n + 1)]→L[𝕜] F) (u v : E) :
+    ‖f.curryLeft u - g.curryLeft v‖ ≤ ‖f - g‖ * ‖u‖ + ‖g‖ * ‖u - v‖ := by
+  have hsplit : f.curryLeft u - g.curryLeft v = (f - g).curryLeft u + g.curryLeft (u - v) := by
+    rw [curryLeft_sub, map_sub, _root_.sub_apply]
+    abel
+  rw [hsplit]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
+  · refine (ContinuousLinearMap.le_opNorm _ _).trans ?_
+    rw [norm_curryLeft]
+
+end Lipschitz
+
+section toDual
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A one-form at a point, read as a continuous linear functional. -/
+noncomputable def toDual : (E [⋀^Fin 1]→L[𝕜] 𝕜) →L[𝕜] E →L[𝕜] 𝕜 :=
+  (ofSubsingletonLIE (𝕜 := 𝕜) (E := E) (F := 𝕜) (ι := Fin 1)
+    0).symm.toContinuousLinearEquiv.toContinuousLinearMap
+
+/-- The functional of a one-form evaluates the form on the one-vector family. -/
+@[simp]
+theorem toDual_apply (a : E [⋀^Fin 1]→L[𝕜] 𝕜) (v : E) : toDual a v = a ![v] := by
+  simp only [toDual, ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ofSubsingletonLIE_symm_apply, ofSubsingleton_symm_apply_apply]
+  congr 1
+  funext i
+  rw [Subsingleton.elim i 0]
+  rfl
+
+end toDual
 
 section flatL
 
@@ -60,6 +112,12 @@ theorem ofSubsingleton_flatL_apply (f : E [⋀^Fin 2]→L[𝕜] F) (v : E) :
 @[simp]
 theorem flatL_apply_apply (f : E [⋀^Fin 2]→L[𝕜] F) (v w : E) : flatL 𝕜 E F f v w = f ![v, w] :=
   DFunLike.congr_fun (ofSubsingleton_flatL_apply f v) ![w]
+
+/-- The flat map of a continuous alternating map of two vectors, read as a bilinear map, is
+alternating. -/
+theorem isAlt_toLinearMap₁₂_flatL (f : E [⋀^Fin 2]→L[𝕜] F) :
+    (flatL 𝕜 E F f).toLinearMap₁₂.IsAlt := fun v ↦ by
+  simp [f.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl Fin.zero_ne_one]
 
 end flatL
 

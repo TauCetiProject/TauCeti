@@ -41,7 +41,10 @@ injective. This applies in particular to a constant invertible symmetric coeffic
   estimate on compactly supported `C¹` paths extends to `W^{1,2}(ℝ, E)`.
 * `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_norm_trajectoryOperator_sq`:
   for a family with a uniform spectral gap `α` and `⟪v, A' v⟫ ≤ β ‖v‖²`, the estimate
-  `‖u'‖² + (α² - β) ‖u‖² ≤ ‖D_A u‖²` without compact error.
+  `‖u'‖² + (α² - β) ‖u‖² ≤ ‖D_A u‖²` without compact error, and
+  `TauCeti.WeakDerivStep.min_one_mul_norm_sq_le_norm_trajectoryOperator_sq`: the same estimate as
+  the lower bound `min 1 (α² - β) ‖u‖² ≤ ‖D_A u‖²` in the norm of `W^{1,2}(ℝ, E)`, with the linear
+  form `TauCeti.WeakDerivStep.min_one_mul_norm_le_norm_trajectoryOperator`.
 * `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot`: for such a family with `β < α²`, `D_A` is
   injective.
 
@@ -152,6 +155,47 @@ theorem norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_norm_trajectoryOperator_sq
     (c := 1) le_rfl zero_lt_one (fun φ hφ hφc ↦ by
       simpa using integral_norm_deriv_sq_add_mul_integral_norm_sq_le hA (fun s _ ↦ hsym s) hφ hφc
         hα (fun s _ ↦ hgap s _) (fun s _ ↦ hsmall s _)) u
+
+open scoped InnerProductSpace in
+/-- **The coercive trajectory estimate in the full Sobolev norm.** If a `C¹` family of symmetric
+operators satisfies `α ‖v‖ ≤ ‖A s v‖` and `⟪v, A' s v⟫ ≤ β ‖v‖²` everywhere, then
+`min 1 (α² - β) ‖u‖² ≤ ‖D_A u‖²` for every `u ∈ W^{1,2}(ℝ, E)`, where
+`‖u‖² = ‖u‖²_{L²} + ‖u'‖²_{L²}`. The coefficient of the operator is any `L∞` class `AL` of `A`. -/
+theorem min_one_mul_norm_sq_le_norm_trajectoryOperator_sq
+    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {α β : ℝ} (hα : 0 ≤ α)
+    (hgap : ∀ s v, α * ‖v‖ ≤ ‖A s v‖) (hsmall : ∀ s v, ⟪v, deriv A s v⟫_ℝ ≤ β * ‖v‖ ^ 2)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    min 1 (α ^ 2 - β) * ‖u‖ ^ 2 ≤ ‖trajectoryOperator AL u‖ ^ 2 := by
+  have hest := norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_norm_trajectoryOperator_sq hA hsym hα
+    hgap hsmall AL hAL u
+  rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
+  have h₁ := mul_le_mul_of_nonneg_right (min_le_left 1 (α ^ 2 - β)) (sq_nonneg ‖weakFDeriv _ u‖)
+  have h₂ := mul_le_mul_of_nonneg_right (min_le_right 1 (α ^ 2 - β)) (sq_nonneg ‖prev _ u‖)
+  linarith
+
+open scoped InnerProductSpace in
+/-- **The coercive trajectory estimate as a linear bound.** If a `C¹` family of symmetric
+operators satisfies `α ‖v‖ ≤ ‖A s v‖` and `⟪v, A' s v⟫ ≤ β ‖v‖²` everywhere, then
+`min 1 (α² - β) ‖u‖ ≤ ‖D_A u‖` for every `u ∈ W^{1,2}(ℝ, E)`. For `β < α²` this bounds the inverse
+of `D_A` by `(min 1 (α² - β))⁻¹`. The coefficient of the operator is any `L∞` class `AL` of `A`. -/
+theorem min_one_mul_norm_le_norm_trajectoryOperator
+    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {α β : ℝ} (hα : 0 ≤ α)
+    (hgap : ∀ s v, α * ‖v‖ ≤ ‖A s v‖) (hsmall : ∀ s v, ⟪v, deriv A s v⟫_ℝ ≤ β * ‖v‖ ^ 2)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    min 1 (α ^ 2 - β) * ‖u‖ ≤ ‖trajectoryOperator AL u‖ := by
+  have h := min_one_mul_norm_sq_le_norm_trajectoryOperator_sq hA hsym hα hgap hsmall AL hAL u
+  have hm1 : min 1 (α ^ 2 - β) ≤ 1 := min_le_left _ _
+  rcases le_or_gt (min 1 (α ^ 2 - β)) 0 with hm | hm
+  · exact (mul_nonpos_of_nonpos_of_nonneg hm (norm_nonneg _)).trans (norm_nonneg _)
+  -- Since `0 < m ≤ 1`, `(m ‖u‖)² ≤ m ‖u‖² ≤ ‖D_A u‖²`.
+  refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 ?_
+  nlinarith [sq_nonneg ‖u‖]
 
 open scoped InnerProductSpace in
 /-- **The trajectory operator of a coercive family is injective.** If a `C¹` family of symmetric

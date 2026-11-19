@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Core.Basic
+public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -14,7 +14,8 @@ public import Mathlib.Topology.LocallyConstant.Basic
 `TauCeti.FiniteRankAtlas` assembles point-indexed Mathlib vector-bundle cores on the
 clopen strata of a locally constant natural-number rank. Its data use only the base
 universe (and the scalar universe), not the universe of any original bundle's fibres.
-There is no bounded-rank or finite-cover hypothesis.
+There is no bounded-rank or finite-cover hypothesis. `FiniteRankAtlas.stratumCore`
+packages each clopen rank stratum's coordinate core as a `TauCeti.FiniteRankBundleCore`.
 
 The reconstructed total space is a native `Bundle.TotalSpace`, with the topology of the
 disjoint union of the core total spaces. Each core total space embeds openly, with image
@@ -55,6 +56,23 @@ variable {𝕜 X} (A : FiniteRankAtlas 𝕜 X)
 /-- The finite coordinate fibre of the reconstructed variable-rank bundle.
 This is an abbreviation so the standard topological-module instances are available. -/
 abbrev Fiber (x : X) := Fin (A.rank x) → 𝕜
+
+/-- Package the point-indexed coordinate core on the rank-`n` clopen stratum of `A` as a
+`FiniteRankBundleCore`. -/
+-- Expose the rank projection so the dependent coordinate model reduces to `Fin n → 𝕜`.
+@[expose]
+def stratumCore (n : ℕ) : FiniteRankBundleCore 𝕜 {x : X // A.rank x = n} where
+  rank := n
+  core := A.charts n
+  indexAt_eq := A.indexAt_eq n
+
+/-- Rank of `A.stratumCore n`. -/
+@[simp]
+theorem rank_stratumCore (n : ℕ) : (A.stratumCore n).rank = n := (rfl)
+
+/-- Underlying `VectorBundleCore` of `A.stratumCore n`. -/
+@[simp]
+theorem core_stratumCore (n : ℕ) : (A.stratumCore n).core = A.charts n := (rfl)
 
 /-- The disjoint union of the native core total spaces. -/
 abbrev GluedTotalSpace := Σ n : ℕ, (A.charts n).TotalSpace
@@ -134,6 +152,46 @@ theorem range_stratum (n : ℕ) :
     | mk x v =>
       cases hp
       exact ⟨⟨⟨x, rfl⟩, v⟩, rfl⟩
+
+section Continuity
+
+variable {Y : Type*} [TopologicalSpace Y] {b : Y → X}
+
+/-- A map into a reconstructed total space is continuous exactly when its restrictions
+to the rank strata, read in the native core total spaces, are continuous. -/
+theorem continuous_mk_iff_rankStrata (hb : Continuous b) (s : ∀ y, A.Fiber (b y)) :
+    Continuous (fun y => (⟨b y, s y⟩ : TotalSpace Unit A.Fiber)) ↔
+      ∀ n : ℕ, Continuous (fun y : {y : Y // A.rank (b y) = n} =>
+        (⟨⟨b y, y.2⟩, fun i => s y (Fin.cast y.2.symm i)⟩ : (A.charts n).TotalSpace)) := by
+  constructor
+  · intro hs n
+    apply (IsEmbedding.sigmaMk (σ := fun n => (A.charts n).TotalSpace)).continuous_iff.2
+    convert A.totalSpaceHomeomorph.symm.continuous.comp (hs.comp continuous_subtype_val) using 1
+    funext ⟨y, hy⟩
+    cases hy
+    simp only [Function.comp_apply, totalSpaceHomeomorph_symm_apply, Fin.cast_refl, id_eq]
+  · intro hs
+    apply continuous_of_cover_nhds (s := fun n : ℕ => {y : Y | A.rank (b y) = n})
+    · intro y
+      exact ⟨A.rank (b y), ((A.rank.isLocallyConstant.isOpen_fiber _).preimage hb).mem_nhds rfl⟩
+    · intro n
+      rw [continuousOn_iff_continuous_domRestrict]
+      convert A.totalSpaceHomeomorph.continuous.comp (continuous_sigmaMk.comp (hs n)) using 1
+      funext ⟨y, hy⟩
+      cases hy
+      simp only [Set.domRestrict_apply, Function.comp_apply, totalSpaceHomeomorph_apply,
+        Fin.cast_refl, id_eq]
+
+/-- The zero section of a variable-rank atlas is continuous. -/
+@[fun_prop]
+theorem continuous_zeroSection :
+    Continuous (fun x => (⟨x, 0⟩ : TotalSpace Unit A.Fiber)) := by
+  apply (A.continuous_mk_iff_rankStrata continuous_id _).2
+  intro n
+  exact (Bundle.Trivialization.continuous_zeroSection 𝕜
+    (F := Fin n → 𝕜) (E := (A.charts n).Fiber)).congr (fun _ => rfl)
+
+end Continuity
 
 section Reconstruction
 

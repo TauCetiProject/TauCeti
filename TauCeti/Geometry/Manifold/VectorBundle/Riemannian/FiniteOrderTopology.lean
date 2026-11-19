@@ -17,9 +17,10 @@ regularity to `C^k` and using the compact derivative topology on symmetric tenso
 Thus only derivatives through order `k` are controlled, although every metric remains smooth.
 
 This construction allows models with corners, in particular half-space models for compact
-manifolds with boundary. It does not apply a completeness theorem for boundaryless section
-spaces to a manifold with boundary. The continuity and convergence criteria use the existing
-frame-coordinate jets and their compact derivative seminorms, including at boundary points.
+manifolds with boundary. Completeness of the underlying section spaces, with boundary or
+corners, is `ContMDiffSection.completeSpace_frameTopology`. The continuity and convergence
+criteria use the existing frame-coordinate jets and their compact derivative seminorms,
+including at boundary points.
 Covering smooth frames give the same topology. Convex interpolation is continuous, and the
 smooth section topology is finer than each finite-order topology.
 
@@ -63,6 +64,13 @@ def frameCkTopology (k : ℕ) : TopologicalSpace (ContMDiffRiemannianMetric IB �
   .induced (fun g : ContMDiffRiemannianMetric IB ∞ F V ↦ g.ofLE (n := ∞) (m := k) (by simp))
     (frameTopology IB k e U hU)
 
+/-- The finite-order topology is induced by forgetting regularity to Cᵏ metrics equipped
+with the section-space topology. -/
+theorem frameCkTopology_def (k : ℕ) :
+    frameCkTopology IB e U hU k =
+      .induced (fun g : ContMDiffRiemannianMetric IB ∞ F V ↦
+        g.ofLE (n := ∞) (m := k) (by simp)) (frameTopology IB k e U hU) := (rfl)
+
 /-- Forgetting regularity embeds smooth metrics with their `C^k` topology into `C^k` metrics
 with the section-space topology. -/
 theorem isEmbedding_ofLE_frameCkTopology (k : ℕ) :
@@ -89,11 +97,7 @@ private theorem frameCoordinateJet_ofLE (k : ℕ)
       (g.ofLE (m := k) (by simp)).toSymmetricSection) =
       ⇑((e i).frameCoordinates (hU i) g.toSymmetricSection) := by
     funext y
-    have hs : (g.ofLE (m := k) (by simp)).toSymmetricSection y =
-        g.toSymmetricSection y := by
-      apply Subtype.ext
-      simp
-    simp only [Trivialization.frameCoordinates_apply, hs]
+    simp only [Trivialization.frameCoordinates_apply, toSymmetricSection_ofLE_apply]
   ext z
   simp only [ContMDiffMap.chartIteratedFDeriv_self_target_apply, hc]
 

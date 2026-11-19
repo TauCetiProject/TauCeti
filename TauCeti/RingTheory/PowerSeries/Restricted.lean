@@ -37,11 +37,13 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   summable strictly inside the radius of restrictedness.
 * `PowerSeries.IsRestricted.mul_of_abs_lt`: over any normed ring, a product of series restricted
   at `c'` is restricted at every `c` with `|c| < |c'|`.
+* `PowerSeries.IsRestricted.subring_zero` and `PowerSeries.IsRestricted.subring_abs`: the
+  restricted subring is everything at the radius `0`, and depends only on `|c|`.
 * `TauCeti.PowerSeries.not_isRestricted_mk_pow`: for `a ≠ 0` and a multiplicative norm, `∑ aⁿ Xⁿ`
   is not restricted at the radius `‖a‖⁻¹`, and `TauCeti.PowerSeries.not_isRestricted_mk_one`:
   over a nontrivial normed ring, `∑ Xⁿ` is not restricted at the radius `1`.
-* `PowerSeries.IsRestricted.rescale`: if `f(X)` is restricted at `‖a‖ * c`, then `f(aX)`
-  is restricted at `c`.
+* `PowerSeries.IsRestricted.rescale` and `PowerSeries.IsRestricted.rescale_of_le`: if `f(X)` is
+  restricted at `‖a‖ * c` (or at `r ≥ ‖a‖ * c` with `0 ≤ c`), then `f(aX)` is restricted at `c`.
 * `TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring` and
   `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
   with those on the ambient formal series.
@@ -109,6 +111,15 @@ theorem _root_.PowerSeries.IsRestricted.rescale {R : Type*} [NormedCommRing R] {
   rw [PowerSeries.coeff_rescale, abs_mul, abs_norm, mul_pow, ← mul_assoc, mul_comm _ (‖a‖ ^ n)]
   gcongr
   exact (norm_mul_le _ _).trans (by gcongr)
+
+/-- **Rescaling at a bounded radius.** Over any normed commutative ring, if `f` is restricted at
+`r`, `0 ≤ s`, and `‖u‖ * s ≤ r`, then `rescale u f` is restricted at `s`. -/
+theorem _root_.PowerSeries.IsRestricted.rescale_of_le {R : Type*} [NormedCommRing R] {r s : ℝ}
+    {u : R} {f : PowerSeries R} (hf : f.IsRestricted r) (hs : 0 ≤ s) (hsr : ‖u‖ * s ≤ r) :
+    (PowerSeries.rescale u f).IsRestricted s := by
+  have hus : 0 ≤ ‖u‖ * s := mul_nonneg (norm_nonneg u) hs
+  exact (isRestricted_of_abs_le hf
+    (by rw [abs_of_nonneg hus, abs_of_nonneg (hus.trans hsr)]; exact hsr)).rescale
 
 /-- For `a ≠ 0` over a ring with multiplicative norm, the geometric series `∑ aⁿ Xⁿ` is not
 restricted at the radius `‖a‖⁻¹`: all its weighted coefficient norms there equal `1`. -/
@@ -256,6 +267,33 @@ open scoped Topology
 
 variable {R : Type*} [NormedRing R] {c c' : ℝ} {f g : PowerSeries R}
 
+section Subring
+
+variable [IsUltrametricDist R]
+
+/-- Membership in the subring of series restricted at `c` is restrictedness at `c`. -/
+@[simp]
+theorem IsRestricted.mem_subring : f ∈ IsRestricted.subring c ↔ f.IsRestricted c :=
+  Iff.rfl
+
+/-- At the radius `0` every series is restricted, its weighted coefficient norms vanishing past
+degree `0`, so the restricted subring is the whole ring of power series. -/
+@[simp]
+theorem IsRestricted.subring_zero : IsRestricted.subring (R := R) 0 = ⊤ := by
+  refine (Subring.eq_top_iff' _).mpr fun f ↦ ?_
+  rw [IsRestricted.mem_subring, isRestricted_iff']
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  simp [zero_pow (by omega : n ≠ 0)]
+
+/-- The restricted subring depends only on the absolute value of the radius. -/
+@[simp]
+theorem IsRestricted.subring_abs (c : ℝ) :
+    IsRestricted.subring (R := R) |c| = IsRestricted.subring c :=
+  Subring.ext fun f ↦ by simp only [IsRestricted.mem_subring, isRestricted_abs_iff]
+
+end Subring
+
 /-- The weighted coefficient norms of a restricted series are summable at every strictly
 smaller radius. No completeness or ultrametric hypothesis is needed. -/
 theorem IsRestricted.summable_norm_coeff_mul_pow (hf : f.IsRestricted c') {t : ℝ}
@@ -279,7 +317,7 @@ geometric factor `(|c| / |c'|)ⁿ` absorbs this growth. Over an ultrametric ring
 theorem IsRestricted.mul_of_abs_lt (hf : f.IsRestricted c') (hg : g.IsRestricted c')
     (h : |c| < |c'|) : (f * g).IsRestricted c := by
   obtain ⟨A, hA0, hA⟩ := hf.exists_nonneg_norm_coeff_mul_pow_le
-  obtain ⟨B, hB0, hB⟩ := hg.exists_nonneg_norm_coeff_mul_pow_le
+  obtain ⟨B, _, hB⟩ := hg.exists_nonneg_norm_coeff_mul_pow_le
   have hq : 0 < |c'| := (abs_nonneg c).trans_lt h
   set ρ := |c| / |c'|
   have hupper : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ) * ρ ^ n * (A * B)) atTop (𝓝 0) := by

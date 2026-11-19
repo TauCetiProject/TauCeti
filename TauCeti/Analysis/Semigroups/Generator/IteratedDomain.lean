@@ -55,7 +55,7 @@ variable (S : StronglyContinuousSemigroup X) {omega M : ℝ}
 
 omit [CompleteSpace X] in
 /-- Every semigroup operator preserves each iterated generator domain `D(Aⁿ)`. -/
-theorem realOperator_mem_domainPow {t : ℝ} (ht : 0 ≤ t) {n : ℕ} {x : X}
+theorem realOperator_mem_domainPow {t : ℝ} {n : ℕ} {x : X}
     (hx : x ∈ S.generator.domainPow n) :
     S.realOperator t x ∈ S.generator.domainPow n := by
   induction n generalizing x with
@@ -65,11 +65,11 @@ theorem realOperator_mem_domainPow {t : ℝ} (ht : 0 ≤ t) {n : ℕ} {x : X}
       have hxd' : x ∈ S.domain := by rwa [S.generator_domain] at hxd
       have hmem : S.realOperator t x ∈ S.generator.domain := by
         rw [S.generator_domain]
-        exact S.realOperator_mem_domain ht hxd'
+        exact S.realOperator_mem_domain hxd'
       refine LinearPMap.mem_domainPow_succ.mpr ⟨hmem, ?_⟩
       have hcomm : S.generator ⟨S.realOperator t x, hmem⟩
           = S.realOperator t (S.generator ⟨x, hxd⟩) :=
-        S.realOperator_generator_map ht ⟨x, hxd'⟩
+        S.realOperator_generator_map ⟨x, hxd'⟩
       rw [hcomm]
       exact ih hAx
 
@@ -85,6 +85,7 @@ private theorem smul_resolventFun_sub_self (hb : S.HasGrowthBound omega M) {lamb
     rw [S.generator_resolvent_eq hb hlt, S.resolventFun_of_lt hb hlt]
   rw [← heq, LinearPMap.resolvent_apply_comm hres ⟨x, hxd⟩, LinearPMap.apply_resolvent hres x]
 
+omit [CompleteSpace X] in
 /-- Beyond `2 |omega| + 1` the scaled resolvent `lambda R(lambda)` is bounded by `2 M`. The
 factor `2` absorbs the difference between `lambda` and `lambda - omega`. -/
 private theorem norm_smul_resolventFun_le (hb : S.HasGrowthBound omega M) {lambda : ℝ}

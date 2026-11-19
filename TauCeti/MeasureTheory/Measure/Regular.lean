@@ -56,6 +56,8 @@ measures given only through a domination bound, such as the variation of a sum o
   a finite sum of outer (weakly) regular measures is outer (weakly) regular.
 * `MeasureTheory.Measure.InnerRegularCompactLTTop.comap'`: compact inner regularity on sets of
   finite measure pulls back along an open embedding between Borel spaces.
+* `MeasureTheory.Measure.InnerRegularCompactLTTop.map_ofMul`: compact inner regularity on sets of
+  finite measure transfers to `Additive α` for Borel spaces.
 * `MeasureTheory.NullMeasurableSet.exists_isSigmaCompact_subset_ae_eq`: a null measurable set
   contains a σ-compact subset of full measure.
 * `MeasureTheory.Measure.dirac.innerRegular`: a Dirac measure is inner regular; on an `R₁` space
@@ -171,6 +173,12 @@ protected theorem InnerRegularCompactLTTop.comap' {β : Type*} [BorelSpace α]
         rwa [← hf.measurableEmbedding.comap_apply]⟩)
       (fun _ hKrange hK ↦ hf.isInducing.isCompact_preimage' hK hKrange)
 
+/-- Pushing forward a compactly inner regular measure on a Borel space to `Additive α` preserves
+compact inner regularity on sets of finite measure. -/
+instance InnerRegularCompactLTTop.map_ofMul [BorelSpace α] [μ.InnerRegularCompactLTTop] :
+    (μ.map Additive.ofMul).InnerRegularCompactLTTop :=
+  .map_of_continuous continuous_ofMul
+
 /-- A Dirac measure is inner regular: a measurable set containing the point contains the compact
 singleton, which carries the full mass. On an `R₁` space with its Borel σ-algebra, Mathlib's
 instances upgrade this to regularity of the finite measure `dirac x`. -/
@@ -220,9 +228,10 @@ theorem weaklyRegular [OpensMeasurableSpace α] [μ.WeaklyRegular] (h : ν ≪ �
   innerRegular := h.innerRegularWRT WeaklyRegular.innerRegular
     (fun _ hK ↦ hK.measurableSet.nullMeasurableSet) fun U _ ↦ measure_ne_top μ U
 
-/-- On an `R₁` space with its Borel σ-algebra, a finite measure absolutely continuous with
+omit [IsFiniteMeasure ν] in
+/-- On an `R₁` space with its Borel σ-algebra, a measure absolutely continuous with
 respect to a finite measure that is inner regular for compact sets is inner regular for compact
-sets. -/
+sets. Compact inner approximation holds on every measurable set of finite measure. -/
 theorem innerRegularCompactLTTop [BorelSpace α] [R1Space α] [μ.InnerRegularCompactLTTop]
     (h : ν ≪ μ) : ν.InnerRegularCompactLTTop := by
   -- Closures of compact sets are compact and closed, so measurable, approximating sets.
@@ -231,9 +240,15 @@ theorem innerRegularCompactLTTop [BorelSpace α] [R1Space α] [μ.InnerRegularCo
       let ⟨K, hKU, hK, hrK⟩ := hU.exists_lt_isCompact_of_ne_top (measure_ne_top μ U) hr
       ⟨closure K, hK.closure_subset_measurableSet hU hKU, ⟨hK.closure, isClosed_closure⟩,
         hrK.trans_le (measure_mono subset_closure)⟩
-  exact ⟨(h.innerRegularWRT H
-    (fun _ hK ↦ hK.2.measurableSet.nullMeasurableSet) fun U _ ↦ measure_ne_top μ U).mono
-      (fun _ hU ↦ hU.1) fun _ hK ↦ hK.1⟩
+  refine ⟨fun U ⟨hU, hUtop⟩ r hr ↦ ?_⟩
+  have : IsFiniteMeasure (ν.restrict U) :=
+    ⟨by simpa [Measure.restrict_apply_univ] using hUtop.lt_top⟩
+  have hac : ν.restrict U ≪ μ :=
+    (Measure.restrict_le_self (μ := ν) (s := U)).absolutelyContinuous.trans h
+  obtain ⟨K, hKU, ⟨hK, -⟩, hrK⟩ := (hac.innerRegularWRT H
+    (fun _ hK ↦ hK.2.measurableSet.nullMeasurableSet) fun V _ ↦ measure_ne_top μ V)
+    hU r (by rwa [restrict_apply_self])
+  exact ⟨K, hKU, hK, by rwa [restrict_eq_self _ hKU] at hrK⟩
 
 /-- On an `R₁` space with its Borel σ-algebra, a finite measure absolutely continuous with
 respect to a finite inner regular measure is inner regular. -/

@@ -46,6 +46,8 @@ maximal atlas.
   `Bundle.Trivialization.coordChangeL_transFiberwiseLinear_right`.
 * `Bundle.Trivialization.transFiberwiseLinear_mem_maximalAtlas_iff`: a gauge transform of a
   member of the maximal atlas is a member exactly when the gauge is bi-`C^n`.
+* `Bundle.Trivialization.mem_maximalAtlas_of_eq_on_baseSet`: a trivialization agreeing on its base
+  set with a member of `G.maximalAtlas` also belongs to `G.maximalAtlas`.
 * `Bundle.Trivialization.contMDiffWithinAt_iff_of_mem_maximalAtlas`,
   `Bundle.Trivialization.contMDiffAt_section_iff_of_mem_maximalAtlas`: smoothness of maps into
   the total space and of sections can be read off in any member of the maximal atlas.
@@ -73,6 +75,23 @@ public section
 
 open Bundle Set Filter OpenPartialHomeomorph
 open scoped Manifold Topology ContDiff
+
+namespace Bundle.Trivialization
+
+/-- If two bundle trivializations have the same base set and agree on every fibre over that base
+set, and the second belongs to the maximal atlas of a structure groupoid `G`, then so does the
+first. -/
+theorem mem_maximalAtlas_of_eq_on_baseSet {B F : Type*} [TopologicalSpace B] [TopologicalSpace F]
+    {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [ChartedSpace (B × F) (TotalSpace F E)]
+    {G : StructureGroupoid (B × F)} {e₁ e₂ : Trivialization F (π F E)}
+    (hbase : e₁.baseSet = e₂.baseSet)
+    (happly : ∀ {b : B}, b ∈ e₁.baseSet → ∀ v : E b, e₁ ⟨b, v⟩ = e₂ ⟨b, v⟩)
+    (he₂ : e₂.toOpenPartialHomeomorph ∈ G.maximalAtlas (TotalSpace F E)) :
+    e₁.toOpenPartialHomeomorph ∈ G.maximalAtlas (TotalSpace F E) :=
+  G.mem_maximalAtlas_of_eqOnSource
+    ⟨by rw [e₁.source_eq, e₂.source_eq, hbase], fun ⟨_, v⟩ hp ↦ happly (e₁.mem_source.mp hp) v⟩ he₂
+
+end Bundle.Trivialization
 
 variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [TopologicalSpace B]
@@ -235,6 +254,7 @@ variable {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] [Topologi
   {IM : ModelWithCorners 𝕜 EM HM} {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
   {f : M → TotalSpace F E} {s : Set M} {x₀ : M}
 
+omit [e.IsLinear 𝕜] [e'.IsLinear 𝕜] [∀ x, Module 𝕜 (E x)] [∀ x, AddCommMonoid (E x)] in
 /-- A map into the total space whose base map is `C^n` and whose fibre coordinate in one member
 of the maximal atlas of `C^n` trivializations is `C^n` has `C^n` fibre coordinate in every other
 member whose source contains the point. -/
@@ -248,15 +268,36 @@ theorem _root_.ContMDiffWithinAt.change_section_trivialization_of_mem_maximalAtl
     (hx : f x₀ ∈ e.source) (hx' : f x₀ ∈ e'.source) :
     ContMDiffWithinAt IM 𝓘(𝕜, F) n (fun y ↦ (e' (f y)).2) s x₀ := by
   rw [mem_source] at hx hx'
-  refine (((contMDiffAt_coordChangeL_of_mem_maximalAtlas he he' hx hx').comp_contMDiffWithinAt
-    x₀ hp).clm_apply hf).congr_of_eventuallyEq ?_ ?_
-  · filter_upwards [hp.continuousWithinAt
-      ((e.open_baseSet.inter e'.open_baseSet).mem_nhds ⟨hx, hx'⟩)] with y hy
-    simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe]
-    have hy : (f y).proj ∈ e.baseSet ∩ e'.baseSet := hy
-    rw [coordChangeL_apply' _ _ hy, e.symm_apply_mk_proj (e.mem_source.2 hy.1)]
-  · simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe]
-    rw [coordChangeL_apply' _ _ ⟨hx, hx'⟩, e.symm_apply_mk_proj (e.mem_source.2 hx)]
+  -- The coordinate change of the two trivializations is a bi-`C^n` fiberwise linear map.
+  obtain ⟨φ, U, hU, hφ, h2φ, heφ⟩ := (mem_contMDiffFiberwiseLinear_iff B F IB _).1
+    (StructureGroupoid.compatible_of_mem_maximalAtlas he he')
+  have hsource : (e.toOpenPartialHomeomorph.symm ≫ₕ e'.toOpenPartialHomeomorph).source =
+      (e.baseSet ∩ e'.baseSet) ×ˢ univ := by
+    simp only [trans_toPartialEquiv, symm_toPartialEquiv, e.symm_trans_source_eq e']
+  have hU : U = e.baseSet ∩ e'.baseSet := by
+    ext b
+    have := congrArg ((b, (0 : F)) ∈ ·) (heφ.source_eq.symm.trans hsource)
+    simpa [FiberwiseLinear.openPartialHomeomorph] using this
+  subst hU
+  have hxU : (f x₀).proj ∈ e.baseSet ∩ e'.baseSet := ⟨hx, hx'⟩
+  have hnhds : e.baseSet ∩ e'.baseSet ∈ 𝓝 (f x₀).proj :=
+    (e.open_baseSet.inter e'.open_baseSet).mem_nhds hxU
+  have hcoord : ∀ y, (f y).proj ∈ e.baseSet ∩ e'.baseSet →
+      (e' (f y)).2 = φ (f y).proj ((e (f y)).2) := fun y hy ↦ by
+    have := heφ.eqOn (x := ((f y).proj, (e (f y)).2)) (by
+      rw [hsource]; exact ⟨hy, mem_univ _⟩)
+    rw [coe_trans, Function.comp_apply, coe_coe] at this
+    have hpair : ((f y).proj, (e (f y)).2) = e (f y) :=
+      Prod.ext (e.coe_fst (e.mem_source.2 hy.1)).symm rfl
+    have hleft : e.toOpenPartialHomeomorph.symm (e (f y)) = f y :=
+      e.toOpenPartialHomeomorph.left_inv (e.mem_source.2 hy.1)
+    rw [hpair, hleft] at this
+    refine (congrArg Prod.snd this).trans ?_
+    simp [FiberwiseLinear.openPartialHomeomorph, e.coe_fst (e.mem_source.2 hy.1)]
+  have hφp : ContMDiffWithinAt IM 𝓘(𝕜, F →L[𝕜] F) n (fun y ↦ (φ (f y).proj : F →L[𝕜] F)) s x₀ :=
+    (hφ.contMDiffAt hnhds).comp_contMDiffWithinAt x₀ hp
+  refine (hφp.clm_apply hf).congr_of_eventuallyEq ?_ (hcoord x₀ hxU)
+  filter_upwards [hp.continuousWithinAt hnhds] with y hy using hcoord y hy
 
 variable [VectorBundle 𝕜 F E]
 
@@ -341,6 +382,7 @@ theorem transFiberwiseLinear_mem_maximalAtlas_iff
 
 variable [ContMDiffVectorBundle n F E IB]
 
+omit [e.IsLinear 𝕜] in
 /-- A map into the total space of a `C^n` vector bundle is `C^n` within a set at a point exactly
 when its base map and its fibre coordinate in a member of the maximal atlas of `C^n`
 trivializations, whose source contains the point, are. -/
@@ -359,6 +401,7 @@ theorem contMDiffWithinAt_iff_of_mem_maximalAtlas
     ⟨(hp.change_section_trivialization_of_mem_maximalAtlas he₀ he · hx₀ hx),
       (hp.change_section_trivialization_of_mem_maximalAtlas he he₀ · hx hx₀)⟩
 
+omit [e.IsLinear 𝕜] in
 /-- A map into the total space of a `C^n` vector bundle is `C^n` at a point exactly when its base
 map and its fibre coordinate in a member of the maximal atlas of `C^n` trivializations, whose
 source contains the point, are. -/
@@ -371,6 +414,7 @@ theorem contMDiffAt_iff_of_mem_maximalAtlas
         ContMDiffAt IM 𝓘(𝕜, F) n (fun x ↦ (e (f x)).2) x₀ :=
   Trivialization.contMDiffWithinAt_iff_of_mem_maximalAtlas he hx
 
+omit [e.IsLinear 𝕜] in
 /-- A section of a `C^n` vector bundle is `C^n` within a set at a point of the base set of a member
 of the maximal atlas of `C^n` trivializations exactly when its coordinate in that member is. -/
 theorem contMDiffWithinAt_section_iff_of_mem_maximalAtlas
@@ -384,6 +428,7 @@ theorem contMDiffWithinAt_section_iff_of_mem_maximalAtlas
     ((e.mem_source (x := TotalSpace.mk' F b₀ (σ b₀))).2 hb₀)]
   exact and_iff_right contMDiffWithinAt_id
 
+omit [e.IsLinear 𝕜] in
 /-- A section of a `C^n` vector bundle is `C^n` at a point of the base set of a member of the
 maximal atlas of `C^n` trivializations exactly when its coordinate in that member is. -/
 theorem contMDiffAt_section_iff_of_mem_maximalAtlas
@@ -394,6 +439,7 @@ theorem contMDiffAt_section_iff_of_mem_maximalAtlas
       ContMDiffAt IB 𝓘(𝕜, F) n (fun x ↦ (e ⟨x, σ x⟩).2) b₀ :=
   contMDiffWithinAt_section_iff_of_mem_maximalAtlas he hb₀
 
+omit [e.IsLinear 𝕜] in
 /-- A section of a `C^n` vector bundle is `C^n` on a subset of the base set of a member of the
 maximal atlas of `C^n` trivializations exactly when its coordinate in that member is. -/
 theorem contMDiffOn_section_iff_of_mem_maximalAtlas

@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Hom.Instances
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
+import TauCeti.Algebra.Group.Hom.Instances
 
 /-!
 # Basic results on roots of unity
@@ -21,7 +23,8 @@ homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`
 `p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
 also records that roots of unity, and hence the values of a character of a finite group, are
 integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, and the
-kernel of the `n`-th power map of a commutative group with the `n`-th roots of unity.
+kernel of the `n`-th power map of a commutative group with the `n`-th roots of unity, and shows
+that homomorphisms out of an `n`-torsion monoid into `Mˣ` factor uniquely through `μₙ(M)`.
 Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th roots of unity.
 
 ## Main definitions
@@ -39,15 +42,24 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 ## Main results
 
+* `TauCeti.compHom_subtype_rootsOfUnity_bijective`: postcomposition with
+  `(rootsOfUnity n M).subtype` is bijective on homomorphisms out of a monoid whose elements satisfy
+  `g ^ n = 1`.
 * `IsOfFinOrder.isIntegral`: a finite-order element of a commutative ring is integral over `ℤ`.
 * `MonoidHom.isIntegral_coe_apply`: the values of a homomorphism from a finite group to the units
   of a commutative ring are integral over `ℤ`.
 
 * `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a commutative ring without zero divisors, a
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
+* `TauCeti.mul_sub_one_ne_zero_of_pow_eq_one`: if `ζ ^ n = 1` and `y ^ n ≠ 1`, then `ζ * y - 1 ≠ 0`,
+  which supplies the nonzero denominators in root averaging.
+* `TauCeti.subsingleton_rootsOfUnity_prime_pow`: in a reduced commutative ring of exponential
+  characteristic `p`, the group of `pʲ`-th roots of unity is trivial.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
 * `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
+* `TauCeti.exponent_pi_rootsOfUnity_cast_ne_zero`: in a domain, the exponent of a finite product
+  of groups `μ_{n i}` is nonzero as soon as each `n i` is.
 * `IsPrimitiveRoot.neg_one_of_two_ne_zero`: when `2 ≠ 0`, `-1` is a primitive square root of
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
@@ -82,6 +94,16 @@ theorem restrictRootsOfUnity_injective {R S F : Type*} [CommMonoid R] [CommMonoi
     [FunLike F R S] [MonoidHomClass F R S] (f : F) (n : ℕ) (hf : Function.Injective f) :
     Function.Injective (restrictRootsOfUnity f n) :=
   fun _ _ h ↦ Subtype.ext (Units.map_injective hf (congrArg Subtype.val h))
+
+/-- Postcomposition with `(rootsOfUnity n M).subtype` is bijective on homomorphisms out of a
+monoid `G` whose elements satisfy `g ^ n = 1`: every homomorphism `G →* Mˣ` lands in `μₙ(M)`. -/
+theorem compHom_subtype_rootsOfUnity_bijective {G M : Type*} [Monoid G] [CommMonoid M] {n : ℕ}
+    (hG : ∀ g : G, g ^ n = 1) :
+    Function.Bijective
+      (MonoidHom.compHom (rootsOfUnity n M).subtype :
+        (G →* rootsOfUnity n M) →* (G →* Mˣ)) :=
+  MonoidHom.compHom_bijective_of_forall_pow_eq_one Subtype.val_injective hG
+    fun y hy ↦ ⟨⟨y, (mem_rootsOfUnity n y).2 hy⟩, rfl⟩
 
 variable {R : Type*} [CommRing R]
 
@@ -162,6 +184,26 @@ theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n 
   have : NeZero n := ⟨hn⟩
   rw [← IsCyclic.exponent_eq_card]
   exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
+
+/-- The exponent of the product of the groups of `n i`-th roots of unity divides `∏ i, n i`. -/
+theorem exponent_pi_rootsOfUnity_dvd_prod {K ι : Type*} [CommMonoid K] [Fintype ι]
+    (n : ι → ℕ) : Monoid.exponent (∀ i, rootsOfUnity (n i) K) ∣ ∏ i, n i := by
+  rw [Monoid.exponent_pi]
+  refine Finset.lcm_dvd fun i _ ↦ dvd_trans ?_ (Finset.dvd_prod_of_mem n (Finset.mem_univ i))
+  exact Monoid.exponent_dvd_of_forall_pow_eq_one fun g ↦ OneMemClass.coe_eq_one.mp g.prop
+
+/-- The exponent of the product of the groups of `n i`-th roots of unity is nonzero in a domain
+`K` when each `n i` is. -/
+theorem exponent_pi_rootsOfUnity_cast_ne_zero {K ι : Type*} [CommRing K] [IsDomain K] [Finite ι]
+    (n : ι → ℕ) (hncast : ∀ i, (n i : K) ≠ 0) :
+    (Monoid.exponent (∀ i, rootsOfUnity (n i) K) : K) ≠ 0 := by
+  have := Fintype.ofFinite ι
+  have hprodcast : ((∏ i, n i : ℕ) : K) ≠ 0 := by
+    simpa using Finset.prod_ne_zero_iff.mpr (fun i _ ↦ hncast i)
+  obtain ⟨d, hd⟩ := exponent_pi_rootsOfUnity_dvd_prod (K := K) n
+  intro h
+  apply hprodcast
+  simp [hd, h]
 
 /-- In a commutative ring in which `2 ≠ 0`, the negative of a primitive `n`-th root of unity of
 odd order `n` is a primitive `2n`-th root of unity. -/
@@ -366,5 +408,15 @@ theorem rootsOfUnityPowOfDvd_comp {M : Type*} [CommMonoid M] {n m l : ℕ}
   apply Subtype.ext
   simp only [MonoidHom.comp_apply, coe_rootsOfUnityPowOfDvd_apply]
   rw [← pow_mul, Nat.div_mul_div h₂ h₁]
+
+/-- In a reduced commutative ring of exponential characteristic `p`, there is no nontrivial
+`pʲ`-th root of unity: `(u - 1) ^ pʲ = u ^ pʲ - 1`, so `u ^ pʲ = 1` forces `u = 1`. -/
+theorem subsingleton_rootsOfUnity_prime_pow [IsReduced R] (p j : ℕ) [ExpChar R p] :
+    Subsingleton (rootsOfUnity (p ^ j) R) := by
+  have key (x : rootsOfUnity (p ^ j) R) : x = 1 := by
+    have h : (x : Rˣ) ∈ rootsOfUnity 1 R :=
+      (mem_rootsOfUnity_prime_pow_mul_iff R p j 1).1 (by simp)
+    exact Subtype.ext (by simpa [mem_rootsOfUnity] using h)
+  exact ⟨fun x y ↦ (key x).trans (key y).symm⟩
 
 end TauCeti

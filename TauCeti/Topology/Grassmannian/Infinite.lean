@@ -47,6 +47,8 @@ open _root_.Finsupp
 
 namespace TauCeti
 
+section
+
 variable (𝕜 : Type*) [Field 𝕜] (k : ℕ)
 
 /-- The infinite Grassmannian of `k`-dimensional subspaces of the countable coordinate space
@@ -132,11 +134,15 @@ theorem mem_range_toInfinite_iff (W : infiniteGrassmannian 𝕜 k) :
 
 end finiteGrassmannian
 
+end
+
 namespace infiniteGrassmannian
 
 open finiteGrassmannian
 
-variable {𝕜 k}
+section
+
+variable {𝕜 : Type*} [Field 𝕜] {k : ℕ}
 
 /-- Every point of the infinite Grassmannian comes from some finite stage. -/
 theorem exists_toInfinite_eq (W : infiniteGrassmannian 𝕜 k) :
@@ -213,6 +219,8 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : infiniteGrassmannia
 
 end Topology
 
+end
+
 section Colimit
 
 variable {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜] (k : ℕ)
@@ -280,7 +288,7 @@ theorem isClosed_image_toInfinite {n : ℕ} {C : Set (finiteGrassmannian 𝕜 k 
     convert hC.preimage (continuous_ambientInclusion h) using 1
     ext W
     simp only [mem_preimage, mem_image, ← toInfinite_ambientInclusion h W, toInfinite_inj]
-    exact ⟨fun ⟨V, hV, hVW⟩ ↦ hVW ▸ hV, fun hW ↦ ⟨_, hW, rfl⟩⟩
+    exact ⟨fun ⟨_, hV, hVW⟩ ↦ hVW ▸ hV, fun hW ↦ ⟨_, hW, rfl⟩⟩
   · -- From a higher stage, the preimage is the image of `C`, closed by compactness.
     convert (isClosedEmbedding_ambientInclusion h).isClosedMap C hC using 1
     ext W

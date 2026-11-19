@@ -75,8 +75,9 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   `k[X₁, …, Xₛ] → A` forces `dim A = s`, the number of variables.
 * `RingHom.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial`: a surjection
   `k[X₁, …, Xₛ] → A` with `s ≤ dim A` is injective.
-* `TauCeti.finiteRingKrullDim_of_finiteType`: a nontrivial finitely generated algebra over a field
-  has finite Krull dimension.
+* `TauCeti.finiteRingKrullDim_of_finiteType` and `TauCeti.ringKrullDim_lt_top_of_finiteType`: a
+  nontrivial finitely generated algebra over a field has finite Krull dimension, and every finitely
+  generated algebra over a field has Krull dimension strictly below `⊤`.
 * `TauCeti.ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType`:
   `dim (K ⊗[k] A) = dim K + dim A` for a Noetherian `k`-algebra `K`.
 * `TauCeti.ringKrullDim_tensorProduct_field_of_finiteType`: `dim (K ⊗[k] A) = dim A` for a field
@@ -162,6 +163,17 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
     (ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hint)
 
 variable (k) in
+/-- Every finitely generated algebra over a field has Krull dimension strictly below `⊤` (including
+the zero ring, whose Krull dimension is `⊥`). -/
+theorem ringKrullDim_lt_top_of_finiteType (A : Type*) [CommRing A] [Algebra k A]
+    [Algebra.FiniteType k A] : ringKrullDim A < ⊤ := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · rw [ringKrullDim_eq_bot_of_subsingleton]
+    exact WithBot.bot_lt_coe _
+  · have := finiteRingKrullDim_of_finiteType k A
+    exact ringKrullDim_lt_top
+
+variable (k) in
 /-- An integral faithful extension of domains preserves ideal heights when the base is a finitely
 generated algebra over a field. -/
 theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_finiteType {R S : Type*}
@@ -224,7 +236,7 @@ theorem ringKrullDim_tensorProduct_field_of_finiteType (K A : Type*) [Field K] [
 
 variable (k) in
 /-- A finitely generated domain over a field `k` has Krull dimension its transcendence degree over
-`k`. The transcendence degree is finite by `Algebra.trdeg_lt_aleph0_of_finiteType`. -/
+`k`. The transcendence degree is finite by `trdeg_lt_aleph0_of_finiteType`. -/
 theorem ringKrullDim_eq_toNat_trdeg (A : Type*) [CommRing A] [IsDomain A] [Algebra k A]
     [Algebra.FiniteType k A] : ringKrullDim A = (Algebra.trdeg k A).toNat := by
   -- Noether normalization `k[X₁, …, Xₛ] → A` gives `dim A = s`, and the variables form a
@@ -246,8 +258,6 @@ theorem ringKrullDim_eq_toNat_trdeg_of_isFractionRing (A K : Type*) [CommRing A]
     [Algebra.FiniteType k A] [Field K] [Algebra A K] [Algebra k K] [IsScalarTower k A K]
     [IsFractionRing A K] : ringKrullDim A = (Algebra.trdeg k K).toNat := by
   have : IsDomain A := (IsFractionRing.injective A K).isDomain (algebraMap A K)
-  have : FaithfulSMul A K :=
-    (faithfulSMul_iff_algebraMap_injective _ _).2 (IsFractionRing.injective _ _)
   have := IsLocalization.isAlgebraic K (nonZeroDivisors A)
   have h := lift_trdeg_add_eq k A K
   rw [trdeg_eq_zero (R := A) (A := K), Cardinal.lift_zero, add_zero] at h
@@ -414,7 +424,7 @@ private theorem height_add_ringKrullDim_quotient_of_isDomain {A : Type*} [CommRi
       _ = ((p.map (Ideal.Quotient.mk P)).height + 1 : ℕ∞) + ringKrullDim (A ⧸ p) := by
         push_cast
         exact add_right_comm _ _ _
-      _ ≤ p.height + ringKrullDim (A ⧸ p) := by gcongr; exact_mod_cast hht
+      _ ≤ p.height + ringKrullDim (A ⧸ p) := by gcongr
 
 variable (k) in
 /-- **The dimension formula.** In a finitely generated algebra `A` with irreducible spectrum over a
@@ -425,7 +435,6 @@ theorem _root_.Ideal.height_add_ringKrullDim_quotient_of_finiteType {A : Type*} 
   -- Pass to the domain `A ⧸ I`, for `I` the nilradical, which has the same primes.
   let I : Ideal A := nilradical A
   have : I.IsPrime := PrimeSpectrum.irreducibleSpace_iff_isPrime_nilradical.mp inferInstance
-  have : IsDomain (A ⧸ I) := (Ideal.Quotient.isDomain_iff_prime I).mpr this
   have hIp : I ≤ p := nilradical_le_prime p
   have : (p.map (Ideal.Quotient.mk I)).IsPrime := Ideal.isPrime_map_quotientMk_of_isPrime hIp
   rw [← Ideal.height_map_quotientMk_nilradical p, ← ringKrullDim_quotient_nilradical A,

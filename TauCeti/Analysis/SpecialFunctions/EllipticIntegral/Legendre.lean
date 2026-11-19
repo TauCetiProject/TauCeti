@@ -201,7 +201,6 @@ theorem inv_max_le_legendrePi_integrand {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α
     (max 1 (1 - α2))⁻¹ ≤ (1 - α2 * sin θ ^ 2)⁻¹ * (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) := by
   have hpos := one_sub_mul_sin_sq_pos hα θ
   have hle : 1 - α2 * sin θ ^ 2 ≤ max 1 (1 - α2) := by
-    have h₀ := sq_nonneg (sin θ)
     have h₁ := sin_sq_le_one θ
     rcases le_or_gt α2 0 with h | h
     · exact le_max_of_le_right (by nlinarith)
@@ -220,7 +219,6 @@ theorem legendrePi_integrand_le {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (
       (min 1 (1 - α2))⁻¹ * (1 - k ^ 2) ^ (-1 / 2 : ℝ) := by
   have hmin : 0 < min 1 (1 - α2) := lt_min one_pos (by linarith)
   have hle : min 1 (1 - α2) ≤ 1 - α2 * sin θ ^ 2 := by
-    have h₀ := sq_nonneg (sin θ)
     have h₁ := sin_sq_le_one θ
     rcases le_or_gt α2 0 with h | h
     · exact min_le_of_left_le (by nlinarith)
