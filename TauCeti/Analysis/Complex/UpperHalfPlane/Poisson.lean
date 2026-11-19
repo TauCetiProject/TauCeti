@@ -15,6 +15,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Basic.Complex.OfRealSub
 
 /-!
 # Poisson and Schwarz integrals on the upper half-plane
@@ -119,12 +120,6 @@ theorem upperHalfPlanePoissonKernel_nonneg {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ)
     0 ≤ upperHalfPlanePoissonKernel z x := by
   rw [upperHalfPlanePoissonKernel_eq]
   exact div_nonneg hz (mul_nonneg Real.pi_pos.le (normSq_nonneg _))
-
-/-- `|x - z| ^ 2 = (x - Re z) ^ 2 + (Im z) ^ 2`. -/
-private theorem normSq_ofReal_sub (z : ℂ) (x : ℝ) :
-    normSq ((x : ℂ) - z) = (x - z.re) ^ 2 + z.im ^ 2 := by
-  simp only [normSq_apply, sub_re, ofReal_re, sub_im, ofReal_im, zero_sub]
-  ring
 
 /-- The Poisson kernel is positive for a pole in the open upper half-plane. -/
 theorem upperHalfPlanePoissonKernel_pos {z : ℂ} (hz : 0 < z.im) (x : ℝ) :
