@@ -145,6 +145,7 @@ theorem coe_graphSpaceRepresentation_apply (g : G) (z : f.graphSpace) :
   (coe_subrepresentation_apply g z).trans (withLpProd_apply g _)
 
 /-- The representation on the graph space acts on the domain of `f` as `π`. -/
+@[simp]
 theorem graphSpaceRepresentation_toGraphSpace (g : G) (x : f.domain) :
     f.graphSpaceRepresentation π ρ hf g (f.toGraphSpace x) =
       f.toGraphSpace ⟨π g x, hf.apply_mem_domain g x⟩ := by
