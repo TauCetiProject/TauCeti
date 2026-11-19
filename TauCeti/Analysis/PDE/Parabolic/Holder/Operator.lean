@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Interpolation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
 public import TauCeti.Analysis.Holder.Bilinear
+import TauCeti.Analysis.Matrix.QuadraticBounds
 
 /-!
 # Second-order parabolic operators on order-two parabolic Hölder spaces
@@ -51,6 +52,8 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   and Lipschitz continuous in its scalar coefficients.
 * `TauCeti.ParabolicC2HolderSpace.exists_norm_coeff_le`: a common bound on the norms of the
   scalar coefficients.
+* `TauCeti.ParabolicC2HolderSpace.toQuadraticForm'_le_of_norm_coeff_le`: a bound on the norms of
+  the second-order coefficients gives the upper ellipticity bound.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_restrictL`: the operator commutes
   with restriction to a smaller slab.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_const_apply_eq_add`: freezing the
@@ -439,6 +442,14 @@ theorem exists_norm_coeff_le (a : ι → ι → HolderSpace α (slab (E := Eucli
       Finset.single_le_sum (f := fun i ↦ ‖b i‖₊) (fun _ _ ↦ zero_le) (Finset.mem_univ i)
     exact_mod_cast h.trans (le_add_right (le_add_left le_rfl))
   · exact_mod_cast (le_add_left le_rfl : ‖c‖₊ ≤ _)
+
+/-- A bound `‖aⁱʲ‖ ≤ K` on the second-order coefficients gives the upper ellipticity bound
+`aⁱʲ(p) ξᵢ ξⱼ ≤ (∑ᵢⱼ K) ‖ξ‖²` at every point `p`. -/
+theorem toQuadraticForm'_le_of_norm_coeff_le {K : ℝ} (hak : ∀ i j, ‖a i j‖ ≤ K)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) (ξ : EuclideanSpace ℝ ι) :
+    (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤ (∑ _i : ι, ∑ _j : ι, K) * ‖ξ‖ ^ 2 :=
+  Matrix.toQuadraticForm'_le_of_forall_abs_le (fun i j ↦
+    ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (hak i j)) ξ
 
 /-- **Restriction to a smaller slab.** The operator commutes with restriction from
 `ℝⁿ × [t₀, t₁]` to `ℝⁿ × [t₀', t₁']`, when the coefficients are restricted as well. -/

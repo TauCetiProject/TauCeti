@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Holder.UniformContinuous
 public import TauCeti.Analysis.PDE.Parabolic.Holder.PositiveTime
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Solvability
-import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.Normed.Group.Submodule
 import TauCeti.Analysis.PDE.HeatKernel.UniformContinuous
 
@@ -462,10 +461,7 @@ private theorem exists_norm_restrictedSolution_le_div {lam : ℝ} (hlam : 0 < la
     hα₀ hα₁ (Lam := ∑ _i : ι, ∑ _j : ι, (K : ℝ)) hlam K T₀
   refine ⟨2 * C, by positivity, fun T hT hTT₀ a b c ha hak hbk hck δ hδ hδT d ↦ ?_⟩
   -- The coefficient bound gives the upper ellipticity bound.
-  have hup : ∀ p (ξ : EuclideanSpace ℝ ι), (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤
-      (∑ _i : ι, ∑ _j : ι, (K : ℝ)) * ‖ξ‖ ^ 2 := fun p ↦
-    Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
-      ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (hak i j)
+  have hup := toQuadraticForm'_le_of_norm_coeff_le hak
   -- The initial values of the classical solution are bounded by the supremum norm of the datum.
   have hM : ∀ x, |(euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩).symm d
       (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤ ‖toBUC d.2‖ := fun x ↦ by
@@ -498,11 +494,6 @@ def euclideanCauchySolutionBUCRestrictL :
       uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ →L[ℝ]
         ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hδT :=
   (restrictedSolution hα₀ hα₁ hT a b c ha hδ hδT).extendOfNorm dataMap
-
-private theorem euclideanCauchySolutionBUCRestrictL_eq :
-    euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT =
-      (restrictedSolution hα₀ hα₁ hT a b c ha hδ hδT).extendOfNorm dataMap :=
-  (rfl)
 
 variable {a b c}
 
@@ -610,7 +601,7 @@ theorem exists_rpow_mul_norm_euclideanCauchySolutionBUCRestrictL_le {lam : ℝ} 
   have h := LinearMap.norm_extendOfNorm_apply_le (denseRange_dataMap hα₁.le)
     (C / δ ^ (1 + (α : ℝ) / 2)) (fun d' ↦ by
       convert hest T hT hTT₀ a b c ha hak hbk hck hδ hδT d' using 2) d
-  rw [euclideanCauchySolutionBUCRestrictL_eq]
+  rw [euclideanCauchySolutionBUCRestrictL]
   convert (le_div_iff₀' hδα).1 (h.trans_eq (div_mul_eq_mul_div _ _ _)) using 2
 
 end PositiveTime
