@@ -72,7 +72,8 @@ example (δ : ℝ) :
       Nat.cast_one]
     ring
   rw [heq]
-  exact riemannZetaData.isBigO_log_norm_dual_gammaFactor_div_neg_line_sub δ
+  simpa only [sub_neg_eq_add, mul_neg] using
+    riemannZetaData.isBigO_log_norm_dual_gammaFactor_div_vertical_line_sub (-δ)
 
 -- Duplication check: two real gamma factors with shifts `{0, 1}` interleave into one `Gammaℂ`
 -- factor, giving degree `2` (exponential rate `-π |t| / 2`), logarithmic exponent `σ - 1 / 2`,

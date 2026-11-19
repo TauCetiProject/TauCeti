@@ -66,11 +66,11 @@ half-plane margin `ε ≤ 1 - b + Re μ` and `ε ≤ 1 - b + Re ν` (`ε ≤ 1 +
   vertical-strip asymptotics of `d.gammaFactor`.
 * `exists_abs_log_norm_dual_gammaFactor_div_vertical_sub_le_of_norm_le`,
   `isBigO_log_norm_dual_gammaFactor_div_vertical_sub`,
-  `isBigO_log_norm_dual_gammaFactor_div_neg_line_sub`: exponential cancellation in
+  `isBigO_log_norm_dual_gammaFactor_div_vertical_line_sub`: exponential cancellation in
   `log ‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖`.
 * `exists_norm_conductor_cpow_mul_dual_gammaFactor_div_le_analyticConductorAt_rpow`,
   `exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_analyticConductorAt_rpow`,
-  `exists_norm_conductor_cpow_mul_dual_gammaFactor_div_neg_line_le_analyticConductorAt_rpow`:
+  `exists_norm_conductor_cpow_mul_dual_gammaFactor_div_line_le_analyticConductorAt_rpow`:
   conductor-uniform upper bounds in terms of `d.analyticConductorAt`.
 
 ## References
@@ -385,18 +385,6 @@ theorem isBigO_log_norm_dual_gammaFactor_div_vertical_line_sub (d : AnalyticLFun
   (d.isBigO_log_norm_dual_gammaFactor_div_vertical_sub σ σ).fiberwise_right
     (left_mem_Icc.2 le_rfl)
 
-/-- **Dual gamma-quotient asymptotic on `Re s = -δ`**:
-`log ‖d.dual.gammaFactor (1 - (-δ + i t)) / d.gammaFactor (-δ + i t)‖ =
-  (d.degree / 2) * (1 + 2 δ) * log |t| + O(1)` as `|t| → ∞`. -/
-theorem isBigO_log_norm_dual_gammaFactor_div_neg_line_sub (d : AnalyticLFunctionData) (δ : ℝ) :
-    (fun t : ℝ ↦
-        Real.log ‖d.dual.gammaFactor (1 - ((-δ : ℝ) + t * I)) /
-            d.gammaFactor ((-δ : ℝ) + t * I)‖ -
-          (d.degree : ℝ) / 2 * (1 + 2 * δ) * Real.log |t|)
-      =O[cocompact ℝ] fun _ ↦ (1 : ℝ) := by
-  simpa only [sub_neg_eq_add, mul_neg] using
-    d.isBigO_log_norm_dual_gammaFactor_div_vertical_line_sub (-δ)
-
 /-! ### Polynomial norm bounds and comparison with `analyticConductorAt` -/
 
 /-- Two-sided polynomial norm bounds for `‖d.dual.gammaFactor (1 - s) / d.gammaFactor s‖` on
@@ -675,30 +663,26 @@ theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_of_shift_re
     (fun μ hμ ↦ ⟨(hR μ hμ).1, by linarith [(hR μ hμ).2]⟩)
     (fun ν hν ↦ ⟨(hC' ν hν).1, by linarith [(hC' ν hν).2]⟩) s hs⟩
 
-/-- **All-height conductor-uniform edge bound on `Re s = -δ`** (for arbitrary `δ : ℝ`): when the
-reflected shifts stay a positive distance `ε` inside the right half-plane (`ε ≤ 1 + δ + Re μ` and
-`ε ≤ 1 + δ + Re ν`), there is a single constant `C > 0` depending only on `δ`, `ε`, `n`, and `M`
-(independent of `d` and `d.conductor`) such that for **every** `t : ℝ`,
-`‖N ^ (1 / 2 - (-δ + i t)) (γ^∨(1 - (-δ + i t)) / γ(-δ + i t))‖ ≤
-  C * d.analyticConductorAt (-δ + i t) ^ (1 / 2 + δ)`. -/
-theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_neg_line_le_analyticConductorAt_rpow
-    (δ : ℝ) {ε : ℝ} (hε : 0 < ε) (n : ℕ) (M : ℝ) :
+/-- **All-height conductor-uniform vertical-line bound on `Re s = σ`**: when the reflected
+shifts stay a positive distance `ε` inside the right half-plane (`ε ≤ 1 - σ + Re μ` and
+`ε ≤ 1 - σ + Re ν`), there is a single constant `C > 0` depending only on `σ`, `ε`, `n`, and `M`
+(independent of `d` and `d.conductor`) such that for every `t : ℝ`,
+`‖N ^ (1 / 2 - (σ + i t)) (γ^∨(1 - (σ + i t)) / γ(σ + i t))‖ ≤`
+`C * d.analyticConductorAt (σ + i t) ^ (1 / 2 - σ)`. -/
+theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_line_le_analyticConductorAt_rpow
+    (σ : ℝ) {ε : ℝ} (hε : 0 < ε) (n : ℕ) (M : ℝ) :
     ∃ C > 0, ∀ d : AnalyticLFunctionData, d.degree = n →
-      (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M ∧ ε ≤ 1 + δ + μ.re) →
-      (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M ∧ ε ≤ 1 + δ + ν.re) →
+      (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M ∧ ε ≤ 1 - σ + μ.re) →
+      (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M ∧ ε ≤ 1 - σ + ν.re) →
       ∀ t : ℝ,
-        ‖((d.conductor : ℕ) : ℂ) ^ ((1 : ℂ) / 2 - ((-δ : ℝ) + t * I)) *
-            (d.dual.gammaFactor (1 - ((-δ : ℝ) + t * I)) /
-              d.gammaFactor ((-δ : ℝ) + t * I))‖ ≤
-          C * d.analyticConductorAt ((-δ : ℝ) + t * I) ^ (1 / 2 + δ) := by
+        ‖((d.conductor : ℕ) : ℂ) ^ ((1 : ℂ) / 2 - (σ + t * I)) *
+            (d.dual.gammaFactor (1 - (σ + t * I)) / d.gammaFactor (σ + t * I))‖ ≤
+          C * d.analyticConductorAt (σ + t * I) ^ (1 / 2 - σ) := by
   obtain ⟨C, hC, h⟩ :=
     exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_analyticConductorAt_rpow
-      (-δ) (-δ) hε n M
-  refine ⟨C, hC, fun d hd hR hC' t ↦ ?_⟩
-  simpa [sub_neg_eq_add] using h d hd
-    (fun μ hμ ↦ ⟨(hR μ hμ).1, by linarith [(hR μ hμ).2]⟩)
-    (fun ν hν ↦ ⟨(hC' ν hν).1, by linarith [(hC' ν hν).2]⟩)
-    ((-δ : ℝ) + t * I) (by simp)
+      σ σ hε n M
+  exact ⟨C, hC, fun d hd hR hC' t ↦ by
+    simpa using h d hd hR hC' (σ + t * I) (by simp)⟩
 
 /-- All-height conductor-uniform vertical-line bound on `Re s = σ` (`σ < 1`, e.g. `σ = -δ` for any
 `δ > -1`) for records whose gamma shifts have nonnegative real parts (`0 ≤ Re μ`, `0 ≤ Re ν`),
@@ -714,8 +698,10 @@ theorem exists_norm_conductor_cpow_mul_dual_gammaFactor_div_line_le_of_shift_re_
             (d.dual.gammaFactor (1 - (σ + t * I)) / d.gammaFactor (σ + t * I))‖ ≤
           C * d.analyticConductorAt (σ + t * I) ^ (1 / 2 - σ) := by
   obtain ⟨C, hC, h⟩ :=
-    exists_norm_conductor_cpow_mul_dual_gammaFactor_div_strip_le_of_shift_re_nonneg σ hσ n M
-  refine ⟨C, hC, fun d hd hR hC' t ↦ ?_⟩
-  simpa using h d hd hR hC' (σ + t * I) (by simp)
+    exists_norm_conductor_cpow_mul_dual_gammaFactor_div_line_le_analyticConductorAt_rpow σ
+      (sub_pos.2 hσ) n M
+  exact ⟨C, hC, fun d hd hR hC' t ↦ h d hd
+    (fun μ hμ ↦ ⟨(hR μ hμ).1, le_add_of_nonneg_right (hR μ hμ).2⟩)
+    (fun ν hν ↦ ⟨(hC' ν hν).1, le_add_of_nonneg_right (hC' ν hν).2⟩) t⟩
 
 end TauCeti.LFunctions.AnalyticLFunctionData

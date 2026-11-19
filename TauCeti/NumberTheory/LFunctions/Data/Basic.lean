@@ -119,18 +119,10 @@ theorem gammaFactor_def (s : ℂ) :
 /-- Every record `d` has a finite norm bound on its real and complex gamma shifts. -/
 theorem exists_shift_norm_le :
     ∃ M ≥ 0, (∀ μ ∈ d.gammaR, ‖μ‖ ≤ M) ∧ (∀ ν ∈ d.gammaC, ‖ν‖ ≤ M) := by
-  have hnn (m : Multiset ℂ) : ∀ x ∈ m.map norm, (0 : ℝ) ≤ x := by
-    intro x hx
-    obtain ⟨z, -, rfl⟩ := Multiset.mem_map.mp hx
-    exact norm_nonneg z
-  have hR0 : 0 ≤ (d.gammaR.map norm).sum := Multiset.sum_nonneg (hnn d.gammaR)
-  have hC0 : 0 ≤ (d.gammaC.map norm).sum := Multiset.sum_nonneg (hnn d.gammaC)
-  refine ⟨(d.gammaR.map norm).sum + (d.gammaC.map norm).sum, add_nonneg hR0 hC0,
-    fun μ hμ ↦ ?_, fun ν hν ↦ ?_⟩
-  · have h1 := Multiset.single_le_sum (hnn d.gammaR) ‖μ‖ (Multiset.mem_map_of_mem norm hμ)
-    linarith
-  · have h2 := Multiset.single_le_sum (hnn d.gammaC) ‖ν‖ (Multiset.mem_map_of_mem norm hν)
-    linarith
+  obtain ⟨R, hR⟩ := (d.gammaR + d.gammaC).finite_toSet.isBounded.exists_norm_le
+  exact ⟨max R 0, le_max_right _ _,
+    fun μ hμ ↦ (hR μ (Multiset.mem_add.2 (.inl hμ))).trans (le_max_left _ _),
+    fun ν hν ↦ (hR ν (Multiset.mem_add.2 (.inr hν))).trans (le_max_left _ _)⟩
 
 /-- The **dual card**: conjugate coefficients, conjugate gamma shifts, conjugate root number, the
 reflected completed function `s ↦ conj Λ(conj s)`, and the conjugate polar divisor. The conductor
