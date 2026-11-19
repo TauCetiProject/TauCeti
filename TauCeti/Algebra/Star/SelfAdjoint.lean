@@ -23,6 +23,9 @@ one-sided relations with a self-adjoint element: `x * q = x` becomes `q * x = x`
 `x`, and `q * u = 0` becomes `star u * q = 0`. For a self-adjoint `p`, the
 element `2 p - 1` is again self-adjoint.
 
+Preservation of self-adjoint squares by an additive homomorphism also implies preservation
+of anticommutators on the self-adjoint part when the codomain has cancellative addition.
+
 ## Main results
 
 * `IsSelfAdjoint.eq_zero_of_isNilpotent`: a nilpotent self-adjoint element is zero.
@@ -34,6 +37,7 @@ element `2 p - 1` is again self-adjoint.
   `star u * q = 0`.
 * `IsSelfAdjoint.two_mul_sub_one`: `2 p - 1` is self-adjoint for a self-adjoint `p`.
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
+* `AddMonoidHom.map_mul_add_mul_of_isSelfAdjoint`: polarization of the self-adjoint square law.
 -/
 
 public section
@@ -89,3 +93,22 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
   have hstar : star Rinv * R = 1 := by
     simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
   exact left_inv_eq_right_inv hstar hRRinv
+
+namespace AddMonoidHom
+
+/-- An additive homomorphism preserving self-adjoint squares preserves anticommutators of
+self-adjoint elements when addition in the codomain is cancellative. -/
+theorem map_mul_add_mul_of_isSelfAdjoint
+    {A B : Type*} [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
+    [NonUnitalNonAssocSemiring B] [IsCancelAdd B] (f : A →+ B)
+    (hf : ∀ x, IsSelfAdjoint x → f (x * x) = f x * f x)
+    {x y : A} (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) :
+    f (x * y + y * x) = f x * f y + f y * f x := by
+  have h := hf (x + y) (hx.add hy)
+  simp only [add_mul, mul_add, map_add, hf x hx, hf y hy] at h
+  rw [map_add]
+  -- Collect the two common square terms on the left before cancelling them.
+  apply add_left_cancel (a := f x * f x + f y * f y)
+  convert h using 1 <;> ac_rfl
+
+end AddMonoidHom
