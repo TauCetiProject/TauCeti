@@ -11,9 +11,9 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 /-!
 # Approximation numbers as s-numbers
 
-The approximation numbers form a strict s-number sequence. They also dominate every
-s-number sequence: perturbation by a rank-at-most-`n` operator bounds the `n`-th term by
-the approximation error.
+The approximation numbers form a strict, additive and multiplicative s-number sequence. They
+also dominate every s-number sequence: perturbation by a rank-at-most-`n` operator bounds the
+`n`-th term by the approximation error.
 
 The approximation family uses the existing `ContinuousLinearMap.singularValue` directly,
 without a second name, infimum or parallel calculus. The strict normalization is supplied by
@@ -62,6 +62,14 @@ theorem isStrictSNumberSequence_approximation :
 normed field. -/
 theorem isSNumberSequence_approximation : IsSNumberSequence (approximation (𝕜 := 𝕜)) :=
   isStrictSNumberSequence_approximation.toIsSNumberSequence
+
+/-- Approximation numbers form an additive s-number family. -/
+theorem additive_approximation : Additive (approximation (𝕜 := 𝕜)) :=
+  fun S T m n ↦ S.singularValue_add_index_le T m n
+
+/-- Approximation numbers form a multiplicative s-number family. -/
+theorem multiplicative_approximation : Multiplicative (approximation (𝕜 := 𝕜)) :=
+  fun S T m n ↦ S.singularValue_comp_add_le_mul T m n
 
 /-- Approximation numbers are the largest s-number sequence, pointwise on every operator. -/
 theorem IsSNumberSequence.le_singularValue {s : SNumberFamily 𝕜}

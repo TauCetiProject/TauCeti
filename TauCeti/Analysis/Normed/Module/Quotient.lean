@@ -19,7 +19,8 @@ Descending a continuous semilinear map through a submodule contained in its kern
 operator norm. Equivalently, precomposition with the quotient projection preserves operator
 norms. These facts apply to seminormed spaces and arbitrary submodules, and supply the metric
 part of the duality between a quotient and the annihilator of its defining submodule.
-The quotient projection is moreover a metric quotient map: it has norm at most one and lifts
+The quotient projection is moreover a metric quotient map: it has norm at most one, decreases
+in operator norm after postcomposition as the submodule grows, and lifts
 every vector of norm less than `r` to a vector of norm less than `r`. A closed-subspace quotient
 has a chosen bounded nonlinear right inverse with public bound constant two
 (`Submodule.quotientRightInverse`, `Submodule.quotientRightInverse_nnnorm`).
@@ -103,6 +104,22 @@ theorem norm_mkQL_comp_le (S : Submodule 𝕜₂ F) (f : E →SL[σ] F) :
 theorem nnnorm_mkQL_comp_le (S : Submodule 𝕜₂ F) (f : E →SL[σ] F) :
     ‖S.mkQL.comp f‖₊ ≤ ‖f‖₊ := by
   exact_mod_cast S.norm_mkQL_comp_le f
+
+/-- Enlarging the quotient submodule does not increase the operator norm after quotienting. -/
+theorem norm_mkQL_comp_antitone (f : E →SL[σ] F) :
+    Antitone fun S : Submodule 𝕜₂ F ↦ ‖S.mkQL.comp f‖ := fun S T h ↦ by
+  have hker : S ≤ T.mkQL.ker := fun x hx ↦ (Submodule.Quotient.mk_eq_zero T).mpr (h hx)
+  have heq : (S.liftQL T.mkQL hker).comp (S.mkQL.comp f) = T.mkQL.comp f := by ext x; rfl
+  dsimp only
+  rw [← heq]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_left (norm_nonneg _) ((S.norm_liftQL T.mkQL hker).trans_le T.norm_mkQL_le))
+
+/-- Enlarging the quotient submodule does not increase the nonnegative operator norm after
+quotienting. -/
+theorem nnnorm_mkQL_comp_antitone (f : E →SL[σ] F) :
+    Antitone fun S : Submodule 𝕜₂ F ↦ ‖S.mkQL.comp f‖₊ :=
+  fun _ _ h ↦ mod_cast norm_mkQL_comp_antitone f h
 
 /-- The quotient projection has norm one when the submodule is not dense. -/
 theorem norm_mkQL (S : Submodule 𝕜 E) (hS : ¬ Dense (S : Set E)) : ‖S.mkQL‖ = 1 := by

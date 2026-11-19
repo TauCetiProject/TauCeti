@@ -17,8 +17,11 @@ spaces over a fixed field. Pietsch's axioms abstract the common calculus of appr
 Gelfand, Kolmogorov, Bernstein and Hilbert numbers. The indexing is zero-based: the first
 term is the operator norm, and the term at index `n` vanishes on operators of rank at most `n`.
 
-This file defines the ordinary and strict axioms and derives the norm bound, Lipschitz
-continuity and scalar homogeneity. Strictness means normalization on every identity below
+This file defines the ordinary and strict axioms, derives the norm bound, Lipschitz
+continuity and scalar homogeneity, and introduces additive and multiplicative s-number
+families (`s_{m+n}(S + T) ≤ s_m(S) + s_n(T)` and `s_{m+n}(S ∘ T) ≤ s_m(S) s_n(T)`), which
+recover the perturbation and two-sided ideal axioms once the zeroth term is the operator norm.
+Strictness means normalization on every identity below
 the dimension, not merely on the finite Euclidean identities.
 
 ## References
@@ -198,5 +201,67 @@ theorem neg (T : X →L[𝕜] Y) (n : ℕ) : s (-T) n = s T n := by
   simpa using hs.smul (-1) T n
 
 end IsSNumberSequence
+
+/-- An additive family satisfies the mixed-index triangle inequality
+`s_{m+n}(S + T) ≤ s_m(S) + s_n(T)`. -/
+@[expose] def Additive (s : SNumberFamily 𝕜) : Prop :=
+  ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (S T : X →L[𝕜] Y) (m n : ℕ),
+    s (S + T) (m + n) ≤ s S m + s T n
+
+/-- A multiplicative family satisfies the mixed-index product inequality
+`s_{m+n}(S ∘ T) ≤ s_m(S) s_n(T)`. -/
+@[expose] def Multiplicative (s : SNumberFamily 𝕜) : Prop :=
+  ∀ {X Y Z : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (S : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (m n : ℕ),
+    s (S ∘L T) (m + n) ≤ s S m * s T n
+
+/-- An additive family whose zeroth term is the operator norm satisfies the perturbative
+triangle axiom (S2). -/
+theorem Additive.add_le {s : SNumberFamily 𝕜} (hadd : Additive s)
+    (hnorm : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), s T 0 = ‖T‖₊)
+    {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (S T : X →L[𝕜] Y) (n : ℕ) :
+    s (S + T) n ≤ s S n + ‖T‖₊ := by
+  simpa [hnorm T] using hadd S T n 0
+
+/-- A multiplicative family whose zeroth term is the operator norm scales under postcomposition
+by at most the operator norm. -/
+theorem Multiplicative.comp_le_left {s : SNumberFamily 𝕜} (hmul : Multiplicative s)
+    (hnorm : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), s T 0 = ‖T‖₊)
+    {X Y Z : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (B : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (n : ℕ) :
+    s (B ∘L T) n ≤ ‖B‖₊ * s T n := by
+  simpa [hnorm B] using hmul B T 0 n
+
+/-- A multiplicative family whose zeroth term is the operator norm scales under precomposition
+by at most the operator norm. -/
+theorem Multiplicative.comp_le_right {s : SNumberFamily 𝕜} (hmul : Multiplicative s)
+    (hnorm : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), s T 0 = ‖T‖₊)
+    {W X Y : Type u} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ) :
+    s (T ∘L A) n ≤ s T n * ‖A‖₊ := by
+  simpa [hnorm A] using hmul T A n 0
+
+/-- A multiplicative family whose zeroth term is the operator norm satisfies the two-sided ideal
+axiom (S3). -/
+theorem Multiplicative.comp_le {s : SNumberFamily 𝕜} (hmul : Multiplicative s)
+    (hnorm : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), s T 0 = ‖T‖₊)
+    {W X Y Z : Type u} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (B : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ) :
+    s (B ∘L T ∘L A) n ≤ ‖B‖₊ * s T n * ‖A‖₊ :=
+  (hmul.comp_le_left hnorm B (T ∘L A) n).trans <| by
+    rw [mul_assoc]
+    gcongr
+    exact hmul.comp_le_right hnorm T A n
 
 end TauCeti.SNumbers

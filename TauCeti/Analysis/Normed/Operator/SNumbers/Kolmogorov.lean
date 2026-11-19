@@ -17,14 +17,19 @@ quotient projections by subspaces of dimension at most `n`. The quotient seminor
 even when the subspace is not closed. This definition works over every nontrivially normed
 field; its closed-unit-ball interpretation requires a densely normed field.
 
-We prove the norm, monotonicity, perturbation, ideal and rank laws. Over a complete scalar
-field, finite-dimensional subspaces are closed, and the Kolmogorov numbers form a strict
-s-number sequence. No completeness of the domain or codomain is needed.
+We prove the norm, monotonicity, mixed-index additivity and multiplicativity, perturbation,
+ideal and rank laws over every nontrivially normed field. Over a complete scalar field,
+finite-dimensional subspaces are closed, and the Kolmogorov numbers form a strict s-number
+sequence. No completeness of the domain or codomain is needed.
 
 ## References
 
-* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §4.
+* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §§4, 9
+  (Theorem 9.5).
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
+* M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
+  `SNumbers/Kolmogorov.lean`: an earlier Lean formalization of Kolmogorov numbers and their
+  index laws.
 -/
 
 public section
@@ -111,49 +116,62 @@ theorem kolmogorovNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ}
     exact (Submodule.Quotient.mk_eq_zero _).mpr (LinearMap.mem_range_self _ x)
   simpa [hz] using T.kolmogorovNumber_le hT
 
+/-- **Mixed-index additive inequality.** `d_{m+n}(S + T) ≤ dₘ(S) + dₙ(T)`, witnessed on the
+sum of subspaces admissible for `S` and `T`. -/
+theorem kolmogorovNumber_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
+    (S + T).kolmogorovNumber (m + n) ≤ S.kolmogorovNumber m + T.kolmogorovNumber n := by
+  rw [kolmogorovNumber_def S, kolmogorovNumber_def T]
+  refine NNReal.le_iInf_add_iInf fun V W ↦ ?_
+  have hrank : Module.rank 𝕜 ↥(V.1 ⊔ W.1) ≤ ↑(m + n) := by
+    rw [Nat.cast_add]
+    exact (Submodule.rank_add_le_rank_add_rank V.1 W.1).trans (add_le_add V.2 W.2)
+  refine ((S + T).kolmogorovNumber_le hrank).trans ?_
+  rw [comp_add]
+  exact (nnNorm_add_le _ _).trans
+    (add_le_add (Submodule.nnnorm_mkQL_comp_antitone S le_sup_left)
+      (Submodule.nnnorm_mkQL_comp_antitone T le_sup_right))
+
 /-- The Kolmogorov number of `S + T` exceeds that of `S` by at most `‖T‖₊`. -/
 theorem kolmogorovNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
     (S + T).kolmogorovNumber n ≤ S.kolmogorovNumber n + ‖T‖₊ := by
-  have h (V : {V : Submodule 𝕜 F // Module.rank 𝕜 V ≤ n}) :
-      (S + T).kolmogorovNumber n ≤ ‖V.1.mkQL ∘L S‖₊ + ‖T‖₊ := by
-    refine ((S + T).kolmogorovNumber_le V.2).trans ?_
-    rw [comp_add]
-    refine (nnNorm_add_le _ _).trans ?_
-    gcongr
-    exact V.1.nnnorm_mkQL_comp_le T
-  simpa only [kolmogorovNumber_def, ciInf_const] using
-    (NNReal.le_iInf_add_iInf (g := fun _ : Unit ↦ ‖T‖₊) fun V _ ↦ h V)
+  simpa using S.kolmogorovNumber_add_index_le T n 0
+
+/-- **Mixed-index product inequality.** `d_{m+n}(S T) ≤ dₘ(S) dₙ(T)`, witnessed on `W + S(V)`
+for subspaces `W` admissible for `S` and `V` admissible for `T`. -/
+theorem kolmogorovNumber_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) (m n : ℕ) :
+    (S ∘L T).kolmogorovNumber (m + n) ≤ S.kolmogorovNumber m * T.kolmogorovNumber n := by
+  rw [kolmogorovNumber_def S, NNReal.iInf_mul]
+  refine le_ciInf fun W ↦ ?_
+  rw [kolmogorovNumber_def T, NNReal.mul_iInf]
+  refine le_ciInf fun V ↦ ?_
+  let U := W.1 ⊔ V.1.map S.toLinearMap
+  have hSV : Module.rank 𝕜 ↥(V.1.map S.toLinearMap) ≤ n :=
+    Cardinal.lift_le_nat_iff.mp
+      ((lift_rank_map_le S.toLinearMap V.1).trans (Cardinal.lift_le_nat_iff.mpr V.2))
+  have hU : Module.rank 𝕜 U ≤ ↑(m + n) := by
+    rw [Nat.cast_add]
+    exact (Submodule.rank_add_le_rank_add_rank _ _).trans (add_le_add W.2 hSV)
+  have hker : V.1 ≤ (U.mkQL ∘L S).ker := fun x hx ↦
+    (Submodule.Quotient.mk_eq_zero U).mpr (Submodule.mem_sup_right ⟨x, hx, rfl⟩)
+  have heq : U.mkQL ∘L (S ∘L T) = (V.1.liftQL (U.mkQL ∘L S) hker) ∘L (V.1.mkQL ∘L T) := by
+    ext x; rfl
+  refine ((S ∘L T).kolmogorovNumber_le hU).trans ?_
+  rw [heq]
+  refine (opNNNorm_comp_le _ _).trans ?_
+  gcongr
+  have hlift : ‖V.1.liftQL (U.mkQL ∘L S) hker‖₊ = ‖U.mkQL ∘L S‖₊ :=
+    Subtype.ext (V.1.norm_liftQL (U.mkQL ∘L S) hker)
+  exact hlift.trans_le (Submodule.nnnorm_mkQL_comp_antitone S le_sup_left)
 
 /-- Precomposition scales Kolmogorov numbers by at most the operator norm. -/
 theorem kolmogorovNumber_comp_le_right (T : F →L[𝕜] G) (A : E →L[𝕜] F) (n : ℕ) :
     (T ∘L A).kolmogorovNumber n ≤ T.kolmogorovNumber n * ‖A‖₊ := by
-  rw [kolmogorovNumber_def T, NNReal.iInf_mul]
-  refine le_ciInf fun V ↦ ((T ∘L A).kolmogorovNumber_le V.2).trans ?_
-  simpa only [comp_assoc] using opNNNorm_comp_le (V.1.mkQL ∘L T) A
+  simpa using T.kolmogorovNumber_comp_add_le_mul A n 0
 
 /-- Postcomposition scales Kolmogorov numbers by at most the operator norm. -/
 theorem kolmogorovNumber_comp_le_left (B : F →L[𝕜] G) (T : E →L[𝕜] F) (n : ℕ) :
     (B ∘L T).kolmogorovNumber n ≤ ‖B‖₊ * T.kolmogorovNumber n := by
-  rw [kolmogorovNumber_def T, NNReal.mul_iInf]
-  refine le_ciInf fun V ↦ ?_
-  let W := V.1.map B.toLinearMap
-  have hW : Module.rank 𝕜 W ≤ n := by
-    have h := (lift_rank_map_le B.toLinearMap V.1).trans
-      (Cardinal.lift_le.mpr V.2)
-    simpa only [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] using h
-  have hker : V.1 ≤ (W.mkQL ∘L B).ker := by
-    intro x hx
-    exact (Submodule.Quotient.mk_eq_zero W).mpr ⟨x, hx, rfl⟩
-  let D := V.1.liftQL (W.mkQL ∘L B) hker
-  have hD : ‖D‖₊ ≤ ‖B‖₊ := by
-    exact_mod_cast (V.1.norm_liftQL_le (W.mkQL ∘L B) hker).trans (W.norm_mkQL_comp_le B)
-  have heq : W.mkQL ∘L (B ∘L T) = D ∘L (V.1.mkQL ∘L T) := by
-    ext x
-    simp [D]
-  exact ((B ∘L T).kolmogorovNumber_le hW).trans (by
-    rw [heq]
-    refine (opNNNorm_comp_le _ _).trans ?_
-    gcongr)
+  simpa using B.kolmogorovNumber_comp_add_le_mul T 0 n
 
 /-- The two-sided ideal inequality for Kolmogorov numbers. -/
 theorem kolmogorovNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G)
@@ -239,6 +257,14 @@ noncomputable def kolmogorov : SNumberFamily 𝕜 := fun T ↦ T.kolmogorovNumbe
 theorem kolmogorov_apply {X Y : Type u}
     [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
     (T : X →L[𝕜] Y) (n : ℕ) : kolmogorov T n = T.kolmogorovNumber n := (rfl)
+
+/-- Kolmogorov numbers form an additive family over every nontrivially normed field. -/
+theorem additive_kolmogorov : Additive (kolmogorov (𝕜 := 𝕜)) :=
+  fun S T m n ↦ S.kolmogorovNumber_add_index_le T m n
+
+/-- Kolmogorov numbers form a multiplicative family over every nontrivially normed field. -/
+theorem multiplicative_kolmogorov : Multiplicative (kolmogorov (𝕜 := 𝕜)) :=
+  fun S T m n ↦ S.kolmogorovNumber_comp_add_le_mul T m n
 
 /-- Over a complete scalar field, Kolmogorov numbers are a strict s-number sequence.
 The normed spaces themselves need not be complete. -/
