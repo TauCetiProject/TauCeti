@@ -105,7 +105,7 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
         pairOfPantsPerturbation H (equivRealProdCLM.symm p.1) (φ.symm p.2) v)
       (thricePuncturedSphereReal ×ˢ φ.target) := by
   rintro ⟨z, y⟩ ⟨hz, hy⟩
-  exact ((φ.contDiffAt_comp_prodMap_symm hnm equivRealProdCLM.symm.contDiff hy
+  exact ((φ.contDiffAt_comp_prodMap_symm hnm equivRealProdCLM.symm.contDiff.contDiffAt hy
     (contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩
       (φ.symm y))).clm_apply contDiffAt_const).contDiffWithinAt
 
@@ -119,7 +119,7 @@ theorem contDiffOn_positiveEndHamiltonian_comp_symm {n : ℕ∞} {m : WithTop �
     ContDiffOn ℝ n (fun p : ℝ × V ↦ positiveEndHamiltonian H q p.1 (φ.symm p.2))
       (univ ×ˢ φ.target) := by
   rintro ⟨t, y⟩ ⟨-, hy⟩
-  exact (φ.contDiffAt_comp_prodMap_symm hnm contDiff_id hy
+  exact (φ.contDiffAt_comp_prodMap_symm hnm contDiffAt_id hy
     (contMDiff_uncurry_positiveEndHamiltonian hHs).contMDiffAt).contDiffWithinAt
 
 end Floer

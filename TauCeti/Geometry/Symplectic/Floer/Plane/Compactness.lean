@@ -161,7 +161,7 @@ theorem contDiffOn_perturbation_comp_symm (p : PSSPlane) {n : ℕ∞} {m : WithT
     ContDiffOn ℝ n (fun q : (ℝ × ℝ) × V ↦
         p.perturbation H (equivRealProdCLM.symm q.1) (φ.symm q.2) v) (univ ×ˢ φ.target) := by
   rintro ⟨z, y⟩ ⟨-, hy⟩
-  exact ((φ.contDiffAt_comp_prodMap_symm hnm equivRealProdCLM.symm.contDiff hy
+  exact ((φ.contDiffAt_comp_prodMap_symm hnm equivRealProdCLM.symm.contDiff.contDiffAt hy
     (contMDiff_perturbation (p := p) hH hHs _)).clm_apply contDiffAt_const).contDiffWithinAt
 
 end Floer.PSSPlane
