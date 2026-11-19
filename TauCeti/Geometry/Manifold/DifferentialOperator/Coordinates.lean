@@ -176,6 +176,14 @@ open Function
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [Fintype ι] (v : ι → E)
 
+/-- The directional derivative `∂_w` along a vector `w` has principal symbol `ξ ↦ ξ(w)`. -/
+theorem smoothPrincipalSymbol_lineDerivation (w x : E) (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint
+      ⟨lineDerivation ℝ w, (lineDerivation ℝ w).mem_differentialOperators_one⟩ ξ = ξ w := by
+  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) ξ
+  rw [smoothPrincipalSymbol_derivation_mvfderiv, lineDerivation_apply_apply]
+  exact (mvfderiv_eq_fderiv_apply f x w).symm
+
 /-- The principal symbol of the monomial `∂^α = ∏ᵢ ∂_{vᵢ} ^ αᵢ` in directional derivatives, as an
 operator of order at most `|α|`, is `ξ ↦ ∏ᵢ ξ(vᵢ) ^ αᵢ`. -/
 theorem smoothPrincipalSymbol_multiIndexDeriv (α : ι → ℕ) (x : E)
@@ -193,12 +201,6 @@ theorem smoothPrincipalSymbol_multiIndexDeriv (α : ι → ℕ) (x : E)
     simp
   | add_single α i ih =>
     -- `∂^(α + eᵢ) = ∂^α ∘ ∂ᵢ`, and principal symbols multiply under composition.
-    have hi : smoothPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint
-        ⟨lineDerivation ℝ (v i), (lineDerivation ℝ (v i)).mem_differentialOperators_one⟩ ξ =
-          ξ (v i) := by
-      obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) ξ
-      rw [smoothPrincipalSymbol_derivation_mvfderiv, lineDerivation_apply_apply]
-      exact (mvfderiv_eq_fderiv_apply f x (v i)).symm
     refine (smoothPrincipalSymbol_congr _ (by simp [Finset.sum_add_distrib])
       (D' := ⟨_, comp_mem_differentialOperators
         (multiIndexDeriv_mem_differentialOperators (fun i ↦ lineDerivation ℝ (v i))
@@ -206,7 +208,8 @@ theorem smoothPrincipalSymbol_multiIndexDeriv (α : ι → ℕ) (x : E)
         (lineDerivation ℝ (v i)).mem_differentialOperators_one⟩)
       (by simp only [multiIndexDeriv_add_single, Module.End.mul_eq_comp]) ξ).trans ?_
     rw [smoothPrincipalSymbol_comp _ ⟨_, multiIndexDeriv_mem_differentialOperators _ _ α⟩
-      ⟨_, (lineDerivation ℝ (v i)).mem_differentialOperators_one⟩, ih, hi]
+      ⟨_, (lineDerivation ℝ (v i)).mem_differentialOperators_one⟩, ih,
+      smoothPrincipalSymbol_lineDerivation]
     simp only [Pi.add_apply, pow_add, Finset.prod_mul_distrib, Pi.single_apply, pow_ite, pow_one,
       pow_zero, Finset.prod_ite_eq', Finset.mem_univ, ite_true]
 
