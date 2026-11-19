@@ -210,16 +210,6 @@ theorem truncate_trans_drop (γ : MoorePath X) (s : ℝ≥0) :
 
 /-! ### Paths starting in a set -/
 
-/-- The source of a Moore path starting in `A`, as a point of `A ∩ univ`. -/
-def sourceFrom (A : Set X) : C(pathsBetween A Set.univ, ↥(A ∩ Set.univ)) where
-  toFun γ := ⟨γ.1.source, (mem_pathsBetween.1 γ.2).1, trivial⟩
-  continuous_toFun := by fun_prop
-
-@[simp]
-theorem coe_sourceFrom (A : Set X) (γ : pathsBetween A Set.univ) :
-    (sourceFrom A γ : X) = γ.1.source :=
-  (rfl)
-
 /-- **Truncation deforms the Moore paths starting in `A` onto their sources.** At time `t` a
 path `γ` is truncated at `t * length γ`. This is a homotopy from the constant paths of length zero
 at the sources to the identity of `P_{A→X} X`, so the source map `P_{A→X} X → A` is a homotopy

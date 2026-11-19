@@ -45,6 +45,7 @@ parametrized by the unit interval: when `X` is a point, the Moore loops at it fo
 * `TauCeti.MoorePath.pathsBetween A B`: the Moore paths from `A` to `B`, the path space
   `P_{A→B} X`.
 * `TauCeti.MoorePath.pathsBetweenSymm A B`: reversal of paths `P_{A→B} X → P_{B→A} X`.
+* `TauCeti.MoorePath.sourceFrom A`: the source map on the paths `P_{A→X} X` starting in `A`.
 * `TauCeti.MooreLoopSpace X x`: the Moore loops at `x`, a monoid under concatenation with unit
   the constant loop of length zero.
 * `TauCeti.MooreLoopSpace.map`: the continuous monoid homomorphism induced by a based map.
@@ -628,6 +629,16 @@ def constantBetween (A B : Set X) : C(↥(A ∩ B), pathsBetween A B) where
 @[simp]
 theorem coe_constantBetween (A B : Set X) (x : ↥(A ∩ B)) :
     (constantBetween A B x : MoorePath X) = refl x.val :=
+  (rfl)
+
+/-- The source of a Moore path starting in `A`, as a point of `A ∩ univ`. -/
+def sourceFrom (A : Set X) : C(pathsBetween A Set.univ, ↥(A ∩ Set.univ)) where
+  toFun γ := ⟨γ.1.source, (mem_pathsBetween.1 γ.2).1, trivial⟩
+  continuous_toFun := by fun_prop
+
+@[simp]
+theorem coe_sourceFrom (A : Set X) (γ : pathsBetween A Set.univ) :
+    (sourceFrom A γ : X) = γ.1.source :=
   (rfl)
 
 theorem trans_mem_pathsBetween {A B : Set X} {γ δ : MoorePath X} (hγ : γ.source ∈ A)
