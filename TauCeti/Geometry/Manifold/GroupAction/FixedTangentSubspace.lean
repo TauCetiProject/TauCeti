@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 public import TauCeti.GroupTheory.GroupAction.Hom
@@ -247,7 +248,7 @@ theorem map_mfderiv_fixedTangentSubspace (hn : n ≠ 0)
   have hinj := (F.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.injective
   rw [← LinearEquiv.coe_coe, F.mfderivToContinuousLinearEquiv_toLinearMap hn] at hsurj hinj
   rw [← comap_mfderiv_fixedTangentSubspace hF
-      (MulAction.stabilizer_apply_eq_of_injective hF (EquivLike.injective F) p).le hinj
+      (MulAction.stabilizer_eq_of_injective F (EquivLike.injective F) hF p).le hinj
       (fun k _ ↦ (contMDiff_const_smul k).mdifferentiable hn p)
       (fun k _ ↦ (contMDiff_const_smul k).mdifferentiable hn (F p)),
     Submodule.map_comap_eq_of_surjective hsurj]
@@ -274,9 +275,8 @@ theorem apply_mem_fixedPointsOfFinrank_iff (hn : n ≠ 0)
 the part of the same dimension:** `F (M^K_d) = N^K_d`. -/
 theorem image_fixedPointsOfFinrank (hn : n ≠ 0)
     (hF : ∀ (k : K) (x : M), F (k • x) = k • F x) (d : ℕ) :
-    F '' fixedPointsOfFinrank I K M d = fixedPointsOfFinrank I' K N d := by
-  refine Set.ext fun y ↦ ?_
-  rw [← F.apply_symm_apply y, (EquivLike.injective F).mem_set_image,
-    F.apply_mem_fixedPointsOfFinrank_iff hn hF]
+    F '' fixedPointsOfFinrank I K M d = fixedPointsOfFinrank I' K N d :=
+  (F.toEquiv.eq_preimage_iff_image_eq _ _).1 <| Set.ext fun _ ↦
+    (F.apply_mem_fixedPointsOfFinrank_iff hn hF).symm
 
 end Diffeomorph

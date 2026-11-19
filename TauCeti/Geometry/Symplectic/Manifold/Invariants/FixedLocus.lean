@@ -42,8 +42,7 @@ submanifold of even dimension.
 
 The fixed locus and its symplectic normal spaces are natural. A diffeomorphism `F : M → N` with
 `F^* τ = σ` has linear symplectomorphisms `dF_p : (T_p M, σ_p) → (T_(F p) N, τ_(F p))` as
-differentials
-(`TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectomorphism_mfderivToContinuousLinearEquiv`). If
+differentials (`TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`). If
 `F` is moreover equivariant, it carries the fixed tangent subspace `V_p` onto `V_(F p)`
 (`Diffeomorph.map_mfderiv_fixedTangentSubspace`), and hence the symplectic normal space
 `V_p^σ = {v | σ_p(w, v) = 0 for all w ∈ V_p}` onto `V_(F p)^τ`
@@ -136,19 +135,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N]
   {σ : SmoothTwoForm I M} {τ : SmoothTwoForm I' N}
 
-/-- **Symplectic diffeomorphisms have symplectic differentials.** If a diffeomorphism `F` pulls the
-nondegenerate two-form `τ` back to `σ`, its differential at `p` is a linear symplectomorphism from
-`(T_p M, σ_p)` to `(T_(F p) N, τ_(F p))`. -/
-theorem IsNondegenerate.isSymplectomorphism_mfderivToContinuousLinearEquiv
-    (hσ : σ.IsNondegenerate) (hτ : τ.IsNondegenerate) (F : M ≃ₘ⟮I, I'⟯ N)
-    (hFσ : SmoothForm.mpullback F F.contMDiff τ = σ) (p : M) :
-    SymplecticForm.IsSymplectomorphism (hσ.symplecticFormAt p) (hτ.symplecticFormAt (F p))
-      (F.mfderivToContinuousLinearEquiv (by simp) p).toLinearEquiv :=
-  SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ by
-    rw [symplecticFormAt_apply, symplecticFormAt_apply, ← hFσ,
-      SmoothForm.eval₂_mpullback F F.contMDiff τ p u w, ← LinearEquiv.coe_coe,
-      F.mfderivToContinuousLinearEquiv_toLinearMap, ContinuousLinearMap.coe_coe]
-
 variable {K : Type*} [Group K] [MulAction K M] [MulAction K N]
   [ContMDiffConstSMul I ∞ K M] [ContMDiffConstSMul I' ∞ K N]
 
@@ -162,8 +148,8 @@ theorem IsNondegenerate.map_mfderiv_orthogonal_fixedTangentSubspace (hσ : σ.Is
     ((hσ.symplecticFormAt p).orthogonal (fixedTangentSubspace I K p)).map
         (mfderiv I I' F p).toLinearMap =
       (hτ.symplecticFormAt (F p)).orthogonal (fixedTangentSubspace I' K (F p)) := by
-  have he := (hσ.isSymplectomorphism_mfderivToContinuousLinearEquiv hτ F hFσ p).map_orthogonal
-    (fixedTangentSubspace I K p)
+  have he := (SymplecticForm.isSymplectomorphism_iff_transport_eq.2
+    (hσ.symplecticFormAt_transport (hσ₂ := hτ) F hFσ p)).map_orthogonal (fixedTangentSubspace I K p)
   rwa [F.mfderivToContinuousLinearEquiv_toLinearMap,
     F.map_mfderiv_fixedTangentSubspace (by simp) hF] at he
 
