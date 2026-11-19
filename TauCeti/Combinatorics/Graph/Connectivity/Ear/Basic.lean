@@ -145,6 +145,16 @@ theorem ext (e f : G.Ear H) (hwalk : e.toWalk = f.toWalk) : e = f := by
   · cases hwalk
     rfl
 
+/-- Two bundled `(base, ear)` pairs are equal when their base graphs and underlying walks
+agree. -/
+theorem sigma_ext {p q : Σ K : Graph α β, G.Ear K}
+    (h1 : p.1 = q.1) (hw : p.2.toWalk = q.2.toWalk) : p = q := by
+  rcases p with ⟨K, e₁⟩
+  rcases q with ⟨_, e₂⟩
+  dsimp only at h1 hw
+  subst h1
+  exact congrArg (Sigma.mk K) (Ear.ext e₁ e₂ hw)
+
 /-- The graph traced by an ear. -/
 def toGraph (e : G.Ear H) : Graph α β :=
   G.walkGraph e.toWalk.2.2
@@ -518,6 +528,12 @@ theorem isCycle_iff_of_heq {K L : Graph α β} {s₁ : G.EarStart K} {s₂ : G.E
   cases eq_of_heq hs
   rfl
 
+/-- Equal cycle walks yield heterogeneously equal cycle initial witnesses. -/
+theorem heq_cycle_of_eq {s : α} {c₁ c₂ : G.Walk s s} (hc₁ : c₁.IsCycle) (hc₂ : c₂.IsCycle)
+    (h : c₁ = c₂) : HEq (EarStart.cycle c₁ hc₁) (EarStart.cycle c₂ hc₂) := by
+  subst h
+  rfl
+
 /-- Every allowed initial graph is a subgraph of its ambient graph. -/
 theorem le : ∀ _start : G.EarStart H, H ≤ G
   | .vertex v => Graph.noEdge_le_iff.mpr (singleton_subset_iff.mpr v.property)
@@ -599,6 +615,33 @@ theorem ext (d e : G.EarDecomposition H) (hlength : d.length = e.length)
   cases hg
   cases hstart
   cases hearAt'
+  rfl
+
+/-- Two length-zero ear decompositions of the same graph are equal if their initial stages are
+heterogeneously equal. -/
+theorem ext_of_length_eq_zero {d₁ d₂ : G.EarDecomposition H}
+    (h₁ : d₁.length = 0) (h₂ : d₂.length = 0) (hs : HEq d₁.start d₂.start) : d₁ = d₂ :=
+  ext _ _ (h₁.trans h₂.symm) hs
+    ((Fin.heq_fun_iff (h₁.trans h₂.symm)).mpr fun i ↦ (Fin.cast h₁ i).elim0)
+
+/-- Equal ear decompositions have equal stage graphs at matching natural indices. -/
+theorem graphAfter_eq_of_eq {d₁ d₂ : G.EarDecomposition H} (h : d₁ = d₂) (m : ℕ)
+    (hm₁ : m < d₁.length + 1) (hm₂ : m < d₂.length + 1) :
+    d₁.graphAfter ⟨m, hm₁⟩ = d₂.graphAfter ⟨m, hm₂⟩ := by
+  subst h
+  rfl
+
+/-- Equal ear decompositions have equal ears at matching natural indices. -/
+theorem earAt_eq_of_eq {d₁ d₂ : G.EarDecomposition H} (h : d₁ = d₂) (m : ℕ)
+    (hm₁ : m < d₁.length) (hm₂ : m < d₂.length) :
+    d₁.earAt ⟨m, hm₁⟩ = d₂.earAt ⟨m, hm₂⟩ := by
+  subst h
+  rfl
+
+/-- Equal ear decompositions have heterogeneously equal initial stages. -/
+theorem heq_start_of_eq {d₁ d₂ : G.EarDecomposition H} (h : d₁ = d₂) :
+    HEq d₁.start d₂.start := by
+  subst h
   rfl
 
 /-- The initial graph of a decomposition. -/
@@ -819,6 +862,23 @@ theorem walkAt_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H')
 @[simp]
 theorem isOpen_copy {H' : Graph α β} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).IsOpen ↔ d.IsOpen := Iff.rfl
+
+/-- Reindexing the final graph along an equality `H₁ = H₂` is an equivalence of multigraph ear
+decompositions. -/
+def copyEquiv {H₁ H₂ : Graph α β} (h : H₁ = H₂) :
+    G.EarDecomposition H₁ ≃ G.EarDecomposition H₂ where
+  toFun d := d.copy h
+  invFun d := d.copy h.symm
+  left_inv d := by simp
+  right_inv d := by simp
+
+@[simp]
+theorem copyEquiv_apply {H₁ H₂ : Graph α β} (h : H₁ = H₂) (d : G.EarDecomposition H₁) :
+    copyEquiv h d = d.copy h := (rfl)
+
+@[simp]
+theorem copyEquiv_symm_apply {H₁ H₂ : Graph α β} (h : H₁ = H₂) (d : G.EarDecomposition H₂) :
+    (copyEquiv h).symm d = d.copy h.symm := (rfl)
 
 private theorem snoc_graphAfter_zero (d : G.EarDecomposition H) (ear : G.Ear H) :
     Fin.lastCases ear.add d.graphAfter (0 : Fin (d.length + 2)) = d.graphAfter 0 := by

@@ -29,6 +29,9 @@ natural in the based space `X`.
 ## Main declarations
 
 * `TauCeti.degreeRaising`: the degree-raising map `H_p(Ω²X; 𝟙) ⟶ H_n(ΩX; 𝟙)` for `1 + p = n`.
+* `TauCeti.map_comp_degreeRaising`: on the class `ℓ_* c` of a family `ℓ : A → Ω²X` of double
+  loops, `β_*` is the image of `[S¹] × c` under the evaluation `S¹ × A → ΩX`,
+  `(z, a) ↦ ℓ a (z)`.
 * `TauCeti.degreeRaising_naturality`: its naturality in `X`.
 
 ## References
@@ -95,6 +98,28 @@ theorem degreeRaising_def :
           (evalCircleTop X) := by
   rw [degreeRaising]
 
+/-- **The degree-raising map on the class of a family of double loops.** For a family
+`ℓ : A → Ω²X`, the degree-raising map sends `ℓ_* c` to the image of `[S¹] × c` under the map
+`S¹ × A → ΩX`, `(z, a) ↦ ℓ a (z)`. -/
+@[reassoc]
+theorem map_comp_degreeRaising {A : TopCat.{0}}
+    (ℓ : A ⟶ TopCat.of (X.iteratedLoopSpace 2).carrier) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) p).obj (𝟙_ _)).map ℓ ≫
+        degreeRaising R X p n h =
+      (λ_ _).inv ≫ (circleFundamentalClass (𝟙_ (ModuleCat.{0} R)) ▷ _) ≫
+        TopCat.singularHomologyCross (C := ModuleCat.{0} R) (TopCat.of Sphere1) A (𝟙_ _) (𝟙_ _)
+          1 p n h ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map
+          (λ_ (𝟙_ _)).hom).app _ ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
+          ((𝟙 (TopCat.of Sphere1) ⊗ₘ ℓ) ≫ evalCircleTop X) := by
+  rw [degreeRaising_def]
+  have hn := TopCat.singularHomologyCross_naturality (C := ModuleCat.{0} R)
+    (𝟙 (TopCat.of Sphere1)) ℓ (𝟙_ _) (𝟙_ _) 1 p n h
+  rw [CategoryTheory.Functor.map_id, id_tensorHom] at hn
+  rw [leftUnitor_inv_naturality_assoc, whisker_exchange_assoc, reassoc_of% hn,
+    NatTrans.naturality_assoc, CategoryTheory.Functor.map_comp]
+
 variable {X} {Y : BasedTopologicalSpace.{0}}
 
 /-- Naturality of the evaluation `S¹ × Ω²X → ΩX` as a square of morphisms of topological spaces. -/
@@ -117,32 +142,9 @@ theorem degreeRaising_naturality (f : Hom X Y) :
       degreeRaising R X p n h ≫
         ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
           (TopCat.ofHom f.loopSpace.toContinuousMap) := by
-  rw [degreeRaising_def, degreeRaising_def]
+  rw [map_comp_degreeRaising, evalCircleTop_naturality, degreeRaising_def,
+    CategoryTheory.Functor.map_comp]
   simp only [Category.assoc]
-  have hn := TopCat.singularHomologyCross_naturality (C := ModuleCat.{0} R)
-    (𝟙 (TopCat.of Sphere1)) (TopCat.ofHom (f.iteratedLoopSpace 2).toContinuousMap)
-    (𝟙_ _) (𝟙_ _) 1 p n h
-  rw [CategoryTheory.Functor.map_id, id_tensorHom] at hn
-  rw [leftUnitor_inv_naturality_assoc, whisker_exchange_assoc, reassoc_of% hn]
-  have nat := ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map
-    (λ_ (𝟙_ (ModuleCat.{0} R))).hom).naturality
-    (𝟙 (TopCat.of Sphere1) ⊗ₘ TopCat.ofHom (f.iteratedLoopSpace 2).toContinuousMap)
-  have hsuf :
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _ ⊗ 𝟙_ _)).map
-          (𝟙 (TopCat.of Sphere1) ⊗ₘ TopCat.ofHom (f.iteratedLoopSpace 2).toContinuousMap) ≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map
-          (λ_ (𝟙_ (ModuleCat.{0} R))).hom).app _ ≫
-          ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
-            (evalCircleTop Y) =
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).map
-          (λ_ (𝟙_ (ModuleCat.{0} R))).hom).app _ ≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
-            (evalCircleTop X) ≫
-          ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) n).obj (𝟙_ _)).map
-            (TopCat.ofHom f.loopSpace.toContinuousMap) := by
-    rw [reassoc_of% nat, ← CategoryTheory.Functor.map_comp, evalCircleTop_naturality,
-      CategoryTheory.Functor.map_comp]
-  rw [hsuf]
 
 end Raising
 
