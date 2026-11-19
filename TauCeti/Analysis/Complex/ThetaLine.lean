@@ -41,14 +41,16 @@ For `Im τ ≠ 0` the pointwise norm `h |s|²` of a continuous section is theref
 
 The Chern connection of `h` on holomorphic sections is `d + A dz` with
 `A = ∂ log h = 2πik Im z / Im τ` (`TauCeti.thetaConnectionForm`,
-`TauCeti.wirtingerDeriv_log_thetaMetric`). It is compatible with the factor of automorphy:
+`TauCeti.wirtingerDeriv_apply_one_log_thetaMetric`), computed from the Wirtinger derivatives
+`∂ Im = -i/2` and `∂bar Im = i/2` (`TauCeti.wirtingerDeriv_apply_one_ofReal_im`,
+`TauCeti.conjWirtingerDeriv_apply_one_ofReal_im`). It is compatible with the factor of automorphy:
 `A(z + λ) + e_λ'(z) / e_λ(z) = A(z)` (`TauCeti.thetaConnectionForm_add_add_logDeriv_thetaFactor`),
 which is the transformation law of a connection form under the transition function `e_λ`, so the
 connection descends to the theta line. Its curvature is `∂bar A d(conj z) ∧ dz` with
-`∂bar A = -πk / Im τ` (`TauCeti.conjWirtingerDeriv_thetaConnectionForm`). In the real coordinates
-`z = q + τ p`, `d(conj z) ∧ dz = 2i Im τ dq ∧ dp`, so the curvature is `-2πik dq ∧ dp`; this is
-`-(i/ℏ) ω` for the symplectic form `ω = 2πℏk dq ∧ dp`, so the theta line of level `k` is a
-prequantum line of `ω`.
+`∂bar A = -πk / Im τ` (`TauCeti.conjWirtingerDeriv_apply_one_thetaConnectionForm`). In the real
+coordinates `z = q + τ p`, `d(conj z) ∧ dz = 2i Im τ dq ∧ dp`, so the curvature is
+`-2πik dq ∧ dp`; this is `-(i/ℏ) ω` for the symplectic form `ω = 2πℏk dq ∧ dp`, so the theta line
+of level `k` is a prequantum line of `ω`.
 
 ## Main definitions
 
@@ -65,10 +67,10 @@ prequantum line of `ω`.
 * `TauCeti.thetaMetric_add_mul_norm_thetaFactor_sq`, `TauCeti.thetaMetric_add_mul_mul_conj`,
   `TauCeti.thetaMetric_add_mul_norm_sq`: the metric descends to the torus.
 * `TauCeti.exists_thetaMetric_mul_norm_sq_le`: continuous sections have bounded pointwise norm.
-* `TauCeti.wirtingerDeriv_log_thetaMetric`,
+* `TauCeti.wirtingerDeriv_apply_one_log_thetaMetric`,
   `TauCeti.thetaConnectionForm_add_add_logDeriv_thetaFactor`,
-  `TauCeti.conjWirtingerDeriv_thetaConnectionForm`: the Chern connection form, its gauge law, and
-  its curvature.
+  `TauCeti.conjWirtingerDeriv_apply_one_thetaConnectionForm`: the Chern connection form, its
+  gauge law, and its curvature.
 
 ## References
 
@@ -288,7 +290,7 @@ theorem exists_thetaMetric_mul_norm_sq_le (hτ : τ.im ≠ 0) {s : ℂ → ℂ} 
 
 /-- The `dz`-coefficient `A(z) = 2πik Im z / Im τ` of the Chern connection form of the metric
 `TauCeti.thetaMetric` on the theta line: on holomorphic sections the Chern connection is
-`d + A dz`, with `A = ∂ log h` (`TauCeti.wirtingerDeriv_log_thetaMetric`). -/
+`d + A dz`, with `A = ∂ log h` (`TauCeti.wirtingerDeriv_apply_one_log_thetaMetric`). -/
 noncomputable def thetaConnectionForm (k : ℤ) (τ z : ℂ) : ℂ :=
   2 * π * I * k * z.im / τ.im
 
@@ -296,26 +298,39 @@ theorem thetaConnectionForm_def (z : ℂ) :
     thetaConnectionForm k τ z = 2 * π * I * k * z.im / τ.im :=
   (rfl)
 
-/-- The real-linear map `w ↦ Im w`, as a complex number. -/
-private noncomputable abbrev ofRealImCLM : ℂ →L[ℝ] ℂ := ofRealCLM.comp imCLM
+/-- The Wirtinger derivative of the imaginary part: `∂ Im = -i/2`. -/
+theorem wirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
+    wirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = -I / 2 := by
+  have hd : HasFDerivAt (fun w : ℂ ↦ (w.im : ℂ)) (ofRealCLM.comp imCLM) z :=
+    (ofRealCLM.comp imCLM).hasFDerivAt
+  rw [wirtingerDeriv_apply, hd.fderiv]
+  simp
+  ring
+
+/-- The conjugate Wirtinger derivative of the imaginary part: `∂bar Im = i/2`. -/
+theorem conjWirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
+    conjWirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = I / 2 := by
+  have hd : HasFDerivAt (fun w : ℂ ↦ (w.im : ℂ)) (ofRealCLM.comp imCLM) z :=
+    (ofRealCLM.comp imCLM).hasFDerivAt
+  rw [conjWirtingerDeriv_apply, hd.fderiv]
+  simp
+  ring
 
 /-- **The Chern connection form**: `∂ log h = A`, where `h` is the theta metric. -/
-theorem wirtingerDeriv_log_thetaMetric (z : ℂ) :
+theorem wirtingerDeriv_apply_one_log_thetaMetric (z : ℂ) :
     wirtingerDeriv (fun w ↦ (Real.log (thetaMetric k τ w) : ℂ)) z 1 =
       thetaConnectionForm k τ z := by
   have hfun : (fun w ↦ (Real.log (thetaMetric k τ w) : ℂ)) =
-      fun w ↦ (-2 * π * k / τ.im : ℂ) * ofRealImCLM w ^ 2 := by
+      (-2 * π * k / τ.im : ℂ) • fun w : ℂ ↦ (w.im : ℂ) • (w.im : ℂ) := by
     funext w
-    simp only [thetaMetric_def, Real.log_exp, ofRealImCLM, ContinuousLinearMap.comp_apply,
-      ofRealCLM_apply, imCLM_apply]
+    simp only [thetaMetric_def, Real.log_exp, Pi.smul_apply, smul_eq_mul]
     push_cast
     ring
-  have hd := ((ofRealImCLM.hasFDerivAt (x := z)).pow 2).const_mul (-2 * π * k / τ.im : ℂ)
-  rw [hfun, wirtingerDeriv_apply, hd.fderiv, thetaConnectionForm_def]
-  simp only [ofRealImCLM, smul_apply, ContinuousLinearMap.comp_apply, ofRealCLM_apply,
-    imCLM_apply, one_im, smul_eq_mul]
-  push_cast
-  simp only [mul_one, I_im, ofReal_one]
+  have hd : DifferentiableAt ℝ (fun w : ℂ ↦ (w.im : ℂ)) z := by fun_prop
+  rw [hfun, wirtingerDeriv_const_smul, smul_apply,
+    wirtingerDeriv_smul_apply hd hd, wirtingerDeriv_apply_one_ofReal_im,
+    thetaConnectionForm_def]
+  simp only [smul_eq_mul]
   ring
 
 /-- **The Chern connection descends to the theta line**: `A(z + λ) + e_λ'(z) / e_λ(z) = A(z)`
@@ -333,19 +348,14 @@ theorem thetaConnectionForm_add_add_logDeriv_thetaFactor (hτ : τ.im ≠ 0) (m 
 
 /-- **The curvature of the theta line**: `∂bar A = -πk / Im τ`. The curvature form is
 `∂bar A d(conj z) ∧ dz`, which in the coordinates `z = q + τ p` is `-2πik dq ∧ dp`. -/
-theorem conjWirtingerDeriv_thetaConnectionForm (z : ℂ) :
+theorem conjWirtingerDeriv_apply_one_thetaConnectionForm (z : ℂ) :
     conjWirtingerDeriv (thetaConnectionForm k τ) z 1 = -(π * k / τ.im) := by
-  have hfun : thetaConnectionForm k τ = fun w ↦ (2 * π * I * k / τ.im : ℂ) * ofRealImCLM w := by
+  have hfun : thetaConnectionForm k τ = (2 * π * I * k / τ.im : ℂ) • fun w : ℂ ↦ (w.im : ℂ) := by
     funext w
-    simp only [thetaConnectionForm_def, ofRealImCLM, ContinuousLinearMap.comp_apply,
-      ofRealCLM_apply, imCLM_apply]
+    simp only [thetaConnectionForm_def, Pi.smul_apply, smul_eq_mul]
     ring
-  have hd := (ofRealImCLM.hasFDerivAt (x := z)).const_mul (2 * π * I * k / τ.im : ℂ)
-  rw [hfun, conjWirtingerDeriv_apply, hd.fderiv]
-  simp only [ofRealImCLM, smul_apply, ContinuousLinearMap.comp_apply, ofRealCLM_apply,
-    imCLM_apply, one_im, smul_eq_mul]
-  push_cast
-  simp only [mul_one, I_im, ofReal_one]
+  rw [hfun, conjWirtingerDeriv_const_smul, smul_apply,
+    conjWirtingerDeriv_apply_one_ofReal_im, smul_eq_mul]
   linear_combination (π * k / τ.im : ℂ) * I_sq
 
 end TauCeti
