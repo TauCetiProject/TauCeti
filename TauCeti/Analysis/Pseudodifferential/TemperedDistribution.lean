@@ -247,13 +247,6 @@ theorem quantizeTempered_ofSpatial_smul_id (φ : 𝓢(CoordinateSpace n, ℂ))
   ext T ψ
   simp only [quantizeTempered_apply_apply, TemperedDistribution.smulLeftCLM_apply_apply, key]
 
-/-- The coordinate function `x ↦ x_j • id` is smooth. -/
-theorem contDiff_coord_smul_id (j : Fin n) :
-    ContDiff ℝ ∞ fun x : CoordinateSpace n ↦ x j • ContinuousLinearMap.id ℂ ℂ :=
-  ContDiff.smul (f := fun x : CoordinateSpace n ↦ x j)
-    (g := fun _ ↦ ContinuousLinearMap.id ℂ ℂ) (EuclideanSpace.proj (𝕜 := ℝ) j).contDiff
-    contDiff_const
-
 /-- **Commutator with a coordinate function, solved for the input.** For a symbol `a` with compact
 spatial support, `Op(a) (x_j T) = Op(x_j a) T - i Op(∂_{ξ_j} a) T` for every tempered distribution
 `T`. -/
@@ -261,13 +254,16 @@ theorem quantizeTempered_smulLeftCLM_coord {a : Symbol n ℂ ℂ m} (ha : a.HasC
     (j : Fin n) (T : 𝓢'(CoordinateSpace n, F)) :
     quantizeTempered F a ha.isUniform
         (TemperedDistribution.smulLeftCLM F (fun y : CoordinateSpace n ↦ ((y j : ℝ) : ℂ)) T) =
-      quantizeTempered F ((ofSpatial (fun x ↦ x j • ContinuousLinearMap.id ℂ ℂ)
-          (contDiff_coord_smul_id j)).comp a) (ha.comp_left _).isUniform T -
+      quantizeTempered F ((coordSubSymbol 0 j).comp a) (ha.comp_left _).isUniform T -
         I • quantizeTempered F (frequencyDeriv j a) (ha.isUniform.frequencyDeriv j) T := by
   have hft : (fun y : CoordinateSpace n ↦ ((y j : ℝ) : ℂ)).HasTemperateGrowth :=
     (ofRealCLM.comp (EuclideanSpace.proj j)).hasTemperateGrowth
-  rw [quantizeTempered_ofSpatial_smul_id_comp ha (contDiff_coord_smul_id j) hft,
-    smulLeftCLM_quantizeTempered]
+  have h : quantizeTempered F ((coordSubSymbol 0 j).comp a) (ha.comp_left _).isUniform T =
+      TemperedDistribution.smulLeftCLM F (fun y : CoordinateSpace n ↦ (((y - 0) j : ℝ) : ℂ))
+        (quantizeTempered F a ha.isUniform T) :=
+    quantizeTempered_ofSpatial_smul_id_comp ha _ (by simpa using hft) T
+  simp only [sub_zero] at h
+  rw [h, smulLeftCLM_quantizeTempered]
   abel
 
 end Tempered

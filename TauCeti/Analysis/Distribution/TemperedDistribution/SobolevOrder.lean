@@ -80,9 +80,7 @@ theorem exists_seminorm_smulLeftCLM_le_mul_norm_toBesselPotentialSpaceCLM {k l N
       (smulLeftCLM ℂ (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(N : ℝ)) : ℝ) : ℂ)) ψ) ≤
         C * ‖toBesselPotentialSpaceCLM t 2 ψ‖ := by
   set w : E → ℂ := fun x ↦ (((1 + ‖x‖ ^ 2) ^ (-(N : ℝ)) : ℝ) : ℂ)
-  have hw : w.HasTemperateGrowth :=
-    Complex.ofRealCLM.hasTemperateGrowth.comp
-      (Function.hasTemperateGrowth_one_add_norm_sq_rpow E (-(N : ℝ)))
+  have hw : w.HasTemperateGrowth := by fun_prop
   -- The derivatives of `ψ` of order at most `l` are bounded by `K ‖ψ‖_{H^t}`.
   obtain ⟨K, hK0, hK⟩ := exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpaceCLM
     (E := E) (F := ℂ) ht
@@ -195,11 +193,7 @@ theorem exists_memSobolev_and_eq_smulLeftCLM_pow (f : 𝓢'(E, ℂ)) :
       f = smulLeftCLM ℂ (fun x : E ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ) ^ N) S := by
   obtain ⟨N, s, hS⟩ := exists_memSobolev_smulLeftCLM f
   refine ⟨N, s, _, hS, ?_⟩
-  have hw : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(N : ℝ)) : ℝ) : ℂ)).HasTemperateGrowth :=
-    Complex.ofRealCLM.hasTemperateGrowth.comp
-      (Function.hasTemperateGrowth_one_add_norm_sq_rpow E (-(N : ℝ)))
-  have hP : (fun x : E ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ) ^ N).HasTemperateGrowth := by fun_prop
-  rw [smulLeftCLM_smulLeftCLM_apply hw hP]
+  rw [smulLeftCLM_smulLeftCLM_apply (by fun_prop) (by fun_prop)]
   have h1 : ((fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(N : ℝ)) : ℝ) : ℂ)) *
       fun x : E ↦ ((1 + ‖x‖ ^ 2 : ℝ) : ℂ) ^ N) = fun _ ↦ 1 := by
     funext x
