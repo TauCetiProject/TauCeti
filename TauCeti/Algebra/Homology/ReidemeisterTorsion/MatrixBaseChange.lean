@@ -94,6 +94,25 @@ private noncomputable def basisChangeBasis (i : ι) :
     Basis (Fin (n i)) K ((C.matrixBaseChange c φ).X i) :=
   (C.matrixBaseChangeBasis c φ i).map (basisChangeEquiv φ c c' i)
 
+/-- The automorphism `basisChangeEquiv` is `Matrix.toLin` of the image under `φ` of the matrix of
+`c' i` in `c i`. -/
+private theorem basisChangeEquiv_toLinearMap (i : ι) :
+    (basisChangeEquiv φ c c' i).toLinearMap =
+      Matrix.toLin (C.matrixBaseChangeBasis c φ i) (C.matrixBaseChangeBasis c φ i)
+        (((c i).toMatrix (c' i)).map φ) :=
+  LinearMap.ext fun x ↦ by simp [basisChangeEquiv]
+
+/-- The inverse of `basisChangeEquiv` is `Matrix.toLin` of the image under `φ` of the matrix of
+`c i` in `c' i`. -/
+private theorem basisChangeEquiv_symm_toLinearMap (i : ι) :
+    (basisChangeEquiv φ c c' i).symm.toLinearMap =
+      Matrix.toLin (C.matrixBaseChangeBasis c φ i) (C.matrixBaseChangeBasis c φ i)
+        (((c' i).toMatrix (c i)).map φ) := by
+  refine LinearMap.ext fun x ↦ (LinearEquiv.symm_apply_eq _).2 ?_
+  rw [← LinearEquiv.coe_toLinearMap, basisChangeEquiv_toLinearMap, ← LinearMap.comp_apply,
+    ← Matrix.toLin_mul, ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip,
+    Matrix.map_one _ φ.map_zero φ.map_one, Matrix.toLin_one, LinearMap.id_apply]
+
 /-- In the bases `basisChangeBasis`, the matrices of the differentials of the coordinate base
 change of `(C, c)` are those of the coordinate base change of `(C, c')`. -/
 private theorem toMatrix_basisChangeBasis_d (i j : ι) :
@@ -103,30 +122,24 @@ private theorem toMatrix_basisChangeBasis_d (i j : ι) :
   rw [basisChangeBasis, basisChangeBasis, LinearMap.toMatrix_map_left,
     LinearMap.toMatrix_map_right, LinearMap.toMatrix_comp _ (C.matrixBaseChangeBasis c φ j),
     LinearMap.toMatrix_comp _ (C.matrixBaseChangeBasis c φ i), toMatrix_matrixBaseChange_d,
+    basisChangeEquiv_toLinearMap, basisChangeEquiv_symm_toLinearMap, LinearMap.toMatrix_toLin,
+    LinearMap.toMatrix_toLin,
     ← basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix (c' i) (c i) (c' j) (c j),
-    Matrix.map_mul, Matrix.map_mul]
-  have h (k : ι) : (basisChangeEquiv φ c c' k).toLinearMap =
-      Matrix.toLin (C.matrixBaseChangeBasis c φ k) (C.matrixBaseChangeBasis c φ k)
-        (((c k).toMatrix (c' k)).map φ) :=
-    LinearMap.ext fun x ↦ by simp [basisChangeEquiv]
-  have h' : (basisChangeEquiv φ c c' j).symm.toLinearMap =
-      Matrix.toLin (C.matrixBaseChangeBasis c φ j) (C.matrixBaseChangeBasis c φ j)
-        (((c' j).toMatrix (c j)).map φ) := by
-    refine LinearMap.ext fun x ↦ (LinearEquiv.symm_apply_eq _).2 ?_
-    rw [← LinearEquiv.coe_toLinearMap, h, ← LinearMap.comp_apply, ← Matrix.toLin_mul,
-      ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip, Matrix.map_one _ φ.map_zero φ.map_one,
-      Matrix.toLin_one, LinearMap.id_apply]
-  rw [h, h', LinearMap.toMatrix_toLin, LinearMap.toMatrix_toLin, Matrix.mul_assoc]
+    Matrix.map_mul, Matrix.map_mul, Matrix.mul_assoc]
 
 /-- The determinant of `basisChangeBasis` with respect to the standard basis is the image under
 `φ` of the determinant of `c' i` with respect to `c i`. -/
 private theorem det_basisChangeBasis (i : ι) :
     (C.matrixBaseChangeBasis c φ i).det (basisChangeBasis φ c c' i) =
       φ ((c i).det (c' i)) := by
-  rw [Basis.det_apply, Basis.det_apply, RingHom.map_det, basisChangeBasis, Basis.coe_map]
+  rw [Basis.det_apply, Basis.det_apply, RingHom.map_det, RingHom.mapMatrix_apply,
+    ← LinearMap.toMatrix_toLin (C.matrixBaseChangeBasis c φ i) (C.matrixBaseChangeBasis c φ i)
+      (((c i).toMatrix (c' i)).map φ),
+    ← basisChangeEquiv_toLinearMap]
   congr 1
   ext k l
-  simp [Basis.toMatrix_apply, basisChangeEquiv, Matrix.toLin_self, Finsupp.single_apply]
+  rw [Basis.toMatrix_apply, LinearMap.toMatrix_apply, basisChangeBasis, Basis.map_apply,
+    LinearEquiv.coe_coe]
 
 /-- The basis-change formula for the torsion of a coordinate base change: replacing the bases
 `c i` of a based two-periodic complex `C` over a commutative ring `A` by `c' i` multiplies the
