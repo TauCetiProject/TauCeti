@@ -13,10 +13,12 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.Conjugate
 
 Let `C` be a complex point-indexed finite-rank core over `X` and `A ⊆ X` a subset. Suppose
 that the transitions of `C` are *real at the points of `A`*: each transition at a point of `A`
-commutes with coordinatewise complex conjugation (`FiniteRankBundleCore.IsRealAlong`). Then the
-real subspaces `ℝⁿ ⊆ ℂⁿ` of the charts at the points of `A` agree, so they form a subbundle `F` of
-`C` over `A`. It is a maximal totally real subbundle, and conversely a core real along `A` is the
-way such a pair `(C, F)` is encoded here.
+commutes with coordinatewise complex conjugation (`FiniteRankBundleCore.IsRealAlong`, characterized
+by `FiniteRankBundleCore.isRealAlong_iff` and
+`FiniteRankBundleCore.isRealAlong_iff_coordChange_star`). Then the real subspaces `ℝⁿ ⊆ ℂⁿ` of
+the charts at the points of `A` agree, so they form a subbundle `F` of `C` over `A`. It is a
+maximal totally real subbundle, and conversely a core real along `A` is the way such a pair
+`(C, F)` is encoded here.
 
 `FiniteRankBundleCore.doubleAlong` glues `C` on the first sheet of `TauCeti.DoubleAlong A` to the
 conjugate core on the second sheet. Its transition between charts at `z` and `w` is the transition
@@ -62,14 +64,39 @@ def IsRealAlong (C : FiniteRankBundleCore ℂ X) (A : Set X) : Prop :=
   ∀ i j x, x ∈ A → x ∈ C.core.baseSet i → x ∈ C.core.baseSet j →
     (star (toConv (C.core.coordChange i j x))).ofConv = C.core.coordChange i j x
 
+variable {A : Set X}
+
+/-- The defining property of `IsRealAlong`: the transitions at points of `A` are fixed by the
+intrinsic star of continuous linear maps. -/
+theorem isRealAlong_iff {C : FiniteRankBundleCore ℂ X} :
+    C.IsRealAlong A ↔ ∀ i j x, x ∈ A → x ∈ C.core.baseSet i → x ∈ C.core.baseSet j →
+      (star (toConv (C.core.coordChange i j x))).ofConv = C.core.coordChange i j x :=
+  Iff.rfl
+
+/-- A complex core is real along `A` if and only if each transition at a point of `A` commutes
+with coordinatewise conjugation. -/
+theorem isRealAlong_iff_coordChange_star {C : FiniteRankBundleCore ℂ X} :
+    C.IsRealAlong A ↔ ∀ i j x, x ∈ A → x ∈ C.core.baseSet i → x ∈ C.core.baseSet j →
+      ∀ v, C.core.coordChange i j x (star v) = star (C.core.coordChange i j x v) := by
+  refine ⟨fun h i j x hx hi hj v => ?_, fun h i j x hx hi hj => ?_⟩
+  · have := congrArg (fun f : (Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ) => f (star v))
+      (h i j x hx hi hj)
+    simp only [ContinuousLinearMap.intrinsicStar_apply, star_star] at this
+    exact this.symm
+  · ext v : 1
+    rw [ContinuousLinearMap.intrinsicStar_apply, h i j x hx hi hj, star_star]
+
+/-- A transition of a core real along `A`, at a point of `A`, commutes with coordinatewise
+conjugation. -/
+theorem IsRealAlong.coordChange_star {C : FiniteRankBundleCore ℂ X} (hC : C.IsRealAlong A)
+    {i j x : X} (hx : x ∈ A) (hi : x ∈ C.core.baseSet i) (hj : x ∈ C.core.baseSet j)
+    (v : Fin C.rank → ℂ) :
+    C.core.coordChange i j x (star v) = star (C.core.coordChange i j x v) :=
+  isRealAlong_iff_coordChange_star.1 hC i j x hx hi hj v
+
 /-- The trivial core is real along every subset. -/
 theorem isRealAlong_trivial (n : ℕ) (A : Set X) : (trivial ℂ X n).IsRealAlong A :=
-  fun _ _ _ _ _ _ => by
-    ext v : 1
-    rw [ContinuousLinearMap.intrinsicStar_apply]
-    exact star_star v
-
-variable {A : Set X}
+  isRealAlong_iff_coordChange_star.2 fun _ _ _ _ _ _ _ => rfl
 
 open Classical in
 /-- The transitions of the doubled core: those of `C` at the folded points on the first sheet, and
@@ -98,7 +125,7 @@ theorem doubleAlongCoordChange_inr {C : FiniteRankBundleCore ℂ X} (hC : C.IsRe
         (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j) x))).ofConv := by
   by_cases hx : x ∈ A
   · rw [← DoubleAlong.inl_coe_eq_inr A ⟨x, hx⟩, doubleAlongCoordChange_inl]
-    exact (hC _ _ x hx hi hj).symm
+    exact (isRealAlong_iff.1 hC _ _ x hx hi hj).symm
   · have : DoubleAlong.inr A x ∉ range (DoubleAlong.inl A) := by
       rintro ⟨y, hy⟩
       obtain ⟨rfl, hyA⟩ := (DoubleAlong.inl_eq_inr_iff A).1 hy
