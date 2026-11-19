@@ -31,8 +31,8 @@ of regular points.
 
 * `TauCeti.mfderiv_mpullback_apply`, `TauCeti.mvfderiv_mpullback_apply`,
   `TauCeti.contMDiffOn_mpullback`: the pullback of a vector field by a chart.
-* `TauCeti.constVectorField_apply_eq`, `TauCeti.mlieBracket_constVectorField`: a constant vector
-  field on the model space takes its value everywhere, and two constant fields have zero bracket.
+* `TauCeti.mlieBracket_constVectorField`: two constant vector fields on the model space have zero
+  bracket.
 * `TauCeti.chartConstField`: a constant field in the preferred chart at a point, on the manifold.
 * `TauCeti.mvfderiv_chartConstField_apply`: the derivative of a function along a constant chart
   field, read in the chart.
@@ -120,11 +120,6 @@ theorem contMDiff_constVectorField (v : E) {n : WithTop ℕ∞} :
     ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent n
       (fun z ↦ (⟨z, constVectorField v z⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
   contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-
-omit [FiniteDimensional ℝ E] in
-/-- The constant vector field takes the value `v` at every point. -/
-theorem constVectorField_apply_eq (v z : E) : constVectorField v z = v :=
-  (rfl)
 
 omit [FiniteDimensional ℝ E] in
 /-- The constant vector field is differentiable. -/

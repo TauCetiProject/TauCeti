@@ -72,6 +72,9 @@ two-form `-d⟨f, θ⟩`, which pairs `(v, u)` and `(w, u')` at `(g, n)` to
 
 * `TauCeti.CotangentBundle.leftTrivialization_snd_apply`: `Φ (g, a)` is the covector
   `a ∘ d(L_{g⁻¹})_g` at `g`.
+* `TauCeti.CotangentBundle.leftTrivialization_symm_apply_fst`,
+  `TauCeti.CotangentBundle.leftTrivialization_symm_apply_snd_apply`: `Φ⁻¹` sends a covector `z` at
+  `g` to `(g, ξ ↦ z (ξ^L g))`.
 * `TauCeti.CotangentBundle.leftTrivialization_mul`: `Φ (h g, a) = h • Φ (g, a)`.
 * `TauCeti.CotangentBundle.cotangentRel_mul_right_leftTrivialization`: right multiplication by `h`
   relates `Φ (g, a)` to `Φ (g h, Ad*_{h⁻¹} a)`.
@@ -128,28 +131,6 @@ private theorem covectorAtOne_snd {z : CotangentBundle I G} (hz : z.proj = 1) :
 private theorem proj_inv_smul_self (z : CotangentBundle I G) : (z.proj⁻¹ • z).proj = 1 := by
   rw [proj_smul, smul_eq_mul, inv_mul_cancel]
 
-/-- Over the identity, the coordinates of a covector in the trivialization at the identity are the
-covector itself. -/
-private theorem inCoordinates_one {x : G} (hx : x = 1) {z : CotangentBundle I G}
-    (hz : z.proj = 1) :
-    ContinuousLinearMap.inCoordinates E (TangentSpace I) ℝ (fun _ : G ↦ ℝ) x z.proj x z.proj z.2 =
-      z.2 := by
-  obtain rfl := hx
-  obtain ⟨y, q⟩ := z
-  obtain rfl : y = 1 := hz
-  ext v
-  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp]
-  exact congrArg q (Manifold.symmL_trivializationAt_self (1 : G) v)
-
-/-- The covectors at the identity form a smooth family. -/
-private theorem contMDiff_covectorAtOne :
-    ContMDiff 𝓘(ℝ, E →L[ℝ] ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ (covectorAtOne (I := I) (G := G)) := by
-  intro a₀
-  rw [contMDiffAt_hom_bundle]
-  exact ⟨contMDiffAt_const, contMDiffAt_id.congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun a ↦ inCoordinates_one rfl rfl)⟩
-
 /-- The underlying map `(g, a) ↦ g • a` of the left trivialization. -/
 private def leftTrivializationFun (p : G × (E →L[ℝ] ℝ)) : CotangentBundle I G :=
   p.1 • covectorAtOne p.2
@@ -162,7 +143,7 @@ private def leftTrivializationInvFun (z : CotangentBundle I G) : G × (E →L[�
 private theorem contMDiff_leftTrivializationFun :
     ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
       (leftTrivializationFun (I := I) (G := G)) :=
-  contMDiff_fst.smul (contMDiff_covectorAtOne.comp contMDiff_snd)
+  contMDiff_fst.smul ((contMDiff_mk (I := I) (1 : G)).comp contMDiff_snd)
 
 private theorem contMDiff_leftTrivializationInvFun :
     ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
@@ -173,10 +154,18 @@ private theorem contMDiff_leftTrivializationInvFun :
   have hback : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞
       fun z : CotangentBundle I G ↦ z.proj⁻¹ • z :=
     ((contMDiff_inv I ∞).comp hπ).smul contMDiff_id
+  -- Over the identity, the coordinates of a covector at the identity are the covector itself.
+  have hcoord (x : G) (z : CotangentBundle I G) (hx : x = 1) (hz : z.proj = 1) :
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) ℝ (fun _ : G ↦ ℝ) x z.proj x z.proj
+        z.2 = z.2 := by
+    obtain rfl := hx
+    obtain ⟨y, q⟩ := z
+    obtain rfl : y = 1 := hz
+    exact inCoordinates_self 1 q
   refine hπ.prodMk fun z₀ ↦ ?_
   exact ((contMDiffAt_hom_bundle _).mp (hback z₀)).2.congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun z ↦
-      (inCoordinates_one (proj_inv_smul_self z₀) (proj_inv_smul_self z)).symm)
+      (hcoord _ _ (proj_inv_smul_self z₀) (proj_inv_smul_self z)).symm)
 
 variable (I G) in
 /-- The **left trivialization** of the cotangent bundle of a Lie group: the diffeomorphism
@@ -239,6 +228,22 @@ translate to the identity. -/
 theorem leftTrivialization_symm_apply (z : CotangentBundle I G) :
     (leftTrivialization I G).symm z = (z.proj, (z.proj⁻¹ • z).2) :=
   (rfl)
+
+/-- The inverse of the left trivialization sends a covector to its base point. -/
+@[simp]
+theorem leftTrivialization_symm_apply_fst (z : CotangentBundle I G) :
+    ((leftTrivialization I G).symm z).1 = z.proj :=
+  (rfl)
+
+/-- The inverse of the left trivialization sends a covector `z` at `g` to the element of `𝔤*`
+whose value on `ξ` is the value of `z` on the left-invariant vector field of `ξ` at `g`. -/
+@[simp]
+theorem leftTrivialization_symm_apply_snd_apply (z : CotangentBundle I G)
+    (ξ : GroupLieAlgebra I G) :
+    ((leftTrivialization I G).symm z).2 ξ = z.2 (mulInvariantVectorField ξ z.proj) := by
+  have h := leftTrivialization_snd_apply_mulInvariantVectorField ((leftTrivialization I G).symm z) ξ
+  rw [Diffeomorph.apply_symm_apply] at h
+  exact h.symm
 
 /-- **Equivariance.** The left trivialization intertwines left multiplication on the first factor
 with the cotangent-lifted action of `G` on `T*G`. -/
@@ -372,10 +377,12 @@ theorem eval₂_mpullback_leftTrivialization_symplecticForm (p : G × (E →L[�
   set Y := prodVectorField (mulInvariantVectorField η) (constVectorField w.2)
   have hv : X p = v := (tangentSpaceProdEquiv p).injective <| by
     rw [tangentSpaceProdEquiv_prodVectorField, tangentSpaceProdEquiv_apply]
-    exact Prod.ext hξ (constVectorField_apply_eq _ _)
+    exact Prod.ext hξ
+      ((constVectorField_apply _ _).trans (NormedSpace.fromTangentSpace_symm_apply _ _))
   have hw : Y p = w := (tangentSpaceProdEquiv p).injective <| by
     rw [tangentSpaceProdEquiv_prodVectorField, tangentSpaceProdEquiv_apply]
-    exact Prod.ext hη (constVectorField_apply_eq _ _)
+    exact Prod.ext hη
+      ((constVectorField_apply _ _).trans (NormedSpace.fromTangentSpace_symm_apply _ _))
   set lam := SmoothForm.mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
     (liouvilleForm I G)
   have hX : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).tangent
@@ -402,8 +409,8 @@ theorem eval₂_mpullback_leftTrivialization_symplecticForm (p : G × (E →L[�
   rw [← hv, ← hw, hω, SmoothForm.mextDeriv_apply_one hX hY, hlam, hlam,
     mlieBracket_prodVectorField_mulInvariantVectorField, liouville_prodVectorField,
     mvfderiv_comp_snd_apply, mvfderiv_comp_snd_apply, mvfderiv_apply_eval, mvfderiv_apply_eval]
-  simp only [X, Y, prodVectorField_fst, prodVectorField_snd, constVectorField_apply_eq, id,
-    mfderiv_inv_mul_mulInvariantVectorField]
+  simp only [X, Y, prodVectorField_fst, prodVectorField_snd, constVectorField_apply,
+    NormedSpace.fromTangentSpace_symm_apply, id, mfderiv_inv_mul_mulInvariantVectorField]
   have hk : Module.Dual.kirillovForm (L := GroupLieAlgebra I G) (p.2 : E →ₗ[ℝ] ℝ) ξ η =
       p.2 (⁅ξ, η⁆ : GroupLieAlgebra I G) :=
     (Module.Dual.kirillovForm_apply _ ξ η).trans (congrFun (ContinuousLinearMap.coe_coe p.2) _)
