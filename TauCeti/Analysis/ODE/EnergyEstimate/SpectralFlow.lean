@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Spectral.FiniteDimensional
+public import TauCeti.Analysis.Fredholm.Spectral.Neg
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 public import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
@@ -227,8 +228,9 @@ theorem eventually_index_trajectoryOperator_neg_eq_neg_spectralFlow (hA : Contin
       (by simpa using hplus) hbot.neg htop.neg AL hAL,
     eventually_ker_eq_bot_and_sigNeg_eq_of_forall_mul_norm_le hsym hα hminus hplus hbot htop,
     eventually_ge_atTop 0] with T hT ⟨hTm, hTp⟩ hT0
-  rw [hT, spectralFlow_neg (by linarith) hA.continuousOn
-    (fun t _ ↦ isSelfAdjoint_iff_isSymmetric.2 (hsym t)) hTm.1 hTp.1]
+  rw [hT, spectralFlow_neg_of_ker_eq_bot (by linarith) hA.continuousOn
+    (fun t _ ↦ isSelfAdjoint_iff_isSymmetric.2 (hsym t))
+    (fun t _ ↦ (A t).isFredholm_of_finiteDimensional) hTm.1 hTp.1]
 
 end WeakDerivStep
 
