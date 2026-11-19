@@ -293,14 +293,6 @@ section BasepointChange
 
 open BalancedTensorProduct DGRightModuleCat
 
--- Instance search finds a different, but definitionally equal, decomposition of the loop chain
--- algebra than the one recorded in a DG module over it.
-local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
-    SetLike.GradedSMul
-      (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B a) R)).opposite.piece
-      M.grading :=
-  M.gradedSMul
-
 -- Transport the graded actions to the internal gradings used by balanced tensors.
 local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
     SetLike.GradedSMul
