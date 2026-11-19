@@ -56,6 +56,7 @@ values in a complex Hilbert space, the inner product of the `L²` parts of `a �
   continuous bilinear map with this property.
 * `BesselPotentialSpace.toDistr_apply_eq_besselPotentialPairing`: the distribution `u` acts on a
   scalar Schwartz function `ψ` by `u ψ = ⟨u, ψ⟩`.
+* `BesselPotentialSpace.norm_toDistr_apply_le`: hence `‖u ψ‖ ≤ ‖u‖_{H^{s,p}} ‖ψ‖_{H^{-s,q}}`.
 * `BesselPotentialSpace.dualEquiv`: the isometric isomorphism
   `H^{-s}(E, F⋆) ≃ₗᵢ[ℂ] (H^s(E, F))⋆` given by the density pairing, with
   `BesselPotentialSpace.dualEquiv_apply_eq_integral` and its Schwartz-function form
@@ -188,6 +189,18 @@ theorem toDistr_apply_eq_besselPotentialPairing {s : ℝ} (u : H^{s, p}(E, F)) (
   filter_upwards [SchwartzMap.coeFn_toLp_toBesselPotentialSpaceCLM (s := -s) (p := q) ψ] with x hx
   rw [hx]
   simp
+
+variable (q) in
+/-- The distribution underlying `u ∈ H^{s,p}(E, F)` is bounded on scalar Schwartz functions by the
+dual norm: `‖u ψ‖ ≤ ‖u‖_{H^{s,p}} ‖ψ‖_{H^{-s,q}}`. -/
+theorem norm_toDistr_apply_le {s : ℝ} (u : H^{s, p}(E, F)) (ψ : 𝓢(E, ℂ)) :
+    ‖u.toDistr ψ‖ ≤ ‖u‖ * ‖SchwartzMap.toBesselPotentialSpaceCLM (-s) q ψ‖ := by
+  rw [toDistr_apply_eq_besselPotentialPairing q]
+  refine (ContinuousLinearMap.norm_besselPotentialPairing_le _ s u _).trans ?_
+  rw [mul_assoc]
+  refine mul_le_of_le_one_left (by positivity) ?_
+  rw [ContinuousLinearMap.opNorm_flip]
+  exact ContinuousLinearMap.opNorm_lsmul_le
 
 end Distribution
 
