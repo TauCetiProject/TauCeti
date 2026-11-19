@@ -73,6 +73,8 @@ finite orthonormal basis (`TauCeti.FourTensor.sum_coordFourTensor_eq`).
 
 * `TauCeti.FourTensor.abs_apply_le_norm_of_norm_eq_one`: evaluation on unit vectors is bounded
   by the operator norm.
+* `TauCeti.FourTensor.IsAlgebraicCurvature.cyclic_last_eq_zero`: the first Bianchi identity in
+  the last three arguments.
 * `TauCeti.FourTensor.isClosed_algebraicCurvatureSubmodule`: the submodule is closed.
 * `TauCeti.FourTensor.IsAlgebraicCurvature.compContinuousLinearMap`: pullback preserves algebraic
   curvature tensors.
@@ -195,6 +197,15 @@ structure IsAlgebraicCurvature (r : FourTensor V) : Prop where
   swap_pairs : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]
   /-- The first Bianchi identity. -/
   cyclic_eq_zero : ∀ u v z w, r ![u, v, z, w] + r ![v, z, u, w] + r ![z, u, v, w] = 0
+
+/-- The first Bianchi identity in the last three arguments:
+`r(u, v, z, w) + r(u, z, w, v) + r(u, w, v, z) = 0`. -/
+theorem IsAlgebraicCurvature.cyclic_last_eq_zero {r : FourTensor V} (hr : IsAlgebraicCurvature r)
+    (u v z w : V) : r ![u, v, z, w] + r ![u, z, w, v] + r ![u, w, v, z] = 0 := by
+  have h (a b c d : V) : r ![a, b, c, d] = r ![d, c, b, a] := by
+    rw [hr.swap_pairs, hr.antisymm_first, hr.antisymm_last, neg_neg]
+  rw [h u v, h u z, h u w]
+  linear_combination hr.cyclic_eq_zero w z v u
 
 variable (V) in
 /-- The submodule of algebraic curvature tensors. -/
