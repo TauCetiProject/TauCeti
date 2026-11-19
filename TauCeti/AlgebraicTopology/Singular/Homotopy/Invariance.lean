@@ -29,7 +29,9 @@ from the identity into `s` keeps `s` inside `s`
 case, a homotopy equivalence of spaces induces an isomorphism on singular homology
 (`ContinuousMap.HomotopyEquiv.singularHomologyIso`), so by the five lemma a map of pairs which is a
 homotopy equivalence on both spaces induces isomorphisms on relative singular homology
-(`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`).
+(`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`). In particular, if `j : s → X` is an
+embedding and `h : X ≃ₕ t` is a homotopy equivalence with `h ∘ j` the inclusion `s ⊆ t`, then
+`Hₙ(X, j s) ≅ Hₙ(t, s)` (`TopPair.nonempty_singularHomology_ofInclusion_iso_of_homotopyEquiv`).
 
 The homotopy is transported to the singular simplicial sets of the two spaces, where the
 compatibility of the two simplicial homotopies over the inclusion of the subspace descends the
@@ -244,6 +246,28 @@ theorem isIso_singularHomologyMap_of_homotopyEquiv {P P' : TopPair.{w}} (f : P �
     h₂ ▸ e₂.isIso_homologyMap R m
   exact isIso_singularHomologyMap_of_isIso R f n (hfst n) (hsnd n) (fun m _ ↦ hfst m)
     fun m _ ↦ hsnd m
+
+/-- **The relative homology of a homotopy model of a pair.** Let `s ⊆ t` be subsets of a space
+`Y`, and let `j : s → X` be an embedding and `h : X ≃ₕ t` a homotopy equivalence with `h ∘ j` the
+inclusion `s ⊆ t`. Then the pair `(X, j s)` has the relative singular homology of `(t, s)`, in
+every degree and for every coefficient object. -/
+theorem nonempty_singularHomology_ofInclusion_iso_of_homotopyEquiv {X Y : Type w}
+    [TopologicalSpace X] [TopologicalSpace Y] {s t : Set Y} (hst : s ⊆ t) {j : C(s, X)}
+    (hj : Topology.IsEmbedding j) (h : ContinuousMap.HomotopyEquiv X t)
+    (hh : ∀ x, (h (j x) : Y) = x) (R : C) (n : ℕ) :
+    Nonempty ((ofInclusion (X := TopCat.of X) (Set.subset_univ (Set.range j))).singularHomology
+      R n ≅ (ofInclusion (X := TopCat.of Y) hst).singularHomology R n) := by
+  -- On the total spaces the map of pairs is `h`, and on the subspaces it is `j⁻¹`.
+  let φ := ofInclusionMap (X := TopCat.of X) (Y := TopCat.of Y) (Set.subset_univ (Set.range j))
+    hst (h.toFun.restrict Set.univ) fun x ⟨w, hw⟩ ↦ by simp [← hw, hh]
+  have := isIso_singularHomologyMap_of_homotopyEquiv φ
+    ((Homeomorph.Set.univ X).toHomotopyEquiv.trans h) hj.toHomeomorph.symm.toHomotopyEquiv
+    (by ext x; exact ofInclusionMap_fst_apply _ _ x)
+    (by
+      ext ⟨_, w, rfl⟩
+      refine Subtype.ext ((ofInclusionMap_snd_apply _ _ _).trans ((hh w).trans ?_))
+      exact congrArg Subtype.val (hj.toHomeomorph_symm_apply w).symm) R n
+  exact ⟨asIso (TopPair.singularHomologyMap φ R n)⟩
 
 end TopPair
 
