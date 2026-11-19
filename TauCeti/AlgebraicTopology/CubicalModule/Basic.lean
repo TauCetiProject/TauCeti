@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplex
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Data.Fin.Parity
+import TauCeti.Data.Fin.FaceSwap
 
 /-!
 # Cubical modules and their cubical boundary complex
@@ -142,20 +143,16 @@ theorem boundary_apply (n : ℕ) (x : A.X (n + 1)) :
 
 /-- The cubical boundary squares to zero. -/
 theorem boundary_comp_boundary (n : ℕ) : A.boundary n ∘ₗ A.boundary (n + 1) = 0 := by
-  -- The terms `(-1) ^ (i + j) ∂ⱼ ∂ᵢ` cancel in pairs under the involution
-  -- `(i, j) ↦ (i.succAbove j, j.predAbove i)`, by the face identity and the parity of the
-  -- swapped exponent.
+  -- The terms `(-1) ^ (i + j) ∂ⱼ ∂ᵢ` cancel in pairs under the involution `Fin.faceSwap`,
+  -- by the face identity and the parity of the swapped exponent.
   ext x
   simp only [LinearMap.comp_apply, boundary_apply, map_sum, map_zsmul, Finset.smul_sum, smul_smul,
     ← pow_add, LinearMap.zero_apply]
   rw [← Finset.sum_product']
-  refine Finset.sum_involution (fun p _ ↦ (p.1.succAbove p.2, p.2.predAbove p.1))
-    (fun p _ ↦ ?_) (fun p _ _ h ↦ Fin.succAbove_ne p.1 p.2 congr($(h).1))
-    (fun _ _ ↦ by simp) (fun p _ ↦ ?_)
-  · dsimp only
-    rw [← LinearMap.comp_apply (A.faceDiff p.2), faceDiff_comp_faceDiff, LinearMap.comp_apply,
-      Fin.neg_one_pow_succAbove_add_predAbove, neg_smul, add_neg_cancel]
-  · simp [Fin.succAbove_succAbove_predAbove, Fin.predAbove_predAbove_succAbove]
+  refine Finset.sum_involution (fun p _ ↦ Fin.faceSwap p) (fun p _ ↦ ?_)
+    (fun p _ _ ↦ Fin.faceSwap_ne p) (fun _ _ ↦ by simp) (fun p _ ↦ Fin.faceSwap_faceSwap p)
+  rw [Fin.faceSwap_def, ← LinearMap.comp_apply (A.faceDiff p.2), faceDiff_comp_faceDiff,
+    LinearMap.comp_apply, Fin.neg_one_pow_succAbove_add_predAbove, neg_smul, add_neg_cancel]
 
 @[simp]
 theorem boundary_boundary (n : ℕ) (x : A.X (n + 2)) : A.boundary n (A.boundary (n + 1) x) = 0 :=
