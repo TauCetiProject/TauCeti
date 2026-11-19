@@ -50,6 +50,15 @@ def timeScale (a : ℝ) : (ℝ × E) →L[ℝ] ℝ × E :=
 @[simp] theorem timeScale_apply (a : ℝ) (x : ℝ × E) :
     timeScale a x = (a * x.1, x.2) := (rfl)
 
+/-- A time dilation by `a` has operator norm at most `max |a| 1`. -/
+theorem norm_timeScale_le (a : ℝ) : ‖(timeScale a : (ℝ × E) →L[ℝ] ℝ × E)‖ ≤ max |a| 1 := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ ?_
+  rw [timeScale_apply, Prod.norm_def, Prod.norm_def, Real.norm_eq_abs, abs_mul, Real.norm_eq_abs]
+  refine max_le (mul_le_mul (le_max_left _ _) (le_max_left _ _) (abs_nonneg _) (by positivity)) ?_
+  calc ‖x.2‖ = 1 * ‖x.2‖ := (one_mul _).symm
+    _ ≤ max |a| 1 * max |x.1| ‖x.2‖ :=
+      mul_le_mul (le_max_right _ _) (le_max_right _ _) (norm_nonneg _) (by positivity)
+
 /-- Expand a time-dilated multilinear term by its subset of time-direction slots. -/
 theorem map_timeScale_eq_sum_pow_card_smul {m : ℕ}
     (A : (ℝ × E) [×m]→L[ℝ] F) (a : ℝ) (v : Fin m → ℝ × E) :
@@ -121,6 +130,16 @@ omit [NormedSpace ℝ E] in
 /-- The lower half-space is closed. -/
 theorem isClosed_lowerHalfSpace : IsClosed (lowerHalfSpace E) :=
   isClosed_Iic.prod isClosed_univ
+
+/-- The lower half-space is convex. -/
+theorem convex_lowerHalfSpace : Convex ℝ (lowerHalfSpace E) :=
+  (convex_Iic 0).prod convex_univ
+
+omit [NormedSpace ℝ E] in
+/-- The lower half-space has nonempty interior. -/
+theorem nonempty_interior_lowerHalfSpace : (interior (lowerHalfSpace E)).Nonempty :=
+  ⟨(-1, 0), mem_interior_iff_mem_nhds.mpr
+    (prod_mem_nhds (Iic_mem_nhds (show (-1 : ℝ) < 0 by norm_num)) univ_mem)⟩
 
 /-- Within-set derivatives are unique on the upper half-space. -/
 theorem uniqueDiffOn_upperHalfSpace : UniqueDiffOn ℝ (upperHalfSpace E) :=

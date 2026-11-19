@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import TauCeti.Analysis.Calculus.FDeriv.Submodule
+public import Mathlib.Analysis.Calculus.FDeriv.Extend
 public import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
@@ -24,7 +25,10 @@ isometry’s range; this lifting does not require the range to be closed.
 Over a real or complex normed field, locally uniform limits of the coefficients of Taylor
 derivative series are again Taylor derivative series, provided the underlying functions converge
 pointwise. This is the derivative-compatibility step in completeness of smooth function spaces.
-The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`.
+The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`. Over `ℝ` the same
+holds on a closed convex set with nonempty interior, such as a closed half-space: the derivatives
+within the set at its boundary points are recovered from the interior by Mathlib's
+`hasFDerivWithinAt_closure_of_tendsto_fderiv`.
 `IsOpen.exists_smooth_of_locallyUniform_jet_limits` specializes this to canonical iterated
 derivatives on an open set, recovering a smooth limit with those derivatives.
 
@@ -112,6 +116,62 @@ theorem HasFTaylorSeriesUpTo.of_tendstoLocallyUniformly [IsRCLikeNormedField �
     (HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn isOpen_univ
       (fun i ↦ (h i).hasFTaylorSeriesUpToOn univ)
       (fun m hm ↦ (hq m hm).tendstoLocallyUniformlyOn) (fun x _ ↦ hf x))
+
+
+section Convex
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {n : WithTop ℕ∞} {f : E → F}
+  {q : E → FormalMultilinearSeries ℝ E F}
+
+/-- On a closed convex set with nonempty interior, locally uniform limits of Taylor derivative
+series are Taylor derivative series of the pointwise limit. This applies to closed half-spaces,
+where the derivatives at the boundary are one-sided. -/
+theorem HasFTaylorSeriesUpToOn.of_tendstoLocallyUniformlyOn_of_convex {s : Set E}
+    (hs : IsClosed s) (hconv : Convex ℝ s) (hint : (interior s).Nonempty)
+    {ι : Type*} {l : Filter ι} [l.NeBot] {fᵢ : ι → E → F}
+    {qᵢ : ι → E → FormalMultilinearSeries ℝ E F}
+    (h : ∀ i, HasFTaylorSeriesUpToOn n (fᵢ i) (qᵢ i) s)
+    (hq : ∀ m : ℕ, m ≤ n →
+      TendstoLocallyUniformlyOn (fun i x ↦ qᵢ i x m) (fun x ↦ q x m) l s)
+    (hf : ∀ x ∈ s, Tendsto (fun i ↦ fᵢ i x) l (𝓝 (f x))) :
+    HasFTaylorSeriesUpToOn n f q s := by
+  have hopen : HasFTaylorSeriesUpToOn n f q (interior s) :=
+    .of_tendstoLocallyUniformlyOn isOpen_interior (fun i ↦ (h i).mono interior_subset)
+      (fun m hm ↦ (hq m hm).mono interior_subset) fun x hx ↦ hf x (interior_subset hx)
+  have hcont (m : ℕ) (hm : m ≤ n) : ContinuousOn (fun x ↦ q x m) s :=
+    (hq m hm).continuousOn (Eventually.of_forall fun i ↦ (h i).cont m hm).frequently
+  have hclosure : closure (interior s) = s := by
+    rw [hconv.closure_interior_eq_closure_of_nonempty_interior hint, hs.closure_eq]
+  refine ⟨fun x hx ↦ ?_, fun m hm x hx ↦ ?_, hcont⟩
+  · have hzero := ((continuousMultilinearCurryFin0 ℝ E F).continuous.tendsto (q x 0)).comp
+      ((hq 0 (by simp)).tendsto_at hx)
+    exact tendsto_nhds_unique hzero (by
+      simpa only [Function.comp_def, continuousMultilinearCurryFin0_apply,
+        ← ContinuousMultilinearMap.curry0_apply, (h _).zero_eq _ hx] using hf x hx)
+  · have hsuc : ((m + 1 : ℕ) : WithTop ℕ∞) ≤ n := ENat.add_one_natCast_le_withTop_of_lt hm
+    have hderiv (y : E) (hy : y ∈ interior s) :
+        HasFDerivAt (fun z ↦ q z m) (q y m.succ).curryLeft y :=
+      (hopen.fderivWithin m hm y hy).hasFDerivAt (isOpen_interior.mem_nhds hy)
+    -- The derivative `(q y (m + 1)).curryLeft` is continuous within `s`, so the interior
+    -- derivatives converge at the boundary point `x`.
+    have hc : ContinuousWithinAt (fun y ↦ (q y m.succ).curryLeft) s x := by
+      have hcurry : (fun y ↦ (q y m.succ).curryLeft) =
+          fun y ↦ continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (m + 1) ↦ E) F (q y m.succ) :=
+        funext fun y ↦ by ext v w; simp [continuousMultilinearCurryLeftEquiv_apply]
+      rw [hcurry]
+      exact (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (m + 1) ↦ E)
+        F).continuous.continuousAt.comp_continuousWithinAt (hcont _ hsuc x hx)
+    have hlim : Tendsto (fun y ↦ fderiv ℝ (fun z ↦ q z m) y) (𝓝[interior s] x)
+        (𝓝 (q x m.succ).curryLeft) :=
+      ((hc.mono interior_subset).tendsto).congr'
+        (eventually_mem_nhdsWithin.mono fun y hy ↦ (hderiv y hy).fderiv.symm)
+    have hext := hasFDerivWithinAt_closure_of_tendsto_fderiv
+      (fun y hy ↦ (hderiv y hy).differentiableAt.differentiableWithinAt) hconv.interior
+      isOpen_interior (fun y hy ↦ ((hcont m hm.le) y (hclosure ▸ hy)).mono interior_subset) hlim
+    rwa [hclosure] at hext
+
+end Convex
 
 
 namespace IsOpen
