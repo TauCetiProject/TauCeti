@@ -100,6 +100,11 @@ private theorem pairOfPantsContinuationPerturbation_add_const_fun (G H : Punctur
   rw [pairOfPantsContinuationPerturbation_add_const, add_apply,
     pairOfPantsContinuationPerturbation_const_target c d L _ x y]
 
+/-- Periodic normalizations `c_q` give period-one target-independent Hamiltonians. -/
+private theorem periodic_const_target {c : Puncture → ℝ → ℝ} (hc : ∀ q, Periodic (c q) 1)
+    (q : Puncture) : Periodic (fun t (_ : M) ↦ c q t) 1 :=
+  fun t ↦ funext fun _ ↦ hc q t
+
 end Floer
 
 /-! ### Manifold targets -/
@@ -111,6 +116,13 @@ open Floer
 variable {E F M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace F]
   {I : ModelWithCorners ℝ E F} [TopologicalSpace M] [ChartedSpace F M] [IsManifold I ⊤ M]
   {G H : Puncture → ℝ → M → ℝ} {c d : Puncture → ℝ → ℝ} {L : Puncture → ℝ}
+
+omit [IsManifold I ⊤ M] in
+/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians on `M`. -/
+private theorem contMDiff_uncurry_const_target {c : Puncture → ℝ → ℝ}
+    (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
+  (hcs q).contMDiff.comp contMDiff_fst
 
 /-- **Normalizing the Hamiltonians does not change the Floer equation.** The perturbed derivative
 `du - X_K` of any map into `M` is the same for the inner and outer Hamiltonians `G_q`, `H_q` and
@@ -194,12 +206,10 @@ theorem hamiltonianCurvature_pairOfPantsContinuationPerturbation_add_const (ω :
             (fun q t (_ : M) ↦ d q t) L (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsContinuationPerturbation (fun q t (_ : M) ↦ c q t)
             (fun q t (_ : M) ↦ d q t) L (Complex.equivRealProdCLM.symm z) x Complex.I) z x := by
-  have hc' (q : Puncture) : Periodic (fun t (_ : M) ↦ c q t) 1 := fun t ↦ funext fun _ ↦ hc q t
-  have hd' (q : Puncture) : Periodic (fun t (_ : M) ↦ d q t) 1 := fun t ↦ funext fun _ ↦ hd q t
-  have hcs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
-    (hcs q).contMDiff.comp contMDiff_fst
-  have hds' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ d q t) :=
-    (hds q).contMDiff.comp contMDiff_fst
+  have hc' := periodic_const_target (M := M) hc
+  have hd' := periodic_const_target (M := M) hd
+  have hcs' := contMDiff_uncurry_const_target (I := I) (M := M) hcs
+  have hds' := contMDiff_uncurry_const_target (I := I) (M := M) hds
   rw [pairOfPantsContinuationPerturbation_add_const_fun G H c d L x,
     pairOfPantsContinuationPerturbation_add_const_fun G H c d L x,
     hamiltonianCurvature_add_const ω
@@ -246,9 +256,9 @@ private theorem setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturba
   have hid := (SymplecticForm.isNondegenerate_constSmooth stdComplexSymplecticForm)
     |>.integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncation
     (G := fun q t (_ : ℂ) ↦ c q t) (H := fun q t (_ : ℂ) ↦ d q t) (L := L)
-    (fun q t ↦ funext fun _ ↦ hc q t) (fun q t ↦ funext fun _ ↦ hd q t)
-    (fun q ↦ (hcs q).contMDiff.comp contMDiff_fst) (fun q ↦ (hds q).contMDiff.comp contMDiff_fst)
-    (u := fun _ ↦ (0 : ℂ)) contMDiffOn_const (R := max 2 (∑ q, |L q| + 1)) (le_max_left _ _)
+    (periodic_const_target hc) (periodic_const_target hd) (contMDiff_uncurry_const_target hcs)
+    (contMDiff_uncurry_const_target hds) (u := fun _ ↦ (0 : ℂ)) contMDiffOn_const
+    (R := max 2 (∑ q, |L q| + 1)) (le_max_left _ _)
     fun q ↦ le_max_of_le_right (by
       linarith [le_abs_self (L q), Finset.single_le_sum (fun r _ ↦ abs_nonneg (L r))
         (Finset.mem_univ q)])
@@ -332,9 +342,8 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_add
   -- along `u` because it is along a constant map.
   have hk := (ω.integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation
     (G := fun q t (_ : M) ↦ c q t) (H := fun q t (_ : M) ↦ d q t) (L := L)
-    (fun q t ↦ funext fun _ ↦ hc q t) (fun q t ↦ funext fun _ ↦ hd q t)
-    (fun q ↦ (hcs q).contMDiff.comp contMDiff_fst) (fun q ↦ (hds q).contMDiff.comp contMDiff_fst)
-    (u := fun _ ↦ u 0) continuousOn_const).congr_fun
+    (periodic_const_target hc) (periodic_const_target hd) (contMDiff_uncurry_const_target hcs)
+    (contMDiff_uncurry_const_target hds) (u := fun _ ↦ u 0) continuousOn_const).congr_fun
     (fun z _ ↦ ω.hamiltonianCurvature_pairOfPantsContinuationPerturbation_const_target c d L z
       (u 0) (u z))
     isOpen_thricePuncturedSphereReal.measurableSet
