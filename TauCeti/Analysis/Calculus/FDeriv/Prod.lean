@@ -208,8 +208,11 @@ theorem _root_.HasFDerivAt.superposition {A : E → F → G} {A' : E × F →L[�
     {u' : E →L[𝕜] F} (hA : HasFDerivAt (Function.uncurry A) A' (a, u a))
     (hu : HasFDerivAt u u' a) :
     HasFDerivAt (fun y ↦ A y (u y)) (A'.comp (.inl 𝕜 E F) + (A'.comp (.inr 𝕜 E F)).comp u') a :=
-  (hA.comp_graph hu).congr_fderiv <| ContinuousLinearMap.ext fun v ↦
-    (A'.comp_inl_add_comp_inr (v, u' v)).symm
+  (hA.comp_graph hu).congr_fderiv <| by
+    ext v
+    simp only [ContinuousLinearMap.comp_apply, add_apply, ContinuousLinearMap.prod_apply,
+      ContinuousLinearMap.id_apply, ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply,
+      ← map_add, Prod.mk_add_mk, add_zero, zero_add]
 
 /-- **The chain rule along a graph.** The derivative of `fun x ↦ f (x, u x)` is the derivative of
 `f` in the first variable plus its derivative in the second variable applied to the derivative
