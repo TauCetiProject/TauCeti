@@ -6,7 +6,6 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Constructions.Pi
-public import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.Probability.Independence.Basic
 import TauCeti.MeasureTheory.MeasurableSpace.Pi
 
@@ -79,12 +78,6 @@ where one side is a product measure.
 over the coordinates outside `p`, of the product measures of its fibres. This is the
 finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
 
-**The constant map to a one-index product.** When `ι` has a single element, the constant map
-`Pi.constAddMonoidHom ι G` identifies `G` with `ι → G` as additive groups. Pushing a left-invariant
-measure forward along it gives a left-invariant measure, and the pushforward gives each box
-`Set.univ.pi fun _ ↦ S` the mass of `S` (for any nonempty countable `ι`). This carries formulas
-for boxes in `ι → G` back to `G` itself.
-
 ## Main statements
 
 * `TauCeti.measurePreserving_pi_comp_embedding` — restricting a product assignment along an
@@ -113,11 +106,7 @@ for boxes in `ι → G` back to `G` itself.
   on products of a measurable set and a measurable box are equal;
 * `MeasureTheory.Measure.pi_apply_eq_lintegral_piEquivPiSubtypeProd_symm` — the product measure
   of a set is the integral of the measures of its fibres over the coordinates satisfying a
-  predicate;
-* `MeasureTheory.Measure.isAddLeftInvariant_map_constAddMonoidHom`,
-  `MeasureTheory.Measure.map_constAddMonoidHom_univ_pi` — the constant map to `ι → G` keeps a
-  left-invariant measure left-invariant and gives each box `Set.univ.pi fun _ ↦ S` the mass
-  of `S`.
+  predicate.
 
 ## Implementation
 
@@ -459,31 +448,6 @@ end FinArrow
 end TauCeti
 
 namespace MeasureTheory.Measure
-
-section ConstMap
-
-variable {G : Type*} [AddMonoid G] [MeasurableSpace G] {ι : Type*}
-
-/-- Carrying a left-invariant measure on `G` to `ι → G` along the constant map, an additive
-bijection when `ι` has exactly one element, gives a left-invariant measure. -/
-theorem isAddLeftInvariant_map_constAddMonoidHom [MeasurableAdd G] [Unique ι] (μ : Measure G)
-    [μ.IsAddLeftInvariant] : (μ.map (Pi.constAddMonoidHom ι G)).IsAddLeftInvariant :=
-  isAddLeftInvariant_map (Pi.constAddMonoidHom ι G).toAddHom
-    (.of_eval fun _ ↦ measurable_id) fun g ↦ ⟨g default, funext fun i ↦ by
-      rw [Unique.eq_default i]; rfl⟩
-
-/-- Carrying a measure on `G` to `ι → G` along the constant map, with `ι` nonempty and countable,
-gives each box `Set.univ.pi fun _ ↦ S` the mass of `S`. This transports box formulas on
-`ι → G` to `G` when `ι` has a single element. -/
-theorem map_constAddMonoidHom_univ_pi [Countable ι] [Nonempty ι] (μ : Measure G) {S : Set G}
-    (hS : MeasurableSet S) : μ.map (Pi.constAddMonoidHom ι G) (univ.pi fun _ ↦ S) = μ S := by
-  rw [map_apply (f := Pi.constAddMonoidHom ι G) (.of_eval fun _ ↦ measurable_id)
-    (MeasurableSet.univ_pi fun _ ↦ hS)]
-  congr 1
-  ext x
-  simp
-
-end ConstMap
 
 variable {ι : Type*} [Finite ι] {α : ι → Type*} [∀ i, MeasurableSpace (α i)]
 
