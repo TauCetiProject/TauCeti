@@ -10,8 +10,10 @@ public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Basic
 public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Symmetry
 public import TauCeti.Analysis.PDE.EnergyForm.VariableLp
 public import TauCeti.Analysis.Sobolev.Poincare.W1p0
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The divergence-form energy form on `H¹(Ω)`, and Gårding's inequality
@@ -269,6 +271,24 @@ theorem memLp_energyIntegrand_of_bounds
   exact (ae_mem_restrict (mu := mu) (Omega := Omega)).mono fun x hx =>
     opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) (hb_bound x hx) (hc_bound x hx)
 
+/-- Bounded measurable principal coefficients and essentially bounded lower-order coefficients
+define an essentially bounded field of pointwise energy forms. This is
+`memLp_energyIntegrand_of_bounds` with the pointwise bounds on `b` and `c` replaced by
+membership in `L^∞(Ω)`. -/
+theorem memLp_energyIntegrand_of_memLp_top
+    (hLam : 0 ≤ Lam) (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
+      ∀ eta xi : EuclideanSpace ℝ ι,
+        |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega)) :
+    MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) := by
+  refine memLp_top_of_bound (f := fun x => energyIntegrand (a x) (b x) (c x))
+    (aestronglyMeasurable_energyIntegrand ha hb.aestronglyMeasurable hc.aestronglyMeasurable)
+    (Lam + lpNorm b ⊤ (mu.restrict Omega) + lpNorm c ⊤ (mu.restrict Omega)) ?_
+  filter_upwards [ae_mem_restrict (mu := mu) (Omega := Omega), ae_le_lpNorm_exponent_top hb,
+    ae_le_lpNorm_exponent_top hc] with x hx hbx hcx
+  exact opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) hbx hcx
+
 /-- Constant principal coefficients without drift or mass define an essentially bounded field of
 pointwise energy forms. -/
 theorem memLp_energyIntegrand_const_zero_zero (A : Matrix ι ι ℝ) :
@@ -307,8 +327,7 @@ theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm
       (mu.restrict U) :=
   memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
     ((norm_nonneg (matrixBilinearForm (a 0))).trans (hLam 0))
-    (Continuous.aestronglyMeasurable (β := ι → ι → ℝ) <|
-      continuous_of_continuous_matrixBilinearForm ha)
+    (continuous_of_continuous_matrixBilinearForm ha).aestronglyMeasurable
     aestronglyMeasurable_const aestronglyMeasurable_const
     (fun x _ eta xi => by
       simpa [Real.norm_eq_abs] using
