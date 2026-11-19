@@ -331,4 +331,15 @@ def skeletonNeighborhoodHomotopyRel (n : ℕ) :
     rw [skeletonNeighborhoodHomotopy_apply_of_mem t
       ⟨x.1, skeletonNeighborhood_subset_skeletonLT_succ C n x.2⟩ (by exact hx)]
 
+/-- `TauCeti.skeletonNeighborhoodHomotopyRel C n` is the deformation
+`TauCeti.skeletonNeighborhoodHomotopy C n` of `Xⁿ`, read on the points of
+`TauCeti.skeletonNeighborhood C n`. -/
+@[simp]
+lemma coe_skeletonNeighborhoodHomotopyRel_apply {n : ℕ} (t : I)
+    (x : skeletonNeighborhood C n) :
+    (skeletonNeighborhoodHomotopyRel C n (t, x) : X) =
+      skeletonNeighborhoodHomotopy C n
+        (t, ⟨x, skeletonNeighborhood_subset_skeletonLT_succ C n x.2⟩) :=
+  (rfl)
+
 end TauCeti
