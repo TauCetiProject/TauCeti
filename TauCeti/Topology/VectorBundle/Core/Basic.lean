@@ -32,6 +32,21 @@ public section
 
 open Bundle Set Topology
 
+/-- Two `VectorBundleCore`s with the same chart base sets, preferred chart indices, and coordinate
+changes are equal. -/
+@[ext]
+protected theorem VectorBundleCore.ext {R B F ι : Type*} [NontriviallyNormedField R]
+    [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace R F]
+    {Z₁ Z₂ : VectorBundleCore R B F ι} (hbaseSet : ∀ i, Z₁.baseSet i = Z₂.baseSet i)
+    (hindexAt : ∀ x, Z₁.indexAt x = Z₂.indexAt x)
+    (hcoordChange : ∀ i j x, Z₁.coordChange i j x = Z₂.coordChange i j x) : Z₁ = Z₂ := by
+  rcases Z₁ with ⟨b₁, _, i₁, _, c₁, _, _, _⟩
+  rcases Z₂ with ⟨b₂, _, i₂, _, c₂, _, _, _⟩
+  obtain rfl : b₁ = b₂ := funext hbaseSet
+  obtain rfl : i₁ = i₂ := funext hindexAt
+  obtain rfl : c₁ = c₂ := funext fun i => funext fun j => funext (hcoordChange i j)
+  rfl
+
 namespace TauCeti
 
 universe u v w
