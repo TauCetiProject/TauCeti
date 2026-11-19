@@ -54,7 +54,11 @@ homology in every degree
 `Hₙ(M_{c+ε}, M_{c-ε})` is the relative homology `Hₙ(V, V₀)` of the Thom pair of `V`
 (`TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`). The Thom isomorphism, which this
 file does not use, identifies the homology of the Thom pair with the homology of the base `B`,
-shifted by the rank of `V` and with coefficients twisted by the orientation of `V`.
+shifted by the rank of `V` and with coefficients twisted by the orientation of `V`. The points of
+`D_ρ(V)` sent into `M_{c-ε}` are those of `S_ρ(V)`
+(`TauCeti.apply_le_sub_iff_mem_gaugeSphereBundle`); the cohomological forms of these statements,
+with the Thom isomorphism in cohomology applied to them, are in
+`TauCeti.Geometry.Manifold.Morse.Bott.Cohomology`.
 
 ## Main results
 
@@ -244,6 +248,33 @@ end SmoothEmbedding
 
 /-! ### The negative disc bundle parametrized by a vector bundle -/
 
+section SphereBundle
+
+variable {M F : Type*} {B : Type u} {V : B → Type u} {f s t : M → ℝ} {c ε : ℝ} {W : Set M}
+  {ρ : TotalSpace F V → ℝ} {g : TotalSpace F V → M}
+
+/-- **The sphere bundle is the part of the negative disc bundle in the lower sublevel.** Let
+`f = c - s + t` on a set `W`, and let `g` be injective on the disc bundle `D_ρ(V)` of a function
+`ρ` on the total space of a bundle, carrying it onto the negative disc bundle
+`{x ∈ W | t x = 0, s x ≤ ε}` and the sphere bundle `S_ρ(V)` onto `{x ∈ W | t x = 0, s x = ε}`.
+Then a point of `D_ρ(V)` is sent into the lower sublevel `{f ≤ c - ε}` exactly when it lies in
+`S_ρ(V)`. -/
+theorem apply_le_sub_iff_mem_gaugeSphereBundle (hf : ∀ x ∈ W, f x = c - s x + t x)
+    (hg : InjOn g (gaugeDiscBundle ρ))
+    (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
+    (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε}) {v : TotalSpace F V}
+    (hv : v ∈ gaugeDiscBundle ρ) : f (g v) ≤ c - ε ↔ v ∈ gaugeSphereBundle ρ := by
+  obtain ⟨hxW, htx, hsx⟩ : g v ∈ {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε} := hgD ▸ mem_image_of_mem g hv
+  rw [hf _ hxW, htx]
+  refine ⟨fun hle ↦ ?_, fun hvS ↦ ?_⟩
+  · -- `s = ε` at `g v`, so `g v` is the image of a point of the sphere bundle, which is `v`.
+    obtain ⟨w, hw, hwv⟩ : g v ∈ g '' gaugeSphereBundle ρ := hgS ▸ ⟨hxW, htx, by linarith⟩
+    rwa [← hg (gaugeSphereBundle_subset_gaugeDiscBundle ρ hw) hv hwv]
+  · have : g v ∈ {x | x ∈ W ∧ t x = 0 ∧ s x = ε} := hgS ▸ mem_image_of_mem g hvS
+    linarith [this.2.2]
+
+end SphereBundle
+
 section ThomPair
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -292,18 +323,7 @@ theorem exists_isIso_singularHomologyMap_sublevelPair_of_negativeDiscBundle
   · -- On the negative disc bundle `f = c - s ≤ c`.
     rw [mem_ofPred_eq, hf x hxW, htx]
     linarith [hs₀ x hxW]
-  · -- A point of the disc bundle lies in `{f ≤ c - ε}` exactly when `s = ε` there, that is, when
-    -- it is the image of a point of the sphere bundle.
-    obtain ⟨hxW, htx, hsx⟩ : g v ∈ {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε} := hgD ▸ mem_image_of_mem g hv
-    rw [mem_ofPred_eq, hf _ hxW, htx]
-    refine ⟨fun hle ↦ ?_, fun hvS ↦ ?_⟩
-    · obtain ⟨w, hw, hwv⟩ : g v ∈ g '' gaugeSphereBundle ρ := hgS ▸ ⟨hxW, htx, by linarith⟩
-      obtain rfl : w = v :=
-        congrArg Subtype.val
-          (@hg.injective ⟨w, gaugeSphereBundle_subset_gaugeDiscBundle ρ hw⟩ ⟨v, hv⟩ hwv)
-      exact hw
-    · have : g v ∈ {x | x ∈ W ∧ t x = 0 ∧ s x = ε} := hgS ▸ mem_image_of_mem g hvS
-      linarith [this.2.2]
+  · exact apply_le_sub_iff_mem_gaugeSphereBundle hf (injOn_iff_injective.2 hg.injective) hgD hgS hv
 
 /-- **The relative homology across a Morse–Bott critical level is that of the Thom pair of the
 negative bundle.** Under the hypotheses of
