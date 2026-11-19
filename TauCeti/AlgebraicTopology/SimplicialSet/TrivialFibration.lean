@@ -172,8 +172,6 @@ lemma Homotopy.exists_lift_horn₂₀ [Fibration p] {Z : SSet.{u}} {f₀ f₁ f�
     simp only [← MonoidalCategory.whiskerLeft_comp]
     exact congrArg _ (CosimplicialObject.δ_comp_δ stdSimplex (i := 0) (j := 0) (by decide)).symm
   have h₀ : ι₀ ≫ H₀₁.h = ι₀ ≫ H₀₂.h := by rw [H₀₁.h₀, H₀₂.h₀]
-  have h₁ : ι₁ ≫ H₀₁.h = f₁ := H₀₁.h₁
-  have h₂ : ι₁ ≫ H₀₂.h = f₂ := H₀₂.h₁
   let φ : Z ⊗ (Λ[2, 0] : SSet.{u}) ⟶ X := hpo.desc H₀₁.h H₀₂.h (by
     rw [whiskerLeft_stdSimplex_δ_one, Category.assoc, Category.assoc, h₀])
   have sq : CommSq φ (Z ◁ Λ[2, 0].ι) p ω := ⟨hpo.hom_ext
@@ -188,9 +186,9 @@ lemma Homotopy.exists_lift_horn₂₀ [Fibration p] {Z : SSet.{u}} {f₀ f₁ f�
   -- The ends of the face `1 → 2` are the ends `1` and `2` of these faces.
   refine ⟨.mk' (Z ◁ stdSimplex.δ 0 ≫ sq.lift) ?_ ?_, ?_⟩
   · rw [← fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one_assoc, reassoc_of% d₁, l₀₁,
-      fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, h₁]
+      fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, H₀₁.h₁]
   · rw [← fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, reassoc_of% d₂, l₀₂,
-      fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, h₂]
+      fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero_assoc, H₀₂.h₁]
   · rw [Homotopy.mk'_h, Category.assoc, sq.fac_right]
 
 /-- Let `p` be a Kan fibration with a section `s` such that `p ≫ s` is homotopic to `𝟙 X`. Then
@@ -201,10 +199,8 @@ private lemma exists_homotopy_over_of_homotopy [Fibration p] (s : Y ⟶ X) (hs :
   -- `σ = H ≫ p ≫ s` is a homotopy from `p ≫ s` to itself with the same image `H ≫ p` in `Y` as
   -- `H`. Fill the horn `Λ[2, 0]` formed by `σ` and `H` over the degenerate triangle of `H ≫ p`
   -- collapsing the edge `1 → 2`: its face `1 → 2` lies over the constant edge.
-  have h₀ : ι₀ ≫ H.h = p ≫ s := H.h₀
-  have h₁ : ι₁ ≫ H.h = 𝟙 X := H.h₁
-  let σ : Homotopy (p ≫ s) (p ≫ s) := .mk' (H.h ≫ p ≫ s) (by rw [reassoc_of% h₀, reassoc_of% hs])
-    (by rw [reassoc_of% h₁])
+  let σ : Homotopy (p ≫ s) (p ≫ s) := .mk' (H.h ≫ p ≫ s) (by simp [reassoc_of% hs])
+    (by simp)
   have d₁ : stdSimplex.{u}.δ (2 : Fin 3) ≫ stdSimplex.σ 1 = 𝟙 _ :=
     CosimplicialObject.δ_comp_σ_succ _ (i := 1)
   have d₂ : stdSimplex.{u}.δ (1 : Fin 3) ≫ stdSimplex.σ 1 = 𝟙 _ :=
@@ -212,10 +208,9 @@ private lemma exists_homotopy_over_of_homotopy [Fibration p] (s : Y ⟶ X) (hs :
   have d₀ : (stdSimplex.{u}.δ (0 : Fin 3) : Δ[1] ⟶ Δ[2]) ≫ stdSimplex.σ 1 =
       stdSimplex.σ 0 ≫ stdSimplex.δ 0 :=
     CosimplicialObject.δ_comp_σ_of_le _ (i := 0) (j := 0) (by decide)
-  obtain ⟨K, hK⟩ := Homotopy.exists_lift_horn₂₀ σ H (X ◁ stdSimplex.σ 1 ≫ H.h ≫ p)
-    (by rw [← whiskerLeft_comp_assoc, d₁, MonoidalCategory.whiskerLeft_id, Category.id_comp,
-      Homotopy.mk'_h, Category.assoc, Category.assoc, hs, Category.comp_id])
-    (by rw [← whiskerLeft_comp_assoc, d₂, MonoidalCategory.whiskerLeft_id, Category.id_comp])
+  obtain ⟨K, hK⟩ := Homotopy.exists_lift_horn₂₀ (p := p) σ H (X ◁ stdSimplex.σ 1 ≫ H.h ≫ p)
+    (by rw [← whiskerLeft_comp_assoc, d₁]; simp [σ, hs])
+    (by rw [← whiskerLeft_comp_assoc, d₂]; simp)
   refine ⟨K, ?_⟩
   rw [hK, ← whiskerLeft_comp_assoc, d₀]
   simp [whiskerLeft_stdSimplex_δ_zero]

@@ -71,12 +71,10 @@ theorem rlp_monomorphisms_of_homotopy_inverse (p : X ⟶ Y) [Fibration p] [KanCo
     (monomorphisms SSet.{u}).rlp p := by
   -- Lift `H₂` along `p`, starting at `g`: its other end is a section `s` of `p`, homotopic to `g`.
   have := (anodyneExtensions.horn_ι (n := 1) 0).whiskerLeft Y p (mem_fibrations p)
-  have h₀ : ι₀ ≫ H₂.h = g ≫ p := H₂.h₀
-  have h₁ : ι₁ ≫ H₂.h = 𝟙 Y := H₂.h₁
   have sq : CommSq (fst Y _ ≫ g) (Y ◁ Λ[1, 0].ι) p H₂.h :=
-    ⟨by rw [whiskerLeft_horn_one_zero_ι]; simp only [Category.assoc]; rw [h₀]⟩
+    ⟨by rw [whiskerLeft_horn_one_zero_ι]; simp only [Category.assoc]; rw [H₂.h₀]⟩
   let s : Y ⟶ X := ι₁ ≫ sq.lift
-  have hs : s ≫ p = 𝟙 Y := by rw [Category.assoc, sq.fac_right, h₁]
+  have hs : s ≫ p = 𝟙 Y := by rw [Category.assoc, sq.fac_right, H₂.h₁]
   -- The end `ι₀` of the cylinder factors through `Y ⊗ Λ[1, 0]`, by way of its vertex.
   have e : horn.ι 0 1 (by decide) ≫ Λ[1, 0].ι = stdSimplex.{u}.δ 1 := horn.ι_ι _ _ _
   have L : Homotopy g s := .mk' sq.lift (by
