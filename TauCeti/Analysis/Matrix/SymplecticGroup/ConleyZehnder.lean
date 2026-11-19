@@ -43,6 +43,14 @@ as a real number, and it does not depend on the choice of unitary frames of the 
 the invariance under homotopies fixing the endpoints, additivity under catenation, and the change
 of sign under reversal.
 
+It is additive under direct sums (`TauCeti.GLSymplectic.conleyZehnderIndex_sum`): the graph of
+`A ⊕ B` is the product of the graphs of `A` and `B`, and the diagonal is the product of the
+diagonals. In coordinates, the graph frame and the diagonal straightening of a direct sum are the
+block-diagonal sums of those of the summands, with the coordinates regrouped by
+`Equiv.sumSumSumComm` (`Matrix.graphFrame_symplecticSum`, `TauCeti.diagonalStraightening_sum`), and
+the Maslov index of paths of unitary frames is additive under block sums and unchanged by this
+relabelling of the coordinates.
+
 On a path of realified diagonal unitary matrices `diag (e^{i θ_j(t)})` it is computed explicitly
 (`TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal`): each angle
 contributes `-(c(θ_j 1) - c(θ_j 0))`, where `c(θ) = ⌊θ / 2π⌋ + ⌈θ / 2π⌉`. Thus each multiple of
@@ -77,6 +85,7 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
   `TauCeti.GLSymplectic.conleyZehnderIndex_trans`, `TauCeti.GLSymplectic.conleyZehnderIndex_symm`,
   `TauCeti.GLSymplectic.conleyZehnderIndex_refl`: homotopy invariance, catenation, reversal and
   the constant path.
+* `TauCeti.GLSymplectic.conleyZehnderIndex_sum`: the direct-sum axiom.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal`: the index of a
   path of diagonal unitary matrices.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`: the
@@ -173,6 +182,17 @@ of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
 theorem realImage_diagonalStraightening_mul_graphFrame_one :
     (diagonalStraightening n * graphFrame 1).realImage = realSubspace (n ⊕ n) := by
   rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
+
+omit [Fintype n] in
+/-- The diagonal straightening of `ℂ^{n ⊕ m} × ℂ^{n ⊕ m}` is the block-diagonal sum of the
+straightenings of `ℂⁿ × ℂⁿ` and `ℂᵐ × ℂᵐ`, read in the coordinates `(n ⊕ m) ⊕ (n ⊕ m)` through
+`Equiv.sumSumSumComm`. -/
+theorem diagonalStraightening_sum {m : Type*} [DecidableEq m] :
+    diagonalStraightening (n ⊕ m) =
+      (fromBlocks (diagonalStraightening n) 0 0 (diagonalStraightening m)).submatrix
+        (Equiv.sumSumSumComm n m n m) (Equiv.sumSumSumComm n m n m) := by
+  ext ((i | i) | (i | i)) ((j | j) | (j | j)) <;>
+    simp [diagonalStraightening_def, Equiv.sumSumSumComm, Matrix.one_apply]
 
 namespace GLSymplectic
 
@@ -283,6 +303,79 @@ theorem conleyZehnderIndex_symm {A B : GLSymplectic n ℝ} (γ : Path A B) :
     conleyZehnderIndex γ.symm = -conleyZehnderIndex γ := by
   rw [conleyZehnderIndex, ← Path.map_symm, Matrix.UnitaryGroup.maslovIndex_symm,
     conleyZehnderIndex]
+
+/-! ### Direct sums -/
+
+section Sum
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- The unitary graph frame of `A` is the straightened graph frame `T Γ(A)` changed by an
+invertible real matrix on the right. -/
+private theorem exists_coe_graphUnitaryFrame_eq_mul (A : GLSymplectic n ℝ) :
+    ∃ O : Matrix (n ⊕ n) (n ⊕ n) ℝ, IsUnit O ∧
+      (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) = diagonalStraightening n *
+        graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) * O.map ((↑) : ℝ → ℂ) := by
+  have hT : IsUnit (diagonalStraightening n * graphFrame ((A : GL (n ⊕ n) ℝ) :
+      Matrix (n ⊕ n) (n ⊕ n) ℝ)).det := by
+    rw [det_mul]
+    exact (isUnit_det_of_left_inverse (Unitary.star_mul_self_of_mem
+      diagonalStraightening_mem_unitaryGroup)).mul
+      (isUnit_det_graphFrame (mem_iff_mem_symplecticGroup.1 A.2))
+  have hU : IsUnit (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).det :=
+    isUnit_det_of_left_inverse (Unitary.star_mul_self_of_mem (graphUnitaryFrame A).2)
+  obtain ⟨O, hO⟩ := exists_eq_mul_map_ofReal (M := ((isUnit_iff_isUnit_det _).2 hT).unit)
+    (M' := ((isUnit_iff_isUnit_det _).2 hU).unit) (by
+      simpa only [IsUnit.unit_spec] using (realImage_graphUnitaryFrame A).symm)
+  simp only [IsUnit.unit_spec] at hO
+  refine ⟨O, ?_, hO⟩
+  -- `O` is invertible since `T Γ(A)` and the unitary graph frame are.
+  have hdet : (O.map ((↑) : ℝ → ℂ)).det = (O.det : ℂ) := (Complex.ofRealHom.map_det O).symm
+  rw [hO, det_mul, hdet] at hU
+  exact (isUnit_iff_isUnit_det _).2 <| isUnit_iff_ne_zero.2 fun h ↦ by
+    simp [h] at hU
+
+/-- **The direct-sum axiom.** The direct sum of two paths of symplectic matrices has the sum of
+their Conley–Zehnder indices: the graph of `A ⊕ B` is the product of the graphs of `A` and `B`,
+and the diagonal is the product of the diagonals. -/
+theorem conleyZehnderIndex_sum {A B : GLSymplectic n ℝ} {A' B' : GLSymplectic m ℝ}
+    (γ₁ : Path A B) (γ₂ : Path A' B') :
+    conleyZehnderIndex ((γ₁.prod γ₂).map continuous_sum) =
+      conleyZehnderIndex γ₁ + conleyZehnderIndex γ₂ := by
+  set e := Equiv.sumSumSumComm n m n m
+  -- The relabelled block-diagonal sum of the unitary graph frames.
+  set F : GLSymplectic n ℝ × GLSymplectic m ℝ → unitaryGroup ((n ⊕ m) ⊕ (n ⊕ m)) ℂ := fun p ↦
+    ⟨(Matrix.UnitaryGroup.sum (graphUnitaryFrame p.1, graphUnitaryFrame p.2) :
+        Matrix ((n ⊕ n) ⊕ (m ⊕ m)) ((n ⊕ n) ⊕ (m ⊕ m)) ℂ).submatrix e e,
+      submatrix_equiv_mem_unitary.2 (Matrix.UnitaryGroup.sum _).2⟩ with hFdef
+  have hF : Continuous F := Continuous.subtype_mk
+    ((continuous_subtype_val.comp (Matrix.UnitaryGroup.continuous_sum.comp
+      (continuous_graphUnitaryFrame.prodMap continuous_graphUnitaryFrame))).matrix_submatrix e e) _
+  -- It frames the straightened graph of the direct sum.
+  have hreal (t : I) : (F (γ₁ t, γ₂ t) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) _ ℂ).realImage =
+      (diagonalStraightening (n ⊕ m) * graphFrame ((((γ₁.prod γ₂).map continuous_sum) t :
+        GL ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) _ ℝ)).realImage := by
+    obtain ⟨O₁, hO₁, h₁⟩ := exists_coe_graphUnitaryFrame_eq_mul (γ₁ t)
+    obtain ⟨O₂, hO₂, h₂⟩ := exists_coe_graphUnitaryFrame_eq_mul (γ₂ t)
+    have hO : IsUnit ((fromBlocks O₁ 0 0 O₂).submatrix e e) := by
+      rw [isUnit_iff_isUnit_det, det_submatrix_equiv_self, det_fromBlocks_zero₂₁]
+      exact ((isUnit_iff_isUnit_det _).1 hO₁).mul ((isUnit_iff_isUnit_det _).1 hO₂)
+    have hFt : (F (γ₁ t, γ₂ t) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) _ ℂ) =
+        diagonalStraightening (n ⊕ m) * graphFrame ((((γ₁.prod γ₂).map continuous_sum) t :
+          GL ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) _ ℝ) *
+          ((fromBlocks O₁ 0 0 O₂).submatrix e e).map ((↑) : ℝ → ℂ) := by
+      rw [Path.map_coe, Function.comp_apply, Path.prod_coe, GLSymplectic.coe_sum,
+        graphFrame_symplecticSum, diagonalStraightening_sum, ← submatrix_map, fromBlocks_map,
+        submatrix_mul_equiv, submatrix_mul_equiv, fromBlocks_multiply, fromBlocks_multiply, hFdef]
+      simp [h₁, h₂, e]
+    rw [hFt, realImage_mul_map_ofReal _ hO]
+  rw [conleyZehnderIndex_eq_neg_maslovIndex _ ((γ₁.prod γ₂).map hF) hreal,
+    Matrix.UnitaryGroup.maslovIndex_eq_of_coe_eq_submatrix
+      (((γ₁.map continuous_graphUnitaryFrame).prod (γ₂.map continuous_graphUnitaryFrame)).map
+        Matrix.UnitaryGroup.continuous_sum) _ e fun t ↦ rfl,
+    Matrix.UnitaryGroup.maslovIndex_sum, conleyZehnderIndex, conleyZehnderIndex, neg_add]
+
+end Sum
 
 /-! ### Paths of unitary matrices -/
 

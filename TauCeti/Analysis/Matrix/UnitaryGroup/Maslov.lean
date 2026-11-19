@@ -72,9 +72,12 @@ of graphs is `∑ j, (sign (a_j 1) - sign (a_j 0)) / 2`, half the change of the 
 
 The index is natural under the real orthogonal group, which preserves `ℝⁿ`: moving a path of
 frames by a fixed real orthogonal matrix does not change it
-(`Matrix.UnitaryGroup.maslovIndex_map_mul_left`). The localization axiom for nondiagonal `A` is
-deduced from the diagonal case in `TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization`.
-For paths of graphs, the comparison with the definition of the index by crossing forms is in
+(`Matrix.UnitaryGroup.maslovIndex_map_mul_left`). Likewise, relabelling the coordinates of `ℂⁿ`
+and the vectors of the frames by the same bijection does not change it
+(`Matrix.UnitaryGroup.maslovIndex_eq_of_coe_eq_submatrix`). The localization axiom for
+nondiagonal `A` is deduced from the diagonal case in
+`TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization`. For paths of graphs, the comparison
+with the definition of the index by crossing forms is in
 `TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing`.
 
 The index also satisfies the zero axiom of Robbin and Salamon: it vanishes on a path along which
@@ -96,6 +99,8 @@ the two terms of the index cancel.
 * `Matrix.continuousAt_spectralAngleSum`: the spectral angle sum is continuous where the
   multiplicity of the eigenvalue `1` is locally constant.
 * `Matrix.UnitaryGroup.maslovIndex_eq_zero_of_rootMultiplicity_eq`: the zero axiom.
+* `Matrix.UnitaryGroup.maslovIndex_eq_of_coe_eq_submatrix`: invariance under relabelling the
+  coordinates.
 
 ## References
 
@@ -156,6 +161,13 @@ theorem spectralAngleSum_conj {P Q : Matrix n n ℂ} (hPQ : P * Q = 1) (hQP : Q 
   have h := charpoly_units_conj (⟨P, Q, hPQ, hQP⟩ : (Matrix n n ℂ)ˣ) W
   rw [Units.val_mk, inv_eq_left_inv hQP] at h
   rw [spectralAngleSum, spectralAngleSum, h]
+
+/-- The spectral angle sum is invariant under a simultaneous relabelling of rows and columns. -/
+@[simp]
+theorem spectralAngleSum_submatrix_equiv (e : m ≃ n) (A : Matrix n n ℂ) :
+    spectralAngleSum (A.submatrix e e) = spectralAngleSum A := by
+  rw [spectralAngleSum, spectralAngleSum, ← charpoly_reindex e.symm A, reindex_apply,
+    Equiv.symm_symm]
 
 /-- Away from `1`, on the unit circle, the angle offset is continuous: there `-z` lies in the slit
 plane, where the argument is continuous. -/
@@ -381,6 +393,26 @@ theorem maslovIndex_map_mul_left {U V : unitaryGroup n ℂ} (O : unitaryGroup n 
     rw [coe_souriau_mul_left, spectralAngleSum_conj hO hO']
   rw [maslovIndex, maslovIndex, Circle.angleChange_congr (detSouriauPath (γ.map _))
     (detSouriauPath γ) fun t => by simp [hdet], hs, hs]
+
+/-- **Naturality under relabelling the coordinates.** A path of frames whose matrices are those of
+`γ` with rows and columns relabelled by the same bijection `e` has the Maslov index of `γ`: the
+relabelling is a permutation of the coordinates, which preserves `ℝⁿ`, and it relabels the Souriau
+maps, preserving their determinants and spectra. -/
+theorem maslovIndex_eq_of_coe_eq_submatrix {U V : unitaryGroup n ℂ} {U' V' : unitaryGroup m ℂ}
+    (γ : Path U V) (γ' : Path U' V') (e : m ≃ n)
+    (h : ∀ t, (γ' t : Matrix m m ℂ) = (γ t : Matrix n n ℂ).submatrix e e) :
+    maslovIndex γ' = maslovIndex γ := by
+  have hs (t : I) :
+      (souriau (γ' t) : Matrix m m ℂ) = (souriau (γ t) : Matrix n n ℂ).submatrix e e := by
+    rw [coe_souriau, coe_souriau, h, transpose_submatrix, submatrix_mul_equiv]
+  have h0 : (souriau U' : Matrix m m ℂ) = (souriau U : Matrix n n ℂ).submatrix e e := by
+    simpa using hs 0
+  have h1 : (souriau V' : Matrix m m ℂ) = (souriau V : Matrix n n ℂ).submatrix e e := by
+    simpa using hs 1
+  rw [maslovIndex, maslovIndex, Circle.angleChange_congr (detSouriauPath γ') (detSouriauPath γ)
+    fun t => Circle.ext (by simp only [detSouriauPath_apply, coe_detCircle, hs,
+      det_submatrix_equiv_self]), h0, h1, spectralAngleSum_submatrix_equiv,
+    spectralAngleSum_submatrix_equiv]
 
 /-- **The loop case.** If the path of Lagrangians closes up, that is, the frames at the endpoints
 have the same Souriau map, the Maslov index is the degree of the loop of determinants
