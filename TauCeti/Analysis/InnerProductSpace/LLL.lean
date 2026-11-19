@@ -22,11 +22,12 @@ vector's length by the length of the combination.
 
 ## Main declarations
 
-* `InnerProductSpace.lllCoefficient` is the coefficient of the `j`-th orthogonalized vector
+* `TauCeti.InnerProductSpace.lllCoefficient` is the coefficient of the `j`-th orthogonalized vector
   in the `i`-th input vector.
-* `InnerProductSpace.IsLLLReduced` expresses independence, size reduction and the Lovász condition.
-* `InnerProductSpace.lll_gramSchmidt_bound` compares two orthogonalized lengths.
-* `InnerProductSpace.lll_short_vector_factor` compares the first basis vector against any
+* `TauCeti.InnerProductSpace.IsLLLReduced` expresses independence, size reduction and the Lovász
+  condition.
+* `TauCeti.InnerProductSpace.lll_gramSchmidt_bound` compares two orthogonalized lengths.
+* `TauCeti.InnerProductSpace.lll_short_vector_factor` compares the first basis vector against any
   nonzero vector in the integer span.
 
 ## References
@@ -35,11 +36,11 @@ vector's length by the length of the combination.
   coefficients*](https://doi.org/10.1007/BF01457454), §1, Propositions 1.6 and 1.11.
 -/
 
-@[expose] public section
+public section
 
-open Finset
+open Finset InnerProductSpace
 
-namespace InnerProductSpace
+namespace TauCeti.InnerProductSpace
 
 attribute [local instance] IsWellOrder.toHasWellFounded
 
@@ -51,11 +52,16 @@ noncomputable def lllCoefficient {ι : Type*} [LinearOrder ι] [LocallyFiniteOrd
     (b : ι → E) (i j : ι) : ℝ :=
   inner ℝ (b i) (gramSchmidt ℝ b j) / ‖gramSchmidt ℝ b j‖ ^ 2
 
+/-- The Gram–Schmidt coefficient is the pairing with the residual divided by its squared norm. -/
+theorem lllCoefficient_def {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
+    (b : ι → E) (i j : ι) :
+    lllCoefficient b i j = inner ℝ (b i) (gramSchmidt ℝ b j) / ‖gramSchmidt ℝ b j‖ ^ 2 := (rfl)
+
 /-- For an orthogonal family, every off-diagonal Gram–Schmidt coefficient vanishes. -/
 theorem lllCoefficient_eq_zero_of_orthogonal {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
     {b : ι → E} (hb : Pairwise fun i j ↦ inner ℝ (b i) (b j) = 0)
     {i j : ι} (hij : i ≠ j) : lllCoefficient b i j = 0 := by
-  rw [lllCoefficient, gramSchmidt_of_orthogonal ℝ hb, hb hij, zero_div]
+  rw [lllCoefficient_def, gramSchmidt_of_orthogonal ℝ hb, hb hij, zero_div]
 
 /-- An LLL-reduced family is linearly independent, size-reduced with parameter `1/2`, and
 satisfies the Lovász condition with parameter `3/4` at each pair of adjacent indices. -/
@@ -79,12 +85,6 @@ theorem _root_.Orthonormal.isLLLReduced {b : Fin n → E} (hb : Orthonormal ℝ 
     have hne : i ≠ j := by omega
     rw [lllCoefficient_eq_zero_of_orthogonal hb.2 hne, gramSchmidt_of_orthogonal ℝ hb.2]
     norm_num [hb.norm_eq_one]
-
-/-- In a linearly independent family, each Gram–Schmidt coefficient has a positive denominator. -/
-theorem gramSchmidt_norm_sq_pos {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
-    {b : ι → E} (hb : LinearIndependent ℝ b) (j : ι) :
-    0 < ‖gramSchmidt ℝ b j‖ ^ 2 :=
-  pow_pos (norm_pos_iff.mpr (gramSchmidt_ne_zero j hb)) _
 
 private theorem half_le_lovasz_factor {μ : ℝ} (hμ : |μ| ≤ 1 / 2) :
     1 / 2 ≤ 3 / 4 - μ ^ 2 := by
@@ -119,28 +119,6 @@ theorem lll_gramSchmidt_bound {b : Fin n → E} (h : IsLLLReduced b) {i j : Fin 
         _ = _ := by rw [Nat.succ_sub hjk, pow_succ (2 : ℝ) (k - j.val), mul_assoc]
   exact bound i.val hji i.isLt
 
-private theorem norm_gramSchmidt_le_norm_sum_zsmul {b : Fin n → E} {c : Fin n → ℤ} {j : Fin n}
-    (hcj : c j ≠ 0) (hc : ∀ i, j < i → c i = 0) :
-    ‖gramSchmidt ℝ b j‖ ≤ ‖∑ i, c i • b i‖ := by
-  let g := gramSchmidt ℝ b j
-  have hinner : inner ℝ g (∑ i, c i • b i) = (c j : ℝ) * ‖g‖ ^ 2 := by
-    simp only [inner_sum, ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_right]
-    rw [Finset.sum_eq_single j]
-    · simp only [g, inner_gramSchmidt_eq_norm_sq, RCLike.ofReal_real_eq_id, id_eq]
-    · intro i _ hij
-      rcases hij.lt_or_gt with hlt | hgt
-      · rw [gramSchmidt_inv_triangular ℝ b hlt, mul_zero]
-      · simp [hc i hgt]
-    · simp
-  have habs : (1 : ℝ) ≤ |(c j : ℝ)| := by exact_mod_cast Int.one_le_abs hcj
-  have hprod : ‖g‖ ^ 2 ≤ ‖g‖ * ‖∑ i, c i • b i‖ := calc
-    ‖g‖ ^ 2 ≤ |(c j : ℝ)| * ‖g‖ ^ 2 := le_mul_of_one_le_left (sq_nonneg _) habs
-    _ = |inner ℝ g (∑ i, c i • b i)| := by rw [hinner, abs_mul, abs_of_nonneg (sq_nonneg ‖g‖)]
-    _ ≤ _ := abs_real_inner_le_norm _ _
-  by_contra! hlt
-  exact (mul_lt_mul_of_pos_left hlt ((norm_nonneg _).trans_lt hlt)).not_ge
-    (by simpa only [pow_two] using hprod)
-
 /-- The first vector of a nonempty LLL-reduced family has squared length at most `2^(n-1)`
 times the squared length of any nonzero vector in its integer span. -/
 theorem lll_short_vector_factor {b : Fin n → E} (h : IsLLLReduced b) (hn : 0 < n)
@@ -156,9 +134,13 @@ theorem lll_short_vector_factor {b : Fin n → E} (h : IsLLLReduced b) (hn : 0 <
   have hjlater (i : Fin n) (hi : j < i) : c i = 0 := by
     by_contra hci
     exact hi.not_ge (hjmax i (mem_filter.mpr ⟨mem_univ _, hci⟩))
-  have hnorm := norm_gramSchmidt_le_norm_sum_zsmul hj0 hjlater (b := b)
-  have hfirst : gramSchmidt ℝ b ⟨0, hn⟩ = b ⟨0, hn⟩ :=
-    gramSchmidt_eq_self_of_inner_eq_zero fun i hi ↦ (Nat.not_lt_zero i.val hi).elim
+  have hnorm := norm_gramSchmidt_le_norm_sum_zsmul (𝕜 := ℝ) (b := b) hj0 hjlater
+  have hfirst : gramSchmidt ℝ b ⟨0, hn⟩ = b ⟨0, hn⟩ := by
+    -- On a successor-sized `Fin`, the locally finite order with bottom is the canonical one
+    -- used by `gramSchmidt_bot`.
+    cases n with
+    | zero => omega
+    | succ n => exact gramSchmidt_bot ℝ b
   calc
     ‖b ⟨0, hn⟩‖ ^ 2 ≤ (2 : ℝ) ^ j.val * ‖gramSchmidt ℝ b j‖ ^ 2 := by
       simpa only [hfirst, Fin.val_mk, Nat.sub_zero] using
@@ -174,21 +156,21 @@ local notation "e" => EuclideanSpace.basisFun (Fin 2) ℝ
 private noncomputable def planar (a c d : ℝ) : Fin 2 → EuclideanSpace ℝ (Fin 2) :=
   ![a • e 0, c • e 0 + d • e 1]
 
-private theorem planar_gramSchmidt_zero (a c d : ℝ) :
-    gramSchmidt ℝ (planar a c d) 0 = a • e 0 := by
-  apply gramSchmidt_eq_self_of_inner_eq_zero (f := planar a c d) (i := 0)
-  intro i hi
-  exact (Fin.not_lt_zero i hi).elim
+private theorem planar_zero (a c d : ℝ) : planar a c d 0 = a • e 0 := rfl
+
+private theorem planar_one (a c d : ℝ) : planar a c d 1 = c • e 0 + d • e 1 := rfl
 
 private theorem planar_coefficient (a c d : ℝ) :
     lllCoefficient (planar a c d) 1 0 = c / a := by
+  have hzero := gramSchmidt_bot ℝ (planar a c d)
+  rw [bot_eq_zero, planar_zero] at hzero
   by_cases ha : a = 0
-  · simp [ha, lllCoefficient, planar_gramSchmidt_zero]
+  · rw [lllCoefficient_def, hzero, ha]
+    simp
   have h00 : inner ℝ (e 0) (e 0) = 1 := by
     rw [real_inner_self_eq_norm_sq, OrthonormalBasis.norm_eq_one e, one_pow]
   have h10 : inner ℝ (e 1) (e 0) = 0 := OrthonormalBasis.inner_eq_zero e (by decide)
-  rw [lllCoefficient, planar_gramSchmidt_zero]
-  change inner ℝ (c • e 0 + d • e 1) (a • e 0) / ‖a • e 0‖ ^ 2 = c / a
+  rw [lllCoefficient_def, hzero, planar_one]
   simp only [real_inner_smul_right, inner_add_left, real_inner_smul_left, h00, h10,
     mul_one, mul_zero, add_zero, norm_smul, OrthonormalBasis.norm_eq_one e, Real.norm_eq_abs,
     sq_abs]
@@ -199,9 +181,10 @@ private theorem planar_gramSchmidt_one {a c d : ℝ} (ha : a ≠ 0) :
   have h := gramSchmidt_def'' ℝ (planar a c d) (1 : Fin 2)
   simp only [show Iio (1 : Fin 2) = {0} by decide, Finset.sum_singleton, RCLike.ofReal_real_eq_id,
     id_eq] at h
-  rw [real_inner_comm, ← lllCoefficient, planar_coefficient a c d, planar_gramSchmidt_zero,
-    smul_smul, div_mul_cancel₀ _ ha] at h
-  change c • e 0 + d • e 1 = _ at h
+  have hzero := gramSchmidt_bot ℝ (planar a c d)
+  rw [bot_eq_zero, planar_zero] at hzero
+  rw [real_inner_comm, ← lllCoefficient_def, planar_coefficient a c d, hzero, smul_smul,
+    div_mul_cancel₀ _ ha, planar_one] at h
   rw [add_comm (c • e 0)] at h
   exact (add_right_cancel h).symm
 
@@ -222,17 +205,17 @@ private theorem planar_reduced {a c d : ℝ} (ha : a ≠ 0)
     IsLLLReduced (planar a c d) := by
   have hfactor := (show (0 : ℝ) < 1 / 2 by norm_num).trans_le (half_le_lovasz_factor hsize)
   have hd := sq_pos_iff.mp ((mul_pos hfactor (sq_pos_of_ne_zero ha)).trans_le hlovasz)
+  have indices : ∀ {i j : Fin 2}, j < i → i = 1 ∧ j = 0 := by decide
   refine ⟨planar_linearIndependent ha hd, ?_, ?_⟩
   · intro i j hij
-    fin_cases i <;> fin_cases j <;> norm_num at hij
-    change |lllCoefficient (planar a c d) 1 0| ≤ 1 / 2
-    simpa only [planar_coefficient a c d] using hsize
+    obtain ⟨rfl, rfl⟩ := indices hij
+    simpa only [planar_coefficient] using hsize
   · intro i j hij
-    fin_cases i <;> fin_cases j <;> norm_num at hij
-    change (3 / 4 - lllCoefficient (planar a c d) 1 0 ^ 2) *
-      ‖gramSchmidt ℝ (planar a c d) 0‖ ^ 2 ≤ ‖gramSchmidt ℝ (planar a c d) 1‖ ^ 2
-    simpa only [planar_coefficient a c d, planar_gramSchmidt_zero, planar_gramSchmidt_one ha,
-      norm_smul, OrthonormalBasis.norm_eq_one e, mul_one, Real.norm_eq_abs, sq_abs] using hlovasz
+    obtain ⟨rfl, rfl⟩ := indices (show j < i by omega)
+    have hzero := gramSchmidt_bot ℝ (planar a c d)
+    rw [bot_eq_zero, planar_zero] at hzero
+    simpa only [planar_coefficient, hzero, planar_gramSchmidt_one ha, norm_smul,
+      OrthonormalBasis.norm_eq_one e, mul_one, Real.norm_eq_abs, sq_abs] using hlovasz
 
 example : lllCoefficient (planar 1 (1 / 2) 1) 1 0 = 1 / 2 ∧
     IsLLLReduced (planar 1 (1 / 2) 1) := by
@@ -252,8 +235,10 @@ example (c : ℝ) (hc : c = 0 ∨ c = 1) :
     rcases hc with rfl | rfl <;> norm_num
   intro h
   have hl := h.lovasz 1 0 rfl
+  have hzero := gramSchmidt_bot ℝ (planar 2 c 1)
+  rw [bot_eq_zero, planar_zero] at hzero
   rcases hc with rfl | rfl <;>
-    norm_num [planar_coefficient, planar_gramSchmidt_zero,
+    norm_num [planar_coefficient, hzero,
       planar_gramSchmidt_one (by norm_num : (2 : ℝ) ≠ 0), norm_smul, OrthonormalBasis.norm_eq_one e,
       Real.norm_eq_abs] at hl
 
@@ -268,38 +253,46 @@ example : IsLLLReduced (planar 1 (1 / 2) (Real.sqrt (1 / 2))) ∧
       2 * ‖gramSchmidt ℝ (planar 1 (1 / 2) (Real.sqrt (1 / 2))) 1‖ ^ 2 := by
   have hs := Real.sq_sqrt (x := 1 / 2) (by norm_num)
   refine ⟨planar_reduced one_ne_zero (by norm_num) (by rw [hs]; norm_num), ?_⟩
-  simp only [planar_gramSchmidt_zero, planar_gramSchmidt_one (one_ne_zero : (1 : ℝ) ≠ 0),
+  have hzero := gramSchmidt_bot ℝ (planar 1 (1 / 2) (Real.sqrt (1 / 2)))
+  rw [bot_eq_zero, planar_zero] at hzero
+  simp only [hzero, planar_gramSchmidt_one (one_ne_zero : (1 : ℝ) ≠ 0),
     norm_smul, OrthonormalBasis.norm_eq_one e, mul_one, Real.norm_eq_abs, sq_abs, hs]
   norm_num
-
-private theorem line_gramSchmidt_zero (c : ℝ) :
-    gramSchmidt ℝ (![1, c] : Fin 2 → ℝ) 0 = 1 :=
-  gramSchmidt_eq_self_of_inner_eq_zero fun i hi ↦ (Fin.not_lt_zero i hi).elim
 
 private theorem line_gramSchmidt_one (c : ℝ) :
     gramSchmidt ℝ (![1, c] : Fin 2 → ℝ) 1 = 0 := by
   rw [gramSchmidt_def, show Iio (1 : Fin 2) = {0} by decide, Finset.sum_singleton,
-    line_gramSchmidt_zero, Submodule.starProjection_singleton]
+    show (0 : Fin 2) = ⊥ from rfl, gramSchmidt_bot, bot_eq_zero,
+    Submodule.starProjection_singleton]
   simp [RCLike.ofReal_real_eq_id]
 
 example : lllCoefficient (![1, 1 / 2] : Fin 2 → ℝ) 1 0 = 1 / 2 := by
-  norm_num [lllCoefficient, line_gramSchmidt_zero, Real.inner_apply]
+  rw [lllCoefficient_def, show (0 : Fin 2) = ⊥ from rfl, gramSchmidt_bot, bot_eq_zero]
+  norm_num [Real.inner_apply]
 
 example :
     gramSchmidt ℝ (![1, 1] : Fin 2 → ℝ) 1 = 0 ∧
     lllCoefficient (![1, 1] : Fin 2 → ℝ) 0 1 = 0 ∧
     ¬ IsLLLReduced (![1, 1] : Fin 2 → ℝ) := by
-  refine ⟨line_gramSchmidt_one 1, by simp [lllCoefficient, line_gramSchmidt_one], fun h ↦ ?_⟩
+  refine ⟨line_gramSchmidt_one 1, by simp [lllCoefficient_def, line_gramSchmidt_one], fun h ↦ ?_⟩
   exact gramSchmidt_ne_zero 1 h.linearIndependent (line_gramSchmidt_one 1)
 
 example (b : Fin 0 → ℝ) : IsLLLReduced b :=
   ⟨linearIndependent_empty_type, fun i ↦ Fin.elim0 i, fun i ↦ Fin.elim0 i⟩
 
-example {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {b : Fin 1 → E}
-    (h : IsLLLReduced b) {x : E} (hx : x ∈ Submodule.span ℤ (Set.range b)) (hx0 : x ≠ 0) :
+example {b : Fin 1 → E} {x : E} (hx : x ∈ Submodule.span ℤ (Set.range b)) (hx0 : x ≠ 0) :
     ‖b 0‖ ≤ ‖x‖ := by
-  apply (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1
-  simpa using lll_short_vector_factor h Nat.one_pos hx hx0
+  have hb : b 0 ≠ 0 := by
+    intro hb
+    rw [Set.range_unique, show b default = b 0 from rfl, hb,
+      Submodule.span_singleton_eq_bot.mpr rfl] at hx
+    exact hx0 (by simpa using hx)
+  have noLt : ∀ i j : Fin 1, ¬ j < i := by decide
+  have noAdj : ∀ i j : Fin 1, j.val + 1 ≠ i.val := by decide
+  have h : IsLLLReduced b := ⟨linearIndependent_unique_iff.mpr hb,
+    fun i j hij ↦ (noLt i j hij).elim, fun i j hij ↦ (noAdj i j hij).elim⟩
+  exact (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp (by
+    simpa using lll_short_vector_factor h Nat.one_pos hx hx0)
 
 -- Real coordinates do not give the integer-coordinate bound, even in rank one.
 example : (1 / 2 : ℝ) ∈ Submodule.span ℝ (Set.range (![1] : Fin 1 → ℝ)) ∧
@@ -310,4 +303,4 @@ example : (1 / 2 : ℝ) ∈ Submodule.span ℝ (Set.range (![1] : Fin 1 → ℝ)
 
 end Examples
 
-end InnerProductSpace
+end TauCeti.InnerProductSpace
