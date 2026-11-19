@@ -357,9 +357,9 @@ theorem abs_le_add_mul_sq_div_two_of_abs_extDeriv_twistedDifferential_le
   obtain ⟨a, c, hac⟩ := Submodule.mem_span_pair.1 (K.starProjection_apply_mem p)
   set y₀ := p - K.starProjection p
   have hproj (z : ℂ) : ‖K.starProjection (y₀ + z.re • n + z.im • J n)‖ = ‖z‖ := by
-    rw [add_assoc, map_add, (K.starProjection_eq_self_iff).2
-        (Submodule.mem_span_pair.2 ⟨z.re, z.im, rfl⟩), map_sub,
-      (K.starProjection_eq_self_iff).2 (K.starProjection_apply_mem p), sub_self, zero_add,
+    simp [y₀, add_assoc,
+      K.starProjection_eq_self_iff.2 (Submodule.mem_span_pair.2 ⟨z.re, z.im, rfl⟩),
+      K.starProjection_eq_self_iff.2 (K.starProjection_apply_mem p),
       J.norm_re_smul_add_im_smul hJ hn]
   have hu : ContDiff ℝ 2 fun z : ℂ ↦ f (y₀ + z.re • n + z.im • J n) :=
     hf.comp ((contDiff_const.add (Complex.reCLM.contDiff.smul contDiff_const)).add

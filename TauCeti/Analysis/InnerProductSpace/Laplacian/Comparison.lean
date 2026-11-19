@@ -182,9 +182,9 @@ private theorem laplacian_barrier_ball (ε C R : ℝ) (y : E) :
     ring
   have h2 : ContDiffAt ℝ 2 ((-(C / (2 * Module.finrank ℝ E))) • fun y : E ↦ ‖y‖ ^ 2) y :=
     contDiffAt_const.smul (contDiff_norm_sq ℝ).contDiffAt
-  rw [hfun, contDiffAt_const.laplacian_add h2, laplacian_smul _ (contDiff_norm_sq ℝ).contDiffAt,
-    laplacian_const, Pi.zero_apply, laplacian_norm_sq, smul_eq_mul, zero_add]
   have : (Module.finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Module.finrank_pos.ne'
+  rw [hfun, contDiffAt_const.laplacian_add h2, laplacian_smul _ (contDiff_norm_sq ℝ).contDiffAt]
+  simp [laplacian_norm_sq]
   field_simp
 
 /-- **A bounded Laplacian and smallness outside a ball bound a function.** Let `u` be continuous
@@ -210,7 +210,7 @@ theorem abs_le_add_mul_sq_div_of_abs_laplacian_le (hR : 0 ≤ R)
   -- The barrier `g y = ε + C (R² - ‖y‖²) / (2 dim E)` has `Δ g = -C`.
   set g : E → ℝ := fun y ↦ ε + C * (R ^ 2 - ‖y‖ ^ 2) / (2 * Module.finrank ℝ E) with hg
   have hgd : ContDiff ℝ 2 g :=
-    contDiff_const.add (((contDiff_const.sub (contDiff_norm_sq ℝ)).const_smul C).div_const _)
+    contDiff_const.add ((contDiff_const.mul (contDiff_const.sub (contDiff_norm_sq ℝ))).div_const _)
   have hgΔ (y : E) : Δ g y = -C := laplacian_barrier_ball ε C R y
   have hK : IsCompact (Metric.closedBall (0 : E) R) := isCompact_closedBall 0 R
   have hfr {y : E} (hy : y ∈ frontier (Metric.closedBall (0 : E) R)) : ‖y‖ = R := by
