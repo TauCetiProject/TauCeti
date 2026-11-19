@@ -58,6 +58,13 @@ rewriting without manipulating heterogeneous equalities.
   **80** (1963), 349–426.
 * A. D. Fairbanks and M. Shulman, *Doubly weak double categories*, Applied Categorical
   Structures **34** (2026), article 26; arXiv:2506.23651.
+
+## Related formalizations
+
+* The Geb project formalizes strict double categories in Lean as internal categories in `Cat`:
+  https://github.com/anoma/geb/blob/main/geb-lean/GebLean/Utilities/DoubleCategory.lean.
+  The boundary-indexed presentation in this file was developed independently of it, from the
+  mathematical sources above.
 -/
 
 @[expose] public section
