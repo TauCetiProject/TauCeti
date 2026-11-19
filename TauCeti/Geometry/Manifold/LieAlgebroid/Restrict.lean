@@ -38,9 +38,10 @@ restriction of global sections intertwines the brackets
 ## Implementation notes
 
 The fibre of the restricted bundle over `x : U` is, by definition of the pullback bundle, the
-fibre `V x` of `V`, with the same algebraic structure. Several proofs compare an expression formed
-in the fibres of the restricted bundle with the same expression formed in the fibres of `V`, and
-close the comparison by `rfl` across this definitional identification.
+fibre `V x` of `V`, with the same algebraic structure. The algebraic laws of the restricted bracket
+are reduced to those of `A` through restrictions of global sections, which keeps both sides of
+each comparison in the fibres of the restricted bundle. The remaining comparisons of values in the
+fibres of `V` and of the restriction use this definitional identification.
 
 ## References
 
@@ -67,14 +68,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   (A : LieAlgebroid I F V) (U : Opens M)
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- A property holding near a point of an open subset, read in the ambient space, holds near that
-point of the ambient space. -/
-private theorem eventually_nhds_coe {x : U} {p : M → Prop} (h : ∀ᶠ y : U in 𝓝 x, p y) :
-    ∀ᶠ y in 𝓝 (x : M), p y := by
-  rw [← U.isOpenEmbedding'.map_nhds_eq x]
-  exact h
-
 /-- A global smooth section of `V` agreeing near `x` with a smooth section over `U`. -/
 private def extendAt (s : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯)
     (x : U) : Cₛ^∞⟮I; F, V⟯ :=
@@ -99,7 +92,8 @@ private theorem restrictBracketAt_eq
     {a' b' : Cₛ^∞⟮I; F, V⟯} (ha : ∀ᶠ y : U in 𝓝 x, a' y = a y)
     (hb : ∀ᶠ y : U in 𝓝 x, b' y = b y) :
     restrictBracketAt A U a b x = A.bracket a' b' x := by
-  refine A.bracket_apply_eq_of_eventuallyEq (eventually_nhds_coe U ?_) (eventually_nhds_coe U ?_)
+  refine A.bracket_apply_eq_of_eventuallyEq ?_ ?_ <;>
+    rw [← U.isOpenEmbedding'.map_nhds_eq x, eventually_map]
   · filter_upwards [eventually_extendAt U a x, ha] with y h h'
     exact h.trans h'.symm
   · filter_upwards [eventually_extendAt U b x, hb] with y h h'
@@ -127,10 +121,14 @@ private def restrictBracketSection
       (eventually_extendAt U b x)] with y hy
     rw [← hy, ContMDiffSection.restrict_apply]
 
-private theorem restrictBracketSection_apply
-    (a b : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯) (x : U) :
-    restrictBracketSection A U a b x = restrictBracketAt A U a b x :=
-  (rfl)
+/-- The bracket of two sections over `U` at `x` is the value at `x` of the restriction of the
+bracket of any two global sections agreeing with them near `x`. -/
+private theorem restrictBracketSection_apply_eq_restrict
+    {a b : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯} {x : U}
+    {a' b' : Cₛ^∞⟮I; F, V⟯} (ha : ∀ᶠ y : U in 𝓝 x, a' y = a y)
+    (hb : ∀ᶠ y : U in 𝓝 x, b' y = b y) :
+    restrictBracketSection A U a b x = (A.bracket a' b').restrict U x :=
+  (restrictBracketAt_eq A U ha hb).trans (ContMDiffSection.restrict_apply _ U x).symm
 
 omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
 /-- Global sections agreeing near `x` with two sections over `U` have a sum agreeing near `x`
@@ -169,36 +167,34 @@ private def restrictBracket :
       have ha := eventually_extendAt U a x
       have ha' := eventually_extendAt U a' x
       have hb := eventually_extendAt U b x
-      rw [ContMDiffSection.coe_add, Pi.add_apply, restrictBracketSection_apply,
-        restrictBracketSection_apply, restrictBracketSection_apply,
-        restrictBracketAt_eq A U (eventually_add_eq U ha ha') hb, restrictBracketAt_eq A U ha hb,
-        restrictBracketAt_eq A U ha' hb, map_add, LinearMap.add_apply, ContMDiffSection.coe_add,
-        Pi.add_apply]
-      rfl)
+      simp only [ContMDiffSection.coe_add, Pi.add_apply,
+        restrictBracketSection_apply_eq_restrict A U (eventually_add_eq U ha ha') hb,
+        restrictBracketSection_apply_eq_restrict A U ha hb,
+        restrictBracketSection_apply_eq_restrict A U ha' hb, map_add, LinearMap.add_apply,
+        ContMDiffSection.restrict_add])
     (fun c a b ↦ ContMDiffSection.ext fun x ↦ by
       have ha := eventually_extendAt U a x
       have hb := eventually_extendAt U b x
-      rw [ContMDiffSection.coe_smul, Pi.smul_apply, restrictBracketSection_apply,
-        restrictBracketSection_apply, restrictBracketAt_eq A U (eventually_smul_eq U c ha) hb,
-        restrictBracketAt_eq A U ha hb, map_smul, LinearMap.smul_apply,
-        ContMDiffSection.coe_smul, Pi.smul_apply]
-      rfl)
+      simp only [ContMDiffSection.coe_smul, Pi.smul_apply,
+        restrictBracketSection_apply_eq_restrict A U (eventually_smul_eq U c ha) hb,
+        restrictBracketSection_apply_eq_restrict A U ha hb, map_smul, LinearMap.smul_apply,
+        ContMDiffSection.restrict_smul])
     (fun a b b' ↦ ContMDiffSection.ext fun x ↦ by
       have ha := eventually_extendAt U a x
       have hb := eventually_extendAt U b x
       have hb' := eventually_extendAt U b' x
-      rw [ContMDiffSection.coe_add, Pi.add_apply, restrictBracketSection_apply,
-        restrictBracketSection_apply, restrictBracketSection_apply,
-        restrictBracketAt_eq A U ha (eventually_add_eq U hb hb'), restrictBracketAt_eq A U ha hb,
-        restrictBracketAt_eq A U ha hb', map_add, ContMDiffSection.coe_add, Pi.add_apply]
-      rfl)
+      simp only [ContMDiffSection.coe_add, Pi.add_apply,
+        restrictBracketSection_apply_eq_restrict A U ha (eventually_add_eq U hb hb'),
+        restrictBracketSection_apply_eq_restrict A U ha hb,
+        restrictBracketSection_apply_eq_restrict A U ha hb', map_add,
+        ContMDiffSection.restrict_add])
     (fun c a b ↦ ContMDiffSection.ext fun x ↦ by
       have ha := eventually_extendAt U a x
       have hb := eventually_extendAt U b x
-      rw [ContMDiffSection.coe_smul, Pi.smul_apply, restrictBracketSection_apply,
-        restrictBracketSection_apply, restrictBracketAt_eq A U ha (eventually_smul_eq U c hb),
-        restrictBracketAt_eq A U ha hb, map_smul, ContMDiffSection.coe_smul, Pi.smul_apply]
-      rfl)
+      simp only [ContMDiffSection.coe_smul, Pi.smul_apply,
+        restrictBracketSection_apply_eq_restrict A U ha (eventually_smul_eq U c hb),
+        restrictBracketSection_apply_eq_restrict A U ha hb, map_smul,
+        ContMDiffSection.restrict_smul])
 
 private theorem restrictBracket_apply
     (a b : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯) (x : U) :
@@ -212,6 +208,13 @@ private theorem eventually_restrictBracket_eq
     ∀ᶠ y : U in 𝓝 x, A.bracket a' b' y = restrictBracket A U a b y :=
   (eventually_restrictBracketAt_eq A U ha hb).mono fun y hy ↦ hy.trans
     (restrictBracket_apply A U a b y).symm
+
+private theorem restrictBracket_apply_eq_restrict
+    {a b : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯} {x : U}
+    {a' b' : Cₛ^∞⟮I; F, V⟯} (ha : ∀ᶠ y : U in 𝓝 x, a' y = a y)
+    (hb : ∀ᶠ y : U in 𝓝 x, b' y = b y) :
+    restrictBracket A U a b x = (A.bracket a' b').restrict U x :=
+  restrictBracketSection_apply_eq_restrict A U ha hb
 
 variable [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
 
@@ -248,23 +251,20 @@ def restrict : LieAlgebroid I F ((⟨Subtype.val, continuous_subtype_val⟩ : C(
   anchor := restrictAnchor A U
   bracket := restrictBracket A U
   bracket_self a := ContMDiffSection.ext fun x ↦ by
-    rw [restrictBracket_apply, restrictBracketAt, A.bracket_self]
-    -- The zero of the fibre of `V` over `x` is the zero of the fibre of the restriction.
-    rfl
+    have ha := eventually_extendAt U a x
+    simp only [restrictBracket_apply_eq_restrict A U ha ha, A.bracket_self,
+      ContMDiffSection.restrict_zero]
   bracket_bracket a b c := ContMDiffSection.ext fun x ↦ by
     -- Each iterated bracket at `x` is the corresponding iterated bracket of the chosen global
     -- extensions at `x`, where the Jacobi identity of `A` applies.
     have ha := eventually_extendAt U a x
     have hb := eventually_extendAt U b x
     have hc := eventually_extendAt U c x
-    rw [ContMDiffSection.coe_add, Pi.add_apply, restrictBracket_apply, restrictBracket_apply,
-      restrictBracket_apply,
-      restrictBracketAt_eq A U ha (eventually_restrictBracket_eq A U hb hc),
-      restrictBracketAt_eq A U (eventually_restrictBracket_eq A U ha hb) hc,
-      restrictBracketAt_eq A U hb (eventually_restrictBracket_eq A U ha hc), A.bracket_bracket,
-      ContMDiffSection.coe_add, Pi.add_apply]
-    -- Both sides are the same sum, formed in the fibre of `V` and of the restriction over `x`.
-    rfl
+    simp only [ContMDiffSection.coe_add, Pi.add_apply,
+      restrictBracket_apply_eq_restrict A U ha (eventually_restrictBracket_eq A U hb hc),
+      restrictBracket_apply_eq_restrict A U (eventually_restrictBracket_eq A U ha hb) hc,
+      restrictBracket_apply_eq_restrict A U hb (eventually_restrictBracket_eq A U ha hc),
+      A.bracket_bracket (extendAt U a x), ContMDiffSection.restrict_add]
   bracket_smul_apply a b f x := by
     -- Extend `f` and the sections from a neighbourhood of `x` to `M`, and apply the Leibniz rule
     -- of `A` there.
@@ -281,11 +281,11 @@ def restrict : LieAlgebroid I F ((⟨Subtype.val, continuous_subtype_val⟩ : C(
         ((Manifold.mfderiv_comp_subtype_val_apply v).trans
           (mvfderiv_apply_eq_mfderiv_apply (I := I) (g : M → ℝ) (x : M) v).symm)
     rw [restrictBracket_apply, restrictBracket_apply, restrictBracketAt_eq A U ha hgb,
-      restrictBracketAt_eq A U ha hb, A.bracket_smul_apply, restrictAnchor_apply, hderiv,
+      restrictBracketAt_eq A U ha hb, restrictAnchor_apply, hderiv,
       Manifold.tangentSpaceOpenEquiv_symm_apply, ← ha.self_of_nhds, ← hb.self_of_nhds,
       ← hg.self_of_nhds, Function.comp_apply]
-    -- Both sides are the same vector, formed in the fibre of `V` and of the restriction over `x`.
-    rfl
+    -- This is the Leibniz rule of `A` for the extensions, read in the fibre of `V` over `x`.
+    exact A.bracket_smul_apply (extendAt U a x) (extendAt U b x) g x
 
 /-- The anchor of the restriction of `A` to `U` is the anchor of `A`, read through the canonical
 identification of the tangent spaces of `U` and `M`. -/

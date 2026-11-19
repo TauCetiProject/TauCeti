@@ -215,13 +215,6 @@ theorem bracket_smul_right (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ�
   ext x
   simp [A.bracket_smul_apply]
 
-/-- The bracket of sections is skew-symmetric, `-[b, a] = [a, b]`. -/
-@[simp]
-theorem bracket_skew (a b : Cₛ^∞⟮I; F, V⟯) : -A.bracket b a = A.bracket a b := by
-  have h := A.bracket_self (a + b)
-  simp only [map_add, LinearMap.add_apply, A.bracket_self, zero_add, add_zero] at h
-  exact neg_eq_of_add_eq_zero_right h
-
 section Locality
 
 variable [FiniteDimensional ℝ E] [T2Space M]
@@ -251,9 +244,9 @@ and `b` at `x`. -/
 theorem bracket_apply_eq_of_eventuallyEq {a a' b b' : Cₛ^∞⟮I; F, V⟯} {x : M}
     (ha : ∀ᶠ y in 𝓝 x, a y = a' y) (hb : ∀ᶠ y in 𝓝 x, b y = b' y) :
     A.bracket a b x = A.bracket a' b' x := by
-  rw [A.bracket_apply_eq_of_eventuallyEq_right a hb, ← A.bracket_skew a b', ← A.bracket_skew a' b',
-    ContMDiffSection.coe_neg, ContMDiffSection.coe_neg, Pi.neg_apply, Pi.neg_apply,
-    A.bracket_apply_eq_of_eventuallyEq_right b' ha]
+  have hskew : A.bracket.IsAlt := A.bracket_self
+  rw [A.bracket_apply_eq_of_eventuallyEq_right a hb, ← hskew.neg b' a, ← hskew.neg b' a']
+  simpa using congr(-$(A.bracket_apply_eq_of_eventuallyEq_right b' ha))
 
 end Locality
 
