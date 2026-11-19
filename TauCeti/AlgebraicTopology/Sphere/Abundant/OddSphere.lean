@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Sphere.Abundant.Action
 public import TauCeti.AlgebraicTopology.Sphere.DoubleTangentCircle
 public import TauCeti.Geometry.Diffeomorphism.Sphere.RotationFamily
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Topology.Grassmannian.SphereBundle.Action
 import TauCeti.Topology.MappingSpace.Sphere.Basic
 
 /-!

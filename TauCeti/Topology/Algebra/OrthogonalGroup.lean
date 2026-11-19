@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
-import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # Closedness and path components of matrix orthogonal groups
@@ -36,6 +36,9 @@ to `r_u r_u = 1` by moving `w` to `u`: along the segment from `w` to `u` when it
 and directly otherwise, since then `w` is a multiple of `u` and `r_w = r_u`. The products joined to
 the identity form a submonoid, which therefore contains every special orthogonal matrix.
 
+The special orthogonal group `SO(N)` acts on the unit sphere of `ℝᴺ` by matrix multiplication,
+through the linear isometry of a special orthogonal matrix, and this action is jointly continuous.
+
 Read through the action of orthogonal matrices on Euclidean space, two linear isometries of
 `EuclideanSpace ℝ ι` with the same determinant are joined by a path of linear isometries,
 continuous in the operator-norm topology.
@@ -51,10 +54,13 @@ continuous in the operator-norm topology.
   a path of orthogonal matrices exactly when they have the same determinant.
 * `TauCeti.Matrix.continuousOn_reflectionMatrix`: the reflection in a nonzero vector depends
   continuously on the vector.
+* `Matrix.SpecialOrthogonalGroup.instMulActionSphere`: `SO(N)` acts on the unit sphere of `ℝᴺ`,
+  by matrix multiplication (`Matrix.SpecialOrthogonalGroup.coe_smul_sphere`) and jointly
+  continuously.
 * `TauCeti.sphereRotation`: for unit vectors `b` and `y ≠ -b` of `ℝᴺ`, the reflection in `b`
   followed by the reflection in `b + y`, a rotation taking `b` to `y`
-  (`TauCeti.sphereRotation_mulVec`) that depends continuously on `y`
-  (`TauCeti.continuousOn_sphereRotation`).
+  (`TauCeti.sphereRotation_mulVec`, `TauCeti.sphereRotation_smul_self`) that depends continuously
+  on `y` (`TauCeti.continuousOn_sphereRotation`).
 * `TauCeti.exists_path_linearIsometryEquiv_of_det_eq`: two linear isometries of Euclidean space
   with the same determinant are joined by an operator-norm-continuous path of linear isometries.
 
@@ -234,6 +240,39 @@ theorem joined_orthogonalGroup_iff_det_eq {A B : orthogonalGroup ι ℝ} :
 
 end TauCeti.Matrix
 
+/-! ### The action of `SO(N)` on the unit sphere -/
+
+namespace Matrix.SpecialOrthogonalGroup
+
+open Metric
+
+variable {N : ℕ}
+
+/-- The special orthogonal group `SO(N)` acts on the unit sphere of `ℝᴺ` by matrix multiplication,
+through the linear isometry `Matrix.UnitaryGroup.toLinearIsometryEquiv` of the matrix. -/
+noncomputable instance instMulActionSphere :
+    MulAction (specialOrthogonalGroup (Fin N) ℝ) (sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :=
+  MulAction.compHom _ (UnitaryGroup.toLinearIsometryEquiv.comp
+    (Submonoid.inclusion fun _ hA ↦ hA.1 :
+      specialOrthogonalGroup (Fin N) ℝ →* unitaryGroup (Fin N) ℝ))
+
+/-- A special orthogonal matrix acts on the unit sphere by matrix multiplication. -/
+@[simp]
+theorem coe_smul_sphere (A : specialOrthogonalGroup (Fin N) ℝ)
+    (x : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
+    ((A • x : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) : EuclideanSpace ℝ (Fin N)) =
+      WithLp.toLp 2
+        ((A : Matrix (Fin N) (Fin N) ℝ) *ᵥ WithLp.ofLp (x : EuclideanSpace ℝ (Fin N))) :=
+  (LinearIsometryEquiv.coe_smul_unitSphere _ x).trans (UnitaryGroup.toLinearIsometryEquiv_apply _ _)
+
+/-- The action of `SO(N)` on the unit sphere of `ℝᴺ` is jointly continuous. -/
+instance : ContinuousSMul (specialOrthogonalGroup (Fin N) ℝ)
+    (sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :=
+  ⟨UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere.comp
+    (((continuous_subtype_val.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
+
+end Matrix.SpecialOrthogonalGroup
+
 /-! ### Rotations taking one unit vector to another -/
 
 namespace TauCeti
@@ -292,6 +331,12 @@ theorem sphereRotation_mulVec {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} 
   rw [coe_sphereRotation_of_ne h, ← mulVec_mulVec]
   rw [WithLp.ofLp_add] at hv ⊢
   exact reflectionMatrix_add_mulVec_reflectionMatrix_mulVec (hunit b) (hunit y) hv
+
+/-- The rotation `TauCeti.sphereRotation b y` takes `b` to `y` when `y ≠ -b`. -/
+theorem sphereRotation_smul_self {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
+    sphereRotation b y • b = y :=
+  Subtype.ext <| by
+    rw [SpecialOrthogonalGroup.coe_smul_sphere, sphereRotation_mulVec h, WithLp.toLp_ofLp]
 
 /-- The rotation `sphereRotation b y` depends continuously on `y` away from `-b`. -/
 theorem continuousOn_sphereRotation (b : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :

@@ -72,6 +72,9 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   topology (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv`), and its action on the unit
   sphere is jointly continuous
   (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere`);
+* `Matrix.UnitaryGroup.ofLinearIsometryEquiv` — the inverse group isomorphism, taking a linear
+  isometry of Euclidean space to its unitary matrix, which depends continuously on the isometry
+  (`Matrix.UnitaryGroup.continuous_ofLinearIsometryEquiv`);
 * `Matrix.toEuclideanCLM_apply_apply` — the coordinate formula for the continuous linear map of
   a matrix, which depends continuously on the matrix (`Matrix.continuous_toEuclideanCLM`) and
   conversely (`Matrix.continuous_toEuclideanCLM_symm`);
@@ -335,6 +338,63 @@ theorem UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere :
     ((continuous_subtype_val.comp continuous_fst).prodMk
       (continuous_subtype_val.comp continuous_snd))).congr fun p ↦ ?_
   simp [toLpLin_apply]
+
+/-- **The unitary matrix of a linear isometry** of `EuclideanSpace 𝕜 ι`, its matrix in the standard
+basis, as a group isomorphism. Its inverse is `Matrix.UnitaryGroup.toLinearIsometryEquiv`
+(`Matrix.UnitaryGroup.ofLinearIsometryEquiv_symm_apply`). -/
+noncomputable def UnitaryGroup.ofLinearIsometryEquiv :
+    (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) ≃* unitaryGroup ι 𝕜 :=
+  MulEquiv.symm
+    { UnitaryGroup.toLinearIsometryEquiv with
+      invFun g := ⟨(toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
+          (g.toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι),
+        mem_unitaryGroup_iff_inner_toEuclideanCLM.2 fun x y ↦ by
+          simp only [StarAlgEquiv.apply_symm_apply, LinearIsometryEquiv.coe_coe'',
+            LinearIsometryEquiv.inner_map_map]⟩
+      left_inv A := Subtype.ext <| by
+        rw [← StarAlgEquiv.symm_apply_apply (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) A]
+        congr 1
+      right_inv g := LinearIsometryEquiv.ext fun x ↦ by
+        have h := congr($(StarAlgEquiv.apply_symm_apply (toEuclideanCLM (n := ι) (𝕜 := 𝕜))
+          (g.toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) x)
+        rw [toEuclideanCLM_apply] at h
+        exact h }
+
+/-- The unitary matrix of a linear isometry is the matrix of its continuous linear map. -/
+theorem UnitaryGroup.coe_ofLinearIsometryEquiv (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
+    (UnitaryGroup.ofLinearIsometryEquiv g : Matrix ι ι 𝕜) =
+      (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
+        (g.toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
+  (rfl)
+
+/-- The inverse of `Matrix.UnitaryGroup.ofLinearIsometryEquiv` is the linear isometry of a unitary
+matrix. -/
+@[simp]
+theorem UnitaryGroup.ofLinearIsometryEquiv_symm_apply (A : unitaryGroup ι 𝕜) :
+    UnitaryGroup.ofLinearIsometryEquiv.symm A = UnitaryGroup.toLinearIsometryEquiv A :=
+  (rfl)
+
+/-- The linear isometry of the unitary matrix of a linear isometry is the linear isometry. -/
+@[simp]
+theorem UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv
+    (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
+    UnitaryGroup.toLinearIsometryEquiv (UnitaryGroup.ofLinearIsometryEquiv g) = g :=
+  UnitaryGroup.ofLinearIsometryEquiv.symm_apply_apply g
+
+/-- The unitary matrix of the linear isometry of a unitary matrix is the matrix. -/
+@[simp]
+theorem UnitaryGroup.ofLinearIsometryEquiv_toLinearIsometryEquiv (A : unitaryGroup ι 𝕜) :
+    UnitaryGroup.ofLinearIsometryEquiv (UnitaryGroup.toLinearIsometryEquiv A) = A :=
+  UnitaryGroup.ofLinearIsometryEquiv.apply_symm_apply A
+
+/-- The unitary matrix of a continuous family of linear isometries, continuous in the operator-norm
+topology, depends continuously on the parameter. -/
+theorem UnitaryGroup.continuous_ofLinearIsometryEquiv {X : Type*} [TopologicalSpace X]
+    {g : X → EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι}
+    (hg : Continuous fun x ↦
+      ((g x).toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) :
+    Continuous fun x ↦ UnitaryGroup.ofLinearIsometryEquiv (g x) :=
+  (continuous_toEuclideanCLM_symm.comp hg).subtype_mk _
 
 /-- The determinant of the continuous linear map of a square matrix is the determinant of the
 matrix. -/
