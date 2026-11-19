@@ -124,12 +124,18 @@ theorem cutHom_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P.X Q.X}
   rw [mem_dgCycles] at hf ⊢
   rw [dgDifferential_cutHom, hf, map_zero]
 
+/-- A morphism of degree zero of the Karoubi envelope is closed exactly when its underlying
+morphism is closed in `C`. -/
+theorem dgHomVal_mem_dgCycles_iff {P Q : DGKaroubi R C} {f : DGHom R 0 P Q} :
+    dgHomVal 0 f ∈ dgCycles R P.X Q.X ↔ f ∈ dgCycles R P Q := by
+  rw [mem_dgCycles, mem_dgCycles, ← dgHomVal_dgDifferential,
+    dgHomVal_injective.eq_iff' (map_zero _)]
+
 /-- The underlying morphism of a closed morphism of degree zero of the Karoubi envelope is
 closed. -/
 theorem dgHomVal_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P Q}
-    (hf : f ∈ dgCycles R P Q) : dgHomVal 0 f ∈ dgCycles R P.X Q.X := by
-  rw [mem_dgCycles] at hf ⊢
-  rw [← dgHomVal_dgDifferential, hf, map_zero]
+    (hf : f ∈ dgCycles R P Q) : dgHomVal 0 f ∈ dgCycles R P.X Q.X :=
+  dgHomVal_mem_dgCycles_iff.2 hf
 
 /-- **A closed morphism of the Karoubi envelope is a boundary exactly when its underlying morphism
 is a boundary in `C`.**  If `dgHomVal f = d h`, then `f = d (cutHom h)`. -/
@@ -379,12 +385,12 @@ noncomputable def toDGKaroubiCompToKaroubiDGHomotopyCategoryIso :
       obtain ⟨X, rfl⟩ := DGHomotopyCategory.of_surjective R X
       obtain ⟨Y, rfl⟩ := DGHomotopyCategory.of_surjective R Y
       refine Karoubi.hom_ext _ _ ?_
-      exact (congrArg₂ (· ≫ ·)
-        (toKaroubiDGHomotopyCategory_map_mapDGHomotopyCategory_toDGKaroubi_map_f f)
-        (toKaroubiDGHomotopyCategoryObjToDGKaroubiObjIso_hom_f (R := R) Y)).trans
-          ((Category.comp_id f).trans ((Category.id_comp f).symm.trans
-            (congrArg₂ (· ≫ ·)
-              (toKaroubiDGHomotopyCategoryObjToDGKaroubiObjIso_hom_f (R := R) X).symm rfl)))
+      -- Both sides reduce to `f`; the identities are on `of R (underlying R (of R X))`, which is
+      -- only definitionally `of R X`, so `simp` leaves them for `comp_id` and `id_comp`.
+      simp only [Functor.comp_map, Karoubi.comp_f, toKaroubi_map_f,
+        toKaroubiDGHomotopyCategory_map_mapDGHomotopyCategory_toDGKaroubi_map_f,
+        toKaroubiDGHomotopyCategoryObjToDGKaroubiObjIso_hom_f]
+      exact (Category.comp_id f).trans (Category.id_comp f).symm
 
 @[simp]
 theorem toDGKaroubiCompToKaroubiDGHomotopyCategoryIso_app (X : C) :
