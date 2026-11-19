@@ -11,15 +11,17 @@ public import Mathlib.NumberTheory.Real.GoldenRatio
 import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 
 /-!
-# The complex roots of `X² - X - 1`
+# The golden ratio and the complex roots of `X² - X - 1`
 
 The golden ratio `φ` and its conjugate `ψ` are the two roots of `X² - X - 1`. This file records
 the complex root multiset of this polynomial, which is used to compute with the conjugates of `φ`,
 for instance to show that `φ` is a Pisot number and that the Mahler measure of `X² - X - 1` is `φ`.
+It also records the identity `φ⁻¹ = φ - 1`, which keeps computations with `φ⁻¹` inside `ℤ[φ]`.
 
 ## Main results
 
 * `TauCeti.aroots_X_sq_sub_X_sub_one`: the complex roots of `X² - X - 1` are `φ` and `ψ`.
+* `TauCeti.inv_goldenRatio_eq_goldenRatio_sub_one`: `φ⁻¹ = φ - 1`.
 -/
 
 public section
@@ -27,6 +29,13 @@ public section
 open Polynomial
 
 namespace TauCeti
+
+open scoped goldenRatio
+
+/-- The inverse of the golden ratio is `φ⁻¹ = φ - 1`. -/
+theorem inv_goldenRatio_eq_goldenRatio_sub_one : φ⁻¹ = φ - 1 := by
+  rw [Real.inv_goldenRatio, ← Real.one_sub_goldenConj]
+  ring
 
 /-- The complex roots of `X² - X - 1` are the golden ratio `φ` and its conjugate `ψ`. -/
 theorem aroots_X_sq_sub_X_sub_one :
