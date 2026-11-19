@@ -245,29 +245,30 @@ private theorem toDualₗᵢ_surjective (hp : 1 < p) (hp_top : p ≠ ∞) :
 density pairing `⟨w, u⟩ = ∫ (J^{-s} w) x ((J^s u) x) dx` identifies `H^{-s,q}(E, F⋆)`,
 `F⋆ = StrongDual ℂ F`, complex-linearly and isometrically with the continuous dual of
 `H^{s,p}(E, F)`, for every real `s` and every complex Hilbert space `F`. -/
-def dualEquiv (s : ℝ) (hp : 1 < p) (hp_top : p ≠ ∞) :
+def dualEquiv (s : ℝ) (p q : ℝ≥0∞) [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
+    (hp : 1 < p) (hp_top : p ≠ ∞) :
     H^{-s, q}(E, StrongDual ℂ F) ≃ₗᵢ[ℂ] StrongDual ℂ H^{s, p}(E, F) :=
   LinearIsometryEquiv.ofSurjective (toDualₗᵢ s hp hp_top) (toDualₗᵢ_surjective s hp hp_top)
 
-/-- `dualEquiv s hp hp_top w` is the density pairing with `w`, for the evaluation pairing of `F`
-with `F⋆`. -/
+/-- `dualEquiv s p q hp hp_top w` is the density pairing with `w`, for the evaluation pairing of
+`F` with `F⋆`. -/
 theorem dualEquiv_apply {s : ℝ} (hp : 1 < p) (hp_top : p ≠ ∞) (w : H^{-s, q}(E, StrongDual ℂ F))
     (u : H^{s, p}(E, F)) :
-    dualEquiv s hp hp_top w u =
+    dualEquiv s p q hp hp_top w u =
       (ContinuousLinearMap.id ℂ (StrongDual ℂ F)).flip.besselPotentialPairing s p q u w := by
   rw [dualEquiv, LinearIsometryEquiv.coe_ofSurjective, toDualₗᵢ_apply]
 
 /-- The integral formula for `dualEquiv`: `w` acts on `u` by `∫ (J^{-s} w) x ((J^s u) x) dx`. -/
 theorem dualEquiv_apply_eq_integral {s : ℝ} (hp : 1 < p) (hp_top : p ≠ ∞)
     (w : H^{-s, q}(E, StrongDual ℂ F)) (u : H^{s, p}(E, F)) :
-    dualEquiv s hp hp_top w u = ∫ x, w.toLp x (u.toLp x) := by
+    dualEquiv s p q hp hp_top w u = ∫ x, w.toLp x (u.toLp x) := by
   simp [dualEquiv_apply, ContinuousLinearMap.besselPotentialPairing_apply]
 
 /-- On Schwartz functions `dualEquiv` is the integral of the pointwise evaluation pairing. -/
 @[simp]
 theorem dualEquiv_toBesselPotentialSpaceCLM {s : ℝ} (hp : 1 < p) (hp_top : p ≠ ∞)
     (ψ : 𝓢(E, StrongDual ℂ F)) (φ : 𝓢(E, F)) :
-    dualEquiv s hp hp_top (SchwartzMap.toBesselPotentialSpaceCLM (-s) q ψ)
+    dualEquiv s p q hp hp_top (SchwartzMap.toBesselPotentialSpaceCLM (-s) q ψ)
         (SchwartzMap.toBesselPotentialSpaceCLM s p φ) = ∫ x, ψ x (φ x) := by
   simp [dualEquiv_apply]
 
