@@ -51,6 +51,8 @@ the position and the frequency.
   only the pointwise composition survives (`TauCeti.Symbol.const_sharpTerm_succ`,
   `TauCeti.Symbol.sharpTerm_const_succ`), and on the right this holds for every symbol that does
   not depend on the position (`TauCeti.Symbol.sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero`).
+  For a multiplication symbol `Ψ` on the right the terms are
+  `((-i)^k / k!) ∑_{|w| = k} ∂_ξ^w a ∘ ∂_x^w Ψ` (`TauCeti.Symbol.coefficient_sharpTerm_ofSpatial`).
 * `TauCeti.Symbol.sharpRemainder a b hb N`: the remainder `a # b - ∑_{k < N} sharpTerm a b k`, a
   symbol of order `m' + m - N`.
 * `TauCeti.Symbol.sharp_eq_sum_sharpTerm_add_sharpRemainder`: **the composition expansion**
@@ -326,6 +328,17 @@ theorem const_sharpTerm_succ (T : W →L[ℂ] U) (b : Symbol n V W m) (k : ℕ) 
   rw [coefficient_sharpTerm]
   simp only [h, ContinuousLinearMap.zero_comp, Finset.sum_const_zero, smul_zero, coefficient_zero,
     Pi.zero_apply]
+
+/-- **The terms of the composition expansion of `a # Ψ`** for a multiplication operator `Ψ` on the
+right are `((-i)^k / k!) ∑_{|w| = k} ∂_ξ^w a ∘ ∂_x^w Ψ`, the sum running over the words `w` of
+coordinate indices of length `k`. -/
+theorem coefficient_sharpTerm_ofSpatial (a : Symbol n W U m')
+    {Ψ : CoordinateSpace n → V →L[ℂ] W} (hΨ : ContDiff ℝ ∞ Ψ) (k : ℕ) (x ξ : CoordinateSpace n) :
+    (a.sharpTerm (ofSpatial Ψ hΨ) k).coefficient (x, ξ) = ((-Complex.I) ^ k / k.factorial) •
+      ∑ w : Fin k → Fin n,
+        (mixedDeriv [] (List.ofFn w) a.coefficient x ξ).comp
+          (coordinateDeriv (List.ofFn w) Ψ x) := by
+  simp only [coefficient_sharpTerm, coefficient_ofSpatial_eq, mixedDeriv_nil_comp_fst]
 
 /-- Only the pointwise composition survives in the composition expansion of a symbol on the right
 that does not depend on the position: its later terms vanish. -/
