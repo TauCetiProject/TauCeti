@@ -108,7 +108,8 @@ lemma pushforwardSkyscraperIso_hom_val_app_apply
     (hT : ∀ (a : ↑(TopCat.Presheaf.stalk 𝒪X.obj (f y))) (t : T), a • t = ringStalkMap φ y a • t)
     (U : (Opens X)ᵒᵖ)
     (s : (skyscraper 𝒪Y y T).val.obj (op ((Opens.map f).obj U.unop))) (p : PLift (f y ∈ U.unop)) :
-    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      skyscraper_val]
     ((pushforwardSkyscraperIso φ y T hT).hom.val.app U s p = s ⟨p.down⟩) :=
   (rfl)
 
@@ -118,7 +119,8 @@ lemma pushforwardSkyscraperIso_inv_val_app_apply
     (hT : ∀ (a : ↑(TopCat.Presheaf.stalk 𝒪X.obj (f y))) (t : T), a • t = ringStalkMap φ y a • t)
     (U : (Opens X)ᵒᵖ) (s : (skyscraper 𝒪X (f y) T).val.obj U)
     (p : PLift (y ∈ (Opens.map f).obj U.unop)) :
-    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      skyscraper_val]
     ((pushforwardSkyscraperIso φ y T hT).inv.val.app U s p = s ⟨p.down⟩) :=
   (rfl)
 

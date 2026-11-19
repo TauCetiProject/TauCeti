@@ -237,9 +237,9 @@ theorem pullbackStalkEquiv_symm_germ (U : Opens X) (hy : f y ∈ U) (m : G.val.o
       1 ⊗ₜ TopCat.Presheaf.germ G.val.presheaf U (f y) hy m) :=
   ofPullbackStalk_germ φ G y U hy m
 
-/-- The stalk equivalence is natural in the `𝒪_X`-module: for `g : G ⟶ G'`, it intertwines the
-base change of the stalk map of `g` at `f y` with the stalk map of `f^* g` at `y`. -/
-theorem pullbackStalkEquiv_naturality {G' : _root_.SheafOfModules.{u} (ringCatSheaf 𝒪X)}
+/-- The stalk equivalence is natural in the `𝒪_X`-module, on pure tensors: for `g : G ⟶ G'`, it
+sends `a ⊗ g_{f(y)}(s)` to the image under the stalk map of `f^* g` of the image of `a ⊗ s`. -/
+theorem pullbackStalkEquiv_naturality_apply {G' : _root_.SheafOfModules.{u} (ringCatSheaf 𝒪X)}
     (g : G ⟶ G') (a : ↑(TopCat.Presheaf.stalk 𝒪Y.obj y))
     (s : ↑(TopCat.Presheaf.stalk G.val.presheaf (f y))) :
     letI := stalkAlgebra φ y
@@ -259,6 +259,22 @@ theorem pullbackStalkEquiv_naturality {G' : _root_.SheafOfModules.{u} (ringCatSh
   rw [PresheafOfModules.stalkMapCommRing_germ, pullbackStalkEquiv_tmul_germ,
     pullbackStalkEquiv_tmul_germ, map_smul, hη]
   exact congrArg (a • ·) (PresheafOfModules.stalkMapCommRing_germ (S := 𝒪Y.obj) y _ _ hy _).symm
+
+/-- The stalk equivalence is natural in the `𝒪_X`-module: for `g : G ⟶ G'`, it intertwines the
+base change of the stalk map of `g` at `f y` with the stalk map of `f^* g` at `y`. -/
+theorem pullbackStalkEquiv_naturality {G' : _root_.SheafOfModules.{u} (ringCatSheaf 𝒪X)}
+    (g : G ⟶ G') :
+    letI := stalkAlgebra φ y
+    (pullbackStalkEquiv φ G' y).toLinearMap ∘ₗ
+        LinearMap.baseChange _ (PresheafOfModules.stalkMapCommRing (S := 𝒪X.obj) (f y) g.val) =
+      PresheafOfModules.stalkMapCommRing (S := 𝒪Y.obj) y
+          ((_root_.SheafOfModules.pullback φ).map g).val ∘ₗ
+        (pullbackStalkEquiv φ G y).toLinearMap := by
+  let := stalkAlgebra φ y
+  refine LinearMap.ext fun t ↦ ?_
+  induction t using TensorProduct.inductionOn with
+  | tmul a s => exact pullbackStalkEquiv_naturality_apply φ G y g a s
+  | add t t' ht ht' => rw [map_add, map_add, ht, ht']
 
 end SheafOfModules
 

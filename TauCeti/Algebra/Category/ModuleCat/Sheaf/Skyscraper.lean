@@ -58,6 +58,11 @@ are `T` when `x ∈ U` and `0` otherwise. Its body is exposed so that sections c
   val := PresheafOfModules.skyscraper R.obj x T
   isSheaf := isSheaf_skyscraper R x T
 
+/-- The underlying presheaf of modules of the skyscraper sheaf is the skyscraper presheaf. -/
+@[simp]
+lemma skyscraper_val : (skyscraper R x T).val = PresheafOfModules.skyscraper R.obj x T :=
+  rfl
+
 variable {R} (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
 
 /-- The skyscraper at `x` is right adjoint to the stalk at `x`: `R_x`-linear maps `M_x → T`
@@ -75,7 +80,8 @@ def skyscraperHomEquiv :
 lemma skyscraperHomEquiv_apply_val_app_apply
     (g : ↑(TopCat.Presheaf.stalk M.val.presheaf x) →ₗ[↑(TopCat.Presheaf.stalk R.obj x)] T)
     (U : (Opens X)ᵒᵖ) (m : M.val.obj U) (p : PLift (x ∈ U.unop)) :
-    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      skyscraper_val]
     ((skyscraperHomEquiv x T M g).val.app U m p =
       g (TopCat.Presheaf.germ M.val.presheaf U.unop x p.down m)) :=
   (PresheafOfModules.skyscraperHomEquiv_apply_app_apply (S := R.obj) x T M.val g U m p :)
