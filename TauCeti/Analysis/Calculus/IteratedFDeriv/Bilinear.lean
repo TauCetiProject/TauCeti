@@ -26,6 +26,8 @@ a parameter `τ`, it follows that if the derivatives of order at most `k` at `x`
 in `τ`, then so is the `k`-th derivative of `B (f τ y) (g τ y)` at `x`, with the derivative given by
 the product rule (`ContinuousLinearMap.hasDerivWithinAt_iteratedFDeriv_of_bilinear`). This is how
 a time derivative passes through the spatial derivatives of a product of space-time functions.
+Its proof takes derivatives of first-order Taylor remainders `f τ - f t - (τ - t) • f'` termwise
+(`TauCeti.iteratedFDeriv_sub_sub_const_smul_apply`).
 -/
 
 public section
@@ -72,9 +74,6 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_sub_le_of_bilinear (B : X →L[�
     (hδ₂ : ∀ i ≤ n, ‖iteratedFDeriv 𝕜 i g₁ x - iteratedFDeriv 𝕜 i g₂ x‖ ≤ δ₂) :
     ‖iteratedFDeriv 𝕜 n (fun y ↦ B (f₁ y) (g₁ y)) x -
         iteratedFDeriv 𝕜 n (fun y ↦ B (f₂ y) (g₂ y)) x‖ ≤ ‖B‖ * 2 ^ n * (δ₁ * N + M * δ₂) := by
-  have hB {φ : E → X} {ψ : E → Y} (hφ : ContDiff 𝕜 n φ) (hψ : ContDiff 𝕜 n ψ) :
-      ContDiff 𝕜 n fun y ↦ B (φ y) (ψ y) :=
-    B.isBoundedBilinearMap.contDiff.comp (hφ.prodMk hψ)
   -- `B f₁ g₁ - B f₂ g₂ = B (f₁ - f₂) g₁ + B f₂ (g₁ - g₂)`, and each term obeys the Leibniz bound.
   have hsplit : ((fun y ↦ B (f₁ y) (g₁ y)) - fun y ↦ B (f₂ y) (g₂ y)) =
       (fun y ↦ B ((f₁ - f₂) y) (g₁ y)) + fun y ↦ B (f₂ y) ((g₁ - g₂) y) := by
@@ -83,8 +82,10 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_sub_le_of_bilinear (B : X →L[�
     abel
   have hf : ContDiff 𝕜 n (f₁ - f₂) := hf₁.sub hf₂
   have hg : ContDiff 𝕜 n (g₁ - g₂) := hg₁.sub hg₂
-  rw [← iteratedFDeriv_sub_apply (hB hf₁ hg₁).contDiffAt (hB hf₂ hg₂).contDiffAt, hsplit,
-    iteratedFDeriv_add_apply (hB hf hg₁).contDiffAt (hB hf₂ hg).contDiffAt]
+  rw [← iteratedFDeriv_sub_apply ((hf₁.continuousLinearMap_comp B).clm_apply hg₁).contDiffAt
+      ((hf₂.continuousLinearMap_comp B).clm_apply hg₂).contDiffAt, hsplit,
+    iteratedFDeriv_add_apply ((hf.continuousLinearMap_comp B).clm_apply hg₁).contDiffAt
+      ((hf₂.continuousLinearMap_comp B).clm_apply hg).contDiffAt]
   have h₁ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le isOpen_univ (Set.mem_univ x)
     hf.contDiffOn hg₁.contDiffOn (fun i hi ↦ by
       rw [iteratedFDeriv_sub_apply (hf₁.of_le (by exact_mod_cast hi)).contDiffAt
@@ -98,6 +99,12 @@ theorem ContinuousLinearMap.norm_iteratedFDeriv_sub_le_of_bilinear (B : X →L[�
   calc _ ≤ _ := norm_add_le _ _
     _ ≤ ‖B‖ * 2 ^ n * δ₁ * N + ‖B‖ * 2 ^ n * M * δ₂ := add_le_add h₁ h₂
     _ = _ := by ring
+
+/-- A first-order Taylor remainder `h τ - h t - (τ - t) h'` of `Cⁿ` maps is `Cⁿ`. -/
+private theorem contDiff_taylor_remainder {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    {h : 𝕜 → E → V} {h' : E → V} {n : ℕ∞ω} (hh : ∀ τ, ContDiff 𝕜 n (h τ)) (hh' : ContDiff 𝕜 n h')
+    (t τ : 𝕜) : ContDiff 𝕜 n (h τ - h t - (τ - t) • h') :=
+  ((hh τ).sub (hh t)).sub (hh'.const_smul _)
 
 /-- The algebra behind `ContinuousLinearMap.hasDerivWithinAt_iteratedFDeriv_of_bilinear`: the
 first-order Taylor remainder in `τ` of the `n`-th derivative at `x` of `B (f τ y) (g τ y)` is the
@@ -116,9 +123,9 @@ private theorem ContinuousLinearMap.iteratedFDeriv_bilinear_taylor_eq
         (τ - t) • iteratedFDeriv 𝕜 n (fun y ↦ B (f' y) ((g τ - g t) y)) x := by
   have hB {φ : E → X} {ψ : E → Y} (hφ : ContDiff 𝕜 n φ) (hψ : ContDiff 𝕜 n ψ) :
       ContDiff 𝕜 n fun y ↦ B (φ y) (ψ y) :=
-    B.isBoundedBilinearMap.contDiff.comp (hφ.prodMk hψ)
-  have hφ : ContDiff 𝕜 n (f τ - f t - (τ - t) • f') := ((hf τ).sub (hf t)).sub (hf'.const_smul _)
-  have hψ : ContDiff 𝕜 n (g τ - g t - (τ - t) • g') := ((hg τ).sub (hg t)).sub (hg'.const_smul _)
+    (hφ.continuousLinearMap_comp B).clm_apply hψ
+  have hφ := contDiff_taylor_remainder hf hf' t τ
+  have hψ := contDiff_taylor_remainder hg hg' t τ
   have hgs : ContDiff 𝕜 n (g τ - g t) := (hg τ).sub (hg t)
   have hsplit : (fun y ↦ B (f τ y) (g τ y)) - (fun y ↦ B (f t y) (g t y)) -
       (τ - t) • ((fun y ↦ B (f' y) (g t y)) + fun y ↦ B (f t y) (g' y)) =
@@ -148,17 +155,17 @@ private theorem ContinuousLinearMap.iteratedFDeriv_bilinear_taylor_eq
     iteratedFDeriv_add_apply (hB hφ (hg τ)).contDiffAt (hB (hf t) hψ).contDiffAt,
     iteratedFDeriv_const_smul_apply (hB hf' hgs).contDiffAt]
 
-/-- The derivatives of a first-order Taylor remainder `h τ - h t - (τ - t) h'` are the
-first-order Taylor remainders of the derivatives. -/
-private theorem iteratedFDeriv_taylor_remainder_apply {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace 𝕜 V] {h : 𝕜 → E → V} {h' : E → V} {t τ : 𝕜} {x : E} {n : ℕ∞ω} {i : ℕ}
-    (hh : ∀ τ, ContDiff 𝕜 n (h τ)) (hh' : ContDiff 𝕜 n h') (hi : (i : ℕ∞ω) ≤ n) :
-    iteratedFDeriv 𝕜 i (h τ - h t - (τ - t) • h') x = iteratedFDeriv 𝕜 i (h τ) x -
-      iteratedFDeriv 𝕜 i (h t) x - (τ - t) • iteratedFDeriv 𝕜 i h' x := by
-  rw [iteratedFDeriv_sub_apply (f := h τ - h t) (g := (τ - t) • h')
-    (((hh τ).sub (hh t)).of_le hi).contDiffAt ((hh'.const_smul (τ - t)).of_le hi).contDiffAt,
-    iteratedFDeriv_sub_apply ((hh τ).of_le hi).contDiffAt ((hh t).of_le hi).contDiffAt,
-    iteratedFDeriv_const_smul_apply (hh'.of_le hi).contDiffAt]
+/-- The `i`-th derivative of `f - g - c • h` is `D^i f - D^i g - c • D^i h`; for instance, the
+derivatives of a first-order Taylor remainder are the first-order Taylor remainders of the
+derivatives. -/
+theorem TauCeti.iteratedFDeriv_sub_sub_const_smul_apply {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] {f g h : E → V} {c : 𝕜} {x : E} {i : ℕ} (hf : ContDiffAt 𝕜 i f x)
+    (hg : ContDiffAt 𝕜 i g x) (hh : ContDiffAt 𝕜 i h x) :
+    iteratedFDeriv 𝕜 i (f - g - c • h) x =
+      iteratedFDeriv 𝕜 i f x - iteratedFDeriv 𝕜 i g x - c • iteratedFDeriv 𝕜 i h x := by
+  rw [iteratedFDeriv_sub_apply (f := f - g) (g := c • h) (hf.sub hg) (hh.const_smul c),
+    iteratedFDeriv_sub_apply hf hg,
+    iteratedFDeriv_const_smul_apply hh]
 
 /-- The bound behind `ContinuousLinearMap.hasDerivWithinAt_iteratedFDeriv_of_bilinear`: the
 first-order Taylor remainder in `τ` of the `n`-th derivative at `x` of `B (f τ y) (g τ y)` is
@@ -186,30 +193,29 @@ private theorem ContinuousLinearMap.norm_iteratedFDeriv_bilinear_taylor_le
   have hterm (w : ℕ → ℝ) (hw : ∀ i, 0 ≤ w i) {i : ℕ} (hi : i ≤ n) :
       w i ≤ ∑ j ∈ Finset.range (n + 1), w j :=
     Finset.single_le_sum (fun j _ ↦ hw j) (Finset.mem_range.2 (Nat.lt_succ_of_le hi))
-  have hDf {i : ℕ} (hi : i ≤ n) :=
-    iteratedFDeriv_taylor_remainder_apply (t := t) (τ := τ) (x := x) hf hf' (hle hi)
-  have hDg {i : ℕ} (hi : i ≤ n) :=
-    iteratedFDeriv_taylor_remainder_apply (t := t) (τ := τ) (x := x) hg hg' (hle hi)
+  have hDf {i : ℕ} (hi : i ≤ n) := TauCeti.iteratedFDeriv_sub_sub_const_smul_apply (c := τ - t)
+    (x := x) ((hf τ).of_le (hle hi)).contDiffAt ((hf t).of_le (hle hi)).contDiffAt
+    (hf'.of_le (hle hi)).contDiffAt
+  have hDg {i : ℕ} (hi : i ≤ n) := TauCeti.iteratedFDeriv_sub_sub_const_smul_apply (c := τ - t)
+    (x := x) ((hg τ).of_le (hle hi)).contDiffAt ((hg t).of_le (hle hi)).contDiffAt
+    (hg'.of_le (hle hi)).contDiffAt
   rw [B.iteratedFDeriv_bilinear_taylor_eq hf hg hf' hg']
-  have hφ : ContDiff 𝕜 n (f τ - f t - (τ - t) • f') := ((hf τ).sub (hf t)).sub (hf'.const_smul _)
-  have hψ : ContDiff 𝕜 n (g τ - g t - (τ - t) • g') := ((hg τ).sub (hg t)).sub (hg'.const_smul _)
-  have hgs : ContDiff 𝕜 n (g τ - g t) := (hg τ).sub (hg t)
   have h₁ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le isOpen_univ (Set.mem_univ x)
-    hφ.contDiffOn (hg τ).contDiffOn
+    (contDiff_taylor_remainder hf hf' t τ).contDiffOn (hg τ).contDiffOn
     (fun i hi ↦ by
       rw [hDf hi]
       exact hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j (f τ) x - iteratedFDeriv 𝕜 j (f t) x -
         (τ - t) • iteratedFDeriv 𝕜 j f' x‖) (fun j ↦ norm_nonneg _) hi)
     (fun i hi ↦ hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j (g τ) x‖) (fun j ↦ norm_nonneg _) hi)
   have h₂ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le isOpen_univ (Set.mem_univ x)
-    (hf t).contDiffOn hψ.contDiffOn
+    (hf t).contDiffOn (contDiff_taylor_remainder hg hg' t τ).contDiffOn
     (fun i hi ↦ hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j (f t) x‖) (fun j ↦ norm_nonneg _) hi)
     (fun i hi ↦ by
       rw [hDg hi]
       exact hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j (g τ) x - iteratedFDeriv 𝕜 j (g t) x -
         (τ - t) • iteratedFDeriv 𝕜 j g' x‖) (fun j ↦ norm_nonneg _) hi)
   have h₃ := B.norm_iteratedFDeriv_le_of_bilinear_of_forall_le isOpen_univ (Set.mem_univ x)
-    hf'.contDiffOn hgs.contDiffOn
+    (g := g τ - g t) hf'.contDiffOn ((hg τ).sub (hg t)).contDiffOn
     (fun i hi ↦ hterm (fun j ↦ ‖iteratedFDeriv 𝕜 j f' x‖) (fun j ↦ norm_nonneg _) hi)
     (fun i hi ↦ by
       rw [iteratedFDeriv_sub_apply ((hg τ).of_le (hle hi)).contDiffAt

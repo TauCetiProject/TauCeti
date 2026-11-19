@@ -829,6 +829,11 @@ theorem norm_mixedDerivL_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ
   · rw [mixedDerivL_of_lt (by simpa using h), zero_apply, norm_zero]
     exact norm_nonneg f
 
+/-- Each value of each field is bounded by the norm. -/
+theorem norm_mixedDerivL_apply_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ)
+    (p : slab (E := E) a b) : ‖mixedDerivL r m f p‖ ≤ ‖f‖ :=
+  ((mixedDerivL r m f).norm_coe_le_norm p).trans (f.norm_mixedDerivL_le r m)
+
 /-- Each family of time slices is bounded by the norm. -/
 theorem norm_timeSliceL_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) :
     ‖timeSliceL r m f‖ ≤ ‖f‖ := by

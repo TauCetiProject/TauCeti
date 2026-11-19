@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Holder.Leibniz
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Inclusion
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -76,84 +77,6 @@ variable {k : ℕ} {α : ℝ≥0} {E F G H : Type*} [NormedAddCommGroup E] [Norm
   [NormedAddCommGroup H] [NormedSpace ℝ H] {a b : ℝ} {hab : a < b}
 
 namespace TauCeti.ParabolicCkHolderSpace
-
-/-! ### Regularity of the fields -/
-
-private theorem norm_mixedDerivL_apply_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ)
-    (p : slab (E := E) a b) : ‖mixedDerivL r m f p‖ ≤ ‖f‖ :=
-  ((mixedDerivL r m f).norm_coe_le_norm p).trans (f.norm_mixedDerivL_le r m)
-
-/-- For `α ≤ 1`, every field `D_t^r D_x^m u` is `α`-Hölder in space with constant `3 ‖u‖`: at the
-top order by the Hölder condition, below it because the next spatial derivative is bounded. -/
-private theorem holderWith_mixedDerivL_space (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
-    (h : 2 * r + m ≤ k) (hα : α ≤ 1) (t : Icc a b) :
-    HolderWith (3 * ‖f‖₊) α fun x ↦ mixedDerivL r m f (slabMk x t) := by
-  rcases h.lt_or_eq with h | h
-  · have hlip : LipschitzWith ‖f‖₊ fun x ↦ mixedDerivL r m f (slabMk x t) :=
-      lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
-        (fun x _ ↦ (f.hasFDerivAt_mixedDerivL (by omega) t x).hasFDerivWithinAt) fun x _ ↦ by
-          rw [← NNReal.coe_le_coe, coe_nnNorm, ContinuousMultilinearMap.curryLeft_norm,
-            coe_nnNorm]
-          exact norm_mixedDerivL_apply_le f r (m + 1) _)
-    refine (holderOnWith_univ.1 ((hlip.lipschitzOnWith (s := univ)).holderOnWith_of_norm_le
-      (M := ‖f‖₊) (fun x _ ↦ norm_mixedDerivL_apply_le f r m _) hα)).mono (le_of_eq ?_)
-    ring
-  · have hslab : LipschitzWith 1 fun x : E ↦ slabMk (a := a) (b := b) x t :=
-      LipschitzWith.of_edist_le fun x y ↦ by
-        rw [edist_slabMk, edist_self, ENNReal.zero_rpow_of_pos (by norm_num), add_zero]
-    have hH := ((mixedDerivHolderL r m f).holderWith_nnnorm.comp_lipschitzWith_one hslab).mono
-      ((show ‖mixedDerivHolderL r m f‖₊ ≤ ‖f‖₊ from f.norm_mixedDerivHolderL_le r m).trans
-        (show ‖f‖₊ ≤ 3 * ‖f‖₊ from le_mul_of_one_le_left (by positivity) (by norm_num)))
-    simpa only [Function.comp_def, mixedDerivHolderL_apply f h] using hH
-
-/-- For `α ≤ 1`, every field `D_t^r D_x^m u` below the top order has `(1 + α) / 2`-Hölder time
-slices with constant `3 ‖u‖`. -/
-private theorem holderWith_mixedDerivL_time (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
-    (h : 2 * r + m + 1 ≤ k) (hα : α ≤ 1) (x : E) :
-    HolderWith (3 * ‖f‖₊) ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
-  rcases h.lt_or_eq with h | h
-  · refine (holderWith_mixedDerivL_slabMk f (by omega) hα x).mono ?_
-    have h₁ : ‖mixedDerivL (r + 1) m f‖₊ ≤ ‖f‖₊ := f.norm_mixedDerivL_le (r + 1) m
-    have h₂ : ‖mixedDerivL r m f‖₊ ≤ ‖f‖₊ := f.norm_mixedDerivL_le r m
-    calc _ ≤ ‖f‖₊ + 2 * ‖f‖₊ := by gcongr
-      _ = _ := by ring
-  · have hslice := (timeSliceL r m f x).holderWith_nnnorm.mono
-      ((show ‖timeSliceL r m f x‖₊ ≤ ‖timeSliceL r m f‖₊ from
-        lp.norm_apply_le_norm ENNReal.top_ne_zero _ x).trans
-        ((show ‖timeSliceL r m f‖₊ ≤ ‖f‖₊ from f.norm_timeSliceL_le r m).trans
-          (show ‖f‖₊ ≤ 3 * ‖f‖₊ from le_mul_of_one_le_left (by positivity) (by norm_num))))
-    rwa [coe_timeSliceL f h x] at hslice
-
-/-- For `α ≤ 1`, every field `D_t^r D_x^m u` is `α / 2`-Hölder in time with constant `5 ‖u‖`: at
-the top order by the parabolic Hölder condition, below it from the `(1 + α) / 2`-Hölder bound at
-time differences below one and the bound `2 ‖u‖` on the oscillation above. -/
-private theorem holderWith_mixedDerivL_time_half (f : ParabolicCkHolderSpace k α E F hab)
-    {r m : ℕ} (h : 2 * r + m ≤ k) (hα : α ≤ 1) (x : E) :
-    HolderWith (5 * ‖f‖₊) (α / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by
-  rcases h.lt_or_eq with h | h
-  · have hγ : α / 2 ≤ (1 + α) / 2 := by gcongr; exact le_add_self
-    have hH := holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le (D := 2 * ‖f‖₊)
-      (fun t _ s _ _ ↦
-        (holderWith_mixedDerivL_time f (r := r) (m := m) (by omega) hα x).dist_le t s)
-      (fun t _ s _ ↦ by
-        push_cast
-        linarith [dist_le_norm_add_norm (mixedDerivL r m f (slabMk x t))
-          (mixedDerivL r m f (slabMk x s)), norm_mixedDerivL_apply_le f r m (slabMk x t),
-          norm_mixedDerivL_apply_le f r m (slabMk x s)]) hγ one_pos)
-    refine hH.mono (le_of_eq ?_)
-    simp only [NNReal.one_rpow, mul_one]
-    ring
-  · intro t s
-    calc edist (mixedDerivL r m f (slabMk x t)) (mixedDerivL r m f (slabMk x s))
-        = edist (mixedDerivHolderL r m f (slabMk x t)) (mixedDerivHolderL r m f (slabMk x s)) := by
-          rw [mixedDerivHolderL_apply f h, mixedDerivHolderL_apply f h]
-      _ ≤ ‖mixedDerivHolderL r m f‖₊ * edist (slabMk x t) (slabMk x s) ^ (α : ℝ) :=
-          (mixedDerivHolderL r m f).holderWith_nnnorm _ _
-      _ ≤ ↑(5 * ‖f‖₊) * edist t s ^ ((α / 2 : ℝ≥0) : ℝ) := by
-          rw [edist_slabMk_same_space_rpow]
-          gcongr
-          exact (show ‖mixedDerivHolderL r m f‖₊ ≤ ‖f‖₊ from f.norm_mixedDerivHolderL_le r m).trans
-            (show ‖f‖₊ ≤ 5 * ‖f‖₊ from le_mul_of_one_le_left (by positivity) (by norm_num))
 
 /-! ### The spatial slices of the time derivatives -/
 
@@ -385,19 +308,6 @@ the field `D_t^r D_x^m` of the product. -/
 private def leibnizField (r m : ℕ) (p : slab (E := E) a b) : E [×m]→L[ℝ] H :=
   ∑ j ∈ Finset.range (r + 1), (r.choose j : ℝ) • prodField B u v j (r - j) m p
 
-/-- A binomially weighted sum of terms of norm at most `c` has norm at most `2^r c`. -/
-private theorem norm_sum_choose_smul_le {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {r : ℕ} {w : ℕ → V} {c : ℝ} (hw : ∀ j ∈ Finset.range (r + 1), ‖w j‖ ≤ c) :
-    ‖∑ j ∈ Finset.range (r + 1), (r.choose j : ℝ) • w j‖ ≤ 2 ^ r * c := by
-  refine (norm_sum_le _ _).trans ?_
-  calc ∑ j ∈ Finset.range (r + 1), ‖(r.choose j : ℝ) • w j‖
-      ≤ ∑ j ∈ Finset.range (r + 1), (r.choose j : ℝ) * c := by
-        refine Finset.sum_le_sum fun j hj ↦ ?_
-        rw [norm_smul, Real.norm_natCast]
-        exact mul_le_mul_of_nonneg_left (hw j hj) (Nat.cast_nonneg _)
-    _ = 2 ^ r * c := by
-        rw [← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose, Nat.cast_pow, Nat.cast_ofNat]
-
 private theorem leibnizField_sub (r m : ℕ) (p q : slab (E := E) a b) :
     leibnizField B u v r m p - leibnizField B u v r m q = ∑ j ∈ Finset.range (r + 1),
       (r.choose j : ℝ) • (prodField B u v j (r - j) m p - prodField B u v j (r - j) m q) := by
@@ -511,17 +421,19 @@ private theorem coe_productField {r m : ℕ} (h : 2 * r + m ≤ k) :
     ⇑(productField B u v r m) = leibnizField B u v r m := by
   rw [productField, dite_eq_left h, BoundedContinuousFunction.coe_ofNormedAddCommGroup]
 
+private theorem two_pow_mul_two_pow_le {r m : ℕ} (h : 2 * r + m ≤ k) :
+    (2 : ℝ) ^ r * 2 ^ m ≤ 2 ^ k := by
+  rw [← pow_add]
+  exact pow_le_pow_right₀ one_le_two (by omega)
+
 private theorem norm_productField_le {r m : ℕ} (h : 2 * r + m ≤ k) :
     ‖productField B u v r m‖ ≤ 2 ^ k * (‖B‖ * ‖u‖ * ‖v‖) := by
-  have hpow : (2 : ℝ) ^ r * 2 ^ m ≤ 2 ^ k := by
-    rw [← pow_add]
-    exact pow_le_pow_right₀ one_le_two (by omega)
   have hK : 0 ≤ ‖B‖ * ‖u‖ * ‖v‖ := by positivity
   refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
   rw [coe_productField B h]
   refine (norm_leibnizField_le B h p).trans ?_
   calc (2 : ℝ) ^ r * (‖B‖ * 2 ^ m * ‖u‖ * ‖v‖) = 2 ^ r * 2 ^ m * (‖B‖ * ‖u‖ * ‖v‖) := by ring
-    _ ≤ _ := mul_le_mul_of_nonneg_right hpow hK
+    _ ≤ _ := mul_le_mul_of_nonneg_right (two_pow_mul_two_pow_le h) hK
 
 variable (hα : α ≤ 1)
 
@@ -548,9 +460,18 @@ private theorem compParabolicCkHolderAux_apply (p : slab (E := E) a b) :
   rw [compParabolicCkHolderAux, mk_apply, coe_productField B (by omega)]
   simp [leibnizField, prodField_slabMk, timeDerivSlice, ContinuousMultilinearMap.curry0_apply]
 
+private theorem mixedDerivL_compParabolicCkHolderAux_eq {r m : ℕ} (h : 2 * r + m ≤ k) :
+    mixedDerivL r m (compParabolicCkHolderAux B u v hα) = productField B u v r m := by
+  rw [compParabolicCkHolderAux, mixedDerivL_mk _ _ _ _ h]
+
 private theorem mixedDerivL_compParabolicCkHolderAux {r m : ℕ} (h : 2 * r + m ≤ k) :
     ⇑(mixedDerivL r m (compParabolicCkHolderAux B u v hα)) = leibnizField B u v r m := by
-  rw [compParabolicCkHolderAux, mixedDerivL_mk _ _ _ _ h, coe_productField B h]
+  rw [mixedDerivL_compParabolicCkHolderAux_eq B hα h, coe_productField B h]
+
+private theorem norm_mixedDerivL_compParabolicCkHolderAux_le {r m : ℕ} (h : 2 * r + m ≤ k) :
+    ‖mixedDerivL r m (compParabolicCkHolderAux B u v hα)‖ ≤ 2 ^ k * (‖B‖ * ‖u‖ * ‖v‖) := by
+  rw [mixedDerivL_compParabolicCkHolderAux_eq B hα h]
+  exact norm_productField_le B h
 
 /-- At the two top orders, the family of time slices and the Hölder field of the product have norm
 at most `23 · 2^k ‖B‖ ‖u‖ ‖v‖`. -/
@@ -561,12 +482,6 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_compAux_le (r m : ℕ
   set w := compParabolicCkHolderAux B u v hα
   have hK : 0 ≤ ‖B‖ * ‖u‖ * ‖v‖ := by positivity
   have hK' : 0 ≤ (2 : ℝ) ^ k * (‖B‖ * ‖u‖ * ‖v‖) := by positivity
-  have hpow (h : 2 * r + m ≤ k) : (2 : ℝ) ^ r * 2 ^ m ≤ 2 ^ k := by
-    rw [← pow_add]
-    exact pow_le_pow_right₀ one_le_two (by omega)
-  have hsup (h : 2 * r + m ≤ k) : ‖mixedDerivL r m w‖ ≤ 2 ^ k * (‖B‖ * ‖u‖ * ‖v‖) := by
-    rw [show mixedDerivL r m w = productField B u v r m from mixedDerivL_mk _ _ _ _ h]
-    exact norm_productField_le B h
   by_cases hs : 2 * r + m + 1 = k
   · -- One order below the top, only the time slices enter.
     rw [mixedDerivHolderL_of_ne (by omega), zero_apply, norm_zero, add_zero]
@@ -574,8 +489,10 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_compAux_le (r m : ℕ
       (C := 2 ^ r * (2 * 3 * 2 ^ m * ‖B‖₊ * ‖u‖₊ * ‖v‖₊)) fun x ↦ ?_).trans ?_
     · rw [mixedDerivL_compParabolicCkHolderAux B hα (by omega)]
       exact holderWith_leibnizField_slice B hα hs x
-    · have h₁ := hsup (by omega)
-      have h₂ := mul_le_mul_of_nonneg_right (hpow (by omega)) hK
+    · have h₁ : ‖mixedDerivL r m w‖ ≤ 2 ^ k * (‖B‖ * ‖u‖ * ‖v‖) :=
+        norm_mixedDerivL_compParabolicCkHolderAux_le B hα (by omega)
+      have h₂ := mul_le_mul_of_nonneg_right (two_pow_mul_two_pow_le (k := k) (r := r) (m := m)
+        (by omega)) hK
       push_cast
       linarith
   · rw [timeSliceL_of_ne hs, zero_apply, norm_zero, zero_add]
@@ -589,8 +506,9 @@ private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_compAux_le (r m : ℕ
         (M := 2 ^ k * (‖B‖ * ‖u‖ * ‖v‖)) (by positivity)
         (fun p ↦ ?_) (hcoe ▸ holderWith_leibnizField B hα hh)).trans ?_
       · rw [hcoe, ← mixedDerivL_compParabolicCkHolderAux B hα hh.le]
-        exact ((mixedDerivL r m w).norm_coe_le_norm p).trans (hsup hh.le)
-      · have h₂ := mul_le_mul_of_nonneg_right (hpow hh.le) hK
+        exact ((mixedDerivL r m w).norm_coe_le_norm p).trans
+          (norm_mixedDerivL_compParabolicCkHolderAux_le B hα hh.le)
+      · have h₂ := mul_le_mul_of_nonneg_right (two_pow_mul_two_pow_le hh.le) hK
         push_cast
         linarith
     · rw [mixedDerivHolderL_of_ne hh, zero_apply, norm_zero]
@@ -604,11 +522,8 @@ private theorem norm_compParabolicCkHolderAux_le :
         refine Finset.sum_le_sum fun p hp ↦ ?_
         have h1 := norm_timeSliceL_add_norm_mixedDerivHolderL_compAux_le B hα (u := u) (v := v)
           p.1 p.2
-        have h2 : ‖mixedDerivL p.1 p.2 (compParabolicCkHolderAux B u v hα)‖ ≤
-            2 ^ k * (‖B‖ * ‖u‖ * ‖v‖) := by
-          rw [show mixedDerivL p.1 p.2 (compParabolicCkHolderAux B u v hα) =
-            productField B u v p.1 p.2 from mixedDerivL_mk _ _ _ _ (mem_parabolicDerivPairs.1 hp)]
-          exact norm_productField_le B (mem_parabolicDerivPairs.1 hp)
+        have h2 := norm_mixedDerivL_compParabolicCkHolderAux_le B hα (u := u) (v := v)
+          (mem_parabolicDerivPairs.1 hp)
         have h3 : 0 ≤ (2 : ℝ) ^ k * (‖B‖ * ‖u‖ * ‖v‖) := by positivity
         linarith
     _ = _ := by rw [Finset.sum_const, nsmul_eq_mul]; ring
