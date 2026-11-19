@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
@@ -71,14 +71,6 @@ private theorem add_const_apply_sub (f : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯
     (f + const a : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯) x - f x = a := by
   simp [const_apply]
 
-/-- The tolerance `exp (-x²)` falls below any positive bound. -/
-private theorem exists_exp_neg_sq_le {a : ℝ} (ha : 0 < a) : ∃ x : ℝ, Real.exp (-x ^ 2) ≤ a := by
-  refine ⟨Real.sqrt |Real.log a|, ?_⟩
-  rw [Real.sq_sqrt (abs_nonneg _)]
-  calc Real.exp (-|Real.log a|) ≤ Real.exp (Real.log a) :=
-        Real.exp_le_exp.mpr (by linarith [neg_abs_le (Real.log a)])
-    _ = a := Real.exp_log ha
-
 /-- **The functions within `exp (-x²)` of `f` form a strong neighbourhood of `f`.** -/
 theorem setOf_forall_abs_sub_lt_exp_neg_sq_mem_nhds_manifoldStrongWhitney
     (f : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯) :
@@ -96,7 +88,9 @@ theorem add_const_mem_setOf_forall_abs_sub_lt_exp_neg_sq_iff (f : C^n⟮𝓘(ℝ
   simp only [mem_ofPred_eq, add_const_apply_sub]
   refine ⟨fun h ↦ ?_, fun ha x ↦ by simpa [ha] using Real.exp_pos (-x ^ 2)⟩
   by_contra ha
-  obtain ⟨x, hx⟩ := exists_exp_neg_sq_le (abs_pos.mpr ha)
+  -- The tolerance `exp (-x²)` tends to zero, so it falls below `|a|`.
+  obtain ⟨x, hx⟩ := ((Real.tendsto_exp_neg_atTop_nhds_zero.comp
+    (tendsto_pow_atTop two_ne_zero)).eventually (ge_mem_nhds (abs_pos.mpr ha))).exists
   exact (h x).not_ge hx
 
 open scoped TauCeti.ManifoldWeakWhitney in
@@ -128,8 +122,8 @@ theorem setOf_forall_mem_Icc_abs_sub_lt_exp_neg_sq_mem_nhds_manifoldWeakWhitney
   simp only [Real.dist_eq] at h
   exact h
 
-/-- **The weak neighbourhood controlling `[-1, 1]` only contains nonzero constant
-perturbations.** -/
+/-- **The weak neighbourhood which controls only `[-1, 1]` contains every constant perturbation
+`f + a` with `|a| < exp (-1)`**, nonzero ones included. -/
 theorem add_const_mem_setOf_forall_mem_Icc_abs_sub_lt_exp_neg_sq (f : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯)
     {a : ℝ} (ha : |a| < Real.exp (-1)) :
     f + const a ∈
