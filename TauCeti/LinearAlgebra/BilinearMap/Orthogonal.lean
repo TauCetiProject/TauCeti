@@ -11,9 +11,10 @@ public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 /-!
 # Rescaling orthogonal families
 
-An indexed family `v` is orthogonal for a bilinear map `B` when `B (v i) (v j) = 0` for `i ≠ j`.
-Rescaling each member of the family by a scalar keeps it orthogonal; in particular rescaling the
-members of a basis by units, as in `Module.Basis.unitsSMul`, gives an orthogonal basis.
+An indexed family `v` is orthogonal for a sesquilinear map `B` when `B (v i) (v j) = 0` for
+`i ≠ j`. Rescaling each member of the family by a scalar keeps it orthogonal; in particular
+rescaling the members of a basis by units, as in `Module.Basis.unitsSMul`, gives an orthogonal
+basis.
 
 ## Main results
 
@@ -27,19 +28,20 @@ open Module
 
 namespace LinearMap.IsOrthoᵢ
 
-variable {R M N ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
-  [Module R N] {B : M →ₗ[R] M →ₗ[R] N}
+variable {R R₁ M M₁ ι : Type*} [CommSemiring R] [CommSemiring R₁] [AddCommMonoid M₁]
+  [Module R₁ M₁] [AddCommMonoid M] [Module R M] {I₁ I₁' : R₁ →+* R}
+  {B : M₁ →ₛₗ[I₁] M₁ →ₛₗ[I₁'] M}
 
 /-- Rescaling the members of an orthogonal family keeps it orthogonal. -/
-theorem smul {v : ι → M} (hv : B.IsOrthoᵢ v) (c : ι → R) : B.IsOrthoᵢ fun i => c i • v i := by
+theorem smul {v : ι → M₁} (hv : B.IsOrthoᵢ v) (c : ι → R₁) : B.IsOrthoᵢ fun i => c i • v i := by
   intro i j hij
-  simp only [Function.onFun, map_smul, LinearMap.smul_apply, LinearMap.isOrthoᵢ_def.1 hv i j hij,
+  simp only [Function.onFun, map_smulₛₗ, LinearMap.smul_apply, LinearMap.isOrthoᵢ_def.1 hv i j hij,
     smul_zero]
 
 /-- Rescaling the members of an orthogonal basis by units keeps it orthogonal. -/
-theorem unitsSMul {b : Basis ι R M} (hb : B.IsOrthoᵢ b) (c : ι → Rˣ) :
+theorem unitsSMul {b : Basis ι R₁ M₁} (hb : B.IsOrthoᵢ b) (c : ι → R₁ˣ) :
     B.IsOrthoᵢ (b.unitsSMul c) := by
-  have h : ⇑(b.unitsSMul c) = fun i => (c i : R) • b i :=
+  have h : ⇑(b.unitsSMul c) = fun i => (c i : R₁) • b i :=
     funext fun i => by rw [Basis.unitsSMul_apply, Units.smul_def]
   rw [h]
   exact hb.smul _
