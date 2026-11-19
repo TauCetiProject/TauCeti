@@ -88,6 +88,8 @@ the Morse lemma, and its derivatives are in `TauCeti.Analysis.Calculus.FDeriv.Di
 * `TauCeti.contDiff_diagonalQuadraticWittenEigenform`: the Hermite eigenforms are smooth.
 * `TauCeti.euclideanWittenLaplacian_diagonalQuadraticWittenEigenform`: the Hermite eigenforms
   satisfy `Δ_t Ψ_{k,s} = μ(k, s) Ψ_{k,s}`.
+* `TauCeti.diagonalQuadraticWittenEigenvalue_zero`: the eigenvalue of the ground state in each
+  degree.
 * `TauCeti.diagonalQuadraticWittenEigenvalue_nonneg`,
   `TauCeti.diagonalQuadraticWittenEigenvalue_eq_zero_iff`,
   `TauCeti.two_mul_mul_le_diagonalQuadraticWittenEigenvalue`: the eigenvalues are nonnegative,
@@ -248,6 +250,14 @@ theorem diagonalQuadraticWittenEigenvalue_nonneg (a : ι → ℝ) {t : ℝ} (ht 
     0 ≤ diagonalQuadraticWittenEigenvalue a t k s :=
   mul_nonneg ht (Finset.sum_nonneg fun _ _ ↦ hermiteSummand_nonneg _ _ _)
 
+/-- The eigenvalue of the ground state `k = 0` in degree `s` is the ground state energy
+`t ∑ᵢ |aᵢ|` of the oscillators plus the degree shift `t ∑ᵢ ±aᵢ`. -/
+theorem diagonalQuadraticWittenEigenvalue_zero (a : ι → ℝ) (t : ℝ) (s : Finset ι) :
+    diagonalQuadraticWittenEigenvalue a t 0 s =
+      ∑ i, t * |a i| + t * ∑ i, if i ∈ s then a i else -a i := by
+  simp only [diagonalQuadraticWittenEigenvalue_def, Pi.zero_apply, CharP.cast_eq_zero, mul_zero,
+    zero_add, mul_one, Finset.sum_add_distrib, mul_add, Finset.mul_sum]
+
 /-- The ground state `k = 0` in the degree `s = {i | aᵢ < 0}` has eigenvalue zero. -/
 @[simp]
 theorem diagonalQuadraticWittenEigenvalue_zero_filter_neg (a : ι → ℝ) (t : ℝ) :
@@ -314,7 +324,7 @@ theorem sum_sq_diagonalQuadraticWittenEigenform_zero_apply (a : ι → ℝ) {t :
   -- The square of the Gaussian factor.
   have h : (Real.exp (-(t * ∑ i, |a i| * x i ^ 2) / 2) / √(√Real.pi) ^ Fintype.card ι) ^ 2 =
       Real.exp (-(t * ∑ i, |a i| * x i ^ 2)) / √Real.pi ^ Fintype.card ι := by
-    rw [div_pow, ← Real.exp_nat_mul, pow_right_comm, Real.sq_sqrt (Real.sqrt_nonneg _)]
+    rw [div_pow, ← Real.exp_natCast_mul, pow_right_comm, Real.sq_sqrt (Real.sqrt_nonneg _)]
     congr 2
     ring
   rw [diagonalQuadraticWittenEigenform_zero_apply a ht, ← h]
