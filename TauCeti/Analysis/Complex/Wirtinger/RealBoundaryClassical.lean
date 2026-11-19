@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.RealBoundaryReflection
 import TauCeti.Analysis.Green.HalfPlane
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Complex.Wirtinger.Similarity.Examples
 import TauCeti.MeasureTheory.Integral.Bochner.Star
@@ -195,7 +196,7 @@ theorem hasWeakConjWirtingerDerivRealBoundaryOn_of_contDiffOn
   have hm : MeasurableSet ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
     Ω.isOpen.measurableSet.inter measurableSet_im_nonneg'
   have hD := hξ.continuousOn_fderivWithin
-    (by rw [inter_comm]; exact uniqueDiffOn_setOf_im_nonneg.inter Ω.isOpen) le_rfl
+    (by rw [inter_comm]; exact (uniqueDiffOn_setOfPred_le_im 0).inter Ω.isOpen) le_rfl
   have hηc : ContinuousOn
       (fun z ↦ (2 : ℂ)⁻¹ • (fderivWithin ℝ ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) z 1 +
         I • fderivWithin ℝ ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) z I))

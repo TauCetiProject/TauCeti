@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.Deriv.Complex
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.Normed.Group.CompactSupport
 
 /-!
@@ -106,12 +107,6 @@ section ClosedHalfPlane
 
 variable {g : ℂ → G} (hg : ContDiffOn ℝ 1 g {z : ℂ | 0 ≤ z.im}) (hgc : HasCompactSupport g)
 
-/-- The closed upper half-plane is a set of unique differentiability. -/
-theorem uniqueDiffOn_setOf_im_nonneg : UniqueDiffOn ℝ {z : ℂ | 0 ≤ z.im} := by
-  refine uniqueDiffOn_convex (convex_halfSpace_ge Complex.imLm.isLinear 0) ⟨I, ?_⟩
-  have ho : IsOpen {z : ℂ | 0 < z.im} := isOpen_lt continuous_const Complex.continuous_im
-  exact interior_maximal (t := {z : ℂ | 0 < z.im}) (fun z (hz : 0 < z.im) ↦ hz.le) ho (by simp)
-
 include hg in
 /-- The derivative within the closed half-plane is the derivative at points of the open one. -/
 private theorem hasFDerivAt_of_im_pos {z : ℂ} (hz : 0 < z.im) :
@@ -145,7 +140,7 @@ compact set of the closed half-plane. -/
 private theorem integrableOn_fderivWithin_apply {K : Set ℂ} (hK : IsCompact K)
     (hKH : K ⊆ {z : ℂ | 0 ≤ z.im}) (v : ℂ) :
     IntegrableOn (fun z ↦ fderivWithin ℝ g {z : ℂ | 0 ≤ z.im} z v) K :=
-  (((hg.continuousOn_fderivWithin uniqueDiffOn_setOf_im_nonneg le_rfl).mono hKH).clm_apply
+  (((hg.continuousOn_fderivWithin (uniqueDiffOn_setOfPred_le_im 0) le_rfl).mono hKH).clm_apply
     continuousOn_const).integrableOn_compact hK
 
 include hg hgc
