@@ -51,7 +51,8 @@ its point in every positive dimension (`Distribution.not_noOppositeCovectorsOn_d
 
 ## Main declarations
 
-* `Distribution.NoOppositeCovectorsOn S T K`: no opposite covectors of `WF(S)` and `WF(T)` over `K`.
+* `Distribution.NoOppositeCovectorsOn S T K`: no opposite covectors of `WF(S)` and `WF(T)` over `K`,
+  with `noOppositeCovectorsOn_iff`.
 * `Distribution.exists_mem_nhds_noOppositeCovectorsOn`: Hörmander's pointwise condition at `x`
   gives the condition on a neighbourhood of `x`.
 * `Distribution.NoOppositeCovectorsOn.exists_forall_one_add_norm_pow_mul_le`: under the condition
@@ -93,6 +94,11 @@ points `x, y ∈ K`. Over a single point this is Hörmander's condition for the 
 the support of a cutoff `φ` it is the condition under which `φ² S T` is constructed. -/
 def NoOppositeCovectorsOn (S T : 𝓓'(Ω, ℂ)) (K : Set E) : Prop :=
   ∀ x ∈ K, ∀ y ∈ K, ∀ ξ : E, (x, ξ) ∈ S.waveFrontSet → (y, -ξ) ∉ T.waveFrontSet
+
+/-- Unfolding `NoOppositeCovectorsOn`. -/
+theorem noOppositeCovectorsOn_iff : NoOppositeCovectorsOn S T K ↔
+    ∀ x ∈ K, ∀ y ∈ K, ∀ ξ : E, (x, ξ) ∈ S.waveFrontSet → (y, -ξ) ∉ T.waveFrontSet :=
+  Iff.rfl
 
 theorem NoOppositeCovectorsOn.mono (h : NoOppositeCovectorsOn S T K) (hK : K' ⊆ K) :
     NoOppositeCovectorsOn S T K' :=
