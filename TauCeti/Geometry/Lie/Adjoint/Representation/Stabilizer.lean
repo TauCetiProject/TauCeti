@@ -20,8 +20,10 @@ import TauCeti.RepresentationTheory.Continuous.Basic
 For `Y` in the Lie algebra of a Lie group `G`, the **adjoint stabilizer**
 `Z_G(Y) = {g ∈ G | Ad_g Y = Y}` is Mathlib's `Representation.stabilizer` of `Y` for
 `TauCeti.Lie.continuousAdjointRepresentation`. This file identifies it with the centralizer of the
-one-parameter subgroup `t ↦ exp (t Y)`, so it is a closed subgroup, and with the centralizer of
-its closure `TauCeti.Lie.closedOneParameterSubgroup`. It also shows that a commutative
+one-parameter subgroup `t ↦ exp (t Y)`, so it is a closed subgroup. For the adjoint
+representation `TauCeti.Lie.adjointRepresentation` on `GroupLieAlgebra I G`, it identifies the
+stabilizer of `ξ` with the centralizer of the closure `TauCeti.Lie.closedOneParameterSubgroup ξ`
+of the one-parameter subgroup of `ξ`. It also shows that a commutative
 subgroup lies in the adjoint stabilizer of each element of its Lie algebra. The analogous facts
 for the coadjoint representation are in
 `TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer`.

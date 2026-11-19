@@ -78,13 +78,12 @@ theorem IsMaximalTorus.centralizer_eq {T : Subgroup G} (hT : IsMaximalTorus T) :
 include I in
 /-- **An element centralizing a torus lies in a common torus with it.** In a compact connected
 finite-dimensional real Lie group, if `h` commutes with every element of a torus `S`, then some
-torus contains both `S` and `h`.
-
-The centralizer `K` of `h` is a compact Lie group containing `S` and a maximal torus `T` through
-`h`. A maximal torus of `K` containing `S` is conjugate in `K` to `T`, and the conjugating element
-commutes with `h`, so it contains `h`. -/
+torus contains both `S` and `h`. -/
 theorem IsTorus.exists_isTorus_le_mem_of_mem_centralizer {S : Subgroup G} (hS : IsTorus S) {h : G}
     (hh : h ∈ Subgroup.centralizer (S : Set G)) : ∃ R : Subgroup G, IsTorus R ∧ S ≤ R ∧ h ∈ R := by
+  -- The centralizer `K` of `h` is a compact Lie group containing `S` and a maximal torus `T`
+  -- through `h`. A maximal torus of `K` containing `S` is conjugate in `K` to `T`, and the
+  -- conjugating element commutes with `h`, so it contains `h`.
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
@@ -123,10 +122,11 @@ theorem IsTorus.exists_isTorus_le_mem_of_mem_centralizer {S : Subgroup G} (hS : 
 
 include I in
 /-- **The centralizer of a torus is connected.** In a compact connected finite-dimensional real Lie
-group, the centralizer of a torus `S` is connected: each element `h` of it lies in a torus
-containing `S`, which is a connected subset of the centralizer joining `1` to `h`. -/
+group, the centralizer of a torus `S` is connected. -/
 theorem IsTorus.isConnected_centralizer {S : Subgroup G} (hS : IsTorus S) :
     IsConnected (Subgroup.centralizer (S : Set G) : Set G) := by
+  -- Each element `h` of the centralizer lies in a torus containing `S`, which is a connected
+  -- subset of the centralizer joining `1` to `h`.
   set C := Subgroup.centralizer (S : Set G)
   refine ⟨⟨1, C.one_mem⟩, isPreconnected_of_forall 1 fun h hh ↦ ?_⟩
   obtain ⟨R, hR, hSR, hhR⟩ := hS.exists_isTorus_le_mem_of_mem_centralizer I hh
