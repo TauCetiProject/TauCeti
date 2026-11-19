@@ -239,15 +239,16 @@ end Sobolev
 
 section Cutoff
 
-variable {r : Symbol n ℂ ℂ m}
+variable {F : Type*} [AddCommGroup F] [Module ℂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousConstSMul ℂ F] {r : Symbol n ℂ ℂ m}
 
 /-- **Spatial cutoffs.** If `ψ`, of temperate growth, is `1` at every position at which the symbol
 `r` does not vanish identically, then `ψ Op(r) T = Op(r) T` for every tempered distribution `T`. -/
 theorem smulLeftCLM_quantizeTempered_of_eq_one (hr : r.IsUniform)
     {ψ : CoordinateSpace n → ℂ} (hψg : ψ.HasTemperateGrowth)
-    (hψ : ∀ x ξ, r.coefficient (x, ξ) ≠ 0 → ψ x = 1) (T : 𝓢'(CoordinateSpace n, ℂ)) :
-    TemperedDistribution.smulLeftCLM ℂ ψ (quantizeTempered ℂ r hr T) =
-      quantizeTempered ℂ r hr T := by
+    (hψ : ∀ x ξ, r.coefficient (x, ξ) ≠ 0 → ψ x = 1) (T : 𝓢'(CoordinateSpace n, F)) :
+    TemperedDistribution.smulLeftCLM F ψ (quantizeTempered F r hr T) =
+      quantizeTempered F r hr T := by
   -- `ψ Op(r) u = Op(r) u` pointwise, so `Op(r)ᵗ (ψ φ) = Op(r)ᵗ φ`.
   have hpt (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
       ψ x * quantizeUniformCLM r hr u x = quantizeUniformCLM r hr u x := by
