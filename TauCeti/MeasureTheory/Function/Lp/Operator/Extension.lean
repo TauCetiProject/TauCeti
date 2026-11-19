@@ -64,6 +64,16 @@ theorem Lp.simpleFunc.memLp_two [Fact (1 ≤ p)] (hp : p ≠ ∞) (f : Lp.simple
   · intro f g hf hg _ hmf hmg
     exact (hmf.add hmg).ae_eq (Lp.coeFn_add (f.toLp hf : Lp E p μ) (g.toLp hg)).symm
 
+/-- An `eLpNorm` bound `‖g‖_p ≤ B ‖u‖_p`, with `u` a representative of `v ∈ Lᵖ`, is the norm
+bound `‖g‖ ≤ B ‖v‖` in `Lᵖ`. -/
+theorem MemLp.norm_toLp_le_of_eLpNorm_le {F : Type*} [NormedAddCommGroup F] {g : α → F}
+    (hg : MemLp g p μ) {u : α → E} {v : Lp E p μ} (hv : u =ᵐ[μ] v) {B : ℝ≥0}
+    (h : eLpNorm g p μ ≤ B * eLpNorm u p μ) : ‖hg.toLp g‖ ≤ B * ‖v‖ := by
+  rw [Lp.norm_toLp, Lp.norm_def, ← eLpNorm_congr_ae hv, ← ENNReal.coe_toReal,
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
+    ((eLpNorm_congr_ae hv).trans_ne (Lp.eLpNorm_ne_top v))) h
+
 variable [NormedSpace ℝ E]
 
 /-- The `Lᵖ` functions which also belong to `L²`. -/
@@ -351,14 +361,9 @@ theorem norm_strongTypeOnIntersection_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C 
   have hfp : MemLp (lpTwoSubmodule.toL2 f : α → E) p μ :=
     (Lp.memLp f.1).ae_eq hf.coeFn_toLp.symm
   have hTp := memLp_apply_of_eLpNorm_le T C hT (lpTwoSubmodule.toL2 f) hfp
-  have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top hfp.ne)
-    (hT (lpTwoSubmodule.toL2 f) hfp)
-  have heq : eLpNorm (lpTwoSubmodule.toL2 f : α → E) p μ = eLpNorm (f.1 : α → E) p μ :=
-    eLpNorm_congr_ae hf.coeFn_toLp
   -- The bundled map applies by turning its `L²` value into the corresponding `Lᵖ` class.
   change ‖hTp.toLp (T (lpTwoSubmodule.toL2 f))‖ ≤ (C : ℝ) * ‖(f : Lp E p μ)‖
-  rw [Lp.norm_toLp, Lp.norm_def]
-  simpa [heq, ENNReal.toReal_mul] using h
+  exact hTp.norm_toLp_le_of_eLpNorm_le hf.coeFn_toLp (hT _ hfp)
 
 variable [CompleteSpace F]
 
@@ -523,15 +528,12 @@ theorem exists_continuousLinearMap_apply_ae_eq_smul_sub [SigmaFinite μ] [Fact (
     exact h₁
   have hjp (u : D) : MemLp (j u).1 p μ := (Lp.memLp u.1).ae_eq (hj₁ u).symm
   have hmem (u : D) : MemLp (fun x => b x • T (j u).1 x - T (j u).2 x) p μ :=
-    memLp_iff.2 ((hB _ _ (hjp u) (hj₂ u)).trans_lt
-      (ENNReal.mul_lt_top ENNReal.coe_lt_top (hjp u).eLpNorm_lt_top))
+    (hB _ _ (hjp u) (hj₂ u)).trans_lt (ENNReal.mul_lt_top (by finiteness) (hjp u))
   set c := memLpSmulSubmodule.smulSub T hmem
   have hc (u : D) : c u =ᵐ[μ] fun x => b x • T (j u).1 x - T (j u).2 x := (hmem u).coeFn_toLp
   have hnorm (u : D) : ‖c u‖ ≤ B * ‖D.subtype u‖ := by
-    rw [memLpSmulSubmodule.smulSub_apply, Lp.norm_toLp, Submodule.subtype_apply, Lp.norm_def,
-      ← eLpNorm_congr_ae (hj₁ u), ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top (hjp u).eLpNorm_ne_top)
-      (hB _ _ (hjp u) (hj₂ u))
+    rw [memLpSmulSubmodule.smulSub_apply, Submodule.subtype_apply]
+    exact (hmem u).norm_toLp_le_of_eLpNorm_le (hj₁ u) (hB _ _ (hjp u) (hj₂ u))
   have hdense : DenseRange D.subtype :=
     denseRange_subtype_val.2 (dense_memLpSmulSubmodule hb hp q)
   refine ⟨c.extendOfNorm D.subtype, LinearMap.opNorm_extendOfNorm_le hdense B.2 hnorm,
