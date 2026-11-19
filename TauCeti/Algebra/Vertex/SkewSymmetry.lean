@@ -61,6 +61,14 @@ namespace TauCeti.FormalVertexAxioms
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V] (A : FormalVertexAxioms R V)
 
+/-- Shifting the index of a `range` sum whose terms vanish at the top index `K`. -/
+private theorem sum_range_eq_add_sum_range_succ {M : Type*} [AddCommMonoid M] (F : ℕ → M)
+    {K : ℕ} (hF : F K = 0) :
+    ∑ l ∈ range K, F l = F 0 + ∑ l ∈ range K, F (l + 1) := by
+  have h := sum_range_succ F K
+  rw [sum_range_succ', hF, add_zero] at h
+  rw [← h, add_comm]
+
 /-- `ncoeff_field_apply_ncoeff_field_apply_vacuum_eq_sum` for the creation vectors
 `a₍₋ₖ₋₁₎|0⟩ = T^{(k)} a`. -/
 private theorem ncoeff_field_apply_ncoeff_field_apply_vacuum_neg_eq_sum [HasUniqueDiv V]
@@ -107,9 +115,8 @@ private theorem ncoeff_field_apply_ncoeff_field_apply_vacuum_neg_eq_sum [HasUniq
     simp only [map_zsmul, hTl, hl, ← hX]
     have h₂ : ∑ l ∈ range (K + 1), q • Ring.choose (q - 1) l • X (l + 1) =
         ∑ l ∈ range (K + 1), ((l : ℤ) * Ring.choose q l) • X l := by
-      rw [sum_range_succ, hXK, smul_zero, smul_zero, add_zero,
-        sum_range_succ' (fun l ↦ ((l : ℤ) * Ring.choose q l) • X l), Nat.cast_zero, zero_mul,
-        zero_smul, add_zero]
+      rw [sum_range_eq_add_sum_range_succ (fun l ↦ ((l : ℤ) * Ring.choose q l) • X l)
+        (by simp [hXK]), Nat.cast_zero, zero_mul, zero_smul, zero_add]
       exact sum_congr rfl fun l _ ↦ by rw [smul_smul, ← hchoose l]
     rw [h₂, ← sum_add_distrib]
     refine sum_congr rfl fun l _ ↦ ?_
@@ -132,7 +139,7 @@ theorem ncoeff_field_apply_ncoeff_field_apply_vacuum_eq_sum [HasUniqueDiv V]
     exact (sum_eq_zero fun l _ ↦ by
       rw [A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by omega), smul_zero]).symm
 
-/-- The coefficient of `z^{-p-N-1} w^{-q-1}` in `(z-w)ᴺ Y(b,w) Y(a,z)|0⟩` equals the
+/-- The coefficient of `z^{-p-1} w^{-q-1}` in `(z-w)ᴺ Y(b,w) Y(a,z)|0⟩` equals the
 corresponding coefficient of `(-1)ᴺ e^{zT} (w-z)ᴺ Y(b,w-z) a`. -/
 private theorem sum_antidiagonal_ncoeff_field_apply_ncoeff_field_apply_vacuum [HasUniqueDiv V]
     (a b : V) (N : ℕ) (q p : ℤ) {K : ℕ} (hK : -p ≤ K) :
@@ -177,13 +184,11 @@ private theorem sum_antidiagonal_ncoeff_field_apply_ncoeff_field_apply_vacuum [H
     -- Pascal's rule for `Ring.choose (q + 1)`, with the boundary term `W K = 0`.
     have hkey : ∑ l ∈ range K, Ring.choose (q + 1) l • W l =
         ∑ l ∈ range K, Ring.choose q l • W l + ∑ l ∈ range K, Ring.choose q l • W (l + 1) := by
-      rcases K with _ | K
-      · simp
-      have hWK : W (K + 1) = 0 := by
+      have hWK : W K = 0 := by
         rw [hW]
-        exact A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by push_cast; omega)
-      rw [sum_range_succ', sum_range_succ' (fun l ↦ Ring.choose q l • W l),
-        sum_range_succ (fun l ↦ Ring.choose q l • W (l + 1)), hWK, smul_zero, add_zero]
+        exact A.ncoeff_field_apply_vacuum_of_nonneg _ _ (by omega)
+      rw [sum_range_eq_add_sum_range_succ (fun l ↦ Ring.choose (q + 1) l • W l) (by simp [hWK]),
+        sum_range_eq_add_sum_range_succ (fun l ↦ Ring.choose q l • W l) (by simp [hWK])]
       simp only [Ring.choose_succ_succ, Ring.choose_zero_right, add_smul, sum_add_distrib]
       abel
     rw [hkey, pow_succ]
@@ -209,12 +214,15 @@ theorem ncoeff_field_apply_eq_sum_ncoeff_field_apply_vacuum [HasUniqueDiv V] (a 
   · rw [mem_range] at hs hsM
     simp [hM (-1 + N - ↑(K - 1 - s)) (by omega)]
   · rw [mem_range] at hs
-    have hchoose : Ring.choose (-1 : ℤ) (K - 1 - s) = ((K - 1 - s : ℕ) : ℤ).negOnePow := by
-      simpa [Ring.choose_natCast, Units.smul_def] using Ring.choose_neg (1 : ℤ) (K - 1 - s)
+    -- the sign `(-1)ᴺ (-1 choose (K - 1 - s))` is `(-1)^{n+s+1}`
+    have hsign : (-1 : ℤ) ^ N * Ring.choose (-1 : ℤ) (K - 1 - s) = (n + s + 1).negOnePow := by
+      have hchoose : Ring.choose (-1 : ℤ) (K - 1 - s) = ((K - 1 - s : ℕ) : ℤ).negOnePow := by
+        simpa [Ring.choose_natCast, Units.smul_def] using Ring.choose_neg (1 : ℤ) (K - 1 - s)
+      rw [hchoose, ← Int.coe_negOnePow_natCast, ← Units.val_mul, ← Int.negOnePow_add,
+        Units.val_inj, Int.negOnePow_eq_iff]
+      exact ⟨(N : ℤ) - n - s - 1, by omega⟩
     rw [show -1 + (N : ℤ) - ↑(K - 1 - s) = n + s by omega,
-      show n - (N : ℤ) + ↑(K - 1 - s) = -s - 1 by omega, hchoose, smul_smul,
-      ← Int.coe_negOnePow_natCast, Units.smul_def, ← Units.val_mul, ← Int.negOnePow_add,
-      (Int.negOnePow_eq_iff _ (n + s + 1)).mpr ⟨(N : ℤ) - n - s - 1, by omega⟩]
+      show n - (N : ℤ) + ↑(K - 1 - s) = -s - 1 by omega, smul_smul, hsign, Units.smul_def]
 
 /-- **Skew symmetry** `Y(a,z) b = e^{zT} Y(b,-z) a` over a `ℚ`-module, in modes:
 `a₍ₙ₎ b = ∑_{s < M} (-1)^{n+s+1} Tˢ (b₍ₙ₊ₛ₎ a) / s!` whenever `b₍ₖ₎ a = 0` for all `k ≥ n + M`. -/
