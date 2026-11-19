@@ -270,16 +270,6 @@ section Thin
 
 variable [Quiver.IsThin C]
 
-/-- In a thin category, the restrictions of the factors of an ordered Čech cochain at two equal
-increasing tuples agree. -/
-private lemma strictMonoCechComplexπ_comp_map_eq [Preorder ι] (P : Cᵒᵖ ⥤ A) {n : ℕ} {W : C}
-    {b b' : Fin (n + 1) → ι} (hb : StrictMono b) (hb' : StrictMono b') (h : b = b')
-    (f : W ⟶ ∏ᶜ fun j ↦ U (b j)) (g : W ⟶ ∏ᶜ fun j ↦ U (b' j)) :
-    strictMonoCechComplexπ U P ⟨b, hb⟩ ≫ P.map f.op =
-      strictMonoCechComplexπ U P ⟨b', hb'⟩ ≫ P.map g.op := by
-  subst h
-  rw [Subsingleton.elim f g]
-
 section LinearOrder
 
 variable [LinearOrder ι]
@@ -311,8 +301,9 @@ theorem fromStrictMonoCechComplex_comp_cechReverse :
       Preadditive.zsmul_comp, smul_smul, neg_one_pow_card_univ_inversions_comp_rev hk,
       Category.assoc, ← P.map_comp, ← op_comp]
     congr 1
-    exact strictMonoCechComplexπ_comp_map_eq U P _ _
-      (Tuple.comp_sort_eq_comp_sort_of_range_eq hk' (Fin.rev_surjective.range_comp k)) _ _
+    exact strictMonoCechComplexπ_comp_map_eq U P
+      (Subtype.ext (Tuple.comp_sort_eq_comp_sort_of_range_eq hk' (Fin.rev_surjective.range_comp k)))
+      _ _
   · have hk' : ¬Function.Injective (k ∘ Fin.rev) := fun h ↦
       hk (by simpa [Function.comp_assoc] using h.comp Fin.rev_injective)
     rw [reassoc_of% fromStrictMono_f_comp_factor_of_not_injective U P hk',
