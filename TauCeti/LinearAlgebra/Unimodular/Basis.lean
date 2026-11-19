@@ -110,6 +110,14 @@ theorem LinearMap.quotientSpanSingletonEquivKer_apply_mk {f : M →ₗ[R] R} {v 
   rw [hmk]
   exact congrArg Subtype.val (Submodule.quotientEquivOfIsCompl_apply_mk_right _ ⟨_, hx⟩)
 
+/-- The inverse of `LinearMap.quotientSpanSingletonEquivKer` sends a vector of `ker f` to its class
+in `M ⧸ R ∙ v`. -/
+@[simp]
+theorem LinearMap.quotientSpanSingletonEquivKer_symm_apply {f : M →ₗ[R] R} {v : M}
+    (hf : f v = 1) (y : LinearMap.ker f) :
+    (quotientSpanSingletonEquivKer hf).symm y = Submodule.Quotient.mk (y : M) :=
+  Submodule.quotientEquivOfIsCompl_symm_apply _ _ _ y
+
 end Ring
 
 namespace Module.IsUnimodular
