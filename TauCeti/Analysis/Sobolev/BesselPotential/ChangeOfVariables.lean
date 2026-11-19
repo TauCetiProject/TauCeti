@@ -16,8 +16,8 @@ For `1 < p < ∞` and a natural order `k`, the real Bessel-potential functions
 `TemperedDistribution.realSobolevFunctions E k p` are preserved by precomposition with a change of
 variables of order `k` of the whole space (`TauCeti.Wkp.IsChangeOfVariables`): a `Cᵏ`
 injective map with bounded derivatives of orders `1` through `k` and Jacobian determinant bounded
-away from zero. In particular they are invariant under translations and under linear
-automorphisms of `E`.
+away from zero. In particular they are invariant under translations, dilations and
+linear automorphisms of `E`.
 
 The proof passes through the weak-derivative Sobolev space `W^{k,p}(E)`, which has the same real
 elements by Calderón's theorem (`MeasureTheory.Lp.memSobolev_natCast_iff_exists_wkp_value_eq`), and
@@ -29,7 +29,7 @@ on which precomposition is the bounded operator `TauCeti.Wkp.compL`.
   variables of order `k`.
 * `TemperedDistribution.comp_add_mem_realSobolevFunctions_natCast`: translations.
 * `TemperedDistribution.comp_continuousLinearEquiv_mem_realSobolevFunctions_natCast`: linear
-  automorphisms.
+  automorphisms, and `TemperedDistribution.comp_smul_mem_realSobolevFunctions_natCast`: dilations.
 -/
 
 public section
@@ -89,5 +89,13 @@ theorem comp_continuousLinearEquiv_mem_realSobolevFunctions_natCast (hp : 1 < p)
     (fun x ↦ f (e x)) ∈ realSobolevFunctions E k p :=
   comp_mem_realSobolevFunctions_natCast hp hp_top
     (Wkp.IsChangeOfVariables.continuousLinearEquiv e (Set.mapsTo_univ _ _)) hf
+
+/-- For `1 < p < ∞` and a natural order `k`, the real Bessel-potential functions of order `k` are
+invariant under dilations `x ↦ c • x` by a nonzero scalar. -/
+theorem comp_smul_mem_realSobolevFunctions_natCast (hp : 1 < p) (hp_top : p ≠ ∞) {k : ℕ}
+    {c : ℝ} (hc : c ≠ 0) {f : E → ℝ} (hf : f ∈ realSobolevFunctions E k p) :
+    (fun x ↦ f (c • x)) ∈ realSobolevFunctions E k p :=
+  comp_continuousLinearEquiv_mem_realSobolevFunctions_natCast hp hp_top
+    (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)) hf
 
 end TemperedDistribution
