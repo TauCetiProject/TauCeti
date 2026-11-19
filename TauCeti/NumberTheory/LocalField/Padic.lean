@@ -51,7 +51,8 @@ concrete p-adic norm and valuation APIs.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
   the integer ring, `TauCeti.Padic.irreducible_intCast_mul_natCast_self` that so is its product
   with an integer prime to `p`, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a
-  uniformizer of `ℚ_[p]`.
+  uniformizer of `ℚ_[p]`. `TauCeti.padicPrimeUnit p` is `p` as a unit of `ℚ_[p]`, and
+  `TauCeti.normalizedValuation_padicPrimeUnit` records that its normalized valuation is one.
 * `TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le`: `𝓂 ^ i` is the disc `‖x‖ ≤ p ^ (-i)`.
 * `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
 * `TauCeti.Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow`: `p ^ n 𝒪[ℚ_[p]] = 𝓂 ^ n`.
@@ -328,3 +329,21 @@ theorem spanSingleton_natCast_pow_eq_maximalIdeal_zpow (n : ℕ) :
     ← Units.spanSingleton_eq_maximalIdeal_zpow, Units.val_mk0]
 
 end TauCeti.Padic
+
+namespace TauCeti
+
+/-- The residue prime `p` as a unit of `ℚ_[p]`. -/
+noncomputable def padicPrimeUnit : ℚ_[p]ˣ :=
+  Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)
+
+/-- The unit `TauCeti.padicPrimeUnit p` is `p`. -/
+@[simp]
+theorem coe_padicPrimeUnit : (padicPrimeUnit p : ℚ_[p]) = p :=
+  (rfl)
+
+/-- The unit `p` of `ℚ_[p]` has normalized valuation one. -/
+theorem normalizedValuation_padicPrimeUnit :
+    normalizedValuation ℚ_[p] (padicPrimeUnit p) = .ofAdd 1 :=
+  (isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p)
+
+end TauCeti

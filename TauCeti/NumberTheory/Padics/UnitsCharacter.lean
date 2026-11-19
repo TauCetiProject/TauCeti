@@ -78,6 +78,12 @@ def padicIntUnitsInclusion : ℤ_[p]ˣ →ₜ* ℚ_[p]ˣ :=
 
 variable {p}
 
+/-- The `p`-adic valuation is continuous on `ℚ_pˣ`: it is the normalized valuation, which is
+locally constant. -/
+theorem continuous_padicValuation_units : Continuous fun x : ℚ_[p]ˣ ↦ (x : ℚ_[p]).valuation := by
+  simp_rw [← Padic.toAdd_normalizedValuation_eq_valuation]
+  exact continuous_of_discreteTopology.comp (continuous_normalizedValuation ℚ_[p])
+
 /-- The inclusion `ℤ_pˣ → ℚ_pˣ` is the identity on underlying `p`-adic numbers. -/
 @[simp]
 theorem coe_padicIntUnitsInclusion_apply (u : ℤ_[p]ˣ) :
@@ -89,24 +95,19 @@ variable (p) in
 continuous character `ℚ_pˣ → ℤ_pˣ`. It sends `p` to `1` and is the identity on `ℤ_pˣ`
 (`TauCeti.padicUnitPart_apply_of_eq`). -/
 def padicUnitPart : ℚ_[p]ˣ →ₜ* ℤ_[p]ˣ where
-  toFun x := PadicInt.mkUnits (u := x * (p : ℚ_[p]) ^ (-(x : ℚ_[p]).valuation)) <| by
-    have hp : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero
-    rw [norm_mul, norm_zpow, Padic.norm_p, Padic.norm_eq_zpow_neg_valuation x.ne_zero, inv_zpow',
-      neg_neg, ← zpow_add₀ hp, neg_add_cancel, zpow_zero]
+  toFun x := PadicInt.mkUnits (Padic.norm_mul_zpow_neg_valuation x.ne_zero)
   map_one' := Units.ext <| PadicInt.ext <| by simp
   map_mul' x y := Units.ext <| PadicInt.ext <| by
-    simp only [Units.val_mul, PadicInt.coe_mul, PadicInt.mkUnits_eq]
-    rw [Padic.valuation_mul x.ne_zero y.ne_zero, neg_add,
-      zpow_add₀ (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero), mul_mul_mul_comm]
+    simp only [Units.val_mul, PadicInt.coe_mul, PadicInt.mkUnits_eq,
+      Padic.valuation_mul x.ne_zero y.ne_zero, neg_add,
+      zpow_add₀ (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero : (p : ℚ_[p]) ≠ 0)]
+    ring
   continuous_toFun := by
     refine Units.isOpenEmbedding_val.isEmbedding.continuous_iff.2 <|
       continuous_induced_rng.2 ?_
-    -- The valuation is locally constant on `ℚ_pˣ`, being the normalized valuation.
-    have hv : Continuous fun x : ℚ_[p]ˣ ↦ (x : ℚ_[p]).valuation := by
-      simp_rw [← Padic.toAdd_normalizedValuation_eq_valuation]
-      exact continuous_of_discreteTopology.comp (continuous_normalizedValuation ℚ_[p])
     exact (Units.continuous_val.mul
-      ((continuous_of_discreteTopology (f := fun n : ℤ ↦ (p : ℚ_[p]) ^ (-n))).comp hv))
+      ((continuous_of_discreteTopology (f := fun n : ℤ ↦ (p : ℚ_[p]) ^ (-n))).comp
+        continuous_padicValuation_units))
 
 /-- The unit part of `x` is `x p ^ (-v(x))`. -/
 @[simp]
@@ -135,9 +136,7 @@ theorem padicUnitPart_apply_of_eq {x : ℚ_[p]ˣ} {k : ℤ} {u : ℤ_[p]ˣ}
 
 /-- `x|x|` sends `p` to `1`. -/
 @[simp]
-theorem padicUnitPart_mk0_natCast :
-    padicUnitPart p (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) =
-      1 :=
+theorem padicUnitPart_padicPrimeUnit : padicUnitPart p (padicPrimeUnit p) = 1 :=
   padicUnitPart_apply_of_eq (k := 1) (by simp)
 
 /-- `x|x|` is the identity on `ℤ_pˣ`. -/
@@ -149,32 +148,24 @@ theorem padicUnitPart_padicIntUnitsInclusion (u : ℤ_[p]ˣ) :
 /-- **Homomorphisms out of `ℚ_pˣ`.** A homomorphism from `ℚ_pˣ` to a monoid is determined by its
 value at `p` and its restriction to `ℤ_pˣ`. -/
 theorem padicUnits_hom_ext {M : Type*} [Monoid M] {f g : ℚ_[p]ˣ →* M}
-    (hp : f (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) =
-      g (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)))
+    (hp : f (padicPrimeUnit p) = g (padicPrimeUnit p))
     (hu : ∀ u : ℤ_[p]ˣ, f (padicIntUnitsInclusion p u) = g (padicIntUnitsInclusion p u)) :
     f = g := by
   -- Pass to the units of `M`, where integer powers make sense.
   suffices f.toHomUnits = g.toHomUnits from
     MonoidHom.ext fun x ↦ congrArg Units.val (DFunLike.congr_fun this x)
   ext1 x
-  have hx : x = Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero) ^
-      (x : ℚ_[p]).valuation * padicIntUnitsInclusion p (padicUnitPart p x) :=
+  have hx : x = padicPrimeUnit p ^ (x : ℚ_[p]).valuation *
+      padicIntUnitsInclusion p (padicUnitPart p x) :=
     Units.ext <| by simpa using coe_eq_zpow_valuation_mul_padicUnitPart x
-  have hp' : f.toHomUnits
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) =
-      g.toHomUnits (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) :=
-    Units.ext hp
-  have hu' (u : ℤ_[p]ˣ) : f.toHomUnits (padicIntUnitsInclusion p u) =
-      g.toHomUnits (padicIntUnitsInclusion p u) :=
-    Units.ext (hu u)
-  rw [hx, map_mul, map_mul, map_zpow, map_zpow, hp', hu']
+  rw [hx, map_mul, map_mul, map_zpow, map_zpow]
+  exact congr_arg₂ (· ^ _ * ·) (Units.ext hp) (Units.ext (hu _))
 
 /-- On `ℚ_p` the unramified character `μ_a` sends `p` to `a`. -/
 @[simp high]
-theorem unramifiedCharacter_padic_apply_mk0_natCast {G : Type*} [Group G] [TopologicalSpace G]
-    (a : G) : unramifiedCharacter ℚ_[p] a
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) = a :=
-  unramifiedCharacter_apply_of_isUniformizer a (Padic.isUniformizer_natCast_self p)
+theorem unramifiedCharacter_padicPrimeUnit {G : Type*} [Group G] [TopologicalSpace G]
+    (a : G) : unramifiedCharacter ℚ_[p] a (padicPrimeUnit p) = a := by
+  rw [unramifiedCharacter_apply, normalizedValuation_padicPrimeUnit, toAdd_ofAdd, zpow_one]
 
 end TauCeti
 
@@ -188,8 +179,7 @@ variable {p : ℕ} [Fact p.Prime] {G : Type*} [CommGroup G] [TopologicalSpace G]
 product of the unramified character of `δ(p)` and its restriction to `ℤ_pˣ` composed with
 `x|x|`: `δ(x) = δ(p) ^ v(x) · δ(x |x|)`. -/
 theorem eq_unramifiedCharacter_mul_comp_padicUnitPart (δ : ℚ_[p]ˣ →ₜ* G) :
-    δ = unramifiedCharacter ℚ_[p]
-        (δ (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero))) *
+    δ = unramifiedCharacter ℚ_[p] (δ (padicPrimeUnit p)) *
       (δ.comp (padicIntUnitsInclusion p)).comp (padicUnitPart p) := by
   refine ContinuousMonoidHom.toMonoidHom_injective <| padicUnits_hom_ext ?_ fun u ↦ ?_
   · simp
@@ -207,20 +197,18 @@ values in a commutative topological group `G` is the same as a pair of an elemen
 continuous character `δ|_{ℤ_pˣ}` of `ℤ_pˣ`; the inverse sends `(a, κ)` to `μ_a · (κ ∘ x|x|)`. For
 `G = Λˣ` the second factor is the weight space `TauCeti.WeightSpace p Λ`. -/
 def padicUnitsCharacterEquiv : (ℚ_[p]ˣ →ₜ* G) ≃* G × (ℤ_[p]ˣ →ₜ* G) where
-  toFun δ := (δ (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)),
-    δ.comp (padicIntUnitsInclusion p))
+  toFun δ := (δ (padicPrimeUnit p), δ.comp (padicIntUnitsInclusion p))
   invFun aκ := unramifiedCharacter ℚ_[p] aκ.1 * aκ.2.comp (padicUnitPart p)
   left_inv δ := δ.eq_unramifiedCharacter_mul_comp_padicUnitPart.symm
   right_inv aκ := by
     refine Prod.ext (by simp) (ContinuousMonoidHom.ext fun u ↦ ?_)
     simp [PadicInt.valuation_eq_zero_of_isUnit u.isUnit]
-  map_mul' δ δ' := rfl
+  map_mul' δ δ' := Prod.ext rfl (ContinuousMonoidHom.ext fun _ ↦ rfl)
 
 /-- The first component of `TauCeti.padicUnitsCharacterEquiv` is the value at `p`. -/
 @[simp]
 theorem padicUnitsCharacterEquiv_apply_fst (δ : ℚ_[p]ˣ →ₜ* G) :
-    (padicUnitsCharacterEquiv p G δ).1 =
-      δ (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) :=
+    (padicUnitsCharacterEquiv p G δ).1 = δ (padicPrimeUnit p) :=
   (rfl)
 
 /-- The second component of `TauCeti.padicUnitsCharacterEquiv` is the restriction to `ℤ_pˣ`. -/

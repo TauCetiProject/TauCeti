@@ -94,6 +94,7 @@ theorem unramifiedCharacter_one : unramifiedCharacter K (1 : G) = 1 := by
   simp
 
 /-- **Unramified characters multiply.** For a commutative group `G`, `μ_{ab} = μ_a μ_b`. -/
+@[simp]
 theorem unramifiedCharacter_mul {G : Type*} [CommGroup G] [TopologicalSpace G]
     [ContinuousMul G] (a b : G) :
     unramifiedCharacter K (a * b) = unramifiedCharacter K a * unramifiedCharacter K b := by
@@ -121,17 +122,17 @@ theorem exists_eq_unramifiedCharacter_iff {δ : Kˣ →ₜ* G} :
   refine ⟨?_, fun hδ ↦ ?_⟩
   · rintro ⟨a, rfl⟩ u hu
     exact unramifiedCharacter_apply_of_valuation_eq_one a hu
-  · obtain ⟨π, hπ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
+  · obtain ⟨π, hπ⟩ := exists_isUniformizer K
     exact ⟨δ π, ContinuousMonoidHom.ext <| apply_eq_unramifiedCharacter_of_isUniformizer
-      (δ := δ.toMonoidHom) hδ ((isUniformizer_def π).2 hπ)⟩
+      (δ := δ.toMonoidHom) hδ hπ⟩
 
 variable (K) in
 /-- An unramified character determines its value at a uniformizer, so `a ↦ μ_a` is injective. -/
 theorem unramifiedCharacter_injective :
     Function.Injective (unramifiedCharacter K : G → Kˣ →ₜ* G) := by
   intro a b h
-  obtain ⟨π, hπ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
-  rw [← unramifiedCharacter_apply_of_isUniformizer a ((isUniformizer_def π).2 hπ),
-    ← unramifiedCharacter_apply_of_isUniformizer b ((isUniformizer_def π).2 hπ), h]
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  rw [← unramifiedCharacter_apply_of_isUniformizer a hπ,
+    ← unramifiedCharacter_apply_of_isUniformizer b hπ, h]
 
 end TauCeti

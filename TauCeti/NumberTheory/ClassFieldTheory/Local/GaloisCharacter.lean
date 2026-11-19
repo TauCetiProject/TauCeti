@@ -87,8 +87,7 @@ theorem comp_geometricArtinMap_eq_unramifiedCharacter_iff
     (∀ x : Kˣ, ψ (geometricArtinMap K x) = unramifiedCharacter K a x) ↔
       (∀ σ ∈ inertiaSubgroup K, ψ σ = 1) ∧
         ∀ σ : Field.absoluteGaloisGroup K, IsArithFrobeniusLift K σ⁻¹ → ψ σ = a := by
-  obtain ⟨π, hπ⟩ := normalizedValuation_surjective (K := K) (.ofAdd 1)
-  rw [← isUniformizer_def] at hπ
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
   obtain ⟨τ, hτ⟩ := QuotientGroup.mk_surjective (geometricArtinMap K π)
   have hτF : IsArithFrobeniusLift K τ⁻¹ :=
     isArithFrobeniusLift_inv_of_mk_eq_geometricArtinMap_uniformizer K hπ τ hτ
@@ -156,9 +155,7 @@ that sends the geometric Artin symbol of `x` to `δ(x)`
 def padicGaloisCharacter (δ : ℚ_[p]ˣ →ₜ* A) :
     Field.absoluteGaloisGroupAbelianization ℚ_[p] →ₜ* A :=
   (δ.comp (padicIntUnitsInclusion p)).comp (abelianizedLocalCyclotomicCharacter p ℚ_[p]) *
-    (zHat.lift
-      (δ (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)))⁻¹).comp
-      (unramifiedCoordinate ℚ_[p])
+    (zHat.lift (δ (padicPrimeUnit p))⁻¹).comp (unramifiedCoordinate ℚ_[p])
 
 /-- **The Galois character of `δ` corresponds to `δ`**: it sends the geometric Artin symbol of `x`
 to `δ(x)`. -/
@@ -184,6 +181,7 @@ theorem padicGaloisCharacter_artinMap (δ : ℚ_[p]ˣ →ₜ* A) (x : ℚ_[p]ˣ)
     padicGaloisCharacter_geometricArtinMap]
 
 /-- **The correspondence is multiplicative.** -/
+@[simp]
 theorem padicGaloisCharacter_mul (δ δ' : ℚ_[p]ˣ →ₜ* A) :
     padicGaloisCharacter (δ * δ') = padicGaloisCharacter δ * padicGaloisCharacter δ' :=
   (eq_padicGaloisCharacter fun x ↦ by simp).symm
@@ -200,14 +198,21 @@ theorem padicGaloisCharacter_padicUnitPart :
     padicGaloisCharacter (padicUnitPart p) = abelianizedLocalCyclotomicCharacter p ℚ_[p] :=
   (eq_padicGaloisCharacter (abelianizedLocalCyclotomicCharacter_geometricArtinMap_padic p)).symm
 
-/-- **The Galois character of an unramified character** `μ_a` is trivial on inertia and sends
-every geometric Frobenius to `a`. -/
-theorem padicGaloisCharacter_unramifiedCharacter (a : A) :
-    (∀ σ ∈ inertiaSubgroup ℚ_[p], padicGaloisCharacter (unramifiedCharacter ℚ_[p] a) σ = 1) ∧
-      ∀ σ : Field.absoluteGaloisGroup ℚ_[p], IsArithFrobeniusLift ℚ_[p] σ⁻¹ →
-        padicGaloisCharacter (unramifiedCharacter ℚ_[p] a) σ = a :=
-  comp_geometricArtinMap_eq_unramifiedCharacter_iff
+/-- **The Galois character of an unramified character** `μ_a` is trivial on inertia. -/
+theorem padicGaloisCharacter_unramifiedCharacter_apply_of_mem_inertiaSubgroup (a : A)
+    {σ : Field.absoluteGaloisGroup ℚ_[p]} (hσ : σ ∈ inertiaSubgroup ℚ_[p]) :
+    padicGaloisCharacter (unramifiedCharacter ℚ_[p] a) σ = 1 :=
+  (comp_geometricArtinMap_eq_unramifiedCharacter_iff
     (ψ := (unramifiedCharacter ℚ_[p] a).padicGaloisCharacter.toMonoidHom) |>.1
-    (padicGaloisCharacter_geometricArtinMap _)
+    (padicGaloisCharacter_geometricArtinMap _)).1 σ hσ
+
+/-- **The Galois character of an unramified character** `μ_a` sends every geometric Frobenius
+to `a`. -/
+theorem padicGaloisCharacter_unramifiedCharacter_apply_of_isArithFrobeniusLift_inv (a : A)
+    {σ : Field.absoluteGaloisGroup ℚ_[p]} (hσ : IsArithFrobeniusLift ℚ_[p] σ⁻¹) :
+    padicGaloisCharacter (unramifiedCharacter ℚ_[p] a) σ = a :=
+  (comp_geometricArtinMap_eq_unramifiedCharacter_iff
+    (ψ := (unramifiedCharacter ℚ_[p] a).padicGaloisCharacter.toMonoidHom) |>.1
+    (padicGaloisCharacter_geometricArtinMap _)).2 σ hσ
 
 end ContinuousMonoidHom
