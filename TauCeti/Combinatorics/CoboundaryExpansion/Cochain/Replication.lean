@@ -17,9 +17,6 @@ import Mathlib.Data.Fintype.Prod
 with value `1` inside clusters and a seed value between them, multiplies the defect of
 `Cochain.ofLt` on the complete complex by `(Fintype.card ι) ^ 3`, for any group and any group norm.
 
-This is the `ofLt` form of that count. The pullback form `Cochain.defect_replicate` is in
-`TauCeti.Combinatorics.CoboundaryExpansion.Replication`.
-
 ## References
 
 * Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
