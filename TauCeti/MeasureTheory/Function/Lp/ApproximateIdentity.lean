@@ -68,8 +68,6 @@ the set where convergence is measured.
   for bounded fields tested against integrable fields through a continuous bilinear map.
 * `TauCeti.tendsto_eLpNorm_normed_convolution_sub_restrict`: finite-`Lᵖ` convergence on a set
   from `Lᵖ` integrability on a positive thickening.
-* `MeasureTheory.Lp.exists_seq_contDiff_tsupport_subset_tendsto`: an `Lᵖ` function vanishing
-  outside a set `s` is an `Lᵖ` limit of smooth functions supported in any closed thickening of `s`.
 * `TauCeti.tendsto_lintegral_enorm_normed_convolution_sub`: for an integrable function these
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
@@ -360,45 +358,6 @@ theorem tendsto_eLpNorm_normed_convolution_sub_restrict [CompleteSpace F] {I : T
     rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
     exact hy.trans hi
   exact (eLpNorm_congr_ae heq).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)
-
-/-- **Smooth approximation in `Lᵖ` with control of the support.** Let `1 ≤ p < ∞` and let
-`f ∈ Lᵖ` vanish almost everywhere outside a set `s`. For every `ε > 0`, `f` is the `Lᵖ` limit of
-smooth functions supported in the closed `ε`-thickening of `s`: its convolutions with normalized
-bumps whose outer radii are at most `ε` and tend to zero. When `s` is bounded these functions
-have compact support. -/
-theorem _root_.MeasureTheory.Lp.exists_seq_contDiff_tsupport_subset_tendsto [CompleteSpace F]
-    (hp : p ≠ ∞) (f : Lp F p mu) {s : Set E} (hf : ∀ᵐ x ∂mu, x ∉ s → f x = 0) {ε : ℝ} (hε : 0 < ε) :
-    ∃ (g : ℕ → E → F) (hg : ∀ j, MemLp (g j) p mu), (∀ j, ContDiff ℝ (⊤ : ℕ∞) (g j)) ∧
-      (∀ j, tsupport (g j) ⊆ cthickening ε s) ∧
-      Tendsto (fun j ↦ (hg j).toLp (g j)) atTop (nhds f) := by
-  -- The representative `s.indicator f` of `f` vanishes outside `s`.
-  set f' : E → F := s.indicator f
-  have hff' : (f : E → F) =ᵐ[mu] f' := by
-    filter_upwards [hf] with x hx
-    by_cases hxs : x ∈ s
-    · simp [f', hxs]
-    · simp [f', hxs, hx hxs]
-  have hf' : MemLp f' p mu := (Lp.memLp f).ae_eq hff'
-  -- Bumps of outer radius `ε / (j + 2)`.
-  let phi : ℕ → ContDiffBump (0 : E) := fun j ↦
-    ⟨ε / (j + 2) / 2, ε / (j + 2), by positivity, half_lt_self (by positivity)⟩
-  have hphi : Tendsto (fun j ↦ (phi j).rOut) atTop (nhds 0) :=
-    tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
-  have hconv (j : ℕ) := normedBumpLp_ae_eq_convolution hp (phi j) hf'
-  refine ⟨fun j ↦ (phi j).normed mu ⋆[lsmul ℝ ℝ, mu] f',
-    fun j ↦ (Lp.memLp _).ae_eq (hconv j), fun j ↦ ?_, fun j ↦ ?_, ?_⟩
-  · exact (phi j).hasCompactSupport_normed.contDiff_convolution_left _ (phi j).contDiff_normed
-      (hf'.locallyIntegrable Fact.out)
-  · refine ((closure_mono ?_).trans (closure_thickening_subset_cthickening _ _)).trans
-      (cthickening_mono (div_le_self hε.le (le_add_of_nonneg_of_le j.cast_nonneg one_le_two)) _)
-    refine (support_convolution_subset _).trans ?_
-    rw [(phi j).support_normed_eq, ← ball_add_zero]
-    exact add_subset_add_left support_indicator_subset
-  · have hf'f : hf'.toLp f' = f := by
-      rw [← (Lp.memLp f).toLp_congr hf' hff', Lp.toLp_coeFn]
-    rw [← hf'f]
-    refine (tendsto_normedBumpLp hp hphi (hf'.toLp f')).congr fun j ↦ ?_
-    exact Lp.ext ((hconv j).trans (MemLp.coeFn_toLp _).symm)
 
 /-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
 bumps `phi i` centred at zero whose outer radii tend to zero, the classical convolutions

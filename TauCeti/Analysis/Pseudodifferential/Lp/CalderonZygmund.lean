@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Pseudodifferential.CalderonVaillancourt
 public import TauCeti.Analysis.Pseudodifferential.StandardKernel
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
+import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 import TauCeti.MeasureTheory.Measure.LocallyNull
@@ -52,8 +52,8 @@ kernel representation of `Op(a)` on Schwartz functions,
 vanishing outside a compact set `s`. On a compact set `A` disjoint from `s`, the kernel cut off to
 `A × B`, for a closed thickening `B` of `s` at positive distance from `A`, is bounded and defines a
 bounded integral operator `R` on `L²`. The smooth approximations of `f` supported in `B`
-(`MeasureTheory.Lp.exists_seq_contDiff_tsupport_subset_tendsto`) satisfy `T = R` on `A`, and this
-passes to the limit.
+(`MeasureTheory.MemLp.exist_contDiff_tsupport_subset_eLpNorm_sub_le`) satisfy `T = R` on `A`, and
+this passes to the limit.
 
 The representation of `T†` (`TauCeti.Symbol.IsUniform.adjoint_ae_eq_integral_offDiagonalKernel`)
 follows by duality: on `A`, `T† g` and `R† g` have the same pairing with every `φ ∈ L²` vanishing
@@ -208,13 +208,18 @@ private theorem IsUniform.ae_restrict_eq_integral_offDiagonalKernel (ha : a.IsUn
   have hclosed : IsClosed {g | P ((T - R) g) = 0} :=
     isClosed_eq (P.continuous.comp (T - R).continuous) continuous_const
   -- and contains the smooth approximations of `f` supported in `B`, so it contains `f`.
-  obtain ⟨g, hg, hgs, hgB, hlim⟩ :=
-    Lp.exists_seq_contDiff_tsupport_subset_tendsto (mu := volume) ENNReal.ofNat_ne_top f hf
-      (half_pos hδ)
+  choose g hgc hgs hgB hgf using fun k : ℕ ↦
+    (Lp.memLp f).exist_contDiff_tsupport_subset_eLpNorm_sub_le ENNReal.ofNat_ne_top one_le_two
+      hs.isClosed (cthickening_mem_nhdsSet s (half_pos hδ)) hf (Nat.one_div_pos_of_nat (n := k))
+  have hg (j : ℕ) : MemLp (g j) 2 volume := (hgs j).continuous.memLp_of_hasCompactSupport (hgc j)
+  have hlim : Tendsto (fun j ↦ (hg j).toLp (g j)) atTop (𝓝 f) := by
+    rw [← Lp.toLp_coeFn f (Lp.memLp f), Lp.tendsto_Lp_iff_tendsto_eLpNorm'']
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ ↦ bot_le)
+      fun k ↦ (eLpNorm_sub_comm _ _ _ _).trans_le (hgf k)
+    simpa using ENNReal.tendsto_ofReal (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
   have hmem (j : ℕ) : P ((T - R) ((hg j).toLp (g j))) = 0 := by
-    have hc : HasCompactSupport (g j) := hB.of_isClosed_subset (isClosed_tsupport _) (hgB j)
-    set u := hc.toSchwartzMap (hgs j)
-    have hu : ⇑u = g j := funext (HasCompactSupport.toSchwartzMap_toFun hc (hgs j))
+    set u := (hgc j).toSchwartzMap (hgs j)
+    have hu : ⇑u = g j := funext ((hgc j).toSchwartzMap_toFun (hgs j))
     have hj : (hg j).toLp (g j) = u.toLp 2 :=
       Lp.ext ((MemLp.coeFn_toLp _).trans (hu ▸ u.coeFn_toLp 2 volume).symm)
     have huB (y : CoordinateSpace n) (hy : y ∉ B) : u y = 0 :=
@@ -224,7 +229,7 @@ private theorem IsUniform.ae_restrict_eq_integral_offDiagonalKernel (ha : a.IsUn
       ae_restrict_of_ae (hT u), hRB _ ((u.coeFn_toLp 2 volume).mono fun y hy hyB ↦ by
         rw [hy, huB y hyB]), ae_restrict_mem hA.measurableSet] with x hsub hTx hRx hxA
     rw [hsub, Pi.sub_apply, hTx, hRx, Pi.zero_apply, sub_eq_zero,
-      quantizeSchwartzValue_eq_integral_offDiagonalKernel a (hu ▸ hc)
+      quantizeSchwartzValue_eq_integral_offDiagonalKernel a (hu ▸ hgc j)
         fun hx ↦ (hsep x hxA x (hgB j (hu ▸ hx))).not_gt (by simpa using half_pos hδ)]
     exact integral_congr_ae ((u.coeFn_toLp 2 volume).mono fun y hy ↦ by simp only [hy])
   have hf' := (hP _).1 (hclosed.mem_of_tendsto hlim (.of_forall hmem))
