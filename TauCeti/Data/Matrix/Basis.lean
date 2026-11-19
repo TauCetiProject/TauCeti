@@ -83,4 +83,4 @@ public theorem Matrix.toLinearMap_singleNonUnitalAlgHom (R : Type*) {n α : Type
     [NonUnitalNonAssocSemiring α] [Module R α] [DecidableEq n] [Fintype n] (i : n) :
     ((Matrix.singleNonUnitalAlgHom R i : α →ₙₐ[R] Matrix n n α) : α →ₗ[R] Matrix n n α) =
       Matrix.singleLinearMap R i i :=
-  LinearMap.ext fun _ ↦ (rfl)
+  LinearMap.ext fun a ↦ by simp
