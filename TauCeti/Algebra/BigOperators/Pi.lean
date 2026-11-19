@@ -27,7 +27,7 @@ coordinate `i` to another coordinate.
   or sum of `Pi.mulSingle i (Pi.mulSingle j (f i j))` / `Pi.single i (Pi.single j (f i j))` equals
   `f`.
 * `Fintype.prod_pow_pi_single`: `∏ j, f j ^ Pi.single i a j = f i ^ a`.
-* `Fintype.sum_intCast_sub_single_mul`: lowering the integer weight at `i` by `c` lowers
+* `Fintype.sum_intCast_sub_pi_single_mul`: lowering the integer weight at `i` by `c` lowers
   `∑ j, χ j g j` by `c g i`.
 * `Pi.exists_eq_add_single_one`: an exponent vector with a positive `i`-th entry is `γ + e_i`.
 * `Pi.eq_single_of_apply_eq_sum`: an exponent vector of degree `d` with `i`-th entry `d` is
@@ -72,7 +72,7 @@ theorem Fintype.prod_pow_pi_single [Fintype ι] [DecidableEq ι] {M : Type*} [Co
   simp
 
 /-- Lowering the integer weight `χ i` by `c` lowers the weighted sum `∑ j, χ j g j` by `c g i`. -/
-theorem Fintype.sum_intCast_sub_single_mul [Fintype ι] [DecidableEq ι] {R : Type*} [Ring R]
+theorem Fintype.sum_intCast_sub_pi_single_mul [Fintype ι] [DecidableEq ι] {R : Type*} [Ring R]
     (χ : ι → ℤ) (i : ι) (c : ℤ) (g : ι → R) :
     ∑ j, ((χ j - Pi.single (M := fun _ ↦ ℤ) i c j : ℤ) : R) * g j =
       ∑ j, (χ j : R) * g j - c * g i := by

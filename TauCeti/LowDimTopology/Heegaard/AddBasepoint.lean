@@ -445,7 +445,8 @@ theorem maslovIndex_addBasepoint (χ : Region → ℤ) (x y : H.Generator) (i j 
   simp only [maslovIndex_apply, eulerMeasure_eq_sub_sum_pointMeasure,
     generatorPointMeasure_addBasepointGenerator, Fintype.sum_sum_type, addBasepointEuler_inl,
     addBasepointEuler_inr, pointMeasure_addBasepoint_inl, pointMeasure_addBasepoint_inr,
-    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply, Fintype.sum_intCast_sub_single_mul]
+    Fin.sum_univ_three, Fin.sum_univ_two, Function.comp_apply,
+    Fintype.sum_intCast_sub_pi_single_mul]
   push_cast
   ring
 

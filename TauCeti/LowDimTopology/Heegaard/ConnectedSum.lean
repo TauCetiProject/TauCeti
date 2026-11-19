@@ -327,7 +327,7 @@ theorem maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint_sub (χ : R
     addBasepointEuler_inl, addBasepointEuler_inr, Fin.sum_univ_two, Fin.sum_univ_three,
     sumCircleTimesSphereRegion_inl, sumCircleTimesSphereRegion_inr_zero,
     sumCircleTimesSphereRegion_inr_one, sumCircleTimesSphereRegion_inr_two,
-    Fintype.sum_intCast_sub_single_mul]
+    Fintype.sum_intCast_sub_pi_single_mul]
   push_cast
   ring
 
