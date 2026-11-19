@@ -62,8 +62,7 @@ theorem conductor_ringHomComp_intCast {R : Type*} [CommRing R] [Nontrivial R]
   obtain rfl | _ := eq_zero_or_neZero n
   · simp only [conductor_eq_zero_iff_level_eq_zero.mpr]
   refine congrArg sInf (Set.ext fun d ↦ ?_)
-  -- ConductorSet is definitionally the set of levels through which the character factors.
-  change FactorsThrough (χ.ringHomComp (Int.castRingHom R)) d ↔ FactorsThrough χ d
+  rw [mem_conductorSet_iff, mem_conductorSet_iff]
   by_cases hd : d ∣ n
   · rw [factorsThrough_iff_ker_unitsMap hd, factorsThrough_iff_ker_unitsMap hd]
     suffices (χ.ringHomComp (Int.castRingHom R)).toUnitHom.ker = χ.toUnitHom.ker by rw [this]
