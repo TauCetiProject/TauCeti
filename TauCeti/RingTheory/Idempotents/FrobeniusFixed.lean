@@ -83,12 +83,7 @@ Restriction to a clopen piece of `Spec R` is the case of the projection `R → R
 theorem map_frobeniusFixedIdempotent {S F : Type*} [CommRing S] [FunLike F R S]
     [RingHomClass F R S] (f : F) :
     f (frobeniusFixedIdempotent p x i) = frobeniusFixedIdempotent p (f x) i := by
-  have hcast : f (i.cast : R) = (i.cast : S) := by
-    cases p with
-    -- By definition `ZMod 0` is `ℤ` and `ZMod.cast` on it is `Int.cast`.
-    | zero => exact map_intCast f (i : ℤ)
-    | succ n => simp only [ZMod.cast_eq_val, map_natCast]
-  simp only [frobeniusFixedIdempotent_def, map_sub, map_one, map_pow, hcast]
+  simp only [frobeniusFixedIdempotent_def, map_sub, map_one, map_pow, map_zmodCast]
 
 end Def
 
