@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Atlas
 public import TauCeti.Geometry.Lie.Subgroup.Immersion
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Embedded Lie subgroups and the closed-subgroup theorem
@@ -261,8 +262,7 @@ variable {E H E' H' G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topol
 smooth, since it is the action on `1`. -/
 theorem contMDiff_subtypeVal_of_contMDiffSMul (K : Subgroup G) [ChartedSpace H' K]
     [ContMDiffSMul I' I n K G] : ContMDiff I' I n (fun h : K ↦ (h : G)) := by
-  have h := (contMDiff_smul (I := I') (I' := I) (n := n) (G := K) (M := G)).comp
-    (contMDiff_id.prodMk (contMDiff_const (c := (1 : G))))
-  simpa [Function.comp_def, Subgroup.smul_def] using h
+  simpa [Subgroup.smul_def] using ContMDiffSMul.contMDiff_smul_const (I := I') (I' := I) (n := n)
+    (G := K) (1 : G)
 
 end Subgroup

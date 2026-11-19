@@ -28,10 +28,10 @@ leave it:
   (`Subgroup.RightTranslation.quotientMk_smul`); it is `G`-equivariant;
 * for a `K`-equivariant map `ι : Z → M` into a `G`-space, the map `[g, z] ↦ g • ι z`
   (`TauCeti.BalancedProduct.lift`), the unique `G`-equivariant map sending `[1, z]` to `ι z`;
-* the projection `[g, z] ↦ [z]` onto the orbit space `Z ⧸ K`
-  (`TauCeti.BalancedProduct.orbitProj`), which is `G`-invariant and whose fibres are exactly the
-  `G`-orbits, so that the orbit space of `G` on `G ×_K Z` is `Z ⧸ K`
-  (`TauCeti.BalancedProduct.orbitRelQuotientEquiv`).
+* the projection `[g, z] ↦ [z]` onto the orbit space `Z ⧸ K`, the case of the projection
+  `TauCeti.BalancedProduct.orbitProj` of any balanced product onto the orbit space of its second
+  factor. It is `G`-invariant and its fibres are exactly the `G`-orbits, so that the orbit space
+  of `G` on `G ×_K Z` is `Z ⧸ K` (`TauCeti.BalancedProduct.orbitRelQuotientEquiv`).
 
 For a topological group `G`, right translation by `K` is continuous, and it is proper when `K` is
 closed: it is the restriction of Mathlib's proper action of `Gᵐᵒᵖ` on `G` along the closed
@@ -42,7 +42,6 @@ embedding `h ↦ op h⁻¹`. The smooth structure of `G ×_K Z` for a Lie group 
 
 * `Subgroup.RightTranslation K`: the group `G` as a `K`-space under `h • g = g h⁻¹`.
 * `TauCeti.BalancedProduct.lift`: the map `[g, z] ↦ g • ι z`.
-* `TauCeti.BalancedProduct.orbitProj`: the map `[g, z] ↦ [z]` to `Z ⧸ K`.
 
 ## Main results
 
@@ -61,8 +60,6 @@ embedding `h ↦ op h⁻¹`. The smooth structure of `G ×_K Z` for a Lie group 
 -/
 
 public section
-
-open Function
 
 /-! ### `G` as a `K`-space under right translation -/
 
@@ -96,6 +93,9 @@ theorem toRightTranslation_symm_smul (h : K) (x : K.RightTranslation) :
     K.toRightTranslation.symm (h • x) = K.toRightTranslation.symm x * (h : G)⁻¹ :=
   (rfl)
 
+instance : Inhabited K.RightTranslation :=
+  ⟨K.toRightTranslation 1⟩
+
 /-- `K` acts on `G` by `h • g = g h⁻¹`. -/
 instance : MulAction K K.RightTranslation where
   one_smul x := K.toRightTranslation.symm.injective (by simp)
@@ -111,7 +111,7 @@ instance : IsCancelSMul K K.RightTranslation where
 
 variable (K) in
 /-- The coset map `g ↦ g K`, read on the `K`-space `Subgroup.RightTranslation K`. -/
-@[expose] def quotientMk (x : K.RightTranslation) : G ⧸ K :=
+def quotientMk (x : K.RightTranslation) : G ⧸ K :=
   (K.toRightTranslation.symm x : G)
 
 @[simp]
@@ -219,13 +219,12 @@ instance [IsCancelSMul K Z] : IsCancelSMul G (BalancedProduct K K.RightTranslati
   right_cancel' k k' y hy := by
     induction y using induction_on_toRightTranslation with
     | h g z =>
-      rw [← inv_smul_eq_iff, smul_smul, smul_mk_toRightTranslation,
+      rw [smul_mk_toRightTranslation, smul_mk_toRightTranslation,
         mk_toRightTranslation_eq_mk_toRightTranslation_iff] at hy
       obtain ⟨h, hg, hz⟩ := hy
-      obtain rfl : h = 1 := IsCancelSMul.right_cancel' h 1 z (by rw [hz, one_smul])
-      rw [OneMemClass.coe_one, inv_one, mul_one] at hg
-      -- Now `k'⁻¹ k g = g`, so `k'⁻¹ k = 1`.
-      exact (inv_mul_eq_one.1 (mul_eq_right.1 hg.symm)).symm
+      obtain rfl : h = 1 := IsCancelSMul.right_cancel' h 1 z (by simp [hz])
+      -- Now `k g = k' g`, so `k = k'`.
+      simpa using hg.symm
 
 /-! ### The projection onto `G ⧸ K` -/
 
@@ -245,11 +244,9 @@ variable {M : Type*} [MulAction G M] (ι : Z →ₑ[((↑) : K → G)] M)
 /-- The map `[g, z] ↦ g • ι z` from `G ×_K Z` to a `G`-space `M`, for a `K`-equivariant map
 `ι : Z → M`. It is the unique `G`-equivariant map sending `[1, z]` to `ι z`
 (`TauCeti.BalancedProduct.eq_lift`). -/
-@[expose] def lift : BalancedProduct K K.RightTranslation Z → M :=
+def lift : BalancedProduct K K.RightTranslation Z → M :=
   Quotient.lift (fun x ↦ K.toRightTranslation.symm x.1 • ι x.2) fun _ _ ⟨h, hh⟩ ↦ by
-    rw [← hh, Prod.smul_fst, Prod.smul_snd,
-      Subgroup.RightTranslation.toRightTranslation_symm_smul, map_smulₛₗ ι h, mul_smul,
-      inv_smul_smul]
+    simp [← hh, map_smulₛₗ, mul_smul]
 
 @[simp]
 theorem lift_mk (g : G) (z : Z) : lift ι (mk K (K.toRightTranslation g) z) = g • ι z :=
@@ -303,27 +300,11 @@ end Lift
 
 /-! ### The projection onto `Z ⧸ K` -/
 
-/-- The projection `[g, z] ↦ [z]` of `G ×_K Z` onto the orbit space `Z ⧸ K`. -/
-@[expose]
-def orbitProj : BalancedProduct K K.RightTranslation Z → MulAction.orbitRel.Quotient K Z :=
-  Quotient.map Prod.snd fun _ _ ⟨h, hh⟩ ↦ ⟨h, congrArg Prod.snd hh⟩
-
-@[simp]
-theorem orbitProj_mk (g : G) (z : Z) :
-    orbitProj (mk K (K.toRightTranslation g) z) = Quotient.mk (MulAction.orbitRel K Z) z :=
-  (rfl)
-
 /-- The projection onto `Z ⧸ K` is constant on the orbits of `G`. -/
 @[simp]
 theorem orbitProj_smul (k : G) (y : BalancedProduct K K.RightTranslation Z) :
     orbitProj (k • y) = orbitProj y :=
   y.induction_on_toRightTranslation fun g z ↦ by simp
-
-theorem orbitProj_surjective :
-    Surjective (orbitProj : BalancedProduct K K.RightTranslation Z → _) := by
-  intro q
-  induction q using Quotient.inductionOn with
-  | h z => exact ⟨mk K (K.toRightTranslation 1) z, rfl⟩
 
 /-- **The fibres of the projection onto `Z ⧸ K` are the orbits of `G`.** Two points of `G ×_K Z`
 have the same image in `Z ⧸ K` exactly when they lie in the same `G`-orbit. -/
@@ -337,9 +318,7 @@ theorem orbitProj_eq_orbitProj_iff {y y' : BalancedProduct K K.RightTranslation 
     constructor
     · intro hq
       obtain ⟨h, hz⟩ := Quotient.exact hq
-      refine ⟨g' * (h : G)⁻¹ * g⁻¹, ?_⟩
-      rw [smul_mk_toRightTranslation, inv_mul_cancel_right, ← hz, ← mk_toRightTranslation_mul,
-        inv_mul_cancel_right]
+      exact ⟨g' * (h : G)⁻¹ * g⁻¹, by simp [← hz, ← mk_toRightTranslation_mul]⟩
     · rintro ⟨k, hk⟩
       rw [smul_mk_toRightTranslation] at hk
       obtain ⟨h, -, hz⟩ := mk_toRightTranslation_eq_mk_toRightTranslation_iff.1 hk.symm
@@ -358,10 +337,12 @@ def orbitRelQuotientEquiv :
     induction q using Quotient.inductionOn with
     | h y =>
       induction y using induction_on_toRightTranslation with
-      | h g z => exact Quotient.sound ⟨g⁻¹, by simp⟩
+      | h g z =>
+        rw [Quotient.lift_mk, orbitProj_mk]
+        exact Quotient.sound ⟨g⁻¹, by simp⟩
   right_inv q := by
     induction q using Quotient.inductionOn with
-    | h z => rfl
+    | h z => exact orbitProj_mk (K.toRightTranslation 1) z
 
 @[simp]
 theorem orbitRelQuotientEquiv_mk (y : BalancedProduct K K.RightTranslation Z) :

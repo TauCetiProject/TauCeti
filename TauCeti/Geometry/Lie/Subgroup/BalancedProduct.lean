@@ -187,7 +187,7 @@ theorem contMDiffSMul_rightTranslation :
       Prod.map id (Quotient.mk _) = Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) ∘
         fun p : G × (K.RightTranslation × Z) ↦
           (K.toRightTranslation (p.1 * K.toRightTranslation.symm p.2.1), p.2.2) :=
-    (rfl)
+    funext fun p ↦ smul_mk_toRightTranslation p.1 (K.toRightTranslation.symm p.2.1) p.2.2
   rw [hcomp]
   exact hπ.contMDiff.comp
     (((Subgroup.RightTranslation.contMDiff_toRightTranslation (I := I) ∞).comp (contMDiff_fst.mul
@@ -207,8 +207,9 @@ theorem contMDiff_proj_rightTranslation :
   rw [contMDiff_iff_rightTranslation (I := I) (IZ := IZ) (F := F) le_rfl]
   have hcomp : proj Z (Subgroup.RightTranslation.quotientMk_smul (K := K)) ∘
       Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
-        Subgroup.RightTranslation.quotientMk K ∘ Prod.fst :=
-    funext fun x ↦ proj_mk Z Subgroup.RightTranslation.quotientMk_smul x.1 x.2
+        fun x ↦ (K.toRightTranslation.symm x.1 : G ⧸ K) :=
+    funext fun x ↦ (proj_mk Z Subgroup.RightTranslation.quotientMk_smul x.1 x.2).trans
+      (Subgroup.RightTranslation.quotientMk_toRightTranslation (K.toRightTranslation.symm x.1))
   rw [hcomp]
   exact (Subgroup.contMDiff_quotientMk ‹_›).comp
     ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm (I := I) ∞).comp
@@ -223,6 +224,10 @@ theorem contMDiff_lift {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ 
     ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM ∞ (lift ι) := by
   let _ := rightTranslationChartedSpace K Z I IZ F
   rw [contMDiff_iff_rightTranslation (I := I) (IZ := IZ) (F := F) le_rfl]
+  have hcomp : lift ι ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
+      fun x ↦ K.toRightTranslation.symm x.1 • ι x.2 :=
+    funext fun x ↦ lift_mk ι (K.toRightTranslation.symm x.1) x.2
+  rw [hcomp]
   exact ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm (I := I) ∞).comp
     (contMDiff_fst (J := IZ) (N := Z))).smul (hι.comp contMDiff_snd)
 
@@ -237,6 +242,10 @@ theorem contMDiff_orbitProj [ProperSMul K Z] [IsCancelSMul K Z] :
   let _ := rightTranslationChartedSpace K Z I IZ F
   let _ := ProperSMul.orbitRelQuotientChartedSpace 𝓘(ℝ, F) K IZ Z
   rw [contMDiff_iff_rightTranslation (I := I) (IZ := IZ) (F := F) le_rfl]
+  have hcomp : orbitProj ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
+      Quotient.mk (MulAction.orbitRel K Z) ∘ Prod.snd :=
+    funext fun x ↦ orbitProj_mk x.1 x.2
+  rw [hcomp]
   exact ProperSMul.contMDiff_quotientMk.comp (contMDiff_snd (I := I) (M := K.RightTranslation))
 
 end Manifold
