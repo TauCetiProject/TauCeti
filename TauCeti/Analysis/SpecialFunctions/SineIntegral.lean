@@ -19,7 +19,7 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 This file defines the sine integral `Si x = ∫_0^x sin t / t dt` and proves the explicit bounds
 used to truncate Dirichlet-kernel integrals:
 
-* `Si` is odd and continuous, with derivative `sinc`;
+* `Si` is odd and continuous, with derivative `sinc`, and tends to `-π / 2` at `-∞`;
 * `|Si x| ≤ Si π` for every real `x`, the first maximum of `Si` being its global maximum;
 * `(cos x - 1) / x ≤ π / 2 - Si x ≤ (1 + cos x) / x` for `x > 0`, so `|π / 2 - Si x| ≤ 2 / x`;
 * `|∫_a^b sin (T v) / v dv| ≤ 2 Si π` for all real `a`, `b` and `T`.
@@ -28,9 +28,10 @@ The two-sided tail bound comes from two monotone comparison functions on `(0, �
 `Si x + (cos x - 1) / x` has derivative `(1 - cos x) / x² ≥ 0` and `Si x + (cos x + 1) / x` has
 derivative `-(1 + cos x) / x² ≤ 0`. This is the integration by parts
 `∫_x^R sin t / t dt = cos x / x - cos R / R - ∫_x^R cos t / t² dt` in monotone form. Letting
-`R → ∞` against `Si R → π / 2` gives the tail bound. On `[0, π]` the integrand is nonnegative,
-and beyond `π` the second comparison function is bounded by its value `Si π` at `π`, which gives
-the global maximum.
+`R → ∞` against the Dirichlet integral `Si R → π / 2`, which is
+`TauCeti.Contour.tendsto_integral_sinc_atTop` after unfolding `sineIntegral`, gives the tail
+bound. On `[0, π]` the integrand is nonnegative, and beyond `π` the second comparison function is
+bounded by its value `Si π` at `π`, which gives the global maximum.
 
 ## Main declarations
 
@@ -105,12 +106,11 @@ theorem sineIntegral_eq_integral_sin_div (x : ℝ) :
     sineIntegral x = ∫ t in (0 : ℝ)..x, sin t / t := by
   simp [integral_sin_div_eq_sub]
 
-/-- **The Dirichlet integral**: `Si x → π / 2` as `x → ∞`. -/
-theorem tendsto_sineIntegral_atTop : Tendsto sineIntegral atTop (𝓝 (π / 2)) :=
-  TauCeti.Contour.tendsto_integral_sinc_atTop
-
+/-- `Si x → -π / 2` as `x → -∞`, by oddness from the Dirichlet integral
+`TauCeti.Contour.tendsto_integral_sinc_atTop`, which states `Si x → π / 2` as `x → ∞`. -/
 theorem tendsto_sineIntegral_atBot : Tendsto sineIntegral atBot (𝓝 (-(π / 2))) := by
-  simpa [Function.comp_def] using (tendsto_sineIntegral_atTop.comp tendsto_neg_atBot_atTop).neg
+  have h : Tendsto sineIntegral atTop (𝓝 (π / 2)) := TauCeti.Contour.tendsto_integral_sinc_atTop
+  simpa [Function.comp_def] using (h.comp tendsto_neg_atBot_atTop).neg
 
 /-! ### The comparison functions on `(0, ∞)` -/
 
@@ -151,7 +151,8 @@ private theorem tendsto_sineIntegral_add_div (c : ℝ) :
     tendsto_bdd_div_atTop_nhds_zero (b := -1 + c) (B := 1 + c)
       (.of_forall fun y ↦ by linarith [neg_one_le_cos y])
       (.of_forall fun y ↦ by linarith [cos_le_one y]) tendsto_id
-  simpa using tendsto_sineIntegral_atTop.add hzero
+  have hSi : Tendsto sineIntegral atTop (𝓝 (π / 2)) := TauCeti.Contour.tendsto_integral_sinc_atTop
+  simpa using hSi.add hzero
 
 /-! ### The tail bounds -/
 
