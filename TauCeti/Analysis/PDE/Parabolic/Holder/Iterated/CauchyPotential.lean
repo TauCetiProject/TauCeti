@@ -160,8 +160,9 @@ private theorem hasFDerivAt_field (g : CkHolderSpace k α E F) {r m : ℕ} (h : 
       ((continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (m + 1) ↦ E) F).norm_map
         (datum g r (m + 1) y)).trans_le (norm_datum_le g (by omega) y)) t x
   rw [heatCauchyPotential_comp_continuousLinearEquiv] at hd
-  -- The left-currying equivalence applied to a map is `curryLeft` by definition.
-  exact hd
+  convert hd using 1
+  ext v w
+  simp [e, continuousMultilinearCurryLeftEquiv_apply, ContinuousMultilinearMap.curryLeft_apply]
 
 private theorem hasDerivWithinAt_field (hab : a < b) (ha : 0 ≤ a) (g : CkHolderSpace k α E F)
     {r m : ℕ} (h : 2 * r + m + 2 ≤ k) (x : E) (t : Icc a b) :
@@ -183,8 +184,7 @@ private theorem hasDerivWithinAt_field (hab : a < b) (ha : 0 ≤ a) (g : CkHolde
     (norm_datum_le g (by omega)) h₁ (fun y ↦ by
       rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv, datum,
         norm_iteratedFDeriv_iteratedFDeriv]
-      exact (norm_iteratedFDeriv_iterate_laplacian_le g.contDiff (by omega) y).trans
-        (mul_le_mul_of_nonneg_left (g.norm_iteratedFDeriv_apply_le (by omega) y) (by positivity)))
+      exact norm_datum_le g (m := 1 + 1 + m) (by omega) y)
     (ha.trans t.2.1) x
   rw [hΔ] at hd
   refine (hd.mono (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 ha))).congr_of_mem
