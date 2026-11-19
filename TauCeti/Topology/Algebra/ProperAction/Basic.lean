@@ -17,6 +17,11 @@ particular the orbit space `X ⧸ G` is Hausdorff (`t2Space_quotient_mulAction_o
 is how quotients such as complex projective space, the orbit space of the circle acting on an odd
 sphere, are shown to be Hausdorff.
 
+Even without a separation axiom on `X`, the quotient map `X → X ⧸ G` of a continuous action of a
+compact group is closed, because the saturation of a closed set `A` is the projection to `X` of the
+closed set `{(g, x) | g • x ∈ A}` of `G × X`, and the projection `G × X → X` is a closed map. Its
+fibres are orbits, continuous images of `G`, so it is proper.
+
 A proper action also restricts to a proper action on every invariant subspace, and more generally
 pulls back along any equivariant topological embedding. It even pulls back to a subgroup acting on
 a subspace, as long as every element of the group carrying a point of the subspace into the
@@ -28,6 +33,9 @@ quotient.
 
 * `TauCeti.properSMul_of_compactSpace`, `TauCeti.properVAdd_of_compactSpace`: a continuous action
   of a compact group, or of a compact additive group, on a Hausdorff space is proper.
+* `MulAction.isClosedMap_quotientMk_of_compactSpace`,
+  `MulAction.isProperMap_quotientMk_of_compactSpace`: for a continuous action of a compact group,
+  with no separation axiom, the quotient map `X → X ⧸ G` is closed and proper.
 * `Topology.IsEmbedding.properSMul`: an action which a topological embedding intertwines with a
   proper action is proper.
 * `Topology.IsEmbedding.properSMul_of_isEmbedding`: the same along a topological embedding of
@@ -54,6 +62,41 @@ theorem properSMul_of_compactSpace (G X : Type*) [Group G] [TopologicalSpace G] 
       ((continuous_fst.tendsto _).comp hxx), hg⟩⟩
 
 end TauCeti
+
+namespace MulAction
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [CompactSpace G] [MulAction G X]
+  [TopologicalSpace X] [ContinuousSMul G X]
+
+/-- **The orbit map of a compact group is closed.** For a continuous action of a compact group `G`
+on `X`, the quotient map `X → X ⧸ G` is closed. -/
+@[to_additive /-- **The orbit map of a compact additive group is closed.** For a continuous
+additive action of a compact additive group `G` on `X`, the quotient map `X → X ⧸ G` is
+closed. -/]
+theorem isClosedMap_quotientMk_of_compactSpace : IsClosedMap (Quotient.mk (orbitRel G X)) :=
+  fun A hA ↦ by
+    rw [← isOpenQuotientMap_quotientMk.isQuotientMap.isClosed_preimage]
+    convert isClosedMap_snd_of_compactSpace _ (hA.preimage (continuous_smul (M := G) (X := X)))
+    ext x
+    simp only [Set.mem_preimage, Set.mem_image, Quotient.eq, orbitRel_apply, mem_orbit_iff,
+      Prod.exists]
+    exact ⟨fun ⟨_, ha, g, hg⟩ ↦ ⟨g, x, hg ▸ ha, rfl⟩, fun ⟨g, _, ha, rfl⟩ ↦ ⟨_, ha, g, rfl⟩⟩
+
+/-- **The orbit map of a compact group is proper.** For a continuous action of a compact group `G`
+on `X`, the quotient map `X → X ⧸ G` is proper. -/
+@[to_additive /-- **The orbit map of a compact additive group is proper.** For a continuous
+additive action of a compact additive group `G` on `X`, the quotient map `X → X ⧸ G` is
+proper. -/]
+theorem isProperMap_quotientMk_of_compactSpace : IsProperMap (Quotient.mk (orbitRel G X)) := by
+  refine isProperMap_iff_isClosedMap_and_compact_fibers.mpr
+    ⟨continuous_quotient_mk', isClosedMap_quotientMk_of_compactSpace, fun y ↦ ?_⟩
+  induction y using Quotient.inductionOn with | h x => ?_
+  convert isCompact_range (continuous_smul.comp (Continuous.prodMk_left (X := G) x))
+  ext w
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, Quotient.eq, orbitRel_apply, mem_orbit_iff,
+    Set.mem_range, Function.comp_apply]
+
+end MulAction
 
 open Filter Topology in
 /-- **Proper actions pull back along slices.** Let `φ : H → G` be a topological embedding between
