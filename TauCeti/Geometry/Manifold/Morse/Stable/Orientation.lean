@@ -21,16 +21,18 @@ coordinates of negative and of positive weight. At a point `y` of the unstable m
 the unstable frame of `X` and the normal coordinates of the stable manifold of `x` for `-X` form a
 short exact sequence `0 → V⁻ → T_y M → V⁺ → 0`
 (`TauCeti.IsAdaptedPseudoGradient.exact_unstableFrame_neg_stableNormal`), so orientations `op` of
-`V⁻` and `op'` of `V⁺` orient `T_y M`, subspace first (`Orientation.ofExact`). At a point of the
-stable manifold `W^s(x)` the sequence `0 → V⁺ → T_y M → V⁻ → 0` does the same
-(`TauCeti.IsAdaptedPseudoGradient.exact_neg_unstableFrame_stableNormal`).
+`V⁻` and `op'` of `V⁺` orient `T_y M`, subspace first (`Orientation.ofExact`): this is
+`TauCeti.IsAdaptedPseudoGradient.unstableFrameOrientation`. At a point of the stable manifold
+`W^s(x)` the sequence `0 → V⁺ → T_y M → V⁻ → 0` does the same
+(`TauCeti.IsAdaptedPseudoGradient.exact_neg_unstableFrame_stableNormal`), giving
+`TauCeti.IsAdaptedPseudoGradient.stableNormalOrientation`.
 
 This file compares these orientations with an orientation `o` of `M`. Whether they agree with `o`
 does not depend on the point: on `W^u(x)` the frame orientation is the orientation of `o` at one
 point exactly when it is at any other
-(`TauCeti.IsAdaptedPseudoGradient.reindex_ofExact_unstableFrame_eq_orientationAt_iff`), and
+(`TauCeti.IsAdaptedPseudoGradient.reindex_unstableFrameOrientation_eq_orientationAt_iff`), and
 likewise on `W^s(x)`
-(`TauCeti.IsAdaptedPseudoGradient.reindex_ofExact_stableNormal_eq_orientationAt_iff`). Taking
+(`TauCeti.IsAdaptedPseudoGradient.reindex_stableNormalOrientation_eq_orientationAt_iff`). Taking
 one of the points to be `x` itself, if `op` followed by `op'` orients `T_x M` like `o`, then the
 frame orientation is the orientation of `o` all along `W^u(x)`. This supplies the `ε = 1` step in
 comparing the signed trajectory counts of `-f` and of `f` on an oriented manifold: the two
@@ -50,10 +52,12 @@ source of the chart (`IsPreconnected.isOrientationPreservingAt_iff`).
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
+* `unstableFrameOrientation`, `stableNormalOrientation`: the orientations of the tangent spaces
+  along the unstable and the stable manifold induced by orientations of `V⁻` and `V⁺`.
 * `isOrientationPreservingAt_flow`: the time-`t` maps of the flow preserve every orientation.
-* `reindex_ofExact_unstableFrame_eq_orientationAt_iff`: along the unstable manifold, the frame
+* `reindex_unstableFrameOrientation_eq_orientationAt_iff`: along the unstable manifold, the frame
   orientation agrees with `o` everywhere or nowhere.
-* `reindex_ofExact_stableNormal_eq_orientationAt_iff`: the same along the stable manifold.
+* `reindex_stableNormalOrientation_eq_orientationAt_iff`: the same along the stable manifold.
 
 ## References
 
@@ -197,28 +201,88 @@ variable (hφ : ∀ y ∈ φ.toChart.source,
 
 include hφ
 
+/-- **The frame orientation along the unstable manifold.** At a point `y` of `W^u(x)`, the unstable
+frame of `X` and the normal coordinates of the stable manifold of `x` for `-X` form a short exact
+sequence `0 → V⁻ → T_y M → V⁺ → 0`. This is the orientation of `T_y M` that it induces from the
+orientations `op` of `V⁻` and `op'` of `V⁺`, subspace first (`Orientation.ofExact`). -/
+noncomputable def unstableFrameOrientation (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
+    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
+    {y : M} (hy : y ∈ hX.flow.unstableSet x) :
+    Orientation ℝ (TangentSpace 𝓘(ℝ, E) y)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x + manifoldMorseIndex 𝓘(ℝ, E) (-f) x)) :=
+  Orientation.ofExact (injective_unstableFrame_of_mem hφ hf hy)
+    (exact_unstableFrame_neg_stableNormal hφ hf hx hy)
+    (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx)
+      ((hX.unstableSet_eq_stableSet_neg hf x).subset hy)) op op'
+    φ.finrank_negativeWeight_fun (φ.neg hx).finrank_negativeWeight_fun
+
+/-- The defining formula of `unstableFrameOrientation`. -/
+theorem unstableFrameOrientation_def (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
+    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
+    {y : M} (hy : y ∈ hX.flow.unstableSet x) :
+    unstableFrameOrientation hφ hf hx op op' hy =
+      Orientation.ofExact (injective_unstableFrame_of_mem hφ hf hy)
+        (exact_unstableFrame_neg_stableNormal hφ hf hx hy)
+        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx)
+          ((hX.unstableSet_eq_stableSet_neg hf x).subset hy)) op op'
+        φ.finrank_negativeWeight_fun (φ.neg hx).finrank_negativeWeight_fun :=
+  (rfl)
+
+/-- **The frame orientation along the stable manifold.** At a point `y` of `W^s(x)`, the unstable
+frame of `-X` and the normal coordinates of the stable manifold of `x` for `X` form a short exact
+sequence `0 → V⁺ → T_y M → V⁻ → 0`. This is the orientation of `T_y M` that it induces from the
+orientations `op'` of `V⁺` and `op` of `V⁻`, subspace first (`Orientation.ofExact`). -/
+noncomputable def stableNormalOrientation (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
+    {y : M} (hy : y ∈ hX.flow.stableSet x) :
+    Orientation ℝ (TangentSpace 𝓘(ℝ, E) y)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x + manifoldMorseIndex 𝓘(ℝ, E) f x)) :=
+  Orientation.ofExact
+    (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx) hf.neg
+      ((hX.stableSet_eq_unstableSet_neg hf x).subset hy))
+    (exact_neg_unstableFrame_stableNormal hφ hf hx hy)
+    (surjective_stableNormal_of_mem hφ hy) op' op
+    (φ.neg hx).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun
+
+/-- The defining formula of `stableNormalOrientation`. -/
+theorem stableNormalOrientation_def (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
+      (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
+    (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
+    {y : M} (hy : y ∈ hX.flow.stableSet x) :
+    stableNormalOrientation hφ hf hx op' op hy =
+      Orientation.ofExact
+        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx) hf.neg
+          ((hX.stableSet_eq_unstableSet_neg hf x).subset hy))
+        (exact_neg_unstableFrame_stableNormal hφ hf hx hy)
+        (surjective_stableNormal_of_mem hφ hy) op' op
+        (φ.neg hx).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun :=
+  (rfl)
+
 /-- The comparison of the frame orientation along the unstable manifold with `o`, at a point of
 `W^u(x)` and at `x`. -/
-private theorem reindex_ofExact_unstableFrame_eq_orientationAt_iff_self (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+private theorem reindex_unstableFrameOrientation_eq_orientationAt_iff_self
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
     (o : Manifold.Orientation 𝓘(ℝ, E) M ι)
     (e : Fin (manifoldMorseIndex 𝓘(ℝ, E) f x + manifoldMorseIndex 𝓘(ℝ, E) (-f) x) ≃ ι)
     (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
     (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
       (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
     (hxu : x ∈ hX.flow.unstableSet x) {y : M} (hy : y ∈ hX.flow.unstableSet x) :
-    Orientation.reindex ℝ _ e (Orientation.ofExact (injective_unstableFrame_of_mem hφ hf hy)
-        (exact_unstableFrame_neg_stableNormal hφ hf hx hy)
-        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx)
-          ((hX.unstableSet_eq_stableSet_neg hf x).subset hy)) op op'
-        φ.finrank_negativeWeight_fun (φ.neg hx).finrank_negativeWeight_fun) =
-        o.orientationAt y ↔
-      Orientation.reindex ℝ _ e (Orientation.ofExact (injective_unstableFrame_of_mem hφ hf hxu)
-        (exact_unstableFrame_neg_stableNormal hφ hf hx hxu)
-        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx)
-          ((hX.unstableSet_eq_stableSet_neg hf x).subset hxu)) op op'
-        φ.finrank_negativeWeight_fun (φ.neg hx).finrank_negativeWeight_fun) =
+    Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx op op' hy) = o.orientationAt y ↔
+      Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx op op' hxu) =
         o.orientationAt x := by
+  rw [unstableFrameOrientation_def, unstableFrameOrientation_def]
   have h0 := hX.zero_mem_linearBackwardTimes φ
     (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints)
   have hfl0 : (φ.toChart ∘ hX.flow (-0) : M → E) = φ.toChart := funext fun z ↦ by simp
@@ -259,28 +323,18 @@ private theorem reindex_ofExact_unstableFrame_eq_orientationAt_iff_self (hf : Is
 
 /-- The comparison of the frame orientation along the stable manifold with `o`, at a point of
 `W^s(x)` and at `x`. -/
-private theorem reindex_ofExact_stableNormal_eq_orientationAt_iff_self (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+private theorem reindex_stableNormalOrientation_eq_orientationAt_iff_self
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
     (o : Manifold.Orientation 𝓘(ℝ, E) M ι)
     (e : Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x + manifoldMorseIndex 𝓘(ℝ, E) f x) ≃ ι)
     (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
       (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
     (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
     (hxs : x ∈ hX.flow.stableSet x) {y : M} (hy : y ∈ hX.flow.stableSet x) :
-    Orientation.reindex ℝ _ e (Orientation.ofExact
-        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx) hf.neg
-          ((hX.stableSet_eq_unstableSet_neg hf x).subset hy))
-        (exact_neg_unstableFrame_stableNormal hφ hf hx hy)
-        (surjective_stableNormal_of_mem hφ hy) op' op
-        (φ.neg hx).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun) =
-        o.orientationAt y ↔
-      Orientation.reindex ℝ _ e (Orientation.ofExact
-        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx) hf.neg
-          ((hX.stableSet_eq_unstableSet_neg hf x).subset hxs))
-        (exact_neg_unstableFrame_stableNormal hφ hf hx hxs)
-        (surjective_stableNormal_of_mem hφ hxs) op' op
-        (φ.neg hx).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun) =
+    Orientation.reindex ℝ _ e (stableNormalOrientation hφ hf hx op' op hy) = o.orientationAt y ↔
+      Orientation.reindex ℝ _ e (stableNormalOrientation hφ hf hx op' op hxs) =
         o.orientationAt x := by
+  rw [stableNormalOrientation_def, stableNormalOrientation_def]
   have h0 := hX.zero_mem_linearForwardTimes φ
     (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints)
   have hfl0 : (φ.toChart ∘ hX.flow 0 : M → E) = φ.toChart := funext fun z ↦ by simp
@@ -322,65 +376,46 @@ private theorem reindex_ofExact_stableNormal_eq_orientationAt_iff_self (hf : IsM
 orient the coordinates of negative weight of a Morse chart `φ` at `x`, in which `X` is linear, by
 `op`, and those of positive weight by `op'`. At each point `y` of `W^u(x)`, the unstable frame
 of `X` and the normal coordinates of the stable manifold of `x` for `-X` form a short exact
-sequence `0 → V⁻ → T_y M → V⁺ → 0`, so `op` and `op'` orient `T_y M` (`Orientation.ofExact`).
+sequence `0 → V⁻ → T_y M → V⁺ → 0`, so `op` and `op'` orient `T_y M` (`unstableFrameOrientation`).
 Whether this orientation is the one of `o` does not depend on the point of `W^u(x)`; in
 particular, it is the one of `o` everywhere on `W^u(x)` as soon as it is at `x`. -/
-theorem reindex_ofExact_unstableFrame_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+theorem reindex_unstableFrameOrientation_eq_orientationAt_iff
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
     (o : Manifold.Orientation 𝓘(ℝ, E) M ι)
     (e : Fin (manifoldMorseIndex 𝓘(ℝ, E) f x + manifoldMorseIndex 𝓘(ℝ, E) (-f) x) ≃ ι)
     (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
     (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
       (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
     {y₁ y₂ : M} (hy₁ : y₁ ∈ hX.flow.unstableSet x) (hy₂ : y₂ ∈ hX.flow.unstableSet x) :
-    Orientation.reindex ℝ _ e (Orientation.ofExact (injective_unstableFrame_of_mem hφ hf hy₁)
-        (exact_unstableFrame_neg_stableNormal hφ hf hx hy₁)
-        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx)
-          ((hX.unstableSet_eq_stableSet_neg hf x).subset hy₁)) op op'
-        φ.finrank_negativeWeight_fun (φ.neg hx).finrank_negativeWeight_fun) =
+    Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx op op' hy₁) =
         o.orientationAt y₁ ↔
-      Orientation.reindex ℝ _ e (Orientation.ofExact (injective_unstableFrame_of_mem hφ hf hy₂)
-        (exact_unstableFrame_neg_stableNormal hφ hf hx hy₂)
-        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx)
-          ((hX.unstableSet_eq_stableSet_neg hf x).subset hy₂)) op op'
-        φ.finrank_negativeWeight_fun (φ.neg hx).finrank_negativeWeight_fun) =
+      Orientation.reindex ℝ _ e (unstableFrameOrientation hφ hf hx op op' hy₂) =
         o.orientationAt y₂ :=
   have hxu := (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hx).1
-  (reindex_ofExact_unstableFrame_eq_orientationAt_iff_self hφ hf hx o e op op' hxu hy₁).trans
-    (reindex_ofExact_unstableFrame_eq_orientationAt_iff_self hφ hf hx o e op op' hxu hy₂).symm
+  (reindex_unstableFrameOrientation_eq_orientationAt_iff_self hφ hf hx o e op op' hxu hy₁).trans
+    (reindex_unstableFrameOrientation_eq_orientationAt_iff_self hφ hf hx o e op op' hxu hy₂).symm
 
 /-- **The frame orientations along the stable manifold.** Let `o` be an orientation of `M`, and
 orient the coordinates of positive weight of a Morse chart `φ` at `x`, in which `X` is linear, by
 `op'`, and those of negative weight by `op`. At each point `y` of `W^s(x)`, the unstable frame
 of `-X` and the normal coordinates of the stable manifold of `x` for `X` form a short exact
-sequence `0 → V⁺ → T_y M → V⁻ → 0`, so `op'` and `op` orient `T_y M` (`Orientation.ofExact`).
+sequence `0 → V⁺ → T_y M → V⁻ → 0`, so `op'` and `op` orient `T_y M` (`stableNormalOrientation`).
 Whether this orientation is the one of `o` does not depend on the point of `W^s(x)`; in
 particular, it is the one of `o` everywhere on `W^s(x)` as soon as it is at `x`. -/
-theorem reindex_ofExact_stableNormal_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f)
-    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+theorem reindex_stableNormalOrientation_eq_orientationAt_iff
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
     (o : Manifold.Orientation 𝓘(ℝ, E) M ι)
     (e : Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x + manifoldMorseIndex 𝓘(ℝ, E) f x) ≃ ι)
     (op' : Orientation ℝ ({i // (φ.neg hx).weight i < 0} → ℝ)
       (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) x)))
     (op : Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)))
     {y₁ y₂ : M} (hy₁ : y₁ ∈ hX.flow.stableSet x) (hy₂ : y₂ ∈ hX.flow.stableSet x) :
-    Orientation.reindex ℝ _ e (Orientation.ofExact
-        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx) hf.neg
-          ((hX.stableSet_eq_unstableSet_neg hf x).subset hy₁))
-        (exact_neg_unstableFrame_stableNormal hφ hf hx hy₁)
-        (surjective_stableNormal_of_mem hφ hy₁) op' op
-        (φ.neg hx).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun) =
-        o.orientationAt y₁ ↔
-      Orientation.reindex ℝ _ e (Orientation.ofExact
-        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φ.coord_mfderiv_neg hφ hx) hf.neg
-          ((hX.stableSet_eq_unstableSet_neg hf x).subset hy₂))
-        (exact_neg_unstableFrame_stableNormal hφ hf hx hy₂)
-        (surjective_stableNormal_of_mem hφ hy₂) op' op
-        (φ.neg hx).finrank_negativeWeight_fun φ.finrank_negativeWeight_fun) =
+    Orientation.reindex ℝ _ e (stableNormalOrientation hφ hf hx op' op hy₁) = o.orientationAt y₁ ↔
+      Orientation.reindex ℝ _ e (stableNormalOrientation hφ hf hx op' op hy₂) =
         o.orientationAt y₂ :=
   have hxs := (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hx).2
-  (reindex_ofExact_stableNormal_eq_orientationAt_iff_self hφ hf hx o e op' op hxs hy₁).trans
-    (reindex_ofExact_stableNormal_eq_orientationAt_iff_self hφ hf hx o e op' op hxs hy₂).symm
+  (reindex_stableNormalOrientation_eq_orientationAt_iff_self hφ hf hx o e op' op hxs hy₁).trans
+    (reindex_stableNormalOrientation_eq_orientationAt_iff_self hφ hf hx o e op' op hxs hy₂).symm
 
 end IsAdaptedPseudoGradient
 

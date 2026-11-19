@@ -47,8 +47,8 @@ dual of the integral Morse complex of `f`. On an oriented manifold, with `op'` a
 that `op` followed by `op'` and `oq'` followed by `oq` orient `M` at `p` and at `q` like the
 orientation `o` of `M`, both orientations of `T_y M` are the orientation of `o`, carried along the
 unstable manifold of `p` and the stable manifold of `q`
-(`TauCeti.IsAdaptedPseudoGradient.reindex_ofExact_unstableFrame_eq_orientationAt_iff`,
-`TauCeti.IsAdaptedPseudoGradient.reindex_ofExact_stableNormal_eq_orientationAt_iff`). So `ε = 1`
+(`TauCeti.IsAdaptedPseudoGradient.reindex_unstableFrameOrientation_eq_orientationAt_iff`,
+`TauCeti.IsAdaptedPseudoGradient.reindex_stableNormalOrientation_eq_orientationAt_iff`). So `ε = 1`
 (`TauCeti.IsAdaptedPseudoGradient.neg_trajectorySign_of_orientationAt_eq`), and the signed count
 of the trajectories of `-X` from `q` to `p` is that of `X` from `p` to `q` times
 `-(-1) ^ (ind_f q * ind_{-f} p)`
@@ -109,7 +109,8 @@ point of a trajectory from `p` to `q`. Orient the coordinates of negative weight
 the negated charts, by `op'` and `oq'`. Then the sign of the trajectory of `-X` from `q` to `p`
 through `y` is the sign of the trajectory of `X` times `-(-1) ^ (ind_f q * ind_{-f} p)` times the
 comparison of two orientations of `T_y M`: the one induced by `oq'` and `oq` through the stable
-manifold of `q`, and the one induced by `op` and `op'` through the unstable manifold of `p`. -/
+manifold of `q` (`stableNormalOrientation`), and the one induced by `op` and `op'` through the
+unstable manifold of `p` (`unstableFrameOrientation`). -/
 theorem neg_trajectorySign (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     (hp : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p)
     (hq : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f q)
@@ -126,18 +127,8 @@ theorem neg_trajectorySign (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
       -(-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p) *
         (if Orientation.reindex ℝ (TangentSpace 𝓘(ℝ, E) y) (finCongr (by
               rw [hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq, hpq]; ring))
-            (Orientation.ofExact
-              (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq)
-                hf.neg ((hX.stableSet_eq_unstableSet_neg hf q).subset hy.2))
-              (exact_neg_unstableFrame_stableNormal hφq hf hq hy.2)
-              (surjective_stableNormal_of_mem hφq hy.2) oq' oq
-              (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
-          Orientation.ofExact (injective_unstableFrame_of_mem hφp hf hy.1)
-            (exact_unstableFrame_neg_stableNormal hφp hf hp hy.1)
-            (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
-              ((hX.unstableSet_eq_stableSet_neg hf p).subset hy.1)) op op'
-            φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun then 1
-          else -1) *
+            (stableNormalOrientation hφq hf hq oq' oq hy.2) =
+          unstableFrameOrientation hφp hf hp op op' hy.1 then 1 else -1) *
         hX.trajectorySign φp φq op oq hpq y := by
   have hb := bijective_trajectoryComparison hφp hφq hMS hf hpq hy
   have hb' := bijective_trajectoryComparison (φq.coord_mfderiv_neg hφq hq)
@@ -146,7 +137,8 @@ theorem neg_trajectorySign (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     ⟨(hX.stableSet_eq_unstableSet_neg hf q).subset hy.2,
       (hX.unstableSet_eq_stableSet_neg hf p).subset hy.1⟩
   rw [trajectorySign_of_bijective hb, trajectorySign_of_bijective hb',
-    MorseChart.trajectoryTargetOrientation_def, MorseChart.trajectoryTargetOrientation_def]
+    MorseChart.trajectoryTargetOrientation_def, MorseChart.trajectoryTargetOrientation_def,
+    stableNormalOrientation_def, unstableFrameOrientation_def]
   exact Orientation.ite_map_eq_prod_of_exact (l := (mvfderiv 𝓘(ℝ, E) f y).toLinearMap) _ _ _ _ _ _
     (eΦ := LinearEquiv.ofBijective _ hb) (fun v ↦ by simp [trajectoryComparison_apply])
     (eΨ := LinearEquiv.ofBijective _ hb') (fun v ↦ by simp [trajectoryComparison_apply])
@@ -174,34 +166,21 @@ theorem neg_trajectorySign_of_orientationAt_eq (hMS : hX.IsMorseSmale) (hf : IsM
       (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) q)))
     (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
         hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
-      (Orientation.ofExact (injective_unstableFrame_of_mem hφp hf
-          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)
-        (exact_unstableFrame_neg_stableNormal hφp hf hp
-          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)
-        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
-          ((hX.unstableSet_eq_stableSet_neg hf p).subset
-            (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)) op op'
-        φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun) =
+      (unstableFrameOrientation hφp hf hp op op'
+        (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1) =
       o.orientationAt p)
     (hoq : Orientation.reindex ℝ _
         (finCongr hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank)
-      (Orientation.ofExact
-        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
-          ((hX.stableSet_eq_unstableSet_neg hf q).subset
-            (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2))
-        (exact_neg_unstableFrame_stableNormal hφq hf hq
-          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2)
-        (surjective_stableNormal_of_mem hφq
-          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2) oq' oq
-        (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
+      (stableNormalOrientation hφq hf hq oq' oq
+        (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2) =
       o.orientationAt q) :
     (hX.neg hf).trajectorySign (φq.neg hq) (φp.neg hp) oq' op'
         (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) y =
       -(-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p) *
         hX.trajectorySign φp φq op oq hpq y := by
-  have hp' := ((reindex_ofExact_unstableFrame_eq_orientationAt_iff hφp hf hp o _ op op' hy.1
+  have hp' := ((reindex_unstableFrameOrientation_eq_orientationAt_iff hφp hf hp o _ op op' hy.1
     (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1).2 hop)
-  have hq' := ((reindex_ofExact_stableNormal_eq_orientationAt_iff hφq hf hq o _ oq' oq hy.2
+  have hq' := ((reindex_stableNormalOrientation_eq_orientationAt_iff hφq hf hq o _ oq' oq hy.2
     (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2).2 hoq)
   rw [neg_trajectorySign hφp hφq hMS hf hp hq hpq hy, ite_eq_left, mul_one]
   refine (Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
@@ -213,7 +192,7 @@ theorem neg_trajectorySign_of_orientationAt_eq (hMS : hX.IsMorseSmale) (hf : IsM
 at `p` and `q` as in `neg_trajectorySign_of_orientationAt_eq`, the signed count of the
 trajectories of `-X` from `q` to `p` is the signed count of the trajectories of `X` from `p` to
 `q` times `-(-1) ^ (ind_f q * ind_{-f} p)`. This is the coefficient-level form of the duality
-between the boundaries of `-f` and of `f`, still to be assembled into the boundary operators. -/
+between the boundaries of `-f` and of `f`. -/
 theorem neg_signedTrajectoryCount_of_orientationAt_eq (hMS : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f)
     (hp : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p)
@@ -228,26 +207,13 @@ theorem neg_signedTrajectoryCount_of_orientationAt_eq (hMS : hX.IsMorseSmale)
       (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) q)))
     (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
         hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
-      (Orientation.ofExact (injective_unstableFrame_of_mem hφp hf
-          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)
-        (exact_unstableFrame_neg_stableNormal hφp hf hp
-          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)
-        (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
-          ((hX.unstableSet_eq_stableSet_neg hf p).subset
-            (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)) op op'
-        φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun) =
+      (unstableFrameOrientation hφp hf hp op op'
+        (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1) =
       o.orientationAt p)
     (hoq : Orientation.reindex ℝ _
         (finCongr hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank)
-      (Orientation.ofExact
-        (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
-          ((hX.stableSet_eq_unstableSet_neg hf q).subset
-            (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2))
-        (exact_neg_unstableFrame_stableNormal hφq hf hq
-          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2)
-        (surjective_stableNormal_of_mem hφq
-          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2) oq' oq
-        (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
+      (stableNormalOrientation hφq hf hq oq' oq
+        (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2) =
       o.orientationAt q) :
     (hX.neg hf).signedTrajectoryCount (φq.neg hq) (φp.neg hp) oq' op'
         (hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq) =
