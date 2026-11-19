@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Combinatorics.Graph.Incidence.Basic
+public import TauCeti.Combinatorics.Graph.Isomorphism
 public import TauCeti.Combinatorics.Graph.VertexCover.Basic
 
 /-!
@@ -36,6 +37,7 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.IsBipartition.loopless`: a multigraph with a bipartition has no loops.
 * `Graph.IsBipartition.finite`: a multigraph with a bipartition has finitely many actual vertices.
 * `Graph.IsBipartition.deleteEdges`: deleting edges preserves a displayed bipartition.
+* `Graph.Iso.isBipartition_map_iff`: a graph isomorphism preserves and reflects bipartitions.
 * `SimpleGraph.isBipartition_ofSimpleGraph_iff`: covering bipartitions of
   `Graph.ofSimpleGraph H` are precisely bipartitions of `H` whose two sides cover every vertex.
 * `Graph.IsBipartition.isVertexCover_left`: the side `L` of a bipartition is a vertex cover, and
@@ -45,6 +47,8 @@ usage of either side by edge multiplicities equals their sum.
 * `Graph.BipartiteHom.sum_outgoing_eq_sum_incidentEdges` and
   `Graph.BipartiteHom.sum_incoming_eq_sum_incidentEdges`: sums over arrows at a vertex agree with
   sums over its incident edges.
+* `SimpleGraph.IsBipartite.exists_isBipartition_ofSimpleGraph`: a finite bipartite simple graph
+  admits a displayed bipartition of its associated edge-labelled multigraph.
 -/
 
 public section
@@ -52,7 +56,7 @@ public section
 open Finset
 open scoped Graph
 
-universe u v
+universe u v u' v'
 
 namespace Graph
 
@@ -169,6 +173,31 @@ end IsBipartition
 /-- A bipartition is symmetric in its two sides. -/
 theorem isBipartition_comm : G.IsBipartition L R ↔ G.IsBipartition R L :=
   ⟨IsBipartition.symm, IsBipartition.symm⟩
+
+/-! ### Isomorphism invariance -/
+
+namespace Iso
+
+variable {α' : Type u'} {β' : Type v'} {H : Graph α' β'}
+
+private theorem isBipartition_map (f : Iso G H) {L R : Finset V(G)} (h : G.IsBipartition L R) :
+    H.IsBipartition (L.map f.vertexEquiv.toEmbedding) (R.map f.vertexEquiv.toEmbedding) where
+  disjoint := (Finset.disjoint_map _).2 h.disjoint
+  mem_or_mem x := by simpa only [Finset.mem_map_equiv] using h.mem_or_mem (f.vertexEquiv.symm x)
+  isLink {e x y} he := by
+    simp only [Finset.mem_map_equiv]
+    exact h.isLink
+      ((f.map_isLink_iff (f.edgeEquiv.symm ⟨e, he.edge_mem⟩) _ _).1 (by simpa using he))
+
+/-- A graph isomorphism preserves and reflects bipartitions. -/
+@[simp]
+theorem isBipartition_map_iff (f : Iso G H) (L R : Finset V(G)) :
+    H.IsBipartition (L.map f.vertexEquiv.toEmbedding) (R.map f.vertexEquiv.toEmbedding) ↔
+      G.IsBipartition L R := by
+  refine ⟨fun h ↦ ?_, f.isBipartition_map⟩
+  simpa [Finset.map_map] using f.symm.isBipartition_map h
+
+end Iso
 
 /-! ### Bipartite arrow family -/
 
@@ -390,5 +419,28 @@ theorem isBipartition_ofSimpleGraph_iff (H : SimpleGraph α)
       · obtain ⟨x', hx'R, hxx'⟩ := hxy.1
         obtain ⟨y', hy'L, hyy'⟩ := hxy.2
         exact Or.inr ⟨Subtype.ext hxx' ▸ hx'R, Subtype.ext hyy' ▸ hy'L⟩
+
+/-- A finite bipartite simple graph admits a displayed bipartition of its associated
+edge-labelled multigraph. -/
+theorem IsBipartite.exists_isBipartition_ofSimpleGraph [Finite α]
+    {H : SimpleGraph α} (hH : H.IsBipartite) :
+    ∃ L R : Finset V(Graph.ofSimpleGraph H),
+      (Graph.ofSimpleGraph H).IsBipartition L R := by
+  classical
+  let _ := Fintype.ofFinite α
+  obtain ⟨c⟩ := hH
+  let b := H.recolorOfEquiv finTwoEquiv c
+  let L : Finset V(Graph.ofSimpleGraph H) := Finset.univ.filter fun x ↦ b x.1 = false
+  let R : Finset V(Graph.ofSimpleGraph H) := Finset.univ.filter fun x ↦ b x.1 = true
+  refine ⟨L, R, ⟨?_, ?_, ?_⟩⟩
+  · exact Finset.disjoint_filter.2 fun _ _ hfalse htrue ↦
+      Bool.false_ne_true (hfalse.symm.trans htrue)
+  · intro x
+    cases hx : b x.1 <;> simp [L, R, hx]
+  · intro e x y he
+    have hxy : H.Adj x.1 y.1 :=
+      (Graph.ofSimpleGraph_adj_iff x.1 y.1).1 ⟨e, he⟩
+    have hb := b.valid hxy
+    cases hx : b x.1 <;> cases hy : b y.1 <;> simp_all [L, R]
 
 end SimpleGraph

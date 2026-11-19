@@ -7,57 +7,70 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Energy
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # The energy identity on the whole plumbed four-punctured sphere
 
-Plumbing the output end at `∞` of a pair of pants `S'`, with bounded period-one `C¹` Hamiltonians
-`Ha`, into the input end `q ∈ {0, 1}` of a pair of pants `S`, with bounded period-one `C¹`
-Hamiltonians `Hb` and `Hb q = Ha ∞`, along a neck of length `L > 4` gives the four-punctured
-sphere `P = ℂ ∖ {0, 1, ψ(1)}` with the plumbed perturbation `K`
-(`TauCeti.Floer.plumbedPerturbation`), where `ψ` is the plumbing map
-`TauCeti.ThricePuncturedSphere.Puncture.plumbingMap q L`. Its four ends are the two inputs of `S'`,
-the remaining input `q'` of `S` and the output of `S`.
+Plumb the output end at `∞` of a pair of pants `S'`, with Hamiltonians `Ha`, into the input end
+`q ≠ ∞` of a pair of pants `S`, with Hamiltonians `Hb q = Ha ∞`, along a neck of length `L > 4`.
+The result is the four-punctured sphere `Σ_L = ℂ ∖ {0, 1, ψ(1)}`, where `ψ` is the plumbing map
+`TauCeti.ThricePuncturedSphere.Puncture.plumbingMap q L`, with the plumbed perturbation `K`
+(`TauCeti.Floer.plumbedPerturbation`). Families of these domains connect the two broken products
+`(a ⋆ b) ⋆ c` and `a ⋆ (b ⋆ c)`, and the energy of the Floer solutions over them controls the
+support of the associativity homotopy.
 
-Let `u` be a map which is `C¹` on `P`, with values in a finite-dimensional manifold `M` carrying a
-nondegenerate two-form `ω`, such as a closed symplectic manifold. Suppose that its loops along the
-four outer circles at height `R`, `ℓ'_r(t) = u(ψ(φ_r(R + i t)))` for the inputs `r` of `S'` and
-`ℓ_r(t) = u(φ_r(±R + i t))` for the ends `r ≠ q` of `S`, converge pointwise to loops `x'_r` and
-`x_r` as `R → ∞`, and that the energy density and the area density of `u` are integrable over
-`P`. The truncations `Σ_R` of `P` (`TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation`)
-exhaust it (`TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`), the curvature of
-`K` is integrable over `P` (`SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`),
-and by dominated convergence the integrals of the bounded Hamiltonians along the four outer loops
-converge to their integrals along the limit loops. Letting `R → ∞` in the energy identity over
-`Σ_R` (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation`) gives
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Energy` computes the energy over the
+truncations `Σ_R = q.plumbedTruncation L R`, `R ≥ L/2`, which increase with `R` and exhaust `Σ_L`
+(`TauCeti.ThricePuncturedSphere.Puncture.iUnion_plumbedTruncation`). This file lets `R → ∞`, for a
+map `u` into a finite-dimensional manifold `M` with a nondegenerate two-form `ω`, such as a closed
+symplectic manifold. Suppose that `u` is `C¹` on `Σ_L`, that its energy density and its area
+density are integrable over `Σ_L`, and that its loops along the four outer circles of `Σ_R`
+converge pointwise as `R → ∞`: the loops `t ↦ u(ψ(φ_r(R + i t)))` along the inputs `r ≠ ∞` of the
+inserted pair of pants to `x'_r`, and the loops `t ↦ u(φ_r(±R + i t))` along the ends `r ≠ q` of
+the receiving one to `x_r`. If the Hamiltonians are bounded, then
 
-`∫_P E = ∫_P u^*ω + ∑_{r ≠ ∞} ∫₀¹ Ha_r(t, x'_r(t)) dt + ∑_{r ≠ q} ±∫₀¹ Hb_r(t, x_r(t)) dt
-  - ∫_P R_K(u)`,
+`∫_{Σ_L} E = ∫_{Σ_L} u^*ω + ∑_{r ≠ ∞} ∫₀¹ Ha_r(t, x'_r(t)) dt + ∑_{r ≠ q} ±∫₀¹ Hb_r(t, x_r(t)) dt
+  - ∫_{Σ_L} R_K(u)`
 
-with the sign `+` on the input `q'` of `S` and `-` on its output
-(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`). The energy
-therefore differs from this topological part by at most `∑ r, Ba r + ∑ r, Bb r` for bounds
-`|Ha r| ≤ Ba r` and `|Hb r| ≤ Bb r`, whatever the neck length `L > 4`, and for a solution of the
-Floer equation with tamed almost complex structures the topological part is at least
-`-(∑ r, Ba r + ∑ r, Bb r)`. The plumbed spheres are the domains of the associativity family
-near its two broken-product ends, and these bounds hold over the whole domain. On a target which
-is not symplectically aspherical the area term depends on the homotopy class of `u`; caps of the
-four asymptotic orbits turn it into capped actions and the area of a sphere, which is not done
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`), with the sign
+`+` on inputs and `-` on the output. The neck contributes no boundary term, and its length enters
+only through the domain.
+
+The curvature is integrable over `Σ_L`
+(`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`): it is integrable
+over each `Σ_R`
+(`TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedTruncation`) and vanishes outside
+`Σ_R` for `R ≥ 2` (`SmoothTwoForm`'s
+`hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation`).
+So the three integrals over `Σ_R` converge to those over `Σ_L`, and by dominated convergence the
+Hamiltonian terms along the outer circles converge to those along their limits.
+
+The integral of the absolute value of the curvature over the plane is at most
+`∑ r, Ba r + ∑ r, Bb r` for bounds `|Ha r| ≤ Ba r`, `|Hb r| ≤ Bb r`
+(`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le`). So the
+energy differs from the area plus the Hamiltonian terms at the asymptotic loops by at most
+`∑ r, Ba r + ∑ r, Bb r`, uniformly in the neck length `L > 4`
+(`IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`), and for a solution
+of the Floer equation with tame almost complex structures this topological part is at least
+`-(∑ r, Ba r + ∑ r, Bb r)`
+(`IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedPerturbation`). On a target
+which is not symplectically aspherical the area term depends on the homotopy class of `u`; caps of
+the four asymptotic loops turn it into capped actions and the area of a sphere, which is not done
 here.
 
 ## Main results
 
-* `TauCeti.Floer.tendsto_setIntegral_plumbedTruncation`: integrals over the plumbed sphere are
-  limits of integrals over its truncations `Σ_R`.
-* `SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`: the curvature of the
-  plumbed perturbation is integrable over the whole plumbed sphere.
-* `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`: the energy
-  identity on the whole plumbed sphere, for a map with asymptotic loops at its four ends.
-* `SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`: the
-  resulting energy bound, uniform in the neck length.
-* `neg_sum_add_sum_le_integral_add_sum_add_sum_of_isComplexLinearMap_plumbedPerturbation`, in
-  the namespace `SmoothTwoForm.IsNondegenerate`: the lower bound on the topological energy of a
-  Floer solution.
+In the namespace `TauCeti.SmoothTwoForm`:
+
+* `integrableOn_hamiltonianCurvature_plumbedPerturbation`: the curvature is integrable over the
+  four-punctured sphere.
+* `IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`: the energy identity on the
+  whole plumbed four-punctured sphere, at the asymptotic loops of the four outer ends.
+* `IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le`: the resulting
+  energy bound, uniform in the neck length.
+* `IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedPerturbation`: the lower
+  bound on the topological energy of a Floer solution.
 
 ## References
 
@@ -73,31 +86,6 @@ open Set Real Function MeasureTheory Filter TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
 open scoped Topology Manifold
 
-namespace TauCeti.Floer
-
-/-- Integrals over the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, in real coordinates, are
-the limits of the integrals over its truncations `Σ_R`. -/
-theorem tendsto_setIntegral_plumbedTruncation {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L) {f : ℝ × ℝ → G}
-    (hf : IntegrableOn f {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
-    Tendsto (fun R : ℝ ↦ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R, f z)
-      atTop (𝓝 (∫ z in {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, f z)) := by
-  have hP : ⋃ R : ℝ, Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R =
-      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1) ∧
-        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-    rw [← preimage_iUnion, iUnion_plumbedTruncation hq hL]
-    rfl
-  rw [← hP] at hf ⊢
-  exact tendsto_setIntegral_of_monotone (measurableSet_preimage_plumbedTruncation q L)
-    (fun _ _ h ↦ preimage_mono (plumbedTruncation_mono q L h)) hf
-
-end TauCeti.Floer
-
 namespace TauCeti.SmoothTwoForm
 
 open Floer
@@ -106,10 +94,9 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   {ω : SmoothTwoForm I M} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
 
-/-- Along a map continuous on the plumbed four-punctured sphere, the curvature of the plumbed
-perturbation of period-one `C¹` Hamiltonians on a manifold is integrable over the whole
-four-punctured sphere, for every neck length `L > 4`. It vanishes off the truncation `Σ_{L/2}`
-(`SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation`). -/
+/-- **The curvature is integrable over the plumbed four-punctured sphere, for a manifold
+target.** Along a map continuous on the four-punctured sphere `Σ_L`, the curvature of the plumbed
+perturbation of period-one `C¹` Hamiltonians is integrable over `Σ_L`. -/
 theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
@@ -125,46 +112,27 @@ theorem integrableOn_hamiltonianCurvature_plumbedPerturbation (ω : SmoothTwoFor
       {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} :=
-  (integrableOn_hamiltonianCurvature_plumbedTruncation ω hq hHa hHb hHas hHbs hab hL le_rfl
+  (ω.integrableOn_hamiltonianCurvature_plumbedTruncation hq hHa hHb hHas hHbs hab hL le_rfl
     hu).of_forall_sdiff_eq_zero (isOpen_plumbedSphere q L).measurableSet fun _ hz ↦
       ω.hamiltonianCurvature_plumbedPerturbation_eq_zero_of_notMem_plumbedTruncation hq hHa hHb
         hHas hHbs hab hL (by linarith) hz.1 hz.2 _
 
-/-- Along a map continuous on the plumbed four-punctured sphere, the loops of `u` along circles
-`c R` lying in the truncation `Σ_R` for every `R > 0` are continuous from some height on. -/
-private theorem eventually_continuousOn_plumbedLoop {X : Type*} [TopologicalSpace X]
-    (hq : q ≠ inf) (hL : 0 < L) {u : ℝ × ℝ → X}
-    (hu : ContinuousOn u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
-    {c : ℝ → ℝ → ℂ} (hc : ∀ R, Continuous (c R))
-    (hcR : ∀ R > 0, ∀ t, c R t ∈ q.plumbedTruncation L R) :
-    ∀ᶠ R in atTop, ContinuousOn (fun t ↦ u (Complex.equivRealProdCLM (c R t))) (uIoc 0 1) := by
-  filter_upwards [eventually_gt_atTop 0] with R hR
-  refine (hu.comp_continuous (Complex.equivRealProdCLM.continuous.comp (hc R))
-    fun t ↦ ?_).continuousOn
-  simpa only [mem_ofPred_eq, comp_apply, ContinuousLinearEquiv.symm_apply_apply] using
-    plumbedTruncation_subset hq hL R (hcR R hR t)
-
 variable [FiniteDimensional ℝ E]
 
-/-- **The energy identity on the whole plumbed four-punctured sphere, for a manifold target.**
-Plumb the output end of a pair of pants with bounded period-one `C¹` Hamiltonians `Ha` into the
-input end `q ≠ ∞` of one with bounded period-one `C¹` Hamiltonians `Hb`, with `Hb q = Ha ∞`,
-along a neck of length `L > 4`, for Hamiltonians on a finite-dimensional manifold with a
-nondegenerate two-form. Let `u` be `C¹` on the four-punctured sphere `P = ℂ ∖ {0, 1, ψ(1)}`, in
-real coordinates, with Floer energy density and symplectic area density integrable over `P`.
-Suppose that its loops `t ↦ u(ψ(φ_r(R + i t)))` along the outer circles of the inputs `r ≠ ∞` of
-the inserted pair of pants converge pointwise to loops `x'_r`, and its loops
-`t ↦ u(φ_r(±R + i t))` along the outer circles of the ends `r ≠ q` of the receiving pair of pants
-converge pointwise to loops `x_r`, as `R → ∞`. Then
+/-- **The energy identity on the plumbed four-punctured sphere, for a manifold target.** Plumb the
+output end of a pair of pants with bounded period-one `C¹` Hamiltonians `Ha` into the input end
+`q ≠ ∞` of one with bounded period-one `C¹` Hamiltonians `Hb`, with `Hb q = Ha ∞`, along a neck of
+length `L > 4`, for Hamiltonians on a finite-dimensional manifold with a nondegenerate two-form,
+such as a closed symplectic manifold. Let `u` be `C¹` on the four-punctured sphere
+`Σ_L = ℂ ∖ {0, 1, ψ(1)}`, in real coordinates, with energy density and area density integrable over
+`Σ_L`. Suppose its loops `t ↦ u(ψ(φ_r(R + i t)))` along the inputs `r ≠ ∞` of the inserted pair of
+pants converge pointwise to loops `x'_r`, and its loops `t ↦ u(φ_r(±R + i t))` along the ends
+`r ≠ q` of the receiving one to loops `x_r`, as `R → ∞`. Then
 
-`∫_P E = ∫_P u^*ω + ∑_{r ≠ ∞} ∫₀¹ Ha_r(t, x'_r(t)) dt + ∑_{r ≠ q} ±∫₀¹ Hb_r(t, x_r(t)) dt
-  - ∫_P R_K(u)`,
+`∫_{Σ_L} E = ∫_{Σ_L} u^*ω + ∑_{r ≠ ∞} ∫₀¹ Ha_r(t, x'_r(t)) dt + ∑_{r ≠ q} ±∫₀¹ Hb_r(t, x_r(t)) dt
+  - ∫_{Σ_L} R_K(u)`,
 
-with the sign `+` on the remaining input of the receiving pair of pants and `-` on its output,
-the curvature term being integrable over `P`
-(`SmoothTwoForm.integrableOn_hamiltonianCurvature_plumbedPerturbation`). -/
+with the sign `+` on inputs and `-` on the output. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
     (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
     (hHb : ∀ r, Periodic (Hb r) 1)
@@ -175,11 +143,11 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1) ∧
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
-    {x' x : Puncture → ℝ → M}
-    (hx' : ∀ r ≠ inf, ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
-      (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (x' r t)))
-    (hx : ∀ r ≠ q, ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
-      (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x r t)))
+    {xa xb : Puncture → ℝ → M}
+    (hxa : ∀ r, r ≠ inf → ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (xa r t)))
+    (hxb : ∀ r, r ≠ q → ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (xb r t)))
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I) u)
@@ -203,67 +171,66 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
           Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1},
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
-        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (x' r t)) +
-          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (x r t)) -
+        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (xa r t)) +
+          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (xb r t)) -
         ∫ z in {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
           Complex.equivRealProdCLM.symm z ≠ 1) ∧
           Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, ω.hamiltonianCurvature
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  have hL₀ : 0 < L := by linarith
-  set P := {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-    Complex.equivRealProdCLM.symm z ≠ 1) ∧ Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}
-  set area := fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-    (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-    (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)
-  set curv := fun z ↦ ω.hamiltonianCurvature
-    (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-    z (u z)
-  -- Each term of the identity over `Σ_R` converges to the corresponding term over `P`.
-  have hRHS : Tendsto (fun R : ℝ ↦
-      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R, area z) +
-        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (u (Complex.equivRealProdCLM
-            (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I)))))) +
-          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (u
-            (Complex.equivRealProdCLM
-              (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I))))) -
-        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R, curv z) atTop
-      (𝓝 ((∫ z in P, area z) +
-        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (x' r t)) +
-          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (x r t)) -
-        ∫ z in P, curv z)) := by
-    refine ((tendsto_setIntegral_plumbedTruncation hq hL₀ hA).add
-      ((tendsto_finsetSum _ fun r hr ↦ ?_).add (tendsto_finsetSum _ fun r hr ↦ ?_))).sub
-      (tendsto_setIntegral_plumbedTruncation hq hL₀
-        (integrableOn_hamiltonianCurvature_plumbedPerturbation ω hq hHa hHb hHas hHbs hab hL
-          hu.continuousOn))
-    · have hr := Finset.ne_of_mem_erase hr
-      exact tendsto_intervalIntegral_comp_of_tendsto_of_norm_le (hHas r).continuous
-        (eventually_continuousOn_plumbedLoop hq hL₀ hu.continuousOn
-          (fun R ↦ (q.contDiff_plumbingMap L (n := 0)).continuous.comp
-            ((r.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop)))
-          fun R hR t ↦ plumbingMap_cylindricalEndLift_mem_plumbedTruncation q hr hL₀.le hR t)
-        (Eventually.of_forall fun R t _ ↦ (Real.norm_eq_abs _).trans_le (hBa r _ _))
-        fun t _ ↦ hx' r hr t
-    · have hr := Finset.ne_of_mem_erase hr
-      exact (tendsto_intervalIntegral_comp_of_tendsto_of_norm_le (hHbs r).continuous
-        (eventually_continuousOn_plumbedLoop hq hL₀ hu.continuousOn
-          (fun R ↦ (r.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))
-          fun R hR t ↦ cylindricalEndLift_mem_plumbedTruncation hq hr hL₀.le hR t)
-        (Eventually.of_forall fun R t _ ↦ (Real.norm_eq_abs _).trans_le (hBb r _ _))
-        fun t _ ↦ hx r hr t).const_mul _
-  -- From `R ≥ L/2` on, the identity over `Σ_R` holds.
-  refine tendsto_nhds_unique (tendsto_setIntegral_plumbedTruncation hq hL₀ hE) (hRHS.congr' ?_)
-  filter_upwards [eventually_ge_atTop (L / 2)] with R hR
-  exact (hω.integral_floerEnergyDensity_plumbedTruncation hq hHa hHb hHas hHbs hab hL hR hu).symm
+  set T : ℝ → Set (ℝ × ℝ) := fun R ↦ Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R
+  have hL0 : 0 < L := by linarith
+  have hTm (R : ℝ) : MeasurableSet (T R) := measurableSet_preimage_plumbedTruncation q L R
+  have hTmono : Monotone T := fun _ _ h ↦ preimage_mono (plumbedTruncation_mono q L h)
+  have hTP := iUnion_preimage_plumbedTruncation hq hL0
+  have hRP := ω.integrableOn_hamiltonianCurvature_plumbedPerturbation hq hHa hHb hHas hHbs hab hL
+    hu.continuousOn
+  -- The Hamiltonian terms along the outer circles converge, by dominated convergence, since for
+  -- `R > 0` the circles lie in `Σ_R`, where `u` is continuous.
+  have hmem {R : ℝ} {w : ℂ} (hw : w ∈ q.plumbedTruncation L R) :
+      Complex.equivRealProdCLM w ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
+    simpa only [mem_ofPred_eq, ContinuousLinearEquiv.symm_apply_apply] using
+      plumbedTruncation_subset hq hL0 R hw
+  have hHa_lim (r : Puncture) (hr : r ∈ Finset.univ.erase inf) :=
+    tendsto_intervalIntegral_comp_of_continuousOn (hHas r).continuous
+      (fun _ ↦ (Real.norm_eq_abs _).trans_le (hBa r _ _)) hu.continuousOn (t₁ := 0) (t₂ := 1)
+      (y := fun R t ↦ Complex.equivRealProdCLM
+        (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))
+      (Eventually.of_forall fun R ↦ (Complex.equivRealProdCLM.continuous.comp
+        ((q.contDiff_plumbingMap L (n := 0)).continuous.comp
+          ((r.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop)))).continuousOn)
+      ((eventually_gt_atTop 0).mono fun R hR t _ ↦ hmem
+        (plumbingMap_cylindricalEndLift_mem_plumbedTruncation (Finset.ne_of_mem_erase hr) hL0.le
+          hR t))
+      fun t _ ↦ hxa r (Finset.ne_of_mem_erase hr) t
+  have hHb_lim (r : Puncture) (hr : r ∈ Finset.univ.erase q) :=
+    tendsto_intervalIntegral_comp_of_continuousOn (hHbs r).continuous
+      (fun _ ↦ (Real.norm_eq_abs _).trans_le (hBb r _ _)) hu.continuousOn (t₁ := 0) (t₂ := 1)
+      (y := fun R t ↦ Complex.equivRealProdCLM
+        (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))
+      (Eventually.of_forall fun R ↦ (Complex.equivRealProdCLM.continuous.comp
+        ((r.contDiff_cylindricalEndLift 0).continuous.comp (by fun_prop))).continuousOn)
+      ((eventually_gt_atTop 0).mono fun R hR t _ ↦ hmem
+        (cylindricalEndLift_mem_plumbedTruncation hq (Finset.ne_of_mem_erase hr) hL0.le hR t))
+      fun t _ ↦ hxb r (Finset.ne_of_mem_erase hr) t
+  -- Both sides of the identity on `Σ_R` converge, and they agree for `R ≥ L/2`.
+  have hlim := ((tendsto_setIntegral_of_monotone hTm hTmono (hTP ▸ hA)).add
+    ((tendsto_finsetSum _ hHa_lim).add
+      (tendsto_finsetSum _ fun r hr ↦ (hHb_lim r hr).const_mul r.endSign))).sub
+    (tendsto_setIntegral_of_monotone hTm hTmono (hTP ▸ hRP))
+  have h := tendsto_nhds_unique (tendsto_setIntegral_of_monotone hTm hTmono (hTP ▸ hE))
+    (hlim.congr' ((eventually_ge_atTop (L / 2)).mono fun R hR ↦
+      (hω.integral_floerEnergyDensity_plumbedTruncation hq hHa hHb hHas hHbs hab hL hR hu).symm))
+  rwa [hTP] at h
 
-/-- **The energy bound on the whole plumbed four-punctured sphere, for a manifold target.** Under
-the hypotheses of `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`,
-the Floer energy over the four-punctured sphere differs from its topological part, the symplectic
-area plus the Hamiltonian terms at the four asymptotic loops, by at most
-`∑ r, Ba r + ∑ r, Bb r`, uniformly in the neck length `L > 4`. -/
+/-- **The energy bound on the plumbed four-punctured sphere, for a manifold target.** Under the
+hypotheses of `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`, the
+Floer energy over the four-punctured sphere differs from the symplectic area plus the Hamiltonian
+terms at the asymptotic loops of its four outer ends by at most `∑ r, Ba r + ∑ r, Bb r`, uniformly
+in the neck length `L > 4`. -/
 theorem IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le
     (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
     (hHb : ∀ r, Periodic (Hb r) 1)
@@ -274,11 +241,11 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1) ∧
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
-    {x' x : Puncture → ℝ → M}
-    (hx' : ∀ r ≠ inf, ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
-      (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (x' r t)))
-    (hx : ∀ r ≠ q, ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
-      (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x r t)))
+    {xa xb : Puncture → ℝ → M}
+    (hxa : ∀ r, r ≠ inf → ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (xa r t)))
+    (hxb : ∀ r, r ≠ q → ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (xb r t)))
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I) u)
@@ -302,25 +269,23 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_
           Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1},
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) -
-        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (x' r t)) +
-          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (x r t))| ≤
+        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (xa r t)) +
+          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (xb r t))| ≤
       ∑ r, Ba r + ∑ r, Bb r := by
   have hsub (a b c : ℝ) : a + b - c - a - b = -c := by ring
-  rw [hω.integral_floerEnergyDensity_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hBa hBb hu hx'
-    hx hE hA, hsub, abs_neg]
+  rw [hω.integral_floerEnergyDensity_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hBa hBb hu hxa
+    hxb hE hA, hsub, abs_neg]
   exact ω.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL
     hBa hBb u _
 
-namespace IsNondegenerate
-
-/-- **The topological energy of a solution on the whole plumbed four-punctured sphere is bounded
-below, for a manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on the
-four-punctured sphere for almost complex structures `J z` on the tangent spaces `T_{u(z)} M`
-tamed by the two-form, under the hypotheses of
+/-- **The topological energy of a solution on the plumbed four-punctured sphere is bounded below,
+for a manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on the
+four-punctured sphere for almost complex structures `J z` on the tangent spaces `T_{u(z)} M` tamed
+by the two-form, under the hypotheses of
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation`. Since its energy
-is nonnegative, its symplectic area plus the Hamiltonian terms at the four asymptotic loops is at
-least `-(∑ r, Ba r + ∑ r, Bb r)`, whatever the neck length `L > 4`. -/
-theorem neg_sum_add_sum_le_integral_add_sum_add_sum_of_isComplexLinearMap_plumbedPerturbation
+is nonnegative, its symplectic area plus the Hamiltonian terms at the asymptotic loops of its four
+outer ends is at least `-(∑ r, Ba r + ∑ r, Bb r)`, whatever the neck length `L > 4`. -/
+theorem IsNondegenerate.neg_sum_add_sum_le_integral_add_sum_add_sum_of_plumbedPerturbation
     (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
     (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
@@ -330,11 +295,11 @@ theorem neg_sum_add_sum_le_integral_add_sum_add_sum_of_isComplexLinearMap_plumbe
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1) ∧
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
-    {x' x : Puncture → ℝ → M}
-    (hx' : ∀ r ≠ inf, ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
-      (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (x' r t)))
-    (hx : ∀ r ≠ q, ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
-      (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x r t)))
+    {xa xb : Puncture → ℝ → M}
+    (hxa : ∀ r, r ≠ inf → ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))) atTop (𝓝 (xa r t)))
+    (hxb : ∀ r, r ≠ q → ∀ t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (xb r t)))
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I) u)
@@ -349,11 +314,12 @@ theorem neg_sum_add_sum_le_integral_add_sum_add_sum_of_isComplexLinearMap_plumbe
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1})
     {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
     (hJ : ∀ z ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, (hω.symplecticFormAt (u z)).Tames (J z))
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1},
+      (hω.symplecticFormAt (u z)).Tames (J z))
     (hfloer : ∀ z ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1},
+        Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1},
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
         (ω.perturbedMFDeriv
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
@@ -365,14 +331,12 @@ theorem neg_sum_add_sum_le_integral_add_sum_add_sum_of_isComplexLinearMap_plumbe
           Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1},
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
-        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (x' r t)) +
-          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (x r t)) := by
+        ((∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, Ha r t (xa r t)) +
+          ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, Hb r t (xb r t)) := by
   have hpos := setIntegral_nonneg (μ := volume) (isOpen_plumbedSphere q L).measurableSet
     fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
   have h := (abs_le.1 (hω.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_le hq hHa hHb
-    hHas hHbs hab hL hBa hBb hu hx' hx hE hA)).2
+    hHas hHbs hab hL hBa hBb hu hxa hxb hE hA)).2
   linarith
-
-end IsNondegenerate
 
 end TauCeti.SmoothTwoForm
