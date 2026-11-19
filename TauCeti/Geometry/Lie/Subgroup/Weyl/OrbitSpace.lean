@@ -30,8 +30,9 @@ group `G` is proper (`Representation.isProperMap_orbitRel_mk`). The induced bije
 is Hausdorff (`TauCeti.Lie.t2Space_quotient_orbitRel_continuousAdjointRepresentation`).
 
 No connectedness of `G` is needed. The restriction of the proper map `𝔱 → 𝔤 / Ad G` to a closed
-subset of `𝔱` meeting every Weyl orbit exactly once, such as a closed Weyl chamber, is again proper
-and is bijective onto `𝔤 / Ad G`; this is how adjoint orbits are parametrized by a chamber.
+subset of `𝔱` meeting every Weyl orbit exactly once is again proper and is bijective onto
+`𝔤 / Ad G`. When `G` is connected, a closed Weyl chamber is such a subset; this is how adjoint
+orbits are parametrized by a chamber.
 
 ## Main results
 
@@ -85,8 +86,7 @@ theorem IsMaximalTorus.orbitRel_weylAdjointRepresentation_iff (hT : IsMaximalTor
 
 omit [IsMulCommutative T] in
 /-- **The map from a torus Lie algebra to the adjoint orbit space is proper.** For a maximal torus
-`T` of a compact Lie group `G`, the map `𝔱 → 𝔤 / Ad G` sending `X` to its adjoint orbit is the
-restriction to the closed subspace `𝔱` of the orbit map of the compact group `G`, which is
+`T` of a compact Lie group `G`, the map `𝔱 → 𝔤 / Ad G` sending `X` to its adjoint orbit is
 proper. -/
 theorem IsMaximalTorus.isProperMap_orbitRel_mk_coe (hT : IsMaximalTorus T) :
     IsProperMap fun X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule ↦

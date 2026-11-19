@@ -24,8 +24,8 @@ The action of `G` on `V` through `ρ` is not registered as a `MulAction` instanc
 compete with other actions on `V`: for instance the units `kˣ` of the scalars already act on `V` by
 scalar multiplication, and a representation of `kˣ` need not be that action. So
 `Representation.orbitRel ρ` is defined as Mathlib's `MulAction.orbitRel` for the action
-`MulAction.compHom V ρ`, and the results below restate Mathlib's orbit-space topology for that
-action with hypotheses on `ρ` itself.
+`MulAction.compHom V ρ` (`Representation.orbitRel_eq`), and the results below restate Mathlib's
+orbit-space topology for that action with hypotheses on `ρ` itself.
 
 * When every `ρ g` is continuous, the quotient map `V → V / G` is open
   (`Representation.isOpenQuotientMap_orbitRel_mk`), by `MulAction.isOpenQuotientMap_quotientMk`.
@@ -65,6 +65,13 @@ def orbitRel : Setoid V :=
   letI := MulAction.compHom V ρ
   MulAction.orbitRel G V
 
+/-- `Representation.orbitRel ρ` is Mathlib's `MulAction.orbitRel` for the action
+`MulAction.compHom V ρ` of `G` through `ρ`. -/
+theorem orbitRel_eq :
+    letI := MulAction.compHom V ρ
+    ρ.orbitRel = MulAction.orbitRel G V :=
+  (rfl)
+
 theorem orbitRel_apply {v w : V} : ρ.orbitRel v w ↔ ∃ g : G, ρ g w = v :=
   Iff.rfl
 
@@ -96,8 +103,7 @@ theorem isOpenQuotientMap_orbitRel_mk (hρ : ∀ g : G, Continuous (ρ g)) :
 variable [TopologicalSpace G] [CompactSpace G]
 
 /-- **The orbit map of a compact group is closed.** For a jointly continuous representation of a
-compact group, the saturation of a closed set `A` is the projection to `V` of the closed set
-`{(g, v) | ρ g v ∈ A}`, and the projection `G × V → V` is a closed map. -/
+compact group, the quotient map `V → V / G` is closed. -/
 theorem isClosedMap_orbitRel_mk (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2) :
     IsClosedMap (Quotient.mk ρ.orbitRel) := fun A hA ↦ by
   rw [← (ρ.isOpenQuotientMap_orbitRel_mk fun g ↦ hρ.comp (Continuous.prodMk_right g))
@@ -108,8 +114,7 @@ theorem isClosedMap_orbitRel_mk (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2)
   exact ⟨fun ⟨_, ha, g, hg⟩ ↦ ⟨g, v, hg ▸ ha, rfl⟩, fun ⟨g, _, ha, rfl⟩ ↦ ⟨_, ha, g, rfl⟩⟩
 
 /-- **The orbit map of a compact group is proper.** For a jointly continuous representation of a
-compact group, the orbit map is closed, and its fibres are orbits, which are compact as continuous
-images of the group. -/
+compact group, the quotient map `V → V / G` is proper. -/
 theorem isProperMap_orbitRel_mk (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2) :
     IsProperMap (Quotient.mk ρ.orbitRel) := by
   refine isProperMap_iff_isClosedMap_and_compact_fibers.mpr
@@ -119,8 +124,9 @@ theorem isProperMap_orbitRel_mk (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2)
   ext w
   exact ρ.orbitRel_mk_eq_mk_iff
 
-/-- **The orbit space of a compact group acting on a Hausdorff space is Hausdorff.** A jointly
-continuous action of a compact group on a Hausdorff space is proper. -/
+/-- **The orbit space of a compact group acting on a Hausdorff space is Hausdorff.** For a jointly
+continuous representation of a compact group on a Hausdorff space, the orbit space `V / G` is
+Hausdorff. -/
 theorem t2Space_quotient_orbitRel [T2Space V] (hρ : Continuous fun p : G × V ↦ ρ p.1 p.2) :
     T2Space (Quotient ρ.orbitRel) :=
   letI := MulAction.compHom V ρ
