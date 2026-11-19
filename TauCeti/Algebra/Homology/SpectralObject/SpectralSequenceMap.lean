@@ -40,7 +40,9 @@ which is functorial in `φ`.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
 * `CategoryTheory.Abelian.SpectralObject.isIso_spectralSequenceMap`: an isomorphism of spectral
-  objects induces an isomorphism of spectral sequences.
+  objects induces an isomorphism of spectral sequences, and isomorphisms of their pages
+  (`CategoryTheory.Abelian.SpectralObject.isIso_spectralSequencePageMap`,
+  `CategoryTheory.Abelian.SpectralObject.isIso_spectralSequencePageXMap`).
 * `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, identified
   with objects `H^n(f)`, the morphism is the component of `φ`.
 
@@ -284,6 +286,20 @@ lemma spectralSequenceMap_comp :
 instance isIso_spectralSequenceMap [IsIso φ] : IsIso (spectralSequenceMap data φ) :=
   ⟨spectralSequenceMap data (inv φ), by rw [← spectralSequenceMap_comp]; simp,
     by rw [← spectralSequenceMap_comp]; simp⟩
+
+/-- An isomorphism of spectral objects induces isomorphisms of the objects of every page. -/
+instance isIso_spectralSequencePageXMap [IsIso φ] (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
+    IsIso (spectralSequencePageXMap data φ r hr pq) :=
+  ⟨spectralSequencePageXMap data (inv φ) r hr pq,
+    by rw [← spectralSequencePageXMap_comp, IsIso.hom_inv_id, spectralSequencePageXMap_id],
+    by rw [← spectralSequencePageXMap_comp, IsIso.inv_hom_id, spectralSequencePageXMap_id]⟩
+
+/-- An isomorphism of spectral objects induces an isomorphism of every page. -/
+instance isIso_spectralSequencePageMap [IsIso φ] (r : ℤ) (hr : r₀ ≤ r) :
+    IsIso (spectralSequencePageMap data φ r hr) :=
+  ⟨spectralSequencePageMap data (inv φ) r hr,
+    by rw [← spectralSequencePageMap_comp, IsIso.hom_inv_id, spectralSequencePageMap_id],
+    by rw [← spectralSequencePageMap_comp, IsIso.inv_hom_id, spectralSequencePageMap_id]⟩
 
 section FirstPage
 

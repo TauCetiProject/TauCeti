@@ -35,7 +35,10 @@ sending subspace inclusions to monomorphisms, so that they apply to singular and
 chains alike. So is the morphism of filtrations induced by a natural transformation `F ⟶ G`
 together with a map of filtered spaces (`TauCeti.chainFiltrationMap`), which is a
 quasi-isomorphism on every stage when the natural transformation is a quasi-isomorphism on every
-space (`TauCeti.quasiIso_chainFiltrationMap_app`).
+space (`TauCeti.quasiIso_chainFiltrationMap_app`, and `TauCeti.quasiIso_chainFiltrationMap_app_eInt`
+for the stages at `⊥` and `⊤`). It then induces an isomorphism of the spectral objects of the two
+filtrations (`TauCeti.chainFiltrationSpectralObjectIso`), hence of their pages, abutments and
+filtrations of the abutments.
 
 * **Graded pieces.** The quotient `F_b / F_a` of two stages of the filtration is the relative
   singular chain complex of the pair `(X b, X a)` (`TauCeti.singularChainFiltrationCokernelIso`),
@@ -312,6 +315,36 @@ instance quasiIso_chainFiltrationMap_app [∀ Z, QuasiIso (α.app Z)] (q : ℤ) 
   rw [hs, CategoryTheory.Functor.map_id, Category.id_comp, ← Iso.eq_comp_inv] at this
   rw [this]
   infer_instance
+
+/-- If `α` is a quasi-isomorphism on every space, then so is the morphism of filtrations it
+induces on a filtered space at every stage indexed by `EInt`, including `⊥` and `⊤`. -/
+instance quasiIso_chainFiltrationMap_app_eInt [∀ Z, QuasiIso (α.app Z)] (a : EInt) :
+    QuasiIso ((chainFiltrationMap α hX hX (𝟙 Y) fun _ _ hx ↦ hx).app a) := by
+  have h (q : ℤ) := quasiIso_chainFiltrationMap_app α hX q
+  have : QuasiIso (extendMap (F.map (𝟙 Y) ≫ α.app Y) ComplexShape.embeddingDownNat) := by
+    rw [CategoryTheory.Functor.map_id, Category.id_comp]
+    infer_instance
+  exact CochainComplex.quasiIso_filtrationFunctorMap_app _
+    (factors_chainFiltration α (𝟙 Y) fun _ _ hx ↦ hx) h a
+
+/-- **A natural transformation of chain functors by quasi-isomorphisms identifies the spectral
+objects of a filtered space.** If `α : F ⟶ G` is a quasi-isomorphism on every space, the spectral
+objects of the filtrations of `F Y` by the `F (X q)` and of `G Y` by the `G (X q)` are isomorphic
+through `α`, hence so are their spectral sequences, abutments and filtrations of the abutments. -/
+def chainFiltrationSpectralObjectIso [∀ Z, QuasiIso (α.app Z)] :
+    CochainComplex.spectralObject
+        (CochainComplex.filtrationFunctor _ (monotone_chainFiltration F hX)) ≅
+      CochainComplex.spectralObject
+        (CochainComplex.filtrationFunctor _ (monotone_chainFiltration G hX)) :=
+  asIso (CochainComplex.spectralObjectMap (chainFiltrationMap α hX hX (𝟙 Y) fun _ _ hx ↦ hx))
+
+/-- The isomorphism `TauCeti.chainFiltrationSpectralObjectIso α hX` is the morphism of spectral
+objects induced by `TauCeti.chainFiltrationMap`. -/
+@[simp]
+lemma chainFiltrationSpectralObjectIso_hom [∀ Z, QuasiIso (α.app Z)] :
+    (chainFiltrationSpectralObjectIso α hX).hom =
+      CochainComplex.spectralObjectMap (chainFiltrationMap α hX hX (𝟙 Y) fun _ _ hx ↦ hx) := by
+  rw [chainFiltrationSpectralObjectIso, asIso_hom]
 
 /-- The identity of a filtered space induces the identity of its filtered chains. -/
 @[simp]
