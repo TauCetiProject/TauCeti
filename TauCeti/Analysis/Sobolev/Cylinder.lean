@@ -18,10 +18,8 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
-import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
-import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 
