@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
-public import TauCeti.Data.List.Involutive
 public import TauCeti.LinearAlgebra.FreeProduct.ReducedWords
 
 /-!
@@ -150,24 +149,6 @@ section Pattern
 
 variable {V X : Type*} (μ : K → V → V) (s : V) (π : V → X)
 
-/-- The state reached from `s` along a reduced word, mutating in reading order. -/
-def _root_.LinearAlgebra.FreeProduct.ReducedWord.eval (w : ReducedWord K) : V :=
-  w.toList.foldl (fun t k ↦ μ k t) s
-
-/-- A reduced word acts by the left fold of its mutations. -/
-theorem _root_.LinearAlgebra.FreeProduct.ReducedWord.eval_def (w : ReducedWord K) :
-    w.eval μ s = w.toList.foldl (fun t k ↦ μ k t) s := (rfl)
-
-/-- The empty word leaves the initial state unchanged. -/
-@[simp]
-theorem _root_.LinearAlgebra.FreeProduct.ReducedWord.eval_nil :
-    (nil : ReducedWord K).eval μ s = s := (rfl)
-
-/-- The value of a reduced word is reachable. -/
-theorem _root_.LinearAlgebra.FreeProduct.ReducedWord.foldReachable_eval (w : ReducedWord K) :
-    FoldReachable (fun t k ↦ μ k t) s (w.eval μ s) :=
-  foldReachable_foldl _ s w.toList
-
 /-- The classes, under a class map `π`, of the states reachable from `s`. For the quotient by
 simultaneous relabelling these are the reachable seeds modulo relabelling. -/
 def reachableClasses : Set X :=
@@ -238,34 +219,6 @@ theorem exchangeGraph_adj_iff_forall (hμ : ∀ k, Function.Involutive (μ k))
     exact ⟨t, ht, k, hx, hk⟩
 
 variable [DecidableEq K]
-
-/-- A step in the mutation tree is a single mutation of the state. -/
-@[simp]
-theorem _root_.LinearAlgebra.FreeProduct.ReducedWord.eval_step
-    (hμ : ∀ k, Function.Involutive (μ k)) (k : K)
-    (w : ReducedWord K) : (step k w).eval μ s = μ k (w.eval μ s) := by
-  rcases toList_step_cases k w with h | h
-  · simp only [eval_def, h, List.foldl_concat, hμ k _]
-  · simp only [eval_def, h, List.foldl_concat]
-
-/-- Every word acts as its free reduction. -/
-@[simp]
-theorem _root_.LinearAlgebra.FreeProduct.ReducedWord.eval_reduce
-    (hμ : ∀ k, Function.Involutive (μ k)) (w : List K) :
-    (reduce w).eval μ s = w.foldl (fun t k ↦ μ k t) s := by
-  induction w using List.reverseRecOn with
-  | nil => simp only [reduce_nil, eval_nil, List.foldl_nil]
-  | append_singleton u k ih =>
-    rw [reduce_append_singleton, eval_step hμ, ih, List.foldl_concat]
-
-omit [DecidableEq K] in
-/-- The states reachable from `s` are exactly the values of reduced words. -/
-theorem _root_.LinearAlgebra.FreeProduct.ReducedWord.foldReachable_iff_exists_eval
-    (hμ : ∀ k, Function.Involutive (μ k))
-    {t : V} : FoldReachable (fun t k ↦ μ k t) s t ↔ ∃ w : ReducedWord K, w.eval μ s = t := by
-  classical
-  exact ⟨fun h ↦ let ⟨w, hw⟩ := foldReachable_def.1 h; ⟨reduce w, (eval_reduce hμ w).trans hw⟩,
-    fun ⟨w, hw⟩ ↦ hw ▸ w.foldReachable_eval μ s⟩
 
 omit [DecidableEq K] in
 /-- Every reachable class is the class of a reduced word. -/

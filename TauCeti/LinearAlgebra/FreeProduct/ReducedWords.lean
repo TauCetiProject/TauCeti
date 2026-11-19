@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DirectSum.Decomposition
 public import TauCeti.LinearAlgebra.FreeProduct.Star
 public import TauCeti.Data.List.Chain
+public import TauCeti.Data.List.Involutive
 public import TauCeti.LinearAlgebra.PiTensorProduct.Fin
 import TauCeti.Algebra.Star.BigOperators
 import Mathlib.Data.List.OfFn
@@ -59,7 +60,10 @@ property `LinearAlgebra.FreeProduct.lift`, and evaluates at the vacuum vector of
   `FreeProduct R A` and `⨁ w : ReducedWord I, WordTensor φ w`.
 
 The reduced-word API also includes involutive right steps (`ReducedWord.step`) and free
-reduction by cancellation of adjacent equal letters (`ReducedWord.reduce`).
+reduction by cancellation of adjacent equal letters (`ReducedWord.reduce`), and evaluation
+by families of involutions (`ReducedWord.eval`). Evaluation commutes with free reduction
+(`ReducedWord.eval_reduce`), and every reachable state is the value of a reduced word
+(`ReducedWord.foldReachable_iff_exists_eval`).
 
 ## Main results
 
@@ -315,6 +319,64 @@ theorem reduce_toList (w : ReducedWord K) : reduce w.toList = w := by
     exact step_eq_of_toList_eq_append rfl
 
 end Reduction
+
+/-! ### Evaluation by involutions -/
+
+section Evaluation
+
+open TauCeti
+
+variable {K V : Type*} (μ : K → V → V) (s : V)
+
+/-- The state reached from `s` along a reduced word, mutating in reading order. -/
+def eval (w : ReducedWord K) : V :=
+  w.toList.foldl (fun t k ↦ μ k t) s
+
+/-- A reduced word acts by the left fold of its mutations. -/
+theorem eval_def (w : ReducedWord K) :
+    w.eval μ s = w.toList.foldl (fun t k ↦ μ k t) s := (rfl)
+
+/-- The empty word leaves the initial state unchanged. -/
+@[simp]
+theorem eval_nil :
+    (nil : ReducedWord K).eval μ s = s := (rfl)
+
+/-- The value of a reduced word is reachable. -/
+theorem foldReachable_eval (w : ReducedWord K) :
+    FoldReachable (fun t k ↦ μ k t) s (w.eval μ s) :=
+  foldReachable_foldl _ s w.toList
+
+variable {μ s} [DecidableEq K]
+
+/-- A right step acts by the corresponding involution. -/
+@[simp]
+theorem eval_step
+    (hμ : ∀ k, Function.Involutive (μ k)) (k : K)
+    (w : ReducedWord K) : (step k w).eval μ s = μ k (w.eval μ s) := by
+  rcases toList_step_cases k w with h | h
+  · simp only [eval_def, h, List.foldl_concat, hμ k _]
+  · simp only [eval_def, h, List.foldl_concat]
+
+/-- Every word acts as its free reduction. -/
+@[simp]
+theorem eval_reduce
+    (hμ : ∀ k, Function.Involutive (μ k)) (w : List K) :
+    (reduce w).eval μ s = w.foldl (fun t k ↦ μ k t) s := by
+  induction w using List.reverseRecOn with
+  | nil => simp only [reduce_nil, eval_nil, List.foldl_nil]
+  | append_singleton u k ih =>
+    rw [reduce_append_singleton, eval_step hμ, ih, List.foldl_concat]
+
+omit [DecidableEq K] in
+/-- The states reachable from `s` are exactly the values of reduced words. -/
+theorem foldReachable_iff_exists_eval
+    (hμ : ∀ k, Function.Involutive (μ k))
+    {t : V} : FoldReachable (fun t k ↦ μ k t) s t ↔ ∃ w : ReducedWord K, w.eval μ s = t := by
+  classical
+  exact ⟨fun h ↦ let ⟨w, hw⟩ := foldReachable_def.1 h; ⟨reduce w, (eval_reduce hμ w).trans hw⟩,
+    fun ⟨w, hw⟩ ↦ hw ▸ w.foldReachable_eval μ s⟩
+
+end Evaluation
 
 end ReducedWord
 
