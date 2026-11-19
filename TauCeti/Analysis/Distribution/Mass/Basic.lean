@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 
 /-!
 # Mass of functionals on vector-valued test functions
@@ -326,9 +327,8 @@ theorem mass_comp_monoCLM {Ω' : Opens E} (h : Ω' ≤ Ω) :
   · exact enorm_le_localMass (f := f) (φ := ι ψ) (by rw [hι]; exact ψ.tsupport_subset)
       (by simpa [hι] using hψ)
   · -- A test on `Ω` supported in `Ω'` is the image of a test on `Ω'`.
-    let ψ : 𝓓^{n}(Ω', F) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφU⟩
-    have hψ : ι ψ = φ := TestFunction.ext fun x => by simp [hι, ψ]
-    simpa [hψ] using enorm_le_mass (f := f ∘ ι) (φ := ψ) hφ
+    obtain ⟨ψ, rfl⟩ := TestFunction.exists_monoCLM_eq_of_tsupport_subset h hφU
+    simpa using enorm_le_mass (f := f ∘ ι) (φ := ψ) (by simpa [h] using hφ)
 
 /-- Precomposing with `TestFunction.monoCLM` does not increase mass. This covers restriction to an
 open subset `Ω' ≤ Ω` and restriction of the smoothness order (`n ≤ m`); otherwise `monoCLM` is
@@ -353,13 +353,11 @@ theorem localMass_comp_monoCLM {Ω' : Opens E} (f : 𝓓^{n}(Ω, F) → V) (h : 
   · exact enorm_le_localMass (f := f)
       (by rw [hcoe]; exact subset_inter hψU ψ.tsupport_subset)
       (by simpa [hcoe] using hψ)
-  · let ψ : 𝓓^{n}(Ω', F) := ⟨φ, φ.contDiff, φ.hasCompactSupport,
-      hφU.trans inter_subset_right⟩
-    have hψ : (TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = φ :=
-      TestFunction.ext fun x => by simp [hcoe, ψ]
-    simpa [Function.comp_apply, hψ] using
+  · obtain ⟨ψ, rfl⟩ :=
+      TestFunction.exists_monoCLM_eq_of_tsupport_subset h (hφU.trans inter_subset_right)
+    simpa [Function.comp_apply] using
       (enorm_le_localMass (f := f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] _))
-        (φ := ψ) (hφU.trans inter_subset_left) hφ)
+        (φ := ψ) (by simpa [hcoe] using hφU.trans inter_subset_left) (by simpa [hcoe] using hφ))
 
 end Restriction
 
