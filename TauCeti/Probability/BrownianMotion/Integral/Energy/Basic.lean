@@ -17,6 +17,12 @@ of its holding against the finite-horizon predictable measure. This identifies t
 finite-grid isometry with the native predictable `L²` norm used for completion, without
 introducing an integral operator or assuming that the general stochastic integral exists.
 
+At an arbitrary observation time `t`, the `L²(P)` norm of the elementary integral equals the
+`L²` norm of its holding for Lebesgue time on `(0,t]` times `P`
+(`TauCeti.Probability.IsFilteredPreBrownianReal.eLpNorm_simpleGains`); the grid may extend
+beyond `t`. This is the form used to show that elementary integrals of `L²`-approximating
+holdings are Cauchy in `L²(P)` at every time.
+
 Heights need only be square integrable and measurable at their left endpoints.
 The grid may be empty or have repeated dates; Brownian path regularity and usual
 conditions on the filtration are not needed.
@@ -67,6 +73,67 @@ theorem lintegral_enorm_sq_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
   refine sum_congr rfl fun i hi ↦ ?_
   have hin : τ (i + 1) ≤ τ n := hτ (mem_range.mp hi) self_mem_Iic (mem_range.mp hi)
   rw [lintegral_mul_const _ (hmeas i (mem_range.mp hi)), min_eq_left hin,
+    ← ofReal_integral_eq_lintegral_ofReal (ha₂ i (mem_range.mp hi)).integrable_sq
+      (ae_of_all _ fun _ ↦ sq_nonneg _),
+    ENNReal.ofReal_mul (integral_nonneg fun _ ↦ sq_nonneg _)]
+
+/-- **The elementary Brownian isometry at an observation time.** The `L²(P)` norm of an
+elementary Brownian integral at time `t` is the `L²` norm of its holding for Lebesgue time on
+`(0,t]` times `P`. The grid may extend beyond `t`, and square-integrable left-measurable
+heights suffice; no boundedness assumption is imposed. -/
+theorem eLpNorm_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
+    (ha₂ : ∀ i < n, MemLp (a i) 2 P) (t : ℝ≥0) :
+    eLpNorm (simpleGains τ n a W t) 2 P =
+      eLpNorm (Function.uncurry (simpleHolding τ n a)) 2
+        ((TauCeti.Probability.timeMeasure t).prod P) := by
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hle (i : ℕ) (hi : i ∈ range n) : τ i ≤ τ (i + 1) :=
+    hτ (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i)
+  have hdisj : ((range n : Finset ℕ) : Set ℕ).Pairwise
+      fun i j ↦ τ (i + 1) ≤ τ j ∨ τ (j + 1) ≤ τ i := by
+    intro i hi j hj hij
+    simp only [coe_range, Set.mem_Iio] at hi hj
+    rcases lt_or_gt_of_ne hij with h | h
+    · exact Or.inl (hτ (by simp only [Set.mem_Iic]; omega) hj.le h)
+    · exact Or.inr (hτ (by simp only [Set.mem_Iic]; omega) hi.le h)
+  have hG : simpleGains τ n a W t = fun ω ↦ ∑ i ∈ range n,
+      a i ω * (W (min (τ (i + 1)) t) ω - W (min (τ i) t) ω) :=
+    funext (simpleGains_def τ n a W t)
+  have hmem := hW.memLp_sum_mul_sub_min (range n) hle (fun i hi ↦ ha i (mem_range.mp hi))
+    (fun i hi ↦ ha₂ i (mem_range.mp hi)) t
+  have hmeas : Measurable (fun p : ℝ≥0 × Ω ↦ ‖simpleHolding τ n a p.1 p.2‖ₑ ^ 2) :=
+    (((isStronglyPredictable_simpleHolding ha).mono ℱ.predictable_le_prod).measurable.eNorm
+      ).pow_const 2
+  have hmeasa (i : ℕ) (hi : i < n) : Measurable (fun ω ↦ ENNReal.ofReal (a i ω ^ 2)) :=
+    (((ha i hi).mono (ℱ.le _)).measurable.pow_const 2).ennreal_ofReal
+  -- Compare the squares of both norms as lower integrals.
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+      (hG ▸ hmem.aestronglyMeasurable),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top
+      ((isStronglyPredictable_simpleHolding ha).mono ℱ.predictable_le_prod).aestronglyMeasurable]
+  congr 1
+  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two, Function.uncurry_def]
+  rw [lintegral_prod _ hmeas.aemeasurable, lintegral_lintegral_swap hmeas.aemeasurable]
+  simp_rw [lintegral_enorm_sq_simpleHolding_timeMeasure hτ, hG, Real.enorm_sq_eq_ofReal_sq]
+  rw [← ofReal_integral_eq_lintegral_ofReal hmem.integrable_sq (ae_of_all _ fun _ ↦ sq_nonneg _),
+    hW.integral_sq_sum_mul_sub_min (range n) hle hdisj (fun i hi ↦ ha i (mem_range.mp hi))
+      (fun i hi ↦ ha₂ i (mem_range.mp hi)) t,
+    lintegral_finsetSum _ (fun i hi ↦ (hmeasa i (mem_range.mp hi)).mul_const _),
+    ENNReal.ofReal_sum_of_nonneg (fun i hi ↦ mul_nonneg (integral_nonneg fun _ ↦ sq_nonneg _)
+      (sub_nonneg.mpr (by exact_mod_cast min_le_min_right t (hle i hi))))]
+  refine sum_congr rfl fun i hi ↦ ?_
+  -- An interval starting after `t` has no elapsed length on either side.
+  have hlen : ENNReal.ofReal ((min (τ (i + 1)) t : ℝ≥0) - (τ i : ℝ)) =
+      ENNReal.ofReal ((min (τ (i + 1)) t : ℝ≥0) - (min (τ i) t : ℝ≥0)) := by
+    by_cases hit : τ i ≤ t
+    · rw [min_eq_left hit]
+    · have hti : t ≤ τ i := (not_le.mp hit).le
+      rw [min_eq_right hti, min_eq_right (hti.trans (hle i hi)), sub_self,
+        ENNReal.ofReal_of_nonpos (sub_nonpos.mpr (by exact_mod_cast hti)),
+        ENNReal.ofReal_zero]
+  rw [lintegral_mul_const _ (hmeasa i (mem_range.mp hi)), hlen,
     ← ofReal_integral_eq_lintegral_ofReal (ha₂ i (mem_range.mp hi)).integrable_sq
       (ae_of_all _ fun _ ↦ sq_nonneg _),
     ENNReal.ofReal_mul (integral_nonneg fun _ ↦ sq_nonneg _)]

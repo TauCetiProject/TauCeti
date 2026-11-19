@@ -157,6 +157,17 @@ theorem simpleHolding_of_notMem_Ioc (hτ : MonotoneOn τ (Set.Iic n))
   exact Set.Ioc_subset_Ioc (hτ (Nat.zero_le n) (mem_range.1 hi).le (Nat.zero_le i))
     (hτ (mem_range.1 hi) Set.self_mem_Iic (mem_range.1 hi)) hit
 
+/-- Over a partition monotone up to `n`, a simple strategy whose positions are bounded in norm
+by `C` holds at most `max C 0` at every time. -/
+theorem norm_simpleHolding_le (hτ : MonotoneOn τ (Set.Iic n)) {C : ℝ}
+    (haC : ∀ j < n, ∀ ω, ‖a j ω‖ ≤ C) (t : ι) (ω : Ω) :
+    ‖simpleHolding τ n a t ω‖ ≤ max C 0 := by
+  by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
+  · obtain ⟨j, hj, htj⟩ := TauCeti.exists_lt_mem_Ioc_of_mem_Ioc ht
+    rw [simpleHolding_of_mem_Ioc hτ hj htj]
+    exact (haC j hj ω).trans (le_max_left _ _)
+  · simp [simpleHolding_of_notMem_Ioc hτ ht]
+
 /-- The gains over a partition monotone up to `n` vanish up to its first date. -/
 @[simp]
 theorem simpleGains_of_le (hτ : MonotoneOn τ (Set.Iic n)) (ht : t ≤ τ 0) (X : ι → Ω → ℝ)
