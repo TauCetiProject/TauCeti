@@ -9,9 +9,9 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Finset.Powerset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Basic.Rel.Cover
-import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Set.Finite.Powerset
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Data.Finset.Powerset
 
 /-!
 # Constant-weight packings
@@ -36,55 +36,30 @@ variable {α : Type*} [DecidableEq α] {s t : Finset α} {k m : ℕ}
 
 /-- The sphere of k-element subsets obtained by making exactly m replacements
 from a k-element centre. The two factors count the removed and inserted elements. -/
-theorem card_filter_powersetCard_card_sdiff_eq (hst : s ⊆ t) (hs : s.card = k) (m : ℕ) :
+theorem card_filter_powersetCard_card_sdiff_eq_choose_mul_choose
+    (hst : s ⊆ t) (hs : s.card = k) (m : ℕ) :
     ((t.powersetCard k).filter fun a ↦ (a \ s).card = m).card =
       k.choose m * (t.card - k).choose m := by
-  let removedAdded := (s.powersetCard m) ×ˢ ((t \ s).powersetCard m)
-  calc
-    _ = removedAdded.card := by
-      refine card_nbij' (fun a ↦ (s \ a, a \ s)) (fun uv ↦ (s \ uv.1) ∪ uv.2) ?_ ?_ ?_ ?_
-      · intro a ha
-        rcases mem_filter.mp ha with ⟨ha, hm⟩
-        rcases mem_powersetCard.mp ha with ⟨hat, hak⟩
-        have hsa := (card_sdiff_eq_card_sdiff_iff.mpr (hs.trans hak.symm)).trans hm
-        exact mem_product.mpr ⟨mem_powersetCard.mpr ⟨sdiff_subset, hsa⟩,
-          mem_powersetCard.mpr ⟨sdiff_subset_sdiff hat Subset.rfl, hm⟩⟩
-      · intro ⟨u, v⟩ huv
-        rcases mem_product.mp huv with ⟨hu, hv⟩
-        rcases mem_powersetCard.mp hu with ⟨hus, hum⟩
-        rcases mem_powersetCard.mp hv with ⟨hvt, hvm⟩
-        have hd : Disjoint (s \ u) v :=
-          disjoint_of_subset_left sdiff_subset
-            (disjoint_of_subset_right hvt disjoint_sdiff_self_right)
-        have hcard := card_sdiff_add_card_eq_card hus
-        refine mem_filter.mpr ⟨mem_powersetCard.mpr ⟨?_, ?_⟩, ?_⟩
-        · exact union_subset (sdiff_subset.trans hst) (hvt.trans sdiff_subset)
-        · rw [card_union_of_disjoint hd, hvm, ← hum, hcard, hs]
-        · rwa [union_sdiff_distrib, sdiff_eq_empty_iff_subset.mpr sdiff_subset, empty_union,
-            sdiff_eq_self_iff_disjoint.mpr (disjoint_of_subset_left hvt disjoint_sdiff_self_left)]
-      · intro a _
-        ext i
-        simp only [mem_union, mem_sdiff]
-        grind
-      · intro ⟨u, v⟩ huv
-        rcases mem_product.mp huv with ⟨hu, hv⟩
-        have hus := (mem_powersetCard.mp hu).1
-        have hvs := (mem_powersetCard.mp hv).1
-        ext : 1
-        · ext i
-          have hi := @hus i
-          have hj := @hvs i
-          simp only [mem_sdiff, mem_union] at *
-          grind
-        · ext i
-          have hj := @hvs i
-          simp only [mem_sdiff, mem_union] at *
-          grind
-    _ = _ := by
-      simp [removedAdded, card_product, card_powersetCard, card_sdiff_of_subset hst, hs]
+  by_cases hm : m ≤ k
+  · have hfilter : (t.powersetCard k).filter (fun a ↦ (a \ s).card = m) =
+        (t.powersetCard k).filter (fun a ↦ (a ∩ s).card = k - m) := by
+      refine filter_congr fun a ha ↦ ?_
+      have hcard := (mem_powersetCard.mp ha).2
+      have hsum := card_sdiff_add_card_inter a s
+      omega
+    rw [hfilter, card_filter_powersetCard_card_inter t s (Nat.sub_le k m),
+      inter_eq_right.mpr hst, card_sdiff_of_subset hst, hs, Nat.choose_symm hm, Nat.sub_sub_self hm]
+  · have hlt := Nat.lt_of_not_ge hm
+    have hfilter : (t.powersetCard k).filter (fun a ↦ (a \ s).card = m) = ∅ := by
+      refine filter_eq_empty_iff.mpr fun a ha hdist ↦ ?_
+      have hcard := (mem_powersetCard.mp ha).2
+      have hle := card_le_card (sdiff_subset (s := a) (t := s))
+      omega
+    simp [hfilter, Nat.choose_eq_zero_of_lt hlt]
 
 /-- The ball of radius r in the constant-weight family, measured in replacements. -/
-theorem card_filter_powersetCard_card_sdiff_le (hst : s ⊆ t) (hs : s.card = k) (r : ℕ) :
+theorem card_filter_powersetCard_card_sdiff_le_eq_sum
+    (hst : s ⊆ t) (hs : s.card = k) (r : ℕ) :
     ((t.powersetCard k).filter fun a ↦ (a \ s).card ≤ r).card =
       ∑ j ∈ range (r + 1), k.choose j * (t.card - k).choose j := by
   have hmap : Set.MapsTo (fun a : Finset α ↦ (a \ s).card)
@@ -98,7 +73,7 @@ theorem card_filter_powersetCard_card_sdiff_le (hst : s ⊆ t) (hs : s.card = k)
   have hj' : j ≤ r := Nat.le_of_lt_succ (mem_range.mp hj)
   have heq (a : Finset α) : ((a \ s).card ≤ r ∧ (a \ s).card = j) ↔ (a \ s).card = j :=
     and_iff_right_of_imp fun h ↦ h ▸ hj'
-  simpa only [heq] using card_filter_powersetCard_card_sdiff_eq hst hs j
+  simpa only [heq] using card_filter_powersetCard_card_sdiff_eq_choose_mul_choose hst hs j
 
 /-- Any k-subset at most k - m replacements from s contains an m-subset of s.
 Counting all extensions of those m-subsets gives this upper bound for the ball. -/
@@ -175,10 +150,11 @@ theorem exists_powersetCard_pairwise_lt_card_sdiff (t : Finset α) (k r : ℕ) :
   obtain ⟨C, hC, hsep, hcover⟩ := t.exists_powersetCard_pairwise_lt_card_sdiff_cover k r
   refine ⟨C, hC, hsep, choose_le_card_mul_of_powersetCard_cover hcover fun b hb ↦ ?_⟩
   obtain ⟨hbt, hbk⟩ := mem_powersetCard.mp (hC hb)
-  exact (card_filter_powersetCard_card_sdiff_le hbt hbk r).le
+  exact (card_filter_powersetCard_card_sdiff_le_eq_sum hbt hbk r).le
 
-/-- A packing separated by more than k - m replacements has a lower cardinality bound
-obtained by counting extensions of m-subsets of each centre. -/
+/-- There is a family `C` of `k`-subsets of `t` pairwise separated by more than `k - m`
+replacements and satisfying `t.card.choose m ≤ C.card * (k.choose m) ^ 2`.
+The bound comes from counting extensions of `m`-subsets of each centre. -/
 theorem exists_powersetCard_pairwise_lt_card_sdiff_choose_le (t : Finset α) {k m : ℕ}
     (hm : m ≤ k) (hk : k ≤ t.card) :
     ∃ C ⊆ t.powersetCard k,
