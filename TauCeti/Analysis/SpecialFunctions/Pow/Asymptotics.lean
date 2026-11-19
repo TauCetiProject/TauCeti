@@ -40,6 +40,10 @@ This is how polynomial rates in a small scale `h` become inequalities for all sm
 A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a → -∞`,
 tends to zero. This is how valuation bounds on coefficients give convergence of series.
 
+## Roots of a fixed number
+
+For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the nonnegative real `q` tends to `∞`.
+
 ## Comparing exponents
 
 If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`: a power with a
@@ -218,5 +222,13 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
     _ ≤ (M * (1 + r)) * ((2 * M + 1) * log (2 + r)) :=
       mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
     _ = _ := by dsimp [M]; ring
+
+open scoped NNReal in
+/-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the nonnegative real `q` tends to `∞`. -/
+theorem tendsto_rpow_inv_coe_atTop {B : ℝ} (hB : B ≠ 0) :
+    Tendsto (fun q : ℝ≥0 => B ^ (q : ℝ)⁻¹) atTop (𝓝 1) := by
+  have ht : Tendsto (fun q : ℝ≥0 => (q : ℝ)⁻¹) atTop (𝓝 0) :=
+    tendsto_inv_atTop_zero.comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
+  simpa only [Function.comp_def, rpow_zero] using (continuousAt_const_rpow hB).tendsto.comp ht
 
 end Real

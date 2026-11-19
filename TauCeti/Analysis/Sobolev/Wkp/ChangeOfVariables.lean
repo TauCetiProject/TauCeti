@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -595,22 +596,13 @@ theorem compLBound_nonneg (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0
   positivity
 
 open scoped NNReal in
-/-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the finite exponent `q` tends to `∞`. -/
-private theorem tendsto_rpow_inv_coe_atTop {B : ℝ} (hB : B ≠ 0) :
-    Tendsto (fun q : ℝ≥0 => B ^ (q : ℝ)⁻¹) atTop (𝓝 1) := by
-  have ht : Tendsto (fun q : ℝ≥0 => (q : ℝ)⁻¹) atTop (𝓝 0) :=
-    tendsto_inv_atTop_zero.comp (NNReal.tendsto_coe_atTop.2 tendsto_id)
-  simpa only [Function.comp_def, Real.rpow_zero] using
-    (Real.continuousAt_const_rpow hB).tendsto.comp ht
-
-open scoped NNReal in
 /-- As the finite exponent `q` tends to `∞`, the constant `compLBound q k L c` tends to
 `compLBound ∞ k L c`. -/
 theorem tendsto_compLBound_coe_atTop (k : ℕ) (L : ℝ) {c : ℝ} (hc : c ≠ 0) :
     Tendsto (fun q : ℝ≥0 => compLBound q k L c) atTop (𝓝 (compLBound ⊤ k L c)) := by
   unfold compLBound
   rw [ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero]
-  refine ((tendsto_rpow_inv_coe_atTop (inv_ne_zero hc)).congr fun q => ?_).mul_const _
+  refine ((Real.tendsto_rpow_inv_coe_atTop (inv_ne_zero hc)).congr fun q => ?_).mul_const _
   rw [one_div, ENNReal.toReal_inv, ENNReal.coe_toReal]
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -990,7 +982,7 @@ private theorem aestronglyMeasurable_and_eLpNorm_top_le_of_chain {n : ℕ}
   have hK : Tendsto (fun q : ℝ≥0 => compLBound q (n + 1) L c * max 1 M ^ (q : ℝ)⁻¹ * ‖u‖)
       atTop (𝓝 (compLBound ⊤ (n + 1) L c * ‖u‖)) := by
     simpa only [mul_one] using ((tendsto_compLBound_coe_atTop (n + 1) L h.pos.ne').mul
-      (tendsto_rpow_inv_coe_atTop (zero_lt_one.trans_le (le_max_left 1 M)).ne')).mul_const ‖u‖
+      (Real.tendsto_rpow_inv_coe_atTop (zero_lt_one.trans_le (le_max_left 1 M)).ne')).mul_const ‖u‖
   refine eLpNorm_exponent_top_le_liminf.trans ?_
   rw [← (ENNReal.tendsto_ofReal hK).liminf_eq]
   exact liminf_le_liminf (eventually_atTop.2 ⟨1, fun q hq1 => (hq q hq1).2⟩)
