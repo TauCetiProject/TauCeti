@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Analysis.CStarAlgebra.Basic
-public import TauCeti.Topology.Grassmannian.Plucker
 public import TauCeti.Topology.Grassmannian.Tautological
 
 /-!
@@ -103,12 +102,19 @@ theorem finrank_range_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) :
     finrank 𝕜 P.range = k :=
   (mem_grassmannian_iff_finrank.mp hP).2
 
+/-- The orthogonal projection onto a subspace `U` lies in `G(E, k)` exactly when `U` has
+dimension `k`. -/
+@[simp]
+theorem starProjection_mem_grassmannian_iff {U : Submodule 𝕜 E} :
+    U.starProjection ∈ grassmannian 𝕜 E k ↔ finrank 𝕜 U = k := by
+  rw [mem_grassmannian_iff_finrank, Submodule.range_starProjection]
+  exact and_iff_right isStarProjection_starProjection
+
 /-- The orthogonal projection onto a subspace `U` lies in the Grassmannian of planes of
 dimension `finrank U`. -/
 theorem starProjection_mem_grassmannian (U : Submodule 𝕜 E) :
     U.starProjection ∈ grassmannian 𝕜 E (finrank 𝕜 U) :=
-  mem_grassmannian_iff_finrank.mpr
-    ⟨isStarProjection_starProjection, by rw [Submodule.range_starProjection]⟩
+  starProjection_mem_grassmannian_iff.mpr rfl
 
 /-- A point of the Grassmannian is the orthogonal projection onto its range. -/
 theorem eq_starProjection_range_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) :
@@ -161,15 +167,11 @@ omit [FiniteDimensional 𝕜 E] in
 /-- An operator in `G(E, k)` with `k ≠ 0` has norm one. -/
 theorem norm_eq_one_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) (hk : k ≠ 0) :
     ‖P‖ = 1 := by
-  refine le_antisymm (norm_le_one_of_mem_grassmannian hP) ?_
-  obtain ⟨_, ⟨w, rfl⟩, hv0⟩ := P.range.exists_mem_ne_zero_of_ne_bot fun h ↦ hk <| by
-    have := hP.2
-    rwa [h, rank_bot, eq_comm, Nat.cast_eq_zero] at this
-  -- `P` fixes the nonzero vector `P w` of its range.
-  have := P.le_opNorm (P w)
-  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.mul_def,
-    hP.1.isIdempotentElem.eq] at this
-  exact le_of_mul_le_mul_right (by simpa using this) (norm_pos_iff.mpr hv0)
+  obtain ⟨_, h⟩ := isStarProjection_iff_eq_starProjection_range.mp hP.1
+  rw [h]
+  refine Submodule.norm_starProjection _ fun hb ↦ hk ?_
+  have := hP.2
+  rwa [hb, rank_bot, eq_comm, Nat.cast_eq_zero] at this
 
 /-- The Grassmannian is compact. -/
 theorem isCompact_grassmannian : IsCompact (grassmannian 𝕜 E k) :=
@@ -189,6 +191,7 @@ theorem norm_trace_comp_le_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k
   let b := stdOrthonormalBasis 𝕜 U
   have htr : LinearMap.trace 𝕜 E (U.starProjection ∘L A : E →L[𝕜] E) =
       ∑ i, inner 𝕜 (b i : E) (A (b i)) := by
+    -- `rfl` unfolds the definition `U.starProjection = U.subtypeL ∘L U.orthogonalProjectionOnto`.
     have : ((U.starProjection ∘L A : E →L[𝕜] E) : E →ₗ[𝕜] E) =
         U.subtype ∘ₗ ((U.orthogonalProjectionOnto ∘L A : E →L[𝕜] U) : E →ₗ[𝕜] U) := rfl
     rw [this, LinearMap.trace_comp_comm', LinearMap.trace_eq_sum_inner _ b]
@@ -278,21 +281,24 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
   {k : ℕ} {P : E →L[𝕜] E}
 
+/-- The range of the conjugate `U P U⁻¹` is the image under `U` of the range of `P`. -/
+@[simp]
+theorem range_conjStarAlgEquiv (U : E ≃ₗᵢ[𝕜] F) (P : E →L[𝕜] E) :
+    (U.conjStarAlgEquiv P).range = P.range.map (U.toLinearEquiv : E →ₗ[𝕜] F) := by
+  ext y
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨P (U.symm x), ⟨U.symm x, rfl⟩, rfl⟩
+  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
+    exact ⟨U x, by simp⟩
+
 /-- Conjugating a point of `G(E, k)` by a linear isometry equivalence `U : E ≃ₗᵢ[𝕜] F` gives a
 point of `G(F, k)`. -/
 theorem conjStarAlgEquiv_mem_grassmannian (U : E ≃ₗᵢ[𝕜] F) (hP : P ∈ grassmannian 𝕜 E k) :
     U.conjStarAlgEquiv P ∈ grassmannian 𝕜 F k := by
   refine ⟨hP.1.map U.conjStarAlgEquiv, ?_⟩
-  -- The range of `U P U⁻¹` is the image of the range of `P` under `U`.
-  have : (U.conjStarAlgEquiv P).range = P.range.map (U.toLinearEquiv : E →ₗ[𝕜] F) := by
-    ext y
-    constructor
-    · rintro ⟨x, rfl⟩
-      exact ⟨P (U.symm x), ⟨U.symm x, rfl⟩, rfl⟩
-    · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
-      exact ⟨U x, by simp⟩
   have h := U.toLinearEquiv.lift_rank_map_eq P.range
-  rw [← this, hP.2, Cardinal.lift_natCast, Cardinal.lift_eq_nat_iff] at h
+  rw [← range_conjStarAlgEquiv, hP.2, Cardinal.lift_natCast, Cardinal.lift_eq_nat_iff] at h
   exact h
 
 theorem conjStarAlgEquiv_mem_grassmannian_iff (U : E ≃ₗᵢ[𝕜] F) :
@@ -319,6 +325,12 @@ noncomputable def grassmannianCongr (U : E ≃ₗᵢ[𝕜] F) :
 theorem coe_grassmannianCongr_apply (U : E ≃ₗᵢ[𝕜] F) (P : grassmannian 𝕜 E k) :
     (U.grassmannianCongr k P : F →L[𝕜] F) = U.conjStarAlgEquiv P :=
   (rfl)
+
+/-- The plane of `U P U⁻¹` is the image under `U` of the plane of `P`. -/
+theorem range_coe_grassmannianCongr_apply (U : E ≃ₗᵢ[𝕜] F) (P : grassmannian 𝕜 E k) :
+    (U.grassmannianCongr k P : F →L[𝕜] F).range =
+      (P : E →L[𝕜] E).range.map (U.toLinearEquiv : E →ₗ[𝕜] F) :=
+  U.range_conjStarAlgEquiv P
 
 @[simp]
 theorem grassmannianCongr_symm (U : E ≃ₗᵢ[𝕜] F) :
@@ -351,11 +363,11 @@ variable {𝕜 : Type*} [RCLike 𝕜] {r N : ℕ}
 `EuclideanSpace 𝕜 (Fin N)`, is a point of the projection Grassmannian. -/
 theorem starProjection_toEuclidean_mem_grassmannian (V : finiteGrassmannian 𝕜 r N) :
     V.toEuclidean.starProjection ∈ grassmannian 𝕜 (EuclideanSpace 𝕜 (Fin N)) r := by
-  simpa using starProjection_mem_grassmannian V.toEuclidean
+  simp
 
 /-- Sending a subspace to its orthogonal projection is a bijection from the finite Grassmannian
 onto the projection Grassmannian of `EuclideanSpace 𝕜 (Fin N)`. -/
-theorem bijective_starProjection_toEuclidean :
+theorem starProjection_toEuclidean_bijective :
     Function.Bijective fun V : finiteGrassmannian 𝕜 r N ↦
       (⟨V.toEuclidean.starProjection, V.starProjection_toEuclidean_mem_grassmannian⟩ :
         grassmannian 𝕜 (EuclideanSpace 𝕜 (Fin N)) r) := by
@@ -382,7 +394,7 @@ noncomputable def starProjectionHomeomorph :
     finiteGrassmannian 𝕜 r N ≃ₜ grassmannian 𝕜 (EuclideanSpace 𝕜 (Fin N)) r :=
   -- A continuous bijection from a compact space onto a Hausdorff space is a homeomorphism.
   Continuous.homeoOfEquivCompactToT2
-    (f := Equiv.ofBijective _ bijective_starProjection_toEuclidean)
+    (f := Equiv.ofBijective _ starProjection_toEuclidean_bijective)
     (continuous_starProjection_toEuclidean.subtype_mk _)
 
 @[simp]
