@@ -42,7 +42,8 @@ multiple of `x`.
   with `TauCeti.isNondegenerateCriticalPoint_stereographicHeight_zero` and
   `TauCeti.morseIndex_stereographicHeight_zero` computing its Morse data at the origin, and
   `TauCeti.neg_stereographicHeight_le_iff` and `TauCeti.neg_stereographicHeight_eq_iff`
-  describing its sublevels and levels below the maximum as closed balls and spheres.
+  describing the sublevels `{w | -stereographicHeight w ≤ a}` and levels for `-1 ≤ a < 1` of its
+  negation, the height read in the chart centred at the south pole, as closed balls and spheres.
 * `TauCeti.sphereHeight`: the height function on the unit sphere in the direction of a unit vector.
 * `TauCeti.sphereHeight_comp_extChartAt_symm`: in the preferred chart at the north pole it is
   `stereographicHeight`.
@@ -98,8 +99,9 @@ theorem stereographicHeight_le_stereographicHeight {u w : F} (h : ‖u‖ ≤ �
     div_le_div_iff₀ (by positivity) (by positivity)]
   nlinarith [pow_le_pow_left₀ (norm_nonneg u) h 2]
 
-/-- The height read in the stereographic chart is at most `a < 1` exactly on the closed ball of
-radius `√(4 (1 + a) / (1 - a))`. -/
+/-- For `-1 ≤ a < 1`, the negated chart height `-stereographicHeight w`, which is the height read in
+the chart centred at the south pole (projecting from the north pole), is at most `a` exactly on the
+closed ball of radius `√(4 (1 + a) / (1 - a))`. -/
 theorem neg_stereographicHeight_le_iff {a : ℝ} (ha : -1 ≤ a) (ha' : a < 1) (w : F) :
     -stereographicHeight w ≤ a ↔ ‖w‖ ≤ √(4 * (1 + a) / (1 - a)) := by
   have h1 : 0 < 1 - a := by linarith
@@ -108,8 +110,9 @@ theorem neg_stereographicHeight_le_iff {a : ℝ} (ha : -1 ≤ a) (ha' : a < 1) (
     (div_nonneg (by linarith) h1.le), le_div_iff₀ h1]
   constructor <;> intro h <;> nlinarith
 
-/-- The height read in the stereographic chart equals `a < 1` exactly on the sphere of radius
-`√(4 (1 + a) / (1 - a))`. -/
+/-- For `-1 ≤ a < 1`, the negated chart height `-stereographicHeight w`, which is the height read in
+the chart centred at the south pole (projecting from the north pole), equals `a` exactly on the
+sphere of radius `√(4 (1 + a) / (1 - a))`. -/
 theorem neg_stereographicHeight_eq_iff {a : ℝ} (ha : -1 ≤ a) (ha' : a < 1) (w : F) :
     -stereographicHeight w = a ↔ ‖w‖ = √(4 * (1 + a) / (1 - a)) := by
   have h1 : 0 < 1 - a := by linarith
