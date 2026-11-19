@@ -65,6 +65,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   `TauCeti.W1p.gradient_coe` identifying them with the components of the ambient jet.
 * `TauCeti.W1p.coe_ae_eq_toLp_value_gradient`: the ambient jet of a Sobolev function is almost
   everywhere its value-gradient pair.
+* `TauCeti.W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral`: on `s ⊆ Ω`, the `L²(s)` seminorm of the
+  value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset, and with it the whole jet
@@ -652,6 +654,16 @@ theorem W1p.ae_norm_gradient_sub_le_dist (u v : W1p mu Omega ⊤) :
   have hn : ‖W1p.gradient (u - v)‖ ≤ dist u v := by
     simpa only [dist_eq_norm] using W1p.norm_gradient_le (u - v)
   simpa only [hcoe, Pi.sub_apply] using hx.trans hn
+
+/-- On a set `s ⊆ Ω`, the `L²` seminorm of a function `f` that agrees almost everywhere on `Ω`
+with the value of `w ∈ W^{1,2}(Ω)` is the square root of `∫_s w²`. -/
+theorem W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral {w : W1p mu Omega 2} {f : E → ℝ}
+    (hwf : W1p.value w =ᵐ[mu.restrict Omega] f) {s : Set E} (hs : s ⊆ (Omega : Set E)) :
+    eLpNorm f 2 (mu.restrict s) = ENNReal.ofReal √(∫ x in s, W1p.value w x ^ 2 ∂mu) := by
+  rw [← eLpNorm_congr_ae (ae_restrict_of_ae_restrict_of_subset hs hwf),
+    ((Lp.memLp (W1p.value w)).mono_measure
+      (Measure.restrict_mono hs le_rfl)).eLpNorm_two_eq_ofReal_sqrt_integral]
+  simp only [Real.norm_eq_abs, sq_abs]
 
 /-- The norm of a Sobolev function is at most the sum of the norms of its value and its weak
 gradient. -/
