@@ -23,7 +23,8 @@ each critical point of index `λ` on the level `c`, along closed embeddings
 says for the simplest Morse functions, one for each extreme case of the index.
 
 At a level with a single critical point the coproducts of the theorem have a single summand, so
-the theorem presents `M_{c+ε}` as the pushout of `M_{c-ε}` and one handle along its attaching map.
+the theorem presents `M_{c+ε}` as the pushout of `M_{c-ε}` and one handle along its attaching map
+(`TauCeti.IsMorse.exists_isPushout_sublevel_handle`).
 
 * **Index `0`: the quadratic well.** For `f(x) = x²` on `ℝ` at the level `0`, the lower sublevel
   `{x² ≤ -ε}` is empty and the attaching region `∂𝔻 0 × 𝔻 1` of the handle at the minimum `0` is
@@ -68,45 +69,6 @@ universe u
 
 namespace TauCeti
 
-/-! ### A level with a single critical point -/
-
-/-- Milnor's handle attachment theorem (`TauCeti.IsMorse.exists_isPushout_sublevel_handles`) at a
-level `c` whose only critical point `p` has index `k` and coindex `l`: the coproducts of the theorem
-have the single summand `p`, so `{f ≤ c + ε}` is the pushout of `{f ≤ c - ε}` and the one handle
-`𝔻 k × 𝔻 l` along its attaching map. The levels `c - ε` and `c + ε` are written `lo ε` and
-`hi ε`, so that the examples can state them in normal form. -/
-private theorem IsMorse.exists_isPushout_sublevel_handle {E H : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    [I.Boundaryless] {M : Type u} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-    [T2Space M] {f : M → ℝ} (hf : IsMorse I f) {c δ : ℝ} (hδ : 0 < δ)
-    (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) {p : M}
-    (hp : criticalPoints I f ∩ f ⁻¹' {c} = {p}) {k l : ℕ} (hk : manifoldMorseIndex I f p = k)
-    (hl : Module.finrank ℝ E - k = l) {lo hi : ℝ → ℝ} (hlo : ∀ ε, c - ε = lo ε)
-    (hhi : ∀ ε, c + ε = hi ε) :
-    ∃ ε, 0 < ε ∧ ε ≤ δ ∧
-      ∃ (α : TopCat.of (TopCat.diskBoundary.{u} k × TopCat.disk.{u} l) ⟶
-          TopCat.of {x | f x ≤ lo ε})
-        (χ : TopCat.of (TopCat.disk.{u} k × TopCat.disk.{u} l) ⟶ TopCat.of {x | f x ≤ hi ε})
-        (j : TopCat.of {x | f x ≤ lo ε} ⟶ TopCat.of {x | f x ≤ hi ε}),
-        IsPushout α (TopCat.ofHom ((TopCat.diskBoundaryInclusion k).hom.prodMap
-          (ContinuousMap.id _))) j χ ∧
-        IsClosedEmbedding α ∧ (∀ s, f (α s : M) = lo ε) ∧
-        (∀ w, f (χ w : M) = hi ε ↔ w.2 ∈ range (TopCat.diskBoundaryInclusion l)) ∧
-        ∀ x, x ∉ range α → (f (j x : M) = hi ε ↔ f (x : M) = lo ε) := by
-  obtain rfl : (fun ε ↦ c - ε) = lo := funext hlo
-  obtain rfl : (fun ε ↦ c + ε) = hi := funext hhi
-  subst hk hl
-  obtain ⟨ε, hε, hεδ, α, χ, j, hpush, hemb, -, hlev, htop, hj⟩ :=
-    hf.exists_isPushout_sublevel_handles hδ hcompact
-  -- The critical points on the level form a one-point type, whose point is `p`.
-  let _ : Unique ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    { default := ⟨p, by simp [hp]⟩
-      uniq := fun q ↦ Subtype.ext (by simpa [hp] using q.2) }
-  refine ⟨ε, hε, hεδ, α default, χ default, j, hpush.of_iso (coproductUniqueIso _) (Iso.refl _)
-    (coproductUniqueIso _) (Iso.refl _) ?_ ?_ ?_ ?_, hemb default, hlev default, htop default,
-    fun x hx ↦ hj x fun q ↦ Subsingleton.elim q default ▸ hx⟩
-  all_goals rw [← Iso.inv_comp_eq]; simp
-
 /-! ### The quadratic well -/
 
 /-- **The handle of the quadratic well.** At the level `0` of `f(x) = x²` on `ℝ`, the handle
@@ -119,12 +81,13 @@ theorem exists_isIso_handle_sq_real :
     ∃ ε, 0 < ε ∧ ε ≤ 1 ∧
       ∃ χ : TopCat.of (TopCat.disk.{0} 0 × TopCat.disk.{0} 1) ⟶ TopCat.of {x : ℝ | x ^ 2 ≤ ε},
         IsIso χ ∧ ∀ w, (χ w : ℝ) ^ 2 = ε ↔ w.2 ∈ range (TopCat.diskBoundaryInclusion 1) := by
-  obtain ⟨ε, hε, hε1, α, χ, j, hpush, -, -, htop, -⟩ :=
+  obtain ⟨ε, hε, hε1, h⟩ :=
     isMorse_sq_real.exists_isPushout_sublevel_handle (c := 0) one_pos
       ((isProperMap_pow two_ne_zero).isCompact_preimage isCompact_Icc)
       (by rw [criticalPoints_sq_real, inter_eq_left, singleton_subset_iff]; simp)
-      manifoldMorseIndex_sq_real (l := 1) (by simp) (lo := fun ε ↦ -ε) (hi := fun ε ↦ ε)
-      zero_sub zero_add
+      manifoldMorseIndex_sq_real (l := 1) (by simp)
+  rw [zero_sub, zero_add] at h
+  obtain ⟨α, χ, j, hpush, -, -, htop, -⟩ := h
   -- The lower sublevel is empty, and so is the attaching region mapping to it, so the attaching
   -- map is the homeomorphism of empty spaces, and its pushout `χ` is an isomorphism too.
   have : IsEmpty {x : ℝ | x ^ 2 ≤ -ε} :=
@@ -179,13 +142,14 @@ theorem exists_isPushout_neg_sq_real :
         IsPushout α (TopCat.ofHom ((TopCat.diskBoundaryInclusion 1).hom.prodMap
           (ContinuousMap.id _))) j χ ∧
         IsClosedEmbedding α ∧ range (fun s ↦ (α s : ℝ)) = {-√ε, √ε} := by
-  obtain ⟨ε, hε, hε1, α, χ, j, hpush, hemb, hlev, -, -⟩ :=
+  obtain ⟨ε, hε, hε1, h⟩ :=
     isMorse_neg_sq_real.exists_isPushout_sublevel_handle (c := 0) one_pos
       (((Homeomorph.neg ℝ).isProperMap.comp (isProperMap_pow two_ne_zero)).isCompact_preimage
         isCompact_Icc)
       (by rw [criticalPoints_neg_sq_real, inter_eq_left, singleton_subset_iff]; simp)
-      manifoldMorseIndex_neg_sq_real (l := 0) (by simp) (lo := fun ε ↦ -ε) (hi := fun ε ↦ ε)
-      zero_sub zero_add
+      manifoldMorseIndex_neg_sq_real (l := 0) (by simp)
+  rw [zero_sub, zero_add] at h
+  obtain ⟨α, χ, j, hpush, hemb, hlev, -, -⟩ := h
   exact ⟨ε, hε, hε1, α, χ, j, hpush, hemb, range_eq_of_injective_of_sq_eq _
     (Subtype.val_injective.comp hemb.injective) fun s ↦ by simpa using hlev s⟩
 
@@ -232,8 +196,7 @@ theorem exists_isPushout_sphereHeight (v : sphere (0 : E) 1) :
   obtain ⟨ε, hε, hε1, α, χ, j, hpush, hemb, hlev, -, hj⟩ :=
     (isMorse_sphereHeight (n := n) v).exists_isPushout_sublevel_handle (c := 1) one_pos
       (isClosed_Icc.preimage (contMDiff_sphereHeight (n := n) (m := 0) v).continuous).isCompact
-      hlevel (manifoldMorseIndex_sphereHeight_self v) (l := 0) (by simp) (lo := fun ε ↦ 1 - ε)
-      (hi := fun ε ↦ 1 + ε) (fun _ ↦ rfl) fun _ ↦ rfl
+      hlevel (manifoldMorseIndex_sphereHeight_self v) (l := 0) (by simp)
   refine ⟨ε, hε, hε1, α, χ, j, hpush, hemb,
     Subset.antisymm (range_subset_iff.2 hlev) fun x hx ↦ ?_⟩
   -- Every point of the level `h = 1 - ε` lies on the attaching region: otherwise the theorem would
