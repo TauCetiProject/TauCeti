@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc.Basic
+public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDouble
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
 public import TauCeti.Topology.Constructions.DoubleAlong.EulerCharacteristic
