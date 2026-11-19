@@ -95,7 +95,10 @@ range of `dφ_x`, the differential carries `X_{g ∘ φ}(x)` to it
 `{f ∘ φ, g ∘ φ}(x) = {f, g}(φ x)` for every differentiable `f`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp_of_mem_range`). For the inclusion of a
 symplectic submanifold, this computes brackets with the restriction of an ambient function whose
-Hamiltonian vector field is tangent to the submanifold.
+Hamiltonian vector field is tangent to the submanifold. When it is not tangent, the differential
+carries `X_{g ∘ φ}(x)` to every vector `w` in its range with `σ₂(w, dφ u) = dg(dφ u)` for all
+`u`, which only asks `σ` to be nondegenerate
+(`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp_eq_of_eval₂`).
 Along a curve where `X_g` is tangent to `φ`, `φ` therefore maps integral curves of the
 Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField_of_mem_range`),
@@ -142,6 +145,10 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
 * `TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`: a linear map `D`
   with `σ₂(D u, D v) = σ(u, v)` and `dg ∘ D = df` whose range contains `X_g(y)` carries `X_f(x)`
   to `X_g(y)`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_eq_of_eval₂` and
+  `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp_eq_of_eval₂`: a
+  linear map `D` with `σ₂(D u, D v) = σ(u, v)`, for instance the differential of `φ`, carries
+  `X_f(x)` to every vector `w` in its range with `σ₂(w, D u) = df(u)` for all `u`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
@@ -844,6 +851,25 @@ variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E�
 
 namespace IsNondegenerate
 
+omit [FiniteDimensional ℝ E₂] in
+/-- **Hamiltonian vectors through a linear map, by their defining equation.** Let `D` be a
+linear map from the tangent space of `M` at `x` to the tangent space of `M₂` at `y` with
+`σ₂_y(D u, D v) = σ_x(u, v)`, for a nondegenerate `σ`. If a vector `w` in the range of `D`
+satisfies `σ₂_y(w, D u) = df_x(u)` for every `u`, then `D` carries `X_f(x)` to `w`. No
+nondegeneracy of `σ₂` is needed. -/
+theorem map_hamiltonianVectorField_eq_of_eval₂ (hσ : σ.IsNondegenerate) {y : M₂}
+    {D : TangentSpace I x →L[ℝ] TangentSpace I₂ y} {f : M → ℝ} {w : TangentSpace I₂ y}
+    (hw : w ∈ D.range)
+    (hD : ∀ u v, SmoothBundleForm.eval₂ σ₂ y (D u) (D v) = SmoothBundleForm.eval₂ σ x u v)
+    (hwf : ∀ u, SmoothBundleForm.eval₂ σ₂ y w (D u) = mvfderiv I f x u) :
+    D (σ.hamiltonianVectorField f x) = w := by
+  obtain ⟨v, hv⟩ := hw
+  rw [ContinuousLinearMap.coe_coe] at hv
+  -- The tangent vector `v` lifting `w` satisfies the Hamiltonian equation of `f`.
+  have hvσ : σ.flat x v = mvfderiv I f x := ContinuousLinearMap.ext fun u ↦ by
+    rw [flat_apply, ← hD, hv, hwf]
+  rwa [← (hσ.isInvertible_flat x).injective (hvσ.trans (hσ.flat_hamiltonianVectorField _ x).symm)]
+
 /-- **Linear maps preserving nondegenerate forms carry Hamiltonian vectors.** Let `D` be a
 linear map from the tangent space of `M` at `x` to the tangent space of `M₂` at `y` with
 `σ₂_y(D u, D v) = σ_x(u, v)` and `dg_y ∘ D = df_x`. If `X_g(y)` lies in the range of `D`, then
@@ -853,13 +879,29 @@ theorem map_hamiltonianVectorField_of_eval₂ (hσ : σ.IsNondegenerate) (hσ₂
     (hDg : σ₂.hamiltonianVectorField g y ∈ D.range)
     (hD : ∀ u v, SmoothBundleForm.eval₂ σ₂ y (D u) (D v) = SmoothBundleForm.eval₂ σ x u v)
     (hfg : ∀ u, mvfderiv I₂ g y (D u) = mvfderiv I f x u) :
-    D (σ.hamiltonianVectorField f x) = σ₂.hamiltonianVectorField g y := by
-  obtain ⟨v, hv⟩ := hDg
-  rw [ContinuousLinearMap.coe_coe] at hv
-  -- The tangent vector `v` lifting `X_g(y)` satisfies the Hamiltonian equation of `f`.
-  have hvσ : σ.flat x v = mvfderiv I f x := ContinuousLinearMap.ext fun w ↦ by
-    rw [flat_apply, ← hD, hv, hσ₂.eval₂_hamiltonianVectorField, hfg]
-  rwa [← (hσ.isInvertible_flat x).injective (hvσ.trans (hσ.flat_hamiltonianVectorField _ x).symm)]
+    D (σ.hamiltonianVectorField f x) = σ₂.hamiltonianVectorField g y :=
+  hσ.map_hamiltonianVectorField_eq_of_eval₂ hDg hD fun u ↦ by
+    rw [hσ₂.eval₂_hamiltonianVectorField, hfg]
+
+omit [FiniteDimensional ℝ E₂] in
+/-- **Hamiltonian vector fields of restrictions.** Let a smooth map `φ` pull a form `σ₂` back to a
+nondegenerate form `σ`. If a tangent vector `w` at `φ x` lies in the range of the differential of
+`φ` and satisfies `σ₂(w, dφ u) = dg(dφ u)` for every tangent vector `u` at `x`, then the
+differential of `φ` carries the Hamiltonian vector of `g ∘ φ` at `x` to `w`. For the inclusion of
+a symplectic submanifold, `w` is the projection of the ambient Hamiltonian vector of `g` onto the
+tangent space along its `σ₂`-orthogonal complement, so this computes the Hamiltonian vector fields
+of restrictions of ambient functions whose own Hamiltonian vector fields are not tangent. -/
+theorem mfderiv_hamiltonianVectorField_comp_eq_of_eval₂ (hσ : σ.IsNondegenerate)
+    (hφ : ContMDiff I I₂ ∞ φ) (hφσ : SmoothForm.mpullback φ hφ σ₂ = σ) {g : M₂ → ℝ}
+    (hg : MDifferentiableAt I₂ 𝓘(ℝ) g (φ x)) {w : TangentSpace I₂ (φ x)}
+    (hw : w ∈ (mfderiv I I₂ φ x).range)
+    (hwg : ∀ u, SmoothBundleForm.eval₂ σ₂ (φ x) w (mfderiv I I₂ φ x u) =
+      mvfderiv I₂ g (φ x) (mfderiv I I₂ φ x u)) :
+    mfderiv I I₂ φ x (σ.hamiltonianVectorField (g ∘ φ) x) = w :=
+  hσ.map_hamiltonianVectorField_eq_of_eval₂ hw
+    (fun u v ↦ by rw [← hφσ, SmoothForm.eval₂_mpullback φ hφ])
+    fun u ↦ by
+      rw [hwg, mvfderiv_comp_apply x hg ((hφ x).mdifferentiableAt (by simp)) u]
 
 end IsNondegenerate
 
