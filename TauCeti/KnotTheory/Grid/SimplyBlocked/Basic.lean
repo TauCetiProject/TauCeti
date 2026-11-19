@@ -36,6 +36,8 @@ specialization.
 * `TauCeti.simplyBlockedRingHomAlong`: rename surviving variables along a column map, then block
   the target column.
 * `TauCeti.simplyBlockedSpecialization`: coefficientwise specialization of `GC⁻` at `V_i = 0`.
+* `TauCeti.simplyBlockedLift`: coefficientwise inclusion of the surviving variables, a section
+  of the specialization (`TauCeti.simplyBlockedSpecialization_simplyBlockedLift`).
 * `TauCeti.simplyBlockedRenameEquiv`: rename surviving variables and transport the blocked column.
 * `TauCeti.simplyBlockedRenameRingHomInvPair`, `TauCeti.simplyBlockedRenameRingHomInvPairSymm`:
   the renaming and its inverse form a `RingHomInvPair`.
@@ -61,6 +63,8 @@ specialization.
   they carry the blocked source column to the blocked target column.
 * `TauCeti.simplyBlockedMap_simplyBlockedSpecialization`: specialization intertwines an
   unblocked semilinear map with its specialization `TauCeti.simplyBlockedMap`.
+* `TauCeti.simplyBlockedSpecialization_simplyBlockedLift`: specializing the lift of a specialized
+  chain recovers it.
 * `TauCeti.simplyBlockedSpecialization_surjective` and
   `TauCeti.exact_X_smul_simplyBlockedSpecialization`: specialization presents the specialized
   chain module as the quotient of `GC⁻` by the multiples of `V_i`, which
@@ -244,6 +248,14 @@ theorem simplyBlockedRingHomAlong_X (c : {c : Fin m // c ≠ j}) :
 theorem simplyBlockedRingHomAlong_C (r : R) :
     simplyBlockedRingHomAlong R π i j (C r) = C r := by
   simp [simplyBlockedRingHomAlong]
+
+/-- `simplyBlockedRingHomAlong` includes the surviving source variables, renames them along `π`
+and blocks the target column. -/
+theorem simplyBlockedRingHomAlong_apply (a : MvPolynomial {c : Fin m // c ≠ j} R) :
+    simplyBlockedRingHomAlong R π i j a =
+      simplyBlockedRingHom R i (rename (π ∘ Subtype.val) a) := by
+  simp only [simplyBlockedRingHomAlong, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
+    RingHom.coe_coe, rename_rename]
 
 /-- Renaming commutes with blocking when `π` carries the blocked source column to the target. -/
 theorem simplyBlockedRingHomAlong_specialization (hπ : π j = i)

@@ -15,9 +15,9 @@ import TauCeti.Algebra.CharP.Two
 
 Simply blocked grid homology `G-hat` is the homology of the unblocked grid complex `GC⁻` with one
 variable `V_i` set to zero. For a knot grid it does not depend on the choice of the blocked column
-`i`: this file constructs, for any two columns `i` and `j`, an isomorphism between the two
-specializations which preserves the (`O`-Maslov, Alexander) bigrading, so the bigraded Poincaré
-series and the Alexander-graded Euler characteristic of `G-hat` are independent of `i`.
+`i`: this file constructs, for any two columns `i` and `j`, an isomorphism between the homologies
+of the two specializations which preserves the (`O`-Maslov, Alexander) bigrading, so the bigraded
+Poincaré series and the Alexander-graded Euler characteristic of `G-hat` are independent of `i`.
 
 The comparison is the one obtained from the mapping cones of `V_i` and `V_j`. Write `π_i` for
 specialization at `V_i = 0` and `L_i` for the lift of a specialized chain including its surviving
@@ -65,8 +65,8 @@ homologies for the blocked columns `i` and `j`.
   blocked column induces a bijection on homology.
 * `GridDiagram.IsKnot.simplyBlockedHomologyColumnChangeEquiv_mem_bigradedHatHomologyPiece_iff`:
   for a knot grid it preserves and reflects both homology degrees.
-* `TauCeti.GridDiagram.IsKnot.bigradedSimplyBlockedHomologyPoincareSeries_eq` and
-  `TauCeti.GridDiagram.IsKnot.gradedSimplyBlockedHomologyEulerChar_eq`: over a field of
+* `TauCeti.GridDiagram.IsKnot.bigradedSimplyBlockedHomologyPoincareSeries_columnChange` and
+  `TauCeti.GridDiagram.IsKnot.gradedSimplyBlockedHomologyEulerChar_columnChange`: over a field of
   characteristic two, the bigraded Poincaré series and the Alexander-graded Euler characteristic of
   `G-hat` do not depend on the blocked column.
 
@@ -123,6 +123,11 @@ theorem X_smul_simplyBlockedConnectingMap (c : GridChainHat R n i) :
       G.unblockedDifferential R (simplyBlockedLift R i c) -
         simplyBlockedLift R i (G.simplyBlockedDifferential R i c) := by
   rw [simplyBlockedConnectingMap, LinearMap.comp_apply, LinearEquiv.coe_coe]
+  -- Up to definitional unfolding, the goal is `ofInjective_symm_apply`: `V_i • x` is
+  -- `DistribSMul.toLinearMap R _ V_i x`, and the coercion of the `codRestrict` value at `c` is
+  -- `(∂⁻.restrictScalars R ∘ₗ L_i - L_i ∘ₗ ∂_i.restrictScalars R) c`, which is the right side.
+  -- A `rw` with these lemmas fails, since the proof arguments of `ofInjective` and `codRestrict`
+  -- in the definition are typed by the unfolded forms.
   exact LinearEquiv.ofInjective_symm_apply (f := DistribSMul.toLinearMap R (GridChainMinus R n)
     (MvPolynomial.X i : MvPolynomial (Fin n) R)) _
 
@@ -161,16 +166,6 @@ section ColumnChange
 variable (R : Type*) [CommRing R] (i j : Fin n)
   (H : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n)
 
-omit G in
-/-- Renaming along the identity and blocking `j` is including the variables `V_c`, `c ≠ i`, and
-then setting `V_j` to zero. -/
-private theorem simplyBlockedRingHomAlong_id_apply (a : MvPolynomial {c : Fin n // c ≠ i} R) :
-    simplyBlockedRingHomAlong R id j i a = simplyBlockedRingHom R j (rename Subtype.val a) := by
-  have h : simplyBlockedRingHomAlong R id j i =
-      (simplyBlockedRingHom R j).comp (rename Subtype.val).toRingHom := by
-    apply MvPolynomial.ringHom_ext <;> intro <;> simp
-  rw [h, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-
 /-- **Changing the blocked column.** Given a map `H` on `GC⁻`, the map
 `c ↦ π_j (L_i c + H (ρ_i c))` from the specialization at `V_i = 0` to the specialization at
 `V_j = 0`. It is semilinear along the inclusion of the variables `V_c`, `c ≠ i`, followed by
@@ -185,7 +180,7 @@ noncomputable def simplyBlockedColumnChangeMap :
     abel
   map_smul' a c := by
     rw [simplyBlockedConnectingMap_smul, simplyBlockedLift_smul, LinearMap.map_smul, ← smul_add,
-      LinearMap.map_smulₛₗ, simplyBlockedRingHomAlong_id_apply]
+      LinearMap.map_smulₛₗ, simplyBlockedRingHomAlong_apply, Function.id_comp]
 
 /-- The change of blocked column applies `π_j` to `L_i c + H (ρ_i c)`. -/
 theorem simplyBlockedColumnChangeMap_apply (c : GridChainHat R n i) :
@@ -206,7 +201,7 @@ private theorem unblockedDifferential_apply_of_homotopy (a : GridChainMinus R n)
   have h := LinearMap.congr_fun hH a
   simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply,
     LinearMap.id_apply] at h
-  rw [← h, add_assoc, add_self_eq_zero_of_charTwo R, add_zero]
+  rw [← h, add_cancel_right_of_charTwo R]
 
 include hH in
 /-- **The change of blocked column is a chain map.** -/
@@ -225,12 +220,8 @@ theorem simplyBlockedColumnChangeMap_simplyBlockedDifferential (c : GridChainHat
         (MvPolynomial.X j : MvPolynomial (Fin n) R) • r := by
     rw [map_add, hL, G.unblockedDifferential_apply_of_homotopy R hH,
       unblockedDifferential_simplyBlockedConnectingMap, add_smul]
-    calc _ = ((MvPolynomial.X i : MvPolynomial (Fin n) R) • r +
-          (MvPolynomial.X i : MvPolynomial (Fin n) R) • r) +
-          ((simplyBlockedLift R i (G.simplyBlockedDifferential R i c) +
-            H (G.simplyBlockedConnectingMap R i (G.simplyBlockedDifferential R i c))) +
-            (MvPolynomial.X j : MvPolynomial (Fin n) R) • r) := by abel
-      _ = _ := by rw [add_self_eq_zero_of_charTwo R, zero_add]
+    simp only [add_assoc, add_cancel_left_of_charTwo R]
+    abel
   rw [simplyBlockedColumnChangeMap_apply, simplyBlockedColumnChangeMap_apply,
     ← simplyBlockedSpecialization_unblockedDifferential, key,
     map_add _ _ ((MvPolynomial.X j : MvPolynomial (Fin n) R) • r),
@@ -299,8 +290,7 @@ theorem mem_range_of_simplyBlockedColumnChangeMap_mem_range {x : GridChainHat R 
     dsimp only
     have h := congrArg (G.unblockedDifferential R) hW
     rw [LinearMap.map_smul, map_sub, map_add, hLx, G.unblockedDifferential_apply_of_homotopy R hH,
-      hr, map_zero, add_zero, hdd, sub_zero, add_smul, ← add_assoc,
-      add_self_eq_zero_of_charTwo R, zero_add] at h
+      hr, map_zero, add_zero, hdd, sub_zero, add_smul, add_cancel_left_of_charTwo R] at h
     exact h.symm
   have hxW : simplyBlockedLift R i x = (MvPolynomial.X j : MvPolynomial (Fin n) R) • W - H r +
       G.unblockedDifferential R (simplyBlockedLift R j z) := by
@@ -312,10 +302,7 @@ theorem mem_range_of_simplyBlockedColumnChangeMap_mem_range {x : GridChainHat R 
   refine (exact_X_smul_simplyBlockedSpecialization R i _).mpr ⟨W, ?_⟩
   dsimp only
   rw [map_add, G.unblockedDifferential_apply_of_homotopy R hH, ← hrW, hxW, add_smul]
-  calc (MvPolynomial.X i : MvPolynomial (Fin n) R) • W =
-        (MvPolynomial.X i : MvPolynomial (Fin n) R) • W + (H r + H r) := by
-        rw [add_self_eq_zero_of_charTwo R, add_zero]
-    _ = _ := by abel
+  exact (add_cancel_right_of_charTwo R _ (H r)).symm.trans (by abel)
 
 include hH in
 /-- Every cycle `y` of the specialization at `V_j = 0` is the image of a cycle up to a boundary:
@@ -335,17 +322,12 @@ theorem exists_sub_simplyBlockedColumnChangeMap_mem_range {y : GridChainHat R n 
   have hY : G.unblockedDifferential R (simplyBlockedLift R j y + H t) =
       (MvPolynomial.X i : MvPolynomial (Fin n) R) • t := by
     rw [map_add, hLy, G.unblockedDifferential_apply_of_homotopy R hH, ht, map_zero, add_zero,
-      add_smul]
-    calc _ = (MvPolynomial.X i : MvPolynomial (Fin n) R) • t +
-          ((MvPolynomial.X j : MvPolynomial (Fin n) R) • t +
-            (MvPolynomial.X j : MvPolynomial (Fin n) R) • t) := by abel
-      _ = _ := by rw [add_self_eq_zero_of_charTwo R, add_zero]
+      add_smul, add_comm, add_cancel_right_of_charTwo R]
   refine ⟨simplyBlockedSpecialization R i (simplyBlockedLift R j y + H t), ?_, ?_⟩
   · rw [← simplyBlockedSpecialization_unblockedDifferential, hY,
       simplyBlockedSpecialization_X_smul]
   · have h := G.simplyBlockedColumnChangeMap_simplyBlockedSpecialization_sub_mem_range R hH hY
-    rw [add_assoc, add_self_eq_zero_of_charTwo R, add_zero,
-      simplyBlockedSpecialization_simplyBlockedLift] at h
+    rw [add_cancel_right_of_charTwo R, simplyBlockedSpecialization_simplyBlockedLift] at h
     rw [← neg_sub]
     exact neg_mem h
 
@@ -520,7 +502,7 @@ variable (K : Type*) [Field K] [CharP K 2]
 /-- **Independence of the blocked column.** Over a field of characteristic two, the bigraded
 Poincaré series of the simply blocked homology `G-hat` of a knot grid is the same for every choice
 of the blocked column. -/
-theorem bigradedSimplyBlockedHomologyPoincareSeries_eq :
+theorem bigradedSimplyBlockedHomologyPoincareSeries_columnChange :
     hG.bigradedSimplyBlockedHomologyPoincareSeries K i =
       hG.bigradedSimplyBlockedHomologyPoincareSeries K j := by
   ext g
@@ -529,10 +511,10 @@ theorem bigradedSimplyBlockedHomologyPoincareSeries_eq :
 
 /-- Over a field of characteristic two, the Alexander-graded Euler characteristic of the simply
 blocked homology `G-hat` of a knot grid is the same for every choice of the blocked column. -/
-theorem gradedSimplyBlockedHomologyEulerChar_eq :
+theorem gradedSimplyBlockedHomologyEulerChar_columnChange :
     hG.gradedSimplyBlockedHomologyEulerChar K i = hG.gradedSimplyBlockedHomologyEulerChar K j := by
   rw [gradedSimplyBlockedHomologyEulerChar_eq_euler, gradedSimplyBlockedHomologyEulerChar_eq_euler,
-    hG.bigradedSimplyBlockedHomologyPoincareSeries_eq i j K]
+    hG.bigradedSimplyBlockedHomologyPoincareSeries_columnChange i j K]
 
 end Field
 
