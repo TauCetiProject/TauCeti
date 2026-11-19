@@ -138,9 +138,10 @@ private theorem diffAddCodiff_apply_eq_component (hkl : k + l = m)
   rfl
 
 /-- On a zero-dimensional manifold `D + δ` is zero. -/
+@[simp]
 theorem diffAddCodiff_apply_zero_zero (hkl : 0 + 0 = m)
     (α : (j : Fin (m + 1)) → SmoothForm I M ℝ j) :
-    diffAddCodiff D δ α ⟨0, by omega⟩ = 0 :=
+    diffAddCodiff D δ α 0 = 0 :=
   diffAddCodiff_apply_eq_component D δ hkl α
 
 /-- In positive dimension the degree-`0` component of `D + δ` is `δα₁`. -/
@@ -192,7 +193,7 @@ theorem diffAddCodiff_diffAddCodiff_apply (hDD : ∀ k, D (k + 1) ∘ₗ D k = 0
       (β : SmoothForm I M ℝ (k + 1 + 1)) : δ hkl (δ hkl' β) = 0 :=
     LinearMap.congr_fun (hδδ hkl hkl') β
   rcases k with _ | k <;> rcases l with _ | l
-  · rw [diffAddCodiff_apply_zero_zero D δ hkl, laplacian_zero_zero]
+  · exact (diffAddCodiff_apply_zero_zero D δ hkl _).trans (laplacian_zero_zero D δ hkl _).symm
   · rw [diffAddCodiff_apply_zero_add_one D δ (show 0 + 1 + l = m by omega),
       laplacian_zero_add_one D δ hkl (by omega)]
     rcases l with _ | l
@@ -244,8 +245,11 @@ theorem lie_diffAddCodiff_piMap (F : ∀ k, SmoothForm I M ℝ k →ₗ[ℝ] Smo
   obtain ⟨l, hkl⟩ : ∃ l, k + l = m := ⟨m - k, by omega⟩
   simp only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, Pi.sub_apply]
   rcases k with _ | k <;> rcases l with _ | l
-  · simp only [diffAddCodiff_apply_zero_zero _ _ hkl, LinearMap.coe_piMap, Pi.map_apply, map_zero,
-      sub_zero]
+  · simp only [Fin.zero_eta, diffAddCodiff_apply_zero_zero _ _ hkl, LinearMap.coe_piMap,
+      Pi.map_apply, map_zero]
+    -- The zeros are typed in degree `↑(0 : Fin (m + 1))` but subtracted in degree `0`, so
+    -- `sub_self` applies only up to definitional unfolding.
+    exact sub_self _
   · simp only [diffAddCodiff_apply_zero_add_one _ _ (show 0 + 1 + l = m by omega),
       LinearMap.coe_piMap, Pi.map_apply, LinearMap.sub_apply, LinearMap.comp_apply]
   · simp only [diffAddCodiff_apply_add_one_zero _ _ hkl, LinearMap.coe_piMap, Pi.map_apply,
@@ -296,7 +300,7 @@ private theorem sum_pairing_diffAddCodiff (α β : (j : Fin (m + 1)) → SmoothF
     obtain ⟨k, hk⟩ := j
     obtain ⟨l, hkl⟩ : ∃ l, k + l = m := ⟨m - k, by omega⟩
     rcases k with _ | k <;> rcases l with _ | l
-    · rw [diffAddCodiff_apply_zero_zero D δ hkl]
+    · rw [show diffAddCodiff D δ α ⟨0, hk⟩ = 0 from diffAddCodiff_apply_zero_zero D δ hkl α]
       simp only [A, B, show ¬(0 : ℕ) < m by omega, ↓reduceDIte, add_zero]
       exact integralTopForm_inner_zero_left o _
     · rw [diffAddCodiff_apply_zero_add_one D δ (l := m - (0 + 1)) (by omega)]
@@ -423,9 +427,10 @@ theorem deRhamOperator_def :
   (rfl)
 
 /-- On a zero-dimensional manifold the de Rham operator is zero. -/
+@[simp]
 theorem deRhamOperator_apply_zero_zero (hkl : 0 + 0 = m)
     (α : (j : Fin (m + 1)) → SmoothForm I M ℝ j) :
-    deRhamOperator o α ⟨0, by omega⟩ = 0 :=
+    deRhamOperator o α 0 = 0 :=
   diffAddCodiff_apply_zero_zero _ _ hkl α
 
 /-- In positive dimension the degree-`0` component of `(d + d*)α` is `d*α₁`. -/
@@ -521,10 +526,11 @@ theorem lie_deRhamOperator_piMap_funSMulₗ (f : C^∞⟮I, M; ℝ⟯) :
   lie_diffAddCodiff_piMap (fun _ ↦ funSMulₗ f)
 
 /-- On a zero-dimensional manifold the symbol `[d + d*, f]` of the de Rham operator is zero. -/
+@[simp]
 theorem lie_deRhamOperator_piMap_funSMulₗ_apply_zero_zero (hkl : 0 + 0 = m)
     (f : C^∞⟮I, M; ℝ⟯) (α : (j : Fin (m + 1)) → SmoothForm I M ℝ j) :
-    ⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆ α
-      ⟨0, by omega⟩ = 0 := by
+    ⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆ α 0 =
+      0 := by
   rw [lie_deRhamOperator_piMap_funSMulₗ, diffAddCodiff_apply_zero_zero _ _ hkl]
 
 /-- **The symbol of the de Rham operator in degree `0`**: in positive dimension the degree-`0`
