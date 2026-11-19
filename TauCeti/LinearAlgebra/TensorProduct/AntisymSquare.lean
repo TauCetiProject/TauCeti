@@ -163,8 +163,9 @@ theorem ext {N : Type*} [AddCommGroup N] [Module R N] {f g : antisymSquare R M �
 /-! ### The diagonal -/
 
 variable (R M) in
-/-- The diagonal `a ↦ a ∧ a`, an additive map `M → antisymSquare R M`. It is not `R`-linear:
-`(r • a) ∧ (r • a) = r ^ 2 • (a ∧ a)`. -/
+/-- The diagonal `a ↦ a ∧ a`, an additive map `M → antisymSquare R M`. It need not be
+`R`-linear: `(r • a) ∧ (r • a) = r ^ 2 • (a ∧ a)`. Over `R = ℤ`, being additive, it is
+`ℤ`-linear. -/
 noncomputable def diag : M →+ antisymSquare R M :=
   AddMonoidHom.mk' (fun a ↦ mk R M a a) mk_add_self
 
@@ -203,14 +204,14 @@ theorem lift_mk (f : M →ₗ[R] M →ₗ[R] N) (hf : ∀ a b, f a b + f b a = 0
 
 /-- The factorization of `f` through the wedge is `f` itself. -/
 @[simp]
-theorem lift_compr₂_mk (f : M →ₗ[R] M →ₗ[R] N) (hf : ∀ a b, f a b + f b a = 0) :
+theorem mk_compr₂_lift (f : M →ₗ[R] M →ₗ[R] N) (hf : ∀ a b, f a b + f b a = 0) :
     (mk R M).compr₂ (lift f hf) = f := by
   ext a b
   simp
 
 /-- A linear map out of `antisymSquare R M` is the lift of its composite with the wedge. -/
 @[simp]
-theorem lift_compr₂ (g : antisymSquare R M →ₗ[R] N) :
+theorem lift_mk_compr₂ (g : antisymSquare R M →ₗ[R] N) :
     lift ((mk R M).compr₂ g) (fun a b ↦ by simp [← map_add]) = g := by
   ext a b
   simp
