@@ -449,9 +449,8 @@ theorem conjWirtingerDeriv_comp_eq_conj_smul {φ : ℂ → W} {g : ℂ → ℂ} 
     (hφ : DifferentiableAt ℝ φ (g x)) (hg : HasDerivAt g a x) :
     conjWirtingerDeriv (φ ∘ g) x = conj a • conjWirtingerDeriv φ (g x) := by
   ext v
-  rw [conjWirtingerDeriv_comp_eq_comp_fderiv hφ hg.differentiableAt, hg.hasFDerivAt.fderiv,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul,
-    mul_comm, ← smul_eq_mul, map_smulₛₗ, smul_apply]
+  rw [conjWirtingerDeriv_comp_eq_comp_fderiv hφ hg.differentiableAt, hg.hasFDerivAt.fderiv]
+  simpa [mul_comm] using map_smulₛₗ (conjWirtingerDeriv φ (g x)) a v
 
 section Mul
 
