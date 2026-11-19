@@ -173,14 +173,16 @@ theorem aeval_jacobian {A : Type*} [CommRing A] [Algebra R A] (x : σ → A)
     (p : σ → MvPolynomial σ R) :
     aeval x (jacobian p) = (Matrix.of fun i j ↦ aeval x (pderiv j (p i))).det := by
   rw [jacobian_eq_det, AlgHom.map_det]
-  congr 1
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  simp
 
 /-- Evaluating the Jacobian determinant at a point gives the determinant of the Jacobian matrix
 at that point. -/
 theorem eval_jacobian (v : σ → R) (p : σ → MvPolynomial σ R) :
     eval v (jacobian p) = (jacobiMatrixAt p v).det := by
   rw [jacobian_eq_det, RingHom.map_det]
-  congr 1
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  simp
 
 /-- The Jacobian determinant commutes with change of coefficients. -/
 theorem map_jacobian {S : Type*} [CommRing S] (f : R →+* S) (p : σ → MvPolynomial σ R) :
@@ -194,7 +196,8 @@ permutation. -/
 theorem jacobian_comp_perm (p : σ → MvPolynomial σ R) (e : Equiv.Perm σ) :
     jacobian (p ∘ e) = Equiv.Perm.sign e * jacobian p := by
   rw [jacobian_eq_det, jacobian_eq_det, ← det_permute]
-  congr 1
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  simp
 
 end Jacobian
 

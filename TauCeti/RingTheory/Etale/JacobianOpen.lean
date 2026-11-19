@@ -146,14 +146,6 @@ private noncomputable def quotientLift (x : σ → A) (hx : ∀ i, aeval x (p i)
     MvPolynomial σ R ⧸ Ideal.span (Set.range p) →ₐ[R] A :=
   Ideal.Quotient.liftₐ _ (aeval x) (aeval_eq_zero_of_mem_span hx)
 
-omit [Fintype σ] [DecidableEq σ] in
-private theorem quotientLift_mk (x : σ → A) (hx : ∀ i, aeval x (p i) = 0)
-    (f : MvPolynomial σ R) :
-    quotientLift x hx (Ideal.Quotient.mk (Ideal.span (Set.range p)) f) = aeval x f := by
-  rw [quotientLift, ← Ideal.Quotient.mkₐ_eq_mk R (Ideal.span (Set.range p))]
-  exact AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp (Ideal.span (Set.range p)) (aeval x)
-    (aeval_eq_zero_of_mem_span hx)) f
-
 /-- The algebra map out of the Jacobian-open algebra attached to a point `x` at which every
 equation vanishes and the Jacobian determinant is a unit. It sends the class of a polynomial `f`
 to `f(x)`. -/
@@ -161,7 +153,8 @@ noncomputable def lift (x : σ → A) (hx : ∀ i, aeval x (p i) = 0)
     (hJ : IsUnit (aeval x (jacobian p))) : JacobianOpenAlgebra p →ₐ[R] A :=
   IsLocalization.Away.liftAlgHom (A := R)
     (Ideal.Quotient.mk (Ideal.span (Set.range p)) (jacobian p)) (f := quotientLift x hx)
-    (by rwa [quotientLift_mk])
+    (by rwa [quotientLift, Ideal.Quotient.liftₐ_apply, (Ideal.Quotient.lift_mk _
+      (aeval (R := R) x : MvPolynomial σ R →+* A) (aeval_eq_zero_of_mem_span hx) :)])
 
 variable (x : σ → A) (hx : ∀ i, aeval x (p i) = 0) (hJ : IsUnit (aeval x (jacobian p)))
 
@@ -170,7 +163,8 @@ theorem lift_ofMvPolynomial (f : MvPolynomial σ R) :
     lift x hx hJ (ofMvPolynomial p f) = aeval x f := by
   rw [lift, ofMvPolynomial_apply, IsLocalization.Away.coe_liftAlgHom,
     IsLocalization.Away.lift_eq]
-  exact quotientLift_mk x hx f
+  exact (Ideal.Quotient.lift_mk _ (aeval (R := R) x : MvPolynomial σ R →+* A)
+    (aeval_eq_zero_of_mem_span hx) :)
 
 @[simp]
 theorem lift_comp_ofMvPolynomial : (lift x hx hJ).comp (ofMvPolynomial p) = aeval x :=
