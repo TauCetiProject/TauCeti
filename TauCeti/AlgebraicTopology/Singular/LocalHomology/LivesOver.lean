@@ -279,8 +279,8 @@ theorem homologyMap_sub_homologyMap_section {k : ℕ}
     (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom
         (α - (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) R k).hom
           ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom p)) R k).hom α)) = 0 := by
-  rw [map_sub, ← ContinuousMap.homologyMap_comp_apply, hs, TopCat.ofHom_id,
-    CategoryTheory.Functor.map_id, SSet.homologyMap_id, ModuleCat.id_apply, sub_self]
+  rw [map_sub, ← ContinuousMap.homologyMap_comp_apply, hs]
+  simp
 
 /-- **Localizing a class with the part carried by a section removed.** For a section `s` of
 `p : E → M`, the localization at the fibre over `b` of `α - s_* p_* α` is that of `α` minus the

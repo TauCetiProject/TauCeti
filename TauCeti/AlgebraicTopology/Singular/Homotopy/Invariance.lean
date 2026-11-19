@@ -250,7 +250,7 @@ end TopPair
 
 namespace ContinuousMap
 
-variable {X Y Z : Type w} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+variable {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- **Homotopy invariance** in the form `SSet.homologyMap (TopCat.toSSet.map _)` used for the
 homology of pairs: homotopic maps induce the same map on singular homology, with coefficients `R`
@@ -261,16 +261,6 @@ theorem Homotopic.homologyMap_eq {f g : C(X, Y)} (H : f.Homotopic g) {C : Type u
     SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n =
       SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n :=
   TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor H.some R n
-
-/-- The map induced by a composite on singular homology, in the form
-`SSet.homologyMap (TopCat.toSSet.map _)`, applied to a class with coefficients in a module. -/
-theorem homologyMap_comp_apply (f : C(X, Y)) (g : C(Y, Z)) {Λ : Type*} [Ring Λ]
-    (R : ModuleCat.{w} Λ) (n : ℕ)
-    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology R n : ModuleCat.{w} Λ)) :
-    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (g.comp f))) R n).hom x =
-      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n).hom
-        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n).hom x) := by
-  rw [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp, ← TopCat.ofHom_comp]
 
 open TauCeti
 

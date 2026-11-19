@@ -120,8 +120,7 @@ theorem IsAbundantWithTwoSpheres.exists_homologyMap_mappingSpaceEval_eq_zero [T1
     · -- Above the dimension the local homology of `Q` at `b` vanishes.
       have h0 : fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) (id : Q → Q) b k = 0 :=
         (isZero_singularHomology_complSingleton_of_ne _ φ hb hn hk.ne').eq_of_tgt _ _
-      rw [hr, h0, ModuleCat.hom_zero, LinearMap.zero_apply, map_zero, sub_zero]
-      exact (livesOverFundamentalClass_iff _ _ b α).1 hα
+      simpa [hr, h0] using (livesOverFundamentalClass_iff _ _ b α).1 hα
     · intro h0
       rw [← sub_eq_zero.1 h0] at hrange
       exact hk hrange
