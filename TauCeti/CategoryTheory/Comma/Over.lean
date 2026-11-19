@@ -53,10 +53,21 @@ instance isIso_left {T : Type u} [Category.{v} T] {X : T} {f g : Over X} (φ : f
 
 /-- An object `Z` over `S` is the image under `Over.map p` of `Over.mk a`, for a lift
 `a : Z.left ⟶ S'` of its structure morphism through `p : S' ⟶ S`. -/
-@[expose, simps! hom_left inv_left]
 def mapMkIso {T : Type u} [Category.{v} T] {S S' : T} {p : S' ⟶ S} {Z : Over S}
     (a : Z.left ⟶ S') (ha : a ≫ p = Z.hom) : (Over.map p).obj (Over.mk a) ≅ Z :=
   Over.isoMk (Iso.refl Z.left) (by simp [ha])
+
+/-- The isomorphism `mapMkIso` is the identity on underlying objects. -/
+@[simp]
+theorem mapMkIso_hom_left {T : Type u} [Category.{v} T] {S S' : T} {p : S' ⟶ S} {Z : Over S}
+    (a : Z.left ⟶ S') (ha : a ≫ p = Z.hom) : (mapMkIso a ha).hom.left = 𝟙 Z.left := by
+  simp [mapMkIso]
+
+/-- The inverse of `mapMkIso` is the identity on underlying objects. -/
+@[simp]
+theorem mapMkIso_inv_left {T : Type u} [Category.{v} T] {S S' : T} {p : S' ⟶ S} {Z : Over S}
+    (a : Z.left ⟶ S') (ha : a ≫ p = Z.hom) : (mapMkIso a ha).inv.left = 𝟙 Z.left := by
+  simp [mapMkIso]
 
 /-- Base change along `f : T ⟶ S` of a morphism `g : A ⟶ B` over `S` is the pullback of `g.left`
 along the projection `B ×_S T ⟶ B`: the square formed by `A ×_S T ⟶ B ×_S T`, the two first
