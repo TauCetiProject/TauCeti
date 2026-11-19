@@ -11,7 +11,8 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
-import TauCeti.Analysis.Normed.Module.Annihilator
+import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
+import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # Representation of continuous functionals on `Lᵖ`
@@ -53,32 +54,12 @@ namespace MeasureTheory.Lp
 variable {α 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measure α}
   [SigmaFinite μ] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
 
-/-- A linear isometry `T` from a Banach space into the continuous dual of a reflexive space `Y` is
-onto when the functionals `T x` separate the points of `Y`: a functional on `Y⋆` annihilating the
-closed range of `T` is evaluation at some `y ∈ Y`, which must vanish. -/
-private theorem surjective_of_reflexive {X Y : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-    [CompleteSpace X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →ₗᵢ[𝕜] StrongDual 𝕜 Y)
-    (hY : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 Y))
-    (h : ∀ y, (∀ x, T x y = 0) → y = 0) : Function.Surjective T := by
-  let S := T.toLinearMap.range
-  have hS : IsClosed (S : Set (StrongDual 𝕜 Y)) := T.isometry.isClosedEmbedding.isClosed_range
-  intro Λ
-  suffices Λ ∈ S.topologicalClosure by
-    rw [hS.submodule_topologicalClosure_eq] at this
-    exact this
-  apply (S.mem_topologicalClosure_iff_forall_dual_eq_zero Λ).2
-  intro Ψ hΨ
-  obtain ⟨y, rfl⟩ := hY Ψ
-  have hy : y = 0 := h y fun x ↦ by
-    rw [← NormedSpace.dual_def]
-    exact hΨ (T x) (LinearMap.mem_range_self T.toLinearMap x)
-  simp [hy]
-
 /-- Every continuous scalar functional on `Lᵠ` is integration against an `Lᵖ` function,
 for conjugate exponents strictly between one and infinity. -/
 theorem toDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
     Function.Surjective (toDual 𝕜 μ p q) :=
-  surjective_of_reflexive _ (surjective_inclusionInDoubleDual (E := 𝕜) hq hq_top) fun f hf ↦
+  LinearIsometry.surjective_of_surjective_inclusionInDoubleDual _
+    (surjective_inclusionInDoubleDual (E := 𝕜) hq hq_top) fun f hf ↦
     (toDual 𝕜 μ q p).injective <| ContinuousLinearMap.ext fun g ↦ by
       rw [map_zero, zero_apply, toDual_apply]
       simpa only [toDual_apply, mul_comm] using hf g
@@ -107,18 +88,6 @@ theorem integral_dualEquiv_symm_mul (hq : 1 < q) (hq_top : q ≠ ∞)
     (Λ : StrongDual 𝕜 (Lp 𝕜 q μ)) (f : Lp 𝕜 q μ) :
     ∫ x, (dualEquiv 𝕜 μ p q hq hq_top).symm Λ x * f x ∂μ = Λ f := by
   rw [← dualEquiv_apply hq hq_top, LinearIsometryEquiv.apply_symm_apply]
-
-omit [SigmaFinite μ] in
-/-- **Hölder's inequality** for the integral pairing `lpPairing` of a bilinear map `B`. -/
-private theorem norm_lpPairing_apply_apply_le {E F G : Type*} [NormedAddCommGroup E]
-    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
-    [NormedSpace 𝕜 G] [NormedSpace ℝ G] [SMulCommClass ℝ 𝕜 G] [CompleteSpace G]
-    (B : E →L[𝕜] F →L[𝕜] G) (g : Lp E p μ) (f : Lp F q μ) :
-    ‖B.lpPairing μ p q g f‖ ≤ ‖B‖ * ‖g‖ * ‖f‖ := by
-  have h : B.lpPairing μ p q g f = L1.integral (B.holder 1 g f) := by
-    simp [ContinuousLinearMap.lpPairing, L1.integral_eq' 𝕜]
-  rw [h]
-  exact (L1.norm_integral_le _).trans (B.norm_holder_apply_apply_le _ _)
 
 /-! ### Functionals on `Lᵠ` with values in a Hilbert space -/
 
@@ -190,7 +159,7 @@ private noncomputable def toStrongDual (hp : p ≠ ∞) :
     set B := ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)
     rw [ContinuousLinearMap.coe_coe]
     refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg g) fun f ↦ ?_) ?_
-    · exact (norm_lpPairing_apply_apply_le B g f).trans
+    · exact (B.norm_lpPairing_apply_apply_le g f).trans
         (by gcongr; exact mul_le_of_le_one_left (norm_nonneg _) ContinuousLinearMap.norm_id_le)
     · rw [← toReal_eNorm g, ← toReal_eNorm (B.lpPairing μ p q g), Lp.eNorm_def]
       exact ENNReal.toReal_mono eNorm_ne_top (eLpNorm_le_enorm_lpPairing hp g)
@@ -206,7 +175,8 @@ private theorem toStrongDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
   have : UniformConvexSpace H := by
     let := InnerProductSpace.rclikeToReal 𝕜 H
     infer_instance
-  refine surjective_of_reflexive _ (surjective_inclusionInDoubleDual (𝕜 := 𝕜) (μ := μ) hq hq_top)
+  refine LinearIsometry.surjective_of_surjective_inclusionInDoubleDual _
+    (surjective_inclusionInDoubleDual (𝕜 := 𝕜) (μ := μ) hq hq_top)
     fun f hf ↦ eq_zero_of_forall_lpPairing_eq_zero (𝕜 := 𝕜) (p := p) hq_top f fun g ↦ ?_
   rw [← toStrongDual_apply]
   exact hf g
