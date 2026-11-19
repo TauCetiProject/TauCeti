@@ -420,8 +420,8 @@ theorem HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero {G : Type*} [NormedAddCo
     (h.clm_comp (b m)).contDiffOn_smul_of_ne_zero ((c m).contDiff.comp_contDiffOn hT) hn
   have hrepr (L : F →L[ℝ] G) (w : F) : ∑ m, c m L • b m w = L w := by
     conv_rhs => rw [← b.sum_repr L]
-    simp only [sum_apply, smul_apply]
-    rfl
+    simp only [sum_apply, smul_apply, c, LinearMap.coe_toContinuousLinearMap',
+      Module.Basis.coord_apply]
   refine (hsum.congr_ae (ae_of_all _ fun x => hrepr (T x) (u x))).congr_ae_deriv
     (ae_restrict_of_forall_mem Ω.isOpen.measurableSet fun x hx => ?_)
   have hd : DifferentiableAt ℝ T x :=

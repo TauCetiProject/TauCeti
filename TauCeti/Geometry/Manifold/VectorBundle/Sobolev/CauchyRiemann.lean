@@ -13,7 +13,6 @@ import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
-import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Complex
 import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
@@ -152,14 +151,7 @@ include hD hDs in
 private def dataL :
     A.sectionChartData.SobolevData μ p 1 →L[ℝ] A.tangentHom.sectionChartData.SobolevData μ p 0 :=
   ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi fun c ↦
-    (Wkp.restrictL (image_tangentHom A i).le 0).comp (chartL A hD hDs μ p i c)
-
-omit [IsManifold 𝓘(ℂ) ∞ M] [T2Space M] [FiniteDimensional ℝ F] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul ℝ (V x)] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-private theorem value_one_eq (i : Fin A.n) (w : A.sectionChartData.SobolevData μ p 1)
-    (j : Fin (finrank ℝ F)) :
-    Wkp.value 1 (w i j) = Wkp.lowerOrderL 0 (w i j) := by
-  rw [Wkp.value_succ, Wkp.value_zero, Wkp.lowerOrderL_apply]
+    (Wkp.restrictL (sectionChartData_image_tangentHom A i).le 0).comp (chartL A hD hDs μ p i c)
 
 /-- The `c`th component in chart `i` of the realization is, almost everywhere on the image of the
 chart, the `c`th coordinate of `∂bar uᵢ` plus the matrix of the zeroth-order term applied to the
@@ -194,7 +186,7 @@ private theorem chartL_ae (i : Fin A.n) (c : Fin (finrank ℝ (ℂ →L[ℝ] F))
   rw [chartL, add_apply, h₁, Pi.add_apply, ContinuousLinearMap.comp_apply, h₂, sum_apply, h₃,
     Finset.sum_apply]
   refine congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun j _ ↦ ?_)
-  rw [value_one_eq A μ p i w j]
+  rw [Wkp.value_one_eq_lowerOrderL]
   exact h₄ j
 
 /-- **The chart formula of the realization.** In chart `i`, the chart data of the realization of
@@ -208,7 +200,7 @@ private theorem chartValueL_dataL_ae (w : A.sectionChartData.SobolevData μ p 1)
   have h₀ := ae_image_tangentHom A μ i
     (A.tangentHom.sectionChartData.chartValueL_apply_ae μ p 0 i (dataL A hD hDs μ p w))
   have hres := ae_image_tangentHom A μ i <| ae_all_iff.2 fun c ↦
-    Wkp.value_restrictL_ae (image_tangentHom A i).le 0 (chartL A hD hDs μ p i c w)
+    Wkp.value_restrictL_ae (sectionChartData_image_tangentHom A i).le 0 (chartL A hD hDs μ p i c w)
   filter_upwards [h₀, hres, ae_all_iff.2 fun c ↦ chartL_ae A hD hDs μ p i c w,
     A.sectionChartData.chartValueL_apply_ae μ p 1 i w] with y h₁ h₂ h₃ h₄
   rw [h₁, h₄]
@@ -274,8 +266,7 @@ private theorem chartData_overlap_eq {i i' : Fin A.n} {y : ℂ} (hy : y ∈ A.ov
       ((A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y) : F →L[ℝ] F).comp
         ((complexAntilinearPartL X + A.chartZeroOrder D i (A.transition i i' y) v).comp
           (fderiv ℝ (A.transition i i') y)) := by
-  have : ∀ x, ContinuousSMul ℂ (V x) := fun x ↦
-    (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
+  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   have hd : DifferentiableAt ℝ (fun z ↦ ((A.triv i).coordChangeL ℝ (A.triv i')
       ((A.chart i').symm z) : F →L[ℝ] F)) y :=
     ((A.contDiffOn_coordChangeL i i').differentiableOn one_ne_zero y hy).differentiableAt
@@ -333,8 +324,7 @@ include hD in
 private theorem dataL_mem_zeroOne (w : A.sectionChartData.sobolevSections μ p 1) :
     (⟨dataL A hD hDs μ p w, dataL_mem A hD hDs μ p w⟩ : SobolevSection A.tangentHom μ p 0) ∈
       zeroOneSobolevSections A μ p 0 := by
-  have : ∀ x, ContinuousSMul ℂ (V x) := fun x ↦
-    (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
+  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   refine mem_zeroOneSobolevSections_iff.2 fun i ↦ (ae_image_tangentHom_iff A μ i).2 ?_
   filter_upwards [chartValueL_dataL_ae A hD hDs μ p w i,
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y h hy v
@@ -382,8 +372,7 @@ theorem chartValueL_sobolevL_ofContMDiffSection_ae (s : Cₛ^1⟮𝓘(ℝ, ℂ);
         ((hD.sobolevL A hDs μ p (SobolevSection.ofContMDiffSection A μ p 1 s) :
           SobolevSection A.tangentHom μ p 0) : A.tangentHom.sectionChartData.SobolevData μ p 0)
       =ᵐ[μ.restrict (A.image i)] A.tangentHom.coord i (D s) := by
-  have : ∀ x, ContinuousSMul ℂ (V x) := fun x ↦
-    (VectorBundle.continuousLinearEquivAt ℂ F V x).continuousSMul
+  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
   have hcoord := SobolevSection.chartValueL_ofContMDiffSection_ae A μ p 1 s i
   have hc : ContDiffOn ℝ 1 (A.coord i s) (A.image i) :=
     (A.contDiffOn_coord s.contMDiff i).mono
