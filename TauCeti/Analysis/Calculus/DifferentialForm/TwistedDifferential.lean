@@ -313,10 +313,9 @@ theorem norm_re_smul_add_im_smul (J : AlmostComplexStructure V)
     ‖z.re • n + z.im • J n‖ = ‖z‖ := by
   have hJn : ‖J n‖ = 1 := by rw [J.norm_apply hJ, hn]
   have horth : ⟪n, J n⟫ = 0 := by rw [real_inner_comm, J.inner_apply_self hJ]
-  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), @norm_add_sq_real, norm_smul, norm_smul,
-    real_inner_smul_left, real_inner_smul_right, horth, hn, hJn, Complex.sq_norm,
-    Complex.normSq_apply, Real.norm_eq_abs, Real.norm_eq_abs]
-  linear_combination sq_abs z.re + sq_abs z.im
+  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply]
+  simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, horth, hn, hJn,
+    ← sq]
 
 /-- **The Laplacian along a `J`-complex line.** For a `C²` function `f`, a point `y` and a vector
 `n`, the restriction `z ↦ f (y + Re z • n + Im z • J n)` of `f` to the complex line through `y`
@@ -339,14 +338,8 @@ theorem laplacian_comp_add_re_smul_add_im_smul {E : Type*} [NormedAddCommGroup E
       ContinuousMultilinearMap.compContinuousLinearMap_apply, iteratedFDeriv_comp_add_left,
       iteratedFDeriv_two_apply, hLz z, add_assoc]
     simp
-  rw [laplacian_eq_iteratedFDeriv_complexPlane]
-  beta_reduce
-  rw [hD, hD, J.extDeriv_twistedDifferential_apply,
-    J.apply_apply]
-  simp only [hLz, Complex.one_re, one_smul, Complex.one_im, zero_smul, add_zero, Complex.I_re,
-    Complex.I_im, zero_add, map_neg, sub_neg_eq_add, ne_eq, OfNat.ofNat_ne_zero,
-    not_false_eq_true, mul_inv_cancel_left₀]
-  ring
+  simp [laplacian_eq_iteratedFDeriv_complexPlane, hD, J.extDeriv_twistedDifferential_apply, hLz,
+    add_comm]
 
 /-- **A bound along complex lines.** Let `J` be orthogonal, `n` a unit vector and `K` the complex
 line spanned by `n` and `J n`. If a `C²` function `f` has `|d d^c_J f (n, J n)| ≤ C` everywhere

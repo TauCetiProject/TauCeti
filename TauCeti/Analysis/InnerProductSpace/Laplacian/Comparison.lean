@@ -196,16 +196,14 @@ theorem abs_le_add_mul_sq_div_of_abs_laplacian_le (hR : 0 ≤ R)
     (hu : ∀ x ∈ Metric.ball (0 : E) R, ContDiffAt ℝ 2 u x)
     (hΔ : ∀ x ∈ Metric.ball (0 : E) R, |Δ u x| ≤ C) (hout : ∀ x, R ≤ ‖x‖ → |u x| ≤ ε) (x : E) :
     |u x| ≤ ε + C * R ^ 2 / (2 * Module.finrank ℝ E) := by
+  rcases hR.eq_or_lt with rfl | hR
+  · simpa using hout x (norm_nonneg x)
+  have hC : 0 ≤ C := (abs_nonneg _).trans (hΔ 0 (by simpa using hR))
   rcases lt_or_ge ‖x‖ R with hx | hx
   swap
-  · -- Outside the open ball the bound is the hypothesis, as `C ≥ 0` or `R = 0`.
-    refine (hout x hx).trans (le_add_of_nonneg_right ?_)
-    rcases hR.eq_or_lt with hR | hR
-    · simp [← hR]
-    · have hC : 0 ≤ C := (abs_nonneg _).trans (hΔ 0 (by simpa using hR))
-      positivity
+  · -- Outside the open ball the bound is the hypothesis, as `C ≥ 0`.
+    exact (hout x hx).trans (le_add_of_nonneg_right (by positivity))
   have hxb : x ∈ Metric.ball (0 : E) R := by simpa using hx
-  have hC : 0 ≤ C := (abs_nonneg _).trans (hΔ x hxb)
   have hd : (0 : ℝ) < 2 * Module.finrank ℝ E := by
     have := Module.finrank_pos (R := ℝ) (M := E)
     positivity
@@ -221,17 +219,22 @@ theorem abs_le_add_mul_sq_div_of_abs_laplacian_le (hR : 0 ≤ R)
     simp [hg, hfr hy]
   have hint : interior (Metric.closedBall (0 : E) R) = Metric.ball 0 R := interior_closedBall' 0 R
   have hxK : x ∈ Metric.closedBall (0 : E) R := Metric.ball_subset_closedBall hxb
-  -- Compare `u` and `-u` with the barrier.
-  have hup : u x ≤ g x := le_of_laplacian_le_of_le_frontier hK hcont hgd.continuous.continuousOn
-    (fun y hy ↦ hu y (hint ▸ hy)) (fun y _ ↦ hgd.contDiffAt)
-    (fun y hy ↦ by rw [hgΔ]; exact neg_le_of_abs_le (hΔ y (hint ▸ hy)))
-    (fun y hy ↦ (le_abs_self _).trans ((hout y (hfr hy).ge).trans (hgfr hy).ge)) hxK
-  have hlo : -u x ≤ g x := le_of_laplacian_le_of_le_frontier hK hcont.neg
-    hgd.continuous.continuousOn (fun y hy ↦ (hu y (hint ▸ hy)).neg) (fun y _ ↦ hgd.contDiffAt)
+  -- A function with `Δ v ≥ -C` on the ball and `v ≤ ε` outside it lies below the barrier.
+  have hside (v : E → ℝ) (hvc : ContinuousOn v (Metric.closedBall 0 R))
+      (hv : ∀ y ∈ Metric.ball (0 : E) R, ContDiffAt ℝ 2 v y)
+      (hvΔ : ∀ y ∈ Metric.ball (0 : E) R, -C ≤ Δ v y) (hvout : ∀ y, R ≤ ‖y‖ → v y ≤ ε) :
+      v x ≤ g x :=
+    le_of_laplacian_le_of_le_frontier hK hvc hgd.continuous.continuousOn
+      (fun y hy ↦ hv y (hint ▸ hy)) (fun y _ ↦ hgd.contDiffAt)
+      (fun y hy ↦ by rw [hgΔ]; exact hvΔ y (hint ▸ hy))
+      (fun y hy ↦ (hvout y (hfr hy).ge).trans (hgfr hy).ge) hxK
+  have hup : u x ≤ g x := hside u hcont hu (fun y hy ↦ neg_le_of_abs_le (hΔ y hy))
+    (fun y hy ↦ (le_abs_self _).trans (hout y hy))
+  have hlo : -u x ≤ g x := hside (-u) hcont.neg (fun y hy ↦ (hu y hy).neg)
     (fun y hy ↦ by
-      rw [hgΔ, laplacian_neg, Pi.neg_apply, neg_le_neg_iff]
-      exact le_of_abs_le (hΔ y (hint ▸ hy)))
-    (fun y hy ↦ (neg_le_abs _).trans ((hout y (hfr hy).ge).trans (hgfr hy).ge)) hxK
+      rw [laplacian_neg, Pi.neg_apply, neg_le_neg_iff]
+      exact le_of_abs_le (hΔ y hy))
+    (fun y hy ↦ (neg_le_abs _).trans (hout y hy))
   have hgx : g x ≤ ε + C * R ^ 2 / (2 * Module.finrank ℝ E) := by
     simp only [hg]
     gcongr
