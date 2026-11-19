@@ -415,6 +415,20 @@ theorem contMDiffAt_iff_of_mem_maximalAtlas
   Trivialization.contMDiffWithinAt_iff_of_mem_maximalAtlas he hx
 
 omit [e.IsLinear 𝕜] in
+/-- A member of the maximal atlas of smooth bundle trivializations is smooth on its source,
+as a map from the native total-space manifold to base times model fibre. -/
+theorem contMDiffOn_of_mem_maximalAtlas
+    (he : e.toOpenPartialHomeomorph ∈
+      (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F E)) :
+    ContMDiffOn (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n e e.source := by
+  intro p hp
+  have h := (contMDiffWithinAt_iff_of_mem_maximalAtlas
+    (IM := IB.prod 𝓘(𝕜, F)) (f := id) (s := e.source) he hp).mp contMDiffWithinAt_id
+  refine (h.1.prodMk h.2).congr (fun q hq ↦ ?_) ?_
+  · exact Prod.ext (e.coe_fst hq) rfl
+  · exact Prod.ext (e.coe_fst hp) rfl
+
+omit [e.IsLinear 𝕜] in
 /-- A section of a `C^n` vector bundle is `C^n` within a set at a point of the base set of a member
 of the maximal atlas of `C^n` trivializations exactly when its coordinate in that member is. -/
 theorem contMDiffWithinAt_section_iff_of_mem_maximalAtlas

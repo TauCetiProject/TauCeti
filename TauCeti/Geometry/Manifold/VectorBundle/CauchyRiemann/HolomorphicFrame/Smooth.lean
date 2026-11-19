@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.HolomorphicFrame
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.HolomorphicFrame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Smooth
 
 /-!
@@ -54,12 +54,8 @@ theorem eventually_contDiffAt_cauchyRiemannChartCoeff
   let s := e.localFrame ((Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ()
   let a : Set M := (chartAt ℂ x₀).source ∩ (e.baseSet ∩ u)
   have ha : IsOpen a := (chartAt ℂ x₀).open_source.inter (e.open_baseSet.inter hu)
-  have hs : ContMDiffOn 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% s) e.baseSet := by
-    rw [e.contMDiffOn_section_iff e.open_baseSet subset_rfl]
-    refine (contMDiffOn_const (c := b.symm 1)).congr fun x hx ↦ ?_
-    rw [← e.continuousLinearMapAt_apply_of_mem (R := ℂ) hx,
-      Manifold.continuousLinearMapAt_localFrame _ hx, Basis.map_apply, Basis.singleton_apply]
-    rfl
+  have hs : ContMDiffOn 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% s) e.baseSet :=
+    e.contMDiffOn_localFrame ((Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ()
   have hDa := hD.contMDiffCovariantDerivativeOn_mono_of_isOpen hDs ha (fun _ hx ↦ hx.2.2)
   let eHom := trivializationAt (ℂ →L[ℝ] F)
     (fun x ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x₀
@@ -81,15 +77,9 @@ theorem eventually_contDiffAt_cauchyRiemannChartCoeff
     refine (((b.toContinuousLinearMap.restrictScalars ℝ).contDiff.comp_contDiffOn
       (hchart.clm_apply (contDiffOn_const (c := (1 : ℂ)))))).congr ?_
     intro z hz
-    have hy : φ.symm z ∈ (chartAt ℂ x₀).source := hz.2.1
     simp only [Function.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-      ContinuousLinearEquiv.coe_coe, eHom, hom_trivializationAt_apply,
-      ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
-    rw [TangentBundle.symmL_trivializationAt hy, φ.right_inv hz.1]
-    rw [cauchyRiemannChartCoeff_apply,
-      (trivializationAt F V x₀).continuousLinearMapAt_apply_of_mem (R := ℂ) hz.2.2.1,
-      (trivializationAt F V x₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hz.2.2.1]
-    rfl
+      ContinuousLinearEquiv.coe_coe, eHom]
+    exact cauchyRiemannChartCoeff_eq_hom_trivializationAt D b x₀ hz.1 hz.2.2.1
   filter_upwards [hW.mem_nhds hxW] with z hz
   exact (hc z hz).contDiffAt (hW.mem_nhds hz)
 

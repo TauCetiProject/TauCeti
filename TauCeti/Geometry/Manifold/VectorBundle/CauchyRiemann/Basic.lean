@@ -766,8 +766,7 @@ theorem SmoothAlmostComplexStructure.IsZeroOneForm.apply_mfderivWithin_extChartA
   set L := mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm (range 𝓘(ℝ, ℂ)) z
   -- `dφ⁻¹` is complex linear, so `dφ⁻¹ i = j (dφ⁻¹ 1)`, on which `η` is `-i • η (dφ⁻¹ 1)`.
   have hLI : L Complex.I = ofComplexManifold ℂ M _ (L (1 : ℂ)) := by
-    simpa only [smul_eq_mul, mul_one] using
-      (ofComplexManifold_apply_mfderivWithin_extChartAt_symm (v := (1 : ℂ)) hz).symm
+    exact (ofComplexManifold_apply_mfderivWithin_extChartAt_symm_one hz).symm
   have hηI : η (L Complex.I) = -(Complex.I • η (L (1 : ℂ))) := by
     rw [hLI]
     exact isZeroOneForm_iff.1 hη _
@@ -798,8 +797,7 @@ theorem eq_zero_iff_apply_mfderivWithin_extChartAt_symm_one
     set L := mfderivWithin 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (extChartAt 𝓘(ℝ, ℂ) x₀).symm
       (range 𝓘(ℝ, ℂ)) z
     have hLI : L Complex.I = ofComplexManifold ℂ M _ (L (1 : ℂ)) := by
-      simpa only [smul_eq_mul, mul_one] using
-        (ofComplexManifold_apply_mfderivWithin_extChartAt_symm (v := (1 : ℂ)) hz).symm
+      exact (ofComplexManifold_apply_mfderivWithin_extChartAt_symm_one hz).symm
     have hI : η (L Complex.I) = 0 := by rw [hLI, hη, h, smul_zero, neg_zero]
     have hLinv : L.IsInvertible := isInvertible_mfderivWithin_extChartAt_symm hz
     obtain ⟨Linv, hL⟩ := hLinv
@@ -808,8 +806,7 @@ theorem eq_zero_iff_apply_mfderivWithin_extChartAt_symm_one
       rw [← hL, ContinuousLinearEquiv.coe_coe]
       exact Linv.apply_symm_apply v⟩
     have hval : η (L w) = w.re • η (L (1 : ℂ)) + w.im • η (L Complex.I) := by
-      convert LinearMap.apply_eq_re_smul_one_add_im_smul_I (η.comp L).toLinearMap w
-        using 1 <;> rfl
+      exact LinearMap.apply_eq_re_smul_one_add_im_smul_I (η.comp L).toLinearMap w
     simpa only [h, hI, smul_zero, add_zero, zero_apply] using hval
 
 end SmoothAlmostComplexStructure.IsZeroOneForm

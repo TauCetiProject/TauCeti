@@ -60,7 +60,7 @@ In the curve construction, the model fibre may be any complex rank-one normed sp
 continuous complex-linear equivalence `b` with `ℂ` chooses the scalar coordinate. The chart
 coefficient is assumed smooth
 near the chart centre. `HolomorphicFrame.Smooth` derives the assumption from native covariant
-regularity of the given operator; `CauchyRiemann.HolomorphicBundle` constructs its actual
+regularity of the given operator; `CauchyRiemann.LineBundle` constructs its actual
 holomorphic bundle and the smooth comparison with the original bundle.
 
 ## References
@@ -109,6 +109,23 @@ theorem IsNonvanishingHolomorphicOn.mdifferentiableAt {σ : Π x : M, V x} {U : 
     (hσ : IsNonvanishingHolomorphicOn F D σ U) (hU : IsOpen U) {x : M} (hx : x ∈ U) :
     MDiffAt (T% σ) x :=
   (hσ.contMDiffOn.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
+
+/-- A local kernel frame depends only on its values on an open set. The original real
+Cauchy–Riemann law supplies locality of the operator, so this does not hold for arbitrary
+nonlocal operators on global sections. -/
+theorem IsNonvanishingHolomorphicOn.congr [IsManifold I ∞ M] [VectorBundle ℝ F V]
+    [∀ x, Module ℂ (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+    [∀ x, ContinuousSMul ℝ (V x)]
+    {j : SmoothAlmostComplexStructure I M} {σ τ : Π x : M, V x} {U : Set M}
+    (hσ : IsNonvanishingHolomorphicOn F D σ U)
+    (hD : IsRealCauchyRiemannOperator F j D) (hU : IsOpen U)
+    (h : ∀ x ∈ U, τ x = σ x) :
+    IsNonvanishingHolomorphicOn F D τ U where
+  contMDiffOn := hσ.contMDiffOn.congr fun x hx ↦ congrArg (TotalSpace.mk' F x) (h x hx)
+  ne_zero x hx := (h x hx).trans_ne (hσ.ne_zero x hx)
+  apply_eq_zero x hx :=
+    (hD.apply_eq_of_eventuallyEq (hσ.mdifferentiableAt hU hx)
+      (Filter.eventually_of_mem (hU.mem_nhds hx) fun y hy ↦ h y hy)).trans (hσ.apply_eq_zero x hx)
 
 end General
 
@@ -291,6 +308,35 @@ theorem cauchyRiemannChartCoeff_apply
             (range 𝓘(ℝ, ℂ)) z (1 : ℂ)))) :=
   (rfl)
 
+omit [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- The scalar chart coefficient is the hom-bundle coordinate of the operator applied to the
+constant local frame, evaluated on the model vector `1`. This identifies the native hom-bundle
+reading used for covariant smoothness with the inverse-chart formula. -/
+theorem cauchyRiemannChartCoeff_eq_hom_trivializationAt
+    (D : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x)
+    (b : F ≃L[ℂ] ℂ) (x₀ : M) {z : ℂ}
+    (hz : z ∈ (extChartAt 𝓘(ℝ, ℂ) x₀).target)
+    (hze : (extChartAt 𝓘(ℝ, ℂ) x₀).symm z ∈ (trivializationAt F V x₀).baseSet) :
+    cauchyRiemannChartCoeff D b x₀ z =
+      b (((trivializationAt (ℂ →L[ℝ] F)
+        (fun x ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x₀)
+          ⟨(extChartAt 𝓘(ℝ, ℂ) x₀).symm z,
+            D ((trivializationAt F V x₀).localFrame
+              ((Module.Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ())
+              ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z)⟩).2 1) := by
+  have hy : (extChartAt 𝓘(ℝ, ℂ) x₀).symm z ∈ (chartAt ℂ x₀).source := by
+    simpa only [extChartAt_source] using (extChartAt 𝓘(ℝ, ℂ) x₀).map_target hz
+  symm
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    ContinuousLinearMap.comp_apply]
+  rw [TangentBundle.symmL_trivializationAt hy, (extChartAt 𝓘(ℝ, ℂ) x₀).right_inv hz]
+  rw [cauchyRiemannChartCoeff_apply,
+    (trivializationAt F V x₀).continuousLinearMapAt_apply_of_mem (R := ℂ) hze,
+    (trivializationAt F V x₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hze]
+  -- The remaining inverse-chart derivative has source the model tangent space `ℂ`;
+  -- only its tangent-space type alias and continuous-linear-map coercions differ.
+  rfl
+
 variable (b : F ≃L[ℂ] ℂ)
   {D : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
 
@@ -322,9 +368,9 @@ theorem IsRealCauchyRiemannOperator.apply_localFrame_mfderivWithin_extChartAt_sy
     rw [Trivialization.coe_continuousLinearEquivAt_eq, map_smul,
       Manifold.continuousLinearMapAt_localFrame _ hze, Module.Basis.map_apply,
       Module.Basis.singleton_apply]
-    change b _ = b (_ • b.symm 1)
-    rw [map_smul, b.apply_symm_apply, smul_eq_mul, mul_one]
-    rfl
+    rw [ContinuousLinearEquiv.coe_toLinearEquiv, map_smul, b.apply_symm_apply,
+      smul_eq_mul, mul_one]
+    exact (cauchyRiemannChartCoeff_apply D b x₀ z).symm
   rw [(hD.isZeroOneForm s y).apply_mfderivWithin_extChartAt_symm hz, h1, smul_smul]
 
 variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)]
@@ -362,6 +408,8 @@ private theorem apply_exp_smul_localFrame_one_eq_zero (x₀ : M) {G : ℂ → �
   have hφ := mdifferentiableAt_extChartAt (I := 𝓘(ℝ, ℂ))
     (by simpa only [φ, extChartAt_source] using φ.map_target hz)
   have hchain (w : ℂ) : mvfderiv 𝓘(ℝ, ℂ) f y (L w) = fderiv ℝ H z w := by
+    -- Expanding `f` here also normalizes `L`'s source `TangentSpace 𝓘(ℝ, ℂ) z` to
+    -- its model `ℂ`, before applying the chain rule to the displayed composition.
     change mvfderiv 𝓘(ℝ, ℂ) (H ∘ φ) y (L w) = _
     rw [mvfderiv_comp_apply_of_differentiableAt hhy hφ,
       mvfderiv_apply_eq_mfderiv_apply, φ.right_inv hz]
@@ -369,14 +417,10 @@ private theorem apply_exp_smul_localFrame_one_eq_zero (x₀ : M) {G : ℂ → �
       congr($(mfderiv_extChartAt_comp_mfderivWithin_extChartAt_symm (I := 𝓘(ℝ, ℂ)) hz) w)
   have hdI : mvfderiv 𝓘(ℝ, ℂ) f y (ofComplexManifold ℂ M y (L (1 : ℂ))) =
       fderiv ℝ H z Complex.I := by
-    rw [show ofComplexManifold ℂ M y (L (1 : ℂ)) = L Complex.I by
-      simpa only [smul_eq_mul, mul_one] using
-        ofComplexManifold_apply_mfderivWithin_extChartAt_symm (v := (1 : ℂ)) hz]
+    rw [ofComplexManifold_apply_mfderivWithin_extChartAt_symm_one hz]
     exact hchain Complex.I
-  have hs1 : e.continuousLinearMapAt ℂ y (s y) = b.symm 1 := by
-    rw [Manifold.continuousLinearMapAt_localFrame _ hze, Module.Basis.map_apply,
-      Module.Basis.singleton_apply]
-    rfl
+  have hs1 : e.continuousLinearMapAt ℂ y (s y) = b.symm 1 :=
+    e.continuousLinearMapAt_localFrame_singleton b hze
   have hval : D (f • s) y (L (1 : ℂ)) = f y • D s y (L (1 : ℂ)) +
       (2⁻¹ : ℝ) • (mvfderiv 𝓘(ℝ, ℂ) f y (L (1 : ℂ)) • s y +
         Complex.I • (mvfderiv 𝓘(ℝ, ℂ) f y (ofComplexManifold ℂ M y (L (1 : ℂ))) • s y)) := by
@@ -387,6 +431,8 @@ private theorem apply_exp_smul_localFrame_one_eq_zero (x₀ : M) {G : ℂ → �
   have hBz : b (e.continuousLinearMapAt ℂ y (D s y (L (1 : ℂ)))) =
       cauchyRiemannChartCoeff D b x₀ z := (cauchyRiemannChartCoeff_apply D b x₀ z).symm
   have hfd : fderiv ℝ H z = Complex.exp (G z) • fderiv ℝ G z := hG.hasFDerivAt.cexp.fderiv
+  -- Fold the displayed exponential section and inverse-chart differential into the local
+  -- names `f`, `s`, `y`, `L` used by the Leibniz identity `hval`.
   change D (f • s) y (L (1 : ℂ)) = 0
   apply (e.continuousLinearEquivAt ℂ y hze).injective
   apply b.injective
@@ -409,19 +455,15 @@ theorem exists_isNonvanishingHolomorphicOn (x₀ : M)
   set φ := extChartAt 𝓘(ℝ, ℂ) x₀
   set e := trivializationAt F V x₀
   set s : Π x : M, V x :=
-    e.localFrame ((Module.Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) () with hs
+    e.localFrame ((Module.Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ()
   -- The frame has constant nonzero coordinate `b⁻¹ 1` in `e`.
-  have hs1 (x : M) (hx : x ∈ e.baseSet) : e.continuousLinearMapAt ℂ x (s x) = b.symm 1 := by
-    rw [hs, Manifold.continuousLinearMapAt_localFrame _ hx, Module.Basis.map_apply,
-      Module.Basis.singleton_apply]
-    rfl
+  have hs1 (x : M) (hx : x ∈ e.baseSet) : e.continuousLinearMapAt ℂ x (s x) = b.symm 1 :=
+    e.continuousLinearMapAt_localFrame_singleton b hx
   have hcoord (x : M) (hx : x ∈ e.baseSet) (c : ℂ) : (e ⟨x, c • s x⟩).2 = b.symm c := by
     rw [← e.continuousLinearMapAt_apply_of_mem (R := ℂ) hx, map_smul, hs1 x hx,
       ← map_smul, smul_eq_mul, mul_one]
-  have hs_smooth : ContMDiffOn 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% s) e.baseSet := by
-    rw [e.contMDiffOn_section_iff e.open_baseSet subset_rfl]
-    refine (contMDiffOn_const (c := b.symm (1 : ℂ))).congr fun x hx ↦ ?_
-    simpa only [one_smul] using hcoord x hx 1
+  have hs_smooth : ContMDiffOn 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% s) e.baseSet :=
+    e.contMDiffOn_localFrame ((Module.Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ()
   -- A smooth solution `G` of `∂bar G = -B` near the chart point of `x₀`.
   obtain ⟨W₁, hW₁, hW₁o, hz₀W₁⟩ := eventually_nhds_iff.mp hB
   obtain ⟨G, hG, hGeq⟩ :=

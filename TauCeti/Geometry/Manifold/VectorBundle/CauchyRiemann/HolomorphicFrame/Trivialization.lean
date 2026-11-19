@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.HolomorphicFrame
+public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.HolomorphicFrame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Smooth
 import TauCeti.Topology.VectorBundle.RestrictScalars
@@ -121,9 +121,7 @@ theorem trivialization_mem_maximalAtlas (hU : IsOpen U) :
         (eR.continuousLinearMapAt ℝ x).toLinearMap := by
       apply ((realFrame hσ b).toBasisAt hxU).ext
       intro i
-      rw [IsLocalFrameOn.toBasisAt_coe]
-      change e.continuousLinearMapAt ℝ x (Complex.basisOneI i.1 • σ x) =
-        eR.continuousLinearMapAt ℝ x (Complex.basisOneI i.1 • σ x)
+      simp only [IsLocalFrameOn.toBasisAt_coe, Pi.smul_apply, ContinuousLinearMap.coe_coe]
       rw [e.continuousLinearMapAt_apply_of_mem (R := ℝ) hx,
         eR.continuousLinearMapAt_apply_of_mem (R := ℝ) hxR,
         ← e.continuousLinearMapAt_apply_of_mem (R := ℂ) hx, map_smul,
@@ -131,8 +129,7 @@ theorem trivialization_mem_maximalAtlas (hU : IsOpen U) :
       rw [hσ.trivialization_apply_frame b hU hxU]
       have hr := (realFrame hσ b).trivialization_apply_frame hU
         (Complex.basisOneI.smulTower b) hxU i
-      change eR ⟨x, Complex.basisOneI i.1 • σ x⟩ =
-        (x, (Complex.basisOneI.smulTower b) i) at hr
+      simp only [Pi.smul_apply] at hr
       rw [hr]
       exact (Basis.smulTower_apply _ _ i).symm
     apply Prod.ext

@@ -11,8 +11,9 @@ import TauCeti.Geometry.Manifold.Complex.Analytic
 /-!
 # Kernel sections in holomorphic frame coordinates
 
-The coordinates of a smooth section in a holomorphic kernel frame are holomorphic exactly when
-the section is in the kernel of the original operator. This statement uses arbitrary rank-one
+The coordinates of a differentiable section in a holomorphic kernel frame are holomorphic
+exactly when the section is in the kernel of the original operator. The model fibre may be any
+rank-one
 complex model fibres and the original smooth bundle topology.
 
 ## References
@@ -53,18 +54,13 @@ theorem eq_coord_smul (hσ : IsNonvanishingHolomorphicOn F D σ U) (b : Basis Un
     v = b.coord () ((hσ.trivialization b hU ⟨x, v⟩).2) • σ x := by
   let e := hσ.trivialization b hU
   have hxe : x ∈ e.baseSet := by simpa only [e, baseSet_trivialization] using hx
-  apply (e.continuousLinearEquivAt ℂ x hxe).injective
-  rw [Trivialization.coe_continuousLinearEquivAt_eq, map_smul,
-    e.continuousLinearMapAt_apply_of_mem (R := ℂ) hxe,
-    e.continuousLinearMapAt_apply_of_mem (R := ℂ) hxe, hσ.trivialization_apply_frame b hU hx]
-  simpa only [Fintype.sum_unique, Basis.coord_apply] using
-    (b.sum_repr ((e ⟨x, v⟩).2)).symm
+  exact (e.symm_apply_apply_mk hxe v).symm.trans (hσ.trivialization_symm_apply b hU hx _)
 
 end IsNonvanishingHolomorphicOn
 
 namespace IsRealCauchyRiemannOperator
 
-/-- In a holomorphic kernel frame, the coordinates of an originally smooth section are
+/-- In a holomorphic kernel frame, the coordinates of an originally differentiable section are
 holomorphic exactly when the original operator vanishes on that section. -/
 theorem mdifferentiableOn_trivialization_iff
     (hD : IsRealCauchyRiemannOperator F
@@ -72,20 +68,21 @@ theorem mdifferentiableOn_trivialization_iff
     (hDℂ : IsComplexLinearOperator F D) (hσ : IsNonvanishingHolomorphicOn F D σ U)
     (b : Basis Unit ℂ F) (hU : IsOpen U) {W : Set M} (hW : IsOpen W)
     (hWU : W ⊆ U) {τ : Π x, V x}
-    (hτ : ContMDiffOn 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) ∞ (T% τ) W) :
+    (hτ : MDifferentiableOn 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) (T% τ) W) :
     MDifferentiableOn 𝓘(ℂ, E) 𝓘(ℂ, F)
       (fun x ↦ (hσ.trivialization b hU ⟨x, τ x⟩).2) W ↔ ∀ x ∈ W, D τ x = 0 := by
   have : FiniteDimensional ℂ F := .of_basis b
   let e := hσ.trivialization b hU
   let c : M → F := fun x ↦ (e ⟨x, τ x⟩).2
   let f : M → ℂ := fun x ↦ b.coord () (c x)
-  have hc : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ c W :=
-    (Trivialization.contMDiffOn_section_iff_of_mem_maximalAtlas
-      (hσ.trivialization_mem_maximalAtlas b hU)
-      (by simpa only [IsNonvanishingHolomorphicOn.baseSet_trivialization] using hWU)).1 hτ
+  have hc : MDifferentiableOn 𝓘(ℝ, E) 𝓘(ℝ, F) c W :=
+    mdifferentiable_snd.comp_mdifferentiableOn
+      (((Trivialization.contMDiffOn_of_mem_maximalAtlas
+      (hσ.trivialization_mem_maximalAtlas b hU)).mdifferentiableOn (by simp)).comp hτ
+        (fun x hx ↦ e.mem_source.mpr (by
+          simpa only [e, IsNonvanishingHolomorphicOn.baseSet_trivialization] using hWU hx)))
   have hf : MDifferentiableOn 𝓘(ℝ, E) 𝓘(ℝ, ℂ) f W :=
-    (((b.coord ()).toContinuousLinearMap.restrictScalars ℝ).contMDiff.comp_contMDiffOn
-      hc).mdifferentiableOn (by simp)
+    ((b.coord ()).toContinuousLinearMap.restrictScalars ℝ).mdifferentiable.comp_mdifferentiableOn hc
   have hτf : ∀ x ∈ W, τ x = f x • σ x := fun x hx ↦ hσ.eq_coord_smul b hU (hWU hx) _
   have hcf : ∀ x ∈ W, c x = f x • b () := fun x _ ↦ by
     simpa only [f, Fintype.sum_unique, Basis.coord_apply] using (b.sum_repr (c x)).symm
@@ -93,7 +90,7 @@ theorem mdifferentiableOn_trivialization_iff
     apply forall₂_congr
     intro x hx
     rw [hD.apply_eq_of_eventuallyEq
-      ((hτ.contMDiffAt (hW.mem_nhds hx)).mdifferentiableAt (by simp))]
+      (hτ.mdifferentiableAt (hW.mem_nhds hx))]
     exact Filter.mem_of_superset (hW.mem_nhds hx) fun y hy ↦ (hτf y hy).symm
   rw [← hker, hD.forall_apply_smul_eq_zero_iff hDℂ (hσ.mono hWU) hW hf]
   constructor
@@ -115,7 +112,7 @@ theorem contMDiffOn_coordChangeL_trivialization [FiniteDimensional ℂ E]
         (hσ'.trivialization b' hU') x : F →L[ℂ] F)) (U ∩ U') := by
   have : FiniteDimensional ℂ F := .of_basis b
   have hc := (hD.mdifferentiableOn_trivialization_iff hDℂ hσ' b' hU' (hU.inter hU')
-    inter_subset_right (hσ.contMDiffOn.mono inter_subset_left)).2
+    inter_subset_right ((hσ.contMDiffOn.mono inter_subset_left).mdifferentiableOn (by simp))).2
       (fun x hx ↦ hσ.apply_eq_zero x hx.1)
   have hω : ContMDiffOn 𝓘(ℂ, E) 𝓘(ℂ, F) ω
       (fun x ↦ (hσ'.trivialization b' hU' ⟨x, σ x⟩).2) (U ∩ U') :=
