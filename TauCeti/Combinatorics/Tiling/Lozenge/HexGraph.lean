@@ -91,6 +91,11 @@ theorem hexGraph_adj_whiteFace_blackFace (e : TriEdge) : hexGraph.Adj e.whiteFac
 and its black face. -/
 def dualEdge (e : TriEdge) : Sym2 TriFace := s(e.whiteFace, e.blackFace)
 
+/-- The faces joined by the edge of `hexGraph` crossing `e` are exactly the faces containing
+`e`. -/
+@[simp] theorem mem_dualEdge {e : TriEdge} {f : TriFace} : f ∈ e.dualEdge ↔ e ∈ f.edges := by
+  rw [dualEdge, Sym2.mem_iff, TriFace.mem_edges_iff]
+
 theorem dualEdge_mem_edgeSet (e : TriEdge) : e.dualEdge ∈ hexGraph.edgeSet :=
   e.hexGraph_adj_whiteFace_blackFace
 
@@ -109,10 +114,10 @@ theorem dualEdge_eq_iff {e : TriEdge} {f g : TriFace} :
     exacts [absurd rfl hfg, Or.inl ⟨rfl, rfl⟩, Or.inr ⟨rfl, rfl⟩, absurd rfl hfg]
 
 theorem dualEdge_injective : Function.Injective dualEdge := fun e e' h => by
-  have h' := dualEdge_eq_iff.1 (h.trans rfl : e.dualEdge = s(e'.whiteFace, e'.blackFace))
+  have hw : e ∈ e'.whiteFace.edges := mem_dualEdge.1 (h ▸ mem_dualEdge.2 e'.mem_whiteFace_edges)
+  have hb : e ∈ e'.blackFace.edges := mem_dualEdge.1 (h ▸ mem_dualEdge.2 e'.mem_blackFace_edges)
   exact eq_of_whiteFace_eq_of_blackFace_eq
-    (eq_whiteFace_of_mem_edges h'.2.1 (by simp)).symm
-    (eq_blackFace_of_mem_edges h'.2.2 (by simp)).symm
+    (eq_whiteFace_of_mem_edges hw (by simp)).symm (eq_blackFace_of_mem_edges hb (by simp)).symm
 
 end TriEdge
 
@@ -145,9 +150,7 @@ theorem TriEdge.mem_edges_equivHexGraphEdgeSet_symm (s : hexGraph.edgeSet) {f : 
     (hf : f ∈ (s : Sym2 TriFace)) : TriEdge.equivHexGraphEdgeSet.symm s ∈ f.edges := by
   obtain ⟨e, rfl⟩ := TriEdge.equivHexGraphEdgeSet.surjective s
   rw [Equiv.symm_apply_apply]
-  rw [TriEdge.coe_equivHexGraphEdgeSet, TriEdge.dualEdge, Sym2.mem_iff] at hf
-  rcases hf with rfl | rfl
-  exacts [e.mem_whiteFace_edges, e.mem_blackFace_edges]
+  rwa [TriEdge.coe_equivHexGraphEdgeSet, TriEdge.mem_dualEdge] at hf
 
 /-! ### Neighbours and degrees -/
 
@@ -191,19 +194,11 @@ theorem hexGraph_neighborSet_mk_false (v : ℤ × ℤ) :
   simp
   tauto
 
-instance : hexGraph.LocallyFinite
-  | ⟨v, true⟩ => Fintype.ofFinset {⟨v, false⟩, ⟨v - (0, 1), false⟩, ⟨v + (1, 0), false⟩}
-      fun g => by
-        have := Set.ext_iff.1 (hexGraph_neighborSet_mk_true v) g
-        simp only [SimpleGraph.mem_neighborSet] at this ⊢
-        rw [this]
-        simp
-  | ⟨v, false⟩ => Fintype.ofFinset {⟨v, true⟩, ⟨v - (1, 0), true⟩, ⟨v + (0, 1), true⟩}
-      fun g => by
-        have := Set.ext_iff.1 (hexGraph_neighborSet_mk_false v) g
-        simp only [SimpleGraph.mem_neighborSet] at this ⊢
-        rw [this]
-        simp
+/-- The neighbours of a face are the other faces of its edges. -/
+instance : hexGraph.LocallyFinite := fun f =>
+  Fintype.ofFinset ((f.edges.biUnion TriEdge.faces).erase f) fun g => by
+    rw [Finset.mem_erase, Finset.mem_biUnion, SimpleGraph.mem_neighborSet, hexGraph_adj, ne_comm]
+    simp only [TriEdge.mem_faces]
 
 theorem hexGraph_neighborFinset_mk_true (v : ℤ × ℤ) :
     hexGraph.neighborFinset ⟨v, true⟩ = {⟨v, false⟩, ⟨v - (0, 1), false⟩, ⟨v + (1, 0), false⟩} := by
@@ -255,12 +250,12 @@ private theorem hexGraph_adj_apply_iff (σ : Equiv.Perm TriFace) (τ : Equiv.Per
   · rwa [← h, Equiv.apply_symm_apply]
   · rwa [← h, Equiv.apply_symm_apply]
 
-theorem hexGraph_adj_vadd_iff (w : ℤ × ℤ) {f g : TriFace} :
+@[simp] theorem hexGraph_adj_vadd_iff (w : ℤ × ℤ) {f g : TriFace} :
     hexGraph.Adj (w +ᵥ f) (w +ᵥ g) ↔ hexGraph.Adj f g :=
   hexGraph_adj_apply_iff (AddAction.toPerm w) (AddAction.toPerm w) fun f e => by
     simp only [AddAction.toPerm_apply, TriFace.edges_vadd, Finset.vadd_mem_vadd_finset_iff]
 
-theorem hexGraph_adj_rot_iff {f g : TriFace} :
+@[simp] theorem hexGraph_adj_rot_iff {f g : TriFace} :
     hexGraph.Adj (TriFace.rot f) (TriFace.rot g) ↔ hexGraph.Adj f g :=
   hexGraph_adj_apply_iff _ TriEdge.rot fun _ _ => TriEdge.rot_mem_edges_rot
 
@@ -283,10 +278,10 @@ def hexGraphRot : hexGraph ≃g hexGraph :=
 
 /-! ### The hexagon at a vertex -/
 
-/-- Faces of opposite colours sharing an edge are adjacent. -/
-theorem hexGraph_adj_of_mem_edges {f g : TriFace} {e : TriEdge} (hfg : f.isWhite ≠ g.isWhite)
+/-- Distinct faces sharing an edge are adjacent. -/
+theorem hexGraph_adj_of_mem_edges {f g : TriFace} {e : TriEdge} (hfg : f ≠ g)
     (hf : e ∈ f.edges) (hg : e ∈ g.edges) : hexGraph.Adj f g :=
-  hexGraph_adj.2 ⟨fun h => hfg (h ▸ rfl), e, hf, hg⟩
+  hexGraph_adj.2 ⟨hfg, e, hf, hg⟩
 
 /-- The six faces at the vertex `v`, traversed as a closed walk of `hexGraph`:
 `W(v) – B(v) – W(v - e₁) – B(v - e₃) – W(v - e₃) – B(v - e₂) – W(v)`, through the edges `(v, 3)`,

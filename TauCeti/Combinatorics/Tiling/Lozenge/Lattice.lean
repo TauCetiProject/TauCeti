@@ -55,7 +55,7 @@ the translations by `ℤ²` and the rotation `ρ(x, y) = (-y, x - y)` of order t
 * `TauCeti.TriEdge.vadd_eq_self_iff`, `TauCeti.TriFace.vadd_eq_self_iff`: translations act freely.
 * `TauCeti.setOf_vadd_eq_true`: the edge set of a translated configuration is the translated edge
   set.
-* `TauCeti.orderOf_latticeRot`, `TauCeti.TriEdge.orderOf_rot`, `TauCeti.TriFace.orderOf_rot`: `ρ`
+* `TauCeti.addOrderOf_latticeRot`, `TauCeti.TriEdge.orderOf_rot`, `TauCeti.TriFace.orderOf_rot`: `ρ`
   has order three on vertices, edges and faces; `TauCeti.TriFace.edges_rot` and
   `TauCeti.TriFace.vertices_rot` say it preserves incidence, and `TauCeti.TriEdge.rot_vadd` and
   `TauCeti.TriFace.rot_vadd` that it commutes with translations up to `ρ` on the translation
@@ -236,14 +236,14 @@ theorem card_edges_inter_le_one {f g : TriFace} (hfg : f ≠ g) : (f.edges ∩ g
     rw [Finset.mem_inter] at he he'
     exact eq_of_mem_edges_of_mem_edges hfg he.1 he.2 he'.1 he'.2
 
-/-- The endpoints of an edge of a face are vertices of the face. -/
+/-- The initial vertex of an edge of a face is a vertex of the face. -/
 theorem v_mem_vertices_of_mem_edges {f : TriFace} {e : TriEdge} (he : e ∈ f.edges) :
     e.v ∈ f.vertices := by
   obtain ⟨⟨a, b⟩, c⟩ := f
   obtain ⟨⟨x, y⟩, k⟩ := e
   cases c <;> fin_cases k <;> simp [TriEdge.ext_iff] at he ⊢ <;> omega
 
-/-- The endpoints of an edge of a face are vertices of the face. -/
+/-- The final vertex `e.target` of an edge of a face is a vertex of the face. -/
 theorem target_mem_vertices_of_mem_edges {f : TriFace} {e : TriEdge} (he : e ∈ f.edges) :
     e.target ∈ f.vertices := by
   obtain ⟨⟨a, b⟩, c⟩ := f
@@ -315,7 +315,7 @@ instance : AddAction (ℤ × ℤ) TriEdge where
 
 @[simp] theorem vadd_k (w : ℤ × ℤ) (e : TriEdge) : (w +ᵥ e).k = e.k := (rfl)
 
-@[simp] theorem vadd_target (w : ℤ × ℤ) (e : TriEdge) : (w +ᵥ e).target = w + e.target :=
+@[simp] theorem target_vadd (w : ℤ × ℤ) (e : TriEdge) : (w +ᵥ e).target = w + e.target :=
   add_assoc w e.v _
 
 /-- Translations act freely on edges. -/
@@ -345,15 +345,16 @@ theorem vadd_eq_self_iff {w : ℤ × ℤ} {f : TriFace} : w +ᵥ f = f ↔ w = 0
   refine ⟨fun h => ?_, fun h => h ▸ zero_vadd _ f⟩
   simpa using congrArg TriFace.v h
 
-theorem edge_vadd (w : ℤ × ℤ) (f : TriFace) (k : Fin 3) : (w +ᵥ f).edge k = w +ᵥ f.edge k := by
+@[simp] theorem edge_vadd (w : ℤ × ℤ) (f : TriFace) (k : Fin 3) :
+    (w +ᵥ f).edge k = w +ᵥ f.edge k := by
   ext <;> simp only [edge, vadd_v, vadd_isWhite, TriEdge.vadd_v, TriEdge.vadd_k] <;>
     split_ifs <;> simp [add_assoc]
 
-theorem edges_vadd (w : ℤ × ℤ) (f : TriFace) : (w +ᵥ f).edges = w +ᵥ f.edges := by
+@[simp] theorem edges_vadd (w : ℤ × ℤ) (f : TriFace) : (w +ᵥ f).edges = w +ᵥ f.edges := by
   obtain ⟨v, c⟩ := f
   cases c <;> simp [Finset.vadd_finset_insert, add_assoc]
 
-theorem vertices_vadd (w : ℤ × ℤ) (f : TriFace) : (w +ᵥ f).vertices = w +ᵥ f.vertices := by
+@[simp] theorem vertices_vadd (w : ℤ × ℤ) (f : TriFace) : (w +ᵥ f).vertices = w +ᵥ f.vertices := by
   obtain ⟨v, c⟩ := f
   cases c <;> simp [Finset.vadd_finset_insert, vadd_eq_add, add_assoc]
 
@@ -361,12 +362,14 @@ end TriFace
 
 namespace TriEdge
 
-theorem whiteFace_vadd (w : ℤ × ℤ) (e : TriEdge) : (w +ᵥ e).whiteFace = w +ᵥ e.whiteFace := by
+@[simp] theorem whiteFace_vadd (w : ℤ × ℤ) (e : TriEdge) :
+    (w +ᵥ e).whiteFace = w +ᵥ e.whiteFace := by
   refine TriFace.ext ?_ rfl
   simp only [whiteFace, vadd_v, vadd_k, TriFace.vadd_v]
   split_ifs <;> abel
 
-theorem blackFace_vadd (w : ℤ × ℤ) (e : TriEdge) : (w +ᵥ e).blackFace = w +ᵥ e.blackFace := by
+@[simp] theorem blackFace_vadd (w : ℤ × ℤ) (e : TriEdge) :
+    (w +ᵥ e).blackFace = w +ᵥ e.blackFace := by
   refine TriFace.ext ?_ rfl
   simp only [blackFace, vadd_v, vadd_k, TriFace.vadd_v]
   split_ifs <;> abel
@@ -393,7 +396,7 @@ theorem setOf_vadd_eq_true (w : ℤ × ℤ) (ω : TriEdge → Bool) :
     {e | (w +ᵥ ω) e = true} = w +ᵥ {e | ω e = true} := by
   ext e
   rw [Set.mem_vadd_set_iff_neg_vadd_mem]
-  rfl
+  simp only [Set.mem_ofPred_eq, vadd_config_apply]
 
 /-! ### The rotation of order three -/
 
@@ -461,7 +464,7 @@ theorem orderOf_rot : orderOf rot = 3 := by
   simpa [rot_apply] using congrArg (fun φ : Equiv.Perm TriEdge => (φ ⟨0, 0⟩).k) h
 
 /-- `ρ` commutes with translations up to `ρ` on the translation vector. -/
-theorem rot_vadd (w : ℤ × ℤ) (e : TriEdge) : rot (w +ᵥ e) = latticeRot w +ᵥ rot e := by
+@[simp] theorem rot_vadd (w : ℤ × ℤ) (e : TriEdge) : rot (w +ᵥ e) = latticeRot w +ᵥ rot e := by
   ext <;> simp [rot_apply] <;> split_ifs <;> simp <;> abel
 
 end TriEdge
@@ -494,7 +497,7 @@ theorem orderOf_rot : orderOf rot = 3 := by
   simpa [rot_apply] using congrArg (fun φ : Equiv.Perm TriFace => (φ ⟨0, true⟩).v) h
 
 /-- `ρ` commutes with translations up to `ρ` on the translation vector. -/
-theorem rot_vadd (w : ℤ × ℤ) (f : TriFace) : rot (w +ᵥ f) = latticeRot w +ᵥ rot f := by
+@[simp] theorem rot_vadd (w : ℤ × ℤ) (f : TriFace) : rot (w +ᵥ f) = latticeRot w +ᵥ rot f := by
   ext <;> simp [rot_apply] <;> split_ifs <;> simp <;> abel
 
 /-- `ρ` maps the vertices of a face onto the vertices of its image. -/
@@ -514,14 +517,14 @@ end TriFace
 
 namespace TriEdge
 
-theorem rot_mem_edges_rot {e : TriEdge} {f : TriFace} :
+@[simp] theorem rot_mem_edges_rot {e : TriEdge} {f : TriFace} :
     rot e ∈ (TriFace.rot f).edges ↔ e ∈ f.edges := by
   rw [TriFace.edges_rot, Finset.mem_map_equiv, Equiv.symm_apply_apply]
 
-theorem whiteFace_rot (e : TriEdge) : (rot e).whiteFace = TriFace.rot e.whiteFace :=
+@[simp] theorem whiteFace_rot (e : TriEdge) : (rot e).whiteFace = TriFace.rot e.whiteFace :=
   (eq_whiteFace_of_mem_edges (rot_mem_edges_rot.2 e.mem_whiteFace_edges) (by simp)).symm
 
-theorem blackFace_rot (e : TriEdge) : (rot e).blackFace = TriFace.rot e.blackFace :=
+@[simp] theorem blackFace_rot (e : TriEdge) : (rot e).blackFace = TriFace.rot e.blackFace :=
   (eq_blackFace_of_mem_edges (rot_mem_edges_rot.2 e.mem_blackFace_edges) (by simp)).symm
 
 end TriEdge
