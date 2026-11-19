@@ -75,6 +75,9 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
   `TauCeti.GridDiagram.isWeightedHomogeneous_unblockedCoefficient`: with every variable of weight
   `-2`, the weight of an empty rectangle from `x` to `y`, and so each matrix coefficient of `∂⁻`,
   is weighted homogeneous of degree `M_O(x) - 1 - M_O(y)`, for any diagram.
+* `TauCeti.OddComponentGridDiagram.monomialBidegree_add_sum_OColumns_eq_sub`: multiplying by the
+  weight of a rectangle across which the gradings change as across an empty rectangle covering
+  `a` of the `X`-markings, and moving to its target, lowers the bidegree by `(1, a)`.
 * `TauCeti.OddComponentGridDiagram.monomialBidegree_add_of_mem_unblockedRectangles`: multiplying by
   the weight of a counted rectangle and moving to its target lowers the bidegree by `(1, 0)`.
 * `TauCeti.OddComponentGridDiagram.unblockedDifferential_mem_bigradedChainMinusPiece`: the
@@ -282,15 +285,16 @@ theorem monomialBidegree_zero (x : GridState n) : G.monomialBidegree x 0 = G.bid
   rw [monomialBidegree]
   simp
 
-/-- Multiplying the basis element `V^e · x` by the weight of a rectangle counted by `∂⁻` and
-passing to the rectangle's target lowers the bidegree by `(1, 0)`. This is the whole content of the
-statement that `∂⁻` has bidegree `(-1, 0)`. -/
-theorem monomialBidegree_add_of_mem_unblockedRectangles
-    {r : GridRectangleBetween x y} (hr : r ∈ G.1.unblockedRectangles x y) (e : Fin n →₀ ℕ) :
+/-- Multiplying the basis element `V^e · x` by the weight `V^{O(r)}` of a rectangle `r` from `x`
+to `y` and passing to `y` lowers the bidegree by `(1, a)`, when crossing `r` changes the `O`-Maslov
+grading by `2 |O(r)| - 1` and the Alexander grading by `|O(r)| - a`. For an empty rectangle, `a` is
+the number of `X`-markings it covers. -/
+theorem monomialBidegree_add_sum_OColumns_eq_sub {r : GridRectangleBetween x y} {a : ℤ}
+    (hM : G.1.maslovOℤ y - 2 * ((G.1.OColumns r.toGridRectangle).card : ℤ) = G.1.maslovOℤ x - 1)
+    (hA : G.alexanderℤ y - ((G.1.OColumns r.toGridRectangle).card : ℤ) = G.alexanderℤ x - a)
+    (e : Fin n →₀ ℕ) :
     G.monomialBidegree y (e + ∑ c ∈ G.1.OColumns r.toGridRectangle, Finsupp.single c 1) =
-      G.monomialBidegree x e - (1, 0) := by
-  have hM := G.1.maslovOℤ_sub_two_mul_card_OColumns (G.1.isEmpty_of_mem_unblockedRectangles hr)
-  have hA := G.alexanderℤ_sub_card_OColumns (G.1.disjoint_XSet_of_mem_unblockedRectangles hr)
+      G.monomialBidegree x e - (1, a) := by
   have hsum : ((e + ∑ c ∈ G.1.OColumns r.toGridRectangle,
       Finsupp.single (M := ℕ) c 1).degree : ℤ) =
       (e.degree : ℤ) + ((G.1.OColumns r.toGridRectangle).card : ℤ) := by
@@ -303,6 +307,18 @@ theorem monomialBidegree_add_of_mem_unblockedRectangles
   · simp only [Prod.snd_sub, monomialBidegree_snd]
     rw [hsum]
     omega
+
+/-- Multiplying the basis element `V^e · x` by the weight of a rectangle counted by `∂⁻` and
+passing to the rectangle's target lowers the bidegree by `(1, 0)`. This is the whole content of the
+statement that `∂⁻` has bidegree `(-1, 0)`. -/
+theorem monomialBidegree_add_of_mem_unblockedRectangles
+    {r : GridRectangleBetween x y} (hr : r ∈ G.1.unblockedRectangles x y) (e : Fin n →₀ ℕ) :
+    G.monomialBidegree y (e + ∑ c ∈ G.1.OColumns r.toGridRectangle, Finsupp.single c 1) =
+      G.monomialBidegree x e - (1, 0) :=
+  G.monomialBidegree_add_sum_OColumns_eq_sub
+    (G.1.maslovOℤ_sub_two_mul_card_OColumns (G.1.isEmpty_of_mem_unblockedRectangles hr))
+    (by rw [G.alexanderℤ_sub_card_OColumns (G.1.disjoint_XSet_of_mem_unblockedRectangles hr),
+      sub_zero]) e
 
 /-! ### The homogeneous pieces of `GC⁻` -/
 

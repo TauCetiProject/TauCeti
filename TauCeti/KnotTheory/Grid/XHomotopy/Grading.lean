@@ -29,7 +29,7 @@ bidegree `(-1, -1)`, and so does every sum of such homotopies, for instance the 
   `(-1, -1)`.
 * `TauCeti.OddComponentGridDiagram.componentXHomotopy_mem_bigradedChainMinusPiece`: the sum of the
   `X`-marking homotopies along a link component has bidegree `(-1, -1)`.
-* `TauCeti.GridDiagram.IsKnot.XSmulHomotopy_mem_bigradedChainMinusPiece`: so does the chosen
+* `TauCeti.GridDiagram.IsKnot.XSmulHomotopy_mem_bigradedChainMinusPiece`: so does the
   null-homotopy of `V_c + V_c'` on a knot grid.
 
 ## References
@@ -51,36 +51,23 @@ theorem monomialBidegree_add_of_mem_XHomotopyRectangles {k : Fin n}
     G.monomialBidegree y (e + ∑ c ∈ G.1.OColumns r.toGridRectangle, Finsupp.single c 1) =
       G.monomialBidegree x e - (1, 1) := by
   have hr' := (G.1.mem_XHomotopyRectangles k r).mp hr
-  have hM := G.1.maslovOℤ_sub_two_mul_card_OColumns hr'.1
-  have hA := G.alexanderℤ_sub_card_OColumns_eq_sub_card r
-  rw [Finset.inter_comm, hr'.2, Finset.card_singleton, Nat.cast_one] at hA
-  have hsum : ((e + ∑ c ∈ G.1.OColumns r.toGridRectangle,
-      Finsupp.single (M := ℕ) c 1).degree : ℤ) =
-      (e.degree : ℤ) + ((G.1.OColumns r.toGridRectangle).card : ℤ) := by
-    rw [map_add, map_sum]
-    simp
-  refine Prod.ext ?_ ?_
-  · simp only [Prod.fst_sub, monomialBidegree_fst]
-    rw [hsum]
-    omega
-  · simp only [Prod.snd_sub, monomialBidegree_snd]
-    rw [hsum]
-    omega
+  refine G.monomialBidegree_add_sum_OColumns_eq_sub (G.1.maslovOℤ_sub_two_mul_card_OColumns hr'.1)
+    ?_ e
+  rw [G.alexanderℤ_sub_card_OColumns_eq_sub_card r, Finset.inter_comm, hr'.2,
+    Finset.card_singleton, Nat.cast_one]
 
 /-- **The `X`-marking homotopy has bidegree `(-1, -1)`**: `H_k` lowers both the `O`-Maslov and
 the Alexander grading of a homogeneous chain of `GC⁻` by one. -/
 theorem XHomotopy_mem_bigradedChainMinusPiece {R : Type*} [CommSemiring R] (k : Fin n)
     {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
     G.1.XHomotopy R k c ∈ G.bigradedChainMinusPiece R (g - (1, 1)) := by
-  classical
-  rw [mem_bigradedChainMinusPiece] at hc ⊢
-  intro z f hf
-  rw [GridDiagram.XHomotopy_apply_apply, Finsupp.sum] at hf
-  obtain ⟨w, -, hfw⟩ := Finset.mem_biUnion.mp (MvPolynomial.support_sum hf)
-  obtain ⟨e, he, d, hd, rfl⟩ := Finset.mem_add.mp (MvPolynomial.support_mul _ _ hfw)
-  obtain ⟨r, hr, rfl⟩ :=
-    G.1.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient R hd
-  rw [G.monomialBidegree_add_of_mem_XHomotopyRectangles hr e, hc w e he]
+  rw [sub_eq_add_neg]
+  refine G.matrixMap_mem_bigradedChainMinusPiece_add R G (Equiv.refl _)
+    (G.1.XHomotopyCoefficient R k) _ (fun c y => by simp [GridDiagram.XHomotopy_apply_apply])
+    (-(1, 1)) (fun x y w hw d => ?_) hc
+  obtain ⟨r, hr, rfl⟩ := G.1.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient R hw
+  rw [Equiv.coe_refl, Finsupp.mapDomain_id, ← sub_eq_add_neg,
+    G.monomialBidegree_add_of_mem_XHomotopyRectangles hr d]
 
 /-- The sum `GridDiagram.componentXHomotopy` of `X`-marking homotopies along a link component has
 bidegree `(-1, -1)`. -/
@@ -97,15 +84,14 @@ namespace TauCeti.GridDiagram.IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
 
-/-- On a knot grid, the chosen null-homotopy `IsKnot.XSmulHomotopy` of multiplication by
+/-- On a knot grid, the null-homotopy `IsKnot.XSmulHomotopy` of multiplication by
 `V_c + V_c'` has bidegree `(-1, -1)`. -/
 theorem XSmulHomotopy_mem_bigradedChainMinusPiece {R : Type*} [CommSemiring R] (c c' : Fin n)
     {g : ℤ × ℤ} {a : GridChainMinus R n}
     (ha : a ∈ hG.toOddComponentGridDiagram.bigradedChainMinusPiece R g) :
     hG.XSmulHomotopy R c c' a ∈
       hG.toOddComponentGridDiagram.bigradedChainMinusPiece R (g - (1, 1)) := by
-  obtain ⟨i, -, hH⟩ := hG.exists_XSmulHomotopy_eq_componentXHomotopy R c c'
-  rw [hH]
-  exact hG.toOddComponentGridDiagram.componentXHomotopy_mem_bigradedChainMinusPiece c i ha
+  rw [hG.XSmulHomotopy_eq_componentXHomotopy R]
+  exact hG.toOddComponentGridDiagram.componentXHomotopy_mem_bigradedChainMinusPiece c _ ha
 
 end TauCeti.GridDiagram.IsKnot

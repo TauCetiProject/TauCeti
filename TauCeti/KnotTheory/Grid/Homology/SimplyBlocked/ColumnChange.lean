@@ -149,13 +149,25 @@ theorem unblockedDifferential_simplyBlockedConnectingMap [CharP R 2] (c : GridCh
       G.simplyBlockedConnectingMap R i (G.simplyBlockedDifferential R i c) := by
   apply X_smul_gridChainMinus_injective R i
   dsimp only
-  have hd : G.unblockedDifferential R (G.unblockedDifferential R (simplyBlockedLift R i c)) = 0 :=
-    LinearMap.congr_fun (G.unblockedDifferential_comp_self_eq_zero R) _
-  have hd' : G.simplyBlockedDifferential R i (G.simplyBlockedDifferential R i c) = 0 :=
-    LinearMap.congr_fun (G.simplyBlockedDifferential_comp_self_eq_zero R i) _
   rw [← LinearMap.map_smul, X_smul_simplyBlockedConnectingMap, X_smul_simplyBlockedConnectingMap,
-    map_sub, hd, hd', map_zero, sub_zero, zero_sub,
+    map_sub, unblockedDifferential_unblockedDifferential_apply,
+    simplyBlockedDifferential_simplyBlockedDifferential_apply, map_zero, sub_zero, zero_sub,
     neg_eq_of_add_eq_zero_left (add_self_eq_zero_of_charTwo R _)]
+
+/-- On a cycle `c` of the specialization at `V_i = 0`, the lift satisfies
+`∂⁻ (L_i c) = V_i • ρ_i c`. -/
+theorem unblockedDifferential_simplyBlockedLift_of_simplyBlockedDifferential_eq_zero
+    {c : GridChainHat R n i} (hc : G.simplyBlockedDifferential R i c = 0) :
+    G.unblockedDifferential R (simplyBlockedLift R i c) =
+      (MvPolynomial.X i : MvPolynomial (Fin n) R) • G.simplyBlockedConnectingMap R i c := by
+  rw [X_smul_simplyBlockedConnectingMap, hc, map_zero, sub_zero]
+
+/-- In characteristic two the connecting map sends a cycle of the specialization at `V_i = 0` to a
+cycle of `GC⁻`. -/
+theorem unblockedDifferential_simplyBlockedConnectingMap_of_simplyBlockedDifferential_eq_zero
+    [CharP R 2] {c : GridChainHat R n i} (hc : G.simplyBlockedDifferential R i c = 0) :
+    G.unblockedDifferential R (G.simplyBlockedConnectingMap R i c) = 0 := by
+  rw [unblockedDifferential_simplyBlockedConnectingMap, hc, map_zero]
 
 end Connecting
 
@@ -248,53 +260,54 @@ private theorem simplyBlockedColumnChangeMap_simplyBlockedSpecialization_sub_mem
       t + G.unblockedDifferential R u := by
     apply X_smul_gridChainMinus_injective R i
     dsimp only
-    rw [X_smul_simplyBlockedConnectingMap, hLY, ← simplyBlockedSpecialization_unblockedDifferential,
-      hY, simplyBlockedSpecialization_X_smul, map_zero, sub_zero, map_add, hY, LinearMap.map_smul,
+    rw [X_smul_simplyBlockedConnectingMap, hLY, ← simplyBlockedSpecialization_unblockedDifferential]
+    simp only [map_add, map_smul, hY, simplyBlockedSpecialization_X_smul, map_zero, sub_zero,
       smul_add]
   have hHu := G.unblockedDifferential_apply_of_homotopy R hH u
   refine ⟨simplyBlockedSpecialization R j (H u), ?_⟩
   -- Both sides are `π_j (V_i • u + H (∂⁻ u))`, since `π_j` kills `V_j • u`.
   rw [← simplyBlockedSpecialization_unblockedDifferential, simplyBlockedColumnChangeMap_apply, hLY,
-    hρ, ← map_sub, hHu, add_smul, add_right_comm, map_add _ _ ((MvPolynomial.X j) • u),
-    simplyBlockedSpecialization_X_smul, add_zero, map_add H]
-  congr 1
+    hρ, hHu]
+  simp only [map_add, add_smul, simplyBlockedSpecialization_X_smul, add_zero]
   abel
 
 include hH in
-/-- A cycle whose image under the change of blocked column is a boundary is itself a boundary.
-With `r = ρ_i x`, lifting `π_j (L_i x + H r - ∂⁻ (L_j z)) = 0` gives `W` with `∂⁻ W = r` and
-`L_i x = ∂⁻ (L_j z + H W) + V_i • W`. -/
+/-- A cycle whose image under the change of blocked column is a boundary is itself a boundary,
+when `∂⁻ H + H ∂⁻ = V_i + V_j` in characteristic two. -/
 theorem mem_range_of_simplyBlockedColumnChangeMap_mem_range {x : GridChainHat R n i}
     (hx : G.simplyBlockedDifferential R i x = 0)
     (hΦx : G.simplyBlockedColumnChangeMap R i j H x ∈
       LinearMap.range (G.simplyBlockedDifferential R j)) :
     x ∈ LinearMap.range (G.simplyBlockedDifferential R i) := by
+  -- With `r = ρ_i x` and `Φ x = ∂_j z`, lifting `π_j (L_i x + H r - ∂⁻ (L_j z)) = 0` gives `W`
+  -- with `V_j • W = L_i x + H r - ∂⁻ (L_j z)`. Then `∂⁻ W = r`, and
+  -- `L_i x = ∂⁻ (L_j z + H W) + V_i • W`, so `x = ∂_i (π_i (L_j z + H W))`.
   obtain ⟨z, hz⟩ := hΦx
+  have hLx := G.unblockedDifferential_simplyBlockedLift_of_simplyBlockedDifferential_eq_zero R i hx
+  have hr :=
+    G.unblockedDifferential_simplyBlockedConnectingMap_of_simplyBlockedDifferential_eq_zero R i hx
   set r := G.simplyBlockedConnectingMap R i x
-  have hLx : G.unblockedDifferential R (simplyBlockedLift R i x) =
-      (MvPolynomial.X i : MvPolynomial (Fin n) R) • r := by
-    rw [X_smul_simplyBlockedConnectingMap, hx, map_zero, sub_zero]
-  have hr : G.unblockedDifferential R r = 0 := by
-    rw [unblockedDifferential_simplyBlockedConnectingMap, hx, map_zero]
   obtain ⟨W, hW⟩ := (exact_X_smul_simplyBlockedSpecialization R j
     (simplyBlockedLift R i x + H r - G.unblockedDifferential R (simplyBlockedLift R j z))).mp (by
       rw [map_sub, ← simplyBlockedColumnChangeMap_apply, ← hz,
         simplyBlockedSpecialization_unblockedDifferential,
         simplyBlockedSpecialization_simplyBlockedLift, sub_self])
   dsimp only at hW
-  have hdd : G.unblockedDifferential R
-      (G.unblockedDifferential R (simplyBlockedLift R j z)) = 0 :=
-    LinearMap.congr_fun (G.unblockedDifferential_comp_self_eq_zero R) _
+  have hW' : simplyBlockedLift R i x + H r =
+      (MvPolynomial.X j : MvPolynomial (Fin n) R) • W +
+        G.unblockedDifferential R (simplyBlockedLift R j z) := by
+    rw [hW, sub_add_cancel]
   have hrW : r = G.unblockedDifferential R W := by
     apply X_smul_gridChainMinus_injective R j
     dsimp only
-    have h := congrArg (G.unblockedDifferential R) hW
-    rw [LinearMap.map_smul, map_sub, map_add, hLx, G.unblockedDifferential_apply_of_homotopy R hH,
-      hr, map_zero, add_zero, hdd, sub_zero, add_smul, add_cancel_left_of_charTwo R] at h
-    exact h.symm
-  have hxW : simplyBlockedLift R i x = (MvPolynomial.X j : MvPolynomial (Fin n) R) • W - H r +
+    have h := congrArg (G.unblockedDifferential R) hW'
+    simp only [map_add, map_smul, hLx, G.unblockedDifferential_apply_of_homotopy R hH, hr,
+      map_zero, add_zero, unblockedDifferential_unblockedDifferential_apply, add_smul,
+      add_cancel_left_of_charTwo R] at h
+    exact h
+  have hxW : simplyBlockedLift R i x = (MvPolynomial.X j : MvPolynomial (Fin n) R) • W + H r +
       G.unblockedDifferential R (simplyBlockedLift R j z) := by
-    rw [hW]
+    rw [← add_cancel_right_of_charTwo R (simplyBlockedLift R i x) (H r), hW']
     abel
   refine ⟨simplyBlockedSpecialization R i (simplyBlockedLift R j z + H W), ?_⟩
   rw [← simplyBlockedSpecialization_unblockedDifferential, ← sub_eq_zero,
@@ -302,23 +315,22 @@ theorem mem_range_of_simplyBlockedColumnChangeMap_mem_range {x : GridChainHat R 
   refine (exact_X_smul_simplyBlockedSpecialization R i _).mpr ⟨W, ?_⟩
   dsimp only
   rw [map_add, G.unblockedDifferential_apply_of_homotopy R hH, ← hrW, hxW, add_smul]
-  exact (add_cancel_right_of_charTwo R _ (H r)).symm.trans (by abel)
+  abel
 
 include hH in
-/-- Every cycle `y` of the specialization at `V_j = 0` is the image of a cycle up to a boundary:
-with `t = ρ_j y`, the chain `Y = L_j y + H t` satisfies `∂⁻ Y = V_i • t`, and `π_i Y` is sent to
-`π_j (Y + H t) = y`. -/
+/-- Every cycle of the specialization at `V_j = 0` is the image of a cycle under the change of
+blocked column up to a boundary, when `∂⁻ H + H ∂⁻ = V_i + V_j` in characteristic two. -/
 theorem exists_sub_simplyBlockedColumnChangeMap_mem_range {y : GridChainHat R n j}
     (hy : G.simplyBlockedDifferential R j y = 0) :
     ∃ x, G.simplyBlockedDifferential R i x = 0 ∧
       y - G.simplyBlockedColumnChangeMap R i j H x ∈
         LinearMap.range (G.simplyBlockedDifferential R j) := by
+  -- With `t = ρ_j y`, the chain `Y = L_j y + H t` satisfies `∂⁻ Y = V_i • t`, so `π_i Y` is a
+  -- cycle, sent up to a boundary to `π_j (Y + H t) = y`.
+  have hLy := G.unblockedDifferential_simplyBlockedLift_of_simplyBlockedDifferential_eq_zero R j hy
+  have ht :=
+    G.unblockedDifferential_simplyBlockedConnectingMap_of_simplyBlockedDifferential_eq_zero R j hy
   set t := G.simplyBlockedConnectingMap R j y
-  have hLy : G.unblockedDifferential R (simplyBlockedLift R j y) =
-      (MvPolynomial.X j : MvPolynomial (Fin n) R) • t := by
-    rw [X_smul_simplyBlockedConnectingMap, hy, map_zero, sub_zero]
-  have ht : G.unblockedDifferential R t = 0 := by
-    rw [unblockedDifferential_simplyBlockedConnectingMap, hy, map_zero]
   have hY : G.unblockedDifferential R (simplyBlockedLift R j y + H t) =
       (MvPolynomial.X i : MvPolynomial (Fin n) R) • t := by
     rw [map_add, hLy, G.unblockedDifferential_apply_of_homotopy R hH, ht, map_zero, add_zero,
@@ -439,7 +451,7 @@ local notation "Base" i => ModuleCat.restrictScalars
   (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
 
 /-- **Simply blocked knot grid homology does not depend on the blocked column.** The change of
-blocked column, with the chosen homotopy `hG.XSmulHomotopy R i j` between `V_i` and `V_j`, as a
+blocked column, with the homotopy `hG.XSmulHomotopy R i j` between `V_i` and `V_j`, as a
 coefficient-linear equivalence between the simply blocked homologies blocking the columns `i` and
 `j`. -/
 noncomputable def simplyBlockedHomologyColumnChangeEquiv :
