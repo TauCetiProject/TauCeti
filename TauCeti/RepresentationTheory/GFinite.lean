@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.LinearAlgebra.Span.FiniteRange
 
 /-!
 # `G`-finite vectors of a representation
@@ -26,10 +26,8 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
 ## Main definitions
 
 * `Representation.IsGFinite ρ v`: the orbit of `v` spans a finite-dimensional subspace.
-* `Representation.gFiniteSubmodule ρ`: the submodule of `G`-finite vectors.
-* `TauCeti.finiteSpanRangeSubmodule T`: for any family of linear maps `T`, the submodule of vectors
-  `x` whose images `T i x` span a finite-dimensional subspace. The `G`-finite vectors are the case
-  of the family `ρ`.
+* `Representation.gFiniteSubmodule ρ`: the submodule of `G`-finite vectors, the case of the family
+  `ρ` of `TauCeti.finiteSpanRangeSubmodule` from `TauCeti/LinearAlgebra/Span/FiniteRange.lean`.
 
 ## Main statements
 
@@ -54,41 +52,6 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
 -/
 
 public section
-
-namespace TauCeti
-
-variable {k ι M N : Type*} [Field k] [AddCommGroup M] [Module k M] [AddCommGroup N] [Module k N]
-
-/-- For a family of linear maps `T`, the vectors `x` whose images `T i x` span a finite-dimensional
-subspace form a submodule. -/
-def finiteSpanRangeSubmodule (T : ι → M →ₗ[k] N) : Submodule k M where
-  carrier := {x | FiniteDimensional k (Submodule.span k (Set.range fun i => T i x))}
-  zero_mem' := Submodule.finiteDimensional_of_le (S₂ := ⊥)
-    (Submodule.span_le.2 (Set.range_subset_iff.2 fun i => by simp))
-  add_mem' {x y} hx hy := by
-    rw [Set.mem_ofPred_eq] at hx hy ⊢
-    refine Submodule.finiteDimensional_of_le (S₂ := Submodule.span k (Set.range fun i => T i x) ⊔
-      Submodule.span k (Set.range fun i => T i y)) (Submodule.span_le.2 ?_)
-    rintro _ ⟨i, rfl⟩
-    simp only [SetLike.mem_coe, map_add]
-    exact Submodule.add_mem_sup (Submodule.subset_span ⟨i, rfl⟩) (Submodule.subset_span ⟨i, rfl⟩)
-  smul_mem' c x hx := by
-    rw [Set.mem_ofPred_eq] at hx ⊢
-    refine Submodule.finiteDimensional_of_le
-      (S₂ := Submodule.span k (Set.range fun i => T i x)) (Submodule.span_le.2 ?_)
-    rintro _ ⟨i, rfl⟩
-    simp only [SetLike.mem_coe, map_smul]
-    exact Submodule.smul_mem _ c (Submodule.subset_span ⟨i, rfl⟩)
-
-/-- Membership in `finiteSpanRangeSubmodule T`: the images `T i x` span a finite-dimensional
-subspace. -/
-@[simp]
-theorem mem_finiteSpanRangeSubmodule {T : ι → M →ₗ[k] N} {x : M} :
-    x ∈ finiteSpanRangeSubmodule T ↔
-      FiniteDimensional k (Submodule.span k (Set.range fun i => T i x)) :=
-  (Iff.rfl)
-
-end TauCeti
 
 namespace Representation
 

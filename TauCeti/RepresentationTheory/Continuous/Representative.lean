@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Continuous.Character
 public import TauCeti.RepresentationTheory.Continuous.Conjugate
 public import TauCeti.RepresentationTheory.Continuous.TensorProduct
 public import TauCeti.RepresentationTheory.Continuous.Transport
-public import TauCeti.RepresentationTheory.GFinite
+public import TauCeti.LinearAlgebra.Span.FiniteRange
 
 /-!
 # The representative ring of a monoid with a topology
