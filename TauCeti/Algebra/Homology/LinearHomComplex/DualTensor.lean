@@ -34,7 +34,9 @@ The comparison is built from structure that already exists rather than by hand:
 * Cochains out of the tensor unit are elements: `Hom(R[0], K) ≅ K`, by evaluation at `1`
   (`TauCeti.linearHomComplexFromTensorUnitIso`), with no sign, since `R[0]` has zero
   differential. Its degreewise form is `TauCeti.cochainFromTensorUnitLinearEquiv`, from Mathlib's
-  `CochainComplex.HomComplex.Cochain.fromSingleLinearEquiv`.
+  `CochainComplex.HomComplex.Cochain.fromSingleLinearEquiv`. Dually, the terms of `A∨` are the
+  linear forms: `TauCeti.cochainToTensorUnitLinearEquiv` identifies `(A∨)^q` with the dual of
+  `A^(-q)`, from Mathlib's `CochainComplex.HomComplex.Cochain.toSingleLinearEquiv`.
 * The comparison is composition of cochains `Hom(R[0], B) ⊗ Hom(A, R[0]) ⟶ Hom(A, B)`
   (`TauCeti.linearHomComplexComp`) after this identification, so it is a morphism of complexes
   and it is natural in `A` and in `B` (`TauCeti.linearHomComplexDualTensor_naturality_source`,
@@ -175,6 +177,31 @@ lemma linearHomComplexFromTensorUnitIso_inv_naturality {K₁ K₂ : CochainCompl
       Iso.hom_inv_id, Category.comp_id])).symm
 
 variable (R) in
+/-- Cochains of degree `q` from `A` to the tensor unit `R[0]` are the linear forms on `Aⁱ`, for
+`i + q = 0`: such a cochain is a single map `Aⁱ ⟶ R`. These are the terms of the dual complex
+`A∨ = Hom(A, R[0])`. -/
+noncomputable def cochainToTensorUnitLinearEquiv (A : CochainComplex (ModuleCat.{v} R) ℤ)
+    {i q : ℤ} (hi : i + q = 0) :
+    Cochain A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) q ≃ₗ[R] Module.Dual R (A.X i) :=
+  (Cochain.toSingleLinearEquiv hi).trans ModuleCat.homLinearEquiv
+
+/-- A cochain `φ` of degree `q` to the tensor unit corresponds to its component `Aⁱ ⟶ R`, for
+`i + q = 0`. -/
+@[simp]
+lemma cochainToTensorUnitLinearEquiv_apply (A : CochainComplex (ModuleCat.{v} R) ℤ) {i q : ℤ}
+    (hi : i + q = 0) (φ : Cochain A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) q) :
+    cochainToTensorUnitLinearEquiv R A hi φ = (Cochain.toSingleEquiv hi φ).hom :=
+  (rfl)
+
+/-- The cochain to the tensor unit corresponding to a linear form `f` on `Aⁱ` is the single cochain
+given by `f`. -/
+@[simp]
+lemma cochainToTensorUnitLinearEquiv_symm_apply (A : CochainComplex (ModuleCat.{v} R) ℤ)
+    {i q : ℤ} (hi : i + q = 0) (f : Module.Dual R (A.X i)) :
+    (cochainToTensorUnitLinearEquiv R A hi).symm f = Cochain.toSingleMk (ModuleCat.ofHom f) hi :=
+  (rfl)
+
+variable (R) in
 /-- The **dual-tensor comparison** `B ⊗ Hom(A, R[0]) ⟶ Hom(A, B)` of cochain complexes of
 `R`-modules. It sends `b ⊗ φ`, for `b ∈ Bᵖ` and a cochain `φ` of degree `q` from `A` to `R[0]`, to
 the cochain `a ↦ φ(a) • b` of degree `p + q`, with no sign: it is composition of cochains,
@@ -268,11 +295,6 @@ section Isomorphism
 
 variable (A B : CochainComplex (ModuleCat.{v} R) ℤ)
 
-/-- Cochains of degree `q` from `A` to the tensor unit are the linear forms on `Aⁱ`, `i + q = 0`. -/
-private noncomputable def cochainToTensorUnitLinearEquiv {i q : ℤ} (hi : i + q = 0) :
-    Cochain A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) q ≃ₗ[R] Module.Dual R (A.X i) :=
-  (Cochain.toSingleLinearEquiv hi).trans ModuleCat.homLinearEquiv
-
 /-- On a summand `Bᵖ ⊗ Hom(A, R[0])^q`, the component on `Aⁱ` with `i + q = 0` of the dual-tensor
 comparison is Mathlib's contraction `dualTensorHom`, after identifying `Hom(A, R[0])^q` with the
 dual of `Aⁱ`. -/
@@ -280,8 +302,8 @@ private lemma vLinearMap_linearHomComplexDualTensor {p q n : ℤ} (h : p + q = n
     (hi : i + q = 0) (t : ↑(B.X p) ⊗[R] ↑((linearHomComplex R A (𝟙_ _)).X q)) :
     Cochain.vLinearMap A B n i p (by omega) (((linearHomComplexDualTensor R A B).f n).hom
         ((HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom t)) =
-      dualTensorHom R (A.X i) (B.X p) (TensorProduct.comm R _ _
-        (TensorProduct.map LinearMap.id (cochainToTensorUnitLinearEquiv A hi).toLinearMap t)) := by
+      dualTensorHom R (A.X i) (B.X p) (TensorProduct.comm R _ _ (TensorProduct.map LinearMap.id
+        (cochainToTensorUnitLinearEquiv R A hi).toLinearMap t)) := by
   induction t using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul b φ =>
@@ -289,10 +311,8 @@ private lemma vLinearMap_linearHomComplexDualTensor {p q n : ℤ} (h : p + q = n
     ext a
     simp only [TensorProduct.map_tmul, LinearMap.id_coe, id_eq, LinearEquiv.coe_coe,
       TensorProduct.comm_tmul, dualTensorHom_apply, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
-      LinearMap.comp_apply]
-    -- Both sides are `φ(a) • b`; the identification of `Hom(A, R[0])^q` with the dual of `Aⁱ` is
-    -- `Cochain.toSingleEquiv` followed by `ModuleCat.Hom.hom` by definition.
-    rfl
+      LinearMap.comp_apply, cochainToTensorUnitLinearEquiv_apply]
+    exact LinearMap.toSpanSingleton_apply ..
 
 /-- On a summand `Bᵖ ⊗ Hom(A, R[0])^q`, the dual-tensor comparison vanishes on `Aⁱ` unless
 `i + q = 0`. -/
@@ -313,7 +333,7 @@ variable [∀ i, Module.Finite R (A.X i)] [∀ i, Module.Projective R (A.X i)]
 `Aⁱ →ₗ Bᵖ`, for `i + q = 0`, is a linear equivalence. -/
 private noncomputable def dualTensorSummandEquiv {p q i : ℤ} (hi : i + q = 0) :
     (↑(B.X p) ⊗[R] ↑((linearHomComplex R A (𝟙_ _)).X q)) ≃ₗ[R] (A.X i →ₗ[R] B.X p) :=
-  (TensorProduct.congr (LinearEquiv.refl R _) (cochainToTensorUnitLinearEquiv A hi)).trans
+  (TensorProduct.congr (LinearEquiv.refl R _) (cochainToTensorUnitLinearEquiv R A hi)).trans
     ((TensorProduct.comm R _ _).trans (dualTensorHomEquiv R (A.X i) (B.X p)))
 
 private lemma vLinearMap_linearHomComplexDualTensor_eq {p q n : ℤ} (h : p + q = n) {i : ℤ}
