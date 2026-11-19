@@ -80,28 +80,23 @@ theorem Cocycle.additiveEquiv_twist [ContinuousSMul G M]
   simp [ContCohomology.d0_apply, add_comm, add_left_comm, sub_eq_add_neg]
 
 /-- The gauge relation is precisely equality of the additive cohomology classes. -/
-theorem Cocycle.equiv_iff_additive_class_eq [ContinuousSMul G M]
+theorem Cocycle.equiv_iff_H1pi_additiveEquiv_eq [ContinuousSMul G M]
     (c d : Cocycle G (Multiplicative M)) :
     c ≈ d ↔
       ContCohomology.H1pi G M (additiveEquiv G M c) =
         ContCohomology.H1pi G M (additiveEquiv G M d) := by
   simp only [ContCohomology.H1pi, QuotientAddGroup.mk'_apply]
-  rw [Cocycle.equiv_iff, ContCohomology.H1pi_eq_iff, ContCohomology.mem_B1_iff]
+  rw [equiv_iff_exists_twist_eq, ContCohomology.H1pi_eq_iff]
   constructor
-  · rintro ⟨a, ha⟩
-    refine ⟨-a.toAdd, fun g ↦ ?_⟩
-    have h := congrArg toAdd (ha g)
-    simp only [toAdd_mul, toAdd_inv, toAdd_smul] at h
-    simp only [smul_neg, Pi.sub_apply, additiveEquiv_apply]
-    rw [h]
-    abel
-  · rintro ⟨a, ha⟩
-    refine ⟨ofAdd (-a), fun g ↦ toAdd.injective ?_⟩
-    have h := ha g
-    simp only [Pi.sub_apply, additiveEquiv_apply] at h
-    simp only [toAdd_mul, toAdd_inv, toAdd_smul, toAdd_ofAdd, smul_neg, neg_neg]
-    rw [← (eq_sub_iff_add_eq.mp h)]
-    abel
+  · rintro ⟨a, rfl⟩
+    rw [additiveEquiv_twist, sub_add_cancel_left, ← map_neg]
+    exact ContCohomology.d0_mem_B1 _
+  · intro h
+    obtain ⟨m, hm⟩ := ContCohomology.mem_B1_iff.mp h
+    replace hm : ContCohomology.d0 G M m = _ :=
+      funext fun g ↦ (ContCohomology.d0_apply m g).trans (hm g)
+    refine ⟨ofAdd (-m), (additiveEquiv G M).injective (Subtype.ext ?_)⟩
+    rw [additiveEquiv_twist, toAdd_ofAdd, map_neg, hm, neg_sub, add_sub_cancel]
 
 variable (G M)
 
@@ -110,10 +105,10 @@ variable (G M)
 def additiveEquiv [ContinuousSMul G M] :
     NonabelianH1 G (Multiplicative M) ≃ ContCohomology.H1 G M where
   toFun := lift (fun c ↦ ContCohomology.H1pi G M (Cocycle.additiveEquiv G M c))
-    (fun c d h ↦ (c.equiv_iff_additive_class_eq d).mp h)
+    (fun c d h ↦ (c.equiv_iff_H1pi_additiveEquiv_eq d).mp h)
   invFun := Quotient.lift (fun c ↦ mk ((Cocycle.additiveEquiv G M).symm c)) fun c d h ↦ by
     apply mk_eq_mk_iff.mpr
-    apply (Cocycle.equiv_iff_additive_class_eq _ _).mpr
+    apply (Cocycle.equiv_iff_H1pi_additiveEquiv_eq _ _).mpr
     simp only [Equiv.apply_symm_apply]
     exact Quotient.sound h
   left_inv c := by
