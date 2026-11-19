@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
+import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
 # Cellular maps of relative CW complexes
 
 A cellular map preserves the skeletal filtration of a relative CW complex. This condition
 ensures that the map restricts to each skeleton and to each consecutive skeletal pair, the
-restrictions used to act on cellular chains. A map carrying the base into the base and the
-characteristic map of every cell onto the characteristic map of a cell of the same dimension is
-cellular (`TauCeti.isCellular_of_map_eq`).
+restrictions used to act on cellular chains, with commuting squares inducing commuting skeletal
+restrictions (`TauCeti.skeletonMap_comm`, `TauCeti.skeletonMap_univ_comm`). On `Set.univ`,
+`TauCeti.isCellular_univ_iff` characterizes cellularity via `Set.MapsTo` on skeleta. A map carrying
+the base into the base and the characteristic map of every cell onto the characteristic map of a
+cell of the same dimension is cellular (`TauCeti.isCellular_of_map_eq`,
+`TauCeti.isCellular_univ_of_map_eq`, `TauCeti.isCellular_univ_of_cwComplex_of_map_eq`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -64,12 +68,51 @@ lemma isCellular_of_map_eq {f : TopCat.of C ⟶ TopCat.of C'}
   · obtain ⟨i', hi'⟩ := hf m i
     exact Or.inr ⟨m, hm, i', y, hy, (hi' y (ball_subset_closedBall hy) hxC).symm⟩
 
+/-- For relative CW structures on `Set.univ`, `f : C(X, Y)` is cellular via
+`f.restrictPreimage Set.univ` iff `f` maps each skeleton of `X` into that of `Y`. -/
+theorem isCellular_univ_iff [RelCWComplex (Set.univ : Set X) D] [RelCWComplex (Set.univ : Set Y) E]
+    {f : C(X, Y)} :
+    IsCellular (Set.univ : Set X) (Set.univ : Set Y)
+      (TopCat.ofHom (f.restrictPreimage Set.univ)) ↔
+      ∀ n : ℕ, Set.MapsTo f (skeletonLT (Set.univ : Set X) (n : ℕ∞))
+        (skeletonLT (Set.univ : Set Y) (n : ℕ∞)) := by
+  rw [TopCat.ofHom_restrictPreimage_univ_eq]
+  exact forall_congr' fun _ ↦ ⟨fun hf x hx ↦ @hf ⟨x, trivial⟩ hx, fun hf x hx ↦ @hf x.1 hx⟩
+
+/-- A continuous map between relative CW structures on `Set.univ` carrying the base into the base
+and each characteristic map onto one of the same dimension on the closed ball is cellular. -/
+theorem isCellular_univ_of_map_eq [RelCWComplex (Set.univ : Set X) D]
+    [RelCWComplex (Set.univ : Set Y) E] {f : C(X, Y)} (hD : Set.MapsTo f D E)
+    (hf : ∀ (n : ℕ) (i : cell (Set.univ : Set X) n), ∃ i' : cell (Set.univ : Set Y) n,
+      ∀ x ∈ closedBall (0 : Fin n → ℝ) 1, f (map n i x) = map n i' x) :
+    IsCellular (Set.univ : Set X) (Set.univ : Set Y)
+      (TopCat.ofHom (f.restrictPreimage Set.univ)) := by
+  rw [TopCat.ofHom_restrictPreimage_univ_eq]
+  refine isCellular_of_map_eq _ _ (fun _ hx ↦ hD hx) fun n i ↦ ?_
+  obtain ⟨i', hi'⟩ := hf n i
+  exact ⟨i', fun x hx _ ↦ by simpa [TopCat.ofHom_apply] using hi' x hx⟩
+
+/-- A continuous map from a CW structure on `Set.univ` to a relative CW structure on `Set.univ`
+sending each characteristic map onto one of the same dimension on the closed ball is cellular. -/
+theorem isCellular_univ_of_cwComplex_of_map_eq [CWComplex (Set.univ : Set X)]
+    [RelCWComplex (Set.univ : Set Y) E] {f : C(X, Y)}
+    (hf : ∀ (n : ℕ) (i : cell (Set.univ : Set X) n), ∃ i' : cell (Set.univ : Set Y) n,
+      ∀ x ∈ closedBall (0 : Fin n → ℝ) 1, f (map n i x) = map n i' x) :
+    IsCellular (Set.univ : Set X) (Set.univ : Set Y)
+      (TopCat.ofHom (f.restrictPreimage Set.univ)) :=
+  isCellular_univ_of_map_eq (Set.mapsTo_empty f E) hf
+
 variable {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
 
 /-- The restriction of a cellular map to the `n`-th stage of the skeletal filtration. -/
 def skeletonMap (n : ℕ) : skeletonObj C n ⟶ skeletonObj C' n :=
   TopCat.ofHom ⟨fun x ↦ ⟨(f ⟨x.1, (skeletonLT C (n : ℕ∞)).subset_complex x.2⟩).1,
     hf n x.2⟩, by fun_prop⟩
+
+/-- Skeletal restrictions of equal cellular maps are equal. -/
+lemma skeletonMap_congr {f₁ f₂ : TopCat.of C ⟶ TopCat.of C'} (h : f₁ = f₂)
+    (hf₁ : IsCellular C C' f₁) (hf₂ : IsCellular C C' f₂) (n : ℕ) :
+    skeletonMap C C' hf₁ n = skeletonMap C C' hf₂ n := by subst h; rfl
 
 /-- On points, the restriction to a skeleton agrees with the original cellular map. -/
 @[simp]
@@ -114,5 +157,49 @@ lemma skeletonMap_comp (n : ℕ) :
       skeletonMap C C' hf n ≫ skeletonMap C' C'' hg n := by
   ext x
   rfl
+
+/-- For a commuting square of cellular morphisms of relative CW complexes, the induced
+restrictions `skeletonMap` commute on every skeleton. -/
+@[reassoc]
+theorem skeletonMap_comm {X₁ X₂ Y₁ Y₂ : Type w}
+    [TopologicalSpace X₁] [T2Space X₁] [TopologicalSpace X₂] [T2Space X₂]
+    [TopologicalSpace Y₁] [T2Space Y₁] [TopologicalSpace Y₂] [T2Space Y₂]
+    {C₁ D₁ : Set X₁} {C₂ D₂ : Set X₂} {C₁' E₁ : Set Y₁} {C₂' E₂ : Set Y₂}
+    [RelCWComplex C₁ D₁] [RelCWComplex C₂ D₂] [RelCWComplex C₁' E₁] [RelCWComplex C₂' E₂]
+    {i₁ : TopCat.of C₁ ⟶ TopCat.of C₁'} {i₂ : TopCat.of C₂ ⟶ TopCat.of C₂'}
+    {f : TopCat.of C₁ ⟶ TopCat.of C₂} {g : TopCat.of C₁' ⟶ TopCat.of C₂'}
+    (hi₁ : IsCellular C₁ C₁' i₁) (hi₂ : IsCellular C₂ C₂' i₂)
+    (hf : IsCellular C₁ C₂ f) (hg : IsCellular C₁' C₂' g) (hcomm : i₁ ≫ g = f ≫ i₂) (n : ℕ) :
+    skeletonMap C₁ C₁' hi₁ n ≫ skeletonMap C₁' C₂' hg n =
+      skeletonMap C₁ C₂ hf n ≫ skeletonMap C₂ C₂' hi₂ n := by
+  rw [← skeletonMap_comp, ← skeletonMap_comp]
+  exact skeletonMap_congr C₁ C₂' hcomm _ _ n
+
+/-- For a commuting square of continuous maps that are cellular on `Set.univ`, the induced
+restrictions `skeletonMap` commute on every skeleton. -/
+@[reassoc]
+theorem skeletonMap_univ_comm {X₁ X₂ Y₁ Y₂ : Type w}
+    [TopologicalSpace X₁] [T2Space X₁] [TopologicalSpace X₂] [T2Space X₂]
+    [TopologicalSpace Y₁] [T2Space Y₁] [TopologicalSpace Y₂] [T2Space Y₂]
+    {D₁ : Set X₁} {D₂ : Set X₂} {E₁ : Set Y₁} {E₂ : Set Y₂}
+    [RelCWComplex (Set.univ : Set X₁) D₁] [RelCWComplex (Set.univ : Set X₂) D₂]
+    [RelCWComplex (Set.univ : Set Y₁) E₁] [RelCWComplex (Set.univ : Set Y₂) E₂]
+    {i₁ : C(X₁, Y₁)} {i₂ : C(X₂, Y₂)} {f : C(X₁, X₂)} {g : C(Y₁, Y₂)}
+    (hi₁ : IsCellular (Set.univ : Set X₁) (Set.univ : Set Y₁)
+      (TopCat.ofHom (i₁.restrictPreimage Set.univ)))
+    (hi₂ : IsCellular (Set.univ : Set X₂) (Set.univ : Set Y₂)
+      (TopCat.ofHom (i₂.restrictPreimage Set.univ)))
+    (hf : IsCellular (Set.univ : Set X₁) (Set.univ : Set X₂)
+      (TopCat.ofHom (f.restrictPreimage Set.univ)))
+    (hg : IsCellular (Set.univ : Set Y₁) (Set.univ : Set Y₂)
+      (TopCat.ofHom (g.restrictPreimage Set.univ)))
+    (hcomm : ∀ x, g (i₁ x) = i₂ (f x)) (n : ℕ) :
+    skeletonMap _ _ hi₁ n ≫ skeletonMap _ _ hg n =
+      skeletonMap _ _ hf n ≫ skeletonMap _ _ hi₂ n := by
+  refine skeletonMap_comm hi₁ hi₂ hf hg ?_ n
+  rw [TopCat.ofHom_restrictPreimage_univ_eq, TopCat.ofHom_restrictPreimage_univ_eq,
+    TopCat.ofHom_restrictPreimage_univ_eq, TopCat.ofHom_restrictPreimage_univ_eq]
+  refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
+  simpa [TopCat.ofHom_apply] using hcomm x.1
 
 end TauCeti

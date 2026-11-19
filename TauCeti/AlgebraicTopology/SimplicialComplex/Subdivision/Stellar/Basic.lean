@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Dimension
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Link
 import Mathlib.Data.Nat.Cast.Order.Basic
 
@@ -333,7 +334,7 @@ theorem link_stellarSubdivision_insert_le_link_closedStar_inf_deletion {ρ : Fin
   exact mem_inf.mpr ⟨mem_closedStar_nonempty.mpr ⟨hne', hK⟩,
     mem_deletion.mpr ⟨(K.isRelLowerSet_faces hK).2 Finset.subset_union_left hne', hσ⟩⟩
 
-/-! ### Relabeling -/
+/-! ### Relabeling and restriction -/
 
 /-- An injective relabeling commutes with stellar subdivision. -/
 @[simp]
@@ -423,6 +424,37 @@ theorem map_stellarSubdivision_of_injOn {κ : Type*} [DecidableEq κ] {S : Set �
     _ = stellarSubdivision (K.map g) (σ.image g) (g v) := map_stellarSubdivision g hg
     _ = (stellarSubdivision (K.map f) (σ.image f) (f v)).map Sum.inl := by
         rw [hKg, hσg, hgS v hv, map_stellarSubdivision Sum.inl Sum.inl_injective]
+
+/-- If every face of `K` lies in `s` and `v ∈ s`, then every face of `stellarSubdivision K σ v`
+also lies in `s`. -/
+theorem subset_of_mem_stellarSubdivision {s : Set ι}
+    (hKs : ∀ ρ ∈ K, (ρ : Set ι) ⊆ s) (hvs : v ∈ s)
+    (hτ : τ ∈ stellarSubdivision K σ v) : (τ : Set ι) ⊆ s := by
+  rcases mem_stellarSubdivision_iff.mp hτ with ⟨-, hτK, -⟩ | ⟨hvτ, -, hτK⟩
+  · exact hKs τ hτK
+  · rw [← Finset.insert_erase hvτ, Finset.coe_insert]
+    exact Set.insert_subset hvs
+      ((Finset.coe_subset.mpr Finset.subset_union_left).trans (hKs _ hτK))
+
+/-- Restricting a stellar subdivision to a vertex set containing the starred face and the new
+vertex agrees with starring the restricted complex. -/
+theorem restrict_stellarSubdivision {s : Set ι} [DecidablePred (· ∈ s)] [DecidableEq s]
+    (hσs : (σ : Set ι) ⊆ s) (hvs : v ∈ s) :
+    (stellarSubdivision K σ v).restrict s =
+      stellarSubdivision (K.restrict s) (σ.subtype (· ∈ s)) ⟨v, hvs⟩ := by
+  have hσ' : (σ.subtype (· ∈ s)).image Subtype.val = σ := by
+    simpa only [Finset.map_eq_image, Function.Embedding.coe_subtype] using
+      Finset.subtype_map_of_mem hσs
+  refine SetLike.ext fun τ => ?_
+  rw [mem_restrict_iff, mem_stellarSubdivision_iff, mem_stellarSubdivision_iff]
+  have hv_iff : v ∈ τ.image Subtype.val ↔ (⟨v, hvs⟩ : s) ∈ τ :=
+    Subtype.val_injective.mem_finset_image (a := ⟨v, hvs⟩)
+  have hsub_iff (ρ : Finset s) : σ ⊆ ρ.image Subtype.val ↔ σ.subtype (· ∈ s) ⊆ ρ := by
+    rw [← Finset.image_subset_image_iff Subtype.val_injective, hσ']
+  have herase : (τ.image Subtype.val).erase v = (τ.erase ⟨v, hvs⟩).image Subtype.val :=
+    (Finset.image_erase Subtype.val_injective τ ⟨v, hvs⟩).symm
+  rw [hv_iff, herase, hsub_iff, hsub_iff, mem_restrict_iff, mem_restrict_iff,
+    Finset.image_union, hσ']
 
 /-! ### Dimension and finiteness -/
 
