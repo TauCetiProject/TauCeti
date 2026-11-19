@@ -297,7 +297,7 @@ theorem exists_siegelConstant :
     · refine le_trans ?_ (one_le_mul_of_one_le_of_one_le hC hbound)
       rcases eq_or_ne j j₀ with rfl | hj
       · simpa using (house_intCast (K := K) 1).le
-      · simpa [Pi.single_eq_of_ne hj] using (house_intCast (K := K) 0).trans_le (by simp)
+      · simp [Pi.single_eq_of_ne hj, house]
 
 /-- **Siegel's lemma over a number field, linear form.** There is `C ≥ 1`, depending only on `K`,
 such that every system `a ξ = 0` of `M` equations in `N ≥ 1` unknowns with `2 M ≤ N`, with

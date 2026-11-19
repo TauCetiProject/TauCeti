@@ -234,8 +234,8 @@ theorem exists_gelfond_auxiliary_algebraic (α β γ : K) {m : ℕ} (hm : 1 ≤ 
   have hA : 1 ≤ (q : ℝ) ^ (n - 1) * H ^ N :=
     one_le_mul_of_one_le_of_one_le (one_le_pow₀ (by exact_mod_cast hq₀)) (one_le_pow₀ hH)
   have hcard : Fintype.card (Fin q × Fin q) = q * q := by rw [Fintype.card_prod, Fintype.card_fin]
-  obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC e' hA (by simpa using hq₀)
-    (Nat.le_of_eq (by simp only [Fintype.card_prod, Fintype.card_fin]; rw [hq]; ring)) heA
+  obtain ⟨ξ, hξ0, hξ, hξle⟩ := hC e' hA (by rw [hcard]; exact Nat.mul_le_mul hq₀ hq₀)
+    (by rw [hcard, hq, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin]; linarith) heA
   replace hξle (u) : house (ξ u : K) ≤ c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) :=
     (hξle u).trans (by rw [hcard]; exact gelfond_siegel_bound_le hm hn hq hC₁ hH)
   refine ⟨fun a b ↦ ξ (a, b), fun h ↦ hξ0 (funext fun u ↦ congr_fun₂ h u.1 u.2),

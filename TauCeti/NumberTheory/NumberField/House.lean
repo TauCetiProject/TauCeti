@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.NumberTheory.NumberField.House
 public import TauCeti.Analysis.Polynomial.L1Norm
 public import TauCeti.Analysis.Polynomial.SupNorm.Basic
+public import TauCeti.NumberTheory.NumberField.AdjoinPair
 
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 
@@ -93,8 +94,9 @@ then `δ ^ b * x` has house at most `G ^ (b - a) * H`. -/
 theorem house_natCast_pow_mul_le_of_le {δ a b : ℕ} (hab : a ≤ b) {G H : ℝ} (hδ : δ ≤ G)
     {x : K} (hx : house ((δ : K) ^ a * x) ≤ H) :
     house ((δ : K) ^ b * x) ≤ G ^ (b - a) * H := by
-  rw [← Nat.sub_add_cancel hab, pow_add, mul_assoc, ← Nat.cast_pow, house_nat_mul,
-    Nat.add_sub_cancel, Nat.cast_pow]
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hab
+  rw [Nat.add_sub_cancel_left, pow_add, mul_comm ((δ : K) ^ a), mul_assoc, ← Nat.cast_pow,
+    house_nat_mul, Nat.cast_pow]
   have := house_nonneg ((δ : K) ^ a * x)
   have := (Nat.cast_nonneg δ).trans hδ
   gcongr
@@ -140,12 +142,8 @@ theorem exists_numberField_denominator {Ω : Type*} [Field Ω] [CharZero Ω] {ι
     ∃ (F : IntermediateField ℚ Ω) (_ : NumberField F) (x' : ι → F), (∀ i, (x' i : Ω) = x i) ∧
       ∃ δ : ℕ, 1 ≤ δ ∧ ∃ G : ℝ, (δ : ℝ) ≤ G ∧
         ∀ i, IsIntegral ℤ ((δ : F) * x' i) ∧ house ((δ : F) * x' i) ≤ G := by
-  let F := IntermediateField.adjoin ℚ (Set.range x)
-  have : FiniteDimensional ℚ F :=
-    IntermediateField.finiteDimensional_adjoin fun _ ⟨i, hi⟩ ↦ hi ▸ (hx i).isIntegral
-  have : NumberField F := NumberField.of_module_finite ℚ F
-  exact ⟨F, this, fun i ↦ ⟨x i, IntermediateField.subset_adjoin ℚ _ ⟨i, rfl⟩⟩, fun i ↦ rfl,
-    exists_natCast_mul_isIntegral_house_le _⟩
+  obtain ⟨F, hF, x', hx'⟩ := TauCeti.exists_numberField_comp hx
+  exact ⟨F, hF, x', fun i ↦ congr_fun hx' i, exists_natCast_mul_isIntegral_house_le x'⟩
 
 end Size
 
