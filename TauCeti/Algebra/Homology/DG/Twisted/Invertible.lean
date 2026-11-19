@@ -182,7 +182,7 @@ theorem inverse_comp (ν : ContinuationCocycle mP mQ) (μ : Matrix Q P A)
 /-- **An invertible continuation cocycle makes its ends homologous**, with the inverse
 continuation cocycle and vanishing parametrized cocycles: both composites are the Kronecker
 cocycles. -/
-def homologous (ν : ContinuationCocycle mP mQ) (μ : Matrix Q P A)
+def homologous (h : IsDGAlgebra 𝒜 d) (ν : ContinuationCocycle mP mQ) (μ : Matrix Q P A)
     (hνμ : Matrix.of ν.ν * μ = 1) (hμν : μ * Matrix.of ν.ν = 1) : Homologous h mP mQ where
   ν := ν
   ν' := ν.inverse h μ hνμ hμν
@@ -192,13 +192,13 @@ def homologous (ν : ContinuationCocycle mP mQ) (μ : Matrix Q P A)
 @[simp]
 theorem homologous_ν (ν : ContinuationCocycle mP mQ) (μ : Matrix Q P A)
     (hνμ : Matrix.of ν.ν * μ = 1) (hμν : μ * Matrix.of ν.ν = 1) :
-    (ν.homologous (h := h) μ hνμ hμν).ν = ν :=
+    (ν.homologous h μ hνμ hμν).ν = ν :=
   (rfl)
 
 @[simp]
 theorem homologous_ν' (ν : ContinuationCocycle mP mQ) (μ : Matrix Q P A)
     (hνμ : Matrix.of ν.ν * μ = 1) (hμν : μ * Matrix.of ν.ν = 1) :
-    (ν.homologous (h := h) μ hνμ hμν).ν' = ν.inverse h μ hνμ hμν :=
+    (ν.homologous h μ hνμ hμν).ν' = ν.inverse h μ hνμ hμν :=
   (rfl)
 
 /-- **The continuation isomorphism**: the continuation maps of an invertible continuation cocycle
