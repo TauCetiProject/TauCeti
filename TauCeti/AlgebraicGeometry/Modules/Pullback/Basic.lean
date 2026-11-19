@@ -145,6 +145,16 @@ lemma pseudofunctor_left_unitality_app (f : X ⟶ Y) (M : Y.Modules) :
       eqToHom (by simp) := by
   simpa using NatTrans.congr_app (pseudofunctor_left_unitality f) M
 
+/-- The composition comparison for `a ≫ 𝟙 B` identifies the pullback identity comparison. -/
+@[reassoc]
+lemma pullbackComp_id_hom {A B : Scheme.{u}} (a : A ⟶ B) (M : B.Modules) :
+    (pullbackComp a (𝟙 B)).hom.app M ≫
+      (pullbackCongr (Category.comp_id a)).hom.app M =
+    (pullback a).map ((pullbackId B).hom.app M) := by
+  apply (cancel_epi ((pullbackComp a (𝟙 B)).inv.app M)).1
+  simpa only [Iso.inv_hom_id_app_assoc, pullbackCongr, eqToIso.hom, eqToHom_app]
+    using (pseudofunctor_left_unitality_app a M).symm
+
 /-- The right unitality condition of the pullback pseudofunctor, on the component at a module. -/
 @[reassoc]
 lemma pseudofunctor_right_unitality_app (f : X ⟶ Y) (M : Y.Modules) :
