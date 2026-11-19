@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.NumberTheory.Real.GoldenRatio
 
@@ -16,12 +17,14 @@ import Mathlib.RingTheory.Polynomial.SmallDegreeVieta
 The golden ratio `φ` and its conjugate `ψ` are the two roots of `X² - X - 1`. This file records
 the complex root multiset of this polynomial, which is used to compute with the conjugates of `φ`,
 for instance to show that `φ` is a Pisot number and that the Mahler measure of `X² - X - 1` is `φ`.
-It also records the identity `φ⁻¹ = φ - 1`, which keeps computations with `φ⁻¹` inside `ℤ[φ]`.
+It also records the identity `φ⁻¹ = φ - 1`, which keeps computations with `φ⁻¹` inside `ℤ[φ]`, and
+the evaluation `TauCeti.goldenEval` of `ℤ[φ] = QuadraticAlgebra ℤ 1 1` at `φ`.
 
 ## Main results
 
 * `TauCeti.aroots_X_sq_sub_X_sub_one`: the complex roots of `X² - X - 1` are `φ` and `ψ`.
 * `TauCeti.inv_goldenRatio_eq_goldenRatio_sub_one`: `φ⁻¹ = φ - 1`.
+* `TauCeti.goldenEval_apply`: the evaluation at `φ` sends `a + b ω` to `a + b φ`.
 -/
 
 public section
@@ -36,6 +39,15 @@ open scoped goldenRatio
 theorem inv_goldenRatio_eq_goldenRatio_sub_one : φ⁻¹ = φ - 1 := by
   rw [Real.inv_goldenRatio, ← Real.one_sub_goldenConj]
   ring
+
+/-- Evaluation of `ℤ[φ] = QuadraticAlgebra ℤ 1 1`, whose generator `ω` satisfies `ω² = 1 + ω`, at
+the golden ratio. -/
+noncomputable def goldenEval : QuadraticAlgebra ℤ 1 1 →ₐ[ℤ] ℝ :=
+  QuadraticAlgebra.lift ⟨φ, by rw [one_smul, one_smul, ← sq, Real.goldenRatio_sq, add_comm]⟩
+
+@[simp]
+theorem goldenEval_apply (z : QuadraticAlgebra ℤ 1 1) : goldenEval z = z.re + z.im * φ := by
+  simp [goldenEval, QuadraticAlgebra.lift_apply_apply]
 
 /-- The complex roots of `X² - X - 1` are the golden ratio `φ` and its conjugate `ψ`. -/
 theorem aroots_X_sq_sub_X_sub_one :

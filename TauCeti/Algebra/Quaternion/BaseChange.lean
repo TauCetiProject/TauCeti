@@ -22,6 +22,8 @@ parameters. The equivalence `TauCeti.QuaternionAlgebra.baseChange` identifies
 It lets quaternion algebras and their splitting isomorphisms be transported along extensions.
 The construction works over arbitrary commutative rings, including in characteristic two.
 
+The coefficientwise maps `TauCeti.QuaternionAlgebra.map` and, for Hamilton's quaternions,
+`Quaternion.map` apply a ring homomorphism to the coordinates of a quaternion.
 The formula `baseChange_tmul` sends a pure tensor to the scalar multiple of the coefficientwise
 image. The inverse formula `baseChange_symm_mk` expands a quaternion in the basis `1, i, j, k`.
 For the two-parameter notation, `baseChangeTwoParams` gives the equivalence directly with
@@ -187,6 +189,34 @@ theorem baseChangeTwoParams_symm_mk (w x y z : S) :
   rfl
 
 end TauCeti.QuaternionAlgebra
+
+namespace Quaternion
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- Apply a ring homomorphism to the coefficients of a quaternion in `ℍ[R]`. Unlike
+`TauCeti.QuaternionAlgebra.map`, which lands in `ℍ[S, f (-1), f 0, f (-1)]`, this lands in `ℍ[S]`
+itself. -/
+def map (f : R →+* S) : ℍ[R] →+* ℍ[S] where
+  toFun q := ⟨f q.re, f q.imI, f q.imJ, f q.imK⟩
+  map_zero' := by ext <;> simp
+  map_one' := by ext <;> simp
+  map_add' x y := by ext <;> simp
+  map_mul' x y := by ext <;> simp <;> ring
+
+@[simp]
+theorem re_map (f : R →+* S) (q : ℍ[R]) : (map f q).re = f q.re := (rfl)
+
+@[simp]
+theorem imI_map (f : R →+* S) (q : ℍ[R]) : (map f q).imI = f q.imI := (rfl)
+
+@[simp]
+theorem imJ_map (f : R →+* S) (q : ℍ[R]) : (map f q).imJ = f q.imJ := (rfl)
+
+@[simp]
+theorem imK_map (f : R →+* S) (q : ℍ[R]) : (map f q).imK = f q.imK := (rfl)
+
+end Quaternion
 
 namespace TauCeti.BrauerGroup
 
