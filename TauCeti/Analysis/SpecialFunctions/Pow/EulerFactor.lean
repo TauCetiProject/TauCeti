@@ -15,7 +15,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 For a base `q > 1` and `‖a‖ = 1`, every zero of the factor `1 - a q^(-s)` has real part zero.
 For `q ≥ 2` and `Re s ≥ 1` its logarithmic derivative has norm at most `log q`.
-These estimates control finite Euler corrections uniformly in the character.
+These estimates control finite Euler corrections uniformly in the character. The unweighted
+factor also has the exact logarithmic derivative `log q / (q ^ s - 1)`; at a real argument
+and a positive real base, its real part is `Real.log q / (q ^ σ - 1)`.
 -/
 
 public section
@@ -30,6 +32,29 @@ theorem logDeriv_one_sub_mul_cpow_neg {q : ℂ} (hq : q ≠ 0) (a s : ℂ) :
   have hd := (((hasDerivAt_neg s).const_cpow (Or.inl hq)).const_mul a).const_sub 1
   rw [logDeriv_apply, hd.deriv]
   ring
+
+/-- An unweighted Euler factor has logarithmic derivative `log q / (q ^ s - 1)`,
+with total division even when the factor vanishes. -/
+theorem logDeriv_one_sub_cpow_neg (q s : ℂ) :
+    logDeriv (fun z : ℂ ↦ 1 - q ^ (-z)) s = log q / (q ^ s - 1) := by
+  have hd : deriv (fun z : ℂ ↦ 1 - q ^ (-z)) s = q ^ (-s) * log q := by
+    rw [deriv_const_sub, Complex.deriv_const_cpow differentiable_neg.differentiableAt, deriv_neg]
+    ring
+  rw [logDeriv_apply, hd, cpow_neg]
+  by_cases hq : q = 0
+  · simp only [hq, log_zero, mul_zero, zero_div]
+  by_cases hpow : q ^ s = 1
+  · simp only [hpow, inv_one, sub_self, div_zero]
+  · field_simp [cpow_ne_zero_iff.mpr (.inl hq), sub_ne_zero.mpr hpow]
+
+/-- At a real argument, an unweighted Euler factor with positive real base has the real
+logarithmic derivative `log q / (q ^ σ - 1)`, with total division. -/
+theorem re_logDeriv_one_sub_ofReal_cpow_neg {q : ℝ} (hq : 0 < q) (σ : ℝ) :
+    (logDeriv (fun z : ℂ ↦ 1 - (q : ℂ) ^ (-z)) (σ : ℂ)).re =
+      Real.log q / (q ^ σ - 1) := by
+  rw [logDeriv_one_sub_cpow_neg,
+    ← Complex.ofReal_cpow hq.le, ← Complex.ofReal_log hq.le, ← Complex.ofReal_one,
+    ← Complex.ofReal_sub, ← Complex.ofReal_div, Complex.ofReal_re]
 
 /-- A weighted Euler factor with unit-modulus coefficient can vanish only on the imaginary axis. -/
 theorem re_eq_zero_of_one_sub_mul_ofReal_cpow_neg_eq_zero {q : ℝ} (hq : 1 < q)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Principal
-import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDerivNearOne
+import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -25,7 +25,7 @@ namespace TauCeti
 example : HasSum (fun p : Nat.Primes ↦ Real.log p / ((p : ℝ) * ((p : ℝ) - 1)))
     (∑' n : ℕ, (if n.Prime then 0 else vonMangoldt n) / n) := by
   simpa only [Real.rpow_one] using
-    vonMangoldt.hasSum_prime_log_div_rpow_mul_sub_one (σ := 1) le_rfl
+    vonMangoldt.hasSum_prime_log_div_rpow_mul_sub_one (σ := 1) (by norm_num)
 
 /-- The principal level-one remainder at two is the positive geometric higher-power tail. -/
 example :
@@ -52,7 +52,7 @@ example :
         ∑' p : Nat.Primes, ((1 : DirichletCharacter ℂ 6) p).re * Real.log p / (p : ℝ) ^ 2) -
       (-(logDeriv riemannZeta 2).re - ∑' p : Nat.Primes, Real.log p / (p : ℝ) ^ 2) =
       -Real.log 2 / 12 - Real.log 3 / 72 ∧ -Real.log 2 / 12 - Real.log 3 / 72 < 0 := by
-  have h := neg_re_logDeriv_principal_remainder_sub_eq 6 (σ := 2) (by norm_num)
+  have h := neg_re_logDeriv_LFunctionTrivChar_remainder_sub_eq 6 (σ := 2) (by norm_num)
   have hp : Nat.primeFactors 6 = {2, 3} := by
     have h6 : 6 = 2 * 3 := by norm_num
     rw [h6, Nat.primeFactors_mul (by norm_num) (by norm_num)]
@@ -72,8 +72,8 @@ example : ∃ C : ℝ, C ≤ 2 * Real.log 4 ∧ ∀ (N : ℕ) [NeZero N] (σ : �
       (-(logDeriv riemannZeta (σ : ℂ)).re -
         ∑' p : Nat.Primes, Real.log p / (p : ℝ) ^ σ)| ≤ C := by
   refine ⟨∑' p : Nat.Primes, Real.log p / ((p : ℝ) * ((p : ℝ) - 1)), ?_,
-    fun N _ σ hσ ↦ abs_neg_re_logDeriv_principal_remainder_sub_le N hσ⟩
-  have hg := vonMangoldt.hasSum_prime_log_div_rpow_mul_sub_one (σ := 1) le_rfl
+    fun N _ σ hσ ↦ abs_neg_re_logDeriv_LFunctionTrivChar_remainder_sub_le N hσ⟩
+  have hg := vonMangoldt.hasSum_prime_log_div_rpow_mul_sub_one (σ := 1) (by norm_num)
   simp only [Real.rpow_one] at hg
   rw [hg.tsum_eq]
   exact vonMangoldt.tsum_nonprime_div_le
