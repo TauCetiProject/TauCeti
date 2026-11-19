@@ -46,10 +46,19 @@ characteristic.
 ## Main results
 
 * `TauCeti.algebraMap_ratFuncAlgebraOfTranscendental_X`: the variable `X` acts as `x`.
-* `TauCeti.map_algebraMap_ratFuncAlgebraOfTranscendental`: an injective `k`-algebra map `f`
+* `TauCeti.algebraMap_ratFuncAlgebraOfTranscendental_apply`: the structure map is the embedding
+  `k(X) ≃ k⟮x⟯` followed by the inclusion of `k⟮x⟯` in `F`.
+* `TauCeti.map_algebraMap_ratFuncAlgebraOfTranscendental`: a `k`-algebra map `f` of fields
   carries the structure induced by `x` to the structure induced by `f x`.
 * `TauCeti.isScalarTower_ratFuncAlgebraOfTranscendental`: the structure extends the given
   `k`-algebra structure.
+* `TauCeti.adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top`: if `z` and `x` generate `F` over `k`,
+  then `z` generates `F` over `k(X)`.
+* `TauCeti.isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap`: an algebra map `F → F'` is
+  `k(X)`-linear for the structures induced by `x` and by its image.
+* `TauCeti.isScalarTower_ratFunc_ratFunc_of_transcendental`: for `y` transcendental over `k` and
+  over `k'`, the structures of `k(X)` and `k'(X)` on `F'` in which `X` acts as `y`, and of `k(X)` on
+  `k'(X)`, form a scalar tower.
 * `TauCeti.isSeparable_ratFuncAlgebraOfTranscendental`: separability over `k⟮x⟯` transfers to
   separability over `k(X)`.
 * `TauCeti.finiteDimensional_ratFuncAlgebraOfTranscendental`: finite-dimensionality over `k⟮x⟯`
@@ -64,9 +73,12 @@ characteristic.
   exactly when it is separable over `k(X)`.
 * `TauCeti.transcendental_of_aeval_eq`: if the variable `t` of `k(t)` acts on `F` as `q(x)`,
   then `x` is transcendental over `k`.
+* `TauCeti.natDegree_pos_of_aeval_eq`: in that situation `q` is not constant.
 * `TauCeti.finiteDimensional_of_aeval_eq` and `TauCeti.isSeparable_of_aeval_eq`: if `F = k(x)`
   over `k(t)` with `t = q(x)` for a polynomial `q`, then `F` is finite over `k(t)`, and separable
   when `q′ ≠ 0`.
+* `TauCeti.isFractionRing_polynomial_aeval`: if `x` is transcendental over `k` and `k⟮x⟯ = ⊤`, then
+  `F` is the fraction field of `k[X]` acting through `X ↦ x`.
 * `TauCeti.transcendental_ratFunc_X_sub_inv`: `X - X⁻¹` is transcendental.
 * `TauCeti.isIntegrallyClosedIn_ratFunc`: `k` is integrally closed in `k(X)`.
 * `Transcendental.algHomAdjoin_gen`: `Transcendental.algHomAdjoin` sends the generator `x` to `z`.
@@ -113,7 +125,7 @@ instance isIntegrallyClosedIn_ratFunc : IsIntegrallyClosedIn k (RatFunc k) :=
 /-- The `RatFunc k`-algebra structure on `F` induced by a transcendental element `x`, with
 `RatFunc.X` acting as `x`. -/
 @[instance_reducible]
-noncomputable def ratFuncAlgebraOfTranscendental (hx : Transcendental k x) :
+def ratFuncAlgebraOfTranscendental (hx : Transcendental k x) :
     Algebra (RatFunc k) F :=
   (k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom).toRingHom.toAlgebra
 
@@ -135,15 +147,15 @@ theorem algebraMap_ratFuncAlgebraOfTranscendental_X (hx : Transcendental k x) :
   rw [algebraMap_ratFuncAlgebraOfTranscendental_apply,
     RatFunc.algEquivOfTranscendental_X]
 
-/-- An injective `k`-algebra map `f : F → F'` carries the embedding `X ↦ x` of `k(X)` to the
+/-- A `k`-algebra map `f : F → F'` of fields carries the embedding `X ↦ x` of `k(X)` to the
 embedding `X ↦ f x`. -/
 theorem map_algebraMap_ratFuncAlgebraOfTranscendental {F' G : Type*} [Field F'] [Algebra k F']
-    [FunLike G F F'] [AlgHomClass G k F F'] (f : G) (hf : Function.Injective f)
+    [FunLike G F F'] [AlgHomClass G k F F'] (f : G)
     (hx : Transcendental k x) (r : RatFunc k) :
     f (letI := ratFuncAlgebraOfTranscendental hx; algebraMap (RatFunc k) F r) =
-      letI := ratFuncAlgebraOfTranscendental (hx.algHom f hf)
+      letI := ratFuncAlgebraOfTranscendental (hx.algHom f (AlgHom.ofClass f).injective)
       algebraMap (RatFunc k) F' r := by
-  have hy := hx.algHom f hf
+  have hy := hx.algHom f (AlgHom.ofClass f).injective
   -- Both sides are `k`-algebra maps out of `k(X)` sending `X` to `f x`.
   have h : (AlgHom.ofClass f).comp
         (k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom) =
@@ -160,6 +172,57 @@ theorem isScalarTower_ratFuncAlgebraOfTranscendental (hx : Transcendental k x) :
   let _ := ratFuncAlgebraOfTranscendental hx
   exact .of_algebraMap_eq fun c ↦
     ((k⟮x⟯.val.comp (RatFunc.algEquivOfTranscendental x hx).toAlgHom).commutes c).symm
+
+/-- **One generator over `k(X)`**: if `z` and the transcendental `x` generate `F` over `k`, then
+`z` generates `F` over `k(X)`, for the structure in which `X` acts as `x`. -/
+theorem adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top (hx : Transcendental k x) {z : F}
+    (hgen : k⟮z, x⟯ = ⊤) :
+    letI := ratFuncAlgebraOfTranscendental hx
+    (RatFunc k)⟮z⟯ = ⊤ := by
+  let _ := ratFuncAlgebraOfTranscendental hx
+  have := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  refine top_le_iff.mp ?_
+  rw [← IntermediateField.adjoin_eq_top_of_adjoin_eq_top (E := RatFunc k) k hgen,
+    IntermediateField.adjoin_le_iff, Set.insert_subset_iff, Set.singleton_subset_iff]
+  exact ⟨IntermediateField.mem_adjoin_simple_self _ _, by
+    simpa using IntermediateField.algebraMap_mem (RatFunc k)⟮z⟯ RatFunc.X⟩
+
+/-- **An algebra map is `k(X)`-linear along `X ↦ x`**: an algebra map `F → F'` of fields over `k`
+is `k(X)`-linear when `X` acts as `x` on `F` and as its image on `F'`. -/
+theorem isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap {F' : Type*} [Field F']
+    [Algebra k F'] [Algebra F F'] [IsScalarTower k F F'] (hx : Transcendental k x) :
+    letI := ratFuncAlgebraOfTranscendental hx
+    letI := ratFuncAlgebraOfTranscendental
+      ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx)
+    IsScalarTower (RatFunc k) F F' := by
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := ratFuncAlgebraOfTranscendental
+    ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx)
+  exact .of_algebraMap_eq fun r ↦ (map_algebraMap_ratFuncAlgebraOfTranscendental
+    (IsScalarTower.toAlgHom k F F') hx r).symm
+
+/-- **Compatible rational-function structures along a constant extension**: if `y` is
+transcendental over `k` and over `k'`, the algebra structures of `k(X)` and `k'(X)` on `F'` and of
+`k(X)` on `k'(X)` that let `X` act as `y` form a scalar tower. -/
+theorem isScalarTower_ratFunc_ratFunc_of_transcendental {k' F' : Type*} [Field k'] [Field F']
+    [Algebra k k'] [Algebra k F'] [Algebra k' F'] [IsScalarTower k k' F'] {y : F'}
+    (hy : Transcendental k y) (hy' : Transcendental k' y)
+    (hX : Transcendental k (RatFunc.X : RatFunc k')) :
+    letI := ratFuncAlgebraOfTranscendental hy
+    letI := ratFuncAlgebraOfTranscendental hy'
+    letI := ratFuncAlgebraOfTranscendental hX
+    IsScalarTower (RatFunc k) (RatFunc k') F' := by
+  let _ := ratFuncAlgebraOfTranscendental hy
+  let _ := ratFuncAlgebraOfTranscendental hy'
+  let _ := ratFuncAlgebraOfTranscendental hX
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hy
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hy'
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hX
+  refine .of_algebraMap_eq fun r ↦ DFunLike.congr_fun (RatFunc.algHom_ext
+    (σ := IsScalarTower.toAlgHom k (RatFunc k) F')
+    (τ := ((IsScalarTower.toAlgHom k' (RatFunc k') F').restrictScalars k).comp
+      (IsScalarTower.toAlgHom k (RatFunc k) (RatFunc k'))) ?_) r
+  simp
 
 /-- Separability over `k(x)` transfers to the rational-function algebra structure induced by
 `x`. -/
@@ -299,11 +362,12 @@ end Polynomial
 
 /-- The `k`-algebra map `k⟮x⟯ → E` sending a transcendental `x` to a transcendental `z`: both
 `k⟮x⟯` and `k⟮z⟯` are identified with the rational function field `k(X)`. -/
-noncomputable def _root_.Transcendental.algHomAdjoin (hx : Transcendental k x) {E : Type*}
+def _root_.Transcendental.algHomAdjoin (hx : Transcendental k x) {E : Type*}
     [Field E] [Algebra k E] {z : E} (hz : Transcendental k z) : k⟮x⟯ →ₐ[k] E :=
   (IntermediateField.val _).comp ((RatFunc.algEquivOfTranscendental z hz).toAlgHom.comp
     (RatFunc.algEquivOfTranscendental x hx).symm.toAlgHom)
 
+/-- The `k`-algebra map `Transcendental.algHomAdjoin` sends the generator `x` of `k⟮x⟯` to `z`. -/
 @[simp]
 theorem _root_.Transcendental.algHomAdjoin_gen (hx : Transcendental k x) {E : Type*} [Field E]
     [Algebra k E] {z : E} (hz : Transcendental k z) :
@@ -337,5 +401,17 @@ theorem ratFuncAlgebraOfTranscendental_eq_liftAlgebra [Algebra k[X] F] [IsScalar
       rw [← IsScalarTower.coe_toAlgHom' k k[X] F, Polynomial.aeval_algHom_apply,
         Polynomial.aeval_X_left_apply]
   exact congrArg (· r) h
+
+/-- **The polynomial ring is the base of a rational function field**: if `x` is transcendental over
+`k` and `k(x)` is the whole field `F`, then `F` is the fraction field of `k[X]`, with `k[X]` acting
+through `X ↦ x`. -/
+theorem isFractionRing_polynomial_aeval (hx : Transcendental k x) (hxtop : k⟮x⟯ = ⊤) :
+    letI : Algebra k[X] F := (Polynomial.aeval x).toAlgebra
+    IsFractionRing k[X] F := by
+  let : Algebra k[X] F := (Polynomial.aeval x).toAlgebra
+  let e : RatFunc k ≃ₐ[k] F := (RatFunc.algEquivOfTranscendental x hx).trans
+    ((IntermediateField.equivOfEq hxtop).trans IntermediateField.topEquiv)
+  refine IsLocalization.isLocalization_of_algEquiv _ { e with commutes' := fun p ↦ ?_ }
+  simp [e, RingHom.algebraMap_toAlgebra]
 
 end TauCeti

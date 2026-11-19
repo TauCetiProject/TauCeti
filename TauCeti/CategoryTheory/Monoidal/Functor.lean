@@ -170,6 +170,23 @@ end OplaxMonoidal
 
 namespace LaxMonoidal
 
+section Composition
+
+universe v₃ u₃
+
+variable {E : Type u₃} [Category.{v₃} E] [MonoidalCategory E]
+
+/-- Equality of tensor comparisons for two lax monoidal structures on a functor is preserved
+by postcomposition with a lax monoidal functor. -/
+lemma comp_μ_congr (F : C ⥤ D) (G : D ⥤ E) [G.LaxMonoidal]
+    (L₁ L₂ : F.LaxMonoidal) (X Y : C)
+    (h : @μ _ _ _ _ _ _ F L₁ X Y = @μ _ _ _ _ _ _ F L₂ X Y) :
+    (letI := L₁; μ (F ⋙ G) X Y) = (letI := L₂; μ (F ⋙ G) X Y) := by
+  simp only [comp_μ]
+  rw [h]
+
+end Composition
+
 open MonoidalCategory
 
 /-- Transport a lax monoidal structure along a natural isomorphism of functors. This is the lax

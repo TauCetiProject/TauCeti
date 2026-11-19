@@ -129,7 +129,7 @@ private theorem exists_ne_zero_fixed_vector_of_stable (ρ : Representation k G V
   let _ : MulAction G A :=
     { one_smul := fun x => Subtype.ext (by rw [hsmul]; simp)
       mul_smul := fun g h x =>
-        Subtype.ext (by rw [hsmul, hsmul, hsmul, map_mul]; exact Module.End.mul_apply _ _ _) }
+        Subtype.ext (by rw [hsmul, hsmul, hsmul, map_mul]; exact mul_apply_eq_comp _ _ _) }
   let φ : G →* Function.End A := MulAction.toEndHom
   have hφ : ∀ (g : G) (x : A), ((φ g x : A) : V) = ρ g x := fun _ _ => rfl
   let H := MonoidHom.mrange φ
@@ -143,7 +143,7 @@ private theorem exists_ne_zero_fixed_vector_of_stable (ρ : Representation k G V
     funext x
     apply Subtype.ext
     rw [hφ, map_pow, hn]
-    exact Module.End.one_apply _
+    exact one_apply_eq_self _
   let _ : Group H := groupOfIsUnit fun σ => by
     obtain ⟨n, hn⟩ := hpow σ
     exact (isOfFinOrder_iff_pow_eq_one.2 ⟨p ^ n, pow_pos (Fact.out : p.Prime).pos _, hn⟩).isUnit

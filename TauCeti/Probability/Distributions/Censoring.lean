@@ -61,7 +61,7 @@ theorem map_coe_projIcc {l r : ℝ} (hlr : l < r) :
   classical
   ext s hs
   rw [Measure.map_apply (by fun_prop) hs]
-  simp only [Measure.add_apply, Measure.smul_apply, Measure.dirac_apply' _ hs,
+  simp only [_root_.add_apply, _root_.smul_apply, Measure.dirac_apply' _ hs,
     Measure.restrict_apply hs, smul_eq_mul]
   have hpreimage :
       clip[l, r; hlr.le] ⁻¹' s =
@@ -191,8 +191,8 @@ theorem map_coe_projIci (l : ℝ) :
       μ (Iic l) • Measure.dirac l + μ.restrict (Ioi l) := by
   classical
   ext s hs
-  rw [Measure.map_apply (by fun_prop) hs]
-  simp only [Measure.add_apply, Measure.smul_apply, Measure.dirac_apply' _ hs,
+  rw [Measure.map_apply (by simp only [Set.coe_projIci]; fun_prop) hs]
+  simp only [_root_.add_apply, _root_.smul_apply, Measure.dirac_apply' _ hs,
     Measure.restrict_apply hs, smul_eq_mul]
   have hpreimage :
       (fun x : ℝ ↦ (Set.projIci l x : ℝ)) ⁻¹' s =
@@ -213,7 +213,8 @@ from `l` onwards. -/
 @[simp] theorem cdf_map_coe_projIci [IsProbabilityMeasure μ] (l x : ℝ) :
     cdf (μ.map fun y : ℝ ↦ (Set.projIci l y : ℝ)) x =
       if x < l then 0 else cdf μ x := by
-  rw [cdf_eq_real, Measure.real, Measure.map_apply (by fun_prop) measurableSet_Iic]
+  rw [cdf_eq_real, Measure.real,
+    Measure.map_apply (by simp only [Set.coe_projIci]; fun_prop) measurableSet_Iic]
   by_cases hxl : x < l
   · rw [ite_eq_left hxl]
     have hpre : (fun y : ℝ ↦ (Set.projIci l y : ℝ)) ⁻¹' Iic x = ∅ := by
@@ -235,7 +236,7 @@ cutoff and the original quantile. -/
     (μ.map fun x : ℝ ↦ (Set.projIci l x : ℝ)).quantile u =
       (Set.projIci l (μ.quantile u) : ℝ) := by
   exact Measure.quantile_map_of_monotone
-    (fun _ _ h ↦ max_le_max le_rfl h) (by fun_prop) hu.1 hu.2
+    (fun _ _ h ↦ max_le_max le_rfl h) (by simp only [Set.coe_projIci]; fun_prop) hu.1 hu.2
 
 /-- Integrability after lower censoring is exactly integrability on the unchanged upper tail. -/
 theorem integrable_map_coe_projIci_iff {E : Type*} [SeminormedAddGroup E]
@@ -282,8 +283,8 @@ theorem map_coe_projIic (r : ℝ) :
       μ.restrict (Iio r) + μ (Ici r) • Measure.dirac r := by
   classical
   ext s hs
-  rw [Measure.map_apply (by fun_prop) hs]
-  simp only [Measure.add_apply, Measure.smul_apply, Measure.dirac_apply' _ hs,
+  rw [Measure.map_apply (by simp only [Set.coe_projIic]; fun_prop) hs]
+  simp only [_root_.add_apply, _root_.smul_apply, Measure.dirac_apply' _ hs,
     Measure.restrict_apply hs, smul_eq_mul]
   have hpreimage :
       (fun x : ℝ ↦ (Set.projIic r x : ℝ)) ⁻¹' s =
@@ -304,7 +305,8 @@ from `r` onwards. -/
 @[simp] theorem cdf_map_coe_projIic [IsProbabilityMeasure μ] (r x : ℝ) :
     cdf (μ.map fun y : ℝ ↦ (Set.projIic r y : ℝ)) x =
       if x < r then cdf μ x else 1 := by
-  rw [cdf_eq_real, Measure.real, Measure.map_apply (by fun_prop) measurableSet_Iic]
+  rw [cdf_eq_real, Measure.real,
+    Measure.map_apply (by simp only [Set.coe_projIic]; fun_prop) measurableSet_Iic]
   by_cases hxr : x < r
   · rw [ite_eq_left hxr, cdf_eq_real, Measure.real]
     have hpre : (fun y : ℝ ↦ (Set.projIic r y : ℝ)) ⁻¹' Iic x = Iic x := by
@@ -332,7 +334,7 @@ cutoff and the original quantile. -/
     (μ.map fun x : ℝ ↦ (Set.projIic r x : ℝ)).quantile u =
       (Set.projIic r (μ.quantile u) : ℝ) := by
   exact Measure.quantile_map_of_monotone
-    (fun _ _ h ↦ min_le_min le_rfl h) (by fun_prop) hu.1 hu.2
+    (fun _ _ h ↦ min_le_min le_rfl h) (by simp only [Set.coe_projIic]; fun_prop) hu.1 hu.2
 
 /-- Integrability after upper censoring is exactly integrability on the unchanged lower tail. -/
 theorem integrable_map_coe_projIic_iff {E : Type*} [SeminormedAddGroup E]

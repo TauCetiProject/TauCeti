@@ -382,13 +382,6 @@ lemma Rep.conjugateEquiv_symm_coindFunctorCompIso_hom (φ : G →* H) (ψ : H �
   unfold Rep.coindFunctorCompIso
   exact Equiv.symm_apply_apply _ _
 
-/-- The counit of Mathlib's restriction--coinduction adjunction is evaluation at `1`. Used to turn
-the abstract adjunction identity `conjugateEquiv_counit_symm` into a statement about elements. -/
-private lemma Rep.resCoindAdjunction_counit_app_hom_apply (φ : G →* H) (A : Rep.{max w t} k G)
-    (f : Rep.coind φ A) :
-    ((Rep.resCoindAdjunction.{t} k φ).counit.app A).hom f = f.1 1 :=
-  rfl
-
 /-- The coinduction-in-stages isomorphism evaluated at `1`: it reads off the value of a doubly
 coinduced function at the pair `(1, 1)`. This is the adjunction identity
 `conjugateEquiv_counit_symm` read on elements, the dual of

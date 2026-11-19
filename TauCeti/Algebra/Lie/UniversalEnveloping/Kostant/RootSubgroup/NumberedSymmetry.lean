@@ -103,7 +103,7 @@ theorem baseChangeInvariantRestrictUnit_mul_kostantRootSubgroupParam (A : CommAl
         ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e (σ i))) • θ v :=
     fun v => by simpa only [Module.End.smul_def] using hθe i v
   refine Units.ext (LinearMap.ext fun z => ?_)
-  rw [Units.val_mul, Units.val_mul, Module.End.mul_apply, Module.End.mul_apply,
+  rw [Units.val_mul, Units.val_mul, mul_apply_eq_comp, mul_apply_eq_comp,
     kostantRootSubgroupParam_val_apply, kostantRootSubgroupParam_val_apply,
     val_baseChangeInvariantRestrictUnit_apply, val_baseChangeInvariantRestrictUnit_apply]
   exact θ.baseChange_invariantRestrict_baseChangeExp M hθM hint _ (hnil i) (hnil (σ i)) _ z
@@ -204,7 +204,7 @@ theorem kostantElementaryNumberedSymmetryAut_pow_eq_one (A : CommAlgCat.{w} ℤ)
     rw [AddEquiv.coe_toIntLinearEquiv]
     exact funext fun v => LinearEquiv.coe_addEquiv_apply θ v
   have hn' : ∀ v, (θ.toAddEquiv.toIntLinearEquiv ^ n) v = v := fun v => by
-    simpa only [LinearEquiv.pow_apply, hcoe] using hn v
+    simpa only [pow_apply_eq_iterate, hcoe] using hn v
   rw [hpow n g, baseChangeInvariantRestrictUnit_pow_eq_one θ.toAddEquiv M hθM hn', one_mul,
     inv_one, mul_one]
   rfl

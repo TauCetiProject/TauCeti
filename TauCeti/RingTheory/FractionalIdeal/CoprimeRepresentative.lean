@@ -59,7 +59,7 @@ theorem exists_mem_inv_exists_mem_mul_notMem (J : (FractionalIdeal R⁰ K)ˣ)
     exact (mem_coeIdeal R⁰).mpr ⟨r, h y hy x hx r hr, hr⟩
   exact hP (top_le_iff.mp ((coeIdeal_le_coeIdeal K).mp (by simpa using hle)))
 
-variable [Nontrivial K]
+variable [Nontrivial R]
 
 /-- **Coprime representatives.** Let `J` be an invertible fractional ideal of a nontrivial ring
 `R`, and let `𝔞` be an ideal of `R` contained in only finitely many maximal ideals. Then `J` has a
@@ -74,15 +74,17 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_and_sup_eq_top (J : (FractionalIdea
       ∃ I : Ideal R, (I : FractionalIdeal R⁰ K) = spanSingleton R⁰ a * J :=
     le_one_iff_exists_coeIdeal.mp <| J.inv_mul ▸ mul_le_mul_left
       (spanSingleton_le_iff_mem.mpr ha) _
+  -- A product `a * x` which is an element of `R` outside an ideal forces `a ≠ 0`.
+  have hne {a x : K} {s : R} {P : Ideal R} (hs : algebraMap R K s = a * x) (hsP : s ∉ P) :
+      a ≠ 0 := by
+    rintro rfl
+    rw [zero_mul, IsFractionRing.to_map_eq_zero_iff] at hs
+    exact hsP (hs ▸ P.zero_mem)
   by_cases htop : 𝔞 = ⊤
-  -- A product outside the zero ideal gives a nonzero element of `J⁻¹`.
-  · have : Nontrivial R := Module.nontrivial R K
-    obtain ⟨a, ha, x, _, r, hr, hr0⟩ := exists_mem_inv_exists_mem_mul_notMem J
+  · obtain ⟨a, ha, x, _, r, hr, hr0⟩ := exists_mem_inv_exists_mem_mul_notMem J
       (P := ⊥) bot_ne_top
     obtain ⟨I, hI⟩ := hint ha
-    refine ⟨a, fun ha0 => ?_, I, hI, by rw [htop, sup_top_eq]⟩
-    rw [ha0, zero_mul, ← map_zero (algebraMap R K)] at hr
-    exact hr0 (IsFractionRing.injective R K hr ▸ Ideal.zero_mem _)
+    exact ⟨a, hne hr hr0, I, hI, by rw [htop, sup_top_eq]⟩
   -- Index by the finitely many maximal ideals `P ⊇ 𝔞`, and choose `y P ∈ J⁻¹`, `x P ∈ J` with
   -- `y P * x P = r P ∉ P`.
   let ι := {P : Ideal R // P.IsMaximal ∧ 𝔞 ≤ P}
@@ -94,9 +96,8 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_and_sup_eq_top (J : (FractionalIdea
   choose e he using fun P : ι => Ideal.exists_forall_sub_mem_ideal hcop (Pi.single P 1)
   -- The element `a = ∑ e P * y P` of `J⁻¹` satisfies `a * x P ∉ P` for every `P`.
   set a : K := ∑ Q, algebraMap R K (e Q) * y Q
-  have ha : a ∈ (↑J⁻¹ : FractionalIdeal R⁰ K) := Submodule.sum_mem _ fun Q _ => by
-    rw [← Algebra.smul_def]
-    exact Submodule.smul_mem _ _ (hy Q)
+  have ha : a ∈ (↑J⁻¹ : FractionalIdeal R⁰ K) := Submodule.sum_mem _ fun Q _ =>
+    Algebra.smul_def (e Q) (y Q) ▸ Submodule.smul_mem _ _ (hy Q)
   have hax (P : ι) : ∃ s : R, algebraMap R K s = a * x P ∧ s ∉ (P : Ideal R) := by
     choose t ht using fun Q : ι =>
       (mem_one_iff R⁰).mp (J.inv_mul ▸ mul_mem_mul (hy Q) (hx P))
@@ -104,27 +105,23 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_and_sup_eq_top (J : (FractionalIdea
     -- `algebraMap (∑ e Q * t Q) = ∑ e Q * (y Q * x P) = a * x P`.
     have hs : algebraMap R K (∑ Q, e Q * t Q) = a * x P := by
       simp only [map_sum, map_mul, ht, a, Finset.sum_mul, mul_assoc]
-    refine ⟨∑ Q, e Q * t Q, hs, fun hs => hrP P ?_⟩
-    -- `∑ e Q * t Q - t P = (e P - 1) * t P + ∑_{Q ≠ P} e Q * t Q` lies in `P`.
+    refine ⟨∑ Q, e Q * t Q, hs, fun hsP => hrP P ?_⟩
+    -- `∑ e Q * t Q - t P = ∑ (e Q - δ_{QP}) * t Q` lies in `P`.
     have hsub : ∑ Q, e Q * t Q - t P ∈ (P : Ideal R) := by
-      rw [← Finset.add_sum_erase _ _ (Finset.mem_univ P), add_sub_right_comm, ← sub_one_mul]
-      refine add_mem (Ideal.mul_mem_right _ _ (by simpa using he P P)) (sum_mem fun Q hQ => ?_)
-      exact Ideal.mul_mem_right _ _
-        (by simpa [Pi.single_eq_of_ne (Finset.ne_of_mem_erase hQ).symm] using he Q P)
-    simpa [htP] using Ideal.sub_mem _ hs hsub
+      have : ∑ Q, e Q * t Q - t P = ∑ Q, (e Q - (Pi.single Q 1 : ι → R) P) * t Q := by
+        simp [sub_mul, Pi.single_apply]
+      exact this ▸ sum_mem fun Q _ => Ideal.mul_mem_right _ _ (he Q P)
+    simpa [htP] using P.1.sub_mem hsP hsub
   obtain ⟨I, hI⟩ := hint ha
   obtain ⟨P, hP, h𝔞P⟩ := Ideal.exists_le_maximal 𝔞 htop
-  refine ⟨a, fun ha0 => ?_, I, hI, ?_⟩
-  · obtain ⟨s, hs, hsP⟩ := hax ⟨P, hP, h𝔞P⟩
-    rw [ha0, zero_mul, ← map_zero (algebraMap R K)] at hs
-    exact hsP (IsFractionRing.injective R K hs ▸ P.zero_mem)
-  · -- A maximal ideal `Q ⊇ I ⊔ 𝔞` would contain the element `a * x Q` of `I`.
-    by_contra hne
-    obtain ⟨Q, hQ, hIQ⟩ := Ideal.exists_le_maximal _ hne
-    obtain ⟨s, hs, hsQ⟩ := hax ⟨Q, hQ, le_sup_right.trans hIQ⟩
-    obtain ⟨s', hs', hs's⟩ := (mem_coeIdeal R⁰).mp
-      (hI ▸ mul_mem_mul (mem_spanSingleton_self R⁰ a) (hx ⟨Q, hQ, le_sup_right.trans hIQ⟩))
-    rw [← hs] at hs's
-    exact hsQ (IsFractionRing.injective R K hs's ▸ le_sup_left.trans hIQ hs')
+  obtain ⟨s, hs, hsP⟩ := hax ⟨P, hP, h𝔞P⟩
+  refine ⟨a, hne hs hsP, I, hI, ?_⟩
+  -- A maximal ideal `Q ⊇ I ⊔ 𝔞` would contain the element `a * x Q` of `I`.
+  by_contra hI𝔞
+  obtain ⟨Q, hQ, hIQ⟩ := Ideal.exists_le_maximal _ hI𝔞
+  obtain ⟨s, hs, hsQ⟩ := hax ⟨Q, hQ, le_sup_right.trans hIQ⟩
+  obtain ⟨s', hs', hs's⟩ := (mem_coeIdeal R⁰).mp
+    (hI ▸ mul_mem_mul (mem_spanSingleton_self R⁰ a) (hx ⟨Q, hQ, le_sup_right.trans hIQ⟩))
+  exact hsQ (IsFractionRing.injective R K (hs's.trans hs.symm) ▸ le_sup_left.trans hIQ hs')
 
 end FractionalIdeal

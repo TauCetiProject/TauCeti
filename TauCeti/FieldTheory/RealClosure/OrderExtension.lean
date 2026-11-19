@@ -123,13 +123,12 @@ theorem extensionCone.exists_linearOrder_iff [Field K] [PartialOrder K] [IsOrder
     have := extensionCone.nonneg f hf.monotone h
     norm_num at this
   · intro h
-    let P : RingPreordering L :=
-      { extensionCone f with
-        mem_of_isSquare' := by
+    have hpre : (extensionCone f).IsPreordering :=
+      { mem_of_isSquare := by
           rintro x ⟨y, rfl⟩
           exact extensionCone.mul_self_mem f y
-        neg_one_notMem' := h }
-    obtain ⟨o, ho, hP⟩ := RingPreordering.exists_linearOrder P
+        neg_one_notMem := h }
+    obtain ⟨o, ho, hP⟩ := hpre.exists_linearOrder
     let := o
     refine ⟨o, ho, ?_⟩
     exact ((monotone_iff_map_nonneg f).mpr fun x hx =>

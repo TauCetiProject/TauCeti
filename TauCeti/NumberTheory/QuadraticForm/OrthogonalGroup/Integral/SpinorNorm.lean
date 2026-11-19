@@ -30,8 +30,8 @@ class of a `p`-adic unit as its spinor norm, every integral isometry has spinor 
 In dimension at least two every unit square class arises from an integral proper isometry,
 because a binary form with unit coefficients represents every unit of `ℤ_[p]`. The image of the
 integral special orthogonal group under the spinor norm is therefore exactly the group of unit
-square classes. The spinor norm takes values in `Multiplicative (SquareClassGroup ℚ_[p])`, so the
-unit square classes are transported there along `multiplicativeSquareClassEquiv`.
+square classes. Both the spinor norm and `unitSquareClasses` use the literal quotient
+`ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ`.
 
 ## Main results
 
@@ -162,7 +162,7 @@ private theorem polar_basis_eq_zero {i j : ι} (hij : i ≠ j) : polar Q (b i) (
   have h : associated Q (b i) (b j) = 0 := hb hij
   rw [associated_apply] at h
   rw [polar]
-  simpa [invOf_eq_inv] using h
+  exact (isUnit_of_invertible (⅟(2 : ℚ_[p]))).smul_eq_zero.mp h
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- For an orthogonal basis of unit norms, the polar form is integral on the basis. -/
@@ -193,6 +193,41 @@ private theorem reflectionOrthogonal_mem_closure {v : V} [Invertible (Q v)]
     reflectionOrthogonal Q v ∈ Subgroup.closure (integralReflections Q b) :=
   Subgroup.subset_closure ⟨v, inferInstance, hv, hQv, rfl⟩
 
+omit [Fintype ι] [DecidableEq ι] hb hunit in
+/-- The second case of the reflection step. Let an isometry `g` map an integral vector `e` to an
+integral vector `f`, with `‖Q e‖ = 1` and `‖Q (f + e)‖ = 1`, and let `g` fix the basis vectors
+`b i` for `i ∈ s`, each orthogonal to `e`. Then some `r` in the closure of the integral
+reflections makes `r * g` fix `e` and every `b i` with `i ∈ s`. -/
+private theorem exists_mem_closure_mul_apply_basis_eq_of_norm_add_eq_one {g : orthogonalGroup Q}
+    {e f : V} {s : Set ι} (he : e ∈ Submodule.span (PadicInt.subring p) (Set.range b))
+    (hf : f ∈ Submodule.span (PadicInt.subring p) (Set.range b)) (hQe : ‖Q e‖ = 1)
+    (hnorm : ‖Q (f + e)‖ = 1) (hgf : (g : V ≃ₗ[ℚ_[p]] V) e = f)
+    (hfix : ∀ i ∈ s, (g : V ≃ₗ[ℚ_[p]] V) (b i) = b i) (horth : ∀ i ∈ s, polar Q e (b i) = 0) :
+    ∃ r ∈ Subgroup.closure (integralReflections Q b),
+      ((r * g : orthogonalGroup Q) : V ≃ₗ[ℚ_[p]] V) e = e ∧
+        ∀ i ∈ s, ((r * g : orthogonalGroup Q) : V ≃ₗ[ℚ_[p]] V) (b i) = b i := by
+  have hfe : Q f = Q e := hgf ▸ map_app_of_mem_orthogonalGroup g.2 e
+  let _ : Invertible (Q (f + e)) :=
+    invertibleOfNonzero (norm_ne_zero_iff.mp (hnorm.symm ▸ one_ne_zero))
+  let _ : Invertible (Q e) :=
+    invertibleOfNonzero (norm_ne_zero_iff.mp (hQe.symm ▸ one_ne_zero))
+  refine ⟨reflectionOrthogonal Q e * reflectionOrthogonal Q (f + e),
+    mul_mem (reflectionOrthogonal_mem_closure he hQe)
+      (reflectionOrthogonal_mem_closure (add_mem hf he) hnorm), ?_, fun i hi ↦ ?_⟩
+  · have hneg : reflection Q (f + e) ((g : V ≃ₗ[ℚ_[p]] V) e) = -e := by
+      rw [hgf]
+      exact reflection_add_apply_eq_neg_of_map_eq Q f e hfe
+    simp only [Subgroup.coe_mul, mul_apply_eq_comp, coe_reflectionOrthogonal]
+    rw [hneg, map_neg, reflection_apply_self, neg_neg]
+  · have horth' : polar Q f (b i) = 0 := by
+      rw [← hgf, ← hfix i hi, polar_apply_of_mem_orthogonalGroup g.2]
+      exact horth i hi
+    have hpolar : polar Q (f + e) (b i) = 0 := by
+      rw [polar_add_left, horth i hi, horth', add_zero]
+    simp only [Subgroup.coe_mul, mul_apply_eq_comp, coe_reflectionOrthogonal, hfix i hi]
+    rw [reflection_apply_of_polar_eq_zero Q _ hpolar,
+      reflection_apply_of_polar_eq_zero Q _ (horth i hi)]
+
 /-- **The reflection step.** An integral isometry fixing the basis vectors indexed by `s` can
 be multiplied on the left by integral reflections so that it fixes the basis vector `b j` as
 well, for any `j ∉ s`. -/
@@ -222,27 +257,12 @@ private theorem exists_mem_closure_mul_apply_basis_eq (hp : p ≠ 2) (s : Set ι
     refine ⟨reflectionOrthogonal Q (f - e),
       reflectionOrthogonal_mem_closure (sub_mem hf he) hnorm, ?_, fun i hi ↦ ?_⟩
     · simpa using reflection_sub_apply_eq_of_map_eq Q f e hfe
-    · simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal, hfix i hi]
+    · simp only [Subgroup.coe_mul, mul_apply_eq_comp, coe_reflectionOrthogonal, hfix i hi]
       apply reflection_apply_of_polar_eq_zero
       rw [polar_sub_left, horth i hi, horth' i hi, sub_zero]
   · -- Reflecting in `f + e` carries `f` to `-e`, and reflecting in `e` carries `-e` to `e`.
-    have hnorm : ‖Q (f + e)‖ = 1 := by rwa [add_comm]
-    let _ : Invertible (Q (f + e)) :=
-      invertibleOfNonzero (norm_ne_zero_iff.mp (hnorm.symm ▸ one_ne_zero))
-    let _ : Invertible (Q e) :=
-      invertibleOfNonzero (norm_ne_zero_iff.mp ((hunit j).symm ▸ one_ne_zero))
-    refine ⟨reflectionOrthogonal Q e * reflectionOrthogonal Q (f + e),
-      mul_mem (reflectionOrthogonal_mem_closure he (hunit j))
-        (reflectionOrthogonal_mem_closure (add_mem hf he) hnorm), ?_, fun i hi ↦ ?_⟩
-    · have hneg : reflection Q (f + e) ((g : V ≃ₗ[ℚ_[p]] V) e) = -e :=
-        reflection_add_apply_eq_neg_of_map_eq Q f e hfe
-      simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal]
-      rw [hneg, map_neg, reflection_apply_self, neg_neg]
-    · have hpolar : polar Q (f + e) (b i) = 0 := by
-        rw [polar_add_left, horth i hi, horth' i hi, add_zero]
-      simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal, hfix i hi]
-      rw [reflection_apply_of_polar_eq_zero Q _ hpolar,
-        reflection_apply_of_polar_eq_zero Q _ (horth i hi)]
+    exact exists_mem_closure_mul_apply_basis_eq_of_norm_add_eq_one he hf (hunit j)
+      (by rwa [add_comm]) rfl hfix horth
 
 /-- **Integral isometries are products of integral reflections.** For an odd prime `p` and an
 orthogonal basis of unit norms, the integral orthogonal subgroup is generated by the reflections
@@ -284,8 +304,7 @@ unit. -/
 theorem orthogonalSpinorNorm_mem_unitSquareClasses (hp : p ≠ 2) {g : orthogonalGroup Q}
     (hg : g ∈ integralOrthogonalSubgroup Q b) :
     orthogonalSpinorNorm Q hQ g ∈
-      (unitSquareClasses ℚ_[p]).map (N := Multiplicative (SquareClassGroup ℚ_[p]))
-        (multiplicativeSquareClassEquiv (K := ℚ_[p])).toMonoidHom := by
+      unitSquareClasses ℚ_[p] := by
   rw [integralOrthogonalSubgroup_eq_closure_reflectionOrthogonal hb hunit hp] at hg
   induction hg using Subgroup.closure_induction with
   | mem g hg =>
@@ -294,10 +313,8 @@ theorem orthogonalSpinorNorm_mem_unitSquareClasses (hp : p ≠ 2) {g : orthogona
     have hval := Padic.norm_eq_zpow_neg_valuation hv
     rw [hQv, eq_comm, zpow_eq_one_iff_right₀ (by exact_mod_cast (Fact.out : p.Prime).pos.le)
       (by exact_mod_cast (Fact.out : p.Prime).one_lt.ne'), neg_eq_zero] at hval
-    refine ⟨QuotientGroup.mk (unitOfInvertible (Q v)),
-      (mk_mem_unitSquareClasses_padic_iff p _).mpr (by simp [hval]), ?_⟩
     rw [orthogonalSpinorNorm_reflectionOrthogonal, squareClassHom_apply]
-    exact multiplicativeSquareClassEquiv_mk _
+    exact (mk_mem_unitSquareClasses_padic_iff p _).mpr (by simp [hval])
   | one => exact (map_one (orthogonalSpinorNorm Q hQ)).symm ▸ one_mem _
   | mul x y _ _ hx hy => exact (map_mul (orthogonalSpinorNorm Q hQ) x y).symm ▸ mul_mem hx hy
   | inv x _ hx => exact (map_inv (orthogonalSpinorNorm Q hQ) x).symm ▸ inv_mem hx
@@ -364,20 +381,18 @@ theorem map_spinorNorm_comap_integralOrthogonalSubgroup_eq_unitSquareClasses (hp
     [Nontrivial ι] :
     ((integralOrthogonalSubgroup Q b).comap (specialOrthogonalToOrthogonal Q)).map
       (spinorNorm Q hQ) =
-      (unitSquareClasses ℚ_[p]).map (N := Multiplicative (SquareClassGroup ℚ_[p]))
-        (multiplicativeSquareClassEquiv (K := ℚ_[p])).toMonoidHom := by
+      unitSquareClasses ℚ_[p] := by
   ext c
   constructor
   · rintro ⟨g, hg, rfl⟩
     rw [spinorNorm_apply]
     exact orthogonalSpinorNorm_mem_unitSquareClasses hb hunit hQ hp hg
-  · rintro ⟨c, hc, rfl⟩
+  · intro hc
     rw [unitSquareClasses_padic_eq_range] at hc
     obtain ⟨u, rfl⟩ := hc
     obtain ⟨g, hg, hgu⟩ := exists_spinorNorm_eq_squareClassHom hb hunit hQ hp u
     refine ⟨g, hg, ?_⟩
-    rw [hgu, squareClassHom_apply]
-    exact (multiplicativeSquareClassEquiv_mk _).symm
+    simpa only [squareClassHom_apply, MonoidHom.comp_apply, QuotientGroup.mk'_apply] using hgu
 
 end Orthogonal
 

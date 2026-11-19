@@ -54,11 +54,6 @@ namespace PopaZagier
 
 /-! ### The sums `T₃` and `T₄` on the coset of `diag(1, m)` -/
 
-private theorem le_of_chainWeight₄_ne_zero {w x y z : ℤ} (h : chainWeight₄ w x y z ≠ 0) :
-    w ≤ x ∧ x ≤ y ∧ y ≤ z := by
-  unfold chainWeight₄ at h
-  split_ifs at h <;> omega
-
 /-- A matrix `(a b; c d)` of determinant `m > 0` in `T₃` whose second row is divisible by `m` is
 `(0 -1; 1 0)` or `(0 -1; 1 -1)`, and then `m = 1`. -/
 private theorem eq_of_mem_T₃ {m a b c d : ℤ} (hm : 0 < m) (hdet : a * d - b * c = m)

@@ -20,11 +20,6 @@ integers.  The integrality condition is expressed using Mathlib's
 The form restricts to a canonical `ℤ`-bilinear form on the carrier.  Conversely, a finite
 `ℚ`-basis and an integral symmetric Gram matrix construct an integral lattice.
 
-## References
-
-* `TauCetiRoadmap/IntegralLattices/README.md`
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`
-
 ## Main definitions
 
 * `TauCeti.IntegralLattice`: an integral symmetric lattice in a rational vector space.
@@ -127,6 +122,12 @@ theorem finrank_carrier (L : IntegralLattice V) :
     Module.finrank ℤ L = Module.finrank ℚ V :=
   congr_arg Cardinal.toNat (Submodule.IsLattice.rank' ℚ L.carrier)
 
+/-- The ambient space of an integral lattice of rank zero is trivial. -/
+theorem subsingleton_of_finrank_eq_zero {L : IntegralLattice V} (h : Module.finrank ℤ L = 0) :
+    Subsingleton V := by
+  have := L.finiteDimensional
+  exact Module.finrank_zero_iff.mp (L.finrank_carrier ▸ h)
+
 /-- Two integral lattices are equal if their carriers and rational forms are equal. -/
 @[ext]
 theorem ext {L M : IntegralLattice V} (hcarrier : L.carrier = M.carrier)
@@ -136,6 +137,11 @@ theorem ext {L M : IntegralLattice V} (hcarrier : L.carrier = M.carrier)
   cases hcarrier
   cases hform
   rfl
+
+/-- Over a trivial ambient space there is only one integral lattice. -/
+instance [Subsingleton V] : Subsingleton (IntegralLattice V) :=
+  ⟨fun _ _ ↦ IntegralLattice.ext (Subsingleton.elim _ _) <| LinearMap.ext fun x ↦
+    LinearMap.ext fun _ ↦ by simp [Subsingleton.elim x 0]⟩
 
 /-- An integral lattice is nondegenerate when its ambient rational bilinear form is
 nondegenerate. This is a mixin rather than a field of `IntegralLattice`, so degenerate lattices

@@ -231,7 +231,8 @@ section RootInvariance
 
 variable (k : Type u) [CommRing k]
 
-private theorem tripledCharacter_injective : Function.Injective tripledCharacter := by
+/-- The twenty-four coordinate lines have distinct integral torus characters. -/
+theorem tripledCharacter_injective : Function.Injective tripledCharacter := by
   intro a b h
   apply d4TripledWeight_injective
   apply Finsupp.equivFunOnFinite.symm.injective

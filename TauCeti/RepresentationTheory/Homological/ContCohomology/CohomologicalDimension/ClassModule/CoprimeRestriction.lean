@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologicalDimension.ClassModule.ChangeOfGroup
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Corestriction.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicPow
 
@@ -43,7 +44,7 @@ theorem abelianizationProP_pow_bijective (hp : p.Prime) (V : Subgroup G)
   let hP : IsProP p (abelianizationProP p G V) :=
     isProP_maximalProPQuotient (p := p) (G := TopologicalAbelianization V)
   have hunit : IsUnit (m : ℤ_[p]) :=
-    PadicInt.isUnit_iff.mpr (PadicInt.norm_natCast_eq_one_iff.mpr hm.symm)
+    PadicInt.isUnit_natCast_of_coprime hm.symm
   let a : ℤ_[p]ˣ := hunit.unit
   have ha : (a : ℤ_[p]) = m := hunit.unit_spec
   have heq : (fun x : abelianizationProP p G V ↦ x ^ m) = hP.padicPowHomeomorph a := by
@@ -94,7 +95,7 @@ private theorem continuous_abelianizationProPNsmulEquiv_symm (hp : p.Prime) (V :
   let hP : IsProP p (abelianizationProP p G V) :=
     isProP_maximalProPQuotient (p := p) (G := TopologicalAbelianization V)
   have hunit : IsUnit (m : ℤ_[p]) :=
-    PadicInt.isUnit_iff.mpr (PadicInt.norm_natCast_eq_one_iff.mpr hm.symm)
+    PadicInt.isUnit_natCast_of_coprime hm.symm
   let a : ℤ_[p]ˣ := hunit.unit
   have ha : (a : ℤ_[p]) = m := hunit.unit_spec
   have hc : Continuous fun x : Additive (abelianizationProP p G V) ↦

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Basic
-public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2
+public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2.Basic
 
 /-!
 # Change of transversal for discrete tensor induction

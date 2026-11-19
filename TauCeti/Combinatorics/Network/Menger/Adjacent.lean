@@ -131,6 +131,55 @@ theorem card_le_card_add_card_of_isMixedSeparator [Fintype (Q s t)] {ι : Type*}
 
 section Attainment
 
+/-- Push internally disjoint paths avoiding every arrow from `s` to `t` into the original arrow
+family, and add the one-arrow path for each arrow from `s` to `t`. -/
+theorem exists_paths_of_withoutHom {ι : Type*} {F : Set (Σ v w, Q v w)}
+    (hF : ∀ e : Q s t, ⟨s, t, e⟩ ∈ F) (hst : s ≠ t)
+    (P : ι → ArrowWalk (WithoutHom F) s t) (hP : ∀ i, (P i).IsPath)
+    (hdisj : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j)) :
+    ∃ R : ι ⊕ Q s t → ArrowWalk Q s t, Function.Injective R ∧ (∀ i, (R i).IsPath) ∧
+      (Pairwise fun i j ↦ (R i).InternallyDisjoint (R j)) ∧
+      ∀ e, R (.inr e) = (ArrowWalk.nil s).cons e := by
+  have hadj : IsEmpty (WithoutHom F s t) := ⟨fun e ↦ e.2 (hF e.1)⟩
+  let φ := WithoutHom.incl F
+  let R : ι ⊕ Q s t → ArrowWalk Q s t :=
+    Sum.elim (fun i ↦ @Prefunctor.mapPath V ⟨WithoutHom F⟩ V ⟨Q⟩ φ s t (P i))
+      fun e ↦ (ArrowWalk.nil s).cons e
+  have hRl (i : ι) : (R (.inl i)).vertices = (P i).vertices :=
+    ArrowWalk.vertices_mapPath_of_obj_eq_id φ rfl (P i)
+  have hRr (e : Q s t) : R (.inr e) = (ArrowWalk.nil s).cons e := rfl
+  have hint (i : ι) : ∃ v ∈ (R (.inl i)).vertices, v ≠ s ∧ v ≠ t :=
+    hRl i ▸ (P i).exists_mem_vertices_ne_ne hst hadj
+  have hdisj' : Pairwise fun i j ↦ (R i).InternallyDisjoint (R j) := by
+    intro i j hij
+    rw [ArrowWalk.internallyDisjoint_def]
+    intro v hvi hvj
+    rcases i with i | _
+    · rcases j with j | _
+      · exact ArrowWalk.internallyDisjoint_def.1 (hdisj fun h ↦ hij (congrArg _ h)) v
+          (hRl i ▸ hvi) (hRl j ▸ hvj)
+      · simpa [hRr] using hvj
+    · simpa [hRr] using hvi
+  refine ⟨R, ?_, ?_, hdisj', hRr⟩
+  · have hleft : Function.Injective fun i ↦ R (.inl i) :=
+      injective_of_pairwise_internallyDisjoint
+        (hdisj'.comp_of_injective Sum.inl_injective) hint
+    rintro (i | e) (j | e') h
+    · exact congrArg Sum.inl (hleft h)
+    · obtain ⟨v, hv, hvs, hvt⟩ := hint i
+      rw [h, hRr] at hv
+      simp [hvs, hvt] at hv
+    · obtain ⟨v, hv, hvs, hvt⟩ := hint j
+      rw [← h, hRr] at hv
+      simp [hvs, hvt] at hv
+    · rw [hRr, hRr] at h
+      simpa using congrArg ArrowWalk.arrows h
+  · rintro (i | e)
+    · rw [ArrowWalk.isPath_def, hRl]
+      exact (ArrowWalk.isPath_def _).1 (hP i)
+    · rw [hRr]
+      simpa [ArrowWalk.isPath_def] using hst
+
 /-- **Menger's theorem for internally vertex-disjoint directed paths between possibly adjacent
 terminals.** Let `s ≠ t` be vertices of an arrow family on a finite vertex type, with finitely many
 arrows from `s` to `t`. For some `k`, there are a family of distinct directed `s`–`t` paths indexed
@@ -148,43 +197,10 @@ theorem exists_paths_isMixedSeparator_card_eq [Finite V] [Fintype (Q s t)] (hst 
   have hR : IsEmpty (WithoutHom F s t) := ⟨fun e ↦ e.2 (mem_arrowFinset.2 ⟨rfl, rfl⟩)⟩
   obtain ⟨k, P, X, -, hP, hdisj, hs, ht, hX, hk⟩ :=
     exists_paths_vertexSeparator_card_eq (Q := WithoutHom F) hst hR
-  let P' : Fin k ⊕ Q s t → ArrowWalk Q s t :=
-    Sum.elim (fun i ↦ @Prefunctor.mapPath V ⟨WithoutHom F⟩ V ⟨Q⟩ (WithoutHom.incl F) s t (P i))
-      fun e ↦ (ArrowWalk.nil s).cons e
-  have hP'l (i : Fin k) : (P' (.inl i)).vertices = (P i).vertices :=
-    ArrowWalk.vertices_mapPath_of_obj_eq_id _ rfl _
-  have hP'r (e : Q s t) : P' (.inr e) = (ArrowWalk.nil s).cons e := rfl
-  -- Every member of `P` visits a vertex other than `s` and `t`, unlike a single arrow.
-  have hint (i : Fin k) : ∃ v ∈ (P' (.inl i)).vertices, v ≠ s ∧ v ≠ t :=
-    hP'l i ▸ (P i).exists_mem_vertices_ne_ne hst hR
-  have hdisj' : Pairwise fun i j ↦ (P' i).InternallyDisjoint (P' j) := by
-    intro i j hij
-    rw [ArrowWalk.internallyDisjoint_def]
-    intro v hvi hvj
-    rcases i with i | _
-    · rcases j with j | _
-      · exact ArrowWalk.internallyDisjoint_def.1 (hdisj fun h ↦ hij (congrArg _ h)) v
-          (hP'l i ▸ hvi) (hP'l j ▸ hvj)
-      · simpa [hP'r] using hvj
-    · simpa [hP'r] using hvi
-  refine ⟨k, P', X, ?_, ?_, hdisj', hP'r, isMixedSeparator_iff.2 ⟨hs, ht, fun p ↦ ?_⟩, hk⟩
-  · rintro (i | e) (j | e') h
-    · by_contra hij
-      obtain ⟨v, hv, hvs, hvt⟩ := hint i
-      exact (ArrowWalk.internallyDisjoint_def.1 (hdisj' hij) v hv (h ▸ hv)).elim hvs hvt
-    · obtain ⟨v, hv, hvs, hvt⟩ := hint i
-      rw [h, hP'r] at hv
-      simp [hvs, hvt] at hv
-    · obtain ⟨v, hv, hvs, hvt⟩ := hint j
-      rw [← h, hP'r] at hv
-      simp [hvs, hvt] at hv
-    · rw [hP'r, hP'r] at h
-      simpa using congrArg ArrowWalk.arrows h
-  · rintro (i | e)
-    · rw [ArrowWalk.isPath_def, hP'l]
-      exact (ArrowWalk.isPath_def _).1 (hP i)
-    · rw [hP'r]
-      simpa [ArrowWalk.isPath_def] using hst
+  obtain ⟨P', hinj, hP', hdisj', hP'r⟩ := exists_paths_of_withoutHom
+    (F := F) (fun _ ↦ mem_arrowFinset.2 ⟨rfl, rfl⟩) hst P hP hdisj
+  refine ⟨k, P', X, hinj, hP', hdisj', hP'r,
+    isMixedSeparator_iff.2 ⟨hs, ht, fun p ↦ ?_⟩, hk⟩
   · -- A walk avoiding `X` and the arrows from `s` to `t` would survive in the deleted family.
     by_contra h
     simp only [not_or, not_exists, not_and, mem_arrowFinset] at h

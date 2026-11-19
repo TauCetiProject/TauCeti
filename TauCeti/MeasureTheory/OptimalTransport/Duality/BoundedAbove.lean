@@ -93,22 +93,18 @@ theorem ofReal_kantorovichDualValue_le_transportCost_of_null_compl {φ : X → �
 variable [TopologicalSpace X] [PolishSpace X] [BorelSpace X] [TopologicalSpace Y] [PolishSpace Y]
   [BorelSpace Y] [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {π : Measure (X × Y)}
 
-/-- **Real contact potentials of a cyclically monotone set.** Let `r` be a measurable real cost
-on a product of Polish spaces, and let a coupling `π` of two probability measures be concentrated
-on a Borel `r`-cyclically monotone set `S`. Then there are potentials `φ` (Borel) and `ψ`
-(a.e.-measurable) and measurable sets `A`, `B` of full measure such that `φ x + ψ y ≤ r (x, y)`
-on `A ×ˢ B` and `φ x + ψ y = r (x, y)` for `π`-a.e. `(x, y)`. The potential `φ` is a Borel
-modification of Rüschendorf's potential `TauCeti.rockafellarPotential r S p`, and `ψ` is the
-`r`-transform of its restriction to `A`. -/
-theorem IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone (hπ : IsCoupling π μ ν)
+omit [IsProbabilityMeasure ν] in
+/-- **A Borel potential for a cyclically monotone set.** If a coupling `π` is concentrated on a
+Borel `r`-cyclically monotone set `S`, there are a potential `φ₀` with `S` inside its
+`r`-superdifferential, a Borel real function `φ`, and a measurable `μ`-full set `A` on which `φ₀`
+is the real number `φ`. -/
+private theorem IsCoupling.exists_borel_potential_of_isCyclicallyMonotone (hπ : IsCoupling π μ ν)
     {r : X × Y → ℝ} (hr : Measurable r) {S : Set (X × Y)} (hSmeas : MeasurableSet S)
     (hS : IsCyclicallyMonotone r S) (haeS : ∀ᵐ z ∂π, z ∈ S) :
-    ∃ (φ : X → ℝ) (ψ : Y → ℝ) (A : Set X) (B : Set Y), MeasurableSet A ∧ MeasurableSet B ∧
-      μ Aᶜ = 0 ∧ ν Bᶜ = 0 ∧ Measurable φ ∧ AEMeasurable ψ ν ∧
-      (∀ x ∈ A, ∀ y ∈ B, φ x + ψ y ≤ r (x, y)) ∧ ∀ᵐ z ∂π, φ z.1 + ψ z.2 = r z := by
+    ∃ (φ₀ : X → EReal) (φ : X → ℝ) (A : Set X), S ⊆ cSuperdifferential r φ₀ ∧
+      MeasurableSet A ∧ μ Aᶜ = 0 ∧ Measurable φ ∧ ∀ x ∈ A, φ₀ x = (φ x : EReal) := by
   classical
   have hfst := hπ.measurePreserving_fst.quasiMeasurePreserving
-  have hsnd := hπ.measurePreserving_snd
   have hπ0 : π ≠ 0 := by
     rintro rfl
     exact IsProbabilityMeasure.ne_zero μ (by simpa using hπ.measurePreserving_fst.map_eq.symm)
@@ -137,8 +133,6 @@ theorem IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone (hπ : IsCoupling π
   have hμA : μ Aᶜ = 0 := by
     rw [hA, compl_compl, measure_toMeasurable]
     exact ae_iff.1 (hφ₀meas.ae_eq_mk.and hgbot)
-  have haeA : ∀ᵐ x ∂μ, x ∈ A := measure_eq_zero_iff_ae_notMem.1 hμA |>.mono fun _ h ↦ by
-    simpa using h
   set φ : X → ℝ := fun x ↦ (g x).toReal with hφ
   have hφA : ∀ x ∈ A, φ₀ x = (φ x : EReal) := by
     intro x hx
@@ -148,20 +142,33 @@ theorem IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone (hπ : IsCoupling π
     have htop : g x ≠ ⊤ :=
       hx'.1 ▸ ne_top_of_le_ne_top (EReal.coe_ne_top _) (rockafellarPotential_le_sub hp x)
     rw [hx'.1, hφ, EReal.coe_toReal htop hx'.2]
+  exact ⟨φ₀, φ, A, hsub, hAmeas, hμA, hg.ereal_toReal, hφA⟩
+
+/-- **Real contact potentials of a cyclically monotone set.** Let `r` be a measurable real cost
+on a product of Polish spaces, and let a coupling `π` of two probability measures be concentrated
+on a Borel `r`-cyclically monotone set `S`. Then there are potentials `φ` (Borel) and `ψ`
+(a.e.-measurable) and measurable sets `A`, `B` of full measure such that `φ x + ψ y ≤ r (x, y)`
+on `A ×ˢ B` and `φ x + ψ y = r (x, y)` for `π`-a.e. `(x, y)`. The potential `φ` is a Borel
+modification of Rüschendorf's potential `TauCeti.rockafellarPotential r S p`, and `ψ` is the
+`r`-transform of its restriction to `A`. -/
+theorem IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone (hπ : IsCoupling π μ ν)
+    {r : X × Y → ℝ} (hr : Measurable r) {S : Set (X × Y)} (hSmeas : MeasurableSet S)
+    (hS : IsCyclicallyMonotone r S) (haeS : ∀ᵐ z ∂π, z ∈ S) :
+    ∃ (φ : X → ℝ) (ψ : Y → ℝ) (A : Set X) (B : Set Y), MeasurableSet A ∧ MeasurableSet B ∧
+      μ Aᶜ = 0 ∧ ν Bᶜ = 0 ∧ Measurable φ ∧ AEMeasurable ψ ν ∧
+      (∀ x ∈ A, ∀ y ∈ B, φ x + ψ y ≤ r (x, y)) ∧ ∀ᵐ z ∂π, φ z.1 + ψ z.2 = r z := by
+  classical
+  have hfst := hπ.measurePreserving_fst.quasiMeasurePreserving
+  have hsnd := hπ.measurePreserving_snd
+  obtain ⟨φ₀, φ, A, hsub, hAmeas, hμA, hg, hφA⟩ :=
+    hπ.exists_borel_potential_of_isCyclicallyMonotone hr hSmeas hS haeS
+  have haeA : ∀ᵐ x ∂μ, x ∈ A := measure_eq_zero_iff_ae_notMem.1 hμA |>.mono fun _ h ↦ by
+    simpa using h
   obtain ⟨x₁, hx₁⟩ := haeA.exists
   -- The second potential is the `c`-transform of `φ` restricted to `A`.
   set g' : X → EReal := fun x ↦ if x ∈ A then (φ x : EReal) else ⊥ with hg'
   set ψ₀ := cTransform r g' with hψ₀
-  have hint : Measurable fun z : X × Y ↦ (r z : EReal) - g' z.1 := by
-    have heq : (fun z : X × Y ↦ (r z : EReal) - g' z.1) =
-        fun z ↦ if z.1 ∈ A then ((r z - φ z.1 : ℝ) : EReal) else ⊤ := by
-      funext z
-      by_cases hz : z.1 ∈ A <;> simp [hg', hz, EReal.coe_sub]
-    rw [heq]
-    exact Measurable.ite (hAmeas.preimage measurable_fst)
-      (measurable_coe_real_ereal.comp (hr.sub (hg.ereal_toReal.comp measurable_fst)))
-      measurable_const
-  have hψ₀meas : NullMeasurable ψ₀ ν := nullMeasurable_cTransform ν hint
+  have hψ₀meas : NullMeasurable ψ₀ ν := nullMeasurable_cTransform_ite ν hr hg hAmeas
   have hψ₀le y : ψ₀ y ≤ ((r (x₁, y) - φ x₁ : ℝ) : EReal) := by
     simpa [hg', hx₁, EReal.coe_sub] using cTransform_le r g' x₁ y
   have hcontact : ∀ z ∈ S, z.1 ∈ A → ψ₀ z.2 = ((r z - φ z.1 : ℝ) : EReal) := by
@@ -195,7 +202,7 @@ theorem IsCoupling.exists_ae_add_eq_of_isCyclicallyMonotone (hπ : IsCoupling π
     filter_upwards [haeS, haeAπ] with z hzS hzA
     simp only [hψ, hcontact z hzS hzA, EReal.toReal_coe]
     ring
-  refine ⟨φ, ψ, A, B, hAmeas, hBmeas, hμA, hνB, hg.ereal_toReal,
+  refine ⟨φ, ψ, A, B, hAmeas, hBmeas, hμA, hνB, hg,
     hψ₀meas.aemeasurable.ereal_toReal, fun x hx y hy ↦ ?_, hsum⟩
   -- Feasibility on `A ×ˢ B` is the `r`-transform inequality.
   have hle := add_cTransform_le r g' x y

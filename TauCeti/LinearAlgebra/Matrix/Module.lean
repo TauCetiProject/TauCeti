@@ -6,23 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Module
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
-# Vanishing of a family fixed by a matrix
+# Matrix modules
 
 A family `y : n → P` in a module over a ring `A` satisfying `yᵢ = ∑ⱼ Bᵢⱼ • yⱼ` is exactly a
-fixed point of the `Matrix n n A`-action on `n → P`, so it is killed by `1 - B`. If `1 - B` is
-a unit, `y` vanishes.
+fixed point of Mathlib's `Matrix n n A`-action on `n → P` (`Matrix.Module.matrixModule`), so it
+is killed by `1 - B`. If `1 - B` is a unit, `y` vanishes.
 
-This is pure algebra: no topology, and `A` need not be commutative. It is stated here rather
-than beside the topological criteria that produce `IsUnit (1 - B)`, so that consumers do not
-have to import a ring theory they do not use — in particular it applies where `P` is an
-abstract subquotient with no topology of its own.
+This is pure algebra: `P` carries no topology and `A` need not be commutative. Criteria producing
+`IsUnit (1 - B)`, such as topological nilpotence of the entries of `B`, live elsewhere, so this
+statement applies to abstract subquotients without importing them.
+
+The scoped column action on `ι → R` agrees with the matrix-to-endomorphism algebra
+equivalence; in particular its action map is bijective. This identifies the matrix module
+used by matrix Morita equivalence with the usual full endomorphism representation.
+
+Changing a family `v` by the rows of a matrix, `vⱼ ↦ ∑ i, A j i • vᵢ`, is compatible with matrix
+multiplication: changing by `A` and then by `B` is changing by `B * A`.
 
 ## Main results
 
 * `TauCeti.eq_zero_of_isUnit_one_sub_of_forall_eq_sum_smul`: a family fixed by `B` vanishes as
   soon as `1 - B` is a unit.
+* `Matrix.sum_mul_apply_smul`: two successive changes of a family by matrices `A` and then `B`
+  are the change by `B * A`.
 
 ## References
 
@@ -37,21 +46,42 @@ open scoped Matrix.Module
 
 namespace TauCeti
 
-/-- **Nakayama once `1 - B` is known to be a unit.** A family with `yᵢ = ∑ⱼ Bᵢⱼ • yⱼ` is killed by
-`1 - B` under the `Matrix n n A`-action on `n → P`, so invertibility of `1 - B` forces `y = 0`.
-
-Nothing topological appears: `P` carries no topology, and `A` is an arbitrary ring — the matrix
-action needs no commutativity. -/
+/-- **A family fixed by a matrix vanishes when `1 - B` is a unit.** If `y : n → P` satisfies
+`yᵢ = ∑ⱼ Bᵢⱼ • yⱼ` for every `i` and `1 - B` is invertible in `Matrix n n A`, then `y = 0`. The
+ring `A` need not be commutative. -/
 theorem eq_zero_of_isUnit_one_sub_of_forall_eq_sum_smul {A : Type*} [Ring A] {n : Type*}
     [Fintype n] [DecidableEq n] {P : Type*} [AddCommGroup P] [Module A P]
     {B : Matrix n n A} (hU : IsUnit (1 - B))
     {y : n → P} (hy : ∀ i, y i = ∑ j, B i j • y j) : y = 0 := by
-  have hrel : (1 - B) • y = 0 := by
-    funext i
-    simp only [Matrix.Module.smul_apply, Matrix.sub_apply, sub_smul, Finset.sum_sub_distrib,
-      Matrix.one_apply, ite_smul, zero_smul, Finset.sum_ite_eq, Finset.mem_univ, ite_true,
-      one_smul, Pi.zero_apply]
-    rw [← hy i, sub_self]
-  exact hU.smul_eq_zero.mp hrel
+  refine hU.smul_eq_zero.mp ?_
+  rw [sub_smul, one_smul, sub_eq_zero]
+  ext i
+  rw [Matrix.Module.smul_apply, ← hy i]
 
 end TauCeti
+
+/-- Two successive changes of frame, by `A` and then by `B`, are the change of frame by `B * A`. -/
+theorem Matrix.sum_mul_apply_smul {R M ι κ μ : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Fintype ι] [Fintype κ] (B : Matrix μ κ R) (A : Matrix κ ι R) (v : ι → M)
+    (j : μ) : ∑ l, (B * A) j l • v l = ∑ i, B j i • ∑ l, A i l • v l := by
+  simp_rw [Matrix.mul_apply, Finset.sum_smul, Finset.smul_sum, smul_smul]
+  exact Finset.sum_comm
+
+namespace Matrix.Module
+
+variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+
+/-- The scoped column action agrees with the usual matrix-to-endomorphism equivalence. -/
+theorem lsmul_eq_toLinAlgEquiv' :
+    (Algebra.lsmul R R (ι → R) : Matrix ι ι R →ₐ[R] _) =
+      Matrix.toLinAlgEquiv'.toAlgHom := by
+  ext a v i
+  simp [Matrix.Module.smul_apply, Matrix.mulVec, dotProduct]
+
+/-- The native column action is the full endomorphism algebra of the column space. -/
+theorem lsmul_bijective :
+    Function.Bijective (Algebra.lsmul R R (ι → R) : Matrix ι ι R →ₐ[R] _) := by
+  rw [lsmul_eq_toLinAlgEquiv']
+  exact Matrix.toLinAlgEquiv'.bijective
+
+end Matrix.Module

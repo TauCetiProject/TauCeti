@@ -164,7 +164,7 @@ theorem IsBounded.image_weightedC {T : Fin k → Set A} (hT : IsWeightFamily T) 
     push_cast [coe_weightedC, MvPowerSeries.coeff_mul_C]
     rfl
   rw [hcoe, mul_comm]
-  refine mul_mem_of_forall_mul_mul_mem (fun t ht u hu ↦ ?_) (hg ν)
+  refine mul_mem_of_mem_weightMul (fun t ht u hu ↦ ?_) (hg ν)
   have huW : u * a ∈ W.toAddSubgroup := hVW ⟨u, hV' hu, a, ha, rfl⟩
   have hassoc : a * (t * u) = t * (u * a) := by ring
   rw [hassoc]

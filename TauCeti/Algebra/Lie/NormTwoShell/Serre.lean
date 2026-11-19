@@ -92,8 +92,8 @@ theorem ad_root_pow_lie_root (hB : B.PosDef) (hev : ∀ i, Even (B i i)) {a b : 
   by_cases heq : a = b
   · subst heq
     rw [ShellLieAlgebra.lie_self hS hev, map_zero]
-  have hle := hB.dotProduct_mulVec_le_one hev a.2 b.2 (Subtype.coe_injective.ne heq)
-  have hge := hB.neg_one_le_dotProduct_mulVec hev a.2 b.2 fun h ↦ hab (by rw [h, neg_add_cancel])
+  have hle := hB.dotProduct_mulVec_le_one a.2 b.2 (Subtype.coe_injective.ne heq)
+  have hge := hB.neg_one_le_dotProduct_mulVec a.2 b.2 fun h ↦ hab (by rw [h, neg_add_cancel])
   rcases (by omega : 0 ≤ (a : I → ℤ) ⬝ᵥ B *ᵥ b ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1) with hp | hp
   · rw [root_lie_root, rootBracket_eq_zero_of_nonneg hS hp, map_zero]
   -- The string `b, a + b` stops at `a + b`, which pairs to `1` with `a`.
@@ -204,7 +204,7 @@ theorem lieSpan_chevalleyE_chevalleyF_eq_top (hB : B.PosDef) (hdiag : ∀ i, B i
   -- The positive root vectors, by height induction.
   have hpos (a : I → ℤ) (ha : a ∈ B.normTwoShell) (hnn : 0 ≤ a) : root B ⟨a, ha⟩ ∈ K := by
     refine PosDef.normTwoShell_nonneg_induction (motive := fun a ↦ ∀ ha, root B ⟨a, ha⟩ ∈ K) hB
-      hdiag hoff (fun i _ ↦ hE i) (fun a i ha _ hai ih _ ↦ step (hE i) (ih ha) ?_) ha hnn ha
+      hdiag (fun i _ ↦ hE i) (fun a i ha _ hai ih _ ↦ step (hE i) (ih ha) ?_) ha hnn ha
     have hm : Pi.single i 1 + a ∈ B.normTwoShell := by rwa [add_comm]
     -- The bracket `⁅Eᵢ, x_a⁆` lands on the root `αᵢ + a`; the induction indexes it as `a + αᵢ`.
     have hc : (⟨_, hm⟩ : B.normTwoShell) = ⟨_, hai⟩ := Subtype.ext (add_comm _ _)
@@ -213,7 +213,7 @@ theorem lieSpan_chevalleyE_chevalleyF_eq_top (hB : B.PosDef) (hdiag : ∀ i, B i
   -- The negative root vectors, by height induction on their negatives.
   have hneg (a : I → ℤ) (ha : -a ∈ B.normTwoShell) (hnn : 0 ≤ a) : root B ⟨-a, ha⟩ ∈ K := by
     refine PosDef.normTwoShell_nonneg_induction (motive := fun a ↦ ∀ ha, root B ⟨-a, ha⟩ ∈ K) hB
-      hdiag hoff (fun i _ ↦ hF i) (fun a i ha _ hai ih _ ↦ step (hF i) (ih ?_) ?_)
+      hdiag (fun i _ ↦ hF i) (fun a i ha _ hai ih _ ↦ step (hF i) (ih ?_) ?_)
       (neg_mem_normTwoShell.mp ha) hnn ha
     · exact neg_mem_normTwoShell.mpr ha
     have hm : -Pi.single i 1 + -a ∈ B.normTwoShell := by

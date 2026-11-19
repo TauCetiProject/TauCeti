@@ -14,6 +14,7 @@ import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Biholomorph
 import TauCeti.Analysis.Complex.Conformal.SimplyConnected
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Jordan domains, and the domains a conformal map takes onto a disc
@@ -26,9 +27,8 @@ domain.
 
 ## Why the converse is the accessible half
 
-Layer **L5** of the conformal-mapping roadmap (`TauCetiRoadmap/ConformalMapping/README.md`) is
-Carathéodory's theorem: *the Riemann map of a Jordan domain extends to a homeomorphism of the
-closures*. Both directions of that correspondence pass through the same object, the boundary
+Carathéodory's theorem says that *the Riemann map of a Jordan domain extends to a homeomorphism of
+the closures*. Both directions of that correspondence pass through the same object, the boundary
 homeomorphism `TauCeti.closureHomeomorph`, but they are not of the same difficulty. Producing the
 extension is the hard direction — it needs the boundary geometry to control the cluster sets of the
 map, which is where `Conformal/ClusterSet.lean` and the local connectivity of the boundary enter,
@@ -41,9 +41,9 @@ the extension.
 
 The result is exactly the statement that Carathéodory's hypothesis is not merely sufficient but
 necessary: among bounded domains, "conformally a disc, with the map extending to a homeomorphism of
-the closures" implies "Jordan". It is what makes the L5 milestone a *correspondence* rather than a
-one-way sufficient condition, and it is the form in which the boundary hypothesis is checked in
-practice, since a Riemann map is rarely available in closed form while its boundary values often
+the closures" implies "Jordan". It is what makes Carathéodory's theorem a *correspondence* rather
+than a one-way sufficient condition, and it is the form in which the boundary hypothesis is checked
+in practice, since a Riemann map is rarely available in closed form while its boundary values often
 are.
 
 ## Main definitions
@@ -58,12 +58,14 @@ are.
   and the one Carathéodory's theorem compares every other Jordan domain to.
 * `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff` — the inside of a Jordan curve is a
   Jordan domain.
+* `TauCeti.IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull` — the outside
+  of a Jordan curve, inverted about a point of the inside and completed by `0`, is a Jordan domain.
 * `TauCeti.IsJordanDomain.isSimplyConnected` — a Jordan domain is simply connected, its frontier
   being connected; so it satisfies the hypotheses of the Riemann mapping theorem.
 * `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier` — the boundary of a Jordan domain is
-  locally connected, which is the hypothesis the *hard* direction of the L5 milestone runs on:
-  Carathéodory's continuity theorem produces a continuous extension of the Riemann map exactly for
-  a locally connected boundary.
+  locally connected, which is the hypothesis the *hard* direction of Carathéodory's theorem runs on:
+  Carathéodory's continuity theorem produces a continuous extension of the Riemann map exactly for a
+  locally connected boundary.
 * `TauCeti.IsJordanDomain.isUniformlyLocallyConnected_frontier` — the same hypothesis in the
   uniform `ε`–`δ` form that proof actually consumes, available because the boundary is compact.
 * `TauCeti.isJordanCurve_frontier_of_isJordanCurve_frontier_image`,
@@ -75,21 +77,10 @@ are.
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, the results below are stated for maps of `ℂ`, as in
-`Conformal/BoundaryCorrespondence.lean`; the Jordan-curve vocabulary they are phrased in, together
-with the circle that models it, is in `TauCeti/Topology/JordanCurve/Basic.lean`, where the
-predicate and its transfer lemmas are stated for an arbitrary topological space.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and the
-pinned Mathlib has no Jordan-curve vocabulary at all. So this file is new Lean formalization rather
-than a temporary shim. It consumes, through `Conformal/BoundaryCorrespondence.lean`, the L0–L3 shim
-`TauCeti.isOpen_image_of_differentiableOn_of_injOn`, to be refactored onto Mathlib once the
-upstream work lands.
+The results below are stated for maps of `ℂ`, as in `Conformal/BoundaryCorrespondence.lean`; the
+Jordan-curve vocabulary they are phrased in, together with the circle that models it, is in
+`TauCeti/Topology/JordanCurve/Basic.lean`, where the predicate and its transfer lemmas are stated
+for an arbitrary topological space.
 
 ## References
 
@@ -159,6 +150,38 @@ theorem IsJordanCurve.isJordanDomain_filledHull_sdiff {C : Set ℂ} (hC : IsJord
   isBounded := (isBounded_filledHull.mpr hC.isCompact.isBounded).subset sdiff_subset
   isJordanCurve_frontier := hC.frontier_filledHull_sdiff.symm ▸ hC
 
+/-- **The inverted outside of a Jordan curve is a Jordan domain.** Inverting the outside
+`(filledHull C)ᶜ` of a Jordan curve `C ⊆ ℂ` about a point `p` of its inside and adding `0`, the
+image of infinity, gives a bounded domain whose frontier, the image of `C`
+(`TauCeti.IsJordanCurve.frontier_insert_zero_image_inv_sub_compl_filledHull`), is a Jordan
+curve. -/
+theorem IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull {C : Set ℂ}
+    (hC : IsJordanCurve C) {p : ℂ} (hp : p ∈ filledHull C \ C) :
+    IsJordanDomain (insert 0 ((fun z : ℂ => (z - p)⁻¹) '' (filledHull C)ᶜ)) := by
+  have hpU := hC.notMem_closure_compl_filledHull hp
+  have hUc : Bornology.IsBounded (filledHull C)ᶜᶜ := by
+    rw [compl_compl]
+    exact isBounded_filledHull.mpr hC.isCompact.isBounded
+  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
+    rw [Complex.rank_real_complex]
+    exact Cardinal.one_lt_two
+  have hUb : ¬Bornology.IsBounded (filledHull C)ᶜ := fun h =>
+    NormedSpace.unbounded_univ ℝ ℂ (by simpa using h.union hUc)
+  refine ⟨isOpen_insert_zero_image_inv_sub hC.isClosed.isClosed_filledHull.isOpen_compl hUc,
+    ?_, (isBounded_image_inv_sub hpU).insert 0, ?_⟩
+  · -- the inverted outside is connected, and `0`, the image of infinity, lies in its closure
+    have hcont : ContinuousOn (fun z : ℂ => (z - p)⁻¹) (filledHull C)ᶜ :=
+      ContinuousOn.inv₀ (by fun_prop) fun z hz =>
+        sub_ne_zero.mpr fun h => hpU (h ▸ subset_closure hz)
+    refine ((isConnected_compl_filledHull hrank hC.isCompact.isBounded).image _
+      hcont).subset_closure (subset_insert _ _) (insert_subset ?_ subset_closure)
+    rw [closure_image_inv_sub hUb]
+    exact mem_insert _ _
+  · rw [hC.frontier_insert_zero_image_inv_sub_compl_filledHull hp]
+    exact hC.image
+      (ContinuousOn.inv₀ (by fun_prop) fun z hz => sub_ne_zero.mpr fun h => hp.2 (h ▸ hz))
+      (inv_injective.comp (sub_left_injective (b := p))).injOn
+
 /-! ## Elementary consequences of being a Jordan domain -/
 
 /-- A Jordan domain is nonempty. -/
@@ -178,10 +201,9 @@ theorem IsJordanDomain.frontier_nonempty (h : IsJordanDomain U) : (frontier U).N
 (`TauCeti.IsJordanCurve.locallyConnectedSpace`).
 
 This is the hypothesis under which Carathéodory's continuity theorem produces the continuous
-extension, so it is what the hard direction of the L5 milestone asks of a Jordan domain; the
-converse reading — that any continuous extension *carries* local connectedness to the image
-boundary — is `TauCeti.locallyConnectedSpace_frontier_image` in
-`Conformal/LocallyConnectedBoundary.lean`. -/
+extension, so it is what the hard direction of Carathéodory's theorem asks of a Jordan domain; the
+converse reading — that any continuous extension *carries* local connectedness to the image boundary
+— is `TauCeti.locallyConnectedSpace_frontier_image` in `Conformal/LocallyConnectedBoundary.lean`. -/
 theorem IsJordanDomain.locallyConnectedSpace_frontier (h : IsJordanDomain U) :
     LocallyConnectedSpace (frontier U) :=
   h.isJordanCurve_frontier.locallyConnectedSpace
@@ -191,10 +213,10 @@ joined by connected subsets of the boundary that are small at a rate independent
 
 This is `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier` upgraded by
 `IsCompact.isUniformlyLocallyConnected`, costing nothing because the boundary of a bounded set is
-compact. The uniform form is what the hard direction of the L5 milestone consumes: Carathéodory's
-continuity theorem controls the image of a crosscut by joining its two
-boundary endpoints inside a small connected piece of `frontier U`, and the estimate has to be
-uniform over all crosscuts at once. -/
+compact. The uniform form is what the hard direction of Carathéodory's theorem consumes:
+Carathéodory's continuity theorem controls the image of a crosscut by joining its two boundary
+endpoints inside a small connected piece of `frontier U`, and the estimate has to be uniform over
+all crosscuts at once. -/
 theorem IsJordanDomain.isUniformlyLocallyConnected_frontier (h : IsJordanDomain U) :
     IsUniformlyLocallyConnected (frontier U) :=
   haveI := h.locallyConnectedSpace_frontier
@@ -245,10 +267,9 @@ theorem isJordanCurve_frontier_of_isJordanCurve_frontier_image (hUo : IsOpen U)
 that a holomorphic map carries onto a connected set with Jordan frontier, extending continuously
 and injectively to the closure, is itself a Jordan domain.
 
-Carathéodory's theorem — layer **L5** of the conformal-mapping roadmap — is the converse for the
-disc: for a Jordan domain such an extension *exists*. Together the two say that, among bounded
-domains, being a Jordan domain is exactly the condition under which the Riemann map extends to a
-homeomorphism of the closures.
+Carathéodory's theorem is the converse for the disc: for a Jordan domain such an extension *exists*.
+Together the two say that, among bounded domains, being a Jordan domain is exactly the condition
+under which the Riemann map extends to a homeomorphism of the closures.
 
 Only two of the four properties of a Jordan domain are asked of the image, since the other two are
 already carried across by `f`: the image of an open set under an injective holomorphic map is open,

@@ -71,7 +71,7 @@ private theorem exists_isPinLift_toMatrix'_reflection
   convert isPinLift_pinVec hu using 1
   rw [toMatrix'_reflection, invOf_eq_inv, hs]
   ext i j
-  simp only [reflectionMatrix_apply, Matrix.sub_apply, one_apply, Matrix.smul_apply,
+  simp only [reflectionMatrix_apply, Matrix.sub_apply, Matrix.one_apply, Matrix.smul_apply,
     vecMulVec_apply, smul_eq_mul, mul_inv]
   ring
 

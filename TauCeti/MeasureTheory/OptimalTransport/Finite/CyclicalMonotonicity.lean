@@ -42,9 +42,6 @@ theorem `TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone`.
   §1.1.2 and §2.3.
 * W. Schachermayer and J. Teichmann, *Characterization of optimal transport plans for the
   Monge--Kantorovich problem*, Proc. Amer. Math. Soc. 137 (2009), 519--529.
-
-This is the finite optimal-support direction of Layer 2, item 7 of the optimal-transport
-roadmap.
 -/
 
 public section

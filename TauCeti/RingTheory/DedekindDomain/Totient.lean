@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.Factorization
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import Mathlib.Algebra.Group.Pi.Units
-import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
+import TauCeti.RingTheory.Ideal.Quotient.Totient
 
 /-!
 # Euler's totient for ideals of a Dedekind domain
@@ -22,10 +22,12 @@ The set of primes dividing `I` is passed as a `Finset` `S` together with the cha
 `∀ v, v ∈ S ↔ v.asIdeal ∣ I`, so that any concrete description of the prime divisors of `I` can
 be used directly.
 
+The computation is local: by the Chinese remainder theorem `(R ⧸ I)ˣ` splits into the units of the
+quotients `R ⧸ 𝔭 ^ e`, which are counted by `Ideal.card_units_quotient_pow_mul_card_quotient`
+for a maximal ideal of an arbitrary commutative ring.
+
 ## Main results
 
-* `Ideal.card_units_quotient_pow_mul_absNorm`: `#(R ⧸ P ^ e)ˣ · N P = N (P ^ e) · (N P - 1)` for a
-  maximal ideal `P` and `e ≠ 0`.
 * `Ideal.card_units_quotient_mul_prod_absNorm`: `#(R ⧸ I)ˣ · ∏_{𝔭 ∈ S} N 𝔭 = N I · ∏_{𝔭 ∈ S}
   (N 𝔭 - 1)` in `ℕ`, the analogue of `Nat.totient_mul_prod_primeFactors`.
 * `Ideal.card_units_quotient_eq_absNorm_mul_prod`: `#(R ⧸ I)ˣ = N I · ∏_{𝔭 ∈ S} (1 - (N 𝔭)⁻¹)`
@@ -40,32 +42,7 @@ namespace Ideal
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Infinite R]
 
-/-- **Units of the quotient by a prime power.** For a maximal ideal `P` and `e ≠ 0`,
-`#(R ⧸ P ^ e)ˣ · N P = N (P ^ e) · (N P - 1)` in `ℕ`: the non-units of the local ring `R ⧸ P ^ e`
-are the residues lying in `P`, which make up `1 / N P` of the quotient. -/
-theorem card_units_quotient_pow_mul_absNorm (P : Ideal R) [P.IsMaximal] {e : ℕ} (he : e ≠ 0)
-    [Finite (R ⧸ P ^ e)] :
-    Nat.card (R ⧸ P ^ e)ˣ * absNorm P = absNorm (P ^ e) * (absNorm P - 1) := by
-  classical
-  let f : R ⧸ P ^ e →+* R ⧸ P := Ideal.Quotient.factor (Ideal.pow_le_self he)
-  have hunit (x : R ⧸ P ^ e) : IsUnit x ↔ ¬ f x = 0 := by
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Ideal.Quotient.isUnit_mk_pow_iff_notMem P he]
-    simp [f, Ideal.Quotient.eq_zero_iff_mem]
-  have hA : Nat.card (R ⧸ P ^ e) = Nat.card (R ⧸ P) * Nat.card f.toAddMonoidHom.ker := by
-    rw [AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup f.toAddMonoidHom.ker]
-    exact congrArg (· * _) (Nat.card_congr (QuotientAddGroup.quotientKerEquivOfSurjective
-      f.toAddMonoidHom (Ideal.Quotient.factor_surjective (pow_le_self he))).toEquiv)
-  have hU : Nat.card (R ⧸ P ^ e)ˣ + Nat.card f.toAddMonoidHom.ker = Nat.card (R ⧸ P ^ e) := by
-    rw [Nat.card_congr (Equiv.sumCompl fun x : R ⧸ P ^ e ↦ IsUnit x).symm, Nat.card_sum,
-      Nat.card_congr (Submonoid.unitsTypeEquivIsUnitSubmonoid (M := R ⧸ P ^ e)).toEquiv]
-    congr 1
-    exact Nat.card_congr (Equiv.subtypeEquivRight (p := (· ∈ f.toAddMonoidHom.ker))
-      (q := fun x ↦ ¬ IsUnit x) fun x ↦ by simp [hunit])
-  simp only [absNorm_apply, Submodule.cardQuot_apply, Nat.mul_sub_one]
-  exact Nat.eq_sub_of_add_eq (by nth_rw 2 [← hU]; rw [hA]; ring)
-
-private theorem card_units_quotient_mul_prod_absNorm_of_prod_eq (I : Ideal R) [Finite (R ⧸ I)]
+private theorem card_units_quotient_mul_prod_absNorm_of_prod_eq (I : Ideal R)
     {S : Finset (HeightOneSpectrum R)} {e : HeightOneSpectrum R → ℕ} (he : ∀ v ∈ S, e v ≠ 0)
     (hprod : ∏ v ∈ S, v.asIdeal ^ e v = I) : Nat.card (R ⧸ I)ˣ * ∏ v ∈ S, absNorm v.asIdeal =
       absNorm I * ∏ v ∈ S, (absNorm v.asIdeal - 1) := by
@@ -75,9 +52,8 @@ private theorem card_units_quotient_mul_prod_absNorm_of_prod_eq (I : Ideal R) [F
     Finset.prod_coe_sort S fun v ↦ Nat.card (R ⧸ v.asIdeal ^ e v)ˣ, ← hprod, map_prod,
     ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
   refine Finset.prod_congr rfl fun v hv ↦ ?_
-  have : Finite (R ⧸ v.asIdeal ^ e v) :=
-    Finite.of_surjective _ ((Function.surjective_eval (⟨v, hv⟩ : S)).comp φ.surjective)
-  exact card_units_quotient_pow_mul_absNorm v.asIdeal (he v hv)
+  simpa only [absNorm_eq_natCard] using
+    card_units_quotient_pow_mul_card_quotient v.asIdeal (he v hv)
 
 /-- **Euler's totient for ideals**, multiplicative form: if `S` is the set of height-one primes
 dividing `I` and `R ⧸ I` is finite, then `#(R ⧸ I)ˣ · ∏_{𝔭 ∈ S} N 𝔭 = N I · ∏_{𝔭 ∈ S} (N 𝔭 - 1)`.

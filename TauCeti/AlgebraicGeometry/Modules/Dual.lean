@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Dualizable
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Dual
-public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
+public import TauCeti.AlgebraicGeometry.Modules.InternalHom.GlobalSections
 
 /-!
 # Duality for sheaves of modules on a scheme
@@ -94,6 +94,14 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_apply
   rw [Scheme.Modules.dualHomUnitEquiv, ExactPairing.homUnitEquiv_apply,
     exactPairingOfIsIsoDualTensorIhom_coevaluation]
 
+/-- The zero functional on the dual corresponds to the zero section of `M`. -/
+@[simp high]
+theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_zero :
+    Scheme.Modules.dualHomUnitEquiv M 0 = 0 := by
+  let _ : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
+  simp only [Scheme.Modules.dualHomUnitEquiv_apply, MonoidalPreadditive.zero_whiskerRight,
+    Limits.comp_zero, Limits.zero_comp]
+
 /-- The functional on the dual of `M` of a global section `s` is evaluation at `s`. -/
 @[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_symm_apply
@@ -121,6 +129,20 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_pre_comp
     Scheme.Modules.dualHomUnitEquiv N ((pre b).app (𝟙_ X.Modules) ≫ φ) =
       Scheme.Modules.dualHomUnitEquiv M φ ≫ b := by
   rw [← Equiv.eq_symm_apply, Scheme.Modules.dualHomUnitEquiv_symm_comp, Equiv.symm_apply_apply]
+
+/-- Multiplication of a functional on the dual by a global function corresponds to
+multiplication of its associated section by that function. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv_comp_globalSectionsSmul
+    (M : X.Modules) [M.IsLocallyFree] [M.IsFiniteType]
+    (φ : (ihom M).obj (𝟙_ X.Modules) ⟶ 𝟙_ X.Modules) (c : Γ(X, ⊤)) :
+    Scheme.Modules.dualHomUnitEquiv M (φ ≫ Scheme.Modules.globalSectionsSmul _ c) =
+      Scheme.Modules.dualHomUnitEquiv M φ ≫ Scheme.Modules.globalSectionsSmul M c := by
+  have h : (pre (Scheme.Modules.globalSectionsSmul M c)).app (𝟙_ X.Modules) ≫ φ =
+      φ ≫ Scheme.Modules.globalSectionsSmul _ c := by
+    rw [Scheme.Modules.pre_globalSectionsSmul, Scheme.Modules.ihom_map_globalSectionsSmul]
+    exact Scheme.Modules.globalSectionsSmul_naturality φ c
+  exact (congrArg (Scheme.Modules.dualHomUnitEquiv M) h.symm).trans
+    (Scheme.Modules.dualHomUnitEquiv_pre_comp φ (Scheme.Modules.globalSectionsSmul M c))
 
 end DualHomUnitEquiv
 

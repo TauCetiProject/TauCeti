@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Order.PartialSups
 import Mathlib.Order.SuccPred.Nat
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Path-connected unions and intersections
@@ -18,11 +19,17 @@ connected: it is a member of the family or `C` itself. This is the hypothesis on
 intersections in the generation half of the Seifert--van Kampen theorem, and the form in which it
 holds for the summands of a wedge sum.
 
+Every space has a choice of base point in each path component, the representative of its class
+in `ZerothHomotopy`.
+
 Finite partial unions are path connected when each member is path connected and each new
 member meets the preceding union. The partial unions use Mathlib's `partialSups`.
 
 If a set is covered by two path-connected subsets but is not itself path connected, then each of
 the two subsets is a path component of it.
+
+A function which, near each point of a path, agrees with its value at that point takes the same
+value at the two ends of the path.
 
 ## Main declarations
 
@@ -31,11 +38,14 @@ the two subsets is a path component of it.
 * `TauCeti.isPathConnected_partialSups`: path connectedness of successive finite unions.
 * `IsPathConnected.pathComponentIn_eq_of_not_isPathConnected`: if a set that is not path connected
   is covered by two path-connected subsets, each of them is one of its path components.
+* `TauCeti.exists_pathComponent_representative`: a choice of base point in each path component.
+* `Path.eq_of_eventually_eq`: a function locally constant along a path takes the same value at its
+  two ends.
 -/
 
 public section
 
-open Set
+open Set Topology
 
 namespace TauCeti
 
@@ -79,4 +89,17 @@ theorem _root_.IsPathConnected.pathComponentIn_eq_of_not_isPathConnected {A B : 
     (hABC hz).elim (fun hzB ↦ hB.joinedIn _ hx _ hzB |>.mono hBA)
       (fun hzC ↦ (hq : JoinedIn A _ q).trans ((hC.joinedIn _ hqC _ hzC).mono hCA))⟩
 
+/-- **Base points of path components.** There is a map sending each point to a point joined to
+it, constant on path components. -/
+theorem exists_pathComponent_representative :
+    ∃ b : X → X, (∀ y, Joined (b y) y) ∧ ∀ {x y}, Joined x y → b x = b y :=
+  ⟨fun y ↦ (Quotient.mk (pathSetoid X) y).out, fun y ↦ Quotient.mk_out (s := pathSetoid X) y,
+    fun h ↦ congrArg Quotient.out (Quotient.sound (s := pathSetoid X) h)⟩
+
 end TauCeti
+
+/-- A function which, near each point of a path, agrees with its value at that point takes the
+same value at the two ends of the path. -/
+theorem Path.eq_of_eventually_eq {X α : Type*} [TopologicalSpace X] {f : X → α} {x y : X}
+    (γ : Path x y) (h : ∀ t, ∀ᶠ s in 𝓝 t, f (γ s) = f (γ t)) : f x = f y := by
+  simpa using ((IsLocallyConstant.iff_eventually_eq _).2 h).apply_eq_of_preconnectedSpace 0 1

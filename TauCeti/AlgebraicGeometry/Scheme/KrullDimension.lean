@@ -57,6 +57,8 @@ an irreducibility assumption on the group.
   scheme is the supremum of the Krull dimensions of the members of an open cover.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_range_of_isPreimmersion`: the image of a
   preimmersion has the Krull dimension of its source.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk`: the Krull
+  dimension of an open subscheme is the supremum of the dimensions of its local rings.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_ne_top_of_locallyOfFiniteType`: a quasi-compact
   scheme locally of finite type over a field has finite Krull dimension.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_pullback_Spec_map_of_field`: the Krull dimension
@@ -105,6 +107,16 @@ has the Krull dimension of its image. -/
 theorem topologicalKrullDim_range_of_isPreimmersion {X Y : Scheme.{u}} (f : X ⟶ Y)
     [IsPreimmersion f] : topologicalKrullDim (Set.range f) = topologicalKrullDim X :=
   f.isEmbedding.toHomeomorph.symm.isHomeomorph.topologicalKrullDim_eq
+
+/-- The Krull dimension of an open subscheme `U` of `X` is the supremum of the Krull dimensions
+of the local rings of `X` at the points of `U`. -/
+theorem topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk {X : Scheme.{u}} (U : X.Opens) :
+    topologicalKrullDim U = ⨆ x : U, ringKrullDim (X.presheaf.stalk x) := by
+  -- `U` is the underlying space of the open subscheme `U.toScheme`, whose point `x` is sent to
+  -- `x` itself by the inclusion `U.ι`
+  refine (topologicalKrullDim_eq_iSup_coheight U.toScheme).trans (iSup_congr fun x ↦ ?_)
+  rw [ringKrullDim_stalk_eq_coheight]
+  exact congrArg _ (coheight_eq_of_isOpenImmersion U.ι (x := x)).symm
 
 /-- A quasi-compact scheme locally of finite type over a field has finite Krull dimension. -/
 theorem topologicalKrullDim_ne_top_of_locallyOfFiniteType {K : Type u} [Field K]

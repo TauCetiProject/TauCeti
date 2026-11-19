@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Algebra.QuadraticAlgebra.AlgEquiv
-public import TauCeti.Algebra.QuadraticAlgebra.Star
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.Analysis.Real.Sqrt
 
@@ -18,7 +17,8 @@ For a rational `a ≤ 0`, the model `QuadraticAlgebra ℚ a 0` of `ℚ(√a)` ha
 complex embedding `QuadraticAlgebra.complexEmbedding`, sending the generator `ω` to `√(-a) · i`,
 the square root of `a` with nonnegative imaginary part. Every complex embedding of the model is
 this one or its complex conjugate, and complex conjugation of the distinguished embedding is
-precomposition with the quadratic involution `QuadraticAlgebra.starAe`. For a nonsquare `a < 0`
+precomposition with the quadratic involution `QuadraticAlgebra.starAlgEquiv`. For a nonsquare
+`a < 0`
 the model is an imaginary quadratic field: the two embeddings are distinct and are told apart by
 the sign of the imaginary part of the image of `ω`, so the field has a single infinite place, which
 is complex, and its signature is `(0, 1)`.
@@ -30,8 +30,8 @@ chosen square root of the radicand lies in the upper half-plane.
 
 * `QuadraticAlgebra.complexEmbedding`: the embedding `ω ↦ √(-a) · i`.
 * `QuadraticAlgebra.complexEmbedding_star`: it intertwines `star` with complex conjugation.
-* `QuadraticAlgebra.algHom_eq_or_eq_comp_starAe`: every `ℚ`-algebra map to `ℂ` is the
-  distinguished embedding or its precomposition with `starAe`.
+* `QuadraticAlgebra.algHom_eq_or_eq_comp_starAlgEquiv`: every `ℚ`-algebra map to `ℂ` is the
+  distinguished embedding or its precomposition with `starAlgEquiv`.
 * `QuadraticAlgebra.complexEmbedding_comp_smulOmegaEquiv_of_pos`,
   `QuadraticAlgebra.complexEmbedding_comp_smulOmegaEquiv_of_neg`: along the rescaling isomorphism
   `QuadraticAlgebra.smulOmegaEquiv u h : ℚ(√d) ≃ₐ[ℚ] ℚ(√e)` with `d = u² e`, the distinguished
@@ -40,7 +40,7 @@ chosen square root of the radicand lies in the upper half-plane.
 * `QuadraticAlgebra.ringHom_eq_complexEmbedding_iff`: for `a < 0`, a ring homomorphism to `ℂ` is
   the distinguished embedding exactly when it sends `ω` into the upper half-plane.
 * `QuadraticAlgebra.ringHom_eq_or_eq_conjugate`: the two complex embeddings of the field model.
-* `QuadraticAlgebra.isConj_complexEmbedding`: complex conjugation induces `starAe`.
+* `QuadraticAlgebra.isConj_complexEmbedding`: complex conjugation induces `starAlgEquiv`.
 * `QuadraticAlgebra.not_isReal_complexEmbedding`: for `a < 0` the distinguished embedding is
   not real.
 * `QuadraticAlgebra.eq_mk_complexEmbedding`: the unique infinite place.
@@ -96,8 +96,10 @@ theorem complexEmbedding_apply (ha : a ≤ 0) (z : QuadraticAlgebra ℚ a 0) :
 /-- **The two complex embeddings of `ℚ(√a)`.** For `a ≤ 0`, every `ℚ`-algebra map
 `QuadraticAlgebra ℚ a 0 → ℂ` is the distinguished embedding or its precomposition with the
 quadratic involution, since it sends `ω` to a square root of `a`. -/
-theorem algHom_eq_or_eq_comp_starAe (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →ₐ[ℚ] ℂ) :
-    φ = complexEmbedding ha ∨ φ = (complexEmbedding ha).comp (starAe : _ ≃ₐ[ℚ] _).toAlgHom := by
+theorem algHom_eq_or_eq_comp_starAlgEquiv (ha : a ≤ 0)
+    (φ : QuadraticAlgebra ℚ a 0 →ₐ[ℚ] ℂ) :
+    φ = complexEmbedding ha ∨
+      φ = (complexEmbedding ha).comp (starAlgEquiv : _ ≃ₐ[ℚ] _).toAlgHom := by
   have hφ : φ ω * φ ω = a := by
     rw [← map_mul]
     simp [omega_mul_omega_eq_algebraMap]
@@ -113,7 +115,7 @@ theorem ringHom_eq_complexEmbedding_iff (ha : a < 0) (φ : QuadraticAlgebra ℚ 
     φ = (complexEmbedding ha.le : QuadraticAlgebra ℚ a 0 →+* ℂ) ↔ 0 < (φ ω).im := by
   have hpos : 0 < √(-(a : ℝ)) := Real.sqrt_pos.mpr (by simpa using ha)
   refine ⟨fun h => by simpa [h] using hpos, fun h => ?_⟩
-  rcases algHom_eq_or_eq_comp_starAe ha.le φ.toRatAlgHom with h' | h'
+  rcases algHom_eq_or_eq_comp_starAlgEquiv ha.le φ.toRatAlgHom with h' | h'
   · exact RingHom.ext fun z => by simpa using AlgHom.congr_fun h' z
   · have him : (φ ω).im = -√(-(a : ℝ)) := by
       simpa using congrArg Complex.im (AlgHom.congr_fun h' ω)
@@ -143,7 +145,7 @@ of `ℚ(√d)`, that is, its precomposition with the quadratic involution. -/
 theorem complexEmbedding_comp_smulOmegaEquiv_of_neg (hd : d ≤ 0) (he : e ≤ 0) (u : ℚˣ)
     (h : d = u ^ 2 * e) (hu : (u : ℚ) < 0) :
     (complexEmbedding he).comp (smulOmegaEquiv u h).toAlgHom =
-      (complexEmbedding hd).comp (starAe : _ ≃ₐ[ℚ] _).toAlgHom := by
+      (complexEmbedding hd).comp (starAlgEquiv : _ ≃ₐ[ℚ] _).toAlgHom := by
   refine algHom_ext ?_
   subst h
   have hu' : (u : ℝ) < 0 := Rat.cast_lt_zero.mpr hu
@@ -163,16 +165,16 @@ complex conjugate. -/
 theorem ringHom_eq_or_eq_conjugate (ha : a ≤ 0) (φ : QuadraticAlgebra ℚ a 0 →+* ℂ) :
     φ = (complexEmbedding ha : QuadraticAlgebra ℚ a 0 →+* ℂ) ∨
       φ = ComplexEmbedding.conjugate (complexEmbedding ha : QuadraticAlgebra ℚ a 0 →+* ℂ) := by
-  rcases algHom_eq_or_eq_comp_starAe ha φ.toRatAlgHom with h | h
+  rcases algHom_eq_or_eq_comp_starAlgEquiv ha φ.toRatAlgHom with h | h
   · exact Or.inl (RingHom.ext fun z => by simpa using AlgHom.congr_fun h z)
   · refine Or.inr (RingHom.ext fun z => ?_)
     simpa [ComplexEmbedding.conjugate_coe_eq] using AlgHom.congr_fun h z
 
 /-- **Complex conjugation induces the quadratic involution.** Under the distinguished embedding,
-complex conjugation restricts to `starAe`, the nontrivial automorphism of `QuadraticAlgebra ℚ a 0`
-over `ℚ`. -/
+complex conjugation restricts to `starAlgEquiv`, the nontrivial automorphism of
+`QuadraticAlgebra ℚ a 0` over `ℚ`. -/
 theorem isConj_complexEmbedding (ha : a ≤ 0) :
-    ComplexEmbedding.IsConj (complexEmbedding ha : QuadraticAlgebra ℚ a 0 →+* ℂ) starAe :=
+    ComplexEmbedding.IsConj (complexEmbedding ha : QuadraticAlgebra ℚ a 0 →+* ℂ) starAlgEquiv :=
   RingHom.ext fun z => by simp [ComplexEmbedding.conjugate_coe_eq]
 
 /-- For a negative nonsquare `a`, the distinguished embedding is not real: the field

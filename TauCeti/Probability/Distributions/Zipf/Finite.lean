@@ -15,6 +15,7 @@ public import TauCeti.Probability.GeneratingFunction
 public import TauCeti.Probability.Quantile.Discrete
 public import TauCeti.Probability.Distributions.Zipf.Basic
 public import TauCeti.Probability.ConditionalProbability
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Cdf
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.NumberTheory.LSeries.Dirichlet
@@ -114,8 +115,8 @@ theorem finiteZipfMeasure_apply (N : ℕ) (s : ℝ) (A : Set ℕ) :
       ∑ k ∈ (Finset.Icc 1 N).filter (· ∈ A),
         ENNReal.ofReal ((k : ℝ) ^ (-s) / finiteZipfNormalizer N s) := by
   classical
-  rw [finiteZipfMeasure_eq_sum_dirac, Measure.finsetSum_apply, Finset.sum_filter]
-  simp [Measure.smul_apply, Measure.dirac_apply' _ MeasurableSet.of_discrete,
+  rw [finiteZipfMeasure_eq_sum_dirac, _root_.sum_apply, Finset.sum_filter]
+  simp [_root_.smul_apply, Measure.dirac_apply' _ MeasurableSet.of_discrete,
     Set.indicator_apply, mul_ite]
 
 /-- There is no probability law on an empty finite Zipf support. -/
@@ -336,7 +337,7 @@ theorem measurable_finiteZipfMeasure :
   apply measurable_from_prod_countable_right
   intro N
   apply Measure.measurable_measure.mpr
-  intro A hA
+  intro A _
   simp only [finiteZipfMeasure_apply]
   unfold finiteZipfNormalizer
   fun_prop
@@ -460,7 +461,7 @@ theorem tvDist_finiteZipfMeasure_zipfMeasure {N : ℕ} (hN : 0 < N) {s : ℝ} (h
       2 * (1 - (zipfMeasure s).real (Iic N)) := by
   let _ := isProbabilityMeasure_zipfMeasure hs
   rw [finiteZipfMeasure_eq_cond N hs]
-  exact (zipfMeasure s).tvDist_cond_self measurableSet_Iic (zipfMeasure_Iic_ne_zero hN hs)
+  exact (zipfMeasure s).tvDist_cond_self (zipfMeasure_Iic_ne_zero hN hs)
 
 /-- Finite Zipf laws converge to the infinite Zipf law in total variation for `s > 1`. -/
 theorem tendsto_tvDist_finiteZipfMeasure_zipfMeasure {s : ℝ} (hs : 1 < s) :
@@ -473,6 +474,6 @@ theorem tendsto_tvDist_finiteZipfMeasure_zipfMeasure {s : ℝ} (hs : 1 < s) :
       (ENNReal.tendsto_toReal (measure_ne_top (zipfMeasure s) univ)).comp
         (tendsto_measure_Iic_atTop (zipfMeasure s))
   simp_rw [finiteZipfMeasure_eq_cond _ hs]
-  exact (zipfMeasure s).tendsto_tvDist_cond (Eventually.of_forall fun _ ↦ measurableSet_Iic) hmass
+  exact (zipfMeasure s).tendsto_tvDist_cond hmass
 
 end TauCeti.Probability

@@ -38,7 +38,7 @@ Rescaling an expanded series `f (X ^ d)` by `a` is expansion of the series resca
 
 public section
 
-open scoped LaurentSeries PowerSeries
+open scoped LaurentSeries PowerSeries WithZero
 open HahnSeries LaurentSeries
 
 namespace TauCeti.LaurentSeries
@@ -105,5 +105,16 @@ theorem rescale_expand (a : Rˣ) (d : ℕ+) (f : R⸨X⸩) :
 theorem rescale_expand_of_pow_eq_one {a : Rˣ} {d : ℕ+} (ha : a ^ (d : ℕ) = 1) (f : R⸨X⸩) :
     rescale a (expand R d f) = expand R d f := by
   rw [rescale_expand, ha, map_one, AlgEquiv.one_apply]
+
+/-- Rescaling by a unit preserves the Laurent valuation: it does not change which coefficients
+vanish. -/
+@[simp]
+theorem valuation_rescale {K : Type*} [Field K] (a : Kˣ) (f : K⸨X⸩) :
+    Valued.v (rescale a f) = (Valued.v f : ℤᵐ⁰) := by
+  apply eq_of_forall_ge_iff
+  intro γ
+  rcases eq_or_ne γ 0 with rfl | hγ
+  · simp
+  · simp [valuation_le_iff_coeff_lt_log_eq_zero K hγ, zpow_ne_zero]
 
 end TauCeti.LaurentSeries

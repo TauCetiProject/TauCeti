@@ -12,7 +12,8 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
+import TauCeti.RingTheory.Valuation.Orthogonality
+import Mathlib.Algebra.Polynomial.Derivative
 
 /-!
 # The ramification index of an extension of local fields
@@ -42,6 +43,11 @@ filtration.
 * `TauCeti.IsTamelyRamified`, `TauCeti.IsWildlyRamified`: the residue characteristic does not
   divide, respectively divides, the ramification index.
 * `TauCeti.IsTotallyRamified`: the ramification index equals the degree, `e(L/K) = [L : K]`.
+* `TauCeti.tameRamificationIndex`: the prime-to-`p` factor `ε` in `e = ε * p ^ w`, where `p`
+  is the residue characteristic and `p ∤ ε`.
+* `TauCeti.wildRamificationExponent`: the `p`-adic exponent `w` in this factorization, not the
+  different exponent or Serre's wild exponent. In towers, tame indices multiply and wild
+  ramification exponents add.
 
 ## Main results
 
@@ -51,6 +57,8 @@ filtration.
   natural-number cast.
 * `TauCeti.normalizedValuationWithZero_algebraMap`: the same identity on all of `K`.
 * `TauCeti.addVal_algebraMap`: the corresponding scaling formula on the integer rings.
+* `TauCeti.dvd_ramificationIndex_of_normalizedValuation_pow_eq`: if `α` has valuation `a / q` in
+  lowest terms for the valuation of `L` extending `v_K`, then `q ∣ e(L/K)`.
 * `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible`: the first `e(L/K)` powers of a
   uniformizer of `L` are orthogonal, so an `𝒪[K]`-linear combination of them has the least
   term valuation.
@@ -58,6 +66,8 @@ filtration.
   `TauCeti.ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible`: the
   preimage of a valuation ball of `𝒪[L]` under the coefficient map `c ↦ ∑ c i ϖ ^ i` on
   `Fin n → 𝒪[K]` is a box of powers of `𝓂[K]`, and a cube at radii divisible by `e(L/K)`.
+* `TauCeti.addVal_aeval_le_addVal_aeval_derivative_add_one`: for a polynomial over `𝒪[K]`
+  of degree less than `e(L/K)`, differentiation lowers its order at a uniformizer by at most one.
 * `TauCeti.ramificationIndex_eq_iff`: `e` is the only natural number with that property.
 * `TauCeti.ramificationIndex_pos`: the ramification index is positive.
 * `TauCeti.normalizedValuation_algebraMap_irreducible` and
@@ -73,6 +83,14 @@ filtration.
   is nonzero in the residue field of `K`.
 * `TauCeti.isTamelyRamified_iff_isUnit_natCast`: `L/K` is tamely ramified exactly when `e(L/K)`
   is a unit in `𝒪[L]`.
+* `TauCeti.tameRamificationIndex_mul_pow_wildRamificationExponent`: `e = ε * p ^ w`.
+* `TauCeti.tameRamificationIndex_eq_and_wildRamificationExponent_eq_iff`: uniqueness of the
+  prime-to-`p` factor `ε` and the `p`-adic exponent `w`.
+* `TauCeti.wildRamificationExponent_eq_zero_iff` and
+  `TauCeti.tameRamificationIndex_eq_ramificationIndex_iff`: tameness is equivalent to `w = 0`
+  and to `ε = e`.
+* `TauCeti.wildRamificationExponent_tower` and `TauCeti.tameRamificationIndex_tower`: wild
+  ramification exponents add and tame indices multiply in a tower.
 
 ## Implementation notes
 
@@ -80,7 +98,14 @@ The definition only uses the algebra map and the two normalized valuations, so i
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
 `ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
 about it assumes compatibility, which makes the restricted valuation trivial on the units of
-`𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
+`𝒪[K]` and hence a power of `v_K`. The multiplicativity theorem `ramificationIndex_tower` is the
+exception: it assumes compatibility only for the top step `M/L`, as it compares indices through
+the valuations of `L` and `M` and never uses a valuation of `K`. The tame tower results
+`isTamelyRamified_tower_iff`, `IsTamelyRamified.tower_bot`, `wildRamificationExponent_tower`,
+and `tameRamificationIndex_tower` still require the compatible bottom step `L/K` and its residue
+field. The tame index and wild ramification exponent also have unconditional defining formulas
+and factorization; positivity and their characterizations assume compatibility.
+Finiteness of `L/K` is used by no statement in this file.
 
 ## References
 
@@ -286,6 +311,22 @@ theorem toAdd_normalizedValuation_algebraMap (x : Kˣ) :
       ramificationIndex K L * (normalizedValuation K x).toAdd := by
   rw [normalizedValuation_algebraMap, toAdd_pow, nsmul_eq_mul]
 
+/-- **Denominators of base-normalised valuations divide the ramification index.** Suppose that
+`α ^ q` has the same normalized valuation in `L` as an element `x` of `K` whose normalized
+valuation is prime to `q`; that is, `α` has valuation `v_K(x) / q`, in lowest terms, for the
+valuation of `L` extending `v_K`. Then `q ∣ e(L/K)`. -/
+theorem dvd_ramificationIndex_of_normalizedValuation_pow_eq {α : Lˣ} {x : Kˣ} {q : ℕ}
+    (hcop : (normalizedValuation K x).toAdd.natAbs.Coprime q)
+    (h : normalizedValuation L α ^ q =
+      normalizedValuation L (Units.map (algebraMap K L : K →* L) x)) :
+    q ∣ ramificationIndex K L := by
+  have h' := congrArg Multiplicative.toAdd h
+  rw [toAdd_pow, toAdd_normalizedValuation_algebraMap, nsmul_eq_mul] at h'
+  have hcop' : IsCoprime (q : ℤ) (normalizedValuation K x).toAdd := by
+    rw [Int.isCoprime_iff_gcd_eq_one, Int.gcd_comm]
+    exact hcop
+  exact Int.natCast_dvd_natCast.mp (hcop'.dvd_of_dvd_mul_right ⟨_, h'.symm⟩)
+
 /-- The characteristic property of the ramification index on natural numbers: the normalized
 valuation of a natural number in `L` is `e(L/K)` times its normalized valuation in `K`. -/
 theorem natCastValuation_eq_ramificationIndex_mul (n : ℕ) (hn : (n : K) ≠ 0) :
@@ -419,12 +460,12 @@ theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irred
         ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
     rw [IsDiscreteValuationRing.addVal_mul, IsDiscreteValuationRing.addVal_pow,
       addVal_algebraMap, IsDiscreteValuationRing.addVal_uniformizer hϖ, nsmul_one]
-  have hdistinct : ∀ i j : Fin n, i ≠ j →
-      algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ) ≠ 0 →
-      algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ) ≠ 0 →
+  have hdistinct : ∀ i ∈ Finset.univ, ∀ j ∈ Finset.univ, i ≠ j →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠ ⊤ →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) ≠ ⊤ →
       IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠
         IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) := by
-    intro i j hij hi0 hj0 hval
+    intro i _ j _ hij hi0 hj0 hval
     have hci : c i ≠ 0 := by
       intro h
       apply hi0
@@ -447,7 +488,7 @@ theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irred
       simpa [Nat.add_mod, Nat.mod_eq_of_lt (i.isLt.trans_le hn),
         Nat.mod_eq_of_lt (j.isLt.trans_le hn)] using hmod
     exact hij (Fin.ext hijval)
-  rw [IsDiscreteValuationRing.addVal_sum_eq_iInf_of_ne _ hdistinct]
+  rw [AddValuation.map_sum_eq_inf_of_ne _ _ _ hdistinct, Finset.inf_univ_eq_iInf]
   exact iInf_congr hterm
 
 /-- **Valuation balls in uniformizer coordinates.** For a uniformizer `ϖ` of `L` and `n ≤ e(L/K)`,
@@ -474,6 +515,42 @@ theorem ramificationIndex_mul_le_addVal_sum_algebraMap_mul_pow_iff_of_irreducibl
   rw [le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible hϖ hn c]
   refine forall_congr' fun i ↦ ?_
   rw [Nat.ceilDiv_mul_sub_of_lt (i.isLt.trans_le hn)]
+
+open Polynomial _root_.IsDiscreteValuationRing in
+/-- For a polynomial with coefficients in `𝒪[K]` of degree less than `e(L/K)`, differentiation
+lowers the order of evaluation at a uniformizer of `L` by at most one. No separability or total
+ramification hypothesis is needed. This estimate controls derivatives when counting roots in
+small valuation balls; see Serre, *Une « formule de masse » pour les extensions totalement
+ramifiées de degré donné d'un corps local* (1978), Lemma 1. -/
+theorem addVal_aeval_le_addVal_aeval_derivative_add_one {ξ : 𝒪[L]} (hξ : Irreducible ξ)
+    {P : 𝒪[K][X]} (hP : P.natDegree < ramificationIndex K L) :
+    addVal 𝒪[L] (aeval ξ P) ≤ addVal 𝒪[L] (aeval ξ P.derivative) + 1 := by
+  classical
+  have hexp : aeval ξ P =
+      ∑ i : Fin (ramificationIndex K L), algebraMap 𝒪[K] 𝒪[L] (P.coeff i) * ξ ^ (i : ℕ) := by
+    rw [aeval_eq_sum_range' hP]
+    simp only [← Fin.sum_univ_eq_sum_range, Algebra.smul_def]
+  have hterm (j : ℕ) : addVal 𝒪[L] (aeval ξ P) ≤
+      addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (P.coeff j) * ξ ^ j) := by
+    by_cases hj : j < ramificationIndex K L
+    · rw [hexp, addVal_sum_algebraMap_mul_pow_of_irreducible hξ le_rfl,
+        addVal_mul, addVal_algebraMap, addVal_pow, addVal_uniformizer hξ, nsmul_one]
+      exact iInf_le (fun i : Fin (ramificationIndex K L) ↦
+        ramificationIndex K L • addVal 𝒪[K] (P.coeff i) + (i : ℕ)) ⟨j, hj⟩
+    · rw [coeff_eq_zero_of_natDegree_lt (hP.trans_le (Nat.le_of_not_gt hj)), map_zero, zero_mul,
+        addVal_zero]
+      exact le_top
+  have hder : aeval ξ P.derivative * ξ =
+      ∑ i : Fin (ramificationIndex K L),
+        algebraMap 𝒪[K] 𝒪[L] (P.coeff (i + 1) * (i + 1)) * ξ ^ ((i : ℕ) + 1) := by
+    rw [aeval_eq_sum_range' ((P.natDegree_derivative_le.trans (Nat.sub_le _ _)).trans_lt hP),
+      Finset.sum_mul]
+    simp only [← Fin.sum_univ_eq_sum_range, coeff_derivative, Algebra.smul_def,
+      pow_succ, mul_assoc]
+  rw [← addVal_uniformizer hξ, ← addVal_mul, hder]
+  refine (addVal 𝒪[L]).map_le_sum fun i _ ↦ (hterm (i + 1)).trans ?_
+  rw [map_mul (algebraMap 𝒪[K] 𝒪[L]), mul_right_comm]
+  exact addVal_le_iff_dvd.2 (dvd_mul_right _ _)
 
 variable (K L) in
 /-- The maximal ideal of `𝒪[K]` generates the `e(L/K)`-th power of the maximal ideal of `𝒪[L]`.
@@ -510,19 +587,40 @@ theorem ramificationIndex_eq_ramificationIdx :
     pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
   omega
 
+/-- The normalized valuation of `M` on the image of `Lˣ` is that of `L` composed with the
+ramification-index power map. -/
+theorem normalizedValuation_comp_unitsMap_algebraMap (L M : Type*) [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M] [ValuativeExtension L M] :
+    (normalizedValuation M).comp (Units.map (algebraMap L M : L →* M)) =
+      (powMonoidHom (ramificationIndex L M)).comp (normalizedValuation L) := by
+  ext x
+  simp
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [ValuativeExtension K L] in
 /-- **Multiplicativity of the ramification index in a tower** `M/L/K`:
-`e(M/K) = e(L/K) · e(M/L)`. -/
+`e(M/K) = e(L/K) · e(M/L)`. Only the compatibility of the top step `M/L` is needed. -/
 theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
     [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     [ValuativeExtension L M] :
     ramificationIndex K M = ramificationIndex K L * ramificationIndex L M := by
-  have := ValuativeExtension.trans K L M
-  refine ramificationIndex_eq_iff.2 fun x ↦ ?_
-  have hx : Units.map (algebraMap K M : K →* M) x =
-      Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) x) := by
-    ext
-    simp [← IsScalarTower.algebraMap_apply]
-  rw [hx, normalizedValuation_algebraMap, normalizedValuation_algebraMap, pow_mul]
+  have hcomp : (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
+      (powMonoidHom (ramificationIndex L M)).comp
+        ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))) := by
+    rw [normalizedValuation_comp_unitsMap_tower K L M,
+      normalizedValuation_comp_unitsMap_algebraMap L M, MonoidHom.comp_assoc]
+  have hLM : ramificationIndex L M = (powMonoidHom (ramificationIndex L M) :
+      Multiplicative ℤ →* Multiplicative ℤ).range.index := by
+    refine ramificationIndex_def.trans ?_
+    rw [normalizedValuation_comp_unitsMap_algebraMap L M, MonoidHom.range_comp,
+      MonoidHom.range_eq_top.2 normalizedValuation_surjective, Subgroup.map_top]
+  have hinj : Function.Injective (powMonoidHom (ramificationIndex L M) :
+      Multiplicative ℤ →* Multiplicative ℤ) :=
+    pow_left_injective ramificationIndex_pos.ne'
+  rw [ramificationIndex_def, hcomp, MonoidHom.range_comp]
+  refine (Subgroup.index_map_of_injective _ hinj).trans ?_
+  rw [← hLM, ← ramificationIndex_def]
 
 /-- A tower of nonarchimedean local fields is tamely ramified exactly when each of its two
 steps is tamely ramified. The residue characteristics of `K` and `L` agree, and their
@@ -553,5 +651,152 @@ theorem isTamelyRamified_iff_isUnit_natCast :
     map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
 
 end Rest
+
+section Indices
+
+variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
+  [IsNonarchimedeanLocalField L] [Algebra K L]
+
+/-- The exponent of the residue characteristic in the ramification index. -/
+noncomputable def wildRamificationExponent : ℕ :=
+  (ramificationIndex K L).factorization (ringChar 𝓀[K])
+
+/-- The prime-to-residue-characteristic part of the ramification index. -/
+noncomputable def tameRamificationIndex : ℕ :=
+  ramificationIndex K L / ringChar 𝓀[K] ^ wildRamificationExponent K L
+
+/-- The wild ramification exponent is the multiplicity of the residue characteristic. -/
+theorem wildRamificationExponent_eq_multiplicity :
+    wildRamificationExponent K L = multiplicity (ringChar 𝓀[K]) (ramificationIndex K L) :=
+  Nat.factorization_def _ (CharP.prime_ringChar 𝓀[K])
+
+/-- The wild ramification exponent agrees with the natural-number p-adic valuation. -/
+theorem wildRamificationExponent_eq_padicValNat :
+    wildRamificationExponent K L = padicValNat (ringChar 𝓀[K]) (ramificationIndex K L) := by
+  rw [Nat.padicValNat_def, wildRamificationExponent_eq_multiplicity]
+
+/-- The defining formula for the wild ramification exponent. -/
+theorem wildRamificationExponent_def :
+    wildRamificationExponent K L =
+      (ramificationIndex K L).factorization (ringChar 𝓀[K]) := (rfl)
+
+/-- The defining quotient formula for the tame ramification index. -/
+theorem tameRamificationIndex_def :
+    tameRamificationIndex K L =
+      ramificationIndex K L / ringChar 𝓀[K] ^ wildRamificationExponent K L := (rfl)
+
+/-- The tame index is the prime-to-residue-characteristic part in Mathlib's notation. -/
+theorem tameRamificationIndex_eq_ordCompl :
+    tameRamificationIndex K L = ordCompl[ringChar 𝓀[K]] (ramificationIndex K L) := by
+  rw [tameRamificationIndex_def, wildRamificationExponent_def]
+
+/-- The ramification index factors into its tame and wild parts. -/
+theorem tameRamificationIndex_mul_pow_wildRamificationExponent :
+    tameRamificationIndex K L * ringChar 𝓀[K] ^ wildRamificationExponent K L =
+      ramificationIndex K L := by
+  rw [mul_comm, tameRamificationIndex_def, wildRamificationExponent_def]
+  exact Nat.ordProj_mul_ordCompl_eq_self _ _
+
+variable {K L} in
+/-- For a tame extension the wild ramification exponent vanishes. -/
+@[simp]
+theorem IsTamelyRamified.wildRamificationExponent_eq_zero (h : IsTamelyRamified K L) :
+    wildRamificationExponent K L = 0 := by
+  rw [wildRamificationExponent_def]
+  exact Nat.factorization_eq_zero_of_not_dvd ((isTamelyRamified_iff K L).1 h)
+
+variable {K L} in
+/-- For a tame extension the tame index is the full ramification index. -/
+@[simp]
+theorem IsTamelyRamified.tameRamificationIndex_eq_ramificationIndex (h : IsTamelyRamified K L) :
+    tameRamificationIndex K L = ramificationIndex K L := by
+  simp [tameRamificationIndex_def, h.wildRamificationExponent_eq_zero]
+
+variable [ValuativeExtension K L]
+
+/-- The tame index is positive. -/
+theorem tameRamificationIndex_pos : 0 < tameRamificationIndex K L := by
+  rw [tameRamificationIndex_eq_ordCompl]
+  exact Nat.ordCompl_pos _ (ramificationIndex_pos (K := K) (L := L)).ne'
+
+/-- The residue characteristic does not divide the tame index. -/
+@[simp]
+theorem not_ringChar_dvd_tameRamificationIndex : ¬ ringChar 𝓀[K] ∣ tameRamificationIndex K L := by
+  rw [tameRamificationIndex_eq_ordCompl]
+  exact Nat.not_dvd_ordCompl (CharP.prime_ringChar 𝓀[K])
+    (ramificationIndex_pos (K := K) (L := L)).ne'
+
+/-- The prime-to-`p` factor and the `p`-adic exponent are uniquely determined by
+`e = ε * p ^ w` with `p ∤ ε`. -/
+theorem tameRamificationIndex_eq_and_wildRamificationExponent_eq_iff {ε w : ℕ} :
+    tameRamificationIndex K L = ε ∧ wildRamificationExponent K L = w ↔
+      ¬ ringChar 𝓀[K] ∣ ε ∧ ε * ringChar 𝓀[K] ^ w = ramificationIndex K L := by
+  constructor
+  · rintro ⟨rfl, rfl⟩
+    exact ⟨not_ringChar_dvd_tameRamificationIndex K L,
+      tameRamificationIndex_mul_pow_wildRamificationExponent K L⟩
+  · rintro ⟨hε, he⟩
+    have ht : tameRamificationIndex K L = ε := by
+      rw [tameRamificationIndex_eq_ordCompl, ← he, mul_comm]
+      exact Nat.ordCompl_pow_mul_of_not_dvd _ (CharP.prime_ringChar 𝓀[K]) hε
+    refine ⟨ht, ?_⟩
+    have hpow := tameRamificationIndex_mul_pow_wildRamificationExponent K L
+    rw [ht, ← he] at hpow
+    exact (Nat.pow_right_injective (CharP.prime_ringChar 𝓀[K]).two_le)
+      (Nat.eq_of_mul_eq_mul_left (ht ▸ tameRamificationIndex_pos K L) hpow)
+
+/-- A power of the residue characteristic divides `e` exactly up to the wild ramification
+exponent. -/
+@[simp]
+theorem ringChar_pow_dvd_ramificationIndex_iff {n : ℕ} :
+    ringChar 𝓀[K] ^ n ∣ ramificationIndex K L ↔ n ≤ wildRamificationExponent K L := by
+  rw [wildRamificationExponent_def]
+  exact (CharP.prime_ringChar 𝓀[K]).pow_dvd_iff_le_factorization ramificationIndex_pos.ne'
+
+/-- Tameness is equivalent to vanishing of the wild ramification exponent. -/
+@[simp]
+theorem wildRamificationExponent_eq_zero_iff :
+    wildRamificationExponent K L = 0 ↔ IsTamelyRamified K L := by
+  rw [wildRamificationExponent_def, isTamelyRamified_iff,
+    (CharP.prime_ringChar 𝓀[K]).dvd_iff_one_le_factorization ramificationIndex_pos.ne']
+  omega
+
+/-- The tame index equals the full ramification index exactly for tame extensions. -/
+@[simp]
+theorem tameRamificationIndex_eq_ramificationIndex_iff :
+    tameRamificationIndex K L = ramificationIndex K L ↔ IsTamelyRamified K L := by
+  rw [tameRamificationIndex_eq_ordCompl,
+    Nat.ordCompl_eq_self_iff_zero_or_not_dvd _ (CharP.prime_ringChar 𝓀[K]),
+    or_iff_right ramificationIndex_pos.ne', isTamelyRamified_iff]
+
+/-- Wild ramification is equivalent to positivity of the wild ramification exponent. -/
+@[simp]
+theorem wildRamificationExponent_pos_iff :
+    0 < wildRamificationExponent K L ↔ IsWildlyRamified K L := by
+  rw [Nat.pos_iff_ne_zero, ne_eq, wildRamificationExponent_eq_zero_iff,
+    not_isTamelyRamified_iff]
+
+variable (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
+  [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M]
+  [IsScalarTower K L M] [ValuativeExtension L M]
+
+/-- Wild ramification exponents add in a tower. -/
+theorem wildRamificationExponent_tower :
+    wildRamificationExponent K M =
+      wildRamificationExponent K L + wildRamificationExponent L M := by
+  simp only [wildRamificationExponent_def, ramificationIndex_tower (K := K) (L := L) M,
+    Nat.factorization_mul (ramificationIndex_pos (K := K) (L := L)).ne'
+      (ramificationIndex_pos (K := L) (L := M)).ne', Finsupp.add_apply,
+    Algebra.ringChar_eq 𝓀[K] 𝓀[L]]
+
+/-- Tame ramification indices multiply in a tower. -/
+theorem tameRamificationIndex_tower :
+    tameRamificationIndex K M = tameRamificationIndex K L * tameRamificationIndex L M := by
+  simp only [tameRamificationIndex_eq_ordCompl,
+    ramificationIndex_tower (K := K) (L := L) M, Nat.ordCompl_mul,
+    Algebra.ringChar_eq 𝓀[K] 𝓀[L]]
+
+end Indices
 
 end TauCeti

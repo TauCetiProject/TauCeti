@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Order
 public import Mathlib.RingTheory.HahnSeries.Multiplication
-public import TauCeti.Order.WellFoundedSet
+public import TauCeti.Order.WellFounded.Set
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
 public import TauCeti.RingTheory.NovikovSeries.Topology
 

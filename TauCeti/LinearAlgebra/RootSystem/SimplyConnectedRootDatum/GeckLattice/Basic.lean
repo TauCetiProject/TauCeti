@@ -134,6 +134,21 @@ the Bourbaki numbering, while the coordinate argument uses the `Fintype.equivFin
 abbrev geckWeightFin : Fin (t.geckDim ht) → Fin t.rank → ℤ :=
   fun i => t.geckWeight ht ((Fintype.equivFin (t.GeckIndex ht)).symm i)
 
+/-- In finite-ordinal coordinates, a Cartan generator is diagonal with the integral Geck
+weights as its entries. -/
+theorem reindex_lieBasis_h (i : Fin t.rank) :
+    Matrix.reindex (Fintype.equivFin (t.GeckIndex ht)) (Fintype.equivFin (t.GeckIndex ht))
+        ((t.lieBasis ht).h i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) =
+      Matrix.diagonal (fun a ↦ (t.geckWeightFin ht a i : ℚ)) := by
+  classical
+  rw [coe_lieBasis_h, h_eq_diagonal, Matrix.reindex_apply, Matrix.submatrix_diagonal_equiv]
+  congr 1
+  funext a
+  simp only [Function.comp_apply, geckWeightFin]
+  cases (Fintype.equivFin (t.GeckIndex ht)).symm a <;>
+    simp only [Sum.elim_inl, Sum.elim_inr, Pi.zero_apply, geckWeight_inl, geckWeight_inr,
+      Int.cast_zero]
+
 /-- Every finite-ordinal coordinate basis vector is a Cartan weight vector. -/
 theorem isCartanWeightVector_geckCoordinateBasisFin (i : Fin (t.geckDim ht)) :
     TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector (t.lieBasis ht).h

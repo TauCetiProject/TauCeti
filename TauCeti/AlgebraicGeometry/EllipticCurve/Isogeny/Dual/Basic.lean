@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separable
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.PointMap
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Commute
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Comp
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Degree
@@ -76,6 +77,8 @@ form in which it is additive and the degree is a quadratic form.
 * `TauCeti.Isogeny.dual_map`: the dual of the base change is the base change of the dual.
 * `TauCeti.Isogeny.Hom.dual_comp_self`, `TauCeti.Isogeny.Hom.dual_dual` and
   `TauCeti.Isogeny.Hom.dual_comp`: the same identities for the dual of a morphism.
+* `TauCeti.Isogeny.Hom.dual_pointMapHom_comp_pointMapHom`: `f̂ ∘ f` acts on points as
+  multiplication by `deg f`.
 
 ## References
 
@@ -282,6 +285,13 @@ theorem dual_pointMap_pointMap [DecidableEq F] (f : Hom W₁ W₂) (P : W₁.Poi
 theorem pointMap_dual_pointMap [DecidableEq F] (f : Hom W₁ W₂) (Q : W₂.Point) :
     f.pointMap (f.dual.pointMap Q) = f.degree • Q := by
   rw [← comp_pointMap, comp_dual_self, nsmul_pointMap, id_pointMap]
+
+/-- `f̂ ∘ f` acts on points as multiplication by `deg f`. -/
+@[simp]
+theorem dual_pointMapHom_comp_pointMapHom [DecidableEq F] (f : Hom W₁ W₂) :
+    f.dual.pointMapHom.comp f.pointMapHom = nsmulAddMonoidHom f.degree := by
+  ext P
+  simp
 
 /-- **The dual of a composite is the composite of the duals in the opposite order**:
 `(g ∘ f)^ = f̂ ∘ ĝ`. -/

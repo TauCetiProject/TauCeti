@@ -53,7 +53,7 @@ private theorem measurable_sum_multinomialWeight_smul_dirac (n : ℕ) :
     Measurable fun w : ι → ℝ≥0 =>
       ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight w k • Measure.dirac k := by
   refine Measure.measurable_of_measurable_coe _ fun s hs => ?_
-  simp only [Measure.coe_finsetSum, Finset.sum_apply, Measure.coe_smul, Pi.smul_apply,
+  simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply,
     Measure.dirac_apply' _ hs, smul_eq_mul]
   fun_prop
 

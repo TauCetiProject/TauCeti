@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.GroupTheory.Perm.Basic
 
@@ -32,6 +33,10 @@ alternatization is absorbed into the outer one
   for `v ↦ f v ∧ ψ`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_pairedWedgeCLM_comp_apply`: the identity for
   `v ↦ φ ∧ g v`.
+* `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply`: alternatizing `v ↦ a v • ψ`
+  for a covector `a` gives the wedge `a ∧ ψ`.
+* `ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply_eq_wedge`: the same identity
+  for a real-valued form `ψ`, stated with the real wedge.
 -/
 
 public section
@@ -174,5 +179,38 @@ theorem alternatizeUncurryFin_pairedWedgeCLM_comp_apply (μ : F₁ →L[ℝ] F�
   -- The two sides agree slot by slot: `p.succAbove` realizes the two block inclusions.
   congr 4 <;> funext i <;> congr 2
   exacts [(hcast₁ i).symm, (hcast₂ i).symm]
+
+/-- Alternatizing the linear family `v ↦ a v • ψ` for a covector `a` gives the wedge `a ∧ ψ` of
+`a`, regarded as a one-form, with `ψ`. This identifies the term `dc ∧ ω` in the Leibniz rule
+`TauCeti.extDerivWithin_function_smul` with the paired wedge. The degree `1 + l` is identified with
+`l + 1` by `Fin.cast`. -/
+theorem alternatizeUncurryFin_smulRight_apply (a : E →L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] F₂)
+    (v : Fin (l + 1) → E) :
+    alternatizeUncurryFin (a.smulRight ψ) v =
+      pairedWedge (ContinuousLinearMap.lsmul ℝ ℝ) (ContinuousLinearMap.lsmul ℝ ℝ).continuous₂
+        (ofSubsingleton ℝ E ℝ (0 : Fin 1) a) ψ (v ∘ Fin.cast (show 1 + l = l + 1 by omega)) := by
+  -- Both sides are `(l!)⁻¹` times a signed sum over permutations, reindexed along `Fin.cast`.
+  rw [pairedWedge_apply, alternatizeUncurryFin_apply_eq_inv_factorial_smul_sum]
+  simp only [Nat.factorial_one, Nat.cast_one, one_mul, ContinuousLinearMap.smulRight_apply,
+    ofSubsingleton_apply_apply, ContinuousLinearMap.lsmul_apply, Function.comp_apply]
+  congr 1
+  refine Fintype.sum_equiv (finCongr (show l + 1 = 1 + l by omega)).permCongr _ _ fun σ => ?_
+  have h₀ : Fin.cast (show 1 + l = l + 1 by omega) (Fin.castAdd l 0) = 0 := Fin.ext rfl
+  have h₁ (j : Fin l) : Fin.cast (show 1 + l = l + 1 by omega) (Fin.natAdd 1 j) = j.succ :=
+    Fin.ext (by simp)
+  simp [h₀, h₁, Perm.sign_permCongr]
+
+/-- Alternatizing the linear family `v ↦ a v • ψ` of real-valued forms, for a covector `a`, gives
+the real wedge `a ∧ ψ` of `a`, regarded as a one-form, with `ψ`. The degree `1 + l` is identified
+with `l + 1` by `Fin.cast`. -/
+theorem alternatizeUncurryFin_smulRight_apply_eq_wedge (a : E →L[ℝ] ℝ) (ψ : E [⋀^Fin l]→L[ℝ] ℝ)
+    (v : Fin (l + 1) → E) :
+    alternatizeUncurryFin (a.smulRight ψ) v =
+      wedge (ofSubsingleton ℝ E ℝ (0 : Fin 1) a) ψ
+        (v ∘ Fin.cast (show 1 + l = l + 1 by omega)) := by
+  -- On `ℝ`, scalar multiplication is multiplication, the pairing of the real wedge.
+  have hμ : ContinuousLinearMap.lsmul ℝ ℝ = ContinuousLinearMap.mul ℝ ℝ := by
+    ext; simp
+  rw [alternatizeUncurryFin_smulRight_apply, wedge_def, hμ]
 
 end ContinuousAlternatingMap

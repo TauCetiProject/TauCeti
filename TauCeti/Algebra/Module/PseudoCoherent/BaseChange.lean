@@ -8,12 +8,16 @@ module
 public import TauCeti.Algebra.Module.PseudoCoherent.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.Algebra.Module.LocalizedModule.Basic
+import Mathlib.RingTheory.Flat.Localization
+import Mathlib.RingTheory.Localization.BaseChange
 
 /-!
 # Flat base change of pseudocoherent modules
 
 Extension of scalars along a flat algebra preserves pseudocoherence, in every finite degree
-and in degree infinity. This supplies the module-theoretic stability needed for flat pullback
+and in degree infinity. In particular localizations of pseudocoherent modules are
+pseudocoherent. This supplies the module-theoretic stability needed for flat pullback
 of locally pseudocoherent sheaves. No Noetherian or finite-presentation hypothesis is imposed
 on the algebra.
 
@@ -54,5 +58,15 @@ theorem baseChange (h : IsPseudoCoherentOver R M m) (S : Type*) [CommRing S] [Al
     rw [← LinearMap.comp_assoc, LinearEquiv.precomp_exact_iff_exact,
       LinearEquiv.postcomp_exact_iff_exact, LinearEquiv.conj_exact_iff_exact]
     simpa only [LinearMap.baseChange_eq_lTensor] using Module.Flat.lTensor_exact S (hd i hi)
+
+/-- **Localizations of pseudocoherent modules are pseudocoherent.** If `M` is `m`-pseudocoherent
+over `R` and `f : M → Mₚ` is a localization of `M` at a submonoid `p`, then `Mₚ` is
+`m`-pseudocoherent over the corresponding localization `Rₚ` of `R`. -/
+theorem of_isLocalizedModule (h : IsPseudoCoherentOver R M m) (p : Submonoid R) {Rₚ : Type*}
+    [CommRing Rₚ] [Algebra R Rₚ] [IsLocalization p Rₚ] {Mₚ : Type*} [AddCommGroup Mₚ]
+    [Module R Mₚ] [Module Rₚ Mₚ] [IsScalarTower R Rₚ Mₚ] (f : M →ₗ[R] Mₚ)
+    [IsLocalizedModule p f] : IsPseudoCoherentOver Rₚ Mₚ m :=
+  have := IsLocalization.flat Rₚ p
+  (h.baseChange Rₚ).of_equiv (IsLocalizedModule.isBaseChange p Rₚ f).equiv
 
 end TauCeti.Huber.IsPseudoCoherentOver

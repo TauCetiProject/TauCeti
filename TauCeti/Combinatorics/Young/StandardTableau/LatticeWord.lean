@@ -104,7 +104,7 @@ theorem count_rowWord (T : StandardYoungTableau μ) (i : ℕ) : T.rowWord.count 
 /-- Every standard tableau has a lattice row word. -/
 theorem isLatticeWord_rowWord (T : StandardYoungTableau μ) : T.rowWord.IsLatticeWord := by
   induction hn : μ.card using Nat.strong_induction_on generalizing μ with
-  | h n ih =>
+  | ind n ih =>
     by_cases hμ : 0 < μ.card
     · let c := T.maxCell hμ
       have hc : YoungDiagram.IsCorner μ c := T.isCorner_maxCell hμ

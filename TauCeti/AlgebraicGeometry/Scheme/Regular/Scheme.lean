@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.RingTheory.RegularLocalRing.Normal
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 
+import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
 import TauCeti.Topology.KrullDimension.Basic
 
 /-!
@@ -30,6 +31,8 @@ rings.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_stalk`: the stalkwise characterization.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_isOpenImmersion`: open subschemes are regular.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_smooth`: schemes smooth over a regular scheme are regular.
+* `TauCeti.AlgebraicGeometry.IsRegular.of_isIso_morphismRestrict`: a scheme covered by a regular
+  open subscheme and by an open isomorphic to an open with regular local rings is regular.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_openCover`: regularity is local on an open cover.
 * `TauCeti.AlgebraicGeometry.IsRegular.openCover`: cover components are regular.
 * `TauCeti.AlgebraicGeometry.isRegular_iff_forall_exists_affineOpens`:
@@ -40,6 +43,8 @@ rings.
 * `TauCeti.AlgebraicGeometry.IsRegular.isNormal`: regular schemes are normal.
 * `TauCeti.AlgebraicGeometry.IsRegular.of_isNormalScheme_of_topologicalKrullDim_le_one`: a locally
   Noetherian normal scheme of dimension at most one is regular.
+* `TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk`: the local ring of a regular
+  scheme at a point of codimension at most two is factorial.
 
 ## References
 
@@ -88,6 +93,26 @@ theorem IsRegular.of_smooth {target : Scheme.{u}} (morphism : X ⟶ target) [Smo
     [IsRegular target] : IsRegular X := by
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian morphism
   exact ⟨isRegularLocalRing_stalk_of_smooth morphism⟩
+
+/-- A scheme `Y'` covered by an open immersion `ι` from a regular scheme and by the inverse image of
+an open `V` over which `f' : Y' ⟶ B` is an isomorphism is regular as soon as `B` has regular local
+rings at the points of `V` and `Y'` is locally Noetherian. -/
+theorem IsRegular.of_isIso_morphismRestrict {Y Y' B : Scheme.{u}} [IsRegular Y]
+    [IsLocallyNoetherian Y'] (ι : Y ⟶ Y') [IsOpenImmersion ι] (f' : Y' ⟶ B) (V : B.Opens)
+    [IsIso (f' ∣_ V)] (hcov : ι.opensRange ⊔ f' ⁻¹ᵁ V = ⊤)
+    (hV : ∀ b ∈ V, IsRegularLocalRing (B.presheaf.stalk b)) : IsRegular Y' := by
+  refine ⟨fun p ↦ ?_⟩
+  rcases TopologicalSpace.Opens.mem_sup.mp (hcov.ge (by trivial : p ∈ (⊤ : Y'.Opens))) with
+    ⟨y, rfl⟩ | hp
+  · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion ι y).mpr inferInstance
+  -- Over `V`, the local ring of `Y'` at `p` is that of `f' ⁻¹ᵁ V ≅ V`, hence that of `B` at `f' p`.
+  let p' : (f' ⁻¹ᵁ V).toScheme := ⟨p, hp⟩
+  have e : V.ι ((f' ∣_ V) p') = f' p := by
+    rw [← Scheme.Hom.comp_apply, morphismRestrict_ι, Scheme.Hom.comp_apply, Scheme.Opens.ι_apply]
+  have hB := hV (f' p) hp
+  exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion (f' ⁻¹ᵁ V).ι p').mpr
+    ((isRegularLocalRing_stalk_iff_of_isOpenImmersion (f' ∣_ V) p').mp
+      ((isRegularLocalRing_stalk_iff_of_isOpenImmersion V.ι _).mp (e ▸ hB)))
 
 /-- Every open subscheme of a regular scheme is regular. -/
 instance IsRegular.opens [IsRegular X] (U : X.Opens) : IsRegular U :=
@@ -190,5 +215,14 @@ theorem IsRegular.of_isNormalScheme_of_topologicalKrullDim_le_one [IsLocallyNoet
     · exact hx.isPrincipalIdealRing
     · exact (IsDiscreteValuationRing.of_krullDimLE_one hx).toIsPrincipalIdealRing
   infer_instance
+
+/-- **Regular schemes are factorial in codimension at most two.** The local ring of a regular
+scheme at a point of codimension at most two, such as any point of a regular model of a curve
+over a discrete valuation ring, is a unique factorization domain. -/
+theorem IsRegular.uniqueFactorizationMonoid_stalk [IsRegular X] (x : X)
+    (hx : Order.coheight x ≤ 2) : UniqueFactorizationMonoid (X.presheaf.stalk x) :=
+  TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid <| by
+    rw [ringKrullDim_stalk_eq_coheight]
+    exact WithBot.coe_le_coe.mpr hx
 
 end TauCeti.AlgebraicGeometry

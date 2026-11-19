@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Order.DirectedInverseSystem
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.MetricSpace.Ultra.ContinuousMaps
@@ -12,6 +13,7 @@ public import TauCeti.Analysis.Normed.Module.InfiniteSum
 public import TauCeti.NumberTheory.Padics.Disc
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
+import Mathlib.Algebra.GroupWithZero.Action.Regular
 
 /-!
 # Analytic stages on `ℤ_p` and their evaluation
@@ -26,7 +28,9 @@ ultrametric normed `ℤ_p`-module `E`, these coefficient families make up the an
 
 normed by the largest coefficient (the maximum of the Gauss norms on the discs). Its elements are
 coefficient vectors, kept distinct from the functions they define: evaluation need not be
-injective when `E` has `p`-torsion.
+injective when `E` has `p`-torsion. If multiplication by `p` on `E` is injective, evaluation
+is injective: values at powers of `p` in each normalized disc coordinate determine all
+coefficients by cancellation and a vanishing tail estimate.
 
 Evaluation `TauCeti.AnalyticStage.eval` sends a coefficient vector to the continuous function
 `x ↦ ∑ₙ wⁿ • c(a, n)`. It is linear over every scalar ring acting on `E` compatibly with `ℤ_p`,
@@ -59,7 +63,10 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 
 * `TauCeti.AnalyticStage.eval_natCast_val_add_mul`: on the disc of `a`, the evaluation of `c` is
   `∑ₙ wⁿ • c(a, n)`.
-* `TauCeti.AnalyticStage.norm_eval_le`: evaluation does not increase norms.
+* `TauCeti.AnalyticStage.norm_eval_le`, `TauCeti.AnalyticStage.opNorm_eval_le_one`: evaluation
+  does not increase norms.
+* `TauCeti.AnalyticStage.eval_injective`: evaluation is injective when multiplication by `p`
+  on the coefficient module is injective.
 * `TauCeti.AnalyticStage.transition_apply`: the re-expansion formula for the transition.
 * `TauCeti.AnalyticStage.norm_transition_apply_le`: the coefficient of `vʲ` after the transition
   has norm at most `‖p‖ʲ ‖c‖`.
@@ -68,11 +75,14 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 * `TauCeti.AnalyticStage.transition_injective`: the transition is injective when multiplication
   by `p` on the coefficients is injective.
 * `TauCeti.AnalyticStage.norm_transition_le`: the transition does not increase norms.
-* `TauCeti.AnalyticStage.eval_transition`: the transition is compatible with evaluation.
+* `TauCeti.AnalyticStage.eval_transition`, `TauCeti.AnalyticStage.eval_comp_transition`: the
+  transition is compatible with evaluation.
 * `TauCeti.AnalyticStage.transitionLE_comp`: re-expansion through an intermediate level is
   re-expansion to the final level.
-* `TauCeti.AnalyticStage.norm_transitionLE_le`: every multi-level transition decreases norms.
-* `TauCeti.AnalyticStage.eval_transitionLE`: every multi-level transition preserves evaluation.
+* `TauCeti.AnalyticStage.norm_transitionLE_le`,
+  `TauCeti.AnalyticStage.opNorm_transitionLE_le_one`: every multi-level transition decreases norms.
+* `TauCeti.AnalyticStage.eval_transitionLE`, `TauCeti.AnalyticStage.eval_comp_transitionLE`:
+  every multi-level transition preserves evaluation.
 * `TauCeti.AnalyticStage.transitionLE_injective`: multi-level transitions are injective under
   the same scalar-regularity hypothesis.
 
@@ -190,14 +200,14 @@ noncomputable def eval : AnalyticStage p h E →L[S] C(ℤ_[p], E) :=
       map_add' c d := by
         ext x
         simp only [ContinuousMap.comp_apply, ContinuousMap.add_apply,
-          ZeroAtInftyContinuousMap.coe_add, Pi.add_apply, smul_add,
+          FunLike.coe_add, Pi.add_apply, smul_add,
           (hasSum_discSeries_apply _ _).tsum_eq.symm]
         exact (hasSum_discSeries_apply c _).summable.tsum_add
           (hasSum_discSeries_apply d _).summable
       map_smul' s c := by
         ext x
         simp only [ContinuousMap.comp_apply, ContinuousMap.smul_apply, RingHom.id_apply,
-          ZeroAtInftyContinuousMap.coe_smul, Pi.smul_apply,
+          FunLike.coe_smul, Pi.smul_apply,
           (hasSum_discSeries_apply _ _).tsum_eq.symm, smul_comm _ s]
         exact (hasSum_discSeries_apply c _).summable.tsum_const_smul s }
   { L with
@@ -241,6 +251,78 @@ theorem eval_natCast_val_add_mul (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (w
 theorem norm_eval_le (c : AnalyticStage p h E) : ‖eval S c‖ ≤ ‖c‖ :=
   norm_discSeries_comp_le c
 
+/-- Evaluation has operator norm at most `1`. -/
+theorem opNorm_eval_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [SMulCommClass ℤ_[p] 𝕜 E] : ‖eval (p := p) (h := h) (E := E) 𝕜‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ by
+    simpa using norm_eval_le 𝕜 c
+
+private theorem summable_smul_apply_add (c : AnalyticStage p h E) (a : ZMod (p ^ h))
+    (n : ℕ) {r : ℕ → ℤ_[p]} (hr : ∀ k, ‖r k‖ ≤ 1) :
+    Summable fun k ↦ r k • c (a, k + n) := by
+  simpa using (summable_nat_add_iff n).mpr
+    (summable_smul_apply c a (r := fun k ↦ r (k - n)) fun k ↦ hr (k - n))
+
+private theorem tsum_pow_smul_apply_add_eq_zero (hpE : IsSMulRegular E (p : ℤ_[p]))
+    (c : AnalyticStage p h E) (hc : eval S c = 0) (a : ZMod (p ^ h)) (n : ℕ)
+    (hn : ∀ k < n, c (a, k) = 0) (m : ℕ) :
+    ∑' k, ((p : ℤ_[p]) ^ m) ^ k • c (a, k + n) = 0 := by
+  set x : ℤ_[p] := p ^ m with hx
+  have hs := summable_smul_apply_add c a n (r := fun k ↦ x ^ k)
+    fun k ↦ PadicInt.norm_le_one _
+  refine ((hpE.pow m).pow n).right_eq_zero_of_smul ?_
+  rw [← hx, ← hs.tsum_const_smul]
+  have hzero : ∑' k, x ^ k • c (a, k) = 0 := by
+    rw [← eval_natCast_val_add_mul S, hc, ContinuousMap.zero_apply]
+  have hprefix : ∑ k ∈ Finset.range n, x ^ k • c (a, k) = 0 :=
+    Finset.sum_eq_zero fun k hk ↦ by rw [hn k (Finset.mem_range.mp hk), smul_zero]
+  have htail := (summable_smul_apply c a (r := fun k ↦ x ^ k)
+    fun k ↦ PadicInt.norm_le_one _).sum_add_tsum_nat_add n
+  rw [hprefix, zero_add, hzero] at htail
+  simpa only [smul_smul, ← pow_add, Nat.add_comm n] using htail
+
+private theorem norm_apply_le_of_eval_eq_zero (hpE : IsSMulRegular E (p : ℤ_[p]))
+    (c : AnalyticStage p h E) (hc : eval S c = 0) (a : ZMod (p ^ h)) (n : ℕ)
+    (hn : ∀ k < n, c (a, k) = 0) (m : ℕ) :
+    ‖c (a, n)‖ ≤ ‖(p : ℤ_[p])‖ ^ m * ‖c‖ := by
+  set x : ℤ_[p] := p ^ m with hx
+  have hs := summable_smul_apply_add c a n (r := fun k ↦ x ^ k)
+    fun k ↦ PadicInt.norm_le_one _
+  have hzero := tsum_pow_smul_apply_add_eq_zero S hpE c hc a n hn m
+  rw [← hx, hs.tsum_eq_zero_add, pow_zero, one_smul, zero_add] at hzero
+  have heq : c (a, n) = -∑' k, x ^ (k + 1) • c (a, k + 1 + n) :=
+    eq_neg_iff_add_eq_zero.mpr hzero
+  rw [heq, norm_neg, ← norm_pow, ← hx]
+  apply IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity)
+  intro k
+  calc
+    ‖x ^ (k + 1) • c (a, k + 1 + n)‖ ≤ ‖x ^ (k + 1)‖ * ‖c (a, k + 1 + n)‖ :=
+      norm_smul_le _ _
+    _ ≤ ‖x‖ * ‖c‖ := mul_le_mul (by
+      rw [norm_pow, pow_succ]
+      exact mul_le_of_le_one_left (norm_nonneg x)
+        (pow_le_one₀ (norm_nonneg x) (PadicInt.norm_le_one x)))
+      (c.norm_coe_le_norm _) (norm_nonneg _) (norm_nonneg _)
+
+/-- Analytic-stage evaluation is injective if multiplication by `p` on the coefficient module
+is injective. The coefficient module need not carry a field structure or an isometric scalar
+action. -/
+theorem eval_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
+    Function.Injective (eval (p := p) (h := h) (E := E) S) := by
+  apply (injective_iff_map_eq_zero (eval S)).mpr
+  intro c hc
+  ext ⟨a, n⟩
+  rw [_root_.zero_apply]
+  induction n using Nat.strong_induction_on with
+  | ind n ih =>
+    apply norm_eq_zero.mp
+    apply le_antisymm ?_ (norm_nonneg _)
+    have hlim : Tendsto (fun m : ℕ ↦ ‖(p : ℤ_[p])‖ ^ m * ‖c‖) atTop (𝓝 0) := by
+      simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one
+        (norm_nonneg (p : ℤ_[p])) PadicInt.norm_p_lt_one).mul_const ‖c‖
+    exact ge_of_tendsto hlim (.of_forall fun m ↦
+      norm_apply_le_of_eval_eq_zero S hpE c hc a n ih m)
+
 /-! ### Raising the level -/
 
 /-- The re-expansion scalars `(k choose j) b^(k - j) pʲ`, the coefficient of `vʲ` in
@@ -261,19 +343,6 @@ private theorem add_mul_pow_eq_sum_transitionScalar (b v : ℤ_[p]) (k : ℕ) :
     (b + p * v) ^ k = ∑ j ∈ Finset.range (k + 1), v ^ j * transitionScalar b j k := by
   rw [add_comm, add_pow]
   exact Finset.sum_congr rfl fun j _ ↦ by rw [transitionScalar]; ring
-
-private theorem tendsto_norm_p_pow_cofinite :
-    Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n) cofinite (𝓝 0) := by
-  rw [Nat.cofinite_eq_atTop]
-  exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) PadicInt.norm_p_lt_one
-
-private theorem tendsto_norm_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ) :
-    Tendsto (fun i : ι × ℕ ↦ ‖(p : ℤ_[p])‖ ^ i.2 * C) cofinite (𝓝 0) := by
-  have hpow : Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) cofinite (𝓝 0) := by
-    simpa using (tendsto_norm_p_pow_cofinite (p := p)).mul_const C
-  refine hpow.comp <| Tendsto.cofinite_of_finite_preimage_singleton fun n ↦ ?_
-  rw [Set.preimage_snd_singleton_eq_range]
-  exact Set.finite_range _
 
 /-- The coefficients of the re-expansion of `c` on the discs of level `h + 1`: on the disc of
 `a' = a + pʰ b`, `0 ≤ b < p`, the coefficient of `vʲ` is
@@ -302,7 +371,7 @@ private theorem norm_transitionCoeff_le_norm (c : AnalyticStage p h E)
 omit [CompleteSpace E] in
 private theorem tendsto_transitionCoeff (c : AnalyticStage p h E) :
     Tendsto (transitionCoeff c) cofinite (𝓝 0) :=
-  squeeze_zero_norm (norm_transitionCoeff_le c) (tendsto_norm_pow_mul_cofinite _)
+  squeeze_zero_norm (norm_transitionCoeff_le c) (PadicInt.tendsto_norm_p_pow_mul_cofinite _)
 
 /-- The transition `LA_h(E) → LA_{h+1}(E)`. The disc of `a ∈ ZMod (pʰ)` is the union of the discs
 of the classes `a' = a + pʰ b`, `0 ≤ b < p`, in `ZMod (p ^ (h + 1))`, where `b = ⌊a'.val / pʰ⌋`.
@@ -317,13 +386,13 @@ noncomputable def transition : AnalyticStage p h E →L[S] AnalyticStage p (h + 
       map_add' c d := by
         ext i
         simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, transitionCoeff,
-          ZeroAtInftyContinuousMap.coe_add, Pi.add_apply, smul_add]
+          FunLike.coe_add, Pi.add_apply, smul_add]
         exact (summable_transitionScalar_smul c _ _ _).tsum_add
           (summable_transitionScalar_smul d _ _ _)
       map_smul' s c := by
         ext i
         simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, transitionCoeff,
-          ZeroAtInftyContinuousMap.coe_smul, Pi.smul_apply, RingHom.id_apply, smul_comm _ s]
+          FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply, smul_comm _ s]
         exact (summable_transitionScalar_smul c _ _ _).tsum_const_smul s }
   { L with
     cont := AddMonoidHomClass.continuous_of_bound L 1 fun c ↦ by
@@ -410,7 +479,7 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
         (pow_le_one₀ (norm_nonneg _) (PadicInt.norm_le_one _))).trans
           (norm_transitionScalar_le b _ _)
     · refine Filter.Tendsto.smul_cofinite_nhds_zero (f := fun j ↦ ‖(p : ℤ_[p])‖ ^ j)
-        (g := fun k ↦ ‖c (a, k)‖) tendsto_norm_p_pow_cofinite ?_
+        (g := fun k ↦ ‖c (a, k)‖) PadicInt.tendsto_norm_p_pow_cofinite ?_
       rw [Nat.cofinite_eq_atTop]
       simpa using (tendsto_apply_mk_atTop c a).norm
   calc ∑' j, v ^ j • transition S c (a', j)
@@ -425,6 +494,12 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
         refine tsum_eq_sum fun j hj ↦ ?_
         rw [Finset.mem_range, not_lt] at hj
         simp [transitionScalar, Nat.choose_eq_zero_of_lt (Nat.lt_of_succ_le hj)]
+
+/-- Evaluation after the transition is evaluation, as an identity of continuous linear maps. -/
+@[simp]
+theorem eval_comp_transition :
+    (eval (p := p) (h := h + 1) (E := E) S).comp (transition S) = eval S :=
+  ContinuousLinearMap.ext (eval_transition S)
 
 variable {k l : ℕ}
 
@@ -529,6 +604,12 @@ theorem norm_transitionLE_le (hhk : h ≤ k) (c : AnalyticStage p h E) :
     rw [transitionLE_succ S hhk, ContinuousLinearMap.comp_apply]
     exact (norm_transition_le S _).trans ih
 
+/-- Re-expansion between any two analytic levels has operator norm at most `1`. -/
+theorem opNorm_transitionLE_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+    [SMulCommClass ℤ_[p] 𝕜 E] (hhk : h ≤ k) : ‖transitionLE (p := p) (E := E) 𝕜 hhk‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun c ↦ by
+    simpa using norm_transitionLE_le 𝕜 hhk c
+
 /-- Re-expansion between any two analytic levels preserves the evaluated function. -/
 @[simp]
 theorem eval_transitionLE (hhk : h ≤ k) (c : AnalyticStage p h E) :
@@ -537,6 +618,13 @@ theorem eval_transitionLE (hhk : h ≤ k) (c : AnalyticStage p h E) :
   | base => simp
   | succ k hhk ih =>
     rw [transitionLE_succ S hhk, ContinuousLinearMap.comp_apply, eval_transition, ih]
+
+/-- Evaluation after re-expansion between two levels is evaluation, as an identity of continuous
+linear maps. -/
+@[simp]
+theorem eval_comp_transitionLE (hhk : h ≤ k) :
+    (eval (p := p) (h := k) (E := E) S).comp (transitionLE S hhk) = eval S :=
+  ContinuousLinearMap.ext (eval_transitionLE S hhk)
 
 /-- Re-expansion between any two levels is injective if multiplication by `p` on the
 coefficient module is injective. -/

@@ -105,6 +105,7 @@ theorem refl (F : Finset ι ⥤ C) :
     ← eqToHom_map F (by simp : insert a S = (insert a S).map _), ← F.map_comp, ← F.map_comp]
   exact congrArg F.map (Subsingleton.elim _ _)
 
+omit [LinearOrder μ] in
 /-- The composites `α₂ (e₁(S)) ∘ α₁ S`, followed by the identification `e₂(e₁(S)) = (e₂ ∘ e₁)(S)`,
 are compatible with the edge maps when `α₁` and `α₂` are. -/
 theorem trans {F : Finset ι ⥤ C} {G : Finset κ ⥤ C} {H : Finset μ ⥤ C} {e₁ : ι ≃ κ}
@@ -113,6 +114,7 @@ theorem trans {F : Finset ι ⥤ C} {G : Finset κ ⥤ C} {H : Finset μ ⥤ C} 
     (h₁ : IsCubeReindexCompatible F G e₁ α₁) (h₂ : IsCubeReindexCompatible G H e₂ α₂) :
     IsCubeReindexCompatible F H (e₁.trans e₂) fun S ↦
       α₁ S ≪≫ α₂ (S.map e₁.toEmbedding) ≪≫ eqToIso (congrArg H.obj (by simp [map_map])) := by
+  classical
   intro S a ha
   simp only [Iso.trans_hom, eqToIso.hom]
   rw [← Category.assoc, h₁ S a ha, Category.assoc, ← Category.assoc (G.map _),
@@ -272,5 +274,27 @@ lemma cubeComplexReindexIso_trans {H : Finset μ ⥤ C} (e₁ : ι ≃ κ) (e₂
     ι_cubeComplexReindexIso_hom_f, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
     smul_smul, eqToIso.hom, Equiv.coe_trans]
   rw [eqToHom_comp_cubeComplexι H (by simp [map_map]), hsign]
+
+/-- `Functor.cubeComplexReindexIso_refl` for a reindexing `e'` which is only propositionally the
+identity. -/
+lemma cubeComplexReindexIso_refl_of_eq {e' : ι ≃ ι} (he : e' = Equiv.refl ι)
+    (h : IsCubeReindexCompatible F F e' fun S ↦ eqToIso (congrArg F.obj (by simp [he]))) :
+    F.cubeComplexReindexIso e' _ h = Iso.refl F.cubeComplex := by
+  subst he
+  exact F.cubeComplexReindexIso_refl
+
+/-- `Functor.cubeComplexReindexIso_trans` for a reindexing `e'` which is only propositionally the
+composite `e₂ ∘ e₁`. -/
+lemma cubeComplexReindexIso_trans_of_eq {H : Finset μ ⥤ C} (e₁ : ι ≃ κ) (e₂ : κ ≃ μ)
+    {e' : ι ≃ μ} (he : e' = e₁.trans e₂)
+    (α₁ : ∀ S : Finset ι, F.obj S ≅ G.obj (S.map e₁.toEmbedding))
+    (α₂ : ∀ S : Finset κ, G.obj S ≅ H.obj (S.map e₂.toEmbedding))
+    (h₁ : IsCubeReindexCompatible F G e₁ α₁) (h₂ : IsCubeReindexCompatible G H e₂ α₂)
+    (h : IsCubeReindexCompatible F H e' fun S ↦ α₁ S ≪≫ α₂ (S.map e₁.toEmbedding) ≪≫
+      eqToIso (congrArg H.obj (by simp [he, map_map]))) :
+    F.cubeComplexReindexIso e' _ h =
+      F.cubeComplexReindexIso e₁ α₁ h₁ ≪≫ G.cubeComplexReindexIso e₂ α₂ h₂ := by
+  subst he
+  exact F.cubeComplexReindexIso_trans e₁ e₂ α₁ α₂ h₁ h₂
 
 end CategoryTheory.Functor

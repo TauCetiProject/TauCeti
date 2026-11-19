@@ -59,15 +59,6 @@ The maps produced here are not canonical and are not asserted to be unique: the 
 simply connected domain with the disc form a torsor under `Aut(𝔻)`, as recorded in the sibling
 `Uniqueness.lean` and `Normalization.lean`. Nothing here normalizes a choice.
 
-## Coordination with upstream Mathlib
-
-The Riemann mapping theorem is being formalized upstream at
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), which proves the
-L0–L3 prerequisites internally as private lemmas. These corollaries rest on the L3 shim in
-`RiemannMapping/Existence.lean` and are themselves an explicitly **temporary shim**: once the
-human-curated Mathlib theorem lands, they should be re-proved on top of it and their downstream
-consumers refactored accordingly.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 6 §1.
@@ -128,9 +119,7 @@ theorem exists_bijOn_differentiableOn_invFunOn_of_isSimplyConnected
 holomorphic and conformal in both directions. It is the Riemann map of `Ω` followed by the inverse
 of the Riemann map of `Ω'`, both taken from `TauCeti.riemannMapping_openPartialHomeomorph`.
 
-This is the packaged-equivalence companion the generality bar of
-`TauCetiRoadmap/ConformalMapping/README.md` asks for, in the same form as
-`TauCeti.riemannMapping_openPartialHomeomorph` for the disc. -/
+It has the same form as `TauCeti.riemannMapping_openPartialHomeomorph` for the disc. -/
 theorem exists_openPartialHomeomorph_of_isSimplyConnected
     (hΩo : IsOpen Ω) (hΩc : IsSimplyConnected Ω) (hΩ : Ω ≠ univ)
     (hΩ'o : IsOpen Ω') (hΩ'c : IsSimplyConnected Ω') (hΩ' : Ω' ≠ univ) :

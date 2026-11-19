@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import TauCeti.Algebra.Bialgebra.GroupLike.Evaluation
 public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.BaseChange
 public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.GroupLike
@@ -29,6 +30,7 @@ characters. No finite-generation, smoothness, or characteristic hypothesis is ne
 ## Main declarations
 
 * `TauCeti.groupLikeBaseChange`: the canonical scalar-extension map on characters.
+* `TauCeti.groupLikeBaseChange_injective`: injectivity along a faithfully flat extension.
 * `TauCeti.groupLikeBaseChange_bijective`: preservation of characters under the stated
   spanning, torsion-free, and connected-spectrum hypotheses.
 * `TauCeti.groupLikeBaseChangeEquiv`: the resulting multiplicative equivalence.
@@ -64,12 +66,21 @@ theorem val_groupLikeBaseChange (g : _root_.GroupLike R A) :
 
 /-- Extending a character commutes with a bialgebra morphism. -/
 @[simp]
-theorem groupLikeBaseChange_map {B : Type*} [Semiring B] [Bialgebra R B]
+theorem groupLikeBaseChange_mapGroupLike {B : Type*} [Semiring B] [Bialgebra R B]
     (f : A →ₐc[R] B) (g : _root_.GroupLike R A) :
-    groupLikeBaseChange (K := K) (GroupLike.map f g) =
-      GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id K K) f) (groupLikeBaseChange g) := by
+    groupLikeBaseChange (K := K) (f.mapGroupLike g) =
+      (Bialgebra.TensorProduct.map (BialgHom.id K K) f).mapGroupLike (groupLikeBaseChange g) := by
   apply _root_.GroupLike.val_injective
   simp
+
+/-- Scalar extension of characters is injective along a faithfully flat extension of the
+base ring. No spanning hypothesis is needed. -/
+theorem groupLikeBaseChange_injective {R K A : Type*} [CommRing R] [CommRing K] [Algebra R K]
+    [Module.FaithfullyFlat R K] [Ring A] [Bialgebra R A] :
+    Function.Injective (groupLikeBaseChange (R := R) (K := K) (A := A)) := fun _ _ h ↦
+  _root_.GroupLike.val_injective <|
+    Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := K) A
+      (congrArg _root_.GroupLike.val h)
 
 section Split
 
@@ -93,17 +104,18 @@ theorem groupLikeBaseChange_bijective
       simp [f]
     rw [← BialgHom.coe_toAlgHom f, ← AlgHom.coe_restrictScalars' R, ← hmap]
     exact Algebra.TensorProduct.map_bijective Function.bijective_id e.bijective
-  let eK := (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv R K
+  let eK := (MonoidAlgebra.scalarTensorBialgEquiv R K
     (G := _root_.GroupLike R A)).symm.trans
     (BialgEquiv.ofBijective f hf)
   let q := (TauCeti.MonoidAlgebra.groupLikeEquiv (R := K)
-    (H := _root_.GroupLike R A)).symm.trans (GroupLike.mapEquiv eK)
+    (H := _root_.GroupLike R A)).symm.trans eK.mapGroupLike
   have hq (g : _root_.GroupLike R A) : q g = groupLikeBaseChange (K := K) g := by
     apply _root_.GroupLike.val_injective
     simp only [q, eK, f, e, BialgEquiv.toBialgHom_eq_coe,
-      GroupLike.evaluationBialgEquiv_toBialgHom, GroupLike.mapEquiv_trans, MulEquiv.trans_apply,
-      GroupLike.val_mapEquiv, TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm,
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_symm_single,
+      GroupLike.evaluationBialgEquiv_toBialgHom, BialgEquiv.mapGroupLike_trans,
+      MulEquiv.trans_apply, BialgEquiv.val_mapGroupLike,
+      TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm,
+      MonoidAlgebra.scalarTensorBialgEquiv_symm_single,
       BialgEquiv.ofBijective_apply, Bialgebra.TensorProduct.map_tmul,
       BialgHom.id_apply, MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul,
       val_groupLikeBaseChange]

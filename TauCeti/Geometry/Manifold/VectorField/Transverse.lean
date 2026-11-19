@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
@@ -20,8 +20,8 @@ the tangent space of `M` at `ι s`. A transverse vector field does not vanish al
 (`TauCeti.IsTransverseAlong.ne_zero`).
 
 For a regular level `f⁻¹(c)` of a scalar function, with its preferred atlas
-`TauCeti.scalarRegularLevelChartedSpace`, the tangent space at `x` is the kernel of `df_x`
-(`TauCeti.range_mfderiv_coe_scalarRegularLevel`). So a vector field is transverse along the
+`TauCeti.regularLevelChartedSpace`, the tangent space at `x` is the kernel of `df_x`
+(`TauCeti.range_mfderiv_coe_regularLevel`). So a vector field is transverse along the
 inclusion of the level exactly when `df(Z) ≠ 0` at every point of the level
 (`TauCeti.isTransverseAlong_coe_scalarRegularLevel_iff`). This is how transversality to the
 hypersurfaces of symplectic geometry (energy levels, boundaries of domains, cosphere bundles) is
@@ -115,14 +115,14 @@ variable {f : M → ℝ} {c : ℝ} [I.Boundaryless] [FiniteDimensional ℝ E] [I
   (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ) f c)
 
 /-- **Transversality to a regular level.** A vector field `Z` is transverse along the inclusion of
-a regular level `f⁻¹(c)`, with its preferred atlas `TauCeti.scalarRegularLevelChartedSpace`,
+a regular level `f⁻¹(c)`, with its preferred atlas `TauCeti.regularLevelChartedSpace`,
 exactly when `df(Z) ≠ 0` at every point of the level. -/
 theorem isTransverseAlong_coe_scalarRegularLevel_iff {Z : (x : M) → TangentSpace I x} :
-    letI := scalarRegularLevelChartedSpace hf hreg
+    letI := regularLevelChartedSpace (n := finrank ℝ E - 1) hf hreg (by rw [finrank_self])
     IsTransverseAlong 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) Z (Subtype.val : {x : M // f x = c} → M) ↔
       ∀ x, f x = c → mfderiv I 𝓘(ℝ) f x (Z x) ≠ 0 := by
-  let := scalarRegularLevelChartedSpace hf hreg
-  simp only [isTransverseAlong_iff, range_mfderiv_coe_scalarRegularLevel hf hreg,
+  let := regularLevelChartedSpace (n := finrank ℝ E - 1) hf hreg (by rw [finrank_self])
+  simp only [isTransverseAlong_iff, range_mfderiv_coe_regularLevel hf hreg (by rw [finrank_self]),
     LinearMap.mem_ker, ContinuousLinearMap.coe_coe, Subtype.forall]
 
 end TauCeti

@@ -26,6 +26,10 @@ in `S`:
 ## Main results
 
 * `IsDedekindDomain.finite_integer_classGroup`: `Cl(𝒪_S)` is finite whenever `Cl(R)` is.
+* `IsDedekindDomain.isPrincipalIdealRing_integer_iff`: `𝒪_S` is a principal ideal domain exactly
+  when the classes of the primes in `S` generate `Cl(R)`.
+* `IsDedekindDomain.exists_finset_superset_isPrincipalIdealRing_integer`: with `Cl(R)` finite,
+  every finite `S₀` is contained in a finite `S` with `𝒪_S` a principal ideal domain.
 * `IsDedekindDomain.integer_extendedHom_mk0_idealUnder`: the class of `I` is extended from the
   class of
   its contraction — the explicit preimage witnessing surjectivity, so a consumer holding a concrete
@@ -47,16 +51,20 @@ The proof is the first isomorphism theorem applied to extension of ideals `Cl(R)
 
 `IsDedekindDomain.finite_integer_classGroup` is the consequence the arithmetic wants: `Cl(𝒪_S)` is
 finite whenever `Cl(R)` is, being a quotient of it. That is one of the two finiteness inputs to
-weak Mordell–Weil (the other being the `S`-unit theorem), so this advances
-`TauCetiRoadmap/EllipticCurves/README.md` §Layer 6 (Mordell–Weil), whose Kummer argument needs
-`E(K)/2E(K)` finite.
+weak Mordell–Weil (the other being the `S`-unit theorem), whose Kummer argument needs `E(K)/2E(K)`
+finite.
 
 Adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's
-convention for adapted material, the upstream authorship is credited here rather than in the
-copyright header. Stoll's unprefixed names are given the `integer` prefix that
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll). Following this repository's convention for
+adapted material, the upstream authorship is credited here rather than in the copyright header.
+Stoll's unprefixed names are given the `integer` prefix that
 `TauCeti/RingTheory/DedekindDomain/SInteger/` already uses.
+
+## References
+
+* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press, 2006,
+  Proposition 5.3.6 (enlarging `S` until the `S`-integers are a principal ideal domain).
 -/
 
 public section
@@ -174,6 +182,25 @@ theorem subsingleton_integer_classGroup_iff :
     Subsingleton (ClassGroup (S.integer K)) ↔
       Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤ := by
   rw [(integerClassGroupEquiv K S).toEquiv.subsingleton_congr, QuotientGroup.subsingleton_iff]
+
+/-- **The `S`-integers are a principal ideal domain exactly when the classes of the primes in `S`
+generate the class group of `R`.** -/
+theorem isPrincipalIdealRing_integer_iff :
+    IsPrincipalIdealRing (S.integer K) ↔
+      Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) = ⊤ := by
+  rw [TauCeti.isPrincipalIdealRing_iff_subsingleton_classGroup, subsingleton_integer_classGroup_iff]
+
+/-- **Every finite set of primes is contained in a finite set whose `S`-integers are a principal
+ideal domain**, when the class group of `R` is finite (Bombieri–Gubler, Proposition 5.3.6): adjoin
+finitely many primes whose classes generate the class group. -/
+theorem exists_finset_superset_isPrincipalIdealRing_integer [Finite (ClassGroup R)]
+    (S₀ : Finset (HeightOneSpectrum R)) :
+    ∃ S : Finset (HeightOneSpectrum R), S₀ ⊆ S ∧
+      IsPrincipalIdealRing ((S : Set (HeightOneSpectrum R)).integer K) := by
+  classical
+  obtain ⟨T, hT, hgen⟩ := ClassGroup.exists_finite_closure_classGroupMk_image_eq_top (R := R)
+  refine ⟨S₀ ∪ hT.toFinset, Finset.subset_union_left, (isPrincipalIdealRing_integer_iff K _).mpr ?_⟩
+  exact top_unique (hgen ▸ Subgroup.closure_mono (Set.image_mono fun v hv ↦ by simp [hv]))
 
 end IsDedekindDomain
 

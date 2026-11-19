@@ -158,25 +158,8 @@ theorem genWeightSpace_typeBSpinLieRep_ne_bot_iff
     LieRingModule.compLieHom _ (P.typeBSpinLieRep b z hz)
   let _ : LieModule K (LieAlgebra.Orthogonal.typeB ι K) (ExteriorAlgebra K P.W) :=
     LieModule.compLieHom _ (P.typeBSpinLieRep b z hz)
-  let _ := b.ExteriorAlgebra.linearWeights_of_weight_basis
+  exact b.ExteriorAlgebra.genWeightSpace_ne_bot_iff_of_weight_basis
     (μ := fun s => typeBWeightEquiv (spinWeight K s))
-    (fun s A => P.typeBSpinLieRep_apply_cartan_exteriorBasis b z hz A s)
-  constructor
-  · intro hχ
-    let wt : Weight K (typeBDiagonalCartan K ι) (ExteriorAlgebra K P.W) := ⟨χ, hχ⟩
-    obtain ⟨c, hc⟩ := typeBWeightEquiv.surjective (wt : Module.Dual K (typeBDiagonalCartan K ι))
-    have hfun : (typeBWeightEquiv c : typeBDiagonalCartan K ι → K) = χ := by
-      simpa only [Weight.coe_coe, wt, Weight.coe_weight_mk] using congrArg DFunLike.coe hc
-    have hspace : spinWeightSpace Q P b c ≠ ⊥ := by
-      rw [ne_eq, ← P.genWeightSpace_typeBSpinLieRep_eq_spinWeightSpace b z hz,
-        LieSubmodule.toSubmodule_eq_bot, hfun, ← ne_eq]
-      exact hχ
-    obtain ⟨s, hs⟩ := (spinWeightSpace_ne_bot_iff P b).mp hspace
-    exact ⟨s, hs ▸ hfun⟩
-  · rintro ⟨s, rfl⟩
-    rw [ne_eq, ← LieSubmodule.toSubmodule_inj, LieSubmodule.bot_toSubmodule,
-      P.genWeightSpace_typeBSpinLieRep_spinWeight b z hz,
-      Submodule.span_singleton_eq_bot]
-    exact b.ExteriorAlgebra.ne_zero s
+    (fun s A => P.typeBSpinLieRep_apply_cartan_exteriorBasis b z hz A s) χ
 
 end TauCeti.SpinPolarizationData

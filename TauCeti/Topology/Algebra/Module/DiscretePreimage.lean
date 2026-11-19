@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import TauCeti.Topology.Algebra.Module.Quotient
@@ -29,10 +30,15 @@ group is `ker f / (L ∩ ker f)`, a complex torus because `L ∩ ker f` is a ful
 ## Main results
 
 * `Submodule.isClosed_orbitRelQuotient_mk_image_preimage`: `f⁻¹(L') / L` is closed in `E / L`.
+* `Submodule.exists_isOpen_inter_orbitRelQuotient_mk_image_preimage`: the image of `ker f` is
+  relatively open in `f⁻¹(L') / L`.
 * `Submodule.connectedComponentIn_orbitRelQuotient_mk_image_preimage`: the connected component
   of `0` in `f⁻¹(L') / L` is the image of `ker f`.
 * `Submodule.coe_addSubgroupOf_eq_connectedComponent_zero`: the same statement inside the
   subgroup `f⁻¹(L') / L`, in the form used by `Submodule.orbitRelQuotientComapQuotientEquiv`.
+* `Submodule.range_orbitRelQuotientMap_ker_subtype`: for normed spaces and continuous `f`, the
+  image of `ker f / (L ∩ ker f) → E / L` is the identity component of the kernel of the map
+  `E / L → E' / L'` induced by `f`.
 
 ## References
 
@@ -68,6 +74,14 @@ private theorem orbitRelQuotient_mk_mem_image_preimage_add_iff {U C : Set E'} (h
 
 variable [TopologicalSpace E] [TopologicalSpace E']
 
+omit [Module K E] [Module K E'] in
+/-- A discrete subgroup `L'` of `E'` meets some open neighbourhood `U` of `0` only in `0`. -/
+private theorem exists_isOpen_zero_mem_forall_mem_eq_zero [DiscreteTopology L'] :
+    ∃ U : Set E', IsOpen U ∧ (0 : E') ∈ U ∧ ∀ y ∈ U, y ∈ L' → y = 0 := by
+  obtain ⟨U, hUo, hU⟩ := isOpen_inter_eq_singleton_of_mem_discrete
+    (isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology L'›) L'.zero_mem
+  exact ⟨U, hUo, (hU.symm.subset rfl).1, fun y hy hyL ↦ hU.subset ⟨hy, hyL⟩⟩
+
 /-- If `f` carries `L` into the closed subgroup `L'`, then `f⁻¹(L') / L` is closed in the orbit
 space of translation by `L`. For lattices and a complex linear `f`, it is the kernel of the
 induced homomorphism of complex tori. -/
@@ -76,6 +90,39 @@ theorem Submodule.isClosed_orbitRelQuotient_mk_image_preimage (hL' : IsClosed (L
     IsClosed (_root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L')) :=
   isClosed_orbitRelQuotient_mk_image (S := L'.comap (f.restrictScalars ℤ))
     (Submodule.map_le_iff_le_comap.1 hf) (hL'.preimage hfc)
+
+/-- If `f` carries `L` into the discrete subgroup `L'`, then the image of `ker f` is relatively
+open in `f⁻¹(L') / L`: it is the trace on `f⁻¹(L') / L` of an open subset of the orbit space of
+translation by `L`. For lattices and a complex linear `f`, the image of `ker f` is the identity
+component of the kernel of the induced homomorphism of complex tori, which is therefore an open
+subgroup of that kernel. -/
+theorem Submodule.exists_isOpen_inter_orbitRelQuotient_mk_image_preimage [ContinuousAdd E]
+    [ContinuousAdd E'] [DiscreteTopology L'] (hfc : Continuous f)
+    (hf : L.map (f.restrictScalars ℤ) ≤ L') :
+    ∃ U : Set (AddAction.orbitRel.Quotient L E), IsOpen U ∧
+      U ∩ _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') =
+        _root_.Quotient.mk (AddAction.orbitRel L E) '' (LinearMap.ker f) := by
+  set π := _root_.Quotient.mk (AddAction.orbitRel L E)
+  -- An open neighbourhood `U` of `0` meeting `L'` only in `0`.
+  obtain ⟨U, hUo, h0U, hU0⟩ := exists_isOpen_zero_mem_forall_mem_eq_zero (L' := L')
+  -- The open set is the image of `f⁻¹(f(L) + U)`.
+  set C : Set E' := ↑(L.map (f.restrictScalars ℤ))
+  have hCL : ∀ c ∈ C, ∀ l ∈ L, c - f l ∈ C := fun c hc l hl ↦
+    (L.map (f.restrictScalars ℤ)).sub_mem hc ⟨l, hl, rfl⟩
+  refine ⟨π '' (f ⁻¹' (C + U)),
+    AddAction.isOpenQuotientMap_quotientMk.isOpenMap _ ((hUo.add_left).preimage hfc), ?_⟩
+  ext z
+  constructor
+  · rintro ⟨hzU, x, hx, rfl⟩
+    obtain ⟨l, hl, hlx⟩ :=
+      (orbitRelQuotient_mk_mem_image_preimage_add_iff L f h0U hU0 hf hCL hf hx).1 hzU
+    refine ⟨x - l, by simp [← hlx], ?_⟩
+    rw [_root_.Quotient.eq, L.orbitRel_apply_iff_sub_mem]
+    simpa using L.neg_mem hl
+  · rintro ⟨x, hx, rfl⟩
+    have hx0 : f x = 0 := LinearMap.mem_ker.1 hx
+    exact ⟨⟨x, ⟨0, (L.map (f.restrictScalars ℤ)).zero_mem, 0, h0U, by simp [hx0]⟩, rfl⟩,
+      x, by simp [hx0], rfl⟩
 
 variable [ContinuousAdd E] [Module ℝ K] [Module ℝ E] [ContinuousSMul ℝ E] [IsScalarTower ℝ K E]
   [ContinuousAdd E']
@@ -98,14 +145,7 @@ theorem Submodule.connectedComponentIn_orbitRelQuotient_mk_image_preimage [Discr
   · exact ((LinearMap.ker f).restrictScalars ℝ).convex.isPreconnected.image _
       continuous_quotient_mk'.continuousOn
   -- A neighbourhood `U` of `0` meeting `L'` only in `0`.
-  obtain ⟨U, hUo, hU⟩ := isOpen_induced_iff.1 (isOpen_discrete {(0 : L')})
-  have hU0 : ∀ y ∈ U, y ∈ L' → y = 0 := fun y hy hyL ↦ by
-    have hmem : (⟨y, hyL⟩ : L') ∈ Subtype.val ⁻¹' U := hy
-    rw [hU, mem_singleton_iff] at hmem
-    exact congrArg Subtype.val hmem
-  have h0U : (0 : E') ∈ U := by
-    have : (0 : L') ∈ Subtype.val ⁻¹' U := hU ▸ rfl
-    exact this
+  obtain ⟨U, hUo, h0U, hU0⟩ := exists_isOpen_zero_mem_forall_mem_eq_zero (L' := L')
   -- Split `f⁻¹(L') / L` into two relatively open pieces, according to whether `f x` lies in
   -- `f(L)`; the connected component of `0` lies in the first piece.
   set C : Set E' := ↑(L.map (f.restrictScalars ℤ))
@@ -175,3 +215,27 @@ theorem Submodule.coe_addSubgroupOf_eq_connectedComponent_zero [DiscreteTopology
     Eq.trans ?_ (connectedComponentIn_eq_image (zero_mem _))
   rw [← AddSubgroup.coe_subtype, ← AddSubgroup.coe_map, himage, hK, hK₀,
     connectedComponentIn_orbitRelQuotient_mk_image_preimage L f hfc hf]
+
+/-- Let the continuous map `f` carry `L` into the discrete subgroup `L'`. The image of the map of
+quotients `ker f / (L ∩ ker f) → E / L` induced by the inclusion of `ker f` is the identity
+component of the kernel `f⁻¹(L') / L` of the map `E / L → E' / L'` induced by `f`. When `L` is
+a full lattice this map is a closed embedding
+(`Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype` together with
+`ZLattice.isZLattice_comap_ker_subtype`), so this identity component is the torus
+`ker f / (L ∩ ker f)`. -/
+theorem Submodule.range_orbitRelQuotientMap_ker_subtype {K : Type*} [NormedField K]
+    [NormedSpace ℝ K] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace K E]
+    [IsScalarTower ℝ K E] {E' : Type*} [NormedAddCommGroup E'] [NormedSpace K E']
+    (L : Submodule ℤ E) {L' : Submodule ℤ E'} [DiscreteTopology L'] (f : E →ₗ[K] E')
+    (hfc : Continuous f)
+    (h : L ≤ L'.comap (f.restrictScalars ℤ)) :
+    Set.range ((ZLattice.comap K L (LinearMap.ker f).subtype).orbitRelQuotientMap L
+        ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl) =
+      connectedComponentIn (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker 0 := by
+  have hK : ((L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :
+      Set (AddAction.orbitRel.Quotient L E)) =
+        _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := by
+    simp [Submodule.ker_orbitRelQuotientMap]
+  rw [hK, connectedComponentIn_orbitRelQuotient_mk_image_preimage L f hfc
+    (map_le_iff_le_comap.2 h)]
+  exact (range_orbitRelQuotientMap _ _ _ _).trans <| congrArg _ <| by ext; simp

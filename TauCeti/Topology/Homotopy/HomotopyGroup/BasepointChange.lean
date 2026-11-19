@@ -49,11 +49,14 @@ product as the class of a concatenation `GenLoop.transAt i` in any cube directio
   `TauCeti.homotopyGroupEquivOfPath_congr` and `TauCeti.homotopyGroupEquivOfPath_symm`, and
   its naturality `TauCeti.map_homotopyGroupEquivOfPath` in the space. In particular whether a map
   induces bijections on homotopy groups does not depend on the base point within a path component
-  (`TauCeti.bijective_map_iff_of_path`).
+  (`ContinuousMap.bijective_map_iff_of_path`), and neither does whether it induces surjections
+  or injections (`ContinuousMap.surjective_map_iff_of_path`,
+  `ContinuousMap.injective_map_iff_of_path`).
 * `TauCeti.homotopyGroupMulEquivOfPath`: **a path from `x` to `y` induces a group isomorphism
   `HomotopyGroup N X x ≃* HomotopyGroup N X y`.**
 * `TauCeti.nonempty_homotopyGroupMulEquiv`: on a path-connected space, all the homotopy groups
-  in a fixed dimension are isomorphic.
+  in a fixed dimension are isomorphic; in particular one of them is trivial exactly when all are
+  (`TauCeti.subsingleton_homotopyGroup_of_pathConnectedSpace`).
 
 ## References
 
@@ -434,8 +437,8 @@ theorem map_homotopyGroupEquivOfPath {Y : Type*} [TopologicalSpace Y] (F : C(X, 
 omit [Fintype N] in
 /-- Whether a continuous map induces a bijection on homotopy groups does not depend on the base
 point within a path component. -/
-theorem bijective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y] (F : C(X, Y))
-    (γ : Path x y) :
+theorem _root_.ContinuousMap.bijective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y]
+    (F : C(X, Y)) (γ : Path x y) :
     Function.Bijective (HomotopyGroup.map (N := N) F (rfl : F x = F x)) ↔
       Function.Bijective (HomotopyGroup.map (N := N) F (rfl : F y = F y)) := by
   have : Fintype N := Fintype.ofFinite N
@@ -444,6 +447,32 @@ theorem bijective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y] (F
     funext (map_homotopyGroupEquivOfPath F γ)
   rw [← Function.Bijective.of_comp_iff _ (homotopyGroupEquivOfPath γ).bijective, h,
     Function.Bijective.of_comp_iff' (homotopyGroupEquivOfPath _).bijective]
+
+omit [Fintype N] in
+/-- Whether a continuous map induces a surjection on homotopy groups does not depend on the base
+point within a path component. -/
+theorem _root_.ContinuousMap.surjective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y]
+    (F : C(X, Y)) (γ : Path x y) :
+    Function.Surjective (HomotopyGroup.map (N := N) F (rfl : F x = F x)) ↔
+      Function.Surjective (HomotopyGroup.map (N := N) F (rfl : F y = F y)) := by
+  have : Fintype N := Fintype.ofFinite N
+  have h : HomotopyGroup.map (N := N) F (rfl : F y = F y) ∘ homotopyGroupEquivOfPath γ =
+      homotopyGroupEquivOfPath (γ.map F.continuous) ∘ HomotopyGroup.map F rfl :=
+    funext (map_homotopyGroupEquivOfPath F γ)
+  rw [← Equiv.surjective_comp (homotopyGroupEquivOfPath γ), h, Equiv.comp_surjective]
+
+omit [Fintype N] in
+/-- Whether a continuous map induces an injection on homotopy groups does not depend on the base
+point within a path component. -/
+theorem _root_.ContinuousMap.injective_map_iff_of_path [Finite N] {Y : Type*} [TopologicalSpace Y]
+    (F : C(X, Y)) (γ : Path x y) :
+    Function.Injective (HomotopyGroup.map (N := N) F (rfl : F x = F x)) ↔
+      Function.Injective (HomotopyGroup.map (N := N) F (rfl : F y = F y)) := by
+  have : Fintype N := Fintype.ofFinite N
+  have h : HomotopyGroup.map (N := N) F (rfl : F y = F y) ∘ homotopyGroupEquivOfPath γ =
+      homotopyGroupEquivOfPath (γ.map F.continuous) ∘ HomotopyGroup.map F rfl :=
+    funext (map_homotopyGroupEquivOfPath F γ)
+  rw [← Equiv.injective_comp (homotopyGroupEquivOfPath γ), h, Equiv.comp_injective]
 
 /-- **Base-point change for higher homotopy groups.** A path from `x` to `y` induces a group
 isomorphism between the homotopy groups based at `x` and at `y`. -/
@@ -523,5 +552,13 @@ theorem nonempty_homotopyGroupMulEquiv [Finite N] [Nonempty N] [DecidableEq N]
     Nonempty (HomotopyGroup N X x ≃* HomotopyGroup N X y) := by
   have : Fintype N := Fintype.ofFinite N
   exact ⟨homotopyGroupMulEquivOfPath (PathConnectedSpace.somePath x y)⟩
+
+omit [Fintype N] in
+/-- On a path-connected space, a homotopy group that is trivial at one base point is trivial at
+every base point. -/
+theorem subsingleton_homotopyGroup_of_pathConnectedSpace [Finite N] [PathConnectedSpace X]
+    (_ : Subsingleton (HomotopyGroup N X x)) : Subsingleton (HomotopyGroup N X y) :=
+  have : Fintype N := Fintype.ofFinite N
+  (homotopyGroupEquivOfPath (PathConnectedSpace.somePath y x)).subsingleton
 
 end TauCeti

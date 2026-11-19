@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Idempotent
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 
 /-!
 # Fredholm series on split Banach modules
@@ -37,7 +37,7 @@ universe u
 
 namespace TauCeti
 
-variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [CompleteSpace R] [NormedRing.IsTate R]
   {M N P : Type*} [SeminormedAddCommGroup M] [Module R M]
   [SeminormedAddCommGroup N] [Module R N] [SeminormedAddCommGroup P] [Module R P]

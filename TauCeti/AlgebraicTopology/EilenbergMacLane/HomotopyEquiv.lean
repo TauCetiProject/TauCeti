@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.Degree
 public import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 
 /-!
-# Asphericity and the `K(G, 1)` property are homotopy invariants
+# Asphericity and the `K(G, 1)` and `K(G, n)` properties are homotopy invariants
 
 Both properties are stated at a base point, but neither depends on it
 (`TauCeti.IsAspherical.of_basepoint`, `TauCeti.IsEilenbergMacLaneSpaceOne.of_basepoint`): an
@@ -17,13 +17,18 @@ aspherical space is path connected, so base-point change identifies its homotopy
 points. With that, homotopy invariance follows from the invariance of the homotopy groups
 themselves, since a homotopy equivalence carries no base point with it.
 
-These are the canonical invariance statements for both properties. In particular they cover a
+The same argument applies in every degree to the `K(G, n)` property
+`TauCeti.IsEilenbergMacLaneSpace`.
+
+These are the canonical invariance statements for these properties. In particular they cover a
 homeomorphism `e : X ≃ₜ Y`, through `e.toHomotopyEquiv`, at any base point of `Y`.
 
 ## Main declarations
 
 * `TauCeti.IsAspherical.of_homotopyEquiv`: **asphericity is a homotopy invariant.**
 * `TauCeti.IsEilenbergMacLaneSpaceOne.of_homotopyEquiv`: **being a `K(G, 1)` space is a homotopy
+  invariant.**
+* `TauCeti.IsEilenbergMacLaneSpace.of_homotopyEquiv`: **being a `K(G, n)` space is a homotopy
   invariant.**
 
 ## References
@@ -65,5 +70,24 @@ theorem of_homotopyEquiv (h : IsEilenbergMacLaneSpaceOne G X x) (e : X ≃ₕ Y)
     (h.nonempty_fundamentalGroupMulEquiv.map fun f => φ.symm.trans f)
 
 end IsEilenbergMacLaneSpaceOne
+
+namespace IsEilenbergMacLaneSpace
+
+variable {G : Type*} [Group G] {n : ℕ} [NeZero n]
+
+/-- **Being an Eilenberg--Mac Lane space of type `K(G, n)` is a homotopy invariant**, at every
+base point of the homotopy equivalent space. -/
+theorem of_homotopyEquiv (h : IsEilenbergMacLaneSpace G n X x) (e : X ≃ₕ Y) (y : Y) :
+    IsEilenbergMacLaneSpace G n Y y := by
+  have := h.pathConnectedSpace
+  refine .mk e.pathConnectedSpace (fun k hk0 hk ↦ ?_) ?_
+  · have : NeZero k := ⟨hk0⟩
+    have := h.subsingleton_homotopyGroup hk
+    obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv_of_homotopyEquiv (N := Fin k) e x y
+    exact φ.toEquiv.subsingleton_congr.mp inferInstance
+  · obtain ⟨φ⟩ := nonempty_homotopyGroupMulEquiv_of_homotopyEquiv (N := Fin n) e x y
+    exact h.nonempty_homotopyGroupMulEquiv.map φ.symm.trans
+
+end IsEilenbergMacLaneSpace
 
 end TauCeti

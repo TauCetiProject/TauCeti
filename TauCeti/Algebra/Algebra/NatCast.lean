@@ -26,9 +26,14 @@ differentiation.
 * `IsUnit.neZero_natCast`: a natural number invertible in a nontrivial semiring is nonzero.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
   exactly when it contains `t`.
-* `TauCeti.isUnit_natCast_of_ne_zero`: every nonzero natural number is a unit in a `ℚ`-algebra.
+* `TauCeti.isUnit_natCast_of_ne_zero`, `TauCeti.isUnit_natCast_add_of_ne_zero`,
+  `TauCeti.isUnit_natCast_add_one`: every nonzero natural number (in particular `(m : K) + k` for
+  `k ≠ 0` and `(m : K) + 1`) is a unit in a `ℚ`-algebra.
+* `TauCeti.natCast_mul_algebraMap_inv`: `m · (1 / m) = 1` in a `ℚ`-algebra, for `m ≠ 0`.
 * `TauCeti.inv_natCast_add_one_smul_mul_natCast_add_one`: `(k + 1)⁻¹ • a * (k + 1) = a` in a
   `ℚ`-algebra.
+* `TauCeti.natCast_add_one_mul_algebraMap_inv_smul`: `(k + 1) * ((1 / (k + 1)) • a) = a` in an
+  algebra over a `ℚ`-algebra, the scalar `1 / (k + 1)` coming from `ℚ`.
 -/
 
 public section
@@ -57,11 +62,37 @@ theorem isUnit_natCast_of_ne_zero {K : Type*} [Semiring K] [Algebra ℚ K] {m : 
     (hm : m ≠ 0) : IsUnit (m : K) := by
   simpa using (Nat.cast_ne_zero.2 hm : (m : ℚ) ≠ 0).isUnit.map (algebraMap ℚ K)
 
+/-- Adding a nonzero natural number to a natural number gives a unit in a `ℚ`-algebra. -/
+theorem isUnit_natCast_add_of_ne_zero {K : Type*} [Semiring K] [Algebra ℚ K] (m : ℕ) {k : ℕ}
+    (hk : k ≠ 0) : IsUnit ((m : K) + k) := by
+  simpa only [Nat.cast_add] using isUnit_natCast_of_ne_zero (K := K) (m := m + k) (by omega)
+
+/-- For every natural number `m`, `(m : K) + 1` is a unit in a `ℚ`-algebra. -/
+theorem isUnit_natCast_add_one {K : Type*} [Semiring K] [Algebra ℚ K] (m : ℕ) :
+    IsUnit ((m : K) + 1) := by
+  simpa only [Nat.cast_one] using isUnit_natCast_add_of_ne_zero (K := K) m one_ne_zero
+
+/-- Multiplying by a nonzero natural number `m` and by the image of `m⁻¹ : ℚ` cancel in a
+`ℚ`-algebra. -/
+theorem natCast_mul_algebraMap_inv {K : Type*} [Semiring K] [Algebra ℚ K] {m : ℕ}
+    (hm : m ≠ 0) : (m : K) * algebraMap ℚ K (m : ℚ)⁻¹ = 1 := by
+  rw [← map_natCast (algebraMap ℚ K), ← map_mul, mul_inv_cancel₀ (Nat.cast_ne_zero.2 hm), map_one]
+
 /-- Dividing by `k + 1` and multiplying by `k + 1` cancel in a `ℚ`-algebra. -/
 theorem inv_natCast_add_one_smul_mul_natCast_add_one {R : Type*} [Semiring R] [Algebra ℚ R]
     (a : R) (k : ℕ) : ((k : ℚ) + 1)⁻¹ • a * ((k : R) + 1) = a := by
   have hcast : (k : R) + 1 = algebraMap ℚ R ((k : ℚ) + 1) := by simp
   rw [hcast, ← Algebra.commutes, ← Algebra.smul_def, smul_smul]
   simp [Nat.cast_add_one_ne_zero]
+
+/-- Multiplying by `k + 1` cancels the scalar `1 / (k + 1)` of a `ℚ`-algebra `R` acting on an
+`R`-algebra `A`. -/
+theorem natCast_add_one_mul_algebraMap_inv_smul {R A : Type*} [CommSemiring R] [Algebra ℚ R]
+    [Semiring A] [Algebra R A] (k : ℕ) (a : A) :
+    ((k : A) + 1) * (algebraMap ℚ R ((k : ℚ) + 1)⁻¹ • a) = a := by
+  have h := natCast_mul_algebraMap_inv (K := R) k.succ_ne_zero
+  push_cast at h
+  have hcast : (k : A) + 1 = algebraMap R A ((k : R) + 1) := by simp
+  rw [Algebra.smul_def, ← mul_assoc, hcast, ← map_mul, h, map_one, one_mul]
 
 end TauCeti

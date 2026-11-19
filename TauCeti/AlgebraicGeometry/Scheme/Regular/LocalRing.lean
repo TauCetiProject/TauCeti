@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.RingTheory.RegularLocalRing.Defs
+import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
+import TauCeti.RingTheory.RegularLocalRing.Flat
 
 /-!
 # Regular local rings of schemes
@@ -16,24 +19,35 @@ regularity of the local rings at every point of the open. In particular, a Noeth
 regular exactly when the local rings of its spectrum are regular. Open immersions identify local
 rings, so they preserve and reflect their regularity.
 
+More generally, a flat, formally unramified morphism `f : X ⟶ Y` locally of finite type (for
+instance an étale morphism) induces at each point `x` a flat local homomorphism
+`𝒪_{Y, f x} ⟶ 𝒪_{X, x}` under which the maximal ideal of the source generates the
+maximal ideal of the target, and which preserves and reflects Noetherianity
+(`AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_stalkMap_of_formallyUnramified`,
+`AlgebraicGeometry.Scheme.Hom.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`). Between
+Noetherian local rings such a homomorphism both preserves and reflects regularity
+(`TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq`).
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_of_isRegularRing`
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec`
 * `TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk_Spec`
+* `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_Spec_iff`
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_iff_of_isOpenImmersion`
+* `AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified`
 -/
 
 public section
 
 open CategoryTheory AlgebraicGeometry
 
+universe u
+
 namespace TauCeti
 
 namespace AlgebraicGeometry
-
-universe u
 
 /-- If the sections over an affine open `U` form a regular ring, the local rings at the points of
 `U` are regular. -/
@@ -80,6 +94,14 @@ theorem isRegularRing_iff_isRegularLocalRing_stalk_Spec (R : CommRingCat.{u})
     fun x _ ↦ h x
   exact .of_ringEquiv e
 
+/-- The local ring of `Spec R` at `x` is the localization of `R` at the prime `x`
+(Mathlib `AlgebraicGeometry.Spec.stalkIso`), so one is regular exactly when the other is. -/
+theorem isRegularLocalRing_stalk_Spec_iff (R : CommRingCat.{u}) (x : PrimeSpectrum R) :
+    IsRegularLocalRing ((Spec R).presheaf.stalk x) ↔
+      IsRegularLocalRing (Localization.AtPrime x.asIdeal) :=
+  let e := (Spec.stalkIso R x).commRingCatIsoToRingEquiv
+  ⟨fun _ ↦ .of_ringEquiv e, fun _ ↦ .of_ringEquiv e.symm⟩
+
 /-- An open immersion `f : X ⟶ Y` identifies the local ring of `X` at `x` with the local ring of
 `Y` at `f x`, so one is regular exactly when the other is. -/
 theorem isRegularLocalRing_stalk_iff_of_isOpenImmersion {X Y : Scheme.{u}} (f : X ⟶ Y)
@@ -91,3 +113,25 @@ theorem isRegularLocalRing_stalk_iff_of_isOpenImmersion {X Y : Scheme.{u}} (f : 
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] [FormallyUnramified f] [LocallyOfFiniteType f]
+  (x : X)
+
+/-- A flat, formally unramified morphism `f : X ⟶ Y` locally of finite type (in particular an
+étale morphism) preserves and reflects regularity of local rings: the local ring of `Y` at `f x`
+is regular exactly when the local ring of `X` at `x` is. -/
+theorem isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified :
+    IsRegularLocalRing (Y.presheaf.stalk (f x)) ↔ IsRegularLocalRing (X.presheaf.stalk x) := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have := isLocalHom_stalkMap_toAlgebra f x
+  have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
+  have h := map_maximalIdeal_stalkMap_of_formallyUnramified f x
+  refine ⟨fun hy ↦ ?_, fun hx ↦ ?_⟩
+  · have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mp inferInstance
+    exact (TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mpr hy
+  · have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mpr inferInstance
+    exact (TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mp hx
+
+end AlgebraicGeometry.Scheme.Hom

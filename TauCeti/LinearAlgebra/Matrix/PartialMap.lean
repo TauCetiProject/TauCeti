@@ -15,7 +15,10 @@ predicate `p`, has the `0`/`1` matrix `X` with `X a b = if p b ∧ a = σ b then
 `b` is the standard basis vector at `σ b` when `p b` holds, and zero otherwise. Raising and
 lowering matrices of a weight basis have this shape, with `σ` a reflection of the indices.
 
-The lemmas here evaluate the matrix products with such an `X` entrywise. Multiplying by `X` on the
+The lemmas here evaluate the matrix products with such an `X` entrywise, and more generally with
+a weighted matrix `X a b = if p b ∧ a = σ b then ε b else 0`, whose column `b` is `ε b` times the
+standard basis vector at `σ b`; the raising and lowering matrices of a sum of a module and its
+dual have this shape with signs `ε`. Multiplying by `X` on the
 right selects a column; multiplying on the left selects a row once `σ` is an involution, so that
 `a = σ b` exactly when `b = σ a`; and the combination `∑ d, X d c • N d` of a family of matrices
 selects the member at `σ c`.
@@ -29,6 +32,8 @@ statements for the matrix of a bundled partial equivalence; the lemmas here take
 * `Matrix.mul_apply_of_apply_eq_ite_left`: the entries of `X * N` for an involution `σ`.
 * `Matrix.mul_apply_of_apply_eq_ite_right`: the entries of `N * X`.
 * `Matrix.sum_smul_apply_of_apply_eq_ite`: the entries of `∑ d, X d c • N d`.
+* `Matrix.mul_apply_of_apply_eq_ite_weight_left`, `Matrix.mul_apply_of_apply_eq_ite_weight_right`
+  and `Matrix.sum_smul_apply_of_apply_eq_ite_weight`: the same three for a weighted matrix.
 -/
 
 public section
@@ -37,12 +42,13 @@ namespace Matrix
 
 variable {l m n o α : Type*} [NonAssocSemiring α] {p : n → Prop} [DecidablePred p]
 
-/-- Multiplying on the left by the matrix of an involutive partial map `σ` on indices picks out
-row `σ a`, provided `σ a` lies in the domain. -/
-theorem mul_apply_of_apply_eq_ite_left [Fintype n] [DecidableEq n] {X : Matrix n n α}
-    {σ : n → n} (hσ : Function.Involutive σ) (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0)
-    (N : Matrix n o α) (a : n) (b : o) : (X * N) a b = if p (σ a) then N (σ a) b else 0 := by
-  rw [mul_apply, Finset.sum_eq_single (σ a)]
+/-- Multiplying on the left by a weighted matrix of an involutive partial map `σ` on indices picks
+out row `σ a`, scaled by the weight of column `σ a`, provided `σ a` lies in the domain. -/
+theorem mul_apply_of_apply_eq_ite_weight_left [Fintype n] [DecidableEq n] {X : Matrix n n α}
+    {σ : n → n} {ε : n → α} (hσ : Function.Involutive σ)
+    (hX : ∀ a b, X a b = if p b ∧ a = σ b then ε b else 0) (N : Matrix n o α) (a : n) (b : o) :
+    (X * N) a b = if p (σ a) then ε (σ a) * N (σ a) b else 0 := by
+  rw [Matrix.mul_apply, Finset.sum_eq_single (σ a)]
   · simp [hX, hσ a]
   · intro k _ hk
     rw [hX]
@@ -51,12 +57,20 @@ theorem mul_apply_of_apply_eq_ite_left [Fintype n] [DecidableEq n] {X : Matrix n
     · exact zero_mul _
   · simp
 
-/-- Multiplying on the right by the matrix of a partial map `σ` on indices picks out column `σ b`,
-provided `b` lies in the domain. -/
-theorem mul_apply_of_apply_eq_ite_right [Fintype m] [DecidableEq m] {X : Matrix m n α} {σ : n → m}
-    (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0) (N : Matrix l m α) (a : l) (b : n) :
-    (N * X) a b = if p b then N a (σ b) else 0 := by
-  rw [mul_apply, Finset.sum_eq_single (σ b)]
+/-- Multiplying on the left by the matrix of an involutive partial map `σ` on indices picks out
+row `σ a`, provided `σ a` lies in the domain. -/
+theorem mul_apply_of_apply_eq_ite_left [Fintype n] [DecidableEq n] {X : Matrix n n α}
+    {σ : n → n} (hσ : Function.Involutive σ) (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0)
+    (N : Matrix n o α) (a : n) (b : o) : (X * N) a b = if p (σ a) then N (σ a) b else 0 := by
+  simpa using mul_apply_of_apply_eq_ite_weight_left (ε := fun _ => 1) hσ hX N a b
+
+/-- Multiplying on the right by a weighted matrix of a partial map `σ` on indices picks out column
+`σ b`, scaled by the weight of column `b`, provided `b` lies in the domain. -/
+theorem mul_apply_of_apply_eq_ite_weight_right [Fintype m] [DecidableEq m] {X : Matrix m n α}
+    {σ : n → m} {ε : n → α} (hX : ∀ a b, X a b = if p b ∧ a = σ b then ε b else 0)
+    (N : Matrix l m α) (a : l) (b : n) :
+    (N * X) a b = if p b then N a (σ b) * ε b else 0 := by
+  rw [Matrix.mul_apply, Finset.sum_eq_single (σ b)]
   · simp [hX]
   · intro k _ hk
     rw [hX]
@@ -65,18 +79,34 @@ theorem mul_apply_of_apply_eq_ite_right [Fintype m] [DecidableEq m] {X : Matrix 
     · exact mul_zero _
   · simp
 
+/-- Multiplying on the right by the matrix of a partial map `σ` on indices picks out column `σ b`,
+provided `b` lies in the domain. -/
+theorem mul_apply_of_apply_eq_ite_right [Fintype m] [DecidableEq m] {X : Matrix m n α} {σ : n → m}
+    (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0) (N : Matrix l m α) (a : l) (b : n) :
+    (N * X) a b = if p b then N a (σ b) else 0 := by
+  simpa using mul_apply_of_apply_eq_ite_weight_right (ε := fun _ => 1) hX N a b
+
+/-- Combining a family of matrices with the coefficients of column `c` of a weighted matrix of a
+partial map `σ` on indices picks out the member at `σ c`, scaled by the weight of column `c`,
+provided `c` lies in the domain. -/
+theorem sum_smul_apply_of_apply_eq_ite_weight [Fintype m] [DecidableEq m] {X : Matrix m n α}
+    {σ : n → m} {ε : n → α} (hX : ∀ a b, X a b = if p b ∧ a = σ b then ε b else 0)
+    (N : m → Matrix l o α) (c : n) (a : l) (b : o) :
+    (∑ d, X d c • N d) a b = if p c then ε c * N (σ c) a b else 0 := by
+  rw [Matrix.sum_apply, Finset.sum_eq_single (σ c)]
+  · simp [hX]
+  · intro d _ hd
+    rw [Matrix.smul_apply, hX]
+    split_ifs with h
+    · exact absurd h.2 hd
+    · exact zero_smul _ _
+  · simp
+
 /-- Combining a family of matrices with the coefficients of column `c` of the matrix of a partial
 map `σ` on indices picks out the member at `σ c`, provided `c` lies in the domain. -/
 theorem sum_smul_apply_of_apply_eq_ite [Fintype m] [DecidableEq m] {X : Matrix m n α} {σ : n → m}
     (hX : ∀ a b, X a b = if p b ∧ a = σ b then 1 else 0) (N : m → Matrix l o α) (c : n) (a : l)
     (b : o) : (∑ d, X d c • N d) a b = if p c then N (σ c) a b else 0 := by
-  rw [Matrix.sum_apply, Finset.sum_eq_single (σ c)]
-  · simp [hX]
-  · intro d _ hd
-    rw [smul_apply, hX]
-    split_ifs with h
-    · exact absurd h.2 hd
-    · exact zero_smul _ _
-  · simp
+  simpa using sum_smul_apply_of_apply_eq_ite_weight (ε := fun _ => 1) hX N c a b
 
 end Matrix

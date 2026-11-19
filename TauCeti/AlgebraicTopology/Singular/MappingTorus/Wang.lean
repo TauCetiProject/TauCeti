@@ -28,9 +28,10 @@ The full sequence is also obtained from the short exact sequence of singular cha
 infinite cyclic cover `F × ℝ → T_φ` (`TauCeti.MappingTorus.cyclicCoverShortComplex_shortExact`),
 transported to `F` along the projection `F × ℝ → F`.  This gives the connecting morphism
 `TauCeti.MappingTorus.wangδ`, exactness at all three terms, and surjectivity of the fibre
-inclusion on degree-zero homology.  With coefficients in a commutative ring `k`, exactness
-identifies the cokernel of `𝟙 - φ_*` on `Hₙ(F)` with the image of the fibre in `Hₙ(T_φ)`
-(`TauCeti.MappingTorus.wangCokernelEquiv`).
+inclusion on degree-zero homology.  For a path-connected fibre the monodromy acts trivially on
+`H₀(F)`, so `wangδ` is surjective onto `H₀(F)` (`TauCeti.MappingTorus.epi_wangδ_zero`).  With
+coefficients in a commutative ring `k`, exactness identifies the cokernel of `𝟙 - φ_*` on
+`Hₙ(F)` with the image of the fibre in `Hₙ(T_φ)` (`TauCeti.MappingTorus.wangCokernelEquiv`).
 -/
 
 public section
@@ -235,6 +236,11 @@ instance epi_homologyMap_fibreInclusionChainMap_zero :
     epi_homologyMap_of_epi_of_not_rel _ 0 (by simp)
   rw [homologyMap_coverChainMap] at this
   exact epi_of_epi (cylinderHomologyIso F R 0).hom _
+
+/-- **The end of the Wang sequence** of a mapping torus with path-connected fibre:
+`H₁(T_φ) ⟶ H₀(F) ⟶ 0`, that is, the Wang connecting morphism is an epimorphism in degree zero. -/
+instance epi_wangδ_zero [PathConnectedSpace F] : Epi (wangδ φ R 0) :=
+  (wang_exact₁ φ R 0).epi_f (by simp)
 
 section ModuleCat
 

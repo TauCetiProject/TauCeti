@@ -259,10 +259,8 @@ theorem coveredRows_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
 @[simp]
 theorem isEmpty_stabilizeXRowSwapRectangle (y : GridState (n + 1)) :
     (G.stabilizeXRowSwapRectangle s y).IsEmpty := by
-  have h : Grid.cIoo (G.X s).castSucc (G.X s).succ = ∅ := by
-    rw [← Fin.coeSucc_eq_succ, ← finRotate_apply, Grid.cIoo_finRotate_eq_empty]
   rw [GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo, stabilizeXRowSwapRectangle_bottom,
-    stabilizeXRowSwapRectangle_top, h]
+    stabilizeXRowSwapRectangle_top, Grid.cIoo_castSucc_succ]
   simp
 
 /-- The stabilization level is unchanged by swapping the two stabilization rows. The swap is

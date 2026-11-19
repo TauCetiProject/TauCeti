@@ -41,6 +41,7 @@ diagrams in all.
   lemmas: every boundary point lies on an arc of exactly one of the three kinds.
 * `TauCeti.card_brauerDiagram_forall_isThrough`: there are `k !` diagrams all of whose arcs go
   through.
+* `TauCeti.BrauerDiagram.card_isLowerEnd`: a diagram on `k` strands has `k` arcs.
 * `TauCeti.BrauerDiagram.prod_eq_prod_isLowerEnd`: a product over the boundary points is a product
   over the arcs, indexed by their lower ends.
 
@@ -48,8 +49,6 @@ diagrams in all.
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
 -/
 
 public section
@@ -202,6 +201,14 @@ theorem notLowerEndEquiv_symm_apply (D : BrauerDiagram k) (x : {x // D.IsLowerEn
     D.notLowerEndEquiv.symm x = ⟨D.val x, D.not_isLowerEnd_val x.2⟩ :=
   (rfl)
 
+/-- **A Brauer diagram on `k` strands has `k` arcs**: its `2 * k` boundary points split evenly into
+the lower ends and their partners. -/
+@[simp]
+theorem card_isLowerEnd (D : BrauerDiagram k) : Fintype.card {x // D.IsLowerEnd x} = k := by
+  have hcompl := Fintype.card_subtype_compl D.IsLowerEnd
+  rw [Fintype.card_congr D.notLowerEndEquiv, Fintype.card_sum, Fintype.card_fin] at hcompl
+  omega
+
 /-- A product over the boundary points is a product over the arcs, each arc contributing the
 factors at its lower end and at its partner. -/
 theorem prod_eq_prod_isLowerEnd {M : Type*} [CommMonoid M] (D : BrauerDiagram k)
@@ -269,7 +276,7 @@ theorem throughPerm_apply (hD : ∀ x, D.IsThrough x) (i : Fin k) :
 @[simp]
 theorem permToBrauer_throughPerm (hD : ∀ x, D.IsThrough x) :
     permToBrauer (throughPerm D hD) = D := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rw [permToBrauer_val_inl, throughPerm_apply, Sum.inr_getRight]
   · obtain ⟨m, hm⟩ : ∃ m, D.val (Sum.inr j) = Sum.inl m :=

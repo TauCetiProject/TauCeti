@@ -160,6 +160,54 @@ theorem mem_facePair_idealOfDefinition (hf : Ideal.span (Set.range f) = ⊤) (p 
         P.locIdeal (numerators f p) _ _ :=
   P.mem_localization_idealOfDefinition _ _ _ _
 
+/-- The deleted-face localization homomorphism preserves the rings of definition. -/
+theorem eraseRingHom_mem_ringOfDefinition (hf : Ideal.span (Set.range f) = ⊤)
+    [DecidableEq ι] (p : ℕ) (S : Finset ι) (a : S) :
+    letI := faceTopology f P hf p (S.erase a.1)
+    letI := faceTopology f P hf (p + 1) S
+    ∀ {r}, r ∈ (facePair f P hf p (S.erase a.1)).ringOfDefinition →
+      cechLocalizationEraseRingHom f S a r ∈ (facePair f P hf (p + 1) S).ringOfDefinition := by
+  let _ := faceTopology f P hf p (S.erase a.1)
+  let _ := faceTopology f P hf (p + 1) S
+  intro r hr
+  simp only [facePair_ringOfDefinition] at hr ⊢
+  rw [cechLocalizationEraseRingHom_eq_awayLift]
+  exact P.awayLift_mem_locSubring _ _ _ _ _ _ (f a.1)
+    (Finset.prod_erase_mul S f a.2).symm (fun _ ht ↦ mul_mem_numerators f ht a.1) hr
+
+/-- The deleted-face localization homomorphism maps the ideal of definition into the
+ideal of definition of the full face. -/
+theorem map_eraseRingHom_idealOfDefinition_le (hf : Ideal.span (Set.range f) = ⊤)
+    [DecidableEq ι] (p : ℕ) (S : Finset ι) (a : S) :
+    letI := faceTopology f P hf p (S.erase a.1)
+    letI := faceTopology f P hf (p + 1) S
+    (facePair f P hf p (S.erase a.1)).idealOfDefinition.map
+      ((cechLocalizationEraseRingHom f S a).restrict _ _
+        fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr) ≤
+      (facePair f P hf (p + 1) S).idealOfDefinition := by
+  let R := Localization.Away (∏ j ∈ S.erase a.1, f j)
+  let T := Localization.Away (∏ j ∈ S, f j)
+  let _ := faceTopology f P hf p (S.erase a.1)
+  let _ := faceTopology f P hf (p + 1) S
+  let ψ := (cechLocalizationEraseRingHom f S a).restrict _ _
+    (fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr)
+  refine Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_
+  rw [Ideal.mem_comap, mem_facePair_idealOfDefinition]
+  have hr' := (mem_facePair_idealOfDefinition f P hf p (S.erase a.1)).mp hr
+  have hr'' := (P.mem_locIdealImage_iff (numerators f p)
+    (∏ j ∈ S.erase a.1, f j) R 1).mpr
+    ⟨_, by simpa only [pow_one] using hr', rfl⟩
+  have h := P.awayLift_mem_locIdealImage (numerators f p) _ R (numerators f (p + 1)) _ T
+    (f a.1) (Finset.prod_erase_mul S f a.2).symm
+    (fun _ ht ↦ mul_mem_numerators f ht a.1) 1 hr''
+  obtain ⟨s, hs, heq⟩ := (P.mem_locIdealImage_iff _ _ T 1).mp h
+  have he : s = ⟨ψ r, by
+      simpa only [facePair_ringOfDefinition] using (ψ r).property⟩ :=
+    Subtype.val_injective (by
+      simpa only [ψ, RingHom.coe_restrict_apply, cechLocalizationEraseRingHom_eq_awayLift]
+        using heq)
+  simpa only [pow_one, he] using hs
+
 /-! ### The topology of the terms -/
 
 variable (M : Type*) [AddCommGroup M] [Module B M]

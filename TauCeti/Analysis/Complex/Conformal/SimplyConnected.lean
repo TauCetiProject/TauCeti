@@ -19,9 +19,11 @@ import Mathlib.Analysis.Complex.BranchLogRoot
 
 An open set `U ⊆ ℂ` *has no holes* when every connected component of `ℂ \ U` is unbounded, that
 is, when `TauCeti.filledHull U ⊆ U`. This file proves that a connected open set without holes is
-simply connected, and that an open set whose frontier is connected, and whose complement is
-unbounded, has no holes. In particular a bounded domain whose frontier is a Jordan curve is simply
-connected, a Jordan curve being connected; this is `TauCeti.IsJordanDomain.isSimplyConnected`, in
+simply connected. Hence a connected open set whose frontier is connected and whose complement is
+unbounded is simply connected, since such a set has no holes
+(`TauCeti.filledHull_eq_self_of_isPreconnected_frontier`, in `Topology/FilledHull.lean`). In
+particular a bounded domain whose frontier is a Jordan curve is simply connected, a Jordan curve
+being connected; this is `TauCeti.IsJordanDomain.isSimplyConnected`, in
 `Conformal/Jordan/Domain.lean`.
 
 The proof is analytic. On a set without holes every closed curve is null-homologous, so by the
@@ -56,6 +58,9 @@ exactly when it has no holes.
   frontier and unbounded complement is simply connected.
 
 ## References
+
+* [Mathlib PR #33505](https://github.com/leanprover-community/mathlib4/pull/33505), the preceding
+  human-curated Riemann-mapping development and its local analytic prerequisites.
 
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., Theorem 13.11.
 * L. Ahlfors, *Complex Analysis*, Ch. 4, §4.2.

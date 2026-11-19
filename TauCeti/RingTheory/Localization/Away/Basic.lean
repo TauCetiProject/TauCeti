@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import Mathlib.Algebra.GroupWithZero.Action.Regular
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The fraction `t/s` in an away localisation
@@ -15,7 +17,8 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 A localisation `S` of `A` away from `s` inverts `s`, so it contains `t/s` for every `t : A`.
 Mathlib names the inverse itself — `IsLocalization.Away.invSelf s` is `1/s` — but not the general
 fraction; this file names it and gives the identities that manipulating it needs: scaling `1/s`
-by `t`, and clearing the denominator on either side.
+by `t`, and clearing the denominator on either side. It also records, over commutative rings,
+when the image of an element is a nonzerodivisor in a localisation away from another element.
 
 Nothing here is topological or Huber-specific — it is `IsLocalization` algebra over an arbitrary
 commutative semiring, for an arbitrary localisation away from `s` — so it is stated outside the
@@ -59,6 +62,14 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `TauCeti.Localization.map_integralClosure_adjoin_divBy_le`: that map carries `R[T/s]`, and its
   integral closure in the localisation, into `R'[T'/f(s)]` and its integral closure, as soon as
   `f` carries `R` into `R'` and `T` into `T'`.
+* `IsLocalization.Away.of_dvd_of_dvd_pow`: inverting `x` also localizes away from `g` when
+  `g ∣ x` and `x` divides a power of `g`.
+* `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
+  becomes a nonzerodivisor after inverting `r`.
+* `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
+  through compatible algebra towers.
+* `Localization.isScalarTower_awayMap`: the algebra structure on `B_z` over `A_z` given by
+  `Localization.awayMap` is compatible with the maps from `A`.
 
 ## Provenance
 
@@ -86,6 +97,13 @@ source never states.
 
 `mk'_pow_eq_invSelf_pow_mul` is **also a later addition with no AINTLIB analogue**, proved here
 directly from Mathlib's `mk'` API.
+
+`IsLocalization.Away.isSMulRegular_algebraMap`, which says when an element stays a
+nonzerodivisor in the localisation, is **also a later addition with no AINTLIB analogue**, proved
+here directly from Mathlib's `mk'` API.
+
+`Localization.isScalarTower_awayMap` is **also a later addition with no AINTLIB analogue**, proved
+here directly from Mathlib's `IsLocalization.map_eq`.
 
 `map_divBy_eq_mul_inv` is a **generalisation of an AINTLIB statement**, checked against the same
 commit. There, `awayLift_divByS_one_eq_unit_inv` in
@@ -441,3 +459,81 @@ theorem map_integralClosure_adjoin_divBy_le (hT : ∀ t ∈ T, f t ∈ T')
   exact IsIntegral.map_of_comp_eq φ _ (by ext; rfl) hx
 
 end TauCeti.Localization
+
+namespace IsLocalization.Away
+
+/-- Inverting `x` is also a localization away from `g` if `g` divides `x` and `x` divides
+some power of `g`. -/
+theorem of_dvd_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    {x g : R} {n : ℕ} [IsLocalization.Away x A] (hxg : g ∣ x) (hgx : x ∣ g ^ n) :
+    IsLocalization.Away g A := by
+  have hgA : IsUnit (algebraMap R A g) := IsLocalization.Away.isUnit_of_dvd x hxg
+  let B := Localization.Away g
+  have hxB : IsUnit (algebraMap R B x) :=
+    (IsLocalization.Away.algebraMap_isUnit_iff (S := B) g).mpr ⟨n, hgx⟩
+  -- Inverting `x`, `g`, or both gives the same localization.
+  let M := Submonoid.powers x ⊔ Submonoid.powers g
+  have hMA : M ≤ (IsUnit.submonoid A).comap (algebraMap R A) :=
+    sup_le (Submonoid.powers_le.mpr (IsLocalization.Away.algebraMap_isUnit x))
+      (Submonoid.powers_le.mpr hgA)
+  have hMB : M ≤ (IsUnit.submonoid B).comap (algebraMap R B) :=
+    sup_le (Submonoid.powers_le.mpr hxB)
+      (Submonoid.powers_le.mpr (IsLocalization.Away.algebraMap_isUnit g))
+  have : IsLocalization M A := IsLocalization.of_le (Submonoid.powers x) M le_sup_left hMA
+  have : IsLocalization M B := IsLocalization.of_le (Submonoid.powers g) M le_sup_right hMB
+  exact (IsLocalization.isLocalization_iff_of_isLocalization M (Submonoid.powers g) B).mp
+    inferInstance
+
+variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+
+/-- If `r` kills every element killed by `a`, then the image of `a` is a nonzerodivisor in the
+localization away from `r`. -/
+theorem isSMulRegular_algebraMap {r a : A} [IsLocalization.Away r B]
+    (h : ∀ b, a * b = 0 → r * b = 0) : IsSMulRegular B (algebraMap A B a) := by
+  refine IsSMulRegular.of_right_eq_zero_of_smul fun y hy ↦ ?_
+  obtain ⟨⟨c, s⟩, rfl⟩ := IsLocalization.mk'_surjective (Submonoid.powers r) y
+  rw [smul_eq_mul, IsLocalization.mul_mk'_eq_mk'_of_mul, IsLocalization.mk'_eq_zero_iff] at hy
+  obtain ⟨⟨_, n, rfl⟩, hn⟩ := hy
+  rw [IsLocalization.mk'_eq_zero_iff]
+  refine ⟨⟨r ^ (n + 1), n + 1, rfl⟩, ?_⟩
+  have := h (r ^ n * c) (by linear_combination hn)
+  linear_combination this
+
+end IsLocalization.Away
+
+namespace RingHom
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- Localization maps commute with `Localization.awayMap` through compatible algebra towers.
+Such towers arise, for example, when `Submonoid.powers a ≤ M`. -/
+theorem map_comp_algebraMap_eq_algebraMap_comp_awayMap (f : R →+* S) (M : Submonoid R) (a : R)
+    {Rm Sm : Type*} [CommRing Rm] [CommRing Sm]
+    [Algebra R Rm] [IsLocalization M Rm] [Algebra S Sm] [IsLocalization (M.map f) Sm]
+    [Algebra (Localization.Away a) Rm] [IsScalarTower R (Localization.Away a) Rm]
+    [Algebra (Localization.Away (f a)) Sm] [IsScalarTower S (Localization.Away (f a)) Sm] :
+    (IsLocalization.map (S := Rm) Sm f (Submonoid.le_comap_map M)).comp
+        (algebraMap (Localization.Away a) Rm) =
+      (algebraMap (Localization.Away (f a)) Sm).comp (Localization.awayMap f a) := by
+  apply IsLocalization.ringHom_ext (.powers a)
+  ext x
+  simp [← IsScalarTower.algebraMap_apply R (Localization.Away a) Rm,
+    IsLocalization.Away.map, IsLocalization.map_eq,
+    ← IsScalarTower.algebraMap_apply S (Localization.Away (f a)) Sm]
+
+end RingHom
+
+namespace Localization
+
+/-- The algebra structure on `B_z` over `A_z` given by `Localization.awayMap` is compatible with
+the maps from `A`. -/
+theorem isScalarTower_awayMap {A : Type*} [CommRing A] (B : Type*) [CommRing B]
+    [Algebra A B] (z : A) :
+    letI := (Localization.awayMap (algebraMap A B) z).toAlgebra
+    IsScalarTower A (Localization.Away z) (Localization.Away (algebraMap A B z)) :=
+  letI := (Localization.awayMap (algebraMap A B) z).toAlgebra
+  .of_algebraMap_eq fun a ↦ by
+    simp only [RingHom.algebraMap_toAlgebra, IsLocalization.Away.map, IsLocalization.map_eq]
+    exact IsScalarTower.algebraMap_apply A B _ a
+
+end Localization

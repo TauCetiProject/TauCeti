@@ -14,19 +14,23 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 # Singular homology of contractible spaces
 
 A contractible space has the singular homology of a point: its homology vanishes in every positive
-degree, and its reduced homology vanishes in every degree. Consequently, the reduced connecting
+degree, and its reduced homology vanishes in every degree. Every map between contractible spaces
+therefore induces an isomorphism on singular homology
+(`TauCeti.isIso_singularHomologyFunctor_map_of_contractibleSpace`). Likewise, the reduced connecting
 morphism of a pair is an isomorphism whenever its ambient space is contractible. For
 `TauCeti.diskBoundaryPair n`, this identifies the relative homology of a disk modulo its boundary
 with the reduced homology of the boundary sphere.  Dually, the quotient map
 `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism whenever the subspace is contractible; for a point this is
-`TauCeti.singularHomologyIsoOfSubsetSingleton : Hₖ₊₁(X) ≅ Hₖ₊₁(X, {x})`.
+`TauCeti.singularHomologyIsoOfSubsetSingleton : Hₖ₊₁(X) ≅ Hₖ₊₁(X, {x})`. The connecting morphism
+`Hₖ₊₁(X, A) ⟶ Hₖ(A)` then vanishes (`TopPair.singularHomologyδ_eq_zero_of_contractibleSpace`).
 
 Coefficients are an object `R` of an abelian category with coproducts, as everywhere in relative
 singular homology.
 
 With coefficients in a module `M`, the singular homology of a contractible space is free or
-finitely generated when `M` is, and over a nontrivial ring it has the rank of `M` in degree zero
-and vanishes in positive degrees (`ModuleCat.finrank_singularHomology_of_contractibleSpace`).
+finitely generated when `M` is, it is trivial in positive degrees
+(`ModuleCat.subsingleton_singularHomology_of_contractibleSpace`), and over a nontrivial ring it has
+the rank of `M` in degree zero (`ModuleCat.finrank_singularHomology_of_contractibleSpace`).
 
 The results follow Hatcher, *Algebraic Topology*, Section 2.1: the vanishing of reduced homology
 for contractible spaces after Corollary 2.11 and Example 2.23 for the disk and its boundary sphere.
@@ -68,6 +72,17 @@ theorem isZero_singularHomologyFunctor_of_contractibleSpace (X : TopCat.{w})
   rw [IsZero.iff_id_eq_zero, ← hid, CategoryTheory.Functor.map_comp, hpt.eq_of_src
     (((singularHomologyFunctor C n).obj R).map s) 0, comp_zero]
 
+/-- **A map between contractible spaces induces an isomorphism on singular homology.** In degree
+zero it intertwines the augmentations, which are isomorphisms; in positive degrees both groups
+vanish. -/
+instance isIso_singularHomologyFunctor_map_of_contractibleSpace {X Y : TopCat.{w}}
+    [ContractibleSpace X] [ContractibleSpace Y] (f : X ⟶ Y) (n : ℕ) :
+    IsIso (((singularHomologyFunctor C n).obj R).map f) := by
+  rcases n with _ | n
+  · exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε R f)
+  · exact (isZero_singularHomologyFunctor_of_contractibleSpace R X n.succ_ne_zero).isIso
+      (isZero_singularHomologyFunctor_of_contractibleSpace R Y n.succ_ne_zero) _
+
 variable [HasKernels C]
 
 /-- **The reduced singular homology of a contractible space vanishes in every degree.** -/
@@ -105,6 +120,13 @@ instance isIso_singularHomologyπ_of_contractibleSpace [ContractibleSpace P.snd]
   P.isIso_singularHomologyπ R
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd (k + 1))
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace R P.snd k)
+
+/-- If the subspace of a pair is contractible, the connecting morphism `Hₖ₊₁(X, A) ⟶ Hₖ(A)`
+vanishes. -/
+theorem singularHomologyδ_eq_zero_of_contractibleSpace [ContractibleSpace P.snd] (k : ℕ) :
+    P.singularHomologyδ R (k + 1) k = 0 := by
+  rw [← cancel_epi (P.singularHomologyπ R (k + 1)),
+    singularHomologyπ_comp_singularHomologyδ _ R (k + 1) k, comp_zero]
 
 end TopPair
 
@@ -166,6 +188,12 @@ instance subsingleton_reducedSingularHomology_of_contractibleSpace (q : ℕ) :
   ModuleCat.isZero_iff_subsingleton.mp
     (isZero_reducedSingularHomologyFunctor_of_contractibleSpace M X q)
 
+/-- The positive-degree singular homology of a contractible space is trivial. -/
+instance subsingleton_singularHomology_of_contractibleSpace (q : ℕ) :
+    Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) (q + 1)).obj M).obj X) :=
+  ModuleCat.isZero_iff_subsingleton.mp
+    (isZero_singularHomologyFunctor_of_contractibleSpace M X q.succ_ne_zero)
+
 /-- The singular homology of a contractible space with coefficients in a free module is free. -/
 instance free_singularHomology_of_contractibleSpace [Module.Free k M] (q : ℕ) :
     Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj X) :=
@@ -191,8 +219,6 @@ theorem finrank_singularHomology_of_contractibleSpace [Nontrivial k] (q : ℕ) :
     exact e.toLinearEquiv.finrank_eq
   | succ q =>
     rw [ite_eq_right q.succ_ne_zero]
-    have := ModuleCat.isZero_iff_subsingleton.mp
-      (isZero_singularHomologyFunctor_of_contractibleSpace M X q.succ_ne_zero)
     exact Module.finrank_zero_of_subsingleton
 
 end Free

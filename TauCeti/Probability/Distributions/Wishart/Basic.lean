@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Affine
 
 import Mathlib.MeasureTheory.Group.Convolution
 import Mathlib.Probability.ProductMeasure
+import TauCeti.Analysis.Matrix.GramFactorization
 import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Determinant
 import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Rank
@@ -136,6 +137,24 @@ theorem rank_coe_wishartGram_le (X : ι → EuclideanSpace ℝ (Fin p)) :
     Matrix.rank_conjTranspose_mul_self]
   exact Matrix.rank_le_card_height _
 
+/-- Gram sums of a finite family are exactly the positive-semidefinite matrices of rank
+at most the number of vectors. -/
+theorem range_wishartGram {ι : Type*} [Fintype ι] :
+    Set.range (wishartGram (p := p) (ι := ι)) =
+      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef ∧
+          (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ Fintype.card ι} := by
+  ext A
+  constructor
+  · rintro ⟨X, rfl⟩
+    exact ⟨posSemidef_coe_wishartGram X, rank_coe_wishartGram_le X⟩
+  · rintro ⟨hA, hr⟩
+    obtain ⟨B, hB⟩ := hA.exists_eq_conjTranspose_mul_self_of_rank_le hr
+    refine ⟨fun r ↦ WithLp.toLp 2 (B r), Subtype.ext ?_⟩
+    rw [coe_wishartGram, hB]
+    ext i j
+    simp [Matrix.sum_apply, Matrix.mul_apply, Matrix.vecMulVec_apply]
+
 /-- A linear image of the vectors congruates their Gram sum. -/
 theorem wishartGram_toEuclideanLin {q : ℕ} (M : Matrix (Fin q) (Fin p) ℝ)
     (X : ι → EuclideanSpace ℝ (Fin p)) :
@@ -249,9 +268,7 @@ theorem wishartGramMeasure_eq_map_sqrt (ν : ℕ) (hS : S.PosSemidef) :
       (wishartGramMeasure ν 1).map (Matrix.symmetricCongruenceLinearMap (CFC.sqrt S)) := by
   rw [map_symmetricCongruenceLinearMap_wishartGramMeasure ν _ Matrix.PosSemidef.one]
   refine congrArg _ ?_
-  rw [Matrix.mul_one, ← Matrix.conjTranspose_eq_transpose_of_trivial,
-    (Matrix.nonneg_iff_posSemidef.1 (CFC.sqrt_nonneg S)).isHermitian.eq,
-    CFC.sqrt_mul_sqrt_self S hS.nonneg]
+  rw [Matrix.mul_one, hS.sqrt_mul_transpose_sqrt]
 
 /-! ### Support, rank and singularity -/
 
@@ -275,7 +292,7 @@ theorem ae_posSemidef_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) 
       (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef := by
   refine (ae_iff_prob_eq_one ?_).2 (wishartGramMeasure_setOf_posSemidef ν S)
   apply measurableSet_setOfPred.mp
-  exact (Matrix.posSemidef_is_closed (n := Fin p) (𝕜 := ℝ)).measurableSet.preimage
+  exact (_root_.isClosed_setOfPred_posSemidef (n := Fin p) (R := ℝ)).measurableSet.preimage
     continuous_subtype_val.measurable
 
 /-- Every value of the congruated Gram sum has rank at most `min ν S.rank`: the Gram sum of `ν`

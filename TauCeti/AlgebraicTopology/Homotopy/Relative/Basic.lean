@@ -124,6 +124,11 @@ theorem apply_of_mem_boundary (p : RelGenLoop N X) (s : I) {t : I^N}
     (ht : t ∈ Cube.boundary N) : p (s, t) = X.pair.map X.basepoint :=
   p.2.2 s t (Or.inr ht)
 
+/-- A relative cube sends the faces `t j = 0` and `t j = 1` to the basepoint. -/
+theorem apply_update [DecidableEq N] (p : RelGenLoop N X) (s : I) (t : I^N) (j : N) {a : I}
+    (ha : a = 0 ∨ a = 1) : p (s, Function.update t j a) = X.pair.map X.basepoint :=
+  apply_of_mem_boundary p s ⟨j, by rwa [Function.update_self]⟩
+
 /-- The constant relative cube at the basepoint. -/
 def const : RelGenLoop N X :=
   ⟨ContinuousMap.const _ (X.pair.map X.basepoint), fun _ => ⟨_, rfl⟩, fun _ _ _ => rfl⟩
@@ -380,6 +385,14 @@ theorem map_map (f : X ⟶ Y) (g : Y ⟶ Z) (a : RelHomotopyGroup N X) :
 @[simp]
 theorem map_default (f : X ⟶ Y) : map f (default : RelHomotopyGroup N X) = default := by
   rw [default_eq, map_mk, RelGenLoop.map_const, default_eq]
+
+/-- If a based pair `X` is a retract of a based pair `Y`, and the relative homotopy set of `Y` is
+trivial, then so is the relative homotopy set of `X`: the map induced by the inclusion is injective,
+since the retraction induces a left inverse. -/
+theorem subsingleton_of_comp_eq_id {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X)
+    [Subsingleton (RelHomotopyGroup N Y)] : Subsingleton (RelHomotopyGroup N X) :=
+  (Function.LeftInverse.injective (g := map g) (f := map f) fun a ↦ by
+    rw [map_map, h, map_id, id]).subsingleton
 
 /-- Relative homotopy sets as a functor from based pairs to pointed types. -/
 @[expose, simps obj map_toFun]

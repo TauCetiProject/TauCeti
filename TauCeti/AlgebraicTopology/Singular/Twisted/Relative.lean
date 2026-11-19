@@ -32,10 +32,16 @@ only the absolute one of `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, nec
 
 * `TopPair.twistedChainComplex`: the relative twisted singular chain complex of a pair, presented
   as a cokernel by `TopPair.isColimitCokernelCoforkTwistedChainComplex`.
+* `TopPair.twistedChainComplexCoeff`: the coefficient of a relative chain on a simplex whose image
+  does not lie in the subspace, with `TopPair.twistedChainComplex_ext_coeff` stating that these
+  coefficients determine the relative chain.
 * `TopPair.twistedChainComplexCoefficientMap`: change of local coefficients on relative chains,
   with the corresponding `TopPair.twistedHomologyCoefficientMap`.
 * `TopPair.shortExact_twistedChainComplexShortComplex`: the twisted chains of the subspace, of the
   ambient space and of the pair form a short exact sequence of chain complexes.
+* `TopPair.twistedChainComplexXSplitting`, `TopPair.twistedChainComplexXRetract`: that sequence is
+  split in each degree, so the relative twisted chains are a retract of the ambient ones, and are
+  projective when the fibres of the system are (`TopPair.projective_twistedChainComplex_X`).
 * `TopPair.twistedHomology`, `TopPair.twistedHomologyπ` and `TopPair.twistedHomologyδ`, with the
   three exactness statements `TopPair.twistedHomology_exact_subspace`,
   `TopPair.twistedHomology_exact_space` and `TopPair.twistedHomology_exact_relative`.
@@ -60,6 +66,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits TauCeti
+open scoped Simplicial
 
 universe u v w
 
@@ -110,6 +117,61 @@ def isColimitCokernelCoforkTwistedChainComplex :
     IsColimit (P.cokernelCoforkTwistedChainComplex L) :=
   cokernelIsCokernel _
 
+/-- In every degree the subspace inclusion followed by the relative quotient is zero. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplex_condition_f (i : ℕ) :
+    (LocalCoefficientSystem.twistedChainComplexMap P.map L).f i ≫
+      (P.twistedChainComplexπ L).f i = 0 := by
+  simpa only [HomologicalComplex.comp_f, HomologicalComplex.zero_f] using
+    congrArg (fun k ↦ k.f i) (P.twistedChainComplexMap_comp_twistedChainComplexπ L)
+
+/-- The summand of a simplex coming from the subspace vanishes in relative twisted chains. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_twistedChainComplexπ_f (n : ℕ)
+    (σ : (TopCat.toSSet.obj P.snd) _⦋n⦌) :
+    LocalCoefficientSystem.ιTwistedChainComplex L n ((TopCat.toSSet.map P.map).app _ σ) ≫
+      (P.twistedChainComplexπ L).f n = 0 := by
+  have h := congrArg (fun k ↦
+    LocalCoefficientSystem.ιTwistedChainComplex (P.subspaceSystem L) n σ ≫ k)
+    (P.twistedChainComplex_condition_f L n)
+  rw [← Category.assoc,
+    LocalCoefficientSystem.ιTwistedChainComplex_twistedChainComplexMap_f] at h
+  -- The pullback fibre at σ is definitionally the fibre of L at the image initial vertex.
+  exact h.trans (comp_zero)
+
+/-- The relative twisted chains in each degree are the cokernel of the subspace chains. -/
+def isColimitCokernelCoforkTwistedChainComplexX (i : ℕ) :
+    IsColimit (CokernelCofork.ofπ ((P.twistedChainComplexπ L).f i)
+      (P.twistedChainComplex_condition_f L i)) :=
+  CokernelCofork.mapIsColimit _ (P.isColimitCokernelCoforkTwistedChainComplex L)
+    (HomologicalComplex.eval _ _ i)
+
+/-- The degree-`i` part `0 ⟶ Cᵢ(A; L|A) ⟶ Cᵢ(X; L) ⟶ Cᵢ(X, A; L) ⟶ 0` of the twisted chain
+sequence of a pair is split: it is exact since the relative chains are the cokernel of the
+subspace chains, and its first map is a split monomorphism, induced by the injection of the
+singular simplices of `A` into those of `X`. -/
+def twistedChainComplexXSplitting (i : ℕ) :
+    (ShortComplex.mk _ _ (P.twistedChainComplex_condition_f L i)).Splitting :=
+  ShortComplex.Splitting.ofExactOfRetraction _
+    (ShortComplex.exact_of_g_is_cokernel _ (P.isColimitCokernelCoforkTwistedChainComplexX L i))
+    (retraction ((LocalCoefficientSystem.twistedChainComplexMap P.map L).f i))
+    (IsSplitMono.id _) (epi_of_isColimit_cofork (P.isColimitCokernelCoforkTwistedChainComplexX L i))
+
+/-- The relative twisted chains `Cᵢ(X, A; L)` of a pair are a retract of the ambient twisted
+chains `Cᵢ(X; L)`: the degree-`i` twisted chain sequence of the pair is split
+(`TopPair.twistedChainComplexXSplitting`), so the quotient map to the relative chains has a
+section. -/
+def twistedChainComplexXRetract (i : ℕ) :
+    Retract ((P.twistedChainComplex L).X i) (L.twistedChainComplex.X i) :=
+  ⟨(P.twistedChainComplexXSplitting L i).s, (P.twistedChainComplexπ L).f i,
+    (P.twistedChainComplexXSplitting L i).s_g⟩
+
+/-- If every fibre of `L` is projective, then so is every degree of the relative twisted chain
+complex of a pair, a retract of the ambient twisted chains. -/
+instance projective_twistedChainComplex_X [∀ x, Projective (L.obj x)] (i : ℕ) :
+    Projective ((P.twistedChainComplex L).X i) :=
+  (P.twistedChainComplexXRetract L i).projective
+
 /-- Descend a map out of the ambient twisted chains to the relative twisted chain complex when it
 vanishes on the chains of the subspace. -/
 def twistedChainComplexDesc {K : ChainComplex (ModuleCat.{max v w} R) ℕ}
@@ -135,6 +197,100 @@ lemma twistedChainComplex_hom_ext {K : ChainComplex (ModuleCat.{max v w} R) ℕ}
     (h : P.twistedChainComplexπ L ≫ f = P.twistedChainComplexπ L ≫ g) : f = g :=
   (cancel_epi (P.twistedChainComplexπ L)).1 h
 
+section Coeff
+
+variable {k : ℕ}
+
+/-- Every relative twisted chain is the class of an ambient twisted chain. -/
+lemma twistedChainComplexπ_f_surjective :
+    Function.Surjective ((P.twistedChainComplexπ L).f k).hom :=
+  (ModuleCat.epi_iff_surjective _).1
+    (epi_of_isColimit_cofork (P.isColimitCokernelCoforkTwistedChainComplexX L k))
+
+/-- A singular simplex of the ambient space of a pair comes from the subspace exactly when its
+image lies in the subspace. -/
+lemma mem_range_toSSet_map_app_iff_range_simplexMap_subset
+    (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌) :
+    σ ∈ Set.range ((TopCat.toSSet.map P.map).app _) ↔
+      Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map := by
+  rw [P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff]
+  -- `TopCat.simplexMap σ` is `P.fst.toSSetObjEquiv _ σ` precomposed with `ULift.down`.
+  constructor <;> rintro h _ ⟨p, rfl⟩
+  · exact h ⟨p.down, rfl⟩
+  · exact h ⟨⟨p⟩, rfl⟩
+
+/-- A singular simplex of `X` meets a set `A` exactly when its image does not lie in the subspace
+of the pair `(X, X \ A)`. -/
+lemma not_range_simplexMap_subset_range_ofSubset_compl_map_iff {X : TopCat.{v}} {A : Set X}
+    {σ : (TopCat.toSSet.obj X) _⦋k⦌} :
+    ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range (ofSubset Aᶜ).map ↔
+      (Set.range (TopCat.simplexMap σ) ∩ A).Nonempty := by
+  -- The range of the pair's map lives in `(ofSubset Aᶜ).fst`, which is only definitionally `X`.
+  rw [show (Set.range (ofSubset Aᶜ).map : Set X) = Aᶜ from range_ofSubset_map,
+    Set.subset_compl_iff_disjoint_right, Set.not_disjoint_iff_nonempty_inter]
+
+/-- The summand of a simplex whose image lies in the subspace vanishes in relative twisted
+chains. -/
+lemma ιTwistedChainComplex_twistedChainComplexπ_f_of_range_subset
+    (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌) (hσ : Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map) :
+    LocalCoefficientSystem.ιTwistedChainComplex L k σ ≫ (P.twistedChainComplexπ L).f k = 0 := by
+  obtain ⟨τ, rfl⟩ := (P.mem_range_toSSet_map_app_iff_range_simplexMap_subset σ).2 hσ
+  exact P.ιTwistedChainComplex_twistedChainComplexπ_f L k τ
+
+/-- The coefficient of a relative twisted chain on a singular simplex of the ambient space whose
+image does not lie in the subspace: the coefficient on that simplex of any ambient twisted chain
+representing it. -/
+def twistedChainComplexCoeff (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌)
+    (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map) :
+    (P.twistedChainComplex L).X k ⟶ L.obj (LocalCoefficientSystem.initialVertex σ) :=
+  (P.isColimitCokernelCoforkTwistedChainComplexX L k).desc
+    (CokernelCofork.ofπ (LocalCoefficientSystem.twistedChainComplexCoeff L σ) (by
+      refine LocalCoefficientSystem.twistedChainComplex_hom_ext _ fun τ ↦ ?_
+      rw [LocalCoefficientSystem.ιTwistedChainComplex_twistedChainComplexMap_f_assoc, comp_zero]
+      exact LocalCoefficientSystem.ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L
+        fun h ↦ hσ ((P.mem_range_toSSet_map_app_iff_range_simplexMap_subset σ).1 ⟨τ, h⟩)))
+
+/-- The coefficient of the class of an ambient twisted chain is its coefficient. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplexπ_f_twistedChainComplexCoeff (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌)
+    (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map) :
+    (P.twistedChainComplexπ L).f k ≫ P.twistedChainComplexCoeff L σ hσ =
+      LocalCoefficientSystem.twistedChainComplexCoeff L σ :=
+  (P.isColimitCokernelCoforkTwistedChainComplexX L k).fac _ WalkingParallelPair.one
+
+/-- The coefficient of the class of an ambient twisted chain is its coefficient. -/
+@[simp]
+lemma twistedChainComplexCoeff_twistedChainComplexπ_f_apply (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌)
+    (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map) (y : L.twistedChainComplex.X k) :
+    (P.twistedChainComplexCoeff L σ hσ).hom (((P.twistedChainComplexπ L).f k).hom y) =
+      (LocalCoefficientSystem.twistedChainComplexCoeff L σ).hom y :=
+  congrArg (fun f ↦ f.hom y) (P.twistedChainComplexπ_f_twistedChainComplexCoeff L σ hσ)
+
+/-- A relative twisted chain is determined by its coefficients on the simplices whose image does
+not lie in the subspace. -/
+lemma twistedChainComplex_ext_coeff {y y' : (P.twistedChainComplex L).X k}
+    (h : ∀ σ hσ, (P.twistedChainComplexCoeff L σ hσ).hom y =
+      (P.twistedChainComplexCoeff L σ hσ).hom y') : y = y' := by
+  obtain ⟨a, rfl⟩ := P.twistedChainComplexπ_f_surjective L y
+  obtain ⟨a', rfl⟩ := P.twistedChainComplexπ_f_surjective L y'
+  rw [← sub_eq_zero, ← map_sub]
+  have ha (σ : (TopCat.toSSet.obj P.fst) _⦋k⦌)
+      (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map) :
+      (LocalCoefficientSystem.twistedChainComplexCoeff L σ).hom (a - a') = 0 := by
+    simpa [sub_eq_zero] using h σ hσ
+  -- Expand `a - a'` along its finitely many nonzero coefficients.
+  rw [← LocalCoefficientSystem.sum_ιTwistedChainComplex_twistedChainComplexCoeff L (a - a')
+    (s := (LocalCoefficientSystem.finite_support_twistedChainComplexCoeff L
+      (a - a')).toFinset) fun ρ hρ ↦ by simpa using hρ, map_sum]
+  refine Finset.sum_eq_zero fun σ _ ↦ ?_
+  by_cases hσ : Set.range (TopCat.simplexMap σ) ⊆ Set.range P.map
+  · rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
+      P.ιTwistedChainComplex_twistedChainComplexπ_f_of_range_subset L σ hσ, ModuleCat.hom_zero,
+      LinearMap.zero_apply]
+  · rw [ha σ hσ, map_zero, map_zero]
+
+end Coeff
+
 section Coefficients
 
 variable {L K J : LocalCoefficientSystem.{u, v, max v w} R P.fst}
@@ -145,21 +301,8 @@ def twistedChainComplexCoefficientMap (η : L ⟶ K) :
   P.twistedChainComplexDesc L
     (LocalCoefficientSystem.twistedChainComplexCoefficientMap η ≫
       P.twistedChainComplexπ K)
-    (by
-      calc
-        _ = (LocalCoefficientSystem.twistedChainComplexMap P.map L ≫
-              LocalCoefficientSystem.twistedChainComplexCoefficientMap η) ≫
-            P.twistedChainComplexπ K := Category.assoc _ _ _ |>.symm
-        _ = (LocalCoefficientSystem.twistedChainComplexCoefficientMap
-                ((LocalCoefficientSystem.pullback P.map.hom).map η) ≫
-              LocalCoefficientSystem.twistedChainComplexMap P.map K) ≫
-            P.twistedChainComplexπ K := by
-              rw [LocalCoefficientSystem.twistedChainComplexMap_naturality]
-        _ = LocalCoefficientSystem.twistedChainComplexCoefficientMap
-              ((LocalCoefficientSystem.pullback P.map.hom).map η) ≫
-            (LocalCoefficientSystem.twistedChainComplexMap P.map K ≫
-              P.twistedChainComplexπ K) := Category.assoc _ _ _
-        _ = 0 := by rw [P.twistedChainComplexMap_comp_twistedChainComplexπ, comp_zero])
+    (by rw [LocalCoefficientSystem.twistedChainComplexMap_naturality_assoc,
+      P.twistedChainComplexMap_comp_twistedChainComplexπ, comp_zero])
 
 /-- The relative coefficient map commutes with the quotient maps from ambient twisted chains. -/
 @[reassoc (attr := simp)]
@@ -278,20 +421,7 @@ lemma twistedHomologyπ_comp_twistedHomologyCoefficientMap
     {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (f : L ⟶ K) (k : ℕ) :
     P.twistedHomologyπ L k ≫ P.twistedHomologyCoefficientMap f k =
       LocalCoefficientSystem.twistedHomologyCoefficientMap f k ≫ P.twistedHomologyπ K k := by
-  calc
-    _ = HomologicalComplex.homologyMap
-          (P.twistedChainComplexπ L ≫ P.twistedChainComplexCoefficientMap f) k :=
-      (HomologicalComplex.homologyMap_comp _ _ _).symm
-    _ = HomologicalComplex.homologyMap
-          (LocalCoefficientSystem.twistedChainComplexCoefficientMap f ≫
-            P.twistedChainComplexπ K) k :=
-      congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
-        (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap f)
-    _ = _ := by
-      simpa only [LocalCoefficientSystem.twistedHomologyCoefficientMap] using
-        HomologicalComplex.homologyMap_comp
-          (LocalCoefficientSystem.twistedChainComplexCoefficientMap f)
-          (P.twistedChainComplexπ K) k
+  simp [← HomologicalComplex.homologyMap_comp]
 
 /-- The identity coefficient morphism induces the identity on relative twisted homology. -/
 @[simp]
@@ -311,6 +441,33 @@ lemma twistedHomologyCoefficientMap_comp
   (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ k)
       (P.twistedChainComplexCoefficientMap_comp f g)).trans
     (HomologicalComplex.homologyMap_comp _ _ _)
+
+/-- An isomorphism of local coefficient systems induces isomorphisms on relative twisted
+homology. -/
+instance isIso_twistedHomologyCoefficientMap {K : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    (f : L ⟶ K) [IsIso f] (k : ℕ) : IsIso (P.twistedHomologyCoefficientMap f k) :=
+  ⟨P.twistedHomologyCoefficientMap (inv f) k, by
+    rw [← twistedHomologyCoefficientMap_comp, IsIso.hom_inv_id, twistedHomologyCoefficientMap_id],
+    by rw [← twistedHomologyCoefficientMap_comp, IsIso.inv_hom_id,
+      twistedHomologyCoefficientMap_id]⟩
+
+variable {L} in
+/-- The relative twisted homology maps of an isomorphism of local coefficient systems and of its
+inverse compose to the identity. -/
+@[reassoc (attr := simp)]
+lemma twistedHomologyCoefficientMap_hom_inv_id
+    {K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (e : L ≅ K) (k : ℕ) :
+    P.twistedHomologyCoefficientMap e.hom k ≫ P.twistedHomologyCoefficientMap e.inv k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.hom_inv_id, twistedHomologyCoefficientMap_id]
+
+variable {L} in
+/-- The relative twisted homology maps of the inverse of an isomorphism of local coefficient
+systems and of the isomorphism compose to the identity. -/
+@[reassoc (attr := simp)]
+lemma twistedHomologyCoefficientMap_inv_hom_id
+    {K : LocalCoefficientSystem.{u, v, max v w} R P.fst} (e : L ≅ K) (k : ℕ) :
+    P.twistedHomologyCoefficientMap e.inv k ≫ P.twistedHomologyCoefficientMap e.hom k = 𝟙 _ := by
+  rw [← twistedHomologyCoefficientMap_comp, e.inv_hom_id, twistedHomologyCoefficientMap_id]
 
 @[reassoc (attr := simp)]
 lemma twistedHomologyMap_comp_twistedHomologyπ (k : ℕ) :
@@ -337,8 +494,8 @@ lemma twistedHomologyδ_naturality_coefficient
     P.twistedHomologyδ L n m h ≫
         LocalCoefficientSystem.twistedHomologyCoefficientMap
           ((LocalCoefficientSystem.pullback P.map.hom).map f) m =
-      P.twistedHomologyCoefficientMap f n ≫ P.twistedHomologyδ K n m h := by
-  exact HomologicalComplex.HomologySequence.δ_naturality
+      P.twistedHomologyCoefficientMap f n ≫ P.twistedHomologyδ K n m h :=
+  HomologicalComplex.HomologySequence.δ_naturality
     (P.twistedChainComplexShortComplexCoefficientMap f)
     (P.shortExact_twistedChainComplexShortComplex L)
     (P.shortExact_twistedChainComplexShortComplex K) n m (by simpa)

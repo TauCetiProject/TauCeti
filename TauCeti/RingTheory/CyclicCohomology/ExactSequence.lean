@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.CyclicCohomology.Periodicity
+public import TauCeti.RingTheory.CyclicCohomology.Periodicity.Comparison
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # Connes' operator `B` and the exactness of the SBI sequence
@@ -31,15 +32,19 @@ complex in column one is contractible: if the total differential of a total coch
 column zero lies in the image of the periodicity map, then its preimage is a total coboundary
 (or zero, in degree zero).
 
-Over a ring containing `ℚ`, the total cohomology is cyclic cohomology
-(`TauCeti.quasiIso_cyclicCochainComplexToTotal`), so the exactness at `HH^(m+1)` gives the
+When `1, 2, …, m + 1` are invertible in `R` (for instance over a ring containing `ℚ`), the total
+cohomology is cyclic cohomology in degrees `m` and `m + 1`
+(`TauCeti.quasiIsoAt_cyclicCochainComplexToTotal`), so the exactness at `HH^(m+1)` gives the
 exactness of `HC^(m+1) →I HH^(m+1) →B HC^m` for the maps `TauCeti.cyclicCohomology.toHochschild`
 and `TauCeti.hochschildCohomology.connesB` defined by cyclic cochains. (Exactness at `HC^1`, the
 injectivity of `I`, holds over every commutative ring, see
-`TauCeti.cyclicCohomology.injective_toHochschild_one`.)
-The periodicity map of the bicomplex is the shift of columns; it is not compared here with
-Connes' operator `S`, normalized as the exterior product with the cyclic `2`-cocycle
-`(a₀, a₁, a₂) ↦ a₀a₁a₂`.
+`TauCeti.cyclicCohomology.injective_toHochschild_one`.) Over a `ℚ`-algebra,
+`TauCeti.RingTheory.CyclicCohomology.Periodicity.Comparison` identifies Connes' periodicity
+operator `TauCeti.cyclicCohomology.periodicity` with `-((m + 1) * (m + 2))` times the bicomplex
+periodicity map and proves exactness of `HC^m →S HC^(m+2) →I HH^(m+2)`; combining that comparison
+with `exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity` yields exactness of
+`HH^(m+1) →B HC^m →S HC^(m+2)` and the injectivity and surjectivity criteria for `S` on cyclic
+cohomology.
 
 ## Main definitions
 
@@ -61,14 +66,21 @@ Connes' operator `S`, normalized as the exterior product with the cyclic `2`-coc
   injective when `HH^(m+1)` vanishes and surjective when `HH^(m+2)` vanishes.
 * `TauCeti.isIso_homologyMap_cyclicTotalComplexToHochschild_zero`,
   `TauCeti.injective_homologyMap_cyclicTotalComplexToHochschild_one`: `I` is an isomorphism in
-  degree zero and injective in degree one.
-* `TauCeti.cyclicCohomology.exact_toHochschild_connesB`: over a ring containing `ℚ`,
-  `HC^(m+1) → HH^(m+1) → HC^m` is exact.
+  degree zero and injective in degree one, for a possibly nonunital algebra.
+* `TauCeti.cyclicCohomology.exact_toHochschild_connesB`: when `1, 2, …, m + 1` are invertible in
+  `R`, `HC^(m+1) → HH^(m+1) → HC^m` is exact.
+* `TauCeti.hochschildCohomology.connesB_comp_periodicity`,
+  `TauCeti.cyclicCohomology.exact_connesB_periodicity`: over a `ℚ`-algebra, `S ∘ B = 0` and
+  `HH^(m+1) →B HC^m →S HC^(m+2)` is exact.
+* `TauCeti.cyclicCohomology.injective_periodicity_of_isZero`,
+  `TauCeti.cyclicCohomology.surjective_periodicity_of_isZero`: over a `ℚ`-algebra,
+  `S : HC^m → HC^(m+2)` is injective when `HH^(m+1)` vanishes and surjective when `HH^(m+2)`
+  vanishes.
 
 ## References
 
 * A. Connes, *Noncommutative Geometry*, Chapter III, §1.
-* J.-L. Loday, *Cyclic Homology*, §§2.1–2.2.
+* J.-L. Loday, *Cyclic Homology*, §§2.1–2.2 and §2.4.
 -/
 
 public section
@@ -90,7 +102,8 @@ variable {R A M : Type*} [CommRing R] [Semiring A] [Module R A]
 
 /-- The lift `φ + s (1 - λ) φ` of a Hochschild `(m + 1)`-cochain `φ` to a total cochain of degree
 `m + 1`, with `φ` in column zero and `s (1 - λ) φ` in column one. -/
-private def cyclicTotalLift {m : ℕ} (φ : MultilinearMap R (fun _ : Fin (m + 1 + 1) ↦ A) M) :
+private def cyclicTotalLift {m : ℕ} (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1 + 1) ↦
+    A) M) :
     cyclicTotalCochains R A M (m + 1) :=
   ⟨Pi.single (m + 1) φ +
       Pi.single m (barContraction R A M m ((1 - cyclicOperator R A M (m + 1)) φ)),
@@ -100,21 +113,21 @@ private def cyclicTotalLift {m : ℕ} (φ : MultilinearMap R (fun _ : Fin (m + 1
 omit [IsScalarTower R A A] [SMulCommClass R A A] in
 /-- The column-zero component of the lift of `φ` is `φ`. -/
 private theorem cyclicTotalLift_apply_column_zero {m : ℕ}
-    (φ : MultilinearMap R (fun _ : Fin (m + 1 + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1 + 1) ↦ A) M) :
     (cyclicTotalLift φ).1 (m + 1) = φ := by
   simp [cyclicTotalLift]
 
 omit [IsScalarTower R A A] [SMulCommClass R A A] in
 /-- The column-one component of the lift of `φ` is `s (1 - λ) φ`. -/
 private theorem cyclicTotalLift_apply_column_one {m : ℕ}
-    (φ : MultilinearMap R (fun _ : Fin (m + 1 + 1) ↦ A) M) :
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1 + 1) ↦ A) M) :
     (cyclicTotalLift φ).1 m = barContraction R A M m ((1 - cyclicOperator R A M (m + 1)) φ) := by
   simp [cyclicTotalLift]
 
 /-- **The total differential of the lift.** For a Hochschild cocycle `φ`, the total differential
 of `φ + s (1 - λ) φ` is `N s (1 - λ) φ = B φ` in row `m`, column two. -/
 private theorem coe_cyclicTotalDifferential_cyclicTotalLift {m : ℕ}
-    {φ : MultilinearMap R (fun _ : Fin (m + 1 + 1) ↦ A) M}
+    {φ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1 + 1) ↦ A) M}
     (hφ : hochschildCoboundary R A M (m + 1) φ = 0) :
     (cyclicTotalDifferential R A M (m + 1) (cyclicTotalLift φ)).1 =
       Pi.single m (connesB R A M m φ) := by
@@ -244,7 +257,38 @@ instance isIso_homologyMap_cyclicTotalComplexToHochschild_zero :
     congr 1
     exact Subtype.ext (by simp)
 
+variable {R A M} in
+/-- For a possibly nonunital algebra, the projection onto column zero
+`H^1(Tot) → HH^1(A, Hom_R(A, M))` is injective. This is the exactness of the SBI sequence at
+`H^1(Tot)`. -/
+theorem injective_homologyMap_cyclicTotalComplexToHochschild_one :
+    Function.Injective
+      (HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) 1) := by
+  refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
+  obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective 1 c
+  rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk,
+    hochschildCohomology.mk_eq_zero_iff, mem_hochschildCoboundaries_succ_iff] at hc
+  obtain ⟨χ, hχ⟩ := hc
+  -- the cochain `χ` in column zero has total differential `b χ = x 1` in column zero
+  let w : cyclicTotalCochains R A M 0 := ⟨Pi.single 0 χ, single_mem_cyclicTotalCochains le_rfl χ⟩
+  rw [cyclicTotalHomologyMk_succ_eq_zero_iff]
+  refine ⟨w, Subtype.ext (funext fun q ↦ ?_)⟩
+  -- The column-two component of `D x = 0` says `N (x 0) = 0`; since the cyclic norm is the
+  -- identity on `0`-cochains, the column-one component vanishes.
+  have hD := congrArg (fun z : cyclicTotalCochains R A M 2 ↦ z.1 0) (LinearMap.mem_ker.1 x.2)
+  simp only [cyclicTotalDifferential_apply_zero, cyclicBicomplexHorizontal_of_odd odd_one] at hD
+  obtain rfl | rfl | hq : q = 0 ∨ q = 1 ∨ 1 < q := by omega
+  · have hlam : cyclicOperator R A M 0 = 1 := by
+      simpa using cyclicOperator_pow_eq_one (R := R) (A := A) (M := M) 0
+    have hN : cyclicNorm R A M 0 = 1 := by simp [cyclicNorm_def, hlam]
+    rw [hN, one_apply_eq_self] at hD
+    simp [w, hlam, hD]
+  · simp [w, hχ]
+  · simp [coe_cyclicTotalCochains_apply_of_lt _ hq]
+
 end NonUnital
+
+/-! ### Vanishing of total classes and surjectivity of the periodicity map -/
 
 section Unital
 
@@ -269,26 +313,6 @@ theorem cyclicTotalHomologyMk_eq_zero_iff {m : ℕ}
     · rw [coe_cyclicTotalPeriodicity_apply]
       exact coe_cyclicTotalCochains_apply_of_lt w (by omega)
     · rw [cyclicTotalDifferential_cyclicTotalPeriodicity, coe_cyclicTotalPeriodicity_apply, hw]
-
-/-- In degree one, the projection onto column zero `H^1(Tot) → HH^1(A, Hom_R(A, M))` is injective:
-a total cocycle of degree one vanishing in column zero is zero, since the bar coboundary is
-injective on `0`-cochains of a unital algebra. This is the exactness of the SBI sequence at
-`H^1(Tot)`. -/
-theorem injective_homologyMap_cyclicTotalComplexToHochschild_one :
-    Function.Injective
-      (HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) 1) := by
-  refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-  obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective 1 c
-  rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk,
-    hochschildCohomology.mk_eq_zero_iff, mem_hochschildCoboundaries_succ_iff] at hc
-  obtain ⟨χ, hχ⟩ := hc
-  -- the cochain `χ` in column zero has total differential `b χ = x 1` in column zero
-  let w : cyclicTotalCochains R A M 0 := ⟨Pi.single 0 χ, single_mem_cyclicTotalCochains le_rfl χ⟩
-  rw [cyclicTotalHomologyMk_succ_eq_zero_iff]
-  refine ⟨w, (sub_eq_zero.1 (eq_zero_of_cyclicTotalDifferential_apply_one_eq_zero
-    (x.1 - cyclicTotalDifferential R A M 0 w) ?_ ?_)).symm⟩
-  · simp [w, hχ]
-  · simp [LinearMap.mem_ker.1 x.2]
 
 /-- For a unital algebra, the periodicity map `S : H^m(Tot) → H^(m+2)(Tot)` is surjective when
 `HH^(m+2)(A, Hom_R(A, M))` vanishes. -/
@@ -428,23 +452,91 @@ theorem injective_cyclicTotalHomologyPeriodicity_of_isZero {m : ℕ}
   have := ModuleCat.isZero_iff_subsingleton.1 h
   rw [Subsingleton.elim b 0, map_zero]
 
-/-- **Exactness of `HC^(m+1) → HH^(m+1) → HC^m`.** For a unital algebra over a ring containing
-`ℚ`, a Hochschild class is killed by Connes' operator `B` exactly when it is the image under `I`
-of a cyclic cohomology class. -/
-theorem cyclicCohomology.exact_toHochschild_connesB [Algebra ℚ R] (m : ℕ) :
+/-- **Exactness of `HC^(m+1) → HH^(m+1) → HC^m`.** For a unital algebra over a ring in which
+`1, 2, …, m + 1` are invertible (for instance a ring containing `ℚ`), a Hochschild class is killed
+by Connes' operator `B` exactly when it is the image under `I` of a cyclic cohomology class. -/
+theorem cyclicCohomology.exact_toHochschild_connesB (m : ℕ)
+    (hR : ∀ q ≤ m, IsUnit ((q : R) + 1)) :
     Function.Exact (cyclicCohomology.toHochschild R A M (m + 1))
       (hochschildCohomology.connesB R A M m) := by
+  -- cyclic cochains compute the total cohomology in degrees `m` and `m + 1`
+  have hbij (n : ℕ) (hn : n ≤ m + 1) :
+      Function.Bijective (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) n) :=
+    (ConcreteCategory.isIso_iff_bijective _).1 ((quasiIsoAt_iff_isIso_homologyMap _ _).1
+      (quasiIsoAt_cyclicCochainComplexToTotal R A M n fun q hq ↦ hR q (by omega)))
   refine (LinearMap.exact_iff_of_surjective_of_bijective_of_injective _ _ _ _
     (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (m + 1)).hom LinearMap.id
     (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m).hom ?_ ?_
-    (bijective_homologyMap_cyclicCochainComplexToTotal R A M (m + 1)).2 Function.bijective_id
-    (bijective_homologyMap_cyclicCochainComplexToTotal R A M m).1).2
+    (hbij (m + 1) le_rfl).2 Function.bijective_id (hbij m m.le_succ).1).2
     (exact_homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyConnesB m)
   · rw [LinearMap.id_comp,
       ← homologyMap_cyclicCochainComplexToTotal_comp_homologyMap_cyclicTotalComplexToHochschild]
     exact (ModuleCat.hom_comp _ _).symm
   · rw [LinearMap.comp_id, cyclicTotalHomologyConnesB_def]
     exact ModuleCat.hom_comp _ _
+
+section Rational
+
+variable [Algebra ℚ R]
+
+variable (R A M) in
+/-- Over a `ℚ`-algebra, the composite
+`S ∘ B : HH^(m+1)(A, Hom_R(A, M)) → HC^m(A; M) → HC^(m+2)(A; M)` vanishes. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+theorem hochschildCohomology.connesB_comp_periodicity (m : ℕ) :
+    hochschildCohomology.connesB R A M m ≫ cyclicCohomology.periodicity R A M m = 0 := by
+  have := quasiIso_cyclicCochainComplexToTotal R A M
+  rw [← cancel_mono (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (m + 2)),
+    Limits.zero_comp, Category.assoc,
+    cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal,
+    Linear.comp_smul, ← Category.assoc, ← cyclicTotalHomologyConnesB_def,
+    cyclicTotalHomologyConnesB_comp_cyclicTotalHomologyPeriodicity, smul_zero]
+
+/-- **Exactness of `HH^(m+1) →B HC^m →S HC^(m+2)`.** For a unital algebra over a ring containing
+`ℚ`, a cyclic cohomology class is killed by Connes' periodicity operator `S` if and only if it lies
+in the image of Connes' operator `B`. -/
+theorem cyclicCohomology.exact_connesB_periodicity (m : ℕ) :
+    Function.Exact (hochschildCohomology.connesB R A M m)
+      (cyclicCohomology.periodicity R A M m) := by
+  have hbij₀ := bijective_homologyMap_cyclicCochainComplexToTotal R A M m
+  have hu : IsUnit ((m + 1 : R) * (m + 2 : R)) :=
+    (isUnit_natCast_add_one (K := R) m).mul
+      (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)
+  refine fun c ↦ ⟨fun hc ↦ ?_, ?_⟩
+  · have hc' : cyclicTotalHomologyPeriodicity R A M m
+        (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m c) = 0 := by
+      refine hu.smul_eq_zero.1 (neg_eq_zero.1 ?_)
+      have heq := cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal_apply
+        R A M m c
+      rw [hc, map_zero] at heq
+      exact heq.symm
+    obtain ⟨b, hb⟩ :=
+      (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity m _).1 hc'
+    refine ⟨b, hbij₀.1 ?_⟩
+    rw [← hb, cyclicTotalHomologyConnesB_def, ModuleCat.comp_apply]
+  · rintro ⟨b, rfl⟩
+    exact hochschildCohomology.connesB_comp_periodicity_apply R A M m b
+
+/-- Over a `ℚ`-algebra, Connes' periodicity map `S : HC^m(A; M) → HC^(m+2)(A; M)` is injective when
+`HH^(m+1)(A, Hom_R(A, M))` vanishes. -/
+theorem cyclicCohomology.injective_periodicity_of_isZero {m : ℕ}
+    (h : Limits.IsZero (hochschildCohomology R A M (m + 1))) :
+    Function.Injective (cyclicCohomology.periodicity R A M m) := by
+  refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
+  obtain ⟨b, rfl⟩ := (cyclicCohomology.exact_connesB_periodicity m c).1 hc
+  have := ModuleCat.isZero_iff_subsingleton.1 h
+  rw [Subsingleton.elim b 0, map_zero]
+
+/-- Over a `ℚ`-algebra, Connes' periodicity map `S : HC^m(A; M) → HC^(m+2)(A; M)` is surjective when
+`HH^(m+2)(A, Hom_R(A, M))` vanishes. -/
+theorem cyclicCohomology.surjective_periodicity_of_isZero {m : ℕ}
+    (h : Limits.IsZero (hochschildCohomology R A M (m + 2))) :
+    Function.Surjective (cyclicCohomology.periodicity R A M m) := by
+  have := ModuleCat.isZero_iff_subsingleton.1 h
+  exact fun c ↦ (cyclicCohomology.exact_periodicity_toHochschild R A M m c).1
+    (Subsingleton.elim _ 0)
+
+end Rational
 
 end Exactness
 

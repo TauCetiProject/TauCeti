@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LocalField.Basic
-public import TauCeti.RingTheory.LaurentSeries.ValuationRing
+public import TauCeti.RingTheory.LaurentSeries.Valuation.Ring
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!

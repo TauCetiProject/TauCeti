@@ -63,8 +63,8 @@ private theorem finite_preimage_range_mulBy_left {K : Type u} [Field K] [IsAlgCl
   have hσc : IsClosed (Set.range σ) :=
     have := isClosedImmersion_of_comp_eq_id _ σ hσ
     σ.isClosedEmbedding.isClosed_range
-  refine IsClosed.finite_of_finite_inter_closedPoints (X := E.carrier)
-    (hσc.preimage (E.mulBy n).left.continuous) ?_
+  refine IsLocallyClosed.finite_of_finite_inter_closedPoints (X := E.carrier)
+    (hσc.preimage (E.mulBy n).left.continuous).isLocallyClosed ?_
   let s : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap := Over.homMk σ (by simpa using hσ)
   have hfin : Finite {x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap // x ^ n = s} := by
     have := E.finite_comp_mulBy_eq_one hn
@@ -137,5 +137,10 @@ finite morphism `[n]` along the zero section. -/
 theorem isFinite_torsion_hom {n : ℤ} (hn : n ≠ 0) : IsFinite (E.torsion n).X.hom :=
   have := E.isFinite_mulBy_left hn
   MorphismProperty.of_isPullback (E.isPullback_torsion n) this
+
+/-- For `n ≠ 0`, the `n`-torsion `E[n]` is finite over `S`. -/
+instance isFinite_torsion_hom_of_neZero {n : ℤ} [NeZero n] :
+    IsFinite (E.torsion n).X.hom :=
+  E.isFinite_torsion_hom (NeZero.ne n)
 
 end TauCeti.AlgebraicGeometry.EllipticCurveGeom

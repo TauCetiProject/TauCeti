@@ -17,13 +17,11 @@ source circle by conjugating it with the two circle inversions. The extension is
 wherever the reflected branch avoids the target centre.
 
 The analytic gluing step is Painlevé removability for a circle, supplied by
-`Conformal/Removability/Circle.lean`. This is the Möbius-reduction route specified by layer L4 of
-the conformal-mapping roadmap.
+`Conformal/Removability/Circle.lean`.
 
 The construction follows Ahlfors, *Complex Analysis*, Chapters 4--6. It reuses Mathlib's
 topological piecewise API and Euclidean inversion, together with Tau Ceti's line-removability and
-circle-reflection conjugation theorems. Layer L4 is absent from the upstream Mathlib
-Riemann-mapping draft mathlib4#33505.
+circle-reflection conjugation theorems.
 -/
 
 public section
@@ -160,7 +158,7 @@ theorem differentiableOn_circleSchwarzReflection_of_symmetric
     (hboundary : MapsTo f (Ω ∩ sphere c r) (sphere d s))
     (havoid : ∀ z ∈ Ω ∩ ball c r, z ≠ c → f z ≠ d) :
     DifferentiableOn ℂ (circleSchwarzReflection c r d s f) Ω := by
-  refine differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere (c := c) hr hΩ
+  refine differentiableOn_of_continuousOn_of_differentiableOn_diff_sphere (c := c) (r := r) hΩ
     (continuousOn_circleSchwarzReflection_of_symmetric hr hs hsymm hcont hboundary havoid) ?_
   let E := Ω ∩ {z : ℂ | r < dist z c}
   have hEinv : MapsTo (inversion c r) E (Ω ∩ ball c r) := by

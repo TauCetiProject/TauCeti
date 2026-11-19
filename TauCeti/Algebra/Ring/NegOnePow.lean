@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Algebra.Ring.NegOnePow
+import Mathlib.Algebra.Module.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # Powers of negative one in a ground ring
@@ -19,18 +22,26 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 
 ## Main results
 
+* `TauCeti.negOnePowCast_eq_of_even_sub`: exponents of the same parity give the same sign.
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
+* `TauCeti.sum_range_negOnePowCast_telescope`: an alternating sum of products, in which one
+  factor is replaced by a two-term correction, telescopes.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
-* `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
+* `TauCeti.map_negOnePowCast_smul`: additive homomorphisms commute with the ground-ring signs.
+* `TauCeti.negOnePow_smul_negOnePow_smul`, `TauCeti.neg_one_pow_smul_neg_one_pow_smul`: the
+  unit-valued sign and the power `(-1) ^ n` act as involutions.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
-* `Int.negOnePow_sub_sub_one`, `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity
-  identities behind the sign cancellations of twisted differentials.
+* `Int.negOnePow_sub_sub_one`, `Int.negOnePow_eq_neg_of_odd_sub`,
+  `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity identities behind the sign cancellations
+  of twisted differentials.
+* `TauCeti.negOnePow_smul_op_smul_negOnePow_smul_op_smul`: reassociating two right actions past
+  two signs.
 -/
 
 public section
 
-universe uR uA uI
+universe uR uA uI uM
 
 namespace TauCeti
 
@@ -75,6 +86,11 @@ theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
 theorem negOnePowCast_odd {e : ℤ} (he : Odd e) : negOnePowCast R e = -1 := by
   simp [negOnePowCast, Int.negOnePow_odd _ he]
 
+/-- Two exponents of the same parity give the same ground-ring sign. -/
+theorem negOnePowCast_eq_of_even_sub {a b : ℤ} (h : Even (a - b)) :
+    negOnePowCast R a = negOnePowCast R b := by
+  rw [negOnePowCast, negOnePowCast, (Int.negOnePow_eq_iff _ _).2 h]
+
 section
 
 variable {A : Type uA} [AddCommGroup A] [Module R A]
@@ -83,6 +99,12 @@ variable {A : Type uA} [AddCommGroup A] [Module R A]
 theorem negOnePow_smul_eq_negOnePowCast_smul (e : ℤ) (a : A) :
     e.negOnePow • a = negOnePowCast R e • a := by
   rw [negOnePowCast, Units.smul_def, ← Int.cast_smul_eq_zsmul R]
+
+/-- Additive homomorphisms between modules commute with the ground-ring signs `(-1) ^ e`. -/
+theorem map_negOnePowCast_smul {B F : Type*} [AddCommGroup B] [Module R B] [FunLike F A B]
+    [AddMonoidHomClass F A B] (f : F) (e : ℤ) (a : A) :
+    f (negOnePowCast R e • a) = negOnePowCast R e • f a := by
+  simp only [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def, map_zsmul]
 
 end
 
@@ -111,9 +133,25 @@ variable {A : Type uA} [AddGroup A]
 theorem negOnePow_smul_negOnePow_smul (e : ℤ) (a : A) : e.negOnePow • e.negOnePow • a = a := by
   rw [smul_smul, Int.units_mul_self, one_smul]
 
+/-- The sign `(-1) ^ n`, acting through any monoid with a distributive negation, acts as an
+involution. -/
+@[simp]
+theorem neg_one_pow_smul_neg_one_pow_smul {R : Type uR} [Monoid R] [HasDistribNeg R]
+    {B : Type uA} [MulAction R B] (n : ℕ) (b : B) :
+    (-1 : R) ^ n • (-1 : R) ^ n • b = b := by
+  rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_smul]
+
 end NegOnePowSMul
 
 section Parity
+
+/-- The signs of successive triangular numbers differ by the sign of the new summand.
+This identity holds in all integer degrees, including negative degrees. -/
+theorem _root_.Int.negOnePow_mul_succ_div_two_succ (k : ℤ) :
+    ((k + 1) * (k + 1 + 1) / 2).negOnePow =
+      (k + 1).negOnePow * (k * (k + 1) / 2).negOnePow := by
+  have h : (k + 1) * (k + 1 + 1) = k * (k + 1) + (k + 1) * 2 := by ring
+  rw [h, Int.add_mul_ediv_right _ _ (by decide), Int.negOnePow_add, mul_comm]
 
 /-- The product of an integer and one minus that integer is even, so its sign is one. -/
 @[simp]
@@ -136,6 +174,13 @@ theorem _root_.Int.negOnePow_sub_sub_one (a b : ℤ) :
   rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
   exact ⟨a - b - 1, by omega⟩
 
+/-- Two signs whose exponents differ by an odd integer are opposite. -/
+theorem _root_.Int.negOnePow_eq_neg_of_odd_sub {a b : ℤ} (h : Odd (a - b)) :
+    a.negOnePow = -b.negOnePow := by
+  rw [← Int.negOnePow_succ, Int.negOnePow_eq_iff]
+  obtain ⟨k, hk⟩ := h
+  exact ⟨k, by omega⟩
+
 /-- A product of two signs is the sign of any exponent congruent modulo two to the sum of their
 exponents. -/
 theorem negOnePow_mul_negOnePow_of_even {a b c : ℤ} (h : Even (a + b - c)) :
@@ -144,6 +189,25 @@ theorem negOnePow_mul_negOnePow_of_even {a b c : ℤ} (h : Even (a + b - c)) :
   exact h
 
 end Parity
+
+section OppositeAction
+
+variable {A : Type uA} {M : Type uM} [Monoid A] [AddCommGroup M] [DistribMulAction Aᵐᵒᵖ M]
+
+/-- Reassociating two right actions past two signs: when the shifts `n` and `m` add up to an odd
+integer, the two signs combine to a single opposite sign. -/
+theorem negOnePow_smul_op_smul_negOnePow_smul_op_smul {q n m : ℤ} (hnm : Odd (n + m))
+    (a b : A) (α : M) :
+    (q + n).negOnePow • (MulOpposite.op a • (q.negOnePow • (MulOpposite.op b • α))) =
+      -(m.negOnePow • (MulOpposite.op (b * a) • α)) := by
+  have hsign : (q + n).negOnePow * q.negOnePow = -m.negOnePow := by
+    rw [← Int.negOnePow_succ]
+    obtain ⟨k, hk⟩ := hnm
+    exact negOnePow_mul_negOnePow_of_even ⟨q + k - m, by omega⟩
+  rw [smul_comm (MulOpposite.op a) q.negOnePow, smul_smul, hsign, MulOpposite.op_mul, mul_smul,
+    Units.neg_smul]
+
+end OppositeAction
 
 section CommRing
 
@@ -157,6 +221,29 @@ theorem negOnePowCast_sum {ι : Type uI} (s : Finset ι) (f : ι → ℤ) :
   | empty => simp
   | cons a s ha ih =>
       rw [Finset.sum_cons, Finset.prod_cons, negOnePowCast_add, ih]
+
+/-- **Telescoping an alternating sum of products.** The `p`-th summand is
+`α 0 ⋯ α (p - 1) · (ε p · β p + α p · ε (p + 1)) · β (p + 1) ⋯ β (n - 1)`, that is, the factor
+`β p` of `α 0 ⋯ α (p - 1) · β p ⋯ β (n - 1)` is replaced by `ε p · β p + α p · ε (p + 1)`.
+Writing `u q = (-1) ^ q · α 0 ⋯ α (q - 1) · ε q · β q ⋯ β (n - 1)`, the signed `p`-th summand
+is `u p - u (p + 1)`, so the alternating sum over `p < n` telescopes to `u 0 - u n`. -/
+theorem sum_range_negOnePowCast_telescope (n : ℕ) (α β ε : ℕ → R) :
+    ∑ p ∈ Finset.range n, negOnePowCast R (p : ℤ) * ((∏ i ∈ Finset.range p, α i) *
+        (ε p * β p + α p * ε (p + 1)) * ∏ i ∈ Finset.Ico (p + 1) n, β i) =
+      ε 0 * ∏ i ∈ Finset.range n, β i -
+        negOnePowCast R (n : ℤ) * ((∏ i ∈ Finset.range n, α i) * ε n) := by
+  set u : ℕ → R := fun q ↦ negOnePowCast R (q : ℤ) *
+    ((∏ i ∈ Finset.range q, α i) * ε q * ∏ i ∈ Finset.Ico q n, β i) with hu
+  have hterm : ∀ p ∈ Finset.range n, negOnePowCast R (p : ℤ) * ((∏ i ∈ Finset.range p, α i) *
+      (ε p * β p + α p * ε (p + 1)) * ∏ i ∈ Finset.Ico (p + 1) n, β i) = u p - u (p + 1) := by
+    intro p hp
+    simp only [hu, Finset.prod_eq_prod_Ico_succ_bot (Finset.mem_range.1 hp),
+      Finset.prod_range_succ, Nat.cast_succ, negOnePowCast_add, negOnePowCast_one]
+    ring
+  rw [Finset.sum_congr rfl hterm, Finset.sum_range_sub']
+  simp only [hu, Nat.Ico_zero_eq_range, Finset.prod_range_zero, Finset.Ico_self,
+    Finset.prod_empty, Nat.cast_zero, negOnePowCast_zero]
+  ring
 
 end CommRing
 

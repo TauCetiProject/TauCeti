@@ -56,8 +56,6 @@ the formal point evaluated at `z = t`. The two constructions are not compared in
 
 ## Main results
 
-* `WeierstrassCurve.Projective.equation_neg_one_iff_wEquation`: the projective Weierstrass
-  equation at `[q : -1 : v]` is the `w`-equation at the parameter `q`.
 * `WeierstrassCurve.projModelFormalPoint_projModelOver`: the formal point lies over
   `Spec R⟦X⟧ ⟶ Spec R`.
 * `WeierstrassCurve.SpecMap_constantCoeff_projModelFormalPoint`: the formal point restricts to the
@@ -97,19 +95,6 @@ universe u
 namespace WeierstrassCurve
 
 variable {R : Type u} [CommRing R]
-
-/-- For `q` and `v` in a commutative `R`-algebra, the projective Weierstrass equation at
-`[q : -1 : v]` is equivalent to the `w`-equation
-`v = q ^ 3 + a₁ q v + a₂ q ^ 2 v + a₃ v ^ 2 + a₄ q v ^ 2 + a₆ v ^ 3` (`wEquationRHS`).
-`wEquation_of_equation` is the implication from left to right for a solution `(x, y)` of the
-affine Weierstrass equation over a field with `y ≠ 0`, where
-`[x : y : 1] = [-x / y : -1 : -1 / y]`. -/
-theorem Projective.equation_neg_one_iff_wEquation (W' : Projective R) {S : Type*} [CommRing S]
-    [Algebra R S] (q v : S) :
-    (W'.map (algebraMap R S)).Equation ![q, -1, v] ↔ v = wEquationRHS W' q v := by
-  rw [Projective.equation_iff, wEquationRHS_def]
-  simp only [Matrix.cons_val, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> linear_combination h
 
 variable (W : WeierstrassCurve R)
 

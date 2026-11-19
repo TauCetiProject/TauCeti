@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+
 /-!
 # Hilbert–Schmidt energy and approximation numbers
 
@@ -70,7 +72,7 @@ the Frobenius seminorm. -/
 private theorem tsum_singularValue_sq_eq_hilbertSchmidtEnergy_of_finiteDimensional
     [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     ∑' n, (T.singularValue n : ℝ≥0∞) ^ 2 = T.hilbertSchmidtEnergy b := by
-  have := FiniteDimensional.complete 𝕜 F
+  have := FiniteDimensional.completeSpace 𝕜 F
   set σ := (T : E →ₗ[𝕜] F).singularValues
   have hσ (n : ℕ) : (T.singularValue n : ℝ≥0∞) ^ 2 = ENNReal.ofReal (σ n ^ 2) := by
     rw [← T.singularValue_eq_linearMap_singularValues, ENNReal.ofReal_pow NNReal.zero_le_coe,
@@ -82,25 +84,12 @@ private theorem tsum_singularValue_sq_eq_hilbertSchmidtEnergy_of_finiteDimension
     tsum_eq_sum (s := σ.support) fun n hn ↦ by simp [Finsupp.notMem_support_iff.mp hn],
     Finsupp.sum, ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ sq_nonneg _]
 
-/-- Compressing `T` to a finite-dimensional subspace `V` of the source, with values in `T(V)`,
-does not increase approximation numbers. -/
-private theorem singularValue_compression_le (T : E →L[𝕜] F) (V : Submodule 𝕜 E)
-    [FiniteDimensional 𝕜 V] (n : ℕ) :
-    ((V.map (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto.comp (T.comp V.subtypeL)).singularValue n ≤
-      T.singularValue n := by
-  have hP : ‖(V.map (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto‖₊ ≤ 1 := by
-    exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
-  have hι : ‖V.subtypeL‖₊ ≤ 1 := by exact_mod_cast Submodule.norm_subtypeL_le V
-  calc _ ≤ _ := singularValue_comp_comp_le _ T _ n
-    _ ≤ 1 * T.singularValue n * 1 := by gcongr
-    _ = T.singularValue n := by rw [one_mul, mul_one]
-
 /-- **Lower half of the Hilbert–Schmidt reconciliation.** The Hilbert–Schmidt energy is at most the
 sum of the squared approximation numbers: `E_b(T) ≤ ∑' n, aₙ(T)²`. No completeness is needed. -/
 theorem hilbertSchmidtEnergy_le_tsum_singularValue_sq (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     T.hilbertSchmidtEnergy b ≤ ∑' n, (T.singularValue n : ℝ≥0∞) ^ 2 := by
   classical
-  rw [hilbertSchmidtEnergy_def, ENNReal.tsum_eq_iSup_sum]
+  rw [hilbertSchmidtEnergy_def, tsum_eq_iSup_sum]
   refine iSup_le fun s ↦ ?_
   -- The partial sum over `s` is the energy of the compression of `T` to the span of the `bᵢ`,
   -- `i ∈ s`, computed in the orthonormal basis formed by these `bᵢ`.
@@ -119,10 +108,11 @@ theorem hilbertSchmidtEnergy_le_tsum_singularValue_sq (T : E →L[𝕜] F) (b : 
         (tsum_singularValue_sq_eq_hilbertSchmidtEnergy_of_finiteDimensional C _).symm
     _ ≤ ∑' n, (T.singularValue n : ℝ≥0∞) ^ 2 := by
         gcongr with n
-        exact T.singularValue_compression_le V n
+        exact T.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le _ V n
 
 variable [CompleteSpace E]
 
+omit [CompleteSpace E] in
 /-- Compressing `T` to a finite-dimensional subspace `V` of the source, with values in `T(V)`,
 does not increase the Hilbert–Schmidt energy. -/
 private theorem hilbertSchmidtEnergy_compression_le (T : E →L[𝕜] F) (V : Submodule 𝕜 E)
@@ -130,12 +120,12 @@ private theorem hilbertSchmidtEnergy_compression_le (T : E →L[𝕜] F) (V : Su
     ((V.map (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto.comp
       (T.comp V.subtypeL)).hilbertSchmidtEnergy c ≤ T.hilbertSchmidtEnergy b := by
   set W := V.map (T : E →ₗ[𝕜] F)
-  have := FiniteDimensional.complete 𝕜 W
+  have := FiniteDimensional.completeSpace 𝕜 W
   have hP : ‖W.orthogonalProjectionOnto‖ₑ ≤ 1 := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_le_one_iff]
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff]
     exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
   have hι : ‖V.subtypeL‖ₑ ≤ 1 := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_le_one_iff]
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff]
     exact_mod_cast Submodule.norm_subtypeL_le V
   -- The middle space of `(P_W ∘ T) ∘ ι_V` is the complete source `E`, so `F` need not be complete.
   rw [← comp_assoc]
@@ -145,29 +135,31 @@ private theorem hilbertSchmidtEnergy_compression_le (T : E →L[𝕜] F) (V : Su
     _ ≤ 1 ^ 2 * T.hilbertSchmidtEnergy b * 1 ^ 2 := by gcongr
     _ = T.hilbertSchmidtEnergy b := by rw [one_pow, one_mul, mul_one]
 
-/-- The partial sums of `n ↦ aₙ(T)²` exceed the energy by at most a multiple of any `δ ∈ (0, 1]`:
+omit [CompleteSpace E] in
+/-- The partial sums of `n ↦ aₙ(T)²` exceed the energy by at most a multiple of any `δ > 0`:
 `∑_{n < k} aₙ(T)² ≤ E_b(T) + δ ∑_{n < k} (2 aₙ(T) + 1)`. -/
 private theorem sum_range_singularValue_sq_le (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) (k : ℕ)
-    {δ : ℝ≥0} (hδ : 0 < δ) (hδ1 : δ ≤ 1) :
+    {δ : ℝ≥0} (hδ : 0 < δ) :
     ∑ n ∈ Finset.range k, (T.singularValue n : ℝ≥0∞) ^ 2 ≤ T.hilbertSchmidtEnergy b +
       ((δ * ∑ n ∈ Finset.range k, (2 * T.singularValue n + 1) : ℝ≥0) : ℝ≥0∞) := by
   -- A compression `C` with `aₙ(T) ≤ aₙ(C) + δ` for `n < k` gives
   -- `aₙ(T)² ≤ aₙ(C)² + δ (2 aₙ(T) + 1)`, while `∑ₙ aₙ(C)² = E(C) ≤ E_b(T)`.
+  have := b.completeSpace
   obtain ⟨V, _, hV⟩ := (TauCeti.HasMinMaxLowerBound.of_completeSpace (𝕜 := 𝕜) (E := E)
     (F := F)).exists_singularValue_le_compression T k (δ := δ) (by exact_mod_cast hδ)
   set C := (V.map (T : E →ₗ[𝕜] F)).orthogonalProjectionOnto.comp (T.comp V.subtypeL)
   have hCE : ∑ n ∈ Finset.range k, (C.singularValue n : ℝ≥0∞) ^ 2 ≤
       T.hilbertSchmidtEnergy b := by
     set c := (stdOrthonormalBasis 𝕜 V).toHilbertBasis
-    calc _ ≤ ∑' n, (C.singularValue n : ℝ≥0∞) ^ 2 := ENNReal.sum_le_tsum _
+    calc _ ≤ ∑' n, (C.singularValue n : ℝ≥0∞) ^ 2 := sum_le_tsum _
       _ = C.hilbertSchmidtEnergy c :=
           tsum_singularValue_sq_eq_hilbertSchmidtEnergy_of_finiteDimensional C c
       _ ≤ _ := T.hilbertSchmidtEnergy_compression_le V c b
   have hpt (n : ℕ) (hn : n ∈ Finset.range k) : (T.singularValue n : ℝ≥0∞) ^ 2 ≤
       (C.singularValue n : ℝ≥0∞) ^ 2 + ((δ * (2 * T.singularValue n + 1) : ℝ≥0) : ℝ≥0∞) := by
     have h₁ := hV n (Finset.mem_range.mp hn)
-    have h₂ : (C.singularValue n : ℝ) ≤ T.singularValue n := T.singularValue_compression_le V n
-    have hδ1' : (δ : ℝ) ≤ 1 := hδ1
+    have h₂ : (C.singularValue n : ℝ) ≤ T.singularValue n :=
+      T.singularValue_orthogonalProjectionOnto_comp_comp_subtypeL_le _ V n
     rw [← ENNReal.coe_pow, ← ENNReal.coe_pow, ← ENNReal.coe_add, ENNReal.coe_le_coe,
       ← NNReal.coe_le_coe]
     push_cast
@@ -179,9 +171,10 @@ private theorem sum_range_singularValue_sq_le (T : E →L[𝕜] F) (b : HilbertB
         rw [Finset.sum_add_distrib, Finset.mul_sum, ENNReal.ofNNReal_finsetSum]
     _ ≤ _ := by gcongr
 
-/-- **Upper half of the Hilbert–Schmidt reconciliation.** For a bounded operator from a Hilbert
-space to an inner product space, the sum of the squared approximation numbers is at most the
-Hilbert–Schmidt energy: `∑' n, aₙ(T)² ≤ E_b(T)`. -/
+omit [CompleteSpace E] in
+/-- **Upper half of the Hilbert–Schmidt reconciliation.** For a bounded operator from a space with
+a Hilbert basis to an inner product space, the sum of the squared approximation numbers is at most
+the Hilbert–Schmidt energy: `∑' n, aₙ(T)² ≤ E_b(T)`. -/
 theorem tsum_singularValue_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     ∑' n, (T.singularValue n : ℝ≥0∞) ^ 2 ≤ T.hilbertSchmidtEnergy b := by
   rw [ENNReal.tsum_eq_iSup_nat]
@@ -195,18 +188,20 @@ theorem tsum_singularValue_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : 
     simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
   refine ge_of_tendsto hlim ?_
   filter_upwards [Ioc_mem_nhdsGT zero_lt_one] with δ hδ
-  using T.sum_range_singularValue_sq_le b k hδ.1 hδ.2
+  using T.sum_range_singularValue_sq_le b k hδ.1
 
-/-- **Hilbert–Schmidt reconciliation.** For a bounded operator from a Hilbert space to an inner
-product space and any Hilbert basis `(bᵢ)` of the source, the sum of the squared approximation
-numbers is the Hilbert–Schmidt energy: `∑' n, aₙ(T)² = ∑' i, ‖T bᵢ‖²` in `ℝ≥0∞`. -/
+omit [CompleteSpace E] in
+/-- **Hilbert–Schmidt reconciliation.** For a bounded operator from a space with a Hilbert basis
+`(bᵢ)` to an inner product space, the sum of the squared approximation numbers is the
+Hilbert–Schmidt energy: `∑' n, aₙ(T)² = ∑' i, ‖T bᵢ‖²` in `ℝ≥0∞`. -/
 theorem tsum_singularValue_sq_eq_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     ∑' n, (T.singularValue n : ℝ≥0∞) ^ 2 = T.hilbertSchmidtEnergy b :=
   (T.tsum_singularValue_sq_le_hilbertSchmidtEnergy b).antisymm
     (T.hilbertSchmidtEnergy_le_tsum_singularValue_sq b)
 
-/-- An operator from a Hilbert space to an inner product space has finite Hilbert–Schmidt energy
-exactly when its approximation numbers are square-summable. -/
+omit [CompleteSpace E] in
+/-- An operator from a space with a Hilbert basis to an inner product space has finite
+Hilbert–Schmidt energy exactly when its approximation numbers are square-summable. -/
 theorem hilbertSchmidtEnergy_ne_top_iff_summable_singularValue_sq (T : E →L[𝕜] F)
     (b : HilbertBasis ι 𝕜 E) :
     T.hilbertSchmidtEnergy b ≠ ∞ ↔ Summable fun n ↦ (T.singularValue n : ℝ) ^ 2 := by
@@ -216,7 +211,7 @@ theorem hilbertSchmidtEnergy_ne_top_iff_summable_singularValue_sq (T : E →L[�
 
 /-- The square of the Hilbert–Schmidt norm is the sum of the squared approximation numbers,
 `‖T‖_HS² = ∑' n, aₙ(T)²`. When `T` has infinite energy both sides are `0`. -/
-theorem sq_hilbertSchmidtNorm_eq_tsum_singularValue_sq [CompleteSpace F] (T : E →L[𝕜] F) :
+theorem sq_hilbertSchmidtNorm_eq_tsum_singularValue_sq (T : E →L[𝕜] F) :
     T.hilbertSchmidtNorm ^ 2 = ∑' n, (T.singularValue n : ℝ) ^ 2 := by
   obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
   rw [T.sq_hilbertSchmidtNorm b, ← T.tsum_singularValue_sq_eq_hilbertSchmidtEnergy b,

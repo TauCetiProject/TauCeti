@@ -77,6 +77,38 @@ lemma weightedEisensteinSeries_def (z : ℍ) :
     weightedEisensteinSeries W k z = ∑' v : Fin 2 → ℤ, W ((↑) ∘ v) * eisSummand k v z :=
   (rfl)
 
+/-- A single-residue Eisenstein series is the sum over the affine lattice `b + N ℤ²`.
+No convergence hypothesis is needed for this reindexing of the total sum. -/
+lemma weightedEisensteinSeries_single_eq_tsum [NeZero N] (b : Fin 2 → ℤ) (z : ℍ) :
+    weightedEisensteinSeries (Pi.single (((↑) : ℤ → ZMod N) ∘ b) 1) k z =
+      ∑' y : Fin 2 → ℤ, eisSummand k (b + N • y) z := by
+  classical
+  have hN : (N : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hinj : Function.Injective (fun y : Fin 2 → ℤ ↦ b + N • y) := by
+    intro y y' h
+    ext i
+    have hi := congrFun h i
+    simpa only [Pi.add_apply, Pi.smul_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply,
+      add_right_inj, mul_right_inj' hN] using hi
+  have hres (y : Fin 2 → ℤ) :
+      ((↑) : ℤ → ZMod N) ∘ (b + N • y) = ((↑) : ℤ → ZMod N) ∘ b := by
+    ext i
+    simp
+  rw [weightedEisensteinSeries, ← hinj.tsum_eq]
+  · simp only [hres, Pi.single_eq_same, one_mul]
+  · intro v hv
+    have hvb : ((↑) : ℤ → ZMod N) ∘ v = ((↑) : ℤ → ZMod N) ∘ b := by
+      by_contra h
+      exact hv (by simp [h])
+    have hd (i : Fin 2) : (N : ℤ) ∣ v i - b i := by
+      rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
+      simpa using sub_eq_zero.mpr (congrFun hvb i)
+    refine ⟨fun i ↦ (v i - b i) / N, ?_⟩
+    ext i
+    simp only [Pi.add_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply]
+    rw [mul_comm, Int.ediv_mul_cancel (hd i)]
+    ring
+
 /-- The series is linear in the weight: scalar multiples. -/
 lemma weightedEisensteinSeries_smul (c : ℂ) :
     weightedEisensteinSeries (c • W) k = c • weightedEisensteinSeries W k := by
@@ -97,7 +129,7 @@ theorem weightedEisensteinSeries_slash_apply (γ : SL(2, ℤ)) :
       weightedEisensteinSeries (fun a ↦
         W (a ᵥ* (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)))) k := by
   ext1 z
-  simp_rw [SL_slash_apply, zpow_neg,
+  simp_rw [SL_slash_apply, _root_.zpow_neg,
     mul_inv_eq_iff_eq_mul₀ (zpow_ne_zero _ <| denom_ne_zero _ z), weightedEisensteinSeries,
     eisSummand_SL2_apply, mul_left_comm _ (_ ^ k), tsum_mul_left, mul_comm (_ ^ k)]
   congr 1
@@ -166,7 +198,7 @@ theorem weightedEisensteinSeries_tendstoLocallyUniformly (hk : 3 ≤ k) :
   rw [norm_mul]
   refine mul_le_mul (norm_le_sum_norm W _) ?_ (norm_nonneg _)
     (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
-  simpa only [eisSummand, one_div, ← zpow_neg, norm_zpow, ← Real.rpow_intCast,
+  simpa only [eisSummand, one_div, ← _root_.zpow_neg, norm_zpow, ← Real.rpow_intCast,
     Int.cast_neg] using summand_bound_of_mem_verticalStrip (by positivity) v hB hz
 
 /-- The weighted series is holomorphic on `ℍ`. -/
@@ -231,7 +263,7 @@ theorem weightedEisensteinSeries_eq_tsum_eisensteinSeries (hk : 3 ≤ k) (z : �
   · have hk0 : k ≠ 0 := by omega
     have h0 (x : gammaSet 1 0 0) : x.1 = 0 := by
       simpa using gammaSet_eq_gcd_mul_divIntMap x.2
-    simp [h0, eisSummand, zero_zpow _ hk0, zero_zpow _ (neg_ne_zero.mpr hk0)]
+    simp [h0, eisSummand, _root_.zero_zpow _ hk0, _root_.zero_zpow _ (neg_ne_zero.mpr hk0)]
   have : NeZero r := ⟨hr⟩
   -- write each pair of gcd `r` as `r` times a coprime pair
   rw [← (gammaSetDivGcdEquiv r).symm.tsum_eq]
@@ -248,7 +280,7 @@ theorem weightedEisensteinSeries_eq_tsum_eisensteinSeries (hk : 3 ≤ k) (z : �
       simp
     rw [hcast]
     simp only [eisSummand, Pi.smul_apply, nsmul_eq_mul, Int.cast_mul, Int.cast_natCast,
-      mul_assoc, ← mul_add, mul_zpow, zpow_neg]
+      mul_assoc, ← mul_add, mul_zpow, _root_.zpow_neg]
     ring
   simp_rw [hsmul, tsum_mul_left]
   congr 1

@@ -23,6 +23,10 @@ simple classes are positive, and its value on a simple class `S` is the spectral
 fusion matrix of `S`. Its value at the class of an object is the Frobenius–Perron dimension of
 that object.
 
+Every complex character is bounded in norm on simple classes by the Frobenius–Perron character,
+since its values are eigenvalues of the fusion matrices. The triangle inequality extends this
+comparison to the class of every object.
+
 By uniqueness, the character does not depend on `k`: any two fields for which `C` satisfies the
 hypotheses give the same ring homomorphism (`TauCeti.SplitK0.eq_frobeniusPerronChar`).
 
@@ -35,6 +39,11 @@ real and characters of the Grothendieck ring intertwine duality with complex con
 epimorphisms. A nonzero object `X` has Frobenius–Perron dimension at least `1`, because the
 coevaluation embeds the unit into `X ⊗ Xᘁ`, whose dimension is the square of that of `X`. So the
 Frobenius–Perron dimension vanishes exactly on zero objects.
+
+The **Frobenius–Perron dimension of the category**, `TauCeti.frobeniusPerronGlobalDim k C`, is the
+sum of the squared Frobenius–Perron dimensions of the simple classes. It is the Frobenius–Perron
+counterpart of the global dimension of a pivotal structure, which it bounds in absolute value over
+`ℂ`; the two agree exactly for pseudo-unitary categories.
 
 ## Main declarations
 
@@ -50,11 +59,15 @@ Frobenius–Perron dimension vanishes exactly on zero objects.
 * `TauCeti.frobeniusPerronDim_rightDual` and `TauCeti.frobeniusPerronDim_leftDual`: it is
   invariant under duality.
 * `TauCeti.frobeniusPerronDim_eq_sum`: it is the sum over the simple summands.
+* `TauCeti.SplitK0.norm_ringHom_of_le_frobeniusPerronDim`: the value of any complex character
+  on an object is bounded in norm by its Frobenius–Perron dimension.
 * `TauCeti.frobeniusPerronDim_le_of_mono` and `TauCeti.frobeniusPerronDim_le_of_epi`: it is
   monotone along monomorphisms and epimorphisms.
 * `TauCeti.one_le_frobeniusPerronDim`, `TauCeti.frobeniusPerronDim_eq_zero_iff` and
   `TauCeti.frobeniusPerronDim_pos_iff`: it is at least one on nonzero objects, and vanishes
   exactly on zero objects.
+* `TauCeti.frobeniusPerronGlobalDim k C`: the Frobenius–Perron dimension of the category, the sum
+  of the squared Frobenius–Perron dimensions of the simple classes.
 
 ## References
 
@@ -80,7 +93,7 @@ namespace SplitK0
 section Fusion
 
 variable (k : Type w') [Field k] [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C]
-  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C] [MonoidalLinear k C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C]
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [Simple (𝟙_ C)]
   [EssentiallySmall.{w} C]
 
@@ -148,6 +161,27 @@ theorem spectralRadius_fusionMatrix [Fintype (SimpleClasses C)] (S : SimpleClass
     (fun S ↦ (frobeniusPerronChar_simpleBasis_pos k S).le)
     fun T ↦ by rw [Module.Basis.repr_self, Finsupp.single_apply]; split_ifs <;> norm_num
 
+/-- Every complex character of the Grothendieck ring is bounded on a simple class by the
+Frobenius–Perron character. -/
+theorem norm_ringHom_simpleBasis_le_frobeniusPerronChar [Finite (SimpleClasses C)]
+    (ψ : SplitK0 C →+* ℂ) (S : SimpleClasses C) :
+    ‖ψ (simpleBasis C S)‖ ≤ frobeniusPerronChar k C (simpleBasis C S) := by
+  classical
+  let := Fintype.ofFinite (SimpleClasses C)
+  have hmem : ψ (simpleBasis C S) ∈
+      spectrum ℂ ((fusionMatrix k S).map (Nat.cast : ℕ → ℂ)) :=
+    Matrix.mem_spectrum_iff_exists_mulVec_eq_smul.2
+      ⟨fun T ↦ ψ (simpleBasis C T),
+        by simpa only [Function.comp_def] using (simpleBasis C).ringHom_comp_ne_zero ψ,
+        fusionMatrix_map_mulVec_ringHom k ψ S⟩
+  have hle : (‖ψ (simpleBasis C S)‖₊ : ENNReal) ≤
+      spectralRadius ℂ ((fusionMatrix k S).map (Nat.cast : ℕ → ℂ)) := by
+    rw [spectralRadius_eq_of_unital]
+    exact le_iSup_of_le (ψ (simpleBasis C S)) (le_iSup_of_le hmem le_rfl)
+  rw [spectralRadius_fusionMatrix k S] at hle
+  rw [← ENNReal.ofReal_coe_nnreal] at hle
+  exact (ENNReal.ofReal_le_ofReal_iff (frobeniusPerronChar_simpleBasis_pos k S).le).1 hle
+
 end Fusion
 
 end SplitK0
@@ -155,7 +189,7 @@ end SplitK0
 section Dim
 
 variable (k : Type w') [Field k] [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C]
-  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C] [MonoidalLinear k C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C]
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [Simple (𝟙_ C)]
   [EssentiallySmall.{w} C] [Finite (SimpleClasses C)]
 
@@ -208,7 +242,7 @@ theorem frobeniusPerronDim_zero : frobeniusPerronDim k (0 : C) = 0 :=
 
 /-- A right dual has the same Frobenius–Perron dimension as the object. -/
 @[simp]
-theorem frobeniusPerronDim_rightDual (X : C) :
+theorem frobeniusPerronDim_rightDual [MonoidalLinear k C] (X : C) :
     frobeniusPerronDim k Xᘁ = frobeniusPerronDim k X := by
   rw [← SplitK0.frobeniusPerronChar_of, ← SplitK0.dual_of,
     SplitK0.ringHom_apply_dual k (SplitK0.frobeniusPerronChar k C), RCLike.conj_to_real,
@@ -216,7 +250,7 @@ theorem frobeniusPerronDim_rightDual (X : C) :
 
 /-- A left dual has the same Frobenius–Perron dimension as the object. -/
 @[simp]
-theorem frobeniusPerronDim_leftDual (X : C) :
+theorem frobeniusPerronDim_leftDual [MonoidalLinear k C] (X : C) :
     frobeniusPerronDim k (ᘁX) = frobeniusPerronDim k X := by
   -- `X` and the chosen right dual of `ᘁX` are both right duals of `ᘁX`, hence isomorphic.
   rw [← frobeniusPerronDim_rightDual k (ᘁX)]
@@ -236,6 +270,25 @@ theorem frobeniusPerronDim_eq_sum [Fintype (SimpleClasses C)] (X : C) :
   rw [← SplitK0.frobeniusPerronChar_of, SplitK0.of_eq_sum, map_finsuppSum,
     Finsupp.sum_fintype _ _ (by simp)]
   simp
+
+/-- Every complex character of the Grothendieck ring, evaluated on an object, has norm at most
+the Frobenius–Perron dimension of that object. -/
+theorem SplitK0.norm_ringHom_of_le_frobeniusPerronDim (ψ : SplitK0 C →+* ℂ) (X : C) :
+    ‖ψ (SplitK0.of X)‖ ≤ frobeniusPerronDim k X := by
+  let := Fintype.ofFinite (SimpleClasses C)
+  rw [frobeniusPerronDim_eq_sum, SplitK0.of_eq_sum, map_finsuppSum,
+    Finsupp.sum_fintype _ _ (by simp)]
+  calc
+    ‖∑ S : SimpleClasses C, ψ (simpleMultiplicities X S • SplitK0.of S.repr)‖ ≤
+        ∑ S : SimpleClasses C, ‖ψ (simpleMultiplicities X S • SplitK0.of S.repr)‖ :=
+      norm_sum_le _ _
+    _ ≤ ∑ S : SimpleClasses C,
+        (simpleMultiplicities X S : ℝ) * frobeniusPerronDim k S.repr := by
+      refine Finset.sum_le_sum fun S _ ↦ ?_
+      rw [map_nsmul, RCLike.norm_nsmul (K := ℂ), nsmul_eq_mul]
+      apply mul_le_mul_of_nonneg_left _ (Nat.cast_nonneg _)
+      simpa only [SplitK0.simpleBasis_apply, SplitK0.frobeniusPerronChar_of] using
+        SplitK0.norm_ringHom_simpleBasis_le_frobeniusPerronChar k ψ S
 
 /-- The Frobenius–Perron dimension is nonnegative. -/
 theorem frobeniusPerronDim_nonneg (X : C) : 0 ≤ frobeniusPerronDim k X := by
@@ -281,9 +334,10 @@ theorem frobeniusPerronDim_le_of_epi {X Y : C} (f : X ⟶ Y) [Epi f] :
     fun g h hgh ↦ (cancel_epi f).1 hgh
 
 /-- A nonzero object has Frobenius–Perron dimension at least one. -/
-theorem one_le_frobeniusPerronDim {X : C} (hX : ¬IsZero X) : 1 ≤ frobeniusPerronDim k X := by
+theorem one_le_frobeniusPerronDim [MonoidalLinear k C] {X : C} (hX : ¬IsZero X) :
+    1 ≤ frobeniusPerronDim k X := by
   -- The coevaluation is a nonzero morphism out of the simple unit, hence a monomorphism.
-  have : Mono (η_ X Xᘁ) := mono_of_nonzero_from_simple (coevaluation_ne_zero hX)
+  have : Mono (η_ X Xᘁ) := CategoryTheory.mono_of_ne_zero_from_simple (coevaluation_ne_zero hX)
   have h := frobeniusPerronDim_le_of_mono k (η_ X Xᘁ)
   rw [frobeniusPerronDim_tensorUnit, frobeniusPerronDim_tensorObj,
     frobeniusPerronDim_rightDual] at h
@@ -291,14 +345,45 @@ theorem one_le_frobeniusPerronDim {X : C} (hX : ¬IsZero X) : 1 ≤ frobeniusPer
 
 /-- An object has Frobenius–Perron dimension zero exactly when it is a zero object. -/
 @[simp]
-theorem frobeniusPerronDim_eq_zero_iff (X : C) : frobeniusPerronDim k X = 0 ↔ IsZero X :=
+theorem frobeniusPerronDim_eq_zero_iff [MonoidalLinear k C] (X : C) :
+    frobeniusPerronDim k X = 0 ↔ IsZero X :=
   ⟨fun h ↦ by_contra fun hX ↦ by linarith [one_le_frobeniusPerronDim k hX],
     frobeniusPerronDim_eq_zero_of_isZero k⟩
 
 /-- An object has positive Frobenius–Perron dimension exactly when it is nonzero. -/
-theorem frobeniusPerronDim_pos_iff (X : C) : 0 < frobeniusPerronDim k X ↔ ¬IsZero X := by
+theorem frobeniusPerronDim_pos_iff [MonoidalLinear k C] (X : C) :
+    0 < frobeniusPerronDim k X ↔ ¬IsZero X := by
   rw [(frobeniusPerronDim_nonneg k X).lt_iff_ne', Ne, frobeniusPerronDim_eq_zero_iff]
 
 end Dim
+
+section GlobalDim
+
+variable (k : Type w') [Field k] [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [RigidCategory C] [Linear k C]
+  [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [Simple (𝟙_ C)]
+  [EssentiallySmall.{w} C] [Fintype (SimpleClasses C)]
+
+variable (C) in
+/-- The **Frobenius–Perron dimension of a fusion category**: the sum, over the simple classes, of
+the squared Frobenius–Perron dimensions of their chosen representatives. -/
+def frobeniusPerronGlobalDim : ℝ :=
+  ∑ S : SimpleClasses C, frobeniusPerronDim k S.repr ^ 2
+
+/-- The defining formula of the Frobenius–Perron dimension of a fusion category. -/
+theorem frobeniusPerronGlobalDim_def :
+    frobeniusPerronGlobalDim k C = ∑ S : SimpleClasses C, frobeniusPerronDim k S.repr ^ 2 :=
+  (rfl)
+
+/-- The Frobenius–Perron dimension of a fusion category is at least one: the class of the tensor
+unit contributes `1`. -/
+theorem one_le_frobeniusPerronGlobalDim :
+    1 ≤ frobeniusPerronGlobalDim k C := by
+  have h := Finset.single_le_sum (f := fun S : SimpleClasses C ↦ frobeniusPerronDim k S.repr ^ 2)
+    (fun S _ ↦ sq_nonneg _) (Finset.mem_univ (SimpleClasses.classOf (𝟙_ C)))
+  rwa [frobeniusPerronDim_eq_of_iso k (SimpleClasses.classOfReprIso (𝟙_ C)),
+    frobeniusPerronDim_tensorUnit, one_pow] at h
+
+end GlobalDim
 
 end TauCeti

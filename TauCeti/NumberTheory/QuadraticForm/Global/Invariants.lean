@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
+import TauCeti.FieldTheory.SquareClassGroup.Real
 
 /-!
 # Systems of local invariants of global quadratic forms
@@ -148,6 +149,16 @@ theorem realHasse_def (w : {w : InfinitePlace K // w.IsReal}) :
     I.realHasse w = (-1) ^ (I.realNegativeIndex w).choose 2 :=
   (rfl)
 
+/-- In rank two, the real Hasse sign is nontrivial exactly when the positive index is zero. -/
+theorem realHasse_ne_one_iff_realPositiveIndex_eq_zero_of_rank_eq_two
+    (hn : I.rank = 2) (w : {w : InfinitePlace K // w.IsReal}) :
+    I.realHasse w ≠ 1 ↔ I.realPositiveIndex w = 0 := by
+  by_cases h : I.realPositiveIndex w = 0
+  · norm_num [realHasse_def, realNegativeIndex_def, hn, h]
+  · have hq : 2 - I.realPositiveIndex w ≤ 1 := by omega
+    interval_cases hneg : 2 - I.realPositiveIndex w <;>
+      simp [realHasse_def, realNegativeIndex_def, hn, hneg, h]
+
 open scoped Classical in
 /-- **The Hasse product** of a system: the product of its Hasse signs over all finite places and
 all real places. The finite factor is a `finprod`; it is the product of the Hasse signs when they
@@ -215,6 +226,20 @@ theorem prod_finiteHasse_mul_prod_realHasse_eq_one (hI : I.IsAdmissible)
     (∏ v ∈ S, I.finiteHasse v) * ∏ w, I.realHasse w = 1 := by
   rw [← hasseProduct_eq_prod_of_mulSupport_subset I hS]
   exact hI.hasseProduct_eq_one
+
+/-- At a real place of an admissible system, a representative `d` of the discriminant is
+negative exactly when the negative index is odd. -/
+theorem embedding_of_isReal_neg_iff_odd (hI : I.IsAdmissible) {d : Kˣ}
+    (hd : squareClass d = I.discr) (w : {w : InfinitePlace K // w.IsReal}) :
+    embedding_of_isReal w.2 (d : K) < 0 ↔ Odd (I.realNegativeIndex w) := by
+  set u : ℝˣ := Units.map (embedding_of_isReal w.2).toMonoidHom d
+  have hu : (u : ℝ) = embedding_of_isReal w.2 (d : K) := by simp [u]
+  have h : squareClass u = I.realNegativeIndex w • squareClass (-1 : ℝˣ) := by
+    rw [← RingHom.squareClassMap_apply, hd, ← discrAtRealPlace_def, hI.discrAtRealPlace_eq]
+  have hpos : 0 < (u : ℝ) ↔ Even (I.realNegativeIndex w) := by
+    rw [← Units.squareClass_eq_zero_iff_pos, h, nsmul_squareClass_neg_one_eq_zero_iff_even]
+  rw [← hu, ← Nat.not_even_iff_odd, ← hpos]
+  simp [u.ne_zero.le_iff_lt]
 
 end IsAdmissible
 

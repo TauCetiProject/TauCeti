@@ -79,8 +79,6 @@ there is no room left for a class outside the image. -/
 theorem SimpleSubmoduleClasses.bijective_of_injective_of_card_conjClasses_le {ι : Type*}
     {f : ι → SimpleSubmoduleClasses k[G] k[G]} (hf : Function.Injective f)
     (h : Nat.card (ConjClasses G) ≤ Nat.card ι) : Function.Bijective f :=
-  have : Finite (SimpleSubmoduleClasses k[G] k[G]) :=
-    .of_equiv _ (simpleSubmoduleClassesEquiv _ _).symm
   hf.bijective_of_nat_card_le ((card_simpleSubmoduleClasses_le_card_conjClasses k G).trans h)
 
 /-- **Enough pairwise non-isomorphic simple objects are all of them**, the same count read in
@@ -90,8 +88,6 @@ conjugacy classes bound them too. -/
 theorem SimpleFDRepClasses.bijective_of_injective_of_card_conjClasses_le {ι : Type*}
     {f : ι → SimpleFDRepClasses k G} (hf : Function.Injective f)
     (h : Nat.card (ConjClasses G) ≤ Nat.card ι) : Function.Bijective f :=
-  have : Finite (SimpleSubmoduleClasses k[G] k[G]) :=
-    .of_equiv _ (simpleSubmoduleClassesEquiv _ _).symm
   have : Finite (SimpleFDRepClasses k G) :=
     .of_injective _ SimpleFDRepClasses.toSimpleSubmoduleClasses_injective
   hf.bijective_of_nat_card_le

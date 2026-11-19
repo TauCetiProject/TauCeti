@@ -42,6 +42,8 @@ theorem nor the fact that a crosscut cuts the disc into exactly two pieces.
 * `TauCeti.impression_unitDiscPrimeEnd` -- the impression at `ζ` is exactly `{ζ}`.
 * `TauCeti.unitDiscPrimeEnd_surjective`, `TauCeti.unitDiscPrimeEnd_bijective` -- every prime end
   of the disc is the prime end at a point of the circle.
+* `TauCeti.domainFilter_unitDiscPrimeEnd` -- the filter of the prime end at `ζ` is the filter of
+  neighbourhoods of `ζ` within the disc.
 
 ## References
 
@@ -141,7 +143,7 @@ theorem isNullChain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) :
   nullChainDomain_succ_subset n := by
     rw [nullChainDomain_unitDiscRadialChain hζ, nullChainDomain_unitDiscRadialChain hζ]
     exact inter_subset_inter_right _ fun z hz => (level_strictMono n.lt_succ_self).trans hz
-  eventually_chordal_lt ε hε := by
+  eventually_chordalDist_lt ε hε := by
     refine (eventually_eight_mul_lt hε).mono fun n hsmall z hz w hw => ?_
     have ht := abs_level_lt_one n
     have hzb : ‖z‖ ≤ 1 := by
@@ -152,7 +154,7 @@ theorem isNullChain_unitDiscRadialChain (hζ : ‖ζ‖ = 1) :
     have hw' := norm_sub_sq_le hζ hwb (inner_eq_of_mem_unitDiscChord hζ hw).ge
     have hzw : ‖z - w‖ < ε :=
       lt_of_pow_lt_pow_left₀ 2 hε.le (by linarith [norm_sub_sq_le_two_mul z w ζ])
-    exact (chordal_le_norm_sub z w).trans_lt hzw
+    exact (chordalDist_le_norm_sub z w).trans_lt hzw
 
 /-- The prime end of the unit disc at a point `ζ` of the unit circle, represented by the radial
 chain of chords perpendicular to `ζ`. -/
@@ -200,7 +202,6 @@ theorem unitDiscPrimeEnd_injective : Function.Injective unitDiscPrimeEnd := by
   have h₂ := norm_sub_sq_le hζ' hqn.le (hut.trans hqt.le)
   have h₃ := norm_sub_sq_le_two_mul ζ ζ' q
   rw [norm_sub_rev ζ q, norm_sub_rev ζ' q] at h₃
-  have hu : 1 - u = 1 / ((m : ℝ) + 2) := by ring
   linarith
 
 /-! ### Every prime end of the disc is radial -/
@@ -255,9 +256,7 @@ private lemma IsNullChain.exists_cap_subset_nullChainDomain (hC : IsNullChain (b
     (hζ : ‖ζ‖ = 1) (hζD : ζ ∈ closure (nullChainDomain (ball 0 1) C k)) (hζC : ζ ∉ C k) :
     ∃ n, nullChainDomain (ball 0 1) (unitDiscRadialChain ζ) n ⊆
       nullChainDomain (ball 0 1) C k := by
-  obtain ⟨x, y, γ, -, hrange⟩ := hC.exists_isCrosscut k
-  have hCk : IsClosed (C k) := hrange ▸ (isCompact_range γ.continuous).isClosed
-  obtain ⟨r, hr, hrC⟩ := Metric.isOpen_iff.mp hCk.isOpen_compl ζ hζC
+  obtain ⟨r, hr, hrC⟩ := Metric.isOpen_iff.mp (hC.isCompact k).isClosed.isOpen_compl ζ hζC
   obtain ⟨n, hn⟩ := (eventually_eight_mul_lt hr).exists
   refine ⟨n, ?_⟩
   rw [nullChainDomain_unitDiscRadialChain hζ]
@@ -366,6 +365,29 @@ theorem impression_unitDiscPrimeEnd (ζ : sphere (0 : ℂ) 1) :
   simp only [mem_ofPred_eq] at hzbound
   have hden : 0 < (n : ℝ) + 2 := by positivity
   nlinarith [one_div_pos.mpr hden]
+
+/-- **The filter of the prime end at a circle point is the neighbourhood filter of that point
+within the disc**: the caps of the radial chain at `ζ` form a basis of `𝓝[ball 0 1] ζ`. -/
+@[simp]
+theorem domainFilter_unitDiscPrimeEnd (ζ : sphere (0 : ℂ) 1) :
+    (unitDiscPrimeEnd ζ).domainFilter = 𝓝[ball 0 1] (ζ : ℂ) := by
+  have hζ : ‖(ζ : ℂ)‖ = 1 := mem_sphere_zero_iff_norm.mp ζ.2
+  rw [unitDiscPrimeEnd_def, PrimeEnd.domainFilter_mk]
+  refine (isNullChain_unitDiscRadialChain hζ).hasAntitoneBasis_nullChainFilter.toHasBasis.ext
+    nhdsWithin_basis_ball (fun n _ => ?_) fun ε hε => ?_
+  -- each cap contains the points of the disc close to `ζ`
+  · refine ⟨1 / ((n : ℝ) + 2), by positivity, fun z hz => ?_⟩
+    rw [nullChainDomain_unitDiscRadialChain hζ]
+    have h := one_sub_norm_sub_le_inner hζ z
+    have hz' : ‖z - ζ‖ < 1 / ((n : ℝ) + 2) := mem_ball_iff_norm.mp hz.1
+    exact ⟨hz.2, by simp only [mem_ofPred_eq]; linarith⟩
+  -- and the caps at high levels lie close to `ζ`
+  · obtain ⟨n, hn⟩ := (eventually_eight_mul_lt hε).exists
+    refine ⟨n, trivial, fun z hz => ?_⟩
+    rw [nullChainDomain_unitDiscRadialChain hζ] at hz
+    have h := norm_sub_sq_le hζ (mem_ball_zero_iff.mp hz.1).le hz.2.le
+    have hpos : 0 < 1 / ((n : ℝ) + 2) := by positivity
+    exact ⟨mem_ball_iff_norm.mpr (lt_of_pow_lt_pow_left₀ 2 hε.le (by linarith)), hz.1⟩
 
 end TauCeti
 

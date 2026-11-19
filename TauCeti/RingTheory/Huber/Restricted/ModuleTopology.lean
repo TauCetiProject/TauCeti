@@ -117,7 +117,7 @@ theorem isClosedEmbedding_restrictedMvPowerSeriesSubmodule_coefficients :
       UniformFun.ofFun (f.1 : (Fin k →₀ ℕ) → M)) := by
   refine ⟨isEmbedding_restrictedMvPowerSeriesSubmodule_coefficients, ?_⟩
   rw [range_restrictedMvPowerSeriesSubmodule_coefficients]
-  exact UniformFun.isClosed_setOfPred_tendsto
+  exact UniformFun.isClosed_setOfPred_tendsto continuous_const
 
 /-- Restricted series with coefficients in a Hausdorff module are Hausdorff. -/
 theorem t2Space_restrictedMvPowerSeriesSubmodule [T2Space M] :
@@ -181,8 +181,8 @@ theorem hasBasis_nhds_zero_restrictedMvPowerSeriesSubmodule :
   · intro V hV
     exact ⟨{m | (0, m) ∈ V}, mem_nhds_left 0 hV, fun _ hf s ↦ hf s⟩
   · intro U hU
-    obtain ⟨V, hV, hVU⟩ := UniformSpace.mem_nhds_iff.mp hU
-    exact ⟨V, hV, fun _ hf s ↦ hVU (hf s)⟩
+    obtain ⟨V, hV, hsymm, hVU⟩ := UniformSpace.mem_nhds_iff_symm.mp hU
+    exact ⟨V, hV, fun _ hf s ↦ hVU (hsymm.symm _ _ (hf s))⟩
 
 end Uniform
 

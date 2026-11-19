@@ -13,10 +13,10 @@ public import Mathlib.Topology.Maps.Proper.Basic
 
 The extension `OnePoint.map f` sends infinity, and only infinity, to infinity. Its range is the
 range of `f`, embedded in the target compactification, together with infinity, and it is injective
-exactly when `f` is injective. For a proper map between arbitrary topological spaces, this extension
-is continuous. Closed embeddings extend to closed embeddings. These lemmas allow proper
-parametrizations to be compactified, with an explicit description of their range after adjoining
-infinity and a criterion for injectivity.
+exactly when `f` is injective; it is an involution when `f` is. For a proper map between
+arbitrary topological spaces, this extension is continuous. Closed embeddings extend to closed
+embeddings. These lemmas allow proper parametrizations to be compactified, with an explicit
+description of their range after adjoining infinity and a criterion for injectivity.
 -/
 
 public section
@@ -37,6 +37,12 @@ theorem onePointMap_injective_iff {X Y : Type*} {f : X → Y} :
   · intro hf
     -- `OnePoint.map` is implemented by `Option.map`, so its injectivity theorem applies.
     exact Option.map_injective hf
+
+/-- Extension to one-point compactifications preserves involutions. -/
+theorem onePointMap_involutive {X : Type*} {f : X → X} (hf : Function.Involutive f) :
+    Function.Involutive (OnePoint.map f) := by
+  intro x
+  induction x using OnePoint.rec <;> simp [hf _]
 
 /-- The range of the extension to one-point compactifications is the embedded range together
 with the point at infinity. -/

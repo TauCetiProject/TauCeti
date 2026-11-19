@@ -53,13 +53,13 @@ open _root_.MonoidAlgebra
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- A finite group of `p`-power roots of unity has order `p ^ k`, and a generator: every element
-is a natural power of it. -/
+omit [Fact p.Prime] in
+/-- A finite group of `p`-power roots of unity has a primitive generator of its order: every
+element is a natural power of it. -/
 private theorem exists_generator_pPowerRootsOfUnity (L : Type*) [Field L]
     (h : Finite (pPowerRootsOfUnity p L)) :
     ∃ ζ ∈ pPowerRootsOfUnity p L, IsPrimitiveRoot ζ (localRootOfUnityOrder p L h) ∧
       ∀ ξ ∈ pPowerRootsOfUnity p L, ∃ j : ℕ, ζ ^ j = ξ := by
-  have := isCyclic_pPowerRootsOfUnity p L h
   obtain ⟨ζ, hζ⟩ := IsCyclic.exists_ofOrder_eq_natCard (α := pPowerRootsOfUnity p L)
   have hprim : IsPrimitiveRoot (ζ : Lˣ) (localRootOfUnityOrder p L h) := by
     rw [localRootOfUnityOrder_def, ← hζ, ← Subgroup.orderOf_coe]
@@ -70,6 +70,7 @@ private theorem exists_generator_pPowerRootsOfUnity (L : Type*) [Field L]
   obtain ⟨j, -, hj⟩ := hprim.eq_pow_of_mem_rootsOfUnity hξ
   exact ⟨j, hj⟩
 
+omit [Fact p.Prime] in
 /-- A field automorphism acts on a finite group of `p`-power roots of unity as a power map, through
 Mathlib's modular cyclotomic character. -/
 private theorem exists_units_map_eq_pow {L : Type*} [Field L] {K : Type*} [Field K] [Algebra K L]

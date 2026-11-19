@@ -18,6 +18,14 @@ projection `T ×_S X ⟶ T` (`graphSection`). Graphs commute with base change al
 `T' ×_S X ⟶ T ×_S X` (`isPullback_graphSection`). A section `x₀` of `f` induces a section
 `baseChangeSection` on each base change `T ×_S X`: the graph of the `T`-point `T ⟶ S ⟶ X`
 (`basePoint`), so its projection formulas and naturality in `T` follow from those of graphs.
+For a base change `X' = S' ×_S X` along `g : S' ⟶ S`, the base-changed sections of `x₀` and of
+its base change `x₀'` agree under `T ×_S X ≅ T ×_{S'} X'`
+(`baseChangeSection_comp_pullbackRightPullbackFstIso_inv`).
+
+Over an open `U` of `S`, a section `σ` of `g : Z ⟶ S` restricts functions on `g⁻¹ U` to `U`,
+giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`). More generally, a
+morphism `f : X ⟶ Y` over `S` induces a `Γ(S, ⊤)`-algebra homomorphism
+`Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)` (`Scheme.Hom.appTopAlgHom`).
 -/
 
 public section
@@ -129,7 +137,94 @@ lemma isPullback_baseChangeSection {T' T : Over S} (φ : T' ⟶ T) :
     (by simpa only [baseChangeSection_fst] using IsPullback.id_horiz φ.left)
     (baseChangeSection_comp_pullback_map f x₀ hx₀ φ) (Over.isPullback_pullback_map_left f φ).flip
 
+variable {S' : Scheme.{u}} (g : S' ⟶ S)
+
+/-- The base-changed sections are compatible with `T ×_S X ≅ T ×_{S'} (S' ×_S X)`. -/
+@[reassoc]
+lemma baseChangeSection_comp_pullbackRightPullbackFstIso_inv (T : Over S') :
+    baseChangeSection f x₀ hx₀ ((Over.map g).obj T) ≫ (pullbackRightPullbackFstIso g f T.hom).inv =
+      𝟙 T.left ≫ baseChangeSection (pullback.fst g f) (baseChangeSection f x₀ hx₀ (Over.mk g))
+        (baseChangeSection_fst f x₀ hx₀ (Over.mk g)) T := by
+  -- The lemmas for the base-changed sections are stated for `T.hom`, which `simp` does not match
+  -- against `((Over.map g).obj T).hom = T.hom ≫ g` and `(Over.mk g).hom = g`.
+  have h₁ := baseChangeSection_fst f x₀ hx₀ ((Over.map g).obj T)
+  have h₂ := baseChangeSection_snd f x₀ hx₀ ((Over.map g).obj T)
+  have h₃ := baseChangeSection_fst f x₀ hx₀ (Over.mk g)
+  have h₄ := baseChangeSection_snd f x₀ hx₀ (Over.mk g)
+  simp only [Over.map_obj_hom, Over.mk_hom] at h₁ h₂ h₃ h₄
+  apply pullback.hom_ext
+  · simpa using h₁
+  · apply pullback.hom_ext
+    · simp [reassoc_of% h₁, h₃]
+    · simp [h₂, h₄]
+
 end
+
+section SectionAlgHom
+
+variable {Z S : Scheme.{u}} (g : Z ⟶ S) {σ : S ⟶ Z} (hσ : σ ≫ g = 𝟙 S)
+
+include hσ in
+/-- A section `σ` of `g` pulls `g⁻¹ U` back to `U`. -/
+theorem preimage_preimage_of_comp_eq_id (U : S.Opens) : σ ⁻¹ᵁ g ⁻¹ᵁ U = U := by
+  rw [← Scheme.Hom.comp_preimage, hσ, Scheme.Hom.id_preimage]
+
+/-- The ring map `Γ(S, U) → Γ(Z, g⁻¹ U) → Γ(S, U)` of a section is the identity. -/
+theorem app_comp_appLE_of_comp_eq_id (U : S.Opens) :
+    g.app U ≫ σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge = 𝟙 _ := by
+  rw [Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_comp_appLE]
+  have key : ∀ (f : S ⟶ S) (_ : f = 𝟙 S) (e : U ≤ f ⁻¹ᵁ U), f.appLE U U e = 𝟙 _ := by
+    rintro _ rfl e
+    simp only [Scheme.Hom.appLE, Scheme.Hom.id_app]
+    exact S.presheaf.map_id _
+  exact key _ hσ _
+
+/-- The `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` of a section `σ` of `g`, over an open
+`U` of `S`. -/
+noncomputable def sectionAlgHom (U : S.Opens) :
+    letI := (g.app U).hom.toAlgebra
+    Γ(Z, g ⁻¹ᵁ U) →ₐ[Γ(S, U)] Γ(S, U) :=
+  letI := (g.app U).hom.toAlgebra
+  { (σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge).hom with
+    commutes' a := congr($(app_comp_appLE_of_comp_eq_id g hσ U).hom a) }
+
+/-- The algebra map `σ^*` of a section evaluates the restriction along `σ`. -/
+@[simp]
+theorem sectionAlgHom_apply (U : S.Opens) (b : Γ(Z, g ⁻¹ᵁ U)) :
+    sectionAlgHom g hσ U b = σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge b :=
+  (rfl)
+
+/-- On global sections, `sectionAlgHom g hσ ⊤` applies `σ.appTop`. -/
+theorem sectionAlgHom_top_apply (b : Γ(Z, ⊤)) :
+    sectionAlgHom g hσ ⊤ b = σ.appTop b :=
+  (sectionAlgHom_apply g hσ ⊤ b).trans congr($(σ.appLE_eq_app).hom b)
+
+/-- A morphism `f : X ⟶ Y` over `S` (`f ≫ g = h`) induces `Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤)`. -/
+noncomputable def _root_.AlgebraicGeometry.Scheme.Hom.appTopAlgHom {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) :
+    letI := g.appTop.hom.toAlgebra; letI := h.appTop.hom.toAlgebra
+    Γ(Y, ⊤) →ₐ[Γ(S, ⊤)] Γ(X, ⊤) :=
+  letI := g.appTop.hom.toAlgebra; letI := h.appTop.hom.toAlgebra
+  { f.appTop.hom with
+    commutes' r := congr($((Scheme.Hom.comp_appTop f g).symm.trans
+      (congrArg Scheme.Hom.appTop hfg)).hom r) }
+
+/-- Evaluating `f.appTopAlgHom hfg` applies `f.appTop`. -/
+@[simp] theorem _root_.AlgebraicGeometry.Scheme.Hom.appTopAlgHom_apply {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) (u : Γ(Y, ⊤)) :
+    f.appTopAlgHom hfg u = f.appTop u := (rfl)
+
+/-- The underlying function of `f.appTopAlgHom hfg` is `f.appTop`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.coe_appTopAlgHom {X Y S : Scheme.{u}}
+    (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) : ⇑(f.appTopAlgHom hfg) = f.appTop :=
+  (rfl)
+
+/-- Coercing `f.appTopAlgHom hfg` to a ring homomorphism recovers `f.appTop.hom`. -/
+@[simp, norm_cast] theorem _root_.AlgebraicGeometry.Scheme.Hom.toRingHom_appTopAlgHom
+    {X Y S : Scheme.{u}} (f : X ⟶ Y) {g : Y ⟶ S} {h : X ⟶ S} (hfg : f ≫ g = h) :
+    (f.appTopAlgHom hfg : Γ(Y, ⊤) →+* Γ(X, ⊤)) = f.appTop.hom := (rfl)
+
+end SectionAlgHom
 
 end AlgebraicGeometry
 end TauCeti

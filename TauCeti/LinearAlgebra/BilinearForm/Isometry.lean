@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GroupWithZero.NonZeroDivisors
-public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.Algebra.Group.Subgroup.Map
+public import TauCeti.Algebra.Module.Equiv.AutCongr
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
-public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # The isometry group of a bilinear form
@@ -24,21 +24,23 @@ import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 An endomorphism `f` of a module `M` is an *isometry* of a bilinear form `B` when
 `B (f x) (f y) = B x y`. Starting from the predicate `TauCeti.BilinForm.IsIsometry` defined in the
 dependency-light module `TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic`, this file builds the
-group it cuts out inside the linear automorphisms of `M`, `TauCeti.BilinForm.isometryGroup B`,
+group it cuts out inside the linear automorphisms of `M`, `LinearMap.BilinForm.isometryGroup B`,
 together with the API a consumer of the group needs: a Gram-matrix criterion, the resulting
 constraint `(det f) ^ 2 = 1`, functoriality in the module and in the base ring, and stability of
 orthogonal complements.
 
-Mathlib bundles the same notion twice — as a map, `B₁ →bᵢ B₂`, and as an equivalence,
-`LinearMap.BilinForm.IsometryEquiv B₁ B₂`. The bridge to the former
-(`TauCeti.BilinForm.IsIsometry.toIsometry`, `TauCeti.BilinForm.isIsometry_toLinearMap`) lives
-with the predicate; the bridge to the latter is
-`TauCeti.BilinForm.isometryGroupEquivIsometryEquiv` here, an equivalence of *types* between the
-subgroup and `B.IsometryEquiv B`. What is new is the unbundled predicate, which is what lets
-"preserves `B`" be a side condition on an endomorphism one already has — the hypothesis of the
-automatic-invertibility theorem below, and the membership condition of a subgroup — and the group
-structure, needed as soon as one wants subgroups of it, group homomorphisms into it, or a group
-action, none of which a bare type of bundled equivalences provides.
+Mathlib has the notion in three forms: as a bundled map, `B₁ →bᵢ B₂`, as a bundled equivalence,
+`LinearMap.BilinForm.IsometryEquiv B₁ B₂`, and as the unbundled predicate `LinearMap.IsOrthogonal`
+over a commutative ring, which `TauCeti.BilinForm.IsIsometry` agrees with by `Iff.rfl`. The
+predicate here is stated over a commutative semiring and an additive commutative monoid. The bridge
+to the bundled map (`TauCeti.BilinForm.IsIsometry.toIsometry`,
+`TauCeti.BilinForm.isIsometry_toLinearMap`) lives with the predicate; the bridge to the bundled
+equivalence is `LinearMap.BilinForm.isometryGroupEquivIsometryEquiv` here, an equivalence of *types*
+between the subgroup and `B.IsometryEquiv B`. What this file adds is the group structure on the
+isometric automorphisms, needed as soon as one wants subgroups of it, group homomorphisms into it,
+or a group action, none of which a bare type of bundled equivalences provides, together with the
+automatic-invertibility theorem below, which turns "preserves `B`" on an endomorphism one already
+has into membership of the group.
 
 Two statements are worth singling out.
 
@@ -50,14 +52,14 @@ Two statements are worth singling out.
   which is how such an automorphism usually presents itself — as an integer matrix satisfying
   `Aᵀ * G * A = G`.
 * Base change along an algebra `R → A` is a group homomorphism
-  `Aut(M, B) →* Aut(A ⊗[R] M, B_A)` (`TauCeti.BilinForm.isometryGroupBaseChange`). For `R = ℤ` and
+  `Aut(M, B) →* Aut(A ⊗[R] M, B_A)` (`LinearMap.BilinForm.isometryGroupBaseChange`). For `R = ℤ` and
   `A = ℂ` this is the action of `Aut(V, Q)` on the complexification of the lattice. When `Q` is
   preserved by monodromy, the monodromy of a variation of Hodge structure acts through this map.
 
 ## Main definitions
 
-* `TauCeti.BilinForm.isometryGroup`: the isometry group `Aut(M, B) ≤ M ≃ₗ[R] M`.
-* `TauCeti.BilinForm.isometryGroupEquivIsometryEquiv`: the isometry group as a type, equivalent to
+* `LinearMap.BilinForm.isometryGroup`: the isometry group `Aut(M, B) ≤ M ≃ₗ[R] M`.
+* `LinearMap.BilinForm.isometryGroupEquivIsometryEquiv`: the isometry group as a type, equivalent to
   Mathlib's self-isometries `B.IsometryEquiv B`.
 * `Module.Basis.isometryEquivOfToMatrixEq`: two bilinear forms with the same matrix in some bases
   are isometric.
@@ -65,9 +67,9 @@ Two statements are worth singling out.
 * `LinearMap.BilinForm.isometryDet`: the determinant of an isometry, as a homomorphism to `Rˣ`.
 * `TauCeti.BilinForm.IsIsometry.toIsometryGroup`: an isometry of a left-separating form on a finite
   free module over an integral domain, as an element of the isometry group.
-* `TauCeti.BilinForm.isometryGroupBaseChange`: base change of isometries, as a group homomorphism.
+* `LinearMap.BilinForm.isometryGroupBaseChange`: base change of isometries, as a group homomorphism.
 * `LinearMap.BilinForm.specialIsometryGroupBaseChange`: base change of determinant-one isometries.
-* `TauCeti.BilinForm.isometryGroupCongr`: transport of the isometry group along a linear
+* `LinearMap.BilinForm.isometryGroupCongr`: transport of the isometry group along a linear
   equivalence.
 * `LinearMap.BilinForm.specialIsometryGroupCongr`: the corresponding transport of its
   determinant-one subgroup.
@@ -79,6 +81,9 @@ Two statements are worth singling out.
   membership of a matrix in `Matrix.isometryMatrices` of the Gram matrix.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
+* `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`: an isometry of a nondegenerate alternating
+  form on a vector space has determinant `1` (by convention when the space is
+  infinite-dimensional).
 * `LinearMap.BilinForm.Isometry.injective`: an isometric embedding of a left-separating form is
   injective.
 * `TauCeti.BilinForm.IsIsometry.bijective`: over an integral domain, an isometry of a
@@ -93,7 +98,9 @@ Mathlib, the group, transport along a linear equivalence, the Gram-matrix criter
 change need only a `CommSemiring` and additive monoids, which is where every Mathlib ingredient
 they consume is stated; injectivity needs subtraction in `M`; the determinant results need `M` to
 be an additive group over a `CommRing`; the automatic invertibility of an isometry of a
-left-separating form needs an integral domain and a finite free module.
+left-separating form needs an integral domain and a finite free module; determinant one for an
+isometry of a nondegenerate alternating form needs a field, over which such a form has a symplectic
+basis.
 
 This is the bilinear-form counterpart of `TauCeti.QuadraticMap.orthogonalGroup` in
 `TauCeti/LinearAlgebra/QuadraticForm/OrthogonalGroup/Basic.lean`, whose API it follows; for a
@@ -167,13 +174,34 @@ theorem map_orthogonal (hf : IsIsometry B f) (hsurj : Function.Surjective f) (N 
 
 end IsIsometry
 
+end CommSemiring
+
+end BilinForm
+
+end TauCeti
+
+/-! ### The isometry group
+
+These declarations live in Mathlib's `LinearMap.BilinForm` namespace so that dot notation such as
+`B.isometryGroup` works on a bilinear form `B`. -/
+
+namespace LinearMap.BilinForm
+
+open TauCeti.BilinForm
+open LinearMap (BilinForm)
+
+section CommSemiring
+
+variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
+  [Module R M'] {B : BilinForm R M}
+
 /-- The isometry group `Aut(M, B)` of a bilinear form `B` on `M`: the linear automorphisms of `M`
 that preserve `B`.
 
 For a finite free `ℤ`-module `V` carrying an integral form `Q` this is the arithmetic group
 `Aut(V, Q)`; when `Q` is preserved by monodromy, a variation of Hodge structure has its monodromy
 representation land in this group and act on the complexification through
-`TauCeti.BilinForm.isometryGroupBaseChange`. -/
+`LinearMap.BilinForm.isometryGroupBaseChange`. -/
 def isometryGroup (B : BilinForm R M) : Subgroup (M ≃ₗ[R] M) where
   carrier := {e | IsIsometry B (e : M →ₗ[R] M)}
   one_mem' := isIsometry_iff.mpr fun _ _ => rfl
@@ -186,13 +214,15 @@ def isometryGroup (B : BilinForm R M) : Subgroup (M ≃ₗ[R] M) where
 theorem mem_isometryGroup {e : M ≃ₗ[R] M} :
     e ∈ isometryGroup B ↔ IsIsometry B (e : M →ₗ[R] M) := Iff.rfl
 
+/-- A self-equivalence lies in `Aut(M, B)` exactly when it preserves `B` on every pair of
+vectors. -/
 @[simp]
 theorem mem_isometryGroup_iff {e : M ≃ₗ[R] M} :
     e ∈ isometryGroup B ↔ ∀ x y, B (e x) (e y) = B x y :=
   mem_isometryGroup.trans isIsometry_iff
 
 /-- Membership in `Aut(M, B)` is exactly Mathlib's notion of a self-isometry of `B`: the subgroup
-`TauCeti.BilinForm.isometryGroup B` and the type `LinearMap.BilinForm.IsometryEquiv B B` carry the
+`LinearMap.BilinForm.isometryGroup B` and the type `LinearMap.BilinForm.IsometryEquiv B B` carry the
 same data, the subgroup adding the group structure. -/
 def isometryGroupEquivIsometryEquiv (B : BilinForm R M) :
     isometryGroup B ≃ B.IsometryEquiv B where
@@ -202,10 +232,14 @@ def isometryGroupEquivIsometryEquiv (B : BilinForm R M) :
   left_inv _ := rfl
   right_inv _ := rfl
 
+/-- The isometry equivalence attached to an element of `Aut(M, B)` has the same underlying
+function. -/
 @[simp]
 theorem coe_isometryGroupEquivIsometryEquiv (B : BilinForm R M) (e : isometryGroup B) :
     ⇑(isometryGroupEquivIsometryEquiv B e) = ⇑(e : M ≃ₗ[R] M) := (rfl)
 
+/-- The element of `Aut(M, B)` attached to an isometry equivalence has the same underlying
+function. -/
 @[simp]
 theorem coe_isometryGroupEquivIsometryEquiv_symm (B : BilinForm R M) (e : B.IsometryEquiv B) :
     (((isometryGroupEquivIsometryEquiv B).symm e : M ≃ₗ[R] M) : M → M) = ⇑e := (rfl)
@@ -235,11 +269,13 @@ def isometryGroupCongr (B : BilinForm R M) (e : M ≃ₗ[R] M') :
     isometryGroup B ≃* isometryGroup (LinearMap.BilinForm.congr e B) :=
   TauCeti.Subgroup.congrOfMapEq (LinearEquiv.autCongr e) (map_isometryGroup B e)
 
+/-- Conjugation by `e` acts on `Aut(M, B)` as `x ↦ e (a (e⁻¹ x))`. -/
 @[simp]
 theorem coe_isometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R] M') (a : isometryGroup B)
     (x : M') : (isometryGroupCongr B e a : M' ≃ₗ[R] M') x = e ((a : M ≃ₗ[R] M) (e.symm x)) := by
   simp [isometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply]
 
+/-- The inverse of conjugation by `e` acts as `x ↦ e⁻¹ (a (e x))`. -/
 @[simp]
 theorem coe_isometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
     (a : isometryGroup (LinearMap.BilinForm.congr e B)) (x : M) :
@@ -248,6 +284,25 @@ theorem coe_isometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃ₗ[R] M
   simp [isometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply]
 
 end Congr
+
+end CommSemiring
+
+end LinearMap.BilinForm
+
+namespace TauCeti
+
+open Module
+open LinearMap (BilinForm)
+open scoped Matrix TensorProduct
+
+namespace BilinForm
+
+section CommSemiring
+
+variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
+  [Module R M']
+
+variable {B : BilinForm R M} {f g : M →ₗ[R] M}
 
 /-! ### The Gram-matrix criterion -/
 
@@ -267,11 +322,15 @@ noncomputable def _root_.Module.Basis.isometryEquivOfToMatrixEq (v : Basis ι R 
         simpa [LinearMap.BilinForm.toMatrix_apply] using (congrFun₂ h i j).symm
     simpa using LinearMap.congr_fun₂ key x y
 
+/-- The linear equivalence underlying `Module.Basis.isometryEquivOfToMatrixEq` is the one
+sending the basis `v` to the basis `w`. -/
 @[simp]
 theorem _root_.Module.Basis.toLinearEquiv_isometryEquivOfToMatrixEq (v : Basis ι R M)
     (w : Basis ι R M') (h : LinearMap.BilinForm.toMatrix v B = LinearMap.BilinForm.toMatrix w B') :
     (v.isometryEquivOfToMatrixEq w h : M ≃ₗ[R] M') = v.equiv w (Equiv.refl ι) := (rfl)
 
+/-- `Module.Basis.isometryEquivOfToMatrixEq` agrees with the basis equivalence `v.equiv w
+(Equiv.refl ι)` on every vector. -/
 @[simp]
 theorem _root_.Module.Basis.isometryEquivOfToMatrixEq_apply (v : Basis ι R M) (w : Basis ι R M')
     (h : LinearMap.BilinForm.toMatrix v B = LinearMap.BilinForm.toMatrix w B') (x : M) :
@@ -313,6 +372,25 @@ theorem IsIsometry.baseChange (hf : IsIsometry B f) :
     IsIsometry (LinearMap.BilinForm.baseChange A B) (f.baseChange A) :=
   isIsometry_iff.mpr (LinearMap.BilinForm.baseChange_baseChange_baseChange (A := A) hf.apply)
 
+end BaseChange
+
+end CommSemiring
+
+end BilinForm
+
+end TauCeti
+
+namespace LinearMap.BilinForm
+
+open TauCeti.BilinForm
+open LinearMap (BilinForm)
+open scoped TensorProduct
+
+section BaseChange
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  (A : Type*) [CommSemiring A] [Algebra R A]
+
 /-- Base change along an `R`-algebra `A` is a group homomorphism
 `Aut(M, B) →* Aut(A ⊗[R] M, B_A)`. For `R = ℤ` and `A = ℂ` this is the action of the arithmetic
 group `Aut(V, Q)` on the complexification of the lattice, through which monodromy acts when it
@@ -324,6 +402,8 @@ def isometryGroupBaseChange (B : BilinForm R M) :
   map_one' := Subtype.ext (by simp)
   map_mul' a b := Subtype.ext (by simp [_root_.LinearEquiv.baseChange_mul])
 
+/-- Base change of an element of `Aut(M, B)` is the base change of its underlying linear
+equivalence. -/
 @[simp]
 theorem coe_isometryGroupBaseChange (B : BilinForm R M) (e : isometryGroup B) :
     (isometryGroupBaseChange A B e : A ⊗[R] M ≃ₗ[A] A ⊗[R] M)
@@ -331,7 +411,15 @@ theorem coe_isometryGroupBaseChange (B : BilinForm R M) (e : isometryGroup B) :
 
 end BaseChange
 
-end CommSemiring
+end LinearMap.BilinForm
+
+namespace TauCeti
+
+open Module
+open LinearMap (BilinForm)
+open scoped Matrix TensorProduct
+
+namespace BilinForm
 
 section AddCommGroup
 
@@ -383,6 +471,15 @@ theorem isUnit_det (b : Basis ι R M)
     (hf : IsIsometry B f) : IsUnit (LinearMap.det f) :=
   IsUnit.of_mul_eq_one _ (by rw [← sq]; exact hf.det_sq_eq_one b hG)
 
+/-- An isometry of a form whose matrix in some basis is the standard symplectic matrix
+`Matrix.J` has determinant `1`: its matrix in that basis is symplectic. -/
+theorem det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
+    (b : Basis (l ⊕ l) R M) (hb : LinearMap.BilinForm.toMatrix b B = Matrix.J l R)
+    (hf : IsIsometry B f) : LinearMap.det f = 1 := by
+  have h := (isIsometry_iff_toMatrix b).mp hf
+  rw [hb, ← SymplecticGroup.mem_iff'] at h
+  rw [← LinearMap.det_toMatrix b, SymplecticGroup.det_eq_one h]
+
 end IsIsometry
 
 end Matrix
@@ -396,16 +493,19 @@ namespace IsIsometry
 /-- An isometry whose underlying endomorphism has unit determinant, as an element of the isometry
 group. -/
 noncomputable def toIsometryGroupOfIsUnitDet (hf : IsIsometry B f)
-    (hdet : IsUnit (LinearMap.det f)) : isometryGroup B :=
+    (hdet : IsUnit (LinearMap.det f)) : B.isometryGroup :=
   ⟨LinearMap.equivOfIsUnitDet hdet,
-    mem_isometryGroup.mpr (isIsometry_iff.mpr fun x y => by simpa using hf.apply x y)⟩
+    LinearMap.BilinForm.mem_isometryGroup.mpr
+      (isIsometry_iff.mpr fun x y => by simpa using hf.apply x y)⟩
 
+/-- The linear map underlying the isometry built from a determinant unit is the original map. -/
 @[simp]
 theorem coe_toIsometryGroupOfIsUnitDet (hf : IsIsometry B f)
     (hdet : IsUnit (LinearMap.det f)) :
-    ((hf.toIsometryGroupOfIsUnitDet hdet : isometryGroup B) : M →ₗ[R] M) = f :=
+    ((hf.toIsometryGroupOfIsUnitDet hdet : B.isometryGroup) : M →ₗ[R] M) = f :=
   LinearMap.coe_equivOfIsUnitDet hdet
 
+/-- The element of `Aut(M, B)` built from a determinant unit acts as the original map. -/
 @[simp]
 theorem toIsometryGroupOfIsUnitDet_apply (hf : IsIsometry B f)
     (hdet : IsUnit (LinearMap.det f)) (x : M) :
@@ -434,14 +534,18 @@ bilinear form is automatically invertible, hence an element of the isometry grou
 element of `Aut(V, Q)` usually presents itself: as an endomorphism of the lattice `V` preserving
 `Q`, with invertibility a consequence rather than a hypothesis. -/
 noncomputable def toIsometryGroup (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
-    isometryGroup B :=
+    B.isometryGroup :=
   hf.toIsometryGroupOfIsUnitDet (hf.isUnit_det_of_separatingLeft hB)
 
+/-- For a left-separating form, the linear map underlying the element of `Aut(M, B)` built from
+an isometry is the original map. -/
 @[simp]
 theorem coe_toIsometryGroup (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
-    ((hf.toIsometryGroup hB : isometryGroup B) : M →ₗ[R] M) = f :=
+    ((hf.toIsometryGroup hB : B.isometryGroup) : M →ₗ[R] M) = f :=
   LinearMap.coe_equivOfIsUnitDet (hf.isUnit_det_of_separatingLeft hB)
 
+/-- For a left-separating form, the element of `Aut(M, B)` built from an isometry acts as the
+original map. -/
 @[simp]
 theorem toIsometryGroup_apply (hB : B.SeparatingLeft) (hf : IsIsometry B f) (x : M) :
     (hf.toIsometryGroup hB : M ≃ₗ[R] M) x = f x :=
@@ -458,6 +562,24 @@ end IsIsometry
 end SeparatingLeft
 
 end CommRing
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+  {B : BilinForm K V} {f : V →ₗ[K] V}
+
+/-- **Isometries of a nondegenerate alternating form have determinant one.** On a
+finite-dimensional space the form has a symplectic basis, in which the matrix of an isometry is
+symplectic. On an infinite-dimensional space the determinant is `1` by convention. -/
+theorem IsIsometry.det_eq_one_of_isAlt (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    (hf : IsIsometry B f) :
+    LinearMap.det f = 1 := by
+  by_cases h : Module.Finite K V
+  · obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
+    exact hf.det_eq_one_of_toMatrix_eq_J b hb
+  · exact LinearMap.det_eq_one_of_not_module_finite h f
+
+end Field
 
 end BilinForm
 
@@ -485,6 +607,8 @@ finite free; on such a module this subgroup is therefore all of `isometryGroup B
 noncomputable def specialIsometryGroup (B : BilinForm R M) : Subgroup (M ≃ₗ[R] M) :=
   isometryGroup B ⊓ (LinearEquiv.det (R := R) (M := M)).ker
 
+/-- A self-equivalence lies in the special isometry group exactly when it is an isometry of
+determinant one. -/
 @[simp]
 theorem mem_specialIsometryGroup_iff {e : M ≃ₗ[R] M} :
     e ∈ specialIsometryGroup B ↔ e ∈ isometryGroup B ∧ LinearEquiv.det e = 1 :=
@@ -505,15 +629,18 @@ instance specialIsometryGroup_normal (B : BilinForm R M) :
 noncomputable def isometryDet (B : BilinForm R M) : isometryGroup B →* Rˣ :=
   LinearEquiv.det.comp (isometryGroup B).subtype
 
+/-- The determinant homomorphism on `Aut(M, B)` is the determinant of the underlying linear
+equivalence. -/
 @[simp]
 theorem isometryDet_apply (g : isometryGroup B) :
-    isometryDet B g = LinearEquiv.det (g : M ≃ₗ[R] M) := by
-  rw [isometryDet, MonoidHom.comp_apply, Subgroup.coe_subtype]
+    isometryDet B g = LinearEquiv.det (g : M ≃ₗ[R] M) := (rfl)
 
 /-- The determinant-one subgroup regarded as a subgroup of the full isometry group. -/
 noncomputable def specialIsometryWithin (B : BilinForm R M) : Subgroup (isometryGroup B) :=
   (isometryDet B).ker
 
+/-- An element of `Aut(M, B)` lies in `specialIsometryWithin B` exactly when its determinant is
+one. -/
 @[simp]
 theorem mem_specialIsometryWithin_iff {g : isometryGroup B} :
     g ∈ specialIsometryWithin B ↔ LinearEquiv.det (g : M ≃ₗ[R] M) = 1 :=
@@ -530,10 +657,10 @@ noncomputable def specialIsometryToIsometry (B : BilinForm R M) :
     specialIsometryGroup B →* isometryGroup B :=
   Subgroup.inclusion (specialIsometryGroup_le_isometryGroup B)
 
+/-- Forgetting the determinant-one condition does not change the underlying linear equivalence. -/
 @[simp]
 theorem coe_specialIsometryToIsometry (g : specialIsometryGroup B) :
-    ((specialIsometryToIsometry B g : isometryGroup B) : M ≃ₗ[R] M) = g := by
-  simp [specialIsometryToIsometry]
+    ((specialIsometryToIsometry B g : isometryGroup B) : M ≃ₗ[R] M) = g := (rfl)
 
 /-- The determinant of a determinant-one isometry is one. -/
 @[simp]
@@ -561,12 +688,16 @@ noncomputable def specialIsometryWithinEquiv (B : BilinForm R M) :
   (MulEquiv.subgroupCongr specialIsometryWithin_eq_subgroupOf).trans
     (Subgroup.subgroupOfEquivOfLe (specialIsometryGroup_le_isometryGroup B))
 
+/-- The equivalence `specialIsometryWithinEquiv` does not change the underlying linear
+equivalence. -/
 @[simp]
 theorem coe_specialIsometryWithinEquiv_apply (g : specialIsometryWithin B) :
     ((specialIsometryWithinEquiv B g : specialIsometryGroup B) : M ≃ₗ[R] M) =
       ((g : isometryGroup B) : M ≃ₗ[R] M) := by
   simp [specialIsometryWithinEquiv, Subgroup.subgroupOfEquivOfLe]
 
+/-- Followed by the inclusion into `Aut(M, B)`, the inverse of `specialIsometryWithinEquiv` agrees
+with `specialIsometryToIsometry`. -/
 @[simp]
 theorem coe_specialIsometryWithinEquiv_symm_apply (g : specialIsometryGroup B) :
     (((specialIsometryWithinEquiv B).symm g : specialIsometryWithin B) : isometryGroup B) =
@@ -590,7 +721,7 @@ private theorem map_specialIsometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M'
   rw [Subgroup.map_equiv_eq_comap_symm, MonoidHom.comap_ker]
   congr 1
   ext g
-  simpa [LinearEquiv.autCongr_symm_apply] using LinearMap.det_conj (g : M' →ₗ[R] M') e.symm
+  simpa [LinearEquiv.autCongr_apply] using LinearMap.det_conj (g : M' →ₗ[R] M') e.symm
 
 /-- Transporting a bilinear form along a linear equivalence transports its determinant-one
 isometry group. -/
@@ -598,6 +729,7 @@ noncomputable def specialIsometryGroupCongr (B : BilinForm R M) (e : M ≃ₗ[R]
     specialIsometryGroup B ≃* specialIsometryGroup (LinearMap.BilinForm.congr e B) :=
   TauCeti.Subgroup.congrOfMapEq (LinearEquiv.autCongr e) (map_specialIsometryGroup B e)
 
+/-- Conjugation by `e` acts on the special isometry group by `x ↦ e (g (e⁻¹ x))`. -/
 @[simp]
 theorem coe_specialIsometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
     (g : specialIsometryGroup B) :
@@ -606,15 +738,14 @@ theorem coe_specialIsometryGroupCongr_apply (B : BilinForm R M) (e : M ≃ₗ[R]
   rw [specialIsometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_apply,
     LinearEquiv.autCongr_apply]
 
+/-- The inverse of conjugation by `e` acts on the special isometry group by `x ↦ e⁻¹ (g (e x))`. -/
 @[simp]
 theorem coe_specialIsometryGroupCongr_symm_apply (B : BilinForm R M) (e : M ≃ₗ[R] M')
     (g : specialIsometryGroup (LinearMap.BilinForm.congr e B)) :
     ((specialIsometryGroupCongr B e).symm g : M ≃ₗ[R] M) =
       (e.trans (g : M' ≃ₗ[R] M')).trans e.symm := by
-  rw [← (LinearEquiv.autCongr e).injective.eq_iff, LinearEquiv.autCongr_apply,
-    ← coe_specialIsometryGroupCongr_apply, MulEquiv.apply_symm_apply]
   ext x
-  simp
+  simp [specialIsometryGroupCongr, TauCeti.Subgroup.coe_congrOfMapEq_symm_apply]
 
 end Congr
 
@@ -623,7 +754,7 @@ section BaseChange
 variable (A : Type*) [CommRing A] [Algebra R A] [Module.Free R M] [Module.Finite R M]
 
 /-- Base change preserves determinant-one isometries. -/
-noncomputable def specialIsometryGroupBaseChange (B : BilinForm R M) :
+def specialIsometryGroupBaseChange (B : BilinForm R M) :
     specialIsometryGroup B →* specialIsometryGroup (LinearMap.BilinForm.baseChange A B) where
   toFun g := ⟨isometryGroupBaseChange A B
       ⟨g, specialIsometryGroup_le_isometryGroup B g.2⟩, by
@@ -633,12 +764,13 @@ noncomputable def specialIsometryGroupBaseChange (B : BilinForm R M) :
   map_one' := Subtype.ext (by simp [isometryGroupBaseChange])
   map_mul' g h := Subtype.ext (by simp [isometryGroupBaseChange, LinearEquiv.baseChange_mul])
 
+/-- Base change of a determinant-one isometry is the base change of its underlying linear
+equivalence. -/
 @[simp]
 theorem coe_specialIsometryGroupBaseChange (B : BilinForm R M)
     (g : specialIsometryGroup B) :
     (specialIsometryGroupBaseChange A B g : A ⊗[R] M ≃ₗ[A] A ⊗[R] M) =
-      LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := by
-  simp [specialIsometryGroupBaseChange, isometryGroupBaseChange]
+      LinearEquiv.baseChange R A M M (g : M ≃ₗ[R] M) := (rfl)
 
 end BaseChange
 

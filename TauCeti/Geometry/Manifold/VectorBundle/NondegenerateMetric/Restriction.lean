@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Restriction
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.LocalIsometry
 
 /-!
@@ -52,7 +52,7 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric`:
   Ch. 3 (the Levi-Civita connection is local and natural under isometries).
 * `TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction`: its locality and restriction
   argument is generalized here to nondegenerate metrics.
-* `TauCeti.Geometry.Manifold.Riemannian.Restriction`: the positive-definite restriction of a
+* `TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic`: the positive-definite restriction of a
   Riemannian metric to an open submanifold, which this file parallels.
 -/
 

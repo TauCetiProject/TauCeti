@@ -475,6 +475,12 @@ theorem dgComp_castDeg_dgId {X Y : C} {a p n : ℤ} (ha : 0 = a) (f : DGHom R p 
   obtain rfl : n = p := by omega
   rw [castDeg_self, castDeg_self, dgComp_dgId]
 
+/-- The identity is a right unit for composition with an arbitrary degree proof, up to degree
+transport. -/
+theorem dgComp_dgId_eq_castDeg {X Y : C} {p n : ℤ} (f : DGHom R p X Y) (h : p + 0 = n) :
+    dgComp R f (dgId R Y) h = castDeg R (by omega) f := by
+  simpa only [castDeg_self] using dgComp_castDeg_dgId R rfl f h
+
 /-- **A two-sided inverse of a closed morphism is closed**: if `f : X ⟶ Y` of degree `p` is a
 cycle and `g : Y ⟶ X` of degree `q` is inverse to it on both sides, then `g` is a cycle. -/
 theorem dgDifferential_eq_zero_of_dgComp_eq_dgId {X Y : C} {p q : ℤ} {f : DGHom R p X Y}

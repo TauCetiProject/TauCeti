@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.RingTheory.Morita.ModuleEnd
 
-import TauCeti.LinearAlgebra.Eigenspace.TensorProduct
+import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Basic
 
 /-!
 # Eigenspaces of modules over an algebra acting on `S` as all of `End S`

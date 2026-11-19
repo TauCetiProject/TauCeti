@@ -291,10 +291,7 @@ theorem hopfIdealLocus_map_eq_bot {N : G(k, A ⊗[R] H; A)} (hN : N.hopfIdealLoc
 Hopf ideal is cut out by finitely many equations. -/
 theorem hopfIdealLocus_fg [Module.Finite R H] (N : G(k, A ⊗[R] H; A)) : N.hopfIdealLocus.FG := by
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := R) (M := H)
-  have : Module.FinitePresentation A (A ⊗[R] H ⧸ N.toSubmodule) :=
-    Module.finitePresentation_of_projective _ _
-  have hN : N.toSubmodule.FG := by
-    simpa using Module.FinitePresentation.fg_ker N.toSubmodule.mkQ N.toSubmodule.mkQ_surjective
+  have hN : N.toSubmodule.FG := N.fg_toSubmodule
   -- the contents of the multiplications by all `1 ⊗ₜ h` are those for `h` in a finite spanning set
   rw [hopfIdealLocus, Submodule.iSup_minorsIdeal_one_map_eq (s := (s : Set H)) _
       (fun h ↦ N.toSubmodule.mkQ ∘ₗ LinearMap.mulLeft A ((1 : A) ⊗ₜ[R] h))

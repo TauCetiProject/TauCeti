@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Current.ResidueCocycle
-public import TauCeti.Algebra.Lie.Extension
+public import TauCeti.Algebra.Lie.Extension.Basic
 
 /-!
 # Maps between residue central extensions
@@ -15,10 +15,11 @@ For an invariant symmetric bilinear form `Φ` on a Lie algebra `L` over a commut
 residue central extension of the formal current algebra `L((t)) = R⸨X⸩ ⊗[R] L` is Mathlib's
 `LieAlgebra.ofTwoCocycle` of the residue cocycle `TauCeti.CurrentAlgebra.twoCocycleOfBilinear`. As
 an `R`-module it is `L((t)) × R`; write `K` for the central element `(0, 1)`
-(`TauCeti.CurrentAlgebra.centralElement`), which is central and nonzero over a nontrivial ring,
+(`LieAlgebra.ofTwoCocycle.centralElement`, defined for the extension of any Lie algebra by a
+2-cocycle with trivial coefficients in `R`), which is central and nonzero over a nontrivial ring,
 and every element is a current plus a multiple of `K`
-(`TauCeti.CurrentAlgebra.ofProd_eq_add_smul_centralElement`). This file constructs the two basic
-maps between such extensions, both instances of the morphisms of central extensions
+(`LieAlgebra.ofTwoCocycle.ofProd_eq_add_smul_centralElement`). This file constructs the two
+basic maps between such extensions, both instances of the morphisms of central extensions
 `LieAlgebra.ofTwoCocycle.map`.
 
 * **Level rescaling.** If `Ψ = r • Φ`, then the map which is the identity on currents and sends
@@ -29,7 +30,14 @@ maps between such extensions, both instances of the morphisms of central extensi
 * **Polynomial currents.** The extension of the polynomial loop algebra by Mathlib's residue
   cocycle `LieAlgebra.LoopAlgebra.twoCocycleOfBilinear` embeds in the extension of formal currents
   by the inclusion `TauCeti.CurrentAlgebra.ofLoop` on currents and the identity on the centre
-  (`TauCeti.CurrentAlgebra.ofLoopExtension`).
+  (`TauCeti.CurrentAlgebra.ofLoopExtension`), which sends the central element of the polynomial
+  extension to `K` (`TauCeti.CurrentAlgebra.ofLoopExtension_centralElement`).
+
+It also identifies the negative currents `t⁻¹ L[t⁻¹]`, the elements `(u, 0)` with `u` a
+polynomial current of negative order, as a Lie subalgebra of the extension
+(`TauCeti.CurrentAlgebra.negativeLieSubalgebra`): the residue cocycle vanishes on them. Over a
+field the vacuum module is free of rank one over its enveloping algebra
+(`TauCeti.CurrentAlgebra.vacuumPBWEquiv`).
 
 The isomorphism `levelEquiv` for a unit `u` does not identify the representations on which the
 central elements act by `1`: pulling back along it a module on which `K` acts by `1` gives one on
@@ -51,6 +59,7 @@ noncomputable section
 
 open scoped LaurentSeries
 open LieAlgebra LieModule.Cohomology
+open LieAlgebra.ofTwoCocycle (centralElement)
 
 attribute [local instance 1100] HahnSeries.instAlgebra
 
@@ -60,48 +69,6 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 local notation "C" => currentAlgebra R L
 local notation "Z" => TrivialLieModule R C R
-
-section Central
-
-variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
-
-local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
-local notation "E" => ofTwoCocycle c
-
-/-- The central element `K = (0, 1)` of the residue central extension of the form `Φ`. -/
-def centralElement : E :=
-  ofProd c (0, (TrivialLieModule.equiv R C R).symm 1)
-
-/-- The coordinates of `K` are `(0, 1)`. -/
-@[simp]
-theorem ofProd_symm_centralElement :
-    (ofProd c).symm (centralElement Φ hΦ hΦs) = (0, (TrivialLieModule.equiv R C R).symm 1) := by
-  rw [centralElement, Equiv.symm_apply_apply]
-
-/-- The element `K` is central. -/
-theorem centralElement_mem_center : centralElement Φ hΦ hΦs ∈ center R E :=
-  (LieModule.mem_maxTrivSubmodule R E E _).2 fun v ↦ by
-    simp only [centralElement, bracket_ofTwoCocycle, Equiv.symm_apply_apply, lie_zero,
-      trivial_lie_zero, map_zero, sub_zero, add_zero]
-    exact of_zero c
-
-/-- The element `K` is nonzero over a nontrivial ring. -/
-theorem centralElement_ne_zero [Nontrivial R] : centralElement Φ hΦ hΦs ≠ 0 := by
-  intro h
-  have h' := congrArg (fun v ↦ TrivialLieModule.equiv R C R ((ofProd c).symm v).2) h
-  simp [centralElement] at h'
-
-/-- Every element of the extension is a current plus a multiple of `K`. -/
-theorem ofProd_eq_add_smul_centralElement (u : C) (z : Z) :
-    ofProd c (u, z) =
-      ofProd c (u, 0) + TrivialLieModule.equiv R C R z • centralElement Φ hΦ hΦs := by
-  apply (ofProd c).symm.injective
-  simp only [centralElement, of_symm_add, of_symm_smul, Equiv.symm_apply_apply, Prod.smul_mk,
-    smul_zero, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.injEq, true_and]
-  apply (TrivialLieModule.equiv R C R).injective
-  simp
-
-end Central
 
 section Level
 
@@ -214,11 +181,62 @@ theorem proj_ofLoopExtension (v : ofTwoCocycle cP) :
     ofTwoCocycle.proj c (ofLoopExtension Φ hΦ hΦs v) = ofLoop R L (ofTwoCocycle.proj cP v) := by
   simp [ofLoopExtension]
 
+/-- The polynomial embedding sends the central element `K` of the polynomial extension to the
+central element `K` of the formal one. -/
+@[simp]
+theorem ofLoopExtension_centralElement :
+    ofLoopExtension Φ hΦ hΦs (centralElement cP) = centralElement c := by
+  apply (ofProd c).symm.injective
+  simp
+
 /-- The residue central extension of polynomial currents embeds in that of formal currents. -/
 theorem ofLoopExtension_injective : Function.Injective (ofLoopExtension Φ hΦ hΦs) :=
   ofTwoCocycle.map_injective _ _ _ _ _ (ofLoop_injective R L)
     ((TrivialLieModule.equiv R C R).symm.injective.comp (TrivialLieModule.equiv R P R).injective)
 
 end Loop
+
+section Negative
+
+variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm)
+
+local notation "c" => twoCocycleOfBilinear R L Φ hΦ hΦs
+
+/-- **The negative currents** `t⁻¹ L[t⁻¹]` as a Lie subalgebra of the residue central extension:
+the elements `(u, 0)` with `u` a polynomial current of negative order. They form a Lie subalgebra
+since the bracket of negative currents is negative and the residue cocycle vanishes on them. -/
+def negativeLieSubalgebra : LieSubalgebra R (ofTwoCocycle c) where
+  toSubmodule :=
+    (truncSubmodule R L 0).map ((ofProdLinearEquiv c).toLinearMap ∘ₗ LinearMap.inl R C Z)
+  lie_mem' := by
+    rintro _ _ ⟨u, hu, rfl⟩ ⟨v, hv, rfl⟩
+    refine ⟨⁅u, v⁆, truncSubmodule_mono R L (by omega) (lie_mem_truncSubmodule R L hu hv), ?_⟩
+    simp [bracket_ofTwoCocycle, coe_ofProdLinearEquiv, twoCochainOfBilinear_apply_apply,
+      residuePairing_eq_zero_of_mem_truncSubmodule R L Φ hu hv (by omega)]
+
+variable {Φ hΦ hΦs}
+
+/-- An element of the residue extension is a negative current exactly when its current
+coordinate is a polynomial current of negative order and its central coordinate vanishes. -/
+theorem mem_negativeLieSubalgebra {x : ofTwoCocycle c} :
+    x ∈ negativeLieSubalgebra Φ hΦ hΦs ↔
+      ((ofProd c).symm x).1 ∈ truncSubmodule R L 0 ∧ ((ofProd c).symm x).2 = 0 := by
+  rw [← LieSubalgebra.mem_toSubmodule]
+  constructor
+  · rintro ⟨u, hu, rfl⟩
+    simpa [coe_ofProdLinearEquiv] using hu
+  · rintro ⟨hu, hz⟩
+    refine ⟨_, hu, ?_⟩
+    rw [← (ofProd c).apply_symm_apply x]
+    simp [coe_ofProdLinearEquiv, ← hz]
+
+/-- The element `(u, z)` is a negative current exactly when `u` is a polynomial current of
+negative order and `z = 0`. -/
+@[simp]
+theorem ofProd_mem_negativeLieSubalgebra {u : C} {z : Z} :
+    ofProd c (u, z) ∈ negativeLieSubalgebra Φ hΦ hΦs ↔ u ∈ truncSubmodule R L 0 ∧ z = 0 := by
+  rw [mem_negativeLieSubalgebra, Equiv.symm_apply_apply]
+
+end Negative
 
 end TauCeti.CurrentAlgebra

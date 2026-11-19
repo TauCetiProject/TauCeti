@@ -69,5 +69,4 @@ theorem meas_gt_le_div_sq_of_integral_sq_le {Y : Ω → ℝ} (hY : Integrable (f
         simp only [Real.norm_eq_abs, sq_abs]
         gcongr
 
-
 end TauCeti

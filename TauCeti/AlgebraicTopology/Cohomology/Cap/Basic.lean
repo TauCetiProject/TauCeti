@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.Cap
+public import TauCeti.Algebra.Homology.Monoidal.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing
-public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney
+public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic
 
 /-!
 # The cap product of singular homology and cohomology
@@ -38,8 +38,11 @@ Section 3.3.
 * `TopCat.ιChainComplex_capChain_alexanderWhitneyDiagonal`: the cap product of a singular simplex
   and a singular cochain.
 * `TopCat.singularCap`: the cap product `Hᵖ(X; R, M) ⟶ (Hₙ(X; T) ⟶ H_q(X; P))`, with
+  `TopCat.singularCap_def` exhibiting it as a cap product of chains and cochains,
   `TopCat.singularCap_homologyπ` computing it on classes of cycles and cocycles and
   `TopCat.singularCap_naturality` its naturality.
+* `TopCat.singularCapLinearMap`: capping with a fixed class `μ ∈ Hₙ(X; k)`, as a `k`-linear map
+  `Hᵖ(X; k) → H_q(X; k)`, with `TopCat.singularCapLinearMap_naturality` its naturality.
 
 ## References
 
@@ -105,6 +108,15 @@ def singularCap (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] [MonoidalLine
   TauCeti.ChainComplex.cap k (X.alexanderWhitneyDiagonal u) ((toSSet.obj X).chainComplexPairing μ)
     p q n h
 
+/-- The singular cap product is the cap product of chains and cochains along the
+Alexander–Whitney diagonal and the chain map induced by the coefficient pairing. -/
+lemma singularCap_def (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] [MonoidalLinear k C]
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ P) (p q n : ℕ) (h : p + q = n) :
+    X.singularCap k u μ p q n h =
+      TauCeti.ChainComplex.cap k (X.alexanderWhitneyDiagonal u)
+        ((toSSet.obj X).chainComplexPairing μ) p q n h :=
+  (rfl)
+
 /-- The cap product of the class of a singular cycle with the class of a singular cocycle is the
 class of their cap product. -/
 @[simp, reassoc]
@@ -132,5 +144,48 @@ lemma singularCap_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) [Ring 
     (SSet.chainComplexPairing_naturality (toSSet.map f) μ).symm p q n h α
 
 end Homology
+
+section ModuleCat
+
+variable (X : TopCat.{w}) (k : Type w) [CommRing k]
+
+/-- **Capping with a homology class**: for `μ ∈ Hₙ(X; k)` and `p + q = n`, the `k`-linear map
+`Hᵖ(X; k) → H_q(X; k)`, `α ↦ μ ⌢ α`, with the cap product taken along the unitors of
+`𝟙_ (ModuleCat k)`. -/
+def singularCapLinearMap {p q n : ℕ} (h : p + q = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
+    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p →ₗ[k]
+      ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ (ModuleCat.{w} k))).obj X where
+  toFun α := (X.singularCap k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ (𝟙_ (ModuleCat.{w} k))).hom
+    p q n h α).hom μ
+  map_add' α β := by simp
+  map_smul' c α := by simp
+
+/-- `TopCat.singularCapLinearMap k h μ α` is the cap product `μ ⌢ α`. -/
+@[simp]
+theorem singularCapLinearMap_apply {p q n : ℕ} (h : p + q = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X)
+    (α : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :
+    X.singularCapLinearMap k h μ α =
+      (X.singularCap k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ (𝟙_ (ModuleCat.{w} k))).hom
+        p q n h α).hom μ :=
+  (rfl)
+
+/-- **Naturality of capping with a homology class**, `f_*(μ ⌢ f^*α) = f_*μ ⌢ α`: for a continuous
+map `f : X ⟶ Y`, capping `μ ∈ Hₙ(X; k)` with the pull-back of `α ∈ Hᵖ(Y; k)` and pushing forward
+is capping the push-forward of `μ` with `α`. -/
+theorem singularCapLinearMap_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) {p q n : ℕ}
+    (h : p + q = n)
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X)
+    (α : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :
+    (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ (ModuleCat.{w} k))).map f).hom
+        (X.singularCapLinearMap k h μ (TopCat.singularCohomologyMap f p α)) =
+      Y.singularCapLinearMap k h
+        ((((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).map f).hom μ)
+        α := by
+  rw [singularCapLinearMap_apply, singularCapLinearMap_apply, ← LinearMap.comp_apply,
+    ← ModuleCat.hom_comp, singularCap_naturality, ModuleCat.hom_comp, LinearMap.comp_apply]
+
+end ModuleCat
 
 end TopCat

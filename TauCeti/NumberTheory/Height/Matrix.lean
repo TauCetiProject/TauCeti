@@ -58,8 +58,7 @@ computed from its maximal minors (`Submodule.relativeSubspaceHeight`).
 The matrix-entry construction and product bound follow Ralf Stephan's CC0 development in
 [rwst/lean-code](https://github.com/rwst/lean-code), file
 `ForMathlib/NumberTheory/HeightTuple.lean` at commit
-`2eadabb0e181b894a4c49fb38b7e45daf6214b25`, recorded as implementation source by the
-Diophantine Approximation and Transcendence roadmap.
+`2eadabb0e181b894a4c49fb38b7e45daf6214b25`.
 The proofs here reduce to Mathlib's tuple-height bounds by Michael Stoll,
 `Height.mulHeight_linearMap_apply_le` and `Height.mulHeight_mul_le`.
 -/
@@ -83,6 +82,8 @@ noncomputable def mulHeight [Finite m] [Finite n] (A : Matrix m n K) : ℝ :=
 /-- The logarithmic entry height of a matrix, the logarithm of `Matrix.mulHeight`. -/
 noncomputable def logHeight [Finite m] [Finite n] (A : Matrix m n K) : ℝ := Real.log A.mulHeight
 
+section
+
 variable [Finite m] [Finite n]
 
 /-- The finite enumeration in `Matrix.mulHeight` gives the projective height of the original
@@ -102,7 +103,7 @@ theorem logHeight_def (A : Matrix m n K) :
 
 @[simp]
 theorem mulHeight_zero : (0 : Matrix m n K).mulHeight = 1 :=
-  by simpa only [mulHeight_def, zero_apply, Pi.zero_def, Pi.zero_apply] using
+  by simpa only [mulHeight_def, Matrix.zero_apply, Pi.zero_def, Pi.zero_apply] using
     (Height.mulHeight_zero : Height.mulHeight (0 : m × n → K) = 1)
 
 @[simp]
@@ -111,7 +112,7 @@ theorem logHeight_zero : (0 : Matrix m n K).logHeight = 0 := by
 
 @[simp]
 theorem mulHeight_neg (A : Matrix m n K) : (-A).mulHeight = A.mulHeight :=
-  by simpa only [mulHeight_def, neg_apply, Pi.neg_def, Pi.neg_apply] using
+  by simpa only [mulHeight_def, Matrix.neg_apply, Pi.neg_def, Pi.neg_apply] using
     Height.mulHeight_neg (fun q : m × n ↦ A q.1 q.2)
 
 @[simp]
@@ -180,7 +181,7 @@ theorem logHeight_nonneg (A : Matrix m n K) : 0 ≤ A.logHeight :=
 @[simp]
 theorem mulHeight_smul (A : Matrix m n K) {c : K} (hc : c ≠ 0) :
     (c • A).mulHeight = A.mulHeight :=
-  by simpa only [mulHeight_def, smul_apply, Pi.smul_def, Pi.smul_apply] using
+  by simpa only [mulHeight_def, Matrix.smul_apply, Pi.smul_def, Pi.smul_apply] using
     mulHeight_smul_eq_mulHeight (fun q : m × n ↦ A q.1 q.2) hc
 
 /-- Multiplication by a nonzero scalar preserves logarithmic entry height. -/
@@ -195,8 +196,8 @@ theorem mulHeight_one [DecidableEq n] : (1 : Matrix n n K).mulHeight = 1 := by
   rw [mulHeight_def, Height.mulHeight_eq_mulHeight_restrict_support]
   convert Height.mulHeight_one with q
   obtain ⟨⟨i, j⟩, hq⟩ := q
-  simp only [Function.mem_support, one_apply] at hq
-  simpa [one_apply] using hq
+  simp only [Function.mem_support, Matrix.one_apply] at hq
+  simpa [Matrix.one_apply] using hq
 
 @[simp]
 theorem logHeight_one [DecidableEq n] : (1 : Matrix n n K).logHeight = 0 := by
@@ -215,9 +216,11 @@ theorem logHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n K) (f : m
     (g : n' → n) : (A.submatrix f g).logHeight ≤ A.logHeight :=
   Real.log_le_log (mulHeight_pos _) (A.mulHeight_submatrix_le f g)
 
+end
+
 /-! ### Products -/
 
-omit [AdmissibleAbsValues K] [Finite m] [Finite n] in
+omit [AdmissibleAbsValues K] in
 /-- The entries of `A * B` are the values at the all-ones vector of the linear map with
 coefficients `A i j * B j k`, the pointwise product of two subtuples of the entries of `A` and of
 `B`. -/
@@ -227,12 +230,12 @@ private theorem mul_entries_eq_linearMap_apply [Fintype n] (A : Matrix m n K)
       ((fun q : (m × p) × n ↦ A q.1.1 q.2) * fun q : (m × p) × n ↦ B q.2 q.1.2) (q, j) *
         (1 : n → K) j := by
   ext q
-  simp [mul_apply]
+  simp [Matrix.mul_apply]
 
 /-- The pointwise product of the subtuples of the entries of `A` and of `B` appearing in
 `mul_entries_eq_linearMap_apply` has height at most the product of the entry heights of `A` and
 `B`. -/
-private theorem mulHeight_mul_entries_le [Finite p] (A : Matrix m n K)
+private theorem mulHeight_mul_entries_le [Finite m] [Finite n] [Finite p] (A : Matrix m n K)
     (B : Matrix n p K) :
     Height.mulHeight ((fun q : (m × p) × n ↦ A q.1.1 q.2) * fun q : (m × p) × n ↦ B q.2 q.1.2) ≤
       A.mulHeight * B.mulHeight := by
@@ -245,7 +248,7 @@ private theorem mulHeight_mul_entries_le [Finite p] (A : Matrix m n K)
 /-- **The entry height of a matrix product.** For a nonempty inner index type `n`, the entry
 height of `A * B` is at most `(#n) ^ totalWeight K` times the product of the entry heights of `A`
 and `B`. -/
-theorem mulHeight_mul_le [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
+theorem mulHeight_mul_le [Finite m] [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
     (B : Matrix n p K) :
     (A * B).mulHeight ≤ Nat.card n ^ totalWeight K * A.mulHeight * B.mulHeight := by
   have hpos : 0 ≤ (Nat.card n : ℝ) ^ totalWeight K := by positivity
@@ -262,7 +265,7 @@ theorem mulHeight_mul_le [Fintype n] [Nonempty n] [Finite p] (A : Matrix m n K)
 
 /-- The logarithmic form of `Matrix.mulHeight_mul_le`. It needs no nonemptiness hypothesis,
 because `Real.log 0 = 0`. -/
-theorem logHeight_mul_le [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n p K) :
+theorem logHeight_mul_le [Finite m] [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n p K) :
     (A * B).logHeight ≤ totalWeight K * Real.log (Nat.card n) + A.logHeight + B.logHeight := by
   let x : (m × p) × n → K := fun q ↦ A q.1.1 q.2
   let y : (m × p) × n → K := fun q ↦ B q.2 q.1.2
@@ -281,6 +284,10 @@ theorem logHeight_mul_le [Fintype n] [Finite p] (A : Matrix m n K) (B : Matrix n
     _ ≤ totalWeight K * Real.log (Nat.card n) + A.logHeight + B.logHeight := by
         rw [Height.logHeight_one, add_zero, add_assoc]
         exact add_le_add le_rfl hc
+
+section
+
+variable [Finite m] [Finite n]
 
 /-! ### Absolute entry heights -/
 
@@ -304,7 +311,7 @@ theorem absLogHeight_eq_log_absMulHeight (A : Matrix m n F) :
 /-- The zero matrix has absolute multiplicative entry height one. -/
 @[simp]
 theorem absMulHeight_zero : (0 : Matrix m n F).absMulHeight = 1 := by
-  simpa only [absMulHeight, zero_apply, Pi.zero_def, Pi.zero_apply] using
+  simpa only [absMulHeight, Matrix.zero_apply, Pi.zero_def, Pi.zero_apply] using
     (TauCeti.absoluteProjectiveTupleHeight_zero :
       TauCeti.absoluteProjectiveTupleHeight (0 : m × n → F) = 1)
 
@@ -329,7 +336,7 @@ theorem absLogHeight_nonneg (A : Matrix m n F) : 0 ≤ A.absLogHeight :=
 @[simp]
 theorem absMulHeight_smul (A : Matrix m n F) {c : F} (hc : c ≠ 0)
     (hcalg : IsAlgebraic ℚ c) : (c • A).absMulHeight = A.absMulHeight := by
-  simpa only [absMulHeight, smul_apply, Pi.smul_def] using
+  simpa only [absMulHeight, Matrix.smul_apply, Pi.smul_def] using
     TauCeti.absoluteProjectiveTupleHeight_smul (fun q : m × n ↦ A q.1 q.2) hc hcalg
 
 /-- A nonzero algebraic scalar preserves absolute logarithmic entry height. -/
@@ -481,6 +488,8 @@ theorem logHeight_map_algebraMap (A : Matrix m n F) :
 
 end NumberField
 
+end
+
 /-! ### Integer matrices over `ℚ` -/
 
 /-- Over `ℚ`, the entry height of an integer matrix with coprime entries is the largest absolute
@@ -515,7 +524,7 @@ example (A : Matrix (Fin 0) (Fin 3) ℚ) : A.mulHeight = 1 := by
 -- `(#n) ^ totalWeight ℚ = 0 ^ 1 = 0`.
 example (A : Matrix (Fin 1) (Fin 0) ℚ) (B : Matrix (Fin 0) (Fin 1) ℚ) :
     ¬ (A * B).mulHeight ≤ Nat.card (Fin 0) ^ totalWeight ℚ * A.mulHeight * B.mulHeight := by
-  have hAB : A * B = 0 := by ext i k; simp [mul_apply]
+  have hAB : A * B = 0 := by ext i k; simp [Matrix.mul_apply]
   simp [hAB, NumberField.totalWeight_eq_finrank]
 
 -- The row `[1 2]` has entry height `2` over `ℚ`, and `2 ^ [L : ℚ]` over a number field `L`, for
@@ -549,7 +558,7 @@ example : !![(1 : ℚ), 1].mulHeight = 1 ∧ !![(1 : ℚ), 0; 1, 1].mulHeight = 
       (le_ciSup_of_le (Finite.bddAbove_range _) (0, 0) (by decide))
   have hAB : (!![(1 : ℚ), 1] * !![(1 : ℚ), 0; 1, 1]).mulHeight = 2 := by
     have h : !![(1 : ℚ), 1] * !![(1 : ℚ), 0; 1, 1] = !![(2 : ℤ), 1].map (↑) := by
-      ext i j; fin_cases i; fin_cases j <;> norm_num [mul_apply, Fin.sum_univ_two]
+      ext i j; fin_cases i; fin_cases j <;> norm_num [Matrix.mul_apply, Fin.sum_univ_two]
     rw [h, mulHeight_map_intCast_eq (by decide)]
     exact_mod_cast le_antisymm (ciSup_le (by decide))
       (le_ciSup_of_le (Finite.bddAbove_range _) (0, 0) (by decide))

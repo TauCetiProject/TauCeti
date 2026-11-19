@@ -32,7 +32,9 @@ into one statement indexed by the parity. Once `2` is invertible, the two graded
 eigenspaces of the grade involution: the even part is its fixed space and the odd part its
 `-1`-eigenspace. Mathlib proves one implication of each (the two lemmas above) and leaves the
 converses as a TODO; they are recorded here. This is the form in which the grading is
-transported along maps commuting with the involution, such as extension of scalars.
+transported along maps commuting with the involution, such as extension of scalars. On a module
+over the Clifford algebra, an operator anticommuting with Clifford multiplication by every vector
+intertwines multiplication by any Clifford element with multiplication by its grade involute.
 
 The coordinate basis of an exterior algebra is homogeneous for this grading: the basis vector
 indexed by `s` has degree `s.card`, and — over a nontrivial ring, where a basis vector is nonzero
@@ -52,6 +54,8 @@ belongs to the grading API independently of any spin representation.
   case.
 * `CliffordAlgebra.involute_eq_uzpow_smul_of_mem_evenOdd`: the grade involution acts on the graded
   piece of parity `p` by `(-1) ^ p`.
+* `CliffordAlgebra.apply_smul_eq_involute_smul`: an operator on a Clifford module anticommuting
+  with every vector intertwines Clifford multiplication with the grade involution.
 * `CliffordAlgebra.involute_eq_self_iff` and `CliffordAlgebra.involute_eq_neg_iff`: with `2`
   invertible, the even and odd parts are the `±1`-eigenspaces of the grade involution.
 * `Module.Basis.exteriorAlgebra_mem_evenOdd_card`: an exterior coordinate-basis vector is
@@ -77,7 +81,7 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 theorem exists_algebraMap_of_mem_range_ι_pow_zero {v : CliffordAlgebra Q}
     (hv : v ∈ LinearMap.range (ι Q) ^ (0 : ZMod 2).val) :
     ∃ r : R, algebraMap R (CliffordAlgebra Q) r = v :=
-  Submodule.mem_one.mp (by simpa using hv)
+  Submodule.mem_one.mp hv
 
 /-- An element of the `(1 : ZMod 2).val`-th power of the range of `ι` is a vector. This is the
 `i = 1` half of the `range_ι_pow` hypothesis of `CliffordAlgebra.evenOdd_induction`. -/
@@ -128,6 +132,19 @@ theorem involute_eq_uzpow_smul_of_mem_evenOdd {p : ZMod 2} {x : CliffordAlgebra 
   obtain rfl | rfl : p = 0 ∨ p = 1 := by clear hx; revert p; decide
   · rw [involute_eq_of_mem_even hx, uzpow_zero, one_smul]
   · rw [involute_eq_of_mem_odd hx, uzpow_one, Units.neg_smul, one_smul]
+
+/-- **An operator anticommuting with every vector intertwines the grade involution**: if
+`γ (c(v) ψ) = -c(v) γ ψ` for every vector `v`, then `γ (a ψ) = involute a • γ ψ` for every Clifford
+element `a`. -/
+theorem apply_smul_eq_involute_smul {E : Type*} [AddCommGroup E] [Module R E]
+    [Module (CliffordAlgebra Q) E] [IsScalarTower R (CliffordAlgebra Q) E] {γ : E →ₗ[R] E}
+    (hγ : ∀ v (ψ : E), γ (ι Q v • ψ) = -(ι Q v • γ ψ)) (a : CliffordAlgebra Q) (ψ : E) :
+    γ (a • ψ) = involute a • γ ψ := by
+  induction a using CliffordAlgebra.induction generalizing ψ with
+  | algebraMap r => rw [AlgHom.commutes, algebraMap_smul, map_smul, algebraMap_smul]
+  | ι v => rw [hγ, involute_ι, neg_smul]
+  | mul a b ha hb => rw [mul_smul, ha, hb, map_mul, mul_smul]
+  | add a b ha hb => rw [add_smul, map_add, ha, hb, map_add, add_smul]
 
 variable [Invertible (2 : R)]
 
@@ -191,6 +208,19 @@ theorem exteriorAlgebra_mem_evenOdd_iff [Nontrivial R] (b : Module.Basis I R M) 
     Submodule.mem_bot] at hbot
   exact b.ExteriorAlgebra.ne_zero s hbot
 
+/-- **An exterior element with no coordinates of the other parity is homogeneous**: if its
+coordinate in the exterior coordinate basis vanishes at every index set whose cardinality is not
+`j` modulo `2`, it lies in the parity-`j` part of the Clifford algebra of the zero form. -/
+private theorem mem_evenOdd_of_exteriorAlgebra_repr_eq_zero (b : Module.Basis I R M) {j : ZMod 2}
+    {y : _root_.ExteriorAlgebra R M}
+    (hy : ∀ t : Finset I, (t.card : ZMod 2) ≠ j → b.ExteriorAlgebra.repr y t = 0) :
+    y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) j := by
+  classical
+  rw [← b.ExteriorAlgebra.linearCombination_repr y, Finsupp.linearCombination_apply]
+  refine Submodule.sum_mem _ fun s hs ↦ Submodule.smul_mem _ _ ?_
+  have hs' : (s.card : ZMod 2) = j := by_contra fun h ↦ Finsupp.mem_support_iff.1 hs (hy s h)
+  exact hs' ▸ b.exteriorAlgebra_mem_evenOdd_card s
+
 /-- **An exterior element is homogeneous of parity `i` exactly when it has no coordinates of the
 other parity**: its coordinate in the exterior coordinate basis vanishes at every index set whose
 cardinality has the other parity. -/
@@ -199,15 +229,7 @@ theorem mem_evenOdd_iff_exteriorAlgebra_repr_eq_zero (b : Module.Basis I R M) {i
     x ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i ↔
       ∀ t : Finset I, (t.card : ZMod 2) ≠ i → b.ExteriorAlgebra.repr x t = 0 := by
   classical
-  have hsupp : ∀ (j : ZMod 2) (y : _root_.ExteriorAlgebra R M),
-      (∀ t : Finset I, (t.card : ZMod 2) ≠ j → b.ExteriorAlgebra.repr y t = 0) →
-        y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) j := by
-    intro j y hy
-    rw [← b.ExteriorAlgebra.linearCombination_repr y, Finsupp.linearCombination_apply]
-    refine Submodule.sum_mem _ fun s hs ↦ Submodule.smul_mem _ _ ?_
-    have hs' : (s.card : ZMod 2) = j := by_contra fun h ↦ Finsupp.mem_support_iff.1 hs (hy s h)
-    exact hs' ▸ b.exteriorAlgebra_mem_evenOdd_card s
-  refine ⟨fun hx t ht ↦ ?_, hsupp i x⟩
+  refine ⟨fun hx t ht ↦ ?_, mem_evenOdd_of_exteriorAlgebra_repr_eq_zero b⟩
   -- `y` is the part of `x` of the parity opposite to `i`; it is homogeneous of both parities.
   let y := b.ExteriorAlgebra.repr.symm
     ((b.ExteriorAlgebra.repr x).filter fun s ↦ (s.card : ZMod 2) ≠ i)
@@ -216,10 +238,12 @@ theorem mem_evenOdd_iff_exteriorAlgebra_repr_eq_zero (b : Module.Basis I R M) {i
     simp only [y, LinearEquiv.apply_symm_apply, Finsupp.filter_apply]
   have hflip : ∀ c d : ZMod 2, c ≠ d + 1 → c = d := by decide
   have hy₁ : y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) (i + 1) :=
-    hsupp _ y fun s hs ↦ by rw [hrepr, ite_eq_right (not_not.2 (hflip _ _ hs))]
+    mem_evenOdd_of_exteriorAlgebra_repr_eq_zero b fun s hs ↦ by
+      rw [hrepr, ite_eq_right (not_not.2 (hflip _ _ hs))]
   have hy₀ : y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i := by
     have hrest : x - y ∈ CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i :=
-      hsupp i _ fun s hs ↦ by rw [map_sub, Finsupp.sub_apply, hrepr, ite_eq_left hs, sub_self]
+      mem_evenOdd_of_exteriorAlgebra_repr_eq_zero b fun s hs ↦ by
+        rw [map_sub, Finsupp.sub_apply, hrepr, ite_eq_left hs, sub_self]
     simpa using Submodule.sub_mem _ hx hrest
   have hdisj : Disjoint (CliffordAlgebra.evenOdd (0 : QuadraticForm R M) i)
       (CliffordAlgebra.evenOdd (0 : QuadraticForm R M) (i + 1)) := by

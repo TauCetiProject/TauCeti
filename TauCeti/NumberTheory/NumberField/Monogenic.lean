@@ -82,8 +82,8 @@ omit [NumberField K] in
 /-- **Monogenicity via the conductor exponent.** `K` is monogenic exactly when some algebraic
 integer of `K` has conductor exponent `1`. -/
 theorem isMonogenic_iff_exists_exponent_eq_one :
-    IsMonogenic K ↔ ∃ θ : 𝓞 K, exponent θ = 1 := by
-  simp_rw [IsMonogenic, exponent_eq_one_iff]
+    IsMonogenic K ↔ ∃ θ : 𝓞 K, NumberField.RingOfIntegers.exponent θ = 1 := by
+  simp_rw [IsMonogenic, NumberField.RingOfIntegers.exponent_eq_one_iff]
 
 /-- **Monogenicity via the index.** `K` is monogenic exactly when some integral primitive element
 has index `1`, so the two ways of saying `𝓞 K = ℤ[θ]` agree. -/

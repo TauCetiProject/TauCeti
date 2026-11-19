@@ -165,7 +165,7 @@ theorem AdjoinRoot.maximalIdeal_eq_map [IsLocalRing (AdjoinRoot g)]
 local homomorphism. -/
 theorem AdjoinRoot.isLocalHom_algebraMap [IsLocalRing (AdjoinRoot g)]
     (hirr : Irreducible (g.map (residue R))) : IsLocalHom (algebraMap R (AdjoinRoot g)) :=
-  ((local_hom_TFAE (algebraMap R (AdjoinRoot g))).out 1 3).mpr
+  ((IsLocalRing.local_hom_tfae (algebraMap R (AdjoinRoot g))).out 1 3).mpr
     (AdjoinRoot.maximalIdeal_eq_map hirr).ge
 
 namespace TauCeti.IsLocalRing

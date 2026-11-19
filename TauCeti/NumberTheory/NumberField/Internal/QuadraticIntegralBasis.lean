@@ -16,7 +16,7 @@ Internal helper: in a quadratic number field `K`, an integral element `x` that i
 packages the pair `{1, x}` as a `ℚ`-basis of `K` whose two vectors are algebraic integers. It is
 *not* claimed to be a `ℤ`-basis of the full ring of integers `𝓞 K`. This construction is shared by
 the effective discriminant bound `NumberField.abs_discr_le_of_sq_intCast` and the
-roadmap's `ℚ(i)` discriminant worked example, so it lives in the generic `NumberField.Internal`
+`ℚ(i)` discriminant worked example, so it lives in the generic `NumberField.Internal`
 namespace rather than being duplicated inline or exposed from either headline API file.
 -/
 
@@ -35,7 +35,7 @@ theorem exists_basis_eq_one_self_of_notMem_range_of_isIntegral {K : Type*} [Fiel
   classical
   -- `{1, x}` is linearly independent over `ℚ` because `x` lies outside the base field.
   have hli : LinearIndependent ℚ ![1, x] :=
-    TauCeti.linearIndependent_one_of_notMem_range_algebraMap ℚ K (by simpa using hx)
+    (TauCeti.linearIndependent_one_iff_notMem_range_algebraMap ℚ K).mpr (by simpa using hx)
   -- A linearly independent family of `finrank` vectors is a basis.
   have hcard : Fintype.card (Fin 2) = finrank ℚ K := by
     rw [Fintype.card_fin]; exact hfin.symm

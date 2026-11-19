@@ -196,7 +196,7 @@ theorem primaryComponent_h3_int_eq_bot_of_isOpen (hℓ : IsUnit (ℓ : K))
         (U.isClosed_of_isOpen hU)
   have : Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ U (ULift (ZMod (ℓ ^ m))))) :=
     cohomologicalDimensionLE_iff.1 hcd _
-      (isPPrimaryTorsion_of_natCard_eq_pow (by rw [Nat.card_ulift, Nat.card_zmod])) 3 (by norm_num)
+      (IsAddPGroup.of_card (by rw [Nat.card_ulift, Nat.card_zmod])) 3 (by norm_num)
   have h := primaryComponent_continuousCohomology_int_eq_bot U ℓ m 2 fun k y ↦ ?_
   · have hZ : ofDiscreteModule ℤ U (ULift.{0} ℤ) =
         TopRep.of (ContRepresentation.trivial ℤ U (ULift.{0} ℤ)) :=

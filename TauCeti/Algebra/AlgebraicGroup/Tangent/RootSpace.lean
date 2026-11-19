@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Weig
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Normalizer.Character
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Etale
 
 /-!
 # Weight spaces of the adjoint representation
@@ -61,6 +62,8 @@ which `Φ` is read off.
   point permutes the nontrivial adjoint weights, hence the roots of a split reductive pair.
 * `Derivation.image_nontrivialAdjointWeights_normalizerCharacterHom`: the actual character
   action of the scheme normalizer preserves the nontrivial adjoint weights.
+* `BialgHom.normalizerAdjointWeightSpaceEquiv`: the adjoint action of a normalizing rational
+  point, as a linear equivalence `𝔤_α ≃ 𝔤_{wα}`.
 * `Derivation.dualCotangentMap_mem_adjointWeightSpace_iff`: the differential of a closed
   immersion `Spec L → Spec H` detects the adjoint weight spaces of a diagonalizable subgroup of
   `Spec L`.
@@ -72,6 +75,9 @@ which `Φ` is read off.
 * `Derivation.map_dualCotangentMap_adjointWeightSpace` and `Derivation.adjointWeightSpaceEquiv`:
   the differential of an isomorphism carries each weight space onto the corresponding weight
   space for the transported diagonalizable subgroup.
+* `Derivation.adjointWeightSpace_comp_bialgEquiv_eq_bot_iff_of_characterEquiv`: a weight space
+  vanishes exactly when its transport along a bialgebra equivalence does, for a character group
+  in any universe.
 
 ## References
 
@@ -108,6 +114,13 @@ noncomputable def adjointWeightSpace (π : H →ₐc[R] MonoidAlgebra R M) (α :
     adjointComodule (R := R) (H := H)
   DiagonalizableGroup.weightSpace (Module.Dual R (Bialgebra.CotangentSpace R H))
     (π : H →ₗc[R] MonoidAlgebra R M) α
+
+/-- The adjoint weight submodule is the weight submodule of the adjoint representation. -/
+theorem adjointWeightSpace_eq_weightSpace (π : H →ₐc[R] MonoidAlgebra R M) (α : M) :
+    adjointWeightSpace π α =
+      DiagonalizableGroup.weightSpace (Module.Dual R (Bialgebra.CotangentSpace R H))
+        π.toCoalgHom α :=
+  (rfl)
 
 /-- Membership in the `α`-weight submodule, in terms of the adjoint coaction: pushing the adjoint
 coaction of `x` through `π` must give `x ⊗ α`. -/
@@ -250,19 +263,6 @@ theorem mem_nontrivialAdjointWeights {π : H →ₐc[R] MonoidAlgebra R M} {α :
     α ∈ nontrivialAdjointWeights π ↔ α ≠ 1 ∧ adjointWeightSpace π α ≠ ⊥ :=
   Iff.rfl
 
-/-- Adjoint action by a normalizing rational point carries each adjoint weight space onto the
-weight space indexed by pullback along inverse conjugation. -/
-theorem map_adjointWeightSpace_basePointsRepresentation
-    (π : H →ₐc[R] MonoidAlgebra R M) (g : WithConv (H →ₐ[R] R)) (w : M ≃* M)
-    (hg : π.toAlgHom.comp (HopfAlgebra.pointConjugationAlgHom g⁻¹) =
-      (MonoidAlgebra.domCongr R R w).toAlgHom.comp π.toAlgHom) (α : M) :
-    (adjointWeightSpace π α).map
-        (Comodule.basePointsRepresentation (H := H)
-          (Module.Dual R (Bialgebra.CotangentSpace R H)) g) =
-      adjointWeightSpace π (w α) := by
-  unfold adjointWeightSpace
-  exact DiagonalizableGroup.map_weightSpace_basePointsRepresentation π g w hg α
-
 /-- Inverse conjugation by a normalizing rational point preserves membership in the set of
 nontrivial adjoint weights. For a split reductive pair these are the roots. -/
 theorem mem_nontrivialAdjointWeights_apply_iff
@@ -297,6 +297,26 @@ theorem image_nontrivialAdjointWeights_normalizerCharacterHom
       nontrivialAdjointWeights π :=
   image_nontrivialAdjointWeights π g (π.normalizerCharacterHom hπ g)
     (π.normalizerCharacterHom_comp hπ g)
+
+/-- The **adjoint action of a normalizing rational point** identifies the weight space `𝔤_α` with
+`𝔤_{wα}`, where `w` is the induced automorphism of the character group. -/
+noncomputable def _root_.BialgHom.normalizerAdjointWeightSpaceEquiv
+    [ConnectedSpace (PrimeSpectrum R)]
+    (π : H →ₐc[R] MonoidAlgebra R M) (hπ : Function.Surjective π)
+    (g : π.normalizerPoints hπ) (α : M) :
+    adjointWeightSpace π α ≃ₗ[R] adjointWeightSpace π (π.normalizerCharacterHom hπ g α) :=
+  DiagonalizableGroup.weightSpaceEquivOfNormalizes π g _ (π.normalizerCharacterHom_comp hπ g) α
+
+@[simp]
+theorem _root_.BialgHom.coe_normalizerAdjointWeightSpaceEquiv_apply
+    [ConnectedSpace (PrimeSpectrum R)]
+    (π : H →ₐc[R] MonoidAlgebra R M) (hπ : Function.Surjective π)
+    (g : π.normalizerPoints hπ) (α : M) (x : adjointWeightSpace π α) :
+    (π.normalizerAdjointWeightSpaceEquiv hπ g α x : Module.Dual R (Bialgebra.CotangentSpace R H)) =
+      Comodule.basePointsRepresentation (H := H) (Module.Dual R (Bialgebra.CotangentSpace R H))
+        (g : WithConv (H →ₐ[R] R)) x :=
+  DiagonalizableGroup.coe_weightSpaceEquivOfNormalizes_apply π g _
+    (π.normalizerCharacterHom_comp hπ g) α x
 
 /-- Off the nontrivial adjoint weights and the trivial character the weight submodule vanishes. -/
 theorem adjointWeightSpace_eq_bot_of_notMem_nontrivialAdjointWeights
@@ -399,23 +419,15 @@ theorem lie_mem_adjointWeightSpace_mul {π : H →ₐc[R] MonoidAlgebra R M} {α
   have hq : q.toLinearMap =
       ((π : H →ₗc[R] MonoidAlgebra R M).toLinearMap ∘ₗ
         (ULift.algEquiv (R := R) : U ≃ₐ[R] H).toLinearMap) := by
-    -- Unfold `q`: `AlgHom.comp` has no theorem exposing its underlying linear map.
-    change
-      ((π : H →ₐ[R] MonoidAlgebra R M).toLinearMap ∘ₗ
-          (ULift.algEquiv (R := R) : U ≃ₐ[R] H).toLinearMap) = _
-    rw [hπ]
-  have hx' :
-      TensorProduct.map q.toLinearMap LinearMap.id
-          ((adjointAction A g).val (1 ⊗ₜ[R] x)) =
-        MonoidAlgebra.single α 1 ⊗ₜ[R] x := by
-    rw [hq]
-    exact map_universalAdjointAction_eq_single_of_mem_adjointWeightSpace hx
-  have hy' :
-      TensorProduct.map q.toLinearMap LinearMap.id
-          ((adjointAction A g).val (1 ⊗ₜ[R] y)) =
-        MonoidAlgebra.single β 1 ⊗ₜ[R] y := by
-    rw [hq]
-    exact map_universalAdjointAction_eq_single_of_mem_adjointWeightSpace hy
+    rw [← hπ]
+    exact AlgHom.comp_toLinearMap _ _
+  have key : ∀ {a : M} {z : Module.Dual R (Bialgebra.CotangentSpace R H)},
+      z ∈ adjointWeightSpace π a →
+        TensorProduct.map q.toLinearMap LinearMap.id
+            ((adjointAction A g).val (1 ⊗ₜ[R] z)) = MonoidAlgebra.single a 1 ⊗ₜ[R] z :=
+    fun hz ↦ by
+      rw [hq]
+      exact map_universalAdjointAction_eq_single_of_mem_adjointWeightSpace hz
   have hbracket := adjointAction_bracket A g (1 ⊗ₜ[R] x) (1 ⊗ₜ[R] y)
   have hmapped := congrArg
     (LieAlgebra.ExtendScalars.map q
@@ -431,7 +443,7 @@ theorem lie_mem_adjointWeightSpace_mul {π : H →ₐc[R] MonoidAlgebra R M} {α
           ((adjointAction A g).val (1 ⊗ₜ[R] x)),
         TensorProduct.map q.toLinearMap LinearMap.id
           ((adjointAction A g).val (1 ⊗ₜ[R] y))⁆ at hmapped
-  rw [hx', hy'] at hmapped
+  rw [key hx, key hy] at hmapped
   simp only [LieAlgebra.ExtendScalars.bracket_tmul,
     MonoidAlgebra.single_mul_single, one_mul] at hmapped
   rw [adjointComodule_coact_apply, adjointPointRepresentation_action]
@@ -601,4 +613,41 @@ theorem dualCotangentMap_mem_adjointWeightSpace_iff_of_characterEquiv
     ← adjointWeightSpace_domCongr e (π.comp φ) α, ← BialgHom.comp_assoc]
   exact dualCotangentMap_mem_adjointWeightSpace_iff φ hφ _ _ x
 
+/-- An adjoint weight space vanishes exactly when the weight space of the same character for the
+diagonalizable subgroup transported along a bialgebra equivalence vanishes. As in
+`dualCotangentMap_mem_adjointWeightSpace_iff_of_characterEquiv`, a character equivalence into the
+coefficient-ring universe lets the character group lie in any universe. -/
+theorem adjointWeightSpace_comp_bialgEquiv_eq_bot_iff_of_characterEquiv
+    {R H L N : Type u} {M : Type v} [CommRing R] [CommRing H] [CommRing L]
+    [HopfAlgebra R H] [HopfAlgebra R L] [CommGroup M] [CommGroup N]
+    [Module.Finite R (Bialgebra.CotangentSpace R H)]
+    [Module.Projective R (Bialgebra.CotangentSpace R H)]
+    [Module.Finite R (Bialgebra.CotangentSpace R L)]
+    [Module.Projective R (Bialgebra.CotangentSpace R L)]
+    (eM : M ≃* N) (e : H ≃ₐc[R] L) (π : L →ₐc[R] MonoidAlgebra R M) (α : M) :
+    adjointWeightSpace (π.comp (e : H →ₐc[R] L)) α = ⊥ ↔ adjointWeightSpace π α = ⊥ := by
+  rw [← adjointWeightSpace_domCongr eM π α,
+    ← adjointWeightSpace_domCongr eM (π.comp (e : H →ₐc[R] L)) α, ← BialgHom.comp_assoc,
+    ← map_dualCotangentMap_adjointWeightSpace e,
+    ← ofBijective_dualCotangentMap_toLinearMap _ e.dualCotangentMap_bijective]
+  exact Submodule.map_eq_bot_iff
+
 end Derivation
+
+namespace TauCeti.CommHopfAlgCat
+
+variable {k : Type u} [Field k] {H K : _root_.CommHopfAlgCat.{u} k}
+  [Algebra.FiniteType k K] {f : H ⟶ K} {M : Type u} [CommGroup M]
+
+/-- The differential of a homomorphism with étale kernel detects adjoint weight vectors.
+Both weights are indexed by the characters of the diagonalizable group in the source. -/
+theorem dualCotangentMap_mem_adjointWeightSpace_iff_of_etaleKernel [Algebra.FiniteType k H]
+    (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal))
+    (π : K →ₐc[k] MonoidAlgebra k M) (α : M)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    Derivation.dualCotangentMap f.hom x ∈ Derivation.adjointWeightSpace (π.comp f.hom) α ↔
+      x ∈ Derivation.adjointWeightSpace π α :=
+  f.hom.dualCotangentMap_mem_adjointWeightSpace_iff_of_injective
+    (dualCotangentMap_injective_of_etaleKernel hker) π α x
+
+end TauCeti.CommHopfAlgCat

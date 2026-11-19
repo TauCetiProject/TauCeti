@@ -48,7 +48,7 @@ public section
 
 noncomputable section
 
-open Matrix.SpecialLinearGroup CongruenceSubgroup
+open Matrix.SpecialLinearGroup CongruenceSubgroup TauCeti
 open scoped Function HeckeCosetModule MatrixGroups
 
 namespace HeckeRing.GL2

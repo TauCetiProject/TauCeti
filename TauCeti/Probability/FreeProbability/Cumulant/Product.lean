@@ -43,7 +43,9 @@ of `NC(f '' s)` onto the upper interval `[σ_f, 1_s]` of `NC(s)`.
   cumulant of the grouped word is `∑_{π ⊔ σ_f = 1_s} κ_π(a)`, and in multiplicative form
   `∑_{π ⊔ σ_f = 1_s} ∏_{B ∈ π} κ_B(a)`.
 * `TauCeti.freeCumulant_comp_of_strictMonoOn` — for injective `f` no letters are grouped, so free
-  cumulants are invariant under increasing relabelling of the positions.
+  cumulants are invariant under increasing relabelling of the positions; in particular
+  `TauCeti.freeCumulant_eq_freeCumulant_comp_orderEmbOfFin` — every free cumulant is a cumulant
+  `κ_n` of a word indexed by `Fin n`.
 
 ## References
 
@@ -58,15 +60,15 @@ open Finset
 
 namespace TauCeti
 
-variable {R A α β : Type*} [LinearOrder α] [LinearOrder β] {s : Finset α} {f : α → β}
+variable {R A α β : Type*} [LinearOrder α] {s : Finset α} {f : α → β}
 
-section Moment
+section FiberProd
 
-variable [Monoid A]
+variable [Monoid A] [DecidableEq β]
 
 /-- The word obtained from `a` by grouping along the fibres of `f`: its letter at `y` is the
-product `a_{x₁} * ⋯ * a_{xₖ}` over the positions `x₁ < ⋯ < xₖ` of `s` with `f xᵢ = y`. When `f` is
-monotone on `s` these positions are consecutive in `s`. -/
+product `a_{x₁} * ⋯ * a_{xₖ}` over the positions `x₁ < ⋯ < xₖ` of `s` with `f xᵢ = y`. When `β` is
+linearly ordered and `f` is monotone on `s` these positions are consecutive in `s`. -/
 def fiberProd (a : α → A) (s : Finset α) (f : α → β) (y : β) : A :=
   ({x ∈ s | f x = y}.sort.map a).prod
 
@@ -74,6 +76,14 @@ def fiberProd (a : α → A) (s : Finset α) (f : α → β) (y : β) : A :=
 theorem fiberProd_def (a : α → A) (s : Finset α) (f : α → β) (y : β) :
     fiberProd a s f y = ({x ∈ s | f x = y}.sort.map a).prod := by
   rw [fiberProd]
+
+end FiberProd
+
+variable [LinearOrder β]
+
+section Moment
+
+variable [Monoid A]
 
 /-- For `f` monotone on `s`, the product of a word along the positions of `s` over a set `C` is
 the product of the word grouped along the fibres of `f` over the values of `f` at those
@@ -179,6 +189,14 @@ theorem freeCumulant_comp_of_strictMonoOn {e : α → β} (he : StrictMonoOn e s
     simp [fiberProd_def, hfib x hx]
   rw [freeCumulant_congr φ hb, freeCumulant_fiberProd φ (b ∘ e) he.monotoneOn, hσ]
   simp only [sup_bot_eq, filter_eq', mem_univ, ite_true, sum_singleton, freeCumulant_def]
+
+/-- Relabelling the positions of `s` increasingly by `Fin #s`: the free cumulant of `b` along `s`
+is the cumulant `κ_n` of the word `b ∘ s.orderEmbOfFin`, which lists the letters of `b` at the
+positions of `s` in increasing order. -/
+theorem freeCumulant_eq_freeCumulant_comp_orderEmbOfFin (b : α → A) (s : Finset α) :
+    freeCumulant φ b s = freeCumulant φ (b ∘ s.orderEmbOfFin rfl) univ := by
+  rw [freeCumulant_comp_of_strictMonoOn φ ((s.orderEmbOfFin rfl).strictMono.strictMonoOn _),
+    image_orderEmbOfFin_univ]
 
 end Cumulant
 

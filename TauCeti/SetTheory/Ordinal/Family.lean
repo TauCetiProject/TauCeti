@@ -34,7 +34,7 @@ theorem lift_iSup {β : Type w} {f : β → _root_.Ordinal.{u}} (hf : BddAbove (
   -- are `0`.
   rcases isEmpty_or_nonempty β with _ | _
   · simp
-  · exact _root_.Ordinal.liftInitialSeg.isNormal.map_iSup hf
+  · exact _root_.Ordinal.liftInitialSeg.isNormal.leftOrdContinuous.map_ciSup hf
 
 end Ordinal
 

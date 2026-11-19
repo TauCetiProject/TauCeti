@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.Data.Sym.NatCard
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 public import TauCeti.RingTheory.MvPolynomial.Finrank
+import Mathlib.Data.Sym.Card
+import TauCeti.Algebra.MvPolynomial.Division
 import TauCeti.Algebra.MvPolynomial.Monomial
 
 /-!
@@ -18,7 +20,9 @@ A basis identifies a symmetric algebra with a multivariate polynomial ring. This
 the equivalence sends a generator to the linear form with the same coordinates, and that it carries
 each homogeneous submodule of the symmetric algebra to the corresponding total-degree submodule of
 the polynomial ring. A linear map permuting basis vectors, such as a permutation representation,
-acts on the polynomial ring by renaming variables.
+acts on the polynomial ring by renaming variables. The generators of basis vectors behave like
+variables: they are nonzerodivisors, and a power of one of them divides a product with a power of
+another only through the remaining factor.
 
 ## Main results
 
@@ -27,8 +31,14 @@ acts on the polynomial ring by renaming variables.
 * `map_homogeneousSubmodule_equivMvPolynomial`: the basis-induced equivalence carries the degree
   `n` part of a symmetric algebra to the degree `n` part of a multivariate polynomial ring.
 * `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
+* `Module.Basis.equivMvPolynomial_symmetricAlgebra_apply`: the basis-induced equivalence sends the
+  basis vector `b.symmetricAlgebra d` to the monomial `xᵈ`; these basis vectors are homogeneous of
+  degree `d.degree` and multiply by adding exponents.
 * `SymmetricAlgebra.equivMvPolynomial_map`: a linear map carrying basis vectors to basis vectors
   acts on the polynomial rings by renaming variables.
+* `SymmetricAlgebra.isRegular_ι_basis`: the generators of basis vectors are nonzerodivisors.
+* `SymmetricAlgebra.ι_basis_pow_dvd_ι_basis_pow_mul_iff`: for distinct basis vectors `b i` and
+  `b j`, a power of `b i` divides a power of `b j` times `a` exactly when it divides `a`.
 * `Sym.equivFinsuppDegree`: degree-`n` multisets are exponent vectors of total degree `n`.
 * `Module.Basis.symmetricAlgebraHomogeneous`: the monomial basis of a homogeneous component of a
   symmetric algebra induced by a basis of the generating module.
@@ -37,6 +47,8 @@ acts on the polynomial ring by renaming variables.
 * `TauCeti.SymmetricAlgebra.instModuleFreeHomogeneousSubmodule`,
   `TauCeti.SymmetricAlgebra.instModuleFiniteHomogeneousSubmodule`: the homogeneous components of
   the symmetric algebra of a finite free module are finite free.
+* `TauCeti.SymmetricAlgebra.finrank_homogeneousSubmodule`: the rank of its degree-`n` component
+  is `(Module.finrank R M).multichoose n`.
 -/
 
 public section
@@ -85,6 +97,38 @@ theorem _root_.SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff {ι : Type w
   rw [← MvPolynomial.mem_homogeneousSubmodule, ← map_homogeneousSubmodule_equivMvPolynomial R M b n,
     Submodule.mem_map_equiv (e := (SymmetricAlgebra.equivMvPolynomial b).toLinearEquiv)]
   simp
+
+variable {R M} in
+/-- Under the polynomial equivalence induced by `b`, the basis vector `b.symmetricAlgebra d` is the
+monomial `xᵈ`. -/
+@[simp]
+theorem _root_.Module.Basis.equivMvPolynomial_symmetricAlgebra_apply {ι : Type w}
+    (b : Basis ι R M) (d : ι →₀ ℕ) :
+    SymmetricAlgebra.equivMvPolynomial b (b.symmetricAlgebra d) = MvPolynomial.monomial d 1 := by
+  simp [Basis.symmetricAlgebra]
+
+variable {R M} in
+/-- The basis vector `b.symmetricAlgebra d` is homogeneous of degree `d.degree`. -/
+theorem _root_.Module.Basis.symmetricAlgebra_mem_homogeneousSubmodule {ι : Type w}
+    (b : Basis ι R M) (d : ι →₀ ℕ) : b.symmetricAlgebra d ∈ homogeneousSubmodule R M d.degree :=
+  (SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff R M b _ _).1 (by
+    simpa using MvPolynomial.isHomogeneous_monomial (1 : R) rfl)
+
+variable {R M} in
+/-- The basis vectors `b.symmetricAlgebra d` multiply by adding exponents. -/
+theorem _root_.Module.Basis.symmetricAlgebra_add {ι : Type w} (b : Basis ι R M)
+    (d d' : ι →₀ ℕ) :
+    b.symmetricAlgebra (d + d') = b.symmetricAlgebra d * b.symmetricAlgebra d' :=
+  (SymmetricAlgebra.equivMvPolynomial b).injective <| by
+    simp [MvPolynomial.monomial_mul_monomial]
+
+variable {R M} in
+/-- A power of the basis vector `b.symmetricAlgebra d` multiplies its exponent. -/
+theorem _root_.Module.Basis.symmetricAlgebra_pow {ι : Type w} (b : Basis ι R M)
+    (d : ι →₀ ℕ) (k : ℕ) :
+    b.symmetricAlgebra d ^ k = b.symmetricAlgebra (k • d) :=
+  (SymmetricAlgebra.equivMvPolynomial b).injective <| by
+    simp [MvPolynomial.monomial_pow]
 
 /-- The restriction of the polynomial equivalence induced by `b` to homogeneous components. -/
 noncomputable def homogeneousSubmoduleEquivMvPolynomial {ι : Type w} (b : Basis ι R M) (n : ℕ) :
@@ -173,6 +217,27 @@ theorem _root_.SymmetricAlgebra.equivMvPolynomial_map {N : Type*} [AddCommMonoid
     SymmetricAlgebra.algHom_ext <| b.ext fun i ↦ by simp [h i]
   exact AlgHom.congr_fun this x
 
+variable {R M} in
+/-- The generator of a basis vector is a nonzerodivisor in the symmetric algebra: the polynomial
+equivalence induced by the basis sends it to a variable. -/
+theorem _root_.SymmetricAlgebra.isRegular_ι_basis {ι : Type w} (b : Basis ι R M) (i : ι) :
+    IsRegular (SymmetricAlgebra.ι R M (b i)) := by
+  refine (Commute.isRegular_iff fun _ ↦ Commute.all _ _).mpr fun a a' h ↦ ?_
+  refine (SymmetricAlgebra.equivMvPolynomial b).injective
+    ((MvPolynomial.isRegular_X (n := i)).left ?_)
+  simpa using congrArg (SymmetricAlgebra.equivMvPolynomial b) h
+
+variable {R M} in
+/-- For distinct basis vectors `b i` and `b j`, a power of the generator of `b i` divides the
+product of a power of the generator of `b j` with `a` exactly when it divides `a`. -/
+theorem _root_.SymmetricAlgebra.ι_basis_pow_dvd_ι_basis_pow_mul_iff {ι : Type w}
+    (b : Basis ι R M) {i j : ι} (hij : i ≠ j) {k l : ℕ} {a : SymmetricAlgebra R M} :
+    SymmetricAlgebra.ι R M (b i) ^ k ∣ SymmetricAlgebra.ι R M (b j) ^ l * a ↔
+      SymmetricAlgebra.ι R M (b i) ^ k ∣ a := by
+  rw [← map_dvd_iff (SymmetricAlgebra.equivMvPolynomial b),
+    ← map_dvd_iff (SymmetricAlgebra.equivMvPolynomial b)]
+  simpa using MvPolynomial.X_pow_dvd_X_pow_mul_iff hij
+
 section Semilinear
 
 variable {S : Type*} [CommSemiring S] {N : Type*} [AddCommMonoid N] [Module S N]
@@ -233,5 +298,20 @@ monomial basis is indexed by the degree-`n` multisets of a finite basis. -/
 instance instModuleFiniteHomogeneousSubmodule [Module.Free R M] [Module.Finite R M] (n : ℕ) :
     Module.Finite R (homogeneousSubmodule R M n) :=
   .of_basis ((Module.Free.chooseBasis R M).symmetricAlgebraHomogeneous n)
+
+variable [StrongRankCondition R] [Module.Free R M] [Module.Finite R M]
+
+/-- The rank of the degree-`n` symmetric power of a finite free module is the number
+of degree-`n` multisets of its basis indices. The multichoose expression also applies
+when the module has rank zero. -/
+@[simp]
+theorem finrank_homogeneousSubmodule (n : ℕ) :
+    Module.finrank R (homogeneousSubmodule R M n) =
+      (Module.finrank R M).multichoose n := by
+  classical
+  rw [Module.finrank_eq_card_basis
+    ((Module.Free.chooseBasis R M).symmetricAlgebraHomogeneous n),
+    Sym.card_sym_eq_multichoose,
+    ← Module.finrank_eq_card_basis (Module.Free.chooseBasis R M)]
 
 end TauCeti.SymmetricAlgebra

@@ -145,6 +145,7 @@ private theorem exists_mem_roots_valuation_eval₂RingHom_eq (x : closedPolydisc
 
 variable [IsUltrametricDist K]
 
+omit [IsUltrametricDist K] in
 /-- **The bound is strictly increasing at a root**: if `b` is one of the `α ∈ S` and `u ≠ 0`, then
 replacing `x(f)` by a larger `x(g)` strictly increases `x(u) ∏_{α ∈ S} max (x(f)) (x(b - α))`,
 since the factor at `α = b` is `x(f)` itself. -/

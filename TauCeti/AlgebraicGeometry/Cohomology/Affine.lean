@@ -6,15 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
-public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.Topology.Sheaves.Cartan
+import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
 import TauCeti.AlgebraicGeometry.Modules.Localization
-import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.AddCommGrp
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Comparison
-import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
 
 /-!
 # Serre's vanishing theorem on affine opens
@@ -54,9 +53,8 @@ induction on the number of members.
   opens of an affine open by basic opens are acyclic for a quasi-coherent sheaf.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`: Serre's
   vanishing theorem on the affine opens of a scheme.
-* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffine` and the instance
-  `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isQuasicoherent`: the same on
-  an affine scheme and on `Spec R`.
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`: the same on an
+  affine scheme, for example on `Spec R`, as an instance.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffineHom`: the same on the
   source of an affine morphism (for example a finite morphism) to an affine scheme.
 
@@ -69,9 +67,7 @@ induction on the number of members.
 
 public section
 
-noncomputable section
-
-open CategoryTheory Limits Opposite TopologicalSpace AlgebraicGeometry TauCeti.CategoryTheory
+open CategoryTheory Limits TauCeti.CategoryTheory
 
 universe u
 
@@ -108,15 +104,10 @@ private lemma exists_sub_eq {W A₀ A₁ A₀₁ : X.Opens} (hW : IsAffineOpen W
     rfl
   rw [hρ] at hy hy'
   -- `c ^ m` and `d ^ n` generate the unit ideal of `Γ(X, W)`
-  have hpow (f : Γ(X, W)) (k : ℕ) : X.basicOpen f ≤ X.basicOpen (f ^ k) := by
-    rcases k.eq_zero_or_pos with rfl | hk
-    · simpa using X.basicOpen_le f
-    · rw [Scheme.basicOpen_pow _ _ hk]
-  obtain ⟨p, q, hpq⟩ := Ideal.mem_span_pair.1 ((hW.self_le_iSup_basicOpen_iff
-    (s := {c ^ m, d ^ n})).1 (hcd.trans (sup_le
-      ((hpow c m).trans (le_iSup_of_le ⟨c ^ m, by simp⟩ le_rfl))
-      ((hpow d n).trans (le_iSup_of_le ⟨d ^ n, by simp⟩ le_rfl)))) ▸ Submodule.mem_top :
-        (1 : Γ(X, W)) ∈ Ideal.span {c ^ m, d ^ n})
+  have hspan : Ideal.span ({c, d} : Set Γ(X, W)) = ⊤ :=
+    hW.self_le_iSup_basicOpen_iff.mp (by simpa only [iSup_subtype, iSup_pair] using hcd)
+  have hcd' : IsCoprime c d := Ideal.mem_span_pair.mp (hspan ▸ Submodule.mem_top)
+  obtain ⟨p, q, hpq⟩ := hcd'.pow (m := m) (n := n)
   refine ⟨X.presheaf.map (homOfLE (X.basicOpen_le c)).op q • y,
     -(X.presheaf.map (homOfLE (X.basicOpen_le d)).op p • y'), ?_⟩
   -- the restriction of `p * c ^ m + q * d ^ n = 1` to `D(c) ∩ D(d)`
@@ -182,7 +173,7 @@ private lemma quasiIso_cechAugmentation_finset {ι : Type u} (V : ι → X.Opens
   | singleton a =>
     exact quasiIso_cechAugmentation_prod_of_hom _ isTerminalTop _ Y
       (i₀ := ⟨a, Finset.mem_singleton_self a⟩) (homOfLE (by simpa using hYs))
-  | cons a s ha hs ih =>
+  | cons a s ha _ ih =>
     obtain ⟨V₁, hV₁, hYV₁, hV₁s⟩ := hU.exists_mem_range_basicOpen_le_sup hY (hV a) V hV s
       (by simpa [Finset.sup_cons] using hYs)
     let F := (SheafOfModules.toSheaf X.ringCatSheaf).obj M
@@ -238,10 +229,10 @@ theorem isCechAcyclicOn_range_basicOpen :
       (by rwa [Finset.sup_univ_eq_iSup]))
 
 include hU in
-/-- **Serre's vanishing theorem on affine opens** (Hartshorne, *Algebraic Geometry*, Theorem
-III.3.5, without the Noetherian hypothesis): a quasi-coherent sheaf of modules has no cohomology in
-positive degrees on an affine open subset of a scheme. -/
-theorem subsingleton_cohomologyOn_succ_of_isAffineOpen (n : ℕ) :
+/-- Serre's vanishing on an affine open, for a sheaf quasi-coherent on the whole scheme; the
+public statement `subsingleton_cohomologyOn_succ_of_isAffineOpen` needs only quasi-coherence over
+the affine open. -/
+private theorem subsingleton_cohomologyOn_succ_of_isAffineOpen_of_isQuasicoherent (n : ℕ) :
     Subsingleton (cohomologyOn M (n + 1) U) := by
   refine TauCeti.Topology.subsingleton_H'_succ_of_isCechAcyclicOn Scheme.inf_mem_range_basicOpen
     ?_ ?_ (isCechAcyclicOn_range_basicOpen M hU) ⟨1, Scheme.basicOpen_one _⟩ n
@@ -252,18 +243,27 @@ theorem subsingleton_cohomologyOn_succ_of_isAffineOpen (n : ℕ) :
     exact ⟨_, ⟨g, rfl⟩, hxg, hg⟩
 
 /-- **Serre's vanishing theorem on affine schemes**: a quasi-coherent sheaf of modules on an
-affine scheme has no cohomology in positive degrees. -/
-theorem subsingleton_cohomology_succ_of_isAffine [IsAffine X] (n : ℕ) :
+affine scheme, for example on the spectrum `Spec R` of any commutative ring, has no cohomology in
+positive degrees. -/
+instance subsingleton_cohomology_succ_of_isAffine [IsAffine X] (n : ℕ) :
     Subsingleton (Cohomology M (n + 1)) := by
-  have := subsingleton_cohomologyOn_succ_of_isAffineOpen M (isAffineOpen_top X) n
+  have := subsingleton_cohomologyOn_succ_of_isAffineOpen_of_isQuasicoherent M
+    (isAffineOpen_top X) n
   exact (cohomologyOnTopIso M (n + 1)).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
 
-/-- **Serre's vanishing theorem on the spectrum of a ring**: a quasi-coherent sheaf of modules on
-`Spec R` has no cohomology in positive degrees. -/
-instance subsingleton_cohomology_succ_of_isQuasicoherent {R : CommRingCat.{u}}
-    (N : (Spec R).Modules) [N.IsQuasicoherent] (n : ℕ) :
-    Subsingleton (Cohomology N (n + 1)) :=
-  subsingleton_cohomology_succ_of_isAffine N n
+include hU in
+omit [M.IsQuasicoherent] in
+/-- **Serre's vanishing theorem on affine opens** (Hartshorne, *Algebraic Geometry*, Theorem
+III.3.5, without the Noetherian hypothesis): a sheaf of modules that is quasi-coherent over an
+affine open subset `U` of a scheme (for example, a quasi-coherent sheaf on the scheme) has no
+cohomology in positive degrees on `U`. -/
+theorem subsingleton_cohomologyOn_succ_of_isAffineOpen [(M.restrict U.ι).IsQuasicoherent]
+    (n : ℕ) : Subsingleton (cohomologyOn M (n + 1) U) := by
+  have : IsAffine U.toScheme := hU
+  have e := cohomologyOnOpensRangeIso U.ι M (n + 1)
+  rw [Scheme.Opens.opensRange_ι] at e
+  have := subsingleton_cohomology_succ_of_isAffine (M.restrict U.ι) n
+  exact e.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
 
 /-- A quasi-coherent sheaf on the source of an affine morphism to an affine scheme (for example, on
 a scheme finite over a field) has no cohomology in positive degrees. -/

@@ -36,7 +36,7 @@ same.
 A published diagram is usually simply laced: every edge carries the label three and every non-edge
 the label two. `TauCeti.coxeterMatrixOfEdges` builds the `CoxeterMatrix` of such a diagram from the
 list of its edges, so that a transcribed row records the edges the source draws rather than a
-hand-built matrix.
+hand-built matrix. No presentation of a named group is asserted here.
 
 ## Main definitions
 
@@ -55,6 +55,9 @@ hand-built matrix.
 * `TauCeti.mulEquivPresentedGroupCoxeterAppend`: the group presented by that list followed by
   further relators is the group defined by Mathlib's Coxeter relations together with those extra
   relations.
+* `TauCeti.of_mul_of_pow_coxeterRelators_append` and
+  `TauCeti.of_mul_of_self_coxeterRelators_append`: in the group presented by that list followed by
+  further relators, `(sᵢ sⱼ) ^ M i j = 1`, and every generator is an involution.
 * `TauCeti.GroupPresentation.mulEquivCoxeterGroup` and
   `TauCeti.GroupPresentation.mulEquivPresentedGroupCoxeterAppend`: the same two conclusions for a
   transcribed presentation row. Neither asks the row's relators to be the Coxeter relators, or the
@@ -65,9 +68,6 @@ hand-built matrix.
   compiled-word membership.
 
 ## References
-
-This file supplies reusable Coxeter-presentation machinery needed by milestone S1 of
-`TauCetiRoadmap/CFSGStatement/README.md`. No presentation of a named group is asserted here.
 
 `TauCeti.coxeterRelatorsOfList` is built from Mathlib's `List.sym2` in `Mathlib.Data.List.Sym`,
 whose `List.length_sym2` supplies the relator count, and from `Sym2.inf`/`Sym2.sup` in
@@ -317,6 +317,30 @@ theorem mulEquivPresentedGroupCoxeterAppend_apply_of {n : ℕ} (M : CoxeterMatri
     (extra : List (Relator (Fin n))) (i : Fin n) :
     mulEquivPresentedGroupCoxeterAppend M extra (PresentedGroup.of i) = PresentedGroup.of i :=
   QuotientGroup.quotientMulEquivOfEq_mk _ _
+
+/-- **Every Coxeter relation of `M` holds in a presented group whose relators are the Coxeter
+relators of `M` followed by any further relators**, in either order of the two generators. -/
+@[simp]
+theorem of_mul_of_pow_coxeterRelators_append {n : ℕ} (M : CoxeterMatrix (Fin n))
+    (extra : List (Relator (Fin n))) (i j : Fin n) :
+    (PresentedGroup.of i * PresentedGroup.of j :
+        PresentedGroup (Relator.relatorSet (coxeterRelators M ++ extra))) ^ M i j = 1 := by
+  have hmem : M.relation i j ∈
+      Subgroup.normalClosure (Relator.relatorSet (coxeterRelators M ++ extra)) := by
+    rw [normalClosure_relatorSet_coxeterRelators_append]
+    exact Subgroup.subset_normalClosure (Or.inl ⟨(i, j), rfl⟩)
+  have key := PresentedGroup.mk_eq_one_iff.mpr hmem
+  rw [CoxeterMatrix.relation, map_pow, map_mul] at key
+  exact key
+
+/-- **Every generator is an involution in a presented group whose relators are the Coxeter
+relators of `M` followed by any further relators.** -/
+@[simp]
+theorem of_mul_of_self_coxeterRelators_append {n : ℕ} (M : CoxeterMatrix (Fin n))
+    (extra : List (Relator (Fin n))) (i : Fin n) :
+    (PresentedGroup.of i * PresentedGroup.of i :
+        PresentedGroup (Relator.relatorSet (coxeterRelators M ++ extra))) = 1 := by
+  simpa [M.diagonal] using of_mul_of_pow_coxeterRelators_append M extra i i
 
 /-- **A transcription whose relations have the same normal closure as the Coxeter relators of `M`
 presents

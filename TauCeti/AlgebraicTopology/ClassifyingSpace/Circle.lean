@@ -7,11 +7,14 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.FirstHomology
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Homology
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Homotopy.Whitehead
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
 public import TauCeti.Topology.CWComplex.Classical.Circle
+import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
 /-!
 # The circle is the classifying space of `ℤ`
@@ -29,6 +32,15 @@ homomorphisms out of `ℤ` that agree on the counterclockwise loop. Both spaces 
 the map is a weak homotopy equivalence (`TauCeti.IsAspherical.isWeakHomotopyEquivalence_iff`), and
 both are CW complexes, so Whitehead's theorem makes it a homotopy equivalence.
 
+The equivalence identifies the singular homology of the circle with coefficients in a commutative
+ring `k` with the group homology of `ℤ` with trivial coefficients `k`, in every degree
+(`TauCeti.circleSingularHomologyIsoGroupHomology`). On integral first homology, the map induced
+by `circleToClassifyingSpace`, read through
+`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology`, sends the Hurewicz class of a loop of
+degree `d` to the class of the `1`-cycle at `ofAdd d`; in particular the counterclockwise loop goes
+to the class of the generator `ofAdd 1`
+(`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace_expLoop`).
+
 ## Main definitions
 
 * `TauCeti.circleToClassifyingSpace`: the based map from the circle to the classifying space of
@@ -36,16 +48,24 @@ both are CW complexes, so Whitehead's theorem makes it a homotopy equivalence.
 * `TauCeti.circleHomotopyEquivClassifyingSpace`: the homotopy equivalence
   `Circle ≃ₕ classifyingSpace (Multiplicative ℤ)` whose forward map is
   `circleToClassifyingSpace`.
+* `TauCeti.circleSingularHomologyIsoGroupHomology`: the isomorphism `Hₙ(S¹; k) ≅ Hₙ(ℤ, k)`.
 
 ## Main results
 
 * `TauCeti.classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpace`: the map
   induces the identity of `ℤ` on fundamental groups.
 * `TauCeti.isWeakHomotopyEquivalence_circleToClassifyingSpace`: it is a weak homotopy equivalence.
+* `FundamentalGroup.classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace` and
+  `FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace`
+  state that on integral first homology the class of a loop goes to the class of its degree, in
+  `ℤᵃᵇ` and in `H₁(ℤ, ℤ)` respectively.
+* `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace_expLoop`:
+  the counterclockwise loop goes to the class of the generator in `H₁(ℤ, ℤ)`.
 
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 1.B, Theorem 1B.8.
+* K. S. Brown, *Cohomology of Groups*, GTM 87, Springer, 1982, Section II.4.
 * J. Milnor, *Construction of universal bundles, II*, Ann. of Math. 63 (1956), 430--436.
 -/
 
@@ -56,6 +76,7 @@ noncomputable section
 namespace TauCeti
 
 open scoped Topology Topology.Homotopy
+open CategoryTheory TauCeti.HurewiczOne
 
 /-- The based map from the circle to the classifying space of `ℤ` that goes once around a loop at
 the base point representing the generator `ofAdd 1` of `ℤ`. The point `exp (2πit)` goes to the
@@ -80,24 +101,8 @@ theorem classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpac
     (γ : FundamentalGroup Circle 1) :
     classifyingSpaceFundamentalGroupMulEquiv (Multiplicative ℤ)
         (FundamentalGroup.mapOfEq circleToClassifyingSpace circleToClassifyingSpace_one γ) =
-      Circle.fundamentalGroupMulEquiv 1 γ := by
-  -- Both sides are homomorphisms out of `π₁(S¹) ≅ ℤ`, so it suffices to compare them on the
-  -- counterclockwise loop, which the circle identification sends to the generator.
-  suffices h : ((classifyingSpaceFundamentalGroupMulEquiv (Multiplicative ℤ)).toMonoidHom.comp
-        (FundamentalGroup.mapOfEq circleToClassifyingSpace circleToClassifyingSpace_one)).comp
-          (Circle.fundamentalGroupMulEquiv 1).symm.toMonoidHom = MonoidHom.id _ by
-    simpa using congrArg (· (Circle.fundamentalGroupMulEquiv 1 γ)) h
-  refine MonoidHom.ext_mint ?_
-  have hgen : (Circle.fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd 1) =
-      FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop) := by
-    rw [MulEquiv.symm_apply_eq, Circle.fundamentalGroupMulEquiv_expLoop]
-  simp only [MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply, hgen,
-    MonoidHom.id_apply]
-  -- The loop wrapped around is a representative of the class sent to the generator.
-  refine (congrArg (classifyingSpaceFundamentalGroupMulEquiv _)
-    ((Circle.mapOfEq_toCircle_expLoop _).trans
-      (FundamentalGroup.fromPath_mk_out _))).trans ?_
-  exact MulEquiv.apply_symm_apply _ _
+      Circle.fundamentalGroupMulEquiv 1 γ :=
+  Circle.apply_mapOfEq_toCircle_out_symm_ofAdd_one _ γ
 
 /-- **The map from the circle to the classifying space of `ℤ` is a weak homotopy equivalence.**
 Both spaces are aspherical and the map induces an isomorphism of fundamental groups. -/
@@ -105,15 +110,8 @@ theorem isWeakHomotopyEquivalence_circleToClassifyingSpace :
     circleToClassifyingSpace.IsWeakHomotopyEquivalence := by
   refine ((IsAspherical.mk inferInstance fun _ ↦ inferInstance).isWeakHomotopyEquivalence_iff
     (isEilenbergMacLaneSpaceOne_classifyingSpace (Multiplicative ℤ)).isAspherical
-    circleToClassifyingSpace_one).2 ?_
-  have h : ⇑(FundamentalGroup.mapOfEq circleToClassifyingSpace circleToClassifyingSpace_one) =
-      (classifyingSpaceFundamentalGroupMulEquiv (Multiplicative ℤ)).symm ∘
-        Circle.fundamentalGroupMulEquiv 1 := by
-    funext γ
-    rw [Function.comp_apply, MulEquiv.eq_symm_apply,
-      classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpace]
-  rw [h]
-  exact (MulEquiv.bijective _).comp (MulEquiv.bijective _)
+    circleToClassifyingSpace_one).2
+    (Circle.bijective_mapOfEq_toCircle_out_symm_ofAdd_one _)
 
 /-- **The circle is homotopy equivalent to the classifying space of `ℤ`**, by Whitehead's
 theorem applied to `circleToClassifyingSpace`. Its forward map induces the identity of `ℤ` on
@@ -128,5 +126,95 @@ def circleHomotopyEquivClassifyingSpace :
 theorem circleHomotopyEquivClassifyingSpace_toFun :
     circleHomotopyEquivClassifyingSpace.toFun = circleToClassifyingSpace :=
   isWeakHomotopyEquivalence_circleToClassifyingSpace.homotopyEquiv_toFun
+
+/-! ### Homology -/
+
+/-- **The homology of the circle is the group homology of `ℤ`.** For every commutative ring `k`,
+the singular homology `Hₙ(S¹; k)` is Mathlib's group homology `Hₙ(ℤ, k)` of the trivial
+representation: the map induced by `TauCeti.circleHomotopyEquivClassifyingSpace` followed by
+`TauCeti.classifyingSpaceSingularHomologyIsoGroupHomology`. -/
+def circleSingularHomologyIsoGroupHomology (k : Type) [CommRing k] (n : ℕ) :
+    ((singularChains k).obj (TopCat.of Circle)).homology n ≅
+      groupHomology (Rep.trivial k (Multiplicative ℤ) k) n :=
+  circleHomotopyEquivClassifyingSpace.singularHomologyIso (ModuleCat.of k k) n ≪≫
+    classifyingSpaceSingularHomologyIsoGroupHomology k (Multiplicative ℤ) n
+
+/-- The identification `TauCeti.circleSingularHomologyIsoGroupHomology` is the map induced on
+homology by `TauCeti.circleToClassifyingSpace`, followed by
+`TauCeti.classifyingSpaceSingularHomologyIsoGroupHomology`. -/
+theorem circleSingularHomologyIsoGroupHomology_hom (k : Type) [CommRing k] (n : ℕ) :
+    (circleSingularHomologyIsoGroupHomology k n).hom =
+      HomologicalComplex.homologyMap ((singularChains k).map
+          (TopCat.ofHom circleToClassifyingSpace)) n ≫
+        (classifyingSpaceSingularHomologyIsoGroupHomology k (Multiplicative ℤ) n).hom := by
+  rw [← circleHomotopyEquivClassifyingSpace_toFun]
+  -- `Iso.trans_hom` does not rewrite here: the two isomorphisms are composed along a
+  -- definitional equality of `singularHomologyFunctor` with the homology of `singularChains`.
+  exact congrArg (· ≫ (classifyingSpaceSingularHomologyIsoGroupHomology k (Multiplicative ℤ) n).hom)
+    (circleHomotopyEquivClassifyingSpace.singularHomologyIso_hom (ModuleCat.of k k) n)
+
+end TauCeti
+
+namespace FundamentalGroup
+
+open CategoryTheory TauCeti TauCeti.HurewiczOne
+
+/-- On integral first homology, `TauCeti.circleToClassifyingSpace` sends the Hurewicz class of a
+loop at `1` to the class in `ℤᵃᵇ` of its degree, read through `Circle.fundamentalGroupMulEquiv`. -/
+theorem classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace
+    (γ : FundamentalGroup Circle 1) :
+    classifyingSpaceFirstHomologyAddEquiv (Multiplicative ℤ)
+      ((HomologicalComplex.homologyMap ((singularChains ℤ).map
+        (TopCat.ofHom circleToClassifyingSpace)) 1).hom
+          (hurewiczHomologyAddEquiv (X := TopCat.of Circle) 1
+            (Additive.ofMul (Group.Abelianization.of γ)))) =
+      Additive.ofMul (Group.Abelianization.of (Circle.fundamentalGroupMulEquiv 1 γ)) := by
+  rw [homologyMap_hurewiczHomologyAddEquiv_mapOfEq _ circleToClassifyingSpace_one, toMul_ofMul,
+    Group.Abelianization.map_of, classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv]
+  -- `TopCat.ofHom circleToClassifyingSpace` has underlying continuous map
+  -- `circleToClassifyingSpace` by `TopCat.hom_ofHom`, which `rw` cannot reach under the dependent
+  -- base point proof.
+  simp only [TopCat.hom_ofHom,
+    classifyingSpaceFundamentalGroupMulEquiv_mapOfEq_circleToClassifyingSpace]
+
+/-- **The first homology of the circle agrees with the first group homology of `ℤ`.** Under
+`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology`, the map induced by
+`TauCeti.circleToClassifyingSpace` sends the Hurewicz class of a loop `γ` at `1` to the class in
+`H₁(ℤ, ℤ)` of the `1`-cycle, with coefficient `1`, at the degree of `γ`. -/
+theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace
+    (γ : FundamentalGroup Circle 1) :
+    classifyingSpaceFirstHomologyAddEquivGroupHomology (Multiplicative ℤ)
+      ((HomologicalComplex.homologyMap ((singularChains ℤ).map
+        (TopCat.ofHom circleToClassifyingSpace)) 1).hom
+          (hurewiczHomologyAddEquiv (X := TopCat.of Circle) 1
+            (Additive.ofMul (Group.Abelianization.of γ)))) =
+      groupHomology.H1π (Rep.trivial ℤ (Multiplicative ℤ) ℤ)
+        ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (Multiplicative ℤ) ℤ)).inv
+          (Finsupp.single (Circle.fundamentalGroupMulEquiv 1 γ) 1)) := by
+  rw [classifyingSpaceFirstHomologyAddEquivGroupHomology_apply,
+    classifyingSpaceFirstHomologyAddEquiv_map_circleToClassifyingSpace,
+    TensorProduct.rid_symm_apply, groupHomology.H1AddEquivOfIsTrivial_symm_tmul]
+
+end FundamentalGroup
+
+namespace TauCeti
+
+open CategoryTheory _root_.FundamentalGroup TauCeti.HurewiczOne
+
+/-- The counterclockwise loop `Circle.expLoop` corresponds, under
+`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology`, to the class in `H₁(ℤ, ℤ)` of the
+`1`-cycle at the generator `ofAdd 1` with coefficient `1`. -/
+theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace_expLoop :
+    classifyingSpaceFirstHomologyAddEquivGroupHomology (Multiplicative ℤ)
+      ((HomologicalComplex.homologyMap ((singularChains ℤ).map
+        (TopCat.ofHom circleToClassifyingSpace)) 1).hom
+          (hurewiczHomologyAddEquiv (X := TopCat.of Circle) 1
+            (Additive.ofMul (Group.Abelianization.of
+              (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)))))) =
+      groupHomology.H1π (Rep.trivial ℤ (Multiplicative ℤ) ℤ)
+        ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (Multiplicative ℤ) ℤ)).inv
+          (Finsupp.single (Multiplicative.ofAdd 1) 1)) := by
+  rw [classifyingSpaceFirstHomologyAddEquivGroupHomology_map_circleToClassifyingSpace,
+    Circle.fundamentalGroupMulEquiv_expLoop]
 
 end TauCeti

@@ -21,7 +21,8 @@ identifies the one-point compactification of `Fin n → ℝ` with `Sⁿ`
 (`onePointEquivSphereOfFinrankEq`); the pole is the image of `∞`.  For `n = 0` the two cells are
 the two points of `S⁰`.
 
-* `TauCeti.spherePole h`: the `0`-cell of `Sⁿ`, for `h : Fintype.card ι = n + 1`.
+* `TauCeti.spherePole h`: the `0`-cell of `Sⁿ`, for `h : Fintype.card ι = n + 1`, and
+  `TauCeti.spherePolePoint h`, the same point as a point of the sphere.
 * `TauCeti.sphereTopCellMap h`: the characteristic map of the `n`-cell, a bijection from the open
   unit cube onto the complement of the pole.
 * `TauCeti.sphereCWComplex h`: the CW structure, which is finite
@@ -30,6 +31,8 @@ the two points of `S⁰`.
   `(k - 1)`-skeleton) is the pole (`TauCeti.skeletonLT_sphereCWComplex`).
 * `TauCeti.finiteCWType_sphere`: the unit sphere of every finite-dimensional real normed space has
   finite CW type.
+* `TauCeti.finiteCWType_onePoint`: so has the one-point compactification of every
+  finite-dimensional real vector space, for instance the Riemann sphere `OnePoint ℂ`.
 
 ## References
 
@@ -124,6 +127,24 @@ theorem sphereTopCellMap_mem_sphere (x : Fin n → ℝ) :
     sphereTopCellMap h x ∈ sphere (0 : EuclideanSpace ℝ ι) 1 :=
   (sphereOnePointEquiv h _).2
 
+/-- The pole `TauCeti.spherePole h`, as a point of the unit sphere `Sⁿ`. -/
+def spherePolePoint : sphere (0 : EuclideanSpace ℝ ι) 1 :=
+  ⟨spherePole h, spherePole_mem_sphere h⟩
+
+@[simp]
+theorem coe_spherePolePoint : (spherePolePoint h : EuclideanSpace ℝ ι) = spherePole h :=
+  (rfl)
+
+/-- The centre of the top cell of the unit sphere `Sⁿ`, the image of the origin under its
+characteristic map `TauCeti.sphereTopCellMap h`, as a point of the sphere. -/
+def sphereTopCellCenter : sphere (0 : EuclideanSpace ℝ ι) 1 :=
+  ⟨sphereTopCellMap h 0, sphereTopCellMap_mem_sphere h 0⟩
+
+@[simp]
+theorem coe_sphereTopCellCenter :
+    (sphereTopCellCenter h : EuclideanSpace ℝ ι) = sphereTopCellMap h 0 :=
+  (rfl)
+
 /-- The characteristic map of the top cell collapses the boundary of the cube to the pole. -/
 @[simp]
 theorem sphereTopCellMap_apply_of_norm_eq_one {x : Fin n → ℝ} (hx : ‖x‖ = 1) :
@@ -134,8 +155,8 @@ theorem sphereTopCellMap_apply_of_norm_eq_one {x : Fin n → ℝ} (hx : ‖x‖ 
 /-- The characteristic map of the top cell of `Sⁿ` is continuous on the closed unit ball, as a
 CW characteristic map must be. -/
 theorem continuousOn_sphereTopCellMap : ContinuousOn (sphereTopCellMap h) (closedBall 0 1) :=
-  (continuous_subtype_val.comp (sphereOnePointEquiv h).continuous).comp_continuousOn
-    continuousOn_unitBallToOnePoint
+  (continuous_subtype_val.comp ((sphereOnePointEquiv h).continuous.comp
+    continuous_unitBallToOnePoint)).continuousOn
 
 /-- The inverse of the characteristic map of the top cell of `Sⁿ` is continuous on the open
 cell `Sⁿ \ {pole}`. -/
@@ -240,6 +261,18 @@ private theorem map_sphereCWComplex_inl {m : ℕ} (hm : m = 0) (x : Fin m → �
   -- is `sphereCellMap h 0 ⟨.inl _⟩ = PartialEquiv.single 0 (spherePole h)` by definition.
   rfl
 
+/-- For `n ≠ 0`, the characteristic map of the `n`-cell of `Sⁿ` is `TauCeti.sphereTopCellMap h`. -/
+theorem map_sphereCWComplex_of_ne_zero (hn : n ≠ 0)
+    (i : letI := sphereCWComplex h; cell (sphere (0 : EuclideanSpace ℝ ι) 1) n) :
+    letI := sphereCWComplex h
+    map (C := sphere (0 : EuclideanSpace ℝ ι) 1) n i = sphereTopCellMap h := by
+  -- `CWComplex.mkFinite` takes the supplied families as its `cell` and `map` fields, so the
+  -- `n`-cells are `SphereCell n n` and the characteristic map of the top cell is
+  -- `sphereCellMap h n ⟨.inr _⟩ = sphereTopCellMap h` by definition.
+  obtain ⟨⟨⟨h₀⟩⟩ | ⟨⟨h₁⟩⟩⟩ : SphereCell.{u} n n := i
+  · exact absurd h₀ hn
+  · rfl
+
 /-- The CW structure on `Sⁿ` is finite. -/
 theorem finite_sphereCWComplex :
     letI := sphereCWComplex h
@@ -299,5 +332,14 @@ instance finiteCWType_sphere {E : Type u} [NormedAddCommGroup E] [NormedSpace �
   have := finite_sphereCWComplex h
   exact (sphereHomeomorphOfFinrankEq (F := EuclideanSpace ℝ (ULift.{u} (Fin (n + 1))))
     (by simp [hn])).finiteCWType
+
+/-- The one-point compactification of a finite-dimensional real vector space `V` has finite CW
+type: it is homeomorphic to the unit sphere of dimension `dim V`. In particular the Riemann sphere
+`OnePoint ℂ` has finite CW type. -/
+instance finiteCWType_onePoint {V : Type u} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+    [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] :
+    FiniteCWType (OnePoint V) :=
+  (onePointEquivSphereOfFinrankEq
+    (ι := ULift.{u} (Fin (finrank ℝ V + 1))) (by simp)).finiteCWType
 
 end TauCeti

@@ -5,20 +5,16 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.RingTheory.Smooth.Basic
+public import TauCeti.RingTheory.Extension.Cotangent.Smooth
 
 /-!
 # Projective cotangent modules at augmented points
 
-For an augmentation `f : A →ₐ[R] R`, the module `ker(f) / ker(f)²` is projective over `R`
-when `A` is formally smooth. This does not require a noetherian base or a finite-type
-algebra. It supplies the projectivity input for forming the adjoint comodule of a
-smooth affine group over a ring.
-
-The comparison uses Mathlib's `Algebra.Extension.cotangentComplex` and its splitting
-criterion for formal smoothness. This map is split injective, exhibiting the cotangent
-module as a direct summand of the
-fiber of the projective module of differentials of `A`.
+For an augmentation `f : A →ₐ[R] R` of a formally smooth `R`-algebra `A`, the module
+`ker(f) / ker(f)²` is projective over `R`. This is the specialization of
+`Algebra.Extension.projective_cotangent_of_formallySmooth` to the extension `A → R` given by `f`.
+It does not require a noetherian base or a finite-type algebra. It supplies the projectivity
+input for forming the adjoint comodule of a smooth affine group over a ring.
 
 ## References
 
@@ -39,17 +35,13 @@ theorem projective_cotangent_ker_of_formallySmooth (f : A →ₐ[R] R)
     Module.Projective R (RingHom.ker f.toRingHom).Cotangent := by
   let P : Algebra.Extension R R :=
     Algebra.Extension.ofSurjective f (fun r ↦ ⟨algebraMap R A r, f.commutes r⟩)
-  have hmap : algebraMap P.Ring R = f.toRingHom :=
-    RingHom.algebraMap_toAlgebra f.toRingHom
-  have hker : P.ker = RingHom.ker f.toRingHom := congrArg RingHom.ker hmap
-  let _ : Algebra.FormallySmooth R P.Ring := inferInstanceAs (Algebra.FormallySmooth R A)
-  obtain ⟨l, hl⟩ := P.formallySmooth_iff_split_injection.mp
-    (inferInstance : Algebra.FormallySmooth R R)
-  let _ : Module.Projective R P.Cotangent :=
-    Module.Projective.of_split P.cotangentComplex l hl
-  let _ : Module.Projective R P.ker.Cotangent :=
-    Module.Projective.of_equiv (P.cotangentEquivCotangentKer.restrictScalars R)
-  exact Module.Projective.of_equiv
+  have hker : P.ker = RingHom.ker f.toRingHom :=
+    congrArg RingHom.ker (RingHom.algebraMap_toAlgebra f.toRingHom)
+  have : Algebra.FormallySmooth R P.Ring := ‹_›
+  have := P.projective_cotangent_of_formallySmooth
+  have : Module.Projective R P.ker.Cotangent :=
+    .of_equiv (P.cotangentEquivCotangentKer.restrictScalars R)
+  exact .of_equiv
     ((Ideal.Cotangent.equivOfEq P.ker (RingHom.ker f.toRingHom) hker).restrictScalars R)
 
 end AlgHom

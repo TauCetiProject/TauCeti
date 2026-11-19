@@ -13,8 +13,8 @@ public import Mathlib.Data.Fintype.Perm
 
 A finitely enumerable type has a finitely enumerable permutation group. The enumeration uses
 Mathlib's `permsOfList` on the enumeration of the carrier, generating only permutations
-instead of filtering all endofunctions. This is useful when a search needs independent
-permutations of a finite set, such as aligning modular central-character rows at conjugate roots.
+instead of filtering all endofunctions. This is useful when an executable search ranges over
+the permutations of a finite set.
 -/
 
 public section

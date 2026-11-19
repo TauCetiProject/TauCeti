@@ -7,6 +7,9 @@ module
 
 public import Mathlib.RingTheory.Smooth.Fiber
 public import Mathlib.RingTheory.Smooth.Flat
+public import TauCeti.RingTheory.Unramified.LocalRing
+import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RingTheory.Smooth.Fiber.Basic
 
 /-!
 # Étaleness at a prime: flatness and unramifiedness of the local ring
@@ -21,11 +24,9 @@ The forward direction spreads étaleness to some `S_f` with `f ∉ q`
 (`Algebra.exists_etale_of_isEtaleAt`), which is flat, and localizes. For the reverse direction,
 put `p = q ∩ R`. The local ring `S_q` is flat over `R_p`, and its closed fibre
 `κ(p) ⊗[R_p] S_q` is formally unramified and essentially of finite type over the field `κ(p)`,
-hence formally étale. Mathlib's local criterion
-`Algebra.FormallySmooth.of_formallySmooth_residueField_tensor` then makes `S_q` formally smooth
-over `R_p`; with formal unramifiedness it is formally étale over `R_p`, hence over `R`. The
-presentation of `S_q` as a localization of the finitely presented `R_p`-algebra `S_p` is set up
-as in Mathlib's proof of `Algebra.IsSmoothAt.of_formallySmooth_fiber`.
+hence formally étale. The local criterion
+`Algebra.IsSmoothAt.of_flat_of_formallySmooth_residueField_tensor` then makes `S` smooth over `R`
+at `q`; with formal unramifiedness it is étale over `R` at `q`.
 
 ## Main results
 
@@ -34,6 +35,10 @@ as in Mathlib's proof of `Algebra.IsSmoothAt.of_formallySmooth_fiber`.
 * `Algebra.IsEtaleAt.flat_localization`: the flatness half of the forward direction.
 * `Algebra.IsEtaleAt.of_flat_of_isUnramifiedAt`: the reverse direction, the pointwise form of
   Mathlib's `Algebra.IsEtaleAt.of_isUnramifiedAt_of_flat`.
+* `Algebra.IsEtaleAt.of_isUnramifiedAt_of_isDedekindDomain`: if `R_p` is a Dedekind domain, for
+  instance a discrete valuation ring, and `S_q` is a domain but not a field, then flatness is
+  automatic, so `S` is étale over `R` at `q` as soon as it is unramified there. This is the case of
+  dimension one of purity of the branch locus.
 
 ## References
 
@@ -41,6 +46,8 @@ as in Mathlib's proof of `Algebra.IsSmoothAt.of_formallySmooth_fiber`.
   global form: étale is flat, unramified and of finite presentation.
 * [The Stacks Project, Tag 00TF](https://stacks.math.columbia.edu/tag/00TF), smoothness at a prime
   from flatness and a smooth fibre.
+* [The Stacks Project, Lemma 58.21.4 (0BMB)](https://stacks.math.columbia.edu/tag/0BMB), purity of
+  the branch locus, whose proof starts from the case of dimension one.
 -/
 
 public section
@@ -74,36 +81,14 @@ theorem IsEtaleAt.of_flat_of_isUnramifiedAt [FinitePresentation R S] (q : Ideal 
     IsEtaleAt R q := by
   let p := q.under R
   let Rp := Localization.AtPrime p
-  let Sp := Localization (algebraMapSubmonoid S p.primeCompl)
   let Sq := Localization.AtPrime q
   let := Localization.AtPrime.algebraOfLiesOver p q
-  -- Present `S_q` as a localization of the finitely presented `R_p`-algebra `S_p`.
-  let f : Sp →ₐ[S] Sq := IsLocalization.liftAlgHom (M := algebraMapSubmonoid S p.primeCompl)
-      (f := Algebra.ofId _ _) (by
-    rintro ⟨_, x, hx, rfl⟩
-    simpa using! IsLocalization.map_units (M := q.primeCompl) Sq ⟨algebraMap _ _ x,
-      by simp_all [q.over_def p]⟩)
-  algebraize [f.toRingHom]
-  have : IsScalarTower R Sp Sq := .to₁₃₄ _ S _ _
-  have : IsScalarTower Rp Sp Sq := .of_algebraMap_eq' <| by
-    apply IsLocalization.ringHom_ext p.primeCompl
-    simp only [RingHom.comp_assoc, ← IsScalarTower.algebraMap_eq]
-  have : IsLocalization (algebraMapSubmonoid Sp q.primeCompl) Sq :=
-    .isLocalization_of_submonoid_le _ _ (algebraMapSubmonoid S p.primeCompl) _
-      (by rintro _ ⟨x, hx, rfl⟩; simp_all [q.over_def p])
-  have : FinitePresentation Rp Sp := by
-    have : Algebra.IsPushout R Rp S Sp :=
-      .symm <| Algebra.isPushout_of_isLocalization p.primeCompl _ _ _
-    exact .equiv (Algebra.IsPushout.equiv R Rp S Sp)
-  -- The closed fibre of `R_p → S_q` is formally étale, so `S_q` is formally smooth over `R_p`.
+  -- The closed fibre of `R_p → S_q` is formally étale, so `S` is smooth over `R` at `q`.
   have : Module.Flat Rp Sq := (Module.flat_iff_of_isLocalization Rp p.primeCompl Sq).mpr ‹_›
   have : FormallyUnramified Rp Sq := .of_restrictScalars R _ _
   have : EssFiniteType Rp Sq := .of_comp R _ _
-  have : FormallySmooth Rp Sq := FormallySmooth.of_formallySmooth_residueField_tensor
-    (P := Sp) (algebraMapSubmonoid _ q.primeCompl)
-  have : FormallyEtale Rp Sq :=
-    FormallyEtale.iff_formallyUnramified_and_formallySmooth.mpr ⟨‹_›, ‹_›⟩
-  exact FormallyEtale.comp R Rp Sq
+  have : IsSmoothAt R q := .of_flat_of_formallySmooth_residueField_tensor p q
+  exact FormallyEtale.iff_formallyUnramified_and_formallySmooth.mpr ⟨‹_›, ‹_›⟩
 
 /-- A finitely presented `R`-algebra `S` is étale over `R` at a prime `q` if and only if `S_q` is
 flat over `R` and `S` is unramified over `R` at `q`. -/
@@ -112,5 +97,22 @@ theorem isEtaleAt_iff_flat_and_isUnramifiedAt [FinitePresentation R S] (q : Idea
     IsEtaleAt R q ↔ Module.Flat R (Localization.AtPrime q) ∧ IsUnramifiedAt R q :=
   ⟨fun _ ↦ ⟨IsEtaleAt.flat_localization q, inferInstance⟩,
     fun ⟨_, _⟩ ↦ IsEtaleAt.of_flat_of_isUnramifiedAt q⟩
+
+/-- **Purity in dimension one.** Let `S` be finitely presented over `R`, and `q` a prime of `S`
+over `p` such that `R_p` is a Dedekind domain, for instance a discrete valuation ring, and `S_q`
+is a domain but not a field. If `S` is unramified over `R` at `q`, then it is étale over `R` at
+`q`. -/
+theorem IsEtaleAt.of_isUnramifiedAt_of_isDedekindDomain [FinitePresentation R S] (q : Ideal S)
+    [q.IsPrime] [IsDedekindDomain (Localization.AtPrime (q.under R))]
+    [IsDomain (Localization.AtPrime q)] (hq : ¬IsField (Localization.AtPrime q))
+    [IsUnramifiedAt R q] : IsEtaleAt R q := by
+  let Rp := Localization.AtPrime (q.under R)
+  let := Localization.AtPrime.algebraOfLiesOver (q.under R) q
+  have : FormallyUnramified Rp (Localization.AtPrime q) := .of_restrictScalars R _ _
+  have : EssFiniteType Rp (Localization.AtPrime q) := .of_comp R _ _
+  -- `S_q` is torsion-free over the Dedekind domain `R_p`, hence flat over it and so over `R`.
+  have := FormallyUnramified.faithfulSMul_of_not_isField (R := Rp) hq
+  have : Module.Flat R (Localization.AtPrime q) := .trans R Rp _
+  exact .of_flat_of_isUnramifiedAt q
 
 end Algebra

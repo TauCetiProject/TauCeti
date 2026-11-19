@@ -30,14 +30,16 @@ and vanishing on boundaries.
 * `TauCeti.simplexChain σ a`: the chain of a singular simplex `σ` with coefficient `a`.
 * `TauCeti.chainsDesc f`: the linear map out of the singular `n`-chains with the given values on
   singular simplices.
-* `TauCeti.singularChainsLinearEquivFinsupp k X n`: the singular `n`-chains are the finitely
-  supported functions on singular `n`-simplices.
 * `TauCeti.singularAugment k X`: the augmentation of the simplicial singular chains.
 * `ContinuousMap.singularHomologyMap`: the induced linear map on singular homology.
 * `TauCeti.singularChainsAugmentation k X`: the augmentation, as a chain map to `k` in degree `0`.
 
 ## Main results
 
+* `TauCeti.singularHomologyFunctor_obj_obj`: singular homology with coefficients in `k` is the
+  homology of `singularChains k`.
+* `TauCeti.subsingleton_singularChains_homology_iff_of_isIso`: a homology isomorphism identifies
+  the vanishing of the homology of the chains of its source and target.
 * `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
   and additive maps out of the chains with integer coefficients, are determined on simplices.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
@@ -60,6 +62,23 @@ variable (k : Type u) [Ring k]
 /-- The **simplicial singular chain complex** functor with coefficients in the ring `k`. -/
 abbrev singularChains : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ :=
   (singularChainComplexFunctor (ModuleCat.{u} k)).obj (ModuleCat.of k k)
+
+/-- Singular homology with coefficients in `k` is, by definition, the homology of the simplicial
+singular chains `singularChains k`. -/
+theorem singularHomologyFunctor_obj_obj (X : TopCat.{u}) (i : ℕ) :
+    ((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).obj X =
+      ((singularChains k).obj X).homology i :=
+  rfl
+
+/-- A map inducing an isomorphism on singular homology with coefficients in `k` in degree `i`
+identifies the vanishing of the degree-`i` homology of the chains of its source and target. -/
+theorem subsingleton_singularChains_homology_iff_of_isIso {X Y : TopCat.{u}} (f : X ⟶ Y) (i : ℕ)
+    [IsIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map f)] :
+    Subsingleton (((singularChains k).obj X).homology i) ↔
+      Subsingleton (((singularChains k).obj Y).homology i) := by
+  rw [← singularHomologyFunctor_obj_obj, ← singularHomologyFunctor_obj_obj]
+  exact (asIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map f))
+    |>.toLinearEquiv.toEquiv.subsingleton_congr
 
 section Singular
 
@@ -124,33 +143,6 @@ theorem chainsDesc_simplexChain_one {X : TopCat.{u}} {n : ℕ} {V : Type u} [Add
     [Module k V] (f : (TopCat.toSSet.obj X) _⦋n⦌ → V) (s : (TopCat.toSSet.obj X) _⦋n⦌) :
     chainsDesc f (simplexChain s (1 : k)) = f s := by
   rw [chainsDesc_simplexChain, one_smul]
-
-variable (k) in
-/-- **The singular `n`-chains are the formal combinations of singular `n`-simplices**: the linear
-equivalence with the finitely supported functions on singular `n`-simplices, sending the chain of
-a simplex with coefficient `a` to the function supported at that simplex with value `a`. -/
-def singularChainsLinearEquivFinsupp (X : TopCat.{u}) (n : ℕ) :
-    ((singularChains k).obj X).X n ≃ₗ[k] ((TopCat.toSSet.obj X) _⦋n⦌ →₀ k) :=
-  LinearEquiv.ofLinearMap (chainsDesc fun σ ↦ Finsupp.single σ 1)
-    (Finsupp.linearCombination k fun σ ↦ simplexChain σ 1)
-    (Finsupp.lhom_ext' fun σ ↦ LinearMap.ext_ring (by simp))
-    (singularChains_linearMap_ext fun σ ↦ by simp)
-
-/-- The chain of a simplex with coefficient `a` is the function supported at the simplex with
-value `a`. -/
-@[simp]
-theorem singularChainsLinearEquivFinsupp_simplexChain {X : TopCat.{u}} {n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
-    singularChainsLinearEquivFinsupp k X n (simplexChain σ a) = Finsupp.single σ a := by
-  simp [singularChainsLinearEquivFinsupp]
-
-/-- The function supported at a simplex with value `a` is the chain of the simplex with
-coefficient `a`. -/
-@[simp]
-theorem singularChainsLinearEquivFinsupp_symm_single {X : TopCat.{u}} {n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌) (a : k) :
-    (singularChainsLinearEquivFinsupp k X n).symm (Finsupp.single σ a) = simplexChain σ a := by
-  rw [LinearEquiv.symm_apply_eq, singularChainsLinearEquivFinsupp_simplexChain]
 
 end Singular
 
@@ -281,6 +273,14 @@ abbrev singularHomologyMap {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace
     ((singularChains k).obj (TopCat.of Y)).homology n →ₗ[k]
       ((singularChains k).obj (TopCat.of Z)).homology n :=
   (HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom g)) n).hom
+
+variable {k n} in
+/-- The identity map induces the identity on singular homology. -/
+@[simp]
+theorem singularHomologyMap_id {Y : Type u} [TopologicalSpace Y] (x) :
+    singularHomologyMap k n (ContinuousMap.id Y) x = x := by
+  rw [singularHomologyMap, TopCat.ofHom_id, CategoryTheory.Functor.map_id,
+    HomologicalComplex.homologyMap_id, ModuleCat.hom_id, LinearMap.id_apply]
 
 variable {k n} in
 /-- Singular homology respects composition of continuous maps. -/

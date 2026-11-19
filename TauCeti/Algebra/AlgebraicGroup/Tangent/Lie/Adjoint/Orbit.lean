@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Basic
 
 /-!
 # Adjoint orbits as homogeneous spaces

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.MinimalResolution
 public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare.Basic
 
 /-!
 # Detecting linear resolutions by bigraded Ext Poincaré series
@@ -30,6 +30,9 @@ bigraded Ext Poincaré matrix is diagonal.
 
 * `TauCeti.GradedProjectiveResolution.IsMinimal.isLinear_iff_isDiagonal_bigradedExtPoincareSeries`:
   diagonal support of the bigraded Ext Poincaré series detects linearity.
+* `TauCeti.GradedProjectiveResolution.IsMinimal.coeff_bigradedExtPoincareSeries_eq_zero_of_lt`:
+  for a minimal resolution of a module starting in degree zero, the series has no coefficients
+  below the diagonal.
 * `TauCeti.forall_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal`: simultaneous linearity of
   chosen minimal resolutions is equivalent to diagonal support of every matrix entry.
 * `TauCeti.forall_exists_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal`: over a semisimple
@@ -94,6 +97,39 @@ theorem IsMinimal.isLinear_iff_isDiagonal_bigradedExtPoincareSeries (hr : r.IsMi
     exact (extLinearEquivOfIso k (Iso.refl M)
       ((GradedModuleCat.shiftPowIso 𝒜 j).app N) n).symm.injective.subsingleton
 
+/-- **The bigraded Ext Poincaré series of a minimally resolved module vanishes below a
+diagonal.** If `M` has no nonzero homogeneous elements below degree `c` and its minimal resolution
+has finite-dimensional terms, then the coefficient `dim_k Extᵐ(M,N{j})` vanishes for `j < c + m`
+whenever `N` is concentrated in degree zero. For `c = 0` there are no coefficients below the
+diagonal. -/
+theorem IsMinimal.coeff_bigradedExtPoincareSeries_eq_zero_of_lt (hr : r.IsMinimal) {c : ℤ}
+    (hM : ∀ p < c, M.grading.piece p = ⊥) {N : GradedModuleCat.{v} 𝒜}
+    (hN : ∀ q, q ≠ 0 → N.grading.piece q = ⊥)
+    (h : IsGradedExtInternallyFinite.{w} k (GradedModuleCat.shift 𝒜) M N) (b : ℕ) {m j : ℤ}
+    (hjm : j < c + m) :
+    (bigradedExtPoincareSeries.{w} k (GradedModuleCat.shift 𝒜) h b).coeff (m, j) = 0 := by
+  classical
+  cases m with
+  | negSucc n => exact coeff_bigradedExtPoincareSeries_negSucc _ _ h b n j
+  | ofNat n =>
+    rw [Int.ofNat_eq_natCast] at hjm ⊢
+    rw [coeff_bigradedExtPoincareSeries]
+    split_ifs
+    · choose lb hlb using fun n ↦ (r.grading n).finite_piece_ne_bot.bddBelow
+      have hshift : Subsingleton (Ext.{w} M (N.shiftObj j) n) :=
+        hr.subsingleton_ext_of_lt hM lb
+          (fun n p hp ↦ by
+            by_contra hne
+            have := hlb n hne
+            omega)
+          (p := j) (by omega) _ <| by
+            simpa using GradedModuleCat.shiftObj_piece_eq_bot_of_concentrated hN j
+      rw [← GradedModuleCat.shiftFunctor_obj] at hshift
+      have := (extLinearEquivOfIso k (Iso.refl M)
+        ((GradedModuleCat.shiftPowIso 𝒜 j).app N) n).injective.subsingleton
+      exact Module.finrank_zero_of_subsingleton
+    · rfl
+
 end TauCeti.GradedProjectiveResolution
 
 namespace TauCeti
@@ -136,14 +172,8 @@ theorem forall_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal
     exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
       ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj) n).injective.subsingleton
   · intro hdiag i
-    apply ((hr i).isLinear_iff_subsingleton_ext_shiftObj_simple hneg).2
-    intro N hNfinite hNsimple hNzero n p hnp
-    let _ : Module.Finite k N := hNfinite
-    let _ : Module.Finite A N := Module.Finite.of_restrictScalars_finite k A N
-    let N' : (gradedFiniteModules 𝒜).FullSubcategory :=
-      ⟨N, gradedFiniteModules_iff.2 inferInstance⟩
-    obtain ⟨j, ⟨eN : N'.obj ≅ (S j).obj⟩⟩ :=
-      hS.exists_iso_of_concentrated S hSzero N' hNsimple hNzero
+    refine ((hr i).isLinear_iff_subsingleton_ext_shiftObj_family hneg hS hSzero).2
+      fun j n p hnp ↦ ?_
     have hij := hdiag i j
     rw [bigradedExtPoincareMatrix_apply] at hij
     have hExt : Subsingleton
@@ -153,8 +183,7 @@ theorem forall_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal
         (hb i j)).1 hij) n p hnp
     rw [← GradedModuleCat.shiftFunctor_obj]
     exact (extLinearEquivOfIso k (Iso.refl (S i).obj)
-      ((GradedModuleCat.shiftFunctor (𝒜 := 𝒜) p).mapIso eN ≪≫
-        ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj).symm) n).injective.subsingleton
+      ((GradedModuleCat.shiftPowIso 𝒜 p).app (S j).obj).symm n).injective.subsingleton
 
 /-- **Bigraded Ext detects linear resolutions over a semisimple degree-zero part.** Suppose that
 `A` is finite-dimensional and nonnegatively graded, with semisimple degree-zero part. For an
@@ -188,7 +217,7 @@ theorem forall_exists_isLinear_iff_bigradedExtPoincareMatrix_isDiagonal
   constructor
   · intro hlinear i
     apply ((hr i).isLinear_iff_subsingleton_ext_shiftObj_simple hneg).2
-    intro N hNfinite hNsimple hNzero n p hnp
+    intro N _ _ hNzero n p hnp
     obtain ⟨r', hr'⟩ := hlinear i
     exact hr'.subsingleton_ext_shiftObj_of_ne hNzero n p hnp
   · intro hlinear i

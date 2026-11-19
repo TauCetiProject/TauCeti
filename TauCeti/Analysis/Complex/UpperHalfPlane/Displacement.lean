@@ -206,6 +206,20 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
     h₁₀]
   linear_combination 2 * k 0 0 ^ 2 * hdet + (X 0 0 ^ 2 + X 0 1 ^ 2 + X 1 0 ^ 2 + X 1 1 ^ 2) * hab
 
+/-- The commutator of a noncentral element fixing `z` with an element moving `z` is
+hyperbolic, with trace strictly greater than two. -/
+theorem two_lt_trace_commutatorElement_of_smul_eq_self {g h : SL(2, ℝ)} {z : ℍ}
+    (hz : g • z = z) (hg : (g : PSL(2, ℝ)) ≠ 1) (hh : h • z ≠ z) :
+    2 < ((⁅g, h⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace := by
+  have hell := (Matrix.isElliptic_iff_abs_trace_lt_two g.det_coe).mp
+    (isElliptic_of_smul_eq_self_of_ne_one hz hg)
+  have hκ : 0 < (4 - (g : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2) / 2 := by
+    nlinarith [sq_abs (g : Matrix (Fin 2) (Fin 2) ℝ).trace,
+      abs_nonneg (g : Matrix (Fin 2) (Fin 2) ℝ).trace]
+  rw [trace_commutatorElement_of_smul_eq_self hz]
+  have := mul_pos hκ (sub_pos.mpr (Real.one_lt_cosh.mpr (dist_ne_zero.mpr hh)))
+  linarith
+
 /-! ### Bounds from the displacement of a point -/
 
 /-- The polynomial inequality behind `abs_trace_commutatorElement_sub_two_le`, in the coordinates
@@ -299,8 +313,6 @@ theorem cosh_dist_dilation_smul (s : ℝ) (z : ℍ) :
   have him : (dilation s • z).im = Real.exp s * z.im := by
     rw [← UpperHalfPlane.coe_im, TauCeti.UpperHalfPlane.coe_dilation_smul, Complex.im_ofReal_mul,
       UpperHalfPlane.coe_im]
-  have hy := z.im_pos
-  have he := Real.exp_pos s
   rw [cosh_dist', hre, him, Real.cosh_eq, Real.exp_neg]
   field_simp
   ring
@@ -366,7 +378,6 @@ theorem one_add_two_mul_sq_le_cosh_dist_smul {g : SL(2, ℝ)} (h₀₀ : g 0 0 =
       Complex.normSq_apply, coe_im, zero_div, Complex.neg_re, Complex.ofReal_re, neg_mul, zero_sub]
     ring
   have hy := z.im_pos
-  have hb2 : 0 < g 0 1 ^ 2 := by positivity
   have hr : 0 < z.re ^ 2 + z.im ^ 2 := by positivity
   rw [cosh_dist', hre, him, le_div_iff₀ (by positivity), div_pow]
   field_simp

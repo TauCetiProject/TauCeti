@@ -47,7 +47,8 @@ of `H⁰` is **distinguished** when it is isomorphic to a cone triangle
   by the projections onto `Q`, the comparison morphism `Q ⟶ Q⟦1⟧` and the inclusion of `Q⟦1⟧`.
 
 The converse half of the rotation axiom, that a triangle whose rotation is distinguished is
-distinguished, is not proved here.
+distinguished, is proved in `TauCeti/CategoryTheory/DG/Twisted/Pretriangulated.lean`, which
+assembles the pretriangulated structure.
 
 ## Main definitions
 
@@ -62,6 +63,9 @@ distinguished, is not proved here.
 
 ## Main results
 
+* `TauCeti.DGTwistedObject.dgDifferential_coneHomOfHomotopy` and
+  `TauCeti.DGTwistedObject.dgDifferential_coneHomOfHomotopy_zero`: homotopy-commutative and
+  strictly commutative squares induce closed morphisms of cones.
 * `TauCeti.DGTwistedObject.isomorphic_distinguished`,
   `TauCeti.DGTwistedObject.contractible_distinguished`,
   `TauCeti.DGTwistedObject.distinguished_cocone_triangle` and
@@ -194,8 +198,8 @@ theorem dgDifferential_coneHomOfHomotopy {a : DGHom R 0 P P'} {b : DGHom R 0 Q Q
     {k : DGHom R (-1) P Q'} (ha : dgDifferential R 0 a = 0) (hb : dgDifferential R 0 b = 0)
     (hk : dgDifferential R (-1) k = dgComp R u b (add_zero 0) - dgComp R a u' (add_zero 0)) :
     dgDifferential R 0 (coneHomOfHomotopy hu hu' a b k) = 0 := by
-  have ha' : dgDifferential R 0 ((shiftFunctor R 1).dgMap 0 a) = 0 := by
-    rw [← (shiftFunctor R 1).dgMap_dgDifferential, ha, map_zero]
+  have ha' : dgDifferential R 0 ((shiftFunctor R 1).dgMap 0 a) = 0 :=
+    (shiftFunctor R 1).dgDifferential_dgMap_eq_zero ha
   -- After the Leibniz rule, every term is the projection onto `P⟦1⟧` followed by a degree-one
   -- morphism `P⟦1⟧ ⟶ cone u'`; these are brought to the form `P⟦1⟧ ⟶ P ⟶ Q' ⟶ cone u'`.
   have h₁ : dgComp R (dgComp R (extensionSnd R (dgDifferential_coneMorphism hu)) (coneMorphism R u)
@@ -226,6 +230,15 @@ theorem dgDifferential_coneHomOfHomotopy {a : DGHom R 0 P P'} {b : DGHom R 0 Q Q
     Units.neg_smul, sub_eq_add_neg, neg_dgComp, dgComp_neg, dgComp_add, add_dgComp, h₁, h₂, h₃]
   abel
 
+/-- **A strictly commutative square induces a closed morphism of cones**: if `a` and `b` are closed
+and `u ≫ b = a ≫ u'`, then the morphism of cones induced by `a` and `b` with zero homotopy is
+closed. -/
+theorem dgDifferential_coneHomOfHomotopy_zero {a : DGHom R 0 P P'} {b : DGHom R 0 Q Q'}
+    (ha : dgDifferential R 0 a = 0) (hb : dgDifferential R 0 b = 0)
+    (h : dgComp R u b (add_zero 0) = dgComp R a u' (add_zero 0)) :
+    dgDifferential R 0 (coneHomOfHomotopy hu hu' a b 0) = 0 :=
+  dgDifferential_coneHomOfHomotopy hu hu' ha hb (by rw [map_zero, h, sub_self])
+
 /-- The inclusion of `Q` into `cone u` followed by the morphism of cones induced by `a`, `b` and
 `k` is `b` followed by the inclusion of `Q'` into `cone u'`. -/
 @[simp↓]
@@ -236,6 +249,20 @@ theorem dgComp_extensionInl_coneHomOfHomotopy (a : DGHom R 0 P P') (b : DGHom R 
       dgComp R b (extensionInl R (dgDifferential_coneMorphism hu')) (add_zero 0) := by
   simp only [coneHomOfHomotopy_def, dgComp_add, dgComp_extensionInl_extensionFst_assoc,
     dgComp_extensionInl_extensionSnd_assoc, add_zero]
+
+/-- The inclusion of `Q` into `cone u` followed by the morphism of cones induced by `a`, `b` and
+`k` and then `x` is `b` followed by the inclusion of `Q'` into `cone u'` and then `x`. -/
+@[simp↓]
+theorem dgComp_extensionInl_coneHomOfHomotopy_assoc (a : DGHom R 0 P P') (b : DGHom R 0 Q Q')
+    (k : DGHom R (-1) P Q') {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {n : ℤ}
+    (x : DGHom R n (cone u' hu') Z) :
+    dgComp R (extensionInl R (dgDifferential_coneMorphism hu))
+        (dgComp R (coneHomOfHomotopy hu hu' a b k) x (zero_add n)) (zero_add n) =
+      dgComp R b (dgComp R (extensionInl R (dgDifferential_coneMorphism hu')) x (zero_add n))
+        (zero_add n) := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionInl_coneHomOfHomotopy,
+    dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega)]
 
 /-- The morphism of cones induced by `a`, `b` and `k` followed by the projection of `cone u'`
 onto `P'⟦1⟧` is the projection of `cone u` onto `P⟦1⟧` followed by the shift of `a`. -/
@@ -252,6 +279,21 @@ theorem dgComp_coneHomOfHomotopy_extensionSnd (a : DGHom R 0 P P') (b : DGHom R 
     dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero, dgComp_dgId,
     zero_add, add_zero]
 
+/-- The morphism of cones induced by `a`, `b` and `k` followed by the projection of `cone u'`
+onto `P'⟦1⟧` and then `x` is the projection of `cone u` onto `P⟦1⟧` followed by the shift of `a`
+and then `x`. -/
+@[simp↓]
+theorem dgComp_coneHomOfHomotopy_extensionSnd_assoc (a : DGHom R 0 P P') (b : DGHom R 0 Q Q')
+    (k : DGHom R (-1) P Q') {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {n : ℤ}
+    (x : DGHom R n ((shiftFunctor R 1).obj P') Z) :
+    dgComp R (coneHomOfHomotopy hu hu' a b k)
+        (dgComp R (extensionSnd R (dgDifferential_coneMorphism hu')) x (zero_add n)) (zero_add n) =
+      dgComp R (extensionSnd R (dgDifferential_coneMorphism hu))
+        (dgComp R ((shiftFunctor R 1).dgMap 0 a) x (zero_add n)) (zero_add n) := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_coneHomOfHomotopy_extensionSnd,
+    dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega)]
+
 /-- The inclusion of `P⟦1⟧` into `cone u` followed by the morphism of cones induced by `a`, `b`
 and `k` is the shift of `a` followed by the inclusion of `P'⟦1⟧` into `cone u'`, minus
 `P⟦1⟧ ⟶ P` followed by `k` and the inclusion of `Q'` into `cone u'`. -/
@@ -266,6 +308,22 @@ theorem dgComp_extensionInr_coneHomOfHomotopy (a : DGHom R 0 P P') (b : DGHom R 
           (extensionInl R (dgDifferential_coneMorphism hu')) (add_zero 0) := by
   simp only [coneHomOfHomotopy_def, dgComp_add, dgComp_extensionInr_extensionFst_assoc,
     dgComp_extensionInr_extensionSnd_assoc, zero_add, neg_dgComp, sub_eq_add_neg]
+
+/-- The inclusion of `P⟦1⟧` into `cone u`, followed by the morphism of cones induced by `a` and
+`b` with zero homotopy and then `x`, is the shift of `a` followed by the inclusion of `P'⟦1⟧` into
+`cone u'` and then `x`. -/
+@[simp↓]
+theorem dgComp_extensionInr_coneHomOfHomotopy_zero_assoc (a : DGHom R 0 P P')
+    (b : DGHom R 0 Q Q') {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {n : ℤ}
+    (x : DGHom R n (cone u' hu') Z) :
+    dgComp R (extensionInr R (dgDifferential_coneMorphism hu))
+        (dgComp R (coneHomOfHomotopy hu hu' a b 0) x (zero_add n)) (zero_add n) =
+      dgComp R ((shiftFunctor R 1).dgMap 0 a)
+        (dgComp R (extensionInr R (dgDifferential_coneMorphism hu')) x (zero_add n))
+        (zero_add n) := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionInr_coneHomOfHomotopy, dgComp_zero, zero_dgComp, sub_zero,
+    dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega)]
 
 /-- The morphism of cones induced by `a`, `b` and `k` followed by the projection of `cone u'`
 onto `Q'` is the projection of `cone u` onto `Q` followed by `b`, minus the projection onto
@@ -283,6 +341,21 @@ theorem dgComp_coneHomOfHomotopy_extensionFst (a : DGHom R 0 P P') (b : DGHom R 
       (add_zero 0) (add_zero 0),
     dgComp_extensionInl_extensionFst, dgComp_extensionInr_extensionFst, dgComp_zero, dgComp_dgId,
     add_zero, neg_dgComp, dgComp_neg, sub_eq_add_neg]
+
+/-- The morphism of cones induced by `a` and `b` with zero homotopy, followed by the projection of
+`cone u'` onto `Q'` and then `x`, is the projection of `cone u` onto `Q` followed by `b` and then
+`x`. -/
+@[simp↓]
+theorem dgComp_coneHomOfHomotopy_zero_extensionFst_assoc (a : DGHom R 0 P P')
+    (b : DGHom R 0 Q Q') {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {n : ℤ}
+    (x : DGHom R n Q' Z) :
+    dgComp R (coneHomOfHomotopy hu hu' a b 0)
+        (dgComp R (extensionFst R (dgDifferential_coneMorphism hu')) x (zero_add n)) (zero_add n) =
+      dgComp R (extensionFst R (dgDifferential_coneMorphism hu)) (dgComp R b x (zero_add n))
+        (zero_add n) := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_coneHomOfHomotopy_extensionFst, dgComp_zero, dgComp_zero, sub_zero,
+    dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega)]
 
 /-- **The morphism of cone triangles induced by a homotopy-commutative square**: closed morphisms
 `a : P ⟶ P'` and `b : Q ⟶ Q'` with `d k = u ≫ b - a ≫ u'` give the morphism of triangles
@@ -429,8 +502,8 @@ theorem coneRotateInv_def :
 
 /-- The comparison morphism `P⟦1⟧ ⟶ cone (Q ⟶ cone u)` is closed. -/
 theorem dgDifferential_coneRotateHom : dgDifferential R 0 (coneRotateHom hu) = 0 := by
-  have hu₁ : dgDifferential R 0 ((shiftFunctor R 1).dgMap 0 u) = 0 := by
-    rw [← (shiftFunctor R 1).dgMap_dgDifferential, hu, map_zero]
+  have hu₁ : dgDifferential R 0 ((shiftFunctor R 1).dgMap 0 u) = 0 :=
+    (shiftFunctor R 1).dgDifferential_dgMap_eq_zero hu
   -- Both terms are `P⟦1⟧ ⟶ P ⟶ Q ⟶ cone u ⟶ cone (Q ⟶ cone u)`, with opposite signs.
   have h : dgComp R (dgComp R (coneMorphism R u) (extensionInl R (dgDifferential_coneMorphism hu))
         (add_zero 1)) (extensionInl R (dgDifferential_coneMorphism

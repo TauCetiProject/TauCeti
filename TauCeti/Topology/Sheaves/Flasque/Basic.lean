@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
 public import Mathlib.Topology.Sheaves.Abelian
 public import Mathlib.Topology.Sheaves.Flasque
 public import Mathlib.Topology.Sheaves.Skyscraper
+public import TauCeti.Topology.Sheaves.Cohomology.Instances
 import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
 /-!
@@ -29,6 +30,9 @@ surjective. This file proves that a flasque sheaf has no higher cohomology.
 * `TauCeti.Topology.subsingleton_H_succ_of_isFlasque`: the same statement for the cohomology
   of the whole space;
 * `TauCeti.Topology.isFlasque_skyscraperSheaf`: skyscraper sheaves are flasque, and hence acyclic;
+* `TopCat.Presheaf.isFlasque_comp` and `TopCat.Presheaf.isFlasque_comp_iff`: flasqueness is
+  preserved by composing with a functor that preserves epimorphisms, and reflected when the
+  functor also reflects them, such as forgetting a module structure;
 * `TopCat.Sheaf.IsFlasque.epi_cokernel_π_app` and `TopCat.Sheaf.IsFlasque.exact_cokernel_π_app`:
   if `0 ⟶ A ⟶ B ⟶ C` is exact with `A` and `B` flasque, then taking sections over an open `U`
   gives an exact sequence `B(U) ⟶ C(U) ⟶ (coker (B ⟶ C))(U) ⟶ 0`.
@@ -42,10 +46,8 @@ which `TauCeti/CategoryTheory/Sites/SheafCohomology/FreeYoneda.lean` enters: an 
 subsets induces a monomorphism of the free abelian sheaves they generate, and `Hom(-, I)` turns it
 into the restriction map of `I`.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, "coherent sheaves and
-cohomology `Hⁱ(X, ℱ)`: acyclicity of affines, …, vanishing above dimension": it is the first
-acyclicity theorem of the lane, and the acyclic skyscraper sheaves are the coefficients in which
-the Riemann-Roch induction over the points of a divisor reads the additivity of
+The acyclic skyscraper sheaves are the coefficients in which a Riemann-Roch induction over the
+points of a divisor reads the additivity of the Euler characteristic of
 `TauCeti/AlgebraicGeometry/Cohomology/EulerCharacteristic.lean`.
 
 No formalization is vendored: flasqueness, the surjectivity of sections out of a flasque
@@ -157,6 +159,25 @@ end
 end Topology
 
 end TauCeti
+
+namespace TopCat.Presheaf
+
+/-- Composing a flasque presheaf with a functor that preserves epimorphisms gives a flasque
+presheaf. -/
+instance isFlasque_comp {C D : Type*} [Category* C] [Category* D] {X : TopCat.{u}}
+    (F : Presheaf C X) [IsFlasque F] (G : C ⥤ D) [G.PreservesEpimorphisms] :
+    IsFlasque (F ⋙ G) :=
+  ⟨fun i ↦ inferInstanceAs (Epi (G.map (F.map i)))⟩
+
+/-- A presheaf is flasque exactly when its composite with a functor that preserves and reflects
+epimorphisms is flasque. -/
+theorem isFlasque_comp_iff {C D : Type*} [Category* C] [Category* D] {X : TopCat.{u}}
+    (F : Presheaf C X) (G : C ⥤ D) [G.PreservesEpimorphisms] [G.ReflectsEpimorphisms] :
+    IsFlasque (F ⋙ G) ↔ IsFlasque F :=
+  ⟨fun _ ↦ ⟨fun i ↦ G.epi_of_epi_map (inferInstanceAs (Epi ((F ⋙ G).map i)))⟩,
+    fun _ ↦ inferInstance⟩
+
+end TopCat.Presheaf
 
 namespace TopCat.Presheaf.IsFlasque
 

@@ -110,6 +110,24 @@ theorem antiholomorphicPart_mem_spinPolarizationData_W' (v : V) :
   rw [spinPolarizationData_W']
   exact J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I v
 
+/-- Conjugation of the complexification maps the first isotropic summand of the polarization into
+the second. -/
+theorem tmulConj_mem_spinPolarizationData_W' {x : ℂ ⊗[ℝ] V}
+    (hx : x ∈ (J.spinPolarizationData hQJ hQ).W) :
+    tmulConj V x ∈ (J.spinPolarizationData hQJ hQ).W' := by
+  rw [spinPolarizationData_W, mem_eigenspace_iff] at hx
+  rw [spinPolarizationData_W', mem_eigenspace_iff, ← tmulConj_baseChange, hx, map_smulₛₗ,
+    Complex.conj_I]
+
+/-- Conjugation of the complexification maps the second isotropic summand of the polarization
+into the first. -/
+theorem tmulConj_mem_spinPolarizationData_W {y : ℂ ⊗[ℝ] V}
+    (hy : y ∈ (J.spinPolarizationData hQJ hQ).W') :
+    tmulConj V y ∈ (J.spinPolarizationData hQJ hQ).W := by
+  rw [spinPolarizationData_W', mem_eigenspace_iff] at hy
+  rw [spinPolarizationData_W, mem_eigenspace_iff, ← tmulConj_baseChange, hy, map_smulₛₗ,
+    map_neg, Complex.conj_I, neg_neg]
+
 /-- The decomposition of a real vector `1 ⊗ v` along the polarization is
 `(v^(1,0), v^(0,1))`, with no component in the orthogonal remainder. -/
 @[simp]

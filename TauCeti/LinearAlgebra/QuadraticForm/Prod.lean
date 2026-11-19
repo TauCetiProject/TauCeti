@@ -8,11 +8,15 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Projection
+public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Structural isometries and special orthogonal groups of quadratic-map products
+
+The orthogonal product `(Q₁, Q₂) ↦ Q₁.prod Q₂` is linear in the pair of quadratic maps
+(`QuadraticMap.prodLinear`).
 
 Mathlib records the commutativity isometries of `QuadraticMap.prod`
 (`QuadraticMap.IsometryEquiv.prodComm` and `QuadraticMap.IsometryEquiv.prodProdProdComm`). This
@@ -21,7 +25,9 @@ module is trivial. Together with `QuadraticMap.IsometryEquiv.prodComm` they are 
 orthogonal sum a commutative monoid operation on isometry classes of quadratic forms; the
 left-commutativity isometry `Q₁ ⊕ (Q₂ ⊕ Q₃) ≅ Q₂ ⊕ (Q₁ ⊕ Q₃)` is recorded as a composite of them.
 For an orthogonal sum `QuadraticMap.pi` indexed by `Fin (n + 1)`, splitting off the first summand
-is likewise isometric, which lets such a sum be assembled one summand at a time.
+is likewise isometric, which lets such a sum be assembled one summand at a time; reindexing an
+orthogonal sum along an equivalence of its index types is isometric; and so is deleting the
+summands of an orthogonal sum that are carried by trivial modules.
 
 For a quadratic form over a commutative ring, it also records the isometry associated to a
 direct-sum decomposition of the underlying module that is orthogonal for the polar form.
@@ -32,15 +38,22 @@ the image: an orthogonal transformation of `Q₁.prod Q₂` is such an orthogona
 maps each summand into itself. No finiteness is needed for this, since a linear automorphism of
 `M₁ × M₂` preserving both summands is automatically a product of automorphisms of the summands.
 For finite free modules the determinant of an orthogonal sum is the product of the determinants,
-so the embedding restricts to the special orthogonal groups.
+so the embedding restricts to the special orthogonal groups. Concatenating orthogonal families of
+the two summands gives an orthogonal family of the orthogonal sum.
 
 ## Main definitions
 
+* `QuadraticMap.prodLinear`: the orthogonal product `(Q₁, Q₂) ↦ Q₁.prod Q₂`, as a linear map.
+* `QuadraticMap.Isometry.prodMap`: the product `f₁.prodMap f₂` of two quadratic isometries.
 * `QuadraticMap.IsometryEquiv.prodAssoc`: `LinearEquiv.prodAssoc` is isometric.
 * `QuadraticMap.IsometryEquiv.prodLeftComm`: exchanging the first two factors of
   `Q₁ ⊕ (Q₂ ⊕ Q₃)` is isometric.
-* `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
+* `QuadraticMap.IsometryEquiv.uniqueProd` and `QuadraticMap.IsometryEquiv.prodUnique`:
+  `LinearEquiv.uniqueProd` and `LinearEquiv.prodUnique` are isometric.
 * `QuadraticMap.IsometryEquiv.consPi`: `Fin.consLinearEquiv` is isometric.
+* `QuadraticMap.IsometryEquiv.piCongrLeft`: `LinearEquiv.piCongrLeft` is isometric.
+* `QuadraticMap.IsometryEquiv.piSubtype`: deleting the summands of an orthogonal sum that are
+  carried by trivial modules is isometric.
 * `QuadraticMap.IsometryEquiv.prodRestrictOrthogonal`: an orthogonal direct sum is isometric to
   the original form.
 * `QuadraticMap.orthogonalGroupProd`: the orthogonal sum `O(Q₁) × O(Q₂) →* O(Q₁.prod Q₂)`.
@@ -58,6 +71,12 @@ so the embedding restricts to the special orthogonal groups.
   summands whose two diagonal blocks have determinant one.
 * `QuadraticMap.det_orthogonalGroupProd`: the determinant of an orthogonal sum is the product of
   the determinants.
+* Naturality, left- and right-unit, associativity, and symmetry coherences of
+  `orthogonalGroupProd` and `specialOrthogonalGroupProd` under `IsometryEquiv.prod`,
+  `IsometryEquiv.uniqueProd`, `IsometryEquiv.prodUnique`, `IsometryEquiv.prodAssoc`, and
+  `IsometryEquiv.prodComm`.
+* `QuadraticMap.isOrthoᵢ_associated_prod`: orthogonal families of the summands concatenate to an
+  orthogonal family of `Q₁.prod Q₂`.
 
 ## References
 
@@ -84,6 +103,32 @@ theorem smul_prod (c : S) (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R 
 
 end Smul
 
+section Linear
+
+variable (R M₁ M₂ P : Type*) [CommSemiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
+  [AddCommMonoid P] [Module R M₁] [Module R M₂] [Module R P]
+
+/-- The orthogonal product `(Q₁, Q₂) ↦ Q₁.prod Q₂` of quadratic maps, as a linear map. -/
+def prodLinear : QuadraticMap R M₁ P × QuadraticMap R M₂ P →ₗ[R] QuadraticMap R (M₁ × M₂) P where
+  toFun Q := Q.1.prod Q.2
+  map_add' _ _ := by
+    ext
+    simp only [prod_apply, Prod.fst_add, Prod.snd_add, add_apply]
+    abel
+  map_smul' _ _ := by
+    ext
+    simp
+
+variable {R M₁ M₂ P}
+
+/-- Unfolding `QuadraticMap.prodLinear`. -/
+@[simp]
+theorem prodLinear_apply (Q : QuadraticMap R M₁ P × QuadraticMap R M₂ P) :
+    prodLinear R M₁ M₂ P Q = Q.1.prod Q.2 :=
+  (rfl)
+
+end Linear
+
 variable {R M₁ M₂ M₃ P : Type*} [CommSemiring R] [AddCommMonoid M₁] [AddCommMonoid M₂]
   [AddCommMonoid M₃] [AddCommMonoid P] [Module R M₁] [Module R M₂] [Module R M₃] [Module R P]
 
@@ -107,10 +152,9 @@ theorem IsometryEquiv.prodAssoc_apply (Q₁ : QuadraticMap R M₁ P)
 @[simp]
 theorem IsometryEquiv.prodAssoc_symm_apply (Q₁ : QuadraticMap R M₁ P)
     (Q₂ : QuadraticMap R M₂ P) (Q₃ : QuadraticMap R M₃ P) (m : M₁ × M₂ × M₃) :
-    (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).invFun m = ((m.1, m.2.1), m.2.2) := by
-  -- Expose the underlying linear equivalence so its public inverse application lemma applies.
-  change (LinearEquiv.prodAssoc R M₁ M₂ M₃).symm m = _
-  exact Equiv.prodAssoc_symm_apply M₁ M₂ M₃ m
+    (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).symm m = ((m.1, m.2.1), m.2.2) :=
+  (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).symm_apply_eq.mpr
+    (IsometryEquiv.prodAssoc_apply Q₁ Q₂ Q₃ ((m.1, m.2.1), m.2.2)).symm
 
 /-- Exchanging the first two factors of an iterated orthogonal product is isometric:
 `Q₁ ⊕ (Q₂ ⊕ Q₃) ≅ Q₂ ⊕ (Q₁ ⊕ Q₃)`. It lets a summand be moved past others to its place in an
@@ -150,10 +194,92 @@ theorem IsometryEquiv.uniqueProd_apply [Unique M₁] (Q₁ : QuadraticMap R M₁
 @[simp]
 theorem IsometryEquiv.uniqueProd_symm_apply [Unique M₁] (Q₁ : QuadraticMap R M₁ P)
     (Q₂ : QuadraticMap R M₂ P) (m : M₂) :
-    (IsometryEquiv.uniqueProd Q₁ Q₂).invFun m = (default, m) := by
-  -- Expose the underlying linear equivalence so its public inverse application lemma applies.
-  change (LinearEquiv.uniqueProd (R := R) (M := M₂) (M₂ := M₁)).symm m = _
-  exact LinearEquiv.uniqueProd_symm_apply m
+    (IsometryEquiv.uniqueProd Q₁ Q₂).symm m = (default, m) :=
+  (IsometryEquiv.uniqueProd Q₁ Q₂).symm_apply_eq.mpr
+    (IsometryEquiv.uniqueProd_apply Q₁ Q₂ (default, m)).symm
+
+/-- `LinearEquiv.prodUnique` is isometric: a right factor carried by a trivial module may be
+deleted from an orthogonal product. -/
+def IsometryEquiv.prodUnique [Unique M₂] (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R M₂ P) :
+    (Q₁.prod Q₂).IsometryEquiv Q₁ where
+  toLinearEquiv := LinearEquiv.prodUnique
+  map_app' m := by simp [Subsingleton.elim m.2 0]
+
+/-- The forward map of `QuadraticMap.IsometryEquiv.prodUnique`. -/
+@[simp]
+theorem IsometryEquiv.prodUnique_apply [Unique M₂] (Q₁ : QuadraticMap R M₁ P)
+    (Q₂ : QuadraticMap R M₂ P) (m : M₁ × M₂) :
+    IsometryEquiv.prodUnique Q₁ Q₂ m = m.1 := by
+  -- Expose the underlying linear equivalence so its public application lemma applies.
+  change LinearEquiv.prodUnique (R := R) (M := M₁) (M₂ := M₂) m = _
+  exact LinearEquiv.prodUnique_apply m
+
+/-- The inverse map of `QuadraticMap.IsometryEquiv.prodUnique`. -/
+@[simp]
+theorem IsometryEquiv.prodUnique_symm_apply [Unique M₂] (Q₁ : QuadraticMap R M₁ P)
+    (Q₂ : QuadraticMap R M₂ P) (m : M₁) :
+    (IsometryEquiv.prodUnique Q₁ Q₂).symm m = (m, default) :=
+  (IsometryEquiv.prodUnique Q₁ Q₂).symm_apply_eq.mpr
+    (IsometryEquiv.prodUnique_apply Q₁ Q₂ (m, default)).symm
+
+/-- Construct a quadratic isometry between orthogonal products from quadratic isometries of the two
+factors. -/
+def Isometry.prodMap {N₁ N₂ : Type*} [AddCommMonoid N₁] [AddCommMonoid N₂]
+    [Module R N₁] [Module R N₂] {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P}
+    {Q₁' : QuadraticMap R N₁ P} {Q₂' : QuadraticMap R N₂ P}
+    (f₁ : Q₁ →qᵢ Q₁') (f₂ : Q₂ →qᵢ Q₂') :
+    Q₁.prod Q₂ →qᵢ Q₁'.prod Q₂' where
+  toLinearMap := f₁.toLinearMap.prodMap f₂.toLinearMap
+  map_app' x := by simp
+
+/-- Evaluating `QuadraticMap.Isometry.prodMap` applies the two factor isometries componentwise. -/
+@[simp]
+theorem Isometry.prodMap_apply {N₁ N₂ : Type*} [AddCommMonoid N₁] [AddCommMonoid N₂]
+    [Module R N₁] [Module R N₂] {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P}
+    {Q₁' : QuadraticMap R N₁ P} {Q₂' : QuadraticMap R N₂ P}
+    (f₁ : Q₁ →qᵢ Q₁') (f₂ : Q₂ →qᵢ Q₂') (x : M₁ × M₂) :
+    f₁.prodMap f₂ x = (f₁ x.1, f₂ x.2) :=
+  (rfl)
+
+/-- Composing `QuadraticMap.Isometry.prodMap` with the left summand inclusion factors through the
+left isometry. -/
+@[simp]
+theorem Isometry.prodMap_comp_inl {N₁ N₂ : Type*} [AddCommMonoid N₁] [AddCommMonoid N₂]
+    [Module R N₁] [Module R N₂] {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P}
+    {Q₁' : QuadraticMap R N₁ P} {Q₂' : QuadraticMap R N₂ P}
+    (f₁ : Q₁ →qᵢ Q₁') (f₂ : Q₂ →qᵢ Q₂') :
+    (f₁.prodMap f₂).comp (Isometry.inl Q₁ Q₂) = (Isometry.inl Q₁' Q₂').comp f₁ :=
+  Isometry.ext fun _ ↦ by simp
+
+/-- Composing `QuadraticMap.Isometry.prodMap` with the right summand inclusion factors through the
+right isometry. -/
+@[simp]
+theorem Isometry.prodMap_comp_inr {N₁ N₂ : Type*} [AddCommMonoid N₁] [AddCommMonoid N₂]
+    [Module R N₁] [Module R N₂] {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P}
+    {Q₁' : QuadraticMap R N₁ P} {Q₂' : QuadraticMap R N₂ P}
+    (f₁ : Q₁ →qᵢ Q₁') (f₂ : Q₂ →qᵢ Q₂') :
+    (f₁.prodMap f₂).comp (Isometry.inr Q₁ Q₂) = (Isometry.inr Q₁' Q₂').comp f₂ :=
+  Isometry.ext fun _ ↦ by simp
+
+/-- Evaluating a product of isometric equivalences applies the two equivalences componentwise. -/
+@[simp]
+theorem IsometryEquiv.prod_apply {N₁ N₂ : Type*} [AddCommMonoid N₁] [AddCommMonoid N₂]
+    [Module R N₁] [Module R N₂] {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P}
+    {Q₁' : QuadraticMap R N₁ P} {Q₂' : QuadraticMap R N₂ P}
+    (e₁ : Q₁.IsometryEquiv Q₁') (e₂ : Q₂.IsometryEquiv Q₂') (x : M₁ × M₂) :
+    e₁.prod e₂ x = (e₁ x.1, e₂ x.2) := by
+  rw [← IsometryEquiv.coe_toLinearEquiv]
+  simp
+
+/-- The quadratic isometry underlying a product of isometric equivalences is the product of their
+underlying quadratic isometries. -/
+@[simp]
+theorem IsometryEquiv.toIsometry_prod {N₁ N₂ : Type*} [AddCommMonoid N₁] [AddCommMonoid N₂]
+    [Module R N₁] [Module R N₂] {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P}
+    {Q₁' : QuadraticMap R N₁ P} {Q₂' : QuadraticMap R N₂ P}
+    (e₁ : Q₁.IsometryEquiv Q₁') (e₂ : Q₂.IsometryEquiv Q₂') :
+    (e₁.prod e₂).toIsometry = e₁.toIsometry.prodMap e₂.toIsometry :=
+  Isometry.ext fun _ ↦ by simp
 
 /-- `Fin.consLinearEquiv` is isometric: an orthogonal sum indexed by `Fin (n + 1)` is the orthogonal
 product of its first summand with the orthogonal sum of the remaining ones. -/
@@ -168,6 +294,74 @@ def IsometryEquiv.consPi {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, AddCommMo
 theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, AddCommMonoid (M i)]
     [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (x : M 0) (y : ∀ i : Fin n, M i.succ) :
     IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
+  (rfl)
+
+/-- `LinearEquiv.piCongrLeft` is isometric: reindexing an orthogonal sum along an equivalence of
+its finite index types does not change it. -/
+def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (e : ι' ≃ ι) :
+    (QuadraticMap.pi fun i' ↦ Q (e i')).IsometryEquiv (QuadraticMap.pi Q) where
+  toLinearEquiv := LinearEquiv.piCongrLeft R M e
+  map_app' x := by
+    rw [pi_apply, pi_apply]
+    exact (Fintype.sum_equiv e (fun i' ↦ Q (e i') (x i')) _ fun i' ↦
+      congrArg (Q (e i')) (Equiv.piCongrLeft_apply_apply M e x i').symm).symm
+
+/-- Reindexing an orthogonal sum has `LinearEquiv.piCongrLeft` as its underlying linear map. -/
+@[simp]
+theorem IsometryEquiv.toLinearEquiv_piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) :
+    (IsometryEquiv.piCongrLeft Q e).toLinearEquiv = LinearEquiv.piCongrLeft R M e :=
+  (rfl)
+
+/-- The forward map of `QuadraticMap.IsometryEquiv.piCongrLeft` at a reindexed coordinate. -/
+@[simp]
+theorem IsometryEquiv.piCongrLeft_apply_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) (x : ∀ i', M (e i')) (i' : ι') :
+    IsometryEquiv.piCongrLeft Q e x (e i') = x i' :=
+  Equiv.piCongrLeft_apply_apply M e x i'
+
+/-- Restriction to the summands indexed by `{i // S i}` is isometric when every other summand is
+carried by a trivial module: such summands may be deleted from an orthogonal sum. -/
+def IsometryEquiv.piSubtype {ι : Type*} [Fintype ι] {M : ι → Type*} [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (S : ι → Prop) [DecidablePred S]
+    (hS : ∀ i, ¬S i → Subsingleton (M i)) :
+    (QuadraticMap.pi Q).IsometryEquiv (QuadraticMap.pi fun i : Subtype S ↦ Q i) where
+  toFun x i := x i
+  invFun y i := if hi : S i then y ⟨i, hi⟩ else 0
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv x := funext fun i ↦ by
+    by_cases hi : S i
+    · simp [hi]
+    · have := hS i hi
+      exact Subsingleton.elim _ _
+  right_inv y := funext fun i ↦ by simp [i.2]
+  map_app' x := by
+    have hzero : ∑ i : {i // ¬S i}, Q i (x i) = 0 := Finset.sum_eq_zero fun i _ ↦ by
+      have := hS i i.2
+      rw [Subsingleton.elim (x i) 0, map_zero]
+    rw [pi_apply, pi_apply, ← Fintype.sum_subtype_add_sum_subtype S, hzero, add_zero]
+
+/-- The forward map of `QuadraticMap.IsometryEquiv.piSubtype` restricts to the retained summands. -/
+@[simp]
+theorem IsometryEquiv.piSubtype_apply {ι : Type*} [Fintype ι] {M : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (S : ι → Prop) [DecidablePred S] (hS : ∀ i, ¬S i → Subsingleton (M i)) (x : ∀ i, M i)
+    (i : Subtype S) :
+    IsometryEquiv.piSubtype Q S hS x i = x i :=
+  (rfl)
+
+/-- The inverse map of `QuadraticMap.IsometryEquiv.piSubtype` extends by zero. -/
+@[simp]
+theorem IsometryEquiv.piSubtype_symm_apply {ι : Type*} [Fintype ι] {M : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (S : ι → Prop) [DecidablePred S] (hS : ∀ i, ¬S i → Subsingleton (M i))
+    (y : ∀ i : Subtype S, M i) (i : ι) :
+    (IsometryEquiv.piSubtype Q S hS).symm y i = if hi : S i then y ⟨i, hi⟩ else 0 :=
   (rfl)
 
 section OrthogonalDecomposition
@@ -283,6 +477,77 @@ theorem mem_range_orthogonalGroupProd_iff {g : orthogonalGroup (Q₁.prod Q₂)}
     simpa [← he] using map_app_of_mem_orthogonalGroup g.2 (0, m)
   exact ⟨(⟨e₁, he₁⟩, ⟨e₂, he₂⟩), Subtype.ext he⟩
 
+/-- `orthogonalGroupProd` is natural with respect to products of isometric equivalences. -/
+@[simp]
+theorem orthogonalGroupCongr_prod_orthogonalGroupProd
+    {M₁' M₂' : Type*} [AddCommMonoid M₁'] [Module R M₁'] [AddCommMonoid M₂'] [Module R M₂']
+    {Q₁' : QuadraticMap R M₁' N} {Q₂' : QuadraticMap R M₂' N}
+    (e₁ : Q₁.IsometryEquiv Q₁') (e₂ : Q₂.IsometryEquiv Q₂')
+    (f : orthogonalGroup Q₁ × orthogonalGroup Q₂) :
+    (e₁.prod e₂).orthogonalGroupCongr (orthogonalGroupProd Q₁ Q₂ f) =
+      orthogonalGroupProd Q₁' Q₂' (e₁.orthogonalGroupCongr f.1, e₂.orthogonalGroupCongr f.2) := by
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  obtain ⟨⟨x₁, x₂⟩, rfl⟩ := (e₁.prod e₂).toLinearEquiv.surjective m
+  have h : (e₁.prod e₂).symm (e₁ x₁, e₂ x₂) = (x₁, x₂) := by
+    have := (e₁.prod e₂).symm_apply_apply (x₁, x₂)
+    rwa [IsometryEquiv.prod_apply] at this
+  simp [h]
+
+/-- Deleting a trivial left summand along `IsometryEquiv.uniqueProd` sends an orthogonal sum of
+orthogonal transformations to its second factor. -/
+@[simp]
+theorem orthogonalGroupCongr_uniqueProd_orthogonalGroupProd [Unique M₁]
+    (f : orthogonalGroup Q₁ × orthogonalGroup Q₂) :
+    (IsometryEquiv.uniqueProd Q₁ Q₂).orthogonalGroupCongr (orthogonalGroupProd Q₁ Q₂ f) = f.2 := by
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  obtain ⟨x, rfl⟩ := (IsometryEquiv.uniqueProd Q₁ Q₂).toLinearEquiv.surjective m
+  simp
+
+/-- Deleting a trivial right summand along `IsometryEquiv.prodUnique` sends an orthogonal sum of
+orthogonal transformations to its first factor. -/
+@[simp]
+theorem orthogonalGroupCongr_prodUnique_orthogonalGroupProd [Unique M₂]
+    (f : orthogonalGroup Q₁ × orthogonalGroup Q₂) :
+    (IsometryEquiv.prodUnique Q₁ Q₂).orthogonalGroupCongr (orthogonalGroupProd Q₁ Q₂ f) = f.1 := by
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  obtain ⟨x, rfl⟩ := (IsometryEquiv.prodUnique Q₁ Q₂).toLinearEquiv.surjective m
+  simp
+
+/-- `orthogonalGroupProd` is associative up to transport along `IsometryEquiv.prodAssoc`. -/
+@[simp]
+theorem orthogonalGroupCongr_prodAssoc_orthogonalGroupProd
+    {M₃ : Type*} [AddCommMonoid M₃] [Module R M₃] (Q₃ : QuadraticMap R M₃ N)
+    (f₁ : orthogonalGroup Q₁) (f₂ : orthogonalGroup Q₂) (f₃ : orthogonalGroup Q₃) :
+    (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).orthogonalGroupCongr
+        (orthogonalGroupProd (Q₁.prod Q₂) Q₃ (orthogonalGroupProd Q₁ Q₂ (f₁, f₂), f₃)) =
+      orthogonalGroupProd Q₁ (Q₂.prod Q₃) (f₁, orthogonalGroupProd Q₂ Q₃ (f₂, f₃)) := by
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  obtain ⟨x, rfl⟩ := (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).toLinearEquiv.surjective m
+  simp
+
+/-- Swapping the two summands along `IsometryEquiv.prodComm` swaps the two factors of
+`orthogonalGroupProd`. -/
+@[simp]
+theorem orthogonalGroupCongr_prodComm_orthogonalGroupProd
+    (f : orthogonalGroup Q₁ × orthogonalGroup Q₂) :
+    (IsometryEquiv.prodComm Q₁ Q₂).orthogonalGroupCongr (orthogonalGroupProd Q₁ Q₂ f) =
+      orthogonalGroupProd Q₂ Q₁ f.swap := by
+  apply Subtype.ext
+  apply LinearEquiv.ext
+  intro m
+  obtain ⟨x, rfl⟩ := (IsometryEquiv.prodComm Q₁ Q₂).toLinearEquiv.surjective m
+  have h : (IsometryEquiv.prodComm Q₁ Q₂).symm x.swap = x :=
+    (IsometryEquiv.prodComm Q₁ Q₂).symm_apply_apply x
+  simp [h]
+
 end OrthogonalGroup
 
 section SpecialOrthogonalGroup
@@ -330,6 +595,18 @@ theorem specialOrthogonalGroupProd_apply
       ((fg.1 : M₁ ≃ₗ[R] M₁) x.1, (fg.2 : M₂ ≃ₗ[R] M₂) x.2) :=
   (rfl)
 
+/-- Forgetting determinant one commutes with forming orthogonal sums of special orthogonal
+transformations. -/
+@[simp]
+theorem specialOrthogonalToOrthogonal_specialOrthogonalGroupProd
+    (f : specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂) :
+    specialOrthogonalToOrthogonal (Q₁.prod Q₂) (specialOrthogonalGroupProd Q₁ Q₂ f) =
+      orthogonalGroupProd Q₁ Q₂
+        (specialOrthogonalToOrthogonal Q₁ f.1, specialOrthogonalToOrthogonal Q₂ f.2) := by
+  apply Subtype.ext
+  rw [coe_specialOrthogonalToOrthogonal, coe_orthogonalGroupProd, coe_specialOrthogonalGroupProd,
+    coe_specialOrthogonalToOrthogonal, coe_specialOrthogonalToOrthogonal]
+
 /-- The orthogonal sum of special orthogonal groups embeds into the special orthogonal group of
 the orthogonal sum. -/
 theorem specialOrthogonalGroupProd_injective :
@@ -374,6 +651,64 @@ theorem mem_range_specialOrthogonalGroupProd_iff {g : specialOrthogonalGroup (Q�
   exact ⟨(⟨f.1, mem_specialOrthogonalGroup_iff.mpr ⟨f.1.2, d₁⟩⟩,
     ⟨f.2, mem_specialOrthogonalGroup_iff.mpr ⟨f.2.2, d₂⟩⟩), Subtype.ext hg⟩
 
+/-- `specialOrthogonalGroupProd` is natural with respect to products of isometric equivalences. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_prod_specialOrthogonalGroupProd
+    {M₁' M₂' : Type*} [AddCommGroup M₁'] [Module R M₁'] [Module.Free R M₁'] [Module.Finite R M₁']
+    [AddCommGroup M₂'] [Module R M₂'] [Module.Free R M₂'] [Module.Finite R M₂']
+    {Q₁' : QuadraticMap R M₁' N} {Q₂' : QuadraticMap R M₂' N}
+    (e₁ : Q₁.IsometryEquiv Q₁') (e₂ : Q₂.IsometryEquiv Q₂')
+    (f : specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂) :
+    (e₁.prod e₂).specialOrthogonalGroupCongr (specialOrthogonalGroupProd Q₁ Q₂ f) =
+      specialOrthogonalGroupProd Q₁' Q₂'
+        (e₁.specialOrthogonalGroupCongr f.1, e₂.specialOrthogonalGroupCongr f.2) :=
+  specialOrthogonalToOrthogonal_injective (by simp)
+
+/-- Deleting a trivial left summand along `IsometryEquiv.uniqueProd` sends an orthogonal sum of
+special orthogonal transformations to its second factor. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_uniqueProd_specialOrthogonalGroupProd [Unique M₁]
+    (f : specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂) :
+    (IsometryEquiv.uniqueProd Q₁ Q₂).specialOrthogonalGroupCongr
+        (specialOrthogonalGroupProd Q₁ Q₂ f) =
+      f.2 :=
+  specialOrthogonalToOrthogonal_injective (by simp)
+
+/-- Deleting a trivial right summand along `IsometryEquiv.prodUnique` sends an orthogonal sum of
+special orthogonal transformations to its first factor. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_prodUnique_specialOrthogonalGroupProd [Unique M₂]
+    (f : specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂) :
+    (IsometryEquiv.prodUnique Q₁ Q₂).specialOrthogonalGroupCongr
+        (specialOrthogonalGroupProd Q₁ Q₂ f) =
+      f.1 :=
+  specialOrthogonalToOrthogonal_injective (by simp)
+
+/-- `specialOrthogonalGroupProd` is associative up to transport along
+`IsometryEquiv.prodAssoc`. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_prodAssoc_specialOrthogonalGroupProd
+    {M₃ : Type*} [AddCommGroup M₃] [Module R M₃] [Module.Free R M₃] [Module.Finite R M₃]
+    (Q₃ : QuadraticMap R M₃ N)
+    (f₁ : specialOrthogonalGroup Q₁) (f₂ : specialOrthogonalGroup Q₂)
+    (f₃ : specialOrthogonalGroup Q₃) :
+    (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).specialOrthogonalGroupCongr
+        (specialOrthogonalGroupProd (Q₁.prod Q₂) Q₃
+          (specialOrthogonalGroupProd Q₁ Q₂ (f₁, f₂), f₃)) =
+      specialOrthogonalGroupProd Q₁ (Q₂.prod Q₃)
+        (f₁, specialOrthogonalGroupProd Q₂ Q₃ (f₂, f₃)) :=
+  specialOrthogonalToOrthogonal_injective (by simp)
+
+/-- Swapping the two summands along `IsometryEquiv.prodComm` swaps the two factors of
+`specialOrthogonalGroupProd`. -/
+@[simp]
+theorem specialOrthogonalGroupCongr_prodComm_specialOrthogonalGroupProd
+    (f : specialOrthogonalGroup Q₁ × specialOrthogonalGroup Q₂) :
+    (IsometryEquiv.prodComm Q₁ Q₂).specialOrthogonalGroupCongr
+        (specialOrthogonalGroupProd Q₁ Q₂ f) =
+      specialOrthogonalGroupProd Q₂ Q₁ f.swap :=
+  specialOrthogonalToOrthogonal_injective (by simp)
+
 end SpecialOrthogonalGroup
 
 section Reflection
@@ -404,5 +739,25 @@ theorem orthogonalGroupProd_one_reflectionOrthogonal (w : M₂) [Invertible (Q�
   ext x <;> simp [reflection_apply]
 
 end Reflection
+
+section Orthogonal
+
+variable {R M₁ M₂ N : Type*} [CommRing R] [Invertible (2 : R)] [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N] [Module R N]
+  {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+
+/-- Concatenating a `Q₁`-orthogonal family of `M₁` and a `Q₂`-orthogonal family of `M₂`, placed in
+the two summands, gives a family orthogonal for the orthogonal sum `Q₁.prod Q₂`. -/
+theorem isOrthoᵢ_associated_prod {ι₁ ι₂ : Type*} {v₁ : ι₁ → M₁} {v₂ : ι₂ → M₂}
+    (h₁ : (associated Q₁).IsOrthoᵢ v₁) (h₂ : (associated Q₂).IsOrthoᵢ v₂) :
+    (associated (Q₁.prod Q₂)).IsOrthoᵢ (Sum.elim (fun i ↦ (v₁ i, 0)) fun j ↦ (0, v₂ j)) := by
+  rw [LinearMap.isOrthoᵢ_def] at h₁ h₂ ⊢
+  rintro (i | i) (j | j) hij
+  · simpa using h₁ i j (Sum.inl.inj_iff.not.1 hij)
+  · simp
+  · simp
+  · simpa using h₂ i j (Sum.inr.inj_iff.not.1 hij)
+
+end Orthogonal
 
 end QuadraticMap

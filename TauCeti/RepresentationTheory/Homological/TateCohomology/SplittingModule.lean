@@ -97,25 +97,14 @@ private theorem isZero_groupCohomology_res_splittingModule (S : Subgroup G) [Fin
     rw [hcardI]
     exact Nat.card_pos.ne')
   -- The long exact sequence in degrees one and two, elementwise.
-  have hex₁ := (ShortComplex.moduleCat_exact_iff _).1
-    (groupCohomology.mapShortComplex₁_exact hX (i := 1) (j := 2) rfl)
   have hex₂ (n : ℕ) := (ShortComplex.moduleCat_exact_iff _).1
     (groupCohomology.mapShortComplex₂_exact hX n)
   have hzero₁ := fun x ↦ ConcreteCategory.congr_hom
     (groupCohomology.mapShortComplex₁ hX (i := 1) (j := 2) rfl).zero x
   have hzero₃ := fun x ↦ ConcreteCategory.congr_hom
     (groupCohomology.mapShortComplex₃ hX (i := 1) (j := 2) rfl).zero x
-  -- The connecting map `H¹(S, I_G) → H²(S, A)` is onto: `u` restricts to a generator and dies in
-  -- the splitting module.
-  have hδ : Function.Surjective δ := by
-    intro x
-    obtain ⟨r, rfl⟩ := hgen x
-    have hcomp := groupCohomology.map_comp S.subtype (MonoidHom.id S) (𝟙 (res S.subtype A))
-      ((resFunctor S.subtype).map (splittingModuleIncl A u)) 2
-    obtain ⟨y, hy⟩ := hex₁ (groupCohomology.map S.subtype (𝟙 (res S.subtype A)) 2 u)
-      ((ConcreteCategory.congr_hom hcomp u).symm.trans
-        (map_splittingModuleIncl_res_eq_zero A u S.subtype))
-    exact ⟨r • y, (map_smul δ.hom r y).trans (congrArg _ hy)⟩
+  have hδ : Function.Surjective δ :=
+    Rep.surjective_connecting_res_splittingModule A u S.subtype hgen hX
   have hδbij : Function.Bijective δ :=
     -- `X.X₁` is `res S.subtype A` by definition of `ShortComplex.map`.
     hδ.bijective_of_nat_card_le (by rw [hcardI, ← hcard]; rfl)

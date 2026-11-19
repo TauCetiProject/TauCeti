@@ -15,16 +15,16 @@ This file specializes the universal property of a directed union of submodules t
 subcomodules of a comodule. A compatible family of linear maps on the finite subcomodules glues to
 a linear map on the whole comodule as soon as every element lies in a finite subcomodule.
 
-This is a prerequisite for the Tannakian reconstruction step in the `ReductiveGroups` roadmap:
-the components of a tensor automorphism on the finite subcomodules of the regular comodule must be
-assembled into one linear functional on the coordinate Hopf algebra.
+In Tannakian reconstruction, `TauCeti.Tannaka.globalFunctional` uses this to glue the
+functionals that a tensor automorphism induces on the finite subcomodules of the regular comodule
+into one linear map on the Hopf algebra.
 
 ## Main declarations
 
 * `TauCeti.Subcomodule.finiteSubcomoduleLiftOfExistsMem`: glue a compatible family under an
   explicit covering hypothesis.
 * `TauCeti.Subcomodule.finiteSubcomoduleLift`: glue such a family when the coefficient coalgebra
-  is free.
+  is projective.
 * `TauCeti.Subcomodule.finiteSubcomoduleLift_apply`: the glued map restricts to each member of the
   family.
 * `TauCeti.Subcomodule.finiteSubcomoduleLift_unique`: the restriction property characterizes the
@@ -70,8 +70,8 @@ private theorem iSup_finiteSubcomodule_toSubmodule_eq_top
 /-- Glue a compatible family of linear maps on the finite subcomodules of a comodule.
 
 Compatibility is expressed along inclusions. The hypothesis `hM` says that the finite
-subcomodules cover `M`; it is supplied by `exists_finite_subcomodule_mem` whenever `C` is free as
-an `R`-module. -/
+subcomodules cover `M`; it is supplied by `exists_finite_subcomodule_mem` whenever `C` is
+projective as an `R`-module. -/
 noncomputable def finiteSubcomoduleLiftOfExistsMem
     (hM : ∀ m : M, ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧ m ∈ N)
     (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
@@ -133,18 +133,18 @@ theorem finiteSubcomoduleLiftOfExistsMem_unique
   rw [hg N' ⟨m, hmN⟩, finiteSubcomoduleLiftOfExistsMem_apply hM f hf N' ⟨m, hmN⟩]
 
 /-- Glue a compatible family of linear maps on the finite subcomodules of a comodule whose
-coefficient coalgebra is free as a module. -/
-noncomputable def finiteSubcomoduleLift [Module.Free R C]
+coefficient coalgebra is projective as a module. -/
+noncomputable def finiteSubcomoduleLift [Module.Projective R C]
     (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
       (hNQ : N.1 ≤ Q.1),
         f N = (f Q).comp (Submodule.inclusion hNQ)) : M →ₗ[R] P :=
   finiteSubcomoduleLiftOfExistsMem exists_finite_subcomodule_mem f hf
 
-/-- The map glued from the finite subcomodules of a comodule over a free coalgebra agrees with
+/-- The map glued from the finite subcomodules of a comodule over a projective coalgebra agrees with
 the prescribed map on each finite subcomodule. -/
 @[simp]
-theorem finiteSubcomoduleLift_apply [Module.Free R C]
+theorem finiteSubcomoduleLift_apply [Module.Projective R C]
     (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
       (hNQ : N.1 ≤ Q.1),
@@ -153,10 +153,10 @@ theorem finiteSubcomoduleLift_apply [Module.Free R C]
     finiteSubcomoduleLift f hf m = f N m :=
   finiteSubcomoduleLiftOfExistsMem_apply exists_finite_subcomodule_mem f hf N m
 
-/-- Restricting the map glued from finite subcomodules over a free coefficient coalgebra to one
-finite subcomodule recovers its prescribed map. -/
+/-- Restricting the map glued from finite subcomodules over a projective coefficient coalgebra to
+one finite subcomodule recovers its prescribed map. -/
 @[simp]
-theorem finiteSubcomoduleLift_comp_subtype [Module.Free R C]
+theorem finiteSubcomoduleLift_comp_subtype [Module.Projective R C]
     (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
       (hNQ : N.1 ≤ Q.1),
@@ -165,9 +165,9 @@ theorem finiteSubcomoduleLift_comp_subtype [Module.Free R C]
     (finiteSubcomoduleLift f hf).comp N.1.toSubmodule.subtype = f N :=
   finiteSubcomoduleLiftOfExistsMem_comp_subtype exists_finite_subcomodule_mem f hf N
 
-/-- A linear map out of a comodule over a free coefficient coalgebra is determined by its
+/-- A linear map out of a comodule over a projective coefficient coalgebra is determined by its
 restrictions to the finite subcomodules. -/
-theorem finiteSubcomoduleLift_unique [Module.Free R C]
+theorem finiteSubcomoduleLift_unique [Module.Projective R C]
     (f : ∀ N : finiteSubcomodules (R := R) (C := C) (M := M), N.1 →ₗ[R] P)
     (hf : ∀ (N Q : finiteSubcomodules (R := R) (C := C) (M := M))
       (hNQ : N.1 ≤ Q.1),

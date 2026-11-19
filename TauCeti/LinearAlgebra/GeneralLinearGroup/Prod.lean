@@ -50,18 +50,18 @@ theorem prodMap_apply (g : GeneralLinearGroup K V) (h : GeneralLinearGroup K W) 
 /-- Product maps preserve multiplication. -/
 @[simp]
 theorem prodMap_mul (g₁ g₂ : GeneralLinearGroup K V) (h₁ h₂ : GeneralLinearGroup K W) :
-    prodMap (g₁ * g₂) (h₁ * h₂) = prodMap g₁ h₁ * prodMap g₂ h₂ := by
-  ext x <;> rfl
+    prodMap (g₁ * g₂) (h₁ * h₂) = prodMap g₁ h₁ * prodMap g₂ h₂ :=
+  Units.ext <| by simp only [Units.val_mul, coe_prodMap, LinearMap.prodMap_mul]
 
 /-- The product map of two identity automorphisms is the identity. -/
 @[simp]
-theorem prodMap_one : prodMap (1 : GeneralLinearGroup K V) (1 : GeneralLinearGroup K W) = 1 := by
-  ext x <;> rfl
+theorem prodMap_one : prodMap (1 : GeneralLinearGroup K V) (1 : GeneralLinearGroup K W) = 1 :=
+  Units.ext <| by simp only [coe_prodMap, Units.val_one, LinearMap.prodMap_one]
 
 /-- Product maps preserve inverses. -/
 @[simp]
 theorem prodMap_inv (g : GeneralLinearGroup K V) (h : GeneralLinearGroup K W) :
-    prodMap g⁻¹ h⁻¹ = (prodMap g h)⁻¹ := by
-  ext x <;> rfl
+    prodMap g⁻¹ h⁻¹ = (prodMap g h)⁻¹ :=
+  eq_inv_of_mul_eq_one_left <| by rw [← prodMap_mul, inv_mul_cancel, inv_mul_cancel, prodMap_one]
 
 end LinearMap.GeneralLinearGroup

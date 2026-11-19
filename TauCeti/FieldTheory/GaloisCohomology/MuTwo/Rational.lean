@@ -44,7 +44,7 @@ and all its prime valuations are even. Negative valuations are allowed. -/
 theorem kummerClass_eq_kummerClass_iff_nonneg_and_even_padicValRat (a b : ℚˣ) :
     kummerClass a = kummerClass b ↔
       0 ≤ (a : ℚ) * b ∧ ∀ p : ℕ, p.Prime → Even (padicValRat p ((a : ℚ) * b)) := by
-  rw [kummerClass_eq_kummerClass_iff_isSquare_mul, ← isSquare_units_val_iff,
+  rw [kummerClass_eq_kummerClass_iff_isSquare_mul, ← Units.isSquare_coe_iff,
     Units.val_mul, Rat.isSquare_iff_even_factorization]
 
 /-- Every mod-two continuous cohomology class of the absolute Galois group of `ℚ` is the
@@ -76,7 +76,7 @@ theorem linearIndependent_kummerClass_rat_primes {ι : Type*} (p : ι → ℕ)
   classical
   rw [linearIndependent_kummerClass_iff]
   intro T hT hsq
-  have hval := isSquare_units_val_iff.2 hsq
+  have hval := Units.isSquare_coe_iff.2 hsq
   simp only [Units.coe_prod, Units.val_mk0] at hval
   exact Multiquadratic.not_isSquare_prod_primes_of_injective
     p hp hinj T hT hval

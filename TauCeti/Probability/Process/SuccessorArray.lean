@@ -56,8 +56,6 @@ noncomputable section
 
 open MeasureTheory
 
-open TauCeti.MeasureTheory
-
 open Function (occCount)
 
 namespace TauCeti
@@ -197,9 +195,7 @@ theorem measurable_successorArray_apply (a : α) (k : ℕ)
     (ha : MeasurableSet ({a} : Set α)) :
     Measurable fun x : ℕ → α => successorArray x a k := by
   simp only [successorArray_def]
-  exact measurable_eval_index (g := fun x : ℕ → α => x)
-    (f := fun x : ℕ → α => visitTime x a k + 1)
-    measurable_id (Measurable.of_discrete.comp (measurable_visitTime a k ha))
+  exact measurable_id.eval_index (Measurable.of_discrete.comp (measurable_visitTime a k ha))
 
 /-- Each entry of the visited successor array is a measurable function of the path: whether the
 path visits the row is a countable union of coordinate events. -/
@@ -276,6 +272,17 @@ theorem visitedSuccessorProcess_visitCell (X : ℕ → Ω → α) (n : ℕ) (ω 
   rw [visitedSuccessorProcess_apply]
   exact visitedSuccessorArray_visitCell _ _
 
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- The cell preimage of a finite window of the visited successor array read at the cells `τ p`:
+the set of outcomes whose visited successor array has the prescribed entries at those cells. -/
+theorem preimage_restrict_visitedSuccessorProcess (τ : α × ℕ → α × ℕ)
+    (F : Finset (α × ℕ)) (g : F → α) :
+    (fun ω ↦ F.restrict fun p : α × ℕ ↦ visitedSuccessorProcess X (τ p) ω) ⁻¹' {g} =
+      {ω | ∀ p : F, visitedSuccessorArray (fun n ↦ X n ω) (τ p).1 (τ p).2 = g p} := by
+  ext ω
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Finset.restrict_def,
+    visitedSuccessorProcess_apply, Set.mem_ofPred_eq]
+
 /-- Every entry of the visited successor array of an almost everywhere measurable process is
 almost everywhere measurable. -/
 theorem aemeasurable_visitedSuccessorProcess {μ : Measure Ω} {X : ℕ → Ω → α}
@@ -298,7 +305,7 @@ private theorem measurable_pathOfSuccessors_apply (n : ℕ) :
     Measurable fun q : α × (α → ℕ → α) => pathOfSuccessors q.1 q.2 n := by
   classical
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     cases n with
     | zero => simpa only [pathOfSuccessors_zero] using measurable_fst
     | succ n =>
@@ -311,21 +318,12 @@ private theorem measurable_pathOfSuccessors_apply (n : ℕ) :
             ih i (hi.trans (Nat.lt_succ_self n))
       have hstate : Measurable fun q : α × (α → ℕ → α) =>
           q.2 (pathOfSuccessors q.1 q.2 n) :=
-        measurable_eval_index (g := fun q : α × (α → ℕ → α) => q.2)
-          (f := fun q : α × (α → ℕ → α) => pathOfSuccessors q.1 q.2 n)
-          measurable_snd hn
+        measurable_snd.eval_index hn
       have hcount : Measurable fun q : α × (α → ℕ → α) =>
           visitCount (pathOfSuccessors q.1 q.2) (pathOfSuccessors q.1 q.2 n) n :=
-        measurable_eval_index
-          (g := fun (q : α × (α → ℕ → α)) a =>
-            visitCount (pathOfSuccessors q.1 q.2) a n)
-          (f := fun q : α × (α → ℕ → α) => pathOfSuccessors q.1 q.2 n)
-          hcounts hn
+        hcounts.eval_index hn
       simp only [pathOfSuccessors_succ]
-      exact measurable_eval_index
-        (g := fun q : α × (α → ℕ → α) => q.2 (pathOfSuccessors q.1 q.2 n))
-        (f := fun q : α × (α → ℕ → α) =>
-          visitCount (pathOfSuccessors q.1 q.2) (pathOfSuccessors q.1 q.2 n) n) hstate hcount
+      exact hstate.eval_index hcount
 
 /-- **Rebuilding a path from an initial state and a successor array is measurable.** -/
 theorem measurable_pathOfSuccessors :

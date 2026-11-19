@@ -48,6 +48,7 @@ reparametrizations of a common one exactly when their normal forms agree, are in
 * `TauCeti.PLPath.ofSegments`: the path presented by a segment list.
 * `TauCeti.PLPath.endpoint`, `TauCeti.PLPath.reverse`, `TauCeti.PLPath.straight`: the endpoint,
   the reversed path and the straight path `t ↦ t • v`.
+* `TauCeti.PLPath.map`: the linear image of a path, allowing collapsed segments.
 
 ## Main results
 
@@ -63,8 +64,13 @@ reparametrizations of a common one exactly when their normal forms agree, are in
   is the concatenation of the straight paths along `v` and along `w`.
 * `TauCeti.PLPath.straight_smul_mul_straight_smul`, `TauCeti.PLPath.ofSegments_smul_cons_smul_cons`:
   subdividing a straight path, or a segment of a segment list, along a ray.
+* `TauCeti.PLPath.ofSegments_append_cut_eq`: cutting a segment at a fraction `θ ∈ [0, 1]`, in the
+  middle of a segment list, does not change the presented path.
 * `TauCeti.PLPath.ofSegments_div_smul_cons_sub_div_smul_cons`: subdividing a segment of a segment
   list at a fraction `d / e` with `0 ≤ d ≤ e`.
+* `TauCeti.PLPath.map_injective`, `TauCeti.PLPath.map_smul_id_injective`: injective linear maps
+  (in particular nonzero scalar dilations) commute with normalization and act injectively on
+  piecewise-linear paths.
 
 ## References
 
@@ -262,6 +268,33 @@ theorem isReduced_normalize (l : List V) : IsReduced 𝕜 (normalize 𝕜 l) := 
   | nil => exact isReduced_nil
   | cons v l ih => exact ih.consMerge v
 
+/-- Normalization only merges segments in the same ray and drops stationary ones. So if a set `T`
+contains `v + w` for all `v, w ∈ T` in the same ray, and contains every nonstationary segment of
+`l`, then it contains every segment of `normalize 𝕜 l`. -/
+theorem mem_of_mem_normalize {T : Set V} (hT : ∀ v ∈ T, ∀ w ∈ T, SameRay 𝕜 v w → v + w ∈ T)
+    (hl : ∀ v ∈ l, v ≠ 0 → v ∈ T) {v : V} (hv : v ∈ normalize 𝕜 l) : v ∈ T := by
+  induction l generalizing v with
+  | nil => simp at hv
+  | cons u l ih =>
+    simp only [List.mem_cons, forall_eq_or_imp] at hl
+    have ih' := fun w hw ↦ ih hl.2 (v := w) hw
+    rw [normalize_cons] at hv
+    by_cases hu : u = 0
+    · exact ih' v (by simpa [hu, consMerge_zero] using hv)
+    rcases hm : normalize 𝕜 l with _ | ⟨w, m⟩
+    · rw [hm, consMerge_nil_of_ne_zero hu, List.mem_singleton] at hv
+      exact hv ▸ hl.1 hu
+    rw [hm] at hv ih'
+    by_cases huw : SameRay 𝕜 u w
+    · rw [consMerge_cons_of_sameRay huw, List.mem_cons] at hv
+      rcases hv with rfl | hv
+      · exact hT u (hl.1 hu) w (ih' w (by simp)) huw
+      · exact ih' v (List.mem_cons_of_mem _ hv)
+    · rw [consMerge_cons_of_not_sameRay huw, List.mem_cons] at hv
+      rcases hv with rfl | hv
+      · exact hl.1 hu
+      · exact ih' v hv
+
 theorem IsReduced.normalize_eq (h : IsReduced 𝕜 l) : normalize 𝕜 l = l := by
   induction l with
   | nil => rfl
@@ -451,6 +484,11 @@ theorem ofSegments_cons (v : V) (l : List V) :
     ofSegments 𝕜 (v :: l) = straight 𝕜 v * ofSegments 𝕜 l := by
   rw [straight, ← ofSegments_append, List.singleton_append]
 
+/-- A stationary first segment does not change the presented path. -/
+@[simp]
+theorem ofSegments_zero_cons (l : List V) : ofSegments 𝕜 ((0 : V) :: l) = ofSegments 𝕜 l :=
+  PLPath.ext (by rw [segments_ofSegments, segments_ofSegments, normalize_cons, consMerge_zero])
+
 /-- Every path is the concatenation of the straight paths along its segments. -/
 theorem prod_map_straight (l : List V) : (l.map (straight 𝕜)).prod = ofSegments 𝕜 l := by
   induction l with
@@ -544,6 +582,17 @@ theorem straight_smul_mul_straight_smul {a b : 𝕜} (ha : 0 ≤ a) (hb : 0 ≤ 
     straight 𝕜 (a • w) * straight 𝕜 (b • w) = straight 𝕜 ((a + b) • w) := by
   rw [add_smul, straight_add ((SameRay.sameRay_nonneg_smul_left w ha).nonneg_smul_right hb)]
 
+/-- A straight path along a natural multiple is the concatenation power of the original
+straight path. -/
+@[simp]
+theorem straight_natCast_smul (n : ℕ) (v : V) :
+    straight 𝕜 ((n : 𝕜) • v) = straight 𝕜 v ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Nat.cast_succ, ← straight_smul_mul_straight_smul (Nat.cast_nonneg n) zero_le_one,
+      one_smul, ih, pow_succ]
+
 /-- Subdividing a segment along its ray does not change the presented path: for `0 ≤ a` and
 `0 ≤ b`, the segments `a • w` and `b • w` present the same path as the single segment
 `(a + b) • w`. -/
@@ -552,6 +601,17 @@ theorem ofSegments_smul_cons_smul_cons {a b : 𝕜} (ha : 0 ≤ a) (hb : 0 ≤ b
   rw [ofSegments_cons, ofSegments_cons, ← mul_assoc, straight_smul_mul_straight_smul ha hb,
     ofSegments_cons]
 
+/-- Cutting a segment `v` of a path at the fraction `θ ∈ [0, 1]`, in the middle of the segments
+`a ++ m ++ v :: r`, does not change the path presented by the segments. -/
+theorem ofSegments_append_cut_eq {a m r : List V} {v : V} {θ : 𝕜} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
+    ofSegments 𝕜 (a ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: r)) =
+      ofSegments 𝕜 (a ++ m ++ v :: r) := by
+  have hr : a ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: r) =
+      (a ++ m) ++ (θ • v :: (1 - θ) • v :: r) := by
+    simp only [List.append_assoc, List.singleton_append]
+  rw [hr, ofSegments_append (a ++ m), ofSegments_append (a ++ m),
+    ofSegments_smul_cons_smul_cons hθ₀ (sub_nonneg.mpr hθ₁), add_sub_cancel, one_smul]
+
 /-- Subdividing a segment `w` at the fraction `d / e`, for `0 ≤ d ≤ e` and `0 < e`, into the
 segments `(d / e) • w` and `((e - d) / e) • w` does not change the presented path. -/
 theorem ofSegments_div_smul_cons_sub_div_smul_cons [PosMulReflectLT 𝕜] {d e : 𝕜} (hd : 0 ≤ d)
@@ -559,6 +619,130 @@ theorem ofSegments_div_smul_cons_sub_div_smul_cons [PosMulReflectLT 𝕜] {d e :
     ofSegments 𝕜 ((d / e) • w :: ((e - d) / e) • w :: l) = ofSegments 𝕜 (w :: l) := by
   rw [ofSegments_smul_cons_smul_cons (div_nonneg hd he.le) (div_nonneg (sub_nonneg.2 hde) he.le),
     ← add_div, add_sub_cancel, div_self he.ne', one_smul]
+
+/-! ### Linear images -/
+
+section Images
+
+variable {W U : Type*} [AddCommGroup W] [Module 𝕜 W] [AddCommGroup U] [Module 𝕜 U]
+
+/-- Taking a linear image preserves elementary path moves, including when segments collapse. -/
+theorem Move.map {l m : List V} (h : Move 𝕜 l m) (g : V →ₗ[𝕜] W) :
+    Move 𝕜 (l.map g) (m.map g) := by
+  cases h with
+  | merge l m hvw => simpa using Move.merge (l.map g) (m.map g) (hvw.map g)
+  | erase_zero l m => simpa using Move.erase_zero (l.map g) (m.map g)
+
+/-- Normalizing a presentation before taking its linear image does not change the path. -/
+theorem ofSegments_map_normalize (g : V →ₗ[𝕜] W) (l : List V) :
+    ofSegments 𝕜 ((normalize 𝕜 l).map g) = ofSegments 𝕜 (l.map g) := by
+  apply ofSegments_eq_ofSegments_iff.mpr
+  exact (EqvGen.reflTransGen_le_eqvGen _ _ _
+    ((reflTransGen_move_normalize l).lift _ fun _ _ h ↦ h.map g)).symm _ _
+
+/-- The linear image of a piecewise-linear path, with any collapsed segments removed. -/
+noncomputable def map (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) : PLPath 𝕜 W :=
+  ofSegments 𝕜 (p.segments.map g)
+
+theorem map_def (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) : p.map g = ofSegments 𝕜 (p.segments.map g) :=
+  (rfl)
+
+/-- A linear image can be computed on any segment presentation. -/
+@[simp]
+theorem map_ofSegments (l : List V) (g : V →ₗ[𝕜] W) :
+    (ofSegments 𝕜 l).map g = ofSegments 𝕜 (l.map g) := by
+  simp only [map, segments_ofSegments, ofSegments_map_normalize]
+
+@[simp]
+theorem map_id (p : PLPath 𝕜 V) : p.map (LinearMap.id : V →ₗ[𝕜] V) = p := by
+  simp [map]
+
+/-- Linear images respect composition. -/
+@[simp]
+theorem map_map (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) (h : W →ₗ[𝕜] U) :
+    (p.map g).map h = p.map (h.comp g) := by
+  simp [map, ofSegments_map_normalize, List.map_map]
+
+@[simp]
+theorem map_one (g : V →ₗ[𝕜] W) : (1 : PLPath 𝕜 V).map g = 1 := by
+  simp [map]
+
+/-- Linear images preserve concatenation. -/
+@[simp]
+theorem map_mul (p q : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) :
+    (p * q).map g = p.map g * q.map g := by
+  simp [map, ofSegments_map_normalize, List.map_append]
+
+@[simp]
+theorem map_straight (v : V) (g : V →ₗ[𝕜] W) :
+    (straight 𝕜 v).map g = straight 𝕜 (g v) := by
+  simp [straight_def]
+
+@[simp]
+theorem endpoint_map (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) :
+    (p.map g).endpoint = g p.endpoint := by
+  simp [map, endpoint_def, map_list_sum]
+
+/-- Linear images commute with reversal. -/
+@[simp]
+theorem map_reverse (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) :
+    p.reverse.map g = (p.map g).reverse := by
+  simp [map, segments_reverse, List.map_reverse, List.map_map, reverse_ofSegments,
+    Function.comp_def]
+
+/-- Mapping by the zero linear map collapses every piecewise-linear path to the constant path
+`1`. -/
+@[simp]
+theorem map_zero_linearMap (p : PLPath 𝕜 V) : p.map (0 : V →ₗ[𝕜] W) = 1 := by
+  obtain ⟨l, rfl⟩ := ofSegments_surjective p
+  apply PLPath.ext
+  simp [segments_ofSegments, normalize_eq_nil_iff]
+
+/-- An injective linear map commutes with the single normalization step `consMerge`, since it
+preserves and reflects both zero segments and collinear rays. -/
+theorem consMerge_map_of_injective {g : V →ₗ[𝕜] W} (hg : Function.Injective g)
+    (v : V) (l : List V) :
+    consMerge 𝕜 (g v) (l.map g) = (consMerge 𝕜 v l).map g := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  have hgv : g v ≠ 0 := by simpa [map_zero] using hg.ne hv
+  cases l with
+  | nil => simp [consMerge_nil_of_ne_zero hv, consMerge_nil_of_ne_zero hgv]
+  | cons w l =>
+    by_cases hvw : SameRay 𝕜 v w
+    · rw [List.map_cons, consMerge_cons_of_sameRay (hg.sameRay_map_iff.mpr hvw),
+        consMerge_cons_of_sameRay hvw, List.map_cons, map_add]
+    · rw [List.map_cons, consMerge_cons_of_not_sameRay (mt hg.sameRay_map_iff.mp hvw),
+        consMerge_cons_of_not_sameRay hvw, List.map_cons, List.map_cons]
+
+/-- Segment normalization commutes with any injective linear map. -/
+theorem normalize_map_of_injective {g : V →ₗ[𝕜] W} (hg : Function.Injective g) (l : List V) :
+    normalize 𝕜 (l.map g) = (normalize 𝕜 l).map g := by
+  induction l with
+  | nil => simp
+  | cons v l ih =>
+    rw [List.map_cons, normalize_cons, normalize_cons, ih, consMerge_map_of_injective hg]
+
+/-- An injective linear map preserves the reduced segment list of a path without further merging or
+erasure. -/
+theorem segments_map_of_injective {g : V →ₗ[𝕜] W} (hg : Function.Injective g) (p : PLPath 𝕜 V) :
+    (p.map g).segments = p.segments.map g := by
+  rw [map_def, segments_ofSegments, normalize_map_of_injective hg, p.isReduced.normalize_eq]
+
+/-- An injective linear map acts injectively on piecewise-linear paths. -/
+theorem map_injective {g : V →ₗ[𝕜] W} (hg : Function.Injective g) :
+    Function.Injective (fun p : PLPath 𝕜 V ↦ p.map g) := by
+  intro p q (h : p.map g = q.map g)
+  apply PLPath.ext
+  apply List.map_injective_iff.mpr hg
+  rw [← segments_map_of_injective hg, ← segments_map_of_injective hg, h]
+
+/-- Nonzero scalar dilation acts injectively on piecewise-linear paths. -/
+theorem map_smul_id_injective {a : 𝕜} (ha : a ≠ 0) :
+    Function.Injective (fun p : PLPath 𝕜 V ↦ p.map (a • LinearMap.id)) :=
+  map_injective fun _ _ h ↦ smul_right_injective V ha h
+
+end Images
 
 end PLPath
 

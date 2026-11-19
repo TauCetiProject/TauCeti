@@ -115,7 +115,7 @@ theorem abelianizationProPClass_generates_of_isPGroup (hp : p.Prime)
   -- satisfies `#(G ⧸ W) = p`. Apply the prime-order case to `W ◁ G`, the induction
   -- hypothesis to `V.subgroupOf W ◁ W`, and combine them using the step lemma.
   induction hn : Nat.card (G ⧸ V) using Nat.strong_induction_on generalizing G V with
-  | h n ih =>
+  | ind n ih =>
   have : Finite (G ⧸ V) := V.quotient_finite_of_isOpen hV
   rcases subsingleton_or_nontrivial (G ⧸ V) with _ | _
   · rw [← hn, Nat.card_of_subsingleton (1 : G ⧸ V), Nat.card_of_subsingleton (0 : H2 _ _)]

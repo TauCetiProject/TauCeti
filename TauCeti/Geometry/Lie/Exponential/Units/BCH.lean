@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.BCH.Local
-public import TauCeti.Geometry.Lie.Exponential.BCH
+public import TauCeti.Geometry.Lie.Exponential.BCH.Basic
 public import TauCeti.Geometry.Lie.Exponential.Units.Compatibility
 
 /-!
@@ -43,7 +43,7 @@ namespace TauCeti
 
 variable (R : Type*) [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
 
-local instance : CompleteSpace R := FiniteDimensional.complete ℝ R
+local instance : CompleteSpace R := FiniteDimensional.completeSpace ℝ R
 attribute [local instance] normedAlgebraRatOfReal
 local instance : FiniteDimensional ℝ
     (LeftInvariantDerivation (modelWithCornersSelf ℝ R) Rˣ) :=

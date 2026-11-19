@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Pair
+public import TauCeti.RingTheory.Ideal.CompatibleRoots
+public import TauCeti.RingTheory.Ideal.Flat
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+public import TauCeti.RingTheory.Subring.Basic
 public import Mathlib.RingTheory.Perfection
 
 /-!
@@ -20,7 +23,10 @@ by these coordinates.
 
 This identifies the topological ideal used in almost mathematics with an algebraic root
 ideal. Neither completeness, uniformity, nor a perfectoid hypothesis is needed. The statement
-allows any ring of integral elements, including `A°` itself.
+allows any ring of integral elements, including `A°` itself. Through this identification the
+ideal inherits the properties of root ideals: it is idempotent, and it is flat because the roots
+are units of `A`, hence nonzerodivisors of `A⁺`. These are the two axioms of a basic setup for
+almost mathematics on `(A⁺, A°°)`.
 
 ## Main results
 
@@ -29,11 +35,17 @@ allows any ring of integral elements, including `A°` itself.
 * `TauCeti.Huber.IsRingOfIntegralElements.comap_topologicallyNilpotentIdeal_eq_span_range`:
   the pullback of `A°°` to `A⁺` is the root ideal.
 * `TauCeti.Huber.topologicallyNilpotentIdeal_eq_span_range`: the ideal equality in `A°`.
+* `TauCeti.Huber.isIdempotentElem_topologicallyNilpotentIdeal` and
+  `TauCeti.Huber.flat_topologicallyNilpotentIdeal`: `A°°` is an idempotent flat ideal of `A°`;
+  `TauCeti.Huber.IsRingOfIntegralElements.isIdempotentElem_comap_topologicallyNilpotentIdeal` and
+  `TauCeti.Huber.IsRingOfIntegralElements.flat_comap_topologicallyNilpotentIdeal` give the same
+  for its pullback to any ring of integral elements.
 
 ## References
 
 * P. Scholze, *Étale cohomology of diamonds*, §3, Definition 3.21 and its preamble.
-* B. Bhatt, *Lecture notes for a class on perfectoid spaces*, Lemma 3.1.3(2).
+* B. Bhatt, *Lecture notes for a class on perfectoid spaces*, Lemma 3.1.3(2) and §4.1,
+  Example 4.1.3.
 -/
 
 public section
@@ -109,12 +121,52 @@ theorem topologicallyNilpotentIdeal_eq_span_range [IsHuberRing A] (hp : 2 ≤ p)
       (Perfection.coeffMonoidHom (powerBoundedSubring A) p 0 r : A)) :
     topologicallyNilpotentIdeal A =
       Ideal.span (Set.range fun n ↦ Perfection.coeffMonoidHom (powerBoundedSubring A) p n r) := by
-  have h : IsRingOfIntegralElements (powerBoundedSubring A) := by
-    simpa only [Pair.powerBounded_plus] using (Pair.powerBounded A).isRingOfIntegralElements
-  have hi : (powerBoundedSubring A).inclusion h.le_powerBoundedSubring = RingHom.id _ := by
-    ext x
-    rfl
-  simpa only [hi, Ideal.comap_id] using
-    h.comap_topologicallyNilpotentIdeal_eq_span_range hp r hr
+  simpa only [Subring.inclusion_rfl, Ideal.comap_id] using
+    (isRingOfIntegralElements_powerBoundedSubring A).comap_topologicallyNilpotentIdeal_eq_span_range
+      hp r hr
+
+/-- The pullback of `A°°` to a ring of integral elements admitting compatible roots of a
+pseudouniformiser is idempotent. -/
+theorem IsRingOfIntegralElements.isIdempotentElem_comap_topologicallyNilpotentIdeal
+    (h : IsRingOfIntegralElements Aplus) (hp : 2 ≤ p) (r : Perfection Aplus p)
+    (hr : IsPseudoUniformizer (Perfection.coeffMonoidHom Aplus p 0 r : A)) :
+    IsIdempotentElem
+      ((topologicallyNilpotentIdeal A).comap (Aplus.inclusion h.le_powerBoundedSubring)) := by
+  rw [h.comap_topologicallyNilpotentIdeal_eq_span_range hp r hr]
+  exact isIdempotentElem_span_range_compatible_roots hp fun n ↦ r.2 n
+
+/-- The pullback of `A°°` to a ring of integral elements admitting compatible roots of a
+pseudouniformiser is a flat module: the roots are units of `A`, hence nonzerodivisors of `A⁺`. -/
+theorem IsRingOfIntegralElements.flat_comap_topologicallyNilpotentIdeal
+    (h : IsRingOfIntegralElements Aplus) (hp : 2 ≤ p) (r : Perfection Aplus p)
+    (hr : IsPseudoUniformizer (Perfection.coeffMonoidHom Aplus p 0 r : A)) :
+    Module.Flat Aplus
+      ((topologicallyNilpotentIdeal A).comap (Aplus.inclusion h.le_powerBoundedSubring)) := by
+  have : NeZero p := ⟨by omega⟩
+  rw [h.comap_topologicallyNilpotentIdeal_eq_span_range hp r hr]
+  exact r.flat_span_range_of_isSMulRegular fun x y hxy ↦
+    Subtype.ext (hr.isUnit.isRegular.left (congrArg (Subtype.val : Aplus → A) hxy))
+
+/-- In a Huber ring admitting compatible roots of a pseudouniformiser, the ideal `A°°` is
+idempotent. -/
+theorem isIdempotentElem_topologicallyNilpotentIdeal [IsHuberRing A] (hp : 2 ≤ p)
+    (r : Perfection (powerBoundedSubring A) p)
+    (hr : IsPseudoUniformizer
+      (Perfection.coeffMonoidHom (powerBoundedSubring A) p 0 r : A)) :
+    IsIdempotentElem (topologicallyNilpotentIdeal A) := by
+  simpa only [Subring.inclusion_rfl, Ideal.comap_id] using
+    isRingOfIntegralElements_powerBoundedSubring A
+      |>.isIdempotentElem_comap_topologicallyNilpotentIdeal hp r hr
+
+/-- In a Huber ring admitting compatible roots of a pseudouniformiser, the ideal `A°°` is a flat
+`A°`-module. -/
+theorem flat_topologicallyNilpotentIdeal [IsHuberRing A] (hp : 2 ≤ p)
+    (r : Perfection (powerBoundedSubring A) p)
+    (hr : IsPseudoUniformizer
+      (Perfection.coeffMonoidHom (powerBoundedSubring A) p 0 r : A)) :
+    Module.Flat (powerBoundedSubring A) (topologicallyNilpotentIdeal A) := by
+  have := isRingOfIntegralElements_powerBoundedSubring A
+    |>.flat_comap_topologicallyNilpotentIdeal hp r hr
+  rwa [Subring.inclusion_rfl, Ideal.comap_id] at this
 
 end TauCeti.Huber

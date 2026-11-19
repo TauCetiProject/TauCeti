@@ -34,6 +34,7 @@ The lattice is not assumed to be full: this follows from the given basis.
   `ℝ`-basis of `E` consisting of lattice vectors.
 * `ZLattice.exists_basis_span_image_eq_flag`: a basis of `L` with the same real flag as an
   `ℝ`-basis of `E` consisting of lattice vectors.
+* `ZLattice.equivFun_ofZLatticeBasis_apply_eq_zero`: coordinates past an adapted flag vanish.
 
 ## References
 
@@ -43,7 +44,7 @@ The lattice is not assumed to be full: this follows from the given basis.
 
 public section
 
-open Module Submodule ZSpan
+open Module Submodule ZSpan Set
 
 namespace ZLattice
 
@@ -199,5 +200,18 @@ theorem exists_basis_span_image_eq_flag (e : Basis (Fin n) ℝ E) (he : ∀ i, e
   refine ⟨b, fun k ↦ ?_⟩
   rw [← (b.ofZLatticeBasis ℝ L).flag_eq_of_triangular htri k, Basis.flag]
   simp only [Basis.ofZLatticeBasis_apply]
+
+/-- In coordinates of a lattice basis adapted to the flag of `e`, the `j`-th coordinate
+vanishes on the span of the first `j` basis vectors of `e`. -/
+theorem equivFun_ofZLatticeBasis_apply_eq_zero [FiniteDimensional ℝ E] [IsZLattice ℝ L]
+    {e : Basis (Fin n) ℝ E} {b : Basis (Fin n) ℤ L}
+    (hb : ∀ k : Fin (n + 1), span ℝ ((fun j ↦ (b j : E)) '' {j | j.castSucc < k}) = e.flag k)
+    (j : Fin n) {v : E} (hv : v ∈ span ℝ (e '' Iio j)) :
+    (b.ofZLatticeBasis ℝ L).equivFun v j = 0 := by
+  refine (b.ofZLatticeBasis ℝ L).mem_flag_iff_repr_eq_zero.1 ?_ j le_rfl
+  simp only [Basis.flag, Basis.ofZLatticeBasis_apply]
+  rw [hb, Basis.flag]
+  simp only [Fin.castSucc_lt_castSucc_iff]
+  exact hv
 
 end ZLattice

@@ -1,0 +1,396 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Normed.Module.TensorProduct.Map
+public import TauCeti.Analysis.Normed.Operator.Completion
+
+/-!
+# Completed projective and injective tensor products
+
+The completed projective tensor product `E ⊗̂π F` and the completed injective tensor product
+`E ⊗̂ε F` are the completions of the algebraic tensor product `E ⊗[𝕜] F` for the projective and
+the injective norm. Here they are `TauCeti.CompletedProjectiveTensor 𝕜 E F` and
+`TauCeti.CompletedInjectiveTensor 𝕜 E F`, Mathlib's `UniformSpace.Completion` of
+`TauCeti.ProjectiveTensor 𝕜 E F` and `TauCeti.InjectiveTensor 𝕜 E F`. They are Banach spaces,
+and the completion map `UniformSpace.Completion.toComplₗᵢ` is a linear isometry with dense range
+from the algebraic tensor product; when `E` and `F` are normed spaces over `ℝ` or `ℂ`, both
+seminorms are norms and it is an isometric embedding.
+
+Bounded operators `f : E →L[𝕜] E'` and `g : F →L[𝕜] F'` induce operators `x ⊗ₜ y ↦ f x ⊗ₜ g y`
+of norm at most `‖f‖ * ‖g‖` on both completed tensor products, functorially, and the contraction
+from the projective to the injective tensor product extends to a natural contraction
+`E ⊗̂π F → E ⊗̂ε F`.
+
+The completed projective tensor product has the norm-preserving universal property for Banach
+targets: bounded bilinear maps `E →L[𝕜] F →L[𝕜] G` into a Banach space `G` correspond
+isometrically to bounded operators `E ⊗̂π F →L[𝕜] G`. When `𝕜` is complete, for instance `ℝ` or
+`ℂ`, taking `G = 𝕜` identifies the dual of `E ⊗̂π F` isometrically with the space of bounded
+bilinear forms on `E × F`; for `StrongDual 𝕜 E ⊗̂π E`, the evaluation pairing defines the
+contractive tensor trace `TauCeti.CompletedProjectiveTensor.trace 𝕜 E : E* ⊗̂π E →L[𝕜] 𝕜` sending
+`f ⊗ₜ x` to `f x`, without completeness assumptions on `E`.
+
+## Main definitions
+
+* `TauCeti.CompletedProjectiveTensor 𝕜 E F` and `TauCeti.CompletedInjectiveTensor 𝕜 E F`: the
+  completed projective and injective tensor products.
+* `TauCeti.CompletedProjectiveTensor.liftIsometry`: the isometric universal property of the
+  completed projective tensor product.
+* `TauCeti.CompletedProjectiveTensor.trace`: the tensor trace `E* ⊗̂π E →L[𝕜] 𝕜` sending `f ⊗ₜ x`
+  to `f x`.
+* `TauCeti.CompletedProjectiveTensor.mapL` and `TauCeti.CompletedInjectiveTensor.mapL`: the
+  operators induced by a pair of bounded operators.
+* `TauCeti.CompletedProjectiveTensor.toCompletedInjectiveTensor`: the contraction
+  `E ⊗̂π F → E ⊗̂ε F`.
+
+## Main results
+
+* `TauCeti.CompletedProjectiveTensor.continuousLinearMap_ext` and
+  `TauCeti.CompletedInjectiveTensor.continuousLinearMap_ext`: bounded operators out of the
+  completed tensor products are determined by their values on pure tensors.
+* `TauCeti.CompletedProjectiveTensor.norm_coe_tmul_le`: the completed norm of a pure tensor is at
+  most the product of the norms of its factors.
+* `TauCeti.CompletedProjectiveTensor.norm_mapL_le` and
+  `TauCeti.CompletedInjectiveTensor.norm_mapL_le`: `‖mapL f g‖ ≤ ‖f‖ * ‖g‖`.
+* `TauCeti.CompletedProjectiveTensor.toCompletedInjectiveTensor_comp_mapL`: naturality of the
+  contraction from the completed projective to the completed injective tensor product, and
+  `TauCeti.CompletedProjectiveTensor.injective_toCompletedInjectiveTensor_of_leftInverse` for
+  descent of its injectivity along bounded linear retractions.
+* `TauCeti.CompletedProjectiveTensor.trace_mapL_precomp`: cyclicity of the tensor trace.
+
+## References
+
+* R. A. Ryan, *Introduction to Tensor Products of Banach Spaces*, Springer, 2002, §§2.1, 3.1.
+* V. Runde, *Lectures on Amenability*, Springer, 2002, Appendix B.2.
+-/
+
+public section
+
+open scoped TensorProduct
+
+open UniformSpace
+
+namespace TauCeti
+
+variable (𝕜 E F : Type*) [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The completed projective tensor product `E ⊗̂π F`: the completion of the algebraic tensor
+product `E ⊗[𝕜] F` for the projective norm. -/
+abbrev CompletedProjectiveTensor :=
+  Completion (ProjectiveTensor 𝕜 E F)
+
+/-- The completed injective tensor product `E ⊗̂ε F`: the completion of the algebraic tensor
+product `E ⊗[𝕜] F` for the injective norm. -/
+abbrev CompletedInjectiveTensor :=
+  Completion (InjectiveTensor 𝕜 E F)
+
+variable {𝕜 E F} {E' E'' F' F'' G : Type*}
+  [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E'] [SeminormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F'] [SeminormedAddCommGroup F''] [NormedSpace 𝕜 F'']
+
+namespace CompletedProjectiveTensor
+
+/-- Two bounded operators from the completed projective tensor product to a Hausdorff space agree
+when they agree on pure tensors. -/
+@[ext]
+theorem continuousLinearMap_ext {M : Type*} [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
+    [T2Space M] {l l' : CompletedProjectiveTensor 𝕜 E F →L[𝕜] M}
+    (h : ∀ x y, l (⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) = l' (⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F)) :
+    l = l' := by
+  have h' : l ∘L Completion.toComplL = l' ∘L Completion.toComplL :=
+    ProjectiveTensor.continuousLinearMap_ext fun x y ↦ by simpa using h x y
+  exact DFunLike.coe_injective <|
+    Completion.ext l.continuous l'.continuous fun u ↦ by simpa using congr($h' u)
+
+/-- The completed projective norm of a pure tensor is at most the product of the norms of its
+factors. -/
+theorem norm_coe_tmul_le (x : E) (y : F) :
+    ‖((⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) : CompletedProjectiveTensor 𝕜 E F)‖ ≤ ‖x‖ * ‖y‖ := by
+  simpa [Completion.norm_coe, ProjectiveTensor.norm_def] using
+    TensorProduct.projectiveSeminorm_tmul_le (𝕜 := 𝕜) x y
+
+/-- The canonical bounded bilinear map into the completed projective tensor product. -/
+noncomputable def tmulL : E →L[𝕜] F →L[𝕜] CompletedProjectiveTensor 𝕜 E F :=
+  (ContinuousLinearMap.compL 𝕜 F (ProjectiveTensor 𝕜 E F)
+    (CompletedProjectiveTensor 𝕜 E F) Completion.toComplL).comp
+      (ProjectiveTensor.tmulL 𝕜 E F)
+
+/-- The canonical bilinear map sends a pair to its completed pure tensor. -/
+@[simp]
+theorem tmulL_apply (x : E) (y : F) :
+    tmulL x y = ((⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) : CompletedProjectiveTensor 𝕜 E F) := by
+  simp [tmulL]
+
+/-- The canonical bilinear map into the completed projective tensor product is contractive. -/
+theorem norm_tmulL_le : ‖tmulL (𝕜 := 𝕜) (E := E) (F := F)‖ ≤ 1 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+  intro x
+  apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+  intro y
+  simpa using norm_coe_tmul_le x y
+
+/-- The bounded operator `x ⊗ₜ y ↦ f x ⊗ₜ g y` between completed projective tensor products
+induced by bounded operators `f` and `g`. -/
+noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    CompletedProjectiveTensor 𝕜 E F →L[𝕜] CompletedProjectiveTensor 𝕜 E' F' :=
+  (ProjectiveTensor.mapL f g).completion
+
+/-- On the algebraic tensor product, the induced operator is `ProjectiveTensor.mapL f g`. -/
+@[simp]
+theorem mapL_coe (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : ProjectiveTensor 𝕜 E F) :
+    mapL f g u = ProjectiveTensor.mapL f g u :=
+  ContinuousLinearMap.completion_apply_coe _ u
+
+/-- The induced operator is the extension of `ProjectiveTensor.mapL f g` to the completions. -/
+theorem mapL_eq_completion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f g = (ProjectiveTensor.mapL f g).completion :=
+  (rfl)
+
+/-- The operator induced by `f` and `g` on completed projective tensor products has norm at most
+`‖f‖ * ‖g‖`. -/
+theorem norm_mapL_le (f : E →L[𝕜] E') (g : F →L[𝕜] F') : ‖mapL f g‖ ≤ ‖f‖ * ‖g‖ :=
+  (ContinuousLinearMap.norm_completion _).trans_le (ProjectiveTensor.norm_mapL_le f g)
+
+/-- The identity operators induce the identity of the completed projective tensor product. -/
+@[simp]
+theorem mapL_id :
+    mapL (ContinuousLinearMap.id 𝕜 E) (ContinuousLinearMap.id 𝕜 F) =
+      ContinuousLinearMap.id 𝕜 (CompletedProjectiveTensor 𝕜 E F) :=
+  continuousLinearMap_ext fun _ _ ↦ by simp
+
+/-- The operator induced on completed projective tensor products respects composition. -/
+theorem mapL_comp (f₂ : E' →L[𝕜] E'') (f₁ : E →L[𝕜] E') (g₂ : F' →L[𝕜] F'') (g₁ : F →L[𝕜] F') :
+    mapL (f₂ ∘L f₁) (g₂ ∘L g₁) = mapL f₂ g₂ ∘L mapL f₁ g₁ :=
+  continuousLinearMap_ext fun _ _ ↦ by simp
+
+/-- The induced operator is additive in the left operator. -/
+theorem mapL_add_left (f₁ f₂ : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (f₁ + f₂) g = mapL f₁ g + mapL f₂ g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.add_tmul, ProjectiveTensor.mk_add, Completion.coe_add]
+
+/-- The induced operator is additive in the right operator. -/
+theorem mapL_add_right (f : E →L[𝕜] E') (g₁ g₂ : F →L[𝕜] F') :
+    mapL f (g₁ + g₂) = mapL f g₁ + mapL f g₂ :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.tmul_add, ProjectiveTensor.mk_add, Completion.coe_add]
+
+/-- The induced operator is homogeneous in the left operator. -/
+theorem mapL_smul_left (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (a • f) g = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [← TensorProduct.smul_tmul', ProjectiveTensor.mk_smul, Completion.coe_smul]
+
+/-- The induced operator is homogeneous in the right operator. -/
+theorem mapL_smul_right (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f (a • g) = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.tmul_smul, ProjectiveTensor.mk_smul, Completion.coe_smul]
+
+variable (𝕜 E F) in
+/-- The contraction from the completed projective to the completed injective tensor product: the
+extension of the identity of the underlying algebraic tensors. -/
+noncomputable def toCompletedInjectiveTensor :
+    CompletedProjectiveTensor 𝕜 E F →L[𝕜] CompletedInjectiveTensor 𝕜 E F :=
+  (ProjectiveTensor.toInjectiveTensor 𝕜 E F).completion
+
+/-- On the algebraic tensor product, the contraction is `ProjectiveTensor.toInjectiveTensor`. -/
+@[simp]
+theorem toCompletedInjectiveTensor_coe (u : ProjectiveTensor 𝕜 E F) :
+    toCompletedInjectiveTensor 𝕜 E F u = ProjectiveTensor.toInjectiveTensor 𝕜 E F u :=
+  ContinuousLinearMap.completion_apply_coe _ u
+
+/-- The map from the completed projective to the completed injective tensor product is a
+contraction. -/
+theorem norm_toCompletedInjectiveTensor_le : ‖toCompletedInjectiveTensor 𝕜 E F‖ ≤ 1 :=
+  (ContinuousLinearMap.norm_completion _).trans_le ProjectiveTensor.norm_toInjectiveTensor_le
+
+section Lift
+
+variable [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
+
+variable (𝕜 E F G) in
+/-- The **universal property** of the completed projective tensor product: bounded bilinear maps
+`E →L[𝕜] F →L[𝕜] G` into a Banach space correspond isometrically to bounded operators on
+`CompletedProjectiveTensor 𝕜 E F`. The operator induced by `B` sends `x ⊗ₜ y` to `B x y`.
+
+When `𝕜` is complete, taking `G = 𝕜` identifies the dual of the completed projective tensor
+product isometrically with the bounded bilinear forms on `E × F`. -/
+noncomputable def liftIsometry :
+    (E →L[𝕜] F →L[𝕜] G) ≃ₗᵢ[𝕜] (CompletedProjectiveTensor 𝕜 E F →L[𝕜] G) where
+  toFun B := (ProjectiveTensor.liftIsometry 𝕜 E F G B).fromCompletion
+  map_add' B B' := continuousLinearMap_ext fun x y ↦ by simp
+  map_smul' a B := continuousLinearMap_ext fun x y ↦ by simp
+  invFun l := (ProjectiveTensor.liftIsometry 𝕜 E F G).symm (l ∘L Completion.toComplL)
+  left_inv B := by ext x y; simp
+  right_inv l := continuousLinearMap_ext fun x y ↦ by simp
+  norm_map' B := by simp [(ProjectiveTensor.liftIsometry 𝕜 E F G).norm_map]
+
+/-- On the algebraic tensor product, the operator induced by a bounded bilinear map is the one
+given by the universal property of `ProjectiveTensor 𝕜 E F`. -/
+@[simp]
+theorem liftIsometry_coe (B : E →L[𝕜] F →L[𝕜] G) (u : ProjectiveTensor 𝕜 E F) :
+    liftIsometry 𝕜 E F G B u = ProjectiveTensor.liftIsometry 𝕜 E F G B u :=
+  ContinuousLinearMap.fromCompletion_apply_coe _ u
+
+/-- The bilinear map corresponding to an operator `l` on the completed projective tensor product
+is `(x, y) ↦ l (x ⊗ₜ y)`. -/
+@[simp]
+theorem liftIsometry_symm_apply_apply (l : CompletedProjectiveTensor 𝕜 E F →L[𝕜] G) (x : E)
+    (y : F) : (liftIsometry 𝕜 E F G).symm l x y = l (⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) := by
+  obtain ⟨B, rfl⟩ := (liftIsometry 𝕜 E F G).surjective l
+  simp
+
+/-- Composing the operator induced by a bilinear map `B` with `mapL f g` gives the operator
+induced by `(x, y) ↦ B (f x) (g y)`. -/
+theorem liftIsometry_comp_mapL (B : E' →L[𝕜] F' →L[𝕜] G) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    liftIsometry 𝕜 E' F' G B ∘L mapL f g = liftIsometry 𝕜 E F G (B.bilinearComp f g) :=
+  continuousLinearMap_ext fun x y ↦ by simp
+
+end Lift
+
+end CompletedProjectiveTensor
+
+namespace CompletedInjectiveTensor
+
+/-- Two bounded operators from the completed injective tensor product to a Hausdorff space agree
+when they agree on pure tensors. -/
+@[ext]
+theorem continuousLinearMap_ext {M : Type*} [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
+    [T2Space M] {l l' : CompletedInjectiveTensor 𝕜 E F →L[𝕜] M}
+    (h : ∀ x y, l (⟨x ⊗ₜ y⟩ : InjectiveTensor 𝕜 E F) = l' (⟨x ⊗ₜ y⟩ : InjectiveTensor 𝕜 E F)) :
+    l = l' := by
+  have h' : l ∘L Completion.toComplL = l' ∘L Completion.toComplL :=
+    InjectiveTensor.continuousLinearMap_ext fun x y ↦ by simpa using h x y
+  exact DFunLike.coe_injective <|
+    Completion.ext l.continuous l'.continuous fun u ↦ by simpa using congr($h' u)
+
+/-- The bounded operator `x ⊗ₜ y ↦ f x ⊗ₜ g y` between completed injective tensor products
+induced by bounded operators `f` and `g`. -/
+noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    CompletedInjectiveTensor 𝕜 E F →L[𝕜] CompletedInjectiveTensor 𝕜 E' F' :=
+  (InjectiveTensor.mapL f g).completion
+
+/-- On the algebraic tensor product, the induced operator is `InjectiveTensor.mapL f g`. -/
+@[simp]
+theorem mapL_coe (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : InjectiveTensor 𝕜 E F) :
+    mapL f g u = InjectiveTensor.mapL f g u :=
+  ContinuousLinearMap.completion_apply_coe _ u
+
+/-- The induced operator is the extension of `InjectiveTensor.mapL f g` to the completions. -/
+theorem mapL_eq_completion (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f g = (InjectiveTensor.mapL f g).completion :=
+  (rfl)
+
+/-- The operator induced by `f` and `g` on completed injective tensor products has norm at most
+`‖f‖ * ‖g‖`. -/
+theorem norm_mapL_le (f : E →L[𝕜] E') (g : F →L[𝕜] F') : ‖mapL f g‖ ≤ ‖f‖ * ‖g‖ :=
+  (ContinuousLinearMap.norm_completion _).trans_le (InjectiveTensor.norm_mapL_le f g)
+
+/-- The identity operators induce the identity of the completed injective tensor product. -/
+@[simp]
+theorem mapL_id :
+    mapL (ContinuousLinearMap.id 𝕜 E) (ContinuousLinearMap.id 𝕜 F) =
+      ContinuousLinearMap.id 𝕜 (CompletedInjectiveTensor 𝕜 E F) :=
+  continuousLinearMap_ext fun _ _ ↦ by simp
+
+/-- The operator induced on completed injective tensor products respects composition. -/
+theorem mapL_comp (f₂ : E' →L[𝕜] E'') (f₁ : E →L[𝕜] E') (g₂ : F' →L[𝕜] F'') (g₁ : F →L[𝕜] F') :
+    mapL (f₂ ∘L f₁) (g₂ ∘L g₁) = mapL f₂ g₂ ∘L mapL f₁ g₁ :=
+  continuousLinearMap_ext fun _ _ ↦ by simp
+
+end CompletedInjectiveTensor
+
+/-- The contraction from the completed projective to the completed injective tensor product is
+natural: it intertwines the operators induced by `f` and `g`. -/
+theorem CompletedProjectiveTensor.toCompletedInjectiveTensor_comp_mapL (f : E →L[𝕜] E')
+    (g : F →L[𝕜] F') :
+    toCompletedInjectiveTensor 𝕜 E' F' ∘L mapL f g =
+      CompletedInjectiveTensor.mapL f g ∘L toCompletedInjectiveTensor 𝕜 E F :=
+  continuousLinearMap_ext fun x y ↦ by simp
+
+end TauCeti
+
+namespace TauCeti.CompletedProjectiveTensor
+
+variable {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
+
+/-- Injectivity of the contraction `E ⊗̂π F → E ⊗̂ε F` descends along bounded linear retractions in
+both factors. -/
+theorem injective_toCompletedInjectiveTensor_of_leftInverse
+    {i₁ : E →L[𝕜] E'} {r₁ : E' →L[𝕜] E} (h₁ : Function.LeftInverse r₁ i₁)
+    {i₂ : F →L[𝕜] F'} {r₂ : F' →L[𝕜] F} (h₂ : Function.LeftInverse r₂ i₂)
+    (hinj : Function.Injective (toCompletedInjectiveTensor 𝕜 E' F')) :
+    Function.Injective (toCompletedInjectiveTensor 𝕜 E F) := by
+  refine (injective_iff_map_eq_zero _).2 fun u hu ↦ ?_
+  have hr₁ : r₁ ∘L i₁ = ContinuousLinearMap.id 𝕜 E := ContinuousLinearMap.ext h₁
+  have hr₂ : r₂ ∘L i₂ = ContinuousLinearMap.id 𝕜 F := ContinuousLinearMap.ext h₂
+  have hmap : toCompletedInjectiveTensor 𝕜 E' F' (mapL i₁ i₂ u) = 0 := by
+    simpa [hu] using congr($(toCompletedInjectiveTensor_comp_mapL i₁ i₂) u)
+  have himg : mapL i₁ i₂ u = 0 := hinj (hmap.trans (map_zero _).symm)
+  simpa [hr₁, hr₂, himg] using congr($(mapL_comp r₁ i₁ r₂ i₂) u)
+
+/-- Injectivity of `E ⊗̂π F → E ⊗̂ε F` descends along a bounded linear retraction in the left
+factor. -/
+theorem injective_toCompletedInjectiveTensor_of_leftInverse_left
+    {i : E →L[𝕜] E'} {r : E' →L[𝕜] E} (h : Function.LeftInverse r i)
+    (hinj : Function.Injective (toCompletedInjectiveTensor 𝕜 E' F)) :
+    Function.Injective (toCompletedInjectiveTensor 𝕜 E F) :=
+  injective_toCompletedInjectiveTensor_of_leftInverse (i₂ := .id 𝕜 F) (r₂ := .id 𝕜 F) h
+    (fun _ ↦ rfl) hinj
+
+/-- Injectivity of `E ⊗̂π F → E ⊗̂ε F` descends along a bounded linear retraction in the right
+factor. -/
+theorem injective_toCompletedInjectiveTensor_of_leftInverse_right
+    {i : F →L[𝕜] F'} {r : F' →L[𝕜] F} (h : Function.LeftInverse r i)
+    (hinj : Function.Injective (toCompletedInjectiveTensor 𝕜 E F')) :
+    Function.Injective (toCompletedInjectiveTensor 𝕜 E F) :=
+  injective_toCompletedInjectiveTensor_of_leftInverse (i₁ := .id 𝕜 E) (r₁ := .id 𝕜 E)
+    (fun _ ↦ rfl) h hinj
+
+section Trace
+
+variable {𝕜 D E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [SeminormedAddCommGroup D] [NormedSpace 𝕜 D]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+variable (𝕜 E) in
+/-- The **tensor trace** `E* ⊗̂π E →L[𝕜] 𝕜` sending `f ⊗ₜ x` to `f x`: the bounded linear
+functional induced by the evaluation pairing `(f, x) ↦ f x`. -/
+noncomputable def trace : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E →L[𝕜] 𝕜 :=
+  liftIsometry 𝕜 (StrongDual 𝕜 E) E 𝕜 (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 E))
+
+/-- The tensor trace sends a pure tensor `f ⊗ₜ x` to `f x`. -/
+@[simp]
+theorem trace_coe_tmul (f : StrongDual 𝕜 E) (x : E) :
+    trace 𝕜 E (⟨f ⊗ₜ x⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) = f x := by
+  simp [trace]
+
+/-- The tensor trace is a contraction. -/
+theorem norm_trace_le : ‖trace 𝕜 E‖ ≤ 1 := by
+  rw [trace, LinearIsometryEquiv.norm_map]
+  exact ContinuousLinearMap.norm_id_le
+
+/-- Cyclicity of the tensor trace: for `A : E →L[𝕜] D` and `u ∈ D* ⊗̂π E`, pulling the left factor
+back along `A` and tracing on `E` agrees with pushing the right factor forward along `A` and
+tracing on `D`. -/
+theorem trace_mapL_precomp (A : E →L[𝕜] D)
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 D) E) :
+    trace 𝕜 E (mapL (ContinuousLinearMap.precomp 𝕜 A) (ContinuousLinearMap.id 𝕜 E) u) =
+      trace 𝕜 D (mapL (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 D)) A u) := by
+  have h : trace 𝕜 E ∘L mapL (ContinuousLinearMap.precomp 𝕜 A) (ContinuousLinearMap.id 𝕜 E) =
+      trace 𝕜 D ∘L mapL (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 D)) A :=
+    continuousLinearMap_ext fun g x ↦ by simp
+  exact congr($h u)
+
+end Trace
+
+end TauCeti.CompletedProjectiveTensor

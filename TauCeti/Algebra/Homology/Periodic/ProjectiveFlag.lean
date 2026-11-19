@@ -110,7 +110,7 @@ theorem HasProjectiveFlag.homotopyCofiber [HasBinaryBiproducts C] {X Y : Cochain
   have (i : ZMod n) : Projective ((coneSequence f).X₃.X i) :=
     inferInstanceAs (Projective (X.X (i + ((1 : ℤ) : ZMod n))))
   exact .extension (coneSequence f) (fun i ↦ ⟨coneSequenceSplitting f i⟩) hY
-    (fun i j ↦ (shiftFunctor_obj_d' X 1 i j).trans (by rw [hd, smul_zero]))
+    (shiftFunctor_obj_d_eq_zero hd 1)
 
 /-- The terms of a complex with a projective flag are projective. -/
 theorem HasProjectiveFlag.projective_X {K : CochainComplex C (ZMod n)}

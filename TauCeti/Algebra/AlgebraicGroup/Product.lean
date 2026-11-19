@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.Bialgebra.TensorProduct
-public import TauCeti.Algebra.TensorProduct.Maps
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Products of convolution monoids of algebra maps
@@ -193,7 +193,7 @@ theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B)
       (pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂) (A := B)).symm
         (AlgHom.mapValue (H := H₁) φ p.1, AlgHom.mapValue (H := H₂) φ p.2) := by
   simp only [pointsMulEquiv_symm_apply, AlgHom.mapValue_apply]
-  rw [_root_.AlgHom.comp_productMap]
+  rw [_root_.Algebra.TensorProduct.comp_productMap]
 
 end AffineGroup.Product
 

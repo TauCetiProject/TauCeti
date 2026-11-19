@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.CategoryTheory.Triangulated.Adjunction
 public import Mathlib.CategoryTheory.Triangulated.Subcategory
+public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
 /-!
 # Triangulated `K₀` of a pretriangulated category
@@ -46,6 +47,10 @@ The biproduct triangles are distinguished, so the class map is additive on bipro
 * `TauCeti.TriangulatedK0.map₂`: the biadditive map induced by a bifunctor which is triangulated
   in each variable.
 * `TauCeti.TriangulatedK0.fromSplit`: the canonical comparison from split `K₀`.
+* `TauCeti.triangulatedObjectRelations C`: the triangle relations as integral combinations of
+  objects, and `TauCeti.TriangulatedK0.isoClassModelEquiv m`: the canonical isomorphism from
+  `TriangulatedK0 C` to the group they present over a model `m` of the isomorphism classes of `C`
+  (`TauCeti.IsoClassModel`), such as a chosen skeleton.
 
 ## Main results
 
@@ -498,15 +503,15 @@ theorem of_fullSubcategory_distTriang {T : Triangle C} (hT : T ∈ distTriang C)
     (h₂ : P T.obj₂) (h₃ : P T.obj₃) :
     (of (⟨T.obj₂, h₂⟩ : P.FullSubcategory) : TriangulatedK0 P.FullSubcategory) =
       of (⟨T.obj₁, h₁⟩ : P.FullSubcategory) + of (⟨T.obj₃, h₃⟩ : P.FullSubcategory) := by
-  -- Complete the first morphism to a distinguished triangle of the subcategory; its third vertex
-  -- is isomorphic to `T.obj₃` in the ambient category, hence in the subcategory.
-  obtain ⟨Z, g, h, hT'⟩ := distinguished_cocone_triangle
-    (P.fullyFaithfulι.preimage T.mor₁ : (⟨T.obj₁, h₁⟩ : P.FullSubcategory) ⟶ ⟨T.obj₂, h₂⟩)
-  have e := Triangle.π₃.mapIso (isoTriangleOfIso₁₂ _ _ (P.ι.map_distinguished _ hT') hT
-    (Iso.refl _) (Iso.refl _)
-    ((Category.comp_id _).trans ((P.fullyFaithfulι.map_preimage (X := ⟨T.obj₁, h₁⟩)
-      (Y := ⟨T.obj₂, h₂⟩) T.mor₁).trans (Category.id_comp _).symm)))
-  exact (of_distTriang hT').trans (congrArg (_ + ·) (of_congr (P.fullyFaithfulι.preimageIso e)))
+  -- `T` is isomorphic to the image of a distinguished triangle of the subcategory.
+  obtain ⟨T', hT', ⟨e⟩⟩ := P.exists_distTriang_mapTriangle_iso hT h₁ h₂
+  rw [← of_congr (P.fullyFaithfulι.preimageIso (X := T'.obj₁) (Y := ⟨T.obj₁, h₁⟩)
+      (Triangle.π₁.mapIso e)),
+    ← of_congr (P.fullyFaithfulι.preimageIso (X := T'.obj₂) (Y := ⟨T.obj₂, h₂⟩)
+      (Triangle.π₂.mapIso e)),
+    ← of_congr (P.fullyFaithfulι.preimageIso (X := T'.obj₃) (Y := ⟨T.obj₃, h₃⟩)
+      (Triangle.π₃.mapIso e))]
+  exact of_distTriang hT'
 
 end FullSubcategory
 
@@ -547,5 +552,68 @@ theorem map_comp_fromSplit (F : C ⥤ D) [F.CommShift ℤ] [F.IsTriangulated] :
 end Comparison
 
 end TriangulatedK0
+
+section IsoClassModel
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasShift C ℤ]
+  [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C]
+
+variable (C) in
+/-- The triangle relations `[T.obj₂] - [T.obj₁] - [T.obj₃]` of the distinguished triangles of
+`C` as integral combinations of objects, before passing to isomorphism classes. Their codes are
+the relations `TauCeti.triangulatedRelations C`, so they present triangulated `K₀` over every
+model of the isomorphism classes of `C`. -/
+def triangulatedObjectRelations : Set (FreeAbelianGroup C) :=
+  {r | ∃ T : Triangle C, T ∈ distTriang C ∧ r = .of T.obj₂ - .of T.obj₁ - .of T.obj₃}
+
+/-- Membership in the family of object-level triangle relations. -/
+@[simp]
+lemma mem_triangulatedObjectRelations_iff {r : FreeAbelianGroup C} :
+    r ∈ triangulatedObjectRelations C ↔
+      ∃ T : Triangle C, T ∈ distTriang C ∧ r = .of T.obj₂ - .of T.obj₁ - .of T.obj₃ :=
+  (Iff.rfl)
+
+variable [EssentiallySmall.{w} C]
+
+/-- The codes of the object-level triangle relations are the triangle relations presenting
+triangulated `K₀`. -/
+lemma image_triangulatedObjectRelations :
+    FreeAbelianGroup.map objectCode '' triangulatedObjectRelations C = triangulatedRelations C := by
+  ext r
+  simp [mem_triangulatedRelations_iff, freeOf_def, eq_comm]
+
+namespace TriangulatedK0
+
+variable {I J : Type*}
+
+/-- Triangulated `K₀` presented over a model `m` of the isomorphism classes of `C`: the canonical
+isomorphism from `TriangulatedK0 C` to the free abelian group on the index type of `m` modulo the
+codes of the triangle relations. It preserves the class of every object, so triangulated `K₀`
+does not depend on the skeleton used to build it. -/
+noncomputable def isoClassModelEquiv (m : IsoClassModel C I) :
+    TriangulatedK0 C ≃+ m.K0 (triangulatedObjectRelations C) :=
+  IsoClassModel.K0.presentedK0Equiv m image_triangulatedObjectRelations
+
+@[simp]
+lemma isoClassModelEquiv_of (m : IsoClassModel C I) (X : C) :
+    isoClassModelEquiv m (of X) = IsoClassModel.K0.of X :=
+  IsoClassModel.K0.presentedK0Equiv_of _ X
+
+@[simp]
+lemma isoClassModelEquiv_symm_of (m : IsoClassModel C I) (X : C) :
+    (isoClassModelEquiv m).symm (IsoClassModel.K0.of X) = of X :=
+  IsoClassModel.K0.presentedK0Equiv_symm_of _ X
+
+/-- The presentations of triangulated `K₀` over two models differ by the canonical isomorphism
+`TauCeti.IsoClassModel.K0.equiv` between them. -/
+@[simp]
+lemma isoClassModelEquiv_trans_equiv (m : IsoClassModel C I) (m' : IsoClassModel C J) :
+    (isoClassModelEquiv m).trans (IsoClassModel.K0.equiv m m' (triangulatedObjectRelations C)) =
+      isoClassModelEquiv m' :=
+  AddEquiv.toAddMonoidHom_injective (hom_ext fun X => by simp)
+
+end TriangulatedK0
+
+end IsoClassModel
 
 end TauCeti

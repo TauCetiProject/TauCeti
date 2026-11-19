@@ -79,7 +79,7 @@ theorem finsum_finrank_singularHomology_mayerVietoris {X : TopCat.{w}} {U V : Se
   have hδf (n : ℕ) := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
       (TopCat.mayerVietoris_exact₁ R hU hV hUV (n + 1) n)
   have hg := (ModuleCat.epi_iff_surjective _).1
-    (TopCat.epi_mayerVietorisFromBiprod_zero R hU hV hUV)
+    (TopCat.epi_mayerVietorisFromBiprod_zero R hUV)
   -- The exact sequence is phrased through simplicial homology of singular simplicial sets, so the
   -- hypotheses are transported along `singularHomologyFunctor_obj_obj_eq`.
   have (n : ℕ) : Module.Finite k

@@ -49,6 +49,7 @@ a dominant top row `λ₁ ≤ λ₀` is `λ₀ - λ₁ + 1`, the dimension of th
 * `TauCeti.GTPattern n`: Gelfand-Tsetlin patterns with `n` rows.
 * `TauCeti.GTPattern.topRow` and `TauCeti.GTPattern.topWeight`: the longest row, the highest weight
   the pattern refines, the second packaged as a `TauCeti.DominantWeight`.
+* `TauCeti.GTPattern.rowWeight`: the weight whose coordinates are consecutive row-sum differences.
 * `TauCeti.Interlaces`: the betweenness relation `lᵢ ≥ mᵢ ≥ lᵢ₊₁` between two integer sequences.
 * `TauCeti.GTPattern.truncate` and `TauCeti.GTPattern.extend`: deleting and prepending a top row.
 
@@ -56,8 +57,11 @@ a dominant top row `λ₁ ≤ λ₀` is `λ₀ - λ₁ + 1`, the dimension of th
 
 * `TauCeti.GTPattern.entry_anti` and `TauCeti.GTPattern.topRow_antitone`: rows are weakly
   decreasing, so the top row is a dominant weight.
+* `TauCeti.GTPattern.sum_rowWeight`: the weight coordinates sum to the top-row sum.
 * `TauCeti.GTPattern.entry_nonneg`: a pattern with a nonnegative top row has nonnegative entries,
   so the polynomial patterns are cut out by the top row alone.
+* `TauCeti.GTPattern.abs_le_sum_abs`: every entry is bounded in absolute value by the sum of the
+  absolute values of the finitely many informative entries.
 * `TauCeti.Interlaces.antitone`: an interlacing sequence is weakly decreasing, so a sequence
   interlacing a dominant weight is dominant.
 * `TauCeti.GTPattern.truncateEquiv`: patterns with `n + 1` rows and top row `l` correspond to
@@ -136,21 +140,23 @@ theorem entry_succ_succ_le_entry (P : GTPattern n) {i j : ℕ} (hj : j < n) :
   · exact (P.interlacing' hij hj).2
   · rw [P.entry_eq_zero_of_le hij, P.entry_eq_zero_of_le (Nat.succ_le_succ hij)]
 
-/-- Rows decrease weakly, in adjacent form. -/
-theorem entry_succ_le_entry (P : GTPattern n) {i j : ℕ} (hij : i + 1 < j) (hj : j ≤ n) :
+/-- Rows decrease weakly, in adjacent form. Beyond the last row both sides vanish. -/
+theorem entry_succ_le_entry (P : GTPattern n) {i j : ℕ} (hij : i + 1 < j) :
     P (i + 1) j ≤ P i j := by
+  rcases Nat.lt_or_ge n j with hj | hj
+  · rw [P.entry_eq_zero_of_lt hj, P.entry_eq_zero_of_lt hj]
   obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := ⟨j - 1, by omega⟩
   exact (P.entry_succ_succ_le_entry (by omega)).trans
     (P.entry_le_entry_succ_row (by omega) (by omega))
 
-/-- Rows decrease weakly: `λᵢ,ⱼ ≥ λᵢ',ⱼ` for `i ≤ i' < j ≤ n`.  This is a consequence of the
+/-- Rows decrease weakly: `λᵢ,ⱼ ≥ λᵢ',ⱼ` for `i ≤ i' < j`.  This is a consequence of the
 interlacing inequalities, not a separate hypothesis on a pattern. -/
-theorem entry_anti (P : GTPattern n) {i j : ℕ} (hj : j ≤ n) :
+theorem entry_anti (P : GTPattern n) {i j : ℕ} :
     ∀ {i' : ℕ}, i ≤ i' → i' < j → P i' j ≤ P i j := by
   intro i' h
   induction i', h using Nat.le_induction with
   | base => exact fun _ => le_rfl
-  | succ k _ ih => exact fun hkj => (P.entry_succ_le_entry hkj hj).trans (ih (by omega))
+  | succ k _ ih => exact fun hkj => (P.entry_succ_le_entry hkj).trans (ih (by omega))
 
 /-- Entries increase weakly with the row index: `λᵢ,ⱼ ≤ λᵢ,ⱼ'` for `i < j ≤ j' ≤ n`. -/
 theorem entry_le_entry_of_le (P : GTPattern n) {i j : ℕ} (hij : i < j) :
@@ -199,13 +205,33 @@ theorem topRow_apply (P : GTPattern n) (i : Fin n) : P.topRow i = P i n := (rfl)
 the top row is one of them, so it is a dominant weight of `GL n`; `TauCeti.GTPattern.topWeight`
 packages it as one. -/
 theorem topRow_antitone (P : GTPattern n) : Antitone P.topRow :=
-  fun _ i' h => P.entry_anti le_rfl h i'.2
+  fun _ i' h => P.entry_anti h i'.2
 
 /-- The top row of a Gelfand-Tsetlin pattern, as a dominant weight of `GL n`. -/
 def topWeight (P : GTPattern n) : DominantWeight n := ⟨P.topRow, P.topRow_antitone⟩
 
 @[simp]
 theorem topWeight_coe (P : GTPattern n) : (P.topWeight : Fin n → ℤ) = P.topRow := (rfl)
+
+/-- The weight of a pattern: coordinate `r` is the sum of row `r + 1` minus the sum of row `r`.
+Unlike the top row, this weight need not be dominant. -/
+def rowWeight (P : GTPattern n) (r : Fin n) : ℤ :=
+  (∑ k ∈ Finset.range (r.val + 1), P k (r.val + 1)) -
+    ∑ k ∈ Finset.range r.val, P k r.val
+
+theorem rowWeight_apply (P : GTPattern n) (r : Fin n) :
+    P.rowWeight r = (∑ k ∈ Finset.range (r.val + 1), P k (r.val + 1)) -
+      ∑ k ∈ Finset.range r.val, P k r.val :=
+  (rfl)
+
+/-- Consecutive row-sum differences telescope to the top-row sum. -/
+theorem sum_rowWeight (P : GTPattern n) : ∑ r, P.rowWeight r = ∑ i, P.topRow i := by
+  simp_rw [rowWeight_apply, topRow_apply]
+  rw [Fin.sum_univ_eq_sum_range (fun r =>
+    (∑ k ∈ Finset.range (r + 1), P k (r + 1)) - ∑ k ∈ Finset.range r, P k r),
+    Finset.sum_range_sub (fun r => ∑ k ∈ Finset.range r, P k r),
+    Fin.sum_univ_eq_sum_range (fun k => P k n)]
+  simp
 
 /-- Every entry is at most the top-row entry directly above it. -/
 theorem entry_le_topRow (P : GTPattern n) {i j : ℕ} (hij : i < j) (hj : j ≤ n) :
@@ -241,10 +267,32 @@ theorem entry_mem_Icc (P : GTPattern n) {i j : ℕ} (hij : i < j) (hj : j ≤ n)
   exact ⟨(P.topRow_antitone hlast).trans (P.topRow_le_entry hij hj),
     (P.entry_le_topRow hij hj).trans (P.topRow_antitone hfirst)⟩
 
+/-- Every entry of a pattern is bounded in absolute value by the sum of the absolute values of
+the entries `λ_{i,j}` with `i, j ≤ n`, which contain all the informative ones. -/
+theorem abs_le_sum_abs (P : GTPattern n) (i j : ℕ) :
+    |P i j| ≤ ∑ i' ∈ Finset.range (n + 1), ∑ j' ∈ Finset.range (n + 1), |P i' j'| := by
+  have hnn : ∀ i', 0 ≤ ∑ j' ∈ Finset.range (n + 1), |P i' j'| := fun _ =>
+    Finset.sum_nonneg fun _ _ => abs_nonneg _
+  by_cases h : i < j ∧ j ≤ n
+  · calc |P i j| ≤ ∑ j' ∈ Finset.range (n + 1), |P i j'| :=
+          Finset.single_le_sum (f := fun j' => |P i j'|) (fun _ _ => abs_nonneg _)
+            (Finset.mem_range.2 (by omega))
+      _ ≤ _ := Finset.single_le_sum (f := fun i' => ∑ j' ∈ Finset.range (n + 1), |P i' j'|)
+            (fun i' _ => hnn i') (Finset.mem_range.2 (by omega))
+  · rw [P.entry_eq_zero (by omega), abs_zero]
+    exact Finset.sum_nonneg fun i' _ => hnn i'
+
 /-- There is exactly one empty pattern. -/
 instance : Unique (GTPattern 0) where
   default := ⟨fun _ _ => 0, fun _ => rfl, fun _ hj => absurd hj (Nat.not_lt_zero _)⟩
   uniq P := by ext i j; exact P.entry_eq_zero (by omega)
+
+/-- There is exactly one pattern for `GL 0`, and it has every dominant weight of `GL 0` as top
+weight. -/
+instance uniqueTopWeightZero (l : DominantWeight 0) :
+    Unique {P : GTPattern 0 // P.topWeight = l} where
+  default := ⟨default, Subsingleton.elim _ _⟩
+  uniq _ := Subtype.ext (Subsingleton.elim _ _)
 
 end GTPattern
 
@@ -318,6 +366,14 @@ theorem truncate_apply (P : GTPattern (n + 1)) (i j : ℕ) :
 theorem topRow_truncate (P : GTPattern (n + 1)) (i : Fin n) : (truncate P).topRow i = P i n := by
   simp
 
+/-- Truncation preserves the row weights indexed by the remaining rows. -/
+@[simp]
+theorem rowWeight_truncate (P : GTPattern (n + 1)) (r : Fin n) :
+    (truncate P).rowWeight r = P.rowWeight r.castSucc := by
+  have hsucc : r.val + 1 ≤ n := r.isLt
+  have hle : r.val ≤ n := Nat.le_of_lt r.isLt
+  simp [rowWeight_apply, truncate_apply, hsucc, hle]
+
 /-- The row below the top of a pattern interlaces its top row: the pattern's own witness that
 `TauCeti.GTPattern.truncate` lands where `TauCeti.GTPattern.extend` expects it. -/
 theorem interlaces_topRow_truncate (P : GTPattern (n + 1)) :
@@ -378,6 +434,27 @@ theorem topRow_extend (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : Interlace
     (extend Q l h).topRow = l := by
   funext i
   rw [topRow_apply, extend_apply_top Q l h i.2]
+
+/-- Prepending a top row preserves every earlier row-weight coordinate. -/
+@[simp↓]
+theorem rowWeight_extend_castSucc (Q : GTPattern n) (l : Fin (n + 1) → ℤ)
+    (h : Interlaces l Q.topRow) (r : Fin n) :
+    (extend Q l h).rowWeight r.castSucc = Q.rowWeight r := by
+  have hsucc : r.val + 1 ≠ n + 1 := by omega
+  have hne : r.val ≠ n + 1 := by omega
+  simp only [rowWeight_apply, Fin.val_castSucc]
+  simp_rw [extend_apply_of_ne Q l h hsucc, extend_apply_of_ne Q l h hne]
+
+/-- The last row weight is the new top-row sum minus the previous top-row sum. -/
+@[simp↓]
+theorem rowWeight_extend_last (Q : GTPattern n) (l : Fin (n + 1) → ℤ)
+    (h : Interlaces l Q.topRow) :
+    (extend Q l h).rowWeight (Fin.last n) = (∑ i, l i) - ∑ i, Q.topRow i := by
+  have hsum := sum_rowWeight (extend Q l h)
+  rw [Fin.sum_univ_castSucc, topRow_extend] at hsum
+  simp only [rowWeight_extend_castSucc] at hsum
+  rw [sum_rowWeight] at hsum
+  omega
 
 @[simp]
 theorem truncate_extend (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : Interlaces l Q.topRow) :

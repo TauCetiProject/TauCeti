@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.CyclicCohomology.Continuous
+public import TauCeti.RingTheory.CyclicCohomology.Continuous.Basic
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 
 /-!
@@ -18,7 +18,8 @@ native topology on `ContinuousMultilinearMap` from Mathlib. By
 bounded coordinate sets, so this is also uniform convergence on products of bounded sets.
 
 In particular the cyclic Hochschild differential is continuous on the cyclic subspaces
-with their induced topologies. These facts apply to locally convex algebras without
+with their induced topologies, and pullback of cyclic cochains along a continuous linear map
+is continuous. These facts apply to locally convex algebras without
 requiring local convexity, completeness, separation, a norm on the algebra, or closed
 differential ranges. Multiplication must be jointly continuous. The operators are
 defined on the naive cochains of a nonunital algebra; no comparison with the relative
@@ -203,7 +204,7 @@ theorem continuous_continuousBarContraction (n : ℕ) :
     cases i using Fin.cases with
     | zero =>
       apply (isVonNBounded_singleton (𝕜 := 𝕜) (1 : A)).subset
-      rintro _ ⟨_, ⟨a, ha, rfl⟩, rfl⟩
+      rintro _ ⟨_, ⟨a, _, rfl⟩, rfl⟩
       simp
     | succ i => simpa [image_image, Function.comp_def] using isVonNBounded_pi_iff.1 hs i
   let := IsTopologicalAddGroup.rightUniformSpace M
@@ -243,5 +244,20 @@ theorem continuous_continuousConnesB (n : ℕ) :
     continuousCyclicOperator_apply]
 
 end Unit
+
+section PullbackTopology
+
+variable {𝕜 A B M : Type*} [NormedField 𝕜] [AddCommGroup A] [Module 𝕜 A] [TopologicalSpace A]
+  [AddCommGroup B] [Module 𝕜 B] [TopologicalSpace B] [AddCommGroup M] [Module 𝕜 M]
+  [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousConstSMul 𝕜 M]
+
+/-- Pullback of continuous cyclic cochains is continuous for bounded convergence. -/
+theorem continuous_continuousCyclicCochainsMap (f : A →L[𝕜] B) (n : ℕ) :
+    Continuous (continuousCyclicCochainsMap M f n) :=
+  continuous_induced_rng.2 <| by
+    simpa only [Function.comp_def, coe_continuousCyclicCochainsMap_apply] using
+      (ContinuousMultilinearMap.continuous_precomp fun _ ↦ f).comp continuous_subtype_val
+
+end PullbackTopology
 
 end TauCeti

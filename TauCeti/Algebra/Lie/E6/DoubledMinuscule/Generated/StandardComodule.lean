@@ -50,6 +50,10 @@ noncomputable def generatedWeightTorusCoordinateMap :
       (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 6))).obj :=
   generatedCoordinateLift R (.inr ())
 
+/-- The generated weight-torus morphism is the torus member of the numbered generator lifts. -/
+theorem generatedWeightTorusCoordinateMap_def :
+    generatedWeightTorusCoordinateMap R = generatedCoordinateLift R (.inr ()) := (rfl)
+
 /-- The generated subgroup's weight torus recovers the ambient doubled minuscule weight torus. -/
 @[reassoc (attr := simp)]
 theorem generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap :
@@ -97,7 +101,7 @@ theorem pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgro
     (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator matrixBasis
-    matrixWeight R definingIdeal_def i B q
+    matrixWeight R i B q
   -- The point functor's component uses the indexed presentation of the same points.
   erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h

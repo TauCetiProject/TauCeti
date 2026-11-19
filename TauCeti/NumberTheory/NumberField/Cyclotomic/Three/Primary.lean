@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Three.Basic
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # Primary elements of the Eisenstein integers
@@ -28,6 +29,8 @@ already satisfies the closure property `IsPrimaryEisenstein.neg_mul`. Its conten
   `ω - 1` has exactly one primary multiple by a unit of `ℤ[ω]`;
 * `Prime.existsUnique_associated_isPrimaryEisenstein`: a prime of `ℤ[ω]` of norm different
   from `3` has exactly one primary associate.
+* `TauCeti.IsPrimaryEisenstein.absNorm_span_singleton_coprime_three`: a primary element
+  generates an ideal whose norm is prime to `3`.
 
 The uniqueness of the primary associate uses Mathlib's special case of Kummer's lemma,
 `IsCyclotomicExtension.Rat.Three.eq_one_or_neg_one_of_unit_of_congruent`.
@@ -83,10 +86,7 @@ congruent to `2` modulo `3`. -/
 theorem isPrimaryEisenstein_intCast_iff {K : Type*} [Field K] [NumberField K] {a : ℤ} :
     IsPrimaryEisenstein (a : 𝓞 K) ↔ a ≡ 2 [ZMOD 3] := by
   rw [isPrimaryEisenstein_iff, Int.modEq_comm, Int.modEq_iff_dvd]
-  refine ⟨fun h ↦ ?_, fun h ↦ by exact_mod_cast Int.cast_dvd_cast _ _ h⟩
-  have h' : algebraMap ℤ (𝓞 K) 3 ∣ algebraMap ℤ (𝓞 K) (a - 2) := by simpa using h
-  have hd : Module.finrank ℤ (𝓞 K) ≠ 0 := Module.finrank_pos.ne'
-  simpa only [Algebra.norm_algebraMap, Int.pow_dvd_pow_iff hd] using map_dvd (Algebra.norm ℤ) h'
+  exact_mod_cast NumberField.RingOfIntegers.intCast_dvd_intCast (K := K) (m := 3) (n := a - 2)
 
 /-- In the ring of integers of a number field, a natural number is primary exactly when it is
 congruent to `2` modulo `3`. -/
@@ -217,13 +217,41 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K]
 
+omit [IsCyclotomicExtension {3} ℚ K] in
+/-- A primary element `x` of the ring of integers of a number field generates an ideal whose norm
+is prime to `3`, in every number field `K`. (When `K = ℚ(ω)`, so `𝓞 K = ℤ[ω]`, writing
+`x = a + b ω` with `a ≡ 2` and `b ≡ 0` modulo `3` shows directly that the norm `a ^ 2 - a b + b ^ 2`
+is `1` modulo `3`.) -/
+theorem IsPrimaryEisenstein.absNorm_span_singleton_coprime_three {x : 𝓞 K}
+    (hx : IsPrimaryEisenstein x) : (Ideal.absNorm (Ideal.span {x})).Coprime 3 := by
+  -- A maximal ideal over `3` containing `x` would contain `x`, `3` and hence `x - 3 y = 2`
+  -- (where `x = 2 + 3 y`), so `1 = 3 - 2`.
+  refine ((Nat.Prime.coprime_iff_not_dvd Nat.prime_three).mpr fun h3 => ?_).symm
+  obtain ⟨P, hPmax, hunder, hPdvd⟩ :=
+    Ideal.exists_isMaximal_dvd_of_dvd_absNorm' Nat.prime_three _ h3
+  have hxP : x ∈ P := (Ideal.span_singleton_le_iff_mem P).mp (Ideal.le_of_dvd hPdvd)
+  have h3P : (3 : 𝓞 K) ∈ P := by
+    have h : ((3 : ℕ) : ℤ) ∈ Ideal.span {((3 : ℕ) : ℤ)} := Ideal.mem_span_singleton_self _
+    rw [← hunder, Ideal.under, Ideal.mem_comap] at h
+    simpa using h
+  obtain ⟨y, hy⟩ := hx
+  have h2P : (2 : 𝓞 K) ∈ P := by
+    have h2 : (2 : 𝓞 K) = x - 3 * y := by linear_combination -hy
+    rw [h2]
+    exact P.sub_mem hxP (P.mul_mem_right y h3P)
+  refine hPmax.ne_top ((Ideal.eq_top_iff_one P).mpr ?_)
+  have h1 : (1 : 𝓞 K) = 3 - 2 := by norm_num
+  rw [h1]
+  exact P.sub_mem h3P h2P
+
 section Examples
 
 variable {ζ : K} (hζ : IsPrimitiveRoot ζ 3)
 include hζ
 
-/- `-1 - 3ω`, of norm `7`, is primary, while `3 + ω`, an associate of its conjugate `2 + 3ω`, and
-the element `2 + ω` are not; `1 - ω`, the prime above `3`, is not primary. -/
+/- `-1 - 3ω`, of norm `7`, is primary, while `3 + ω` (whose conjugate is `2 - ω` and whose primary
+associate is `2 + 3ω = -ω²(3 + ω)`) and the element `2 + ω` are not; `1 - ω`, the prime above
+`3`, is not primary. -/
 example : IsPrimaryEisenstein (((-1 : ℤ) : 𝓞 K) + (-3 : ℤ) * hζ.toInteger) := by
   rw [hζ.isPrimaryEisenstein_add_mul_iff]; decide
 

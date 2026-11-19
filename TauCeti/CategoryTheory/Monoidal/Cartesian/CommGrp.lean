@@ -37,6 +37,9 @@ so `f + g` corresponds to the product of the underlying morphisms (`CommGrp.add_
 
 ## Main results
 
+* `CategoryTheory.GrpObj.isCommMonObj_of_isMonHom_inv` and
+  `CategoryTheory.GrpObj.isCommMonObj_iff_isMonHom_inv`: a group object in a braided cartesian
+  monoidal category is commutative if and only if its inversion morphism is a monoid homomorphism.
 * `CategoryTheory.CommGrp.add_hom_hom_hom`, `CategoryTheory.CommGrp.zero_hom_hom_hom`,
   `CategoryTheory.CommGrp.neg_hom_hom_hom`, `CategoryTheory.CommGrp.sub_hom_hom_hom` and
   `CategoryTheory.CommGrp.zsmul_hom_hom_hom`: the group operations on morphisms of `CommGrp C`
@@ -44,11 +47,43 @@ so `f + g` corresponds to the product of the underlying morphisms (`CommGrp.add_
 * `CategoryTheory.CommGrp.intCast_hom_hom_hom`: the integer `n` in the endomorphism ring of a
   commutative group object `A` is the `n`-th power of the identity of `A.X` for the group law on
   points, that is, multiplication by `n`.
+* `CategoryTheory.Functor.mapCommGrp_map_intCast` and
+  `CategoryTheory.Functor.mapCommGrp_map_natCast`: a braided functor takes multiplication by `n` to
+  multiplication by `n`. For group schemes, this is the compatibility of multiplication by `n` with
+  base change.
 -/
 
 public section
 
 open CategoryTheory MonoidalCategory CartesianMonoidalCategory MonObj
+
+open scoped CategoryTheory.MonObj
+
+namespace CategoryTheory.GrpObj
+
+universe v u
+
+variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C] [BraidedCategory C]
+
+/-- A group object in a braided cartesian monoidal category whose inversion morphism is a monoid
+homomorphism is commutative. -/
+@[to_additive
+/-- An additive group object in a braided cartesian monoidal category whose negation morphism is an
+additive monoid homomorphism is commutative. -/]
+theorem isCommMonObj_of_isMonHom_inv (G : C) [GrpObj G] [IsMonHom ι[G]] : IsCommMonObj G := by
+  rw [isCommMonObj_iff_isMulCommutative]
+  refine fun X ↦ ⟨⟨fun f g ↦ inv_injective ?_⟩⟩
+  rw [_root_.mul_inv_rev g f, Hom.inv_def (f * g), MonObj.mul_comp, ← Hom.inv_def, ← Hom.inv_def]
+
+/-- A group object in a braided cartesian monoidal category is commutative if and only if its
+inversion morphism is a monoid homomorphism. -/
+@[to_additive
+/-- An additive group object in a braided cartesian monoidal category is commutative if and only if
+its negation morphism is an additive monoid homomorphism. -/]
+theorem isCommMonObj_iff_isMonHom_inv (G : C) [GrpObj G] : IsCommMonObj G ↔ IsMonHom ι[G] :=
+  ⟨fun _ ↦ inferInstance, fun _ ↦ isCommMonObj_of_isMonHom_inv G⟩
+
+end CategoryTheory.GrpObj
 
 namespace CategoryTheory.CommGrp
 
@@ -135,3 +170,33 @@ theorem natCast_hom_hom_hom (A : CommGrp C) (n : ℕ) :
   rw [← Int.cast_natCast, intCast_hom_hom_hom, zpow_natCast]
 
 end CategoryTheory.CommGrp
+
+namespace CategoryTheory.Functor
+
+open scoped Obj
+
+universe v u v₁ u₁
+
+variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C] [BraidedCategory C]
+  {D : Type u₁} [Category.{v₁} D] [CartesianMonoidalCategory D] [BraidedCategory D]
+  (F : C ⥤ D) [F.Braided]
+
+/-- A braided functor takes multiplication by an integer `n` on a commutative group object `A` to
+multiplication by `n` on the image of `A`. -/
+@[simp]
+theorem mapCommGrp_map_intCast (A : CommGrp C) (n : ℤ) :
+    F.mapCommGrp.map (n : End A).asHom = (n : End (F.mapCommGrp.obj A)).asHom := by
+  refine CommGrp.hom_ext _ _ ?_
+  rw [CommGrp.intCast_hom_hom_hom]
+  -- The underlying morphism of `F.mapCommGrp.map g` is `F.map` of the underlying morphism of `g`.
+  exact (congrArg F.map (CommGrp.intCast_hom_hom_hom A n)).trans <|
+    (map_zpow F.homMonoidHom (𝟙 A.X) n).trans (congrArg (· ^ n) (F.map_id A.X))
+
+/-- A braided functor takes multiplication by a natural number `n` on a commutative group object `A`
+to multiplication by `n` on the image of `A`. -/
+@[simp]
+theorem mapCommGrp_map_natCast (A : CommGrp C) (n : ℕ) :
+    F.mapCommGrp.map (n : End A).asHom = (n : End (F.mapCommGrp.obj A)).asHom := by
+  simpa only [Int.cast_natCast] using F.mapCommGrp_map_intCast A n
+
+end CategoryTheory.Functor

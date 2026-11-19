@@ -44,7 +44,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- Let `K` be a closed subgroup and `M` a linear subspace disjoint from its Lie algebra. In some
@@ -54,11 +54,11 @@ This needs only disjointness; in the closed-subgroup chart construction it appli
 when `M` is chosen as a linear complement of `lieSubalgebraOfSubgroup K`. -/
 theorem exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ∀ (M : Submodule ℝ (LeftInvariantDerivation I G)),
       Disjoint M (lieSubalgebraOfSubgroup (I := I) K).toSubmodule →
       ∃ ε > 0, ∀ X ∈ M, ‖X‖ < ε → (lieExp (I := I) X ∈ K ↔ X = 0) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   intro M hM
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
@@ -77,7 +77,7 @@ theorem exists_pos_forall_norm_lt_lieExp_mem_iff_eq_zero_of_disjoint {K : Subgro
     (isCompact_sphere (0 : LeftInvariantDerivation I G) 1).tendsto_subseq
       (fun n => by simpa [Metric.mem_sphere, dist_eq_norm] using hYnorm n)
   have hZM : Z ∈ M := by
-    apply M.closed_of_finiteDimensional.mem_of_tendsto hφ
+    apply M.isClosed_of_finiteDimensional.mem_of_tendsto hφ
     filter_upwards with n
     simp only [Function.comp_apply, Y, NormedSpace.normalize]
     exact M.smul_mem ‖X (φ n)‖⁻¹ (hXM (φ n))

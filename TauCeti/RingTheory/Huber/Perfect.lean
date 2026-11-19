@@ -27,6 +27,8 @@ Tate rings are exactly the perfect complete Tate rings.
 
 * `TauCeti.Huber.isOpenMap_frobenius`: Frobenius is an open map.
 * `TauCeti.Huber.IsUniform.of_perfectRing`: `R` is uniform.
+* `RingHom.perfectRing_topologicalClosure_range`: the closure of a perfect ring's image in `R`
+  is perfect; no topology on the source or continuity of the homomorphism is required.
 
 ## Implementation notes
 
@@ -138,3 +140,26 @@ theorem IsUniform.of_perfectRing (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRi
     _ = x := by rw [hϖu.val_inv_mul, one_pow, one_mul]
 
 end TauCeti.Huber
+
+/-- The closure of the image of a perfect ring in a perfect complete Hausdorff Tate ring is
+perfect. The source requires no topology, and the homomorphism need not be continuous. -/
+theorem RingHom.perfectRing_topologicalClosure_range {A R : Type*} [CommRing A] [CommRing R]
+    [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R]
+    [TauCeti.Huber.IsTateRing R] [CompleteSpace R] [T2Space R]
+    (f : A →+* R) (p : ℕ) [Fact p.Prime] [CharP R p] [PerfectRing A p] [PerfectRing R p] :
+    PerfectRing f.range.topologicalClosure p := by
+  have hroot : Continuous (frobeniusEquiv R p).symm :=
+    (frobeniusEquiv R p).toEquiv.continuous_symm_iff.mpr
+      (TauCeti.Huber.isOpenMap_frobenius p)
+  have hmem : Set.MapsTo (frobeniusEquiv R p).symm (f.range : Set R) f.range := by
+    rintro _ ⟨a, rfl⟩
+    obtain ⟨b, hb⟩ := (PerfectRing.bijective_frobenius (R := A) (p := p)).surjective a
+    refine ⟨b, (frobeniusEquiv R p).injective ?_⟩
+    simp only [RingEquiv.apply_symm_apply, coe_frobeniusEquiv, frobenius_def]
+    exact (map_pow f b p).symm.trans (congrArg f hb)
+  refine ⟨⟨?_, ?_⟩⟩
+  · intro x y hxy
+    exact Subtype.ext (injective_frobenius R p (congrArg Subtype.val hxy))
+  · intro x
+    exact ⟨⟨(frobeniusEquiv R p).symm x, map_mem_closure hroot x.property hmem⟩,
+      Subtype.ext ((frobeniusEquiv R p).apply_symm_apply x)⟩

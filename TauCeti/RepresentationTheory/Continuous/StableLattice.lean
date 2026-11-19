@@ -70,7 +70,7 @@ theorem exists_le_stable_lattice (ρ : Representation E Γ V)
   have hWo (g : Γ) : IsOpen (W g) := isOpen_biInter_finset fun v _ =>
     (IsLattice.isOpen L).preimage ((IsModuleTopology.continuous_of_linearMap (ρ g⁻¹)).comp (hρ v))
   have hWm (g : Γ) : g ∈ W g := mem_iInter₂.mpr fun v hv => by
-    simpa [← Module.End.mul_apply, ← map_mul] using hs ▸ subset_span hv
+    simpa [← mul_apply_eq_comp, ← map_mul] using hs ▸ subset_span hv
   obtain ⟨t, ht⟩ :=
     isCompact_univ.elim_finite_subcover W hWo fun g _ => mem_iUnion.mpr ⟨g, hWm g⟩
   have hle (h : Γ) : L.map (r h) ≤ ⨆ g ∈ t, L.map (r g) := by

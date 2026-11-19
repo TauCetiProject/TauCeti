@@ -35,6 +35,8 @@ has a splitting of genus zero, so its Heegaard genus is zero.
 ## Main definitions
 
 * `TauCeti.HeegaardSplitting M`: a Heegaard splitting of a space `M`.
+* `TauCeti.HeegaardSplitting.ofIsClosed`: two closed handlebodies covering a space, whose
+  intersection lies in the closure of the complement of each.
 * `TauCeti.HeegaardSplitting.symm`: the splitting with its two sides exchanged.
 * `TauCeti.HeegaardSplitting.transHomeomorph`: transport of a splitting along a homeomorphism.
 * `TauCeti.HeegaardSplitting.ofIsOpenQuotientMap`: the image of a splitting with saturated pieces
@@ -130,6 +132,51 @@ def transHomeomorph (e : M ≃ₜ N) : HeegaardSplitting N where
     rw [← image_inter e.injective, s.inter_eq_frontier_right, e.image_frontier]
   nonempty_homeomorph_left := s.nonempty_homeomorph_left.map (e.image s.left).symm.trans
   nonempty_homeomorph_right := s.nonempty_homeomorph_right.map (e.image s.right).symm.trans
+
+section OfIsClosed
+
+variable {L R : Set M}
+
+/-- **Two closed handlebodies meeting along their common frontier.** Two closed subsets `L` and
+`R` covering `M`, each homeomorphic to the standard handlebody of genus `g`, form a Heegaard
+splitting as soon as every point of `L ∩ R` is a limit of points outside `L` and of points
+outside `R`; then `L ∩ R` is the frontier of each of them. -/
+def ofIsClosed (g : ℕ) (hL : IsClosed L) (hR : IsClosed R) (hLR : L ∪ R = univ)
+    (hLc : L ∩ R ⊆ closure Lᶜ) (hRc : L ∩ R ⊆ closure Rᶜ) (eL : Nonempty (L ≃ₜ handlebody g))
+    (eR : Nonempty (R ≃ₜ handlebody g)) : HeegaardSplitting M where
+  genus := g
+  left := L
+  right := R
+  union_eq_univ := hLR
+  inter_eq_frontier_left := by
+    -- The complement of `L` lies in the closed set `R`, and so does its closure.
+    have hc : closure Lᶜ ⊆ R := closure_minimal (compl_subset_iff_union.2 hLR) hR
+    rw [frontier_eq_closure_inter_closure, hL.closure_eq]
+    exact (subset_inter inter_subset_left hLc).antisymm fun x hx ↦ ⟨hx.1, hc hx.2⟩
+  inter_eq_frontier_right := by
+    have hc : closure Rᶜ ⊆ L :=
+      closure_minimal (compl_subset_iff_union.2 (union_comm L R ▸ hLR)) hL
+    rw [frontier_eq_closure_inter_closure, hR.closure_eq]
+    exact (subset_inter inter_subset_right hRc).antisymm fun x hx ↦ ⟨hc hx.2, hx.1⟩
+  nonempty_homeomorph_left := eL
+  nonempty_homeomorph_right := eR
+
+@[simp]
+theorem ofIsClosed_genus (g : ℕ) (hL : IsClosed L) (hR : IsClosed R) (hLR hLc hRc eL eR) :
+    (ofIsClosed g hL hR hLR hLc hRc eL eR : HeegaardSplitting M).genus = g :=
+  (rfl)
+
+@[simp]
+theorem ofIsClosed_left (g : ℕ) (hL : IsClosed L) (hR : IsClosed R) (hLR hLc hRc eL eR) :
+    (ofIsClosed g hL hR hLR hLc hRc eL eR : HeegaardSplitting M).left = L :=
+  (rfl)
+
+@[simp]
+theorem ofIsClosed_right (g : ℕ) (hL : IsClosed L) (hR : IsClosed R) (hLR hLc hRc eL eR) :
+    (ofIsClosed g hL hR hLR hLc hRc eL eR : HeegaardSplitting M).right = R :=
+  (rfl)
+
+end OfIsClosed
 
 @[simp] theorem transHomeomorph_genus (e : M ≃ₜ N) : (s.transHomeomorph e).genus = s.genus := (rfl)
 @[simp] theorem transHomeomorph_left (e : M ≃ₜ N) : (s.transHomeomorph e).left = e '' s.left :=

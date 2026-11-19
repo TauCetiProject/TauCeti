@@ -5,18 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 
 /-!
 # The units of a finite group with zero are its roots of unity
 
-For a finite commutative group with zero `F` with `q` elements, every unit satisfies
-`x ^ (q - 1) = 1`, so the group `μ_{q-1}` of `(q-1)`-st roots of unity is all of `Fˣ`. This file
-records that identification. The main example is the multiplicative structure of a finite field.
+For a finite commutative group with zero `F` with `q` elements, the unit group `Fˣ` has `q - 1`
+elements, so every unit satisfies `x ^ (q - 1) = 1` and the group `μ_{q-1}` of `(q-1)`-st roots
+of unity is all of `Fˣ`. This file records that identification. The main example is the
+multiplicative structure of a finite field.
 
 Mathlib has the statement for the prime fields (`ZMod.rootsOfUnity_eq_top`); the version here is
-for an arbitrary finite commutative group with zero and is indexed by `Nat.card`.
+for an arbitrary commutative group with zero and is indexed by `Nat.card`. No finiteness
+assumption is needed: for an infinite `F` both `Nat.card F - 1` and `Nat.card Fˣ` are `0`, and
+`μ_0 = Fˣ` holds trivially.
 
 ## Main results
 
@@ -30,19 +32,13 @@ noncomputable section
 
 namespace TauCeti
 
-variable (F : Type*) [Finite F]
-
-section CommGroupWithZero
-
-variable [CommGroupWithZero F]
+variable (F : Type*) [CommGroupWithZero F]
 
 /-- **Every unit of a finite commutative group with zero with `q` elements is a `(q-1)`-st root
 of unity**; in particular every unit of a finite field is. -/
 theorem rootsOfUnity_natCard_sub_one_eq_top : rootsOfUnity (Nat.card F - 1) F = ⊤ := by
-  have := Fintype.ofFinite F
-  ext α
-  simp only [mem_rootsOfUnity', Subgroup.mem_top, iff_true, Nat.card_eq_fintype_card]
-  exact FiniteField.pow_card_sub_one_eq_one (α : F) α.ne_zero
+  ext
+  simp [mem_rootsOfUnity, ← Nat.card_units]
 
 /-- The `(q-1)`-st roots of unity of a finite commutative group with zero with `q` elements, a
 finite field for instance, are its units. -/
@@ -52,9 +48,6 @@ def rootsOfUnityEquivUnits : rootsOfUnity (Nat.card F - 1) F ≃* Fˣ :=
 @[simp]
 theorem rootsOfUnityEquivUnits_apply (ζ : rootsOfUnity (Nat.card F - 1) F) :
     rootsOfUnityEquivUnits F ζ = (ζ : Fˣ) := by
-  simp only [rootsOfUnityEquivUnits, MulEquiv.trans_apply, Subgroup.topEquiv_apply,
-    MulEquiv.subgroupCongr_apply]
-
-end CommGroupWithZero
+  simp [rootsOfUnityEquivUnits]
 
 end TauCeti

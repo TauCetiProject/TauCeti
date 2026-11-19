@@ -8,7 +8,8 @@ module
 public import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.Analysis.SpecialFunctions.Gamma
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -49,7 +50,7 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-variable {m s p q x : ℝ}
+variable {m s p q : ℝ}
 
 /-! ### The density -/
 
@@ -191,7 +192,7 @@ theorem integrable_generalizedNormalPDFReal (m s p : ℝ) :
     exact integrable_zero _ _ _
 
 /-- For positive scale and shape the density integrates to `1`. -/
-theorem integral_generalizedNormalPDFReal (hs : 0 < s) (hp : 0 < p) (m : ℝ) :
+theorem integral_generalizedNormalPDFReal_eq_one (hs : 0 < s) (hp : 0 < p) (m : ℝ) :
     ∫ x, generalizedNormalPDFReal m s p x = 1 := by
   have h := integral_generalizedNormalPDFReal_mul_rpow_abs_sub (q := 0) hs hp (by norm_num) m
   simp only [Real.rpow_zero, mul_one, zero_add, one_div, one_mul] at h
@@ -203,7 +204,7 @@ theorem lintegral_generalizedNormalPDF_eq_one (hs : 0 < s) (hp : 0 < p) (m : ℝ
   simp_rw [generalizedNormalPDF_eq_ofReal]
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_generalizedNormalPDFReal m s p)
       (ae_of_all _ (generalizedNormalPDFReal_nonneg m s p)),
-    integral_generalizedNormalPDFReal hs hp m, ENNReal.ofReal_one]
+    integral_generalizedNormalPDFReal_eq_one hs hp m, ENNReal.ofReal_one]
 
 /-! ### The law -/
 
@@ -243,7 +244,7 @@ theorem isProbabilityMeasure_generalizedNormalMeasure_iff :
   refine ⟨fun h => ?_, fun h => isProbabilityMeasure_generalizedNormalMeasure h.1 h.2 m⟩
   by_contra hsp
   rw [generalizedNormalMeasure_of_not_pos hsp] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The generalized normal law is a finite measure at every parameter. -/
 instance (m s p : ℝ) : IsFiniteMeasure (generalizedNormalMeasure m s p) := by

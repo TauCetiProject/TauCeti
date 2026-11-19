@@ -30,7 +30,7 @@ acting on its divisors, register it globally.
 * `TauCeti.AlgebraicGeometry.WeilDivisor.degree_smul` and
   `TauCeti.AlgebraicGeometry.WeilDivisor.weightedDegree_smul`: an action preserves the
   unweighted degree, and transports a weighted degree to the weight composed with the action;
-* `TauCeti.AlgebraicGeometry.WeilDivisor.isEffective_smul` and
+* `TauCeti.AlgebraicGeometry.WeilDivisor.smul_nonneg_iff` and
   `TauCeti.AlgebraicGeometry.WeilDivisor.smul_le_smul_iff`: the action preserves effectivity and
   the coefficientwise order.
 -/
@@ -57,7 +57,8 @@ noncomputable scoped instance instDistribMulAction : DistribMulAction G (WeilDiv
   Finsupp.comapDistribMulAction
 
 /-- The action is the formal pushforward along the action on points. -/
-theorem smul_def (g : G) (D : WeilDivisor X) : g • D = pushforward (g • ·) D := rfl
+theorem smul_def (g : G) (D : WeilDivisor X) : g • D = pushforward (g • ·) D :=
+  (Finsupp.comapSMul_def g D).trans (pushforward_apply (g • ·) D).symm
 
 /-- The action carries the point divisor at `x` to the point divisor at `g • x`. -/
 @[simp]
@@ -97,8 +98,8 @@ theorem smul_le_smul_iff {D E : WeilDivisor X} : g • D ≤ g • E ↔ D ≤ E
 
 /-- The action preserves effectivity of Weil divisors. -/
 @[simp]
-theorem isEffective_smul {D : WeilDivisor X} : IsEffective (g • D) ↔ IsEffective D := by
-  simp only [isEffective_iff, coeff_smul]
+theorem smul_nonneg_iff {D : WeilDivisor X} : 0 ≤ g • D ↔ 0 ≤ D := by
+  simp only [nonneg_iff, coeff_smul]
   exact ⟨fun h x ↦ by simpa using h (g • x), fun h x ↦ h _⟩
 
 end Group

@@ -58,8 +58,8 @@ def restrictScalars (Φ : PartialDiffeomorph 𝓘(𝕜', E) 𝓘(𝕜', E') M N 
   toPartialEquiv := Φ.toPartialEquiv
   open_source := Φ.open_source
   open_target := Φ.open_target
-  contMDiffOn_toFun := Φ.contMDiffOn_toFun.restrictScalars 𝕜
-  contMDiffOn_invFun := Φ.contMDiffOn_invFun.restrictScalars 𝕜
+  contMDiffOn_toFun := by simpa using Φ.contMDiffOn_toFun.restrictScalars 𝕜
+  contMDiffOn_invFun := by simpa using Φ.contMDiffOn_invFun.restrictScalars 𝕜
 
 variable (Φ : PartialDiffeomorph 𝓘(𝕜', E) 𝓘(𝕜', E') M N n)
 

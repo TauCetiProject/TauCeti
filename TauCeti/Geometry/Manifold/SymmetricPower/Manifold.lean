@@ -31,6 +31,8 @@ deliberately not an instance; see its docstring.
 
 * `TauCeti.isManifold_symChartedSpace`: the symmetric power of a Hausdorff complex curve is a
   complex analytic manifold for its elementary-symmetric charts.
+* `TauCeti.symOpenPartialHomeomorph_mem_maximalAtlas`: every explicit elementary-symmetric chart
+  built from surface charts belongs to the maximal analytic atlas.
 * `TauCeti.analyticAt_symChartAt_symm_trans`: the transition between two chosen
   elementary-symmetric charts is analytic, so that analyticity of a map into the symmetric power
   can be checked in any of them (`TauCeti.analyticAt_symChartAt_comp_of_analyticAt`).
@@ -65,6 +67,42 @@ theorem isManifold_symChartedSpace :
     hWdisj e e' hq hr fun _ _ i j z hz _ =>
       analyticAt_symm_trans (IsManifold.chart_mem_maximalAtlas _)
           (IsManifold.chart_mem_maximalAtlas _) (hVsub i hz.1) (hWsub j hz.2)
+
+/-- Every explicit elementary-symmetric chart built from analytic surface charts belongs to the
+maximal analytic atlas of the symmetric power. Thus local calculations may use common disjoint
+patches rather than the independently chosen preferred charts. -/
+theorem symOpenPartialHomeomorph_mem_maximalAtlas {ι : Type*} [Fintype ι]
+    (φ : ι → OpenPartialHomeomorph α ℂ) (V : ι → Set α)
+    (m : ι → ℕ) (hm : ∑ i, m i = n)
+    (hVo : ∀ i, IsOpen (V i)) (hVsub : ∀ i, V i ⊆ (φ i).source)
+    (hVdisj : Pairwise (Function.onFun Disjoint V))
+    (e : (Σ i, Fin (m i)) ≃ Fin n) (hq : Nonempty (∀ i, Sym (V i) (m i)))
+    (hφ : ∀ i, φ i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 α) :
+    letI := symChartedSpace (K := ℂ) (α := α) (n := n)
+    symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hq ∈
+      IsManifold.maximalAtlas 𝓘(ℂ, Fin n → ℂ) ω (Sym α n) := by
+  let := symChartedSpace (K := ℂ) (α := α) (n := n)
+  rw [IsManifold.mem_maximalAtlas_iff, mem_maximalAtlas_iff]
+  intro D hD
+  rw [symChartedSpace_atlas, Set.mem_range] at hD
+  obtain ⟨s, rfl⟩ := hD
+  obtain ⟨W, p, hp, hWo, hWsub, hWdisj, e', hr, hs⟩ := symChartAt_spec (K := ℂ) s
+  rw [hs]
+  have hCD := contDiffOn_symOpenPartialHomeomorph_trans φ _ V m hm W p hp hVo hVsub hVdisj
+    hWo hWsub hWdisj e e' hq hr fun _ _ i j z hz _ =>
+      analyticAt_symm_trans (hφ i) (IsManifold.chart_mem_maximalAtlas _)
+        (hVsub i hz.1) (hWsub j hz.2)
+  have hDC := contDiffOn_symOpenPartialHomeomorph_trans _ φ W p hp V m hm hWo hWsub hWdisj
+    hVo hVsub hVdisj e' e hr hq fun _ _ i j z hz _ =>
+      analyticAt_symm_trans (IsManifold.chart_mem_maximalAtlas _) (hφ j)
+        (hWsub i hz.1) (hVsub j hz.2)
+  constructor
+  · constructor
+    · simpa only [contDiffPregroupoid, mfld_simps] using hCD
+    · simpa only [contDiffPregroupoid, mfld_simps] using hDC
+  · constructor
+    · simpa only [contDiffPregroupoid, mfld_simps] using hDC
+    · simpa only [contDiffPregroupoid, mfld_simps] using hCD
 
 /-- **The transition between two chosen elementary-symmetric charts is analytic.** For tuples `s`,
 `s'` of a complex curve, the change of coordinates from `symChartAt s` to `symChartAt s'` is

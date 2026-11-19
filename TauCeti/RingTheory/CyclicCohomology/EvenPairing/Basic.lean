@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.GroupWithZero.Idempotent
 public import Mathlib.Data.Nat.Factorial.Basic
 public import TauCeti.Data.Matrix.Block
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
@@ -33,6 +34,7 @@ cyclicity in odd degree forces `ψ(e, …, e) = -ψ(e, …, e)`.
 * `TauCeti.apply_const_eq_zero_of_mem_cyclicCoboundaries`: when `2` is invertible, an
   even-degree cyclic coboundary vanishes on constant idempotent tuples.
 * `TauCeti.cyclicCohomology.evenPairing_mk`: the pairing evaluated on the class of a cocycle.
+* `TauCeti.cyclicCohomology.evenPairing_zero`: the zero idempotent pairs to zero.
 * `TauCeti.cyclicCohomology.evenPairing_matrixExtension_mk`: Connes' formula
   `⟨[e], [φ]⟩ = (m!)⁻¹ (φ#Tr)(e, …, e)` for an idempotent matrix `e`.
 * `TauCeti.cyclicCohomology.evenPairing_fromBlocks_matrixExtension`: the pairing is additive on
@@ -63,7 +65,7 @@ idempotent entry. Associativity is not required: each Hochschild face fixes this
 theorem apply_const_eq_zero_of_mem_cyclicCoboundaries {n : ℕ} (hn : Even n)
     {φ : cyclicCochains R A M n} (hφ : φ ∈ cyclicCoboundaries R A M n) {e : A}
     (he : IsIdempotentElem e) :
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (fun _ ↦ e) = 0 := by
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) (fun _ ↦ e) = 0 := by
   cases n with
   | zero =>
     rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ
@@ -93,7 +95,7 @@ def evenPairing (e : A) (he : IsIdempotentElem e) (m : ℕ) :
   desc (2 * m)
     ((m ! : R)⁻¹ •
       { toFun φ := ((φ : cyclicCochains R A M (2 * m)) :
-          MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e
+          MultilinearMap (RingHom.id R) (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e
         map_add' _ _ := rfl
         map_smul' _ _ := rfl })
     fun _ hφ ↦ by
@@ -107,8 +109,16 @@ theorem evenPairing_mk (e : A) (he : IsIdempotentElem e) (m : ℕ)
     (φ : cyclicCocycles R A M (2 * m)) :
     evenPairing e he m (mk R A M (2 * m) φ) =
       (m ! : R)⁻¹ • ((φ : cyclicCochains R A M (2 * m)) :
-        MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
+        MultilinearMap (RingHom.id R) (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
   simp [evenPairing]
+
+/-- The even pairing of the zero idempotent vanishes. -/
+@[simp]
+theorem evenPairing_zero (m : ℕ) :
+    evenPairing (R := R) (M := M) (0 : A) IsIdempotentElem.zero m = 0 := by
+  ext φ
+  simp only [LinearMap.coe_comp, Function.comp_apply, evenPairing_mk, LinearMap.zero_apply]
+  rw [MultilinearMap.map_coord_zero _ 0 rfl, smul_zero]
 
 /-- **Connes' even pairing** of an idempotent matrix `e` with cyclic cohomology: on the class of a
 cyclic cocycle `φ` of degree `2m`, it is `(m!)⁻¹ (φ#Tr)(e, …, e)`. -/
@@ -117,7 +127,7 @@ theorem evenPairing_matrixExtension_mk {ι : Type*} [Fintype ι] [DecidableEq ι
     evenPairing e he m (matrixExtension M ι (2 * m) (mk R A M (2 * m) φ)) =
       (m ! : R)⁻¹ • matrixCochainExtension ι (2 * m)
         ((φ : cyclicCochains R A M (2 * m)) :
-          MultilinearMap R (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
+          MultilinearMap (RingHom.id R) (fun _ : Fin (2 * m + 1) ↦ A) M) fun _ ↦ e := by
   rw [matrixExtension_mk, evenPairing_mk, coe_matrixCyclicCochainExtension_apply]
 
 /-- **Additivity of the even pairing on direct sums**: the even pairing of the block-diagonal

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Flat
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Projective
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Yoneda
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
@@ -26,7 +27,9 @@ of modules is right exact, since it has a right adjoint, so preserving monomorph
 it exact (`CategoryTheory.Functor.preservesFiniteLimits_of_preservesMonomorphisms`, for any right
 exact functor between abelian categories).
 Hence the sheafification of a sectionwise flat presheaf of modules is flat
-(`PresheafOfModulesOfCommRing.preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat`).
+(`PresheafOfModulesOfCommRing.preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat`),
+in particular that of a projective presheaf of modules
+(`PresheafOfModules.preservesFiniteLimits_tensorLeft_sheafification_obj_of_projective`).
 
 Applied to the free presheaf of modules on a representable presheaf, which is sectionwise free,
 this shows that the free module sheaf `SheafOfModules.freeYonedaFunctor R U` on an object `U` of
@@ -102,6 +105,22 @@ instance preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat
   exact Functor.preservesFiniteLimits_of_preservesMonomorphisms _
 
 end PresheafOfModulesOfCommRing
+
+namespace PresheafOfModules
+
+/-- The sheafification of a projective presheaf of modules is a flat sheaf of modules: tensoring
+with it is exact. -/
+instance preservesFiniteLimits_tensorLeft_sheafification_obj_of_projective
+    (P : PresheafOfModules.{u} (ringCatSheaf R).obj) [Projective P] :
+    PreservesFiniteLimits (tensorLeft ((sheafification.{u} (𝟙 (ringCatSheaf R).obj)).obj P)) :=
+  -- the projectivity of `P` is stated in `PresheafOfModules (ringCatSheaf R).obj`, whose ring
+  -- presheaf is by definition `R.obj ⋙ forget₂ _ _`, so it is passed explicitly to the
+  -- statement over `PresheafOfModulesOfCommRing R.obj`
+  have (X : Cᵒᵖ) : Module.Flat (R.obj.obj X) (PresheafOfModulesOfCommRing.obj P X) :=
+    @PresheafOfModulesOfCommRing.flat_obj_of_projective _ _ R.obj P ‹_› X
+  PresheafOfModulesOfCommRing.preservesFiniteLimits_tensorLeft_sheafification_obj_of_flat (R := R) P
+
+end PresheafOfModules
 
 namespace SheafOfModules
 

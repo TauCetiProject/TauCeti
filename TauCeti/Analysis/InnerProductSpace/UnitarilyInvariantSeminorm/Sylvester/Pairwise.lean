@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
 import TauCeti.Analysis.Fourier.HaagerupZsido.Fourier
 import TauCeti.Analysis.Fourier.HaagerupZsido.Mass
+import TauCeti.Analysis.InnerProductSpace.Projection.ReducedExtension
 import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
 
 /-!
@@ -46,6 +47,16 @@ characterization of the Ky Fan sums yields `δ Kₖ(X) ≤ (π / 2) Kₖ(C)`. Wo
 and the sine and cosine of `A` and `B` keeps the argument inside the scalar field, so no
 complexification is needed over `ℝ`.
 
+## Separation on invariant subspaces
+
+The separation hypothesis may also be restricted to subspaces: if `S` is invariant under `A`, `T`
+invariant under `B`, `X` takes values in `S` and vanishes on `Tᗮ`, and the eigenvalues of `A` on
+`S` are at distance at least `δ` from those of `B` on `T`, the same bound holds. Replacing `A` by
+`r` on `Sᗮ` and `B` by `-r` on `Tᗮ`, with `r = ‖A‖ + ‖B‖ + δ`, changes neither `A X` nor `X B`,
+and the new scalar eigenvalues are at distance at least `δ` from every other eigenvalue, so the
+bound on the whole spaces applies to the two reduced extensions. This is the form consumed by the
+pairwise `sin Θ` theorem, where `X` is a product of orthogonal projections.
+
 ## Main statements
 
 * `ContinuousLinearMap.mul_kyFanSum_le_pi_div_two_mul_kyFanSum_sylvester_apply`: under pairwise
@@ -55,6 +66,9 @@ complexification is needed over `ℝ`.
 * `TauCeti.UnitarilyInvariantSeminorm.mul_map_le_pi_div_two_mul_map_sylvester_apply`: under
   pairwise separation by `δ`, `δ N(X) ≤ (π / 2) N(A X - X B)` for every unitarily invariant
   seminorm `N`.
+* `TauCeti.UnitarilyInvariantSeminorm.mul_map_le_pi_div_two_mul_map_sylvester_apply_of_mem`: the
+  same bound with the separation restricted to invariant subspaces `S` and `T`, for `X` taking
+  values in `S` and vanishing on `Tᗮ`.
 
 ## References
 
@@ -79,30 +93,30 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   {A : E →L[𝕜] E} {B : F →L[𝕜] F} {δ : ℝ}
 
 /-- The phase-twisted coefficient sum of `C : F →ₗ[𝕜] E` against families `(uₗ)` and `(vₗ)`,
-written through the functional calculi of symmetric `A` and `B`: with `A eᵢ = αᵢ eᵢ` and
-`B fⱼ = βⱼ fⱼ`, the sum `∑ₗ (⟪sin (τA) uₗ, C cos (τB) vₗ⟫ + ⟪cos (τA) uₗ, C (-sin (τB)) vₗ⟫)` is
+written through the functional calculi of symmetric `S` and `T`: with `S eᵢ = αᵢ eᵢ` and
+`T fⱼ = βⱼ fⱼ`, the sum `∑ₗ (⟪sin (τS) uₗ, C cos (τT) vₗ⟫ + ⟪cos (τS) uₗ, C (-sin (τT)) vₗ⟫)` is
 `∑ₗ ∑ᵢ ∑ⱼ ⟪uₗ, eᵢ⟫ ⟪eᵢ, C fⱼ⟫ ⟪fⱼ, vₗ⟫ sin ((αᵢ - βⱼ) τ)`. -/
-private theorem sum_inner_cfc_add_inner_cfc {n m p : ℕ} {A : E →ₗ[𝕜] E} {B : F →ₗ[𝕜] F}
-    (hA : A.IsSymmetric) (hB : B.IsSymmetric) (hn : finrank 𝕜 E = n) (hm : finrank 𝕜 F = m)
+private theorem sum_inner_cfc_add_inner_cfc {n m p : ℕ} {S : E →ₗ[𝕜] E} {T : F →ₗ[𝕜] F}
+    (hS : S.IsSymmetric) (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (hm : finrank 𝕜 F = m)
     (C : F →ₗ[𝕜] E) (u : Fin p → E) (v : Fin p → F) (τ : ℝ) :
-    ∑ l, (⟪hA.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
-        C (hB.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
-      ⟪hA.cfc (fun μ ↦ Real.cos (μ * τ)) (u l),
-        C (hB.cfc (fun ν ↦ -Real.sin (ν * τ)) (v l))⟫_𝕜) =
-      ∑ l, ∑ i, ∑ j, ⟪u l, hA.eigenvectorBasis hn i⟫_𝕜 *
-        ⟪hA.eigenvectorBasis hn i, C (hB.eigenvectorBasis hm j)⟫_𝕜 *
-          ⟪hB.eigenvectorBasis hm j, v l⟫_𝕜 *
-            (Real.sin ((hA.eigenvalues hn i - hB.eigenvalues hm j) * τ) : 𝕜) := by
-  set e := hA.eigenvectorBasis hn
-  set f := hB.eigenvectorBasis hm
+    ∑ l, (⟪hS.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
+        C (hT.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
+      ⟪hS.cfc (fun μ ↦ Real.cos (μ * τ)) (u l),
+        C (hT.cfc (fun ν ↦ -Real.sin (ν * τ)) (v l))⟫_𝕜) =
+      ∑ l, ∑ i, ∑ j, ⟪u l, hS.eigenvectorBasis hn i⟫_𝕜 *
+        ⟪hS.eigenvectorBasis hn i, C (hT.eigenvectorBasis hm j)⟫_𝕜 *
+          ⟪hT.eigenvectorBasis hm j, v l⟫_𝕜 *
+            (Real.sin ((hS.eigenvalues hn i - hT.eigenvalues hm j) * τ) : 𝕜) := by
+  set e := hS.eigenvectorBasis hn
+  set f := hT.eigenvectorBasis hm
   refine sum_congr rfl fun l _ ↦ ?_
   rw [← e.sum_sum_inner_mul_inner_mul_inner f C, ← e.sum_sum_inner_mul_inner_mul_inner f C]
   simp only [← sum_add_distrib]
   refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ ?_
   -- Move the functional calculi onto the eigenvectors, where they act by scalars.
-  rw [hA.isSymmetric_cfc _ (u l), hA.isSymmetric_cfc _ (u l), ← hB.isSymmetric_cfc _ _ (v l),
-    ← hB.isSymmetric_cfc _ _ (v l)]
-  simp only [e, f, hA.cfc_apply_eigenvectorBasis, hB.cfc_apply_eigenvectorBasis,
+  rw [hS.isSymmetric_cfc _ (u l), hS.isSymmetric_cfc _ (u l), ← hT.isSymmetric_cfc _ _ (v l),
+    ← hT.isSymmetric_cfc _ _ (v l)]
+  simp only [e, f, hS.cfc_apply_eigenvectorBasis, hT.cfc_apply_eigenvectorBasis,
     inner_smul_right, inner_smul_left, RCLike.conj_ofReal]
   rw [sub_mul, Real.sin_sub]
   push_cast
@@ -110,18 +124,18 @@ private theorem sum_inner_cfc_add_inner_cfc {n m p : ℕ} {A : E →ₗ[𝕜] E}
 
 /-- The phase-twisted coefficient sums of `C : F →ₗ[𝕜] E` against orthonormal families of `p`
 vectors are bounded by the Ky Fan `p`-sum of `C`, since `sin² + cos² = 1`. -/
-private theorem norm_sum_inner_cfc_add_inner_cfc_le_kyFanSum {p : ℕ} {A : E →ₗ[𝕜] E}
-    {B : F →ₗ[𝕜] F} (hA : A.IsSymmetric) (hB : B.IsSymmetric) (C : F →ₗ[𝕜] E) {u : Fin p → E}
+private theorem norm_sum_inner_cfc_add_inner_cfc_le_kyFanSum {p : ℕ} {S : E →ₗ[𝕜] E}
+    {T : F →ₗ[𝕜] F} (hS : S.IsSymmetric) (hT : T.IsSymmetric) (C : F →ₗ[𝕜] E) {u : Fin p → E}
     {v : Fin p → F} (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) (τ : ℝ) :
-    ‖∑ l, (⟪hA.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
-        C (hB.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
-      ⟪hA.cfc (fun μ ↦ Real.cos (μ * τ)) (u l),
-        C (hB.cfc (fun ν ↦ -Real.sin (ν * τ)) (v l))⟫_𝕜)‖ ≤ C.kyFanSum p := by
-  simpa using C.norm_sum_inner_add_inner_le_kyFanSum (hA.isSymmetric_cfc _)
-    (hA.isSymmetric_cfc _) (hB.isSymmetric_cfc _) (hB.isSymmetric_cfc _)
-    (fun y ↦ (hA.norm_cfc_apply_sq_add_norm_cfc_apply_sq
+    ‖∑ l, (⟪hS.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
+        C (hT.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
+      ⟪hS.cfc (fun μ ↦ Real.cos (μ * τ)) (u l),
+        C (hT.cfc (fun ν ↦ -Real.sin (ν * τ)) (v l))⟫_𝕜)‖ ≤ C.kyFanSum p := by
+  simpa using C.norm_sum_inner_add_inner_le_kyFanSum (hS.isSymmetric_cfc _)
+    (hS.isSymmetric_cfc _) (hT.isSymmetric_cfc _) (hT.isSymmetric_cfc _)
+    (fun y ↦ (hS.norm_cfc_apply_sq_add_norm_cfc_apply_sq
       (fun μ _ ↦ Real.sin_sq_add_cos_sq (μ * τ)) y).le)
-    (fun x ↦ (hB.norm_cfc_apply_sq_add_norm_cfc_apply_sq (f := fun ν ↦ Real.cos (ν * τ))
+    (fun x ↦ (hT.norm_cfc_apply_sq_add_norm_cfc_apply_sq (f := fun ν ↦ Real.cos (ν * τ))
       (g := fun ν ↦ -Real.sin (ν * τ))
       (fun ν _ ↦ by rw [neg_sq, add_comm, Real.sin_sq_add_cos_sq]) x).le) hu hv
 
@@ -149,38 +163,24 @@ private theorem sum_inner_eq_inv_mul_integral_realKernel_mul {p : ℕ}
   have hgap (i j) : δ ≤ |α i - β j| :=
     h.le_abs_sub (by simpa using hA.hasEigenvalue_eigenvalues rfl i)
       (by simpa using hB.hasEigenvalue_eigenvalues rfl j)
-  -- The real Haagerup–Zsidó kernel inverts every eigenvalue difference:
-  -- `∫ r(t) sin ((αᵢ - βⱼ) t / δ) dt = δ / (αᵢ - βⱼ)`.
-  have hinv (i j) :
-      ∫ t, realKernel t * Real.sin ((α i - β j) * (t / δ)) = δ * (α i - β j)⁻¹ := by
-    have h1 : 1 ≤ |(α i - β j) / δ| := by
-      rw [abs_div, abs_of_pos hδ, one_le_div hδ]
-      exact hgap i j
-    calc _ = ∫ t, realKernel t * Real.sin ((α i - β j) / δ * t) :=
-          integral_congr_ae (.of_forall fun t ↦ by ring_nf)
-      _ = δ * (α i - β j)⁻¹ := by rw [integral_realKernel_mul_sin h1, inv_div, div_eq_mul_inv]
-  -- The eigenbasis coefficients of `X` are those of `C` divided by the eigenvalue differences.
-  have hX (i j) : ⟪e i, X (f j)⟫_𝕜 = ((α i - β j)⁻¹ : ℝ) * ⟪e i, C (f j)⟫_𝕜 := by
-    have hij : (α i : 𝕜) - β j ≠ 0 := by exact_mod_cast abs_pos.mp (hδ.trans_le (hgap i j))
-    rw [hC, coe_coe, inner_sylvester_apply_eigenvectorBasis hA hB rfl rfl X i j]
-    push_cast
-    field_simp
-    ring
+  have hij (i j) : α i - β j ≠ 0 := abs_pos.mp (hδ.trans_le (hgap i j))
   -- Integrate the expanded sums term by term.
   set c : Fin p → Fin (finrank 𝕜 E) → Fin (finrank 𝕜 F) → 𝕜 :=
     fun l i j ↦ ⟪u l, e i⟫_𝕜 * ⟪e i, C (f j)⟫_𝕜 * ⟪f j, v l⟫_𝕜
+  -- The scaled sine against the kernel, with a `𝕜`-valued coefficient.
   have hint (l i j) : Integrable fun t ↦
-      (realKernel t : 𝕜) * (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) := by
-    have hr : Integrable fun t ↦ Real.sin ((α i - β j) * (t / δ)) * realKernel t :=
-      integrable_realKernel.bdd_mul (c := 1) (by fun_prop)
-        (.of_forall fun t ↦ by simpa using Real.abs_sin_le_one _)
-    refine (hr.ofReal (𝕜 := 𝕜)).const_mul (c l i j) |>.congr (.of_forall fun t ↦ ?_)
-    push_cast
-    ring
-  have hterm (l i j) :
-      ∫ t, (realKernel t : 𝕜) * (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) =
+      (realKernel t : 𝕜) * (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) :=
+    ((integrable_realKernel_mul_sin ((α i - β j) / δ)).ofReal (𝕜 := 𝕜)).const_mul (c l i j)
+      |>.congr (.of_forall fun t ↦ by
+        beta_reduce
+        rw [show (α i - β j) / δ * t = (α i - β j) * (t / δ) by ring]
+        push_cast
+        ring)
+  have hterm (l i j) : ∫ t, (realKernel t : 𝕜) *
+      (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) =
         c l i j * ((δ * (α i - β j)⁻¹ : ℝ) : 𝕜) := by
-    rw [← hinv i j, ← integral_ofReal, ← integral_const_mul]
+    rw [← integral_realKernel_mul_sin_mul_div hδ (hgap i j), ← integral_ofReal,
+      ← integral_const_mul]
     exact integral_congr_ae (.of_forall fun t ↦ by push_cast; ring)
   simp only [mul_sum]
   rw [integral_finsetSum _ fun l _ ↦ integrable_finsetSum _ fun i _ ↦
@@ -192,10 +192,13 @@ private theorem sum_inner_eq_inv_mul_integral_realKernel_mul {p : ℕ}
   rw [integral_finsetSum _ fun j _ ↦ hint l i j, mul_sum]
   refine sum_congr rfl fun j _ ↦ ?_
   have hδ' : (δ : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr hδ.ne'
-  rw [hterm, coe_coe, hX]
+  rw [hterm, coe_coe, inner_eigenvectorBasis_apply_eq_inv_mul_inner_sylvester_apply hA hB rfl rfl
+    X i j (hij i j)]
   simp only [c]
   push_cast
   field_simp
+  rw [hC, coe_coe]
+  ring
 
 /-- **The simultaneous Ky Fan estimate for the Sylvester equation.** Let `A` and `B` be symmetric
 operators on finite-dimensional inner product spaces. If every eigenvalue of `A` is at distance at
@@ -270,5 +273,52 @@ theorem mul_map_le_pi_div_two_mul_map_sylvester_apply (N : UnitarilyInvariantSem
   rw [map_smul_eq_mul, RCLike.norm_ofReal, abs_of_nonneg (by positivity)] at hN
   calc δ * N X = π / 2 * (2 * δ / π * N X) := by field_simp
     _ ≤ π / 2 * N (A.sylvester B X) := by gcongr
+
+/-- **The pairwise Sylvester bound on invariant subspaces.** Let `A` and `B` be symmetric operators
+on finite-dimensional inner product spaces, let `S` be invariant under `A` and `T` invariant under
+`B`, and let `X` take values in `S` and vanish on `Tᗮ`. If every eigenvalue of `A` on `S` is at
+distance at least `δ` from every eigenvalue of `B` on `T`, then `δ N(X) ≤ (π / 2) N(A X - X B)`
+for every unitarily invariant seminorm `N`. -/
+theorem mul_map_le_pi_div_two_mul_map_sylvester_apply_of_mem
+    (N : UnitarilyInvariantSeminorm 𝕜 F E) (hA : (A : E →ₗ[𝕜] E).IsSymmetric)
+    (hB : (B : F →ₗ[𝕜] F).IsSymmetric) {S : Submodule 𝕜 E} {T : Submodule 𝕜 F}
+    (hS : ∀ x ∈ S, A x ∈ S) (hT : ∀ y ∈ T, B y ∈ T)
+    (h : End.PointSpectraSeparated (A : E →ₗ[𝕜] E) S (B : F →ₗ[𝕜] F) T δ)
+    {X : F →L[𝕜] E} (hXS : ∀ y, X y ∈ S) (hXT : ∀ y ∈ Tᗮ, X y = 0) :
+    δ * N X ≤ π / 2 * N (A.sylvester B X) := by
+  rcases lt_or_ge δ 0 with hδ | hδ
+  · exact (mul_nonpos_of_nonpos_of_nonneg hδ.le (apply_nonneg _ _)).trans
+      (mul_nonneg (by positivity) (apply_nonneg _ _))
+  -- Replace `A` on `Sᗮ` and `B` on `Tᗮ` by the scalars `r` and `-r`, far from both spectra.
+  set r := ‖A‖ + ‖B‖ + δ
+  have hsyl : (A.reducedExtension S r).sylvester (B.reducedExtension T (-r)) X =
+      A.sylvester B X := by
+    have hBT : ∀ y ∈ Tᗮ, B y ∈ Tᗮ := fun _ hy ↦
+      hB.orthogonalComplement_mem_invtSubmodule (p := T) (fun z hz ↦ hT z hz) hy
+    ext y
+    -- `X` kills `B P_{Tᗮ} y`, so `X B y = X B P_T y`.
+    have hy : X (B y) = X (B (T.starProjection y)) := by
+      conv_lhs => rw [← T.starProjection_add_starProjection_orthogonal y]
+      rw [map_add, map_add, hXT _ (hBT _ (Tᗮ.starProjection_apply_mem y)), add_zero]
+    simp only [ContinuousLinearMap.sylvester_apply, sub_apply, ContinuousLinearMap.comp_apply,
+      A.reducedExtension_apply_of_mem S r (hXS _), B.reducedExtension_apply, map_add, map_smul,
+      hXT _ (Tᗮ.starProjection_apply_mem y), smul_zero, add_zero, hy]
+  -- The eigenvalues of the extensions are those of `A` on `S` and of `B` on `T`, together
+  -- with `r` and `-r`, and `r` exceeds every eigenvalue of `A` and `B` in absolute value by `δ`.
+  have hsep : End.PointSpectraSeparated (A.reducedExtension S r : E →ₗ[𝕜] E) ⊤
+      (B.reducedExtension T (-r) : F →ₗ[𝕜] F) ⊤ δ := by
+    refine End.pointSpectraSeparated_iff.mpr fun μ hμ ν hν ↦ ?_
+    have hA0 := norm_nonneg A
+    have hB0 := norm_nonneg B
+    rcases A.restrictedPointSpectrum_reducedExtension_subset hS r hμ with rfl | hμ <;>
+      rcases B.restrictedPointSpectrum_reducedExtension_subset hT (-r) hν with rfl | hν
+    · exact le_abs.mpr (Or.inl (by linarith))
+    · have := (abs_le.mp (ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum hν)).2
+      exact le_abs.mpr (Or.inl (by linarith))
+    · have := (abs_le.mp (ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum hμ)).1
+      exact le_abs.mpr (Or.inl (by linarith))
+    · exact h.le_abs_sub hμ hν
+  simpa only [hsyl] using N.mul_map_le_pi_div_two_mul_map_sylvester_apply
+    (A.isSymmetric_reducedExtension hA hS r) (B.isSymmetric_reducedExtension hB hT (-r)) hsep X
 
 end TauCeti.UnitarilyInvariantSeminorm

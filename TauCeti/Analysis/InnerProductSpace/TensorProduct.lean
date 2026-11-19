@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.TensorProduct
+public import TauCeti.Analysis.InnerProductSpace.Dual
+public import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
 # Tensor products of inner product spaces
@@ -22,12 +24,34 @@ the Hodge forms of polarized Hodge structures: a sesquilinear form on `W₁ ⊗[
 pure tensors is the product of the values of two positive definite Hermitian forms is positive
 definite.
 
+`InnerProductSpace.tensorDualMetric` puts the ordinary product metric on `F ⊗ E*`, with
+`E*` carrying the Riesz-transported algebraic dual metric. Evaluation carries this form to
+the unnormalized Hilbert–Schmidt pairing `tr(A† B)`. This fixes the metric normalization
+when endomorphisms are identified with tensors, without adding an instance on the dual.
+
 ## Main statements
 
 * `TauCeti.lipschitzWith_one_rTensor` and `TauCeti.lipschitzWith_one_lTensor`: tensoring with the
   identity, on either side, is `1`-Lipschitz in the operator.
 * `TauCeti.apply_self_pos_of_apply_tmul_tmul`: the tensor product of two positive definite
   Hermitian forms is positive definite.
+* `TensorProduct.instCompleteSpaceOfFiniteDimensional`: the tensor product of two
+  finite-dimensional inner product spaces is complete, which discharges completeness hypotheses
+  on tensor products in adjoint statements for finite-dimensional factors.
+* `ContinuousLinearMap.rTensor_lTensor_apply_comm`: `f ⊗ 1` and `1 ⊗ g` commute.
+* `ContinuousLinearMap.rTensor_adjoint_inner_left` and
+  `ContinuousLinearMap.lTensor_adjoint_inner_left`, with their `_right` forms: `f† ⊗ 1` and
+  `1 ⊗ g†` are formal adjoints of `f ⊗ 1` and `1 ⊗ g` on the algebraic tensor product, which
+  need not be complete, so that Mathlib's `ContinuousLinearMap.adjoint_rTensor` does not apply.
+* `rTensor_adjoint_comp_self_apply_add_lTensor_adjoint_comp_self_apply_eq_zero_iff`, in the
+  `ContinuousLinearMap` namespace: the positive tensor sum `A†A ⊗ 1 + 1 ⊗ B†B` vanishes exactly
+  on the common kernel of `A ⊗ 1` and `1 ⊗ B`.
+* `InnerProductSpace.tensorDualMetric_tmul`: on pure tensors, the metric on `F ⊗ E*` is the
+  product of the inner product of `F` and the dual metric of `E`.
+* `InnerProductSpace.tensorDualMetric_eq_trace`: evaluation carries this metric to the
+  unnormalized Hilbert–Schmidt pairing `tr(A† B)`.
+* `InnerProductSpace.isPosSemidef_tensorDualMetric` and
+  `InnerProductSpace.tensorDualMetric_self_pos`: this metric is Hermitian and positive definite.
 -/
 
 public section
@@ -110,3 +134,165 @@ theorem apply_self_pos_of_apply_tmul_tmul {h₁ : W₁ →ₗ⋆[𝕜] W₁ →�
 end Sesquilinear
 
 end TauCeti
+
+namespace TensorProduct
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- The Hilbert tensor product of two finite-dimensional inner product spaces is complete, so
+operators between such tensor products have adjoints. -/
+instance instCompleteSpaceOfFiniteDimensional : CompleteSpace (E ⊗[𝕜] F) :=
+  FiniteDimensional.completeSpace 𝕜 _
+
+end TensorProduct
+
+namespace ContinuousLinearMap
+
+variable {𝕜 X₀ X₁ Y₀ Y₁ : Type*} [RCLike 𝕜] [NormedAddCommGroup X₀] [InnerProductSpace 𝕜 X₀]
+  [NormedAddCommGroup X₁] [InnerProductSpace 𝕜 X₁] [NormedAddCommGroup Y₀] [InnerProductSpace 𝕜 Y₀]
+  [NormedAddCommGroup Y₁] [InnerProductSpace 𝕜 Y₁]
+
+/-- `f ⊗ 1` and `1 ⊗ g` commute: the pointwise form of Mathlib's
+`ContinuousLinearMap.rTensor_comp_lTensor` and `ContinuousLinearMap.lTensor_comp_rTensor`. -/
+theorem rTensor_lTensor_apply_comm (f : X₀ →L[𝕜] X₁) (g : Y₀ →L[𝕜] Y₁) (x : X₀ ⊗[𝕜] Y₀) :
+    f.rTensor Y₁ (g.lTensor X₀ x) = g.lTensor X₁ (f.rTensor Y₀ x) := by
+  rw [← comp_apply, rTensor_comp_lTensor, ← comp_apply, lTensor_comp_rTensor]
+
+section Adjoint
+
+open scoped InnerProductSpace
+
+/-- `f† ⊗ 1` is a formal adjoint of `f ⊗ 1`, even when the tensor products are not complete. -/
+theorem rTensor_adjoint_inner_left [CompleteSpace X₀] [CompleteSpace X₁] (f : X₀ →L[𝕜] X₁)
+    (x : X₁ ⊗[𝕜] Y₀) (y : X₀ ⊗[𝕜] Y₀) :
+    ⟪f.adjoint.rTensor Y₀ x, y⟫_𝕜 = ⟪x, f.rTensor Y₀ y⟫_𝕜 := by
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
+  | tmul a b =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
+    | tmul c d => simp [adjoint_inner_left]
+
+/-- `f† ⊗ 1` is a formal adjoint of `f ⊗ 1`, even when the tensor products are not complete. -/
+theorem rTensor_adjoint_inner_right [CompleteSpace X₀] [CompleteSpace X₁] (f : X₀ →L[𝕜] X₁)
+    (x : X₀ ⊗[𝕜] Y₀) (y : X₁ ⊗[𝕜] Y₀) :
+    ⟪x, f.adjoint.rTensor Y₀ y⟫_𝕜 = ⟪f.rTensor Y₀ x, y⟫_𝕜 := by
+  rw [← inner_conj_symm, rTensor_adjoint_inner_left, inner_conj_symm]
+
+/-- `1 ⊗ g†` is a formal adjoint of `1 ⊗ g`, even when the tensor products are not complete. -/
+theorem lTensor_adjoint_inner_left [CompleteSpace Y₀] [CompleteSpace Y₁] (g : Y₀ →L[𝕜] Y₁)
+    (x : X₀ ⊗[𝕜] Y₁) (y : X₀ ⊗[𝕜] Y₀) :
+    ⟪g.adjoint.lTensor X₀ x, y⟫_𝕜 = ⟪x, g.lTensor X₀ y⟫_𝕜 := by
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ h₁ h₂ => simp only [map_add, inner_add_left, h₁, h₂]
+  | tmul a b =>
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ h₁ h₂ => simp only [map_add, inner_add_right, h₁, h₂]
+    | tmul c d => simp [adjoint_inner_left]
+
+/-- `1 ⊗ g†` is a formal adjoint of `1 ⊗ g`, even when the tensor products are not complete. -/
+theorem lTensor_adjoint_inner_right [CompleteSpace Y₀] [CompleteSpace Y₁] (g : Y₀ →L[𝕜] Y₁)
+    (x : X₀ ⊗[𝕜] Y₀) (y : X₀ ⊗[𝕜] Y₁) :
+    ⟪x, g.adjoint.lTensor X₀ y⟫_𝕜 = ⟪g.lTensor X₀ x, y⟫_𝕜 := by
+  rw [← inner_conj_symm, lTensor_adjoint_inner_left, inner_conj_symm]
+
+/-- The positive tensor sum `A†A ⊗ 1 + 1 ⊗ B†B` vanishes exactly on the common kernel of `A ⊗ 1`
+and `1 ⊗ B`. The tensor products need not be complete. -/
+theorem rTensor_adjoint_comp_self_apply_add_lTensor_adjoint_comp_self_apply_eq_zero_iff
+    [CompleteSpace X₀] [CompleteSpace X₁] [CompleteSpace Y₀] [CompleteSpace Y₁]
+    (A : X₀ →L[𝕜] X₁) (B : Y₀ →L[𝕜] Y₁) (x : X₀ ⊗[𝕜] Y₀) :
+    (A.adjoint ∘L A).rTensor Y₀ x + (B.adjoint ∘L B).lTensor X₀ x = 0 ↔
+      A.rTensor Y₀ x = 0 ∧ B.lTensor X₀ x = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [rTensor_comp, lTensor_comp, h.1, h.2]⟩
+  -- Pairing with `x` gives `‖(A ⊗ 1) x‖ ^ 2 + ‖(1 ⊗ B) x‖ ^ 2 = 0`.
+  have hx := congrArg (fun y ↦ RCLike.re ⟪y, x⟫_𝕜) h
+  simp only [inner_add_left, map_add, rTensor_comp, lTensor_comp, comp_apply,
+    rTensor_adjoint_inner_left, lTensor_adjoint_inner_left, inner_self_eq_norm_sq,
+    inner_zero_left, map_zero] at hx
+  obtain ⟨hA, hB⟩ := (add_eq_zero_iff_of_nonneg (by positivity) (by positivity)).mp hx
+  exact ⟨by simpa using hA, by simpa using hB⟩
+
+end Adjoint
+
+end ContinuousLinearMap
+
+namespace InnerProductSpace
+
+variable (𝕜 E F : Type*) [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- The ordinary tensor metric on `F ⊗ E*`, using the Riesz-transported positive dual
+metric. No norm or inner product instance on the algebraic dual is installed. -/
+noncomputable def tensorDualMetric :
+    F ⊗[𝕜] Module.Dual 𝕜 E →ₗ⋆[𝕜] F ⊗[𝕜] Module.Dual 𝕜 E →ₗ[𝕜] 𝕜 :=
+  (TensorProduct.map₂ (innerₛₗ 𝕜) (dualMetric 𝕜 E)).compr₂ₛₗ
+    (TensorProduct.lid 𝕜 𝕜).toLinearMap
+
+/-- On pure tensors the tensor metric is the product of the two factor metrics. -/
+@[simp]
+theorem tensorDualMetric_tmul (x : F) (φ : Module.Dual 𝕜 E)
+    (y : F) (ψ : Module.Dual 𝕜 E) :
+    tensorDualMetric 𝕜 E F (x ⊗ₜ φ) (y ⊗ₜ ψ) =
+      inner 𝕜 x y * dualMetric 𝕜 E φ ψ := by
+  simp [tensorDualMetric]
+
+/-- Evaluation identifies the ordinary tensor metric with the unnormalized Hilbert–Schmidt
+pairing. The source and target spaces may be different, and either can be zero. -/
+theorem tensorDualMetric_eq_trace [FiniteDimensional 𝕜 F]
+    (a b : F ⊗[𝕜] Module.Dual 𝕜 E) :
+    tensorDualMetric 𝕜 E F a b = LinearMap.trace 𝕜 E
+      ((dualTensorHom 𝕜 E F (TensorProduct.comm 𝕜 F (Module.Dual 𝕜 E) a)).adjoint ∘ₗ
+        dualTensorHom 𝕜 E F (TensorProduct.comm 𝕜 F (Module.Dual 𝕜 E) b)) := by
+  induction a with
+  | tmul x φ =>
+    induction b with
+    | tmul y ψ =>
+      obtain ⟨v, rfl, _⟩ := φ.existsUnique_innerₛₗ_eq
+      obtain ⟨w, rfl, _⟩ := ψ.existsUnique_innerₛₗ_eq
+      let e := stdOrthonormalBasis 𝕜 E
+      rw [tensorDualMetric_tmul, dualMetric_innerₛₗ, LinearMap.trace_eq_sum_inner _ e]
+      simp only [LinearMap.comp_apply, LinearMap.adjoint_inner_right,
+        TensorProduct.comm_tmul, dualTensorHom_apply, innerₛₗ_apply_apply, inner_smul_left,
+        inner_smul_right]
+      simp only [← inner_conj_symm v, starRingEnd_self_apply, ← mul_assoc]
+      rw [← Finset.sum_mul, e.sum_inner_mul_inner, mul_comm]
+    | add b c hb hc => simp [hb, hc, LinearMap.comp_add]
+  | add a c ha hc => simp [ha, hc, LinearMap.add_comp]
+
+/-- The ordinary tensor/dual metric is positive on every nonzero tensor. -/
+theorem tensorDualMetric_self_pos {a : F ⊗[𝕜] Module.Dual 𝕜 E} (ha : a ≠ 0) :
+    0 < tensorDualMetric 𝕜 E F a a := by
+  have hinner : (innerₛₗ 𝕜 : F →ₗ⋆[𝕜] F →ₗ[𝕜] 𝕜).IsSymm :=
+    ⟨fun x y => inner_conj_symm y x⟩
+  apply TauCeti.apply_self_pos_of_apply_tmul_tmul
+    (tensorDualMetric_tmul 𝕜 E F) hinner (isPosSemidef_dualMetric 𝕜 E).isSymm _ _ ha
+  · intro x hx
+    exact RCLike.pos_iff.2 ⟨re_inner_self_pos.2 hx, inner_self_im x⟩
+  · intro φ hφ
+    exact ((isPosSemidef_dualMetric 𝕜 E).nonneg φ).lt_of_ne' (by simpa using hφ)
+
+/-- Definiteness of the ordinary tensor/dual metric. -/
+@[simp]
+theorem tensorDualMetric_self_eq_zero_iff (a : F ⊗[𝕜] Module.Dual 𝕜 E) :
+    tensorDualMetric 𝕜 E F a a = 0 ↔ a = 0 :=
+  ⟨not_imp_not.1 fun ha ↦ (tensorDualMetric_self_pos 𝕜 E F ha).ne', by rintro rfl; simp⟩
+
+/-- The ordinary tensor/dual metric is Hermitian and positive semidefinite. -/
+theorem isPosSemidef_tensorDualMetric : (tensorDualMetric 𝕜 E F).IsPosSemidef where
+  eq a b := by
+    induction a with
+    | tmul x φ =>
+      induction b with
+      | tmul y ψ =>
+        simp only [tensorDualMetric_tmul, map_mul, inner_conj_symm,
+          (isPosSemidef_dualMetric 𝕜 E).eq]
+      | add b c hb hc => simp [hb, hc]
+    | add a c ha hc => simp [ha, hc]
+  nonneg a := by
+    rcases eq_or_ne a 0 with rfl | ha
+    · simp
+    · exact (tensorDualMetric_self_pos 𝕜 E F ha).le
+
+end InnerProductSpace

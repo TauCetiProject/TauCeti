@@ -18,7 +18,10 @@ support rather than an explicit `Finsupp.single`.
 
 The coordinate and linear-map lemmas hold over a semiring of scalars. For a finite integer basis of
 an additive group, we also express an additive map in coordinates. A ring homomorphism's values on
-an integer basis cannot all vanish when its target is nontrivial.
+an integer basis cannot all vanish when its target is nontrivial. Over a ring in which `2 ≠ 0`, no
+basis vector is the negative of a basis vector. For a basis indexed by a sum `ι ⊕ κ`, the linear
+maps with prescribed values on the vectors indexed by `κ` are parametrized by their values on the
+vectors indexed by `ι`.
 
 ## Main results
 
@@ -30,6 +33,17 @@ an integer basis cannot all vanish when its target is nontrivial.
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
+* `Module.Basis.span_range_coe`: the vectors of a basis of a submodule `U`, viewed in the ambient
+  module, span `U`.
+* `Module.Basis.span_range_map_coe`, `Module.Basis.linearIndependent_map_coe_basis`: their images
+  under a linear map `f` span the image of `U`, and are linearly independent when `f` is injective
+  on `U`.
+* `Module.Basis.range_eq_span_comp`: the range of a linear map is spanned by its values on a basis.
+* `Module.Basis.ofSpanEq`: a linearly independent family spanning a submodule `U` is a basis of `U`.
+* `Module.Basis.eq_sum_repr_smul_of_mem`: an ambient vector in a submodule `U` expands as the
+  coordinate sum of any finite basis of `U`.
+* `Module.Basis.repr_eq_zero_of_mem_of_notMem`: a vector of a submodule spanned by basis vectors has
+  zero coordinate at every basis vector outside the submodule.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
   indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
   independent.
@@ -37,6 +51,10 @@ an integer basis cannot all vanish when its target is nontrivial.
   values on a finite integer basis, weighted by the coordinates.
 * `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
   an integer basis do not all vanish.
+* `Module.Basis.ne_neg`: over a ring in which `2 ≠ 0`, no basis vector is the negative of a basis
+  vector.
+* `Module.Basis.constrSumInrEquiv`: the linear maps with prescribed values on the basis vectors
+  `b (inr j)` correspond to their values on the basis vectors `b (inl l)`.
 -/
 
 public section
@@ -66,6 +84,16 @@ theorem repr_map_eq_of_map_basis
     exact (congrArg c.repr (hf i)).trans
       ((c.repr_self i).trans (b.repr_self i).symm)
   exact DFunLike.congr_fun h x
+
+/-- A coefficient of a composite is the sum of products of coefficients through a finite
+intermediate basis. The multiplication order also applies over noncommutative semirings. -/
+theorem repr_comp_apply_apply {κ W : Type*} [Fintype κ] [AddCommMonoid W] [Module K W]
+    (b : Basis ι K V) (c : Basis κ K W) (f : V →ₗ[K] W) (g : W →ₗ[K] V) (i k : ι) :
+    b.repr ((g ∘ₗ f) (b i)) k =
+      ∑ j, c.repr (f (b i)) j * b.repr (g (c j)) k := by
+  conv_lhs => rw [LinearMap.comp_apply, ← c.sum_repr (f (b i))]
+  simp only [map_sum, map_smul, Finsupp.coe_finsetSum, Finset.sum_apply,
+    Finsupp.smul_apply, smul_eq_mul]
 
 /-- A linear map intertwines two endomorphisms if it does so on every vector of a basis. -/
 theorem intertwines_of_apply {W : Type*} [AddCommMonoid W] [Module K W]
@@ -112,6 +140,58 @@ theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
     LinearIndependent R fun i ↦ (b i : M) :=
   b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
 
+/-- The vectors of a basis of a submodule `U`, viewed in the ambient module, span `U`. -/
+@[simp]
+theorem span_range_coe (b : Module.Basis n R U) :
+    Submodule.span R (Set.range fun i ↦ (b i : M)) = U := by
+  have h := congrArg (Submodule.map U.subtype) b.span_eq
+  rwa [Submodule.map_span, Submodule.map_subtype_top, ← Set.range_comp] at h
+
+/-- The images under a linear map `f` of the vectors of a basis of a submodule `U`, viewed in the
+ambient module, span the image of `U`. -/
+@[simp]
+theorem span_range_map_coe {N : Type*} [AddCommMonoid N] [Module R N] (b : Module.Basis n R U)
+    (f : M →ₗ[R] N) : Submodule.span R (Set.range fun i ↦ f (b i)) = U.map f := by
+  have h := congrArg (Submodule.map f) b.span_range_coe
+  rwa [Submodule.map_span, ← Set.range_comp] at h
+
+/-- The images under a linear map `f`, injective on a submodule `U`, of the vectors of a basis of
+`U`, viewed in the ambient module, are linearly independent. -/
+theorem linearIndependent_map_coe_basis {N : Type*} [AddCommMonoid N] [Module R N]
+    (b : Module.Basis n R U) {f : M →ₗ[R] N} (hf : Set.InjOn f U) :
+    LinearIndependent R fun i ↦ f (b i) :=
+  b.linearIndependent_coe_basis.map_injOn f (by rwa [b.span_range_coe])
+
+/-- The range of a linear map is spanned by its values on a basis. -/
+theorem range_eq_span_comp {N : Type*} [AddCommMonoid N] [Module R N] (b : Module.Basis n R M)
+    (f : M →ₗ[R] N) : LinearMap.range f = Submodule.span R (Set.range (f ∘ b)) := by
+  rw [LinearMap.range_eq_map, ← b.span_eq, Submodule.map_span, ← Set.range_comp]
+
+/-- A linearly independent family `v` spanning a submodule `U` is a basis of `U`. -/
+noncomputable def ofSpanEq {v : n → M} (hv : LinearIndependent R v)
+    (h : Submodule.span R (Set.range v) = U) : Module.Basis n R U :=
+  (Basis.span hv).map (LinearEquiv.ofEq _ _ h)
+
+/-- The vectors of `Module.Basis.ofSpanEq hv h`, viewed in the ambient module, are those of `v`. -/
+@[simp]
+theorem coe_ofSpanEq {v : n → M} (hv : LinearIndependent R v)
+    (h : Submodule.span R (Set.range v) = U) (i : n) : (ofSpanEq hv h i : M) = v i := by
+  simp [ofSpanEq, Basis.span_apply]
+
+/-- An ambient vector belonging to a submodule `U` expands in any finite basis of `U`. -/
+theorem eq_sum_repr_smul_of_mem [Fintype n] (b : Module.Basis n R U) {x : M} (hx : x ∈ U) :
+    x = ∑ i, b.repr ⟨x, hx⟩ i • (b i : M) := by
+  simpa only [map_sum, Submodule.coe_subtype, SetLike.val_smul] using
+    congrArg U.subtype (b.sum_repr ⟨x, hx⟩).symm
+
+/-- A vector of a submodule spanned by basis vectors has zero coordinate at every basis vector
+outside the submodule. -/
+theorem repr_eq_zero_of_mem_of_notMem (cb : Basis ι R M) {S : Submodule R M}
+    (hS : S = Submodule.span R (cb '' {j | cb j ∈ S})) {j : ι} (hj : cb j ∉ S) {z : M}
+    (hz : z ∈ S) : cb.repr z j = 0 := by
+  by_contra hn
+  exact hj ((cb.mem_span_image.mp (hS ▸ hz)) (Finsupp.mem_support_iff.mpr hn))
+
 end Submodule
 
 /-- An additive map evaluated at a vector is the sum of its values on a finite integer basis,
@@ -133,5 +213,55 @@ theorem ringHom_comp_ne_zero [Nontrivial S] (ψ : R →+* S) : ⇑ψ ∘ ⇑b �
   simpa using LinearMap.congr_fun this 1
 
 end RingHom
+
+section Ring
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+
+/-- **No basis vector is the negative of a basis vector** over a ring in which `2 ≠ 0`. The
+hypothesis is needed: when `2 = 0`, every vector is its own negative. -/
+theorem ne_neg (b : Basis ι R M) (h2 : (2 : R) ≠ 0) (i j : ι) : b i ≠ -b j := by
+  intro h
+  have h' := congrArg (fun x ↦ b.repr x i) h
+  simp only [repr_self, map_neg, Finsupp.coe_neg, Pi.neg_apply, Finsupp.single_eq_same] at h'
+  by_cases hji : j = i
+  · subst hji
+    rw [Finsupp.single_eq_same] at h'
+    refine h2 ?_
+    rw [← one_add_one_eq_two]
+    nth_rw 1 [h']
+    exact neg_add_cancel 1
+  · rw [Finsupp.single_eq_of_ne (Ne.symm hji), neg_zero] at h'
+    exact h2 (by rw [← one_add_one_eq_two, h', add_zero])
+
+end Ring
+
+section SumInr
+
+variable {κ R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N] (b : Basis (ι ⊕ κ) R M) (v : κ → N)
+
+/-- A linear map `f : M → N` with prescribed values `f (b (inr j)) = v j` on part of a basis `b` is
+determined by its values on the remaining basis vectors `b (inl l)`, and these are arbitrary. -/
+noncomputable def constrSumInrEquiv :
+    {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j} ≃ (ι → N) where
+  toFun f l := f.1 (b (.inl l))
+  invFun g := ⟨b.constr ℕ (Sum.elim g v), fun j ↦ by rw [constr_basis, Sum.elim_inr]⟩
+  left_inv f := Subtype.ext <| b.ext fun i ↦ by rcases i with l | j <;> simp [f.2]
+  right_inv g := funext fun l ↦ by simp
+
+/-- The parameter of a linear map records its values on the basis vectors `b (inl l)`. -/
+@[simp]
+theorem constrSumInrEquiv_apply (f : {f : M →ₗ[R] N // ∀ j, f (b (.inr j)) = v j}) (l : ι) :
+    b.constrSumInrEquiv v f l = f.1 (b (.inl l)) :=
+  (rfl)
+
+/-- The linear map with parameter `g` sends `b (inl l)` to `g l` and `b (inr j)` to `v j`. -/
+@[simp]
+theorem coe_constrSumInrEquiv_symm_apply (g : ι → N) :
+    ((b.constrSumInrEquiv v).symm g).1 = b.constr ℕ (Sum.elim g v) :=
+  (rfl)
+
+end SumInr
 
 end Module.Basis

@@ -33,8 +33,8 @@ over.
 
 No metrizability, separability or countability of the source is assumed: attainment and lower
 semicontinuity of a partial infimum need compactness alone, as
-`TauCeti.exists_iInf_eq_of_lowerSemicontinuous` and
-`TauCeti.lowerSemicontinuous_iInf_of_compactSpace` record.
+`LowerSemicontinuous.exists_iInf_eq` and
+`LowerSemicontinuous.iInf_of_compactSpace` record.
 
 ## Main results
 
@@ -77,7 +77,7 @@ theorem exists_cTransform_eq [TopologicalSpace X] [CompactSpace X] [Nonempty X]
     (h : LowerSemicontinuous fun x => (c (x, y) : EReal) - φ x) :
     ∃ x, cTransform c φ y = (c (x, y) : EReal) - φ x := by
   simp only [cTransform_apply]
-  exact exists_iInf_eq_of_lowerSemicontinuous h
+  exact h.exists_iInf_eq
 
 /-- On a nonempty compact target with a lower semicontinuous integrand, the infimum defining the
 symmetric `c`-transform is attained. -/
@@ -85,7 +85,7 @@ theorem exists_cTransformSymm_eq [TopologicalSpace Y] [CompactSpace Y] [Nonempty
     (h : LowerSemicontinuous fun y => (c (x, y) : EReal) - ψ y) :
     ∃ y, cTransformSymm c ψ x = (c (x, y) : EReal) - ψ y := by
   simp only [cTransformSymm_apply]
-  exact exists_iInf_eq_of_lowerSemicontinuous h
+  exact h.exists_iInf_eq
 
 /-! ## Lower semicontinuity over a compact factor -/
 
@@ -104,7 +104,7 @@ theorem lowerSemicontinuous_cTransform [CompactSpace X]
   have hfun : cTransform c φ = fun y => ⨅ x, ((c (x, y) : EReal) - φ x) :=
     funext (cTransform_apply c φ)
   rw [hfun]
-  exact lowerSemicontinuous_iInf_of_compactSpace h
+  exact h.iInf_of_compactSpace
 
 /-- A symmetric `c`-transform over a compact target is lower semicontinuous when the integrand of
 its defining infimum is jointly lower semicontinuous. -/

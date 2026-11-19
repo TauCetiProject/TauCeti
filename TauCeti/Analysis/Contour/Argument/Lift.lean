@@ -5,10 +5,13 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Topology.UnitInterval
 import TauCeti.Analysis.Contour.Curve.Distance
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Continuous argument lift for a point-avoiding curve
@@ -35,17 +38,27 @@ API does not expose.
 * `TauCeti.Contour.exists_continuousOn_arg_lift_with_partition` — a real argument lift, continuous
   on `[a, b]`, for a curve continuous there and avoiding `w`, plus a monotone partition witness.
 * `TauCeti.Contour.segRatio` and its evaluation lemmas — the segment-ratio building block used to
-  assemble the index integral downstream.
-* `TauCeti.Contour.div_norm_eq_exp_arg_mul_I` — the unit direction of a nonzero complex number
-  in polar form, shared with the sector-resonance bridges.
+  assemble the index integral downstream; `TauCeti.Contour.sum_im_log_segRatio_eq_zero_of_le` and
+  `TauCeti.Contour.sum_im_log_segRatio_eq_sum_of_le` evaluate the lift's segment sum before and
+  after the partition.
 * `TauCeti.Contour.exp_mul_I_congr_angle` — equal real angles have equal unit complex
   exponentials.
+* `ContinuousOn.exists_continuousOn_circleMap_comp_eqOn` — a curve in a circle `sphere c r` is
+  `circleMap c r` composed with an angle function continuous on `[a, b]`.
+* `ContinuousOn.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi` — an angle
+  function of a curve in a circle that is injective on `(a, b)` is strictly monotone or strictly
+  antitone on `[a, b]` with total turn at most `2π`.
+* `ContinuousOn.monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi` — if moreover
+  `a < b` and the curve is closed, the angle function is monotone or antitone with total turn
+  exactly `± 2π`.
+* `ContinuousOn.apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere` — a continuous parametrization of
+  a circle that is injective on `(a, b)` is closed.
 
 ## Provenance
 
 Adapted from `WindingInteger.lean` in the AINTLIB `LeanModularForms` development. Prerequisite for
 the integer-valuedness and local constancy of the generalized winding number, hence for the homology
-Cauchy theorem (roadmap `homologyCauchyTheorem`) and the generalized residue theorem.
+Cauchy theorem (`homologyCauchyTheorem`) and the generalized residue theorem.
 -/
 
 public section
@@ -144,6 +157,26 @@ theorem segRatio_eq_endpoint_div_of_le {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t
     (h : s_j ≤ s_jp1) (ht : s_jp1 ≤ t) :
     segRatio γ w s_j s_jp1 t = (γ s_jp1 - w) / (γ s_j - w) := by
   rw [segRatio, segClamp_eq_right h ht]
+
+/-- Before a monotone partition starts (`t ≤ s 0`), every segment ratio is `1`, so the segment sum
+of arguments in the lift of `exists_continuousOn_arg_lift_with_partition` vanishes. -/
+theorem sum_im_log_segRatio_eq_zero_of_le {γ : ℝ → ℂ} {w : ℂ} {N : ℕ} {s : ℕ → ℝ} {t : ℝ}
+    (hs : Monotone s) (h_ne : ∀ j < N, γ (s j) - w ≠ 0) (ht : t ≤ s 0) :
+    ∑ j ∈ Finset.range N, (Complex.log (segRatio γ w (s j) (s (j + 1)) t)).im = 0 := by
+  refine Finset.sum_eq_zero fun j hj ↦ ?_
+  rw [segRatio_eq_one_of_le (ht.trans (hs (Nat.zero_le j))) (h_ne j (Finset.mem_range.mp hj)),
+    Complex.log_one, Complex.zero_im]
+
+/-- After a monotone partition ends (`s N ≤ t`), every segment ratio is its full endpoint ratio,
+so the segment sum of arguments in the lift of `exists_continuousOn_arg_lift_with_partition` is the
+sum of the arguments of the endpoint ratios. -/
+theorem sum_im_log_segRatio_eq_sum_of_le {γ : ℝ → ℂ} {w : ℂ} {N : ℕ} {s : ℕ → ℝ} {t : ℝ}
+    (hs : Monotone s) (ht : s N ≤ t) :
+    ∑ j ∈ Finset.range N, (Complex.log (segRatio γ w (s j) (s (j + 1)) t)).im =
+      ∑ j ∈ Finset.range N, (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im := by
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  rw [segRatio_eq_endpoint_div_of_le (hs (Nat.le_succ j))
+    ((hs (Nat.succ_le_of_lt (Finset.mem_range.mp hj))).trans ht)]
 
 /-- For partition with mesh < δ' and segments [s_j, s_{j+1}] of length ≤ mesh,
 on the j-th segment, `γ(clamp t) - γ s_j` is small, so `segRatio j t ∈ ball(1, 1/2)`. -/
@@ -274,13 +307,6 @@ private theorem continuousOn_im_log_segRatio {γ : ℝ → ℂ} {a b : ℝ}
 
 /-! ### The unit direction in polar form -/
 
-/-- **A nonzero complex number over its norm is the exponential of its argument**:
-`w / ↑‖w‖ = exp(arg w · I)`. -/
-theorem div_norm_eq_exp_arg_mul_I {w : ℂ} (hw : w ≠ 0) :
-    w / (‖w‖ : ℂ) = Complex.exp ((Complex.arg w : ℂ) * Complex.I) := by
-  rw [div_eq_iff (Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hw)), mul_comm]
-  exact (Complex.norm_mul_exp_arg_mul_I w).symm
-
 /-- Two real representatives of the same `Real.Angle` have the same unit complex exponential.
 This is the coercion bridge from the quotient-valued angle API to complex polar form. -/
 theorem exp_mul_I_congr_angle {x y : ℝ} (h : (x : Real.Angle) = (y : Real.Angle)) :
@@ -291,7 +317,7 @@ theorem exp_mul_I_congr_angle {x y : ℝ} (h : (x : Real.Angle) = (y : Real.Angl
 /-- For a nonzero complex number `z`, `exp(I · Im(log z)) = z / ↑‖z‖`. -/
 private lemma exp_I_log_im_eq_div_norm {z : ℂ} (hz : z ≠ 0) :
     Complex.exp (Complex.I * ((Complex.log z).im : ℂ)) = z / (‖z‖ : ℂ) := by
-  rw [Complex.log_im, mul_comm, ← div_norm_eq_exp_arg_mul_I hz]
+  rw [Complex.log_im, mul_comm, Complex.exp_arg_mul_I hz]
 
 /-! ### Polar form of a product -/
 
@@ -462,5 +488,149 @@ theorem exists_continuousOn_arg_lift_with_partition {γ : ℝ → ℂ} {w : ℂ}
         (by rw [hs_zero]; exact ht.1) (by rw [hs_N]; exact ht.2)
 
 end TauCeti.Contour
+
+namespace ContinuousOn
+
+open Metric Real
+open scoped Interval
+
+/-- **Angle function of a curve in a circle.** A curve continuous on `[a, b]` with values in the
+circle `sphere c r` factors through `circleMap c r` with a continuous angle: there is `θ`,
+continuous on `[a, b]`, such that `γ t = circleMap c r (θ t)` for every `t ∈ [a, b]`. -/
+theorem exists_continuousOn_circleMap_comp_eqOn {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ} {r : ℝ}
+    (hγ : ContinuousOn γ (Icc a b)) (hmaps : MapsTo γ (Icc a b) (sphere c r)) :
+    ∃ θ : ℝ → ℝ, ContinuousOn θ (Icc a b) ∧ EqOn (circleMap c r ∘ θ) γ (Icc a b) := by
+  rcases le_or_gt r 0 with hr | hr
+  · -- A circle of nonpositive radius is at most the center, and any angle works.
+    refine ⟨0, continuousOn_const, fun t ht ↦ ?_⟩
+    have hdist : dist (γ t) c = r := hmaps ht
+    obtain rfl : r = 0 := le_antisymm hr (hdist ▸ dist_nonneg)
+    simpa [circleMap_zero_radius, eq_comm] using hdist
+  rcases lt_or_ge b a with hba | hab
+  · exact ⟨0, by simp [Icc_eq_empty_of_lt hba]⟩
+  have havoid (t : ℝ) (ht : t ∈ Icc a b) : γ t ≠ c := by
+    intro h
+    have := hmaps ht
+    rw [h, mem_sphere, dist_self] at this
+    exact hr.ne this
+  obtain ⟨N, s, -, -, -, -, -, -, -, hcont, hlift⟩ :=
+    TauCeti.Contour.exists_continuousOn_arg_lift_with_partition hab hγ havoid
+  refine ⟨_, hcont, fun t ht ↦ ?_⟩
+  have hnorm : ‖γ t - c‖ = r := by simpa [dist_eq_norm] using hmaps ht
+  rw [Function.comp_apply, circleMap, eq_comm, ← sub_eq_iff_eq_add', hlift t ht, hnorm,
+    mul_comm Complex.I]
+
+/-- A curve `circleMap c r ∘ θ` injective on a nonempty open interval `(a, b)` has nonzero radius:
+for `r = 0` the curve is constant. -/
+private theorem ne_zero_of_injOn_circleMap_comp_Ioo {θ : ℝ → ℝ} {a b : ℝ} {c : ℂ} {r : ℝ}
+    (hab : a < b) (hinj : InjOn (circleMap c r ∘ θ) (Ioo a b)) : r ≠ 0 := by
+  rintro rfl
+  obtain ⟨s, has, hsb⟩ := exists_between hab
+  obtain ⟨t, hst, htb⟩ := exists_between hsb
+  exact hst.ne (hinj ⟨has, hsb⟩ ⟨has.trans hst, htb⟩ (by simp))
+
+/-- An angle function `θ`, continuous on `[a, b]`, of a curve `circleMap c r ∘ θ` that is injective
+on `(a, b)` is strictly monotone on `[a, b]` with a total turn of at most one full turn, or
+strictly antitone with a total turn of at most one full turn. -/
+theorem strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi {θ : ℝ → ℝ} {a b : ℝ}
+    {c : ℂ} {r : ℝ} (hθ : ContinuousOn θ (Icc a b)) (hab : a ≤ b)
+    (hinj : InjOn (circleMap c r ∘ θ) (Ioo a b)) :
+    (StrictMonoOn θ (Icc a b) ∧ θ b ≤ θ a + 2 * π) ∨
+      (StrictAntiOn θ (Icc a b) ∧ θ a ≤ θ b + 2 * π) := by
+  rcases hab.eq_or_lt with rfl | hab
+  · exact Or.inl ⟨(subsingleton_Icc_of_ge le_rfl).strictMonoOn θ, by linarith [Real.pi_pos]⟩
+  have hθinj : InjOn θ (Ioo a b) := fun s hs t ht h ↦ hinj hs ht (by simp [h])
+  -- A turn of more than `2π` would repeat a point of `(a, b)`: two angles differing by `2π` are
+  -- both attained strictly inside the interval.
+  have hrepeat {s t : ℝ} (hs : s ∈ Ioo a b) (ht : t ∈ Ioo a b) (h : θ t = θ s + 2 * π) :
+      False := by
+    obtain rfl : s = t := hinj hs ht (by
+      simp only [Function.comp_apply, h]
+      exact (periodic_circleMap c r _).symm)
+    linarith [Real.pi_pos]
+  rcases (hθ.mono Ioo_subset_Icc_self).strictMonoOn_of_injOn_Ioo hab hθinj with hmono | hanti
+  · refine Or.inl ⟨hθ.strictMonoOn_Icc_of_strictMonoOn_Ioo hmono, ?_⟩
+    by_contra! h
+    obtain ⟨s, hs, hsv⟩ := intermediate_value_Ioo hab.le hθ
+      (show θ a + (θ b - θ a - 2 * π) / 2 ∈ Ioo (θ a) (θ b) by
+        constructor <;> linarith [Real.pi_pos])
+    obtain ⟨t, ht, htv⟩ := intermediate_value_Ioo hab.le hθ
+      (show θ a + (θ b - θ a - 2 * π) / 2 + 2 * π ∈ Ioo (θ a) (θ b) by
+        constructor <;> linarith [Real.pi_pos])
+    exact hrepeat hs ht (by rw [hsv, htv])
+  · refine Or.inr ⟨hθ.strictAntiOn_Icc_of_strictAntiOn_Ioo hanti, ?_⟩
+    by_contra! h
+    obtain ⟨s, hs, hsv⟩ := intermediate_value_Ioo' hab.le hθ
+      (show θ b + (θ a - θ b - 2 * π) / 2 ∈ Ioo (θ b) (θ a) by
+        constructor <;> linarith [Real.pi_pos])
+    obtain ⟨t, ht, htv⟩ := intermediate_value_Ioo' hab.le hθ
+      (show θ b + (θ a - θ b - 2 * π) / 2 + 2 * π ∈ Ioo (θ b) (θ a) by
+        constructor <;> linarith [Real.pi_pos])
+    exact hrepeat hs ht (by rw [hsv, htv])
+
+/-- An angle function `θ`, continuous on a nontrivial interval `[a, b]` (`a < b`), of a closed
+curve `circleMap c r ∘ θ` that is injective on `(a, b)` increases or decreases by exactly one full
+turn. -/
+theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ → ℝ} {a b : ℝ}
+    {c : ℂ} {r : ℝ} (hθ : ContinuousOn θ (Icc a b)) (hab : a < b)
+    (hinj : InjOn (circleMap c r ∘ θ) (Ioo a b))
+    (hclosed : circleMap c r (θ a) = circleMap c r (θ b)) :
+    (MonotoneOn θ (Icc a b) ∧ θ b = θ a + 2 * π) ∨
+      (AntitoneOn θ (Icc a b) ∧ θ a = θ b + 2 * π) := by
+  have hr := ne_zero_of_injOn_circleMap_comp_Ioo hab hinj
+  -- A turn of less than `2π` could not close up.
+  rcases hθ.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi hab.le hinj with
+    ⟨hmono, hle⟩ | ⟨hanti, hle⟩
+  · have hlt := hmono (left_mem_Icc.2 hab.le) (right_mem_Icc.2 hab.le) hab
+    refine Or.inl ⟨hmono.monotoneOn, hle.antisymm (not_lt.1 fun h ↦ ?_)⟩
+    exact hlt.ne (eq_of_circleMap_eq hr (by rw [abs_lt]; constructor <;> linarith) hclosed)
+  · have hlt := hanti (left_mem_Icc.2 hab.le) (right_mem_Icc.2 hab.le) hab
+    refine Or.inr ⟨hanti.antitoneOn, hle.antisymm (not_lt.1 fun h ↦ ?_)⟩
+    exact hlt.ne' (eq_of_circleMap_eq hr (by rw [abs_lt]; constructor <;> linarith) hclosed)
+
+/-- A continuous parametrization of a circle on `[a, b]` that is injective on `(a, b)` is
+closed. -/
+theorem apply_eq_apply_of_injOn_Ioo_of_image_eq_sphere {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ} {r : ℝ}
+    (hγ : ContinuousOn γ (Icc a b)) (hab : a ≤ b) (hinj : InjOn γ (Ioo a b))
+    (himage : γ '' Icc a b = sphere c r) : γ a = γ b := by
+  rcases hab.eq_or_lt with rfl | hab
+  · rfl
+  have hmaps : MapsTo γ (Icc a b) (sphere c r) := fun t ht ↦ by
+    rw [← himage]
+    exact mem_image_of_mem γ ht
+  obtain ⟨θ, hθ, hθγ⟩ := exists_continuousOn_circleMap_comp_eqOn hγ hmaps
+  have hinj' : InjOn (circleMap c r ∘ θ) (Ioo a b) :=
+    hinj.congr (hθγ.symm.mono Ioo_subset_Icc_self)
+  have hr₀ : 0 ≤ r := by
+    rw [← mem_sphere.1 (hmaps (left_mem_Icc.2 hab.le))]
+    exact dist_nonneg
+  have hr : 0 < r := hr₀.lt_of_ne' (ne_zero_of_injOn_circleMap_comp_Ioo hab hinj')
+  -- An angle function with values in `[u, v]` and a turn `v - u` below `2π` would miss a point of
+  -- the circle.
+  have hfull {u v : ℝ} (hle : v ≤ u + 2 * π) (hθuv : MapsTo θ (Icc a b) (Icc u v)) :
+      v = u + 2 * π := by
+    refine hle.antisymm (not_lt.1 fun h ↦ ?_)
+    obtain ⟨t, ht, htφ⟩ : circleMap c r (v + (u + 2 * π - v) / 2) ∈ γ '' Icc a b := by
+      rw [himage]
+      exact circleMap_mem_sphere c hr.le _
+    have hθt := eq_of_circleMap_eq hr.ne' (by
+      rw [abs_lt]; constructor <;> linarith [Real.pi_pos, (hθuv ht).1, (hθuv ht).2])
+      ((hθγ ht).trans htφ)
+    linarith [(hθuv ht).2]
+  have hturn : θ b = θ a + 2 * π ∨ θ a = θ b + 2 * π :=
+    (hθ.strictMonoOn_and_le_add_two_pi_or_strictAntiOn_and_le_add_two_pi hab.le hinj').imp
+      (fun ⟨hmono, hle⟩ ↦ hfull hle hmono.monotoneOn.mapsTo_Icc)
+      (fun ⟨hanti, hle⟩ ↦ hfull hle hanti.antitoneOn.mapsTo_Icc)
+  rcases hturn with h | h
+  · calc γ a = circleMap c r (θ a) := (hθγ (left_mem_Icc.2 hab.le)).symm
+      _ = circleMap c r (θ a + 2 * π) := (periodic_circleMap c r _).symm
+      _ = circleMap c r (θ b) := by rw [h]
+      _ = γ b := hθγ (right_mem_Icc.2 hab.le)
+  · calc γ a = circleMap c r (θ a) := (hθγ (left_mem_Icc.2 hab.le)).symm
+      _ = circleMap c r (θ b + 2 * π) := by rw [h]
+      _ = circleMap c r (θ b) := periodic_circleMap c r _
+      _ = γ b := hθγ (right_mem_Icc.2 hab.le)
+
+end ContinuousOn
 
 end

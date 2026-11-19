@@ -50,7 +50,8 @@ For the rotations `x ↦ x + θ` precomposition is the rotation `TauCeti.CircleS
 * `TauCeti.CircleSobolev.precompEquivOfLift_symm_eq`: the inverse of precomposition with `φ` is
   precomposition with the inverse of `φ`, presented by any of its lifts.
 * `TauCeti.CircleSobolev.precomp_add_const`: precomposition with a rotation is
-  `TauCeti.CircleSobolev.rotate`.
+  `TauCeti.CircleSobolev.rotate`; equivalently, the `L²` function of a rotation is a translate
+  (`TauCeti.CircleSobolev.toLpₗᵢ_rotate`).
 * `TauCeti.CircleSobolev.norm_precompEquivOfLift_le` and
   `TauCeti.CircleSobolev.norm_precompEquivOfLift_symm_le`: the bounds `c^(-1/2)` and `M^(1/2)`.
 
@@ -185,6 +186,15 @@ theorem precomp_add_const (θ : AddCircle T) (hC : C ≠ ∞)
   simp only [Function.comp_apply, smul_eq_mul, fourier_apply_add]
   linear_combination (-(fourier (-n) x * toLpₗᵢ T a (x + θ))) * h
 
+/-- The `L²` function of the rotation `rotate θ a` of `a ∈ H⁰` is the `L²` function of `a`
+translated by `θ`. -/
+theorem toLpₗᵢ_rotate (θ : AddCircle T) (a : CircleSobolev 0 ℂ) :
+    toLpₗᵢ T (rotate θ a) =ᵐ[haarAddCircle] toLpₗᵢ T a ∘ (· + θ) := by
+  have hmap : (haarAddCircle : Measure (AddCircle T)).map (· + θ) ≤ (1 : ℝ≥0∞) • haarAddCircle := by
+    rw [one_smul, map_add_right_eq_self]
+  rw [← precomp_add_const θ ENNReal.one_ne_top hmap a]
+  exact toLpₗᵢ_precomp (measurable_add_const θ) ENNReal.one_ne_top hmap a
+
 section Lift
 
 variable {F F' : ℝ → ℝ} {c M : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
@@ -216,7 +226,6 @@ def precompEquivOfLift : CircleSobolev 0 ℂ ≃L[ℂ] CircleSobolev 0 ℂ :=
       (map_haarAddCircle_le_of_lift hF hper hφ hc hcF)
       (symmOfLift hF hper hφ hc hcF).continuous.measurable ENNReal.ofReal_ne_top
       (map_haarAddCircle_le_of_lift_of_leftInverse hF hper hφ (fun x ↦ hc.trans_le (hcF x)) hMF
-        (symmOfLift hF hper hφ hc hcF).continuous.measurable
         (symmOfLift_apply_apply hF hper hφ hc hcF))
       (symmOfLift_apply_apply hF hper hφ hc hcF) (apply_symmOfLift_apply hF hper hφ hc hcF))).trans
     (toLpₗᵢ T).symm.toContinuousLinearEquiv
@@ -241,8 +250,7 @@ private theorem precompEquivOfLift_symm_apply (a : CircleSobolev 0 ℂ) :
     (precompEquivOfLift hF hper hφ hc hcF hMF).symm a =
       precomp T (symmOfLift hF hper hφ hc hcF).continuous.measurable ENNReal.ofReal_ne_top
         (map_haarAddCircle_le_of_lift_of_leftInverse hF hper hφ (fun x ↦ hc.trans_le (hcF x))
-          hMF (symmOfLift hF hper hφ hc hcF).continuous.measurable
-          (symmOfLift_apply_apply hF hper hφ hc hcF)) a := by
+          hMF (symmOfLift_apply_apply hF hper hφ hc hcF)) a := by
   simp only [precompEquivOfLift, ContinuousLinearEquiv.symm_trans_apply,
     LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, LinearIsometryEquiv.symm_symm,
     Lp.compEquivOfMapLeSmul_symm_apply, precomp_apply]
@@ -253,11 +261,10 @@ theorem toLpₗᵢ_precompEquivOfLift_symm {ψ : AddCircle T → AddCircle T}
     (hψφ : Function.LeftInverse ψ φ) (a : CircleSobolev 0 ℂ) :
     toLpₗᵢ T ((precompEquivOfLift hF hper hφ hc hcF hMF).symm a) =ᵐ[haarAddCircle]
       toLpₗᵢ T a ∘ ψ := by
-  have hψ : ψ = symmOfLift hF hper hφ hc hcF := funext fun y ↦ by
-    obtain ⟨x, rfl⟩ := (bijective_of_lift
+  have hψ : ψ = symmOfLift hF hper hφ hc hcF :=
+    eq_homeomorphOfLift_symm_of_leftInverse
       (strictMono_of_hasDerivAt_pos hF fun x ↦ hc.trans_le (hcF x))
-      (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt) hper hφ).2 y
-    rw [hψφ x, symmOfLift_apply_apply]
+      (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt) hper hφ hψφ
   subst hψ
   rw [precompEquivOfLift_symm_apply]
   exact toLpₗᵢ_precomp _ _ _ a

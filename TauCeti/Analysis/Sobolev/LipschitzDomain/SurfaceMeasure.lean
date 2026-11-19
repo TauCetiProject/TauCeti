@@ -34,6 +34,9 @@ traces in graph coordinates to traces on the boundary itself.
 * `Set.IsLipschitzChartWith.map_snd_euclideanHausdorffMeasure_frontier_inter_le`: the tangential
   coordinate pushes surface measure on a frontier patch forward to a bounded multiple of
   tangential volume.
+* `Set.IsLipschitzChartWith.ae_restrict_frontier_inter_iff`: a property of the tangential
+  coordinate holds almost everywhere on a frontier patch exactly when it holds for almost every
+  tangential parameter in the chart.
 
 ## References
 
@@ -163,7 +166,7 @@ theorem map_snd_euclideanHausdorffMeasure_frontier_inter_le
       ((L + 1 : ℝ≥0) : ℝ≥0∞) ^ finrank ℝ E • volume := by
   refine Measure.le_iff.2 fun S hS ↦ ?_
   have hm := e.measurable_snd_apply
-  rw [Measure.map_apply hm hS, Measure.restrict_apply (hm hS), Measure.smul_apply, smul_eq_mul]
+  rw [Measure.map_apply hm hS, Measure.restrict_apply (hm hS), _root_.smul_apply, smul_eq_mul]
   calc
     _ ≤ μHE[finrank ℝ E] ((fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) '' S) := by
       refine measure_mono ?_
@@ -194,6 +197,29 @@ theorem euclideanHausdorffMeasure_frontier_inter_eq_zero_iff
       volume (TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b) = 0 := by
   rw [← h.image_boundaryParametrization]
   exact h.euclideanHausdorffMeasure_image_boundaryParametrization_eq_zero_iff _
+
+/-- A property of the tangential coordinate holds almost everywhere on the frontier patch of a
+Lipschitz boundary chart, for normalized surface measure, exactly when it holds for almost every
+tangential parameter whose graph point lies in the chart cylinder. -/
+theorem ae_restrict_frontier_inter_iff (h : Omega.IsLipschitzChartWith L e phi a b)
+    {P : E → Prop} :
+    (∀ᵐ x ∂(μHE[finrank ℝ E] : Measure F).restrict
+        (frontier Omega ∩ e ⁻¹' TauCeti.normalCylinder a b), P (e x).snd) ↔
+      ∀ᵐ y ∂volume.restrict (TauCeti.normalGraphEmbedding phi ⁻¹' TauCeti.normalCylinder a b),
+        P y := by
+  rw [ae_restrict_iff' (TauCeti.measurableSet_frontier_inter_preimage_normalCylinder Omega e a b),
+    ae_restrict_iff' h.measurableSet_normalGraphEmbedding_preimage_normalCylinder, ae_iff, ae_iff,
+    ← h.euclideanHausdorffMeasure_image_boundaryParametrization_eq_zero_iff,
+    ← h.image_boundaryParametrization]
+  -- The chart parametrization carries the bad parameters onto the bad boundary points.
+  congr! 3
+  ext x
+  simp only [not_imp, mem_image]
+  constructor
+  · rintro ⟨⟨y, hy, rfl⟩, hP⟩
+    exact ⟨y, ⟨hy, by simpa using hP⟩, rfl⟩
+  · rintro ⟨y, ⟨hy, hP⟩, rfl⟩
+    exact ⟨⟨y, hy, rfl⟩, by simpa using hP⟩
 
 end NormedTarget
 

@@ -11,16 +11,16 @@ public import TauCeti.Topology.Homotopy.AmbientIsotopic.Naturality
 /-!
 # Naturality of continuous ambient isotopy for smooth embeddings
 
-The geometric-topology roadmap asks that isotopy and ambient isotopy be defined once, in
-generality, and then specialised to smooth embeddings such as geometric knot presentations.
+Isotopy and ambient isotopy are defined once, in generality, and then specialised to smooth
+embeddings such as geometric knot presentations.
 `TauCeti.SmoothEmbedding.ContinuousAmbientIsotopic` is that continuous ambient-isotopy relation
 on bundled smooth embeddings. This file records its coordinate-change API.
 
 The statements are formulated for already-constructed bundled smooth embeddings, together with
 equalities identifying their underlying continuous maps after precomposition or postcomposition.
-This avoids depending on Mathlib's still-axiomatized predicate-level composition theorem for
-smooth embeddings, while still giving downstream knot and embedding presentations the relation
-transport they need once they have built the relevant embeddings.
+This avoids depending on a predicate-level composition theorem for smooth embeddings, which
+Mathlib lists only as a `TODO`, while still giving downstream knot and embedding presentations the
+relation transport they need once they have built the relevant embeddings.
 
 ## Main results
 

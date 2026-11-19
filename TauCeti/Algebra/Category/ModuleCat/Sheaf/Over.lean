@@ -22,7 +22,7 @@ Since `𝟙 X` is a terminal object of the slice over `X`, a global section of t
 
 * `SheafOfModules.overSectionModule`: the original commutative-ring action on sections of
   a sheaf of modules restricted to a slice site;
-* `SheafOfModules.overSectionsEquiv`: global sections of `M.over X` are sections of `M` over `X`.
+* `SheafOfModules.overSectionsEquiv`: global sections of `M.over X` are sections of `M` over `X`;
 -/
 
 public section

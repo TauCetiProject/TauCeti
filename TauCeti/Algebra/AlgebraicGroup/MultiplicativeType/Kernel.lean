@@ -53,7 +53,7 @@ variable (hK : multiplicativeTypeCommHopfAlgProperty k K) (f : H.obj ⟶ K.obj)
 private noncomputable def geometricKernelCoordinateIsoAux
     (p : CommHopfAlgCat.geometricCharacterGroup H.obj →*
       CommHopfAlgCat.geometricCharacterGroup K.obj)
-    (hp : p = TauCeti.GroupLike.map
+    (hp : p = BialgHom.mapGroupLike
       (CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k) f).hom) :
     CommHopfAlgCat.baseChange (K := AlgebraicClosure k)
         (CommHopfAlgCat.quotient K.obj (CommHopfAlgCat.kernelHopfIdeal f)) ≅
@@ -79,7 +79,7 @@ private noncomputable def geometricKernelCoordinateIsoAux
 private theorem geometricKernelCoordinateIsoAux_comp
     (p : CommHopfAlgCat.geometricCharacterGroup H.obj →*
       CommHopfAlgCat.geometricCharacterGroup K.obj)
-    (hp : p = TauCeti.GroupLike.map
+    (hp : p = BialgHom.mapGroupLike
       (CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k) f).hom) :
     CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k)
         (CommHopfAlgCat.mkQuotient K.obj (CommHopfAlgCat.kernelHopfIdeal f)) ≫
@@ -108,7 +108,7 @@ noncomputable def geometricKernelCoordinateIso :
           (CommHopfAlgCat.geometricCharacterGroup K.obj ⧸
             (CommHopfAlgCat.geometricCharacterMap f).range)) :=
   geometricKernelCoordinateIsoAux hH hK f (CommHopfAlgCat.geometricCharacterMap f)
-    (CommHopfAlgCat.geometricCharacterMap_eq_groupLikeMap f)
+    (CommHopfAlgCat.geometricCharacterMap_eq_mapGroupLike f)
 
 /-- The geometric kernel comparison commutes with the scalar-extended quotient map.
 The right side expresses the ambient algebra in intrinsic character coordinates and
@@ -125,7 +125,7 @@ theorem baseChangeMap_mkQuotient_comp_geometricKernelCoordinateIso_hom :
         CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom (AlgebraicClosure k)
           (QuotientGroup.mk' (CommHopfAlgCat.geometricCharacterMap f).range)) :=
   geometricKernelCoordinateIsoAux_comp hH hK f (CommHopfAlgCat.geometricCharacterMap f)
-    (CommHopfAlgCat.geometricCharacterMap_eq_groupLikeMap f)
+    (CommHopfAlgCat.geometricCharacterMap_eq_mapGroupLike f)
 
 include hH hK in
 /-- A homomorphism of multiplicative-type groups has finite scheme-theoretic kernel

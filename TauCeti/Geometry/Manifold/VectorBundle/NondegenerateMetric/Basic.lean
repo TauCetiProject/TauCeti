@@ -132,6 +132,14 @@ def tangentBilinFormInCoordinates (a x : M)
   ContinuousLinearMap.inCoordinates E (fun y : M ↦ TangentSpace I y)
     (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) a x a x ϕ
 
+/-- The tangent bilinear-form coordinate map is the canonical coordinate map for hom bundles. -/
+theorem tangentBilinFormInCoordinates_def (a x : M)
+    (ϕ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) :
+    tangentBilinFormInCoordinates a x ϕ =
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) (E →L[ℝ] ℝ)
+        (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) a x a x ϕ := by
+  rfl
+
 /-- On the base set of the trivialization at `a`, a tangent bilinear form read in that
 trivialization pairs two vectors of the model space as the form pairs the tangent vectors with
 these coordinates. -/
@@ -268,6 +276,11 @@ on `E` obtained by reading `g` at `(extChartAt I x₀).symm z` in the trivializa
 bundle at `x₀`. It is meaningful on the chart target `(extChartAt I x₀).target`. -/
 def chartMetric (x₀ : M) (z : E) : E →L[ℝ] E →L[ℝ] ℝ :=
   g.inCoordinates x₀ ((extChartAt I x₀).symm z)
+
+/-- The chart metric is the tangent coordinate metric composed with the inverse base chart. -/
+theorem chartMetric_def (x₀ : M) (z : E) :
+    g.chartMetric x₀ z = g.inCoordinates x₀ ((extChartAt I x₀).symm z) := by
+  rfl
 
 /-- At a point `z` of the chart target, the chart metric pairs two vectors of the model space as
 `g` pairs the tangent vectors at `(extChartAt I x₀).symm z` with these coordinates. -/

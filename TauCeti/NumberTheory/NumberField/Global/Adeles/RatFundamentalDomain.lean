@@ -96,9 +96,9 @@ private theorem sub_algebraMap_mem_ratFundamentalDomain_unique (a : 𝔸[ℚ]) {
   apply eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles
   · intro w
     -- The completion's field coercion uses `WithAbs`, whereas rational casts use its ring API.
-    change ‖(WithAbs.toAbs w.1 (q - r) : w.Completion)‖ < 1
-    rw [InfinitePlace.Completion.norm_coe]
-    simpa using hinf
+    rw [AdeleRing.algebraMap_fst_apply]
+    rw [AbsoluteValue.Completion.norm_coe]
+    exact (Rat.infinitePlace_apply w (q - r)).trans_lt (by simpa using hinf)
   · refine FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ ?_
     have hv := sub_mem (hrfin v) (hqfin v)
     -- Expose the finite components of the product synonym before the local additive calculation.

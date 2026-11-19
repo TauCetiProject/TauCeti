@@ -7,7 +7,7 @@ module
 
 -- `TauCeti.Algebra.CentralSimple.Degree` is imported publicly: `TauCeti.Algebra.deg` occurs in the
 -- statements below, and it is the separably closed base change
--- `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed` proved there that makes
+-- `IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed` proved there that makes
 -- a separably closed extension a splitting field. It also re-exports
 -- `Mathlib.RingTheory.TensorProduct.Basic` (the `⊗[K]` notation and the algebra structure on
 -- `L ⊗[K] A`) and `Mathlib.Algebra.Central.Basic`, which is why neither is imported again here.
@@ -224,7 +224,7 @@ variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A]
 
 This is the base case of the separable splitting theory, and it needs no theory of maximal
 subfields: over a separably closed field the Wedderburn division algebra collapses, which is
-exactly `TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`. Every
+exactly `IsSimpleRing.nonempty_algEquiv_matrix_baseChange_of_isSepClosed`. Every
 finite-dimensional central simple `K`-algebra therefore has a separable splitting field, namely a
 separable closure of `K`. -/
 theorem isSplittingField_of_isSepClosed [IsSepClosed L] : IsSplittingField K A L :=

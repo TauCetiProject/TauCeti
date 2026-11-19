@@ -6,15 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Binomial
-import Mathlib.Analysis.Complex.AbelLimit
+import Mathlib.Analysis.Normed.Ring.InfiniteSum
 
 /-!
-# Convergence of multichoose power series
+# Convergence of binomial and multichoose power series
 
 This file determines the exact unconditional summability domain of the power series with
 generalized multichoose coefficients and positive real parameter.  The result applies to both real
 and complex arguments.  These results supply the analytic criterion used to determine the exact
 integrability domain of the negative-binomial probability-generating function.
+
+It also treats the binomial series `binomialSeries 𝔸 a`, the power series of `(1 + y) ^ a`, with
+values in a normed algebra `𝔸` over `ℝ` or `ℂ` rather than a normed division ring. Its radius is
+still at least `1`, since its coefficients are scalars, so it converges on the open unit ball when
+`𝔸` is complete. On the open unit ball of a Banach algebra the sums of the series for `a` and `b`
+multiply to the sum of the series for `a + b`, by the Chu–Vandermonde identity, and in any normed
+algebra the series for a natural number `n` sums to `(1 + y) ^ n`. In particular the binomial series
+of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra over `ℝ`
+(`TauCeti.mul_self_sqrtNearOne`).
 
 ## Main declarations
 
@@ -24,41 +33,39 @@ integrability domain of the negative-binomial probability-generating function.
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
+* `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
+  `1` in every normed algebra over `ℝ` or `ℂ`.
+* `TauCeti.binomialSeries_sum_mul_binomialSeries_sum` — on the open unit ball of a Banach algebra,
+  `(1 + y) ^ a * (1 + y) ^ b = (1 + y) ^ (a + b)` for the sums of the binomial series.
+* `TauCeti.binomialSeries_sum_natCast` — for a natural number `n` the binomial series sums to
+  `(1 + y) ^ n`.
 -/
 
 public section
 
-open Filter Set
-open scoped ENNReal
+open Filter Set Topology
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
 /-- The generalized multichoose power series sums to `(1 - x)⁻ʳ` when `|x| < 1`. -/
 theorem hasSum_multichoose_mul_geometric_of_abs_lt_one {r x : ℝ} (hx : |x| < 1) :
     HasSum (fun n : ℕ => Ring.multichoose r n * x ^ n) (1 / (1 - x) ^ r) := by
-  have hmem : x ∈ Metric.eball (0 : ℝ) (1 : ℝ≥0∞) := by
-    rw [Metric.mem_eball]
-    simpa [edist_dist, Real.dist_0_eq_abs, enorm_eq_nnnorm] using hx
-  have hsum := (Real.one_div_one_sub_rpow_hasFPowerSeriesOnBall_zero r).hasSum_sub hmem
-  simp only [FormalMultilinearSeries.ofScalars_apply_eq, sub_zero, smul_eq_mul] at hsum
-  have hchoose (n : ℕ) :
-      Ring.choose (r + (n : ℝ) - 1) n = Ring.multichoose r n := by
-    rw [Ring.multichoose_eq]
-  simpa only [hchoose] using hsum
+  have hmem : x ∈ Metric.eball (0 : ℝ) 1 := by
+    rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one,
+      Real.norm_eq_abs]
+  simpa [Ring.multichoose_eq, mul_comm] using
+    (Real.one_div_one_sub_rpow_hasFPowerSeriesOnBall_zero r).hasSum_sub hmem
 
 /-- The generalized multichoose power series sums to `(1 - z)⁻ʳ` throughout the complex open
 unit disk. -/
 theorem hasSum_multichoose_mul_geometric_complex_of_norm_lt_one {r z : ℂ}
     (hz : ‖z‖ < 1) :
     HasSum (fun n : ℕ => Ring.multichoose r n * z ^ n) (1 / (1 - z) ^ r) := by
-  have hmem : z ∈ Metric.eball (0 : ℂ) (1 : ℝ≥0∞) := by
-    simpa only [Metric.mem_eball, edist_dist, dist_zero_right, ENNReal.ofReal_lt_one] using hz
-  have hsum := (Complex.one_div_one_sub_cpow_hasFPowerSeriesOnBall_zero r).hasSum_sub hmem
-  have hchoose (n : ℕ) :
-      Ring.choose (r + (n : ℂ) - 1) n = Ring.multichoose r n := by
-    rw [Ring.multichoose_eq]
-  simpa only [FormalMultilinearSeries.ofScalars_apply_eq, sub_zero, smul_eq_mul,
-    hchoose] using hsum
+  have hmem : z ∈ Metric.eball (0 : ℂ) 1 := by
+    rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+  simpa [Ring.multichoose_eq, mul_comm] using
+    (Complex.one_div_one_sub_cpow_hasFPowerSeriesOnBall_zero r).hasSum_sub hmem
 
 /-- For positive real `r`, the generalized multichoose power series is unconditionally summable
 at a real or complex argument `q` exactly when `q` lies in the open unit ball. -/
@@ -69,51 +76,97 @@ theorem summable_multichoose_mul_geometric_iff_norm_lt_one
   have hcoeff_pos (n : ℕ) : 0 < Ring.multichoose r n := by
     have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer r n
     rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-    apply pos_of_mul_pos_right (by rw [h]; exact ascPochhammer_pos n r hr)
-    positivity
+    exact pos_of_mul_pos_right (h ▸ ascPochhammer_pos n r hr) (by positivity)
+  -- At the boundary point `1` the coefficients themselves are not summable: their sum would
+  -- bound `(1 - x)⁻ʳ` on `[0, 1)`, which tends to infinity as `x → 1⁻`.
   have hnot : ¬ Summable (fun n : ℕ => Ring.multichoose r n) := by
     intro hs
-    have habel := Real.tendsto_tsum_powerSeries_nhdsWithin_lt hs.hasSum.tendsto_sum_nat
-    have hsub : Tendsto (fun x : ℝ => 1 - x) (nhdsWithin 1 (Iio 1))
-        (nhdsWithin 0 (Ioi 0)) := by
-      apply tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within
-      · have hc : Tendsto (fun _ : ℝ => (1 : ℝ)) (nhds 1) (nhds 1) :=
-          tendsto_const_nhds
-        have hi : Tendsto (fun x : ℝ => x) (nhds 1) (nhds 1) := tendsto_id
-        have hmono : nhdsWithin (1 : ℝ) (Iio 1) ≤ nhds 1 := inf_le_left
-        simpa only [sub_self] using (hc.sub hi).mono_left hmono
-      · filter_upwards [self_mem_nhdsWithin] with x hx
-        exact sub_pos.mpr (by simpa only [mem_Iio] using hx)
-    have htop : Tendsto (fun x : ℝ => 1 / (1 - x) ^ r)
-        (nhdsWithin 1 (Iio 1)) atTop := by
-      refine ((tendsto_rpow_neg_nhdsGT_zero (neg_lt_zero.mpr hr)).comp hsub).congr' ?_
+    have hsub : Tendsto (fun x : ℝ => 1 - x) (𝓝[<] 1) (𝓝[>] 0) := by
+      simpa using (continuous_sub_left (1 : ℝ)).continuousWithinAt.tendsto_nhdsWithin
+        (s := Iio 1) (t := Ioi 0) (x := 1) fun x hx => sub_pos.2 hx
+    have htop : Tendsto (fun x : ℝ => 1 / (1 - x) ^ r) (𝓝[<] 1) atTop := by
+      refine ((tendsto_rpow_neg_nhdsGT_zero (neg_lt_zero.2 hr)).comp hsub).congr' ?_
       filter_upwards [self_mem_nhdsWithin] with x hx
-      have hx' : x < 1 := by simpa only [mem_Iio] using hx
-      simpa only [Function.comp_apply, one_div] using
-        Real.rpow_neg (sub_nonneg.mpr hx'.le) r
-    have heq : ∀ᶠ x : ℝ in nhdsWithin 1 (Iio 1),
-        (∑' n : ℕ, Ring.multichoose r n * x ^ n) = 1 / (1 - x) ^ r := by
-      filter_upwards [Ioo_mem_nhdsLT (by norm_num : (-1 : ℝ) < 1)] with x hx
-      exact (hasSum_multichoose_mul_geometric_of_abs_lt_one
-        (r := r) (by simpa [abs_lt] using hx)).tsum_eq
-    have heq' : Filter.EventuallyEq (nhdsWithin 1 (Iio 1))
-        (fun x : ℝ => 1 / (1 - x) ^ r)
-        (fun x => ∑' n : ℕ, Ring.multichoose r n * x ^ n) := by
-      filter_upwards [heq] with x hx
-      exact hx.symm
-    exact not_tendsto_atTop_of_tendsto_nhds habel (htop.congr' heq')
+      simp [Real.rpow_neg (sub_nonneg.2 (le_of_lt hx))]
+    obtain ⟨x, hlt, hx⟩ := ((htop.eventually_gt_atTop (∑' n, Ring.multichoose r n)).and
+      (Ioo_mem_nhdsLT zero_lt_one)).exists
+    refine hlt.not_ge (hasSum_le (fun n => ?_) (hasSum_multichoose_mul_geometric_of_abs_lt_one
+      (abs_lt.2 ⟨by linarith [hx.1], hx.2⟩)) hs.hasSum)
+    exact mul_le_of_le_one_right (hcoeff_pos n).le (pow_le_one₀ hx.1.le hx.2.le)
   rw [← summable_norm_iff]
   simp_rw [norm_mul, norm_pow, RCLike.norm_ofReal, abs_of_pos (hcoeff_pos _)]
-  constructor
-  · intro hs
-    by_contra hq
-    apply hnot
-    exact hs.of_nonneg_of_le (fun n => (hcoeff_pos n).le) fun n => by
-      simpa only [mul_one] using mul_le_mul_of_nonneg_left
-        (one_le_pow₀ (le_of_not_gt hq)) (hcoeff_pos n).le
-  · intro hq
-    exact (hasSum_multichoose_mul_geometric_of_abs_lt_one
-      (r := r) (by simpa only [abs_norm] using hq)).summable
+  refine ⟨fun hs => not_le.1 fun hq => hnot (hs.of_nonneg_of_le (fun n => (hcoeff_pos n).le)
+    fun n => le_mul_of_one_le_right (hcoeff_pos n).le (one_le_pow₀ hq)), fun hq => ?_⟩
+  exact (hasSum_multichoose_mul_geometric_of_abs_lt_one (by simpa using hq)).summable
+
+section NormedAlgebra
+
+variable {𝕂 : Type*} [RCLike 𝕂] {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra 𝕂 𝔸]
+
+/-- The binomial series has radius at least `1` in every normed algebra over `ℝ` or `ℂ`, not only
+in a normed division ring (`binomialSeries_radius_ge_one`). It converges on the open unit ball when
+the algebra is complete (`TauCeti.hasSum_binomialSeries`). -/
+theorem binomialSeries_radius_ge_one_of_normedRing (a : 𝕂) :
+    1 ≤ (binomialSeries 𝔸 a).radius := by
+  refine ENNReal.le_of_forall_nnreal_lt fun r hr ↦ ?_
+  obtain ⟨C, -, hC⟩ := (binomialSeries 𝕂 a).norm_mul_pow_le_of_lt_radius
+    (hr.trans_le binomialSeries_radius_ge_one)
+  refine (binomialSeries 𝔸 a).le_radius_of_bound (max C ‖binomialSeries 𝔸 a 0‖) fun n ↦ ?_
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  · refine le_max_of_le_left ((mul_le_mul_of_nonneg_right ?_ (by positivity)).trans (hC n))
+    calc ‖binomialSeries 𝔸 a n‖ ≤ ‖Ring.choose a n‖ :=
+          FormalMultilinearSeries.ofScalars_norm_le _ _ _ hn
+      _ = ‖binomialSeries 𝕂 a n‖ := (FormalMultilinearSeries.ofScalars_norm 𝕂 _ n).symm
+
+/-- A point of the open unit ball lies in the ball of convergence of every binomial series. -/
+theorem mem_eball_binomialSeries_radius {y : 𝔸} (hy : ‖y‖ < 1) (a : 𝕂) :
+    y ∈ Metric.eball (0 : 𝔸) (binomialSeries 𝔸 a).radius := by
+  refine lt_of_lt_of_le ?_ (binomialSeries_radius_ge_one_of_normedRing a)
+  rwa [edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+
+/-- The sum of the binomial series is the sum of its terms `(a choose n) • yⁿ`. -/
+theorem binomialSeries_sum_eq_tsum (a : 𝕂) (y : 𝔸) :
+    (binomialSeries 𝔸 a).sum y = ∑' n, Ring.choose a n • y ^ n :=
+  FormalMultilinearSeries.ofScalars_sum_eq _ y
+
+/-- On the open unit ball of a Banach algebra, the binomial series converges to its sum. -/
+theorem hasSum_binomialSeries [CompleteSpace 𝔸] (a : 𝕂) {y : 𝔸} (hy : ‖y‖ < 1) :
+    HasSum (fun n ↦ Ring.choose a n • y ^ n) ((binomialSeries 𝔸 a).sum y) := by
+  simpa [binomialSeries, FormalMultilinearSeries.ofScalars_apply_eq] using
+    (binomialSeries 𝔸 a).hasSum (mem_eball_binomialSeries_radius hy a)
+
+/-- **The binomial series multiply as powers.** On the open unit ball of a Banach algebra the
+sums of the binomial series of `a` and `b`, which are `(1 + y) ^ a` and `(1 + y) ^ b`, multiply to
+the sum of the binomial series of `a + b`. This is the Chu–Vandermonde identity
+`∑_{i + j = n} (a choose i) (b choose j) = (a + b choose n)` for the Cauchy product. -/
+theorem binomialSeries_sum_mul_binomialSeries_sum [CompleteSpace 𝔸] (a b : 𝕂) {y : 𝔸}
+    (hy : ‖y‖ < 1) :
+    (binomialSeries 𝔸 a).sum y * (binomialSeries 𝔸 b).sum y =
+      (binomialSeries 𝔸 (a + b)).sum y := by
+  have hnorm (c : 𝕂) : Summable fun n ↦ ‖Ring.choose c n • y ^ n‖ := by
+    simpa [binomialSeries, FormalMultilinearSeries.ofScalars_apply_eq] using
+      (binomialSeries 𝔸 c).summable_norm_apply (mem_eball_binomialSeries_radius hy c)
+  rw [binomialSeries_sum_eq_tsum, binomialSeries_sum_eq_tsum, binomialSeries_sum_eq_tsum,
+    tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm (hnorm a) (hnorm b)]
+  refine tsum_congr fun n ↦ ?_
+  rw [Ring.add_choose_eq n (Commute.all a b), Finset.sum_smul]
+  refine Finset.sum_congr rfl fun ij hij ↦ ?_
+  rw [smul_mul_smul_comm, ← pow_add, Finset.mem_antidiagonal.mp hij, mul_smul]
+
+/-- For a natural number `n` the binomial series is the binomial expansion of `(1 + y) ^ n`,
+a finite sum, at every point of the algebra. -/
+theorem binomialSeries_sum_natCast (n : ℕ) (y : 𝔸) :
+    (binomialSeries 𝔸 (n : 𝕂)).sum y = (1 + y) ^ n := by
+  rw [binomialSeries_sum_eq_tsum, tsum_eq_sum (s := Finset.range (n + 1)) fun k hk ↦ ?_,
+    add_comm (1 : 𝔸) y, (Commute.one_right y).add_pow]
+  · refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [Ring.choose_natCast, one_pow, mul_one, Nat.cast_smul_eq_nsmul, nsmul_eq_mul,
+      Nat.cast_comm]
+  · rw [Ring.choose_natCast, Nat.choose_eq_zero_of_lt (by simpa using hk), Nat.cast_zero,
+      zero_smul]
+
+end NormedAlgebra
 
 end TauCeti
 

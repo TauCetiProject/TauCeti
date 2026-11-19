@@ -31,9 +31,10 @@ corner. The induced map `GH⁻(G') → GH⁻(G)` (`GridDiagram.stabilizeXSuccHom
 composite of two half-turn equivalences and the south-west stabilization map of `G.rotate`, so
 it is bijective.
 
-The half-turn preserves the Alexander grading and `τ` (`Homology/HalfTurn.lean`).
-Consequently `τ` is also invariant under this north-east stabilization, by conjugating the
-south-west stabilization with the two half-turns.
+For a knot grid the half-turn preserves `GH⁻` as an Alexander-graded `R[U]`-module
+(`Homology/HalfTurn.lean`). Conjugating the south-west stabilization with the two half-turns shows
+that so does this north-east stabilization
+(`GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX_succ`).
 
 ## Main definitions
 
@@ -50,6 +51,8 @@ south-west stabilization with the two half-turns.
   `z` goes to the class of `stabilizeXSuccChainMap z`.
 * `TauCeti.GridDiagram.stabilizeXSuccHomologyMap_bijective`: **stabilization invariance of
   `GH⁻` for the north-east corner**, the map on homology is bijective.
+* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_stabilizeX_succ`: for a knot grid, the
+  north-east stabilization preserves `GH⁻` as an Alexander-graded `R[U]`-module.
 
 ## References
 
@@ -66,10 +69,14 @@ namespace TauCeti
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (s : Fin n) (R : Type*) [CommRing R]
+variable {n : ℕ} (G : GridDiagram n) (s : Fin n) (R : Type*)
 
 local notation "A" => MvPolynomial (Fin n) R
 local notation "S" => MvPolynomial (Fin (n + 1)) R
+
+section Semiring
+
+variable [CommSemiring R]
 
 /-- **The chain map of the north-east `X`-stabilization.** On a chain `c` of
 `GC⁻(G.stabilizeX s.succ (G.X s).succ s)` it is the half-turn of the south-west stabilization
@@ -103,7 +110,9 @@ private theorem unblockedDifferential_stabilizeX_rotate_halfTurnRenameEquiv
   rw [← rotate_stabilizeX_succ]
   exact unblockedDifferential_rotate_halfTurnRenameEquiv _ R c
 
-variable [CharP R 2]
+end Semiring
+
+variable [CommRing R] [CharP R 2]
 
 /-- **`stabilizeXSuccChainMap` is a chain map**: it intertwines the unblocked differentials of
 the north-east stabilization `G.stabilizeX s.succ (G.X s).succ s` and of `G`. -/
@@ -173,6 +182,29 @@ theorem stabilizeXSuccHomologyMap_bijective :
     ((G.rotate.stabilizeXHomologyMap_bijective s.rev R).comp
       (G.stabilizeXSuccSourceEquiv s R).bijective)
 
+/-- Every unblocked cycle differs from the image of a north-east stabilization cycle by a
+boundary. -/
+theorem exists_sub_stabilizeXSuccChainMap_mem_range {c : GridChainMinus R n}
+    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    ∃ z ∈ LinearMap.ker ((G.stabilizeX s.succ (G.X s).succ s).unblockedDifferential R),
+      c - G.stabilizeXSuccChainMap s R z ∈ LinearMap.range (G.unblockedDifferential R) :=
+  G.exists_sub_map_mem_range_unblockedDifferential_of_surjective _
+    (G.stabilizeXSuccChainMap s R) (fun _ hc => G.stabilizeXSuccChainMap_mem_ker s R hc)
+    (G.stabilizeXSuccHomologyMap s R)
+    (fun z _ => G.stabilizeXSuccHomologyMap_unblockedHomologyClass s R z)
+    (G.stabilizeXSuccHomologyMap_bijective s R).2 hc
+
+/-- The north-east stabilization chain map reflects boundaries among unblocked cycles. -/
+theorem mem_range_of_stabilizeXSuccChainMap_mem_range {z : GridChainMinus R (n + 1)}
+    (hz : z ∈ LinearMap.ker ((G.stabilizeX s.succ (G.X s).succ s).unblockedDifferential R))
+    (h : G.stabilizeXSuccChainMap s R z ∈ LinearMap.range (G.unblockedDifferential R)) :
+    z ∈ LinearMap.range ((G.stabilizeX s.succ (G.X s).succ s).unblockedDifferential R) :=
+  G.mem_range_unblockedDifferential_of_map_mem_range_of_injective _
+    (G.stabilizeXSuccChainMap s R)
+    (G.stabilizeXSuccHomologyMap s R)
+    (fun w _ => G.stabilizeXSuccHomologyMap_unblockedHomologyClass s R w)
+    (G.stabilizeXSuccHomologyMap_bijective s R).1 hz h
+
 end GridDiagram
 
 namespace GridDiagram.IsKnot
@@ -180,18 +212,18 @@ namespace GridDiagram.IsKnot
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (s : Fin n)
   (K : Type*) [CommRing K] [CharP K 2]
 
-/-- The north-east corner `X`-stabilization of a knot grid preserves `τ`. -/
-theorem tau_stabilizeX_succ :
-    ((G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG).tau K = hG.tau K := by
+/-- The north-east corner `X`-stabilization of a knot grid preserves `GH⁻` as an
+Alexander-graded `K[U]`-module. -/
+theorem unblockedHomologyIsomorphic_stabilizeX_succ :
+    hG.UnblockedHomologyIsomorphic ((G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG) K := by
   have hrot := (G.isKnot_rotate).mpr hG
   have hstab := (G.isKnot_stabilizeX s.succ (G.X s).succ s).mpr hG
-  have hturn := hstab.tau_rotate K
-  have hsw := hrot.tau_stabilizeX s.rev K
-  have hturn' :
-      ((G.rotate.isKnot_stabilizeX s.rev.castSucc (G.rotate.X s.rev).castSucc s.rev).mpr
-        hrot).tau K = hstab.tau K := by
-    simpa only [G.rotate_stabilizeX_succ s] using hturn
-  exact hturn'.symm.trans (hsw.trans (hG.tau_rotate K))
+  -- The half-turn carries the north-east stabilization of `G` to the south-west stabilization
+  -- of `G.rotate`.
+  exact (hG.unblockedHomologyIsomorphic_rotate K).trans
+    ((hrot.unblockedHomologyIsomorphic_stabilizeX s.rev K).trans
+      ((unblockedHomologyIsomorphic_of_eq (G.rotate_stabilizeX_succ s).symm).trans
+        (hstab.unblockedHomologyIsomorphic_rotate K).symm))
 
 end GridDiagram.IsKnot
 

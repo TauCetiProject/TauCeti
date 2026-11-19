@@ -179,6 +179,11 @@ def linearSpec : (QuasicoherentSheaf X)ᵒᵖ ⥤ QuasicoherentLinearScheme X :=
 
 namespace QuasicoherentLinearScheme
 
+/-- Forget the grading of a linear scheme, retaining its affine structure morphism. -/
+abbrev forget : QuasicoherentLinearScheme X ⥤ AffineSchemeOver X :=
+  (isQuasicoherentLinearScheme X).ι ⋙
+    π₁ (affineFunctions X) GradedQuasicoherentAlgebra.toQuasicoherentAlgebra.op
+
 /-- The degree-one component `A₁` of the grading of a linear scheme, contravariant in the linear
 scheme. -/
 -- Exposed, like `linearSpec`, so that its objects and morphisms are computed by unfolding.
@@ -227,8 +232,7 @@ variable (X) in
 /-- Forgetting the grading of `linearSpec X` gives the relative spectrum `Spec_X (⨁ₙ Symⁿ F)` of
 the direct-sum algebra of the graded symmetric algebra. -/
 def linearSpecForgetIso :
-    linearSpec X ⋙ (isQuasicoherentLinearScheme X).ι ⋙
-        π₁ (affineFunctions X) GradedQuasicoherentAlgebra.toQuasicoherentAlgebra.op ≅
+    linearSpec X ⋙ QuasicoherentLinearScheme.forget X ≅
       (gradedSymmetricAlgebra X ⋙ GradedQuasicoherentAlgebra.toQuasicoherentAlgebra).op ⋙
         relativeSpec X :=
   Iso.refl _
@@ -321,6 +325,15 @@ theorem linearSpecEquiv_unit_app (F : (QuasicoherentSheaf X)ᵒᵖ) :
   -- The unit of the opposite of `gradedSymmetricAlgebraEquiv X` is, by definition of
   -- `Equivalence.op` and `NatIso.op`, the opposite of the inverse of its unit `Sym¹ F ≅ F`.
   rfl
+
+/-- The inverse unit of `linearSpecEquiv X` at `F` is `degreeOneLinearSpecIso F`. -/
+@[simp]
+theorem linearSpecEquiv_unitInv_app (F : (QuasicoherentSheaf X)ᵒᵖ) :
+    (linearSpecEquiv X).unitInv.app F = (degreeOneLinearSpecIso F).hom := by
+  have h : (linearSpecEquiv X).unitIso.app F = (degreeOneLinearSpecIso F).symm :=
+    Iso.ext (linearSpecEquiv_unit_app F)
+  -- The inverse component of a natural isomorphism is the inverse of its component iso.
+  exact congrArg Iso.inv h
 
 /-- The counit of `linearSpecEquiv X` at `V` is `linearSpecDegreeOneIso V`. -/
 @[simp]

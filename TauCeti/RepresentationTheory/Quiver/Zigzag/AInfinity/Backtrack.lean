@@ -47,7 +47,7 @@ is the identity, so the morphism is an `A∞` isomorphism and the deformation is
 The signs are those of Tau Ceti's Keller/Getzler--Jones conventions, in which the arity-four
 morphism equation carries no relative sign between the two outer terms of `δψ`. Liu--Wang's quartic
 operation for affine `D₄`, with equal values on the four rotations of its walk, is an instance;
-see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD4`.
+see `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`.
 
 ## Main definitions
 
@@ -86,15 +86,18 @@ open PathAlgebra DoubledQuiver AInfinity ReducedTensorWords
 
 universe u w
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
-  (hns : ∀ i : V, ∃ j, G.Adj i j)
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 /-! ### Backtrack operations -/
+
+section
+
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j)
 
 /-- The **backtrack operation** of two darts `d` and `e`: the product of the `d`-, `e`- and
 `e.symm`-arrow coordinates of its three inputs, times the arrow of `d`. -/
 noncomputable def zigzagBacktrackOperation (d e : G.Dart) :
-    MultilinearMap k (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
+    MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) :=
   ((MultilinearMap.mkPiAlgebra k (Fin 3) k).compLinearMap
     fun i ↦ (zigzagBasis k G hns).coord (.inr (.inl (![d, e, e.symm] i)))).smulRight
@@ -110,12 +113,13 @@ theorem zigzagBacktrackOperation_apply (d e : G.Dart) (x : Fin 3 → nonisolated
         zigzagMk k G (ofArrow (arrow G d.adj)) := by
   simp [zigzagBacktrackOperation, Fin.prod_univ_three, mul_assoc]
 
+end
+
 /-- The closed walk `d.symm, d, e, e.symm` in product order: read from the last entry it goes
 back and forth along `e` and then along `d`, so it is closed when `d.fst = e.snd`. -/
 def zigzagBacktrackWalk (d e : G.Dart) : Fin 4 → G.Dart :=
   ![d.symm, d, e, e.symm]
 
-omit [Finite V] in
 /-- The backtrack walk lists `d.symm`, `d`, `e` and `e.symm`. -/
 theorem zigzagBacktrackWalk_def (d e : G.Dart) :
     zigzagBacktrackWalk G d e = ![d.symm, d, e, e.symm] := by
@@ -123,13 +127,13 @@ theorem zigzagBacktrackWalk_def (d e : G.Dart) :
 
 variable {G}
 
-omit [Finite V] in
 /-- Every rotation of the backtrack walk of `d` and `e` is closed, read in product order, when `d`
 starts where `e` ends. -/
 theorem zigzagBacktrackWalk_fst_eq_snd {d e : G.Dart} (h : d.fst = e.snd) (j i : Fin 4) :
     (zigzagBacktrackWalk G d e (i + j)).fst = (zigzagBacktrackWalk G d e (i + 1 + j)).snd := by
   fin_cases i <;> fin_cases j <;> simp [zigzagBacktrackWalk, h]
 
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j) in
 /-- **The core coboundary identity.** When `d.fst = e.snd`, the Hochschild coboundary of the
 backtrack operation of `d` and `e` is the sum of the loop operations of the backtrack walk and of
 its rotation by one step. -/
@@ -154,14 +158,15 @@ theorem zigzagBacktrackOperation_coboundary {d e : G.Dart} (h : d.fst = e.snd)
 
 /-! ### Weighted families of backtrack operations -/
 
-section Family
+section
 
-variable {k} (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
+variable {k} [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j)
+  (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
 
 /-- The **backtrack cochain** of a finite set `P` of pairs of darts with weights `a`: the sum of the
 backtrack operations of the pairs in `P`, weighted by `a`. -/
 noncomputable def zigzagBacktrackCochain :
-    MultilinearMap k (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
+    MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) :=
   ∑ p ∈ P, a p • zigzagBacktrackOperation k G hns p.1 p.2
 
@@ -175,13 +180,18 @@ theorem zigzagBacktrackCochain_apply (x : Fin 3 → nonisolatedZigzagQuotient k 
         zigzagMk k G (ofArrow (arrow G p.1.adj)) := by
   simp [zigzagBacktrackCochain, zigzagBacktrackOperation_apply, smul_smul]
 
+end
+
+section
+
+variable {k} (P : Finset (G.Dart × G.Dart)) (a : G.Dart × G.Dart → k)
+
 /-- The coefficients of the loop operations of the backtrack walks of the pairs in `P` and of their
 rotations by one step, weighted by `a`. -/
 noncomputable def zigzagBacktrackCoefficients : (Fin 4 → G.Dart) →₀ k :=
   ∑ p ∈ P, (Finsupp.single (zigzagBacktrackWalk G p.1 p.2) (a p) +
     Finsupp.single (fun i ↦ zigzagBacktrackWalk G p.1 p.2 (i + 1)) (a p))
 
-omit [Finite V] in
 /-- The backtrack coefficients are the sum, over the pairs in `P`, of the single coefficients of the
 backtrack walk and of its rotation by one step. -/
 theorem zigzagBacktrackCoefficients_def :
@@ -192,7 +202,6 @@ theorem zigzagBacktrackCoefficients_def :
 
 variable {P}
 
-omit [Finite V] in
 /-- The backtrack coefficients are supported on closed walks, read in product order. -/
 theorem fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients
     (hP : ∀ p ∈ P, p.1.fst = p.2.snd) :
@@ -210,6 +219,14 @@ theorem fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients
     exact zigzagBacktrackWalk_fst_eq_snd (hP p hp) 1 i
   simp [h₁, h₂] at hpw
 
+end
+
+variable [Finite V] (hns : ∀ i : V, ∃ j, G.Adj i j)
+
+section Family
+
+variable {k} {P : Finset (G.Dart × G.Dart)} (a : G.Dart × G.Dart → k)
+
 /-- The quartic operation of the loop deformation with backtrack coefficients is the weighted sum
 of the loop operations of the backtrack walks and of their rotations. -/
 theorem zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients_m_four
@@ -217,7 +234,8 @@ theorem zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients_m_four
     (zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a) hc).m 4 =
       ∑ p ∈ P, a p • (zigzagLoopOperation k G hns (zigzagBacktrackWalk G p.1 p.2) +
         zigzagLoopOperation k G hns (fun i ↦ zigzagBacktrackWalk G p.1 p.2 (i + 1))) := by
-  rw [zigzagLoopAInfinityAlgebra_m_four, zigzagBacktrackCoefficients, map_sum]
+  rw [zigzagLoopAInfinityAlgebra_m_eq_linearCombination (n := 4) _ _ (by norm_num),
+    zigzagBacktrackCoefficients, map_sum]
   simp [smul_add]
 
 /-- **The coboundary of the backtrack cochain** is the quartic operation of the loop deformation
@@ -276,7 +294,7 @@ theorem zigzagBacktrackCochain_mul_zigzagBacktrackCochain_eq_zero
 
 section Twist
 
-variable {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G)}
+variable {𝒢 : InternalGrading k (nonisolatedZigzagQuotient k G) ℤ}
   (h𝒢 : 𝒢.piece = zigzagIntegerGrade k G)
 include h𝒢
 
@@ -358,7 +376,7 @@ variable {k} {P : Finset (G.Dart × G.Dart)} (a : G.Dart × G.Dart → k)
 variable (P) in
 /-- The family of operations of the backtrack Taylor map: the backtrack cochain in arity three. -/
 private noncomputable def backtrackOps :
-    ∀ n : ℕ, MultilinearMap k (fun _ : Fin n ↦ nonisolatedZigzagQuotient k G)
+    ∀ n : ℕ, MultilinearMap (RingHom.id k) (fun _ : Fin n ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G)
   | 0 => 0
   | 1 => 0
@@ -544,7 +562,7 @@ private theorem taylor_zigzagLoopAInfinityAlgebra_subword_four_mem {n : ℕ}
     (zigzagLoopAInfinityAlgebra hns c hc).taylor (subword k x s 4) ∈ zigzagIntegerGrade k G 2 := by
   by_cases h : s + 4 ≤ n
   · rw [subword_eq_of_tprod k x (by norm_num) h, AInfinityAlgebra.taylor_of_tprod]
-    exact zigzagLoopAInfinityAlgebra_m_four_mem _ hc _
+    exact zigzagLoopAInfinityAlgebra_m_mem _ hc (by norm_num) _
   · rw [subword_eq_zero_of_lt_add k x (by omega), map_zero]
     exact zero_mem _
 
@@ -647,7 +665,7 @@ private theorem backtrack_component_four (x : Fin 4 → nonisolatedZigzagQuotien
     letter_add_zigzagBacktrackTaylor_subword_one, letter_add_zigzagBacktrackTaylor_subword_three]
   -- All Koszul twists are those of one grading, in which the arity-four suspension twists the
   -- first and third letters; the remaining identity is the coboundary identity with signs.
-  set 𝒢 := (zigzagStrictAInfinityAlgebra k hns).grading with h𝒢
+  set 𝒢 := (zigzagStrictAInfinityAlgebra k hns).grading
   have hG : (zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a)
       (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP)).grading = 𝒢 :=
     zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _
@@ -739,7 +757,7 @@ theorem isHomogeneous_zigzagBacktrackTaylor :
   intro D z hz
   refine gradedPiece_induction
     (motive := fun w ↦ zigzagBacktrackTaylor hns P a w ∈
-      ((zigzagStrictAInfinityAlgebra k hns).grading.shift 1).piece (D + 0)) hz ?_ ?_ ?_ ?_
+      ((zigzagStrictAInfinityAlgebra k hns).grading.shift 1).piece (D + 0)) hz ?_ ?_ ?_
   · intro m hm 𝒟 y hy hD
     by_cases h₃ : m = 3
     · subst h₃
@@ -761,8 +779,6 @@ theorem isHomogeneous_zigzagBacktrackTaylor :
       ring
     · rw [zigzagBacktrackTaylor_of_tprod_of_ne hns a hm h₃]
       exact zero_mem _
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv

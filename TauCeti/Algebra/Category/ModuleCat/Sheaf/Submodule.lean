@@ -7,28 +7,27 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PushforwardContinuous
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
+public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Submodule
 
 /-!
-# Factoring a morphism through a submodule of a (pre)sheaf of modules
+# Factoring a morphism through a submodule of a sheaf of modules
 
-Mathlib's `PresheafOfModules.Submodule` and `SheafOfModules.Submodule` package a submodule of a
-(pre)sheaf of modules together with the inclusion `N.ι` of the associated (pre)sheaf of modules.
-This file supplies the missing universal property of that inclusion: a morphism whose sections all
-land in `N` factors through `N`, uniquely because `N.ι` is a monomorphism.
+Mathlib's `SheafOfModules.Submodule` packages a submodule of a sheaf of modules together with the
+inclusion `N.ι` of the associated sheaf of modules. This file supplies the universal property of
+that inclusion, lifting `PresheafOfModules.Submodule.lift` from the underlying presheaves: a
+morphism whose sections all land in `N` factors through `N`, uniquely because `N.ι` is a
+monomorphism.
 
 ## Main declarations
 
-* `TauCeti.PresheafOfModules.liftToSubmodule` and `TauCeti.SheafOfModules.liftToSubmodule`, the
-  factorization itself, with `liftToSubmodule_ι` recording that it does factor the given morphism;
-* `TauCeti.SheafOfModules.isIso_liftToSubmodule`: the factorization is an isomorphism when the
-  morphism is injective on sections with image exactly `N`;
-* `TauCeti.SheafOfModules.Submodule.homOfLE`, the inclusion of one submodule of a sheaf of modules
-  into a larger one;
-* `SheafOfModules.Submodule.overIsoOfEq`, the identification over `V` of two submodules
-  with the same sections over every object above `V`.
-
-No formalization is vendored; the constructions are `AddMonoidHom.codRestrict` applied section by
-section, assembled by Mathlib's `PresheafOfModules.homMk`.
+* `SheafOfModules.Submodule.lift`, the factorization itself, with `lift_ι` recording that it does
+  factor the given morphism;
+* `SheafOfModules.Submodule.isIso_lift`: the factorization is an isomorphism when the morphism is
+  injective on sections with image exactly `N`;
+* `SheafOfModules.Submodule.homOfLE`, the inclusion of one submodule of a sheaf of modules into a
+  larger one;
+* `SheafOfModules.Submodule.overIsoOfEq`, the identification over `V` of two submodules with the
+  same sections over every object above `V`.
 -/
 
 public section
@@ -37,142 +36,55 @@ universe v v₁ u₁ u
 
 open CategoryTheory Opposite
 
-variable {C : Type u₁} [Category.{v₁} C]
+namespace SheafOfModules.Submodule
 
-namespace TauCeti
-
-namespace PresheafOfModules
-
-variable {R : Cᵒᵖ ⥤ RingCat.{u}} {M P : _root_.PresheafOfModules.{v} R}
-
-noncomputable section
-
-/-- A morphism of presheaves of modules all of whose sections lie in a submodule `N` of the
-target factors through the presheaf of modules attached to `N`. -/
-def liftToSubmodule (N : M.Submodule) (φ : P ⟶ M)
-    (hφ : ∀ (U : Cᵒᵖ) (s : P.obj U), φ.app U s ∈ N.obj U) :
-    P ⟶ N.toPresheafOfModules :=
-  _root_.PresheafOfModules.homMk
-    { app U := AddCommGrpCat.ofHom
-        (((φ.app U).hom.toAddMonoidHom).codRestrict (N.obj U) (hφ U))
-      naturality := by
-        intro U V f
-        ext x
-        apply Subtype.ext
-        exact _root_.PresheafOfModules.naturality_apply φ f x }
-    (by
-      intro U r m
-      apply Subtype.ext
-      exact (φ.app U).hom.map_smul r m)
-
-@[simp]
-lemma liftToSubmodule_app_coe (N : M.Submodule) (φ : P ⟶ M)
-    (hφ : ∀ (U : Cᵒᵖ) (s : P.obj U), φ.app U s ∈ N.obj U) (U : Cᵒᵖ) (s : P.obj U) :
-    ((liftToSubmodule N φ hφ).app U s).val = φ.app U s :=
-  (rfl)
-
-@[reassoc (attr := simp)]
-lemma liftToSubmodule_ι (N : M.Submodule) (φ : P ⟶ M)
-    (hφ : ∀ (U : Cᵒᵖ) (s : P.obj U), φ.app U s ∈ N.obj U) :
-    liftToSubmodule N φ hφ ≫ N.ι = φ := by
-  ext U s
-  exact liftToSubmodule_app_coe N φ hφ U s
-
-lemma ι_app_mem (N : M.Submodule) (U : Cᵒᵖ) (s : N.toPresheafOfModules.obj U) :
-    N.ι.app U s ∈ N.obj U :=
-  s.2
-
-end
-
-end PresheafOfModules
-
-namespace SheafOfModules
-
-variable {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
-  {M P : _root_.SheafOfModules.{v} R}
+variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}}
+  {M P : SheafOfModules.{v} R}
 
 noncomputable section
 
 /-- A morphism of sheaves of modules all of whose sections lie in a submodule `N` of the target
 factors through the sheaf of modules attached to `N`. -/
-def liftToSubmodule (N : M.Submodule) (φ : P ⟶ M)
+def lift (N : M.Submodule) (φ : P ⟶ M)
     (hφ : ∀ (U : Cᵒᵖ) (s : P.val.obj U), φ.val.app U s ∈ N.toSubmodule.obj U) :
     P ⟶ N.toSheafOfModules :=
-  ⟨PresheafOfModules.liftToSubmodule N.toSubmodule φ.val hφ⟩
+  ⟨N.toSubmodule.lift φ.val hφ⟩
 
+/-- On sections, `N.lift φ hφ` followed by the inclusion of `N` is `φ`. -/
 @[simp]
-lemma liftToSubmodule_val_app_coe (N : M.Submodule) (φ : P ⟶ M)
+lemma lift_val_app_coe (N : M.Submodule) (φ : P ⟶ M)
     (hφ : ∀ (U : Cᵒᵖ) (s : P.val.obj U), φ.val.app U s ∈ N.toSubmodule.obj U)
     (U : Cᵒᵖ) (s : P.val.obj U) :
-    ((liftToSubmodule N φ hφ).val.app U s).val = φ.val.app U s :=
-  (rfl)
+    ((N.lift φ hφ).val.app U s).val = φ.val.app U s :=
+  N.toSubmodule.lift_app_coe φ.val hφ U s
 
+/-- `N.lift φ hφ` factors `φ` through the inclusion `N.ι`. -/
 @[reassoc (attr := simp)]
-lemma liftToSubmodule_ι (N : M.Submodule) (φ : P ⟶ M)
+lemma lift_ι (N : M.Submodule) (φ : P ⟶ M)
     (hφ : ∀ (U : Cᵒᵖ) (s : P.val.obj U), φ.val.app U s ∈ N.toSubmodule.obj U) :
-    liftToSubmodule N φ hφ ≫ N.ι = φ :=
-  _root_.SheafOfModules.Hom.ext (PresheafOfModules.liftToSubmodule_ι N.toSubmodule φ.val hφ)
+    N.lift φ hφ ≫ N.ι = φ :=
+  Hom.ext (N.toSubmodule.lift_ι φ.val hφ)
 
-lemma ι_val_app_mem (N : M.Submodule) (U : Cᵒᵖ) (s : N.toSheafOfModules.val.obj U) :
-    N.ι.val.app U s ∈ N.toSubmodule.obj U :=
-  PresheafOfModules.ι_app_mem N.toSubmodule U s
-
-/-- The inclusion of a submodule sheaf is injective on sections. -/
-lemma ι_val_app_injective (N : M.Submodule) (U : Cᵒᵖ) :
-    Function.Injective (N.ι.val.app U) :=
-  Subtype.val_injective
-
-/-- The image of the inclusion on sections is the defining submodule. -/
-@[simp]
-lemma range_ι_val_app (N : M.Submodule) (U : Cᵒᵖ) :
-    Set.range (N.toSubmodule.ι.app U) = N.toSubmodule.obj U := by
-  ext s
-  exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ ι_val_app_mem N U t, fun hs ↦ ⟨⟨s, hs⟩, rfl⟩⟩
-
-/-- The factorization `liftToSubmodule N φ hφ` is an isomorphism when `φ` is injective on sections
-and every section of `N` is in the image of `φ`. -/
-lemma isIso_liftToSubmodule (N : M.Submodule) (φ : P ⟶ M)
+/-- The factorization `N.lift φ hφ` is an isomorphism when `φ` is injective on sections and every
+section of `N` is in the image of `φ`. -/
+lemma isIso_lift (N : M.Submodule) (φ : P ⟶ M)
     (hφ : ∀ (U : Cᵒᵖ) (s : P.val.obj U), φ.val.app U s ∈ N.toSubmodule.obj U)
     (hinj : ∀ U : Cᵒᵖ, Function.Injective (φ.val.app U))
-    (hsurj : ∀ (U : Cᵒᵖ) (s : M.val.obj U), s ∈ N.toSubmodule.obj U → ∃ t, φ.val.app U t = s) :
-    IsIso (liftToSubmodule N φ hφ) := by
-  rw [← isIso_iff_of_reflects_iso _ (_root_.SheafOfModules.forget _)]
-  have (U : Cᵒᵖ) : IsIso ((liftToSubmodule N φ hφ).val.app U) := by
-    rw [ConcreteCategory.isIso_iff_bijective]
-    refine ⟨fun a b hab ↦ hinj U ?_, fun s ↦ ?_⟩
-    · simpa only [liftToSubmodule_val_app_coe] using congrArg Subtype.val hab
-    · obtain ⟨t, ht⟩ := hsurj U s.1 s.2
-      exact ⟨t, Subtype.ext (by simpa only [liftToSubmodule_val_app_coe] using ht)⟩
-  exact (_root_.PresheafOfModules.isoMk (fun U ↦ asIso ((liftToSubmodule N φ hφ).val.app U))
-    fun _ _ f ↦ (liftToSubmodule N φ hφ).val.naturality f).isIso_hom
+    (hsurj : ∀ U : Cᵒᵖ, ∀ s ∈ N.toSubmodule.obj U, ∃ t, φ.val.app U t = s) :
+    IsIso (N.lift φ hφ) :=
+  have : IsIso ((forget R).map (N.lift φ hφ)) := N.toSubmodule.isIso_lift φ.val hφ hinj hsurj
+  isIso_of_reflects_iso _ (forget R)
 
-namespace Submodule
-
-/-- The inclusion of a submodule of a sheaf of modules into a larger one. The hypothesis is
-stated for the underlying submodules of the presheaf of modules, which is what
-`SheafOfModules.Submodule.le_iff` says the order on submodules of a sheaf of modules is. -/
-def homOfLE {N₁ N₂ : M.Submodule} (h : N₁.toSubmodule ≤ N₂.toSubmodule) :
+/-- The inclusion of a submodule of a sheaf of modules into a larger one. -/
+def homOfLE {N₁ N₂ : M.Submodule} (h : N₁ ≤ N₂) :
     N₁.toSheafOfModules ⟶ N₂.toSheafOfModules :=
-  ⟨_root_.PresheafOfModules.Submodule.homOfLE h⟩
+  ⟨PresheafOfModules.Submodule.homOfLE (le_iff.mp h)⟩
 
+/-- The inclusion `homOfLE h` is compatible with the inclusions into `M`. -/
 @[reassoc (attr := simp)]
-lemma homOfLE_ι {N₁ N₂ : M.Submodule} (h : N₁.toSubmodule ≤ N₂.toSubmodule) :
+lemma homOfLE_ι {N₁ N₂ : M.Submodule} (h : N₁ ≤ N₂) :
     homOfLE h ≫ N₂.ι = N₁.ι :=
-  _root_.SheafOfModules.Hom.ext (_root_.PresheafOfModules.Submodule.homOfLE_ι h)
-
-end Submodule
-
-end
-
-end SheafOfModules
-
-end TauCeti
-
-namespace SheafOfModules.Submodule
-
-variable {J : GrothendieckTopology C} {R : Sheaf J RingCat.{u}} {M : SheafOfModules.{v} R}
-
-noncomputable section
+  (rfl)
 
 /-- Two submodules of a sheaf of modules which have the same sections over every object above `V`
 give isomorphic sheaves of modules over `V`, compatibly with their inclusions (`overIsoOfEq_hom_ι`,
@@ -190,14 +102,14 @@ def overIsoOfEq (N₁ N₂ : M.Submodule) (V : C)
       (fun _ _ _ ↦ rfl)
 
 /-- The inclusion of a submodule remains a monomorphism after restricting to an object. -/
-instance instMonoιOver (N : M.Submodule) (V : C) : Mono (N.ι.over V) := by
-  apply (SheafOfModules.forget _).mono_of_mono_map
-  -- `SheafOfModules.forget` sends a morphism to its underlying presheaf morphism `.val` by
-  -- definition, and Mathlib has no `forget_map` lemma to rewrite with, so we restate the goal.
-  change Mono (N.ι.over V).val
-  apply PresheafOfModules.mono_of_injective
-  intro W
-  exact Subtype.val_injective
+instance instMonoιOver (N : M.Submodule) (V : C) : Mono (N.ι.over V) :=
+  (forget _).mono_of_mono_map <| PresheafOfModules.mono_of_injective fun W s t h ↦ by
+    -- `N.ι.over V` is the pushforward of `N.ι` along `Over.forget V` (`overFunctor`), so its
+    -- sections over `W` are those of `N.ι` over `W.unop.left`.
+    have hW (x) : ((forget _).map (N.ι.over V)).app W x = N.toSubmodule.ι.app (op W.unop.left) x :=
+      PresheafOfModules.pushforward_map_app_apply (𝟙 _) N.toSubmodule.ι W x
+    rw [hW, hW] at h
+    exact PresheafOfModules.injective_of_mono N.toSubmodule.ι (op W.unop.left) h
 
 /-- The isomorphism `overIsoOfEq` is compatible with the inclusions into `M`. -/
 @[reassoc (attr := simp)]

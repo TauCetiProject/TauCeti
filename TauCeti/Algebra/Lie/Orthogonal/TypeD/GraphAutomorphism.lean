@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Generators
-public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 
 /-!
 # The native type-D graph involution
@@ -19,7 +19,8 @@ over every commutative ring, including in characteristic two.
 For the last pair in the standard positive system, this is the type-D diagram involution.
 It exchanges the raising and lowering generators at the two terminal nodes and fixes the
 other generators. The result supplies the native Lie automorphism needed to twist the two
-half-spin representations; it does not construct an intertwiner between them.
+half-spin representations; the intertwiner between them, which needs the spinor module, is
+`TauCeti.SpinPolarizationData.typeDGraphHalfSpinLieModuleEquiv`.
 -/
 
 public section
@@ -82,6 +83,12 @@ variable [Fintype I]
 @[simp]
 theorem typeDGraphMatrix_mul_self : typeDGraphMatrix c A * typeDGraphMatrix c A = 1 := by
   simp [typeDGraphMatrix, ← Matrix.permMatrix_mul, typeDGraphIndex]
+
+/-- The graph matrix exchanges exactly the chosen pair of vector coordinates. -/
+@[simp]
+theorem typeDGraphMatrix_mulVec (x : I ⊕ I → A) (s : I ⊕ I) :
+    (typeDGraphMatrix c A *ᵥ x) s = x (typeDGraphIndex c s) := by
+  rw [typeDGraphMatrix, Matrix.permMatrix_mulVec, Function.comp_apply]
 
 private theorem typeDGraphMatrix_conj (X : Matrix (I ⊕ I) (I ⊕ I) A) :
     typeDGraphMatrix c A * X * typeDGraphMatrix c A =

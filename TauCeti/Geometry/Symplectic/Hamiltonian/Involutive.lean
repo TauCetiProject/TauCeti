@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.RegularValue
+public import TauCeti.Geometry.Manifold.RegularValue.Rank
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 
@@ -27,6 +27,17 @@ parametrization satisfying the hypotheses described below:
 * hence `ker dF_x` is coisotropic exactly when the `F_i` pairwise Poisson-commute at `x`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isCoisotropic_ker_mfderiv_iff`), and `X_{F_j}(x)` is
   in `ker dF_x` exactly when `F_j` Poisson-commutes at `x` with every `F_i`;
+* functions whose differentials at `x` vanish on `ker dF_x`, such as functions of `F`, then
+  Poisson-commute at `x` as well
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_zero_of_ker_le`);
+* the rank of `F` at `x` (`TauCeti.mfderivRank`, the dimension of the image of `dF_x`) is the
+  dimension of the span of the `X_{F_i}(x)`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderivRank_eq_finrank_span_hamiltonianVectorField`), so
+  the points of rank zero are the common zeros of the Hamiltonian vector fields
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderivRank_eq_zero_iff_hamiltonianVectorField_eq_zero`);
+* where the `F_i` Poisson-commute this span is isotropic, so the rank of `F` there is at most half
+  the dimension of `M`, whether or not `x` is a regular point
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.two_mul_mfderivRank_le`);
 * at a regular point of `F` (the differentials `dF_i` are independent) the `X_{F_i}(x)` are
   linearly independent, so `k` independent Poisson-commuting functions on a `2n`-dimensional
   manifold satisfy `k ≤ n`
@@ -93,15 +104,26 @@ theorem orthogonal_ker_mfderiv (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F
       Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x) := by
   rw [← hσ.orthogonal_span_hamiltonianVectorField hF, SymplecticForm.orthogonal_orthogonal]
 
+omit hσ [FiniteDimensional ℝ E] in
 /-- The Hamiltonian vector `X_{F_j}(x)` lies in `ker dF_x` exactly when `F_j`
-Poisson-commutes at `x` with every `F_i`. -/
-theorem hamiltonianVectorField_mem_ker_mfderiv_iff (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x)
-    (j : ι) :
+Poisson-commutes at `x` with every `F_i`. Where the flat map is not invertible, both sides hold,
+since all Hamiltonian vectors vanish. -/
+theorem _root_.TauCeti.SmoothTwoForm.hamiltonianVectorField_mem_ker_mfderiv_iff
+    (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x) (j : ι) :
     σ.hamiltonianVectorField (F · j) x ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ↔
       ∀ i, σ.poissonBracket (F · i) (F · j) x = 0 := by
-  simp only [← hσ.orthogonal_span_hamiltonianVectorField hF,
-    SymplecticForm.mem_orthogonal_span_iff, Set.forall_mem_range, symplecticFormAt_apply,
-    poissonBracket_def]
+  by_cases hinv : (σ.flat x).IsInvertible
+  · have hev (f : M → ℝ) (v : TangentSpace I x) :
+        SmoothBundleForm.eval₂ σ x (σ.hamiltonianVectorField f x) v = mvfderiv I f x v := by
+      rw [← flat_apply, hamiltonianVectorField_def, hinv.self_apply_inverse]
+    simp only [poissonBracket_def, hev, mvfderiv_apply hF, LinearMap.mem_ker,
+      ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+      mvfderiv_apply_eq_mfderiv_apply]
+    exact funext_iff
+  · have h0 (f : M → ℝ) : σ.hamiltonianVectorField f x = 0 := by
+      rw [hamiltonianVectorField_def, ContinuousLinearMap.inverse_of_not_isInvertible hinv]
+      rfl
+    simp [poissonBracket_def, h0]
 
 /-- The kernel of `dF_x` is a coisotropic subspace of `T_x M` exactly when
 `{F_i, F_j}(x) = 0` for all `i` and `j`. -/
@@ -112,6 +134,32 @@ theorem isCoisotropic_ker_mfderiv_iff (hF : MDifferentiableAt I 𝓘(ℝ, ι →
     ← hσ.orthogonal_span_hamiltonianVectorField hF, ← SymplecticForm.isIsotropic_iff_le,
     SymplecticForm.isIsotropic_span_iff]
   simp only [Set.forall_mem_range, symplecticFormAt_apply, poissonBracket_def]
+
+/-- **Functions of Poisson-commuting functions Poisson-commute.** If the `F_i` Poisson-commute at
+`x`, then any two functions whose differentials at `x` vanish on `ker dF_x`, such as functions
+`h ∘ F` of `F`, Poisson-commute at `x`. -/
+theorem poissonBracket_eq_zero_of_ker_le
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) {g k : M → ℝ}
+    (hg : (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ≤ (mvfderiv I g x).ker)
+    (hk : (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ≤ (mvfderiv I k x).ker) :
+    σ.poissonBracket g k x = 0 := by
+  by_cases hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x
+  · -- `X_k` is `σ`-orthogonal to `ker dk`, hence to `ker dF`, so it lies in the coisotropic
+    -- `ker dF` and therefore in `ker dg`.
+    have hXk : σ.hamiltonianVectorField k x ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker :=
+      SymplecticForm.isCoisotropic_iff_le.1 ((hσ.isCoisotropic_ker_mfderiv_iff hF).2 hcomm) <|
+        SymplecticForm.mem_orthogonal_iff'.2 fun v hv ↦ by
+          rw [symplecticFormAt_apply, hσ.eval₂_hamiltonianVectorField]
+          exact hk hv
+    rw [hσ.poissonBracket_eq_mvfderiv]
+    exact hg hXk
+  · -- If `F` is not differentiable at `x` then `dF_x = 0`, so `dk_x = 0` and `X_k(x) = 0`.
+    rw [mfderiv_zero_of_not_mdifferentiableAt hF] at hk
+    have hdk : mvfderiv I k x = 0 := by
+      ext v
+      exact hk (by simp : v ∈ ((0 : TangentSpace I x →L[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)) :
+        TangentSpace I x →ₗ[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)).ker)
+    rw [hσ.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_eq_zero_iff.2 hdk, map_zero]
 
 /-! ### Independent functions -/
 
@@ -136,17 +184,51 @@ theorem finrank_span_hamiltonianVectorField (hreg : IsRegularPoint I 𝓘(ℝ, �
       Fintype.card ι :=
   finrank_span_eq_card (hσ.linearIndependent_hamiltonianVectorField hreg)
 
-/-- **The dimension bound for Poisson-commuting functions.** If `k` functions Poisson-commute at a
-regular point of a `2n`-dimensional manifold, then `k ≤ n`. -/
-theorem two_mul_card_le_finrank (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
-    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) :
-    2 * Fintype.card ι ≤ finrank ℝ E := by
+/-! ### The rank of a family of functions -/
+
+/-- **The rank of a family of functions is the dimension of its Hamiltonian span.** At a point
+where `F` is differentiable, the rank of `F` (the dimension of the image of `dF_x`) is the dimension
+of the span of the Hamiltonian vectors `X_{F_i}(x)`. -/
+theorem mfderivRank_eq_finrank_span_hamiltonianVectorField
+    (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x) :
+    mfderivRank I 𝓘(ℝ, ι → ℝ) F x =
+      finrank ℝ (Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x)) := by
+  rw [← hσ.orthogonal_ker_mfderiv hF, SymplecticForm.finrank_orthogonal, finrank_tangentSpace]
+  have := finrank_ker_mfderiv_add_mfderivRank (I := I) (J := 𝓘(ℝ, ι → ℝ)) (f := F) (x := x)
+  omega
+
+/-- **The points of rank zero are the common zeros of the Hamiltonian vectors.** A differentiable
+family `F` has rank zero at `x` exactly when every Hamiltonian vector `X_{F_i}(x)` vanishes, that
+is when `x` is an equilibrium of every Hamiltonian vector field `X_{F_i}`. -/
+theorem mfderivRank_eq_zero_iff_hamiltonianVectorField_eq_zero
+    (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x) :
+    mfderivRank I 𝓘(ℝ, ι → ℝ) F x = 0 ↔ ∀ i, σ.hamiltonianVectorField (F · i) x = 0 := by
+  rw [hσ.mfderivRank_eq_finrank_span_hamiltonianVectorField hF, Submodule.finrank_eq_zero,
+    Submodule.span_eq_bot, Set.forall_mem_range]
+
+/-- **The rank bound for Poisson-commuting functions.** At a point where the functions `F_i`
+Poisson-commute, the rank of `F` is at most half the dimension of `M`: the Hamiltonian vectors
+`X_{F_i}(x)` span an isotropic subspace of that dimension. Where `F` is not differentiable the
+rank is zero, so no differentiability of `F` is assumed. -/
+theorem two_mul_mfderivRank_le (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) :
+    2 * mfderivRank I 𝓘(ℝ, ι → ℝ) F x ≤ finrank ℝ E := by
+  by_cases hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x
+  swap
+  · simp [mfderivRank_eq_zero_of_not_mdifferentiableAt hF]
   have hiso : (hσ.symplecticFormAt x).IsIsotropic
       (Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x)) := by
     rw [SymplecticForm.isIsotropic_span_iff]
     simpa only [Set.forall_mem_range, symplecticFormAt_apply, poissonBracket_def] using hcomm
   have := hiso.two_mul_finrank_le
-  rwa [hσ.finrank_span_hamiltonianVectorField hreg, finrank_tangentSpace] at this
+  rwa [← hσ.mfderivRank_eq_finrank_span_hamiltonianVectorField hF, finrank_tangentSpace] at this
+
+/-- **The dimension bound for Poisson-commuting functions.** If `k` functions Poisson-commute at a
+regular point of a `2n`-dimensional manifold, then `k ≤ n`. -/
+theorem two_mul_card_le_finrank (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) :
+    2 * Fintype.card ι ≤ finrank ℝ E := by
+  have := hσ.two_mul_mfderivRank_le hcomm
+  rwa [isRegularPoint_iff_mfderivRank_eq.1 hreg, Module.finrank_fintype_fun_eq_card] at this
 
 /-- **The Lagrangian criterion for `ker dF_x`.** At a regular point of `F`
 at which the `F_i` Poisson-commute, the kernel of `dF_x` is Lagrangian exactly when there are
@@ -194,7 +276,7 @@ theorem isCoisotropicMap_of_forall_eq (hg : ∀ p, F (g p) = c)
     (hinj : ∀ p, Function.Injective (mfderiv J I g p))
     (hdim : finrank ℝ E' + Fintype.card ι = finrank ℝ E) :
     hσ.IsCoisotropicMap J g := isCoisotropicMap_iff.2 fun p ↦ by
-  have hrange := (hreg p).range_mfderiv_eq_ker_mfderiv hg (hinj p)
+  have hrange := (hreg p).range_mfderiv_eq_ker_mfderiv (.of_forall hg) (hinj p)
     (by rwa [Module.finrank_fintype_fun_eq_card])
   rw [hrange]
   exact (hσ.isCoisotropic_ker_mfderiv_iff (hreg p).mdifferentiableAt).2 (hcomm p)
@@ -209,7 +291,7 @@ theorem isLagrangianMap_of_forall_eq (hg : ∀ p, F (g p) = c)
     (hinj : ∀ p, Function.Injective (mfderiv J I g p))
     (hdimN : finrank ℝ E' = Fintype.card ι) (hdim : 2 * Fintype.card ι = finrank ℝ E) :
     hσ.IsLagrangianMap J g := isLagrangianMap_iff_forall.2 fun p ↦ by
-  have hrange := (hreg p).range_mfderiv_eq_ker_mfderiv hg (hinj p)
+  have hrange := (hreg p).range_mfderiv_eq_ker_mfderiv (.of_forall hg) (hinj p)
     (by rw [Module.finrank_fintype_fun_eq_card]; omega)
   rw [hrange]
   exact (hσ.isLagrangian_ker_mfderiv_iff (hreg p) (hcomm p)).2 hdim

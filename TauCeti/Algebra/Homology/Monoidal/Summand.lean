@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Homology.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+public import TauCeti.Algebra.Homology.Bifunctor.Basic
 
 /-!
 # The monoidal structure of homological complexes on homogeneous summands
@@ -24,10 +25,14 @@ themselves.  This file supplies that last step, so that a calculation on homogen
 never has to unfold the monoidal structure.  The formulas hold verbatim for homological complexes
 of any shape in any monoidal preadditive category, and are stated in that generality; only their
 evaluation on pure tensors, `HomologicalComplex.ι_tensorHom_apply`, is specific to modules.
+The curried tensor bifunctor on cochain complexes is also identified with `tensorObj` and
+`tensorHom`, so consumers can use these formulas without unfolding the bifunctor.
 
 ## Main results
 
 * `HomologicalComplex.ι_tensorHom`: the tensor product of two morphisms on a homogeneous summand.
+* `HomologicalComplex.zero_tensorHom` and `HomologicalComplex.tensorHom_zero`: the tensor product
+  of morphisms vanishes when either factor does.
 * `HomologicalComplex.tensorHom_eq_mapBifunctorMap`: `⊗ₘ` of homological complexes is the
   totalization `HomologicalComplex.mapBifunctorMap` of the two morphisms.
 * `HomologicalComplex.ι_whiskerLeft` and `HomologicalComplex.ι_whiskerRight`: the two whiskerings
@@ -71,9 +76,20 @@ lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ �
   refine (ι_mapBifunctorMap _ _ _ _ _ _ _ _).trans ?_
   simp [tensorHom_def]
 
+/-- The tensor product of homological complexes of the zero morphism with any morphism is zero. -/
+lemma zero_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₂ : K₂ ⟶ L₂)
+    [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
+    tensorHom (0 : K₁ ⟶ L₁) f₂ = 0 :=
+  mapBifunctorMap_zero_left (curriedTensor C) c K₁ L₁ f₂
+
+/-- The tensor product of homological complexes of any morphism with the zero morphism is zero. -/
+lemma tensorHom_zero {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
+    [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
+    tensorHom f₁ (0 : K₂ ⟶ L₂) = 0 :=
+  mapBifunctorMap_zero_right (curriedTensor C) c f₁ K₂ L₂
+
 variable [HasZeroObject C] (c) [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
-  [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
-  [∀ X₂, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
+  [∀ X₂, PreservesColimit (CategoryTheory.Functor.empty.{0} C) ((curriedTensor C).flip.obj X₂)]
   [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
   [∀ (X₁ X₂ X₃ : GradedObject I C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
 
@@ -126,7 +142,7 @@ lemma leftUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
     (λ_ X).inv.f j = (leftUnitor' X).inv j := by
   dsimp only [MonoidalCategoryStruct.leftUnitor, monoidalCategoryStruct,
     monoidalCategory, leftUnitor, Iso.symm_inv]
-  simp only [Hom.isoOfComponents_hom_f, Functor.mapIso_hom, Iso.symm_hom]
+  simp only [Hom.isoOfComponents_hom_f, CategoryTheory.Functor.mapIso_hom, Iso.symm_hom]
   rfl
 
 /-- The degreewise component of the inverse right unitor of homological complexes is the
@@ -136,7 +152,7 @@ lemma rightUnitor_inv_f (X : HomologicalComplex C c) (j : I) :
     (ρ_ X).inv.f j = (rightUnitor' X).inv j := by
   dsimp only [MonoidalCategoryStruct.rightUnitor, monoidalCategoryStruct,
     monoidalCategory, rightUnitor, Iso.symm_inv]
-  simp only [Hom.isoOfComponents_hom_f, Functor.mapIso_hom, Iso.symm_hom]
+  simp only [Hom.isoOfComponents_hom_f, CategoryTheory.Functor.mapIso_hom, Iso.symm_hom]
   rfl
 
 /-- The inclusion `HomologicalComplex.mapBifunctor₁₂.ι` of the summand `X.X p ⊗ Y.X q ⊗ Z.X r`
@@ -218,3 +234,29 @@ lemma ι_tensorHom_apply {K₁ K₂ L₁ L₂ : HomologicalComplex (ModuleCat.{v
 end ComplexesOfModules
 
 end HomologicalComplex
+
+namespace CochainComplex
+
+open HomologicalComplex
+
+variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C]
+  [MonoidalPreadditive C] [∀ K L : CochainComplex C ℤ, HasTensor K L]
+
+/-- The curried tensor bifunctor on complexes computes the total tensor product. -/
+@[simp]
+theorem curriedTensor_map₂CochainComplex_obj_obj (K A : CochainComplex C ℤ) :
+    ((curriedTensor C).map₂CochainComplex.obj K).obj A = tensorObj K A := rfl
+
+/-- The curried tensor bifunctor acts in the right input by tensoring with an identity. -/
+@[simp]
+theorem curriedTensor_map₂CochainComplex_obj_map (K : CochainComplex C ℤ)
+    {A B : CochainComplex C ℤ} (g : A ⟶ B) :
+    ((curriedTensor C).map₂CochainComplex.obj K).map g = tensorHom (𝟙 K) g := rfl
+
+/-- The curried tensor bifunctor acts in the left input by tensoring with an identity. -/
+@[simp]
+theorem curriedTensor_map₂CochainComplex_map_app {K L : CochainComplex C ℤ}
+    (f : K ⟶ L) (A : CochainComplex C ℤ) :
+    ((curriedTensor C).map₂CochainComplex.map f).app A = tensorHom f (𝟙 A) := rfl
+
+end CochainComplex

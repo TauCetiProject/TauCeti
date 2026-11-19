@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
+import TauCeti.Algebra.DualNumber.Basic
 import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
@@ -25,6 +28,8 @@ even when `B` is noncommutative. For commutative `B`, the tangent Lie bracket va
   equivalent to `B`.
 * `TauCeti.MultiplicativeGroup.tangent_bracket_eq_zero`: the tangent Lie bracket of `𝔾ₘ`
   vanishes.
+* `TauCeti.MultiplicativeGroup.mapValue_derivationComp_tangentLinearEquiv_symm_one`:
+  coefficient change preserves a cocharacter's unit tangent differential.
 
 ## References
 
@@ -114,35 +119,24 @@ theorem derivation_T_zsmul (d : Derivation R H C) (n : ℤ) :
   simpa only [zsmul_one, Int.cast_id, monomialValues_apply] using
     map_zsmul (monomialValues d) n (1 : ℤ)
 
-private noncomputable def infinitesimalUnit (c : C) : (DualNumber C)ˣ :=
-  have h : IsUnit (inl 1 + inr c : DualNumber C) := by
-    rw [TrivSqZeroExt.isUnit_iff_isUnit_fst]
-    simp
-  h.unit
-
-private lemma infinitesimalUnit_map_fst (c : C) :
-    Units.map (fstHom R C C : DualNumber C →* C) (infinitesimalUnit c) = 1 := by
-  ext
-  simp [infinitesimalUnit]
-
 private theorem tangentCoordinate_surjective :
     Function.Surjective (tangentCoordinate (R := R) (B := B)) := by
   intro b
   let c : C := (CounitAlgebra.algEquivSelf R H B).symm b
-  let q : H →ₐ[R] DualNumber C := laurentEval (infinitesimalUnit c)
+  let q : H →ₐ[R] DualNumber C := laurentEval (dualNumberUnit c)
   have hq : (fstHom R C C).comp q = IsScalarTower.toAlgHom R H C := by
-    simp only [q, comp_laurentEval, infinitesimalUnit_map_fst]
+    simp only [q, comp_laurentEval, map_fstHom_dualNumberUnit]
     apply (laurentEval_unique 1 _ ?_).symm
     simp only [IsScalarTower.toAlgHom_apply, CounitAlgebra.algebraMap_apply,
       LaurentPolynomial.counit_T, ← CounitAlgebra.algebraMap_base R H B, map_one,
       Units.val_one]
   let d : Derivation R H C :=
-    (derivationToDualNumberEquivLift R H C).symm ⟨q, hq⟩
+    (derivationToTrivSqZeroExtEquivLift R H C).symm ⟨q, hq⟩
   refine ⟨d, ?_⟩
   rw [tangentCoordinate_apply]
   dsimp only [d]
-  rw [derivationToDualNumberEquivLift_symm_apply]
-  simp only [q, laurentEval_T_one, infinitesimalUnit, IsUnit.unit_spec, snd_add, snd_inl,
+  rw [derivationToTrivSqZeroExtEquivLift_symm_apply]
+  simp only [q, laurentEval_T_one, coe_dualNumberUnit, snd_add, snd_one,
     snd_inr, zero_add, c, AlgEquiv.apply_symm_apply]
 
 /-- **The tangent module at the identity of `𝔾ₘ` is free of rank one.** The equivalence sends
@@ -172,6 +166,26 @@ theorem tangentLinearEquiv_symm_apply_T (b : B) (n : ℤ) :
     simpa only [tangentLinearEquiv_apply] using
       (tangentLinearEquiv (R := R) (B := B)).apply_symm_apply b
   rw [derivation_T_zsmul, map_zsmul, h]
+
+/-- Coefficient change preserves the image of the multiplicative unit tangent vector under
+any cocharacter's differential. -/
+theorem mapValue_derivationComp_tangentLinearEquiv_symm_one
+    {D A : Type*} [Ring D] [Algebra R D] [CommSemiring A] [Bialgebra R A]
+    (ψ : B →ₐ[R] D) (φ : A →ₐc[R] H) :
+    Derivation.mapValue ψ (derivationComp (B := B) φ
+      ((tangentLinearEquiv (R := R) (B := B)).symm 1)) =
+      derivationComp (B := D) φ ((tangentLinearEquiv (R := R) (B := D)).symm 1) := by
+  have hgm : Derivation.mapValue ψ ((tangentLinearEquiv (R := R) (B := B)).symm 1) =
+      (tangentLinearEquiv (R := R) (B := D)).symm 1 := by
+    apply (tangentLinearEquiv (R := R) (B := D)).injective
+    simp only [tangentLinearEquiv_apply, Derivation.mapValue_apply,
+      CounitAlgebra.algEquivSelf_map, tangentLinearEquiv_symm_apply_T, one_zsmul, map_one]
+  ext a
+  simp only [Derivation.mapValue_apply, derivationComp_apply]
+  have h := DFunLike.congr_fun hgm (φ a)
+  simp only [Derivation.mapValue_apply] at h
+  -- Evaluation erases the counit-algebra indexing introduced by precomposition.
+  exact h
 
 end Ring
 

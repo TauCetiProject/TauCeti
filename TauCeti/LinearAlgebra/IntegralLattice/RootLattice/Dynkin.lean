@@ -55,6 +55,8 @@ are excluded here (`TauCeti.DynkinType.isSimplyLaced_cartanMatrix_iff`).
 * `TauCeti.DynkinType.span_vectorsOfNorm_two_rootLattice`: the norm-`2` vectors span the carrier.
 * `TauCeti.DynkinType.eq_rootLattice`: a lattice with integral coordinates and Cartan Gram matrix
   is the root lattice.
+* `TauCeti.DynkinType.rootLatticeIsometryOfEq`: the isometry between the root lattices of equal
+  Dynkin types.
 * `TauCeti.DynkinType.rootLattice_A`, `rootLattice_E6`, `rootLattice_E7`, `rootLattice_E8`:
   identification with the family-specific simple-root lattices.
 * `TauCeti.DynkinType.rootLatticeIsometryCheckerboard`: the isometry of the type `Dₙ` root lattice
@@ -194,6 +196,29 @@ theorem minimum_rootLattice (h : t.rank ≠ 0) : (t.rootLattice ht).minimum = 2 
     (x := t.simpleRootBasis ht ⟨0, Nat.pos_of_ne_zero h⟩) <| by
       rw [integralNorm_apply, ← gramMatrix_apply, gramMatrix_simpleRootBasis,
         cartanMatrix_apply_same]
+
+/-- **Root lattices of equal Dynkin types are isometric**: for `h : t = s`, the isometry from the
+root lattice of `t` to that of `s` which reads simple-root coordinates along the equality of
+ranks.  It lets a family of components that is only propositionally equal to another one, such as
+the components of a list read off by position, be compared with it. -/
+noncomputable def rootLatticeIsometryOfEq {s : DynkinType} (h : t = s) (hs : s.IsSimplyLaced) :
+    Isometry (t.rootLattice ht) (s.rootLattice hs) := by
+  subst h
+  exact Isometry.refl _
+
+/-- The isometry of the root lattice of `t` with itself is the identity. -/
+@[simp]
+theorem rootLatticeIsometryOfEq_rfl : t.rootLatticeIsometryOfEq ht rfl ht = Isometry.refl _ :=
+  (rfl)
+
+/-- The isometry of root lattices of equal types reads each simple-root coordinate of the target
+from the corresponding coordinate of the source. -/
+@[simp]
+theorem rootLatticeIsometryOfEq_apply {s : DynkinType} (h : t = s) (hs : s.IsSimplyLaced)
+    (x : Fin t.rank → ℚ) (j : Fin s.rank) :
+    t.rootLatticeIsometryOfEq ht h hs x j = x (Fin.cast (congrArg rank h).symm j) := by
+  subst h
+  rw [rootLatticeIsometryOfEq_rfl, Isometry.refl_apply, Fin.cast_eq_self]
 
 /-! ## Identification with the family-specific models -/
 

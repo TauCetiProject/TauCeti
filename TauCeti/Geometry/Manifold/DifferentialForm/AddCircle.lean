@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.AddCircle
+public import TauCeti.Geometry.Manifold.Instances.AddCircle.Cover
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
@@ -26,9 +26,13 @@ lift `c`, `dt_p` is the differential of `c`. It is closed, since the circle is o
 and it vanishes nowhere.
 
 The time form is invariant under the translations of the circle. Multiplication by an integer
-`k` pulls it back to `k • dt_p`, and the rescaling `AddCircle p ≃ AddCircle q` pulls `dt_q` back to
-`(p⁻¹ * q) • dt_p`. Its integral along the curve `t ↦ q_p t` from `a` to `b` is `b - a`; one
+`k` pulls it back to `k • dt_p`, the rescaling `AddCircle p ≃ AddCircle q` pulls `dt_q` back to
+`(p⁻¹ * q) • dt_p`, and the covering map `AddCircle p → AddCircle q` for a multiple `p` of `q` pulls
+`dt_q` back to `dt_p`. Its integral along the curve `t ↦ q_p t` from `a` to `b` is `b - a`; one
 circuit `0 ≤ t ≤ p` of the circle has integral `p`.
+
+On the cylinder `AddCircle p × ℝ`, the wedge of the pulled-back time form and the real
+coordinate form evaluates as the determinant in the real tangent coordinates.
 
 ## Main definitions
 
@@ -44,8 +48,9 @@ circuit `0 ≤ t ≤ p` of the circle has integral `p`.
 * `AddCircle.isClosed_timeForm`, `AddCircle.timeForm_apply_ne_zero`: `dt_p` is closed and
   nowhere vanishing.
 * `AddCircle.mpullback_add_right_timeForm`, `AddCircle.mpullback_zsmul_timeForm`,
-  `AddCircle.mpullback_diffeomorphAddCircle_timeForm`: the pullbacks of the time form along
-  translations, integer multiplications and rescalings.
+  `AddCircle.mpullback_diffeomorphAddCircle_timeForm`, `AddCircle.mpullback_coverMap_timeForm`:
+  the pullbacks of the time form along translations, integer multiplications, rescalings and
+  covering maps.
 * `AddCircle.pathIntegral_timeForm_coe`: the integral of `dt_p` along `q_p` from `a` to `b` is
   `b - a`.
 
@@ -89,13 +94,25 @@ It is the unique form pulling back to `dt` along the quotient map `ℝ → AddCi
 (`AddCircle.eq_timeForm_iff`). -/
 def timeForm : SmoothForm 𝓘(ℝ) (AddCircle p) ℝ 1 :=
   ⟨fun x ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace 𝓘(ℝ) x) ℝ 0
-    (ContinuousLinearMap.id ℝ ℝ), (isSmoothForm_timeForm p).mem_smoothForms⟩
+    (ContinuousLinearMap.id ℝ ℝ), (isSmoothForm_timeForm p).mem_smoothBundleForms⟩
 
 /-- The time form sends a tangent vector of `AddCircle p` to itself. -/
 @[simp]
 theorem timeForm_apply (x : AddCircle p) (v : Fin 1 → TangentSpace 𝓘(ℝ) x) :
     (timeForm p).1 x v = v 0 :=
   (rfl)
+
+/-- On the circle cylinder, the wedge of the angular time form and the real coordinate form
+evaluates as the determinant of the two tangent vectors. -/
+theorem eval₂_wedge_timeForm_realLineCoordForm (y : AddCircle p × ℝ)
+    (v w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) y) :
+    SmoothBundleForm.eval₂
+      (SmoothForm.wedge (SmoothForm.mpullback Prod.fst contMDiff_fst (timeForm p))
+        (SmoothForm.mpullback Prod.snd contMDiff_snd SmoothForm.realLineCoordForm)) y v w =
+      v.1 * w.2 - w.1 * v.2 := by
+  simp only [SmoothForm.eval₂_wedge_one_one, SmoothForm.mpullback_fst_apply,
+    SmoothForm.mpullback_snd_apply, timeForm_apply, SmoothForm.realLineCoordForm_apply,
+    Manifold.tangentSpaceProdEquiv_apply, Matrix.cons_val_zero]
 
 /-- As a section of the cotangent bundle, the time form is the constant section `id`. -/
 @[simp]
@@ -114,7 +131,7 @@ theorem timeForm_apply_ne_zero (x : AddCircle p) : (timeForm p).1 x ≠ 0 := fun
 
 /-- The time form is closed: on the one-dimensional circle every two-form vanishes. -/
 theorem isClosed_timeForm : (timeForm p).IsClosed :=
-  (SmoothForm.isClosed_def _).mpr (mextDeriv_eq_zero_of_finrank_le (by simp) _)
+  SmoothForm.isClosed_of_finrank_le (by simp) _
 
 /-! ### Pullback to the real line -/
 
@@ -203,6 +220,19 @@ theorem mpullback_diffeomorphAddCircle_timeForm (q : ℝ) [Fact (0 < q)] (n : �
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
   simp only [mpullback_apply, mfderiv_diffeomorphAddCircle, timeForm_apply, Pi.smul_apply,
     ContinuousAlternatingMap.coe_smul]
+  -- Tangent vectors of `AddCircle p` are real numbers, on which the identity of `ℝ` acts.
+  rfl
+
+variable {p} in
+/-- For a period `p` that is an integer multiple of `q`, the covering map
+`AddCircle p → AddCircle q` pulls the time form of `AddCircle q` back to the time form of
+`AddCircle p`. -/
+@[simp]
+theorem mpullback_coverMap_timeForm {q : ℝ} [Fact (0 < q)] (h : p ∈ AddSubgroup.zmultiples q) :
+    mpullback 𝓘(ℝ) 𝓘(ℝ) (coverMap h) (timeForm q).1 = (timeForm p).1 := by
+  funext x
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  simp only [mpullback_apply, mfderiv_coverMap, timeForm_apply]
   -- Tangent vectors of `AddCircle p` are real numbers, on which the identity of `ℝ` acts.
   rfl
 

@@ -110,7 +110,10 @@ theorem exists_isCompact_superset_image_ball_inter_sphere_diam_le
     have ht0 : t ≠ 0 := by rintro rfl; rw [γ.source] at hfz; exact hfz hu
     have ht1 : t ≠ 1 := by rintro rfl; rw [γ.target] at hfz; exact hfz hv
     refine γ.isPreconnected_range_union_sdiff_singleton (fun s hst => ?_)
-      hCconn.isPreconnected.closure (subset_closure huC) (subset_closure hvC) fun h => hfz (hCfr h)
+      hCconn.isPreconnected.closure
+      ⟨0, unitInterval.pos_iff_ne_zero.2 ht0, by simpa using subset_closure huC⟩
+      ⟨1, unitInterval.lt_one_iff_ne_one.2 ht1, by simpa using subset_closure hvC⟩
+      fun h => hfz (hCfr h)
     rcases hγsimple hst with h | ⟨-, h⟩ | ⟨-, h⟩
     · exact h
     · exact absurd h ht1

@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Model
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 
 import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
+import TauCeti.NumberTheory.NumberField.ClassNumber.SmallDiscriminant
 
 /-!
 # The class number of `ℚ(√d)` from its integral model
@@ -27,12 +28,25 @@ The integral models are domains because they are isomorphic to a ring of integer
 class number of any quadratic field presented by a squarefree radicand `d` with the number of ideal
 classes of the integral model of `d`.
 
+The same ring isomorphisms specialize the Dedekind equivalences *class number one ⇔ principal ideal
+domain ⇔ unique factorization domain* to the integral models: `ℚ(√d)` has class number `1` exactly
+when `ℤ[√d]`, respectively `ℤ[(1 + √d)/2]`, is a principal ideal domain, and exactly when it is a
+unique factorization domain. Minkowski's bound certifies class number `1` for the radicands with
+`|discr| ≤ 9`, namely `d = -1, ±2` with `d ≢ 1 (mod 4)` and `d = -3, 5, -7` with `d ≡ 1 (mod 4)`.
+
 ## Main results
 
 * `QuadraticAlgebra.natCard_classGroup_eq_classNumber_of_mod_four_ne_one`: for `d ≢ 1 (mod 4)`,
   `ℤ[√d]` has `classNumber ℚ(√d)` ideal classes.
 * `QuadraticAlgebra.natCard_classGroup_eq_classNumber_of_mod_four_eq_one`: for `d ≡ 1 (mod 4)`,
   `ℤ[(1 + √d)/2]` has `classNumber ℚ(√d)` ideal classes.
+* `QuadraticAlgebra.classNumber_eq_one_iff_isPrincipalIdealRing_of_mod_four_ne_one`,
+  `QuadraticAlgebra.classNumber_eq_one_iff_uniqueFactorizationMonoid_of_mod_four_ne_one` and their
+  `_of_mod_four_eq_one` analogues: class number one of `ℚ(√d)` is principality, respectively
+  unique factorization, of its integral model.
+* `QuadraticAlgebra.classNumber_eq_one_of_natAbs_le_two`,
+  `QuadraticAlgebra.classNumber_eq_one_of_mod_four_eq_one_of_natAbs_le_nine`: the Minkowski
+  certificates for the radicands of discriminant at most `9` in absolute value.
 -/
 
 public section
@@ -63,5 +77,80 @@ theorem natCard_classGroup_eq_classNumber_of_mod_four_eq_one (hd4 : d % 4 = 1) :
       classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) :=
   haveI := (ringOfIntegersEquivHalf hsf hd4).symm.toMulEquiv.isDomain
   (ringOfIntegersEquivHalf hsf hd4).symm.toRingEquiv.natCard_classGroup_eq_classNumber
+
+include hsf in
+/-- **Class number one of `ℚ(√d)` is principality of `ℤ[√d]`.** For squarefree `d` with
+`d % 4 ≠ 1`, the class number of `ℚ(√d)` is `1` exactly when `ℤ[√d]` is a principal ideal ring. -/
+theorem classNumber_eq_one_iff_isPrincipalIdealRing_of_mod_four_ne_one (hd4 : d % 4 ≠ 1) :
+    classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) = 1 ↔
+      IsPrincipalIdealRing (QuadraticAlgebra ℤ d 0) :=
+  (ringOfIntegersEquiv hsf hd4).symm.toRingEquiv.classNumber_eq_one_iff_isPrincipalIdealRing
+
+include hsf in
+/-- **Class number one of `ℚ(√d)` is unique factorization in `ℤ[√d]`.** For squarefree `d` with
+`d % 4 ≠ 1`, the class number of `ℚ(√d)` is `1` exactly when `ℤ[√d]` is a unique factorization
+domain. -/
+theorem classNumber_eq_one_iff_uniqueFactorizationMonoid_of_mod_four_ne_one (hd4 : d % 4 ≠ 1) :
+    classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) = 1 ↔
+      UniqueFactorizationMonoid (QuadraticAlgebra ℤ d 0) :=
+  (ringOfIntegersEquiv hsf hd4).symm.toRingEquiv.classNumber_eq_one_iff_uniqueFactorizationMonoid
+
+include hsf in
+/-- **Class number one of `ℚ(√d)` is principality of `ℤ[(1 + √d)/2]`.** For squarefree `d` with
+`d % 4 = 1`, the class number of `ℚ(√d)` is `1` exactly when `ℤ[(1 + √d)/2]` is a principal
+ideal ring. -/
+theorem classNumber_eq_one_iff_isPrincipalIdealRing_of_mod_four_eq_one (hd4 : d % 4 = 1) :
+    classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) = 1 ↔
+      IsPrincipalIdealRing (QuadraticAlgebra ℤ ((d - 1) / 4) 1) :=
+  (ringOfIntegersEquivHalf hsf hd4).symm.toRingEquiv.classNumber_eq_one_iff_isPrincipalIdealRing
+
+include hsf in
+/-- **Class number one of `ℚ(√d)` is unique factorization in `ℤ[(1 + √d)/2]`.** For squarefree
+`d` with `d % 4 = 1`, the class number of `ℚ(√d)` is `1` exactly when `ℤ[(1 + √d)/2]` is a unique
+factorization domain. -/
+theorem classNumber_eq_one_iff_uniqueFactorizationMonoid_of_mod_four_eq_one (hd4 : d % 4 = 1) :
+    classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) = 1 ↔
+      UniqueFactorizationMonoid (QuadraticAlgebra ℤ ((d - 1) / 4) 1) :=
+  RingEquiv.classNumber_eq_one_iff_uniqueFactorizationMonoid
+    (ringOfIntegersEquivHalf hsf hd4).symm.toRingEquiv
+
+/-- **Minkowski certificate for `d ≢ 1 (mod 4)`.** For a nonsquare `d` with `|d| ≤ 2`, that is
+`d = -1, 2, -2`, the field `ℚ(√d)` of discriminant `4d` has class number `1`: `|4d| ≤ 9` lies below
+the quadratic Minkowski threshold. -/
+theorem classNumber_eq_one_of_natAbs_le_two (hd : d.natAbs ≤ 2) :
+    classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) = 1 := by
+  have hns : ¬ IsSquare d := Fact.out
+  have h0 : d ≠ 0 := fun h => hns ⟨0, by simp [h]⟩
+  have h1 : d ≠ 1 := fun h => hns ⟨1, by simp [h]⟩
+  have hsf : Squarefree d := by
+    refine Int.squarefree_natAbs.mp ?_
+    have : d.natAbs = 1 ∨ d.natAbs = 2 := by omega
+    rcases this with h | h <;> rw [h]
+    · exact squarefree_one
+    · exact Nat.prime_two.squarefree
+  have hd4 : d % 4 ≠ 1 := by omega
+  exact classNumber_eq_one_iff.mpr <|
+    TauCeti.NumberField.isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine
+      (QuadraticAlgebra.finrank_eq_two _ _)
+      (by rw [discr_eq_four_mul_of_mod_four_ne_one hsf hd4]; omega)
+
+/-- **Minkowski certificate for `d ≡ 1 (mod 4)`.** For a nonsquare `d` with `d % 4 = 1` and
+`|d| ≤ 9`, that is `d = -3, 5, -7`, the field `ℚ(√d)` of discriminant `d` has class number `1`:
+`|d| ≤ 9` lies below the quadratic Minkowski threshold. -/
+theorem classNumber_eq_one_of_mod_four_eq_one_of_natAbs_le_nine (hd4 : d % 4 = 1)
+    (hd : d.natAbs ≤ 9) : classNumber (QuadraticAlgebra ℚ (d : ℚ) 0) = 1 := by
+  have hns : ¬ IsSquare d := Fact.out
+  have hsf : Squarefree d := by
+    have : d = -7 ∨ d = -3 ∨ d = 1 ∨ d = 5 ∨ d = 9 := by omega
+    rcases this with h | h | h | h | h
+    · rw [h]
+      exact Int.squarefree_natAbs.mp (show Squarefree 7 from (by decide : Nat.Prime 7).squarefree)
+    · rw [h]; exact Int.squarefree_natAbs.mp Nat.prime_three.squarefree
+    · exact absurd ⟨1, by simp [h]⟩ hns
+    · rw [h]; exact Int.squarefree_natAbs.mp Nat.prime_five.squarefree
+    · exact absurd ⟨3, by simp [h]⟩ hns
+  exact classNumber_eq_one_iff.mpr <|
+    TauCeti.NumberField.isPrincipalIdealRing_of_finrank_eq_two_of_natAbs_discr_le_nine
+      (QuadraticAlgebra.finrank_eq_two _ _) (by rwa [discr_eq_of_mod_four_eq_one hsf hd4])
 
 end QuadraticAlgebra

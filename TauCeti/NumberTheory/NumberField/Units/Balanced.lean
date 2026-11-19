@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Height.NumberField
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.NormLeOne
 public import Mathlib.NumberTheory.NumberField.House
 public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+
+import TauCeti.NumberTheory.Height.House
 
 /-!
 # Balanced representatives modulo units and bounded divisors
@@ -28,7 +31,8 @@ For a nonzero algebraic integer `α`, the divisors of `α` whose house is at mos
 `exp c₁(u) * |N(α)| ^ (1 / d)` form a finite set `boundedDivisors u α`. By the balancing
 argument, every divisor of `α` is a unit times a member of this set. This reduces equations
 whose solutions factor into divisors of a fixed integer, such as Thue equations, to finitely many
-unit equations.
+unit equations. For a nonzero rational integer `m`, the members of `boundedDivisors u m` have
+house at most `exp c₁(u) * |m|`, hence relative height at most `d (c₁(u) + log |m|)`.
 
 ## Main results
 
@@ -45,6 +49,8 @@ unit equations.
 * `TauCeti.NumberField.Units.boundedDivisors_finite`: this set is finite.
 * `TauCeti.NumberField.Units.exists_mem_boundedDivisors_of_dvd`: for `u` of maximal rank and
   `α ≠ 0`, every divisor of `α` is a unit times a member of `boundedDivisors u α`.
+* `TauCeti.NumberField.Units.logHeight₁_le_of_mem_boundedDivisors`: the height bound for the
+  members of `boundedDivisors u m` with `m` a nonzero integer.
 
 ## References
 
@@ -172,14 +178,14 @@ open scoped Classical in
 divisor of `α` is a unit times a member of this set (`exists_mem_boundedDivisors_of_dvd`), and the
 set is finite (`boundedDivisors_finite`). -/
 noncomputable def boundedDivisors (u : Fin (rank K) → (𝓞 K)ˣ) (α : 𝓞 K) : Set (𝓞 K) :=
-  {γ | γ ∣ α ∧ house (γ : K) ≤
+  {γ | γ ∣ α ∧ NumberField.house (γ : K) ≤
     Real.exp (rank K * ∑ j, ‖logEmbedding K (Additive.ofMul (u j))‖) *
       |(Algebra.norm ℚ (α : K) : ℝ)| ^ (1 / (finrank ℚ K : ℝ))}
 
 open scoped Classical in
 @[simp]
 theorem mem_boundedDivisors {u : Fin (rank K) → (𝓞 K)ˣ} {α γ : 𝓞 K} :
-    γ ∈ boundedDivisors u α ↔ γ ∣ α ∧ house (γ : K) ≤
+    γ ∈ boundedDivisors u α ↔ γ ∣ α ∧ NumberField.house (γ : K) ≤
       Real.exp (rank K * ∑ j, ‖logEmbedding K (Additive.ofMul (u j))‖) *
         |(Algebra.norm ℚ (α : K) : ℝ)| ^ (1 / (finrank ℚ K : ℝ)) :=
   Iff.rfl
@@ -215,7 +221,7 @@ open scoped Classical in
 theorem one_mem_boundedDivisors (u : Fin (rank K) → (𝓞 K)ˣ) {α : 𝓞 K} (hα : α ≠ 0) :
     1 ∈ boundedDivisors u α := by
   refine ⟨one_dvd α, ?_⟩
-  rw [RingOfIntegers.coe_eq_algebraMap, map_one, ← Int.cast_one, house_intCast, abs_one,
+  rw [RingOfIntegers.coe_eq_algebraMap, map_one, ← Int.cast_one, NumberField.house_intCast, abs_one,
     Int.cast_one]
   refine one_le_mul_of_one_le_of_one_le (Real.one_le_exp (by positivity)) ?_
   exact Real.one_le_rpow (RingOfIntegers.one_le_abs_norm hα) (by positivity)
@@ -239,9 +245,35 @@ theorem exists_mem_boundedDivisors_of_dvd {u : Fin (rank K) → (𝓞 K)ˣ} (hu 
     have hδ : δ ≠ 0 := right_ne_zero_of_mul hα
     simp only [RingOfIntegers.coe_eq_algebraMap, map_mul, Rat.cast_mul, abs_mul]
     exact le_mul_of_one_le_right (abs_nonneg _) (RingOfIntegers.one_le_abs_norm hδ)
-  rw [house, pi_norm_le_iff_of_nonneg (by positivity)]
+  rw [NumberField.house, pi_norm_le_iff_of_nonneg (by positivity)]
   intro φ
   rw [canonicalEmbedding.apply_at, RingOfIntegers.coe_eq_algebraMap, map_mul]
   exact (hn φ).2.trans (by gcongr)
+
+open scoped Classical in
+/-- A divisor `μ` of a nonzero integer `m` in `boundedDivisors u m` has relative height at most
+`[K : ℚ] * (c₁ + log |m|)`, where `c₁ = rank K * ∑ j, ‖log u j‖`: its house is at most
+`exp c₁ * |N(m)| ^ (1 / [K : ℚ]) = exp c₁ * |m|`. -/
+theorem logHeight₁_le_of_mem_boundedDivisors {u : Fin (rank K) → (𝓞 K)ˣ} {m : ℤ}
+    (hm : m ≠ 0) {μ : 𝓞 K} (hμ : μ ∈ boundedDivisors u (m : 𝓞 K)) :
+    Height.logHeight₁ (μ : K) ≤ finrank ℚ K *
+      (rank K * ∑ j, ‖logEmbedding K (Additive.ofMul (u j))‖ + Real.log |(m : ℝ)|) := by
+  set c₁ : ℝ := rank K * ∑ j, ‖logEmbedding K (Additive.ofMul (u j))‖
+  have hc₁ : 0 ≤ c₁ := by positivity
+  have hm1 : 1 ≤ |(m : ℝ)| := by exact_mod_cast Int.one_le_abs hm
+  -- The norm of the integer `m` is `m ^ [K : ℚ]`.
+  have hN : (Algebra.norm ℚ ((m : 𝓞 K) : K) : ℝ) = (m : ℝ) ^ finrank ℚ K := by
+    simpa using congrArg (Rat.cast (K := ℝ)) (Algebra.norm_algebraMap (S := K) (m : ℚ))
+  have hnorm : |(Algebra.norm ℚ ((m : 𝓞 K) : K) : ℝ)| ^ (1 / (finrank ℚ K : ℝ)) = |(m : ℝ)| := by
+    rw [hN, abs_pow, one_div, Real.pow_rpow_inv_natCast (abs_nonneg _) finrank_pos.ne']
+  have hhouse := (mem_boundedDivisors.mp hμ).2
+  rw [hnorm] at hhouse
+  have h1 : 1 ≤ Real.exp c₁ * |(m : ℝ)| :=
+    one_le_mul_of_one_le_of_one_le (Real.one_le_exp hc₁) hm1
+  refine (logHeight₁_le_finrank_mul_posLog_house μ.isIntegral_coe).trans
+    (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _))
+  rw [← Real.log_exp c₁, ← Real.log_mul (Real.exp_pos _).ne' (by positivity),
+    ← Real.posLog_eq_log (by rwa [abs_of_nonneg (by positivity)])]
+  exact Real.posLog_le_posLog (by linarith [NumberField.house_nonneg (μ : K)]) hhouse
 
 end TauCeti.NumberField.Units

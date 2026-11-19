@@ -29,7 +29,8 @@ generators of degree one into the degree-one piece preserves every degree.
   homogeneous of the same degree.
 * `TauCeti.DirectSum.decomposeTensor.gradedOne` and
   `TauCeti.DirectSum.decomposeTensor.gradedMul`: tensoring preserves the unit and multiplication
-  grading separately, without requiring a decomposition into a direct sum.
+  grading separately, without requiring a decomposition into a direct sum; the multiplicative
+  statement holds for non-unital, non-associative algebras.
 * `TauCeti.DirectSum.decomposeTensor.gradedMonoid`: the pieces `decomposeTensor 𝒜 H i` form a graded
   monoid.
 -/
@@ -52,7 +53,7 @@ variable [AddCommMonoid A] [Module R A] [AddCommMonoid H] [Module R H] {𝒜 : �
 theorem tmul_mem_decomposeTensor {i : ι} {a : A} (ha : a ∈ 𝒜 i) (h : H) :
     a ⊗ₜ[R] h ∈ decomposeTensor 𝒜 H i := by
   rw [decomposeTensor_apply]
-  exact ⟨⟨a, ha⟩ ⊗ₜ[R] h, by rw [LinearMap.rTensor_tmul, Submodule.subtype_apply]⟩
+  exact ⟨⟨a, ha⟩ ⊗ₜ[R] h, LinearMap.rTensor_tmul _ _ _ _⟩
 
 end Module
 
@@ -68,9 +69,14 @@ instance decomposeTensor.gradedOne [Zero ι] [SetLike.GradedOne 𝒜] :
 
 end One
 
-variable [Semiring A] [Algebra R A] [Semiring H] [Algebra R H] (𝒜 : ι → Submodule R A)
+section Mul
 
-/-- Tensoring on the right preserves graded multiplication; the index type only needs addition. -/
+variable [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+  [NonUnitalNonAssocSemiring H] [Module R H] [SMulCommClass R H H] [IsScalarTower R H H]
+  (𝒜 : ι → Submodule R A)
+
+/-- Tensoring on the right preserves graded multiplication; the index type only needs addition
+and the algebras need be neither unital nor associative. -/
 instance decomposeTensor.gradedMul [Add ι] [SetLike.GradedMul 𝒜] :
     SetLike.GradedMul (decomposeTensor 𝒜 H) where
   mul_mem i j x y hx hy := by
@@ -88,6 +94,10 @@ instance decomposeTensor.gradedMul [Add ι] [SetLike.GradedMul 𝒜] :
         simpa only [map_add, mul_add] using add_mem h₁ h₂
     | add x₁ x₂ h₁ h₂ =>
       simpa only [map_add, add_mul] using add_mem h₁ h₂
+
+end Mul
+
+variable [Semiring A] [Algebra R A] [Semiring H] [Algebra R H] (𝒜 : ι → Submodule R A)
 
 /-- The pieces of `A ⊗[R] H` induced by a graded monoid `𝒜` on `A` form a graded monoid, with
 the right tensor factor `H` in degree zero. -/

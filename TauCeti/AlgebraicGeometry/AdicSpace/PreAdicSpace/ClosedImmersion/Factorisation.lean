@@ -118,7 +118,8 @@ theorem existsUnique_comp_presentationLimitPreAdicSpaceQuotientComap_eq
   -- on each open affinoid subspace `U ≅ Spa(B, B⁺)`, the restriction of `f` factors through `i`
   have hloc (U : X.affinoidOpens) : ∃ g : X.restrict U.1.isOpenEmbedding ⟶ Z.obj,
       g ≫ i = X.ofRestrict U.1.isOpenEmbedding ≫ f := by
-    obtain ⟨B, _, _, _, _, _, _, _, T, P', hT, ⟨e⟩⟩ := (isAffinoid_iff_exists_complete _).mp U.2
+    obtain ⟨B, _, _, _, _, _, _, _, T, P', hT, ⟨e⟩⟩ := (isAffinoid_iff_exists_complete _).mp
+      ((mem_propOpens_iff _).mp U.2)
     have hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
         (presentationLimitPresheaf P' T.plus) :=
       ObjectProperty.prop_of_iso isSheafy e (isSheafy_restrict _ hX.isSheafy)

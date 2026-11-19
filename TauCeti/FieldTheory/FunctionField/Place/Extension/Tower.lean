@@ -24,7 +24,8 @@ expected commuting scalar towers. No function-field, finite-dimensionality, sepa
 perfectness hypothesis is needed: restriction uses only integrality of the field extensions,
 and the degree identity is the ordinary finrank tower formula for the residue fields. The
 inseparable residue degrees are multiplicative as well, since integrality makes every residue
-extension algebraic.
+extension algebraic. Separability of the residue extension holds for the whole tower
+exactly when it holds for both steps.
 
 ## Main results
 
@@ -32,11 +33,16 @@ extension algebraic.
   restricting directly to `F₀`.
 * `TauCeti.Place.ramificationIdx_restrict_mul`: ramification indices multiply in a tower.
 * `TauCeti.Place.relativeDegree_restrict_mul`: relative residue degrees multiply in a tower.
+* `TauCeti.Place.ramificationIdx_eq_one_iff_ramificationIdx_eq_one_and_restrict` and
+  `TauCeti.Place.relativeDegree_eq_one_iff_relativeDegree_eq_one_and_restrict`: `e = 1`,
+  respectively `f = 1`, over the bottom of a tower holds exactly when it holds on both steps.
 * `TauCeti.Place.finInsepDegree_residueField_restrict_mul`: inseparable degrees of residue
   extensions multiply in a tower.
 * `TauCeti.Place.isSeparable_residueField_restrict_top` and
   `TauCeti.Place.isSeparable_residueField_restrict_bot`: a separable residue extension stays
   separable on each step of the tower.
+* `TauCeti.Place.isSeparable_residueField_restrict_trans`: conversely, residue extensions that are
+  separable on both steps of the tower compose to a separable residue extension.
 
 ## Mathematical context
 
@@ -101,6 +107,14 @@ theorem ramificationIdx_restrict_mul (P : Place k₂ F₂) :
     IsScalarTower.algebraMap_apply F₀ F₁ F₂, ord_valuation, ord_valuation,
     ord_algebraMap_restrict k₁ F₁ P,
     ramificationIdx_def]
+
+omit [Algebra.IsIntegral F₀ F₁] in
+/-- **A place is unramified over the bottom of a tower exactly when it is unramified on both
+steps**: `e(P₂ / F₀) = 1` if and only if `e(P₂ / F₁) = 1` and `e(P₂|F₁ / F₀) = 1`. -/
+theorem ramificationIdx_eq_one_iff_ramificationIdx_eq_one_and_restrict (P : Place k₂ F₂) :
+    P.ramificationIdx F₀ = 1 ↔
+      P.ramificationIdx F₁ = 1 ∧ (P.restrict k₁ F₁).ramificationIdx F₀ = 1 := by
+  rw [ramificationIdx_restrict_mul (k₁ := k₁) (F₁ := F₁), mul_eq_one]
 
 /-- Read through the identification `(P ∩ F₁) ∩ F₀ = P ∩ F₀` of `TauCeti.Place.restrict_restrict`,
 the residue-field map of the twice-restricted place `(P ∩ F₁) ∩ F₀` into `F₂_P` is the
@@ -170,6 +184,13 @@ theorem relativeDegree_restrict_mul (P : Place k₂ F₂) :
       ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
       (P.restrict k₁ F₁).ResidueField P.ResidueField).symm
 
+/-- **A place has relative degree one over the bottom of a tower exactly when it does on both
+steps**: `f(P₂ / P₀) = 1` if and only if `f(P₂ / P₁) = 1` and `f(P₁ / P₀) = 1`. -/
+theorem relativeDegree_eq_one_iff_relativeDegree_eq_one_and_restrict (P : Place k₂ F₂) :
+    @relativeDegree k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁) = 1 ↔
+      P.relativeDegree k₁ F₁ = 1 ∧ (P.restrict k₁ F₁).relativeDegree k₀ F₀ = 1 := by
+  rw [relativeDegree_restrict_mul (k₁ := k₁) (F₁ := F₁), mul_eq_one]
+
 /-- **Inseparable residue degrees are multiplicative in towers**:
 `[F₂_P : F₀_{P ∩ F₀}]ᵢ = [F₂_P : F₁_{P ∩ F₁}]ᵢ [F₁_{P ∩ F₁} : F₀_{P ∩ F₀}]ᵢ`, the bottom step read
 at the twice-restricted place `(P ∩ F₁) ∩ F₀`. -/
@@ -206,16 +227,16 @@ theorem finInsepDegree_residueField_restrict_mul (P : Place k₂ F₂) :
     ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField (P.restrict k₁ F₁).ResidueField
     P.ResidueField).symm
 
-/-- Separability of the residue extension of `P` over `F₀` passes to both steps of the tower of
-residue fields through `P ∩ F₁`, the bottom step read at the twice-restricted place
+/-- The residue extension of `P` over `F₀` is separable exactly when both steps of the tower of
+residue fields through `P ∩ F₁` are, the bottom step read at the twice-restricted place
 `(P ∩ F₁) ∩ F₀`. -/
-private theorem isSeparable_residueField_restrict_and (P : Place k₂ F₂)
-    [Algebra.IsSeparable
-      (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
-      P.ResidueField] :
-    Algebra.IsSeparable (P.restrict k₁ F₁).ResidueField P.ResidueField ∧
-      Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
-        (P.restrict k₁ F₁).ResidueField := by
+private theorem isSeparable_residueField_restrict_iff (P : Place k₂ F₂) :
+    Algebra.IsSeparable
+        (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
+        P.ResidueField ↔
+      Algebra.IsSeparable (P.restrict k₁ F₁).ResidueField P.ResidueField ∧
+        Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
+          (P.restrict k₁ F₁).ResidueField := by
   let _ : Algebra ((P.restrict k₁ F₁).restrict k₀ F₀).integers P.integers :=
     ((algebraMap (P.restrict k₁ F₁).integers P.integers).comp
       (algebraMap ((P.restrict k₁ F₁).restrict k₀ F₀).integers
@@ -226,15 +247,15 @@ private theorem isSeparable_residueField_restrict_and (P : Place k₂ F₂)
   let _ : IsScalarTower ((P.restrict k₁ F₁).restrict k₀ F₀).integers
       (P.restrict k₁ F₁).integers P.integers :=
     IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField P.ResidueField := by
-    refine Algebra.IsSeparable.of_equiv_equiv
-      (RingEquiv.cast (R := fun Q : Place k₀ F₀ ↦ Q.ResidueField)
-        (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P).symm)
-      (RingEquiv.refl P.ResidueField) ?_
-    exact (algebraMap_comp_cast_restrict_restrict P).trans (RingHom.id_comp _).symm
-  exact ⟨Algebra.isSeparable_tower_top_of_isSeparable
+  rw [Algebra.IsSeparable.iff_of_equiv_equiv
+    (RingEquiv.cast (R := fun Q : Place k₀ F₀ ↦ Q.ResidueField)
+      (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P).symm)
+    (RingEquiv.refl P.ResidueField)
+    ((algebraMap_comp_cast_restrict_restrict P).trans (RingHom.id_comp _).symm)]
+  exact ⟨fun _ ↦ ⟨Algebra.isSeparable_tower_top_of_isSeparable
       ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField _ _,
-    Algebra.isSeparable_tower_bot_of_isSeparable _ _ P.ResidueField⟩
+    Algebra.isSeparable_tower_bot_of_isSeparable _ _ P.ResidueField⟩,
+    fun ⟨_, _⟩ ↦ .trans _ (P.restrict k₁ F₁).ResidueField _⟩
 
 variable (k₀ F₀) in
 /-- **Separability of residue extensions passes to the top of a tower**: if the residue extension
@@ -244,7 +265,7 @@ theorem isSeparable_residueField_restrict_top (P : Place k₂ F₂)
       (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
       P.ResidueField] :
     Algebra.IsSeparable (P.restrict k₁ F₁).ResidueField P.ResidueField :=
-  (isSeparable_residueField_restrict_and (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P).1
+  ((isSeparable_residueField_restrict_iff (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P).1 ‹_›).1
 
 /-- **Separability of residue extensions passes to the bottom of a tower**: if the residue
 extension of `P` over `F₀` is separable, so is the residue extension of `P ∩ F₁` over `F₀`. -/
@@ -254,7 +275,19 @@ theorem isSeparable_residueField_restrict_bot (P : Place k₂ F₂)
       P.ResidueField] :
     Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
       (P.restrict k₁ F₁).ResidueField :=
-  (isSeparable_residueField_restrict_and P).2
+  ((isSeparable_residueField_restrict_iff P).1 ‹_›).2
+
+/-- **Separability of residue extensions is transitive in a tower**: if the residue extension of
+`P` over `F₁` and the residue extension of `P ∩ F₁` over `F₀` are separable, so is the residue
+extension of `P` over `F₀`. -/
+theorem isSeparable_residueField_restrict_trans (P : Place k₂ F₂)
+    [Algebra.IsSeparable (P.restrict k₁ F₁).ResidueField P.ResidueField]
+    [Algebra.IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField
+      (P.restrict k₁ F₁).ResidueField] :
+    Algebra.IsSeparable
+      (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
+      P.ResidueField :=
+  (isSeparable_residueField_restrict_iff P).2 ⟨‹_›, ‹_›⟩
 
 end Place
 

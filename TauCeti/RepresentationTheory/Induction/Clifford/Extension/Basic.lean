@@ -61,6 +61,12 @@ theorem mem_implementers_iff (p : inertia A × (A ≃ₗ[k] A)) :
     p ∈ implementers A ↔
       ∀ n x, p.2 (A.ρ n x) = A.ρ (MulAut.conjNormal (p.1 : G) n) (p.2 x) := Iff.rfl
 
+/-- Implementing pairs are determined by their group elements and pointwise operator values. -/
+@[ext]
+theorem implementers.ext {p q : implementers A}
+    (ht : (p.1.1 : G) = (q.1.1 : G)) (hU : ∀ x, p.1.2 x = q.1.2 x) : p = q :=
+  Subtype.ext (Prod.ext (Subtype.ext ht) (LinearEquiv.ext hU))
+
 /-- Projection of implementing pairs to the inertia group. -/
 noncomputable def projection : implementers A →* inertia A :=
   (MonoidHom.fst _ _).comp (implementers A).subtype

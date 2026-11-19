@@ -123,13 +123,11 @@ theorem HasDirichletDensity.of_symmDiff (hT : T.HasDirichletDensity δ)
     -- `P_T ≤ P_S + P_{S ∆ T}`, since `T ∆ S = S ∆ T`.
     have := primeIdealZetaSum_le_add_symmDiff (S := T) (T := S)
       (summable_absNorm_rpow_subtype_of_one_lt S hs)
-      (summable_absNorm_rpow_subtype_of_one_lt _ hs)
     rw [symmDiff_comm] at this
     exact div_le_div_of_nonneg_right (by linarith) (Set.univ.primeIdealZetaSum_nonneg s)
   · filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
     exact div_le_div_of_nonneg_right (primeIdealZetaSum_le_add_symmDiff
-      (summable_absNorm_rpow_subtype_of_one_lt T hs)
-      (summable_absNorm_rpow_subtype_of_one_lt _ hs)) (Set.univ.primeIdealZetaSum_nonneg s)
+      (summable_absNorm_rpow_subtype_of_one_lt T hs)) (Set.univ.primeIdealZetaSum_nonneg s)
 
 /-- Two sets of primes whose symmetric difference has Dirichlet density zero have the same
 Dirichlet densities. -/
@@ -172,7 +170,6 @@ theorem IsLowerDirichletDensityBound.of_symmDiff (hT : IsLowerDirichletDensityBo
   -- `P_T ≤ P_S + P_{S ∆ T}`, since `T ∆ S = S ∆ T`.
   have hle := primeIdealZetaSum_le_add_symmDiff (S := T) (T := S)
     (summable_absNorm_rpow_subtype_of_one_lt S hs)
-    (summable_absNorm_rpow_subtype_of_one_lt _ hs)
   rw [symmDiff_comm] at hle
   have := div_le_div_of_nonneg_right hle
     ((Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum_nonneg s)
@@ -189,8 +186,7 @@ theorem IsUpperDirichletDensityBound.of_symmDiff (hT : IsUpperDirichletDensityBo
     isUpperDirichletDensityBound_iff.1 h (ε / 2) (half_pos hε),
     self_mem_nhdsWithin] with s hT hST (hs : 1 < s)
   have := div_le_div_of_nonneg_right (primeIdealZetaSum_le_add_symmDiff (S := S)
-    (summable_absNorm_rpow_subtype_of_one_lt T hs)
-    (summable_absNorm_rpow_subtype_of_one_lt _ hs))
+    (summable_absNorm_rpow_subtype_of_one_lt T hs))
     ((Set.univ : Set (HeightOneSpectrum (𝓞 K))).primeIdealZetaSum_nonneg s)
   rw [add_div] at this
   linarith

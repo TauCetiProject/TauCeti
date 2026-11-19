@@ -11,9 +11,10 @@ public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 /-!
 # Homomorphisms from an idempotent-generated left ideal
 
-Let `A` be an algebra over a commutative semiring `k`, let `e` be an idempotent of `A`, and let
-`f` be arbitrary. This file identifies the homomorphisms between the principal left ideals
-`Ae` and `Af`:
+Let `A` be an algebra over a commutative semiring `k` and let `e` be an idempotent of `A`.
+Evaluation at `e` identifies `Hom_A(Ae, M)` with the subspace `eM` of any module `M`.
+For an arbitrary `f : A`, it also identifies the homomorphisms between the principal left ideals
+`Ae` and `Af` with the corner:
 
 `Hom_A(Ae, Af) ≃ₗ[k] eAf`, by `φ ↦ φ e`.
 
@@ -34,6 +35,7 @@ distinguished family of idempotents, since the corner inherits the grading of `A
 
 ## Main definitions
 
+* `IsIdempotentElem.spanSingletonHomEquivSMulTop`: evaluation gives `Hom_A(Ae, M) ≃ₗ[k] eM`.
 * `TauCeti.cornerToSpanSingletonHom`: right multiplication by an element of `eAf`, as a
   homomorphism `Ae → Af`.
 
@@ -42,6 +44,10 @@ distinguished family of idempotents, since the corner inherits the grading of `A
 * `TauCeti.spanSingletonHomEquivCorner`: **the dictionary `Hom_A(Ae, Af) ≃ₗ[k] eAf`.**
 * `TauCeti.coe_apply_eq_mul_apply_generator`: a homomorphism out of `Ae` is right multiplication
   by its value at `e`.
+* `IsIdempotentElem.endSpanSingletonRingEquiv`: the endomorphism ring of `Ae` is the opposite of
+  the corner `eAe`, as rings.
+* `IsIdempotentElem.exists_mul_eq_of_linearEquiv`: an isomorphism `Ae ≅ Af` gives `a ∈ eAf` and
+  `b ∈ fAe` with `a b = e` and `b a = f`.
 
 ## References
 
@@ -50,6 +56,57 @@ Algebras, Vol. 1*, Section I.4.
 -/
 
 public section
+
+open scoped Pointwise
+
+namespace IsIdempotentElem
+
+open TauCeti
+
+universe u v
+
+variable {k : Type v} [CommSemiring k] {A : Type u} [Semiring A] [Algebra k A] {e : A}
+
+/-- Evaluation at `e` identifies maps from `Ae` into any module with the subspace `eM`.
+The inverse sends a vector `m` fixed by `e` to the map `a ↦ a • m`. -/
+def spanSingletonHomEquivSMulTop {M : Type*} [AddCommMonoid M] [Module k M] [Module A M]
+    [IsScalarTower k A M] (he : IsIdempotentElem e) :
+    ((Ideal.span {e} : Ideal A) →ₗ[A] M) ≃ₗ[k] ↥(e • (⊤ : Submodule k M)) where
+  toFun φ := ⟨φ (spanSingletonGenerator e), by
+    rw [← smul_spanSingletonGenerator he (spanSingletonGenerator e), map_smul,
+      coe_spanSingletonGenerator]
+    exact Submodule.smul_mem_pointwise_smul _ e (⊤ : Submodule k M) (Submodule.mem_top)⟩
+  map_add' φ ψ := Subtype.ext (by simp)
+  map_smul' c φ := Subtype.ext (by simp)
+  invFun m := (LinearMap.toSpanSingleton A M (m : M)).comp (Ideal.span {e} : Ideal A).subtype
+  left_inv φ := by
+    ext a
+    simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearMap.toSpanSingleton_apply,
+      ← map_smul, smul_spanSingletonGenerator he]
+  right_inv m := by
+    apply Subtype.ext
+    obtain ⟨n, _, hn⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 m.property
+    simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearMap.toSpanSingleton_apply,
+      coe_spanSingletonGenerator]
+    rw [← hn, smul_smul, he.eq]
+
+/-- The evaluation equivalence sends a homomorphism to its value at the idempotent. -/
+@[simp]
+theorem coe_spanSingletonHomEquivSMulTop_apply {M : Type*} [AddCommMonoid M] [Module k M]
+    [Module A M] [IsScalarTower k A M] (he : IsIdempotentElem e)
+    (φ : (Ideal.span {e} : Ideal A) →ₗ[A] M) :
+    (spanSingletonHomEquivSMulTop (k := k) he φ : M) = φ (spanSingletonGenerator e) :=
+  (rfl)
+
+/-- The inverse evaluation equivalence is scalar action by an element of `Ae`. -/
+@[simp]
+theorem spanSingletonHomEquivSMulTop_symm_apply {M : Type*} [AddCommMonoid M] [Module k M]
+    [Module A M] [IsScalarTower k A M] (he : IsIdempotentElem e)
+    (m : ↥(e • (⊤ : Submodule k M))) (a : (Ideal.span {e} : Ideal A)) :
+    (spanSingletonHomEquivSMulTop (k := k) he).symm m a = (a : A) • (m : M) :=
+  (rfl)
+
+end IsIdempotentElem
 
 namespace TauCeti
 
@@ -121,3 +178,78 @@ theorem coe_spanSingletonHomEquivCorner_symm_apply (he : IsIdempotentElem e)
   (rfl)
 
 end TauCeti
+
+namespace IsIdempotentElem
+
+open TauCeti MulOpposite
+
+variable {A : Type*} [Ring A] {e : A}
+
+/-- **The endomorphism ring of `Ae` is the opposite of the corner `eAe`**: evaluation at the
+generator `e` (`TauCeti.spanSingletonHomEquivCorner`) is multiplicative up to order, since an
+endomorphism is right multiplication by its value at `e`. -/
+noncomputable def endSpanSingletonRingEquiv (he : IsIdempotentElem e) :
+    (Module.End A (Ideal.span {e} : Ideal A))ᵐᵒᵖ ≃+* he.Corner where
+  toFun φ := (he.cornerLinearEquivCornerSubmodule (R := ℕ)).symm
+    (spanSingletonHomEquivCorner (k := ℕ) he (unop φ))
+  invFun c := op ((spanSingletonHomEquivCorner (k := ℕ) he).symm
+    (he.cornerLinearEquivCornerSubmodule (R := ℕ) c))
+  left_inv φ := by simp
+  right_inv c := by simp
+  map_mul' φ ψ := Subtype.ext <| by
+    simpa using coe_apply_eq_mul_apply_generator he (unop ψ) (unop φ (spanSingletonGenerator e))
+  map_add' φ ψ := Subtype.ext <| by simp
+
+@[simp]
+theorem val_endSpanSingletonRingEquiv_apply (he : IsIdempotentElem e)
+    (φ : (Module.End A (Ideal.span {e} : Ideal A))ᵐᵒᵖ) :
+    (he.endSpanSingletonRingEquiv φ).1 = (unop φ (spanSingletonGenerator e) : A) := by
+  -- Unfold the definition to the two dictionary equivalences, which have `simp` lemmas.
+  change ((he.cornerLinearEquivCornerSubmodule (R := ℕ)).symm
+    (spanSingletonHomEquivCorner (k := ℕ) he (unop φ))).1 = _
+  simp
+
+@[simp]
+theorem coe_unop_endSpanSingletonRingEquiv_symm_apply (he : IsIdempotentElem e) (c : he.Corner)
+    (y : (Ideal.span {e} : Ideal A)) :
+    (unop (he.endSpanSingletonRingEquiv.symm c) y : A) = (y : A) * c.1 := by
+  -- Unfold the definition to the two dictionary equivalences, which have `simp` lemmas.
+  change ((spanSingletonHomEquivCorner (k := ℕ) he).symm
+    (he.cornerLinearEquivCornerSubmodule (R := ℕ) c) y : A) = _
+  simp
+
+/-- An isomorphism of left ideals `Ae ≅ Af` between idempotent generators is right multiplication
+by some `a ∈ eAf`, with inverse right multiplication by some `b ∈ fAe`; then `a b = e` and
+`b a = f`. -/
+theorem exists_mul_eq_of_linearEquiv (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
+    (φ : (Ideal.span {e} : Ideal A) ≃ₗ[A] (Ideal.span {f} : Ideal A)) :
+    ∃ a b : A, e * a = a ∧ a * f = a ∧ f * b = b ∧ b * e = b ∧ a * b = e ∧ b * a = f := by
+  -- `a` and `b` are the values of `φ` and `φ⁻¹` at the generators `e` and `f`.
+  have hea : e * (φ (spanSingletonGenerator e) : A) = φ (spanSingletonGenerator e) := by
+    simpa only [coe_spanSingletonGenerator, LinearEquiv.coe_coe] using
+      (coe_apply_eq_mul_apply_generator he φ.toLinearMap (spanSingletonGenerator e)).symm
+  have hfb : f * (φ.symm (spanSingletonGenerator f) : A) = φ.symm (spanSingletonGenerator f) := by
+    simpa only [coe_spanSingletonGenerator, LinearEquiv.coe_coe] using
+      (coe_apply_eq_mul_apply_generator hf φ.symm.toLinearMap (spanSingletonGenerator f)).symm
+  have haf : (φ (spanSingletonGenerator e) : A) * f = φ (spanSingletonGenerator e) := by
+    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (φ (spanSingletonGenerator e)).2
+    rw [← hc, mul_assoc, hf.eq]
+  have hbe : (φ.symm (spanSingletonGenerator f) : A) * e = φ.symm (spanSingletonGenerator f) := by
+    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton'.mp (φ.symm (spanSingletonGenerator f)).2
+    rw [← hc, mul_assoc, he.eq]
+  -- The value of `φ` at the generator is `a` times the generator of `Af`, and dually.
+  have hφ : φ (spanSingletonGenerator e) =
+      (φ (spanSingletonGenerator e) : A) • spanSingletonGenerator f :=
+    Subtype.ext (by simp [haf])
+  have hφ' : φ.symm (spanSingletonGenerator f) =
+      (φ.symm (spanSingletonGenerator f) : A) • spanSingletonGenerator e :=
+    Subtype.ext (by simp [hbe])
+  refine ⟨_, _, hea, haf, hfb, hbe, ?_, ?_⟩
+  · have := congrArg Subtype.val (φ.symm_apply_apply (spanSingletonGenerator e))
+    rw [hφ, map_smul] at this
+    simpa using this
+  · have := congrArg Subtype.val (φ.apply_symm_apply (spanSingletonGenerator f))
+    rw [hφ', map_smul] at this
+    simpa using this
+
+end IsIdempotentElem

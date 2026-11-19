@@ -14,6 +14,11 @@ Mathlib's `IsClosedImmersion.lift` factors a scheme morphism through a closed im
 when the defining ideal vanishes on the source. The factor remains over the same base.
 This file packages that lift in `Over S`, for use with structure maps of group schemes.
 Sections over a base with at most one point are also closed immersions.
+
+A closed immersion also preserves the height of every point for the specialization order
+(`AlgebraicGeometry.Scheme.Hom.height_apply_eq_height`): the closure of a point of the source is
+carried homeomorphically onto the closure of its image. So the dimension of the closure of a point
+can be computed in a closed subscheme or in the ambient scheme alike.
 -/
 
 public section
@@ -53,3 +58,23 @@ theorem closedImmersionOverLift_comp (i : X ⟶ Y) (f : Z ⟶ Y)
   simp
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- A closed immersion preserves the height of points for the specialization order, that is, the
+dimension of the closure of a point: the specializations of `f x` all lie in the closed image of
+`f`, and `f` is an embedding. -/
+@[simp]
+theorem height_apply_eq_height {X Y : Scheme} (f : X ⟶ Y) [IsClosedImmersion f] (x : X) :
+    Order.height (f x) = Order.height x := by
+  have hemb := f.isClosedEmbedding
+  have hle : ∀ a b : X, f a ≤ f b ↔ a ≤ b := fun a b ↦ hemb.isInducing.specializes_iff
+  have hmono : StrictMono f := fun a b hab ↦ by
+    simpa only [lt_iff_le_not_ge, hle] using hab
+  refine (Order.height_eq_of_strictMono f hmono (fun a b hb ↦ ?_) x).symm
+  obtain ⟨a', rfl⟩ : b ∈ Set.range f := hemb.isClosed_range.closure_subset
+    (closure_mono (Set.singleton_subset_iff.mpr (Set.mem_range_self a))
+      (specializes_iff_mem_closure.mp hb.le))
+  exact ⟨a', by simpa only [lt_iff_le_not_ge, hle] using hb, rfl⟩
+
+end AlgebraicGeometry.Scheme.Hom

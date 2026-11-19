@@ -228,8 +228,18 @@ def gradedSymmetricAlgebraDegreeOneIso :
   NatIso.ofComponents
     (fun F ↦ ObjectProperty.isoMk _ (eqToIso (degree_obj_gradedSymmetricAlgebra_obj F 1) ≪≫
       (SheafOfModules.symmetricPowerOneIso X.sheaf).app F.obj))
-    (fun φ ↦ ObjectProperty.hom_ext _ (by
-      simp [-degree_map_hom, degree_map_gradedSymmetricAlgebra_map_hom]))
+    (fun {F G} φ ↦ ObjectProperty.hom_ext _ (by
+      -- Naturality is now an equality of underlying module morphisms. Display the
+      -- degree-one transport so `degree_map_gradedSymmetricAlgebra_map_hom` matches.
+      change ((degree 1).map ((gradedSymmetricAlgebra X).map φ)).hom ≫
+          (eqToHom (degree_obj_gradedSymmetricAlgebra_obj G 1) ≫
+            (SheafOfModules.symmetricPowerOneIso X.sheaf).hom.app G.obj) =
+        (eqToHom (degree_obj_gradedSymmetricAlgebra_obj F 1) ≫
+          (SheafOfModules.symmetricPowerOneIso X.sheaf).hom.app F.obj) ≫ φ.hom
+      rw [degree_map_gradedSymmetricAlgebra_map_hom]
+      simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+      erw [(SheafOfModules.symmetricPowerOneIso X.sheaf).hom.naturality]
+      rfl))
 
 variable {X}
 
@@ -254,7 +264,7 @@ theorem gradedSymmetricAlgebraDegreeOneIso_inv_app_hom (F : QuasicoherentSheaf X
 /-- The graded symmetric algebra functor is faithful: a morphism of quasicoherent sheaves is
 recovered from its action in degree one. -/
 instance : (gradedSymmetricAlgebra X).Faithful :=
-  Functor.Faithful.of_comp_iso (gradedSymmetricAlgebraDegreeOneIso X)
+  CategoryTheory.Functor.Faithful.of_comp_iso (gradedSymmetricAlgebraDegreeOneIso X)
 
 /-- The unit `𝒪_X ⟶ Sym⁰ F` of the graded symmetric algebra is an epimorphism, being an
 isomorphism. -/
@@ -317,7 +327,7 @@ theorem gradedSymmetricAlgebra_preimage {F G : QuasicoherentSheaf X}
     (gradedSymmetricAlgebra X).preimage φ = (gradedSymmetricAlgebraDegreeOneIso X).inv.app F ≫
       degreeOne.map φ ≫ (gradedSymmetricAlgebraDegreeOneIso X).hom.app G :=
   (gradedSymmetricAlgebra X).map_injective (by
-    rw [Functor.map_preimage, gradedSymmetricAlgebra_map_degreeOne])
+    rw [CategoryTheory.Functor.map_preimage, gradedSymmetricAlgebra_map_degreeOne])
 
 end
 

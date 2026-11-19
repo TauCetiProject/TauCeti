@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
--- Private: the Clifford-group characterization of the Lipschitz group, the reversal calculus on
--- odd elements in dimension five, the volume element, the orthogonal basis, the vanishing of
--- central vectors and the dichotomy for a vector plus a central element are used only inside the
--- proofs.
+-- Private: the conjugation lemma for units, the Clifford-group characterization of the Lipschitz
+-- group, the reversal calculus on odd elements in dimension five, the volume element, the
+-- orthogonal basis, the vanishing of central vectors and the dichotomy for a vector plus a central
+-- element are used only inside the proofs.
+import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Five
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
@@ -94,26 +95,9 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_five (Q : QuadraticForm
       (by rw [ht]; exact (hcenter _).symm.smul_right t)
   intro x hx
   refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit fun m => ?_
-  have hxe : (x : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
-    have h := evenUnitaryGroup.mem_even Q hx
-    rwa [← Subalgebra.mem_toSubmodule, even_toSubmodule] at h
-  have hxie : ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
-    have h := evenUnitaryGroup.mem_even Q (inv_mem hx)
-    rwa [← Subalgebra.mem_toSubmodule, even_toSubmodule] at h
-  rw [involute_eq_of_mem_even hxe]
-  -- The conjugate of a vector by an even unit is odd.
-  have hodd : (x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹ ∈ evenOdd Q 1 := by
-    have h : (x : CliffordAlgebra Q) * ι Q m ∈ evenOdd Q 1 :=
-      zero_add (1 : ZMod 2) ▸ SetLike.mul_mem_graded hxe (ι_mem_evenOdd_one Q m)
-    exact add_zero (1 : ZMod 2) ▸ SetLike.mul_mem_graded h hxie
-  -- Reversal inverts an even unitary unit, so it fixes the conjugate.
-  have hrev : reverse ((x : CliffordAlgebra Q) * ι Q m *
-        ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) =
-      (x : CliffordAlgebra Q) * ι Q m * ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
-    have hxr : reverse (x : CliffordAlgebra Q) = ↑x⁻¹ := evenUnitaryGroup.reverse_eq_inv Q ⟨x, hx⟩
-    have hxir : reverse ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = x := by
-      rw [← hxr, reverse_reverse]
-    simp only [reverse.map_mul, reverse_ι, hxr, hxir, mul_assoc]
+  rw [involute_eq_of_mem_even (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)]
+  have hodd := evenUnitaryGroup.mul_ι_mul_inv_mem_evenOdd_one Q hx m
+  have hrev := evenUnitaryGroup.reverse_mul_ι_mul_inv Q ⟨x, hx⟩ m
   -- So the conjugate is `ι Q w + c • ω`, and its square is the scalar `Q m`.
   obtain ⟨y₁, hy₁, y₂, hy₂, hy⟩ := Submodule.mem_sup.mp
     (mem_range_ι_sup_span_of_mem_evenOdd_one_of_reverse_eq_of_length_eq_five hl hspan hlen hodd
@@ -131,14 +115,8 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_five (Q : QuadraticForm
     exact LinearMap.mem_range_self _ w
   · -- `ι Q w` is a multiple of `ω`, so `w = 0` and the conjugate `c • ω` is central: it is `ι Q m`.
     rw [hcentral t ht, map_zero, zero_add] at hy
-    have hm : ι Q m = c • ω := by
-      calc ι Q m = ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
-            ((x : CliffordAlgebra Q) * ι Q m * ↑x⁻¹) * x := by
-            simp [mul_assoc]
-        _ = ((x⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) * (c • ω) * x := by rw [hy]
-        _ = c • ω := by
-            rw [mul_smul_comm, smul_mul_assoc, (hcenter _).symm.eq, mul_assoc, Units.inv_mul,
-              mul_one]
+    have hm : ι Q m = c • ω :=
+      Units.eq_of_mul_mul_inv_eq_of_commute x hy.symm ((hcenter x).smul_left c)
     rw [← hy, ← hm]
     exact LinearMap.mem_range_self _ m
 

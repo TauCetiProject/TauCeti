@@ -23,6 +23,8 @@ the module of sections of a quasi-coherent sheaf this says that restricting from
   localization.
 * `IsLocalizedModule.isLocalizedModule_map`: the map induced on localizations at `S` by a
   localization at `T` is a localization at `T`.
+* `IsLocalizedModule.of_bijective_semilinearMap`: a linear map identified, along a ring
+  homomorphism `σ : R →+* A`, with a localization at the image of `S` is a localization at `S`.
 -/
 
 public section
@@ -64,5 +66,30 @@ theorem isLocalizedModule_map (f₂ : N →ₗ[R] N') [IsLocalizedModule S f₂]
     refine ⟨t, ?_⟩
     simp only [Function.uncurry_apply_pair, Submonoid.smul_def, ← mk'_smul, mk'_eq_mk'_iff]
     exact ⟨c, by simpa only [Submonoid.smul_def, smul_comm (t : R)] using ht⟩
+
+/-- **Localizations transported along semilinear bijections.** Let `σ : R →+* A` be a ring
+homomorphism, `f : M →ₗ[R] N` an `R`-linear map and `f' : M' →ₗ[A] N'` an `A`-linear map which is
+a localization at the image `S.map σ`. If `f` corresponds to `f'` under `σ`-semilinear bijections
+`M → M'` and `N → N'`, then `f` is a localization at `S`. -/
+theorem of_bijective_semilinearMap {A : Type*} [CommSemiring A] {σ : R →+* A}
+    {M N M' N' : Type*} [AddCommMonoid M] [AddCommMonoid N] [AddCommMonoid M'] [AddCommMonoid N']
+    [Module R M] [Module R N] [Module A M'] [Module A N'] (f : M →ₗ[R] N) (f' : M' →ₗ[A] N')
+    [IsLocalizedModule (S.map σ) f'] (eM : M →ₛₗ[σ] M') (eN : N →ₛₗ[σ] N')
+    (heM : Function.Bijective eM) (heN : Function.Bijective eN) (h : ∀ x, eN (f x) = f' (eM x)) :
+    IsLocalizedModule S f := by
+  -- View `M'` and `N'` as `R`-modules through `σ`; then `eM`, `eN` are `R`-linear bijections.
+  let := σ.toAlgebra
+  let := Module.compHom M' σ
+  let := Module.compHom N' σ
+  have : IsScalarTower R A M' := SMul.comp.isScalarTower σ
+  have : IsScalarTower R A N' := SMul.comp.isScalarTower σ
+  have : IsLocalizedModule (Algebra.algebraMapSubmonoid A S) f' := by
+    rwa [Algebra.algebraMapSubmonoid, RingHom.algebraMap_toAlgebra]
+  let eM' : M →ₗ[R] M' := ⟨eM.toAddHom, eM.map_smulₛₗ⟩
+  let eN' : N →ₗ[R] N' := ⟨eN.toAddHom, eN.map_smulₛₗ⟩
+  rw [← comp_iff_of_bijective_left S eN' heN,
+    show eN' ∘ₗ f = f'.restrictScalars R ∘ₗ eM' from LinearMap.ext h,
+    comp_iff_of_bijective_right S eM' heM]
+  exact restrictScalars S f'
 
 end IsLocalizedModule

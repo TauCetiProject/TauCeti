@@ -30,7 +30,9 @@ form is properly equivalent to its opposite exactly when its class has order div
 `NarrowPic` for positive nonsquare discriminant
 (`exists_eq_smul_reflected_iff_narrowPicClass_sq_eq_one`). On proper classes of primitive positive
 definite forms the opposite form represents the inverse class
-(`posDefProperClassToPic_mk_eq_inv_of_eq_reflected`).
+(`posDefProperClassToPic_mk_eq_inv_of_eq_reflected`), and likewise on proper classes of positive
+nonsquare discriminant in the narrow Picard group
+(`properClassToNarrowPic_mk_eq_inv_of_eq_reflected`).
 
 ## References
 
@@ -121,11 +123,11 @@ theorem fractionalIdeal_reflected_mul (hf : f.discrim = D) (hprim : f.IsPrimitiv
       linear_combination -(f.a : QuadraticAlgebra ℚ (D : ℚ) 0) * h1 -
         (v : QuadraticAlgebra ℚ (D : ℚ) 0) * f.a * hdiff +
         (w : QuadraticAlgebra ℚ (D : ℚ) 0) * hprod
-    rw [key, ← mem_coe]
-    exact sub_mem (add_mem (zsmul_mem (mem_coe.mpr (mul_mem_mul hα' hα)) _)
-      (zsmul_mem (sub_mem (mem_coe.mpr (mul_mem_mul hβ' hα))
-        (mem_coe.mpr (mul_mem_mul hα' hβ))) _))
-      (zsmul_mem (mem_coe.mpr (mul_mem_mul hβ' hβ)) _)
+    rw [key, ← mem_coeToSubmodule]
+    exact sub_mem (add_mem (zsmul_mem (mem_coeToSubmodule.mpr (mul_mem_mul hα' hα)) _)
+      (zsmul_mem (sub_mem (mem_coeToSubmodule.mpr (mul_mem_mul hβ' hα))
+        (mem_coeToSubmodule.mpr (mul_mem_mul hα' hβ))) _))
+      (zsmul_mem (mem_coeToSubmodule.mpr (mul_mem_mul hβ' hβ)) _)
 
 /-- The invertible ideals of a primitive form and of its opposite multiply to the principal
 ideal `(a)`. -/
@@ -217,17 +219,9 @@ two. -/
 theorem exists_eq_smul_reflected_iff_narrowPicClass_sq_eq_one (hpos : 0 < D)
     (hf : f.discrim = D) (hprim : f.IsPrimitive) :
     (∃ γ : SL(2, ℤ), f = γ • f.reflected) ↔ f.narrowPicClass D hf hprim ^ 2 = 1 := by
-  let F : primitiveForms D := ⟨f, (mem_primitiveForms D f).mpr ⟨hf, hprim⟩⟩
-  let G : primitiveForms D := ⟨f.reflected, (mem_primitiveForms D _).mpr
-    ⟨f.discrim_reflected.trans hf, f.isPrimitive_reflected_iff.mpr hprim⟩⟩
-  have hFG : (∃ γ : SL(2, ℤ), f = γ • f.reflected) ↔
-      (Quotient.mk'' F : MulAction.orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) =
-        Quotient.mk'' G := by
-    rw [Quotient.eq'', MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-    simp only [F, G, Subtype.ext_iff, SubMulAction.val_smul, eq_comm]
-  rw [hFG, ← (properClassToNarrowPic_injective D (hf ▸ f.discrim_emod_four_eq_zero_or_one)
-    hpos).eq_iff, properClassToNarrowPic_mk, properClassToNarrowPic_mk, sq,
-    mul_eq_one_iff_eq_inv, narrowPicClass_reflected hf hprim]
+  rw [sq, mul_eq_one_iff_eq_inv, ← narrowPicClass_reflected hf hprim,
+    eq_comm (a := f.narrowPicClass D hf hprim), narrowPicClass_eq_narrowPicClass_iff_of_pos D hpos]
+  exact exists_congr fun _ ↦ eq_comm
 
 section PosDef
 
@@ -247,5 +241,23 @@ theorem posDefProperClassToPic_mk_eq_inv_of_eq_reflected
   exact picClass_reflected hn hfD hfp
 
 end PosDef
+
+section Narrow
+
+variable (hD : D % 4 = 0 ∨ D % 4 = 1)
+
+/-- **The opposite form represents the inverse narrow class.** -/
+theorem properClassToNarrowPic_mk_eq_inv_of_eq_reflected {f g : primitiveForms D}
+    (hg : (g : BinaryQuadraticForm ℤ) = (f : BinaryQuadraticForm ℤ).reflected) :
+    properClassToNarrowPic D hD (Quotient.mk'' g) =
+      (properClassToNarrowPic D hD (Quotient.mk'' f))⁻¹ := by
+  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.2
+  obtain ⟨g, hgm⟩ := g
+  simp only at hg
+  subst hg
+  simp only [properClassToNarrowPic_mk]
+  exact narrowPicClass_reflected hfD hfp
+
+end Narrow
 
 end TauCeti.BinaryQuadraticForm

@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Monomial
+import Mathlib.LinearAlgebra.Matrix.Nonsingular
 
 /-!
 # The monomial and Schur bases of the symmetric homogeneous polynomials
@@ -44,7 +45,7 @@ the coordinates of `s_μ` are the Kostka numbers `K_{μν}`
 (`TauCeti.msymmBasis_repr_schurPoly`), which vanish unless `μ` dominates `ν`
 (`TauCeti.kostkaNumber_eq_zero_of_not_dominates`) and equal `1` on the diagonal
 (`TauCeti.kostkaNumber_self`).  Since dominance refines the lexicographic linear order on
-partitions (`TauCeti.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
+partitions (`Nat.Partition.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
 diagonal for that linear order, so its determinant is `1` and it is a change of basis.  This is
 where the ring hypothesis enters: over `ℕ` the transition matrix is not invertible.
 
@@ -58,7 +59,7 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.msymmBasis`: **the monomial basis**.
 * `TauCeti.schurPolyBasis`: **the Schur basis**.
 * `TauCeti.partitionEquivSchurIndex`: identifies partitions of `n` with the Schur basis index
-  when the alphabet is `Fin d` and `n ≤ d`.
+  when the alphabet has at least `n` letters.
 
 ## Main results
 
@@ -73,6 +74,10 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
 * `TauCeti.schurPolyBasis` and `TauCeti.coe_schurPolyBasis`: **the Schur polynomials of the
   partitions of `n` with at most `Fintype.card σ` parts are a basis of the symmetric homogeneous
   polynomials of degree `n`.**
+* The symmetric homogeneous polynomials of degree `n` are a free and finite module.
+* `TauCeti.finrank_symmetricHomogeneousSubmodule`: the dimension in degree `n` is the number of
+  partitions of `n` with at most `Fintype.card σ` parts; it is the number of all partitions of `n`
+  in at least `n` letters and smaller in fewer.
 
 ## References
 
@@ -80,9 +85,6 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
   Sections 2 and 6: the monomial symmetric functions are a basis, the Kostka matrix is
   unitriangular for the dominance order, and hence the Schur functions are a basis.
 * R. P. Stanley, *Enumerative Combinatorics*, Volume 2, §7.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 7, "The Schur functions are a `ℤ`-basis of the symmetric functions; `msymm`-to-`schurPoly`
-  change of basis is the Kostka matrix `Kλμ`".
 -/
 
 public section
@@ -92,25 +94,21 @@ namespace TauCeti
 open Finset MvPolynomial
 
 /-- For an alphabet with at least `n` letters, every partition of `n` indexes a Schur basis
-vector. -/
-def partitionEquivSchurIndex (n d : ℕ) (h : n ≤ d) :
-    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card (Fin d)} where
-  toFun μ := ⟨μ, μ.card_parts_le.trans (by simpa using h)⟩
-  invFun μ := μ.1
-  left_inv _ := rfl
-  right_inv _ := Subtype.ext rfl
+vector: a partition of `n` has at most `n` parts, so the subtype condition always holds. -/
+def partitionEquivSchurIndex (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ) :
+    n.Partition ≃ {μ : n.Partition // μ.parts.card ≤ Fintype.card σ} :=
+  (Equiv.subtypeUnivEquiv fun μ : n.Partition => μ.card_parts_le.trans h).symm
 
 /-- Reindexing a partition into the Schur basis retains the same underlying partition. -/
 @[simp]
-theorem partitionEquivSchurIndex_apply (n d : ℕ) (h : n ≤ d) (μ : n.Partition) :
-    (partitionEquivSchurIndex n d h μ).1 = μ := by
-  simp [partitionEquivSchurIndex]
+theorem partitionEquivSchurIndex_apply (σ : Type*) [Fintype σ] (n : ℕ) (h : n ≤ Fintype.card σ)
+    (μ : n.Partition) : (partitionEquivSchurIndex σ n h μ).1 = μ := (rfl)
 
 /-- The inverse reindexing from the Schur basis returns the underlying partition. -/
 @[simp]
-theorem partitionEquivSchurIndex_symm_apply (n d : ℕ) (h : n ≤ d)
-    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card (Fin d)}) :
-    (partitionEquivSchurIndex n d h).symm μ = μ.1 := (rfl)
+theorem partitionEquivSchurIndex_symm_apply (σ : Type*) [Fintype σ] (n : ℕ)
+    (h : n ≤ Fintype.card σ) (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+    (partitionEquivSchurIndex σ n h).symm μ = μ.1 := (rfl)
 
 section CommSemiring
 
@@ -249,6 +247,44 @@ theorem msymmBasis_repr_schurPoly (μ : n.Partition)
   rw [msymmBasis_repr_apply]
   exact coeff_schurPoly_partWeight μ ν.1 (by rw [YoungDiagram.colLen_zero_ofPartition]; exact ν.2)
 
+/-! ### The dimension -/
+
+omit [Fintype σ] in
+/-- The symmetric polynomials of degree `n` in a finite alphabet form a free module, with the
+monomial basis `TauCeti.msymmBasis`. -/
+instance [Finite σ] : Module.Free R (symmetricHomogeneousSubmodule σ R n) :=
+  have := Fintype.ofFinite σ
+  .of_basis (msymmBasis σ R n)
+
+omit [Fintype σ] in
+/-- The symmetric polynomials of degree `n` in a finite alphabet form a finite module, spanned by
+the monomial basis `TauCeti.msymmBasis`. -/
+instance [Finite σ] : Module.Finite R (symmetricHomogeneousSubmodule σ R n) :=
+  have := Fintype.ofFinite σ
+  .of_basis (msymmBasis σ R n)
+
+variable (σ R n) in
+/-- **The dimension of the symmetric polynomials of degree `n`** in the alphabet `σ` is the number
+of partitions of `n` with at most `Fintype.card σ` parts, the index set of the monomial and Schur
+bases. -/
+theorem finrank_symmetricHomogeneousSubmodule [Nontrivial R] :
+    Module.finrank R (symmetricHomogeneousSubmodule σ R n) =
+      Fintype.card {ν : n.Partition // ν.parts.card ≤ Fintype.card σ} :=
+  Module.finrank_eq_card_basis (msymmBasis σ R n)
+
+/-- **In at least `n` letters the dimension in degree `n` is the number of partitions of `n`.** -/
+theorem finrank_symmetricHomogeneousSubmodule_of_le [Nontrivial R] (h : n ≤ Fintype.card σ) :
+    Module.finrank R (symmetricHomogeneousSubmodule σ R n) = Fintype.card n.Partition := by
+  rw [finrank_symmetricHomogeneousSubmodule, Fintype.card_congr (partitionEquivSchurIndex σ n h)]
+
+/-- **In fewer than `n` letters the dimension in degree `n` is less than the number of partitions
+of `n`**, the partition `1ⁿ` having more parts than the alphabet has letters. -/
+theorem finrank_symmetricHomogeneousSubmodule_lt [Nontrivial R] (h : Fintype.card σ < n) :
+    Module.finrank R (symmetricHomogeneousSubmodule σ R n) < Fintype.card n.Partition := by
+  rw [finrank_symmetricHomogeneousSubmodule]
+  refine Fintype.card_subtype_lt (x := Nat.Partition.ones n) ?_
+  simpa [Nat.Partition.ones_parts] using h
+
 end CommSemiring
 
 /-! ### The Schur basis -/
@@ -280,7 +316,7 @@ private theorem isUnit_det_schurPolyElem :
     intro ν μ hμν
     have hlt : (μ : n.Partition) < (ν : n.Partition) := Subtype.coe_lt_coe.mpr hμν
     rw [hentry ν μ, kostkaNumber_eq_zero_of_not_dominates fun hdom =>
-      absurd (lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
+      absurd (Nat.Partition.lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
   have hdiag : ∏ ν, (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν ν = 1 :=
     Finset.prod_eq_one fun ν _ => by rw [hentry ν ν, kostkaNumber_self, Nat.cast_one]
   rw [Module.Basis.det_apply, Matrix.det_of_isUpperTriangular htri, hdiag]

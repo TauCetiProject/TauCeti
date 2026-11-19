@@ -10,10 +10,10 @@ public import Mathlib.Data.PNat.Defs
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.FormalGroup.BaseChange
-public import TauCeti.RingTheory.FormalGroup.Rescale
+public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
-import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.FormalGroup.Basic
 
 /-!
 # The Lazard ring, its universal formal group law and its grading
@@ -67,8 +67,6 @@ classifying a commutative formal group law over `A` is graded exactly when the c
 
 ## Main results
 
-* `FormalGroup.coeff_single_zero`, `FormalGroup.coeff_single_one`: the coefficients of `Xⁿ` and
-  `Yⁿ` in a formal group law are `1` for `n = 1` and `0` otherwise.
 * `TauCeti.coeff_lazardSeries_eq`: the coefficient of an arbitrary monomial in
   `X + Y + ∑ aᵢⱼ Xⁱ Yʲ`.
 * `TauCeti.lazardSeries_coeff_toPowerSeries`: every formal group law is the series
@@ -84,7 +82,7 @@ classifying a commutative formal group law over `A` is graded exactly when the c
   formal group law has degree `2 (i + j - 1)`.
 * `TauCeti.LazardRing.lift_mem_iff`: the homomorphism classifying `F` is graded exactly when the
   coefficients of `F` are homogeneous of the matching degrees, for a target graded over any
-  commutative monoid receiving the degrees of `L`, such as `ℤ`.
+  additive monoid receiving the degrees of `L`, such as `ℤ`.
 
 ## References
 
@@ -97,24 +95,6 @@ public section
 noncomputable section
 
 open MvPowerSeries Finsupp
-
-namespace FormalGroup
-
-variable {R : Type*} [CommRing R] (F : FormalGroup R)
-
-/-- The coefficient of `Xⁿ` in a formal group law `F(X, Y)`: since `F(X, 0) = X`, it is `1` for
-`n = 1` and `0` otherwise. -/
-theorem coeff_single_zero (n : ℕ) :
-    coeff (single 0 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
-  rw [← coeff_subst_X_zero, ← Xzero, Xzero_eq_X, PowerSeries.coeff_X]
-
-/-- The coefficient of `Yⁿ` in a formal group law `F(X, Y)`: since `F(0, Y) = Y`, it is `1` for
-`n = 1` and `0` otherwise. -/
-theorem coeff_single_one (n : ℕ) :
-    coeff (single 1 n) F.toPowerSeries = if n = 1 then 1 else 0 := by
-  rw [← coeff_subst_zero_X, ← zeroX, zeroX_eq_X, PowerSeries.coeff_X]
-
-end FormalGroup
 
 namespace TauCeti
 
@@ -381,7 +361,7 @@ theorem isHomogeneous_relations :
     rw [← ker_mk, RingHom.mem_ker] at hp
     have := congrArg φ hp
     rw [← RingHom.comp_apply, hφ, map_zero] at this
-    simpa using congrArg (fun q ↦ Polynomial.coeff q n) this
+    simpa using congrArg (fun q ↦ AddMonoidAlgebra.coeff q n) this
   rwa [← MvPolynomial.weightedDecomposition.decompose'_apply] at key
 
 /-- The **grading of the Lazard ring** by homological degree: `Lₙ` consists of the classes of the
@@ -430,14 +410,14 @@ theorem coeff_formalGroup_mem_grading (d : Fin 2 →₀ ℕ) :
 variable {σ : Type*} [SetLike σ A] [AddSubgroupClass σ A]
 
 /-- **The graded universal property of the Lazard ring**, pointwise: let `A` be graded by `𝒜`
-over a commutative monoid `ι` receiving the degrees of `L` along `e : ℕ →+ ι` (for instance
+over an additive monoid `ι` receiving the degrees of `L` along `e : ℕ →+ ι` (for instance
 `ι = ℕ` with `e = id`, or `ι = ℤ` with `e` the inclusion or its negative). The homomorphism
 `L →+* A` classifying a commutative formal group law `F` over `A` maps each `Lₙ` into `𝒜 (e n)`
 exactly when the coefficient of every monomial `X^(d 0) Y^(d 1)` in `F` lies in
 `𝒜 (e (2 (d 0 + d 1 - 1)))`. Since the coefficients of `X` and `Y` are `1` and those of the other
 monomials `Xⁿ` and `Yⁿ` vanish, this says that the coefficient `aᵢⱼ` of `F` lies in
 `𝒜 (e (2 (i + j - 1)))` for all `i, j ≥ 1`. -/
-theorem lift_mem_iff {ι : Type*} [AddCommMonoid ι] {𝒜 : ι → σ} [SetLike.GradedMonoid 𝒜]
+theorem lift_mem_iff {ι : Type*} [AddMonoid ι] {𝒜 : ι → σ} [SetLike.GradedMonoid 𝒜]
     (e : ℕ →+ ι) (F : {F : FormalGroup A // F.IsComm}) :
     (∀ ⦃n : ℕ⦄ ⦃x : LazardRing⦄, x ∈ grading n → lift F x ∈ 𝒜 (e n)) ↔
       ∀ d : Fin 2 →₀ ℕ, coeff d F.1.toPowerSeries ∈ 𝒜 (e (2 * (d.degree - 1))) := by
@@ -445,13 +425,15 @@ theorem lift_mem_iff {ι : Type*} [AddCommMonoid ι] {𝒜 : ι → σ} [SetLike
   · rw [← map_lift F, FormalGroup.map_toPowerSeries, coeff_map]
     exact h (coeff_formalGroup_mem_grading d)
   · obtain ⟨p, hp, rfl⟩ := mem_grading_iff.1 hx
-    -- Pushing the degrees forward along `e` preserves weighted homogeneity.
-    have hpe : p.IsWeightedHomogeneous (e ∘ degree) (e n) := fun d hd ↦ by
-      simp only [← hp hd, Finsupp.weight_apply, map_finsuppSum, map_nsmul, Function.comp_apply]
-    -- The pieces are closed under the `ℤ`-action, as `IsWeightedHomogeneous.aeval_mem` requires.
-    have := AddSubgroupClass.zsmulMemClass (S := σ) (M := A)
-    rw [← RingHom.comp_apply, lift_comp_mk]
-    refine hpe.aeval_mem fun ⟨i, j⟩ ↦ ?_
+    -- Pull the grading back along `e`, so that it is indexed by the commutative monoid `ℕ`.
+    have : SetLike.GradedMonoid (𝒜 ∘ e) :=
+      { one_mem := by simpa using SetLike.GradedOne.one_mem (A := 𝒜)
+        mul_mem := fun _ _ _ _ ha hb ↦ by simpa using SetLike.GradedMul.mul_mem (A := 𝒜) ha hb }
+    rw [← RingHom.comp_apply]
+    apply (MvPolynomial.WeightedHomogeneousSubmodule.map_mem_iff degree (𝒜 ∘ e) (.id ℕ)
+      ((lift F).comp mk)).mpr ?_ hp
+    rintro ⟨i, j⟩
+    rw [RingHom.comp_apply, lift_mk_X]
     have hd := h (single 0 (i : ℕ) + single 1 (j : ℕ))
     rwa [map_add, Finsupp.degree_single, Finsupp.degree_single, ← degree_apply] at hd
 

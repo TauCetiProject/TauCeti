@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
+public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 
 /-!
 # Root and coroot coordinates for the E₇ minuscule construction
@@ -44,6 +45,13 @@ theorem coroot_simpleIndex (ht : E7.Valid) (i : Fin 7) :
   change (E7.simplyConnectedRootDatum ht).coroot (E7.simpleIndex ht i) =
     (Pi.single i 1 : Fin E7.rank → ℤ)
   exact E7.coroot_simpleIndex ht i
+
+/-- The coordinate evaluation cocharacter represents the named simple coroot. -/
+theorem cocharEquiv_symm_coroot_simpleIndex (ht : E7.Valid) (i : Fin 7) :
+    SplitTorus.cocharEquiv.symm ((E7.simplyConnectedRootDatum ht).coroot
+      (E7.simpleIndex ht i)) = (Finsupp.applyAddHom i).toMultiplicative := by
+  exact SplitTorus.cocharEquiv.symm_apply_eq.mpr
+    ((coroot_simpleIndex ht i).trans (SplitTorus.cocharEquiv_applyAddHom i).symm)
 
 /-- A named simple coroot evaluates a weight at its numbered coordinate. -/
 theorem coroot'_simpleIndex_apply (ht : E7.Valid) (i : Fin 7) (mu : Fin 7 → ℤ) :

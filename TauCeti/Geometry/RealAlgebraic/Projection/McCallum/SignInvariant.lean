@@ -267,13 +267,16 @@ private lemma exists_not_signInvariant_stackCells_signInvariantExample (k : ℕ)
   rw [hv, hv] at h
   norm_num at h
 
-variable [NormalizedGCDMonoid (MvPolynomial (Fin 2) ℝ)]
-
 /-- The McCallum projection of the example, its content `1`, its coefficients and its
 discriminant, is sign-invariant on the line `x₁ = 0`. -/
-private lemma signInvariant_mcCallumProjection_signInvariantExample {q : MvPolynomial (Fin 2) ℝ}
-    (hq : q ∈ ({signInvariantExample} : Finset _).mcCallumProjection {signInvariantExample}) :
-    SignInvariant (fun x ↦ MvPolynomial.eval x q) signInvariantExampleLine := by
+private lemma signInvariant_mcCallumProjection_signInvariantExample
+    (polynomialGCD : NormalizedGCDMonoid (MvPolynomial (Fin 2) ℝ))
+    {q : MvPolynomial (Fin 2) ℝ} :
+    letI := polynomialGCD
+    q ∈ ({signInvariantExample} : Finset _).mcCallumProjection {signInvariantExample} →
+      SignInvariant (fun x ↦ MvPolynomial.eval x q) signInvariantExampleLine := by
+  let := polynomialGCD
+  intro hq
   rw [signInvariant_iff_exists]
   rcases Finset.mem_mcCallumProjection.1 hq with ⟨b, hb, rfl⟩ | ⟨b, hb, i, hi, rfl⟩ |
     ⟨b, hb, rfl⟩ | ⟨b, hb, b', hb', hne, -⟩ <;> rw [Finset.mem_singleton] at hb <;> subst hb
@@ -302,7 +305,9 @@ the single root `1` over the origin. In the coordinates `(T, x₀, x₁)`, every
 both contain its only zero `(1, 0, 0)` over the origin, hence coincide, and then also contain
 `(3 / 2, 1, 0)`, where `f` is negative. So no stack over `S`, given by pointwise strictly
 increasing functions, continuous or not, has `f` sign-invariant on each cell. -/
-theorem exists_signInvariant_mcCallumProjection_stackCells_not_signInvariant :
+theorem exists_signInvariant_mcCallumProjection_stackCells_not_signInvariant
+    (polynomialGCD : NormalizedGCDMonoid (MvPolynomial (Fin 2) ℝ)) :
+    letI := polynomialGCD
     ∃ (f : (MvPolynomial (Fin 2) ℝ)[X]) (S : Set (Fin 2 → ℝ)),
       ({f} : Finset _).IsSquarefreeBasis {f} ∧ IsSemialgebraic S ∧
       IsAnalyticSubmanifold 1 S ∧ IsConnected S ∧
@@ -314,6 +319,7 @@ theorem exists_signInvariant_mcCallumProjection_stackCells_not_signInvariant :
       ∀ (k : ℕ) (θ : Fin k → S → ℝ), (∀ x, StrictMono fun i ↦ θ i x) →
         ∃ E ∈ stackCells S θ,
           ¬ SignInvariant (fun y ↦ MvPolynomial.eval y ((finSuccEquiv ℝ 2).symm f)) E := by
+  let := polynomialGCD
   have hSs : IsSemialgebraic signInvariantExampleLine := by
     convert isSemialgebraic_eval_eq_zero (MvPolynomial.X 1 : MvPolynomial (Fin 2) ℝ) using 1
     ext x
@@ -323,7 +329,7 @@ theorem exists_signInvariant_mcCallumProjection_stackCells_not_signInvariant :
     isAnalyticSubmanifold_coordSubspace (by norm_num)
   refine ⟨signInvariantExample, signInvariantExampleLine, isSquarefreeBasis_signInvariantExample,
     hSs, hSa, hSc, fun x _ ↦ (monic_signInvariantExample.map _).ne_zero,
-    fun q hq ↦ signInvariant_mcCallumProjection_signInvariantExample hq, ?_,
+    fun q hq ↦ signInvariant_mcCallumProjection_signInvariantExample polynomialGCD hq, ?_,
     exists_not_signInvariant_stackCells_signInvariantExample⟩
   -- Order-invariance of the projection would give, by the order-invariant lifting theorem, a
   -- stack on which the example is sign-invariant.

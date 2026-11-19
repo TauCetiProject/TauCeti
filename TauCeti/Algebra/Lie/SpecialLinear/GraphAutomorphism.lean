@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.GraphAutomorphism
 public import Mathlib.Algebra.Lie.Classical
 
+import TauCeti.Data.Fin.Rev
+
 /-!
 # The pinned type-A Lie graph automorphism
 
@@ -16,7 +18,7 @@ Conjugating negative transpose by the existing signed reversal matrix
 `TauCeti.typeAGraphConjugator` gives the pinned type-A Lie graph automorphism over any
 commutative ring.
 
-The closed, unmerged Tau Ceti PR #4951 by mccorvie-agent constructed the same map using
+The Tau Ceti PR #4951 by mccorvie-agent constructed the same map using
 a separate diagonal matrix. Here the conjugator is the one already used by the group
 graph automorphism.
 -/
@@ -46,17 +48,6 @@ theorem typeAGraphLieEquiv_apply (X : Matrix (Fin (r + 1)) (Fin (r + 1)) A) :
         ((typeAGraphConjugator r A)⁻¹ : Matrix (Fin (r + 1)) (Fin (r + 1)) A)) := by
   simp only [typeAGraphLieEquiv, LieEquiv.trans_apply, negTransposeLieEquiv_apply,
     lieConj_apply, mul_neg, neg_mul]
-
-private theorem typeAGraphConjugator_inv_eq_transpose :
-    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)⁻¹ =
-      (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)ᵀ := by
-  have h := congrArg
-    (fun g : GeneralLinearGroup (Fin (r + 1)) A ↦
-      (g : Matrix (Fin (r + 1)) (Fin (r + 1)) A))
-    (inverseTranspose_typeAGraphConjugator (A := A) r)
-  rw [GeneralLinearGroup.coe_inverseTranspose] at h
-  simpa only [transpose_transpose, GeneralLinearGroup.coe_inv] using
-    congrArg Matrix.transpose h
 
 /-- The graph automorphism reverses both indices and applies the alternating signs. -/
 @[simp]
@@ -105,19 +96,13 @@ theorem trace_typeAGraphLieEquiv
 theorem typeAGraphLieEquiv_single (i j : Fin (r + 1)) (a : A) :
     typeAGraphLieEquiv r A (single i j a) =
       single j.rev i.rev ((-1 : A) ^ ((i : ℕ) + (j : ℕ) + 1) * a) := by
-  have hmod : ((j.rev : ℕ) + (i.rev : ℕ) + 1) % 2 =
-      ((i : ℕ) + (j : ℕ) + 1) % 2 := by
-    simp only [Fin.val_rev]
-    omega
   have hsign : -((-1 : A) ^ (j.rev : ℕ) * a * (-1 : A) ^ (i.rev : ℕ)) =
       (-1 : A) ^ ((i : ℕ) + (j : ℕ) + 1) * a := by
     calc
       _ = (-1 : A) ^ ((j.rev : ℕ) + (i.rev : ℕ) + 1) * a := by
         rw [pow_add, pow_add, pow_one]
         ring
-      _ = _ := by
-        rw [neg_one_pow_eq_pow_mod_two ((j.rev : ℕ) + (i.rev : ℕ) + 1),
-          neg_one_pow_eq_pow_mod_two ((i : ℕ) + (j : ℕ) + 1), hmod]
+      _ = _ := by rw [Fin.neg_one_pow_rev_add_rev_add_one]
   ext k l
   by_cases hk : k = j.rev
   · subst k

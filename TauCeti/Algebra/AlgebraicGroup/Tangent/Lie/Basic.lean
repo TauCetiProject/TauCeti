@@ -197,7 +197,7 @@ noncomputable instance instLieRingCounitAlgebra :
   add_lie d₁ d₂ d₃ := Derivation.ext fun a => by
     let _ : LieRing (WithConv (A →ₗ[R] Bialgebra.CounitAlgebra R A B)) :=
       LieRing.ofAssociativeRing
-    rw [Derivation.add_apply, bracket_apply_ofConv, bracket_apply_ofConv,
+    rw [_root_.add_apply, bracket_apply_ofConv, bracket_apply_ofConv,
       bracket_apply_ofConv, Derivation.coe_add_linearMap, toConv_add]
     exact DFunLike.congr_fun (congrArg ofConv
       (add_lie (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
@@ -206,7 +206,7 @@ noncomputable instance instLieRingCounitAlgebra :
   lie_add d₁ d₂ d₃ := Derivation.ext fun a => by
     let _ : LieRing (WithConv (A →ₗ[R] Bialgebra.CounitAlgebra R A B)) :=
       LieRing.ofAssociativeRing
-    rw [Derivation.add_apply, bracket_apply_ofConv, bracket_apply_ofConv,
+    rw [_root_.add_apply, bracket_apply_ofConv, bracket_apply_ofConv,
       bracket_apply_ofConv, Derivation.coe_add_linearMap, toConv_add]
     exact DFunLike.congr_fun (congrArg ofConv
       (lie_add (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
@@ -215,14 +215,14 @@ noncomputable instance instLieRingCounitAlgebra :
   lie_self d := Derivation.ext fun a => by
     let _ : LieRing (WithConv (A →ₗ[R] Bialgebra.CounitAlgebra R A B)) :=
       LieRing.ofAssociativeRing
-    rw [bracket_apply_ofConv, Derivation.zero_apply]
+    rw [bracket_apply_ofConv, _root_.zero_apply]
     exact (DFunLike.congr_fun (congrArg ofConv
       (lie_self (toConv (↑d : A →ₗ[R] Bialgebra.CounitAlgebra R A B)))) a).trans
       (by rw [ofConv_zero]; exact LinearMap.zero_apply a)
   leibniz_lie d₁ d₂ d₃ := Derivation.ext fun a => by
     let _ : LieRing (WithConv (A →ₗ[R] Bialgebra.CounitAlgebra R A B)) :=
       LieRing.ofAssociativeRing
-    rw [Derivation.add_apply, bracket_apply_ofConv, bracket_apply_ofConv,
+    rw [_root_.add_apply, bracket_apply_ofConv, bracket_apply_ofConv,
       bracket_apply_ofConv, toConv_coe_bracket, toConv_coe_bracket, toConv_coe_bracket]
     exact DFunLike.congr_fun (congrArg ofConv
       (leibniz_lie (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
@@ -235,7 +235,7 @@ noncomputable instance instLieAlgebraCounitAlgebra :
   lie_smul r d₁ d₂ := Derivation.ext fun a => by
     let _ : LieRing (WithConv (A →ₗ[R] Bialgebra.CounitAlgebra R A B)) :=
       LieRing.ofAssociativeRing
-    rw [Derivation.smul_apply, bracket_apply_ofConv, bracket_apply_ofConv,
+    rw [_root_.smul_apply, bracket_apply_ofConv, bracket_apply_ofConv,
       Derivation.coe_smul_linearMap, toConv_smul]
     exact DFunLike.congr_fun (congrArg ofConv
       (lie_smul r (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
@@ -247,7 +247,7 @@ noncomputable instance instLieAlgebraCoefficients :
   lie_smul b d₁ d₂ := Derivation.ext fun a => by
     let _ : LieRing (WithConv (A →ₗ[R] Bialgebra.CounitAlgebra R A B)) :=
       LieRing.ofAssociativeRing
-    rw [Derivation.smul_apply, bracket_apply_ofConv, bracket_apply_ofConv,
+    rw [_root_.smul_apply, bracket_apply_ofConv, bracket_apply_ofConv,
       Derivation.coe_smul_linearMap, toConv_smul, LieRing.of_associative_ring_bracket,
       mul_smul_comm, smul_mul_assoc, ← smul_sub, ofConv_smul,
       LieRing.of_associative_ring_bracket, LinearMap.smul_apply]

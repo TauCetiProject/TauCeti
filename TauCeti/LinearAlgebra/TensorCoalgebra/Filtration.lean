@@ -32,6 +32,8 @@ length at most `n + 1` only through its top component.
 
 * `TauCeti.ReducedTensorWords.iSup_filtration_eq_top` and
   `TauCeti.ReducedTensorWords.exists_mem_filtration`: the filtration is exhaustive.
+* `TauCeti.ReducedTensorWords.pow_apply_eq_zero_of_filtration_lowering`: a map lowering the
+  filtration kills the words of length at most `n` after `n` applications.
 * `TauCeti.ReducedTensorWords.exists_pow_apply_eq_zero_of_filtration_lowering`: a map lowering
   tensor length is locally nilpotent, also after composition with a length-preserving map.
 * `TauCeti.ReducedTensorWords.ofLetter_mem_filtration` and
@@ -114,21 +116,27 @@ theorem exists_mem_filtration (z : ReducedTensorWords R M) : ∃ n : ℕ, z ∈ 
     trivial
   exact (Submodule.mem_iSup_of_directed _ (filtration_monotone R M).directed_le).1 hz
 
+/-- A map strictly lowering the tensor-length filtration kills the words of length at most `n`
+after `n` applications. -/
+theorem pow_apply_eq_zero_of_filtration_lowering (f : Module.End R (ReducedTensorWords R M))
+    (hf : ∀ n, Submodule.map f (filtration R M (n + 1)) ≤ filtration R M n) {n : ℕ}
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) : (f ^ n) z = 0 := by
+  induction n generalizing z with
+  | zero =>
+      rw [filtration_zero] at hz
+      have : z = 0 := hz
+      simp [this]
+  | succ n ih =>
+      have hfz : f z ∈ filtration R M n := hf n ⟨z, hz, rfl⟩
+      simpa only [pow_succ, mul_apply_eq_comp] using ih hfz
+
 /-- A map strictly lowering the tensor-length filtration is locally nilpotent. -/
 theorem exists_pow_apply_eq_zero_of_filtration_lowering
     (f : Module.End R (ReducedTensorWords R M))
     (hf : ∀ n, Submodule.map f (filtration R M (n + 1)) ≤ filtration R M n)
     (z : ReducedTensorWords R M) : ∃ n, (f ^ n) z = 0 := by
   obtain ⟨n, hn⟩ := exists_mem_filtration R M z
-  refine ⟨n, ?_⟩
-  induction n generalizing z with
-  | zero =>
-      rw [filtration_zero] at hn
-      have : z = 0 := hn
-      simp [this]
-  | succ n ih =>
-      have hfz : f z ∈ filtration R M n := hf n ⟨z, hn, rfl⟩
-      simpa only [pow_succ, Module.End.mul_apply] using ih (f z) hfz
+  exact ⟨n, pow_apply_eq_zero_of_filtration_lowering R M f hf hn⟩
 
 /-- Composing a strictly length-lowering map with a length-preserving map remains locally
 nilpotent. -/
@@ -269,6 +277,12 @@ theorem lengthProj_lengthProj (n : {n : ℕ // 0 < n}) (z : ReducedTensorWords R
     lengthProj R M n (lengthProj R M n z) = lengthProj R M n z := by
   rw [lengthProj_apply R M n z, lengthProj_of_self]
 
+/-- Precomposing with the same length projection twice is precomposing with it once. -/
+theorem comp_lengthProj_comp_lengthProj {N : Type*} [AddCommMonoid N] [Module R N]
+    (f : ReducedTensorWords R M →ₗ[R] N) (n : {n : ℕ // 0 < n}) :
+    (f ∘ₗ lengthProj R M n) ∘ₗ lengthProj R M n = f ∘ₗ lengthProj R M n :=
+  LinearMap.ext fun z ↦ by simp only [LinearMap.comp_apply, lengthProj_lengthProj]
+
 /-- Projections onto two different lengths are orthogonal. -/
 theorem lengthProj_lengthProj_of_ne {m n : {n : ℕ // 0 < n}} (h : m ≠ n)
     (z : ReducedTensorWords R M) : lengthProj R M n (lengthProj R M m z) = 0 := by
@@ -287,6 +301,26 @@ theorem lengthProj_apply_eq_zero_of_mem_filtration {n : {n : ℕ // 0 < n}} {k :
     rintro m hm _ ⟨x, rfl⟩
     rw [LinearMap.mem_ker, lengthProj_of_of_ne R M fun h ↦ by subst h; omega]
   exact h hz
+
+/-- A reduced tensor word lies in the `n`-th filtration step exactly when all its components
+of length greater than `n` vanish. -/
+theorem mem_filtration_iff (n : ℕ) (z : ReducedTensorWords R M) :
+    z ∈ filtration R M n ↔ ∀ k : {k : ℕ // 0 < k}, n < k.1 → component R M k z = 0 := by
+  classical
+  constructor
+  · intro hz k hk
+    have h := congrArg (component R M k)
+      (lengthProj_apply_eq_zero_of_mem_filtration R M hk hz)
+    simpa only [lengthProj_apply, component_of, map_zero] using h
+  · intro hz
+    have hsum : ∑ k ∈ z.support, of R M k (z k) = z := by
+      simpa only [of_def, DirectSum.lof_eq_of] using DirectSum.sum_support_of z
+    rw [← hsum]
+    refine Submodule.sum_mem _ fun k _ ↦ ?_
+    by_cases hk : k.1 ≤ n
+    · exact of_mem_filtration R M hk _
+    · rw [apply_eq_component, hz k (by omega), map_zero]
+      exact Submodule.zero_mem _
 
 /-- A linear map vanishing on the words of length at most `n` sees a word of length at most
 `n + 1` only through its component of length `n + 1`. -/

@@ -43,23 +43,22 @@ abbrev HomCocycleQuotient (f : P₁ →ₗ[A] P₀) (N : Type*)
   ker ((ker f).subtype.lcomp k N) ⧸
     (range (f.lcomp k N)).comap (ker ((ker f).subtype.lcomp k N)).subtype
 
+/-- Postcomposition preserves the Hom cocycle condition. -/
+theorem homCocycleComp_mem {f : P₁ →ₗ[A] P₀} (g : N →ₗ[A] N') {h : P₁ →ₗ[A] N}
+    (hh : h ∈ ker ((ker f).subtype.lcomp k N)) :
+    g.comp h ∈ ker ((ker f).subtype.lcomp k N') := by
+  simp only [mem_ker, lcomp_apply'] at hh ⊢
+  rw [comp_assoc, hh, comp_zero]
+
 /-- Postcomposition on Hom cocycles modulo coboundaries. -/
 def homCocycleQuotientMap (f : P₁ →ₗ[A] P₀) (g : N →ₗ[A] N') :
-    HomCocycleQuotient (k := k) f N →ₗ[k] HomCocycleQuotient (k := k) f N' := by
-  let Z := ker ((ker f).subtype.lcomp k N)
-  let Z' := ker ((ker f).subtype.lcomp k N')
-  let F := ((g.compRight k).comp Z.subtype).codRestrict Z' fun h ↦ by
-    apply mem_ker.mpr
-    simpa only [comp_apply, compRight_apply, Submodule.subtype_apply, lcomp_apply',
-      comp_assoc, comp_zero]
-      using congrArg (g.comp ·) (mem_ker.mp h.property)
-  exact ((range (f.lcomp k N)).comap Z.subtype).mapQ
-    ((range (f.lcomp k N')).comap Z'.subtype) F (by
-      rintro h ⟨a, ha⟩
-      refine ⟨g.comp a, ?_⟩
-      simpa only [F, codRestrict_apply, comp_apply, compRight_apply,
-        Submodule.subtype_apply, lcomp_apply',
-        comp_assoc] using congrArg (g.comp ·) ha)
+    HomCocycleQuotient (k := k) f N →ₗ[k] HomCocycleQuotient (k := k) f N' :=
+  Submodule.mapQ _ _ ((g.compRight k).restrict fun _ hh ↦ by
+    simpa only [compRight_apply] using homCocycleComp_mem g hh) <| by
+    rintro h ⟨a, ha⟩
+    refine ⟨g.comp a, ?_⟩
+    simp only [lcomp_apply', Submodule.subtype_apply, coe_restrict_apply, compRight_apply] at ha ⊢
+    rw [comp_assoc, ha]
 
 /-- Postcomposition sends a cocycle class to the class of the composite. -/
 @[simp]
@@ -67,24 +66,16 @@ theorem homCocycleQuotientMap_mk (f : P₁ →ₗ[A] P₀) (g : N →ₗ[A] N')
     (h : ker ((ker f).subtype.lcomp k N)) :
     homCocycleQuotientMap f g (Submodule.Quotient.mk h) =
       Submodule.Quotient.mk
-        (⟨g.comp h.val, by
-          apply mem_ker.mpr
-          simpa only [lcomp_apply', comp_assoc, comp_zero]
-            using congrArg (g.comp ·) (mem_ker.mp h.property)⟩ :
+        (⟨g.comp h.val, homCocycleComp_mem g h.property⟩ :
           ker ((ker f).subtype.lcomp k N')) := by
-  simp only [homCocycleQuotientMap, Submodule.mapQ_apply]
-  apply congrArg Submodule.Quotient.mk
-  apply Subtype.ext
-  simp [codRestrict_apply, compRight_apply]
+  simp [homCocycleQuotientMap, restrict_apply]
 
 /-- Postcomposition with the identity preserves cocycle classes. -/
 @[simp]
 theorem homCocycleQuotientMap_id (f : P₁ →ₗ[A] P₀) :
     homCocycleQuotientMap (k := k) f (LinearMap.id : N →ₗ[A] N) = LinearMap.id := by
-  apply LinearMap.ext
-  intro x
-  induction x using Submodule.Quotient.induction_on with
-  | _ h => simp
+  ext
+  simp
 
 /-- Postcomposition on cocycle classes respects composition. -/
 @[simp]
@@ -92,9 +83,7 @@ theorem homCocycleQuotientMap_comp (f : P₁ →ₗ[A] P₀)
     (g : N →ₗ[A] N') (h : N' →ₗ[A] N'') :
     homCocycleQuotientMap (k := k) f (h.comp g) =
       (homCocycleQuotientMap f h).comp (homCocycleQuotientMap f g) := by
-  apply LinearMap.ext
-  intro x
-  induction x using Submodule.Quotient.induction_on with
-  | _ a => simp [comp_assoc]
+  ext
+  simp [comp_assoc]
 
 end LinearMap

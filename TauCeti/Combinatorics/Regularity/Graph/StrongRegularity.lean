@@ -216,27 +216,27 @@ variable {G} in
 /-- **Induced counting lemma for strong regularity.** Let `(P, Q)` be a strong regularity witness
 for `G` with `τ = F #P.parts > 0`, and suppose every part of `P` has at most `m` vertices. Then for
 every graph `J` on `Fin 3`, the number of labelled induced copies of `J` in `G` differs from the
-coarse prediction `J.coarseInducedGraphEstimate3 G P` by at most
+coarse prediction `J.coarseInducedGraphEstimate G P` by at most
 `(15 τ + 3 √ε) (card α) ^ 3 + 6 m (card α) ^ 2`. Only the refinement, the equitability and
 uniformity of `Q`, and the energy gap are used. -/
 theorem StrongRegular.inducedGraphCount3_estimate (J : SimpleGraph (Fin 3)) [DecidableRel J.Adj]
     {P Q : Finpartition (univ : Finset α)} {ε : ℝ} {F : ℕ → ℝ} {l₀ : ℕ}
     (h : G.StrongRegular P Q ε F l₀) (hF : 0 < F #P.parts) {m : ℕ}
     (hm : ∀ A ∈ P.parts, #A ≤ m) :
-    |(J.inducedGraphCount3 G : ℝ) - J.coarseInducedGraphEstimate3 G P| ≤
+    |(J.inducedGraphCount3 G : ℝ) - J.coarseInducedGraphEstimate G P| ≤
       (15 * F #P.parts + 3 * √ε) * card α ^ 3 + 6 * m * card α ^ 2 := by
   have hmQ : ∀ B ∈ Q.parts, #B ≤ m := fun B hB ↦ by
     obtain ⟨A, hA, hBA⟩ := h.refines hB
     exact (card_le_card hBA).trans (hm A hA)
   -- Compare the count with the coarse prediction of `Q`, then pass through the stepped
   -- predictions of `Q` and `P` to the coarse prediction of `P`.
-  have h₁ := J.inducedGraphCount3_le_coarseInducedGraphEstimate3_add G h.equitQ hF h.regQ hmQ
-  have h₂ := J.coarseInducedGraphEstimate3_sub_le_inducedGraphCount3 G h.equitQ hF h.regQ
-  have h₃ := J.coarseInducedGraphEstimate3_le_steppedInducedGraphCount3 G Q
-  have h₄ := J.steppedInducedGraphCount3_le_coarseInducedGraphEstimate3_add G Q hmQ
+  have h₁ := J.inducedGraphCount3_le_coarseInducedGraphEstimate_add G h.equitQ hF h.regQ hmQ
+  have h₂ := J.coarseInducedGraphEstimate_sub_le_inducedGraphCount3 G h.equitQ hF h.regQ
+  have h₃ := J.coarseInducedGraphEstimate_le_steppedInducedGraphCount3 G Q
+  have h₄ := J.steppedInducedGraphCount3_le_coarseInducedGraphEstimate_add G Q hmQ
   have h₅ := abs_le.1 (J.abs_steppedInducedGraphCount3_sub_le G h.refines h.energyClose)
-  have h₆ := J.coarseInducedGraphEstimate3_le_steppedInducedGraphCount3 G P
-  have h₇ := J.steppedInducedGraphCount3_le_coarseInducedGraphEstimate3_add G P hm
+  have h₆ := J.coarseInducedGraphEstimate_le_steppedInducedGraphCount3 G P
+  have h₇ := J.steppedInducedGraphCount3_le_coarseInducedGraphEstimate_add G P hm
   rw [abs_le]
   constructor <;> linarith [h₅.1, h₅.2]
 

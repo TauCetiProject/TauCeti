@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.FunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.MoorePenrose
 public import TauCeti.Analysis.SpecificLimits.RegularizedInverse
 import TauCeti.Topology.Instances.Matrix
+import TauCeti.Analysis.Matrix.Sqrt
 
 /-!
 # The pseudoinverse of a covariance matrix
@@ -129,6 +130,47 @@ theorem eq_covariancePseudoInverse_of_penrose {C D : Matrix ι ι ℝ} (hC : C.P
   toEuclideanLin.injective ((isMoorePenroseInverse_toEuclideanLin_of_penrose h₁ h₂ h₃ h₄).unique
     (isMoorePenroseInverse_covariancePseudoInverse hC))
 
+/-- The pseudoinverse of a nonnegative diagonal covariance inverts each diagonal entry,
+with the usual zero inverse on zero-variance coordinates. -/
+@[simp]
+theorem covariancePseudoInverse_diagonal {d : ι → ℝ} (hd : ∀ i, 0 ≤ d i) :
+    (diagonal d).covariancePseudoInverse = diagonal (fun i ↦ (d i)⁻¹) := by
+  refine (eq_covariancePseudoInverse_of_penrose (PosSemidef.diagonal hd) ?_ ?_ ?_ ?_).symm
+  · simp only [diagonal_mul_diagonal]
+    congr 1
+    funext i
+    exact mul_inv_mul_cancel (d i)
+  · simp only [diagonal_mul_diagonal]
+    congr 1
+    funext i
+    simpa only [inv_inv] using mul_inv_mul_cancel (d i)⁻¹
+  · simp only [diagonal_mul_diagonal]
+    exact isHermitian_diagonal _
+  · simp only [diagonal_mul_diagonal]
+    exact isHermitian_diagonal _
+
+/-- The covariance pseudoinverse of a nonnegative multiple scales by the reciprocal. -/
+theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 ≤ c) :
+    (c • C).covariancePseudoInverse = c⁻¹ • C.covariancePseudoInverse := by
+  rcases hc.eq_or_lt with rfl | hc
+  · simp [covariancePseudoInverse_zero]
+  by_cases hC : C.PosSemidef
+  · have hc' : c * c⁻¹ = 1 := mul_inv_cancel₀ hc.ne'
+    have hc'' : c⁻¹ * c = 1 := inv_mul_cancel₀ hc.ne'
+    refine (eq_covariancePseudoInverse_of_penrose (hC.smul hc.le) ?_ ?_ ?_ ?_).symm
+    · have h := congrArg (c • ·) (mul_covariancePseudoInverse_mul hC)
+      simpa [Matrix.smul_mul, Matrix.mul_smul, smul_smul, hc', hc''] using h
+    · have h := congrArg (c⁻¹ • ·) (covariancePseudoInverse_mul_self_mul C)
+      simpa [Matrix.smul_mul, Matrix.mul_smul, smul_smul, hc', hc''] using h
+    · simpa [Matrix.smul_mul, Matrix.mul_smul, smul_smul, hc', hc''] using
+        (isHermitian_mul_covariancePseudoInverse C)
+    · simpa [Matrix.smul_mul, Matrix.mul_smul, smul_smul, hc', hc''] using
+        (isHermitian_covariancePseudoInverse_mul C)
+  · have hcC : ¬ (c • C).PosSemidef := fun h => hC (by
+      simpa [smul_smul, hc.ne'] using h.smul (inv_pos.mpr hc).le)
+    rw [covariancePseudoInverse_of_not_posSemidef hC, covariancePseudoInverse_of_not_posSemidef hcC,
+      smul_zero]
+
 /-- The covariance construction agrees with the existing Moore–Penrose inverse of the
 Euclidean operator. -/
 theorem toEuclideanLin_covariancePseudoInverse {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
@@ -141,6 +183,18 @@ theorem covariancePseudoInverse_of_posDef {C : Matrix ι ι ℝ} (hC : C.PosDef)
     C.covariancePseudoInverse = C⁻¹ := by
   rw [covariancePseudoInverse_of_posSemidef hC.posSemidef, nonsing_inv_eq_ringInverse]
   exact cfc_ringInverse_id C hC.isUnit hC.isHermitian.isSelfAdjoint
+
+/-- On one coordinate, the pseudoinverse of a valid covariance agrees with the totalized
+ordinary inverse, including zero variance. -/
+theorem covariancePseudoInverse_eq_inv_of_unique [Unique ι] {C : Matrix ι ι ℝ}
+    (hC : C.PosSemidef) : C.covariancePseudoInverse = C⁻¹ := by
+  by_cases h0 : C default default = 0
+  · have hzero : C = 0 := by
+      ext i j
+      simpa only [Unique.eq_default i, Unique.eq_default j, Matrix.zero_apply] using h0
+    simp [hzero]
+  · exact covariancePseudoInverse_of_posDef (hC.posDef_iff_det_ne_zero.mpr
+      (by simpa only [det_unique] using h0))
 
 /-- Inverting the covariance pseudoinverse recovers every valid covariance. -/
 @[simp]
@@ -178,6 +232,28 @@ theorem toEuclideanLin_covariancePseudoInverse_mul {C : Matrix ι ι ℝ}
   rw [← (commute_covariancePseudoInverse C).eq]
   exact toEuclideanLin_mul_covariancePseudoInverse hC
 
+/-- A covariance matrix and its square root have the same orthogonal range projector,
+including the zero projectors returned for invalid covariances. -/
+@[simp]
+theorem sqrt_mul_covariancePseudoInverse_sqrt (C : Matrix ι ι ℝ) :
+    CFC.sqrt C * (CFC.sqrt C).covariancePseudoInverse = C * C.covariancePseudoInverse := by
+  by_cases hC : C.PosSemidef
+  · apply toEuclideanLin.injective
+    rw [toEuclideanLin_mul_covariancePseudoInverse
+      (nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg C)),
+      toEuclideanLin_mul_covariancePseudoInverse hC]
+    simp only [hC.range_toEuclideanLin_sqrt]
+  · have hn : ¬ 0 ≤ C := fun h ↦ hC (nonneg_iff_posSemidef.mp h)
+    simp [hC, CFC.sqrt_of_not_nonneg hn]
+
+/-- A covariance square root's pseudoinverse times that square root equals the covariance's
+pseudoinverse times the covariance, including the zero products for invalid covariances. -/
+@[simp]
+theorem covariancePseudoInverse_sqrt_mul_sqrt (C : Matrix ι ι ℝ) :
+    (CFC.sqrt C).covariancePseudoInverse * CFC.sqrt C = C.covariancePseudoInverse * C := by
+  rw [← (commute_covariancePseudoInverse (CFC.sqrt C)).eq,
+    sqrt_mul_covariancePseudoInverse_sqrt, (commute_covariancePseudoInverse C).eq]
+
 /-- The covariance pseudoinverse is the limit of `(C² + ε I)⁻¹ C` as positive `ε` tends to zero.
 The limit includes zero covariance and empty coordinate types. -/
 theorem tendsto_inv_sq_add_smul_mul {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
@@ -193,7 +269,7 @@ theorem tendsto_inv_sq_add_smul_mul {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
 theorem measurable_covariancePseudoInverse :
     Measurable (covariancePseudoInverse : Matrix ι ι ℝ → Matrix ι ι ℝ) := by
   classical
-  exact Measurable.ite posSemidef_is_closed.measurableSet
+  exact Measurable.ite isClosed_setOfPred_posSemidef.measurableSet
     (TauCeti.measurable_matrix_cfc_of_tendsto
       (F := fun k x ↦ x / (x ^ 2 + 1 / (k + 1)))
       (fun _ ↦ continuous_id.div ((continuous_id.pow 2).add continuous_const)

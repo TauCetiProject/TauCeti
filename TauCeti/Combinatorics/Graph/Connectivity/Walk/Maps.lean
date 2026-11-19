@@ -335,6 +335,11 @@ theorem reachable_deleteVerts_iff_exists_walk {α : Type u} {β : Type v} {G : G
     · rw [vertexSet_deleteVerts]
       exact ⟨hx, hp x p.start_mem_support⟩
 
+/-- Points reachable after deleting some vertices are actual vertices of `G`. -/
+theorem mem_vertexSet_of_reachable_deleteVerts {α : Type u} {β : Type v} {G : Graph α β}
+    {S : Set α} {x y : α} (h : (G.deleteVerts S).Reachable x y) : x ∈ V(G) ∧ y ∈ V(G) :=
+  ⟨(h.mono deleteVerts_le).left_mem, (h.mono deleteVerts_le).right_mem⟩
+
 section DeleteOneEdge
 
 variable {α : Type u} {β : Type v} {G : Graph α β} {e : β} {x y u v : α}
@@ -348,7 +353,7 @@ theorem IsLink.reachable_deleteEdges_or_reachable_deleteEdges_or (h : G.IsLink e
   clear huv
   induction p with
   | nil => exact .inl (Reachable.refl (by simpa using hu))
-  | @cons u w _ f hf q ih =>
+  | @cons u w _ f hf _ ih =>
     by_cases hfe : f = e
     · subst hfe
       obtain rfl | rfl := hf.left_eq_or_eq h

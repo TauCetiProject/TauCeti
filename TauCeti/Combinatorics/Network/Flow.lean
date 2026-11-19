@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import TauCeti.Combinatorics.Network.Residual
+import TauCeti.Combinatorics.Network.Shift
 
 /-!
 # Bounded terminal assignments, flows, and weak duality
@@ -50,6 +51,8 @@ flows is assembled.
 * `TauCeti.Flow.arrowSum_le_arrowSum_univ`: a flow carries at most the total capacity across any
   pair of vertex sets.
 * `TauCeti.map_cutBound`: cut bounds commute with additive coefficient maps.
+* `TauCeti.neg_cutBound_le_sum_excessAt` and `TauCeti.sum_excessAt_le_cutBound_compl`: cut bounds
+  bound the total excess of an assignment between `lo` and `hi` on any vertex set.
 * `TauCeti.BoundedFlow.cutBound_sub_val` and `TauCeti.BoundedFlow.val_eq_cutBound_iff`: the gap
   between a cut bound and the value is the residual capacity leaving the cut, so the value attains
   the cut bound exactly when no residual arrow of positive capacity leaves the cut.
@@ -113,6 +116,26 @@ theorem map_cutBound [DecidableEq V] {L F : Type*} [AddCommGroup L] [FunLike F K
     [AddMonoidHomClass F K L] (φ : F) (lo hi : Assignment Q K) (S : Finset V) :
     φ (cutBound lo hi S) = cutBound (lo.map φ) (hi.map φ) S := by
   rw [cutBound_def, cutBound_def, map_sub, map_arrowSum, map_arrowSum]
+
+section Ordered
+
+variable [Preorder K] [AddLeftMono K] [DecidableEq V] {lo hi f : Assignment Q K}
+
+/-- An assignment between `lo` and `hi` has total excess on `S` at least minus the cut bound
+of `S`. -/
+theorem neg_cutBound_le_sum_excessAt (hf : f ∈ Set.Icc lo hi) (S : Finset V) :
+    -cutBound lo hi S ≤ ∑ v ∈ S, excessAt f v := by
+  rw [sum_excessAt_eq_arrowSum_sub, cutBound_def, neg_sub]
+  exact sub_le_sub (arrowSum_mono hf.1 _ _) (arrowSum_mono hf.2 _ _)
+
+/-- An assignment between `lo` and `hi` has total excess on `S` at most the cut bound of the
+complement of `S`. -/
+theorem sum_excessAt_le_cutBound_compl (hf : f ∈ Set.Icc lo hi) (S : Finset V) :
+    ∑ v ∈ S, excessAt f v ≤ cutBound lo hi Sᶜ := by
+  rw [sum_excessAt_eq_arrowSum_sub, cutBound_def, compl_compl]
+  exact sub_le_sub (arrowSum_mono hf.2 _ _) (arrowSum_mono hf.1 _ _)
+
+end Ordered
 
 namespace BoundedFlow
 
@@ -178,6 +201,25 @@ theorem val_eq_zero_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.val = 0 
   subst hst
   rw [val_def, ← sum_excessAt f.toFun, Fintype.sum_eq_single s fun v hv ↦ f.conserve v hv hv]
 
+/-- The excess of a bounded terminal assignment is concentrated at its terminals, with demand
+`f.val` at the sink and supply `f.val` at the source. This also holds for coinciding terminals. -/
+theorem excessAt_eq_single_sub_single [DecidableEq V] (f : BoundedFlow lo hi s t) :
+    excessAt f.toFun = Pi.single t f.val - Pi.single s f.val := by
+  ext v
+  by_cases hst : s = t
+  · subst t
+    by_cases hv : v = s
+    · subst v
+      simp [← val_def, val_eq_zero_of_eq rfl]
+    · simp [f.conserve v hv hv]
+  · by_cases hvs : v = s
+    · subst v
+      simp [f.excessAt_source, hst]
+    · by_cases hvt : v = t
+      · subst v
+        simp [← val_def, hvs]
+      · simp [f.conserve v hvs hvt, hvs, hvt]
+
 end Preorder
 
 section Ordered
@@ -198,6 +240,34 @@ theorem neg_cutBound_compl_le_val [DecidableEq V] (f : BoundedFlow lo hi s t) {S
     (hs : s ∈ S) (ht : t ∉ S) : -cutBound lo hi Sᶜ ≤ f.val := by
   rw [f.val_eq_arrowSum_sub hs ht, cutBound_def, compl_compl, neg_sub]
   exact sub_le_sub (arrowSum_mono f.mem_Icc.1 _ _) (arrowSum_mono f.mem_Icc.2 _ _)
+
+/-- The terminal excess of a bounded assignment satisfies the incoming cut inequality on every
+vertex set, whether or not it separates the terminals. -/
+theorem terminal_excess_add_arrowSum_le [DecidableEq V] (f : BoundedFlow lo hi s t)
+    (S : Finset V) :
+    ((if t ∈ S then f.val else 0) - (if s ∈ S then f.val else 0)) +
+      arrowSum lo S Sᶜ ≤ arrowSum hi Sᶜ S := by
+  have h := ExcessFlow.sum_add_arrowSum_le
+    (⟨f.toFun, f.mem_Icc, rfl⟩ : ExcessFlow lo hi (excessAt f.toFun)) S
+  simpa only [f.excessAt_eq_single_sub_single, Pi.sub_apply, sum_sub_distrib,
+    sum_pi_single'] using h
+
+/-- A value between two feasible terminal values satisfies every incoming cut inequality for
+its terminal demand. -/
+theorem sum_single_sub_single_add_arrowSum_le [DecidableEq V]
+    (f g : BoundedFlow lo hi s t) {q : K} (hfq : f.val ≤ q) (hqg : q ≤ g.val)
+    (S : Finset V) :
+    (∑ v ∈ S, (Pi.single t q - Pi.single s q : V → K) v) + arrowSum lo S Sᶜ ≤
+      arrowSum hi Sᶜ S := by
+  have hf := f.terminal_excess_add_arrowSum_le S
+  have hg := g.terminal_excess_add_arrowSum_le S
+  simp only [Pi.sub_apply, sum_sub_distrib, sum_pi_single']
+  by_cases hs : s ∈ S <;> by_cases ht : t ∈ S <;>
+    simp only [hs, ht, ↓reduceIte, sub_self, zero_sub, sub_zero, zero_add] at *
+  · exact hf
+  · exact (add_le_add (neg_le_neg_iff.mpr hfq) le_rfl).trans hf
+  · exact (add_le_add hqg le_rfl).trans hg
+  · exact hf
 
 /-- The *residual update* of a bounded `s`–`t` assignment `f` by a residual `s`–`t` assignment `r`
 between zero and the residual capacities of `f`: the value on an arrow `e` becomes

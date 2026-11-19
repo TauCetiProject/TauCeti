@@ -23,36 +23,28 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti
-
-universe u v w x
+universe u v w x y
 
 namespace SheafOfModules
 
 variable {C : Type u} [Category.{w} C] {J : GrothendieckTopology C}
-  {R : Sheaf J RingCat.{v}} {M N : _root_.SheafOfModules.{v} R}
+  {R : Sheaf J RingCat.{y}} {M N : SheafOfModules.{v} R}
   {ι : Type x} {X : ι → C}
 
 /-- A morphism of sheaves of modules that is an isomorphism on every member of a covering
 family is an isomorphism globally. -/
-theorem _root_.SheafOfModules.isIso_of_coversTop (hX : J.CoversTop X) (f : M ⟶ N)
+theorem isIso_of_coversTop (hX : J.CoversTop X) {f : M ⟶ N}
     (hf : ∀ i, IsIso (f.over (X i))) : IsIso f := by
-  have h : IsIso ((_root_.SheafOfModules.toSheaf R).map f) := by
-    apply Sheaf.isIso_of_coversTop hX
-    intro i
+  have : IsIso ((toSheaf R).map f) := Sheaf.isIso_of_coversTop hX fun i ↦
     -- Pullback of the underlying sheaf is definitionally the underlying sheaf of the
     -- restricted module; the two expressions carry different categorical wrappers.
-    change IsIso ((_root_.SheafOfModules.toSheaf (R.over (X i))).map (f.over (X i)))
-    let h := hf i
-    infer_instance
-  exact (isIso_iff_of_reflects_iso f (_root_.SheafOfModules.toSheaf R)).mp h
+    inferInstanceAs (IsIso ((toSheaf (R.over (X i))).map (f.over (X i))))
+  exact isIso_of_reflects_iso f (toSheaf R)
 
 /-- A morphism of sheaves of modules is an isomorphism exactly when its restrictions to a
 cover are isomorphisms. -/
-theorem _root_.SheafOfModules.isIso_iff_of_coversTop (hX : J.CoversTop X) (f : M ⟶ N) :
+theorem isIso_iff_of_coversTop (hX : J.CoversTop X) (f : M ⟶ N) :
     IsIso f ↔ ∀ i, IsIso (f.over (X i)) :=
-  ⟨fun _ _ => inferInstance, _root_.SheafOfModules.isIso_of_coversTop hX f⟩
+  ⟨fun _ _ ↦ inferInstance, isIso_of_coversTop hX⟩
 
 end SheafOfModules
-
-end TauCeti

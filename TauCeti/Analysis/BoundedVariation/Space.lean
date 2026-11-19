@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
-import Mathlib.MeasureTheory.Function.LpSpace.Complete
-import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 
 /-!
 # The Banach space of functions of bounded variation
@@ -51,6 +49,21 @@ def MemBV (μ : Measure E) (Ω : Opens E) (u : E → ℝ) : Prop :=
 theorem memBV_iff {u : E → ℝ} : MemBV μ Ω u ↔
     IntegrableOn u Ω μ ∧ totalVariationOn μ Ω u < ∞ := (Iff.rfl)
 
+/-- A BV function is integrable on its domain. -/
+theorem MemBV.integrableOn {u : E → ℝ} (hu : MemBV μ Ω u) : IntegrableOn u Ω μ :=
+  (memBV_iff.mp hu).1
+
+/-- A BV function has finite total variation on its domain. -/
+theorem MemBV.totalVariationOn_lt_top {u : E → ℝ} (hu : MemBV μ Ω u) :
+    totalVariationOn μ Ω u < ∞ :=
+  (memBV_iff.mp hu).2
+
+/-- Restriction to an open subset preserves BV membership. -/
+theorem MemBV.mono {U : Opens E} {u : E → ℝ} (hu : MemBV μ Ω u) (hU : U ≤ Ω) :
+    MemBV μ U u :=
+  memBV_iff.mpr ⟨hu.integrableOn.mono_set hU,
+    (totalVariationOn_mono hU).trans_lt hu.totalVariationOn_lt_top⟩
+
 /-- BV membership is unchanged by equality almost everywhere on the domain. -/
 theorem memBV_congr_ae {u v : E → ℝ} (h : u =ᵐ[μ.restrict Ω] v) :
     MemBV μ Ω u ↔ MemBV μ Ω v := by
@@ -63,9 +76,8 @@ theorem MemBV.zero : MemBV μ Ω 0 :=
   memBV_iff.mpr ⟨integrableOn_zero, by simp⟩
 
 /-- Negation preserves BV membership. -/
-theorem MemBV.neg {u : E → ℝ} (hu : MemBV μ Ω u) : MemBV μ Ω (-u) := by
-  rcases memBV_iff.mp hu with ⟨hu, hfinite⟩
-  exact memBV_iff.mpr ⟨hu.neg, by simpa using hfinite⟩
+theorem MemBV.neg {u : E → ℝ} (hu : MemBV μ Ω u) : MemBV μ Ω (-u) :=
+  memBV_iff.mpr ⟨hu.integrableOn.neg, by simpa using hu.totalVariationOn_lt_top⟩
 
 /-- BV membership is unchanged by negation. -/
 @[simp]
@@ -74,19 +86,16 @@ theorem memBV_neg_iff {u : E → ℝ} : MemBV μ Ω (-u) ↔ MemBV μ Ω u :=
 
 /-- Multiplication by a real scalar preserves BV membership. -/
 theorem MemBV.smul {u : E → ℝ} (hu : MemBV μ Ω u) (c : ℝ) : MemBV μ Ω (c • u) := by
-  rcases memBV_iff.mp hu with ⟨hu, hfinite⟩
-  refine memBV_iff.mpr ⟨hu.smul c, ?_⟩
+  refine memBV_iff.mpr ⟨hu.integrableOn.smul c, ?_⟩
   rw [totalVariationOn_smul]
-  exact ENNReal.mul_lt_top (by finiteness) hfinite
+  exact ENNReal.mul_lt_top (by finiteness) hu.totalVariationOn_lt_top
 
 /-- The sum of two BV functions belongs to BV. -/
 theorem MemBV.add [OpensMeasurableSpace E] {u v : E → ℝ}
-    (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) : MemBV μ Ω (u + v) := by
-  rcases memBV_iff.mp hu with ⟨hu, hufinite⟩
-  rcases memBV_iff.mp hv with ⟨hv, hvfinite⟩
-  exact memBV_iff.mpr ⟨hu.add hv,
-    (totalVariationOn_add_le hu.locallyIntegrableOn hv.locallyIntegrableOn).trans_lt
-      (ENNReal.add_lt_top.mpr ⟨hufinite, hvfinite⟩)⟩
+    (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) : MemBV μ Ω (u + v) :=
+  memBV_iff.mpr ⟨hu.integrableOn.add hv.integrableOn,
+    (totalVariationOn_add_le hu.integrableOn.locallyIntegrableOn).trans_lt
+      (ENNReal.add_lt_top.mpr ⟨hu.totalVariationOn_lt_top, hv.totalVariationOn_lt_top⟩)⟩
 
 /-- The difference of two BV functions belongs to BV. -/
 theorem MemBV.sub [OpensMeasurableSpace E] {u v : E → ℝ}
@@ -103,18 +112,13 @@ def bvSubmodule (μ : Measure E) (Ω : Opens E) : Submodule ℝ (E →₁[μ.res
     simp only [Set.mem_ofPred_eq]
     rw [totalVariationOn_congr_ae (Lp.coeFn_zero ℝ 1 (μ.restrict Ω)), totalVariationOn_zero]
     exact ENNReal.zero_lt_top
-  add_mem' := by
-    intro u v hu hv
-    simp only [Set.mem_ofPred_eq] at hu hv ⊢
-    rw [totalVariationOn_congr_ae (Lp.coeFn_add u v)]
-    exact (totalVariationOn_add_le (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn u))
-      (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v))).trans_lt
-        (ENNReal.add_lt_top.mpr ⟨hu, hv⟩)
-  smul_mem' := by
-    intro c u hu
-    simp only [Set.mem_ofPred_eq] at hu ⊢
-    rw [totalVariationOn_congr_ae (Lp.coeFn_smul c u), totalVariationOn_smul]
-    exact ENNReal.mul_lt_top (by finiteness) hu
+  add_mem' {u v} hu hv := by
+    rw [Set.mem_ofPred_eq, totalVariationOn_congr_ae (Lp.coeFn_add u v)]
+    exact ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).add
+      (memBV_iff.mpr ⟨L1.integrable_coeFn v, hv⟩)).totalVariationOn_lt_top
+  smul_mem' c u hu := by
+    rw [Set.mem_ofPred_eq, totalVariationOn_congr_ae (Lp.coeFn_smul c u)]
+    exact ((memBV_iff.mpr ⟨L1.integrable_coeFn u, hu⟩).smul c).totalVariationOn_lt_top
 
 /-- Almost-everywhere classes of integrable functions with finite total variation on `Ω`.
 The wrapper gives this space its BV norm, independently of the weaker inherited `L¹` norm. -/
@@ -159,21 +163,21 @@ theorem memBV (u : BV μ Ω) : MemBV μ Ω u :=
 
 /-- Form the almost-everywhere class of an integrable function of finite variation. -/
 def ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) : BV μ Ω :=
-  BV.mk ⟨(memBV_iff.mp hu).1.toL1 u, (mem_bvSubmodule_iff _).mpr <| by
-    rw [totalVariationOn_congr_ae (memBV_iff.mp hu).1.coeFn_toL1]
-    exact (memBV_iff.mp hu).2⟩
+  BV.mk ⟨hu.integrableOn.integrable.toL1 u, (mem_bvSubmodule_iff _).mpr <| by
+    rw [totalVariationOn_congr_ae hu.integrableOn.integrable.coeFn_toL1]
+    exact hu.totalVariationOn_lt_top⟩
 
 /-- The `L¹` class of the BV class constructed from a function. -/
-@[simp]
 theorem toL1_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
-    (ofFunction u hu).toL1 = (memBV_iff.mp hu).1.toL1 u := (rfl)
+    (ofFunction u hu).toL1 = hu.integrableOn.integrable.toL1 u := (rfl)
 
 /-- Forming a BV class preserves the function almost everywhere on `Ω`. -/
 theorem coeFn_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
     (ofFunction u hu : E → ℝ) =ᵐ[μ.restrict Ω] u :=
-  (memBV_iff.mp hu).1.coeFn_toL1
+  hu.integrableOn.integrable.coeFn_toL1
 
 /-- Construction of a BV class preserves its total variation. -/
+@[simp]
 theorem totalVariationOn_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
     totalVariationOn μ Ω (ofFunction u hu) = totalVariationOn μ Ω u :=
   totalVariationOn_congr_ae (coeFn_ofFunction u hu)
@@ -183,6 +187,16 @@ theorem totalVariationOn_ofFunction (u : E → ℝ) (hu : MemBV μ Ω u) :
 theorem ofFunction_coeFn (u : BV μ Ω) : ofFunction u u.memBV = u :=
   ext (coeFn_ofFunction u u.memBV)
 
+/-- Two BV classes constructed from functions are equal exactly when the functions agree almost
+everywhere on `Ω`. -/
+@[simp]
+theorem ofFunction_eq_ofFunction_iff {u v : E → ℝ} (hu : MemBV μ Ω u) (hv : MemBV μ Ω v) :
+    ofFunction u hu = ofFunction v hv ↔ u =ᵐ[μ.restrict Ω] v :=
+  ⟨fun h => (coeFn_ofFunction u hu).symm.trans
+      ((Filter.EventuallyEq.of_eq (congrArg (fun w : BV μ Ω => (w : E → ℝ)) h)).trans
+        (coeFn_ofFunction v hv)),
+    fun h => ext ((coeFn_ofFunction u hu).trans (h.trans (coeFn_ofFunction v hv).symm))⟩
+
 instance : Zero (BV μ Ω) := ⟨BV.mk 0⟩
 instance : Add (BV μ Ω) := ⟨fun u v => BV.mk (u.toSubmodule + v.toSubmodule)⟩
 instance : Neg (BV μ Ω) := ⟨fun u => BV.mk (-u.toSubmodule)⟩
@@ -191,12 +205,19 @@ instance : SMul ℝ (BV μ Ω) := ⟨fun c u => BV.mk (c • u.toSubmodule)⟩
 instance : SMul ℕ (BV μ Ω) := ⟨fun c u => BV.mk (c • u.toSubmodule)⟩
 instance : SMul ℤ (BV μ Ω) := ⟨fun c u => BV.mk (c • u.toSubmodule)⟩
 
+/-- The `L¹` class of the zero BV class is zero. -/
 @[simp] theorem toL1_zero : (0 : BV μ Ω).toL1 = 0 := (rfl)
+/-- The `L¹` class of a sum of BV classes is the sum of the `L¹` classes. -/
 @[simp] theorem toL1_add (u v : BV μ Ω) : (u + v).toL1 = u.toL1 + v.toL1 := (rfl)
+/-- The `L¹` class of the negative of a BV class is the negative of its `L¹` class. -/
 @[simp] theorem toL1_neg (u : BV μ Ω) : (-u).toL1 = -u.toL1 := (rfl)
+/-- The `L¹` class of a difference of BV classes is the difference of the `L¹` classes. -/
 @[simp] theorem toL1_sub (u v : BV μ Ω) : (u - v).toL1 = u.toL1 - v.toL1 := (rfl)
+/-- The `L¹` class of a real multiple of a BV class is that multiple of its `L¹` class. -/
 @[simp] theorem toL1_smul (c : ℝ) (u : BV μ Ω) : (c • u).toL1 = c • u.toL1 := (rfl)
+/-- The `L¹` class of a natural multiple of a BV class is that multiple of its `L¹` class. -/
 @[simp] theorem toL1_nsmul (c : ℕ) (u : BV μ Ω) : (c • u).toL1 = c • u.toL1 := (rfl)
+/-- The `L¹` class of an integer multiple of a BV class is that multiple of its `L¹` class. -/
 @[simp] theorem toL1_zsmul (c : ℤ) (u : BV μ Ω) : (c • u).toL1 = c • u.toL1 := (rfl)
 
 instance : AddCommGroup (BV μ Ω) :=
@@ -251,8 +272,7 @@ instance instNormedAddCommGroup : NormedAddCommGroup (BV μ Ω) :=
         totalVariationOn_congr_ae (Lp.coeFn_add u.toL1 v.toL1)]
       have ht := ENNReal.toReal_mono
         (ENNReal.add_ne_top.mpr ⟨u.totalVariationOn_lt_top.ne, v.totalVariationOn_lt_top.ne⟩)
-        (totalVariationOn_add_le u.integrableOn.locallyIntegrableOn
-          v.integrableOn.locallyIntegrableOn)
+        (totalVariationOn_add_le u.integrableOn.locallyIntegrableOn)
       rw [ENNReal.toReal_add u.totalVariationOn_lt_top.ne v.totalVariationOn_lt_top.ne] at ht
       linarith [norm_add_le u.toL1 v.toL1]
     norm_eq_zero_iff u := by
@@ -279,6 +299,11 @@ theorem norm_toL1_le (u : BV μ Ω) : ‖u.toL1‖ ≤ ‖u‖ := by
   rw [norm_def]
   exact le_add_of_nonneg_right ENNReal.toReal_nonneg
 
+/-- The total variation of a BV class is bounded by its norm. -/
+theorem toReal_totalVariationOn_le_norm (u : BV μ Ω) : (totalVariationOn μ Ω u).toReal ≤ ‖u‖ := by
+  rw [norm_def]
+  exact le_add_of_nonneg_left (norm_nonneg _)
+
 /-- Forgetting finite variation gives a continuous linear inclusion into `L¹(Ω)`. -/
 def toL1CLM : BV μ Ω →L[ℝ] (E →₁[μ.restrict Ω] ℝ) :=
   ({ toFun := toL1, map_add' := toL1_add, map_smul' := toL1_smul } :
@@ -286,6 +311,7 @@ def toL1CLM : BV μ Ω →L[ℝ] (E →₁[μ.restrict Ω] ℝ) :=
       intro u
       simpa using norm_toL1_le u)
 
+/-- The continuous linear inclusion `toL1CLM` agrees with `toL1` on every BV class. -/
 @[simp]
 theorem toL1CLM_apply (u : BV μ Ω) : toL1CLM u = u.toL1 := (rfl)
 
@@ -294,14 +320,15 @@ theorem toL1CLM_injective : Function.Injective (toL1CLM : BV μ Ω →L[ℝ] _) 
   toL1_injective
 
 private theorem variation_sub_limit_le {u : ℕ → BV μ Ω} {v : E →₁[μ.restrict Ω] ℝ}
-    (hv : Tendsto (fun n => (u n).toL1) atTop (𝓝 v)) (N M : ℕ) {C : ℝ} (hC : 0 ≤ C)
+    (hv : Tendsto (fun n => (u n).toL1) atTop (𝓝 v)) (N M : ℕ) {C : ℝ}
     (hbound : ∀ n ≥ N, ‖u n - u M‖ ≤ C) :
     totalVariationOn μ Ω (v - (u M).toL1 : E →₁[μ.restrict Ω] ℝ) ≤ ENNReal.ofReal C := by
-  apply totalVariationOn_le_of_tendsto_L1 (hv.sub tendsto_const_nhds)
+  refine totalVariationOn_le_of_tendsto_L1 (hv.sub tendsto_const_nhds) (Eventually.frequently ?_)
   filter_upwards [eventually_ge_atTop N] with n hn
   rw [← toL1_sub]
+  have hC : 0 ≤ C := (norm_nonneg _).trans (hbound N le_rfl)
   apply (ENNReal.le_ofReal_iff_toReal_le (u n - u M).totalVariationOn_lt_top.ne hC).mpr
-  exact (le_add_of_nonneg_left (norm_nonneg (u n - u M).toL1)).trans (hbound n hn)
+  exact (u n - u M).toReal_totalVariationOn_le_norm.trans (hbound n hn)
 
 /-- The BV norm is complete: every Cauchy sequence for the sum of the `L¹` norm and total
 variation converges in that norm. -/
@@ -312,29 +339,19 @@ instance instCompleteSpace : CompleteSpace (BV μ Ω) :=
     obtain ⟨v, hv⟩ := cauchySeq_tendsto_of_complete huL1
     obtain ⟨N₀, hN₀⟩ := Metric.cauchySeq_iff.mp hu 1 zero_lt_one
     have hvar : totalVariationOn μ Ω (v - (u N₀).toL1 : E →₁[μ.restrict Ω] ℝ) < ∞ :=
-      (variation_sub_limit_le hv N₀ N₀ zero_le_one fun n hn => by
+      (variation_sub_limit_le hv N₀ N₀ fun n hn => by
         simpa only [dist_eq_norm] using (hN₀ n hn N₀ le_rfl).le).trans_lt (by finiteness)
-    have hvBV : MemBV μ Ω v := by
-      apply memBV_iff.mpr
-      refine ⟨L1.integrable_coeFn v, ?_⟩
-      have hsum := totalVariationOn_add_le
-        (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (v - (u N₀).toL1)))
-        (u N₀).integrableOn.locallyIntegrableOn
-      have hae : ((v - (u N₀).toL1 : E →₁[μ.restrict Ω] ℝ) : E → ℝ) + u N₀
-          =ᵐ[μ.restrict Ω] v := by
-        filter_upwards [Lp.coeFn_sub v (u N₀).toL1] with x hx
-        simp only [Pi.add_apply, hx, Pi.sub_apply, sub_add_cancel]
-      rw [totalVariationOn_congr_ae hae] at hsum
-      exact hsum.trans_lt (ENNReal.add_lt_top.mpr ⟨hvar, (u N₀).totalVariationOn_lt_top⟩)
-    let f := ofFunction v hvBV
-    have hf : f.toL1 = v := by
-      exact Integrable.toL1_coeFn v (L1.integrable_coeFn v)
+    have hvmem : v ∈ bvSubmodule μ Ω := by
+      rw [← sub_add_cancel v (u N₀).toL1]
+      exact (bvSubmodule μ Ω).add_mem ((mem_bvSubmodule_iff _).2 hvar) (u N₀).toSubmodule.2
+    let f : BV μ Ω := BV.mk ⟨v, hvmem⟩
+    have hf : f.toL1 = v := rfl
     refine ⟨f, Metric.tendsto_atTop.mpr fun ε hε => ?_⟩
     obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hu (ε / 4) (by positivity)
     have hsmall (n : ℕ) (hn : N ≤ n) : ‖f - u n‖ ≤ ε / 2 := by
       have hbound : ∀ m ≥ N, ‖u m - u n‖ ≤ ε / 4 := fun m hm => by
         simpa only [dist_eq_norm] using (hN m hm n hn).le
-      have hvar' := variation_sub_limit_le hv N n (by positivity : 0 ≤ ε / 4) hbound
+      have hvar' := variation_sub_limit_le hv N n hbound
       have hL1 : ‖v - (u n).toL1‖ ≤ ε / 4 := by
         apply le_of_tendsto ((hv.sub tendsto_const_nhds).norm)
         filter_upwards [eventually_ge_atTop N] with m hm

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Dagger.GaussNorm
 public import TauCeti.RingTheory.Dagger.Subst
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 
@@ -35,6 +36,9 @@ This file proves that unequal radii work. For every `g` as above there are radii
 `∑ₘ gₘ Yᵐ` is distinguished of degree `s` at radius `r` over the series restricted at `ρ`, with
 `g_s` a unit there.
 
+In one variable, distinguishedness of a fixed degree at unit radius persists to a radius
+strictly greater than one, over any ultrametric normed commutative ring.
+
 ## Main definitions
 
 * `TauCeti.Dagger.washnitzerAlgebra.triangularEquiv`: the triangular automorphism
@@ -44,9 +48,13 @@ This file proves that unequal radii work. For every `g` as above there are radii
 
 * `TauCeti.Dagger.washnitzerAlgebra.toTate_triangularEquiv`: compatibility with the triangular
   automorphism of the Tate algebra.
+* `TauCeti.Dagger.washnitzerAlgebra.norm_triangularEquiv`: the triangular automorphism preserves
+  the Gauss norm.
 * `TauCeti.Dagger.washnitzerAlgebra.exists_triangularEquiv_isDistinguished_isUnit`: over a
   complete nonarchimedean field, a triangular automorphism makes every nonzero overconvergent
   series distinguished in `Y`, with a unit coefficient in the distinguished degree.
+* `TauCeti.Dagger.exists_isDistinguished_of_isDistinguished_one`: radius selection preserving a
+  one-variable distinguished degree.
 * `TauCeti.Dagger.exists_isDistinguished_isUnit_of_isDistinguished_one`: radius selection for a
   `Y`-distinguished overconvergent series.
 
@@ -120,6 +128,13 @@ theorem toTate_triangularEquiv (α : σ → ℕ) (hα : ∀ i, α i ≠ 0)
       restrictedTriangularEquiv α hα (toTate (Option σ) R f) :=
   Subtype.ext (by simp [triangularEquiv])
 
+/-- The triangular automorphism preserves the Gauss norm. -/
+@[simp]
+theorem norm_triangularEquiv (α : σ → ℕ) (hα : ∀ i, α i ≠ 0)
+    (f : washnitzerAlgebra (Option σ) R) : ‖triangularEquiv α hα f‖ = ‖f‖ := by
+  rw [← norm_toTate, toTate_triangularEquiv, MvPowerSeries.norm_restrictedTriangularEquiv,
+    norm_toTate]
+
 end Triangular
 
 /-- **Distinguishing automorphisms of Monsky–Washnitzer algebras.** Over a complete
@@ -146,6 +161,52 @@ theorem exists_triangularEquiv_isDistinguished_isUnit {K : Type*} [NormedField K
 end washnitzerAlgebra
 
 variable {K : Type*}
+
+section Radius
+
+open TauCeti.PowerSeries
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+/-- A one-variable overconvergent series distinguished at radius one remains distinguished of
+the same degree at some radius greater than one, within any prescribed upper bound. -/
+theorem exists_isDistinguished_of_isDistinguished_one
+    {f : washnitzerAlgebra Unit R} {s : ℕ}
+    (hf : IsDistinguished 1 s (f : PowerSeries R)) {ρ₀ : ℝ} (hρ₀ : 1 < ρ₀) :
+    ∃ ρ > (1 : ℝ), ρ ≤ ρ₀ ∧ PowerSeries.IsRestricted ρ (f : PowerSeries R) ∧
+      IsDistinguished ρ s (f : PowerSeries R) := by
+  -- The strict bound on the tail persists at a radius greater than one.
+  obtain ⟨ρ₁, hρ₁, hfρ₁, htail⟩ := exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt f.2
+    (S := {u | s < u ()}) (fun u hu ↦ by
+      rw [← PowerSeries.coeff_def (rfl : u () = u ())]
+      simpa [← hf.norm_coeff_mul_pow_eq] using hf.norm_coeff_mul_pow_lt _ hu)
+  let ρ := min ρ₁ ρ₀
+  have hρ : 1 < ρ := lt_min hρ₁ hρ₀
+  have hρ0 : 0 ≤ ρ := zero_le_one.trans hρ.le
+  have hfr : PowerSeries.IsRestricted ρ (f : PowerSeries R) :=
+    MvPowerSeries.isRestricted_of_le hfρ₁ (fun _ ↦ hρ0) (fun _ ↦ min_le_left _ _)
+  have hlt (m : ℕ) (hm : s < m) :
+      ‖PowerSeries.coeff m (f : PowerSeries R)‖ * ρ ^ m <
+        ‖PowerSeries.coeff s (f : PowerSeries R)‖ * ρ ^ s := by
+    have ht := htail (Finsupp.single () m) (by simpa using hm)
+    rw [Finsupp.degree_single, PowerSeries.coeff_coeToMvPowerSeries] at ht
+    exact (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hρ0 (min_le_left _ _) m)
+      (norm_nonneg _)).trans_lt (ht.trans_le
+        (le_mul_of_one_le_right (norm_nonneg _) (one_le_pow₀ hρ.le)))
+  -- Earlier coefficients remain dominated because the radius has increased.
+  have hle (m : ℕ) : ‖PowerSeries.coeff m (f : PowerSeries R)‖ * ρ ^ m ≤
+      ‖PowerSeries.coeff s (f : PowerSeries R)‖ * ρ ^ s := by
+    rcases le_or_gt m s with hm | hm
+    · have hc := PowerSeries.le_gaussNorm norm 1 (f : PowerSeries R) hf.hasGaussNorm m
+      rw [← hf.norm_coeff_mul_pow_eq] at hc
+      simp only [one_pow, mul_one] at hc
+      exact mul_le_mul hc (pow_le_pow_right₀ hρ.le hm) (by positivity) (norm_nonneg _)
+    · exact (hlt m hm).le
+  have heq := gaussNorm_eq_of_forall_le hle
+  exact ⟨ρ, hρ, min_le_right _ _, hfr,
+    ⟨heq.symm, fun m hm ↦ heq ▸ hlt m hm⟩⟩
+
+end Radius
 
 section Field
 
@@ -195,6 +256,36 @@ private theorem norm_coeff_le_of_isDistinguished_one {g : washnitzerAlgebra (Opt
       simpa [hgauss] using hg.norm_coeff_mul_pow_lt _ hu
     · rw [hu, ← hGt, ← hcN]
       simpa [hone] using hlt _ hu0
+
+/-- The weighted bounds in `Y`-degrees `m ≠ s` behind radius selection. If the weights
+`w u ρ₁ ^ |u|` stay below `N` in `Y`-degrees above `s`, and `w u ρ₂ ^ |u|` below `N r` in
+`Y`-degrees below `s`, then `w (t, m) ρ ^ |t| r ^ m < N r ^ s` whenever `0 ≤ w`, `0 < N`,
+`0 < ρ`, `ρ ≤ ρ₂`, `ρ ≤ r ≤ ρ₁`, `1 < r` and `1 < ρ₂`. -/
+private theorem mul_pow_mul_pow_lt_of_ne {w : (Option σ →₀ ℕ) → ℝ} (hw : ∀ u, 0 ≤ w u)
+    {s m : ℕ} (hm : m ≠ s) {N ρ ρ₁ ρ₂ r : ℝ} (hN : 0 < N) (hρ0 : 0 < ρ) (hr : 1 < r)
+    (hρ₂ : 1 < ρ₂) (hrρ₁ : r ≤ ρ₁) (hρρ₂ : ρ ≤ ρ₂) (hρr : ρ ≤ r)
+    (h₁ : ∀ u, s < u none → w u * ρ₁ ^ u.degree < N)
+    (h₂ : ∀ u, u none < s → w u * ρ₂ ^ u.degree < N * r) (t : σ →₀ ℕ) :
+    w (t.optionElim m) * ρ ^ t.degree * r ^ m < N * r ^ s := by
+  rcases hm.lt_or_gt with hm | hm
+  · have hw' : w (t.optionElim m) * ρ ^ t.degree < N * r := by
+      refine lt_of_le_of_lt (mul_le_mul_of_nonneg_left ?_ (hw _)) (h₂ _ (by simpa using hm))
+      exact Finsupp.pow_degree_le_pow_degree_optionElim hρ0.le hρρ₂ hρ₂.le t m
+    calc w (t.optionElim m) * ρ ^ t.degree * r ^ m < N * r * r ^ m :=
+          mul_lt_mul_of_pos_right hw' (pow_pos (zero_lt_one.trans hr) _)
+      _ = N * r ^ (m + 1) := by ring
+      _ ≤ N * r ^ s := mul_le_mul_of_nonneg_left (pow_le_pow_right₀ hr.le hm) hN.le
+  · have hρ₁w : ρ ^ t.degree * r ^ m ≤ ρ₁ ^ (t.optionElim m).degree := by
+      rw [Finsupp.degree_optionElim, pow_add, mul_comm]
+      exact mul_le_mul (pow_le_pow_left₀ (zero_lt_one.trans hr).le hrρ₁ _)
+        (pow_le_pow_left₀ hρ0.le (hρr.trans hrρ₁) _) (by positivity)
+        (pow_nonneg (zero_le_one.trans (hr.le.trans hrρ₁)) _)
+    calc w (t.optionElim m) * ρ ^ t.degree * r ^ m
+        ≤ w (t.optionElim m) * ρ₁ ^ (t.optionElim m).degree := by
+          rw [mul_assoc]
+          exact mul_le_mul_of_nonneg_left hρ₁w (hw _)
+      _ < N := h₁ _ (by simpa using hm)
+      _ ≤ N * r ^ s := le_mul_of_one_le_right hN.le (one_le_pow₀ hr.le)
 
 /-- **Radius selection for distinguished overconvergent series.** Let `g` be an overconvergent
 series in the variables `Option σ` which, as a series in `Y = X none` over the Tate algebra in the
@@ -263,26 +354,9 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
       ‖coeff t (↑(PowerSeries.coeff m G) : MvPowerSeries σ K)‖ * t.prod (fun _ n ↦ ρ ^ n) *
         r ^ m < N * r ^ s := by
     rw [hGcoeff, Finsupp.prod_pow_eq_pow_degree]
-    set w := ‖coeff (t.optionElim m) (g : MvPowerSeries (Option σ) K)‖
-    rcases hm.lt_or_gt with hm | hm
-    · have hw : w * ρ ^ t.degree < N * r := by
-        refine lt_of_le_of_lt (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-          (by simpa using hρ₂S _ (by simpa using hm))
-        exact Finsupp.pow_degree_le_pow_degree_optionElim hρ0.le (min_le_left _ _) hρ₂.le t m
-      calc w * ρ ^ t.degree * r ^ m < N * r * r ^ m :=
-            mul_lt_mul_of_pos_right hw (pow_pos (zero_lt_one.trans hr) _)
-        _ = N * r ^ (m + 1) := by ring
-        _ ≤ N * r ^ s := mul_le_mul_of_nonneg_left (pow_le_pow_right₀ hr.le hm) hN.le
-    · have hρ₁w : ρ ^ t.degree * r ^ m ≤ ρ₁ ^ (t.optionElim m).degree := by
-        rw [Finsupp.degree_optionElim, pow_add, mul_comm]
-        exact mul_le_mul (pow_le_pow_left₀ (zero_lt_one.trans hr).le (min_le_left _ _) _)
-          (pow_le_pow_left₀ hρ0.le (hρr.trans (min_le_left _ _)) _) (by positivity)
-          (by positivity)
-      calc w * ρ ^ t.degree * r ^ m ≤ w * ρ₁ ^ (t.optionElim m).degree := by
-            rw [mul_assoc]
-            exact mul_le_mul_of_nonneg_left hρ₁w (norm_nonneg _)
-        _ < N := hρ₁S _ (Or.inl (by simpa using hm))
-        _ ≤ N * r ^ s := le_mul_of_one_le_right hN.le (one_le_pow₀ hr.le)
+    exact mul_pow_mul_pow_lt_of_ne (w := fun u ↦ ‖coeff u (g : MvPowerSeries (Option σ) K)‖)
+      (fun _ ↦ norm_nonneg _) hm hN hρ0 hr hρ₂ (min_le_left _ _) (min_le_left _ _) hρr
+      (fun u hu ↦ hρ₁S u (Or.inl hu)) (fun u hu ↦ hρ₂S u hu) t
   obtain ⟨hd, hunit⟩ := MvPowerSeries.isDistinguished_isUnit_of_norm_coeff_lt (zero_lt_one.trans hr)
     (by rw [hGs0]; exact norm_pos_iff.1 hN) (by rw [hGs0]; exact hs) (by rw [hGs0]; exact hm)
   exact ⟨ρ, this, r, hρ, hρr, min_le_right _ _,

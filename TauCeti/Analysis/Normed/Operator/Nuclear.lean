@@ -1,0 +1,748 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Normed.Module.TensorProduct.Approximable
+public import TauCeti.Analysis.Normed.Module.TensorProduct.Series
+public import TauCeti.Analysis.OperatorIdeal.Carrier
+public import Mathlib.Analysis.Normed.Group.Quotient
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
+import Mathlib.Topology.Algebra.InfiniteSum.Module
+import TauCeti.Analysis.Normed.Group.InfiniteSum
+import TauCeti.Analysis.Normed.Module.Quotient
+import TauCeti.Analysis.Normed.Operator.Basic
+
+/-!
+# Nuclear operators
+
+Let `E` be a normed space and `F` a Banach space over a nontrivially normed field `𝕜`, and write
+`E* = StrongDual 𝕜 E`. The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` on the completed
+projective tensor product sends `f ⊗ₜ y` to the rank-one operator `x ↦ f x • y`. It is the
+contraction `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E F`, and its kernel is
+closed. Its range is the submodule `TauCeti.nuclearOperators 𝕜 E F` of *nuclear operators*.
+Over `ℝ` or `ℂ` it is the contraction `E* ⊗̂π F → E* ⊗̂ε F` followed by the isometric embedding
+of `E* ⊗̂ε F` into the bounded operators, so it is injective exactly when that contraction is.
+
+The *nuclear norm* `ν(T)` of a bounded operator `T` is the infimum of the projective norms of the
+tensors representing `T`, and `∞` when `T` is not nuclear. As `TauCeti.nuclearGauge 𝕜 E F` it is
+an operator gauge: it is subadditive, absolutely homogeneous and dominates the operator norm. On
+the nuclear operators it is the quotient norm of `E* ⊗̂π F` by the kernel of the canonical
+operator. It satisfies the two-sided ideal inequality `ν(A ∘ T ∘ B) ≤ ‖A‖ ν(T) ‖B‖`, and the
+rank-one operator `x ↦ f x • y` has nuclear norm `‖f‖ ‖y‖`.
+
+Through the series representation of completed projective tensors, an operator `T` is nuclear
+exactly when `T x = ∑ n, f n x • y n` for some functionals `f n` and vectors `y n` with
+`∑ n, ‖f n‖ * ‖y n‖ < ∞`, and `ν(T)` is the infimum of the costs `∑ n, ‖f n‖ * ‖y n‖` of these
+representations. When `ν(T) < c`, the series can be chosen of cost less than `c` and convergent in
+operator norm.
+
+The normed space `TauCeti.NuclearOperator 𝕜 E F` is the carrier of this gauge: the nuclear
+operators normed by the nuclear norm, a type distinct from the submodule `nuclearOperators 𝕜 E F`,
+which carries the operator norm. Its inclusion into the bounded operators is a contraction. The
+quotient of `E* ⊗̂π F` by the kernel of the canonical operator is always isometrically isomorphic
+to it (`NuclearOperator.quotKerEquiv`), so it is a Banach space; when the canonical operator is
+injective, `E* ⊗̂π F` itself is isometrically isomorphic to `NuclearOperator 𝕜 E F`
+(`NuclearOperator.completedProjectiveTensorEquiv`). When `𝕜` is complete and the tensor trace
+`E* ⊗̂π E → 𝕜` vanishes on the kernel of the canonical operator `E* ⊗̂π E → (E →L[𝕜] E)` (which
+over `ℝ` or `ℂ` is equivalent to the approximation property on `E`), it descends through
+`quotKerEquiv` to the contractive nuclear trace
+`NuclearOperator.trace : NuclearOperator 𝕜 E E →L[𝕜] 𝕜`.
+
+The nuclear norm is in general different from `ContinuousLinearMap.nuclearENorm`, the sum of the
+approximation numbers, which is the trace-class gauge on Hilbert spaces.
+
+The canonical operator and the submodule of nuclear operators follow Michał Pacholski's Mathlib
+pull request <https://github.com/leanprover-community/mathlib4/pull/42197>
+(`TensorProduct.toContinuousLinearMap` and `ContinuousLinearMap.nuclearOperators`), where the
+factors appear in the order `F ⊗ E*`.
+
+## Main declarations
+
+* `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap`: the canonical operator
+  `E* ⊗̂π F → (E →L[𝕜] F)`.
+* `TauCeti.CompletedProjectiveTensor.toContinuousLinearMap_mapL` and
+  `TauCeti.CompletedProjectiveTensor.hasSum_toContinuousLinearMap_apply`: its naturality and
+  pointwise evaluation on pure-tensor series.
+* `TauCeti.CompletedProjectiveTensor.toOperator_comp_toCompletedInjectiveTensor`: over `ℝ` and
+  `ℂ`, it is the contraction `E* ⊗̂π F → E* ⊗̂ε F` followed by the isometric embedding of
+  `E* ⊗̂ε F` into the bounded operators.
+* `TauCeti.CompletedProjectiveTensor.injective_toContinuousLinearMap_iff`: hence it is injective
+  exactly when that contraction is.
+* `TauCeti.nuclearOperators`: the submodule of nuclear operators.
+* `TauCeti.nuclearGauge`: the nuclear norm as an operator gauge.
+* `TauCeti.nuclearGauge_toContinuousLinearMap` and
+  `TauCeti.nuclearGauge_toContinuousLinearMap_of_injective`: the nuclear norm is the quotient
+  norm, and equals the projective norm when the canonical operator is injective.
+* `TauCeti.nuclearGauge_comp_comp_le`: the ideal inequality.
+* `TauCeti.nuclearGauge_smulRight`: the rank-one value `‖f‖ ‖y‖`.
+* `TauCeti.mem_nuclearOperators_iff_exists_hasSum`: nuclear operators are the operators
+  `x ↦ ∑ n, f n x • y n` with `∑ n, ‖f n‖ * ‖y n‖ < ∞`.
+* `TauCeti.exists_hasSum_smulRight_of_nuclearGauge_lt`: series representations of cost close to
+  the nuclear norm, convergent in operator norm.
+* `TauCeti.nuclearGauge_eq_iInf_tsum`: the nuclear norm is the infimum of the costs of series
+  representations.
+* `TauCeti.NuclearOperator`: the Banach space of nuclear operators with the nuclear norm.
+* `TauCeti.NuclearOperator.quotKerEquiv` and
+  `TauCeti.NuclearOperator.completedProjectiveTensorEquiv`: its always-defined isometric
+  identification with the quotient of `E* ⊗̂π F` by the kernel of the canonical operator, and its
+  direct isometric identification with `E* ⊗̂π F` when the canonical operator is injective.
+* `TauCeti.NuclearOperator.trace`, `TauCeti.NuclearOperator.hasSum_trace`, and
+  `TauCeti.NuclearOperator.trace_mk'_comp_comm`: the contractive nuclear trace on
+  `NuclearOperator 𝕜 E E` when the tensor trace vanishes on the kernel of the canonical operator,
+  its series formula, and cyclicity.
+
+## References
+
+* R. A. Ryan, *Introduction to Tensor Products of Banach Spaces*, Springer, 2002, Chapter 2.
+* A. Grothendieck, *Produits tensoriels topologiques et espaces nucléaires*, Mem. Amer. Math.
+  Soc. **16** (1955).
+-/
+
+public section
+
+noncomputable section
+
+open scoped TensorProduct ENNReal
+
+open UniformSpace
+
+namespace TauCeti
+
+variable {𝕜 D E F G : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup D] [NormedSpace 𝕜 D] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
+
+namespace CompletedProjectiveTensor
+
+variable (𝕜 E F) in
+/-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` sending `f ⊗ₜ y` to the rank-one operator
+`x ↦ f x • y`. Its range is the submodule of nuclear operators. -/
+def toContinuousLinearMap : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F →L[𝕜] E →L[𝕜] F :=
+  liftIsometry 𝕜 (StrongDual 𝕜 E) F (E →L[𝕜] F) (ContinuousLinearMap.smulRightL 𝕜 E F)
+
+/-- The canonical operator sends `f ⊗ₜ y` to the rank-one operator `x ↦ f x • y`. -/
+@[simp]
+theorem toContinuousLinearMap_coe_tmul (f : StrongDual 𝕜 E) (y : F) :
+    toContinuousLinearMap 𝕜 E F (⟨f ⊗ₜ y⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) =
+      f.smulRight y := by
+  simp [toContinuousLinearMap]
+
+/-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is a contraction. -/
+theorem norm_toContinuousLinearMap_le : ‖toContinuousLinearMap 𝕜 E F‖ ≤ 1 := by
+  rw [toContinuousLinearMap, LinearIsometryEquiv.norm_map]
+  exact ContinuousLinearMap.norm_smulRightL_le
+
+/-- The kernel of the canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is closed, so the quotient of
+`E* ⊗̂π F` by it is a normed space. -/
+instance isClosed_ker_toContinuousLinearMap :
+    IsClosed ((toContinuousLinearMap 𝕜 E F).ker :
+      Set (CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F)) :=
+  (toContinuousLinearMap 𝕜 E F).isClosed_ker
+
+/-- Naturality of the canonical operator: if `u` represents `T`, then the tensor induced from `u`
+by the adjoint of `B` and by `A` represents `A ∘L T ∘L B`. -/
+theorem toContinuousLinearMap_mapL (A : F →L[𝕜] G) (B : D →L[𝕜] E)
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
+    toContinuousLinearMap 𝕜 D G (mapL (ContinuousLinearMap.precomp 𝕜 B) A u) =
+      A ∘L toContinuousLinearMap 𝕜 E F u ∘L B := by
+  have h : toContinuousLinearMap 𝕜 D G ∘L mapL (ContinuousLinearMap.precomp 𝕜 B) A =
+      ContinuousLinearMap.postcomp D A ∘L ContinuousLinearMap.precomp F B ∘L
+        toContinuousLinearMap 𝕜 E F := by
+    refine continuousLinearMap_ext fun f y ↦ ?_
+    ext x
+    simp
+  exact congr($h u)
+
+/-- If `u = ∑ i, f i ⊗ₜ y i` in `E* ⊗̂π F`, then evaluating `toContinuousLinearMap 𝕜 E F u` at
+`x : E` has sum `∑ i, f i x • y i`. -/
+theorem hasSum_toContinuousLinearMap_apply {ι : Type*} {f : ι → StrongDual 𝕜 E} {y : ι → F}
+    {u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F}
+    (hu : HasSum (fun i ↦ ((⟨f i ⊗ₜ y i⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
+      CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F)) u)
+    (x : E) :
+    HasSum (fun i ↦ f i x • y i) (toContinuousLinearMap 𝕜 E F u x) := by
+  simpa using hasSum_apply ((toContinuousLinearMap 𝕜 E F).hasSum hu) x
+
+end CompletedProjectiveTensor
+
+open CompletedProjectiveTensor
+
+/-! ### The submodule of nuclear operators -/
+
+variable (𝕜 E F) in
+/-- The nuclear operators from `E` to `F`: the range of the canonical operator
+`E* ⊗̂π F → (E →L[𝕜] F)`. -/
+def nuclearOperators : Submodule 𝕜 (E →L[𝕜] F) :=
+  (toContinuousLinearMap 𝕜 E F).range
+
+/-- An operator is nuclear iff it is represented by a tensor in `E* ⊗̂π F`. -/
+@[simp]
+theorem mem_nuclearOperators {T : E →L[𝕜] F} :
+    T ∈ nuclearOperators 𝕜 E F ↔ ∃ u, toContinuousLinearMap 𝕜 E F u = T :=
+  LinearMap.mem_range
+
+/-- Rank-one operators are nuclear. -/
+theorem smulRight_mem_nuclearOperators (f : StrongDual 𝕜 E) (y : F) :
+    f.smulRight y ∈ nuclearOperators 𝕜 E F :=
+  ⟨_, toContinuousLinearMap_coe_tmul f y⟩
+
+/-! ### The nuclear norm -/
+
+/-- The infimum defining the nuclear norm of `T` is at most `c * ν(T)` as soon as every tensor `u`
+representing `T` gives the bound `c * ‖u‖`, provided that the bound vanishes for `c = 0`. -/
+private theorem le_mul_iInf_enorm {a c : ℝ≥0∞} {T : E →L[𝕜] F} (hc : c ≠ ∞) (ha : c = 0 → a = 0)
+    (h : ∀ u, toContinuousLinearMap 𝕜 E F u = T → a ≤ c * ‖u‖ₑ) :
+    a ≤ c * ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = T), ‖u‖ₑ := by
+  rcases eq_or_ne c 0 with rfl | hc₀
+  · simp [ha rfl]
+  · rw [ENNReal.mul_iInf_of_ne hc₀ hc]
+    refine le_iInf fun u ↦ ?_
+    rw [ENNReal.mul_iInf_of_ne hc₀ hc]
+    exact le_iInf (h u)
+
+/-- The infimum defining the nuclear norm is at most `‖c‖` times that of `T` for `c • T`. -/
+private theorem iInf_enorm_smul_le (c : 𝕜) (T : E →L[𝕜] F) :
+    ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = c • T), ‖u‖ₑ ≤
+      ‖c‖ₑ * ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = T), ‖u‖ₑ := by
+  refine le_mul_iInf_enorm eNorm_ne_top (fun hc ↦ ?_) fun u hu ↦ ?_
+  · rw [eNorm_eq_zero] at hc
+    subst hc
+    exact le_antisymm ((iInf₂_le 0 (by simp)).trans_eq eNorm_zero) bot_le
+  · exact (iInf₂_le (c • u) (by rw [map_smul, hu])).trans_eq (eNorm_smul c u)
+
+variable (𝕜 E F) in
+/-- The **nuclear norm** `ν(T)` as an operator gauge: the infimum of the projective norms of the
+tensors in `E* ⊗̂π F` representing `T`, and `∞` when `T` is not nuclear.
+
+This is different in general from `ContinuousLinearMap.nuclearENorm`, the sum of the
+approximation numbers. -/
+def nuclearGauge : OperatorGauge 𝕜 E F where
+  toFun T := ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = T), ‖u‖ₑ
+  map_add_le' S T := ENNReal.le_iInf₂_add_iInf₂ fun u hu v hv ↦
+    (iInf₂_le (u + v) (by rw [map_add, hu, hv])).trans (eNorm_add_le u v)
+  map_smul' c T := by
+    refine le_antisymm (iInf_enorm_smul_le c T) ?_
+    rcases eq_or_ne c 0 with rfl | hc
+    · simp
+    calc
+      _ ≤ ‖c‖ₑ * (‖c⁻¹‖ₑ * ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = c • T), ‖u‖ₑ) := by
+        gcongr
+        simpa [smul_smul, inv_mul_cancel₀ hc] using iInf_enorm_smul_le c⁻¹ (c • T)
+      _ = _ := by rw [← mul_assoc, ← eNorm_mul, mul_inv_cancel₀ hc, eNorm_one, one_mul]
+  enorm_le' T := le_iInf₂ fun u hu ↦ hu ▸ eNorm_le_iff_norm_le.2
+    (((toContinuousLinearMap 𝕜 E F).le_of_opNorm_le norm_toContinuousLinearMap_le u).trans_eq
+      (one_mul _))
+
+/-- The nuclear norm of `T` is the infimum of the projective norms of the tensors representing
+`T`. -/
+theorem nuclearGauge_apply (T : E →L[𝕜] F) :
+    nuclearGauge 𝕜 E F T = ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = T), ‖u‖ₑ :=
+  (rfl)
+
+/-- The projective norm of a tensor bounds the nuclear norm of the operator it represents. -/
+theorem nuclearGauge_toContinuousLinearMap_le (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
+    nuclearGauge 𝕜 E F (toContinuousLinearMap 𝕜 E F u) ≤ ‖u‖ₑ := by
+  rw [nuclearGauge_apply]
+  refine iInf₂_le u ?_
+  rfl
+
+/-- If `ν(T) < c`, then `T` is represented by a tensor of projective norm less than `c`. -/
+theorem exists_toContinuousLinearMap_eq_of_nuclearGauge_lt {T : E →L[𝕜] F} {c : ℝ≥0∞}
+    (h : nuclearGauge 𝕜 E F T < c) : ∃ u, toContinuousLinearMap 𝕜 E F u = T ∧ ‖u‖ₑ < c := by
+  simpa only [nuclearGauge_apply, iInf_lt_iff, exists_prop] using h
+
+/-- The nuclear norm is finite exactly on the nuclear operators. -/
+theorem nuclearGauge_lt_top_iff {T : E →L[𝕜] F} :
+    nuclearGauge 𝕜 E F T < ∞ ↔ T ∈ nuclearOperators 𝕜 E F := by
+  refine ⟨fun h ↦ ?_, fun ⟨u, hu⟩ ↦
+    hu ▸ (nuclearGauge_toContinuousLinearMap_le u).trans_lt eNorm_lt_top⟩
+  obtain ⟨u, hu, -⟩ := exists_toContinuousLinearMap_eq_of_nuclearGauge_lt h
+  exact ⟨u, hu⟩
+
+/-- The operators of finite nuclear norm are the nuclear operators. -/
+@[simp]
+theorem finiteSubmodule_nuclearGauge :
+    (nuclearGauge 𝕜 E F).finiteSubmodule = nuclearOperators 𝕜 E F :=
+  Submodule.ext fun _ ↦ OperatorGauge.mem_finiteSubmodule.trans nuclearGauge_lt_top_iff
+
+/-- On the nuclear operators, the nuclear norm is the quotient norm of `E* ⊗̂π F` by the kernel of
+the canonical operator. -/
+theorem nuclearGauge_toContinuousLinearMap
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
+    nuclearGauge 𝕜 E F (toContinuousLinearMap 𝕜 E F u) =
+      ENNReal.ofReal ‖(Submodule.Quotient.mk u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F ⧸
+        (toContinuousLinearMap 𝕜 E F).ker)‖ := by
+  have hmk {v : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F} :
+      (Submodule.Quotient.mk v : _ ⧸ (toContinuousLinearMap 𝕜 E F).ker) =
+          Submodule.Quotient.mk u ↔
+        toContinuousLinearMap 𝕜 E F v = toContinuousLinearMap 𝕜 E F u := by
+    rw [Submodule.Quotient.eq, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, sub_eq_zero]
+  refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_) (le_iInf₂ fun v hv ↦ ?_)
+  · -- A representative of the coset that is almost optimal for the quotient norm.
+    obtain ⟨v, hv, hlt⟩ := Submodule.Quotient.norm_mk_lt
+      (Submodule.Quotient.mk u : _ ⧸ (toContinuousLinearMap 𝕜 E F).ker)
+      (NNReal.coe_pos.2 hε)
+    refine (iInf₂_le v (hmk.1 hv)).trans ?_
+    rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
+    exact (ENNReal.ofReal_le_ofReal hlt.le).trans ENNReal.ofReal_add_le
+  · rw [← hmk.2 hv, ← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal (Submodule.Quotient.norm_mk_le _ v)
+
+/-- When the canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is injective, the nuclear norm of the
+operator represented by `u` equals the projective norm of `u`. -/
+theorem nuclearGauge_toContinuousLinearMap_of_injective
+    (hinj : Function.Injective (toContinuousLinearMap 𝕜 E F))
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
+    nuclearGauge 𝕜 E F (toContinuousLinearMap 𝕜 E F u) = ‖u‖ₑ :=
+  le_antisymm (nuclearGauge_toContinuousLinearMap_le u)
+    (le_iInf₂ fun _ hv ↦ hinj hv ▸ le_rfl)
+
+/-- The **ideal inequality** for the nuclear norm: `ν(A ∘ T ∘ B) ≤ ‖A‖ ν(T) ‖B‖`. -/
+theorem nuclearGauge_comp_comp_le (A : F →L[𝕜] G) (T : E →L[𝕜] F) (B : D →L[𝕜] E) :
+    nuclearGauge 𝕜 D G (A ∘L T ∘L B) ≤ ‖A‖ₑ * nuclearGauge 𝕜 E F T * ‖B‖ₑ := by
+  rw [mul_right_comm, nuclearGauge_apply T]
+  refine le_mul_iInf_enorm (ENNReal.mul_ne_top eNorm_ne_top eNorm_ne_top) (fun h ↦ ?_)
+    fun u hu ↦ ?_
+  · -- If `‖A‖ ‖B‖ = 0`, then `A ∘L T ∘L B = 0`.
+    have hle : ‖A ∘L T ∘L B‖ₑ ≤ ‖A‖ₑ * ‖T‖ₑ * ‖B‖ₑ :=
+      (ContinuousLinearMap.opENorm_comp_le _ _).trans <| by
+        rw [mul_assoc]; gcongr; exact ContinuousLinearMap.opENorm_comp_le _ _
+    rw [mul_right_comm, h, zero_mul, nonpos_iff_eq_zero,
+      ContinuousLinearMap.opENorm_eq_zero_iff] at hle
+    rw [hle, OperatorGauge.map_zero]
+  · subst hu
+    rw [← toContinuousLinearMap_mapL]
+    refine (nuclearGauge_toContinuousLinearMap_le _).trans ?_
+    simp only [← ofReal_norm]
+    rw [← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
+    refine ENNReal.ofReal_le_ofReal ?_
+    calc
+      _ ≤ ‖mapL (ContinuousLinearMap.precomp 𝕜 B) A‖ * ‖u‖ := ContinuousLinearMap.le_opNorm _ _
+      _ ≤ ‖B‖ * ‖A‖ * ‖u‖ := by
+        gcongr
+        exact (norm_mapL_le _ _).trans (by gcongr; exact ContinuousLinearMap.norm_precomp_le B)
+      _ = _ := by ring
+
+/-- Nuclear operators are stable under composition on the left. -/
+theorem comp_left_mem_nuclearOperators (A : F →L[𝕜] G) {T : E →L[𝕜] F}
+    (hT : T ∈ nuclearOperators 𝕜 E F) : A ∘L T ∈ nuclearOperators 𝕜 E G := by
+  rw [← nuclearGauge_lt_top_iff] at hT ⊢
+  simpa using (nuclearGauge_comp_comp_le A T (ContinuousLinearMap.id 𝕜 E)).trans_lt
+    (ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top hT) eNorm_lt_top)
+
+/-- Nuclear operators are stable under composition on the right. -/
+theorem comp_right_mem_nuclearOperators {T : E →L[𝕜] F} (hT : T ∈ nuclearOperators 𝕜 E F)
+    (B : D →L[𝕜] E) : T ∘L B ∈ nuclearOperators 𝕜 D F := by
+  rw [← nuclearGauge_lt_top_iff] at hT ⊢
+  simpa using (nuclearGauge_comp_comp_le (ContinuousLinearMap.id 𝕜 F) T B).trans_lt
+    (ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top hT) eNorm_lt_top)
+
+/-- The rank-one operator `x ↦ f x • y` has nuclear norm `‖f‖ ‖y‖`. -/
+@[simp]
+theorem nuclearGauge_smulRight (f : StrongDual 𝕜 E) (y : F) :
+    nuclearGauge 𝕜 E F (f.smulRight y) = ‖f‖ₑ * ‖y‖ₑ := by
+  refine le_antisymm ?_ ?_
+  · rw [← toContinuousLinearMap_coe_tmul]
+    refine (nuclearGauge_toContinuousLinearMap_le _).trans ?_
+    rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _),
+      Completion.norm_coe, ProjectiveTensor.norm_def]
+    exact ENNReal.ofReal_le_ofReal (TensorProduct.projectiveSeminorm_tmul_le f y)
+  · simpa [eNorm_eq_nnNorm] using (nuclearGauge 𝕜 E F).enorm_le (f.smulRight y)
+
+/-! ### Series representations -/
+
+/-- A series representation `T x = ∑ i, f i x • y i` of finite cost `∑ i, ‖f i‖ * ‖y i‖` comes
+from a tensor representing `T` whose projective norm is at most that cost. -/
+private theorem exists_toContinuousLinearMap_eq_of_hasSum {ι : Type*} {T : E →L[𝕜] F}
+    {f : ι → StrongDual 𝕜 E} {y : ι → F} (hfy : Summable fun i ↦ ‖f i‖ * ‖y i‖)
+    (hT : ∀ x, HasSum (fun i ↦ f i x • y i) (T x)) :
+    ∃ u, toContinuousLinearMap 𝕜 E F u = T ∧ ‖u‖ ≤ ∑' i, ‖f i‖ * ‖y i‖ := by
+  obtain ⟨u, hu⟩ := summable_coe_tmul 𝕜 hfy
+  exact ⟨u, ContinuousLinearMap.ext fun x ↦
+    (hasSum_toContinuousLinearMap_apply hu x).unique (hT x),
+    norm_le_tsum_of_hasSum_tmul hu hfy⟩
+
+/-- The nuclear norm of `T` is at most the cost `∑ i, ‖f i‖ * ‖y i‖` of any series representation
+`T x = ∑ i, f i x • y i`. -/
+theorem nuclearGauge_le_tsum_of_hasSum {ι : Type*} {T : E →L[𝕜] F} {f : ι → StrongDual 𝕜 E}
+    {y : ι → F} (hT : ∀ x, HasSum (fun i ↦ f i x • y i) (T x)) :
+    nuclearGauge 𝕜 E F T ≤ ∑' i, ‖f i‖ₑ * ‖y i‖ₑ := by
+  rcases eq_or_ne (∑' i, ‖f i‖ₑ * ‖y i‖ₑ) ∞ with htop | htop
+  · simp [htop]
+  have hfy : Summable fun i ↦ ‖f i‖ * ‖y i‖ := by
+    simpa using ENNReal.summable_toReal htop
+  obtain ⟨u, rfl, hle⟩ := exists_toContinuousLinearMap_eq_of_hasSum hfy hT
+  calc
+    _ ≤ ‖u‖ₑ := nuclearGauge_toContinuousLinearMap_le u
+    _ ≤ ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖) := by
+      rw [← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal hle
+    _ = ∑' i, ‖f i‖ₑ * ‖y i‖ₑ := (tsum_enorm_mul_enorm_eq_ofReal hfy).symm
+
+/-- **Series representation of nuclear operators.** If `ν(T) < c`, then `T` is the sum, in
+operator norm, of a series of rank-one operators `x ↦ f n x • y n` whose cost
+`∑ n, ‖f n‖ * ‖y n‖` is finite and less than `c`. -/
+theorem exists_hasSum_smulRight_of_nuclearGauge_lt {T : E →L[𝕜] F} {c : ℝ≥0∞}
+    (h : nuclearGauge 𝕜 E F T < c) :
+    ∃ (f : ℕ → StrongDual 𝕜 E) (y : ℕ → F), HasSum (fun n ↦ (f n).smulRight (y n)) T ∧
+      Summable (fun n ↦ ‖f n‖ * ‖y n‖) ∧ ∑' n, ‖f n‖ₑ * ‖y n‖ₑ < c := by
+  obtain ⟨u, rfl, hu⟩ := exists_toContinuousLinearMap_eq_of_nuclearGauge_lt h
+  obtain ⟨r, hur, hrc⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hu
+  obtain ⟨f, y, hsum, hfy, hlt⟩ := exists_hasSum_tmul_of_norm_lt u (c := r) <| by
+    simpa [← NNReal.coe_lt_coe] using hur
+  refine ⟨f, y, by simpa using (toContinuousLinearMap 𝕜 E F).hasSum hsum, hfy, ?_⟩
+  calc
+    ∑' n, ‖f n‖ₑ * ‖y n‖ₑ = ENNReal.ofReal (∑' n, ‖f n‖ * ‖y n‖) :=
+      tsum_enorm_mul_enorm_eq_ofReal hfy
+    _ ≤ r := by simpa using ENNReal.ofReal_le_ofReal hlt.le
+    _ < c := hrc
+
+/-- The nuclear norm of `T` is the infimum of the costs `∑ n, ‖f n‖ * ‖y n‖` of the series
+representations `T x = ∑ n, f n x • y n` of `T` by rank-one operators. -/
+theorem nuclearGauge_eq_iInf_tsum (T : E →L[𝕜] F) :
+    nuclearGauge 𝕜 E F T = ⨅ (f : ℕ → StrongDual 𝕜 E) (y : ℕ → F)
+      (_ : ∀ x, HasSum (fun n ↦ f n x • y n) (T x)), ∑' n, ‖f n‖ₑ * ‖y n‖ₑ := by
+  refine le_antisymm (le_iInf₂ fun f y ↦ le_iInf nuclearGauge_le_tsum_of_hasSum)
+    (le_of_forall_gt fun c hc ↦ ?_)
+  obtain ⟨f, y, hT, -, hlt⟩ := exists_hasSum_smulRight_of_nuclearGauge_lt hc
+  calc
+    _ ≤ ∑' n, ‖f n‖ₑ * ‖y n‖ₑ := iInf₂_le_of_le f y <|
+      iInf_le_of_le (hasSum_apply hT) le_rfl
+    _ < c := hlt
+
+/-- An operator `T` is nuclear iff it has a series representation `T x = ∑ n, f n x • y n` with
+`∑ n, ‖f n‖ * ‖y n‖ < ∞`. -/
+theorem mem_nuclearOperators_iff_exists_hasSum {T : E →L[𝕜] F} :
+    T ∈ nuclearOperators 𝕜 E F ↔ ∃ (f : ℕ → StrongDual 𝕜 E) (y : ℕ → F),
+      Summable (fun n ↦ ‖f n‖ * ‖y n‖) ∧ ∀ x, HasSum (fun n ↦ f n x • y n) (T x) := by
+  refine ⟨fun hT ↦ ?_, fun ⟨f, y, hfy, hT⟩ ↦ ?_⟩
+  · obtain ⟨f, y, hT, hfy, -⟩ :=
+      exists_hasSum_smulRight_of_nuclearGauge_lt (nuclearGauge_lt_top_iff.2 hT)
+    exact ⟨f, y, hfy, hasSum_apply hT⟩
+  · obtain ⟨u, hu, -⟩ := exists_toContinuousLinearMap_eq_of_hasSum hfy hT
+    exact ⟨u, hu⟩
+
+/-! ### The Banach space of nuclear operators -/
+
+variable (𝕜 E F) in
+/-- The normed space of **nuclear operators** from `E` to `F`, normed by the nuclear norm. It is a
+Banach space, isometrically isomorphic to the quotient of `E* ⊗̂π F` by the kernel of the canonical
+operator (`NuclearOperator.quotKerEquiv`), and its inclusion
+`OperatorGauge.Carrier.toContinuousLinearMapL` into the bounded operators is a contraction. -/
+abbrev NuclearOperator := (nuclearGauge 𝕜 E F).Carrier
+
+namespace NuclearOperator
+
+/-- The underlying operators of `NuclearOperator 𝕜 E F` are nuclear. -/
+theorem toContinuousLinearMap_mem (T : NuclearOperator 𝕜 E F) :
+    T.toContinuousLinearMap ∈ nuclearOperators 𝕜 E F :=
+  nuclearGauge_lt_top_iff.1 T.gauge_lt_top
+
+/-- A nuclear operator as an element of `NuclearOperator 𝕜 E F`. -/
+def mk' {T : E →L[𝕜] F} (hT : T ∈ nuclearOperators 𝕜 E F) : NuclearOperator 𝕜 E F :=
+  ⟨T, OperatorGauge.mem_finiteSubmodule.2 (nuclearGauge_lt_top_iff.2 hT)⟩
+
+@[simp]
+theorem toContinuousLinearMap_mk' {T : E →L[𝕜] F} (hT : T ∈ nuclearOperators 𝕜 E F) :
+    (mk' hT).toContinuousLinearMap = T :=
+  (rfl)
+
+/-- The nuclear operator represented by a tensor in `E* ⊗̂π F`, as a linear map. -/
+private def ofTensor :
+    CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F →ₗ[𝕜] NuclearOperator 𝕜 E F where
+  toFun u := mk' ⟨u, rfl⟩
+  map_add' _ _ := OperatorGauge.Carrier.ext (map_add _ _ _)
+  map_smul' _ _ := OperatorGauge.Carrier.ext (map_smul _ _ _)
+
+@[simp]
+private theorem toContinuousLinearMap_ofTensor
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
+    (ofTensor u).toContinuousLinearMap = toContinuousLinearMap 𝕜 E F u :=
+  (rfl)
+
+private theorem ker_ofTensor :
+    LinearMap.ker (ofTensor (𝕜 := 𝕜) (E := E) (F := F)) =
+      (toContinuousLinearMap 𝕜 E F).ker := by
+  ext u
+  simp [← OperatorGauge.Carrier.toContinuousLinearMap_inj]
+
+variable (𝕜 E F) in
+/-- The quotient of `E* ⊗̂π F` by the kernel of the canonical operator is isometrically isomorphic
+to the space of nuclear operators with the nuclear norm. -/
+def quotKerEquiv :
+    (CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F ⧸ (toContinuousLinearMap 𝕜 E F).ker)
+      ≃ₗᵢ[𝕜] NuclearOperator 𝕜 E F :=
+  LinearIsometryEquiv.ofSurjective
+    { toLinearMap := (toContinuousLinearMap 𝕜 E F).ker.liftQ ofTensor ker_ofTensor.ge
+      norm_map' q := by
+        induction q using Submodule.Quotient.induction_on with | H u => ?_
+        simp only [Submodule.liftQ_apply, OperatorGauge.Carrier.norm_def,
+          toContinuousLinearMap_ofTensor, nuclearGauge_toContinuousLinearMap]
+        exact ENNReal.toReal_ofReal (norm_nonneg _) }
+    fun T ↦ by
+      obtain ⟨u, hu⟩ := T.toContinuousLinearMap_mem
+      exact ⟨Submodule.Quotient.mk u, OperatorGauge.Carrier.ext (by simpa using hu)⟩
+
+/-- The isometric isomorphism `quotKerEquiv` sends the class of a tensor to the operator it
+represents. -/
+@[simp]
+theorem toContinuousLinearMap_quotKerEquiv_mk
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
+    (quotKerEquiv 𝕜 E F (Submodule.Quotient.mk u)).toContinuousLinearMap =
+      toContinuousLinearMap 𝕜 E F u :=
+  (rfl)
+
+/-- The space of nuclear operators with the nuclear norm is a Banach space. -/
+instance : CompleteSpace (NuclearOperator 𝕜 E F) :=
+  (quotKerEquiv 𝕜 E F).symm.toIsometryEquiv.completeSpace
+
+/-- The rank-one operator `x ↦ f x • y` in `NuclearOperator 𝕜 E F`. -/
+def smulRight (f : StrongDual 𝕜 E) (y : F) : NuclearOperator 𝕜 E F :=
+  mk' (smulRight_mem_nuclearOperators f y)
+
+@[simp]
+theorem toContinuousLinearMap_smulRight (f : StrongDual 𝕜 E) (y : F) :
+    (smulRight f y).toContinuousLinearMap = f.smulRight y :=
+  (rfl)
+
+/-- The rank-one operator `x ↦ f x • y` has nuclear norm `‖f‖ ‖y‖`. -/
+@[simp]
+theorem norm_smulRight (f : StrongDual 𝕜 E) (y : F) : ‖smulRight f y‖ = ‖f‖ * ‖y‖ := by
+  rw [OperatorGauge.Carrier.norm_def, toContinuousLinearMap_smulRight, nuclearGauge_smulRight,
+    ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm]
+
+/-- When the canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is injective, `E* ⊗̂π F` is isometrically
+isomorphic to `NuclearOperator 𝕜 E F`; in contrast to the always-defined quotient isomorphism
+`quotKerEquiv`, this identification requires injectivity (for instance via the approximation
+property on `E*` or `F`). -/
+def completedProjectiveTensorEquiv
+    (hinj : Function.Injective (toContinuousLinearMap 𝕜 E F)) :
+    CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F ≃ₗᵢ[𝕜] NuclearOperator 𝕜 E F :=
+  LinearIsometryEquiv.ofSurjective
+    { toLinearMap := ofTensor
+      norm_map' u := by
+        rw [OperatorGauge.Carrier.norm_def, toContinuousLinearMap_ofTensor,
+          nuclearGauge_toContinuousLinearMap_of_injective hinj, toReal_eNorm] }
+    fun T ↦ by
+      obtain ⟨u, hu⟩ := T.toContinuousLinearMap_mem
+      exact ⟨u, OperatorGauge.Carrier.ext hu⟩
+
+/-- The isometric isomorphism `completedProjectiveTensorEquiv` sends a tensor to the operator it
+represents. -/
+@[simp]
+theorem toContinuousLinearMap_completedProjectiveTensorEquiv
+    (hinj : Function.Injective (toContinuousLinearMap 𝕜 E F))
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :
+    (completedProjectiveTensorEquiv hinj u).toContinuousLinearMap =
+      toContinuousLinearMap 𝕜 E F u :=
+  (rfl)
+
+/-- The inverse of `completedProjectiveTensorEquiv` sends a nuclear operator `T` to a tensor
+representing `T.toContinuousLinearMap`. -/
+@[simp]
+theorem toContinuousLinearMap_completedProjectiveTensorEquiv_symm
+    (hinj : Function.Injective (toContinuousLinearMap 𝕜 E F)) (T : NuclearOperator 𝕜 E F) :
+    toContinuousLinearMap 𝕜 E F ((completedProjectiveTensorEquiv hinj).symm T) =
+      T.toContinuousLinearMap := by
+  rw [← toContinuousLinearMap_completedProjectiveTensorEquiv hinj,
+    LinearIsometryEquiv.apply_symm_apply]
+
+/-- The isometric isomorphism `completedProjectiveTensorEquiv` sends a pure tensor `f ⊗ₜ y` to the
+rank-one nuclear operator `smulRight f y`. -/
+@[simp]
+theorem completedProjectiveTensorEquiv_coe_tmul
+    (hinj : Function.Injective (toContinuousLinearMap 𝕜 E F)) (f : StrongDual 𝕜 E) (y : F) :
+    completedProjectiveTensorEquiv hinj
+        (⟨f ⊗ₜ y⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) =
+      smulRight f y := by
+  apply OperatorGauge.Carrier.ext
+  simp
+
+/-- The inverse of `completedProjectiveTensorEquiv` sends the rank-one nuclear operator
+`smulRight f y` to the pure tensor `f ⊗ₜ y`. -/
+@[simp]
+theorem completedProjectiveTensorEquiv_symm_smulRight
+    (hinj : Function.Injective (toContinuousLinearMap 𝕜 E F)) (f : StrongDual 𝕜 E) (y : F) :
+    (completedProjectiveTensorEquiv hinj).symm (smulRight f y) =
+      (⟨f ⊗ₜ y⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F) :=
+  (completedProjectiveTensorEquiv hinj).symm_apply_eq.2
+    (completedProjectiveTensorEquiv_coe_tmul hinj f y).symm
+
+end NuclearOperator
+
+end TauCeti
+
+/-! ### The nuclear trace -/
+
+namespace TauCeti.NuclearOperator
+
+section Trace
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+
+/-- When the tensor trace `E* ⊗̂π E → 𝕜` vanishes on the kernel of the canonical operator
+`E* ⊗̂π E → (E →L[𝕜] E)`, the **nuclear trace** `NuclearOperator 𝕜 E E →L[𝕜] 𝕜` descends
+`CompletedProjectiveTensor.trace 𝕜 E` through the quotient isomorphism `quotKerEquiv`. -/
+def trace
+    (hker : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 E).ker) :
+    NuclearOperator 𝕜 E E →L[𝕜] 𝕜 :=
+  ((CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker.liftQL
+      (CompletedProjectiveTensor.trace 𝕜 E) hker).comp
+    (quotKerEquiv 𝕜 E E).symm.toContinuousLinearEquiv.toContinuousLinearMap
+
+/-- Evaluating the nuclear trace on `T` applies the descended tensor trace to the quotient class
+representing `T` under `quotKerEquiv`. -/
+theorem trace_apply
+    (hker : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 E).ker)
+    (T : NuclearOperator 𝕜 E E) :
+    trace hker T = (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker.liftQL
+      (CompletedProjectiveTensor.trace 𝕜 E) hker ((quotKerEquiv 𝕜 E E).symm T) :=
+  (rfl)
+
+/-- Evaluating the nuclear trace on the nuclear operator associated with a quotient class recovers
+the tensor trace of any representative. -/
+@[simp]
+theorem trace_quotKerEquiv_mk
+    (hker : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 E).ker)
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) :
+    trace hker (quotKerEquiv 𝕜 E E (Submodule.Quotient.mk u)) =
+      CompletedProjectiveTensor.trace 𝕜 E u := by
+  simp [trace]
+
+/-- If `u ∈ E* ⊗̂π E` represents `T : NuclearOperator 𝕜 E E`, then the nuclear trace of `T`
+equals the tensor trace of `u`. -/
+theorem trace_eq_of_toContinuousLinearMap_eq
+    (hker : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 E).ker)
+    {T : NuclearOperator 𝕜 E E} {u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E}
+    (hu : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E u = T.toContinuousLinearMap) :
+    trace hker T = CompletedProjectiveTensor.trace 𝕜 E u := by
+  have hT : T = quotKerEquiv 𝕜 E E (Submodule.Quotient.mk u) :=
+    OperatorGauge.Carrier.ext (by simpa using hu.symm)
+  rw [hT, trace_quotKerEquiv_mk]
+
+/-- Evaluating the nuclear trace on the nuclear operator associated with a tensor `u` recovers the
+tensor trace of `u`. -/
+@[simp]
+theorem trace_completedProjectiveTensorEquiv
+    (hker : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 E).ker)
+    (hinj : Function.Injective (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E))
+    (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) :
+    trace hker (completedProjectiveTensorEquiv hinj u) =
+      CompletedProjectiveTensor.trace 𝕜 E u :=
+  trace_eq_of_toContinuousLinearMap_eq hker (by simp)
+
+/-- On a rank-one nuclear operator `smulRight f x`, the nuclear trace evaluates `f x`. -/
+@[simp]
+theorem trace_smulRight
+    (hker : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 E).ker)
+    (f : StrongDual 𝕜 E) (x : E) :
+    trace hker (smulRight f x) = f x := by
+  simpa using trace_eq_of_toContinuousLinearMap_eq hker (T := smulRight f x)
+    (u := (⟨f ⊗ₜ x⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E)) (by simp)
+
+/-- The nuclear trace is a contraction on `NuclearOperator 𝕜 E E`. -/
+theorem norm_trace_le
+    (hker : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 E).ker) :
+    ‖trace hker‖ ≤ 1 := by
+  rw [trace, ContinuousLinearMap.opNorm_comp_linearIsometryEquiv, Submodule.norm_liftQL]
+  exact CompletedProjectiveTensor.norm_trace_le
+
+/-- If `T : NuclearOperator 𝕜 E E` has a nuclear series representation
+`T v = ∑ i, f i v • x i` with `∑ i, ‖f i‖ * ‖x i‖ < ∞`, then
+`trace hker T = ∑ i, f i (x i)`. -/
+theorem hasSum_trace {ι : Type*}
+    (hker : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 E).ker)
+    {f : ι → StrongDual 𝕜 E} {x : ι → E} {T : NuclearOperator 𝕜 E E}
+    (hfx : Summable fun i ↦ ‖f i‖ * ‖x i‖)
+    (hT : ∀ v, HasSum (fun i ↦ f i v • x i) (T.toContinuousLinearMap v)) :
+    HasSum (fun i ↦ f i (x i)) (trace hker T) := by
+  obtain ⟨u, hu⟩ := CompletedProjectiveTensor.summable_coe_tmul 𝕜 hfx
+  have hTu : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E u =
+      T.toContinuousLinearMap :=
+    ContinuousLinearMap.ext fun v ↦
+      (CompletedProjectiveTensor.hasSum_toContinuousLinearMap_apply hu v).unique (hT v)
+  rw [trace_eq_of_toContinuousLinearMap_eq hker hTu]
+  exact CompletedProjectiveTensor.hasSum_trace hu
+
+end Trace
+
+section TraceCyclicity
+
+variable {𝕜 D E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup D] [NormedSpace 𝕜 D] [CompleteSpace D]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+
+/-- Cyclicity of the nuclear trace: for a bounded operator `A : E →L[𝕜] D` and a nuclear operator
+`T : D →L[𝕜] E` between Banach spaces on which the nuclear trace is well-defined, `A ∘L T` and
+`T ∘L A` have the same nuclear trace. -/
+theorem trace_mk'_comp_comm
+    (hD : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 D D).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 D).ker)
+    (hE : (CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E).ker ≤
+      (CompletedProjectiveTensor.trace 𝕜 E).ker)
+    (A : E →L[𝕜] D) {T : D →L[𝕜] E} (hT : T ∈ nuclearOperators 𝕜 D E) :
+    trace hD (mk' (comp_left_mem_nuclearOperators A hT)) =
+      trace hE (mk' (comp_right_mem_nuclearOperators hT A)) := by
+  obtain ⟨u, rfl⟩ := mem_nuclearOperators.1 hT
+  have hAT : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 D D
+      (CompletedProjectiveTensor.mapL (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 D)) A u) =
+      (mk' (comp_left_mem_nuclearOperators A hT)).toContinuousLinearMap := by
+    simpa using CompletedProjectiveTensor.toContinuousLinearMap_mapL A
+      (ContinuousLinearMap.id 𝕜 D) u
+  have hTA : CompletedProjectiveTensor.toContinuousLinearMap 𝕜 E E
+      (CompletedProjectiveTensor.mapL (ContinuousLinearMap.precomp 𝕜 A)
+        (ContinuousLinearMap.id 𝕜 E) u) =
+      (mk' (comp_right_mem_nuclearOperators hT A)).toContinuousLinearMap := by
+    simpa using CompletedProjectiveTensor.toContinuousLinearMap_mapL
+      (ContinuousLinearMap.id 𝕜 E) A u
+  rw [trace_eq_of_toContinuousLinearMap_eq hD hAT,
+    trace_eq_of_toContinuousLinearMap_eq hE hTA,
+    CompletedProjectiveTensor.trace_mapL_precomp]
+
+end TraceCyclicity
+
+end TauCeti.NuclearOperator
+
+/-! ### Factorization through the injective tensor product -/
+
+namespace TauCeti.CompletedProjectiveTensor
+
+section Factorization
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+variable (𝕜 E F) in
+/-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is the contraction `E* ⊗̂π F → E* ⊗̂ε F`
+followed by the isometric embedding of `E* ⊗̂ε F` into the bounded operators. -/
+theorem toOperator_comp_toCompletedInjectiveTensor :
+    (CompletedInjectiveTensor.toOperator 𝕜 E F).toContinuousLinearMap ∘L
+        toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F =
+      toContinuousLinearMap 𝕜 E F :=
+  continuousLinearMap_ext fun f y ↦ by simp [ProjectiveTensor.toInjectiveTensor_apply]
+
+/-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is injective exactly when the contraction
+`E* ⊗̂π F → E* ⊗̂ε F` is. -/
+theorem injective_toContinuousLinearMap_iff :
+    Function.Injective (toContinuousLinearMap 𝕜 E F) ↔
+      Function.Injective (toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F) := by
+  rw [← toOperator_comp_toCompletedInjectiveTensor, ContinuousLinearMap.coe_comp]
+  exact (CompletedInjectiveTensor.toOperator 𝕜 E F).injective.of_comp_iff _
+
+end Factorization
+
+end TauCeti.CompletedProjectiveTensor

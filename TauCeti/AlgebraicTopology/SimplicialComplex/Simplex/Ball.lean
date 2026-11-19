@@ -255,6 +255,31 @@ theorem realizationTopHomeomorphCoordinateSimplex_symm_castSucc (n : ℕ)
     ((realizationTopHomeomorphCoordinateSimplex n).symm y).1 i.castSucc = y.1 i :=
   coordinateSimplexToTop_castSucc n y i
 
+/-- Dropping the last barycentric coordinate is linear, and its affine inverse restores the
+missing mass on the coordinate simplex. -/
+theorem realizationTopHomeomorphCoordinateSimplex_exists_affine (n : ℕ) :
+    ∃ A : (Fin (n + 2) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ),
+    ∃ B : (Fin (n + 1) → ℝ) →ᴬ[ℝ] (Fin (n + 2) → ℝ),
+      (∀ z i, A z i = z i.castSucc) ∧
+      ∀ y : coordinateSimplex (Fin (n + 1)),
+        B y.1 = ((realizationTopHomeomorphCoordinateSimplex (n + 1)).symm y).1 := by
+  let e : (Fin (n + 1) → ℝ) ≃L[ℝ] (Option (Fin n) → ℝ) :=
+    ContinuousLinearEquiv.piCongrLeft ℝ (fun _ : Option (Fin n) => ℝ) finSuccEquivLast
+  have he (x : Fin (n + 1) → ℝ) (i : Option (Fin n)) : e x i = x (finSuccEquivLast.symm i) := by
+    obtain ⟨j, rfl⟩ := finSuccEquivLast.surjective i
+    simp [e, ContinuousLinearEquiv.piCongrLeft, Equiv.piCongrLeft_apply_apply]
+  have hs (x : Option (Fin n) → ℝ) (j : Fin (n + 1)) : e.symm x j = x (finSuccEquivLast j) :=
+    by simpa using (he (e.symm x) (finSuccEquivLast j)).symm
+  refine ⟨(e.symm : (Option (Fin n) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ)).comp
+      (simplexBoundaryCoordinateMap n),
+    (simplexBoundaryCoordinateLift n).comp
+      (e : (Fin (n + 1) → ℝ) →L[ℝ] (Option (Fin n) → ℝ)).toContinuousAffineMap,
+    fun z i => by simp [hs], fun y => ?_⟩
+  funext i
+  refine Fin.lastCases ?_ (fun k => ?_) i
+  · simp [he, Equiv.sum_comp finSuccEquivLast.symm (fun j => y.1 j)]
+  · simp [he]
+
 /-- A simplex point maps to the geometric frontier exactly when its support is a proper
 face. This includes the empty boundary of the zero-simplex. -/
 @[simp 1100]
@@ -405,8 +430,10 @@ theorem nonempty_homeomorph_simplex_closedBall {V : Finset ι}
   let P := simplex (Finset.univ : Finset (Fin (n + 1)))
   have hP : P = (⊤ : AbstractSimplicialComplex (Fin (n + 1))).toPreAbstractSimplicialComplex := by
     simp only [P, simplex_univ, AbstractSimplicialComplex.top_toPreAbstractSimplicialComplex]
-  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph hV (fun f himage => by
-      rw [map_simplex, himage]) hP hA
+  obtain ⟨f, hf⟩ := Function.Embedding.exists_of_card_eq_finset (α := Fin (n + 1)) (s := V)
+    (by simpa using hV.symm)
+  let r := (P.realizationRelabelingHomeomorph (R := simplex V) f
+    (by rw [map_simplex, ← Finset.map_eq_image, hf]) hP hA).symm
   exact ⟨r.trans (AbstractSimplicialComplex.realizationTopHomeomorphClosedBall n)⟩
 
 end PreAbstractSimplicialComplex

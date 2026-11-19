@@ -33,9 +33,9 @@ restricts to compression along the projection `D^b(C) ⥤ D^b(C)/[n]`. It is ind
 functor `K^b(C)/[n] ⥤ K_n(C)`: the induced functor `K^b(C)/[n] ⥤ D^b(C)/[n]` followed by the
 derived orbit functor is the homotopy orbit functor followed by `K_n(C) ⥤ D_n(C)`
 (`TauCeti.PeriodicComplex.orbitDerivedCompressionFunctorFactors`). No hypothesis on `C` beyond
-abelianity is needed for these constructions. Stai proves that the derived orbit functor is fully
-faithful when `C` is the category of finitely generated modules over a finite-dimensional algebra
-of finite global dimension.
+abelianity is needed for these constructions. In finite global dimension the derived orbit functor
+is fully faithful (`TauCeti.PeriodicComplex.fullyFaithfulOrbitDerivedCompressionFunctor`, in
+`TauCeti.Algebra.Homology.Periodic.Compression.GlobalDimension`), generalizing Stai's Lemma 3.12.
 
 ## References
 

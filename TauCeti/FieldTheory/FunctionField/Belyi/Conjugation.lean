@@ -7,7 +7,9 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.LocalData
 public import TauCeti.FieldTheory.RatFunc.Map
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Equiv
 import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
@@ -33,7 +35,8 @@ place, `τ` carries the places of `F` over the marked place numbered `i` bijecti
 of `F'` over the marked place numbered `i`
 (`TauCeti.Place.restrict_equivOfRingEquiv_eq_markedPlace_iff`), with the same ramification indices
 (`TauCeti.Place.ramificationIdx_equivOfRingEquiv_of_comm`) and residue degrees
-(`TauCeti.Place.degree_equivOfRingEquiv`).
+(`TauCeti.Place.degree_equivOfRingEquiv`), so the local data `(e, f)` over each marked place are
+unchanged (`TauCeti.Place.localData_markedPlace_of_mapRingEquiv`).
 
 Conjugation does not in general preserve the isomorphism class of a Belyi pair: the action of the
 absolute Galois group on isomorphism classes, its orbits and stabilizers, and the field of moduli
@@ -46,6 +49,8 @@ are built on top of this transport.
   algebraic Belyi pair.
 * `TauCeti.Place.restrict_equivOfRingEquiv_eq_markedPlace_iff`: conjugation keeps the fibres over
   the marked places.
+* `TauCeti.Place.localData_markedPlace_of_mapRingEquiv`: conjugation keeps the local data over the
+  marked places.
 
 ## References
 
@@ -74,19 +79,13 @@ theorem equivOfRingEquiv_mapRingEquiv_markedPlace (i : Fin 3) :
   have h0 {P : Place k' (RatFunc k')} (h : 0 < P.ord X) : P = markedPlace k' 0 := by
     rw [markedPlace_zero]
     exact ord_X_pos_iff.mp h
-  have h1 {P : Place k' (RatFunc k')} (h : 0 < P.ord (X - C 1)) : P = markedPlace k' 1 := by
-    rw [markedPlace_one]
-    exact ord_X_sub_C_pos_iff.mp h
   have h2 {P : Place k' (RatFunc k')} (h : P.ord X < 0) : P = markedPlace k' 2 := by
     rw [markedPlace_two]
     exact X_notMem_integers_iff_eq_infty.mp (by rwa [mem_integers_iff_ord_nonneg, not_le])
   fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
   · exact h0 (by simp [ord_adicOfIrreducible_X_self])
-  · -- `simp` would rewrite `C 1` to `1` inside the polynomial indexing the place, so rewrite.
-    refine h1 ?_
-    rw [ord_equivOfRingEquiv, RatFunc.mapRingEquiv_symm, map_sub, RatFunc.mapRingEquiv_X,
-      RatFunc.mapRingEquiv_C, map_one, markedPlace_one]
-    exact ord_X_sub_C_pos_iff.mpr rfl
+  · rw [markedPlace_one, markedPlace_one,
+      equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C, map_one]
   · exact h2 (by simp [ord_infty])
 
 /-- **Conjugation preserves the three marked places as a set.** -/
@@ -122,6 +121,20 @@ theorem Place.restrict_equivOfRingEquiv_eq_markedPlace_iff [Algebra.IsIntegral (
   rw [Place.restrict_equivOfRingEquiv σ τ _ (RatFunc.mapRingEquiv σ) hτ
     (RatFunc.mapRingEquiv_algebraMap_const σ),
     ← Place.equivOfRingEquiv_mapRingEquiv_markedPlace σ i, Equiv.apply_eq_iff_eq]
+
+/-- **Conjugation keeps the local data over the marked places**: if `τ : F ≃+* F'` carries `k(t)`
+onto `k'(t)` by the coefficient map of `σ`, then the multiset of pairs `(e, f)` of ramification
+indices and relative degrees at the places of `F'` over the marked place numbered `i` is the one at
+the places of `F` over the marked place numbered `i`. -/
+theorem Place.localData_markedPlace_of_mapRingEquiv [FiniteDimensional (RatFunc k) F]
+    [FiniteDimensional (RatFunc k') F'] (i : Fin 3) :
+    Place.localData (k' := k') (F' := F') k' (RatFunc k') (Place.markedPlace k' i) =
+      Place.localData (k' := k) (F' := F) k (RatFunc k) (Place.markedPlace k i) :=
+  Place.localData_eq_of_equiv _ _
+    (Place.equivOfRingEquiv σ τ (apply_algebraMap_eq_of_mapRingEquiv σ τ hτ))
+    (fun _ ↦ Place.restrict_equivOfRingEquiv_eq_markedPlace_iff σ τ hτ)
+    (fun P _ ↦ Place.ramificationIdx_equivOfRingEquiv_of_comm σ τ _ _ hτ P)
+    (fun P _ ↦ Place.relativeDegree_equivOfRingEquiv_of_comm σ τ _ _ hτ P)
 
 /-- **The Galois conjugate of an algebraic Belyi pair is an algebraic Belyi pair**: if `F` is an
 algebraic Belyi pair over `k`, and `τ : F ≃+* F'` carries `k(t)` onto `k'(t)` by the coefficient

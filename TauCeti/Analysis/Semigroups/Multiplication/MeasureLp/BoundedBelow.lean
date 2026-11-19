@@ -120,7 +120,6 @@ theorem ofMeasureLpMultiplication_generator_apply_ae (hm : AEMeasurable m μ) (h
 
 /-- The generator domain consists exactly of the vectors whose product with `m` belongs to Lᵖ.
 Neither boundedness of `m` nor finiteness of the measure is needed. -/
-@[simp]
 theorem ofMeasureLpMultiplication_mem_domain_iff (hm : AEMeasurable m μ) (hp : p ≠ ∞)
     (b : ℝ) (hb : ∀ᵐ a ∂μ, b ≤ m a) (f : Lp E p μ) :
     f ∈ (ofMeasureLpMultiplication hm hp b hb).domain ↔ MemLp (fun a => m a • f a) p μ := by

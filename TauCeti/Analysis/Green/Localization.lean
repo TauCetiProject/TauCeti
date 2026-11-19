@@ -58,8 +58,8 @@ theorem exists_contDiff_localization_sum {P Q : ℂ → ℝ}
   have hK : IsCompact K := isCompact_traces_union_tsupport_sum_windingWeight hγ hclosed
   have hKU : K ⊆ U := union_subset (iUnion_subset fun i ↦ iUnion_subset (htrace i))
     (tsupport_sum_windingWeight_subset hγ hclosed htrace hindex)
-  obtain ⟨P', hP', hcP, hsP, heP⟩ := hP.exists_contDiff_eventuallyEq_on_isCompact hK hU hKU
-  obtain ⟨Q', hQ', hcQ, hsQ, heQ⟩ := hQ.exists_contDiff_eventuallyEq_on_isCompact hK hU hKU
+  obtain ⟨P', hP', hcP, hsP, -, heP⟩ := hP.exists_contDiff_eventuallyEq_on_isCompact hK hU hKU
+  obtain ⟨Q', hQ', hcQ, hsQ, -, heQ⟩ := hQ.exists_contDiff_eventuallyEq_on_isCompact hK hU hKU
   have htK (i) (hi : i ∈ s) {z} (hz : z ∈ γ i '' uIcc (a i) (b i)) : z ∈ K :=
     Or.inl (mem_iUnion.mpr ⟨i, mem_iUnion.mpr ⟨hi, hz⟩⟩)
   have hPt : ∀ i ∈ s, EqOn P' P (γ i '' uIcc (a i) (b i)) :=

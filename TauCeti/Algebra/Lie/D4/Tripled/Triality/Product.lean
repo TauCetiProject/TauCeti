@@ -260,15 +260,8 @@ theorem eq_of_eq_mul_of_trialityProductMatrix_ne_zero {G : Type*} [CommGroup G]
   have hstep : ∀ S : Finset (Fin 24), (∀ a ∈ S, t a / u a = 1) → ∀ x,
       (∃ k ∈ S, ∃ j ∈ S, trialityProductMatrix k x j ≠ 0 ∨
         trialityProductMatrix x k j ≠ 0 ∨ trialityProductMatrix k j x ≠ 0) →
-      t x / u x = 1 := by
-    rintro S hS x ⟨k, hk, j, hj, h | h | h⟩
-    · rw [hd k x j h, hS k hk, hS j hj, one_mul]
-    · have hx := hd x k j h
-      rw [hS k hk, hS j hj, mul_one] at hx
-      exact hx.symm
-    · have hx := hd k j x h
-      rw [hS k hk, hS j hj, one_mul] at hx
-      exact hx.symm
+      t x / u x = 1 := fun S hS _ =>
+    ConstantMultiplication.eq_one_of_eq_mul_of_ne_zero (T := S) (f := fun a => t a / u a) hd hS
   have hseed : ∀ a ∈ seedIndices, t a / u a = 1 := by
     simp only [seedIndices, Finset.mem_insert, Finset.mem_singleton]
     rintro a (rfl | rfl | rfl | rfl) <;> simp [h₀, h₁, h₈, h₁₆]

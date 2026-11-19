@@ -6,34 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Colon
-public import Mathlib.RingTheory.Localization.FractionRing
+public import Mathlib.RingTheory.Localization.Defs
 
 /-!
 # The denominator ideal of an element of an algebra
 
 For `x` in an `R`-algebra `K`, the denominator ideal `Algebra.denIdeal K x` is the colon ideal
-`(R : x) = {r : R | r • x ∈ R}` — the `r` that clear the denominator of `x`. When `K` is the
-localization of `R` at its non-zero-divisors it is nonzero (`Algebra.denIdeal_ne_bot`), because
-any expression of `x` as a fraction exhibits a denominator in it.
+`(R : x) = {r : R | r • x ∈ R}` — the `r` that clear the denominator of `x`. When `K` is a
+localization of a nontrivial ring `R` it is nonzero (`Algebra.denIdeal_ne_bot`), because any
+expression of `x` as a fraction exhibits a denominator in it.
 
-This is general commutative algebra, used in
-`TauCeti/RingTheory/DedekindDomain/SInteger/Basic.lean`
-to show that every ideal of a ring of `S`-integers is extended from the base.
+This is general commutative algebra. Over a Dedekind domain it is used to show that every ideal
+of a ring of `S`-integers is extended from the base, and to find common denominators coprime to a
+given ideal; it also describes the points of a field not lying in a local subring.
 
 Split out of material adapted from Michael Stoll's elliptic-curves formalisation
-(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at the
-roadmap's pin `66889eada51a`, Apache 2.0, by Michael Stoll); following this repository's
-convention for adapted material, the upstream authorship is credited here rather than in the
-copyright header.
+(`github.com/MichaelStollBayreuth/EllipticCurves`, `EllipticCurves/Mathlib/SIntegers.lean` at
+commit `66889eada51a`, Apache 2.0, by Michael Stoll).
 -/
 
 public section
 
-open scoped nonZeroDivisors
+variable {R : Type*} [CommSemiring R]
 
 section Semiring
 
-variable {R : Type*} [CommSemiring R] (K : Type*) [Semiring K] [Algebra R K]
+variable (K : Type*) [Semiring K] [Algebra R K]
 
 /-- The denominator ideal of `x : K`: the colon ideal `(R : x) = {r : R | r • x ∈ R}`.
 
@@ -47,8 +45,8 @@ consumers reaching for colon-ideal operations rewrite with this, while `mem_denI
 remains the membership normal form. Not a `simp` lemma — rewriting with it would undo
 `mem_denIdeal_iff`. -/
 lemma Algebra.denIdeal_def (x : K) :
-    Algebra.denIdeal K x = (1 : Submodule R K).colon {x} := by
-  simp only [Algebra.denIdeal]
+    Algebra.denIdeal K x = (1 : Submodule R K).colon {x} :=
+  (rfl)
 
 /-- Membership in the denominator ideal: `r` clears `x` into the image of `R`, in the sense that
 `r * x` is the image of some `s : R`. -/
@@ -59,16 +57,25 @@ lemma Algebra.denIdeal_def (x : K) :
 
 end Semiring
 
-variable {R : Type*} [CommSemiring R] (K : Type*) [CommSemiring K] [Algebra R K]
+section CommSemiring
 
-/-- The denominator ideal of an element of a localization at the non-zero-divisors is nonzero:
-a denominator witnessing the element as a fraction lies in it. -/
-lemma Algebra.denIdeal_ne_bot [Nontrivial R] [IsLocalization R⁰ K] (x : K) :
+variable (K : Type*) [CommSemiring K] [Algebra R K]
+
+/-- The denominator ideal of an element of a localization of a nontrivial ring is nonzero: a
+denominator witnessing the element as a fraction lies in it. (When `0 ∈ M` the localization is
+trivial and the denominator ideal is all of `R`.) -/
+lemma Algebra.denIdeal_ne_bot [Nontrivial R] (M : Submonoid R) [IsLocalization M K] (x : K) :
     Algebra.denIdeal K x ≠ (⊥ : Ideal R) := by
-  obtain ⟨⟨a, b, hb⟩, hab⟩ := IsLocalization.surj R⁰ x
-  refine fun h0 ↦ nonZeroDivisors.ne_zero hb ?_
-  have : b ∈ Algebra.denIdeal K x := by
-    rw [Algebra.mem_denIdeal_iff]; exact ⟨a, by rw [mul_comm]; exact hab⟩
-  simpa [h0] using this
+  obtain ⟨⟨a, b⟩, hab⟩ := IsLocalization.surj M x
+  intro h0
+  have hb : (b : R) ∈ Algebra.denIdeal K x :=
+    (Algebra.mem_denIdeal_iff K).2 ⟨a, by rw [mul_comm, hab]⟩
+  rw [h0, Ideal.mem_bot] at hb
+  have := IsLocalization.uniqueOfZeroMem (M := M) (S := K) (hb ▸ b.2)
+  have h1 : (1 : R) ∈ Algebra.denIdeal K x :=
+    (Algebra.mem_denIdeal_iff K).2 ⟨0, Subsingleton.elim _ _⟩
+  simp [h0] at h1
+
+end CommSemiring
 
 end

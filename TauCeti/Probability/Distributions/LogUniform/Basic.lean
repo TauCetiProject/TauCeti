@@ -211,7 +211,7 @@ theorem logUniformMeasure_eq_withDensity (a b : ℝ) :
     logUniformMeasure a b = volume.withDensity (logUniformPDF a b) := by
   by_cases h : 0 < a ∧ a < b
   · have hmap := MeasureTheory.map_withDensity_abs_deriv_mul (f := logUniformPDF a b)
-      MeasurableSet.univ measurable_exp (fun y _ ↦ (hasDerivAt_exp y).hasDerivWithinAt)
+      MeasurableSet.univ (fun y _ ↦ (hasDerivAt_exp y).hasDerivWithinAt)
       exp_injective.injOn
     simp only [Measure.restrict_univ, image_univ, range_exp] at hmap
     rw [withDensity_congr_ae (transform_logUniformPDF h.1 h.2)] at hmap

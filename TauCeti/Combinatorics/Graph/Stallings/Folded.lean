@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Basic
-public import TauCeti.Combinatorics.Graph.Serre.Path
+public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 
 /-!
@@ -14,7 +14,11 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 
 A labelled graph is folded when the label and initial vertex determine a dart. This makes
 the word and endpoints determine a path and ensures that a reduced path has a freely reduced
-label. These are the local facts behind the Stallings subgroup criterion.
+label. Consequently a freely reduced word is accepted at a vertex exactly when it labels a
+closed path there (`StallingsGraph.mem_subgroup_iff_folded`), and a preconnected folded graph
+accepts only the trivial subgroup exactly when it is acyclic
+(`StallingsGraph.IsFolded.subgroup_eq_bot_iff_isAcyclic`). Over a finite alphabet, a folded graph
+with finitely many vertices has finitely many darts.
 
 ## References
 
@@ -58,6 +62,12 @@ theorem IsFolded.labels_not_inverse (hS : S.IsFolded) {e f : S.graph.E}
   have hfr : f = S.graph.rev e := hS f (S.graph.rev e)
     (hsrc.trans (S.graph.src_rev e).symm) (by simpa only [S.label_rev] using h)
   exact hne hfr
+
+/-- Over a finite alphabet, a folded graph with finitely many vertices has finitely many
+darts. -/
+theorem IsFolded.finite_E [Finite α] [Finite S.graph.V] (hS : S.IsFolded) : Finite S.graph.E :=
+  Finite.of_injective (fun e => (S.graph.src e, S.label e)) fun e f h =>
+    hS e f (congrArg Prod.fst h) (congrArg Prod.snd h)
 
 /-- A reduced path in a folded graph reads a freely reduced word. -/
 theorem IsFolded.isReduced_word (hS : S.IsFolded) {a b : S.graph.V}
@@ -111,6 +121,26 @@ theorem IsFolded.path_eq_of_word_eq (hS : S.IsFolded) {a b : S.graph.V}
       congr 1
       exact ih q hword
 
+/-- Paths with the same initial vertex and label word have the same terminal vertex in a
+folded graph. The terminal vertices are not assumed equal. -/
+theorem IsFolded.eq_tgt_of_word_eq (hS : S.IsFolded) {a b c : S.graph.V}
+    (p : S.graph.Path a b) (q : S.graph.Path a c) (h : S.word p = S.word q) : b = c := by
+  induction p generalizing c with
+  | nil =>
+    cases q with
+    | nil => rfl
+    | cons q f => simp at h
+  | cons p e ih =>
+    cases q with
+    | nil => simp at h
+    | cons q f =>
+      simp only [word_cons] at h
+      obtain ⟨hw, hl⟩ := List.append_inj' h (by simp)
+      obtain rfl := ih q hw
+      have he : e.1 = f.1 := hS _ _ (e.2.1.trans f.2.1.symm)
+        (List.singleton_inj.mp hl)
+      exact e.2.2.symm.trans ((congrArg S.graph.tgt he).trans f.2.2)
+
 /-- The reduced word of a reduced path's reading is its actual label word. -/
 @[simp] theorem IsFolded.toWord_read_eq_word [DecidableEq α] (hS : S.IsFolded)
     {a b : S.graph.V} (p : S.graph.Path a b)
@@ -130,6 +160,66 @@ theorem IsFolded.path_eq_of_read_eq (hS : S.IsFolded)
   simpa only [IsFolded.toWord_read_eq_word S hS p hp,
     IsFolded.toWord_read_eq_word S hS q hq] using
     congrArg FreeGroup.toWord h
+
+/-- In a folded graph, a free-group element is accepted at a vertex exactly when its reduced
+word is the label of a closed path at that vertex. -/
+theorem IsFolded.mem_subgroup_iff_exists_word_eq_toWord [DecidableEq α] (hS : S.IsFolded)
+    {a : S.graph.V} {g : FreeGroup α} :
+    g ∈ S.subgroup a ↔ ∃ p : S.graph.Path a a, S.word p = g.toWord := by
+  constructor
+  · intro hg
+    obtain ⟨p, hp, rfl⟩ := S.mem_subgroup_iff_exists_reduced_path.mp hg
+    exact ⟨p, (hS.toWord_read_eq_word S p hp).symm⟩
+  · rintro ⟨p, hp⟩
+    exact S.mem_subgroup_iff.mpr ⟨p, by rw [S.read_eq_mk_word, hp, FreeGroup.mk_toWord]⟩
+
+/-- In a folded graph, a freely reduced word represents an element accepted at a vertex exactly
+when it is the label of a closed path at that vertex. By `IsFolded.path_eq_of_word_eq` such a
+path is unique. -/
+theorem mem_subgroup_iff_folded (hS : S.IsFolded) {a : S.graph.V} {w : List (α × Bool)}
+    (hw : FreeGroup.IsReduced w) :
+    FreeGroup.mk w ∈ S.subgroup a ↔ ∃ p : S.graph.Path a a, S.word p = w := by
+  classical
+  rw [hS.mem_subgroup_iff_exists_word_eq_toWord, FreeGroup.toWord_mk, hw.reduce_eq]
+
+/-- Paths with the same initial vertex and free-group reading have the same terminal vertex
+in a folded graph, even when the paths are not reduced. -/
+theorem IsFolded.eq_tgt_of_read_eq (hS : S.IsFolded) {a b c : S.graph.V}
+    (p : S.graph.Path a b) (q : S.graph.Path a c) (h : S.read p = S.read q) : b = c := by
+  classical
+  obtain ⟨p', hp', hrp⟩ := S.exists_reduced_path_read_eq p
+  obtain ⟨q', hq', hrq⟩ := S.exists_reduced_path_read_eq q
+  apply hS.eq_tgt_of_word_eq S p' q'
+  have hr : S.read p' = S.read q' := hrp.trans (h.trans hrq.symm)
+  simpa only [hS.toWord_read_eq_word S p' hp', hS.toWord_read_eq_word S q' hq'] using
+    congrArg FreeGroup.toWord hr
+
+/-- The endpoint of a based path in a folded graph is determined by the coset of its reading.
+No reducedness assumption on the paths is necessary. -/
+theorem IsFolded.eq_tgt_iff_read_mul_inv_mem (hS : S.IsFolded) {a b c : S.graph.V}
+    (p : S.graph.Path a b) (q : S.graph.Path a c) :
+    b = c ↔ S.read p * (S.read q)⁻¹ ∈ S.subgroup a := by
+  constructor
+  · rintro rfl
+    simpa using S.read_mem_subgroup (p.comp q.reverse)
+  · intro h
+    obtain ⟨l, hl⟩ := S.mem_subgroup_iff.mp h
+    apply hS.eq_tgt_of_read_eq S p (l.comp q)
+    simp [hl]
+
+/-- A folded preconnected labelled graph accepts the trivial subgroup at a vertex exactly when
+it is acyclic: a nonempty reduced closed path anywhere reads a nontrivial element, a conjugate of
+which is accepted at the vertex. -/
+theorem IsFolded.subgroup_eq_bot_iff_isAcyclic (hS : S.IsFolded) (hc : S.graph.Preconnected)
+    (a : S.graph.V) : S.subgroup a = ⊥ ↔ S.graph.IsAcyclic := by
+  refine ⟨fun h => S.graph.isAcyclic_iff.mpr fun u r hr => ?_,
+    fun h => S.subgroup_eq_bot_of_isAcyclic h a⟩
+  obtain ⟨q⟩ := S.graph.preconnected_iff.mp hc a u
+  have h0 : S.read ((q.comp r).comp q.reverse) = 1 :=
+    Subgroup.mem_bot.mp (h ▸ S.read_mem_subgroup _)
+  have h1 : S.read r = S.read (.nil : S.graph.Path u u) := by
+    simpa [← mul_assoc, mul_inv_eq_one] using h0
+  exact hS.path_eq_of_read_eq S r .nil hr (SerreGraph.Path.isReduced_nil _ _) h1
 
 end StallingsGraph
 end TauCeti

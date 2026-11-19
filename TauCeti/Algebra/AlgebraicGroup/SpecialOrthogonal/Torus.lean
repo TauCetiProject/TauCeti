@@ -51,7 +51,7 @@ open CategoryTheory
 
 namespace TauCeti.SpecialOrthogonal
 
-universe u v
+universe u v w
 
 noncomputable section
 
@@ -67,7 +67,7 @@ private def rankOneCoordinatesSpecialOrthogonalMulEquiv
 /-- The rank-one-coordinate matrix equivalence commutes with a ring morphism which preserves
 the chosen square root and half. -/
 private theorem map_rankOneCoordinatesSpecialOrthogonalMulEquiv
-    {A B : Type v} [CommRing A] [CommRing B] (f : A →+* B)
+    {A : Type v} {B : Type w} [CommRing A] [CommRing B] (f : A →+* B)
     (i half : A) (hi : i ^ 2 = -1) (hhalf : 2 * half = 1)
     (c : ULift.{u} (Fin 1) → Aˣ) :
     Matrix.SpecialOrthogonalGroup.map f
@@ -155,7 +155,7 @@ theorem splitTorusPointsMulEquiv_symm_apply
 
 /-- The rank-one split-torus point equivalence is natural in the commutative value algebra. -/
 theorem splitTorusPointsMulEquiv_mapValue
-    {A B : Type v} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+    {A : Type v} {B : Type w} [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
     (f : A →ₐ[R] B)
     (t : WithConv ((DiagonalizableGroup.coordinateRing R
       (SplitTorus.characterGroup (ULift.{u} (Fin 1)))) →ₐ[R] A)) :

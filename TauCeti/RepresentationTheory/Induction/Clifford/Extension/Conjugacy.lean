@@ -78,7 +78,7 @@ theorem clifford_splitting_eq_conj_iff (s t : (groupExtension A).Splitting) (d :
     -- Multiplication of implementing pairs composes their linear equivalences.
     rw [hp'] at hv
     simp only [p', Subgroup.coe_mul, Subgroup.coe_inv, Prod.snd_mul, Prod.snd_inv,
-      LinearEquiv.mul_apply, LinearEquiv.coe_inv, LinearEquiv.symm_apply_apply] at hv
+      mul_apply_eq_comp, LinearEquiv.coe_inv, LinearEquiv.symm_apply_apply] at hv
     simpa only [hρ] using hv.symm
   · intro h q
     obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
@@ -91,7 +91,7 @@ theorem clifford_splitting_eq_conj_iff (s t : (groupExtension A).Splitting) (d :
       have hv := h g ((kernelLift A d).1.2.symm x)
       rw [hp']
       simp only [p', Subgroup.coe_mul, Subgroup.coe_inv, Prod.snd_mul, Prod.snd_inv,
-        LinearEquiv.mul_apply, LinearEquiv.coe_inv]
+        mul_apply_eq_comp, LinearEquiv.coe_inv]
       simpa only [hρ, LinearEquiv.apply_symm_apply] using hv.symm
     rw [hp'] at hc'
     rw [← hc']

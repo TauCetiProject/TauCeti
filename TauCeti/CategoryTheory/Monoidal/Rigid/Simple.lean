@@ -7,7 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
+public import TauCeti.CategoryTheory.Semisimple.Basic
 
 /-!
 # Duals of simple objects
@@ -26,6 +28,12 @@ hence a monomorphism out of the simple unit, and whiskering by `X` keeps it a mo
 `X ⊗ -` is right adjoint to `Xᘁ ⊗ -`. So `X ≅ X ⊗ 𝟙_ C` embeds into `(X ⊗ Y) ⊗ Yᘁ`. Without a
 simple unit this fails: in a multifusion category two distinct simple summands of the unit have
 zero tensor product.
+
+For a split simple member of an exact pairing, Frobenius reciprocity and Schur's lemma show
+that every morphism from the paired tensor product to the unit is a scalar multiple of the
+evaluation. Both choices of the simple member are available; they control the two categorical
+trace pairings. In a finite semisimple category with simple unit, every nonzero morphism
+`η : 𝟙_ C ⟶ Y ⊗ X` then splits, and composing it with the evaluation gives an invertible scalar.
 
 ## References
 
@@ -64,8 +72,8 @@ instance simple_rightDual (X : C) [Simple X] : Simple Xᘁ where
       have h : (𝟙 X)ᘁ = (0 : X ⟶ X)ᘁ := by
         rw [rightAdjointMate_id, rightAdjointMate_zero, ← IsIso.inv_hom_id f]
         simp only [h0, comp_zero]
-      exact id_nonzero X (rightAdjointMate_injective h)
-    · have : IsIso g := isIso_of_epi_of_nonzero (mt hg0.1 h0)
+      exact CategoryTheory.id_ne_zero X (rightAdjointMate_injective h)
+    · have : IsIso g := CategoryTheory.isIso_of_epi_of_ne_zero (mt hg0.1 h0)
       -- The mate of `inv g` inverts `gᘁ = f`; the identity of `(ᘁY)ᘁ` is that of `Y`, since
       -- `(ᘁY)ᘁ = Y` holds by definition (`CategoryTheory.rightDual_leftDual`).
       rw [← hg]
@@ -81,12 +89,77 @@ theorem not_isZero_tensorObj [Preadditive C] [HasKernels C] [MonoidalPreadditive
     [RightRigidCategory C] [Simple (𝟙_ C)] {X Y : C} (hX : ¬IsZero X) (hY : ¬IsZero Y) :
     ¬IsZero (X ⊗ Y) := by
   intro h
-  have : Mono (η_ Y Yᘁ) := mono_of_nonzero_from_simple (coevaluation_ne_zero hY)
+  have : Mono (η_ Y Yᘁ) := CategoryTheory.mono_of_ne_zero_from_simple (coevaluation_ne_zero hY)
   have : Mono (X ◁ η_ Y Yᘁ) :=
-    (Functor.preservesMonomorphisms_of_adjunction (tensorLeftAdjunction X Xᘁ)).preserves (η_ Y Yᘁ)
+    (CategoryTheory.Functor.preservesMonomorphisms_of_adjunction
+      (tensorLeftAdjunction X Xᘁ)).preserves (η_ Y Yᘁ)
   have h' : IsZero (X ⊗ Y ⊗ Yᘁ) := ((tensorRight Yᘁ).map_isZero h).of_iso (α_ X Y Yᘁ).symm
   refine hX (IsZero.of_iso ?_ (ρ_ X).symm)
   rw [IsZero.iff_id_eq_zero, ← cancel_mono (X ◁ η_ Y Yᘁ)]
   exact h'.eq_of_tgt _ _
+
+/-- If the right member of an exact pairing is split simple, every morphism from the
+paired tensor product to the unit is a scalar multiple of the evaluation. -/
+theorem hom_tensorUnit_eq_smul_evaluation_of_simple_right (k : Type*) [Field k] [IsAlgClosed k]
+    [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
+    {X Y : C} [ExactPairing X Y] [Simple Y] [FiniteDimensional k (Y ⟶ Y)]
+    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y := by
+  let e := (tensorRightHomLinearEquiv k Y X Y (𝟙_ C)).trans
+    (Linear.homCongr k (Iso.refl Y) (λ_ Y))
+  obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (e f)
+  refine ⟨c, e.injective ?_⟩
+  rw [map_smul, ← hc]
+  congr 1
+  -- Frobenius reciprocity carries evaluation to the identity, with the unitors removed.
+  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
+    Category.id_comp, tensorRightHomLinearEquiv_apply]
+  simp [tensorRightHomEquiv, ExactPairing.coevaluation_evaluation]
+
+/-- If the left member of an exact pairing is split simple, every morphism from the
+paired tensor product to the unit is a scalar multiple of the evaluation. -/
+theorem hom_tensorUnit_eq_smul_evaluation_of_simple_left (k : Type*) [Field k] [IsAlgClosed k]
+    [Preadditive C] [HasKernels C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
+    {X Y : C} [ExactPairing X Y] [Simple X] [FiniteDimensional k (X ⟶ X)]
+    (f : Y ⊗ X ⟶ 𝟙_ C) : ∃ c : k, f = c • ε_ X Y := by
+  let e := (tensorLeftHomLinearEquiv k X X Y (𝟙_ C)).trans
+    (Linear.homCongr k (Iso.refl X) (ρ_ X))
+  obtain ⟨c, hc⟩ := endomorphism_simple_eq_smul_id k (e f)
+  refine ⟨c, e.injective ?_⟩
+  rw [map_smul, ← hc]
+  congr 1
+  -- The other Frobenius reciprocity bijection carries evaluation to the identity of `X`.
+  simp only [e, LinearEquiv.trans_apply, Linear.homCongr_apply, Iso.refl_inv,
+    Category.id_comp, tensorLeftHomLinearEquiv_apply]
+  simp [tensorLeftHomEquiv, ExactPairing.evaluation_coevaluation]
+
+section FiniteSemisimple
+
+variable (k : Type*) [Field k] [IsAlgClosed k] [Abelian C] [MonoidalPreadditive C] [Linear k C]
+  [MonoidalLinear k C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
+
+include k in
+/-- **Schur's lemma for an exact pairing with simple right member**: if `Y` is simple with
+finite-dimensional endomorphisms, every nonzero `η : 𝟙_ C ⟶ Y ⊗ X` closes up with the evaluation
+of an exact pairing of `X` and `Y` to an invertible scalar. Indeed `η` splits, and its retraction
+is a scalar multiple of the evaluation. -/
+theorem isIso_comp_evaluation_of_simple_right {X Y : C} [ExactPairing X Y] [Simple Y]
+    [FiniteDimensional k (Y ⟶ Y)] {η : 𝟙_ C ⟶ Y ⊗ X} (hη : η ≠ 0) : IsIso (η ≫ ε_ X Y) := by
+  have : IsSplitMono η := isSplitMono_of_nonzero_from_simple hη
+  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_right k (retraction η)
+  refine Linear.isIso_of_smul_eq_id (c := c) ?_
+  rw [← Linear.comp_smul, ← hc, IsSplitMono.id]
+
+include k in
+/-- **Schur's lemma for an exact pairing with simple left member**: if `X` is simple with
+finite-dimensional endomorphisms, every nonzero `η : 𝟙_ C ⟶ Y ⊗ X` closes up with the evaluation
+of an exact pairing of `X` and `Y` to an invertible scalar. -/
+theorem isIso_comp_evaluation_of_simple_left {X Y : C} [ExactPairing X Y] [Simple X]
+    [FiniteDimensional k (X ⟶ X)] {η : 𝟙_ C ⟶ Y ⊗ X} (hη : η ≠ 0) : IsIso (η ≫ ε_ X Y) := by
+  have : IsSplitMono η := isSplitMono_of_nonzero_from_simple hη
+  obtain ⟨c, hc⟩ := hom_tensorUnit_eq_smul_evaluation_of_simple_left k (retraction η)
+  refine Linear.isIso_of_smul_eq_id (c := c) ?_
+  rw [← Linear.comp_smul, ← hc, IsSplitMono.id]
+
+end FiniteSemisimple
 
 end TauCeti

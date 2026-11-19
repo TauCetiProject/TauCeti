@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Perfectoid.Basic
-import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.RingTheory.Huber.Perfect
 
 /-!
@@ -16,11 +15,9 @@ In characteristic `p`, the perfectoid Tate rings are exactly the perfect complet
 rings (Scholze, *Étale cohomology of diamonds*, Proposition 3.5).
 
 * A perfectoid Tate ring of characteristic `p` is perfect. It is reduced, so Frobenius is
-  injective. For surjectivity, let `x ∈ R°`. The perfectoid condition gives `x = y₀ ^ p + ϖ ^ p z₁`
-  with `y₀, z₁ ∈ R°`, then `z₁ = y₁ ^ p + ϖ ^ p z₂`, and so on. In characteristic `p` this gives
-  `x = (y₀ + ϖ y₁ + ⋯ + ϖ ^ n yₙ) ^ p + ϖ ^ (p (n + 1)) z_{n+1}`. The series `∑ ϖ ^ k y_k`
-  converges, because `R°` is bounded and `ϖ` is topologically nilpotent, and its sum is a `p`-th
-  root of `x`. Any `x ∈ R` has `ϖ ^ (p n) x ∈ R°` for some `n`, so it is a `p`-th power too.
+  injective. For surjectivity, every `x ∈ R°` is a `p`-th power modulo `p`
+  (`TauCeti.Perfectoid.IsPerfectoidTateRing.exists_natCast_dvd_sub_pow`), and `p = 0`, so `x` is a
+  `p`-th power. Any `x ∈ R` has `ϖ ^ (p n) x ∈ R°` for some `n`, so it is a `p`-th power too.
 * Conversely, a perfect complete Hausdorff Tate ring of characteristic `p` is uniform
   (`TauCeti.Huber.IsUniform.of_perfectRing`), hence perfectoid
   (`TauCeti.Perfectoid.IsPerfectoidTateRing.of_perfectRing`).
@@ -43,7 +40,7 @@ rings (Scholze, *Étale cohomology of diamonds*, Proposition 3.5).
 
 public section
 
-open Filter Topology TauCeti.Huber
+open TauCeti.Huber
 
 namespace TauCeti.Perfectoid
 
@@ -51,39 +48,13 @@ variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] [UniformSpace R] [IsU
   [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T2Space R] [CharP R p]
 
 /-- In a perfectoid Tate ring of characteristic `p`, every power-bounded element has a `p`-th
-root, the sum of a series built by successive approximation modulo `ϖ ^ p`. -/
+root: it is a `p`-th power modulo `p = 0`. -/
 private theorem IsPerfectoidTateRing.exists_pow_eq [IsPerfectoidTateRing p R]
     (x : powerBoundedSubring R) : ∃ s : R, s ^ p = x := by
-  obtain ⟨ϖ, hϖ, -, hs, -⟩ := IsPerfectoidTateRing.exists_pseudoUniformizer (p := p) (R := R)
-  have hb := IsPerfectoidTateRing.isBounded_powerBoundedSubring (p := p) (R := R)
-  -- every `z ∈ R°` is `Y z ^ p + ϖ ^ p * W z` with `Y z, W z ∈ R°`
-  have step (z : powerBoundedSubring R) : ∃ y w : powerBoundedSubring R, z = y ^ p + ϖ ^ p * w :=
-    let ⟨y, w, hw⟩ := hs z
-    ⟨y, w, by rw [← hw, add_sub_cancel]⟩
-  choose Y W hYW using step
-  -- the successive remainders `z n` and the partial sums `∑_{k < n} ϖ ^ k * Y (z k)`
-  set z : ℕ → powerBoundedSubring R := fun n ↦ W^[n] x
-  set t : ℕ → R := fun k ↦ (ϖ : R) ^ k * Y (z k)
-  have hrem (n : ℕ) : (x : R) = (∑ k ∈ Finset.range n, t k) ^ p + ((ϖ : R) ^ p) ^ n * z n := by
-    induction n with
-    | zero => simp [z, zero_pow (Fact.out : p.Prime).ne_zero]
-    | succ n ih =>
-      have hz : z (n + 1) = W (z n) := Function.iterate_succ_apply' W n x
-      have h := congrArg (Subtype.val : powerBoundedSubring R → R) (hYW (z n))
-      push_cast at h
-      rw [Finset.sum_range_succ, add_pow_char, hz, ih, h]
-      ring
-  -- the series converges, its terms tending to zero
-  have ht : Tendsto t atTop (𝓝 0) :=
-    hb.tendsto_mul hϖ.isTopologicallyNilpotent (Eventually.of_forall fun k ↦ (Y (z k)).2)
-  obtain ⟨σ, hσ⟩ := NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (by rwa [Nat.cofinite_eq_atTop])
-  refine ⟨σ, tendsto_nhds_unique (hσ.tendsto_sum_nat.pow p) ?_⟩
-  -- the remainders `(ϖ ^ p) ^ n * z n` tend to zero
-  have hϖp : Tendsto (fun n ↦ ((ϖ : R) ^ p) ^ n) atTop (𝓝 0) :=
-    hϖ.isTopologicallyNilpotent.pow (Fact.out : p.Prime).ne_zero
-  have hr := hb.tendsto_mul hϖp (Eventually.of_forall fun n ↦ (z n).2)
-  simpa [sub_eq_iff_eq_add.mpr (hrem _)] using (tendsto_const_nhds (x := (x : R))).sub hr
+  obtain ⟨y, hy⟩ := IsPerfectoidTateRing.exists_natCast_dvd_sub_pow (p := p) x
+  have hp : (p : powerBoundedSubring R) = 0 := Subtype.ext (CharP.cast_eq_zero R p)
+  rw [hp, zero_dvd_iff, sub_eq_zero] at hy
+  exact ⟨y, by rw [hy]; rfl⟩
 
 /-- **A perfectoid Tate ring of characteristic `p` is perfect** (Scholze, *Étale cohomology of
 diamonds*, Proposition 3.5). -/

@@ -69,6 +69,40 @@ instance monoidalCategory : MonoidalCategory PointedSSet.{u} :=
 instance symmetricCategory : SymmetricCategory PointedSSet.{u} :=
   inferInstanceAs (SymmetricCategory (Transported simplicialPointedEquivalence.{u}.symm))
 
+/-- The degreewise pointed presentation is strong monoidal for the smash product. -/
+noncomputable instance simplicialPointedEquivalenceMonoidal :
+    simplicialPointedEquivalence.{u}.functor.Monoidal :=
+  inferInstanceAs
+    (Monoidal.equivalenceTransported simplicialPointedEquivalence.{u}.symm).inverse.Monoidal
+
+/-- The tensor comparison is the inverse counit on the degreewise smash product. -/
+@[simp]
+lemma simplicialPointedEquivalence_μ (X Y : PointedSSet.{u}) :
+    Functor.LaxMonoidal.μ simplicialPointedEquivalence.functor X Y =
+      simplicialPointedEquivalence.counitIso.inv.app
+        (simplicialPointedEquivalence.functor.obj X ⊗
+          simplicialPointedEquivalence.functor.obj Y) := (rfl)
+
+/-- The inverse tensor comparison is the counit on the degreewise smash product. -/
+@[simp]
+lemma simplicialPointedEquivalence_δ (X Y : PointedSSet.{u}) :
+    Functor.OplaxMonoidal.δ simplicialPointedEquivalence.functor X Y =
+      simplicialPointedEquivalence.counitIso.hom.app
+        (simplicialPointedEquivalence.functor.obj X ⊗
+          simplicialPointedEquivalence.functor.obj Y) := (rfl)
+
+/-- The unit comparison is the inverse counit on the constant pointed unit. -/
+@[simp]
+lemma simplicialPointedEquivalence_ε :
+    Functor.LaxMonoidal.ε simplicialPointedEquivalence.{u}.functor =
+      simplicialPointedEquivalence.counitIso.inv.app (𝟙_ (SimplicialObject Pointed.{u})) := (rfl)
+
+/-- The inverse unit comparison is the counit on the constant pointed unit. -/
+@[simp]
+lemma simplicialPointedEquivalence_η :
+    Functor.OplaxMonoidal.η simplicialPointedEquivalence.{u}.functor =
+      simplicialPointedEquivalence.counitIso.hom.app (𝟙_ (SimplicialObject Pointed.{u})) := (rfl)
+
 variable {X Y Z X' Y' : PointedSSet.{u}} {n m : SimplexCategoryᵒᵖ}
 
 /-- The class in the smash product `X ⊗ Y` of a pair of simplices of the same degree. -/

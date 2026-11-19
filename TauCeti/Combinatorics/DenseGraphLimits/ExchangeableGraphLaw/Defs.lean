@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Measure.Dirac.Basic
-import TauCeti.MeasureTheory.Measure.FiniteOrder
+import TauCeti.MeasureTheory.Measure.WellFoundedOrder
 
 /-!
 # Exchangeable graph laws
@@ -27,7 +27,7 @@ relabelling a pattern along an injection — the consistency hypothesis seen on 
 are a complete observable: an upper mass is the total probability of the graphs above the pattern,
 so downward induction along the finite lattice of graphs recovers the probability of an individual
 graph, and hence the whole law, from the upper masses
-(`MeasureTheory.Measure.ext_of_Ici_of_finite`).
+(`MeasureTheory.Measure.ext_of_Ici_of_wellFoundedGT`).
 
 The label set is always a finite `Fin k`, so its graphs form a finite measurable space and every
 set of them is measurable; no measurability side conditions appear below.
@@ -160,7 +160,7 @@ lattice of graphs, and a finite measure on a finite partial order is determined 
 downward induction along the lattice recovers the probability of every individual graph. -/
 theorem ext_upperMass {L L' : ExchangeableGraphLaw}
     (h : ∀ (k : ℕ) (F : SimpleGraph (Fin k)), L.upperMass F = L'.upperMass F) : L = L' :=
-  ext fun k => Measure.ext_of_Ici_of_finite _ _ fun F =>
+  ext fun k => Measure.ext_of_Ici_of_wellFoundedGT _ _ fun F =>
     (ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)).1 (h k F)
 
 end ExchangeableGraphLaw

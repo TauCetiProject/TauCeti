@@ -28,7 +28,7 @@ The isomorphisms are the specialisation of Mathlib's change of generator
 `b = 0` form of Mathlib's classification of quadratic algebras by their discriminant modulo unit
 squares, `QuadraticAlgebra.nonempty_algEquiv_iff_of_invertible_two`, read in the square-class
 group; its squarefree-integer form over `ℚ` is
-`QuadraticAlgebra.nonempty_algEquiv_iff_of_squarefree`.
+`QuadraticAlgebra.Rat.nonempty_algEquiv_iff`.
 
 ## Main definitions and results
 

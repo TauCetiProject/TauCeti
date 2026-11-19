@@ -13,7 +13,7 @@ import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.Data.Fintype.Fin
 import Mathlib.Tactic.Rify
 import TauCeti.Algebra.Order.BigOperators.ChainCombination
-import TauCeti.Data.Fintype.CardFilterOrder
+import TauCeti.Data.Fintype.Card.FilterOrder
 
 /-!
 # The simplices of edgewise subdivisions are small and uniformly fat
@@ -56,26 +56,6 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} [LinearOrder ι] {K : PreAbstractSimplicialComplex ι} {k : ℕ}
   {ρ : Finset (K.EdgewiseVertex k)} {u w : K.EdgewiseVertex k}
 
-/-! ### Counting entries in initial segments -/
-
-/-- In a face of the edgewise subdivision, the number of entries of a vertex `u` in a lower set
-exceeds that of any other vertex `w` by at most one. -/
-private theorem card_filter_le_card_filter_add_one (hρ : ρ ∈ K.edgewiseSubdivision k)
-    (hu : u ∈ ρ) (hw : w ∈ ρ) {p : ι → Prop} [DecidablePred p] (hp : Antitone p) :
-    #{l | p (u.1 l)} ≤ #{l | p (w.1 l)} + 1 := by
-  cases k with
-  | zero => simp
-  | succ m =>
-    -- Drop the first entry of `u`; the `l + 1`-st entry of `u` dominates the `l`-th of `w`.
-    rw [Fin.card_filter_univ_succ']
-    have h₁ : #{l : Fin m | p (u.1 l.succ)} ≤ #{l : Fin m | p (w.1 l.castSucc)} :=
-      card_le_card (monotone_filter_right _ fun l _ hl =>
-        hp (le_of_lt_of_mem_edgewiseSubdivision hρ hw hu (Fin.castSucc_lt_succ (i := l))) hl)
-    have h₂ : #{l : Fin m | p (w.1 l.castSucc)} ≤ #{l | p (w.1 l)} :=
-      card_le_card_of_injOn Fin.castSucc (fun l hl => by simpa using hl)
-        (Fin.castSucc_injective m).injOn
-    split_ifs <;> omega
-
 /-! ### Mesh and fatness -/
 
 /-- The vertices of a face of the `k`-th edgewise subdivision are placed at distance at most
@@ -96,8 +76,12 @@ theorem norm_edgewisePoint_sub_edgewisePoint_le (hρ : ρ ∈ K.edgewiseSubdivis
     congr 1
     ext l
     simp [le_iff_eq_or_lt]
-  have h₁ := card_filter_le_card_filter_add_one hρ hu hw (p := (· ≤ (i : ι))) antitone_le
-  have h₂ := card_filter_le_card_filter_add_one hρ hu hw (p := (· < (i : ι))) antitone_lt
+  have h₁ :=
+    card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hu hw
+      (p := (· ≤ (i : ι))) antitone_le
+  have h₂ :=
+    card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hu hw
+      (p := (· < (i : ι))) antitone_lt
   have h₃ := card_filter_le_card_filter_of_le huw (p := (· ≤ (i : ι))) antitone_le
   have h₄ := card_filter_le_card_filter_of_le huw (p := (· < (i : ι))) antitone_lt
   rify at h₁ h₂ h₃ h₄
@@ -118,9 +102,9 @@ theorem mul_sum_abs_le_norm_sum_smul_edgewisePoint (hρ : ρ ∈ K.edgewiseSubdi
   · simp
   -- `C a i` counts the entries of the vertex `a` that are at most `i`, and `N a j` those equal
   -- to `j`; `F i` is the set of vertices of `σ` that are at most `i`.
-  set C : ρ → σ → ℕ := fun a i => #{l | a.1.1 l ≤ i.1} with hC
+  set C : ρ → σ → ℕ := fun a i => #{l | a.1.1 l ≤ i.1}
   set N : ρ → σ → ℕ := fun a j => #{l | a.1.1 l = j.1} with hN
-  set F : σ → Finset σ := fun i => {j | j ≤ i} with hF
+  set F : σ → Finset σ := fun i => {j | j ≤ i}
   have hcount (a : ρ) (i : σ) : C a i = ∑ j ∈ F i, N a j :=
     card_filter_le_eq_sum_card_filter_eq (hσ a.1 a.2) i
   have hxj (j : σ) : (k : ℝ) * x j = ∑ a, v a * N a j := by
@@ -143,10 +127,12 @@ theorem mul_sum_abs_le_norm_sum_smul_edgewisePoint (hρ : ρ ∈ K.edgewiseSubdi
   have hchain : ∀ a ∈ (univ : Finset ρ), ∀ b ∈ (univ : Finset ρ),
       (C a ≤ C b ∧ C b ≤ C a + 1) ∨ (C b ≤ C a ∧ C a ≤ C b + 1) := by
     intro a _ b _
-    have hab := fun i : σ => card_filter_le_card_filter_add_one hρ a.2 b.2
-      (p := (· ≤ (i : ι))) antitone_le
-    have hba := fun i : σ => card_filter_le_card_filter_add_one hρ b.2 a.2
-      (p := (· ≤ (i : ι))) antitone_le
+    have hab := fun i : σ =>
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ a.2 b.2
+        (p := (· ≤ (i : ι))) antitone_le
+    have hba := fun i : σ =>
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ b.2 a.2
+        (p := (· ≤ (i : ι))) antitone_le
     rcases le_or_le_of_mem_edgewiseSubdivision hρ a.2 b.2 with h | h
     · exact Or.inr ⟨fun i => card_filter_le_card_filter_of_le h (p := (· ≤ (i : ι))) antitone_le,
         hab⟩
@@ -157,10 +143,10 @@ theorem mul_sum_abs_le_norm_sum_smul_edgewisePoint (hρ : ρ ∈ K.edgewiseSubdi
     by_contra hne
     have hne' : a.1 ≠ b.1 := fun h => hne (Subtype.ext h)
     rcases le_or_le_of_mem_edgewiseSubdivision hρ a.2 b.2 with h | h
-    · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter a.1.2.1 b.1.2.1 h
+    · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter h
         (fun h' => hne' (Subtype.ext h'))
       exact hj.ne (congrFun hab ⟨a.1.1 j, hσ a.1 a.2 j⟩).symm
-    · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter b.1.2.1 a.1.2.1 h
+    · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter h
         (fun h' => hne' (Subtype.ext h').symm)
       exact hj.ne (congrFun hab ⟨b.1.1 j, hσ b.1 b.2 j⟩)
   have hmain := sum_abs_le_two_mul_sum_abs_sum_mul C univ hchain hinj v hv

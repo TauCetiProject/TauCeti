@@ -7,11 +7,17 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
 # Directional differentiation and linear maps on Schwartz space
 
-Directional derivatives of a Schwartz function commute, since its second derivative is symmetric.
+Directional derivatives of a Schwartz function commute, since its second derivative is symmetric,
+and they commute with translation (`SchwartzMap.lineDerivOp_compSubConstCLM`).
+Near a point where a Schwartz function is constant, its line derivatives vanish
+(`SchwartzMap.lineDerivOp_eventuallyEq_zero`).
+The partial derivatives of the coordinates of a Schwartz function valued in Euclidean space are
+the coordinates of its line derivatives.
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
 
 Applying a continuous real-linear map to the values of a Schwartz function commutes with
@@ -19,8 +25,9 @@ directional differentiation, and hence with the Laplacian. In particular, real a
 parts, and the embedding of real-valued functions into complex Schwartz space, commute with
 differentiation.
 
-Multiplication by a continuous linear functional `L` satisfies the Leibniz rule
-`∂_v (L f) = L ∂_v f + L v f`, and its iterate
+Multiplication by a function `g` of temperate growth satisfies the Leibniz rule
+`∂_v (g f) = (∂_v g) f + g ∂_v f`. For a continuous linear functional `L` it reads
+`∂_v (L f) = L ∂_v f + L v f`, with iterate
 `∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f`. On the Fourier side, multiplying a symbol
 by `⟪h, ξ⟫` differentiates its kernel along `h`, so these identities control the derivatives of
 the symbol of a differentiated kernel.
@@ -85,6 +92,32 @@ theorem lineDerivOp_comm (f : 𝓢(V, F)) (v w : V) : ∂_{v} (∂_{w} f) = ∂_
     fderiv_clm_apply hd (differentiableAt_const _), fderiv_clm_apply hd (differentiableAt_const _)]
   simpa using ((f.smooth 2).contDiffAt.isSymmSndFDerivAt (by simp)).eq v w
 
+/-- Directional differentiation commutes with translation. -/
+@[simp]
+theorem lineDerivOp_compSubConstCLM {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] (f : 𝓢(V, F))
+    (a v : V) : ∂_{v} (f.compSubConstCLM 𝕜 a) = (∂_{v} f).compSubConstCLM 𝕜 a := by
+  ext x
+  rw [lineDerivOp_apply_eq_fderiv, funext (compSubConstCLM_apply f a), fderiv_comp_sub,
+    compSubConstCLM_apply, lineDerivOp_apply_eq_fderiv]
+
+open scoped Topology in
+/-- A Schwartz function that is constant near a point has line derivatives vanishing near that
+point. -/
+theorem lineDerivOp_eventuallyEq_zero {f : 𝓢(V, F)} {x : V} {c : F}
+    (hf : ⇑f =ᶠ[𝓝 x] fun _ ↦ c) (v : V) : ⇑(∂_{v} f : 𝓢(V, F)) =ᶠ[𝓝 x] fun _ ↦ 0 := by
+  filter_upwards [hf.eventually_nhds] with y hy
+  rw [lineDerivOp_apply_eq_fderiv, Filter.EventuallyEq.fderiv_eq (f := fun _ ↦ c) hy,
+    fderiv_const_apply, zero_apply]
+
+/-- A coordinate partial derivative of a Schwartz function with values in Euclidean space is a
+coordinate of its line derivative. -/
+theorem fderiv_apply_eq_lineDerivOp_apply {ι : Type*} [Fintype ι]
+    (f : 𝓢(V, EuclideanSpace ℝ ι)) (i : ι) (x v : V) :
+    fderiv ℝ (fun y ↦ f y i) x v = ∂_{v} f x i := by
+  have hp := ((EuclideanSpace.proj i).hasFDerivAt.comp x f.differentiableAt.hasFDerivAt).fderiv
+  simpa [Function.comp_def, lineDerivOp_apply_eq_fderiv] using
+    congrArg (fun L : V →L[ℝ] ℝ ↦ L v) hp
+
 open Laplacian in
 /-- **The Laplacian on the plane in coordinates**: `Δ f = ∂₁² f + ∂₂² f` for a Schwartz function
 `f` on `ℂ`, where `∂₁` and `∂₂` differentiate along `1` and `I`. -/
@@ -92,13 +125,22 @@ theorem laplacian_eq_lineDerivOp_one_I (f : 𝓢(ℂ, F)) :
     Δ f = ∂_{(1 : ℂ)} (∂_{(1 : ℂ)} f) + ∂_{Complex.I} (∂_{Complex.I} f) := by
   simp [laplacian_eq_sum Complex.orthonormalBasisOneI, Fin.sum_univ_two]
 
+/-- **The Leibniz rule for multiplication by a function of temperate growth**:
+`∂_v (g f) = (∂_v g) f + g ∂_v f`, where `∂_v g` is `x ↦ Dg(x) v`. -/
+theorem lineDerivOp_smulLeftCLM {𝕜 : Type*} [RCLike 𝕜] [NormedSpace 𝕜 F] {g : V → 𝕜}
+    (hg : g.HasTemperateGrowth) (f : 𝓢(V, F)) (v : V) :
+    ∂_{v} (smulLeftCLM F g f) =
+      smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
+  ext x
+  simp [lineDerivOp_apply_eq_fderiv, smulLeftCLM_apply hg, smulLeftCLM_apply (hg.fderiv_apply v),
+    fderiv_fun_smul (hg.1.differentiable (by simp) x) f.differentiableAt, add_comm]
+
 /-- **The Leibniz rule for multiplication by a linear function**:
 `∂_v (L f) = L ∂_v f + L v f` for a continuous linear functional `L`. -/
 theorem lineDerivOp_smulLeftCLM_clm (L : V →L[ℝ] ℝ) (f : 𝓢(V, F)) (v : V) :
     ∂_{v} (smulLeftCLM F L f) = smulLeftCLM F L (∂_{v} f) + L v • f := by
-  ext x
-  simp [lineDerivOp_apply_eq_fderiv, smulLeftCLM_apply L.hasTemperateGrowth,
-    fderiv_fun_smul L.differentiableAt f.differentiableAt]
+  rw [lineDerivOp_smulLeftCLM L.hasTemperateGrowth, add_comm]
+  simp
 
 /-- **The iterated Leibniz rule for multiplication by a linear function**:
 `∂_v^(k+1) (L f) = L ∂_v^(k+1) f + (k + 1) L v ∂_v^k f` for a continuous linear functional `L`. -/

@@ -106,6 +106,18 @@ theorem typeDDiagonalMatrix_apply (d : ι → K) (i j : ι ⊕ ι) :
 
 end NegZero
 
+section NegZeroClass
+
+variable [NegZeroClass K] [DecidableEq ι]
+
+/-- `diag(d, -d)` as a block matrix. -/
+theorem typeDDiagonalMatrix_eq_fromBlocks (d : ι → K) :
+    typeDDiagonalMatrix d = fromBlocks (diagonal d) 0 0 (-diagonal d) := by
+  rw [typeDDiagonalMatrix, typeDDiagonalValue, Pi.neg_def d, ← fromBlocks_diagonal,
+    ← diagonal_neg]
+
+end NegZeroClass
+
 section Ring
 
 variable [Ring K]
@@ -145,8 +157,8 @@ variable [CommRing K] [DecidableEq ι] [Fintype ι]
 /-- Every `diag(d, -d)` is skew-adjoint for the split type-`D` form. -/
 theorem typeDDiagonalMatrix_mem_typeD (d : ι → K) :
     typeDDiagonalMatrix d ∈ LieAlgebra.Orthogonal.typeD ι K := by
-  simpa [typeDDiagonalMatrix, typeDDiagonalValue, Pi.neg_def] using
-    fromBlocks_mem_typeD (diagonal d) 0 0 (by simp) (by simp)
+  rw [typeDDiagonalMatrix, typeDDiagonalValue, ← fromBlocks_diagonal]
+  exact fromBlocks_mem_typeD_iff.mpr ⟨by simp, by simp, by simp⟩
 
 /-! ### The Cartan subalgebra and its coordinates -/
 

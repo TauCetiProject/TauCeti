@@ -11,7 +11,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.GrpLimits
+public import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Kernel
 
 /-!
 # Kernels of group schemes
@@ -31,8 +32,6 @@ recorded explicitly for downstream use.
 ## Main declarations
 
 * `TauCeti.GroupScheme.isPullback_kernel`: a group-scheme kernel is the fibre over the identity.
-* `TauCeti.GroupScheme.isPullback_kernel_scheme`: the corresponding square of underlying schemes
-  is a pullback.
 * `TauCeti.GroupScheme.kernelPointsMulEquiv`: the points of a kernel with values in `Z` are the
   kernel of the induced homomorphism on points with values in `Z`.
 * `TauCeti.GroupScheme.isPullback_kernel_left`: on underlying schemes, the kernel with its
@@ -62,21 +61,6 @@ namespace TauCeti.GroupScheme
 open AlgebraicGeometry
 
 universe u
-
-/-- Pullback of group schemes along an arbitrary base morphism preserves parallel-pair limits.
-In particular, it preserves kernels. -/
-noncomputable instance pullbackMapGrp_preservesLimitsOfShape_walkingParallelPair
-    {S T : Scheme.{u}} (s : T ⟶ S) :
-    PreservesLimitsOfShape WalkingParallelPair (Over.pullback s).mapGrp := by
-  have : PreservesLimitsOfShape WalkingParallelPair
-      ((Over.pullback s).mapGrp ⋙ Grp.forget (Over T)) := by
-    -- Forgetting the group structure after the lifted pullback functor is definitionally the
-    -- same functor as first forgetting and then applying pullback in the over category.
-    change PreservesLimitsOfShape WalkingParallelPair
-      (Grp.forget (Over S) ⋙ Over.pullback s)
-    infer_instance
-  exact preservesLimitsOfShape_of_reflects_of_preserves
-    (Over.pullback s).mapGrp (Grp.forget (Over T))
 
 /-- The canonical isomorphism from the base change of a scheme-theoretic kernel to the kernel of
 the base-changed homomorphism. -/
@@ -124,25 +108,10 @@ kernel is the unique morphism to the trivial group scheme. -/
 theorem isPullback_kernel {S : Scheme.{u}} {G H : Grp (Over S)} (f : G ⟶ H) :
     IsPullback (kernel.ι f)
       (0 : kernel f ⟶ Grp.trivial (Over S)) f
-      (0 : Grp.trivial (Over S) ⟶ H) := by
-  refine IsPullback.of_isLimit' ⟨by simp⟩ ?_
-  refine PullbackCone.IsLimit.mk (by simp)
-    (fun t ↦ kernel.lift f t.fst (by simpa using t.condition)) ?_ ?_ ?_
-  · intro t
-    simp
-  · intro t
-    exact Subsingleton.elim _ _
-  · intro t m hm _
-    apply (cancel_mono (kernel.ι f)).1
-    simpa using hm
-
-/-- On underlying schemes, the scheme-theoretic kernel is the fibre of the homomorphism over its
-identity section. -/
-theorem isPullback_kernel_scheme {S : Scheme.{u}} {G H : Grp (Over S)} (f : G ⟶ H) :
-    IsPullback (kernel.ι f).hom.hom.left
-      (0 : kernel f ⟶ Grp.trivial (Over S)).hom.hom.left f.hom.hom.left
-      (0 : Grp.trivial (Over S) ⟶ H).hom.hom.left := by
-  exact ((isPullback_kernel f).map (Grp.forget _)).map (Over.forget _)
+      (0 : Grp.trivial (Over S) ⟶ H) :=
+  (IsPullback.kernel_ι f).of_iso (Iso.refl _) (Iso.refl _)
+    ((isZero_zero _).iso (Grp.isZero_trivial _)) (Iso.refl _) (by simp) (by simp) (by simp)
+    (by simp)
 
 /-! ### Points of a kernel -/
 
@@ -154,7 +123,7 @@ variable {S : Scheme.{u}} {G H : Grp (Over S)} (f : G ⟶ H)
 
 /-- A homomorphism of group schemes kills its kernel: the composite of the kernel inclusion and
 the homomorphism is the unit point. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem kernel_ι_comp_hom : (kernel.ι f).hom.hom ≫ f.hom.hom = 1 :=
   congrArg (fun g ↦ g.hom.hom) (kernel.condition f)
 
@@ -214,7 +183,7 @@ schemes with values in `Z` form the kernel of the induced homomorphism from the 
 the points of `H` with values in `Z`. -/
 noncomputable def kernelPointsMulEquiv :
     (Z ⟶ (kernel f).X) ≃* (IsMonHom.monoidHom f.hom.hom Z).ker where
-  toFun y := ⟨y ≫ (kernel.ι f).hom.hom, by simp [kernel_ι_comp_hom]⟩
+  toFun y := ⟨y ≫ (kernel.ι f).hom.hom, by simp⟩
   invFun x := kernelLift x.1 (MonoidHom.mem_ker.1 x.2 :)
   left_inv y := kernel_hom_ext (kernelLift_ι _ _)
   right_inv x := Subtype.ext (kernelLift_ι _ _)
@@ -255,8 +224,8 @@ lemma kernelBaseChangeSchemeIso_hom_comp_ι {S T : Scheme.{u}} (s : T ⟶ S)
     {G H : Grp (Over S)} (f : G ⟶ H) :
     (kernelBaseChangeSchemeIso s f).hom ≫
         (kernel.ι ((Over.pullback s).mapGrp.map f)).hom.hom.left =
-      ((Over.pullback s).mapGrp.map (kernel.ι f)).hom.hom.left := by
-  exact congrArg (fun k ↦ k.hom.hom.left) (kernelBaseChangeIso_hom_comp_ι s f)
+      ((Over.pullback s).mapGrp.map (kernel.ι f)).hom.hom.left :=
+  congrArg (fun k ↦ k.hom.hom.left) (kernelBaseChangeIso_hom_comp_ι s f)
 
 /-- The inverse underlying-scheme comparison intertwines the two kernel inclusions. -/
 @[reassoc (attr := simp)]

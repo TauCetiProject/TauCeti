@@ -55,6 +55,8 @@ states its results.
 
 * `TauCeti.AlgebraicGeometry.projectivePlaneCurve.chartSectionsEquiv_appLE`: on a chart, the
   functions pulled back from `Spec R` are the constants.
+* `TauCeti.AlgebraicGeometry.projectivePlaneCurve.exists_not_dvd_X`: an irreducible `G` divides
+  at most one coordinate, so some chart `D₊(Xᵢ)` has `Xᵢ` not divisible by `G`.
 * the instance `TauCeti.AlgebraicGeometry.projectivePlaneCurve.isIntegral`: over a field, the curve
   of an irreducible `G` is integral.
 * `TauCeti.AlgebraicGeometry.projectivePlaneCurve.functionFieldEquiv_germToFunctionField_mk`: the
@@ -182,6 +184,15 @@ theorem mk_X_ne_zero_iff {hG : G.IsHomogeneous d} {i : Fin 3} :
     Ideal.Quotient.mk (ideal hG).toIdeal (X i) ≠ 0 ↔ ¬ G ∣ X i := by
   rw [ne_eq, Ideal.Quotient.eq_zero_iff_mem, toIdeal_ideal, Ideal.mem_span_singleton]
 
+/-- Over a domain, an irreducible `G` divides at most one of the coordinates, so the curve `G = 0`
+has a standard chart `D₊(Xᵢ)` with `Xᵢ` not divisible by `G`. -/
+theorem exists_not_dvd_X [IsDomain R] (hirr : Irreducible G) : ∃ i : Fin 3, ¬ G ∣ X i := by
+  by_contra! h
+  -- otherwise `G` would be associated to both `X₀` and `X₁`
+  have h₀ := hirr.associated_of_dvd (prime_X (i := 0)).irreducible (h 0)
+  have h₁ := hirr.associated_of_dvd (prime_X (i := 1)).irreducible (h 1)
+  exact absurd (X_dvd_X.mp (h₀.symm.trans h₁).dvd) (by decide)
+
 end projectivePlaneCurve
 
 end CommRing
@@ -201,12 +212,7 @@ theorem isDomain_quotient (hirr : Irreducible G) :
 /-- **The projective plane curve of an irreducible polynomial is integral.** -/
 instance isIntegral [Fact (Irreducible G)] : IsIntegral (projectivePlaneCurve hG) := by
   have := isDomain_quotient (hG := hG) Fact.out
-  -- `G` divides at most one coordinate: otherwise it would be associated to both `X₀` and `X₁`
-  obtain ⟨i, hi⟩ : ∃ i : Fin 3, ¬ G ∣ X i := by
-    by_contra! h
-    have h₀ := (Fact.out : Irreducible G).associated_of_dvd (prime_X (i := 0)).irreducible (h 0)
-    have h₁ := (Fact.out : Irreducible G).associated_of_dvd (prime_X (i := 1)).irreducible (h 1)
-    exact absurd (X_dvd_X.mp (h₀.symm.trans h₁).dvd) (by decide)
+  obtain ⟨i, hi⟩ := exists_not_dvd_X (G := G) Fact.out
   refine Proj.isIntegral_of_isDomain _ fun h ↦ (mk_X_ne_zero_iff (hG := hG)).mpr hi ?_
   have := HomogeneousIdeal.mem_irrelevant_of_mem _ one_pos ((ideal hG).mk_X_mem_quotientGrading i)
   rwa [h, ← HomogeneousIdeal.mem_iff, HomogeneousIdeal.toIdeal_bot, Ideal.mem_bot] at this

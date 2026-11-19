@@ -57,6 +57,8 @@ step at a time, which shows that pseudocoherence is pseudocoherence in every fin
   pseudocoherent.
 * `TauCeti.Huber.IsPseudoCoherentOver.prod`: products of `m`-pseudocoherent modules are
   `m`-pseudocoherent.
+* `TauCeti.Huber.IsPseudoCoherentOver.pi`: finite products of `m`-pseudocoherent modules are
+  `m`-pseudocoherent.
 * `TauCeti.Huber.IsPseudoCoherentOver.of_isNoetherianRing`: over a noetherian ring, finitely
   generated modules are pseudocoherent.
 
@@ -347,6 +349,14 @@ theorem prod (h₁ : IsPseudoCoherentOver R M m) (h₂ : IsPseudoCoherentOver R 
   induction m using ENat.recTopCoe with
   | top => exact top_iff.mpr fun n ↦ prod_nat (top_iff.mp h₁ n) (top_iff.mp h₂ n)
   | coe n => exact prod_nat h₁ h₂
+
+/-- **Finite products of `m`-pseudocoherent modules are `m`-pseudocoherent.** -/
+theorem pi {ι : Type*} [Finite ι] {M : ι → Type*} [∀ i, AddCommGroup (M i)]
+    [∀ i, Module R (M i)] (h : ∀ i, IsPseudoCoherentOver R (M i) m) :
+    IsPseudoCoherentOver R (∀ i, M i) m :=
+  Module.pi_induction' R (fun N _ _ ↦ IsPseudoCoherentOver R N m)
+    (fun N _ _ ↦ IsPseudoCoherentOver R N m) (fun e h ↦ h.of_equiv e) (fun e h ↦ h.of_equiv e)
+    (of_projective.mono le_top) (fun h₁ h₂ ↦ h₁.prod h₂) M h
 
 /-- **Kernels of surjections from projective modules.** If `M` is `(m + 1)`-pseudocoherent, the
 kernel of every surjection onto `M` from a finitely generated projective module is

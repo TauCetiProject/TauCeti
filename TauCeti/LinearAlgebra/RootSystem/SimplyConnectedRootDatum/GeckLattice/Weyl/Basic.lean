@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Algebra.Algebra.Hom
-import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.RootDatum
@@ -74,26 +73,6 @@ variable (t : DynkinType) (ht : t.Valid)
 
 /-! ## A simple Weyl representative -/
 
-/-- The defining representation carries the numbered `sl₂` triple at node `i` to an `sl₂` triple
-of endomorphisms of the Geck module. -/
-theorem isSl2Triple_geckRepresentation (i : Fin t.rank) :
-    IsSl2Triple
-      (t.geckRepresentation ht
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
-      (t.geckRepresentation ht
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
-      (t.geckRepresentation ht
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
-  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
-    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
-    ((t.lieBasis ht).sl2 i).map
-      ((t.geckRepresentation ht).toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
-      (by
-        intro hzero
-        apply ((t.lieBasis ht).sl2 i).h_ne_zero
-        apply t.geckRepresentation_ι_injective ht
-        simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply, map_zero] using hzero)
-
 /-- **The pinned simple Weyl representative in the Geck carrier.**  At node `i` this is
 `xᵢ(1) x₋ᵢ(-1) xᵢ(1)`. -/
 def geckSimpleWeylPoint (i : Fin t.rank) (A : Type v) [CommRing A] : t.geckPoints ht A :=
@@ -104,6 +83,18 @@ def geckSimpleWeylPoint (i : Fin t.rank) (A : Type v) [CommRing A] : t.geckPoint
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
       (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) (.inl i) (.inr i) A)
+
+/-- The pinned simple Weyl representative is the three-factor opposite-root word. -/
+theorem geckSimpleWeylPoint_eq_mul (i : Fin t.rank) (A : Type v) [CommRing A] :
+    t.geckSimpleWeylPoint ht i A =
+      t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (1 : A)) *
+        t.geckRootSubgroupPoints ht (.inr i) A (Multiplicative.ofAdd (-1 : A)) *
+        t.geckRootSubgroupPoints ht (.inl i) A (Multiplicative.ofAdd (1 : A)) := by
+  apply Subtype.ext
+  simp only [geckSimpleWeylPoint, MulEquiv.subgroupCongr_apply,
+    UniversalEnvelopingAlgebra.kostantToralWeylPoint_def, Subgroup.coe_mul,
+    coe_geckRootSubgroupPoints,
+    UniversalEnvelopingAlgebra.coe_kostantToralRootSubgroupPoints]
 
 /-- In the Geck coordinate basis, the simple Weyl representative is the integral Weyl
 automorphism supplied by the corresponding numbered `sl₂` pair. -/

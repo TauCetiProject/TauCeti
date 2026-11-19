@@ -9,9 +9,10 @@ import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.NumberTheory.LocalField.FractionalIdeal
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
+public import TauCeti.NumberTheory.LocalField.Squares
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
+public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
-
-import TauCeti.NumberTheory.LocalField.Squares
 
 /-!
 # The quadratic defect
@@ -46,6 +47,8 @@ approximation argument: below depth `2e` the cross term `2 ξ π^k s` is negligi
 approximation of even order can always be improved using that the residue field is perfect of
 characteristic two. Every listed value is
 attained: sharpness supplies the value `2e`, and `1 + π^(2k+1)` has defect exponent `2k+1`.
+Every nonsquare radicand, including one of negative valuation, has a square multiple that is
+a uniformizer or a unit of maximal or positive odd defect.
 
 ## Main definitions
 
@@ -57,7 +60,8 @@ attained: sharpness supplies the value `2e`, and `1 + π^(2k+1)` has defect expo
 * `TauCeti.isGLB_quadraticDefect`: `𝔡(a)` is the greatest lower bound of the ideals
   `(a - ξ²) 𝒪[K]`, and `TauCeti.exists_quadraticDefect_eq_spanSingleton`: it is one of them.
 * `TauCeti.quadraticDefect_eq_zero_iff` and `TauCeti.defectExponent_eq_top_iff`: the defect
-  detects squares.
+  detects squares; `TauCeti.exists_defectExponent_eq_coe`: a nonsquare has a finite defect
+  exponent.
 * `TauCeti.quadraticDefect_eq_maximalIdeal_zpow`: `𝔡(a) = 𝓂[K] ^ δ(a)` for a nonsquare `a`, and
   `TauCeti.quadraticDefect_eq_spanSingleton_of_defectExponent_eq`: `𝔡(a) = c 𝒪[K]` whenever
   `v_K(c) = δ(a)`.
@@ -67,11 +71,19 @@ attained: sharpness supplies the value `2e`, and `1 + π^(2k+1)` has defect expo
   an element of odd valuation.
 * `TauCeti.defectExponent_le_two_mul_natCastValuation`: the defect exponent of a nonsquare unit
   is at most `2 v_K(2)`.
+* `TauCeti.dyadicLevel_ne_zero_of_defectExponent_eq`: a unit of positive defect exponent forces
+  `v_K(2) ≠ 0`.
 * `TauCeti.defectExponent_eq_two_mul_natCastValuation_or_odd` and
   `TauCeti.quadraticDefect_eq_maximalIdeal_zpow_or_odd`: the possible defects of a unit.
+* `TauCeti.exists_mul_sq_cases_of_not_isSquare`: the three-case normalization of a nonsquare
+  radicand, with an explicit square-rescaling witness.
 * `TauCeti.exists_unit_defectExponent_eq_two_mul_natCastValuation` and
   `TauCeti.defectExponent_one_add_pow_odd`: every entry in that list is attained, with an explicit
   representative for each odd exponent.
+* `TauCeti.defectExponent_eq_two_mul_natCastValuation_of_mem_unitFiltration`: every nonsquare in
+  `U(K, 2 v_K(2))` has the maximal defect exponent `2 v_K(2)`.
+* `TauCeti.exists_eisenstein_coefficients_of_defectExponent_eq_odd`: Eisenstein coefficients
+  `t = 2b / π^k ∈ 𝓂[K]` and irreducible `c = (b² - u) / π^(2k)` from an odd unit defect.
 
 ## References
 
@@ -164,7 +176,7 @@ private theorem approxOrders_nonempty (a : Kˣ) : (approxOrders a).Nonempty :=
 
 private theorem bddAbove_approxOrders {a : Kˣ} (ha : ¬IsSquare a) :
     BddAbove (approxOrders a) := by
-  rw [← isSquare_units_val_iff] at ha
+  rw [← Units.isSquare_coe_iff] at ha
   obtain ⟨y, hy⟩ := exists_forall_valuation_le_valuation_sub_sq ha
   refine ⟨(normalizedValuation K y).toAdd, ?_⟩
   rintro _ ⟨ξ, x, hx, rfl⟩
@@ -184,6 +196,11 @@ theorem defectExponent_eq_top_iff {a : Kˣ} : defectExponent a = ⊤ ↔ IsSquar
   unfold defectExponent
   split_ifs with h <;> simp [h]
 
+/-- A nonsquare unit has a finite defect exponent. -/
+theorem exists_defectExponent_eq_coe {a : Kˣ} (ha : ¬IsSquare a) :
+    ∃ d : ℤ, defectExponent a = d :=
+  (WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp ha)).imp fun _ h ↦ h.symm
+
 /-- A unit with finite defect exponent is not a square. -/
 theorem not_isSquare_of_defectExponent_eq {a : Kˣ} {d : ℤ}
     (hd : defectExponent a = d) : ¬IsSquare a := by
@@ -191,6 +208,15 @@ theorem not_isSquare_of_defectExponent_eq {a : Kˣ} {d : ℤ}
   have htop := defectExponent_eq_top_iff.mpr hsq
   rw [hd] at htop
   exact WithTop.coe_ne_top htop
+
+/-- A square root `x` of a unit `a` with finite defect exponent does not lie in the base field,
+since `a` is not a square. -/
+theorem notMem_range_algebraMap_of_defectExponent_eq {L : Type*} [Field L] [Algebra K L]
+    {a : Kˣ} {x : L} (hx2 : x ^ 2 = algebraMap K L (a : K)) {d : ℤ}
+    (hd : defectExponent a = d) : x ∉ Set.range (algebraMap K L) := by
+  rintro ⟨c, rfl⟩
+  exact not_isSquare_of_defectExponent_eq hd (Units.isSquare_coe_iff.mp
+    ⟨c, (algebraMap K L).injective (by simpa [sq] using hx2.symm)⟩)
 
 /-- Every approximation order `v_K(a - ξ²)` is at most the defect exponent. -/
 theorem le_defectExponent (a : Kˣ) (ξ : K) (x : Kˣ) (hx : (x : K) = a - ξ ^ 2) :
@@ -219,7 +245,7 @@ private theorem valuation_le_valuation_sub_sq_of_eq {a : Kˣ} (ha : ¬IsSquare a
     (hx : ((normalizedValuation K x).toAdd : WithTop ℤ) = defectExponent a) (η : K) :
     valuation K (x : K) ≤ valuation K ((a : K) - η ^ 2) := by
   have hne : (a : K) - η ^ 2 ≠ 0 := fun h =>
-    ha (isSquare_units_val_iff.mp ⟨η, by rw [← sq]; exact sub_eq_zero.mp h⟩)
+    ha (Units.isSquare_coe_iff.mp ⟨η, by rw [← sq]; exact sub_eq_zero.mp h⟩)
   have h := le_defectExponent a η (Units.mk0 _ hne) rfl
   rw [← hx, WithTop.coe_le_coe, toAdd_normalizedValuation_le_iff_valuation_le] at h
   simpa using h
@@ -229,7 +255,7 @@ square root of `a`. -/
 private theorem exists_forall_valuation_sub_sq_le (a : Kˣ) :
     ∃ ξ₀ : K, ∀ ξ : K, valuation K ((a : K) - ξ₀ ^ 2) ≤ valuation K ((a : K) - ξ ^ 2) := by
   by_cases ha : IsSquare a
-  · obtain ⟨r, hr⟩ := isSquare_units_val_iff.mpr ha
+  · obtain ⟨r, hr⟩ := Units.isSquare_coe_iff.mpr ha
     exact ⟨r, fun ξ => by simp [hr, sq]⟩
   obtain ⟨ξ₀, x₀, hx₀, h₀⟩ := exists_defectExponent_eq ha
   exact ⟨ξ₀, fun ξ => hx₀ ▸ valuation_le_valuation_sub_sq_of_eq ha h₀ ξ⟩
@@ -285,7 +311,7 @@ theorem exists_quadraticDefect_eq_spanSingleton (a : Kˣ) :
 theorem quadraticDefect_eq_zero_iff {a : Kˣ} : quadraticDefect a = 0 ↔ IsSquare a := by
   obtain ⟨ξ₀, h₀⟩ := exists_forall_valuation_sub_sq_le a
   rw [quadraticDefect_eq_spanSingleton_of_forall h₀, FractionalIdeal.spanSingleton_eq_zero_iff,
-    sub_eq_zero, ← isSquare_units_val_iff]
+    sub_eq_zero, ← Units.isSquare_coe_iff]
   refine ⟨fun h => ⟨ξ₀, by rw [h, sq]⟩, fun ⟨r, hr⟩ => ?_⟩
   have h := h₀ r
   rwa [sq r, ← hr, sub_self, map_zero, le_zero_iff, map_eq_zero, sub_eq_zero] at h
@@ -339,6 +365,22 @@ theorem defectExponent_mul_sq (a c : Kˣ) :
   norm_cast at h1 h2 ⊢
   omega
 
+/-- An element of even valuation and finite defect exponent `d` has a square multiple
+that is a unit with defect exponent `d - v_K(a)`, even when `v_K(a)` is negative. -/
+theorem exists_defectExponent_mul_sq_eq_sub_of_even_valuation {a : Kˣ} {d : ℤ}
+    (hd : defectExponent a = d) (ha : Even (normalizedValuation K a).toAdd) :
+    ∃ c : Kˣ, valuation K ((a * c ^ 2 : Kˣ) : K) = 1 ∧
+      defectExponent (a * c ^ 2) = ((d - (normalizedValuation K a).toAdd : ℤ) : WithTop ℤ) := by
+  obtain ⟨k, hk⟩ := ha
+  obtain ⟨c, hc⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd (-k))
+  have hv : (normalizedValuation K (a * c ^ 2)).toAdd = 0 := by
+    simp only [map_mul, map_pow, toAdd_mul, toAdd_pow, hc, toAdd_ofAdd, nsmul_eq_mul]
+    omega
+  refine ⟨c, (normalizedValuation_eq_one_iff _).mp (toAdd_eq_zero.mp hv), ?_⟩
+  rw [defectExponent_mul_sq, hd, hc, toAdd_ofAdd, ← WithTop.coe_add]
+  congr 1
+  omega
+
 /-- For `a` of odd valuation, `v(a - ξ²) = min (v(a), 2 v(ξ))` never exceeds `v(a)`. -/
 private theorem valuation_le_valuation_sub_sq {a : Kˣ}
     (ha : ¬Even (normalizedValuation K a).toAdd) (ξ : K) :
@@ -348,8 +390,7 @@ private theorem valuation_le_valuation_sub_sq {a : Kˣ}
   have hne : valuation K (ξ ^ 2) ≠ valuation K (a : K) := fun h => ha <| by
     have e : (normalizedValuation K (Units.mk0 ξ hξ ^ 2)).toAdd =
         (normalizedValuation K a).toAdd :=
-      le_antisymm ((toAdd_normalizedValuation_le_iff_valuation_le _ _).mpr (by simpa using h.ge))
-        ((toAdd_normalizedValuation_le_iff_valuation_le _ _).mpr (by simpa using h.le))
+      (toAdd_normalizedValuation_eq_iff_valuation_eq _ _).mpr (by simpa using h)
     rw [← e, map_pow, toAdd_pow]
     exact ⟨_, two_nsmul _⟩
   rcases hne.lt_or_gt with h | h
@@ -506,6 +547,15 @@ theorem defectExponent_le_two_mul_natCastValuation (h2 : (2 : K) ≠ 0) {u : Kˣ
   rw [← sq, mul_pow, hz, hw]
   group
 
+/-- **A unit of positive defect exponent forces `v_K(2) ≠ 0`.** Its defect exponent is at most
+`2 v_K(2)`; in odd residue characteristic every nonsquare unit has defect exponent `0`. -/
+theorem dyadicLevel_ne_zero_of_defectExponent_eq (h2 : (2 : K) ≠ 0) {a : Kˣ}
+    (ha : valuation K (a : K) = 1) {d : ℤ} (hd : defectExponent a = d) (hd0 : 0 < d) :
+    dyadicLevel K h2 ≠ 0 := by
+  have h := defectExponent_le_two_mul_natCastValuation h2 ha (not_isSquare_of_defectExponent_eq hd)
+  rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
+  omega
+
 /-- **The possible defects of a unit** (O'Meara 63:2). For a unit of `𝒪[K]` which is not a square,
 the defect exponent is either `2 v_K(2)` or an odd number below `2 v_K(2)`; equivalently, by
 `TauCeti.quadraticDefect_eq_maximalIdeal_zpow`, the defect is `𝓂[K] ^ (2 v_K(2)) = 4 𝒪[K]` or
@@ -558,17 +608,51 @@ theorem defectExponent_eq_two_mul_natCastValuation_or_odd (h2 : (2 : K) ≠ 0) {
       omega
     exact Or.inr ⟨k, by omega, by rw [← hxd, hd_eq]⟩
 
-/-- The maximal finite unit defect is attained. This is the defect-theoretic form of the
-sharpness of the local square theorem: a nonsquare in `U(K, 2 v_K(2))` is approximated by `1²`
-to order at least `2 v_K(2)`, while no nonsquare unit has larger defect exponent. -/
-theorem exists_unit_defectExponent_eq_two_mul_natCastValuation (h2 : (2 : K) ≠ 0) :
-    ∃ u : Kˣ, valuation K (u : K) = 1 ∧ ¬IsSquare u ∧
-      defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) := by
+/-- A suitable square multiple of a nonsquare is a nonsquare uniformizer or a unit whose defect
+exponent is maximal or positive odd. The unit-defect alternatives are bounded by `v_K(2)`,
+so at odd residue characteristic only the maximal-defect alternative remains. -/
+theorem exists_mul_sq_cases_of_not_isSquare
+    (h2 : (2 : K) ≠ 0) (a : Kˣ) (ha : ¬IsSquare a) :
+    ∃ b c : Kˣ, b = a * c ^ 2 ∧ ¬IsSquare b ∧
+      (IsUniformizer (K := K) b ∨ valuation K (b : K) = 1 ∧
+        (defectExponent b = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) ∨
+          ∃ k : ℕ, k < natCastValuation K 2 h2 ∧
+            defectExponent b = ((2 * k + 1 : ℕ) : ℤ))) := by
+  obtain ⟨π, hπ⟩ := exists_isUniformizer K
+  let n : ℤ := (normalizedValuation K a).toAdd
+  let c : Kˣ := π ^ (-(n / 2))
+  let b : Kˣ := a * c ^ 2
+  have hval : (normalizedValuation K b).toAdd = n % 2 := by
+    have hc : (normalizedValuation K c).toAdd = -(n / 2) := by
+      dsimp only [c]
+      rw [normalizedValuation_zpow_of_eq_ofAdd_one ((isUniformizer_def π).mp hπ),
+        toAdd_ofAdd]
+    simp only [b, map_mul, map_pow, toAdd_mul, toAdd_pow, hc, nsmul_eq_mul]
+    omega
+  have hb : ¬IsSquare b := by
+    intro h
+    have hcancel : b * (c⁻¹) ^ 2 = a := by simp [b, mul_assoc]
+    exact ha (hcancel ▸ h.mul (IsSquare.sq c⁻¹))
+  refine ⟨b, c, rfl, hb, ?_⟩
+  have hmod : n % 2 = 0 ∨ n % 2 = 1 := by omega
+  rcases hmod with hzero | hone
+  · right
+    have hv : valuation K (b : K) = 1 :=
+      (normalizedValuation_eq_one_iff b).mp (toAdd_eq_zero.mp (hval.trans hzero))
+    exact ⟨hv, defectExponent_eq_two_mul_natCastValuation_or_odd h2 hv hb⟩
+  · left
+    apply (isUniformizer_def b).mpr
+    apply Multiplicative.toAdd.injective
+    simpa only [toAdd_ofAdd] using hval.trans hone
+
+/-- A nonsquare in `U(K, 2 v_K(2))` has defect exponent exactly `2 v_K(2)`: it is approximated by
+`1²` to order at least `2 v_K(2)`, while no nonsquare unit has larger defect exponent. -/
+theorem defectExponent_eq_two_mul_natCastValuation_of_mem_unitFiltration (h2 : (2 : K) ≠ 0)
+    {u : Kˣ} (hu : u ∈ unitFiltration K (2 * natCastValuation K 2 h2)) (hnsq : ¬IsSquare u) :
+    defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) := by
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
-  obtain ⟨u, hu, hnsq⟩ := exists_mem_unitFiltration_not_isSquare h2
   have huval : valuation K (u : K) = 1 := ((mem_unitFiltration_iff_valuation_le hπ).mp hu).1
-  refine ⟨u, huval, hnsq, le_antisymm
-    (defectExponent_le_two_mul_natCastValuation h2 huval hnsq) ?_⟩
+  refine le_antisymm (defectExponent_le_two_mul_natCastValuation h2 huval hnsq) ?_
   have hu1 : valuation K ((u : K) - 1) ≤
       valuation K (π : K) ^ (2 * natCastValuation K 2 h2) :=
     ((mem_unitFiltration_iff_valuation_le hπ).mp hu).2
@@ -586,6 +670,16 @@ theorem exists_unit_defectExponent_eq_two_mul_natCastValuation (h2 : (2 : K) ≠
       ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) x).mpr
         (by simpa only [x, Units.val_mk0, zpow_natCast] using hu1)
   exact (WithTop.coe_le_coe.mpr hx).trans (le_defectExponent u 1 x (by simp [x]))
+
+/-- The maximal finite unit defect is attained. This is the defect-theoretic form of the
+sharpness of the local square theorem: every nonsquare in `U(K, 2 v_K(2))` has defect exponent
+`2 v_K(2)`. -/
+theorem exists_unit_defectExponent_eq_two_mul_natCastValuation (h2 : (2 : K) ≠ 0) :
+    ∃ u : Kˣ, valuation K (u : K) = 1 ∧ ¬IsSquare u ∧
+      defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) := by
+  obtain ⟨u, hu, hnsq⟩ := exists_mem_unitFiltration_not_isSquare h2
+  exact ⟨u, (mem_unitFiltration_zero u).mp (unitFiltration_antitone (Nat.zero_le _) hu), hnsq,
+    defectExponent_eq_two_mul_natCastValuation_of_mem_unitFiltration h2 hu hnsq⟩
 
 /-- For `k < v_K(2)`, the unit represented by `1 + π^(2k+1)` has defect exponent exactly
 `2k+1`. -/
@@ -671,6 +765,44 @@ theorem quadraticDefect_eq_maximalIdeal_zpow_or_odd (h2 : (2 : K) ≠ 0) {u : K�
   rcases defectExponent_eq_two_mul_natCastValuation_or_odd h2 hu hsq with h | ⟨k, hk, h⟩
   · exact Or.inl (quadraticDefect_eq_maximalIdeal_zpow h)
   · exact Or.inr ⟨k, hk, quadraticDefect_eq_maximalIdeal_zpow h⟩
+
+/-- **Eisenstein coefficients from an odd unit defect** (O'Meara §63A). For a uniformizer `π` and a
+unit `u` with defect exponent `2k + 1`, an optimal square approximation `b²` of `u` yields
+`t = 2b / π^k ∈ 𝓂[K]` and an irreducible `c = (b² - u) / π^(2k) ∈ 𝒪[K]`. -/
+theorem exists_eisenstein_coefficients_of_defectExponent_eq_odd {π : 𝒪[K]} (hπ : Irreducible π)
+    {u : Kˣ} (hu : valuation K (u : K) = 1) {k : ℕ}
+    (hd : defectExponent u = ((2 * k + 1 : ℕ) : ℤ)) :
+    ∃ (b : K) (t c : 𝒪[K]),
+      valuation K ((u : K) - b ^ 2) = valuation K (π : K) ^ (2 * k + 1) ∧
+      t ∈ 𝓂[K] ∧ Irreducible c ∧
+      (t : K) = 2 * b / (π : K) ^ k ∧
+      (c : K) = (b ^ 2 - (u : K)) / (π : K) ^ (2 * k) := by
+  have hsq := not_isSquare_of_defectExponent_eq hd
+  have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
+  have hπpos : 0 < valuation K (π : K) := Valuation.integer.v_irreducible_pos hπ
+  obtain ⟨b, y, hy, hyd⟩ := exists_defectExponent_eq hsq
+  rw [hd, WithTop.coe_inj] at hyd
+  have hyv : valuation K (y : K) = valuation K (π : K) ^ (2 * k + 1) := by
+    simpa only [Units.val_mk0, zpow_natCast] using
+      (toAdd_normalizedValuation_eq_iff_valuation_eq_zpow
+        (normalizedValuation_irreducible hπ) _ y).mp hyd
+  have hcv : valuation K ((b ^ 2 - (u : K)) / (π : K) ^ (2 * k)) = valuation K (π : K) := by
+    rw [map_div₀, ← neg_sub, Valuation.map_neg, ← hy, hyv, map_pow, pow_succ,
+      mul_div_cancel_left₀ _ (pow_ne_zero _ hπpos.ne')]
+  have htv : valuation K (2 * b / (π : K) ^ k) < 1 := by
+    by_cases h2 : (2 : K) = 0
+    · simp [h2]
+    · have hb : valuation K b ≤ 1 := valuation_le_one_of_sub_sq_le_one hu.le
+        (hy ▸ hyv ▸ pow_le_one₀ zero_le hπ1.le)
+      have hk : k < natCastValuation K 2 h2 := by
+        have h := defectExponent_le_two_mul_natCastValuation h2 hu hsq
+        rw [hd, WithTop.coe_le_coe, Nat.cast_le] at h; omega
+      rw [map_div₀, map_mul, show valuation K (2 : K) = _ from valuation_natCast_eq_pow hπ 2 h2,
+        map_pow, div_lt_one₀ (pow_pos hπpos k)]
+      exact (mul_le_mul' le_rfl hb).trans_lt
+        (by simpa only [mul_one] using pow_lt_pow_right_of_lt_one₀ hπpos hπ1 hk)
+  exact ⟨b, ⟨_, htv.le⟩, ⟨_, hcv.trans_le hπ1.le⟩, hy ▸ hyv,
+    (valuation K).mem_maximalIdeal_iff.mpr htv, irreducible_of_valuation_eq hπ hcv, rfl, rfl⟩
 
 end UnitDefect
 

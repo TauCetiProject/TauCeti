@@ -1,0 +1,204 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Probability.Process.TimeMeasure
+public import TauCeti.Probability.Process.Predictable.Basic
+public import Mathlib.MeasureTheory.Measure.Prod
+import Mathlib.MeasureTheory.Function.LpSeminorm.Trim
+import Mathlib.MeasureTheory.Integral.Prod
+
+/-!
+# The finite-horizon predictable time-product measure
+
+For a filtration `ℱ`, `ℱ.predictableMeasure P T` is the restriction of Lebesgue-time × `P`
+to `(0,T]`, trimmed to the predictable sigma-algebra. No Brownian process, usual conditions,
+or completion of the sample space are needed for this construction. Its native `Lp ℝ 2`
+space is the expected-square-energy space for Brownian integrands.
+
+The measure agrees with the ambient product measure on predictable sets. In particular,
+`(s,t] × A`, with `A` known at `s` and `t ≤ T`, has mass `(t-s) P(A)`. The initial-time
+slice has mass zero, and restricting to a shorter horizon commutes with trimming.
+Filtered measure-preserving sample maps preserve these predictable measures, even with
+different ambient measurable spaces.
+Native `lintegral_trim`, `integral_trim`, and `eLpNorm_trim` then identify predictable
+integrands' energies and norms with their ambient time-product counterparts; the dictionary
+lemmas below retain the predictable measurability hypothesis, since trimming does not preserve
+integrals of arbitrary ambient-product-measurable functions.
+
+## References
+
+* I. Karatzas, S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
+  Springer, 1991, §3.2.
+-/
+
+public section
+
+open MeasureTheory Set TauCeti.Probability
+open scoped NNReal ENNReal
+
+namespace MeasureTheory.Filtration
+
+variable {Ω : Type*} {m : MeasurableSpace Ω}
+
+/-- The finite-horizon time-product measure on the predictable sigma-algebra.
+It is the expected-energy measure for Brownian stochastic integrands. -/
+noncomputable def predictableMeasure (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) (T : ℝ≥0) :
+    @Measure (ℝ≥0 × Ω) ℱ.predictable :=
+  ((timeMeasure T).prod P).trim ℱ.predictable_le_prod
+
+/-- The predictable measure is the trim of the finite-horizon time-product measure. -/
+theorem predictableMeasure_def (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) (T : ℝ≥0) :
+    ℱ.predictableMeasure P T = ((timeMeasure T).prod P).trim ℱ.predictable_le_prod :=
+  (rfl)
+
+/-- On predictable sets, trimming does not change time-product mass. -/
+theorem predictableMeasure_apply (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) (T : ℝ≥0)
+    {A : Set (ℝ≥0 × Ω)} (hA : MeasurableSet[ℱ.predictable] A) :
+    ℱ.predictableMeasure P T A = (timeMeasure T).prod P A := by
+  rw [predictableMeasure_def, trim_measurableSet_eq _ hA]
+
+/-- A filtered measure-preserving sample map preserves finite-horizon predictable
+measures. The ambient spaces and the filtrations on its two sides may differ. -/
+theorem measurePreserving_prodMap_predictableMeasure {Ω' : Type*} {m' : MeasurableSpace Ω'}
+    (ℱ : Filtration ℝ≥0 m) (𝒢 : Filtration ℝ≥0 m')
+    {P : Measure Ω} {Q : Measure Ω'} [SFinite P] {f : Ω → Ω'}
+    (hf : MeasurePreserving f P Q) (hℱ : ∀ t, Measurable[ℱ t, 𝒢 t] f) (T : ℝ≥0) :
+    @MeasurePreserving (ℝ≥0 × Ω) (ℝ≥0 × Ω') ℱ.predictable 𝒢.predictable
+      (Prod.map id f) (ℱ.predictableMeasure P T) (𝒢.predictableMeasure Q T) := by
+  have hm := ℱ.measurable_prodMap_predictable 𝒢 hℱ
+  refine @MeasurePreserving.mk _ _ ℱ.predictable 𝒢.predictable _ _ _ hm ?_
+  apply @Measure.ext _ 𝒢.predictable
+  intro A hA
+  rw [Measure.map_apply hm hA, ℱ.predictableMeasure_apply P T (hm hA),
+    𝒢.predictableMeasure_apply Q T hA]
+  exact ((MeasurePreserving.id (timeMeasure T)).prod hf).measure_preimage
+    (𝒢.predictable_le_prod A hA).nullMeasurableSet
+
+/-- Under a probability measure, the time projection of the predictable measure is
+the finite-horizon time measure. Its native `Lp` pullback embeds deterministic integrands
+isometrically into predictable integrands. -/
+theorem measurePreserving_fst_predictableMeasure (ℱ : Filtration ℝ≥0 m)
+    (P : Measure Ω) [IsProbabilityMeasure P] (T : ℝ≥0) :
+    @MeasurePreserving _ _ ℱ.predictable _ Prod.fst
+      (ℱ.predictableMeasure P T) (timeMeasure T) := by
+  have hprod (A : Set ℝ≥0) (hA : MeasurableSet A) :
+      (timeMeasure T).prod P (Prod.fst ⁻¹' A) = timeMeasure T A :=
+    (measurePreserving_fst (μ := timeMeasure T) (ν := P)).measure_preimage hA.nullMeasurableSet
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  refine ⟨ℱ.measurable_fst_predictable, ?_⟩
+  ext A hA
+  rw [Measure.map_apply ℱ.measurable_fst_predictable hA,
+    predictableMeasure_apply _ _ _ (hA.preimage ℱ.measurable_fst_predictable)]
+  exact hprod A hA
+
+/-- Predictable rectangles have time length times event probability, clipped at the horizon. -/
+@[simp]
+theorem predictableMeasure_Ioc_prod (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
+    (T s t : ℝ≥0) {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
+    ℱ.predictableMeasure P T (Ioc s t ×ˢ A) =
+      ENNReal.ofReal ((min t T : ℝ≥0) - (s : ℝ)) * P A := by
+  rw [predictableMeasure_apply _ _ _ (measurableSet_predictable_Ioc_prod _ _ hA),
+    Measure.prod_prod, timeMeasure_Ioc]
+
+/-- At a horizon beyond the right endpoint, a predictable rectangle has its full time length. -/
+theorem predictableMeasure_Ioc_prod_of_le (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
+    {T s t : ℝ≥0} (ht : t ≤ T) {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
+    ℱ.predictableMeasure P T (Ioc s t ×ˢ A) = ENNReal.ofReal ((t : ℝ) - s) * P A := by
+  simp [predictableMeasure_Ioc_prod ℱ P T s t hA, min_eq_left ht]
+
+/-- The total predictable mass is the horizon length times the total sample-space mass. -/
+@[simp]
+theorem predictableMeasure_univ (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
+    (T : ℝ≥0) : ℱ.predictableMeasure P T univ = T * P univ := by
+  rw [predictableMeasure_apply _ _ _ MeasurableSet.univ, ← univ_prod_univ,
+    Measure.prod_prod, timeMeasure_univ]
+
+/-- A finite underlying measure gives a finite predictable measure on every finite horizon. -/
+instance (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [IsFiniteMeasure P] (T : ℝ≥0) :
+    IsFiniteMeasure (ℱ.predictableMeasure P T) := by
+  rw [predictableMeasure_def]
+  infer_instance
+
+/-- At horizon zero the predictable measure is zero. -/
+@[simp]
+theorem predictableMeasure_zero (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) :
+    ℱ.predictableMeasure P 0 = 0 := by
+  simp [predictableMeasure_def]
+
+/-- There is no predictable mass at the initial time, even when the initial event is nontrivial. -/
+@[simp]
+theorem predictableMeasure_singleton_zero_prod (ℱ : Filtration ℝ≥0 m) (P : Measure Ω)
+    [SFinite P] (T : ℝ≥0) {A : Set Ω} (hA : MeasurableSet[ℱ 0] A) :
+    ℱ.predictableMeasure P T ({0} ×ˢ A) = 0 := by
+  have hzero : MeasurableSet[ℱ.predictable] ({0} ×ˢ A) := by
+    simpa only [NNReal.bot_eq_zero] using measurableSet_predictable_singleton_bot_prod hA
+  rw [predictableMeasure_apply _ _ _ hzero, Measure.prod_prod,
+    timeMeasure_singleton_zero, zero_mul]
+
+/-- Restricting the predictable measure to `(0,S]` clips its horizon to `min S T`. -/
+@[simp]
+theorem predictableMeasure_restrict (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [SFinite P]
+    (T S : ℝ≥0) :
+    (ℱ.predictableMeasure P T).restrict (Ioc 0 S ×ˢ univ) =
+      ℱ.predictableMeasure P (min S T) := by
+  have hS : MeasurableSet[ℱ.predictable] (Ioc 0 S ×ˢ (univ : Set Ω)) :=
+    measurableSet_predictable_Ioc_prod _ _ MeasurableSet.univ
+  rw [predictableMeasure_def, restrict_trim ℱ.predictable_le_prod _ hS,
+    ← Measure.restrict_prod_eq_prod_univ, timeMeasure_restrict, predictableMeasure_def]
+
+/-- The identity from a larger predictable sigma-algebra to a smaller one preserves
+finite-horizon time-product measure. Its native Lᵖ pullback embeds the smaller integrand space
+isometrically into the larger one. No finiteness assumption on the sample measure is needed. -/
+theorem measurePreserving_id_predictableMeasure {ℱ 𝒢 : Filtration ℝ≥0 m}
+    (h : ℱ ≤ 𝒢) (P : Measure Ω) (T : ℝ≥0) :
+    @MeasurePreserving (ℝ≥0 × Ω) (ℝ≥0 × Ω) 𝒢.predictable ℱ.predictable
+      id (𝒢.predictableMeasure P T) (ℱ.predictableMeasure P T) := by
+  have hm : @Measurable (ℝ≥0 × Ω) (ℝ≥0 × Ω) 𝒢.predictable ℱ.predictable id :=
+    measurable_id'' (predictable_mono h)
+  refine @MeasurePreserving.mk _ _ 𝒢.predictable ℱ.predictable _ _ _ hm ?_
+  apply @Measure.ext _ ℱ.predictable
+  intro A hA
+  rw [Measure.map_apply hm hA, Set.preimage_id,
+    𝒢.predictableMeasure_apply P T (predictable_mono h _ hA),
+    ℱ.predictableMeasure_apply P T hA]
+
+section Dictionary
+
+variable (ℱ : Filtration ℝ≥0 m) (P : Measure Ω)
+
+/-- The predictable integral is the ambient time-product integral for predictable functions. -/
+theorem integral_predictableMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : ℝ≥0 × Ω → E} (hf : StronglyMeasurable[ℱ.predictable] f) (T : ℝ≥0) :
+    ∫ p, f p ∂ℱ.predictableMeasure P T = ∫ p, f p ∂(timeMeasure T).prod P :=
+  (integral_trim ℱ.predictable_le_prod hf).symm
+
+/-- Nonnegative predictable integrals can be computed by ordinary time/sample integration.
+Unlike a real Bochner energy, the lower integral records infinite square energy faithfully. -/
+theorem lintegral_predictableMeasure [SFinite P] {f : ℝ≥0 × Ω → ℝ≥0∞}
+    (hf : Measurable[ℱ.predictable] f) (T : ℝ≥0) :
+    ∫⁻ p, f p ∂ℱ.predictableMeasure P T = ∫⁻ t, ∫⁻ ω, f (t, ω) ∂P ∂timeMeasure T := by
+  rw [predictableMeasure_def, lintegral_trim ℱ.predictable_le_prod hf]
+  exact lintegral_prod _ (hf.mono ℱ.predictable_le_prod le_rfl).aemeasurable
+
+/-- Equality of predictable representatives almost everywhere is the same for the
+predictable measure and the ambient time-product measure. -/
+theorem ae_eq_predictableMeasure_iff {E : Type*} [MeasurableSpace E] [MeasurableEq E]
+    {f g : ℝ≥0 × Ω → E} (hf : Measurable[ℱ.predictable] f)
+    (hg : Measurable[ℱ.predictable] g) (T : ℝ≥0) :
+    f =ᵐ[ℱ.predictableMeasure P T] g ↔ f =ᵐ[(timeMeasure T).prod P] g :=
+  ⟨ae_eq_of_ae_eq_trim, ae_eq_trim_of_measurable ℱ.predictable_le_prod hf hg⟩
+
+/-- For predictable functions the native `MemLp` condition can be tested in the ambient
+product measure, at every exponent (in particular exponent two). -/
+theorem memLp_predictableMeasure_iff {E : Type*} [NormedAddCommGroup E]
+    {f : ℝ≥0 × Ω → E} (hf : StronglyMeasurable[ℱ.predictable] f) (T : ℝ≥0) (p : ℝ≥0∞) :
+    MemLp f p (ℱ.predictableMeasure P T) ↔ MemLp f p ((timeMeasure T).prod P) := by
+  simp only [MemLp, predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hf]
+
+end Dictionary
+
+end MeasureTheory.Filtration

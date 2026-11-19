@@ -69,7 +69,7 @@ theorem index_nsmul_id_mem_range_norm_linHom (H : Subgroup G) [Fintype H]
   -- The `G`-norm is the relative norm of the `H`-norm, which is `[G : H]` on fixed vectors.
   have hfix (g : G) : linHom ρ ρ g LinearMap.id = LinearMap.id := by
     ext x
-    simp [← Module.End.mul_apply, ← map_mul]
+    simp [← mul_apply_eq_comp, ← map_mul]
   rw [← relNorm_norm_apply (H := H),
     ← relNorm_apply_of_forall_apply_eq (ρ := linHom ρ ρ) (H := H) hfix, ← hφ]
   congr!

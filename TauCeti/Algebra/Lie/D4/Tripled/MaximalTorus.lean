@@ -56,33 +56,6 @@ open TauCeti.DynkinType
 
 universe v
 
-/-- The diagonal entries of a diagonal carrier point are multiplicative along the triality
-product. -/
-private theorem eq_mul_of_diagGL_mem_points {A : Type v} [CommRing A] {t : Fin 24 → Aˣ}
-    (ht : diagGL t ∈ points A) {k i j : Fin 24} (h : trialityProductMatrix k i j ≠ 0) :
-    t i = t k * t j := by
-  have hpres := preserves_trialityProductMatrix_of_mem_points ht
-  rw [diagGL_coe, ConstantMultiplication.preserves_diagonal_iff] at hpres
-  have hkij := hpres k i j
-  apply Units.ext
-  rw [Units.val_mul]
-  rcases trialityProductMatrix_apply_eq_neg_one_or_eq_zero_or_eq_one k i j with hc | hc | hc
-  · rw [hc] at hkij
-    simpa using hkij
-  · exact absurd hc h
-  · rw [hc] at hkij
-    simpa using hkij
-
-/-- The values of a torus character on the tripled weights are multiplicative along the triality
-product, which is homogeneous for the weights. -/
-private theorem torusCharacter_eq_mul {A : Type v} [CommRing A] (s : Fin 4 → Aˣ) {k i j : Fin 24}
-    (h : trialityProductMatrix k i j ≠ 0) :
-    torusCharacter s (d4TripledWeight i) =
-      torusCharacter s (d4TripledWeight k) * torusCharacter s (d4TripledWeight j) := by
-  by_contra hne
-  refine h (trialityProductMatrix_apply_eq_zero_of_weight_ne fun hw => hne ?_)
-  rw [hw, torusCharacter_add]
-
 /-- **Over every commutative ring, a point of the tripled carrier lies in the weight torus exactly
 when its matrix is diagonal** in the weight basis. -/
 theorem mem_range_weightTorusPoints_iff_isDiag {A : Type v} [CommRing A] (g : points A) :
@@ -98,11 +71,27 @@ theorem mem_range_weightTorusPoints_iff_isDiag {A : Type v} [CommRing A] (g : po
     -- The torus parameter is read off at the four indices whose weights are `ϖ₁`, `ϖ₂ - ϖ₁`,
     -- `ϖ₃` and `ϖ₄`.
     let s : Fin 4 → Aˣ := ![t 0, t 0 * t 1, t 8, t 16]
+    -- The carrier point `diagGL t` and the torus point at `s` both preserve the triality
+    -- product, whose nonzero structure constants are `±1`, so their diagonal entries are
+    -- multiplicative along it.
+    have hunit {k i j : Fin 24} (h : trialityProductMatrix k i j ≠ 0) :
+        IsUnit (algebraMap ℤ A (trialityProductMatrix k i j)) :=
+      (Int.isUnit_iff.mpr <| by
+        rcases trialityProductMatrix_apply_eq_neg_one_or_eq_zero_or_eq_one k i j with
+          hc | hc | hc <;> simp_all).map _
+    have hpt := preserves_trialityProductMatrix_of_mem_points htmem
+    rw [diagGL_coe] at hpt
+    have hps := preserves_trialityProductMatrix_weightTorusPoints A s
+    rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply,
+      diagGL_coe] at hps
     have hchar : (fun a => torusCharacter s (d4TripledWeight a)) = t := by
       refine eq_of_eq_mul_of_trialityProductMatrix_ne_zero
-        (fun k i j h => torusCharacter_eq_mul s h)
-        (fun k i j h => eq_mul_of_diagGL_mem_points htmem h) ?_ ?_ ?_ ?_ <;>
-        simp [s, torusCharacter_def, Fin.prod_univ_four, d4TripledWeight_one]
+        (fun k i j h => Units.ext ?_) (fun k i j h => Units.ext ?_) ?_ ?_ ?_ ?_
+      · rw [Units.val_mul]
+        exact ConstantMultiplication.eq_mul_of_preserves_diagonal _ hps (hunit h)
+      · rw [Units.val_mul]
+        exact ConstantMultiplication.eq_mul_of_preserves_diagonal _ hpt (hunit h)
+      all_goals simp [s, torusCharacter_def, Fin.prod_univ_four, d4TripledWeight_one]
     refine ⟨s, Subtype.ext ?_⟩
     rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, hchar, ht]
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Quaternion
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.BrauerGroup.BaseChange
+public import TauCeti.Algebra.BrauerGroup.ULift
 public import TauCeti.Algebra.Quaternion.BrauerClass
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import Mathlib.LinearAlgebra.TensorProduct.Pi
@@ -30,7 +31,10 @@ Over fields in which `2` is invertible, the Brauer class of a quaternion algebra
 carried by scalar extension to the class with the same parameters
 (`TauCeti.BrauerGroup.baseChange_quaternionClass`), and the quaternion pairing on square classes
 is carried to the pairing of the pushed-forward square classes
-(`TauCeti.BrauerGroup.baseChange_quaternionClassOnSquareClasses`).
+(`TauCeti.BrauerGroup.baseChange_quaternionClassOnSquareClasses`). The same holds for the
+identification of the Brauer group of `K` with that of its universe lift `ULift K`
+(`TauCeti.BrauerGroup.uliftEquiv_quaternionClass` and
+`TauCeti.BrauerGroup.uliftEquiv_quaternionClassOnSquareClasses`).
 -/
 
 public section
@@ -211,5 +215,36 @@ theorem baseChange_quaternionClassOnSquareClasses (x y : SquareClassGroup K) :
   rw [← squareClass_toMul_out x, ← squareClass_toMul_out y]
   simp only [quaternionClassOnSquareClasses_squareClass, RingHom.squareClassMap_apply,
     baseChange_quaternionClass]
+
+section ULift
+
+universe w
+
+variable (K : Type u) [Field K] [Invertible (2 : K)] [Invertible (2 : ULift.{w} K)]
+
+/-- **A quaternion symbol in the Brauer group of a universe lift**: the identification
+`TauCeti.BrauerGroup.uliftEquiv` carries the class of `(a, b)_K` to the class of the quaternion
+algebra over `ULift K` with the same parameters. -/
+@[simp]
+theorem uliftEquiv_quaternionClass (a b : Kˣ) :
+    uliftEquiv.{u, w} K (quaternionClass a b) =
+      quaternionClass (Units.map (algebraMap K (ULift.{w} K)).toMonoidHom a)
+        (Units.map (algebraMap K (ULift.{w} K)).toMonoidHom b) := by
+  rw [quaternionClass_def, uliftEquiv_mk, quaternionClass_def]
+  exact mk_eq_mk_of_algEquiv (QuaternionAlgebra.baseChangeTwoParams K (ULift.{w} K) a b)
+
+/-- **The quaternion pairing on square classes in the Brauer group of a universe lift**: the
+identification `TauCeti.BrauerGroup.uliftEquiv` carries the pairing of two square classes to the
+pairing of their images in the square-class group of `ULift K`. -/
+@[simp]
+theorem uliftEquiv_quaternionClassOnSquareClasses (x y : SquareClassGroup K) :
+    uliftEquiv.{u, w} K (quaternionClassOnSquareClasses x y) =
+      quaternionClassOnSquareClasses ((algebraMap K (ULift.{w} K)).squareClassMap x)
+        ((algebraMap K (ULift.{w} K)).squareClassMap y) := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y]
+  simp only [quaternionClassOnSquareClasses_squareClass, RingHom.squareClassMap_apply,
+    uliftEquiv_quaternionClass]
+
+end ULift
 
 end TauCeti.BrauerGroup

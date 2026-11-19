@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
-public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
+public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 
 /-!
 # The PBW Rees algebra
@@ -20,7 +20,8 @@ equivalence between its degree `n` piece and the `n`-th filtration step are avai
 from `TauCeti.coeffSubalgebra.grade`, `coe_decompose_apply`, and `gradeEquiv`. The
 coefficientwise membership test is `TauCeti.mem_coeffSubalgebra_iff`. The shared parameter
 API is `TauCeti.coeffSubalgebra.commute_X`, `X_mul_injective`, and `coe_algebraMap`;
-scalar evaluation is `TauCeti.coeffSubalgebra.eval`.
+scalar evaluation is `TauCeti.coeffSubalgebra.eval`. Since `reesParameter` unfolds to the shared
+parameter, `TauCeti.coeffSubalgebra.span_X_isTwoSided` makes the ideal it generates two-sided.
 
 The parameter is central and multiplication by it is injective. The linear generators
 `j(x) = ι(x)t` satisfy `j(x)j(y) - j(y)j(x) = t j([x,y])`. Evaluation at parameter one

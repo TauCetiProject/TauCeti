@@ -17,7 +17,7 @@ import TauCeti.Analysis.Normed.Group.Basic
 
 Far out, a polygonal domain decomposes into ends of three kinds: half-strips between two parallel
 sides, sectors between two rays, and exteriors of half-strips (ends of opening `2 * π`).  In the
-normalized coordinate `z = (w - c) / b`, with `b ≠ 0`, they are
+normalized coordinate `z = (w - c) / b`, they are
 
 * the half-strip `{ρ < re z, 0 < im z < π}`,
 * the sector `{ρ < ‖w - c‖, |arg z| < α}`,
@@ -29,7 +29,7 @@ preconnected at infinity inside `U` by `TauCeti.IsPreconnectedAtInfinityIn.mono`
 hypothesis under which distinct boundary zeros of an inverted coordinate lie in distinct ends
 (`TauCeti.eq_of_eventually_mem_of_inverted_coordinate_eq_zero`).
 
-The far parts of sector and half-strip ends are also open and unbounded. A finite disjoint
+The far parts of all three kinds of ends are also open and unbounded. A finite disjoint
 family covering a domain far out can be replaced by such open far parts.
 
 ## Main results
@@ -40,7 +40,7 @@ family covering a domain far out can be replaced by such open far parts.
 * `TauCeti.isPreconnectedAtInfinityIn_halfStripExterior`: the far part of the exterior of a closed
   half-strip is preconnected at infinity.
 
-* `TauCeti.exists_far_ends`: replace a finite family of sector and half-strip ends by open,
+* `TauCeti.exists_far_ends`: replace a finite family of model ends by open,
   unbounded far parts that remain disjoint, preconnected at infinity and cover the domain far out.
 
 ## References
@@ -77,14 +77,21 @@ private theorem isPreconnectedAtInfinityIn_halfStrip_zero_one (ρ : ℝ) :
     rcases abs_cases z.re with ⟨h, -⟩ | ⟨h, -⟩ <;>
       linarith [le_abs_self R, neg_abs_le ρ, abs_nonneg ρ, abs_nonneg R]
 
-/-- **A half-strip is preconnected at infinity.**  For `b ≠ 0`, the half-strip
+/-- **A half-strip is preconnected at infinity.**  The half-strip
 `{w | ρ < re ((w - c) / b), 0 < im ((w - c) / b) < π}` is preconnected at infinity inside
-itself. -/
-theorem isPreconnectedAtInfinityIn_halfStrip (ρ : ℝ) {c b : ℂ} (hb : b ≠ 0) :
+itself.  For `b = 0` it is empty. -/
+theorem isPreconnectedAtInfinityIn_halfStrip (ρ : ℝ) {c b : ℂ} :
     IsPreconnectedAtInfinityIn
       {w : ℂ | ρ < ((w - c) / b).re ∧ ((w - c) / b).im ∈ Ioo 0 Real.pi}
-      {w : ℂ | ρ < ((w - c) / b).re ∧ ((w - c) / b).im ∈ Ioo 0 Real.pi} :=
-  (isPreconnectedAtInfinityIn_halfStrip_zero_one ρ).preimage_div_sub hb
+      {w : ℂ | ρ < ((w - c) / b).re ∧ ((w - c) / b).im ∈ Ioo 0 Real.pi} := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · have : {w : ℂ | ρ < ((w - c) / 0).re ∧ ((w - c) / 0).im ∈ Ioo 0 Real.pi} = ∅ := by
+      ext w
+      simp
+    rw [this]
+    exact isPreconnectedAtInfinityIn_iff.2 fun B _ => ⟨∅, empty_subset _, isPreconnected_empty,
+      empty_disjoint B, Filter.Eventually.of_forall fun _ h => h⟩
+  exact (isPreconnectedAtInfinityIn_halfStrip_zero_one ρ).preimage_div_sub hb
 
 /-- The far part `{r < ‖z‖, |arg z| < α}` of the model sector is preconnected at infinity. -/
 private theorem isPreconnectedAtInfinityIn_sector_zero_one (r α : ℝ) :
@@ -119,13 +126,29 @@ private theorem isPreconnectedAtInfinityIn_sector_zero_one (r α : ℝ) :
       with z hz hzE
     exact ⟨(‖z‖, z.arg), ⟨hz, arg_mem_Ioc z, abs_lt.1 hzE.2⟩, norm_mul_cos_add_sin_mul_I z⟩
 
-/-- **A sector is preconnected at infinity.**  For `b ≠ 0`, the far part
+/-- **A sector is preconnected at infinity.**  The far part
 `{w | ρ < ‖w - c‖, |arg ((w - c) / b)| < α}` of the sector of half-opening `α` with vertex `c` and
 axis direction `b` is preconnected at infinity inside itself.  No restriction on `α` is needed: for
-`α > π` this is the exterior of a disc. -/
-theorem isPreconnectedAtInfinityIn_sector (ρ α : ℝ) {c b : ℂ} (hb : b ≠ 0) :
+`α > π` this is the exterior of a disc.  For `b = 0` the argument is `0`, so the set is empty for
+`α ≤ 0` and the exterior of a disc otherwise. -/
+theorem isPreconnectedAtInfinityIn_sector (ρ α : ℝ) {c b : ℂ} :
     IsPreconnectedAtInfinityIn {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < α}
       {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < α} := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · by_cases hα : 0 < α
+    · have := (isPreconnectedAtInfinityIn_sector_zero_one ρ 5).preimage_div_sub (c := c)
+        (one_ne_zero (α := ℂ))
+      have h5 : ∀ z : ℂ, |z.arg| < 5 := fun z =>
+        (abs_arg_le_pi z).trans_lt (Real.pi_le_four.trans_lt (by norm_num))
+      convert this using 2 <;>
+        · ext w
+          simp [hα, h5]
+    · have : {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / 0).arg| < α} = ∅ := by
+        ext w
+        simp [hα]
+      rw [this]
+      exact isPreconnectedAtInfinityIn_iff.2 fun B _ => ⟨∅, empty_subset _, isPreconnected_empty,
+      empty_disjoint B, Filter.Eventually.of_forall fun _ h => h⟩
   have hset : {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < α} =
       (fun w => (w - c) / b) ⁻¹' {z : ℂ | ρ / ‖b‖ < ‖z‖ ∧ |z.arg| < α} := by
     ext w
@@ -188,13 +211,22 @@ private theorem isPreconnectedAtInfinityIn_halfStripExterior_zero_one (r : ℝ) 
     · exact Or.inr ⟨hre, h₀⟩
     · exact Or.inl (Or.inl (Or.inl (Or.inl ⟨hre, lt_of_not_ge fun hπ => hz' ⟨h₀, hπ⟩⟩)))
 
-/-- **The exterior of a half-strip is preconnected at infinity.**  For `b ≠ 0`, the far part
+/-- **The exterior of a half-strip is preconnected at infinity.**  The far part
 `{w | ρ < ‖w - c‖, re ((w - c) / b) < 0 ∨ im ((w - c) / b) ∉ [0, π]}` of the exterior of a closed
-half-strip, an end of opening `2 * π`, is preconnected at infinity inside itself. -/
-theorem isPreconnectedAtInfinityIn_halfStripExterior (ρ : ℝ) {c b : ℂ} (hb : b ≠ 0) :
+half-strip, an end of opening `2 * π`, is preconnected at infinity inside itself.  For `b = 0` it
+is empty. -/
+theorem isPreconnectedAtInfinityIn_halfStripExterior (ρ : ℝ) {c b : ℂ} :
     IsPreconnectedAtInfinityIn
       {w : ℂ | ρ < ‖w - c‖ ∧ (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)}
       {w : ℂ | ρ < ‖w - c‖ ∧ (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · have : {w : ℂ | ρ < ‖w - c‖ ∧
+        (((w - c) / 0).re < 0 ∨ ((w - c) / 0).im ∉ Icc 0 Real.pi)} = ∅ := by
+      ext w
+      simp [Real.pi_pos.le]
+    rw [this]
+    exact isPreconnectedAtInfinityIn_iff.2 fun B _ => ⟨∅, empty_subset _, isPreconnected_empty,
+      empty_disjoint B, Filter.Eventually.of_forall fun _ h => h⟩
   have hset : {w : ℂ | ρ < ‖w - c‖ ∧ (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} =
       (fun w => (w - c) / b) ⁻¹'
         {z : ℂ | ρ / ‖b‖ < ‖z‖ ∧ (z.re < 0 ∨ z.im ∉ Icc 0 Real.pi)} := by
@@ -285,15 +317,39 @@ theorem not_isBounded_halfStrip {ρ : ℝ} {c b : ℂ} (hb : b ≠ 0) :
   have := mem_closedBall_iff_norm.mp (hM hmem)
   linarith [le_abs_self M]
 
+/-- The far part of the exterior of a closed half-strip is open. -/
+theorem isOpen_halfStripExterior (ρ : ℝ) (c b : ℂ) :
+    IsOpen {w : ℂ | ρ < ‖w - c‖ ∧
+      (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} := by
+  have hre : Continuous fun w : ℂ => ((w - c) / b).re := by fun_prop
+  have him : Continuous fun w : ℂ => ((w - c) / b).im := by fun_prop
+  have hnorm : Continuous fun w : ℂ => ‖w - c‖ := by fun_prop
+  exact (isOpen_lt continuous_const hnorm).inter
+    ((isOpen_lt hre continuous_const).union (isClosed_Icc.preimage him).isOpen_compl)
+
+/-- The far part of the exterior of a half-strip in a nondegenerate affine coordinate is
+unbounded. -/
+theorem not_isBounded_halfStripExterior {ρ : ℝ} {c b : ℂ} (hb : b ≠ 0) :
+    ¬IsBounded {w : ℂ | ρ < ‖w - c‖ ∧
+      (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)} := by
+  -- A half-strip pointing in the opposite direction lies in the exterior.
+  intro hE
+  apply not_isBounded_inter_lt_norm_sub
+    (not_isBounded_halfStrip (ρ := 0) (c := c) (neg_ne_zero.mpr hb)) c ρ
+  refine hE.subset fun w hw => ⟨hw.2, Or.inl ?_⟩
+  simpa only [div_neg, neg_re, neg_pos] using hw.1.1
+
 /-- **Open far parts of the ends.**  For finitely many pairwise disjoint sector ends of positive
-half-opening or half-strip ends contained in `U` and covering it far out, their far parts are
-open, unbounded, pairwise disjoint and preconnected at infinity inside `U`, and still cover `U`
-far out. -/
+half-opening, half-strip ends or half-strip-exterior ends contained in `U` and covering it far out,
+their far parts are open, unbounded, pairwise disjoint and preconnected at infinity inside `U`, and
+still cover `U` far out. -/
 theorem exists_far_ends {κ : Type*} [Finite κ] {α : κ → ℝ} {U : Set ℂ}
     {E : κ → Set ℂ} {c b : κ → ℂ} {ρ : κ → ℝ} {R : ℝ} (hb : ∀ k, b k ≠ 0)
     (hE : ∀ k, (0 < α k ∧
         E k = {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < α k}) ∨
-      E k = {w : ℂ | ρ k < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi})
+      E k = {w : ℂ | ρ k < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi} ∨
+      E k = {w : ℂ | ρ k < ‖w - c k‖ ∧
+        (((w - c k) / b k).re < 0 ∨ ((w - c k) / b k).im ∉ Icc 0 Real.pi)})
     (hEU : ∀ k, E k ⊆ U) (hUE : ∀ w ∈ U, R < ‖w‖ → ∃ k, w ∈ E k)
     (hEd : Pairwise (Disjoint on E)) :
     ∃ E' : κ → Set ℂ, ∃ R' : ℝ, (∀ k, IsOpen (E' k)) ∧ (∀ k, E' k ⊆ E k) ∧
@@ -307,7 +363,7 @@ theorem exists_far_ends {κ : Type*} [Finite κ] {α : κ → ℝ} {U : Set ℂ}
     fun k l hkl => (hEd hkl).mono inter_subset_left inter_subset_left, fun w hw hRw => ?_,
     fun k => ?_, fun k => ?_⟩
   · dsimp only
-    rcases hE k with ⟨-, hEk⟩ | hEk <;> rw [hEk]
+    rcases hE k with ⟨-, hEk⟩ | hEk | hEk <;> rw [hEk]
     · -- the far part of the sector is the sector of radius `max (ρ k) 0`
       have hset :
           {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < α k} ∩
@@ -319,6 +375,8 @@ theorem exists_far_ends {κ : Type*} [Finite κ] {α : κ → ℝ} {U : Set ℂ}
       rw [hset]
       exact isOpen_sector (le_max_right (ρ k) 0)
     · exact (isOpen_halfStrip (ρ k) (c k) (b k)).inter (isOpen_lt continuous_const (by fun_prop))
+    · exact (isOpen_halfStripExterior (ρ k) (c k) (b k)).inter
+        (isOpen_lt continuous_const (by fun_prop))
   · -- far from `0`, a point is far from every centre
     obtain ⟨k, hk⟩ := hUE w hw ((le_max_left _ _).trans_lt hRw)
     have hck : max (ρ k) 0 + ‖c k‖ ≤ ∑ l, (max (ρ l) 0 + ‖c l‖) :=
@@ -328,14 +386,17 @@ theorem exists_far_ends {κ : Type*} [Finite κ] {α : κ → ℝ} {U : Set ℂ}
     have := norm_sub_norm_le w (c k)
     have := le_max_right R (∑ l, (max (ρ l) 0 + ‖c l‖))
     exact (by linarith : max (ρ k) 0 < ‖w - c k‖)
-  · rcases hE k with ⟨-, hEk⟩ | hEk
-    · exact ((isPreconnectedAtInfinityIn_sector (ρ k) _ (hb k)).mono (hEk ▸ hEU k)).subset
+  · rcases hE k with ⟨-, hEk⟩ | hEk | hEk
+    · exact ((isPreconnectedAtInfinityIn_sector (ρ k) _).mono (hEk ▸ hEU k)).subset
         (hEk ▸ inter_subset_left)
-    · exact ((isPreconnectedAtInfinityIn_halfStrip (ρ k) (hb k)).mono (hEk ▸ hEU k)).subset
+    · exact ((isPreconnectedAtInfinityIn_halfStrip (ρ k)).mono (hEk ▸ hEU k)).subset
         (hEk ▸ inter_subset_left)
+    · exact ((isPreconnectedAtInfinityIn_halfStripExterior (ρ k)).mono
+        (hEk ▸ hEU k)).subset (hEk ▸ inter_subset_left)
   · dsimp only
-    rcases hE k with ⟨hα, hEk⟩ | hEk <;> rw [hEk]
+    rcases hE k with ⟨hα, hEk⟩ | hEk | hEk <;> rw [hEk]
     · exact not_isBounded_inter_lt_norm_sub (not_isBounded_sector hα) _ _
     · exact not_isBounded_inter_lt_norm_sub (not_isBounded_halfStrip (hb k)) _ _
+    · exact not_isBounded_inter_lt_norm_sub (not_isBounded_halfStripExterior (hb k)) _ _
 
 end TauCeti

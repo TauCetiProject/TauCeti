@@ -25,6 +25,8 @@ Cartan--Dieudonné argument and are deliberately not asserted here.
 
 * `CliffordAlgebra.spinVectorAction Q x` is the restriction of
   `CliffordAlgebra.lipschitzVectorAction` along the canonical Spin inclusion.
+* `CliffordAlgebra.spinToLipschitz Q` is the canonical inclusion of the Spin group into the
+  Lipschitz group, through Pin.
 * `CliffordAlgebra.spinToOrthogonal Q` is the resulting homomorphism into `O(Q)`.
 
 ## References
@@ -44,14 +46,32 @@ open TauCeti
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M) [Invertible (2 : R)]
 
-private def spinToLipschitz : spinGroup Q →* lipschitzGroup Q :=
+/-- The canonical inclusion of the Spin group into the Lipschitz group. -/
+def spinToLipschitz : spinGroup Q →* lipschitzGroup Q :=
   (pinToLipschitz Q).comp (spinToPin Q)
 
 omit [Invertible (2 : R)] in
-private theorem coe_spinToLipschitz_apply (x : spinGroup Q) :
+/-- The canonical Spin-to-Lipschitz map applied to an element is the composite of the
+Pin and Spin inclusions. -/
+@[simp]
+theorem spinToLipschitz_apply (x : spinGroup Q) :
+    spinToLipschitz Q x = pinToLipschitz Q (spinToPin Q x) := by
+  rfl
+
+omit [Invertible (2 : R)] in
+/-- The canonical Spin-to-Lipschitz inclusion has the expected Clifford value. -/
+theorem coe_spinToLipschitz_apply (x : spinGroup Q) :
     (((spinToLipschitz Q x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) :
         CliffordAlgebra Q) = (x : CliffordAlgebra Q) := by
   simp [spinToLipschitz]
+
+omit [Invertible (2 : R)] in
+/-- The canonical Spin-to-Lipschitz inclusion is injective. -/
+theorem spinToLipschitz_injective : Function.Injective (spinToLipschitz Q) := by
+  intro x y h
+  exact Subtype.ext (by
+    simpa only [coe_spinToLipschitz_apply] using congrArg
+      (fun z : lipschitzGroup Q => ((z : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) h)
 
 /-- The action of a spin element on the generating vectors of its Clifford algebra, transported
 back to the underlying module. It is characterized by
@@ -90,6 +110,12 @@ theorem ι_spinVectorAction_apply (x : spinGroup Q) (m : M) :
       rw [← spinGroup.star_eq_inv x]
       exact spinGroup.coe_star
     rw [hunit, hinv]
+
+/-- A spin element moves a vector past itself by its vector action:
+`ι (x • m) * x = x * ι m`. -/
+theorem ι_spinVectorAction_apply_mul (x : spinGroup Q) (m : M) :
+    ι Q (spinVectorAction Q x m) * x = (x : CliffordAlgebra Q) * ι Q m := by
+  rw [ι_spinVectorAction_apply, mul_assoc, spinGroup.star_mul_self_of_mem x.2, mul_one]
 
 /-- A Spin element sends `m` to `w` when it moves `ι Q m` past itself as `ι Q w`. -/
 theorem spinVectorAction_eq_of_mul_ι_eq (x : spinGroup Q) {m w : M}

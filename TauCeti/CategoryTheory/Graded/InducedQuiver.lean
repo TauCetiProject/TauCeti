@@ -45,6 +45,8 @@ become composable in `C`.
 * `TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap_injective` and
   `TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap_mem_totalGrading_piece_iff`: along an
   injective map of objects, the map is injective and detects degrees.
+* `TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap_surjective`: along a surjective map of
+  objects, the map is surjective.
 
 ## References
 
@@ -187,6 +189,23 @@ theorem totalHomMap_mem_totalGrading_piece_iff (n : ℤ) (x : TotalHom R (Induce
     exact zero_mem _
 
 end Injective
+
+/-- Along a surjective map of objects, the map of total modules of morphisms is surjective: a
+morphism `F X ⟶ F Y` of `C` is the image of the same morphism `⟨X⟩ ⟶ ⟨Y⟩` of the induced
+quiver. -/
+theorem totalHomMap_surjective (hF : Function.Surjective F) :
+    Function.Surjective (totalHomMap R F) := by
+  intro y
+  induction y using totalHom_induction with
+  | zero => exact ⟨0, map_zero _⟩
+  | add x y hx hy =>
+    obtain ⟨x', rfl⟩ := hx
+    obtain ⟨y', rfl⟩ := hy
+    exact ⟨x' + y', map_add _ _ _⟩
+  | homInclusion U V f =>
+    obtain ⟨X, rfl⟩ := hF U
+    obtain ⟨Y, rfl⟩ := hF V
+    exact ⟨homInclusion (R := R) (C := InducedQuiver C F) ⟨X⟩ ⟨Y⟩ f, totalHomMap_homInclusion _ _ _⟩
 
 /-- The map of total modules of an induced quiver commutes with the Koszul twists. -/
 theorem koszulTwist_totalHomMap (q : ℤ) (x : TotalHom R (InducedQuiver C F)) :

@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.Cycle.Reversal
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.Perm.SwapFactors
 
 /-!
@@ -42,16 +43,21 @@ travel.
 
 * `TauCeti.IsPerfectMatching f`: the permutation `f` is an involution with no fixed point.
 * `TauCeti.PerfectMatching α`: the type of perfect matchings of `α`.
+* `TauCeti.PerfectMatching.ofInvolutive`: the perfect matching from a fixed-point-free involution.
 * `TauCeti.PerfectMatching.congr`: transporting a perfect matching along an equivalence.
 * `TauCeti.PerfectMatching.reconnect`: cutting two arcs and joining their ends the other way.
 * `TauCeti.PerfectMatching.restrict`: the perfect matching induced on the complement of an arc.
 * `TauCeti.PerfectMatching.extend`: the perfect matching obtained by adjoining an arc.
 * `TauCeti.PerfectMatching.fiberEquiv`: the two constructions above are mutually inverse.
+* `TauCeti.PerfectMatching.partnerEquiv`: decomposing a matching by a distinguished point's
+  partner and the matching on their complement.
 * `TauCeti.PerfectMatching.restrictInl`: the perfect matching induced on `α` by a perfect matching
   of `α ⊕ β` that pairs the points of `β` among themselves.
 
 ## Main results
 
+* `TauCeti.PerfectMatching.exists_val_eq_sumCongr`: a perfect matching of `α ⊕ β` containing
+  every arc of a permutation of `α` is that permutation together with a perfect matching of `β`.
 * `TauCeti.PerfectMatching.ext_of_eqOn`: two perfect matchings agreeing on a set containing a
   partner of every point are equal.
 * `TauCeti.even_card_of_nonempty_perfectMatching`: a matched type has even cardinality, and so
@@ -71,12 +77,9 @@ travel.
   equivalence relation they generate has half as many classes as their product has orbits.
 * `TauCeti.PerfectMatching.orbitCount_mul_reconnect`: reconnecting a perfect matching so that it
   joins a point to its partner under an involution `T` cuts off a new two-point circle, adding
-  two orbits to the product with `T`.
-
-## References
-
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 9.
+  two orbits to the product with `T`. When `T` and the matching attain the Euler bound
+  `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, so does the reconnected matching
+  (`TauCeti.PerfectMatching.orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq`).
 -/
 
 public section
@@ -92,7 +95,7 @@ variable {α : Type u} {β : Type v} {γ : Type w}
 /-- A permutation of `α` is a **perfect matching** when it is an involution with no fixed
 point, so that it pairs off the elements of `α`. -/
 def IsPerfectMatching (f : Equiv.Perm α) : Prop :=
-  (∀ a, f (f a) = a) ∧ ∀ a, f a ≠ a
+  Function.Involutive f ∧ ∀ a, f a ≠ a
 
 /-- A permutation is a perfect matching exactly when it is an involution with no fixed
 point. -/
@@ -133,6 +136,12 @@ instance [DecidableEq α] [Fintype α] : Fintype (PerfectMatching α) :=
 instance [DecidableEq α] [Fintype α] : DecidableEq (PerfectMatching α) :=
   inferInstanceAs (DecidableEq {f : Equiv.Perm α // IsPerfectMatching f})
 
+/-- The empty type has exactly one perfect matching. -/
+instance [IsEmpty α] : Unique (PerfectMatching α) where
+  default := ⟨Equiv.refl α, isPerfectMatching_iff.mpr
+    ⟨fun a ↦ isEmptyElim a, fun a ↦ isEmptyElim a⟩⟩
+  uniq _ := Subtype.ext (Equiv.ext fun a ↦ isEmptyElim a)
+
 /-- Bundle a permutation that is an involution with no fixed point as a perfect matching. -/
 def mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) : PerfectMatching α :=
   ⟨f, hinv, hne⟩
@@ -140,6 +149,18 @@ def mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) 
 @[simp]
 theorem val_mk (f : Equiv.Perm α) (hinv : ∀ a, f (f a) = a) (hne : ∀ a, f a ≠ a) :
     (mk f hinv hne).val = f := (rfl)
+
+/-- A fixed-point-free involution gives a perfect matching. -/
+def ofInvolutive {f : α → α} (hinv : Function.Involutive f) (hne : ∀ a, f a ≠ a) :
+    PerfectMatching α :=
+  .mk (hinv.toPerm _) (fun a ↦ by rw [Function.Involutive.coe_toPerm]; exact hinv a)
+    (fun a h ↦ hne a (by rwa [Function.Involutive.coe_toPerm] at h))
+
+@[simp]
+theorem ofInvolutive_apply {f : α → α} (hinv : Function.Involutive f) (hne : ∀ a, f a ≠ a)
+    (a : α) :
+    (ofInvolutive hinv hne).val a = f a := by
+  simp [ofInvolutive]
 
 variable {a b : α} {D : PerfectMatching α}
 
@@ -158,6 +179,11 @@ theorem apply_eq_of_apply_eq (D : PerfectMatching α) {x y : α} (h : D.val x = 
 /-- The arc joining `x` to `y` joins `y` to `x`. -/
 theorem apply_eq_comm (D : PerfectMatching α) {x y : α} : D.val x = y ↔ D.val y = x :=
   ⟨D.apply_eq_of_apply_eq, D.apply_eq_of_apply_eq⟩
+
+/-- Two perfect matchings are equal when every vertex has the same partner. -/
+@[ext]
+theorem ext {D E : PerfectMatching α} (h : ∀ a, D.val a = E.val a) : D = E :=
+  Subtype.ext (Equiv.ext h)
 
 /-- Two perfect matchings are equal as soon as they agree on a set `s` containing the partner, under
 the first matching, of every point outside `s`. For instance `s` may be the set of half-edges
@@ -322,6 +348,30 @@ theorem fiberEquiv_apply (hab : a ≠ b) (D : {D : PerfectMatching α // D.val a
 theorem fiberEquiv_symm_apply (hab : a ≠ b) (E : PerfectMatching {x : α // x ≠ a ∧ x ≠ b}) :
     ((fiberEquiv hab).symm E : PerfectMatching α) = extend hab E := (rfl)
 
+/-- Group all perfect matchings by the partner of `a`, and remove that pair. -/
+def partnerEquiv (a : α) : PerfectMatching α ≃
+    (b : {b : α // b ≠ a}) × PerfectMatching {x : α // x ≠ a ∧ x ≠ b.val} :=
+  (Equiv.sigmaSubtypeFiberEquiv (fun D : PerfectMatching α ↦ D.val a)
+    (· ≠ a) (fun D ↦ D.apply_ne a)).symm.trans
+      (Equiv.sigmaCongrRight fun b ↦ fiberEquiv b.2.symm)
+
+/-- The matching reconstructed from a partner and a matching of the complement adjoins
+exactly that pair. -/
+@[simp]
+theorem partnerEquiv_symm_apply (a : α)
+    (p : (b : {b : α // b ≠ a}) × PerfectMatching {x : α // x ≠ a ∧ x ≠ b.val}) :
+    (partnerEquiv a).symm p = extend p.1.2.symm p.2 := by
+  rcases p with ⟨b, E⟩
+  simp [partnerEquiv, Equiv.sigmaSubtypeFiberEquiv, Equiv.sigmaSubtypeEquivOfSubset,
+    Equiv.subtypeSigmaEquiv, Equiv.sigmaCongrRight]
+
+/-- The partner decomposition records the partner and restricts away its edge. -/
+@[simp]
+theorem partnerEquiv_apply (a : α) (D : PerfectMatching α) :
+    partnerEquiv a D = ⟨⟨D.val a, D.apply_ne a⟩, D.restrict rfl⟩ := by
+  apply (partnerEquiv a).symm.injective
+  simp only [Equiv.symm_apply_apply, partnerEquiv_symm_apply, extend_restrict]
+
 end Extend
 
 section Congr
@@ -330,8 +380,9 @@ section Congr
 without fixed points. -/
 theorem isPerfectMatching_permCongr (e : α ≃ β) {f : Equiv.Perm α} (hf : IsPerfectMatching f) :
     IsPerfectMatching (e.permCongr f) := by
-  refine ⟨fun b => by simp [hf.1], fun b hb => hf.2 (e.symm b) ?_⟩
-  simpa using congrArg e.symm hb
+  refine ⟨fun b ↦ ?_, fun b hb ↦ hf.2 (e.symm b) ?_⟩
+  · simpa using congrArg e (hf.1 (e.symm b))
+  · simpa using congrArg e.symm hb
 
 /-- A permutation is a perfect matching exactly when its transport along an equivalence is. -/
 theorem isPerfectMatching_permCongr_iff (e : α ≃ β) {f : Equiv.Perm α} :
@@ -380,6 +431,22 @@ theorem congr_trans (e : α ≃ β) (e' : β ≃ γ) (D : PerfectMatching α) :
 theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm :=
   Equiv.ext fun D => by
     rw [Equiv.symm_apply_eq, congr_trans, Equiv.symm_trans_self, congr_refl]
+
+/-- A perfect matching of `α ⊕ β` containing every arc of a permutation `X` of `α` is
+`Equiv.Perm.sumCongr X π` for a perfect matching `π` of `β`. This is a converse to
+`TauCeti.PerfectMatching.restrictInl`. -/
+theorem exists_val_eq_sumCongr (M : PerfectMatching (α ⊕ β)) {X : Equiv.Perm α}
+    (hM : ∀ a, M.val (.inl a) = .inl (X a)) :
+    ∃ π : PerfectMatching β, M.val = Equiv.Perm.sumCongr X π.val := by
+  have hr (a : α) : ((congr (Equiv.sumComm α β) M).val (.inr a)).isRight := by
+    simp [hM]
+  refine ⟨(congr (Equiv.sumComm α β) M).restrictInl hr, Equiv.ext fun x ↦ ?_⟩
+  rcases x with a | b
+  · simp [hM]
+  · have h := (congr (Equiv.sumComm α β) M).inl_restrictInl_val hr b
+    simp only [congr_val_apply, Equiv.sumComm_symm, Equiv.sumComm_apply, Sum.swap_inl] at h
+    rw [Equiv.Perm.sumCongr_apply, Sum.map_inr, ← Sum.swap_swap (M.val (.inr b)), ← h,
+      Sum.swap_inl]
 
 end Congr
 
@@ -476,6 +543,25 @@ theorem reconnect_reconnect_val : (D.reconnect a b).reconnect a (D.val a) = D :=
   rw [reconnect, reconnect_val_self hba, reconnect, congr_trans, Equiv.swap_comm b,
     Equiv.swap_swap, congr_refl]
 
+omit hba in
+/-- Reconnecting, read as a permutation, is the old involution after two transpositions: first `b`
+with the other end `D.val a` of the arc at `a`, then `a` with the other end `D.val b` of the arc at
+`b`. -/
+theorem reconnect_val_eq_mul_swap_mul_swap :
+    (D.reconnect a b).val = D.val * Equiv.swap a (D.val b) * Equiv.swap b (D.val a) := by
+  rw [reconnect_val, Equiv.permCongr_eq_mul, Equiv.swap_inv,
+    Equiv.mul_swap_eq_swap_mul D.val, D.apply_apply, Equiv.swap_comm b]
+
+omit hba in
+/-- A function constant along the arcs of `D` and taking the same value at `a` and `b` is
+constant along the arcs of the reconnection: each new arc runs along old arcs and the join of `a`
+with `b`. -/
+theorem apply_reconnect_val {β : Type*} {f : α → β} (hf : ∀ x, f (D.val x) = f x)
+    (hab : f a = f b) (x : α) : f ((D.reconnect a b).val x) = f x := by
+  have hσ (y : α) : f (Equiv.swap (D.val a) b y) = f y :=
+    Equiv.apply_swap_eq_self ((hf a).trans hab) y
+  rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, hσ, hf, hσ]
+
 end Reconnect
 
 end PerfectMatching
@@ -525,16 +611,6 @@ theorem IsPerfectMatching.even_card_of_mapsTo {f : Equiv.Perm α} (hf : IsPerfec
   rw [← Fintype.card_coe]
   exact even_card_of_nonempty_perfectMatching _ ⟨⟨f.subtypePerm hiff,
     fun x => Subtype.ext (hf.1 x), fun x h => hf.2 x (congrArg Subtype.val h)⟩⟩
-
-/-- An empty type has exactly one perfect matching, the empty one. -/
-private theorem card_perfectMatching_of_isEmpty (α : Type u) [Fintype α] [DecidableEq α]
-    [IsEmpty α] :
-    Fintype.card (PerfectMatching α) = 1 := by
-  have : Subsingleton (PerfectMatching α) :=
-    ⟨fun D E => Subtype.ext (Equiv.ext fun x => isEmptyElim x)⟩
-  have : Unique (PerfectMatching α) :=
-    uniqueOfSubsingleton ⟨1, fun a => isEmptyElim a, fun a => isEmptyElim a⟩
-  exact Fintype.card_unique
 
 /-- There are as many perfect matchings pairing a fixed `a` with a fixed `b ≠ a` as there are
 perfect matchings of the complement of `{a, b}`. -/
@@ -586,7 +662,7 @@ private theorem card_perfectMatching_aux :
   | zero =>
     intro α _ _ hcard
     have : IsEmpty α := Fintype.card_eq_zero_iff.mp (by omega)
-    rw [card_perfectMatching_of_isEmpty α]
+    rw [Fintype.card_unique]
     rfl
   | succ m ih =>
     intro α _ _ hcard
@@ -611,23 +687,60 @@ theorem IsPerfectMatching.sign_eq [Fintype α] [DecidableEq α] {f : Equiv.Perm 
   rw [Equiv.Perm.sign_of_pow_two_eq_one hsq, hfix, Nat.sub_zero]
 
 /-- **A perfect matching has half as many orbits as points**: its orbits are its pairs. -/
-theorem IsPerfectMatching.two_mul_orbitCount [Finite α] {f : Equiv.Perm α}
+theorem IsPerfectMatching.two_mul_orbitCount {f : Equiv.Perm α}
     (hf : IsPerfectMatching f) : 2 * orbitCount f = Nat.card α := by
   classical
-  have := Fintype.ofFinite α
-  have hsupp : f.support = Finset.univ :=
-    Finset.eq_univ_of_forall fun a => Equiv.Perm.mem_support.mpr (hf.2 a)
-  have hsq : f ^ 2 = 1 := Equiv.ext fun a => by simp [sq, hf.1 a]
-  -- Every orbit of `f` is a pair: `f` has no fixed points, and its cycles have length `2`.
-  have hpair : ∀ k ∈ f.partition.parts, k = 2 := fun k hk => by
-    rw [Equiv.Perm.parts_partition, Equiv.Perm.cycleType_of_pow_prime_eq_one hsq] at hk
-    exact Multiset.eq_of_mem_replicate (by simpa [hsupp] using hk)
-  rw [f.orbitCount_eq_card_parts_partition, Nat.card_eq_fintype_card]
-  refine .trans ?_ f.partition.parts_sum
-  rw [Multiset.eq_replicate_of_mem hpair]
-  simp [mul_comm]
+  cases finite_or_infinite α
+  · have := Fintype.ofFinite α
+    have hsupp : f.support = Finset.univ :=
+      Finset.eq_univ_of_forall fun a => Equiv.Perm.mem_support.mpr (hf.2 a)
+    have hsq : f ^ 2 = 1 := Equiv.ext fun a => by simp [sq, hf.1 a]
+    -- Every orbit of `f` is a pair: `f` has no fixed points, and its cycles have length `2`.
+    have hpair : ∀ k ∈ f.partition.parts, k = 2 := fun k hk => by
+      rw [Equiv.Perm.parts_partition, Equiv.Perm.cycleType_of_pow_prime_eq_one hsq] at hk
+      exact Multiset.eq_of_mem_replicate (by simpa [hsupp] using hk)
+    rw [f.orbitCount_eq_card_parts_partition, Nat.card_eq_fintype_card]
+    refine .trans ?_ f.partition.parts_sum
+    rw [Multiset.eq_replicate_of_mem hpair]
+    simp [mul_comm]
+  · have := Equiv.Perm.infinite_quotient_sameCycle_of_involutive hf.1
+    simp [orbitCount_def, Nat.card_eq_zero_of_infinite]
 
 end Parity
+
+/-! ### Four endpoints -/
+
+/-- There are exactly three perfect matchings of four labelled points, determined by the
+partner of `0`. -/
+theorem isPerfectMatching_fin_four_iff (f : Equiv.Perm (Fin 4)) :
+    IsPerfectMatching f ↔
+      f = Equiv.swap 0 1 * Equiv.swap 2 3 ∨
+      f = Equiv.swap 0 2 * Equiv.swap 1 3 ∨
+      f = Equiv.swap 0 3 * Equiv.swap 1 2 := by
+  revert f
+  decide
+
+/-- The product of two distinct perfect matchings of four points is again a perfect matching.
+This fails for larger endpoint sets. -/
+theorem IsPerfectMatching.mul_of_ne_fin_four {f g : Equiv.Perm (Fin 4)}
+    (hf : IsPerfectMatching f) (hg : IsPerfectMatching g) (hne : f ≠ g) :
+    IsPerfectMatching (f * g) := by
+  rcases (isPerfectMatching_fin_four_iff f).mp hf with rfl | rfl | rfl <;>
+    rcases (isPerfectMatching_fin_four_iff _).mp hg with rfl | rfl | rfl <;>
+    first | exact False.elim (hne rfl) | decide
+
+/-- Closing a pairing of four points by another pairing gives four directed traversal cycles
+when the pairings agree, and two otherwise. Each undirected circle has two directions. -/
+theorem IsPerfectMatching.orbitCount_mul_fin_four {f g : Equiv.Perm (Fin 4)}
+    (hf : IsPerfectMatching f) (hg : IsPerfectMatching g) :
+    orbitCount (f * g) = if f = g then 4 else 2 := by
+  split_ifs with h
+  · subst g
+    have hsq : f * f = 1 := Equiv.ext hf.apply_apply
+    simp [hsq]
+  · have hcount := (hf.mul_of_ne_fin_four hg h).two_mul_orbitCount
+    simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hcount
+    omega
 
 section CycleReversal
 
@@ -665,7 +778,7 @@ theorem IsPerfectMatching.isPerfectMatching_cycleReversal (hf : IsPerfectMatchin
 
 /-- **Each class of the equivalence relation generated by two perfect matchings contains exactly
 two cycles of their product**, so there are half as many classes as cycles. -/
-theorem IsPerfectMatching.two_mul_card_quotient_eqvGen [Finite α] (hf : IsPerfectMatching f)
+theorem IsPerfectMatching.two_mul_card_quotient_eqvGen (hf : IsPerfectMatching f)
     (hg : IsPerfectMatching g) :
     2 * Nat.card (Quotient (Relation.EqvGen.setoid fun a b ↦ b = g a ∨ b = f a)) =
       orbitCount (f * g) := by
@@ -675,7 +788,7 @@ theorem IsPerfectMatching.two_mul_card_quotient_eqvGen [Finite α] (hf : IsPerfe
 
 /-- **A product of two perfect matchings has an even number of orbits**: each class of the
 equivalence relation the two matchings generate contains exactly two of them. -/
-theorem IsPerfectMatching.even_orbitCount_mul [Finite α] (hf : IsPerfectMatching f)
+theorem IsPerfectMatching.even_orbitCount_mul (hf : IsPerfectMatching f)
     (hg : IsPerfectMatching g) : Even (orbitCount (f * g)) :=
   ⟨_, (hf.two_mul_card_quotient_eqvGen hg).symm.trans (two_mul _)⟩
 
@@ -702,13 +815,56 @@ theorem orbitCount_mul_reconnect (D : PerfectMatching α) {T : Perm α} {a : α}
   -- Reconnecting differs from `D` by two transpositions.
   have hval : (D.reconnect a (T a)).val =
       D.val * swap a (D.val (T a)) * swap (D.val a) (T a) := by
-    rw [reconnect_val, permCongr_eq_mul, swap_inv, mul_swap_eq_swap_mul D.val, D.apply_apply]
+    rw [reconnect_val_eq_mul_swap_mul_swap, swap_comm (T a)]
   -- Each transposition joins two consecutive points of one orbit, so each cuts that orbit.
   have hs₁ : (T * D.val).SameCycle (D.val (T a)) a := ⟨1, by simp [hT]⟩
   have hs₂ : (T * D.val * swap a (D.val (T a))).SameCycle (D.val a) (T a) :=
     ⟨1, by simp [swap_apply_of_ne_of_ne (D.apply_ne a) h₂]⟩
   rw [hval, ← mul_assoc, ← mul_assoc, orbitCount_mul_swap_of_sameCycle hD hs₂,
     orbitCount_mul_swap_of_sameCycle h₁ hs₁.symm]
+
+/-- **Suppressing a vertex of degree two keeps a sphere a sphere.** Let `T` and `D.val` attain the
+Euler bound `Equiv.Perm.orbitCount_add_orbitCount_add_orbitCount_mul_le`, and let `T` exchange `a`
+with `T a ≠ a`, a vertex of degree two. Reconnecting `D` so that it joins `a` to `T a` detaches
+this vertex as a loop of its own, joining the two arcs that ended there; the bound is attained
+again. When `T a = a` there is nothing to reconnect and the statement is the hypothesis. -/
+theorem orbitCount_add_orbitCount_reconnect_add_orbitCount_reconnect_mul_eq
+    (D : PerfectMatching α) {T : Perm α} {a : α} (hT : T (T a) = a)
+    (h : orbitCount T + orbitCount D.val + orbitCount (D.val * T) =
+      Nat.card α + 2 * Nat.card (MulAction.orbitRel.Quotient (Subgroup.closure {T, D.val}) α)) :
+    orbitCount T + orbitCount (D.reconnect a (T a)).val +
+        orbitCount ((D.reconnect a (T a)).val * T) =
+      Nat.card α + 2 * Nat.card (MulAction.orbitRel.Quotient
+        (Subgroup.closure {T, (D.reconnect a (T a)).val}) α) := by
+  by_cases ha : T a = a
+  · rwa [ha, reconnect_self]
+  by_cases hD : D.val a = T a
+  · rwa [← hD, reconnect_partner]
+  have hbound := T.orbitCount_add_orbitCount_add_orbitCount_mul_le (D.reconnect a (T a)).val
+  set K := Subgroup.closure {T, (D.reconnect a (T a)).val}
+  -- The new loop adds two faces, its two sides.
+  have hface := D.orbitCount_mul_reconnect hT ha hD
+  rw [orbitCount_mul_comm T, orbitCount_mul_comm T] at hface
+  have hedge : orbitCount (D.reconnect a (T a)).val = orbitCount D.val := by
+    rw [reconnect_val, orbitCount_permCongr]
+  -- Reconnecting back by the same transposition recovers `D`, so at most one component is added.
+  have hle : Subgroup.closure {T, D.val} ≤
+      Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) := by
+    have hK : K ≤ Subgroup.closure (insert (swap (D.val a) (T a)) (K : Set (Perm α))) :=
+      fun g hg ↦ Subgroup.subset_closure (Set.mem_insert_of_mem _ hg)
+    have hs := Subgroup.subset_closure (Set.mem_insert (swap (D.val a) (T a)) (K : Set (Perm α)))
+    have hr : (D.reconnect a (T a)).val ∈ K := Subgroup.subset_closure (by simp)
+    have hval : swap (D.val a) (T a) * (D.reconnect a (T a)).val * swap (D.val a) (T a) =
+        D.val := by
+      simp [reconnect_val, permCongr_eq_mul, mul_assoc]
+    have hm := mul_mem (mul_mem hs (hK hr)) hs
+    rw [hval] at hm
+    exact (Subgroup.closure_le _).2
+      (Set.pair_subset_iff.2 ⟨hK (Subgroup.subset_closure (by simp)), hm⟩)
+  have hanti := MulAction.card_orbitRelQuotient_anti (X := α) hle
+  have := K.card_orbitRelQuotient_le_card_orbitRelQuotient_closure_insert_swap_add_one
+    (D.val a) (T a)
+  omega
 
 end PinchOff
 

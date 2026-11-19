@@ -70,7 +70,7 @@ theorem integralDividedPower_mul_integralDividedPower_of_g2_short_pair
             integralDividedPower x M (m - p.1 - 2 * p.2.1 - p.2.2)
               (hMx (m - p.1 - 2 * p.2.1 - p.2.2))) := by
   ext a
-  simp only [Module.End.mul_apply, LinearMap.sum_apply, LinearMap.smul_apply,
+  simp only [mul_apply_eq_comp, LinearMap.sum_apply, LinearMap.smul_apply,
     AddSubmonoidClass.coe_finsetSum, AddSubgroupClass.coe_nsmul, coe_integralDividedPower_apply,
     ← mul_smul, ← smul_assoc, ← Finset.sum_smul]
   congr 1

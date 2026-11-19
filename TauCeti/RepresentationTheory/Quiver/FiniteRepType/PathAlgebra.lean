@@ -70,7 +70,7 @@ theorem isFiniteRepType_iff_isRepresentationFinite_pathAlgebra :
         E.functor.indecomposable_obj_of_map_bijective hI
           (E.fullyFaithfulFunctor.map_bijective _ _)⟩
   rw [isFiniteRepType_iff, isRepresentationFinite_iff]
-  exact (E.congrFullSubcategory h).skeletonEquiv.finite_iff
+  exact (E.congrFullSubcategory h).skeletonIsoCat.objEquiv.finite_iff
 
 /-- **Gabriel's theorem for path algebras.** For a finite connected quiver with finitely many paths,
 the path algebra is representation-finite exactly when the Tits form is positive definite. -/

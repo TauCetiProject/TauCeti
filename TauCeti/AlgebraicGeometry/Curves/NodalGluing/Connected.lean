@@ -18,8 +18,9 @@ component indices carrying a node. This permits loops and multiple edges.
 
 `mem_connectedComponent_mk_iff` identifies the component of every point of the quotient.
 `preconnectedSpace_gluedCurve_iff` and `connectedSpace_gluedCurve_iff` give the resulting
-connectivity criteria, including the nonemptiness condition in the latter. No finiteness,
-compactness or separation assumptions are needed for these statements.
+connectivity criteria, including the nonemptiness condition in the latter, and
+`reflTransGen_of_connectedSpace` restates connectivity as chains of nodes traversed in either
+direction. No finiteness, compactness or separation assumptions are needed for these statements.
 
 The construction uses the existing `GluedCurve` quotient and its lifting property. To separate
 different graph components, the component index descends to the discrete quotient of the
@@ -91,8 +92,8 @@ theorem connectedComponent_mk_eq_of_eqvGen {i j : ι}
       obtain ⟨f, rfl, rfl⟩ := hab
       exact iff_of_true ⟨d.fstPt f⟩ ⟨d.sndPt f⟩
     | refl a => rfl
-    | symm a b hab ih => exact ih.symm
-    | trans a b c hab hbc ih₁ ih₂ => exact ih₁.trans ih₂
+    | symm a b _ ih => exact ih.symm
+    | trans a b c _ _ ih₁ ih₂ => exact ih₁.trans ih₂
   induction h with
   | rel i j h =>
     obtain ⟨f, rfl, rfl⟩ := h
@@ -106,8 +107,8 @@ theorem connectedComponent_mk_eq_of_eqvGen {i j : ι}
         rw [sndPoint_def]
         exact connectedComponent_mk_eq d _ _ y
   | refl i => exact connectedComponent_mk_eq d i x y
-  | symm i j h ih => exact (ih y x).symm
-  | trans i j k h₁ h₂ ih₁ ih₂ =>
+  | symm i j _ ih => exact (ih y x).symm
+  | trans i j k h₁ _ ih₁ ih₂ =>
     have : Nonempty (X j) := (hn h₁).mp ⟨x⟩
     exact (ih₁ x (Classical.arbitrary (X j))).trans (ih₂ (Classical.arbitrary (X j)) y)
 
@@ -123,8 +124,9 @@ theorem mem_connectedComponent_mk_iff (x y : Σ i, X i) :
 
 variable [∀ i, Nonempty (X i)]
 
-/-- The glued curve is preconnected exactly when its dual graph is preconnected. Empty
-normalizations are allowed here. -/
+/-- The glued curve is preconnected exactly when its dual graph is preconnected. Every
+normalization component is assumed nonempty: an empty component contributes a vertex of the dual
+graph that no point of the glued curve lies over. -/
 theorem preconnectedSpace_gluedCurve_iff :
     PreconnectedSpace (GluedCurve d) ↔
       ∀ i j, Relation.EqvGen (fun i j ↦ ∃ f, d.fst f = i ∧ d.snd f = j) i j := by
@@ -154,5 +156,16 @@ theorem connectedSpace_gluedCurve_iff :
     let : Nonempty ι := hi
     let : PreconnectedSpace (GluedCurve d) := (preconnectedSpace_gluedCurve_iff d).mpr h
     exact ⟨⟨Quotient.mk _ ⟨Classical.choice hi, Classical.arbitrary _⟩⟩⟩
+
+/-- In a connected glued curve with preconnected nonempty components, any two components are
+joined by a chain of nodes, each traversed in either direction. -/
+theorem reflTransGen_of_connectedSpace [ConnectedSpace (GluedCurve d)] (i j : ι) :
+    Relation.ReflTransGen
+      (fun i j ↦ ∃ f, (d.fst f = i ∧ d.snd f = j) ∨ (d.fst f = j ∧ d.snd f = i)) i j := by
+  have h := ((connectedSpace_gluedCurve_iff d).mp ‹_›).2 i j
+  rw [← Relation.EqvGen.reflTransGen_symmGen] at h
+  refine Relation.ReflTransGen.mono (fun a b hab ↦ ?_) _ _ h
+  rcases hab with ⟨f, ha, hb⟩ | ⟨f, hb, ha⟩
+  exacts [⟨f, Or.inl ⟨ha, hb⟩⟩, ⟨f, Or.inr ⟨hb, ha⟩⟩]
 
 end TauCeti.NodalGluing

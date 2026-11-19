@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.Normalize.Measurable
 public import TauCeti.Geometry.Euclidean.Volume.Sphere
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
+public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Chi.Gaussian
 public import TauCeti.Probability.Distributions.Gaussian.Density
 
@@ -40,6 +41,7 @@ The radial factorization comes from the polar-coordinate formula
 
 ## Main results
 
+* `TauCeti.Probability.support_uniformSphereMeasure`: the uniform sphere law has full support.
 * `LinearIsometryEquiv.map_uniformSphereMeasure`: invariance under linear isometric
   equivalences.
 * `TauCeti.Probability.integral_coe_uniformSphereMeasure`: the embedded mean is zero.
@@ -90,16 +92,29 @@ theorem uniformSphereMeasure_apply (s : Set (sphere (0 : E) 1)) :
     uniformSphereMeasure E s = (volume : Measure E).toSphere s /
       ENNReal.ofReal (2 * Real.pi ^ ((Module.finrank ℝ E : ℝ) / 2) /
         Real.Gamma ((Module.finrank ℝ E : ℝ) / 2)) := by
-  rw [uniformSphereMeasure_def, Measure.smul_apply, smul_eq_mul, toSphere_volume_apply_univ,
+  rw [uniformSphereMeasure_def, _root_.smul_apply, smul_eq_mul, toSphere_volume_apply_univ,
     ENNReal.div_eq_inv_mul]
 
 /-- In every positive dimension the uniform law on the sphere is a probability measure. -/
 instance isProbabilityMeasure_uniformSphereMeasure [Nontrivial E] :
     IsProbabilityMeasure (uniformSphereMeasure E) where
   measure_univ := by
-    rw [uniformSphereMeasure_def, Measure.smul_apply, smul_eq_mul]
+    rw [uniformSphereMeasure_def, _root_.smul_apply, smul_eq_mul]
     exact ENNReal.inv_mul_cancel (Measure.measure_univ_ne_zero.2 (Measure.toSphere_ne_zero _))
       (measure_ne_top _ _)
+
+/-- The uniform sphere measure has full topological support. In dimension zero both the sphere
+and its universal set are empty. -/
+@[simp]
+theorem support_uniformSphereMeasure :
+    (uniformSphereMeasure E).support = Set.univ := by
+  rcases subsingleton_or_nontrivial E with hE | _
+  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
+    rw [hzero, Measure.support_zero]
+    exact Set.eq_univ_iff_forall.mpr fun x ↦ isEmptyElim x
+  · rw [uniformSphereMeasure_def,
+      Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr (measure_ne_top _ _))]
+    exact Measure.support_eq_univ
 
 instance isFiniteMeasure_uniformSphereMeasure : IsFiniteMeasure (uniformSphereMeasure E) := by
   rcases subsingleton_or_nontrivial E with hE | hE
@@ -155,22 +170,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- The uniform law on the sphere has embedded mean zero. -/
 theorem integral_coe_uniformSphereMeasure :
     ∫ x, (x : E) ∂uniformSphereMeasure E = 0 := by
-  let f : E ≃ₗᵢ[ℝ] E := LinearIsometryEquiv.neg ℝ
-  set g : sphere (0 : E) 1 → sphere (0 : E) 1 := Subtype.map f fun x hx ↦ by simpa using hx
-  have hg : Measurable g := f.continuous.measurable.subtype_map _
-  have h := integral_map (μ := uniformSphereMeasure E) hg.aemeasurable
-    (continuous_subtype_val.aestronglyMeasurable (f := ((↑) : sphere (0 : E) 1 → E)))
-  rw [f.map_uniformSphereMeasure] at h
-  have hg' : ∀ x : sphere (0 : E) 1, (g x : E) = -(x : E) := fun x ↦ by
-    simp only [g]
-    rw [Subtype.map_coe]
-    simp [f]
-  simp_rw [hg', integral_neg] at h
-  have h2 : (2 : ℝ) • ∫ x, (x : E) ∂uniformSphereMeasure E = 0 := by
-    rw [two_smul]
-    nth_rewrite 1 [h]
-    exact neg_add_cancel _
-  exact (smul_eq_zero.1 h2).resolve_left two_ne_zero
+  rw [uniformSphereMeasure_def, integral_smul_measure, integral_toSphere_coe_eq_zero, smul_zero]
 
 end Mean
 
@@ -221,7 +221,7 @@ theorem map_sphereDirection_prod_norm_withDensity (e : sphere (0 : E) 1) {φ : �
   -- The uniform law times the total surface mass recovers the surface measure.
   have hσ : ∀ s, uniformSphereMeasure E s * (volume : Measure E).toSphere univ =
       (volume : Measure E).toSphere s := fun s ↦ by
-    rw [uniformSphereMeasure_def, Measure.smul_apply, smul_eq_mul, ← ENNReal.div_eq_inv_mul,
+    rw [uniformSphereMeasure_def, _root_.smul_apply, smul_eq_mul, ← ENNReal.div_eq_inv_mul,
       ENNReal.div_mul_cancel hσ₀ (measure_ne_top _ _)]
   refine (Measure.prod_eq fun s t hs ht ↦ ?_).symm
   have hprod : (ν.map Φ) (s ×ˢ t) = (volume : Measure E).toSphere s * K t := by

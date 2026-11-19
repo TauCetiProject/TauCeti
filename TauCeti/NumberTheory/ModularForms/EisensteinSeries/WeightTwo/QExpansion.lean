@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Character
-import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
 # The `q`-expansion of the weight-two Eisenstein series with character
@@ -25,9 +24,9 @@ The double series `∑_{(c, d)} ψ(c) φ⁻¹(d) (c v z + d)⁻²` does not conv
 order of summation matters. The series `G₂^{ψ,φ}` is the sum over the translates of a box of
 residues modulo `N` (`TauCeti.EisensteinSeries.hasSum_charG2MF`); we show that it is also the sum
 over `c` of the absolutely convergent rows `ψ(c) ∑_d φ⁻¹(d) (c v z + d)⁻²`
-(`TauCeti.EisensteinSeries.hasSum_charRow_charG2MF`). The box sums are grouped by the first
-coordinate, each group being a finite sum of rows, and the rows themselves form a summable family
-(`TauCeti.EisensteinSeries.summable_charRow`), so the grouping can be undone. The coefficients
+(`TauCeti.EisensteinSeries.hasSum_charRow_charG2MF`). These are the rows of the weighted series
+of `charWeight`, which has total mass zero, so this is the row expansion of weighted weight-two
+series (`TauCeti.EisensteinSeries.hasSum_weightedG2Row`). The coefficients
 then follow from the row-by-row computation shared with weight `k ≥ 3`
 (`TauCeti.EisensteinSeries.qExpansion_coeff_of_apply_eq_tsum_charRow`).
 
@@ -56,55 +55,15 @@ namespace TauCeti.EisensteinSeries
 
 variable {u v N : ℕ} [NeZero N] (ψ : DirichletCharacter ℂ u) (φ : DirichletCharacter ℂ v)
 
-/-- Each row of the weight-two series with character converges absolutely. -/
-private lemma summable_charG2_row (z : ℍ) (c : ℤ) :
-    Summable fun d : ℤ ↦
-      (if (v : ℤ) ∣ c then ψ ((c / v : ℤ) : ZMod u) * φ⁻¹ (d : ZMod v) else 0) *
-        eisSummand 2 ![c, d] z := by
-  have h2 : Summable fun d : ℤ ↦ ‖eisSummand 2 ![c, d] z‖ :=
-    summable_norm_iff.mpr <| (linear_right_summable (z : ℂ) c (k := 2) le_rfl).congr
-      fun d ↦ by simp [eisSummand, zpow_neg]
-  refine h2.of_norm_bounded fun d ↦ ?_
-  rw [norm_mul]
-  refine mul_le_of_le_one_left (norm_nonneg _) ?_
-  split_ifs
-  · exact norm_apply_mul_inv_apply_le_one ψ φ _ _
-  · simp
-
 /-- **The weight-two Eisenstein series with character summed along rows**: unless `ψ` and `φ` are
 both trivial, `G₂^{ψ,φ}(z)` is the sum over `c ∈ ℤ` of the absolutely convergent rows
 `ψ(c) ∑_{d ∈ ℤ} φ⁻¹(d) (c v z + d)⁻²`. The double series itself does not converge absolutely. -/
 theorem hasSum_charRow_charG2MF (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) (z : ℍ) :
     HasSum (charRow ψ φ 2 z) (charG2MF ψ φ huv z) := by
   have : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
-  -- the terms of the series and its rows
-  set T : ℤ → ℤ → ℂ := fun c d ↦
-    (if (v : ℤ) ∣ c then ψ ((c / v : ℤ) : ZMod u) * φ⁻¹ (d : ZMod v) else 0) *
-      eisSummand 2 ![c, d] z with hT
-  set R : ℤ → ℂ := fun c ↦ ∑' d, T c d with hR
-  have hTs (c : ℤ) : Summable (T c) := summable_charG2_row ψ φ z c
-  -- only the rows `v c` contribute, and they are the rows of the statement
-  rw [hasSum_charRow_iff]
-  have hRs : Summable R :=
-    ((hasSum_charRow_iff ψ φ 2 z).mp (summable_charRow ψ φ le_rfl z).hasSum).summable
-  -- the sums over the boxes, grouped by the first coordinate, are finite sums of rows
-  have hbox := hasSum_charG2MF ψ φ huv h z
-  rw [← (finTwoArrowEquiv ℤ).symm.hasSum_iff] at hbox
-  have hfib : HasSum (fun y : ℤ ↦ ∑ a : ZMod N, R ((a.val : ℤ) - N * y))
-      (charG2MF ψ φ huv z) := by
-    refine hbox.prod_fiberwise fun y₀ ↦ ?_
-    refine (hasSum_sum fun a₀ _ ↦ (hTs _).hasSum.sum_zmod_val_sub N).congr_fun
-      fun y₁ ↦ ?_
-    rw [Function.comp_apply, ← (finTwoArrowEquiv (ZMod N)).symm.sum_comp, Fintype.sum_prod_type]
-    refine Finset.sum_congr rfl fun a₀ _ ↦ Finset.sum_congr rfl fun a₁ _ ↦ ?_
-    have hfun : (fun i ↦ (((finTwoArrowEquiv (ZMod N)).symm (a₀, a₁) i).val : ℤ)) -
-        N • (finTwoArrowEquiv ℤ).symm (y₀, y₁) =
-          ![(a₀.val : ℤ) - N * y₀, (a₁.val : ℤ) - N * y₁] := by
-      ext i
-      fin_cases i <;> simp
-    rw [hfun]
-    simp [hT]
-  exact (hRs.hasSum.sum_zmod_val_sub N).unique hfib ▸ hRs.hasSum
+  rw [hasSum_charRow_iff, coe_charG2MF]
+  refine (hasSum_weightedG2Row (sum_charWeight_eq_zero ψ φ huv h) z).congr_fun fun c ↦ ?_
+  simp [weightedG2Row_def, charWeight_intCast ψ φ huv]
 
 /-- **The `q`-expansion of the weight-two Eisenstein series with character.** For characters `ψ`
 modulo `u` and `φ` modulo `v`, not both trivial, with `ψ(-1) φ(-1) = 1`, the constant coefficient

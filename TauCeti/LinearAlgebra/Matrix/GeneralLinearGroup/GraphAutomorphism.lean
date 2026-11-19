@@ -9,6 +9,9 @@ public import Mathlib.Data.Fin.Rev
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
+import TauCeti.Data.Fin.Rev
+import Mathlib.Tactic.FinCases
+
 /-!
 # The pinned type-A graph automorphism on matrices
 
@@ -48,6 +51,7 @@ carrier.
   arbitrary root `ε_i - ε_j`, where the parameter is rescaled by the sign `(-1) ^ (i + j + 1)`.
 * `TauCeti.typeAGraphAutomorphism_diagGL`: the automorphism reverses and inverts diagonal entries.
 * `TauCeti.typeAGraphAutomorphism_apply_apply`: the signed entrywise formula on the inverse matrix.
+* `TauCeti.transpose_typeAGraphConjugator`: `Qᵀ = (-1) ^ r • Q`.
 * `TauCeti.typeAGraphAutomorphism_mem_upperTriangularGroup_iff`: preservation of
   upper triangularity.
 * `TauCeti.typeAGraphAutomorphism_mul_self`: the automorphism has order dividing two.
@@ -100,6 +104,51 @@ theorem typeAGraphConjugator_apply (r : ℕ) (i j : Fin (r + 1)) :
   have h : (i = j.rev) ↔ (j = i.rev) := by
     rw [← Fin.rev_eq_iff, eq_comm]
   simp only [Fin.revPerm_apply, diagGL_apply, coe_typeAGraphSign, h]
+
+/-- The signed reversal form in dimension three. -/
+theorem coe_typeAGraphConjugator_two :
+    (typeAGraphConjugator 2 A : Matrix (Fin 3) (Fin 3) A) =
+      !![0, 0, 1; 0, -1, 0; 1, 0, 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [typeAGraphConjugator_apply]
+
+/-- The signed reversal matrix reverses coordinates and applies alternating signs. -/
+theorem coe_typeAGraphConjugator_mulVec (r : ℕ) (w : Fin (r + 1) → A) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A) *ᵥ w =
+      fun i : Fin (r + 1) ↦ (-1 : A) ^ (i : ℕ) * w i.rev := by
+  ext i
+  simp [mulVec, dotProduct, typeAGraphConjugator_apply, ite_mul]
+
+/-- The bilinear pairing for the signed reversal form in arbitrary dimension. -/
+theorem dotProduct_typeAGraphConjugator_mulVec (r : ℕ) (v w : Fin (r + 1) → A) :
+    v ⬝ᵥ ((typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A) *ᵥ w) =
+      ∑ i : Fin (r + 1), (-1 : A) ^ (i : ℕ) * (v i * w i.rev) := by
+  rw [coe_typeAGraphConjugator_mulVec]
+  apply Finset.sum_congr rfl
+  intro i _
+  rw [← mul_assoc, ← ((Commute.neg_one_left (v i)).pow_left (i : ℕ)).eq, mul_assoc]
+
+/-- The bilinear pairing for the signed reversal form in dimension three. -/
+theorem dotProduct_typeAGraphConjugator_two_mulVec (v w : Fin 3 → A) :
+    v ⬝ᵥ ((typeAGraphConjugator 2 A : Matrix (Fin 3) (Fin 3) A) *ᵥ w) =
+      v 0 * w 2 - v 1 * w 1 + v 2 * w 0 := by
+  simp [dotProduct_typeAGraphConjugator_mulVec, Fin.sum_univ_three, sub_eq_add_neg]
+
+/-- The transpose of the signed reversal matrix is `(-1) ^ r` times the matrix: the form of Gram
+matrix `Q` is symmetric for even `r` and skew-symmetric for odd `r`. -/
+theorem transpose_typeAGraphConjugator (r : ℕ) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)ᵀ =
+      (-1 : A) ^ r • (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A) := by
+  ext i j
+  simp only [transpose_apply, typeAGraphConjugator_apply, Matrix.smul_apply, smul_eq_mul]
+  by_cases h : j = i.rev
+  · subst h
+    have hi : (i : ℕ) ≤ r := Nat.lt_succ_iff.mp i.isLt
+    simp only [Fin.rev_rev, ↓reduceIte]
+    rw [← pow_add, show r + (i : ℕ) = (i.rev : ℕ) + 2 * i by rw [Fin.val_rev]; omega, pow_add,
+      pow_mul, neg_one_sq, one_pow, mul_one]
+  · have h' : i ≠ j.rev := fun h' ↦ h (by rw [h', Fin.rev_rev])
+    simp only [h, h', ↓reduceIte, mul_zero]
 
 private theorem permutationGL_rev_inv {A : Type u} [Semiring A] (r : ℕ) :
     (permutationGL (k := A) (Fin.revPerm : Equiv.Perm (Fin (r + 1))))⁻¹ =
@@ -190,6 +239,18 @@ theorem inverseTranspose_typeAGraphConjugator (r : ℕ) :
       typeAGraphConjugator r A := by
   simp only [typeAGraphConjugator, map_mul, inverseTranspose_diagGL,
     inverseTranspose_permutationGL, typeAGraphSign_inv]
+
+/-- The inverse of the native signed reversal matrix is its transpose. -/
+theorem typeAGraphConjugator_inv_eq_transpose (r : ℕ) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)⁻¹ =
+      (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)ᵀ := by
+  have h := congrArg
+    (fun g : GeneralLinearGroup (Fin (r + 1)) A ↦
+      (g : Matrix (Fin (r + 1)) (Fin (r + 1)) A))
+    (inverseTranspose_typeAGraphConjugator (A := A) r)
+  rw [GeneralLinearGroup.coe_inverseTranspose] at h
+  simpa only [transpose_transpose, GeneralLinearGroup.coe_inv] using
+    congrArg Matrix.transpose h
 
 private theorem typeAGraphAutomorphism_eq_iff_gl (r : ℕ) (g h : GL (Fin (r + 1)) A) :
     typeAGraphAutomorphism r A g = h ↔
@@ -358,19 +419,12 @@ theorem typeAGraphAutomorphism_transvectionUnit_of_ne (r : ℕ) {i j : Fin (r + 
   rw [typeAGraphAutomorphism_transvectionUnit_aux, typeAGraphSign_inv]
   congr 1
   rw [coe_typeAGraphSign, coe_typeAGraphSign]
-  -- Reversing both indices preserves the parity of the total exponent.
-  have hmod : ((j.rev : ℕ) + (i.rev : ℕ) + 1) % 2 = ((i : ℕ) + (j : ℕ) + 1) % 2 := by
-    have hi := i.isLt
-    have hj := j.isLt
-    simp only [Fin.val_rev]
-    omega
   calc ((-1 : A) ^ (j.rev : ℕ)) * (-c) * ((-1 : A) ^ (i.rev : ℕ))
       = (-1 : A) ^ ((j.rev : ℕ) + (i.rev : ℕ) + 1) * c := by
         rw [pow_add, pow_add, pow_one]
         ring
     _ = (-1 : A) ^ ((i : ℕ) + (j : ℕ) + 1) * c := by
-        rw [neg_one_pow_eq_pow_mod_two ((j.rev : ℕ) + (i.rev : ℕ) + 1),
-          neg_one_pow_eq_pow_mod_two ((i : ℕ) + (j : ℕ) + 1), hmod]
+        rw [Fin.neg_one_pow_rev_add_rev_add_one]
 
 /-- **The pinned graph automorphism reverses the positive simple-root subgroups without changing
 their parameters.** In Bourbaki numbering, the node `i` is carried to `i.rev`. The sign that

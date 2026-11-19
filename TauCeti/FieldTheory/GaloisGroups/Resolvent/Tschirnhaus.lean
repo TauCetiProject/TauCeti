@@ -169,7 +169,7 @@ theorem HasGaloisLabel.exists_isRoot_specialize_tschirnhausPolynomial_of_exists_
       referenceSubgroup n j ≤ spec.H.map (MulAut.conj τ).toMonoidHom) :
     ∃ a : F, (spec.specialize F (f.tschirnhausPolynomial T)).IsRoot a := by
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin h.separable (SplittingField.splits f)
   obtain ⟨τ, hτ⟩ :=
     (h.transitiveGroupLabel (e.trans (finCongr h.natDegree_eq))).exists_le_map_conj_iff.2 hle
   exact spec.exists_isRoot_specialize_tschirnhausPolynomial_of_le_map_conj hf h.natDegree_eq
@@ -190,7 +190,7 @@ theorem HasGaloisLabel.exists_isRoot_specialize_tschirnhausPolynomial_iff
     (∃ a : F, (spec.specialize F (f.tschirnhausPolynomial T)).IsRoot a) ↔
       ∃ τ : Equiv.Perm (Fin n), referenceSubgroup n j ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin h.separable (SplittingField.splits f)
   rw [spec.exists_isRoot_specialize_tschirnhausPolynomial_iff_exists_le_map_conj hf h.natDegree_eq
     hT (e.trans (finCongr h.natDegree_eq)) hres]
   exact (h.transitiveGroupLabel _).exists_le_map_conj_iff

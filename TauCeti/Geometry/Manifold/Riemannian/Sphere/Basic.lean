@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Riemannian.Induced
+import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -37,6 +38,10 @@ Thurston's eight model geometries.
 * `TauCeti.norm_tangentSpace_sphere`: the round norm of a tangent vector is the norm of its image
   in `E`.
 * `TauCeti.inner_coe_mvfderiv_subtypeVal_sphere`: tangent vectors are orthogonal to the radius.
+* `TauCeti.contMDiff_coe_sphereTangentEquiv`: reading a tangent vector in `E` via
+  `sphereTangentEquiv` is `C^m` on the tangent bundle.
+* `TauCeti.edist_le_riemannianEDist_sphere`: the chordal distance in `E` is at most the round
+  distance.
 
 ## References
 
@@ -128,6 +133,25 @@ theorem coe_sphereTangentEquiv_apply (x : sphere (0 : E) 1)
   rw [LinearIsometry.equivRange_apply_coe]
   exact mvfderiv_apply_eq_mfderiv_apply _ x v
 
+/-- The image of a tangent vector to the sphere under the differential of the inclusion is the
+value of `TauCeti.sphereTangentEquiv` on it. -/
+theorem mvfderiv_subtypeVal_sphere_eq_sphereTangentEquiv (x : sphere (0 : E) 1)
+    (v : TangentSpace (𝓡 n) x) :
+    mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v = sphereTangentEquiv x v := by
+  rw [coe_sphereTangentEquiv_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- Reading a tangent vector to the unit sphere in the ambient inner product space `E` via
+`sphereTangentEquiv` is `C^m` for every `m : ℕ∞ω` (including `m = ω`). -/
+theorem contMDiff_coe_sphereTangentEquiv {m : ℕ∞ω} :
+    ContMDiff (𝓡 n).tangent 𝓘(ℝ, E) m
+      (fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) ↦
+        (sphereTangentEquiv p.proj p.2 : E)) := by
+  have htan : ContMDiff (𝓡 n).tangent 𝓘(ℝ, E).tangent m
+      (tangentMap (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E)) :=
+    (contMDiff_coe_sphere (E := E) (n := n) (m := ω)).contMDiff_tangentMap le_top
+  exact ((contMDiff_snd_tangentBundle_modelSpace E 𝓘(ℝ, E)).comp htan).congr fun p ↦
+    coe_sphereTangentEquiv_apply p.proj p.2
+
 /-- The image of a tangent vector under the differential of the sphere inclusion is orthogonal
 to the radius vector. -/
 theorem inner_coe_mvfderiv_subtypeVal_sphere (x : sphere (0 : E) 1)
@@ -136,5 +160,16 @@ theorem inner_coe_mvfderiv_subtypeVal_sphere (x : sphere (0 : E) 1)
   have h := (sphereTangentEquiv x v).2
   rw [Submodule.mem_orthogonal_singleton_iff_inner_right, coe_sphereTangentEquiv_apply] at h
   rwa [mvfderiv_apply_eq_mfderiv_apply]
+
+/-- **The chordal distance is at most the round distance.** The distance in `E` between two points
+of the unit sphere is at most their Riemannian distance for the round metric: the inclusion of the
+sphere into `E` preserves the length of tangent vectors, so every path on the sphere is at least as
+long as the chord between its endpoints. -/
+theorem edist_le_riemannianEDist_sphere (x y : sphere (0 : E) 1) :
+    edist x y ≤ Manifold.riemannianEDist (𝓡 n) x y := by
+  have h := Manifold.edist_le_mul_riemannianEDist (I := 𝓡 n) (C := 1)
+    (contMDiff_coe_sphere (E := E) (n := n)) one_ne_zero (fun p v ↦ ?_) x y
+  · simpa [Subtype.edist_eq] using h
+  rw [ENNReal.coe_one, one_mul, ← ofReal_norm, ← ofReal_norm, ← norm_tangentSpace_sphere]
 
 end TauCeti

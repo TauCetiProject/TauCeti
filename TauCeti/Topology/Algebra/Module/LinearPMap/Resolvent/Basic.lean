@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import Mathlib.LinearAlgebra.LinearPMap
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
 # Continuous inverses of shifts of partial linear maps
@@ -22,12 +23,15 @@ Over a noncommutative ring, the scalar expression `x ↦ lambda • x - A x` nee
 The predicate still requires its inverse to be linear over the full scalar ring; a parameter
 whose shift is not linear therefore does not belong to the resolvent set.
 
-This file gives the graph characterization, the two inverse identities, and the fact that an
-operator has no proper extension sharing a resolvent point. The pointwise resolvent identity
-holds over rings, and resolvents commute over division rings. For topological additive groups, an
-invertible continuous linear perturbation gives another resolvent. Over commutative rings
-with continuous scalar multiplication by constants, the resolvent of an everywhere defined
-continuous linear operator agrees with Mathlib's algebraic resolvent, and their spectra agree.
+This file gives the graph characterization, the two inverse identities, the fact that a point of
+the resolvent set is not an eigenvalue, and the fact that an operator has no proper extension
+sharing a resolvent point. The pointwise resolvent identity
+holds over rings. Over division rings resolvents commute, and the resolvent at `lambda` acts on
+an eigenvector for the eigenvalue `c` as multiplication by `(lambda - c)⁻¹`. For topological
+additive groups, an invertible continuous linear perturbation gives another resolvent. Over
+commutative rings with continuous scalar multiplication by constants, the resolvent of an
+everywhere defined continuous linear operator agrees with Mathlib's algebraic resolvent, and their
+spectra agree.
 
 On normed spaces over nontrivially normed fields the continuous linear inverse is bounded;
 Neumann perturbations and openness of the resolvent set are developed in
@@ -204,26 +208,21 @@ theorem smul_sub_bijective (h : lambda ∈ resolventSet A) :
     Function.Bijective fun x : A.domain => lambda • (x : X) - A x :=
   (isResolventAt_resolvent h).smul_sub_bijective
 
+/-- A point of the resolvent set is not an eigenvalue: `A x = lambda • x` forces `x = 0`. -/
+theorem eq_zero_of_apply_eq_smul (h : lambda ∈ resolventSet A) (x : A.domain)
+    (hx : A x = lambda • (x : X)) : x = 0 :=
+  Subtype.ext <| by rw [ZeroMemClass.coe_zero, ← resolvent_smul_sub_apply h x, hx, sub_self,
+    ContinuousLinearMap.map_zero]
+
 /-- **An operator has no proper extension sharing a resolvent point.** If `A ≤ B` and some
 `lambda` lies in the resolvent set of both, then `A = B`.
-
-A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for a unique `x ∈ D(A)`, by
-surjectivity for `A`; injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`.
 
 This is the step that upgrades "`A` is a restriction of the generator" to "`A` *is* the
 generator" in the generation theorems. -/
 theorem eq_of_le_of_mem_resolventSet {A B : X →ₗ.[𝕜] X} (hAB : A ≤ B)
-    (hA : lambda ∈ resolventSet A) (hB : lambda ∈ resolventSet B) : A = B := by
-  refine LinearPMap.eq_of_le_of_domain_eq hAB (le_antisymm hAB.1 fun y hy => ?_)
-  obtain ⟨x, hx⟩ := (smul_sub_bijective hA).surjective (lambda • y - B ⟨y, hy⟩)
-  obtain ⟨x', hx'coe, hx'val⟩ := LinearPMap.exists_of_le hAB x
-  have hxy : x' = (⟨y, hy⟩ : B.domain) := by
-    refine (smul_sub_bijective hB).injective ?_
-    simp only [← hx'coe, ← hx'val]
-    exact hx
-  have hcoe : (x : X) = y := by rw [hx'coe, hxy]
-  rw [← hcoe]
-  exact x.property
+    (hA : lambda ∈ resolventSet A) (hB : lambda ∈ resolventSet B) : A = B :=
+  eq_of_le_of_smul_sub_surjective_of_injective hAB (smul_sub_bijective hA).surjective
+    (smul_sub_bijective hB).injective
 
 /-- The resolvent commutes with `A` on `D(A)`: `R(lambda) (A x) = A (R(lambda) x)`. -/
 theorem resolvent_apply_comm (h : lambda ∈ resolventSet A) (x : A.domain) :
@@ -301,11 +300,26 @@ theorem resolvent_comm (hl : lambda ∈ A.resolventSet) (hm : mu ∈ A.resolvent
     have h2 := resolvent_sub_resolvent_apply hm hl y
     have h3 : (mu - lambda) • A.resolvent lambda (A.resolvent mu y)
         = (mu - lambda) • A.resolvent mu (A.resolvent lambda y) := by
-      rw [← h1, ← neg_sub lambda mu, neg_smul, ← h2]
+      rw [← h1, ← neg_sub lambda mu, _root_.neg_smul, ← h2]
       abel
     have h4 := congrArg (fun x : X => (mu - lambda)⁻¹ • x) h3
     simpa only [ContinuousLinearMap.comp_apply, smul_smul, inv_mul_cancel₀ hsub, one_smul]
       using h4
+
+/-- The resolvent acts on an eigenvector of `A` for the eigenvalue `c` as multiplication by
+`(lambda - c)⁻¹`. For `c = lambda` both sides vanish: a point of the resolvent set is not an
+eigenvalue, so the eigenvector is zero. -/
+theorem resolvent_apply_of_apply_eq_smul (h : lambda ∈ A.resolventSet) {c : 𝕜} (x : A.domain)
+    (hx : A x = c • (x : X)) : A.resolvent lambda x = (lambda - c)⁻¹ • (x : X) := by
+  rcases eq_or_ne (lambda - c) 0 with hc | hc
+  · rw [← sub_eq_zero.1 hc] at hx
+    rw [eq_zero_of_apply_eq_smul h x hx, ZeroMemClass.coe_zero, ContinuousLinearMap.map_zero,
+      smul_zero]
+  · have hx' : (lambda - c) • A.resolvent lambda x = x := by
+      rw [← ContinuousLinearMap.map_smul, sub_smul, ← hx, resolvent_smul_sub_apply h]
+    calc A.resolvent lambda x = (lambda - c)⁻¹ • ((lambda - c) • A.resolvent lambda x) :=
+          (inv_smul_smul₀ hc _).symm
+      _ = (lambda - c)⁻¹ • (x : X) := by rw [hx']
 
 end DivisionRing
 

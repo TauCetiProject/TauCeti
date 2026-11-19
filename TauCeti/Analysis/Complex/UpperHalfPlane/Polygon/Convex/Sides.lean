@@ -42,6 +42,8 @@ the polygon is the closure of its interior.
 * `ConvexPolygon.geodesicSegment_inter_interior_carrier_nonempty`: two distinct points of the
   polygon not on a common side span a segment through the interior.
 * `ConvexPolygon.frontier_carrier`: the boundary is the union of the sides.
+* `ConvexPolygon.mem_interior_or_mem_side_or_vertex_eq_inl`: a point of the polygon is interior,
+  a nonendpoint side point, or a finite vertex.
 * `ConvexPolygon.volume_frontier_carrier`: the boundary is a null set.
 * `ConvexPolygon.nonempty_interior_carrier`, `ConvexPolygon.closure_interior_carrier`: the
   interior is nonempty and dense in the polygon.
@@ -144,6 +146,26 @@ private theorem geodesicLine_notMem_range_sideGeodesic {k j : Fin n} (hjk : j �
       (P.carrier_subset_closure_leftHalfPlane j ha) (P.carrier_subset_closure_leftHalfPlane j hb)
       (P.range_sideGeodesic_ne hjk.symm))
 
+/-- **A point of the polygon on the supporting geodesic of a side running from an ideal point to a
+finite vertex lies on the side.** If the side `ξ → w` of the polygon, where `w` is the finite
+endpoint and lies on the supporting geodesic of the next side, is contained in the polygon, then
+every point of the polygon on the supporting geodesic of the side belongs to the side. This is the
+case of a backward ray `(-∞, t]` in `carrier_inter_range_sideGeodesic`. -/
+private theorem mem_extGeodesicSegment_inr_inl_of_mem_carrier {k : Fin n} (hk₁ : k + 1 ≠ k)
+    {ξ : OnePoint ℝ} {w : ℍ} {u : ℝ}
+    (hg : IsGeodesicFromTo (P.sideGeodesic k) (.inr ξ) (.inl w))
+    (hside : extGeodesicSegment (.inr ξ) (.inl w) ⊆ P.carrier)
+    (hx : geodesicLine (P.sideGeodesic k) u ∈ P.carrier)
+    (hnext : w ∈ range (geodesicLine (P.sideGeodesic (k + 1)))) :
+    geodesicLine (P.sideGeodesic k) u ∈ extGeodesicSegment (.inr ξ) (.inl w) := by
+  obtain ⟨rfl, t, rfl⟩ := isGeodesicFromTo_inr_inl.1 hg
+  -- the side is the backward ray `(-∞, t]`; a parameter `u > t` would put the finite endpoint,
+  -- a point of the line of the next side, strictly between two points of the polygon
+  rw [← geodesicLine_image_Iic] at hside ⊢
+  refine ⟨u, le_of_not_gt fun htu ↦ ?_, rfl⟩
+  exact P.geodesicLine_notMem_range_sideGeodesic hk₁ (sub_one_lt t) htu
+    (hside (mem_image_of_mem _ (sub_one_lt t).le)) hx hnext
+
 /-- The points of the polygon on the supporting geodesic of a side are exactly the points of
 that side. -/
 @[simp]
@@ -188,23 +210,8 @@ theorem carrier_inter_range_sideGeodesic (k : Fin n) :
       rw [add_sub_cancel]⟩
     exact P.geodesicLine_notMem_range_sideGeodesic hk₀ hus (lt_add_one s) hx
       (hside (mem_image_of_mem _ (mem_Ici.2 zero_le_one))) (hs ▸ hprev hp)
-  · -- a backward ray `(-∞, t]`, the forward ray of the reversed line
-    obtain ⟨hξ, ⟨t, ht⟩⟩ := isGeodesicFromTo_inr_inl.1 hg
-    have hξ' : ξ = (P.sideGeodesic k * pslS) • (∞ : OnePoint ℝ) := by
-      rw [mul_smul, pslS_smul_infty, hξ]
-    have hw : w = geodesicLine (P.sideGeodesic k * pslS) (-t) := by
-      rw [geodesicLine_mul_pslS, neg_neg, ht]
-    rw [extGeodesicSegment_inr_inl, hξ', hw] at hside ⊢
-    simp only [rayToward_geodesicLine_inr_smul_infty, geodesicLine_mul_dilation] at hside ⊢
-    simp only [geodesicLine_mul_pslS] at hside ⊢
-    refine ⟨t - u, mem_Ici.2 (sub_nonneg.2 (le_of_not_gt fun htu ↦ ?_)), by
-      dsimp only
-      congr 1
-      ring⟩
-    refine P.geodesicLine_notMem_range_sideGeodesic hk₁ (sub_one_lt t) htu ?_ hx (ht ▸ hnext hq)
-    have := hside (mem_image_of_mem _ (mem_Ici.2 zero_le_one))
-    convert this using 2
-    ring
+  · -- a backward ray `(-∞, t]`
+    exact P.mem_extGeodesicSegment_inr_inl_of_mem_carrier hk₁ hg hside hx (hnext hq)
   · -- the whole line
     obtain ⟨hξ, hη⟩ := isGeodesicFromTo_inr_inr.1 hg
     have hξη : ξ ≠ η := fun h ↦ (isGeodesicFromTo_inr_inr.2 ⟨hξ, hη⟩).ne (congrArg _ h)
@@ -308,6 +315,22 @@ theorem frontier_carrier : frontier P.carrier = ⋃ i, P.side i := by
   have hz := P.carrier_subset_closure_leftHalfPlane k hzc
   rw [closure_leftHalfPlane] at hz
   exact mem_iUnion.2 ⟨k, P.carrier_inter_range_sideGeodesic k ▸ ⟨hzc, hz.resolve_left hk⟩⟩
+
+/-- A point of a convex polygon is an interior point, a point of a side other than its finite
+endpoints, or a finite vertex. -/
+theorem mem_interior_or_mem_side_or_vertex_eq_inl {z : ℍ} (hz : z ∈ P.carrier) :
+    z ∈ interior P.carrier ∨
+      (∃ i, z ∈ P.side i ∧ P.vertex i ≠ .inl z ∧ P.vertex (i + 1) ≠ .inl z) ∨
+        ∃ j, P.vertex j = .inl z := by
+  by_cases hzi : z ∈ interior P.carrier
+  · exact Or.inl hzi
+  have hzf : z ∈ frontier P.carrier := P.isClosed_carrier.frontier_eq ▸ ⟨hz, hzi⟩
+  obtain ⟨i, hi⟩ := mem_iUnion.mp (P.frontier_carrier ▸ hzf)
+  by_cases h₀ : P.vertex i = .inl z
+  · exact Or.inr (Or.inr ⟨i, h₀⟩)
+  by_cases h₁ : P.vertex (i + 1) = .inl z
+  · exact Or.inr (Or.inr ⟨i + 1, h₁⟩)
+  exact Or.inr (Or.inl ⟨i, hi, h₀, h₁⟩)
 
 /-- The boundary of a convex polygon is a null set: it is the union of finitely many sides, each
 contained in a geodesic line. -/

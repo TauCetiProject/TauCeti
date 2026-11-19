@@ -123,6 +123,13 @@ theorem toSpec_def : toSpec C F = Proj.toSpecZero (gradedRing C F) ≫
     Spec.map (CommRingCat.ofHom (algebraMap C (gradedRing C F 0))) :=
   (rfl)
 
+/-- The submodule blowup is a scheme over its coefficient ring through `toSpec`. -/
+noncomputable instance instOver : (submoduleBlowup C F).Over (Spec (.of C)) :=
+  ⟨toSpec C F⟩
+
+/-- The structure morphism of the submodule blowup is `toSpec`. -/
+theorem over_eq_toSpec : submoduleBlowup C F ↘ Spec (.of C) = toSpec C F := (rfl)
+
 /-- The inverse image of the basic open `D(h)` of `Spec C` in the blowup is the standard open
 `D₊(h)` of the degree-zero image of `h`. -/
 theorem toSpec_preimage_basicOpen (h : C) :

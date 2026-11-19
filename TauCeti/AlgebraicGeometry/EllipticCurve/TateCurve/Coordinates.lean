@@ -20,7 +20,8 @@ classical Tate coordinates are
 `X(u) = ∑_{n ∈ ℤ} qⁿu / (1 - qⁿu)² - 2 s₁(q)`,
 `Y(u) = ∑_{n ∈ ℤ} (qⁿu)² / (1 - qⁿu)³ + s₁(q)`.
 
-This file proves convergence of both bilateral series, their invariance under `u ↦ qu`,
+This file proves convergence of both bilateral series and of the one-sided series into which
+they split, their invariance under `u ↦ qu`,
 and the inversion laws `X(u⁻¹) = X(u)` and `Y(u⁻¹) = -Y(u) - X(u)`. These are the
 analytic coordinates used to construct the map from the multiplicative group modulo `q^ℤ`
 to the Tate curve over a non-archimedean field. The Weierstrass equation and the homomorphism
@@ -212,6 +213,27 @@ theorem summable_tateUniformizationY (q : Kˣ) (hq : ‖(q : K)‖ < 1) (u : Kˣ
   · simpa only [yTerm_zpow_neg, zpow_natCast] using
       (summable_yTerm_nat (q : K) hq (u : K)⁻¹).neg.sub
         (summable_xTerm_nat (q : K) hq (u : K)⁻¹)
+
+/-- The one-sided series `∑_{n ≥ 1} qⁿw / (1 - qⁿw)²` of `tateUniformizationX_eq_tsum_nat`
+converges for every `w` when `‖q‖ < 1`; there `w` is `u` or `u⁻¹`. -/
+theorem summable_tateUniformizationX_nat (q : K) (hq : ‖q‖ < 1) (w : K) :
+    Summable fun n : ℕ ↦ q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2 :=
+  (summable_nat_add_iff 1).mpr (summable_xTerm_nat q hq w)
+
+/-- The one-sided series `∑_{n ≥ 1} (qⁿw)² / (1 - qⁿw)³` of `tateUniformizationY_eq_tsum_nat`
+converges for every `w` when `‖q‖ < 1`; there `w` is `u`. -/
+theorem summable_tateUniformizationY_nat (q : K) (hq : ‖q‖ < 1) (w : K) :
+    Summable fun n : ℕ ↦ (q ^ (n + 1) * w) ^ 2 / (1 - q ^ (n + 1) * w) ^ 3 :=
+  (summable_nat_add_iff 1).mpr (summable_yTerm_nat q hq w)
+
+/-- The one-sided series `∑_{n ≥ 1} -qⁿw / (1 - qⁿw)³` of `tateUniformizationY_eq_tsum_nat`,
+which collects the terms of negative index, converges for every `w` when `‖q‖ < 1`; there `w` is
+`u⁻¹`. -/
+theorem summable_tateUniformizationY_nat_neg (q : K) (hq : ‖q‖ < 1) (w : K) :
+    Summable fun n : ℕ ↦ -(q ^ (n + 1) * w) / (1 - q ^ (n + 1) * w) ^ 3 :=
+  ((summable_tateUniformizationY_nat q hq w).neg.sub
+    (summable_tateUniformizationX_nat q hq w)).congr fun _ ↦
+      ((inv_sq_div_one_sub_inv_cube _).symm.trans (inv_sq_div_one_sub_inv_cube_eq_neg_sub _)).symm
 
 /-- The first Tate coordinate as its central term plus two one-sided series:
 `X(u) = u / (1 - u)² + ∑_{n ≥ 1} qⁿu / (1 - qⁿu)² + ∑_{n ≥ 1} qⁿu⁻¹ / (1 - qⁿu⁻¹)² - 2 s₁(q)`. -/

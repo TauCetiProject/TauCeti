@@ -66,12 +66,12 @@ theorem realPlaneDy_eq_const : realPlaneDy = fun _ : ℝ × ℝ ↦ realPlaneDy 
 @[simp]
 theorem extDeriv_realPlaneDx (p : ℝ × ℝ) : extDeriv realPlaneDx p = 0 := by
   rw [realPlaneDx_eq_const]
-  exact ContinuousAlternatingMap.extDeriv_const (realPlaneDx (0, 0)) p
+  exact congrFun (ContinuousAlternatingMap.extDeriv_const (realPlaneDx (0, 0))) p
 
 /-- The exterior derivative of the constant coordinate one-form `dy` vanishes. -/
 @[simp]
 theorem extDeriv_realPlaneDy (p : ℝ × ℝ) : extDeriv realPlaneDy p = 0 := by
   rw [realPlaneDy_eq_const]
-  exact ContinuousAlternatingMap.extDeriv_const (realPlaneDy (0, 0)) p
+  exact congrFun (ContinuousAlternatingMap.extDeriv_const (realPlaneDy (0, 0))) p
 
 end Prod

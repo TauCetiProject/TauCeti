@@ -49,6 +49,21 @@ default endpoint that leanprover-community/mathlib4@03616a12 introduced, and ups
 plans to retire it together with direct reads from the storage account. Remove this
 wiring when the pinned cache tool drops the flag.
 
+## Official Lean toolchain setup on fleet
+
+PR and staging builds on `fleet-` runners skip official-toolchain snapshot
+restoration using the existing action's `cold` input. They retain exact pin
+attestation, provenance checks for any existing installation, and the official
+installer with its bounded retries. Cloud runners retain verified snapshot
+restoration; the trusted dependency warmer and Mathlib's separate compressed
+download cache are unchanged.
+
+The toolchain snapshot's home-directory paths are stored relative to the
+publisher's workspace. The fleet workspace prefix differs, so extraction does
+not populate the expected Elan directory. Fleet jobs therefore discarded the
+unusable restore and installed the official release anyway. Restoring that
+snapshot is disabled until a portable layout and a measured benefit justify it.
+
 ## Cloudflare account
 
 The 2026 account migration is complete. The live bucket, zone, custom domain,
@@ -176,7 +191,7 @@ the publisher.
 Digests establish byte integrity; the existing exact-candidate builds and audits establish
 proof correctness and producer eligibility. If inherited bytes disappear after staging,
 publication fails closed. A new producer run with `LAKE_CACHE_FULL_PUBLICATION=1` transfers all
-built objects to repair the cache. See [incremental publication operations](../scripts/lake-cache-publication.md)
+built objects to repair the cache. See [incremental publication operations](https://github.com/TauCetiProject/TauCetiTools/blob/main/tauceti_tools/assets/scripts/lake-cache-publication.md)
 for the fallback bounds, retry behavior and byte/time fields to compare.
 
 ## Why a custom domain

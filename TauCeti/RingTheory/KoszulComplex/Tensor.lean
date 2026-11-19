@@ -131,7 +131,7 @@ private theorem fromKoszul_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : �
     (b : ⋀[R]^q N) :
     (fromKoszul φ ψ n).hom (wedgeTensor R M N p q n h (a ⊗ₜ b)) =
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by
-  have key : ∀ (q' : ℕ) (hq' : q' = q) (h' : p + q' = n),
+  have key : ∀ (q' : ℕ) (_ : q' = q) (h' : p + q' = n),
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q' n h').hom
           (proj R M p a ⊗ₜ proj R N q' b) =
         (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by
@@ -194,10 +194,6 @@ private def degreeIso (n : ℕ) :
   inv_hom_id := by
     ext x : 2
     exact toKoszul_fromKoszul φ ψ n x
-
-private theorem koszulComplex_d_apply (φ : Module.Dual R M) (n : ℕ) (x : ⋀[R]^(n + 1) M) :
-    ((koszulComplex φ).d (n + 1) n).hom x = koszulDifferential φ n x :=
-  congr($(koszulComplex_d φ n).hom x)
 
 private theorem whiskerRight_d_tmul (r q : ℕ) (a : ⋀[R]^(r + 1) M) (b : ⋀[R]^q N) :
     ((koszulComplex φ).d (r + 1) r ▷ (koszulComplex ψ).X q).hom

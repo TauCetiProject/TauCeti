@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.ExplicitCyclotomicSymbol.Basic
 import Mathlib.Data.Nat.Factorization.Induction
 import TauCeti.Data.ZMod.Divisibility
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The product formula for the explicit cyclotomic symbols
@@ -94,8 +95,7 @@ private theorem symbolProd_of_eq_prime (hm : m.primeFactors ⊆ T) {q : ℕ} (hq
   have : Fact q.Prime := ⟨hq⟩
   -- `q` as an `ℓ`-adic unit, for `ℓ ≠ q`
   let unit (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ q) : ℤ_[ℓ]ˣ :=
-    (PadicInt.isUnit_iff.2 (PadicInt.norm_natCast_eq_one_iff.2
-      ((Nat.coprime_primes Fact.out hq).2 hℓ))).unit
+    (PadicInt.isUnit_natCast_of_coprime ((Nat.coprime_primes Fact.out hq).2 hℓ)).unit
   have hunit (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ q) : (unit ℓ hℓ : ℤ_[ℓ]) = q :=
     IsUnit.unit_spec _
   rw [symbolProd_apply]

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.Equiv
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Sum
+
+import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
 # Restricted series in two families of variables
@@ -37,6 +39,21 @@ interval rings of the Fargues–Fontaine curve are strongly noetherian.
   `TauCeti.MvPowerSeries.coeff_restrictedSumEquiv_symm`: its coefficients.
 * `TauCeti.MvPowerSeries.norm_restrictedSumEquiv` and
   `TauCeti.MvPowerSeries.isometry_restrictedSumEquiv`: it preserves the Gauss norms.
+* `TauCeti.MvPowerSeries.map_subtype_restrictedSumEquiv`: on the underlying formal series it is
+  `MvPowerSeries.sumAlgEquiv`.
+* `TauCeti.MvPowerSeries.restrictedSumEquiv_X_inl`, `TauCeti.MvPowerSeries.restrictedSumEquiv_X_inr`
+  and `TauCeti.MvPowerSeries.restrictedSumEquiv_polynomialToRestricted`: its values on the
+  variables and on polynomials.
+* `TauCeti.MvPowerSeries.restrictedSumAssoc` and
+  `TauCeti.MvPowerSeries.map_restrictedSumEquiv_restrictedSumAssoc`: reassociating three families
+  of variables, and the associativity of iteration.
+* `TauCeti.MvPowerSeries.restrictedSumCongr` and
+  `TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedSumCongr`: renaming each family of
+  variables, and the compatibility of iteration with these renamings.
+
+Its compatibility with bounded coefficient maps is
+`TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedMap`, in
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map`.
 
 ## References
 
@@ -55,23 +72,9 @@ open scoped Topology
 variable {σ τ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : σ → ℝ} {d : τ → ℝ}
   [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)]
 
-/-- The polyradii `Sum.elim c d` are positive when `c` and `d` are. -/
-instance instFactPosSumElim : ∀ k, Fact (0 < Sum.elim c d k)
-  | .inl i => ‹∀ i, Fact (0 < c i)› i
-  | .inr j => ‹∀ j, Fact (0 < d j)› j
-
 local notation "Inner" => IsRestricted.subring (R := R) d
 local notation "Flat" => IsRestricted.subring (R := R) (Sum.elim c d)
 local notation "Iter" => IsRestricted.subring (R := Inner) c
-
-omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] in
-/-- Rearranging a weighted coefficient norm in `σ ⊕ τ` as a weighted norm in `τ`, weighted again
-in `σ`. -/
-private theorem mul_prod_sumElim (x : ℝ) (a : σ →₀ ℕ) (b : τ →₀ ℕ) :
-    x * (a.sumElim b).prod (Sum.elim c d · ^ ·) = x * b.prod (d · ^ ·) * a.prod (c · ^ ·) := by
-  rw [Finsupp.prod_sumElim]
-  simp only [Function.comp_def, Sum.elim_inl, Sum.elim_inr]
-  ring
 
 omit [IsUltrametricDist R] [∀ j, Fact (0 < d j)] in
 /-- Each coefficient of a restricted series in `σ ⊕ τ`, viewed as a series in `σ` over series in
@@ -79,13 +82,9 @@ omit [IsUltrametricDist R] [∀ j, Fact (0 < d j)] in
 theorem isRestricted_coeff_sumAlgEquiv {f : MvPowerSeries (σ ⊕ τ) R}
     (hf : IsRestricted (Sum.elim c d) f) (a : σ →₀ ℕ) :
     IsRestricted d (coeff a (sumAlgEquiv R σ τ f)) := by
-  have hi : Function.Injective (a.sumElim : (τ →₀ ℕ) → σ ⊕ τ →₀ ℕ) := fun b b' h ↦ by
-    simpa using congrArg (Finsupp.comapDomain Sum.inr · Sum.inr_injective.injOn) h
-  have h := (hf.comp hi.tendsto_cofinite).const_mul (a.prod (c · ^ ·))⁻¹
-  rw [mul_zero] at h
-  refine h.congr fun b ↦ ?_
-  rw [Function.comp_apply, coeff_coeff_sumAlgEquiv, mul_prod_sumElim]
-  field_simp [(prod_pow_pos (c := c) a).ne']
+  apply (isRestrictedFamily_coeff_iff _).mp
+  simpa only [coeff_coeff_sumAlgEquiv] using
+    ((isRestrictedFamily_coeff_iff f).mpr hf).comp_sumElim a
 
 /-- The coefficients of a restricted series in `σ ⊕ τ`, as a formal series in `σ` over the
 restricted series in `τ`. -/
@@ -97,59 +96,48 @@ private theorem coe_coeff_sumSlices (f : Flat) (a : σ →₀ ℕ) :
     ((coeff a (sumSlices f) : Inner) : MvPowerSeries τ R) = coeff a (sumAlgEquiv R σ τ f) :=
   (rfl)
 
+private theorem sumAddEquiv_subringLinearEquiv (f : Flat) (s : σ →₀ ℕ) :
+    IsRestrictedFamily.Gauss.sumAddEquiv
+        (IsRestrictedFamily.Gauss.ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)) s =
+      IsRestrictedFamily.Gauss.ofAddSubgroup
+        (IsRestrictedFamily.subringLinearEquiv (coeff s (sumSlices f))) := by
+  ext t
+  simp [coe_coeff_sumSlices, coeff_coeff_sumAlgEquiv]
+
+private theorem norm_sumAddEquiv_subringLinearEquiv (f : Flat) (s : σ →₀ ℕ) :
+    ‖IsRestrictedFamily.Gauss.sumAddEquiv
+        (IsRestrictedFamily.Gauss.ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)) s‖ =
+      ‖coeff s (sumSlices f)‖ := by
+  rw [sumAddEquiv_subringLinearEquiv, IsRestrictedFamily.Gauss.norm_subringLinearEquiv]
+
 private theorem isRestricted_sumSlices (f : Flat) : IsRestricted c (sumSlices f) := by
-  classical
-  refine tendsto_order.mpr ⟨fun _ hb ↦ .of_forall fun a ↦
-    hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos a).le), fun ε hε ↦ ?_⟩
-  -- only finitely many weighted coefficients of `f` reach `ε / 2`; the exponents in `σ` of these
-  -- are the only ones at which the weighted Gauss norm of the slice can reach `ε`
-  have hbad : {k | ε / 2 ≤ ‖coeff k (f : MvPowerSeries (σ ⊕ τ) R)‖ *
-      k.prod (Sum.elim c d · ^ ·)}.Finite := by
-    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds (half_pos hε))
-  rw [eventually_cofinite]
-  refine (hbad.image fun k ↦ k.comapDomain Sum.inl Sum.inl_injective.injOn).subset fun a ha ↦ ?_
-  by_contra hna
-  have hpos : 0 < a.prod (c · ^ ·) := prod_pow_pos a
-  refine (half_lt_self hε).not_ge ((not_lt.mp ha).trans ?_)
-  rw [← le_div_iff₀ hpos, norm_le_iff (div_nonneg (half_pos hε).le hpos.le)]
-  intro b
-  rw [le_div_iff₀ hpos, coe_coeff_sumSlices, coeff_coeff_sumAlgEquiv, ← mul_prod_sumElim]
-  by_contra hlt
-  exact hna ⟨a.sumElim b, (not_le.mp hlt).le, Finsupp.comapDomain_inl_sumElim a b⟩
+  have h := IsRestrictedFamily.mem_addSubgroup.mp
+    (IsRestrictedFamily.Gauss.sumAddEquiv
+      (IsRestrictedFamily.Gauss.ofAddSubgroup
+        (IsRestrictedFamily.subringLinearEquiv f))).toAddSubgroup.2
+  apply (isRestrictedFamily_coeff_iff _).mp
+  apply isRestrictedFamily_iff.mpr
+  simpa only [norm_sumAddEquiv_subringLinearEquiv] using isRestrictedFamily_iff.mp h
 
 /-- Flattening a restricted series in `σ` over the restricted series in `τ` gives a restricted
 series in `σ ⊕ τ`. -/
 private theorem isRestricted_sumAlgEquiv_symm (g : Iter) :
     IsRestricted (Sum.elim c d) ((sumAlgEquiv R σ τ).symm (map (Inner).subtype g)) := by
-  classical
-  set h := (sumAlgEquiv R σ τ).symm (map (Inner).subtype g)
-  have hcoeff (a : σ →₀ ℕ) (b : τ →₀ ℕ) :
-      coeff (a.sumElim b) h =
-        coeff b ((coeff a (g : MvPowerSeries σ Inner) : Inner) : MvPowerSeries τ R) := by
-    simp [h]
-  refine tendsto_order.mpr ⟨fun _ hb ↦ .of_forall fun k ↦
-    hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos k).le), fun ε hε ↦ ?_⟩
-  -- a weighted coefficient of `h` reaching `ε` comes from one of the finitely many coefficients
-  -- of `g` whose weighted norm reaches `ε`, and from one of the finitely many coefficients of
-  -- that slice whose weighted norm, weighted again, reaches `ε`
-  have houter : {a | ε ≤ ‖coeff a (g : MvPowerSeries σ Inner)‖ * a.prod (c · ^ ·)}.Finite := by
-    simpa [eventually_cofinite, not_lt] using g.2.eventually (gt_mem_nhds hε)
-  have hinner (a : σ →₀ ℕ) : {b | ε / a.prod (c · ^ ·) ≤
-      ‖coeff b ((coeff a (g : MvPowerSeries σ Inner) : Inner) : MvPowerSeries τ R)‖ *
-        b.prod (d · ^ ·)}.Finite := by
-    simpa [eventually_cofinite, not_lt] using (coeff a (g : MvPowerSeries σ Inner)).2.eventually
-      (gt_mem_nhds (div_pos hε (prod_pow_pos a)))
-  rw [eventually_cofinite]
-  refine (houter.biUnion fun a _ ↦ (hinner a).image a.sumElim).subset fun k hk ↦ ?_
-  set a := k.comapDomain Sum.inl Sum.inl_injective.injOn
-  set b := k.comapDomain Sum.inr Sum.inr_injective.injOn
-  have hk' : ε ≤ ‖coeff (a.sumElim b) h‖ * (a.sumElim b).prod (Sum.elim c d · ^ ·) := by
-    rw [Finsupp.comapDomain_sumElim_comapDomain]
-    exact not_lt.mp hk
-  rw [mul_prod_sumElim, hcoeff] at hk'
-  refine Set.mem_biUnion (x := a) ?_ ⟨b, ?_, Finsupp.comapDomain_sumElim_comapDomain k⟩
-  · exact hk'.trans (mul_le_mul_of_nonneg_right (norm_coeff_mul_prod_le _ b) (prod_pow_pos a).le)
-  · exact (div_le_iff₀ (prod_pow_pos a)).mpr hk'
+  let a : (σ →₀ ℕ) → IsRestrictedFamily.Gauss d R := fun s ↦
+    .ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv
+      (coeff s (g : MvPowerSeries σ Inner)))
+  have ha : IsRestrictedFamily c a := by
+    apply isRestrictedFamily_iff.mpr
+    have hg := (isRestrictedFamily_coeff_iff _).mpr (IsRestricted.mem_subring.mp g.2)
+    simpa only [a, IsRestrictedFamily.Gauss.norm_subringLinearEquiv] using
+      isRestrictedFamily_iff.mp hg
+  have h := IsRestrictedFamily.Gauss.isRestrictedFamily_flatten
+    (.ofAddSubgroup ⟨a, IsRestrictedFamily.mem_addSubgroup.mpr ha⟩)
+  apply (isRestrictedFamily_coeff_iff _).mp
+  apply isRestrictedFamily_iff.mpr
+  refine (isRestrictedFamily_iff.mp h).congr fun k ↦ ?_
+  rw [← Finsupp.comapDomain_sumElim_comapDomain k, coeff_sumAlgEquiv_symm]
+  simp [a]
 
 /-- Flattening, as a ring homomorphism from `R{Y/d}{X/c}` to `R{X/c, Y/d}`. -/
 private noncomputable def sumFlatten : Iter →+* Flat :=
@@ -224,24 +212,173 @@ theorem coe_restrictedSumAlgEquiv {S : Type*} [CommSemiring S] [Algebra S R] :
 /-- `restrictedSumEquiv` preserves the Gauss norms. -/
 @[simp]
 theorem norm_restrictedSumEquiv (f : Flat) : ‖restrictedSumEquiv f‖ = ‖f‖ := by
-  apply le_antisymm
-  · rw [norm_le_iff (norm_nonneg _)]
-    intro a
-    rw [← le_div_iff₀ (prod_pow_pos a), norm_le_iff (div_nonneg (norm_nonneg _)
-      (prod_pow_pos a).le)]
-    intro b
-    rw [le_div_iff₀ (prod_pow_pos a), coeff_coeff_restrictedSumEquiv, ← mul_prod_sumElim]
-    exact norm_coeff_mul_prod_le f _
-  · rw [norm_le_iff (norm_nonneg _)]
-    intro k
-    rw [← Finsupp.comapDomain_sumElim_comapDomain k, mul_prod_sumElim,
-      ← coeff_coeff_restrictedSumEquiv]
-    exact (mul_le_mul_of_nonneg_right (norm_coeff_mul_prod_le _ _) (prod_pow_pos _).le).trans
-      (norm_coeff_mul_prod_le (restrictedSumEquiv f) _)
+  calc
+    ‖restrictedSumEquiv f‖ = ‖IsRestrictedFamily.Gauss.sumAddEquiv
+        (IsRestrictedFamily.Gauss.ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f))‖ := by
+      rw [← IsRestrictedFamily.Gauss.norm_subringLinearEquiv (restrictedSumEquiv f),
+        IsRestrictedFamily.Gauss.norm_eq_iSup, IsRestrictedFamily.Gauss.norm_eq_iSup]
+      simp only [IsRestrictedFamily.coe_subringLinearEquiv,
+        norm_sumAddEquiv_subringLinearEquiv, restrictedSumEquiv_apply]
+    _ = ‖f‖ := by
+      rw [IsRestrictedFamily.Gauss.norm_sumAddEquiv,
+        IsRestrictedFamily.Gauss.norm_subringLinearEquiv]
 
 /-- `restrictedSumEquiv` is an isometry for the Gauss norms. -/
 theorem isometry_restrictedSumEquiv :
     Isometry (restrictedSumEquiv (R := R) (c := c) (d := d)) :=
   AddMonoidHomClass.isometry_iff_norm _ |>.mpr norm_restrictedSumEquiv
+
+/-- On the underlying formal series, `restrictedSumEquiv` is `MvPowerSeries.sumAlgEquiv`. -/
+@[simp]
+theorem map_subtype_restrictedSumEquiv (f : Flat) :
+    map (Inner).subtype (restrictedSumEquiv f : MvPowerSeries σ Inner) =
+      sumAlgEquiv R σ τ (f : MvPowerSeries (σ ⊕ τ) R) := by
+  ext a b
+  simp [coeff_map]
+
+omit [∀ i, Fact (0 < c i)] in
+/-- Iterated restricted series are determined by their underlying formal series. -/
+private theorem eq_of_map_subtype_eq {F G : Iter}
+    (h : map (Inner).subtype (F : MvPowerSeries σ Inner) = map (Inner).subtype G) : F = G :=
+  Subtype.ext (MvPowerSeries.ext fun a ↦ Subtype.ext (by simpa using congrArg (coeff a) h))
+
+/-- `restrictedSumEquiv` sends a variable of the first family to the corresponding variable. -/
+@[simp]
+theorem restrictedSumEquiv_X_inl (i : σ) :
+    restrictedSumEquiv (⟨X (.inl i), isRestricted_X _ _⟩ : Flat) = ⟨X i, isRestricted_X c i⟩ := by
+  apply eq_of_map_subtype_eq
+  rw [map_subtype_restrictedSumEquiv, sumAlgEquiv_X_inl, map_X]
+
+/-- `restrictedSumEquiv` sends a variable of the second family to the corresponding constant. -/
+@[simp]
+theorem restrictedSumEquiv_X_inr (j : τ) :
+    restrictedSumEquiv (⟨X (.inr j), isRestricted_X _ _⟩ : Flat) =
+      algebraMap Inner Iter ⟨X j, isRestricted_X d j⟩ := by
+  apply eq_of_map_subtype_eq
+  rw [map_subtype_restrictedSumEquiv, sumAlgEquiv_X_inr, coe_algebraMap_isRestrictedSubring_apply,
+    map_C, Algebra.algebraMap_self_apply, Subring.subtype_apply]
+
+/-- `restrictedSumEquiv` is compatible with the polynomial inclusions: a polynomial in `σ ⊕ τ` goes
+to the polynomial in `σ` whose coefficients are its coefficients in `τ`, read through
+`MvPolynomial.sumAlgEquiv`. -/
+theorem restrictedSumEquiv_polynomialToRestricted (p : MvPolynomial (σ ⊕ τ) R) :
+    restrictedSumEquiv (polynomialToRestricted (Sum.elim c d) p) =
+      polynomialToRestricted c ((MvPolynomial.sumAlgEquiv R σ τ p).map
+        (polynomialToRestricted (R := R) d : MvPolynomial τ R →+* Inner)) := by
+  refine DFunLike.congr_fun (MvPolynomial.ringHom_ext
+    (f := (restrictedSumEquiv : Flat ≃+* Iter).toRingHom.comp
+      (polynomialToRestricted (R := R) (Sum.elim c d) : MvPolynomial (σ ⊕ τ) R →+* Flat))
+    (g := ((polynomialToRestricted (R := Inner) c : MvPolynomial σ Inner →+* Iter).comp
+      (MvPolynomial.map (polynomialToRestricted (R := R) d : MvPolynomial τ R →+* Inner))).comp
+        (MvPolynomial.sumAlgEquiv R σ τ : MvPolynomial (σ ⊕ τ) R →+* _)) (fun r ↦ ?_) ?_) p
+  · refine Subtype.ext ?_
+    simp [← MvPolynomial.algebraMap_eq, coe_algebraMap_isRestrictedSubring_apply]
+  · rintro (i | j)
+    · simp
+    · simp [← MvPolynomial.algebraMap_eq]
+
+/-! ### Renaming and reassociating the families of variables -/
+
+section Rename
+
+variable {σ' τ' υ : Type*} {ρ : υ → ℝ} [∀ k, Fact (0 < ρ k)]
+
+/-- **Reassociating three families of variables.** Renaming along `Equiv.sumAssoc` is an
+`R`-algebra isomorphism `R{(X, Y)/(c, d), Z/ρ} ≃ R{X/c, (Y, Z)/(d, ρ)}`, preserving the Gauss
+norms. -/
+noncomputable def restrictedSumAssoc :
+    IsRestricted.subring (R := R) (Sum.elim (Sum.elim c d) ρ) ≃ₐ[R]
+      IsRestricted.subring (R := R) (Sum.elim c (Sum.elim d ρ)) :=
+  IsRestricted.renameAlgEquivOfEq (Equiv.sumAssoc σ τ υ) _
+    (by funext x; rcases x with (i | j) | k <;> rfl)
+
+omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] [∀ k, Fact (0 < ρ k)] in
+/-- `restrictedSumAssoc` renames the underlying series along `Equiv.sumAssoc`. -/
+@[simp]
+theorem coe_restrictedSumAssoc (f : IsRestricted.subring (R := R) (Sum.elim (Sum.elim c d) ρ)) :
+    (restrictedSumAssoc f : MvPowerSeries (σ ⊕ (τ ⊕ υ)) R) =
+      rename (Equiv.sumAssoc σ τ υ) (f : MvPowerSeries ((σ ⊕ τ) ⊕ υ) R) :=
+  IsRestricted.coe_renameAlgEquivOfEq _ _ _ f
+
+/-- `restrictedSumAssoc` preserves the Gauss norms. -/
+@[simp]
+theorem norm_restrictedSumAssoc (f : IsRestricted.subring (R := R) (Sum.elim (Sum.elim c d) ρ)) :
+    ‖restrictedSumAssoc f‖ = ‖f‖ :=
+  IsRestricted.norm_renameAlgEquivOfEq _ _ _ f
+
+/-- `restrictedSumAssoc` is an isometry for the Gauss norms. -/
+theorem isometry_restrictedSumAssoc :
+    Isometry (restrictedSumAssoc (R := R) (c := c) (d := d) (ρ := ρ)) :=
+  AddMonoidHomClass.isometry_iff_norm _ |>.mpr norm_restrictedSumAssoc
+
+/-- **Iteration is associative.** Separating the last family `Z` from `R{X/c, Y/d, Z/ρ}` and then
+`Y` from the remaining outer family `(X, Y)`, over the coefficient ring `R{Z/ρ}`, gives the same
+series in `X` over `R{Z/ρ}{Y/d}` as reassociating, separating `(Y, Z)` and then separating `Z`
+coefficientwise. -/
+theorem map_restrictedSumEquiv_restrictedSumAssoc
+    (f : IsRestricted.subring (R := R) (Sum.elim (Sum.elim c d) ρ)) :
+    map (restrictedSumEquiv (R := R) (c := d) (d := ρ) :
+        IsRestricted.subring (R := R) (Sum.elim d ρ) →+*
+          IsRestricted.subring (R := IsRestricted.subring (R := R) ρ) d)
+        (restrictedSumEquiv (restrictedSumAssoc f) :
+          MvPowerSeries σ (IsRestricted.subring (R := R) (Sum.elim d ρ))) =
+      (restrictedSumEquiv (R := IsRestricted.subring (R := R) ρ) (c := c) (d := d)
+          (restrictedSumEquiv (R := R) (c := Sum.elim c d) (d := ρ) f) :
+        MvPowerSeries σ (IsRestricted.subring (R := IsRestricted.subring (R := R) ρ) d)) := by
+  refine MvPowerSeries.ext fun a ↦ Subtype.ext <| MvPowerSeries.ext fun b ↦ Subtype.ext <|
+    MvPowerSeries.ext fun k ↦ ?_
+  have hk : ((a.sumElim b).sumElim k).equivMapDomain (Equiv.sumAssoc σ τ υ) =
+      a.sumElim (b.sumElim k) :=
+    Finsupp.ext fun x ↦ by rcases x with i | j | l <;> simp [Finsupp.equivMapDomain_apply]
+  simp only [coeff_map, RingHom.coe_coe, coeff_coeff_restrictedSumEquiv, coe_restrictedSumAssoc,
+    ← hk, coeff_equivMapDomain_rename]
+
+variable (e₁ : σ' ≃ σ) (e₂ : τ' ≃ τ)
+
+/-- **Renaming each family of variables.** For `e₁ : σ' ≃ σ` and `e₂ : τ' ≃ τ`, renaming along
+`Equiv.sumCongr e₁ e₂` is an `R`-algebra isomorphism `R{X'/(c ∘ e₁), Y'/(d ∘ e₂)} ≃ R{X/c, Y/d}`,
+preserving the Gauss norms. -/
+noncomputable def restrictedSumCongr :
+    IsRestricted.subring (R := R) (Sum.elim (c ∘ e₁) (d ∘ e₂)) ≃ₐ[R] Flat :=
+  IsRestricted.renameAlgEquivOfEq (Equiv.sumCongr e₁ e₂) _
+    (by funext x; rcases x with i | j <;> rfl)
+
+omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] in
+/-- `restrictedSumCongr` renames the underlying series along `Equiv.sumCongr`. -/
+@[simp]
+theorem coe_restrictedSumCongr (f : IsRestricted.subring (R := R) (Sum.elim (c ∘ e₁) (d ∘ e₂))) :
+    (restrictedSumCongr e₁ e₂ f : MvPowerSeries (σ ⊕ τ) R) =
+      rename (Equiv.sumCongr e₁ e₂) (f : MvPowerSeries (σ' ⊕ τ') R) :=
+  IsRestricted.coe_renameAlgEquivOfEq _ _ _ f
+
+/-- `restrictedSumCongr` preserves the Gauss norms. -/
+@[simp]
+theorem norm_restrictedSumCongr (f : IsRestricted.subring (R := R) (Sum.elim (c ∘ e₁) (d ∘ e₂))) :
+    ‖restrictedSumCongr e₁ e₂ f‖ = ‖f‖ :=
+  IsRestricted.norm_renameAlgEquivOfEq _ _ _ f
+
+/-- `restrictedSumCongr` is an isometry for the Gauss norms. -/
+theorem isometry_restrictedSumCongr :
+    Isometry (restrictedSumCongr (R := R) (c := c) (d := d) e₁ e₂) :=
+  AddMonoidHomClass.isometry_iff_norm _ |>.mpr (norm_restrictedSumCongr e₁ e₂)
+
+/-- **Iteration commutes with renaming.** Renaming both families and then separating `Y` is
+separating `Y'` first, renaming the coefficients along `e₂` and then the outer variables along
+`e₁`. -/
+theorem coe_restrictedSumEquiv_restrictedSumCongr
+    (f : IsRestricted.subring (R := R) (Sum.elim (c ∘ e₁) (d ∘ e₂))) :
+    (restrictedSumEquiv (restrictedSumCongr e₁ e₂ f) : MvPowerSeries σ Inner) =
+      rename e₁ (map (IsRestricted.renameAlgEquiv (R := R) e₂ d :
+          IsRestricted.subring (R := R) (d ∘ e₂) →+* Inner)
+        (restrictedSumEquiv f : MvPowerSeries σ' (IsRestricted.subring (R := R) (d ∘ e₂)))) := by
+  refine MvPowerSeries.ext fun a ↦ Subtype.ext <| MvPowerSeries.ext fun b ↦ ?_
+  obtain ⟨a, rfl⟩ := (Finsupp.equivCongrLeft e₁).surjective a
+  obtain ⟨b, rfl⟩ := (Finsupp.equivCongrLeft e₂).surjective b
+  have hab : (a.equivMapDomain e₁).sumElim (b.equivMapDomain e₂) =
+      (a.sumElim b).equivMapDomain (Equiv.sumCongr e₁ e₂) :=
+    Finsupp.ext fun x ↦ by rcases x with i | j <;> simp [Finsupp.equivMapDomain_apply]
+  simp [hab]
+
+end Rename
 
 end TauCeti.MvPowerSeries

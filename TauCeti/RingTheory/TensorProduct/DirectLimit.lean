@@ -25,6 +25,7 @@ directions are built separately from the universal properties of `DirectLimit.Al
 ## Main declarations
 
 * `TauCeti.DirectedSystem.algebraRTensor`: the directed system `B i ⊗[A] M`.
+* `TauCeti.rTensor_comp_eq_of_le`: an equality after base change persists at later stages.
 * `TauCeti.directLimitLeft`:
   `(colim B i) ⊗[A] M ≃ₐ[A] colim (B i ⊗[A] M)`, with `directLimitLeft_tmul_of`,
   `directLimitLeft_rTensor_of`, `directLimitLeft_symm_of` and the composite forms
@@ -55,9 +56,24 @@ instance DirectedSystem.algebraRTensor :
     | tmul b m => simp [DirectedSystem.map_map' f]
     | add x y hx hy => simp_all
 
-variable [IsDirectedOrder ι] [Nonempty ι]
-
 open _root_.Algebra.TensorProduct _root_.DirectLimit.Algebra TauCeti.DirectLimit.Algebra
+
+/-- Two algebra maps equalized by a tensor transition map remain equalized at every later
+stage of the directed system. -/
+theorem rTensor_comp_eq_of_le {X Y : Type*} [Semiring X] [Algebra A X]
+    [Semiring Y] [Algebra A Y] {i j l : ι} {hij : i ≤ j}
+    {g h : Y →ₐ[A] B i ⊗[A] X}
+    (heq : (rTensor X (f i j hij)).comp g = (rTensor X (f i j hij)).comp h)
+    (hjl : j ≤ l) :
+    (rTensor X (f i l (hij.trans hjl))).comp g =
+      (rTensor X (f i l (hij.trans hjl))).comp h := by
+  ext y
+  have hy := congrArg (rTensor X (f j l hjl)) (congr($heq y))
+  simp only [AlgHom.comp_apply] at hy ⊢
+  simpa only [DirectedSystem.map_map' (F := fun i ↦ B i ⊗[A] X)
+    (fun i j h ↦ rTensor (R := A) X (f i j h)) hij hjl] using hy
+
+variable [IsDirectedOrder ι] [Nonempty ι]
 
 /-- The map `colim (B i ⊗[A] M) → (colim B i) ⊗[A] M` induced by the base changes of the
 canonical maps `B i → colim B i`. -/

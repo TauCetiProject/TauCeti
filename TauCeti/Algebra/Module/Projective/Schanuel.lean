@@ -123,7 +123,7 @@ theorem exists_lift_projective_presentation [Module.Projective R P₀] [Module.P
     rintro _ ⟨x, rfl⟩
     simp only [mem_ker, comp_apply]
     rw [← comp_apply, hf₀]
-    simp only [comp_apply, ← comp_apply π p, hp, zero_apply, map_zero]
+    simp only [comp_apply, ← comp_apply π p, hp, LinearMap.zero_apply, map_zero]
   obtain ⟨f₁, hf₁⟩ := exists_comp_eq_of_range_le hrange
   exact ⟨f₀, f₁, hf₀, hf₁.symm⟩
 

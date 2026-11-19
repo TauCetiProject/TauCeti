@@ -20,7 +20,7 @@ commutative Noetherian ring is Noetherian on both sides. The left Noetherian res
 `TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Noetherian.Basic` uses the surjection from the
 symmetric algebra to the PBW associated graded and the filtered-to-graded transfer.
 The instance here obtains its right counterpart through the existing
-`TauCeti.UniversalEnvelopingAlgebra.antipodeEquiv`, without freeness, characteristic,
+`UniversalEnvelopingAlgebra.antipodeEquiv`, without freeness, characteristic,
 or algebraic-closure assumptions. This supplies the ascending chain condition on right
 ideals used in the structure theory of enveloping algebras.
 
@@ -43,6 +43,7 @@ this applies to every module-finite Lie algebra over a commutative Noetherian ri
 instance instIsNoetherianRingMulOpposite
     [IsNoetherianRing (_root_.UniversalEnvelopingAlgebra R L)] :
     IsNoetherianRing (_root_.UniversalEnvelopingAlgebra R L)ᵐᵒᵖ :=
-  isNoetherianRing_of_ringEquiv _ (antipodeEquiv (L := L) R).toRingEquiv
+  isNoetherianRing_of_ringEquiv _
+    (_root_.UniversalEnvelopingAlgebra.antipodeEquiv (L := L) R).toRingEquiv
 
 end TauCeti.UniversalEnvelopingAlgebra

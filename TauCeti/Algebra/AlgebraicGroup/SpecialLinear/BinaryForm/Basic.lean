@@ -208,6 +208,11 @@ theorem mem_binaryForms {d : ℕ} {f : MvPolynomial (Fin 2) R} :
     f ∈ binaryForms R d ↔ f.IsHomogeneous d :=
   Comodule.mem_polynomialHomogeneousSubcomodule _
 
+/-- The monomial `xᵈ` is a binary form of degree `d`. -/
+theorem X_zero_pow_mem_binaryForms {d : ℕ} :
+    (MvPolynomial.X 0 ^ d : MvPolynomial (Fin 2) R) ∈ binaryForms R d :=
+  mem_binaryForms.mpr (MvPolynomial.isHomogeneous_X_pow 0 d)
+
 /-- **The rational action of `SL₂` on binary forms.** A point with matrix `[[a, b], [c, d]]` acts
 by `(g • f)(x, y) = f(d x - b y, a y - c x)`. -/
 theorem algebraTensorAlgEquiv_endOfPoint_binaryForm
@@ -397,8 +402,9 @@ private theorem coeffAction_eq (g : WithConv (coordinateHopfAlgebra R 2 →ₐ[R
     simp only [MvPolynomial.algebraTensorAlgEquiv_tmul, map_mul, smul_mul_assoc]
   simp only [coeffAction, LinearMap.coe_comp, Function.comp_apply, TensorProduct.mk_apply,
     LinearMap.restrictScalars_apply, h, map_sum, LinearMap.rTensor_tmul, lcoeff_apply,
-    coeff_smul, coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero, LinearEquiv.coe_coe,
-    TensorProduct.lid_tmul, ite_smul, zero_smul, Finset.sum_ite_eq, Finset.mem_range]
+    AddMonoidAlgebra.coeff_smul_apply, coeff_X_pow, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    LinearEquiv.coe_coe, TensorProduct.lid_tmul, ite_smul, zero_smul, Finset.sum_ite_eq,
+    Finset.mem_range]
   split_ifs with hn
   · rfl
   · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, mul_zero, zero_smul]
@@ -497,6 +503,15 @@ theorem binaryForms_le_of_X_zero_mul_X_one_mem
 section Field
 
 variable {k : Type u} [Field k] {d : ℕ}
+
+/-- The binary forms of degree `d` are finite-dimensional. -/
+instance instFiniteDimensionalBinaryForms : FiniteDimensional k (binaryForms k d) := by
+  have : FiniteDimensional k (MvPolynomial.homogeneousSubmodule (Fin 2) k d) :=
+    Module.Finite.iff_fg.mpr (MvPolynomial.homogeneousSubmodule_fg (Fin 2) k d)
+  exact Module.Finite.of_injective
+    ((SMulMemClass.subtype (binaryForms k d)).codRestrict
+      (MvPolynomial.homogeneousSubmodule (Fin 2) k d) fun f ↦ mem_binaryForms.mp f.2)
+    ((LinearMap.injective_codRestrict_iff _).mpr Subtype.val_injective)
 
 /-- **Every nonzero subrepresentation of the binary forms of degree `d` contains `yᵈ`**, over every
 field and in every characteristic. Hence every nonzero subrepresentation contains the
@@ -597,6 +612,12 @@ theorem X_one_pow_mem_binaryFormsSocle :
     (MvPolynomial.X 1 ^ d : MvPolynomial (Fin 2) k) ∈ binaryFormsSocle k d := by
   simpa using (X_pow_mul_X_pow_mem_binaryFormsSocle_iff (k := k) (d := d) (i := 0)).mpr
     ⟨zero_add d, by simp⟩
+
+/-- The lowest weight vector `xᵈ` lies in the socle of the binary forms. -/
+theorem X_zero_pow_mem_binaryFormsSocle :
+    (MvPolynomial.X 0 ^ d : MvPolynomial (Fin 2) k) ∈ binaryFormsSocle k d := by
+  simpa using (X_pow_mul_X_pow_mem_binaryFormsSocle_iff (k := k) (d := d) (i := d) (j := 0)).mpr
+    ⟨add_zero d, by simp⟩
 
 /-- The socle is nonzero. -/
 theorem binaryFormsSocle_ne_bot : binaryFormsSocle k d ≠ ⊥ := fun h ↦

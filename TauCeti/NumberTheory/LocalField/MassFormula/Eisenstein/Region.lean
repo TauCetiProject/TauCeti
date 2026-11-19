@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
+import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import Mathlib.RingTheory.Polynomial.GaussLemma
 import Mathlib.RingTheory.Valuation.ValuationRing
 
@@ -60,6 +61,9 @@ product structure on the measure is used.
 * `TauCeti.measurableSet_eisensteinSet`: the Eisenstein region is measurable.
 * `TauCeti.measure_eisensteinSet`: for `0 < n`, the Eisenstein region has volume
   `q ^ (-n) (1 - q⁻¹)`.
+* `TauCeti.measure_eisensteinSet_pos`, `TauCeti.measure_eisensteinSet_lt_top`: the Eisenstein
+  region has positive finite volume for every additive Haar measure (positivity needs only that
+  `μ` is positive on nonempty open sets).
 
 ## Implementation notes
 
@@ -234,6 +238,48 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
   rw [ENNReal.mul_sub fun _ _ ↦ ENNReal.inv_ne_top.2 (pow_ne_zero _ hq), mul_one, pow_succ,
     ENNReal.mul_inv (.inl (pow_ne_zero _ hq))
       (.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))]
+
+/-- The Eisenstein region has finite volume for every measure that is finite on compact sets,
+since it lies in the compact integer box. -/
+theorem measure_eisensteinSet_lt_top {n : ℕ} [MeasurableSpace (Fin n → K)]
+    (μ : Measure (Fin n → K)) [IsFiniteMeasureOnCompacts μ] : μ (eisensteinSet K n) < ∞ :=
+  (measure_mono (eisensteinSet_subset_integerBox n)).trans_lt isCompact_integerBox.measure_lt_top
+
+/-- The Eisenstein region has positive volume for every measure that is positive on nonempty open
+sets, in particular for every additive Haar measure and not only for the one normalized on the
+integer box. -/
+theorem measure_eisensteinSet_pos {n : ℕ} [MeasurableSpace (Fin n → K)]
+    (μ : Measure (Fin n → K)) [μ.IsOpenPosMeasure] :
+    0 < μ (eisensteinSet K n) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- For `n = 0` the region is the whole one-point space.
+    have h0 : (0 : Fin 0 → K) ∈ eisensteinSet K 0 :=
+      ⟨fun i ↦ i.elim0, fun y hy ↦ by
+        rw [coeff_monicOfCoeff_self (n := 0), map_one]
+        exact hy.le⟩
+    rw [Set.Nonempty.eq_univ ⟨0, h0⟩]
+    exact isOpen_univ.measure_pos μ Set.univ_nonempty
+  -- For `0 < n` the region is a nonempty open set, so no Borel structure is needed.
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  set i₀ : Fin n := ⟨0, hn⟩
+  have hϖ𝓂 : ϖ ∈ 𝓂[K] := hϖ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self ϖ
+  refine IsOpen.measure_pos μ ?_ ⟨Function.update 0 i₀ (ϖ : K), ?_⟩
+  · rw [eisensteinSet_eq_sdiff hn]
+    refine IsOpen.sdiff (isOpen_set_pi Set.finite_univ fun i _ ↦ ?_)
+      (isClosed_univ_pi_image_maximalIdeal_pow _)
+    simpa only [pow_one] using isOpen_image_maximalIdeal_pow (K := K) 1
+  · rw [eisensteinSet_eq_sdiff hn]
+    refine ⟨fun i _ ↦ ?_, fun h ↦ ?_⟩
+    · by_cases hi : i = i₀
+      · subst hi
+        exact ⟨ϖ, hϖ𝓂, by simp⟩
+      · exact ⟨0, zero_mem _, by simp [Function.update_of_ne hi]⟩
+    · obtain ⟨c, hc, hca⟩ := h i₀ (Set.mem_univ _)
+      obtain rfl : c = ϖ := Subtype.ext (by simpa using hca)
+      rw [Function.update_self, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, SetLike.mem_coe,
+        Ideal.mem_span_singleton, pow_two] at hc
+      exact hϖ.not_isUnit (isUnit_of_dvd_one
+        ((mul_dvd_mul_iff_left hϖ.ne_zero).1 (by rwa [mul_one])))
 
 end Measure
 

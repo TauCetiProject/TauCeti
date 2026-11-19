@@ -23,7 +23,7 @@ This matters because `FirstCountableTopology` is the class Mathlib's own instanc
 notably the completeness of a quotient by a subgroup (Bourbaki IX.3.1 Proposition 4), which the
 theory of rational localisations consumes. With the instance below in scope,
 `FirstCountableTopology (weightedRestrictedSubring T hT)` is found by typeclass resolution alone,
-through `TauCeti.SeparatelyContinuousAdd.toFirstCountableTopology`; no separate declaration is
+through `TauCeti.ContinuousConstVAdd.toFirstCountableTopology`; no separate declaration is
 needed and none is given.
 
 The hypothesis `[(𝓝 (0 : A)).IsCountablyGenerated]` is not restrictive in the intended

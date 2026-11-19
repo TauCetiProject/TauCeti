@@ -57,6 +57,7 @@ local Kummer map serve as the local condition at `L` of the `m`-Selmer group.
 
 * `WeierstrassCurve.pointCoeffBaseChange_smul`: `pointCoeffBaseChange τ` is equivariant along
   `absoluteGaloisGroupMap τ`.
+* `WeierstrassCurve.pointCoeffBaseChange_pointCoeffEquiv`: it is Mathlib's point map along `τ`.
 * `WeierstrassCurve.pointCoeffBaseChange_basePointCoeff`: on points of `E(K)` it is base change
   to `L`.
 * `WeierstrassCurve.pointCoeffBaseChange_pointCoeffBaseChange`,
@@ -114,6 +115,19 @@ def pointCoeffBaseChange : W.PointCoeff →+ (W⁄L).PointCoeff :=
         W.map_baseChange
           (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm).toAddMonoidHom.comp <|
     (Affine.Point.map (W' := W.toAffine) τ).comp W.pointCoeffEquiv.symm.toAddMonoidHom
+
+open scoped Classical in
+/-- `pointCoeffBaseChange τ` is Mathlib's point map along `τ`, read on `W⁄L` through the
+identification of `W⁄Lˢ` with `(W⁄L)⁄Lˢ`. -/
+theorem pointCoeffBaseChange_pointCoeffEquiv (P : (W⁄(SeparableClosure K)).toAffine.Point) :
+    W.pointCoeffBaseChange τ (W.pointCoeffEquiv P) =
+      (W⁄L).pointCoeffEquiv
+        (AddEquiv.cast (M := fun V : WeierstrassCurve (SeparableClosure L) => V.toAffine.Point)
+          (show (W⁄L)⁄(SeparableClosure L) = W⁄(SeparableClosure L) from
+            W.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm
+          (Affine.Point.map τ P)) := by
+  simp only [pointCoeffBaseChange, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
+    AddEquiv.symm_apply_apply]
 
 open scoped Classical in
 /-- `pointCoeffBaseChange τ` applies `τ` to both coordinates of an affine point. -/

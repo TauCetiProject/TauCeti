@@ -41,7 +41,6 @@ derived subgroup. Zero is the defining ideal of the whole group. -/
 theorem derivedDefiningIdeal_eq_bot (hH : semisimpleCommHopfAlgProperty k H) :
     CommHopfAlgCat.derivedDefiningIdeal (R := k) H.obj = ⊥ := by
   let _ : Algebra.Smooth k H := hH.smooth
-  let _ : Algebra.IsGeometricallyReduced k H := isGeometricallyReduced_of_smooth k H
   exact (_root_.CommHopfAlgCat.derivedDefiningIdeal_eq_bot_iff_forall_hom_eq_unit_comp_counit
     H.obj).mpr fun _ _ f ↦ hH.hom_eq_unit_comp_counit f
 

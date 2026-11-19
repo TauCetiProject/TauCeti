@@ -39,13 +39,13 @@ theorem coordinateRingMap_injective : Function.Injective (coordinateRingMap R n)
 
 /-- The determinant localization map transported across the bundled coordinate algebras. -/
 private noncomputable def polynomialCoordinateAlgHom :
-    MatrixMonoid.coordinateBialgebra R n →ₐ[R] coordinateHopfAlgebra R n :=
+    MatrixMonoid.coordinateBialgebra R (Fin n) →ₐ[R] coordinateHopfAlgebra R n :=
   ((coordinateHopfAlgebraAlgEquiv R n).toAlgHom.comp (coordinateRingMap R n)).comp
-    (MatrixMonoid.coordinateBialgebraAlgEquiv R n).symm.toAlgHom
+    (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n)).symm.toAlgHom
 
 @[simp]
-private theorem polynomialCoordinateAlgHom_apply (p : MatrixMonoid.CoordinateRing R n) :
-    polynomialCoordinateAlgHom R n (MatrixMonoid.coordinateBialgebraAlgEquiv R n p) =
+private theorem polynomialCoordinateAlgHom_apply (p : MatrixMonoid.CoordinateRing R (Fin n)) :
+    polynomialCoordinateAlgHom R n (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n) p) =
       coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p) := by
   simp [polynomialCoordinateAlgHom]
 
@@ -53,8 +53,8 @@ private theorem polynomialCoordinateAlgHom_apply (p : MatrixMonoid.CoordinateRin
 private theorem polynomialCoordinateAlgHom_tensorSquare :
     (Algebra.TensorProduct.map (polynomialCoordinateAlgHom R n)
       (polynomialCoordinateAlgHom R n)).comp
-        (Algebra.TensorProduct.map (MatrixMonoid.coordinateBialgebraAlgEquiv R n).toAlgHom
-          (MatrixMonoid.coordinateBialgebraAlgEquiv R n).toAlgHom) =
+        (Algebra.TensorProduct.map (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n)).toAlgHom
+          (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n)).toAlgHom) =
       (Algebra.TensorProduct.map (coordinateHopfAlgebraAlgEquiv R n).toAlgHom
         (coordinateHopfAlgebraAlgEquiv R n).toAlgHom).comp
           (Algebra.TensorProduct.map (coordinateRingMap R n) (coordinateRingMap R n)) := by
@@ -63,27 +63,29 @@ private theorem polynomialCoordinateAlgHom_tensorSquare :
 /-- Polynomial matrix coordinates included in the coordinate Hopf algebra of `GLₙ`.
 This is the coordinate morphism of the open inclusion `GLₙ → Matₙ`. -/
 noncomputable def polynomialCoordinateBialgHom :
-    MatrixMonoid.coordinateBialgebra R n →ₐc[R] coordinateHopfAlgebra R n :=
+    MatrixMonoid.coordinateBialgebra R (Fin n) →ₐc[R] coordinateHopfAlgebra R n :=
   BialgHom.ofAlgHom (polynomialCoordinateAlgHom R n)
     (by
-      apply (AlgHom.cancel_right (f := (MatrixMonoid.coordinateBialgebraAlgEquiv R n).toAlgHom)
-        (MatrixMonoid.coordinateBialgebraAlgEquiv R n).surjective).mp
+      apply (AlgHom.cancel_right
+          (f := (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n)).toAlgHom)
+          (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n)).surjective).mp
       ext p
       simp)
     (by
-      apply (AlgHom.cancel_right (f := (MatrixMonoid.coordinateBialgebraAlgEquiv R n).toAlgHom)
-        (MatrixMonoid.coordinateBialgebraAlgEquiv R n).surjective).mp
+      apply (AlgHom.cancel_right
+          (f := (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n)).toAlgHom)
+          (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n)).surjective).mp
       apply AlgHom.ext
       intro p
       simpa [comul_coordinateRingMap] using
         DFunLike.congr_fun (polynomialCoordinateAlgHom_tensorSquare R n)
-          (MatrixMonoid.comul R n p))
+          (MatrixMonoid.comul R (Fin n) p))
 
 /-- The polynomial coordinate inclusion is the determinant localization map under the
 canonical coordinate-algebra identifications. -/
 @[simp]
-theorem polynomialCoordinateBialgHom_apply (p : MatrixMonoid.CoordinateRing R n) :
-    polynomialCoordinateBialgHom R n (MatrixMonoid.coordinateBialgebraAlgEquiv R n p) =
+theorem polynomialCoordinateBialgHom_apply (p : MatrixMonoid.CoordinateRing R (Fin n)) :
+    polynomialCoordinateBialgHom R n (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n) p) =
       coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n p) := by
   simp [polynomialCoordinateBialgHom]
 
@@ -92,10 +94,10 @@ determinant-localized coordinates. This includes size zero and the zero ring. -/
 theorem polynomialCoordinateBialgHom_injective :
     Function.Injective (polynomialCoordinateBialgHom R n) := by
   intro x y h
-  obtain ⟨p, rfl⟩ := (MatrixMonoid.coordinateBialgebraAlgEquiv R n).surjective x
-  obtain ⟨q, rfl⟩ := (MatrixMonoid.coordinateBialgebraAlgEquiv R n).surjective y
+  obtain ⟨p, rfl⟩ := (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n)).surjective x
+  obtain ⟨q, rfl⟩ := (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n)).surjective y
   rw [polynomialCoordinateBialgHom_apply, polynomialCoordinateBialgHom_apply] at h
-  exact congrArg (MatrixMonoid.coordinateBialgebraAlgEquiv R n)
+  exact congrArg (MatrixMonoid.coordinateBialgebraAlgEquiv R (Fin n))
     (coordinateRingMap_injective R n ((coordinateHopfAlgebraAlgEquiv R n).injective h))
 
 end TauCeti.GeneralLinear

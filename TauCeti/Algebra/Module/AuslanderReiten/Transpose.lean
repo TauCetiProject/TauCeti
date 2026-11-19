@@ -289,7 +289,8 @@ def prodMapEquiv :
       apply prod_ext <;> ext φ <;> simp [lcomp_apply', comp_assoc])
     (by
       ext φ
-      simp only [comp_apply, lift_mk, coprod_apply, prod_apply, Function.prod, lcomp_apply',
+      simp only [comp_apply, lift_mk, coprod_apply, LinearMap.prod_apply, Function.prod,
+        lcomp_apply',
         id_apply]
       rw [← map_add]
       congr 1
@@ -330,7 +331,8 @@ def compFstEquiv :
       apply prod_ext <;> ext φ <;> simp [lcomp_apply', comp_assoc])
     (by
       ext φ
-      simp only [comp_apply, lift_mk, coprod_apply, prod_apply, Function.prod, lcomp_apply',
+      simp only [comp_apply, lift_mk, coprod_apply, LinearMap.prod_apply, Function.prod,
+        lcomp_apply',
         id_apply]
       rw [← map_add]
       congr 1

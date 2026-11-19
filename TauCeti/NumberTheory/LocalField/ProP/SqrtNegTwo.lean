@@ -240,7 +240,7 @@ theorem absoluteGaloisGroupProP_two_ratPadicSqrtNegTwo_marked :
         cyclotomicOrientation 2 RatPadicSqrtNegTwo ratPadicSqrtNegTwo_hasPrimitiveRoot
             (e.symm (presentedProPGen 2 4 _ 2)) = 1 := by
   have hmarked := absoluteGaloisGroupProP_two_marked_of_degree_even_principal RatPadicSqrtNegTwo
-    ratPadicSqrtNegTwo_hasPrimitiveRoot (by simp) (a := 4) (k := 2) (f := 3) le_rfl
+    ratPadicSqrtNegTwo_hasPrimitiveRoot (a := 4) (k := 2) (f := 3) le_rfl
     (by norm_num) (by norm_num) (by norm_num) negThreeUnit_neg_coe
     range_localCyclotomicCharacter_ratPadicSqrtNegTwo
   rw [finrank_ratPadicSqrtNegTwo] at hmarked

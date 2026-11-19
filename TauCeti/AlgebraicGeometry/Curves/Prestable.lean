@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Family
-public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
+public import TauCeti.AlgebraicGeometry.Curves.Node.Fiber
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 
 /-!
@@ -20,6 +20,11 @@ dimension one. No genus bound or projectivity hypothesis is part of this notion.
 Prestable families are families of curves. They are invariant under isomorphisms, local on
 the base, and stable under arbitrary base change; thus their restrictions and fibres are
 again prestable. Smooth proper geometrically connected relative curves provide examples.
+
+Over a local domain of Krull dimension at most one, for instance a discrete valuation ring, a
+morphism is a prestable family exactly when it is proper, flat and locally of finite presentation
+and its generic and special fibres are prestable curves
+(`TauCeti.AlgebraicGeometry.prestableFamily_iff_genericFiber_and_specialFiber`).
 
 ## References
 
@@ -122,5 +127,39 @@ theorem of_smooth (f : X ⟶ S) [IsProper f] [SmoothOfRelativeDimension 1 f]
   atWorstNodalOfRelativeDimensionOne := AtWorstNodalOfRelativeDimensionOne.of_smooth f
 
 end PrestableFamily
+
+section DimensionLEOne
+
+variable {R : CommRingCat.{u}} [IsLocalRing R] [IsDomain R] [Ring.DimensionLEOne R]
+variable (K : Type u) [CommRing K] [Algebra R K] [IsFractionRing R K]
+variable (toBase : X ⟶ Spec R)
+
+/-- **The two-fibre criterion for prestable families.** Over a local domain of dimension at most
+one, for instance a discrete valuation ring, a morphism is a prestable family exactly when it is
+proper, flat and locally of finite presentation and both its generic fibre over the fraction field
+and its special fibre over the residue field are prestable curves. -/
+theorem prestableFamily_iff_genericFiber_and_specialFiber :
+    PrestableFamily toBase ↔
+      IsProper toBase ∧ Flat toBase ∧ LocallyOfFinitePresentation toBase ∧
+        PrestableFamily (genericFiber R K toBase).hom ∧
+          PrestableFamily (specialFiber R toBase).hom := by
+  refine ⟨fun _ ↦ ⟨inferInstance, inferInstance, inferInstance,
+      .of_isPullback (isPullback_genericFiber R K toBase),
+      .of_isPullback (isPullback_specialFiber R toBase)⟩, ?_⟩
+  rintro ⟨hp, hf, hl, hg, hs⟩
+  refine
+    { toIsProper := hp
+      toGeometricallyConnected := ?_
+      atWorstNodalOfRelativeDimensionOne :=
+        (atWorstNodalOfRelativeDimensionOne_iff_genericFiber_and_specialFiber K toBase).mpr
+          ⟨hf, hl, hg.atWorstNodalOfRelativeDimensionOne, hs.atWorstNodalOfRelativeDimensionOne⟩ }
+  -- Fixing the universe lets instance search find isomorphism invariance.
+  have : MorphismProperty.RespectsIso @GeometricallyConnected.{u} :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
+  rw [GeometricallyConnected.iff_geometricallyConnected_fiber,
+    forall_fiberToSpecResidueField_iff K toBase @GeometricallyConnected]
+  exact ⟨hg.toGeometricallyConnected, hs.toGeometricallyConnected⟩
+
+end DimensionLEOne
 
 end TauCeti.AlgebraicGeometry

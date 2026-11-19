@@ -430,6 +430,35 @@ theorem mem_cycle_comm {j i : Fin n} : i ∈ σ.cycle j ↔ j ∈ σ.cycle i := 
   simp only [mem_cycle_iff_sameCycle]
   exact Equiv.Perm.sameCycle_comm
 
+/-- Membership along vertex cycles is transitive. -/
+theorem mem_cycle_trans {j i k : Fin n} (hi : i ∈ σ.cycle j) (hk : k ∈ σ.cycle i) :
+    k ∈ σ.cycle j := by
+  rw [mem_cycle_iff_sameCycle] at hi hk ⊢
+  exact hi.trans hk
+
+/-- The least vertex index on each vertex cycle, including ideal cycles. -/
+def cycleRepresentatives : Finset (Fin n) :=
+  Finset.univ.filter fun i ↦ ∀ j ∈ σ.cycle i, i ≤ j
+
+/-- A vertex represents its cycle exactly when it is its least index. -/
+@[simp]
+theorem mem_cycleRepresentatives {i : Fin n} :
+    i ∈ σ.cycleRepresentatives ↔ ∀ j ∈ σ.cycle i, i ≤ j := by
+  simp [cycleRepresentatives]
+
+/-- Every vertex cycle has exactly one least-index representative. -/
+theorem existsUnique_mem_cycleRepresentatives (j : Fin n) :
+    ∃! i, i ∈ σ.cycleRepresentatives ∧ i ∈ σ.cycle j := by
+  let i := (σ.cycle j).min' ⟨j, σ.self_mem_cycle j⟩
+  have hi : i ∈ σ.cycle j := Finset.min'_mem _ _
+  have hmin : ∀ k ∈ σ.cycle j, i ≤ k := fun k hk ↦ Finset.min'_le _ _ hk
+  have hrep : i ∈ σ.cycleRepresentatives := by
+    rw [mem_cycleRepresentatives]
+    exact fun k hk ↦ hmin k (σ.mem_cycle_trans hi hk)
+  refine ⟨i, ⟨hrep, hi⟩, fun k hk ↦ le_antisymm ?_ (hmin k hk.2)⟩
+  exact (σ.mem_cycleRepresentatives.mp hk.1) i
+    (σ.mem_cycle_trans (σ.mem_cycle_comm.mp hk.2) hi)
+
 /-- The vertices of one cycle have the same cycle length. -/
 theorem cycleLength_eq_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
     σ.cycleLength i = σ.cycleLength j := by

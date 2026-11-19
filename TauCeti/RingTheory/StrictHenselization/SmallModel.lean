@@ -47,9 +47,7 @@ private def toPointedFiniteType : Neighbourhood R Ω ⥤
 /-- Distinct pointed-neighbourhood morphisms remain distinct after forgetting étaleness. -/
 private instance : (toPointedFiniteType R Ω).Faithful where
   map_injective equality := by
-    apply ObjectProperty.hom_ext
-    apply Over.OverMorphism.ext
-    exact congrArg (fun morphism ↦ morphism.left.hom) equality
+    exact Neighbourhood.hom_ext (congrArg (fun morphism ↦ morphism.left.hom.hom) equality)
 
 /-- Every pointed finite-type morphism between étale objects is a neighbourhood morphism. -/
 private instance : (toPointedFiniteType R Ω).Full where

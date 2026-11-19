@@ -273,11 +273,16 @@ theorem coindCochain1_apply (g x : G) :
 /-- The inverse Shapiro cochain of a `1`-coboundary of `U` is a `1`-coboundary of `G`, with the
 primitive `x ↦ w x • α` in `Coind_U^G A`. This is what makes the inverse construction descend to
 cohomology. -/
-theorem coindCochain1_mem_B1_of_mem_B1 [ContinuousSMul U A] (hcB : c ∈ B1 U A) :
+theorem coindCochain1_mem_B1_of_mem_B1 (hcB : c ∈ B1 U A) :
     coindCochain1 w c hw hwmul hccont hccoc ∈ B1 G (DiscreteCoind G U A) := by
   obtain ⟨α, hα⟩ := mem_B1_iff.1 hcB
+  -- `w x • α = c (w x) + α` is continuous without any continuity of the action on `A`.
+  have hcont : Continuous fun x => w x • α := by
+    have h : (fun x => w x • α) = fun x => c (w x) + α := funext fun x => by
+      rw [← hα, sub_add_cancel]
+    exact h ▸ (hccont.comp hw).add continuous_const
   refine mem_B1_iff.2 ⟨DiscreteCoind.mk G U A (fun x => w x • α)
-    ((IsLocallyConstant.iff_continuous _).2 (continuous_smul.comp (hw.prodMk continuous_const)))
+    ((IsLocallyConstant.iff_continuous _).2 hcont)
     (fun u x => by rw [hwmul u x, mul_smul]), fun g => DiscreteCoind.ext fun x => ?_⟩
   simp only [DiscreteCoind.coe_sub, Pi.sub_apply, DiscreteCoind.coe_smul,
     DiscreteCoind.mk_apply, coindCochain1_apply, ← hα]

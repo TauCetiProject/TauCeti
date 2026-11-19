@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.Equivalence
+import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # Graded exact categories
@@ -47,9 +48,6 @@ which is the form in which it is usually checked.
 * Theo Bühler, *Exact categories*, Expositiones Mathematicae **28** (2010), 1–69,
   <https://arxiv.org/abs/0811.1480>, Section 2, for the exact structures which the grading shift
   is required here to preserve and to reflect.
-* `TauCetiRoadmap/GrothendieckEulerForms/README.md`, Layer 2, which fixes the normalization
-  `[M{1}] = q[M]` used downstream and requires the shift to be part of the data of a graded
-  exact category.
 -/
 
 public section
@@ -334,12 +332,16 @@ theorem refl_equiv (E : GradedExactStructure C) :
     (GradedExactEquiv.refl E).equiv = CategoryTheory.Equivalence.refl :=
   (rfl)
 
-/-- The shift-commutation isomorphism of the identity graded exact equivalence. -/
+/-- The identity graded exact equivalence commutes with the shift by the canonical identity
+morphism. -/
 @[simp]
-theorem refl_commShift (E : GradedExactStructure C) :
-    HEq (GradedExactEquiv.refl E).commShift
-      (Functor.rightUnitor E.shift.functor ≪≫ (Functor.leftUnitor E.shift.functor).symm) :=
-  (HEq.rfl)
+theorem refl_commShift_hom_app (E : GradedExactStructure C) (X : C) :
+    (GradedExactEquiv.refl E).commShift.hom.app X = eqToHom (by simp) := by
+  simp only [GradedExactEquiv.refl, Equivalence.refl_functor, Functor.comp_obj, Functor.id_obj,
+    Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.rightUnitor_hom_app,
+    Functor.leftUnitor_inv_app, Category.comp_id]
+  -- the remaining `eqToHom` is between definitionally equal objects, hence the identity
+  exact (eqToHom_refl _ _).symm
 
 /-- The inverse of a graded exact equivalence is a graded exact equivalence. -/
 protected def symm (h : GradedExactEquiv E E') : GradedExactEquiv E' E :=
@@ -370,27 +372,23 @@ protected def symm (h : GradedExactEquiv E E') : GradedExactEquiv E' E :=
 theorem symm_equiv (h : GradedExactEquiv E E') : h.symm.equiv = h.equiv.symm :=
   (rfl)
 
-/-- The shift-commutation isomorphism of the inverse of a graded exact equivalence. -/
+/-- The shift commutation of the inverse equivalence is the inverse of the original commutation,
+conjugated by the unit and counit of the equivalence. -/
 @[simp]
-theorem symm_commShift (h : GradedExactEquiv E E') :
-    HEq h.symm.commShift
-      ((Functor.leftUnitor (E'.shift.functor ⋙ h.equiv.inverse)).symm ≪≫
-        Functor.isoWhiskerRight h.equiv.counitIso.symm
-          (E'.shift.functor ⋙ h.equiv.inverse) ≪≫
-        Functor.associator h.equiv.inverse h.equiv.functor
-          (E'.shift.functor ⋙ h.equiv.inverse) ≪≫
-        Functor.isoWhiskerLeft h.equiv.inverse
-          (Functor.associator h.equiv.functor E'.shift.functor h.equiv.inverse).symm ≪≫
-        Functor.isoWhiskerLeft h.equiv.inverse
-          (Functor.isoWhiskerRight h.commShift.symm h.equiv.inverse) ≪≫
-        Functor.isoWhiskerLeft h.equiv.inverse
-          (Functor.associator E.shift.functor h.equiv.functor h.equiv.inverse) ≪≫
-        (Functor.associator h.equiv.inverse E.shift.functor
-          (h.equiv.functor ⋙ h.equiv.inverse)).symm ≪≫
-        Functor.isoWhiskerLeft (h.equiv.inverse ⋙ E.shift.functor) h.equiv.unitIso.symm ≪≫
-        Functor.associator h.equiv.inverse E.shift.functor (𝟭 C) ≪≫
-        Functor.isoWhiskerLeft h.equiv.inverse (Functor.rightUnitor E.shift.functor)) :=
-  (HEq.rfl)
+theorem symm_commShift_hom_app (h : GradedExactEquiv E E') (X : D) :
+    h.symm.commShift.hom.app X =
+      eqToHom (by simp) ≫
+        h.equiv.inverse.map (E'.shift.functor.map (h.equiv.counitIso.inv.app X)) ≫
+        h.equiv.inverse.map (h.commShift.inv.app (h.equiv.inverse.obj X)) ≫
+        h.equiv.unitIso.inv.app (E.shift.functor.obj (h.equiv.inverse.obj X)) ≫
+        eqToHom (by simp) := by
+  simp only [GradedExactEquiv.symm, Equivalence.symm_functor, Functor.comp_obj, Iso.trans_hom,
+    Iso.symm_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom, NatTrans.comp_app,
+    Functor.id_obj, Functor.leftUnitor_inv_app, Functor.whiskerRight_app, Functor.comp_map,
+    Functor.associator_hom_app, Functor.whiskerLeft_app, Functor.associator_inv_app,
+    Functor.rightUnitor_hom_app, Category.comp_id, Category.id_comp, eqToHom_naturality,
+    eqToHom_refl]
+  exact (eqToHom_self_comp _ _).symm
 
 /-- A composite of graded exact equivalences is a graded exact equivalence, for the composed
 commutation isomorphism. -/
@@ -409,15 +407,19 @@ theorem trans_equiv (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'') :
     (h.trans h').equiv = h.equiv.trans h'.equiv :=
   (rfl)
 
-/-- The shift-commutation isomorphism of a composite graded exact equivalence. -/
+/-- The shift commutation of a composite equivalence composes the two shift commutations. -/
 @[simp]
-theorem trans_commShift (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'') :
-    HEq (h.trans h').commShift
-      ((Functor.associator _ _ _).symm ≪≫
-        Functor.isoWhiskerRight h.commShift h'.equiv.functor ≪≫
-        Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft h.equiv.functor h'.commShift ≪≫
-        (Functor.associator _ _ _).symm) :=
-  (HEq.rfl)
+theorem trans_commShift_hom_app (h : GradedExactEquiv E E') (h' : GradedExactEquiv E' E'')
+    (X : C) :
+    (h.trans h').commShift.hom.app X =
+      eqToHom (by simp) ≫ h'.equiv.functor.map (h.commShift.hom.app X) ≫
+        h'.commShift.hom.app (h.equiv.functor.obj X) ≫ eqToHom (by simp) := by
+  simp only [GradedExactEquiv.trans, Equivalence.trans_functor, Functor.comp_obj,
+    GradedConflationExact.comp_commShift, toGradedConflationExact_commShift, Iso.trans_hom,
+    Iso.symm_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom, NatTrans.comp_app,
+    Functor.associator_inv_app, Functor.whiskerRight_app, Functor.associator_hom_app,
+    Functor.whiskerLeft_app, Category.comp_id, Category.id_comp, eqToHom_naturality, eqToHom_refl]
+  exact (eqToHom_self_comp _ _).symm
 
 end GradedExactEquiv
 

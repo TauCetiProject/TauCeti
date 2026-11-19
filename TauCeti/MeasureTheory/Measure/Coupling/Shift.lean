@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Coupling
 import TauCeti.Data.ENNReal.Weights
-import TauCeti.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
 
 /-!
 # The shift coupling of two weightings of a finite carrier
@@ -70,8 +70,8 @@ theorem shiftCoupling_apply (S : Set (κ × κ)) :
     shiftCoupling ν ν' k₀ S =
       ∑ k, min (ν {k}) (ν' {k}) * S.indicator 1 (k, k) +
         ∑ k, (ν {k} - ν' {k}) * S.indicator 1 (k, k₀) := by
-  simp only [shiftCoupling, Measure.coe_add, Pi.add_apply, Measure.finsetSum_apply,
-    Measure.smul_apply, smul_eq_mul, Measure.dirac_apply' _ MeasurableSet.of_discrete]
+  simp only [shiftCoupling, FunLike.coe_add, Pi.add_apply, _root_.sum_apply,
+    _root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ MeasurableSet.of_discrete]
 
 /-- **The shift coupling puts at most the transferred mass off the diagonal.**  The matched mass
 sits on the diagonal by construction, and the excess of an atom `k` leaves the diagonal only when
@@ -98,7 +98,8 @@ theorem isCoupling_shiftCoupling (hfg : ∑ k, ν {k} = ∑ k, ν' {k})
     (hne : ∑ k, ν {k} ≠ ⊤) (hdom : ∀ k, k ≠ k₀ → ν' {k} ≤ ν {k}) :
     IsCoupling (shiftCoupling ν ν' k₀) ν ν' := by
   have hdom' : ∀ k ∈ Finset.univ, k ≠ k₀ → ν' {k} ≤ ν {k} := fun k _ hk => hdom k hk
-  have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
+  have hne' : ∀ k ∈ Finset.univ, k ≠ k₀ → ν {k} ≠ ⊤ := fun k hk _ => ENNReal.sum_ne_top.1 hne k hk
+  have hk₀ := le_of_sum_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne' hdom'
   refine ⟨?_, ?_⟩
   · refine Measure.ext_of_singleton fun i => ?_
     rw [Measure.fst_apply (MeasurableSet.singleton i), shiftCoupling_apply]
@@ -130,7 +131,7 @@ theorem isCoupling_shiftCoupling (hfg : ∑ k, ν {k} = ∑ k, ν' {k})
         Finset.sum_congr rfl fun k _ => by
           rw [Set.indicator_of_mem (by simp), Pi.one_apply, mul_one]
       rw [h1, h2, min_eq_left hk₀]
-      exact add_sum_tsub_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne hdom'
+      exact add_sum_tsub_eq_of_forall_ne_le (Finset.mem_univ k₀) hfg hne' hdom'
     · have h2 : ∑ k, (ν {k} - ν' {k}) * (Prod.snd ⁻¹' ({i} : Set κ)).indicator 1 (k, k₀)
           = 0 :=
         Finset.sum_eq_zero fun k _ => by

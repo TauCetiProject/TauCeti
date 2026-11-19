@@ -13,6 +13,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 -- `MonoidHom.noncommCoprod` packages products of commuting one-parameter subgroups.
 public import Mathlib.GroupTheory.NoncommCoprod
+-- `Matrix.GeneralLinearGroup.transvection` occurs in the bridge statement below.
+public import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
 -- Non-public: the diagonal-matrix-unit product law is used only in a proof below.
 import TauCeti.GroupTheory.Commutator
 import TauCeti.LinearAlgebra.Matrix.Diagonal
@@ -26,7 +28,9 @@ Mathlib's `Matrix.transvection i j c = 1 + c Eᵢⱼ` is the elementary matrix a
 file packages the invertible matrix `1 + c Eᵢⱼ` in `GL n A` as `TauCeti.transvectionUnit`, over a
 possibly noncommutative ring `A`, where its inverse is `1 - c Eᵢⱼ`, and packages the resulting
 one-parameter subgroup as `TauCeti.transvectionHom`. Over a commutative ring the transvection is
-Mathlib's one viewed along `Matrix.SpecialLinearGroup.toGL`.
+Mathlib's one viewed along `Matrix.SpecialLinearGroup.toGL`
+(`TauCeti.toGL_transvection_eq_transvectionUnit`), and it is also Mathlib's
+`Matrix.GeneralLinearGroup.transvection` (`TauCeti.transvectionUnit_eq_transvection`).
 
 Writing `xᵢⱼ(c)` for the transvection, the relations are
 
@@ -72,6 +76,8 @@ elementary matrices against the diagonal torus.
 * `TauCeti.commutatorElement_transvectionUnit` and
   `TauCeti.commutatorElement_transvectionUnit_reverse`: the commutators of two chaining
   transvections in either orientation.
+* `Equiv.reindexGL_transvectionUnit`: relabelling the indices sends a transvection to the
+  transvection at the relabelled pair of indices.
 * `TauCeti.det_transvectionUnit` and `TauCeti.transvectionUnit_injective`: a transvection has
   determinant `1`, and distinct parameters give distinct transvections.
 * `TauCeti.diagGL_mul_transvectionUnit_mul_inv`: conjugation by an invertible diagonal matrix.
@@ -309,6 +315,12 @@ theorem toGL_transvection_eq_transvectionUnit (hij : i ≠ j) (c : A) :
       transvectionUnit hij c :=
   Units.ext (rfl)
 
+/-- Over a commutative ring, `TauCeti.transvectionUnit` is Mathlib's
+`Matrix.GeneralLinearGroup.transvection`. -/
+theorem transvectionUnit_eq_transvection (hij : i ≠ j) (c : A) :
+    transvectionUnit hij c = Matrix.GeneralLinearGroup.transvection i j hij c :=
+  Units.ext (rfl)
+
 /-- A transvection has determinant one, so the root subgroup lands in `SLₙ`. -/
 @[simp]
 theorem det_transvectionUnit (hij : i ≠ j) (c : A) :
@@ -373,12 +385,6 @@ private theorem transpose_coe_transvectionWeylElement_symm (hij : i ≠ j) :
   by_cases hai : a = i <;> by_cases haj : a = j <;>
     by_cases hbi : b = i <;> by_cases hbj : b = j <;>
       simp_all [Matrix.one_apply, eq_comm]
-
-omit [Fintype n] in
-private theorem transpose_transvection (a b : n) (c : A) :
-    (Matrix.transvection a b c).transpose = Matrix.transvection b a c := by
-  simp [Matrix.transvection, Matrix.transpose_add, Matrix.transpose_one,
-    Matrix.transpose_single]
 
 private theorem coe_mul_transvectionWeylElement_symm_apply (hij : i ≠ j) (M : Matrix n n A)
     (a b : n) :
@@ -448,7 +454,8 @@ theorem transvectionWeylElement_mul_transvectionUnit_mul_inv_symm (hij : i ≠ j
     (transvectionWeylElement_mul_transvectionUnit_mul_inv_self (A := A) hij c))
   apply Units.ext
   simpa only [Units.val_mul, coe_transvectionUnit, Matrix.transpose_mul, mul_assoc,
-    transpose_transvection, transpose_coe_transvectionWeylElement_symm (A := A) hij, hT] using h
+    Matrix.transpose_transvection, transpose_coe_transvectionWeylElement_symm (A := A) hij,
+    hT] using h
 
 /-- Conjugation by the Weyl representative exchanging `i` and `j` replaces the left index `j`
 of `xⱼₖ(c)` by `i`. -/
@@ -622,3 +629,38 @@ theorem transvectionWeylElement_mul_diagGL_mul_inv (hij : i ≠ j) (t : Fin N �
 end Torus
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti
+
+variable {n m : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m] {A : Type*} [Ring A]
+  {i j : n}
+
+/-- Relabelling the indices sends an elementary matrix to the elementary matrix with the same
+parameter at the relabelled pair of indices. -/
+theorem reindexGL_transvectionUnit (e : n ≃ m) (hij : i ≠ j) (a : A) :
+    e.reindexGL A (transvectionUnit hij a) = transvectionUnit (e.injective.ne hij) a := by
+  ext : 1
+  simp [coe_transvectionUnit_eq_one_add_single, submatrix_add, submatrix_single_equiv,
+    submatrix_one_equiv]
+
+end Equiv
+
+namespace RingHom
+
+open TauCeti
+
+variable {A B n : Type*} [Ring A] [Ring B] [Fintype n] [DecidableEq n]
+
+/-- Applying a ring homomorphism entrywise to a transvection applies it to the coefficient.
+This holds for noncommutative rings as well. -/
+@[simp]
+theorem unitsMap_mapMatrix_transvectionUnit (f : A →+* B) {i j : n} (hij : i ≠ j) (a : A) :
+    Units.map (f.mapMatrix (m := n) : Matrix n n A →* Matrix n n B)
+      (transvectionUnit hij a) = transvectionUnit hij (f a) := by
+  ext r s
+  simp [Matrix.single_apply, Matrix.one_apply]
+  split_ifs <;> simp_all
+
+end RingHom

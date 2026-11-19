@@ -215,7 +215,7 @@ private theorem isInducing_restrictTranslate (h : (spaYPresheaf P ϖ).IsSheaf)
     obtain ⟨k, hk⟩ := Opens.mem_iSup.mp (saturation_le_iSup_translate hI V hv)
     exact ⟨_, homOfLE (translate_le_saturation hI V k), Sieve.ofArrows_mk _ _ k, hk⟩
   exact (TopCommRingCat.isInducing_restrictionMap_ofArrows_iff _ _ _).mp
-    (TopCommRingCat.isInducing_restrictionMap_of_isSheafFor _ S fun E ↦ hO E S hS)
+    (TopCommRingCat.isInducing_restrictionMap_of_isSheafFor _ S.arrows fun E ↦ hO E S hS)
 
 /-- **Gluing the Frobenius transports.** When `𝒪_𝒴` is a sheaf and `V` wanders, every section `y`
 over `V` is the restriction of a Frobenius-invariant section over `q⁻¹(q V)`: its Frobenius

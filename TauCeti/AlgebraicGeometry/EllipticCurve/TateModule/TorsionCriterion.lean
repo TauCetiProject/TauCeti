@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.GoodReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.PotentialGoodReduction
--- Proof-only: a natural number invertible in `𝒪[K]` is nonzero in `K`.
-import TauCeti.Algebra.Algebra.NatCast
+-- Proof-only: a natural number nonzero in `𝓀[K]` is nonzero in `K`.
+import TauCeti.NumberTheory.LocalField.NatCastValuation
 
 /-!
 # Good reduction from unramified torsion at potential good reduction
@@ -29,7 +29,7 @@ converse, write `ℓ ^ k` for a divisor of `N` equal to `4` or to an odd prime, 
 * An element of `I_K` fixes `E[ℓ ^ k] ⊆ E[N]`, so by Serre's lemma it acts trivially on `T_ℓ E`
   (`WeierstrassCurve.tateModuleGaloisRepresentation_eq_one_of_finite_image`).
 * An unramified Tate module forces good reduction
-  (`WeierstrassCurve.hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one`).
+  (`hasGoodReduction_of_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one`).
 
 The hypothesis of potential good reduction cannot be dropped, since a curve with multiplicative
 reduction can have unramified `N`-torsion. For instance the curve 11a1 has split multiplicative
@@ -93,7 +93,8 @@ theorem hasGoodReduction_of_forall_mem_inertiaSubgroup (h : W.HasPotentialGoodRe
     exact fun h₀ ↦ hNk (by rw [hc, Nat.cast_mul, h₀, zero_mul])
   -- Inertia fixes `E[ℓ ^ k] ⊆ E[N]` and acts on `T_ℓ E` through a finite quotient, so it acts
   -- trivially on `T_ℓ E`.
-  refine W.hasGoodReduction_of_tateModuleGaloisRepresentation_eq_one hℓk fun σ hσ ↦ ?_
+  refine W.hasGoodReduction_of_forall_mem_inertiaSubgroup_tateModuleGaloisRepresentation_eq_one hℓk
+    fun σ hσ ↦ ?_
   refine tateModuleGaloisRepresentation_eq_one_of_finite_image
     (h.finite_image_tateModuleGaloisRepresentation ℓ hℓk) hk (fun τ hτ P hP ↦ hfix τ hτ P ?_) hσ
   obtain ⟨c, rfl⟩ := hdvd
@@ -127,8 +128,7 @@ theorem hasGoodReduction_iff_isUnramified_divisionField (h : W.HasPotentialGoodR
     [TopologicalSpace (W.divisionField N)] [IsNonarchimedeanLocalField (W.divisionField N)]
     [ValuativeExtension K (W.divisionField N)] :
     W.HasGoodReduction 𝒪[K] ↔ IsUnramified K (W.divisionField N) := by
-  have hNK : (N : K) ≠ 0 := IsUnit.natCast_ne_zero_of_algebra (K := 𝒪[K])
-    ((IsLocalRing.residue_ne_zero_iff_isUnit _).1 (by rwa [map_natCast]))
+  have hNK : (N : K) ≠ 0 := natCast_ne_zero_of_residueField_natCast_ne_zero hNk
   rw [h.hasGoodReduction_iff_forall_mem_inertiaSubgroup hN hNk,
     W.isUnramified_divisionField_iff_forall_mem_inertiaSubgroup hNK]
 

@@ -49,22 +49,14 @@ theorem simple_indFDRep_of_mackeyDisjoint_doubleCoset (A : FDRep k H) [Simple A]
       D ≠ DoubleCoset.mk H H 1 → MackeyDisjoint A D.out) :
     Simple (indFDRep A) := by
   have : NeZero (Nat.card G : k) := ⟨hG.ne_zero⟩
-  let e := A.indEndAlgEquiv h
-  have : Nontrivial (End (indFDRep A)) := e.symm.toEquiv.nontrivial
-  refine (simple_iff_nontrivial_end_and_isUnit (indFDRep A)).mpr ⟨inferInstance, ?_⟩
-  intro f hf
-  have hne : e.symm f ≠ 0 := by simpa using hf
-  simpa using (isUnit_iff_ne_zero.mpr hne).map e.toMonoidHom
+  exact simple_of_ringEquiv_end (indFDRep A) (A.indEndAlgEquiv h).toRingEquiv
 
 /-- Elementwise Mackey sufficiency over an arbitrary field: it is enough to check
 disjointness at each group element outside the inducing subgroup. -/
 theorem simple_indFDRep_of_forall_mackeyDisjoint (A : FDRep k H) [Simple A]
     (hG : IsUnit (Nat.card G : k)) (h : ∀ s ∉ H, MackeyDisjoint A s) :
-    Simple (indFDRep A) := by
-  apply A.simple_indFDRep_of_mackeyDisjoint_doubleCoset hG
-  intro D hD
-  exact h D.out fun hmem => hD ((DoubleCoset.out_eq' D).symm.trans
-    ((doubleCosetMk_eq_mk_one_iff_mem H D.out).mpr hmem))
+    Simple (indFDRep A) :=
+  A.simple_indFDRep_of_mackeyDisjoint_doubleCoset hG (A.forall_mackeyDisjoint_out_iff.mpr h)
 
 /-- For a normal subgroup, a simple representation with no isomorphic conjugate
 outside that subgroup induces to a simple representation over any Maschke field. -/

@@ -24,9 +24,9 @@ of `∇` and the torsion `T` of `∇ᵀ`:
 
 where `T(X, Y) = ∇ᵀ_X Y - ∇ᵀ_Y X - [X, Y]` is Mathlib's `CovariantDerivative.torsion`.
 For a torsion-free `∇ᵀ`, such as a Levi-Civita connection, the torsion term disappears and the
-antisymmetric part of `∇²σ` is the curvature `R(u, v) σ`. For `V` the tangent bundle this is the
-Ricci identity for vector fields. It is the rule for commuting covariant derivatives used in
-Bochner and Weitzenböck formulas.
+antisymmetrized difference `∇²σ(u, v) - ∇²σ(v, u)` is the curvature `R(u, v) σ`. For `V` the
+tangent bundle this is the Ricci identity for vector fields. It is the rule for commuting
+covariant derivatives used in Bochner and Weitzenböck formulas.
 
 ## Main results
 
@@ -43,10 +43,8 @@ Bochner and Weitzenböck formulas.
 
 public section
 
-open Bundle FiberBundle VectorField
+open Bundle FiberBundle
 open scoped ContDiff Manifold
-
-noncomputable section
 
 namespace CovariantDerivative
 
@@ -69,7 +67,8 @@ section RicciIdentity
 variable [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I]
 
 /-- **The Ricci identity**, with its torsion correction. For a smooth section `σ`, the
-antisymmetric part of its second covariant derivative is the curvature of `∇` applied to `σ`,
+antisymmetrized difference `∇²σ(u, v) - ∇²σ(v, u)` of its second covariant derivative is the
+curvature of `∇` applied to `σ`,
 corrected by the covariant derivative of `σ` along the torsion of `∇ᵀ`:
 
 `∇²σ(u, v) - ∇²σ(v, u) = R(u, v) σ - ∇_{T(u, v)} σ`. -/
@@ -77,8 +76,8 @@ theorem secondCovariantDerivative_sub_swap (hσ : CMDiff ∞ (T% σ)) (x : M)
     (u v : TangentSpace I x) :
     cov.secondCovariantDerivative covT σ x u v - cov.secondCovariantDerivative covT σ x v u =
       cov.curvatureTensor x u v (σ x) - cov σ x (covT.torsion x u v) := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
   rw [secondCovariantDerivative_apply cov covT hσ x hY,
     secondCovariantDerivative_apply cov covT hσ x hX, curvatureTensor_apply cov x hX hY hσ,
     curvatureOperator_apply,
@@ -87,8 +86,8 @@ theorem secondCovariantDerivative_sub_swap (hσ : CMDiff ∞ (T% σ)) (x : M)
   abel
 
 /-- **The Ricci identity.** For a torsion-free connection `∇ᵀ` on the tangent bundle, the
-antisymmetric part of the second covariant derivative of a smooth section `σ` is the curvature
-of `∇` applied to `σ`: `∇²σ(u, v) - ∇²σ(v, u) = R(u, v) σ`. -/
+antisymmetrized difference of the second covariant derivative of a smooth section `σ` is the
+curvature of `∇` applied to `σ`: `∇²σ(u, v) - ∇²σ(v, u) = R(u, v) σ`. -/
 theorem secondCovariantDerivative_sub_swap_of_isTorsionFree (ht : covT.IsTorsionFree)
     (hσ : CMDiff ∞ (T% σ)) (x : M) (u v : TangentSpace I x) :
     cov.secondCovariantDerivative covT σ x u v - cov.secondCovariantDerivative covT σ x v u =
@@ -97,13 +96,16 @@ theorem secondCovariantDerivative_sub_swap_of_isTorsionFree (ht : covT.IsTorsion
     (isTorsionFree_iff_torsion_eq_zero covT).1 ht]
   simp
 
-/-- For a flat connection `∇` and a torsion-free connection `∇ᵀ` on the tangent bundle, the
-second covariant derivative of every smooth section is symmetric. -/
-theorem secondCovariantDerivative_comm_of_curvatureTensor_eq_zero (ht : covT.IsTorsionFree)
-    {x : M} (hR : cov.curvatureTensor x = 0) (hσ : CMDiff ∞ (T% σ)) (u v : TangentSpace I x) :
+/-- If the torsion of `∇ᵀ` and the curvature of `∇` both vanish at `x`, then the second
+covariant derivative of every section at `x` is symmetric. (For a section that is not smooth,
+both sides are the junk value `0`.) -/
+theorem secondCovariantDerivative_comm_of_curvatureTensor_eq_zero {x : M}
+    (hT : covT.torsion x = 0) (hR : cov.curvatureTensor x = 0) (u v : TangentSpace I x) :
     cov.secondCovariantDerivative covT σ x u v = cov.secondCovariantDerivative covT σ x v u := by
-  rw [← sub_eq_zero, secondCovariantDerivative_sub_swap_of_isTorsionFree cov covT ht hσ x, hR]
-  simp only [LinearMap.zero_apply]
+  by_cases hσ : CMDiff ∞ (T% σ)
+  · rw [← sub_eq_zero, secondCovariantDerivative_sub_swap cov covT hσ x, hR, hT]
+    simp
+  · simp only [secondCovariantDerivative_of_not_contMDiff cov covT hσ, LinearMap.zero_apply]
 
 end RicciIdentity
 

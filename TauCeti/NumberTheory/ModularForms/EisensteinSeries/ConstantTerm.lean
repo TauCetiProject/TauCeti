@@ -80,7 +80,7 @@ lemma tendsto_eisSummand_ofComplex_I_mul (hk : 0 < k) (x : Fin 2 → ℤ) :
     refine le_trans ?_ (abs_im_le_norm _)
     have h1 : (1 : ℝ) ≤ |(x 0 : ℝ)| := by exact_mod_cast Int.one_le_abs hx
     simpa [hz, abs_mul, abs_of_pos ht] using le_mul_of_one_le_left ht.le h1
-  rw [eisSummand, zpow_neg, norm_inv, norm_zpow, zpow_neg]
+  rw [eisSummand, _root_.zpow_neg, norm_inv, norm_zpow, _root_.zpow_neg]
   exact inv_anti₀ (zpow_pos ht _) (zpow_le_zpow_left₀ hk.le ht.le hle)
 
 variable [NeZero N]
@@ -118,7 +118,7 @@ private lemma tendsto_weightedEisensteinSeries_ofComplex_I_mul (hk : 3 ≤ k) :
   refine mul_le_mul ?_ ?_ (norm_nonneg _) (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
   · exact Finset.single_le_sum (f := fun b ↦ ‖W b‖) (fun _ _ ↦ norm_nonneg _)
       (Finset.mem_univ _)
-  · simpa only [eisSummand, one_div, ← zpow_neg, norm_zpow, ← Real.rpow_intCast,
+  · simpa only [eisSummand, one_div, ← _root_.zpow_neg, norm_zpow, ← Real.rpow_intCast,
       Int.cast_neg] using summand_bound_of_mem_verticalStrip (by positivity) x hB hz
 
 /-- **The limit at `i∞` of a weighted Eisenstein series**: for `k ≥ 3`, the series

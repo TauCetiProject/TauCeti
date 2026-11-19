@@ -128,11 +128,12 @@ does not depend on how the tensor factors are indexed. -/
 theorem slotSum_comp_wreathTensor {ι : Type x} [Fintype ι] [DecidableEq ι]
     (ρ : Representation R D M) {f : Module.End R M} (hf : ∀ g, f ∘ₗ ρ g = ρ g ∘ₗ f)
     (a : TauCeti.WreathProduct D ι) :
-    TauCeti.PiTensorProduct.slotSum ι f ∘ₗ ρ.wreathTensor ι a =
-      ρ.wreathTensor ι a ∘ₗ TauCeti.PiTensorProduct.slotSum ι f := by
+    TauCeti.PiTensorProduct.slotSum ι (fun _ ↦ f) ∘ₗ ρ.wreathTensor ι a =
+      ρ.wreathTensor ι a ∘ₗ TauCeti.PiTensorProduct.slotSum ι (fun _ ↦ f) := by
   rw [wreathTensor_apply, ← LinearMap.comp_assoc,
     TauCeti.PiTensorProduct.slotSum_comp_map _ fun i ↦ hf _, LinearMap.comp_assoc,
-    TauCeti.PiTensorProduct.slotSum_comp_reindex, LinearMap.comp_assoc]
+    TauCeti.PiTensorProduct.slotSum_comp_reindex (fun _ : ι ↦ f) a.right,
+    LinearMap.comp_assoc]
 
 /-- If every element of `D` acts by a map preserving the degrees of a grading of `M`, then the
 wreath-product action preserves the total degree of the tensor power. -/
@@ -140,10 +141,10 @@ theorem isHomogeneous_wreathTensor {ι : Type x} [Fintype ι] {A : Type*} [AddCo
     {ℳ : A → Submodule R M} (ρ : Representation R D M)
     (hρ : ∀ g, TauCeti.LinearMap.IsHomogeneous (ρ g) ℳ ℳ 0) (a : TauCeti.WreathProduct D ι) :
     TauCeti.LinearMap.IsHomogeneous (ρ.wreathTensor ι a)
-      (TauCeti.PiTensorProduct.totalDegreePiece ι ℳ)
-      (TauCeti.PiTensorProduct.totalDegreePiece ι ℳ) 0 := by
+      (TauCeti.PiTensorProduct.totalDegreePiece ι (fun _ ↦ ℳ))
+      (TauCeti.PiTensorProduct.totalDegreePiece ι (fun _ ↦ ℳ)) 0 := by
   have h := (TauCeti.PiTensorProduct.isHomogeneous_map fun i ↦ hρ (a.left i)).comp
-    (TauCeti.PiTensorProduct.isHomogeneous_reindex (ℳ := ℳ) a.right)
+    (TauCeti.PiTensorProduct.isHomogeneous_reindex (ℳ := fun _ ↦ ℳ) a.right)
   rwa [Finset.sum_const_zero, add_zero, ← wreathTensor_apply] at h
 
 variable {N : Type y} [AddCommMonoid N] [Module R N]
@@ -289,6 +290,27 @@ theorem tensorInducedRepresentation_apply_tprod (U : Subgroup G) (s : U.LeftTran
   funext x
   rw [← Equiv.Perm.coe_inv, Subgroup.monomialHom_right_inv]
 
+/-- Tensor induction preserves equivariant pairings: the factorwise pairing
+`PiTensorProduct.map₂` of a `U`-equivariant bilinear map is equivariant for the tensor-induced
+actions of `G`. -/
+theorem map₂_tensorInducedRepresentation (U : Subgroup G) (s : U.LeftTransversal)
+    {M : Type w} {N : Type x} {P : Type y} [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+    [Module R N] [AddCommMonoid P] [Module R P] {ρ : Representation R U M}
+    {τ : Representation R U N} {σ : Representation R U P} (f : M →ₗ[R] N →ₗ[R] P)
+    (hf : ∀ u m n, f (ρ u m) (τ u n) = σ u (f m n)) (g : G) (a : ⨂[R] _ : G ⧸ U, M)
+    (b : ⨂[R] _ : G ⧸ U, N) :
+    PiTensorProduct.map₂ (fun _ ↦ f) (U.tensorInducedRepresentation s ρ g a)
+        (U.tensorInducedRepresentation s τ g b) =
+      U.tensorInducedRepresentation s σ g (PiTensorProduct.map₂ (fun _ ↦ f) a b) := by
+  induction a using PiTensorProduct.induction_on with
+  | smul_tprod r a =>
+    induction b using PiTensorProduct.induction_on with
+    | smul_tprod t b =>
+      simp only [map_smul, LinearMap.smul_apply, tensorInducedRepresentation_apply_tprod,
+        PiTensorProduct.map₂_tprod_tprod, hf]
+    | add b c hb hc => simp only [map_add, hb, hc]
+  | add a c ha hc => simp only [map_add, LinearMap.add_apply, ha, hc]
+
 end
 
 variable [CommRing R] [Group G]
@@ -378,13 +400,13 @@ of the tensor induction of a complex. -/
 noncomputable def tensorInducedSlotSum [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)]
     (f : ρ.IntertwiningMap ρ) (s : U.LeftTransversal) :
     (U.tensorInducedRepresentation s ρ).IntertwiningMap (U.tensorInducedRepresentation s ρ) where
-  toLinearMap := TauCeti.PiTensorProduct.slotSum (G ⧸ U) f.toLinearMap
+  toLinearMap := TauCeti.PiTensorProduct.slotSum (G ⧸ U) (fun _ ↦ f.toLinearMap)
   isIntertwining' g := ρ.slotSum_comp_wreathTensor f.isIntertwining' (U.monomialHom s g)
 
 /-- The underlying linear map of the tensor-induced slot sum is the slot sum. -/
 @[simp] theorem tensorInducedSlotSum_toLinearMap [Fintype (G ⧸ U)] [DecidableEq (G ⧸ U)]
     (f : ρ.IntertwiningMap ρ) (s : U.LeftTransversal) :
     (f.tensorInducedSlotSum s).toLinearMap =
-      TauCeti.PiTensorProduct.slotSum (G ⧸ U) f.toLinearMap := (rfl)
+      TauCeti.PiTensorProduct.slotSum (G ⧸ U) (fun _ ↦ f.toLinearMap) := (rfl)
 
 end Representation.IntertwiningMap

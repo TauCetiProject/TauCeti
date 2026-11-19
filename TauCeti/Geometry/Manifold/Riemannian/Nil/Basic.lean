@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.GroupTheory.SemidirectProduct
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.Analysis.Normed.Group.Prod
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Coercive
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 
@@ -239,12 +240,7 @@ private theorem contDiff_form : ContDiff ℝ ω fun r : ℝ × ℝ × ℝ ↦ fo
 
 private theorem isCoercive_form (t : ℝ) : IsCoercive (form t) := by
   refine ⟨(2 + 2 * t ^ 2)⁻¹, by positivity, fun v ↦ ?_⟩
-  -- The sup norm of `v` is at most its Euclidean norm.
-  have hv : ‖v‖ ≤ √(v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2) := by
-    refine norm_prod_le_iff.2 ⟨?_, norm_prod_le_iff.2 ⟨?_, ?_⟩⟩ <;>
-      refine Real.abs_le_sqrt ?_ <;> nlinarith [sq_nonneg v.1, sq_nonneg v.2.1, sq_nonneg v.2.2]
-  have hv' : ‖v‖ * ‖v‖ ≤ v.1 ^ 2 + v.2.1 ^ 2 + v.2.2 ^ 2 :=
-    (mul_self_le_mul_self (norm_nonneg v) hv).trans (Real.mul_self_sqrt (by positivity)).le
+  have hv' := v.norm_mul_self_le_sq_add_sq_add_sq
   rw [mul_assoc, inv_mul_le_iff₀ (by positivity), form_apply]
   nlinarith [sq_nonneg (t * v.2.1 - (v.2.2 - t * v.2.1)), sq_nonneg v.1, sq_nonneg v.2.1,
     sq_nonneg (v.2.2 - t * v.2.1), mul_nonneg (sq_nonneg t) (sq_nonneg v.1),
@@ -353,39 +349,24 @@ private theorem inner_mfderiv_mul_left (p q : Nil) (v w : TangentSpace 𝓘(ℝ,
     ContinuousLinearMap.coe_comp, Function.comp_apply, smul_eq_mul]
   ring
 
-/-- Left multiplication by `p`, as an isometry of `Nil`. -/
-private def mulLeft (p : Nil) : Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil where
-  toFun := (p * ·)
-  invFun := (p⁻¹ * ·)
-  left_inv q := inv_mul_cancel_left p q
-  right_inv q := mul_inv_cancel_left p q
-  contMDiff_toFun := contMDiff_mul_left p
-  contMDiff_invFun := contMDiff_mul_left p⁻¹
-  inner_mfderiv' q v w := by
-    -- The underlying map of the diffeomorphism under construction is `(p * ·)` by definition;
-    -- `change` states the goal in terms of that function, so that its differential applies.
-    change inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q v)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ × ℝ) (p * ·) q w) = inner ℝ v w
-    exact inner_mfderiv_mul_left p q v w
-
-private theorem mulLeft_apply (p q : Nil) : mulLeft p q = p * q := (rfl)
+/-- Left multiplication by an element of `Nil` is smooth. -/
+instance contMDiffConstSMul : ContMDiffConstSMul 𝓘(ℝ, ℝ × ℝ × ℝ) ∞ Nil Nil :=
+  ⟨fun p ↦ contMDiff_mul_left p⟩
 
 /-- Left multiplication, as a group homomorphism from `Nil` to its isometry group: the metric
 of `Nil` is left-invariant. -/
-def toIsom : Nil →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil where
-  toFun := mulLeft
-  map_one' := RiemannianIsometry.ext fun q ↦ by
-    rw [mulLeft_apply, RiemannianIsometry.one_apply, one_mul]
-  map_mul' p p' := RiemannianIsometry.ext fun q ↦ by
-    rw [RiemannianIsometry.mul_apply, mulLeft_apply, mulLeft_apply, mulLeft_apply, mul_assoc]
+def toIsom : Nil →* Isom 𝓘(ℝ, ℝ × ℝ × ℝ) Nil :=
+  RiemannianIsometry.constSMulHom inner_mfderiv_mul_left
 
 /-- The isometry `toIsom p` is left multiplication by `p`. -/
 @[simp]
-theorem toIsom_apply (p q : Nil) : toIsom p q = p * q := (rfl)
+theorem toIsom_apply (p q : Nil) : toIsom p q = p * q := by
+  rw [toIsom, RiemannianIsometry.constSMulHom_apply, RiemannianIsometry.constSMul_apply,
+    smul_eq_mul]
 
 /-- Distinct elements of `Nil` act by distinct isometries. -/
-theorem toIsom_injective : Function.Injective toIsom := fun p p' h ↦ by
-  simpa using DFunLike.congr_fun h 1
+theorem toIsom_injective : Function.Injective toIsom :=
+  RiemannianIsometry.constSMulHom_injective _
 
 /-- The isometry group of `Nil` acts transitively: `Nil` is a homogeneous Riemannian manifold.
 This is transferred along `toIsom` from the transitive action of `Nil` on itself by left

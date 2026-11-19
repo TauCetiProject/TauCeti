@@ -96,7 +96,8 @@ def cyclicCocycles (n : ℕ) : Submodule R (cyclicCochains R A M n) :=
 @[simp]
 theorem mem_cyclicCocycles_iff {n : ℕ} {φ : cyclicCochains R A M n} :
     φ ∈ cyclicCocycles R A M n ↔
-      hochschildCoboundary R A M n (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) = 0 := by
+      hochschildCoboundary R A M n (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A)
+          M) = 0 := by
   rw [cyclicCocycles, LinearMap.mem_ker, ← Subtype.coe_inj, coe_cyclicHochschildCoboundary_apply,
     ZeroMemClass.coe_zero]
 
@@ -129,7 +130,7 @@ quasi-inverse, `xᵢ₊₁ + xᵢ + xᵢxᵢ₊₁ = 0`. -/
 theorem apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero {n : ℕ}
     {φ : cyclicCochains R A M n} (hφ : φ ∈ cyclicCoboundaries R A M n) {x : Fin (n + 1) → A}
     (hx : ∀ i, x (finRotate (n + 1) i) + x i + x i * x (finRotate (n + 1) i) = 0) :
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) x = 0 := by
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M) x = 0 := by
   cases n with
   | zero =>
     rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ
@@ -142,8 +143,8 @@ theorem apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero {n : ℕ}
 /-- A cyclic `0`-cochain is a cocycle exactly when it is a trace. -/
 theorem mem_cyclicCocycles_zero_iff {φ : cyclicCochains R A M 0} :
     φ ∈ cyclicCocycles R A M 0 ↔
-      ∀ x y : A, (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) (fun _ ↦ x * y) =
-        (φ : MultilinearMap R (fun _ : Fin 1 ↦ A) M) (fun _ ↦ y * x) := by
+      ∀ x y : A, (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M) (fun _ ↦ x * y) =
+        (φ : MultilinearMap (RingHom.id R) (fun _ : Fin 1 ↦ A) M) (fun _ ↦ y * x) := by
   rw [mem_cyclicCocycles_iff, hochschildCoboundary_zero_eq_zero_iff]
 
 variable {R A M} {B : Type u} [NonUnitalNonAssocSemiring B] [Module R B] [IsScalarTower R B B]
@@ -266,7 +267,10 @@ variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Ring A] [Algebra R A
   [Module R M]
 
 /-- The cyclic cohomology `HCⁿ(A; M)` of a unital algebra `A` with coefficients in `M`, the
-cohomology of the cyclic cochain complex. For `M = R` this is Connes' cyclic cohomology `HCⁿ(A)`. -/
+cohomology of the cyclic cochain complex. For `M = R` this is Connes' cyclic cohomology `HCⁿ(A)`,
+defined by cyclic cochains: over a ground ring containing `ℚ` it agrees with the cohomology of
+the cyclic bicomplex (`TauCeti.RingTheory.CyclicCohomology.Bicomplex`), and over other rings the
+two can differ. -/
 abbrev cyclicCohomology (n : ℕ) : ModuleCat R :=
   (cyclicCochainComplex R A M).homology n
 
@@ -414,8 +418,7 @@ theorem map_mk (f : A →ₙₐ[R] B) {n : ℕ} (φ : cyclicCocycles R B M n) :
     HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1
   apply (cyclicCochainComplex R A M).moduleCat_iCycles_injective n
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
-    iCycles_toCycles, iCycles_toCycles]
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, iCycles_toCycles, iCycles_toCycles]
   -- Both sides are the pullback of `φ`, as `cyclicCochainComplexXIso` is the identity.
   rfl
 

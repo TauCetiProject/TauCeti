@@ -29,6 +29,8 @@ namespace TauCeti.BalancedTensorProduct
 
 open MulOpposite
 
+section Bimodule
+
 variable {k A M N : Type*} [CommRing k] [Semiring A]
   [AddCommGroup M] [Module k M] [Module Aᵐᵒᵖ M]
   [AddCommGroup N] [Module k N] [Module A N]
@@ -53,7 +55,7 @@ private def leftActionHom : S →+* Module.End k (BalancedTensorProduct k A M N)
   map_one' := hom_ext fun m n ↦ by simp [leftAction_tmul]
   map_add' s t := hom_ext fun m n ↦ by simp [leftAction_tmul, add_smul, add_tmul]
   map_mul' s t := hom_ext fun m n ↦ by
-    simp [Module.End.mul_apply, leftAction_tmul, mul_smul]
+    simp [mul_apply_eq_comp, leftAction_tmul, mul_smul]
 
 /-- The module structure induced by the outer action on the first factor. -/
 @[instance_reducible]
@@ -152,7 +154,7 @@ private def rightActionHom : T →+* Module.End k (BalancedTensorProduct k A M N
   map_one' := hom_ext fun m n ↦ by simp [rightAction_tmul]
   map_add' s t := hom_ext fun m n ↦ by simp [rightAction_tmul, add_smul, tmul_add]
   map_mul' s t := hom_ext fun m n ↦ by
-    simp [Module.End.mul_apply, rightAction_tmul, mul_smul]
+    simp [mul_apply_eq_comp, rightAction_tmul, mul_smul]
 
 /-- The module structure induced by the outer action on the second factor. -/
 @[instance_reducible]
@@ -248,7 +250,7 @@ theorem outerSMulCommClass (S T : Type*) [Semiring S] [Semiring T]
 section Grading
 
 variable [Module k A] {𝒜 : ℤ → Submodule k A} [DirectSum.Decomposition 𝒜]
-  (G : InternalGrading k M) (H : InternalGrading k N)
+  (G : InternalGrading k M ℤ) (H : InternalGrading k N ℤ)
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece G.piece]
   [SetLike.GradedSMul 𝒜 H.piece]
 
@@ -292,17 +294,18 @@ theorem gradedSMul_right (T : Type*) [Semiring T] [Module k T] [Module T N]
 
 end Grading
 
+end Bimodule
+
 section Iterated
 
-attribute [local instance 100] rightModule rightSMulCommClass outerSMulCommClass
+attribute [local instance 100] rightModule
 
 variable {k B C M N P : Type*} [CommRing k] [Semiring B] [Semiring C]
   [AddCommGroup M] [Module k M] [Module Bᵐᵒᵖ M]
   [AddCommGroup N] [Module k N] [Module B N] [Module Cᵐᵒᵖ N]
   [AddCommGroup P] [Module k P] [Module C P]
-  [SMulCommClass B k N] [SMulCommClass Cᵐᵒᵖ k N] [SMulCommClass B Cᵐᵒᵖ N]
+  [SMulCommClass Cᵐᵒᵖ k N] [SMulCommClass B Cᵐᵒᵖ N]
 
-omit [SMulCommClass B k N] in
 /-- Linear maps out of a left-associated triple balanced tensor product are determined by
 their values on nested pure tensors. -/
 theorem ext_threefold {Q : Type*} [AddCommGroup Q] [Module k Q]
@@ -316,11 +319,9 @@ theorem ext_threefold {Q : Type*} [AddCommGroup Q] [Module k Q]
   | ha x y hx hy => simp only [add_tmul, map_add, hx, hy]
 
 variable {D Q : Type*} [Semiring D]
-  [Module Dᵐᵒᵖ P] [SMulCommClass C k P] [SMulCommClass Dᵐᵒᵖ k P]
-  [SMulCommClass C Dᵐᵒᵖ P]
+  [Module Dᵐᵒᵖ P] [SMulCommClass Dᵐᵒᵖ k P] [SMulCommClass C Dᵐᵒᵖ P]
   [AddCommGroup Q] [Module k Q] [Module D Q]
 
-omit [SMulCommClass B k N] [SMulCommClass C k P] in
 /-- Linear maps out of a left-associated fourfold balanced tensor product are determined by
 their values on nested pure tensors. -/
 theorem ext_fourfold {T : Type*} [AddCommGroup T] [Module k T]

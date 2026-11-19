@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Probability.Distributions.Rademacher
+public import TauCeti.Probability.Distributions.Rademacher.Basic
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 
 /-!
@@ -15,7 +15,9 @@ public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 In a one-dimensional real inner product space, the unit sphere consists of two antipodal
 points. Its uniform law assigns mass one half to each point. Consequently, its coordinate
 along any unit vector has the Rademacher law, whose cumulative distribution, quantiles,
-moments and transforms are available in `TauCeti.Probability.Distributions.Rademacher`.
+moments and transforms are available in `TauCeti.Probability.Distributions.Rademacher.Basic`.
+Along an arbitrary representing vector, the law is scaled by that vector's norm.
+Its cdf and interior quantile are given explicitly, including the zero observable.
 
 The measure identity is stated both on the sphere and after embedding in the ambient space.
 These identities also describe the discrete direction in the Gaussian direction/radius
@@ -105,6 +107,51 @@ theorem map_inner_uniformSphereMeasure_of_finrank_eq_one (hdim : Module.finrank 
     Measure.map_smul _ hm.aemeasurable]
   simp [ENNReal.smul_def, add_comm]
 
+/-- In dimension one, any real linear observable of a uniform sphere point has a
+Rademacher law scaled by the norm of its representing vector, including the zero vector. -/
+theorem map_inner_uniformSphereMeasure_eq_map_rademacher_of_finrank_eq_one
+    (hd : Module.finrank ℝ E = 1) (v : E) :
+    (uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫_ℝ) =
+      rademacherMeasure.map (fun y ↦ ‖v‖ * y) := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < Module.finrank ℝ E)
+  by_cases hv : v = 0
+  · simp [hv, Measure.map_const]
+  let e : sphere (0 : E) 1 :=
+    ⟨NormedSpace.normalize v, mem_sphere_zero_iff_norm.mpr (NormedSpace.norm_normalize hv)⟩
+  have h := congrArg (Measure.map (fun y : ℝ ↦ ‖v‖ * y))
+    (map_inner_uniformSphereMeasure_of_finrank_eq_one hd e)
+  rw [Measure.map_map (by fun_prop) (by fun_prop)] at h
+  simpa only [Function.comp_def, ← real_inner_smul_left, e,
+    NormedSpace.norm_smul_normalize] using h
+
+/-- In dimension one, projection cdfs have two equally weighted atoms at the extreme
+values. For the zero observable these coincide and give the Dirac cdf at zero. -/
+theorem cdf_map_inner_uniformSphereMeasure_of_finrank_eq_one
+    (hd : Module.finrank ℝ E = 1) (v : E) (x : ℝ) :
+    cdf ((uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫_ℝ)) x =
+      if x < -‖v‖ then 0 else if x < ‖v‖ then 1 / 2 else 1 := by
+  rw [map_inner_uniformSphereMeasure_eq_map_rademacher_of_finrank_eq_one hd v]
+  by_cases hv : v = 0
+  · simp [hv, Measure.map_const, cdf_dirac]
+    split_ifs <;> grind
+  have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv
+  have h := cdf_map_affine_of_pos (μ := rademacherMeasure) (a := 0) hn x
+  simpa only [zero_add, sub_zero, cdf_rademacherMeasure,
+    div_lt_iff₀ hn, neg_one_mul, one_mul] using h
+
+/-- In dimension one, projection quantiles equal the lower extreme through probability
+one half and the upper extreme above it, including the constant-zero observable. -/
+theorem quantile_map_inner_uniformSphereMeasure_of_finrank_eq_one
+    (hd : Module.finrank ℝ E = 1) (v : E) {u : ℝ} (hu : u ∈ Ioo 0 1) :
+    ((uniformSphereMeasure E).map (fun x : sphere (0 : E) 1 ↦ ⟪v, (x : E)⟫_ℝ)).quantile u =
+      if u ≤ 1 / 2 then -‖v‖ else ‖v‖ := by
+  rw [map_inner_uniformSphereMeasure_eq_map_rademacher_of_finrank_eq_one hd v]
+  by_cases hv : v = 0
+  · simp [hv, Measure.map_const, Measure.quantile_dirac _ hu.1 hu.2.le]
+  have h := quantile_map_affine_pos (μ := rademacherMeasure) (a := 0)
+    (norm_pos_iff.mpr hv) hu.1 hu.2
+  simpa only [zero_add, quantile_rademacherMeasure hu, mul_ite, mul_neg_one, mul_one] using h
+
 /-- In dimension one the exponential moment is the hyperbolic cosine of the coordinate
 along a chosen unit vector. -/
 theorem integral_exp_inner_uniformSphereMeasure_of_finrank_eq_one
@@ -144,5 +191,13 @@ theorem HasLaw.inner_uniformSphereMeasure_of_finrank_eq_one
     HasLaw (fun ω ↦ ⟪(e : E), (X ω : E)⟫_ℝ) rademacherMeasure P :=
   HasLaw.comp (Y := fun x : sphere (0 : E) 1 ↦ ⟪(e : E), (x : E)⟫_ℝ)
     ⟨(by fun_prop), map_inner_uniformSphereMeasure_of_finrank_eq_one hdim e⟩ hX
+
+/-- Every real linear observable of a uniform random unit vector in dimension one has a
+Rademacher law scaled by the norm of its representing vector. -/
+theorem HasLaw.inner_uniformSphereMeasure_eq_map_rademacher_of_finrank_eq_one
+    (hX : HasLaw X (uniformSphereMeasure E) P) (hd : Module.finrank ℝ E = 1) (v : E) :
+    HasLaw (fun ω ↦ ⟪v, (X ω : E)⟫_ℝ) (rademacherMeasure.map (fun y ↦ ‖v‖ * y)) P :=
+  (HasLaw.mk (by fun_prop)
+    (map_inner_uniformSphereMeasure_eq_map_rademacher_of_finrank_eq_one hd v)).comp hX
 
 end ProbabilityTheory

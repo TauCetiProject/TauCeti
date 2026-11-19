@@ -243,6 +243,35 @@ theorem map_comp {C : Type*} [AddCommGroup C] (g : B →+ C) (f : A →+ B) :
   ext x n
   rfl
 
+/-- A map injective on every torsion level induces an injective map on Tate modules. -/
+theorem map_injective (f : A →+ B)
+    (hf : ∀ n, Function.Injective (levelMap (p := p) f n)) :
+    Function.Injective (map (p := p) f) := by
+  intro x y h
+  exact ext fun n ↦ hf n (by simpa only [proj_map] using congrArg (proj n) h)
+
+/-- If a homomorphism is injective on each torsion level, a Tate-module point lies in its
+image exactly when each component lies in the corresponding finite-level image. Uniqueness
+of the finite-level preimages ensures their compatibility. -/
+theorem mem_range_map_iff (f : A →+ B)
+    (hf : ∀ n, Function.Injective (levelMap (p := p) f n)) (x : TateModule p B) :
+    x ∈ (map f).range ↔ ∀ n, proj n x ∈ (levelMap f n).range := by
+  constructor
+  · rintro ⟨y, rfl⟩ n
+    exact ⟨proj n y, (proj_map f y n).symm⟩
+  · intro hx
+    choose y hy using hx
+    have hcompat (n : ℕ) : tateModuleTransition p A n (y (n + 1)) = y n := by
+      apply hf n
+      apply Subtype.ext
+      simp only [levelMap_apply, tateModuleTransition_apply, map_nsmul]
+      have hnext := congrArg Subtype.val (hy (n + 1))
+      have hnow := congrArg Subtype.val (hy n)
+      simp only [levelMap_apply] at hnext hnow
+      rw [hnext, hnow]
+      exact congrArg Subtype.val (proj_succ x n)
+    exact ⟨mk y hcompat, ext fun n ↦ by simpa only [proj_map, proj_mk] using hy n⟩
+
 end Map
 
 section PadicModule
@@ -303,6 +332,26 @@ def mapLinearMap (f : A →+ B) : TateModule p A →ₗ[ℤ_[p]] TateModule p B 
 @[simp]
 theorem mapLinearMap_apply (f : A →+ B) (x : TateModule p A) : mapLinearMap f x = map f x :=
   (rfl)
+
+/-- An additive equivalence induces a `ℤ_p`-linear equivalence of Tate modules. -/
+def mapLinearEquiv (e : A ≃+ B) : TateModule p A ≃ₗ[ℤ_[p]] TateModule p B :=
+  LinearEquiv.ofLinearMap (mapLinearMap e.toAddMonoidHom)
+    (mapLinearMap e.symm.toAddMonoidHom)
+    (by ext x n; simp)
+    (by ext x n; simp)
+
+/-- The equivalence induced on Tate modules is the map induced by the additive equivalence. -/
+@[simp]
+theorem mapLinearEquiv_apply (e : A ≃+ B) (x : TateModule p A) :
+    mapLinearEquiv e x = map e.toAddMonoidHom x :=
+  (rfl)
+
+/-- The inverse equivalence on Tate modules is induced by the inverse additive equivalence. -/
+@[simp]
+theorem mapLinearEquiv_symm (e : A ≃+ B) :
+    (mapLinearEquiv (p := p) e).symm = mapLinearEquiv e.symm := by
+  ext x n
+  rfl
 
 end Map
 
@@ -691,7 +740,7 @@ theorem eq_one_of_isOfFinOrder_of_forall_proj_eq [hp : Fact p.Prime]
     (hfix : ∀ t, proj k (φ t) = proj k t) : φ = 1 := by
   have hcast (n : ℕ) (ψ : Module.End ℤ_[p] (TateModule p A)) (t : TateModule p A) :
       ((n : Module.End ℤ_[p] (TateModule p A)) * ψ) t = n • ψ t := by
-    rw [Module.End.mul_apply, Module.End.natCast_apply]
+    rw [_root_.mul_apply_eq_comp, _root_.natCast_apply_eq_smul]
   refine eq_one_of_isOfFinOrder_of_pow_dvd_sub_one hp.out (fun ψ ψ' h ↦ ?_) (fun ψ hψ ↦ ?_) hk hφ
     ?_
   · -- `T_p A` has no `p`-torsion, so `p` is left regular in its endomorphism ring.
@@ -707,16 +756,16 @@ theorem eq_one_of_isOfFinOrder_of_forall_proj_eq [hp : Fact p.Prime]
     set g : Module.End ℤ_[p] (TateModule p A) := ((p ^ k : ℕ) : Module.End ℤ_[p] (TateModule p A))
     have hg : Function.Injective g := fun s t hst ↦ sub_eq_zero.mp
       (eq_zero_of_pow_nsmul_eq_zero (k := k) (by
-        rw [smul_sub, ← Module.End.natCast_apply (R := ℤ_[p]),
-          ← Module.End.natCast_apply (R := ℤ_[p])]
+        rw [smul_sub, ← _root_.natCast_apply_eq_smul (F := Module.End ℤ_[p] (TateModule p A)),
+          ← _root_.natCast_apply_eq_smul (F := Module.End ℤ_[p] (TateModule p A))]
         exact sub_eq_zero.mpr hst))
     have hrange (t : TateModule p A) : (φ - 1) t ∈ LinearMap.range g := by
       obtain ⟨y, hy⟩ := (proj_eq_zero_iff (n := k) (x := (φ - 1) t)).mp (by
-        rw [LinearMap.sub_apply, Module.End.one_apply, map_sub, hfix, sub_self])
-      exact ⟨y, by rw [hy, Module.End.natCast_apply]⟩
+        rw [LinearMap.sub_apply, _root_.one_apply_eq_self, map_sub, hfix, sub_self])
+      exact ⟨y, by rw [hy, _root_.natCast_apply_eq_smul]⟩
     refine ⟨(LinearEquiv.ofInjective g hg).symm.toLinearMap ∘ₗ (φ - 1).codRestrict _ hrange,
       LinearMap.ext fun t ↦ ?_⟩
-    rw [← Nat.cast_pow, Module.End.mul_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    rw [← Nat.cast_pow, _root_.mul_apply_eq_comp, LinearMap.comp_apply, LinearEquiv.coe_coe,
       ← LinearEquiv.ofInjective_apply (f := g) (h := hg), LinearEquiv.apply_symm_apply,
       LinearMap.codRestrict_apply]
 

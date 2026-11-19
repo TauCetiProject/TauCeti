@@ -40,6 +40,8 @@ projective module is `m`-fpd.
   pseudocoherent of projective dimension at most `m`.
 * `TauCeti.Module.IsFPD.succ_iff_ker`: for a surjection `f` onto `M` from a finitely generated
   projective module, `M` is `(m + 1)`-fpd exactly when `ker f` is `m`-fpd.
+* `TauCeti.Module.IsFPD.cokernel`: in a short exact sequence `0 → M₁ → M → M₂ → 0` with `M₁`
+  `m`-fpd and `M` `(m + 1)`-fpd, `M₂` is `(m + 1)`-fpd.
 
 ## References
 
@@ -211,6 +213,38 @@ theorem succ_iff_ker {P : Type w} [AddCommGroup P] [Module R P] [Module.Finite R
   rw [← (show _ ↔ IsFPD R M (m + 1) from ⟨of_equiv eM, of_equiv eM.symm⟩),
     ← (show _ ↔ IsFPD R (ker f) m from ⟨of_equiv eK, of_equiv eK.symm⟩)]
   exact succ_iff_ker_aux (Submodule.mkQ_surjective _)
+
+/-- `IsFPD.cokernel` for a quotient `P ⧸ N` of a module in the universe of the ring, through
+projective dimension. -/
+private theorem cokernel_aux {P : Type u} [AddCommGroup P] [Module R P] {N : Submodule R P}
+    (hN : IsFPD R N m) (hP : IsFPD R P (m + 1)) : IsFPD R (P ⧸ N) (m + 1) := by
+  have hK : IsFPD R (ker N.mkQ) m := hN.of_equiv (.ofEq _ _ N.ker_mkQ.symm)
+  rw [isFPD_iff_hasProjectiveDimensionLE] at hK hP ⊢
+  refine ⟨Huber.IsPseudoCoherentOver.cokernel N.injective_subtype (exact_subtype_mkQ N)
+    N.mkQ_surjective (fun _ ↦ ENat.top_sub_one ▸ hN.isPseudoCoherentOver) hP.1, ?_⟩
+  exact (N.mkQ.shortExact_shortComplexKer N.mkQ_surjective).hasProjectiveDimensionLT_X₃ (m + 1)
+    hK.2 hP.2
+
+/-- **A cokernel of `m`-fpd modules is `(m + 1)`-fpd.** If `0 → M₁ → M → M₂ → 0` is exact, `M₁`
+is `m`-fpd and `M` is `(m + 1)`-fpd, then `M₂` is `(m + 1)`-fpd (Kedlaya–Liu II, Lemma 1.1.5). -/
+theorem cokernel {M₁ M₂ : Type*} [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+    [Module R M₂] {f : M₁ →ₗ[R] M} {g : M →ₗ[R] M₂} (hf : Function.Injective f)
+    (hfg : Function.Exact f g) (hg : Function.Surjective g) (h₁ : IsFPD R M₁ m)
+    (h : IsFPD R M (m + 1)) :
+    IsFPD R M₂ (m + 1) := by
+  -- Replace `M` by a quotient `P` of a finite free module, `M₁` by the submodule of `P`
+  -- corresponding to `ker g`, and `M₂` by the quotient of `P` by it; all lie in the universe
+  -- of `R`.
+  have := h.isPseudoCoherentOver.finite
+  obtain ⟨k, π, hπ⟩ := Module.Finite.exists_fin' R M
+  let e : ((Fin k → R) ⧸ ker π) ≃ₗ[R] M := π.quotKerEquivOfSurjective hπ
+  have hmap : ((ker g).comap e.toLinearMap).map e.toLinearMap = ker g :=
+    Submodule.map_comap_eq_of_surjective e.surjective _
+  let e₁ : M₁ ≃ₗ[R] (ker g).comap e.toLinearMap :=
+    ((LinearEquiv.ofInjective f hf).trans (.ofEq _ _ (exact_iff.mp hfg).symm)).trans
+      (e.ofSubmodules _ _ hmap).symm
+  exact (cokernel_aux (h₁.of_equiv e₁) (h.of_equiv e.symm)).of_equiv
+    ((Submodule.Quotient.equiv _ _ e hmap).trans (g.quotKerEquivOfSurjective hg))
 
 end IsFPD
 

@@ -102,6 +102,13 @@ theorem normalizedBurauAlexander_def (β : MarkovBraid) (s : Rˣ) :
     normalizedBurauAlexander ⟨0, 1⟩ s = 1 := by
   simp [normalizedBurauAlexander_def]
 
+/-- The normalized Alexander invariant vanishes on disjoint union with an unknot,
+represented by adding an uncrossed strand. -/
+@[simp]
+theorem normalizedBurauAlexander_strandIncl (s : Rˣ) (b : BraidGroup (n + 1)) :
+    normalizedBurauAlexander ⟨n + 1, strandIncl b⟩ s = 0 := by
+  simp [normalizedBurauAlexander_def]
+
 /-- The normalized value of the right-handed trefoil braid is `s² - 1 + s⁻²`. -/
 theorem normalizedBurauAlexander_sigma_pow_three (s : Rˣ) :
     normalizedBurauAlexander ⟨1, sigma 0 ^ 3⟩ s =

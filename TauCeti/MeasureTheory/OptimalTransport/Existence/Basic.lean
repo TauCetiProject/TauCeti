@@ -49,7 +49,7 @@ the infimum on the compact set of couplings.
 * `TauCeti.transportCost_eq_iSup_transportCost_lscApprox` — transport cost commutes with the
   canonical monotone approximation of a lower-semicontinuous cost;
 * `TauCeti.exists_isOptimalCoupling_edist` and `TauCeti.exists_isOptimalCoupling_edist_rpow` — the
-  acceptance instances: the Kantorovich–Rubinstein cost `edist`, and the `p`-Wasserstein cost
+  basic instances: the Kantorovich–Rubinstein cost `edist`, and the `p`-Wasserstein cost
   `edist ^ p`, admit optimal plans on a Polish space.
 
 ## References
@@ -204,7 +204,7 @@ theorem transportCost_eq_iSup_transportCost_lscApprox
     (hc : LowerSemicontinuous c) :
     transportCost c μ ν =
       ⨆ n : ℕ, transportCost (fun z ↦ (lscApprox c n z : ℝ≥0∞)) μ ν := by
-  simpa only [iSup_coe_lscApprox hc] using
+  simpa only [fun z ↦ iSup_coe_lscApprox (hc z)] using
     transportCost_iSup_eq_iSup hμ hν
       (cs := fun n z ↦ (lscApprox c n z : ℝ≥0∞))
       (fun n ↦ (ENNReal.continuous_coe.comp (lscApprox c n).continuous).lowerSemicontinuous)

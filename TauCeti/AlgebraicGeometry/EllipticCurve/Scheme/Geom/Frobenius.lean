@@ -36,7 +36,7 @@ namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
 variable {k R : Type u} [CommRing k] [CommRing R] [IsLocalRing R] [IsArtinianRing R]
   [Algebra k R] (E : EllipticCurveGeom (Spec (.of R)))
-  (p : ℕ) [Fact p.Prime] [CharP k p] [CharP R p]
+  (p : ℕ) [Fact p.Prime] [CharP R p]
 
 /-- Every sufficiently high Frobenius twist of an elliptic curve over an Artinian local
 algebra with residue field `k` is pointed-isomorphic over the base to a curve defined over `k`.
@@ -50,6 +50,9 @@ theorem exists_iso_baseChange_iterateFrobenius
             (E.baseChange (Spec.map (CommRingCat.ofHom (iterateFrobenius R p n)))).structureMap ∧
           (E.baseChange (Spec.map (CommRingCat.ofHom (iterateFrobenius R p n)))).zero ≫ e.hom =
             (E₀.baseChange (Spec.map (CommRingCat.ofHom (algebraMap k R)))).zero := by
+  let : CharP k p := (algebraMap k R).charP (fun x y hxy => hres.1 <| by
+    simpa only [IsScalarTower.algebraMap_apply k R (ResidueField R)] using
+      congrArg (algebraMap R (ResidueField R)) hxy) p
   obtain ⟨N, hN⟩ := TauCeti.exists_iterateFrobenius_eq_algebraMap_comp (R := R) p hres
   refine ⟨N, fun n hn ↦ ?_⟩
   let f := (iterateFrobenius k p n).comp

@@ -181,6 +181,15 @@ theorem isIso_iff_kernelHopfIdeal_eq_augmentation (hf : IsIsogeny f) :
 theorem finiteType (hf : IsIsogeny f) : f.hom.toAlgHom.FiniteType :=
   hf.finite.finiteType
 
+/-- Finite type over the base passes from the domain to the codomain of an isogeny's
+coordinate map. -/
+theorem finiteType_target (hf : IsIsogeny f) [Algebra.FiniteType R H] :
+    Algebra.FiniteType R K := by
+  apply RingHom.finiteType_algebraMap.mp
+  rw [← f.hom.toAlgHom.comp_algebraMap]
+  exact RingHom.FiniteType.comp hf.finiteType
+    (RingHom.finiteType_algebraMap.mpr inferInstance)
+
 /-- A composite of isogenies is an isogeny. -/
 theorem comp {f : H ⟶ K} {g : K ⟶ L} (hf : IsIsogeny f) (hg : IsIsogeny g) :
     IsIsogeny (f ≫ g) := by

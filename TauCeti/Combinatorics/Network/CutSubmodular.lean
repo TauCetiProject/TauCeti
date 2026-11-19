@@ -43,7 +43,7 @@ theorem isSubmodular_outgoingArrowSum [AddCommMonoid K] [Preorder K]
     IsSubmodular (fun S : Finset V ↦ arrowSum cap S Sᶜ) := by
   rw [isSubmodular_def]
   intro S T
-  simp only [sup_eq_union, inf_eq_inter, arrowSum_eq_sum_ite]
+  simp only [arrowSum_eq_sum_ite]
   simp only [← sum_add_distrib]
   apply sum_le_sum
   intro v _

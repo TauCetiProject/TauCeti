@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
+public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.Data.Int.Sign
 import TauCeti.Data.Nat.Factorization.GcdSplit
+import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 /-!
 # The Kronecker symbol
@@ -30,10 +32,10 @@ multiplicativity in the denominator fail exactly for the numerator `-1`, where
 `(-1 / 0) = 1` but `(-1 / 0) * (-1 / 3) = -1`.
 
 The point of the extension is the case of a **discriminant** `D ≡ 0, 1 (mod 4)`. Then `(D / ·)` is
-periodic modulo `|D|` on all of `ℤ`, so it is a quadratic Dirichlet character `kroneckerChar` of
-modulus `|D|`, whose value at `-1` is the sign of `D`. For `D ≡ 1 (mod 4)` this rests on
-quadratic reciprocity, in the form `(D / n) = J(n | |D|)`; for `D ≡ 0 (mod 4)` it rests on the
-periodicity of `J(D | ·)` modulo `|D|` on odd numbers and on its reflection law under `b ↦ -b`.
+periodic modulo `|D|` on all of `ℤ`, so for `D ≠ 0` it is a quadratic Dirichlet character
+`kroneckerChar` of modulus `|D|`, whose value at `-1` is the sign of `D`. For `D ≡ 1 (mod 4)` this
+rests on quadratic reciprocity, in the form `(D / n) = J(n | |D|)`; for `D ≡ 0 (mod 4)` it rests on
+the periodicity of `J(D | ·)` modulo `|D|` on odd numbers and on its reflection law under `b ↦ -b`.
 The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 
 ## Main definitions
@@ -51,13 +53,26 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 * `TauCeti.kroneckerSym_mul_right`, `TauCeti.kroneckerSym_mul_right_of_ne_neg_one`:
   multiplicativity in the denominator, over nonzero factors, and without restriction when the
   numerator is not `-1`.
-* `TauCeti.kroneckerSym_mul_left`: multiplicativity in the numerator, over nonzero factors.
+* `TauCeti.kroneckerSym_mul_left`, `TauCeti.kroneckerSym_mul_left_of_ne_neg_one`,
+  `TauCeti.kroneckerSym_pow_left`, `TauCeti.kroneckerSym_eq_one_of_isSquare`: multiplicativity in
+  the numerator, over nonzero factors and without restriction when the denominator is not `-1`,
+  unrestricted power law, and value `1` on squares coprime to the denominator.
 * `TauCeti.kroneckerSym_eq_zero_iff`: `(a / b) = 0` exactly when `gcd (a, b) ≠ 1`.
 * `TauCeti.kroneckerSym_eq_jacobiSym_natAbs`: `(D / n) = J(n | |D|)` for `D ≡ 1 (mod 4)`.
 * `TauCeti.kroneckerSym_mod_right'`: for `D ≡ 0, 1 (mod 4)`, `(D / ·)` is periodic modulo `D`.
 * `TauCeti.kroneckerChar_intCast`, `TauCeti.kroneckerChar_isQuadratic`,
   `TauCeti.kroneckerChar_neg_one`: the character computes the Kronecker symbol, is quadratic, and
   has value `sign D` at `-1`.
+* `TauCeti.conductor_kroneckerChar_dvd_iff`: the conductor of `kroneckerChar` divides `N`
+  exactly when `(D / a) = 1` for the odd `a ≡ 1 (mod N)` prime to `D`.
+* `TauCeti.kroneckerChar_eq_one_iff_isSquare`: `(D / ·)` is the trivial character exactly when
+  `D` is a square.
+* `TauCeti.changeLevel_kroneckerChar_sq_mul`, `TauCeti.kroneckerChar_eq_one_of_isSquare`,
+  `TauCeti.conductor_kroneckerChar_eq_of_isSquare_mul`,
+  `TauCeti.conductor_kroneckerChar_eq_natAbs_of_prime`: `(m² D / ·)` is induced from
+  `(D / ·)` for `m ≠ 0`, so discriminants in the same square class share their conductor and
+  primitive character, a square discriminant gives the trivial character of conductor `1`, and a
+  prime discriminant (`|D|` prime) gives a primitive character of conductor `|D|`.
 
 ## References
 
@@ -80,8 +95,8 @@ and with the standard values at `2`, `-1` and `0`: `(a / 2) = χ₈ a`, `(a / -1
 `|b| = 2 ^ e * m`, `m` odd, it is `(a / -1)^[b < 0] * χ₈ a ^ e * J(a | m)`. -/
 def kroneckerSym (a b : ℤ) : ℤ :=
   if b = 0 then if a = 1 ∨ a = -1 then 1 else 0
-  else (if a < 0 ∧ b < 0 then -1 else 1) * χ₈ a ^ b.natAbs.factorization 2 *
-    jacobiSym a (ordCompl[2] b.natAbs)
+  else (if a < 0 ∧ b < 0 then -1 else 1) * χ₈ a ^ padicValNat 2 b.natAbs *
+    jacobiSym a (b.natAbs.divMaxPow 2)
 
 /-- `(a / 0)` is `1` for `a = ±1` and `0` otherwise. It is not `jacobiSym a 0 = 1`. -/
 @[simp]
@@ -92,8 +107,11 @@ theorem kroneckerSym_zero_right (a : ℤ) :
 /-- The Kronecker symbol at a nonzero denominator `b`, with `|b| = 2 ^ e * m` and `m` odd. -/
 theorem kroneckerSym_of_ne_zero (a : ℤ) {b : ℤ} (hb : b ≠ 0) :
     kroneckerSym a b = (if a < 0 ∧ b < 0 then -1 else 1) * χ₈ a ^ b.natAbs.factorization 2 *
-      jacobiSym a (ordCompl[2] b.natAbs) :=
-  ite_eq_right hb
+      jacobiSym a (ordCompl[2] b.natAbs) := by
+  rw [Nat.factorization_def _ Nat.prime_two, ← Nat.padicValNat_def,
+    ← Nat.eq_div_of_mul_eq_left (pow_ne_zero _ two_ne_zero)
+      (Nat.divMaxPow_mul_pow_padicValNat 2 b.natAbs)]
+  exact ite_eq_right hb
 
 /-- At an odd denominator `b`, of either sign, the Kronecker symbol is the Jacobi symbol at `|b|`,
 times `-1` when both `a < 0` and `b < 0`. -/
@@ -107,7 +125,7 @@ theorem kroneckerSym_of_odd (a : ℤ) {b : ℤ} (hb : Odd b) :
 /-- At an odd positive denominator the Kronecker symbol is the Jacobi symbol. -/
 theorem kroneckerSym_eq_jacobiSym (a : ℤ) {b : ℕ} (hb : Odd b) :
     kroneckerSym a b = jacobiSym a b := by
-  rw [kroneckerSym_of_odd a (Int.odd_coe_nat b |>.mpr hb), Int.natAbs_natCast,
+  rw [kroneckerSym_of_odd a (Int.odd_natCast b |>.mpr hb), Int.natAbs_natCast,
     ite_eq_right (fun h ↦ (Int.natCast_nonneg b).not_gt h.2), one_mul]
 
 /-- At an odd prime the Kronecker symbol is the Legendre symbol. -/
@@ -199,7 +217,7 @@ theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b 
   -- Writing `|b| = 2 ^ e * m` with `m` odd, `a` and `b` have a common factor exactly when `a` is
   -- even and `e ≠ 0`, or `a` and `m` have one.
   rw [kroneckerSym_of_ne_zero a hb, Int.gcd_eq_natAbs_gcd_natAbs, Ne,
-    ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_iff_coprime_ordCompl Nat.prime_two]
+    ← Nat.coprime_iff_gcd_eq_one, Nat.coprime_iff_coprime_ordCompl (p := 2)]
   simp only [mul_eq_zero, hs, false_or, pow_eq_zero_iff', χ₈_intCast_eq_zero_iff,
     jacobiSym.eq_zero_iff, Ne, hm, not_false_eq_true, true_and, Int.gcd_eq_natAbs_gcd_natAbs,
     Int.natAbs_natCast, not_and_or, not_imp, Nat.coprime_iff_gcd_eq_one, ← Int.natCast_dvd,
@@ -226,7 +244,7 @@ theorem kroneckerSym_trichotomy (a b : ℤ) :
     Int.abs_le_one_iff.mpr (jacobiSym.trichotomy _ _)
   have hmul (x y : ℤ) (hx : |x| ≤ 1) (hy : |y| ≤ 1) : |x * y| ≤ 1 := by
     rw [abs_mul]
-    nlinarith [abs_nonneg x, abs_nonneg y]
+    exact (mul_le_of_le_one_left (abs_nonneg _) hx).trans hy
   rw [kroneckerSym_of_ne_zero a hb]
   exact hmul _ _ (hmul _ _ hs (by rw [abs_pow]; exact pow_le_one₀ (abs_nonneg _) h₈)) hJ
 
@@ -247,7 +265,74 @@ theorem kroneckerSym_mul_left {a a' : ℤ} (ha : a ≠ 0) (ha' : a' ≠ 0) (b : 
     Int.cast_mul, map_mul, mul_pow, jacobiSym.mul_left, hs]
   ring
 
+/-- Multiplicativity of the Kronecker symbol in the numerator without restriction on the
+numerators, when the denominator is not `-1`. For `b = -1` it can fail when one factor is `0` and
+the other is negative (see `kroneckerSym_mul_left`). -/
+theorem kroneckerSym_mul_left_of_ne_neg_one {b : ℤ} (hb : b ≠ -1) (a a' : ℤ) :
+    kroneckerSym (a * a') b = kroneckerSym a b * kroneckerSym a' b := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · rw [zero_mul, kroneckerSym_zero_left]
+    by_cases h1 : b = 1
+    · subst h1; simp
+    · simp [h1, hb]
+  rcases eq_or_ne a' 0 with rfl | ha'
+  · rw [mul_zero, kroneckerSym_zero_left]
+    by_cases h1 : b = 1
+    · subst h1; simp
+    · simp [h1, hb]
+  exact kroneckerSym_mul_left ha ha' b
+
+/-- The Kronecker symbol of a power in the numerator is the power of the symbol. Unlike
+`kroneckerSym_mul_left`, this holds without restriction: at `a = 0` the value `(0 / b) ∈ {0, 1}` is
+idempotent. -/
+theorem kroneckerSym_pow_left (a b : ℤ) (k : ℕ) :
+    kroneckerSym (a ^ k) b = kroneckerSym a b ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rcases eq_or_ne a 0 with rfl | ha
+    · rw [zero_pow k.succ_ne_zero, kroneckerSym_zero_left]
+      split_ifs <;> simp
+    · rw [pow_succ, kroneckerSym_mul_left (pow_ne_zero k ha) ha, ih, pow_succ]
+
+/-- `(a² / b) = 1` when `a` and `b` are coprime, including at `a = 0` (where `b = ±1`). -/
+theorem kroneckerSym_sq_one {a b : ℤ} (h : a.gcd b = 1) : kroneckerSym (a ^ 2) b = 1 := by
+  rw [kroneckerSym_pow_left]
+  rcases kroneckerSym_trichotomy a b with h0 | h1 | h1
+  · exact absurd h (kroneckerSym_eq_zero_iff.mp h0)
+  · simp [h1]
+  · simp [h1]
+
+/-- For a square integer `a` coprime to `b`, `(a / b) = 1`. -/
+theorem kroneckerSym_eq_one_of_isSquare {a b : ℤ} (ha : IsSquare a) (h : a.gcd b = 1) :
+    kroneckerSym a b = 1 := by
+  obtain ⟨s, rfl⟩ := ha
+  rw [← sq]
+  exact kroneckerSym_sq_one (Nat.eq_one_of_dvd_one (h ▸ Int.gcd_dvd_gcd_of_dvd_left b ⟨s, rfl⟩))
+
+/-- Multiplying a numerator `a` by a nonzero square `u²` coprime to `b` leaves `(a / b)` unchanged.
+The hypothesis `u ≠ 0` cannot be dropped: at `a = -1`, `u = 0`, `b = -1` the left side is
+`(0 / -1) = 1` and the right side is `-1`. -/
+theorem kroneckerSym_mul_sq {a u b : ℤ} (hu : u ≠ 0) (hub : u.gcd b = 1) :
+    kroneckerSym (a * u ^ 2) b = kroneckerSym a b := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · rw [zero_mul]
+  · rw [kroneckerSym_mul_left ha (pow_ne_zero 2 hu), kroneckerSym_sq_one hub, mul_one]
+
 /-! ### The Kronecker symbol of a discriminant -/
+
+/-- Multiplying a discriminant `D ≡ 0, 1 (mod 4)` by a square preserves the congruence condition
+`≡ 0, 1 (mod 4)`. -/
+theorem sq_mul_modEq_four {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) (m : ℤ) :
+    m ^ 2 * D ≡ 0 [ZMOD 4] ∨ m ^ 2 * D ≡ 1 [ZMOD 4] := by
+  rcases Int.even_or_odd m with ⟨k, rfl⟩ | ⟨k, rfl⟩
+  · exact .inl (Int.modEq_zero_iff_dvd.mpr ⟨k ^ 2 * D, by ring⟩)
+  · have hm : (2 * k + 1) ^ 2 ≡ 1 [ZMOD 4] := by
+      rw [Int.modEq_iff_dvd]
+      exact ⟨-(k ^ 2 + k), by ring⟩
+    rcases hD with h | h
+    · exact .inl ((hm.mul h).trans (by norm_num))
+    · exact .inr ((hm.mul h).trans (by norm_num))
 
 /-- A discriminant `D ≡ 0, 1 (mod 4)` is not `-1`, so `(D / ·)` is completely multiplicative
 (`kroneckerSym_mul_right_of_ne_neg_one`). -/
@@ -279,11 +364,9 @@ theorem kroneckerSym_eq_jacobiSym_natAbs {D : ℤ} (hD : D ≡ 1 [ZMOD 4]) (n : 
       kroneckerSym_eq_jacobiSym _ hm, jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one hD4 hm]
     simp only [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two hodd]
     congr 2
-    have habs : ((D.natAbs : ℕ) : ZMod 8) = ((|D| : ℤ) : ZMod 8) := by
-      rw [← Int.natCast_natAbs, Int.cast_natCast]
-    rw [habs]
-    rcases abs_choice D with h | h <;> rw [h]
-    rw [Int.cast_neg, χ₈_neg]
+    rcases Int.natAbs_eq D with h | h
+    · rw [h, Int.natAbs_natCast, Int.cast_natCast]
+    · rw [h, Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, Int.cast_natCast, χ₈_neg]
   rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
   · exact hnat k
   · rw [neg_eq_neg_one_mul, kroneckerSym_mul_right_of_ne_neg_one hD1, kroneckerSym_neg_one_right,
@@ -299,24 +382,19 @@ least nonnegative residue of `m` modulo `D`. For `m < 0` this is the reflection 
 private theorem kroneckerSym_eq_jacobiSym_emod {D : ℤ} (hD : D % 4 = 0) (hD₀ : D ≠ 0) {m : ℤ}
     (hm : Odd m) : kroneckerSym D m = jacobiSym D (m % D).toNat := by
   have hr₀ : 0 ≤ m % D := Int.emod_nonneg m hD₀
-  have hr : Odd (m % D).toNat := by
-    have h2 : Even D := even_iff_two_dvd.mpr (dvd_trans (by norm_num) (Int.dvd_of_emod_eq_zero hD))
-    rw [← Int.odd_coe_nat, Int.toNat_of_nonneg hr₀, Int.emod_def]
-    exact hm.sub_even (h2.mul_right _)
   rcases Int.eq_nat_or_neg m with ⟨k, rfl | rfl⟩
-  · have hk : Odd k := (Int.odd_coe_nat k).mp hm
+  · have hk : Odd k := (Int.odd_natCast k).mp hm
     have hmod : ((k : ℤ) % D).toNat = k % D.natAbs := by
       rw [← Int.emod_abs, ← Int.natCast_natAbs, ← Int.natCast_mod, Int.toNat_natCast]
-    rw [kroneckerSym_eq_jacobiSym D hk, jacobiSym_mod_natAbs_of_emod_four_eq_zero hD hk, hmod,
-      jacobiSym_mod_natAbs_of_emod_four_eq_zero hD (hmod ▸ hr), Nat.mod_mod]
-  · have hk : Odd k := (Int.odd_coe_nat k).mp (by simpa using hm)
+    rw [kroneckerSym_eq_jacobiSym D hk, hmod, jacobiSym_mod_natAbs_of_emod_four_eq_zero hD hk]
+  · have hk : Odd k := (Int.odd_natCast k).mp (by simpa using hm)
     have hdvd : D.natAbs ∣ k + (-(k : ℤ) % D).toNat := by
       rw [← Int.natCast_dvd_natCast, Nat.cast_add, Int.toNat_of_nonneg hr₀, Int.natCast_natAbs,
         abs_dvd, Int.emod_def]
       exact ⟨-(-(k : ℤ) / D), by ring⟩
     have hk₀ : -(k : ℤ) < 0 := by have := hk.pos; omega
     rw [kroneckerSym_of_odd D hm, Int.natAbs_neg, Int.natAbs_natCast,
-      jacobiSym_eq_sign_mul_of_emod_four_eq_zero hD hk hr hdvd]
+      jacobiSym_eq_sign_mul_of_emod_four_eq_zero hD hk hdvd]
     simp only [hk₀, and_true, Int.ite_lt_zero_eq_sign hD₀]
 
 private theorem kroneckerSym_eq_zero_of_two_dvd {D m : ℤ} (hD : 2 ∣ D) (hm : 2 ∣ m) :
@@ -421,6 +499,210 @@ theorem kroneckerChar_isQuadratic : (kroneckerChar R D hD hD₀).IsQuadratic := 
 theorem kroneckerChar_neg_one : kroneckerChar R D hD hD₀ (-1) = D.sign := by
   rw [← Int.cast_one (R := ZMod D.natAbs), ← Int.cast_neg, kroneckerChar_intCast,
     kroneckerSym_neg_one_right, Int.ite_lt_zero_eq_sign hD₀]
+
+/-- **The conductor of the Kronecker character.** The conductor of `(D / ·)` divides `N` exactly
+when `(D / a) = 1` for every odd natural number `a` prime to `D` with `a ≡ 1 (mod N)`. The
+modulus `N` need not divide `D`, so this is how `(D / ·)` is shown to be induced from a character
+modulo `N` when only the values at odd `a ≡ 1 (mod N)` are known. The coefficient ring only needs
+`2 ≠ 0`, so that the values `0`, `1` and `-1` stay distinct. -/
+theorem conductor_kroneckerChar_dvd_iff [NeZero (2 : R)] {N : ℕ} :
+    (kroneckerChar R D hD hD₀).conductor ∣ N ↔
+      ∀ a : ℕ, Odd a → a.Coprime D.natAbs → a ≡ 1 [MOD N] → kroneckerSym D a = 1 := by
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero
+  rw [DirichletCharacter.conductor_dvd_iff_forall_odd]
+  refine forall_congr' fun a ↦ forall₃_congr fun _ _ _ ↦ ?_
+  rw [kroneckerChar_natCast]
+  rcases kroneckerSym_trichotomy D a with h | h | h <;>
+    simp [h, neg_eq_iff_add_eq_zero, one_add_one_eq_two, two_ne_zero]
+
+/-- **Multiplying a discriminant by a nonzero square induces its Kronecker character**: for `m ≠ 0`,
+the Kronecker character `(m² D / ·)` of modulus `|m² D|` is `DirichletCharacter.changeLevel` of
+`(D / ·)`. For instance `(-12 / ·)` is induced from `(-3 / ·)`. -/
+theorem changeLevel_kroneckerChar_sq_mul {m : ℤ} (hm : m ≠ 0) :
+    DirichletCharacter.changeLevel
+        (⟨m.natAbs ^ 2, by rw [Int.natAbs_mul, Int.natAbs_pow, mul_comm]⟩ :
+          D.natAbs ∣ (m ^ 2 * D).natAbs)
+        (kroneckerChar R D hD hD₀) =
+      kroneckerChar R (m ^ 2 * D) (sq_mul_modEq_four hD m)
+        (mul_ne_zero (pow_ne_zero 2 hm) hD₀) := by
+  have hmD₀ : m ^ 2 * D ≠ 0 := mul_ne_zero (pow_ne_zero 2 hm) hD₀
+  have : NeZero (m ^ 2 * D).natAbs := ⟨Int.natAbs_ne_zero.mpr hmD₀⟩
+  refine MulChar.ext fun u ↦ ?_
+  set v : ℕ := (u : ZMod (m ^ 2 * D).natAbs).val
+  have hcop : v.Coprime (m ^ 2 * D).natAbs := by
+    rw [← ZMod.isUnit_iff_coprime, ZMod.natCast_zmod_val]
+    exact u.isUnit
+  have hcop_m : m.gcd v = 1 := by
+    rw [Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast, ← Nat.coprime_iff_gcd_eq_one]
+    exact (hcop.of_dvd_right
+      ⟨m.natAbs * D.natAbs, by rw [Int.natAbs_mul, Int.natAbs_pow]; ring⟩).symm
+  have hu : (u : ZMod (m ^ 2 * D).natAbs) = ((v : ℕ) : ℤ) := by
+    rw [Int.cast_natCast, ZMod.natCast_zmod_val]
+  rw [hu, DirichletCharacter.changeLevel_eq_cast_of_dvd' _ _
+      (Nat.isCoprime_iff_coprime.mpr hcop), kroneckerChar_intCast, kroneckerChar_intCast,
+    mul_comm (m ^ 2) D, kroneckerSym_mul_sq hm hcop_m]
+
+/-- Multiplying a discriminant `D` by a nonzero square `m²` leaves the conductor of its Kronecker
+character unchanged. -/
+theorem conductor_kroneckerChar_sq_mul {m : ℤ} (hm : m ≠ 0) :
+    (kroneckerChar R (m ^ 2 * D) (sq_mul_modEq_four hD m)
+      (mul_ne_zero (pow_ne_zero 2 hm) hD₀)).conductor =
+      (kroneckerChar R D hD hD₀).conductor := by
+  have : NeZero (m ^ 2 * D).natAbs :=
+    ⟨Int.natAbs_ne_zero.mpr (mul_ne_zero (pow_ne_zero 2 hm) hD₀)⟩
+  rw [← changeLevel_kroneckerChar_sq_mul hD hD₀ hm, DirichletCharacter.conductor_changeLevel]
+
+/-- Multiplying a discriminant `D` by a nonzero square `m²` leaves the values of the associated
+primitive character unchanged. -/
+theorem primitiveCharacter_kroneckerChar_sq_mul_apply {m : ℤ} (hm : m ≠ 0)
+    (a : ℤ) :
+    (kroneckerChar R (m ^ 2 * D) (sq_mul_modEq_four hD m)
+      (mul_ne_zero (pow_ne_zero 2 hm) hD₀)).primitiveCharacter a =
+      (kroneckerChar R D hD hD₀).primitiveCharacter a := by
+  have : NeZero (m ^ 2 * D).natAbs :=
+    ⟨Int.natAbs_ne_zero.mpr (mul_ne_zero (pow_ne_zero 2 hm) hD₀)⟩
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim _ _
+  rw [← changeLevel_kroneckerChar_sq_mul hD hD₀ hm,
+    DirichletCharacter.primitiveCharacter_changeLevel_apply]
+
+/-- For a nonzero square discriminant `D`, the Kronecker character `(D / ·)` is the trivial
+Dirichlet character modulo `|D|`. -/
+theorem kroneckerChar_eq_one_of_isSquare (hsq : IsSquare D) :
+    kroneckerChar R D hD hD₀ = 1 := by
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  refine MulChar.ext fun u ↦ ?_
+  have hcop : D.gcd (u : ZMod D.natAbs).val = 1 := by
+    rw [Int.gcd_eq_natAbs_gcd_natAbs, Int.natAbs_natCast, ← Nat.coprime_iff_gcd_eq_one]
+    exact ((ZMod.isUnit_iff_coprime _ _).mp
+      (by rw [ZMod.natCast_zmod_val]; exact u.isUnit)).symm
+  rw [kroneckerChar_apply, kroneckerSym_eq_one_of_isSquare hsq hcop, Int.cast_one,
+    MulChar.one_apply u.isUnit]
+
+/-- **The Kronecker character is trivial exactly on squares**: for a coefficient ring with
+`2 ≠ 0`, the character `(D / ·)` is the trivial Dirichlet character modulo `|D|` if and only if
+the discriminant `D` is a square. For a nonsquare `D` some odd prime `p ∤ D` has `(D / p) = -1`. -/
+@[simp]
+theorem kroneckerChar_eq_one_iff_isSquare [NeZero (2 : R)] :
+    kroneckerChar R D hD hD₀ = 1 ↔ IsSquare D := by
+  refine ⟨fun h ↦ ?_, kroneckerChar_eq_one_of_isSquare hD hD₀⟩
+  by_contra hsq
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  obtain ⟨p, hp, hp2, hJ⟩ := exists_prime_jacobiSym_eq_neg_one hsq
+  have : Fact p.Prime := ⟨hp⟩
+  -- `J(D | p) ≠ 0`, so `p` is prime to `D` and is a unit modulo `|D|`
+  have hu : IsUnit (p : ZMod D.natAbs) := by
+    rw [ZMod.isUnit_iff_coprime, Nat.coprime_comm, Nat.coprime_iff_gcd_eq_one,
+      ← Int.natAbs_natCast p, ← Int.gcd_eq_natAbs_gcd_natAbs]
+    by_contra h'
+    have h0 := jacobiSym.eq_zero_iff_not_coprime.mpr h'
+    rw [hJ] at h0
+    exact absurd h0 (by decide)
+  have hval := DFunLike.congr_fun h (p : ZMod D.natAbs)
+  simp only [kroneckerChar_natCast, kroneckerSym_eq_jacobiSym _ (hp.odd_of_ne_two hp2), hJ,
+    MulChar.one_apply hu, Int.cast_neg, Int.cast_one] at hval
+  rw [neg_eq_iff_add_eq_zero, one_add_one_eq_two] at hval
+  exact two_ne_zero hval
+
+/-- For a nonzero square discriminant `D`, the Kronecker character `(D / ·)` has conductor `1`. -/
+theorem conductor_kroneckerChar_eq_one_of_isSquare (hsq : IsSquare D) :
+    (kroneckerChar R D hD hD₀).conductor = 1 := by
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  rw [kroneckerChar_eq_one_of_isSquare hD hD₀ hsq, DirichletCharacter.conductor_one]
+
+/-- For a nonzero square discriminant `D`, the primitive character associated to `(D / ·)` is the
+trivial character modulo `1`. -/
+theorem primitiveCharacter_kroneckerChar_of_isSquare (hsq : IsSquare D) :
+    (kroneckerChar R D hD hD₀).primitiveCharacter = 1 := by
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  rw [kroneckerChar_eq_one_of_isSquare hD hD₀ hsq, DirichletCharacter.primitiveCharacter_one]
+
+private theorem conductor_kroneckerChar_congr {D₁ D₂ : ℤ}
+    (hD₁ : D₁ ≡ 0 [ZMOD 4] ∨ D₁ ≡ 1 [ZMOD 4]) (hD₁₀ : D₁ ≠ 0)
+    (hD₂ : D₂ ≡ 0 [ZMOD 4] ∨ D₂ ≡ 1 [ZMOD 4]) (hD₂₀ : D₂ ≠ 0) (h : D₁ = D₂) :
+    (kroneckerChar R D₁ hD₁ hD₁₀).conductor = (kroneckerChar R D₂ hD₂ hD₂₀).conductor := by
+  subst h; rfl
+
+private theorem primitiveCharacter_kroneckerChar_apply_congr {D₁ D₂ : ℤ}
+    (hD₁ : D₁ ≡ 0 [ZMOD 4] ∨ D₁ ≡ 1 [ZMOD 4]) (hD₁₀ : D₁ ≠ 0)
+    (hD₂ : D₂ ≡ 0 [ZMOD 4] ∨ D₂ ≡ 1 [ZMOD 4]) (hD₂₀ : D₂ ≠ 0) (h : D₁ = D₂) (a : ℤ) :
+    (kroneckerChar R D₁ hD₁ hD₁₀).primitiveCharacter a =
+      (kroneckerChar R D₂ hD₂ hD₂₀).primitiveCharacter a := by
+  subst h; rfl
+
+/-- **Square-class invariance of the Kronecker conductor.** Two nonzero discriminants `D` and `D'`
+whose product `D * D'` is a square have Kronecker characters of the same conductor. -/
+theorem conductor_kroneckerChar_eq_of_isSquare_mul {D' : ℤ}
+    (hD' : D' ≡ 0 [ZMOD 4] ∨ D' ≡ 1 [ZMOD 4]) (hD'₀ : D' ≠ 0) (hsq : IsSquare (D * D')) :
+    (kroneckerChar R D hD hD₀).conductor = (kroneckerChar R D' hD' hD'₀).conductor := by
+  obtain ⟨s, hs⟩ := hsq
+  have hs₀ : s ≠ 0 := fun h ↦ mul_ne_zero hD₀ hD'₀ (by rw [hs, h, mul_zero])
+  -- Both `(D / ·)` and `(D' / ·)` induce the character of the common multiple `s² D = D² D'`.
+  have hmul : s ^ 2 * D = D ^ 2 * D' := by linear_combination -D * hs
+  rw [← conductor_kroneckerChar_sq_mul hD hD₀ hs₀,
+    conductor_kroneckerChar_congr _ _ (sq_mul_modEq_four hD' D)
+      (mul_ne_zero (pow_ne_zero 2 hD₀) hD'₀) hmul,
+    conductor_kroneckerChar_sq_mul hD' hD'₀ hD₀]
+
+/-- **Square-class invariance of the primitive Kronecker character.** Two nonzero discriminants `D`
+and `D'` whose product `D * D'` is a square have the same primitive character values at every
+integer `a`. -/
+theorem primitiveCharacter_kroneckerChar_apply_of_isSquare_mul {D' : ℤ}
+    (hD' : D' ≡ 0 [ZMOD 4] ∨ D' ≡ 1 [ZMOD 4]) (hD'₀ : D' ≠ 0) (hsq : IsSquare (D * D'))
+    (a : ℤ) :
+    (kroneckerChar R D hD hD₀).primitiveCharacter a =
+      (kroneckerChar R D' hD' hD'₀).primitiveCharacter a := by
+  obtain ⟨s, hs⟩ := hsq
+  have hs₀ : s ≠ 0 := fun h ↦ mul_ne_zero hD₀ hD'₀ (by rw [hs, h, mul_zero])
+  have hmul : s ^ 2 * D = D ^ 2 * D' := by linear_combination -D * hs
+  rw [← primitiveCharacter_kroneckerChar_sq_mul_apply hD hD₀ hs₀,
+    primitiveCharacter_kroneckerChar_apply_congr _ _ (sq_mul_modEq_four hD' D)
+      (mul_ne_zero (pow_ne_zero 2 hD₀) hD'₀) hmul,
+    primitiveCharacter_kroneckerChar_sq_mul_apply hD' hD'₀ hD₀]
+
+/-- For a negative discriminant `D < 0` and a coefficient ring with `2 ≠ 0`, the Kronecker
+character `(D / ·)` is odd (`kroneckerChar_neg_one`) and therefore has conductor different from
+`1`. -/
+theorem conductor_kroneckerChar_ne_one_of_neg [NeZero (2 : R)] (hDneg : D < 0) :
+    (kroneckerChar R D hD hD₀).conductor ≠ 1 := by
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  intro h1
+  rw [← DirichletCharacter.eq_one_iff_conductor_eq_one] at h1
+  have hval : kroneckerChar R D hD hD₀ (-1) = 1 := by
+    rw [h1]
+    exact MulChar.one_apply isUnit_one.neg
+  rw [kroneckerChar_neg_one, Int.sign_eq_neg_one_of_neg hDneg, Int.cast_neg, Int.cast_one,
+    neg_eq_iff_add_eq_zero, one_add_one_eq_two] at hval
+  exact two_ne_zero hval
+
+/-- For a prime discriminant, meaning that `|D|` is prime (such as `D = -3`, `-7`, `-11`, `5`,
+`13`), and `2 ≠ 0` in `R`, the Kronecker character `(D / ·)` is primitive, of conductor `|D|`. It
+is nontrivial because `|D|` is odd, `D ≡ 1 (mod 4)`, so `(D / ·)` is the Legendre symbol modulo
+`|D|`, which takes the value `-1` at a nonresidue. -/
+theorem conductor_kroneckerChar_eq_natAbs_of_prime [NeZero (2 : R)] (hp : D.natAbs.Prime) :
+    (kroneckerChar R D hD hD₀).conductor = D.natAbs := by
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  have : Fact D.natAbs.Prime := ⟨hp⟩
+  refine ((hp.dvd_iff_eq ?_).mp (DirichletCharacter.conductor_dvd_level _)).symm
+  intro h1
+  rw [← DirichletCharacter.eq_one_iff_conductor_eq_one] at h1
+  have hne2 : D.natAbs ≠ 2 := by
+    rintro h2
+    rcases hD with h | h <;> (unfold Int.ModEq at h; omega)
+  have hD4 : D ≡ 1 [ZMOD 4] := by
+    refine hD.resolve_left fun h ↦ hne2 ?_
+    have : 2 ∣ D.natAbs := by unfold Int.ModEq at h; omega
+    exact ((Nat.prime_dvd_prime_iff_eq Nat.prime_two hp).mp this).symm
+  obtain ⟨c, hc⟩ := FiniteField.exists_nonsquare
+    (F := ZMod D.natAbs) (by rwa [ZMod.ringChar_zmod_n])
+  have hval : kroneckerChar R D hD hD₀ c = -1 := by
+    rw [kroneckerChar_apply, kroneckerSym_eq_jacobiSym_natAbs hD4,
+      ← jacobiSym.legendreSym.to_jacobiSym, (legendreSym.eq_neg_one_iff _).mpr (by
+        simpa using hc), Int.cast_neg, Int.cast_one]
+  have hc0 : IsUnit c := (isUnit_iff_ne_zero).mpr fun h ↦ hc (h ▸ IsSquare.zero)
+  rw [h1, MulChar.one_apply hc0, eq_comm, neg_eq_iff_add_eq_zero, one_add_one_eq_two] at hval
+  exact two_ne_zero hval
 
 end KroneckerChar
 

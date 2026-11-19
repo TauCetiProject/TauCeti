@@ -34,6 +34,8 @@ any universe, independent of the universe of `X`.
   countable fibres have a countable union.
 * `TauCeti.countable_iff_exists_lt_omega_one_forall_lt`: with countable fibres, a set is countable
   iff the rank is bounded below `ω₁` on it.
+* `TauCeti.exists_surjective_Iio_omega_one`: an uncountable type maps onto the countable ordinals,
+  so a rank below `ω₁` can be unbounded on it.
 
 ## References
 
@@ -109,5 +111,16 @@ theorem countable_iff_exists_lt_omega_one_forall_lt {s : Set X} (hr : ∀ x ∈ 
   ⟨fun hs ↦ hs.exists_lt_omega_one_forall_lt hr, fun ⟨_, hβ, hs⟩ ↦
     (countable_preimage_Iio_of_lt_omega_one hβ fun o ho ↦ hfib o (ho.trans hβ)).mono
       fun x hx ↦ hs x hx⟩
+
+/-- **An uncountable type maps onto the countable ordinals.** Some rank on an uncountable type
+takes every value below `ω₁`, in any universe of ordinals. -/
+theorem exists_surjective_Iio_omega_one [Uncountable X] :
+    ∃ f : X → Iio (ω₁ : Ordinal.{w}), Function.Surjective f := by
+  have : Nonempty (Iio (ω₁ : Ordinal.{w})) := ⟨⟨0, omega_pos 1⟩⟩
+  -- The countable ordinals number `ℵ₁`, so they embed into `X`; invert the embedding.
+  obtain ⟨g⟩ : Nonempty (Iio (ω₁ : Ordinal.{w}) ↪ X) := by
+    rw [← lift_mk_le']
+    simp
+  exact ⟨Function.invFun g, Function.invFun_surjective g.injective⟩
 
 end TauCeti

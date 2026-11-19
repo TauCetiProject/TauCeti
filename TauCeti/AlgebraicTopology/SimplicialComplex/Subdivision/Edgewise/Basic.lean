@@ -8,6 +8,8 @@ module
 public import Mathlib.Order.Preorder.Chain
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Basic
 
+import Mathlib.Data.Fintype.Fin
+
 /-!
 # Edgewise subdivision of ordered simplicial complexes
 
@@ -32,8 +34,9 @@ scaling by `1 / k`; their uniform fatness is proved in
 `TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Fatness`. This is what
 Whitehead's secant approximation of smooth triangulations needs from a subdivision.
 
-Identifying the realization of the edgewise subdivision with the realization of `K` is not done
-here.
+The canonical map from the realization of the edgewise subdivision to the realization of `K`,
+sending each vertex `u` to the point `edgewisePoint u`, is constructed in
+`TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Realization`.
 
 ## Main definitions
 
@@ -46,9 +49,18 @@ here.
 ## Main results
 
 * `PreAbstractSimplicialComplex.mem_edgewiseSubdivision_iff`: the face criterion.
-* `PreAbstractSimplicialComplex.le_or_le_of_mem_edgewiseSubdivision` and
+* `PreAbstractSimplicialComplex.finite_edgewiseVertex_entries_subset`: only finitely many vertices
+  have all their entries in a given finite set.
+* `PreAbstractSimplicialComplex.EdgewiseVertex.ne_zero`: the edgewise subdivision has a vertex
+  only for `k ≠ 0`.
+* `PreAbstractSimplicialComplex.le_or_le_of_mem_edgewiseSubdivision`,
+  `PreAbstractSimplicialComplex.lt_or_eq_or_lt_of_mem_edgewiseSubdivision` and
   `PreAbstractSimplicialComplex.le_of_lt_of_mem_edgewiseSubdivision`: the vertices of a face are
   comparable and interleave.
+* `PreAbstractSimplicialComplex.card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision`: the
+  numbers of entries of two vertices of a face in a lower set differ by at most one.
+* `TauCeti.linearCombination_edgewisePoint`: a combination of the coordinates of the point of a
+  tuple is the average of its coefficients over the entries.
 * `TauCeti.support_edgewisePoint`: the point of a tuple is supported on its entries.
 * `TauCeti.edgewisePoint_mem_convexHull`: a tuple with entries in `σ` is placed in the closed
   simplex spanned by `σ`.
@@ -101,8 +113,21 @@ def edgewiseSubdivision (K : PreAbstractSimplicialComplex ι) (k : ℕ) :
     rw [ha, hb]
     exact u.2.1 hjj'.le
 
+/-- Only finitely many vertices of an edgewise subdivision have all their entries in a given
+finite set of original vertices. -/
+theorem finite_edgewiseVertex_entries_subset (K : PreAbstractSimplicialComplex ι) (k : ℕ)
+    (σ : Finset ι) :
+    {u : K.EdgewiseVertex k | ∀ l, u.1 l ∈ σ}.Finite := by
+  exact (Set.Finite.pi' fun _ : Fin k => σ.finite_toSet).preimage Subtype.val_injective.injOn
+
 variable {K : PreAbstractSimplicialComplex ι} {k : ℕ} {ρ : Finset (K.EdgewiseVertex k)}
   {u w : K.EdgewiseVertex k}
+
+/-- A complex has a vertex in its `k`-th edgewise subdivision only if `k ≠ 0`, since the entries of
+a vertex form a nonempty face. -/
+theorem EdgewiseVertex.ne_zero (u : K.EdgewiseVertex k) : k ≠ 0 := by
+  rintro rfl
+  simpa using K.isRelLowerSet_faces.prop_of_mem u.2.2
 
 /-- A finite set of vertices is a face of the edgewise subdivision exactly when it is nonempty,
 the entries of its tuples form a face of `K`, it is a chain for the coordinatewise order, and
@@ -124,11 +149,38 @@ theorem le_or_le_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdivision 
     (hw : w ∈ ρ) : u ≤ w ∨ w ≤ u :=
   (mem_edgewiseSubdivision_iff.mp hρ).2.2.1.total (mem_coe.mpr hu) (mem_coe.mpr hw)
 
+/-- Two vertices of a face of the edgewise subdivision are comparable coordinatewise: one is
+strictly below the other, or they are equal. -/
+theorem lt_or_eq_or_lt_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdivision k) (hu : u ∈ ρ)
+    (hw : w ∈ ρ) : u < w ∨ u = w ∨ w < u := by
+  rcases le_or_le_of_mem_edgewiseSubdivision hρ hu hw with h | h
+  · exact h.lt_or_eq.imp_right Or.inl
+  · exact Or.inr (h.lt_or_eq.symm.imp Eq.symm id)
+
 /-- In a face of the edgewise subdivision, every entry of every vertex is at most every later
 entry of every vertex. -/
 theorem le_of_lt_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdivision k) (hu : u ∈ ρ)
     (hw : w ∈ ρ) {j j' : Fin k} (hjj' : j < j') : u.1 j ≤ w.1 j' :=
   (mem_edgewiseSubdivision_iff.mp hρ).2.2.2 u hu w hw j j' hjj'
+
+/-- In a face of the edgewise subdivision, the number of entries of a vertex `u` in a lower set
+exceeds that of any other vertex `w` by at most one. -/
+theorem card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision
+    (hρ : ρ ∈ K.edgewiseSubdivision k)
+    (hu : u ∈ ρ) (hw : w ∈ ρ) {p : ι → Prop} [DecidablePred p] (hp : Antitone p) :
+    #{l | p (u.1 l)} ≤ #{l | p (w.1 l)} + 1 := by
+  cases k with
+  | zero => simp
+  | succ m =>
+    -- Drop the first entry of `u`; the `l + 1`-st entry of `u` dominates the `l`-th of `w`.
+    rw [Fin.card_filter_univ_succ']
+    have h₁ : #{l : Fin m | p (u.1 l.succ)} ≤ #{l : Fin m | p (w.1 l.castSucc)} :=
+      card_le_card (monotone_filter_right _ fun l _ hl =>
+        hp (le_of_lt_of_mem_edgewiseSubdivision hρ hw hu (Fin.castSucc_lt_succ (i := l))) hl)
+    have h₂ : #{l : Fin m | p (w.1 l.castSucc)} ≤ #{l | p (w.1 l)} :=
+      card_le_card_of_injOn Fin.castSucc (fun l hl => by simpa using hl)
+        (Fin.castSucc_injective m).injOn
+    split_ifs <;> omega
 
 end PreAbstractSimplicialComplex
 
@@ -141,6 +193,12 @@ the vertices `u 0, …, u (k - 1)`, in barycentric coordinates. Its coordinate a
 of entries `u l = i`, divided by `k`. -/
 noncomputable def edgewisePoint (u : Fin k → ι) : ι →₀ ℝ :=
   (k : ℝ)⁻¹ • ∑ l, Finsupp.single (u l) 1
+
+/-- The combination with coefficients `g` of the coordinates of `edgewisePoint u` is the average
+of `g` over the entries of `u`. -/
+theorem linearCombination_edgewisePoint (g : ι → ℝ) (u : Fin k → ι) :
+    Finsupp.linearCombination ℝ g (edgewisePoint u) = (k : ℝ)⁻¹ * ∑ l, g (u l) := by
+  simp [edgewisePoint, map_sum, Finsupp.linearCombination_single]
 
 /-- The coordinate of `edgewisePoint u` at `i` is the proportion of entries of `u` equal to
 `i`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
 
 import TauCeti.Data.Fin.Basic
@@ -44,6 +45,8 @@ cochain `ψ` the alternating sum of these terms telescopes, so `(bψ)(x₀, …,
   additive on direct sums, `⟨[u ⊕ v], [φ]⟩ = ⟨[u], [φ]⟩ + ⟨[v], [φ]⟩`.
 * `TauCeti.cyclicCohomology.oddPairing_matrixExtension_of_val_eq_fromBlocks_one`: the pairing is
   unchanged by stabilization `u ↦ u ⊕ 1`.
+* `Equiv.oddPairing_reindexGL`: the pairing is unchanged by relabelling the matrix indices.
+* `TauCeti.cyclicCohomology.oddPairing_map`: naturality of the pairing for algebra homomorphisms.
 
 ## References
 
@@ -88,7 +91,7 @@ private theorem add_add_mul_eq_zero_of_units (u : Aˣ) {m : ℕ} {x : Fin (2 * m
 `(u⁻¹ - 1, u - 1, …, u⁻¹ - 1, u - 1)` of an invertible `u`. -/
 theorem apply_units_eq_zero_of_mem_cyclicCoboundaries (u : Aˣ) {m : ℕ}
     {φ : cyclicCochains R A M (2 * m + 1)} (hφ : φ ∈ cyclicCoboundaries R A M (2 * m + 1)) :
-    (φ : MultilinearMap R (fun _ : Fin (2 * m + 2) ↦ A) M)
+    (φ : MultilinearMap (RingHom.id R) (fun _ : Fin (2 * m + 2) ↦ A) M)
       (fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1) = 0 :=
   apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero hφ
     (add_add_mul_eq_zero_of_units u rfl)
@@ -106,7 +109,7 @@ def oddPairing (u : Aˣ) (m : ℕ) : cyclicCohomology ℂ A M (2 * m + 1) →ₗ
     (((1 + Complex.I)⁻¹ * ((2 : ℂ) ^ (2 * m + 1))⁻¹ *
         ((Real.Gamma ((2 * m + 1 : ℝ) / 2 + 1) : ℂ))⁻¹) •
       { toFun φ := ((φ : cyclicCochains ℂ A M (2 * m + 1)) :
-          MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ A) M)
+          MultilinearMap (RingHom.id ℂ) (fun _ : Fin (2 * m + 2) ↦ A) M)
             fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1
         map_add' _ _ := rfl
         map_smul' _ _ := rfl })
@@ -120,7 +123,7 @@ theorem oddPairing_mk (u : Aˣ) (m : ℕ) (φ : cyclicCocycles ℂ A M (2 * m + 
       ((1 + Complex.I)⁻¹ * ((2 : ℂ) ^ (2 * m + 1))⁻¹ *
           ((Real.Gamma ((2 * m + 1 : ℝ) / 2 + 1) : ℂ))⁻¹) •
         ((φ : cyclicCochains ℂ A M (2 * m + 1)) :
-          MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ A) M)
+          MultilinearMap (RingHom.id ℂ) (fun _ : Fin (2 * m + 2) ↦ A) M)
             fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1 := by
   simp [oddPairing]
 
@@ -130,6 +133,22 @@ theorem oddPairing_one (m : ℕ) :
     oddPairing (1 : Aˣ) m = (0 : cyclicCohomology ℂ A M (2 * m + 1) →ₗ[ℂ] M) := by
   ext φ
   simp [← Pi.zero_def]
+
+/-- **Naturality of the odd pairing**: the image of an invertible `u` under an algebra
+homomorphism `f : A →ₐ[ℂ] B` pairs with a class of `B` as `u` pairs with the pullback of the class
+along `f`. -/
+theorem oddPairing_map {B : Type _} [Ring B] [Algebra ℂ B] (f : A →ₐ[ℂ] B) (u : Aˣ) (m : ℕ)
+    (c : cyclicCohomology ℂ B M (2 * m + 1)) :
+    oddPairing (Units.map (f : A →* B) u) m c =
+      oddPairing u m (map M (f : A →ₙₐ[ℂ] B) (2 * m + 1) c) := by
+  obtain ⟨φ, rfl⟩ := mk_surjective ℂ B M (2 * m + 1) c
+  simp only [map_mk, oddPairing_mk, coe_cyclicCochainsMap_apply,
+    MultilinearMap.compLinearMap_apply]
+  -- The pulled-back cochain applies `f` through its underlying linear map.
+  have hf (x : A) : ((f : A →ₙₐ[ℂ] B) : A →ₗ[ℂ] B) x = f x := (rfl)
+  congr 2
+  funext k
+  split_ifs <;> simp [hf]
 
 /-- **Connes' odd pairing** of an invertible matrix `u` with cyclic cohomology: on the class of a
 cyclic cocycle `φ` of degree `n = 2m + 1`, it is
@@ -141,7 +160,7 @@ theorem oddPairing_matrixExtension_mk {ι : Type*} [Fintype ι] [DecidableEq ι]
           ((Real.Gamma ((2 * m + 1 : ℝ) / 2 + 1) : ℂ))⁻¹) •
         matrixCochainExtension ι (2 * m + 1)
           ((φ : cyclicCochains ℂ A M (2 * m + 1)) :
-            MultilinearMap ℂ (fun _ : Fin (2 * m + 2) ↦ A) M)
+            MultilinearMap (RingHom.id ℂ) (fun _ : Fin (2 * m + 2) ↦ A) M)
           fun k ↦ if Even (k : ℕ) then ↑u⁻¹ - 1 else ↑u - 1 := by
   rw [matrixExtension_mk, oddPairing_mk, coe_matrixCyclicCochainExtension_apply]
 
@@ -184,3 +203,30 @@ theorem oddPairing_matrixExtension_of_val_eq_fromBlocks_one {ι κ : Type*} [Fin
 end cyclicCohomology
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti TauCeti.cyclicCohomology
+
+variable {A M : Type*} [Ring A] [Algebra ℂ A] [AddCommGroup M] [Module ℂ M]
+
+/-- **Relabelling invariance of the odd pairing**: reindexing the rows and columns of an invertible
+matrix along an equivalence of index types does not change its odd pairing. -/
+theorem oddPairing_reindexGL {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+    [DecidableEq κ] (e : ι ≃ κ) (u : GL ι A) (m : ℕ) (c : cyclicCohomology ℂ A M (2 * m + 1)) :
+    cyclicCohomology.oddPairing (e.reindexGL A u) m (matrixExtension M κ (2 * m + 1) c) =
+      cyclicCohomology.oddPairing u m (matrixExtension M ι (2 * m + 1) c) := by
+  obtain ⟨φ, rfl⟩ := cyclicCohomology.mk_surjective ℂ A M (2 * m + 1) c
+  have hinv : (↑(e.reindexGL A u)⁻¹ : Matrix κ κ A) =
+      (↑u⁻¹ : Matrix ι ι A).submatrix e.symm e.symm := by
+    rw [← map_inv, coe_reindexGL]
+  have hx : (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then
+        (↑(e.reindexGL A u)⁻¹ - 1 : Matrix κ κ A) else ↑(e.reindexGL A u) - 1) =
+      fun k : Fin (2 * m + 2) ↦
+        (if Even (k : ℕ) then (↑u⁻¹ - 1 : Matrix ι ι A) else ↑u - 1).submatrix e.symm e.symm := by
+    funext k
+    split_ifs <;> simp [hinv, Matrix.submatrix_sub, Matrix.submatrix_one_equiv]
+  simp only [oddPairing_matrixExtension_mk, hx,
+    matrixCochainExtension_submatrix_equiv κ ι e.symm]
+
+end Equiv

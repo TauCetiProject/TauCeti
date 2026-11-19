@@ -6,15 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import TauCeti.Analysis.BoundedVariation.Perimeter
+public import TauCeti.Analysis.BoundedVariation.VariationMeasure
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.LayerCake
+import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Topology.MetricSpace.ProperSpace
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # The coarea formula for total variation
@@ -49,18 +54,36 @@ Fatou's lemma and monotone convergence need the level perimeter `t ↦ P({u > t}
 measurable (`TauCeti.measurable_perimeter_setOf_lt`). It is lower semicontinuous at every level
 `t` with `μ ({u = t} ∩ Ω) = 0`, so at all but countably many levels.
 
+If `u` moreover has locally finite variation on `Ω`, the formula holds at the level of measures:
+the variation measure `|Du|` (`TauCeti.variationMeasure`) is the superposition
+`|Du| = ∫_ℝ |D1_{u > t}| dt` of the perimeter measures of the superlevel sets, so that
+`|Du|(B) = ∫_ℝ |D1_{u > t}|(B) dt` for every Borel set `B ⊆ Ω`
+(`TauCeti.variationMeasure_eq_bind`). Applying the coarea formula on each set `V j` of an
+exhaustion of `Ω` by relatively compact open sets shows that almost every superlevel set has
+locally finite perimeter in `Ω`. The two measures then agree on open subsets of `Ω` by the coarea
+formula there, and are finite on each `V j`, so they agree on all Borel sets. Since the definition
+of the variation measure involves a choice depending on local finiteness, the measurability of
+`t ↦ |D1_{u > t}|` is proved separately, by a π-λ argument on each `V j`.
+
 ## Main declarations
 
 * `TauCeti.integral_divergenceCLM_mul_eq_integral_integral_indicator`: the layer-cake formula for
-  the pairing of `u` with `div φ`.
+  the pairing of `u` with `div φ`, in any finite-dimensional real normed space.
 * `TauCeti.totalVariationOn_le_lintegral_perimeter`: the coarea inequality.
 * `LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fderiv`: for locally Lipschitz
   `u`, `∫_ℝ P({u > t}; Ω) dt = ∫_Ω ‖Du‖`.
 * `TauCeti.measurable_perimeter_setOf_lt`: the perimeter of `{u > t}` is measurable in `t`.
 * `TauCeti.totalVariationOn_eq_lintegral_perimeter`: the coarea formula
   `|Du|(Ω) = ∫_ℝ P({u > t}; Ω) dt` for locally integrable `u`.
-* `TauCeti.ae_perimeter_setOf_lt_lt_top`: if `|Du|(Ω) < ∞`, then `{u > t}` has finite perimeter
-  in `Ω` for almost every `t`.
+* `TauCeti.ae_perimeter_setOf_lt_lt_top`: if `u` is locally integrable on `Ω` and `|Du|(Ω) < ∞`,
+  then `{u > t}` has finite perimeter in `Ω` for almost every `t`.
+* `TauCeti.ae_exists_perimeter_setOf_lt_ne_top`: if `u` has locally finite variation on `Ω`, then
+  `{u > t}` has locally finite perimeter in `Ω` for almost every `t`.
+* `TauCeti.measurable_variationMeasure_indicator_setOf_lt`: the perimeter measure
+  `|D1_{u > t}|` on `Ω` is measurable in `t`.
+* `TauCeti.variationMeasure_eq_bind`, `TauCeti.variationMeasure_apply_eq_lintegral` and
+  `TauCeti.lintegral_variationMeasure_eq_lintegral_lintegral`: the coarea formula
+  `|Du| = ∫_ℝ |D1_{u > t}| dt` for the variation measure, on Borel sets and for integrals.
 
 ## References
 
@@ -73,15 +96,52 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Filter TestFunction Set Metric
-open scoped ENNReal Distributions Topology Convolution symmDiff
+open scoped ENNReal Distributions
 
 namespace TauCeti
 
 /-! ### The layer-cake formula and the coarea inequality -/
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
-  {u : E → ℝ}
+variable {E : Type*} [NormedAddCommGroup E]
+
+section NormedSpace
+
+variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E} {u : E → ℝ}
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- For `u` locally integrable on `Ω` and a test function `ψ` on `Ω`, the signed layer-cake
+integrand `(x, t) ↦ ψ x * (1_{t < u x} - 1_{t < 0})` is integrable on `Ω × ℝ`. -/
+private theorem integrable_mul_indicator_Iio_sub_indicator_Iio_zero [OpensMeasurableSpace E]
+    (hu : LocallyIntegrableOn u Ω μ) (ψ : 𝓓(Ω, ℝ)) :
+    Integrable (fun p : E × ℝ => ψ p.1 * ((Iio (u p.1)).indicator 1 p.2 - (Iio 0).indicator 1 p.2))
+      ((μ.restrict Ω).prod volume) := by
+  -- Only the values of `u` on the compact support `K` of `ψ` matter, and `u` is integrable there.
+  set K := tsupport (ψ : E → ℝ)
+  have hK : MeasurableSet K := isClosed_tsupport _ |>.measurableSet
+  have hv : AEMeasurable (K.indicator u) (μ.restrict Ω) :=
+    ((aemeasurable_indicator_iff hK).2 (hu.integrableOn_compact_subset ψ.tsupport_subset
+      ψ.hasCompactSupport.isCompact).aestronglyMeasurable.aemeasurable).mono_measure
+      Measure.restrict_le_self
+  have hlt :
+      NullMeasurableSet {p : E × ℝ | p.2 < K.indicator u p.1} ((μ.restrict Ω).prod volume) :=
+    nullMeasurableSet_lt measurable_snd.aemeasurable
+      (hv.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst)
+  have hm : AEStronglyMeasurable (fun p : E × ℝ => ψ p.1 *
+      ((Iio (u p.1)).indicator 1 p.2 - (Iio 0).indicator 1 p.2)) ((μ.restrict Ω).prod volume) := by
+    refine (ψ.continuous.comp continuous_fst).aestronglyMeasurable.mul
+      (((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hlt).sub
+        (((measurable_const (a := (1 : ℝ))).indicator (measurableSet_Iio (a := (0 : ℝ)))).comp
+          measurable_snd).aestronglyMeasurable)
+      |>.congr (.of_forall fun p => ?_)
+    by_cases hp : p.1 ∈ K
+    · simp [hp, indicator_apply]
+    · simp [image_eq_zero_of_notMem_tsupport hp]
+  rw [integrable_prod_iff hm]
+  refine ⟨.of_forall fun x =>
+    (integrable_indicator_Iio_sub_indicator_Iio_zero (u x)).const_mul (ψ x), ?_⟩
+  simp_rw [norm_mul, integral_const_mul]
+  simpa using (TestFunction.integrable_smul ψ hu).integrableOn.norm
 
 /-- **The layer-cake formula for the distributional pairing.** For `u` locally integrable on `Ω`
 and a test vector field `φ` on `Ω`, the pairing of `u` with `div φ` is the integral over all
@@ -93,37 +153,22 @@ theorem integral_divergenceCLM_mul_eq_integral_integral_indicator
       ∫ t, ∫ x, divergenceCLM φ x * {x | t < u x}.indicator 1 x ∂μ := by
   -- All pairings only see `Ω`, where `u` is a.e. measurable.
   have hrestrict (w : E → ℝ) :
-      ∫ x, divergenceCLM φ x * w x ∂μ = ∫ x in Ω, divergenceCLM φ x * w x ∂μ := by
-    have := setIntegral_smul_eq_integral_smul (μ := μ) (w := w) (divergenceCLM φ)
-    simp only [smul_eq_mul] at this
-    exact this.symm
+      ∫ x in Ω, divergenceCLM φ x * w x ∂μ = ∫ x, divergenceCLM φ x * w x ∂μ := by
+    simpa only [smul_eq_mul] using setIntegral_smul_eq_integral_smul (μ := μ) (w := w)
+      (divergenceCLM φ)
   have hu_meas : AEMeasurable u (μ.restrict Ω) := hu.aestronglyMeasurable.aemeasurable
   have hf_int : Integrable (divergenceCLM φ) (μ.restrict Ω) :=
     ((divergenceCLM φ).integrable ((locallyIntegrable_const 1).locallyIntegrableOn _)).integrableOn
   have hf0 : ∫ x in Ω, divergenceCLM φ x ∂μ = 0 := by
-    simpa using (hrestrict 1).symm.trans (by simpa using integral_divergenceCLM_eq_zero (μ := μ) φ)
+    simpa using (hrestrict 1).trans (by simpa using integral_divergenceCLM_eq_zero (μ := μ) φ)
   -- The integrand `div φ x * (1_{t < u x} - 1_{t < 0})` on `Ω × ℝ`; its integral in `t` is
   -- `div φ x * u x`.
   let G : E × ℝ → ℝ := fun p =>
     divergenceCLM φ p.1 * ((Iio (u p.1)).indicator 1 p.2 - (Iio 0).indicator 1 p.2)
-  have hGm : AEStronglyMeasurable G ((μ.restrict Ω).prod volume) := by
-    have hlt : NullMeasurableSet {p : E × ℝ | p.2 < u p.1} ((μ.restrict Ω).prod volume) :=
-      nullMeasurableSet_lt measurable_snd.aemeasurable
-        (hu_meas.comp_quasiMeasurePreserving Measure.quasiMeasurePreserving_fst)
-    refine ((divergenceCLM φ).continuous.comp continuous_fst).aestronglyMeasurable.mul
-      (((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hlt).sub
-        (((measurable_const (a := (1 : ℝ))).indicator (measurableSet_Iio (a := (0 : ℝ)))).comp
-          measurable_snd).aestronglyMeasurable)
-      |>.congr (.of_forall fun p => ?_)
-    simp [G, indicator_apply]
-  have hG : Integrable G ((μ.restrict Ω).prod volume) := by
-    rw [integrable_prod_iff hGm]
-    refine ⟨.of_forall fun x =>
-      (integrable_indicator_Iio_sub_indicator_Iio_zero (u x)).const_mul (divergenceCLM φ x), ?_⟩
-    simp_rw [G, norm_mul, integral_const_mul]
-    simpa using (integrable_smul_of_locallyIntegrableOn hu (divergenceCLM φ)).integrableOn.norm
+  have hG : Integrable G ((μ.restrict Ω).prod volume) :=
+    integrable_mul_indicator_Iio_sub_indicator_Iio_zero hu (divergenceCLM φ)
   calc ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x in Ω, ∫ t, G (x, t) ∂volume ∂μ := by
-        rw [hrestrict]
+        rw [← hrestrict]
         simp_rw [G, integral_const_mul, integral_indicator_Iio_sub_indicator_Iio_zero]
     _ = ∫ t, ∫ x in Ω, G (x, t) ∂μ := integral_integral_swap hG
     _ = ∫ t, ∫ x, divergenceCLM φ x * {x | t < u x}.indicator 1 x ∂μ := by
@@ -135,10 +180,15 @@ theorem integral_divergenceCLM_mul_eq_integral_integral_indicator
               (nullMeasurableSet_lt aemeasurable_const hu_meas)
           · by_cases hx : t < u x <;> simp [hx]
         simp only [G, mul_sub]
-        rw [hrestrict, integral_sub, integral_mul_const, hf0]
+        rw [← hrestrict, integral_sub, integral_mul_const, hf0]
         · simp [indicator_apply]
         · simpa [indicator_apply] using hA
         · exact hf_int.mul_const _
+
+end NormedSpace
+
+variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E} {u : E → ℝ}
 
 /-- **The coarea inequality.** For `u` locally integrable on `Ω`, against an additive Haar
 measure, the total variation of `u` is at most the integral of the perimeters of its superlevel
@@ -163,8 +213,8 @@ private theorem totalVariationOn_smoothTransition_comp (hu : LocallyLipschitzOn 
   refine setLIntegral_congr_fun_ae Ω.isOpen.measurableSet ?_
   filter_upwards [hu.ae_differentiableAt_of_mem (μ := μ) Ω.isOpen] with x hx hxΩ
   rw [((hx hxΩ).hasFDerivAt.sub_const t).const_mul c |>.smoothTransition |>.fderiv, smul_smul,
-    mul_comm, enorm_smul,
-    Real.enorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
+    mul_comm, eNorm_smul,
+    Real.eNorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
 
 /-- The indicator of `{u > t}` is the pointwise limit of the smoothed superlevel functions
 `ψ ((n + 1) (u - t))`, so by lower semicontinuity their variations bound the perimeter of
@@ -193,28 +243,12 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
   have hlim := tendsto_lintegral_of_dominated_convergence' (μ := μ.restrict K) (f := 0)
     (F := fun n x => ‖Real.smoothTransition (((n : ℝ) + 1) * (u x - t)) -
       {x | t < u x}.indicator 1 x‖ₑ) (fun _ => 1)
-    (fun n => ((((hv n).continuousOn.mono hKΩ).aemeasurable hKm).sub hind_meas).enorm)
+    (fun n => ((((hv n).continuousOn.mono hKΩ).aemeasurable hKm).sub hind_meas).eNorm)
     (fun n => .of_forall fun x => ?_) (by simpa using hK.measure_lt_top.ne)
     (.of_forall fun x => ?_)
   · simpa using hlim
-  · have h0 := Real.smoothTransition.nonneg (((n : ℝ) + 1) * (u x - t))
-    have h1 := Real.smoothTransition.le_one (((n : ℝ) + 1) * (u x - t))
-    have hi : {x | t < u x}.indicator (1 : E → ℝ) x ∈ Icc 0 1 := by
-      by_cases hxt : t < u x <;> simp [hxt]
-    dsimp only
-    rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
-    exact abs_sub_le_iff.2 ⟨by linarith [hi.1], by linarith [hi.2]⟩
-  · refine tendsto_const_nhds.congr' ?_
-    by_cases hxt : t < u x
-    · have htop : Tendsto (fun n : ℕ => ((n : ℝ) + 1) * (u x - t)) atTop atTop :=
-        (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).atTop_mul_const
-          (sub_pos.2 hxt)
-      filter_upwards [htop.eventually_ge_atTop 1] with n hn
-      simp [Real.smoothTransition.one_of_one_le hn, hxt]
-    · refine .of_forall fun n => ?_
-      have hle : ((n : ℝ) + 1) * (u x - t) ≤ 0 :=
-        mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.2 (not_lt.1 hxt))
-      simp [Real.smoothTransition.zero_of_nonpos hle, hxt]
+  · exact Real.smoothTransition.enorm_sub_indicator_le_one _ _ x
+  · exact tendsto_iff_eNorm_sub_tendsto_zero.mp (Real.smoothTransition.tendsto_indicator u t x)
 
 /-- **The coarea formula for locally Lipschitz functions.** If `u` is locally Lipschitz on `Ω`,
 in particular if it is `C¹` there, then against an additive Haar measure the perimeters of its
@@ -241,11 +275,11 @@ theorem _root_.LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fder
       (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
     exact (ENNReal.measurable_ofReal.comp_aemeasurable ((hψ'.measurable.comp_aemeasurable
       ((hu2.sub measurable_fst.aemeasurable).const_mul _)).const_mul _)).mul
-      ((measurable_fderiv ℝ u).enorm.comp measurable_snd).aemeasurable
+      ((measurable_fderiv ℝ u).eNorm.comp measurable_snd).aemeasurable
   have hint (n : ℕ) : ∫⁻ t, ∫⁻ x in Ω, F n t x ∂μ = ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ := by
     rw [lintegral_lintegral_swap (hF n)]
     refine lintegral_congr fun x => ?_
-    rw [lintegral_mul_const' _ _ enorm_ne_top,
+    rw [lintegral_mul_const' _ _ eNorm_ne_top,
       Real.smoothTransition.lintegral_ofReal_mul_deriv _ (by positivity), one_mul]
   -- Lower semicontinuity, then Fatou's lemma and Tonelli's theorem.
   calc ∫⁻ t, perimeter μ Ω {x | t < u x}
@@ -267,11 +301,11 @@ private theorem perimeter_setOf_lt_congr_ae {v : E → ℝ} (h : u =ᵐ[μ.restr
   filter_upwards [h] with x hx
   simp only [hx]
 
-omit [μ.IsAddHaarMeasure] in
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- For a measurable `u`, the perimeter of `{u > t}` in `Ω` is lower semicontinuous in `t` at every
 level `t` whose level set `{u = t}` is null in `Ω`. -/
-private theorem lowerSemicontinuousAt_perimeter_setOf_lt [IsLocallyFiniteMeasure μ]
-    (hu : Measurable u) {t : ℝ}
+private theorem lowerSemicontinuousAt_perimeter_setOf_lt [OpensMeasurableSpace E]
+    [IsLocallyFiniteMeasure μ] (hu : Measurable u) {t : ℝ}
     (ht : μ.restrict Ω {x | u x = t} = 0) :
     LowerSemicontinuousAt (fun s => perimeter μ Ω {x | s < u x}) t := by
   intro y hy
@@ -299,10 +333,10 @@ private theorem lowerSemicontinuousAt_perimeter_setOf_lt [IsLocallyFiniteMeasure
   rcases hx with ⟨hx₁, hx₂⟩ | ⟨hx₁, hx₂⟩ <;> simp only [mem_ofPred_eq, not_lt] at hx₁ hx₂ <;>
     exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
-omit [μ.IsAddHaarMeasure] in
+omit [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- **Measurability in the level.** For `u` almost everywhere measurable on `Ω`, the perimeter of
 the superlevel set `{u > t}` in `Ω` is a measurable function of the level `t`. -/
-theorem measurable_perimeter_setOf_lt [IsLocallyFiniteMeasure μ]
+theorem measurable_perimeter_setOf_lt [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ]
     (hu : AEMeasurable u (μ.restrict Ω)) : Measurable fun t => perimeter μ Ω {x | t < u x} := by
   simp_rw [perimeter_setOf_lt_congr_ae hu.ae_eq_mk]
   -- Lower semicontinuity can only fail at the countably many levels of positive measure.
@@ -369,10 +403,8 @@ theorem totalVariationOn_eq_lintegral_perimeter (hu : LocallyIntegrableOn u Ω �
   have hv : LocallyIntegrableOn v Ω μ := hu.congr hum.ae_eq_mk
   -- Exhaust `Ω` by open sets `Ω' j` with compact closures in `Ω`; by inner continuity and monotone
   -- convergence the level integral on `Ω` is the supremum of those on `Ω' j`.
-  obtain ⟨V, hVo, hVc, hVΩ, hVmono, hVU⟩ := IsOpen.exists_iUnion_isOpen_isCompact_closure Ω.isOpen
-  let Ω' : ℕ → Opens E := fun j => ⟨V j, hVo j⟩
-  have hΩ' : (⨆ j, Ω' j) = Ω := Opens.ext (by simpa [Ω'] using hVU)
-  have hmono : Monotone Ω' := fun i j hij => hVmono hij
+  obtain ⟨Ω', hVc, hVΩ, hmono, hVU, -⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
+  have hΩ' : (⨆ j, Ω' j) = Ω := Opens.ext (by simpa using hVU)
   calc ∫⁻ t, perimeter μ Ω {x | t < v x}
       = ∫⁻ t, ⨆ j, perimeter μ (Ω' j) {x | t < v x} := by
         simp_rw [← perimeter_iSup hmono.directed_le, hΩ']
@@ -383,11 +415,146 @@ theorem totalVariationOn_eq_lintegral_perimeter (hu : LocallyIntegrableOn u Ω �
         iSup_le fun j => lintegral_perimeter_le_of_isCompact_closure hum.measurable_mk hv (hVc j)
           (hVΩ j)
 
-/-- If `u` has finite total variation on `Ω`, then its superlevel sets `{u > t}` have finite
-perimeter in `Ω` for almost every level `t`. -/
+/-- If `u` is locally integrable on `Ω` and has finite total variation on `Ω`, then its superlevel
+sets `{u > t}` have finite perimeter in `Ω` for almost every level `t`. -/
 theorem ae_perimeter_setOf_lt_lt_top (hu : LocallyIntegrableOn u Ω μ)
     (h : totalVariationOn μ Ω u ≠ ∞) : ∀ᵐ t, perimeter μ Ω {x | t < u x} < ∞ :=
   ae_lt_top (measurable_perimeter_setOf_lt hu.aestronglyMeasurable.aemeasurable)
     (by rwa [← totalVariationOn_eq_lintegral_perimeter hu])
+
+/-! ### The coarea formula for the variation measure -/
+
+section VariationMeasure
+
+omit [μ.IsAddHaarMeasure] in
+/-- The perimeter measure `|D1_s|` of a null-measurable set `s` with locally finite perimeter in
+`Ω` gives every open `U ⊆ Ω` the perimeter `P(s; U)`. -/
+theorem variationMeasure_indicator_preimage_coe [IsLocallyFiniteMeasure μ] {s : Set E}
+    (hs : NullMeasurableSet s (μ.restrict Ω))
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ perimeter μ U s ≠ ∞)
+    {U : Opens E} (hU : U ≤ Ω) :
+    variationMeasure μ Ω (s.indicator 1) ((↑) ⁻¹' (U : Set E)) = perimeter μ U s := by
+  simp_rw [perimeter_def] at hfin ⊢
+  exact variationMeasure_preimage_coe (locallyIntegrableOn_indicator_const hs 1) hfin hU
+
+omit [μ.IsAddHaarMeasure] in
+/-- **Measurability in the level of the perimeter measures.** For `u` almost everywhere measurable
+on `Ω`, the variation measure `|D1_{u > t}|` of the indicator of the superlevel set `{u > t}` is a
+measurable function of the level `t`. -/
+theorem measurable_variationMeasure_indicator_setOf_lt [IsLocallyFiniteMeasure μ]
+    (hu : AEMeasurable u (μ.restrict Ω)) :
+    Measurable fun t => variationMeasure μ Ω ({x | t < u x}.indicator 1) := by
+  obtain ⟨V, hVc, hVΩ, hVmono, hVU, hcover⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
+  have hlf (s : Set E) := forall_isCompact_exists_totalVariationOn_ne_top_iff (μ := μ)
+    (w := s.indicator 1) hVc hVΩ hVmono hVU
+  simp_rw [← perimeter_def] at hlf
+  have hVsub (j : ℕ) : V j ≤ Ω := subset_closure.trans (hVΩ j)
+  have hum {U : Opens E} (hU : U ≤ Ω) : AEMeasurable u (μ.restrict U) :=
+    hu.mono_measure (Measure.restrict_mono hU le_rfl)
+  -- The levels at which `{u > t}` has locally finite perimeter in `Ω` form a measurable set `G`.
+  let G := ⋂ j, {t | perimeter μ (V j) {x | t < u x} ≠ ∞}
+  have hG : MeasurableSet G :=
+    .iInter fun j => measurable_perimeter_setOf_lt (hum (hVsub j)) (measurableSet_singleton ∞).compl
+  -- On an open `U ⊆ Ω`, the variation measure is the perimeter in `U` at levels in `G`, and `0`
+  -- at the other levels, where its defining local finiteness fails.
+  have hopen {U : Opens E} (hU : U ≤ Ω) : Measurable fun t =>
+      variationMeasure μ Ω ({x | t < u x}.indicator 1) ((↑) ⁻¹' (U : Set E)) := by
+    convert (measurable_perimeter_setOf_lt (hum hU)).indicator hG using 1
+    funext t
+    by_cases ht : t ∈ G
+    · rw [indicator_of_mem ht, variationMeasure_indicator_preimage_coe
+        (nullMeasurableSet_lt aemeasurable_const hu) ((hlf _).2 (by simpa [G] using ht)) hU]
+    · rw [indicator_of_notMem ht, variationMeasure_eq_zero_of_not fun h => ht ?_,
+        FunLike.coe_zero, Pi.zero_apply]
+      simpa [G] using (hlf _).1 (by simpa only [perimeter_def] using h.2)
+  -- Each open subset of `Ω` is the trace of an open subset of `E` contained in `Ω`.
+  have hopen' {W : Set Ω} (hW : IsOpen W) :
+      Measurable fun t => variationMeasure μ Ω ({x | t < u x}.indicator 1) W := by
+    obtain ⟨U, hU, rfl⟩ := Ω.exists_le_preimage_coe_eq hW
+    exact hopen hU
+  -- Apply the generating π-system criterion along the finite-measure traces of `V j`.
+  refine Measurable.measure_of_isPiSystem_of_iUnion BorelSpace.measurable_eq
+    isPiSystem_isOpen (B := fun j ↦ (↑) ⁻¹' (V j : Set E))
+    (fun j ↦ (V j).isOpen.preimage continuous_subtype_val) hcover (fun t j ↦ ?_)
+    (fun W hW ↦ hopen' hW)
+  have hK : IsCompact (((↑) : Ω → E) ⁻¹' closure (V j : Set E)) := by
+    rw [Subtype.isCompact_iff, image_preimage_eq_of_subset (by simpa using hVΩ j)]
+    exact hVc j
+  exact ne_top_of_le_ne_top hK.measure_lt_top.ne
+    (measure_mono (preimage_mono subset_closure))
+
+/-- If `u` has locally finite variation on `Ω`, then for almost every level `t` the superlevel set
+`{u > t}` has locally finite perimeter in `Ω`: every compact `K ⊆ Ω` has an open neighbourhood `U`
+with `P({u > t}; U) < ∞`. -/
+theorem ae_exists_perimeter_setOf_lt_ne_top (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞) :
+    ∀ᵐ t, ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ perimeter μ U {x | t < u x} ≠ ∞ := by
+  obtain ⟨V, hVc, hVΩ, hVmono, hVU, -⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
+  have hlf (w : E → ℝ) :=
+    forall_isCompact_exists_totalVariationOn_ne_top_iff (μ := μ) (w := w) hVc hVΩ hVmono hVU
+  have hV := (hlf u).1 hfin
+  filter_upwards [ae_all_iff.2 fun j => ae_perimeter_setOf_lt_lt_top
+    (hu.mono_set (subset_closure.trans (hVΩ j))) (hV j)] with t ht
+  simp_rw [perimeter_def] at ht ⊢
+  exact (hlf _).2 fun j => (ht j).ne
+
+/-- **The coarea formula for the variation measure.** If `u` is locally integrable on `Ω` with
+locally finite variation there, its variation measure is the superposition of the perimeter
+measures of its superlevel sets: `|Du| = ∫_ℝ |D1_{u > t}| dt` as measures on `Ω`. -/
+theorem variationMeasure_eq_bind (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞) :
+    variationMeasure μ Ω u =
+      volume.bind fun t => variationMeasure μ Ω ({x | t < u x}.indicator 1) := by
+  have hum : AEMeasurable u (μ.restrict Ω) := hu.aestronglyMeasurable.aemeasurable
+  obtain ⟨V, hVc, hVΩ, hVmono, hVU, hcover⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
+  have hlf (w : E → ℝ) :=
+    forall_isCompact_exists_totalVariationOn_ne_top_iff (μ := μ) (w := w) hVc hVΩ hVmono hVU
+  have hVsub (j : ℕ) : V j ≤ Ω := subset_closure.trans (hVΩ j)
+  -- Both measures are finite on the traces of `V j`, which cover `Ω`, so it suffices to compare
+  -- them on open sets, where this is the coarea formula on each open subset of `Ω`.
+  refine Measure.ext_of_generateFrom_of_iUnion {W | IsOpen W} (fun j => (↑) ⁻¹' (V j : Set E))
+    BorelSpace.measurable_eq isPiSystem_isOpen ?_
+    (fun j => (V j).isOpen.preimage continuous_subtype_val) (fun j => ?_) fun W hW => ?_
+  · exact hcover
+  · rw [variationMeasure_preimage_coe hu hfin (hVsub j)]
+    exact (hlf u).1 hfin j
+  · obtain ⟨U, hU, rfl⟩ := Ω.exists_le_preimage_coe_eq hW
+    rw [variationMeasure_preimage_coe hu hfin hU,
+      totalVariationOn_eq_lintegral_perimeter (hu.mono_set hU),
+      Measure.bind_apply hW.measurableSet
+        (measurable_variationMeasure_indicator_setOf_lt hum).aemeasurable]
+    refine lintegral_congr_ae ?_
+    filter_upwards [ae_exists_perimeter_setOf_lt_ne_top hu hfin] with t ht
+    exact (variationMeasure_indicator_preimage_coe
+      (nullMeasurableSet_lt aemeasurable_const hum) ht hU).symm
+
+/-- **The coarea formula on Borel sets.** If `u` is locally integrable on `Ω` with locally finite
+variation there, then `|Du|(B) = ∫_ℝ |D1_{u > t}|(B) dt` for every measurable `B ⊆ Ω`. -/
+theorem variationMeasure_apply_eq_lintegral (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    {s : Set Ω} (hs : MeasurableSet s) :
+    variationMeasure μ Ω u s = ∫⁻ t, variationMeasure μ Ω ({x | t < u x}.indicator 1) s := by
+  rw [variationMeasure_eq_bind hu hfin, Measure.bind_apply hs
+    (measurable_variationMeasure_indicator_setOf_lt
+      hu.aestronglyMeasurable.aemeasurable).aemeasurable]
+
+/-- **The coarea formula for integrals against the variation measure.** If `u` is locally integrable
+on `Ω` with locally finite variation there, then `∫ f d|Du| = ∫_ℝ ∫ f d|D1_{u > t}| dt` for every
+nonnegative `f` almost everywhere measurable for `|Du|`. -/
+theorem lintegral_variationMeasure_eq_lintegral_lintegral (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    {f : Ω → ℝ≥0∞} (hf : AEMeasurable f (variationMeasure μ Ω u)) :
+    ∫⁻ x, f x ∂variationMeasure μ Ω u =
+      ∫⁻ t, ∫⁻ x, f x ∂variationMeasure μ Ω ({x | t < u x}.indicator 1) := by
+  rw [variationMeasure_eq_bind hu hfin] at hf ⊢
+  exact Measure.lintegral_bind (measurable_variationMeasure_indicator_setOf_lt
+    hu.aestronglyMeasurable.aemeasurable).aemeasurable hf
+
+end VariationMeasure
 
 end TauCeti

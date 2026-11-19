@@ -206,11 +206,7 @@ theorem gradedExtEulerMatrix_eq_diagonal_smulGradedDimension :
       Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
   refine Matrix.ext fun i j ↦ ?_
   rw [gradedExtEulerMatrix_apply_eq_gradedProjectiveExtEuler, hbP, hbM,
-    gradedProjectiveExtEuler_ofIdeal_span_singleton (he i) (he₀ i) (hI i),
-    gradedIdempotentCoordinate_of, Matrix.diagonal_apply]
-  split_ifs with hij
-  · rw [hij]
-  · exact hne hij
+    gradedProjectiveExtEuler_basis S he he₀ hI hne, Matrix.diagonal_apply]
 
 include he₀ hne hbP hbM in
 /-- **The general-field graded Cartan/q-Euler identity.** Let `C` be the graded Cartan matrix in a

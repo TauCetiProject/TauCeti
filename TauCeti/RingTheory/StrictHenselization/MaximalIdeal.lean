@@ -86,4 +86,11 @@ theorem maximalIdeal_eq_map :
     rwa [← ker_toTarget_eq_maximalIdeal R Ω, RingHom.mem_ker] at hx
   · exact map_maximalIdeal_le (algebraMap R (algebra R Ω))
 
+/-- A finitely generated base maximal ideal gives a finitely generated maximal ideal in the
+colimit of pointed étale neighbourhoods. -/
+theorem maximalIdeal_fg (hR : (maximalIdeal R).FG) :
+    (maximalIdeal (algebra R Ω)).FG := by
+  rw [maximalIdeal_eq_map R Ω]
+  exact hR.map _
+
 end TauCeti.StrictHenselization

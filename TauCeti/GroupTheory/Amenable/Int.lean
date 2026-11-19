@@ -51,8 +51,11 @@ theorem hasFoelnerSets_multiplicative_int : HasFoelnerSets (Multiplicative ℤ) 
   exact .of_tendsto_card_smul_symmDiff_div_card (Eventually.of_forall hne) hlimit
 
 /-- The integer group is amenable for every group topology. -/
-instance Amenable.multiplicative_int [TopologicalSpace (Multiplicative ℤ)]
-    [IsTopologicalGroup (Multiplicative ℤ)] : Amenable (Multiplicative ℤ) :=
-  .of_hasFoelnerSets hasFoelnerSets_multiplicative_int
+instance Amenable.multiplicative_int
+    {integerTopology : TopologicalSpace (Multiplicative ℤ)}
+    [hTopology : letI := integerTopology; IsTopologicalGroup (Multiplicative ℤ)] :
+    letI := integerTopology; Amenable (Multiplicative ℤ) := by
+  let := integerTopology
+  exact .of_hasFoelnerSets hasFoelnerSets_multiplicative_int
 
 end TauCeti

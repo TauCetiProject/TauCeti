@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Support
 public import Mathlib.LinearAlgebra.RootSystem.Base
+public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.Height
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Positive and negative roots
@@ -34,6 +36,8 @@ positive root is a nonnegative integer combination of the simple coroots.
 ## Main results
 
 * `TauCeti.image_reflectionPerm_self_posRoots` says root negation exchanges the two sets.
+* `TauCeti.posRoots_map` and `TauCeti.negRoots_map` say an equivalence of root pairings carries
+  the positive and negative roots of a base to those of the transported base.
 * `TauCeti.ncard_posRoots_eq_natCard_div_two` says that, for a finite root index type, exactly
   half of the roots are positive, and `TauCeti.posRootsFinset_eq_filter`,
   `TauCeti.card_posRootsFinset` read `TauCeti.posRootsFinset` as the filter of the positivity
@@ -43,7 +47,10 @@ positive root is a nonnegative integer combination of the simple coroots.
   `TauCeti.reflectionPerm_self_notMem_posRoots`, `TauCeti.reflectionPerm_self_notMem_negRoots` say
   neither contains a root together with its negative.
 * `TauCeti.eq_of_isPos_of_reflection_eq` says that, in a reduced root pairing, a positive root is
-  determined by the effect of its reflection on any weight it moves.
+  determined by the effect of its reflection on any weight it moves;
+  `RootPairing.ker_coroot'_eq_iff_of_mem_posRoots` and
+  `RootPairing.ofIdx_eq_ofIdx_iff_of_mem_posRoots` deduce that distinct positive roots have
+  distinct coroot hyperplanes and distinct reflections in the Weyl group.
 * `TauCeti.bijOn_reflectionPerm_posRoots_diff_singleton` says a simple reflection permutes the
   positive roots other than its own simple root, and
   `TauCeti.sum_posRootsFinset_erase_comp_reflectionPerm` is the resulting reindexing rule for sums
@@ -52,6 +59,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   indecomposable positive roots: those that are not the sum of two positive roots.
 * `RootPairing.Base.isPos_flip_iff` says a root is positive for a base exactly when its
   coroot is positive for that base, and `TauCeti.posRoots_flip` restates it for the sets.
+* `TauCeti.mem_posRootCone_iff_exists_nat_of_bijOn` describes `Q⁺` by nonnegative integer
+  coefficients indexed by any finite type in bijection with the simple roots.
 * `TauCeti.mem_posRoots_iff_root_mem_posRootCone` says the positive roots are exactly the roots
   lying in `Q⁺`,
   `TauCeti.isPointed_posRootCone` says `Q⁺` is pointed,
@@ -72,6 +81,15 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`, and `RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support` says every
   coroot functional takes an integer value on a weight on which the simple ones do.
+* `RootPairing.coroot'_eq_zero_of_forall_mem_support` says a weight killed by the simple coroots
+  is killed by every coroot, and `TauCeti.smul_eq_self_of_forall_coroot'_eq_zero` deduces that the
+  whole Weyl group fixes it.
+* `RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone` says a member of `Q⁺` is nonnegative
+  at a point of the coweight space where every simple root is nonnegative.
+  `TauCeti.toWeightBasis_repr_nonneg_of_mem_posRootCone` says its coordinates in the basis of
+  simple roots are nonnegative.
+* `RootPairing.coroot'_sum_nsmul_root_nonpos` says a natural combination of the simple roots
+  other than `αₖ` pairs nonpositively with `αₖ^∨`.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots, and
   `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
@@ -94,6 +112,18 @@ own.
 -/
 
 public section
+
+namespace RootPairing
+
+/-- Negating a root index negates its root vector. -/
+lemma root_neg_index {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) (i : ι) :
+    letI := P.indexNeg;
+    P.root (-i) = -P.root i := by
+  let := P.indexNeg
+  simp only [indexNeg_neg, root_reflectionPerm, reflection_apply_self]
+
+end RootPairing
 
 namespace TauCeti
 
@@ -136,13 +166,37 @@ lemma mem_negRoots (i : ι) : i ∈ negRoots P b ↔ ¬ b.IsPos i := Iff.rfl
 theorem height_neg_of_mem_negRoots {i : ι} (hi : i ∈ negRoots P b) : b.height i < 0 :=
   lt_of_not_ge fun h => (mem_negRoots P b i).mp hi (b.isPos_iff'.mpr h)
 
-/-- The negative roots are the complement of the positive roots. -/
+/-- The complement of the positive roots is the set of negative roots. -/
+@[simp]
 lemma compl_posRoots : (posRoots P b)ᶜ = negRoots P b := by
   ext i
   simp only [Set.mem_compl_iff, mem_posRoots, mem_negRoots]
 
-/-- The negative roots are the complement of the positive roots. -/
-lemma negRoots_eq_compl : negRoots P b = (posRoots P b)ᶜ := compl_posRoots P b |>.symm
+/-- The complement of the negative roots is the set of positive roots. -/
+@[simp]
+lemma compl_negRoots : (negRoots P b)ᶜ = posRoots P b := by
+  ext i
+  simp only [Set.mem_compl_iff, mem_posRoots, mem_negRoots, not_not]
+
+section Map
+
+variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {P₂ : RootPairing ι₂ R M₂ N₂}
+
+/-- **An equivalence of root pairings carries positive roots to positive roots**: the positive
+roots of the transported base `b.map e` are the images of the positive roots of `b`. -/
+@[simp]
+theorem posRoots_map (e : P.Equiv P₂) : posRoots P₂ (b.map e) = e.indexEquiv '' posRoots P b := by
+  ext j
+  rw [Equiv.image_eq_preimage_symm, mem_preimage, mem_posRoots, mem_posRoots,
+    ← b.isPos_map_iff e, Equiv.apply_symm_apply]
+
+/-- An equivalence of root pairings carries negative roots to negative roots. -/
+@[simp]
+theorem negRoots_map (e : P.Equiv P₂) : negRoots P₂ (b.map e) = e.indexEquiv '' negRoots P b := by
+  rw [← compl_posRoots, ← compl_posRoots, posRoots_map, Equiv.image_compl]
+
+end Map
 
 /-- No root is both positive and negative. -/
 lemma disjoint_posRoots_negRoots : Disjoint (posRoots P b) (negRoots P b) := by
@@ -151,7 +205,7 @@ lemma disjoint_posRoots_negRoots : Disjoint (posRoots P b) (negRoots P b) := by
 
 /-- Every root is either positive or negative. -/
 lemma posRoots_union_negRoots : posRoots P b ∪ negRoots P b = Set.univ := by
-  rw [negRoots_eq_compl]
+  rw [← compl_posRoots]
   exact Set.union_compl_self _
 
 /-- Every root is either positive or negative. -/
@@ -176,10 +230,12 @@ noncomputable def posRootsFinset [Finite ι] : Finset ι := (posRoots_finite P b
 /-- The negative roots of a base, as a finset, so that they can be summed over. -/
 noncomputable def negRootsFinset [Finite ι] : Finset ι := (negRoots_finite P b).toFinset
 
+/-- Membership in the finset of positive roots. -/
 @[simp]
 lemma mem_posRootsFinset [Finite ι] (i : ι) : i ∈ posRootsFinset P b ↔ i ∈ posRoots P b :=
   (posRoots_finite P b).mem_toFinset
 
+/-- Membership in the finset of negative roots. -/
 @[simp]
 lemma mem_negRootsFinset [Finite ι] (i : ι) : i ∈ negRootsFinset P b ↔ i ∈ negRoots P b :=
   (negRoots_finite P b).mem_toFinset
@@ -208,7 +264,7 @@ lemma posRoots_nonempty [Nonempty ι] : (posRoots P b).Nonempty := by
   · exact ⟨i, hi⟩
   · exact ⟨-i, hi⟩
 
-/-- The negative of a positive root is negative. -/
+/-- The negative of a root is negative exactly when the root is positive. -/
 lemma reflectionPerm_self_mem_negRoots_iff_mem_posRoots (i : ι) :
     P.reflectionPerm i i ∈ negRoots P b ↔ i ∈ posRoots P b := by
   let := P.indexNeg
@@ -261,6 +317,29 @@ theorem eq_of_isPos_of_reflection_eq [P.IsReduced] {β γ : ι} (hβ : b.IsPos �
       rw [heq, RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self])
     exact ((isPos_reflectionPerm_self_iff_mem_negRoots P b γ).mp (hneg ▸ hβ) hγ).elim
 
+/-- Two positive roots have the same coroot hyperplane if and only if they are equal. -/
+theorem _root_.RootPairing.ker_coroot'_eq_iff_of_mem_posRoots [P.flip.IsReduced] {α β : ι}
+    (hα : α ∈ posRoots P b) (hβ : β ∈ posRoots P b) :
+    LinearMap.ker (P.coroot' α) = LinearMap.ker (P.coroot' β) ↔ α = β := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
+  rcases P.eq_or_eq_reflectionPerm_self_of_ker_coroot'_le h.le with rfl | rfl
+  · rfl
+  · exact absurd hβ (reflectionPerm_self_notMem_posRoots P b hα)
+
+/-- Two positive roots define the same reflection in `P.weylGroup` if and only if they are equal. -/
+theorem _root_.RootPairing.ofIdx_eq_ofIdx_iff_of_mem_posRoots [P.IsReduced] {α β : ι}
+    (hα : α ∈ posRoots P b) (hβ : β ∈ posRoots P b) :
+    RootPairing.weylGroup.ofIdx P α = RootPairing.weylGroup.ofIdx P β ↔ α = β := by
+  refine ⟨fun h ↦ eq_of_isPos_of_reflection_eq (x := P.root α) hα hβ ?_ ?_, fun h ↦ h ▸ rfl⟩
+  · simpa using congrArg (· • P.root α) h
+  · intro hfix
+    have hcor := congrArg (P.coroot' α) hfix
+    rw [P.reflection_apply_self, map_neg, P.coroot_root_two] at hcor
+    have h4 : ((2 + 2 : ℕ) : R) = 0 := by
+      rw [Nat.cast_add, Nat.cast_ofNat]
+      exact neg_eq_iff_add_eq_zero.mp hcor
+    exact Nat.cast_ne_zero.mpr (by decide : 2 + 2 ≠ 0) h4
+
 /-- The positive roots are closed under addition: a root that is the sum of two positive roots is
 positive, because heights add. -/
 lemma add_mem_posRoots {i j k : ι} (hi : i ∈ posRoots P b) (hj : j ∈ posRoots P b)
@@ -310,6 +389,23 @@ theorem mem_posRootCone {v : M} :
   rw [posRootCone, ← Submodule.span_nat_eq_addSubmonoidClosure, Submodule.mem_toAddSubmonoid,
     Submodule.mem_span_image_finset_iff_exists_fun']
   exact exists_congr fun _ => eq_comm
+
+omit [CharZero R] in
+/-- Membership in the positive root cone, spelled out in coordinates indexed by a finite type `κ`
+whose map `e` to the root indices is a bijection onto the simple roots. -/
+theorem mem_posRootCone_iff_exists_nat_of_bijOn {κ : Type*} [Fintype κ] {e : κ → ι}
+    (he : Set.BijOn e Set.univ b.support) {v : M} :
+    v ∈ posRootCone P b ↔ ∃ c : κ → ℕ, v = ∑ i, c i • P.root (e i) := by
+  constructor
+  · intro hv
+    obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
+    refine ⟨fun i ↦ f (e i), (Finset.sum_nbij e (fun i _ ↦ he.mapsTo trivial) ?_ ?_
+      fun _ _ ↦ rfl).symm⟩
+    · simpa only [Finset.coe_univ] using he.injOn
+    · simpa only [Finset.coe_univ] using he.surjOn
+  · rintro ⟨c, rfl⟩
+    exact (posRootCone P b).sum_mem fun i _ ↦ (posRootCone P b).nsmul_mem
+      (AddSubmonoid.subset_closure ⟨e i, he.mapsTo trivial, rfl⟩) _
 
 /-- Every positive root lies in the positive root cone. -/
 theorem root_mem_posRootCone_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :
@@ -392,6 +488,78 @@ theorem _root_.RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support {x : 
   | smul z n _ hn =>
     obtain ⟨m, hm⟩ := hn
     exact ⟨z * m, by simp [hm]⟩
+
+omit [CharZero R] in
+/-- **A weight killed by the simple coroots is killed by every coroot**, since every coroot is an
+integer combination of the simple coroots. -/
+theorem _root_.RootPairing.coroot'_eq_zero_of_forall_mem_support {x : M}
+    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 := by
+  suffices ∀ n ∈ Submodule.span ℤ (P.coroot '' b.support), P.toLinearMap.flip n x = 0
+    from this _ (b.coroot_mem_span_int j)
+  intro n hn
+  induction hn using Submodule.span_induction with
+  | mem n hn =>
+    obtain ⟨i, hi, rfl⟩ := hn
+    exact hx i hi
+  | zero => simp
+  | add n n' _ _ hn hn' => simp [hn, hn']
+  | smul z n _ hn => simp [hn]
+
+omit [CharZero R] in
+variable {P} in
+/-- **A weight killed by the simple coroots is fixed by the Weyl group**: it is killed by every
+coroot (`RootPairing.coroot'_eq_zero_of_forall_mem_support`), so every reflection generating the
+Weyl group fixes it. -/
+theorem smul_eq_self_of_forall_coroot'_eq_zero {x : M} (hx : ∀ i ∈ b.support, P.coroot' i x = 0)
+    (w : P.weylGroup) : w • x = x := by
+  obtain ⟨w, hw⟩ := w
+  induction hw using RootPairing.weylGroup.induction with
+  | mem i =>
+    rw [Subgroup.mk_smul, RootPairing.Equiv.reflection_smul, P.reflection_apply,
+      P.coroot'_eq_zero_of_forall_mem_support b hx i, zero_smul, sub_zero]
+  | one => exact one_smul _ x
+  | mul w₁ w₂ _ _ h₁ h₂ =>
+    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
+    rw [mul_smul, h₂, h₁]
+
+omit [CharZero R] in
+variable {P b} in
+/-- An element of the positive root cone is nonnegative at a point where every simple root is
+nonnegative. -/
+theorem _root_.RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone [Preorder R]
+    [IsOrderedAddMonoid R] {x : N} (hx : ∀ i ∈ b.support, 0 ≤ P.root' i x) {v : M}
+    (hv : v ∈ posRootCone P b) : 0 ≤ P.toLinearMap v x := by
+  obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
+  simp only [map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
+  exact Finset.sum_nonneg fun i hi ↦ nsmul_nonneg (hx i hi) _
+
+omit [CharZero R] in
+variable {P b} in
+/-- **A member of the positive root cone has nonnegative coordinates** in the basis of simple
+roots. -/
+theorem toWeightBasis_repr_nonneg_of_mem_posRootCone [PartialOrder R] [IsOrderedRing R]
+    [P.IsRootSystem] {v : M} (hv : v ∈ posRootCone P b) (i : b.support) :
+    0 ≤ b.toWeightBasis.repr v i := by
+  obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
+  rw [← Finset.sum_coe_sort b.support]
+  simp only [← RootPairing.Base.toWeightBasis_apply, map_sum, map_nsmul, Module.Basis.repr_self,
+    Finsupp.finsetSum_apply, Finsupp.smul_apply]
+  exact Finset.sum_nonneg fun j _ ↦ nsmul_nonneg (Finsupp.single_nonneg.mpr zero_le_one i) _
+
+omit [CharZero R] in
+/-- A natural combination of simple roots in which `αₖ` does not occur pairs nonpositively with
+the simple coroot `αₖ^∨`, since distinct simple roots have nonpositive Cartan integers. -/
+theorem _root_.RootPairing.coroot'_sum_nsmul_root_nonpos [LinearOrder R] [IsStrictOrderedRing R]
+    [Finite ι] [P.IsCrystallographic] {k : ι} (hk : k ∈ b.support) {c : ι → ℕ} (hck : c k = 0) :
+    P.coroot' k (∑ j ∈ b.support, c j • P.root j) ≤ 0 := by
+  rw [map_sum]
+  refine Finset.sum_nonpos fun j hj => ?_
+  rw [map_nsmul, RootPairing.root_coroot'_eq_pairing]
+  rcases eq_or_ne j k with rfl | hjk
+  · simp [hck]
+  · refine nsmul_nonpos ?_ _
+    rw [← P.algebraMap_pairingIn ℤ, algebraMap_int_eq, eq_intCast, Int.cast_nonpos]
+    exact b.pairingIn_le_zero_of_ne hjk hj hk
 
 /-- **The positive root cone is pointed**: the only member whose negative is again a member is
 zero. Expanding a member and its negative in the simple roots, the total coefficient vector is
@@ -525,14 +693,11 @@ theorem image_reflectionPerm_self_negRoots :
   have hinv := reflectionPerm_self_involutive P
   calc
     (fun i ↦ P.reflectionPerm i i) '' negRoots P b =
-        (fun i ↦ P.reflectionPerm i i) '' (posRoots P b)ᶜ := by rw [negRoots_eq_compl]
+        (fun i ↦ P.reflectionPerm i i) '' (posRoots P b)ᶜ := by rw [← compl_posRoots]
     _ = ((fun i ↦ P.reflectionPerm i i) '' posRoots P b)ᶜ :=
       Set.image_compl_eq hinv.bijective
     _ = (negRoots P b)ᶜ := by rw [image_reflectionPerm_self_posRoots]
-    _ = posRoots P b := by
-      ext i
-      simp only [Set.mem_compl_iff, mem_negRoots, mem_posRoots]
-      tauto
+    _ = posRoots P b := compl_negRoots P b
 
 /-! ### The number of positive roots -/
 
@@ -547,7 +712,7 @@ theorem ncard_negRoots_eq_ncard_posRoots :
 /-- The numbers of positive and negative roots add up to the total number of roots. -/
 theorem ncard_posRoots_add_ncard_negRoots [Finite ι] :
     (posRoots P b).ncard + (negRoots P b).ncard = Nat.card ι := by
-  rw [negRoots_eq_compl]
+  rw [← compl_posRoots]
   exact Set.ncard_add_ncard_compl _
 
 /-- Twice the number of positive roots is the total number of roots. -/
@@ -640,12 +805,6 @@ theorem bijOn_reflectionPerm_posRoots_diff_singleton {i : ι} (hi : i ∈ b.supp
   Set.InvOn.bijOn ⟨fun j _ ↦ P.reflectionPerm_self i j, fun j _ ↦ P.reflectionPerm_self i j⟩
     (fun _ hj ↦ (reflectionPerm_mem_posRoots_diff_singleton_iff P b hi _).mpr hj)
     (fun _ hj ↦ (reflectionPerm_mem_posRoots_diff_singleton_iff P b hi _).mpr hj)
-
-/-- The image form of `bijOn_reflectionPerm_posRoots_diff_singleton`: a simple reflection maps the
-positive roots other than its own simple root onto themselves. -/
-theorem image_reflectionPerm_posRoots_diff_singleton {i : ι} (hi : i ∈ b.support) :
-    P.reflectionPerm i '' (posRoots P b \ {i}) = posRoots P b \ {i} :=
-  (bijOn_reflectionPerm_posRoots_diff_singleton P b hi).image_eq
 
 /-- The finset form of `reflectionPerm_mem_posRoots_diff_singleton_iff`. -/
 lemma reflectionPerm_mem_posRootsFinset_erase_iff [DecidableEq ι] {i : ι} (hi : i ∈ b.support)

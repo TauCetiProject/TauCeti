@@ -218,6 +218,15 @@ theorem burauAlexander_one_strand (t : Rˣ) (b : BraidGroup 1) :
     burauAlexander (R := R) ⟨0, b⟩ t = 1 :=
   by rw [burauAlexander_def, Matrix.det_fin_zero]
 
+/-- Adding an uncrossed strand makes the Burau Alexander invariant vanish: the corner
+matrix is the full singular matrix `burau b - 1` of the original braid. -/
+@[simp]
+theorem burauAlexander_strandIncl (t : Rˣ) (b : BraidGroup (n + 1)) :
+    burauAlexander (R := R) ⟨n + 1, BraidGroup.strandIncl b⟩ t = 0 := by
+  simp only [burauAlexander_def, Matrix.submatrix_sub, Pi.sub_apply,
+    submatrix_burau_strandIncl, Matrix.submatrix_one _ (Fin.castSucc_injective _)]
+  exact det_burau_sub_one t b
+
 /-- **Markov move I leaves the invariant unchanged.** Passing from `b` to `c * b * c⁻¹` conjugates
 `burau b - 1` by `burau c`, which fixes both of the vectors annihilating it, so
 `Matrix.det_submatrix_castSucc_conj` applies. -/

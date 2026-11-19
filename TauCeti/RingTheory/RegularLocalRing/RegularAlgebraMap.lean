@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Localization
-public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.RegularLocalRing.GeometricallyRegular
+
+import TauCeti.RingTheory.Flat.Tower
+import TauCeti.RingTheory.RegularLocalRing.Descent
 
 /-!
 # Regular ring maps
@@ -27,12 +30,22 @@ excellent rings.
 * `TauCeti.Excellence.RegularAlgebraMap.of_isLocalization`: localizations are regular, for
   instance `R → R_p` and `ℤ → ℚ`.
 * `AlgEquiv.regularAlgebraMap`: regularity is invariant under isomorphisms of `R`-algebras.
-* `TauCeti.Excellence.RegularAlgebraMap.of_bijective_algebraMap`: regularity is invariant under
-  isomorphisms of the base ring.
+* `TauCeti.Excellence.RegularAlgebraMap.localization_base`: an algebra regular over `R` is regular
+  over any localization of `R` through which its structure map factors, for instance over a ring
+  isomorphic to `R`.
+* `TauCeti.Excellence.RegularAlgebraMap.isRegularRing`: a Noetherian regular algebra over a regular
+  ring is a regular ring.
+* `TauCeti.Excellence.RegularAlgebraMap.of_faithfullyFlat`: if `R → C` is regular and `C` is
+  faithfully flat over an intermediate `R`-algebra `B`, then `R → B` is regular.
+* `RingEquiv.regularAlgebraMap_adicCompletion`: regularity of the completion map `A → Â` along an
+  ideal is transported along a ring isomorphism matching the ideals.
+* `Ideal.regularAlgebraMap_adicCompletion_of_isAdicComplete`: the completion map of a ring along an
+  ideal it is complete for is regular.
 
 ## References
 
-* The Stacks Project, Section 15.42 (Regular ring maps), Definition 15.42.1.
+* The Stacks Project, Section 15.42 (Regular ring maps), Definition 15.42.1 and Lemma 15.42.7
+  (Tag 07NT).
 -/
 
 public section
@@ -98,18 +111,13 @@ theorem _root_.AlgEquiv.regularAlgebraMap (e : B ≃ₐ[R] B') [RegularAlgebraMa
     (Algebra.TensorProduct.congr (AlgEquiv.refl : p.ResidueField ≃ₐ[p.ResidueField] _)
       e).geometricallyRegular
 
-/-- Regularity of an algebra does not see an isomorphism of base rings: if `algebraMap R R'` is
-bijective and `B` is an `R'`-algebra that is regular over `R`, then `B` is regular over `R'`. -/
-theorem of_bijective_algebraMap {R' : Type u} [CommRing R'] [Algebra R R'] [Algebra R' B]
-    [IsScalarTower R R' B] (h : Function.Bijective (algebraMap R R')) [RegularAlgebraMap R B] :
+/-- Regularity of an algebra passes to a localization of the base: if `R'` is a localization of
+`R` at `M` and `B` is an `R'`-algebra that is regular over `R`, then `B` is regular over `R'`.
+Taking `M = IsUnit.submonoid R`, this covers a ring `R'` isomorphic to `R`. -/
+theorem localization_base {R' : Type*} [CommRing R'] [Algebra R R'] [Algebra R' B]
+    [IsScalarTower R R' B] (M : Submonoid R) [IsLocalization M R'] [RegularAlgebraMap R B] :
     RegularAlgebraMap R' B where
-  flat :=
-    have : IsLocalization (⊥ : Submonoid R) R' :=
-      IsLocalization.of_le_isUnit_of_bijective (by
-        rintro _ ⟨y, hy, rfl⟩
-        rw [Submonoid.mem_bot.mp hy, map_one]
-        exact isUnit_one) h
-    (Module.flat_iff_of_isLocalization R' (⊥ : Submonoid R) B).mpr inferInstance
+  flat := (Module.flat_iff_of_isLocalization R' M B).mpr inferInstance
   geometricallyRegular_fiber p' _ := by
     let p := p'.comap (algebraMap R R')
     let : Algebra p.ResidueField p'.ResidueField :=
@@ -118,16 +126,70 @@ theorem of_bijective_algebraMap {R' : Type u} [CommRing R'] [Algebra R R'] [Alge
       (IsScalarTower.algebraMap_apply R R' _ r).trans
         (Ideal.ResidueField.map_algebraMap p p' _ rfl r).symm
     have hκ : Function.Bijective (algebraMap p.ResidueField p'.ResidueField) :=
-      (RingHom.surjectiveOnStalks_of_surjective h.2).residueFieldMap_bijective p p' rfl
+      (RingHom.surjectiveOnStalks_of_isLocalization M R').residueFieldMap_bijective p p' rfl
     have := (geometricallyRegular_tensorProduct_iff_of_bijective hκ (p.Fiber B)).mpr inferInstance
     have : TensorProduct.CompatibleSMul R R' p'.ResidueField B :=
-      .of_algebraMap_surjective _ _ h.2
+      IsLocalization.tensorProduct_compatibleSMul M R' _ _
     -- `κ(p') ⊗[κ(p)] (κ(p) ⊗[R] B) ≃ κ(p') ⊗[R] B ≃ κ(p') ⊗[R'] B` as `κ(p')`-algebras.
     exact ((Algebra.TensorProduct.cancelBaseChange R p.ResidueField p'.ResidueField
       p'.ResidueField B).trans (Algebra.TensorProduct.equivOfCompatibleSMul R R'
         p'.ResidueField p'.ResidueField B).symm).geometricallyRegular
 
+/-- A Noetherian regular algebra over a regular ring is a regular ring: its fibres are
+geometrically regular, hence regular. -/
+theorem isRegularRing [IsRegularRing R] [IsNoetherianRing B] [RegularAlgebraMap R B] :
+    IsRegularRing B :=
+  IsRegularRing.of_flat_of_isRegularRing_fiber (R := R) fun p _ ↦
+    GeometricallyRegular.isRegularRing p.ResidueField
+
+/-- **Regularity descends along faithfully flat maps.** If `R → B → C` are ring maps such that
+`R → C` is regular and `C` is faithfully flat over `B`, then `R → B` is regular
+(Stacks, Tag 07NT). Faithful flatness cannot be weakened to flatness: the punctured cusp
+`k[t, t⁻¹]` is smooth over `k` and flat over the cusp `k[x, y] ⧸ (y² - x³)`. -/
+theorem of_faithfullyFlat (C : Type w) [CommRing C] [Algebra R C] [Algebra B C]
+    [IsScalarTower R B C] [Module.FaithfullyFlat B C] [RegularAlgebraMap R C] :
+    RegularAlgebraMap R B := by
+  have := Module.Flat.of_faithfullyFlat_of_flat R B C
+  refine ⟨inferInstance, fun p _ ↦ ?_⟩
+  -- `L ⊗[κ(p)] (κ(p) ⊗[R] B) ≃ L ⊗[R] B` is regular for every finite purely inseparable `L`.
+  have key (L : Type u) [Field L] [Algebra p.ResidueField L] [Module.Finite p.ResidueField L]
+      [IsPurelyInseparable p.ResidueField L] : IsRegularRing (L ⊗[p.ResidueField] p.Fiber B) := by
+    let : Algebra R L := ((algebraMap p.ResidueField L).comp (algebraMap R _)).toAlgebra
+    have : IsScalarTower R p.ResidueField L := .of_algebraMap_eq fun _ ↦ rfl
+    have : IsRegularRing (L ⊗[R] C) := .of_ringEquiv
+      (Algebra.TensorProduct.cancelBaseChange R p.ResidueField L L C).toRingEquiv
+    have : IsRegularRing (L ⊗[R] B) := TauCeti.IsRegularRing.tensorProduct_of_faithfullyFlat L C
+    exact .of_ringEquiv
+      (Algebra.TensorProduct.cancelBaseChange R p.ResidueField L L B).symm.toRingEquiv
+  -- Taking `L = κ(p)` shows that the fibre itself is regular, in particular Noetherian.
+  have := (key p.ResidueField).toIsNoetherian
+  exact ⟨isNoetherianRing_of_ringEquiv _
+    (Algebra.TensorProduct.lid p.ResidueField (p.Fiber B)).toRingEquiv, key⟩
+
 end RegularAlgebraMap
+
+/-! ### Completion maps -/
+
+/-- Regularity of the completion map `A → Â` along an ideal `I` is transported along a ring
+isomorphism `e : A ≃+* A'` carrying `I` onto `I'`: then `A' → Â'` along `I'` is regular. For local
+rings and their maximal ideals, `IsLocalRing.map_ringEquiv_maximalIdeal e` supplies the
+hypothesis. -/
+theorem _root_.RingEquiv.regularAlgebraMap_adicCompletion {A : Type u} {A' : Type v}
+    [CommRing A] [CommRing A'] (e : A ≃+* A') {I : Ideal A} {I' : Ideal A'} (he : I.map e = I')
+    [RegularAlgebraMap A (AdicCompletion I A)] :
+    RegularAlgebraMap A' (AdicCompletion I' A') := by
+  let : Algebra A A' := e.toRingHom.toAlgebra
+  let e' : A ≃ₐ[A] A' := AlgEquiv.ofRingEquiv (f := e) fun _ ↦ rfl
+  have := (AdicCompletion.congrₐ e' he).regularAlgebraMap
+  have : IsLocalization (IsUnit.submonoid A) A' :=
+    .of_le_isUnit_of_bijective Algebra.algebraMapSubmonoid_isUnit_le e.bijective
+  exact .localization_base (IsUnit.submonoid A)
+
+/-- The completion map `A → Â` of a ring along an ideal `I` for which `A` is `I`-adically complete
+is regular, being an isomorphism. -/
+theorem _root_.Ideal.regularAlgebraMap_adicCompletion_of_isAdicComplete {A : Type u} [CommRing A]
+    (I : Ideal A) [IsAdicComplete I A] : RegularAlgebraMap A (AdicCompletion I A) :=
+  (AdicCompletion.ofAlgEquiv I).regularAlgebraMap
 
 /-! ### Checks -/
 
@@ -143,6 +205,12 @@ example : RegularAlgebraMap ℤ ℚ := .of_isLocalization (nonZeroDivisors ℤ)
 /-- Polynomial rings in finitely many variables over `R` are regular `R`-algebras. -/
 example (R : Type u) [CommRing R] (n : ℕ) : RegularAlgebraMap R (MvPolynomial (Fin n) R) :=
   inferInstance
+
+/-- Regularity of `R → B` descends from the polynomial ring `B[X]`, which is free, hence faithfully
+flat, over a nontrivial ring `B`. -/
+example (R B : Type u) [CommRing R] [CommRing B] [Nontrivial B] [Algebra R B]
+    [RegularAlgebraMap R (Polynomial B)] : RegularAlgebraMap R B :=
+  .of_faithfullyFlat (Polynomial B)
 
 /-- The dual numbers `k[ε]/(ε²)` are flat over the field `k`, but their fibre is not
 geometrically regular, so they are not a regular `k`-algebra. -/

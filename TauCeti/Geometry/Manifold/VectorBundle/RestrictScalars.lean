@@ -20,7 +20,7 @@ underlying real manifold. The result does not require finite rank.
 `ContMDiffVectorBundle.restrictScalars` supplies this forgetful operation on Mathlib's
 existing mixin, using `VectorBundle.restrictScalars` for its topological vector bundle.
 The coordinate changes are identified by
-`Bundle.Trivialization.coordChangeL_restrictScalars`. Smoothness follows by composing
+`Bundle.Trivialization.restrictScalars_coordChangeL`. Smoothness follows by composing
 the scalar-restricted operator-valued transition function with the continuous linear
 map `ContinuousLinearMap.restrictScalarsL`.
 
@@ -58,10 +58,12 @@ theorem contMDiffFiberwiseLinear_le_restrictScalars :
   intro e he
   obtain ⟨φ, U, hU, hφ, h2φ, heφ⟩ := (mem_contMDiffFiberwiseLinear_iff B F 𝓘(𝕜', EB) e).1 he
   let L := ContinuousLinearMap.restrictScalarsL 𝕜' F F 𝕜 𝕜
+  replace hφ := hφ.restrictScalars 𝕜
+  replace h2φ := h2φ.restrictScalars 𝕜
+  simp only [modelWithCornersSelf_restrictScalars] at hφ h2φ
   refine (mem_contMDiffFiberwiseLinear_iff B F 𝓘(𝕜, EB) e).2
     ⟨fun b ↦ (φ b).restrictScalars 𝕜, U, hU,
-      L.contMDiff.comp_contMDiffOn (hφ.restrictScalars 𝕜),
-      L.contMDiff.comp_contMDiffOn (h2φ.restrictScalars 𝕜), ?_⟩
+      L.contMDiff.comp_contMDiffOn hφ, L.contMDiff.comp_contMDiffOn h2φ, ?_⟩
   -- Restricting the coefficients changes neither the source nor the underlying function.
   exact ⟨heφ.1, heφ.2⟩
 
@@ -78,13 +80,12 @@ smaller field, on the same fibre bundle. In particular, a holomorphic vector bun
 has an underlying smooth real vector bundle. -/
 theorem ContMDiffVectorBundle.restrictScalars
     (h : ContMDiffVectorBundle n F E 𝓘(𝕜', EB)) :
-    letI := (inferInstance : VectorBundle 𝕜' F E).restrictScalars 𝕜
+    letI := VectorBundle.restrictScalars 𝕜 𝕜' F E
     ContMDiffVectorBundle n F E 𝓘(𝕜, EB) := by
-  let := (inferInstance : VectorBundle 𝕜' F E).restrictScalars 𝕜
+  let := VectorBundle.restrictScalars 𝕜 𝕜' F E
   constructor
   intro e e' _ _
-  have hf := (ContinuousLinearMap.restrictScalarsL 𝕜' F F 𝕜 𝕜).contMDiff.comp_contMDiffOn
-    ((h.contMDiffOn_coordChangeL e e').restrictScalars 𝕜)
-  exact hf.congr fun b _ ↦
-    ContinuousLinearMap.ext fun v ↦ DFunLike.congr_fun
-      (e.coordChangeL_restrictScalars 𝕜 (S := 𝕜') e' b).symm v
+  have hc := (h.contMDiffOn_coordChangeL e e').restrictScalars 𝕜
+  simp only [modelWithCornersSelf_restrictScalars] at hc
+  have hf := (ContinuousLinearMap.restrictScalarsL 𝕜' F F 𝕜 𝕜).contMDiff.comp_contMDiffOn hc
+  exact hf.congr fun b _ ↦ (Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' e e').symm

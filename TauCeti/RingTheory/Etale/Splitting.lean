@@ -97,7 +97,7 @@ theorem exists_isFiniteSplit_tensorProduct :
     have hφ : (⟨φ (b i), hmem φ (b i)⟩ : L) = e.symm φ (b i) :=
       Subtype.ext congr($((e.apply_symm_apply φ).symm) (b i))
     simp only [Function.comp_apply, hφ, AlgEquiv.coe_toAlgHom, AlgEquiv.one_apply]
-    exact AlgEquiv.apply_of_smul_eq (Equiv.ext_iff.1 hσ (e.symm φ)) (b i)
+    exact AlgEquiv.smul_algHom_eq_self_iff.1 (Equiv.ext_iff.1 hσ (e.symm φ)) (b i)
   · refine .of_finrank_le_card_algHom ?_
     rw [← Nat.card_congr (AlgHom.liftEquiv K L A L), hcard, Module.finrank_baseChange]
 

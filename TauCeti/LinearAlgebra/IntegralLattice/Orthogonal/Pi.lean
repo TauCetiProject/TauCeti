@@ -130,6 +130,12 @@ theorem single_mem_pi_carrier [DecidableEq ι] (i : ι) {v : V i} (hv : v ∈ (L
 theorem norm_pi_apply (x : ∀ i, V i) : (pi L).norm x = ∑ i, (L i).norm (x i) := by
   simp [norm_apply]
 
+/-- A vector supported in one summand has the norm it has in that summand. -/
+-- Use explicitly: the simplifier first expands norms by `norm_pi_apply`.
+theorem norm_pi_single [DecidableEq ι] (i : ι) (x : V i) :
+    (pi L).norm (Pi.single i x) = (L i).norm x := by
+  simp only [norm_apply, pi_form, piForm_single_left, Pi.single_eq_same]
+
 /-! ## Nondegeneracy -/
 
 /-- A vector which pairs trivially with every family is zero, provided every summand form is
@@ -309,6 +315,38 @@ theorem piCongrLeft_trans_pi (σ : κ ≃ ι) (f : ∀ i, Isometry (L i) (M i)) 
   ext x i
   obtain ⟨k, rfl⟩ := σ.surjective i
   simp only [trans_apply, pi_apply, piCongrLeft_apply_apply]
+
+section Unique
+
+variable [Unique ι]
+
+/-- Evaluation is an isometry from a one-summand orthogonal sum to its sole summand. -/
+def piUnique : Isometry (IntegralLattice.pi L) (L default) where
+  toIsometryEquiv :=
+    { toLinearEquiv := LinearEquiv.piUnique ℚ V
+      map_app' x y := by simp [pi_form, piForm_apply] }
+  map_carrier := by
+    ext y
+    rw [Submodule.mem_map_equiv, mem_pi_carrier_iff]
+    constructor
+    · intro h
+      exact h default
+    · intro h i
+      obtain rfl := Unique.eq_default i
+      exact h
+
+/-- The one-summand isometry evaluates at the unique index. -/
+@[simp]
+theorem piUnique_apply (x : ∀ i, V i) : piUnique L x = x default := (rfl)
+
+/-- The inverse one-summand isometry places a vector in the unique coordinate. -/
+@[simp]
+theorem piUnique_symm_apply (y : V default) :
+    (piUnique L).symm y = uniqueElim y := by
+  refine EquivLike.injective (piUnique L) ?_
+  simp
+
+end Unique
 
 end Isometry
 

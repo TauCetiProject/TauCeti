@@ -50,17 +50,17 @@ theorem signedInChartAt_fun_smul_manifoldAreaForm (f : ℂ → ℝ)
 /-- The canonical positive complex orientation lift gives ordinary planar integration of
 the actual weighted manifold area form. -/
 theorem chartIntegral_model_manifoldAreaForm (f : ℂ → ℝ) (c : ℂ) :
-    (Manifold.OrientationLift.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
+    (Manifold.OrientationLift.ofHasGroupoid (I := 𝓘(ℝ, ℂ)) (M := ℂ) Complex.orientation
       (by simp)).chartIntegral (fun x ↦ f x • manifoldAreaForm x) c = ∫ z, f z := by
   rw [Manifold.OrientationLift.chartIntegral_eq_integral
-    _ _ Complex.basisOneI c, Manifold.OrientationLift.model_modelOrientation]
+    _ _ Complex.basisOneI c, Manifold.OrientationLift.ofHasGroupoid_modelOrientation]
   have hs : (fun x : (extChartAt 𝓘(ℝ, ℂ) c).source ↦
-      (Manifold.OrientationLift.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
+      (Manifold.OrientationLift.ofHasGroupoid (I := 𝓘(ℝ, ℂ)) (M := ℂ) Complex.orientation
         (by simp)).signAt c x) = fun _ ↦ (1 : ℤˣ) := by
     funext x
     rw [Manifold.OrientationLift.signAt_of_mem _ (by
       simpa only [extChartAt_source] using x.property)]
-    exact Manifold.OrientationLift.model_sign _ _ _ _
+    exact Manifold.OrientationLift.ofHasGroupoid_sign _ _ _ _
   rw [hs]
   have ho : _root_.Orientation.signBasis Complex.orientation Complex.basisOneI = 1 :=
     _root_.Orientation.signBasis_orientation Complex.basisOneI
@@ -103,7 +103,7 @@ theorem _root_.HasCompactSupport.integralTopForm_model_manifoldAreaForm {f : ℂ
   have hs : _root_.tsupport (α := ℂ [⋀^Fin _]→L[ℝ] ℝ) (fun z ↦ f z • manifoldAreaForm z) ⊆
       (extChartAt 𝓘(ℝ, ℂ) (0 : ℂ)).source := by simp
   exact (integralTopForm_eq_chartIntegral
-    (Manifold.OrientationLift.model (I := 𝓘(ℝ, ℂ)) Complex.orientation (by simp))
+    (Manifold.OrientationLift.ofHasGroupoid (I := 𝓘(ℝ, ℂ)) (M := ℂ) Complex.orientation (by simp))
     (fun z ↦ f z • manifoldAreaForm z) (hc.integrableTopForm_fun_smul_manifoldAreaForm hf)
     0 hs).trans (chartIntegral_model_manifoldAreaForm f 0)
 

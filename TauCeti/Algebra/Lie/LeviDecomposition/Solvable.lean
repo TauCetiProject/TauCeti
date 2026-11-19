@@ -81,15 +81,10 @@ private theorem exists_lieSubalgebra_isCompl_of_isCompl_map_mkQ [CharZero K] {L 
     rw [← LieIdeal.mkQ_ker A, LieHom.mem_ker]
     exact Submodule.disjoint_def.1 hS₁.disjoint _ (LieIdeal.mem_map hxI) hxP
   -- The ideal `I ∩ P = A` of `P` is abelian with quotient `L ⧸ I`: apply the abelian case.
-  have : IsLieAbelian (I.comap P.incl) := by
-    rw [LieSubmodule.lie_abelian_iff_lie_self_eq_bot, LieSubmodule.lie_eq_bot_iff]
-    intro x hx y hy
+  have : IsLieAbelian (I.comap P.incl) := ⟨fun x y ↦ by
     ext
-    rw [LieSubalgebra.coe_bracket, ZeroMemClass.coe_zero]
-    have h := (LieSubmodule.lie_abelian_iff_lie_self_eq_bot A).1 ‹_›
-    rw [← LieSubmodule.mem_bot (R := K) (L := L), ← h]
-    exact LieSubmodule.lie_mem_lie (hPI x.2 (LieIdeal.mem_comap.1 hx))
-      (hPI y.2 (LieIdeal.mem_comap.1 hy))
+    exact LieIdeal.lie_eq_zero_of_mem (hPI x.1.2 (LieIdeal.mem_comap.1 x.2))
+      (hPI y.1.2 (LieIdeal.mem_comap.1 y.2))⟩
   have := I.isKilling_quotient_comap_incl hIP
   obtain ⟨T, hT⟩ := (I.comap P.incl).exists_lieSubalgebra_isCompl_of_isLieAbelian
   exact ⟨T.map P.incl, I.isCompl_map_incl hIP hT⟩
@@ -119,7 +114,8 @@ private theorem exists_lieSubalgebra_isCompl_of_isSolvable_of_finrank_eq [CharZe
     have hAI' : A ≤ I.mkQ.ker := by rwa [LieIdeal.mkQ_ker]
     rw [← I.ker_liftQ_mkQ hAI']
     exact isKilling_of_equiv
-      ((A.liftQ I.mkQ hAI').quotKerEquivOfSurjective (A.liftQ_surjective _ _ I.surjective_mkQ)).symm
+      ((A.liftQ I.mkQ hAI').quotKerEquivOfSurjective
+        ((A.liftQ_surjective_iff _ _).2 I.surjective_mkQ)).symm
   have hlt : finrank K (L ⧸ A) < n := by
     have h := Submodule.finrank_quotient_add_finrank A.toSubmodule
     have hpos : 0 < finrank K A.toSubmodule := Nat.pos_of_ne_zero fun h0 ↦

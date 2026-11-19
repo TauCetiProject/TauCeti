@@ -39,11 +39,15 @@ Its constants depend neither on the dimension nor on the slab. For `α < 1` the 
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm_one_le_of_hasFDerivAt` and
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_one_le_of_hasDerivWithinAt`: bounded derivatives
   give Lipschitz bounds in space and in time.
+* `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_of_timeEHolderNorm_le`: the temporal seminorm
+  with a smaller exponent, from a temporal seminorm and an oscillation bound.
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le`:
   the parabolic seminorm with a smaller exponent, from separate seminorms and an oscillation
   bound.
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_add_eHolderNorm_le`: the absorption of the
   lower-order parabolic seminorms of `u` and `D_x u`.
+* `TauCeti.ParabolicSpaceTime.holderWith_comp_time`: a function of time alone with bounded
+  derivative is parabolically Hölder, with a constant depending on a chosen time scale.
 
 ## References
 
@@ -60,6 +64,20 @@ open scoped ENNReal NNReal
 namespace TauCeti.ParabolicSpaceTime
 
 variable {E F : Type*} {a b : ℝ}
+
+/-- **The temporal seminorm at a smaller exponent.** Let `v` be a function on the slab
+`E × [a, b]` whose values lie within distance `D` of each other, with temporal `β`-seminorm at
+most `K`. If `γ ≤ β`, then for every scale `δ > 0` the temporal `γ`-seminorm of `v` is at most
+`K δ^(β - γ) + D δ^(-γ)`. -/
+theorem timeEHolderNorm_le_of_timeEHolderNorm_le [PseudoMetricSpace F]
+    {v : slab (E := E) a b → F} {β γ K D δ : ℝ≥0} (h : timeEHolderNorm β v ≤ K)
+    (hD : ∀ p q, dist (v p) (v q) ≤ D) (hγ : γ ≤ β) (hδ : 0 < δ) :
+    timeEHolderNorm γ v ≤ ↑(K * δ ^ ((β : ℝ) - γ) + D * δ ^ (-(γ : ℝ))) := by
+  refine timeEHolderNorm_le_iff.2 fun x => ?_
+  have hx : HolderOnWith K β (fun t => v (slabMk x t)) univ :=
+    fun t _ s _ => timeEHolderNorm_le_iff.1 h x t s
+  exact fun t s => HolderOnWith.of_le_of_dist_le (fun _ ht _ hs _ => hx.dist_le ht hs)
+    (fun _ _ _ _ => hD _ _) hγ hδ t (mem_univ t) s (mem_univ s)
 
 /-- **The parabolic seminorm at a smaller exponent.** Let `v` be a function on the slab
 `E × [a, b]` whose values lie within distance `D` of each other, with spatial `β₁`-seminorm at most
@@ -79,13 +97,9 @@ theorem eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le [MetricSpace
   · refine spaceEHolderNorm_le_iff.2 fun t => ?_
     have ht : HolderOnWith K₁ β₁ (fun x => v (slabMk x t)) univ :=
       fun x _ y _ => spaceEHolderNorm_le_iff.1 h₁ t x y
-    exact fun x y => ht.of_le_of_dist_le (fun _ _ _ _ => hD _ _) hα₁ hδ₁ x (mem_univ x) y
-      (mem_univ y)
-  · refine timeEHolderNorm_le_iff.2 fun x => ?_
-    have hx : HolderOnWith K₂ β₂ (fun t => v (slabMk x t)) univ :=
-      fun t _ s _ => timeEHolderNorm_le_iff.1 h₂ x t s
-    exact fun t s => hx.of_le_of_dist_le (fun _ _ _ _ => hD _ _) hα₂ hδ₂ t (mem_univ t) s
-      (mem_univ s)
+    exact fun x y => HolderOnWith.of_le_of_dist_le (fun _ hx _ hy _ => ht.dist_le hx hy)
+      (fun _ _ _ _ => hD _ _) hα₁ hδ₁ x (mem_univ x) y (mem_univ y)
+  · exact timeEHolderNorm_le_of_timeEHolderNorm_le h₂ hD hα₂ hδ₂
 
 /-- Values bounded in norm by `C` on the slab lie within distance `2 C` of each other. -/
 private theorem dist_le_two_mul_of_norm_le [SeminormedAddCommGroup F] {w : E → ℝ → F} {C : ℝ≥0}
@@ -109,8 +123,8 @@ theorem timeEHolderNorm_one_le_of_hasDerivWithinAt {w wₜ : E → ℝ → F} {C
     timeEHolderNorm 1
         (fun p : slab (E := E) a b => w (p : ParabolicSpaceTime E).space (slabTime p)) ≤ C := by
   refine timeEHolderNorm_le_iff.2 fun x t s => ?_
-  have hlip := ((convex_Icc a b).lipschitzOnWith_of_nnnorm_hasDerivWithin_le (hw x)
-    fun t ht => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hC x t ht).to_restrict
+  have hlip := ((convex_Icc a b).lipschitzOnWith_of_nnNorm_hasDerivWithin_le (hw x)
+    fun t ht => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hC x t ht).to_restrict
   simpa only [space_slabMk, slabTime_slabMk, Set.domRestrict_apply] using holderWith_one.2 hlip t s
 
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -124,10 +138,42 @@ theorem spaceEHolderNorm_one_le_of_hasFDerivAt {w : E → ℝ → F} {w' : E →
     spaceEHolderNorm 1
         (fun p : slab (E := E) a b => w (p : ParabolicSpaceTime E).space (slabTime p)) ≤ C := by
   refine spaceEHolderNorm_le_iff.2 fun t x y => ?_
-  have hlip := lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnnorm_hasFDerivWithin_le
+  have hlip := lipschitzOnWith_univ.1 (convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
     (fun z _ => (hw t t.2 z).hasFDerivWithinAt)
-    fun z _ => by rw [← NNReal.coe_le_coe, coe_nnnorm]; exact hC z t t.2)
+    fun z _ => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hC z t t.2)
   simpa only [space_slabMk, slabTime_slabMk] using holderWith_one.2 hlip x y
+
+omit [NormedSpace ℝ E] in
+/-- **Functions of time alone.** If `g` has derivative `g'` on the line, with `‖g‖ ≤ A` and
+`‖g'‖ ≤ A'`, then for `α ≤ 2` the map `(x, t) ↦ g t` on the slab `E × [a, b]` is parabolically
+`α`-Hölder with constant `A' δ^(1 - α/2) + 2 A δ^(-α/2)`, for every time scale `δ > 0`. -/
+theorem holderWith_comp_time {g g' : ℝ → F} {α A A' δ : ℝ≥0}
+    (hg : ∀ t, HasDerivAt g (g' t) t) (hA : ∀ t, ‖g t‖ ≤ A) (hA' : ∀ t, ‖g' t‖ ≤ A')
+    (hα : α ≤ 2) (hδ : 0 < δ) :
+    HolderWith (A' * δ ^ (1 - (α : ℝ) / 2) + 2 * A * δ ^ (-((α : ℝ) / 2))) α
+      fun p : slab (E := E) a b => g (p : ParabolicSpaceTime E).time := by
+  set v := fun p : slab (E := E) a b => g (p : ParabolicSpaceTime E).time
+  -- The map is constant in space ...
+  have hspace : spaceEHolderNorm α v = 0 :=
+    le_antisymm (spaceEHolderNorm_le_iff.2 fun t x y => by simp [v]) bot_le
+  -- ... its time slices are `A'`-Lipschitz ...
+  have hlip : timeEHolderNorm 1 v ≤ A' := by
+    simpa [v] using timeEHolderNorm_one_le_of_hasDerivWithinAt (E := E) (a := a) (b := b)
+      (w := fun _ t => g t) (wₜ := fun _ t => g' t) (C := A')
+      (fun _ t _ => (hg t).hasDerivWithinAt) fun _ t _ => hA' t
+  -- ... and its oscillation is at most `2 A`, which lowers the exponent to `α / 2`.
+  have hD : ∀ p q, dist (v p) (v q) ≤ ((2 * A : ℝ≥0) : ℝ) := fun p q => by
+    push_cast
+    linarith [dist_le_norm_add_norm (v p) (v q), hA (p : ParabolicSpaceTime E).time,
+      hA (q : ParabolicSpaceTime E).time]
+  have hα₂ : α / 2 ≤ 1 := by
+    rw [div_le_one (by norm_num)]
+    exact hα
+  have h := eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α v
+  rw [hspace, zero_add] at h
+  have h' := h.trans (timeEHolderNorm_le_of_timeEHolderNorm_le hlip hD hα₂ hδ)
+  refine fun p q => (eHolderNorm_le_iff.1 h' p q).trans_eq ?_
+  simp only [NNReal.coe_one, NNReal.coe_div, NNReal.coe_ofNat]
 
 /-- The comparison of constants in `eHolderNorm_add_eHolderNorm_le`: with `M₁ = 2 M₀ / ε + M₂ ε`
 and `K = H₂ + Hₜ`, the constants produced by

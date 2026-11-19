@@ -52,8 +52,11 @@ generality.
   terminates.
 * `TauCeti.BoundedFlow.exists_reflTransGen_shortestAugmentationStep_isMaximum`: finitely many steps
   lead from any bounded `s`–`t` assignment to a maximum one.
+* `TauCeti.BoundedFlow.exists_isMaximum`: a maximum assignment exists whenever a feasible one
+  does, and `TauCeti.BoundedFlow.exists_isMaximum_mem`: integrality of some maximum assignment.
 * `TauCeti.BoundedFlow.exists_val_eq_cutBound`: the max-flow/min-cut theorem for bounded
   assignments.
+* `TauCeti.Flow.exists_isMaximum`: a maximum ordinary flow exists for nonnegative capacities.
 * `TauCeti.Flow.exists_isMaximum_mem` and `TauCeti.Flow.exists_val_eq_arrowSum`: integrality and
   the max-flow/min-cut theorem for ordinary flows with nonnegative capacities.
 
@@ -313,6 +316,13 @@ one exists. -/
 theorem exists_isMaximum (f : BoundedFlow lo hi s t) : ∃ g : BoundedFlow lo hi s t, g.IsMaximum :=
   let ⟨g, _, hg⟩ := exists_reflTransGen_shortestAugmentationStep_isMaximum f
   ⟨g, hg⟩
+
+/-- A feasible bounded terminal problem has a minimum assignment, including when its values
+are all negative. -/
+theorem exists_isMinimum (f : BoundedFlow lo hi s t) :
+    ∃ g : BoundedFlow lo hi s t, g.IsMinimum := by
+  obtain ⟨g, hg⟩ := f.swap.exists_isMaximum
+  exact ⟨g.swap, (isMaximum_swap _).1 (by simpa using hg)⟩
 
 /-- **Max-flow/min-cut theorem for bounded assignments.** If some bounded `s`–`t` assignment
 between distinct terminals exists, then some bounded `s`–`t` assignment has value equal to the cut

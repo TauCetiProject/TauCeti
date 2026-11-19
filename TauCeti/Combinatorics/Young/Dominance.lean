@@ -44,8 +44,6 @@ below holds.
 
 * [G. D. James, *The Representation Theory of the Symmetric Groups*][james1978], Lemma 3.15.
 * B. E. Sagan, *The Symmetric Group*, 2nd edition (2001), Lemma 2.2.4.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "Distinctness and completeness".
 -/
 
 public section
@@ -91,8 +89,8 @@ theorem dominates_of_rowIndex_colIndex_injective {n : ℕ} {μ ν : n.Partition}
     (t : YoungTableau (ofPartition ν)) (s : YoungTableau (ofPartition μ))
     (σ : Fin (ofPartition μ).card ≃ Fin (ofPartition ν).card)
     (h : ∀ x y, rowIndex s x = rowIndex s y → colIndex t (σ x) = colIndex t (σ y) → x = y) :
-    Dominates ν μ := by
-  refine dominates_iff.mpr fun k => ?_
+    ν.Dominates μ := by
+  refine Nat.Partition.dominates_iff.mpr fun k => ?_
   simpa only [YoungDiagram.rowLens_ofPartition_eq_sort_parts] using
     sum_take_rowLens_le_of_injective t s σ h k
 
@@ -101,7 +99,7 @@ open YoungTableau in
 `ν`-tableau has a column meeting a row of every `μ`-tableau in two distinct labels. -/
 theorem exists_ne_rowIndex_eq_colIndex_eq_of_not_dominates {n : ℕ} {μ ν : n.Partition}
     (t : YoungTableau (ofPartition ν)) (s : YoungTableau (ofPartition μ))
-    (σ : Fin (ofPartition μ).card ≃ Fin (ofPartition ν).card) (h : ¬Dominates ν μ) :
+    (σ : Fin (ofPartition μ).card ≃ Fin (ofPartition ν).card) (h : ¬ν.Dominates μ) :
     ∃ x y, x ≠ y ∧ rowIndex s x = rowIndex s y ∧ colIndex t (σ x) = colIndex t (σ y) := by
   by_contra hcon
   refine h (dominates_of_rowIndex_colIndex_injective t s σ fun x y hr hc => ?_)

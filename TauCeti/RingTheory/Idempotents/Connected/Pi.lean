@@ -39,7 +39,7 @@ theorem eq_algebraMap_comp_of_connected {R A ι : Type*} [CommSemiring R] [CommR
   have hidempotent : IsIdempotentElem (f (Pi.single i 1)) := by
     apply IsIdempotentElem.map
     simp [IsIdempotentElem, ← Pi.single_mul]
-  rcases TauCeti.eq_zero_or_eq_one_of_isIdempotentElem hidempotent with hzero | hone
+  rcases hidempotent.eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
   · simp [hzero]
   · simp [hone]
 

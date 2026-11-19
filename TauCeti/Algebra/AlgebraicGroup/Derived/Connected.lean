@@ -105,7 +105,7 @@ private theorem commutatorToDerivedAlgHom_eq_one_of_isIdempotentElem
   have hφ : h.comp F = φ := by
     ext a <;> simp [F] <;> simp [g, h]
   have hFe : F (f e) = 1 := by
-    rcases eq_zero_or_eq_one_of_isIdempotentElem (he.map F) with hzero | hone
+    rcases (he.map F).eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
     · have hε := DFunLike.congr_fun
         (productMap_counit_comp_commutatorToDerivedAlgHom H g) e
       have : Bialgebra.counitAlgHom k H (F (f e)) = 1 := by
@@ -134,7 +134,7 @@ private theorem identityComponentHopfIdeal_quotient_derivedDefiningIdeal_eq_bot
   have hfe : f (PrimeSpectrum.connectedComponentIdempotent z) = 1 :=
     commutatorToDerivedAlgHom_eq_one_of_isIdempotentElem H _
       (PrimeSpectrum.isIdempotentElem_connectedComponentIdempotent z)
-      (TauCeti.AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one
+      (AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one
         (Bialgebra.counitAlgHom k D))
   apply eq_bot_of_comapOfSurjective_le J
   rw [le_derivedDefiningIdeal_iff]

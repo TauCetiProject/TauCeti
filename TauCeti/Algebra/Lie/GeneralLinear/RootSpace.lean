@@ -86,12 +86,6 @@ form is degenerate. With `LieAlgebra.IsKilling` goes all of Mathlib's
 `LieAlgebra.IsKilling.rootSystem` machinery, including `finrank_rootSpace_eq_one`; the analogues
 here are proved from scratch. See the module documentation of
 `TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan`.
-
-## References
-
-This implements the root space decomposition of `gl n` supporting the diagonal Cartan targets of
-Layer 9 (and the Layer 1 root space vocabulary, transported to the reductive case) of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 -/
 
 public section

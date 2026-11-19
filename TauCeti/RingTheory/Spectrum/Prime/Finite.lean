@@ -27,6 +27,8 @@ the base, a discrete valuation ring étale over the base.
 
 * `PrimeSpectrum.finite_of_krullDimLE_one`: a local domain of Krull dimension at most one has
   finitely many prime ideals.
+* `PrimeSpectrum.natCard_of_krullDimLE_one`: a local domain of Krull dimension at most one that is
+  not a field has exactly two prime ideals.
 * `PrimeSpectrum.exists_notMem_isLocalization_atPrime_away`: in a ring with finitely many prime
   ideals, the localization at a prime `p` is the localization away from some `f ∉ p`.
 -/
@@ -38,14 +40,33 @@ namespace PrimeSpectrum
 variable {R : Type*} [CommRing R]
 
 /-- A local domain of Krull dimension at most one has finitely many prime ideals: its only
-primes are `0` and the maximal ideal. -/
+primes are `0` and the maximal ideal (`IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top`). -/
 instance finite_of_krullDimLE_one [IsDomain R] [IsLocalRing R] [Ring.KrullDimLE 1 R] :
-    Finite (PrimeSpectrum R) := by
-  refine Set.finite_univ_iff.mp ((Set.toFinite {⟨⊥, Ideal.isPrime_bot⟩,
-    IsLocalRing.closedPoint R}).subset fun p _ ↦ ?_)
-  rcases eq_or_ne p.asIdeal ⊥ with h | h
-  · exact .inl (PrimeSpectrum.ext h)
-  · exact .inr (PrimeSpectrum.ext (IsLocalRing.eq_maximalIdeal (p.isPrime.isMaximal_of_ne_bot h)))
+    Finite (PrimeSpectrum R) :=
+  Set.finite_univ_iff.mp ((Set.toFinite {⊥, ⊤}).subset fun p _ ↦
+    IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top p)
+
+/-- A local domain of Krull dimension at most one that is not a field (for instance, a discrete
+valuation ring) has exactly two prime ideals: `(0)` and the maximal ideal. -/
+theorem natCard_of_krullDimLE_one [IsDomain R] [IsLocalRing R] [Ring.KrullDimLE 1 R]
+    (h : ¬IsField R) : Nat.card (PrimeSpectrum R) = 2 := by
+  let pts : Bool → PrimeSpectrum R
+    | false => ⊥
+    | true => ⊤
+  have hinj : Function.Injective pts := by
+    rintro (_ | _) (_ | _) heq
+    · rfl
+    · exact False.elim (h (IsLocalRing.isField_iff_maximalIdeal_eq.mpr
+        (congrArg PrimeSpectrum.asIdeal heq).symm))
+    · exact False.elim (h (IsLocalRing.isField_iff_maximalIdeal_eq.mpr
+        (congrArg PrimeSpectrum.asIdeal heq)))
+    · rfl
+  have hsurj : Function.Surjective pts := fun p ↦ by
+    rcases IsLocalRing.Ring.KrullDimLE.eq_bot_or_eq_top p with rfl | rfl
+    · exact ⟨false, rfl⟩
+    · exact ⟨true, rfl⟩
+  rw [Nat.card_congr (Equiv.ofBijective pts ⟨hinj, hsurj⟩).symm]
+  simp
 
 /-- **Localizing at a prime of a ring with finitely many primes inverts a single element.** If
 `R` has finitely many prime ideals, then for every prime `p` there is some `f ∉ p` such that

@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Generator
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Monoidal
 public import Mathlib.CategoryTheory.Abelian.Subobject
 public import Mathlib.CategoryTheory.Adjunction.AdjointFunctorTheorems
-public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
 
 /-!
 # The closed monoidal category of presheaves of modules
@@ -41,12 +40,11 @@ variable {C : Type u} [SmallCategory C] (R₀ : Cᵒᵖ ⥤ CommRingCat.{u})
 
 /-- The closed monoidal structure on presheaves of modules over a presheaf of commutative rings.
 Its internal Hom is the right adjoint supplied by the special adjoint functor theorem. -/
-instance monoidalClosed : MonoidalClosed (PresheafOfModules.{u} (R₀ ⋙ forget₂ _ RingCat)) where
+instance monoidalClosed : MonoidalClosed (PresheafOfModulesOfCommRing.{u} R₀) where
   closed M :=
-    letI := isLeftAdjoint_of_preservesColimits_of_isSeparating.{u}
+    haveI := isLeftAdjoint_of_preservesColimits_of_isSeparating.{u}
       (_root_.PresheafOfModules.freeYoneda.isSeparating (R₀ ⋙ forget₂ _ RingCat)) (tensorLeft M)
-    { rightAdj := (tensorLeft M).rightAdjoint
-      adj := Adjunction.ofIsLeftAdjoint (tensorLeft M) }
+    .mk _ (Adjunction.ofIsLeftAdjoint (tensorLeft M))
 
 end PresheafOfModules
 

@@ -33,6 +33,8 @@ covers every ring of odd characteristic.
 * `Matrix.trace_eq_zero_of_transpose_eq_neg`: the trace vanishes when `2` is invertible.
 * `Matrix.ext_of_lt_of_transpose_eq_neg`: two such matrices with vanishing diagonals agree as soon
   as they agree above the diagonal.
+* `Matrix.eta_fin_four_of_transpose_eq_neg`: a `4 × 4` such matrix written out in terms of its six
+  entries above the diagonal.
 * `Matrix.ofStrictUpper` and `Matrix.skewStrictUpperAddEquiv`: complete arbitrary strict-upper
   entries and give additive coordinates when doubling has trivial kernel.
 * `Matrix.ofStrictUpper_apply`, `Matrix.ofStrictUpper_zero`, `Matrix.ofStrictUpper_neg`, and
@@ -69,7 +71,7 @@ theorem single_sub_single_apply_of_lt [LinearOrder n] [AddGroup S]
     exact (not_lt_of_ge q.property.le) h
   have heq : (p.val.1 = q.val.1 ∧ p.val.2 = q.val.2) ↔ p = q :=
     ⟨fun h => Subtype.ext (Prod.ext h.1 h.2), fun h => by subst q; exact ⟨rfl, rfl⟩⟩
-  simp [sub_apply, single_apply, hrev, heq]
+  simp [single_apply, hrev, heq]
 
 /-- **The condition `Mᵀ = -M` passes to the image of the matrix** under an additive morphism of
 the entry types. -/
@@ -127,6 +129,19 @@ theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [Zero S] [Neg S] {M N : Ma
   · exact h a b hab
   · rw [hMd a, hNd a]
   · rw [hskew M hM b a, hskew N hN b a, h b a hab]
+
+/-- **A `4 × 4` matrix equal to the negative of its transpose, written out in terms of its six
+entries above the diagonal**, as soon as zero is the only entry that doubles to zero. -/
+theorem eta_fin_four_of_transpose_eq_neg [AddGroup S] {M : Matrix (Fin 4) (Fin 4) S}
+    (hM : Mᵀ = -M) (h2 : ∀ x : S, x + x = 0 → x = 0) :
+    M = !![0, M 0 1, M 0 2, M 0 3;
+      -M 0 1, 0, M 1 2, M 1 3;
+      -M 0 2, -M 1 2, 0, M 2 3;
+      -M 0 3, -M 1 3, -M 2 3, 0] := by
+  have h (i j : Fin 4) : M j i = -M i j := by simpa using congrFun (congrFun hM i) j
+  have hd := diag_eq_zero_of_transpose_eq_neg hM h2
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [hd, h 0 1, h 0 2, h 0 3, h 1 2, h 1 3, h 2 3]
 
 /-- Complete strict-upper entries to a matrix with zero diagonal and opposite lower entries. -/
 def ofStrictUpper [LinearOrder n] [AddGroup S]
@@ -197,7 +212,7 @@ theorem ofStrictUpper_apply_of_lt [LinearOrder n] [AddGroup S]
 theorem ofStrictUpper_apply_of_gt [LinearOrder n] [AddGroup S]
     (b : {p : n × n // p.1 < p.2} → S) (p : {p : n × n // p.1 < p.2}) :
     ofStrictUpper b p.val.2 p.val.1 = -b p := by
-  simpa only [transpose_apply, neg_apply, ofStrictUpper_apply_of_lt] using
+  simpa only [transpose_apply, Matrix.neg_apply, ofStrictUpper_apply_of_lt] using
     congrFun (congrFun (transpose_ofStrictUpper b) p.val.1) p.val.2
 
 /-- A skew matrix is recovered from its strict-upper entries when doubling has trivial kernel. -/

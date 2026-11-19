@@ -73,7 +73,7 @@ theorem OrderedIntermediateField.exists_isRoot_of_isMax
     (p : P.toIntermediateField[X]) (hp : Odd p.natDegree) : ∃ x, p.IsRoot x := by
   let := P.linearOrder
   have := P.isStrictOrderedRing
-  obtain ⟨q, hq, hqodd, hqp⟩ := exists_irreducible_factor_of_odd_natDegree p hp
+  obtain ⟨q, hq, hqodd, hqp⟩ := exists_irreducible_factor_of_odd_natDegree hp
   have : Fact (Irreducible q) := ⟨hq⟩
   have : FiniteDimensional P.toIntermediateField (AdjoinRoot q) :=
     (AdjoinRoot.powerBasis hq.ne_zero).finite
