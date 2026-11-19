@@ -49,9 +49,7 @@ example : glnHeckePolynomial 2 (2 : ℤ) ![1, 3, 5] = X ^ 2 - C 3 * X + C 10 := 
 -- it is `X² + X`.
 example : glnHeckePolynomial 2 (0 : ZMod 2) ![1, 1, 1] = X ^ 2 + X := by
   rw [glnHeckePolynomial_two]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
-    Matrix.tail_cons, map_one, one_mul, zero_mul, map_zero, add_zero]
-  exact CharTwo.sub_eq_add _ _
+  simp [CharTwo.sub_eq_add]
 
 -- In rank zero with `T₀ = 0` over `ℤ` the polynomial is `0`, which is not monic.
 example : ¬ (glnHeckePolynomial 0 (1 : ℤ) ![0]).Monic := by

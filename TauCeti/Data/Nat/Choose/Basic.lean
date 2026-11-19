@@ -91,10 +91,11 @@ theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 
 
 /-- Twice `C(a, 2)`, plus `ab`, is `a(a + b - 1)`, with truncated subtraction. -/
 theorem two_mul_choose_two_add_mul (a b : ℕ) : 2 * a.choose 2 + a * b = a * (a + b - 1) := by
-  have := Nat.le_mul_self a
-  rw [choose_two_right, Nat.mul_div_cancel' (even_mul_pred_self a).two_dvd, Nat.mul_sub_one,
-    Nat.mul_sub_one, mul_add]
-  omega
+  rcases a with _ | a
+  · simp
+  · have := add_one_mul_choose_eq a 1
+    simp only [choose_one_right, Nat.add_right_comm a 1 b, Nat.add_sub_cancel] at this ⊢
+    linarith
 
 /-- `g³ - g = (2g + 2) · C(g, 2)`. -/
 theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :

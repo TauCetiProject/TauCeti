@@ -131,7 +131,7 @@ theorem coeff_zero_glnHeckePolynomial :
 /-- The Hecke polynomial has degree at most `n`. -/
 theorem natDegree_glnHeckePolynomial_le : (glnHeckePolynomial n q T).natDegree ≤ n :=
   natDegree_le_iff_coeff_eq_zero.mpr fun _ hk =>
-    coeff_glnHeckePolynomial_of_lt q T (by exact_mod_cast hk)
+    coeff_glnHeckePolynomial_of_lt q T hk
 
 /-- The Hecke polynomial has degree `n` as soon as `T_0 ≠ 0`. -/
 theorem natDegree_glnHeckePolynomial (h : T 0 ≠ 0) : (glnHeckePolynomial n q T).natDegree = n :=
@@ -180,7 +180,7 @@ theorem glnHeckePolynomial_eq_prod_X_sub_C (s : A) (z : Fin n → A) :
   refine Finset.sum_congr rfl fun i _ => ?_
   have hexp : 2 * (i : ℕ).choose 2 + i * (n - i) = (n - 1) * i := by
     rw [Nat.two_mul_choose_two_add_mul, Nat.add_sub_cancel' i.is_le, mul_comm]
-  rw [← Multiset.pow_smul_esymm, smul_eq_mul, ← pow_mul, ← pow_mul, ← hexp, pow_add]
+  rw [← Multiset.pow_smul_esymm, smul_eq_mul, ← pow_mul s (n - 1), ← hexp]
   simp only [map_mul, map_pow, map_neg, map_one]
   ring
 
@@ -220,7 +220,7 @@ theorem coeff_glnHeckePolynomial_sub_mul_coeff_zero {T' : Fin (n + 1) → A}
   have hrev : ((i.rev : Fin (n + 1)) : ℕ) = j := by rw [Fin.val_rev]; omega
   rw [hrev]
   have hsign : (-1 : A) ^ (i : ℕ) * (-1) ^ (i + j : ℕ) = (-1) ^ j := by
-    rw [← pow_add, ← add_assoc, pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_mul]
+    simp [pow_add, ← mul_assoc, ← sq, ← pow_mul]
   have hexp : (i : ℕ).choose 2 + (i + j).choose 2 = i * (i + j - 1) + j.choose 2 := by
     rw [Nat.add_choose_two, ← Nat.two_mul_choose_two_add_mul]
     ring
