@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent.Escape
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Examples: explicit time-dependent flows on the real line
@@ -30,17 +31,6 @@ open scoped Manifold
 
 namespace TauCeti.Examples.TimeDependentFlow
 
-/-- A field `(t, y) ↦ F (t, y)` on the real line given by a `C¹` function is a jointly `C¹`
-time-dependent vector field. -/
-private theorem contMDiff_tangentBundle_of_contDiff {F : ℝ × ℝ → ℝ} (hF : ContDiff ℝ 1 F) :
-    ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, ℝ).tangent 1
-      (fun p : ℝ × ℝ ↦ (⟨p.2, F p⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) := by
-  have hpair : ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) 1 (fun p : ℝ × ℝ ↦ (p.2, F p)) :=
-    (contDiff_snd.prodMk hF).contMDiff
-  rw [modelWithCornersSelf_prod] at hpair
-  rw [chartedSpaceSelf_prod]
-  exact contMDiff_tangentBundleModelSpaceHomeomorph_symm.comp hpair
-
 /-! ### The field `y ↦ y²` -/
 
 /-- The time-independent field `y ↦ y²` on the real line. -/
@@ -50,7 +40,8 @@ def sqField : ℝ → (y : ℝ) → TangentSpace 𝓘(ℝ, ℝ) y := fun _ y ↦
 private theorem contMDiff_sqField :
     ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, ℝ).tangent 1
       (fun p : ℝ × ℝ ↦ (⟨p.2, sqField p.1 p.2⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-  contMDiff_tangentBundle_of_contDiff (F := fun p ↦ p.2 ^ 2) (by fun_prop)
+  contMDiff_tangentBundle_mk_modelSpace contMDiff_snd
+    ((contDiff_id.pow 2).contMDiff.comp contMDiff_snd)
 
 /-- Where `(u - s) x < 1`, the curve `u ↦ x / (1 - (u - s) x)` solves `γ' = γ²`. -/
 private theorem hasMFDerivAt_sqSolution {s x u : ℝ} (hu : (u - s) * x < 1) :
@@ -194,7 +185,7 @@ def clockField : ℝ → (y : ℝ) → TangentSpace 𝓘(ℝ, ℝ) y := fun t _ 
 private theorem contMDiff_clockField :
     ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, ℝ).tangent 1
       (fun p : ℝ × ℝ ↦ (⟨p.2, clockField p.1 p.2⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-  contMDiff_tangentBundle_of_contDiff (F := fun p ↦ p.1) (by fun_prop)
+  contMDiff_tangentBundle_mk_modelSpace contMDiff_snd contMDiff_fst
 
 /-- The curve `u ↦ x + (u² - s²) / 2` solves `γ' = u`. -/
 private theorem hasMFDerivAt_clockSolution (s x u : ℝ) :

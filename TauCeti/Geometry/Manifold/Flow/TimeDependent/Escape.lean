@@ -59,21 +59,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpa
   [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
   {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ} {x : M} {K : Set M}
 
-omit [CompleteSpace E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
-/-- At a time `s + τ` at which the flow from `(s, x)` is defined, the maximal integral curve of the
-suspension through `(s, x)` is at `(s + τ, φ_{s, s + τ}(x))`. -/
-private theorem maximalIntegralCurve_timeDependentSuspensionField {τ : ℝ}
-    (hτ : τ ∈ maximalIntegralCurveInterval (timeDependentSuspensionField X) (s, x)) :
-    ((s, s + τ), x) ∈ timeDependentFlowDomain X ∧
-      maximalIntegralCurve (timeDependentSuspensionField X) (s, x) τ =
-        (s + τ, timeDependentFlowOf X s (s + τ) x) := by
-  have hD : ((s, s + τ), x) ∈ timeDependentFlowDomain X := by
-    rw [mem_timeDependentFlowDomain, add_sub_cancel_left]
-    exact mem_flowDomain.2 hτ
-  refine ⟨hD, ?_⟩
-  have hpt := flowOf_timeDependentSuspensionField hD
-  rwa [add_sub_cancel_left, flowOf_apply] at hpt
-
 section Escape
 
 variable (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1

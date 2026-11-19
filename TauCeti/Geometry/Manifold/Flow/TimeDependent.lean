@@ -54,6 +54,8 @@ the initial position of the submanifold to the later ones.
 
 * `TauCeti.flowOf_timeDependentSuspensionField`: the flow of the suspension advances the clock at
   unit speed and moves the point along the time-dependent flow.
+* `TauCeti.maximalIntegralCurve_timeDependentSuspensionField`: the maximal integral curve of the
+  suspension through `(s, x)` is at `(s + τ, φ_{s, s + τ}(x))` at every time `τ` of its interval.
 * `TauCeti.isOpen_timeDependentFlowDomain` and `TauCeti.contMDiffOn_timeDependentFlowOf`: the
   domain is open and the flow is jointly `C^n` on it.
 * `TauCeti.mfderiv_timeDependentFlowOf_trans_of_mem`: the chain rule for the two-time
@@ -275,6 +277,20 @@ theorem fst_flowOf_timeDependentSuspensionField {τ : ℝ}
 theorem flowOf_timeDependentSuspensionField (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     flowOf (timeDependentSuspensionField X) (t - s) (s, x) = (t, timeDependentFlowOf X s t x) :=
   Prod.ext (by rw [fst_flowOf_timeDependentSuspensionField h]; ring) (rfl)
+
+/-- At a time `s + τ` at which the flow from `(s, x)` is defined, the maximal integral curve of the
+suspension through `(s, x)` is at `(s + τ, φ_{s, s + τ}(x))`. -/
+theorem maximalIntegralCurve_timeDependentSuspensionField {τ : ℝ}
+    (hτ : τ ∈ maximalIntegralCurveInterval (timeDependentSuspensionField X) (s, x)) :
+    ((s, s + τ), x) ∈ timeDependentFlowDomain X ∧
+      maximalIntegralCurve (timeDependentSuspensionField X) (s, x) τ =
+        (s + τ, timeDependentFlowOf X s (s + τ) x) := by
+  have hD : ((s, s + τ), x) ∈ timeDependentFlowDomain X := by
+    rw [mem_timeDependentFlowDomain, add_sub_cancel_left]
+    exact mem_flowDomain.2 hτ
+  refine ⟨hD, ?_⟩
+  have hpt := flowOf_timeDependentSuspensionField hD
+  rwa [add_sub_cancel_left, flowOf_apply] at hpt
 
 /-- The time-dependent flow from time `s` to time `s` is the identity. -/
 @[simp]
@@ -503,11 +519,7 @@ theorem isCompleteVectorField_timeDependentSuspensionField {K : Set M} (hK : IsC
   -- On a bounded time interval `[a, b]`, the maximal integral curve stays in a compact set.
   have hmem {a b τ : ℝ} (hτ : τ ∈ maximalIntegralCurveInterval W (s, x)) (hτab : τ ∈ Icc a b) :
       maximalIntegralCurve W (s, x) τ ∈ Icc (s + a) (s + b) ×ˢ insert x K := by
-    have hD : ((s, s + τ), x) ∈ timeDependentFlowDomain X := by
-      rw [mem_timeDependentFlowDomain, add_sub_cancel_left]
-      exact mem_flowDomain.2 hτ
-    have hpt := flowOf_timeDependentSuspensionField hD
-    rw [add_sub_cancel_left, flowOf_apply] at hpt
+    obtain ⟨hD, hpt⟩ := maximalIntegralCurve_timeDependentSuspensionField hτ
     rw [hpt]
     exact ⟨⟨by linarith [hτab.1], by linarith [hτab.2]⟩, timeDependentFlowOf_mem_insert hX hXK hD⟩
   have hC (a b : ℝ) : IsCompact (Icc (s + a) (s + b) ×ˢ insert x K) :=
