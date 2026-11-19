@@ -364,6 +364,11 @@ instance isEmpty_diskBoundary_zero : IsEmpty (TopCat.diskBoundary.{u} 0) :=
     Set.isEmpty_coe_sort.mpr (Metric.sphere_eq_empty_of_subsingleton one_ne_zero)
   (diskBoundaryHomeomorph 0).toEquiv.isEmpty
 
+/-- The `0`-disk is a single point, the origin of the zero space. -/
+instance uniqueDiskZero : Unique (TopCat.disk.{u} 0) where
+  default := diskCenter 0
+  uniq _ := ULift.ext (Subtype.ext (Subsingleton.elim _ _))
+
 /-- A point of the boundary `S⁰` of the `1`-disk is determined by its coordinate. -/
 lemma diskBoundary_one_ext {p q : TopCat.diskBoundary.{u} 1}
     (h : ((p : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
