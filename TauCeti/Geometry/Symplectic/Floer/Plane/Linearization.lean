@@ -14,7 +14,6 @@ import TauCeti.Geometry.Symplectic.Floer.Plane.ExponentialDecay
 import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
-import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.Topology.MetricSpace.Pseudo.Basic
 
 /-!
@@ -204,81 +203,6 @@ theorem norm_floerLinearization_comp_realChart_cylindricalEndLift_sq_le (ω : Sy
         rw [mul_pow, ← mul_assoc]
         exact mul_le_mul_of_nonneg_right hCS (sq_nonneg _)
 
-/-- The band `R ≤ ε s ≤ N` of the end, in the longitudinal coordinate `s`, is a closed interval
-`[a, b]` whose endpoints lie on the two boundary slices. -/
-private theorem exists_Icc_eq_preimage_endSign_mul (p : PSSPlane) {R N : ℝ} (h : R ≤ N) :
-    ∃ a b : ℝ, a ≤ b ∧ (∀ s, s ∈ Icc a b ↔ p.endSign * s ∈ Icc R N) ∧
-      (p.endSign * a = R ∨ p.endSign * a = N) ∧ (p.endSign * b = R ∨ p.endSign * b = N) := by
-  cases p
-  · exact ⟨R, N, h, fun s ↦ by simp, by simp, by simp⟩
-  · refine ⟨-N, -R, by linarith, fun s ↦ ?_, by simp, by simp⟩
-    simp only [endSign_negative, neg_mul, one_mul, mem_Icc]
-    constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- **Sections far out on the end, in end coordinates.** A section `ξ` with compact support in the
-part `‖w‖ > exp (2π R)` of a PSS plane is, in end coordinates, supported in a band `[a, b] × ℝ` on
-which `ε s ≥ R`: it vanishes on the two boundary slices and near every point off the band. -/
-private theorem exists_band_of_tsupport_subset (p : PSSPlane) {R : ℝ} {ξ : ℝ × ℝ → V}
-    (hξc : HasCompactSupport ξ)
-    (hξR : tsupport ξ ⊆ {z | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖}) :
-    ∃ a b : ℝ, a ≤ b ∧ (∀ s ∈ Icc a b, R ≤ p.endSign * s) ∧
-      (∀ t, (ξ ∘ realChart p.cylindricalEndLift) (a, t) = 0) ∧
-      (∀ t, (ξ ∘ realChart p.cylindricalEndLift) (b, t) = 0) ∧
-      ∀ ζ : ℝ × ℝ, ζ.1 ∉ Icc a b → ξ ∘ realChart p.cylindricalEndLift =ᶠ[𝓝 ζ] 0 := by
-  set φ := realChart p.cylindricalEndLift
-  obtain ⟨M, hM⟩ := hξc.isCompact.exists_bound_of_continuousOn
-    Complex.equivRealProdCLM.symm.continuous.continuousOn
-  set N := max (max M 0 + 1) R
-  -- In end coordinates, `ξ ∘ φ` vanishes outside the open band `R < ε s < N`.
-  have hvan (ζ : ℝ × ℝ) (hζ : ¬ (R < p.endSign * ζ.1 ∧ p.endSign * ζ.1 < N)) :
-      (ξ ∘ φ) ζ = 0 := by
-    by_contra h
-    have hs : φ ζ ∈ tsupport ξ := subset_tsupport _ h
-    have h₁ : Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm (φ ζ)‖ := hξR hs
-    have h₂ := hM _ hs
-    rw [norm_symm_realChart_cylindricalEndLift, Real.exp_lt_exp] at h₁
-    rw [norm_symm_realChart_cylindricalEndLift] at h₂
-    refine hζ ⟨lt_of_mul_lt_mul_left h₁ (by positivity), lt_of_not_ge fun h₃ ↦ ?_⟩
-    -- Otherwise `exp (2π N) ≤ M`, while `exp (2π N) ≥ 1 + 2π N > N > M`.
-    have h₄ : max M 0 + 1 ≤ N := le_max_left _ _
-    have h₅ : N ≤ 2 * π * N := by nlinarith [Real.two_le_pi, le_max_right M 0]
-    have h₆ : Real.exp (2 * π * N) ≤ Real.exp (2 * π * (p.endSign * ζ.1)) :=
-      Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
-    linarith [le_max_left M 0, Real.add_one_le_exp (2 * π * N)]
-  obtain ⟨a, b, hab, hband, ha, hb⟩ := exists_Icc_eq_preimage_endSign_mul p (le_max_right _ R)
-  have hendpt {s : ℝ} (hs : p.endSign * s = R ∨ p.endSign * s = N) (t : ℝ) :
-      (ξ ∘ φ) (s, t) = 0 :=
-    hvan _ fun h ↦ by rcases hs with hs | hs <;> simp only [hs] at h <;> linarith [h.1, h.2]
-  refine ⟨a, b, hab, fun s hs ↦ ((hband s).1 hs).1, hendpt ha, hendpt hb, fun ζ hζ ↦ ?_⟩
-  filter_upwards [(isClosed_Icc.preimage continuous_fst).isOpen_compl.mem_nhds hζ] with ζ' hζ'
-  exact hvan ζ' fun h ↦ hζ' ((hband _).2 ⟨h.1.le, h.2.le⟩)
-
-/-- **Changing variables along the end lift.** For a nonnegative integrable function `g` on the
-plane, the integral of `det (dφ) · g ∘ φ` over a band `[a, b] × [0, 1]` of the cylinder is at most
-the integral of `g`: the end lift `φ` is injective on a strip of angular width one. -/
-private theorem setIntegral_det_mul_comp_realChart_le_integral (p : PSSPlane) {g : ℝ × ℝ → ℝ}
-    (hg : ∀ z, 0 ≤ g z) (hgi : Integrable g) (a b : ℝ) :
-    ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1, (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det *
-        g (realChart p.cylindricalEndLift ζ) ≤ ∫ z, g z := by
-  have hs : MeasurableSet (Ioo a b ×ˢ Ioo (0 : ℝ) 1) := measurableSet_Ioo.prod measurableSet_Ioo
-  have hinj : InjOn (realChart p.cylindricalEndLift) (Ioo a b ×ˢ Ioo (0 : ℝ) 1) :=
-    TauCeti.Complex.injOn_realChart <| (p.injOn_cylindricalEndLift 0).mono <| by
-      rintro _ ⟨q, hq, rfl⟩
-      simp only [mem_ofPred_eq, Complex.equivRealProdCLM_symm_apply_im, zero_add]
-      exact Ioo_subset_Ico_self hq.2
-  calc _ = ∫ ζ in Ioo a b ×ˢ Ioo (0 : ℝ) 1, (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det *
-        g (realChart p.cylindricalEndLift ζ) := by
-        refine setIntegral_congr_set ?_
-        rw [Measure.volume_eq_prod]
-        exact (Measure.set_prod_ae_eq Ioo_ae_eq_Icc Ioo_ae_eq_Icc).symm
-    _ = ∫ z in realChart p.cylindricalEndLift '' (Ioo a b ×ˢ Ioo (0 : ℝ) 1), g z := by
-        refine (integral_image_eq_integral_of_eq_abs_det_smul hs hinj
-          (fun ζ _ ↦ (contDiff_realChart (n := 1) p.contDiff_cylindricalEndLift).differentiable
-            one_ne_zero ζ) fun ζ _ ↦ ?_).symm
-        rw [abs_of_pos (p.det_fderiv_realChart_cylindricalEndLift_pos ζ), smul_eq_mul]
-    _ ≤ _ := setIntegral_le_integral hgi (ae_of_all _ hg)
-
 /-- The linearized operator of a PSS plane applied to a `C¹` section `ξ` with compact support in a
 set `Ω`, along a map `u` which is `C¹` on `Ω` with `J` also `C¹` along `u` there, is continuous
 on the plane and has compact support. -/
@@ -345,14 +269,14 @@ private theorem exists_setIntegral_le_mul_setIntegral_floerLinearization_comp_re
             (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
             (fun w ↦ H w.2) (u ∘ realChart p.cylindricalEndLift) ξ ζ‖ ^ 2 := by
   set φ := realChart p.cylindricalEndLift
-  have hε : p.endSign * p.endSign = 1 := by cases p <;> simp
   -- Far out on the end, in the longitudinal coordinate `s`, means along `l`.
   set l : Filter ℝ := map (p.endSign * ·) atTop
   have hl {P : ℝ → Prop} (h : ∀ᶠ s in l, P s) : ∃ R, ∀ s, R ≤ p.endSign * s → P s := by
     obtain ⟨R, hR⟩ := eventually_atTop.1 (eventually_map.1 h)
-    exact ⟨R, fun s hs ↦ by simpa [← mul_assoc, hε] using hR _ hs⟩
+    exact ⟨R, fun s hs ↦ by simpa [← mul_assoc] using hR _ hs⟩
   have hlr : ∀ᶠ s in l, r < p.endSign * s :=
-    eventually_map.2 ((eventually_gt_atTop r).mono fun s hs ↦ by rwa [← mul_assoc, hε, one_mul])
+    eventually_map.2 ((eventually_gt_atTop r).mono fun s hs ↦ by
+      rwa [← mul_assoc, endSign_mul_endSign, one_mul])
   have hux' : TendstoUniformlyOn (fun s t ↦ (u ∘ φ) (s, t)) x l (Icc 0 1) :=
     fun U hU ↦ eventually_map.2 (hux U hU)
   obtain ⟨C₁, -, U, hU, hest⟩ :=
@@ -368,7 +292,7 @@ private theorem exists_setIntegral_le_mul_setIntegral_floerLinearization_comp_re
     filter_upwards [Metric.tendstoUniformlyOn_iff.1 hux' 1 one_pos] with s hs t ht
     exact hB (t, _) ⟨ht, Metric.mem_cthickening_of_dist_le _ (x t) 1 _ (mem_image_of_mem x ht)
       (by rw [dist_comm]; exact (hs t ht).le)⟩
-  obtain ⟨R₀, hR₀⟩ := hl ((show ∀ᶠ s in l, s ∈ U from hU).and hBl)
+  obtain ⟨R₀, hR₀⟩ := hl ((eventually_mem_set.2 hU).and hBl)
   exact ⟨C₁, B, R₀, fun a b hab hR ↦ ⟨fun s hs ↦ (hR₀ s (hR s hs)).2,
     fun ξ hξ hper ha hb ↦ hest hξ hper hab (fun s hs ↦ (hR₀ s (hR s hs)).1) ha hb⟩⟩
 
@@ -416,9 +340,8 @@ private theorem setIntegral_norm_floerLinearization_comp_realChart_sq_le (ω : S
   have hDi : Integrable fun z ↦ ‖D z‖ ^ 2 := Continuous.integrable_of_hasCompactSupport
     (f := fun z ↦ ‖D z‖ ^ 2) (hD.norm.pow 2) (hDs.comp_left (g := fun v : V ↦ ‖v‖ ^ 2) (by simp))
   have hmem {ζ : ℝ × ℝ} (hζ : ζ ∈ Icc a b ×ˢ Icc (0 : ℝ) 1) :
-      Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm (φ ζ)‖ := by
-    rw [norm_symm_realChart_cylindricalEndLift, Real.exp_lt_exp]
-    nlinarith [Real.pi_pos, (hab _ hζ.1).1]
+      Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm (φ ζ)‖ :=
+    p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 (hab _ hζ.1).1
   have hrect : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
   -- The operator of the end data along `u ∘ φ` on `ξ ∘ φ` is continuous on the band.
   have hD' : ContinuousOn (fun ζ ↦ ‖ω.floerLinearization
@@ -449,12 +372,50 @@ private theorem setIntegral_norm_floerLinearization_comp_realChart_sq_le (ω : S
             exact hB ζ.1 hζ.1 ζ.2 hζ.2
     _ = (1 + B ^ 2) * ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1, (fderiv ℝ φ ζ).det * ‖D (φ ζ)‖ ^ 2 :=
         integral_const_mul _ _
-    _ ≤ _ := mul_le_mul_of_nonneg_left (setIntegral_det_mul_comp_realChart_le_integral p
-        (fun _ ↦ sq_nonneg _) hDi a b) (by positivity)
+    _ ≤ _ := mul_le_mul_of_nonneg_left
+        (p.setIntegral_det_mul_comp_realChart_cylindricalEndLift_le_integral
+          (fun _ ↦ sq_nonneg _) hDi a b) (by positivity)
+
+/-- **Structures cylindrical on the end are smooth there.** If from `ε s > r` on the structures
+of a PSS plane read in end coordinates are a `Cⁿ` family `J_e(t)`, then `J` is `Cⁿ` jointly in the
+domain point and the target point on the part `‖w‖ > exp (2π r)` of the plane. -/
+private theorem contDiffAt_of_comp_realChart_cylindricalEndLift_eq (p : PSSPlane)
+    {n : WithTop ℕ∞} {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    {Je : ℝ → V → AlmostComplexStructure V}
+    (hJe : ContDiff ℝ n fun q : ℝ × V ↦ (Je q.1 q.2).toLinearMap.toContinuousLinearMap) {r : ℝ}
+    (hJeq : ∀ ζ : ℝ × ℝ, r < p.endSign * ζ.1 → J (realChart p.cylindricalEndLift ζ) = Je ζ.2)
+    {z : ℝ × ℝ} (hz : Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖) (y : V) :
+    ContDiffAt ℝ n (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap)
+      (z, y) := by
+  -- `J_e` has period one, as the end lift has.
+  have hper : Periodic (fun t y ↦ (Je t y).toLinearMap.toContinuousLinearMap) 1 := fun t ↦ by
+    have h₁ := hJeq (p.endSign * (r + 1), t + 1) (by simp [← mul_assoc])
+    have h₂ := hJeq (p.endSign * (r + 1), t) (by simp [← mul_assoc])
+    rw [realChart_cylindricalEndLift_add_one] at h₁
+    simp only [← h₁.symm.trans h₂]
+  have h := p.contMDiffAt_comp_im_endCoord hper
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hJe.contMDiff)
+    (norm_pos_iff.1 ((Real.exp_pos _).trans hz)) y
+  refine ((contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt.comp (z, y)
+    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
+      contDiff_snd).contDiffAt).congr_of_eventuallyEq ?_
+  -- On the part `‖w‖ > exp (2π r)`, `J w` is `J_e` at the angular coordinate of `w`.
+  have hΩ : IsOpen {w : ℝ × ℝ | Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm w‖} :=
+    isOpen_lt continuous_const (by fun_prop)
+  filter_upwards [(hΩ.preimage continuous_fst).mem_nhds hz] with q hq
+  replace hq : Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm q.1‖ := hq
+  have hφ : realChart p.cylindricalEndLift
+      (Complex.equivRealProdCLM (p.endCoord (Complex.equivRealProdCLM.symm q.1))) = q.1 := by
+    rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+      p.cylindricalEndLift_endCoord (norm_pos_iff.1 ((Real.exp_pos _).trans hq)),
+      ContinuousLinearEquiv.apply_symm_apply]
+  have hJq := hJeq _ (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.1 (by rwa [hφ]))
+  rw [hφ] at hJq
+  simp [hJq]
 
 /-- **The end estimate on a PSS plane.** Let `u` be `C¹` on a part `‖w‖ > exp (2π r)` of the end
 of the PSS plane `p`, solving there the Floer equation for the perturbation of a jointly `C²`
-period-one Hamiltonian `H`, with `J` also `C¹` along `u`. Suppose that, with `φ` the end lift and
+period-one Hamiltonian `H`. Suppose that, with `φ` the end lift and
 `ε = p.endSign`, the loops `t ↦ u(φ(ε s, t))` converge uniformly as `s → ∞` to an orbit `x` of
 `H` starting at a nondegenerate fixed point of the time-one map, while the slice defect
 `∂t (u ∘ φ) - X_{H_t}(u ∘ φ)` at `(ε s, t)` tends uniformly to zero, and that from `ε s > r` on,
@@ -477,8 +438,6 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
     (hJex : ∀ t, ω.Compatible (Je t (x t))) {r : ℝ}
     (hJeq : ∀ ζ : ℝ × ℝ, r < p.endSign * ζ.1 → J (realChart p.cylindricalEndLift ζ) = Je ζ.2)
     {u : ℝ × ℝ → V}
-    (hJ : ∀ z, Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖ → ContDiffAt ℝ 1
-      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z))
     (hu : ∀ z, Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖ → ContDiffAt ℝ 1 u z)
     (hF : ∀ z, Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖ →
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
@@ -502,10 +461,9 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
           u ξ z‖ ^ 2 := by
   set φ := realChart p.cylindricalEndLift
   have hφ : ContDiff ℝ 2 φ := contDiff_realChart p.contDiff_cylindricalEndLift
-  have huφ (ζ : ℝ × ℝ) (hζ : r < p.endSign * ζ.1) : ContDiffAt ℝ 1 (u ∘ φ) ζ := by
-    refine (hu _ ?_).comp _ (hφ.contDiffAt.of_le one_le_two)
-    rw [norm_symm_realChart_cylindricalEndLift, Real.exp_lt_exp]
-    nlinarith [Real.pi_pos]
+  have huφ (ζ : ℝ × ℝ) (hζ : r < p.endSign * ζ.1) : ContDiffAt ℝ 1 (u ∘ φ) ζ :=
+    (hu _ (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hζ)).comp _
+      (hφ.contDiffAt.of_le one_le_two)
   obtain ⟨C₁, B, R₀, hfar⟩ :=
     ω.exists_setIntegral_le_mul_setIntegral_floerLinearization_comp_realChart p hHs hX hx hnd hJe
       hJex huφ hux hδ
@@ -516,13 +474,14 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
   have hRΩ : {z : ℝ × ℝ | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
       {z | Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖} :=
     fun z hz ↦ lt_trans (Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])) hz
-  obtain ⟨hD, hDs⟩ := ω.continuous_floerLinearization_perturbation hH hHs (fun z hz ↦ hJ z hz)
+  obtain ⟨hD, hDs⟩ := ω.continuous_floerLinearization_perturbation hH hHs
+    (fun z hz ↦ contDiffAt_of_comp_realChart_cylindricalEndLift_eq p hJe hJeq hz (u z))
     (fun z hz ↦ hu z hz) (hξ.of_le one_le_two) hξc (hξR.trans hRΩ)
   set D := ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u ξ
   -- In end coordinates, `ξ ∘ φ` is supported in a band `[a, b]` on which `ε s ≥ R`.
-  obtain ⟨a, b, hab, hband, ha, hb, hout⟩ := exists_band_of_tsupport_subset p hξc hξR
+  obtain ⟨a, b, hab, hband, ha, hb, hout⟩ := p.exists_band_of_tsupport_subset hξc hξR
   obtain ⟨hB, hest⟩ := hfar hab fun s hs ↦ (le_max_left _ _).trans (hband s hs)
   calc _ = ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1,
         (‖fderiv ℝ (ξ ∘ φ) ζ stdComplexLineReal‖ ^ 2 +
@@ -551,6 +510,12 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
             (le_max_right _ _))
     _ = _ := by ring
 
+/-- The bound `c exp (-κ s)` with `κ > 0` tends to zero as `s → ∞`. -/
+private theorem tendsto_const_mul_exp_neg_mul_atTop (c : ℝ) {κ : ℝ} (hκ : 0 < κ) :
+    Tendsto (fun s ↦ c * Real.exp (-(κ * s))) atTop (𝓝 0) := by
+  simpa using
+    (Real.tendsto_exp_neg_atTop_nhds_zero.comp (tendsto_id.const_mul_atTop hκ)).const_mul c
+
 /-- **The slice defect at the end of a decaying plane.** If the loops of `u` along the end come
 within `A exp (-κ s)` of an orbit `x` of `H` in `C¹`, for large `s`, with `κ > 0`, and the suspended
 Hamiltonian vector field is `L`-Lipschitz, then the slice defect `∂t (u ∘ φ) - X_{H_t}(u ∘ φ)` at
@@ -566,8 +531,7 @@ private theorem tendstoUniformlyOn_sliceDefect_of_le_exp (ω : SymplecticForm V)
     TendstoUniformlyOn (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t))
       (u ∘ realChart p.cylindricalEndLift) (p.endSign * s, t)) 0 atTop S := by
   refine tendstoUniformlyOn_of_dist_le (u := fun s ↦ (1 + L) * A * Real.exp (-(κ * s)))
-    (by simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-      (tendsto_id.const_mul_atTop hκ)).const_mul ((1 + L) * A)) ?_
+    (tendsto_const_mul_exp_neg_mul_atTop _ hκ) ?_
   filter_upwards [hdecay] with s hs t _
   set y := u (realChart p.cylindricalEndLift (p.endSign * s, t))
   set d := fderiv ℝ (u ∘ realChart p.cylindricalEndLift) (p.endSign * s, t)
@@ -590,22 +554,6 @@ private theorem tendstoUniformlyOn_sliceDefect_of_le_exp (ω : SymplecticForm V)
     _ ≤ A * Real.exp (-(κ * s)) + L * (A * Real.exp (-(κ * s))) := by
         linarith [hs t, mul_le_mul_of_nonneg_left hy L.coe_nonneg, norm_nonneg (y - x t)]
     _ = _ := by ring
-
-/-- A one-periodic `C²` family `J_t` of structures, read at the angular coordinate of the plane in
-real coordinates, is `C¹` jointly in the domain point and the target point away from the pole. -/
-private theorem contDiffAt_comp_im_endCoord_symm (p : PSSPlane)
-    {Jq : ℝ → V → AlmostComplexStructure V}
-    (hJq : ContDiff ℝ 2 fun q : ℝ × V ↦ (Jq q.1 q.2).toLinearMap.toContinuousLinearMap)
-    (hJqper : Periodic Jq 1) {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0) (y : V) :
-    ContDiffAt ℝ 1 (fun q : (ℝ × ℝ) × V ↦ (Jq (p.endCoord
-      (Complex.equivRealProdCLM.symm q.1)).im q.2).toLinearMap.toContinuousLinearMap) (z, y) := by
-  have hper : Periodic (fun t y ↦ (Jq t y).toLinearMap.toContinuousLinearMap) 1 := fun t ↦ by
-    simp only [hJqper t]
-  have h := p.contMDiffAt_comp_im_endCoord hper
-    (contMDiff_prod_modelWithCornersSelf_iff.2 hJq.contMDiff) hz y
-  exact ((contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt.comp (z, y)
-    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
-      contDiff_snd).contDiffAt).of_le one_le_two
 
 section InnerProductSpace
 
@@ -675,43 +623,26 @@ theorem exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearizat
   simp only [hrealChart] at hdecay
   have hloop (S : Set ℝ) : TendstoUniformlyOn
       (fun s t ↦ u (realChart p.cylindricalEndLift (p.endSign * s, t))) x atTop S :=
-    tendstoUniformlyOn_of_dist_le (by simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
-      (tendsto_id.const_mul_atTop hκ)).const_mul A) (hdecay.mono fun s hs t _ ↦ by
+    tendstoUniformlyOn_of_dist_le (tendsto_const_mul_exp_neg_mul_atTop A hκ)
+      (hdecay.mono fun s hs t _ ↦ by
         rw [dist_eq_norm]
         exact (le_add_of_nonneg_right (norm_nonneg _)).trans (hs t))
+  obtain ⟨a, -, hsub⟩ := exists_two_le_exp_lt_norm_subset r
   -- The orbit stays in `K`, as a limit of loops in `K`.
   have hxK (t : ℝ) : x t ∈ K := by
     refine hK.isClosed.mem_of_tendsto ((hloop {t}).tendsto_at (mem_singleton t)) ?_
-    filter_upwards [eventually_ge_atTop (max r 0)] with s hs
-    refine huK _ ?_
-    have hs' : p.endSign * (p.endSign * s, t).1 = s := by cases p <;> simp
-    rw [norm_symm_realChart_cylindricalEndLift, hs']
-    nlinarith [Real.add_one_le_exp (2 * π * s), Real.two_le_pi, le_max_left r 0,
-      le_max_right r 0]
-  -- Far out on the end, `J` is `J_t` in end coordinates and smooth along `u`.
-  obtain ⟨a, -, hsub⟩ := exists_two_le_exp_lt_norm_subset r
+    filter_upwards [eventually_gt_atTop a] with s hs
+    exact huK _ (hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
+      (by simpa [← mul_assoc] using hs)))
+  -- Far out on the end, `J` is `J_t` in end coordinates.
   have hJeq (ζ : ℝ × ℝ) (hζ : a < p.endSign * ζ.1) :
       J (realChart p.cylindricalEndLift ζ) = Jq ζ.2 := by
-    have hζ' : Real.exp (2 * π * a) <
-        ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift ζ)‖ := by
-      rw [norm_symm_realChart_cylindricalEndLift, Real.exp_lt_exp]
-      nlinarith [Real.pi_pos]
-    rw [hJ _ (hsub hζ'), realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-      apply_im_endCoord_cylindricalEndLift hJqper, Complex.equivRealProdCLM_symm_apply_im]
-  set Ωa := {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖}
-  have hΩa : IsOpen Ωa := isOpen_lt continuous_const (by fun_prop)
-  have hJs (z : ℝ × ℝ) (hz : z ∈ Ωa) : ContDiffAt ℝ 1
-      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, u z) := by
-    have hz0 : Complex.equivRealProdCLM.symm z ≠ 0 := fun h ↦ by
-      have : Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖ := hz
-      rw [h, norm_zero] at this
-      exact (Real.exp_pos _).not_ge this.le
-    refine (contDiffAt_comp_im_endCoord_symm p hJq hJqper hz0 (u z)).congr_of_eventuallyEq ?_
-    filter_upwards [(hΩa.preimage continuous_fst).mem_nhds hz] with q hq
-    simp [hJ q.1 (hsub hq)]
+    rw [hJ _ (hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hζ)), realChart_apply,
+      ContinuousLinearEquiv.symm_apply_apply, apply_im_endCoord_cylindricalEndLift hJqper,
+      Complex.equivRealProdCLM_symm_apply_im]
   exact ω.exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization
     p hH (hHs.of_le (by norm_num)) hL hx (hnd x hxper hx hxK) (Je := Jq) (hJq.of_le one_le_two)
-    (fun t ↦ hJqK t _ (hxK t)) hJeq (fun z hz ↦ hJs z hz)
+    (fun t ↦ hJqK t _ (hxK t)) hJeq
     (fun z hz ↦ (hu.contDiffAt (hΩ.mem_nhds (hsub hz))).of_le (by norm_num))
     (fun z hz ↦ hF z (hsub hz)) (hloop _)
     (tendstoUniformlyOn_sliceDefect_of_le_exp ω p hL hκ hdecay _)
