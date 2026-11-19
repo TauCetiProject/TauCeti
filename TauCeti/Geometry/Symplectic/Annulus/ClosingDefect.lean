@@ -453,14 +453,12 @@ example (x v : ℝ) (hv : v ∈ Icc (0 : ℝ) 1) :
     · omega
   · refine stripClosingDefect_pos (J := Icc 0 1) (P := {1}) hx hP hN ⟨zero_le_one, le_rfl⟩
       (hline 1)
-      (z := fun k ↦ if k = 0 then (x, 1) else if k = 1 then (x - 7 / 8, 1) else (x + 1 / 8, 1))
-      (fun k hk ↦ ?_) rfl (by norm_num) (hy 1 ⟨zero_le_one, le_rfl⟩)
+      (z := fun k ↦ if k = 0 then (x, 1) else if k = 1 then (x - 7 / 8, 1) else (x - 7 / 8 + 1, 1))
+      (fun k hk ↦ ?_) rfl (by norm_num [sub_add]) (hy 1 ⟨zero_le_one, le_rfl⟩)
       (Fin.forall_fin_two.2 ⟨by simp [hv.2], by simp⟩)
     obtain _ | _ | k := k
     · norm_num [F]
-    · change (x + 1 / 8, (1 : ℝ)) = (x - 7 / 8 + 1, 1)
-      congr 1
-      ring
+    · norm_num [F]
     · omega
 
 end TauCeti
