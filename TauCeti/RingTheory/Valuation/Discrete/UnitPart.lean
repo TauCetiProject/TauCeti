@@ -33,26 +33,16 @@ namespace Valuation
 
 variable {F : Type*} [Field F] (v : Valuation F ℤᵐ⁰)
 
-/-- A field unit belongs to the valuation-ring unit subgroup exactly when its order is zero. -/
-theorem mem_unitGroup_iff_ord_eq_zero (f : Fˣ) :
-    f ∈ v.valuationSubring.unitGroup ↔ v.ord (f : F) = 0 := by
-  rw [mem_unitGroup_iff, ord_eq_iff_valuation_eq_exp_neg v (v.ne_zero_iff.mpr f.ne_zero)]
-  simp
-
 /-- The unit part of a field unit relative to an order-one parameter, as a homomorphism
 to the unit subgroup of the valuation ring. -/
 noncomputable def unitPart (t : Fˣ) (ht : v.ord (t : F) = 1) :
     Fˣ →* v.valuationSubring.unitGroup where
   toFun f := ⟨f * t ^ (-v.ord (f : F)), by
-    rw [mem_unitGroup_iff_ord_eq_zero]
-    simp only [Units.val_mul, Units.val_zpow_eq_zpow_val,
-      ord_mul v (v.ne_zero_iff.mpr f.ne_zero)
-        (v.ne_zero_iff.mpr (zpow_ne_zero _ t.ne_zero)), ord_zpow, ht]
-    ring⟩
+    rw [mem_unitGroup_iff_ord_eq_zero, Units.val_mul, ord_units_mul]
+    simp [Units.val_zpow_eq_zpow_val, ht]⟩
   map_one' := Subtype.ext (by simp)
   map_mul' f g := Subtype.ext (by
-    simp only [Units.val_mul, ord_mul v (v.ne_zero_iff.mpr f.ne_zero)
-      (v.ne_zero_iff.mpr g.ne_zero), neg_add, zpow_add, Subgroup.coe_mul]
+    simp only [Units.val_mul, ord_units_mul, neg_add, zpow_add, Subgroup.coe_mul]
     ac_rfl)
 
 /-- The field-unit value of the unit part. -/
@@ -90,11 +80,8 @@ theorem unitPart_self (t : Fˣ) (ht : v.ord (t : F) = 1) : v.unitPart t ht t = 1
 order power. -/
 theorem unitPart_mul_coe (t : Fˣ) (ht : v.ord (t : F) = 1)
     (u : v.valuationSubring.unitGroup) (f : Fˣ) :
-    v.unitPart (t * (u : Fˣ)) (by
-      rw [Units.val_mul, ord_mul v (v.ne_zero_iff.mpr t.ne_zero)
-        (v.ne_zero_iff.mpr (u : Fˣ).ne_zero),
-        (v.mem_unitGroup_iff_ord_eq_zero _).mp u.2, add_zero]
-      exact ht) f = v.unitPart t ht f * u ^ (-v.ord (f : F)) := by
+    v.unitPart (t * (u : Fˣ)) ((v.ord_mul_coe_unitGroup (t : F) u).trans ht) f =
+      v.unitPart t ht f * u ^ (-v.ord (f : F)) := by
   apply Subtype.ext
   simp [mul_zpow, mul_comm, mul_assoc]
 
@@ -112,8 +99,7 @@ theorem unitPartUnits_apply (t : Fˣ) (ht : v.ord (t : F) = 1) (f : Fˣ) :
 theorem coe_unitPartUnits (t : Fˣ) (ht : v.ord (t : F) = 1) (f : Fˣ) :
     ((v.unitPartUnits t ht f : v.valuationSubring) : F) =
       (f : F) * (t : F) ^ (-v.ord (f : F)) := by
-  rw [unitPartUnits_apply, ValuationSubring.coe_unitGroupMulEquiv_apply, coe_unitPart,
-    Units.val_mul, Units.val_zpow_eq_zpow_val]
+  simp [unitPartUnits_apply, Units.val_zpow_eq_zpow_val]
 
 /-- The ring-unit version is uniquely characterized by its field-value decomposition. -/
 theorem unitPartUnits_eq_iff (t : Fˣ) (ht : v.ord (t : F) = 1) (f : Fˣ)
