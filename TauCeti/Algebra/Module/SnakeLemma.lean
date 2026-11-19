@@ -50,7 +50,8 @@ different universes.
   `Function.Exact.restrict_ker_snakeδ` at `ker i₃` and `Function.Exact.snakeδ_mapQ_range` at
   `coker i₁`.
 * `LinearMap.snakeδ_prodMap_eq_zero`: the connecting map of a direct sum, with split rows,
-  vanishes.
+  vanishes; `LinearMap.prodMap_comp_inl` and `LinearMap.snd_comp_prodMap` are the commuting
+  squares of these rows.
 * `LinearMap.finiteDimensional_ker₂_of_finiteDimensional_ker₁₃` and
   `LinearMap.finiteDimensional_coker₂_of_finiteDimensional_coker₁₃`: finiteness in the middle.
 * `LinearMap.finiteDimensional_ker₃_of_finiteDimensional_ker₂_coker₁` and
@@ -72,6 +73,25 @@ open Function Module Submodule LinearMap
 variable {R M₁ M₂ M₃ N₁ N₂ N₃ : Type*}
   [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃]
   [AddCommGroup N₁] [AddCommGroup N₂] [AddCommGroup N₃]
+
+section Semiring
+
+variable [Semiring R] {P P' Q Q' : Type*} [AddCommMonoid P] [AddCommMonoid P'] [AddCommMonoid Q]
+  [AddCommMonoid Q'] [Module R P] [Module R P'] [Module R Q] [Module R Q']
+
+/-- The left square of the split rows `0 → P → P × P' → P' → 0` and `0 → Q → Q × Q' → Q' → 0`
+with vertical maps `f`, `f.prodMap g` and `g` commutes. -/
+theorem LinearMap.prodMap_comp_inl (f : P →ₗ[R] Q) (g : P' →ₗ[R] Q') :
+    f.prodMap g ∘ₗ inl R P P' = inl R Q Q' ∘ₗ f := by
+  ext <;> simp
+
+/-- The right square of the split rows `0 → P → P × P' → P' → 0` and `0 → Q → Q × Q' → Q' → 0`
+with vertical maps `f`, `f.prodMap g` and `g` commutes. -/
+theorem LinearMap.snd_comp_prodMap (f : P →ₗ[R] Q) (g : P' →ₗ[R] Q') :
+    snd R Q Q' ∘ₗ f.prodMap g = g ∘ₗ snd R P P' := by
+  ext <;> simp
+
+end Semiring
 
 section Ring
 
@@ -171,13 +191,11 @@ theorem Function.Exact.snakeδ_mapQ_range (hf : Exact f₁ f₂) (hg : Exact g�
 `(0, x) ∈ ker (j₁.prodMap j₃)`. -/
 theorem LinearMap.snakeδ_prodMap_eq_zero (j₁ : M₁ →ₗ[R] N₁) (j₃ : M₃ →ₗ[R] N₃) :
     Exact.inl_snd.snakeδ Exact.inl_snd (snd_surjective (R := R)) (inl_injective (R := R))
-      (by ext <;> simp : inl R N₁ N₃ ∘ₗ j₁ = j₁.prodMap j₃ ∘ₗ inl R M₁ M₃)
-      (by ext <;> simp : snd R N₁ N₃ ∘ₗ j₁.prodMap j₃ = j₃ ∘ₗ snd R M₁ M₃) = 0 := by
-  have h₁ : inl R N₁ N₃ ∘ₗ j₁ = j₁.prodMap j₃ ∘ₗ inl R M₁ M₃ := by ext <;> simp
-  have h₂ : snd R N₁ N₃ ∘ₗ j₁.prodMap j₃ = j₃ ∘ₗ snd R M₁ M₃ := by ext <;> simp
+      (prodMap_comp_inl j₁ j₃).symm (snd_comp_prodMap j₁ j₃) = 0 := by
   refine LinearMap.ext fun x ↦ ?_
   rw [Exact.inl_snd.snakeδ_apply Exact.inl_snd (snd_surjective (R := R)) (inl_injective (R := R))
-    h₁ h₂ x (0, x) rfl 0 (by simp [mem_ker.1 x.2])]
+    (prodMap_comp_inl j₁ j₃).symm (snd_comp_prodMap j₁ j₃) x (0, x) rfl 0
+    (by simp [mem_ker.1 x.2])]
   simp
 
 end CommRing

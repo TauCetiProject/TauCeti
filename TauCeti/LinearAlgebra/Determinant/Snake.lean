@@ -170,11 +170,10 @@ private theorem detLineEquivOfExact_prodMap_tmul (u : Fin (finrank K (ker f)) �
     (hχ : χ (exteriorPower.ιMulti K _ ((range g).mkQ ∘ yg)) = 1) :
     detLineEquivOfExact Exact.inl_snd Exact.inl_snd (inl_injective (R := K))
         (snd_surjective (R := K)) (inl_injective (R := K)) (snd_surjective (R := K))
-        (by ext <;> simp : inl K N N' ∘ₗ f = f.prodMap g ∘ₗ inl K M M')
-        (by ext <;> simp : snd K N N' ∘ₗ f.prodMap g = g ∘ₗ snd K M M') (β ⊗ₜ φ) =
+        (prodMap_comp_inl f g).symm (snd_comp_prodMap f g) (β ⊗ₜ φ) =
       φ ε • ((exteriorPower.ιMulti K _ u ⊗ₜ ψ) ⊗ₜ (exteriorPower.ιMulti K _ w ⊗ₜ χ)) := by
-  have h₁ : inl K N N' ∘ₗ f = f.prodMap g ∘ₗ inl K M M' := by ext <;> simp
-  have h₂ : snd K N N' ∘ₗ f.prodMap g = g ∘ₗ snd K M M' := by ext <;> simp
+  have h₁ := (prodMap_comp_inl f g).symm
+  have h₂ := snd_comp_prodMap f g
   have hf := Exact.inl_snd (R := K) (M := M) (N := M')
   have hg := Exact.inl_snd (R := K) (M := N) (N := N')
   -- The maps of the snake sequence `ker f → ker (f.prodMap g) → ker g → coker f → ⋯`.
@@ -201,8 +200,8 @@ private theorem detLineEquivOfExact_prodMap_tmul (u : Fin (finrank K (ker f)) �
     fun j ↦ (range (f.prodMap g)).mkQ (0, yg j)
   have hβ' : (β : ExteriorAlgebra K (ker (f.prodMap g))) =
       ExteriorAlgebra.ιMulti K _ (Fin.append (F₁ ∘ u) v) := by
-    rw [Fin.append_cast_right, TauCeti.ExteriorAlgebra.ιMulti_comp_cast, hβ]
-    rfl
+    rw [show F₁ ∘ u = fun i ↦ ⟨(u i, 0), by simp⟩ from funext fun i ↦ by ext <;> simp [F₁],
+      Fin.append_cast_right, TauCeti.ExteriorAlgebra.ιMulti_comp_cast, hβ]
   have hγ' : ((exteriorPower.ιMulti K _ w : TauCeti.detLine K (ker g)) :
       ExteriorAlgebra K (ker g)) =
       ExteriorAlgebra.ιMulti K _ (Fin.append (F₂ ∘ v) (fun _ : Fin (finrank K (range δ)) ↦ 0)) := by
@@ -233,8 +232,7 @@ private theorem detLineEquivOfExact_prodMap_tmul_eq_smul (u : Fin (finrank K (ke
     (φ : Dual K (TauCeti.detLine K ((N × N') ⧸ range (f.prodMap g)))) :
     detLineEquivOfExact Exact.inl_snd Exact.inl_snd (inl_injective (R := K))
         (snd_surjective (R := K)) (inl_injective (R := K)) (snd_surjective (R := K))
-        (by ext <;> simp : inl K N N' ∘ₗ f = f.prodMap g ∘ₗ inl K M M')
-        (by ext <;> simp : snd K N N' ∘ₗ f.prodMap g = g ∘ₗ snd K M M') (β ⊗ₜ φ) =
+        (prodMap_comp_inl f g).symm (snd_comp_prodMap f g) (β ⊗ₜ φ) =
       (-1 : K) ^ (finrank K (N ⧸ range f) * finrank K (ker g)) •
         detLineProdMapEquiv f g (β ⊗ₜ φ) := by
   -- Lifts of bases of `coker f` and `coker g`, and functionals normalized on their products.
@@ -322,8 +320,7 @@ the Koszul sign of moving it past. -/
 theorem detLineEquivOfExact_prodMap :
     (detLineEquivOfExact Exact.inl_snd Exact.inl_snd (inl_injective (R := K))
         (snd_surjective (R := K)) (inl_injective (R := K)) (snd_surjective (R := K))
-        (by ext <;> simp : inl K N N' ∘ₗ f = f.prodMap g ∘ₗ inl K M M')
-        (by ext <;> simp : snd K N N' ∘ₗ f.prodMap g = g ∘ₗ snd K M M') :
+        (prodMap_comp_inl f g).symm (snd_comp_prodMap f g) :
         (f.prodMap g).detLine →ₗ[K] f.detLine ⊗[K] g.detLine) =
       (-1 : K) ^ (finrank K (N ⧸ range f) * finrank K (ker g)) •
         (detLineProdMapEquiv f g : (f.prodMap g).detLine →ₗ[K] f.detLine ⊗[K] g.detLine) := by
