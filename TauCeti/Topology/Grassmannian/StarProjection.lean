@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Projection.Trace
+public import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 public import TauCeti.Topology.Grassmannian.Tautological
 
 /-!
@@ -147,16 +147,15 @@ theorem trace_eq_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) :
 
 /-- The Grassmannian is closed in the space of operators. -/
 theorem isClosed_grassmannian : IsClosed (grassmannian 𝕜 E k) := by
-  have : grassmannian 𝕜 E k = {P : E →L[𝕜] E | P * P = P} ∩ {P | star P = P} ∩
-      {P | LinearMap.trace 𝕜 E (P : E →ₗ[𝕜] E) = k} := by
+  have : grassmannian 𝕜 E k = {P : E →L[𝕜] E | P * P = P} ∩ {P | IsSelfAdjoint P} ∩
+      {P | traceCLM 𝕜 E P = k} := by
     ext P
     simp only [mem_grassmannian_iff_trace, isStarProjection_iff, IsIdempotentElem,
-      IsSelfAdjoint, mem_inter_iff, mem_ofPred_eq, and_assoc]
+      traceCLM_apply, mem_inter_iff, mem_ofPred_eq, and_assoc]
   rw [this]
-  refine ((isClosed_eq (continuous_id.mul continuous_id) continuous_id).inter
-    (isClosed_eq continuous_star continuous_id)).inter (isClosed_eq ?_ continuous_const)
-  exact LinearMap.continuous_of_finiteDimensional
-    ((LinearMap.trace 𝕜 E).comp (ContinuousLinearMap.coeLM 𝕜))
+  exact ((isClosed_eq (continuous_id.mul continuous_id) continuous_id).inter
+    isClosed_setOfPred_isSelfAdjoint).inter
+      (isClosed_eq (traceCLM 𝕜 E).continuous continuous_const)
 
 omit [FiniteDimensional 𝕜 E] in
 /-- An operator in the Grassmannian has norm at most one. -/
@@ -185,25 +184,13 @@ instance : CompactSpace (grassmannian 𝕜 E k) :=
 /-- The tangential trace of an operator `A` along a plane `P ∈ G(E, k)` is bounded by `k ‖A‖`. -/
 theorem norm_trace_comp_le_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k)
     (A : E →L[𝕜] E) : ‖LinearMap.trace 𝕜 E (P ∘L A : E →L[𝕜] E)‖ ≤ k * ‖A‖ := by
-  obtain ⟨U, rfl, rfl⟩ := mem_grassmannian_iff_exists_starProjection.mp hP
-  -- Move the inclusion of `U` to the other side and compute the trace in an orthonormal basis
-  -- `b` of `U`: each term `⟪b i, A (b i)⟫` has norm at most `‖A‖`.
-  let b := stdOrthonormalBasis 𝕜 U
-  have htr : LinearMap.trace 𝕜 E (U.starProjection ∘L A : E →L[𝕜] E) =
-      ∑ i, inner 𝕜 (b i : E) (A (b i)) := by
-    -- `rfl` unfolds the definition `U.starProjection = U.subtypeL ∘L U.orthogonalProjectionOnto`.
-    have : ((U.starProjection ∘L A : E →L[𝕜] E) : E →ₗ[𝕜] E) =
-        U.subtype ∘ₗ ((U.orthogonalProjectionOnto ∘L A : E →L[𝕜] U) : E →ₗ[𝕜] U) := rfl
-    rw [this, LinearMap.trace_comp_comm', LinearMap.trace_eq_sum_inner _ b]
-    simp
-  rw [htr]
-  calc ‖∑ i, inner 𝕜 (b i : E) (A (b i))‖ ≤ ∑ _i : Fin (finrank 𝕜 U), ‖A‖ := by
-        refine norm_sum_le_of_le _ fun i _ ↦ ?_
-        calc ‖inner 𝕜 (b i : E) (A (b i))‖ ≤ ‖(b i : E)‖ * ‖A (b i)‖ := norm_inner_le_norm _ _
-          _ ≤ ‖(b i : E)‖ * (‖A‖ * ‖(b i : E)‖) :=
-            mul_le_mul_of_nonneg_left (A.le_opNorm _) (norm_nonneg _)
-          _ = ‖A‖ := by rw [show ‖(b i : E)‖ = 1 from b.orthonormal.1 i, one_mul, mul_one]
-    _ = finrank 𝕜 U * ‖A‖ := by simp
+  rw [← traceCLM_apply]
+  refine (P ∘L A).norm_traceCLM_le_finrank_range_mul.trans
+    (mul_le_mul ?_ ?_ (norm_nonneg _) (Nat.cast_nonneg _))
+  · rw [← finrank_range_of_mem_grassmannian hP]
+    exact_mod_cast Submodule.finrank_mono (LinearMap.range_comp_le_range _ _)
+  · exact (P.opNorm_comp_le A).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (norm_le_one_of_mem_grassmannian hP))
 
 /-- The passage to the orthogonal complement: `P ∈ G(E, k)` gives `1 - P ∈ G(E, l)` when
 `k + l = dim E`. -/
@@ -219,6 +206,17 @@ theorem one_sub_mem_grassmannian_iff (hkl : k + l = finrank 𝕜 E) :
     1 - P ∈ grassmannian 𝕜 E l ↔ P ∈ grassmannian 𝕜 E k :=
   ⟨fun h ↦ by simpa using one_sub_mem_grassmannian h (l := k) (by omega),
     fun h ↦ one_sub_mem_grassmannian h hkl⟩
+
+omit [FiniteDimensional 𝕜 E] in
+/-- The range of the complementary projection `1 - P` of a point `P` of `G(E, k)` is the orthogonal
+complement of the range of `P`. -/
+@[simp]
+theorem range_one_sub_coe_grassmannian (P : grassmannian 𝕜 E k) :
+    LinearMap.range (1 - ((P : E →L[𝕜] E) : E →ₗ[𝕜] E)) = (P : E →L[𝕜] E).rangeᗮ := by
+  obtain ⟨_, h⟩ := isStarProjection_iff_eq_starProjection_range.mp P.2.1
+  rw [← ContinuousLinearMap.toLinearMap_one, ← ContinuousLinearMap.toLinearMap_sub, h,
+    ← Submodule.starProjection_orthogonal', Submodule.range_starProjection,
+    Submodule.range_starProjection]
 
 /-- The passage to orthogonal complements `P ↦ 1 - P`, a homeomorphism from `G(E, k)` onto
 `G(E, l)` when `k + l = dim E`: if `P` projects onto `S`, then `1 - P` projects onto `Sᗮ`
@@ -242,9 +240,7 @@ theorem coe_grassmannianOrthogonalHomeomorph (hkl : k + l = finrank 𝕜 E)
 theorem range_coe_grassmannianOrthogonalHomeomorph (hkl : k + l = finrank 𝕜 E)
     (P : grassmannian 𝕜 E k) :
     (grassmannianOrthogonalHomeomorph hkl P : E →L[𝕜] E).range = (P : E →L[𝕜] E).rangeᗮ := by
-  rw [coe_grassmannianOrthogonalHomeomorph, eq_starProjection_range_of_mem_grassmannian P.2,
-    ← Submodule.starProjection_orthogonal', Submodule.range_starProjection,
-    Submodule.range_starProjection]
+  simp
 
 @[simp]
 theorem grassmannianOrthogonalHomeomorph_symm (hkl : k + l = finrank 𝕜 E) :
