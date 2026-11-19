@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Probability.ProbabilityMassFunction.Integrals
 public import Mathlib.Probability.ProbabilityMassFunction.Monad
+public import TauCeti.Analysis.Normed.Lp.Infty
 
 /-!
 # Markov decision processes and the expected next value
@@ -29,15 +29,7 @@ and the bound `|M.expect v s a| ≤ ‖v‖` for bounded `v`, which gives the on
 On a countable state space with measurable singletons every function is measurable, so every
 bounded function is integrable for every transition law (`MDP.integrable_trans`).
 
-The file also proves Blackwell's sufficient conditions
-(`TauCeti.lipschitzWith_of_mono_of_le_add_const`): a monotone operator on `BoundedFn ι` that
-raises by at most `γ c` when its argument is raised by a constant `c ≥ 0` is `γ`-Lipschitz. The
-Bellman operators are contractions for this reason.
-
 ## References
-
-* D. Blackwell, *Discounted dynamic programming*, Ann. Math. Statist. **36** (1965), 226–235,
-  Theorem 5.
 
 * M. L. Puterman, *Markov decision processes: discrete stochastic dynamic programming*, Wiley,
   1994, Sections 2.1 and 6.1.
@@ -52,10 +44,6 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-/-- The Banach space of bounded real functions on `ι` with the sup norm: Mathlib's `lp` space of
-real families with exponent `∞`. -/
-abbrev BoundedFn (ι : Type*) : Type _ := lp (fun _ : ι ↦ ℝ) ∞
-
 /-- A Markov decision process with states `S` and actions `A`: in state `s`, the action `a` earns
 the mean reward `reward s a` and moves to a state drawn from `trans s a`. The rewards are bounded
 in absolute value by `rewardBound`. -/
@@ -68,34 +56,6 @@ structure MDP (S A : Type*) where
   rewardBound : ℝ
   /-- The rewards are bounded in absolute value by `rewardBound`. -/
   abs_reward_le : ∀ s a, |reward s a| ≤ rewardBound
-
-/-- Adding `c • 1` to a bounded function raises each of its values by the constant `c`. -/
-theorem BoundedFn.coeFn_add_smul_one {ι : Type*} (v : BoundedFn ι) (c : ℝ) :
-    ⇑(v + c • 1) = fun i ↦ v i + c := by
-  ext i
-  simp only [lp.coeFn_add, lp.coeFn_smul, lp.infty_coeFn_one, Pi.add_apply, Pi.smul_apply,
-    Pi.one_apply, smul_eq_mul, mul_one]
-
-/-- **Blackwell's sufficient conditions.** An operator on the bounded functions that is monotone
-and raises by at most `γ * c` when its argument is raised by the constant `c ≥ 0` is
-`γ`-Lipschitz for the sup norm. -/
-theorem lipschitzWith_of_mono_of_le_add_const {ι : Type*} {γ : ℝ≥0}
-    {T : BoundedFn ι → BoundedFn ι}
-    (mono : ∀ ⦃v w : BoundedFn ι⦄, (∀ i, v i ≤ w i) → ∀ i, T v i ≤ T w i)
-    (le_add_const : ∀ (v : BoundedFn ι) (c : ℝ), 0 ≤ c → ∀ i, T (v + c • 1) i ≤ T v i + γ * c) :
-    LipschitzWith γ T := by
-  have key (v w : BoundedFn ι) (i : ι) : T v i - T w i ≤ γ * ‖v - w‖ := by
-    have hle (j : ι) : v j ≤ (w + ‖v - w‖ • 1 : BoundedFn ι) j := by
-      have h := lp.norm_apply_le_norm ENNReal.top_ne_zero (v - w) j
-      simp only [lp.coeFn_sub, Pi.sub_apply, Real.norm_eq_abs] at h
-      rw [BoundedFn.coeFn_add_smul_one]
-      linarith [le_abs_self (v j - w j)]
-    linarith [mono hle i, le_add_const w ‖v - w‖ (norm_nonneg _) i]
-  refine LipschitzWith.of_dist_le_mul fun v w ↦ ?_
-  rw [dist_eq_norm, dist_eq_norm]
-  refine lp.norm_le_of_forall_le (by positivity) fun i ↦ ?_
-  rw [lp.coeFn_sub, Pi.sub_apply, Real.norm_eq_abs, abs_sub_le_iff]
-  exact ⟨key v w i, norm_sub_rev v w ▸ key w v i⟩
 
 namespace MDP
 
@@ -200,13 +160,12 @@ theorem integrable_trans (v : BoundedFn S) (s : S) (a : A) :
 /-- The expected next value of a bounded function is the weighted sum of its values. -/
 theorem expect_eq_tsum (v : BoundedFn S) (s : S) (a : A) :
     M.expect v s a = ∑' s', (M.trans s a s').toReal * v s' := by
-  rw [expect_def, PMF.integral_eq_tsum _ _ (M.integrable_trans v s a)]
-  rfl
+  simp only [expect_def, PMF.integral_eq_tsum _ _ (M.integrable_trans v s a), smul_eq_mul]
 
 /-- Raising a bounded function by the constant `c` raises its expected next value by `c`. -/
 theorem expect_add_smul_one (v : BoundedFn S) (c : ℝ) (s : S) (a : A) :
     M.expect ⇑(v + c • 1) s a = M.expect v s a + c := by
-  rw [BoundedFn.coeFn_add_smul_one, M.expect_add_const (M.integrable_trans v s a)]
+  rw [lp.infty_coeFn_add_smul_one, M.expect_add_const (M.integrable_trans v s a)]
 
 /-- The expected next values of two bounded functions differ by at most their distance. -/
 theorem abs_expect_sub_expect_le (v w : BoundedFn S) (s : S) (a : A) :
@@ -219,8 +178,7 @@ end Countable
 /-- On a finite state space, the expected next value is the weighted sum of the values. -/
 theorem expect_eq_sum [Fintype S] [MeasurableSingletonClass S] (v : S → ℝ) (s : S) (a : A) :
     M.expect v s a = ∑ s', (M.trans s a s').toReal * v s' := by
-  rw [expect_def, PMF.integral_eq_sum]
-  rfl
+  simp only [expect_def, PMF.integral_eq_sum, smul_eq_mul]
 
 end MDP
 

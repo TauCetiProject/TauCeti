@@ -27,6 +27,10 @@ stationary policy `π : S → PMF A`, this file defines on the bounded functions
 
 ## Main results
 
+The results up to and including the norm bounds assume a countable state space `S` with
+measurable singletons, where every bounded function is integrable for every transition law
+(`MDP.integrable_trans`); the greedy-policy results hold for every measurable state space.
+
 * `MDP.bellmanEval_mono`, `MDP.bellman_mono`: both operators are monotone, and
   `MDP.bellmanEval_add_smul_one`, `MDP.bellman_add_smul_one`: raising the argument by a constant
   `c` raises the result by `γ c`.
@@ -103,15 +107,15 @@ theorem bellmanEval_mono (γ : ℝ≥0) (π : S → PMF A) {v w : BoundedFn S} (
 theorem bellmanEval_add_smul_one (γ : ℝ≥0) (π : S → PMF A) (v : BoundedFn S) (c : ℝ) :
     M.bellmanEval γ π (v + c • 1) = M.bellmanEval γ π v + ((γ : ℝ) * c) • 1 := by
   refine lp.ext (funext fun s ↦ ?_)
-  rw [BoundedFn.coeFn_add_smul_one (M.bellmanEval γ π v)]
+  rw [lp.infty_coeFn_add_smul_one (M.bellmanEval γ π v)]
   simp only [bellmanEval_apply, expect_add_smul_one, mul_add, Finset.sum_add_distrib,
     ← Finset.sum_mul, PMF.sum_toReal_eq_one, one_mul, add_assoc]
 
 /-- The evaluation operator is `γ`-Lipschitz for the sup norm, for every `γ`. -/
 theorem lipschitzWith_bellmanEval (γ : ℝ≥0) (π : S → PMF A) :
     LipschitzWith γ (M.bellmanEval γ π) :=
-  lipschitzWith_of_mono_of_le_add_const (fun _ _ h ↦ M.bellmanEval_mono γ π h)
-    fun v c _ s ↦ by rw [bellmanEval_add_smul_one, BoundedFn.coeFn_add_smul_one]
+  lp.lipschitzWith_of_mono_of_le_add_const (fun _ _ h ↦ M.bellmanEval_mono γ π h)
+    fun v c _ s ↦ by rw [bellmanEval_add_smul_one, lp.infty_coeFn_add_smul_one]
 
 /-- For `γ < 1` the evaluation operator is a `γ`-contraction of the sup norm. -/
 theorem contractingWith_bellmanEval {γ : ℝ≥0} (hγ : γ < 1) (π : S → PMF A) :
@@ -180,13 +184,13 @@ theorem bellman_mono (γ : ℝ≥0) {v w : BoundedFn S} (h : ∀ s, v s ≤ w s)
 theorem bellman_add_smul_one (γ : ℝ≥0) (v : BoundedFn S) (c : ℝ) :
     M.bellman γ (v + c • 1) = M.bellman γ v + ((γ : ℝ) * c) • 1 := by
   refine lp.ext (funext fun s ↦ ?_)
-  rw [BoundedFn.coeFn_add_smul_one (M.bellman γ v)]
+  rw [lp.infty_coeFn_add_smul_one (M.bellman γ v)]
   simp only [bellman_apply, expect_add_smul_one, Finset.sup'_add, mul_add, add_assoc]
 
 /-- The optimality operator is `γ`-Lipschitz for the sup norm, for every `γ`. -/
 theorem lipschitzWith_bellman (γ : ℝ≥0) : LipschitzWith γ (M.bellman γ) :=
-  lipschitzWith_of_mono_of_le_add_const (fun _ _ h ↦ M.bellman_mono γ h)
-    fun v c _ s ↦ by rw [bellman_add_smul_one, BoundedFn.coeFn_add_smul_one]
+  lp.lipschitzWith_of_mono_of_le_add_const (fun _ _ h ↦ M.bellman_mono γ h)
+    fun v c _ s ↦ by rw [bellman_add_smul_one, lp.infty_coeFn_add_smul_one]
 
 /-- For `γ < 1` the optimality operator is a `γ`-contraction of the sup norm. -/
 theorem contractingWith_bellman {γ : ℝ≥0} (hγ : γ < 1) : ContractingWith γ (M.bellman γ) :=
@@ -266,22 +270,26 @@ theorem bellman_eq_self_iff (hγ : γ < 1) {v : BoundedFn S} :
   rw [M.optimalValue_eq_fixedPoint hγ]
   exact ContractingWith.fixedPoint_unique _ h
 
-omit [Nonempty A] in
-/-- For `γ < 1` the value of every policy is bounded by `rewardBound / (1 - γ)`. -/
-theorem norm_value_le [Nonempty S] (hγ : γ < 1) (π : S → PMF A) :
-    ‖M.value γ π‖ ≤ M.rewardBound / (1 - γ) := by
-  have h := M.norm_bellmanEval_le γ π (M.value γ π)
-  rw [M.bellmanEval_value hγ π] at h
+omit [MeasurableSpace S] [Countable S] [MeasurableSingletonClass S] in
+/-- A fixed point `v` of an operator `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` is bounded by
+`R / (1 - γ)`. -/
+private theorem norm_le_div_of_isFixedPt (hγ : γ < 1) {T : BoundedFn S → BoundedFn S}
+    {v : BoundedFn S} {R : ℝ} (hT : ‖T v‖ ≤ R + γ * ‖v‖) (hv : T v = v) :
+    ‖v‖ ≤ R / (1 - γ) := by
+  rw [hv] at hT
   rw [le_div_iff₀ (sub_pos.2 (show (γ : ℝ) < 1 from hγ))]
   linarith
 
+omit [Nonempty A] in
+/-- For `γ < 1` the value of every policy is bounded by `rewardBound / (1 - γ)`. -/
+theorem norm_value_le [Nonempty S] (hγ : γ < 1) (π : S → PMF A) :
+    ‖M.value γ π‖ ≤ M.rewardBound / (1 - γ) :=
+  norm_le_div_of_isFixedPt hγ (M.norm_bellmanEval_le γ π _) (M.bellmanEval_value hγ π)
+
 /-- For `γ < 1` the optimal value is bounded by `rewardBound / (1 - γ)`. -/
 theorem norm_optimalValue_le [Nonempty S] (hγ : γ < 1) :
-    ‖M.optimalValue γ‖ ≤ M.rewardBound / (1 - γ) := by
-  have h := M.norm_bellman_le γ (M.optimalValue γ)
-  rw [M.bellman_optimalValue hγ] at h
-  rw [le_div_iff₀ (sub_pos.2 (show (γ : ℝ) < 1 from hγ))]
-  linarith
+    ‖M.optimalValue γ‖ ≤ M.rewardBound / (1 - γ) :=
+  norm_le_div_of_isFixedPt hγ (M.norm_bellman_le γ _) (M.bellman_optimalValue hγ)
 
 end Countable
 
