@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
 public import TauCeti.Analysis.Complex.Euclidean.Plane
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.FlatTrace
 public import TauCeti.Analysis.Sobolev.Local.HalfPlane
@@ -14,6 +15,7 @@ public import TauCeti.Analysis.Sobolev.Local.Norm
 public import TauCeti.Analysis.Sobolev.Local.W1p
 public import TauCeti.Analysis.Sobolev.Local.Wkp.HalfDisc
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
+import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -21,7 +23,7 @@ import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 Let `U = Ω ∩ {0 ≤ im}` be a relatively open subset of the closed upper half-plane and let
 `u : ℂ → V` lie in the half-disc class `TauCeti.MemWkpLoc p U 1`, `1 ≤ p < ∞`. The totally real
-boundary condition `u(s) ∈ L` for real `s ∈ U`, with `L` a real subspace of `V` (for instance
+boundary condition `u(s) ∈ L` for real `s ∈ U`, with `L` a closed real subspace of `V` (for instance
 `ℝⁿ ⊆ ℂⁿ`), is a pointwise condition only when `u` has a representative continuous up to the real
 axis, as it does for `p > 2`. For `p ≤ 2` it is a condition on traces. This file states it through
 the trace on the flat segment of the model half-disc,
@@ -35,7 +37,8 @@ first coordinate is the normal one, and the real interval `[x - r, x + r]` onto 
   axis inside `U`: for every real point `x` and every `r > 0` with
   `closedBall x r ∩ {0 ≤ im} ⊆ U`, the function `f` transported to `TauCeti.halfDisc r` is
   represented by an element of `W^{1,p}(halfDisc r)` whose trace vanishes on the flat segment.
-* `TauCeti.HasRealAxisTraceIn hp U L u` says that the trace of `u` on the real axis lies in `L`:
+* `TauCeti.HasRealAxisTraceIn hp U L u`, for `L : ClosedSubmodule ℝ V`, says that the trace of `u`
+  on the real axis lies in `L`:
   `ℓ ∘ u` has zero trace for every continuous linear functional `ℓ` vanishing on `L`.
 
 Both conditions pass to smaller sets and only depend on the almost-everywhere class of the map on
@@ -404,15 +407,16 @@ theorem HasZeroRealAxisTrace.of_tendsto {fs : ℕ → ℂ → ℝ}
 section Subspace
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
-  [NormedSpace ℝ W] {L : Submodule ℝ V} {u u' : ℂ → V}
+  [NormedSpace ℝ W] {L : ClosedSubmodule ℝ V} {u u' : ℂ → V}
 
 variable (hp) in
 /-- **Boundary values in a real subspace.** The trace on the real axis inside `U ⊆ ℂ` of a map
-`u : ℂ → V` lies in the real subspace `L` if `ℓ ∘ u` has zero trace on the real axis
+`u : ℂ → V` lies in the closed real subspace `L` if `ℓ ∘ u` has zero trace on the real axis
 (`TauCeti.HasZeroRealAxisTrace`) for every continuous linear functional `ℓ` vanishing on `L`.
-For `L = ℝⁿ ⊆ ℂⁿ` this is the totally real boundary condition `u(s) ∈ ℝⁿ` for real `s`
-(`TauCeti.hasRealAxisTraceIn_ker_im_iff`). -/
-def HasRealAxisTraceIn (U : Set ℂ) (L : Submodule ℝ V) (u : ℂ → V) : Prop :=
+Closedness is bundled because continuous annihilating functionals detect only the closure of a
+subspace. For `L = ℝⁿ ⊆ ℂⁿ` this is the totally real boundary condition `u(s) ∈ ℝⁿ`
+for real `s` (`TauCeti.hasRealAxisTraceIn_ker_im_iff`). -/
+def HasRealAxisTraceIn (U : Set ℂ) (L : ClosedSubmodule ℝ V) (u : ℂ → V) : Prop :=
   ∀ ℓ : V →L[ℝ] ℝ, (∀ y ∈ L, ℓ y = 0) → HasZeroRealAxisTrace hp U fun z => ℓ (u z)
 
 /-- The boundary condition passes to smaller sets. -/
@@ -425,7 +429,7 @@ theorem HasRealAxisTraceIn.congr_ae (h : HasRealAxisTraceIn hp U L u)
     (huu' : u =ᵐ[volume.restrict U] u') : HasRealAxisTraceIn hp U L u' :=
   fun ℓ hℓ => (h ℓ hℓ).congr_ae (huu'.fun_comp ℓ)
 
-/-- The zero map has boundary values in every subspace. -/
+/-- The zero map has boundary values in every closed subspace. -/
 theorem hasRealAxisTraceIn_zero : HasRealAxisTraceIn hp U L (0 : ℂ → V) := fun ℓ _ => by
   convert (hasZeroRealAxisTrace_zero : HasZeroRealAxisTrace hp U 0) using 1
   funext z
@@ -447,7 +451,7 @@ theorem HasRealAxisTraceIn.const_smul (h : HasRealAxisTraceIn hp U L u) (c : ℝ
 
 /-- Every map has its boundary values in the whole space. -/
 theorem hasRealAxisTraceIn_top : HasRealAxisTraceIn hp U ⊤ u := fun ℓ hℓ => by
-  have : (fun z => ℓ (u z)) = 0 := funext fun z => hℓ _ Submodule.mem_top
+  have : (fun z => ℓ (u z)) = 0 := funext fun z => hℓ _ ClosedSubmodule.mem_top
   rw [this]
   exact hasZeroRealAxisTrace_zero
 
@@ -465,7 +469,7 @@ theorem hasRealAxisTraceIn_bot_iff {f : ℂ → ℝ} :
 finite-dimensional space, the boundary values of `u` lie in `ker A` exactly when those of `A ∘ u`
 are zero. -/
 theorem hasRealAxisTraceIn_ker_iff [FiniteDimensional ℝ W] (A : V →L[ℝ] W) :
-    HasRealAxisTraceIn hp U (LinearMap.ker (A : V →ₗ[ℝ] W)) u ↔
+    HasRealAxisTraceIn hp U ((⊥ : ClosedSubmodule ℝ W).comap A) u ↔
       HasRealAxisTraceIn hp U ⊥ fun z => A (u z) := by
   refine ⟨fun h μ _ => h (μ.comp A) fun y hy => by
     rw [ContinuousLinearMap.comp_apply, show A y = 0 from LinearMap.mem_ker.1 hy, map_zero],
@@ -478,7 +482,7 @@ theorem hasRealAxisTraceIn_ker_iff [FiniteDimensional ℝ W] (A : V →L[ℝ] W)
   have hfun : (fun z => ℓ (u z)) = fun z => LinearMap.toContinuousLinearMap μ (A (u z)) :=
     funext fun z => (LinearMap.congr_fun hμ (u z)).symm
   rw [hfun]
-  exact h _ fun y hy => by simp [(Submodule.mem_bot ℝ).1 hy]
+  exact h _ fun y hy => by simp [ClosedSubmodule.mem_bot.1 hy]
 
 /-- **The coordinate form for `L = 0`.** A map into a finite-dimensional space has zero boundary
 values exactly when each of its coordinates in a basis `b` has zero trace. -/
@@ -488,7 +492,7 @@ theorem hasRealAxisTraceIn_bot_iff_forall_coord {ι : Type*} [Finite ι]
   have := Fintype.ofFinite ι
   have := Module.Finite.of_basis b
   refine ⟨fun h i => h (LinearMap.toContinuousLinearMap (b.coord i)) fun y hy => by
-    simp [(Submodule.mem_bot ℝ).1 hy], fun h μ _ => ?_⟩
+    simp [ClosedSubmodule.mem_bot.1 hy], fun h μ _ => ?_⟩
   have hfun : (fun z => μ (w z)) = ∑ i, μ (b i) • fun z => b.coord i (w z) := by
     funext z
     simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Basis.coord_apply]
@@ -501,7 +505,7 @@ theorem hasRealAxisTraceIn_bot_iff_forall_coord {ι : Type*} [Finite ι]
 `u` lie in `ker A` exactly when each coordinate of `A ∘ u` in `b` has zero trace. -/
 theorem hasRealAxisTraceIn_ker_iff_forall_coord {ι : Type*} [Finite ι]
     (A : V →L[ℝ] W) (b : Basis ι ℝ W) :
-    HasRealAxisTraceIn hp U (LinearMap.ker (A : V →ₗ[ℝ] W)) u ↔
+    HasRealAxisTraceIn hp U ((⊥ : ClosedSubmodule ℝ W).comap A) u ↔
       ∀ i, HasZeroRealAxisTrace hp U fun z => b.coord i (A (u z)) :=
   have := Module.Finite.of_basis b
   (hasRealAxisTraceIn_ker_iff A).trans (hasRealAxisTraceIn_bot_iff_forall_coord b)
@@ -510,18 +514,17 @@ theorem hasRealAxisTraceIn_ker_iff_forall_coord {ι : Type*} [Finite ι]
 the boundary condition says that the imaginary part of each component of `u` has zero trace. -/
 theorem hasRealAxisTraceIn_ker_im_iff {ι : Type*} [Fintype ι] {u : ℂ → ι → ℂ} :
     HasRealAxisTraceIn hp U
-        (LinearMap.ker ((ContinuousLinearMap.pi fun i =>
-          Complex.imCLM.comp (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℂ) i)) :
-            (ι → ℂ) →ₗ[ℝ] (ι → ℝ))) u ↔
+        ((⊥ : ClosedSubmodule ℝ (ι → ℝ)).comap (ContinuousLinearMap.pi fun i =>
+          Complex.imCLM.comp (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι => ℂ) i))) u ↔
       ∀ i, HasZeroRealAxisTrace hp U fun z => (u z i).im := by
   rw [hasRealAxisTraceIn_ker_iff_forall_coord _ (Pi.basisFun ℝ ι)]
   simp
 
 /-- **The pointwise reading of the boundary condition.** Let `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` take
-values in a finite-dimensional space and agree almost everywhere on `Ω ∩ {0 ≤ im}` with a map `g`
+values in a real normed space and agree almost everywhere on `Ω ∩ {0 ≤ im}` with a map `g`
 continuous there. Then the boundary values of `u` lie in `L` exactly when `g x ∈ L` at every real
 point `x` of `Ω`. -/
-theorem MemWkpLoc.hasRealAxisTraceIn_iff_of_continuousOn [FiniteDimensional ℝ V] {Ω : Opens ℂ}
+theorem MemWkpLoc.hasRealAxisTraceIn_iff_of_continuousOn {Ω : Opens ℂ}
     {g : ℂ → V} (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u)
     (hg : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
     (hug : u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g) :
@@ -534,11 +537,17 @@ theorem MemWkpLoc.hasRealAxisTraceIn_iff_of_continuousOn [FiniteDimensional ℝ 
       (hug.fun_comp ℓ)
   refine ⟨fun h x hxΩ hx => ?_, fun h ℓ hℓ => (hscalar ℓ).2 fun x hxΩ hx => hℓ _ (h x hxΩ hx)⟩
   by_contra hgx
-  obtain ⟨μ, hμx, hμL⟩ := Submodule.exists_dual_map_eq_bot_of_notMem hgx inferInstance
-  refine hμx ((hscalar (LinearMap.toContinuousLinearMap μ)).1 (h _ fun y hy => ?_) x hxΩ hx)
-  have hmap := Submodule.mem_map_of_mem (f := μ) hy
-  rw [hμL, Submodule.mem_bot] at hmap
-  exact hmap
+  obtain ⟨ℓ, c, hℓL, hcx⟩ :=
+    geometric_hahn_banach_closed_point L.toSubmodule.convex L.isClosed hgx
+  have hℓzero (y : V) (hy : y ∈ L) : ℓ y = 0 := by
+    by_contra hne
+    have hb := hℓL (((c + 1) / ℓ y) • y) (L.smul_mem _ hy)
+    rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hne] at hb
+    linarith
+  have htrace := (hscalar ℓ).1 (h ℓ hℓzero) x hxΩ hx
+  have hc := hℓL 0 L.zero_mem
+  simp only [map_zero] at hc
+  linarith
 
 /-- **For `p > 2` the boundary condition is pointwise.** For `2 < p < ∞` and
 `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` with values in a finite-dimensional space, the boundary values
@@ -589,7 +598,7 @@ theorem hasZeroRealAxisTrace_im {Ω : Opens ℂ} :
 theorem not_hasRealAxisTraceIn_ker_im_const_I {Ω : Opens ℂ} {x : ℂ} (hxΩ : x ∈ Ω)
     (hx : x.im = 0) :
     ¬ HasRealAxisTraceIn hp ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})
-      (LinearMap.ker (Complex.imCLM : ℂ →ₗ[ℝ] ℝ))
+      ((⊥ : ClosedSubmodule ℝ ℝ).comap Complex.imCLM)
       (fun _ => Complex.I) := by
   have hmem : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 (fun _ : ℂ => Complex.I) :=
     contDiffOn_const.memWkpLoc_inter_setOf_im_nonneg Ω.isOpen
