@@ -265,8 +265,11 @@ private theorem eval_leftDual_iterate (f : α → C) (n : ℕ) (X : RigidObject 
 @[simp] theorem eval_atLevel (f : α → C) (a : α) (n : ℤ) :
     eval f (atLevel a n) = iteratedDual n (f a) := by
   cases n with
-  | ofNat n => rw [Int.ofNat_eq_natCast, atLevel_natCast]; exact eval_rightDual_iterate f n (.of a)
-  | negSucc n => rw [atLevel_negSucc]; exact eval_leftDual_iterate f (n + 1) (.of a)
+  | ofNat n =>
+    rw [Int.ofNat_eq_natCast, atLevel_natCast, eval_rightDual_iterate, eval_of,
+      iteratedDual_natCast]
+  | negSucc n =>
+    rw [atLevel_negSucc, eval_leftDual_iterate, eval_of, iteratedDual_negSucc]
 
 /-- The canonical expression realizing a winding word evaluates to that word. -/
 @[simp] theorem eval_ofWord (f : α → C) (L : WindingWord α) :
@@ -334,8 +337,8 @@ noncomputable def evalIsoOfNormalizeEq (f : α → C) {X Y : RigidObject α}
     (h : X.normalize = Y.normalize) :
     (evalIsoOfNormalizeEq f h).inv =
       (normalizeIso f Y).hom ≫ eqToHom (congrArg (WindingWord.eval f) h.symm) ≫
-        (normalizeIso f X).inv :=
-  Category.assoc _ _ _
+        (normalizeIso f X).inv := by
+  simp [evalIsoOfNormalizeEq]
 
 @[simp] theorem evalIsoOfNormalizeEq_refl (f : α → C) (X : RigidObject α) :
     evalIsoOfNormalizeEq f (rfl : X.normalize = X.normalize) = Iso.refl _ := by

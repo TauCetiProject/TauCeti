@@ -43,7 +43,8 @@ but in general neither need be isomorphic to the identity.
 * `TauCeti.leftDualTensorIso_associativity`, `TauCeti.leftDualTensorIso_leftUnitality` and
   `TauCeti.leftDualTensorIso_rightUnitality`: its compatibility with the associator and the
   unitors;
-* `TauCeti.leftDualUnitIso`: the chosen left dual of `𝟙_ C` is isomorphic to `𝟙_ C`;
+* `TauCeti.leftDualUnitIso` and `TauCeti.coevaluation_comp_whiskerRight_leftDualUnitIso_hom`: the
+  chosen left dual of `𝟙_ C` is isomorphic to `𝟙_ C`, compatibly with coevaluation;
 * `TauCeti.leftDualFunctorCoreMonoidal` and the instance `TauCeti.leftDualFunctorMonoidal`: the
   strong monoidal structure on `leftDualFunctor C`, with structure morphisms given by
   `TauCeti.leftDualFunctor_ε`, `TauCeti.leftDualFunctor_η`, `TauCeti.leftDualFunctor_μ` and
@@ -146,6 +147,15 @@ theorem leftDualUnitIso_inv :
     (leftDualUnitIso C).inv =
       (leftDualIso (LeftRigidCategory.leftDual (𝟙_ C)).exact exactPairingUnit).inv :=
   (rfl)
+
+/-- Through `TauCeti.leftDualUnitIso`, the coevaluation of the chosen left dual of `𝟙_ C` is the
+inverse right unitor of `𝟙_ C`. -/
+@[reassoc]
+theorem coevaluation_comp_whiskerRight_leftDualUnitIso_hom :
+    @ExactPairing.coevaluation C _ _ _ (𝟙_ C) (LeftRigidCategory.leftDual (𝟙_ C)).exact ≫
+      (leftDualUnitIso C).hom ▷ 𝟙_ C = (ρ_ (𝟙_ C)).inv := by
+  rw [leftDualUnitIso_hom, leftDualIso_hom, coevaluation_comp_leftMate,
+    MonoidalCategory.whiskerLeft_id, Category.comp_id, TauCeti.ExactPairing.unit_coevaluation]
 
 /-! In `(Cᵒᵖ)ᴹᵒᵖ`, composition and tensor products are those of `C` in the reverse order, by
 definition. So after `Quiver.Hom.unmop_inj` and `Quiver.Hom.unop_inj`, each coherence condition

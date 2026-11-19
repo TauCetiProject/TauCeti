@@ -83,6 +83,10 @@ def iteratedDual : ℤ → C → C
 @[simp] theorem iteratedDual_natCast (n : ℕ) (X : C) :
     iteratedDual (n : ℤ) X = iteratedRightDual n X := rfl
 
+/-- `(n : ℤ) + 1` reduces by definition to `.ofNat (n + 1)`, so this holds by `rfl`. -/
+@[simp] theorem iteratedDual_natCast_add_one (n : ℕ) (X : C) :
+    iteratedDual ((n : ℤ) + 1) X = (iteratedRightDual n X)ᘁ := rfl
+
 @[simp] theorem iteratedDual_negSucc (n : ℕ) (X : C) :
     iteratedDual (.negSucc n) X = iteratedLeftDual (n + 1) X := rfl
 
