@@ -98,6 +98,8 @@ allowing the entire path or loop to be read in one stereographic chart.
   on the unit sphere.
 * `Circle.instContMDiffSMul`, `Circle.instContMDiffConstSMul`: the circle acts smoothly on every
   complex normed space by scalar multiplication.
+* `TauCeti.contMDiff_circleExp_two_pi_mul`: the standard loop `t ↦ exp (2π i t)` of the circle is
+  smooth.
 * `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
   `Circle.exp : ℝ → S¹` is bijective.
 * `TauCeti.mvfderiv_coe_mfderiv_circleExp`: read in `ℂ`, the generator of `t ↦ exp (t i)`, the
@@ -514,6 +516,11 @@ end Circle
 /-! ### The derivative of the circle exponential -/
 
 namespace TauCeti
+
+/-- The standard loop `t ↦ exp (2π i t)` of the circle is smooth. -/
+theorem contMDiff_circleExp_two_pi_mul :
+    ContMDiff 𝓘(ℝ, ℝ) (𝓡 1) ∞ fun t : ℝ ↦ Circle.exp (2 * Real.pi * t) :=
+  contMDiff_circleExp.comp (contDiff_const.mul contDiff_id).contMDiff
 
 attribute [local instance] finrank_real_complex_fact'
 
