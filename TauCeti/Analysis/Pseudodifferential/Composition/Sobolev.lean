@@ -18,9 +18,7 @@ to the bounded extensions `H^s → H^{s - m}` of `TauCeti.Symbol.quantizeSobolev
 `Op(a # b) : H^s → H^{s - (m' + m)}` is `Op(a) ∘ Op(b)`, as maps of tempered distributions
 (`TauCeti.Symbol.toDistr_quantizeSobolev_sharp`). In particular, multiplying `Op(a) v` by a
 compactly supported Schwartz function `ψ` gives `Op(ψ # a) v`
-(`TauCeti.Symbol.smulLeftCLM_toDistr_quantizeSobolev`), and `ψ # a` vanishes at positions outside
-`tsupport ψ`
-(`TauCeti.Symbol.coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport`).
+(`TauCeti.Symbol.smulLeftCLM_toDistr_quantizeSobolev`).
 
 Combined with the locality of the composition symbol
 (`TauCeti.Symbol.isSmoothing_sharp_sub_comp`), this shows that `Op(c) v` only depends on `v` near
@@ -73,19 +71,6 @@ theorem toDistr_quantizeSobolev_sharp {a : Symbol n W U m'} {b : Symbol n V W m}
     simp [hb.quantizeSobolev_toBesselPotentialSpaceCLM,
       quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb]
   simpa using congrArg (fun T ↦ (T u).toDistr) key
-
-omit [CompleteSpace V] [CompleteSpace W] in
-/-- The composition `ψ # a` of multiplication by a Schwartz function `ψ` with a symbol `a`
-vanishes at positions outside `tsupport ψ`. -/
-theorem coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport {a : Symbol n V W m}
-    (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)} {x : CoordinateSpace n}
-    (hx : x ∉ tsupport ψ) (ξ : CoordinateSpace n) :
-    ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
-      ((ψ.smooth ⊤).smul contDiff_const)).sharp a ha).coefficient (x, ξ) = 0 := by
-  set F := ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W) ((ψ.smooth ⊤).smul contDiff_const)
-  -- At a position where `ψ` vanishes, so does the left factor `F`, and with it `F # a`.
-  rw [coefficient_sharp_of_coefficient_eq_smul (a := F) (a' := F) ha (t := 0)
-    (fun η ↦ by simp [F, image_eq_zero_of_notMem_tsupport hx]), zero_smul]
 
 /-- **Multiplication after quantization.** For a Schwartz function `ψ` whose multiplication symbol
 `ψ(x) id` has compact spatial support (for instance `ψ` compactly supported,
