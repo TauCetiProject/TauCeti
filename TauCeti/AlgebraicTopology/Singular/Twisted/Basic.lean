@@ -42,6 +42,7 @@ twisted by the system pulled back along `f`.
 
 * `TauCeti.LocalCoefficientSystem.twistedChains`: the simplicial module of twisted chains, and
   `twistedChainComplex`, `twistedHomology` for its alternating face map complex and homology.
+  The twisted homology of an empty space vanishes (`isZero_twistedHomology_of_isEmpty`).
   Maps out of twisted chains are built summand by summand with `twistedChainsDesc`.
   Each degree is projective when the fibres of the system are
   (`projective_twistedChainComplex_X`).
@@ -720,6 +721,13 @@ end Coeff
 
 /-- Singular homology of `X` with coefficients in the local coefficient system `L`. -/
 abbrev twistedHomology (k : ℕ) : ModuleCat.{max v w} R := (twistedChainComplex L).homology k
+
+/-- The twisted homology of an empty space vanishes. -/
+theorem isZero_twistedHomology_of_isEmpty [IsEmpty X] (k : ℕ) : IsZero (L.twistedHomology k) := by
+  have : Subsingleton ((twistedChainComplex L).X k) :=
+    ⟨fun _ _ ↦ twistedChainComplex_ext_coeff L fun ρ ↦ isEmptyElim (initialVertex ρ).as⟩
+  exact ((twistedChainComplex L).sc k).isZero_homology_of_isZero_X₂
+    (ModuleCat.isZero_of_subsingleton ((twistedChainComplex L).X k))
 
 end Chains
 
