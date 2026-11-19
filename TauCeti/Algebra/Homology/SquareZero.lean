@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.Quotient.Prod
 
@@ -57,9 +58,6 @@ elements of `M`, on which such structure is defined. The image is represented in
   map on homology.
 * `LinearMap.comp_comp_sub_id_eq_of_sub_id_eq`: a chain homotopy for a composite of two chain
   homotopy equivalences.
-* `LinearEquiv.eq_conjRingEquiv_apply_iff`: the conjugate `f ∘ d ∘ f⁻¹` is the unique
-  endomorphism `e` with `e ∘ f = f ∘ d`; it squares to zero when `d` does
-  (`LinearEquiv.conjRingEquiv_apply_comp_self`).
 * `LinearMap.ker_le_range_mappingCone_iff`: a linear chain map over a single coefficient ring
   induces a bijection on homology exactly when its mapping cone is exact.
 * `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
@@ -464,36 +462,6 @@ theorem ker_le_range_mappingCone_iff (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (
     abel
 
 end Ring
-
-/-! ### Conjugation by a semilinear equivalence -/
-
-section Conj
-
-variable {S T M M' : Type*} [Semiring S] [Semiring T] [AddCommMonoid M] [Module S M]
-  [AddCommMonoid M'] [Module T M'] {σ : S →+* T} {σ' : T →+* S} [RingHomInvPair σ σ']
-  [RingHomInvPair σ' σ]
-
-/-- A semilinear equivalence `f` is a chain map from an endomorphism `d` to its conjugate
-`f ∘ d ∘ f⁻¹`. -/
-theorem _root_.LinearEquiv.conjRingEquiv_apply_comp (f : M ≃ₛₗ[σ] M') (d : M →ₗ[S] M) :
-    f.conjRingEquiv d ∘ₛₗ f.toLinearMap = f.toLinearMap ∘ₛₗ d := by
-  ext x
-  simp
-
-/-- The conjugate `f ∘ d ∘ f⁻¹` is the unique endomorphism `e` for which the semilinear
-equivalence `f` is a chain map from `d` to `e`. -/
-theorem _root_.LinearEquiv.eq_conjRingEquiv_apply_iff (f : M ≃ₛₗ[σ] M') (d : M →ₗ[S] M)
-    {e : M' →ₗ[T] M'} :
-    e = f.conjRingEquiv d ↔ e ∘ₛₗ f.toLinearMap = f.toLinearMap ∘ₛₗ d := by
-  refine ⟨fun h ↦ h ▸ f.conjRingEquiv_apply_comp d, fun h ↦ LinearMap.ext fun x ↦ ?_⟩
-  simpa using congr($h (f.symm x))
-
-/-- The conjugate of a square-zero endomorphism by a semilinear equivalence squares to zero. -/
-theorem _root_.LinearEquiv.conjRingEquiv_apply_comp_self (f : M ≃ₛₗ[σ] M') {d : M →ₗ[S] M}
-    (hd : d ∘ₗ d = 0) : f.conjRingEquiv d ∘ₗ f.conjRingEquiv d = 0 := by
-  rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp, hd, map_zero]
-
-end Conj
 
 /-! ### Mapping cones of maps between free modules -/
 
