@@ -23,7 +23,7 @@ import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.RingTheory.Localization.FiniteFree
-import TauCeti.RingTheory.Norm.Quotient
+import TauCeti.RingTheory.Norm.Projective
 import TauCeti.RingTheory.NovikovSeries.LeadingTerm
 
 /-!
@@ -51,7 +51,7 @@ rings. Two primes of `Q(Nov(R, H, N))` over the same prime of `Q(Nov(R, K, N|K))
 the same ideal, so they are equal. Hence contraction is a bijection between the primes of the two
 total rings of fractions (`TauCeti.NovikovSeries.comap_algebraMap_bijective_of_torsion_le`). When
 the Novikov rings are reduced, as for `R = ℤ`, these primes index the field components of the total
-rings of fractions. Reading the norm modulo a prime (`Algebra.norm_mem_iff_exists_liesOver`), the
+rings of fractions. Reading the norm modulo a prime (`Algebra.projectiveNorm_mem_iff`), the
 norm of the finite cover of an element lies in a prime of the base exactly when the element lies in
 the prime above it (`TauCeti.NovikovSeries.fractionNorm_mem_iff_mem_of_torsion_le`): an element
 whose component in a field factor is nonzero has a norm whose component in the corresponding field
@@ -357,12 +357,12 @@ theorem fractionNorm_mem_iff_mem_of_torsion_le (hK : AddCommGroup.torsion H ≤ 
     Algebra.fractionNorm (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) QA QB x ∈
       n ↔ x ∈ m := by
   obtain ⟨_, _⟩ := free_and_finite R N (K := K) QA QB
-  have := isArtinianRing_of_isFractionRing R (N.comp K.subtype) QA
-  have : n.IsMaximal := by
+  have : n.IsPrime := by
     rw [Ideal.over_def m n]
     infer_instance
-  rw [Algebra.fractionNorm_eq_norm, Algebra.norm_mem_iff_exists_liesOver n x]
-  refine ⟨fun ⟨P, hP, _, hxP⟩ => ?_, fun hx => ⟨m, inferInstance, inferInstance, hx⟩⟩
+  rw [Algebra.fractionNorm_eq_norm, ← Algebra.projectiveNorm_eq_norm,
+    Algebra.projectiveNorm_mem_iff]
+  refine ⟨fun ⟨P, ⟨hP, _⟩, hxP⟩ => ?_, fun hx => ⟨m, ⟨inferInstance, inferInstance⟩, hx⟩⟩
   -- The prime `P` over `n` containing `x` is `m`, the only prime over `n`.
   have hPm : (⟨P, hP⟩ : PrimeSpectrum QB) = ⟨m, inferInstance⟩ :=
     comap_algebraMap_injective_of_torsion_le R N QA QB hK <| PrimeSpectrum.ext <| by
