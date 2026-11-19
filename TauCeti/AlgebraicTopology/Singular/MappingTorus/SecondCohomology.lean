@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.FibreClass
-import TauCeti.LinearAlgebra.Determinant.Basic
+import Mathlib.LinearAlgebra.Determinant
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 import TauCeti.Algebra.Homology.UniversalCoefficient.Basic
@@ -97,7 +97,7 @@ private theorem injective_id_sub_homologyMap_monodromyChainMap_ulift
     exact h
   intro x y hxy
   apply e.injective
-  apply LinearMap.injective_of_det_ne_zero hdet
+  apply LinearMap.ker_eq_bot.1 (not_not.1 fun h ↦ hdet (LinearMap.det_eq_zero_iff_ker_ne_bot.2 h))
   have h := congrArg e hxy
   simp only [LinearMap.sub_apply, LinearMap.id_apply, map_sub, hφ] at h ⊢
   exact h
