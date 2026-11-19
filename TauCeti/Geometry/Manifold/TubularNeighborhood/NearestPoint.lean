@@ -54,7 +54,7 @@ the submanifold.
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
-  Springer (2013), Theorem 6.24 and Problem 6-5.
+  Springer (2013), Theorem 6.24.
 * H. Federer, *Curvature measures*, Trans. Amer. Math. Soc. **93** (1959), §4 (nearest points
   and the normal cone of a set of positive reach).
 -/
