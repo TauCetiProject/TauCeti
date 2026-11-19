@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Sl2
 public import Mathlib.LinearAlgebra.Matrix.Transvection
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
+public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.RingTheory.MvPolynomial.BinaryMonomial
 
 /-!
@@ -30,8 +30,9 @@ operator `F = y ∂_x` and `H = ⁅E, F⁆ = x ∂_x - y ∂_y` form an `sl₂`-
 
 `E e_i = i e_(i-1)`, `F e_i = (d - i) e_(i+1)`, `H e_i = (d - 2i) e_i`,
 
-with zero endpoints; `x ^ d` is a primitive vector of weight `d`. The transvections
-`!![1, t; 0, 1]` and `!![1, 0; t, 1]` act as the exponentials of `t E` and `t F`.
+with zero endpoints. The transvections `!![1, t; 0, 1]` and `!![1, 0; t, 1]` act as the
+exponentials of `t E` and `t F`. The `sl₂`-triple itself and the primitive vector `x ^ d` are in
+`TauCeti/Algebra/Lie/Sl2/BinaryForm.lean`.
 
 ## Main definitions
 
@@ -39,20 +40,18 @@ with zero endpoints; `x ^ d` is a primitive vector of weight `d`. The transvecti
 
 ## Main results
 
-* `TauCeti.polynomialOperator_mul`: `X a ∂_b` is a derivation.
+* `TauCeti.polynomialOperator_eq`: `X a ∂_b` is the derivation `X a • pderiv b`.
+* `TauCeti.polynomialOperator_mul`: `X a ∂_b` satisfies the Leibniz rule.
 * `MvPolynomial.IsHomogeneous.polynomialOperator`: `X a ∂_b` preserves homogeneous degrees.
 * `TauCeti.lie_polynomialOperator`: the commutation relations of the elementary matrices.
 * `TauCeti.pow_polynomialOperator_X_pow`: for `a ≠ b`,
   `(X a ∂_b)ᵏ (X b ^ m) = m(m-1)⋯(m-k+1) X a ^ k X b ^ (m-k)`.
 * `TauCeti.polynomialAction_transvection`: the transvection `1 + t E_ab` acts as
   `∑ₖ tᵏ / k! (X a ∂_b)ᵏ`.
-* `TauCeti.isSl2Triple_polynomialOperator`: `x ∂_x - y ∂_y`, `x ∂_y` and `y ∂_x` form an
-  `sl₂`-triple.
 * `TauCeti.pow_polynomialOperator_zero_one_polynomialMonomial`,
-  `TauCeti.pow_polynomialOperator_one_zero_polynomialMonomial`,
-  `TauCeti.lie_polynomialOperator_polynomialMonomial`: the ladder formulas on the binary
+  `TauCeti.pow_polynomialOperator_one_zero_polynomialMonomial`: the ladder formulas on the binary
   monomials.
-* `TauCeti.hasPrimitiveVectorWith_X_zero_pow`: `x ^ d` is a primitive vector of weight `d`.
+* `TauCeti.lie_polynomialOperator_zero_one_one_zero`: `⁅x ∂_y, y ∂_x⁆ = x ∂_x - y ∂_y`.
 
 ## References
 
@@ -76,11 +75,19 @@ multiplication by the variable `a`. -/
 noncomputable def polynomialOperator (a b : σ) : Module.End R (MvPolynomial σ R) :=
   ((X a : MvPolynomial σ R) • pderiv b : Derivation R (MvPolynomial σ R) (MvPolynomial σ R))
 
+variable (R) in
+/-- `X a ∂_b` is the derivation `X a • pderiv b`, viewed as a linear map. -/
+theorem polynomialOperator_eq (a b : σ) :
+    polynomialOperator R a b =
+      (((X a : MvPolynomial σ R) • pderiv b : Derivation R (MvPolynomial σ R) (MvPolynomial σ R)) :
+        Module.End R (MvPolynomial σ R)) :=
+  (rfl)
+
 theorem polynomialOperator_apply (a b : σ) (p : MvPolynomial σ R) :
     polynomialOperator R a b p = X a * pderiv b p :=
   (rfl)
 
-/-- `X a ∂_b` is a derivation. -/
+/-- `X a ∂_b` satisfies the Leibniz rule. -/
 theorem polynomialOperator_mul (a b : σ) (p q : MvPolynomial σ R) :
     polynomialOperator R a b (p * q) =
       polynomialOperator R a b p * q + p * polynomialOperator R a b q := by
@@ -140,10 +147,9 @@ theorem lie_polynomialOperator [DecidableEq σ] (a b c d : σ) :
     simp only [D, Derivation.commutator_apply, smul_apply, sub_apply, pderiv_X, smul_eq_mul,
       Pi.single_apply]
     split_ifs <;> simp_all
-  have hcoe : ∀ a b, polynomialOperator R a b = (D a b : Module.End R (MvPolynomial σ R)) :=
-    fun _ _ ↦ rfl
-  rw [hcoe, hcoe, ← Derivation.commutator_coe_linear_map, hD, Derivation.coe_sub_linearMap]
-  split_ifs <;> simp [hcoe]
+  rw [polynomialOperator_eq, polynomialOperator_eq, ← Derivation.commutator_coe_linear_map, hD,
+    Derivation.coe_sub_linearMap]
+  split_ifs <;> simp [D, polynomialOperator_eq]
 
 end Lie
 
@@ -158,11 +164,9 @@ theorem pow_polynomialOperator_X_pow (hab : a ≠ b) (k m : ℕ) :
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ', mul_apply_eq_comp, ih, map_smul, polynomialOperator_mul,
-      polynomialOperator_apply, polynomialOperator_apply, pderiv_pow, pderiv_pow,
-      pderiv_X_of_ne hab, pderiv_X_self, Nat.descFactorial_succ, Nat.cast_mul, mul_smul,
-      Nat.sub_sub]
-    simp only [mul_zero, zero_mul, zero_add, mul_one, smul_eq_C_mul, map_natCast]
+    rw [pow_succ', mul_apply_eq_comp, ih]
+    simp [polynomialOperator_apply, pderiv_X_of_ne hab, Nat.descFactorial_succ, Nat.sub_sub,
+      smul_eq_C_mul]
     ring
 
 /-- If `X a ∂_b` kills `q`, then it commutes with multiplication by `q`. -/
@@ -173,11 +177,6 @@ private theorem pow_polynomialOperator_mul_of_eq_zero {q : MvPolynomial σ R}
   | zero => simp
   | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, polynomialOperator_mul, hq, mul_zero,
       add_zero, mul_apply_eq_comp]
-
-/-- A monomial splits off its power of `X b`. -/
-private theorem monomial_eq_X_pow_mul_monomial_erase (s : σ →₀ ℕ) (r : R) :
-    monomial s r = X b ^ s b * monomial (s.erase b) r := by
-  rw [X_pow_eq_monomial, monomial_mul_monomial, one_mul, Finsupp.single_add_erase]
 
 end Power
 
@@ -212,7 +211,7 @@ private theorem polynomialAction_transvection_monomial (t : R) (s : σ →₀ �
     polynomialAction (transvection a b t) (monomial s r) =
       ∑ k ∈ Finset.range (s b + 1), ((s b).choose k * t ^ k : R) •
         (X a ^ k * X b ^ (s b - k) * monomial (s.erase b) r) := by
-  rw [monomial_eq_X_pow_mul_monomial_erase, map_mul,
+  rw [monomial_eq_X_pow_mul_monomial_erase b, map_mul,
     polynomialAction_transvection_monomial_of_eq_zero t (Finsupp.erase_same),
     map_pow, polynomialAction_transvection_X]
   simp only [↓reduceIte]
@@ -220,6 +219,12 @@ private theorem polynomialAction_transvection_monomial (t : R) (s : σ →₀ �
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [mul_pow, smul_eq_C_mul, map_mul, map_pow, map_natCast]
   ring
+
+/-- Over a `ℚ`-algebra, `k!` is cancelled by `(k! : ℚ)⁻¹`. -/
+private theorem inv_factorial_smul_factorial (R : Type*) [Ring R] [Algebra ℚ R] (k : ℕ) :
+    (k.factorial : ℚ)⁻¹ • (k.factorial : R) = 1 := by
+  rw [← map_natCast (algebraMap ℚ R), Algebra.algebraMap_eq_smul_one, smul_smul,
+    inv_mul_cancel₀ (by positivity), one_smul]
 
 /-- **The exponential formula for a transvection**: over a `ℚ`-algebra, for `a ≠ b` the
 transvection `1 + t E_ab` acts on a polynomial of degree at most `N` in `X b` as the finite
@@ -235,7 +240,7 @@ theorem polynomialAction_transvection [Algebra ℚ R] (hab : a ≠ b) (t : R) {N
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun s hs ↦ ?_
   have hsN : s b ≤ N := (monomial_le_degreeOf b hs).trans hp
-  have hmon := monomial_eq_X_pow_mul_monomial_erase (b := b) s (p.coeff s)
+  have hmon := monomial_eq_X_pow_mul_monomial_erase b s (p.coeff s)
   have hkill : polynomialOperator R a b (monomial (s.erase b) (p.coeff s)) = 0 := by
     simp
   rw [polynomialAction_transvection_monomial, ← Finset.sum_range_add_sum_Ico _
@@ -244,13 +249,8 @@ theorem polynomialAction_transvection [Algebra ℚ R] (hab : a ≠ b) (t : R) {N
     rw [hmon, pow_polynomialOperator_mul_of_eq_zero hkill, pow_polynomialOperator_X_pow hab,
       smul_mul_assoc, smul_smul]
     congr 1
-    have h1 : (k.factorial : ℚ)⁻¹ • (k.factorial : R) = 1 := by
-      rw [show (k.factorial : R) = (k.factorial : ℚ) • (1 : R) by
-          rw [Nat.cast_smul_eq_nsmul, nsmul_one],
-        smul_smul, inv_mul_cancel₀ (by positivity), one_smul]
     rw [Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul, smul_mul_assoc,
-      show t ^ k * ((k.factorial : R) * ((s b).choose k : R)) =
-        (k.factorial : R) * ((s b).choose k * t ^ k) by ring, ← smul_mul_assoc, h1, one_mul]
+      mul_left_comm, ← smul_mul_assoc, inv_factorial_smul_factorial, one_mul, mul_comm]
   · intro k hk
     rw [hmon, pow_polynomialOperator_mul_of_eq_zero hkill, pow_polynomialOperator_X_pow hab,
       Nat.descFactorial_eq_zero_iff_lt.mpr (Finset.mem_Ico.mp hk).1, Nat.cast_zero, zero_smul,
@@ -334,9 +334,7 @@ theorem polynomialOperator_one_one_polynomialMonomial :
 
 end Binary
 
-section Sl2
-
-attribute [local instance 100] LieRing.ofAssociativeRing
+section Lie
 
 variable (R : Type*) [CommRing R]
 
@@ -346,49 +344,6 @@ theorem lie_polynomialOperator_zero_one_one_zero :
       polynomialOperator R (0 : Fin 2) 0 - polynomialOperator R (1 : Fin 2) 1 := by
   simp [lie_polynomialOperator]
 
-/-- **The `sl₂`-triple of binary forms**: `H = x ∂_x - y ∂_y`, `E = x ∂_y` and `F = y ∂_x` satisfy
-`⁅E, F⁆ = H`, `⁅H, E⁆ = 2E` and `⁅H, F⁆ = -2F`. -/
-theorem isSl2Triple_polynomialOperator [Nontrivial R] :
-    IsSl2Triple (polynomialOperator R (0 : Fin 2) 0 - polynomialOperator R (1 : Fin 2) 1)
-      (polynomialOperator R (0 : Fin 2) 1) (polynomialOperator R (1 : Fin 2) 0) where
-  h_ne_zero h := by
-    have := congr($h (X 0))
-    simp at this
-  lie_e_f := lie_polynomialOperator_zero_one_one_zero R
-  lie_h_e_nsmul := by
-    simp [sub_lie, lie_polynomialOperator, two_smul]
-  lie_h_f_nsmul := by
-    simp [sub_lie, lie_polynomialOperator, two_smul]
-    abel
-
-variable {R} {d i : ℕ}
-
-/-- **The weights of the binary monomials**: `H = ⁅x ∂_y, y ∂_x⁆` multiplies `e_i` by `d - 2i`. -/
-theorem lie_polynomialOperator_polynomialMonomial :
-    ⁅polynomialOperator R (0 : Fin 2) 1, polynomialOperator R (1 : Fin 2) 0⁆
-        (polynomialMonomial R d i) =
-      ((d : R) - 2 * i) • polynomialMonomial R d i := by
-  rcases le_or_gt i d with h | h
-  · rw [lie_polynomialOperator_zero_one_one_zero, LinearMap.sub_apply,
-      polynomialOperator_zero_zero_polynomialMonomial,
-      polynomialOperator_one_one_polynomialMonomial, ← sub_smul, Nat.cast_sub h]
-    congr 1
-    ring
-  · simp [polynomialMonomial_of_lt h]
-
-/-- The binary monomial `x ^ d` is a primitive vector of weight `d` for the `sl₂`-triple of
-binary forms. -/
-theorem hasPrimitiveVectorWith_X_zero_pow [Nontrivial R] (d : ℕ) :
-    (isSl2Triple_polynomialOperator R).HasPrimitiveVectorWith
-      (X 0 ^ d : MvPolynomial (Fin 2) R) (d : R) where
-  ne_zero := by simp [X_pow_eq_monomial]
-  lie_h := by
-    have := lie_polynomialOperator_polynomialMonomial (R := R) (d := d) (i := 0)
-    simpa [lie_polynomialOperator_zero_one_one_zero, polynomialMonomial_zero_right] using this
-  lie_e := by
-    simpa [polynomialMonomial_zero_right] using
-      polynomialOperator_zero_one_polynomialMonomial (R := R) (d := d) (i := 0) (Nat.zero_le d)
-
-end Sl2
+end Lie
 
 end TauCeti
