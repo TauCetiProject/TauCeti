@@ -137,12 +137,18 @@ private theorem two_mul_mul_sq_le {da ε θ C r w s : ℝ} (hC0 : 0 < C) (hθ : 
     _ = θ * ((r * w + 1) / 4) := by rw [hε]; field_simp; ring
     _ ≤ s * ((r * w + 1) / 4) := by gcongr
 
+/-- For `C ≥ 1` and `0 < θ ≤ 1`, `C ≤ C² / θᵏ`. -/
+private theorem le_sq_div_pow {C θ : ℝ} (k : ℕ) (hC : 1 ≤ C) (hθ : 0 < θ) (hθ1 : θ ≤ 1) :
+    C ≤ C ^ 2 / θ ^ k := by
+  rw [le_div_iff₀ (pow_pos hθ k)]
+  calc C * θ ^ k ≤ C * 1 := mul_le_mul_of_nonneg_left (pow_le_one₀ hθ.le hθ1) (by linarith)
+    _ ≤ C ^ 2 := by nlinarith
+
 /-- The error from `∂bar_a α`: with `ε = θ / (8 C)`, `|∂bar_a α|² ≤ C`, `C ≥ 1` and `θ ≤ 1`,
 `2 (2 + 18 / ε) |∂bar_a α|² ≤ s · 292 C² / θ²` wherever `θ ≤ s`. -/
 private theorem two_mul_two_add_div_mul_sq_le {q ε θ C s : ℝ} (hC : 1 ≤ C) (hθ : 0 < θ)
     (hθ1 : θ ≤ 1) (hε : ε = θ / (8 * C)) (hθs : θ ≤ s) (hq : q ^ 2 ≤ C) :
     2 * (2 + 18 / ε) * q ^ 2 ≤ s * (292 * C ^ 2 / θ ^ 2) := by
-  have hC0 : 0 < C := one_pos.trans_le hC
   have hK : 2 + 18 / ε = 2 + 144 * C / θ := by
     rw [hε]
     field_simp
@@ -151,11 +157,7 @@ private theorem two_mul_two_add_div_mul_sq_le {q ε θ C s : ℝ} (hC : 1 ≤ C)
   have e1 : 2 * (2 + 144 * C / θ) * q ^ 2 ≤ 2 * (2 + 144 * C / θ) * C :=
     mul_le_mul_of_nonneg_left hq (by positivity)
   have e2 : 2 * (2 + 144 * C / θ) * C = 4 * C + 288 * (C ^ 2 / θ) := by ring
-  have e3 : C ≤ C ^ 2 / θ := by
-    rw [le_div_iff₀ hθ]
-    calc C * θ ≤ C * 1 := mul_le_mul_of_nonneg_left hθ1 hC0.le
-      _ = C := mul_one C
-      _ ≤ C ^ 2 := by rw [sq]; exact le_mul_of_one_le_right hC0.le hC
+  have e3 : C ≤ C ^ 2 / θ := by simpa using le_sq_div_pow 1 hC hθ hθ1
   have e4 : θ * (292 * C ^ 2 / θ ^ 2) ≤ s * (292 * C ^ 2 / θ ^ 2) :=
     mul_le_mul_of_nonneg_right hθs (by positivity)
   have e5 : θ * (292 * C ^ 2 / θ ^ 2) = 292 * (C ^ 2 / θ) := by
@@ -187,11 +189,7 @@ private theorem two_mul_mul_add_add_le {a b db C θ : ℝ} (hC0 : 0 < C) (hθ : 
 private theorem const_le {C θ : ℝ} (hC : 1 ≤ C) (hθ : 0 < θ) (hθ1 : θ ≤ 1) :
     1 / 4 + C + 292 * C ^ 2 / θ ^ 2 + (2 * C + 8 * C ^ 2 / θ) + C / 2 ≤ 304 * C ^ 2 / θ ^ 2 := by
   have hθ2 : θ ^ 2 ≤ θ := by nlinarith
-  have hCθ : C ≤ C ^ 2 / θ ^ 2 := by
-    rw [le_div_iff₀ (by positivity)]
-    calc C * θ ^ 2 ≤ C * 1 := mul_le_mul_of_nonneg_left (by nlinarith) (by linarith)
-      _ = C := mul_one C
-      _ ≤ C ^ 2 := by rw [sq]; exact le_mul_of_one_le_right (by linarith) hC
+  have hCθ : C ≤ C ^ 2 / θ ^ 2 := le_sq_div_pow 2 hC hθ hθ1
   have h8 : 8 * C ^ 2 / θ ≤ 8 * C ^ 2 / θ ^ 2 :=
     div_le_div_of_nonneg_left (by positivity) (by positivity) hθ2
   have e : 304 * C ^ 2 / θ ^ 2 = 292 * C ^ 2 / θ ^ 2 + 8 * C ^ 2 / θ ^ 2 + 4 * (C ^ 2 / θ ^ 2) := by

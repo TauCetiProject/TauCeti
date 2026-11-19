@@ -54,16 +54,15 @@ theorem inner_sq_add_inner_sq_le {J : AlmostComplexStructure V}
   rcases eq_or_ne p 0 with rfl | hp
   · simp
   have hJpp : ⟪J p, p⟫ = 0 := inner_apply_self hJ p
-  have hpp : ⟪p, p⟫ = ‖p‖ ^ 2 := real_inner_self_eq_norm_sq p
-  have hJJ : ⟪J p, J p⟫ = ‖p‖ ^ 2 := by rw [hJ, hpp]
+  have hpJp : ⟪p, J p⟫ = 0 := by rw [real_inner_comm, hJpp]
+  have hn : ‖p‖⁻¹ * ‖p‖ = 1 := inv_mul_cancel₀ (norm_ne_zero_iff.2 hp)
   -- `p / ‖p‖` and `J p / ‖p‖` are orthonormal.
   have hv : Orthonormal ℝ ![‖p‖⁻¹ • p, ‖p‖⁻¹ • J p] := by
     rw [orthonormal_iff_ite]
     intro i j
     fin_cases i <;> fin_cases j <;>
-      simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one,
-        real_inner_smul_left, real_inner_smul_right, hJpp, hJJ, real_inner_comm (J p) p, hpp,
-        ↓reduceIte, Fin.isValue, zero_ne_one, one_ne_zero, mul_zero] <;> field_simp
+      simp [norm_smul, norm_apply hJ, hn, real_inner_smul_left, real_inner_smul_right, hJpp,
+        hpJp]
   have h := hv.sum_inner_products_le (x := d) (s := Finset.univ)
   simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Real.norm_eq_abs,
     sq_abs, real_inner_comm d, real_inner_smul_right] at h
