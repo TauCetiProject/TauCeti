@@ -10,6 +10,7 @@ import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.MellinTransform.Convolution
 import TauCeti.Analysis.MellinTransform.Decay
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Delta spikes and smoothed cutoffs for the measure `dx/x`
@@ -120,9 +121,8 @@ theorem mellin_deltaSpike (ν : ℝ → ℝ) (hε : 0 < ε) (s : ℂ) :
       mellin (fun x ↦ ε⁻¹ • (ν (x ^ ε⁻¹) : ℂ)) s :=
     setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ by
       simp only [ofReal_deltaSpike_of_pos (mem_Ioi.mp hx)]
-  rw [h, mellin_const_smul, mellin_comp_rpow (fun y ↦ (ν y : ℂ)), smul_smul, abs_inv,
-    abs_of_pos hε, inv_inv, inv_mul_cancel₀ hε.ne', one_smul, ofReal_inv, div_inv_eq_mul,
-    mul_comm]
+  rw [h, mellin_const_smul, mellin_comp_rpow (fun y ↦ (ν y : ℂ))]
+  simp [abs_of_pos hε, hε.ne', mul_comm]
 
 /-- The spike is Mellin convergent at `s` exactly when `ν` is Mellin convergent at `εs`. -/
 theorem mellinConvergent_deltaSpike_iff (hε : 0 < ε) {s : ℂ} :
@@ -145,33 +145,10 @@ theorem integral_deltaSpike_div (ν : ℝ → ℝ) (hε : 0 < ε) :
   have h := mellin_deltaSpike ν hε 0
   rwa [mul_zero, mellin_ofReal_zero, mellin_ofReal_zero, ofReal_inj] at h
 
-/-- On `[1/2, 2]` and for `0 ≤ ε ≤ 1`, `|x^ε - 1| ≤ 2 log 2 · ε`. -/
-private lemma abs_rpow_sub_one_le (hx : x ∈ Icc (1 / 2 : ℝ) 2) (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) :
-    |x ^ ε - 1| ≤ 2 * Real.log 2 * ε := by
-  have hx0 : 0 < x := lt_of_lt_of_le (by norm_num) hx.1
-  have hlog : |Real.log x| ≤ Real.log 2 := by
-    refine abs_le.mpr ⟨?_, Real.log_le_log hx0 hx.2⟩
-    calc -Real.log 2 = Real.log (1 / 2) := by rw [one_div, Real.log_inv]
-      _ ≤ Real.log x := Real.log_le_log (by norm_num) hx.1
-  have hle : |Real.log x * ε| ≤ Real.log 2 * ε := by
-    rw [abs_mul, abs_of_nonneg hε0]
-    exact mul_le_mul_of_nonneg_right hlog hε0
-  have hlog2 : Real.log 2 ≤ 1 := by
-    linarith [Real.log_le_sub_one_of_pos (zero_lt_two' ℝ)]
-  have h1 : |Real.log x * ε| ≤ 1 :=
-    hle.trans ((mul_le_mul hlog2 hε1 hε0 zero_le_one).trans_eq (one_mul 1))
-  rw [Real.rpow_def_of_pos hx0]
-  calc |Real.exp (Real.log x * ε) - 1| ≤ 2 * |Real.log x * ε| := Real.abs_exp_sub_one_le h1
-    _ ≤ 2 * (Real.log 2 * ε) := by gcongr
-    _ = 2 * Real.log 2 * ε := by ring
-
-/-- A real function supported in `[1/2, 2]` with `x ↦ ν x / x` integrable on `(0, ∞)` is
-Mellin convergent at every exponent. -/
-private lemma mellinConvergent_ofReal (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
-    (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0)) (s : ℂ) :
-    MellinConvergent (fun x ↦ (ν x : ℂ)) s :=
-  ((mellinConvergent_ofReal_zero_iff ν).mpr hνi).of_support_subset_Icc (a := 1 / 2) (b := 2)
-    (by norm_num) (by simpa only [Function.support, ne_eq, ofReal_eq_zero] using hνs) s
+/-- A function of `dx/x`-mass `1` on `(0, ∞)` has `x ↦ f x / x` integrable there. -/
+private lemma integrableOn_div_of_integral_div_eq_one {f : ℝ → ℝ}
+    (hf : ∫ x in Ioi 0, f x / x = 1) : IntegrableOn (fun x ↦ f x / x) (Ioi 0) :=
+  Integrable.of_integral_ne_zero (hf ▸ one_ne_zero)
 
 /-- For a bump `ν` (`ν ≥ 0`, supported in `[1/2, 2]`, of `dx/x`-mass `1`) and `0 ≤ ε ≤ 1`,
 `‖mellin ν ε - 1‖ ≤ 2 log 2 · ε`. This is the distance between the Mellin transform of the spike
@@ -179,28 +156,36 @@ private lemma mellinConvergent_ofReal (hνs : Function.support ν ⊆ Icc (1 / 2
 theorem norm_mellin_sub_one_le (hν0 : ∀ x, 0 ≤ ν x) (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
     (hνm : ∫ x in Ioi 0, ν x / x = 1) (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) :
     ‖mellin (fun x ↦ (ν x : ℂ)) ε - 1‖ ≤ 2 * Real.log 2 * ε := by
-  have hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0) :=
-    Integrable.of_integral_ne_zero (by rw [hνm]; exact one_ne_zero)
+  have hνi := integrableOn_div_of_integral_div_eq_one hνm
+  have hνc := mellinConvergent_ofReal_of_support_subset_Icc (by norm_num) hνs hνi
   have h1 : mellin (fun x ↦ (ν x : ℂ)) 0 = 1 := by rw [mellin_ofReal_zero, hνm, ofReal_one]
-  rw [← h1, mellin, mellin, ← integral_sub (mellinConvergent_ofReal hνs hνi _)
-    (mellinConvergent_ofReal hνs hνi _)]
+  rw [← h1, mellin, mellin, ← integral_sub (hνc _) (hνc _)]
   refine (norm_integral_le_of_norm_le (hνi.const_mul (2 * Real.log 2 * ε))
     ((ae_restrict_iff' measurableSet_Ioi).mpr (Eventually.of_forall fun x hx ↦ ?_))).trans
     (by rw [integral_const_mul, hνm, mul_one])
   have hx0 : 0 < x := hx
   by_cases hνx : ν x = 0
   · simp [hνx]
-  have hcpow (σ : ℝ) : (x : ℂ) ^ ((σ : ℂ) - 1) = ((x ^ (σ - 1) : ℝ) : ℂ) := by
-    rw [ofReal_cpow hx0.le, ofReal_sub, ofReal_one]
+  obtain ⟨hx1, hx2⟩ := hνs hνx
+  have hlog : |Real.log x| ≤ Real.log 2 := by
+    have h := Real.log_le_log (by norm_num) hx1
+    rw [one_div, Real.log_inv] at h
+    exact abs_le.mpr ⟨h, Real.log_le_log hx0 hx2⟩
+  have hlog2 : Real.log 2 ≤ 1 := by linarith [Real.log_le_sub_one_of_pos (zero_lt_two' ℝ)]
+  have hle : |Real.log x * ε| ≤ Real.log 2 * ε := by
+    rw [abs_mul, abs_of_nonneg hε0]
+    gcongr
+  have hpow : |x ^ ε - 1| ≤ 2 * Real.log 2 * ε := by
+    have h := Real.abs_rpow_sub_one_le hx0 (hle.trans (by nlinarith))
+    linarith
   have key : (x : ℂ) ^ ((ε : ℂ) - 1) • (ν x : ℂ) - (x : ℂ) ^ ((0 : ℂ) - 1) • (ν x : ℂ) =
-      (((x ^ ε - 1) / x * ν x : ℝ) : ℂ) := by
-    rw [hcpow, ← ofReal_zero, hcpow, smul_eq_mul, smul_eq_mul, ← sub_mul, ← ofReal_sub,
-      ← ofReal_mul, zero_sub, Real.rpow_neg_one, Real.rpow_sub_one hx0.ne']
-    ring_nf
-  rw [key, norm_real, Real.norm_eq_abs, abs_mul, abs_div, abs_of_pos hx0, abs_of_nonneg (hν0 x),
-    div_mul_eq_mul_div, mul_div_assoc]
-  exact mul_le_mul_of_nonneg_right (abs_rpow_sub_one_le (hνs hνx) hε0 hε1)
-    (div_nonneg (hν0 x) hx0.le)
+      (((x ^ ε - 1) * (ν x / x) : ℝ) : ℂ) := by
+    rw [← ofReal_one, ← ofReal_sub, ← ofReal_cpow hx0.le, Real.rpow_sub_one hx0.ne']
+    simp [cpow_neg_one]
+    ring
+  have hq : 0 ≤ ν x / x := div_nonneg (hν0 x) hx0.le
+  rw [key, norm_real, Real.norm_eq_abs, abs_mul, abs_of_nonneg hq]
+  gcongr
 
 /-! ### Smoothed cutoffs -/
 
@@ -210,7 +195,6 @@ theorem norm_mellin_sub_one_le (hν0 : ∀ x, 0 ≤ ν x) (hνs : Function.suppo
 noncomputable def smoothCutoff (ν : ℝ → ℝ) (ε x : ℝ) : ℝ :=
   if 0 < x then ∫ z in Ioi x, deltaSpike ν ε z / z else 0
 
-@[simp]
 theorem smoothCutoff_of_pos (hx : 0 < x) :
     smoothCutoff ν ε x = ∫ z in Ioi x, deltaSpike ν ε z / z := by
   simp [smoothCutoff, hx]
@@ -236,7 +220,7 @@ theorem smoothCutoff_le_one (hν : ∀ x, 0 ≤ ν x) (hνm : ∫ x in Ioi 0, ν
   have hm := integral_deltaSpike_div ν hε
   rw [hνm] at hm
   rw [smoothCutoff_of_pos hx, ← hm]
-  exact setIntegral_mono_set (Integrable.of_integral_ne_zero (by rw [hm]; exact one_ne_zero))
+  exact setIntegral_mono_set (integrableOn_div_of_integral_div_eq_one hm)
     ((ae_restrict_iff' measurableSet_Ioi).mpr (Eventually.of_forall fun z hz ↦
       div_nonneg (deltaSpike_nonneg hν hε.le z) (le_of_lt hz)))
     (Eventually.of_forall (Ioi_subset_Ioi hx.le))
@@ -297,9 +281,10 @@ theorem smoothCutoff_eq_integral_mul_div (ν : ℝ → ℝ) (ε : ℝ) (hx : 0 <
     by_cases hy1 : y ≤ 1
     · simp [indicator, hy0, hy1, hiff.mpr hy1, g, cpow_neg_one, div_eq_mul_inv, mul_comm]
     · simp [indicator, hy1, mt hiff.mp hy1]
-  rw [hcongr, mellin_comp_inv (fun u ↦ (Ici x).indicator g (x * u)), neg_zero,
-    mellin_comp_mul_left _ _ hx, neg_zero, cpow_zero, one_smul, mellin_indicator_Ici g hx.le,
-    smoothCutoff_of_pos hx, ← integral_complex_ofReal]
+  rw [hcongr, mellin_comp_inv (fun u ↦ (Ici x).indicator g (x * u)),
+    mellin_comp_mul_left _ _ hx, mellin_indicator_Ici g hx.le, smoothCutoff_of_pos hx,
+    ← integral_complex_ofReal]
+  simp only [neg_zero, cpow_zero, one_smul]
   refine setIntegral_congr_fun measurableSet_Ioi fun z _ ↦ ?_
   simp [g, cpow_neg_one, div_eq_inv_mul]
 
@@ -311,7 +296,8 @@ theorem hasMellin_smoothCutoff (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
     HasMellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) s (mellin (fun x ↦ (ν x : ℂ)) (ε * s) / s) := by
   have h1 := hasMellin_one_Ioc hs
   have h := hasMellin_integral_mul_div h1.1
-    ((mellinConvergent_deltaSpike_iff hε).mpr (mellinConvergent_ofReal hνs hνi _))
+    ((mellinConvergent_deltaSpike_iff hε).mpr
+      (mellinConvergent_ofReal_of_support_subset_Icc (by norm_num) hνs hνi _))
   rw [h1.2, mellin_deltaSpike ν hε, one_div_mul_eq_div] at h
   exact (hasMellin_congr fun x hx ↦ smoothCutoff_eq_integral_mul_div ν ε hx).mpr h
 
@@ -373,10 +359,8 @@ theorem norm_mellin_smoothCutoff_one_sub_one_le (hν0 : ∀ x, 0 ≤ ν x)
     (hνs : Function.support ν ⊆ Icc (1 / 2) 2) (hνm : ∫ x in Ioi 0, ν x / x = 1) (hε : 0 < ε)
     (hε1 : ε ≤ 1) :
     ‖mellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) 1 - 1‖ ≤ 2 * Real.log 2 * ε := by
-  have hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0) :=
-    Integrable.of_integral_ne_zero (by rw [hνm]; exact one_ne_zero)
-  rw [(hasMellin_smoothCutoff hνs hνi hε (by norm_num : (0 : ℝ) < (1 : ℂ).re)).2, mul_one,
-    div_one]
+  rw [(hasMellin_smoothCutoff hνs (integrableOn_div_of_integral_div_eq_one hνm) hε
+    (by norm_num : (0 : ℝ) < (1 : ℂ).re)).2, mul_one, div_one]
   exact norm_mellin_sub_one_le hν0 hνs hνm hε.le hε1
 
 end TauCeti

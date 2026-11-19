@@ -29,6 +29,8 @@ transform of `t⁻¹ f(t⁻¹)` at `s` to that of `f` at `1 - s`.
   Mellin transform of a real function is the real integral `∫_{(0,∞)} f(x) dx/x`.
 * `MellinConvergent.of_support_subset_Icc`: for a function supported in a compact interval of
   `(0, ∞)`, convergence at one exponent gives convergence at every exponent.
+* `TauCeti.mellinConvergent_ofReal_of_support_subset_Icc`: a real function supported in a compact
+  interval of `(0, ∞)` with `x ↦ f x / x` integrable on `(0, ∞)` converges at every exponent.
 * `TauCeti.mellinConvergent_iff_integrable_exp_smul`, `TauCeti.mellin_eq_integral_exp_smul`:
   absolute convergence and value of the Mellin transform in logarithmic coordinates.
 * `TauCeti.mellinConvergent_inv_smul_comp_inv`, `TauCeti.mellin_inv_smul_comp_inv`: the Mellin
@@ -154,3 +156,15 @@ theorem MellinConvergent.of_support_subset_Icc {E : Type*} [NormedAddCommGroup E
     measurableSet_Ioi fun t ht ↦ ?_
   · rw [smul_smul, ← cpow_add _ _ (ofReal_ne_zero.mpr (ha.trans_le ht.1).ne'), sub_add_sub_cancel]
   · rw [Function.notMem_support.mp fun h ↦ ht.2 (hf h), smul_zero]
+
+namespace TauCeti
+
+/-- A real function supported in a compact interval `[a, b] ⊆ (0, ∞)` with `x ↦ f x / x`
+integrable on `(0, ∞)` is Mellin convergent at every exponent. -/
+theorem mellinConvergent_ofReal_of_support_subset_Icc {f : ℝ → ℝ} {a b : ℝ} (ha : 0 < a)
+    (hf : Function.support f ⊆ Icc a b) (hfi : IntegrableOn (fun x ↦ f x / x) (Ioi 0)) (s : ℂ) :
+    MellinConvergent (fun x ↦ (f x : ℂ)) s :=
+  ((mellinConvergent_ofReal_zero_iff f).mpr hfi).of_support_subset_Icc ha
+    (by simpa only [Function.support, ne_eq, ofReal_eq_zero] using hf) s
+
+end TauCeti
