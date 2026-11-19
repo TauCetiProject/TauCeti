@@ -114,6 +114,11 @@ variable {X Y Z : Model P}
 theorem hom_ext {f g : X ⟶ Y} (h : ∀ a, f a = g a) : f = g :=
   funext h
 
+/-- Equal morphisms have equal matrix entries. -/
+theorem congr_apply {f g : X ⟶ Y} (h : f = g) (a : ι) (i : X.basis a) (j : Y.basis a) :
+    f a i j = g a i j := by
+  rw [h]
+
 @[simp]
 theorem id_apply (X : Model P) (a : ι) : (𝟙 X : X ⟶ X) a = 1 :=
   (rfl)
@@ -212,6 +217,12 @@ theorem sum_apply {κ : Type*} (s : Finset κ) (f : κ → (X ⟶ Y)) (a : ι) :
     (∑ k ∈ s, f k) a = ∑ k ∈ s, f k a :=
   Finset.sum_apply a s f
 
+/-- The scalar endomorphism `r` of `X` is `r` times the identity matrix in each grade. -/
+@[simp]
+theorem algebraMap_asHom_apply (X : Model P) (r : R) (a : ι) :
+    (algebraMap R (End X) r).asHom a = r • 1 := by
+  rw [Algebra.algebraMap_eq_smul_one, End.smul_asHom, End.one_asHom, smul_apply, id_apply]
+
 instance (X Y : Model P) : Module.Free R (X ⟶ Y) :=
   inferInstanceAs <| Module.Free R (∀ a, Matrix (X.basis a) (Y.basis a) R)
 
@@ -236,14 +247,16 @@ theorem isZero_of_isEmpty (X : Model P) [∀ a, IsEmpty (X.basis a)] : IsZero X 
 /-- Over a nontrivial ring, an object is a zero object exactly when it has no basis vectors. -/
 theorem isZero_iff [Nontrivial R] (X : Model P) : IsZero X ↔ ∀ a, IsEmpty (X.basis a) := by
   refine ⟨fun h a ↦ ⟨fun i ↦ ?_⟩, fun h ↦ isZero_of_isEmpty X⟩
-  have := congr_fun (congr_fun (congr_fun (h.eq_of_src (𝟙 X) 0) a) i) i
-  simp at this
+  simpa using congr_apply (h.eq_of_src (𝟙 X) 0) a i i
 
 instance : HasZeroObject (Model P) :=
   ⟨⟨⟨fun _ ↦ PEmpty⟩, isZero_of_isEmpty _⟩⟩
 
 /-- The binary biproduct of `X` and `Y`: in each grade, the disjoint union of the bases, with
-inclusions and projections the block matrices of the identity. -/
+inclusions and projections the block matrices of the identity. Its body is exposed because the
+statements of `TauCeti.FSymbols.Model.binaryBicone_fst_apply` and its siblings need the basis of
+the cone point to unfold to a sum type. -/
+@[expose]
 def binaryBicone (X Y : Model P) : BinaryBicone X Y where
   pt := ⟨fun a ↦ X.basis a ⊕ Y.basis a⟩
   fst _ := Matrix.fromRows 1 0
@@ -254,6 +267,31 @@ def binaryBicone (X Y : Model P) : BinaryBicone X Y where
   inl_snd := by ext1; simp [Matrix.fromCols_mul_fromRows]
   inr_fst := by ext1; simp [Matrix.fromCols_mul_fromRows]
   inr_snd := by ext1; simp [Matrix.fromCols_mul_fromRows]
+
+@[simp]
+theorem binaryBicone_pt_basis (X Y : Model P) (a : ι) :
+    (binaryBicone X Y).pt.basis a = (X.basis a ⊕ Y.basis a) :=
+  (rfl)
+
+@[simp]
+theorem binaryBicone_fst_apply (X Y : Model P) (a : ι) :
+    (binaryBicone X Y).fst a = Matrix.fromRows (1 : Matrix (X.basis a) (X.basis a) R) 0 :=
+  (rfl)
+
+@[simp]
+theorem binaryBicone_snd_apply (X Y : Model P) (a : ι) :
+    (binaryBicone X Y).snd a = Matrix.fromRows (0 : Matrix (X.basis a) (Y.basis a) R) 1 :=
+  (rfl)
+
+@[simp]
+theorem binaryBicone_inl_apply (X Y : Model P) (a : ι) :
+    (binaryBicone X Y).inl a = Matrix.fromCols (1 : Matrix (X.basis a) (X.basis a) R) 0 :=
+  (rfl)
+
+@[simp]
+theorem binaryBicone_inr_apply (X Y : Model P) (a : ι) :
+    (binaryBicone X Y).inr a = Matrix.fromCols (0 : Matrix (Y.basis a) (X.basis a) R) 1 :=
+  (rfl)
 
 /-- `TauCeti.FSymbols.Model.binaryBicone` is a biproduct. -/
 def binaryBiconeIsBilimit (X Y : Model P) : (binaryBicone X Y).IsBilimit :=
@@ -371,9 +409,11 @@ def isoBiproduct (X : Model P) : X ≅ ⨁ fun p : Σ a, X.basis a ↦ simple P 
       simp
     · simp [biproduct.ι_π_ne _ h, incl_comp_proj_of_ne h]
 
+@[simp]
 theorem isoBiproduct_hom (X : Model P) : X.isoBiproduct.hom = biproduct.lift (proj X) :=
   (rfl)
 
+@[simp]
 theorem isoBiproduct_inv (X : Model P) : X.isoBiproduct.inv = biproduct.desc (incl X) :=
   (rfl)
 
@@ -425,7 +465,7 @@ theorem homSimpleEquiv_symm_apply (a : ι) (v : X.basis a → R) (x : X.basis a)
 theorem bijective_algebraMap_simple (a : ι) :
     Function.Bijective (algebraMap R (End (simple P a))) := by
   refine ⟨fun r s h ↦ ?_, fun e ↦ ⟨e.asHom a default default, End.ext ?_⟩⟩
-  · simpa using congr_fun (congr_fun (congr_fun (congrArg End.asHom h) a) default) default
+  · simpa using congr_apply (congrArg End.asHom h) a default default
   · ext c i j
     obtain rfl := eq_of_simple_basis i
     rw [Subsingleton.elim i default, Subsingleton.elim j default]
@@ -442,8 +482,7 @@ theorem isEmpty_simple_iso [Nontrivial R] {a b : ι} (hab : a ≠ b) :
     IsEmpty (simple P a ≅ simple P b) := by
   refine ⟨fun e ↦ ?_⟩
   have := (homOrthogonal_simple hab).elim e.hom 0
-  have h := congr_fun (congr_fun (congr_fun e.hom_inv_id a) default) default
-  simp [this] at h
+  simpa [this] using congr_apply e.hom_inv_id a default default
 
 /-- The simple objects of the model form a split simple family: each has endomorphisms the
 scalars, there are no nonzero morphisms between distinct ones, and every object is a finite
