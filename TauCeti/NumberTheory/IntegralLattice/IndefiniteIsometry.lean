@@ -137,7 +137,7 @@ theorem infinite_isometry_of_isIndefinite_of_anisotropic {L : IntegralLattice V}
   obtain ⟨d, hd, hdπ⟩ := ((Module.Finite.fg_top (M := L)).map
     ((ι.orthogonalProjection hS).restrictScalars ℤ ∘ₗ L.carrier.subtype)).exists_smul_mem_of_le_span
       (F := ℚ) (M := M.carrier) (nonZeroDivisors ℤ) fun _ _ ↦ by
-        simp [Submodule.IsLattice.span_eq_top]
+        simp [Submodule.IsFullLattice.span_eq_top]
   replace hd : d ≠ 0 := nonZeroDivisors.ne_zero hd
   -- The isometries of `M` acting trivially on `M / d M` form an infinite group.
   let Γ := Isometry.congruenceSubgroup M d
