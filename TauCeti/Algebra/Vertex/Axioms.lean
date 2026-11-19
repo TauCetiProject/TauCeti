@@ -220,22 +220,10 @@ theorem eq_field_of_lie_translation [HasUniqueDiv V] {B : VertexOperator R V}
     (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
     (hT : ∀ n : ℤ, ⁅A.translation, B[[n]]⁆ = (derivative B)[[n]]) :
     B = A.field ((B[[-1]]) A.vacuum) := by
-  have hrec (n : ℤ) : A.translation ((B[[n]]) A.vacuum) = (-n) • (B[[n - 1]]) A.vacuum := by
-    simpa [Ring.lie_def] using LinearMap.congr_fun (hT n) A.vacuum
-  -- Descending from the truncation of `B(z)|0⟩`, `hrec` kills every `B₍ₖ₎|0⟩` with `k ≥ 0`.
-  obtain ⟨N, hN⟩ := B.exists_forall_ncoeff_apply_eq_zero A.vacuum
-  have hvac (d k : ℕ) (hk : N ≤ k + d) : (B[[k]]) A.vacuum = 0 := by
-    induction d generalizing k with
-    | zero => exact hN k (by omega)
-    | succ d ih =>
-      have h0 : (B[[k + 1]]) A.vacuum = 0 := mod_cast ih (k + 1) (by omega)
-      have h := hrec (k + 1)
-      simp only [h0, map_zero, add_sub_cancel_right, neg_smul, zero_eq_neg, smul_eq_zero] at h
-      exact h.resolve_left (by omega)
   refine A.eq_field_of_ncoeff_apply_vacuum_eq hB fun n ↦ ?_
   by_cases hn : 0 ≤ n
-  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = k := ⟨n.toNat, by omega⟩
-    rw [hvac N k (by omega), A.ncoeff_field_apply_vacuum_of_nonneg _ k hn]
+  · rw [ncoeff_apply_eq_zero_of_nonneg A.translation_vacuum hT n hn,
+      A.ncoeff_field_apply_vacuum_of_nonneg _ n hn]
   · -- Both creation series satisfy `k! • x₍₋ₖ₋₁₎|0⟩ = Tᵏ x₍₋₁₎|0⟩`.
     obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
     rw [← nsmul_right_inj k.factorial_ne_zero,
