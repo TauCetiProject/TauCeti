@@ -71,7 +71,7 @@ variable (n : ℕ)
 /-- The evaluation map `SO(1 + n) → Sⁿ`, `A ↦ A e₀`, on the first coordinate vector `e₀`. -/
 def specialOrthogonalSphereMap (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
     sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1 :=
-  finiteOrthonormalFrame.sphereHomeomorph (1 + n)
+  finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n)
     (finiteOrthonormalFrame.unitaryMap ⟨A.1, A.2.1⟩
       (finiteOrthonormalFrame.standard ℝ (Nat.le_add_right 1 n)))
 
@@ -90,7 +90,7 @@ theorem coe_specialOrthogonalSphereMap (A : specialOrthogonalGroup (Fin (1 + n))
 variable (n) in
 /-- The evaluation map `SO(1 + n) → Sⁿ` is continuous. -/
 theorem continuous_specialOrthogonalSphereMap : Continuous (specialOrthogonalSphereMap n) :=
-  (finiteOrthonormalFrame.sphereHomeomorph (1 + n)).continuous.comp
+  (finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n)).continuous.comp
     (finiteOrthonormalFrame.continuous_unitaryMap.comp
       ((continuous_subtype_val.subtype_mk _).prodMk continuous_const))
 
@@ -119,7 +119,7 @@ theorem specialOrthogonalSphereMap_eq_specialOrthogonalSphereMap_one_iff
 /-- For `n ≥ 1`, every unit vector of `ℝ^(1 + n)` is `A e₀` for some `A ∈ SO(1 + n)`. -/
 theorem surjective_specialOrthogonalSphereMap [NeZero n] :
     Function.Surjective (specialOrthogonalSphereMap n) :=
-  (finiteOrthonormalFrame.sphereHomeomorph (1 + n)).surjective.comp
+  (finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n)).surjective.comp
     (finiteOrthonormalFrame.specialOrthogonal_unitaryMap_standard_surjective
       (Nat.lt_add_of_pos_right (Nat.pos_of_neZero n)))
 
@@ -173,10 +173,10 @@ theorem exists_trivialization_specialOrthogonalSphereMap [NeZero n]
   let φ : specialOrthogonalGroup (Fin (1 + n)) ℝ ⧸ H ≃ₜ
       sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1 :=
     (finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph hn).trans
-      (finiteOrthonormalFrame.sphereHomeomorph (1 + n))
+      (finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n))
   have hφ (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
       φ (QuotientGroup.mk A) = specialOrthogonalSphereMap n A := by
-    exact congrArg (finiteOrthonormalFrame.sphereHomeomorph (1 + n))
+    exact congrArg (finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n))
       (finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph_mk hn A)
   -- A rotation `g` taking `e₀` to `b`, followed by rotations taking `b` to nearby points.
   obtain ⟨g, hg⟩ := surjective_specialOrthogonalSphereMap (n := n) b

@@ -29,6 +29,15 @@ the standard frame is the block-diagonal subgroup `diag(1_r, U(m))`
 (`TauCeti.finiteOrthonormalFrame.range_fromBlocksOne_eq_unitaryStabilizer`), so this identifies
 the frames with `U(r + m) / U(m)`. For `𝕜 = ℝ` this is `O(r + m) / O(m)`.
 
+The special unitary group `SU(N)` is also transitive when `r < N`: a unitary matrix carrying the
+standard frame to a given frame becomes special unitary once its last column, which the standard
+frame does not use, is multiplied by the conjugate of its determinant
+(`TauCeti.finiteOrthonormalFrame.specialUnitary_unitaryMap_standard_surjective`). For `N = r + m`
+its stabilizer of the standard frame is the block-diagonal subgroup `diag(1_r, SU(m))`
+(`TauCeti.finiteOrthonormalFrame.range_fromBlocksOne_eq_specialUnitaryStabilizer`); this is the
+fibre of the special unitary Stiefel fibration
+`TauCeti.Topology.Grassmannian.StiefelFibration.SpecialUnitary`.
+
 Over `ℝ`, the special orthogonal group `SO(N)` is already transitive when `r < N`: the sign of
 the determinant can be corrected by a reflection in a coordinate not used by the standard frame.
 This gives `SO(N) ⧸ Stab(e) ≃ₜ V_r(ℝ^N)`
@@ -54,8 +63,11 @@ The homeomorphisms are the topological orbit-stabilizer theorem
 ## Main definitions
 
 * `TauCeti.finiteOrthonormalFrame.unitaryStabilizer`,
+  `TauCeti.finiteOrthonormalFrame.specialUnitaryStabilizer`,
   `TauCeti.finiteOrthonormalFrame.specialOrthogonalStabilizer`: the stabilizers of the standard
   frame.
+* `TauCeti.finiteOrthonormalFrame.specialUnitaryStabilizerHomeomorph`: `SU(m)` is homeomorphic to
+  the stabilizer of the standard frame in `SU(r + m)`.
 * `TauCeti.finiteOrthonormalFrame.unitaryQuotientHomeomorph`,
   `TauCeti.finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph`: the frames as quotients
   of the unitary and special orthogonal groups.
@@ -64,8 +76,10 @@ The homeomorphisms are the topological orbit-stabilizer theorem
 ## Main results
 
 * `TauCeti.finiteOrthonormalFrame.unitaryMap_standard_surjective`,
+  `TauCeti.finiteOrthonormalFrame.specialUnitary_unitaryMap_standard_surjective`,
   `TauCeti.finiteOrthonormalFrame.specialOrthogonal_unitaryMap_standard_surjective`: transitivity.
 * `TauCeti.finiteOrthonormalFrame.range_fromBlocksOne_eq_unitaryStabilizer`,
+  `TauCeti.finiteOrthonormalFrame.range_fromBlocksOne_eq_specialUnitaryStabilizer`,
   `TauCeti.finiteOrthonormalFrame.range_fromBlocksOne_eq_specialOrthogonalStabilizer`: the
   stabilizers are the block-diagonal subgroups.
 * `TauCeti.finiteOrthonormalFrame.unitaryMap_left_injective`: the action on full frames is free.
@@ -187,6 +201,64 @@ def unitaryStabilizerHomeomorph (m : ℕ) :
 theorem coe_unitaryStabilizerHomeomorph_apply (m : ℕ) (B : unitaryGroup (Fin m) 𝕜) :
     (unitaryStabilizerHomeomorph 𝕜 r m B : unitaryGroup (Fin (r + m)) 𝕜) =
       UnitaryGroup.fromBlocksOne 𝕜 r m B :=
+  (rfl)
+
+/-! ### Frames and the special unitary group -/
+
+variable (𝕜) in
+/-- The **stabilizer of the standard frame** in the special unitary group `SU(N)`. -/
+def specialUnitaryStabilizer (h : r ≤ N) : Subgroup (specialUnitaryGroup (Fin N) 𝕜) :=
+  letI := specialUnitaryMulAction 𝕜 r N
+  MulAction.stabilizer _ (standard 𝕜 h)
+
+theorem mem_specialUnitaryStabilizer_iff {h : r ≤ N} {A : specialUnitaryGroup (Fin N) 𝕜} :
+    A ∈ specialUnitaryStabilizer 𝕜 h ↔ unitaryMap ⟨A.1, A.2.1⟩ (standard 𝕜 h) = standard 𝕜 h :=
+  Iff.rfl
+
+/-- **The special unitary group acts transitively on orthonormal frames** of fewer than `N`
+vectors: for `r < N`, every orthonormal `r`-frame of `𝕜^N` is the image of the standard frame
+under a special unitary matrix. A unitary matrix carrying the standard frame to the given one is
+made special unitary by multiplying its last column, which is not used by the standard frame, by
+the conjugate of its determinant (`Matrix.UnitaryGroup.toSpecialUnitaryAt`). -/
+theorem specialUnitary_unitaryMap_standard_surjective (h : r < N) :
+    Surjective fun A : specialUnitaryGroup (Fin N) 𝕜 ↦
+      unitaryMap ⟨A.1, A.2.1⟩ (standard 𝕜 h.le) := by
+  intro f
+  obtain ⟨A, rfl⟩ := unitaryMap_standard_surjective h.le f
+  refine ⟨UnitaryGroup.toSpecialUnitaryAt ⟨N - 1, by omega⟩ A, Subtype.ext <| funext fun i ↦ ?_⟩
+  have hi : Fin.castLE h.le i ≠ ⟨N - 1, by omega⟩ := fun hi ↦ by
+    have := congrArg Fin.val hi
+    simp only [Fin.val_castLE] at this
+    omega
+  simp only [coe_unitaryMap, coe_standard]
+  exact UnitaryGroup.toSpecialUnitaryAt_mulVec_single hi A
+
+/-- **The stabilizer of the standard frame in `SU(r + m)` is the block-diagonal subgroup**
+`diag(1_r, SU(m))`. So for `m ≥ 1` the orthonormal `r`-frames of `𝕜^(r + m)` are the homogeneous
+space `SU(r + m) / SU(m)`; for instance the unit sphere `S^(2n+1)` of `ℂ^(n+1)` is
+`SU(n + 1) / SU(n)`. -/
+theorem range_fromBlocksOne_eq_specialUnitaryStabilizer (m : ℕ) :
+    (specialUnitaryGroup.fromBlocksOne 𝕜 r m).range =
+      specialUnitaryStabilizer 𝕜 (Nat.le_add_right r m) := by
+  ext A
+  rw [specialUnitaryGroup.mem_range_fromBlocksOne_iff, mem_specialUnitaryStabilizer_iff,
+    Subtype.ext_iff, funext_iff, coe_unitaryMap, coe_standard]
+  rfl
+
+variable (𝕜 r) in
+/-- The block embedding `B ↦ diag(1_r, B)` is a homeomorphism of `SU(m)` onto the stabilizer of
+the standard `r`-frame in `SU(r + m)`. -/
+def specialUnitaryStabilizerHomeomorph (m : ℕ) :
+    specialUnitaryGroup (Fin m) 𝕜 ≃ₜ specialUnitaryStabilizer 𝕜 (Nat.le_add_right r m) :=
+  ((specialUnitaryGroup.continuous_fromBlocksOne m).rangeFactorization.homeoOfEquivCompactToT2
+    (f := Equiv.ofInjective _ (specialUnitaryGroup.fromBlocksOne_injective 𝕜 r))).trans
+    (Homeomorph.setCongr <| by
+      rw [← range_fromBlocksOne_eq_specialUnitaryStabilizer, MonoidHom.coe_range])
+
+@[simp]
+theorem coe_specialUnitaryStabilizerHomeomorph_apply (m : ℕ) (B : specialUnitaryGroup (Fin m) 𝕜) :
+    (specialUnitaryStabilizerHomeomorph 𝕜 r m B : specialUnitaryGroup (Fin (r + m)) 𝕜) =
+      specialUnitaryGroup.fromBlocksOne 𝕜 r m B :=
   (rfl)
 
 /-! ### Real frames and the special orthogonal group -/
