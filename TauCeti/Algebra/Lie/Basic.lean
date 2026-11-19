@@ -164,6 +164,20 @@ theorem LieSubalgebra.apply_mem_of_mem {K V : Type*} [CommRing K] [AddCommGroup 
 
 end EndSubalgebra
 
+section LieEquivOfBijective
+
+variable {R L₁ L₂ : Type*} [CommRing R] [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂]
+  [LieAlgebra R L₂]
+
+/-- The equivalence `LieEquiv.ofBijective f h` applies `f`. Mathlib provides only
+`LieEquiv.toLinearEquiv_ofBijective`. -/
+@[simp]
+theorem LieEquiv.ofBijective_apply (f : L₁ →ₗ⁅R⁆ L₂) (h : Function.Bijective f) (x : L₁) :
+    LieEquiv.ofBijective f h x = f x :=
+  rfl
+
+end LieEquivOfBijective
+
 namespace TauCeti
 
 universe u v w w₁ w₂

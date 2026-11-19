@@ -327,7 +327,7 @@ theorem IsCSA.of_injective {H : Type*} [Group H] (hG : IsCSA G)
     have hMC : M ≤ C.comap f := by
       have : IsMulCommutative M := hM.prop
       intro x hx
-      exact Subgroup.mem_centralizer_singleton_iff.mpr <|
+      exact Subgroup.mem_centralizer_singleton_iff.mpr <| (commute_iff_eq _ _).mpr <|
         by simpa only [map_mul] using congrArg f (setLike_mul_comm hx hyM)
     have hM_eq : M = C.comap f := hM.eq_of_le hCM hMC
     rw [hM_eq]

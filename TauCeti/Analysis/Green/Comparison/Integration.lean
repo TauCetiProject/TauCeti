@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Green.Comparison.Area.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OrientationLift
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # Planar area against the canonical manifold orientation
@@ -67,7 +68,7 @@ theorem chartIntegral_model_manifoldAreaForm (f : ℂ → ℝ) (c : ℂ) :
   rw [ho]
   simp_rw [signedInChartAt_fun_smul_manifoldAreaForm, Complex.coe_basisOneI,
     Complex.orientation_volumeFormL_one_I, mul_one]
-  simp only [Units.val_one, Int.cast_one, one_mul, basisOneI_addHaar]
+  simp only [Units.val_one, Int.cast_one, one_mul, Complex.addHaar_basisOneI]
 
 /-- Genuine compactly supported planar coefficient integrability gives intrinsic top-form
 integrability for the actual manifold area form in every basis and every preferred chart. -/
@@ -90,7 +91,7 @@ theorem _root_.HasCompactSupport.integrableTopForm_fun_smul_manifoldAreaForm {f 
       (fun z ↦ f z • Complex.orientation.volumeFormL)
     simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul,
       Complex.coe_basisOneI, Complex.orientation_volumeFormL_one_I, mul_one,
-      basisOneI_addHaar] at he
+      Complex.addHaar_basisOneI] at he
     exact he.mpr hf
 
 /-- The canonical oriented manifold integral of integrable compactly supported planar area

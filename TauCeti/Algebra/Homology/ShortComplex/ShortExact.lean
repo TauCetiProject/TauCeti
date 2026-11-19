@@ -32,6 +32,9 @@ simultaneously.
   `b` a monomorphism, `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact.
 * `TauCeti.kernelCokernelCompSequence_snakeInput_L₀_shortExact`: for composable `a` and `b` with
   `a` an epimorphism, `kernel a ⟶ kernel (a ≫ b) ⟶ kernel b` is short exact.
+* `TauCeti.kernelCokernelCompSequence_shortExact_of_mono_of_epi`: for composable `a` and `b` with
+  `a` a monomorphism and `a ≫ b` an epimorphism, `kernel (a ≫ b) ⟶ kernel b ⟶ cokernel a` is
+  short exact.
 * `TauCeti.cokernelOfLEKernelSubobjectIso`: for an epimorphism `a`, the quotient of the kernel of
   `a ≫ b` by the kernel of `a` is the kernel of `b`.
 * `TauCeti.cokernelKernelSubobjectArrowIso`: for an epimorphism `a`, the quotient by the kernel of
@@ -109,6 +112,29 @@ lemma kernelCokernelCompSequence_snakeInput_L₀_shortExact [Epi a] :
   · exact (inferInstance : Mono (kernel.map a (a ≫ b) (𝟙 _) b (by simp)))
   · exact ((kernelCokernelCompSequence_exact a b).exact 1).epi_f
       ((isZero_cokernel_of_epi a).eq_of_tgt _ _)
+
+/-- The sequence `kernel (a ≫ b) ⟶ kernel b ⟶ cokernel a`, whose second map is
+`kernel.ι b ≫ cokernel.π a`, is short exact when `a` is a monomorphism and `a ≫ b` is an
+epimorphism. Up to the sign of its second map, it is the middle of Mathlib's
+`kernelCokernelCompSequence a b`, whose two outer terms `kernel a` and `cokernel (a ≫ b)` then
+vanish. -/
+lemma kernelCokernelCompSequence_shortExact_of_mono_of_epi [Mono a] [Epi (a ≫ b)] :
+    (ShortComplex.mk (kernel.map (a ≫ b) b a (𝟙 _) (by simp)) (kernel.ι b ≫ cokernel.π a)
+      (by simp)).ShortExact := by
+  have hE := kernelCokernelCompSequence_exact a b
+  -- The middle of Mathlib's sequence, whose second map is the connecting map
+  -- `δ = -(kernel.ι b ≫ cokernel.π a)`.
+  have hS : ((kernelCokernelCompSequence a b).sc hE.toIsComplex 1).ShortExact :=
+    ShortComplex.ShortExact.mk' (hE.exact 1)
+      ((hE.exact 0).mono_g ((isZero_kernel_of_mono a).eq_of_src _ _))
+      ((hE.exact 2).epi_f ((isZero_cokernel_of_epi (a ≫ b)).eq_of_tgt _ _))
+  refine ShortComplex.shortExact_of_iso (ShortComplex.isoMk
+    (S₁ := (kernelCokernelCompSequence a b).sc hE.toIsComplex 1) (Iso.refl _) (Iso.refl _)
+    { hom := -𝟙 _, inv := -𝟙 _ } ?_ ?_) hS
+  · simp
+  · dsimp
+    rw [kernelCokernelCompSequence.δ_fac]
+    simp
 
 variable {a b} in
 /-- The short complex `S ⟶ T ⟶ kernel b` for subobjects `S = kernelSubobject a` and

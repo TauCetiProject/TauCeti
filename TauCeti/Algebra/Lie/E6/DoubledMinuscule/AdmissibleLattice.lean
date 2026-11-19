@@ -249,8 +249,8 @@ noncomputable def lattice : Submodule ℤ ((Fin 27 ⊕ Fin 27) → ℚ) :=
   TauCeti.coordinateLattice (Fin 27 ⊕ Fin 27)
 
 /-- The doubled minuscule coordinate lattice is finitely generated and spans the rational module. -/
-instance instIsLatticeLattice : Submodule.IsLattice ℚ lattice where
-  __ := TauCeti.instIsLatticeCoordinateLattice (Fin 27 ⊕ Fin 27)
+instance instIsFullLatticeLattice : Submodule.IsFullLattice ℚ lattice where
+  __ := TauCeti.instIsFullLatticeCoordinateLattice (Fin 27 ⊕ Fin 27)
 
 /-- A vector belongs to the doubled minuscule lattice exactly when every coordinate is integral. -/
 @[simp]

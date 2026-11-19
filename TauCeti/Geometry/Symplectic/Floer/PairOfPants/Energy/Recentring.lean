@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
@@ -283,10 +284,6 @@ theorem fst_exchangeMap_le (hc : 0 ≤ c) (y : ℝ × ℝ) : (exchangeMap c y).1
 section Datum
 
 variable {M : Type*}
-
-/-- `2 exp (2π)` exceeds `14`. -/
-private theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * Real.exp (2 * π) := by
-  nlinarith [Real.quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), Real.two_le_pi]
 
 /-- **Pulling back along `Φ_c` moves the recentred output end back to `∞`.** Let `K₁` and `K₀` be
 perturbation data on `ℂ` and `0 ≤ c ≤ 1`. Suppose that `K₁` agrees with `K₀` on the disc
