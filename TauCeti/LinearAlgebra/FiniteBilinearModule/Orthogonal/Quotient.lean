@@ -290,7 +290,7 @@ private theorem map_toIntSubmodule_addSubgroupOf_orthogonalComplement
     y ∈ (H.map f.toAddEquiv).addSubgroupOf
       (B.orthogonalComplement (H.map f.toAddEquiv))
   rw [AddSubgroup.mem_addSubgroupOf, AddSubgroup.mem_addSubgroupOf,
-    Isometry.coe_orthogonalComplementEquiv_symm_apply A f H]
+    Isometry.coe_orthogonalComplementEquiv_symm_apply f H]
   constructor
   · intro hy
     exact ⟨f.symm (y : B), hy, f.apply_symm_apply (y : B)⟩
@@ -341,8 +341,8 @@ private noncomputable def orthogonalQuotientMap (f : Isometry A B) (H : AddSubgr
         rw [orthogonalQuotientAddEquiv_orthogonalQuotientMk,
           orthogonalQuotientAddEquiv_orthogonalQuotientMk,
           B.orthogonalQuotient_pairing_mk, A.orthogonalQuotient_pairing_mk,
-          Isometry.coe_orthogonalComplementEquiv_apply A f H,
-          Isometry.coe_orthogonalComplementEquiv_apply A f H,
+          Isometry.coe_orthogonalComplementEquiv_apply f H,
+          Isometry.coe_orthogonalComplementEquiv_apply f H,
           f.map_pairing]
 
 /-- The image-subgroup transport sends the class of `x ∈ H⊥` to the class of `f x`. -/
@@ -370,11 +370,11 @@ theorem orthogonalQuotientEquiv_orthogonalQuotientMk (f : Isometry A B)
     (x : A.orthogonalComplement H) :
     f.orthogonalQuotientEquiv h (A.orthogonalQuotientMk H x) =
       B.orthogonalQuotientMk K
-        ⟨f (x : A), Isometry.map_mem_orthogonalComplement_of_map_eq A f h x.2⟩ := by
+        ⟨f (x : A), Isometry.map_mem_orthogonalComplement_of_map_eq f h x.2⟩ := by
   rw [orthogonalQuotientEquiv, trans_apply, orthogonalQuotientMap_orthogonalQuotientMk,
     B.orthogonalQuotientCongr_orthogonalQuotientMk]
   apply congrArg (B.orthogonalQuotientMk K)
-  exact Subtype.ext (Isometry.coe_orthogonalComplementEquiv_apply A f H x)
+  exact Subtype.ext (Isometry.coe_orthogonalComplementEquiv_apply f H x)
 
 /-- **The inverse representative formula for a transported orthogonal quotient.** The inverse
 transport sends the class of `y ∈ K⊥` to the class of `f⁻¹ y ∈ H⊥`. -/

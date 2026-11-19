@@ -526,7 +526,7 @@ variable {A} in
 pairing `q(x + y) - q(x) - q(y)` is then killed by `2`. -/
 theorem two_nsmul_eq_zero_of_quadratic_add_self_eq_zero (hA : A.IsNondegenerate)
     (hq : ∀ x : A, A.quadratic x + A.quadratic x = 0) (x : A) : 2 • x = 0 := by
-  refine FiniteBilinearModule.IsNondegenerate.eq_zero_of_forall_pairing_eq_zero _ hA fun y ↦ ?_
+  refine FiniteBilinearModule.IsNondegenerate.eq_zero_of_forall_pairing_eq_zero hA fun y ↦ ?_
   rw [FiniteBilinearModule.pairing_nsmul_left, ← polar_eq_pairing, QuadraticMap.polar, two_nsmul]
   calc _ = (A.quadratic (x + y) + A.quadratic (x + y)) - (A.quadratic x + A.quadratic x) -
         (A.quadratic y + A.quadratic y) := by abel
@@ -1149,7 +1149,7 @@ private theorem orthogonalQuotientBilinearMapAddEquiv_orthogonalQuotientMk
         (A.toFiniteBilinearModule.orthogonalQuotientMk H x) =
       B.toFiniteBilinearModule.orthogonalQuotientMk (H.map f.toAddEquiv)
         ⟨f (x : A), FiniteBilinearModule.Isometry.map_mem_orthogonalComplement_of_map_eq
-          A.toFiniteBilinearModule f.toFiniteBilinearModule
+          f.toFiniteBilinearModule
           (by rw [f.toFiniteBilinearModule_toAddEquiv]) x.2⟩ := by
   rw [orthogonalQuotientBilinearMapAddEquiv]
   -- The definition ends by forgetting a bilinear isometry to its additive equivalence; normalize
@@ -1195,7 +1195,7 @@ private theorem orthogonalQuotientMapAddEquiv_orthogonalQuotientMk (f : Isometry
     orthogonalQuotientMapAddEquiv f H hH hK (A.orthogonalQuotientMk H hH x) =
       B.orthogonalQuotientMk (H.map f.toAddEquiv) hK
         ⟨f (x : A), FiniteBilinearModule.Isometry.map_mem_orthogonalComplement_of_map_eq
-          A.toFiniteBilinearModule f.toFiniteBilinearModule
+          f.toFiniteBilinearModule
           (by rw [f.toFiniteBilinearModule_toAddEquiv]) x.2⟩ := by
   rw [orthogonalQuotientMapAddEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply,
     A.orthogonalQuotientUnderlyingEquiv_orthogonalQuotientMk,
@@ -1231,7 +1231,7 @@ private theorem orthogonalQuotientMap_orthogonalQuotientMk (f : Isometry A B)
     f.orthogonalQuotientMap H hH (A.orthogonalQuotientMk H hH x) =
       B.orthogonalQuotientMk (H.map f.toAddEquiv) ((f.isIsotropic_map_iff (H := H)).mpr hH)
         ⟨f (x : A), FiniteBilinearModule.Isometry.map_mem_orthogonalComplement_of_map_eq
-          A.toFiniteBilinearModule f.toFiniteBilinearModule
+          f.toFiniteBilinearModule
           (by rw [f.toFiniteBilinearModule_toAddEquiv]) x.2⟩ :=
   by
     rw [orthogonalQuotientMap]
@@ -1261,7 +1261,7 @@ theorem orthogonalQuotientEquiv_orthogonalQuotientMk (f : Isometry A B)
       B.orthogonalQuotientMk K (f.isIsotropic_of_map_eq hH h)
         ⟨f (x : A), by
           apply FiniteBilinearModule.Isometry.map_mem_orthogonalComplement_of_map_eq
-            A.toFiniteBilinearModule f.toFiniteBilinearModule (K := K) (x := (x : A))
+            f.toFiniteBilinearModule (K := K) (x := (x : A))
           · simpa only [toFiniteBilinearModule_toAddEquiv] using h
           · exact x.2⟩ := by
   rw [orthogonalQuotientEquiv, trans_apply, orthogonalQuotientMap_orthogonalQuotientMk,
