@@ -201,10 +201,10 @@ private theorem isNondegeneratePoint_iff_comp_right_aux
   rw [hT, key, isNondegeneratePoint_iff_isTransversallyNondegenerate]
   exact ⟨fun ⟨_, h⟩ ↦ ⟨hF, h⟩, fun ⟨_, h⟩ ↦ ⟨hF.comp y hφ, h⟩⟩
 
-/-- **Invariance under symplectic changes of coordinates.** Let `τ` be a nondegenerate two-form on
-a boundaryless manifold `N` and let `φ : N → M` be `C²` at `y`, with invertible differential there,
-pulling `σ` back to `τ` at `y`. For `F` which is `C²` at `φ y`, the point `y` is a nondegenerate
-point of `F ∘ φ` for `τ` exactly when `φ y` is one of `F` for `σ`. -/
+/-- **Invariance under symplectic changes of coordinates.** Let `M` be boundaryless, let `τ` be a
+nondegenerate two-form on a boundaryless manifold `N` and let `φ : N → M` be `C²` at `y`, with
+invertible differential there, pulling `σ` back to `τ` at `y`. For `F` which is `C²` at `φ y`, the
+point `y` is a nondegenerate point of `F ∘ φ` for `τ` exactly when `φ y` is one of `F` for `σ`. -/
 theorem isNondegeneratePoint_comp_right_iff [IsManifold I' ∞ N] {τ : SmoothTwoForm I' N}
     (hτ : τ.IsNondegenerate) (hφ : ContMDiffAt I' I 2 φ y)
     (hinv : (mfderiv I' I φ y).IsInvertible)
@@ -217,10 +217,10 @@ theorem isNondegeneratePoint_comp_right_iff [IsManifold I' ∞ N] {τ : SmoothTw
   exact isNondegeneratePoint_iff_isTransversallyNondegenerate
 
 /-- **Nondegenerate points in symplectic coordinates.** Let `φ : E' → M` be a map from a symplectic
-vector space `(E', ω₀)`, such as the inverse of a Darboux chart, which is `C²` at `y`, has
-invertible differential there and pulls `σ` back to `ω₀` at `y`. For `F` which is `C²` at `φ y`,
-the point `y` is a nondegenerate point of the coordinate expression `F ∘ φ`, in the linear sense,
-exactly when `φ y` is a nondegenerate point of `F`. -/
+vector space `(E', ω₀)` into the boundaryless manifold `M`, such as the inverse of a Darboux chart,
+which is `C²` at `y`, has invertible differential there and pulls `σ` back to `ω₀` at `y`. For `F`
+which is `C²` at `φ y`, the point `y` is a nondegenerate point of the coordinate expression `F ∘ φ`,
+in the linear sense, exactly when `φ y` is a nondegenerate point of `F`. -/
 theorem _root_.TauCeti.SymplecticForm.isNondegeneratePoint_comp_right_iff
     (ω₀ : SymplecticForm E') {φ : E' → M} {y : E'} (hφ : ContMDiffAt 𝓘(ℝ, E') I 2 φ y)
     (hinv : (mfderiv 𝓘(ℝ, E') I φ y).IsInvertible)
