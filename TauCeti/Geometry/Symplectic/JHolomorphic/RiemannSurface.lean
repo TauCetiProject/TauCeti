@@ -162,7 +162,7 @@ private theorem eventually_eq_of_writtenInExtChartAt {x x' : S} {y : N}
   have h := hw _ hb
   have hs' := hBs _ hb
   rw [hl] at hs'
-  simp only [writtenInExtChartAt, comp_apply, hl] at h
+  rw [writtenInExtChartAt_apply_extChartAt hs] at h
   exact (extChartAt I (u x)).injOn hs' hy h
 
 /-! ### Unique continuation -/
@@ -251,14 +251,6 @@ private theorem eventually_nhdsNE_of_mem_codiscreteWithin {B : Set ℂ} {z₀ : 
   filter_upwards [h', nhdsWithin_le_nhds (hB.mem_nhds hz₀)] with z hz hzB
   exact ⟨hzB, hz.resolve_right (not_not_intro hzB)⟩
 
-omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
-/-- The coordinate expression of `u` in the charts at `x` and `u x` takes the value `ψ (u x)` at
-the chart image of `x`. -/
-private theorem writtenInExtChartAt_extChartAt_self (x : S) :
-    writtenInExtChartAt 𝓘(ℝ, ℂ) I x u (extChartAt 𝓘(ℝ, ℂ) x x) = extChartAt I (u x) (u x) := by
-  simp only [writtenInExtChartAt, comp_apply,
-    (extChartAt 𝓘(ℝ, ℂ) x).left_inv (mem_extChartAt_source x)]
-
 /-- **The fibres of a pseudoholomorphic curve are discrete.** On a connected Riemann surface, a
 nonconstant `C¹` pseudoholomorphic map into an almost complex manifold takes each value on a
 discrete subset. -/
@@ -270,13 +262,13 @@ theorem setOf_ne_mem_codiscrete_of_isPseudoholomorphic [PreconnectedSpace S]
   · subst hxy
     obtain ⟨B, hBo, hBc, hxB, -, hBs, hcd, hJ, hCR⟩ := exists_chartBall 1 hu hJu x
     have hJx := hJ _ hxB
-    rw [writtenInExtChartAt_extChartAt_self] at hJx
+    rw [writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)] at hJx
     have hdisc := setOf_ne_mem_codiscreteWithin_of_cauchyRiemann hJx.1.exists_lipschitzOnWith
       hJx.2 hBo hBc hcd hCR (exists_ne_of_isPseudoholomorphic hu hJu hne hBo hxB hBs)
     filter_upwards [eventually_nhdsNE_of_extChartAt
       (eventually_nhdsNE_of_mem_codiscreteWithin hBo hxB hdisc)] with x' ⟨hs, _, hx'⟩ hux'
     apply hx'
-    simp only [writtenInExtChartAt, comp_apply, (extChartAt 𝓘(ℝ, ℂ) x).left_inv hs]
+    rw [writtenInExtChartAt_apply_extChartAt hs]
     exact congrArg (extChartAt I (u x)) hux'
   · have := I.t1Space N
     exact nhdsWithin_le_nhds (hu.continuous.continuousAt.eventually_ne hxy)
@@ -293,7 +285,7 @@ theorem setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic [Preconnecte
   obtain ⟨z, hz, hzne⟩ := exists_ne_of_isPseudoholomorphic hu₁ hJu hne hBo hxB hBs
   have hdisc := setOf_fderiv_ne_zero_mem_codiscreteWithin_of_cauchyRiemann_comp hBo hBc
     (fun z hz ↦ (hJ z hz).1) (fun z hz ↦ (hJ z hz).2) hcd hCR
-    ⟨z, hz, _, hxB, by rwa [writtenInExtChartAt_extChartAt_self]⟩
+    ⟨z, hz, _, hxB, by rwa [writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)]⟩
   filter_upwards [eventually_nhdsNE_of_extChartAt
     (eventually_nhdsNE_of_mem_codiscreteWithin hBo hxB hdisc)] with x' ⟨hs, hx'B, hx'⟩
   -- The critical points of `u` are those of its coordinate expression.
