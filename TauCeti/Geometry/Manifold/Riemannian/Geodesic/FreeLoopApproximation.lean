@@ -118,7 +118,7 @@ private theorem eq_of_arcDuration_eq_zero {s : unitInterval} {γ : MooreFreeLoop
   obtain ⟨h₁, h₂⟩ := add_eq_zero.1 h
   rcases mul_eq_zero.1 h₂ with hs | hd
   · -- At `s = 0` the duration is `L / (n + 1)`, which only vanishes for a loop of length zero.
-    have hs : s = 0 := Subtype.ext (congrArg NNReal.toReal hs)
+    have hs : s = 0 := Subtype.ext (by simpa using congrArg NNReal.toReal hs)
     rw [hs, unitInterval.symm_zero, unitInterval.toNNReal_one, one_mul,
       div_eq_zero_iff] at h₁
     have hγ := h₁.resolve_right (by exact_mod_cast n.succ_ne_zero)
@@ -135,7 +135,7 @@ private def arcDurationMap :
   toFun p := ⟨brokenMoorePath (isPathInterpolation_geodesicInterpolation hr) (n + 1)
       ((p.2 : MooreFreeLoopSpace M).closedSample (n + 1))
       (arcDuration n p.1 (p.2 : MooreFreeLoopSpace M)) fun i ↦
-        ⟨MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin p.2.2 n.succ_pos i,
+        ⟨MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin p.2.2 i,
           eq_of_arcDuration_eq_zero n⟩, by
     rw [target_brokenMoorePath, source_brokenMoorePath, MooreFreeLoopSpace.closedSample_last,
       MooreFreeLoopSpace.closedSample_zero]⟩
@@ -171,7 +171,7 @@ private theorem arcDurationMap_one
   simp only [arcDurationMap, ContinuousMap.coe_mk]
   rw [toMoorePath_brokenGeodesicLoop hr n _ _ fun i ↦ by
       rw [← MooreFreeLoopSpace.closedSample_eq_snoc]
-      exact MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.2 n.succ_pos i,
+      exact MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.2 i,
     brokenGeodesic_eq_brokenMoorePath hr]
   exact brokenMoorePath_congr _ _ _ (MooreFreeLoopSpace.closedSample_eq_snoc _ _)
     (funext fun i ↦ by simp [arcDuration, MooreFreeLoopSpace.closedSample_eq_snoc])
@@ -213,13 +213,31 @@ def brokenPathDurationHomotopy :
     rw [MoorePath.brokenPathMap_eq_brokenMoorePath _ _ (fun i ↦ by
       rw [MooreFreeLoopSpace.coe_toArcsWithin]
       exact MooreFreeLoopSpace.closedSample_eq_toUnitPath (γ : MooreFreeLoopSpace M) n.succ_pos i)
-      fun i ↦ ⟨MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.2 n.succ_pos i, fun h ↦ by
-        rw [MooreFreeLoopSpace.coe_toArcsWithin, MooreFreeLoopSpace.length_toMoorePath] at h
-        have hγ := (div_eq_zero_iff.1 h).resolve_right (by positivity)
-        rw [MooreFreeLoopSpace.closedSample_of_length_eq_zero hγ,
-          MooreFreeLoopSpace.closedSample_of_length_eq_zero hγ]⟩]
+      fun i ↦ ⟨MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.2 i, fun h ↦
+        eq_of_arcDuration_eq_zero n (s := 0) (by simpa [arcDuration] using h)⟩]
     exact brokenMoorePath_congr _ _ _ rfl (funext fun i ↦ by simp [arcDuration])
   map_one_left := arcDurationMap_one hr n
+
+/-- At time `s` of the homotopy changing the durations, the `i`-th arc runs along the geodesic
+between the `i`-th and `(i + 1)`-st closed sampled vertices in time `(1 - s) L / (n + 1) + s d`,
+for a loop of duration `L` and vertices at distance `d`. -/
+theorem toMoorePath_brokenPathDurationHomotopy (s : unitInterval)
+    (γ : MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + 1))
+    (h : ∀ i : Fin (n + 1), ((γ : MooreFreeLoopSpace M).closedSample (n + 1) i.castSucc,
+        (γ : MooreFreeLoopSpace M).closedSample (n + 1) i.succ) ∈ {p : M × M | dist p.1 p.2 < r} ∧
+      (unitInterval.toNNReal (unitInterval.symm s) * ((γ : MooreFreeLoopSpace M).length / (n + 1)) +
+          unitInterval.toNNReal s * nndist ((γ : MooreFreeLoopSpace M).closedSample (n + 1)
+            i.castSucc) ((γ : MooreFreeLoopSpace M).closedSample (n + 1) i.succ) = 0 →
+        (γ : MooreFreeLoopSpace M).closedSample (n + 1) i.castSucc =
+          (γ : MooreFreeLoopSpace M).closedSample (n + 1) i.succ)) :
+    (brokenPathDurationHomotopy hr n (s, γ)).toMoorePath =
+      brokenMoorePath (isPathInterpolation_geodesicInterpolation hr) (n + 1)
+        ((γ : MooreFreeLoopSpace M).closedSample (n + 1))
+        (fun i ↦ unitInterval.toNNReal (unitInterval.symm s) *
+            ((γ : MooreFreeLoopSpace M).length / (n + 1)) +
+          unitInterval.toNNReal s * nndist ((γ : MooreFreeLoopSpace M).closedSample (n + 1)
+            i.castSucc) ((γ : MooreFreeLoopSpace M).closedSample (n + 1) i.succ)) h :=
+  (rfl)
 
 /-- **Free loops are homotopic to the broken geodesics through their sampled vertices.** On the
 free Moore loops whose `n + 1` arcs lie within distance `r` of their initial vertices, a homotopy

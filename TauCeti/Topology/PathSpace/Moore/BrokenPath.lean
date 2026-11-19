@@ -67,13 +67,13 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 section Arc
 
 /-- The interpolating path from `x` to `y`, run in time `ℓ`, starts at `x`. -/
-private theorem source_rescale_ofUnitPath (hρ : IsPathInterpolation ρ U) {x y : X}
+theorem source_rescale_ofUnitPath (hρ : IsPathInterpolation ρ U) {x y : X}
     (hxy : (x, y) ∈ U) (ℓ : ℝ≥0) : ((MoorePath.ofUnitPath (ρ (x, y))).rescale ℓ).source = x := by
   rw [MoorePath.source_rescale, MoorePath.source_ofUnitPath, hρ.apply_zero _ hxy]
 
 /-- The interpolating path from `x` to `y`, run in time `ℓ`, ends at `y`, provided `x = y` when
 `ℓ = 0`. -/
-private theorem target_rescale_ofUnitPath (hρ : IsPathInterpolation ρ U) {x y : X}
+theorem target_rescale_ofUnitPath (hρ : IsPathInterpolation ρ U) {x y : X}
     (hxy : (x, y) ∈ U) {ℓ : ℝ≥0} (hℓ : ℓ = 0 → x = y) :
     ((MoorePath.ofUnitPath (ρ (x, y))).rescale ℓ).target = y := by
   rcases eq_or_ne ℓ 0 with rfl | hℓ0
@@ -270,8 +270,7 @@ private theorem brokenPathMap_apply_of_lt {n : ℕ} (γ : arcsWithin U (n + 1))
     rw [coe_toNNReal, coe_toNNReal, coe_arcPoint hi]
     push_cast
     ring
-  have hlen : (brokenPathMap hρ n.succ_pos γ).length = L := by
-    rw [brokenPathMap_apply, length_arcStraighteningMap]
+  have hlen : (brokenPathMap hρ n.succ_pos γ).length = L := length_brokenPathMap hρ _ γ
   conv_lhs => rw [hts, ← hlen, ← toUnitPath_apply, toUnitPath_brokenPathMap,
     brokenPath_arcPoint_of_arcsWithin hρ (mem_arcsWithin.1 γ.2) hi]
   rw [hti, brokenMoorePath_apply_mul_add hρ q _ h ⟨i, hi⟩
@@ -291,8 +290,7 @@ theorem brokenPathMap_eq_brokenMoorePath {n : ℕ} (γ : arcsWithin U (n + 1))
     brokenPathMap hρ n.succ_pos γ =
       brokenMoorePath hρ (n + 1) q (fun _ ↦ (γ : MoorePath X).length / (n + 1)) h := by
   set L := (γ : MoorePath X).length
-  have hlen : (brokenPathMap hρ n.succ_pos γ).length = L := by
-    rw [brokenPathMap_apply, length_arcStraighteningMap]
+  have hlen : (brokenPathMap hρ n.succ_pos γ).length = L := length_brokenPathMap hρ _ γ
   have hlen' : (brokenMoorePath hρ (n + 1) q (fun _ ↦ L / (n + 1)) h).length = L := by
     rw [length_brokenMoorePath, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
       ← Nat.cast_succ, mul_div_cancel₀ _ (by positivity)]

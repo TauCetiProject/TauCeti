@@ -178,6 +178,11 @@ theorem brokenPathMap_apply (γ : arcsWithin U r) :
     brokenPathMap hρ hr γ = arcStraighteningMap hρ hr (1, γ) :=
   (rfl)
 
+/-- The broken path through the sampled vertices of a Moore path has the same length. -/
+theorem length_brokenPathMap (γ : arcsWithin U r) :
+    (brokenPathMap hρ hr γ).length = (γ : MoorePath X).length := by
+  rw [brokenPathMap_apply, length_arcStraighteningMap]
+
 /-- The broken path of a Moore path, reparametrized to the unit interval, is the broken path of
 its reparametrization. -/
 theorem toUnitPath_brokenPathMap (γ : arcsWithin U r) (s : I) :
@@ -220,8 +225,8 @@ theorem mem_arcsWithin {γ : MooreFreeLoopSpace X} :
 /-- The consecutive closed sampled vertices of a free Moore loop whose `r` arcs lie in `U` form
 pairs in `U`. -/
 theorem closedSample_mem_of_mem_arcsWithin {γ : MooreFreeLoopSpace X} (hγ : γ ∈ arcsWithin U r)
-    (hr : 0 < r) (i : Fin r) : (γ.closedSample r i.castSucc, γ.closedSample r i.succ) ∈ U := by
-  rw [closedSample_eq_toUnitPath γ hr, closedSample_eq_toUnitPath γ hr, Fin.val_castSucc,
+    (i : Fin r) : (γ.closedSample r i.castSucc, γ.closedSample r i.succ) ∈ U := by
+  rw [closedSample_eq_toUnitPath γ i.pos, closedSample_eq_toUnitPath γ i.pos, Fin.val_castSucc,
     Fin.val_succ, ← unitInterval.arcPoint_one]
   exact mem_arcsWithin.1 hγ i i.2 1
 
@@ -230,7 +235,7 @@ with the preceding one, the last vertex preceding the first. -/
 theorem sample_sub_one_mem_of_mem_arcsWithin {n : ℕ} {γ : MooreFreeLoopSpace X}
     (hγ : γ ∈ arcsWithin U (n + 1)) (i : Fin (n + 1)) :
     (γ.toMoorePath.sample (n + 1) (i - 1), γ.toMoorePath.sample (n + 1) i) ∈ U := by
-  have h := closedSample_mem_of_mem_arcsWithin hγ n.succ_pos (i - 1)
+  have h := closedSample_mem_of_mem_arcsWithin hγ (i - 1)
   rwa [closedSample_castSucc, closedSample_succ, sub_add_cancel] at h
 
 /-- A free Moore loop whose arcs lie in `U`, as a Moore path whose arcs lie in `U`. -/
