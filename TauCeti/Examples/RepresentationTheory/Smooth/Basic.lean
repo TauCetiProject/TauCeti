@@ -38,6 +38,8 @@ example [DiscreteTopology G] (ρ : Representation A G V) : ρ.smoothVectors = �
 
 example : (leftRegular ℤ (Multiplicative ℚ_[2])).smoothVectors = ⊥ := by
   refine smoothVectors_leftRegular_eq_bot fun h ↦ ?_
+  -- `Multiplicative ℚ_[2]` carries the topology of `ℚ_[2]` by definition, so `h` is
+  -- discreteness of `ℚ_[2]` itself.
   have : DiscreteTopology ℚ_[2] := h
   exact (NormedField.nhdsNE_neBot (0 : ℚ_[2])).ne (discreteTopology_iff_nhds_ne.1 this 0)
 

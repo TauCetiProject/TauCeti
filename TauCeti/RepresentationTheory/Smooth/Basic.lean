@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Invariants
-public import Mathlib.RepresentationTheory.Stabilizer
-public import Mathlib.RepresentationTheory.Subrepresentation
 public import Mathlib.Topology.Algebra.Group.Quotient
+public import TauCeti.RepresentationTheory.Stabilizer
+public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 
 /-!
@@ -63,20 +62,6 @@ namespace Representation
 variable {A G V W : Type*} [Semiring A] [Group G]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
   {ρ : Representation A G V} {σ : Representation A G W}
-
-/-- The stabilizers of an injective intertwining map agree with those of its source. -/
-theorem IntertwiningMap.stabilizer_apply_of_injective (f : ρ.IntertwiningMap σ)
-    (hf : Function.Injective f) (v : V) : σ.stabilizer (f v) = ρ.stabilizer v := by
-  ext g
-  rw [mem_stabilizer, mem_stabilizer, ← f.isIntertwining, hf.eq_iff]
-
-/-- The stabilizer of a vector of a subrepresentation is its stabilizer in the ambient
-representation. -/
-@[simp]
-theorem _root_.Subrepresentation.stabilizer_toRepresentation (ρ' : Subrepresentation ρ)
-    (v : ρ'.toSubmodule) : ρ'.toRepresentation.stabilizer v = ρ.stabilizer v := by
-  ext g
-  rw [mem_stabilizer, mem_stabilizer, Subrepresentation.toRepresentation_apply_coe]
 
 variable [TopologicalSpace G]
 
@@ -136,17 +121,6 @@ section SmoothVectors
 
 variable [SeparatelyContinuousMul G]
 
-/-- The stabilizer of `ρ g v` is the preimage of that of `v` under `x ↦ g⁻¹ * x * g`, so it is
-open when the stabilizer of `v` is. -/
-private theorem isOpen_stabilizer_apply {v : V} (hv : IsOpen (ρ.stabilizer v : Set G)) (g : G) :
-    IsOpen (ρ.stabilizer (ρ g v) : Set G) := by
-  have hcont : Continuous fun x : G ↦ g⁻¹ * x * g :=
-    SeparatelyContinuousMul.continuous_mul_const.comp SeparatelyContinuousMul.continuous_const_mul
-  convert hv.preimage hcont using 1
-  ext x
-  simp only [SetLike.mem_coe, mem_stabilizer, mem_preimage, map_mul, mul_apply_eq_comp]
-  rw [← inv_apply_eq_iff, ← mul_apply_eq_comp, ← map_mul]
-
 variable (ρ) in
 /-- The *smooth vectors* `V^∞` of a representation of a topological group: the vectors whose
 stabilizer is open. It is the largest smooth subrepresentation (`le_smoothVectors_iff`). -/
@@ -157,16 +131,16 @@ def smoothVectors : Subrepresentation ρ where
         Subgroup.isOpen_mono (ρ.le_stabilizer_add v w) (hv.inter hw)
       zero_mem' := by simp [stabilizer_zero]
       smul_mem' := fun c v hv ↦ Subgroup.isOpen_mono (ρ.le_stabilizer_smul c v) hv }
-  apply_mem_toSubmodule g _ hv := isOpen_stabilizer_apply hv g
+  apply_mem_toSubmodule g v hv := by
+    -- The stabilizer of `ρ g v` is the image of that of `v` under `x ↦ g * x * g⁻¹`.
+    change IsOpen (ρ.stabilizer v : Set G) at hv
+    change IsOpen (ρ.stabilizer (ρ g v) : Set G)
+    rw [stabilizer_conj, Subgroup.coe_map]
+    exact ((Homeomorph.mulLeft g).trans (Homeomorph.mulRight g⁻¹)).isOpenMap _ hv
 
 @[simp]
 theorem mem_smoothVectors_iff {v : V} :
     v ∈ ρ.smoothVectors ↔ IsOpen (ρ.stabilizer v : Set G) :=
-  Iff.rfl
-
-@[simp]
-theorem mem_smoothVectors_toSubmodule_iff {v : V} :
-    v ∈ ρ.smoothVectors.toSubmodule ↔ IsOpen (ρ.stabilizer v : Set G) :=
   Iff.rfl
 
 /-- A vector lies in `V^∞` exactly when it is fixed by an open subgroup. -/
@@ -176,7 +150,7 @@ theorem mem_smoothVectors_iff_exists_openSubgroup {v : V} :
 
 /-- For a locally profinite group, a vector lies in `V^∞` exactly when it is fixed by a compact
 open subgroup. -/
-theorem mem_smoothVectors_iff_exists_isCompact [NonarchimedeanGroup G]
+theorem mem_smoothVectors_iff_exists_isCompact_openSubgroup [NonarchimedeanGroup G]
     [WeaklyLocallyCompactSpace G] {v : V} :
     v ∈ ρ.smoothVectors ↔
       ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧ (U : Subgroup G) ≤ ρ.stabilizer v :=
@@ -211,7 +185,8 @@ theorem isSmooth_iff_exists_isCompact_openSubgroup [NonarchimedeanGroup G]
     [WeaklyLocallyCompactSpace G] :
     IsSmooth ρ ↔
       ∀ v, ∃ U : OpenSubgroup G, IsCompact (U : Set G) ∧ (U : Subgroup G) ≤ ρ.stabilizer v := by
-  simp only [isSmooth_iff_forall_mem_smoothVectors, mem_smoothVectors_iff_exists_isCompact]
+  simp only [isSmooth_iff_forall_mem_smoothVectors,
+    mem_smoothVectors_iff_exists_isCompact_openSubgroup]
 
 /-- `V^∞` is smooth. -/
 instance : IsSmooth ρ.smoothVectors.toRepresentation :=
@@ -230,7 +205,9 @@ theorem le_smoothVectors_iff {ρ' : Subrepresentation ρ} :
 /-- `V^∞ = V` exactly when the representation is smooth. -/
 theorem smoothVectors_eq_top_iff : ρ.smoothVectors = ⊤ ↔ IsSmooth ρ := by
   rw [eq_top_iff, isSmooth_iff_forall_mem_smoothVectors]
-  exact ⟨fun h v ↦ h Submodule.mem_top, fun h v _ ↦ h v⟩
+  refine ⟨fun h v ↦ h ?_, fun h v _ ↦ h v⟩
+  rw [← Subrepresentation.mem_toSubmodule, Subrepresentation.toSubmodule_top]
+  exact Submodule.mem_top
 
 /-- A smooth representation is its own subrepresentation of smooth vectors. -/
 @[simp]
@@ -246,12 +223,6 @@ section Invariants
 variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
   {ρ : Representation A G V}
 
-/-- A vector is invariant under the restriction of `ρ` to a subgroup `H` exactly when `H` lies in
-its stabilizer. -/
-theorem mem_invariants_comp_subtype_iff {H : Subgroup G} {v : V} :
-    v ∈ invariants (ρ.comp H.subtype) ↔ H ≤ ρ.stabilizer v := by
-  simp [mem_invariants, IsConcreteLE.le_iff]
-
 variable [TopologicalSpace G] [NonarchimedeanGroup G] [WeaklyLocallyCompactSpace G]
 
 /-- For a locally profinite group, `V^∞ = ⋃ V^U`, the union of the invariants of the compact open
@@ -261,7 +232,7 @@ theorem coe_smoothVectors_eq_iUnion :
       ⋃ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
         (invariants (ρ.comp (U : Subgroup G).subtype) : Set V) := by
   ext v
-  simp only [SetLike.mem_coe, mem_smoothVectors_iff_exists_isCompact, mem_iUnion,
+  simp only [SetLike.mem_coe, mem_smoothVectors_iff_exists_isCompact_openSubgroup, mem_iUnion,
     mem_invariants_comp_subtype_iff, exists_prop]
 
 /-- For a locally profinite group, a representation is smooth exactly when `V = ⋃ V^U`, the
@@ -270,8 +241,8 @@ theorem isSmooth_iff_iUnion_eq_univ :
     IsSmooth ρ ↔
       ⋃ (U : OpenSubgroup G) (_ : IsCompact (U : Set G)),
         (invariants (ρ.comp (U : Subgroup G).subtype) : Set V) = univ := by
-  rw [← coe_smoothVectors_eq_iUnion, isSmooth_iff_forall_mem_smoothVectors, eq_univ_iff_forall]
-  rfl
+  simp only [← coe_smoothVectors_eq_iUnion, isSmooth_iff_forall_mem_smoothVectors,
+    eq_univ_iff_forall, SetLike.mem_coe]
 
 end Invariants
 
@@ -299,15 +270,6 @@ end Quotient
 section OfMulAction
 
 variable {X : Type*} [MulAction G X]
-
-omit [TopologicalSpace G] in
-/-- The stabilizer of a basis vector of a permutation representation is the stabilizer of the
-point, for nonzero coefficient. -/
-theorem stabilizer_ofMulAction_single (x : X) {r : A} (hr : r ≠ 0) :
-    (ofMulAction A G X).stabilizer (MonoidAlgebra.single x r) = MulAction.stabilizer G x := by
-  ext g
-  rw [mem_stabilizer, ofMulAction_single, MonoidAlgebra.single_left_inj hr,
-    MulAction.mem_stabilizer_iff]
 
 /-- The permutation representation on `A[X]` is smooth when every point of `X` has an open
 stabilizer. -/
@@ -342,21 +304,21 @@ theorem isSmooth_leftRegular_iff [SeparatelyContinuousMul G] [Nontrivial A] :
   simp [isSmooth_ofMulAction_iff, discreteTopology_iff_isOpen_singleton_one]
 
 /-- For a `T₁` group that is not discrete, the left regular representation on `A[G]` has no
-nonzero smooth vector. A nonzero `f` with open stabilizer `H` would make `H` finite, since `H`
-permutes the finite support of `f`, and a finite open subgroup of a `T₁` group makes `{1}`
-open. -/
+nonzero smooth vector. -/
 theorem smoothVectors_leftRegular_eq_bot [SeparatelyContinuousMul G] [T1Space G]
     (hG : ¬ DiscreteTopology G) : (leftRegular A G).smoothVectors = ⊥ := by
+  -- A nonzero `f` with open stabilizer `H` would make `H` finite, since `H` permutes the finite
+  -- support of `f`, and a finite open subgroup of a `T₁` group makes `{1}` open.
   refine eq_bot_iff.2 fun f hf ↦ ?_
+  rw [← Subrepresentation.mem_toSubmodule, Subrepresentation.toSubmodule_bot, Submodule.mem_bot]
   by_contra hf0
-  replace hf0 : f ≠ 0 := hf0
   obtain ⟨x, hx⟩ := Finsupp.support_nonempty_iff.2 (mt MonoidAlgebra.coeff_eq_zero.1 hf0)
   set H := (leftRegular A G).stabilizer f
   -- Every `g ∈ H` sends `x` into the support of `f`, so `H` lies in a finite set.
   have hfin : (H : Set G).Finite := by
     refine ((f.coeff.support.finite_toSet.image fun y ↦ y * x⁻¹)).subset fun g hg ↦ ?_
     refine ⟨g * x, ?_, by simp⟩
-    have hg' : (leftRegular A G) g f = f := hg
+    have hg' : (leftRegular A G) g f = f := mem_stabilizer.1 hg
     rw [Finset.mem_coe, Finsupp.mem_support_iff, ← hg', coeff_ofMulAction, smul_eq_mul,
       inv_mul_cancel_left]
     exact Finsupp.mem_support_iff.1 hx
@@ -364,7 +326,7 @@ theorem smoothVectors_leftRegular_eq_bot [SeparatelyContinuousMul G] [T1Space G]
     have : ({1} : Set G) = (H : Set G) \ ((H : Set G) \ {1}) := by
       rw [sdiff_sdiff_cancel_left (singleton_subset_iff.2 H.one_mem)]
     rw [this]
-    exact (hf : IsOpen (H : Set G)).sdiff hfin.sdiff.isClosed
+    exact (mem_smoothVectors_iff.1 hf).sdiff hfin.sdiff.isClosed
   exact hG (discreteTopology_of_isOpen_singleton_one hopen)
 
 end OfMulAction
