@@ -13,6 +13,7 @@ import Mathlib.Algebra.Polynomial.Degree.Lemmas
 import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.LinearAlgebra.Matrix.CharP
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 import TauCeti.Algebra.Polynomial.Derivative
 
@@ -132,12 +133,7 @@ theorem jacobsonCoeff_succ_eq_zero_of_lie_eq_zero {x y : L} (h : ⁅x, y⁆ = 0)
     jacobsonCoeff x y (k + 1) j = 0 := by
   induction k generalizing j with
   | zero =>
-    rcases j with _ | _ | j
-    · rw [jacobsonCoeff_succ_zero, jacobsonCoeff_zero_zero, ← lie_skew, h, neg_zero]
-    · rw [jacobsonCoeff_succ_succ, jacobsonCoeff_zero_zero, jacobsonCoeff_zero_succ, lie_self,
-        lie_zero, add_zero]
-    · rw [jacobsonCoeff_succ_succ, jacobsonCoeff_zero_succ, jacobsonCoeff_zero_succ, lie_zero,
-        lie_zero, add_zero]
+    rcases j with _ | _ | j <;> simp [← lie_skew y x, h]
   | succ k ih =>
     cases j
     · rw [jacobsonCoeff_succ_zero, ih, lie_zero]
@@ -255,11 +251,8 @@ private theorem coeff_pow_succ_eq (p : ℕ) [hp : Fact p.Prime] [CharP A p] (a b
       derivative_pow_eq_sum]
     simp
   have hinv : ((j + 1 : ℕ) : A) * (((j + 1 : ZMod p)⁻¹).val : A) = 1 := by
-    have h := congrArg (ZMod.castHom (dvd_refl p) A) (ZMod.coe_mul_inv_eq_one (j + 1)
-      (Nat.coprime_comm.1 (Nat.coprime_of_lt_prime (by omega) (by omega) hp.out)))
-    rw [map_mul, map_one, map_natCast, ← ZMod.natCast_zmod_val (_ : ZMod p)⁻¹, map_natCast] at h
-    push_cast at h ⊢
-    exact h
+    simpa using natCast_mul_natCast_val_inv_eq_one (R := A) p
+      (Nat.coprime_comm.1 (Nat.coprime_of_lt_prime (n := j + 1) (by omega) (by omega) hp.out))
   rw [nsmul_eq_mul, ← hder, Nat.cast_comm, mul_assoc, hinv, mul_one]
 
 /-- **Jacobson's formula.**  In a ring of prime characteristic `p`,

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Lemmas
+public import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Nat.Choose.Dvd
 
 /-!
@@ -18,7 +19,9 @@ one picks a prime `ℓ` different from the characteristic of a field. In a nontr
 characteristic can vanish among the primes, so there are arbitrarily large primes with nonzero
 cast. Without zero divisors, `4` is nonzero whenever `2` is. A natural number prime to the
 characteristic of a nontrivial ring is nonzero. In characteristic a prime `p`, the binomial
-coefficient `(p - 1).choose k` is `(-1) ^ k` for `k ≤ p - 1`.
+coefficient `(p - 1).choose k` is `(-1) ^ k` for `k ≤ p - 1`. In characteristic `p`, the
+natural-number representative of the inverse of `m` modulo `p` inverts the cast of `m` when `m` is
+prime to `p`.
 
 In a ring of exponential characteristic `p`, raising to the power `q = p ^ n` commutes with
 negation. Mathlib records the special case `(-1) ^ q = -1` (`neg_one_pow_expChar_pow`) and the
@@ -39,6 +42,8 @@ law.
   nontrivial ring is nonzero.
 * `TauCeti.natCast_choose_sub_one_eq_neg_one_pow`: `(p - 1).choose k = (-1) ^ k` in
   characteristic `p`.
+* `TauCeti.natCast_mul_natCast_val_inv_eq_one`: `m * (m⁻¹ : ZMod p).val = 1` in characteristic
+  `p` when `m` is prime to `p`.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
 -/
 
@@ -106,6 +111,15 @@ theorem natCast_choose_sub_one_eq_neg_one_pow {R : Type*} [Ring R] (p : ℕ) [hp
       rw [← Nat.cast_add, add_comm, ← h, CharP.cast_eq_zero_iff R p]
       exact hp.out.dvd_choose_self (by omega) (by omega)
     rw [eq_neg_of_add_eq_zero_left hsum, ih (by omega), pow_succ, mul_neg_one]
+
+/-- In characteristic `p`, the natural-number representative `(m⁻¹ : ZMod p).val` of the inverse
+of `m` modulo `p` is a right inverse of `m` whenever `m` is prime to `p`. -/
+theorem natCast_mul_natCast_val_inv_eq_one {R : Type*} [NonAssocSemiring R] [IsRightCancelAdd R]
+    (p : ℕ) [CharP R p] {m : ℕ} (hm : m.Coprime p) : (m : R) * ((m⁻¹ : ZMod p).val : R) = 1 := by
+  rw [← Nat.cast_mul, ← Nat.cast_one, CharP.natCast_eq_natCast R p,
+    ← ZMod.natCast_eq_natCast_iff]
+  push_cast
+  exact ZMod.mul_val_inv hm
 
 variable {R : Type*} [Ring R] (p n : ℕ) [ExpChar R p]
 
