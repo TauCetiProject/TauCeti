@@ -1,0 +1,615 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
+public import TauCeti.AlgebraicTopology.Singular.Fibration.SerreLocalSystem
+public import TauCeti.AlgebraicTopology.Singular.Additivity
+
+/-!
+# The column `p = 0` of the second page of the Serre spectral sequence
+
+Let `p : E ⟶ B` be a Serre fibration and `C ⊆ B` a relative CW complex with skeleta `Xⁿ` and base
+`X⁻¹`. The first page of the Serre spectral sequence of `p` is the direct sum, over the cells, of
+the homology of the fibres over their centres
+(`TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma`).
+Its column `p = 0` is `E¹_{0,q} = Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)`, the fibre homology over the
+`0`-cells, and nothing leaves it, so the second page there is the cokernel of the first
+differential `d¹ : E¹_{1,q} ⟶ E¹_{0,q}`.
+
+This file identifies that cokernel through path transport. A `1`-cell `j` is a path
+`TauCeti.TopCat.cellPath` from `χⱼ(-1)` to `χⱼ(1)` in the `0`-skeleton, along which the fibre
+homology has its transport `τⱼ` (`TauCeti.TopCat.fiberHomologyTransport`, the monodromy of the
+local system of fibre homology `TauCeti.TopCat.serreFiberLocalSystem`). The image of `d¹` is
+spanned by the classes `a - τⱼ a`, for `a` over the end point `χⱼ(-1)`
+(`TauCeti.TopCat.oneCellTransportDifference`), so
+
+`E²_{0,q} ≅ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R) / ⟨a - τⱼ a⟩`
+
+(`TauCeti.TopCat.serreSpectralSequenceSecondPageXIsoCokernel`). For a connected CW complex this
+is the module of coinvariants `H₀(B; Hq(F))` of the fibre homology under the fundamental group,
+the column `p = 0` of `E²_{p,q} = H_p(B; Hq(F))`.
+
+## The argument
+
+The first differential is the connecting map of the triple `(p⁻¹(X¹), p⁻¹(X⁰), p⁻¹(X⁻¹))`
+(`TauCeti.filteredSpaceSpectralSequence_first_page_d_eq`). On the summand of a `1`-cell `j` it is
+the connecting map of the pair `(Pⱼ, ∂Pⱼ)` of the pullback of `p` to the closed unit ball of `ℝ¹`
+along the characteristic map, followed by the projection of `∂Pⱼ` to `p⁻¹(X⁰)`. The boundary
+`∂Pⱼ` is the disjoint union of the fibres over the end points `χⱼ(∓1)`, and the ball is
+contractible, so the inclusion `∂Pⱼ ⟶ Pⱼ` is onto in homology. By the exact sequence of the pair,
+the image of the connecting map is the kernel of `Hq(∂Pⱼ) ⟶ Hq(Pⱼ)`, and since the two fibre
+inclusions into `Pⱼ` differ by the transport `τⱼ`, that kernel is `{(a, -τⱼ a)}`.
+
+## Main definitions and results
+
+* `TauCeti.TopCat.cellPath`: the path along a `1`-cell.
+* `TauCeti.TopCat.oneCellTransportDifference`: the map `⨁ⱼ Hq(p⁻¹(χⱼ(-1))) ⟶ E¹_{0,q}`,
+  `a ↦ a - τⱼ a`.
+* `TauCeti.TopCat.serreSpectralSequenceSecondPageXIsoCokernel`: `E²_{0,q}` is its cokernel.
+
+## References
+
+* J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
+  425–505, Chapter II.
+* J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
+  Theorem 5.2 and Section 5.1.
+* A. Hatcher,
+  [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
+  Chapter 1, the proof of Theorem 1.3 (the second page with local coefficients).
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Limits Metric Set Topology Topology.RelCWComplex
+
+universe u
+
+namespace TauCeti
+
+namespace TopCat
+
+variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} [T2Space B] {C D : Set B} [RelCWComplex C D]
+
+section Endpoints
+
+variable (C) in
+/-- The end points `χⱼ(-1)` and `χⱼ(1)` of a `1`-cell `j` lie in the `0`-skeleton. -/
+lemma map_mem_skeletonLT_one (j : cell C 1) {c : ℝ} (hc : |c| = 1) :
+    map 1 j (fun _ ↦ c) ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B) :=
+  cellFrontier_subset_skeletonLT 1 j
+    ⟨_, mem_sphere_zero_iff_norm.2 (by rw [pi_norm_const, Real.norm_eq_abs, hc]), rfl⟩
+
+variable (C) in
+/-- The path along a `1`-cell `j`: its characteristic map read on `[-1, 1]`, from the end point
+`χⱼ(-1)` to the end point `χⱼ(1)`. -/
+def cellPath (j : cell C 1) : Path (map 1 j (fun _ ↦ -1)) (map 1 j (fun _ ↦ 1)) where
+  toFun t := map 1 j (fun _ ↦ 2 * (t : ℝ) - 1)
+  continuous_toFun := by
+    refine (continuousOn 1 j).comp_continuous (by fun_prop) fun t ↦ ?_
+    rw [mem_closedBall_zero_iff, pi_norm_const, Real.norm_eq_abs, abs_le]
+    constructor <;> linarith [t.2.1, t.2.2]
+  source' := by simp
+  target' := by norm_num
+
+omit [T2Space B] in
+@[simp]
+lemma cellPath_apply (j : cell C 1) (t : unitInterval) :
+    cellPath C j t = map 1 j (fun _ ↦ 2 * (t : ℝ) - 1) :=
+  (rfl)
+
+variable (p C) in
+/-- The inclusion of the fibre of `p` over a point `b` of the `0`-skeleton into the preimage
+`p⁻¹(X⁰)` of the `0`-skeleton. -/
+def fiberToPreimageSkeletonZero {b : B} (hb : b ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B)) :
+    p.fiber b ⟶ (preimageSkeletonPair p C 0).fst :=
+  _root_.TopCat.ofHom
+    ⟨fun e ↦ ⟨e.1, by rw [mem_preimage, show p e.1 = b from e.2]; exact hb⟩, by fun_prop⟩
+
+@[simp]
+lemma coe_fiberToPreimageSkeletonZero_apply {b : B}
+    (hb : b ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B)) (e : p.fiber b) :
+    (fiberToPreimageSkeletonZero p C hb e).1 = e.1 :=
+  (rfl)
+
+variable (R : Type u) [Ring R]
+
+variable (p C) in
+/-- The map `Hq(p⁻¹(b); R) ⟶ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)` induced by the inclusion of the fibre over a
+point `b` of the `0`-skeleton. -/
+def fiberHomologyToPreimageSkeletonZero (q : ℕ) {b : B}
+    (hb : b ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B)) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (p.fiber b) ⟶
+      (preimageSkeletonPair p C 0).singularHomology (ModuleCat.of R R) q :=
+  ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map
+      (fiberToPreimageSkeletonZero p C hb) ≫
+    (preimageSkeletonPair p C 0).singularHomologyπ (ModuleCat.of R R) q
+
+variable (hp : serreFibrations p)
+
+variable (C) in
+/-- **The transport differences along the `1`-cells.** The map
+`⨁ⱼ Hq(p⁻¹(χⱼ(-1)); R) ⟶ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)` which sends a class `a` over the end point
+`χⱼ(-1)` of the `1`-cell `j` to `a - τⱼ a`, where `τⱼ` is the transport of fibre homology
+(`TauCeti.TopCat.fiberHomologyTransport`) along the path `TauCeti.TopCat.cellPath` of `j` to its
+other end point `χⱼ(1)`, both classes being read in the homology of `p⁻¹(X⁰)` relative to
+`p⁻¹(X⁻¹)`. -/
+def oneCellTransportDifference (q : ℕ) :
+    (∐ fun j : cell C 1 ↦ ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (p.fiber (map 1 j fun _ ↦ -1))) ⟶
+      (preimageSkeletonPair p C 0).singularHomology (ModuleCat.of R R) q :=
+  Sigma.desc fun j ↦
+    fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j (by norm_num)) -
+      fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) ≫
+        fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j (by norm_num))
+
+/-- On the summand of a `1`-cell `j`, the transport differences send `a` to `a - τⱼ a`. -/
+@[reassoc (attr := simp)]
+lemma ι_oneCellTransportDifference (q : ℕ) (j : cell C 1) :
+    Sigma.ι _ j ≫ oneCellTransportDifference C R hp q =
+      fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j (by norm_num)) -
+        fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) ≫
+          fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j (by norm_num)) :=
+  Sigma.ι_comp_desc _ _
+
+end Endpoints
+
+section CellBoundary
+
+/-! ### The pullback of `p` along a `1`-cell over the two end points -/
+
+/-- The point `(c)` of the closed unit ball of `ℝ¹`, lifted to the universe `u`. -/
+private def ballPoint (c : ℝ) (hc : |c| ≤ 1) : closedBall (0 : ULift.{u} (Fin 1 → ℝ)) 1 :=
+  ⟨ULift.up fun _ ↦ c, by
+    rw [mem_closedBall_zero_iff, ULift.norm_up, pi_norm_const, Real.norm_eq_abs]
+    exact hc⟩
+
+private lemma ballPoint_down (c : ℝ) (hc : |c| ≤ 1) :
+    ((ballPoint.{u} c hc : ULift.{u} (Fin 1 → ℝ))).down = fun _ ↦ c :=
+  (rfl)
+
+private instance : ContractibleSpace (closedBall (0 : ULift.{u} (Fin 1 → ℝ)) 1) :=
+  (convex_closedBall _ _).contractibleSpace ⟨0, mem_closedBall_self zero_le_one⟩
+
+omit [T2Space B] in
+private lemma cellULiftMap_ballPoint (j : cell C 1) (c : ℝ) (hc : |c| ≤ 1) :
+    cellULiftMap C 1 j (ballPoint c hc) = map 1 j (fun _ ↦ c) :=
+  cellULiftMap_apply 1 j _
+
+variable (p) in
+/-- The inclusion of the fibre of `p` over the end point `χⱼ(c)`, `c = ±1`, of a `1`-cell `j` into
+the part `∂Pⱼ` of the pullback `Pⱼ` of `p` along the characteristic map over the boundary. -/
+private def cellBoundaryFiberι (j : cell C 1) (c : ℝ) (hc : |c| = 1) :
+    p.fiber (map 1 j fun _ ↦ c) ⟶ (cellDiskPullbackPair p C 1 j).snd :=
+  _root_.TopCat.ofHom ⟨fun e ↦ ⟨⟨(ballPoint c hc.le, e.1),
+      (cellULiftMap_ballPoint j c hc.le).trans (show p e.1 = _ from e.2).symm⟩, by
+        -- Membership in `∂Pⱼ` is membership of the point of the ball in the unit sphere.
+        change (ballPoint c hc.le : ULift.{u} (Fin 1 → ℝ)) ∈ sphere 0 1
+        rw [mem_sphere_zero_iff_norm, ← ULift.norm_down, ballPoint_down, pi_norm_const,
+          Real.norm_eq_abs, hc]⟩,
+    by fun_prop⟩
+
+omit [T2Space B] in
+private lemma cellBoundaryFiberι_comp_map (j : cell C 1) (c : ℝ) (hc : |c| = 1) :
+    cellBoundaryFiberι p j c hc ≫ (cellDiskPullbackPair p C 1 j).map =
+      p.pullbackFiberι (cellULiftMap C 1 j) (cellULiftMap_ballPoint j c hc.le) := by
+  ext e : 2
+  exact Subtype.ext (TopCat.Hom.coe_pullbackFiberι_apply p (cellULiftMap C 1 j)
+    (cellULiftMap_ballPoint j c hc.le) e).symm
+
+private lemma cellBoundaryFiberι_comp_snd (j : cell C 1) (c : ℝ) (hc : |c| = 1) :
+    cellBoundaryFiberι p j c hc ≫ TopPair.Hom.snd (cellDiskPullbackPairMap p C 1 j) =
+      fiberToPreimageSkeletonZero p C (map_mem_skeletonLT_one C j hc) := by
+  ext e : 2
+  refine Subtype.ext ?_
+  have := TopPair.Hom.w_apply (cellDiskPullbackPairMap p C 1 j) (cellBoundaryFiberι p j c hc e)
+  exact (congrArg Subtype.val this).trans (coe_cellDiskPullbackPairMap_fst_apply 1 j _)
+
+variable (R : Type u) [Ring R] (hp : serreFibrations p)
+
+omit [T2Space B] in
+/-- Transport of fibre homology along the path of a `1`-cell is transport over the closed unit
+ball of `ℝ¹`, along the characteristic map, from `-1` to `1`. -/
+private lemma fiberHomologyTransport_cellPath (q : ℕ) (j : cell C 1) :
+    fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) =
+      pullbackFiberTransport hp (ModuleCat.of R R) q (cellULiftMap C 1 j)
+        (cellULiftMap_ballPoint j (-1) (by norm_num))
+        (cellULiftMap_ballPoint j 1 (by norm_num)) := by
+  rw [fiberHomologyTransport_eq_pullbackFiberTransport]
+  -- The interval `I` maps to the ball by `t ↦ 2t - 1`, over `B`.
+  have hb (t : unitInterval) : |2 * (t : ℝ) - 1| ≤ 1 := by
+    rw [abs_le]
+    constructor <;> linarith [t.2.1, t.2.2]
+  let φ : _root_.TopCat.I.{u} ⟶ _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin 1 → ℝ)) 1) :=
+    _root_.TopCat.ofHom ⟨fun t ↦ ballPoint (2 * (_root_.TopCat.I.homeomorph t : ℝ) - 1) (hb _), by
+      unfold ballPoint
+      fun_prop⟩
+  refine pullbackFiberTransport_comp_left hp _ q _ _ φ ?_ (k₀ := 0) (k₁ := 1) ?_ ?_ _ _ _ _
+  · ext t
+    simp only [ConcreteCategory.comp_apply]
+    rw [TopCat.pathEquiv_symm_hom_apply, cellPath_apply]
+    exact cellULiftMap_ballPoint j _ (hb _)
+  · refine Subtype.ext (congrArg ULift.up (funext fun _ ↦ ?_))
+    simp
+  · refine Subtype.ext (congrArg ULift.up (funext fun _ ↦ ?_))
+    norm_num
+
+/-! ### The two ends of the boundary of a `1`-cell -/
+
+omit [T2Space B] in
+/-- A point of the boundary sphere of the closed unit ball of `ℝ¹` is `-1` or `1`. -/
+private lemma abs_down_eq_one (j : cell C 1) (x : (cellDiskPullbackPair p C 1 j).snd) :
+    |(x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0| = 1 := by
+  have hx : ‖(x.1.1.1 : ULift.{u} (Fin 1 → ℝ))‖ = 1 := mem_sphere_zero_iff_norm.1 x.2
+  have hv : (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down =
+      fun _ ↦ (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0 :=
+    funext fun i ↦ by rw [Subsingleton.elim i 0]
+  rwa [← ULift.norm_down, hv, pi_norm_const, Real.norm_eq_abs] at hx
+
+variable (p) in
+/-- The part of the boundary `∂Pⱼ` of the pullback along a `1`-cell `j` over the end point `c`,
+for `c = ±1`, as an open set. -/
+private def cellBoundaryOpens (j : cell C 1) (c : ℝ) :
+    TopologicalSpace.Opens (cellDiskPullbackPair p C 1 j).snd :=
+  ⟨{x | 0 < c * (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0},
+    isOpen_lt continuous_const (by fun_prop)⟩
+
+omit [T2Space B] in
+private lemma ballPoint_eq_of_mem_cellBoundaryOpens (j : cell C 1) {c : ℝ} (hc : |c| = 1)
+    {x : (cellDiskPullbackPair p C 1 j).snd} (hx : x ∈ cellBoundaryOpens p j c) :
+    x.1.1.1 = ballPoint c hc.le := by
+  -- Both `c` and the coordinate of `x` are `±1`, with positive product.
+  have h : (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0 = c := by
+    have hx' : 0 < c * (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0 := hx
+    rcases abs_eq zero_le_one |>.1 hc with rfl | rfl <;>
+      rcases abs_eq zero_le_one |>.1 (abs_down_eq_one j x) with h | h <;> rw [h] at hx' ⊢ <;>
+      linarith
+  refine Subtype.ext (congrArg ULift.up (funext fun i ↦ ?_))
+  rw [Subsingleton.elim i 0]
+  exact h
+
+variable (p) in
+/-- The fibre of `p` over the end point `χⱼ(c)` of a `1`-cell is the part of `∂Pⱼ` over `c`. -/
+private def cellBoundaryOpensHomeomorph (j : cell C 1) (c : ℝ) (hc : |c| = 1) :
+    p.fiber (map 1 j fun _ ↦ c) ≃ₜ cellBoundaryOpens p j c where
+  toFun e := ⟨cellBoundaryFiberι p j c hc e, by
+    -- The point of the ball under `cellBoundaryFiberι` is `c`.
+    change 0 < c * c
+    nlinarith [abs_mul_abs_self c, hc]⟩
+  invFun x := ⟨x.1.1.1.2, by
+    have h := x.1.1.2
+    rw [ballPoint_eq_of_mem_cellBoundaryOpens j hc x.2, cellULiftMap_ballPoint] at h
+    exact h.symm⟩
+  left_inv _ := rfl
+  right_inv x := Subtype.ext <| Subtype.ext <| Subtype.ext <|
+    Prod.ext (ballPoint_eq_of_mem_cellBoundaryOpens j hc x.2).symm rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+omit [T2Space B] in
+/-- **Morphisms out of the homology of the boundary of a `1`-cell are determined on the two end
+fibres.** The boundary `∂Pⱼ` is the disjoint union of the fibres over `χⱼ(-1)` and `χⱼ(1)`. -/
+private lemma cellBoundary_hom_ext (q : ℕ) (j : cell C 1) {Z : ModuleCat.{u} R}
+    {f f' : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).obj (cellDiskPullbackPair p C 1 j).snd ⟶ Z}
+    (hneg : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (cellBoundaryFiberι p j (-1) (by norm_num)) ≫ f =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (cellBoundaryFiberι p j (-1) (by norm_num)) ≫ f')
+    (hpos : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 (by norm_num)) ≫ f =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 (by norm_num)) ≫ f') :
+    f = f' := by
+  let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
+  let c : ULift.{u} Bool → ℝ := fun i ↦ bif i.down then -1 else 1
+  have hc (i : ULift.{u} Bool) : |c i| = 1 := by
+    rcases i with ⟨_ | _⟩ <;> norm_num [c]
+  let s : ULift.{u} Bool → TopologicalSpace.Opens (cellDiskPullbackPair p C 1 j).snd :=
+    fun i ↦ cellBoundaryOpens p j (c i)
+  have hs : Pairwise (Function.onFun Disjoint s) := by
+    rintro ⟨_ | _⟩ ⟨_ | _⟩ h
+    all_goals first
+      | exact absurd rfl h
+      | exact TopologicalSpace.Opens.coe_disjoint.1 <| Set.disjoint_left.2 fun x hx hx' ↦ by
+          -- Unfold membership in `cellBoundaryOpens` to the sign condition.
+          change 0 < _ * _ at hx hx'
+          simp only [c, Bool.cond_true, Bool.cond_false] at hx hx'
+          linarith
+  -- The two ends cover the boundary, so the inclusion of their union is a homeomorphism.
+  have hcov (x : (cellDiskPullbackPair p C 1 j).snd) : x ∈ ⨆ i, s i := by
+    rw [TopologicalSpace.Opens.mem_iSup]
+    -- Membership in `cellBoundaryOpens` unfolds to the sign condition `0 < c * x`.
+    rcases abs_eq zero_le_one |>.1 (abs_down_eq_one j x) with h | h
+    · exact ⟨⟨false⟩, by change 0 < 1 * _; rw [h]; norm_num⟩
+    · exact ⟨⟨true⟩, by change 0 < -1 * _; rw [h]; norm_num⟩
+  let val : _root_.TopCat.of ↥(⨆ i, s i) ⟶ (cellDiskPullbackPair p C 1 j).snd :=
+    _root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩
+  have : IsIso val := (_root_.TopCat.isIso_iff_isHomeomorph _).2
+    (isHomeomorph_iff_isEmbedding_surjective.2
+      ⟨IsEmbedding.subtypeVal, fun x ↦ ⟨⟨x, hcov x⟩, rfl⟩⟩)
+  rw [← cancel_epi (H.map val)]
+  refine (isColimitCofanSingularHomologyOpens s (ModuleCat.{u} R) (ModuleCat.of R R) q
+    hs).hom_ext fun ⟨i⟩ ↦ ?_
+  -- On the part over each end point, read the leg through the fibre over that end point.
+  let e := cellBoundaryOpensHomeomorph p j (c i) (hc i)
+  refine (cancel_epi (H.map (_root_.TopCat.isoOfHomeo e).hom)).1 ?_
+  have hleg : H.map (_root_.TopCat.isoOfHomeo e).hom ≫
+      (Cofan.mk _ fun i ↦ SSet.homologyMap (_root_.TopCat.toSSet.map
+        (_root_.TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion (le_iSup s i),
+          continuous_inclusion _⟩)) (ModuleCat.of R R) q).ι.app ⟨i⟩ ≫ H.map val =
+      H.map (cellBoundaryFiberι p j (c i) (hc i)) := by
+    erw [Cofan.mk_ι_app]
+    rw [← singularHomologyFunctor_obj_map]
+    simp only [H]
+    erw [← Functor.map_comp, ← Functor.map_comp]
+    rfl
+  erw [reassoc_of% hleg, reassoc_of% hleg]
+  rcases i with _ | _
+  · exact hpos
+  · exact hneg
+
+end CellBoundary
+
+section SecondPage
+
+variable (R : Type u) [Ring R] (hp : serreFibrations p)
+
+variable (p C) in
+/-- The triple `(p⁻¹(X¹), p⁻¹(X⁰), p⁻¹(X⁻¹))` of the first three stages of the skeletal
+filtration. -/
+private abbrev skeletonTriple : TopTriple.{u} :=
+  TopTriple.ofInclusions (preimage_mono (f := p) (skeletonLT_subset_skeletonLT_succ C 0))
+    (preimage_mono (f := p) (skeletonLT_subset_skeletonLT_succ C 1))
+
+variable (p C) in
+/-- The connecting map `Hq+1(p⁻¹(X¹), p⁻¹(X⁰)) ⟶ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹))` of the triple of the first
+three stages of the skeletal filtration. -/
+private def skeletonδ (q : ℕ) :
+    (preimageSkeletonPair p C 1).singularHomology (ModuleCat.of R R) (q + 1) ⟶
+      (preimageSkeletonPair p C 0).singularHomology (ModuleCat.of R R) q :=
+  (skeletonTriple p C).singularHomologyδ (ModuleCat.of R R) (q + 1) q
+
+omit [T2Space B] in
+/-- The fibre inclusions into the pullback `Pⱼ` at the two ends of a `1`-cell differ by the
+transport along its path. -/
+private lemma map_pullbackFiberι_neg (q : ℕ) (j : cell C 1) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map
+        (p.pullbackFiberι (cellULiftMap C 1 j) (cellULiftMap_ballPoint j (-1) (by norm_num))) =
+      fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+          (ModuleCat.of R R)).map
+            (p.pullbackFiberι (cellULiftMap C 1 j) (cellULiftMap_ballPoint j 1 (by norm_num))) := by
+  rw [fiberHomologyTransport_cellPath, pullbackFiberTransport_comp_map_pullbackFiberι]
+
+omit [T2Space B] in
+/-- The isomorphism `Hq(p⁻¹(χⱼ(1))) ≅ Hq(Pⱼ)` induced by the inclusion of the fibre over the end
+point `1` into the pullback along the contractible ball. -/
+private def pullbackFiberιIso (q : ℕ) (j : cell C 1) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
+        (p.fiber (map 1 j fun _ ↦ 1)) ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
+        (cellDiskPullbackPair p C 1 j).fst :=
+  have h := isIso_singularHomologyMap_pullbackFiberι hp (ModuleCat.of R R) q (cellULiftMap C 1 j)
+    (cellULiftMap_ballPoint j 1 (by norm_num))
+  @asIso _ _ _ _ (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+    (ModuleCat.of R R)).map (p.pullbackFiberι (cellULiftMap C 1 j)
+      (cellULiftMap_ballPoint j 1 (by norm_num)))) h
+
+variable (p) in
+/-- The connecting map `Hq+1(Pⱼ, ∂Pⱼ) ⟶ Hq(∂Pⱼ)` of the pair over a `1`-cell `j`. -/
+private def cellBoundaryδ (q : ℕ) (j : cell C 1) :
+    (cellDiskPullbackPair p C 1 j).singularHomology (ModuleCat.of R R) (q + 1) ⟶
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (cellDiskPullbackPair p C 1 j).snd :=
+  (cellDiskPullbackPair p C 1 j).singularHomologyδ (ModuleCat.of R R) (q + 1) q
+
+variable (p) in
+/-- The map `Hq(∂Pⱼ) ⟶ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹))` induced by the projection of the boundary of the
+pullback over a `1`-cell `j`. -/
+private def cellBoundaryProj (q : ℕ) (j : cell C 1) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (cellDiskPullbackPair p C 1 j).snd ⟶
+      (preimageSkeletonPair p C 0).singularHomology (ModuleCat.of R R) q :=
+  ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (TopPair.Hom.snd (cellDiskPullbackPairMap p C 1 j)) ≫
+    (preimageSkeletonPair p C 0).singularHomologyπ (ModuleCat.of R R) q
+
+variable (p) in
+/-- The map `Hq(∂Pⱼ) ⟶ Hq(Pⱼ)` induced by the inclusion of the boundary of the pullback over a
+`1`-cell `j`. -/
+private def cellBoundaryIncl (q : ℕ) (j : cell C 1) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (cellDiskPullbackPair p C 1 j).snd ⟶
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (cellDiskPullbackPair p C 1 j).fst :=
+  ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (cellDiskPullbackPair p C 1 j).map
+
+/-- On the summand of a `1`-cell `j`, the connecting map of the triple of the first stages of the
+skeletal filtration is the connecting map of the pair `(Pⱼ, ∂Pⱼ)`, followed by the projection of
+`∂Pⱼ` to `p⁻¹(X⁰)`. -/
+@[reassoc]
+private lemma singularHomologyMap_cellDiskPullbackPairMap_comp_δ (q : ℕ) (j : cell C 1) :
+    (cellDiskPullbackPair p C 1 j).singularHomologyMap (cellDiskPullbackPairMap p C 1 j)
+        (ModuleCat.of R R) (q + 1) ≫ skeletonδ p C R q =
+      cellBoundaryδ p R q j ≫ cellBoundaryProj p R q j := by
+  have h₁ := (skeletonTriple p C).singularHomologyδ_eq_comp_singularHomologyπ (ModuleCat.of R R)
+    (q + 1) q
+  have h₂ := TopPair.singularHomologyδ_naturality (R := ModuleCat.of R R)
+    (cellDiskPullbackPairMap p C 1 j) (q + 1) q
+  refine (congrArg (_ ≫ ·) (h₁ : skeletonδ p C R q = _)).trans ?_
+  exact ((Category.assoc _ _ _).symm.trans (h₂ =≫ _).symm).trans (Category.assoc _ _ _)
+
+omit [T2Space B] in
+@[reassoc (attr := simp)]
+private lemma cellBoundaryδ_comp_cellBoundaryIncl (q : ℕ) (j : cell C 1) :
+    cellBoundaryδ p R q j ≫ cellBoundaryIncl p R q j = 0 :=
+  (cellDiskPullbackPair p C 1 j).singularHomologyδ_comp (ModuleCat.of R R) (q + 1) q
+
+omit [T2Space B] in
+private lemma exact_cellBoundaryδ (q : ℕ) (j : cell C 1) :
+    (ShortComplex.mk _ _ (cellBoundaryδ_comp_cellBoundaryIncl (p := p) R q j)).Exact :=
+  (cellDiskPullbackPair p C 1 j).singularHomology_exact_subspace (ModuleCat.of R R) (q + 1) q
+
+/-- The fibre inclusions at the two ends of `∂Pⱼ`, followed by the projection to `p⁻¹(X⁰)`. -/
+@[reassoc]
+private lemma map_cellBoundaryFiberι_comp_cellBoundaryProj (q : ℕ) (j : cell C 1) (c : ℝ)
+    (hc : |c| = 1) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (cellBoundaryFiberι p j c hc) ≫ cellBoundaryProj p R q j =
+      fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j hc) := by
+  rw [cellBoundaryProj, fiberHomologyToPreimageSkeletonZero, ← cellBoundaryFiberι_comp_snd]
+  exact (Functor.map_comp_assoc _ _ _ _).symm
+
+omit [T2Space B] in
+/-- Through the boundary `∂Pⱼ`, the fibre inclusion at the end point `1` is the isomorphism
+`Hq(p⁻¹(χⱼ(1))) ≅ Hq(Pⱼ)`. -/
+@[reassoc]
+private lemma map_cellBoundaryFiberι_one_comp_cellBoundaryIncl (q : ℕ) (j : cell C 1) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 (by norm_num)) ≫
+      cellBoundaryIncl p R q j = (pullbackFiberιIso R hp q j).hom := by
+  rw [cellBoundaryIncl, ← Functor.map_comp]
+  erw [cellBoundaryFiberι_comp_map]
+  rfl
+
+omit [T2Space B] in
+/-- Through the boundary `∂Pⱼ`, the fibre inclusions at the two end points differ by the transport
+along the path of the cell. -/
+@[reassoc]
+private lemma map_cellBoundaryFiberι_neg_one_comp_cellBoundaryIncl (q : ℕ) (j : cell C 1) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (cellBoundaryFiberι p j (-1) (by norm_num)) ≫
+      cellBoundaryIncl p R q j =
+      fiberHomologyTransport hp (ModuleCat.of R R) q (cellPath C j) ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+          (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 (by norm_num)) ≫
+        cellBoundaryIncl p R q j := by
+  rw [cellBoundaryIncl, ← Functor.map_comp, ← Functor.map_comp]
+  erw [cellBoundaryFiberι_comp_map, cellBoundaryFiberι_comp_map]
+  exact map_pullbackFiberι_neg R hp q j
+
+/-- **The first differential out of the `1`-cells lands in the transport relations.** -/
+private lemma δ_comp_cokernel_π (q : ℕ) :
+    skeletonδ p C R q ≫ cokernel.π (oneCellTransportDifference C R hp q) = 0 := by
+  refine (isColimitCofanSingularHomologyPreimageSkeletonPair C hp R 1 (q + 1)).hom_ext
+    fun ⟨j⟩ ↦ ?_
+  simp only [Cofan.mk_ι_app, comp_zero]
+  rw [singularHomologyMap_cellDiskPullbackPairMap_comp_δ_assoc]
+  -- The projection of `∂Pⱼ` to the cokernel factors through the homology of `Pⱼ`.
+  have hfac : cellBoundaryProj p R q j ≫ cokernel.π (oneCellTransportDifference C R hp q) =
+      cellBoundaryIncl p R q j ≫ (pullbackFiberιIso R hp q j).inv ≫
+        fiberHomologyToPreimageSkeletonZero p C R q (map_mem_skeletonLT_one C j (by norm_num)) ≫
+          cokernel.π (oneCellTransportDifference C R hp q) := by
+    have hT := Sigma.ι _ j ≫= cokernel.condition (oneCellTransportDifference C R hp q)
+    rw [ι_oneCellTransportDifference_assoc, comp_zero, Preadditive.sub_comp, sub_eq_zero,
+      Category.assoc] at hT
+    refine cellBoundary_hom_ext R q j ?_ ?_
+    · rw [map_cellBoundaryFiberι_comp_cellBoundaryProj_assoc, hT,
+        map_cellBoundaryFiberι_neg_one_comp_cellBoundaryIncl_assoc R hp,
+        map_cellBoundaryFiberι_one_comp_cellBoundaryIncl_assoc R hp, Iso.hom_inv_id_assoc]
+    · rw [map_cellBoundaryFiberι_comp_cellBoundaryProj_assoc,
+        map_cellBoundaryFiberι_one_comp_cellBoundaryIncl_assoc R hp, Iso.hom_inv_id_assoc]
+  rw [hfac, cellBoundaryδ_comp_cellBoundaryIncl_assoc, zero_comp]
+
+/-- **The transport relations are boundaries of the first differential.** -/
+private lemma oneCellTransportDifference_comp_cokernel_π (q : ℕ) :
+    oneCellTransportDifference C R hp q ≫ cokernel.π (skeletonδ p C R q) = 0 := by
+  refine Sigma.hom_ext _ _ fun j ↦ ?_
+  rw [ι_oneCellTransportDifference_assoc, comp_zero, Preadditive.sub_comp, sub_eq_zero,
+    Category.assoc]
+  -- The projection of `∂Pⱼ` to the cokernel kills the boundaries of `(Pⱼ, ∂Pⱼ)`, and the
+  -- homology of `∂Pⱼ` maps onto that of `Pⱼ`, with cokernel those boundaries.
+  have hzero := (cellDiskPullbackPair p C 1 j).singularHomologyMap
+    (cellDiskPullbackPairMap p C 1 j) (ModuleCat.of R R) (q + 1) ≫=
+      cokernel.condition (skeletonδ p C R q)
+  rw [comp_zero, singularHomologyMap_cellDiskPullbackPairMap_comp_δ_assoc] at hzero
+  have : Epi (cellBoundaryIncl p R q j) :=
+    epi_of_epi_fac (f := (pullbackFiberιIso R hp q j).inv ≫
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).map (cellBoundaryFiberι p j 1 (by norm_num)))
+      (by rw [Category.assoc, map_cellBoundaryFiberι_one_comp_cellBoundaryIncl R hp,
+        Iso.inv_hom_id])
+  obtain ⟨χ, hχ⟩ :=
+    CokernelCofork.IsColimit.desc' (exact_cellBoundaryδ (p := p) R q j).gIsCokernel _ hzero
+  rw [← map_cellBoundaryFiberι_comp_cellBoundaryProj_assoc R q j (-1) (by norm_num),
+    ← map_cellBoundaryFiberι_comp_cellBoundaryProj_assoc R q j 1 (by norm_num), ← hχ]
+  exact map_cellBoundaryFiberι_neg_one_comp_cellBoundaryIncl_assoc R hp q j χ
+
+variable (C) in
+/-- The cokernel of the connecting map `Hq+1(p⁻¹(X¹), p⁻¹(X⁰)) ⟶ Hq(p⁻¹(X⁰), p⁻¹(X⁻¹))` of the
+first stages of the skeletal filtration is the cokernel of the transport differences along the
+`1`-cells. -/
+private def cokernelSkeletonTripleδIso (q : ℕ) :
+    cokernel (skeletonδ p C R q) ≅
+      cokernel (oneCellTransportDifference C R hp q) where
+  hom := cokernel.desc _ _ (δ_comp_cokernel_π R hp q)
+  inv := cokernel.desc _ _ (oneCellTransportDifference_comp_cokernel_π R hp q)
+  hom_inv_id := by rw [← cancel_epi (cokernel.π _)]; simp
+  inv_hom_id := by rw [← cancel_epi (cokernel.π _)]; simp
+
+/-- The comparison `TauCeti.TopCat.cokernelSkeletonTripleδIso` for any triple of subsets equal to
+the first three stages of the skeletal filtration. -/
+private def cokernelTripleδIsoOfEq {s t w : Set E} (h₁ : s ⊆ t) (h₂ : t ⊆ w)
+    (hs : s = p ⁻¹' (skeletonLT C ((0 : ℕ) : ℕ∞) : Set B))
+    (ht : t = p ⁻¹' (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set B))
+    (hw : w = p ⁻¹' (skeletonLT C ((1 + 1 : ℕ) : ℕ∞) : Set B)) (q : ℕ) :
+    cokernel ((TopTriple.ofInclusions h₁ h₂).singularHomologyδ (ModuleCat.of R R) (q + 1) q) ≅
+      cokernel (oneCellTransportDifference C R hp q) := by
+  subst hs ht hw
+  exact cokernelSkeletonTripleδIso C R hp q
+
+/-- The objects of the first page of the Serre spectral sequence in the row `b = -2` vanish: the
+two stages `p⁻¹(X⁻¹)` of the filtration involved agree. -/
+private lemma isZero_serreSpectralSequence_page_two_X_neg_two (pq : ℤ × ℤ) (hb : pq.2 = -2) :
+    IsZero (((serreSpectralSequence C p R).page 2).X pq) := by
+  rcases lt_or_ge 0 (pq.1 + pq.2) with h | h
+  · exact isZero_filteredSpaceSpectralSequence_page_two_X _ _ _ h
+  obtain ⟨n, hn⟩ : ∃ n : ℕ, pq.1 + pq.2 = -n := ⟨(-(pq.1 + pq.2)).toNat, by lia⟩
+  refine IsZero.of_iso ?_ (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
+    (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hn)
+  refine TopPair.isZero_singularHomology_of_surjective_map _ _
+    (fun x ↦ ⟨(⟨(x : preimageSkeleton C p (pq.2 + 1)).1, ?_⟩ : preimageSkeleton C p pq.2), rfl⟩) n
+  have := (mem_preimageSkeleton_iff _ _ _).1 (x : preimageSkeleton C p (pq.2 + 1)).2
+  have h₁ : (pq.2 + 1 + 1).toNat = (pq.2 + 1).toNat := by lia
+  rw [h₁] at this
+  exact (mem_preimageSkeleton_iff _ _ _).2 this
+
+variable (C) in
+/-- **The column `p = 0` of the second page of the Serre spectral sequence.** For a Serre
+fibration `p : E ⟶ B` and a relative CW complex `C ⊆ B` with skeleta `Xⁿ`, the object `E²_{0,q}` of
+the second page (numbered `3`) of the Serre spectral sequence, at `pq = (a, b)` with `b = -1` and
+`a + b = -q`, is the quotient of `Hq(p⁻¹(X⁰), p⁻¹(X⁻¹); R)`, the fibre homology over the
+`0`-skeleton, by the classes `a - τⱼ a` of the transport differences along the `1`-cells
+(`TauCeti.TopCat.oneCellTransportDifference`): it is the cokernel of the first differential, which
+has the same image as the transport differences. -/
+def serreSpectralSequenceSecondPageXIsoCokernel (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1)
+    (ha : pq.1 + pq.2 = -q) :
+    ((serreSpectralSequence C p R).page 3).X pq ≅ cokernel (oneCellTransportDifference C R hp q) :=
+  eqToIso (congrArg (fun pq ↦ ((serreSpectralSequence C p R).page 3).X pq)
+      (Prod.ext (by dsimp only; lia) (by dsimp only; lia) : pq = (-1 - (q : ℤ) + 2, 0 - 1))) ≪≫
+    ((serreSpectralSequence C p R).iso 2 3 (-1 - (q : ℤ) + 2, 0 - 1) rfl le_rfl).symm ≪≫
+    ((serreSpectralSequence C p R).page 2 le_rfl).isoHomologyι _ (-1 - (q : ℤ) + 2 + 2, 0 - 1 - 1)
+      (ComplexShape.next_eq' _ (Prod.ext (by simp only [Prod.fst_add])
+        (by simp only [Prod.snd_add]; lia)))
+      ((isZero_serreSpectralSequence_page_two_X_neg_two R _ (by dsimp only; lia)).eq_of_tgt _ _) ≪≫
+    (((serreSpectralSequence C p R).page 2 le_rfl).opcyclesIsCokernel (-1 - (q : ℤ), 0) _
+      (ComplexShape.prev_eq' _ (Prod.ext (by simp only [Prod.fst_add])
+        (by simp only [Prod.snd_add]; lia)))).coconePointUniqueUpToIso (cokernelIsCokernel _) ≪≫
+    cokernelIsoOfEq (filteredSpaceSpectralSequence_first_page_d_eq (ModuleCat.of R R)
+      (monotone_preimageSkeleton p) 0 (-1 - q) q (by lia)) ≪≫
+    cokernelEpiComp _ _ ≪≫ @cokernelCompIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_inv _) ≪≫
+    cokernelTripleδIsoOfEq R hp _ _ (by rw [preimageSkeleton_def]; rfl)
+      (by rw [preimageSkeleton_def]; rfl) (by rw [preimageSkeleton_def]; rfl) q
+
+end SecondPage
+
+end TopCat
+end TauCeti
