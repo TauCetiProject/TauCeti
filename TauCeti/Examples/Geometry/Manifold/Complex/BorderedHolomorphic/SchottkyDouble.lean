@@ -105,6 +105,7 @@ local instance emptyChartedSpace : ChartedSpace ClosedUpperHalfPlane Empty :=
 local instance emptyHasGroupoid : HasGroupoid Empty borderedHolomorphicGroupoid where
   compatible := by
     intro e e' he
+    -- The locally installed empty atlas has definitionally no charts.
     change e ∈ (∅ : Set _) at he
     exact he.elim
 
@@ -130,16 +131,16 @@ example : ¬ PreconnectedSpace separatedHalfPlanes := by
   intro h
   -- These points belong to the two defining real-coordinate regions.
   let a : separatedHalfPlanes :=
-    ⟨⟨-2, by simp⟩, by change (-2 : ℂ).re < -1 ∨ 1 < (-2 : ℂ).re; norm_num⟩
+    ⟨⟨-2, by simp⟩, by norm_num [separatedHalfPlanes]⟩
   let b : separatedHalfPlanes :=
-    ⟨⟨2, by simp⟩, by change (2 : ℂ).re < -1 ∨ 1 < (2 : ℂ).re; norm_num⟩
+    ⟨⟨2, by simp⟩, by norm_num [separatedHalfPlanes]⟩
   let f : separatedHalfPlanes → ℝ := fun z ↦ (z.val : ℂ).re
   have hf : Continuous f := Complex.continuous_re.comp
     (continuous_subtype_val.comp continuous_subtype_val)
   obtain ⟨x, _, hx⟩ := isPreconnected_univ.intermediate_value (a := a) (b := b)
     (mem_univ _) (mem_univ _) hf.continuousOn (show (0 : ℝ) ∈ Icc (f a) (f b) by
       constructor <;> norm_num [f, a, b])
-  have hx' : ((x.val : ℂ).re) = 0 := hx
+  have hx' : ((x.val : ℂ).re) = 0 := by simpa only [f] using hx
   have hxmem := x.2
   -- Expand membership in the chosen open set to contradict the intermediate real coordinate.
   change (x.val : ℂ).re < -1 ∨ 1 < (x.val : ℂ).re at hxmem

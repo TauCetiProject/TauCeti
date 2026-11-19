@@ -58,12 +58,14 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
   `TauCeti.ClosedUpperHalfPlane.chartAt_borderedInterior_target_eq`: the interior of the closed
   upper half-plane is the open upper half-plane, with the inclusion into `ℂ` as chart.
 
+* `TauCeti.mem_boundary_euclideanHalfSpace_iff_notMem_borderedInterior` and
+  `TauCeti.boundary_euclideanHalfSpace_eq_compl_borderedInterior`: the actual native half-space
+  boundary is exactly the bordered gluing locus.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
   Colloquium Publications **52**, 2012, Section 2.4 and Appendix C.
-The exact native half-space transfer has boundary `(borderedInterior M)ᶜ`, as a set of `M`, by
-`TauCeti.boundary_euclideanHalfSpace_eq_compl_borderedInterior`.
 
 -/
 
@@ -380,11 +382,7 @@ theorem mem_boundary_euclideanHalfSpace_iff_notMem_borderedInterior
     x ∈ (𝓡∂ (1 + 1)).boundary M ↔ x ∉ borderedInterior M := by
   rw [ModelWithCorners.mem_boundary_euclideanHalfSpace_iff
     (mem_chart_source (EuclideanHalfSpace (1 + 1)) x)]
-  rw [ClosedUpperHalfPlane.chartAt_euclideanHalfSpace]
-  simp only [OpenPartialHomeomorph.coe_trans, Function.comp_apply]
-  -- Evaluate the composite preferred chart through its coordinate homeomorphism.
-  change (ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph
-    (chartAt ClosedUpperHalfPlane x x)).1 0 = 0 ↔ x ∉ borderedInterior M
+  rw [ClosedUpperHalfPlane.chartAt_euclideanHalfSpace_apply]
   rw [ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph,
     closedUpperHalfPlaneCoordinates_apply_zero]
   exact im_eq_zero_iff_notMem_borderedInterior (IsManifold.chart_mem_maximalAtlas _)

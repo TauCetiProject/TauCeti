@@ -398,7 +398,8 @@ theorem range_closedUpperHalfPlaneCoordinates_symm_boundaryParam :
     rw [closedUpperHalfPlaneCoordinates_symm_boundaryParam]
     simp
   · intro hz
-    have hz' : z.im = 0 := hz
+    have hz' : z.im = 0 := by
+      simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, Complex.imCLM_apply] using hz
     refine ⟨WithLp.toLp 2 (fun _ : Fin 1 ↦ z.re), ?_⟩
     -- Evaluate the composite on the chosen real-coordinate preimage.
     change closedUpperHalfPlaneCoordinates.symm
@@ -431,6 +432,39 @@ theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace (M : Type*)
       (chartAt ClosedUpperHalfPlane x).trans
         euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph := by
   rfl
+
+/-- Evaluation of the preferred chart in the native half-space transfer. -/
+@[simp]
+theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace_apply (M : Type*)
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] (x y : M) :
+    letI := euclideanHalfSpaceChartedSpace M
+    chartAt (EuclideanHalfSpace (1 + 1)) x y =
+      euclideanHalfSpaceHomeomorph (chartAt ClosedUpperHalfPlane x y) := by
+  rw [chartAt_euclideanHalfSpace]
+  rfl
+
+/-- The inverse preferred chart undoes the half-space coordinate homeomorphism first. -/
+@[simp]
+theorem ClosedUpperHalfPlane.chartAt_euclideanHalfSpace_symm_apply (M : Type*)
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] (x : M)
+    (v : EuclideanHalfSpace (1 + 1)) :
+    letI := euclideanHalfSpaceChartedSpace M
+    (chartAt (EuclideanHalfSpace (1 + 1)) x).symm v =
+      (chartAt ClosedUpperHalfPlane x).symm (euclideanHalfSpaceHomeomorph.symm v) := by
+  rw [chartAt_euclideanHalfSpace]
+  rfl
+
+/-- Membership in the transferred chart target is membership after undoing the coordinate
+homeomorphism, which is defined on the whole half-space. -/
+@[simp]
+theorem ClosedUpperHalfPlane.mem_chartAt_euclideanHalfSpace_target (M : Type*)
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M] (x : M)
+    (v : EuclideanHalfSpace (1 + 1)) :
+    letI := euclideanHalfSpaceChartedSpace M
+    v ∈ (chartAt (EuclideanHalfSpace (1 + 1)) x).target ↔
+      euclideanHalfSpaceHomeomorph.symm v ∈ (chartAt ClosedUpperHalfPlane x).target := by
+  rw [chartAt_euclideanHalfSpace]
+  simp
 
 /-- A `C^n` manifold modelled on the closed upper half-plane is a `C^n` manifold modelled on
 `𝓡∂ 2`, for its charts read in the native half-space coordinates `s + it ↦ (t, s)`. -/

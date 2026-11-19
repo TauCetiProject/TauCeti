@@ -11,6 +11,7 @@ public import TauCeti.Topology.Constructions.DoubleAlong.Separation
 public import TauCeti.Geometry.Manifold.Boundary.Derivative
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.VectorField.StrictInward
 
 /-!
@@ -68,7 +69,7 @@ attached only to doubles along the complement of `TauCeti.borderedInterior M`.
 * `TauCeti.SchottkyDouble.doubleChart_mem_maximalAtlas`: the doubled chart of a chart of the
   bordered holomorphic maximal atlas of `M` is a holomorphic chart of the double.
 * `TauCeti.SchottkyDouble.instHasGroupoid` and `TauCeti.SchottkyDouble.instIsManifold`: the double
-  is a Riemann surface without boundary.
+  is a Riemann surface without boundary; `instIsManifoldReal` also gives its real analytic atlas.
 * `TauCeti.SchottkyDouble.instT2Space`, `TauCeti.SchottkyDouble.instSecondCountableTopology`: the
   double is Hausdorff and second countable when `M` is. Compactness is inherited from
   `TauCeti.DoubleAlong`.
@@ -463,6 +464,10 @@ instance instHasGroupoid : HasGroupoid (SchottkyDouble M) (contDiffGroupoid ω �
 instance instIsManifold : IsManifold 𝓘(ℂ) ω (SchottkyDouble M) :=
   IsManifold.mk' _ _ _
 
+/-- The holomorphic Schottky atlas is also a real analytic manifold atlas. -/
+instance instIsManifoldReal : IsManifold 𝓘(ℝ, ℂ) ω (SchottkyDouble M) :=
+  (inferInstance : IsManifold 𝓘(ℂ) ω (SchottkyDouble M)).restrictScalars ℝ
+
 end holomorphic
 
 /-- The Schottky double of a Hausdorff Riemann surface with boundary is Hausdorff. -/
@@ -583,46 +588,26 @@ theorem writtenInExtChartAt_inl_eqOn_id [IsManifold closedUpperHalfPlaneModel 1 
   simpa only [closedUpperHalfPlaneModel_apply] using
     closedUpperHalfPlaneModel.right_inv hw.2
 
-
 /-- The full first sheet, with its original real model with corners, is a smooth embedding. -/
 theorem isSmoothEmbedding_inl [HasGroupoid M borderedHolomorphicGroupoid]
     {n : ℕ∞ω} (hn : n ≤ ∞) :
     Manifold.IsSmoothEmbedding closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) n
     (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) := by
-  have h : Manifold.IsSmoothEmbedding closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) ∞
-    (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) := by
-    have : IsManifold 𝓘(ℝ, ℂ) ∞ (SchottkyDouble M) :=
-      (inferInstance : IsManifold 𝓘(ℂ) ∞ (SchottkyDouble M)).restrictScalars ℝ
-    refine ⟨Manifold.IsImmersionOfComplement.isImmersion (F := PUnit.{1}) ?_,
-      DoubleAlong.isEmbedding_inl _⟩
-    intro x
-    apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
-      (DoubleAlong.inl _).continuous.continuousAt (ContinuousLinearEquiv.prodUnique ℝ ℂ PUnit.{1})
-    intro w hw
-    simpa only [writtenInExtChartAt, Function.comp_apply,
-      ContinuousLinearEquiv.prodUnique_apply, id_eq] using
-      writtenInExtChartAt_inl_eqOn_id x hw
-  exact h.of_le hn
+  apply (Topology.IsEmbedding.isSmoothEmbedding_of_writtenInExtChartAt_eqOn
+    (n := ∞) (DoubleAlong.isEmbedding_inl (borderedInterior M : Set M)ᶜ)
+    (ContinuousLinearEquiv.prodUnique ℝ ℂ PUnit.{1}) ?_).of_le hn
+  intro x w hw
+  simpa only [Function.comp_apply, ContinuousLinearEquiv.prodUnique_apply, id_eq] using
+    writtenInExtChartAt_inl_eqOn_id x hw
 
 /-- The real manifold derivative of the full first sheet is the identity in preferred charts. -/
 theorem hasMFDerivAt_inl [IsManifold closedUpperHalfPlaneModel 1 M]
     (x : M) : HasMFDerivAt closedUpperHalfPlaneModel 𝓘(ℝ, ℂ)
     (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) x (ContinuousLinearMap.id ℝ ℂ) := by
-  refine ⟨(DoubleAlong.inl _).continuous.continuousAt, ?_⟩
-  have heq : writtenInExtChartAt closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) x
-      (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) =ᶠ[
-        𝓝[range closedUpperHalfPlaneModel] (extChartAt closedUpperHalfPlaneModel x x)] id := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin (I := closedUpperHalfPlaneModel) x]
-      with w hw
-    exact writtenInExtChartAt_inl_eqOn_id x hw
-  have hd := (hasFDerivWithinAt_id (𝕜 := ℝ) (extChartAt closedUpperHalfPlaneModel x x)
-    (range closedUpperHalfPlaneModel)).congr_of_eventuallyEq heq
-      (writtenInExtChartAt_inl_eqOn_id x (mem_extChartAt_target x))
-  -- The model-to-tangent casts in HasMFDerivAt are identities on these fixed models;
-  -- compare their continuous linear maps on each model vector.
-  convert hd using 1
-  ext v
-  rfl
+  apply ContinuousAt.hasMFDerivAt_of_writtenInExtChartAt_eventuallyEq
+    (DoubleAlong.inl _).continuous.continuousAt
+  filter_upwards [extChartAt_target_mem_nhdsWithin (I := closedUpperHalfPlaneModel) x] with w hw
+  exact writtenInExtChartAt_inl_eqOn_id x hw
 
 /-- The first-sheet derivative is the real identity. -/
 @[simp]
@@ -660,41 +645,22 @@ theorem isSmoothEmbedding_inr [HasGroupoid M borderedHolomorphicGroupoid]
     {n : ℕ∞ω} (hn : n ≤ ∞) :
     Manifold.IsSmoothEmbedding closedUpperHalfPlaneModel
     𝓘(ℝ, ℂ) n (DoubleAlong.inr (borderedInterior M : Set M)ᶜ) := by
-  have h : Manifold.IsSmoothEmbedding closedUpperHalfPlaneModel
-    𝓘(ℝ, ℂ) ∞ (DoubleAlong.inr (borderedInterior M : Set M)ᶜ) := by
-    have : IsManifold 𝓘(ℝ, ℂ) ∞ (SchottkyDouble M) :=
-      (inferInstance : IsManifold 𝓘(ℂ) ∞ (SchottkyDouble M)).restrictScalars ℝ
-    refine ⟨Manifold.IsImmersionOfComplement.isImmersion (F := PUnit.{1}) ?_,
-      DoubleAlong.isEmbedding_inr _⟩
-    intro x
-    apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
-      (DoubleAlong.inr _).continuous.continuousAt
-      ((ContinuousLinearEquiv.prodUnique ℝ ℂ PUnit.{1}).trans Complex.conjCLE)
-    intro w hw
-    simpa only [writtenInExtChartAt, Function.comp_apply, ContinuousLinearEquiv.trans_apply,
-      ContinuousLinearEquiv.prodUnique_apply, Complex.conjCLE_apply] using
-        writtenInExtChartAt_inr_eqOn_conj x hw
-  exact h.of_le hn
+  apply (Topology.IsEmbedding.isSmoothEmbedding_of_writtenInExtChartAt_eqOn
+    (n := ∞) (DoubleAlong.isEmbedding_inr (borderedInterior M : Set M)ᶜ)
+    ((ContinuousLinearEquiv.prodUnique ℝ ℂ PUnit.{1}).trans Complex.conjCLE) ?_).of_le hn
+  intro x w hw
+  simpa only [Function.comp_apply, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.prodUnique_apply, Complex.conjCLE_apply] using
+    writtenInExtChartAt_inr_eqOn_conj x hw
 
 /-- The real manifold derivative of the full second sheet is complex conjugation. -/
 theorem hasMFDerivAt_inr [IsManifold closedUpperHalfPlaneModel 1 M]
     (x : M) : HasMFDerivAt closedUpperHalfPlaneModel 𝓘(ℝ, ℂ)
     (DoubleAlong.inr (borderedInterior M : Set M)ᶜ) x Complex.conjCLE.toContinuousLinearMap := by
-  refine ⟨(DoubleAlong.inr _).continuous.continuousAt, ?_⟩
-  have heq : writtenInExtChartAt closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) x
-      (DoubleAlong.inr (borderedInterior M : Set M)ᶜ) =ᶠ[
-        𝓝[range closedUpperHalfPlaneModel] (extChartAt closedUpperHalfPlaneModel x x)]
-        Complex.conjCLE := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin (I := closedUpperHalfPlaneModel) x]
-      with w hw
-    exact writtenInExtChartAt_inr_eqOn_conj x hw
-  have hd := Complex.conjCLE.hasFDerivAt.hasFDerivWithinAt.congr_of_eventuallyEq heq
-    (writtenInExtChartAt_inr_eqOn_conj x (mem_extChartAt_target x))
-  -- The model-to-tangent casts in HasMFDerivAt are identities on these fixed models;
-  -- compare their continuous linear maps on each model vector.
-  convert hd using 1
-  ext v
-  rfl
+  apply ContinuousAt.hasMFDerivAt_of_writtenInExtChartAt_eventuallyEq
+    (DoubleAlong.inr _).continuous.continuousAt
+  filter_upwards [extChartAt_target_mem_nhdsWithin (I := closedUpperHalfPlaneModel) x] with w hw
+  exact writtenInExtChartAt_inr_eqOn_conj x hw
 
 /-- The second-sheet derivative is the real conjugation map. -/
 @[simp]
@@ -736,22 +702,9 @@ theorem mem_strictInwardTangentCone_iff_im_mfderiv_inr_neg
     v ∈ strictInwardTangentCone closedUpperHalfPlaneModel x ↔
       (mfderiv closedUpperHalfPlaneModel 𝓘(ℝ, ℂ)
         (DoubleAlong.inr (borderedInterior M : Set M)ᶜ) x v).im < 0 := by
-  have hscalar : (mfderiv closedUpperHalfPlaneModel 𝓘(ℝ, ℂ)
-      (DoubleAlong.inr (borderedInterior M : Set M)ᶜ) x v).im = -(v : ℂ).im :=
-    (congrArg Complex.im (mfderiv_inr_apply x v)).trans (Complex.conj_im (v : ℂ))
-  have hxim : (extChartAt closedUpperHalfPlaneModel x x).im = 0 := by
-    simpa only [extChartAt_coe, Function.comp_apply, closedUpperHalfPlaneModel_apply] using
-      (im_eq_zero_iff_notMem_borderedInterior (IsManifold.chart_mem_maximalAtlas _)
-        (mem_chart_source _ _)).2 hx
-  have hp := mem_strictInwardCone_closedUpperHalfPlaneModel_iff
-    (extChartAt closedUpperHalfPlaneModel x x)
-    (tangentSpaceCastModel closedUpperHalfPlaneModel x v) hxim
-  rw [mem_strictInwardTangentCone_iff]
-  constructor
-  · intro hv
-    exact hscalar.symm ▸ neg_lt_zero.mpr (hp.mp hv)
-  · intro hv
-    exact hp.mpr (neg_lt_zero.mp (hscalar ▸ hv))
+  simpa only [mfderiv_inl_apply, mfderiv_inr_apply, Complex.conj_im (v : ℂ),
+    neg_lt_zero] using
+    mem_strictInwardTangentCone_iff_im_mfderiv_inl_pos x hx v
 
 section NativeBoundary
 attribute [local instance] ClosedUpperHalfPlane.euclideanHalfSpaceChartedSpace
@@ -767,23 +720,13 @@ theorem writtenInExtChartAt_inl_euclideanHalfSpace_eqOn [IsManifold closedUpperH
   intro v hv
   rw [extChartAt_target] at hv
   have hvt := hv.1
-  rw [ClosedUpperHalfPlane.chartAt_euclideanHalfSpace] at hvt
-  -- The composed chart target undoes the coordinate homeomorphism before the original chart.
-  change (𝓡∂ (1 + 1)).symm v ∈ Set.univ ∧
-    ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph.symm ((𝓡∂ (1 + 1)).symm v) ∈
-      (chartAt ClosedUpperHalfPlane x).target at hvt
+  rw [Set.mem_preimage, ClosedUpperHalfPlane.mem_chartAt_euclideanHalfSpace_target] at hvt
   have hmodel : ((𝓡∂ (1 + 1)).symm v).1 = v := by
     exact (𝓡∂ (1 + 1)).right_inv hv.2
   simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_coe, extChartAt_coe_symm,
     modelWithCornersSelf_coe, Function.id_comp, SchottkyDouble.chartAt_inl,
-    ClosedUpperHalfPlane.chartAt_euclideanHalfSpace]
-  -- Expose only the two native composed charts, their model inclusions and singleton
-  -- homeomorphism, leaving the chart cancellation and model inverse as public laws below.
-  change SchottkyDouble.doubleChart (chartAt ClosedUpperHalfPlane x)
-    (IsManifold.chart_mem_maximalAtlas _)
-    (DoubleAlong.inl _ ((chartAt ClosedUpperHalfPlane x).symm
-      (ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph.symm ((𝓡∂ (1 + 1)).symm v)))) = _
-  rw [SchottkyDouble.doubleChart_inl, (chartAt ClosedUpperHalfPlane x).right_inv hvt.2,
+    ClosedUpperHalfPlane.chartAt_euclideanHalfSpace_symm_apply]
+  rw [SchottkyDouble.doubleChart_inl, (chartAt ClosedUpperHalfPlane x).right_inv hvt,
     ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph_symm, hmodel]
 
 /-- The full first sheet is a smooth embedding also for the native real half-space model. -/
@@ -791,49 +734,32 @@ theorem isSmoothEmbedding_inl_euclideanHalfSpace [HasGroupoid M borderedHolomorp
     {n : ℕ∞ω} (hn : n ≤ ∞) :
     Manifold.IsSmoothEmbedding (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) n
       (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) := by
-  have h : Manifold.IsSmoothEmbedding (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) ∞
-      (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) := by
-    have : IsManifold (𝓡∂ (1 + 1)) ∞ M :=
-      ClosedUpperHalfPlane.isManifold_euclideanHalfSpace M
-    have : IsManifold 𝓘(ℝ, ℂ) ∞ (SchottkyDouble M) :=
-      (inferInstance : IsManifold 𝓘(ℂ) ∞ (SchottkyDouble M)).restrictScalars ℝ
-    refine ⟨Manifold.IsImmersionOfComplement.isImmersion (F := PUnit.{1}) ?_,
-      DoubleAlong.isEmbedding_inl _⟩
-    intro x
-    apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
-      (DoubleAlong.inl _).continuous.continuousAt
-      ((ContinuousLinearEquiv.prodUnique ℝ (EuclideanSpace ℝ (Fin (1 + 1))) PUnit.{1}).trans
-        closedUpperHalfPlaneCoordinates.symm)
-    intro w hw
-    simpa only [writtenInExtChartAt, Function.comp_apply, ContinuousLinearEquiv.trans_apply,
-      ContinuousLinearEquiv.prodUnique_apply] using
-        writtenInExtChartAt_inl_euclideanHalfSpace_eqOn x hw
-  exact h.of_le hn
+  have : IsManifold (𝓡∂ (1 + 1)) ∞ M :=
+    ClosedUpperHalfPlane.isManifold_euclideanHalfSpace M
+  apply (Topology.IsEmbedding.isSmoothEmbedding_of_writtenInExtChartAt_eqOn
+    (n := ∞) (DoubleAlong.isEmbedding_inl (borderedInterior M : Set M)ᶜ)
+    ((ContinuousLinearEquiv.prodUnique ℝ (EuclideanSpace ℝ (Fin (1 + 1))) PUnit.{1}).trans
+      closedUpperHalfPlaneCoordinates.symm) ?_).of_le hn
+  intro x w hw
+  simpa only [Function.comp_apply, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.prodUnique_apply] using
+    writtenInExtChartAt_inl_euclideanHalfSpace_eqOn x hw
 
 /-- The first-sheet derivative for the native half-space model is the inverse coordinate map. -/
 theorem hasMFDerivAt_inl_euclideanHalfSpace [IsManifold closedUpperHalfPlaneModel 1 M]
     (x : M) : HasMFDerivAt (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ)
     (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) x
       closedUpperHalfPlaneCoordinates.symm.toContinuousLinearMap := by
-  refine ⟨(DoubleAlong.inl _).continuous.continuousAt, ?_⟩
-  have heq : writtenInExtChartAt (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) x
-      (DoubleAlong.inl (borderedInterior M : Set M)ᶜ) =ᶠ[
-        𝓝[range (𝓡∂ (1 + 1))] (extChartAt (𝓡∂ (1 + 1)) x x)]
-        closedUpperHalfPlaneCoordinates.symm := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin (I := 𝓡∂ (1 + 1)) x] with w hw
-    exact writtenInExtChartAt_inl_euclideanHalfSpace_eqOn x hw
-  have hd :=
-    closedUpperHalfPlaneCoordinates.symm.hasFDerivAt.hasFDerivWithinAt.congr_of_eventuallyEq
-    heq (writtenInExtChartAt_inl_euclideanHalfSpace_eqOn x (mem_extChartAt_target x))
-  -- The model-to-tangent casts in HasMFDerivAt are identities on these fixed models;
-  -- compare their continuous linear maps on each model vector.
-  convert hd using 1
-  ext v
-  rfl
+  apply ContinuousAt.hasMFDerivAt_of_writtenInExtChartAt_eventuallyEq
+    (DoubleAlong.inl _).continuous.continuousAt
+  filter_upwards [extChartAt_target_mem_nhdsWithin (I := 𝓡∂ (1 + 1)) x] with w hw
+  exact writtenInExtChartAt_inl_euclideanHalfSpace_eqOn x hw
 
 /-- The inclusion of the actual native manifold boundary into the first sheet of the double.
 The boundary uses the half-space charts obtained from the original bordered charts by
-`ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph` and the canonical boundary charts. -/
+`ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph` and the canonical boundary charts.
+Its `C¹` hypothesis is needed to state the codomain `SchottkyDouble M`, whose gluing locus
+is packaged using the open manifold interior. -/
 def boundaryInl [IsManifold closedUpperHalfPlaneModel 1 M]
     (y : (𝓡∂ (1 + 1)).boundary M) : SchottkyDouble M :=
   DoubleAlong.inl (borderedInterior M : Set M)ᶜ (y : M)
@@ -890,7 +816,6 @@ theorem writtenInExtChartAt_boundaryInl_eqOn [IsManifold closedUpperHalfPlaneMod
     EuclideanHalfSpace.modelWithCornersEuclideanHalfSpace_symm_boundaryParam] using
       writtenInExtChartAt_inl_euclideanHalfSpace_eqOn (p : M) hparam
 
-
 /-- The derivative of the actual boundary inclusion inserts the zero normal coordinate and
 then applies the native half-space-to-complex coordinate comparison. -/
 theorem hasMFDerivAt_boundaryInl [IsManifold closedUpperHalfPlaneModel 1 M]
@@ -898,19 +823,11 @@ theorem hasMFDerivAt_boundaryInl [IsManifold closedUpperHalfPlaneModel 1 M]
     HasMFDerivAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) (boundaryInl (M := M)) p
       (closedUpperHalfPlaneCoordinates.symm.toContinuousLinearMap.comp
         (euclideanHalfSpaceBoundaryParam 1)) := by
-  refine ⟨((DoubleAlong.inl _).continuous.comp continuous_subtype_val).continuousAt, ?_⟩
-  let L := closedUpperHalfPlaneCoordinates.symm.toContinuousLinearMap.comp
-    (euclideanHalfSpaceBoundaryParam 1)
-  have heq : writtenInExtChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) p
-      (boundaryInl (M := M)) =ᶠ[
-        𝓝 (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) p p)] L := by
-    filter_upwards [extChartAt_target_mem_nhds (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin 1))) p]
-      with w hw
-    exact writtenInExtChartAt_boundaryInl_eqOn p hw
-  have hd := L.hasFDerivAt.congr_of_eventuallyEq heq
-  convert hd.hasFDerivWithinAt using 1
-  ext v
-  rfl
+  apply ContinuousAt.hasMFDerivAt_of_writtenInExtChartAt_eventuallyEq
+    ((DoubleAlong.inl _).continuous.comp continuous_subtype_val).continuousAt
+  filter_upwards [extChartAt_target_mem_nhdsWithin (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin 1))) p]
+    with w hw
+  exact writtenInExtChartAt_boundaryInl_eqOn p hw
 
 /-- The boundary derivative in preferred charts is the native zero-normal-coordinate map. -/
 @[simp]
@@ -945,27 +862,20 @@ theorem isSmoothEmbedding_boundaryInl [HasGroupoid M borderedHolomorphicGroupoid
     {n : ℕ∞ω} (hn : n ≤ ∞) :
     Manifold.IsSmoothEmbedding 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) n
     (boundaryInl (M := M)) := by
-  have h : Manifold.IsSmoothEmbedding 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) ∞
-    (boundaryInl (M := M)) := by
-    have : IsManifold (𝓡∂ (1 + 1)) ∞ M :=
-      ClosedUpperHalfPlane.isManifold_euclideanHalfSpace M
-    have : IsManifold 𝓘(ℝ, ℂ) ∞ (SchottkyDouble M) :=
-      (inferInstance : IsManifold 𝓘(ℂ) ∞ (SchottkyDouble M)).restrictScalars ℝ
-    have : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) ∞ ((𝓡∂ (1 + 1)).boundary M) :=
-      TauCeti.isManifold_boundary (n := 1) M
-    refine ⟨Manifold.IsImmersionOfComplement.isImmersion (F := ℝ) ?_,
-      (DoubleAlong.isEmbedding_inl _).comp IsEmbedding.subtypeVal⟩
-    intro p
-    apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
-      ((DoubleAlong.inl _).continuous.comp continuous_subtype_val).continuousAt
-      ((euclideanHalfSpaceBoundaryNormalEquiv 1).trans closedUpperHalfPlaneCoordinates.symm)
-    intro z hz
-    simpa only [writtenInExtChartAt, Function.comp_apply, ContinuousLinearEquiv.trans_apply,
-      euclideanHalfSpaceBoundaryNormalEquiv_apply_zero_eq_boundaryParam, boundaryInl_apply] using
-        writtenInExtChartAt_boundaryInl_eqOn p hz
-  exact h.of_le hn
+  have : IsManifold (𝓡∂ (1 + 1)) ∞ M :=
+    ClosedUpperHalfPlane.isManifold_euclideanHalfSpace M
+  have : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) ∞ ((𝓡∂ (1 + 1)).boundary M) :=
+    TauCeti.isManifold_boundary (n := 1) M
+  apply (Topology.IsEmbedding.isSmoothEmbedding_of_writtenInExtChartAt_eqOn (n := ∞)
+    (f := boundaryInl (M := M))
+    ((DoubleAlong.isEmbedding_inl _).comp IsEmbedding.subtypeVal)
+    ((euclideanHalfSpaceBoundaryNormalEquiv 1).trans closedUpperHalfPlaneCoordinates.symm)
+    ?_).of_le hn
+  intro p z hz
+  simpa only [Function.comp_apply, ContinuousLinearEquiv.trans_apply,
+    euclideanHalfSpaceBoundaryNormalEquiv_apply_zero_eq_boundaryParam] using
+    writtenInExtChartAt_boundaryInl_eqOn p hz
 
 end NativeBoundary
-
 
 end TauCeti.SchottkyDouble
