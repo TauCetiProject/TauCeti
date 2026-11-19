@@ -232,6 +232,7 @@ private theorem source_zero_client (A : TangentSpace 𝓘(ℝ, ZR) (0 : ZR) →L
   simp [ZR]
 
 private abbrev ZC := EuclideanSpace ℂ (Fin 0)
+/-- The zero-dimensional complex target carries its inherited real metric. -/
 local instance zeroTargetMetric : InnerProductSpace ℝ (EuclideanSpace ℂ (Fin 0)) :=
   InnerProductSpace.complexToReal
 
@@ -247,7 +248,9 @@ private theorem target_zero_client (A : TangentSpace 𝓘(ℝ, ℂ) (0 : ℂ) �
   rw [hA]
   exact ⟨by simp, by simp, by simp [ZC]⟩
 
+/-- The literal empty native manifold has the canonical empty complex atlas. -/
 local instance emptyCharted : ChartedSpace ℂ Empty := ChartedSpace.empty _ _
+/-- The tangent metric on the empty manifold has no fibre values to choose. -/
 local instance emptyMetric :
     RiemannianBundle (fun y : Empty ↦ TangentSpace 𝓘(ℝ, ℂ) y) where
   g := {
