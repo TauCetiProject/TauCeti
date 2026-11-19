@@ -21,6 +21,8 @@ An `R`-module `M` is a separator of `ModuleCat R`, a module that detects morphis
 is a generator in the sense of `TauCeti.Module.IsGenerator`: `R` is a quotient of a finite power
 of `M` (`ModuleCat.isSeparator_iff_isGenerator`). If `M` is a separator, the quotient map
 `R ⟶ R ⧸ τ` by the trace ideal `τ` of `M` vanishes on every morphism out of `M`, so `τ = R`.
+The same description of the separators of `FGModuleCat R`
+(`FGModuleCat.isSeparator_iff_isGenerator`) is deduced from this one.
 
 A **progenerator** of `R` is a finitely generated projective generator. Every finitely generated
 projective module is a retract of a finite power of any generator
