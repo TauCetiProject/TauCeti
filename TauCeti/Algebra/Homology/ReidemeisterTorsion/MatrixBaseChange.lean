@@ -23,12 +23,24 @@ The same holds for the torsion of a based two-periodic complex
 (`HomologicalComplex.map_parityTorsion_matrixBaseChange`), by
 `HomologicalComplex.map_parityTorsion`.
 
+Changing the bases `c i` of `C` to `c' i` changes the torsion of the coordinate base change by the
+images under `φ` of the determinants `[c'ᵢ / cᵢ]` of the new bases with respect to the old ones,
+with the exponents of the basis-change formulas over a field
+(`HomologicalComplex.reidemeisterTorsion_matrixBaseChange_eq_mul_finprod_det`,
+`HomologicalComplex.parityTorsion_matrixBaseChange_eq_mul_det`). The coordinate base changes of
+`(C, c)` and `(C, c')` are different complexes, but the first, in the basis given by the columns
+of the image under `φ` of the matrix of `c' i` in `c i`, has the differential matrices of the
+second.
+
 ## Main results
 
 * `HomologicalComplex.map_reidemeisterTorsion_matrixBaseChange`: naturality of the torsion of the
   coordinate base change in the field.
 * `HomologicalComplex.map_parityTorsion_matrixBaseChange`: naturality of the torsion of the
   coordinate base change of a two-periodic complex in the field.
+* `HomologicalComplex.reidemeisterTorsion_matrixBaseChange_eq_mul_finprod_det`,
+  `HomologicalComplex.parityTorsion_matrixBaseChange_eq_mul_det`: the change of the torsion of the
+  coordinate base change under a change of the bases of `C`.
 -/
 
 public section
@@ -60,5 +72,89 @@ theorem map_parityTorsion_matrixBaseChange
       (C.matrixBaseChange c (ψ.comp φ)).parityTorsion (C.matrixBaseChangeBasis c (ψ.comp φ)) :=
   map_parityTorsion ψ fun i j ↦ by
     rw [toMatrix_matrixBaseChange_d, toMatrix_matrixBaseChange_d, Matrix.map_map, RingHom.coe_comp]
+
+/-! ### Changing the bases of the complex -/
+
+section BasisChange
+
+variable {ι : Type*} {s : ComplexShape ι} {C : HomologicalComplex (ModuleCat A) s} {n : ι → ℕ}
+  (c c' : ∀ i, Basis (Fin (n i)) A (C.X i))
+
+/-- The automorphism of the coordinate base change of `(C, c)` along `φ` in degree `i` whose
+matrix in the standard basis is the image under `φ` of the matrix of `c' i` in the basis `c i`;
+its inverse has the image of the matrix of `c i` in `c' i`. -/
+private noncomputable def basisChangeEquiv (i : ι) :
+    (C.matrixBaseChange c φ).X i ≃ₗ[K] (C.matrixBaseChange c φ).X i :=
+  let b := C.matrixBaseChangeBasis c φ i
+  LinearEquiv.ofLinearMap (Matrix.toLin b b (((c i).toMatrix (c' i)).map φ))
+    (Matrix.toLin b b (((c' i).toMatrix (c i)).map φ))
+    (by rw [← Matrix.toLin_mul, ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip,
+      Matrix.map_one _ φ.map_zero φ.map_one, Matrix.toLin_one])
+    (by rw [← Matrix.toLin_mul, ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip,
+      Matrix.map_one _ φ.map_zero φ.map_one, Matrix.toLin_one])
+
+/-- The basis of the coordinate base change of `(C, c)` along `φ` corresponding to the basis
+`c' i` of `C.X i`: its vectors are the columns of the image under `φ` of the matrix of `c' i` in
+`c i`. -/
+private noncomputable def basisChangeBasis (i : ι) :
+    Basis (Fin (n i)) K ((C.matrixBaseChange c φ).X i) :=
+  (C.matrixBaseChangeBasis c φ i).map (basisChangeEquiv φ c c' i)
+
+/-- In the bases `basisChangeBasis`, the matrices of the differentials of the coordinate base
+change of `(C, c)` are those of the coordinate base change of `(C, c')`. -/
+private theorem toMatrix_basisChangeBasis_d (i j : ι) :
+    LinearMap.toMatrix (basisChangeBasis φ c c' i) (basisChangeBasis φ c c' j)
+        ((C.matrixBaseChange c φ).d i j).hom =
+      (LinearMap.toMatrix (c' i) (c' j) (C.d i j).hom).map φ := by
+  rw [basisChangeBasis, basisChangeBasis, LinearMap.toMatrix_map_left,
+    LinearMap.toMatrix_map_right, LinearMap.toMatrix_comp _ (C.matrixBaseChangeBasis c φ j),
+    LinearMap.toMatrix_comp _ (C.matrixBaseChangeBasis c φ i), toMatrix_matrixBaseChange_d,
+    ← basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix (c' i) (c i) (c' j) (c j),
+    Matrix.map_mul, Matrix.map_mul]
+  simp [basisChangeEquiv, Matrix.mul_assoc]
+
+/-- The determinant of `basisChangeBasis` with respect to the standard basis is the image under
+`φ` of the determinant of `c' i` with respect to `c i`. -/
+private theorem det_basisChangeBasis (i : ι) :
+    (C.matrixBaseChangeBasis c φ i).det (basisChangeBasis φ c c' i) =
+      φ ((c i).det (c' i)) := by
+  rw [Basis.det_apply, Basis.det_apply, RingHom.map_det, basisChangeBasis, Basis.coe_map]
+  congr 1
+  ext k l
+  simp [Basis.toMatrix_apply, basisChangeEquiv, Matrix.toLin_self, Finsupp.single_apply]
+
+/-- The basis-change formula for the torsion of a coordinate base change: replacing the bases
+`c i` of a based two-periodic complex `C` over a commutative ring `A` by `c' i` multiplies the
+torsion of its coordinate base change along `φ : A →+* K` by
+`φ [c'₀ / c₀] · φ [c₁ / c'₁]`, where `[c'ᵢ / cᵢ]` is the determinant of `c' i` with respect to
+`c i`. -/
+theorem parityTorsion_matrixBaseChange_eq_mul_det
+    {C : HomologicalComplex (ModuleCat A) (ComplexShape.up (ZMod 2))} {n : ZMod 2 → ℕ}
+    (c c' : ∀ i, Basis (Fin (n i)) A (C.X i)) :
+    (C.matrixBaseChange c' φ).parityTorsion (C.matrixBaseChangeBasis c' φ) =
+      (C.matrixBaseChange c φ).parityTorsion (C.matrixBaseChangeBasis c φ) *
+        (φ ((c 0).det (c' 0)) * φ ((c' 1).det (c 1))) := by
+  rw [← map_parityTorsion (RingHom.id K) (c := basisChangeBasis φ c c') fun i j ↦ by
+      rw [toMatrix_matrixBaseChange_d, toMatrix_basisChangeBasis_d, RingHom.coe_id, Matrix.map_id],
+    RingHom.id_apply, parityTorsion_eq_mul_det (C.matrixBaseChangeBasis c φ),
+    det_basisChangeBasis, det_basisChangeBasis]
+  congr 2
+  exact inv_eq_of_mul_eq_one_right (by rw [← map_mul, Basis.det_mul_det, Basis.det_self, map_one])
+
+/-- The basis-change formula for the torsion of a coordinate base change: replacing the bases
+`c i` of a based complex `C` over a commutative ring `A` by `c' i` multiplies the torsion of its
+coordinate base change along `φ : A →+* K` by `∏ᵢ φ [c'ᵢ / cᵢ] ^ ((-1) ^ i)`, where `[c'ᵢ / cᵢ]`
+is the determinant of `c' i` with respect to `c i`. -/
+theorem reidemeisterTorsion_matrixBaseChange_eq_mul_finprod_det
+    {C : ChainComplex (ModuleCat A) ℤ} {n : ℤ → ℕ} (c c' : ∀ i, Basis (Fin (n i)) A (C.X i)) :
+    (C.matrixBaseChange c' φ).reidemeisterTorsion (C.matrixBaseChangeBasis c' φ) =
+      (C.matrixBaseChange c φ).reidemeisterTorsion (C.matrixBaseChangeBasis c φ) *
+        ∏ᶠ i : ℤ, φ ((c i).det (c' i)) ^ (i.negOnePow : ℤ) := by
+  rw [← map_reidemeisterTorsion (RingHom.id K) (c := basisChangeBasis φ c c') fun i ↦ by
+      rw [toMatrix_matrixBaseChange_d, toMatrix_basisChangeBasis_d, RingHom.coe_id, Matrix.map_id],
+    RingHom.id_apply, reidemeisterTorsion_eq_mul_finprod_det _ (C.matrixBaseChangeBasis c φ)]
+  simp_rw [det_basisChangeBasis]
+
+end BasisChange
 
 end HomologicalComplex
