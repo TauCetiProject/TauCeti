@@ -680,6 +680,7 @@ def _root_.TopologicalSpace.Opens.chartPieceInterior (U : TopologicalSpace.Opens
 
 /-- A point lies in `U.chartPieceInterior x K` when it lies in `U` and in the chart source, with
 coordinates in the relative interior of `K`. -/
+@[simp]
 theorem _root_.TopologicalSpace.Opens.mem_chartPieceInterior {U : TopologicalSpace.Opens M}
     {x : U} {K : TopologicalSpace.Compacts (extChartAt I x).target} {y : M} :
     y ∈ U.chartPieceInterior x K ↔ ∃ hy : y ∈ U, ∃ hs : (⟨y, hy⟩ : U) ∈ (extChartAt I x).source,
