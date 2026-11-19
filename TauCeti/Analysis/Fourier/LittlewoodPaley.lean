@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.One
 import TauCeti.MeasureTheory.Function.Lp.SequenceValued
@@ -422,7 +423,8 @@ private theorem exists_norm_sum_toLp_symbol_smul_le :
       (φ.inhomogeneousLittlewoodPaleySchwartz j).coeFn_toLp ∞ (volume : Measure V)]
     with ξ h₁ h₂ h₃
   rw [h₁]
-  simp only [h₂, Pi.smul_apply', h₃, φ.inhomogeneousLittlewoodPaleySchwartz_apply, smul_eq_mul,
+  simp only [h₂]
+  simp only [Pi.smul_apply', h₃, φ.inhomogeneousLittlewoodPaleySchwartz_apply, smul_eq_mul,
     ← Complex.ofReal_mul,
     ← Complex.ofReal_sum, Complex.norm_real, Real.norm_eq_abs]
   rw [abs_of_nonneg (Finset.sum_nonneg fun j _ ↦ mul_self_nonneg _)]
@@ -570,18 +572,6 @@ variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
   [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
 
-/-- If the symbols `mₖ ∈ L^∞` are almost everywhere the real functions `aₖ`, and
-`∑_{k ∈ s} aₖ aⱼ = aⱼ` pointwise, then `∑_{k ∈ s} mₖ mⱼ = mⱼ` in `L^∞`. -/
-private theorem sum_smul_eq_of_ae_eq_ofReal {α ι : Type*} [MeasurableSpace α] {μ : Measure α}
-    [Countable ι] {m : ι → Lp ℂ ∞ μ} {a : ι → α → ℝ} (hm : ∀ k, m k =ᵐ[μ] fun x ↦ (a k x : ℂ))
-    {s : Finset ι} {j : ι} (h : ∀ x, ∑ k ∈ s, a k x * a j x = a j x) :
-    ∑ k ∈ s, (m k • m j : Lp ℂ ∞ μ) = m j := by
-  apply Lp.ext
-  filter_upwards [coeFn_fun_finsetSum s fun k ↦ (m k • m j : Lp ℂ ∞ μ),
-    ae_all_iff.2 fun k ↦ coeFn_lpSMul (r := ∞) (m k) (m j), ae_all_iff.2 hm] with x h₁ h₂ h₃
-  rw [h₁]
-  simp only [h₂, Pi.smul_apply', h₃, smul_eq_mul, ← Complex.ofReal_mul, ← Complex.ofReal_sum, h]
-
 /-- **Littlewood–Paley reconstruction in `L²`.** The partial sums `∑_{j < N} Δⱼ f` of the
 Littlewood–Paley blocks of `f ∈ L²(V, F)` converge to `f` in `L²`. Each symbol enters as any
 element of `L^∞` almost everywhere equal to the piece `ψⱼ` of the inhomogeneous partition. -/
@@ -637,7 +627,8 @@ private theorem sum_toLp_symbol_smul_toLp_symbol {L : ℕ}
       ((φ.inhomogeneousLittlewoodPaleySchwartz k).toLp ∞ volume •
           (φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞ volume : Lp ℂ ∞ (volume : Measure V)) =
       (φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞ volume := by
-  refine Lp.sum_smul_eq_of_ae_eq_ofReal (fun k ↦
+  simp only [Lp.smul_eq_mul]
+  refine Lp.sum_mul_eq_of_ae_eq_ofReal (fun k ↦
     ((φ.inhomogeneousLittlewoodPaleySchwartz k).coeFn_toLp ∞ volume).trans
       (.of_forall (φ.inhomogeneousLittlewoodPaleySchwartz_apply k))) fun ξ ↦ ?_
   rw [← Finset.sum_mul, ← φ.enlargedLittlewoodPaley_apply,
@@ -923,8 +914,9 @@ theorem sum_fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley {L : ℕ}
       Lp.fourierMultiplierCLM F (m j) f := by
   -- As symbols in `L^∞`, `∑_{j - L < k < j + L} ψₖ ψⱼ = ψⱼ`.
   have hsym : ∑ k ∈ Finset.Ioo (j - L) (j + L), (m k • m j : Lp ℂ ∞ (volume : Measure V)) =
-      m j :=
-    Lp.sum_smul_eq_of_ae_eq_ofReal hm (φ.sum_littlewoodPaley_mul_littlewoodPaley hL j)
+      m j := by
+    simpa only [Lp.smul_eq_mul] using
+      Lp.sum_mul_eq_of_ae_eq_ofReal hm (φ.sum_littlewoodPaley_mul_littlewoodPaley hL j)
   simp only [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
   conv_rhs => rw [← hsym]
   rw [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply]

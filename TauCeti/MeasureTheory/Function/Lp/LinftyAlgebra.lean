@@ -45,6 +45,8 @@ almost everywhere equalities in place of pointwise ones.
   `CStarAlgebra` and `CommCStarAlgebra` on `Lp R ∞ μ`.
 * `MeasureTheory.Lp.reCLM_mul`, `MeasureTheory.Lp.imCLM_mul`, `MeasureTheory.Lp.normLp_mul_self_eq`:
   real/imaginary parts and squared pointwise norm of products in `Lp 𝕜 ∞ μ`.
+* `MeasureTheory.Lp.sum_mul_eq_of_ae_eq_ofReal`: a pointwise identity `∑ₖ aₖ aⱼ = aⱼ` of real
+  representatives gives the same identity in `Lp ℂ ∞ μ`.
 * `MeasureTheory.MemLp.sqrt_top`, `MeasureTheory.Lp.sqrtLp`,
   `MeasureTheory.Lp.nonneg_iff_exists_mul_self`: pointwise square roots and square characterization
   of nonnegative classes in `Lp ℝ ∞ μ`.
@@ -304,6 +306,18 @@ theorem selfAdjointLinearIsometryEquiv_mul (f g : selfAdjoint (Lp 𝕜 ∞ μ)) 
     LinearIsometryEquiv.symm_apply_apply, LinearIsometryEquiv.symm_apply_apply]
 
 end SelfAdjoint
+
+/-- If the classes `mₖ ∈ L^∞` are almost everywhere the real functions `aₖ`, and
+`∑_{k ∈ s} aₖ aⱼ = aⱼ` pointwise, then `∑_{k ∈ s} mₖ mⱼ = mⱼ` in `L^∞`. -/
+theorem sum_mul_eq_of_ae_eq_ofReal {ι : Type*} [Countable ι] {m : ι → Lp ℂ ∞ μ}
+    {a : ι → α → ℝ} (hm : ∀ k, m k =ᵐ[μ] fun x ↦ (a k x : ℂ)) {s : Finset ι} {j : ι}
+    (h : ∀ x, ∑ k ∈ s, a k x * a j x = a j x) :
+    ∑ k ∈ s, m k * m j = m j := by
+  apply Lp.ext
+  filter_upwards [coeFn_fun_finsetSum s fun k ↦ m k * m j,
+    ae_all_iff.2 fun k ↦ coeFn_mul (m k) (m j), ae_all_iff.2 hm] with x h₁ h₂ h₃
+  rw [h₁]
+  simp only [h₂, Pi.mul_apply, h₃, ← Complex.ofReal_mul, ← Complex.ofReal_sum, h]
 
 section SqrtAndSquareFunction
 
