@@ -69,7 +69,7 @@ Two forms of the equation are used.
   `i`, which is conjugate linear (`TauCeti.cayleyCoord_mul_eq_neg_mul`). Unlike the first form,
   this one is invariant under rotations of the domain: if `u` solves it, so does `w ↦ u(c w)` for
   `|c| = 1`.
-  The cutoff `χ` and the Cauchy transform (`TauCeti.cauchyTransform_comp_mul`) are rotation
+  The cutoff `χ` and the Cauchy transform (`TauCeti.cauchyTransform_comp_mul_left`) are rotation
   invariant too, so `z ↦ c⁻¹ h(c z)` is the source of the disc with first jet `c ξ`, and by
   uniqueness of the source the discs satisfy `u_{c ξ}(w) = u_ξ(c w)`.
 
@@ -984,7 +984,7 @@ private theorem cauchyTransform_rotSource {c : ℂ} (hc : ‖c‖ = 1) (f : Sour
     simp at hc
   have h : (⇑(rotSource hc f).1 : ℂ → F) = c⁻¹ • fun z ↦ f.1 (c * z) :=
     funext fun z ↦ rotSource_apply hc f z
-  rw [h, cauchyTransform_smul, Pi.smul_apply, cauchyTransform_comp_mul hc, smul_smul,
+  rw [h, cauchyTransform_smul, Pi.smul_apply, cauchyTransform_comp_mul_left hc, smul_smul,
     inv_mul_cancel₀ hc0, one_smul]
 
 /-- Rotating the source of a disc whose source vanishes at the centre rotates the disc:
@@ -1047,7 +1047,7 @@ private theorem discSource_smul (hξ : ‖ξ‖ ≤ 1) (hQ : SmallCoeff F Q)
     rw [hrot, show discMap (c • ξ) ⇑g.1 = fun w ↦ discMap ξ ⇑f.1 (c * w) from funext hrot,
       wirtingerAtOne_apply, wirtingerAtOne_apply, ← wirtingerDeriv_eq_complexLinearPart,
       ← wirtingerDeriv_eq_complexLinearPart,
-      wirtingerDeriv_comp_mul (differentiableAt_discMap ξ f _),
+      wirtingerDeriv_comp_mul_left (differentiableAt_discMap ξ f _),
       show discCutoff z = discCutoff (c * z) by simp [discCutoff, hc], hconj,
       ← Complex.inv_eq_conj hc, smul_comm]
   · rw [mem_supportedHolderSubmodule_iff.mp (fixedPointMap _ _ _ g).2 z hz,

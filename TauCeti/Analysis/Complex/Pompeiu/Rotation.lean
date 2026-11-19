@@ -17,7 +17,7 @@ the Cauchy integral `T f(w) = π⁻¹ ∫ (w - z)⁻¹ f(z) dz` gives
 
 `T (f ∘ (c ·))(w) = c T f(c w)`
 
-(`TauCeti.cauchyTransform_comp_mul`). Equivalently, `T` intertwines the action
+(`TauCeti.cauchyTransform_comp_mul_left`). Equivalently, `T` intertwines the action
 `f ↦ c⁻¹ f(c ·)` of the circle group on sources with the action `g ↦ g(c ·)` on solutions of
 `\bar∂ g = f`, as it must, since `\bar∂ (g(c ·)) = conj c (\bar∂ g)(c ·)` and `conj c = c⁻¹`.
 This is the symmetry behind rotation-equivariant constructions with the Cauchy transform, such as
@@ -35,7 +35,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 /-- **The Cauchy transform commutes with rotations.** For `‖c‖ = 1`,
 `T (f ∘ (c ·))(w) = c T f(c w)`. No integrability of `f` is needed: both sides use the same
 integral up to the measure-preserving substitution `z ↦ c z`. -/
-theorem cauchyTransform_comp_mul {c : ℂ} (hc : ‖c‖ = 1) (f : ℂ → F) (w : ℂ) :
+theorem cauchyTransform_comp_mul_left {c : ℂ} (hc : ‖c‖ = 1) (f : ℂ → F) (w : ℂ) :
     cauchyTransform (fun z ↦ f (c * z)) w = c • cauchyTransform f (c * w) := by
   have hc0 : c ≠ 0 := by
     rintro rfl
