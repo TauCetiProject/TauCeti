@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -62,49 +61,6 @@ namespace TauCeti
 namespace CotangentBundle
 
 variable (p : ℝ) [Fact (0 < p)] {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-! ### The action map -/
-
-/-- The **actions** of a covector `ξ` of the torus `ι → AddCircle p`: its values `ξ(e_j)` on the
-coordinate vectors. -/
-def torusActions
-    (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) : ι → ℝ :=
-  fun j ↦ z.2 (Pi.single j 1)
-
-/-- The `j`-th action of a covector is its value on the `j`-th coordinate vector. -/
-theorem torusActions_apply
-    (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) (j : ι) :
-    torusActions p z j = z.2 (Pi.single j 1) :=
-  (rfl)
-
-/-- The actions of `κ(θ, I)` are `I`. -/
-@[simp]
-theorem torusActions_actionAngleCover (x : (ι → ℝ) × (ι → ℝ)) :
-    torusActions p (actionAngleCover p x) = x.2 :=
-  funext fun j ↦ actionAngleCover_snd_apply_single p x j
-
-/-- In action–angle coordinates the action map is the projection `(θ, I) ↦ I`. -/
-@[simp]
-theorem torusActions_comp_actionAngleCover :
-    torusActions p ∘ actionAngleCover (ι := ι) p = Prod.snd :=
-  funext (torusActions_actionAngleCover p)
-
-/-- The action map of the cotangent bundle of the torus is smooth. -/
-theorem contMDiff_torusActions :
-    ContMDiff ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
-      𝓘(ℝ, ι → ℝ) ∞ (torusActions (ι := ι) p) := by
-  rw [← (isLocalDiffeomorph_actionAngleCover (ι := ι) p).contMDiff_comp_iff
-    (surjective_actionAngleCover p) le_rfl, torusActions_comp_actionAngleCover]
-  exact contMDiff_iff_contDiff.2 contDiff_snd
-
-/-- A function of the actions is differentiable where its profile is differentiable at the actions.
--/
-theorem mdifferentiableAt_comp_torusActions {h : (ι → ℝ) → ℝ}
-    {z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)}
-    (hh : DifferentiableAt ℝ h (torusActions p z)) :
-    MDifferentiableAt ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) 𝓘(ℝ)
-      (h ∘ torusActions p) z :=
-  hh.mdifferentiableAt.comp z ((contMDiff_torusActions p z).mdifferentiableAt (by simp))
 
 /-! ### Hamiltonian vector fields of functions of the actions -/
 

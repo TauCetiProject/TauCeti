@@ -96,9 +96,9 @@ private def rescaledCover (q : (ι → ℝ) × (ι → ℝ)) :
 variable {p a A}
 
 /-- The actions of `rescaledCover p a A (θ, c)` are `a⁻¹ A(c)`. -/
-private theorem rescaledCover_snd_apply_single [DecidableEq ι] (q : (ι → ℝ) × (ι → ℝ)) :
-    (fun i ↦ (rescaledCover p a A q).2 (Pi.single i 1)) = a⁻¹ • A q.2 :=
-  funext fun i ↦ CotangentBundle.actionAngleCover_snd_apply_single p _ i
+private theorem torusActions_rescaledCover [DecidableEq ι] (q : (ι → ℝ) × (ι → ℝ)) :
+    CotangentBundle.torusActions p (rescaledCover p a A q) = a⁻¹ • A q.2 :=
+  CotangentBundle.torusActions_actionAngleCover p _
 
 private theorem contMDiffAt_rescaledCover {q : (ι → ℝ) × (ι → ℝ)}
     (hA : ContDiffAt ℝ ∞ A q.2) :
@@ -207,7 +207,7 @@ private theorem exists_actionAngle_aux (hσ : σ.IsSymplectic) (hF : ContMDiff I
       (Φ : M → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
       (h : (ι → ℝ) → ι → ℝ),
       IsOpen U ∧ connectedComponentIn (F ⁻¹' {F x}) x ⊆ U ∧ IsOpen D ∧ InjOn Φ U ∧
-      Φ '' U = {z | (fun i ↦ z.2 (Pi.single i 1)) ∈ D} ∧
+      Φ '' U = {z | CotangentBundle.torusActions p z ∈ D} ∧
       (∀ y ∈ U, IsLocalDiffeomorphAt I
         ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ y) ∧
       (∀ y ∈ U, ∀ v w : TangentSpace I y,
@@ -219,7 +219,7 @@ private theorem exists_actionAngle_aux (hσ : σ.IsSymplectic) (hF : ContMDiff I
             (mfderiv I ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
               Φ y w) =
           SmoothBundleForm.eval₂ σ y v w) ∧
-      ContDiffOn ℝ ∞ h D ∧ ∀ y ∈ U, F y = h (fun i ↦ (Φ y).2 (Pi.single i 1)) := by
+      ContDiffOn ℝ ∞ h D ∧ ∀ y ∈ U, F y = h (CotangentBundle.torusActions p (Φ y)) := by
   -- Start from the local action-angle coordinates `Ψ(θ, c)`, `2π`-periodic in `θ`, with actions
   -- `A`. On `W = ℝ^ι × U₀`, where `A` is a diffeomorphism, `Ψ` and the rescaled model
   -- `κ(θ, c) = ∑ j, (a⁻¹ A(c))_j dθ_j` at `[a θ]`, `a = p / 2π`, identify the same points, so `κ`
@@ -297,15 +297,14 @@ private theorem exists_actionAngle_aux (hσ : σ.IsSymplectic) (hF : ContMDiff I
   · ext z
     constructor
     · rintro ⟨_, ⟨q, hq, rfl⟩, rfl⟩
-      rw [Set.mem_ofPred_eq, hΦΨ q hq, hκ_def, rescaledCover_snd_apply_single]
+      rw [Set.mem_ofPred_eq, hΦΨ q hq, hκ_def, torusActions_rescaledCover]
       exact ⟨q.2, hq.2, rfl⟩
     · rintro ⟨c, hc, hcz⟩
       obtain ⟨⟨θ₀, I₀⟩, rfl⟩ := CotangentBundle.surjective_actionAngleCover p z
       refine ⟨Ψ (a⁻¹ • θ₀, c), ⟨_, ⟨mem_univ _, hc⟩, rfl⟩, ?_⟩
       rw [hΦΨ _ ⟨mem_univ _, hc⟩, hκ_def, rescaledCover, smul_inv_smul₀ ha]
       congr 2
-      refine hcz.trans (funext fun i ↦ ?_)
-      exact CotangentBundle.actionAngleCover_snd_apply_single p _ i
+      exact hcz.trans (CotangentBundle.torusActions_actionAngleCover p _)
   · rintro _ ⟨q, hq, rfl⟩
     exact hΦloc q hq
   · rintro _ ⟨q, hq, rfl⟩ v w
@@ -333,7 +332,7 @@ private theorem exists_actionAngle_aux (hσ : σ.IsSymplectic) (hF : ContMDiff I
     exact ΦA.toPartialEquiv.map_source hc.2
   · rintro _ ⟨q, hq, rfl⟩
     dsimp only
-    rw [hΦΨ q hq, hκ_def, rescaledCover_snd_apply_single, smul_inv_smul₀ ha, hAeq hq.2.2]
+    rw [hΦΨ q hq, hκ_def, torusActions_rescaledCover, smul_inv_smul₀ ha, hAeq hq.2.2]
     exact ((ΦA.toPartialEquiv.left_inv hq.2.2).trans ((hΨ q.2 hq.2.1).1 q.1).symm).symm
 
 /-- **The Liouville–Arnold theorem in action–angle form.** On a symplectic manifold of dimension
@@ -378,21 +377,14 @@ theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, �
             (fun j ↦ fderiv ℝ (h · i) q.2 (Pi.single j 1), 0) := by
   obtain ⟨U, D, Φ, h, hU, hLU, hD, hinj, himage, hloc, hsymp, hh, hFh⟩ :=
     exists_actionAngle_aux hσ hF hcomm hdim hreg hK p
-  have hact (z : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) :
-      CotangentBundle.torusActions p z = fun j ↦ z.2 (Pi.single j 1) :=
-    funext (CotangentBundle.torusActions_apply p z)
-  simp only [hact]
   refine ⟨U, D, Φ, h, hU, hLU, hD, hinj, himage, hloc, hsymp, hh, hFh, fun y hy i q hq ↦ ?_⟩
   -- Near `y`, `F_i` is the `i`-th component of `h` composed with the actions of `Φ`.
   have hFi : (F · i) =ᶠ[𝓝 y] (h · i) ∘ CotangentBundle.torusActions p ∘ Φ :=
-    Filter.eventuallyEq_of_mem (hU.mem_nhds hy) fun y' hy' ↦ by
-      rw [comp_apply, comp_apply, hact]
-      exact congrFun (hFh y' hy') i
+    Filter.eventuallyEq_of_mem (hU.mem_nhds hy) fun y' hy' ↦ congrFun (hFh y' hy') i
   -- The actions of `Φ y` lie in the open set `D`, where `h` is smooth.
   have hqD : q.2 ∈ D := by
     have h' : Φ y ∈ Φ '' U := mem_image_of_mem Φ hy
-    rwa [himage, Set.mem_ofPred_eq, ← hq, ← hact,
-      CotangentBundle.torusActions_actionAngleCover] at h'
+    simpa [himage, ← hq] using h'
   have hhi : DifferentiableAt ℝ (h · i) q.2 :=
     differentiableAt_pi.1 ((hh.differentiableOn (by simp) q.2 hqD).differentiableAt
       (hD.mem_nhds hqD)) i
