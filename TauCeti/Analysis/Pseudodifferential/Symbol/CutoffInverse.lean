@@ -534,10 +534,13 @@ private theorem exists_bound_inverse (a : Symbol n V W m)
       rw [Pi.div_apply, Real.norm_of_nonneg (by positivity), div_le_iff₀ hw0] at h
       exact h.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) hw0.le)
   let e : Symbol n W W 0 := const (.id ℂ W)
-  simpa [e] using exists_bound_bilinear_inverse (compR W W V).flip a e.contDiff_coefficient
-    isClosed_univ (fun p hp => absurd (mem_univ p) hp) (fun p _ => hinv p)
-    (fun α β => (e.exists_bound K hK α β).imp fun _ h => h.2)
-    (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2) hC' α β
+  simpa only [e, coefficient_const, ContinuousLinearMap.flip_apply,
+    ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearMap.comp_id, zero_add] using
+    exists_bound_bilinear_inverse (compR W W V).flip a e.contDiff_coefficient
+      isClosed_univ (fun p hp => absurd (mem_univ p) hp) (fun p _ => hinv p)
+      (fun α β => (e.exists_bound K hK α β).imp fun _ h => h.2)
+      (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2) hC' α β
 
 /-- The pointwise inverse `a(x, ξ)⁻¹` of a symbol `a` of order `m` that is invertible at every
 point, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` at the frequencies `|R| ≤ ‖ξ‖` for a constant `C` depending
