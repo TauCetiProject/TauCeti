@@ -175,9 +175,9 @@ cardinality, with no class in both. The local exponents of the hypergeometric eq
 and `∞` are read off `β` and `α`. -/
 @[ext]
 structure Parameters where
-  /-- The top parameters, the classes read at the cusp `∞`. -/
+  /-- The top parameters, giving the local exponents at `∞`. -/
   α : Multiset (AddCircle (1 : ℚ))
-  /-- The bottom parameters, the classes read at the cusp `0`. -/
+  /-- The bottom parameters, giving the local exponents at `0`. -/
   β : Multiset (AddCircle (1 : ℚ))
   card_eq : Multiset.card α = Multiset.card β
   disjoint : Disjoint α β
@@ -408,6 +408,9 @@ theorem scale_scale {v : ℤ} (hv : IsCoprime v (P.scale hu).denominator) :
 
 @[simp]
 theorem swap_scale : (P.scale hu).swap = P.swap.scale (P.denominator_swap ▸ hu) := (rfl)
+
+theorem neg_scale : -(P.scale hu) = (-P).scale (P.denominator_neg ▸ hu) := by
+  ext1 <;> simp [Multiset.map_map]
 
 end Parameters
 
