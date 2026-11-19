@@ -9,21 +9,26 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 
 /-!
-# The holomorphic projective action on the upper half-plane
+# The holomorphic and smooth projective actions on the upper half-plane
 
-Every element of `PSL(2, ℝ)` acts on the upper half-plane by a biholomorphism. This file expresses
-holomorphy as a `ContMDiffConstSMul` instance, so each transformation is packaged by the generic
-`Diffeomorph.constSmul` constructor. Subgroups inherit the same holomorphic action through the
-generic instance `SetLike.contMDiffConstSMul`, which is the input needed to put complex charts on
+Every element of `PSL(2, ℝ)` acts on the upper half-plane by a biholomorphism, and every element
+of `PSL(2, R)` (for any commutative ring `R` equipped with an algebra map to `ℝ`) acts by a
+real-analytic map for the real manifold structure `𝓘(ℝ, ℂ)`. This file expresses both properties
+as `ContMDiffConstSMul` instances, so each transformation is packaged by the generic
+`Diffeomorph.constSmul` constructor. Subgroups inherit the same holomorphic or smooth action
+through `SetLike.contMDiffConstSMul`, which is the input needed to put complex or smooth charts on
 their free orbit quotients.
 
 ## Main declarations
 
 * `UpperHalfPlane.instContMDiffConstSMulPSL2`: the action of each element of `PSL(2, ℝ)` is
-  holomorphic.
+  holomorphic (`𝓘(ℂ, ℂ)`).
+* `TauCeti.UpperHalfPlane.instContMDiffConstSMulPSL2Real`: the action of each element of
+  `PSL(2, R)` is real-analytic (`𝓘(ℝ, ℂ)`).
 -/
 
 public section
@@ -43,5 +48,18 @@ instance instContMDiffConstSMulPSL2 : ContMDiffConstSMul 𝓘(ℂ, ℂ) ∞ PSL(
         (g := Matrix.SpecialLinearGroup.toGL g) (by simp)
 
 end UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
+open _root_.UpperHalfPlane
+
+/-- Every element of `PSL(2, R)` acts on `ℍ` by a real-analytic map. -/
+instance instContMDiffConstSMulPSL2Real {R : Type*} [CommRing R] [Algebra R ℝ] {n : ℕ∞ω} :
+    ContMDiffConstSMul 𝓘(ℝ, ℂ) n PSL(2, R) ℍ where
+  contMDiff_const_smul q := by
+    refine QuotientGroup.induction_on q fun g ↦ ?_
+    simpa only [pslMk_smul] using contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := n) g
+
+end TauCeti.UpperHalfPlane
 
 end

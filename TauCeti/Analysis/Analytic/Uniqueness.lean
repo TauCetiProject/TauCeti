@@ -16,13 +16,16 @@ import Mathlib.Analysis.Analytic.Composition
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Uniqueness
+import Mathlib.Analysis.Calculus.ContDiff.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
-# Analytic functions are determined by their restrictions to lines
+# Restrictions to lines and iterated derivatives of analytic functions
 
 A function analytic at `p` vanishes on a neighbourhood of `p` exactly when its restriction
 `t ↦ f (p + t • v)` to every line through `p` vanishes on a neighbourhood of `0`. The nontrivial
@@ -35,6 +38,13 @@ some direction `v` has a restriction that does not vanish identically, and in li
 whose last axis is `v` the germ becomes regular in the last variable, as Weierstrass preparation
 requires (`AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`).
 
+Over a characteristic-zero normed field and into a complete codomain,
+`HasFPowerSeriesOnBall.hasSum_iteratedFDeriv` expresses a germ analytic at `p` on a ball around `p`
+through the diagonal values of its iterated Fréchet derivatives at `p`. Consequently `f` vanishes
+near `p` if and only if `iteratedFDeriv 𝕜 n f p = 0` for every `n : ℕ`, and Mathlib's identity
+principle extends this pointwise jet condition along any preconnected set on which `f` is analytic
+on neighbourhoods.
+
 The name follows Mathlib's `Mathlib.Analysis.Analytic.Uniqueness`, where the identity principle
 lives.
 
@@ -44,6 +54,13 @@ lives.
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
 * `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
   coordinates, a function on `E × 𝕜` not vanishing near `p` has finite order in the last variable.
+* `AnalyticAt.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero`,
+  `AnalyticAt.eventuallyEq_iff_forall_iteratedFDeriv_eq`: over a characteristic-zero field and into
+  a complete space, an analytic germ is determined by its iterated Fréchet derivatives at a single
+  point.
+* `AnalyticOnNhd.eqOn_zero_of_preconnected_of_forall_iteratedFDeriv_eq_zero`,
+  `AnalyticOnNhd.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq`: the corresponding identity
+  principles on preconnected sets.
 
 ## References
 
@@ -134,5 +151,59 @@ theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E ×
     rw [← hL, ← L.map_smul, ← L.map_add]
     simp
   simpa [hLt] using ht
+
+section IteratedFDeriv
+
+variable {𝕜' E' F' : Type*} [NontriviallyNormedField 𝕜'] [CharZero 𝕜']
+  [NormedAddCommGroup E'] [NormedSpace 𝕜' E']
+  [NormedAddCommGroup F'] [NormedSpace 𝕜' F'] [CompleteSpace F']
+
+/-- Over a characteristic-zero field and into a complete normed space, an analytic germ vanishes
+near `p` if and only if all of its iterated Fréchet derivatives at `p` vanish. -/
+theorem AnalyticAt.eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero
+    {f : E' → F'} {p : E'} (hf : AnalyticAt 𝕜' f p) :
+    f =ᶠ[𝓝 p] 0 ↔ ∀ n : ℕ, iteratedFDeriv 𝕜' n f p = 0 := by
+  refine ⟨fun h n ↦ ?_, fun h ↦ ?_⟩
+  · simpa [iteratedFDeriv_zero] using (h.iteratedFDeriv 𝕜' n).eq_of_nhds
+  · obtain ⟨P, r, hP⟩ := hf
+    filter_upwards [Metric.eball_mem_nhds p hP.r_pos] with y hy
+    have hy' : y - p ∈ Metric.eball 0 r := by
+      simpa [eDist_eq_eNorm_sub] using hy
+    have hsum := hP.hasSum_iteratedFDeriv hy'
+    simp only [h, zero_apply, smul_zero, add_sub_cancel] at hsum
+    exact hsum.unique hasSum_zero
+
+/-- Over a characteristic-zero field and into a complete normed space, two germs analytic at `p`
+agree near `p` if and only if all of their iterated Fréchet derivatives at `p` agree. -/
+theorem AnalyticAt.eventuallyEq_iff_forall_iteratedFDeriv_eq
+    {f g : E' → F'} {p : E'} (hf : AnalyticAt 𝕜' f p) (hg : AnalyticAt 𝕜' g p) :
+    f =ᶠ[𝓝 p] g ↔ ∀ n : ℕ, iteratedFDeriv 𝕜' n f p = iteratedFDeriv 𝕜' n g p := by
+  rw [Filter.eventuallyEq_iff_sub,
+    (hf.sub hg).eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero]
+  refine forall_congr' fun n ↦ ?_
+  rw [iteratedFDeriv_sub_apply hf.contDiffAt hg.contDiffAt, sub_eq_zero]
+
+/-- **Identity principle via iterated derivatives.** If a function into a complete normed space is
+analytic on neighbourhoods along a preconnected set `U` over a characteristic-zero field and all of
+its iterated Fréchet derivatives vanish at one point `z₀ ∈ U`, then it vanishes on `U`. -/
+theorem AnalyticOnNhd.eqOn_zero_of_preconnected_of_forall_iteratedFDeriv_eq_zero
+    {f : E' → F'} {U : Set E'} (hf : AnalyticOnNhd 𝕜' f U) (hU : IsPreconnected U)
+    {z₀ : E'} (h₀ : z₀ ∈ U) (hfz₀ : ∀ n : ℕ, iteratedFDeriv 𝕜' n f z₀ = 0) :
+    Set.EqOn f 0 U :=
+  hf.eqOn_zero_of_preconnected_of_eventuallyEq_zero hU h₀
+    ((hf z₀ h₀).eventuallyEq_zero_iff_forall_iteratedFDeriv_eq_zero.2 hfz₀)
+
+/-- **Identity principle via iterated derivatives.** Two functions into a complete normed space
+that are analytic on neighbourhoods along a preconnected set `U` over a characteristic-zero field
+and have equal iterated Fréchet derivatives at one point `z₀ ∈ U` agree on `U`. -/
+theorem AnalyticOnNhd.eqOn_of_preconnected_of_forall_iteratedFDeriv_eq
+    {f g : E' → F'} {U : Set E'} (hf : AnalyticOnNhd 𝕜' f U) (hg : AnalyticOnNhd 𝕜' g U)
+    (hU : IsPreconnected U) {z₀ : E'} (h₀ : z₀ ∈ U)
+    (hfg : ∀ n : ℕ, iteratedFDeriv 𝕜' n f z₀ = iteratedFDeriv 𝕜' n g z₀) :
+    Set.EqOn f g U :=
+  hf.eqOn_of_preconnected_of_eventuallyEq hg hU h₀
+    (((hf z₀ h₀).eventuallyEq_iff_forall_iteratedFDeriv_eq (hg z₀ h₀)).2 hfg)
+
+end IteratedFDeriv
 
 end

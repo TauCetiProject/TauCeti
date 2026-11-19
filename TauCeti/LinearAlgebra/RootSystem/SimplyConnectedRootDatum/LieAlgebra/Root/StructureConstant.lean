@@ -47,6 +47,8 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
 * `TauCeti.DynkinType.chainBotCoeff_add_one_dvd_structureConstant`: `r + 1` divides `N_{α,β}`.
 * `TauCeti.DynkinType.structureConstant_eq_two_or_neg_two_of_pairingIn_eq_zero`:
   `N_{α,β} = ±2` for orthogonal roots whose sum is a root.
+* `structureConstant_eq_two_or_neg_two_of_root_eq_add_of_root_eq_add_of_chainBotCoeff_eq_zero`:
+  `N_{α,α+β} = ±2` when `α + β` and `2α + β` are roots and the `α`-string starts at `β`.
 * `TauCeti.DynkinType.structureConstant_ne_zero` and `TauCeti.DynkinType.structureConstant_eq_zero`:
   the constant vanishes exactly when `α + β` is not a root.
 * `TauCeti.DynkinType.structureConstant_skew`: `N_{β,α} = -N_{α,β}`.
@@ -157,6 +159,22 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast {α β : Fin t.numRoots}
   exact (t.isChevalleySystem_chevalleySystem ht).intStructureConstant_eq_natCast_or_eq_neg_natCast
     _ _ _ (LieSubalgebra.isNonZero_coe_root _) (LieSubalgebra.isNonZero_coe_root _)
     (LieSubalgebra.isNonZero_coe_root _) (coe_rootEquiv_eq_add_iff.2 hγ)
+
+/-- If `α + β` and `2α + β` are roots and the `α`-string starts at `β`, then
+`N_{α,α+β} = ±2`. -/
+theorem structureConstant_eq_two_or_neg_two_of_root_eq_add_of_root_eq_add_of_chainBotCoeff_eq_zero
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0) :
+    t.structureConstant ht α γ = 2 ∨ t.structureConstant ht α γ = -2 := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  have hli := (t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
+  have hnext := (t.simplyConnectedRootDatum ht).chainBotCoeff_of_add hli
+    (hγ.trans (add_comm _ _))
+  simpa [hnext, hbot] using structureConstant_eq_natCast_or_eq_neg_natCast ⟨δ, hδ⟩
 
 /-- The structure constant vanishes when `α + β` is not a root. -/
 theorem structureConstant_eq_zero {α β : Fin t.numRoots}
