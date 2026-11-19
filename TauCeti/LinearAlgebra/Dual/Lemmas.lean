@@ -27,6 +27,7 @@ and so separate points.
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.eval_eq_applyₗ`: evaluation into the double dual is `LinearMap.applyₗ`.
 * `Module.Dual.apply_eq_mul_apply_of_nonneg`: over an ordered ring, if `f x = 1`, a functional `g`
   nonnegative on the half-space `{v | 0 ≤ f v}` is the multiple `g x • f` of `f`.
 * `Module.Dual.finrank_ker_inf_add_one`: if `f` does not vanish on a finite-dimensional subspace
@@ -86,6 +87,17 @@ theorem ker_id_sub_smulRight (f : Dual K V) {x : V} (hfx : f x = 1) :
   exact ⟨fun h => ⟨f y, h.symm⟩, by rintro ⟨c, rfl⟩; simp [hfx]⟩
 
 end Semiring
+
+section CommSemiring
+
+variable (R : Type*) [CommSemiring R]
+
+/-- Evaluation into the double dual is evaluation into the double `R`-valued `Hom`. -/
+theorem eval_eq_applyₗ (M : Type*) [AddCommMonoid M] [Module R M] :
+    Dual.eval R M = LinearMap.applyₗ :=
+  LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
+
+end CommSemiring
 
 section OrderedCommRing
 

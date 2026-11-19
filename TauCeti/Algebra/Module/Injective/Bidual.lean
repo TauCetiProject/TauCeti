@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.LeftExact
 public import Mathlib.RingTheory.Finiteness.Cardinality
 public import TauCeti.Algebra.Module.Injective.Hom
+public import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Evaluation into a double Hom
@@ -160,16 +161,12 @@ open LinearMap
 
 variable (R : Type u) [CommRing R]
 
-/-- Evaluation into the double dual is evaluation into the double `R`-valued `Hom`. -/
-theorem Dual.eval_eq_applyₗ (M : Type*) [AddCommGroup M] [Module R M] :
-    Dual.eval R M = applyₗ :=
-  LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp
-
 /-- **Biduality over a self-injective ring**: every finitely presented module over a
 self-injective commutative ring is reflexive. Projectivity is not needed. Over a Noetherian ring
 every finitely generated module is finitely presented, see `IsReflexive.of_injective_of_finite`. -/
-theorem IsReflexive.of_injective_of_finitePresentation [Module.Injective R R] (M : Type*)
-    [AddCommGroup M] [Module R M] [Module.FinitePresentation R M] : IsReflexive R M := by
+instance (priority := 900) IsReflexive.of_injective_of_finitePresentation [Module.Injective R R]
+    (M : Type*) [AddCommGroup M] [Module R M] [Module.FinitePresentation R M] :
+    IsReflexive R M := by
   have hR (f : Module.End R R) : ∃ r : R, f = r • LinearMap.id :=
     ⟨f 1, LinearMap.ext_ring (by simp)⟩
   obtain ⟨n, m, g, f, hg, hfg⟩ := FinitePresentation.exists_fin' R M
@@ -182,8 +179,9 @@ theorem IsReflexive.of_injective_of_finitePresentation [Module.Injective R R] (M
 
 /-- **Biduality over a Noetherian self-injective ring**: every finitely generated module is
 reflexive, so evaluation into its double dual is bijective (`Module.bijective_dual_eval`). -/
-theorem IsReflexive.of_injective_of_finite [IsNoetherianRing R] [Module.Injective R R] (M : Type*)
-    [AddCommGroup M] [Module R M] [Module.Finite R M] : IsReflexive R M :=
+instance (priority := 900) IsReflexive.of_injective_of_finite [IsNoetherianRing R]
+    [Module.Injective R R] (M : Type*) [AddCommGroup M] [Module R M] [Module.Finite R M] :
+    IsReflexive R M :=
   have := finitePresentation_of_finite R M
   .of_injective_of_finitePresentation R M
 

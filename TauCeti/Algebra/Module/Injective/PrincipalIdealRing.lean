@@ -86,7 +86,8 @@ instance Submodule.injective_quotient_of_divisionRing {R K : Type*} [CommRing R]
 
 /-- **A principal ideal domain modulo a nonzero ideal is self-injective**, in the form of Baer's
 criterion. For a discrete valuation ring `O` with uniformizer `π` this applies to `O/πⁿ` with
-`n ≥ 1`. The hypothesis `I ≠ ⊥` is necessary: `ℤ` is not injective over itself. -/
+`n ≥ 1`. The hypothesis `I ≠ ⊥` cannot be dropped in general: `ℤ` is not injective over
+itself. -/
 theorem Module.Baer.quotient_self {R : Type*} [CommRing R] [IsDomain R] [IsPrincipalIdealRing R]
     {I : Ideal R} (hI : I ≠ ⊥) : Module.Baer (R ⧸ I) (R ⧸ I) := by
   intro J g
