@@ -27,9 +27,21 @@ variable {α : Type*} [TopologicalSpace α]
 noncomputable def irreducibleComponentOf (x : α) : irreducibleComponents α :=
   ⟨irreducibleComponent x, irreducibleComponent_mem_irreducibleComponents x⟩
 
-/-- A point lies on the irreducible component `irreducibleComponentOf x`. -/
+/-- The carrier of `irreducibleComponentOf x` is Mathlib's `irreducibleComponent x`. -/
 @[simp]
+theorem coe_irreducibleComponentOf (x : α) :
+    (irreducibleComponentOf x : Set α) = irreducibleComponent x :=
+  (rfl)
+
+/-- A point lies on the irreducible component `irreducibleComponentOf x`. -/
 theorem mem_irreducibleComponentOf (x : α) : x ∈ (irreducibleComponentOf x : Set α) :=
   mem_irreducibleComponent
+
+/-- When `x` lies on exactly one irreducible component, `irreducibleComponentOf x` is the
+irreducible component containing `x`. -/
+theorem irreducibleComponentOf_eq_iff_of_existsUnique {x : α}
+    (h : ∃! c : irreducibleComponents α, x ∈ (c : Set α)) {c : irreducibleComponents α} :
+    irreducibleComponentOf x = c ↔ x ∈ (c : Set α) :=
+  ⟨fun hc ↦ hc ▸ mem_irreducibleComponentOf x, h.unique (mem_irreducibleComponentOf x)⟩
 
 end TauCeti

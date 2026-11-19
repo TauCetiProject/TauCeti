@@ -98,16 +98,12 @@ private theorem atWorstNodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.
 private instance isRegular_blowup : IsRegular (X.singularLocus K).blowup :=
   X.isRegular_blowup_singularLocus (atWorstNodal K X)
 
-private theorem isDomain_stalk_blowup (b : (X.singularLocus K).blowup) :
-    IsDomain ((X.singularLocus K).blowup.presheaf.stalk b) :=
-  inferInstance
-
 /-- An irreducible component of the blowup of a prestable curve along its singular subscheme, as
 an open subscheme: the blowup is regular, so its irreducible components are disjoint and open. Each
 is an integral scheme, proper over `K`, of dimension at most one. -/
 def blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
     (X.singularLocus K).blowup.Opens :=
-  ⟨v, isOpen_of_mem_irreducibleComponents_of_isDomain_stalk (isDomain_stalk_blowup X) v.2⟩
+  ⟨v, isOpen_of_mem_irreducibleComponents_of_isDomain_stalk (fun _ ↦ inferInstance) v.2⟩
 
 @[simp]
 theorem coe_blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
@@ -115,9 +111,17 @@ theorem coe_blowupComponent (v : irreducibleComponents (X.singularLocus K).blowu
   (rfl)
 
 /-- A component of the blowup is a scheme over `K` through the blowup morphism to the curve. -/
-instance (v : irreducibleComponents (X.singularLocus K).blowup) :
+instance blowupComponentOver (v : irreducibleComponents (X.singularLocus K).blowup) :
     (X.blowupComponent v).toScheme.Over (Spec (.of K)) :=
   ⟨(X.blowupComponent v).ι ≫ (X.singularLocus K).blowupToBase ≫ X ↘ Spec (.of K)⟩
+
+/-- The structure morphism of a component of the blowup to `Spec K` is the composite of its
+inclusion, the blowup morphism and the structure morphism of the curve. -/
+@[simp]
+theorem blowupComponent_over (v : irreducibleComponents (X.singularLocus K).blowup) :
+    (X.blowupComponent v).toScheme ↘ Spec (.of K) =
+      (X.blowupComponent v).ι ≫ (X.singularLocus K).blowupToBase ≫ X ↘ Spec (.of K) :=
+  (rfl)
 
 /-- The cohomology of the structure sheaf of a component of the blowup is finite-dimensional: the
 component is a proper integral scheme of dimension at most one. -/
@@ -134,8 +138,9 @@ instance (v : irreducibleComponents (X.singularLocus K).blowup) (n : ℕ) :
   -- `U` is proper over `K`: it is also closed in the blowup, which is finite over the curve.
   have : IsClosedImmersion U.ι :=
     .of_isPreimmersion _ (by rw [Opens.range_ι]; exact isClosed_of_mem_irreducibleComponents _ v.2)
-  have : IsProper (U.toScheme ↘ Spec (.of K)) :=
-    inferInstanceAs (IsProper (U.ι ≫ ν ≫ X ↘ Spec (.of K)))
+  have : IsProper (U.toScheme ↘ Spec (.of K)) := by
+    rw [blowupComponent_over]
+    infer_instance
   -- `U` has dimension at most that of the curve, which is at most one.
   have hX : topologicalKrullDim X ≤ 1 :=
     ((familyOfCurves_iff_of_field (X ↘ Spec (.of K))).mp inferInstance).2
@@ -237,8 +242,8 @@ private theorem reflTransGen_adj (v w : irreducibleComponents (X.singularLocus K
     simp only [A, B, Set.mem_iUnion, Set.mem_image, Set.mem_ofPred_eq] at hA hB
     obtain ⟨u, hu, b, hb, rfl⟩ := hA
     obtain ⟨u', hu', b', hb', hbb'⟩ := hB
-    obtain rfl := (irreducibleComponentOf_eq_iff (isDomain_stalk_blowup X)).mpr hb
-    obtain rfl := (irreducibleComponentOf_eq_iff (isDomain_stalk_blowup X)).mpr hb'
+    obtain rfl := irreducibleComponentOf_eq_iff.mpr hb
+    obtain rfl := irreducibleComponentOf_eq_iff.mpr hb'
     rcases eq_or_adj_of_blowupToBase_eq X hbb'.symm with h | ⟨e, he⟩
     · exact hu' (h ▸ hu)
     · exact hu' (hu.tail ⟨e, he⟩)
@@ -330,7 +335,7 @@ theorem dualGraphVertexEquiv_endpoint_eq_iff (e : (X.dualGraph p).Edge) (i : Fin
     X.dualGraphVertexEquiv p ((X.dualGraph p).endpoint e i) = v ↔
       (X.branchPointEquiv (X.dualGraphEdgeEquiv p e) i : (X.singularLocus K).blowup) ∈
         (v : Set (X.singularLocus K).blowup) :=
-  irreducibleComponentOf_eq_iff (isDomain_stalk_blowup X)
+  irreducibleComponentOf_eq_iff
 
 /-- A marking is attached to the component of the blowup carrying the point over it. -/
 theorem mem_dualGraph_marking (i : ι) {b : (X.singularLocus K).blowup}
@@ -345,8 +350,7 @@ theorem mem_dualGraph_marking (i : ι) {b : (X.singularLocus K).blowup}
 theorem dualGraphVertexEquiv_marking (i : ι) {b : (X.singularLocus K).blowup}
     (hb : (X.singularLocus K).blowupToBase b = p i) :
     X.dualGraphVertexEquiv p ((X.dualGraph p).marking i) = irreducibleComponentOf b :=
-  ((irreducibleComponentOf_eq_iff (isDomain_stalk_blowup X)).mpr
-    (X.mem_dualGraph_marking p i hb)).symm
+  (irreducibleComponentOf_eq_iff.mpr (X.mem_dualGraph_marking p i hb)).symm
 
 /-- The `i`-th marking is the component of the blowup carrying the point over `p i`: this
 determines it, as every point lies on exactly one component. -/
@@ -356,7 +360,7 @@ theorem dualGraphVertexEquiv_marking_eq_iff (i : ι) {b : (X.singularLocus K).bl
     X.dualGraphVertexEquiv p ((X.dualGraph p).marking i) = v ↔
       b ∈ (v : Set (X.singularLocus K).blowup) :=
   X.dualGraphVertexEquiv_marking p i hb ▸
-    irreducibleComponentOf_eq_iff (isDomain_stalk_blowup (K := K) X)
+    irreducibleComponentOf_eq_iff
 
 /-- The genus of a vertex of the dual graph is the genus of its component of the blowup. -/
 @[simp]

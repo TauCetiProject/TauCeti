@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Regular
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
+import TauCeti.AlgebraicGeometry.Pullback.Carrier
 import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
@@ -194,23 +195,7 @@ theorem natCard_preimage_blowupToBase_singularLocus_of_mem_support [IsSepClosed 
   rw [← X.finrank_branchSchemeToSingularLocus hnodal z,
     ← Scheme.Hom.natCard_preimage_singleton_eq_finrank]
   -- the branch scheme is the inverse image of the singular subscheme in the blowup
-  have hmaps (e : X.branchSchemeToSingularLocus K ⁻¹' {z}) :
-      X.branchSchemeToBlowup K e.1 ∈ I.blowupToBase ⁻¹' {I.subschemeι z} := by
-    have := congr($(X.branchSchemeToSingularLocus_subschemeι K) e.1)
-    simp only [Scheme.Hom.comp_apply] at this
-    rw [Set.mem_preimage, Set.mem_singleton_iff, ← this, e.2]
-  let φ : X.branchSchemeToSingularLocus K ⁻¹' {z} → I.blowupToBase ⁻¹' {I.subschemeι z} :=
-    fun e ↦ ⟨_, hmaps e⟩
-  refine (Nat.card_congr (Equiv.ofBijective φ
-    ⟨fun e e' h ↦ Subtype.ext ((X.branchSchemeToBlowup K).isClosedEmbedding.injective
-      (congrArg Subtype.val h :)), fun b ↦ ?_⟩)).symm
-  obtain ⟨e, he, hb⟩ := Scheme.Pullback.exists_preimage_pullback (f := I.subschemeι)
-    (g := I.blowupToBase) z b.1 b.2.symm
-  let H := X.isPullback_branchScheme K
-  refine ⟨⟨H.isoPullback.inv e, ?_⟩, Subtype.ext ?_⟩
-  · rw [Set.mem_preimage, Set.mem_singleton_iff, ← Scheme.Hom.comp_apply,
-      IsPullback.isoPullback_inv_fst, he]
-  · exact (Scheme.Hom.comp_apply H.isoPullback.inv (X.branchSchemeToBlowup K) e).symm.trans
-      (by rw [IsPullback.isoPullback_inv_snd, hb])
+  exact (Scheme.natCard_preimage_fst_singleton_of_isPullback (X.isPullback_branchScheme K)
+    (X.branchSchemeToBlowup K).isClosedEmbedding.injective z).symm
 
 end AlgebraicGeometry.Scheme

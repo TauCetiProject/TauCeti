@@ -12,7 +12,13 @@ import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.RingHom.Integral
 
 /-!
-# Residue fields of points of a fibre product
+# Points of a fibre product and their residue fields
+
+In a pullback square of schemes whose second projection is injective on points, the fibre of the
+first projection over a point `x` is in bijection with the fibre of the opposite map over the
+image of `x` (`AlgebraicGeometry.Scheme.natCard_preimage_fst_singleton_of_isPullback`), as for the
+inverse image of a closed subscheme.
+
 
 Let `t` be a point of `X ×_S Y` lying over `x ∈ X`, `y ∈ Y` and `s ∈ S`. Mathlib's
 `AlgebraicGeometry.Scheme.Pullback.ofPointTensor` is the canonical map
@@ -28,6 +34,9 @@ Lemma 58.31.1 (0EYD).
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.natCard_preimage_fst_singleton_of_isPullback`: if the second
+  projection of a pullback square is injective, the fibres of the first projection have the same
+  cardinality as the corresponding fibres of the opposite map.
 * `AlgebraicGeometry.Scheme.Pullback.ofPointTensor_surjective`: `κ(x) ⊗[κ(s)] κ(y) ⟶ κ(t)` is
   surjective when `κ(x)` is integral over `κ(s)`.
 * `AlgebraicGeometry.Scheme.Pullback.closure_range_residueFieldMap_eq_top`: in that case `κ(t)`
@@ -138,3 +147,29 @@ theorem surjective_liftEquiv_residueFieldMap (t : ↑(pullback f g))
   exact fun z ↦ (AlgHom.mem_range _).mp (hle (Subring.mem_top z))
 
 end AlgebraicGeometry.Scheme.Pullback
+
+namespace AlgebraicGeometry.Scheme
+
+universe u
+
+variable {P X Y S : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ S} {g : Y ⟶ S}
+
+/-- In a pullback square of schemes whose second projection `snd` is injective, `snd` maps the
+fibre of `fst` over `x` bijectively onto the fibre of `g` over `f x`. -/
+theorem natCard_preimage_fst_singleton_of_isPullback (H : IsPullback fst snd f g)
+    (hsnd : Function.Injective snd) (x : X) :
+    Nat.card (fst ⁻¹' {x}) = Nat.card (g ⁻¹' {f x}) := by
+  have hmaps (p : fst ⁻¹' {x}) : snd p.1 ∈ g ⁻¹' {f x} := by
+    rw [Set.mem_preimage, Set.mem_singleton_iff, ← Scheme.Hom.comp_apply, ← H.w,
+      Scheme.Hom.comp_apply, Set.mem_singleton_iff.mp p.2]
+  refine Nat.card_congr (Equiv.ofBijective (fun p ↦ ⟨snd p.1, hmaps p⟩)
+    ⟨fun p p' h ↦ Subtype.ext (hsnd congr(($h).1)), fun y ↦ ?_⟩)
+  -- a point of the abstract pullback over `x` and `y` gives one of `P`
+  obtain ⟨q, hq, hy⟩ := Pullback.exists_preimage_pullback x y.1 y.2.symm
+  refine ⟨⟨H.isoPullback.inv q, ?_⟩, Subtype.ext ?_⟩
+  · rw [Set.mem_preimage, Set.mem_singleton_iff, ← Scheme.Hom.comp_apply,
+      IsPullback.isoPullback_inv_fst, hq]
+  · change snd (H.isoPullback.inv q) = y.1
+    rw [← Scheme.Hom.comp_apply, IsPullback.isoPullback_inv_snd, hy]
+
+end AlgebraicGeometry.Scheme
