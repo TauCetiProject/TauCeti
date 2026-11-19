@@ -36,7 +36,7 @@ under infinite direct sums. For the groups annihilated by some power of `d`, `Q`
 annihilated by a single power `dᴺ`: all `K(G, n + 1)` spaces have isomorphic homology, so in the
 finitely many degrees `1, …, k` it is annihilated by one power of `d` as soon as each degree lies
 in the class. When `P` itself is closed under direct sums, the axiom for `K(G, 1)` spaces implies
-it for all `K(G, n)`, through the based path fibrations `K(G, n) → P → K(G, n + 1)` with
+it for all `K(G, n)`, through the based path fibrations `K(G, n) → E → K(G, n + 1)` with
 contractible total space (`TauCeti.IsEilenbergMacLaneSpace.prop_singularHomology_of_one`).
 
 The proof climbs the Whitehead tower.
@@ -45,9 +45,10 @@ The proof climbs the Whitehead tower.
   `k` (`TauCeti.isZero_singularHomologyFunctor_of_subsingleton_homotopyGroup`).
 * **One step down.** If `Z` is `(n - 1)`-connected, `n ≥ 2`, the `n`-connected cover
   `Z⟨n⟩ → Z` is a fibration with `K(πₙ Z, n - 1)` fibres
-  (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). When `πₙ Z ∈ P` it is an
-  isomorphism on homology modulo `P`, so the homology of `Z` lies in `P` wherever that of
-  `Z⟨n⟩` does (`TauCeti.prop_singularHomology_of_nConnectedCover`).
+  (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). When the homology of these
+  fibres lies in `Q ≤ P`, it is an isomorphism on homology modulo `P`, so the homology of `Z` lies
+  in `P` wherever that of `Z⟨n⟩` does (`TauCeti.prop_singularHomology_of_nConnectedCover`). The
+  induction supplies such a `Q` because `πₙ Z ∈ P`.
 * **The induction.** `Z⟨n⟩` is `n`-connected and has the homotopy groups of `Z` above `n`. Each
   stage is replaced by its CW approximation, which is Hausdorff and changes neither homotopy nor
   homology.
@@ -90,10 +91,9 @@ variable (P Q : ObjectProperty (ModuleCat.{0} ℤ)) [P.IsSerreClass] [Q.IsClosed
   [Q.ContainsZero] [∀ J : Type, Q.IsClosedUnderColimitsOfShape (Discrete J)]
 
 /-- **One step down the Whitehead tower.** Let `X` be a Hausdorff path-connected space whose
-homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and suppose that `πₘ₊₂(X)` lies in the Serre
-class `P`, while the homology in degrees `1, …, i` of every `K(πₘ₊₂(X), m + 1)` space lies in
-`Q ≤ P`. Then the homology `Hᵢ(X; ℤ)` lies in `P` whenever the homology of the `(m + 2)`-connected
-cover `X⟨m + 2⟩` does. -/
+homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and suppose that the homology in degrees
+`1, …, i` of every `K(πₘ₊₂(X), m + 1)` space lies in `Q ≤ P`. Then the homology `Hᵢ(X; ℤ)`
+lies in `P` whenever the homology of the `(m + 2)`-connected cover `X⟨m + 2⟩` does. -/
 theorem prop_singularHomology_of_nConnectedCover (hQP : Q ≤ P) (X : TopCat.{0}) [T2Space X]
     [PathConnectedSpace X] (x : X) (m i : ℕ)
     (hX : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k X x))
@@ -137,9 +137,7 @@ private theorem prop_singularHomology_of_cwApproximation {Z : Type} [Topological
   have := hf.isIso_singularHomologyMap (ModuleCat.of ℤ ℤ) i
   refine P.prop_of_iso (asIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) i).obj
     (ModuleCat.of ℤ ℤ)).map f)) (h _ (cwApproximationBasepoint (TopCat.of Z) z) fun j _ ↦ ?_)
-  exact ⟨MulEquiv.ofBijective
-    (HomotopyGroup.mapHom f.hom (cwApproximationMap_cwApproximationBasepoint (TopCat.of Z) z))
-    ((HomotopyGroup.bijective_map_congr rfl rfl _).1 (hf.bijective j _))⟩
+  exact ⟨cwApproximationHomotopyGroupMulEquiv (TopCat.of Z) z j⟩
 
 /-- The induction along the Whitehead tower: for an `(n + 1)`-connected space whose homotopy
 groups `π_{j + 2}` lie in `P` for `n ≤ j` and `j + 2 ≤ k`, the homology `Hᵢ` lies in `P` for
@@ -233,7 +231,7 @@ theorem prop_singularHomology_of_prop_homotopyGroup (k : ℕ)
 /-- **Serre's axiom on Eilenberg--Mac Lane spaces, from degree one to all degrees.** Let `P` be a
 Serre class closed under direct sums and `G` a group such that every `K(G, 1)` space has its
 positive-degree integral homology in `P`. Then so does every `K(G, n + 1)` space. The induction
-runs through the based path fibration `K(G, n + 1) → P → K(G, n + 2)`, whose total space is
+runs through the based path fibration `K(G, n + 1) → E → K(G, n + 2)`, whose total space `E` is
 contractible. -/
 theorem IsEilenbergMacLaneSpace.prop_singularHomology_of_one
     [∀ J : Type, P.IsClosedUnderColimitsOfShape (Discrete J)] {G : Type} [Group G]
@@ -248,7 +246,7 @@ theorem IsEilenbergMacLaneSpace.prop_singularHomology_of_one
   | zero => exact h₁ Z z hZ q hq
   | succ n ih =>
     have := hZ.pathConnectedSpace
-    -- The based path fibration `P → Z`, sending a path ending at `z` to its starting point.
+    -- The based path fibration `E → Z`, sending a path ending at `z` to its starting point.
     let p : TopCat.of (MappingPathFiber (ContinuousMap.id Z) z) ⟶ TopCat.of Z :=
       TopCat.ofHom (MappingPathFiber.proj _ z)
     have hp : TopCat.serreFibrations p :=
@@ -275,6 +273,7 @@ theorem isAddTorsion_singularHomology_of_isMulTorsion_homotopyGroup {Y : Type}
       (AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)) M ↔
         IsAddTorsion M :=
     (ObjectProperty.prop_inverseImage_iff _ _ _).trans (AddCommGrpCat.prop_isTorsion_iff _)
+  rw [← singularHomologyFunctor_obj_obj]
   refine (hP _).1 (prop_singularHomology_of_prop_homotopyGroup _ k ?_ y
     (fun j hj ↦ (hP _).2 fun a : Additive (π_ (j + 2) Y y) ↦
       (isOfFinAddOrder_ofMul_iff (x := a.toMul)).2 (hY j hj _)) hi0 hik)
@@ -292,6 +291,8 @@ theorem isAddTorsion_singularHomology_of_isMulTorsion_homotopyGroup {Y : Type}
   obtain ⟨q, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
   exact ObjectProperty.prop_of_iso _ (asIso (((singularHomologyFunctor (ModuleCat.{0} ℤ)
     (q + 1)).obj (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom f)))
-    ((hP _).2 (isAddTorsion_classifyingSpace_singularHomology ℤ q))
+    ((hP _).2 (by
+      rw [singularHomologyFunctor_obj_obj]
+      exact isAddTorsion_classifyingSpace_singularHomology ℤ q))
 
 end TauCeti

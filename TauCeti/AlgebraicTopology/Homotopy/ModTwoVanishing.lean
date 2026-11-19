@@ -128,9 +128,7 @@ private theorem isUniquelyTwoDivisible_homotopyGroup_of_add (d : ℕ) :
       isWeakHomotopyEquivalence_cwApproximationMap (TopCat.of Z) z
     -- `f` identifies the homotopy groups of `X` at `x₀` with those of `Z` at `z`.
     let e (k : ℕ) [NeZero k] : π_ k X x₀ ≃* π_ k Z z :=
-      MulEquiv.ofBijective
-        (HomotopyGroup.mapHom f (cwApproximationMap_cwApproximationBasepoint (TopCat.of Z) z))
-        ((HomotopyGroup.bijective_map_congr rfl rfl _).1 (hf.bijective k x₀))
+      cwApproximationHomotopyGroupMulEquiv (TopCat.of Z) z k
     have hX : ∀ k, k ≠ 0 → k < n + 2 → Subsingleton (π_ k X x₀) := fun k hk0 hk ↦ by
       have : NeZero k := ⟨hk0⟩
       have := hZ k hk0 hk
