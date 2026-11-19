@@ -14,7 +14,9 @@ import Mathlib.Algebra.DualNumber
 
 For the multiplicative group `𝔾ₘ`, with coordinate Hopf algebra `k[T, T⁻¹]`, the identification
 `TauCeti.MultiplicativeGroup.pointsMulEquiv` of points with units gives `LG(R) = R⸨t⸩ˣ` and
-`L⁺G(R) = R⟦t⟧ˣ`, and under it the congruence subgroup `K_N(R)` is `1 + t ^ N R⟦t⟧`.
+`L⁺G(R) = R⟦t⟧ˣ`, and under it the congruence subgroup `K_N(R)` is the group of units of the
+form `1 + t ^ N f` with `f ∈ R⟦t⟧`. For `N ≥ 1` every such series is a unit, so
+`K_N(R) = 1 + t ^ N R⟦t⟧`, while `K_0(R) = R⟦t⟧ˣ`.
 
 Over a field `R` every loop has the form `a t ^ n u` with `a ∈ Rˣ`, `n ∈ ℤ` and `u ∈ K_1(R)`: this
 is the valuation of `R⸨t⸩`. Over a nonreduced ring the description fails. If `ε ≠ 0` is
@@ -100,8 +102,8 @@ theorem exists_eq_single_mul_ofPowerSeries {R : Type w} [Field R] [Algebra k R]
   have hqu : IsUnit q := isUnit_iff_constantCoeff.2 (hq ▸ isUnit_one)
   refine ⟨a, x.order, pointsMulEquiv.symm hqu.unit, ?_, ?_⟩
   · rw [mem_congruenceSubgroup_span_X_pow_iff, MulEquiv.apply_symm_apply, IsUnit.unit_spec]
-    obtain ⟨f, hf⟩ := X_dvd_iff.2 (show constantCoeff (q - 1) = 0 by rw [map_sub, hq, map_one,
-      sub_self])
+    have hq₁ : constantCoeff (q - 1) = 0 := by rw [map_sub, hq, map_one, sub_self]
+    obtain ⟨f, hf⟩ := X_dvd_iff.2 hq₁
     exact ⟨f, by rw [pow_one, ← hf, add_sub_cancel]⟩
   · rw [MulEquiv.apply_symm_apply, IsUnit.unit_spec, map_mul, ofPowerSeries_C, HahnSeries.C_apply,
       ← mul_assoc, single_mul_single, add_zero, mul_inv_cancel₀ a.ne_zero]
@@ -144,8 +146,10 @@ theorem not_exists_eq_single_mul_ofPowerSeries {ε : R} (hε₀ : ε ≠ 0) (hε
     · exact not_isUnit_zero (hn' ▸ hunit)
   · -- The coefficient of `t⁻¹` is `ε ≠ 0`, but `t ^ n p` has no pole.
     have h1 := hcoeff (-1)
-    simp only [show -1 - n < 0 by omega, ite_true, coeff_add, HahnSeries.coeff_one,
-      show (-1 : ℤ) ≠ 0 by omega, ite_false, zero_add, coeff_single_same] at h1
+    have hneg : -1 - n < 0 := by omega
+    have hne : (-1 : ℤ) ≠ 0 := by omega
+    simp only [hneg, ite_true, coeff_add, HahnSeries.coeff_one, hne, ite_false, zero_add,
+      coeff_single_same] at h1
     exact hε₀ h1
 
 /-- Over the dual numbers `ℚ[ε] ⧸ (ε²)`, the hypotheses of
@@ -156,8 +160,9 @@ example : (DualNumber.eps : DualNumber ℚ) ≠ 0 ∧ IsNilpotent (DualNumber.ep
       (1 - single (-1) DualNumber.eps) = 1 := by
   refine ⟨fun h ↦ (one_ne_zero : (1 : ℚ) ≠ 0) (by simpa using congrArg TrivSqZeroExt.snd h),
     ⟨2, by rw [sq, DualNumber.eps_mul_eps]⟩, ?_⟩
-  rw [show ∀ e : LaurentSeries (DualNumber ℚ), (1 + e) * (1 - e) = 1 - e * e from
-    fun e ↦ by ring, single_mul_single, DualNumber.eps_mul_eps, single_eq_zero, sub_zero]
+  -- `(1 + e) * (1 - e) = 1 - e ^ 2`, and `e = ε t⁻¹` squares to `0`.
+  have hsq (e : LaurentSeries (DualNumber ℚ)) : (1 + e) * (1 - e) = 1 - e * e := by ring
+  rw [hsq, single_mul_single, DualNumber.eps_mul_eps, single_eq_zero, sub_zero]
 
 end MultiplicativeGroup
 

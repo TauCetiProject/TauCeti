@@ -197,6 +197,15 @@ lemma congruenceLoopGroup_obj (N : ℕ) (R : CommAlgCat.{w} k) :
       GrpCat.of (congruenceSubgroup k H (Ideal.span {(X : R⟦X⟧) ^ N})) :=
   (rfl)
 
+/-- A morphism `f : R ⟶ S` acts on `K_N` by applying `f` to the coefficients of the values of a
+positive loop. -/
+@[simp]
+lemma congruenceLoopGroup_map_apply (N : ℕ) {R S : CommAlgCat.{w} k} (f : R ⟶ S)
+    (g : (congruenceLoopGroup k H N).obj R) :
+    Subtype.val ((congruenceLoopGroup k H N).map f g) =
+      AlgHom.mapValue (PowerSeries.mapAlgHom f.hom) (Subtype.val g) :=
+  (rfl)
+
 variable (k H) in
 /-- The natural inclusion `K_N → L⁺G`. -/
 noncomputable def congruenceLoopGroupIncl (N : ℕ) :
