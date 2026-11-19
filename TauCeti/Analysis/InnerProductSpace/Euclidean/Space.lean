@@ -27,9 +27,6 @@ The real coordinates of `ℂⁱ` (`TauCeti.complexEuclideanRealCoords`) identify
 `ℝ²ⁱ`, the real parts of the coordinates first and then their imaginary parts. They carry the
 closed disks in which characteristic maps of CW complexes are defined onto complex Euclidean
 disks.
-
-`EuclideanSpace.norm_sq_eq_fin_two` writes the squared norm of a vector of `𝕜²` as the sum of the
-squared norms of its two coordinates.
 -/
 
 public section
@@ -72,11 +69,5 @@ theorem complexEuclideanRealCoords_apply {i m : ℕ} (hm : 2 * i = m) (v : Eucli
   simp [complexEuclideanRealCoords, Module.Basis.smulTower_repr]
 
 end TauCeti
-
-/-- The squared Euclidean norm of a vector of `𝕜²` is the sum of the squared norms of its two
-coordinates. -/
-theorem EuclideanSpace.norm_sq_eq_fin_two {𝕜 : Type*} [RCLike 𝕜] (x : EuclideanSpace 𝕜 (Fin 2)) :
-    ‖x‖ ^ 2 = ‖x 0‖ ^ 2 + ‖x 1‖ ^ 2 := by
-  rw [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two]
 
 end

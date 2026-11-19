@@ -13,8 +13,7 @@ public import TauCeti.Geometry.Sphere.LinearIsometry
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.Complex.Isometry
-import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
-import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 
 /-!
 # The weighted ellipsoid is an analytic three-sphere
@@ -194,13 +193,11 @@ theorem isSmoothEmbedding_coe_weightedEllipsoid [NeZero ε] :
     funext x
     rw [Function.comp_apply, Homeomorph.coe_pullbackDiffeomorph]
     rfl
-  refine ⟨?_, Topology.IsEmbedding.subtypeVal⟩
   rw [hcoe]
-  exact (isImmersionOfComplement_comp_diffeomorph _
-    (isImmersionOfComplement_coe_regularLevel (m := ω) (by simp)
+  exact isSmoothEmbedding_comp_diffeomorph _
+    (isSmoothEmbedding_coe_regularLevel (m := ω) (by simp)
       (fun _ _ ↦ (contDiff_weightedNormSq a b).contMDiff.contMDiffAt)
-      (isRegularValue_weightedNormSq (NeZero.ne ε))
-      finrank_sub_finrank_weightedNormSq)).isImmersion
+      (isRegularValue_weightedNormSq (NeZero.ne ε)) finrank_sub_finrank_weightedNormSq)
 
 /-- The inclusion of the ellipsoid into `ℂ²` is analytic. -/
 theorem contMDiff_coe_weightedEllipsoid [NeZero ε] {n : ℕ∞ω} :
@@ -247,7 +244,7 @@ theorem sphereToWeightedEllipsoid_apply (w : EuclideanSpace ℂ (Fin 2)) :
 theorem weightedEllipsoidToSphere_mem_sphere (hε : 0 < ε) {z : ℂ × ℂ}
     (hz : z ∈ weightedEllipsoid a b ε) : weightedEllipsoidToSphere a b ε z ∈ sphere 0 1 := by
   rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
-    EuclideanSpace.norm_sq_eq_fin_two]
+    EuclideanSpace.norm_sq_eq, Fin.sum_univ_two]
   simp only [weightedEllipsoidToSphere_apply_zero, weightedEllipsoidToSphere_apply_one,
     norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_pow,
     Real.sq_sqrt (by positivity : (0 : ℝ) ≤ a / (2 * ε)),
@@ -260,7 +257,8 @@ theorem sphereToWeightedEllipsoid_mem_weightedEllipsoid (ha : 0 < a) (hb : 0 < b
     {w : EuclideanSpace ℂ (Fin 2)} (hw : w ∈ sphere 0 1) :
     sphereToWeightedEllipsoid a b ε w ∈ weightedEllipsoid a b ε := by
   have hw' : ‖w 0‖ ^ 2 + ‖w 1‖ ^ 2 = 1 := by
-    rw [← EuclideanSpace.norm_sq_eq_fin_two, mem_sphere_zero_iff_norm.1 hw, one_pow]
+    rw [← Fin.sum_univ_two (fun i ↦ ‖w i‖ ^ 2), ← EuclideanSpace.norm_sq_eq,
+      mem_sphere_zero_iff_norm.1 hw, one_pow]
   have ha' : (a : ℝ) ≠ 0 := by positivity
   have hb' : (b : ℝ) ≠ 0 := by positivity
   simp only [mem_weightedEllipsoid, sphereToWeightedEllipsoid_apply, norm_mul, Complex.norm_real,
