@@ -435,10 +435,11 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_actionClass (x₀ : M)
     ModuleCat.id_apply] at hcross
   -- Identify the coefficients before the maps, then commute the square `ρ ∘ Φ = Φ ∘ γ`.
   rw [actionClass, actionClass, ← hcross]
-  exact (congrArg _ (homologyMap_uliftIntTensorIso_hom_apply Φ _)).trans
+  exact (congrArg _ (homologyMap_chainComplexFunctor_map_apply uliftIntTensorIso.hom Φ _)).trans
     ((homologyMap_homologyMap_apply_of_comp_eq R hΦ _).trans
-      ((congrArg _ (homologyMap_uliftIntTensorIso_hom_apply γ _)).symm.trans
-        (homologyMap_uliftIntTensorIso_hom_apply Φ _).symm))
+      ((congrArg _
+        (homologyMap_chainComplexFunctor_map_apply uliftIntTensorIso.hom γ _)).symm.trans
+        (homologyMap_chainComplexFunctor_map_apply uliftIntTensorIso.hom Φ _).symm))
 
 include o hd in
 /-- `Φ_*(A × α)`, with its coefficients identified with `ℤ`, lives over the fundamental class at

@@ -201,7 +201,7 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
       ModuleCat.id_apply] at h
     exact h
   -- Identify the coefficients before the maps, then commute the square `hΨ`.
-  rw [sphereClass, sphereClass, ← hcross, homologyMap_uliftIntTensorIso_hom_apply]
+  rw [sphereClass, sphereClass, ← hcross, homologyMap_chainComplexFunctor_map_apply]
   exact homologyMap_homologyMap_apply_of_comp_eq R hΨ _
 
 include o hn in

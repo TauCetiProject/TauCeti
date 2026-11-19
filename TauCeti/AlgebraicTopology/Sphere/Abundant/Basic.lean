@@ -49,7 +49,7 @@ integers, written `ULift ℤ` as for the integral fundamental classes of
 coefficients `ℤ ⊗ ℤ` identified with `ℤ` (`TauCeti.uliftIntTensorIso`), from classes of the double
 loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedMap`). The
 identification of coefficients commutes with continuous maps
-(`TauCeti.homologyMap_uliftIntTensorIso_hom_apply`), and so does homology with commuting squares
+(`TauCeti.homologyMap_chainComplexFunctor_map_apply`), and so does homology with commuting squares
 of continuous maps (`TauCeti.homologyMap_homologyMap_apply_of_comp_eq`).
 
 ## Main definitions
@@ -236,34 +236,22 @@ theorem homologyMap_homologyMap_apply_of_comp_eq {k : Type v} [Ring k] (M : Modu
   simp only [← ConcreteCategory.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp,
     ← TopCat.ofHom_comp, h]
 
-/-- The identification `TauCeti.uliftIntTensorIso` of the coefficients `ℤ ⊗ ℤ` with `ℤ` commutes
-with the map induced on homology by a continuous map: this is the naturality of
-`AlgebraicTopology.singularHomologyFunctor` in the coefficients, on elements. -/
-theorem homologyMap_uliftIntTensorIso_hom_apply {X Y : Type} [TopologicalSpace X]
-    [TopologicalSpace Y] (f : C(X, Y)) {m : ℕ}
-    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) m : ModuleCat.{0} ℤ)) :
-    (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of Y))) m).hom
-        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f))
-          (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) m).hom x) =
-      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) (ModuleCat.of ℤ (ULift.{0} ℤ)) m).hom
-        ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-          uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of X))) m).hom x) := by
+/-- A coefficient morphism `φ : M ⟶ N` commutes with the map induced on homology by a continuous
+map: this is the naturality of `AlgebraicTopology.singularHomologyFunctor` in the coefficients, on
+elements. -/
+theorem homologyMap_chainComplexFunctor_map_apply {k : Type v} [Ring k] {M N : ModuleCat.{w} k}
+    (φ : M ⟶ N) {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y] (f : C(X, Y)) {m : ℕ}
+    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology M m : ModuleCat.{w} k)) :
+    (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+      φ).app (TopCat.toSSet.obj (TopCat.of Y))) m).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) M m).hom x) =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) N m).hom
+        ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+          φ).app (TopCat.toSSet.obj (TopCat.of X))) m).hom x) :=
   -- The naturality square of `singularHomologyFunctor`, read through its definition as the
   -- homology of `TopCat.toSSet`.
-  have h : HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of X))) m ≫
-        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) (ModuleCat.of ℤ (ULift.{0} ℤ)) m =
-      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f))
-          (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) m ≫
-        HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-          uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of Y))) m :=
-    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).map
-      uliftIntTensorIso.hom).naturality (TopCat.ofHom f)).symm
-  have hx := ConcreteCategory.congr_hom h x
-  simp only [ConcreteCategory.comp_apply] at hx
-  exact hx.symm
+  (ConcreteCategory.congr_hom (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k)
+    m).map φ).naturality (TopCat.ofHom f)) x)
 
 /-- The integral homology of the double loop space `Ω²Q` at `x` is that of the based mapping space
 `Map_*(S², Q)` of maps sending the north pole to `x`, with the coefficients `ULift ℤ` of
