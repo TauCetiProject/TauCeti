@@ -146,13 +146,12 @@ theorem norm_one_sub_complexSlope {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (hst : s
 `ξ` is determined by the angles of the triangle `0, 1, ξ` at `0` and `1`. -/
 theorem complexSlope_arg_div_pi {ξ : ℂ} (hξ : 0 < ξ.im) :
     complexSlope (arg ξ / π) (-arg (1 - ξ) / π) = ξ := by
-  have h₀ : ξ ≠ 0 := fun h => by simp [h] at hξ
   have h₁ : 1 - ξ ≠ 0 := fun h => by
     have := congrArg im h
     simp at this
     linarith
   have hS : Real.sin (π * (1 - arg ξ / π - -arg (1 - ξ) / π)) = ξ.im / (‖ξ‖ * ‖1 - ξ‖) := by
-    rw [← sin_arg_sub_arg_one_sub h₀ h₁, ← Real.sin_pi_sub]
+    rw [← sin_arg_sub_arg_one_sub ξ, ← Real.sin_pi_sub]
     congr 1
     field_simp
     ring
@@ -191,7 +190,7 @@ theorem bijOn_complexSlope :
       (arg_eq_zero_iff.1 h.symm).2.not_gt hξ
     have hb : arg (1 - ξ) < 0 := arg_neg_iff.2 (by simpa using hξ)
     have hsin : 0 < Real.sin (arg ξ - arg (1 - ξ)) := by
-      rw [sin_arg_sub_arg_one_sub h₀ h₁]
+      rw [sin_arg_sub_arg_one_sub ξ]
       exact div_pos hξ (mul_pos (norm_pos_iff.2 h₀) (norm_pos_iff.2 h₁))
     have hlt : arg ξ - arg (1 - ξ) < π := by
       by_contra! hle

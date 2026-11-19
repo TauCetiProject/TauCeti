@@ -58,8 +58,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
-* `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`, the
-  sine of the angle at `ξ` of the triangle `0, 1, ξ`.
+* `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
+  in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -229,10 +229,16 @@ theorem im_zpow (z : ℂ) (m : ℤ) : (z ^ m).im = ‖z‖ ^ m * Real.sin (m * a
   rw [mul_zpow, ← exp_int_mul, ← ofReal_zpow, ← mul_assoc, ← ofReal_intCast, ← ofReal_mul,
     im_ofReal_mul, exp_ofReal_mul_I_im]
 
-/-- The angle of the triangle `0, 1, ξ` at `ξ` is `π - arg ξ + arg (1 - ξ)`, so its sine
-`sin (arg ξ - arg (1 - ξ))` is `Im ξ / (|ξ| |1 - ξ|)`. -/
-theorem sin_arg_sub_arg_one_sub {ξ : ℂ} (h₀ : ξ ≠ 0) (h₁ : 1 - ξ ≠ 0) :
+/-- `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)` for every `ξ`; both sides vanish at `ξ = 0`
+and `ξ = 1`. For `ξ` in the upper half-plane, `π - arg ξ + arg (1 - ξ)` is the angle at `ξ` of the
+triangle `0, 1, ξ`, so this is the sine of that angle. -/
+theorem sin_arg_sub_arg_one_sub (ξ : ℂ) :
     Real.sin (arg ξ - arg (1 - ξ)) = ξ.im / (‖ξ‖ * ‖1 - ξ‖) := by
+  rcases eq_or_ne ξ 0 with rfl | h₀
+  · simp
+  rcases eq_or_ne ξ 1 with rfl | h₁
+  · simp
+  have h₁ : 1 - ξ ≠ 0 := sub_ne_zero.2 (Ne.symm h₁)
   rw [Real.sin_sub, sin_arg, sin_arg, cos_arg h₀, cos_arg h₁]
   have : ‖ξ‖ ≠ 0 := norm_ne_zero_iff.2 h₀
   have : ‖1 - ξ‖ ≠ 0 := norm_ne_zero_iff.2 h₁
