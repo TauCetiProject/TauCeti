@@ -181,17 +181,6 @@ theorem l2Pairing_self_eq_zero_iff {ξ : ∀ x, V x}
   exact (integral_pos_of_integrable_nonneg_ne_zero (h.continuous_inner hξ hξ) hi
     (fun y ↦ h.inner_self_nonneg y (ξ y)) (h.pos x _ hx).ne').ne' h0
 
-omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] in
-/-- Sections have compactly supported scalar pairing if either factor is compactly supported. -/
-theorem hasCompactSupport_inner {ξ η : ∀ x, V x}
-    (hc : IsCompact (closure {x | ξ x ≠ 0}) ∨ IsCompact (closure {x | η x ≠ 0})) :
-    HasCompactSupport (fun x ↦ h.inner x (ξ x) (η x)) := by
-  rcases hc with hc | hc
-  · exact hc.of_isClosed_subset isClosed_closure
-      (closure_mono fun x hx hξ ↦ hx (by simp [hξ]))
-  · exact hc.of_isClosed_subset isClosed_closure
-      (closure_mono fun x hx hη ↦ hx (by simp [hη]))
-
 /-- Continuous sections have integrable scalar pairing when either factor is compactly
 supported. -/
 theorem integrable_inner_of_isCompact_closure {ξ η : ∀ x, V x}

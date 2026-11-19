@@ -50,6 +50,8 @@ continuous reference inner products on the fibres.
 * `Bundle.ContinuousRiemannianMetric.continuous_inner`: the pointwise inner product of two
   continuous maps into the fibers is continuous, with versions `continuousWithinAt_inner`,
   `continuousAt_inner` and `continuousOn_inner`.
+* `Bundle.ContinuousRiemannianMetric.hasCompactSupport_inner`: the scalar pairing is compactly
+  supported when either section is compactly supported.
 -/
 
 public section
@@ -195,6 +197,16 @@ variable {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ x, Topologic
 theorem inner_self_nonneg (g : ContinuousRiemannianMetric F E) (b : B) (v : E b) :
     0 ≤ g.inner b v v :=
   g.toRiemannianMetric.inner_self_nonneg b v
+
+/-- Sections have compactly supported scalar pairing if either factor is compactly supported. -/
+theorem hasCompactSupport_inner (h : ContinuousRiemannianMetric F E) {ξ η : ∀ x, E x}
+    (hc : IsCompact (closure {x | ξ x ≠ 0}) ∨ IsCompact (closure {x | η x ≠ 0})) :
+    HasCompactSupport (fun x ↦ h.inner x (ξ x) (η x)) := by
+  rcases hc with hc | hc
+  · exact hc.of_isClosed_subset isClosed_closure
+      (closure_mono fun x hx hξ ↦ hx (by simp [hξ]))
+  · exact hc.of_isClosed_subset isClosed_closure
+      (closure_mono fun x hx hη ↦ hx (by simp [hη]))
 
 /-- The pointwise inner product, for a continuous Riemannian metric, of two maps into the same
 fibers that are continuous within `s` at `x₀` is continuous within `s` at `x₀`. -/
