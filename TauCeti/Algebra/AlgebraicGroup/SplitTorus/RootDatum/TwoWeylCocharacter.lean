@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # The sum of the positive coroots as a cocharacter
@@ -80,19 +81,12 @@ theorem pairing_ofAdd_twoWeylCocharacter (m : M) :
 
 variable [P.IsReduced]
 
-/-- The dual of a reduced root datum is reduced: both lattices of a root datum are reflexive, hence
-torsion free. -/
-private theorem isReduced_flip : P.flip.IsReduced := by
-  have : Module.IsReflexive ℤ M := .of_isPerfPair P.toLinearMap
-  have : Module.IsReflexive ℤ N := .of_isPerfPair P.flip.toLinearMap
-  infer_instance
-
 /-- **The pairing of a character with `2ρ^∨` is the sum of its pairings with the positive
 coroots.** -/
 theorem pairing_ofAdd_twoWeylCocharacter_eq_posCorootSum (m : M) :
     DiagonalizableGroup.pairing (Multiplicative.ofAdd m) (P.twoWeylCocharacter b) =
       posCorootSum P b m := by
-  have := P.isReduced_flip
+  have := P.flip_isReduced
   simp only [pairing_ofAdd_twoWeylCocharacter, twoWeylVector_flip, map_sum, posCorootSum_def,
     coroot', LinearMap.flip_apply]
 
@@ -101,7 +95,7 @@ taken relative to `b`. -/
 theorem pairing_ofAdd_root_twoWeylCocharacter (i : ι) :
     DiagonalizableGroup.pairing (Multiplicative.ofAdd (P.root i)) (P.twoWeylCocharacter b) =
       2 * b.height i := by
-  have := P.isReduced_flip
+  have := P.flip_isReduced
   rw [pairing_ofAdd_twoWeylCocharacter]
   -- The pairing of `P.root i` in `P` is the coroot functional of the index `i` in `P.flip`.
   exact coroot'_twoWeylVector_eq_two_mul_height_flip P.flip b.flip i
@@ -174,7 +168,7 @@ split-torus lattices whose pairing is the split-torus pairing. -/
 theorem cocharEquiv_twoWeylCocharacter_eq_sum [P.IsReduced]
     (hP : P.toLinearMap = SplitTorus.dotPairing) :
     SplitTorus.cocharEquiv (P.twoWeylCocharacter b) = ∑ i ∈ posRootsFinset P b, P.coroot i := by
-  have := P.isReduced_flip
+  have := P.flip_isReduced
   rw [cocharEquiv_twoWeylCocharacter b hP, twoWeylVector_flip]
 
 end SplitTorus
