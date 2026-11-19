@@ -42,7 +42,7 @@ estimate (`TauCeti.norm_quantizeSchwartzValue_cutoffExponential_le`). For symbol
 uniform in the position this lets the limit pass under integrals in the position
 (`TauCeti.Symbol.IsUniform.tendsto_integral_smul_quantizeSchwartzValue_cutoffExponential`), which
 gives the identity itself for the action of `Op(a)` on tempered distributions
-(`TauCeti.Symbol.quantizeTempered_toTemperedDistribution_exp_mul_I`).
+(`TauCeti.Symbol.quantizeTempered_toTemperedDistribution_exp_inner_mul_I`).
 
 The proof changes variables `ζ = ξ / 2π + ε η` in the quantization integral, which gives the
 exact formula

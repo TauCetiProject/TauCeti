@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -437,10 +438,8 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 @[simp]
 theorem cutoffExponential_apply (φ : 𝓢(E, ℂ)) {ε : ℝ} (hε : ε ≠ 0) (ξ : E) (v : F) (y : E) :
     φ.cutoffExponential ε ξ v y = (Complex.exp (⟪y, ξ⟫ * Complex.I) * φ (ε • y)) • v := by
-  have hg : (fun y : E ↦ Complex.exp (⟪y, ξ⟫ * Complex.I)).HasTemperateGrowth :=
-    Complex.hasTemperateGrowth_exp_mul_I.comp
-      (by fun_prop : (inner ℝ · ξ : E → ℝ).HasTemperateGrowth)
-  simp [cutoffExponential, hε, smulLeftCLM_apply_apply hg]
+  simp [cutoffExponential, hε,
+    smulLeftCLM_apply_apply (Function.hasTemperateGrowth_exp_inner_mul_I ξ)]
 
 /-- **The Fourier transform of a cut-off exponential** is the rescaled Fourier transform of the
 cutoff, translated to the frequency `ξ / 2π`:
