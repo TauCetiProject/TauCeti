@@ -12,8 +12,9 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 # Compact chart seminorms of quadratics and exponentials on `ℝ`
 
 This file computes compact chart seminorms of two explicit functions on `ℝ`, in the identity
-chart, and uses them to test the comparison of compact chart seminorms under a change of
-coordinates (`ContMDiffMap.exists_chartCkSeminorm_le_coordChange`).
+chart, and uses them to illustrate the scalar-field analogue of the comparison of compact chart
+seminorms under a change of coordinates (`ContMDiffMap.exists_chartCkSeminorm_le_coordChange`),
+where the change of coordinates is applied to the map rather than to the chart.
 
 * **Quadratics.** For `f x = a * x ^ 2` and the interval `[-r, r]`, `r ≥ 0`, the `m`th
   derivative seminorm is `2.descFactorial m * |a| * r ^ (2 - m)`
@@ -32,7 +33,8 @@ coordinates (`ContMDiffMap.exists_chartCkSeminorm_le_coordChange`).
   (`ContMDiffMap.chartCkSeminorm_Icc_exp_two_mul_eq`). So no constant independent of the order
   `k` bounds the `C^k` seminorms after this change of coordinates
   (`ContMDiffMap.not_exists_forall_chartCkSeminorm_le_of_forall_apply_eq_apply_two_mul`): the
-  constants of `ContMDiffMap.exists_chartCkSeminorm_le_coordChange` depend on `k`.
+  constant for the dilation `y ↦ 2 * y` must depend on `k`, matching the analogous chart-change
+  comparison, whose constant is chosen after `k`.
 
 ## References
 

@@ -23,9 +23,10 @@ Consequently the compact `C^k` seminorm of `g` is at most `max 1 ‖c‖ ^ k` ti
 (`ContMDiffMap.chartCkSeminorm_selfChartCompacts_le_of_forall_apply_eq_apply_mul`). For a
 contraction, `‖c‖ ≤ 1`, the constant is `1` in every order
 (`ContMDiffMap.chartCkSeminorm_selfChartCompacts_le_of_forall_apply_eq_apply_mul_of_norm_le_one`);
-for an expansion it is `‖c‖ ^ k`, which grows with the order. These are explicit constants for
-the general comparison of compact chart seminorms under a change of charts
-(`ContMDiffMap.exists_chartCkSeminorm_le_coordChange`) in the case of a dilation.
+for an expansion it is `‖c‖ ^ k`, which grows with the order. These give explicit constants in
+the scalar-field analogue of the comparison of compact chart seminorms under a change of charts
+(`ContMDiffMap.exists_chartCkSeminorm_le_coordChange`), where the change of coordinates is
+applied to the map rather than to the chart.
 
 ## Main results
 
