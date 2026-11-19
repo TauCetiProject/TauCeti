@@ -38,6 +38,11 @@ vanishes (`TauCeti.MappingTorus.wangδ_eq_zero`), so the fibre inclusion is an e
 `Hₙ₊₁` (`TauCeti.MappingTorus.epi_homologyMap_fibreInclusionChainMap_succ`). If moreover `φ_*` is
 the identity on `Hₙ₊₁(F)`, the fibre inclusion is an isomorphism `Hₙ₊₁(F) ≅ Hₙ₊₁(T_φ)`
 (`TauCeti.MappingTorus.isIso_homologyMap_fibreInclusionChainMap_succ`).
+
+The Wang connecting morphism is natural for maps of mapping tori: if `g : F → G` satisfies
+`g ∘ φ = ψ ∘ g`, then `g × 𝟙ℝ` and the induced map `T_φ → T_ψ` form a morphism of the short exact
+sequences of the infinite cyclic covers (`TauCeti.MappingTorus.cyclicCoverShortComplexMap`), so
+`wangδ` commutes with the induced maps on homology (`TauCeti.MappingTorus.wangδ_naturality`).
 -/
 
 public section
@@ -276,6 +281,81 @@ theorem isIso_homologyMap_fibreInclusionChainMap_succ (n : ℕ)
     IsIso (homologyMap (fibreInclusionChainMap φ R) (n + 1)) :=
   have := mono_homologyMap_fibreInclusionChainMap φ R (n + 1) hφ
   isIso_of_mono_of_epi _
+
+section Naturality
+
+/-! ### Naturality of the Wang connecting morphism -/
+
+variable {G : Type w} [TopologicalSpace G] (ψ : G ≃ₜ G) (g : C(F, G))
+  (h : Function.Semiconj g φ ψ)
+
+/-- The deck transformations of two mapping tori are intertwined by `g × 𝟙ℝ` on singular chains of
+the cylinders, for a map `g` intertwining the monodromies. -/
+@[reassoc]
+lemma deckChainMap_comp_map_prodMap (h : Function.Semiconj g φ ψ) :
+    deckChainMap φ R ≫ ((singularChainComplexFunctor A).obj R).map
+        (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) =
+      ((singularChainComplexFunctor A).obj R).map
+          (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) ≫ deckChainMap ψ R := by
+  rw [deckChainMap_def, deckChainMap_def, ← Functor.map_comp, ← Functor.map_comp]
+  congr 1
+  ext p
+  · simpa using h p.1
+  · simp
+
+/-- The covering maps of two mapping tori are intertwined by `g × 𝟙ℝ` on the cylinders and the
+induced map of mapping tori, on singular chains. -/
+@[reassoc]
+lemma coverChainMap_comp_mappingTorusChainMap :
+    coverChainMap φ R ≫ mappingTorusChainMap φ R ψ g h =
+      ((singularChainComplexFunctor A).obj R).map
+          (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) ≫ coverChainMap ψ R := by
+  rw [coverChainMap_def, coverChainMap_def, mappingTorusChainMap_def, ← Functor.map_comp,
+    ← Functor.map_comp]
+  congr 1
+  ext p
+  simp [coverMap_apply]
+
+/-- The morphism of short exact sequences of chains of the infinite cyclic covers induced by a map
+`g` intertwining the monodromies: `g × 𝟙ℝ` on the cylinders and the induced map of mapping tori. -/
+def cyclicCoverShortComplexMap : cyclicCoverShortComplex φ R ⟶ cyclicCoverShortComplex ψ R where
+  τ₁ := ((singularChainComplexFunctor A).obj R).map
+    (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ)))
+  τ₂ := ((singularChainComplexFunctor A).obj R).map
+    (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ)))
+  τ₃ := mappingTorusChainMap φ R ψ g h
+  comm₁₂ := by
+    rw [Preadditive.comp_sub, Preadditive.sub_comp, Category.comp_id, Category.id_comp,
+      deckChainMap_comp_map_prodMap φ R ψ g h]
+  comm₂₃ := (coverChainMap_comp_mappingTorusChainMap φ R ψ g h).symm
+
+/-- **Naturality of the Wang connecting morphism.** For a map `g : F → G` intertwining the
+monodromies, `g ∘ φ = ψ ∘ g`, the Wang connecting morphisms `Hₙ₊₁(T_φ) ⟶ Hₙ(F)` and
+`Hₙ₊₁(T_ψ) ⟶ Hₙ(G)` commute with the induced maps `Hₙ₊₁(T_φ) ⟶ Hₙ₊₁(T_ψ)` and
+`Hₙ(F) ⟶ Hₙ(G)`. -/
+@[reassoc]
+theorem wangδ_naturality (n : ℕ) :
+    wangδ φ R n ≫ homologyMap (fibreChainMap R g) n =
+      homologyMap (mappingTorusChainMap φ R ψ g h) (n + 1) ≫ wangδ ψ R n := by
+  have hδ := HomologicalComplex.HomologySequence.δ_naturality
+    (cyclicCoverShortComplexMap φ R ψ g h) (cyclicCoverShortComplex_shortExact φ R)
+    (cyclicCoverShortComplex_shortExact ψ R) (n + 1) n (by simp)
+  -- The projections of the cylinders onto the fibres intertwine `g × 𝟙ℝ` with `g`.
+  have hfst : ((singularChainComplexFunctor A).obj R).map
+        (TopCat.ofHom (cylinderHomotopyEquiv F).toFun) ≫ fibreChainMap R g =
+      ((singularChainComplexFunctor A).obj R).map
+          (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) ≫
+        ((singularChainComplexFunctor A).obj R).map
+          (TopCat.ofHom (cylinderHomotopyEquiv G).toFun) := by
+    rw [fibreChainMap_def, ← Functor.map_comp, ← Functor.map_comp]
+    congr 1
+    ext p
+    simp
+  rw [wangδ_def, wangδ_def, Category.assoc, ← homologyMap_comp, hfst, homologyMap_comp,
+    ← Category.assoc, ← Category.assoc]
+  exact congrArg (· ≫ _) hδ
+
+end Naturality
 
 section ModuleCat
 
