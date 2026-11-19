@@ -9,7 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.MvPolynomial.Kronecker
 public import TauCeti.RingTheory.MvPolynomial.PowerSubstitution
 
-import Mathlib.Algebra.BigOperators.Fin
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # The base-`B` Kronecker substitution
@@ -25,12 +25,12 @@ B ^ i` (`MvPolynomial.polynomialGraph_apply`); for `m = 2` it is the power subst
 `MvPolynomial.powerSubstitution B` (`MvPolynomial.polynomialGraph_fin_two`). The weight `i ↦ B ^ i`
 sends the exponent vector `d` to its base-`B` value `∑ i, d i * B ^ i`. By uniqueness of base-`B`
 digits this weight is injective on the box of exponent vectors with entries `< B`
-(`Finsupp.injOn_weight_pow`). Hence a base `B` exceeding every exponent of `h` preserves every
-coefficient of `h` (`MvPolynomial.coeff_polynomialGraph`), and a nonzero `h` stays nonzero. Since
-`B` may be chosen after `h`, this produces for every hypersurface `V(h)` of affine space a curve
-through the origin, defined over the base ring, that is not contained in `V(h)`. Straight lines do
-not suffice: over `𝔽₂` the polynomial `X₀² X₁ - X₀ X₁²` vanishes on all three rational lines through
-the origin, but pulls back to `T⁵ + T⁷` along `T ↦ (T, T³)`.
+(`Finsupp.injOn_weight_pow` in `TauCeti.Data.Finsupp.Weight`). Hence a base `B` exceeding every
+exponent of `h` preserves every coefficient of `h` (`MvPolynomial.coeff_polynomialGraph`), and a
+nonzero `h` stays nonzero. Since `B` may be chosen after `h`, this produces for every hypersurface
+`V(h)` of affine space a curve through the origin, defined over the base ring, that is not contained
+in `V(h)`. Straight lines do not suffice: over `𝔽₂` the polynomial `X₀² X₁ - X₀ X₁²` vanishes on
+all three rational lines through the origin, but pulls back to `T⁵ + T⁷` along `T ↦ (T, T³)`.
 
 For `m ≠ 0` the substitution is surjective, as `X_0 ↦ T`
 (`MvPolynomial.polynomialGraph_surjective`), so the graph is a closed immersion; for `m ≥ 2` it is
@@ -43,8 +43,6 @@ not injective, since `X_1 - X_0 ^ B` lies in its kernel
 
 ## Main results
 
-* `Finsupp.injOn_weight_pow`: the base-`B` weight `d ↦ ∑ i, d i * B ^ i` is injective on the
-  exponent vectors with entries `< B`.
 * `MvPolynomial.coeff_polynomialGraph`: if every exponent of `h` is `< B`, the coefficient of
   `T ^ (∑ i, e i * B ^ i)` in the image of `h` is the coefficient of `X ^ e` in `h`, for every `e`
   with entries `< B`.
@@ -64,23 +62,6 @@ not injective, since `X_1 - X_0 ^ B` lies in its kernel
 public section
 
 noncomputable section
-
-namespace Finsupp
-
-/-- **Uniqueness of base-`B` digits.** The base-`B` weight `d ↦ ∑ i, d i * B ^ i` of exponent
-vectors in `m` variables is injective on the vectors all of whose entries are `< B`. For `B ≤ 1`
-this box has at most one element. -/
-theorem injOn_weight_pow (m B : ℕ) :
-    Set.InjOn (weight fun i : Fin m ↦ B ^ (i : ℕ)) {d | ∀ i, d i < B} := by
-  have key (d : Fin m →₀ ℕ) (hd : ∀ i, d i < B) :
-      weight (fun i : Fin m ↦ B ^ (i : ℕ)) d =
-        finFunctionFinEquiv fun i ↦ (⟨d i, hd i⟩ : Fin B) := by
-    simp [weight_eq_sum]
-  intro d hd d' hd' h
-  have := finFunctionFinEquiv.injective (Fin.ext ((key d hd).symm.trans (h.trans (key d' hd'))))
-  exact Finsupp.ext fun i ↦ congrArg Fin.val (congrFun this i)
-
-end Finsupp
 
 namespace MvPolynomial
 
@@ -132,10 +113,8 @@ of the graph. -/
 theorem aeval_polynomialGraph {S : Type*} [CommSemiring S] [Algebra R S] (a : S)
     (h : MvPolynomial (Fin m) R) :
     Polynomial.aeval a (polynomialGraph R m B h) = aeval (fun i : Fin m ↦ a ^ (B ^ (i : ℕ))) h := by
-  induction h using MvPolynomial.induction_on with
-  | C c => simp [Polynomial.aeval_C]
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => simp [hp]
+  rw [polynomialGraph_apply, ← AlgHom.comp_apply, comp_aeval]
+  simp
 
 /-- Evaluating the image of `h` at `a` evaluates `h` at `(a, a ^ B, …, a ^ (B ^ (m - 1)))`. -/
 @[simp]
@@ -163,7 +142,7 @@ theorem polynomialGraph_fin_one (h : MvPolynomial (Fin 1) R) :
   rw [uniqueAlgEquiv_apply, polynomialGraph, coe_eval₂Hom]
   congr 1
   funext i
-  rw [Fin.fin_one_eq_zero i, Fin.val_zero, pow_zero, pow_one]
+  simp [Fin.fin_one_eq_zero i]
 
 /-- In two variables the substitution is the power substitution `Z ↦ T`, `W ↦ T ^ B`, for every
 base `B`. -/
@@ -220,8 +199,8 @@ theorem polynomialGraph_eq_zero_iff {h : MvPolynomial (Fin m) R}
 is the image of `∑ a_j X_0 ^ j`. -/
 theorem polynomialGraph_surjective [NeZero m] : Function.Surjective (polynomialGraph R m B) :=
   fun p ↦ ⟨p.eval₂ C (X 0), by
-    rw [Polynomial.hom_eval₂, polynomialGraph_comp_C, polynomialGraph_X, Fin.val_zero, pow_zero,
-      pow_one, Polynomial.eval₂_C_X]⟩
+    rw [Polynomial.hom_eval₂, polynomialGraph_comp_C]
+    simp⟩
 
 end CommSemiring
 
