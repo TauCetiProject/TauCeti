@@ -62,6 +62,8 @@ product `z · x`. The sign is absorbed in `TauCeti.sphereLoopHomologyMulRightEqu
 
 ## Main definitions
 
+* `TauCeti.sphereBallMap h`: the characteristic map of the top cell of `Sⁿ`, on the closed unit
+  ball of the sup norm.
 * `TauCeti.sphereCubeMap h`: the characteristic map of the top cell of `Sⁿ`, read on the cube.
 * `TauCeti.sphereCubePaths h`: the Moore paths from the pole along the images of straight segments.
 * `TauCeti.spherePathCube h`: the singular `n`-cube `d ↦ τ d` of `P_b Sⁿ`.
@@ -107,14 +109,14 @@ local notation "Sph" => sphere (0 : EuclideanSpace ℝ ι) 1
 
 /-- The characteristic map of the top cell of the sphere, on the closed unit ball of the sup
 norm. -/
-private def sphereBallMap : C(closedBall (0 : Fin (m + 2) → ℝ) 1, Sph) :=
+def sphereBallMap : C(closedBall (0 : Fin (m + 2) → ℝ) 1, Sph) :=
   letI := TopCat.sphereRelCWComplex h
   letI := TopCat.uniqueCellSphereRelCWComplex h (n := m + 2) (by omega)
   (sigmaCellMap (univ : Set Sph) (m + 2)).comp
     ⟨Sigma.mk (β := fun _ ↦ closedBall (0 : Fin (m + 2) → ℝ) 1) default, continuous_sigmaMk⟩
 
 /-- The characteristic map of the top cell sends the boundary sphere of the ball to the pole. -/
-private theorem sphereBallMap_of_norm_eq_one {v : closedBall (0 : Fin (m + 2) → ℝ) 1}
+theorem sphereBallMap_of_norm_eq_one {v : closedBall (0 : Fin (m + 2) → ℝ) 1}
     (hv : ‖(v : Fin (m + 2) → ℝ)‖ = 1) : sphereBallMap h v = spherePolePoint h := by
   let _ := TopCat.sphereRelCWComplex h
   let _ := TopCat.uniqueCellSphereRelCWComplex h (n := m + 2) (by omega)
@@ -140,12 +142,12 @@ def sphereCubeMap : C(Fin (m + 2) → I, Sph) :=
 
 /-- The cube map is the characteristic map of the single top cell, read through
 `TauCeti.cubeHomeomorphClosedBall`. -/
-private theorem sphereCubeMap_apply (d : Fin (m + 2) → I) :
+theorem sphereCubeMap_apply (d : Fin (m + 2) → I) :
     letI := TopCat.sphereRelCWComplex h
     letI := TopCat.uniqueCellSphereRelCWComplex h (n := m + 2) (by omega)
     sphereCubeMap h d = sigmaCellMap (univ : Set Sph) (m + 2)
       ⟨default, cubeHomeomorphClosedBall (Fin (m + 2)) d⟩ :=
-  rfl
+  (rfl)
 
 /-- The cube map collapses the boundary of the cube to the pole. -/
 theorem sphereCubeMap_of_mem_boundary {d : Fin (m + 2) → I}
@@ -162,6 +164,19 @@ def sphereCubePaths : C(Fin (m + 2) → I, MoorePath Sph) :=
     ⟨MoorePath.refl _, MoorePath.source_refl _,
       (MoorePath.target_refl _).trans (sphereBallMap_of_norm_eq_one h norm_ballCorner).symm⟩).comp
     (cubeHomeomorphClosedBall (Fin (m + 2)))
+
+/-- The Moore paths from the pole are the radial paths of `TauCeti.sphereBallMap` from the image
+of the corner `0` of the cube, starting with the constant path at the pole, read on the cube. -/
+theorem sphereCubePaths_apply (d : Fin (m + 2) → I) :
+    sphereCubePaths h d = MoorePathPullback.radialPaths
+      ((convex_closedBall (0 : Fin (m + 2) → ℝ) 1).starConvex
+        (cubeHomeomorphClosedBall (Fin (m + 2)) 0).2)
+      (cubeHomeomorphClosedBall (Fin (m + 2)) 0).2 (sphereBallMap h)
+      ⟨MoorePath.refl _, MoorePath.source_refl _, (MoorePath.target_refl _).trans
+        (sphereBallMap_of_norm_eq_one h
+          ((norm_cubeHomeomorphClosedBall_eq_one_iff 0).2 ⟨0, Or.inl rfl⟩)).symm⟩
+      (cubeHomeomorphClosedBall (Fin (m + 2)) d) :=
+  (rfl)
 
 @[simp]
 theorem source_sphereCubePaths (d : Fin (m + 2) → I) :
