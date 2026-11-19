@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import Mathlib.Geometry.Manifold.HasGroupoid
+import Mathlib.Analysis.Normed.Affine.Convex
 import Mathlib.Topology.Homotopy.Affine
 import TauCeti.Topology.Compactness.Compact
 
@@ -226,18 +227,12 @@ theorem localDegree_restrict_eq_of_norm_sub_lt {U : Opens M}
     (o.comap U.isOpenEmbedding').localDegree o' hE (f.restrict U) y =
       (o.comap U.isOpenEmbedding').localDegree o' hE (g.restrict U) y := by
   refine o.localDegree_restrict_eq_of_homotopy o' hE hF hU (.affine f g) fun t x hx hxy ↦ ?_
-  -- At a solution `f x + t (g x - f x) = y`, the margins `‖f x - y‖ = t ‖g x - f x‖` and
-  -- `‖g x - y‖ = (1 - t) ‖g x - f x‖` add up to only `‖g x - f x‖`.
-  simp only [ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module] at hxy
-  have hft : f x - y = -((t : ℝ) • (g x - f x)) := by
-    linear_combination (norm := module) hxy
-  have hgt : g x - y = (1 - (t : ℝ)) • (g x - f x) := by
-    linear_combination (norm := module) hxy
-  have hle : ‖f x - y‖ + ‖g x - y‖ ≤ ‖g x - f x‖ := by
-    rw [hft, hgt, norm_neg, norm_smul, norm_smul, Real.norm_of_nonneg t.2.1,
-      Real.norm_of_nonneg (sub_nonneg.2 t.2.2)]
-    exact (by ring : _ = _).le
-  exact (hfg x hx).not_ge hle
+  -- A solution `y` lies on the segment from `f x` to `g x`, so its distances to the endpoints
+  -- add up to only `‖g x - f x‖`.
+  simp only [ContinuousMap.Homotopy.affine_apply] at hxy
+  have hle := (show Wbtw ℝ (f x) y (g x) from ⟨t, t.2, hxy⟩).dist_add_dist
+  rw [dist_comm y, dist_comm (f x) (g x), dist_eq_norm, dist_eq_norm, dist_eq_norm] at hle
+  exact (hfg x hx).ne' hle
 
 include hF in
 /-- **The boundary margin of an isolating open set.** Let `U` have compact closure and let `f` take
