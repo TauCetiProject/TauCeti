@@ -36,6 +36,8 @@ divide the order, all elements of order `2` are conjugate and so form a single c
   group, any two elements of order `2` are conjugate.
 * `TauCeti.carrier_mk_eq_setOf_orderOf_eq_two`: if `4` does not divide the order of the group,
   the elements of order `2` form a single conjugacy class.
+* `TauCeti.subsingleton_sylow_of_forall_dvd_natCard_modEq_one`: the Sylow `p`-subgroup is unique
+  when no divisor of the group order other than `1` is congruent to `1` modulo `p`.
 -/
 
 public section
@@ -127,5 +129,16 @@ theorem carrier_mk_eq_setOf_orderOf_eq_two (h4 : ¬ 4 ∣ Nat.card G) {g : G} (h
   refine ⟨fun hx => ?_, fun hx => isConj_of_orderOf_eq_two_of_not_four_dvd h4 hx hg⟩
   obtain ⟨y, rfl⟩ := isConj_iff.mp hx.symm
   rw [← MulAut.conj_apply, MulEquiv.orderOf_eq, hg]
+
+/-- A group has a unique Sylow `p`-subgroup when `1` is the only divisor of its order congruent
+to `1` modulo `p`. The hypothesis forces the group to be finite, since every number divides
+`Nat.card G = 0`. -/
+theorem subsingleton_sylow_of_forall_dvd_natCard_modEq_one
+    (h : ∀ d, d ∣ Nat.card G → d ≡ 1 [MOD p] → d = 1) : Subsingleton (Sylow p G) := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h0 ↦
+    hp.out.ne_zero (Nat.succ_injective (h (p + 1) (h0 ▸ dvd_zero _) (by simp [Nat.ModEq])))
+  obtain ⟨P⟩ := (inferInstance : Nonempty (Sylow p G))
+  exact (Nat.card_eq_one_iff_unique.mp
+    (h _ (P.card_dvd_index.trans (Subgroup.index_dvd_card _)) (card_sylow_modEq_one p G))).1
 
 end TauCeti
