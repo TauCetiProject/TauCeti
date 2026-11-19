@@ -124,6 +124,8 @@ theorem discriminantGroup_mk_eq_iff (L : IntegralLattice V) (x y : L.dualCarrier
 /-- The discriminant group of a nondegenerate integral lattice is finite. -/
 noncomputable instance instFiniteDiscriminantGroup (L : IntegralLattice V) [L.IsNondegenerate] :
     Finite L.DiscriminantGroup := by
+  have := Submodule.IsLattice.free ℚ L.dualCarrier
+  have := Submodule.IsLattice.finite ℚ L.dualCarrier
   apply Submodule.finiteQuotientOfFreeOfRankEq L.carrierInDual
   rw [L.finrank_carrierInDual, L.finrank_carrier, L.finrank_dualCarrier]
 
