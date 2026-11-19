@@ -14,58 +14,73 @@ import TauCeti.LinearAlgebra.Matrix.DotProduct
 /-!
 # The indefinite unitary group `U(p, q)`
 
-Let `R` be a commutative ring with an involution `star`, and let
-`J = LieAlgebra.Orthogonal.indefiniteDiagonal p q R = diag(1, …, 1, -1, …, -1)` be the Gram matrix
-of the Hermitian form `⟨z, w⟩ = star z ⬝ᵥ J *ᵥ w = Σ_{i ∈ p} star zᵢ wᵢ - Σ_{j ∈ q} star zⱼ wⱼ` on
-`p ⊕ q → R`, conjugate-linear in the first slot. The **indefinite unitary group**
-`Matrix.indefiniteUnitaryGroup p q R` is the subgroup of `GL (p ⊕ q) R` of the matrices `g` with
-`star g * J * g = J`: the invertible matrices preserving the form. Over `ℂ` this is `U(p, q)`, and
-`U(1, n)`, for `p = Fin 1` and `q = Fin n`, is the group acting on complex hyperbolic `n`-space.
-Over `ℝ`, where the star is trivial, it is the indefinite orthogonal group `O(p, q)`.
+Let `R` be a commutative ring with an involution `star`. For a square matrix `A` over `R`, the
+**unitary group of `A`**, `TauCeti.Matrix.unitaryGroupOf A`, is the subgroup of `GL n R` of the
+matrices `g` with `star g * A * g = A`: the invertible matrices preserving the sesquilinear form
+`⟨z, w⟩ = star z ⬝ᵥ A *ᵥ w` of Gram matrix `A`, conjugate-linear in the first slot.
 
-The basic structure of this group is recorded here.
+For `J = LieAlgebra.Orthogonal.indefiniteDiagonal p q R = diag(1, …, 1, -1, …, -1)`, the Gram
+matrix of the Hermitian form
+`⟨z, w⟩ = star z ⬝ᵥ J *ᵥ w = Σ_{i ∈ p} star zᵢ wᵢ - Σ_{j ∈ q} star zⱼ wⱼ` on `p ⊕ q → R`, this is
+the **indefinite unitary group** `TauCeti.Matrix.indefiniteUnitaryGroup p q R`. Over `ℂ` this is
+`U(p, q)`, and `U(1, n)`, for `p = Fin 1` and `q = Fin n`, is the group acting on complex
+hyperbolic `n`-space. Over `ℝ`, where the star is trivial, it is the indefinite orthogonal group
+`O(p, q)`.
 
-* Membership is equivalent to `g * J * star g = J`, to `star g` lying in the group, and to the
-  preservation `⟨g z, g w⟩ = ⟨z, w⟩` of the form. (Over `ℝ` or `ℂ` it is also equivalent, by
-  polarization, to the preservation of the values `⟨z, z⟩` alone; that statement, with the
-  topological facts about `U(p, q)`, is in `TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup`.)
-* Every matrix preserving the form is invertible, with inverse `J * star g * J`
-  (`Matrix.indefiniteUnitaryGroup.ofMatrix`), and its determinant is a unitary scalar.
-* The block-diagonal matrices `diag(A, D)` with `A ∈ U(p)` and `D ∈ U(q)` form a subgroup
-  isomorphic to `U(p) × U(q)` (`Matrix.indefiniteUnitaryGroup.fromBlocksHom`). It is the stabilizer
-  of the coordinate subspace `p → R` spanned by the positive basis vectors: an element of `U(p, q)`
-  preserves that subspace, that is has vanishing lower-left block, exactly when it is block
-  diagonal. For `U(1, n)` this is the stabilizer `U(1) × U(n)` of the positive line spanned by the
-  first basis vector.
+The basic structure of these groups is recorded here.
+
+* Membership in `unitaryGroupOf A` is equivalent to the preservation `⟨g z, g w⟩ = ⟨z, w⟩` of the
+  form and, for invertible `A`, to `g * A⁻¹ * star g = A⁻¹`, that is to `star g` lying in
+  `unitaryGroupOf A⁻¹`. For `J`, which is its own inverse, `U(p, q)` is stable under `star`.
+  (Over `ℝ` or `ℂ` and for Hermitian `A`, membership is also equivalent, by polarization, to the
+  preservation of the values `⟨z, z⟩` alone; that statement, with the topological facts, is in
+  `TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup`.)
+* For invertible `A`, every matrix preserving the form is invertible, with inverse
+  `A⁻¹ * star g * A` (`TauCeti.Matrix.unitaryGroupOf.ofMatrix`), and its determinant is a unitary
+  scalar. For `U(p, q)` the inverse is `J * star g * J`.
+* The block-diagonal matrices `diag(A, D)` with `A ∈ U(p)` and `D ∈ U(q)` form a subgroup of
+  `U(p, q)` isomorphic to `U(p) × U(q)` (`TauCeti.Matrix.indefiniteUnitaryGroup.fromBlocksHom`). It
+  is the stabilizer of the coordinate subspace `p → R` spanned by the positive basis vectors: an
+  element of `U(p, q)` preserves that subspace, that is has vanishing lower-left block, exactly
+  when it is block diagonal. For `U(1, n)` this is the stabilizer `U(1) × U(n)` of the positive
+  line spanned by the first basis vector.
 * Over a field of characteristic zero, the centre of `U(p, q)` is the group of unit scalars
   `λ • 1` with `star λ * λ = 1`. The proof uses the reflections
   `1 - (2 / ⟨v, v⟩) • vecMulVec v (star v ᵥ* J)` in the non-isotropic vectors `v`, which lie in
-  `U(p, q)` (`Matrix.indefiniteUnitaryGroup.reflection`): a central element commutes with the
-  rank-one matrices `vecMulVec v (star v ᵥ* J)`, and testing this on the vectors `eₖ` and
+  `U(p, q)` (`TauCeti.Matrix.indefiniteUnitaryGroup.reflection`): a central element commutes with
+  the rank-one matrices `vecMulVec v (star v ᵥ* J)`, and testing this on the vectors `eₖ` and
   `eᵢ + 2 eₖ` forces it to be scalar.
 
 ## Main definitions
 
-* `Matrix.indefiniteUnitaryGroup p q R`: the group `U(p, q)` of invertible matrices preserving the
-  Hermitian form of Gram matrix `diag(1, …, 1, -1, …, -1)`.
-* `Matrix.indefiniteUnitaryGroup.ofMatrix`: the element of `U(p, q)` defined by a matrix preserving
-  the form.
-* `Matrix.indefiniteUnitaryGroup.fromBlocksHom`: the block-diagonal embedding of `U(p) × U(q)`.
-* `Matrix.indefiniteUnitaryGroup.scalarHom`: the embedding `λ ↦ λ • 1` of the unitary scalars.
-* `Matrix.indefiniteUnitaryGroup.reflection`: the reflection in a non-isotropic vector.
+* `TauCeti.Matrix.unitaryGroupOf A`: the group of invertible matrices preserving the sesquilinear
+  form of Gram matrix `A`.
+* `TauCeti.Matrix.unitaryGroupOf.ofMatrix`: the element of `unitaryGroupOf A` defined by a matrix
+  preserving the form, for invertible `A`.
+* `TauCeti.Matrix.unitaryGroupOf.scalarHom`: the embedding `λ ↦ λ • 1` of the unitary scalars.
+* `TauCeti.Matrix.indefiniteUnitaryGroup p q R`: the group `U(p, q)` of invertible matrices
+  preserving the Hermitian form of Gram matrix `diag(1, …, 1, -1, …, -1)`.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.fromBlocksHom`: the block-diagonal embedding of
+  `U(p) × U(q)`.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.reflection`: the reflection in a non-isotropic vector.
 
 ## Main results
 
-* `Matrix.mem_indefiniteUnitaryGroup_iff'`: membership as the equation `g * J * star g = J`.
-* `Matrix.mem_indefiniteUnitaryGroup_iff_forall_dotProduct`: membership as preservation of the
+* `TauCeti.Matrix.mem_unitaryGroupOf_iff_forall_dotProduct`: membership as preservation of the
   form.
-* `Matrix.val_inv_of_mem_indefiniteUnitaryGroup`: the inverse of `g ∈ U(p, q)` is `J * star g * J`.
-* `Matrix.star_mem_indefiniteUnitaryGroup_iff`: `U(p, q)` is stable under conjugate transposition.
-* `Matrix.det_mem_unitary_of_mem_indefiniteUnitaryGroup`: `star (det g) * det g = 1`.
-* `Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff`: the image of `U(p) × U(q)` is the
-  subgroup of elements with vanishing lower-left block.
-* `Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`: over a field of characteristic zero,
-  the centre of `U(p, q)` is the group of unit scalars.
+* `TauCeti.Matrix.mem_unitaryGroupOf_iff'`: membership as the equation `g * A⁻¹ * star g = A⁻¹`.
+* `TauCeti.Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`.
+* `TauCeti.Matrix.det_mem_unitary_of_mem_unitaryGroupOf`: `star (det g) * det g = 1`.
+* `TauCeti.Matrix.mem_indefiniteUnitaryGroup_iff'`: membership in `U(p, q)` as the equation
+  `g * J * star g = J`.
+* `TauCeti.Matrix.val_inv_of_mem_indefiniteUnitaryGroup`: the inverse of `g ∈ U(p, q)` is
+  `J * star g * J`.
+* `TauCeti.Matrix.star_mem_indefiniteUnitaryGroup_iff`: `U(p, q)` is stable under conjugate
+  transposition.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff`: the image of
+  `U(p) × U(q)` is the subgroup of elements with vanishing lower-left block.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`: over a field of
+  characteristic zero, the centre of `U(p, q)` is the group of unit scalars.
 
 ## References
 
@@ -77,9 +92,133 @@ The basic structure of this group is recorded here.
 
 public section
 
-open LieAlgebra.Orthogonal
+open LieAlgebra.Orthogonal Matrix
+
+namespace TauCeti
 
 namespace Matrix
+
+section General
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [StarRing R]
+
+/-- The **unitary group of a sesquilinear form**: the invertible matrices `g` with
+`star g * A * g = A`, that is the invertible matrices preserving the form
+`⟨z, w⟩ = star z ⬝ᵥ A *ᵥ w` of Gram matrix `A`. For `A = 1` this is the unitary group, and for
+`A = diag(1, …, 1, -1, …, -1)` it is the indefinite unitary group `indefiniteUnitaryGroup`. -/
+def unitaryGroupOf (A : Matrix n n R) : Subgroup (GL n R) where
+  carrier := {g | star (g : Matrix n n R) * A * g = A}
+  one_mem' := by simp
+  mul_mem' {a b} ha hb := by
+    simp only [Set.mem_ofPred_eq, Units.val_mul, star_mul] at *
+    calc _ = star (b : Matrix n n R) * (star (a : Matrix n n R) * A * a) * b := by
+          simp only [Matrix.mul_assoc]
+      _ = _ := by rw [ha, hb]
+  inv_mem' {a} ha := by
+    simp only [Set.mem_ofPred_eq] at *
+    calc _ = star (↑a⁻¹ : Matrix n n R) * (star (a : Matrix n n R) * A * a) * ↑a⁻¹ := by
+          rw [ha]
+      _ = star ((a : Matrix n n R) * ↑a⁻¹) * A * ((a : Matrix n n R) * ↑a⁻¹) := by
+          simp only [star_mul, Matrix.mul_assoc]
+      _ = _ := by simp
+
+variable {A : Matrix n n R}
+
+/-- Membership in `unitaryGroupOf A` is the equation `star g * A * g = A`. -/
+theorem mem_unitaryGroupOf_iff {g : GL n R} :
+    g ∈ unitaryGroupOf A ↔ star (g : Matrix n n R) * A * g = A :=
+  Iff.rfl
+
+/-- Two elements of `unitaryGroupOf A` are equal when their matrices are. -/
+@[ext]
+theorem unitaryGroupOf.ext {g h : unitaryGroupOf A}
+    (H : ((g : GL n R) : Matrix n n R) = ((h : GL n R) : Matrix n n R)) : g = h :=
+  Subtype.ext <| Units.ext H
+
+/-- **`unitaryGroupOf A` is the group of isometries of the form**: `g ∈ unitaryGroupOf A` exactly
+when `⟨g x, g y⟩ = ⟨x, y⟩` for all `x` and `y`, where `⟨x, y⟩ = star x ⬝ᵥ A *ᵥ y`. -/
+theorem mem_unitaryGroupOf_iff_forall_dotProduct {g : GL n R} :
+    g ∈ unitaryGroupOf A ↔ ∀ x y : n → R,
+      star ((g : Matrix n n R) *ᵥ x) ⬝ᵥ A *ᵥ (g *ᵥ y) = star x ⬝ᵥ A *ᵥ y := by
+  simp only [← star_dotProduct_conjTranspose_mul_mul_mulVec, ← star_eq_conjTranspose]
+  refine ⟨fun h x y => by rw [mem_unitaryGroupOf_iff.mp h], fun h => ?_⟩
+  ext i j
+  simpa [mulVec_single_one, Pi.star_single] using h (Pi.single i 1) (Pi.single j 1)
+
+/-- **The inverse of an element of `unitaryGroupOf A`**, for invertible `A`, is
+`A⁻¹ * star g * A`. -/
+theorem val_inv_of_mem_unitaryGroupOf (hA : IsUnit A) {g : GL n R} (hg : g ∈ unitaryGroupOf A) :
+    (↑g⁻¹ : Matrix n n R) = A⁻¹ * star (g : Matrix n n R) * A :=
+  Units.inv_eq_of_mul_eq_one_left <| by
+    have h := mem_unitaryGroupOf_iff.mp hg
+    simp only [Matrix.mul_assoc] at h ⊢
+    rw [h, nonsing_inv_mul _ ((isUnit_iff_isUnit_det A).mp hA)]
+
+/-- For invertible `A`, membership in `unitaryGroupOf A` is equivalent to the equation
+`g * A⁻¹ * star g = A⁻¹`. -/
+theorem mem_unitaryGroupOf_iff' (hA : IsUnit A) {g : GL n R} :
+    g ∈ unitaryGroupOf A ↔ (g : Matrix n n R) * A⁻¹ * star (g : Matrix n n R) = A⁻¹ := by
+  -- Both equations say that `A⁻¹ * star g * A` is an inverse of `g`, on the left and on the right.
+  set M : Matrix n n R := (g : Matrix n n R)
+  have hd : IsUnit A.det := (isUnit_iff_isUnit_det A).mp hA
+  have hA' : IsUnit A⁻¹ := (isUnit_nonsing_inv_iff).mpr hA
+  calc g ∈ unitaryGroupOf A ↔ A⁻¹ * (star M * A * M) = A⁻¹ * A := hA'.mul_right_inj.symm
+    _ ↔ A⁻¹ * star M * A * M = 1 := by simp only [nonsing_inv_mul _ hd, Matrix.mul_assoc]
+    _ ↔ M * (A⁻¹ * star M * A) = 1 := mul_eq_one_comm
+    _ ↔ M * A⁻¹ * star M * A = A⁻¹ * A := by simp only [nonsing_inv_mul _ hd, Matrix.mul_assoc]
+    _ ↔ _ := hA.mul_left_inj
+
+/-- For invertible `A`, conjugate transposition maps `unitaryGroupOf A` onto
+`unitaryGroupOf A⁻¹`. -/
+theorem star_mem_unitaryGroupOf_inv_iff (hA : IsUnit A) {g : GL n R} :
+    star g ∈ unitaryGroupOf A⁻¹ ↔ g ∈ unitaryGroupOf A := by
+  rw [mem_unitaryGroupOf_iff, mem_unitaryGroupOf_iff' hA, Units.coe_star, star_star]
+
+/-- **The determinant of an element of `unitaryGroupOf A` is a unitary scalar**, for invertible
+`A`: `star (det g) * det g = 1`. Over `ℂ` this says `|det g| = 1`. -/
+theorem det_mem_unitary_of_mem_unitaryGroupOf (hA : IsUnit A) {g : GL n R}
+    (hg : g ∈ unitaryGroupOf A) : (g : Matrix n n R).det ∈ unitary R := by
+  have h := congrArg det (mem_unitaryGroupOf_iff.mp hg)
+  rw [det_mul, det_mul, star_eq_conjTranspose, det_conjTranspose, mul_right_comm] at h
+  rw [Unitary.mem_iff_star_mul_self]
+  exact ((isUnit_iff_isUnit_det A).mp hA).mul_eq_right.mp h
+
+namespace unitaryGroupOf
+
+/-- A matrix preserving the form of an invertible Gram matrix `A` is invertible, with inverse
+`A⁻¹ * star M * A`: this is the element of `unitaryGroupOf A` it defines. -/
+noncomputable def ofMatrix (hA : IsUnit A) (M : Matrix n n R) (hM : star M * A * M = A) :
+    unitaryGroupOf A :=
+  have h : A⁻¹ * star M * A * M = 1 := by
+    simp only [Matrix.mul_assoc] at hM ⊢
+    rw [hM, nonsing_inv_mul _ ((isUnit_iff_isUnit_det A).mp hA)]
+  ⟨⟨M, A⁻¹ * star M * A, mul_eq_one_comm.mp h, h⟩, hM⟩
+
+@[simp]
+theorem val_ofMatrix (hA : IsUnit A) (M : Matrix n n R) (hM : star M * A * M = A) :
+    ((ofMatrix hA M hM : GL n R) : Matrix n n R) = M :=
+  (rfl)
+
+variable (A) in
+/-- The embedding `λ ↦ λ • 1` of the unitary scalars in `unitaryGroupOf A`. For the indefinite
+unitary group over a field of characteristic zero its image is the centre
+(`indefiniteUnitaryGroup.center_eq_range_scalarHom`). -/
+def scalarHom : unitary R →* unitaryGroupOf A :=
+  ((GeneralLinearGroup.scalar n).comp Unitary.toUnits).codRestrict _ fun u => by
+    rw [mem_unitaryGroupOf_iff, MonoidHom.comp_apply, GeneralLinearGroup.coe_scalar,
+      Unitary.val_toUnits_apply, scalar_apply, star_eq_conjTranspose, diagonal_conjTranspose]
+    ext i j
+    rw [mul_diagonal, diagonal_mul, Pi.star_apply, mul_right_comm, Unitary.star_mul_self_of_mem u.2,
+      one_mul]
+
+@[simp]
+theorem val_scalarHom (u : unitary R) :
+    ((scalarHom A u : GL n R) : Matrix n n R) = scalar n (u : R) :=
+  GeneralLinearGroup.coe_scalar _
+
+end unitaryGroupOf
+
+end General
 
 variable (p q R : Type*) [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
 
@@ -90,108 +229,34 @@ variable [CommRing R] [StarRing R]
 /-- The **indefinite unitary group** `U(p, q)`: the invertible matrices `g` on `p ⊕ q → R` with
 `star g * J * g = J`, where `J = diag(1, …, 1, -1, …, -1)` is
 `LieAlgebra.Orthogonal.indefiniteDiagonal p q R`, the Gram matrix of the Hermitian form
-`⟨z, w⟩ = star z ⬝ᵥ J *ᵥ w` of signature `(p, q)`. -/
-def indefiniteUnitaryGroup : Subgroup (GL (p ⊕ q) R) where
-  carrier := {g | star (g : Matrix (p ⊕ q) (p ⊕ q) R) * indefiniteDiagonal p q R * g =
-    indefiniteDiagonal p q R}
-  one_mem' := by simp
-  mul_mem' {a b} ha hb := by
-    simp only [Set.mem_ofPred_eq, Units.val_mul, star_mul] at *
-    calc _ = star (b : Matrix (p ⊕ q) (p ⊕ q) R) *
-          (star (a : Matrix (p ⊕ q) (p ⊕ q) R) * indefiniteDiagonal p q R * a) * b := by
-          simp only [Matrix.mul_assoc]
-      _ = _ := by rw [ha, hb]
-  inv_mem' {a} ha := by
-    simp only [Set.mem_ofPred_eq] at *
-    calc _ = star (↑a⁻¹ : Matrix (p ⊕ q) (p ⊕ q) R) *
-          (star (a : Matrix (p ⊕ q) (p ⊕ q) R) * indefiniteDiagonal p q R * a) * ↑a⁻¹ := by
-          rw [ha]
-      _ = star ((a : Matrix (p ⊕ q) (p ⊕ q) R) * ↑a⁻¹) * indefiniteDiagonal p q R *
-          ((a : Matrix (p ⊕ q) (p ⊕ q) R) * ↑a⁻¹) := by
-          simp only [star_mul, Matrix.mul_assoc]
-      _ = _ := by simp
+`⟨z, w⟩ = star z ⬝ᵥ J *ᵥ w` of signature `(p, q)`. It is `unitaryGroupOf J`, whose general API
+applies to it. -/
+abbrev indefiniteUnitaryGroup : Subgroup (GL (p ⊕ q) R) :=
+  unitaryGroupOf (indefiniteDiagonal p q R)
 
 variable {p q R}
-
-/-- Membership in `U(p, q)` is the equation `star g * J * g = J`. -/
-theorem mem_indefiniteUnitaryGroup_iff {g : GL (p ⊕ q) R} :
-    g ∈ indefiniteUnitaryGroup p q R ↔
-      star (g : Matrix (p ⊕ q) (p ⊕ q) R) * indefiniteDiagonal p q R * g =
-        indefiniteDiagonal p q R :=
-  Iff.rfl
 
 /-- **The inverse of an element of `U(p, q)`** is `J * star g * J`. -/
 theorem val_inv_of_mem_indefiniteUnitaryGroup {g : GL (p ⊕ q) R}
     (hg : g ∈ indefiniteUnitaryGroup p q R) :
     (↑g⁻¹ : Matrix (p ⊕ q) (p ⊕ q) R) =
-      indefiniteDiagonal p q R * star (g : Matrix (p ⊕ q) (p ⊕ q) R) * indefiniteDiagonal p q R :=
-  Units.inv_eq_of_mul_eq_one_left <| by
-    have h := mem_indefiniteUnitaryGroup_iff.mp hg
-    simp only [Matrix.mul_assoc] at h ⊢
-    rw [h, indefiniteDiagonal_mul_indefiniteDiagonal]
+      indefiniteDiagonal p q R * star (g : Matrix (p ⊕ q) (p ⊕ q) R) *
+        indefiniteDiagonal p q R := by
+  rw [val_inv_of_mem_unitaryGroupOf isUnit_indefiniteDiagonal hg, inv_indefiniteDiagonal]
 
 /-- Membership in `U(p, q)` is equivalent to the equation `g * J * star g = J`. -/
 theorem mem_indefiniteUnitaryGroup_iff' {g : GL (p ⊕ q) R} :
     g ∈ indefiniteUnitaryGroup p q R ↔
       (g : Matrix (p ⊕ q) (p ⊕ q) R) * indefiniteDiagonal p q R * star (g : Matrix _ _ R) =
         indefiniteDiagonal p q R := by
-  -- Both equations say that `J * star g * J` is an inverse of `g`, on the left and on the right.
-  set M : Matrix (p ⊕ q) (p ⊕ q) R := (g : Matrix (p ⊕ q) (p ⊕ q) R)
-  have hJ : IsUnit (indefiniteDiagonal p q R) := isUnit_indefiniteDiagonal
-  calc g ∈ indefiniteUnitaryGroup p q R
-      ↔ indefiniteDiagonal p q R * (star M * indefiniteDiagonal p q R * M) =
-          indefiniteDiagonal p q R * indefiniteDiagonal p q R :=
-        hJ.mul_right_inj.symm
-    _ ↔ indefiniteDiagonal p q R * star M * indefiniteDiagonal p q R * M = 1 := by
-        simp only [indefiniteDiagonal_mul_indefiniteDiagonal, Matrix.mul_assoc]
-    _ ↔ M * (indefiniteDiagonal p q R * star M * indefiniteDiagonal p q R) = 1 := mul_eq_one_comm
-    _ ↔ M * indefiniteDiagonal p q R * star M * indefiniteDiagonal p q R =
-          indefiniteDiagonal p q R * indefiniteDiagonal p q R := by
-        simp only [indefiniteDiagonal_mul_indefiniteDiagonal, Matrix.mul_assoc]
-    _ ↔ _ := hJ.mul_left_inj
+  rw [mem_unitaryGroupOf_iff' isUnit_indefiniteDiagonal, inv_indefiniteDiagonal]
 
 /-- **`U(p, q)` is stable under conjugate transposition.** -/
 @[simp]
 theorem star_mem_indefiniteUnitaryGroup_iff {g : GL (p ⊕ q) R} :
     star g ∈ indefiniteUnitaryGroup p q R ↔ g ∈ indefiniteUnitaryGroup p q R := by
-  rw [mem_indefiniteUnitaryGroup_iff, mem_indefiniteUnitaryGroup_iff', Units.coe_star, star_star]
-
-/-- **`U(p, q)` is the group of isometries of the Hermitian form**: `g ∈ U(p, q)` exactly when
-`⟨g x, g y⟩ = ⟨x, y⟩` for all `x` and `y`, where `⟨x, y⟩ = star x ⬝ᵥ J *ᵥ y`. -/
-theorem mem_indefiniteUnitaryGroup_iff_forall_dotProduct {g : GL (p ⊕ q) R} :
-    g ∈ indefiniteUnitaryGroup p q R ↔ ∀ x y : p ⊕ q → R,
-      star ((g : Matrix (p ⊕ q) (p ⊕ q) R) *ᵥ x) ⬝ᵥ indefiniteDiagonal p q R *ᵥ (g *ᵥ y) =
-        star x ⬝ᵥ indefiniteDiagonal p q R *ᵥ y := by
-  simp only [← star_dotProduct_conjTranspose_mul_mul_mulVec, ← star_eq_conjTranspose]
-  refine ⟨fun h x y => by rw [mem_indefiniteUnitaryGroup_iff.mp h], fun h => ?_⟩
-  ext i j
-  simpa [mulVec_single_one, Pi.star_single] using h (Pi.single i 1) (Pi.single j 1)
-
-/-- A matrix preserving the form is invertible, with inverse `J * star M * J`: this is the element
-of `U(p, q)` it defines. -/
-def indefiniteUnitaryGroup.ofMatrix (M : Matrix (p ⊕ q) (p ⊕ q) R)
-    (hM : star M * indefiniteDiagonal p q R * M = indefiniteDiagonal p q R) :
-    indefiniteUnitaryGroup p q R :=
-  have h : indefiniteDiagonal p q R * star M * indefiniteDiagonal p q R * M = 1 := by
-    simp only [Matrix.mul_assoc] at hM ⊢
-    rw [hM, indefiniteDiagonal_mul_indefiniteDiagonal]
-  ⟨⟨M, indefiniteDiagonal p q R * star M * indefiniteDiagonal p q R, mul_eq_one_comm.mp h, h⟩, hM⟩
-
-@[simp]
-theorem indefiniteUnitaryGroup.val_ofMatrix (M : Matrix (p ⊕ q) (p ⊕ q) R)
-    (hM : star M * indefiniteDiagonal p q R * M = indefiniteDiagonal p q R) :
-    ((ofMatrix M hM : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) = M :=
-  (rfl)
-
-/-- **The determinant of an element of `U(p, q)` is a unitary scalar**: `star (det g) * det g = 1`.
-Over `ℂ` this says `|det g| = 1`. -/
-theorem det_mem_unitary_of_mem_indefiniteUnitaryGroup {g : GL (p ⊕ q) R}
-    (hg : g ∈ indefiniteUnitaryGroup p q R) :
-    (g : Matrix (p ⊕ q) (p ⊕ q) R).det ∈ unitary R := by
-  have h := congrArg det (mem_indefiniteUnitaryGroup_iff.mp hg)
-  rw [det_mul, det_mul, star_eq_conjTranspose, det_conjTranspose, mul_right_comm] at h
-  rw [Unitary.mem_iff_star_mul_self]
-  exact (isUnit_det_of_left_inverse indefiniteDiagonal_mul_indefiniteDiagonal).mul_eq_right.mp h
+  simpa only [inv_indefiniteDiagonal] using
+    star_mem_unitaryGroupOf_inv_iff (A := indefiniteDiagonal p q R) isUnit_indefiniteDiagonal
 
 namespace indefiniteUnitaryGroup
 
@@ -202,7 +267,7 @@ image is the stabilizer of the positive coordinate subspace (`mem_range_fromBloc
 vector. -/
 def fromBlocksHom : unitaryGroup p R × unitaryGroup q R →* indefiniteUnitaryGroup p q R :=
   (Unitary.toUnits.comp UnitaryGroup.sum).codRestrict _ fun x => by
-    rw [mem_indefiniteUnitaryGroup_iff, MonoidHom.comp_apply, Unitary.val_toUnits_apply,
+    rw [mem_unitaryGroupOf_iff, MonoidHom.comp_apply, Unitary.val_toUnits_apply,
       UnitaryGroup.coe_sum, indefiniteDiagonal_eq_fromBlocks, star_eq_conjTranspose,
       fromBlocks_conjTranspose, fromBlocks_multiply, fromBlocks_multiply]
     simp [← star_eq_conjTranspose]
@@ -243,29 +308,9 @@ theorem mem_range_fromBlocksHom_iff {g : indefiniteUnitaryGroup p q R} :
   have hDu : M.toBlocks₂₂ ∈ unitaryGroup q R := by
     rw [mem_unitaryGroup_iff', star_eq_conjTranspose]
     simpa [hB0] using hD
-  refine ⟨(⟨_, hAu⟩, ⟨_, hDu⟩), Subtype.ext <| Units.ext ?_⟩
+  refine ⟨(⟨_, hAu⟩, ⟨_, hDu⟩), unitaryGroupOf.ext ?_⟩
   rw [val_fromBlocksHom]
   exact (hB0 ▸ hM).symm
-
-variable (p q R) in
-/-- The embedding `λ ↦ λ • 1` of the unitary scalars in `U(p, q)`. Over a field of characteristic
-zero its image is the centre of `U(p, q)` (`center_eq_range_scalarHom`). -/
-def scalarHom : unitary R →* indefiniteUnitaryGroup p q R :=
-  ((GeneralLinearGroup.scalar (p ⊕ q)).comp Unitary.toUnits).codRestrict _ fun u => by
-    rw [mem_indefiniteUnitaryGroup_iff, MonoidHom.comp_apply]
-    simp only [GeneralLinearGroup.scalar, Units.coe_map, MonoidHom.coe_ofClass,
-      Unitary.val_toUnits_apply, RingHom.toMonoidHom_eq_coe, scalar_apply]
-    rw [star_eq_conjTranspose, diagonal_conjTranspose, indefiniteDiagonal, diagonal_mul_diagonal,
-      diagonal_mul_diagonal]
-    congr 1
-    ext i
-    simp only [Pi.star_apply]
-    rw [mul_right_comm, Unitary.star_mul_self_of_mem u.2, one_mul]
-
-@[simp]
-theorem val_scalarHom (u : unitary R) :
-    ((scalarHom p q R u : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) = scalar (p ⊕ q) (u : R) :=
-  (rfl)
 
 end indefiniteUnitaryGroup
 
@@ -312,9 +357,9 @@ namespace indefiniteUnitaryGroup
 `1 - (2 / ⟨v, v⟩) • v (star v ᵥ* J)` of `U(p, q)`, which sends `v` to `-v`
 (`reflection_mulVec_self`) and fixes the vectors orthogonal to `v` for the form
 (`reflection_mulVec_of_dotProduct_eq_zero`). -/
-def reflection (v : p ⊕ q → K) (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) :
+noncomputable def reflection (v : p ⊕ q → K) (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) :
     indefiniteUnitaryGroup p q K :=
-  ofMatrix _ (star_reflectionMatrix_mul_mul hv)
+  unitaryGroupOf.ofMatrix isUnit_indefiniteDiagonal _ (star_reflectionMatrix_mul_mul hv)
 
 @[simp]
 theorem val_reflection (v : p ⊕ q → K) (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) :
@@ -380,6 +425,16 @@ private theorem apply_eq_zero_of_mem_center {g : indefiniteUnitaryGroup p q K}
     not_false_eq_true, Pi.single_eq_of_ne, zero_mul, mul_eq_zero] at h
   exact h.resolve_right (indefiniteDiagonal_apply_self_ne_zero k)
 
+/-- The matrix of a central element of `U(p, q)` is diagonal. -/
+private theorem eq_diagonal_of_mem_center {g : indefiniteUnitaryGroup p q K}
+    (hg : g ∈ Subgroup.center (indefiniteUnitaryGroup p q K)) :
+    ((g : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) =
+      diagonal fun i => ((g : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) i i := by
+  ext a b
+  rcases eq_or_ne a b with rfl | hab
+  · simp
+  · simp [apply_eq_zero_of_mem_center hg hab, hab]
+
 /-- The diagonal entries of a central element of `U(p, q)` agree: test its commutation with the
 rank-one matrix of the non-isotropic vector `eᵢ + 2 eₖ`, whose value `J i i + 4 J k k` is one of
 `±3`, `±5`. -/
@@ -389,20 +444,6 @@ private theorem apply_self_eq_of_mem_center {g : indefiniteUnitaryGroup p q K}
       ((g : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) k k := by
   rcases eq_or_ne i k with rfl | hik
   · rfl
-  set M : Matrix (p ⊕ q) (p ⊕ q) K := ((g : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) with hMdef
-  have hMd : M = diagonal fun i => M i i := by
-    ext a b
-    rcases eq_or_ne a b with rfl | hab
-    · simp
-    · simp [apply_eq_zero_of_mem_center hg hab, hab, M]
-  have hJv (v : p ⊕ q → K) :
-      indefiniteDiagonal p q K *ᵥ v = fun l => indefiniteDiagonal p q K l l * v l := by
-    ext l
-    simp [indefiniteDiagonal, mulVec_diagonal]
-  have hvJ (v : p ⊕ q → K) :
-      v ᵥ* indefiniteDiagonal p q K = fun l => v l * indefiniteDiagonal p q K l l := by
-    ext l
-    simp [indefiniteDiagonal, vecMul_diagonal]
   set v : p ⊕ q → K := Pi.single i 1 + Pi.single k 2 with hv_def
   have hvi : v i = 1 := by simp [v, hik]
   have hvk : v k = 2 := by simp [v, hik.symm]
@@ -410,9 +451,9 @@ private theorem apply_self_eq_of_mem_center {g : indefiniteUnitaryGroup p q K}
   have hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0 := by
     have hc : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v =
         indefiniteDiagonal p q K i i + 4 * indefiniteDiagonal p q K k k := by
-      rw [hsv, hJv]
-      nth_rw 1 [hv_def]
-      rw [add_dotProduct, single_dotProduct, single_dotProduct, hvi, hvk]
+      nth_rw 1 [hsv, hv_def]
+      rw [add_dotProduct, single_dotProduct, single_dotProduct, indefiniteDiagonal_mulVec_apply,
+        indefiniteDiagonal_mulVec_apply, hvi, hvk]
       ring
     rw [hc]
     rcases indefiniteDiagonal_apply_self_eq_one_or_eq_neg_one (p := p) (q := q) (R := K) i
@@ -420,8 +461,8 @@ private theorem apply_self_eq_of_mem_center {g : indefiniteUnitaryGroup p q K}
     rcases indefiniteDiagonal_apply_self_eq_one_or_eq_neg_one (p := p) (q := q) (R := K) k
       with h2 | h2 <;> rw [h1, h2] <;> norm_num
   have h := mulVec_apply_mul_eq_of_mem_center hg hv i k
-  rw [← hMdef, hMd, mulVec_diagonal, vecMul_diagonal, hsv, hvJ, hvi] at h
-  simp only [hvk] at h
+  rw [eq_diagonal_of_mem_center hg, mulVec_diagonal, vecMul_diagonal, hsv,
+    vecMul_indefiniteDiagonal_apply, hvi, hvk] at h
   apply mul_right_cancel₀ (mul_ne_zero two_ne_zero (indefiniteDiagonal_apply_self_ne_zero k))
   linear_combination h
 
@@ -429,31 +470,32 @@ private theorem apply_self_eq_of_mem_center {g : indefiniteUnitaryGroup p q K}
 commuting with all of `U(p, q)` are the unit scalars `λ • 1` with `star λ * λ = 1`. Over `ℂ`
 these are the scalars of modulus one, and `PU(p, q)` is the quotient by them. -/
 theorem center_eq_range_scalarHom :
-    Subgroup.center (indefiniteUnitaryGroup p q K) = (scalarHom p q K).range := by
+    Subgroup.center (indefiniteUnitaryGroup p q K) =
+      (unitaryGroupOf.scalarHom (indefiniteDiagonal p q K)).range := by
   refine le_antisymm (fun g hg => ?_) fun _ ⟨u, hu⟩ => hu ▸ Subgroup.mem_center_iff.mpr fun h =>
-    Subtype.ext <| Units.ext <| by
-      simp only [Subgroup.coe_mul, Units.val_mul, val_scalarHom]
+    unitaryGroupOf.ext <| by
+      simp only [Subgroup.coe_mul, Units.val_mul, unitaryGroupOf.val_scalarHom]
       exact (scalar_commute _ (fun _ => Commute.all _ _) _).eq.symm
   rcases isEmpty_or_nonempty (p ⊕ q) with hn | ⟨⟨i₀⟩⟩
-  · exact ⟨1, Subtype.ext <| Units.ext <| Subsingleton.elim _ _⟩
+  · exact ⟨1, unitaryGroupOf.ext <| Subsingleton.elim _ _⟩
   set M : Matrix (p ⊕ q) (p ⊕ q) K := ((g : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) with hMdef
   -- `M` is the scalar matrix of its corner entry `λ = M i₀ i₀`, and `star λ * λ = 1`.
   have hMs : M = scalar (p ⊕ q) (M i₀ i₀) := by
-    ext a b
-    rcases eq_or_ne a b with rfl | hab
-    · simp [apply_self_eq_of_mem_center hg a i₀, M]
-    · simp [apply_eq_zero_of_mem_center hg hab, hab, M]
+    rw [hMdef, eq_diagonal_of_mem_center hg, scalar_apply]
+    exact congrArg diagonal (funext fun a => by simp [apply_self_eq_of_mem_center hg a i₀])
   have hu : M i₀ i₀ ∈ unitary K := by
-    have h := congrFun (congrFun (mem_indefiniteUnitaryGroup_iff.mp g.2) i₀) i₀
+    have h := congrFun (congrFun (mem_unitaryGroupOf_iff.mp g.2) i₀) i₀
     rw [← hMdef, hMs] at h
     simp only [scalar_apply, star_eq_conjTranspose, diagonal_conjTranspose, mul_diagonal,
       diagonal_mul, Pi.star_apply] at h
     rw [Unitary.mem_iff_star_mul_self]
     exact mul_right_cancel₀ (indefiniteDiagonal_apply_self_ne_zero i₀) (by linear_combination h)
-  exact ⟨⟨_, hu⟩, Subtype.ext <| Units.ext <| by rw [val_scalarHom]; exact hMs.symm⟩
+  exact ⟨⟨_, hu⟩, unitaryGroupOf.ext <| by rw [unitaryGroupOf.val_scalarHom]; exact hMs.symm⟩
 
 end indefiniteUnitaryGroup
 
 end Field
 
 end Matrix
+
+end TauCeti

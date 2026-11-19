@@ -27,7 +27,8 @@ statements about the unitary — that is, orthogonal — group of `Matrix n n �
 The file also records the elementary identities of the indefinite Gram matrix
 `J = LieAlgebra.Orthogonal.indefiniteDiagonal p q R = diag(1, …, 1, -1, …, -1)`, on which the
 groups preserving its form are built: it is invertible, `J * J = 1`, it is Hermitian, and it is the
-block matrix `fromBlocks 1 0 0 (-1)`. It records symmetry of the split even orthogonal Gram matrix
+block matrix `fromBlocks 1 0 0 (-1)`; it acts on vectors by scaling their coordinates by `±1`. It
+records symmetry of the split even orthogonal Gram matrix
 `LieAlgebra.Orthogonal.JD ι R` and the invariance of its bilinear form under renaming the
 hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gram matrix
 `LieAlgebra.Orthogonal.JB ι R`.
@@ -39,11 +40,16 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mul_indefiniteDiagonal`,
+  `LieAlgebra.Orthogonal.inv_indefiniteDiagonal`,
   `LieAlgebra.Orthogonal.indefiniteDiagonal_apply_self_eq_one_or_eq_neg_one`,
   `LieAlgebra.Orthogonal.indefiniteDiagonal_apply_self_ne_zero`,
   `LieAlgebra.Orthogonal.indefiniteDiagonal_eq_fromBlocks` and
-  `LieAlgebra.Orthogonal.isHermitian_indefiniteDiagonal`: it squares to one, its diagonal entries
-  are `±1`, hence nonzero, it is the block matrix `fromBlocks 1 0 0 (-1)`, and it is Hermitian.
+  `LieAlgebra.Orthogonal.isHermitian_indefiniteDiagonal`: it squares to one, so is its own inverse,
+  its diagonal entries are `±1`, hence nonzero, it is the block matrix `fromBlocks 1 0 0 (-1)`, and
+  it is Hermitian.
+* `LieAlgebra.Orthogonal.indefiniteDiagonal_mulVec_apply` and
+  `LieAlgebra.Orthogonal.vecMul_indefiniteDiagonal_apply`: it scales the coordinates of a vector by
+  its diagonal entries.
 * `LieAlgebra.Orthogonal.isSymm_JD`: the split even orthogonal Gram matrix is symmetric.
 * `LieAlgebra.Orthogonal.toBilin'_JD_comp_sumMap`: the split even orthogonal form is unchanged by
   renaming its hyperbolic pairs along an equivalence.
@@ -86,6 +92,28 @@ theorem indefiniteDiagonal_mul_indefiniteDiagonal :
   rw [indefiniteDiagonal, diagonal_mul_diagonal, ← diagonal_one]
   congr 1
   ext (i | i) <;> simp
+
+open Matrix in
+/-- The Gram matrix `diag(1, …, 1, -1, …, -1)` of the indefinite form is its own inverse. -/
+@[simp]
+theorem inv_indefiniteDiagonal : (indefiniteDiagonal p q R)⁻¹ = indefiniteDiagonal p q R :=
+  inv_eq_left_inv indefiniteDiagonal_mul_indefiniteDiagonal
+
+open Matrix in
+/-- The Gram matrix of the indefinite form acts on a vector by scaling its coordinates by the
+diagonal entries `±1`. -/
+@[simp]
+theorem indefiniteDiagonal_mulVec_apply (v : p ⊕ q → R) (i : p ⊕ q) :
+    (indefiniteDiagonal p q R *ᵥ v) i = indefiniteDiagonal p q R i i * v i := by
+  simp [indefiniteDiagonal, mulVec_diagonal]
+
+open Matrix in
+/-- The Gram matrix of the indefinite form acts on a row vector by scaling its coordinates by the
+diagonal entries `±1`. -/
+@[simp]
+theorem vecMul_indefiniteDiagonal_apply (v : p ⊕ q → R) (i : p ⊕ q) :
+    (v ᵥ* indefiniteDiagonal p q R) i = v i * indefiniteDiagonal p q R i i := by
+  simp [indefiniteDiagonal, vecMul_diagonal]
 
 omit [Fintype p] [Fintype q] in
 /-- Each diagonal entry of the Gram matrix of the indefinite form is `1` or `-1`. -/
