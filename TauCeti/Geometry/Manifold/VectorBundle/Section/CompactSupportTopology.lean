@@ -36,7 +36,8 @@ particular, taking the final topology does not discard the section values. Conve
 single fixed-support stage implies convergence in the test topology.
 
 We reuse `TauCeti.finalLocallyConvexTopology`, rather than the final topology of topological
-spaces. No completeness or strict inductive-limit assertion is made.
+spaces, so the test topology is a locally convex vector topology. No completeness or strict
+inductive-limit assertion is made.
 -/
 
 public noncomputable section
@@ -65,6 +66,34 @@ compact derivative subspace topology. It is not defined as a subspace topology o
 def compactlySupportedTopology : TopologicalSpace (compactlySupported I F n V) :=
   letI := frameTopology (I := I) (n := n) e U hU
   TauCeti.finalLocallyConvexTopology (ofSupportedIn (I := I) (F := F) (V := V) (n := n))
+
+/-- The test topology is the final locally convex topology of the fixed-compact stages. -/
+theorem compactlySupportedTopology_def :
+    compactlySupportedTopology (I := I) (n := n) e U hU =
+      letI := frameTopology (I := I) (n := n) e U hU
+      TauCeti.finalLocallyConvexTopology (ofSupportedIn (I := I) (F := F) (V := V) (n := n)) :=
+  (rfl)
+
+/-- The test topology is a group topology. -/
+theorem isTopologicalAddGroup_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    IsTopologicalAddGroup (compactlySupported I F n V) := by
+  rw [compactlySupportedTopology_def]
+  infer_instance
+
+/-- Real scalar multiplication is continuous for the test topology. -/
+theorem continuousSMul_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    ContinuousSMul ℝ (compactlySupported I F n V) := by
+  rw [compactlySupportedTopology_def]
+  infer_instance
+
+/-- The test topology is locally convex. -/
+theorem locallyConvexSpace_compactlySupportedTopology :
+    letI := compactlySupportedTopology (I := I) (n := n) e U hU
+    LocallyConvexSpace ℝ (compactlySupported I F n V) := by
+  rw [compactlySupportedTopology_def]
+  infer_instance
 
 /-- Every fixed-compact support inclusion is continuous. -/
 theorem continuous_ofSupportedIn (K : Compacts M) :

@@ -17,13 +17,21 @@ single Euclidean space: `TauCeti.prodEuclideanChartedSpace` charts `M × N` on
 `EuclideanSpace 𝕜 (Fin (n + m))` when `M` and `N` are charted on `EuclideanSpace 𝕜 (Fin n)` and
 `EuclideanSpace 𝕜 (Fin m)`, by following the product charts with
 `EuclideanSpace.finAddEquivProd.symm` through `Homeomorph.chartedSpaceComp`.
-`TauCeti.prodEuclideanChartedSpace_chartAt` describes its charts.
+`TauCeti.prodEuclideanChartedSpace_chartAt` and `TauCeti.prodEuclideanChartedSpace_extChartAt`
+describe its charts and extended charts.
 
-It is a definition rather than an instance, so that the Euclidean model can be chosen explicitly
-alongside Mathlib's product model.
+When `M` and `N` are `C^r` manifolds, these composite charts make `M × N` a `C^r` manifold
+modelled on `EuclideanSpace 𝕜 (Fin (n + m))` (`TauCeti.isManifold_prodEuclideanChartedSpace`), and
+the identity map is a `C^r` diffeomorphism between `TauCeti.prodEuclideanChartedSpace` and the
+native product charted space (`TauCeti.prodEuclideanDiffeomorph`).
+
+`TauCeti.prodEuclideanChartedSpace` is a definition rather than an instance, so that the Euclidean
+model can be chosen explicitly alongside Mathlib's product model.
 -/
 
 public section
+
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -48,5 +56,99 @@ theorem prodEuclideanChartedSpace_chartAt (x : M × N) :
         (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).symm.toHomeomorph.toOpenPartialHomeomorph :=
   Homeomorph.chartAt_chartedSpaceComp
     (H := ModelProd (EuclideanSpace 𝕜 (Fin n)) (EuclideanSpace 𝕜 (Fin m))) _ x
+
+/-- The extended chart of `TauCeti.prodEuclideanChartedSpace` at `x` is the product extended chart
+at `x`, followed by `EuclideanSpace.finAddEquivProd.symm`. -/
+theorem prodEuclideanChartedSpace_extChartAt (x : M × N) :
+    (letI := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+     extChartAt 𝓘(𝕜, EuclideanSpace 𝕜 (Fin (n + m))) x) =
+      (extChartAt (𝓘(𝕜, EuclideanSpace 𝕜 (Fin n)).prod 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m))) x).trans
+        (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).symm.toEquiv.toPartialEquiv := by
+  let := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+  rw [extChartAt, prodEuclideanChartedSpace_chartAt]
+  refine PartialEquiv.ext (fun _ ↦ rfl) (fun _ ↦ rfl) ?_
+  simp
+
+/-- When `M` and `N` are `C^r` manifolds modelled on `𝕜ⁿ` and `𝕜ᵐ`,
+`TauCeti.prodEuclideanChartedSpace` makes `M × N` a `C^r` manifold modelled on `𝕜ⁿ⁺ᵐ`. -/
+theorem isManifold_prodEuclideanChartedSpace (r : ℕ∞ω)
+    [IsManifold 𝓘(𝕜, EuclideanSpace 𝕜 (Fin n)) r M]
+    [IsManifold 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m)) r N] :
+    letI := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+    IsManifold 𝓘(𝕜, EuclideanSpace 𝕜 (Fin (n + m))) r (M × N) := by
+  let Φ : ModelProd (EuclideanSpace 𝕜 (Fin n)) (EuclideanSpace 𝕜 (Fin m))
+      ≃ₘ^r⟮𝓘(𝕜, EuclideanSpace 𝕜 (Fin n)).prod 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m)),
+        𝓘(𝕜, EuclideanSpace 𝕜 (Fin (n + m)))⟯
+      EuclideanSpace 𝕜 (Fin (n + m)) :=
+    { toEquiv := (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).symm.toEquiv
+      contMDiff_toFun := by
+        rw [← modelWithCornersSelf_prod]
+        exact (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).symm.contDiff.contMDiff
+      contMDiff_invFun := by
+        rw [← modelWithCornersSelf_prod]
+        exact (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).contDiff.contMDiff }
+  exact Φ.isManifold_chartedSpaceComp (M × N)
+
+/-- The identity map of `M × N` is `C^r` from `TauCeti.prodEuclideanChartedSpace` to the product
+charted space. -/
+private theorem contMDiff_id_prodEuclidean (r : ℕ∞ω) :
+    letI := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+    ContMDiff 𝓘(𝕜, EuclideanSpace 𝕜 (Fin (n + m)))
+      (𝓘(𝕜, EuclideanSpace 𝕜 (Fin n)).prod 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m))) r
+      (id : M × N → M × N) := by
+  let := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+  intro x
+  refine contMDiffWithinAt_iff'.2 ⟨continuousWithinAt_id, ?_⟩
+  refine (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).contDiff.contDiffWithinAt.congr_of_mem
+    (fun z hz ↦ ?_) ?_
+  · rw [Set.mem_inter_iff, prodEuclideanChartedSpace_extChartAt, PartialEquiv.trans_target] at hz
+    simp only [Function.comp_apply, id_eq, prodEuclideanChartedSpace_extChartAt,
+      PartialEquiv.trans_symm_eq_symm_trans_symm, PartialEquiv.coe_trans]
+    exact (extChartAt _ x).right_inv hz.1.2
+  · refine ⟨(extChartAt _ x).map_source (mem_extChartAt_source x), trivial, ?_⟩
+    rw [Set.mem_preimage, id_eq, (extChartAt _ x).left_inv (mem_extChartAt_source x)]
+    exact mem_extChartAt_source x
+
+/-- The identity map of `M × N` is `C^r` from the product charted space to
+`TauCeti.prodEuclideanChartedSpace`. -/
+private theorem contMDiff_id_prodEuclidean_symm (r : ℕ∞ω) :
+    letI := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+    ContMDiff (𝓘(𝕜, EuclideanSpace 𝕜 (Fin n)).prod 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m)))
+      𝓘(𝕜, EuclideanSpace 𝕜 (Fin (n + m))) r (id : M × N → M × N) := by
+  let := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+  intro x
+  refine contMDiffWithinAt_iff'.2 ⟨continuousWithinAt_id, ?_⟩
+  refine (EuclideanSpace.finAddEquivProd (𝕜 := 𝕜)).symm.contDiff.contDiffWithinAt.congr_of_mem
+    (fun z hz ↦ ?_) ?_
+  · simp only [Function.comp_apply, id_eq, prodEuclideanChartedSpace_extChartAt,
+      PartialEquiv.coe_trans, (extChartAt _ x).right_inv hz.1]
+    rfl
+  · refine ⟨(extChartAt _ x).map_source (mem_extChartAt_source x), trivial, ?_⟩
+    rw [Set.mem_preimage, id_eq, (extChartAt _ x).left_inv (mem_extChartAt_source x)]
+    exact mem_extChartAt_source x
+
+/-- The identity map of `M × N` as a `C^r` diffeomorphism between
+`TauCeti.prodEuclideanChartedSpace` (modelled on `𝕜ⁿ⁺ᵐ`) and the product charted space (modelled
+on `𝕜ⁿ × 𝕜ᵐ`). -/
+noncomputable def prodEuclideanDiffeomorph (r : ℕ∞ω) :
+    letI := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+    (M × N) ≃ₘ^r⟮𝓘(𝕜, EuclideanSpace 𝕜 (Fin (n + m))),
+      𝓘(𝕜, EuclideanSpace 𝕜 (Fin n)).prod 𝓘(𝕜, EuclideanSpace 𝕜 (Fin m))⟯ (M × N) :=
+  letI := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+  { toEquiv := Equiv.refl _
+    contMDiff_toFun := contMDiff_id_prodEuclidean r
+    contMDiff_invFun := contMDiff_id_prodEuclidean_symm r }
+
+@[simp]
+theorem coe_prodEuclideanDiffeomorph (r : ℕ∞ω) :
+    letI := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+    ⇑(prodEuclideanDiffeomorph (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N) r) = id :=
+  (rfl)
+
+@[simp]
+theorem coe_prodEuclideanDiffeomorph_symm (r : ℕ∞ω) :
+    letI := prodEuclideanChartedSpace (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N)
+    ⇑(prodEuclideanDiffeomorph (𝕜 := 𝕜) (n := n) (m := m) (M := M) (N := N) r).symm = id :=
+  (rfl)
 
 end TauCeti
