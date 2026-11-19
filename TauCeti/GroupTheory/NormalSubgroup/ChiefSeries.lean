@@ -43,7 +43,7 @@ subgroups, combined with the second isomorphism theorem: the elementary isomorph
 
 ## References
 
-* [J. S. Milne, *Group Theory*][milne-gt], Example 6.29(a).
+* [J. S. Milne, *Group Theory*, version 4.01][milne2025gt], Example 6.29(a).
 -/
 
 public section

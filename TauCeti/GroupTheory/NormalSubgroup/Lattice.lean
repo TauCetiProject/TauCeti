@@ -52,6 +52,10 @@ subgroup of `G` other than `⊥` and itself. -/
 def Subgroup.IsMinimalNormal (N : Subgroup G) : Prop :=
   N.Normal ∧ N ≠ ⊥ ∧ ∀ M ≤ N, M.Normal → M = ⊥ ∨ M = N
 
+theorem Subgroup.isMinimalNormal_iff {N : Subgroup G} :
+    N.IsMinimalNormal ↔ N.Normal ∧ N ≠ ⊥ ∧ ∀ M ≤ N, M.Normal → M = ⊥ ∨ M = N :=
+  Iff.rfl
+
 namespace TauCeti
 
 variable (G) in
