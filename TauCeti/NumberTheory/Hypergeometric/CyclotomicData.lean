@@ -26,7 +26,7 @@ This file sets up the carrier and the facts about `Φ_A`, `Φ_B` and `Q` that th
 
 * `Φ_A` and `Φ_B` are monic of degree `d` over every nontrivial commutative ring, and are
   compatible with every change of coefficients;
-* they are coprime over every `ℚ`-algebra; this needs exactly that `A` and `B` are disjoint, and
+* they are coprime over every `ℚ`-algebra because `A` and `B` are disjoint; coprimality
   fails over `ℤ` (for `A = {4}`, `B = {2, 1}` the difference `Φ_A - Φ_B` is `2`);
 * their constant coefficients are `(-1) ^ m_A` and `(-1) ^ m_B`, with `m_A`, `m_B` the
   multiplicities of `1` in `A` and `B`, at most one of which is positive;
@@ -77,6 +77,12 @@ namespace CyclotomicData
 instance : Inhabited CyclotomicData :=
   ⟨{ A := 0, B := 0, pos := by simp, disjoint := disjoint_bot_left, totient_sum_eq := rfl }⟩
 
+@[simp]
+theorem default_A : (default : CyclotomicData).A = 0 := (rfl)
+
+@[simp]
+theorem default_B : (default : CyclotomicData).B = 0 := (rfl)
+
 variable (D : CyclotomicData)
 
 theorem pos_of_mem_A {a : ℕ} (ha : a ∈ D.A) : 0 < a :=
@@ -111,6 +117,10 @@ theorem degree_eq_zero_iff : D.degree = 0 ↔ D.A = 0 ∧ D.B = 0 := by
   rw [← key fun _ ↦ D.pos_of_mem_A, ← key fun _ ↦ D.pos_of_mem_B, sum_map_totient_A,
     sum_map_totient_B, and_self]
 
+/-- The empty datum has degree `0`. -/
+@[simp]
+theorem degree_default : (default : CyclotomicData).degree = 0 := (rfl)
+
 /-- The swap `(A, B) ↦ (B, A)`. -/
 def swap : CyclotomicData where
   A := D.B
@@ -135,10 +145,12 @@ theorem degree_swap : D.swap.degree = D.degree := D.sum_map_totient_B
 
 /-! ### The multiplicities of `1` -/
 
-/-- The multiplicity `m_A` of `1` in `A`, the number of factors `X - 1` of `Φ_A`. -/
+/-- The multiplicity `m_A` of `1` in `A`, i.e. the number of factors `Φ_1 = X - 1` in the
+product `Φ_A`. -/
 def multOneA : ℕ := D.A.count 1
 
-/-- The multiplicity `m_B` of `1` in `B`, the number of factors `X - 1` of `Φ_B`. -/
+/-- The multiplicity `m_B` of `1` in `B`, i.e. the number of factors `Φ_1 = X - 1` in the
+product `Φ_B`. -/
 def multOneB : ℕ := D.B.count 1
 
 @[simp]
@@ -221,6 +233,7 @@ theorem map_phiB {S : Type*} [CommRing S] (f : R →+* S) : (D.phiB R).map f = D
 
 /-- The constant coefficient of `Φ_A` is `(-1) ^ m_A`: `Φ_1(0) = -1`, while `Φ_n(0) = 1` for
 `n ≠ 1`. -/
+@[simp]
 theorem coeff_zero_phiA : (D.phiA R).coeff 0 = (-1) ^ D.multOneA := by
   rw [phiA_def, coeff_zero_multiset_prod, Multiset.map_map, ← count_one_A]
   induction D.A using Multiset.induction_on with
@@ -232,6 +245,7 @@ theorem coeff_zero_phiA : (D.phiA R).coeff 0 = (-1) ^ D.multOneA := by
     · simp [pow_succ']
     · rw [cyclotomic_coeff_zero R ha, one_mul, Multiset.count_cons_of_ne ha.ne]
 
+@[simp]
 theorem coeff_zero_phiB : (D.phiB R).coeff 0 = (-1) ^ D.multOneB :=
   D.swap.coeff_zero_phiA R
 

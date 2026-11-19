@@ -45,8 +45,7 @@ example : legendre.multOneA = 0 ∧ legendre.multOneB = 2 := by
   simp [← CyclotomicData.count_one_A, ← CyclotomicData.count_one_B, legendre]
 
 example : (legendre.phiA ℤ).coeff 0 = 1 ∧ (legendre.phiB ℤ).coeff 0 = 1 := by
-  simp [CyclotomicData.coeff_zero_phiA, CyclotomicData.coeff_zero_phiB,
-    ← CyclotomicData.count_one_A, ← CyclotomicData.count_one_B, legendre]
+  simp [← CyclotomicData.count_one_A, ← CyclotomicData.count_one_B, legendre]
 
 -- `{2, 2}` and `{2, 1}` share the index `2`.
 example : ¬ Disjoint ({2, 2} : Multiset ℕ) {2, 1} := by
