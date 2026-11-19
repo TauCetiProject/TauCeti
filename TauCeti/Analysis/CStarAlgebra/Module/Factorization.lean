@@ -62,7 +62,7 @@ include hw hw0 hxs hf hf0
 /-- The inner product of `f(s) • x` with `x` is `(w f)(s)`. -/
 private lemma inner_cfcₙ_smul_left :
     inner A (cfcₙ f s • x) x = cfcₙ (fun u ↦ w u * f u) s := by
-  rw [inner_op_smul_left, (cfcₙ_predicate f s : IsSelfAdjoint _).star_eq, cfcₙ_mul w f s, hxs]
+  rw [inner_op_smul_left, (IsSelfAdjoint.cfcₙ (f := f)).star_eq, cfcₙ_mul w f s, hxs]
 
 /-- The inner product of `x` with `f(s) • x` is `(f w)(s)`. -/
 private lemma inner_smul_cfcₙ_smul :
@@ -74,7 +74,7 @@ include hg hg0 in
 private lemma inner_cfcₙ_smul_cfcₙ_smul :
     inner A (cfcₙ f s • x) (cfcₙ g s • x) = cfcₙ (fun u ↦ g u * w u * f u) s := by
   rw [inner_op_smul_left, inner_smul_cfcₙ_smul hw hw0 hxs hg hg0,
-    (cfcₙ_predicate f s : IsSelfAdjoint _).star_eq, cfcₙ_mul (fun u ↦ g u * w u) f s]
+    (IsSelfAdjoint.cfcₙ (f := f)).star_eq, cfcₙ_mul (fun u ↦ g u * w u) f s]
 
 /-- The defect `f(s) • x - x` has inner square the functional calculus of `w(u) (f u - 1)²`,
 in expanded form. -/
