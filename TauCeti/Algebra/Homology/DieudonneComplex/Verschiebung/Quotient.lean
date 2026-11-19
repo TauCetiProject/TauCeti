@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DieudonneComplex.VerschiebungFiltration
+public import TauCeti.Algebra.Homology.DieudonneComplex.Verschiebung.Filtration
 
 /-!
 # The finite Verschiebung quotients of a saturated Dieudonné complex
@@ -15,7 +15,7 @@ Verschiebung filtration `Nʳ Mⁿ = im Vʳ + im (d Vʳ)` form a cochain complex 
 differential induced by `d`. (Here `W_r` is a quotient of a Dieudonné complex, not a ring of
 truncated Witt vectors.) These complexes come with
 
-* the projections `M → W_r(M)`;
+* the projections `M → W_r(M)`, through which every map out of `M` vanishing on `Nʳ M` factors;
 * the restriction cochain maps `R : W_{r+1}(M) → W_r(M)`, induced by the identity of `M`;
 * the Frobenius `F : W_{r+1}(M)ⁿ → W_r(M)ⁿ` and the Verschiebung `V : W_r(M)ⁿ → W_{r+1}(M)ⁿ`,
   induced by `F` and `V` on `M`;
@@ -32,6 +32,9 @@ completion of `M` is built; for the saturated de Rham–Witt complex of an `𝔽
 
 * `TauCeti.DieudonneComplex.IsSaturated.verschiebungQuotient`: the cochain complex `W_r(M)`.
 * `TauCeti.DieudonneComplex.IsSaturated.toVerschiebungQuotient`: the projection `M ⟶ W_r(M)`.
+* `TauCeti.DieudonneComplex.IsSaturated.verschiebungQuotientLift` and
+  `TauCeti.DieudonneComplex.IsSaturated.verschiebungQuotientDesc`: the maps out of `W_r(M)ⁿ` and
+  `W_r(M)` induced by maps out of `M` that vanish on the Verschiebung filtration.
 * `TauCeti.DieudonneComplex.IsSaturated.verschiebungQuotientRestriction`: the restriction
   `W_{r+1}(M) ⟶ W_r(M)`.
 * `TauCeti.DieudonneComplex.IsSaturated.verschiebungQuotientF` and
@@ -87,10 +90,7 @@ noncomputable def verschiebungQuotient (r : ℕ) : CochainComplex AddCommGrpCat.
     simp [M.shape i j h]
   d_comp_d' i j k _ _ := by
     ext x
-    simp only [AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply, AddCommGrpCat.hom_ofHom,
-      QuotientAddGroup.mk'_apply, QuotientAddGroup.map_mk]
-    rw [← AddCommGrpCat.comp_apply, M.d_comp_d]
-    rfl
+    simp
 
 /-- The projection `M ⟶ W_r(M)`. -/
 noncomputable def toVerschiebungQuotient (r : ℕ) :
@@ -144,6 +144,59 @@ instance (n : ℤ) : Subsingleton ((hM.verschiebungQuotient 0).X n) where
     simp [toVerschiebungQuotient_f_apply_eq_iff]
 
 end Quotient
+
+section Desc
+
+/-- A homomorphism `g` out of `Mⁿ` that vanishes on `Nʳ Mⁿ` descends to `W_r(M)ⁿ`. -/
+noncomputable def verschiebungQuotientLift {A : Type*} [AddMonoid A] (r : ℕ) (n : ℤ)
+    (g : M.X n →+ A) (hg : hM.verschiebungFiltration r n ≤ g.ker) :
+    (hM.verschiebungQuotient r).X n →+ A :=
+  QuotientAddGroup.lift _ g hg
+
+/-- The lift of `g` sends the class of `x` to `g x`. -/
+@[simp]
+lemma verschiebungQuotientLift_apply {A : Type*} [AddMonoid A] (r : ℕ) {n : ℤ} (g : M.X n →+ A)
+    (hg : hM.verschiebungFiltration r n ≤ g.ker) (x : M.X n) :
+    hM.verschiebungQuotientLift r n g hg (((hM.toVerschiebungQuotient r).f n).hom x) = g x :=
+  (rfl)
+
+/-- The cochain map `W_r(M) ⟶ K` induced by a cochain map `g : M ⟶ K` that vanishes on the
+Verschiebung filtration `Nʳ M`. -/
+noncomputable def verschiebungQuotientDesc (r : ℕ) {K : CochainComplex AddCommGrpCat.{u} ℤ}
+    (g : M.toCochainComplex ⟶ K) (hg : ∀ n, hM.verschiebungFiltration r n ≤ (g.f n).hom.ker) :
+    hM.verschiebungQuotient r ⟶ K where
+  f n := AddCommGrpCat.ofHom (hM.verschiebungQuotientLift r n (g.f n).hom (hg n))
+  comm' i j _ := by
+    ext y
+    obtain ⟨x, rfl⟩ := hM.toVerschiebungQuotient_f_surjective r i y
+    exact ConcreteCategory.congr_hom (g.comm i j) x
+
+/-- The descended cochain map sends the class of `x` to `g x`. -/
+@[simp]
+lemma verschiebungQuotientDesc_f_apply (r : ℕ) {K : CochainComplex AddCommGrpCat.{u} ℤ}
+    (g : M.toCochainComplex ⟶ K) (hg : ∀ n, hM.verschiebungFiltration r n ≤ (g.f n).hom.ker)
+    {n : ℤ} (x : M.X n) :
+    ((hM.verschiebungQuotientDesc r g hg).f n).hom (((hM.toVerschiebungQuotient r).f n).hom x) =
+      (g.f n).hom x :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+lemma toVerschiebungQuotient_comp_verschiebungQuotientDesc (r : ℕ)
+    {K : CochainComplex AddCommGrpCat.{u} ℤ} (g : M.toCochainComplex ⟶ K)
+    (hg : ∀ n, hM.verschiebungFiltration r n ≤ (g.f n).hom.ker) :
+    hM.toVerschiebungQuotient r ≫ hM.verschiebungQuotientDesc r g hg = g :=
+  (rfl)
+
+/-- Cochain maps out of `W_r(M)` are determined by their composites with the projection
+`M ⟶ W_r(M)`. -/
+lemma verschiebungQuotient_hom_ext {r : ℕ} {K : CochainComplex AddCommGrpCat.{u} ℤ}
+    {φ ψ : hM.verschiebungQuotient r ⟶ K}
+    (h : hM.toVerschiebungQuotient r ≫ φ = hM.toVerschiebungQuotient r ≫ ψ) : φ = ψ := by
+  ext n y
+  obtain ⟨x, rfl⟩ := hM.toVerschiebungQuotient_f_surjective r n y
+  exact ConcreteCategory.congr_hom (HomologicalComplex.congr_hom h n) x
+
+end Desc
 
 section Restriction
 
@@ -233,7 +286,7 @@ lemma verschiebungQuotientV_verschiebungQuotient_d_apply (r : ℕ) {i j : ℤ}
       p • ((hM.verschiebungQuotient (r + 1)).d i j).hom ((hM.verschiebungQuotientV r i).hom y) := by
   obtain ⟨x, rfl⟩ := hM.toVerschiebungQuotient_f_surjective r i y
   simpa [← map_nsmul] using congrArg ((hM.toVerschiebungQuotient (r + 1)).f j).hom
-    (hM.V_d_iterate_V_apply 0 x)
+    (hM.V_d_V_iterate_apply 0 x)
 
 /-- `F V = p` on the finite quotients. -/
 @[simp]
@@ -285,11 +338,9 @@ lemma mem_range_verschiebungQuotientF {r : ℕ} {n : ℤ} {y : (hM.verschiebungQ
       toVerschiebungQuotient_f_apply_eq_iff, hM.mem_verschiebungFiltration_iff rfl] at hz
     obtain ⟨a, b, hab⟩ := hz
     -- Applying `d` gives `d (Vʳ⁺¹ a) = p • d w`, so `a = F a'`.
-    obtain ⟨a', rfl⟩ := hM.mem_range_F_of_d_iterate_V (r := r + 1) rfl
-      ⟨(M.d (n + 1) (n + 1 + 1)).hom w, by
-        simpa [← AddCommGrpCat.comp_apply _ (M.d (n + 1) (n + 1 + 1))] using
-          (congrArg (M.d (n + 1) (n + 1 + 1)).hom hab).symm⟩
-    rw [hM.iterate_V_succ_F_apply] at hab
+    obtain ⟨a', rfl⟩ := hM.mem_range_F_of_V_iterate_add_d_V_iterate_eq (c := -x)
+      (by rw [hab, map_neg, sub_eq_add_neg])
+    rw [hM.V_iterate_succ_F_apply] at hab
     -- Then `d (x + Vʳ⁺¹ b) = p • (w - Vʳ a')`, so `x + Vʳ⁺¹ b = F x'`.
     obtain ⟨x', hx'⟩ :=
       (hM.mem_range_F_iff (x := x + (⇑(hM.V n).hom)^[r + 1] b)).2
@@ -298,7 +349,7 @@ lemma mem_range_verschiebungQuotientF {r : ℕ} {n : ℤ} {y : (hM.verschiebungQ
     refine ⟨((hM.toVerschiebungQuotient (r + 2)).f n).hom x', ?_⟩
     rw [verschiebungQuotientF_apply, hx', toVerschiebungQuotient_f_apply_eq_iff,
       add_sub_cancel_left]
-    exact hM.iterate_V_mem_verschiebungFiltration (r + 1) b
+    exact hM.V_iterate_mem_verschiebungFiltration (r + 1) b
 
 end Frobenius
 
@@ -311,7 +362,7 @@ Dieudonné complexes. -/
 noncomputable def verschiebungQuotientMap (f : M ⟶ N) (r : ℕ) :
     hM.verschiebungQuotient r ⟶ hN.verschiebungQuotient r where
   f n := AddCommGrpCat.ofHom <|
-    QuotientAddGroup.map _ _ (f.hom.f n).hom (hM.verschiebungFiltration_le_comap_map hN f r n)
+    QuotientAddGroup.map _ _ (f.hom.f n).hom (hM.verschiebungFiltration_le_comap hN f r n)
   comm' i j _ := by
     ext y
     obtain ⟨x, rfl⟩ := hM.toVerschiebungQuotient_f_surjective r i y
