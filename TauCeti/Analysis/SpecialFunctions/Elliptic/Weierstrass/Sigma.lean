@@ -52,7 +52,8 @@ complex torus.
 * `PeriodPair.weierstrassSigma_add_coe_of_div_two_notMem`,
   `PeriodPair.weierstrassSigma_add_coe_of_div_two_mem`, `PeriodPair.weierstrassSigma_add_coe`:
   the quasi-periodicity of `σ`.
-* `PeriodPair.weierstrassSigma_congr`: `σ` depends only on the lattice, not on the chosen basis.
+* `PeriodPair.weierstrassSigma_eq_of_lattice_eq`: `σ` depends only on the lattice, not on the
+  chosen basis.
 
 ## References
 
@@ -404,7 +405,7 @@ theorem analyticOrderAt_weierstrassSigma_coe (l : L.lattice) :
   simp at hε
 
 /-- **`σ` depends only on the lattice**, not on the chosen pair of periods. -/
-theorem weierstrassSigma_congr {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
+theorem weierstrassSigma_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
     L.weierstrassSigma = L'.weierstrassSigma := by
   ext z
   rw [weierstrassSigma_def, weierstrassSigma_def, h]
