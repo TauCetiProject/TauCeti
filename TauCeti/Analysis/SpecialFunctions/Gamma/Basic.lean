@@ -51,6 +51,7 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
+* `Complex.Gamma_add_natCast_eq_ascPochhammer_eval_mul` — `Γ(c + k) = (c)ₖ Γ(c)` off the poles.
 * `Complex.ne_neg_natCast_of_re_pos` — a parameter with positive real part avoids `−ℕ`.
 * `Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` and
   `Real.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` — the pole-free reciprocal identity
@@ -235,6 +236,11 @@ theorem tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop {a b : ℝ} (hab :
 end Real
 
 namespace Complex
+
+/-- `Γ(c + k) = (c)ₖ Γ(c)` for `c` off the poles of `Γ`. -/
+theorem Gamma_add_natCast_eq_ascPochhammer_eval_mul {c : ℂ} (hc : ∀ m : ℕ, c ≠ -m) (k : ℕ) :
+    Gamma (c + k) = (ascPochhammer ℂ k).eval c * Gamma c := by
+  rw [← Gamma_add_nat_div_Gamma_eq c hc, div_mul_cancel₀ _ (Gamma_ne_zero hc)]
 
 /-- A complex number with positive real part is not a nonpositive integer. -/
 theorem ne_neg_natCast_of_re_pos {b : ℂ} (hb : 0 < b.re) (n : ℕ) :
