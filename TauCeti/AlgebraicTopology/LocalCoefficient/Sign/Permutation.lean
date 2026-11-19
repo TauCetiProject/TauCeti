@@ -22,7 +22,11 @@ precomposed with the endomorphism moving the sheets by `σ`
 (`IsCoveringMap.permutationLocalSystemFiberMap_comp_toSign`). When the fibres are finite, a
 function on a fibre is a formal sum of its sheets, which gives a morphism back
 (`IsCoveringMap.signLocalSystemToPermutation`), and the round trip on the permutation local system
-is `1 - σ` (`IsCoveringMap.permutationLocalSystemToSign_comp_toPermutation`).
+is `1 - σ` (`IsCoveringMap.permutationLocalSystemToSign_comp_toPermutation`). In the other order,
+reading a function changing sign under `σ` as a formal sum of sheets and antisymmetrizing again
+doubles it (`IsCoveringMap.signLocalSystemToPermutation_comp_toSign`), and moving the sheets of
+that formal sum by `σ` negates it
+(`IsCoveringMap.signLocalSystemToPermutation_comp_permutationLocalSystemFiberMap`).
 
 When every fibre is a pair `{e, σ e}` with `σ e ≠ e`, reading functions as formal sums of sheets
 followed by the augmentation is a short exact sequence `0 ⟶ sign ⟶ R[p⁻¹ b] ⟶ R ⟶ 0` of local
@@ -43,6 +47,8 @@ homology are in `TauCeti.AlgebraicTopology.Singular.Transfer.Sign`.
   antisymmetrizing is the negative of antisymmetrizing.
 * `IsCoveringMap.permutationLocalSystemToSign_comp_toPermutation`: the round trip through the
   sign local system is `1 - σ`.
+* `IsCoveringMap.signLocalSystemToPermutation_comp_toSign`: the round trip through the permutation
+  local system is multiplication by `2`.
 * `IsCoveringMap.shortExact_signPermutationShortComplex`: for a double cover,
   `0 ⟶ sign ⟶ R[p⁻¹ b] ⟶ R ⟶ 0` is short exact.
 
@@ -200,6 +206,52 @@ theorem permutationLocalSystemToSign_comp_toPermutation :
   rw [NatTrans.app_sub, NatTrans.id_app, ModuleCat.hom_sub, ModuleCat.hom_id, LinearMap.sub_apply,
     LinearMap.id_apply, hp.permutationLocalSystemFiberMap_app_apply R σ hσ x f]
   -- Both sides are the explicit linear maps of the definitions, evaluated on a formal sum.
+  exact key x f e
+
+include hσσ in
+/-- Reading a function changing sign under `σ` as a formal sum of sheets and then moving the
+sheets by `σ` gives the negative formal sum. -/
+@[reassoc (attr := simp)]
+theorem signLocalSystemToPermutation_comp_permutationLocalSystemFiberMap :
+    hp.signLocalSystemToPermutation R hσ hfin ≫ hp.permutationLocalSystemFiberMap R σ hσ =
+      -hp.signLocalSystemToPermutation R hσ hfin := by
+  have key (x : FundamentalGroupoid B) (f : (hp.signLocalSystem R σ hσ).obj x)
+      (e : p ⁻¹' {x.as}) :
+      Finsupp.mapDomain (Function.fiberMap σ hσ x.as)
+          (hp.signLocalSystemToPermutationApp R hσ hfin x f) e =
+        -hp.signLocalSystemToPermutationApp R hσ hfin x f e := by
+    rw [Function.mapDomain_fiberMap_apply_of_involutive hσσ hσ,
+      signLocalSystemToPermutationApp_apply, signLocalSystemToPermutationApp_apply,
+      TauCeti.mem_signFiber_iff.1 (hp.signLocalSystemObjEquiv σ hσ x f).2]
+  refine NatTrans.ext (funext fun x ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦
+    Finsupp.ext fun e ↦ ?_))
+  rw [NatTrans.app_neg, ModuleCat.hom_neg, LinearMap.neg_apply, NatTrans.comp_app,
+    ModuleCat.hom_comp, LinearMap.comp_apply]
+  -- Both sides are the explicit linear maps of the definitions, evaluated at a sheet; the fibres
+  -- of the permutation system are formal sums only after unfolding, so this is not a rewrite.
+  exact (congrArg (fun g : (p ⁻¹' {x.as}) →₀ R ↦ g e)
+    (hp.permutationLocalSystemFiberMap_app_apply R σ hσ x _)).trans
+      ((key x f e).trans (Finsupp.neg_apply _ _).symm)
+
+/-- Reading a function changing sign under `σ` as a formal sum of sheets and antisymmetrizing
+again doubles it: `e ↦ f e - f (σ e) = 2 f e`. -/
+theorem signLocalSystemToPermutation_comp_toSign :
+    hp.signLocalSystemToPermutation R hσ hfin ≫ hp.permutationLocalSystemToSign R hσ hσσ =
+      𝟙 _ + 𝟙 _ := by
+  have key (x : FundamentalGroupoid B) (f : (hp.signLocalSystem R σ hσ).obj x)
+      (e : p ⁻¹' {x.as}) :
+      (hp.signLocalSystemObjEquiv σ hσ x (hp.permutationLocalSystemToSignApp R hσ hσσ x
+          (hp.signLocalSystemToPermutationApp R hσ hfin x f)) : p ⁻¹' {x.as} → R) e =
+        (hp.signLocalSystemObjEquiv σ hσ x (f + f) : p ⁻¹' {x.as} → R) e := by
+    rw [signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply,
+      signLocalSystemToPermutationApp_apply, signLocalSystemToPermutationApp_apply,
+      TauCeti.mem_signFiber_iff.1 (hp.signLocalSystemObjEquiv σ hσ x f).2, sub_neg_eq_add,
+      map_add, Submodule.coe_add, Pi.add_apply]
+  refine NatTrans.ext (funext fun x ↦ ModuleCat.hom_ext (LinearMap.ext fun f ↦
+    (hp.signLocalSystemObjEquiv σ hσ x).injective (Subtype.ext (funext fun e ↦ ?_))))
+  rw [NatTrans.app_add, NatTrans.id_app, ModuleCat.hom_add, ModuleCat.hom_id, LinearMap.add_apply,
+    LinearMap.id_apply]
+  -- Both sides are the explicit linear maps of the definitions, evaluated at a point of the fibre.
   exact key x f e
 
 /-! ### The short exact sequence of a double cover -/
