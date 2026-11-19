@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Boundary.BrokenSign
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedAugmentation
 
