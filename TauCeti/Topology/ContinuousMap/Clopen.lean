@@ -12,10 +12,12 @@ public import TauCeti.Topology.Sets.Clopens
 /-!
 # Extension by zero from a clopen subset
 
-A continuous function on a clopen subset extends continuously to the ambient space by taking the
-value zero on the complementary clopen. For a compact space and a seminormed module over a
-semiring whose fixed scalars act continuously, this file packages that operation as a continuous
-linear map and records its pointwise values, its exact norm, and its interaction with restriction.
+A continuous function on a clopen subset of a topological space with a zero element in the codomain
+extends continuously to the ambient space (`ContinuousMap.zeroExtendClopenFn`) by taking the value
+zero on the complementary clopen. For a compact space and a seminormed module over a semiring whose
+fixed scalars act continuously, this file packages that operation as a continuous linear map
+(`ContinuousMap.zeroExtendClopen`) and records its pointwise values, its exact norm, and its
+interaction with restriction.
 
 The construction is the test-function operator used to restrict an abstract measure to a clopen
 subset.
@@ -37,7 +39,9 @@ section Zero
 
 variable [TopologicalSpace E] [Zero E]
 
-private noncomputable def zeroExtendClopenFn (s : Clopens X) (f : C(s, E)) : C(X, E) := by
+/-- Extend a continuous function on a clopen subset `s` by `0` on its complement, assuming only a
+zero element in the codomain. -/
+noncomputable def zeroExtendClopenFn (s : Clopens X) (f : C(s, E)) : C(X, E) := by
   let S : Bool → Set X
     | false => s
     | true => (s : Set X)ᶜ
@@ -56,15 +60,19 @@ private noncomputable def zeroExtendClopenFn (s : Clopens X) (f : C(s, E)) : C(X
     · exact ⟨false, by simpa [S] using s.isOpen.mem_nhds hx⟩
     · exact ⟨true, by simpa [S] using s.isClosed.isOpen_compl.mem_nhds hx⟩
 
-private theorem zeroExtendClopenFn_apply_mem (s : Clopens X) (f : C(s, E))
+/-- On the clopen subset, `zeroExtendClopenFn` agrees with the original function. -/
+@[simp]
+theorem zeroExtendClopenFn_apply_mem (s : Clopens X) (f : C(s, E))
     {x : X} (hx : x ∈ s) : zeroExtendClopenFn s f x = f ⟨x, hx⟩ := by
   rw [zeroExtendClopenFn]
   exact liftCover_coe (i := false) ⟨x, hx⟩
 
-private theorem zeroExtendClopenFn_apply_not_mem (s : Clopens X) (f : C(s, E))
+/-- Outside the clopen subset, `zeroExtendClopenFn` vanishes. -/
+@[simp]
+theorem zeroExtendClopenFn_apply_not_mem (s : Clopens X) (f : C(s, E))
     {x : X} (hx : x ∉ s) : zeroExtendClopenFn s f x = 0 := by
   rw [zeroExtendClopenFn]
-  exact liftCover_coe (i := true) ⟨x, hx⟩
+  exact (liftCover_coe (i := true) ⟨x, hx⟩).trans (ContinuousMap.zero_apply _)
 
 end Zero
 
@@ -93,7 +101,9 @@ section Norm
 
 variable [CompactSpace X] [SeminormedAddCommGroup E]
 
-private theorem norm_zeroExtendClopenFn (s : Clopens X) (f : C(s, E)) :
+/-- Extension by zero from a clopen subset preserves the supremum norm. -/
+@[simp]
+theorem norm_zeroExtendClopenFn (s : Clopens X) (f : C(s, E)) :
     ‖zeroExtendClopenFn s f‖ = ‖f‖ := by
   apply le_antisymm
   · refine (norm_le _ (norm_nonneg f)).2 fun x ↦ ?_

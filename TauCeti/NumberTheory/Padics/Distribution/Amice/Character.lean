@@ -56,13 +56,16 @@ term `p t` keeps `(1 + t) ^ p - 1` inside `r_0`, while beyond `r_0` the term `t�
 
 ## Main results
 
-* `TauCeti.tendsto_amiceCharCoeff`: the Amice coordinates tend to zero when `‖t‖ < r_h`.
+* `TauCeti.norm_amiceCharCoeff_le_div_pow`, `TauCeti.tendsto_amiceCharCoeff`: for `n ≥ 1` the
+  Amice coordinates are bounded by `(‖t‖ / r_h)ⁿ`, so they tend to zero when `‖t‖ < r_h`.
 * `TauCeti.tendsto_amiceCharCoeff_iff`: for a multiplicative norm, they tend to zero exactly when
   `‖t‖ < r_h`; `TauCeti.le_norm_amiceCharCoeff_pow` is the subsequence detecting the failure.
 * `TauCeti.not_tendsto_amiceCharCoeff_one_and_tendsto_amiceCharCoeff_two`: at `p = 2`, a parameter
   of norm `2 ^ (-1 / 2)` fails the criterion at level one and satisfies it at level two.
 * `TauCeti.AnalyticStage.eval_addCharExpansion`: the expansion evaluates to `χ_t`.
-* `TauCeti.AnalyticStage.norm_addCharExpansion`: the expansion has norm exactly one.
+* `TauCeti.AnalyticStage.norm_addCharExpansion_apply_le_of_ne_zero`,
+  `TauCeti.AnalyticStage.norm_addCharExpansion`: positive-degree coefficients have norm at most
+  `‖t‖ / r_h` (without `NormOneClass`), and the expansion has norm `1` when `‖1‖ = 1`.
 * `TauCeti.AnalyticStage.isGreatest_norm_addCharExpansion`: for a multiplicative norm, the
   expansion has Gauss norm exactly one on each disc.
 * `TauCeti.AnalyticStage.exists_eval_eq_addChar_iff`: for a multiplicative norm, `χ_t` is analytic
@@ -120,7 +123,7 @@ theorem norm_amiceCharCoeff_le (h : ℕ) (t : R) (n : ℕ) :
   exact norm_smul_le _ _
 
 /-- For `n ≥ 1` the Amice coordinate has norm at most `(‖t‖ / r_h)ⁿ`. -/
-private theorem norm_amiceCharCoeff_le_div_pow {h n : ℕ} (t : R) (hn : n ≠ 0) :
+theorem norm_amiceCharCoeff_le_div_pow {h n : ℕ} (t : R) (hn : n ≠ 0) :
     ‖amiceCharCoeff p h t n‖ ≤ (‖t‖ / amiceRadius p h) ^ n := by
   have hr := (pow_pos (amiceRadius_pos (p := p) h) n)
   refine (norm_amiceCharCoeff_le h t n).trans ?_
@@ -375,6 +378,25 @@ theorem norm_addCharExpansion_le [NormOneClass R] {h : ℕ} {t : R}
     (ht : ‖t‖ < amiceRadius p h) : ‖addCharExpansion p h t ht‖ ≤ 1 :=
   (norm_amiceMap_le ℤ_[p] _).trans <| (ZeroAtInftyContinuousMap.norm_le zero_le_one).mpr fun n ↦ by
     simpa using norm_amiceCharCoeff_le_one ht.le n
+
+/-- Every positive-degree coefficient (`k ≥ 1`) of the expansion of `χ_t` at level `h` has norm
+at most `‖t‖ / r_h`, without assuming `NormOneClass R`: the `n = 0` term of `amiceMap` is constant
+(`amicePolynomial p h 0 a = 1`), and for `n ≥ 1` the Amice coordinates satisfy
+`‖amiceCharCoeff p h t n‖ ≤ (‖t‖ / r_h)ⁿ ≤ ‖t‖ / r_h`. -/
+theorem norm_addCharExpansion_apply_le_of_ne_zero {h : ℕ} {t : R} (ht : ‖t‖ < amiceRadius p h)
+    (a : ZMod (p ^ h)) {k : ℕ} (hk : k ≠ 0) :
+    ‖addCharExpansion p h t ht (a, k)‖ ≤ ‖t‖ / amiceRadius p h := by
+  have hr : 0 < amiceRadius p h := amiceRadius_pos (p := p) h
+  have hB0 : 0 ≤ ‖t‖ / amiceRadius p h := div_nonneg (norm_nonneg t) hr.le
+  have hB1 : ‖t‖ / amiceRadius p h ≤ 1 := (div_le_one hr).mpr ht.le
+  rw [addCharExpansion_apply]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hB0 fun l ↦ ?_
+  rcases eq_or_ne l 0 with rfl | hl
+  · rw [coeff_amicePolynomial_eq_zero _ (Nat.pos_of_ne_zero hk), zero_smul, norm_zero]
+    exact hB0
+  · refine (norm_smul_le _ _).trans
+      ((mul_le_of_le_one_left (norm_nonneg _) (PadicInt.norm_le_one _)).trans ?_)
+    exact (norm_amiceCharCoeff_le_div_pow t hl).trans (pow_le_of_le_one hB0 hB1 hl)
 
 /-- The constant term of the expansion of `χ_t` on the disc of `a` is `χ_t(a)`, the value at its
 centre `a.val`. -/
