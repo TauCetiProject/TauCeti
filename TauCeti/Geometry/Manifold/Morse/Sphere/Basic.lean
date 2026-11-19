@@ -233,6 +233,10 @@ theorem sphereHeight_eq_innerSL_comp (v : sphere (0 : E) 1) :
   funext x
   simp [real_inner_comm]
 
+/-- On the unit circle of `ℂ`, the height function in the direction of `1` is the real part. -/
+theorem sphereHeight_one_apply (z : sphere (0 : ℂ) 1) : sphereHeight 1 z = (z : ℂ).re := by
+  simp [sphereHeight_apply, Metric.unitSphere.coe_one, Complex.inner]
+
 /-- Reversing the direction negates the height function. -/
 @[simp]
 theorem sphereHeight_neg (v : sphere (0 : E) 1) : sphereHeight (-v) = -sphereHeight v := by
