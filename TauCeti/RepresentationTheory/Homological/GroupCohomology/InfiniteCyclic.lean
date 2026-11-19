@@ -69,16 +69,7 @@ variable {k G : Type u} [CommRing k] [CommGroup G] {g : G} (A : Rep k G)
 theorem leftRegularHomEquiv_comp_applyAsHom_sub (x : leftRegular k G ⟶ A) :
     leftRegularHomEquiv A ((applyAsHom (leftRegular k G) g - 𝟙 _) ≫ x) =
       (A.ρ g - LinearMap.id : A.V →ₗ[k] A.V) (leftRegularHomEquiv A x) := by
-  obtain ⟨a, rfl⟩ := (leftRegularHomEquiv A).symm.surjective x
-  rw [LinearEquiv.apply_symm_apply]
-  -- `leftRegularHomEquiv A` is evaluation at `single 1 1`, by definition; this unfolds it.
-  change ((applyAsHom (leftRegular k G) g - 𝟙 _) ≫ (leftRegularHomEquiv A).symm a).hom
-    (MonoidAlgebra.single 1 1) = _
-  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply, applyAsHom_sub_hom_apply k,
-    sub_mul, one_mul, MonoidAlgebra.single_mul_single, mul_one, map_sub]
-  -- `simp` does not use `leftRegularHomEquiv_symm_single` on this form, so rewrite with it.
-  rw [leftRegularHomEquiv_symm_single, leftRegularHomEquiv_symm_single]
-  simp
+  simp [sub_hom, homEquiv, ← hom_comm_apply x, Rep.applyAsHom]
 
 /-- The cochain complex of the resolution vanishes in degrees at least `2`, since `Hom(-, A)`
 takes the zero terms of the resolution to zero modules. -/

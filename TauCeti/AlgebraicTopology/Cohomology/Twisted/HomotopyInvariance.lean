@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
+import TauCeti.CategoryTheory.EpiMono
 
 /-!
 # Homotopy invariance of singular cohomology with local coefficients
@@ -111,9 +112,9 @@ theorem isIso_twistedCohomologyMap (e : X ≃ₕ Y)
     IsIso (twistedCohomologyMap k M (TopCat.ofHom e.toFun) L n) := by
   let f := TopCat.ofHom e.toFun
   let g := TopCat.ofHom e.invFun
-  -- `g ≫ f ≃ 𝟙` makes the map of `f` on `Hⁿ(Y; L)` a split monomorphism and the map of `g` on
-  -- `Hⁿ(X; f⁎L)` a split epimorphism, and `f ≫ g ≃ 𝟙` makes the latter a split monomorphism. So
-  -- the map of `g` is an isomorphism, and then so is the map of `f`.
+  -- `g ≫ f ≃ 𝟙` and `f ≫ g ≃ 𝟙` make the composites of the map of `g` on `Hⁿ(X; f⁎L)` with the
+  -- maps of `f` on either side isomorphisms. So it is an isomorphism, and then so is the map
+  -- of `f`.
   have h₁ := TopCat.Homotopy.isIso_twistedCohomologyMap_comp (a := g) (b := f) k M
     e.right_inv.some L n
   have h₂ := TopCat.Homotopy.isIso_twistedCohomologyMap_comp (a := f) (b := g) k M
@@ -122,19 +123,12 @@ theorem isIso_twistedCohomologyMap (e : X ≃ₕ Y)
       IsIso (twistedCohomologyCoefficientMap k M ((pullbackCompIso g.hom f.hom).hom.app L) n) := by
     rw [← Iso.app_hom, ← twistedCohomologyCoefficientIso_hom]
     infer_instance
-  have : Epi (twistedCohomologyMap k M g ((pullback f.hom).obj L) n) :=
-    (epi_comp_iff_of_isIso _
-      (twistedCohomologyCoefficientMap k M ((pullbackCompIso g.hom f.hom).hom.app L) n)).1
-        (epi_of_epi (twistedCohomologyMap k M f L n) _)
-  -- The instance argument is passed explicitly: the composite whose monomorphy is wanted has a
-  -- second factor that unification cannot infer from the goal.
-  have : Mono (twistedCohomologyMap k M g ((pullback f.hom).obj L) n) :=
-    @mono_of_mono _ _ _ _ _ _ _ (@IsIso.mono_of_iso _ _ _ _ _ h₂)
-  have := isIso_of_mono_of_epi (twistedCohomologyMap k M g ((pullback f.hom).obj L) n)
   rw [← Category.assoc] at h₁
-  have := IsIso.of_isIso_comp_right (twistedCohomologyMap k M f L n ≫
-    twistedCohomologyMap k M g ((pullback f.hom).obj L) n)
-    (twistedCohomologyCoefficientMap k M ((pullbackCompIso g.hom f.hom).hom.app L) n)
+  have h₃ : IsIso (twistedCohomologyMap k M f L n ≫
+      twistedCohomologyMap k M g ((pullback f.hom).obj L) n) :=
+    IsIso.of_isIso_comp_right _
+      (twistedCohomologyCoefficientMap k M ((pullbackCompIso g.hom f.hom).hom.app L) n)
+  have := IsIso.of_isIso_comp_of_isIso_comp h₃ h₂
   exact IsIso.of_isIso_comp_right _ (twistedCohomologyMap k M g ((pullback f.hom).obj L) n)
 
 end ContinuousMap.HomotopyEquiv
