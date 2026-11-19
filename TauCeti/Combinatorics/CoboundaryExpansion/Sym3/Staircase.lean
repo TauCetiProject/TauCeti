@@ -21,13 +21,14 @@ import Mathlib.Tactic.Positivity
 
 For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complete V) f` with
 `f u v = swap 0 1` on the edges of `G` and `1` elsewhere has defect `2 * #G.oddTriangleFinset`
-(`Sym3.defect_ofLt_ite_adj`). When `G` is cut-minimal every gauge costs at least
+(`SimpleGraph.defect_ofLt_ite_adj`). When `G` is cut-minimal every gauge costs at least
 `2 * #G.edgeFinset`: the parity retraction onto `{1, swap 0 1}`
 (`Equiv.Perm.parityRetract`, which fixes the cochain and does not increase the moved-point norm,
 `Cochain.cost_map_le`) turns any gauge into a cut `S`, whose cost is twice the size of the
 symmetric difference of the edges of `G` with the cut edges of `S`. Hence:
 
-* `h1_complete_movedNorm_fin_three_le_of_isCutMinimal`: for a cut-minimal `G` with an edge,
+* `SimpleGraph.h1_complete_movedNorm_fin_three_le_of_isCutMinimal`: for a cut-minimal `G` with an
+  edge,
   `h1 (complete V) (movedNorm (Fin 3)) ≤ #G.oddTriangleFinset / #G.edgeFinset`.
 * `h1_complete_movedNorm_fin_three_le_of_card_eq_mul`: applied to Kozlov's staircase graph
   `SimpleGraph.staircase q t` on `q (2 t + 1)` vertices, which is cut-minimal
@@ -72,6 +73,16 @@ private theorem card_support_inv_mul_ite_mul {x y : Perm (Fin 3)} (hx : x = 1 �
   by_cases hp : p
   · simpa [hp] using key x y hx hy true
   · simpa [hp] using key x y hx hy false
+
+end Sym3
+
+end TauCeti
+
+namespace SimpleGraph
+
+open Finset Equiv TauCeti TauCeti.TwoComplex
+
+variable {V : Type*} [Fintype V] [LinearOrder V]
 
 /-- **Parity retraction against a cut-minimal graph.** Every gauge costs at least
 `2 * #G.edgeFinset` against the cochain equal to `swap 0 1` on the edges of a cut-minimal `G`. -/
@@ -119,11 +130,9 @@ private theorem two_mul_card_edgeFinset_le_cost (G : SimpleGraph V) [DecidableRe
       refine sum_congr rfl fun v _ => ?_
       by_cases huv : u < v
       · rw [Cochain.ofLt_apply_of_lt _ ((adj_complete u v).mpr huv.ne) huv, Perm.movedNorm_apply,
-          card_support_inv_mul_ite_mul (hγ u) (hγ v)]
+          TauCeti.Sym3.card_support_inv_mul_ite_mul (hγ u) (hγ v)]
         by_cases hx : Xor (G.Adj u v) (Xor (γ u = swap 0 1) (γ v = swap 0 1)) <;> simp [huv, hx]
       · simp [huv]
-
-end Sym3
 
 /-- **Cut-minimal graphs bound the `Sym(3)` constant.** For a cut-minimal graph `G` on `V` with at
 least one edge, `h1 (complete V) (movedNorm (Fin 3)) ≤ #G.oddTriangleFinset / #G.edgeFinset`. -/
@@ -134,13 +143,21 @@ theorem h1_complete_movedNorm_fin_three_le_of_isCutMinimal (G : SimpleGraph V)
   set α := Cochain.ofLt (complete V) fun u v => if G.Adj u v then (swap 0 1 : Perm (Fin 3)) else 1
   have hE' : (0 : ℝ) < 2 * #G.edgeFinset := by positivity
   have hgd : (2 * #G.edgeFinset : ℝ) ≤ α.gaugeDist (Perm.movedNorm (Fin 3)) :=
-    (α.le_gaugeDist_iff _).mpr (Sym3.two_mul_card_edgeFinset_le_cost G hG)
+    (α.le_gaugeDist_iff _).mpr (G.two_mul_card_edgeFinset_le_cost hG)
   refine (h1_le_div (hE'.trans_le hgd)).trans ?_
-  rw [Sym3.defect_ofLt_ite_adj]
+  rw [defect_ofLt_ite_adj]
   calc (2 * #G.oddTriangleFinset : ℝ) / α.gaugeDist (Perm.movedNorm (Fin 3)) ≤
         2 * #G.oddTriangleFinset / (2 * #G.edgeFinset) :=
         div_le_div_of_nonneg_left (by positivity) hE' hgd
     _ = #G.oddTriangleFinset / #G.edgeFinset := mul_div_mul_left _ _ two_ne_zero
+
+end SimpleGraph
+
+namespace TauCeti
+
+open Finset Equiv TwoComplex
+
+variable {V : Type*} [Fintype V] [LinearOrder V]
 
 /-- **The staircase upper bound.** If `card V = q (2 t + 1)` with `q, t ≥ 1`, then
 `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3`, witnessed by Kozlov's staircase graph
@@ -159,7 +176,7 @@ theorem h1_complete_movedNorm_fin_three_le_of_card_eq_mul {q t : ℕ} (hq : 0 < 
   have hE : 0 < #(SimpleGraph.staircase q t).edgeFinset := by
     have : 0 < q ^ 2 * t * (t + 1) := by positivity
     omega
-  refine (h1_complete_movedNorm_fin_three_le_of_isCutMinimal _
+  refine (SimpleGraph.h1_complete_movedNorm_fin_three_le_of_isCutMinimal _
     (SimpleGraph.isCutMinimal_staircase q t) hE).trans_eq ?_
   have hE' : (0 : ℝ) < #(SimpleGraph.staircase q t).edgeFinset := by exact_mod_cast hE
   rw [hV, div_eq_div_iff hE'.ne' (by norm_num)]

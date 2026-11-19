@@ -15,7 +15,7 @@ import Mathlib.Data.Fintype.Prod
 
 For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complete V)` that is the
 transposition `swap 0 1` on the edges of `G` and `1` elsewhere has moved-point defect twice the
-number of odd triangles of `G` (`Sym3.defect_ofLt_ite_adj`).
+number of odd triangles of `G` (`SimpleGraph.defect_ofLt_ite_adj`).
 
 The balanced-replication identity `Cochain.defect_ofLt_lex` is in
 `TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication`.
@@ -48,12 +48,22 @@ private theorem card_support_ite_mul_ite_mul_ite_inv (p r s : Prop) [Decidable p
         (if s then swap 0 1 else 1)⁻¹).support = if Xor p (Xor s r) then 2 else 0 := by
   by_cases hp : p <;> by_cases hr : r <;> by_cases hs : s <;> simp [hp, hr, hs]
 
+end Sym3
+
+end TauCeti
+
+namespace SimpleGraph
+
+open Finset Equiv TauCeti TauCeti.TwoComplex
+
+variable {V : Type*} [Fintype V] [LinearOrder V]
+
 /-- **Defect of a graph cochain.** The cochain equal to `swap 0 1` on the edges of `G` and `1`
 elsewhere has moved-point defect `2 * #G.oddTriangleFinset`. -/
 theorem defect_ofLt_ite_adj (G : SimpleGraph V) [DecidableRel G.Adj] :
     (Cochain.ofLt (complete V) fun u v => if G.Adj u v then swap 0 1 else 1).defect
         (Perm.movedNorm (Fin 3)) = 2 * #G.oddTriangleFinset := by
-  rw [Cochain.defect_complete, sum_filter, SimpleGraph.card_oddTriangleFinset_eq_sum]
+  rw [Cochain.defect_complete, sum_filter, card_oddTriangleFinset_eq_sum]
   simp only [Fintype.sum_prod_type]
   push_cast
   rw [mul_sum]
@@ -64,11 +74,9 @@ theorem defect_ofLt_ite_adj (G : SimpleGraph V) [DecidableRel G.Adj] :
   refine sum_congr rfl fun w _ => ?_
   by_cases h : u < v ∧ v < w
   · rw [ite_eq_left h, Cochain.holonomy_ofLt_complete _ h.1 h.2, Perm.movedNorm_apply,
-      card_support_ite_mul_ite_mul_ite_inv]
+      TauCeti.Sym3.card_support_ite_mul_ite_mul_ite_inv]
     by_cases hx : Xor (G.Adj u v) (Xor (G.Adj u w) (G.Adj v w)) <;> simp [h, hx]
   · rw [ite_eq_right h, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩]
     simp
 
-end Sym3
-
-end TauCeti
+end SimpleGraph
