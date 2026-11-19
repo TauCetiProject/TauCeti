@@ -30,9 +30,10 @@ differentiable.
 ## Main declarations
 
 * `TauCeti.InhomogeneousTerm.comp`: the reparametrization `g^* ν`, with
-  `TauCeti.InhomogeneousTerm.comp_val_tangentHom` and `TauCeti.InhomogeneousTerm.comp_zero`.
-* `TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_comp`,
-  `TauCeti.InhomogeneousTerm.chartTerm_comp`: transport in charts.
+  `TauCeti.InhomogeneousTerm.comp_val_tangentHom`; it is linear in `ν`
+  (`TauCeti.InhomogeneousTerm.comp_zero`, `comp_add`, `comp_smul`, `comp_neg`, `comp_sub`).
+* `TauCeti.InhomogeneousTerm.chartTerm_comp`: transport in charts; the family counterpart is
+  `TauCeti.ContMDiffAlmostComplexStructureFamily.chartField_comp`.
 
 ## References
 
@@ -55,23 +56,6 @@ variable {E H M EP HP P EQ HQ Q : Type*} [NormedAddCommGroup E] [NormedSpace ℝ
   [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
   {IQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q] [IsManifold IQ ∞ Q]
   {n : ℕ∞}
-
-namespace ContMDiffAlmostComplexStructureFamily
-
-variable {D D' G : Type*} [TopologicalSpace D] [TopologicalSpace D'] [NormedAddCommGroup G]
-  [NormedSpace ℝ G]
-
-omit [IsManifold IP ∞ P] [IsManifold IQ ∞ Q] in
-/-- **Transport in charts.** If `φ'` is a chart of `Q` and `φ` a chart of `P` with
-`g ∘ φ'⁻¹ = φ⁻¹`, the reparametrized family `J ∘ g` read in `φ'` is `J` read in `φ`. -/
-theorem chartField_comp (J : ContMDiffAlmostComplexStructureFamily I M IP P n)
-    (g : C^n⟮IQ, Q; IP, P⟯) {φ' : OpenPartialHomeomorph Q D} {φ : OpenPartialHomeomorph P D}
-    (hφ : g ∘ φ'.symm = φ.symm) (ψ : OpenPartialHomeomorph M G) :
-    (J.comp g).chartField φ' ψ = J.chartField φ ψ := by
-  funext z v
-  rw [chartField_apply, chartField_apply, freeze_comp, ← hφ, Function.comp_apply]
-
-end ContMDiffAlmostComplexStructureFamily
 
 namespace InhomogeneousTerm
 
@@ -132,6 +116,9 @@ def comp (ν : InhomogeneousTerm j J) (j' : ContMDiffAlmostComplexStructure IQ n
     intro v
     have h := ν.tangentHom_apply_j (g q.1, q.2) (mfderiv IQ IP g q.1 v)
     rw [ContMDiffAlmostComplexStructureFamily.tangentEndomorphism_apply] at h
+    -- The goal is stated in the horizontal fibre of `Q × M` pulled back from `Q`, a type synonym
+    -- of `TangentSpace IQ q.1`; `rw` cannot see through the synonym to match these lemmas (as in
+    -- `InhomogeneousTerm.tangentHom_apply_j`).
     erw [ContMDiffAlmostComplexStructure.horizontalEndomorphism_apply,
       ContMDiffAlmostComplexStructureFamily.comp_toEndomorphism_apply]
     exact (congrArg (ν.val.tangentHom (g q.1, q.2)) (hgj q.1 v)).trans h⟩
@@ -168,6 +155,36 @@ theorem comp_zero : (0 : InhomogeneousTerm j J).comp j' g hg hgj = 0 := by
   -- The zero maps of the pulled-back and original tangent fibres agree.
   rfl
 
+omit [FiniteDimensional ℝ EP] [FiniteDimensional ℝ EQ] in
+/-- Two terms are equal when their readings in the tangent spaces agree. -/
+private theorem ext_tangentHom {j'' : ContMDiffAlmostComplexStructure IQ n Q}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IQ Q n} {ν₁ ν₂ : InhomogeneousTerm j'' J'}
+    (h : ∀ q v, ν₁.val.tangentHom q v = ν₂.val.tangentHom q v) : ν₁ = ν₂ :=
+  InhomogeneousTerm.ext fun q v ↦ (DomainDependentHomSection.tangentHom_apply _ q v).symm.trans
+    ((h q v).trans (DomainDependentHomSection.tangentHom_apply _ q v))
+
+/-- Reparametrization is additive. -/
+@[simp]
+theorem comp_add (μ : InhomogeneousTerm j J) :
+    (ν + μ).comp j' g hg hgj = ν.comp j' g hg hgj + μ.comp j' g hg hgj :=
+  ext_tangentHom fun q v ↦ by simp
+
+/-- Reparametrization commutes with scalar multiplication. -/
+@[simp]
+theorem comp_smul (c : ℝ) : (c • ν).comp j' g hg hgj = c • ν.comp j' g hg hgj :=
+  ext_tangentHom fun q v ↦ by simp
+
+/-- Reparametrization commutes with negation. -/
+@[simp]
+theorem comp_neg : (-ν).comp j' g hg hgj = -ν.comp j' g hg hgj :=
+  ext_tangentHom fun q v ↦ by simp
+
+/-- Reparametrization commutes with subtraction. -/
+@[simp]
+theorem comp_sub (μ : InhomogeneousTerm j J) :
+    (ν - μ).comp j' g hg hgj = ν.comp j' g hg hgj - μ.comp j' g hg hgj :=
+  ext_tangentHom fun q v ↦ by simp
+
 /-- **Transport in charts.** Let `φ'` be a chart of `Q` and `φ` a chart of `P`, both with values
 in `ℂ`, with `g ∘ φ'⁻¹ = φ⁻¹`. At a point `z` where `φ'⁻¹` is differentiable, the reparametrized
 term `g^* ν` read in `φ'` is `ν` read in `φ`. -/
@@ -178,17 +195,17 @@ theorem chartTerm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   have hgd : MDifferentiableAt IQ IP g (φ'.symm z) :=
     (hg (φ'.symm z)).mdifferentiableAt (by simp)
   funext v
-  have hd : mfderiv 𝓘(ℝ, ℂ) IP φ.symm z =
-      (mfderiv IQ IP g (φ'.symm z)).comp (mfderiv 𝓘(ℝ, ℂ) IQ φ'.symm z) := by
+  have hd1 : mfderiv 𝓘(ℝ, ℂ) IP φ.symm z (1 : ℂ) =
+      mfderiv IQ IP g (φ'.symm z) (mfderiv 𝓘(ℝ, ℂ) IQ φ'.symm z (1 : ℂ)) := by
     rw [← hφ]
-    exact mfderiv_comp z hgd hz
-  have hz' : g (φ'.symm z) = φ.symm z := congrFun hφ z
-  rw [chartTerm_apply, chartTerm_apply, comp_val_tangentHom_apply, hd]
-  erw [ContinuousLinearMap.comp_apply]
-  dsimp only
-  rw [hz']
-  -- Both sides apply the same maps; `mvfderiv` is `mfderiv` read in the model space.
-  rfl
+    exact mfderiv_comp_apply z hgd hz _
+  -- The tangent spaces at `g (φ'⁻¹ z)` and at `φ⁻¹ z` are both `EP`, so `ν` may be evaluated at
+  -- either point on the same vector.
+  have hν : ∀ x, g (φ'.symm z) = x → ∀ w : TangentSpace IP (g (φ'.symm z)),
+      ν.val.tangentHom (g (φ'.symm z), ψ.symm v) w = ν.val.tangentHom (x, ψ.symm v) w := by
+    rintro x rfl w
+    rfl
+  rw [chartTerm_apply, chartTerm_apply, comp_val_tangentHom_apply, hd1, hν _ (congrFun hφ z)]
 
 end InhomogeneousTerm
 

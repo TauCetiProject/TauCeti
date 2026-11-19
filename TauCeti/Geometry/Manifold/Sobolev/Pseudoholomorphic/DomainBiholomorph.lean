@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Comp
+import TauCeti.Geometry.Manifold.Diffeomorph.MaximalAtlas
+import TauCeti.Geometry.Manifold.Diffeomorph.RestrictScalars
 import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.SourceDiffeomorph
 
@@ -19,7 +21,7 @@ almost complex structure `J` on `M` parametrized by `X` reparametrizes to `J ∘
 for `J` to `f^* ν`, `(x, y) ↦ ν(f x, y) ∘ df_x` (`TauCeti.InhomogeneousTerm.compBiholomorph`),
 which is again complex antilinear because `df` is complex linear. The weak pseudoholomorphic
 equation is invariant: `u` is weakly pseudoholomorphic on `s` for `(J, ν)` exactly when `u ∘ f`
-is on `f ⁻¹' s` for `(J ∘ f, f^* ν)` (`TauCeti.isWeakPseudoholomorphicOn_comp_diffeomorph_iff`).
+is on `f ⁻¹' s` for `(J ∘ f, f^* ν)` (`Diffeomorph.isWeakPseudoholomorphicOn_comp_diffeomorph_iff`).
 
 The holomorphic charts of `X'` are exactly the charts `f ≫ φ` for holomorphic charts `φ` of `X`.
 In a pair of such charts the coordinate expressions of `u` and `u ∘ f` coincide, and so do the
@@ -28,13 +30,14 @@ structures and the terms read in the charts, since `(J ∘ f)(f⁻¹ (φ⁻¹ z)
 
 ## Main results
 
-* `TauCeti.isWeakPseudoholomorphicOn_comp_diffeomorph_iff`,
-  `TauCeti.isWeakPseudoholomorphic_comp_diffeomorph_iff`: **invariance under biholomorphisms of
-  the domain**, transporting `J` and `ν`.
+* `TauCeti.InhomogeneousTerm.compBiholomorph`: the transported term `f^* ν`, linear in `ν`.
+* `Diffeomorph.isWeakPseudoholomorphicOn_comp_diffeomorph_iff`,
+  `Diffeomorph.isWeakPseudoholomorphic_comp_diffeomorph_iff`: **invariance under biholomorphisms
+  of the domain**, transporting `J` and `ν`.
 * `TauCeti.isWeakPseudoholomorphicOn_const_zero_comp_diffeomorph_iff`: for a structure independent
   of the domain point and the zero term, nothing needs to be transported, so reparametrizing a
   solution by a biholomorphism gives a solution of the same equation.
-* Check on `X = ℂ`: the maps `u` and `z ↦ u (2 z)` are weak solutions of the same homogeneous
+* Example on `X = ℂ`: the maps `u` and `z ↦ u (2 z)` are weak solutions of the same homogeneous
   equation together (`TauCeti.isWeakPseudoholomorphicOn_comp_two_mul_iff`).
 
 ## References
@@ -58,30 +61,15 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ℓ : ℕ∞}
 
-omit [IsManifold 𝓘(ℂ) ∞ X] [IsManifold 𝓘(ℂ) ∞ X'] in
-/-- A biholomorphism is a smooth map of the underlying real surfaces. -/
-private theorem contMDiff_real (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ f := by
-  simpa only [modelWithCornersSelf_restrictScalars] using f.contMDiff.restrictScalars ℝ
-
-/-- The real differential of a biholomorphism commutes with multiplication by `i`. -/
-private theorem mfderiv_ofComplexManifold (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) (x : X')
-    (v : TangentSpace 𝓘(ℝ, ℂ) x) :
-    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f x
-        ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X').toContMDiff ℓ x v) =
-      (SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ (f x)
-        (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f x v) := by
-  simpa only [SmoothAlmostComplexStructure.toContMDiff_apply] using
-    (isPseudoholomorphicAt_ofComplexManifold_iff.2
-      ((f.contMDiff x).mdifferentiableAt (by simp))).mfderiv_apply_commute v
-
 namespace ContMDiffAlmostComplexStructureFamily
 
 /-- The reparametrization `J ∘ f` of a domain-dependent almost complex structure along a
 biholomorphism `f : X' → X` of the domains. -/
 def compBiholomorph (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X ℓ)
     (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X' ℓ :=
-  J.comp ⟨f, (contMDiff_real f).of_le (by exact_mod_cast le_top)⟩
+  J.comp ⟨f, (by simpa only [modelWithCornersSelf_restrictScalars,
+    Diffeomorph.coe_restrictScalars] using (f.restrictScalars ℝ).contMDiff :
+      ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ f).of_le (by exact_mod_cast le_top)⟩
 
 omit [IsManifold 𝓘(ℂ) ∞ X] [IsManifold 𝓘(ℂ) ∞ X'] in
 /-- The reparametrized structure at `(x, y)` is the structure at `(f x, y)`. -/
@@ -113,8 +101,12 @@ def compBiholomorph
     (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
     InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X').toContMDiff ℓ)
       (J.compBiholomorph f) :=
-  ν.comp _ _ ((contMDiff_real f).of_le (by exact_mod_cast le_top))
-    (mfderiv_ofComplexManifold f)
+  ν.comp _ _ ((by simpa only [modelWithCornersSelf_restrictScalars,
+    Diffeomorph.coe_restrictScalars] using (f.restrictScalars ℝ).contMDiff :
+      ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ f).of_le (by exact_mod_cast le_top))
+    fun x v ↦ by
+      simpa only [SmoothAlmostComplexStructure.toContMDiff_apply, ContMDiffMap.coeFn_mk] using
+        ((f.contMDiff x).mdifferentiableAt (by simp)).mfderiv_ofComplexManifold_apply v
 
 /-- The reparametrized term at `(x, y)`, evaluated on a tangent vector `v`, is
 `ν(f x, y)(df_x v)`. -/
@@ -133,6 +125,36 @@ theorem compBiholomorph_zero (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
       J).compBiholomorph f = 0 :=
   comp_zero _ _ _ _
 
+/-- Reparametrization is additive. -/
+@[simp]
+theorem compBiholomorph_add
+    (ν μ : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ)
+      J) (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
+    (ν + μ).compBiholomorph f = ν.compBiholomorph f + μ.compBiholomorph f :=
+  comp_add _ _ _ _ _ _
+
+/-- Reparametrization commutes with scalar multiplication. -/
+@[simp]
+theorem compBiholomorph_smul (c : ℝ)
+    (ν : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) J)
+    (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) : (c • ν).compBiholomorph f = c • ν.compBiholomorph f :=
+  comp_smul _ _ _ _ _ c
+
+/-- Reparametrization commutes with negation. -/
+@[simp]
+theorem compBiholomorph_neg
+    (ν : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ) J)
+    (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) : (-ν).compBiholomorph f = -ν.compBiholomorph f :=
+  comp_neg _ _ _ _ _
+
+/-- Reparametrization commutes with subtraction. -/
+@[simp]
+theorem compBiholomorph_sub
+    (ν μ : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X).toContMDiff ℓ)
+      J) (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
+    (ν - μ).compBiholomorph f = ν.compBiholomorph f - μ.compBiholomorph f :=
+  comp_sub _ _ _ _ _ _
+
 end InhomogeneousTerm
 
 variable {J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X ℓ}
@@ -147,7 +169,7 @@ variable [I.Boundaryless]
 of `X` with `f ∘ φ'⁻¹ = φ⁻¹` and the same target, such as `φ' = f ≫ φ`. In `φ'` and a chart `ψ`
 of `M`, the coordinate equation of `u ∘ f` for the reparametrized data is the coordinate equation
 of `u` in `φ` and `ψ`. -/
-private theorem isWeakCauchyRiemannOn_chart_comp_iff (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
+private theorem _root_.Diffeomorph.isWeakCauchyRiemannOn_chart_comp_iff (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
     {φ' : OpenPartialHomeomorph X' ℂ} (hφ' : φ' ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X')
     {φ : OpenPartialHomeomorph X ℂ} (hsymm : f ∘ φ'.symm = φ.symm)
     (htarget : φ'.target = φ.target) (ψ : OpenPartialHomeomorph M H) :
@@ -184,7 +206,8 @@ private theorem isWeakCauchyRiemannOn_chart_comp_iff (f : X' ≃ₘ⟮𝓘(ℂ),
 /-- **Invariance under biholomorphisms of the domain.** For a biholomorphism `f : X' → X`, a map
 `u : X → M` is weakly pseudoholomorphic on `s` for `(J, ν)` exactly when `u ∘ f` is weakly
 pseudoholomorphic on `f ⁻¹' s` for the reparametrized structure `J ∘ f` and term `f^* ν`. -/
-theorem isWeakPseudoholomorphicOn_comp_diffeomorph_iff (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
+theorem _root_.Diffeomorph.isWeakPseudoholomorphicOn_comp_diffeomorph_iff
+    (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
     IsWeakPseudoholomorphicOn (J.compBiholomorph f) (ν.compBiholomorph f) p (u ∘ f) (f ⁻¹' s) ↔
       IsWeakPseudoholomorphicOn J ν p u s := by
   have hn : (1 : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
@@ -193,23 +216,20 @@ theorem isWeakPseudoholomorphicOn_comp_diffeomorph_iff (f : X' ≃ₘ⟮𝓘(ℂ
   refine and_congr_right fun _ ↦ ⟨fun h φ hφ ψ hψ ↦ ?_, fun h φ' hφ' ψ hψ ↦ ?_⟩
   · -- Test `u` in `φ` through the chart `f ≫ φ` of `X'`.
     obtain ⟨φ', hφ', htarget, hsymm⟩ := f.exists_mem_maximalAtlas_comp_symm_eq hn hφ
-    exact (isWeakCauchyRiemannOn_chart_comp_iff f hφ' hsymm htarget ψ).1 (h φ' hφ' ψ hψ)
+    exact (f.isWeakCauchyRiemannOn_chart_comp_iff hφ' hsymm htarget ψ).1 (h φ' hφ' ψ hψ)
   · -- Test `u ∘ f` in `φ'` through a chart `φ` of `X` with `φ⁻¹ = f ∘ φ'⁻¹`.
-    obtain ⟨φ, hφ, htarget, hcomp⟩ := f.symm.exists_mem_maximalAtlas_comp_symm_eq hn hφ'
-    have hsymm : f ∘ φ'.symm = φ.symm := by
-      rw [← hcomp]
-      funext z
-      exact f.apply_symm_apply _
-    exact (isWeakCauchyRiemannOn_chart_comp_iff f hφ' hsymm htarget.symm ψ).2 (h φ hφ ψ hψ)
+    obtain ⟨φ, hφ, htarget, hsymm⟩ := f.exists_mem_maximalAtlas_symm_eq_comp hn hφ'
+    exact (f.isWeakCauchyRiemannOn_chart_comp_iff hφ' hsymm htarget.symm ψ).2 (h φ hφ ψ hψ)
 
 /-- **Invariance under biholomorphisms of the domain.** For a biholomorphism `f : X' → X`, a map
 `u : X → M` is weakly pseudoholomorphic for `(J, ν)` exactly when `u ∘ f` is weakly
 pseudoholomorphic for the reparametrized structure `J ∘ f` and term `f^* ν`. -/
-theorem isWeakPseudoholomorphic_comp_diffeomorph_iff (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
+theorem _root_.Diffeomorph.isWeakPseudoholomorphic_comp_diffeomorph_iff
+    (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
     IsWeakPseudoholomorphic (J.compBiholomorph f) (ν.compBiholomorph f) p (u ∘ f) ↔
       IsWeakPseudoholomorphic J ν p u := by
   simpa only [preimage_univ, isWeakPseudoholomorphicOn_univ] using
-    isWeakPseudoholomorphicOn_comp_diffeomorph_iff (ν := ν) (p := p) (u := u) (s := univ) f
+    f.isWeakPseudoholomorphicOn_comp_diffeomorph_iff (ν := ν) (p := p) (u := u) (s := univ)
 
 /-- **Reparametrizing solutions of an autonomous homogeneous equation.** For a structure `K` on `M`
 independent of the domain point and the zero term, a map `u : X → M` is weakly pseudoholomorphic
@@ -220,15 +240,15 @@ theorem isWeakPseudoholomorphicOn_const_zero_comp_diffeomorph_iff
     IsWeakPseudoholomorphicOn (ContMDiffAlmostComplexStructureFamily.const K) 0 p (u ∘ f)
         (f ⁻¹' s) ↔
       IsWeakPseudoholomorphicOn (ContMDiffAlmostComplexStructureFamily.const K) 0 p u s := by
-  rw [← isWeakPseudoholomorphicOn_comp_diffeomorph_iff f,
+  rw [← f.isWeakPseudoholomorphicOn_comp_diffeomorph_iff,
     ← isWeakPseudoholomorphicOn_ofEq rfl
       (ContMDiffAlmostComplexStructureFamily.const_compBiholomorph K f),
     InhomogeneousTerm.compBiholomorph_zero, InhomogeneousTerm.ofEq_zero]
 
-/-! ### Check on the plane -/
+/-! ### Example: dilations of the plane -/
 
 omit [IsManifold 𝓘(ℂ) ∞ X] in
-/-- **Check: `z` and `2 z`.** On `X = ℂ`, for a structure `K` on `M` independent of the domain
+/-- **Dilation by `2`.** On `X = ℂ`, for a structure `K` on `M` independent of the domain
 point and the zero term, a map `u : ℂ → M` is weakly pseudoholomorphic on `s` exactly when
 `z ↦ u (2 z)` is weakly pseudoholomorphic on `{z | 2 z ∈ s}`. -/
 theorem isWeakPseudoholomorphicOn_comp_two_mul_iff (K : ContMDiffAlmostComplexStructure I ℓ M)
