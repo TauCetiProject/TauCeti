@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Dimension.Basic
-import Mathlib.Analysis.Complex.Polynomial.Basic
+public import Mathlib.Topology.MetricSpace.ProperSpace
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
 import TauCeti.Topology.Algebra.Polynomial.Basic
@@ -17,15 +18,17 @@ import TauCeti.Topology.Algebra.Polynomial.Root.Extension
 /-!
 # Roots and factorizations at a puncture
 
-Let `F y` be complex polynomials whose coefficients are continuous at a point `c`. If `F y` has
-degree exactly `d` near `c`, a root of `F y`, continuous on a punctured ball about `c` in a real
-normed space of dimension greater than one, converges at `c` to a root of `F c`
+Let `F y` be polynomials over a proper algebraically closed normed field, such as `ℂ`, whose
+coefficients are continuous at a point `c`. If `F y` has degree exactly `d` near `c`, a root of
+`F y`, continuous on a punctured ball about `c` in a real normed space of dimension greater than
+one, converges at `c` to a root of `F c`
 (`TauCeti.Polynomial.exists_isRoot_tendsto_of_continuousOn`): near `c` the roots of `F y` lie close
 to the roots of `F c` (`Polynomial.eventually_rel_roots_norm_sub_lt`), so the root is bounded there,
 and the cluster set at `c` of a bounded root over the connected punctured balls is a single root
-of `F c` (`TauCeti.subsingleton_clusterSetOn_of_polynomial_root`). If `F y` has degree at most
-`d` near `c`, a splitting of `F y` into `d` linear factors with roots continuous at `c` passes to
-the limit (`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`).
+of `F c` (`TauCeti.subsingleton_clusterSetOn_of_polynomial_root`). Over any infinite Hausdorff
+topological domain, if `F y` has degree at most `d` near `c`, a splitting of `F y` into `d`
+linear factors with roots continuous at `c` passes to the limit
+(`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`).
 -/
 
 public section
@@ -34,14 +37,14 @@ open Filter Metric Polynomial Set Topology
 
 namespace TauCeti.Polynomial
 
-/-- **A continuous root extends across a puncture.** Let `F y` be polynomials of degree `d` near
-`c`, a point of a real normed space of dimension greater than one, with coefficients continuous at
-`c`. A root `v` of `F`, continuous on a punctured ball about `c`, converges at `c` to a root of
-`F c`. -/
-theorem exists_isRoot_tendsto_of_continuousOn {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (hE : 1 < Module.rank ℝ E) {F : E → ℂ[X]} {c : E} {d : ℕ}
-    (hF : ∀ i ≤ d, ContinuousAt (fun y => (F y).coeff i) c)
-    (hdeg : ∀ᶠ y in 𝓝 c, (F y).degree = d) {δ : ℝ} (hδ : 0 < δ) {v : E → ℂ}
+/-- **A continuous root extends across a puncture.** Let `F y` be polynomials over a proper
+algebraically closed normed field, of degree `d` near `c`, a point of a real normed space of
+dimension greater than one, with coefficients continuous at `c`. A root `v` of `F`, continuous
+on a punctured ball about `c`, converges at `c` to a root of `F c`. -/
+theorem exists_isRoot_tendsto_of_continuousOn {K E : Type*} [NormedField K] [IsAlgClosed K]
+    [ProperSpace K] [NormedAddCommGroup E] [NormedSpace ℝ E] (hE : 1 < Module.rank ℝ E)
+    {F : E → K[X]} {c : E} {d : ℕ} (hF : ∀ i ≤ d, ContinuousAt (fun y => (F y).coeff i) c)
+    (hdeg : ∀ᶠ y in 𝓝 c, (F y).degree = d) {δ : ℝ} (hδ : 0 < δ) {v : E → K}
     (hv : ContinuousOn v (ball c δ \ {c})) (hroot : ∀ z ∈ ball c δ \ {c}, (F z).IsRoot (v z)) :
     ∃ w, (F c).IsRoot w ∧ Tendsto v (𝓝[≠] c) (𝓝 w) := by
   classical
@@ -73,8 +76,8 @@ theorem exists_isRoot_tendsto_of_continuousOn {E : Type*} [NormedAddCommGroup E]
   -- evaluation is jointly continuous at `c`, so the cluster values are among the roots of `F c`
   have hdeg' : ∀ᶠ y in 𝓝 c, (F y).natDegree ≤ d :=
     hdeg.mono fun y hy => natDegree_le_of_degree_le hy.le
-  have hp (t : ℂ) :
-      ContinuousWithinAt (fun z : E × ℂ ↦ (F z.1).eval z.2) ((ball c δ' \ {c}) ×ˢ univ) (c, t) :=
+  have hp (t : K) :
+      ContinuousWithinAt (fun z : E × K ↦ (F z.1).eval z.2) ((ball c δ' \ {c}) ×ˢ univ) (c, t) :=
     (continuousAt_eval (fun i hi => (hF i hi).fst')
       ((continuousAt_fst (p := (c, t))).tendsto.eventually hdeg')
       continuousAt_snd).continuousWithinAt
@@ -87,12 +90,13 @@ theorem exists_isRoot_tendsto_of_continuousOn {E : Type*} [NormedAddCommGroup E]
   rw [clusterSetOn_eq_singleton_of_tendsto hc hw]
   exact mem_singleton w
 
-/-- **Splitting passes to the limit.** Let `F y` be complex polynomials of degree at most `d` near
-`c`, with coefficients continuous at `c`, that split into linear factors `X - u_i(y)` on a
-punctured neighbourhood of `c`, the roots `u_i` being continuous at `c`. Then `F c` splits into the
-limiting factors `X - u_i(c)`. -/
-theorem eq_prod_X_sub_C_of_continuousAt {B : Type*} [TopologicalSpace B] {F : B → ℂ[X]} {c : B}
-    [(𝓝[≠] c).NeBot] {d : ℕ} {u : Fin d → B → ℂ}
+/-- **Splitting passes to the limit.** Let `F y` be polynomials over an infinite Hausdorff
+topological domain, of degree at most `d` near `c`, with coefficients continuous at `c`, that split
+into linear factors `X - u_i(y)` on a punctured neighbourhood of `c`, the roots `u_i` being
+continuous at `c`. Then `F c` splits into the limiting factors `X - u_i(c)`. -/
+theorem eq_prod_X_sub_C_of_continuousAt {R B : Type*} [CommRing R] [IsDomain R] [Infinite R]
+    [TopologicalSpace R] [IsTopologicalRing R] [T2Space R] [TopologicalSpace B] {F : B → R[X]}
+    {c : B} [(𝓝[≠] c).NeBot] {d : ℕ} {u : Fin d → B → R}
     (hF : ∀ i ≤ d, ContinuousAt (fun y => (F y).coeff i) c)
     (hdeg : ∀ᶠ y in 𝓝 c, (F y).natDegree ≤ d) (hu : ∀ i, ContinuousAt (u i) c)
     (hsplit : ∀ᶠ y in 𝓝[≠] c, F y = ∏ i, (X - C (u i y))) :
