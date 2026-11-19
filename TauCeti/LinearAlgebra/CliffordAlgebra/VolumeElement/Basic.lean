@@ -365,7 +365,8 @@ theorem algebraMap_add_smul_mul_algebraMap_sub_smul {ω : CliffordAlgebra Q} {s 
 
 /-- The product `(a + b • ω) * ι Q v * (a - b • ω)`, for `ω` anticommuting with `ι Q v` and
 squaring to the scalar `s`. When `a - b • ω` is the inverse of `a + b • ω`, this is conjugation of
-the vector by `a + b • ω`; it leaves the vectors as soon as `ω * ι Q v` does and `2ab ≠ 0`. -/
+the vector by `a + b • ω`; it leaves the vectors as soon as `ω * ι Q v` does and `2ab` is a unit
+(over a field, `2ab ≠ 0`). -/
 theorem algebraMap_add_smul_mul_ι_mul_algebraMap_sub_smul {ω : CliffordAlgebra Q} {s : R}
     (hsq : ω * ω = algebraMap R _ s) {v : M} (hv : ω * ι Q v = -(ι Q v * ω)) (a b : R) :
     (algebraMap R _ a + b • ω) * ι Q v * (algebraMap R _ a - b • ω) =
