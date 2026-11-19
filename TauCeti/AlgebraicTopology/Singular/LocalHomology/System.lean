@@ -95,6 +95,17 @@ variable {M : Type w} [TopologicalSpace M]
 abbrev localHomology (S : Set M) (k : ℕ) : A :=
   (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomology R k
 
+/-- The degree-zero relative class of a point, as the coefficient morphism into local homology
+along a set. This is the actual point section followed by the quotient map. -/
+def localHomologyPointClass (S : Set M) (x : M) : R ⟶ localHomology R S 0 :=
+  singularHomology₀Section R (X := TopCat.of M) x ≫
+    (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R 0
+
+/-- The point class is the image of the absolute point section under the relative quotient. -/
+lemma localHomologyPointClass_def (S : Set M) (x : M) :
+    localHomologyPointClass R S x = singularHomology₀Section R (X := TopCat.of M) x ≫
+      (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R 0 := by rfl
+
 /-- The subspace `M ∖ M` of the pair `(M, M ∖ M)` is empty, so `Hₖ(M, M ∖ M)` is the singular
 homology of `M`. -/
 instance isEmpty_ofSubset_compl_univ_snd :
@@ -141,6 +152,15 @@ lemma singularHomologyπ_localHomologyRestriction {S T : Set M} (h : S ⊆ T) (k
   rw [localHomologyRestriction_def]
   exact TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id R
     (compl_subset_compl.2 h) k
+
+/-- Restricting the relative point class is the point class in the smaller pair. -/
+@[reassoc]
+lemma localHomologyPointClass_restriction {S T : Set M} (h : S ⊆ T) (x : M) :
+    localHomologyPointClass R T x ≫ localHomologyRestriction R h 0 =
+      localHomologyPointClass R S x := by
+  rw [localHomologyPointClass_def, localHomologyPointClass_def]
+  exact (Category.assoc _ _ _).trans
+    (singularHomology₀Section R x ≫= singularHomologyπ_localHomologyRestriction R h 0)
 
 /-- **Local homology along the empty set vanishes**: `Hₖ(M, M) = 0`. -/
 theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Set M) k) := by
@@ -251,6 +271,20 @@ lemma localHomologyMap_def {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (k : �
         (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N) (B := Sᶜ) (B' := Tᶜ)
           (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k :=
   (rfl)
+
+/-- A map of local homology carries the actual relative point class to its image point. -/
+@[reassoc]
+lemma localHomologyPointClass_map {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (x : M) :
+    localHomologyPointClass R S x ≫ localHomologyMap R j h 0 =
+      localHomologyPointClass R T (j x) := by
+  let hf : Set.MapsTo (TopCat.ofHom j) Sᶜ Tᶜ :=
+    (mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h)
+  let f := TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N)
+    (B := Sᶜ) (B' := Tᶜ) (TopCat.ofHom j) hf
+  rw [localHomologyPointClass_def, localHomologyPointClass_def, localHomologyMap_def]
+  exact TopPair.singularHomology₀Section_singularHomologyMap _ R f x (j x)
+    (TopPair.ofSubsetMap_fst_apply (X := TopCat.of M) (Y := TopCat.of N)
+      (TopCat.ofHom j) hf x)
 
 /-- Equal continuous maps induce equal maps of local homology, with the preimage hypothesis
 transported along the equality. -/
