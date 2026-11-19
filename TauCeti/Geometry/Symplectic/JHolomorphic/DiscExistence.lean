@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Algebra.Ring.CayleyChart
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
@@ -66,9 +67,11 @@ Two forms of the equation are used.
   (`TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq`).
   For `J(x)² = -1` it is equivalent to `∂ₛu + J(u) ∂ₜu = 0` when `Q = (J + i)⁻¹ (i - J)` is the
   Beltrami coefficient of `J`, minus its Cayley coordinate `TauCeti.cayleyCoord i J` relative to
-  `i`, which is conjugate linear (`TauCeti.cayleyCoord_mul_eq_neg_mul`). Unlike the first form,
-  this one is invariant under rotations of the domain: if `u` solves it, so does `w ↦ u(c w)` for
-  `|c| = 1`.
+  `i`, which is conjugate linear (`TauCeti.cayleyCoord_mul_eq_neg_mul`). Both forms have the same
+  solutions, and these are preserved by rotations `w ↦ c w` of the domain with `|c| = 1`. What
+  the Beltrami form adds is that, for conjugate-linear `Q`, its right side `Q(u) ∂u` is compatible
+  with the source rotation `h ↦ c⁻¹ h(c ·)`, unlike `K(u) (-∂ₜu / 2)`, so the fixed-point map
+  commutes with it.
   The cutoff `χ` and the Cauchy transform (`TauCeti.cauchyTransform_comp_mul_left`) are rotation
   invariant too, so `z ↦ c⁻¹ h(c z)` is the source of the disc with first jet `c ξ`, and by
   uniqueness of the source the discs satisfy `u_{c ξ}(w) = u_ξ(c w)`.
@@ -1168,20 +1171,6 @@ private theorem rescale_props {ξ : F} {t μ : ℝ} (ht : 0 < t) (hμ : 0 < μ) 
 
 
 
-/-- A map of class `C²` at `0` is differentiable with Lipschitz derivative on a closed ball
-about `0`. -/
-private theorem exists_closedBall_differentiableAt_lipschitz {E G : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {f : E → G}
-    (hf : ContDiffAt ℝ 2 f 0) :
-    ∃ r > 0, ∃ K : ℝ≥0, (∀ x ∈ closedBall (0 : E) r, DifferentiableAt ℝ f x) ∧
-      ∀ x ∈ closedBall (0 : E) r, ∀ y ∈ closedBall (0 : E) r,
-        ‖fderiv ℝ f x - fderiv ℝ f y‖ ≤ K * ‖x - y‖ := by
-  obtain ⟨K, t₀, ht₀, hK⟩ := (hf.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
-  obtain ⟨r, hr, hrf⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp
-    ((hf.eventually (by simp)).and ht₀)
-  exact ⟨r, hr, K, fun x hx ↦ (hrf hx).1.differentiableAt (by norm_num), fun x hx y hy ↦ by
-    simpa [dist_eq_norm] using hK.dist_le_mul x (hrf hx).2 y (hrf hy).2⟩
-
 omit [FiniteDimensional ℂ F] in
 /-- Rescaling the argument of a map `J` whose derivative is `K`-Lipschitz on the ball of radius
 `r` makes its derivative and the Lipschitz constant of its derivative as small as required on
@@ -1237,7 +1226,7 @@ theorem exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt {J : F → F 
       ∀ z ∈ ball (0 : ℂ) ε, fderiv ℝ u z 1 + J (u z) (fderiv ℝ u z I) = 0 := by
   obtain ⟨η, hη, hdisc⟩ := exists_pos_forall_exists_fderiv_one_add_apply_fderiv_I_eq_zero (F := F)
   -- Near `0`, `J` is differentiable and `DJ` is Lipschitz, hence bounded.
-  obtain ⟨r, hr, K, hd, hL⟩ := exists_closedBall_differentiableAt_lipschitz hJ
+  obtain ⟨r, hr, K, hd, hL⟩ := hJ.exists_closedBall_differentiableAt_lipschitz_fderiv
   obtain ⟨t, ht, -, hdt, hAt, hLt⟩ := exists_rescale hη hr hd hL
   set μ := (‖ξ‖ + 1)⁻¹
   have hμ : 0 < μ := by positivity
@@ -1353,7 +1342,7 @@ private theorem exists_neg_cayleyCoord_local {J : F → F →L[ℝ] F} (hJ : Con
     exact ((contDiffAt_const.sub hJ).mul (hinv.comp 0 hAC)).neg
   have hunit : ∀ᶠ x in 𝓝 0, IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J x) :=
     hAC.continuousAt.eventually (Units.isOpen.mem_nhds hU)
-  obtain ⟨r₁, hr₁, K, hd, hL⟩ := exists_closedBall_differentiableAt_lipschitz hQC
+  obtain ⟨r₁, hr₁, K, hd, hL⟩ := hQC.exists_closedBall_differentiableAt_lipschitz_fderiv
   obtain ⟨r₂, hr₂, hr₂J⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp (hJJ.and hunit)
   have h₁ : closedBall (0 : F) (min r₁ r₂) ⊆ closedBall 0 r₁ :=
     closedBall_subset_closedBall (min_le_left _ _)
