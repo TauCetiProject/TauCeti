@@ -47,7 +47,8 @@ instance instTensorSignsDownInt : TensorSigns (ComplexShape.down ℤ) where
   add_rel p q r hpq := by simp only [down_Rel] at hpq ⊢; omega
   ε'_succ := by
     rintro _ q rfl
-    exact (neg_neg _).symm.trans (congrArg Neg.neg (Int.negOnePow_succ q)).symm
+    change q.negOnePow = -(q + 1).negOnePow
+    rw [Int.negOnePow_succ, neg_neg]
 
 @[simp]
 theorem ε_down_ℤ (n : ℤ) : (ComplexShape.down ℤ).ε n = n.negOnePow := rfl

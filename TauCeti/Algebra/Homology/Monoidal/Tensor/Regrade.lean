@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 public import TauCeti.Algebra.Homology.ComplexShape.Signs
 public import TauCeti.Algebra.Homology.Embedding.Regrade
+public import TauCeti.Algebra.Homology.Monoidal.Summand
 
 /-!
 # Regrading tensor products of chain complexes
@@ -16,10 +17,10 @@ public import TauCeti.Algebra.Homology.Embedding.Regrade
 For an integer `n`, a chain complex `K` indexed by `ℤ` is regraded into the cochain complex
 `K^k = K_(n-k)` with the same differential (`ChainComplex.regradeEquivalence`). This file compares
 the regrading of a tensor product with the tensor product of the regradings: for chain complexes
-`K`, `L` and integers `n₁`, `n₂`, the regrading of `K ⊗ L` by `n₁ + n₂` is isomorphic to the tensor
-product of the regradings of `K` by `n₁` and of `L` by `n₂`
-(`ChainComplex.regradeTensorIso`). Both complexes have the same summands
-`K_(n₁ - a) ⊗ L_(n₂ - b)` in degree `k = a + b`, but they are not equal: the Koszul sign of the
+`K`, `L` and integers `n₁`, `n₂`, the tensor product of the regradings of `K` by `n₁` and of `L` by
+`n₂` is isomorphic to the regrading of `K ⊗ L` by `n₁ + n₂` (`ChainComplex.regradeTensorIso`).
+Both complexes have the same summands `K_(n₁ - a) ⊗ L_(n₂ - b)` in degree `k = a + b`, but they
+are not equal: the Koszul sign of the
 second factor's differential is `(-1)^p` for `x ∈ K_p` in `K ⊗ L` and `(-1)^a = (-1)^(n₁ - p)` in
 the tensor product of the regradings. The isomorphism is the identity on summands twisted by the
 sign `(-1)^(n₁ q)` on `K_p ⊗ L_q`, which depends on the degree of the second factor.
@@ -27,9 +28,9 @@ sign `(-1)^(n₁ q)` on `K_p ⊗ L_q`, which depends on the degree of the second
 This is the sign identity that makes the cohomological regrading of a degree-shifting product an
 actual cochain-level product. A family of maps `K_p ⊗ L_q → M_(p + q + n₀ - n₁ - n₂)` commuting
 with the differentials of `K ⊗ L` and `M` is a morphism from the regrading of `K ⊗ L` by
-`n₁ + n₂` to the regrading of `M` by `n₀`. Composing it with the inverse of
-`ChainComplex.regradeTensorIso` gives a morphism of cochain complexes out of the tensor product of
-the regradings of `K` by `n₁` and `L` by `n₂`, of degree zero, whose Leibniz rule carries the
+`n₁ + n₂` to the regrading of `M` by `n₀`. Precomposing it with `ChainComplex.regradeTensorHom`
+gives a morphism of cochain complexes out of the tensor product of the regradings of `K` by `n₁`
+and `L` by `n₂`, of degree zero, whose Leibniz rule carries the
 cohomological sign `(-1)^a`. For the pair-of-pants product `CF_i ⊗ CF_j → CF_(i+j-n)` on Floer
 complexes of a symplectic manifold of dimension `2n` this is the passage to the degree-zero
 product on `C^k = CF_(n-k)`, with `n₁ = n₂ = n₀ = n`.
@@ -39,14 +40,15 @@ product on `C^k = CF_(n-k)`, with `n₁ = n₂ = n₀ = n`.
 * `ChainComplex.regradeTensorSummand`: the component of the comparison on one summand.
 * `ChainComplex.regradeTensorHom`: the comparison morphism from the tensor product of the
   regradings to the regrading of the tensor product.
-* `ChainComplex.regradeTensorIso`: the isomorphism between the regrading of `K ⊗ L` by `n₁ + n₂`
-  and the tensor product of the regradings of `K` by `n₁` and `L` by `n₂`.
+* `ChainComplex.regradeTensorIso`: the comparison morphism as an isomorphism between the tensor
+  product of the regradings of `K` by `n₁` and `L` by `n₂` and the regrading of `K ⊗ L` by
+  `n₁ + n₂`.
 
 ## Main results
 
-* `ChainComplex.ι_regradeTensorIso_hom_f`, `ChainComplex.ι_regradeTensorHom_f`: the components of
-  the isomorphism and of its inverse `ChainComplex.regradeTensorHom` on summands.
-* `ChainComplex.regradeTensorHom_naturality`, `ChainComplex.regradeTensorIso_hom_naturality`: the
+* `ChainComplex.ι_regradeTensorHom_f`, `ChainComplex.ι_regradeTensorIso_inv_f`: the components of
+  the isomorphism, whose `hom` is `ChainComplex.regradeTensorHom`, and of its inverse on summands.
+* `ChainComplex.regradeTensorHom_naturality`, `ChainComplex.regradeTensorIso_inv_naturality`: the
   comparison is natural in both complexes.
 
 The tensor product of the regradings exists whenever `K ⊗ L` does, since their summands agree;
@@ -63,24 +65,6 @@ this is an instance. The tensor signs on `ComplexShape.down ℤ` that define `K 
 public section
 
 open CategoryTheory Limits MonoidalCategory
-
-namespace HomologicalComplex
-
-variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
-  {I : Type*} [AddMonoid I] [DecidableEq I] {c : ComplexShape I} [c.TensorSigns]
-
-/-- Identifying the degrees of the two factors along equalities of indices does not change the
-inclusion of a summand into a tensor product of complexes. -/
-@[reassoc (attr := simp)]
-lemma XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj (K L : HomologicalComplex C c)
-    [K.HasTensor L] {p p' q q' : I} (hp : p = p') (hq : q = q') (j : I) (h : p + q = j)
-    (h' : p' + q' = j) :
-    ((K.XIsoOfEq hp).hom ⊗ₘ (L.XIsoOfEq hq).hom) ≫ ιTensorObj K L p' q' j h' =
-      ιTensorObj K L p q j h := by
-  subst hp hq
-  simp
-
-end HomologicalComplex
 
 namespace ChainComplex
 
@@ -111,6 +95,23 @@ instance [K.HasTensor L] :
     (fun _ ↦ Iso.refl _)
 
 variable [K.HasTensor L]
+
+/-- Identifying the degrees of the two factors of a summand of the tensor product of the
+regradings along equalities of indices does not change its inclusion. -/
+private lemma restrictionXIso_inv_tensorHom_restrictionXIso_inv_ιTensorObj
+    {a b a' b' : ℤ}
+    (ha : (embeddingUpIntDownIntSub n₁).f a' = (embeddingUpIntDownIntSub n₁).f a)
+    (hb : (embeddingUpIntDownIntSub n₂).f b' = (embeddingUpIntDownIntSub n₂).f b) (k : ℤ)
+    (h : a + b = k) (h' : a' + b' = k) :
+    ((K.restrictionXIso (embeddingUpIntDownIntSub n₁) ha).inv ⊗ₘ
+        (L.restrictionXIso (embeddingUpIntDownIntSub n₂) hb).inv) ≫
+      ιTensorObj (K.restriction (embeddingUpIntDownIntSub n₁))
+        (L.restriction (embeddingUpIntDownIntSub n₂)) a' b' k h' =
+      ιTensorObj (K.restriction (embeddingUpIntDownIntSub n₁))
+        (L.restriction (embeddingUpIntDownIntSub n₂)) a b k h := by
+  obtain rfl := (embeddingUpIntDownIntSub n₁).injective_f ha
+  obtain rfl := (embeddingUpIntDownIntSub n₂).injective_f hb
+  simp [restrictionXIso, -embeddingUpIntDownIntSub_f]
 
 /-- The component of the comparison between regradings of tensor products on the summand
 `K_(n₁ - a) ⊗ L_(n₂ - b)` of the tensor product of the regradings: the inclusion of this summand
@@ -235,10 +236,7 @@ private lemma regradeTensorSummand_comp_regradeTensorInvF (a b k : ℤ) (h : a +
         (L.restriction (embeddingUpIntDownIntSub n₂)) a b k h := by
   rw [Linear.units_smul_comp, ι_regradeTensorInvF, regradeTensorInvSummand_def, smul_smul,
     Int.units_mul_self, one_smul]
-  -- The identifications `restrictionXIso` are identities up to the equalities of indices.
-  exact XIsoOfEq_hom_tensorHom_XIsoOfEq_hom_ιTensorObj (K.restriction (embeddingUpIntDownIntSub n₁))
-    (L.restriction (embeddingUpIntDownIntSub n₂)) (show a = n₁ - (n₁ - a) by omega)
-    (show b = n₂ - (n₂ - b) by omega) k h _
+  exact restrictionXIso_inv_tensorHom_restrictionXIso_inv_ιTensorObj n₁ n₂ K L _ _ k h _
 
 private lemma ι_regradeTensorInvF_comp_regradeTensorHom_f (p q k : ℤ)
     (h : p + q = n₁ + n₂ - k) :
@@ -258,15 +256,15 @@ private lemma ι_regradeTensorInvF_comp_regradeTensorHom_f (p q k : ℤ)
   -- equalities of indices, and `regradeTensorSummand` is the signed inclusion of a summand.
   exact key
 
-/-- The regrading of the tensor product `K ⊗ L` of chain complexes by `n₁ + n₂` is isomorphic to
-the tensor product of the regradings of `K` by `n₁` and of `L` by `n₂`. On the summand
-`K_p ⊗ L_q` the isomorphism is the identity twisted by the sign `(-1)^(n₁ q)`
-(`ChainComplex.ι_regradeTensorIso_hom_f`). -/
+/-- The tensor product of the regradings of `K` by `n₁` and of `L` by `n₂` is isomorphic to the
+regrading of the tensor product `K ⊗ L` of chain complexes by `n₁ + n₂`, through the comparison
+morphism `ChainComplex.regradeTensorHom`. On the summand `K_p ⊗ L_q` the isomorphism is the
+identity twisted by the sign `(-1)^(n₁ q)` (`ChainComplex.ι_regradeTensorHom_f`). -/
 noncomputable def regradeTensorIso :
-    (tensorObj K L).restriction (embeddingUpIntDownIntSub (n₁ + n₂)) ≅
-      tensorObj (K.restriction (embeddingUpIntDownIntSub n₁))
-        (L.restriction (embeddingUpIntDownIntSub n₂)) :=
-  (Hom.isoOfComponents
+    tensorObj (K.restriction (embeddingUpIntDownIntSub n₁))
+        (L.restriction (embeddingUpIntDownIntSub n₂)) ≅
+      (tensorObj K L).restriction (embeddingUpIntDownIntSub (n₁ + n₂)) :=
+  Hom.isoOfComponents
     (fun k ↦
       { hom := (regradeTensorHom n₁ n₂ K L).f k
         inv := regradeTensorInvF n₁ n₂ K L k
@@ -279,21 +277,21 @@ noncomputable def regradeTensorIso :
         inv_hom_id := mapBifunctor.hom_ext fun p q h ↦
           (ι_regradeTensorInvF_comp_regradeTensorHom_f n₁ n₂ K L p q k h).trans
             (Category.comp_id _).symm })
-    (fun i j _ ↦ (regradeTensorHom n₁ n₂ K L).comm i j)).symm
+    (fun i j _ ↦ (regradeTensorHom n₁ n₂ K L).comm i j)
 
-/-- The inverse of `ChainComplex.regradeTensorIso` is the comparison morphism
+/-- The isomorphism `ChainComplex.regradeTensorIso` is the comparison morphism
 `ChainComplex.regradeTensorHom`. -/
 @[simp]
-lemma regradeTensorIso_inv : (regradeTensorIso n₁ n₂ K L).inv = regradeTensorHom n₁ n₂ K L :=
+lemma regradeTensorIso_hom : (regradeTensorIso n₁ n₂ K L).hom = regradeTensorHom n₁ n₂ K L :=
   (rfl)
 
-/-- On the summand `K_p ⊗ L_q` of `K ⊗ L` in degree `n₁ + n₂ - k`, the isomorphism
+/-- On the summand `K_p ⊗ L_q` of `K ⊗ L` in degree `n₁ + n₂ - k`, the inverse of
 `ChainComplex.regradeTensorIso` is the identification of `K_p ⊗ L_q` with the summand
 `K_(n₁ - (n₁ - p)) ⊗ L_(n₂ - (n₂ - q))` of the tensor product of the regradings, with the sign
 `(-1)^(n₁ q)`. -/
 @[simp, reassoc]
-lemma ι_regradeTensorIso_hom_f (p q k : ℤ) (h : p + q = n₁ + n₂ - k) :
-    ιTensorObj K L p q (n₁ + n₂ - k) h ≫ (regradeTensorIso n₁ n₂ K L).hom.f k =
+lemma ι_regradeTensorIso_inv_f (p q k : ℤ) (h : p + q = n₁ + n₂ - k) :
+    ιTensorObj K L p q (n₁ + n₂ - k) h ≫ (regradeTensorIso n₁ n₂ K L).inv.f k =
       regradeTensorInvSummand n₁ n₂ K L p q k h :=
   ι_regradeTensorInvF n₁ n₂ K L p q k h
 
@@ -301,13 +299,12 @@ variable {n₁ n₂ K L} in
 private lemma regradeTensorSummand_naturality {K₂ L₂ : ChainComplex C ℤ} [K₂.HasTensor L₂]
     (φ : K ⟶ K₂)
     (ψ : L ⟶ L₂) (a b k : ℤ) (h : a + b = k) :
-    φ.f (n₁ - a) ▷ L.X (n₂ - b) ≫ K₂.X (n₁ - a) ◁ ψ.f (n₂ - b) ≫
+    (φ.f (n₁ - a) ⊗ₘ ψ.f (n₂ - b)) ≫
         ((n₁ * (n₂ - b)).negOnePow • ιTensorObj K₂ L₂ (n₁ - a) (n₂ - b) (n₁ + n₂ - k)
           (by omega)) =
       ((n₁ * (n₂ - b)).negOnePow • ιTensorObj K L (n₁ - a) (n₂ - b) (n₁ + n₂ - k)
           (by omega)) ≫ (tensorHom φ ψ).f (n₁ + n₂ - k) := by
-  rw [Linear.comp_units_smul, Linear.comp_units_smul, Linear.units_smul_comp, ι_mapBifunctorMap]
-  simp only [curriedTensor_map_app, curriedTensor_obj_map]
+  rw [Linear.comp_units_smul, Linear.units_smul_comp, ι_tensorHom]
 
 /-- The comparison morphism `ChainComplex.regradeTensorHom` is natural in both complexes. -/
 @[reassoc]
@@ -318,24 +315,25 @@ lemma regradeTensorHom_naturality {K₂ L₂ : ChainComplex C ℤ} [K₂.HasTens
       regradeTensorHom n₁ n₂ K L ≫
         restrictionMap (tensorHom φ ψ) (embeddingUpIntDownIntSub (n₁ + n₂)) := by
   ext k a b h
-  rw [comp_f, comp_f, ι_mapBifunctorMap_assoc, ι_regradeTensorHom_f, ι_regradeTensorHom_f_assoc,
+  rw [comp_f, comp_f, ι_tensorHom_assoc, ι_regradeTensorHom_f, ι_regradeTensorHom_f_assoc,
     restrictionMap_f]
-  simp only [curriedTensor_map_app, curriedTensor_obj_map, restrictionMap_f]
+  simp only [restrictionMap_f]
   -- The regraded complexes and morphisms have the summands and components of `K`, `L`, `φ` and
   -- `ψ` by definition of `HomologicalComplex.restriction`.
   exact regradeTensorSummand_naturality φ ψ a b k h
 
-/-- The isomorphism `ChainComplex.regradeTensorIso` is natural in both complexes. -/
+/-- The inverse of the isomorphism `ChainComplex.regradeTensorIso` is natural in both
+complexes. -/
 @[reassoc]
-lemma regradeTensorIso_hom_naturality {K₂ L₂ : ChainComplex C ℤ} [K₂.HasTensor L₂]
+lemma regradeTensorIso_inv_naturality {K₂ L₂ : ChainComplex C ℤ} [K₂.HasTensor L₂]
     (φ : K ⟶ K₂) (ψ : L ⟶ L₂) :
     restrictionMap (tensorHom φ ψ) (embeddingUpIntDownIntSub (n₁ + n₂)) ≫
-        (regradeTensorIso n₁ n₂ K₂ L₂).hom =
-      (regradeTensorIso n₁ n₂ K L).hom ≫
+        (regradeTensorIso n₁ n₂ K₂ L₂).inv =
+      (regradeTensorIso n₁ n₂ K L).inv ≫
         tensorHom (restrictionMap φ (embeddingUpIntDownIntSub n₁))
           (restrictionMap ψ (embeddingUpIntDownIntSub n₂)) := by
-  rw [← cancel_epi (regradeTensorIso n₁ n₂ K L).inv, Iso.inv_hom_id_assoc, regradeTensorIso_inv,
-    ← regradeTensorHom_naturality_assoc, ← regradeTensorIso_inv, Iso.inv_hom_id,
+  rw [← cancel_epi (regradeTensorIso n₁ n₂ K L).hom, Iso.hom_inv_id_assoc, regradeTensorIso_hom,
+    ← regradeTensorHom_naturality_assoc, ← regradeTensorIso_hom, Iso.hom_inv_id,
     Category.comp_id]
 
 end ChainComplex
