@@ -162,6 +162,17 @@ theorem normalizedCoordinateFlux_eq_of_eqOn_sphere
     smul_eq_mul]
   field_simp
 
+/-- If the flux density equals `c |x| ^ (1 - n)` on the sphere of radius `r > 0`, then the
+normalized flux at radius `r` is `c / (2 (n - 1))`, independently of `r`. -/
+theorem normalizedCoordinateFlux_eq_of_eqOn_sphere_mul_rpow
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} (hn : n ≠ 0) {r c : ℝ} (hr : 0 < r)
+    (h : EqOn (coordinateFluxIntegrand g) (fun x ↦ c * ‖x‖ ^ (1 - n : ℝ)) (sphere 0 r)) :
+    normalizedCoordinateFlux g r = c / (2 * (n - 1)) := by
+  rw [normalizedCoordinateFlux_eq_of_eqOn_sphere (c := c * r ^ (1 - n : ℝ)) hn hr
+      fun x hx ↦ (h hx).trans (by dsimp only; rw [mem_sphere_zero_iff_norm.1 hx]),
+    mul_left_comm, ← Real.rpow_natCast, ← Real.rpow_add hr, Nat.cast_sub (by omega), Nat.cast_one,
+    sub_add_sub_cancel', sub_self, Real.rpow_zero, mul_one]
+
 /-! ### Linearity -/
 
 /-- The flux density is homogeneous in the coefficients. -/
@@ -324,9 +335,7 @@ flux of the coefficients `w(|x|) δ_ij` at radius `r` is `-r ^ (n - 1) w'(r) / 2
 theorem normalizedCoordinateFlux_conformal_radial (hn : 2 ≤ n) (w : ℝ → ℝ) {r : ℝ} (hr : 0 < r) :
     normalizedCoordinateFlux (fun y : EuclideanSpace ℝ (Fin n) ↦ fun i j ↦
       if i = j then w ‖y‖ else 0) r = -(r ^ (n - 1) * deriv w r) / 2 := by
-  have hn' : (n : ℝ) - 1 ≠ 0 := by
-    have : (2 : ℝ) ≤ n := by exact_mod_cast hn
-    linarith
+  have hn' : (n : ℝ) - 1 ≠ 0 := sub_ne_zero.2 (Nat.one_lt_cast.2 hn).ne'
   rw [normalizedCoordinateFlux_eq_of_eqOn_sphere (c := (1 - n) * deriv w r) (by omega) hr
     fun x hx ↦ ?_]
   · field_simp
@@ -355,21 +364,20 @@ theorem tendsto_normalizedCoordinateFlux_conformal_one_add_mul_rpow (hn : 3 ≤ 
         (c * ((2 - n) * r ^ ((2 - n : ℝ) - 1)) * p * B r ^ (p - 1)) r :=
       (((Real.hasDerivAt_rpow_const (Or.inl hr.ne')).const_mul c).const_add 1).rpow_const
         (Or.inl hBr.ne')
-    have hflux := normalizedCoordinateFlux_conformal_radial (n := n) (by omega) (fun t ↦ B t ^ p) hr
-    beta_reduce at hflux
-    rw [hflux, hd.deriv]
-    have hr' : r ^ (n - 1) * r ^ ((2 - n : ℝ) - 1) = 1 := by
-      rw [show (2 - n : ℝ) - 1 = 1 - n by ring, ← Real.rpow_natCast, ← Real.rpow_add hr,
-        Nat.cast_sub (by omega), Nat.cast_one, sub_add_sub_cancel', sub_self, Real.rpow_zero]
     have hp : (2 - n) * p = -4 := by
       simp only [p]
       field_simp [show (n : ℝ) - 2 ≠ 0 by linarith]
       ring
-    have h : r ^ (n - 1) * (c * ((2 - n) * r ^ ((2 - n : ℝ) - 1)) * p * B r ^ (p - 1)) =
-        c * B r ^ (p - 1) * ((2 - n) * p) * (r ^ (n - 1) * r ^ ((2 - n : ℝ) - 1)) := by
+    rw [normalizedCoordinateFlux_eq_of_eqOn_sphere_mul_rpow
+      (c := (1 - n) * (c * (2 - n) * p * B r ^ (p - 1))) (by omega) hr fun x hx ↦ ?_]
+    · rw [eq_div_iff (by linarith)]
+      linear_combination (n - 1) * c * B r ^ (p - 1) * hp
+    · have hx' : ‖x‖ = r := mem_sphere_zero_iff_norm.1 hx
+      refine (coordinateFluxIntegrand_conformal_radial (fun t ↦ B t ^ p)
+        (norm_pos_iff.1 (hx' ▸ hr))).trans ?_
+      dsimp only
+      rw [hx', hd.deriv, show (2 - n : ℝ) - 1 = 1 - n by ring]
       ring
-    rw [h, hr', hp]
-    ring
   refine Tendsto.congr' heq ?_
   simpa using (hB.rpow_const (Or.inl one_ne_zero)).const_mul (2 * c)
 
@@ -435,17 +443,10 @@ mass `ε / 2`
 theorem normalizedCoordinateFlux_mul_mul_rpow (hn : 2 ≤ n) {r : ℝ} (hr : 0 < r) :
     normalizedCoordinateFlux (fun y : EuclideanSpace ℝ (Fin n) ↦ fun i j ↦
       y i * y j * ‖y‖ ^ (-(n : ℝ))) r = 1 / 2 := by
-  have hn' : (n : ℝ) - 1 ≠ 0 := by
-    have : (2 : ℝ) ≤ n := by exact_mod_cast hn
-    linarith
-  rw [normalizedCoordinateFlux_eq_of_eqOn_sphere (c := (n - 1) * r ^ (1 - n : ℝ)) (by omega) hr
-    fun x hx ↦ ?_]
-  · have h : r ^ (n - 1) * r ^ (1 - n : ℝ) = 1 := by
-      rw [← Real.rpow_natCast, ← Real.rpow_add hr, Nat.cast_sub (by omega), Nat.cast_one,
-        sub_add_sub_cancel', sub_self, Real.rpow_zero]
-    field_simp
-    linear_combination h
-  · have hx' : ‖x‖ = r := mem_sphere_zero_iff_norm.1 hx
-    exact (coordinateFluxIntegrand_mul_mul_rpow (norm_pos_iff.1 (hx' ▸ hr))).trans (by rw [hx'])
+  have hn' : (n : ℝ) - 1 ≠ 0 := sub_ne_zero.2 (Nat.one_lt_cast.2 hn).ne'
+  rw [normalizedCoordinateFlux_eq_of_eqOn_sphere_mul_rpow (c := n - 1) (by omega) hr
+    fun x hx ↦ coordinateFluxIntegrand_mul_mul_rpow
+      (norm_pos_iff.1 ((mem_sphere_zero_iff_norm.1 hx).symm ▸ hr))]
+  field_simp
 
 end TauCeti
