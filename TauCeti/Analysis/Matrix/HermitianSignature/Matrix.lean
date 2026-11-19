@@ -21,8 +21,8 @@ forms `Matrix.toContinuousLinearMap₂'` (`Matrix.crossingFormIsometryEquiv`), s
 signature theory of paths of continuous bilinear forms at their crossings applies to paths of
 matrices. In particular, along a path of real symmetric matrices whose crossings, the parameters
 where the matrix is singular, are regular, the change of the signature is the sum of the
-signatures of the crossing forms, the crossings at the endpoints counting one half
-(`Matrix.signature_sub_signature_eq_crossingForm_add_two_mul_finsum`).
+signatures of the crossing forms, counted twice at the interior crossings and once at the
+endpoints (`Matrix.signature_sub_signature_eq_crossingForm_add_two_mul_finsum`).
 
 ## Main definitions
 
