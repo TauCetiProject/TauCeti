@@ -10,7 +10,6 @@ public import Mathlib.Data.ZMod.ValMinAbs
 
 import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -27,7 +26,6 @@ geometric-sum bounds give a logarithmic estimate after summing over nonzero freq
 * `ZMod.le_norm_stdAddChar_sub_one`: a lower bound for the distance to `1`.
 * `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
 * `ZMod.norm_sum_range_stdAddChar_mul_add_le`: a geometric-sum bound at nonzero frequency.
-* `ZMod.sum_inv_val_le_one_add_log`: a logarithmic bound for reciprocal representatives.
 * `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le`: the summed geometric-sum bound.
 -/
 
@@ -134,22 +132,6 @@ theorem norm_sum_range_stdAddChar_mul_add_le (a k : ZMod N) (H : ℕ)
     _ = 2 := by
       simp only [norm_pow, ZMod.stdAddChar_apply, Circle.norm_coe, one_pow, norm_one]
       norm_num
-
-/-- The sum of reciprocal least nonnegative representatives of the nonzero residues is
-bounded by one plus the logarithm of the modulus. -/
-theorem sum_inv_val_le_one_add_log :
-    ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ ≤ 1 + Real.log N := by
-  have hh : ∑ j ∈ range N, (j : ℝ)⁻¹ ≤ (harmonic N : ℝ) := by
-    rw [sum_range_eq_add_Ico _ (NeZero.pos N), harmonic_eq_sum_Icc]
-    simp only [Nat.cast_zero, _root_.inv_zero, zero_add, Rat.cast_sum, Rat.cast_inv,
-      Rat.cast_natCast]
-    exact sum_le_sum_of_subset_of_nonneg Ico_subset_Icc_self fun j _ _ ↦ by positivity
-  have he : ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ =
-      ∑ k : ZMod N, (k.val : ℝ)⁻¹ := by
-    rw [← sum_erase_add _ _ (mem_univ (0 : ZMod N))]
-    simp
-  rw [he, ZMod.sum_val_eq_sum_range (fun j ↦ (j : ℝ)⁻¹)]
-  exact hh.trans (harmonic_le_one_add_log N)
 
 /-- Summing the norms of interval sums of the standard additive character over nonzero
 frequencies is bounded by the modulus times one plus its logarithm. -/
