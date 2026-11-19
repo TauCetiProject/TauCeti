@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.PresentedGroup
 public import TauCeti.AlgebraicTopology.FundamentalGroup.TwoCellAttachment
 public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
 public import TauCeti.Topology.CWComplex.Abstract.TwoCellAttachment
-public import TauCeti.Topology.CWComplex.Classical.WedgeCircles
+public import TauCeti.Topology.CWComplex.Classical.WedgeSum.Circles
 import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic

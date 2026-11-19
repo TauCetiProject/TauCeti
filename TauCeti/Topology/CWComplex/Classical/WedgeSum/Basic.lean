@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CWComplex.Classical.Image
+public import TauCeti.Topology.CWComplex.Classical.Zero
 public import TauCeti.Topology.WedgeSum
 
 /-!
@@ -165,22 +166,15 @@ private lemma pairwiseDisjoint_cellMap :
         obtain rfl := eq_of_heq h
         exact hne rfl
 
-
-/-- The open cell of a summand which contains its base point is a `0`-cell. -/
-private lemma eq_zero_of_mem_openCell [hx : ∀ i, Fact (x i ∈ skeletonLT (univ : Set (X i)) 1)]
-    {i : ι} {n : ℕ} {j : cell (univ : Set (X i)) n} (h : x i ∈ openCell n j) : n = 0 := by
-  obtain ⟨m, hm, k, hk⟩ := CWComplex.mem_skeletonLT_iff.1 (hx i).out
-  have hmk := eq_of_not_disjoint_openCell (not_disjoint_iff.2 ⟨x i, h, hk⟩)
-  have hm0 : m = 0 := Nat.lt_one_iff.1 (by exact_mod_cast hm)
-  exact (congrArg Sigma.fst hmk).trans hm0
-
 variable [∀ i, Fact (x i ∈ skeletonLT (univ : Set (X i)) 1)]
 
 variable (x) in
 open Classical in
 /-- The cell of the wedge sum containing the open cell `j` of the summand `X i`. -/
 private def toCell (i : ι) {n : ℕ} (j : cell (univ : Set (X i)) n) : Cell x n :=
-  if h : x i ∈ openCell n j then (eq_zero_of_mem_openCell h).symm ▸ .base else .incl i j h
+  if h : x i ∈ openCell n j then
+    (eq_zero_of_mem_skeletonLT_one_of_mem_openCell Fact.out h).symm ▸ .base
+  else .incl i j h
 
 private lemma toCell_of_notMem {i : ι} {n : ℕ} {j : cell (univ : Set (X i)) n}
     (hj : x i ∉ openCell n j) : toCell x i j = .incl i j hj := by
@@ -196,7 +190,7 @@ point. -/
 private lemma coe_cellMap_toCell (i : ι) {n : ℕ} (j : cell (univ : Set (X i)) n) :
     ⇑(cellMap x (toCell x i j)) = incl x i ∘ map n j := by
   by_cases hj : x i ∈ openCell n j
-  · obtain rfl := eq_zero_of_mem_openCell hj
+  · obtain rfl := eq_zero_of_mem_skeletonLT_one_of_mem_openCell Fact.out hj
     rw [toCell_of_mem hj]
     rw [openCell_zero_eq_singleton, mem_singleton_iff] at hj
     funext y
