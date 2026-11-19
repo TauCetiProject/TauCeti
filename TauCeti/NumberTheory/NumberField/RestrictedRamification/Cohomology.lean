@@ -74,7 +74,6 @@ theorem finite_setOf_isOpen_index_le [Normal K Ω] (S : Set (HeightOneSpectrum (
     simp only at hc
     have hfin : FiniteDimensional K (fixedField W) :=
       (InfiniteGalois.isOpen_iff_finite _).1 (by
-        change IsOpen ((fixedField W).fixingSubgroup : Set (galoisGroupS K Ω S))
         rw [hc]
         exact hW.1)
     have hrank : finrank K (φ W) = finrank K (fixedField W) :=
