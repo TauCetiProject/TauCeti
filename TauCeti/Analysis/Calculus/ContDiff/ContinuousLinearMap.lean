@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 # Smoothness of coproducts of operator families
 
 The coproduct `(f x).coprod (g x)` of two `C^n` families of continuous linear maps is `C^n`
-(`ContDiffAt.continuousLinearMapCoprod`), the smooth analogue of Mathlib's
-`ContinuousAt.continuousLinearMapCoprod`.
+(`ContDiffAt.continuousLinearMapCoprod`, `ContDiffOn.continuousLinearMapCoprod`), the smooth
+analogue of Mathlib's `ContinuousAt.continuousLinearMapCoprod`.
 -/
 
 public section
@@ -31,3 +31,10 @@ theorem ContDiffAt.continuousLinearMapCoprod {f : X → E →L[𝕜] G} {g : X �
     ContDiffAt 𝕜 n (fun y ↦ (f y).coprod (g y)) x := by
   simp_rw [← ContinuousLinearMap.comp_fst_add_comp_snd]
   exact (hf.clm_comp contDiffAt_const).add (hg.clm_comp contDiffAt_const)
+
+/-- The coproduct of two families of operators has their common regularity on a set. -/
+theorem ContDiffOn.continuousLinearMapCoprod {f : X → E →L[𝕜] G} {g : X → F →L[𝕜] G}
+    {s : Set X} {n : ℕ∞ω} (hf : ContDiffOn 𝕜 n f s) (hg : ContDiffOn 𝕜 n g s) :
+    ContDiffOn 𝕜 n (fun y ↦ (f y).coprod (g y)) s := by
+  simp_rw [← ContinuousLinearMap.comp_fst_add_comp_snd]
+  exact (hf.clm_comp contDiffOn_const).add (hg.clm_comp contDiffOn_const)

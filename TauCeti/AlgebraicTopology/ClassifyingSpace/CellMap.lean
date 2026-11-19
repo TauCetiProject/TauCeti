@@ -240,6 +240,36 @@ theorem isCellular_universalGSpaceCellularMap (φ : G →* H) :
   convert (φ.universalGSpaceSimplicialMap).isCellular_realizationMap using 1
   exact φ.universalGSpaceSimplicialMap_restrictPreimage.symm
 
+/-- The identity homomorphism induces the identity cellular map on the universal subset. -/
+@[simp]
+theorem universalGSpaceCellularMap_id :
+    (MonoidHom.id G).universalGSpaceCellularMap = 𝟙 _ := by
+  ext x : 1
+  simp [universalGSpaceCellularMap]
+
+/-- Composition of homomorphisms induces composition of cellular maps on the universal subsets,
+in categorical composition order. -/
+@[simp]
+theorem universalGSpaceCellularMap_comp {K : Type u} [MulOne K] (ψ : H →* K) (φ : G →* H) :
+    (ψ.comp φ).universalGSpaceCellularMap =
+      φ.universalGSpaceCellularMap ≫ ψ.universalGSpaceCellularMap := by
+  ext x : 1
+  simp [universalGSpaceCellularMap]
+
+/-- In the CW structure on the universal subset, `universalGSpaceCellularMap` carries the
+characteristic map of each simplex to the characteristic map of its relabelled simplex. -/
+theorem map_universalGSpaceCellularMap_realizationCellEquiv_symm (φ : G →* H) {n : ℕ}
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (x : Fin n → ℝ)
+    (hx : Topology.RelCWComplex.map n ((realizationCellEquiv _ n).symm c) x ∈
+      (univ : Set (universalGSpace G))) :
+    (φ.universalGSpaceCellularMap
+        ⟨Topology.RelCWComplex.map n ((realizationCellEquiv _ n).symm c) x, hx⟩).1 =
+      Topology.RelCWComplex.map n
+        ((realizationCellEquiv _ n).symm (φ.universalGSpaceCellMap c)) x := by
+  rw [universalGSpaceCellularMap_apply, map_realizationCellEquiv_symm,
+    map_realizationCellEquiv_symm]
+  exact φ.universalGSpaceMap_characteristicMap c x
+
 end Cellular
 
 end MonoidHom

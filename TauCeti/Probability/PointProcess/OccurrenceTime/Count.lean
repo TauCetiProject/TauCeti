@@ -15,9 +15,9 @@ occurrence `n`. If its location has multiplicity at most one, the cumulative cou
 there is exactly `n + 1`, and the next occurrence is strictly later (possibly infinite).
 Only simplicity at the selected location is required; earlier multiple points are allowed.
 
-Consequently the next interarrival exceeds a given duration exactly when the
-corresponding interval after the current occurrence is empty. This is the pathwise
-link between waiting-time survival events and increments of a counting process.
+Consequently an observation window `(T_n, b]` after a simple finite occurrence is empty
+exactly when the next occurrence is strictly after `b`. This is the pathwise link between
+waiting-time survival events and increments of a counting process.
 Finite configurations, an occurrence at zero, and zero observation durations are included.
 No value obtained by converting an infinite occurrence time to a finite time is used.
 
@@ -115,17 +115,5 @@ theorem IsIntegerValued.apply_Ioc_toNNReal_occurrenceTime_eq_zero_iff
     rw [hmass] at hsplit
     exact (ENNReal.add_right_inj (by simp : (n : ℝ≥0∞) + 1 ≠ ∞)).1
       (by simpa only [add_zero] using hsplit.symm)
-
-/-- For two finite consecutive occurrences, the interarrival exceeds `s` exactly
-when there is no occurrence in the closed-right window of duration `s` after the
-first. Simplicity is needed only at the first occurrence. -/
-theorem IsIntegerValued.lt_toNNReal_occurrenceTime_sub_iff (hμ : μ.IsIntegerValued)
-    (hn : μ.occurrenceTime n ≠ ∞) (hnext : μ.occurrenceTime (n + 1) ≠ ∞)
-    (hs : μ {(μ.occurrenceTime n).toNNReal} ≤ 1) (s : ℝ≥0) :
-    s < (μ.occurrenceTime (n + 1)).toNNReal - (μ.occurrenceTime n).toNNReal ↔
-      μ (Ioc (μ.occurrenceTime n).toNNReal ((μ.occurrenceTime n).toNNReal + s)) = 0 := by
-  rw [hμ.apply_Ioc_toNNReal_occurrenceTime_eq_zero_iff hn hs (le_add_of_nonneg_right s.2)]
-  rw [← ENNReal.coe_toNNReal hnext, ENNReal.coe_lt_coe]
-  exact lt_tsub_iff_left
 
 end MeasureTheory.Measure

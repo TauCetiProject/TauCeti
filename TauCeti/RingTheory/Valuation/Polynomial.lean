@@ -51,8 +51,8 @@ algebra over a field.
 ## Uses
 
 The place-at-infinity argument for isogenies in
-`AlgebraicGeometry/EllipticCurve/Isogeny/InfinityPlace.lean` needs exactly this to see that a
-pulled-back affine function of a Weierstrass curve — a polynomial in the pulled-back coordinates —
+`AlgebraicGeometry/EllipticCurve/Isogeny/InfinityPlace/Basic.lean` needs exactly this to see that
+a pulled-back affine function of a Weierstrass curve — a polynomial in the pulled-back coordinates —
 stays in the valuation ring at infinity. The statement is about a valuation and a polynomial and
 nothing else, so it is stated here rather than there.
 

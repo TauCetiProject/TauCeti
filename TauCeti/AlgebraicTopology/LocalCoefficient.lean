@@ -433,6 +433,26 @@ theorem pullback_monodromyRepresentation {X : TopCat.{v₁}} {Y : TopCat.{v₂}}
       (monodromyRepresentation L (f x)).comp (FundamentalGroup.map f x) :=
   rfl
 
+/-- Transport in a pulled-back system along a loop at `x` is transport in the original system
+along the image loop at `y`, after identifying the fibres at `f x = y`. -/
+@[reassoc]
+theorem pullback_obj_map_comp_eqToHom {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
+    {x : X} {y : Y} (h : f x = y) (L : LocalCoefficientSystem.{u, v₂, w} R Y)
+    (γ : FundamentalGroup X x) :
+    ((pullback (R := R) f).obj L).map γ.asHom ≫
+        eqToHom (show ((pullback (R := R) f).obj L).obj (.mk x) = L.obj (.mk y) from
+          congrArg L.obj (congrArg FundamentalGroupoid.mk h)) =
+      eqToHom (show ((pullback (R := R) f).obj L).obj (.mk x) = L.obj (.mk y) from
+          congrArg L.obj (congrArg FundamentalGroupoid.mk h)) ≫
+        L.map (FundamentalGroup.mapOfEq f h γ).asHom := by
+  subst h
+  simp only [pullback_obj_map, FundamentalGroupoid.map_map, FundamentalGroup.mapOfEq,
+    eqToIso_refl, MulEquiv.toMonoidHom_eq_coe, MonoidHom.coe_comp, MonoidHom.coe_ofClass,
+    Function.comp_apply, Iso.refl_conj, FundamentalGroup.map_apply_asHom]
+  -- Both `eqToHom`s identify the fibre `L.obj ((FundamentalGroupoid.map f).obj x)` with the
+  -- definitionally equal `L.obj (FundamentalGroupoid.mk (f x))`, so they are identities.
+  exact (Category.comp_id _).trans (Category.id_comp _).symm
+
 /-- A morphism of local coefficient systems induces an intertwining map between the monodromy
 representations on each fibre. -/
 @[expose] def monodromyMap {L K : LocalCoefficientSystem.{u, v, w} R X}
