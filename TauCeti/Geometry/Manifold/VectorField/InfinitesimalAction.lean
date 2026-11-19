@@ -280,6 +280,17 @@ theorem orbitTangent_comp (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
   ext v
   simp
 
+/-- Every element of `𝔤` lies in the isotropy algebra of the trivial action. -/
+@[simp]
+theorem isotropy_zero : (0 : InfinitesimalAction 𝔤 I M).isotropy x = ⊤ :=
+  LieSubalgebra.ext _ _ fun _ ↦ by simp
+
+/-- The orbit tangent spaces of the trivial action vanish. -/
+@[simp]
+theorem orbitTangent_zero : (0 : InfinitesimalAction 𝔤 I M).orbitTangent x = ⊥ := by
+  ext v
+  simp [eq_comm]
+
 end orbit
 
 section prod

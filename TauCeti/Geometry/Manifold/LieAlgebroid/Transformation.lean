@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Basic
 public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
+import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -224,44 +225,7 @@ private theorem tJacobiator_const (c d k : F) :
 
 end Algebra
 
-/-! ### Functions vanishing on the constant frame -/
-
 variable [FiniteDimensional ℝ F]
-
-omit [IsManifold I ∞ M] in
-/-- An operation on smooth `F`-valued functions which is additive and linear over smooth functions
-vanishes as soon as it vanishes on constant functions, since the constant functions form a global
-frame. -/
-private theorem eq_zero_of_const {W : M → Type*} [∀ x, AddCommGroup (W x)]
-    [∀ x, Module ℝ (W x)] (Φ : (M → F) → Π x, W x)
-    (hadd : ∀ u v : M → F, ContMDiff I 𝓘(ℝ, F) ∞ u → ContMDiff I 𝓘(ℝ, F) ∞ v →
-      Φ (u + v) = Φ u + Φ v)
-    (hsmul : ∀ (f : M → ℝ) (u : M → F), ContMDiff I 𝓘(ℝ) ∞ f → ContMDiff I 𝓘(ℝ, F) ∞ u →
-      Φ (f • u) = f • Φ u)
-    (hconst : ∀ c : F, Φ (fun _ ↦ c) = 0) {u : M → F} (hu : ContMDiff I 𝓘(ℝ, F) ∞ u) :
-    Φ u = 0 := by
-  classical
-  let b := Module.finBasis ℝ F
-  -- The coefficients of `u` in the basis `b` are smooth.
-  let c (i) : M → ℝ := fun x ↦ b.coord i (u x)
-  have hc (i) : ContMDiff I 𝓘(ℝ) ∞ (c i) :=
-    (LinearMap.toContinuousLinearMap (b.coord i)).contDiff.comp_contMDiff hu
-  have hterm (i) : ContMDiff I 𝓘(ℝ, F) ∞ (c i • fun _ ↦ b i) :=
-    (hc i).smul contMDiff_const
-  have hsum (s : Finset (Fin (Module.finrank ℝ F))) :
-      Φ (∑ i ∈ s, c i • fun _ ↦ b i) = 0 := by
-    induction s using Finset.induction_on with
-    | empty =>
-      rw [Finset.sum_empty]
-      exact hconst 0
-    | insert i s hi ih =>
-      rw [Finset.sum_insert hi, hadd _ _ (hterm i) (contMDiff_finsetSum' fun j _ ↦ hterm j),
-        hsmul _ _ (hc i) contMDiff_const, hconst, smul_zero, ih, add_zero]
-  have hu_eq : u = ∑ i, c i • fun _ ↦ b i := by
-    ext x
-    simp [c, Finset.sum_apply, b.sum_repr]
-  rw [hu_eq]
-  exact hsum _
 
 /-! ### Smoothness -/
 
@@ -358,11 +322,12 @@ private theorem tAnchor_tBracket {u v : M → F} (hu : ContMDiff I 𝓘(ℝ, F) 
   -- first argument is constant; by skew-symmetry it is then linear in its first argument too.
   have hc (c : F) {v : M → F} (hv : ContMDiff I 𝓘(ℝ, F) ∞ v) :
       tDefect a e (fun _ ↦ c) v = 0 :=
-    eq_zero_of_const (tDefect a e fun _ ↦ c) (fun _ _ hv hv' ↦ tDefect_add_right hv hv')
-      (fun _ _ hf hv ↦ tDefect_smul_right hv hf) (tDefect_const c) hv
+    Manifold.eq_zero_of_contMDiff_tensorial_of_const (tDefect a e fun _ ↦ c)
+      (fun _ _ hv hv' ↦ tDefect_add_right hv hv') (fun _ _ hf hv ↦ tDefect_smul_right hv hf)
+      (tDefect_const c) hv
   have h : tDefect a e u v = 0 := by
-    refine eq_zero_of_const (fun u ↦ tDefect a e u v) (fun u u' hu hu' ↦ ?_)
-      (fun f u hf hu ↦ ?_) (fun c ↦ hc c hv) hu
+    refine Manifold.eq_zero_of_contMDiff_tensorial_of_const (fun u ↦ tDefect a e u v)
+      (fun u u' hu hu' ↦ ?_) (fun f u hf hu ↦ ?_) (fun c ↦ hc c hv) hu
     · rw [tDefect_swap, tDefect_add_right hu hu', tDefect_swap u, tDefect_swap u', neg_add,
         neg_neg, neg_neg]
     · rw [tDefect_swap, tDefect_smul_right hu hf, tDefect_swap u, smul_neg, neg_neg]
@@ -423,7 +388,8 @@ private theorem tJacobiator_eq_zero {u v w : M → F}
   have h₃ {u v : M → F} (hu : ContMDiff I 𝓘(ℝ, F) ∞ u) (hv : ContMDiff I 𝓘(ℝ, F) ∞ v)
       (hconst : ∀ c, tJacobiator a e u v (fun _ ↦ c) = 0) {w : M → F}
       (hw : ContMDiff I 𝓘(ℝ, F) ∞ w) : tJacobiator a e u v w = 0 :=
-    eq_zero_of_const (tJacobiator a e u v) (fun _ _ hw hw' ↦ tJacobiator_add_right hu hv hw hw')
+    Manifold.eq_zero_of_contMDiff_tensorial_of_const (tJacobiator a e u v)
+      (fun _ _ hw hw' ↦ tJacobiator_add_right hu hv hw hw')
       (fun _ _ hf hw ↦ tJacobiator_smul_right hu hv hw hf) hconst hw
   have hccw (c d : F) {w : M → F} (hw : ContMDiff I 𝓘(ℝ, F) ∞ w) :
       tJacobiator a e (fun _ ↦ c) (fun _ ↦ d) w = 0 :=
@@ -437,11 +403,6 @@ private theorem tJacobiator_eq_zero {u v w : M → F}
     rw [tJacobiator_swap₂₃, tJacobiator_swap₁₂, neg_neg, hcvw c hv hw]) hu
 
 /-! ### The transformation Lie algebroid -/
-
-omit [IsManifold I ∞ M] [FiniteDimensional ℝ F] [CompleteSpace E] in
-private theorem contMDiff_coe (u : Cₛ^∞⟮I; F, Trivial M F⟯) :
-    ContMDiff I 𝓘(ℝ, F) ∞ (fun x ↦ (u x : F)) :=
-  (Bundle.Trivial.contMDiff_mk_iff.1 u.contMDiff).2
 
 omit [IsManifold I ∞ M] [FiniteDimensional ℝ F] [CompleteSpace E] in
 private theorem coe_add_fun (u v : Cₛ^∞⟮I; F, Trivial M F⟯) :
@@ -464,7 +425,7 @@ variable (a e) in
 private def tBracketSection (u v : Cₛ^∞⟮I; F, Trivial M F⟯) : Cₛ^∞⟮I; F, Trivial M F⟯ where
   toFun := tBracket a e (fun x ↦ (u x : F)) fun x ↦ (v x : F)
   contMDiff_toFun := Bundle.Trivial.contMDiff_mk_iff.2
-    ⟨contMDiff_id, contMDiff_tBracket (contMDiff_coe u) (contMDiff_coe v)⟩
+    ⟨contMDiff_id, contMDiff_tBracket u.contMDiff_coe_trivial v.contMDiff_coe_trivial⟩
 
 omit [CompleteSpace E] in
 private theorem coe_tBracketSection (u v : Cₛ^∞⟮I; F, Trivial M F⟯) :
@@ -490,31 +451,31 @@ def transformation : LieAlgebroid I F (Trivial M F) where
   bracket := LinearMap.mk₂ ℝ (tBracketSection a e)
     (fun u u' v ↦ ContMDiffSection.ext fun x ↦ by
       rw [ContMDiffSection.coe_add, Pi.add_apply, tBracketSection_apply, tBracketSection_apply,
-        tBracketSection_apply, coe_add_fun, tBracket_add_left (contMDiff_coe u) (contMDiff_coe u'),
-        Pi.add_apply])
+        tBracketSection_apply, coe_add_fun,
+        tBracket_add_left u.contMDiff_coe_trivial u'.contMDiff_coe_trivial, Pi.add_apply])
     (fun c u v ↦ ContMDiffSection.ext fun x ↦ by
       rw [ContMDiffSection.coe_smul, Pi.smul_apply, tBracketSection_apply, tBracketSection_apply,
-        coe_const_smul_fun, tBracket_const_smul_left (contMDiff_coe u), Pi.smul_apply])
+        coe_const_smul_fun, tBracket_const_smul_left u.contMDiff_coe_trivial, Pi.smul_apply])
     (fun u v v' ↦ ContMDiffSection.ext fun x ↦ by
       rw [ContMDiffSection.coe_add, Pi.add_apply, tBracketSection_apply, tBracketSection_apply,
-        tBracketSection_apply, coe_add_fun, tBracket_add_right (contMDiff_coe v) (contMDiff_coe v'),
-        Pi.add_apply])
+        tBracketSection_apply, coe_add_fun,
+        tBracket_add_right v.contMDiff_coe_trivial v'.contMDiff_coe_trivial, Pi.add_apply])
     (fun c u v ↦ ContMDiffSection.ext fun x ↦ by
       rw [ContMDiffSection.coe_smul, Pi.smul_apply, tBracketSection_apply, tBracketSection_apply,
-        coe_const_smul_fun, tBracket_const_smul_right (contMDiff_coe v), Pi.smul_apply])
+        coe_const_smul_fun, tBracket_const_smul_right v.contMDiff_coe_trivial, Pi.smul_apply])
   bracket_self u := ContMDiffSection.ext fun x ↦ by
     rw [LinearMap.mk₂_apply, tBracketSection_apply, tBracket_self, ContMDiffSection.coe_zero,
       Pi.zero_apply]
   bracket_bracket u v w := ContMDiffSection.ext fun x ↦ by
-    have h := congr($(tJacobiator_eq_zero (a := a) (e := e) (contMDiff_coe u) (contMDiff_coe v)
-      (contMDiff_coe w)) x)
+    have h := congr($(tJacobiator_eq_zero (a := a) (e := e) u.contMDiff_coe_trivial
+      v.contMDiff_coe_trivial w.contMDiff_coe_trivial) x)
     rw [tJacobiator, Pi.sub_apply, Pi.sub_apply, sub_sub, Pi.zero_apply, sub_eq_zero] at h
     simp only [LinearMap.mk₂_apply, ContMDiffSection.coe_add, Pi.add_apply, tBracketSection_apply,
       coe_tBracketSection]
     exact h
   bracket_smul_apply u v f x := by
     rw [LinearMap.mk₂_apply, LinearMap.mk₂_apply, tBracketSection_apply, tBracketSection_apply,
-      coe_smul_fun, tBracket_smul_right (contMDiff_coe v) f.contMDiff]
+      coe_smul_fun, tBracket_smul_right v.contMDiff_coe_trivial f.contMDiff]
     simp [tDeriv, tAnchor, tAnchorCLM_apply]
 
 /-- The anchor of the transformation algebroid at `x` sends `w` to `-(e w)_M(x)`. -/
@@ -554,7 +515,7 @@ theorem transformation_anchor_bracket (u v : Cₛ^∞⟮I; F, Trivial M F⟯) (x
       ⇑((transformation a e).anchorField w) = tAnchor a e fun x ↦ (w x : F) := by
     ext y
     simp [tAnchor]
-  rw [hρ, hρ, ← tAnchor_tBracket (contMDiff_coe u) (contMDiff_coe v),
+  rw [hρ, hρ, ← tAnchor_tBracket u.contMDiff_coe_trivial v.contMDiff_coe_trivial,
     transformation_anchor_apply]
   -- The bracket of `transformation a e` is `tBracket` applied to the underlying functions.
   rfl
