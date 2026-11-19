@@ -59,16 +59,6 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-- A property eventually true along a sequence `ψ` is eventually true along a sequence `D` whose
-terms from some index on are terms `ψ k` with `k ≥ n`. -/
-private theorem eventually_of_eq_apply_of_le {p : ℕ → Prop} {ψ D : ℕ → ℕ} {m : ℕ}
-    (hD : ∀ n, m ≤ n → ∃ k, n ≤ k ∧ D n = ψ k) (h : ∀ᶠ k in atTop, p (ψ k)) :
-    ∀ᶠ n in atTop, p (D n) := by
-  obtain ⟨K, hK⟩ := eventually_atTop.1 h
-  refine eventually_atTop.2 ⟨max m K, fun n hn ↦ ?_⟩
-  obtain ⟨k, hnk, hk⟩ := hD n (le_of_max_le_left hn)
-  exact hk ▸ hK k ((le_of_max_le_right hn).trans hnk)
-
 variable {X α : Type*}
 
 /-- A set all of whose finite subsets `T` satisfy `#T * δ ≤ E`, for `δ ≠ 0` and `E ≠ ∞`, is

@@ -66,22 +66,14 @@ namespace TauCeti.SymplecticForm
 
 open Floer
 
-/-- No point of `S` is the centre of an end. -/
-private theorem equivRealProdCLM_symm_ne_endCenter {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) (q : Puncture) :
-    equivRealProdCLM.symm z ≠ q.endCenter := by
-  obtain ⟨h0, h1⟩ := mem_thricePuncturedSphereReal_iff.1 hz
-  cases q <;> simp only [Puncture.endCenter_zero, Puncture.endCenter_one, Puncture.endCenter_inf]
-  exacts [h0, h1, h0]
-
 /-- The points of `S` whose signed longitudinal coordinate on every end is below `c` form an open
 set. -/
 private theorem isOpen_setOf_forall_fst_positiveEndCoord_lt (c : ℝ) :
     IsOpen {z | z ∈ thricePuncturedSphereReal ∧ ∀ q, (positiveEndCoord q z).1 < c} := by
   refine isOpen_iff_mem_nhds.2 fun z ⟨hzS, hz⟩ ↦ ?_
   refine (isOpen_thricePuncturedSphereReal.eventually_mem hzS).and (eventually_all.2 fun q ↦ ?_)
-  exact (continuousAt_fst_positiveEndCoord q
-    (equivRealProdCLM_symm_ne_endCenter hzS q)).eventually_lt continuousAt_const (hz q)
+  exact (continuousAt_fst_positiveEndCoord q (Puncture.ne_endCenter
+    (mem_thricePuncturedSphereReal_iff.1 hzS) q)).eventually_lt continuousAt_const (hz q)
 
 /-- The end windows `(T + 1, T + 3) × (c - 2/5, c + 2/5)` of a positive end chart, with `c = 0`
 for `b = false` and `c = 1/2` for `b = true`. -/
@@ -176,8 +168,8 @@ private theorem iUnion_window {T : ℝ} (hT : 0 ≤ T) :
     · exact mem_iUnion.2 ⟨none, hz, hc⟩
     · obtain ⟨q, hq⟩ := not_forall.1 hc
       obtain ⟨m, b, hzm⟩ :=
-        exists_mem_image_positiveEndChart_add (equivRealProdCLM_symm_ne_endCenter hz q)
-          (not_lt.1 hq)
+        exists_mem_image_positiveEndChart_add
+          (Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q) (not_lt.1 hq)
       exact mem_iUnion.2 ⟨some (q, m, b), hzm⟩
 
 /-- Energy at least `δ` over a measurable part `s` of `S ∩ N` makes the energy measure of `N` at
