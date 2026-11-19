@@ -145,6 +145,13 @@ def pairTransferπ [Finite G] :
   app _ := hG.isCoveringMap.singularPairTransfer hG.finite_fiber A R
   naturality _ _ g := by
     have := hG.toContinuousConstSMul
+    -- The two sides match the lemma by definition: the constant functor sends `g` to `𝟙`
+    -- (`Functor.const_obj_map`), and the action functor followed by relative chains sends `g` to
+    -- `TopPair.singularChainComplexMap (ofSubsetMap (g • ·) _) R` (`Functor.comp_map` and
+    -- `TopPair.ofSubsetActionFunctor_map`). These are not rewritten with `simp only`: even after
+    -- specializing both objects to `SingleObj.star G`, the implicit objects of `≫` still read
+    -- `((Functor.const _).obj _).obj _` and `(ofSubsetActionFunctor ..).obj _`, so neither
+    -- `Category.id_comp` nor the inner `Functor.comp_map` matches syntactically.
     refine (Category.id_comp _).trans ?_
     exact (hG.isCoveringMap.singularPairTransfer_comp_singularChainComplexMap_of_comp_eq
       hG.finite_fiber A R (f := TopCat.ofHom ⟨(g • ·), hG.continuous_const_smul g⟩)
@@ -196,8 +203,11 @@ def isLimitMapConePairTransferCone [Fintype G] [IsIso (Fintype.card G • 𝟙 R
     (TopPair.singularChainComplexMap (TopPair.ofSubsetMap p (Set.mapsTo_preimage p A)) R) F ?_ ?_
   · exact hG.isCoveringMap.singularPairTransfer_comp_singularChainComplexMap hG.finite_fiber A R
       fun b ↦ (hG.natCard_fiber b).trans Nat.card_eq_fintype_card
-  -- The action functor sends `g` to the map of pairs induced by `g • ·`.
-  · exact hG.singularChainComplexMap_comp_singularPairTransfer A R
+  -- The action functor sends `g` to the map of pairs induced by `g • ·`. The composite is
+  -- unfolded first so that `TopPair.ofSubsetActionFunctor_map` then matches the implicit objects.
+  · simp only [Functor.comp_map]
+    simp only [TopPair.ofSubsetActionFunctor_map]
+    exact hG.singularChainComplexMap_comp_singularPairTransfer A R
 
 /-- **The relative singular homology of the base of a finite quotient covering is invariants.** For
 the quotient covering map `p : E ⟶ B` of an action of a finite group `G`, a subset `A ⊆ B`, and
