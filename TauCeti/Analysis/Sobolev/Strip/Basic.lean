@@ -231,6 +231,14 @@ theorem H1_mono (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') : H1 F₀ F₁ �
   rintro _ ⟨ξ, rfl⟩
   exact ⟨Submodule.inclusion (testSection_mono h₀ h₁) ξ, jetₗ_inclusion h₀ h₁ ξ⟩
 
+/-- The jet in `H1` of a test section does not depend on the boundary conditions it is
+considered with. -/
+theorem inclusion_jetH1 (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : testSection F₀ F₁) :
+    Submodule.inclusion (H1_mono h₀ h₁) (jetH1 F₀ F₁ ξ) =
+      jetH1 F₀' F₁' (Submodule.inclusion (testSection_mono h₀ h₁) ξ) := by
+  ext1
+  rw [Submodule.coe_inclusion, coe_jetH1, coe_jetH1, jetₗ_inclusion h₀ h₁]
+
 /-! ### The components of an element of `H1` -/
 
 variable (F₀ F₁) in
@@ -552,6 +560,12 @@ theorem traceₗ_apply (ξ : testSection F₀ F₁) :
     traceₗ F₀ F₁ ξ = ((memLp_slice ξ.2 0).toLp _, (memLp_slice ξ.2 1).toLp _) :=
   (rfl)
 
+/-- The boundary values of a test section do not depend on the boundary conditions it is
+considered with. -/
+theorem traceₗ_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : testSection F₀ F₁) :
+    traceₗ F₀' F₁' (Submodule.inclusion (testSection_mono h₀ h₁) ξ) = traceₗ F₀ F₁ ξ :=
+  (rfl)
+
 /-- The first boundary value of a test section is represented by `s ↦ ξ (s, 0)`. -/
 theorem coeFn_traceₗ_fst (ξ : testSection F₀ F₁) :
     (traceₗ F₀ F₁ ξ).1 =ᵐ[volume] fun s ↦ (ξ : ℝ × ℝ → V) (s, 0) :=
@@ -677,9 +691,7 @@ theorem traceL_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (x : H1
     (P := fun x ↦ traceL F₀' F₁' (Submodule.inclusion (H1_mono h₀ h₁) x) = traceL F₀ F₁ x)
     (isClosed_eq ((traceL F₀' F₁').continuous.comp (continuous_subtype_val.subtype_mk _))
       (traceL F₀ F₁).continuous) (fun ξ ↦ ?_) x
-  change traceL F₀' F₁' (jetH1 F₀' F₁' (Submodule.inclusion (testSection_mono h₀ h₁) ξ)) = _
-  rw [traceL_jetH1, traceL_jetH1]
-  rfl
+  rw [inclusion_jetH1 h₀ h₁, traceL_jetH1, traceL_jetH1, traceₗ_inclusion h₀ h₁]
 
 /-- **The boundary conditions are faithful.** If `F₀` and `F₁` are closed, the jet of a `C²`
 section vanishing for `|s|` large lies in `H1 F₀ F₁` exactly when the boundary values of the
@@ -694,7 +706,7 @@ theorem jetₗ_mem_H1_iff (hF₀ : IsClosed (F₀ : Set V)) (hF₁ : IsClosed (F
     rwa [← jetₗ_inclusion le_top le_top] at this
   have htr : traceL F₀ F₁ ⟨_, h⟩ = traceₗ ⊤ ⊤ ξ := by
     rw [← traceL_inclusion le_top le_top, ← traceL_jetH1]
-    rfl
+    exact congrArg _ (Subtype.ext (by rw [Submodule.coe_inclusion, coe_jetH1]))
   obtain ⟨hξ, -, -, hR⟩ := mem_testSection_iff.1 ξ.2
   refine mem_testSection_iff.2 ⟨hξ, forall_mem_of_ae_mem hF₀ hξ.continuous ?_,
     forall_mem_of_ae_mem hF₁ hξ.continuous ?_, hR⟩

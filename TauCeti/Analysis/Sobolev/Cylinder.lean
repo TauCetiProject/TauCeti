@@ -253,7 +253,7 @@ theorem testSection_le_strip : testSection V ≤ StripSobolev.testSection (⊤ :
 theorem jetₗ_eq_strip (ξ : testSection V) :
     jetₗ V ξ = StripSobolev.jetₗ ⊤ ⊤ (Submodule.inclusion testSection_le_strip ξ) := by
   rw [jetₗ_apply, StripSobolev.jetₗ_apply]
-  rfl
+  exact MemLp.toLp_congr _ _ (by rw [Submodule.coe_inclusion])
 
 /-- `H1` of the cylinder lies in `H1` of the strip with no boundary conditions. -/
 theorem H1_le_strip : H1 V ≤ StripSobolev.H1 (⊤ : Submodule ℝ V) ⊤ := by
