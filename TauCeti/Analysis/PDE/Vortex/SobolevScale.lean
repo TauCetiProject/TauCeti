@@ -24,9 +24,11 @@ inverse that is bounded on `L²` and orthogonal to the weak kernel.
   `f` continuous and in every `H^k`, agrees almost everywhere with a smooth classical solution
   lying in every `H^k`. With `f = 0`, the weak `L²` kernel of `L_x` consists of smooth classical
   solutions of `L_x y = 0`; conversely a `C¹`, `L²` classical solution is a weak solution, so
-  it is smooth (`contDiff_of_gaugeFixedOperator_eq`) and gains one Sobolev derivative over `f`
-  (`mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq`). So the weak and
-  classical `L²` kernels coincide, and lie in every `H^k`.
+  it is smooth (`contDiff_of_gaugeFixedOperator_eq`), gains one Sobolev derivative over `f`
+  (`mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq`), and every element
+  of `gaugeFixedKernel x` lies in `sobolevFields s` for every `s : ℝ`
+  (`mem_sobolevFields_of_mem_gaugeFixedKernel`). So the weak and classical `L²` kernels coincide,
+  and lie in every `H^k`.
 * `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_and_mem_sobolevFields_add_one`:
   at a continuous vortex lying in `A_m^k` for every `k`, the weak right inverse `Q` of `L_x` maps
   `H^k` into `H^(k+1)` for every `k`. This is the vanishing of the cokernel of `L_x` on the
@@ -103,6 +105,19 @@ theorem contDiff_of_gaugeFixedOperator_eq (hx : ContDiff ℝ ∞ x)
   obtain ⟨y', hy', hyy', -⟩ := exists_contDiff_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq hx
     hbound hyL hf hfc ((forall_integral_inner_gaugeFixedAdjoint_eq_iff hx.continuous hy hfc).2 heq)
   rwa [(hy.continuous.ae_eq_iff_eq volume hy'.continuous).1 hyy']
+
+/-- At a smooth field `x` whose coordinates have bounded derivatives of every order, every element
+of `gaugeFixedKernel x` lies in `sobolevFields s` for every `s : ℝ`. -/
+theorem mem_sobolevFields_of_mem_gaugeFixedKernel (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hy : y ∈ gaugeFixedKernel x) (s : ℝ) :
+    y ∈ sobolevFields s := by
+  obtain ⟨hyc, hyL, hker⟩ := mem_gaugeFixedKernel.1 hy
+  refine sobolevFields_mono (Nat.le_ceil s)
+    (forall_mem_sobolevFields_of_integral_inner_gaugeFixedAdjoint_eq hx hbound hyL
+      (f := 0) (fun _ ↦ zero_mem _) ?_ ⌈s⌉₊)
+  simpa using (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) hx.continuous
+    (hyc.of_le one_le_two) continuous_const).2 hker
 
 /-! ### Surjectivity at a vortex -/
 
