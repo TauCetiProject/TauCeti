@@ -82,6 +82,14 @@ def sphereTopCellBall :
   (sigmaCellMap (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) (n + 1)).comp
     ⟨fun v ↦ ⟨default, v⟩, continuous_sigmaMk.comp continuous_id⟩
 
+@[simp]
+theorem sphereTopCellBall_apply (v : closedBall (0 : Fin (n + 1) → ℝ) 1) :
+    letI := TopCat.sphereRelCWComplex h
+    letI := TopCat.uniqueCellSphereRelCWComplex h (n := n + 1) (by omega)
+    sphereTopCellBall h v =
+      sigmaCellMap (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) (n + 1) ⟨default, v⟩ :=
+  (rfl)
+
 /-- The characteristic map of the top cell of the CW structure on the unit sphere `Sⁿ⁺¹`, read on
 the cube `Iⁿ⁺¹`. -/
 def sphereTopCellCube : C(Fin (n + 1) → I, sphere (0 : EuclideanSpace ℝ ι) 1) :=
@@ -124,6 +132,12 @@ def sphereTopCellPaths : C(Fin (n + 1) → I, MoorePath (sphere (0 : EuclideanSp
   (MoorePathPullback.radialPaths ((convex_closedBall 0 1).starConvex
     (mem_closedBall_self zero_le_one)) (mem_closedBall_self zero_le_one) (sphereTopCellBall h)
       (sphereTopCellCenterPath h)).comp (cubeHomeomorphClosedBall (Fin (n + 1)))
+
+theorem sphereTopCellPaths_apply (d : Fin (n + 1) → I) :
+    sphereTopCellPaths h d = MoorePathPullback.radialPaths ((convex_closedBall 0 1).starConvex
+      (mem_closedBall_self zero_le_one)) (mem_closedBall_self zero_le_one) (sphereTopCellBall h)
+        (sphereTopCellCenterPath h) (cubeHomeomorphClosedBall _ d) :=
+  (rfl)
 
 @[simp]
 theorem source_sphereTopCellPaths (d : Fin (n + 1) → I) :
