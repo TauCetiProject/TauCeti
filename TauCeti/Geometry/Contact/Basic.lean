@@ -40,8 +40,10 @@ nonzero there and its exterior derivative is nondegenerate on its kernel. This c
 no global regularity. For a smooth one-form it agrees with the canonical contact condition, by
 `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`. For a one-form and a scalar
 function that are both differentiable at `x`, rescaling by the function preserves the pointwise
-condition whenever its value at `x` is nonzero (`TauCeti.isContactFormAt_fun_smul_iff`). At an
-interior point the condition can be checked in the preferred chart
+condition whenever its value at `x` is nonzero (`TauCeti.isContactFormAt_fun_smul_iff`). The
+condition at `x` only depends on the value of the form at `x` and on its exterior derivative at `x`
+restricted to the hyperplane (`TauCeti.isContactFormAt_congr`). At an interior point the
+condition can be checked in the preferred chart
 (`TauCeti.isContactFormAt_inChartAt_iff`), which reduces local questions about contact forms on
 manifolds, such as the existence of Darboux charts, to open subsets of the model space.
 On a normed space it is the linear condition `Module.Dual.IsContact` for the covector `α(x)` and the
@@ -61,7 +63,8 @@ bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
 * `TauCeti.SmoothForm.IsContactForm.exists_linearEquiv_eq_stdContact`: at each point, a contact
   form and its exterior derivative are standard in suitable linear coordinates.
 * `TauCeti.IsContactFormAt`: the pointwise contact condition for a rough one-form, with
-  `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff` and
+  `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff`,
+  `TauCeti.isContactFormAt_congr`, `TauCeti.SmoothForm.isContactFormAt_iff_isContact` and
   `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`.
 * `TauCeti.isContactFormAt_inChartAt_iff`: at an interior point, the pointwise contact condition
   holds exactly when it holds for the coordinate expression in the preferred chart.
@@ -334,16 +337,34 @@ theorem isContactFormAt_fun_smul_iff (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f 
 
 end Rescaling
 
-/-- A smooth one-form is contact exactly when it satisfies the pointwise contact condition
-at every point. -/
-theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
-    {α : SmoothForm I M ℝ 1} : α.IsContactForm ↔ ∀ x, IsContactFormAt α.1 x := by
-  rw [SmoothForm.isContactForm_iff]
-  refine forall_congr' fun x ↦ ?_
+/-- **The contact condition at a point is congruent.** Two one-forms with the same value at `x`
+whose exterior derivatives at `x` agree on the common hyperplane `ker α_x` are contact at `x`
+together. Their exterior derivatives may differ off `ker α_x`. -/
+theorem isContactFormAt_congr {α β : RoughForm I M ℝ 1} {x : M} (hval : β x = α x)
+    (hd : ∀ v ∈ α.ker x, ∀ w ∈ α.ker x, mextDeriv β x ![v, w] = mextDeriv α x ![v, w]) :
+    IsContactFormAt β x ↔ IsContactFormAt α x := by
+  have hker {v : TangentSpace I x} : v ∈ β.ker x ↔ v ∈ α.ker x := by
+    rw [RoughForm.mem_ker, RoughForm.mem_ker, hval]
+  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero (hval.trans h0), fun v hv hvw ↦
+      h.nondegenerate v (hker.2 hv) fun w hw ↦ ?_⟩,
+    fun h ↦ ⟨fun h0 ↦ h.ne_zero (hval.symm.trans h0), fun v hv hvw ↦
+      h.nondegenerate v (hker.1 hv) fun w hw ↦ ?_⟩⟩
+  · rw [hd v hv w (hker.1 hw)]
+    exact hvw w (hker.1 hw)
+  · rw [← hd v (hker.1 hv) w hw]
+    exact hvw w (hker.2 hw)
+
+/-- For a smooth one-form, the pointwise contact condition at `x` is the linear contact condition
+`Module.Dual.IsContact` for the covector `α_x` and the bilinear form of `dα_x`. -/
+theorem SmoothForm.isContactFormAt_iff_isContact [IsManifold I 2 M] {α : SmoothForm I M ℝ 1}
+    {x : M} :
+    IsContactFormAt α.1 x ↔ Module.Dual.IsContact
+      (SmoothForm.degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+      ((mextDerivₗ I 1 α).bilinFormAt x) := by
+  rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
+  simp only [SmoothForm.degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt, ne_eq,
+    LinearMap.ext_iff, LinearMap.zero_apply, not_forall]
   constructor
-  · rintro ⟨⟨v, hv⟩, h⟩
-    refine ⟨fun hz ↦ hv (by rw [hz]; rfl), ?_⟩
-    simpa only [RoughForm.mem_ker] using h
   · intro h
     refine ⟨?_, ?_⟩
     · by_contra hn
@@ -356,6 +377,15 @@ theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
         rfl
       simpa only [hv, ContinuousAlternatingMap.coe_zero, Pi.zero_apply] using hn (v 0)
     · simpa only [RoughForm.mem_ker] using h.nondegenerate
+  · rintro ⟨⟨v, hv⟩, h⟩
+    refine ⟨fun hz ↦ hv (by rw [hz]; rfl), ?_⟩
+    simpa only [RoughForm.mem_ker] using h
+
+/-- A smooth one-form is contact exactly when it satisfies the pointwise contact condition
+at every point. -/
+theorem SmoothForm.isContactForm_iff_forall_isContactFormAt [IsManifold I 2 M]
+    {α : SmoothForm I M ℝ 1} : α.IsContactForm ↔ ∀ x, IsContactFormAt α.1 x :=
+  forall_congr' fun _ ↦ SmoothForm.isContactFormAt_iff_isContact.symm
 
 end Pointwise
 

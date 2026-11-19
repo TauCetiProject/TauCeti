@@ -25,15 +25,15 @@ piece, with the norm
 `‖f‖ = max_i max_{m ≤ k} sup_{K i} ‖D^m f‖ + ∑_i [D^k f]_{α, K i}`,
 
 the finite-atlas `C^k` norm `ContMDiffMap.finiteAtlasSeminorm` plus the Hölder seminorms of the
-`k`th coordinate derivatives on the pieces. It is a Banach space when `M` is boundaryless and
-modelled on a locally compact space over `ℝ` or `ℂ`, and `F` is complete
+`k`th coordinate derivatives on the pieces. It is a Banach space when `M`, possibly with boundary
+or corners, is modelled on a locally compact space over `ℝ` or `ℂ`, and `F` is complete
 (`TauCeti.CompactChartAtlas.CkHolderSpace.instCompleteSpace`). The comparison of the spaces
 and norms of two atlases, by chart-change estimates, is not part of this file.
 
 The usual Hölder spaces are those with `0 < α ≤ 1`, but the definitions accept every `α`.
 
-The derivatives are taken within the extended chart targets, so the definitions also apply to
-manifolds with boundary and corners; only completeness uses that `M` is boundaryless.
+The derivatives are taken within the extended chart targets, so the definitions and the
+completeness theorem also apply to manifolds with boundary and corners.
 
 ## Main definitions
 
@@ -536,11 +536,11 @@ theorem cauchySeq_toContMDiffMap {β : Type*} [Preorder β] {u : β → A.CkHold
 
 section Complete
 
-variable [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E] [I.Boundaryless] [CompleteSpace F]
+variable [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E] [CompleteSpace F]
 
-/-- **The Banach space `C^{k,α}(M, F)`.** On a boundaryless manifold modelled on a locally
-compact space over `ℝ` or `ℂ`, the Hölder space of a compact chart atlas with values in a Banach
-space is complete. -/
+/-- **The Banach space `C^{k,α}(M, F)`.** On a manifold, possibly with boundary or corners,
+modelled on a locally compact space over `ℝ` or `ℂ`, the Hölder space of a compact chart atlas
+with values in a Banach space is complete. -/
 instance instCompleteSpace : CompleteSpace (A.CkHolderSpace k α F) := by
   let := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := F) k A.interior_cover
   have := ContMDiffMap.completeSpace_finiteAtlas (F := F) k A.interior_cover
