@@ -250,7 +250,7 @@ theorem cechFace_cechComplexFunctor_map {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F �
 end Maps
 
 /-- Restrictions along maps of vertices with the same values agree. -/
-private lemma cechFace_eq_of_val {m n : ℕ} {k : Fin (n + 1) → ι} {σ σ' : Fin (m + 1) → Fin (n + 1)}
+lemma cechFace_eq_of_val {m n : ℕ} {k : Fin (n + 1) → ι} {σ σ' : Fin (m + 1) → Fin (n + 1)}
     (c : (cechAlgebraComplex U F).X m) (h : ∀ i, (σ i : ℕ) = σ' i) :
     cechFace k σ c = cechFace k σ' c := by
   rw [show σ = σ' from funext fun i ↦ Fin.ext (h i)]

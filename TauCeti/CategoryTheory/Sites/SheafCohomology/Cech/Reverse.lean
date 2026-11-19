@@ -400,13 +400,10 @@ theorem cechReverse_cechCup_cechReverse (hF : ∀ X (x y : F.obj X), x * y = y *
       (-1 : ℤ) ^ (p * q) • cechCup p q n h a b := by
   subst h
   refine cechCochain_ext fun k ↦ ?_
-  have key {l : ℕ} {σ σ' : Fin (l + 1) → Fin (p + q + 1)} (c : (cechAlgebraComplex U F).X l)
-      (h : ∀ i, (σ i : ℕ) = σ' i) : cechFace k σ c = cechFace k σ' c := by
-    rw [show σ = σ' from funext fun i ↦ Fin.ext (h i)]
   rw [cechComponent_cechReverse, cechFace_cechCup, cechFace_cechReverse, cechFace_cechReverse,
     map_zsmul, cechComponent_cechCup, smul_mul_smul_comm, hF, smul_smul,
     Nat.neg_one_pow_add_add_one_choose_two_mul]
-  congr 2 <;> exact key _ fun i ↦ by simp [Fin.val_rev]; omega
+  congr 2 <;> exact cechFace_eq_of_val _ fun i ↦ by simp [Fin.val_rev]; omega
 
 end Cup
 
