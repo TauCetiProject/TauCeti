@@ -160,10 +160,10 @@ theorem isLocallyConstant_fourierIntegral [TopologicalSpace V] [TopologicalSpace
   simpa using periodic_fourierIntegral ψ μ L hf hw' w
 
 /-- **Compact support from a compact period annihilator.** If every element of `U` is a period of
-`f` and the annihilator of `U` is compact in the Hausdorff space `W`, the Fourier transform of `f`
-has compact support. -/
+`f` and the annihilator of `U` is compact in the `R₁` space `W`, the Fourier transform of `f` has
+compact support. -/
 theorem hasCompactSupport_fourierIntegral [MeasurableAdd V] [μ.IsAddRightInvariant]
-    [TopologicalSpace W] [T2Space W] {f : V → E} {U : AddSubgroup V}
+    [TopologicalSpace W] [R1Space W] {f : V → E} {U : AddSubgroup V}
     (hf : ∀ u ∈ U, Periodic f u) (hU : IsCompact (U.characterAnnihilator ψ L : Set W)) :
     HasCompactSupport (fourierIntegral ψ μ L f) :=
   HasCompactSupport.of_support_subset_isCompact hU (support_fourierIntegral_subset ψ μ L hf)
