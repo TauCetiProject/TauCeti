@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+import Mathlib.Analysis.InnerProductSpace.Orthonormal
 
 /-!
 # The complex inner product of an orthogonal complex structure
@@ -18,7 +19,8 @@ structure rather than a global instance, since it depends on `J`.
 
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
 real inner product, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
-`⟪J v, v⟫ = 0`.
+`⟪J v, v⟫ = 0`. Hence `p` and `J p` are orthogonal of equal norm, and Bessel's inequality bounds the
+components of any vector along them (`TauCeti.AlmostComplexStructure.inner_sq_add_inner_sq_le`).
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -43,6 +45,34 @@ theorem inner_apply_self {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J
     (v : V) : ⟪J v, v⟫ = 0 := by
   rw [real_inner_comm]
   exact J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun x y ↦ real_inner_comm y x⟩ hJ v
+
+/-- Bessel's inequality for the orthogonal pair `p`, `J p` of equal norms: the components of `d`
+along them satisfy `⟪d, J p⟫² + ⟪d, p⟫² ≤ ‖d‖² ‖p‖²`. -/
+theorem inner_sq_add_inner_sq_le {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (d p : V) :
+    ⟪d, J p⟫ ^ 2 + ⟪d, p⟫ ^ 2 ≤ ‖d‖ ^ 2 * ‖p‖ ^ 2 := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
+  have hJpp : ⟪J p, p⟫ = 0 := inner_apply_self hJ p
+  have hpp : ⟪p, p⟫ = ‖p‖ ^ 2 := real_inner_self_eq_norm_sq p
+  have hJJ : ⟪J p, J p⟫ = ‖p‖ ^ 2 := by rw [hJ, hpp]
+  -- `p / ‖p‖` and `J p / ‖p‖` are orthonormal.
+  have hv : Orthonormal ℝ ![‖p‖⁻¹ • p, ‖p‖⁻¹ • J p] := by
+    rw [orthonormal_iff_ite]
+    intro i j
+    fin_cases i <;> fin_cases j <;>
+      simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one,
+        real_inner_smul_left, real_inner_smul_right, hJpp, hJJ, real_inner_comm (J p) p, hpp,
+        ↓reduceIte, Fin.isValue, zero_ne_one, one_ne_zero, mul_zero] <;> field_simp
+  have h := hv.sum_inner_products_le (x := d) (s := Finset.univ)
+  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Real.norm_eq_abs,
+    sq_abs, real_inner_comm d, real_inner_smul_right] at h
+  have hid : ⟪d, J p⟫ ^ 2 + ⟪d, p⟫ ^ 2 =
+      ‖p‖ ^ 2 * ((‖p‖⁻¹ * ⟪d, p⟫) ^ 2 + (‖p‖⁻¹ * ⟪d, J p⟫) ^ 2) := by
+    field_simp
+    ring
+  rw [hid, mul_comm (‖d‖ ^ 2)]
+  exact mul_le_mul_of_nonneg_left h (by positivity)
 
 /-- The complex inner product induced by an orthogonal complex structure, using the original
 norm on `V` and the scalar action `J.complexModule`. Its real part is the original inner product.
