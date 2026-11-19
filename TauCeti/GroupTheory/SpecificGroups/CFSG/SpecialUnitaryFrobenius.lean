@@ -159,7 +159,7 @@ theorem mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff (r : ℕ)
     ← SpecialLinearGroup.toGL_injective.eq_iff, SpecialLinearGroup.toGL_typeAGraphAutomorphism,
     typeAGraphAutomorphism_eq_iff_transpose_mul_conjugator_mul_eq,
     SpecialLinearGroup.coe_GL_coe_matrix, SpecialLinearGroup.coe_GL_coe_matrix,
-    SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, coe_iterateFrobenius_galoisField]
+    SpecialLinearGroup.map_apply_coe, coe_iterateFrobenius_galoisField]
 
 /-- **The finite special unitary group is a special isometry group.** The fixed points of the
 graph-twisted Frobenius of `SL_{r+1}(𝔽_{q²})` are the special isometries of the sesquilinear form

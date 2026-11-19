@@ -161,8 +161,8 @@ theorem doubleAlongCoordChange_comp {C : FiniteRankBundleCore ℂ X} (hC : C.IsR
   | hr x =>
     simp only [DoubleAlong.fold_inr] at hi hj hk
     rw [doubleAlongCoordChange_inr hC hi hj, doubleAlongCoordChange_inr hC hj hk,
-      doubleAlongCoordChange_inr hC hi hk, ContinuousLinearMap.intrinsicStar_apply,
-      ContinuousLinearMap.intrinsicStar_apply, ContinuousLinearMap.intrinsicStar_apply, star_star,
+      doubleAlongCoordChange_inr hC hi hk]
+    simp only [ContinuousLinearMap.intrinsicStar_apply, star_star,
       C.core.coordChange_comp _ _ _ x ⟨⟨hi, hj⟩, hk⟩]
 
 /-- The doubled transitions are continuous on the overlap of the folded charts. -/
@@ -401,6 +401,9 @@ noncomputable def doubleAlongTrivialIso (n : ℕ) :
         (doubleAlongCoordChange (trivial ℂ X n) A i j y) =
         (ContinuousLinearMap.id ℂ (Fin n → ℂ)).comp (ContinuousLinearMap.id ℂ (Fin n → ℂ)) := by
       ext v : 1
+      -- Here v is typed over Fin (trivial ℂ X n).rank, while the identities use Fin n.
+      -- Rewriting comp_apply does not match those inherited fibre instances. Identify
+      -- the definitional rank equality and evaluate the two identity composites first.
       change doubleAlongCoordChange (trivial ℂ X n) A i j y v = v
       induction y using DoubleAlong.induction_on with
       | hl x =>
