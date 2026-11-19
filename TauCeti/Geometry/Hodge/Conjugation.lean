@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.Basic.Complex.ConjZPow
 
 /-!
 # Conjugation and maps on complexifications
@@ -50,8 +51,6 @@ models.
 * `TauCeti.Hodge.Conjugation.twist`: the twisted real structure `W_ℝ(p)`, the subspace on which a
   conjugation acts by the sign `(-1) ^ p`, equal to `c ^ p • W_ℝ` for every nonzero purely
   imaginary `c` (`TauCeti.Hodge.Conjugation.mem_twist_iff_exists`).
-* `Complex.conj_zpow_of_conj_eq_neg`: conjugating an integer power `c ^ p` of a purely imaginary
-  number multiplies it by the sign `(-1) ^ p`.
 * `TauCeti.Hodge.Conjugation.dual`: the twisted transpose of a conjugation, again a conjugation,
   on the complex dual space, with its pointwise description
   `TauCeti.Hodge.Conjugation.dual_toEquiv_apply`.
@@ -393,15 +392,6 @@ theorem map_mem_twist_add_one {W' : Type v} [AddCommGroup W'] [Module ℂ W'] {F
   rw [mem_twist] at hx ⊢
   rw [hf, hx, Int.negOnePow_succ, Units.smul_def, map_zsmul, Units.smul_def, Units.val_neg,
     neg_smul]
-
-/-- Conjugation of a power of a purely imaginary number is the power multiplied by the sign
-`(-1) ^ p`. -/
-theorem _root_.Complex.conj_zpow_of_conj_eq_neg {c : ℂ} (hc : starRingEnd ℂ c = -c) (p : ℤ) :
-    starRingEnd ℂ (c ^ p) = (p.negOnePow : ℂ) * c ^ p := by
-  rw [map_zpow₀, hc]
-  rcases Int.even_or_odd p with hp | hp
-  · simp [hp.neg_zpow, Int.negOnePow_even p hp]
-  · simp [hp.neg_zpow, Int.negOnePow_odd p hp]
 
 /-- For a nonzero purely imaginary `c`, the real twist `ω.twist p` consists of the vectors
 `c ^ p • y` with `y` a real point of `ω`. With `c = 2πi` this is the description
