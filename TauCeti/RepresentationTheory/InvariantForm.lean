@@ -7,10 +7,10 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
-public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 public import TauCeti.RepresentationTheory.Dual
+public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Irreducible
 
 /-!
@@ -346,13 +346,14 @@ theorem isInvariantForm_iff_isIntertwiningMap (ρ : Representation k G V) (B : B
 
 /-- **Stabilizers of covectors given by an invariant form.** An injective invariant form `B`
 identifies `V` with a subrepresentation of the dual, so `g` fixes the covector `B v` under the
-dual representation exactly when it fixes `v`. -/
+dual representation exactly when it fixes `v`. This is
+`Representation.IntertwiningMap.stabilizer_apply_eq_of_injective` for the intertwiner `B`. -/
 theorem IsInvariantForm.stabilizer_dual_apply_eq_stabilizer (hB : IsInvariantForm ρ B)
     (hB' : Function.Injective B) (v : V) :
-    _root_.Representation.stabilizer ρ.dual (B v) = _root_.Representation.stabilizer ρ v := by
-  ext g
-  rw [_root_.Representation.mem_stabilizer, _root_.Representation.mem_stabilizer,
-    ← ((isInvariantForm_iff_isIntertwiningMap ρ B).mp hB).isIntertwining g v, hB'.eq_iff]
+    _root_.Representation.stabilizer ρ.dual (B v) = _root_.Representation.stabilizer ρ v :=
+  _root_.Representation.IntertwiningMap.stabilizer_apply_eq_of_injective
+    (LinearMap.intertwiningMap_of_isIntertwiningMap ρ ρ.dual B
+      ((isInvariantForm_iff_isIntertwiningMap ρ B).mp hB).isIntertwining) hB' v
 
 end Group
 
