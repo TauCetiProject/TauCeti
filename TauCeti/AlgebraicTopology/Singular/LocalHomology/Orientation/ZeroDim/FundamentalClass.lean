@@ -49,8 +49,7 @@ theorem fundamentalClass_toHomologicalOrientationOfZeroDim_of_subsingleton
   have hpt : singularHomologyToLocalHomology R x 0
       (singularHomology₀Section R (X := TopCat.of M) x 1) = localHomologyPointClass R {x} x 1 :=
     (singularHomologyToLocalHomology_eq_singularHomologyπ R x _).trans
-      ((ModuleCat.comp_apply _ _ _).symm.trans
-        (congrArg (fun f ↦ f (1 : ULift.{0} ℤ)) (localHomologyPointClass_def R {x} x).symm))
+      (localHomologyPointClass_def_apply R {x} x 1).symm
   symm
   apply HomologicalOrientation.eq_fundamentalClass
   intro y

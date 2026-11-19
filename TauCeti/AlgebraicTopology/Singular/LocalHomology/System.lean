@@ -102,6 +102,7 @@ def localHomologyPointClass (S : Set M) (x : M) : R ⟶ localHomology R S 0 :=
     (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R 0
 
 /-- The point class is the image of the absolute point section under the relative quotient. -/
+@[elementwise]
 lemma localHomologyPointClass_def (S : Set M) (x : M) :
     localHomologyPointClass R S x = singularHomology₀Section R (X := TopCat.of M) x ≫
       (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R 0 := by rfl
@@ -154,7 +155,7 @@ lemma singularHomologyπ_localHomologyRestriction {S T : Set M} (h : S ⊆ T) (k
     (compl_subset_compl.2 h) k
 
 /-- Restricting the relative point class is the point class in the smaller pair. -/
-@[reassoc]
+@[reassoc, elementwise]
 lemma localHomologyPointClass_restriction {S T : Set M} (h : S ⊆ T) (x : M) :
     localHomologyPointClass R T x ≫ localHomologyRestriction R h 0 =
       localHomologyPointClass R S x := by
@@ -273,7 +274,7 @@ lemma localHomologyMap_def {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (k : �
   (rfl)
 
 /-- A map of local homology carries the actual relative point class to its image point. -/
-@[reassoc]
+@[reassoc, elementwise]
 lemma localHomologyPointClass_map {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (x : M) :
     localHomologyPointClass R S x ≫ localHomologyMap R j h 0 =
       localHomologyPointClass R T (j x) := by

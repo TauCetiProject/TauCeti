@@ -115,19 +115,19 @@ theorem localOrientationOfZeroDim_eq_neg_localOrientationOfZeroDimChart_of_orien
 @[simp]
 theorem localOrientationOfZeroDim_neg (o : Manifold.Orientation I M (Fin 0)) (x : M) :
     (-o).localOrientationOfZeroDim x = -o.localOrientationOfZeroDim x := by
-  rcases _root_.Orientation.eq_or_eq_neg_of_isEmpty (o.orientationAt x) with h | h
-  · have h' : (-o).orientationAt x = -positiveOrientation :=
-      (orientationAt_neg o x).trans (congrArg Neg.neg h)
-    rw [localOrientationOfZeroDim_eq_localOrientationOfZeroDimChart_of_orientationAt_eq o x h,
-      localOrientationOfZeroDim_eq_neg_localOrientationOfZeroDimChart_of_orientationAt_eq_neg
-        (-o) x h']
-  · have h' : (-o).orientationAt x = positiveOrientation :=
-      (orientationAt_neg o x).trans ((congrArg Neg.neg h).trans
-        (neg_neg (positiveOrientation : _root_.Orientation ℝ (TangentSpace I x) (Fin 0))))
-    rw [localOrientationOfZeroDim_eq_neg_localOrientationOfZeroDimChart_of_orientationAt_eq_neg
-        o x h,
-      localOrientationOfZeroDim_eq_localOrientationOfZeroDimChart_of_orientationAt_eq
-        (-o) x h', neg_neg]
+  classical
+  rw [localOrientationOfZeroDim_eq_ite (-o) (chartAt E x) (mem_chart_source E x)
+      o.finrank_eq_zero,
+    localOrientationOfZeroDim_eq_ite o (chartAt E x) (mem_chart_source E x) o.finrank_eq_zero]
+  have hp : -(positiveOrientation : _root_.Orientation ℝ (TangentSpace I x) (Fin 0)) ≠
+      positiveOrientation := (Module.Ray.ne_neg_self _).symm
+  -- The ray negation instance needs the explicitly typed orientation here: generic `neg_neg`
+  -- does not rewrite this double negation at implicit transparency.
+  have hpp : - -(positiveOrientation : _root_.Orientation ℝ (TangentSpace I x) (Fin 0)) =
+      positiveOrientation :=
+    neg_neg (positiveOrientation : _root_.Orientation ℝ (TangentSpace I x) (Fin 0))
+  rcases _root_.Orientation.eq_or_eq_neg_of_isEmpty (o.orientationAt x) with h | h <;>
+    simp only [orientationAt_neg, h, hpp, hp, ↓reduceIte, neg_neg]
 
 /-- The signed point class retains exactly the tangent orientation at the point. -/
 theorem localOrientationOfZeroDim_eq_iff (o o' : Manifold.Orientation I M (Fin 0)) (x : M) :
@@ -139,32 +139,14 @@ theorem localOrientationOfZeroDim_eq_iff (o o' : Manifold.Orientation I M (Fin 0
   have hz : -z ≠ z := fun h ↦ z.property.neg_ne
     (singularHomologyComplSingletonIsoOfFinrankEqZero (ModuleCat.of ℤ (ULift.{w} ℤ))
       (chartAt E x) (mem_chart_source E x) hE) (congrArg Subtype.val h)
+  dsimp only [z] at hz
   have hp : (positiveOrientation : _root_.Orientation ℝ (TangentSpace I x) (Fin 0)) ≠
       -positiveOrientation := Module.Ray.ne_neg_self _
+  rw [localOrientationOfZeroDim_eq_ite o (chartAt E x) (mem_chart_source E x) hE,
+    localOrientationOfZeroDim_eq_ite o' (chartAt E x) (mem_chart_source E x) hE]
   rcases _root_.Orientation.eq_or_eq_neg_of_isEmpty (o.orientationAt x) with h | h <;>
-    rcases _root_.Orientation.eq_or_eq_neg_of_isEmpty (o'.orientationAt x) with h' | h'
-  · rw [localOrientationOfZeroDim_eq_localOrientationOfZeroDimChart_of_orientationAt_eq
-        o x h,
-      localOrientationOfZeroDim_eq_localOrientationOfZeroDimChart_of_orientationAt_eq
-        o' x h']
-    exact ⟨fun _ ↦ h.trans h'.symm, fun _ ↦ rfl⟩
-  · rw [localOrientationOfZeroDim_eq_localOrientationOfZeroDimChart_of_orientationAt_eq
-        o x h,
-      localOrientationOfZeroDim_eq_neg_localOrientationOfZeroDimChart_of_orientationAt_eq_neg
-        o' x h',
-      h, h']
-    exact ⟨fun he ↦ (hz.symm he).elim, fun he ↦ (hp he).elim⟩
-  · rw [localOrientationOfZeroDim_eq_neg_localOrientationOfZeroDimChart_of_orientationAt_eq_neg
-        o x h,
-      localOrientationOfZeroDim_eq_localOrientationOfZeroDimChart_of_orientationAt_eq
-        o' x h',
-      h, h']
-    exact ⟨fun he ↦ (hz he).elim, fun he ↦ (hp.symm he).elim⟩
-  · rw [localOrientationOfZeroDim_eq_neg_localOrientationOfZeroDimChart_of_orientationAt_eq_neg
-        o x h,
-      localOrientationOfZeroDim_eq_neg_localOrientationOfZeroDimChart_of_orientationAt_eq_neg
-        o' x h']
-    exact ⟨fun _ ↦ h.trans h'.symm, fun _ ↦ rfl⟩
+    rcases _root_.Orientation.eq_or_eq_neg_of_isEmpty (o'.orientationAt x) with h' | h' <;>
+      simp [h, h', hp, hp.symm, hz, hz.symm]
 
 /-- A zero-dimensional smooth orientation supplies its signed native homological orientation.
 Its value at a point is the relative point class in degree zero,
@@ -223,14 +205,8 @@ theorem localHomologyRestriction_ite_localHomologyPointClass
           localHomologyPointClass (ModuleCat.of ℤ (ULift.{w} ℤ)) S x 1
         else -(localHomologyPointClass (ModuleCat.of ℤ (ULift.{w} ℤ)) S x 1)) =
       (o.localOrientationOfZeroDim x).val := by
-  have hpt := congrArg (fun f ↦ f (1 : ULift.{w} ℤ))
-    (localHomologyPointClass_restriction (ModuleCat.of ℤ (ULift.{w} ℤ))
-      (singleton_subset_iff.2 hx) x)
-  have hval : localHomologyRestriction (ModuleCat.of ℤ (ULift.{w} ℤ))
-      (singleton_subset_iff.2 hx) 0
-        (localHomologyPointClass (ModuleCat.of ℤ (ULift.{w} ℤ)) S x 1) =
-      localHomologyPointClass (ModuleCat.of ℤ (ULift.{w} ℤ)) {x} x 1 :=
-    (ModuleCat.comp_apply _ _ _).symm.trans hpt
+  have hval := localHomologyPointClass_restriction_apply
+    (ModuleCat.of ℤ (ULift.{w} ℤ)) (singleton_subset_iff.2 hx) x 1
   rw [localOrientationOfZeroDim_coe]
   split_ifs <;> simp only [map_neg, hval]
 
@@ -249,12 +225,7 @@ theorem IsOrientationPreservingAt.localHomologyMap_localOrientationOfZeroDim
     (hpre : j ⁻¹' {j x} ⊆ {x}) :
     localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j hpre 0
         (o.localOrientationOfZeroDim x).val = (o'.localOrientationOfZeroDim (j x)).val := by
-  have hpt := congrArg (fun f ↦ f (1 : ULift.{w} ℤ))
-    (localHomologyPointClass_map (ModuleCat.of ℤ (ULift.{w} ℤ)) j hpre x)
-  have hval : localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j hpre 0
-      (localHomologyPointClass (ModuleCat.of ℤ (ULift.{w} ℤ)) {x} x 1) =
-      localHomologyPointClass (ModuleCat.of ℤ (ULift.{w} ℤ)) {j x} (j x) 1 :=
-    (ModuleCat.comp_apply _ _ _).symm.trans hpt
+  have hval := localHomologyPointClass_map_apply (ModuleCat.of ℤ (ULift.{w} ℤ)) j hpre x 1
   rw [localOrientationOfZeroDim_coe, localOrientationOfZeroDim_coe]
   by_cases hp : o.orientationAt x = positiveOrientation
   · simp only [hp, h.orientationAt_eq_positiveOrientation_iff.mp hp, ↓reduceIte, hval]
