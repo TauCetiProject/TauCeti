@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 public import TauCeti.Analysis.Calculus.GaussianDecay
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.Bounds
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Scale-invariant bounds on the space-time derivatives of the heat kernel
@@ -484,13 +485,7 @@ theorem integral_iteratedFDeriv_heatKernel_eq_zero {t : ℝ} (ht : 0 < t) {m : �
 /-- **The first moment of the heat kernel vanishes.** For every time `t` and every continuous
 linear map `L`, `∫ K_t(y) L y dy = 0`, since `K_t` is even. -/
 theorem integral_heatKernel_smul_apply_eq_zero {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] (t : ℝ) (L : E →L[ℝ] F) : ∫ y, heatKernel t y • L y = 0 := by
-  have h := integral_neg_eq_self (fun y ↦ heatKernel t y • L y) (volume : Measure E)
-  simp only [heatKernel_neg, map_neg, smul_neg, integral_neg] at h
-  have h2 : (2 : ℝ) • ∫ y, heatKernel t y • L y = 0 := by
-    rw [two_smul]
-    nth_rw 1 [← h]
-    exact neg_add_cancel _
-  exact (smul_eq_zero.mp h2).resolve_left two_ne_zero
+    [NormedSpace ℝ F] (t : ℝ) (L : E →L[ℝ] F) : ∫ y, heatKernel t y • L y = 0 :=
+  integral_eq_zero_of_odd fun y ↦ by simp [heatKernel_neg]
 
 end TauCeti
