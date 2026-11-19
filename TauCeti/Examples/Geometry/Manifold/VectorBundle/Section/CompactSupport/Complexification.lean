@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupportComplexification
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Complexification
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 
@@ -13,7 +13,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Density
 # Native compact-test complexification examples
 
 Nonzero chart tests, inverse/fixed-point formulas, strict projection-support containment,
-finite and smooth orders, empty support, empty and disconnected bases, rank zero and the
+finite, smooth and analytic algebraic orders, empty support, empty and disconnected bases, rank
+  zero and the
 infinite-dimensional model `C([0,1], ℝ)`. The final example uses the actual real density-valued
 Hom bundle, without identifying it with a complex dual-density bundle.
 -/
@@ -28,7 +29,7 @@ namespace TauCeti.Examples.CompactSupportComplexification
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The identity chart on the real line has the required native smoothness. -/
-theorem realChartSmooth : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞
+theorem contMDiffOn_refl_real : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞
     (OpenPartialHomeomorph.refl ℝ) (OpenPartialHomeomorph.refl ℝ).source :=
   (contMDiffOn_id : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ id
     (OpenPartialHomeomorph.refl ℝ).source).congr
@@ -36,7 +37,7 @@ theorem realChartSmooth : ContMDiffOn 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞
 
 omit [NormedSpace ℝ F] in
 /-- The identity chart lies inside the canonical trivial bundle frame. -/
-theorem realChartContained : (OpenPartialHomeomorph.refl ℝ).source ⊆
+theorem refl_source_subset_baseSet : (OpenPartialHomeomorph.refl ℝ).source ⊆
     (trivializationAt F (Bundle.Trivial ℝ F) 0).baseSet := by
   intro x _
   simp [Bundle.Trivial.fiberBundle_trivializationAt']
@@ -46,7 +47,7 @@ def chartSection (φ : 𝓓((⟨(OpenPartialHomeomorph.refl ℝ).target,
     (OpenPartialHomeomorph.refl ℝ).open_target⟩ : Opens ℝ), F)) :
     compactlySupported 𝓘(ℝ, ℝ) F ∞ (Bundle.Trivial ℝ F) :=
   (trivializationAt F (Bundle.Trivial ℝ F) 0).chartTestSection (OpenPartialHomeomorph.refl ℝ)
-    realChartSmooth realChartContained φ
+    contMDiffOn_refl_real refl_source_subset_baseSet φ
 
 /-- The bundled map evaluates by the stated original-fibre formula. -/
 @[simp] theorem chartSection_apply (φ : 𝓓((⟨(OpenPartialHomeomorph.refl ℝ).target,
@@ -57,15 +58,15 @@ def chartSection (φ : 𝓓((⟨(OpenPartialHomeomorph.refl ℝ).target,
     (by simp only [OpenPartialHomeomorph.refl_source, mem_univ])]
   simp [Bundle.Trivial.fiberBundle_trivializationAt']
 
-/-- The CompactlySupported.ITmul chart generator is an actual chart extension, not an assumed
+/-- The imaginary chart generator is an actual chart extension, not an assumed
 supported section. -/
 theorem imaginary_chartSection (φ : 𝓓((⟨(OpenPartialHomeomorph.refl ℝ).target,
     (OpenPartialHomeomorph.refl ℝ).open_target⟩ : Opens ℝ), F)) :
     CompactlySupported.ITmul (n := (⊤ : ℕ∞)) (chartSection φ) =
       (trivializationAt F (Bundle.Trivial ℝ F) 0).complexification.chartTestSection
-        (OpenPartialHomeomorph.refl ℝ) realChartSmooth
+        (OpenPartialHomeomorph.refl ℝ) contMDiffOn_refl_real
         (by intro x hx; simpa only [Trivialization.baseSet_complexification] using
-          (realChartContained (F := F) hx))
+          (refl_source_subset_baseSet (F := F) hx))
         (TestFunction.postcompCLM
           (Complex.I • (Complexification.ofRealLI F).toContinuousLinearMap) φ) := by
   exact Bundle.Trivialization.ITmul_chartTestSection _ _ _ _ _
@@ -209,8 +210,8 @@ theorem infinite_model_nonzero :
     (hφ.symm.trans hv)
   norm_num at h1
 
-/-- A native compact test can be nonzero on CompactlySupported.oneTmul component and vanish on the
-other. -/
+/-- A native compact test equals one at `Sum.inl 0` and vanishes on the right component
+of `ℝ ⊕ ℝ`. -/
 theorem disconnected_nonzero :
     ∃ φ : compactlySupported 𝓘(ℝ, ℝ) ℝ ∞ (Bundle.Trivial (ℝ ⊕ ℝ) ℝ),
       φ.val (Sum.inl 0) = 1 ∧ ∀ x : ℝ, φ.val (Sum.inr x) = 0 := by
@@ -231,8 +232,8 @@ theorem disconnected_nonzero :
       Bundle.Trivial.symmL_trivialization, ContinuousLinearMap.id_apply]
   · intro x
     apply Trivialization.chartTestSection_apply_of_notMem
-    rw [show c = chartAt ℝ (Sum.inl (0 : ℝ) : ℝ ⊕ ℝ) from rfl,
-      ChartedSpace.sum_chartAt_inl, OpenPartialHomeomorph.lift_openEmbedding_source]
+    dsimp only [c, p]
+    rw [ChartedSpace.sum_chartAt_inl, OpenPartialHomeomorph.lift_openEmbedding_source]
     simp
 
 /-- Every native section on the literal Empty base is zero. -/
@@ -296,6 +297,67 @@ def emptyCompactFixed :=
     (fun x : ℝ ↦ trivializationAt ℝ (Bundle.Trivial ℝ ℝ) x) (fun _ ↦ (⊤ : Opens ℝ))
     (by intro i; simp [Bundle.Trivial.fiberBundle_trivializationAt'])
     (by intro x; exact ⟨x, Set.mem_univ x⟩) ⊥
+
+/-! ## Analytic-order algebra, without a chosen test topology -/
+
+/-- An actual nonzero analytic test on the compact zero-dimensional real model. -/
+def analyticZeroBaseOne :
+    compactlySupported 𝓘(ℝ, Fin 0 → ℝ) ℝ ω (Bundle.Trivial (Fin 0 → ℝ) ℝ) := by
+  refine ⟨⟨fun _ ↦ 1, ?_⟩, ?_⟩
+  · have h : (fun x : Fin 0 → ℝ ↦ TotalSpace.mk' ℝ (E := Bundle.Trivial (Fin 0 → ℝ) ℝ) x (1 : ℝ)) =
+        (fun _ ↦ TotalSpace.mk' ℝ (E := Bundle.Trivial (Fin 0 → ℝ) ℝ) (0 : Fin 0 → ℝ) (1 : ℝ)) := by
+      funext x
+      rw [Subsingleton.elim x 0]
+    rw [h]
+    exact contMDiff_const
+  · rw [compactlySupported_eq_top]
+    exact Submodule.mem_top
+
+/-- The analytic constant section evaluates to one in its original real fibre. -/
+@[simp] theorem analyticZeroBaseOne_apply (x : Fin 0 → ℝ) :
+    analyticZeroBaseOne.val x = 1 := by rfl
+
+/-- Analytic imaginary inclusion is nonzero on an actual compact base. -/
+theorem analytic_imaginary_nonzero :
+    CompactlySupported.ITmul analyticZeroBaseOne ≠ 0 := by
+  intro h
+  have hx := congrArg (fun φ ↦ φ.val (0 : Fin 0 → ℝ)) h
+  have hz : (Complex.I ⊗ₜ[ℝ] (1 : ℝ)) = 0 := by
+    simpa only [CompactlySupported.coe_ITmul, ITmulLinearMap_apply,
+      Submodule.coe_zero, ContMDiffSection.coe_zero, Pi.zero_apply,
+      analyticZeroBaseOne_apply] using hx
+  have hi := congrArg (TauCeti.imaginaryPart ℝ) hz
+  simp at hi
+
+/-- Both analytic-order actions have their algebraic square laws, without chart-finality. -/
+theorem analytic_compact_actions
+    (φ : compactlySupported 𝓘(ℝ, ℝ) (Complexification F) ω
+      (fun x : ℝ ↦ ℂ ⊗[ℝ] Bundle.Trivial ℝ F x)) :
+    CompactlySupported.conjEquiv (CompactlySupported.conjEquiv φ) = φ ∧
+      CompactlySupported.smulIEquiv (CompactlySupported.smulIEquiv φ) = -φ ∧
+      (CompactlySupported.conjEquiv φ).val.tsupport = φ.val.tsupport ∧
+      (CompactlySupported.smulIEquiv φ).val.tsupport = φ.val.tsupport := by
+  simp
+
+/-- Analytic prescribed-support stages permit any support set, including the empty set. -/
+theorem analytic_supported_actions (K : Set ℝ)
+    (φ : supportedIn 𝓘(ℝ, ℝ) (Complexification F) ω
+      (fun x : ℝ ↦ ℂ ⊗[ℝ] Bundle.Trivial ℝ F x) K) :
+    SupportedIn.conjEquiv K (SupportedIn.conjEquiv K φ) = φ ∧
+      SupportedIn.smulIEquiv K (SupportedIn.smulIEquiv K φ) = -φ ∧
+      (SupportedIn.conjEquiv K φ).val.tsupport = φ.val.tsupport ∧
+      (SupportedIn.smulIEquiv K φ).val.tsupport = φ.val.tsupport := by
+  simp
+
+/-- The original analytic real fixed submodule is available before any test topology. -/
+def analyticFixed :=
+  CompactlySupported.realPointsConjEquiv (n := ω) (I := 𝓘(ℝ, ℝ))
+    (F := F) (V := Bundle.Trivial ℝ F)
+
+/-- The analytic-order fixed endpoint includes empty support on a nonempty base. -/
+def analyticEmptySupportFixed :=
+  SupportedIn.realPointsConjEquiv (n := ω) (I := 𝓘(ℝ, ℝ))
+    (F := F) (V := Bundle.Trivial ℝ F) (⊥ : Compacts ℝ)
 
 section DensityHom
 

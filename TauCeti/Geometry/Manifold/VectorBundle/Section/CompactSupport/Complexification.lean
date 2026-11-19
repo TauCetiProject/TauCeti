@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
-public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Complexification.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 
 /-!
 # Real and complex compactly supported bundle tests
 
-Native sections of a complexified real bundle identify with pairs of original real sections,
-including every prescribed compact-support stage. On a finite-dimensional boundaryless smooth
+The algebraic comparisons in `CompactSupport.Complexification.Basic` identify native sections
+of a complexified real bundle with real pairs at all orders `n : ℕ∞ω`. This module adds
+continuity at orders `n : ℕ∞`, including every prescribed compact-support stage.
+On a finite-dimensional boundaryless smooth
 Hausdorff sigma-compact base, this is a real continuous linear equivalence for the existing
 compactly-supported final locally convex topologies. The fibre model can be arbitrary normed,
 infinite dimensional or incomplete. These results make no LF or strict inductive-limit assertion.
@@ -23,7 +25,7 @@ postcomposition. Every complexified atlas frame comes from a real atlas frame, s
 chart-finality criterion proves continuity. The compact stages retain their original frame
 subspace topologies. Cover choices compare through the existing
 `ContMDiffSection.compactlySupportedTopology_eq_of_covers`. Original real tests identify with the
-  pullback of the existing native
+pullback of the existing native
 `TauCeti.realPoints` submodule, using the original real scalar action explicitly.
 
 ## Main definitions
@@ -47,6 +49,10 @@ open Bundle Set TopologicalSpace TauCeti ContMDiffSection
 open scoped ContDiff Manifold TensorProduct Topology Distributions
 
 namespace ContMDiffSection
+
+
+
+section FiniteRegularity
 
 variable {n : ℕ∞}
 
@@ -134,7 +140,7 @@ variable [T2Space M]
     simp [hz]
   · simp [hx]
 
-/-- The CompactlySupported.ITmul inclusion commutes with native chart extension and model
+/-- The imaginary inclusion commutes with native chart extension and model
 postcomposition. -/
  theorem _root_.Bundle.Trivialization.ITmul_chartTestSection (t : Trivialization F (π F V))
    [MemTrivializationAtlas t]
@@ -198,7 +204,7 @@ theorem CompactlySupported.continuous_realPart :
       (Bundle.Trivialization.realPart_chartTestSection_complexification t₀ c hc hct₀ φ).symm
 
 include hcover in
-/-- The CompactlySupported.ITmul projection is continuous for the native compact-test final
+/-- The imaginary projection is continuous for the native compact-test final
 topologies. -/
 theorem CompactlySupported.continuous_imaginaryPart :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
@@ -255,7 +261,7 @@ theorem CompactlySupported.continuous_oneTmul :
       (Bundle.Trivialization.oneTmul_chartTestSection t c hc hct φ).symm
 
 include hcover in
-/-- The CompactlySupported.ITmul inclusion is continuous for the native compact-test final
+/-- The imaginary inclusion is continuous for the native compact-test final
 topologies. -/
 theorem CompactlySupported.continuous_ITmul :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
@@ -468,9 +474,27 @@ def CompactlySupported.smulICLE :
   let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
     (by simpa only [Trivialization.baseSet_complexification] using hU)
   let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n)
+    (fun i ↦ (e i).complexification) U
+    (by simpa only [Trivialization.baseSet_complexification] using hU)
   let L := CompactlySupported.complexificationCLEProd (n := n) (I := I) e U hU hcover
-  exact (L.trans ((ContinuousLinearEquiv.prodComm ℝ _ _).trans
-    ((ContinuousLinearEquiv.neg ℝ).prodCongr (ContinuousLinearEquiv.refl ℝ _)))).trans L.symm
+  have hc : Continuous (CompactlySupported.smulIEquiv
+      (n := n) (I := I) (F := F) (V := V)) := by
+    refine (L.symm.continuous.comp ((continuous_snd.neg.prodMk continuous_fst).comp
+      L.continuous)).congr ?_
+    intro φ
+    apply L.injective
+    simp only [Function.comp_apply, Pi.neg_apply, L.apply_symm_apply]
+    simpa only [L, CompactlySupported.complexificationCLEProd_apply,
+      CompactlySupported.complexificationEquivProd_apply] using
+      (CompactlySupported.complexificationEquivProd_smulIEquiv φ).symm
+  refine { CompactlySupported.smulIEquiv (n := n) (I := I) (F := F) (V := V) with
+    continuous_toFun := ?_, continuous_invFun := ?_ }
+  · simpa only [LinearEquiv.toFun_eq_coe] using hc
+  · rw [LinearEquiv.invFun_eq_symm]
+    exact hc.neg.congr fun φ ↦
+      (CompactlySupported.smulIEquiv_symm_apply φ).symm
+
 
 
 include hcover in
@@ -485,9 +509,27 @@ def CompactlySupported.conjCLE :
   let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
     (by simpa only [Trivialization.baseSet_complexification] using hU)
   let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n) e U hU
+  let _ := isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := n)
+    (fun i ↦ (e i).complexification) U
+    (by simpa only [Trivialization.baseSet_complexification] using hU)
   let L := CompactlySupported.complexificationCLEProd (n := n) (I := I) e U hU hcover
-  exact (L.trans ((ContinuousLinearEquiv.refl ℝ _).prodCongr (ContinuousLinearEquiv.neg ℝ))).trans
-    L.symm
+  have hc : Continuous (CompactlySupported.conjEquiv
+      (n := n) (I := I) (F := F) (V := V)) := by
+    refine (L.symm.continuous.comp ((continuous_fst.prodMk continuous_snd.neg).comp
+      L.continuous)).congr ?_
+    intro φ
+    apply L.injective
+    simp only [Function.comp_apply, Pi.neg_apply, L.apply_symm_apply]
+    simpa only [L, CompactlySupported.complexificationCLEProd_apply,
+      CompactlySupported.complexificationEquivProd_apply] using
+      (CompactlySupported.complexificationEquivProd_conjEquiv φ).symm
+  refine { CompactlySupported.conjEquiv (n := n) (I := I) (F := F) (V := V) with
+    continuous_toFun := ?_, continuous_invFun := ?_ }
+  · simpa only [LinearEquiv.toFun_eq_coe] using hc
+  · rw [LinearEquiv.invFun_eq_symm]
+    exact hc.congr fun φ ↦
+      (CompactlySupported.conjEquiv_symm_apply φ).symm
+
 
 /-- In real-pair coordinates, multiplication by i sends (a,b) to (-b,a). -/
 theorem CompactlySupported.complexificationCLEProd_smulICLE
@@ -498,10 +540,10 @@ theorem CompactlySupported.complexificationCLEProd_smulICLE
     CompactlySupported.complexificationCLEProd (n := n) e U hU hcover (CompactlySupported.smulICLE
       (n := n) (I := I) e U hU hcover φ) = (-CompactlySupported.imaginaryPart φ,
       CompactlySupported.realPart φ) := by
-  apply Prod.ext <;> apply Subtype.ext <;> ext x <;>
-    simp [CompactlySupported.smulICLE, CompactlySupported.complexificationCLEProd_apply,
-      CompactlySupported.complexificationCLEProd_symm_apply,
-      CompactlySupported.complexificationEquivProd_symm_apply]
+  simpa only [CompactlySupported.smulICLE, ContinuousLinearEquiv.coe_mk,
+    CompactlySupported.complexificationCLEProd_apply,
+    CompactlySupported.complexificationEquivProd_apply] using
+    CompactlySupported.complexificationEquivProd_smulIEquiv (n := n) (I := I) (F := F) (V := V) φ
 
 /-- In real-pair coordinates, conjugation sends (a,b) to (a,-b). -/
 theorem CompactlySupported.complexificationCLEProd_conjCLE
@@ -512,88 +554,54 @@ theorem CompactlySupported.complexificationCLEProd_conjCLE
     CompactlySupported.complexificationCLEProd (n := n) e U hU hcover (CompactlySupported.conjCLE
       (n := n) (I := I) e U hU hcover φ) = (CompactlySupported.realPart φ,
       -CompactlySupported.imaginaryPart φ) := by
-  apply Prod.ext <;> apply Subtype.ext <;> ext x <;>
-    simp [CompactlySupported.conjCLE, CompactlySupported.complexificationCLEProd_apply,
-      CompactlySupported.complexificationCLEProd_symm_apply,
-      CompactlySupported.complexificationEquivProd_symm_apply]
+  simpa only [CompactlySupported.conjCLE, ContinuousLinearEquiv.coe_mk,
+    CompactlySupported.complexificationCLEProd_apply,
+    CompactlySupported.complexificationEquivProd_apply] using
+    CompactlySupported.complexificationEquivProd_conjEquiv (n := n) (I := I) (F := F) (V := V) φ
 
 /-- The real continuous conjugation acts by the native tensor conjugation in each fibre. -/
-theorem CompactlySupported.conjCLE_apply
+@[simp] theorem CompactlySupported.conjCLE_apply
     (φ : compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) (x : M) :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
     (CompactlySupported.conjCLE (n := n) (I := I) e U hU hcover φ).val x = tmulConj (V x) (φ.val
       x) := by
-  have h := CompactlySupported.complexificationCLEProd_conjCLE (n := n) e U hU hcover φ
-  apply complexification_ext
-  · simpa only [CompactlySupported.complexificationCLEProd_apply,
-    CompactlySupported.coe_realPart, realPartLinearMap_apply, realPart_tmulConj] using
-      congrArg (fun p : compactlySupported I F n V × compactlySupported I F n V ↦ p.1.val x) h
-  · simpa only [CompactlySupported.complexificationCLEProd_apply, Submodule.coe_neg,
-    ContMDiffSection.coe_neg, Pi.neg_apply,
-      CompactlySupported.coe_realPart, realPartLinearMap_apply,
-        CompactlySupported.coe_imaginaryPart, imaginaryPartLinearMap_apply,
-        imaginaryPart_tmulConj] using
-      congrArg (fun p : compactlySupported I F n V × compactlySupported I F n V ↦ p.2.val x) h
+  simpa only [CompactlySupported.conjCLE, ContinuousLinearEquiv.coe_mk] using
+    CompactlySupported.conjEquiv_apply (n := n) (I := I) (F := F) (V := V) φ x
 
 /-- The real continuous quarter-turn acts by the actual complex scalar in each original fibre. -/
-theorem CompactlySupported.smulICLE_apply
+@[simp] theorem CompactlySupported.smulICLE_apply
     (φ : compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) (x : M) :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
     (CompactlySupported.smulICLE (n := n) (I := I) e U hU hcover φ).val x = Complex.I • φ.val x :=
       by
-  have h := CompactlySupported.complexificationCLEProd_smulICLE (n := n) e U hU hcover φ
-  have hr := congrArg (fun p : compactlySupported I F n V × compactlySupported I F n V ↦ p.1.val
-    x) h
-  have hi := congrArg (fun p : compactlySupported I F n V × compactlySupported I F n V ↦ p.2.val
-    x) h
-  rw [CompactlySupported.complexificationCLEProd_apply] at hr hi
-  rw [← one_tmul_realPart_add_I_tmul_imaginaryPart (V x)
-    ((CompactlySupported.smulICLE (n := n) (I := I) e U hU hcover φ).val x),
-    ← one_tmul_realPart_add_I_tmul_imaginaryPart (V x) (φ.val x),
-    I_smul_one_tmul_add_I_tmul]
-  simp only [Submodule.coe_neg, ContMDiffSection.coe_neg, Pi.neg_apply,
-    CompactlySupported.coe_realPart, realPartLinearMap_apply,
-      CompactlySupported.coe_imaginaryPart, imaginaryPartLinearMap_apply] at hr hi
-  rw [hr, hi]
+  simpa only [CompactlySupported.smulICLE, ContinuousLinearEquiv.coe_mk] using
+    CompactlySupported.smulIEquiv_apply (n := n) (I := I) (F := F) (V := V) φ x
 
 /-- Conjugation preserves the exact closed support. -/
-theorem CompactlySupported.tsupport_conjCLE
+@[simp] theorem CompactlySupported.tsupport_conjCLE
     (φ : compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
     (CompactlySupported.conjCLE (n := n) (I := I) e U hU hcover φ).val.tsupport = φ.val.tsupport
       := by
-  rw [tsupport_def, tsupport_def]
-  congr 1
-  ext x
-  simp only [Set.mem_ofPred_eq, CompactlySupported.conjCLE_apply]
-  exact not_congr (map_eq_zero_iff (tmulConj (V x)) (Function.LeftInverse.injective
-    (tmulConj_tmulConj (V x))))
+  simpa only [CompactlySupported.conjCLE, ContinuousLinearEquiv.coe_mk] using
+    CompactlySupported.tsupport_conjEquiv (n := n) (I := I) (F := F) (V := V) φ
 
 /-- The quarter-turn preserves the exact closed support. -/
-theorem CompactlySupported.tsupport_smulICLE
+@[simp] theorem CompactlySupported.tsupport_smulICLE
     (φ : compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
     (CompactlySupported.smulICLE (n := n) (I := I) e U hU hcover φ).val.tsupport = φ.val.tsupport
       := by
-  rw [tsupport_def, tsupport_def]
-  congr 1
-  ext x
-  simp only [Set.mem_ofPred_eq, CompactlySupported.smulICLE_apply]
-  apply not_congr
-  constructor
-  · intro h
-    have h' := congrArg (fun u : ℂ ⊗[ℝ] V x ↦ -Complex.I • u) h
-    simpa [smul_smul] using h'
-  · intro h
-    rw [h, smul_zero]
+  simpa only [CompactlySupported.smulICLE, ContinuousLinearEquiv.coe_mk] using
+    CompactlySupported.tsupport_smulIEquiv (n := n) (I := I) (F := F) (V := V) φ
 
 /-- Conjugation of native compact tests is involutive. -/
 theorem CompactlySupported.conjCLE_involutive :
@@ -603,23 +611,22 @@ theorem CompactlySupported.conjCLE_involutive :
     Function.Involutive (CompactlySupported.conjCLE (n := n) (I := I) e U hU hcover) := by
   dsimp only
   intro φ
-  apply Subtype.ext
-  ext x
-  simp only [CompactlySupported.conjCLE_apply, tmulConj_tmulConj]
+  simpa only [CompactlySupported.conjCLE, ContinuousLinearEquiv.coe_mk] using
+    CompactlySupported.conjEquiv_conjEquiv (n := n) (I := I) (F := F) (V := V) φ
 
 /-- The square of the quarter-turn is negation. -/
-theorem CompactlySupported.smulICLE_smulICLE
+@[simp] theorem CompactlySupported.smulICLE_smulICLE
     (φ : compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     let _ := compactlySupportedTopology (I := I) (n := n) e U hU
     let _ := compactlySupportedTopology (I := I) (n := n) (fun i ↦ (e i).complexification) U
       (by simpa only [Trivialization.baseSet_complexification] using hU)
     CompactlySupported.smulICLE (n := n) (I := I) e U hU hcover (CompactlySupported.smulICLE (n :=
       n) (I := I) e U hU hcover φ) = -φ := by
-  apply Subtype.ext
-  ext x
-  simp [CompactlySupported.smulICLE_apply, smul_smul]
+  simpa only [CompactlySupported.smulICLE, ContinuousLinearEquiv.coe_mk] using
+    CompactlySupported.smulIEquiv_smulIEquiv (n := n) (I := I) (F := F) (V := V) φ
 
 end Topology
 
-end ContMDiffSection
+end FiniteRegularity
 
+end ContMDiffSection
