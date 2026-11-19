@@ -60,6 +60,8 @@ for the computation of the Pontryagin ring of `Ω Sⁿ⁺¹` as a polynomial rin
 * H.-C. Wang, *The homology groups of the fibre bundles over a sphere*, Duke Math. J. 16 (1949),
   33–38.
 * A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 3.C.
+* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
+  Applications to cotangent bundles*, arXiv:2404.07953, §6.4.2, Propositions 6.17 and 6.18.
 -/
 
 public noncomputable section
@@ -84,6 +86,11 @@ def sphereTopCellBall :
 the cube `Iⁿ⁺¹`. -/
 def sphereTopCellCube : C(Fin (n + 1) → I, sphere (0 : EuclideanSpace ℝ ι) 1) :=
   (sphereTopCellBall h).comp (cubeHomeomorphClosedBall (Fin (n + 1)))
+
+@[simp]
+theorem sphereTopCellCube_apply (d : Fin (n + 1) → I) :
+    sphereTopCellCube h d = sphereTopCellBall h (cubeHomeomorphClosedBall _ d) :=
+  (rfl)
 
 /-- The top cell of the sphere is attached to the pole: the characteristic map sends the boundary
 of the cube to the pole. -/
@@ -167,11 +174,6 @@ private def topCellPullbackHomeomorph :
             (continuous_fst.comp continuous_subtype_val))
       · exact continuous_snd.comp continuous_subtype_val }
 
-private theorem point_eq (x : MoorePathPullback (sphereTopCellCube h) (spherePolePoint h)) :
-    x.point = x.1.1 := by
-  obtain ⟨⟨d, γ⟩, hx⟩ := x
-  exact MoorePathPullback.point_mk d γ hx
-
 /-- The pair of the pullback over the cube relative to the boundary of the cube is the pair of the
 pullback over the disk of the top cell relative to the boundary sphere. -/
 private def topCellPairHom :
@@ -184,7 +186,7 @@ private def topCellPairHom :
         (univ : Set (sphere (0 : EuclideanSpace ℝ ι) 1)) (n + 1) :=
   TopPair.ofHom (TopCat.ofHom (topCellPullbackHomeomorph h)) (TopCat.ofHom
     ⟨fun x ↦ ⟨topCellPullbackHomeomorph h x.1, (norm_cubeHomeomorphClosedBall_eq_one_iff _).2
-      ((point_eq h x.1) ▸ MoorePathPullback.point_mem_boundary x)⟩,
+      ((MoorePathPullback.point_def x.1) ▸ MoorePathPullback.point_mem_boundary x)⟩,
     ((topCellPullbackHomeomorph h).continuous.comp continuous_subtype_val).subtype_mk _⟩) rfl
 
 private theorem isIso_topCellPairHom : IsIso (topCellPairHom h) := by
@@ -198,7 +200,7 @@ private theorem isIso_topCellPairHom : IsIso (topCellPairHom h) := by
   refine TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun y ↦
     ⟨⟨(topCellPullbackHomeomorph h).symm y.1, ?_⟩,
       Subtype.ext ((topCellPullbackHomeomorph h).apply_symm_apply y.1)⟩
-  rw [Set.mem_preimage, MoorePathPullback.proj_apply, point_eq,
+  rw [Set.mem_preimage, MoorePathPullback.proj_apply, MoorePathPullback.point_def,
     ← norm_cubeHomeomorphClosedBall_eq_one_iff]
   exact (congrArg (fun v : closedBall (0 : Fin (n + 1) → ℝ) 1 ↦ ‖(v : Fin (n + 1) → ℝ)‖)
     ((cubeHomeomorphClosedBall (Fin (n + 1))).apply_symm_apply y.1.1.1.2)).trans y.2

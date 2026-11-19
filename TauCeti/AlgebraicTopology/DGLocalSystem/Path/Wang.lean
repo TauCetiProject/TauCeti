@@ -32,7 +32,7 @@ represented by the chain `z · c₀` of the pullback, `c₀` the section cube; i
 `z` with `y` read in the fibre.
 
 The based path space is contractible, so the connecting morphism is an isomorphism in positive
-degrees (`TopPair.isIso_cubicalHomologyδ_of_contractibleSpace`). So whenever the
+degrees (`TopPair.isIso_cubicalHomologyδ_of_contractibleSpace_of_ne_zero`). So whenever the
 projection of the pullback induces isomorphisms of relative homology, for instance when `f` is the
 characteristic map of the top cell of a sphere, the Wang map is bijective
 (`TauCeti.MoorePathPullback.bijective_wangMap`): right multiplication by `y` is an isomorphism
@@ -142,6 +142,16 @@ def boundaryLoopCycle :
   TopPair.cubicalBoundaryCycleOfCube k (P := pathFromLoopPair X b) (pathCube τ h₀ h₁)
     (mapsTo_pathCube hf τ h₀ h₁)
 
+/-- The underlying chain of the cycle of boundary loops is the boundary of the cube of paths, read
+in the loops. -/
+@[simp]
+theorem iCycles_boundaryLoopCycle :
+    (((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b))).iCycles m).hom
+        (boundaryLoopCycle hf τ h₀ h₁ k) =
+      TopPair.cubicalBoundaryChainOfCube k (P := pathFromLoopPair X b) (pathCube τ h₀ h₁)
+        (mapsTo_pathCube hf τ h₀ h₁) :=
+  TopPair.iCycles_cubicalBoundaryCycleOfCube k (P := pathFromLoopPair X b) _ _
+
 /-- The **Wang map** `H_q(Ω_b X) → H_{q+m}(Ω_b X)` of the cube: the isomorphism
 `H_q(Ω_b X) ≅ H_{q+m+1}(f^*P_b X, f^*P_b X|_{∂Iᵐ⁺¹})`, the map to `H_{q+m+1}(P_b X, Ω_b X)` and the
 connecting morphism of the pair `(P_b X, Ω_b X)`. -/
@@ -194,14 +204,14 @@ private theorem iCycles_mulCycles_boundaryLoopCycle {q : ℕ}
               q).hom z))
           (TopPair.cubicalBoundaryChainOfCube k (P := pathFromLoopPair X b) (pathCube τ h₀ h₁)
             (mapsTo_pathCube hf τ h₀ h₁))) := by
-  rw [NormalizedCubicalChain.iCycles_mulCycles, boundaryLoopCycle]
-  exact congrArg (fun w ↦ (normalizedCubicalChainComplexXEquiv (TopCat.of (MooreLoopSpace X b))
-    (q + m)).symm (NormalizedCubicalChain.mul (MooreLoopSpace X b) k q m
-      (normalizedCubicalChainComplexXEquiv _ q
-        ((((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b))).iCycles
-          q).hom z)) w))
-    (TopPair.iCycles_cubicalBoundaryCycleOfCube k (P := pathFromLoopPair X b) _ _)
+  rw [NormalizedCubicalChain.iCycles_mulCycles, iCycles_boundaryLoopCycle]
+  -- the identification `normalizedCubicalChainComplexXEquiv` of degree `m` is the identity
+  -- (`normalizedCubicalChainComplexXEquiv_apply`), which `rw` cannot use here because the boundary
+  -- chain is typed as a chain of `(pathFromLoopPair X b).snd`
+  rfl
 
+/-- **The Wang map is right multiplication by the boundary loops**: it sends the class of a cycle
+`z` of degree `q` to `(-1) ^ q` times the class of `z · y`, `y` the cycle `boundaryLoopCycle`. -/
 theorem wangMap_homologyπ (q : ℕ)
     (z : ((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b))).cycles q) :
     wangMap hf τ h₀ h₁ k q
@@ -212,16 +222,11 @@ theorem wangMap_homologyπ (q : ℕ)
           (NormalizedCubicalChain.mulCycles k z (boundaryLoopCycle hf τ h₀ h₁ k)) := by
   obtain ⟨r, hr, hrz⟩ := (TopPair.isCubicalRepresentative_iff _ _).1
     (isCubicalRepresentative_cubicalHomologyCubeBoundaryEquiv τ h₀ h₁ k q z)
-  -- the image of `[z]` in `H_{q+m+1}(f^*P_b X, f^*P_b X|_{∂Iᵐ⁺¹})` is the class of `r`
-  refine (congrArg (fun x ↦ ((pathFromLoopPair X b).cubicalHomologyδ k (q + (m + 1)) (q + m)).hom
-    ((homologyMap (TopPair.cubicalChainComplexMap k (toPathFromLoopPair hf)) (q + (m + 1))).hom
-      x)) hrz.symm).trans ?_
-  -- and its image in `H_{q+m+1}(P_b X, Ω_b X)` is the class of the image of `r`
-  refine (congrArg (((pathFromLoopPair X b).cubicalHomologyδ k (q + (m + 1)) (q + m)).hom)
-    ((ModuleCat.comp_apply _ _ _).symm.trans ((ConcreteCategory.congr_hom
-      (homologyπ_naturality (TopPair.cubicalChainComplexMap k (toPathFromLoopPair hf))
-        (q + (m + 1))) r).trans (ModuleCat.comp_apply _ _ _)))).trans ?_
-  rw [← map_smul, TopPair.cubicalHomologyδ_def k (pathFromLoopPair X b) (q + (m + 1)) (q + m)]
+  -- the image of `[z]` in `H_{q+m+1}(f^*P_b X, f^*P_b X|_{∂Iᵐ⁺¹})` is the class of `r`, and its
+  -- image in `H_{q+m+1}(P_b X, Ω_b X)` is the class of the image of `r`
+  rw [wangMap, LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, ← hrz,
+    ← ModuleCat.comp_apply (homologyπ _ _), homologyπ_naturality, ModuleCat.comp_apply, ← map_smul,
+    TopPair.cubicalHomologyδ_def k (pathFromLoopPair X b) (q + (m + 1)) (q + m)]
   refine (TopPair.shortExact_cubicalChainComplexShortComplex k
     (pathFromLoopPair X b)).moduleCat_δ_homologyπ (q + (m + 1)) (q + m) rfl _
     ((normalizedCubicalChainComplexXEquiv _ _).symm
@@ -230,10 +235,8 @@ theorem wangMap_homologyπ (q : ℕ)
           ((((normalizedCubicalChainComplex k).obj (TopCat.of (MooreLoopSpace X b))).iCycles
             q).hom z))
         (NormalizedCubicalChain.ofCube _ k (pathCube τ h₀ h₁)))) ?_ _ ?_
-  · refine Eq.symm ((ModuleCat.comp_apply _ _ _).symm.trans ((ConcreteCategory.congr_hom
-      (cyclesMap_i _ _) r).trans ((ModuleCat.comp_apply _ _ _).trans ?_)))
-    rw [← hr]
-    exact (TopPair.π_cubicalChainComplexMap_f_apply k _ _ _).trans
+  · rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply, ← hr]
+    exact Eq.symm <| (TopPair.π_cubicalChainComplexMap_f_apply k _ _ _).trans
       (congrArg _ (map_leftAct_sectionCube τ h₀ h₁ k _))
   · refine Eq.trans ?_ (NormalizedCubicalChain.d_leftAct_of_d_eq_zero _
       (fun j ↦ HomologicalComplex.moduleCat_d_iCycles_apply _ _ j z) _).symm
@@ -244,17 +247,6 @@ theorem wangMap_homologyπ (q : ℕ)
     rw [map_smul]
     exact (map_smul _ _ _).trans (congrArg _ (map_mul_cubicalBoundaryChainOfCube hf τ h₀ h₁ k _))
 
-/-- The connecting morphism of the pair `(P_b X, Ω_b X)` is an isomorphism in positive degrees,
-since the based path space is contractible (`TopPair.isIso_cubicalHomologyδ_of_contractibleSpace`,
-reindexed). -/
-private theorem isIso_cubicalHomologyδ_pathFromLoopPair (n j : ℕ) (h : j + 1 = n) (hj : j ≠ 0) :
-    IsIso ((pathFromLoopPair X b).cubicalHomologyδ k n j h) := by
-  have : ContractibleSpace (pathFromLoopPair X b).fst :=
-    inferInstanceAs (ContractibleSpace (MoorePathFrom X b))
-  obtain ⟨j, rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
-  subst h
-  exact TopPair.isIso_cubicalHomologyδ_of_contractibleSpace k (pathFromLoopPair X b) j
-
 /-- **The Wang map is bijective** in every degree `q` with `q + m ≥ 1` in which the projection of
 the pullback induces an isomorphism
 `H_{q+m+1}(f^*P_b X, f^*P_b X|_{∂Iᵐ⁺¹}) ≅ H_{q+m+1}(P_b X, Ω_b X)`, for instance when `f` is the
@@ -263,7 +255,11 @@ theorem bijective_wangMap (q : ℕ)
     (hg : IsIso (homologyMap (TopPair.cubicalChainComplexMap k (toPathFromLoopPair hf))
       (q + (m + 1)))) (hqm : q + m ≠ 0) :
     Function.Bijective (wangMap hf τ h₀ h₁ k q) := by
-  have := isIso_cubicalHomologyδ_pathFromLoopPair (X := X) (b := b) k (q + (m + 1)) (q + m) rfl hqm
+  -- the based path space is contractible, so the connecting morphism is an isomorphism
+  have : ContractibleSpace (pathFromLoopPair X b).fst :=
+    inferInstanceAs (ContractibleSpace (MoorePathFrom X b))
+  have := TopPair.isIso_cubicalHomologyδ_of_contractibleSpace_of_ne_zero k (pathFromLoopPair X b)
+    (n := q + (m + 1)) rfl hqm
   rw [wangMap, LinearMap.coe_comp, LinearMap.coe_comp, LinearEquiv.coe_coe]
   exact (ConcreteCategory.bijective_of_isIso
     ((pathFromLoopPair X b).cubicalHomologyδ k (q + (m + 1)) (q + m) rfl)).comp

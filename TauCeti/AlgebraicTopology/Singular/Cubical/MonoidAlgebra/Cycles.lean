@@ -96,7 +96,7 @@ theorem d_mul_eq_zero {p q : ℕ} (a : NormalizedCubicalChain G R p)
   rcases q with _ | q
   · rcases p with _ | p
     · rw [HomologicalComplex.shape _ _ _ (by simp)]
-      rfl
+      simp
     · by_cases hj : j = p
       · subst hj
         have ha' : boundary G R j a = 0 :=
@@ -104,16 +104,17 @@ theorem d_mul_eq_zero {p q : ℕ} (a : NormalizedCubicalChain G R p)
         refine (normalizedCubicalChainComplex_obj_d_apply (TopCat.of G) j _).trans ?_
         rw [normalizedCubicalChainComplexXEquiv_symm_apply, boundary_mul_zero_right, ha',
           map_zero, LinearMap.zero_apply]
+        -- both sides are the zero chain, of degree `j + 0` and `j` respectively
         rfl
       · rw [HomologicalComplex.shape _ _ _ (by simp; omega)]
-        rfl
+        simp
   · by_cases hj : j = p + q
     · subst hj
       have hb' : boundary G R q b = 0 :=
         (normalizedCubicalChainComplex_obj_d_apply (TopCat.of G) q b).symm.trans (hb q)
       rw [← leftAct_eq_mul, d_leftAct_of_d_eq_zero a ha b, hb', map_zero, smul_zero, map_zero]
     · rw [HomologicalComplex.shape _ _ _ (by simp; omega)]
-      rfl
+      simp
 
 variable (R) in
 /-- The **Pontryagin product of cycles**, as a cycle. -/
