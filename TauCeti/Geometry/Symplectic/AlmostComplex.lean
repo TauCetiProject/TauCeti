@@ -528,6 +528,13 @@ theorem IsComplexLinearMap.apply_mem_range
   obtain ⟨u, rfl⟩ := hv
   exact ⟨j u, (isComplexLinearMap_iff_apply _ _ _).1 hf u⟩
 
+/-- The kernel of a complex-linear map is invariant under the source structure: if `f u = 0`
+then `f (j u) = J (f u) = 0`. -/
+theorem IsComplexLinearMap.apply_apply_eq_zero_of_apply_eq_zero
+    {j : AlmostComplexStructure V} {J : AlmostComplexStructure W} {f : V →ₗ[ℝ] W}
+    (hf : IsComplexLinearMap j J f) {u : V} (hu : f u = 0) : f (j u) = 0 := by
+  rw [(isComplexLinearMap_iff_apply j J f).1 hf u, hu, J.apply_zero]
+
 /-- A complex-linear map preserving a `J`-invariant submodule restricts to a complex-linear map of
 the restricted complex structure. -/
 lemma IsComplexLinearMap.restrict {J : AlmostComplexStructure V} {f : V →ₗ[ℝ] V}
