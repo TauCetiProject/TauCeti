@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Germ
-public import Mathlib.Analysis.Distribution.TemperateGrowth
+public import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
 # Affine extensions of local diffeomorphisms
@@ -16,6 +16,12 @@ neighborhood, to a global diffeomorphism between its model spaces. The extension
 a compact set with its affine tangent map. Both directions have bounded derivatives of every
 positive order and temperate growth. These extensions supply the global coordinate changes
 used in compactly localized Sobolev estimates.
+
+The construction adapts
+[`TauCeti.exists_diffeomorph_eventuallyEq_of_det_fderiv_pos`](Germ.lean#L287).
+Applying the inverse derivative and translating the source and target normalizes the local map to
+a fixed-point germ tangent to the identity. The cited theorem supplies its compactly supported
+extension; composing with the affine tangent map gives the extension between the two model spaces.
 -/
 
 public section
@@ -27,52 +33,6 @@ open scoped ContDiff Manifold
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-private theorem affine_compact_bounds {f : E → F} (hf : ContDiff ℝ ∞ f)
-    {K : Set E} (hK : IsCompact K) (a : F) (L : E →L[ℝ] F)
-    (heq : EqOn f (fun x ↦ a + L x) Kᶜ) :
-    (∀ n : ℕ, 0 < n → ∃ C : ℝ, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C) ∧
-      Function.HasTemperateGrowth f := by
-  have hA : ContDiff ℝ ∞ (fun x ↦ a + L x) := contDiff_const.add L.contDiff
-  have hs : HasCompactSupport (fun x ↦ f x - (a + L x)) := by
-    apply HasCompactSupport.of_support_subset_isCompact hK
-    intro x hx
-    by_contra hxK
-    exact hx (sub_eq_zero.mpr (heq hxK))
-  have htemp : Function.HasTemperateGrowth f := by
-    have h := (hs.hasTemperateGrowth (hf.sub hA)).add
-      ((Function.HasTemperateGrowth.const a).add L.hasTemperateGrowth)
-    convert h using 1
-    funext x
-    simp
-  have hd : HasCompactSupport (fun x ↦ fderiv ℝ f x - L) := by
-    apply HasCompactSupport.of_support_subset_isCompact hK
-    intro x hx
-    by_contra hxK
-    have hevent : f =ᶠ[𝓝 x] (fun y ↦ a + L y) :=
-      Filter.Eventually.mono (hK.isClosed.isOpen_compl.mem_nhds hxK) fun y hy ↦ heq hy
-    have hder : fderiv ℝ f x = L := by
-      rw [hevent.fderiv_eq]
-      exact ((L.hasFDerivAt.const_add a).fderiv)
-    exact hx (sub_eq_zero.mpr hder)
-  have hdcd : ContDiff ℝ ∞ (fun x ↦ fderiv ℝ f x - L) :=
-    (hf.fderiv_right (by simp)).sub contDiff_const
-  refine ⟨?_, htemp⟩
-  intro n hn
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  obtain ⟨C, _, hC⟩ := hd.exists_bound_iteratedFDeriv hdcd m
-  refine ⟨C + ‖L‖, fun x ↦ ?_⟩
-  rw [← norm_iteratedFDeriv_fderiv]
-  have heqD : fderiv ℝ f = (fun x ↦ fderiv ℝ f x - L) + (fun _ ↦ L) := by
-    funext x
-    simp
-  rw [heqD, iteratedFDeriv_add (hdcd.of_le (by simp)) contDiff_const, Pi.add_apply]
-  apply (norm_add_le _ _).trans
-  exact add_le_add (hC m le_rfl x) (by
-    by_cases hm : m = 0
-    · subst m
-      simp
-    · simp [iteratedFDeriv_const_of_ne hm])
 
 namespace ContinuousLinearEquiv
 
@@ -105,8 +65,7 @@ theorem exists_diffeomorph_eventuallyEq_affine (e : E ≃L[ℝ] F)
     TauCeti.exists_diffeomorph_eventuallyEq_of_det_fderiv_pos (n := ⊤) (by simp)
       hg (by simp [g]) (by
         rw [hgd.fderiv]
-        change 0 < LinearMap.det (LinearMap.id : E →ₗ[ℝ] E)
-        simp) (hU.mem_nhds hx₀)
+        simp [ContinuousLinearMap.det]) (hU.mem_nhds hx₀)
   let A : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ F :=
     { toEquiv :=
         { toFun := fun x ↦ f x₀ + e (x - x₀)
@@ -117,29 +76,29 @@ theorem exists_diffeomorph_eventuallyEq_affine (e : E ≃L[ℝ] F)
         (contDiff_const.add (e.contDiff.comp (contDiff_id.sub contDiff_const))).contMDiff
       contMDiff_invFun :=
         (contDiff_const.add (e.symm.contDiff.comp (contDiff_id.sub contDiff_const))).contMDiff }
+  have hA (x : E) : A x = f x₀ + e (x - x₀) := rfl
+  have hAi (y : F) : A.symm y = x₀ + e.symm (y - f x₀) := rfl
   let Φ := φ.trans A
   have hΦK : EqOn Φ (fun x ↦ f x₀ + e (x - x₀)) Kᶜ := by
     intro x hx
-    change A (φ x) = A x
-    simp only [hφK hx, id_eq]
+    simp only [Φ, Diffeomorph.coe_trans, Function.comp_apply, hφK hx, id_eq, hA]
   have hΦinv : EqOn Φ.symm (fun y ↦ x₀ + e.symm (y - f x₀)) (Φ '' K)ᶜ := by
     intro y hy
     have hxK : Φ.symm y ∈ Kᶜ := fun hx ↦
       hy ⟨Φ.symm y, hx, Φ.apply_symm_apply y⟩
-    have h : Φ (Φ.symm y) = A (Φ.symm y) := hΦK hxK
-    rw [Φ.apply_symm_apply] at h
-    change Φ.symm y = A.symm y
-    exact A.injective (by simpa using h.symm)
-  have hbound := affine_compact_bounds Φ.contDiff hK (f x₀ - e x₀)
+    have h : y = A (Φ.symm y) := by
+      simpa only [hA, Φ.apply_symm_apply] using hΦK hxK
+    exact ((congrArg A.symm h).trans (A.symm_apply_apply _)).symm.trans (hAi y)
+  have hbound := ContDiff.exists_bound_iteratedFDeriv_pos_and_hasTemperateGrowth_of_eqOn_affine
+    Φ.contDiff hK (f x₀ - e x₀)
     (e : E →L[ℝ] F) (by simpa [map_sub, sub_add_eq_add_sub, add_sub_assoc] using hΦK)
-  have hibound := affine_compact_bounds Φ.symm.contDiff (hK.image Φ.continuous)
+  have hibound := ContDiff.exists_bound_iteratedFDeriv_pos_and_hasTemperateGrowth_of_eqOn_affine
+    Φ.symm.contDiff (hK.image Φ.continuous)
     (x₀ - e.symm (f x₀)) (e.symm : F →L[ℝ] E)
     (by simpa [map_sub, sub_add_eq_add_sub, add_sub_assoc] using hΦinv)
   refine ⟨Φ, K, hK, hKU, ?_, hΦK, hΦinv, hbound.1, hibound.1, hbound.2, hibound.2⟩
   filter_upwards [hφg] with x hx
-  change A (φ x) = f x
-  change f x₀ + e (φ x - x₀) = f x
-  rw [hx]
+  simp only [Φ, Diffeomorph.coe_trans, Function.comp_apply, hx, hA]
   simp [g]
 
 end ContinuousLinearEquiv
