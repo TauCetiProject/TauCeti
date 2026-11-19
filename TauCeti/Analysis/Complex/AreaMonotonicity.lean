@@ -109,6 +109,18 @@ private theorem cutoff_nonneg {χ : ℝ → ℝ} (hχa : Antitone χ) (hχ1 : �
     (x : ℝ) : 0 ≤ χ x :=
   (hχ1 (max x 2) (by linarith [le_max_right x 2])) ▸ hχa (le_max_left x 2)
 
+/-- For `m ≠ 0`, the power `s ^ m` is below any positive level for `s` near `0`. -/
+private theorem eventually_pow_lt {m : ℕ} (hm : m ≠ 0) {t : ℝ} (ht : 0 < t) :
+    ∀ᶠ s in 𝓝 (0 : ℝ), s ^ m < t :=
+  ((continuous_pow m).tendsto' 0 0 (zero_pow hm)).eventually (gt_mem_nhds ht)
+
+/-- A function continuous on `U` that vanishes off a compact subset `K ⊆ U` is integrable on
+`U`. -/
+private theorem integrableOn_of_sdiff_eq_zero {U K : Set ℂ} {f : ℂ → ℝ} (hU : MeasurableSet U)
+    (hf : ContinuousOn f U) (hKU : K ⊆ U) (hK : IsCompact K) (h0 : ∀ z ∈ U \ K, f z = 0) :
+    IntegrableOn f U :=
+  ((hf.mono hKU).integrableOn_compact hK).of_forall_sdiff_eq_zero hU h0
+
 /-- The rescaled point `z₀ + s ζ` lies in the closed disc of radius `δ ≥ s ‖ζ‖` about `z₀`. -/
 private theorem add_smul_mem_closedBall {z₀ ζ : ℂ} {s δ : ℝ} (hs : 0 ≤ s) (hsζ : s * ‖ζ‖ ≤ δ) :
     z₀ + s • ζ ∈ closedBall z₀ δ := by
@@ -307,15 +319,14 @@ private theorem setIntegral_mul_norm_deriv_sq_le {U : Set ℂ} {u : ℂ → E} {
   have hcu : ContinuousOn u U := hu.continuousOn
   have hcdu : ContinuousOn (deriv u) U := (hu.analyticOnNhd hU).deriv.continuousOn
   refine setIntegral_mono_on ?_ ?_ hU.measurableSet fun z _ ↦ ?_
-  · exact ((ContinuousOn.mono (by fun_prop) hKU).integrableOn_compact hK).of_forall_sdiff_eq_zero
-      hU.measurableSet fun z hz ↦ by simp [deriv_eq_zero_of_lt hφρ (lt_of_notMem_sep hz.1 hz.2)]
-  · exact ((ContinuousOn.mono (by fun_prop) hKU).integrableOn_compact hK).of_forall_sdiff_eq_zero
-      hU.measurableSet fun z hz ↦ by simp [deriv_eq_zero_of_lt hφρ (lt_of_notMem_sep hz.1 hz.2)]
-  · have hφ' : deriv φ (‖u z - x₀‖ ^ 2) ≤ 0 := hφa.deriv_nonpos
-    rw [mul_assoc]
-    refine mul_le_mul_of_nonpos_left ?_ hφ'
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) (norm_inner_le_norm _ _) 2
+  iterate 2
+    exact integrableOn_of_sdiff_eq_zero hU.measurableSet (by fun_prop) hKU hK
+      fun z hz ↦ by simp [deriv_eq_zero_of_lt hφρ (lt_of_notMem_sep hz.1 hz.2)]
+  have hφ' : deriv φ (‖u z - x₀‖ ^ 2) ≤ 0 := hφa.deriv_nonpos
+  rw [mul_assoc]
+  refine mul_le_mul_of_nonpos_left ?_ hφ'
+  rw [← mul_pow]
+  exact pow_le_pow_left₀ (norm_nonneg _) (norm_inner_le_norm _ _) 2
 
 /-- The derivative of `t ↦ χ (a / t²)`. -/
 private theorem hasDerivAt_comp_div_sq {χ : ℝ → ℝ} (hχ : ContDiff ℝ 1 χ) (a : ℝ) {t : ℝ}
@@ -339,8 +350,7 @@ private theorem integrableOn_cutoff {U : Set ℂ} {u : ℂ → E} {x₀ : E} {χ
   have hcu : ContinuousOn u U := hu.continuousOn
   have hcdu : ContinuousOn (deriv u) U := (hu.analyticOnNhd hU).deriv.continuousOn
   have hKU : {z ∈ U | ‖u z - x₀‖ ≤ t} ⊆ U := fun z hz ↦ hz.1
-  refine ((ContinuousOn.mono (by fun_prop) hKU).integrableOn_compact hK).of_forall_sdiff_eq_zero
-    hU.measurableSet ?_
+  refine integrableOn_of_sdiff_eq_zero hU.measurableSet (by fun_prop) hKU hK ?_
   rintro z ⟨hz, hzK⟩
   simp [hχ1 _ (one_lt_sq_div_sq ht (lt_of_notMem_sep hz hzK))]
 
@@ -664,12 +674,11 @@ private theorem tendsto_setIntegral_rescaledDensity {U : Set ℂ} {u : ℂ → E
         χ ((‖ζ‖ ^ m * ‖g z₀‖) ^ 2) * (m * ‖ζ‖ ^ (m - 1) * ‖g z₀‖) ^ 2)) := by
   obtain ⟨Mg, hMg⟩ := (isCompact_closedBall z₀ δ).exists_bound_of_continuousOn hgc
   obtain ⟨Mdg, hMdg⟩ := (isCompact_closedBall z₀ δ).exists_bound_of_continuousOn hdgc
-  have hpow : Tendsto (fun s : ℝ ↦ s ^ m) (𝓝 0) (𝓝 0) :=
-    (continuous_pow m).tendsto' 0 0 (zero_pow (by omega))
   refine tendsto_integral_filter_of_dominated_convergence
     (fun _ ↦ χ 0 * (m * R ^ (m - 1) * Mg + R ^ m * Mdg) ^ 2) ?_ ?_
     (integrableOn_const measure_ball_lt_top.ne) ?_
-  · filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hpow.eventually (gt_mem_nhds hr))]
+  · filter_upwards [self_mem_nhdsWithin,
+      nhdsWithin_le_nhds (eventually_pow_lt (Nat.one_le_iff_ne_zero.1 hm) hr)]
       with s (hs : 0 < s) hsr
     exact (integral_rescaledDensity hU hu hχ hχ1 hK hs hsr).1.aestronglyMeasurable.restrict
   · filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (gt_mem_nhds (by positivity :
@@ -735,9 +744,8 @@ private theorem analyticOrderNatAt_mul_pi_mul_integral_le_integral_div_sq {U : S
   -- the normalized weighted area at radius `s ^ m < t`, hence at radius `t`.
   have hupper : ∀ᶠ s in 𝓝[>] (0 : ℝ), ∫ ζ in ball (0 : ℂ) R, rescaledDensity U u z₀ χ m s ζ ≤
       A t := by
-    have hpow : Tendsto (fun s : ℝ ↦ s ^ m) (𝓝 0) (𝓝 0) :=
-      (continuous_pow m).tendsto' 0 0 (zero_pow (by omega))
-    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (hpow.eventually (gt_mem_nhds ht.1))]
+    filter_upwards [self_mem_nhdsWithin,
+      nhdsWithin_le_nhds (eventually_pow_lt (Nat.one_le_iff_ne_zero.1 hm) ht.1)]
       with s (hs : 0 < s) hst
     obtain ⟨hint, heq⟩ := integral_rescaledDensity hU hu hχ.continuous hχ1 hK hs (hst.trans ht.2)
     calc ∫ ζ in ball (0 : ℂ) R, rescaledDensity U u z₀ χ m s ζ
