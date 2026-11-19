@@ -35,6 +35,8 @@ is a round ball `‖q‖² + ‖p‖² < r²`, such that
 
 * the source of the chart is `G`-invariant and `g` acts by `zₖ ↦ χₖ(g) zₖ`;
 * the chart pulls the standard form `Σ dqₖ ∧ dpₖ` back to `σ`;
+* the chart sends the fundamental vector field `ξ_M` to the model one
+  (`TauCeti.weightInfinitesimalAction`), the generator of the rotation by the angles `αₖ(ξ)`;
 * the moment map is the model one up to its value at `p`:
 
   `μ = μ(p) - ½ Σₖ (qₖ² + pₖ²) αₖ`.
@@ -43,9 +45,9 @@ So near `p` the image of `μ` lies in `μ(p) - cone{αₖ}`, and the component `
 symplectic coordinates, the constant `μ^ξ(p)` plus the quadratic form
 `-½ Σₖ αₖ(ξ) (qₖ² + pₖ²)`. This is the chart through
 which the results on the model, such as `TauCeti.range_weightMomentMap`,
-`TauCeti.weightRotation_apply_eq_self_iff` and `TauCeti.morseIndex_weightMomentMap_apply`, are
-read on `M`. The weights are integral on the period lattice: `αₖ(ξ) ∈ ℤ` whenever
-`exp (2π ξ) = 1`.
+`TauCeti.weightRotation_apply_eq_self_iff`, `TauCeti.finrank_range_weightInfinitesimalAction` and
+`TauCeti.morseIndex_weightMomentMap_apply`, are read on `M`. The weights are integral on the
+period lattice: `αₖ(ξ) ∈ ℤ` whenever `exp (2π ξ) = 1`.
 
 Without a moment map the same chart exists for any symplectic action of a compact commutative
 group with a fixed point (`TauCeti.SmoothTwoForm.IsSymplectic.exists_weightRotation_darbouxChart`),
@@ -363,6 +365,8 @@ sending `p` to `0`, whose image is the ball `‖q‖² + ‖p‖² < r²`, such 
 
 * its source is `G`-invariant and `g` acts in it by the rotation `zₖ ↦ χₖ(g) zₖ`;
 * it pulls the standard symplectic form back to `σ`;
+* its differential sends the fundamental vector field `ξ_M` to the model one,
+  `weightInfinitesimalAction α · ξ`, the generator of the rotation by the angles `αₖ(ξ)`;
 * `μ = μ(p) - ½ Σₖ (qₖ² + pₖ²) αₖ` on its source.
 
 The weights are integral on the period lattice: `αₖ(ξ) ∈ ℤ` whenever `exp (2π ξ) = 1`. -/
@@ -383,6 +387,9 @@ theorem exists_weightModelChart (hμ : σ.IsMomentMap (InfinitesimalAction.funda
         chart (g • x) = weightRotation (fun k ↦ Complex.arg (χ k g)) (chart x)) ∧
       (∀ x ∈ chart.source, ∀ v w : TangentSpace I' x,
         σ.eval₂ x v w = stdSymplecticForm (mvfderiv I' chart x v) (mvfderiv I' chart x w)) ∧
+      (∀ x ∈ chart.source, ∀ ξ : GroupLieAlgebra I G,
+        mfderiv I' 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) chart x
+          (fundamentalVectorField I' ξ x) = weightInfinitesimalAction α (chart x) ξ) ∧
       ∀ x ∈ chart.source, ∀ ξ, μ x ξ = μ p ξ + weightMomentMap α (chart x) ξ := by
   obtain ⟨n, χ, chart, r, hpchart, hchartp, hr, htarget, hequiv, hform⟩ :=
     hσ.exists_weightRotation_darbouxChart (I := I) hG hp
@@ -396,20 +403,24 @@ theorem exists_weightModelChart (hμ : σ.IsMomentMap (InfinitesimalAction.funda
       χ k (mulInvariantExp (I := I) ξ) = Circle.exp (α k ξ) := by
     have h := ContinuousMonoidHom.apply_lieExp_eq_circleExp_lieWeight (χ k) (ε.symm ξ)
     rwa [lieExp_eq_mulInvariantExp, LinearEquiv.apply_symm_apply] at h
+  -- In the chart, `ξ_M` is the generator of the rotation by the angles `αₖ(ξ)`.
+  have hgen (y : M) (hy : y ∈ chart.source) (ξ : GroupLieAlgebra I G) :=
+    mfderiv_fundamentalVectorField_eq_weightGenerator (chart.mdifferentiableAt (by simp) hy) hα
+      (fun g ↦ (hequiv g y hy).2) ξ
   refine ⟨n, χ, α, chart, r, hα, fun k ξ hξ ↦ ?_, hpchart, hchartp, hr, htarget, hequiv, hform,
+    fun y hy ξ ↦ (hgen y hy ξ).trans (weightInfinitesimalAction_apply α (chart y) ξ).symm,
     fun x hx ξ ↦ ?_⟩
   · -- Integrality: `ε⁻¹ ξ` lies in the period lattice, where weights take integer values.
     exact (χ k).exists_lieWeight_apply_eq_intCast_of_mem_periodLattice (X := ε.symm ξ)
       (mem_periodLattice.2 (by rwa [← map_smul, lieExp_eq_mulInvariantExp,
         LinearEquiv.apply_symm_apply]))
-  -- In the chart, `ξ_M` is the generator of the rotation by the angles `αₖ(ξ)`, so `μ^ξ` minus
-  -- the model component `-½ Σₖ αₖ(ξ) (qₖ² + pₖ²)` has zero differential on the source.
+  -- As the chart sends `ξ_M` to the model generator, `μ^ξ` minus the model component
+  -- `-½ Σₖ αₖ(ξ) (qₖ² + pₖ²)` has zero differential on the source.
   set F : M → ℝ := (fun y ↦ μ y ξ) - fun y ↦ weightMomentMap α (chart y) ξ
   have hF {y : M} (hy : y ∈ chart.source) :
       MDifferentiableAt I' 𝓘(ℝ) F y ∧ mfderiv I' 𝓘(ℝ) F y = 0 :=
-    have hcd := chart.mdifferentiableAt (by simp) hy
-    mfderiv_sub_weightMomentMap_eq_zero hμ hcd (hform y hy) ξ
-      (mfderiv_fundamentalVectorField_eq_weightGenerator hcd hα (fun g ↦ (hequiv g y hy).2) ξ)
+    mfderiv_sub_weightMomentMap_eq_zero hμ (chart.mdifferentiableAt (by simp) hy) (hform y hy) ξ
+      (hgen y hy ξ)
   -- The source of the chart is connected, being the preimage of a ball, so `F` is constant there.
   have hsrc : IsPreconnected chart.source := by
     have hB := (convex_setOf_norm_fst_sq_add_norm_snd_sq_lt (E := EuclideanSpace ℝ (Fin n))
