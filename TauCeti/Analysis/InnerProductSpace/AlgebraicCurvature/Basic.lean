@@ -165,6 +165,14 @@ theorem apply_smul_fourth : r ![a, b, c, t • x] = t * r ![a, b, c, x] := by
 
 end Linearity
 
+/-- Two four-tensors are equal if they agree on every `![a, b, c, d]`. -/
+theorem ext_vec {r s : FourTensor V} (h : ∀ a b c d, r ![a, b, c, d] = s ![a, b, c, d]) :
+    r = s := by
+  ext m
+  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
+  rw [hm]
+  exact h _ _ _ _
+
 /-- The algebraic symmetries of a curvature four-tensor `r(u, v, z, w) = g(R(u, v)w, z)`:
 antisymmetry in the first and in the last pair of arguments, symmetry under interchanging the two
 pairs, and the first Bianchi identity. -/
@@ -493,9 +501,8 @@ theorem constantCurvature_compContinuousLinearMap_linearIsometry {W : Type*}
     [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (f : W →ₗᵢ[ℝ] V) :
     (constantCurvature V).compContinuousLinearMap (fun _ ↦ f.toContinuousLinearMap) =
       constantCurvature W := by
-  ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
-  rw [hm, compContinuousLinearMap_apply_vec]
+  refine ext_vec fun a b c d ↦ ?_
+  rw [compContinuousLinearMap_apply_vec]
   simp
 
 /-- The Ricci contraction of the constant-curvature tensor is `(n - 1) g`. -/
