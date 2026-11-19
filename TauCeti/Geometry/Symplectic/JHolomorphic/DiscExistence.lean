@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Contracting
+import TauCeti.Algebra.Ring.CayleyChart
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.Pompeiu.Holder.Operator
@@ -62,10 +63,12 @@ Two forms of the equation are used.
 * With `J(x) = i + K(x)`, the equation `∂ₛu + J(u) ∂ₜu = 0` reads `\bar∂u = K(u) (-∂ₜu / 2)`
   (`TauCeti.exists_pos_forall_exists_fderiv_one_add_apply_fderiv_I_eq_zero`).
 * The **Beltrami form** `\bar∂u = Q(u) ∂u`, with `∂u = (∂ₛu - i ∂ₜu) / 2`
-  (`TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv`). For
-  `J(x)² = -1` it is equivalent to `∂ₛu + J(u) ∂ₜu = 0` when `Q = (J + i)⁻¹ (i - J)` is the
-  Beltrami coefficient of `J`, which is conjugate linear. Unlike the first form, this one is
-  invariant under rotations of the domain: if `u` solves it, so does `w ↦ u(c w)` for `|c| = 1`.
+  (`TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq`).
+  For `J(x)² = -1` it is equivalent to `∂ₛu + J(u) ∂ₜu = 0` when `Q = (J + i)⁻¹ (i - J)` is the
+  Beltrami coefficient of `J`, minus its Cayley coordinate `TauCeti.cayleyCoord i J` relative to
+  `i`, which is conjugate linear (`TauCeti.cayleyCoord_mul_eq_neg_mul`). Unlike the first form,
+  this one is invariant under rotations of the domain: if `u` solves it, so does `w ↦ u(c w)` for
+  `|c| = 1`.
   The cutoff `χ` and the Cauchy transform (`TauCeti.cauchyTransform_comp_mul`) are rotation
   invariant too, so `z ↦ c⁻¹ h(c z)` is the source of the disc with first jet `c ξ`, and by
   uniqueness of the source the discs satisfy `u_{c ξ}(w) = u_ξ(c w)`.
@@ -94,9 +97,9 @@ for `h ↦ K(u)` is the second-difference estimate
   derivative and its Lipschitz constant are small on the ball of radius `4`, a solution on
   `|w| < 1/2` with `u(0) = 0`, `∂ₛu(0) = ξ` for each `‖ξ‖ ≤ 1`, which is `C¹` on `|w| < 2` and has
   values of norm at most `2` on the unit disc.
-* `TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv`: the same for the
-  Beltrami equation `\bar∂u = Q(u) ∂u` with a small conjugate-linear coefficient, as a family
-  `u_ξ` with `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
+* `TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq`:
+  the same for the Beltrami equation `\bar∂u = Q(u) ∂u` with a small conjugate-linear
+  coefficient, as a family `u_ξ` with `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
 * `TauCeti.exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt`: for a structure of class
   `C²` near `0`, a solution near `0` with `u(0) = 0` and `∂ₛu(0) = ξ`, for every `ξ`.
 * `TauCeti.exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq`: for
@@ -215,12 +218,6 @@ private theorem conjWirtingerDeriv_discMap (ξ : F) {h : ℂ → F} {z : ℂ}
     I_mul_I, neg_one_smul]
   abel
 
-private theorem id_smulRight_sub (a b : F) :
-    (ContinuousLinearMap.id ℝ ℂ).smulRight (a - b) =
-      (ContinuousLinearMap.id ℝ ℂ).smulRight a - (ContinuousLinearMap.id ℝ ℂ).smulRight b := by
-  ext v
-  simp [smul_sub]
-
 private theorem norm_id_smulRight_le (a : F) :
     ‖(ContinuousLinearMap.id ℝ ℂ).smulRight a‖ ≤ ‖a‖ :=
   (ContinuousLinearMap.norm_smulRight_le _ a).trans
@@ -301,7 +298,7 @@ private theorem norm_fderiv_discMap_sub_le (ξ : F) (f g : Source F) {z : ℂ}
   have h3 : ‖(ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F f centre 1) -
       (ContinuousLinearMap.id ℝ ℂ).smulRight (derivOp F g centre 1)‖ ≤
         ‖derivOp F f centre 1 - derivOp F g centre 1‖ := by
-    rw [← id_smulRight_sub]
+    rw [← ContinuousLinearMap.coe_smulRightₗ (T := ℝ), ← map_sub]
     exact norm_id_smulRight_le _
   simp only [map_sub, HolderSpace.sub_apply, sub_apply] at h1 h2
   calc _ = ‖(derivOp F f ⟨z, hz⟩ - derivOp F g ⟨z, hz⟩) -
@@ -452,7 +449,7 @@ private theorem norm_wField_sub_le (hℓ : ‖ℓ‖ ≤ 1) (f g : Source F) :
     HolderSpace.ext fun z ↦ by
       simp only [wField, map_sub, HolderSpace.sub_apply, HolderSpace.add_apply,
         HolderSpace.compLeftL_apply, HolderSpace.const_apply, sub_apply,
-        id_smulRight_sub]
+        ← ContinuousLinearMap.coe_smulRightₗ (T := ℝ)]
       abel
   rw [heq]
   exact norm_compLeftL_sub_const_le hℓ (f - g)
@@ -952,28 +949,6 @@ private theorem norm_wirtingerAtOne_le : ‖wirtingerAtOne F‖ ≤ 1 :=
     rw [norm_I, mul_one] at hI
     linarith
 
-omit [FiniteDimensional ℂ F] in
-/-- In one variable the Wirtinger derivative of a precomposition with a rotation `w ↦ c w` is
-multiplied by `c`. -/
-private theorem wirtingerAtOne_comp_mul (L : ℂ →L[ℝ] F) (c : ℂ) :
-    wirtingerAtOne F (L.comp ((ContinuousLinearMap.mul ℂ ℂ c).restrictScalars ℝ)) =
-      c • wirtingerAtOne F L := by
-  rw [wirtingerAtOne_apply, wirtingerAtOne_apply,
-    ContinuousLinearMap.complexLinearPart_comp_restrictScalars, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.mul_apply', mul_one]
-  have h := L.complexLinearPart.map_smul c (1 : ℂ)
-  rwa [smul_eq_mul, mul_one] at h
-
-omit [FiniteDimensional ℂ F] in
-/-- A real-linear map `A` with `A(i v) = -i A(v)` is conjugate-linear: `A(c v) = conj c A(v)`. -/
-private theorem apply_smul_eq_conj_smul {A : F →L[ℝ] F} (hA : ∀ v, A (I • v) = -(I • A v))
-    (c : ℂ) (v : F) : A (c • v) = (starRingEnd ℂ c) • A v := by
-  -- `A` is its own complex-antilinear part, which is conjugate linear.
-  have hpart : ∀ w, A.complexAntilinearPart w = A w := fun w ↦ by
-    rw [ContinuousLinearMap.complexAntilinearPart_apply, hA, smul_neg, smul_smul, I_mul_I,
-      neg_one_smul, neg_neg, ← two_smul ℝ (A w), smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
-  rw [← hpart, map_smulₛₗ, hpart]
-
 /-- On the unit circle `|c| = 1`, rotate a source: `z ↦ c⁻¹ h(c z)`. -/
 private def rotSource {c : ℂ} (hc : ‖c‖ = 1) (f : Source F) : Source F :=
   ⟨HolderSpace.compLeftL (ContinuousLinearMap.lsmul ℝ ℂ c⁻¹)
@@ -1012,18 +987,6 @@ private theorem cauchyTransform_rotSource {c : ℂ} (hc : ‖c‖ = 1) (f : Sour
   rw [h, cauchyTransform_smul, Pi.smul_apply, cauchyTransform_comp_mul hc, smul_smul,
     inv_mul_cancel₀ hc0, one_smul]
 
-omit [FiniteDimensional ℂ F] in
-/-- A real-linear map `L : ℂ → F` with vanishing `\bar∂`-part at `1` is complex linear. -/
-private theorem apply_eq_smul_apply_one {L : ℂ →L[ℝ] F} (h : L.complexAntilinearPart 1 = 0)
-    (c : ℂ) : L c = c • L 1 := by
-  have hanti : L.complexAntilinearPart c = 0 := by
-    simpa [h] using L.complexAntilinearPart.map_smulₛₗ c 1
-  have hlin : L.complexLinearPart c = c • L.complexLinearPart 1 := by
-    have h1 := L.complexLinearPart.map_smul c (1 : ℂ)
-    rwa [smul_eq_mul, mul_one] at h1
-  rw [← L.complexLinearPart_add_complexAntilinearPart_apply c,
-    ← L.complexLinearPart_add_complexAntilinearPart_apply 1, hanti, h, hlin, add_zero, add_zero]
-
 /-- Rotating the source of a disc whose source vanishes at the centre rotates the disc:
 `u_{c ξ}(w) = u_ξ(c w)` for the rotated source. -/
 private theorem discMap_rotSource {c : ℂ} (hc : ‖c‖ = 1) (ξ : F) {f : Source F}
@@ -1033,10 +996,12 @@ private theorem discMap_rotSource {c : ℂ} (hc : ‖c‖ = 1) (ξ : F) {f : Sou
     funext (cauchyTransform_rotSource hc f)
   -- `\bar∂ (T f)(0) = f(0) = 0`, so `D(T f)(0)` is complex linear.
   have hlin : fderiv ℝ (cauchyTransform ⇑f.1) 0 c = c • fderiv ℝ (cauchyTransform ⇑f.1) 0 1 := by
-    refine apply_eq_smul_apply_one ?_ c
     have h := conjWirtingerDeriv_cauchyTransform_of_mem_supportedHolderSubmodule hα₀ hα₁
       zero_le_one f.2 0
-    rwa [hf0, conjWirtingerDeriv_eq_complexAntilinearPart] at h
+    rw [hf0] at h
+    rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
+      fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
+    simp only [h, smul_zero, add_zero, one_smul]
   have hd : HasFDerivAt (fun w ↦ cauchyTransform ⇑f.1 (c * w))
       ((fderiv ℝ (cauchyTransform ⇑f.1) (c * 0)).comp
         ((ContinuousLinearMap.mul ℂ ℂ c).restrictScalars ℝ)) 0 :=
@@ -1070,22 +1035,21 @@ private theorem discSource_smul (hξ : ‖ξ‖ ≤ 1) (hQ : SmallCoeff F Q)
   by_cases hz : z ∈ closedBall (0 : ℂ) 1
   · have hcz : c * z ∈ closedBall (0 : ℂ) 1 := by
       simpa [mem_closedBall, norm_mul, hc] using hz
-    -- The derivative of the rotated disc is that of the disc, precomposed with `w ↦ c w`.
-    have hD : fderiv ℝ (discMap (c • ξ) ⇑g.1) z =
-        (fderiv ℝ (discMap ξ ⇑f.1) (c * z)).comp
-          ((ContinuousLinearMap.mul ℂ ℂ c).restrictScalars ℝ) := by
-      rw [funext hrot]
-      exact ((differentiableAt_discMap ξ f _).hasFDerivAt.comp z
-        ((ContinuousLinearMap.mul ℂ ℂ c).restrictScalars ℝ).hasFDerivAt).fderiv
     rw [fixedPointMap_apply _ _ _ _ hz, rotSource_apply, ← hfix, fixedPointMap_apply _ _ _ _ hcz,
       gField, gField, ContinuousLinearMap.compHolder₂_apply, ContinuousLinearMap.compHolder₂_apply,
       ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply,
       kField_eq hcξ hQ0 hd h1 hg, kField_eq hξ hQ0 hd h1 hf, kFun, kFun, wField_apply, wField_apply]
     simp only
-    rw [hD, hrot, wirtingerAtOne_comp_mul, show discCutoff z = discCutoff (c * z) by
-        simp [discCutoff, hc],
-      hQI _ (mem_closedBall_four (norm_discMap_le hξ hf hcz)) |>
-        apply_smul_eq_conj_smul, ← Complex.inv_eq_conj hc, smul_comm]
+    have hconj := (Q (discMap ξ (⇑f.1) (c * z)) : F →ₗ[ℝ] F).map_smul_eq_conj_smul_of_map_I_smul
+      (hQI _ (mem_closedBall_four (norm_discMap_le hξ hf hcz)))
+    simp only [ContinuousLinearMap.coe_coe] at hconj
+    -- The rotated disc is the disc precomposed with `w ↦ c w`, so its `∂` is multiplied by `c`.
+    rw [hrot, show discMap (c • ξ) ⇑g.1 = fun w ↦ discMap ξ ⇑f.1 (c * w) from funext hrot,
+      wirtingerAtOne_apply, wirtingerAtOne_apply, ← wirtingerDeriv_eq_complexLinearPart,
+      ← wirtingerDeriv_eq_complexLinearPart,
+      wirtingerDeriv_comp_mul (differentiableAt_discMap ξ f _),
+      show discCutoff z = discCutoff (c * z) by simp [discCutoff, hc], hconj,
+      ← Complex.inv_eq_conj hc, smul_comm]
   · rw [mem_supportedHolderSubmodule_iff.mp (fixedPointMap _ _ _ g).2 z hz,
       mem_supportedHolderSubmodule_iff.mp g.2 z hz]
 
@@ -1097,12 +1061,8 @@ radius `2` with `u_ξ(0) = 0`, `∂ₛu_ξ(0) = ξ` and values of norm at most `
 solving the Beltrami equation `\bar∂u_ξ = Q(u_ξ) ∂u_ξ` on the disc of radius `1/2`. If moreover
 `Q` takes conjugate-linear values on that ball, `Q(x)(i v) = -i Q(x) v`, as the Beltrami
 coefficient of a complex structure near `i` does, then the family is equivariant under rotations:
-`u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
-
-Each `u_ξ` is `w ξ + T h(w) - T h(0) - w ∂ₛ(T h)(0)`, with `T` the Cauchy transform and `h` the
-unique small `1/2`-Hölder source supported in the unit disc with `h = χ Q(u_ξ) ∂u_ξ` for a radial
-cutoff `χ`. -/
-theorem exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv :
+`u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`. -/
+theorem exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq :
     ∃ η > 0, ∀ Q : F → F →L[ℝ] F, Q 0 = 0 →
       (∀ x ∈ closedBall (0 : F) 4, DifferentiableAt ℝ Q x) →
       (∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ Q x‖ ≤ η) →
@@ -1286,66 +1246,54 @@ theorem exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt {J : F → F 
 
 /-! ### Rotation-equivariant families of `J`-holomorphic discs -/
 
-/-! #### The Beltrami coefficient of a structure near `i` -/
+/-! #### The Beltrami coefficient of a structure near `i`
+
+The Beltrami coefficient of a real endomorphism `A` of `F` is `-cayleyCoord i A`, minus its
+Cayley coordinate (`TauCeti.cayleyCoord`) relative to the standard structure `i`, in the normed
+ring `F →L[ℝ] F`, where it depends smoothly on `A`. For `A² = -1` it is `(A + i)⁻¹ (i - A)`
+(`TauCeti.add_mul_cayleyCoord`) and conjugate linear (`TauCeti.cayleyCoord_mul_eq_neg_mul`). -/
 
 omit [FiniteDimensional ℂ F] in
-/-- The Beltrami coefficient `Q = (A + i)⁻¹ (i - A)` of a real endomorphism `A` of `F`. It is minus
-the Cayley transform of `A` relative to the standard structure `i`
-(`TauCeti.AlmostComplexStructure.cayley`), written in the normed ring `F →L[ℝ] F` so that it
-depends smoothly on `A`. -/
-private def beltramiCoeff (A : F →L[ℝ] F) : F →L[ℝ] F :=
-  Ring.inverse (A + ContinuousLinearMap.lsmul ℝ ℂ I) * (ContinuousLinearMap.lsmul ℝ ℂ I - A)
+private theorem lsmul_I_mul_self :
+    (ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F) * ContinuousLinearMap.lsmul ℝ ℂ I = -1 := by
+  ext v
+  simp [smul_smul]
 
 omit [FiniteDimensional ℂ F] in
-/-- `(A + i) Q v = (i - A) v` when `A + i` is invertible. -/
-private theorem add_apply_beltramiCoeff {A : F →L[ℝ] F}
-    (hA : IsUnit (A + ContinuousLinearMap.lsmul ℝ ℂ I)) (v : F) :
-    A (beltramiCoeff A v) + I • beltramiCoeff A v = I • v - A v := by
-  have h := congrArg (fun T : F →L[ℝ] F ↦ T v)
-    (Ring.mul_inverse_cancel_left _ (ContinuousLinearMap.lsmul ℝ ℂ I - A) hA)
-  simpa [beltramiCoeff, ← mul_assoc] using h
+private theorem mul_self_eq_neg_one {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v) : A * A = -1 := by
+  ext v
+  simp [hAA]
 
 omit [FiniteDimensional ℂ F] in
-/-- The Beltrami coefficient of a complex structure `A`, `A² = -1`, is conjugate linear. -/
-private theorem beltramiCoeff_apply_I_smul {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v)
-    (hA : IsUnit (A + ContinuousLinearMap.lsmul ℝ ℂ I)) (v : F) :
-    beltramiCoeff A (I • v) = -(I • beltramiCoeff A v) := by
-  have hinj : Function.Injective (A + ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F) := by
-    obtain ⟨U, hU⟩ := hA
-    intro x y hxy
-    have h := congrArg (↑U⁻¹ : F →L[ℝ] F)
-      (show (U : F →L[ℝ] F) x = (U : F →L[ℝ] F) y by rw [hU]; exact hxy)
-    have e : ∀ z, (↑U⁻¹ : F →L[ℝ] F) ((U : F →L[ℝ] F) z) = z := fun z ↦ by
-      rw [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
-    rwa [e, e] at h
-  have hII : ∀ w : F, I • I • w = -w := fun w ↦ by rw [smul_smul, I_mul_I, neg_one_smul]
-  set y := beltramiCoeff A v
-  have hy := add_apply_beltramiCoeff hA v
-  -- Applying `A` to `A y + i y = i v - A v` gives `A (i y) = A (i v) + v + y`.
-  have hAy : A (I • y) = A (I • v) + v + y := by
-    have h := congrArg A hy
-    rw [map_add, map_sub, hAA, hAA] at h
-    linear_combination (norm := module) h
-  refine hinj ?_
-  simp only [add_apply, ContinuousLinearMap.lsmul_apply, add_apply_beltramiCoeff hA, map_neg,
-    hII, hAy]
-  abel
+/-- `(A + i) Q v = (i - A) v` for the Beltrami coefficient `Q` of `A`, when `A² = -1` and `i + A`
+is invertible. -/
+private theorem add_apply_neg_cayleyCoord {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v)
+    (hA : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + A)) (v : F) :
+    A ((-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) v) +
+        I • (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) v = I • v - A v := by
+  have h := congrArg (fun T : F →L[ℝ] F ↦ T v) (add_mul_cayleyCoord
+    ((mul_self_eq_neg_one hAA).trans lsmul_I_mul_self.symm) hA)
+  simp only [add_mul, mul_apply_eq_comp, add_apply, sub_apply,
+    ContinuousLinearMap.lsmul_apply] at h
+  simp only [neg_apply, map_neg, smul_neg]
+  rw [← neg_add, h, neg_sub]
 
 omit [FiniteDimensional ℂ F] in
-/-- **The Beltrami form of the Cauchy–Riemann equation.** If `A² = -1`, `A + i` is invertible and
+/-- **The Beltrami form of the Cauchy–Riemann equation.** If `A² = -1`, `i + A` is invertible and
 the real-linear map `L : ℂ → F` satisfies `\bar∂L = Q ∂L` for the Beltrami coefficient `Q` of
 `A`, then `L 1 + A (L i) = 0`. -/
 private theorem apply_one_add_apply_apply_I_eq_zero {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v)
-    (hA : IsUnit (A + ContinuousLinearMap.lsmul ℝ ℂ I)) {L : ℂ →L[ℝ] F}
-    (hL : L.complexAntilinearPart 1 = beltramiCoeff A (L.complexLinearPart 1)) :
+    (hA : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + A)) {L : ℂ →L[ℝ] F}
+    (hL : L.complexAntilinearPart 1 =
+      (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) (L.complexLinearPart 1)) :
     L 1 + A (L I) = 0 := by
   have hII : ∀ w : F, I • I • w = -w := fun w ↦ by rw [smul_smul, I_mul_I, neg_one_smul]
   rw [ContinuousLinearMap.complexAntilinearPart_apply, ContinuousLinearMap.complexLinearPart_apply,
     smul_eq_mul, mul_one, map_smul] at hL
-  have hL' : L 1 + I • L I = beltramiCoeff A (L 1 - I • L I) :=
+  have hL' : L 1 + I • L I = (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) (L 1 - I • L I) :=
     smul_right_injective F (by norm_num : (2⁻¹ : ℝ) ≠ 0) hL
   -- The equation `(A + i) \bar∂L = (i - A) ∂L` reduces to `A (L 1) = L i`.
-  have h := add_apply_beltramiCoeff hA (L 1 - I • L I)
+  have h := add_apply_neg_cayleyCoord hAA hA (L 1 - I • L I)
   rw [← hL'] at h
   simp only [map_add, map_sub, smul_add, smul_sub, hII] at h
   have hq : A (L 1) = L I := by
@@ -1364,46 +1312,50 @@ omit [FiniteDimensional ℂ F] in
 /-- The Beltrami form of the Cauchy–Riemann equation for a real multiple `L = s M` of a map `M`
 solving it. -/
 private theorem apply_one_add_apply_apply_I_eq_zero_of_eq_smul {A : F →L[ℝ] F}
-    (hAA : ∀ v, A (A v) = -v) (hA : IsUnit (A + ContinuousLinearMap.lsmul ℝ ℂ I))
+    (hAA : ∀ v, A (A v) = -v) (hA : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + A))
     {L M : ℂ →L[ℝ] F} {s : ℝ} (hLM : L = s • M)
-    (hM : M.complexAntilinearPart 1 = beltramiCoeff A (M.complexLinearPart 1)) :
+    (hM : M.complexAntilinearPart 1 =
+      (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) (M.complexLinearPart 1)) :
     L 1 + A (L I) = 0 := by
   refine apply_one_add_apply_apply_I_eq_zero hAA hA ?_
   rw [hLM, ContinuousLinearMap.complexAntilinearPart_smul,
     ContinuousLinearMap.complexLinearPart_smul, smul_apply, smul_apply, hM, map_smul]
 
 /-- For a structure `J` of class `C²` near `0` with `J(0) = i` and `J² = -1` near `0`, the Beltrami
-coefficient `Q = (J + i)⁻¹ (i - J)` vanishes at `0`, and on a small ball it is differentiable with
-Lipschitz derivative, `J² = -1` and `J + i` is invertible. -/
-private theorem exists_beltramiCoeff_local {J : F → F →L[ℝ] F} (hJ : ContDiffAt ℝ 2 J 0)
+coefficient `Q = -cayleyCoord i J` vanishes at `0`, and on a small ball it is differentiable with
+Lipschitz derivative, `J² = -1` and `i + J` is invertible. -/
+private theorem exists_neg_cayleyCoord_local {J : F → F →L[ℝ] F} (hJ : ContDiffAt ℝ 2 J 0)
     (hJ0 : ∀ v, J 0 v = I • v) (hJJ : ∀ᶠ x in 𝓝 0, ∀ v, J x (J x v) = -v) :
-    ∃ r > 0, ∃ K : ℝ≥0, beltramiCoeff (J 0) = 0 ∧
-      (∀ x ∈ closedBall (0 : F) r, DifferentiableAt ℝ (fun x ↦ beltramiCoeff (J x)) x) ∧
+    ∃ r > 0, ∃ K : ℝ≥0, -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J 0) = 0 ∧
+      (∀ x ∈ closedBall (0 : F) r,
+        DifferentiableAt ℝ (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)) x) ∧
       (∀ x ∈ closedBall (0 : F) r, ∀ y ∈ closedBall (0 : F) r,
-        ‖fderiv ℝ (fun x ↦ beltramiCoeff (J x)) x - fderiv ℝ (fun x ↦ beltramiCoeff (J x)) y‖ ≤
-          K * ‖x - y‖) ∧
+        ‖fderiv ℝ (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)) x -
+          fderiv ℝ (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)) y‖ ≤
+            K * ‖x - y‖) ∧
       ∀ x ∈ closedBall (0 : F) r,
-        (∀ v, J x (J x v) = -v) ∧ IsUnit (J x + ContinuousLinearMap.lsmul ℝ ℂ I) := by
+        (∀ v, J x (J x v) = -v) ∧ IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J x) := by
   have := FiniteDimensional.completeSpace ℂ F
   have hI0 : J 0 = ContinuousLinearMap.lsmul ℝ ℂ I := by
     ext v
     simp [hJ0]
-  -- `Q` is `C²` near `0`, since `J(0) + i = 2 i` is invertible.
-  have hU : IsUnit (J 0 + ContinuousLinearMap.lsmul ℝ ℂ I) := by
+  -- `Q` is `C²` near `0`, since `i + J(0) = 2 i` is invertible.
+  have hU : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J 0) := by
     rw [hI0, ← two_smul ℝ (ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F)]
     exact isUnit_two_smul_lsmul_I
-  have hAC : ContDiffAt ℝ 2 (fun x ↦ J x + ContinuousLinearMap.lsmul ℝ ℂ I) 0 :=
-    hJ.add contDiffAt_const
-  have hinv : ContDiffAt ℝ 2 Ring.inverse (J 0 + ContinuousLinearMap.lsmul ℝ ℂ I) :=
+  have hAC : ContDiffAt ℝ 2 (fun x ↦ ContinuousLinearMap.lsmul ℝ ℂ I + J x) 0 :=
+    contDiffAt_const.add hJ
+  have hinv : ContDiffAt ℝ 2 Ring.inverse (ContinuousLinearMap.lsmul ℝ ℂ I + J 0) :=
     hU.unit_spec ▸ contDiffAt_ringInverse ℝ hU.unit
-  have hQC : ContDiffAt ℝ 2 (fun x ↦ beltramiCoeff (J x)) 0 :=
-    (hinv.comp 0 hAC).mul (contDiffAt_const.sub hJ)
-  have hunit : ∀ᶠ x in 𝓝 0, IsUnit (J x + ContinuousLinearMap.lsmul ℝ ℂ I) :=
+  have hQC : ContDiffAt ℝ 2 (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)) 0 := by
+    simp only [cayleyCoord_def]
+    exact ((contDiffAt_const.sub hJ).mul (hinv.comp 0 hAC)).neg
+  have hunit : ∀ᶠ x in 𝓝 0, IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J x) :=
     hAC.continuousAt.eventually (Units.isOpen.mem_nhds hU)
   obtain ⟨K, t₀, ht₀, hK⟩ := (hQC.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
   obtain ⟨r, hr, hrQ⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp
     (((hQC.eventually (by simp)).and ht₀).and (hJJ.and hunit))
-  refine ⟨r, hr, K, by simp only [beltramiCoeff, hI0, sub_self, mul_zero],
+  refine ⟨r, hr, K, by rw [hI0, cayleyCoord_self, neg_zero],
     fun x hx ↦ (hrQ hx).1.1.differentiableAt (by norm_num), fun x hx y hy ↦ ?_,
     fun x hx ↦ (hrQ hx).2⟩
   simpa [dist_eq_norm] using hK.dist_le_mul x (hrQ hx).1.2 y (hrQ hy).1.2
@@ -1413,13 +1365,9 @@ private theorem exists_beltramiCoeff_local {J : F → F →L[ℝ] F} (hJ : ContD
 for an almost complex structure in coordinates centred at a point where it is standard. Then
 there are `ε > 0` and maps `u_ξ : ℂ → F`, for `‖ξ‖ ≤ 1`, each `C¹` on the disc of radius `ε` with
 `u_ξ(0) = 0` and `∂ₛu_ξ(0) = ξ`, solving `∂ₛu_ξ + J(u_ξ) ∂ₜu_ξ = 0` there, such that rotating the
-first jet rotates the parameter: `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`.
-
-This is the `U(1)`-equivariance of the normal disc family through a point: for a unit normal
-vector `ν`, the disc `w ↦ u_ν(w)` and the disc `w ↦ u_{c ν}(w)` of the rotated frame are the same
-disc, reparametrized by the rotation `w ↦ c w`. The discs are rescalings of those of
-`TauCeti.exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv`, for the Beltrami
-coefficient `(J + i)⁻¹ (i - J)` of `J`, in which the equation is rotation invariant. -/
+first jet rotates the parameter: `u_{c ξ}(w) = u_ξ(c w)` for `|c| = 1`. So the discs through `0`
+with first jets `ξ` and `c ξ` have the same image, parametrized differently by the rotation
+`w ↦ c w`. -/
 theorem exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply_smul_eq
     {J : F → F →L[ℝ] F} (hJ : ContDiffAt ℝ 2 J 0) (hJ0 : ∀ v, J 0 v = I • v)
     (hJJ : ∀ᶠ x in 𝓝 0, ∀ v, J x (J x v) = -v) :
@@ -1427,18 +1375,21 @@ theorem exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply
       ContDiffOn ℝ 1 (u ξ) (ball 0 ε) ∧ u ξ 0 = 0 ∧ fderiv ℝ (u ξ) 0 1 = ξ ∧
         ∀ z ∈ ball (0 : ℂ) ε, fderiv ℝ (u ξ) z 1 + J (u ξ z) (fderiv ℝ (u ξ) z I) = 0) ∧
       ∀ ξ : F, ‖ξ‖ ≤ 1 → ∀ c : ℂ, ‖c‖ = 1 → ∀ w, u (c • ξ) w = u ξ (c * w) := by
-  obtain ⟨η, hη, hdisc⟩ := exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv
-    (F := F)
-  obtain ⟨r, hr, K, hQ0, hd, hL, hrJ⟩ := exists_beltramiCoeff_local hJ hJ0 hJJ
-  set Q : F → F →L[ℝ] F := fun x ↦ beltramiCoeff (J x)
+  obtain ⟨η, hη, hdisc⟩ :=
+    exists_pos_forall_exists_conjWirtingerDeriv_eq_apply_wirtingerDeriv_and_apply_smul_eq (F := F)
+  obtain ⟨r, hr, K, hQ0, hd, hL, hrJ⟩ := exists_neg_cayleyCoord_local hJ hJ0 hJJ
+  set Q : F → F →L[ℝ] F := fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J x)
   obtain ⟨t, ht, htr, hdt, hAt, hLt⟩ := exists_rescale hη hr hd hL
   have hmem : ∀ x : F, ‖x‖ ≤ 4 → t • x ∈ closedBall (0 : F) r := fun x hx ↦ by
     rw [mem_closedBall, dist_zero_right, norm_smul, Real.norm_of_nonneg ht.le]
     nlinarith
-  obtain ⟨v, hv, hveq⟩ := hdisc (fun x ↦ Q (t • x)) (by simpa using hQ0) hdt hAt hLt
+  obtain ⟨v, hv, hveq⟩ := hdisc (fun x ↦ Q (t • x)) (by rw [smul_zero]; exact hQ0) hdt hAt hLt
   replace hveq := hveq fun x hx w ↦ by
-    have hx' := hrJ _ (hmem x (by simpa using hx))
-    exact beltramiCoeff_apply_I_smul hx'.1 hx'.2 w
+    -- The Cayley coordinate of a square root of `-1` anticommutes with `i`.
+    have h := congrArg (fun T : F →L[ℝ] F ↦ T w) (cayleyCoord_mul_eq_neg_mul lsmul_I_mul_self
+      (mul_self_eq_neg_one (hrJ _ (hmem x (by simpa using hx))).1))
+    simp only [mul_apply_eq_comp, neg_apply, ContinuousLinearMap.lsmul_apply] at h
+    simp only [Q, neg_apply, h, smul_neg]
   have hμ : (0 : ℝ) < 2⁻¹ := by norm_num
   have hμξ : ∀ ξ : F, ‖ξ‖ ≤ 1 → ‖(2⁻¹ : ℝ) • ξ‖ ≤ 1 := fun ξ hξ ↦ by
     rw [norm_smul, Real.norm_of_nonneg hμ.le]
