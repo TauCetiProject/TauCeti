@@ -217,19 +217,13 @@ theorem kroneckerTMul_mem_homogeneousMatrices {T T' U : Type*} [MulAction GA T] 
       (fun p ↦ π (gr p.1) (gr' p.2)) (fun p ↦ π (gr₂ p.1) (gr₂' p.2)) (c, c') := by
   refine mem_homogeneousMatrices_iff.2 ?_
   rintro ⟨x, x'⟩ ⟨y, y'⟩
+  have hFG := Submodule.apply_mem_map₂ (TensorProduct.mk R A B)
+    (mem_homogeneousMatrices_iff.1 hF x y) (mem_homogeneousMatrices_iff.1 hG x' y')
+  simp_rw [Submodule.map₂_iSup_left, Submodule.map₂_iSup_right] at hFG
   rw [Matrix.kroneckerTMul_apply]
-  refine Submodule.iSup_induction _ (motive := fun a ↦ a ⊗ₜ[R] G x' y' ∈ _)
-    (mem_homogeneousMatrices_iff.1 hF x y) ?_
-    (by rw [TensorProduct.zero_tmul]; exact zero_mem _)
-    fun a a' ha ha' ↦ by rw [TensorProduct.add_tmul]; exact add_mem ha ha'
-  rintro ⟨g, hg⟩ a ha
-  refine Submodule.iSup_induction _ (motive := fun b ↦ a ⊗ₜ[R] b ∈ _)
-    (mem_homogeneousMatrices_iff.1 hG x' y') ?_
-    (by rw [TensorProduct.tmul_zero]; exact zero_mem _)
-    fun b b' hb hb' ↦ by rw [TensorProduct.tmul_add]; exact add_mem hb hb'
-  rintro ⟨h, hh⟩ b hb
-  refine Submodule.mem_iSup_of_mem ⟨(g, h), ?_⟩ (tmul_mem_tensorGradedPart ha hb)
-  rw [← hπ, hg, hh, hπ]
+  refine (iSup_le fun g ↦ iSup_le fun h ↦ Submodule.map₂_le.2 fun a ha b hb ↦ ?_ : _ ≤ _) hFG
+  refine Submodule.mem_iSup_of_mem ⟨(g.1, h.1), ?_⟩ (tmul_mem_tensorGradedPart ha hb)
+  rw [← hπ, g.2, h.2, hπ]
 
 end Algebra
 
