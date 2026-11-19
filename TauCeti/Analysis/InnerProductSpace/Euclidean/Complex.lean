@@ -23,6 +23,12 @@ basis ordering agrees with `Module.Basis.complexToReal` reindexed by
 `EuclideanSpace ℝ (Fin (2 * n))`
 (`TauCeti.map_complexEuclideanRealLinearIsometryEquiv_complexOrientation`). The resulting isometry
 can transport real manifold models and orientations without changing their chart carriers.
+
+`TauCeti.complexEuclideanEquivRealProd` instead keeps the real and imaginary parts in separate
+blocks: it is the continuous real-linear equivalence `z ↦ (Re z, Im z)` of `EuclideanSpace ℂ ι`
+with the doubled real space `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`, whose inverse
+`(x, y) ↦ x + i y` carries the sum of the real inner products of the two factors to
+`Re ⟪·, ·⟫_ℂ` (`TauCeti.real_inner_complexEuclideanEquivRealProd_symm`).
 -/
 
 public section
@@ -163,5 +169,59 @@ theorem map_complexEuclideanRealLinearIsometryEquiv_reindex_complexOrientation (
   rw [Orientation.map_reindex, map_complexEuclideanRealLinearIsometryEquiv_complexOrientation]
   exact (Orientation.reindex ℝ _
     (finCongr (by rw [finrank_euclideanSpace_fin]))).symm_apply_apply _
+
+/-! ### Real and imaginary parts -/
+
+section RealProd
+
+open scoped InnerProductSpace
+
+variable (ι : Type*) [Fintype ι]
+
+/-- The real and imaginary parts `z ↦ (Re z, Im z)` of complex Euclidean space, as a continuous
+real-linear equivalence with the doubled real Euclidean space. Its inverse is the identification
+`(x, y) ↦ x + i y`. -/
+noncomputable def complexEuclideanEquivRealProd :
+    EuclideanSpace ℂ ι ≃L[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι :=
+  LinearEquiv.toContinuousLinearEquiv
+    { toFun z := (WithLp.toLp 2 fun i ↦ (z i).re, WithLp.toLp 2 fun i ↦ (z i).im)
+      map_add' z w := by ext <;> simp
+      map_smul' c z := by ext <;> simp
+      invFun p := WithLp.toLp 2 fun i ↦ (p.1 i : ℂ) + p.2 i * Complex.I
+      left_inv z := by ext i; apply Complex.ext <;> simp
+      right_inv p := by ext <;> simp }
+
+variable {ι}
+
+/-- The first component of `TauCeti.complexEuclideanEquivRealProd` is the real part. -/
+@[simp]
+theorem complexEuclideanEquivRealProd_apply_fst (z : EuclideanSpace ℂ ι) (i : ι) :
+    (complexEuclideanEquivRealProd ι z).1 i = (z i).re :=
+  (rfl)
+
+/-- The second component of `TauCeti.complexEuclideanEquivRealProd` is the imaginary part. -/
+@[simp]
+theorem complexEuclideanEquivRealProd_apply_snd (z : EuclideanSpace ℂ ι) (i : ι) :
+    (complexEuclideanEquivRealProd ι z).2 i = (z i).im :=
+  (rfl)
+
+/-- The inverse of `TauCeti.complexEuclideanEquivRealProd` is `(x, y) ↦ x + i y`. -/
+@[simp]
+theorem complexEuclideanEquivRealProd_symm_apply
+    (p : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (i : ι) :
+    (complexEuclideanEquivRealProd ι).symm p i = p.1 i + p.2 i * Complex.I :=
+  (rfl)
+
+/-- The identification `(x, y) ↦ x + i y` carries the sum of the real inner products of the two
+factors to the real inner product `Re ⟪·, ·⟫_ℂ`. -/
+theorem real_inner_complexEuclideanEquivRealProd_symm
+    (u w : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    ⟪(complexEuclideanEquivRealProd ι).symm u, (complexEuclideanEquivRealProd ι).symm w⟫_ℝ =
+      ⟪u.1, w.1⟫_ℝ + ⟪u.2, w.2⟫_ℝ := by
+  simp only [PiLp.inner_apply, complexEuclideanEquivRealProd_symm_apply, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [Complex.inner, Complex.mul_re]
+
+end RealProd
 
 end TauCeti
