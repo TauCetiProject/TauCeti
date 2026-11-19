@@ -265,7 +265,7 @@ theorem torsionImageFiltration_map_le (f : G →* H) (t : ℕ) :
   exact ⟨f a, by rw [← map_pow, ha, map_one], (elementaryTwoQuotientMap_mk f a).symm⟩
 
 /-- A multiplicative equivalence identifies the torsion-image filtrations. -/
-theorem torsionImageFiltration_map_elementaryTwoQuotientCongr (e : G ≃* H) (t : ℕ) :
+@[simp] theorem torsionImageFiltration_map_elementaryTwoQuotientCongr (e : G ≃* H) (t : ℕ) :
     (torsionImageFiltration G t).map
         (elementaryTwoQuotientCongr e : ElementaryTwoQuotient G →ₗ[ZMod 2] _) =
       torsionImageFiltration H t := by
@@ -286,7 +286,7 @@ theorem obstructionThreshold_map_le (hG : IsMulTorsion G) (f : G →* H) (b : G)
     (elementaryTwoQuotientMk_mem_torsionImageFiltration_obstructionThreshold hG b)
 
 /-- A multiplicative equivalence preserves the obstruction threshold. -/
-theorem obstructionThreshold_congr (e : G ≃* H) (b : G) :
+@[simp] theorem obstructionThreshold_congr (e : G ≃* H) (b : G) :
     obstructionThreshold (e b) = obstructionThreshold b := by
   have h (t : ℕ) : elementaryTwoQuotientMk (e b) ∈ torsionImageFiltration H t ↔
       elementaryTwoQuotientMk b ∈ torsionImageFiltration G t := by
