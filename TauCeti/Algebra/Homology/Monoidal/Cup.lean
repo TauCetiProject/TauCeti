@@ -24,7 +24,7 @@ cocycle cupped with a cocycle is a cocycle, a coboundary cupped with a cocycle (
 is a coboundary, and the cup product descends to a `k`-bilinear map
 `Hᵖ(Hom(A, M)) × H^q(Hom(B, N)) ⟶ Hⁿ(Hom(E, P))` on the cohomology of the complexes
 `ChainComplex.linearYonedaObj`, an instance of the general product on cohomology
-`CochainComplex.moduleCatHomologyMap₂`.  It is natural along maps of diagonals.
+`TauCeti.CochainComplex.moduleCatHomologyMap₂`.  It is natural along maps of diagonals.
 
 The singular cup product is the case where `D` is the Alexander–Whitney map precomposed with the
 diagonal of a space; there `φ ⌣ ψ` evaluates a singular simplex on its front `p`-face and its back
@@ -119,7 +119,7 @@ private def cupCochainHom (p q n : ℕ) (h : p + q = n) :
   cupCochain k D μ p q n h
 
 /-- The Leibniz rule `TauCeti.ChainComplex.d_comp_cupCochain` in the cochain modules of the
-complexes `Hom(-, -)`, in the form required by `CochainComplex.moduleCatHomologyMap₂`. -/
+complexes `Hom(-, -)`, in the form required by `TauCeti.CochainComplex.moduleCatHomologyMap₂`. -/
 private lemma d_cupCochainHom (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M).X p)
     (ψ : (B.linearYonedaObj k N).X q) :
     ((E.linearYonedaObj k P).d n (n + 1)).hom (cupCochainHom k D μ p q n h φ ψ) =
@@ -137,7 +137,7 @@ underlying cochains, which is a cocycle by the Leibniz rule
 def cupCycles (p q n : ℕ) (h : p + q = n) :
     (A.linearYonedaObj k M).cycles p →ₗ[k] (B.linearYonedaObj k N).cycles q →ₗ[k]
       (E.linearYonedaObj k P).cycles n :=
-  CochainComplex.moduleCatCyclesMap₂ (cupCochainHom k D μ) (d_cupCochainHom D μ) p q n h
+  TauCeti.CochainComplex.moduleCatCyclesMap₂ (cupCochainHom k D μ) (d_cupCochainHom D μ) p q n h
 
 /-- On underlying cochains, the cup product of cocycles is the cup product of cochains. -/
 @[simp]
@@ -146,17 +146,18 @@ lemma iCycles_cupCycles (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaObj k 
     (E.linearYonedaObj k P).iCycles n (cupCycles k D μ p q n h a b) =
       cupCochain k D μ p q n h ((A.linearYonedaObj k M).iCycles p a)
         ((B.linearYonedaObj k N).iCycles q b) :=
-  CochainComplex.iCycles_moduleCatCyclesMap₂ _ _ p q n h a b
+  TauCeti.CochainComplex.iCycles_moduleCatCyclesMap₂ _ _ p q n h a b
 
 variable (k) in
 /-- **The cup product on cohomology**, `Hᵖ(Hom(A, M)) × H^q(Hom(B, N)) ⟶ Hⁿ(Hom(E, P))` for
 `p + q = n`, along the diagonal `D : E ⟶ A ⊗ B` and the pairing `μ : M ⊗ N ⟶ P`: the class of
 `a ⌣ b` on the classes of cocycles `a` and `b` (`TauCeti.ChainComplex.cup_homologyπ`). It is the
-product on cohomology `CochainComplex.moduleCatHomologyMap₂` of the cup product of cochains. -/
+product on cohomology `TauCeti.CochainComplex.moduleCatHomologyMap₂` of the cup product of
+cochains. -/
 def cup (p q n : ℕ) (h : p + q = n) :
     (A.linearYonedaObj k M).homology p →ₗ[k] (B.linearYonedaObj k N).homology q →ₗ[k]
       (E.linearYonedaObj k P).homology n :=
-  CochainComplex.moduleCatHomologyMap₂ (cupCochainHom k D μ) (d_cupCochainHom D μ) p q n h
+  TauCeti.CochainComplex.moduleCatHomologyMap₂ (cupCochainHom k D μ) (d_cupCochainHom D μ) p q n h
 
 /-- **The cup product on classes**: the cup product of the classes of two cocycles is the class of
 their cup product. -/
@@ -166,7 +167,7 @@ lemma cup_homologyπ (p q n : ℕ) (h : p + q = n) (a : (A.linearYonedaObj k M).
     cup k D μ p q n h ((A.linearYonedaObj k M).homologyπ p a)
         ((B.linearYonedaObj k N).homologyπ q b) =
       (E.linearYonedaObj k P).homologyπ n (cupCycles k D μ p q n h a b) :=
-  CochainComplex.moduleCatHomologyMap₂_homologyπ _ _ p q n h a b
+  TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ _ _ p q n h a b
 
 /-- **Naturality of the cup product on cohomology** along a map of diagonals: if chain maps
 `e : E' ⟶ E`, `f : A' ⟶ A` and `g : B' ⟶ B` satisfy `e ≫ D = D' ≫ (f ⊗ g)`, then the cup product
@@ -182,7 +183,7 @@ lemma cup_naturality {A' B' E' : ChainComplex C ℕ} [A'.HasTensor B']
           ((linearYonedaFunctor k N).map g.op) q β) =
       homologyMap (K := E.linearYonedaObj k P) (L := E'.linearYonedaObj k P)
         ((linearYonedaFunctor k P).map e.op) n (cup k D μ p q n h α β) :=
-  (CochainComplex.homologyMap_moduleCatHomologyMap₂ _ _ _ _ _ _ _
+  (TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂ _ _ _ _ _ _ _
     (fun p q n h φ ψ ↦ (cupCochain_naturality D μ D' e f g hD p q n h φ ψ).symm) p q n h α β).symm
 
 /-- Precomposing a diagonal with a chain map pulls back its cup product on cohomology. -/

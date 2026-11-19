@@ -18,28 +18,29 @@ the **Leibniz rule**
 
 Such families are the products of cochains: cup products of singular, Čech or Hochschild cochains,
 and the multiplication of a differential graded algebra. The Leibniz rule makes the product of two
-cocycles a cocycle (`CochainComplex.moduleCatCyclesMap₂`), and the product of a coboundary and a
-cocycle, in either order, a coboundary. So the product descends to an `R`-bilinear map
-`Hᵖ(K₁) × H^q(K₂) → Hⁿ(K₀)` on cohomology (`CochainComplex.moduleCatHomologyMap₂`), computed on
-classes of cocycles by the product of representatives
-(`CochainComplex.moduleCatHomologyMap₂_homologyπ`). Cochain maps which intertwine two such products
-intertwine the products on cohomology (`CochainComplex.homologyMap_moduleCatHomologyMap₂`).
+cocycles a cocycle (`TauCeti.CochainComplex.moduleCatCyclesMap₂`), and the product of a coboundary
+and a cocycle, in either order, a coboundary. So the product descends to an `R`-bilinear map
+`Hᵖ(K₁) × H^q(K₂) → Hⁿ(K₀)` on cohomology (`TauCeti.CochainComplex.moduleCatHomologyMap₂`),
+computed on classes of cocycles by the product of representatives
+(`TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ`). Cochain maps which intertwine two such
+products intertwine the products on cohomology
+(`TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂`).
 
 ## Main definitions
 
-* `CochainComplex.moduleCatCyclesMap₂`: the product of cocycles.
-* `CochainComplex.moduleCatHomologyMap₂`: the product on cohomology.
+* `TauCeti.CochainComplex.moduleCatCyclesMap₂`: the product of cocycles.
+* `TauCeti.CochainComplex.moduleCatHomologyMap₂`: the product on cohomology.
 
 ## Main results
 
-* `CochainComplex.iCycles_moduleCatCyclesMap₂`: the product of cocycles is the product of the
-  underlying cochains.
-* `CochainComplex.moduleCatHomologyMap₂_homologyπ`: the product of the classes of two cocycles is
-  the class of their product.
-* `CochainComplex.moduleCatHomologyMap₂_homologyπ_moduleCatCyclesMk`: the same for cocycles given
-  as elements of the cochain modules.
-* `CochainComplex.homologyMap_moduleCatHomologyMap₂`: naturality under cochain maps intertwining the
-  products.
+* `TauCeti.CochainComplex.iCycles_moduleCatCyclesMap₂`: the product of cocycles is the product of
+  the underlying cochains.
+* `TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ`: the product of the classes of two
+  cocycles is the class of their product.
+* `TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ_moduleCatCyclesMk`: the same for cocycles
+  given as elements of the cochain modules.
+* `TauCeti.CochainComplex.homologyMap_moduleCatHomologyMap₂`: naturality under cochain maps
+  intertwining the products.
 -/
 
 public section
@@ -50,7 +51,7 @@ open CategoryTheory Limits HomologicalComplex
 
 universe u v
 
-namespace CochainComplex
+namespace TauCeti.CochainComplex
 
 variable {R : Type u} [CommRing R] {K₁ K₂ K₀ : CochainComplex (ModuleCat.{v} R) ℕ}
   (μ : ∀ p q n : ℕ, p + q = n → K₁.X p →ₗ[R] K₂.X q →ₗ[R] K₀.X n)
@@ -167,7 +168,7 @@ private lemma toCycles_comp_moduleCatHomologyMap₂Cycles (p q n : ℕ) (h : p +
 
 /-- **The product on cohomology** `Hᵖ(K₁) × H^q(K₂) → Hⁿ(K₀)`, `p + q = n`, of a family of products
 of cochains obeying the Leibniz rule: the class of the product of representing cocycles
-(`CochainComplex.moduleCatHomologyMap₂_homologyπ`). -/
+(`TauCeti.CochainComplex.moduleCatHomologyMap₂_homologyπ`). -/
 def moduleCatHomologyMap₂ (p q n : ℕ) (h : p + q = n) :
     K₁.homology p →ₗ[R] K₂.homology q →ₗ[R] K₀.homology n :=
   (CokernelCofork.IsColimit.desc' (K₁.homologyIsCokernel _ p rfl)
@@ -230,4 +231,4 @@ theorem homologyMap_moduleCatHomologyMap₂
 
 end Naturality
 
-end CochainComplex
+end TauCeti.CochainComplex
