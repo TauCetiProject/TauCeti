@@ -752,17 +752,12 @@ private theorem eLpNorm_smul_sub_le_of_forall_max_min {F : Type*} [NormedAddComm
     by_cases hy : y ∈ spanningSets volume k ∩ {y | ‖f y‖ ≤ k} <;> simp_all [fs]
   have hfs_supp (k : ℕ) (y : ι → ℝ) (hy : y ∉ spanningSets volume k) : fs k y = 0 :=
     indicator_of_notMem (s := spanningSets volume k ∩ _) (fun h => hy h.1) _
-  -- A bounded function supported in a spanning set lies in every `Lʳ`.
-  have hmem {u : (ι → ℝ) → E} (k : ℕ) (c : ℝ) (hu : AEStronglyMeasurable u volume)
-      (hc : ∀ y, ‖u y‖ ≤ c) (hsupp : ∀ y, y ∉ spanningSets volume k → u y = 0) (r : ℝ≥0∞) :
-      MemLp u r volume :=
-    (memLp_top_of_bound hu c (.of_forall hc)).mono_exponent_of_measure_support_ne_top hsupp
-      (measure_spanningSets_lt_top volume k).ne le_top
   have hfs (k : ℕ) (r : ℝ≥0∞) : MemLp (fs k) r volume :=
-    hmem k k (hfsm k) (hfs_bd k) (hfs_supp k) r
+    memLp_of_norm_le_of_eq_zero_of_notMem_spanningSets (hfsm k) (.of_forall (hfs_bd k))
+      (hfs_supp k) r
   have hgs (k : ℕ) (r : ℝ≥0∞) : MemLp (fun y => bs k y • fs k y) r volume := by
-    refine hmem (u := fun y => bs k y • fs k y) k (k * k) ((hbsm k).smul (hfsm k))
-      (fun y => ?_) (fun y hy => ?_) r
+    refine memLp_of_norm_le_of_eq_zero_of_notMem_spanningSets (u := fun y => bs k y • fs k y)
+      (c := k * k) (N := k) ((hbsm k).smul (hfsm k)) (.of_forall fun y => ?_) (fun y hy => ?_) r
     · rw [norm_smul, Real.norm_eq_abs]
       exact mul_le_mul ((abs_max_min_le _ _).trans_eq (Nat.abs_cast k)) (hfs_bd k y)
         (norm_nonneg _) (Nat.cast_nonneg _)
@@ -940,159 +935,14 @@ The operator `T` is only given on `L²`, and for an unbounded `b` the product `b
 function need not lie in `L²`, so `[b, T] f` is defined a priori only for `f ∈ L² ∩ Lᵖ` with
 `b f ∈ L²`. These `f` are dense in `Lᵖ`: truncating `f` to the sets where `‖f‖` and `|b|` are at
 most `k`, inside sets of finite measure, gives such functions converging to `f`. The
-Coifman–Rochberg–Weiss bound therefore extends `[b, T]` uniquely to a bounded operator on `Lᵖ`. -/
+Coifman–Rochberg–Weiss bound therefore extends `[b, T]` uniquely to a bounded operator on `Lᵖ`
+(`ContinuousLinearMap.exists_continuousLinearMap_apply_ae_eq_smul_sub`). -/
 
 section Extension
 
 omit [Nonempty ι]
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The pairs `(f, g)` of `L²` functions with `g = b f` and `f ∈ Lᵖ`: the data on which the
-commutator `b T f - T g` is defined a priori. -/
-private def commutatorDomain (b : (ι → ℝ) → ℝ) (p : ℝ≥0∞) :
-    Submodule ℝ (Lp E 2 (volume : Measure (ι → ℝ)) × Lp E 2 (volume : Measure (ι → ℝ))) where
-  carrier := {x | x.2 =ᵐ[volume] (fun y => b y • x.1 y) ∧ MemLp x.1 p volume}
-  add_mem' {x x'} := by
-    rintro ⟨hx₁, hx₂⟩ ⟨hx'₁, hx'₂⟩
-    refine ⟨?_, (hx₂.add hx'₂).ae_eq (Lp.coeFn_add x.1 x'.1).symm⟩
-    filter_upwards [hx₁, hx'₁, Lp.coeFn_add x.1 x'.1, Lp.coeFn_add x.2 x'.2] with y h h' h₁ h₂
-    simp only [Prod.fst_add, Prod.snd_add, h₁, h₂, Pi.add_apply, h, h', smul_add]
-  zero_mem' := by
-    refine ⟨?_, MemLp.zero.ae_eq (Lp.coeFn_zero E 2 volume).symm⟩
-    filter_upwards [Lp.coeFn_zero E 2 (volume : Measure (ι → ℝ))] with y h
-    simp only [Prod.fst_zero, Prod.snd_zero, h, Pi.zero_apply, smul_zero]
-  smul_mem' c x := by
-    rintro ⟨hx₁, hx₂⟩
-    refine ⟨?_, (hx₂.const_smul c).ae_eq (Lp.coeFn_smul c x.1).symm⟩
-    filter_upwards [hx₁, Lp.coeFn_smul c x.1, Lp.coeFn_smul c x.2] with y h h₁ h₂
-    simp only [Prod.smul_fst, Prod.smul_snd, h₁, h₂, Pi.smul_apply, h, smul_comm c (b y)]
-
-private theorem mem_commutatorDomain {b : (ι → ℝ) → ℝ} {p : ℝ≥0∞}
-    {x : Lp E 2 (volume : Measure (ι → ℝ)) × Lp E 2 (volume : Measure (ι → ℝ))} :
-    x ∈ commutatorDomain b p ↔ x.2 =ᵐ[volume] (fun y => b y • x.1 y) ∧ MemLp x.1 p volume :=
-  Iff.rfl
-
-/-- The `Lᵖ` class of `f`, for `(f, g)` in the a priori domain, as a linear map. -/
-private noncomputable def commutatorDomainToLp (b : (ι → ℝ) → ℝ) (p : ℝ≥0∞) :
-    commutatorDomain (E := E) b p →ₗ[ℝ] Lp E p (volume : Measure (ι → ℝ)) where
-  toFun x := (mem_commutatorDomain.1 x.2).2.toLp (x.1.1 : (ι → ℝ) → E)
-  map_add' x x' := by
-    refine Lp.ext ?_
-    filter_upwards [(mem_commutatorDomain.1 (x + x').2).2.coeFn_toLp,
-      (mem_commutatorDomain.1 x.2).2.coeFn_toLp, (mem_commutatorDomain.1 x'.2).2.coeFn_toLp,
-      Lp.coeFn_add ((mem_commutatorDomain.1 x.2).2.toLp (x.1.1 : (ι → ℝ) → E))
-        ((mem_commutatorDomain.1 x'.2).2.toLp _),
-      Lp.coeFn_add x.1.1 x'.1.1] with y h h₁ h₂ h₃ h₄
-    rw [h]
-    simp only [Submodule.coe_add, Prod.fst_add]
-    rw [h₄, h₃, Pi.add_apply, Pi.add_apply, h₁, h₂]
-  map_smul' c x := by
-    refine Lp.ext ?_
-    filter_upwards [(mem_commutatorDomain.1 (c • x).2).2.coeFn_toLp,
-      (mem_commutatorDomain.1 x.2).2.coeFn_toLp,
-      Lp.coeFn_smul c ((mem_commutatorDomain.1 x.2).2.toLp (x.1.1 : (ι → ℝ) → E)),
-      Lp.coeFn_smul c x.1.1] with y h h₁ h₂ h₃
-    rw [h]
-    simp only [Submodule.coe_smul, Prod.smul_fst]
-    rw [h₃, RingHom.id_apply, h₂, Pi.smul_apply, Pi.smul_apply, h₁]
-
-private theorem commutatorDomainToLp_apply {b : (ι → ℝ) → ℝ} {p : ℝ≥0∞}
-    (x : commutatorDomain (E := E) b p) :
-    commutatorDomainToLp b p x = (mem_commutatorDomain.1 x.2).2.toLp (x.1.1 : (ι → ℝ) → E) :=
-  rfl
-
-/-- The a priori commutator `(f, g) ↦ b T f - T g` on the domain, as a linear map into `Lᵖ`,
-given that it takes values in `Lᵖ`. -/
-private noncomputable def commutatorOnDomain
-    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume) {b : (ι → ℝ) → ℝ} {p : ℝ≥0∞}
-    (hmem : ∀ x : commutatorDomain (E := E) b p,
-      MemLp (fun y => b y • T x.1.1 y - T x.1.2 y) p volume) :
-    commutatorDomain (E := E) b p →ₗ[ℝ] Lp F p (volume : Measure (ι → ℝ)) where
-  toFun x := (hmem x).toLp _
-  map_add' x x' := by
-    refine Lp.ext ?_
-    filter_upwards [(hmem (x + x')).coeFn_toLp, (hmem x).coeFn_toLp, (hmem x').coeFn_toLp,
-      Lp.coeFn_add ((hmem x).toLp _) ((hmem x').toLp _), Lp.coeFn_add (T x.1.1) (T x'.1.1),
-      Lp.coeFn_add (T x.1.2) (T x'.1.2)] with y h h₁ h₂ h₃ h₄ h₅
-    rw [h]
-    simp only [Submodule.coe_add, Prod.fst_add, Prod.snd_add, map_add]
-    rw [h₄, h₅, h₃, Pi.add_apply, Pi.add_apply, Pi.add_apply, h₁, h₂, smul_add]
-    abel
-  map_smul' a x := by
-    refine Lp.ext ?_
-    filter_upwards [(hmem (a • x)).coeFn_toLp, (hmem x).coeFn_toLp,
-      Lp.coeFn_smul a ((hmem x).toLp _), Lp.coeFn_smul a (T x.1.1),
-      Lp.coeFn_smul a (T x.1.2)] with y h h₁ h₂ h₃ h₄
-    rw [h]
-    simp only [Submodule.coe_smul, Prod.smul_fst, Prod.smul_snd, map_smul]
-    rw [h₃, h₄, RingHom.id_apply, h₂, Pi.smul_apply, Pi.smul_apply, Pi.smul_apply, h₁,
-      smul_sub, smul_comm a (b y)]
-
-private theorem commutatorOnDomain_apply
-    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume) {b : (ι → ℝ) → ℝ} {p : ℝ≥0∞}
-    (hmem : ∀ x : commutatorDomain (E := E) b p,
-      MemLp (fun y => b y • T x.1.1 y - T x.1.2 y) p volume) (x : commutatorDomain (E := E) b p) :
-    commutatorOnDomain T hmem x = (hmem x).toLp _ :=
-  rfl
-
-/-- **Density of the a priori domain.** For `p < ∞` and every a.e. strongly measurable `b`, the
-`Lᵖ` classes of the functions `f ∈ L² ∩ Lᵖ` with `b f ∈ L²` are dense in `Lᵖ`
-(`MeasureTheory.dense_setOf_memLp_and_memLp_smul`). -/
-private theorem denseRange_commutatorDomain {b : (ι → ℝ) → ℝ} (hb : AEStronglyMeasurable b volume)
-    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) :
-    DenseRange (commutatorDomainToLp (E := E) b p) := by
-  refine (dense_setOf_memLp_and_memLp_smul hb hp 2).mono ?_
-  rintro u ⟨hu, hbu⟩
-  have hbu' : MemLp (fun y => b y • hu.toLp (u : (ι → ℝ) → E) y) 2 volume :=
-    hbu.ae_eq (by filter_upwards [hu.coeFn_toLp] with y hy; rw [hy])
-  refine ⟨⟨(hu.toLp _, hbu'.toLp _), mem_commutatorDomain.2
-    ⟨hbu'.coeFn_toLp, (Lp.memLp u).ae_eq hu.coeFn_toLp.symm⟩⟩, ?_⟩
-  rw [commutatorDomainToLp_apply]
-  exact Lp.ext ((MemLp.coeFn_toLp _).trans hu.coeFn_toLp)
-
-/-- **Extension of the commutator to `Lᵖ`.** Let `1 ≤ p < ∞`. If the commutator satisfies
-`‖b T f - T g‖_p ≤ B ‖f‖_p` for all `f, g ∈ L²` with `g = b f` and `f ∈ Lᵖ`, then there is a
-bounded operator `S` on `Lᵖ` with `‖S‖ ≤ B` and `S f = b T f - T g` for all such `f, g`, and it is
-the only bounded operator with the latter property. -/
-private theorem exists_continuousLinearMap_apply_ae_eq_smul_sub [CompleteSpace F]
-    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume) {b : (ι → ℝ) → ℝ}
-    (hb : AEStronglyMeasurable b volume) {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) {B : ℝ≥0}
-    (hB : ∀ f g : Lp E 2 (volume : Measure (ι → ℝ)), MemLp f p volume →
-      g =ᵐ[volume] (fun y => b y • f y) →
-        eLpNorm (fun y => b y • T f y - T g y) p volume ≤ B * eLpNorm f p volume) :
-    ∃ S : Lp E p (volume : Measure (ι → ℝ)) →L[ℝ] Lp F p volume, ‖S‖ ≤ B ∧
-      (∀ (f g : Lp E 2 (volume : Measure (ι → ℝ))) (hf : MemLp f p volume),
-        g =ᵐ[volume] (fun y => b y • f y) →
-          S (hf.toLp f) =ᵐ[volume] fun y => b y • T f y - T g y) ∧
-      ∀ S' : Lp E p (volume : Measure (ι → ℝ)) →L[ℝ] Lp F p volume,
-        (∀ (f g : Lp E 2 (volume : Measure (ι → ℝ))) (hf : MemLp f p volume),
-          g =ᵐ[volume] (fun y => b y • f y) →
-            S' (hf.toLp f) =ᵐ[volume] fun y => b y • T f y - T g y) → S' = S := by
-  set D := commutatorDomain (E := E) b p
-  have hD (x : D) := mem_commutatorDomain.1 x.2
-  have hmem (x : D) : MemLp (fun y => b y • T x.1.1 y - T x.1.2 y) p volume :=
-    memLp_iff.2 ((hB _ _ (hD x).2 (hD x).1).trans_lt
-      (ENNReal.mul_lt_top ENNReal.coe_lt_top (hD x).2.eLpNorm_lt_top))
-  set e := commutatorDomainToLp (E := E) b p
-  set c := commutatorOnDomain T hmem
-  have hc (x : D) : c x =ᵐ[volume] fun y => b y • T x.1.1 y - T x.1.2 y := by
-    rw [commutatorOnDomain_apply]
-    exact (hmem x).coeFn_toLp
-  have hnorm (x : D) : ‖c x‖ ≤ B * ‖e x‖ := by
-    rw [commutatorOnDomain_apply, commutatorDomainToLp_apply, Lp.norm_toLp, Lp.norm_toLp,
-      ← ENNReal.coe_toReal, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top (hD x).2.eLpNorm_ne_top)
-      (hB _ _ (hD x).2 (hD x).1)
-  have hdense : DenseRange e := denseRange_commutatorDomain hb hp
-  refine ⟨c.extendOfNorm e, LinearMap.opNorm_extendOfNorm_le hdense B.2 hnorm,
-    fun f g hf hg => ?_, fun S' hS' => ?_⟩
-  · rw [← commutatorDomainToLp_apply (x := ⟨(f, g), mem_commutatorDomain.2 ⟨hg, hf⟩⟩),
-      LinearMap.extendOfNorm_eq hdense ⟨B, hnorm⟩]
-    exact hc _
-  · refine (LinearMap.extendOfNorm_unique hdense B hnorm S'
-      (LinearMap.ext fun x => Lp.ext ?_)).symm
-    exact (hS' x.1.1 x.1.2 (hD x).2 (hD x).1).trans (hc x).symm
 
 /-- **The Coifman–Rochberg–Weiss theorem on `Lᵖ`.** Let `1 ≤ s`, let `1 ≤ p < ∞` with `s < p`,
 and let `δ > 0` and `A`, `Aₚ`, `C₀` be constants. There is a constant `C`, depending only on these
@@ -1135,7 +985,7 @@ theorem exists_continuousLinearMap_apply_ae_eq_smul_sub_of_norm_sub_le_mul_rpow
   obtain ⟨C, hC⟩ := exists_eLpNorm_smul_sub_le_of_norm_sub_le_mul_rpow (ι := ι) (E := E) (F := F)
     hs ((ENNReal.ofReal_lt_iff_lt_toReal (by linarith) hp).1 hsp) A Aₚ C₀ hδ
   refine ⟨C, fun T K hKm hK hrep hT hTp b M hb hM => ?_⟩
-  refine exists_continuousLinearMap_apply_ae_eq_smul_sub T hb hp (B := C * M) fun f g _ hg => ?_
+  refine T.exists_continuousLinearMap_apply_ae_eq_smul_sub hb hp (B := C * M) fun f g _ hg => ?_
   have := hC T hKm hK hrep hT (by rwa [hp']) hb hM f g hg
   rwa [hp', ← ENNReal.coe_mul] at this
 

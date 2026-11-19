@@ -314,10 +314,9 @@ private theorem eLpNorm_indicator_spanningSets_inter_norm_le_of_forall_enorm_int
     exact (RCLike.continuous_ofReal.comp_stronglyMeasurable
       (hh'.norm.measurable.pow_const _).stronglyMeasurable).smul hh'
   have huLq : MemLp u q μ :=
-    (memLp_top_of_bound hum.aestronglyMeasurable N
-      (ae_of_all _ hu_le)).mono_exponent_of_measure_support_ne_top
-      (fun x hx => Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _)
-      (measure_spanningSets_lt_top μ N).ne le_top
+    memLp_of_norm_le_of_eq_zero_of_notMem_spanningSets hum.aestronglyMeasurable
+      (ae_of_all _ hu_le)
+      (fun x hx => Set.indicator_of_notMem (fun h => hx (Set.mem_of_mem_inter_left h)) _) q
   set X := eLpNorm u q μ with hX_def
   have hX : X ≠ ∞ := huLq.eLpNorm_lt_top.ne
   have hgX : eLpNorm g q' μ ≤ X ^ (r - 1) :=
