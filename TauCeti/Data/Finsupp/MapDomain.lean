@@ -17,7 +17,10 @@ function extension by zero, over any additive commutative monoid. For an arbitra
 the range of `Finsupp.mapDomain f` consists of the finitely supported functions vanishing outside
 the range of `f` (`Finsupp.mem_range_mapDomain_iff'`). Restricting to a predicate commutes with
 pushing forward along `f` when the predicate on the source is the pullback along `f` of a
-predicate on the target (`Finsupp.mapDomain_subtypeDomain`).
+predicate on the target (`Finsupp.mapDomain_subtypeDomain`). Pushing forward along the inclusion
+of a subtype is a section of restricting to it (`Finsupp.subtypeDomain_mapDomain_subtype`), and
+restricting and then pushing forward filters by the predicate
+(`Finsupp.mapDomain_subtypeDomain_eq_filter`).
 
 Pushing forward along a strictly monotone map of linearly ordered indices preserves and reflects
 the strict and non-strict lexicographic orders, since the relabeled functions vanish off the image
@@ -58,6 +61,26 @@ theorem mapDomain_subtypeDomain_subtype {α M : Type*} [AddCommMonoid M] {s : Se
   classical
   have h := extendDomain_subtypeDomain f (P := (· ∈ s)) fun _ ha ↦ hf ha
   rwa [extendDomain_eq_embDomain_subtype, embDomain_eq_mapDomain] at h
+
+/-- Restricting to a predicate `p` the push-forward of a function on `Subtype p` along the
+inclusion recovers the function. -/
+@[simp]
+theorem subtypeDomain_mapDomain_subtype {α M : Type*} [AddCommMonoid M] {p : α → Prop}
+    (f : Subtype p →₀ M) : (f.mapDomain Subtype.val).subtypeDomain p = f := by
+  ext a
+  rw [subtypeDomain_apply, mapDomain_apply_of_injective Subtype.val_injective]
+
+/-- Restricting to a predicate `p` and pushing forward along the inclusion of `Subtype p` filters
+by `p`. -/
+theorem mapDomain_subtypeDomain_eq_filter {α M : Type*} [AddCommMonoid M] {p : α → Prop}
+    [DecidablePred p] (f : α →₀ M) :
+    (f.subtypeDomain p).mapDomain Subtype.val = f.filter p := by
+  ext a
+  by_cases ha : p a
+  · lift a to Subtype p using ha
+    rw [mapDomain_apply_of_injective Subtype.val_injective, subtypeDomain_apply,
+      filter_apply_pos _ _ a.2]
+  · rw [filter_apply_neg _ _ ha, mapDomain_of_notMem_range _ _ (by simpa using ha)]
 
 /-- If the predicate `p` on the source is the pullback along `f` of the predicate `q` on the
 target, restricting to `p` and then pushing forward along `f` is pushing forward along `f` and

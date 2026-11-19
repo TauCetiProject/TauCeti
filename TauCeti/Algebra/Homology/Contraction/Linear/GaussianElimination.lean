@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Finsupp.Defs
-public import TauCeti.Algebra.Homology.Contraction.Linear.HomologyEquiv
+public import Mathlib.LinearAlgebra.Span.Basic
+public import TauCeti.Algebra.Homology.Contraction.Linear.Basic
+import Mathlib.Tactic.Abel
+import TauCeti.Data.Finsupp.MapDomain
 
 /-!
 # Gaussian elimination in a free differential module
@@ -30,7 +33,8 @@ with `⟨z, y⟩ = ⟨d z, y⟩ = 0`. Writing `ψ = 1 - (d h + h d)` for the com
 inclusion of the contraction is `ψ` on the generators other than `x` and `y`, and its projection is
 `ψ` followed by restriction to these generators. In particular `d'` squares to zero
 (`LinearMap.gaussianElimination_comp_self`), and its homology is that of `d`
-(`TauCeti.LinearContraction.homologyEquiv`).
+(`TauCeti.LinearContraction.homologyEquiv` in
+`TauCeti.Algebra.Homology.Contraction.Linear.Homology.Equiv`).
 
 This is the algebraic model of how a based complex changes when a pair of generators joined by an
 invertible coefficient is born or dies, as at a birth–death point of a generic one-parameter family
@@ -168,22 +172,18 @@ private theorem subtypeDomain_homotopy (z : ι →₀ R) :
   have hjx : j ≠ x := fun h ↦ hj (by simp [h])
   simp [gaussianEliminationHomotopy_apply, single_eq_of_ne hjx]
 
-private theorem subtypeDomain_mapDomain (w : ({x, y}ᶜ : Set ι) →₀ R) :
-    (w.mapDomain (↑)).subtypeDomain (· ∈ ({x, y}ᶜ : Set ι)) = w := by
-  ext j
-  rw [subtypeDomain_apply, mapDomain_apply_of_injective Subtype.val_injective]
-
-private theorem mapDomain_subtypeDomain (hxy : x ≠ y) (z : ι →₀ R) :
+private theorem mapDomain_subtypeDomain_compl_pair (hxy : x ≠ y) (z : ι →₀ R) :
     (z.subtypeDomain (· ∈ ({x, y}ᶜ : Set ι))).mapDomain (↑) =
       z - Finsupp.single x (z x) - Finsupp.single y (z y) := by
+  classical
   ext i
+  rw [mapDomain_subtypeDomain_eq_filter]
   by_cases hi : i ∈ ({x, y}ᶜ : Set ι)
   · have hix : i ≠ x := fun h ↦ hi (by simp [h])
     have hiy : i ≠ y := fun h ↦ hi (by simp [h])
-    rw [show i = ((⟨i, hi⟩ : ({x, y}ᶜ : Set ι)) : ι) from rfl,
-      mapDomain_apply_of_injective Subtype.val_injective]
+    rw [filter_apply_pos _ _ hi]
     simp [single_eq_of_ne hix, single_eq_of_ne hiy]
-  · rw [mapDomain_of_notMem_range _ _ (by simpa using hi)]
+  · rw [filter_apply_neg _ _ hi]
     by_cases hix : i = x
     · subst hix
       simp [single_eq_of_ne hxy]
@@ -242,7 +242,7 @@ private theorem complement_complement (z : ι →₀ R) :
 private theorem complement_mapDomain_subtypeDomain_complement (z : ι →₀ R) :
     complement d x y (((complement d x y z).subtypeDomain (· ∈ ({x, y}ᶜ : Set ι))).mapDomain (↑)) =
       complement d x y z := by
-  rw [mapDomain_subtypeDomain hxy, complement_apply_right hxy hu, single_zero, sub_zero,
+  rw [mapDomain_subtypeDomain_compl_pair hxy, complement_apply_right hxy hu, single_zero, sub_zero,
     map_sub, complement_complement hd hxy hu, complement_single_left hxy hu, sub_zero]
 
 variable (d x y) in
@@ -269,7 +269,7 @@ noncomputable def gaussianEliminationContraction :
     simp only [LinearMap.comp_apply, lmapDomain_apply, lsubtypeDomain_apply, LinearMap.id_apply,
       complement_complement hd hxy hu]
     rw [complement_apply, homotopy_mapDomain, map_zero, sub_zero, Finsupp.subtypeDomain_sub,
-      subtypeDomain_homotopy, sub_zero, subtypeDomain_mapDomain]
+      subtypeDomain_homotopy, sub_zero, subtypeDomain_mapDomain_subtype]
   dM_comp_homotopy_add_homotopy_comp_dM := by
     refine LinearMap.ext fun z ↦ ?_
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply,

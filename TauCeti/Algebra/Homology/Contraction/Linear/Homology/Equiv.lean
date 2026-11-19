@@ -40,11 +40,13 @@ noncomputable def homologyEquiv (c : LinearContraction dM dN) (hdM : dM ∘ₗ d
   LinearEquiv.ofLinearMap (LinearMap.homologyMap c.incl _ hdM c.dM_comp_incl.symm)
     (LinearMap.homologyMap c.proj hdM _ c.proj_comp_dM)
     (by
+      have hfg :
+          c.incl ∘ₗ c.proj - LinearMap.id = dM ∘ₗ (-c.homotopy) + (-c.homotopy) ∘ₗ dM := by
+        rw [c.incl_comp_proj, LinearMap.comp_neg, LinearMap.neg_comp]
+        abel
       rw [LinearMap.homologyMap_comp_homologyMap,
-        LinearMap.homologyMap_eq_of_sub_eq _ LinearMap.id (-c.homotopy) _ _ _ (by simp),
-        LinearMap.homologyMap_id]
-      rw [c.incl_comp_proj, LinearMap.comp_neg, LinearMap.neg_comp]
-      abel)
+        LinearMap.homologyMap_eq_of_sub_eq _ LinearMap.id _ _ _ _ (by simp) hfg,
+        LinearMap.homologyMap_id])
     (by
       rw [LinearMap.homologyMap_comp_homologyMap]
       simp only [proj_comp_incl, LinearMap.homologyMap_id])
