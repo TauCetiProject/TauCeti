@@ -74,8 +74,9 @@ $J$-holomorphic curves.
   energy--area identity for the within-set derivative of a pseudoholomorphic curve.
 * `TauCeti.SmoothTwoForm.Tames.eval₂_mfderiv_nonneg`: under tameness, the symplectic area density
   of a curve satisfying the Cauchy--Riemann equation is nonnegative.
-* `TauCeti.SmoothTwoForm.Tames.exists_pos_eval₂_mfderiv`: under tameness, a nonconstant `C¹`
-  curve satisfying the Cauchy--Riemann equation has positive symplectic area density somewhere.
+* `TauCeti.SmoothTwoForm.Tames.exists_pos_eval₂_mfderiv`: under tameness, a nonconstant
+  differentiable curve satisfying the Cauchy--Riemann equation has positive symplectic area
+  density somewhere.
 * `TauCeti.SmoothTwoForm.continuous_eval₂_mfderiv`: continuity of the symplectic area density
   of a `C¹` curve.
 * `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm`: the Wirtinger
@@ -334,10 +335,10 @@ lemma Tames.eval₂_mfderiv_nonneg (htame : form.Tames J) {u : ℝ × ℝ → M}
     |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm] at h
   exact (mul_nonneg_iff_of_pos_left two_pos).1 h
 
-/-- Under tameness, a nonconstant `C¹` curve `u` satisfying the Cauchy--Riemann equation
+/-- Under tameness, a nonconstant differentiable curve `u` satisfying the Cauchy--Riemann equation
 `∂ₜu = J(u) ∂ₛu` has positive symplectic area density `ω(∂ₛu, ∂ₜu)` somewhere. -/
 theorem Tames.exists_pos_eval₂_mfderiv (htame : form.Tames J) {u : ℝ × ℝ → M}
-    (hu : ContMDiff (modelWithCornersSelf ℝ (ℝ × ℝ)) I 1 u)
+    (hu : MDifferentiable (modelWithCornersSelf ℝ (ℝ × ℝ)) I u)
     (hCR : ∀ z, mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag =
       J (u z) (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal))
     (hnc : ∃ z w, u z ≠ u w) :
@@ -352,7 +353,7 @@ theorem Tames.exists_pos_eval₂_mfderiv (htame : form.Tames J) {u : ℝ × ℝ 
       |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm]
     exact mul_eq_zero_of_right 2 (le_antisymm (h w) (htame.eval₂_mfderiv_nonneg (hCR w)))
   obtain ⟨z, w, hzw⟩ := hnc
-  exact hzw ((hu.mdifferentiable (by norm_num)).apply_eq_of_mfderiv_eq_zero hzero z w)
+  exact hzw (hu.apply_eq_of_mfderiv_eq_zero hzero z w)
 
 /-- For a `C¹` map `u`, the area density `ω(∂ₛu, ∂ₜu)` is continuous. -/
 theorem continuous_eval₂_mfderiv (form : SmoothTwoForm I M) {u : ℝ × ℝ → M}

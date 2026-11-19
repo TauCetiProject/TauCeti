@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Hofer
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
@@ -360,10 +361,8 @@ private theorem exists_pos_forall_le_or_le_of_chart [I.Boundaryless] (α : M) {K
   -- The coordinate expression `f` of `u` in the complex coordinate `φ` of the domain.
   set φ := Complex.equivRealProdCLM
   set f : ℂ → E := (extChartAt I α ∘ u) ∘ φ
-  have hsrc (y : ℂ) (hy : y ∈ closedBall (φ.symm w₀) r) := hmaps _ <| by
-    have h : dist (φ y) w₀ ≤ dist y (φ.symm w₀) := by
-      simpa [φ] using Complex.lipschitz_equivRealProd.dist_le_mul y (φ.symm w₀)
-    exact mem_closedBall.2 (h.trans (mem_closedBall.1 hy))
+  have hsrc (y : ℂ) (hy : y ∈ closedBall (φ.symm w₀) r) := hmaps _ <|
+    mem_closedBall.2 ((Complex.dist_equivRealProdCLM_le y w₀).trans (mem_closedBall.1 hy))
   have hcd (y : ℂ) (hy : y ∈ closedBall (φ.symm w₀) r) : ContDiffAt ℝ 3 f y :=
     (contMDiffAt_iff_contDiffAt.1 ((contMDiffAt_extChartAt'
       (show u (φ y) ∈ (chartAt H α).source by rw [← extChartAt_source I]; exact (hsrc y hy).1)).comp
@@ -510,7 +509,7 @@ theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryles
   have hsq (w : ℝ × ℝ) : √(ρ w) ^ 2 = ρ w := Real.sq_sqrt (hJ.eval₂_mfderiv_nonneg (hCR w))
   -- Hofer's lemma gives a point `w'` of density `m² > 0`, with density at most `(2m)²` on a ball
   -- about `w'` of radius at least `R / m`.
-  obtain ⟨w₁, hw₁⟩ := hJ.exists_pos_eval₂_mfderiv (hu.of_le (by norm_num)) hCR hnc
+  obtain ⟨w₁, hw₁⟩ := hJ.exists_pos_eval₂_mfderiv (hu.mdifferentiable (by norm_num)) hCR hnc
   have hϕ1 : 0 < √(ρ w₁) := Real.sqrt_pos.2 hw₁
   obtain ⟨ε', hε', w', -, -, hmono, hball⟩ := hofer_of_continuousOn_closedBall w₁
     (show 0 < R / √(ρ w₁) by positivity)
