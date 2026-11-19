@@ -169,8 +169,8 @@ theorem _root_.Group.isSolvable_of_forall_notMem_mul_self_eq_one {G : Type*} [Gr
       calc x * (a * b) * x = x * a * (x * x) * b * x := by rw [hxx]; group
         _ = x * a * x * (x * b * x) := by group
     simpa [mul_inv_rev] using congrArg (·⁻¹) key
-  · rw [← inv_eq_of_mul_eq_one_right (hsq (a * b)), mul_inv_rev,
-      inv_eq_of_mul_eq_one_right (hsq a), inv_eq_of_mul_eq_one_right (hsq b)]
+  · exact (Commute.of_orderOf_dvd_two
+      (fun q ↦ orderOf_dvd_of_pow_eq_one ((sq q).trans (hsq q))) a b).eq
 
 universe u v
 
