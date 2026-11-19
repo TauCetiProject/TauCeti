@@ -135,6 +135,14 @@ def reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι
 theorem reindex_mk {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
     (mk o).reindex e = mk (o.reindex e) := (rfl)
 
+/-- Reindexing along the identity equivalence does not change an orientation. -/
+@[simp]
+theorem reindex_refl (o : Orientation I M ι) : o.reindex (Equiv.refl ι) = o := by
+  induction o using Orientation.inductionOn with | h l =>
+    rw [reindex_mk]
+    congr 1
+    ext α x <;> simp
+
 variable [IsManifold I 1 M]
 
 /-- The induced orientation of the tangent bundle. -/
