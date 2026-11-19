@@ -26,11 +26,11 @@ for the coadjoint representation are in
 
 The same holds on the tangent Lie algebra `𝔤 = GroupLieAlgebra I G`, for the stabilizer of
 `μ ∈ 𝔤` under `TauCeti.Lie.adjointRepresentation`. Conjugation by `g` carries `exp (t μ)` to
-`exp (t Ad_g μ)`, so `Ad_g μ = μ` exactly when `g` commutes with every `exp (t μ)`; the converse
-direction is the derivation-level `TauCeti.Lie.Ad_apply_eq_self_of_forall_commute`, read through
-evaluation at the identity. Since the centralizer of `g` is
-closed, `g` then commutes with the whole closed one-parameter subgroup `T_μ`, the closure of
-`{exp (t μ) | t ∈ ℝ}` (`TauCeti.Lie.closedOneParameterSubgroup`).
+`exp (t Ad_g μ)`, so `Ad_g μ = μ` exactly when `g` commutes with every `exp (t μ)`; this is
+`TauCeti.Lie.stabilizer_continuousAdjointRepresentation_eq_centralizer`, read through evaluation at
+the identity. Since the centralizer of `g` is closed, `g` then commutes with the whole closed
+one-parameter subgroup `T_μ`, the closure of `{exp (t μ) | t ∈ ℝ}`
+(`TauCeti.Lie.closedOneParameterSubgroup`).
 
 ## Main results
 
@@ -110,26 +110,18 @@ theorem le_stabilizer_continuousAdjointRepresentation {K : Subgroup G} [IsMulCom
 theorem stabilizer_adjointRepresentation_eq_centralizer (μ : GroupLieAlgebra I G) :
     (adjointRepresentation ℝ I G).stabilizer μ =
       Subgroup.centralizer (Set.range fun t : ℝ ↦ mulInvariantExp (I := I) (t • μ)) := by
+  -- Transport `stabilizer_continuousAdjointRepresentation_eq_centralizer` along evaluation at
+  -- the identity.
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  have hexp (t : ℝ) : lieExp (I := I) (t • e.symm μ) = mulInvariantExp (I := I) (t • μ) := by
+    rw [lieExp_eq_mulInvariantExp, map_smul,
+      ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply, e.apply_symm_apply]
+  simp_rw [← hexp, ← stabilizer_continuousAdjointRepresentation_eq_centralizer]
   ext g
-  rw [Representation.mem_stabilizer, adjointRepresentation_apply, Subgroup.mem_centralizer_iff,
-    Set.forall_mem_range]
-  -- Conjugation by `g` carries the line `exp (t μ)` to the line `exp (t Ad_g μ)`.
-  have hconj (t : ℝ) : g * mulInvariantExp (I := I) (t • μ) * g⁻¹ =
-      mulInvariantExp (I := I) (t • adjointContinuousLinearMap (I := I) g μ) := by
-    rw [conj_mulInvariantExp, tangentAd_apply, map_smul]
-  refine ⟨fun h t ↦ ?_, fun h ↦ ?_⟩
-  · rw [eq_comm, ← mul_inv_eq_iff_eq_mul, hconj, h]
-  · -- Transport `Ad_apply_eq_self_of_forall_commute` along evaluation at the identity.
-    let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-    have hAd : Ad (I := I) g (e.symm μ) = e.symm μ :=
-      Ad_apply_eq_self_of_forall_commute fun t ↦ by
-        rw [lieExp_eq_mulInvariantExp, map_smul,
-          ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply, e.apply_symm_apply]
-        exact (h t).symm
-    have := congrArg e hAd
-    rwa [leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, e.apply_symm_apply,
-      tangentAd_apply] at this
+  rw [Representation.mem_stabilizer, adjointRepresentation_apply,
+    mem_stabilizer_continuousAdjointRepresentation_iff, ← EquivLike.apply_eq_iff_eq e,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, e.apply_symm_apply, tangentAd_apply]
 
 section TopologicalGroup
 

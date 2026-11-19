@@ -167,7 +167,7 @@ Lie modules. -/
 noncomputable def lieModuleEquivDual (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
     (hBL : B.lieInvariant L) : M ≃ₗ⁅K,L⁆ Dual K M where
   __ := B.toDual hB
-  map_lie' {x m} := LinearMap.ext fun n ↦ by simp [toDual_def, hBL x m n]
+  map_lie' {x m} := map_lie_of_lieInvariant hBL x m
 
 /-- The Lie module equivalence `M ≃ M*` of a nondegenerate invariant form `B` sends `m` to the
 linear form `n ↦ B m n`. -/

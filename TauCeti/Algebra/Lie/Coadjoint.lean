@@ -101,7 +101,8 @@ structure.
 * `Module.Dual.kksForm_eq_kirillovForm_of_coadjointTangentMap_eq`: the KKS form inverts the
   Lie–Poisson sharp map.
 * `TauCeti.lieAnnihilator_bilinForm_apply_eq_of_lieInvariant`: for an invariant form `B` with
-  trivial left radical, the stabilizer of `B μ` is the centralizer of `μ`.
+  trivial left radical on a Lie module, the annihilator of `B m` is that of `m`; on `L` itself,
+  the stabilizer of `B μ` is the centralizer of `μ`.
 
 ## References
 
@@ -441,14 +442,17 @@ end Module.Dual
 
 namespace TauCeti
 
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {B : LinearMap.BilinForm R L}
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+  {B : LinearMap.BilinForm R M}
 
-/-- **The coadjoint stabilizer of an invariant-form covector is a centralizer.** For an invariant
-form `B` with trivial left radical, the infinitesimal coadjoint stabilizer of the covector
-`B μ = B(μ, ·)` is the centralizer `{ξ | ⁅ξ, μ⁆ = 0}` of `μ`. -/
+/-- **Annihilators of invariant-form covectors.** For a bilinear form `B` on a Lie module `M`,
+invariant under `L` and with trivial left radical, the annihilator in `L` of the linear form
+`B m = B(m, ·)` is the annihilator of `m`. For `M = L` this says that the infinitesimal coadjoint
+stabilizer of `B μ` is the centralizer `{ξ | ⁅ξ, μ⁆ = 0}` of `μ`. -/
 theorem lieAnnihilator_bilinForm_apply_eq_of_lieInvariant (hB : B.lieInvariant L)
-    (hB' : LinearMap.SeparatingLeft B) (μ : L) :
-    lieAnnihilator R L (B μ) = lieAnnihilator R L μ := by
+    (hB' : LinearMap.SeparatingLeft B) (m : M) :
+    lieAnnihilator R L (B m) = lieAnnihilator R L m := by
   ext ξ
   rw [mem_lieAnnihilator, mem_lieAnnihilator, ← LinearMap.BilinForm.map_lie_of_lieInvariant hB]
   exact ⟨fun h ↦ hB' _ fun η ↦ by rw [h, LinearMap.zero_apply], fun h ↦ by rw [h, map_zero]⟩
