@@ -302,9 +302,8 @@ theorem MonoidHom.injective_domRestrict_of_isMulTorsion {H : Type*} [Group H] (f
     Function.Injective (f.domRestrict K) := by
   refine (injective_iff_map_eq_one _).mpr fun x hx ↦ ?_
   have hker : (x : G) ∈ f.ker := f.mem_ker.mpr (by simpa using hx)
-  obtain ⟨n, hn, hxn⟩ := isOfFinOrder_iff_pow_eq_one.mp (hK x)
   have hfin : IsOfFinOrder (⟨x, hker⟩ : f.ker) :=
-    isOfFinOrder_iff_pow_eq_one.mpr ⟨n, hn, Subtype.ext (by simpa using congrArg Subtype.val hxn)⟩
+    Submonoid.isOfFinOrder_coe.1 (Submonoid.isOfFinOrder_coe.2 (hK x) : IsOfFinOrder (x : G))
   have h1 : (x : G) = 1 := congrArg Subtype.val hfin.eq_one'
   exact Subtype.ext h1
 

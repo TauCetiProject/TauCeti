@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.RingTheory.ZMod
 import TauCeti.GroupTheory.Torsion
+import TauCeti.RingTheory.AdicCompletion.Pi
 import TauCeti.RingTheory.RootsOfUnity.Congruence
 
 /-!
@@ -29,6 +30,8 @@ The prime `2` is excluded: `-1 ∈ GL 1 ℤ` reduces to `1` modulo `2` and has o
 
 ## Main results
 
+* `Matrix.isLeftRegular_scalar`, `Matrix.eq_zero_of_forall_scalar_pow_dvd`: regularity and
+  `r`-adic separatedness of `R` pass to the scalar matrix `r` in `Matrix n n R`.
 * `Matrix.GeneralLinearGroup.isMulTorsionFree_ker_map`: if `φ : R →+* S` has kernel contained in
   `ℓ R`, the kernel of `GL n R → GL n S` is torsion-free.
 * `Matrix.GeneralLinearGroup.injective_domRestrict_map`,
@@ -39,8 +42,10 @@ The prime `2` is excluded: `-1 ∈ GL 1 ℤ` reduces to `1` modulo `2` and has o
   `Matrix.GeneralLinearGroup.injective_domRestrict_map_toZMod`: the first congruence subgroup of
   `GL n ℤ_[ℓ]` is torsion-free, and reduction `GL n ℤ_[ℓ] → GL n (ZMod ℓ)` is injective on every
   finite subgroup.
-* `Matrix.GeneralLinearGroup.injective_domRestrict_map_intCast`: for an odd prime `p`, reduction
-  `GL n ℤ → GL n (ZMod p)` is injective on every finite subgroup.
+* `Matrix.GeneralLinearGroup.isMulTorsionFree_ker_map_intCast`,
+  `Matrix.GeneralLinearGroup.injective_domRestrict_map_intCast`: for an odd prime `p`, the kernel
+  of reduction `GL n ℤ → GL n (ZMod p)` is torsion-free, and the reduction is injective on every
+  finite subgroup.
 * `Matrix.GeneralLinearGroup.natCard_le_natCard_zmod_three`: a finite subgroup of `GL n ℤ` has at
   most `|GL n (ZMod 3)|` elements.
 
@@ -59,6 +64,27 @@ with `k = 1`; this is where `ℓ ≥ 3` is used.
 -/
 
 public section
+
+namespace Matrix
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+
+/-- Left multiplication by the scalar matrix `r` is injective when multiplication by `r` is
+injective on `R`. -/
+theorem isLeftRegular_scalar {r : R} (h : IsSMulRegular R r) : IsLeftRegular (scalar n r) :=
+  fun x y hxy ↦ h.matrix (by simpa only [scalar_apply, ← smul_eq_diagonal_mul] using hxy)
+
+/-- If `R` is `r`-adically separated, the only matrix over `R` divisible by every power of the
+scalar matrix `r` is `0`. -/
+theorem eq_zero_of_forall_scalar_pow_dvd {r : R} (h : IsHausdorff (Ideal.span {r}) R)
+    {x : Matrix n n R} (hx : ∀ k : ℕ, scalar n r ^ k ∣ x) : x = 0 := by
+  have := h
+  refine Matrix.ext fun i j ↦ congrFun (TauCeti.eq_zero_of_forall_pow_dvd r fun k j ↦ ?_) j
+  obtain ⟨z, rfl⟩ := hx k
+  rw [← map_pow, scalar_apply, ← smul_eq_diagonal_mul]
+  exact Dvd.intro _ rfl
+
+end Matrix
 
 namespace Matrix.GeneralLinearGroup
 
@@ -85,19 +111,10 @@ theorem isMulTorsionFree_ker_map {ℓ : ℕ} (hℓ : ℓ.Prime) (hodd : Odd ℓ)
     simpa using congrFun (congrFun h0 i) j
   choose Y hY using hdvd
   -- apply Serre's lemma in the matrix ring, where multiplication by `ℓ` is scalar multiplication
-  have hcz (k : ℕ) (z : Matrix n n R) : (ℓ : Matrix n n R) ^ k * z = (ℓ : R) ^ k • z := by
-    rw [← Nat.cast_pow, ← Nat.cast_pow, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
-  have hregM : IsLeftRegular (ℓ : Matrix n n R) := fun x y hxy ↦ by
-    have h : (ℓ : Matrix n n R) ^ 1 * x = (ℓ : Matrix n n R) ^ 1 * y := by rwa [pow_one]
-    rw [hcz, hcz, pow_one] at h
-    exact hreg.matrix h
-  have hsepM (x : Matrix n n R) (hx : ∀ k : ℕ, (ℓ : Matrix n n R) ^ k ∣ x) : x = 0 := by
-    ext i j
-    refine hsep.haus' _ fun k ↦ ?_
-    obtain ⟨z, rfl⟩ := hx k
-    rw [SModEq.zero, hcz, Matrix.smul_apply]
-    exact Submodule.smul_mem_smul (Ideal.pow_mem_pow (Ideal.mem_span_singleton_self _) k)
-      Submodule.mem_top
+  have hregM : IsLeftRegular (ℓ : Matrix n n R) := by
+    simpa using Matrix.isLeftRegular_scalar (n := n) hreg
+  have hsepM (x : Matrix n n R) (hx : ∀ k : ℕ, (ℓ : Matrix n n R) ^ k ∣ x) : x = 0 :=
+    Matrix.eq_zero_of_forall_scalar_pow_dvd hsep (by simpa using hx)
   have hk : 3 ≤ ℓ ^ 1 := by
     obtain ⟨m, hm⟩ := hodd
     have := hℓ.two_le
@@ -105,8 +122,9 @@ theorem isMulTorsionFree_ker_map {ℓ : ℕ} (hℓ : ℓ.Prime) (hodd : Odd ℓ)
     omega
   have hg1 : (ℓ : Matrix n n R) ^ 1 ∣ (g : Matrix n n R) - 1 := by
     refine ⟨Matrix.of Y, ?_⟩
+    rw [pow_one, ← nsmul_eq_mul]
     ext i j
-    rw [hcz, Matrix.smul_apply, Matrix.of_apply, pow_one, smul_eq_mul, mul_comm, hY]
+    simp [← hY, mul_comm]
   have := TauCeti.eq_one_of_isOfFinOrder_of_pow_dvd_sub_one hℓ hregM hsepM hk
     (Units.isOfFinOrder_val.mpr ((Subgroup.subtype _).isOfFinOrder hfin)) hg1
   exact Subtype.ext (Units.ext this)
@@ -155,17 +173,24 @@ end Padic
 
 section Int
 
-/-- **Finite subgroups of `GL n ℤ` inject modulo an odd prime `p`**: reduction
-`GL n ℤ → GL n (ZMod p)` is injective on every finite subgroup. -/
-theorem injective_domRestrict_map_intCast {p : ℕ} [hp : Fact p.Prime] (hodd : Odd p)
-    (G : Subgroup (GL n ℤ)) [Finite G] :
-    Function.Injective ((map (Int.castRingHom (ZMod p))).domRestrict G) :=
-  injective_domRestrict_map hp.out hodd (.of_ne_zero (by exact_mod_cast hp.out.ne_zero))
+/-- **The kernel of `GL n ℤ → GL n (ZMod p)` is torsion-free** for an odd prime `p`: an integer
+matrix of finite order congruent to `1` modulo `p` is `1`. -/
+theorem isMulTorsionFree_ker_map_intCast {p : ℕ} [hp : Fact p.Prime] (hodd : Odd p) :
+    IsMulTorsionFree (map (n := n) (Int.castRingHom (ZMod p))).ker :=
+  isMulTorsionFree_ker_map hp.out hodd (.of_ne_zero (by exact_mod_cast hp.out.ne_zero))
     (.of_isDomain _ (by
       rw [Ne, Ideal.span_singleton_eq_top, Int.isUnit_iff]
       have := hp.out.two_le
       omega)) _
-    (ZMod.ker_intCastRingHom p).le G
+    (ZMod.ker_intCastRingHom p).le
+
+/-- **Finite subgroups of `GL n ℤ` inject modulo an odd prime `p`**: reduction
+`GL n ℤ → GL n (ZMod p)` is injective on every finite subgroup. -/
+theorem injective_domRestrict_map_intCast {p : ℕ} [Fact p.Prime] (hodd : Odd p)
+    (G : Subgroup (GL n ℤ)) [Finite G] :
+    Function.Injective ((map (Int.castRingHom (ZMod p))).domRestrict G) :=
+  have := isMulTorsionFree_ker_map_intCast (n := n) hodd
+  (map _).injective_domRestrict_of_isMulTorsion isMulTorsion_of_finite
 
 /-- A finite subgroup of `GL n ℤ` has at most `|GL n (ZMod 3)|` elements, since it embeds into
 `GL n (ZMod 3)` by reduction. -/
