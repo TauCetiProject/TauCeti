@@ -356,8 +356,8 @@ theorem tendsto_eLpNorm_sub_of_tendsto {α : Type*} {l : Filter α} {k : ℕ}
     (hv : value k v =ᵐ[mu.restrict Omega] g) :
     Filter.Tendsto (fun i => eLpNorm (f i - g) p (mu.restrict Omega)) l (nhds 0) := by
   refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
-    (((valueL k).continuous.tendsto v).comp huv)).congr fun i => eLpNorm_congr_ae ?_
-  simpa only [Function.comp_apply, valueL_apply] using (hu i).sub hv
+    (tendsto_value huv)).congr fun i => eLpNorm_congr_ae ?_
+  exact (hu i).sub hv
 
 /-- At first order, the generic lower-order projection is the `W1p` value projection. -/
 @[simp]

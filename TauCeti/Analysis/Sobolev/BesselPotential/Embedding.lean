@@ -696,8 +696,7 @@ private theorem toZeroAtInftyₗ_closedGraph (hk : finrank ℝ E < 2 * k)
     (hu : Tendsto u atTop (𝓝 w)) (hg : Tendsto (toZeroAtInftyₗ hk ∘ u) atTop (𝓝 g)) :
     g = toZeroAtInftyₗ hk w := by
   refine eq_of_value_ae_eq (u := w) ?_ (value_ae_eq_toZeroAtInftyₗ hk w)
-  have hval : Tendsto (fun n => value k (u n)) atTop (𝓝 (value k w)) := by
-    simpa only [Function.comp_def, valueL_apply] using ((valueL k).continuous.tendsto w).comp hu
+  have hval : Tendsto (fun n => value k (u n)) atTop (𝓝 (value k w)) := tendsto_value hu
   obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hval).exists_seq_tendsto_ae
   have hrep : ∀ᵐ x ∂(volume : Measure E), ∀ i,
       value k (u (ns i)) x = toZeroAtInftyₗ hk (u (ns i)) x :=
