@@ -35,9 +35,13 @@ relative to any group of automorphisms.
 
 ## Main results
 
-* `TauCeti.BranchTuple.hurwitzMove_mul_comm` and `TauCeti.BranchTuple.hurwitzMove_braid`: the
-  moves satisfy the braid relations.
+* `TauCeti.BranchTuple.hurwitzMove_mul_hurwitzMove_comm` and
+  `TauCeti.BranchTuple.hurwitzMove_braid`: the moves satisfy the braid relations.
 * `TauCeti.BranchTuple.hurwitzAction_sigma`: `σ i` acts by the `i`-th move.
+* `TauCeti.BranchTuple.apply_hurwitzAction_of_apply_hurwitzMove` and
+  `TauCeti.BranchTuple.apply_hurwitzAction_eq_of_invariant`: to show that a map out of branch
+  tuples is equivariant for, or invariant under, the Hurwitz action, it suffices to check single
+  Hurwitz moves.
 * `TauCeti.BranchTuple.product_hurwitzAction`, `TauCeti.BranchTuple.generated_hurwitzAction` and
   `TauCeti.BranchTuple.classMultiset_hurwitzAction`: the invariants of the action.
 * `TauCeti.BranchTuple.isConj_hurwitzAction_apply`: the entry of `b • t` at position `k` is
@@ -131,7 +135,8 @@ theorem hurwitzMove_symm_apply_of_ne (i : Fin (r - 1)) (t : BranchTuple r G) {k 
   simp [hurwitzMove_symm_apply, h₀, h₁]
 
 /-- Hurwitz moves at disjoint pairs of positions commute. -/
-theorem hurwitzMove_mul_comm {i j : Fin (r - 1)} (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
+theorem hurwitzMove_mul_hurwitzMove_comm {i j : Fin (r - 1)}
+    (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     hurwitzMove (G := G) i * hurwitzMove j = hurwitzMove j * hurwitzMove i := by
   have hnd := nodup_strand_strandSucc_strand_strandSucc h
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil, not_or,
@@ -218,7 +223,7 @@ theorem hurwitzMove_braid {i j : Fin (r - 1)} (h : (i : ℕ) + 1 = j ∨ (j : �
 /-- The Hurwitz action of the braid group on branch tuples of length `r`, a left action in which
 the elementary braid `σ i` acts by the `i`-th positive Hurwitz move. -/
 def hurwitzAction : BraidGroup r →* Equiv.Perm (BranchTuple r G) :=
-  BraidGroup.lift hurwitzMove hurwitzMove_mul_comm hurwitzMove_braid
+  BraidGroup.lift hurwitzMove hurwitzMove_mul_hurwitzMove_comm hurwitzMove_braid
 
 /-- The elementary braid `σ i` acts by the `i`-th positive Hurwitz move. -/
 @[simp]
@@ -228,7 +233,7 @@ theorem hurwitzAction_sigma (i : Fin (r - 1)) :
 
 /-- A map out of branch tuples intertwining each Hurwitz move with the action of the corresponding
 elementary braid through `ρ` intertwines the whole Hurwitz action with `ρ`. -/
-private theorem apply_hurwitzAction_eq {X : Type*} (ρ : BraidGroup r →* Equiv.Perm X)
+theorem apply_hurwitzAction_of_apply_hurwitzMove {X : Type*} (ρ : BraidGroup r →* Equiv.Perm X)
     {F : BranchTuple r G → X} (h : ∀ i t, F (hurwitzMove i t) = ρ (sigma i) (F t))
     (b : BraidGroup r) (t : BranchTuple r G) : F (hurwitzAction b t) = ρ b (F t) := by
   induction b using sigma_induction_on generalizing t with
@@ -241,10 +246,10 @@ private theorem apply_hurwitzAction_eq {X : Type*} (ρ : BraidGroup r →* Equiv
 
 /-- A function of branch tuples invariant under every Hurwitz move is invariant under the Hurwitz
 action. -/
-private theorem apply_hurwitzAction_of_forall {X : Type*} {F : BranchTuple r G → X}
+theorem apply_hurwitzAction_eq_of_invariant {X : Type*} {F : BranchTuple r G → X}
     (h : ∀ i t, F (hurwitzMove i t) = F t) (b : BraidGroup r) (t : BranchTuple r G) :
-    F (hurwitzAction b t) = F t :=
-  apply_hurwitzAction_eq 1 (by simpa using h) b t
+    F (hurwitzAction b t) = F t := by
+  simpa using apply_hurwitzAction_of_apply_hurwitzMove 1 (by simpa using h) b t
 
 /-! ### Invariants of the Hurwitz action -/
 
@@ -255,8 +260,9 @@ private theorem ofFn_eq_take_append {α : Type*} (u : Fin r → α) (i : Fin (r 
   have hi := i.isLt
   conv_lhs => rw [← List.take_append_drop i (List.ofFn u)]
   rw [List.drop_eq_getElem_cons (by simp; omega), List.drop_eq_getElem_cons (by simp; omega)]
-  simp only [List.getElem_ofFn]
-  congr 3 <;> first | exact Fin.ext (by simp) | (congr 1; exact Fin.ext (by simp))
+  have h₀ : (⟨i, by omega⟩ : Fin r) = strand i := Fin.ext (by simp)
+  have h₁ : (⟨i + 1, by omega⟩ : Fin r) = strandSucc i := Fin.ext (by simp)
+  simp only [List.getElem_ofFn, h₀, h₁]
 
 private theorem take_ofFn_hurwitzMove (i : Fin (r - 1)) (t : BranchTuple r G) :
     (List.ofFn (hurwitzMove i t)).take i = (List.ofFn t).take i := by
@@ -275,9 +281,8 @@ private theorem drop_ofFn_hurwitzMove (i : Fin (r - 1)) (t : BranchTuple r G) :
 private theorem product_eq_mul (u : BranchTuple r G) (i : Fin (r - 1)) :
     product u = ((List.ofFn u).take i).prod *
       (u (strand i) * (u (strandSucc i) * ((List.ofFn u).drop (i + 2)).prod)) := by
-  rw [product_def, ofFn_eq_take_append u i]
+  conv_lhs => rw [product_def, ofFn_eq_take_append u i]
   simp only [List.prod_append, List.prod_cons]
-  rw [← ofFn_eq_take_append u i]
 
 /-- A Hurwitz move preserves the ordered product. -/
 @[simp]
@@ -320,15 +325,17 @@ theorem isConj_hurwitzMove_apply (i : Fin (r - 1)) (t : BranchTuple r G) (k : Fi
   rw [hurwitzMove_apply_of_ne i t h₀ h₁, transposition_eq_swap,
     Equiv.swap_apply_of_ne_of_ne h₀ h₁]
 
+/-- The Hurwitz action preserves the ordered product exactly. -/
 @[simp]
 theorem product_hurwitzAction (b : BraidGroup r) (t : BranchTuple r G) :
     product (hurwitzAction b t) = product t :=
-  apply_hurwitzAction_of_forall product_hurwitzMove b t
+  apply_hurwitzAction_eq_of_invariant product_hurwitzMove b t
 
+/-- The Hurwitz action preserves the generated subgroup exactly. -/
 @[simp]
 theorem generated_hurwitzAction (b : BraidGroup r) (t : BranchTuple r G) :
     generated (hurwitzAction b t) = generated t :=
-  apply_hurwitzAction_of_forall generated_hurwitzMove b t
+  apply_hurwitzAction_eq_of_invariant generated_hurwitzMove b t
 
 /-- Under the Hurwitz action of a braid `b`, the entry at position `k` is conjugate to the entry of
 the original tuple at position `(permHom r b)⁻¹ k`: the conjugacy classes of the entries travel
@@ -377,7 +384,7 @@ theorem hurwitzMove_comp (f : G →* H) (i : Fin (r - 1)) (t : BranchTuple r G) 
 /-- The Hurwitz action commutes with homomorphisms applied entrywise. -/
 theorem hurwitzAction_comp (f : G →* H) (b : BraidGroup r) (t : BranchTuple r G) :
     hurwitzAction b (f ∘ t) = f ∘ hurwitzAction b t :=
-  (apply_hurwitzAction_eq hurwitzAction (F := fun t ↦ ⇑f ∘ t)
+  (apply_hurwitzAction_of_apply_hurwitzMove hurwitzAction (F := fun t ↦ ⇑f ∘ t)
     (fun i t ↦ by rw [hurwitzAction_sigma, hurwitzMove_comp]) b t).symm
 
 /-- The Hurwitz action commutes with automorphisms applied entrywise. -/

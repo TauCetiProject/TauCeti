@@ -128,7 +128,7 @@ theorem apply_mem_generated (t : BranchTuple r G) (i : Fin r) : t i ∈ generate
 theorem generated_le_iff {t : BranchTuple r G} {K : Subgroup G} :
     generated t ≤ K ↔ ∀ i, t i ∈ K := by
   rw [generated_def, Subgroup.closure_le, Set.range_subset_iff]
-  rfl
+  simp only [SetLike.mem_coe]
 
 /-- The empty tuple generates the trivial subgroup. -/
 @[simp]
@@ -279,7 +279,7 @@ theorem classMultiset_eq_of_mk_eq_mk {t t' : BranchTuple r G}
   rw [show t' = MulAut.conj g • t from funext hg, BranchTuple.classMultiset_conj_smul]
 
 /-- In an abelian group, conjugation is trivial, so the inner Nielsen class of a branch tuple
-determines the tuple. Dividing by all automorphisms of the group would identify more tuples. -/
+determines the tuple. Dividing by all automorphisms of the group can identify more tuples. -/
 theorem mk_injective {G : Type*} [CommGroup G] :
     Function.Injective (Quotient.mk'' : BranchTuple r G → InnerNielsenClass r G) := by
   intro t t' h
