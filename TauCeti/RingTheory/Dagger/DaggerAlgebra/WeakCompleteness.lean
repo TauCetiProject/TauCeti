@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Dagger.SupSeminorm
 
 import Mathlib.RingTheory.Filtration
-import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.Affinoid.Integral.Equation
 import TauCeti.RingTheory.Algebraic.Basic
@@ -18,6 +17,7 @@ import TauCeti.RingTheory.Dagger.NoetherNormalization
 import TauCeti.RingTheory.Dagger.Noetherian
 import TauCeti.RingTheory.Dagger.Weierstrass
 import TauCeti.RingTheory.Ideal.Quotient.Integral
+import TauCeti.RingTheory.RingHom.Flat
 
 /-!
 # Weak completeness of dagger algebras
@@ -45,7 +45,7 @@ every noetherian target whose residue fields at maximal ideals are integral over
 * This equation descends to `W_m`. The difference between it and the monic equation
   `(Y - g) ^ d` of a preimage `g` of `f` is a solution over `T_m` of a linear equation with
   coefficients in `W_m`. Since `T_m` is flat over `W_m`, it is a `T_m`-combination of solutions
-  over `W_m` (`Module.Flat.isTrivialRelation_of_sum_smul_eq_zero`), and approximating the
+  over `W_m` (`RingHom.Flat.exists_eq_sum_mul_of_sum_mul_eq_zero`), and approximating the
   coefficients of this combination by elements of the dense subring `W_m` gives a monic
   equation over `W_m` with coefficients of Gauss norm at most `1`.
 * Such a polynomial `Q` is distinguished, so overconvergent Weierstrass division identifies
@@ -67,7 +67,8 @@ Adjoining the elements one at a time and substituting variables
   the variables; `TauCeti.Dagger.washnitzerAlgebra.algHom_ext` is the case of a dagger algebra.
 * `TauCeti.Dagger.washnitzerAlgebra.supSeminorm_apply_X_le_one`: homomorphisms into a dagger
   algebra send the variables into the unit ball of `|·|sup`.
-* `TauCeti.Dagger.washnitzerAlgebra.lift_X`: the lift sends `Xᵢ` to `xᵢ`.
+* `TauCeti.Dagger.washnitzerAlgebra.lift_X`: the lift sends `Xᵢ` to `xᵢ`, and
+  `TauCeti.Dagger.washnitzerAlgebra.lift_unique` says it is the only such homomorphism.
 
 ## References
 
@@ -100,10 +101,7 @@ theorem algHom_ext_of_isNoetherianRing [IsNoetherianRing B]
   refine eq_zero_of_localization _ fun m hm ↦ ?_
   -- Modulo every power of `m` the two maps agree, since `B ⧸ m ^ k` is integral over `K`.
   have hmem (k : ℕ) : φ f - ψ f ∈ m ^ k := by
-    have : Algebra.IsIntegral K (B ⧸ m ^ k) := ⟨fun x ↦ by
-      obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective x
-      exact isIntegral_quotient_pow_of_isIntegral_quotient
-        ((hB m hm).isIntegral (Ideal.Quotient.mk m b)) k⟩
+    have := (hB m hm).quotient_pow k
     have hk := algHom_ext_of_isIntegral (φ := (Ideal.Quotient.mkₐ K (m ^ k)).comp φ)
       (ψ := (Ideal.Quotient.mkₐ K (m ^ k)).comp ψ) fun i ↦ by simp [h i]
     rw [← Ideal.Quotient.eq]
@@ -117,6 +115,7 @@ theorem algHom_ext_of_isNoetherianRing [IsNoetherianRing B]
   exact Ideal.mem_map_of_mem _ (hmem k)
 
 /-- **Homomorphisms into a dagger algebra are determined by the variables.** -/
+@[ext]
 theorem algHom_ext [IsDaggerAlgebra K B] {φ ψ : washnitzerAlgebra σ K →ₐ[K] B}
     (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) : φ = ψ :=
   have := IsDaggerAlgebra.isNoetherianRing (K := K) (A := B)
@@ -189,11 +188,8 @@ private theorem exists_sum_mul_eq_zero_norm_sub_lt {σ : Type*} [Finite σ] {ι 
     [Fintype ι] (f : ι → W σ) (x : ι → T σ) (hx : ∑ i, toTate σ K (f i) * x i = 0) {ε : ℝ}
     (hε : 0 < ε) :
     ∃ x' : ι → W σ, ∑ i, f i * x' i = 0 ∧ ∀ i, ‖toTate σ K (x' i) - x i‖ < ε := by
-  let := (toTate σ K).toRingHom.toAlgebra
-  have : Module.FaithfullyFlat (W σ) (T σ) := faithfullyFlat_toTate
   obtain ⟨k, a, y, hxy, ha⟩ :=
-    Module.Flat.isTrivialRelation_of_sum_smul_eq_zero (f := f) (x := x) (by
-      simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hx)
+    RingHom.Flat.exists_eq_sum_mul_of_sum_mul_eq_zero faithfullyFlat_toTate.flat hx
   -- Approximate the `y j` by elements of `W`, to within `δ = ε / (1 + ∑ ‖a i j‖)`.
   set S := ∑ i, ∑ j, ‖a i j‖
   have hS : 0 ≤ S := by positivity
@@ -212,8 +208,8 @@ private theorem exists_sum_mul_eq_zero_norm_sub_lt {σ : Type*} [Finite σ] {ι 
     rw [Finset.sum_comm]
     simp [← Finset.sum_mul, ha]
   · rw [hxy i, map_sum]
-    simp only [Algebra.smul_def, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-      RingHom.coe_coe, map_mul, ← Finset.sum_sub_distrib, ← mul_sub]
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_mul, ← Finset.sum_sub_distrib,
+      ← mul_sub]
     refine (IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (mul_nonneg hS hδ.le)
       fun j _ ↦ ?_).trans_lt hSδ
     calc ‖toTate σ K (a i j) * (toTate σ K (y' j) - y j)‖
@@ -406,6 +402,18 @@ noncomputable def lift [IsDaggerAlgebra K C] {σ : Type*} [Finite σ] (x : σ �
 theorem lift_X [IsDaggerAlgebra K C] {σ : Type*} [Finite σ] (x : σ → C)
     (hx : ∀ i, supSeminorm K (x i) ≤ 1) (i : σ) : lift x hx (X σ K i) = x i :=
   (exists_algHom_apply_X x hx).choose_spec i
+
+/-- The lift is the only homomorphism sending each variable `Xᵢ` to `xᵢ`. -/
+theorem lift_unique [IsDaggerAlgebra K C] {σ : Type*} [Finite σ] {x : σ → C}
+    {hx : ∀ i, supSeminorm K (x i) ≤ 1} (φ : W σ →ₐ[K] C) (h : ∀ i, φ (X σ K i) = x i) :
+    φ = lift x hx :=
+  algHom_ext fun i ↦ by rw [h, lift_X]
+
+/-- Every homomorphism into a dagger algebra is the lift of its values on the variables. -/
+@[simp]
+theorem lift_apply_X_eq [IsDaggerAlgebra K C] {σ : Type*} [Finite σ] (φ : W σ →ₐ[K] C) :
+    lift (fun i ↦ φ (X σ K i)) (supSeminorm_apply_X_le_one φ) = φ :=
+  (lift_unique φ fun _ ↦ rfl).symm
 
 end Lift
 
