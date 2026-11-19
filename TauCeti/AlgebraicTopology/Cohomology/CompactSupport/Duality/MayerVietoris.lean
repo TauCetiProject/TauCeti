@@ -15,9 +15,10 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
 Let `M` be an `n`-manifold without boundary with an orientation `o`, let `L` be an abelian group,
 and orient every open subset `W ⊆ M` by the restriction of `o`
 (`TauCeti.HomologicalOrientation.comap`). Hatcher's proof of Poincaré duality for noncompact
-manifolds (Lemma 3.36) compares, for open sets `U` and `V` of `M`, the Mayer–Vietoris sequence of
-cohomology with compact supports with the Mayer–Vietoris sequence of singular homology through the
-duality maps `D_W : Hᵖ_c(W; L) ⟶ H_q(W; L)`, `p + q = n`, of `U ∩ V`, `U`, `V` and `M`:
+manifolds (Lemma 3.36) compares, for open sets `U` and `V` of `M` with `U ∪ V = M`, the
+Mayer–Vietoris sequence of cohomology with compact supports with the Mayer–Vietoris sequence of
+singular homology through the duality maps `D_W : Hᵖ_c(W; L) ⟶ H_q(W; L)`, `p + q = n`, of `U ∩ V`,
+`U`, `V` and `M`:
 
 ```
 Hᵖ_c(U ∩ V) ⟶ Hᵖ_c(U) ⊞ Hᵖ_c(V) ⟶ Hᵖ_c(M) ⟶ Hᵖ⁺¹_c(U ∩ V)
@@ -25,13 +26,15 @@ Hᵖ_c(U ∩ V) ⟶ Hᵖ_c(U) ⊞ Hᵖ_c(V) ⟶ Hᵖ_c(M) ⟶ Hᵖ⁺¹_c(U ∩ 
 H_q(U ∩ V)  ⟶  H_q(U) ⊞ H_q(V)  ⟶  H_q(M)  ⟶  H_{q-1}(U ∩ V)
 ```
 
-This file proves that the first two squares commute
+The rows are the Mayer–Vietoris sequences of the cover `M = U ∪ V`, and their exactness uses that
+cover assumption. This file proves that the first two squares commute
 (`TauCeti.HomologicalOrientation.compactSupportCohomologyMayerVietorisToBiprod_dualityMap` and
 `TauCeti.HomologicalOrientation.compactSupportCohomologyMayerVietorisFromBiprod_dualityMap`). The
 maps of both rows have the same signs: the first has components the maps induced by the inclusion
 into `U` and minus the maps induced by the inclusion into `V`, the second is the sum of the maps
-induced by the inclusions. Both squares are therefore componentwise instances of the naturality of
-the duality map along open embeddings
+induced by the inclusions. The two squares commute for arbitrary opens `U` and `V`, without the
+cover assumption: they are componentwise instances of the naturality of the duality map along open
+embeddings
 (`TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_dualityMap`), applied to the
 inclusions of open subsets
 (`TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_inclusion'_dualityMap` and
@@ -40,9 +43,9 @@ inclusions of open subsets
 ## Main results
 
 * `TauCeti.HomologicalOrientation.compactSupportCohomologyMayerVietorisToBiprod_dualityMap`: the
-  square at `Hᵖ_c(U ∩ V) ⟶ Hᵖ_c(U) ⊞ Hᵖ_c(V)`.
+  square at `Hᵖ_c(U ∩ V) ⟶ Hᵖ_c(U) ⊞ Hᵖ_c(V)`, for arbitrary opens `U` and `V`.
 * `TauCeti.HomologicalOrientation.compactSupportCohomologyMayerVietorisFromBiprod_dualityMap`:
-  the square at `Hᵖ_c(U) ⊞ Hᵖ_c(V) ⟶ Hᵖ_c(M)`.
+  the square at `Hᵖ_c(U) ⊞ Hᵖ_c(V) ⟶ Hᵖ_c(M)`, for arbitrary opens `U` and `V`.
 
 ## Implementation notes
 
@@ -80,12 +83,12 @@ variable {p q : ℕ} (h : p + q = n)
 
 variable (U V : Opens (TopCat.of M))
 
-/-- **The duality maps commute with the first Mayer–Vietoris maps**: for opens `U` and `V` of
-`M`, the map `Hᵖ_c(U ∩ V) ⟶ Hᵖ_c(U) ⊞ Hᵖ_c(V)` of the Mayer–Vietoris sequence of cohomology with
-compact supports, followed by the duality maps of `U` and `V`, is the duality map of `U ∩ V`
-followed by the map `H_q(U ∩ V) ⟶ H_q(U) ⊞ H_q(V)` of the Mayer–Vietoris sequence of singular
-homology. Both maps have components the map induced by the inclusion into `U` and minus the map
-induced by the inclusion into `V`. -/
+/-- **The duality maps commute with the first Mayer–Vietoris maps**: for any opens `U` and `V` of
+`M`, not necessarily covering `M`, the map `Hᵖ_c(U ∩ V) ⟶ Hᵖ_c(U) ⊞ Hᵖ_c(V)` of the Mayer–Vietoris
+sequence of cohomology with compact supports, followed by the duality maps of `U` and `V`, is the
+duality map of `U ∩ V` followed by the map `H_q(U ∩ V) ⟶ H_q(U) ⊞ H_q(V)` of the Mayer–Vietoris
+sequence of singular homology. Both maps have components the map induced by the inclusion into `U`
+and minus the map induced by the inclusion into `V`. -/
 @[reassoc]
 theorem compactSupportCohomologyMayerVietorisToBiprod_dualityMap :
     TopCat.compactSupportCohomologyMayerVietorisToBiprod (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L U V p ≫
@@ -110,11 +113,11 @@ theorem compactSupportCohomologyMayerVietorisToBiprod_dualityMap :
     -- As in the first component, only up to unfolding `singularHomologyFunctor`.
     erw [Category.assoc, SSet.mayerVietorisToBiprod_snd, Preadditive.comp_neg]
 
-/-- **The duality maps commute with the second Mayer–Vietoris maps**: for opens `U` and `V` of
-`M`, the map `Hᵖ_c(U) ⊞ Hᵖ_c(V) ⟶ Hᵖ_c(M)` of the Mayer–Vietoris sequence of cohomology with
-compact supports, followed by the duality map of `M`, is the duality maps of `U` and `V` followed
-by the map `H_q(U) ⊞ H_q(V) ⟶ H_q(M)` of the Mayer–Vietoris sequence of singular homology. Both
-maps are the sums of the maps induced by the inclusions. -/
+/-- **The duality maps commute with the second Mayer–Vietoris maps**: for any opens `U` and `V` of
+`M`, not necessarily covering `M`, the map `Hᵖ_c(U) ⊞ Hᵖ_c(V) ⟶ Hᵖ_c(M)` of the Mayer–Vietoris
+sequence of cohomology with compact supports, followed by the duality map of `M`, is the duality
+maps of `U` and `V` followed by the map `H_q(U) ⊞ H_q(V) ⟶ H_q(M)` of the Mayer–Vietoris sequence of
+singular homology. Both maps are the sums of the maps induced by the inclusions. -/
 @[reassoc]
 theorem compactSupportCohomologyMayerVietorisFromBiprod_dualityMap :
     TopCat.compactSupportCohomologyMayerVietorisFromBiprod (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L U V

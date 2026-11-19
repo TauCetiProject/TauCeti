@@ -255,6 +255,7 @@ lemma comap_comap_of_comp_eq (o : HomologicalOrientation P E d) {j' : N → P} {
 
 /-- Restricting an orientation of `M` to an open `W` and then to an open `V ⊆ W`, along the
 inclusion `V ⟶ W` in `Opens (TopCat.of M)`, is restricting it to `V`. -/
+@[simp]
 lemma comap_comap_toTopCat_map (o : HomologicalOrientation N E d)
     {V W : TopologicalSpace.Opens (TopCat.of N)} (f : V ⟶ W) :
     (o.comap W.isOpenEmbedding).comap (TopologicalSpace.Opens.isOpenEmbedding_toTopCat_map f) =
