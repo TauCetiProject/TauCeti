@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Homotopy
 public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
@@ -69,6 +70,8 @@ whose terms at the time ends vanish because `G` is stationary in `s` there.
   form relative to both time ends.
 * `TauCeti.Diffeotopy.flux_eq_of_homotopy`: diffeotopies whose motions are homotopic relative to
   both time ends have the same flux.
+* `TauCeti.Diffeotopy.Homotopic.flux_eq`: the same for homotopic diffeotopies
+  (`TauCeti.Diffeotopy.Homotopic`).
 * `TauCeti.Diffeotopy.flux_eq_zero_of_homotopy_refl`: a diffeotopy homotopic relative to both time
   ends to the constant one has zero flux.
 
@@ -470,6 +473,15 @@ theorem flux_eq_of_homotopy (σ : closedForms J M 2)
   rw [flux_def, flux_def, ← sub_eq_zero, ← map_sub, deRhamCohomology.mk_eq_zero_iff]
   exact Φ.fluxForm_sub_fluxForm_mem_exactForms
     ((SmoothForm.isClosed_def _).mpr ((mem_closedForms J σ.val).mp σ.property)) hG hG₀ hG₁ h₀ h₁
+
+variable {Φ} in
+/-- **Homotopic diffeotopies have the same flux** (`TauCeti.Diffeotopy.Homotopic`) with respect to
+every closed two-form preserved by their common final diffeomorphism. -/
+theorem Homotopic.flux_eq (σ : closedForms J M 2) (h : Φ.Homotopic Ψ)
+    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
+    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) : Φ.flux σ hΦ = Ψ.flux σ hΨ := by
+  obtain ⟨G, -, hG, hG₀, hG₁, h₀, h₁, -⟩ := homotopic_iff.mp h
+  exact (Φ.flux_eq_of_homotopy σ hΦ hG hG₀ hG₁ h₀ h₁).symm
 
 /-- A diffeotopy whose motion is homotopic, through a smooth homotopy fixing both time ends, to the
 constant motion has zero flux with respect to every closed two-form. Its final diffeomorphism is
