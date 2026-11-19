@@ -396,7 +396,8 @@ theorem mem_range_fromBlocksOne_iff {A : specialUnitaryGroup (Fin (r + m)) α} :
   rw [← UnitaryGroup.mem_range_fromBlocksOne_iff (A := ⟨A.1, A.2.1⟩)]
   constructor
   · rintro ⟨B, rfl⟩
-    exact ⟨⟨B.1, B.2.1⟩, rfl⟩
+    exact ⟨⟨B.1, B.2.1⟩, Subtype.ext <|
+      (UnitaryGroup.coe_fromBlocksOne α r _).trans (coe_fromBlocksOne α r B).symm⟩
   · rintro ⟨B, hB⟩
     -- The determinant of `diag(1_r, B)` is that of `B`.
     have hdet : (B : Matrix (Fin m) (Fin m) α).det = 1 := by
@@ -420,9 +421,15 @@ variable (m) in
 /-- The **block-diagonal embedding** `B ↦ diag(1_r, B)` of the special orthogonal group `SO(m)`
 in `SO(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. It is the
 special unitary embedding `Matrix.specialUnitaryGroup.fromBlocksOne` for the trivial star. -/
-@[expose] def fromBlocksOne :
+def fromBlocksOne :
     specialOrthogonalGroup (Fin m) R →* specialOrthogonalGroup (Fin (r + m)) R :=
   specialUnitaryGroup.fromBlocksOne R r m
+
+variable (m) in
+/-- The special orthogonal block embedding is the special unitary one for the trivial star. -/
+theorem fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne :
+    fromBlocksOne R r m = specialUnitaryGroup.fromBlocksOne R r m :=
+  (rfl)
 
 theorem coe_fromBlocksOne (B : specialOrthogonalGroup (Fin m) R) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) =

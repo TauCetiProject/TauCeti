@@ -207,9 +207,17 @@ theorem coe_unitaryStabilizerHomeomorph_apply (m : ℕ) (B : unitaryGroup (Fin m
 
 variable (𝕜) in
 /-- The **stabilizer of the standard frame** in the special unitary group `SU(N)`. -/
-@[expose] def specialUnitaryStabilizer (h : r ≤ N) : Subgroup (specialUnitaryGroup (Fin N) 𝕜) :=
+def specialUnitaryStabilizer (h : r ≤ N) : Subgroup (specialUnitaryGroup (Fin N) 𝕜) :=
   letI := specialUnitaryMulAction 𝕜 r N
   MulAction.stabilizer _ (standard 𝕜 h)
+
+variable (𝕜) in
+/-- `specialUnitaryStabilizer` is the stabilizer of the standard frame under
+`specialUnitaryMulAction`. -/
+theorem specialUnitaryStabilizer_eq_stabilizer (h : r ≤ N) :
+    letI := specialUnitaryMulAction 𝕜 r N
+    specialUnitaryStabilizer 𝕜 h = MulAction.stabilizer _ (standard 𝕜 h) :=
+  (rfl)
 
 theorem mem_specialUnitaryStabilizer_iff {h : r ≤ N} {A : specialUnitaryGroup (Fin N) 𝕜} :
     A ∈ specialUnitaryStabilizer 𝕜 h ↔ unitaryMap ⟨A.1, A.2.1⟩ (standard 𝕜 h) = standard 𝕜 h :=
@@ -267,9 +275,14 @@ theorem coe_specialUnitaryStabilizerHomeomorph_apply (m : ℕ) (B : specialUnita
 
 /-- The **stabilizer of the standard real frame** in the special orthogonal group `SO(N)`: the
 stabilizer `specialUnitaryStabilizer` over `ℝ`. -/
-@[expose] def specialOrthogonalStabilizer (h : r ≤ N) :
+def specialOrthogonalStabilizer (h : r ≤ N) :
     Subgroup (specialOrthogonalGroup (Fin N) ℝ) :=
   specialUnitaryStabilizer ℝ h
+
+/-- The special orthogonal stabilizer is the special unitary one over `ℝ`. -/
+theorem specialOrthogonalStabilizer_eq_specialUnitaryStabilizer (h : r ≤ N) :
+    specialOrthogonalStabilizer h = specialUnitaryStabilizer ℝ h :=
+  (rfl)
 
 theorem mem_specialOrthogonalStabilizer_iff {h : r ≤ N} {A : specialOrthogonalGroup (Fin N) ℝ} :
     A ∈ specialOrthogonalStabilizer h ↔ unitaryMap ⟨A.1, A.2.1⟩ (standard ℝ h) = standard ℝ h :=
@@ -335,19 +348,21 @@ space `SO(r + m) / SO(m)`; for instance the ordered orthonormal two-frames of `�
 `SO(n) / SO(n - 2)`. -/
 theorem range_fromBlocksOne_eq_specialOrthogonalStabilizer (m : ℕ) :
     (SpecialOrthogonalGroup.fromBlocksOne ℝ r m).range =
-      specialOrthogonalStabilizer (Nat.le_add_right r m) :=
-  range_fromBlocksOne_eq_specialUnitaryStabilizer m
+      specialOrthogonalStabilizer (Nat.le_add_right r m) := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact range_fromBlocksOne_eq_specialUnitaryStabilizer m
 
 /-- The block embedding `B ↦ diag(1_r, B)` of `SO(m)` in `SO(r + m)` is continuous. -/
 theorem continuous_fromBlocksOne (m : ℕ) :
-    Continuous (SpecialOrthogonalGroup.fromBlocksOne ℝ r m) :=
-  specialUnitaryGroup.continuous_fromBlocksOne m
+    Continuous (SpecialOrthogonalGroup.fromBlocksOne ℝ r m) := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact specialUnitaryGroup.continuous_fromBlocksOne m
 
 variable (r) in
 /-- The block embedding `B ↦ diag(1_r, B)` is a homeomorphism of `SO(m)` onto the stabilizer of
 the standard real `r`-frame in `SO(r + m)`: this is `specialUnitaryStabilizerHomeomorph` over `ℝ`.
 -/
-@[expose] def specialOrthogonalStabilizerHomeomorph (m : ℕ) :
+def specialOrthogonalStabilizerHomeomorph (m : ℕ) :
     specialOrthogonalGroup (Fin m) ℝ ≃ₜ specialOrthogonalStabilizer (Nat.le_add_right r m) :=
   specialUnitaryStabilizerHomeomorph ℝ r m
 
@@ -355,8 +370,9 @@ the standard real `r`-frame in `SO(r + m)`: this is `specialUnitaryStabilizerHom
 theorem coe_specialOrthogonalStabilizerHomeomorph_apply (m : ℕ)
     (B : specialOrthogonalGroup (Fin m) ℝ) :
     (specialOrthogonalStabilizerHomeomorph r m B : specialOrthogonalGroup (Fin (r + m)) ℝ) =
-      SpecialOrthogonalGroup.fromBlocksOne ℝ r m B :=
-  coe_specialUnitaryStabilizerHomeomorph_apply m B
+      SpecialOrthogonalGroup.fromBlocksOne ℝ r m B := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact coe_specialUnitaryStabilizerHomeomorph_apply m B
 
 /-! ### Full frames -/
 

@@ -64,11 +64,18 @@ variable (n : ℕ)
 
 /-- The evaluation map `SU(1 + n) → S`, `A ↦ A e₀`, on the first coordinate vector `e₀`, to the
 unit sphere `S` of `EuclideanSpace 𝕜 (Fin (1 + n))`. -/
-@[expose] def specialUnitarySphereMap (A : specialUnitaryGroup (Fin (1 + n)) 𝕜) :
+def specialUnitarySphereMap (A : specialUnitaryGroup (Fin (1 + n)) 𝕜) :
     sphere (0 : EuclideanSpace 𝕜 (Fin (1 + n))) 1 :=
   finiteOrthonormalFrame.sphereHomeomorph 𝕜 (1 + n) (specialUnitaryFrameMap 1 n A)
 
 variable {n}
+
+/-- The evaluation map is the frame map `SU(1 + n) → V_1(𝕜^(1 + n))` followed by the
+identification of orthonormal one-frames with unit vectors. -/
+theorem specialUnitarySphereMap_eq_sphereHomeomorph (A : specialUnitaryGroup (Fin (1 + n)) 𝕜) :
+    specialUnitarySphereMap n A =
+      finiteOrthonormalFrame.sphereHomeomorph 𝕜 (1 + n) (specialUnitaryFrameMap 1 n A) :=
+  (rfl)
 
 /-- In coordinates, `specialUnitarySphereMap n A` is the first column `A e₀` of `A`. -/
 @[simp]
@@ -115,7 +122,7 @@ theorem surjective_specialUnitarySphereMap [NeZero n] :
 variable (𝕜 n) in
 /-- The fibre of `A ↦ A e₀` over `e₀` is `SU(n)`: the block embedding `B ↦ diag(1, B)` is a
 homeomorphism of `SU(n)` onto the special unitary matrices fixing `e₀`. -/
-@[expose] def specialUnitarySphereFiberHomeomorph :
+def specialUnitarySphereFiberHomeomorph :
     specialUnitaryGroup (Fin n) 𝕜 ≃ₜ
       specialUnitarySphereMap (𝕜 := 𝕜) n ⁻¹' {specialUnitarySphereMap n 1} :=
   (finiteOrthonormalFrame.specialUnitaryStabilizerHomeomorph 𝕜 1 n).trans

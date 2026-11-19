@@ -74,7 +74,7 @@ variable {r m : ℕ}
 variable (r m) in
 /-- The Stiefel map `SO(r + m) → V_r(ℝ^(r + m))`, `A ↦ (A e₀, …, A e_{r-1})`, sending a special
 orthogonal matrix to its first `r` columns: the special unitary frame map over `ℝ`. -/
-@[expose] def specialOrthogonalFrameMap (A : specialOrthogonalGroup (Fin (r + m)) ℝ) :
+def specialOrthogonalFrameMap (A : specialOrthogonalGroup (Fin (r + m)) ℝ) :
     finiteOrthonormalFrame ℝ r (r + m) :=
   specialUnitaryFrameMap r m A
 
@@ -114,15 +114,17 @@ theorem specialOrthogonalFrameMap_eq_smul_standard (A : specialOrthogonalGroup (
 theorem specialOrthogonalFrameMap_eq_specialOrthogonalFrameMap_iff
     {A B : specialOrthogonalGroup (Fin (r + m)) ℝ} :
     specialOrthogonalFrameMap r m A = specialOrthogonalFrameMap r m B ↔
-      A⁻¹ * B ∈ specialOrthogonalStabilizer (Nat.le_add_right r m) :=
-  specialUnitaryFrameMap_eq_specialUnitaryFrameMap_iff
+      A⁻¹ * B ∈ specialOrthogonalStabilizer (Nat.le_add_right r m) := by
+  rw [specialOrthogonalStabilizer_eq_specialUnitaryStabilizer]
+  exact specialUnitaryFrameMap_eq_specialUnitaryFrameMap_iff
 
 /-- The fibre of the frame map over the standard frame is the block subgroup `diag(1_r, SO(m))`. -/
 theorem specialOrthogonalFrameMap_eq_specialOrthogonalFrameMap_one_iff
     {A : specialOrthogonalGroup (Fin (r + m)) ℝ} :
     specialOrthogonalFrameMap r m A = specialOrthogonalFrameMap r m 1 ↔
-      A ∈ (SpecialOrthogonalGroup.fromBlocksOne ℝ r m).range :=
-  specialUnitaryFrameMap_eq_specialUnitaryFrameMap_one_iff
+      A ∈ (SpecialOrthogonalGroup.fromBlocksOne ℝ r m).range := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact specialUnitaryFrameMap_eq_specialUnitaryFrameMap_one_iff
 
 /-- For `m ≥ 1`, every orthonormal `r`-frame of `ℝ^(r + m)` consists of the first `r` columns of a
 special orthogonal matrix. -/
@@ -136,7 +138,7 @@ variable (r m) in
 /-- The fibre of the frame map over the standard frame is `SO(m)`: the block embedding
 `B ↦ diag(1_r, B)` is a homeomorphism of `SO(m)` onto the special orthogonal matrices fixing the
 standard frame. -/
-@[expose] def specialOrthogonalFrameFiberHomeomorph :
+def specialOrthogonalFrameFiberHomeomorph :
     specialOrthogonalGroup (Fin m) ℝ ≃ₜ
       specialOrthogonalFrameMap r m ⁻¹' {specialOrthogonalFrameMap r m 1} :=
   specialUnitaryFrameFiberHomeomorph ℝ r m
@@ -144,8 +146,9 @@ standard frame. -/
 @[simp]
 theorem coe_specialOrthogonalFrameFiberHomeomorph_apply (B : specialOrthogonalGroup (Fin m) ℝ) :
     (specialOrthogonalFrameFiberHomeomorph r m B : specialOrthogonalGroup (Fin (r + m)) ℝ) =
-      SpecialOrthogonalGroup.fromBlocksOne ℝ r m B :=
-  coe_specialUnitaryFrameFiberHomeomorph_apply B
+      SpecialOrthogonalGroup.fromBlocksOne ℝ r m B := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact coe_specialUnitaryFrameFiberHomeomorph_apply B
 
 /-- A special orthogonal matrix fixing the standard frame is the block matrix `diag(1_r, B)` of its
 image `B` in `SO(m)`. -/
@@ -153,8 +156,9 @@ image `B` in `SO(m)`. -/
 theorem fromBlocksOne_specialOrthogonalFrameFiberHomeomorph_symm_apply
     (A : specialOrthogonalFrameMap r m ⁻¹' {specialOrthogonalFrameMap r m 1}) :
     SpecialOrthogonalGroup.fromBlocksOne ℝ r m
-        ((specialOrthogonalFrameFiberHomeomorph r m).symm A) = A :=
-  fromBlocksOne_specialUnitaryFrameFiberHomeomorph_symm_apply A
+        ((specialOrthogonalFrameFiberHomeomorph r m).symm A) = A := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact fromBlocksOne_specialUnitaryFrameFiberHomeomorph_symm_apply A
 
 /-- The identity of `SO(m)` corresponds to the identity of `SO(r + m)` in the fibre. -/
 @[simp]

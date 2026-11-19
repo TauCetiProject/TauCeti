@@ -78,7 +78,7 @@ variable {𝕜 : Type*} [RCLike 𝕜] {r m : ℕ}
 variable (r m) in
 /-- The special unitary Stiefel map `SU(r + m) → V_r(𝕜^(r + m))`, `A ↦ (A e₀, …, A e_{r-1})`,
 sending a special unitary matrix to its first `r` columns. -/
-@[expose] def specialUnitaryFrameMap (A : specialUnitaryGroup (Fin (r + m)) 𝕜) :
+def specialUnitaryFrameMap (A : specialUnitaryGroup (Fin (r + m)) 𝕜) :
     finiteOrthonormalFrame 𝕜 r (r + m) :=
   unitaryMap ⟨A.1, A.2.1⟩ (standard 𝕜 (Nat.le_add_right r m))
 
@@ -125,7 +125,8 @@ theorem specialUnitaryFrameMap_eq_specialUnitaryFrameMap_iff
     specialUnitaryFrameMap r m A = specialUnitaryFrameMap r m B ↔
       A⁻¹ * B ∈ specialUnitaryStabilizer 𝕜 (Nat.le_add_right r m) := by
   let := specialUnitaryMulAction 𝕜 r (r + m)
-  simpa only [specialUnitaryFrameMap_eq_smul_standard, specialUnitaryStabilizer] using
+  simpa only [specialUnitaryFrameMap_eq_smul_standard,
+    specialUnitaryStabilizer_eq_stabilizer] using
     smul_eq_smul_iff_inv_mul_mem_stabilizer (standard 𝕜 (Nat.le_add_right r m)) A B
 
 /-- The fibre of the frame map over the standard frame is the block subgroup `diag(1_r, SU(m))`. -/

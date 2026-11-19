@@ -77,7 +77,7 @@ variable (n : ℕ)
 
 /-- The evaluation map `SO(1 + n) → Sⁿ`, `A ↦ A e₀`, on the first coordinate vector `e₀`: the
 special unitary evaluation map over `ℝ`. -/
-@[expose] def specialOrthogonalSphereMap (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
+def specialOrthogonalSphereMap (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
     sphere (0 : EuclideanSpace ℝ (Fin (1 + n))) 1 :=
   specialUnitarySphereMap n A
 
@@ -106,8 +106,9 @@ theorem ofLp_specialOrthogonalSphereMap_mul (A B : specialOrthogonalGroup (Fin (
 theorem specialOrthogonalSphereMap_eq_specialOrthogonalSphereMap_one_iff
     {A : specialOrthogonalGroup (Fin (1 + n)) ℝ} :
     specialOrthogonalSphereMap n A = specialOrthogonalSphereMap n 1 ↔
-      A ∈ (SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n).range :=
-  specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff
+      A ∈ (SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n).range := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff
 
 /-- For `n ≥ 1`, every unit vector of `ℝ^(1 + n)` is `A e₀` for some `A ∈ SO(1 + n)`. -/
 theorem surjective_specialOrthogonalSphereMap [NeZero n] :
@@ -119,7 +120,7 @@ theorem surjective_specialOrthogonalSphereMap [NeZero n] :
 variable (n) in
 /-- The fibre of `A ↦ A e₀` over `e₀` is `SO(n)`: the block embedding `B ↦ diag(1, B)` is a
 homeomorphism of `SO(n)` onto the special orthogonal matrices fixing `e₀`. -/
-@[expose] def specialOrthogonalSphereFiberHomeomorph :
+def specialOrthogonalSphereFiberHomeomorph :
     specialOrthogonalGroup (Fin n) ℝ ≃ₜ
       specialOrthogonalSphereMap n ⁻¹' {specialOrthogonalSphereMap n 1} :=
   specialUnitarySphereFiberHomeomorph ℝ n
@@ -127,8 +128,9 @@ homeomorphism of `SO(n)` onto the special orthogonal matrices fixing `e₀`. -/
 @[simp]
 theorem coe_specialOrthogonalSphereFiberHomeomorph_apply (B : specialOrthogonalGroup (Fin n) ℝ) :
     (specialOrthogonalSphereFiberHomeomorph n B : specialOrthogonalGroup (Fin (1 + n)) ℝ) =
-      SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n B :=
-  coe_specialUnitarySphereFiberHomeomorph_apply B
+      SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n B := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact coe_specialUnitarySphereFiberHomeomorph_apply B
 
 /-- A special orthogonal matrix fixing `e₀` is the block matrix `diag(1, B)` of its image `B` in
 `SO(n)`. -/
@@ -136,8 +138,9 @@ theorem coe_specialOrthogonalSphereFiberHomeomorph_apply (B : specialOrthogonalG
 theorem fromBlocksOne_specialOrthogonalSphereFiberHomeomorph_symm_apply
     (A : specialOrthogonalSphereMap n ⁻¹' {specialOrthogonalSphereMap n 1}) :
     SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n ((specialOrthogonalSphereFiberHomeomorph n).symm A) =
-      A :=
-  fromBlocksOne_specialUnitarySphereFiberHomeomorph_symm_apply A
+      A := by
+  rw [SpecialOrthogonalGroup.fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne]
+  exact fromBlocksOne_specialUnitarySphereFiberHomeomorph_symm_apply A
 
 /-- The identity of `SO(n)` corresponds to the identity of `SO(1 + n)` in the fibre. -/
 @[simp]
@@ -162,6 +165,8 @@ theorem exists_trivialization_specialOrthogonalSphereMap [NeZero n]
       (finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n))
   have hφ (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
       φ (QuotientGroup.mk A) = specialOrthogonalSphereMap n A := by
+    rw [specialOrthogonalSphereMap, specialUnitarySphereMap_eq_sphereHomeomorph,
+      specialUnitaryFrameMap_eq_smul_standard, finiteOrthonormalFrame.specialUnitary_smul_def]
     exact congrArg (finiteOrthonormalFrame.sphereHomeomorph ℝ (1 + n))
       (finiteOrthonormalFrame.specialOrthogonalQuotientHomeomorph_mk hn A)
   -- A rotation `g` taking `e₀` to `b`, followed by rotations taking `b` to nearby points.
