@@ -19,7 +19,7 @@ flux, `TauCeti.Diffeotopy.flux_eq_of_homotopy`. The intermediate maps `G (·, s)
 diffeotopies.
 
 Homotopic diffeotopies have the same final diffeomorphism. Homotopy is an equivalence relation
-for `n ≤ ∞` (`TauCeti.Diffeotopy.homotopic_equivalence`): transitivity glues two homotopies along
+for `n ≤ ∞` (`TauCeti.Diffeotopy.Homotopic.equivalence`): transitivity glues two homotopies along
 a smooth transition in the homotopy parameter, constant near the joining time. It is compatible
 with the pointwise operations, the composite `TauCeti.Diffeotopy.trans` with slices `ψ_t ∘ φ_t`
 (`TauCeti.Diffeotopy.Homotopic.trans_congr`) and the inverse `TauCeti.Diffeotopy.symm` with slices
@@ -35,7 +35,7 @@ the composite, since `Φ.symm` is an inverse of `Φ` for the composite.
 
 * `TauCeti.Diffeotopy.Homotopic.final_eq`: homotopic diffeotopies have the same final
   diffeomorphism.
-* `TauCeti.Diffeotopy.homotopic_equivalence`: homotopy is an equivalence relation.
+* `TauCeti.Diffeotopy.Homotopic.equivalence`: homotopy is an equivalence relation.
 * `TauCeti.Diffeotopy.Homotopic.trans_congr`, `Homotopic.symm_congr`: homotopy is compatible with
   the pointwise composite and inverse.
 
@@ -54,7 +54,7 @@ namespace TauCeti
 
 namespace Diffeotopy
 
-open unitInterval Set Filter Topology
+open unitInterval
 open scoped Manifold ContDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -104,50 +104,6 @@ theorem Homotopic.symm (h : Φ.Homotopic Ψ) : Ψ.Homotopic Φ := by
   · dsimp only
     rw [symm_one, hG₀]
 
-/-- Glue two homotopies, running through the first for `s ≤ 1 / 2` and through the second for
-`1 / 2 < s`, each reparametrized by a smooth transition to be stationary for `s` near `1 / 2`. -/
-private def glue (G G' : (M × I) × I → M) (q : (M × I) × I) : M :=
-  if (q.2 : ℝ) ≤ 1 / 2 then G (q.1, collaredSmoothTransitionUnit (2 * q.2))
-  else G' (q.1, collaredSmoothTransitionUnit (2 * q.2 - 1))
-
-/-- Gluing two `C^n` maps which agree at the joining time gives a `C^n` map: near `s = 1 / 2` both
-pieces are stationary at that common value. -/
-private theorem contMDiff_glue {G G' : (M × I) × I → M}
-    (hG : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n G)
-    (hG' : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n G') (hGG' : ∀ p, G (p, 1) = G' (p, 0))
-    (hn : n ≤ ∞) : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) J n (glue G G') := by
-  classical
-  have hcoe : Continuous fun s : I ↦ (s : ℝ) := continuous_subtype_val
-  have hfirst : ContMDiff (𝓡∂ 1) (𝓡∂ 1) n fun s : I ↦ collaredSmoothTransitionUnit (2 * s) :=
-    (contMDiff_collaredSmoothTransitionUnit hn).comp
-      ((contDiff_const.mul contDiff_id).contMDiff.comp
-        (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))
-  have hsecond : ContMDiff (𝓡∂ 1) (𝓡∂ 1) n fun s : I ↦ collaredSmoothTransitionUnit (2 * s - 1) :=
-    (contMDiff_collaredSmoothTransitionUnit hn).comp
-      (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff.comp
-        (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))
-  have hpw : glue G G' = Set.piecewise {q : (M × I) × I | (q.2 : ℝ) ≤ 1 / 2}
-      (fun q ↦ G (q.1, collaredSmoothTransitionUnit (2 * q.2)))
-      (fun q ↦ G' (q.1, collaredSmoothTransitionUnit (2 * q.2 - 1))) := by
-    funext q
-    by_cases hq : (q.2 : ℝ) ≤ 1 / 2
-    · rw [Set.piecewise_eq_of_mem _ _ _ (by exact hq)]
-      simp only [glue, hq, ↓reduceIte]
-    · rw [Set.piecewise_eq_of_notMem _ _ _ (by exact hq)]
-      simp only [glue, hq, ↓reduceIte]
-  rw [hpw]
-  refine (hG.comp (contMDiff_fst.prodMk (hfirst.comp contMDiff_snd))).piecewise
-    (hG'.comp (contMDiff_fst.prodMk (hsecond.comp contMDiff_snd))) fun q hq ↦ ?_
-  have hq' : (q.2 : ℝ) = 1 / 2 :=
-    frontier_le_subset_eq (hcoe.comp continuous_snd) continuous_const hq
-  have hnear : {r : (M × I) × I | 3 / 8 < (r.2 : ℝ) ∧ (r.2 : ℝ) < 5 / 8} ∈ 𝓝 q :=
-    (isOpen_Ioo.preimage (hcoe.comp continuous_snd)).mem_nhds
-      (by simp only [mem_preimage, mem_Ioo, Function.comp_apply, hq']; norm_num)
-  filter_upwards [hnear] with r hr
-  simp only [Function.comp_apply]
-  rw [collaredSmoothTransitionUnit_eq_one_of_ge (by linarith [hr.1]),
-    collaredSmoothTransitionUnit_eq_zero_of_le (by linarith [hr.2]), hGG']
-
 /-- **Homotopy of diffeotopies is transitive**, at finite regularity and at `C^∞`. -/
 @[trans]
 theorem Homotopic.trans (h : Φ.Homotopic Ψ) (h' : Ψ.Homotopic Θ) (hn : n ≤ ∞) :
@@ -155,25 +111,18 @@ theorem Homotopic.trans (h : Φ.Homotopic Ψ) (h' : Ψ.Homotopic Θ) (hn : n ≤
   have hfinal := h.final_eq
   obtain ⟨G, hG, hG₀, hG₁, h₀, h₁⟩ := h
   obtain ⟨G', hG', hG'₀, hG'₁, h'₀, h'₁⟩ := h'
-  refine ⟨glue G G', contMDiff_glue hG hG' (fun p ↦ (hG₁ p).trans (hG'₀ p).symm) hn,
+  -- Run through `G` and then through `G'`, each reparametrized to be stationary near `s = 1 / 2`.
+  refine ⟨_, hG.glue_collaredHalves hG' (fun p ↦ (hG₁ p).trans (hG'₀ p).symm) hn,
     fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ ?_, fun x s ↦ ?_⟩
-  · have h0 : ((0 : I) : ℝ) ≤ 1 / 2 := by norm_num [Set.Icc.coe_zero]
-    simp only [glue, h0, ↓reduceIte]
-    rw [Set.Icc.coe_zero, mul_zero,
-      collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num), hG₀]
-  · have h1 : ¬((1 : I) : ℝ) ≤ 1 / 2 := by norm_num [Set.Icc.coe_one]
-    simp only [glue, h1, ↓reduceIte]
-    rw [Set.Icc.coe_one,
-      collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num), hG'₁]
-  · rw [glue]
-    split_ifs
+  · rw [ite_eq_left (by norm_num [Set.Icc.coe_zero]), collaredFirstHalf_zero, hG₀]
+  · rw [ite_eq_right (by norm_num [Set.Icc.coe_one]), collaredSecondHalf_one, hG'₁]
+  · split_ifs
     exacts [h₀ x _, h'₀ x _]
-  · rw [glue]
-    split_ifs
+  · split_ifs
     exacts [h₁ x _, by rw [h'₁, hfinal]]
 
 /-- Homotopy of diffeotopies is an equivalence relation, at finite regularity and at `C^∞`. -/
-theorem homotopic_equivalence (hn : n ≤ ∞) :
+theorem Homotopic.equivalence (hn : n ≤ ∞) :
     Equivalence (Homotopic (J := J) (n := n) (M := M)) :=
   ⟨Homotopic.refl, Homotopic.symm, fun h h' ↦ h.trans h' hn⟩
 

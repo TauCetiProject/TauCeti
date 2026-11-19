@@ -183,13 +183,17 @@ def reverse : Diffeotopy J n M :=
 /-- The reversed diffeotopy at `(t, x)` is `φ_{1 - t} (φ₁⁻¹ x)`. -/
 @[simp]
 theorem reverse_apply (p : I × M) : Φ.reverse p = Φ (σ p.1, Φ.symm (1, p.2)) := by
-  rw [← symm_zero]
-  exact Φ.reparam_apply ⟨σ, contMDiff_symm⟩ p
+  -- `Φ.reverse` is by definition the reparametrization by `σ`, whose value at `0` is `1`.
+  have h := Φ.reparam_apply ⟨σ, contMDiff_symm⟩ p
+  rw [ContMDiffMap.coeFn_mk, symm_zero] at h
+  exact h
 
 /-- The inverse of the reversed diffeotopy at `(t, x)` is `φ₁ (φ_{1 - t}⁻¹ x)`. -/
 theorem symm_reverse_apply (p : I × M) : Φ.reverse.symm p = Φ (1, Φ.symm (σ p.1, p.2)) := by
-  rw [← symm_zero]
-  exact Φ.symm_reparam_apply ⟨σ, contMDiff_symm⟩ p
+  -- `Φ.reverse` is by definition the reparametrization by `σ`, whose value at `0` is `1`.
+  have h := Φ.symm_reparam_apply ⟨σ, contMDiff_symm⟩ p
+  rw [ContMDiffMap.coeFn_mk, symm_zero] at h
+  exact h
 
 /-- The time slices of the reversed diffeotopy are `φ_{1 - t} ∘ φ₁⁻¹`. -/
 theorem timeSlice_reverse (t : I) :
@@ -218,59 +222,24 @@ theorem reverse_refl : (refl J n M).reverse = refl J n M :=
 
 /-! ### Concatenation -/
 
-/-- The time map of the first half of a concatenation: `0` up to time `1 / 8` and `1` from time
-`3 / 8` on. -/
-private def concatFirstTime (hn : n ≤ ∞) : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯ :=
-  ⟨fun t ↦ collaredSmoothTransitionUnit (2 * t),
-    (contMDiff_collaredSmoothTransitionUnit hn).comp
-      ((contDiff_const.mul contDiff_id).contMDiff.comp
-        (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))⟩
-
-/-- The time map of the second half of a concatenation: `0` up to time `5 / 8` and `1` from time
-`7 / 8` on. -/
-private def concatSecondTime (hn : n ≤ ∞) : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯ :=
-  ⟨fun t ↦ collaredSmoothTransitionUnit (2 * t - 1),
-    (contMDiff_collaredSmoothTransitionUnit hn).comp
-      (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff.comp
-        (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))⟩
-
-private theorem concatFirstTime_apply (hn : n ≤ ∞) (t : I) :
-    concatFirstTime hn t = collaredSmoothTransitionUnit (2 * t) :=
-  (rfl)
-
-private theorem concatSecondTime_apply (hn : n ≤ ∞) (t : I) :
-    concatSecondTime hn t = collaredSmoothTransitionUnit (2 * t - 1) :=
-  (rfl)
-
-private theorem concatFirstTime_zero (hn : n ≤ ∞) : concatFirstTime hn 0 = 0 :=
-  collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num)
-
-private theorem concatSecondTime_zero (hn : n ≤ ∞) : concatSecondTime hn 0 = 0 :=
-  collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num)
-
-private theorem concatFirstTime_one (hn : n ≤ ∞) : concatFirstTime hn 1 = 1 :=
-  collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num)
-
-private theorem concatSecondTime_one (hn : n ≤ ∞) : concatSecondTime hn 1 = 1 :=
-  collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num)
-
 /-- **Concatenation** of diffeotopies: run through `Φ` and then through `Ψ` after `φ₁`. On
 `[0, 1 / 2]` the time-`t` slice is `φ_{a t}`, and on `[1 / 2, 1]` it is `ψ_{b t} ∘ φ₁`, for the
-smooth transitions `a t = collaredSmoothTransitionUnit (2 t)` and
-`b t = collaredSmoothTransitionUnit (2 t - 1)`. These are constant near both ends and near the
-middle of the interval, so the concatenation is `C^n` and collared (`isCollared_concat`) without
-any hypothesis on `Φ` and `Ψ`. It is the pointwise composite of the two reparametrizations. -/
+smooth transitions `a = TauCeti.collaredFirstHalf hn` and `b = TauCeti.collaredSecondHalf hn`, so
+`a t = collaredSmoothTransitionUnit (2 t)` and `b t = collaredSmoothTransitionUnit (2 t - 1)`.
+These are constant near both ends and near the middle of the interval, so the concatenation is
+`C^n` and collared (`isCollared_concat`) without any hypothesis on `Φ` and `Ψ`. It is the
+pointwise composite of the two reparametrizations. -/
 def concat (hn : n ≤ ∞) : Diffeotopy J n M :=
-  (Φ.reparam (concatFirstTime hn)).trans (Ψ.reparam (concatSecondTime hn))
+  (Φ.reparam (collaredFirstHalf hn)).trans (Ψ.reparam (collaredSecondHalf hn))
 
 /-- The concatenation at `(t, x)` is `ψ_{b t} (φ_{a t} x)`, where `a` and `b` are the two time
 maps of the concatenation. -/
 theorem concat_apply (hn : n ≤ ∞) (p : I × M) :
     Φ.concat Ψ hn p = Ψ (collaredSmoothTransitionUnit (2 * p.1 - 1),
       Φ (collaredSmoothTransitionUnit (2 * p.1), p.2)) := by
-  rw [concat, trans_apply, reparam_apply_of_map_zero _ (concatFirstTime_zero hn),
-    reparam_apply_of_map_zero _ (concatSecondTime_zero hn), concatFirstTime_apply,
-    concatSecondTime_apply]
+  rw [concat, trans_apply, reparam_apply_of_map_zero _ (collaredFirstHalf_zero hn),
+    reparam_apply_of_map_zero _ (collaredSecondHalf_zero hn), collaredFirstHalf_apply,
+    collaredSecondHalf_apply]
 
 /-- On the first half of the interval the concatenation runs through `Φ`. -/
 theorem concat_apply_of_le (hn : n ≤ ∞) {t : I} (ht : (t : ℝ) ≤ 1 / 2) (x : M) :
@@ -350,12 +319,13 @@ theorem IsCollared.reverse (hΦ : Φ.IsCollared) : Φ.reverse.IsCollared := by
     simpa only [symm_zero] using continuous_symm.tendsto (0 : I)
   have hσ₁ : Tendsto σ (𝓝 (1 : I)) (𝓝 0) := by
     simpa only [symm_one] using continuous_symm.tendsto (1 : I)
-  refine isCollared_reparam_iff.mpr ⟨(hσ₀.eventually hΦ.eventually_one).mono fun t ht ↦ ?_,
+  -- `Φ.reverse` is by definition the reparametrization by `σ`.
+  have h := isCollared_reparam_iff (Φ := Φ) (ρ := ⟨σ, contMDiff_symm⟩)
+  rw [ContMDiffMap.coeFn_mk] at h
+  refine h.mpr ⟨(hσ₀.eventually hΦ.eventually_one).mono fun t ht ↦ ?_,
     (hσ₁.eventually hΦ.eventually_zero).mono fun t ht ↦ ?_⟩
-  · change Φ.timeSlice (σ t) = Φ.timeSlice (σ 0)
-    rw [ht, symm_zero, final_def]
-  · change Φ.timeSlice (σ t) = Φ.timeSlice (σ 1)
-    rw [ht, symm_one, timeSlice_zero]
+  · rw [ht, symm_zero, final_def]
+  · rw [ht, symm_one, timeSlice_zero]
 
 variable (Φ Ψ)
 
@@ -397,8 +367,8 @@ theorem reparam_homotopic {ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯} (h₀ : ρ 
 /-- **The path-class law of concatenation.** The concatenation of `Φ` and `Ψ` is homotopic to their
 pointwise composite `ψ_t ∘ φ_t`. -/
 theorem concat_homotopic_trans (hn : n ≤ ∞) : (Φ.concat Ψ hn).Homotopic (Φ.trans Ψ) :=
-  (Φ.reparam_homotopic (concatFirstTime_zero hn) (concatFirstTime_one hn)).trans_congr
-    (Ψ.reparam_homotopic (concatSecondTime_zero hn) (concatSecondTime_one hn))
+  (Φ.reparam_homotopic (collaredFirstHalf_zero hn) (collaredFirstHalf_one hn)).trans_congr
+    (Ψ.reparam_homotopic (collaredSecondHalf_zero hn) (collaredSecondHalf_one hn))
 
 /-- **The path-class law of time reversal.** The reversal `φ_{1 - t} ∘ φ₁⁻¹` is homotopic to the
 pointwise inverse `φ_t⁻¹`, through `((x, t), s) ↦ φ_{(1 - s)(1 - t)} (φ_{(1 - s) + s t}⁻¹ x)`. -/

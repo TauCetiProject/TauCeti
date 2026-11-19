@@ -31,7 +31,6 @@ As for `TauCeti.Diffeotopy.flux_trans`, only the final diffeomorphisms are requi
 
 ## Main results
 
-* `TauCeti.Diffeotopy.Homotopic.flux_eq`: homotopic diffeotopies have the same flux.
 * `TauCeti.Diffeotopy.flux_reparam`: the flux is invariant under reparametrizations fixing both
   ends.
 * `TauCeti.Diffeotopy.flux_concat`: the flux is additive on concatenations.
@@ -56,14 +55,6 @@ namespace Diffeotopy
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {J : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold J ∞ M] (Φ Ψ : Diffeotopy J ∞ M) (σ : closedForms J M 2)
-
-/-- **Homotopic diffeotopies have the same flux** with respect to every closed two-form preserved
-by their common final diffeomorphism. -/
-theorem Homotopic.flux_eq {Φ Ψ : Diffeotopy J ∞ M} (h : Φ.Homotopic Ψ)
-    (hΦ : Φ.final ∈ SmoothForm.diffeomorphStabilizer σ.1)
-    (hΨ : Ψ.final ∈ SmoothForm.diffeomorphStabilizer σ.1) : Φ.flux σ hΦ = Ψ.flux σ hΨ := by
-  obtain ⟨G, hG, hG₀, hG₁, h₀, h₁⟩ := homotopic_iff.mp h
-  exact (Φ.flux_eq_of_homotopy σ hΦ hG hG₀ hG₁ h₀ h₁).symm
 
 /-- **Reparametrization invariance of the flux.** Reparametrizing a diffeotopy by a smooth map of
 the unit interval fixing both of its ends does not change the flux. -/
