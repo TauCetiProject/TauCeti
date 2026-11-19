@@ -38,6 +38,9 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
   quasi-measure-preserving map preserves `L^∞`.
 * `MeasureTheory.eLpNorm_clm_comp_le`: postcomposition with a continuous linear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
+* `Isometry.eLpNorm_comp_of_map_zero`, `LinearIsometry.eLpNorm_comp`,
+  `LinearIsometryEquiv.eLpNorm_comp`: postcomposition with an isometry fixing zero, such as a
+  linear isometry, preserves `eLpNorm`.
 * `Homeomorph.memLp_comp_restrict_of_forall_isCompact`: precomposition with a measure-preserving
   homeomorphism preserves `Lᵖ` integrability on compact subsets.
 -/
@@ -114,6 +117,36 @@ theorem eLpNorm_clm_comp_le {F G : Type*} [NormedAddCommGroup F] [NormedSpace �
 end MeasureTheory
 
 open MeasureTheory Set
+
+/-- **`eLpNorm` is invariant under postcomposition with an isometry fixing zero.** No measurability
+assumption is needed: `u` and `f ∘ u` are almost everywhere strongly measurable together, since `f`
+is an embedding. -/
+theorem Isometry.eLpNorm_comp_of_map_zero {α F G : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup F] [SeminormedAddCommGroup G] {f : F → G} (hf : Isometry f)
+    (hf0 : f 0 = 0) (u : α → F) (p : ℝ≥0∞) (μ : Measure α) :
+    eLpNorm (fun x => f (u x)) p μ = eLpNorm u p μ := by
+  have hm : AEStronglyMeasurable (fun x => f (u x)) μ ↔ AEStronglyMeasurable u μ :=
+    hf.isEmbedding.aestronglyMeasurable_comp_iff
+  by_cases hu : AEStronglyMeasurable u μ
+  · refine eLpNorm_congr_eNorm_ae (hm.2 hu) hu (ae_of_all _ fun x => ?_)
+    rw [← ofReal_norm, ← ofReal_norm, hf.norm_map_of_map_zero hf0]
+  · rw [eLpNorm_of_not_aestronglyMeasurable hu, eLpNorm_of_not_aestronglyMeasurable (mt hm.1 hu)]
+
+variable {α R R₂ F G : Type*} [MeasurableSpace α] [Semiring R] [Semiring R₂] {σ : R →+* R₂}
+  {σ' : R₂ →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  [NormedAddCommGroup F] [Module R F] [SeminormedAddCommGroup G] [Module R₂ G]
+
+/-- **`eLpNorm` is invariant under postcomposition with a linear isometry.** -/
+@[simp]
+theorem LinearIsometry.eLpNorm_comp (L : F →ₛₗᵢ[σ] G) (u : α → F) (p : ℝ≥0∞) (μ : Measure α) :
+    eLpNorm (fun x => L (u x)) p μ = eLpNorm u p μ :=
+  L.isometry.eLpNorm_comp_of_map_zero L.map_zero u p μ
+
+/-- **`eLpNorm` is invariant under postcomposition with a linear isometric equivalence.** -/
+@[simp]
+theorem LinearIsometryEquiv.eLpNorm_comp (L : F ≃ₛₗᵢ[σ] G) (u : α → F) (p : ℝ≥0∞)
+    (μ : Measure α) : eLpNorm (fun x => L (u x)) p μ = eLpNorm u p μ :=
+  L.toLinearIsometry.eLpNorm_comp u p μ
 
 namespace Homeomorph
 
