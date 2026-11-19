@@ -11,13 +11,14 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 /-!
 # Global-functions actions on sheaves of modules
 
-This file constructs the canonical action of the ring of global functions on a sheaf of modules
-on a scheme, shows that multiplication by a global unit is an isomorphism, and records how the
-action is carried along a morphism of schemes `f : X ⟶ Y`: pushing forward multiplication by
-`f^♯ r` is multiplication by `r`, and pulling back multiplication by `r` is multiplication by
-`f^♯ r` (`Scheme.Modules.pushforward_map_globalSectionsSmul` and
-`Scheme.Modules.pullback_map_globalSectionsSmul`). It also records the restriction of this
-action to the base ring for a scheme over a commutative ring, and the morphism
+This file constructs the canonical action of the ring of global functions on a sheaf of modules on a
+scheme, identifies the global section of `𝒪_X` given by multiplication by `r` with `r`
+(`Scheme.Modules.eval_unitHomEquiv_globalSectionsSmul`), shows that multiplication by a global unit
+is an isomorphism, and records how the action is carried along a morphism of schemes `f : X ⟶ Y`:
+pushing forward multiplication by `f^♯ r` is multiplication by `r`, and pulling back multiplication
+by `r` is multiplication by `f^♯ r` (`Scheme.Modules.pushforward_map_globalSectionsSmul` and
+`Scheme.Modules.pullback_map_globalSectionsSmul`). It also records the restriction of this action to
+the base ring for a scheme over a commutative ring, and the morphism
 `Scheme.baseRingToStructurePresheaf` from the constant presheaf of the base ring to the structure
 presheaf, which on the whole scheme is the base-ring map to global functions
 (`AlgebraicGeometry.Scheme.baseRingToStructurePresheaf_app_top`). The sections of the structure
@@ -85,6 +86,19 @@ lemma globalSectionsSmul_app
     (M : X.Modules) (r : Γ(X, ⊤)) (U : X.Opens) :
     (globalSectionsSmul M r).app U = (M.smul (X.presheaf.map U.leTop.op r)).asHom := by
   rfl
+
+/-- The section of the unit module corresponding to multiplication by a global function `r` is the
+restriction of `r`. -/
+@[simp]
+lemma eval_unitHomEquiv_globalSectionsSmul (r : Γ(X, ⊤)) (U : X.Opens) :
+    ((SheafOfModules.unit X.ringCatSheaf).unitHomEquiv
+      (globalSectionsSmul (SheafOfModules.unit X.ringCatSheaf) r)).eval (.op U) =
+      (X.presheaf.map U.leTop.op r : Γ(X, U)) := by
+  -- The section is the image of `1` under multiplication by `r`.
+  change ((globalSectionsSmul (SheafOfModules.unit X.ringCatSheaf) r).app U).hom (1 : Γ(X, U)) = _
+  exact (congrArg (fun φ ↦ φ.hom (1 : Γ(X, U)))
+    (globalSectionsSmul_app (SheafOfModules.unit X.ringCatSheaf) r U)).trans
+      (mul_one (X.presheaf.map U.leTop.op r : Γ(X, U)))
 
 -- In the next four proofs, sheaf-morphism extensionality leaves pointwise bundled-module goals.
 -- The wrappers have no pointwise equality lemmas, so each `change` records the corresponding
