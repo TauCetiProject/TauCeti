@@ -81,14 +81,14 @@ def realCotangentProdEquiv : (ℝ × ℝ) ≃L[ℝ] (ℝ × StrongDual ℝ ℝ) 
 /-- `realCotangentProdEquiv` keeps the position and sends the momentum `p` to `y ↦ y p`. -/
 @[simp]
 theorem realCotangentProdEquiv_apply (x : ℝ × ℝ) :
-    realCotangentProdEquiv x = (x.1, ContinuousLinearMap.toSpanSingleton ℝ x.2) :=
-  (rfl)
+    realCotangentProdEquiv x = (x.1, ContinuousLinearMap.toSpanSingleton ℝ x.2) := by
+  ext <;> simp [realCotangentProdEquiv]
 
 /-- The inverse of `realCotangentProdEquiv` evaluates the covector at `1`. -/
 @[simp]
 theorem realCotangentProdEquiv_symm_apply (x : ℝ × StrongDual ℝ ℝ) :
-    realCotangentProdEquiv.symm x = (x.1, x.2 1) :=
-  (rfl)
+    realCotangentProdEquiv.symm x = (x.1, x.2 1) := by
+  simp [realCotangentProdEquiv]
 
 /-- The basis `(∂_q, ∂_p)` of `T*ℝ`: the image under `realCotangentProdEquiv` of the standard basis
 of `ℝ × ℝ`, indexed by `Fin 1 ⊕ Fin 1` as in `Matrix.J`. -/
@@ -156,6 +156,15 @@ theorem toMatrix_realCotangentNegBasis :
   exact (isSymplectomorphism_iff.1 isSymplectomorphism_cotangentFiberNeg) _ _
 
 /-! ### The oscillator flow before and after transport -/
+
+/-- The harmonic oscillator `(q² + p²) / 2` is even in the momentum, so it is unchanged by the
+fibrewise negation `ν`. -/
+@[simp]
+theorem real_sq_add_momentum_sq_div_two_comp_cotangentFiberNeg :
+    (fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) ∘ cotangentFiberNeg =
+      fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2 := by
+  funext y
+  simp
 
 /-- The clockwise rotation `(q, p) ↦ (q cos t + p sin t, -q sin t + p cos t)` of `T*ℝ` through the
 angle `t`: the evolution `TauCeti.oscillatorEvolution t` of the harmonic oscillator on `ℝ × ℝ`,
@@ -269,12 +278,11 @@ theorem hamiltonianFlow_neg_real_sq_add_momentum_sq_div_two {K : ℝ≥0}
     strongDualCotangentSymplecticForm.hamiltonianFlow
         (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) hX t x =
       cotangentFiberNeg (realCotangentRotation t (cotangentFiberNeg x)) := by
-  -- The oscillator is even in the momentum, so it is unchanged by `ν`.
   have hHν : (-fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2) ∘
       (cotangentFiberNeg (V := ℝ)).toLinearEquiv =
       -fun y : ℝ × StrongDual ℝ ℝ ↦ (y.1 ^ 2 + y.2 1 ^ 2) / 2 := by
-    funext y
-    simp
+    rw [ContinuousLinearEquiv.coe_toLinearEquiv, Pi.neg_comp,
+      real_sq_add_momentum_sq_div_two_comp_cotangentFiberNeg]
   obtain ⟨K₁, hX₁⟩ :=
     exists_lipschitzWith_hamiltonianVectorField_rescale_neg_one_neg_real_sq_add_momentum_sq_div_two
   have hX₁' : LipschitzWith K₁
