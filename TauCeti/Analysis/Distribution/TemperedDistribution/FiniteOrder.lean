@@ -30,7 +30,7 @@ operators (`TauCeti.Symbol.IsSmoothing.memSobolev_quantizeTempered`).
 
 ## Main declarations
 
-* `TemperedDistribution.exists_seminorm_smulLeftCLM_one_add_norm_sq_rpow_neg_le`: for `k ≤ 2K` and
+* `SchwartzMap.exists_seminorm_smulLeftCLM_one_add_norm_sq_rpow_neg_le`: for `k ≤ 2K` and
   `t > l + n / 2`, the Schwartz seminorm `sup ‖x‖ ^ k ‖D^l (⟨x⟩ ^ (-2K) φ)‖` is at most
   `C ‖φ‖_{H^t}`.
 * `TemperedDistribution.exists_memSobolev_smulLeftCLM_one_add_norm_sq_rpow_neg`: every scalar
@@ -76,6 +76,11 @@ private theorem hasTemperateGrowth_weight (K : ℕ) :
   rw [weight_eq K]
   fun_prop
 
+end TemperedDistribution
+
+namespace SchwartzMap
+
+open TemperedDistribution in
 /-- **Weighted Schwartz seminorms are controlled by Sobolev norms.** For `k ≤ 2K`, the seminorm
 `sup ‖x‖ ^ k ‖D^l (⟨x⟩ ^ (-2K) φ)‖` is at most a constant times `‖φ‖_{H^t}` once
 `t > l + n / 2`: the weight absorbs the polynomial factor, and the Sobolev embedding bounds the
@@ -126,6 +131,10 @@ theorem exists_seminorm_smulLeftCLM_one_add_norm_sq_rpow_neg_le (K : ℕ) {k l :
         · exact hD _ hil x
     _ = _ := by ring
 
+end SchwartzMap
+
+namespace TemperedDistribution
+
 /-- **Tempered distributions have finite weighted Sobolev order.** Every scalar tempered
 distribution `u` becomes an element of a Sobolev space `H^s` after multiplication by a negative
 power `⟨x⟩ ^ (-2K) = (1 + ‖x‖ ^ 2) ^ (-K)` of the Japanese bracket. Equivalently,
@@ -152,7 +161,7 @@ theorem exists_memSobolev_smulLeftCLM_one_add_norm_sq_rpow_neg (u : 𝓢'(E, ℂ
       (SchwartzMap.smulLeftCLM ℂ (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-(N : ℝ)) : ℝ) : ℂ)) φ) ≤
         C * ‖SchwartzMap.toBesselPotentialSpaceCLM t 2 φ‖ := by
     by_cases hi : i ∈ S
-    · obtain ⟨C, hC⟩ := exists_seminorm_smulLeftCLM_one_add_norm_sq_rpow_neg_le N
+    · obtain ⟨C, hC⟩ := SchwartzMap.exists_seminorm_smulLeftCLM_one_add_norm_sq_rpow_neg_le N
         (k := i.1) (l := i.2) (by have := (hN i hi).1; omega) (ht i hi)
       exact ⟨C, fun _ ↦ hC⟩
     · exact ⟨0, fun h ↦ absurd h hi⟩
