@@ -9,6 +9,7 @@ public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.GroupTheory.BranchTuple.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
 import Mathlib.Tactic.Group
+import TauCeti.Data.List.ProdOfFn
 
 /-!
 # The Hurwitz action of the braid group on branch tuples
@@ -139,10 +140,13 @@ theorem hurwitzMove_symm_apply_of_ne (i : Fin (r - 1)) (t : BranchTuple r G) {k 
 theorem hurwitzMove_mul_hurwitzMove_comm {i j : Fin (r - 1)}
     (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     hurwitzMove (G := G) i * hurwitzMove j = hurwitzMove j * hurwitzMove i := by
-  obtain ⟨h₂, h₃, h₄, h₅⟩ : strand i ≠ strand j ∧ strand i ≠ strandSucc j ∧
-      strandSucc i ≠ strand j ∧ strandSucc i ≠ strandSucc j := by
-    simp only [ne_eq, Fin.ext_iff, val_strand, val_strandSucc]
-    omega
+  -- Each inequality between the four strands follows from their distinctness: identifying two
+  -- of them makes the list `[strand i, strandSucc i, strand j, strandSucc j]` repeat an entry.
+  have hnd := nodup_strand_strandSucc_strand_strandSucc h
+  have h₂ : strand i ≠ strand j := fun e ↦ by simp [e] at hnd
+  have h₃ : strand i ≠ strandSucc j := fun e ↦ by simp [e] at hnd
+  have h₄ : strandSucc i ≠ strand j := fun e ↦ by simp [e] at hnd
+  have h₅ : strandSucc i ≠ strandSucc j := fun e ↦ by simp [e] at hnd
   have ia : ∀ u : BranchTuple r G, hurwitzMove i u (strand j) = u (strand j) :=
     fun u ↦ hurwitzMove_apply_of_ne i u (Ne.symm h₂) (Ne.symm h₄)
   have ib : ∀ u : BranchTuple r G, hurwitzMove i u (strandSucc j) = u (strandSucc j) :=
@@ -254,43 +258,28 @@ theorem apply_hurwitzAction_eq_of_invariant {X : Type*} {F : BranchTuple r G →
 
 /-! ### Invariants of the Hurwitz action -/
 
-/-- Decomposition of `List.ofFn u` around the two positions moved by the `i`-th Hurwitz move. -/
-private theorem ofFn_eq_take_append {α : Type*} (u : Fin r → α) (i : Fin (r - 1)) :
-    List.ofFn u = (List.ofFn u).take i ++
-      u (strand i) :: u (strandSucc i) :: (List.ofFn u).drop (i + 2) := by
-  have hi := i.isLt
-  conv_lhs => rw [← List.take_append_drop i (List.ofFn u)]
-  rw [List.drop_eq_getElem_cons (by simp; omega), List.drop_eq_getElem_cons (by simp; omega)]
-  have h₀ : (⟨i, by omega⟩ : Fin r) = strand i := Fin.ext (by simp)
-  have h₁ : (⟨i + 1, by omega⟩ : Fin r) = strandSucc i := Fin.ext (by simp)
-  simp only [List.getElem_ofFn, h₀, h₁]
-
 private theorem take_ofFn_hurwitzMove (i : Fin (r - 1)) (t : BranchTuple r G) :
-    (List.ofFn (hurwitzMove i t)).take i = (List.ofFn t).take i := by
+    (List.ofFn (hurwitzMove i t)).take (strand i) = (List.ofFn t).take (strand i) := by
   refine List.ext_getElem (by simp) fun n h₁ _ ↦ ?_
   simp only [List.getElem_take, List.getElem_ofFn]
-  simp only [List.length_take, List.length_ofFn, lt_min_iff] at h₁
+  simp only [List.length_take, List.length_ofFn, val_strand, lt_min_iff] at h₁
   exact hurwitzMove_apply_of_ne i t (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
 
 private theorem drop_ofFn_hurwitzMove (i : Fin (r - 1)) (t : BranchTuple r G) :
-    (List.ofFn (hurwitzMove i t)).drop (i + 2) = (List.ofFn t).drop (i + 2) := by
+    (List.ofFn (hurwitzMove i t)).drop (strandSucc i + 1) =
+      (List.ofFn t).drop (strandSucc i + 1) := by
   refine List.ext_getElem (by simp) fun n _ _ ↦ ?_
   simp only [List.getElem_drop, List.getElem_ofFn]
   exact hurwitzMove_apply_of_ne i t (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
-
-/-- The ordered product, split around the two positions moved by the `i`-th Hurwitz move. -/
-private theorem product_eq_mul (u : BranchTuple r G) (i : Fin (r - 1)) :
-    product u = ((List.ofFn u).take i).prod *
-      (u (strand i) * (u (strandSucc i) * ((List.ofFn u).drop (i + 2)).prod)) := by
-  conv_lhs => rw [product_def, ofFn_eq_take_append u i]
-  simp only [List.prod_append, List.prod_cons]
 
 /-- A Hurwitz move preserves the ordered product. -/
 @[simp]
 theorem product_hurwitzMove (i : Fin (r - 1)) (t : BranchTuple r G) :
     product (hurwitzMove i t) = product t := by
-  rw [product_eq_mul (hurwitzMove i t) i, product_eq_mul t i, take_ofFn_hurwitzMove,
-    drop_ofFn_hurwitzMove, hurwitzMove_apply_strand, hurwitzMove_apply_strandSucc]
+  have hi : (strand i : ℕ) + 1 = strandSucc i := by simp
+  rw [product_def, product_def, List.prod_ofFn_eq_take_mul_mul_drop _ hi,
+    List.prod_ofFn_eq_take_mul_mul_drop t hi, take_ofFn_hurwitzMove, drop_ofFn_hurwitzMove,
+    hurwitzMove_apply_strand, hurwitzMove_apply_strandSucc]
   group
 
 /-- A Hurwitz move preserves the generated subgroup. -/

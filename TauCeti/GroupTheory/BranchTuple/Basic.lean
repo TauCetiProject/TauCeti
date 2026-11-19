@@ -228,23 +228,18 @@ namespace NielsenClass
 variable {G : Type*} [Group G] {A : Subgroup (MulAut G)} {r : ℕ}
 
 /-- Two branch tuples have the same Nielsen class exactly when an automorphism in `A` carries the
-first to the second entrywise. -/
-theorem mk_eq_mk_iff {t t' : BranchTuple r G} :
-    (Quotient.mk'' t : NielsenClass A r) = Quotient.mk'' t' ↔
-      ∃ φ ∈ A, ∀ i, t' i = φ (t i) := by
-  rw [eq_comm, Quotient.eq'', MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-  constructor
-  · rintro ⟨φ, hφ⟩
-    exact ⟨φ, φ.2, fun i ↦ (congrFun hφ i).symm⟩
-  · rintro ⟨φ, hφ, h⟩
-    exact ⟨⟨φ, hφ⟩, funext fun i ↦ (h i).symm⟩
-
-/-- Two branch tuples have the same Nielsen class exactly when an automorphism in `A` carries the
 first to the second. -/
 theorem mk_eq_mk_iff_smul {t t' : BranchTuple r G} :
     (Quotient.mk'' t : NielsenClass A r) = Quotient.mk'' t' ↔ ∃ φ ∈ A, φ • t = t' := by
   rw [eq_comm, Quotient.eq'', MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
   simp only [Subtype.exists, Subgroup.mk_smul, exists_prop]
+
+/-- Two branch tuples have the same Nielsen class exactly when an automorphism in `A` carries the
+first to the second entrywise. -/
+theorem mk_eq_mk_iff {t t' : BranchTuple r G} :
+    (Quotient.mk'' t : NielsenClass A r) = Quotient.mk'' t' ↔
+      ∃ φ ∈ A, ∀ i, t' i = φ (t i) := by
+  simp only [mk_eq_mk_iff_smul, funext_iff, Pi.smul_apply, MulAut.smul_def, eq_comm]
 
 /-- Product one is an invariant of Nielsen classes. -/
 theorem product_eq_one_iff_of_mk_eq_mk {t t' : BranchTuple r G}
