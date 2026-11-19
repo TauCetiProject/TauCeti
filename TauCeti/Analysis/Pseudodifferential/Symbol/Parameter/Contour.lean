@@ -59,6 +59,8 @@ at every order (`hasFTaylorSeriesUpToOn_integral_of_le_bound`).
 * `TauCeti.ParameterSymbol.contourIntegral_add`, `TauCeti.ParameterSymbol.contourIntegral_smul`,
   `TauCeti.ParameterSymbol.contourIntegral_neg`, `TauCeti.ParameterSymbol.contourIntegral_sub`:
   it is linear in `a`, so a parametrix may be integrated term by term.
+* `TauCeti.ParameterSymbol.contourIntegralₗ`: the contour integral as a `ℂ`-linear map, with
+  `TauCeti.ParameterSymbol.contourIntegral_sum` for finite sums.
 
 ## References
 
@@ -568,6 +570,26 @@ theorem contourIntegral_sub (b : ParameterSymbol n Λ V W m) :
     (a - b).contourIntegral hγ hγΛ hg hγc hgσ hσ hm =
       a.contourIntegral hγ hγΛ hg hγc hgσ hσ hm - b.contourIntegral hγ hγΛ hg hγc hgσ hσ hm := by
   rw [sub_eq_add_neg, contourIntegral_add, contourIntegral_neg, ← sub_eq_add_neg]
+
+/-- The contour integral as a `ℂ`-linear map from parameter-dependent symbols of order `m` to
+symbols of order `m + 2 σ + 2`. -/
+def contourIntegralₗ : ParameterSymbol n Λ V W m →ₗ[ℂ] Symbol n V W (m + 2 * σ + 2) where
+  toFun b := b.contourIntegral hγ hγΛ hg hγc hgσ hσ hm
+  map_add' b b' := b.contourIntegral_add hγ hγΛ hg hγc hgσ hσ hm b'
+  map_smul' c b := b.contourIntegral_smul hγ hγΛ hg hγc hgσ hσ hm c
+
+@[simp]
+theorem contourIntegralₗ_apply :
+    contourIntegralₗ hγ hγΛ hg hγc hgσ hσ hm a = a.contourIntegral hγ hγΛ hg hγc hgσ hσ hm :=
+  (rfl)
+
+/-- The contour integral of a finite sum is the sum of the contour integrals, so a finite
+parametrix expansion may be integrated term by term. -/
+@[simp]
+theorem contourIntegral_sum {ι : Type*} (s : Finset ι) (b : ι → ParameterSymbol n Λ V W m) :
+    (∑ i ∈ s, b i).contourIntegral hγ hγΛ hg hγc hgσ hσ hm =
+      ∑ i ∈ s, (b i).contourIntegral hγ hγΛ hg hγc hgσ hσ hm :=
+  map_sum (contourIntegralₗ hγ hγΛ hg hγc hgσ hσ hm) b s
 
 end Contour
 
