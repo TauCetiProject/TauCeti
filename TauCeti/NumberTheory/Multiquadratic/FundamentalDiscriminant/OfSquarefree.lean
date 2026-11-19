@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Basic
+import TauCeti.Algebra.Group.Even
 
 /-!
 # The fundamental discriminant of a squarefree radicand
@@ -46,6 +47,8 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
 * `TauCeti.Multiquadratic.jacobiSym_fundamentalDiscriminant`,
   `TauCeti.Multiquadratic.legendreSym_fundamentalDiscriminant`: the square factor does not change
   Jacobi symbols at odd arguments or Legendre symbols at odd primes.
+* `TauCeti.Multiquadratic.isSquare_fundamentalDiscriminant_zmod_iff`: modulo an odd natural
+  number, `fundamentalDiscriminant d` is a square if and only if `d` is.
 * `TauCeti.Multiquadratic.dvd_fundamentalDiscriminant_iff`: for `p` coprime to `2`,
   `p ∣ fundamentalDiscriminant d ↔ p ∣ d` (the ramified odd primes are the divisors of `d`).
 * `TauCeti.Multiquadratic.two_not_dvd_fundamentalDiscriminant_iff_mod_four_eq_one`:
@@ -125,6 +128,20 @@ theorem legendreSym_fundamentalDiscriminant (d : ℤ) {p : ℕ} [Fact p.Prime] (
     legendreSym p (fundamentalDiscriminant d) = legendreSym p d := by
   rw [jacobiSym.legendreSym.to_jacobiSym, jacobiSym.legendreSym.to_jacobiSym,
     jacobiSym_fundamentalDiscriminant d ((Fact.out : p.Prime).odd_of_ne_two hp)]
+
+/-- Modulo an odd natural number `n`, `fundamentalDiscriminant d` is a square if and only if `d`
+is a square. -/
+theorem isSquare_fundamentalDiscriminant_zmod_iff (d : ℤ) {n : ℕ} (hn : Odd n) :
+    IsSquare ((fundamentalDiscriminant d : ℤ) : ZMod n) ↔ IsSquare (d : ZMod n) := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
+  have hu : IsUnit (c : ZMod n) := by
+    rcases hc with rfl | rfl
+    · rw [Int.cast_one]
+      exact isUnit_one
+    · rw [← Nat.cast_two, Int.cast_natCast]
+      exact (ZMod.isUnit_iff_coprime 2 n).mpr hn.coprime_two_left
+  rw [← hcd, Int.cast_mul, Int.cast_pow]
+  exact hu.isSquare_sq_mul_iff
 
 /-- **The fundamental discriminant of a nonzero integer is nonzero**, being a nonzero square
 multiple of it. -/
