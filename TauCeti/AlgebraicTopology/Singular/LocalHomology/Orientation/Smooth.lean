@@ -247,8 +247,7 @@ private theorem localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart {
       localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (sourceRestrict φ)
         (sourceRestrict_preimage φ ha) (n + 1) w := by
     rw [← ConcreteCategory.comp_apply,
-      localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom _ φ ha
-        (sourceRestrict φ) (sourceRestrict_apply φ)]
+      localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom _ φ ha]
   rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart] at hw ⊢
   apply (ConcreteCategory.bijective_of_isIso e.hom).1
   rw [Iso.inv_hom_id_apply,
@@ -361,7 +360,7 @@ private theorem exists_localHomologyRestriction_eq_localOrientationOfOrientedCha
   -- Its pullback to `Hₙ₊₁(M, M ∖ φ.symm '' K)` through the source of `φ`.
   have : IsIso (localHomologyMap Z (sourceRestrict φ) (sourceRestrict_preimage_eq φ hKφ).subset
       (n + 1)) :=
-    isIso_localHomologyMap Z (sourceRestrict φ) (φ.isOpenEmbedding_restrict)
+    isIso_localHomologyMap Z (sourceRestrict φ) (φ.isOpenEmbedding_sourceRestrict)
       (sourceRestrict_preimage_eq φ hKφ) hKc.isClosed
       (fun z hz ↦ ⟨⟨φ.symm z, φ.map_target (hKφ hz)⟩,
         (sourceRestrict_apply φ _).trans (φ.right_inv (hKφ hz))⟩) (n + 1)
@@ -451,7 +450,7 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationO
   set SW : Set W := ContinuousMap.subtypeVal W ⁻¹' {a}
   -- A class `w` on `W` which `φ` carries to the local orientation of the model at `φ a`.
   have hgφ : IsOpenEmbedding ((sourceRestrict φ).comp iφ) :=
-    (φ.isOpenEmbedding_restrict).comp
+    (φ.isOpenEmbedding_sourceRestrict).comp
       (IsOpenEmbedding.inclusion (inter_subset_left.trans inter_subset_right)
         (hWo.preimage continuous_subtype_val))
   have hgφS : (sourceRestrict φ).comp iφ ⁻¹' {φ a} = SW := by

@@ -321,16 +321,15 @@ variable {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [Topological
 
 /-- **The chart isomorphism through the source.** The local homology isomorphism of a chart `φ`
 at `a` (`TauCeti.singularHomologyComplSingletonIsoOfChart`) is the inverse of the excision
-isomorphism of the source of `φ`, followed by the map induced by any continuous map `σ` on the
-source agreeing with `φ`. -/
+isomorphism of the source of `φ`, followed by the map induced by its canonical source
+restriction `φ.sourceRestrict`. -/
 theorem localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom
-    {a : M} (ha : a ∈ φ.source) (σ : C(φ.source, E)) (hσ : ∀ z, σ z = φ z)
-    (h : σ ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (k : ℕ) :
+    {a : M} (ha : a ∈ φ.source)
+    (h : φ.sourceRestrict ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (k : ℕ) :
     localHomologyMap R (ContinuousMap.subtypeVal φ.source)
         (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k ≫
           (singularHomologyComplSingletonIsoOfChart R φ ha k).hom =
-      localHomologyMap R σ h k := by
-  obtain rfl : σ = φ.sourceRestrict := ContinuousMap.ext hσ
+      localHomologyMap R φ.sourceRestrict h k := by
   have h₁ : localHomologyMap R (ContinuousMap.subtypeVal φ.source)
       (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k =
         TopPair.singularHomologyMap
@@ -357,7 +356,7 @@ theorem localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChar
     erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.ofSubsetIso_hom,
       TopPair.ofSubsetMap_fst_apply,
       TopPair.ofSubsetMap_fst_apply]
-    rfl
+    exact φ.sourceRestrict_apply z
   rw [h₁, h₂, TopPair.singularHomologyMap_comp]
   exact singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom R φ ha k
 

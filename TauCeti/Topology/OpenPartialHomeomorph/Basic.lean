@@ -61,14 +61,17 @@ theorem mem_refl_source (x : X) : x ∈ (OpenPartialHomeomorph.refl X).source :=
   Set.mem_univ x
 
 /-- The restriction of an open partial homeomorphism to its source, as a continuous map. -/
--- Expose the formula so Mathlib's restriction lemmas apply across module boundaries.
-@[expose] def sourceRestrict : C(e.source, Y) :=
+def sourceRestrict : C(e.source, Y) :=
   ⟨e.source.domRestrict e, e.continuousOn.domRestrict⟩
 
 /-- Restricting to the source agrees pointwise with the partial homeomorphism. -/
 @[simp]
 theorem sourceRestrict_apply (x : e.source) : e.sourceRestrict x = e x :=
   (rfl)
+
+/-- The restriction to the source is an open embedding. -/
+theorem isOpenEmbedding_sourceRestrict : Topology.IsOpenEmbedding e.sourceRestrict :=
+  e.isOpenEmbedding_restrict
 
 /-- A point of the source is the only point of the source that `e` sends to its image. -/
 theorem sourceRestrict_preimage {a : X} (ha : a ∈ e.source) :

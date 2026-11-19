@@ -350,7 +350,7 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_sourceRestrict_localOrient
         (localHomologyMap Z (ContinuousMap.subtypeVal φ.source) (S := {⟨z, hz⟩}) (T := {z})
           (fun x (hx : x.1 = z) ↦ Subtype.ext hx) (n + 1) c) := by
     rw [← localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom Z φ hz
-      sR φ.sourceRestrict_apply hsR' (n + 1), ← Category.assoc, localHomologyMap_comp,
+      hsR' (n + 1), ← Category.assoc, localHomologyMap_comp,
       localHomologyMap_congr Z (ContinuousMap.comp_id _), ConcreteCategory.comp_apply]
   rw [h₁, h₂, hc, OpenPartialHomeomorph.coe_localOrientationOfOrientedChart,
     OpenPartialHomeomorph.coe_localOrientationOfOrientedChart]

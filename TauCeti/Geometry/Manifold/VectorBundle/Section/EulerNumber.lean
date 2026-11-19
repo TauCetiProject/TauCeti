@@ -25,8 +25,9 @@ orientation of `T_z M` to that of `E_z`, and `-1` otherwise.
 Combined with the sum-of-local-indices formula
 `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_sectionIndex`, this
 evaluates the Euler class of `E` on the fundamental class of a compact `M` as the signed count of
-the zeros of any section all of whose zeros are transverse, and such sections exist when the
-bundle is smooth (`TauCeti.exists_contMDiffSection_regular_finite_zero_of_finrank_eq`).
+the zeros of a continuous section with finitely many zeros, all transverse. Such sections
+exist when the bundle is smooth
+(`TauCeti.exists_contMDiffSection_regular_finite_zero_of_finrank_eq`).
 
 The proof reads the section in the preferred chart `φ` at `z`, composed with the linear
 equivalence `Λ = e_z ∘ Dₛ(z) : X ≃ F` given by the linearization followed by the preferred
