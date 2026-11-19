@@ -21,9 +21,10 @@ continuous linear map, so that the spaces `H^{s,p}` for different `s` can be com
 * `BesselPotentialSpace.toDistrCLM_injective`: it is injective.
 * `BesselPotentialSpace.norm_copy`, `BesselPotentialSpace.memSobolev_toDistr_of_eq`: moving an
   element along an equality of orders `s = s'`.
-* `BesselPotentialSpace.enorm_toLp_eq`, `BesselPotentialSpace.toLp_toLpₗᵢ_symm_apply`,
-  `BesselPotentialSpace.integrable_toLp_iff`: the isometry `u ↦ J^s u` of `H^{s,p}` onto `Lᵖ`
-  transfers extended norms and Bochner integrability of `H^{s,p}`-valued functions.
+* `BesselPotentialSpace.enorm_toLp_eq`, `BesselPotentialSpace.integrable_toLp_iff`,
+  `BesselPotentialSpace.toLp_intervalIntegral`: the isometry `u ↦ J^s u` of `H^{s,p}` onto `Lᵖ`
+  transfers extended norms, Bochner integrability of `H^{s,p}`-valued functions and their
+  interval integrals.
 -/
 
 public section
@@ -67,19 +68,19 @@ theorem enorm_toLp_eq {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, p}(
     ‖u.toLp‖ₑ = ‖u‖ₑ := by
   rw [← ofReal_norm, ← ofReal_norm, norm_toLp_eq]
 
-/-- The `Lᵖ` function of the element of `H^{s,p}` with `Lᵖ` function `f` is `f`. -/
-@[simp]
-theorem toLp_toLpₗᵢ_symm_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (f : Lp F p (volume : Measure E)) : ((toLpₗᵢ E F s p).symm f).toLp = f := by
-  rw [← toLpₗᵢ_apply]
-  exact (toLpₗᵢ E F s p).apply_symm_apply f
-
 /-- A function with values in `H^{s,p}` is Bochner integrable exactly when the `Lᵖ` functions
 of its values are. -/
 theorem integrable_toLp_iff {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {α : Type*} [MeasurableSpace α]
     {μ : Measure α} {G : α → H^{s, p}(E, F)} :
     Integrable (fun a ↦ (G a).toLp) μ ↔ Integrable G μ := by
   simpa only [toLpₗᵢ_apply] using (toLpₗᵢ E F s p).integrable_comp_iff
+
+/-- The `Lᵖ` function of an interval integral in `H^{s,p}` is the interval integral of the `Lᵖ`
+functions: `J^s ∫_a^b g = ∫_a^b J^s g`. -/
+theorem toLp_intervalIntegral {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (g : ℝ → H^{s, p}(E, F))
+    (a b : ℝ) : (∫ τ in a..b, g τ).toLp = ∫ τ in a..b, (g τ).toLp := by
+  simpa only [LinearIsometryEquiv.coe_toLinearIsometry, toLpₗᵢ_apply] using
+    ((toLpₗᵢ E F s p).toLinearIsometry.intervalIntegral_comp_comm g).symm
 
 /-- The tempered distribution of an element of `H^{t,p}` lies in `H^{s,p}` when `t = s`. -/
 theorem memSobolev_toDistr_of_eq {s t : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{t, p}(E, F))

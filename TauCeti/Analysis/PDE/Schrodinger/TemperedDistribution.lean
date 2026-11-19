@@ -17,9 +17,9 @@ On a finite-dimensional real inner product space `E`, the Schrödinger propagato
 `S(t) = exp(itΔ)` is the Fourier multiplier with the unimodular symbol
 `exp(-4π² i t ‖ξ‖²)` (`TauCeti.phaseSymbol TauCeti.laplacianSymbol t`). This symbol has temperate
 growth, so `S(t)` is a continuous linear operator on all tempered distributions
-(`TemperedDistribution.schrodingerPropagator`). It solves the free Schrödinger equation
-`i ∂ₜu + Δu = 0` with initial value `u` in `𝓢'`, and on `L²` it is the unitary propagator
-`TauCeti.schrodingerPropagator`
+(`TemperedDistribution.schrodingerPropagator`). Formally, `t ↦ S(t) u` solves the free
+Schrödinger equation `i ∂ₜu + Δu = 0` with initial value `u` in `𝓢'`; the time derivative is not
+proved here. On `L²` it is the unitary propagator `TauCeti.schrodingerPropagator`
 (`TemperedDistribution.schrodingerPropagator_toTemperedDistribution`).
 
 Since Fourier multipliers with symbols of temperate growth commute, `S(t)` commutes with every
@@ -144,10 +144,9 @@ theorem besselPotential_schrodingerPropagator (s t : ℝ) (u : 𝓢'(E, F)) :
 theorem littlewoodPaleyBlock_schrodingerPropagator (φ : ContDiffBump (0 : E)) (j : ℕ) (t : ℝ)
     (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j (schrodingerPropagator E F t u) =
-      schrodingerPropagator E F t (littlewoodPaleyBlock F φ j u) := by
-  rw [littlewoodPaleyBlock_apply, littlewoodPaleyBlock_apply,
-    schrodingerPropagator_fourierMultiplierCLM_comm
-      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+      schrodingerPropagator E F t (littlewoodPaleyBlock F φ j u) :=
+  littlewoodPaleyBlock_fourierMultiplierCLM_comm φ
+    (TauCeti.hasTemperateGrowth_phaseSymbol_laplacianSymbol t) j u
 
 end NormedSpace
 

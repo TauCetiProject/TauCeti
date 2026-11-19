@@ -9,6 +9,7 @@ public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.PDE.Schrodinger.MixedNorm
 public import TauCeti.Analysis.PDE.Schrodinger.TemperedDistribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
+import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 
 /-!
 # The Schrödinger equation with data in `H^s`
@@ -79,30 +80,32 @@ namespace BesselPotentialSpace
 
 variable (F s) in
 /-- **The Schrödinger propagator on `H^s`**: `S(t) = exp(itΔ)` restricted to the
-Bessel-potential space `H^{s,2}(E, F)`. Under the isometry `J^s : H^s ≃ L²` it is the propagator
-on `L²` (`BesselPotentialSpace.toLp_schrodingerPropagator`), and on the underlying tempered
+Bessel-potential space `H^{s,2}(E, F)`, which it preserves
+(`TemperedDistribution.MemSobolev.schrodingerPropagator`). On the underlying tempered
 distributions it is `TemperedDistribution.schrodingerPropagator`
-(`BesselPotentialSpace.toDistr_schrodingerPropagator`). -/
+(`BesselPotentialSpace.toDistr_schrodingerPropagator`), and under the isometry `J^s : H^s ≃ L²`
+it is the propagator on `L²` (`BesselPotentialSpace.toLp_schrodingerPropagator`). -/
 def schrodingerPropagator (t : ℝ) : H^{s}(E, F) →L[ℂ] H^{s}(E, F) :=
-  ((toLpₗᵢ E F s 2).symm.toContinuousLinearEquiv : Lp F 2 (volume : Measure E) →L[ℂ] H^{s}(E, F))
-    ∘L TauCeti.schrodingerPropagator F t ∘L
-      ((toLpₗᵢ E F s 2).toContinuousLinearEquiv : H^{s}(E, F) →L[ℂ] Lp F 2 (volume : Measure E))
-
-/-- **`J^s` intertwines the propagators** on `H^s` and on `L²`: `J^s (S(t) u) = S(t) (J^s u)`. -/
-@[simp]
-theorem toLp_schrodingerPropagator (t : ℝ) (u : H^{s}(E, F)) :
-    (schrodingerPropagator F s t u).toLp = TauCeti.schrodingerPropagator F t u.toLp := by
-  simp [schrodingerPropagator, ← toLpₗᵢ_apply]
+  mapCLM (TemperedDistribution.schrodingerPropagator E F t) fun u ↦
+    u.memSobolev_toDistr.schrodingerPropagator t
 
 /-- On the underlying tempered distributions, the propagator on `H^s` is
 `TemperedDistribution.schrodingerPropagator`. -/
 @[simp]
 theorem toDistr_schrodingerPropagator (t : ℝ) (u : H^{s}(E, F)) :
     (schrodingerPropagator F s t u).toDistr =
-      TemperedDistribution.schrodingerPropagator E F t u.toDistr := by
-  rw [← besselPotential_neg_toLp_eq (f := schrodingerPropagator F s t u),
-    toLp_schrodingerPropagator, ← schrodingerPropagator_toTemperedDistribution,
-    besselPotential_schrodingerPropagator, besselPotential_neg_toLp_eq]
+      TemperedDistribution.schrodingerPropagator E F t u.toDistr :=
+  toDistr_mapCLM _ _ u
+
+/-- **`J^s` intertwines the propagators** on `H^s` and on `L²`: `J^s (S(t) u) = S(t) (J^s u)`. -/
+@[simp]
+theorem toLp_schrodingerPropagator (t : ℝ) (u : H^{s}(E, F)) :
+    (schrodingerPropagator F s t u).toLp = TauCeti.schrodingerPropagator F t u.toLp := by
+  rw [← toLpₗᵢ_apply, ← (toLpₗᵢ E F s 2).eq_symm_apply]
+  refine ext ?_
+  rw [toDistr_schrodingerPropagator, toLpₗᵢ_symm_apply,
+    ← schrodingerPropagator_toTemperedDistribution, besselPotential_schrodingerPropagator,
+    besselPotential_neg_toLp_eq]
 
 /-- The propagator on `H^s` is an isometry. -/
 @[simp]
@@ -127,11 +130,9 @@ theorem schrodingerPropagator_add_apply (t₁ t₂ : ℝ) (u : H^{s}(E, F)) :
 /-- **Strong continuity**: `t ↦ S(t) u` is continuous with values in `H^s`. -/
 theorem continuous_schrodingerPropagator_apply (u : H^{s}(E, F)) :
     Continuous fun t ↦ schrodingerPropagator F s t u := by
-  have h := (toLpₗᵢ E F s 2).symm.continuous.comp
-    (TauCeti.continuous_phasePropagator_apply TauCeti.laplacianSymbol u.toLp)
-  convert h using 2 with t
-  exact injective_toLp E F s 2
-    ((toLp_schrodingerPropagator t u).trans (toLp_toLpₗᵢ_symm_apply _).symm)
+  refine (toLpₗᵢ E F s 2).comp_continuous_iff.1 ?_
+  simpa [Function.comp_def] using
+    TauCeti.continuous_phasePropagator_apply TauCeti.laplacianSymbol u.toLp
 
 /-! ### Duhamel's formula in `H^s` -/
 
@@ -154,11 +155,7 @@ theorem schrodingerDuhamel_def (f : H^{s}(E, F)) (G : ℝ → H^{s}(E, F)) (t : 
 theorem toLp_schrodingerDuhamel (f : H^{s}(E, F)) (G : ℝ → H^{s}(E, F)) (t : ℝ) :
     (schrodingerDuhamel f G t).toLp =
       TauCeti.schrodingerDuhamel f.toLp (fun τ ↦ (G τ).toLp) t := by
-  rw [schrodingerDuhamel_def, TauCeti.schrodingerDuhamel_def, toLp_sub, toLp_smul,
-    toLp_schrodingerPropagator,
-    ← toLpₗᵢ_apply (∫ τ in (0 : ℝ)..t, schrodingerPropagator F s (t - τ) (G τ)),
-    ← LinearIsometryEquiv.coe_toLinearIsometry, ← LinearIsometry.intervalIntegral_comp_comm]
-  simp
+  simp [schrodingerDuhamel_def, TauCeti.schrodingerDuhamel_def, toLp_intervalIntegral]
 
 /-- Duhamel's formula in `H^s` takes the initial value `f` at time `0`. -/
 @[simp]
@@ -177,10 +174,8 @@ integrable on `(0, T]` with values in `H^s`. -/
 theorem continuousOn_schrodingerDuhamel_Icc (f : H^{s}(E, F)) {G : ℝ → H^{s}(E, F)} {T : ℝ}
     (hG : IntegrableOn G (Ioc 0 T)) : ContinuousOn (schrodingerDuhamel f G) (Icc 0 T) := by
   have hG' : IntegrableOn (fun τ ↦ (G τ).toLp) (Ioc 0 T) := integrable_toLp_iff.2 hG
-  have h := (toLpₗᵢ E F s 2).symm.continuous.comp_continuousOn
-    (TauCeti.continuousOn_schrodingerDuhamel_Icc f.toLp hG')
-  exact h.congr fun t _ ↦ injective_toLp E F s 2 ((toLp_schrodingerDuhamel f G t).trans
-    (toLp_toLpₗᵢ_symm_apply _).symm)
+  refine (toLpₗᵢ E F s 2).comp_continuousOn_iff.1 ?_
+  simpa [Function.comp_def] using TauCeti.continuousOn_schrodingerDuhamel_Icc f.toLp hG'
 
 /-- **The energy estimate in `H^s`**: `‖u(t)‖_{H^s} ≤ ‖f‖_{H^s} + ∫_{Ι(0,t)} ‖G(τ)‖_{H^s} dτ` at
 every time `t`, where `Ι(0,t)` is `(0, t]` for `t ≥ 0` and `(t, 0]` for `t ≤ 0`. -/
