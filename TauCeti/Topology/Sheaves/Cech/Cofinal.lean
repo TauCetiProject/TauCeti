@@ -115,6 +115,20 @@ theorem homologyMap_cechComplexMap_comp_toCechCohomology_app {ι κ : Type u} {U
       (toCechCohomology A n U hU).app P :=
   TauCeti.CategoryTheory.homologyMap_cechComplexMap_comp_toCechCohomology_app A _ _ n φ _ P
 
+/-- If one open cover computes Čech cohomology, the inverse of its structure map, on the image
+of a coarser cover, is the Čech cohomology map induced by the refinement. This holds for arbitrary
+coefficients, in every degree and for every presheaf. -/
+@[reassoc]
+theorem toCechCohomology_app_comp_inv {ι κ : Type u} {U : ι → Opens X}
+    {V : κ → Opens X} (hU : IsOpenCover U) (hV : IsOpenCover V)
+    (P : (Opens X)ᵒᵖ ⥤ A) (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    [IsIso ((toCechCohomology A n U hU).app P)] :
+    (toCechCohomology A n V hV).app P ≫ inv ((toCechCohomology A n U hU).app P) =
+      HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechComplexMap P φ) n :=
+  -- The source is the homology object only after unfolding the composite Čech functor.
+  (Iso.comp_inv_eq (asIso ((toCechCohomology A n U hU).app P))).2
+    (homologyMap_cechComplexMap_comp_toCechCohomology_app A n φ hV hU P).symm
+
 /-- **Covers computing Čech cohomology.** Let `L` be a property of opens such that every open
 cover of `X` is refined by a finite open cover whose members have `L`, and every refinement
 between two finite open covers whose members have `L` induces an isomorphism on the degree `n`
@@ -155,12 +169,6 @@ theorem isIso_toCechCohomology_app_of_forall_isIso [HasColimitsOfSize.{u, u} A]
   have : IsIso ((TauCeti.CategoryTheory.cechCohomologyι E hE n j₀).app P) :=
     TauCeti.CategoryTheory.isIso_cechCohomologyι_app A E hE n P j₀ fun W _ φ ↦
       hiso _ _ j₀.2 W.2 φ
-  have : IsIso (TauCeti.CategoryTheory.cechComplexHomologyMap A n e.hom) :=
-    ⟨TauCeti.CategoryTheory.cechComplexHomologyMap A n e.inv, by
-      rw [← TauCeti.CategoryTheory.cechComplexHomologyMap_comp, e.inv_hom_id,
-        TauCeti.CategoryTheory.cechComplexHomologyMap_id], by
-      rw [← TauCeti.CategoryTheory.cechComplexHomologyMap_comp, e.hom_inv_id,
-        TauCeti.CategoryTheory.cechComplexHomologyMap_id]⟩
   let c := TauCeti.CategoryTheory.cechCohomologyIso A E hE PointOpenCover.toFormalCoproduct
     (fun _ _ h ↦ h) n h₁ h₂
   have hfac : TauCeti.CategoryTheory.cechComplexHomologyMap A n e.hom ≫

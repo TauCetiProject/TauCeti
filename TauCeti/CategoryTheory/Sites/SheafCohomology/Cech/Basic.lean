@@ -640,6 +640,14 @@ theorem cechComplexHomologyMap_comp {ι' : Type w} {W : ι' → C}
   rw [cechComplexHomologyMap_app, cechComplexMap_comp]
   exact HomologicalComplex.homologyMap_comp _ _ n
 
+/-- An isomorphism of families induces an isomorphism on Čech cohomology in every degree. -/
+instance isIso_cechComplexHomologyMap
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) [IsIso φ] :
+    IsIso (cechComplexHomologyMap A n φ) :=
+  ⟨cechComplexHomologyMap A n (inv φ), by
+    rw [← cechComplexHomologyMap_comp, IsIso.inv_hom_id, cechComplexHomologyMap_id], by
+    rw [← cechComplexHomologyMap_comp, IsIso.hom_inv_id, cechComplexHomologyMap_id]⟩
+
 end Homology
 
 /-- **Families that map to each other have homotopy equivalent Čech complexes.** Given morphisms
