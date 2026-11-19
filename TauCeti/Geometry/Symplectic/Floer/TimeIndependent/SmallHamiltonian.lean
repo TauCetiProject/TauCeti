@@ -75,7 +75,9 @@ mixed boundary conditions
 `f'' ≥ κ f`, `κ > 0`, is convex and bounded, hence zero
 (`TauCeti.eq_zero_of_hasDerivAt_of_mul_le_of_bddAbove`). So `ξ = 0`
 (`TauCeti.SymplecticForm.eq_zero_of_fderiv_apply_real_eq` for cylinders). This step only uses
-that `ξ` is a bounded solution of the linearized equation along `u`.
+that `ξ` is a bounded solution of the linearized equation along `u` whose slices satisfy the
+Wirtinger-type bound `C² ∫₀¹ ‖ξ‖² ≤ ∫₀¹ ‖∂t ξ‖²` and whose boundary term `⟪J ξ, ∂s ξ⟫` takes equal
+values at `t = 0` and `t = 1`.
 
 The constant structure `J` covers flat targets. On a torus `V / Λ` with a flat compatible
 structure, a Floer cylinder whose loops are contractible lifts to a solution on `V` of period one
@@ -404,15 +406,14 @@ private theorem eq_zero_of_fderiv_apply_real_eq_of_mul_integral_le
   have hfz := eq_zero_of_hasDerivAt_of_mul_le_of_bddAbove (by nlinarith)
     (hasDerivAt_intervalIntegral_norm_sq hξ1 0 1)
     (hasDerivAt_intervalIntegral_two_mul_inner_fderiv hξ 0 1) hle hf0 hfb
-  -- A continuous slice with vanishing `L²` norm vanishes on `(0, 1]`, hence on `[0, 1]`.
+  -- A continuous slice with vanishing `L²` norm vanishes on `[0, 1]`.
   have hae := (intervalIntegral.integral_eq_zero_iff_of_le_of_nonneg_ae zero_le_one
     (Eventually.of_forall fun t ↦ sq_nonneg ‖ξ (s, t)‖)
     ((hcont s).intervalIntegrable (μ := volume) 0 1)).1 (hfz s)
-  have hIoc := Measure.eqOn_Ioc_of_ae_eq volume hae (hcont s).continuousOn continuousOn_const
-  have hcl : closure (Ioc (0 : ℝ) 1) ⊆ {t | ‖ξ (s, t)‖ ^ 2 = 0} :=
-    (isClosed_eq (hcont s) continuous_const).closure_subset_iff.2 fun t ht ↦ hIoc ht
-  rw [closure_Ioc zero_ne_one] at hcl
-  simpa using hcl ht
+  have hIcc := Measure.eqOn_Icc_of_ae_eq volume zero_ne_one (g := fun _ ↦ (0 : ℝ))
+    (by rwa [Measure.restrict_congr_set Ioc_ae_eq_Icc] at hae) (hcont s).continuousOn
+    continuousOn_const
+  simpa using hIcc ht
 
 /-- **Wirtinger's inequality on the slices of a cylinder.** If `ξ` has period one in `t` and mean
 zero on every slice, then `(2π)² ∫₀¹ ‖ξ(s, t)‖² dt ≤ ∫₀¹ ‖∂t ξ(s, t)‖² dt`. -/
