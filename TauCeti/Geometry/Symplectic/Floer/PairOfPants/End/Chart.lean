@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -39,15 +40,14 @@ apply to all three ends.
 * `TauCeti.Floer.endStrip q`: the part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the cylinder of the end
   `q`.
 * `TauCeti.Floer.positiveEndChart q`: the end chart of `q` read as a positive end.
-* `TauCeti.Floer.endHeight q`: the signed longitudinal coordinate `±s_q` of the end `q` in the
-  real coordinates `ℝ × ℝ ≃ ℂ`; it is `s` at `φ'_q(s, t)`.
+* `TauCeti.Floer.positiveEndCoord q`: the coordinates of a point in the positive end chart of `q`.
 * `TauCeti.Floer.positiveEndHamiltonian H q`: the end Hamiltonian in the positive end chart.
 
 ## Main results
 
 * `TauCeti.Floer.isCompact_preimage_truncation`,
   `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
-  `TauCeti.Floer.exists_lt_endHeight_of_notMem_truncation`: in real coordinates the
+  `TauCeti.Floer.exists_lt_fst_positiveEndCoord_of_notMem_truncation`: in real coordinates the
   truncation `S_R` is compact and lies in `S`, and every other point of `S` lies beyond `R` on some
   end.
 * `TauCeti.Floer.subset_preimage_truncation_of_isOpen`: an open set on which every signed
@@ -107,13 +107,21 @@ apply to all three ends.
   `TauCeti.Floer.exists_endCoord_positiveEndChart`: the signed end coordinates
   `(±Re ζ_q, ±Im ζ_q)` invert the positive end chart, up to an integer shift of the angular
   coordinate.
-* `TauCeti.Floer.contDiffAt_endHeight`, `TauCeti.Floer.contDiffAt_endHeight_of_mem`,
-  `TauCeti.Floer.endHeight_positiveEndChart`, `TauCeti.Floer.endHeight_nonpos_of_ne`: the end
-  height is smooth away from the center of the end, in particular on `S`, is `s` at `φ'_q(s, t)`,
-  and is positive on at most one end.
+* `TauCeti.Floer.positiveEndChart_positiveEndCoord`,
+  `TauCeti.Floer.exists_positiveEndCoord_positiveEndChart`,
+  `TauCeti.Floer.fst_positiveEndCoord_positiveEndChart`: the positive end coordinates invert
+  the positive end chart, up to an integer shift of `t`.
+* `TauCeti.Floer.contDiffAt_comp_positiveEndCoord`: a `Cⁿ` function on the cylinder of period one
+  in `t`, read in the positive end coordinates, is `Cⁿ` away from the center of the end.
+* `TauCeti.Floer.contDiffAt_fst_positiveEndCoord`,
+  `TauCeti.Floer.contDiffAt_fst_positiveEndCoord_of_mem`,
+  `TauCeti.Floer.fst_positiveEndCoord_nonpos_of_ne`: the longitudinal positive end coordinate is
+  smooth away from the center of the end, in particular on `S`, and is positive on at most one
+  end.
 * `TauCeti.Floer.mem_preimage_truncation_iff`, `TauCeti.Floer.mem_preimage_truncationAt_iff`: a
   point lies in the truncation `S_T`, or in the truncation at heights `R`, exactly when it lies in
-  `S` and its end height on each end `q` is at most `T`, or at most `R q`.
+  `S` and its longitudinal positive end coordinate on each end `q` is at most `T`, or at most
+  `R q`.
 * `TauCeti.Floer.exists_forall_comp_positiveEndChart_eventuallyEq_zero`: a function with compact
   support in `S` vanishes in the positive end chart beyond some height.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
@@ -164,45 +172,100 @@ theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
-/-- The signed longitudinal coordinate `±s_q` of the end `q`, at a point of `ℝ × ℝ ≃ ℂ`. -/
-noncomputable def endHeight (q : Puncture) (z : ℝ × ℝ) : ℝ :=
-  q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
+/-! ### Coordinates of the positive end chart -/
 
-theorem endHeight_apply (q : Puncture) (z : ℝ × ℝ) :
-    endHeight q z = q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re :=
+/-- The coordinates of a point in the positive end chart of `q`: `(±s, ±t)` for the end coordinate
+`s + i t` of the point (`TauCeti.ThricePuncturedSphere.Puncture.endCoord`), with the sign of the
+end. Away from the center of the end the positive end chart sends them back to the point
+(`positiveEndChart_positiveEndCoord`), and they recover a point of the cylinder from its image
+under the positive end chart up to an integer shift of `t`
+(`exists_positiveEndCoord_positiveEndChart`). -/
+noncomputable def positiveEndCoord (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
+  q.endSign • Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z))
+
+theorem positiveEndCoord_apply (q : Puncture) (z : ℝ × ℝ) :
+    positiveEndCoord q z =
+      q.endSign • Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)) :=
   (rfl)
 
-/-- The signed longitudinal coordinate of an end is smooth away from the center of the end. -/
-theorem contDiffAt_endHeight (q : Puncture) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) {n : WithTop ℕ∞} :
-    ContDiffAt ℝ n (endHeight q) z :=
-  contDiffAt_const.mul ((q.contDiffAt_re_endCoord hz).comp z
-    Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
+/-- The first positive end coordinate is the signed longitudinal coordinate `±s`. -/
+theorem fst_positiveEndCoord (q : Puncture) (z : ℝ × ℝ) :
+    (positiveEndCoord q z).1 = q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+  simp [positiveEndCoord_apply]
 
-/-- The signed longitudinal coordinate of an end is smooth on `S`. -/
-theorem contDiffAt_endHeight_of_mem (q : Puncture) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) {n : WithTop ℕ∞} : ContDiffAt ℝ n (endHeight q) z :=
-  contDiffAt_endHeight q (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
+/-- The second positive end coordinate is the signed angular coordinate `±t`. -/
+theorem snd_positiveEndCoord (q : Puncture) (z : ℝ × ℝ) :
+    (positiveEndCoord q z).2 = q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im := by
+  simp [positiveEndCoord_apply]
+
+/-- A `Cⁿ` function `F` on the cylinder of period one in the angular coordinate, read in the
+positive end coordinates of the end `q`, is `Cⁿ` away from the center of the end. The angular
+coordinate jumps by `1` across a ray, and periodicity removes the jump. -/
+theorem contDiffAt_comp_positiveEndCoord {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (q : Puncture) {n : WithTop ℕ∞} {F : ℝ × ℝ → E} (hF : ContDiff ℝ n F)
+    (hFp : ∀ p, F (p + (0, 1)) = F p) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    ContDiffAt ℝ n (F ∘ positiveEndCoord q) z := by
+  -- Read `F` as a function of the angular coordinate `t` and the longitudinal coordinate `s`.
+  set f : ℝ → ℝ → E := fun t s ↦ F (q.endSign * s, q.endSign * t)
+  have hf : Periodic f 1 := by
+    intro t
+    funext s
+    rcases q.endSign_eq_one_or_eq_neg_one with hσ | hσ
+    · simpa [f, hσ] using hFp (s, t)
+    · have h := hFp (-s, -(t + 1))
+      rw [Prod.mk_add_mk, add_zero, show -(t + 1) + 1 = -t by ring] at h
+      simpa [f, hσ] using h.symm
+  have hfs : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)) 𝓘(ℝ, E) n (uncurry f) :=
+    contMDiff_prod_modelWithCornersSelf_iff.2 (hF.comp ((contDiff_const.mul contDiff_snd).prodMk
+      (contDiff_const.mul contDiff_fst))).contMDiff
+  have hg : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℝ)) n
+      (fun w : ℝ × ℝ ↦ (Complex.equivRealProdCLM.symm w,
+        (q.endCoord (Complex.equivRealProdCLM.symm w)).re)) z :=
+    Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.prodMk
+      ((q.contDiffAt_re_endCoord hz).comp z
+        Complex.equivRealProdCLM.symm.contDiff.contDiffAt).contMDiffAt
+  have h := (q.contMDiffAt_comp_im_endCoord hf hfs hz _).comp z hg
+  rw [contMDiffAt_iff_contDiffAt] at h
+  refine h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w ↦ ?_)
+  simp [f, positiveEndCoord_apply]
+
+/-- The longitudinal positive end coordinate is smooth away from the center of the end. -/
+theorem contDiffAt_fst_positiveEndCoord (q : Puncture) {n : WithTop ℕ∞} {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    ContDiffAt ℝ n (fun w ↦ (positiveEndCoord q w).1) z :=
+  contDiffAt_comp_positiveEndCoord q contDiff_fst (fun _ ↦ by simp) hz
+
+/-- The longitudinal positive end coordinate is continuous away from the center of the end. -/
+theorem continuousAt_fst_positiveEndCoord (q : Puncture) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    ContinuousAt (fun w ↦ (positiveEndCoord q w).1) z :=
+  (contDiffAt_fst_positiveEndCoord q (n := 0) hz).continuousAt
+
+/-- The longitudinal positive end coordinate is smooth on `S`. -/
+theorem contDiffAt_fst_positiveEndCoord_of_mem (q : Puncture) {n : WithTop ℕ∞} {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) : ContDiffAt ℝ n (fun w ↦ (positiveEndCoord q w).1) z :=
+  contDiffAt_fst_positiveEndCoord q (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
 
 /-- In real coordinates, a point lies in the truncation `S_T` exactly when it lies in `S` and its
-end height on every end is at most `T`. -/
+longitudinal positive end coordinate on every end is at most `T`. -/
 theorem mem_preimage_truncation_iff {T : ℝ} {z : ℝ × ℝ} :
     z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation T ↔
-      z ∈ thricePuncturedSphereReal ∧ ∀ q, endHeight q z ≤ T := by
-  simp only [mem_preimage, mem_truncation, mem_thricePuncturedSphereReal_iff, endHeight_apply,
+      z ∈ thricePuncturedSphereReal ∧ ∀ q, (positiveEndCoord q z).1 ≤ T := by
+  simp only [mem_preimage, mem_truncation, mem_thricePuncturedSphereReal_iff, fst_positiveEndCoord,
     and_assoc]
 
 /-- In real coordinates, a point lies in the truncation at heights `R` exactly when it lies in `S`
-and its end height on every end `q` is at most `R q`. -/
+and its longitudinal positive end coordinate on every end `q` is at most `R q`. -/
 theorem mem_preimage_truncationAt_iff {R : Puncture → ℝ} {z : ℝ × ℝ} :
     z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncationAt R ↔
-      z ∈ thricePuncturedSphereReal ∧ ∀ q, endHeight q z ≤ R q := by
-  simp only [mem_preimage, mem_truncationAt, mem_thricePuncturedSphereReal_iff, endHeight_apply,
-    and_assoc]
+      z ∈ thricePuncturedSphereReal ∧ ∀ q, (positiveEndCoord q z).1 ≤ R q := by
+  simp only [mem_preimage, mem_truncationAt, mem_thricePuncturedSphereReal_iff,
+    fst_positiveEndCoord, and_assoc]
 
 /-- A point lies beyond `0` on at most one end. -/
-theorem endHeight_nonpos_of_ne {q r : Puncture} (hqr : q ≠ r) {z : ℝ × ℝ}
-    (h : 0 < endHeight q z) : endHeight r z ≤ 0 :=
+theorem fst_positiveEndCoord_nonpos_of_ne {q r : Puncture} (hqr : q ≠ r) {z : ℝ × ℝ}
+    (h : 0 < (positiveEndCoord q z).1) : (positiveEndCoord r z).1 ≤ 0 :=
   endSign_mul_re_endCoord_nonpos hqr h
 
 /-- The truncation at heights `R` is compact in real coordinates. -/
@@ -220,9 +283,9 @@ theorem preimage_truncationAt_subset_thricePuncturedSphereReal (R : Puncture →
 `c ≤ R`, gives the truncation at the height `c` on `q` and `R` on the other two ends. -/
 theorem preimage_truncation_inter_eq_preimage_truncationAt (q : Puncture) {c R : ℝ}
     (hcR : c ≤ R) :
-    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩ {z | endHeight q z ≤ c} =
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩ {z | (positiveEndCoord q z).1 ≤ c} =
       Complex.equivRealProdCLM.symm ⁻¹' truncationAt (Function.update (fun _ ↦ R) q c) := by
-  simp_rw [endHeight_apply]
+  simp_rw [fst_positiveEndCoord]
   rw [← truncation_inter_eq_truncationAt q hcR, preimage_inter,
     preimage_ofPred_eq (p := fun w ↦ q.endSign * (q.endCoord w).re ≤ c)]
 
@@ -240,17 +303,17 @@ theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
 /-- An open set on which the signed longitudinal coordinate `±s` of every end is at most `R`
 lies in the truncation `S_R`, in real coordinates. -/
 theorem subset_preimage_truncation_of_isOpen {U : Set (ℝ × ℝ)} (hU : IsOpen U) {R : ℝ}
-    (h : ∀ z ∈ U, ∀ q : Puncture, endHeight q z ≤ R) :
+    (h : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ R) :
     U ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R := by
   have hV := subset_truncation_of_isOpen (hU.preimage Complex.equivRealProdCLM.continuous)
     fun w hw q ↦ by
-      simpa only [endHeight_apply, ContinuousLinearEquiv.symm_apply_apply] using h _ hw q
+      simpa only [fst_positiveEndCoord, ContinuousLinearEquiv.symm_apply_apply] using h _ hw q
   exact fun z hz ↦ hV (by simpa using hz)
 
 /-- A point of `S` outside the truncation `S_R` lies beyond `R` on some end. -/
-theorem exists_lt_endHeight_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
+theorem exists_lt_fst_positiveEndCoord_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (hzR : Complex.equivRealProdCLM.symm z ∉ truncation R) :
-    ∃ q : Puncture, R < endHeight q z := by
+    ∃ q : Puncture, R < (positiveEndCoord q z).1 := by
   by_contra! h
   exact hzR (mem_truncation.2 ⟨(mem_thricePuncturedSphereReal_iff.1 hz).1,
     (mem_thricePuncturedSphereReal_iff.1 hz).2, h⟩)
@@ -260,13 +323,13 @@ its integral over the truncation `S_R`. -/
 theorem setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ × ℝ → E} {R : ℝ}
     (hf : ∀ z ∈ thricePuncturedSphereReal, ∀ q : Puncture,
-      R < endHeight q z → f z = 0) :
+      R < (positiveEndCoord q z).1 → f z = 0) :
     ∫ z in thricePuncturedSphereReal, f z =
       ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z := by
   refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
     isOpen_thricePuncturedSphereReal.measurableSet
     (preimage_truncation_subset_thricePuncturedSphereReal R) fun z hz ↦ ?_
-  obtain ⟨q, hq⟩ := exists_lt_endHeight_of_notMem_truncation hz.1 hz.2
+  obtain ⟨q, hq⟩ := exists_lt_fst_positiveEndCoord_of_notMem_truncation hz.1 hz.2
   exact hf z hz.1 q hq
 
 /-- Almost every point of the plane lies in the pair of pants: the two punctures form a null
@@ -567,10 +630,10 @@ theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) :=
 /-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
 image of a point of that end's strip. -/
 theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    {q : Puncture} (hq : 1 / 2 < endHeight q z) :
+    {q : Puncture} (hq : 1 / 2 < (positiveEndCoord q z).1) :
     z ∈ endChart q '' endStrip q := by
   refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
-    ⟨by simpa [endHeight_apply] using hq, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
+    ⟨by simpa [fst_positiveEndCoord] using hq, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
   rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
     q.cylindricalEndLift_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     ContinuousLinearEquiv.apply_symm_apply]
@@ -811,46 +874,24 @@ theorem positiveEndChart_endSign_mul_endCoord {q : Puncture} {z : ℝ × ℝ}
 /-- The signed end coordinates of the image of `y` under the positive end chart are `y`, up to an
 integer shift of the angular coordinate. -/
 theorem exists_endCoord_positiveEndChart (q : Puncture) (y : ℝ × ℝ) :
-    ∃ k : ℤ, endHeight q (positiveEndChart q y) = y.1 ∧
+    ∃ k : ℤ,
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q y))).re = y.1 ∧
       q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q y))).im =
         y.2 + k := by
   obtain ⟨s, t⟩ := y
   obtain ⟨k, hk⟩ :=
     q.exists_endCoord_cylindricalEndLift (↑(q.endSign * s) + ↑(q.endSign * t) * Complex.I)
-  rw [endHeight_apply, positiveEndChart_mk, endChart_mk, ContinuousLinearEquiv.symm_apply_apply,
-    hk]
+  rw [positiveEndChart_mk, endChart_mk, ContinuousLinearEquiv.symm_apply_apply, hk]
   rcases q.endSign_eq_one_or_eq_neg_one with h | h
   · exact ⟨k, by simp [h]⟩
   · exact ⟨-k, by simp [h, add_comm]⟩
 
-/-- The end height at the image of a cylinder point is its signed longitudinal coordinate. -/
+/-- The longitudinal positive end coordinate at the image of a cylinder point under the end chart
+is its signed longitudinal coordinate. -/
 @[simp]
-theorem endHeight_endChart (q : Puncture) (ζ : ℝ × ℝ) :
-    endHeight q (endChart q ζ) = q.endSign * ζ.1 := by
-  rw [endHeight, re_endCoord_endChart]
-
-/-- The end height of `φ'_q(s, t)` is `s`. -/
-@[simp]
-theorem endHeight_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
-    endHeight q (positiveEndChart q ζ) = ζ.1 :=
-  (exists_endCoord_positiveEndChart q ζ).choose_spec.1
-
-/-- A function with compact support in `S` vanishes, in the positive end chart of `q`, near every
-point beyond some height. -/
-theorem exists_forall_comp_positiveEndChart_eventuallyEq_zero {M : Type*} [Zero M]
-    {f : ℝ × ℝ → M} (hfc : HasCompactSupport f) (hfS : tsupport f ⊆ thricePuncturedSphereReal)
-    (q : Puncture) :
-    ∃ N, ∀ ζ : ℝ × ℝ, N < ζ.1 → f ∘ positiveEndChart q =ᶠ[nhds ζ] 0 := by
-  -- The end height is bounded on the support of `f`.
-  obtain ⟨N, hN⟩ := hfc.isCompact.exists_bound_of_continuousOn (f := endHeight q)
-    fun z hz ↦ (contDiffAt_endHeight_of_mem q (hfS hz) (n := 0)).continuousAt.continuousWithinAt
-  refine ⟨N, fun ζ hζ ↦ ?_⟩
-  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
-  rw [Pi.zero_apply, Function.comp_apply]
-  refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
-  have := (Real.le_norm_self _).trans (hN _ h)
-  rw [endHeight_positiveEndChart] at this
-  exact absurd hζ' (not_lt.2 this)
+theorem fst_positiveEndCoord_endChart (q : Puncture) (ζ : ℝ × ℝ) :
+    (positiveEndCoord q (endChart q ζ)).1 = q.endSign * ζ.1 := by
+  rw [fst_positiveEndCoord, re_endCoord_endChart]
 
 /-- The positive end chart is injective on every open band `ℝ × (t₀, t₀ + 1)` of angular width
 one. -/
@@ -867,6 +908,58 @@ theorem injOn_positiveEndChart (q : Puncture) (t₀ : ℝ) :
         simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
   exact smul_right_injective _ q.endSign_ne_zero
     (injOn_endChart_univ_prod_Ico q t₁ (ht₁ a ha) (ht₁ b hb) hab)
+
+/-! ### The positive end coordinates invert the positive end chart -/
+
+/-- Away from the center of the end, the positive end chart inverts the positive end
+coordinates. -/
+theorem positiveEndChart_positiveEndCoord (q : Puncture) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    positiveEndChart q (positiveEndCoord q z) = z := by
+  rw [positiveEndChart_apply, positiveEndCoord_apply, smul_smul, endSign_mul_self, one_smul,
+    endChart_apply, ContinuousLinearEquiv.symm_apply_apply, q.cylindricalEndLift_endCoord hz,
+    ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The positive end coordinates recover a point of the cylinder from its image under the positive
+end chart, up to an integer shift of the angular coordinate. -/
+theorem exists_positiveEndCoord_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
+    ∃ k : ℤ, positiveEndCoord q (positiveEndChart q ζ) = ζ + (0, (k : ℝ)) := by
+  obtain ⟨k, hk⟩ :=
+    q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm (q.endSign • ζ))
+  -- The shift `k i` of the end coordinate becomes the shift `±k` of the positive coordinates.
+  have h : positiveEndCoord q (positiveEndChart q ζ) = ζ + (0, q.endSign * k) := by
+    rw [positiveEndCoord_apply, positiveEndChart_apply, equivRealProdCLM_symm_endChart, hk]
+    ext <;> simp [Complex.equivRealProdCLM_symm_apply, mul_add, ← mul_assoc]
+  rcases q.endSign_eq_one_or_eq_neg_one with hσ | hσ
+  · exact ⟨k, by rw [h, hσ, one_mul]⟩
+  · exact ⟨-k, by rw [h, hσ]; push_cast; ring_nf⟩
+
+/-- The positive end coordinates recover the longitudinal coordinate of a point of the cylinder
+from its image under the positive end chart. -/
+@[simp]
+theorem fst_positiveEndCoord_positiveEndChart (q : Puncture) (ζ : ℝ × ℝ) :
+    (positiveEndCoord q (positiveEndChart q ζ)).1 = ζ.1 := by
+  obtain ⟨k, hk⟩ := exists_positiveEndCoord_positiveEndChart q ζ
+  simp [hk]
+
+/-- A function with compact support in `S` vanishes, in the positive end chart of `q`, near every
+point beyond some height. -/
+theorem exists_forall_comp_positiveEndChart_eventuallyEq_zero {M : Type*} [Zero M]
+    {f : ℝ × ℝ → M} (hfc : HasCompactSupport f) (hfS : tsupport f ⊆ thricePuncturedSphereReal)
+    (q : Puncture) :
+    ∃ N, ∀ ζ : ℝ × ℝ, N < ζ.1 → f ∘ positiveEndChart q =ᶠ[nhds ζ] 0 := by
+  -- The longitudinal positive end coordinate is bounded on the support of `f`.
+  obtain ⟨N, hN⟩ :=
+    hfc.isCompact.exists_bound_of_continuousOn (f := fun w ↦ (positiveEndCoord q w).1) fun z hz ↦
+      (continuousAt_fst_positiveEndCoord q
+        (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 (hfS hz)) q)).continuousWithinAt
+  refine ⟨N, fun ζ hζ ↦ ?_⟩
+  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
+  rw [Pi.zero_apply, Function.comp_apply]
+  refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
+  have := (Real.le_norm_self _).trans (hN _ h)
+  rw [fst_positiveEndCoord_positiveEndChart] at this
+  exact absurd hζ' (not_lt.2 this)
 
 /-- The Hamiltonian of the end `q` in its positive end chart: `H'_q(t, x) = ±H_q(±t, x)` with the
 sign of the end. It is `H_q` on the input ends and `(t, x) ↦ -H_∞(-t, x)` on the output end. -/

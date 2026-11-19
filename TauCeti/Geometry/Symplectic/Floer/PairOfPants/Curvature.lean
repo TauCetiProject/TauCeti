@@ -211,11 +211,11 @@ private theorem image_endPiece_subset {R : Puncture → ℝ} (hR : ∀ r, 0 ≤ 
 
 /-- A point of `S` on the part `1 ≤ ±s ≤ R` of the end `q` lies in its end piece. -/
 private theorem mem_image_endPiece {R : ℝ} {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    {q : Puncture} (hq : 1 ≤ endHeight q z) (hqR : endHeight q z ≤ R) :
+    {q : Puncture} (hq : 1 ≤ (positiveEndCoord q z).1) (hqR : (positiveEndCoord q z).1 ≤ R) :
     z ∈ endChart q '' endPiece q R := by
   obtain ⟨hz₀, hz₁⟩ := mem_thricePuncturedSphereReal_iff.1 hz
   refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
-    (⟨⟨by simpa [endHeight_apply] using hq, by simpa [endHeight_apply] using hqR⟩,
+    (⟨⟨by simpa [fst_positiveEndCoord] using hq, by simpa [fst_positiveEndCoord] using hqR⟩,
       by simpa using q.im_endCoord_mem_Ico _⟩ :
       _ ∧ _), ?_⟩
   rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
@@ -395,13 +395,13 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
     (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
-    {q : Puncture} (hq : 2 < endHeight q z) (x : M) :
+    {q : Puncture} (hq : 2 < (positiveEndCoord q z).1) (x : M) :
     ω.hamiltonianCurvature
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       z x = 0 := by
   obtain ⟨w, _, rfl⟩ := mem_image_endChart hz (q := q) (by linarith)
-  have hw₂ : 2 < q.endSign * w.1 := by rwa [endHeight_endChart] at hq
+  have hw₂ : 2 < q.endSign * w.1 := by rwa [fst_positiveEndCoord_endChart] at hq
   -- In the coordinates of the end the curvature is `±β'(±s - 1) H_q(t)`, and `β' = 0` there.
   have key := det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart ω hH hHs
     (by linarith : 0 < q.endSign * w.1) x
@@ -517,7 +517,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncationAt
       ((isCompact_preimage_truncationAt R).isClosed.measurableSet.diff
         (MeasurableSet.iUnion fun q ↦ measurableSet_image_endPiece q (R q)))
     have hzS := preimage_truncationAt_subset_thricePuncturedSphereReal R hz.1
-    refine (ω.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt (K := pairOfPantsPerturbation H)
+    refine (ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (K := pairOfPantsPerturbation H)
       (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) hzS (fun q ↦ ?_)
       (u z)).symm
     by_contra! h
@@ -548,7 +548,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation_truncation
       (fun _ ↦ hR) hu
   · -- Every `±s ≤ R < 1` on `S_R`, so the curvature vanishes there.
     refine integrableOn_zero.congr_fun (fun z hz ↦ ?_) (measurableSet_preimage_truncation R)
-    exact (ω.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt (K := pairOfPantsPerturbation H)
+    exact (ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (K := pairOfPantsPerturbation H)
       (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
       (preimage_truncation_subset_thricePuncturedSphereReal R hz)
       (fun q ↦ by linarith [(mem_preimage_truncation_iff.1 hz).2 q]) (u z)).symm
@@ -738,7 +738,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   -- On the core the perturbation vanishes nearby, so the energy is the area and the curvature
   -- vanishes.
   have hcore {z : ℝ × ℝ} (hz : z ∈ C) :
-      ∀ q : Puncture, endHeight q z < 1 := by
+      ∀ q : Puncture, (positiveEndCoord q z).1 < 1 := by
     intro q
     by_contra! h
     exact hz.2 (mem_iUnion.2 ⟨q, mem_image_endPiece (hTS hz.1) h
@@ -752,7 +752,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
     refine setIntegral_congr_fun hCm fun z hz => ?_
     have hK : pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) = fun _ => 0 :=
       funext (pairOfPantsPerturbation_eq_zero_of_forall_le fun q ↦
-        ((endHeight_apply q z).symm.trans_lt (hcore hz q)).le)
+        ((fst_positiveEndCoord q z).symm.trans_lt (hcore hz q)).le)
     exact ω.floerEnergyDensity_of_eq_zero u (funext fun x ↦ by simp [hK])
       (funext fun x ↦ by simp [hK])
   have hCR : ∫ z in C, ω.hamiltonianCurvature
@@ -760,7 +760,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       z (u z) = 0 :=
     setIntegral_eq_zero_of_forall_eq_zero fun z hz =>
-      ω.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt (K := pairOfPantsPerturbation H)
+      ω.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt (K := pairOfPantsPerturbation H)
         (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) (hTS hz.1) (hcore hz)
         (u z)
   rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hCE, hCR,
@@ -854,7 +854,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_inte
   -- The region is the truncation at the height `c` on `q` and `R` on the other two ends.
   have hRq (r : Puncture) : 1 ≤ Function.update (fun _ ↦ R) q c r :=
     le_update_iff (x := fun _ ↦ 1).2 ⟨hc, fun _ _ ↦ hc.trans hcR⟩ r
-  simp only [← endHeight_apply] at hAV ⊢
+  simp only [← fst_positiveEndCoord] at hAV ⊢
   rw [preimage_truncation_inter_eq_preimage_truncationAt q hcR] at hAV ⊢
   rw [hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncationAt hH hHs hVo hAV hu hRq,
     ← Finset.add_sum_erase _ _ (Finset.mem_univ q), Finset.mul_sum,
@@ -969,7 +969,7 @@ the collars `1 ≤ ±s ≤ 2` of the three ends, a compact part of `S`. -/
 theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
-    {q : Puncture} (hq : 2 < endHeight q z) (x : V) :
+    {q : Puncture} (hq : 2 < (positiveEndCoord q z).1) (x : V) :
     ω.hamiltonianCurvature
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -1222,11 +1222,11 @@ theorem sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturba
   · exact Finset.sum_le_sum fun q _ ↦
       endSign_mul_integral_le_setIntegral_image_endChart ω hH hHs (hh q) (hhH q) hu
   · have hS : z ∈ thricePuncturedSphereReal := mem_thricePuncturedSphereReal_iff.2 hz.1
-    have hlt (q : Puncture) : endHeight q z < 1 := by
+    have hlt (q : Puncture) : (positiveEndCoord q z).1 < 1 := by
       by_contra! hq
       exact hz.2 (mem_iUnion.2 ⟨q, mem_image_endChart hS (by linarith)⟩)
     simpa only [hamiltonianCurvature_constSmooth] using
-      ω.constSmooth.hamiltonianCurvature_eq_zero_of_forall_endHeight_lt
+      ω.constSmooth.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt
         (K := pairOfPantsPerturbation H)
         (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y) hS hlt (u z)
 

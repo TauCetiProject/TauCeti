@@ -116,7 +116,7 @@ section Cutoff
 ends of `1 - β(±s_q - T)`, and `0` at the punctures `0` and `1`. -/
 private noncomputable def truncation (T : ℝ) (z : ℝ × ℝ) : ℝ :=
   if Complex.equivRealProdCLM.symm z = 0 ∨ Complex.equivRealProdCLM.symm z = 1 then 0
-  else ∏ q, (1 - smoothTransition (endHeight q z - T))
+  else ∏ q, (1 - smoothTransition ((positiveEndCoord q z).1 - T))
 
 /-- The cutoff at height `T` vanishes off the compact truncation `S_{T+1}`. -/
 private theorem truncation_eq_zero_of_notMem {T : ℝ} {z : ℝ × ℝ}
@@ -125,7 +125,7 @@ private theorem truncation_eq_zero_of_notMem {T : ℝ} {z : ℝ × ℝ}
   rw [truncation]
   split_ifs with h
   · rfl
-  · obtain ⟨q, hq⟩ : ∃ q, T + 1 < endHeight q z := by
+  · obtain ⟨q, hq⟩ : ∃ q, T + 1 < (positiveEndCoord q z).1 := by
       by_contra! h'
       exact hz (mem_preimage_truncation_iff.2
         ⟨mem_thricePuncturedSphereReal_iff.2 (not_or.1 h), h'⟩)
@@ -148,7 +148,7 @@ private theorem hasCompactSupport_truncation (T : ℝ) : HasCompactSupport (trun
 /-- On the thrice-punctured sphere the cutoff is given by its product formula nearby. -/
 private theorem truncation_eventuallyEq_prod (T : ℝ) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) :
-    truncation T =ᶠ[𝓝 z] fun z' ↦ ∏ q, (1 - smoothTransition (endHeight q z' - T)) := by
+    truncation T =ᶠ[𝓝 z] fun z' ↦ ∏ q, (1 - smoothTransition ((positiveEndCoord q z').1 - T)) := by
   filter_upwards [isOpen_thricePuncturedSphereReal.mem_nhds hz] with z' hz'
   rw [truncation, ite_eq_right (not_or.2 (mem_thricePuncturedSphereReal_iff.1 hz'))]
 
@@ -161,7 +161,7 @@ private theorem contDiff_truncation (T : ℝ) : ContDiff ℝ 1 (truncation T) :=
       (truncation_eventuallyEq_prod T (mem_thricePuncturedSphereReal_iff.2 hz'))
     exact contDiffAt_prod fun q _ ↦ contDiffAt_const.sub
       (smoothTransition.contDiffAt.comp z
-        ((contDiffAt_endHeight q (ne_endCenter hz' q)).sub contDiffAt_const))
+        ((contDiffAt_fst_positiveEndCoord q (ne_endCenter hz' q)).sub contDiffAt_const))
 
 /-- The support of the cutoff stays away from the punctures. -/
 private theorem mem_tsupport_truncation {T : ℝ} {z : ℝ × ℝ} (hz : z ∈ tsupport (truncation T)) :
@@ -181,9 +181,10 @@ private theorem truncation_mem_Icc (T : ℝ) (z : ℝ × ℝ) : truncation T z �
 /-- At a point of the thrice-punctured sphere where every end height is below `T`, the cutoff
 is `1` nearby. -/
 private theorem truncation_eventuallyEq_one {T : ℝ} {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    (hT : ∀ q, endHeight q z < T) : truncation T =ᶠ[𝓝 z] fun _ ↦ 1 := by
-  have hev : ∀ᶠ z' in 𝓝 z, ∀ q, endHeight q z' < T := eventually_all.2 fun q ↦
-    (contDiffAt_endHeight_of_mem q hz (n := 0)).continuousAt.eventually (gt_mem_nhds (hT q))
+    (hT : ∀ q, (positiveEndCoord q z).1 < T) : truncation T =ᶠ[𝓝 z] fun _ ↦ 1 := by
+  have hev : ∀ᶠ z' in 𝓝 z, ∀ q, (positiveEndCoord q z').1 < T := eventually_all.2 fun q ↦
+    (contDiffAt_fst_positiveEndCoord_of_mem q hz (n := 0)).continuousAt.eventually
+      (gt_mem_nhds (hT q))
   filter_upwards [truncation_eventuallyEq_prod T hz, hev] with z' h₁ h₂
   rw [h₁]
   exact Finset.prod_eq_one fun q _ ↦ by
@@ -193,7 +194,7 @@ private theorem truncation_eventuallyEq_one {T : ℝ} {z : ℝ × ℝ} (hz : z �
 private theorem tendsto_truncation {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) :
     Tendsto (fun T ↦ truncation T z) atTop (𝓝 1) := by
   refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_all.2 fun q ↦ eventually_ge_atTop (endHeight q z)] with T hT
+  filter_upwards [eventually_all.2 fun q ↦ eventually_ge_atTop ((positiveEndCoord q z).1)] with T hT
   rw [truncation, ite_eq_right (not_or.2 (mem_thricePuncturedSphereReal_iff.1 hz))]
   exact (Finset.prod_eq_one fun q _ ↦ by
     rw [smoothTransition.zero_of_nonpos (by linarith [hT q]), sub_zero]).symm
@@ -205,10 +206,10 @@ private theorem truncation_endChart {T : ℝ} (hT : 0 ≤ T) {q : Puncture} {ζ 
   have hw := equivRealProdCLM_symm_endChart q ζ
   have hζ' : 0 < q.endSign * (Complex.equivRealProdCLM.symm ζ).re := by simpa using hζ
   have hS := q.cylindricalEndLift_ne_zero_and_ne_one hζ'
-  have hr (r : Puncture) (hr : r ≠ q) : endHeight r (endChart q ζ) ≤ 0 :=
-    endHeight_nonpos_of_ne hr.symm (by rwa [endHeight_endChart])
+  have hr (r : Puncture) (hr : r ≠ q) : (positiveEndCoord r (endChart q ζ)).1 ≤ 0 :=
+    fst_positiveEndCoord_nonpos_of_ne hr.symm (by rwa [fst_positiveEndCoord_endChart])
   rw [truncation, ite_eq_right (by rw [hw]; exact not_or.2 hS), Finset.prod_eq_single q,
-    endHeight_endChart]
+    fst_positiveEndCoord_endChart]
   · intro r _ hrq
     rw [smoothTransition.zero_of_nonpos (by linarith [hr r hrq]), sub_zero]
   · simp
@@ -603,7 +604,7 @@ derivative vanishes there. -/
 private theorem fderiv_truncation_eq_zero {T : ℝ} (hT : 2 ≤ T) {z : ℝ × ℝ}
     (hz : z ∉ ⋃ q, endChart q '' endStrip q) : fderiv ℝ (truncation T) z = 0 := by
   by_cases hzS : z ∈ thricePuncturedSphereReal
-  · have hT' (q : Puncture) : endHeight q z < T := by
+  · have hT' (q : Puncture) : (positiveEndCoord q z).1 < T := by
       by_contra h
       rw [not_lt] at h
       exact hz (mem_iUnion.2 ⟨q, mem_image_endChart hzS (by linarith)⟩)

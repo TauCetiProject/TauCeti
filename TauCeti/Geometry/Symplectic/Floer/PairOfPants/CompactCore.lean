@@ -64,7 +64,7 @@ namespace TauCeti.Floer
 `2` on each end `q` the perturbed datum `K + δ` is still `H_q(t) dt`. -/
 theorem pairOfPantsPerturbation_add_eq_smul_endAngularForm {M : Type*}
     {H : Puncture → ℝ → M → ℝ} {δs δt : ℝ × ℝ → M → ℝ} {D : Set (ℝ × ℝ)}
-    (hcore : ∀ z ∈ D, ∀ q : Puncture, endHeight q z ≤ 1)
+    (hcore : ∀ z ∈ D, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {q : Puncture} {w : ℂ}
     (hw : 2 ≤ q.endSign * (q.endCoord w).re) (x : M) :
     pairOfPantsPerturbation H w x + (δs (Complex.equivRealProdCLM w) x • Complex.reCLM +
@@ -72,7 +72,7 @@ theorem pairOfPantsPerturbation_add_eq_smul_endAngularForm {M : Type*}
       H q (q.endCoord w).im x • q.endAngularForm w := by
   have hwD : Complex.equivRealProdCLM w ∉ D := fun hwD ↦ by
     have := hcore _ hwD q
-    rw [endHeight_apply, ContinuousLinearEquiv.symm_apply_apply] at this
+    rw [fst_positiveEndCoord, ContinuousLinearEquiv.symm_apply_apply] at this
     linarith
   simp only [congrFun (hs _ hwD) x, congrFun (ht _ hwD) x, Pi.zero_apply, zero_smul, add_zero,
     pairOfPantsPerturbation_eq_smul_endAngularForm hw]
@@ -96,7 +96,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     (hB : ∀ q t x, |H q t x| ≤ B q) {δs δt : ℝ × ℝ → M → ℝ} {D U : Set (ℝ × ℝ)}
     (hD : IsClosed D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, endHeight q z ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1 + δs z x)
@@ -107,7 +107,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le
       (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v) = 0 := by
     funext x
     simp [pairOfPantsPerturbation_eq_zero_of_forall_le
-      (fun q ↦ (endHeight_apply q z).symm.trans_le (hcore z hz q)) x]
+      (fun q ↦ (fst_positiveEndCoord q z).symm.trans_le (hcore z hz q)) x]
   have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
   rw [ω.lintegral_enorm_hamiltonianCurvature_add_of_eq_zero_on hD hU hDU (hzero 1)
     (hzero Complex.I) hs ht u, ENNReal.ofReal_sum_of_nonneg fun q _ ↦ hB₀ q]
@@ -129,7 +129,7 @@ theorem IsNondegenerate.integrableOn_hamiltonianCurvature_pairOfPantsPerturbatio
     (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
     (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
     (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, endHeight q z ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
     (hu : ContinuousOn u thricePuncturedSphereReal) :
     IntegrableOn (fun z ↦ ω.hamiltonianCurvature
@@ -144,7 +144,7 @@ theorem IsNondegenerate.integrableOn_hamiltonianCurvature_pairOfPantsPerturbatio
       (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v) = 0 := by
     funext x
     simp [pairOfPantsPerturbation_eq_zero_of_forall_le
-      (fun q ↦ (endHeight_apply q z).symm.trans_le (hcore z hz q)) x]
+      (fun q ↦ (fst_positiveEndCoord q z).symm.trans_le (hcore z hz q)) x]
   simp only [ω.hamiltonianCurvature_add_of_eq_zero_on hD.isClosed hU hDU (hzero 1)
     (hzero Complex.I) hs ht]
   exact (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hu).add
@@ -165,7 +165,7 @@ theorem IsNondegenerate.exists_lintegral_enorm_hamiltonianCurvature_pairOfPantsP
       (fun q : (N × (ℝ × ℝ)) × M ↦ δt q.1.1 q.1.2 q.2))
     {A : Set N} {D U : Set (ℝ × ℝ)} {Q : Set M}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, endHeight q z ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ p ∈ A, ∀ u : ℝ × ℝ → M, (∀ z ∈ D, u z ∈ Q) →
       ∫⁻ z, ‖ω.hamiltonianCurvature
@@ -201,7 +201,7 @@ theorem exists_lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_
     (hδt : ContDiff ℝ 1 (fun q : (P × (ℝ × ℝ)) × V ↦ δt q.1.1 q.1.2 q.2))
     {A : Set P} {D U : Set (ℝ × ℝ)} {Q : Set V}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, endHeight q z ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ p ∈ A, ∀ u : ℝ × ℝ → V, (∀ z ∈ D, u z ∈ Q) →
       ∫⁻ z, ‖ω.hamiltonianCurvature

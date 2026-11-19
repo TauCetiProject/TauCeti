@@ -213,7 +213,7 @@ omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
 end chart outside a finite band `(R, b) × ℝ`. -/
 private theorem exists_forall_comp_positiveEndChart_eq_zero {q : Puncture} {R : ℝ}
     {ξ : ℝ × ℝ → V} (hξc : HasCompactSupport ξ)
-    (hξR : tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < endHeight q z}) :
+    (hξR : tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1}) :
     ∃ b, R ≤ b ∧ ∀ s t, s ∉ Ioo R b → (ξ ∘ positiveEndChart q) (s, t) = 0 := by
   obtain ⟨N, hN⟩ :=
     exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc (fun z hz ↦ (hξR hz).1) q
@@ -222,7 +222,7 @@ private theorem exists_forall_comp_positiveEndChart_eq_zero {q : Puncture} {R : 
   · rw [Function.comp_apply]
     refine image_eq_zero_of_notMem_tsupport fun h' ↦ ?_
     have := (hξR h').2
-    rw [endHeight_positiveEndChart] at this
+    rw [fst_positiveEndCoord_positiveEndChart] at this
     linarith
   · refine (hN (s, t) ?_).eq_of_nhds
     have : max N R + 1 ≤ s := not_lt.1 fun h' ↦ hs ⟨h, h'⟩
@@ -265,7 +265,7 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
         (s, t)) 0 atTop (Icc 0 1)) :
     ∃ C R : ℝ, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
-      tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < endHeight q z} →
+      tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1} →
       ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ ≤
         C * ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
