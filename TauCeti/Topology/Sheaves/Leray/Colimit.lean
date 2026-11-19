@@ -39,8 +39,8 @@ a compact Riemann surface, where coordinate discs have vanishing `H¹` for the s
 
 * `CategoryTheory.Sheaf.homologyCechComplexIsoCechCohomologyOne`: the isomorphism between the Čech
   `H¹` of a finite cover whose members have vanishing `H¹` and the degree one Čech cohomology, for
-  a sheaf of modules; `TauCeti.Topology.homologyCechComplexIsoCechCohomologyOne` is the version
-  for a sheaf of abelian groups.
+  a sheaf of modules; `CategoryTheory.Sheaf.homologyCechComplexIsoCechCohomologyOneAddCommGrpCat`
+  is the version for a sheaf of abelian groups.
 
 ## Main results
 
@@ -53,9 +53,9 @@ a compact Riemann surface, where coordinate discs have vanishing `H¹` for the s
   coefficients, a refinement between finite covers whose members have vanishing `H¹` induces an
   isomorphism on degree one Čech cohomology.
 * `CategoryTheory.Sheaf.isIso_toCechCohomology_one_of_subsingleton_H'` and
-  `TauCeti.Topology.isIso_toCechCohomology_one`: if every open cover is refined by such a finite
-  cover, every such cover computes the degree one Čech cohomology, for sheaves of modules and of
-  abelian groups.
+  `CategoryTheory.Sheaf.isIso_toCechCohomology_one_of_subsingleton_H'_addCommGrpCat`: if every
+  open cover is refined by such a finite cover, every such cover computes the degree one Čech
+  cohomology, for sheaves of modules and of abelian groups.
 * `CategoryTheory.Sheaf.finite_cechCohomology_one_iff_finite_homology_cechComplex` and
   `CategoryTheory.Sheaf.finrank_cechCohomology_one_eq_finrank_homology_cechComplex`: the degree one
   Čech cohomology is finitely generated exactly when the Čech `H¹` of such a cover is, with the
@@ -76,6 +76,8 @@ open CategoryTheory Limits TopologicalSpace TauCeti.CategoryTheory TauCeti.Topol
 universe u
 
 namespace CategoryTheory.Sheaf
+
+section ModuleCat
 
 variable {X : TopCat.{u}} {R : Type u} [Ring R]
   (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
@@ -251,9 +253,9 @@ theorem finrank_cechCohomology_one_eq_finrank_homology_cechComplex
       Module.finrank R (((cechComplexFunctor U).obj F.obj).homology 1) :=
   (homologyCechComplexIsoCechCohomologyOne F hF U hU hFU).toLinearEquiv.finrank_eq.symm
 
-end CategoryTheory.Sheaf
+end ModuleCat
 
-namespace TauCeti.Topology
+section AddCommGrpCat
 
 variable {X : TopCat.{u}} (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
 
@@ -261,7 +263,7 @@ variable {X : TopCat.{u}} (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCa
 If every open cover of `X` is refined by a finite open cover whose members `W i` have
 `H¹(W i, F) = 0`, then for every finite open cover `U` whose members have `H¹(U i, F) = 0`, the
 map from `H¹(Č(U, F))` to the degree one Čech cohomology of `F` is an isomorphism. -/
-theorem isIso_toCechCohomology_one
+theorem isIso_toCechCohomology_one_of_subsingleton_H'_addCommGrpCat
     (hF : ∀ {κ : Type u} (V : κ → Opens X), IsOpenCover V →
       ∃ (ι : Type u) (_ : Finite ι) (W : ι → Opens X), ⨆ i, W i = ⊤ ∧ (∀ i, ∃ k, W i ≤ V k) ∧
         ∀ i, Subsingleton (F.H' 1 (W i)))
@@ -273,9 +275,9 @@ theorem isIso_toCechCohomology_one
       V.isOpenCover.iSup_eq_top F hW hV φ) U (IsOpenCover.mk hU) hFU
 
 /-- **The Čech `H¹` of a finite Leray cover, for sheaves of abelian groups.** Under the
-hypotheses of `isIso_toCechCohomology_one`, `H¹(Č(U, F))` is isomorphic to the degree one Čech
-cohomology of `F` through the structure map. -/
-def homologyCechComplexIsoCechCohomologyOne
+hypotheses of `isIso_toCechCohomology_one_of_subsingleton_H'_addCommGrpCat`, `H¹(Č(U, F))` is
+isomorphic to the degree one Čech cohomology of `F` through the structure map. -/
+def homologyCechComplexIsoCechCohomologyOneAddCommGrpCat
     (hF : ∀ {κ : Type u} (V : κ → Opens X), IsOpenCover V →
       ∃ (ι : Type u) (_ : Finite ι) (W : ι → Opens X), ⨆ i, W i = ⊤ ∧ (∀ i, ∃ k, W i ≤ V k) ∧
         ∀ i, Subsingleton (F.H' 1 (W i)))
@@ -284,17 +286,20 @@ def homologyCechComplexIsoCechCohomologyOne
     ((cechComplexFunctor U).obj F.obj).homology 1 ≅
       (cechCohomology X AddCommGrpCat.{u} 1).obj F.obj :=
   @asIso _ _ _ _ ((toCechCohomology AddCommGrpCat.{u} 1 U (IsOpenCover.mk hU)).app F.obj)
-    (isIso_toCechCohomology_one F hF U hU hFU)
+    (isIso_toCechCohomology_one_of_subsingleton_H'_addCommGrpCat F hF U hU hFU)
 
-/-- The forward map of `homologyCechComplexIsoCechCohomologyOne` is the structure map of `U`. -/
-theorem homologyCechComplexIsoCechCohomologyOne_hom
+/-- The forward map of `homologyCechComplexIsoCechCohomologyOneAddCommGrpCat` is the structure map
+of `U`. -/
+theorem homologyCechComplexIsoCechCohomologyOneAddCommGrpCat_hom
     (hF : ∀ {κ : Type u} (V : κ → Opens X), IsOpenCover V →
       ∃ (ι : Type u) (_ : Finite ι) (W : ι → Opens X), ⨆ i, W i = ⊤ ∧ (∀ i, ∃ k, W i ≤ V k) ∧
         ∀ i, Subsingleton (F.H' 1 (W i)))
     {ι : Type u} [Finite ι] (U : ι → Opens X) (hU : ⨆ i, U i = ⊤)
     (hFU : ∀ i, Subsingleton (F.H' 1 (U i))) :
-    (homologyCechComplexIsoCechCohomologyOne F hF U hU hFU).hom =
+    (homologyCechComplexIsoCechCohomologyOneAddCommGrpCat F hF U hU hFU).hom =
       (toCechCohomology AddCommGrpCat.{u} 1 U (IsOpenCover.mk hU)).app F.obj :=
   (rfl)
 
-end TauCeti.Topology
+end AddCommGrpCat
+
+end CategoryTheory.Sheaf
