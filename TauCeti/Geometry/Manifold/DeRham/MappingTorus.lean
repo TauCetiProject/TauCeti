@@ -53,6 +53,8 @@ to `dt`; its period homomorphism is `-N`
 
 * `TauCeti.SmoothMappingTorus.timePeriodHom φ`: the homomorphism `N(h) = ∫_h dt` on
   `H₁(Y_φ; ℤ)`.
+* `TauCeti.SmoothMappingTorus.intTimePeriodHom φ`: the same homomorphism with values in `ℤ`
+  (`TauCeti.SmoothMappingTorus.intCast_intTimePeriodHom`).
 
 ## Main results
 
@@ -153,6 +155,33 @@ theorem exists_timePeriodHom_eq_intCast
   rw [timePeriodHom_eq_homologyPeriodHom_singularHomologyMap_proj]
   simpa using AddCircle.exists_homologyPeriodHom_timeForm_eq_intCast_mul (p := 1) _
 
+/-- The **integral time period homomorphism** `H₁(Y_φ; ℤ) → ℤ`: the time period `N(h) = ∫_h dt`,
+which takes integer values (`TauCeti.SmoothMappingTorus.exists_timePeriodHom_eq_intCast`), as an
+integer (`TauCeti.SmoothMappingTorus.intCast_intTimePeriodHom`). It is the exponent map
+specializing series indexed by `H₁(Y_φ; ℤ)` to series in one variable. -/
+def intTimePeriodHom :
+    ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1 →+ ℤ where
+  toFun c := (exists_timePeriodHom_eq_intCast φ c).choose
+  map_zero' := Int.cast_injective (α := ℝ) <| by
+    rw [← (exists_timePeriodHom_eq_intCast φ 0).choose_spec, map_zero, Int.cast_zero]
+  map_add' a b := Int.cast_injective (α := ℝ) <| by
+    rw [← (exists_timePeriodHom_eq_intCast φ (a + b)).choose_spec, Int.cast_add,
+      ← (exists_timePeriodHom_eq_intCast φ a).choose_spec,
+      ← (exists_timePeriodHom_eq_intCast φ b).choose_spec, map_add]
+
+/-- The integral time period is the time period. -/
+@[simp]
+theorem intCast_intTimePeriodHom
+    (c : ((singularChains ℤ).obj (TopCat.of (SmoothMappingTorus φ))).homology 1) :
+    (intTimePeriodHom φ c : ℝ) = timePeriodHom φ c :=
+  (exists_timePeriodHom_eq_intCast φ c).choose_spec.symm
+
+/-- The integral time period rescales time periods by `1`: it is an exponent map along which
+Novikov series indexed by `H₁(Y_φ; ℤ)` push forward to series in one variable. -/
+theorem exists_period_rescale_intTimePeriodHom :
+    ∃ c > 0, ∀ h, Int.castAddHom ℝ (intTimePeriodHom φ h) = c * timePeriodHom φ h :=
+  ⟨1, one_pos, fun _ => by simp⟩
+
 variable {φ} in
 /-- **The period of a closed orbit.** The class `[γ] ∈ H₁(Y_φ; ℤ)` of the closed orbit
 `[t] ↦ [t, x]` through a point `x` of period `d` has time period `N [γ] = ∫_γ dt = d`: its
@@ -180,6 +209,13 @@ theorem timePeriodHom_closedOrbitHomologyClass_pos {d : ℕ} {x : M} (hx : IsPer
     (hd : 0 < d) : 0 < timePeriodHom φ (closedOrbitHomologyClass hx) := by
   rw [timePeriodHom_closedOrbitHomologyClass]
   exact_mod_cast hd
+
+variable {φ} in
+/-- The class of the closed orbit through a point of period `d` has integral time period `d`. -/
+@[simp]
+theorem intTimePeriodHom_closedOrbitHomologyClass {d : ℕ} {x : M} (hx : IsPeriodicPt φ d x) :
+    intTimePeriodHom φ (closedOrbitHomologyClass hx) = d :=
+  Int.cast_injective (α := ℝ) <| by simp
 
 section Map
 

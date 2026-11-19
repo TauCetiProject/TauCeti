@@ -47,6 +47,13 @@ Euler product with integer coefficients, so `ζ` has integer coefficients
 (`TauCeti.NovikovSeries.orbitZeta_eq_mapRingHom_eulerProduct`). Neither the injectivity of `N` nor
 the discreteness of its image is used, and the exponent group may have torsion.
 
+The orbit logarithm and the orbit zeta function are natural: the pushforward along a ring
+homomorphism of coefficients and an exponent homomorphism `φ` rescaling periods
+(`TauCeti.NovikovSeries.mapRingHom`) sends them to those of the classes `φ (γ i)`, with the same
+signs (`TauCeti.NovikovSeries.mapRingHom_orbitLog`, `TauCeti.NovikovSeries.mapRingHom_orbitZeta`).
+For an integer-valued period map this is the specialisation to one variable, treated in
+`TauCeti.RingTheory.NovikovSeries.OrbitZeta.Univariate`.
+
 The specialisation of the product formula to the Lefschetz signs `sgn det (1 - f ^ k)` of
 linearized return maps `f` is in `TauCeti.RingTheory.NovikovSeries.OrbitZeta.ReturnMap`.
 
@@ -77,6 +84,11 @@ linearized return maps `f` is in `TauCeti.RingTheory.NovikovSeries.OrbitZeta.Ret
   function.
 * `TauCeti.NovikovSeries.orbitLog_sigma`, `TauCeti.NovikovSeries.orbitZeta_sigma`: listing the
   `i`-th orbit `c i` times multiplies its signs by `c i`.
+* `TauCeti.NovikovSeries.finite_setOf_succ_nsmul_eq`, `TauCeti.NovikovSeries.coeff_orbitLog`: only
+  finitely many iterates have a given class, and the coefficient of the orbit logarithm at a class
+  is the sum of `ε i (k + 1) / (k + 1)` over them.
+* `TauCeti.NovikovSeries.mapRingHom_orbitLog`, `TauCeti.NovikovSeries.mapRingHom_orbitZeta`:
+  naturality under pushforward along coefficient and exponent maps.
 
 ## References
 
@@ -359,6 +371,69 @@ theorem orbitZeta_sigma (ε : ι → ℕ → ℤ) (c : ι → ℕ) :
     orbitZeta K N (fun p : (i : ι) × Fin (c i) => γ p.1) (fun p => ε p.1) =
       orbitZeta K N γ (fun i n => c i * ε i n) := by
   rw [orbitZeta_def, orbitZeta_def, orbitLog_sigma]
+
+/-- Only finitely many iterates of the orbits have a given class, when only finitely many periods
+lie below each cutoff. -/
+theorem finite_setOf_succ_nsmul_eq (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (h : H) :
+    {p : ι × ℕ | (p.2 + 1) • γ p.1 = h}.Finite := by
+  obtain ⟨c, hc, hcγ⟩ := hfin.exists_gt_forall_le hpos
+  -- An iterate of class `h` comes from an orbit of period at most `N h`, iterated at most
+  -- `N h / c` times.
+  refine ((((northcott_iff_tendsto _).2 hfin).finite_le (N h)).prod
+    (Set.finite_Iic ⌊N h / c⌋₊)).subset ?_
+  rintro ⟨i, k⟩ (hik : (k + 1) • γ i = h)
+  have hN : ((k : ℝ) + 1) * N (γ i) = N h := by rw [← hik, period_succ_nsmul]
+  have hk : (k : ℝ) ≤ N h / c := by
+    rw [le_div_iff₀ hc, ← hN]
+    nlinarith [hcγ i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+  refine ⟨?_, Nat.le_floor hk⟩
+  simp only [Set.mem_ofPred_eq]
+  nlinarith [hpos i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
+
+/-- **Coefficients of the orbit logarithm.** The coefficient of the orbit logarithm at `h` is the
+sum of `ε i (k + 1) / (k + 1)` over the finitely many iterates `(i, k)` of class
+`(k + 1) • γ i = h`. -/
+theorem coeff_orbitLog [DecidableEq H] (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) (h : H) :
+    (orbitLog K N γ ε).coeff h = algebraMap ℚ K (∑ᶠ p : ι × ℕ,
+      if (p.2 + 1) • γ p.1 = h then (ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ) else 0) := by
+  have hsupp : (Function.support fun p : ι × ℕ =>
+      if (p.2 + 1) • γ p.1 = h then (ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ) else 0).Finite :=
+    (finite_setOf_succ_nsmul_eq hpos hfin h).subset
+      (Function.support_subset_iff'.2 fun _ hp => ite_eq_right hp)
+  rw [coeff_eq_finsum_of_hasSum (hasSum_orbitLog hpos hfin ε) h, map_finsum _ hsupp]
+  refine finsum_congr fun p => ?_
+  rw [coeff_single, Pi.single_apply]
+  by_cases hp : (p.2 + 1) • γ p.1 = h
+  · simp [hp]
+  · simp [hp, Ne.symm hp]
+
+section Map
+
+variable {H' K' : Type*} [AddCommMonoid H'] {N' : H' →+ ℝ} [CommRing K'] [Algebra ℚ K']
+
+/-- **Naturality of the orbit logarithm.** The pushforward along a ring homomorphism `ρ` of
+coefficients and an exponent homomorphism `φ` rescaling periods sends the orbit logarithm of the
+classes `γ i` to the orbit logarithm of their images `φ (γ i)`, with the same signs. -/
+theorem mapRingHom_orbitLog (ρ : K →+* K') (φ : H →+ H')
+    (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) :
+    mapRingHom ρ φ hφ (orbitLog K N γ ε) = orbitLog K' N' (φ ∘ γ) ε := by
+  rw [← ((hasSum_orbitLog hpos hfin ε).map _ (continuous_mapRingHom ρ φ hφ)).tsum_eq, orbitLog]
+  exact tsum_congr fun p => by simp [map_single, map_nsmul]
+
+/-- **Naturality of the orbit zeta function.** The pushforward along a ring homomorphism `ρ` of
+coefficients and an exponent homomorphism `φ` rescaling periods sends the orbit zeta function of
+the classes `γ i` to the orbit zeta function of their images `φ (γ i)`, with the same signs. -/
+theorem mapRingHom_orbitZeta (ρ : K →+* K') (φ : H →+ H')
+    (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hpos : ∀ i, 0 < N (γ i))
+    (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (ε : ι → ℕ → ℤ) :
+    mapRingHom ρ φ hφ (orbitZeta K N γ ε) = orbitZeta K' N' (φ ∘ γ) ε := by
+  rw [orbitZeta_def, orbitZeta_def, ← mapRingHom_orbitLog ρ φ hφ hpos hfin ε]
+  exact mapRingHom_exp ρ φ hφ (orbitLog_mem_posIdeal hpos ε)
+
+end Map
 
 end OrbitZeta
 

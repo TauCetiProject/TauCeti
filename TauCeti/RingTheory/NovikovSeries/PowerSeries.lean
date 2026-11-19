@@ -52,6 +52,8 @@ orbit, where products over all orbits converge in the period topology.
   the period neighbourhood `U_(N γ * n)`.
 * `TauCeti.NovikovSeries.ofPowerSeries_mem_nonnegSubring`: the image lies in the nonnegative
   subring.
+* `TauCeti.NovikovSeries.mapRingHom_ofPowerSeries`: pushing forward along an exponent map `φ`
+  turns the substitution at `e^γ` into the substitution at `e^(φ γ)`.
 
 ## References
 
@@ -190,6 +192,17 @@ theorem coeff_ofPowerSeries_of_forall_nsmul_ne {h : H} (hh : ∀ n : ℕ, n • 
     (ofPowerSeries γ hγ f).coeff h = 0 := by
   rw [ofPowerSeries_apply]
   exact coeff_map_eq_zero_of_notMem_range _ _ _ _ fun ⟨n, hn⟩ => hh n hn
+
+/-- **Naturality of the substitution.** Pushing the image of a power series at `e^γ` forward along
+an exponent homomorphism `φ` rescaling periods gives its image at `e^(φ γ)`. -/
+theorem mapRingHom_ofPowerSeries {H' : Type*} [AddMonoid H'] {N' : H' →+ ℝ} (φ : H →+ H')
+    (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hφγ : 0 < N' (φ γ)) (f : R⟦X⟧) :
+    mapRingHom (RingHom.id R) φ hφ (ofPowerSeries γ hγ f) = ofPowerSeries (φ γ) hφγ f := by
+  rw [ofPowerSeries, ofPowerSeries, RingHom.comp_apply, RingHom.comp_apply,
+    ← RingHom.comp_apply (mapRingHom (RingHom.id R) φ hφ), mapRingHom_comp]
+  congr 2
+  ext
+  simp
 
 end OfPowerSeries
 
