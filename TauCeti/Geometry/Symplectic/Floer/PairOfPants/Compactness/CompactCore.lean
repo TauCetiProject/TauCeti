@@ -19,7 +19,8 @@ of every end is at most `1`, so that `K` vanishes on `U`. The universal moduli s
 transversality argument consists of the pairs `(p, u)` with `u` a solution of
 `(du - X_{K + δ_p})^{0,1} = 0`. This file proves the interior part of Gromov–Floer compactness for
 these solutions, uniformly over a compact window of parameters, for a symplectic vector space
-target `(V, ω)`.
+target `(V, ω)`, and for a target manifold `M` with a nondegenerate two-form `ω` when the solutions
+stay in one symplectic chart.
 
 **The energy bound.** For a compact parameter window `A` and a compact target window `Q`
 containing `u(D)`, a solution `u` with tamed almost complex structures whose end loops have limiting
