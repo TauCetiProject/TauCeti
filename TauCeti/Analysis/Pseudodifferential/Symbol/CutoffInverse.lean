@@ -35,6 +35,10 @@ holds with a constant independent of the position, `b` satisfies uniform estimat
 (`TauCeti.Symbol.IsUniform.cutoffInverse`). This is the first step of the construction of a
 parametrix of an elliptic operator: `b` is the leading term of its symbol.
 
+If `a(x, ξ)` is invertible at every point, with the inverse bound at all frequencies, no cutoff is
+needed: the same estimates make the pointwise inverse `a(x, ξ)⁻¹` itself a symbol of order `-m`
+(`TauCeti.Symbol.inverse`), such as `(1 + ⟨ξ⟩)⁻¹` of order `-1`.
+
 ## Implementation notes
 
 The derivative estimates rest on the formula `∂(a⁻¹) = -a⁻¹ (∂a) a⁻¹`
@@ -449,6 +453,72 @@ theorem IsUniform.cutoffInverse {a : Symbol n V W m} (ha : a.IsUniform)
     (fun α β => (isUniform_iff.1 ha α β).imp fun _ h x _ ξ => h.2 x ξ)
     (hC.imp fun _ h x _ ξ hξ => h x ξ hξ) α β
   exact ⟨C, hC0, fun x ξ => hC' x (mem_univ x) ξ⟩
+
+/-! ### The inverse of a symbol that is invertible everywhere -/
+
+section Inverse
+
+private theorem contDiff_inverse (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible) :
+    ContDiff ℝ ∞ fun p => (a.coefficient p).inverse :=
+  contDiff_iff_contDiffAt.2 fun p => a.contDiff_coefficient.contDiffAt.clm_inverse (hinv p)
+
+/-- The estimates of the pointwise inverse of a symbol that is invertible at every point, at the
+positions of a compact set. -/
+private theorem exists_bound_inverse (a : Symbol n V W m)
+    (hinv : ∀ p, (a.coefficient p).IsInvertible) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (hC : ∃ C, ∀ x ∈ K, ∀ ξ, ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
+    (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (fun p => (a.coefficient p).inverse) x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((-m - β.length) / 2) := by
+  have hb := wordBounds_inverse a (T := K) (R := 0)
+    (fun α β => (a.exists_bound K hK α β).imp fun _ h => h.2) (fun x _ ξ _ => hinv (x, ξ))
+    (hC.imp fun _ h x hx ξ _ => h x hx ξ) (α.map Sum.inl ++ β.map Sum.inr).length
+  obtain ⟨C, hC⟩ := hb _ le_rfl
+  refine ⟨max C 0, le_max_right _ _, fun x hx ξ => ?_⟩
+  rw [mixedDeriv_eq_iteratedFDerivAlong α β
+    ((contDiff_inverse a hinv).of_le (by exact_mod_cast le_top))]
+  have h := hC (x, ξ) ⟨hx, by simp⟩
+  simp only [List.map_append, List.map_map, Function.comp_def, mixedDirection_inl,
+    mixedDirection_inr, ← mixedDirections_def] at h
+  have hβ : freqLetters (α.map Sum.inl ++ β.map Sum.inr) = β := by
+    simp [freqLetters, Function.comp_def]
+  rw [hβ] at h
+  exact h.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
+
+/-- The pointwise inverse `a(x, ξ)⁻¹` of a symbol `a` of order `m` that is invertible at every
+point, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` for a constant `C` depending on a compact set of positions.
+It is a symbol of order `-m`, a two-sided inverse of `a` at every point
+(`TauCeti.Symbol.coefficient_comp_coefficient_inverse`,
+`TauCeti.Symbol.coefficient_inverse_comp_coefficient`). Unlike `TauCeti.Symbol.cutoffInverse`, it
+needs invertibility at low frequencies as well, and involves no cutoff. -/
+def inverse (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible)
+    (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ,
+      ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
+    Symbol n W V (-m) where
+  coefficient p := (a.coefficient p).inverse
+  contDiff_coefficient := contDiff_inverse a hinv
+  exists_bound _ hK := exists_bound_inverse a hinv hK (hbound _ hK)
+
+variable (a : Symbol n V W m) (hinv : ∀ p, (a.coefficient p).IsInvertible)
+  (hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ C, ∀ x ∈ K, ∀ ξ,
+    ‖(a.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2))
+
+@[simp]
+theorem coefficient_inverse (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.inverse hinv hbound).coefficient p = (a.coefficient p).inverse := (rfl)
+
+/-- The symbol composed with its inverse is the identity at every point. -/
+theorem coefficient_comp_coefficient_inverse (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.coefficient p).comp ((a.inverse hinv hbound).coefficient p) = ContinuousLinearMap.id ℂ W :=
+  (hinv p).self_comp_inverse
+
+/-- The inverse composed with the symbol is the identity at every point. -/
+theorem coefficient_inverse_comp_coefficient (p : CoordinateSpace n × CoordinateSpace n) :
+    ((a.inverse hinv hbound).coefficient p).comp (a.coefficient p) = ContinuousLinearMap.id ℂ V :=
+  (hinv p).inverse_comp_self
+
+end Inverse
 
 end Symbol
 
