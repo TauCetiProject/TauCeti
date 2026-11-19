@@ -101,6 +101,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   derivative after an inverse chart, including derivatives within the model range.
 * `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`: the same for a map between
   manifolds read in arbitrary preferred charts of the source and the target.
+* `TauCeti.tangentCoordChange_tangentCoordChange`: changing tangent coordinates to another chart
+  and back is the identity.
 * `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm_eq_zero_iff`: such a coordinate
   expression has vanishing derivative exactly when the map has vanishing manifold derivative.
 * `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`: a `C^n` map between manifolds, read in
@@ -851,6 +853,13 @@ theorem _root_.ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm {f : M 
     ext _
     exact (map_zero (tangentCoordChange I' (f x) α (f x))).symm
 
+/-- Changing tangent coordinates from the chart at `x` to the chart at `y` and back is the
+identity at every point of both chart sources. -/
+theorem tangentCoordChange_tangentCoordChange {x y z : M} (hx : z ∈ (extChartAt I x).source)
+    (hy : z ∈ (extChartAt I y).source) (v : E) :
+    tangentCoordChange I y x z (tangentCoordChange I x y z v) = v := by
+  rw [tangentCoordChange_comp ⟨⟨hx, hy⟩, hx⟩, tangentCoordChange_self hx]
+
 /-- The coordinate expression of a map between manifolds in arbitrary preferred charts at `β` and
 `α` has vanishing derivative within the model range at the chart image of `x` exactly when the
 map has vanishing manifold derivative at `x`: the tangent coordinate changes are invertible. -/
@@ -867,15 +876,10 @@ theorem _root_.ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm_eq_zero
     have hv : tangentCoordChange I' (f x) α (f x) (mfderiv I I' f x
         (tangentCoordChange I β x x (tangentCoordChange I x β x v))) = 0 :=
       congr($h0 (tangentCoordChange I x β x v))
-    rw [tangentCoordChange_comp ⟨⟨mem_extChartAt_source x, hx⟩, mem_extChartAt_source x⟩,
-      tangentCoordChange_self (mem_extChartAt_source x)] at hv
+    rw [tangentCoordChange_tangentCoordChange (mem_extChartAt_source x) hx] at hv
     -- Undo the target coordinate change.
-    have hinv (m : E') : tangentCoordChange I' α (f x) (f x)
-        (tangentCoordChange I' (f x) α (f x) m) = m := by
-      rw [tangentCoordChange_comp
-          ⟨⟨mem_extChartAt_source (f x), hfx⟩, mem_extChartAt_source (f x)⟩,
-        tangentCoordChange_self (mem_extChartAt_source (f x))]
-    have hm := hinv (mfderiv I I' f x v)
+    have hm := tangentCoordChange_tangentCoordChange (mem_extChartAt_source (f x)) hfx
+      (mfderiv I I' f x v)
     rw [hv, map_zero] at hm
     exact hm.symm
   · -- With `df = 0` the composite sends `w` to the image of `0` under the target coordinate change.

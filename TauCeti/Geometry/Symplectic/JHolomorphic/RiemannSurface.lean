@@ -12,6 +12,8 @@ import TauCeti.Geometry.Symplectic.JHolomorphic.CriticalPoint
 import TauCeti.Geometry.Symplectic.JHolomorphic.UniqueContinuation
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Chart
+import TauCeti.Topology.Codiscrete
 
 /-!
 # Critical points and fibres of pseudoholomorphic curves on Riemann surfaces
@@ -97,28 +99,19 @@ private theorem fderiv_writtenInExtChartAt_I (hJu : IsPseudoholomorphic (ofCompl
       J.inChart (u x) (writtenInExtChartAt 𝓘(ℝ, ℂ) I x u z)
         (fderiv ℝ (writtenInExtChartAt 𝓘(ℝ, ℂ) I x u) z 1) := by
   -- The inverse chart is holomorphic, hence pseudoholomorphic, and so is its composite with `u`.
-  -- The extended charts of `S` for the complex and the real model are both the chart itself.
-  have hz' : z ∈ (extChartAt 𝓘(ℂ) x).target := hz
-  have hφ : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (extChartAt 𝓘(ℂ) x).symm z :=
-    (mdifferentiableWithinAt_extChartAt_symm hz').mdifferentiableAt (by simp)
+  -- The extended charts of `S` for the complex and the real model agree.
+  have hφeq : extChartAt 𝓘(ℝ, ℂ) x = extChartAt 𝓘(ℂ) x := by
+    rw [← modelWithCornersSelf_restrictScalars (𝕜 := ℝ) (𝕜' := ℂ),
+      ModelWithCorners.extChartAt_restrictScalars]
+  have hφ : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (extChartAt 𝓘(ℝ, ℂ) x).symm z := by
+    rw [hφeq] at hz ⊢
+    exact (mdifferentiableWithinAt_extChartAt_symm hz).mdifferentiableAt (by simp)
   have hg : IsPseudoholomorphicAt (ofComplexManifold ℂ ℂ) J (u ∘ (extChartAt 𝓘(ℝ, ℂ) x).symm) z :=
     (hJu.isPseudoholomorphicAt _).comp (isPseudoholomorphicAt_ofComplexManifold_iff.2 hφ)
   have h := hg.mfderiv_apply_commute (1 : ℂ)
   rw [ofComplexManifold_apply, smul_eq_mul, mul_one] at h
   exact J.fderiv_extChartAt_comp_apply_eq_inChart (u x)
     (hu.continuousAt.comp (continuousAt_extChartAt_symm'' hz)) hzu h
-
-omit [FiniteDimensional ℝ E] in
-/-- The structure read in the target chart is `C¹` near every point of the chart target and
-squares to `-1` there. -/
-private theorem inChart_props (J : SmoothAlmostComplexStructure I N) (y : N) {p : E}
-    (hp : p ∈ (extChartAt I y).target) :
-    ContDiffAt ℝ 1 (J.inChart y) p ∧
-      J.inChart y p ∘L J.inChart y p = -ContinuousLinearMap.id ℝ E := by
-  refine ⟨((J.contDiffOn_inChart y).contDiffAt
-    ((isOpen_extChartAt_target y).mem_nhds hp)).of_le (by simp), ?_⟩
-  ext v
-  simp [J.inChart_inChart y hp v]
 
 omit [FiniteDimensional ℝ E] in
 /-- The local data of a pseudoholomorphic curve near `x`: a connected open neighbourhood `B` of the
@@ -142,7 +135,9 @@ private theorem exists_chartBall (n : WithTop ℕ∞) [IsManifold 𝓘(ℝ, ℂ)
   have hc : Continuous u := hu.continuous
   refine ⟨Metric.ball _ ε, Metric.isOpen_ball, (convex_ball _ _).isPreconnected,
     Metric.mem_ball_self hε, fun z hz ↦ (hball hz).1, fun z hz ↦ (hball hz).2,
-    hcd.mono hball, fun z hz ↦ inChart_props J (u x) (hmaps (hball hz)),
+    hcd.mono hball, fun z hz ↦ ⟨((J.contDiffOn_inChart (u x)).contDiffAt
+      ((isOpen_extChartAt_target (u x)).mem_nhds (hmaps (hball hz)))).of_le (by simp),
+      J.inChart_comp_inChart (u x) (hmaps (hball hz))⟩,
     fun z hz ↦ fderiv_writtenInExtChartAt_I hJu hc (hball hz).1 (hball hz).2⟩
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
@@ -242,15 +237,6 @@ private theorem eventually_nhdsNE_of_extChartAt {x : S} {p : ℂ → Prop}
     (𝓘(ℝ, ℂ).tendsto_extChartAt_nhdsNE x).eventually h] with x' hx' hp
   exact ⟨hx', hp⟩
 
-/-- From a set codiscrete within an open neighbourhood `B` of a point, a punctured neighbourhood
-of that point. -/
-private theorem eventually_nhdsNE_of_mem_codiscreteWithin {B : Set ℂ} {z₀ : ℂ} {p : ℂ → Prop}
-    (hB : IsOpen B) (hz₀ : z₀ ∈ B) (h : {z | p z} ∈ codiscreteWithin B) :
-    ∀ᶠ z in 𝓝[≠] z₀, z ∈ B ∧ p z := by
-  have h' := (mem_codiscreteWithin_iff_forall_mem_nhdsNE.1 h) z₀ hz₀
-  filter_upwards [h', nhdsWithin_le_nhds (hB.mem_nhds hz₀)] with z hz hzB
-  exact ⟨hzB, hz.resolve_right (not_not_intro hzB)⟩
-
 /-- **The fibres of a pseudoholomorphic curve are discrete.** On a connected Riemann surface, a
 nonconstant `C¹` pseudoholomorphic map into an almost complex manifold takes each value on a
 discrete subset. -/
@@ -266,7 +252,7 @@ theorem setOf_ne_mem_codiscrete_of_isPseudoholomorphic [PreconnectedSpace S]
     have hdisc := setOf_ne_mem_codiscreteWithin_of_cauchyRiemann hJx.1.exists_lipschitzOnWith
       hJx.2 hBo hBc hcd hCR (exists_ne_of_isPseudoholomorphic hu hJu hne hBo hxB hBs)
     filter_upwards [eventually_nhdsNE_of_extChartAt
-      (eventually_nhdsNE_of_mem_codiscreteWithin hBo hxB hdisc)] with x' ⟨hs, _, hx'⟩ hux'
+      (hBo.inter_mem_nhdsNE_of_mem_codiscreteWithin hdisc hxB)] with x' ⟨hs, _, hx'⟩ hux'
     apply hx'
     rw [writtenInExtChartAt_apply_extChartAt hs]
     exact congrArg (extChartAt I (u x)) hux'
@@ -287,7 +273,7 @@ theorem setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic [Preconnecte
     (fun z hz ↦ (hJ z hz).1) (fun z hz ↦ (hJ z hz).2) hcd hCR
     ⟨z, hz, _, hxB, by rwa [writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)]⟩
   filter_upwards [eventually_nhdsNE_of_extChartAt
-    (eventually_nhdsNE_of_mem_codiscreteWithin hBo hxB hdisc)] with x' ⟨hs, hx'B, hx'⟩
+    (hBo.inter_mem_nhdsNE_of_mem_codiscreteWithin hdisc hxB)] with x' ⟨hs, hx'B, hx'⟩
   -- The critical points of `u` are those of its coordinate expression.
   have h := (hu.continuous.continuousAt.fderivWithin_extChartAt_comp_extChartAt_symm_eq_zero_iff
     hs ((extChartAt 𝓘(ℝ, ℂ) x).left_inv hs ▸ hBs _ hx'B)).not
