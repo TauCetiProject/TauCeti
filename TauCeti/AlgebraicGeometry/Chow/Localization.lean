@@ -10,8 +10,8 @@ public import TauCeti.AlgebraicGeometry.Chow.OpenRestriction
 import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 import TauCeti.AlgebraicGeometry.Noetherian
-import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
 import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 
@@ -55,18 +55,6 @@ variable (k : Type u) [Field k] {X U : Scheme.{u}}
   [X.Over (Spec (.of k))] [U.Over (Spec (.of k))]
   [LocallyOfFiniteType (X ↘ Spec (.of k))] [LocallyOfFiniteType (U ↘ Spec (.of k))]
 
-section Subschemes
-
-/-- The pullback of an integral scheme along an open immersion whose image it meets is integral. -/
-private lemma isIntegral_pullback {W : Scheme.{u}} [IsIntegral W] (i : W ⟶ X) (j : U ⟶ X)
-    [IsOpenImmersion j] (h : (Set.range i ∩ Set.range j).Nonempty) :
-    IsIntegral (pullback i j) :=
-  have : Nonempty ↥(pullback i j) := not_isEmpty_iff.mp
-    (Scheme.isEmpty_pullback_iff.not.mpr (Set.not_disjoint_iff_nonempty_inter.mpr h))
-  isIntegral_of_isOpenImmersion (pullback.fst i j)
-
-end Subschemes
-
 section Restriction
 
 variable {k} [IsLocallyNoetherian X] [IsLocallyNoetherian U] (j : U ⟶ X) [IsOpenImmersion j]
@@ -95,7 +83,7 @@ subscheme `j : U ⟶ X`: the members `W` meeting `U` are replaced by their pullb
 the pulled-back rational functions. -/
 private noncomputable def restrict {n : ℤ} (F : RatEquivFamily X n) : RatEquivFamily U n :=
   have hI (a : {a : F.ι // (Set.range (F.i a) ∩ Set.range j).Nonempty}) :=
-    isIntegral_pullback (F.i a.1) j a.2
+    isIntegral_pullback_of_isOpenImmersion (F.i a.1) j a.2
   { ι := {a : F.ι // (Set.range (F.i a) ∩ Set.range j).Nonempty}
     W a := pullback (F.i a.1) j
     i a := pullback.snd (F.i a.1) j
@@ -120,7 +108,7 @@ private lemma component_restrict_apply {n : ℤ} (F : RatEquivFamily X n)
     (F.restrict k j).component a u = F.component a.1 (j u) := by
   by_cases hu : u ∈ Set.range (pullback.snd (F.i a.1) j)
   · obtain ⟨p, rfl⟩ := hu
-    have := isIntegral_pullback (F.i a.1) j a.2
+    have := isIntegral_pullback_of_isOpenImmersion (F.i a.1) j a.2
     have := LocallyOfFiniteType.isLocallyNoetherian (pullback.snd (F.i a.1) j)
     -- The `a`-th member of `F.restrict k j` is `W ×_X U ⟶ U` with the pulled-back function.
     refine ((F.restrict k j).component_apply a p).trans ?_
