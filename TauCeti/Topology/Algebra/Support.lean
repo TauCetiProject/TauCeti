@@ -39,6 +39,12 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `TauCeti.hasCompactSupport_pi_iff`: a function with values in a finite product is compactly
   supported exactly when every coordinate is, with multiplicative version
   `TauCeti.hasCompactMulSupport_pi_iff`.
+* `TauCeti.sum_eventuallyEq_of_notMem_tsupport`: near a point outside the topological supports
+  of all summands but one, a finite sum agrees with that summand, with multiplicative version
+  `TauCeti.prod_eventuallyEq_of_notMem_mulTSupport`.
+* `TauCeti.apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport`: a functional that depends only on
+  the germ at `x` and is quadratic under scaling does not mix functions whose topological
+  supports at `x` are disjoint.
 -/
 
 public section
@@ -157,5 +163,49 @@ theorem hasCompactMulSupport_pi_iff {X ι : Type*} [TopologicalSpace X] [Finite 
     {M : ι → Type*} [∀ i, One (M i)] {f : X → ∀ i, M i} :
     HasCompactMulSupport f ↔ ∀ i, HasCompactMulSupport (f · i) := by
   simp [hasCompactMulSupport_iff_eventuallyEq, Filter.EventuallyEq, funext_iff]
+
+open scoped Topology in
+/-- Near a point outside the topological multiplicative supports of all `f j` with `j ∈ s` and
+`j ≠ i`, the product `∏ j ∈ s, f j` agrees with `f i`. -/
+@[to_additive /-- Near a point outside the topological supports of all `f j` with `j ∈ s` and
+`j ≠ i`, the sum `∑ j ∈ s, f j` agrees with `f i`. -/]
+theorem prod_eventuallyEq_of_notMem_mulTSupport {X M κ : Type*} [TopologicalSpace X]
+    [CommMonoid M] {s : Finset κ} {f : κ → X → M} {x : X} {i : κ} (hi : i ∈ s)
+    (h : ∀ j ∈ s, j ≠ i → x ∉ mulTSupport (f j)) : (∏ j ∈ s, f j) =ᶠ[𝓝 x] f i := by
+  classical
+  have h₁ : ∀ᶠ y in 𝓝 x, ∀ j ∈ s.erase i, f j y = 1 := (Filter.eventually_all_finset _).2
+    fun j hj ↦ notMem_mulTSupport_iff_eventuallyEq.1 (h j (Finset.mem_of_mem_erase hj)
+      (Finset.ne_of_mem_erase hj))
+  filter_upwards [h₁] with y hy
+  rw [Finset.prod_apply, ← Finset.mul_prod_erase s _ hi, Finset.prod_eq_one hy, mul_one]
+
+open scoped Topology in
+/-- Let `Q` be a functional of functions `X → M` that depends only on the germ at `x` and satisfies
+`Q (a • φ) = a ^ 2 * Q φ`. If `x` lies in the topological support of at most one `v j`, then
+`Q (∑ j, c j • v j) = ∑ j, c j ^ 2 * Q (v j)`. -/
+theorem apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport {X R M κ : Type*} [TopologicalSpace X]
+    [Semiring R] [AddCommMonoid M] [Module R M] [Fintype κ] {v : κ → X → M} {x : X}
+    (Q : (X → M) → R) (hQ : ∀ (a : R) φ, Q (a • φ) = a ^ 2 * Q φ)
+    (hQx : ∀ φ ψ, φ =ᶠ[𝓝 x] ψ → Q φ = Q ψ) (c : κ → R)
+    (hv : ∀ i j, i ≠ j → x ∈ tsupport (v i) → x ∉ tsupport (v j)) :
+    Q (∑ j, c j • v j) = ∑ j, c j ^ 2 * Q (v j) := by
+  classical
+  -- `Q` vanishes on functions vanishing near `x`, since such a function is `0 • φ` near `x`.
+  have hzero : ∀ φ : X → M, φ =ᶠ[𝓝 x] 0 → Q φ = 0 := fun φ hφ ↦ by
+    rw [hQx φ ((0 : R) • φ) (hφ.trans (.of_eq (by ext; simp))), hQ, zero_pow two_ne_zero,
+      zero_mul]
+  have hzero' : ∀ j, x ∉ tsupport (v j) → c j ^ 2 * Q (v j) = 0 := fun j hj ↦ by
+    rw [hzero _ (notMem_tsupport_iff_eventuallyEq.1 hj), mul_zero]
+  by_cases hx : ∃ i, x ∈ tsupport (v i)
+  · obtain ⟨i, hi⟩ := hx
+    have hi' : ∀ j ≠ i, x ∉ tsupport (v j) := fun j hj ↦ hv i j (Ne.symm hj) hi
+    rw [hQx _ _ (sum_eventuallyEq_of_notMem_tsupport (f := fun j ↦ c j • v j) (Finset.mem_univ i)
+        fun j _ hj hx ↦ hi' j hj (tsupport_smul_subset_right (fun _ ↦ c j) (v j) hx)), hQ,
+      Finset.sum_eq_single i (fun j _ hj ↦ hzero' j (hi' j hj)) (by simp)]
+  · push Not at hx
+    rw [Finset.sum_eq_zero fun j _ ↦ hzero' j (hx j)]
+    refine hzero _ ((Filter.eventually_all.2 fun j ↦
+      notMem_tsupport_iff_eventuallyEq.1 (hx j)).mono fun y hy ↦ ?_)
+    simp [Finset.sum_apply, hy]
 
 end TauCeti
