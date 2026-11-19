@@ -206,11 +206,11 @@ degree four of `ℚ_[2]`, and geometric Frobenius would send `ζ` to `ζ ^ 3`. -
 theorem localArtinMap_Q2_zeta5 (E : Type*) [Field E] [Algebra ℚ_[2] E]
     [FiniteDimensional ℚ_[2] E] [IsGalois ℚ_[2] E] (ι : E →ₐ[ℚ_[2]] SeparableClosure ℚ_[2])
     {σ : Gal(E/ℚ_[2])}
-    (hσ : localArtinMap ℚ_[2] E ι (Additive.ofMul (Units.mk0 (2 : ℚ_[2]) two_ne_zero)) =
+    (hσ : localArtinMap ℚ_[2] E ι (Additive.ofMul (padicPrimeUnit 2)) =
       Additive.ofMul (Group.Abelianization.of σ))
     {ζ : E} (hζ : ζ ^ 5 = 1) :
     σ ζ = ζ ^ 2 :=
-  localArtinMap_cyclotomic_padic 2 E ι (by simpa [padicPrimeUnit_eq_mk0] using hσ) (by norm_num) hζ
+  localArtinMap_cyclotomic_padic 2 E ι hσ (by norm_num) hζ
 
 /-! ### The cyclotomic character of absolute Artin symbols -/
 

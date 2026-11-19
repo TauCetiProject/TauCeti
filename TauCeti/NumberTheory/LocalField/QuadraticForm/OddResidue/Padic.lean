@@ -166,10 +166,11 @@ variable {p} in
 exactly when its residue is a square in `𝔽_p`. -/
 theorem hilbertSymbol_intCast_self_eq_legendreSym (hp : p ≠ 2) {n : ℤ} (hn : ¬ (p : ℤ) ∣ n) :
     ((hilbertSymbol (Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _)))
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) : ℤˣ) : ℤ) =
+      (padicPrimeUnit p) : ℤˣ) : ℤ) =
       legendreSym p n := by
   have h1 : ¬ (p : ℤ) ∣ 1 := by exact_mod_cast (Fact.out : p.Prime).not_dvd_one
-  simpa using coe_hilbertSymbol_pow_mul_intCast_pow_mul_intCast hp 0 1 hn h1
+  simpa [padicPrimeUnit_eq_mk0] using
+    coe_hilbertSymbol_pow_mul_intCast_pow_mul_intCast hp 0 1 hn h1
 
 variable {p} in
 /-- **Squares in `ℚ_p` of integers prime to `p`.** For an odd prime `p` and an integer `n` prime
@@ -180,10 +181,8 @@ theorem isSquare_intCast_iff_legendreSym_eq_one (hp : p ≠ 2) {n : ℤ} (hn : �
   have hval := _root_.Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq
     (a := Units.mk0 (n : ℚ_[p]) (Int.cast_ne_zero.2 fun h ↦ hn (h ▸ dvd_zero _)))
     (u := (PadicInt.isUnit_intCast_iff.2 hn).unit) (by simp)
-  have hπ := isUniformizer_natCast_self p
-  rw [padicPrimeUnit_eq_mk0] at hπ
   have h := hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer
-    (_root_.Padic.isUnit_two_integerRing hp) hval hπ
+    (_root_.Padic.isUnit_two_integerRing hp) hval (isUniformizer_natCast_self p)
   rw [← Units.val_eq_one, hilbertSymbol_intCast_self_eq_legendreSym hp hn] at h
   rw [h, ← Units.isSquare_coe_iff, Units.val_mk0]
 
@@ -196,17 +195,14 @@ variable (p : ℕ) [Fact p.Prime]
 /-- If `p ≡ 3 (mod 4)`, then the Hilbert symbol `(-1, p)` over `ℚ_p` is `-1`: the prime `p` is not
 a sum of two squares in `ℚ_p`. -/
 theorem hilbertSymbol_neg_one_eq_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
-    hilbertSymbol (-1 : ℚ_[p]ˣ)
-      (Units.mk0 (p : ℚ_[p]) (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)) = -1 := by
+    hilbertSymbol (-1 : ℚ_[p]ˣ) (TauCeti.padicPrimeUnit p) = -1 := by
   have h2 := isUnit_two_integerRing (p := p) (by omega)
   have hu : (normalizedValuation ℚ_[p] (-1 : ℚ_[p]ˣ)).toAdd = 0 := by
     rw [toAdd_normalizedValuation_eq_valuation]
     simpa [padicValInt] using valuation_intCast (p := p) (-1)
-  have hπ := TauCeti.Padic.isUniformizer_natCast_self p
-  rw [TauCeti.padicPrimeUnit_eq_mk0] at hπ
   rcases Int.units_eq_one_or (hilbertSymbol (-1 : ℚ_[p]ˣ) _) with h | h
   · have hsq := (hilbertSymbol_eq_one_iff_isSquare_of_valuation_zero_of_isUniformizer h2 hu
-      hπ).mp h
+      (TauCeti.Padic.isUniformizer_natCast_self p)).mp h
     exact absurd (Units.isSquare_coe_iff.mpr hsq)
       (by simpa using not_isSquare_neg_one_of_mod_four_ne_one p (by omega))
   · exact h

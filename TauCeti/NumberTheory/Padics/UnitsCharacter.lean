@@ -98,16 +98,16 @@ def padicUnitPart : ℚ_[p]ˣ →ₜ* ℤ_[p]ˣ where
     ring
   continuous_toFun := by
     refine Units.isOpenEmbedding_val.isEmbedding.continuous_iff.2 <|
-      continuous_induced_rng.2 ?_
+      PadicInt.isOpenEmbedding_coe.isEmbedding.continuous_iff.2 ?_
     exact (Units.continuous_val.mul
       ((continuous_of_discreteTopology (f := fun n : ℤ ↦ (p : ℚ_[p]) ^ (-n))).comp
-        Padic.continuous_valuation_units))
+        Padic.continuous_valuation_units)).congr fun x ↦ (PadicInt.mkUnits_eq _).symm
 
 /-- The unit part of `x` is `x p ^ (-v(x))`. -/
 @[simp]
 theorem coe_padicUnitPart_apply (x : ℚ_[p]ˣ) :
     ((padicUnitPart p x : ℤ_[p]) : ℚ_[p]) = x * (p : ℚ_[p]) ^ (-(x : ℚ_[p]).valuation) :=
-  (rfl)
+  PadicInt.mkUnits_eq (Padic.norm_mul_zpow_neg_valuation x.ne_zero)
 
 /-- **Every nonzero `p`-adic number is `p ^ v(x)` times its unit part.** -/
 theorem coe_eq_zpow_valuation_mul_padicUnitPart (x : ℚ_[p]ˣ) :
