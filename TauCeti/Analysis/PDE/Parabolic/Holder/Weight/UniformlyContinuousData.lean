@@ -18,9 +18,11 @@ On `ℝⁿ = EuclideanSpace ℝ ι` and a time slab `ℝⁿ × [0, T]`, let
 have coefficients in `C_b^{α,α/2}`, `0 < α < 1`, with `a` uniformly elliptic, and let `w = exp ℓ` be
 a positive time-independent weight whose logarithm `ℓ` is `C²` with bounded `α`-Hölder partial
 derivatives `∂ᵢℓ`, `∂ᵢ∂ⱼℓ`. The logarithm itself may be unbounded, so `w` may grow or decay
-exponentially at infinity. This file solves the Cauchy problem `P u = F`, `u(·, 0) = G` for data
-with `F / w ∈ C_b^{α,α/2}` and `G / w` bounded and uniformly continuous, and shows that the
-solution attains `G` in the weighted uniform norm `sup |u / w|`.
+exponentially at infinity. For the Cauchy problem `P u = F`, `u(·, 0) = G` with
+`F / w ∈ C_b^{α,α/2}` and `G / w` bounded and uniformly continuous, this file takes as weighted
+solution operator `w` times the solution operator of a conjugated problem, shows that it agrees
+with the classical weighted solutions and is the unique continuous linear extension of them, and
+bounds it uniformly. It does not prove that its output solves `P u = F` for general such data.
 
 Writing `u = w v`, the conjugation identity `P (w v) = w P_w v`
 (`TauCeti.ParabolicC2HolderSpace.exp_mul_euclideanParabolicOperatorL_eq`) turns the weighted
@@ -28,15 +30,16 @@ problem into a Cauchy problem for the operator `P_w`, which has the same princip
 and the lower-order coefficients `b_w = euclideanWeightedFirstOrderCoeff a b dℓ` and
 `c_w = euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ`, again in `C_b^{α,α/2}`. The solution
 operator of `P_w` for bounded uniformly continuous initial data
-(`TauCeti.ParabolicC2HolderSpace.euclideanCauchySolutionBUC`), multiplied by `w`, is therefore
-the solution operator of the weighted problem:
+(`TauCeti.ParabolicC2HolderSpace.euclideanCauchySolutionBUC`), multiplied by `w`, is the
+weighted solution operator studied here:
 
 * on data with `G / w ∈ C_b^{2,α}` it agrees with the classical weighted solution `u = w v`
   (`exp_mul_euclideanCauchySolutionBUC_weightedCoeff_eq`), and it is the only continuous linear map
   `C_b^{α,α/2} × BUC → C_b` that sends the weighted data of every classical weighted solution
   `u = w v` to `v` (`eq_euclideanCauchySolutionBUC_weightedCoeff`);
-* the solution takes the datum `G` at `t = 0` and attains it uniformly in the weighted norm,
-  `sup_x |u(x, t) - G(x)| / w(x) → 0` as `t → 0⁺`: since `u / w = v` and `G / w = g`, this is
+* the weighted trace is not a result of this file but a direct reading of existing unweighted
+  lemmas: since `u / w = v` and `G / w = g`, the statements that `u` takes the datum `G` at `t = 0`
+  and that `sup_x |u(x, t) - G(x)| / w(x) → 0` as `t → 0⁺` are
   `TauCeti.ParabolicC2HolderSpace.euclideanCauchySolutionBUC_apply_slabMk_zero` and
   `TauCeti.ParabolicC2HolderSpace.tendstoUniformly_euclideanCauchySolutionBUC` for the coefficients
   `b_w`, `c_w`;
@@ -47,7 +50,7 @@ the solution operator of the weighted problem:
 On the line, the weight `1 + exp x` qualifies:
 `TauCeti.contDiff_log_one_add_exp_and_exists_fderiv_eq` supplies the derivatives `dℓ`, `d2ℓ` of
 `ℓ = log (1 + exp x)`, and with them the statements above cover data growing like `exp x` as
-`x → ∞`, attained in the norm `sup |u / (1 + exp x)|`.
+`x → ∞`, measured in the norm `sup |u / (1 + exp x)|`.
 
 The regularity of the solution for `t > 0`, where it is classical, is not proved here; it rests on
 the corresponding statement for the unweighted problem.
@@ -172,9 +175,10 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 norms of the coefficients, a bound `L` on the Hölder norms of the derivatives `∂ᵢℓ`, `∂ᵢ∂ⱼℓ` of the
 logarithm of the weight and a bound `T₀` on the horizon, the solution operators of the conjugated
 problems for bounded uniformly continuous initial data on `ℝⁿ × [0, T]`, `T ≤ T₀`, are bounded
-uniformly. Thus the solution `u = w v` of `P u = w f`, `u(·, 0) = w g` satisfies
-`sup |u / w| ≤ C max (‖f‖_{α,par}) (sup |g|)`. The constant does not depend on the ellipticity
-constant, and the weight itself enters only through `L`. -/
+uniformly. Thus `v = euclideanCauchySolutionBUC … (f, g)` satisfies
+`sup |v| ≤ C max (‖f‖_{α,par}) (sup |g|)`, that is, `sup |u / w| ≤ C max (‖f‖_{α,par}) (sup |g|)`
+for `u = w v`. The constant does not depend on the ellipticity constant, and the weight itself
+enters only through `L`. -/
 theorem exists_norm_euclideanCauchySolutionBUC_weightedCoeff_le (hα₀ : 0 < α) (hα₁ : α < 1)
     (K L T₀ : ℝ≥0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
