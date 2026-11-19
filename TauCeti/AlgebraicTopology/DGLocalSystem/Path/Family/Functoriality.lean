@@ -117,44 +117,21 @@ theorem pullbackBasepointChangeCompHom_eq (M : DGLocalSystem.{v} B x R) :
   (rfl)
 
 /-- The composition law for a single DG local system is natural in the DG local system. -/
+@[reassoc]
 theorem pullbackBasepointChangeCompHom_naturality {M N : DGLocalSystem.{v} B x R} (φ : M ⟶ N) :
     (pullback R g rfl).map ((basepointChange R y (g z)).map
       ((pullback R f rfl).map ((basepointChange R x (f y)).map φ))) ≫
         pullbackBasepointChangeCompHom f g y z N =
       pullbackBasepointChangeCompHom f g y z M ≫
         (pullback R (f.comp g) rfl).map ((basepointChange R x (f (g z))).map φ) := by
-  -- Write `G = g^*` and `F = f^*`. The three squares are the naturality of the commutation of
-  -- basepoint change with `F`, of the composite change and of `pullbackComp`, each read after
-  -- applying the outer pullbacks.
-  have h₁ : (pullback R g rfl).map ((basepointChange R y (g z)).map ((pullback R f rfl).map
-        ((basepointChange R x (f y)).map φ))) ≫
-      (pullback R g rfl).map (changeBasepointPullbackHom f ((basepointChange R x (f y)).obj N)) =
-      (pullback R g rfl).map (changeBasepointPullbackHom f ((basepointChange R x (f y)).obj M)) ≫
-        (pullback R g rfl).map ((pullback R f rfl).map ((basepointChange R (f y) (f (g z))).map
-          ((basepointChange R x (f y)).map φ))) :=
-    ((pullback R g rfl).map_comp _ _).symm.trans <|
-      (congrArg (pullback R g rfl).map (changeBasepointPullbackHom_naturality (b := g z) f
-        ((basepointChange R x (f y)).obj M) ((basepointChange R x (f y)).map φ))).trans
-          ((pullback R g rfl).map_comp _ _)
-  have h₂ : (pullback R g rfl).map ((pullback R f rfl).map ((basepointChange R (f y) (f (g z))).map
-        ((basepointChange R x (f y)).map φ))) ≫
-      (pullback R g rfl).map ((pullback R f rfl).map (tensorPathChainConcat N (f y) (f (g z)))) =
-      (pullback R g rfl).map ((pullback R f rfl).map (tensorPathChainConcat M (f y) (f (g z)))) ≫
-        (pullback R g rfl).map ((pullback R f rfl).map ((basepointChange R x (f (g z))).map φ)) :=
-    ((pullback R g rfl).map_comp _ _).symm.trans <|
-      (congrArg (pullback R g rfl).map <| ((pullback R f rfl).map_comp _ _).symm.trans <|
-        (congrArg (pullback R f rfl).map
-          (tensorPathChainConcat_naturality M φ (f y) (f (g z)))).trans
-            ((pullback R f rfl).map_comp _ _)).trans ((pullback R g rfl).map_comp _ _)
-  have h₃ := (pullbackComp R f g (rfl : f (g z) = f (g z)) (rfl : g z = g z)).inv.naturality
-    ((basepointChange R x (f (g z))).map φ)
-  -- The composite is assembled from the three squares by reassociation; rewriting inside it is
-  -- not possible, since `basepointChange` agrees with the tensor products in the types of its
-  -- constituents only up to unfolding.
-  exact (Category.assoc _ _ _).symm.trans <| (eq_whisker h₁ _).trans <|
-    (Category.assoc _ _ _).trans <| (whisker_eq _ <| (Category.assoc _ _ _).symm.trans <|
-      (eq_whisker h₂ _).trans <| (Category.assoc _ _ _).trans <| whisker_eq _ h₃).trans
-        ((Category.assoc _ _ _).trans (whisker_eq _ (Category.assoc _ _ _))).symm
+  -- Write `G = g^*` and `F = f^*`. The composite is pasted from three commuting squares: the
+  -- naturality of the commutation of basepoint change with `F`, read after `G`, of the composite
+  -- change, read after `F` and `G`, and of `pullbackComp`.
+  exact ((CommSq.mk (changeBasepointPullbackHom_naturality (b := g z) f _
+    ((basepointChange R x (f y)).map φ))).map (pullback R g rfl)).vert_comp
+      ((((CommSq.mk (tensorPathChainConcat_naturality M φ (f y) (f (g z)))).map
+        (pullback R f rfl)).map (pullback R g rfl)).vert_comp
+          (CommSq.mk ((pullbackComp R f g rfl rfl).inv.naturality _))) |>.w
 
 /-- **The composition law is a quasi-isomorphism** when `x` is joined to `f y` and `y` to `g z` by
 Moore paths. -/
@@ -220,14 +197,13 @@ def pullbackBasepointChangeComp (f : C(B', B)) (g : C(B'', B'))
     simp only [Functor.comp_map, pullbackBasepointChangeCompApp, Pi.comp_apply,
       pullbackBasepointChange_map, Functor.map_comp, eqToHom_map, Category.assoc,
       eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl, Category.id_comp]
-    refine whisker_eq _ ?_
-    rw [reassoc_of% (DGLocalSystem.pullbackBasepointChangeCompHom_naturality f g _ _ (φ _))]
-    refine whisker_eq _ ?_
-    have key := eqToHom_naturality (fun c ↦ (DGLocalSystem.pullback R (f.comp g) rfl).map
-      ((DGLocalSystem.basepointChange R (β.point c) (f (g (β''.point c'')))).map (φ c)))
-      (β'.mk_apply_point_mk f.continuous (g (β''.point c'')))
-    exact (whisker_eq _ (eqToHom_trans _ _).symm).trans <| (Category.assoc _ _ _).symm.trans <|
-      (eq_whisker key _).trans (Category.assoc _ _ _)
+    rw [DGLocalSystem.pullbackBasepointChangeCompHom_naturality_assoc]
+    -- Split off the `eqToHom` across the path components of `f(b'_{g(b''_{c''})})` and
+    -- `f(g(b''_{c''}))`, and move it past `φ`.
+    exact whisker_eq _ <| whisker_eq _ <| (whisker_eq _ (eqToHom_trans _ _).symm).trans <|
+      eqToHom_naturality_assoc (fun c ↦ (DGLocalSystem.pullback R (f.comp g) rfl).map
+        ((DGLocalSystem.basepointChange R (β.point c) (f (g (β''.point c'')))).map (φ c)))
+        (β'.mk_apply_point_mk f.continuous (g (β''.point c''))) _
 
 /-- The components of `pullbackBasepointChangeComp` are `pullbackBasepointChangeCompApp`. -/
 @[simp]
@@ -267,6 +243,7 @@ theorem changeBasepointsSelfApp_rfl (c : ZerothHomotopy B)
   (rfl)
 
 /-- Naturality of `changeBasepointsSelfApp` in the family. -/
+@[reassoc]
 theorem changeBasepointsSelfApp_naturality {c₁ c : ZerothHomotopy B} (h : c₁ = c)
     {𝓕 𝓖 : DGLocalSystemFamily.{max u w v} β R} (φ : 𝓕 ⟶ 𝓖) :
     (DGLocalSystem.basepointChange R (β.point c₁) (β.point c)).map (φ c₁) ≫
@@ -302,11 +279,8 @@ def pullbackBasepointChangeId :
       simp only [Pi.comp_apply, Pi.isoMk_hom, pullbackBasepointChangeIdApp_hom,
         pullbackBasepointChange_map, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
         Category.id_comp, Functor.id_map]
-      exact whisker_eq _ <| (Category.assoc _ _ _).symm.trans <|
-        (eq_whisker ((DGLocalSystem.pullbackId R).hom.naturality _) _).trans <|
-          (Category.assoc _ _ _).trans <|
-            (whisker_eq _ (changeBasepointsSelfApp_naturality R (β.mk_point c) φ)).trans
-              (Category.assoc _ _ _).symm)
+      exact whisker_eq _ ((CommSq.mk ((DGLocalSystem.pullbackId R).hom.naturality _)).vert_comp
+        (CommSq.mk (changeBasepointsSelfApp_naturality R (β.mk_point c) φ))).w)
 
 /-- The components of `pullbackBasepointChangeId` are `pullbackBasepointChangeIdApp`. -/
 @[simp]
