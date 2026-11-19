@@ -5,7 +5,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -77,7 +77,7 @@ theorem derivBilinearTensor_zero :
 
 /-- The total covariant derivative of a bilinear field commutes with constant
 real scaling, including fields whose pairings fail to be differentiable. -/
-theorem derivBilinearTensor_const_smul (c : ℝ) (u v : V x) (w : TangentSpace I x) :
+@[simp] theorem derivBilinearTensor_const_smul (c : ℝ) (u v : V x) (w : TangentSpace I x) :
     cov.derivBilinearTensor (c • b) x u v w = c * cov.derivBilinearTensor b x u v w := by
   classical
   by_cases hc : c = 0

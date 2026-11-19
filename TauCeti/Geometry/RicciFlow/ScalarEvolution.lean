@@ -5,11 +5,11 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ScalarTrace
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.RicciVariation
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Trace
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensorTrace
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.SMul
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 
@@ -197,8 +197,9 @@ private theorem palatini_deriv_difference_eq_laplaceBeltrami
   exact sum_palatini_eq_laplaceBeltrami hLC.isMetricCompatible hcanonical
     (hC.mdifferentiableAt (by simp))
     (((cov t).contMDiff_scalarCurvature x).of_le (by simp))
-    (sum_C_self_eq_zero hLC.isMetricCompatible hLC.torsion hpair)
-    (trace_C_eq_neg_mvfderiv_scalarCurvature hLC.isMetricCompatible hLC.torsion hpair)
+    (Filter.Eventually.of_forall (sum_C_self_eq_zero hLC.isMetricCompatible hLC.torsion hpair))
+    (Filter.Eventually.of_forall
+      (trace_C_eq_neg_mvfderiv_scalarCurvature hLC.isMetricCompatible hLC.torsion hpair))
 
 /-- The inverse-metric trace of the actual Ricci derivative is the scalar Laplacian. -/
 private theorem traceCLM_inverse_deriv_ricciTensor_eq_laplaceBeltrami

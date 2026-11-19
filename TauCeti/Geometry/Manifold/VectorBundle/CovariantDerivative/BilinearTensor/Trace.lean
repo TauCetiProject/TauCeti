@@ -96,13 +96,13 @@ private theorem deriv_lowerConnectionTensor
   ring
 
 /-- The covariant derivative of a vector-valued bilinear tensor has zero metric trace
-when the tensor itself has zero metric trace at every point. -/
+when the tensor itself has zero metric trace near the point. -/
 private theorem sum_hom_self_eq_zero_of_mdifferentiable
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (hC : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E)
       (E := fun y ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y)
       y (C y)) x)
-    (htrace : ∀ y, ∑ i, C y (stdOrthonormalBasis ℝ (TangentSpace I y) i)
+    (htrace : ∀ᶠ y in 𝓝 x, ∑ i, C y (stdOrthonormalBasis ℝ (TangentSpace I y) i)
       (stdOrthonormalBasis ℝ (TangentSpace I y) i) = 0)
     (z : TangentSpace I x) :
     ∑ i, cov.hom (cov.hom cov) C x z
@@ -120,29 +120,30 @@ private theorem sum_hom_self_eq_zero_of_mdifferentiable
       (E := fun y : M ↦ TangentSpace I y) hW
       ((hC.clm_bundle_apply hA).clm_bundle_apply hB)
   have hzero : (fun y ↦ TauCeti.bilinFormTrace
-      (ContinuousLinearMap.toLinearMap₁₂ (lowerConnectionTensor C W y))) = fun _ ↦ 0 := by
-    funext y
+      (ContinuousLinearMap.toLinearMap₁₂ (lowerConnectionTensor C W y))) =ᶠ[𝓝 x]
+      fun _ ↦ 0 := by
+    filter_upwards [htrace] with y hy
     rw [TauCeti.bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ (TangentSpace I y))]
     simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
       lowerConnectionTensor_apply]
-    rw [← inner_sum, htrace y, inner_zero_right]
+    rw [← inner_sum, hy, inner_zero_right]
   have h := hcov.mvfderiv_bilinFormTrace hb e z
-  rw [hzero] at h
+  rw [hzero.mvfderiv_eq] at h
   simp only [mvfderiv_const, zero_apply,
     deriv_lowerConnectionTensor hcov hC hW, Finset.sum_add_distrib,
     ← inner_sum] at h
-  have htrace_x : ∑ i, C x (e i) (e i) = 0 := htrace x
+  have htrace_x : ∑ i, C x (e i) (e i) = 0 := htrace.self_of_nhds
   rw [htrace_x, inner_zero_right, add_zero] at h
   -- The displayed orthonormal contraction is the vector `q` defined above.
   change q = 0
   apply (inner_self_eq_zero (𝕜 := ℝ)).mp
   simpa only [W, extend_apply_self] using h.symm
 
-/-- Covariant differentiation preserves a vanishing metric trace, including at points
-where the tensor is not differentiable and the induced connection is totalized to zero. -/
+/-- Covariant differentiation preserves a metric trace vanishing near `x`, including when
+the tensor is not differentiable and the induced connection is totalized to zero. -/
 theorem sum_hom_self_eq_zero
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-    (htrace : ∀ y, ∑ i, C y (stdOrthonormalBasis ℝ (TangentSpace I y) i)
+    (htrace : ∀ᶠ y in 𝓝 x, ∑ i, C y (stdOrthonormalBasis ℝ (TangentSpace I y) i)
       (stdOrthonormalBasis ℝ (TangentSpace I y) i) = 0)
     (z : TangentSpace I x) :
     ∑ i, cov.hom (cov.hom cov) C x z
@@ -154,7 +155,7 @@ theorem sum_hom_self_eq_zero
   · exact sum_hom_self_eq_zero_of_mdifferentiable hcov hC htrace z
   · simp [hom_eq_zero_of_not_mdifferentiableAt cov (cov.hom cov) hC]
 
-/-- If the endomorphism trace of a bilinear tensor is minus the differential of `f`,
+/-- If the endomorphism trace of a bilinear tensor is minus the differential of `f` near `x`,
 its differentiated endomorphism trace is minus the Hessian of `f`. Agreement with the
 Levi-Civita connection is only required on differentiable fields at the point. -/
 theorem trace_hom_eq_neg_hessian
@@ -164,7 +165,7 @@ theorem trace_hom_eq_neg_hessian
       (E := fun y ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y)
       y (C y)) x)
     {f : M → ℝ} (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (htrace : ∀ y u, LinearMap.trace ℝ (TangentSpace I y) (C y u).toLinearMap =
+    (htrace : ∀ᶠ y in 𝓝 x, ∀ u, LinearMap.trace ℝ (TangentSpace I y) (C y u).toLinearMap =
       -mvfderiv I f y u)
     (z u : TangentSpace I x) :
     LinearMap.trace ℝ (TangentSpace I x)
@@ -177,17 +178,17 @@ theorem trace_hom_eq_neg_hessian
     (fun A : TangentSpace I x →L[ℝ] TangentSpace I x ↦
       LinearMap.trace ℝ (TangentSpace I x) A.toLinearMap) h₁
   simp only [ContinuousLinearMap.toLinearMap_sub, map_sub] at h
-  rw [← cov.mvfderiv_trace_eq_trace_hom hCU z, htrace x] at h
-  have hfun : (fun y ↦ LinearMap.trace ℝ (TangentSpace I y) (C y (U y)).toLinearMap) =
-      fun y ↦ -mvfderiv I f y (U y) := funext fun y ↦ htrace y (U y)
-  rw [hfun, mvfderiv_fun_neg] at h
+  rw [← cov.mvfderiv_trace_eq_trace_hom hCU z, htrace.self_of_nhds] at h
+  have hfun : (fun y ↦ LinearMap.trace ℝ (TangentSpace I y) (C y (U y)).toLinearMap) =ᶠ[𝓝 x]
+      fun y ↦ -mvfderiv I f y (U y) := htrace.mono fun y hy ↦ hy (U y)
+  rw [hfun.mvfderiv_eq, mvfderiv_fun_neg] at h
   have hh := hessian_apply_eq_mvfderiv_sub x hf (fun _ ↦ z) U hU
   rw [hLC hU z] at h
   simp only [U, extend_apply_self, neg_apply] at h hh
   linarith
 
-/-- A bilinear tensor with zero metric trace and endomorphism trace `-df` has Palatini
-double contraction equal to the Laplace–Beltrami operator of `f`. -/
+/-- A bilinear tensor with zero metric trace and endomorphism trace `-df` near `x` has
+Palatini double contraction equal to the Laplace–Beltrami operator of `f`. -/
 theorem sum_palatini_eq_laplaceBeltrami
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (hLC : ∀ ⦃U : Π y : M, TangentSpace I y⦄, MDiffAt (T% U) x →
@@ -196,9 +197,9 @@ theorem sum_palatini_eq_laplaceBeltrami
       (E := fun y ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] TangentSpace I y)
       y (C y)) x)
     {f : M → ℝ} (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (hV : ∀ y, ∑ i, C y (stdOrthonormalBasis ℝ (TangentSpace I y) i)
+    (hV : ∀ᶠ y in 𝓝 x, ∑ i, C y (stdOrthonormalBasis ℝ (TangentSpace I y) i)
       (stdOrthonormalBasis ℝ (TangentSpace I y) i) = 0)
-    (hθ : ∀ y u, LinearMap.trace ℝ (TangentSpace I y) (C y u).toLinearMap =
+    (hθ : ∀ᶠ y in 𝓝 x, ∀ u, LinearMap.trace ℝ (TangentSpace I y) (C y u).toLinearMap =
       -mvfderiv I f y u) :
     let e := stdOrthonormalBasis ℝ (TangentSpace I x)
     ∑ j, ∑ i, ⟪e i, cov.hom (cov.hom cov) C x (e i) (e j) (e j) -
