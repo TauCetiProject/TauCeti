@@ -17,12 +17,15 @@ The nonzero primes of `𝓞 ℚ` correspond to the rational primes through their
 identifying the norm of `v` with its generator). This file transports a prime summatory function
 over `ℚ` whose weight depends only on the norm to the corresponding sum over Mathlib's
 `Nat.primesLE`, so that results stated for the primes of a number field specialize to the
-classical sums over rational primes.
+classical sums over rational primes. The same transport applies to infinite sums over all primes.
 
 ## Main results
 
 * `TauCeti.primeSummatory_rat_eq_sum_primesLE`: for a weight `f : ℕ → M`,
   `∑_{N𝔭 ≤ x} f (N𝔭)` over the primes of `𝓞 ℚ` is `∑_{p ∈ Nat.primesLE ⌊x⌋₊} f p`.
+* `TauCeti.summable_rat_iff_summable_primes`, `TauCeti.tsum_rat_eq_tsum_primes`: `f (N𝔭)` is
+  summable over the primes of `𝓞 ℚ` if and only if `f p` is summable over `Nat.Primes`, and the
+  two sums agree.
 -/
 
 public section
@@ -48,5 +51,31 @@ theorem primeSummatory_rat_eq_sum_primesLE {M : Type*} [AddCommMonoid M] (f : �
     fun _ _ ↦ rfl
   obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq (Nat.prime_of_mem_primesLE hp)
   exact ⟨v, (hmem v).mpr (hv ▸ hp), hv⟩
+
+/-- Over `ℚ`, transporting along `Rat.HeightOneSpectrum.primesEquiv` turns a weight depending only
+on the norm into the same weight on the rational primes. -/
+private theorem comp_primesEquiv_eq {M : Type*} (f : ℕ → M) :
+    (fun p : Nat.Primes ↦ f p) ∘ Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ) =
+      fun v ↦ f (Ideal.absNorm v.asIdeal) := by
+  -- Mathlib defines the value of `primesEquiv v` to be `natGenerator v`, which is the absolute
+  -- norm of `v` by `Rat.HeightOneSpectrum.absNorm_asIdeal`.
+  funext v
+  exact congrArg f (Rat.HeightOneSpectrum.absNorm_asIdeal v).symm
+
+/-- Over `ℚ`, a weight depending only on the norm is summable over the primes of `𝓞 ℚ` if and only
+if it is summable over the rational primes. -/
+theorem summable_rat_iff_summable_primes {M : Type*} [AddCommMonoid M] [TopologicalSpace M]
+    (f : ℕ → M) :
+    Summable (fun v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ) ↦ f (Ideal.absNorm v.asIdeal)) ↔
+      Summable fun p : Nat.Primes ↦ f p := by
+  rw [← comp_primesEquiv_eq, Equiv.summable_iff]
+
+/-- Over `ℚ`, the sum of a weight depending only on the norm over the primes of `𝓞 ℚ` is the
+corresponding sum over the rational primes. -/
+theorem tsum_rat_eq_tsum_primes {M : Type*} [AddCommMonoid M] [TopologicalSpace M] (f : ℕ → M) :
+    ∑' v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ), f (Ideal.absNorm v.asIdeal) =
+      ∑' p : Nat.Primes, f p := by
+  rw [← comp_primesEquiv_eq]
+  exact (Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).tsum_eq fun p : Nat.Primes ↦ f p
 
 end TauCeti

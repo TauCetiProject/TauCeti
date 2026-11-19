@@ -15,6 +15,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 import TauCeti.NumberTheory.LSeries.SumCoeff
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Count.Asymptotic
+import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
 # The Dedekind zeta function across the line `Re s = 1`
@@ -64,6 +65,8 @@ Tauberian theorem needs to count prime ideals.
   `s ≠ 1` of the line `Re s = 1` does not vanish there.
 * `TauCeti.exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub`: `-ζ_K'(s) / ζ_K(s) - 1 / (s - 1)`
   extends continuously from `Re s > 1` to `Re s ≥ 1`.
+* `TauCeti.dedekindZeta_residue_rat`: over `ℚ` the residue `ρ` is `1`, as for the Riemann zeta
+  function.
 
 ## References
 
@@ -266,5 +269,19 @@ theorem exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub : ∃ G : ℂ → 
     (hH.differentiableAt (hUs hs.le)) (differentiableAt_id.sub_const 1), logDeriv_apply (· - 1),
     deriv_sub_const, deriv_id'']
   ring
+
+/-- **The residue of `ζ_ℚ` at `s = 1` is `1`.** In the class number formula defining
+`dedekindZeta_residue`, `ℚ` has one real place, no complex place, regulator `1`, class number `1`,
+torsion order `2` and discriminant `1`. -/
+@[simp]
+theorem dedekindZeta_residue_rat : dedekindZeta_residue ℚ = 1 := by
+  have h1 : Module.finrank ℚ ℚ = 1 := Module.finrank_self ℚ
+  have hc := InfinitePlace.card_add_two_mul_card_eq_rank ℚ
+  rw [h1, InfinitePlace.nrRealPlaces_eq_one_of_finrank_eq_one h1] at hc
+  rw [dedekindZeta_residue_def, InfinitePlace.nrRealPlaces_eq_one_of_finrank_eq_one h1,
+    show InfinitePlace.nrComplexPlaces ℚ = 0 by omega,
+    Units.torsionOrder_eq_two_of_odd_finrank (h1 ▸ odd_one), Rat.numberField_discr,
+    Rat.classNumber_eq, Units.regulator_rat_eq_one]
+  norm_num
 
 end TauCeti
