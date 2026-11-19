@@ -74,7 +74,8 @@ The data are read in the chart: the Hamiltonians are `K'(z, y) = K(z, φ⁻¹ y)
 complex structures are any family `J'(z, y)` on `V` with `dφ_x ∘ J(z, x) = J'(z, φ x) ∘ dφ_x`.
 The regularity hypotheses, `C³` for `K'` and `C²` for `J'`, are those of the vector-space theorem
 for this coordinate data. If `K` is `C³` on `Ω' × M` for an open set `Ω'` of the domain, then `K'`
-is `C³` on `Ω' × φ.target` (`TauCeti.Floer.contDiffOn_comp_symm`). By
+is `C³` on `Ω' × φ.target`
+(`PartialDiffeomorph.contDiffOn_comp_symm_of_contMDiffOn`). By
 `TauCeti.Geometry.Symplectic.Floer.Chart`, the coordinate maps `φ ∘ u` solve the Floer equation
 of `(V, ω₀)` for `K'` and `J'`, with the same energy density, and `J'` is tamed by `ω₀` where `J`
 is tamed by `ω`. So a sequence of such solutions on an open subset
@@ -531,43 +532,6 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset (hω : ω.
   exact ⟨ψ, Z, v, hψ, h⟩
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
-
-end
-
-section
-
-open Function Set
-open scoped Manifold
-
-namespace TauCeti.Floer
-
-variable {E H M P V W : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup P]
-  [NormedSpace ℝ P] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
-  [NormedSpace ℝ W]
-
-/-- **A Hamiltonian read in a chart is smooth.** Let `K : P × M → W` be `C^n` on `U × M` for an
-open subset `U` of a normed space `P`, and let `φ` be a `C^m` partial diffeomorphism from `M` to a
-normed space `V`, with `n ≤ m`. Then `(p, y) ↦ K(p, φ⁻¹ y)`, the map `K` read in the chart, is
-`C^n` on `U × φ.target`. This supplies the regularity of the coordinate Hamiltonians `K'` in the
-compactness theorems for symplectic charts. -/
-theorem contDiffOn_comp_symm {K : P → M → W} {U : Set P} {n : ℕ∞} {m : WithTop ℕ∞}
-    (hU : IsOpen U) (hK : ContMDiffOn (𝓘(ℝ, P).prod I) 𝓘(ℝ, W) n (uncurry K) (U ×ˢ univ))
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V m) (hnm : (n : WithTop ℕ∞) ≤ m) :
-    ContDiffOn ℝ n (fun q : P × V ↦ K q.1 (φ.symm q.2)) (U ×ˢ φ.target) := by
-  rintro ⟨z, y⟩ ⟨hz, hy⟩
-  refine ContDiffAt.contDiffWithinAt ?_
-  -- The point `z` and the chart inverse `φ⁻¹` are `C^n` into `P × M`.
-  have hsymm : ContMDiffAt 𝓘(ℝ, V) I n φ.symm y :=
-    (φ.symm.contMDiffOn.of_le hnm).contMDiffAt (φ.open_target.mem_nhds hy)
-  have hpair : ContMDiffAt 𝓘(ℝ, P × V) (𝓘(ℝ, P).prod I) n
-      (fun q : P × V ↦ (q.1, φ.symm q.2)) (z, y) :=
-    (contDiff_fst.contMDiff.contMDiffAt).prodMk
-      (hsymm.comp (z, y) contDiff_snd.contMDiff.contMDiffAt)
-  have hK' := hK.contMDiffAt ((hU.prod isOpen_univ).mem_nhds (mk_mem_prod hz (mem_univ (φ.symm y))))
-  exact contMDiffAt_iff_contDiffAt.1 (hK'.comp (z, y) hpair)
-
-end TauCeti.Floer
 
 end
 

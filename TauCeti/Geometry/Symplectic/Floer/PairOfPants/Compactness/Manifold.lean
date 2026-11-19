@@ -83,9 +83,9 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
     ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦
         pairOfPantsPerturbation H (equivRealProdCLM.symm p.1) (φ.symm p.2) v)
       (thricePuncturedSphereReal ×ˢ φ.target) := by
-  refine (contDiffOn_comp_symm
+  refine (φ.contDiffOn_comp_symm_of_contMDiffOn
     (K := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x)
-    isOpen_thricePuncturedSphereReal ?_ φ hnm).clm_apply contDiffOn_const
+    isOpen_thricePuncturedSphereReal ?_ hnm).clm_apply contDiffOn_const
   rintro ⟨z, x⟩ ⟨hz, -⟩
   exact ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
     ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk

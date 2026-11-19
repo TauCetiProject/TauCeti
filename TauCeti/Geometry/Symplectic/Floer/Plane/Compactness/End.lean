@@ -97,14 +97,14 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 Floer equation for the perturbation of the positive plane given by `H`, with energy at most `E`,
 for structures `J` with `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`. If the translate by `(R, 0)` of
 an open set `Ω` lies in the band `(max T₀ 2, ∞) × (t₀, t₀ + 1)` and `v(z) = u(φ(z + (R, 0)))` maps
-`Ω` into a set on which the `J_∞(t)` are tamed by `ω`, then `v` is `C³`, solves the Floer equation
-for `H(t) dt` and `J_∞` on `Ω`, and its energy density is integrable on `Ω` with integral at most
-`E`. -/
+`Ω` into a set on which `J_∞(t)` is tamed by `ω` for `(s, t) ∈ Ω`, then `v` is `C³`, solves the
+Floer equation for `H(t) dt` and `J_∞` on `Ω`, and its energy density is integrable on `Ω` with
+integral at most `E`. -/
 private theorem contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add
     (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H))
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {T₀ : ℝ} {Jend : ℝ → V → AlmostComplexStructure V}
     (hJ : ∀ s t x, T₀ ≤ s → J (realChart positive.cylindricalEndLift (s, t)) x = Jend t x)
-    {B : Set V} (hJt : ∀ t, ∀ x ∈ B, ω.Tames (Jend t x)) {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω)
+    {B : Set V} {Ω : Set (ℝ × ℝ)} (hJt : ∀ z ∈ Ω, ∀ x ∈ B, ω.Tames (Jend z.2 x)) (hΩ : IsOpen Ω)
     {u : ℝ × ℝ → V} {R E t₀ : ℝ}
     (hΩT : ∀ z ∈ Ω, z + (R, 0) ∈ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1)) (hu : ContDiff ℝ 3 u)
     (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
@@ -153,28 +153,32 @@ private theorem contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_p
     (hHs.of_le (by norm_num)).comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
   exact ⟨hvC, hvfl, ω.integrableOn_and_setIntegral_floerEnergyDensity_le hΩ hΩ.measurableSet
     subset_rfl (hvC.of_le (by norm_num)).contDiffOn contDiffOn_const hKt.contDiffOn
-    (fun z hz ↦ ω.floerEnergyDensity_nonneg (hJt _ _ (huB hz)) (hvfl z hz)) hE0 hlin⟩
+    (fun z hz ↦ ω.floerEnergyDensity_nonneg (hJt z hz _ (huB hz)) (hvfl z hz)) hE0 hlin⟩
 
 /-- **The translated ends of PSS planes converge off finitely many bubbling points.** Let `p` be a
 PSS plane with end sign `ε`, `H` a period-one `C³` Hamiltonian on `V`, and `J(z, x)` structures on
 `V` which are cylindrical far out on the end, `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`, where `φ`
-is the end lift of the positive plane in real coordinates, for a `C²` family `J_∞` of structures
-tamed by `ω` on `B`. Fix compact sets `D ⊆ (max T₀ 2, ∞) × (t₀, t₀ + 1)` and `B ⊆ V`. There is a
-threshold `δ > 0` with the following property. Let `uₖ` be `C³` solutions on the plane of the Floer
-equation for `J(z, u)` and the perturbation of `p` given by `H`, with energy at most `E ≥ 0`, let
-`Rₖ ≥ 0` be heights, and let the translated ends `vₖ(z) = uₖ(φ(z + (Rₖ, 0)))` map an open
-`Ω ⊆ D` into `B`. Then there are a subsequence `ψ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`, and a
-continuous `v : Ω \ Z → B` such that along `ψ` every disc about a point of `Z` eventually carries
-energy at least `δ` for the cylindrical datum `ε H(ε t) dt`, the differentials of the `vₖ` are
-uniformly bounded on every compact subset of `Ω \ Z`, and `v_{ψ n} → v` locally uniformly on
+is the end lift of the positive plane in real coordinates. Fix compact sets
+`D ⊆ (max T₀ 2, ∞) × (t₀, t₀ + 1)` and `B ⊆ V`, and let `J_∞(t, x)` be tamed by `ω` for
+`(s, t) ∈ D` and `x ∈ B`, with `((s, t), x) ↦ J_∞(t, x)` `C²` on an open set containing `D × B`.
+There is a threshold `δ > 0` with the following property. Let `uₖ` be `C³` solutions on the plane
+of the Floer equation for `J(z, u)` and the perturbation of `p` given by `H`, with energy at most
+`E ≥ 0`, let `Rₖ ≥ 0` be heights, and let the translated ends `vₖ(z) = uₖ(φ(z + (Rₖ, 0)))` map an
+open `Ω ⊆ D` into `B`. Then there are a subsequence `ψ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`,
+and a continuous `v : Ω \ Z → B` such that along `ψ` every disc about a point of `Z` eventually
+carries energy at least `δ` for the cylindrical datum `ε H(ε t) dt`, the differentials of the `vₖ`
+are uniformly bounded on every compact subset of `Ω \ Z`, and `v_{ψ n} → v` locally uniformly on
 `Ω \ Z`. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add
     (ω : SymplecticForm V) (p : PSSPlane) (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H))
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {T₀ : ℝ} {Jend : ℝ → V → AlmostComplexStructure V}
-    (hJend : ContDiff ℝ 2 fun q : ℝ × V ↦ (Jend q.1 q.2).toLinearMap.toContinuousLinearMap)
     (hJ : ∀ s t x, T₀ ≤ s → J (realChart positive.cylindricalEndLift (s, t)) x = Jend t x)
-    {D : Set (ℝ × ℝ)} {B : Set V} {t₀ : ℝ} (hJt : ∀ t, ∀ x ∈ B, ω.Tames (Jend t x))
-    (hD : IsCompact D) (hDT : D ⊆ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1)) (hB : IsCompact B) :
+    {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {B : Set V} {t₀ : ℝ}
+    (hJt : ∀ z ∈ D, ∀ x ∈ B, ω.Tames (Jend z.2 x)) (hW : IsOpen W)
+    (hJend : ContDiffOn ℝ 2
+      (fun q : (ℝ × ℝ) × V ↦ (Jend q.1.2 q.2).toLinearMap.toContinuousLinearMap) W)
+    (hD : IsCompact D) (hDT : D ⊆ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1)) (hB : IsCompact B)
+    (hDBW : D ×ˢ B ⊆ W) :
     ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃R : ℕ → ℝ⦄ ⦃E : ℝ⦄,
       IsOpen Ω → Ω ⊆ D → (∀ k, 0 ≤ R k) → (∀ k, ContDiff ℝ 3 (u k)) →
       (∀ k z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u k z))
@@ -204,12 +208,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
   -- The cylindrical datum `ε H(ε t) dt` and the structures `J_∞(t)` of the end are smooth.
   have hKt : ContDiff ℝ 3 (uncurry fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x) :=
     hHs'.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
-  have hJ' : ContDiff ℝ 2 fun q : (ℝ × ℝ) × V ↦
-      (Jend q.1.2 q.2).toLinearMap.toContinuousLinearMap :=
-    hJend.comp ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
-    (Ks := fun _ _ ↦ 0) (J := fun z ↦ Jend z.2) isOpen_univ contDiffOn_const hKt.contDiffOn
-    hJ'.contDiffOn hD hB (subset_univ _) fun _ _ x hx ↦ hJt _ x hx
+    (Ks := fun _ _ ↦ 0) (J := fun z ↦ Jend z.2) hW contDiffOn_const hKt.contDiffOn hJend hD hB
+    hDBW hJt
   refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huB ↦ ?_⟩
   rw [perturbation_eq_positive p H] at hfl hE
   -- The translated windows lie in the band `(max T₀ 2, ∞) × (t₀, t₀ + 1)` of the end.
@@ -218,7 +219,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
     add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
   have h (k : ℕ) :=
     contDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add ω
-      (p.periodic_endSign_mul hH) hHs' hJ hJt hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k) (huB k)
+      (p.periodic_endSign_mul hH) hHs' hJ (fun z hz ↦ hJt z (hΩD hz)) hΩ (hΩT k) (hu k) (hfl k) hE0
+      (hE k) (huB k)
   exact hconv hΩ hΩD (fun k ↦ (h k).1.contDiffOn) (fun k ↦ (h k).2.1) huB (fun k ↦ (h k).2.2.1)
     fun k ↦ (h k).2.2.2
 
@@ -243,16 +245,17 @@ variable [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [FiniteDimensional 
 plane of the Floer equation for the perturbation of the positive plane given by `H`, with energy at
 most `E`, for structures `J` with `J(φ(s, t), x) = J_∞(t, x)` for `s ≥ T₀`. If the translate by
 `(R, 0)` of an open set `Ω` lies in the band `(max T₀ 2, ∞) × (t₀, t₀ + 1)` and
-`v(z) = u(φ(z + (R, 0)))` maps `Ω` into a set on which the `J_∞(t)` are tamed by `ω`, then `v` is
-`C³`, solves the Floer equation for `H(t) dt` and `J_∞` on `Ω`, and its energy density is
-integrable on `Ω` with integral at most `E`. -/
+`v(z) = u(φ(z + (R, 0)))` maps `Ω` into a set on which `J_∞(t)` is tamed by `ω` for `(s, t) ∈ Ω`,
+then `v` is `C³`, solves the Floer equation for `H(t) dt` and `J_∞` on `Ω`, and its energy density
+is integrable on `Ω` with integral at most `E`. -/
 private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add
     (hω : ω.IsNondegenerate) (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry H)) {T₀ : ℝ}
     {Jend : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ s t x, T₀ ≤ s → J (realChart positive.cylindricalEndLift (s, t)) x = Jend t x)
-    {C : Set M} (hJt : ∀ t, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jend t x))
-    {Ω : Set (ℝ × ℝ)} (hΩ : IsOpen Ω) {u : ℝ × ℝ → M} {R E t₀ : ℝ}
+    {C : Set M} {Ω : Set (ℝ × ℝ)}
+    (hJt : ∀ z ∈ Ω, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jend z.2 x)) (hΩ : IsOpen Ω)
+    {u : ℝ × ℝ → M} {R E t₀ : ℝ}
     (hΩT : ∀ z ∈ Ω, z + (R, 0) ∈ Ioi (max T₀ 2) ×ˢ Ioo t₀ (t₀ + 1))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 3 u)
     (hfl : ∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
@@ -312,26 +315,26 @@ private theorem contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_
       (by norm_num)
   exact ⟨hvC, hvfl, ω.integrableOn_and_setIntegral_floerEnergyDensity_le hΩ hΩ.measurableSet
     subset_rfl (hvC.of_le (by norm_num)).contMDiffOn (hX contMDiff_const) (hX hH₂)
-    (fun z hz ↦ floerEnergyDensity_nonneg (u := v) hω (hJt _ _ (huC hz)) (hvfl z hz)) hE0 hlin⟩
+    (fun z hz ↦ floerEnergyDensity_nonneg (u := v) hω (hJt z hz _ (huC hz)) (hvfl z hz)) hE0 hlin⟩
 
 /-- **The translated ends of PSS planes in a symplectic chart of a manifold converge off finitely
 many bubbling points.** Let `p` be a PSS plane with end sign `ε`, `H` a period-one `C³`
 Hamiltonian on `M`, and `J(z, x)` structures on the tangent spaces of `M` which are cylindrical far
 out on the end, `J(e(s, t), x) = J_∞(t, x)` for `s ≥ T₀`, where `e` is the end lift of the positive
-plane in real coordinates, with `J_∞(t, x)` tamed by `ω` for `x ∈ C`. Let `φ` be a smooth partial
-diffeomorphism from `M` onto an open subset of `V`, and `D ⊆ (max T₀ 2, ∞) × (t₀, t₀ + 1)` and
-`C ⊆ φ.source` compact. Let `φ` pull the symplectic form `ω₀` back to `ω` at the points of `C`, and
-let `J'` be the family `J_∞` read in the chart, `dφ_x ∘ J_∞(t, x) = J'((s, t), φ x) ∘ dφ_x` for
-`(s, t) ∈ D` and `x ∈ C`, and `C²` on an open set containing `D × φ(C)`. There is a threshold
-`δ > 0` with the following property. Let `uₖ` be `C³` solutions on the plane of the Floer equation
-for `J(z, u)` and the perturbation of `p` given by `H`, with energy at most `E ≥ 0`, let `Rₖ ≥ 0`
-be heights, and let the translated ends `vₖ(z) = uₖ(e(z + (Rₖ, 0)))` map an open `Ω ⊆ D` into
-`C`. Then there are a subsequence `ψ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ E`, and a map `v`,
-continuous on `Ω \ Z` with values in `C`, such that along `ψ` every disc about a point of `Z`
-eventually carries energy at least `δ` for the cylindrical datum `ε H(ε t) dt`, the differentials
-of the coordinate maps `φ ∘ v_{ψ n}` are uniformly bounded on every compact subset of `Ω \ Z`, the
-coordinate maps converge to `φ ∘ v` locally uniformly on `Ω \ Z`, and `v_{ψ n} → v` pointwise on
-`Ω \ Z`. -/
+plane in real coordinates. Let `φ` be a smooth partial diffeomorphism from `M` onto an open subset
+of `V`, and `D ⊆ (max T₀ 2, ∞) × (t₀, t₀ + 1)` and `C ⊆ φ.source` compact, with `J_∞(t, x)` tamed
+by `ω` for `(s, t) ∈ D` and `x ∈ C`. Let `φ` pull the symplectic form `ω₀` back to `ω` at the
+points of `C`, and let `J'` be the family `J_∞` read in the chart,
+`dφ_x ∘ J_∞(t, x) = J'((s, t), φ x) ∘ dφ_x` for `(s, t) ∈ D` and `x ∈ C`, and `C²` on an open set
+containing `D × φ(C)`. There is a threshold `δ > 0` with the following property. Let `uₖ` be `C³`
+solutions on the plane of the Floer equation for `J(z, u)` and the perturbation of `p` given by
+`H`, with energy at most `E ≥ 0`, let `Rₖ ≥ 0` be heights, and let the translated ends
+`vₖ(z) = uₖ(e(z + (Rₖ, 0)))` map an open `Ω ⊆ D` into `C`. Then there are a subsequence `ψ`, a
+finite set `Z ⊆ Ω` with `#Z * δ ≤ E`, and a map `v`, continuous on `Ω \ Z` with values in `C`, such
+that along `ψ` every disc about a point of `Z` eventually carries energy at least `δ` for the
+cylindrical datum `ε H(ε t) dt`, the differentials of the coordinate maps `φ ∘ v_{ψ n}` are
+uniformly bounded on every compact subset of `Ω \ Z`, the coordinate maps converge to `φ ∘ v`
+locally uniformly on `Ω \ Z`, and `v_{ψ n} → v` pointwise on `Ω \ Z`. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realChart_positive_add
     (hω : ω.IsNondegenerate) (p : PSSPlane) (hH : Periodic H 1)
     (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry H)) {T₀ : ℝ}
@@ -341,7 +344,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
     {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {C : Set M} {t₀ : ℝ}
     (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
       ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    (hJt : ∀ t, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jend t x))
+    (hJt : ∀ z ∈ D, ∀ x ∈ C, (hω.symplecticFormAt x).Tames (Jend z.2 x))
     (hJJ' : ∀ z ∈ D, ∀ x ∈ C,
       IsComplexLinearMap (Jend z.2 x) (J' z (φ x)) (mvfderiv I φ x).toLinearMap) (hW : IsOpen W)
     (hJ' : ContDiffOn ℝ 2
@@ -388,10 +391,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset φ
     (Ks := fun _ _ ↦ 0) (Kt := fun w x ↦ p.endSign * H (p.endSign * w.2) x)
     (J := fun z ↦ Jend z.2) hφ hJJ' hW' contDiffOn_const
-    ((contDiffOn_comp_symm (K := fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x)
+    ((φ.contDiffOn_comp_symm_of_contMDiffOn
+      (K := fun (w : ℝ × ℝ) x ↦ p.endSign * H (p.endSign * w.2) x)
       isOpen_univ (hHs'.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)).contMDiffOn φ (WithTop.coe_le_coe.2 le_top)).mono inter_subset_right)
-    (hJ'.mono inter_subset_left) hD hC hCφ hDCW' fun z _ x hx ↦ hJt z.2 x hx
+        contMDiff_snd)).contMDiffOn (WithTop.coe_le_coe.2 le_top)).mono inter_subset_right)
+    (hJ'.mono inter_subset_left) hD hC hCφ hDCW' hJt
   refine ⟨δ, hδ, fun Ω u R E hΩ hΩD hR hu hfl hE0 hE huC ↦ ?_⟩
   rw [perturbation_eq_positive p H] at hfl hE
   -- The translated windows lie in the band `(max T₀ 2, ∞) × (t₀, t₀ + 1)` of the end.
@@ -400,7 +404,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_comp_realC
     add_mk_zero_mem_Ioi_prod (hDT (hΩD hz)) (hR k)
   have h (k : ℕ) :=
     contMDiff_and_isComplexLinearMap_and_integral_le_comp_realChart_positive_add hω
-      (p.periodic_endSign_mul hH) hHs' hJ hJt hΩ (hΩT k) (hu k) (hfl k) hE0 (hE k) (huC k)
+      (p.periodic_endSign_mul hH) hHs' hJ (fun z hz ↦ hJt z (hΩD hz)) hΩ (hΩT k) (hu k) (hfl k) hE0
+      (hE k) (huC k)
   exact hconv hΩ hΩD (fun k ↦ (h k).1.contMDiffOn) (fun k ↦ (h k).2.1) huC
     (fun k ↦ (h k).2.2.1) fun k ↦ (h k).2.2.2
 

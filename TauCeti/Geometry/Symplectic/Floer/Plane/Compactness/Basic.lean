@@ -160,10 +160,11 @@ theorem contDiffOn_perturbation_comp_symm (p : PSSPlane) {n : ℕ∞} {m : WithT
     (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V m) (hnm : (n : WithTop ℕ∞) ≤ m) (v : ℂ) :
     ContDiffOn ℝ n (fun q : (ℝ × ℝ) × V ↦
         p.perturbation H (equivRealProdCLM.symm q.1) (φ.symm q.2) v) (univ ×ˢ φ.target) :=
-  (contDiffOn_comp_symm (K := fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x) isOpen_univ
+  (φ.contDiffOn_comp_symm_of_contMDiffOn
+    (K := fun z x ↦ p.perturbation H (equivRealProdCLM.symm z) x) isOpen_univ
     ((contMDiff_perturbation (p := p) hH hHs).comp
       ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)).contMDiffOn φ hnm).clm_apply contDiffOn_const
+        contMDiff_snd)).contMDiffOn hnm).clm_apply contDiffOn_const
 
 end Floer.PSSPlane
 
