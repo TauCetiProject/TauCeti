@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Structure
+import TauCeti.Algebra.HopfAlgebra.TensorShear
 import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
@@ -38,12 +40,20 @@ Install the restricted structure locally with `letI : HopfAlgebra R A := hA.hopf
 Then `hA.comul_apply x`, `hA.counit_apply x`, and `hA.coe_antipode_apply x` identify its
 operations with the restricted comultiplication, ambient counit, and ambient antipode.
 
+Over a field, closure under the antipode is automatic for a finite-dimensional subalgebra of a
+commutative Hopf algebra which is stable under comultiplication
+(`Subalgebra.IsHopfSubalgebra.of_finiteDimensional`). The shear `a ⊗ b ↦ (a ⊗ 1) Δ(b)` of
+`H ⊗ H` maps the finite-dimensional image of `A ⊗ A` injectively, hence surjectively, to itself,
+and the antipode is read off from its inverse.
+
 ## Main declarations
 
 * `Subalgebra.IsHopfSubalgebra`: a subalgebra stable under comultiplication and the
   antipode.
 * `Subalgebra.IsHopfSubalgebra.hopfAlgebra`: the restricted Hopf algebra structure, under
   flatness.
+* `Subalgebra.IsHopfSubalgebra.of_finiteDimensional`: over a field, a finite-dimensional
+  subalgebra of a commutative Hopf algebra stable under comultiplication is a Hopf subalgebra.
 * `TauCeti.CommHopfAlgCat.ofHopfSubalgebra`: a Hopf subalgebra as a bundled commutative Hopf
   algebra.
 * `TauCeti.CommHopfAlgCat.hopfSubalgebraι`: the inclusion morphism, a bialgebra morphism which
@@ -270,6 +280,89 @@ theorem coe_codRestrict_apply {K : Type*} [Semiring K] [Bialgebra R K]
     letI : HopfAlgebra R A := hA.hopfAlgebra
     (hA.codRestrict f hf x : H) = f x :=
   (rfl)
+
+end IsHopfSubalgebra
+
+namespace IsHopfSubalgebra
+
+variable {k : Type u} {H : Type v} [Field k] [CommRing H] [HopfAlgebra k H] {A : Subalgebra k H}
+
+/-- The image of `A ⊗ A` in `H ⊗ H` is stable under the shear `a ⊗ b ↦ (a ⊗ 1) Δ(b)` when
+comultiplication maps `A` into it. -/
+private theorem tensorShearMulRight_mem_range
+    (hA : ∀ ⦃x : H⦄, x ∈ A → Coalgebra.comul (R := k) x ∈
+      LinearMap.range (TensorProduct.map (toSubmodule A).subtype (toSubmodule A).subtype))
+    (t : A ⊗[k] A) :
+    TauCeti.HopfAlgebra.tensorShearMulRight (R := k)
+        (Algebra.TensorProduct.map A.val A.val t) ∈
+      LinearMap.range (Algebra.TensorProduct.map A.val A.val).toLinearMap := by
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simpa only [map_add] using add_mem hs ht
+  | tmul a b =>
+    obtain ⟨s, hs⟩ := hA b.2
+    have hs : Algebra.TensorProduct.map A.val A.val s = Coalgebra.comul (R := k) (b : H) := by
+      rw [← AlgHom.coe_toLinearMap, Algebra.TensorProduct.toLinearMap_map,
+        TensorProduct.AlgebraTensorModule.map_eq]
+      exact hs
+    refine ⟨(a ⊗ₜ[k] (1 : A)) * s, ?_⟩
+    rw [AlgHom.toLinearMap_apply, map_mul, hs, Algebra.TensorProduct.map_tmul,
+      Algebra.TensorProduct.map_tmul, TauCeti.HopfAlgebra.tensorShearMulRight_tmul, map_one,
+      Subalgebra.coe_val]
+
+/-- Contracting the right factor of the image of `A ⊗ A` with the counit lands in `A`. -/
+private theorem rid_lTensor_counit_map_val_mem (t : A ⊗[k] A) :
+    TensorProduct.rid k H ((Coalgebra.counit (R := k)).lTensor H
+      (Algebra.TensorProduct.map A.val A.val t)) ∈ A := by
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simpa only [map_add] using add_mem hs ht
+  | tmul a c => simpa using A.smul_mem a.2 (Coalgebra.counit (R := k) (c : H))
+
+/-- Contracting the right factor with the counit commutes with applying the antipode on the
+left factor. -/
+private theorem lTensor_counit_map_antipode_id (x : H ⊗[k] H) :
+    (Coalgebra.counit (R := k)).lTensor H
+        (TensorProduct.map (HopfAlgebra.antipode k) LinearMap.id x) =
+      (HopfAlgebra.antipode k).rTensor k ((Coalgebra.counit (R := k)).lTensor H x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- **A finite-dimensional subbialgebra is a Hopf subalgebra.** Over a field, a
+finite-dimensional subalgebra of a commutative Hopf algebra which comultiplication maps into the
+image of its tensor square is closed under the antipode.
+
+The shear `a ⊗ b ↦ (a ⊗ 1) Δ(b)` of `H ⊗ H` restricts to an injective, hence bijective,
+endomorphism of the finite-dimensional image of `A ⊗ A`. Its inverse sends `1 ⊗ b` to
+`(S ⊗ id) Δ(b)`, which `id ⊗ ε` carries to `S(b)`. -/
+theorem of_finiteDimensional [FiniteDimensional k A]
+    (hA : ∀ ⦃x : H⦄, x ∈ A → Coalgebra.comul (R := k) x ∈
+      LinearMap.range (TensorProduct.map (toSubmodule A).subtype (toSubmodule A).subtype)) :
+    A.IsHopfSubalgebra where
+  comul_mem := hA
+  antipode_mem := by
+    intro b hb
+    let φ := Algebra.TensorProduct.map A.val A.val
+    let T := TauCeti.HopfAlgebra.tensorShearMulRight (R := k) (H := H)
+    let V := LinearMap.range φ.toLinearMap
+    have hTV : ∀ w ∈ V, T w ∈ V := by
+      rintro _ ⟨t, rfl⟩
+      exact tensorShearMulRight_mem_range hA t
+    let T' : V →ₗ[k] V := T.toLinearMap.restrict hTV
+    have hT' : Function.Surjective T' :=
+      LinearMap.injective_iff_surjective.mp fun x y hxy ↦
+        Subtype.ext (T.injective (congrArg Subtype.val hxy))
+    obtain ⟨w, hw⟩ := hT' ⟨1 ⊗ₜ[k] b, (1 : A) ⊗ₜ[k] ⟨b, hb⟩, by simp [φ]⟩
+    have hw : T w = 1 ⊗ₜ[k] b := congrArg Subtype.val hw
+    have hmem : T.symm (1 ⊗ₜ[k] b) ∈ V := by
+      rw [← hw, T.symm_apply_apply]
+      exact w.2
+    rw [TauCeti.HopfAlgebra.tensorShearMulRight_symm_tmul, ← Algebra.TensorProduct.one_def,
+      one_mul] at hmem
+    obtain ⟨t, ht⟩ := hmem
+    have h := rid_lTensor_counit_map_val_mem t
+    rwa [← AlgHom.toLinearMap_apply, ht, lTensor_counit_map_antipode_id,
+      Coalgebra.lTensor_counit_comul, LinearMap.rTensor_tmul, TensorProduct.rid_tmul,
+      one_smul] at h
 
 end IsHopfSubalgebra
 
