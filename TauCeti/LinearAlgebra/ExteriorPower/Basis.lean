@@ -276,6 +276,6 @@ theorem map_toMatrix_exteriorPower (φ : R →+* S) (n : ℕ) (A : Matrix J I R)
   simp only [Matrix.map_apply, Module.Basis.toMatrix_exteriorPower_map, RingHom.map_det]
   congr 1
   ext
-  simp [← Matrix.toLin_eq_toLin']
+  simp
 
 end RingHom

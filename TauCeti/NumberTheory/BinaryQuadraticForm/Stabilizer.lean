@@ -344,7 +344,7 @@ theorem map_stabilizerEquivUnitary_symm_apply {S : Type*} [CommRing S] (φ : R �
           simpa [Ideal.map_span, Ideal.map_top, Set.image_insert_eq] using
             congrArg (Ideal.map φ) hf) hfD hS).symm w : SL(2, S)) := by
   ext i j
-  rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+  rw [SpecialLinearGroup.map_apply_coe,
     coe_stabilizerEquivUnitary_symm_apply, coe_stabilizerEquivUnitary_symm_apply]
   fin_cases i <;> fin_cases j <;> simp [hre, him]
 
