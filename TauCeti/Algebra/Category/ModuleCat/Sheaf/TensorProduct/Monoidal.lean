@@ -41,8 +41,8 @@ the localization functor, for which sheafification is a braided monoidal functor
   (`SheafOfModules.tensorUnderlyingIso_naturality`) and compatible with the braiding and
   the unitors; through it, transport of an isomorphism through one argument of
   `SheafOfModules.tensorProduct` is whiskering
-  (`SheafOfModules.tensorProductCongrLeft_hom_comp_tensorUnderlyingIso_inv` and
-  `SheafOfModules.tensorProductCongrRight_hom_comp_tensorUnderlyingIso_inv`).
+  (`tensorProductCongrLeft_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv` and
+  `tensorProductCongrRight_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv`).
 * `SheafOfModules.sheafificationForgetAdjunction`, `SheafOfModules.forgetLaxMonoidal`, and
   `SheafOfModules.forgetLaxBraided`:
   sheafification is left adjoint to the inclusion of sheaves of modules into presheaves of
@@ -224,7 +224,7 @@ theorem _root_.SheafOfModules.braiding_hom_tensorUnderlyingIso_hom
 /-- Read through `tensorProductIso` and `tensorUnderlyingIso`, transport through the first
 argument of `SheafOfModules.tensorProduct` is whiskering in the monoidal structure. -/
 @[reassoc]
-theorem tensorProductCongrLeft_hom_comp_tensorUnderlyingIso_inv
+theorem tensorProductCongrLeft_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv
     {M M' N : SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ M') :
     (tensorProductCongrLeft R (N := N) e).hom ≫ (tensorProductIso R M' N).hom ≫
         (M'.tensorUnderlyingIso N).inv =
@@ -238,7 +238,7 @@ theorem tensorProductCongrLeft_hom_comp_tensorUnderlyingIso_inv
 /-- Read through `tensorProductIso` and `tensorUnderlyingIso`, transport through the second
 argument of `SheafOfModules.tensorProduct` is whiskering in the monoidal structure. -/
 @[reassoc]
-theorem tensorProductCongrRight_hom_comp_tensorUnderlyingIso_inv
+theorem tensorProductCongrRight_hom_comp_tensorProductIso_hom_comp_tensorUnderlyingIso_inv
     {M N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : N ≅ N') :
     (tensorProductCongrRight R (M := M) e).hom ≫ (tensorProductIso R M N').hom ≫
         (M.tensorUnderlyingIso N').inv =

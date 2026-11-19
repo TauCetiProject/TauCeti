@@ -20,18 +20,24 @@ class of the trivial line bundle (`LineBundleClass.pullback_one`), through
 the comparison `Scheme.Modules.pullbackObjUnitIso : f^* 𝒪_Y ≅ 𝒪_X`, and tensor products of line
 bundles (`LineBundleClass.pullback_mul`), through the tensor comparison
 `InvertibleSheaf.pullbackTensorProductIso : f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`. On underlying sheaves this
-is the oplax tensor comparison `δ` of module pullback, which is invertible because line
-bundles are quasicoherent (`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a
-homomorphism of Picard groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor
-`T ↦ Pic(X_T)`.
+is the oplax tensor comparison `δ` of module pullback, read through canonical identifications of
+its source and target: on the source, the transport along `InvertibleSheaf.pullback_obj_obj` and
+the pullback of `InvertibleSheaf.tensorProductObjIso L K`; on the target, the transports along
+`InvertibleSheaf.pullback_obj_obj` on both factors and the inverse of `tensorProductObjIso`. The
+comparison `δ` is the field `Functor.OplaxMonoidal.δ` of Mathlib's oplax monoidal functors, for
+Tau Ceti's oplax monoidal structure `Scheme.Modules.pullbackOplaxMonoidal` on module pullback; it
+is invertible because line bundles are quasicoherent
+(`Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`). So pullback is a homomorphism of Picard
+groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor `T ↦ Pic(X_T)`.
 
 The identity and composition comparisons are restrictions of Mathlib's
 `Scheme.Modules.pullbackId` and `Scheme.Modules.pullbackComp`. The tensor comparison is natural
-in both factors (`InvertibleSheaf.pullbackTensorProductIso_hom_naturality_left` and
-`InvertibleSheaf.pullbackTensorProductIso_hom_naturality_right`) and compatible with them
-(`InvertibleSheaf.pullbackTensorProductIso_id` and
-`InvertibleSheaf.pullbackTensorProductIso_comp`), through the
-identities `Scheme.Modules.pullback_id_δ` and `Scheme.Modules.pullback_comp_δ` of module pullback.
+with respect to isomorphisms in either factor, transported by `tensorProductCongrLeft` and
+`tensorProductCongrRight` (`InvertibleSheaf.pullbackTensorProductIso_hom_naturality_left` and
+`InvertibleSheaf.pullbackTensorProductIso_hom_naturality_right`), and compatible with the identity
+and composition comparisons (`InvertibleSheaf.pullbackTensorProductIso_id` and
+`InvertibleSheaf.pullbackTensorProductIso_comp`), through Tau Ceti's identities
+`Scheme.Modules.pullback_id_δ` and `Scheme.Modules.pullback_comp_δ` of module pullback.
 -/
 
 public section
@@ -135,7 +141,9 @@ theorem pullbackComp_inv_app_hom (f : X ⟶ Y) (g : Y ⟶ Z) (L : InvertibleShea
 
 /-- **Pullback commutes with tensor products of line bundles**: `f^*(L ⊗ K) ≅ f^*L ⊗ f^*K`. On
 underlying sheaves it is the oplax tensor comparison `δ` of module pullback, which is invertible
-because line bundles are quasicoherent. -/
+because line bundles are quasicoherent, preceded by the transport along `pullback_obj_obj` and the
+pullback of `tensorProductObjIso L K`, and followed by the transports along `pullback_obj_obj` on
+both factors and the inverse of `tensorProductObjIso` of the pulled-back line bundles. -/
 def pullbackTensorProductIso (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
     (pullback f).obj (tensorProduct L K) ≅
       tensorProduct ((pullback f).obj L) ((pullback f).obj K) :=
@@ -170,8 +178,11 @@ lemma pullbackTensorProductIso_inv_hom (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
         eqToHom (pullback_obj_obj f (tensorProduct L K)).symm := by
   simp [pullbackTensorProductIso]
 
-/-- Followed by `tensorProductObjIso`, the comparison `pullbackTensorProductIso` is the tensor
-comparison of module pullback. -/
+/-- Postcomposing `pullbackTensorProductIso` with `tensorProductObjIso` removes the identification
+of the target: the result is the tensor comparison `δ` of module pullback, still preceded by the
+identification of the source (the transport along `pullback_obj_obj` and the pullback of
+`tensorProductObjIso L K`) and followed by the transports along `pullback_obj_obj` on both
+factors. -/
 @[reassoc]
 lemma pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom (f : X ⟶ Y)
     (L K : InvertibleSheaf Y) :
@@ -183,7 +194,26 @@ lemma pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom (f : X ⟶ Y
         (eqToHom (pullback_obj_obj f L).symm ⊗ₘ eqToHom (pullback_obj_obj f K).symm) := by
   simp [pullbackTensorProductIso_hom_hom]
 
-/-- `pullbackTensorProductIso` is natural in the first factor. -/
+/-- Whiskering on the right by a morphism commutes with transports of the tensor factors along
+equalities of objects. -/
+private lemma whiskerRight_comp_tensorHom_eqToHom {C : Type*} [Category C] [MonoidalCategory C]
+    {A A' B B' K K' : C} (hA : A = A') (hB : B = B') (hK : K = K') (g : A ⟶ B) :
+    g ▷ K ≫ (eqToHom hB ⊗ₘ eqToHom hK) =
+      (eqToHom hA ⊗ₘ eqToHom hK) ≫ (eqToHom hA.symm ≫ g ≫ eqToHom hB) ▷ K' := by
+  subst hA hB hK
+  simp
+
+/-- Whiskering on the left by a morphism commutes with transports of the tensor factors along
+equalities of objects. -/
+private lemma whiskerLeft_comp_tensorHom_eqToHom {C : Type*} [Category C] [MonoidalCategory C]
+    {L L' A A' B B' : C} (hL : L = L') (hA : A = A') (hB : B = B') (g : A ⟶ B) :
+    L ◁ g ≫ (eqToHom hL ⊗ₘ eqToHom hB) =
+      (eqToHom hL ⊗ₘ eqToHom hA) ≫ L' ◁ (eqToHom hA.symm ≫ g ≫ eqToHom hB) := by
+  subst hL hA hB
+  simp
+
+/-- `pullbackTensorProductIso` is natural with respect to isomorphisms in the first factor,
+transported through the tensor product by `tensorProductCongrLeft`. -/
 @[reassoc]
 lemma pullbackTensorProductIso_hom_naturality_left (f : X ⟶ Y)
     {L L' : InvertibleSheaf Y} (e : L ≅ L') (K : InvertibleSheaf Y) :
@@ -200,14 +230,11 @@ lemma pullbackTensorProductIso_hom_naturality_left (f : X ⟶ Y)
     Functor.mapIso_hom]
   simp only [eqToHom_refl, Category.id_comp, eqToHom_trans_assoc, ← Functor.map_comp_assoc,
     tensorProductCongrLeft_hom_hom_comp_tensorProductObjIso_hom]
-  rw [Functor.map_comp_assoc, ← Functor.OplaxMonoidal.δ_natural_left_assoc]
-  congr 3
-  simp only [tensorHom_def, eqToHom_whiskerRight, whiskerLeft_eqToHom, eqToHom_trans,
-    comp_whiskerRight, eqToHom_trans_assoc]
-  -- The remaining transports are along the definitional equalities `pullback_obj_obj`.
-  rfl
+  rw [Functor.map_comp_assoc, ← Functor.OplaxMonoidal.δ_natural_left_assoc,
+    whiskerRight_comp_tensorHom_eqToHom (pullback_obj_obj f L).symm]
 
-/-- `pullbackTensorProductIso` is natural in the second factor. -/
+/-- `pullbackTensorProductIso` is natural with respect to isomorphisms in the second factor,
+transported through the tensor product by `tensorProductCongrRight`. -/
 @[reassoc]
 lemma pullbackTensorProductIso_hom_naturality_right (f : X ⟶ Y)
     (L : InvertibleSheaf Y) {K K' : InvertibleSheaf Y} (e : K ≅ K') :
@@ -224,12 +251,8 @@ lemma pullbackTensorProductIso_hom_naturality_right (f : X ⟶ Y)
     Functor.mapIso_hom]
   simp only [eqToHom_refl, Category.id_comp, eqToHom_trans_assoc, ← Functor.map_comp_assoc,
     tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom]
-  rw [Functor.map_comp_assoc, ← Functor.OplaxMonoidal.δ_natural_right_assoc]
-  congr 3
-  simp only [tensorHom_def, eqToHom_whiskerRight, whiskerLeft_eqToHom, eqToHom_trans,
-    whiskerLeft_comp, eqToHom_trans_assoc]
-  -- The remaining transports are along the definitional equalities `pullback_obj_obj`.
-  rfl
+  rw [Functor.map_comp_assoc, ← Functor.OplaxMonoidal.δ_natural_right_assoc,
+    whiskerLeft_comp_tensorHom_eqToHom _ (pullback_obj_obj f K).symm]
 
 /-- Along the identity, `pullbackTensorProductIso` followed by the identity comparisons
 `pullbackId` on both factors is the identity comparison of the tensor product. -/
