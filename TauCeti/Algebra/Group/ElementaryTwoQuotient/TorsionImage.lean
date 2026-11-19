@@ -48,6 +48,8 @@ minimum.
   `B` once `2 ^ e` kills every element of `2`-power order.
 * `TauCeti.obstructionThreshold_le_iff`: in a torsion group, `t_A(b) ≤ t` iff the class of `b`
   lies in `B_t`.
+* `TauCeti.obstructionThreshold_eq_zero_of_isSquare`: in any commutative group, squares have
+  threshold `0`.
 * `TauCeti.exists_pow_two_mul_eq_pow_iff_obstructionThreshold_le` and
   `TauCeti.exists_pow_sub_one_eq_pow_iff_obstructionThreshold_lt`: the two-adic solvability
   criterion.
@@ -214,6 +216,16 @@ theorem obstructionThreshold_eq_of_elementaryTwoQuotientMk_eq {b c : A}
     (h : elementaryTwoQuotientMk b = elementaryTwoQuotientMk c) :
     obstructionThreshold b = obstructionThreshold c := by
   rw [obstructionThreshold, obstructionThreshold, h]
+
+/-- Squares have threshold `0`: their square class is `0 ∈ B_0`. -/
+theorem obstructionThreshold_eq_zero_of_isSquare {b : A} (hb : IsSquare b) :
+    obstructionThreshold b = 0 :=
+  Nat.le_zero.1 (obstructionThreshold_le_of_mem
+    ((elementaryTwoQuotientMk_eq_zero_iff b).2 hb ▸ Submodule.zero_mem _))
+
+/-- The identity has threshold `0`. -/
+@[simp] theorem obstructionThreshold_one : obstructionThreshold (1 : A) = 0 :=
+  obstructionThreshold_eq_zero_of_isSquare IsSquare.one
 
 /-- In a torsion group, the threshold vanishes exactly on squares. -/
 theorem obstructionThreshold_eq_zero_iff (hA : IsMulTorsion A) {b : A} :
