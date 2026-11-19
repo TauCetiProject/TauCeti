@@ -8,11 +8,13 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.GroupTheory.Coxeter.Bipartite
-public import TauCeti.LinearAlgebra.RootSystem.Chamber
+public import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Bipartite
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import Mathlib.Algebra.QuadraticDiscriminant
+import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Perron
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # A regular eigenvector of the bipartite Coxeter element
@@ -90,24 +92,6 @@ private theorem noncommProd_smul (s : Finset b.support) (f : b.support → P.wey
     rw [map_sub, h0, sub_zero]
     abel
 
-/-- The powers of an element act on an eigenvector by the powers of its eigenvalue. -/
-private theorem pow_smul_eq_of_smul_eq {w : P.weylGroup} {v : M} {μ : K} (hw : w • v = μ • v)
-    (l : ℕ) : w ^ l • v = μ ^ l • v := by
-  induction l with
-  | zero => simp
-  | succ l ih =>
-    rw [pow_succ', mul_smul, ih, smul_comm, hw, smul_smul, pow_succ]
-
-/-- If `μ ^ l = 1` forces `w ^ l = 1`, then the eigenvalue `μ` of `w` on a nonzero eigenvector is
-a primitive root of unity of order the order of `w`. -/
-private theorem isPrimitiveRoot_orderOf_of_smul_eq {w : P.weylGroup} {v : M} {μ : K}
-    (hv : v ≠ 0) (hw : w • v = μ • v) (h : ∀ l : ℕ, μ ^ l = 1 → w ^ l = 1) :
-    IsPrimitiveRoot μ (orderOf w) := by
-  refine ⟨?_, fun l hl ↦ orderOf_dvd_of_pow_eq_one (h l hl)⟩
-  have h0 : (μ ^ orderOf w - 1) • v = 0 := by
-    rw [sub_smul, ← pow_smul_eq_of_smul_eq P hw, pow_orderOf_eq_one, one_smul, one_smul, sub_self]
-  exact sub_eq_zero.1 ((smul_eq_zero.1 h0).resolve_right hv)
-
 variable [P.IsCrystallographic]
 
 /-- The value of a coroot on a real combination of the simple roots is real. -/
@@ -127,66 +111,6 @@ private theorem pairingIn_eq_zero_of_color_eq (c : (coxeterMatrixOfBase P b).gra
   rw [← Base.cartanMatrixIn_def]
   by_contra hne
   exact hadj ⟨hij, hne, fun h' ↦ hne (b.cartanMatrix_apply_eq_zero_iff_symm.2 h')⟩
-
-/-! ### Weights positive on the simple coroots with respect to an ordered subfield -/
-
-section Ordered
-
-variable [P.IsReduced] {S : Type*} [Field S] [LinearOrder S] [IsStrictOrderedRing S]
-  [Algebra S K] {x : M}
-
-/-- If every simple coroot takes a positive value of the ordered subfield `S` on `x`, so does
-every positive coroot. -/
-private theorem exists_pos_coroot'_eq_of_mem_posRoots
-    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = algebraMap S K t) {i : ι}
-    (hi : i ∈ posRoots P b) : ∃ t : S, 0 < t ∧ P.coroot' i x = algebraMap S K t := by
-  obtain ⟨f, ⟨j, hj, hfj⟩, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
-  choose! t ht hxt using hx
-  refine ⟨∑ k ∈ b.support, (f k : S) * t k, sum_pos' (fun k hk ↦ by positivity [(ht k hk).le])
-    ⟨j, hj, mul_pos (by exact_mod_cast Nat.pos_of_ne_zero hfj) (ht j hj)⟩, ?_⟩
-  rw [hsum, LinearMap.sum_apply, map_sum]
-  refine sum_congr rfl fun k hk ↦ ?_
-  rw [LinearMap.smul_apply, hxt k hk, map_mul, map_natCast, smul_eq_mul]
-
-/-- If every simple coroot takes a positive value of `S` on `x`, every negative coroot takes a
-negative value of `S` on `x`. -/
-private theorem exists_neg_coroot'_eq_of_mem_negRoots
-    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = algebraMap S K t) {i : ι}
-    (hi : i ∈ negRoots P b) : ∃ t : S, t < 0 ∧ P.coroot' i x = algebraMap S K t := by
-  obtain ⟨t, ht, hxt⟩ := exists_pos_coroot'_eq_of_mem_posRoots P b hx
-    ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).2 hi)
-  refine ⟨-t, neg_neg_of_pos ht, ?_⟩
-  rw [coroot'_reflectionPerm_self, LinearMap.neg_apply, neg_eq_iff_eq_neg] at hxt
-  rw [hxt, map_neg]
-
-/-- If every simple coroot takes a positive value of `S` on `x`, every coroot takes a nonzero
-value of `S` on `x`. -/
-private theorem exists_ne_zero_coroot'_eq
-    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = algebraMap S K t) (i : ι) :
-    ∃ t : S, t ≠ 0 ∧ P.coroot' i x = algebraMap S K t := by
-  rcases mem_posRoots_or_mem_negRoots P b i with hi | hi
-  · obtain ⟨t, ht, hxt⟩ := exists_pos_coroot'_eq_of_mem_posRoots P b hx hi
-    exact ⟨t, ht.ne', hxt⟩
-  · obtain ⟨t, ht, hxt⟩ := exists_neg_coroot'_eq_of_mem_negRoots P b hx hi
-    exact ⟨t, ht.ne, hxt⟩
-
-/-- The Weyl group acts freely on the weights on which every simple coroot takes a positive value
-of the ordered subfield `S`: a positive root moved to a negative root would change the sign of the
-value of its coroot. -/
-private theorem eq_one_of_smul_eq_self_of_coroot'_eq
-    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = algebraMap S K t)
-    {w : P.weylGroup} (hw : w • x = x) : w = 1 := by
-  by_contra hne
-  obtain ⟨i, hi⟩ := Set.nonempty_iff_ne_empty.2 fun h ↦ hne (eq_one_of_inversions_eq_empty h)
-  rw [mem_inversions] at hi
-  obtain ⟨t, ht, hxt⟩ := exists_pos_coroot'_eq_of_mem_posRoots P b hx ((mem_posRoots P b i).2 hi.1)
-  obtain ⟨t', ht', hxt'⟩ := exists_neg_coroot'_eq_of_mem_negRoots P b hx
-    ((mem_negRoots P b _).2 hi.2)
-  have h := coroot'_weylGroupToPerm_smul P w i x
-  rw [hw, hxt, hxt'] at h
-  exact (ht'.trans ht).ne ((algebraMap S K).injective h)
-
-end Ordered
 
 variable [P.IsReduced]
 
@@ -413,9 +337,9 @@ private theorem pow_eq_one_of_pow_eq_one
     field_simp
     linear_combination hμ
   have h1 : g ^ l • ((1 + μ) • u₀ + L • u₁) = (1 + μ) • u₀ + L • u₁ := by
-    rw [pow_smul_eq_of_smul_eq P (bipartiteCoxeterElement_smul_eigen hy hμ), hl, one_smul]
+    rw [pow_smul_eq_of_smul_eq (bipartiteCoxeterElement_smul_eigen hy hμ), hl, one_smul]
   have h2 : g ^ l • ((1 + μ⁻¹) • u₀ + L • u₁) = (1 + μ⁻¹) • u₀ + L • u₁ := by
-    rw [pow_smul_eq_of_smul_eq P (bipartiteCoxeterElement_smul_eigen hy hμ'), inv_pow, hl,
+    rw [pow_smul_eq_of_smul_eq (bipartiteCoxeterElement_smul_eigen hy hμ'), inv_pow, hl,
       inv_one, one_smul]
   -- The difference of the two eigenvectors is a nonzero multiple of `u₀`.
   have hg₀ : g ^ l • u₀ = u₀ := by
@@ -473,9 +397,9 @@ private theorem exists_isRegularWeight_smul_eq_of_subsingleton
     exact (map_ne_zero _).2 ht
   obtain ⟨j₀⟩ := ‹Nonempty ι›
   have hx0 : x ≠ 0 := fun h ↦ (P.isRegularWeight_iff x).1 hreg j₀ (by rw [h, map_zero])
-  exact ⟨x, -1, hreg, hgx, isPrimitiveRoot_orderOf_of_smul_eq P hx0 hgx fun l hl ↦
+  exact ⟨x, -1, hreg, hgx, isPrimitiveRoot_orderOf_of_smul_eq hx0 hgx fun l hl ↦
     eq_one_of_smul_eq_self_of_coroot'_eq P b hx
-      (by rw [pow_smul_eq_of_smul_eq P hgx, hl, one_smul])⟩
+      (by rw [pow_smul_eq_of_smul_eq hgx, hl, one_smul])⟩
 
 /-- **Steinberg's regular eigenvector of the bipartite Coxeter element.** Let `b` be a base of a
 finite irreducible reduced crystallographic root system over a field `K` which contains `ℝ` and is
@@ -501,7 +425,7 @@ theorem exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveR
   set v := (1 + μ) • colorPart P b c y true + algebraMap ℝ K (2 - κ) • colorPart P b c y false
   obtain ⟨j₀⟩ := ‹Nonempty ι›
   have hv0 : v ≠ 0 := fun h ↦ (P.isRegularWeight_iff v).1 hreg j₀ (by rw [h, map_zero])
-  exact ⟨v, μ, hreg, hgv, isPrimitiveRoot_orderOf_of_smul_eq P hv0 hgv fun l hl ↦
+  exact ⟨v, μ, hreg, hgv, isPrimitiveRoot_orderOf_of_smul_eq hv0 hgv fun l hl ↦
     pow_eq_one_of_pow_eq_one hy hy0 hκ hκ2 hμ hl⟩
 
 end RootPairing

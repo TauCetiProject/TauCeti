@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Irreducible
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 public import Mathlib.LinearAlgebra.Matrix.Block
+import TauCeti.LinearAlgebra.Matrix.Block
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 
@@ -126,11 +127,7 @@ theorem exists_pos_vecMul_eq_smul [Fintype B] [Nontrivial B] (h : IsFiniteType A
     (hA : A.IsIndecomposable) :
     ∃ κ : ℝ, 0 < κ ∧ κ < 2 ∧
       ∃ y : B → ℝ, (∀ i, 0 < y i) ∧ y ᵥ* A.map (Int.cast : ℤ → ℝ) = κ • y := by
-  -- Reversing the chains of nonzero entries shows that the transpose is again indecomposable.
-  have hAT : Aᵀ.IsIndecomposable := by
-    rw [isIndecomposable_iff_reflTransGen] at hA ⊢
-    exact fun i j ↦ (hA j i).swap
-  obtain ⟨κ, hκ, hκ2, y, hy, hAy⟩ := h.transpose.exists_pos_mulVec_eq_smul hAT
+  obtain ⟨κ, hκ, hκ2, y, hy, hAy⟩ := h.transpose.exists_pos_mulVec_eq_smul hA.transpose
   exact ⟨κ, hκ, hκ2, y, hy, by rwa [← mulVec_transpose, ← transpose_map]⟩
 
 end IsFiniteType

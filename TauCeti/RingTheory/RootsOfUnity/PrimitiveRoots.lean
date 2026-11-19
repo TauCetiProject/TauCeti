@@ -10,6 +10,8 @@ public import Mathlib.FieldTheory.Normal.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import Mathlib.FieldTheory.Minpoly.IsConjRoot
+import Mathlib.Algebra.Module.Torsion.Free
+import TauCeti.Algebra.Group.Action.Pow
 import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 
 /-!
@@ -35,6 +37,9 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
 
 If `q²` is a primitive `l`-th root of unity, then `q^(l(l+1)) = (-1)^(l+1)`, the sign that appears
 when quantum binomial coefficients are evaluated at such a `q`.
+
+An eigenvalue `μ` of an element `g` of finite order acting linearly on a nonzero vector is a
+primitive root of unity of order `orderOf g` as soon as `μ ^ l = 1` forces `g ^ l = 1`.
 
 ## Main results
 
@@ -62,6 +67,8 @@ when quantum binomial coefficients are evaluated at such a `q`.
   `n ≠ 0`, exactly `n` elements have `n`-th power `1`.
 * `IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow`: if `q²` is a primitive `l`-th root of unity
   with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`.
+* `TauCeti.isPrimitiveRoot_orderOf_of_smul_eq`: if `g • v = μ • v` for a nonzero `v`, and
+  `μ ^ l = 1` forces `g ^ l = 1`, then `μ` is a primitive root of unity of order `orderOf g`.
 
 ## References
 
@@ -215,5 +222,14 @@ theorem _root_.AlgEquiv.apply_eq_apply_of_abelianization_of_eq {K M : Type*} [Co
   have h' := congrArg (Group.Abelianization.lift (hμ'.autToPow K)) h
   rw [Group.Abelianization.lift_apply_of, Group.Abelianization.lift_apply_of] at h'
   rw [← hμ'.autToPow_spec K σ, ← hμ'.autToPow_spec K τ, h']
+
+/-- If `g` acts on a nonzero vector `v` by the scalar `μ`, and `μ ^ l = 1` forces `g ^ l = 1`, then
+`μ` is a primitive root of unity of order the order of `g`. -/
+theorem isPrimitiveRoot_orderOf_of_smul_eq {G K M : Type*} [Monoid G] [CommRing K] [IsDomain K]
+    [AddCommGroup M] [Module K M] [Module.IsTorsionFree K M] [MulAction G M] [SMulCommClass G K M]
+    {g : G} {v : M} {μ : K} (hv : v ≠ 0) (hg : g • v = μ • v)
+    (h : ∀ l : ℕ, μ ^ l = 1 → g ^ l = 1) : IsPrimitiveRoot μ (orderOf g) := by
+  refine ⟨(smul_left_inj hv).1 ?_, fun l hl ↦ orderOf_dvd_of_pow_eq_one (h l hl)⟩
+  rw [← pow_smul_eq_of_smul_eq hg, pow_orderOf_eq_one, one_smul, one_smul]
 
 end TauCeti
