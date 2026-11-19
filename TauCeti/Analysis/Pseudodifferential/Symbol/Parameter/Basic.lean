@@ -295,8 +295,7 @@ theorem parameterIteratedFDeriv_sub {f g : (CoordinateSpace n × CoordinateSpace
     parameterIteratedFDeriv k (fun q => f q - g q) p =
       parameterIteratedFDeriv k f p - parameterIteratedFDeriv k g p := by
   ext v
-  rw [show (fun q => f q - g q) = f - g from rfl]
-  simp [parameterIteratedFDeriv_apply, iteratedFDeriv_sub_apply hf hg]
+  simp [parameterIteratedFDeriv_apply, fun_iteratedFDeriv_sub_apply hf hg]
 
 /-- `TauCeti.parameterIteratedFDeriv_eq_iteratedFDeriv_comp` at a point given by its position,
 frequency and spectral parameter. -/
@@ -721,12 +720,19 @@ theorem coefficient_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol 
 
 /-! ### Derivatives in the position and frequency directions -/
 
+/-- The coefficient of a parameter-dependent symbol is smooth at every point whose spectral
+parameter lies in `Λ`. -/
+theorem contDiffAt_coefficient (a : ParameterSymbol n Λ V W m)
+    {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
+    ContDiffAt ℝ ∞ a.coefficient p :=
+  (a.contDiffOn_coefficient p ⟨mem_univ _, hp⟩).contDiffAt
+    ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩)
+
 /-- The coefficient is differentiable at every point with spectral parameter in `Λ`. -/
 theorem differentiableAt_coefficient (a : ParameterSymbol n Λ V W m)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
     DifferentiableAt ℝ a.coefficient p :=
-  (a.contDiffOn_coefficient.contDiffAt
-    ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩)).differentiableAt (by simp)
+  (a.contDiffAt_coefficient hp).differentiableAt (by simp)
 
 open scoped Classical in
 /-- The derivative of the coefficient in a direction `e` that the dilations scale by `t ^ d`, a

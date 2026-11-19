@@ -10,6 +10,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Asymptotic summation of parameter-dependent symbols
@@ -145,6 +146,10 @@ private theorem cutoffScaling_apply (t : ℝ) (p : (CoordinateSpace n × Coordin
 private def parameterCutoff (t : ℝ) (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) : ℝ :=
   cutoffProfile (cutoffScaling t p)
 
+private theorem parameterCutoff_eq_comp (t : ℝ) :
+    parameterCutoff (n := n) t = cutoffProfile ∘ cutoffScaling t :=
+  (rfl)
+
 private theorem contDiff_parameterCutoff (t : ℝ) : ContDiff ℝ ∞ (parameterCutoff (n := n) t) :=
   contDiff_cutoffProfile.comp (cutoffScaling t).contDiff
 
@@ -230,7 +235,7 @@ private theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ)
         fun _ => (cutoffScaling t).comp (parameterDilation n (parameterWeight ξ z)) := by
     ext v
     rw [parameterIteratedFDeriv_apply,
-      show parameterCutoff (n := n) t = cutoffProfile ∘ cutoffScaling t from rfl,
+      parameterCutoff_eq_comp,
       (cutoffScaling t).iteratedFDeriv_comp_right contDiff_cutoffProfile _
         (by exact_mod_cast le_top)]
     simp
@@ -255,23 +260,6 @@ private theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ)
 
 /-! ### Cut-off symbols -/
 
-/-- If each `P i` is monotone in the constant, constants for each `i` give one constant for all
-`i ≤ k`. -/
-private theorem exists_forall_le_of_forall {P : ℕ → ℝ → Prop}
-    (hP : ∀ i C C', C ≤ C' → P i C → P i C') (h : ∀ i, ∃ C, 0 ≤ C ∧ P i C) (k : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ i ≤ k, P i C := by
-  induction k with
-  | zero =>
-    obtain ⟨C, hC, h0⟩ := h 0
-    exact ⟨C, hC, fun i hi => by obtain rfl := Nat.le_zero.1 hi; exact h0⟩
-  | succ k ih =>
-    obtain ⟨C, hC, hk⟩ := ih
-    obtain ⟨D, -, hk1⟩ := h (k + 1)
-    refine ⟨max C D, le_max_of_le_left hC, fun i hi => ?_⟩
-    rcases Nat.lt_or_eq_of_le hi with hi | rfl
-    · exact hP i C _ (le_max_left _ _) (hk i (Nat.lt_succ_iff.1 hi))
-    · exact hP _ D _ (le_max_right _ _) hk1
-
 /-- **The cut-off symbols `ψₜ a`** satisfy the estimates of the order of `a`, uniformly in
 `t ≥ 1`. -/
 private theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_le {m : ℝ}
@@ -279,16 +267,16 @@ private theorem exists_norm_parameterIteratedFDeriv_cutoff_smul_le {m : ℝ}
     ∃ C, 0 ≤ C ∧ ∀ t, 1 ≤ t → ∀ i ≤ k, ∀ x ∈ K, ∀ ξ, ∀ z ∈ Λ,
       ‖parameterIteratedFDeriv i (fun p => parameterCutoff t p • a.coefficient p) ((x, ξ), z)‖ ≤
         C * parameterWeight ξ z ^ m := by
-  obtain ⟨Ca, hCa, ha⟩ := exists_forall_le_of_forall (P := fun i C => ∀ x ∈ K, ∀ ξ, ∀ z ∈ Λ,
-      ‖parameterIteratedFDeriv i a.coefficient ((x, ξ), z)‖ ≤ C * parameterWeight ξ z ^ m)
-    (fun _ _ _ hCC' h x hx ξ z hz => (h x hx ξ z hz).trans
-      (mul_le_mul_of_nonneg_right hCC' (Real.rpow_pos_of_pos (parameterWeight_pos ξ z) m).le))
-    (fun i => a.exists_bound K hK i) k
-  obtain ⟨Cψ, hCψ, hψ⟩ := exists_forall_le_of_forall (P := fun i C => ∀ t, 1 ≤ t →
-      ∀ p : (CoordinateSpace n × CoordinateSpace n) × ℂ,
-        ‖parameterIteratedFDeriv i (parameterCutoff t) p‖ ≤ C)
-    (fun _ _ _ hCC' h t ht p => (h t ht p).trans hCC')
-    exists_norm_parameterIteratedFDeriv_parameterCutoff_le k
+  -- Each bound holds for all large constants, hence for one constant at all orders `i ≤ k`.
+  obtain ⟨Ca, ha, hCa⟩ := (((finite_Iic k).eventually_all (l := (atTop : Filter ℝ))).2 fun i _ => by
+      obtain ⟨C, -, hC⟩ := a.exists_bound K hK i
+      exact eventually_atTop.2 ⟨C, fun C' hCC' x hx ξ z hz => (hC x hx ξ z hz).trans
+        (mul_le_mul_of_nonneg_right hCC' (Real.rpow_pos_of_pos (parameterWeight_pos ξ z) m).le)⟩)
+    |>.and (eventually_ge_atTop 0) |>.exists
+  obtain ⟨Cψ, hψ, hCψ⟩ := (((finite_Iic k).eventually_all (l := (atTop : Filter ℝ))).2 fun i _ => by
+      obtain ⟨C, -, hC⟩ := exists_norm_parameterIteratedFDeriv_parameterCutoff_le (n := n) i
+      exact eventually_atTop.2 ⟨C, fun C' hCC' t ht p => (hC t ht p).trans hCC'⟩)
+    |>.and (eventually_ge_atTop 0) |>.exists
   obtain ⟨CB, hCB, hB⟩ := exists_norm_iteratedFDeriv_bilinear_le
     ((CoordinateSpace n × CoordinateSpace n) × ℂ)
     (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] (V →L[ℂ] W) →L[ℝ] V →L[ℂ] W) k
@@ -333,18 +321,7 @@ private theorem parameterCutoff_smul_sub_eventuallyEq_zero {t : ℝ} (ht : 1 ≤
 private theorem contDiffAt_parameterCutoff_smul {m : ℝ} (t : ℝ) (a : ParameterSymbol n Λ V W m)
     {p : (CoordinateSpace n × CoordinateSpace n) × ℂ} (hp : p.2 ∈ Λ) :
     ContDiffAt ℝ ∞ (fun q => parameterCutoff t q • a.coefficient q) p :=
-  (contDiff_parameterCutoff t).contDiffAt.smul (a.contDiffOn_coefficient.contDiffAt
-    ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩))
-
-/-- A power of a weight `1 ≤ w ≤ R` changes order at the cost of a power of `R`. -/
-private theorem rpow_le_rpow_abs_sub_mul_rpow {w R : ℝ} (hw : 1 ≤ w) (hR : w ≤ R) (μ μ' : ℝ) :
-    w ^ μ ≤ R ^ |μ - μ'| * w ^ μ' := by
-  have hw0 : 0 < w := by linarith
-  calc w ^ μ = w ^ (μ - μ') * w ^ μ' := by rw [← Real.rpow_add hw0, sub_add_cancel]
-    _ ≤ R ^ |μ - μ'| * w ^ μ' := by
-      gcongr
-      exact (Real.rpow_le_rpow_of_exponent_le hw (le_abs_self _)).trans
-        (Real.rpow_le_rpow hw0.le hR (abs_nonneg _))
+  (contDiff_parameterCutoff t).contDiffAt.smul (a.contDiffAt_coefficient hp)
 
 /-- The removed part `(ψₜ - 1) a` of a cut-off symbol vanishes where the weight exceeds `5 t`, so
 it satisfies the estimates of every order `μ'`. -/
@@ -370,14 +347,17 @@ private theorem norm_parameterIteratedFDeriv_cutoff_smul_sub_le {m : ℝ} {t : �
   push Not at hw
   rw [parameterIteratedFDeriv_sub ((contDiffAt_parameterCutoff_smul t a hz).of_le
       (by exact_mod_cast le_top))
-    ((a.contDiffOn_coefficient.contDiffAt
-      ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hz⟩)).of_le (by exact_mod_cast le_top))]
+    ((a.contDiffAt_coefficient hz).of_le (by exact_mod_cast le_top))]
   calc _ ≤ Cψ * parameterWeight ξ z ^ m + Ca * parameterWeight ξ z ^ m :=
         (norm_sub_le _ _).trans (add_le_add hψ ha)
     _ = (Cψ + Ca) * parameterWeight ξ z ^ m := by ring
+    _ = (Cψ + Ca) * (parameterWeight ξ z ^ (m - μ') * parameterWeight ξ z ^ μ') := by
+        rw [← Real.rpow_add (parameterWeight_pos ξ z), sub_add_cancel]
     _ ≤ (Cψ + Ca) * ((5 * t) ^ |m - μ'| * parameterWeight ξ z ^ μ') := by
+        have hw1 := one_le_parameterWeight ξ z
         gcongr
-        exact rpow_le_rpow_abs_sub_mul_rpow (one_le_parameterWeight ξ z) hw m μ'
+        exact Real.rpow_le_rpow_abs (parameterWeight_pos ξ z) hw
+          ((inv_le_one_of_one_le₀ hw1).trans (hw1.trans hw)) _
     _ = _ := by ring
 
 /-! ### The Borel sum -/
@@ -470,8 +450,7 @@ private theorem contDiffAt_borelTerm {m : ℕ → ℝ} (t : ℕ → ℝ)
   have h₁ := contDiffAt_parameterCutoff_smul (t j) (a j) hp
   rcases lt_or_ge j N with hj | hj
   · rw [borelTerm_of_lt t a hj]
-    exact h₁.sub ((a j).contDiffOn_coefficient.contDiffAt
-      ((isOpen_univ.prod Λ.isOpen).mem_nhds ⟨mem_univ _, hp⟩))
+    exact h₁.sub ((a j).contDiffAt_coefficient hp)
   · rw [borelTerm_of_le t a hj]
     exact h₁
 
@@ -597,8 +576,7 @@ private def borelRemainder {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto m 
     have hf : ContDiffAt ℝ ∞ (fun p => (∑ j ∈ range J, parameterCutoff (t j) p •
         (a j).coefficient p) - ∑ j ∈ range N, (a j).coefficient p) q :=
       (ContDiffAt.sum fun j _ => contDiffAt_parameterCutoff_smul (t j) (a j) hq').sub
-        (ContDiffAt.sum fun j _ => (a j).contDiffOn_coefficient.contDiffAt
-          ((isOpen_univ.prod Λ.isOpen).mem_nhds hq))
+        (ContDiffAt.sum fun j _ => (a j).contDiffAt_coefficient hq')
     refine (hf.congr_of_eventuallyEq ?_).contDiffWithinAt
     filter_upwards [borelSum_eventuallyEq ht a (J := J) (by linarith)] with p hp
     rw [hp]
