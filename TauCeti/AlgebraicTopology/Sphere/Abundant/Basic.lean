@@ -202,16 +202,18 @@ theorem exists_not_joined_of_nontrivial_homotopyGroup_two (x : Q) [Nontrivial (�
 `ℤ`, both written `ULift ℤ` as in `TauCeti.IsAbundantWithTwoSpheres`. -/
 def uliftIntTensorIso :
     ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) ≅ ModuleCat.of ℤ (ULift.{0} ℤ) :=
-  let e : ModuleCat.of ℤ (ULift.{0} ℤ) ≅ 𝟙_ (ModuleCat.{0} ℤ) :=
-    (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
-  tensorIso e e ≪≫ λ_ (𝟙_ _) ≪≫ e.symm
+  -- `ModuleCat.of ℤ ℤ`, the target of `uliftIntIso`, is the tensor unit `𝟙_ (ModuleCat ℤ)`.
+  tensorIso uliftIntIso uliftIntIso ≪≫ λ_ (𝟙_ _) ≪≫ uliftIntIso.symm
 
 /-- `TauCeti.uliftIntTensorIso` multiplies the integers. -/
 @[simp]
 theorem uliftIntTensorIso_hom_tmul (a b : ℤ) :
     uliftIntTensorIso.hom.hom (ULift.up a ⊗ₜ[ℤ] ULift.up b) = ULift.up (a * b) := by
-  unfold uliftIntTensorIso
-  rfl
+  rw [uliftIntTensorIso, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, tensorIso_hom,
+    ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
+    ModuleCat.hom_tensorHom, TensorProduct.map_tmul, uliftIntIso_hom_apply, uliftIntIso_hom_apply]
+  -- `ModuleCat.of ℤ ℤ` is the tensor unit, on which the left unitor multiplies.
+  rw [ModuleCat.MonoidalCategory.leftUnitor_hom_apply, uliftIntIso_inv_apply, smul_eq_mul]
 
 /-- The integral homology of the double loop space `Ω²Q` at `x` is that of the based mapping space
 `Map_*(S², Q)` of maps sending the north pole to `x`, with the coefficients `ULift ℤ` of
@@ -221,8 +223,7 @@ def doubleLoopSpaceHomologyIsoBasedMap (x : Q) (m : ℕ) :
     ((singularChains ℤ).obj (TopCat.of (Ω (Ω Q x) (Path.refl x)))).homology m ≅
       (TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 Q Sphere2.north x))).homology
         (ModuleCat.of ℤ (ULift.{0} ℤ)) m :=
-  ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).mapIso
-    (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso.symm).app _ ≪≫
+  (uliftIntHomologyIso _ m).symm ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).mapIso (TopCat.isoOfHomeo
         (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2 ⟨Q, x⟩

@@ -162,9 +162,7 @@ private theorem sphereClass_sub {k : ℕ}
     o.sphereClass hn (α - β) = o.sphereClass hn α - o.sphereClass hn β := by
   have h : o.crossFundamentalClass hn (α - β) =
       o.crossFundamentalClass hn α - o.crossFundamentalClass hn β :=
-    -- The tensor product of `ModuleCat` is not syntactically `TensorProduct`, so `simp` does not
-    -- apply `TensorProduct.tmul_sub` here.
-    (congrArg _ (TensorProduct.tmul_sub _ _ _)).trans (map_sub _ _ _)
+    singularHomologyCross_tmul_sub _ _ rfl _ α β
   exact (congrArg _ ((congrArg _ h).trans (map_sub _ _ _))).trans (map_sub _ _ _)
 
 /-- The constant spheres at the values at the north pole, `f ↦ const (f north)`, send `[G] × α`
@@ -196,8 +194,12 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
   have hcross : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) (R ⊗ R : ModuleCat.{0} ℤ)
       (n + k)).hom (o.crossFundamentalClass hn α) =
         o.crossFundamentalClass hn ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom c)) R k).hom
-          α) :=
-    homologyMap_prodMap_id_singularHomologyCross_tmul R R c rfl (o.fundamentalClass hn) α
+          α) := by
+    have h := homologyMap_prodMap_singularHomologyCross_tmul R R (ContinuousMap.id G) c rfl
+      (o.fundamentalClass hn) α
+    simp only [TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id,
+      ModuleCat.id_apply] at h
+    exact h
   have hΨ' : SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) R (n + k) ≫
       SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Ψ)) R (n + k) =
       SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Ψ)) R (n + k) ≫
@@ -205,10 +207,17 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
           (ContinuousMap.const'.comp (mappingSpaceEval (X := G) Sphere2.north)))) R (n + k) := by
     rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
       ← TopCat.ofHom_comp, ← TopCat.ofHom_comp, hΨ]
-  -- The identification of coefficients is natural in the space.
-  have e₁ := ConcreteCategory.congr_hom
-    (homologyMap_coefficient_naturality uliftIntTensorIso.hom γ (n + k))
-    (o.crossFundamentalClass hn α)
+  -- The identification of coefficients is natural in the space: this is the naturality of
+  -- Mathlib's `singularHomologyFunctor` in the coefficients, read through its definition.
+  have hcoeff : HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) R (n + k) =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) (R ⊗ R : ModuleCat.{0} ℤ) (n + k) ≫
+        HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+          uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) :=
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (n + k)).map
+      uliftIntTensorIso.hom).naturality (TopCat.ofHom γ)).symm
+  have e₁ := ConcreteCategory.congr_hom hcoeff (o.crossFundamentalClass hn α)
   have e₂ := ConcreteCategory.congr_hom hΨ' ((HomologicalComplex.homologyMap
     (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map uliftIntTensorIso.hom).app
       (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k)).hom (o.crossFundamentalClass hn α))
@@ -286,6 +295,7 @@ theorem isAbundantWithTwoSpheres_of_not_isAspherical [PathConnectedSpace G] (b :
       (α := (singularHomology₀Section R (X := TopCat.of Y) y₁).hom (ULift.up 1)) ?_
     -- `c_* [y₁] = [c y₁] = [1]`, so the hypothesis says that `[1] = [y₁]`.
     rw [homologyMap_singularHomology₀Section_apply]
+    simp only [TopCat.hom_ofHom, ContinuousMap.const_apply]
     exact fun h ↦ hy₁ ((singularHomology₀Section_apply_eq_iff hr).1 h.symm)
 
 end HomologicalOrientation
