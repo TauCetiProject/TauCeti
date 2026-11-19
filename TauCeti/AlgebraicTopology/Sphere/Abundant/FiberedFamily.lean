@@ -211,7 +211,8 @@ private theorem isZero_singularHomology_equatorProj_compl {n : ℕ} (hE : finran
     (m := 2 * n - 3) (by omega)
   have hF := isZero_singularHomology_equatorProj_fiber h hE (by omega) (-x) (ModuleCat.of ℤ ℤ)
     (q := 2 * n - 4) (by omega)
-  rw [show 2 * n - 4 + 1 = 2 * n - 3 by omega] at hF
+  have hdeg : 2 * n - 4 + 1 = 2 * n - 3 := by omega
+  rw [hdeg] at hF
   have hZ := hF.of_iso (asIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (2 * n - 3)).obj
     (ModuleCat.of ℤ ℤ)).map ((ContinuousMap.fst.comp
       (ContinuousMap.subtypeVal (twoFieldEquators u v))).preimageInclusion hx))).symm
@@ -240,19 +241,6 @@ private theorem twoFieldSphereFamilyHom_comp :
       equatorProj u v :=
   TopCat.hom_ext (mappingSpaceEval_comp_twoFieldSphereFamily h hu hv)
 
-/-- The based maps out of `S²` are the fibre of evaluation. -/
-private def basedMapHomeomorphPreimage (x : sphere (0 : E) 1) :
-    BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x ≃ₜ
-      (TopCat.ofHom (mappingSpaceEval (X := sphere (0 : E) 1) Sphere2.north) ⁻¹' {x} :
-        Set _) where
-  toFun f := ⟨f.1, by simpa using f.2⟩
-  invFun f := ⟨f.1, by
-    have hf := f.2
-    simp only [mem_preimage, TopCat.hom_ofHom, mappingSpaceEval_apply, mem_singleton_iff] at hf
-    exact hf⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
 /-- Over `x`, the family of two-spheres is the family of based two-spheres
 `TauCeti.twoFieldSphereFamilyFiber`. -/
 private theorem preimageMap_twoFieldSphereFamilyHom (x : sphere (0 : E) 1) :
@@ -260,10 +248,10 @@ private theorem preimageMap_twoFieldSphereFamilyHom (x : sphere (0 : E) 1) :
         ({x} : Set (sphere (0 : E) 1)) =
       (TopCat.isoOfHomeo (equatorProjFiberHomeomorph x)).inv ≫
         TopCat.ofHom (twoFieldSphereFamilyFiber h hu hv x) ≫
-          (TopCat.isoOfHomeo (basedMapHomeomorphPreimage x)).hom := by
+          (TopCat.isoOfHomeo (basedMapHomeomorphPreimage Sphere2.north x)).hom := by
   ext z a
   rw [TopCat.Hom.coe_preimageMap_apply]
-  simp [equatorProjFiberHomeomorph, basedMapHomeomorphPreimage]
+  simp [equatorProjFiberHomeomorph]
 
 include h hu hv in
 /-- Over every point of `Sⁿ`, `n ≥ 4`, the family of two-spheres is an isomorphism on
@@ -277,8 +265,8 @@ private theorem isIso_singularHomologyFunctor_map_preimageMap {n : ℕ} (hE : fi
   have h621 := (NatIso.isIso_map_iff ((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).mapIso
     uliftIntIso) _).2 (isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber h hu hv
       (m := m) (by omega) x)
-  rw [show m + 4 - 2 = m + 2 by omega, preimageMap_twoFieldSphereFamilyHom, Functor.map_comp,
-    Functor.map_comp]
+  have hdeg : m + 4 - 2 = m + 2 := by omega
+  rw [hdeg, preimageMap_twoFieldSphereFamilyHom, Functor.map_comp, Functor.map_comp]
   infer_instance
 
 include h hu hv in
