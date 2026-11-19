@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Vague
 public import Mathlib.Topology.MetricSpace.ProperSpace
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.LowerDensity
 
 /-!
 # Lower density bounds in vague limits of locally finite measures
@@ -70,25 +71,9 @@ theorem le_measure_closedBall_of_tendsto_integral_compactlySupported [l.NeBot]
     (hdens : ∀ᶠ i in l, ∀ y ∈ Z i ∩ U, ∀ ρ, h i ≤ ρ → ρ ≤ ρ₀ →
       ENNReal.ofReal (c * ρ ^ d) ≤ μs i (closedBall y ρ))
     {ρ : ℝ} (hρ : 0 < ρ) (hρρ₀ : ρ ≤ ρ₀) :
-    ENNReal.ofReal (c * ρ ^ d) ≤ μ (closedBall x ρ) := by
-  obtain ⟨δ, hδ, hδU⟩ := Metric.mem_nhds_iff.1 hU
-  -- It suffices to prove the bound with `c ρ' ^ d` for every `ρ' ∈ (0, ρ)`, and let `ρ' → ρ`.
-  have hcont : Tendsto (fun ρ' : ℝ ↦ ENNReal.ofReal (c * ρ' ^ d)) (𝓝[<] ρ)
-      (𝓝 (ENNReal.ofReal (c * ρ ^ d))) :=
-    ((ENNReal.continuous_ofReal.comp (continuous_const.mul (continuous_pow d))).tendsto ρ).mono_left
-      nhdsWithin_le_nhds
-  refine le_of_tendsto hcont ?_
-  filter_upwards [Ioo_mem_nhdsLT hρ] with ρ' hρ'
-  -- Eventually some `y ∈ Z i ∩ U` has `closedBall y ρ' ⊆ closedBall x ρ`, and `h i ≤ ρ'`.
-  have hev : ∀ᶠ i in l, ENNReal.ofReal (c * ρ' ^ d) ≤ μs i (closedBall x ρ) := by
-    filter_upwards [hdens, hx (min (ρ - ρ') δ) (lt_min (sub_pos.2 hρ'.2) hδ),
-      hh.eventually (gt_mem_nhds hρ'.1)] with i hi ⟨y, hy, hyx⟩ hhi
-    refine (hi y ⟨hy, hδU (mem_ball.2 (hyx.trans_le (min_le_right _ _)))⟩ ρ' hhi.le
-      (hρ'.2.le.trans hρρ₀)).trans (measure_mono fun z hz ↦ ?_)
-    rw [mem_closedBall] at hz ⊢
-    linarith [dist_triangle z y x, min_le_left (ρ - ρ') δ]
+    ENNReal.ofReal (c * ρ ^ d) ≤ μ (closedBall x ρ) :=
   -- The portmanteau inequality on the compact closed ball bounds the limit superior.
-  exact (le_limsup_of_frequently_le hev.frequently).trans
+  le_measure_closedBall_of_limsup_le hx hh hU hdens hρ hρρ₀
     (limsup_measure_le_of_tendsto_integral_compactlySupported hμ (isCompact_closedBall x ρ))
 
 end MeasureTheory.Measure

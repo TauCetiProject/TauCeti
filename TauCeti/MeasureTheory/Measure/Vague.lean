@@ -24,9 +24,11 @@ portmanteau theorem that survive localization:
 * the mass of a compact set is upper semicontinuous, `limsup μs i K ≤ μ K`
   (`MeasureTheory.Measure.limsup_measure_le_of_tendsto_integral_compactlySupported`).
 
-Both reduce to the portmanteau theorem for finite measures: weighting by a compactly supported
-cutoff `0 ≤ χ ≤ 1` equal to one on the set turns vague convergence into weak convergence of the
-finite measures `χ μs i`, which agree with `μs i` on that set.
+Both reduce to the portmanteau theorem for finite measures: weighting by a nonnegative compactly
+supported continuous function `χ` turns vague convergence into weak convergence of the finite
+measures `χ μs i`
+(`MeasureTheory.Measure.tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported`), and
+these agree with `μs i` on the set when `χ` is a cutoff equal to one there.
 
 ## References
 
@@ -47,26 +49,17 @@ variable {X ι : Type*} [MeasurableSpace X] [TopologicalSpace X] [BorelSpace X]
   [∀ i, IsLocallyFiniteMeasure (μs i)] [IsLocallyFiniteMeasure μ]
 
 omit [T2Space X] [LocallyCompactSpace X] [HasOuterApproxClosed X] in
-/-- Weighting a locally finite measure by a nonnegative compactly supported continuous function
-gives a finite measure. -/
-private lemma isFiniteMeasure_withDensity_ofReal (χ : C(X, ℝ)) (hχc : HasCompactSupport χ)
-    (hχ0 : ∀ x, 0 ≤ χ x) (ν : Measure X) [IsLocallyFiniteMeasure ν] :
-    IsFiniteMeasure (ν.withDensity fun x ↦ ENNReal.ofReal (χ x)) :=
-  isFiniteMeasure_withDensity <|
-    (lintegral_ofReal_ne_top_iff_integrable χ.continuous.aestronglyMeasurable
-      (ae_of_all _ hχ0)).2 (χ.continuous.integrable_of_hasCompactSupport hχc)
-
-omit [T2Space X] [LocallyCompactSpace X] [HasOuterApproxClosed X] in
 /-- **Localization of vague convergence.** Weighting by a nonnegative compactly supported
 continuous function `χ` turns vague convergence of locally finite measures into weak convergence
 of the finite measures `χ μs i`. -/
-private lemma tendsto_withDensity_ofReal
+theorem tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported
     (h : ∀ f : C_c(X, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μs i) l (𝓝 (∫ x, f x ∂μ)))
     (χ : C(X, ℝ)) (hχc : HasCompactSupport χ) (hχ0 : ∀ x, 0 ≤ χ x) :
     Tendsto (β := FiniteMeasure X) (fun i ↦ ⟨(μs i).withDensity fun x ↦ ENNReal.ofReal (χ x),
-        isFiniteMeasure_withDensity_ofReal χ hχc hχ0 (μs i)⟩) l
-      (𝓝 ⟨μ.withDensity fun x ↦ ENNReal.ofReal (χ x),
-        isFiniteMeasure_withDensity_ofReal χ hχc hχ0 μ⟩) := by
+        isFiniteMeasure_withDensity_ofReal
+          (χ.continuous.integrable_of_hasCompactSupport hχc).hasFiniteIntegral⟩) l
+      (𝓝 ⟨μ.withDensity fun x ↦ ENNReal.ofReal (χ x), isFiniteMeasure_withDensity_ofReal
+        (χ.continuous.integrable_of_hasCompactSupport hχc).hasFiniteIntegral⟩) := by
   have hint (ρ : Measure X) (f : X → ℝ) :
       ∫ x, f x ∂ρ.withDensity (fun x ↦ ENNReal.ofReal (χ x)) = ∫ x, χ x * f x ∂ρ := by
     rw [integral_withDensity_eq_integral_toReal_smul χ.continuous.measurable.ennreal_ofReal
@@ -100,7 +93,8 @@ theorem tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported
   have hχs : EqOn χ 1 s := hχone.mono subset_closure
   simpa only [FiniteMeasure.toMeasure_mk, withDensity_ofReal_apply_eq χ hs hχs] using
     FiniteMeasure.tendsto_measure_of_null_frontier_of_tendsto
-      (tendsto_withDensity_ofReal h χ hχcomp fun x ↦ (hχrange x).1)
+      (tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported h χ hχcomp
+        fun x ↦ (hχrange x).1)
       ((withDensity_absolutelyContinuous μ _) hboundary)
 
 /-- **Portmanteau theorem for compact sets under vague convergence.** The limit superior of the
@@ -115,6 +109,7 @@ theorem limsup_measure_le_of_tendsto_integral_compactlySupported
   simpa only [FiniteMeasure.toMeasure_mk,
     withDensity_ofReal_apply_eq χ hK.isClosed.measurableSet hχone] using
     FiniteMeasure.limsup_measure_closed_le_of_tendsto
-      (tendsto_withDensity_ofReal h χ hχcomp fun x ↦ (hχrange x).1) hK.isClosed
+      (tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported h χ hχcomp
+        fun x ↦ (hχrange x).1) hK.isClosed
 
 end MeasureTheory.Measure

@@ -260,7 +260,7 @@ private lemma ofReal_mul_setLIntegral_le {ν : Measure α} {T S : Set α} (hT : 
     have h2 : ((1 : ℝ) / 2) ^ k ≤ (1 / 2) ^ N :=
       pow_le_pow_of_le_one (by norm_num) (by norm_num) hNk
     calc (1 / 4) ^ k * (M + 1)⁻¹ * M = (1 / 2) ^ k * (1 / 2) ^ k * (M * (M + 1)⁻¹) := by
-          rw [← mul_pow]; norm_num; ring
+          rw [show (1 / 4 : ℝ) = 1 / 2 * (1 / 2) by norm_num, mul_pow]; ring
       _ ≤ (1 / 2) ^ k * (1 / 2) ^ k := mul_le_of_le_one_right (by positivity) h1
       _ ≤ (1 / 2) ^ N * (1 / 2) ^ k := by gcongr
   · have : ∫⁻ x in S, ENNReal.ofReal (f x) ∂ν = 0 :=
@@ -304,7 +304,7 @@ private lemma exists_weight_of_iSup_measure_ne_top [LocallyCompactSpace α]
   -- Expand the weight and bound the `k`-th term by `(1 / 2) ^ N (1 / 2) ^ k`.
   have hw (x : α) : ((∑' k, a k * f k x).toNNReal : ℝ≥0∞) =
       ∑' k, ENNReal.ofReal (a k) * ENNReal.ofReal (f k x) := by
-    rw [← ENNReal.ofReal.eq_def, ENNReal.ofReal_tsum_of_nonneg (hterm · x) (hsumx x)]
+    rw [ENNReal.ofNNReal_toNNReal, ENNReal.ofReal_tsum_of_nonneg (hterm · x) (hsumx x)]
     exact tsum_congr fun k ↦ ENNReal.ofReal_mul (ha k).le
   have hgeom : ENNReal.ofReal ((1 / 2) ^ N * 2) =
       ∑' k, ENNReal.ofReal ((1 / 2) ^ N * (1 / 2) ^ k) := by
