@@ -274,15 +274,19 @@ def restrict : LieAlgebroid I F ((⟨Subtype.val, continuous_subtype_val⟩ : C(
     have hgb : ∀ᶠ y : U in 𝓝 x, (g • extendAt U b x) y = (f • b) y := by
       filter_upwards [hg, hb] with y hgy hby
       rw [ContMDiffSection.smul_apply, ContMDiffSection.smul_apply, ← hby, ← hgy]
+      -- `(g ∘ Subtype.val) y` is `g y`, which acts on the fibre of `V` over `y` as on the
+      -- fibre of the restriction.
       rfl
     have hderiv (v : TangentSpace I x) : mvfderiv I f x v = mvfderiv I g x v := by
       rw [← hg.mvfderiv_eq]
       exact (mvfderiv_apply_eq_mfderiv_apply _ _ v).trans
         ((Manifold.mfderiv_comp_subtype_val_apply v).trans
           (mvfderiv_apply_eq_mfderiv_apply (I := I) (g : M → ℝ) (x : M) v).symm)
-    rw [restrictBracket_apply, restrictBracket_apply, restrictBracketAt_eq A U ha hgb,
-      restrictBracketAt_eq A U ha hb, restrictAnchor_apply, hderiv,
-      Manifold.tangentSpaceOpenEquiv_symm_apply, ← ha.self_of_nhds, ← hb.self_of_nhds,
+    -- Express the brackets and the anchor through the extensions. The derivative of `f` is
+    -- replaced while it is still applied to a tangent vector of `U`.
+    simp only [restrictBracket_apply, restrictBracketAt_eq A U ha hgb,
+      restrictBracketAt_eq A U ha hb, restrictAnchor_apply, hderiv]
+    simp only [Manifold.tangentSpaceOpenEquiv_symm_apply, ← ha.self_of_nhds, ← hb.self_of_nhds,
       ← hg.self_of_nhds, Function.comp_apply]
     -- This is the Leibniz rule of `A` for the extensions, read in the fibre of `V` over `x`.
     exact A.bracket_smul_apply (extendAt U a x) (extendAt U b x) g x

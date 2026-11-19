@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.BumpFunction
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 
@@ -308,24 +309,19 @@ supported in `U`, extended by zero. -/
 theorem exists_eventually_eq_of_opens {U : TopologicalSpace.Opens M}
     (s : Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V⟯) (x : U) :
     ∃ t : Cₛ^n⟮I; F, V⟯, ∀ᶠ y : U in 𝓝 x, t y = s y := by
-  classical
   obtain ⟨ρ, -, hρU⟩ :=
     (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (U.isOpen.mem_nhds x.2)
-  let s' : Π y : M, V y := fun y ↦ if h : y ∈ U then s ⟨y, h⟩ else 0
-  have hs' : CMDiff[(U : Set M)] n (T% s') := fun y hy ↦ by
-    refine (contMDiffAt_subtype_iff (U := U) (x := ⟨y, hy⟩)).1 ?_ |>.contMDiffWithinAt
-    have h := ((Bundle.Pullback.contMDiffAt_iff
-      (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) contMDiff_subtype_val.contMDiffAt).1
-        (s.contMDiff ⟨y, hy⟩)).2
-    -- On `U`, the extension by zero is `s`, read in the original bundle through `Pullback.lift`.
-    convert h using 2 with z
-    simp [s', z.2]
-    rfl
-  refine ⟨⟨(ρ : M → ℝ) • s', ρ.contMDiff_of_isManifold.contMDiffOn.smul_section_of_tsupport
-    U.isOpen hρU hs'⟩, ?_⟩
+  let f : C^n⟮I, U; ℝ⟯ :=
+    ⟨(ρ : M → ℝ) ∘ Subtype.val, ρ.contMDiff_of_isManifold.comp contMDiff_subtype_val⟩
+  have hf : HasCompactSupport f :=
+    (Topology.IsInducing.subtypeVal.isCompact_preimage' ρ.hasCompactSupport.isCompact
+      fun y hy ↦ ⟨⟨y, hρU hy⟩, rfl⟩).of_isClosed_subset (_root_.isClosed_tsupport _)
+      (tsupport_comp_subset_preimage (ρ : M → ℝ) continuous_subtype_val :)
+  refine ⟨extendByZero ⟨f • s, smul_function_mem_compactlySupported_of_hasCompactSupport f hf s⟩,
+    ?_⟩
   filter_upwards [(continuous_subtype_val.tendsto x).eventually ρ.eventuallyEq_one] with y hy
-  have hs'y : s' y = s y := dite_eq_left y.2
-  simp only [coeFn_mk, Pi.smul_apply', hs'y, hy, Pi.one_apply]
+  rw [extendByZero_apply_of_mem, smul_apply]
+  simp only [f, ContMDiffMap.coeFn_mk, Function.comp_apply, hy, Pi.one_apply]
   -- The fibre of the pullback bundle over `y` is the fibre of `V` over `y`, with its scalars.
   exact one_smul ℝ (s y)
 
