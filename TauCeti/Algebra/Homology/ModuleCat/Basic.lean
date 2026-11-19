@@ -20,7 +20,10 @@ public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 For a homological complex `K` of modules over a ring, the inclusion of the degree-`n` cycles into
 `K.X n` is injective and the class map from the cycles onto the degree-`n` homology is surjective.
 These are the elementwise forms of the facts that `K.iCycles n` is a monomorphism and
-`K.homologyπ n` is an epimorphism.  Chain maps commute with the differentials and the square of
+`K.homologyπ n` is an epimorphism.  Additive maps out of the homology are therefore determined by
+their values on classes of cycles (`HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ`,
+`HomologicalComplex.moduleCat_linearMap_ext_homologyπ`).
+Chain maps commute with the differentials and the square of
 the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
 `HomologicalComplex.d_comp_d_apply`), cycles have zero boundary, on elements
 (`HomologicalComplex.iCycles_d_apply`), and an element killed by the differential to degree
@@ -290,6 +293,22 @@ lemma moduleCat_iCycles_injective : Function.Injective (K.iCycles n) :=
 degree-`n` homology is surjective. -/
 lemma moduleCat_homologyπ_surjective : Function.Surjective (K.homologyπ n) :=
   (ModuleCat.epi_iff_surjective _).1 inferInstance
+
+variable {K n} in
+/-- Two additive homomorphisms out of the degree-`n` homology of a complex of modules agree once
+they agree on the classes of cycles. -/
+lemma moduleCat_addMonoidHom_ext_homologyπ {G : Type*} [AddZeroClass G] {f g : K.homology n →+ G}
+    (h : ∀ z, f (K.homologyπ n z) = g (K.homologyπ n z)) : f = g := by
+  ext x
+  obtain ⟨z, rfl⟩ := K.moduleCat_homologyπ_surjective n x
+  exact h z
+
+variable {K n} in
+/-- Two linear maps out of the degree-`n` homology of a complex of modules agree once they agree
+on the classes of cycles. -/
+lemma moduleCat_linearMap_ext_homologyπ {G : Type*} [AddCommMonoid G] [Module R G]
+    {f g : K.homology n →ₗ[R] G} (h : ∀ z, f (K.homologyπ n z) = g (K.homologyπ n z)) : f = g :=
+  LinearMap.toAddMonoidHom_injective (moduleCat_addMonoidHom_ext_homologyπ h)
 
 /-- The differential out of degree `n` of a complex of modules kills every cycle of degree `n`, on
 elements. -/
