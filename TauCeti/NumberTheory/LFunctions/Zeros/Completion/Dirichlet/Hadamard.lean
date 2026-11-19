@@ -39,7 +39,8 @@ of `TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard` gives:
 * **The sum through `L'/L`**
   (`DirichletCharacter.tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction`): for
   nonprincipal `χ`, the same sum equals
-  `Re (L'/L)(s, χ) + ½ log N + Re (Γ'/Γ)(s, χ)` on the positive half-plane off the zeros.
+  `Re (L'/L)(s, χ) + ½ log N + Re (Γℝ'/Γℝ)(s + κ)`, where `κ` is the parity of `χ`,
+  on the positive half-plane off the zeros.
 * **Retained-zero inequalities** (in `namespace DirichletCharacter`,
   `sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add`,
   `analyticOrderNatAt_LFunction_div_sub_le_re_logDeriv_LFunction_add`, and
@@ -247,7 +248,7 @@ namespace DirichletCharacter
 open TauCeti.LFunctions
 
 /-- **The sum over zeros through `L'/L`.** On the positive half-plane, away from the zeros of
-`L(χ, ·)`, `∑_ρ m_ρ Re (1 / (s - ρ)) = Re (L'/L)(s, χ) + ½ log q + Re (Γℝ'/Γℝ)(s + κ)`, the sum
+`L(χ, ·)`, `∑_ρ m_ρ Re (1 / (s - ρ)) = Re (L'/L)(s, χ) + ½ log N + Re (Γℝ'/Γℝ)(s + κ)`, the sum
 running over all zeros of the entire completion with multiplicity. -/
 theorem tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction
     {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) (hne : χ ≠ 1) {s : ℂ}
@@ -295,8 +296,8 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunc
     (le_abs_self _).trans ((abs_re_le_norm _).trans (χ.norm_logDeriv_gammaFactor_ofReal_le hσ))
   linarith
 
-/-- **A real zero with its multiplicity.** For a nonprincipal primitive character `χ` modulo `q`,
-real `0 < β` and `1 ≤ σ ≤ 2`, `m_β / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log q + C_Γ`, where `m_β` is the
+/-- **A real zero with its multiplicity.** For a nonprincipal primitive character `χ` modulo `N`,
+real `0 < β` and `1 ≤ σ ≤ 2`, `m_β / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log N + C_Γ`, where `m_β` is the
 analytic order of `L(χ, ·)` at `β`. -/
 theorem analyticOrderNatAt_LFunction_div_sub_le_re_logDeriv_LFunction_add
     {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) (hne : χ ≠ 1)
