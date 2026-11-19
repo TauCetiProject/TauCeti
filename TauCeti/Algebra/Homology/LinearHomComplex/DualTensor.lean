@@ -84,8 +84,17 @@ noncomputable def cochainFromTensorUnitLinearEquiv (K : CochainComplex (ModuleCa
 
 variable {R}
 
-/-- A cochain from the tensor unit given by a map `f : R ⟶ Kⁿ` corresponds to `f 1`. -/
+/-- A cochain `z` of degree `n` from the tensor unit corresponds to the value at `1` of its
+component `R ⟶ Kⁿ` on degree `0`. -/
 @[simp]
+lemma cochainFromTensorUnitLinearEquiv_apply (K : CochainComplex (ModuleCat.{v} R) ℤ) (n : ℤ)
+    (z : Cochain (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) K n) :
+    cochainFromTensorUnitLinearEquiv R K n z =
+      ((HomologicalComplex.singleObjXSelf (.up ℤ) 0 (𝟙_ (ModuleCat.{v} R))).inv ≫
+        z.v 0 n (zero_add n)).hom 1 :=
+  (rfl)
+
+/-- A cochain from the tensor unit given by a map `f : R ⟶ Kⁿ` corresponds to `f 1`. -/
 lemma cochainFromTensorUnitLinearEquiv_fromSingleMk (K : CochainComplex (ModuleCat.{v} R) ℤ)
     (n : ℤ) (f : 𝟙_ (ModuleCat.{v} R) ⟶ K.X n) :
     cochainFromTensorUnitLinearEquiv R K n (Cochain.fromSingleMk f (zero_add n)) = f.hom 1 :=
@@ -317,8 +326,12 @@ private lemma vLinearMap_linearHomComplexDualTensor_eq {p q n : ℤ} (h : p + q 
     (hi : i + q = 0) (t : ↑(B.X p) ⊗[R] ↑((linearHomComplex R A (𝟙_ _)).X q)) :
     Cochain.vLinearMap A B n i p (by omega) (((linearHomComplexDualTensor R A B).f n).hom
         ((HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom t)) =
-      dualTensorSummandEquiv A B hi t :=
-  vLinearMap_linearHomComplexDualTensor A B h hi t
+      dualTensorSummandEquiv A B hi t := by
+  rw [vLinearMap_linearHomComplexDualTensor A B h hi t, dualTensorSummandEquiv,
+    LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    ← LinearEquiv.coe_toLinearMap (dualTensorHomEquiv _ _ _), toLinearMap_dualTensorHomEquiv,
+    ← LinearEquiv.coe_toLinearMap (TensorProduct.congr _ _), TensorProduct.toLinearMap_congr,
+    LinearEquiv.refl_toLinearMap]
 
 /-- The inverse of the dual-tensor comparison in degree `n`, when `Aⁱ` vanishes for `i ∉ S`: the
 component of a cochain on `Aⁱ` is sent back to the summand `Bⁱ⁺ⁿ ⊗ Hom(A, R[0])⁻ⁱ`. -/
