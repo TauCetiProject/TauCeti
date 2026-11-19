@@ -597,6 +597,12 @@ theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq (k : ℕ)
   | succ k =>
       exact norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
 
+/-- At order one and exponent two, the squared graph norm is the sum of the squared norms of the
+value and of the weak gradient. -/
+theorem norm_sq_eq_norm_value_sq_add_norm_iteratedGradient_sq (u : Wkp mu Omega 2 1) :
+    ‖u‖ ^ 2 = ‖value 1 u‖ ^ 2 + ‖iteratedGradient 0 u‖ ^ 2 := by
+  rw [norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq 0 u, lowerOrder_zero, value_one]
+
 /-- Convergence in a positive-order Sobolev norm is equivalent to convergence of the
 preceding Sobolev component and the highest weak derivative. -/
 theorem tendsto_iff_lowerOrder_iteratedGradient (k : ℕ) {I : Type*} {l : Filter I}

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.PlaneShear
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Sobolev.BesselPotential.Plancherel
 
 /-!
 # Shears of the plane and the Sobolev space `H¹`

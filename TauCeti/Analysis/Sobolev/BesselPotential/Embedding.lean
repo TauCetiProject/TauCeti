@@ -75,6 +75,8 @@ spaces.
 
 ## Main declarations
 
+* `BesselPotentialSpace.fourier_toLp_ae_eq`: for `h ∈ H^{s,2}` whose tempered distribution has the
+  Fourier transform `v ∈ L^q`, the `L²` Fourier transform of `J^s h` is `(1 + ‖ξ‖²)^{s/2} v`.
 * `TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`: an `L²` function in
   `H^s`, `2s > n`, agrees almost everywhere with a continuous function vanishing at infinity.
 * `MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace` (in
@@ -118,6 +120,8 @@ spaces.
   a Sobolev function to its unique continuous representative.
 * `TauCeti.Wkp.toZeroAtInfty_injective`: the continuous representative determines the Sobolev
   function.
+* `TauCeti.not_memSobolev_one_indicator_Icc`: `1_{[0,1]} ∉ H^{1,2}(ℝ)`, since it has no
+  continuous representative.
 
 ## References
 
@@ -136,6 +140,25 @@ open scoped FourierTransform SchwartzMap ZeroAtInfty ENNReal Real
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
+
+namespace BesselPotentialSpace
+
+open TemperedDistribution
+open scoped BesselPotentialSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **The Fourier transform of the Bessel potential.** If `h ∈ H^{s,2}` has a tempered distribution
+whose Fourier transform is an `L^q` function `v`, for any `1 ≤ q ≤ ∞`, then the Fourier transform of
+the `L²` function `J^s h` is `(1 + ‖ξ‖²)^{s/2} v(ξ)` almost everywhere. -/
+theorem fourier_toLp_ae_eq {s : ℝ} (h : H^{s}(E, F)) {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    {v : Lp F q (volume : Measure E)} (hv : 𝓕 h.toDistr = v) :
+    𝓕 h.toLp =ᵐ[volume] fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • v ξ := by
+  rw [← Lp.toTemperedDistribution_eq_smulLeftCLM_iff (by fun_prop),
+    ← Lp.fourier_toTemperedDistribution_eq, ← h.bessel_toDistr_eq_toLp,
+    fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv]
+
+end BesselPotentialSpace
 
 namespace TemperedDistribution
 
@@ -170,24 +193,12 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
     {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f) {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 f = v) :
     eLpNorm (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 volume =
       ‖hf.toBesselPotentialSpace‖ₑ := by
-  set U := hf.toBesselPotentialSpace.toLp
-  have hU : besselPotential E F s f = U := by
-    simpa using hf.toBesselPotentialSpace.bessel_toDistr_eq_toLp
-  have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
-    fun_prop
-  have hwc : Continuous fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (s / 2) :=
-    (by fun_prop : Continuous fun ξ : E => 1 + ‖ξ‖ ^ 2).rpow_const fun ξ =>
-      Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
-  -- The `L²` function `𝓕 U` represents the weight times `v`.
-  have hae : ((𝓕 U : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
-      fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ := by
-    refine Lp.ae_eq_of_toTemperedDistribution_apply_eq (𝓕 U) ?_ fun φ => ?_
-    · refine locallyIntegrable_iff.2 fun K hK => ?_
-      exact (L1.integrable_coeFn v).integrableOn.continuousOn_smul hwc.continuousOn hK
-    · rw [← Lp.fourier_toTemperedDistribution_eq U, ← hU,
-        fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv,
-        Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
-      simp only [Complex.coe_smul]
+  -- The `L²` function `𝓕 (J^s f)` represents the weight times `v`.
+  have hae : ((𝓕 hf.toBesselPotentialSpace.toLp : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
+      fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ :=
+    (BesselPotentialSpace.fourier_toLp_ae_eq hf.toBesselPotentialSpace (v := v)
+      (by rwa [MemSobolev.toBesselPotentialSpace_toDistr])).mono fun ξ h =>
+        h.trans (Complex.coe_smul _ _)
   rw [eLpNorm_congr_ae hae.symm, ← Lp.eNorm_def, ← ofReal_norm, ← ofReal_norm,
     BesselPotentialSpace.norm_fourier_toLp_eq]
 
@@ -747,5 +758,40 @@ theorem toZeroAtInfty_injective (hk : finrank ℝ E < 2 * k) :
   simpa only [Opens.coe_top, Measure.restrict_univ] using hae
 
 end Wkp
+
+open Set in
+/-- **The indicator function of `[0, 1]` is not in `H^{1,2}(ℝ)`.** Since `1 > 1 / 2`, every
+function in `H^{1,2}(ℝ)` has a continuous representative
+(`TemperedDistribution.MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`), while the indicator
+function jumps at `0`. Its distributional derivative `δ₀ - δ₁` is not a function. -/
+theorem not_memSobolev_one_indicator_Icc :
+    ¬ TemperedDistribution.MemSobolev 1 2 (Complex.ofRealCLM.compLp (indicatorConstLp 2
+      (measurableSet_Icc (a := (0 : ℝ)) (b := 1)) measure_Icc_lt_top.ne (1 : ℝ) :
+        Lp ℝ 2 (volume : Measure ℝ)) : 𝓢'(ℝ, ℂ)) := by
+  set g : Lp ℝ 2 (volume : Measure ℝ) :=
+    indicatorConstLp 2 (measurableSet_Icc (a := (0 : ℝ)) (b := 1)) measure_Icc_lt_top.ne 1
+  have hg : (g : ℝ → ℝ) =ᵐ[volume] (Icc (0 : ℝ) 1).indicator fun _ ↦ 1 := indicatorConstLp_coeFn
+  intro hu
+  obtain ⟨f, hf⟩ := hu.exists_zeroAtInftyContinuousMap_ae_eq (by norm_num)
+  have hae : (f : ℝ → ℂ) =ᵐ[volume]
+      fun x ↦ (((Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ)) x : ℂ) := by
+    filter_upwards [hf, Complex.ofRealCLM.coeFn_compLp g, hg] with x h₁ h₂ h₃
+    rw [← h₁, h₂, Complex.ofRealCLM_apply, h₃]
+  -- So the continuous function `f` is `1` on `(0, 1)` and `0` on `(-1, 0)`, and both at `0`.
+  have h₁ : EqOn f (fun _ ↦ 1) (Ioo 0 1) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ isOpen_Ioo f.continuous.continuousOn
+      continuousOn_const
+    filter_upwards [ae_restrict_of_ae hae, ae_restrict_mem measurableSet_Ioo] with x hx hxI
+    rw [hx, indicator_of_mem (Ioo_subset_Icc_self hxI), Complex.ofReal_one]
+  have h₀ : EqOn f (fun _ ↦ 0) (Ioo (-1) 0) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ isOpen_Ioo f.continuous.continuousOn
+      continuousOn_const
+    filter_upwards [ae_restrict_of_ae hae, ae_restrict_mem measurableSet_Ioo] with x hx hxI
+    rw [hx, indicator_of_notMem fun h : x ∈ Icc (0 : ℝ) 1 ↦ (not_le.2 hxI.2) h.1,
+      Complex.ofReal_zero]
+  have h₁0 : f 0 = 1 := h₁.closure f.continuous continuous_const (by simp [closure_Ioo zero_ne_one])
+  have h₀0 : f 0 = 0 :=
+    h₀.closure f.continuous continuous_const (by simp [closure_Ioo (by norm_num : (-1 : ℝ) ≠ 0)])
+  exact one_ne_zero (h₁0.symm.trans h₀0)
 
 end TauCeti

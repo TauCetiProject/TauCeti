@@ -7,12 +7,15 @@ module
 
 public import Mathlib.Analysis.Fourier.LpSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence
+public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Sobolev.W1p.Morrey
+import TauCeti.Analysis.Fourier.LpSpace
+import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Plancherel's identity for the `H^{1,2}` and `W^{1,2}` norms
@@ -28,7 +31,8 @@ an orthonormal basis,
 
 `‖u‖²_{H^{1,2}} = ∫ (1 + ‖ξ‖²) ‖𝓕u(ξ)‖² dξ = ‖u‖²_{L²} + (2π)⁻² ∑ᵢ ‖∂ᵢu‖²_{L²}`
 
-(`BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq`), whereas the `W^{1,2}` norm is
+(`BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq`; for Schwartz functions,
+`SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`), whereas the `W^{1,2}` norm is
 `‖u‖²_{W^{1,2}} = ‖u‖²_{L²} + ‖∇u‖²_{L²}`, the integral of `1 + 4π²‖ξ‖²` against `‖𝓕u‖²`. So for
 `u ∈ W^{1,2}(E)` (`TauCeti.Wkp.norm_toBesselPotentialSpace_sq`)
 
@@ -41,23 +45,20 @@ weigh the gradient differently, by `(2π)⁻²` and by `1`. The constants `1` an
 values of the ratio `((1 + 4π²‖ξ‖²) / (1 + ‖ξ‖²))^{1/2}` of the two symbols, approached at low and
 at high frequencies.
 
-The comparison between the scales also detects non-membership. The indicator function of `[0, 1]`
-is not in `H^{1,2}(ℝ)` (`TauCeti.not_memSobolev_one_indicator_Icc`): by the identification with
-`W^{1,2}(ℝ)` it would have a continuous representative by Morrey's embedding, but it jumps at `0`.
-Its distributional derivative `δ₀ - δ₁` is not a function.
+The Fourier-side ingredients are `BesselPotentialSpace.fourier_toLp_ae_eq`, for the symbol of
+`J^s`, and `MeasureTheory.Lp.fourier_ae_eq_of_lineDerivOp_eq`, for the symbol of `∂_m`.
 
 ## Main declarations
 
-* `BesselPotentialSpace.fourier_toLp_ae_eq`: for `h ∈ H^{s,2}` whose tempered distribution has the
-  Fourier transform `v ∈ L^q`, the `L²` Fourier transform of `J^s h` is `(1 + ‖ξ‖²)^{s/2} v`.
-* `MeasureTheory.Lp.fourier_ae_eq_of_lineDerivOp_eq`: the Fourier transform of an `L²` derivative
-  `∂_m f` is `2πi⟪ξ, m⟫ 𝓕f`.
 * `BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq`: Plancherel's identity
   `‖h‖²_{H^{1,2}} = ‖h‖²_{L²} + (2π)⁻² ∑ᵢ ‖∂ᵢh‖²_{L²}`.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_one_sq`: the same identity for a Schwartz function,
+  `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
+* `SchwartzMap.inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le`: the `H¹` norm of a Schwartz
+  function bounds the `L²` norm of each of its first derivatives.
 * `TauCeti.Wkp.norm_toBesselPotentialSpace_sq`: the same identity on `W^{1,2}(E)`.
 * `TauCeti.Wkp.norm_toBesselPotentialSpace_le`,
   `TauCeti.Wkp.norm_le_two_mul_pi_mul_norm_toBesselPotentialSpace`: the explicit norm equivalence.
-* `TauCeti.not_memSobolev_one_indicator_Icc`: `1_{[0,1]} ∉ H^{1,2}(ℝ)`.
 
 ## References
 
@@ -70,39 +71,14 @@ public section
 
 noncomputable section
 
-open MeasureTheory TemperedDistribution FourierTransform TopologicalSpace Set
+open MeasureTheory TemperedDistribution FourierTransform TopologicalSpace
 open scoped ENNReal NNReal LineDeriv SchwartzMap BesselPotentialSpace Real
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
 
-namespace MeasureTheory.Lp
-
-/-- **The Fourier transform of a derivative.** If a tempered distribution `f` has the `L²`
-Fourier transform `v` and its derivative in the direction `m` is an `L²` function `d`, then
-`𝓕 d(ξ) = 2πi⟪ξ, m⟫ v(ξ)` almost everywhere. -/
-theorem fourier_ae_eq_of_lineDerivOp_eq {f : 𝓢'(E, F)} {v d : Lp F 2 (volume : Measure E)}
-    (hv : 𝓕 f = v) {m : E} (hd : ∂_{m} f = d) :
-    𝓕 d =ᵐ[volume] fun ξ ↦ (2 * π * Complex.I * inner ℝ ξ m) • v ξ := by
-  rw [← toTemperedDistribution_eq_smulLeftCLM_iff (by fun_prop),
-    ← fourier_toTemperedDistribution_eq, ← hd, fourier_lineDerivOp_eq, hv]
-  exact (DFunLike.congr_fun (smulLeftCLM_smul (F := F) (g := fun ξ : E ↦ (inner ℝ ξ m : ℂ))
-    (by fun_prop) (2 * π * Complex.I)) _).symm
-
-end MeasureTheory.Lp
-
 namespace BesselPotentialSpace
-
-/-- **The Fourier transform of the Bessel potential.** If `h ∈ H^{s,2}` has a tempered distribution
-whose Fourier transform is an `L^q` function `v`, for any `1 ≤ q ≤ ∞`, then the Fourier transform of
-the `L²` function `J^s h` is `(1 + ‖ξ‖²)^{s/2} v(ξ)` almost everywhere. -/
-theorem fourier_toLp_ae_eq {s : ℝ} (h : H^{s}(E, F)) {q : ℝ≥0∞} [Fact (1 ≤ q)]
-    {v : Lp F q (volume : Measure E)} (hv : 𝓕 h.toDistr = v) :
-    𝓕 h.toLp =ᵐ[volume] fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • v ξ := by
-  rw [← Lp.toTemperedDistribution_eq_smulLeftCLM_iff (by fun_prop),
-    ← Lp.fourier_toTemperedDistribution_eq, ← h.bessel_toDistr_eq_toLp,
-    fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv]
 
 /-- **Plancherel's identity for `H^{1,2}`.** Let `b` be an orthonormal basis of `E` and let
 `h ∈ H^{1,2}(E, F)` be the `L²` function `g`, with derivatives `∂_{bᵢ} h` the `L²` functions `dᵢ`.
@@ -130,11 +106,45 @@ theorem norm_sq_eq_norm_sq_add_mul_sum_norm_sq {ι : Type*} [Fintype ι] (b : Or
     field_simp
   rw [← norm_fourier_toLp_eq h, ← Lp.integral_norm_sq_eq_norm_sq, integral_congr_ae hpt,
     integral_add (hint _) ((integrable_finsetSum _ fun i _ ↦ hint _).const_mul _),
-    integral_const_mul, integral_finsetSum _ fun i _ ↦ hint _, Lp.integral_norm_sq_eq_norm_sq,
-    Lp.norm_fourier_eq]
+    integral_const_mul, integral_finsetSum _ fun i _ ↦ hint _]
   simp only [Lp.integral_norm_sq_eq_norm_sq, Lp.norm_fourier_eq]
 
 end BesselPotentialSpace
+
+namespace SchwartzMap
+
+/-- **The `H¹` norm of a Schwartz function** in terms of its first derivatives: for an orthonormal
+basis `b` of `E`,
+
+`‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
+
+The factor `(2π)⁻²` comes from the Fourier transform of `∂_v u` being `2πi ⟪ξ, v⟫ 𝓕 u`. -/
+theorem norm_toBesselPotentialSpaceCLM_one_sq {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 =
+      (∫ x, ‖u x‖ ^ 2) + (2 * π)⁻¹ ^ 2 * ∑ i, ∫ x, ‖∂_{b i} u x‖ ^ 2 := by
+  have hint (g : 𝓢(E, F)) : ∫ x, ‖g x‖ ^ 2 = ‖g.toLp 2 (volume : Measure E)‖ ^ 2 := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    exact integral_congr_ae ((g.coeFn_toLp 2 volume).mono fun x hx ↦ by simp only [hx])
+  simp only [hint]
+  refine BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq b _ ?_ fun i ↦ ?_
+  · rw [toDistr_toBesselPotentialSpaceCLM, Lp.toTemperedDistribution_toLp_eq]
+  · rw [toDistr_toBesselPotentialSpaceCLM, Lp.toTemperedDistribution_toLp_eq]
+    exact lineDerivOp_toTemperedDistributionCLM_eq u (b i)
+
+/-- The `H¹` norm of a Schwartz function bounds the `L²` norm of each of its first derivatives
+along an orthonormal basis `b`: `(2π)⁻² ∫ ‖∂_{bᵢ} u‖² ≤ ‖u‖²_{H¹}`. -/
+theorem inv_two_pi_sq_mul_integral_norm_lineDerivOp_sq_le {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (u : 𝓢(E, F)) (i : ι) :
+    (2 * π)⁻¹ ^ 2 * ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ‖toBesselPotentialSpaceCLM 1 2 u‖ ^ 2 := by
+  rw [norm_toBesselPotentialSpaceCLM_one_sq b]
+  have hi : ∫ x, ‖∂_{b i} u x‖ ^ 2 ≤ ∑ j, ∫ x, ‖∂_{b j} u x‖ ^ 2 :=
+    Finset.single_le_sum (f := fun j ↦ ∫ x, ‖∂_{b j} u x‖ ^ 2)
+      (fun j _ ↦ integral_nonneg fun _ ↦ by positivity) (Finset.mem_univ i)
+  have h0 : 0 ≤ ∫ x, ‖u x‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hi (by positivity : (0 : ℝ) ≤ (2 * π)⁻¹ ^ 2)]
+
+end SchwartzMap
 
 namespace TauCeti
 
@@ -157,10 +167,10 @@ theorem norm_toBesselPotentialSpace_sq (u : Wkp (volume : Measure E) ⊤ 2 1) :
     .of_forall fun x ↦ (coeFn_castLpₗᵢ hvol f x).symm
   have hnorm (f : Lp ℝ 2 ((volume : Measure E).restrict ((⊤ : Opens E) : Set E))) :
       ‖Complex.ofRealCLM.compLp (castLpₗᵢ (𝕜 := ℝ) hvol f)‖ = ‖f‖ := by
-    rw [← LinearIsometryEquiv.norm_map (castLpₗᵢ (𝕜 := ℝ) hvol) f, Lp.norm_def, Lp.norm_def]
-    exact congrArg ENNReal.toReal (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
-      (Lp.aestronglyMeasurable _) ((Complex.ofRealCLM.coeFn_compLp _).mono fun x hx ↦ by
-        rw [hx, Complex.ofRealCLM_apply, Complex.norm_real, coeFn_castLpₗᵢ]))
+    rw [← LinearIsometryEquiv.norm_map (castLpₗᵢ (𝕜 := ℝ) hvol) f]
+    have h := (Complex.ofRealLI.compLpₗᵢ 2 (volume : Measure E)).norm_map (castLpₗᵢ (𝕜 := ℝ) hvol f)
+    rwa [← LinearIsometry.coe_toContinuousLinearMap,
+      LinearIsometry.toContinuousLinearMap_compLpₗᵢ] at h
   set T := toBesselPotentialSpace (E := E) Nat.one_lt_ofNat ENNReal.ofNat_ne_top 1 u
   have key := BesselPotentialSpace.norm_sq_eq_norm_sq_add_mul_sum_norm_sq b (T.copy 1 Nat.cast_one)
     (g := Complex.ofRealCLM.compLp (castLpₗᵢ (𝕜 := ℝ) hvol (value 1 u)))
@@ -181,16 +191,14 @@ theorem norm_toBesselPotentialSpace_sq (u : Wkp (volume : Measure E) ⊤ 2 1) :
       with x hx
     simp only [D, hx, innerSL_apply_apply, Real.norm_eq_abs, sq_abs, b.sum_sq_inner_right]
   rw [← BesselPotentialSpace.norm_toLp_eq, ← BesselPotentialSpace.toLp_copy T Nat.cast_one,
-    BesselPotentialSpace.norm_toLp_eq, key, hnorm, hgrad]
+    BesselPotentialSpace.norm_toLp_eq, key, hgrad]
   simp only [hnorm]
 
 /-- The `H^{1,2}` norm of `u ∈ W^{1,2}(E)` is at most its `W^{1,2}` norm. -/
 theorem norm_toBesselPotentialSpace_le (u : Wkp (volume : Measure E) ⊤ 2 1) :
     ‖toBesselPotentialSpace Nat.one_lt_ofNat ENNReal.ofNat_ne_top 1 u‖ ≤ ‖u‖ := by
-  have hW := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq 0 u
-  rw [lowerOrder_zero, ← value_one] at hW
   refine (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-  rw [norm_toBesselPotentialSpace_sq, hW]
+  rw [norm_toBesselPotentialSpace_sq, norm_sq_eq_norm_value_sq_add_norm_iteratedGradient_sq]
   have : (2 * π)⁻¹ ^ 2 ≤ 1 := pow_le_one₀ (by positivity) (inv_le_one_of_one_le₀ (by
     linarith [Real.two_le_pi]))
   nlinarith [sq_nonneg ‖iteratedGradient 0 u‖]
@@ -198,54 +206,14 @@ theorem norm_toBesselPotentialSpace_le (u : Wkp (volume : Measure E) ⊤ 2 1) :
 /-- The `W^{1,2}` norm of `u ∈ W^{1,2}(E)` is at most `2π` times its `H^{1,2}` norm. -/
 theorem norm_le_two_mul_pi_mul_norm_toBesselPotentialSpace (u : Wkp (volume : Measure E) ⊤ 2 1) :
     ‖u‖ ≤ 2 * π * ‖toBesselPotentialSpace Nat.one_lt_ofNat ENNReal.ofNat_ne_top 1 u‖ := by
-  have hW := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq 0 u
-  rw [lowerOrder_zero, ← value_one] at hW
   refine (sq_le_sq₀ (norm_nonneg _) (by positivity)).1 ?_
   have h2 : (2 * π) ^ 2 * (2 * π)⁻¹ ^ 2 = 1 := by
     rw [← mul_pow, mul_inv_cancel₀ (by positivity), one_pow]
-  rw [mul_pow, norm_toBesselPotentialSpace_sq, hW, mul_add, ← mul_assoc, h2, one_mul]
+  rw [mul_pow, norm_toBesselPotentialSpace_sq,
+    norm_sq_eq_norm_value_sq_add_norm_iteratedGradient_sq, mul_add, ← mul_assoc, h2, one_mul]
   have : 1 ≤ (2 * π) ^ 2 := one_le_pow₀ (by linarith [Real.two_le_pi])
   nlinarith [sq_nonneg ‖value 1 u‖]
 
 end Wkp
-
-/-- **The indicator function of `[0, 1]` is not in `H^{1,2}(ℝ)`.** By Calderón's identification of
-`H^{1,2}(ℝ)` with `W^{1,2}(ℝ)` and Morrey's embedding, every function in `H^{1,2}(ℝ)` has a
-continuous representative, while the indicator function jumps at `0`. Its distributional derivative
-`δ₀ - δ₁` is not a function. -/
-theorem not_memSobolev_one_indicator_Icc :
-    ¬ MemSobolev 1 2 (Complex.ofRealCLM.compLp (indicatorConstLp 2
-      (measurableSet_Icc (a := (0 : ℝ)) (b := 1)) measure_Icc_lt_top.ne (1 : ℝ) :
-        Lp ℝ 2 (volume : Measure ℝ)) : 𝓢'(ℝ, ℂ)) := by
-  have key := Lp.memSobolev_natCast_iff_exists_wkp_value_eq (p := 2) Nat.one_lt_ofNat
-    ENNReal.ofNat_ne_top 1 (indicatorConstLp 2 (measurableSet_Icc (a := (0 : ℝ)) (b := 1))
-      measure_Icc_lt_top.ne (1 : ℝ))
-  rw [Nat.cast_one] at key
-  rw [key]
-  rintro ⟨w, hw⟩
-  have hp : (Module.finrank ℝ ℝ : ℝ≥0) < 2 := by simp
-  have : Fact (1 ≤ ((2 : ℝ≥0) : ℝ≥0∞)) := ⟨by norm_num⟩
-  -- By Morrey's embedding the indicator agrees almost everywhere with a continuous function `f`.
-  set f := W1p.morreyRepresentative (p := 2) (Wkp.firstOrder 0 w) hp
-  have hf : Continuous f := W1p.continuous_morreyRepresentative _ hp
-  have hw' : (W1p.value (Wkp.firstOrder 0 w) : ℝ → ℝ) =ᵐ[volume]
-      (Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ) := by
-    rw [Wkp.value_firstOrder]
-    exact hw.trans indicatorConstLp_coeFn
-  have hae : f =ᵐ[volume] (Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℝ) :=
-    (W1p.value_ae_eq_morreyRepresentative (Wkp.firstOrder 0 w) hp).symm.trans hw'
-  -- So `f` is `1` on `(0, 1)` and `0` on `(-1, 0)`, and by continuity both at `0`.
-  have h₁ : EqOn f (fun _ ↦ 1) (Ioo 0 1) := by
-    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ isOpen_Ioo hf.continuousOn continuousOn_const
-    filter_upwards [ae_restrict_of_ae hae, ae_restrict_mem measurableSet_Ioo] with x hx hxI
-    rw [hx, indicator_of_mem (Ioo_subset_Icc_self hxI)]
-  have h₀ : EqOn f (fun _ ↦ 0) (Ioo (-1) 0) := by
-    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ isOpen_Ioo hf.continuousOn continuousOn_const
-    filter_upwards [ae_restrict_of_ae hae, ae_restrict_mem measurableSet_Ioo] with x hx hxI
-    rw [hx, indicator_of_notMem fun h : x ∈ Icc (0 : ℝ) 1 ↦ (not_le.2 hxI.2) h.1]
-  have h₁0 : f 0 = 1 := h₁.closure hf continuous_const (by simp [closure_Ioo zero_ne_one])
-  have h₀0 : f 0 = 0 :=
-    h₀.closure hf continuous_const (by simp [closure_Ioo (by norm_num : (-1 : ℝ) ≠ 0)])
-  exact one_ne_zero (h₁0.symm.trans h₀0)
 
 end TauCeti
