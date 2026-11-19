@@ -364,17 +364,17 @@ point. -/
 private lemma lt_norm_sub_arc_of_far_right (ht₀ : t₀ ∈ Ioo (1 : ℝ) 3)
     (hw : fdBoundary H t₀ = w) (hδ : 0 < δ)
     (h2sin : 2 * Real.sin (δ * (Real.pi / 12)) = ε)
-    (hε₂ : ε < w.re + 1 / 2) (hεc : ε < H - 1) (hs : s ∈ Ioo (t₀ + δ) (5 : ℝ)) :
+    (hε₂ : ε < w.re + 1 / 2) (hεc : ε < H - 1) (hs : t₀ + δ < s) :
     ε < ‖fdBoundary H s - w‖ := by
   have him1 : w.im ≤ 1 := by
     rw [← hw]
     exact im_fdBoundary_arc_le H ⟨ht₀.1.le, ht₀.2.le⟩
   rcases le_or_gt s 3 with h3 | h3
   · rw [← hw, ← h2sin]
-    refine lt_norm_sub_arc_of_far ⟨by linarith [hs.1, ht₀.1], h3⟩ ⟨ht₀.1.le, ht₀.2.le⟩
+    refine lt_norm_sub_arc_of_far ⟨by linarith [ht₀.1], h3⟩ ⟨ht₀.1.le, ht₀.2.le⟩
       hδ ?_
-    rw [abs_of_pos (by linarith [hs.1] : (0 : ℝ) < s - t₀)]
-    linarith [hs.1]
+    rw [abs_of_pos (by linarith : (0 : ℝ) < s - t₀)]
+    linarith
   · rcases le_or_gt s 4 with h4 | h4
     · have hr : (fdBoundary H s - w).re = -(1 / 2) - w.re := by
         rw [Complex.sub_re, re_fdBoundarySegment4 H ⟨h3.le, h4⟩]
@@ -410,7 +410,7 @@ private lemma truncated_integral_spec_arc (hH : 1 < H) (hnorm : ‖w‖ = 1)
     (fun t _ htw ↦ slit_branch_arc hH hnorm him (fdBoundary_ne_arc hH hre ht₀ hw
       fun h ↦ htw (by rw [h]; exact ⟨by linarith, by linarith⟩)))
     (fun s hs ↦ lt_norm_sub_arc_of_far_left ht₀ hw hδ0 h2sin hε₁ hs)
-    (fun s hs ↦ lt_norm_sub_arc_of_far_right ht₀ hw hδ0 h2sin hε₂ hεc hs)
+    (fun s hs ↦ lt_norm_sub_arc_of_far_right ht₀ hw hδ0 h2sin hε₂ hεc hs.1)
     (fun s hs ↦ by
       rw [← hw, ← h2sin]
       exact norm_sub_arc_le_of_near ⟨by linarith [hs.1, ht₀.1], by linarith [hs.2, ht₀.2]⟩

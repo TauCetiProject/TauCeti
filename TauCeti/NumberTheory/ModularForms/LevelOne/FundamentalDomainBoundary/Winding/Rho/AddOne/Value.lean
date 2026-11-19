@@ -325,7 +325,7 @@ private lemma lt_norm_of_far_right_rho_add_one (hε₁ : ε < 1)
     · calc ε < H - Real.sqrt 3 / 2 := hεH
         _ ≤ ‖fdBoundary H t - ((UpperHalfPlane.ρ : ℂ) + 1)‖ :=
           (le_abs_self _).trans
-            (norm_fdBoundary_sub_rho_add_one_segment5 (H := H) ⟨ht4.le, ht.2⟩)
+            (norm_fdBoundary_sub_rho_add_one_segment5 (H := H) ht4.le)
 
 /-- Over the excised corner, the contour stays within distance `ε` of `ρ + 1`. -/
 private lemma norm_le_of_near_rho_add_one {δL δR : ℝ} (hH : Real.sqrt 3 / 2 < H)
