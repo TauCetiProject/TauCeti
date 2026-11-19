@@ -87,10 +87,14 @@ is projective. -/
 theorem projective_of_addEquiv_iterateFrobenius {a : ℕ} (ha : a ≠ 0) (F : M ≃+ M)
     (hF : ∀ (r : R) (x : M), F (r • x) = iterateFrobenius R p a r • F x) :
     Projective R M := by
+  -- `φ^a` as a ring automorphism, so that `F` is a semilinear equivalence along it.
+  have hφ : (iterateFrobeniusEquiv R p a : R →+* R) = iterateFrobenius R p a :=
+    RingHom.ext fun r ↦ by rw [RingEquiv.coe_toRingHom, coe_iterateFrobeniusEquiv]
   let e : M ≃ₛₗ[(iterateFrobeniusEquiv R p a : R →+* R)] M :=
-    { F with map_smul' := hF }
+    { F with map_smul' := fun r x ↦ by rw [hφ]; exact hF r x }
   refine (projective_iff_forall_isIdempotentElem_fittingIdeal).2 fun k ↦
     Ideal.isIdempotentElem_of_le_map_iterateFrobenius (p := p) ha ?_
+  rw [← hφ]
   exact (fittingIdeal_eq_map_of_semilinearEquiv e k).le
 
 end TauCeti
