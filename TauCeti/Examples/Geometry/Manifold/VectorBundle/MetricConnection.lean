@@ -187,6 +187,14 @@ private theorem exp_inner (x : ℝ) (u v : MetricLine x) :
       congr 1
 
 
+private theorem MetricLine.toReal_injective {x : ℝ} :
+    Function.Injective (@MetricLine.toReal x) := fun _ _ h ↦ h
+
+private theorem MetricLine.toReal_zero {x : ℝ} : (0 : MetricLine x).toReal = 0 := rfl
+
+private theorem MetricLine.toReal_add {x : ℝ} (u v : MetricLine x) :
+    (u + v).toReal = u.toReal + v.toReal := rfl
+
 private theorem MetricLine.toReal_smul {x : ℝ} (a : ℝ) (u : MetricLine x) :
     (a • u).toReal = a * u.toReal := by rfl
 
@@ -258,9 +266,9 @@ theorem exponentialFlatConnection_metricCompatible_apply (u : Π x, MetricLine x
 
 example : exponentialFlatConnection.metricCompatible.ContMDiffCovariantDerivative ∞ := by
   have : ContMDiffVectorBundle (∞ + 1) ℝ MetricLine 𝓘(ℝ) :=
-    inferInstanceAs (ContMDiffVectorBundle ∞ ℝ MetricLine 𝓘(ℝ))
+    .of_le (show (∞ : ℕ∞ω) + 1 ≤ ∞ by simp)
   have : IsContMDiffRiemannianBundle 𝓘(ℝ) (∞ + 1) ℝ MetricLine :=
-    inferInstanceAs (IsContMDiffRiemannianBundle 𝓘(ℝ) ∞ ℝ MetricLine)
+    .of_le (show (∞ : ℕ∞ω) + 1 ≤ ∞ by simp)
   infer_instance
 
 /-- The nowhere-zero section `exp(-x)`, parallel for the corrected exponential metric. -/
@@ -272,11 +280,9 @@ theorem parallelSection_ne_zero (x : ℝ) : parallelSection x ≠ 0 := Real.exp_
 /-- The section `exp(-x)` is parallel for the corrected connection. -/
 theorem parallelSection_parallel (x : ℝ) (X : TangentSpace 𝓘(ℝ) x) :
     exponentialFlatConnection.metricCompatible parallelSection x X = 0 := by
-  apply (show Function.Injective (@MetricLine.toReal x) from fun _ _ h ↦ h)
-  have hzero : (0 : MetricLine x).toReal = 0 := rfl
-  rw [hzero, exponentialFlatConnection_metricCompatible_apply]
-  have hadd (a b : MetricLine x) : (a + b).toReal = a.toReal + b.toReal := by rfl
-  rw [hadd, exponentialFlatConnection_apply, MetricLine.toReal_smul]
+  apply MetricLine.toReal_injective
+  rw [MetricLine.toReal_zero, exponentialFlatConnection_metricCompatible_apply,
+    MetricLine.toReal_add, exponentialFlatConnection_apply, MetricLine.toReal_smul]
   have hd : deriv (fun y ↦ (parallelSection y).toReal) x = -Real.exp (-x) := by
     simpa [parallelSection, MetricLine.toReal] using ((hasDerivAt_id x).neg.exp).deriv
   rw [hd]
