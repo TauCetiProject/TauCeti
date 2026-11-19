@@ -165,6 +165,7 @@ variable {F G : B ⥤ᵖ C}
 /-- The unit condition of a strong transformation, for a `1`-morphism `f` equal to an identity:
 the inverse naturality isomorphism at `f` is determined by the comparisons `F.mapId' f` and
 `G.mapId' f`. This generalizes `StrongTrans.naturality_id_inv`. -/
+@[to_app]
 lemma naturality_id'_inv (η : F ⟶ G) {a : B} (f : a ⟶ a) (hf : f = 𝟙 a) :
     (η.naturality f).inv = η.app a ◁ (G.mapId' f hf).hom ≫ (ρ_ (η.app a)).hom ≫
       (λ_ (η.app a)).inv ≫ (F.mapId' f hf).inv ▷ η.app a := by
@@ -186,6 +187,7 @@ lemma naturality_comp'_hom (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c
 
 /-- The inverse form of `StrongTrans.naturality_comp'_hom`, generalizing
 `StrongTrans.naturality_comp_inv`. -/
+@[to_app]
 lemma naturality_comp'_inv (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (fg : a ⟶ c)
     (h : f ≫ g = fg) :
     (η.naturality fg).inv =
