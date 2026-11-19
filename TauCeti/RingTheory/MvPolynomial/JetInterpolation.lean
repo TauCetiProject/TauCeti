@@ -47,7 +47,7 @@ matrix has full row rank `|ι| (|σ| + 1)`.
   jet of `f`.
 * `TauCeti.firstJetMap_surjective_iff_mulVec_surjective`: the first-jet map is onto iff
   multiplication by its matrix is onto.
-* `TauCeti.firstJetMap_surjective_iff_rank`: over a field, the first-jet map is onto iff its
+* `TauCeti.wellPoised_iff_rank`: over a field, the points are well poised iff the first-jet
   matrix has rank `|ι| (|σ| + 1)`.
 * `TauCeti.firstJetMap_comp`, `TauCeti.firstJetValueMap_comp`, `TauCeti.firstJetDerivMap_comp`:
   reindexing the points reindexes the first jets, the values and the derivatives.
@@ -113,23 +113,17 @@ theorem firstJetMap_comp_inclusion {d e : ℕ} (h : d ≤ e) :
 
 /-- The value map of the points `P i` in degree `d`: a polynomial `f` of total degree at most `d`
 is sent to its values `f (P i)`. These are the `none` rows of `TauCeti.firstJetMap P d`. -/
-noncomputable def firstJetValueMap : restrictTotalDegree σ R d →ₗ[R] ι → R where
-  toFun f i := eval (P i) (f : MvPolynomial σ R)
-  map_add' f g := by
-    funext i
-    simp
-  map_smul' a f := by
-    funext i
-    simp
-
-@[simp]
-theorem firstJetValueMap_apply (f : restrictTotalDegree σ R d) (i : ι) :
-    firstJetValueMap P d f i = eval (P i) (f : MvPolynomial σ R) := (rfl)
+noncomputable def firstJetValueMap : restrictTotalDegree σ R d →ₗ[R] ι → R :=
+  LinearMap.compLeft (LinearMap.proj none) ι ∘ₗ firstJetMap P d
 
 /-- The value map consists of the `none` rows of the first-jet map. -/
 theorem firstJetValueMap_apply_eq_firstJetMap (f : restrictTotalDegree σ R d) (i : ι) :
-    firstJetValueMap P d f i = firstJetMap P d f i none := by
-  simp
+    firstJetValueMap P d f i = firstJetMap P d f i none := (rfl)
+
+@[simp]
+theorem firstJetValueMap_apply (f : restrictTotalDegree σ R d) (i : ι) :
+    firstJetValueMap P d f i = eval (P i) (f : MvPolynomial σ R) := by
+  rw [firstJetValueMap_apply_eq_firstJetMap, firstJetMap_apply_none]
 
 /-- Reindexing the points reindexes the values. -/
 theorem firstJetValueMap_comp (e : κ → ι) :
@@ -146,25 +140,20 @@ theorem mem_ker_firstJetValueMap {f : restrictTotalDegree σ R d} :
 most `d` vanishing at every point is sent to its first partial derivatives `∂ⱼ f (P i)`. These are
 the `some` rows of `TauCeti.firstJetMap P d` on the kernel of `TauCeti.firstJetValueMap P d`. -/
 noncomputable def firstJetDerivMap :
-    LinearMap.ker (firstJetValueMap P d) →ₗ[R] ι → σ → R where
-  toFun f i j := eval (P i) (pderiv j ((f : restrictTotalDegree σ R d) : MvPolynomial σ R))
-  map_add' f g := by
-    funext i j
-    simp
-  map_smul' a f := by
-    funext i j
-    simp
-
-@[simp]
-theorem firstJetDerivMap_apply (f : LinearMap.ker (firstJetValueMap P d)) (i : ι) (j : σ) :
-    firstJetDerivMap P d f i j =
-      eval (P i) (pderiv j ((f : restrictTotalDegree σ R d) : MvPolynomial σ R)) := (rfl)
+    LinearMap.ker (firstJetValueMap P d) →ₗ[R] ι → σ → R :=
+  LinearMap.compLeft (LinearMap.funLeft R R some) ι ∘ₗ firstJetMap P d ∘ₗ
+    (LinearMap.ker (firstJetValueMap P d)).subtype
 
 /-- The derivative map consists of the `some` rows of the first-jet map on the kernel of the value
 map. -/
 theorem firstJetDerivMap_apply_eq_firstJetMap (f : LinearMap.ker (firstJetValueMap P d)) (i : ι)
-    (j : σ) : firstJetDerivMap P d f i j = firstJetMap P d f i (some j) := by
-  simp
+    (j : σ) : firstJetDerivMap P d f i j = firstJetMap P d f i (some j) := (rfl)
+
+@[simp]
+theorem firstJetDerivMap_apply (f : LinearMap.ker (firstJetValueMap P d)) (i : ι) (j : σ) :
+    firstJetDerivMap P d f i j =
+      eval (P i) (pderiv j ((f : restrictTotalDegree σ R d) : MvPolynomial σ R)) := by
+  rw [firstJetDerivMap_apply_eq_firstJetMap, firstJetMap_apply_some]
 
 /-- A polynomial vanishing at the points `P i` vanishes at the points of a reindexed family. -/
 theorem ker_firstJetValueMap_le_comp (e : κ → ι) :
@@ -172,15 +161,19 @@ theorem ker_firstJetValueMap_le_comp (e : κ → ι) :
   rw [firstJetValueMap_comp]
   exact LinearMap.ker_le_ker_comp _ _
 
-/-- Permuting the points does not change the polynomials vanishing at them. -/
-theorem ker_firstJetValueMap_comp_equiv (e : κ ≃ ι) :
+/-- Reindexing the points along a surjection, for instance a permutation, does not change the
+polynomials vanishing at them. -/
+theorem ker_firstJetValueMap_comp_of_surjective {e : κ → ι} (he : Function.Surjective e) :
     LinearMap.ker (firstJetValueMap (P ∘ e) d) = LinearMap.ker (firstJetValueMap P d) := by
-  refine le_antisymm ?_ (ker_firstJetValueMap_le_comp P d e)
-  simpa [Function.comp_assoc] using ker_firstJetValueMap_le_comp (P ∘ e) d e.symm
+  refine le_antisymm (fun f hf ↦ ?_) (ker_firstJetValueMap_le_comp P d e)
+  rw [mem_ker_firstJetValueMap] at hf ⊢
+  intro i
+  obtain ⟨k, rfl⟩ := he i
+  exact hf k
 
 /-- Reindexing the points reindexes the derivatives of the polynomials vanishing at the points. For
-a permutation `e`, the inclusion of kernels is the identification
-`TauCeti.ker_firstJetValueMap_comp_equiv`. -/
+a surjection `e`, the inclusion of kernels is the identification
+`TauCeti.ker_firstJetValueMap_comp_of_surjective`. -/
 theorem firstJetDerivMap_comp (e : κ → ι) :
     firstJetDerivMap (P ∘ e) d ∘ₗ Submodule.inclusion (ker_firstJetValueMap_le_comp P d e) =
       LinearMap.funLeft R (σ → R) e ∘ₗ firstJetDerivMap P d := by
@@ -243,10 +236,6 @@ theorem firstJetMap_surjective_iff_mulVec_surjective [Fintype σ] [DecidableEq �
 partial derivatives at the points is attained by a polynomial of total degree at most `d`. -/
 def WellPoised : Prop :=
   Function.Surjective (firstJetMap P d)
-
-/-- Well-poisedness is surjectivity of the first-jet map. -/
-theorem wellPoised_iff_surjective : WellPoised P d ↔ Function.Surjective (firstJetMap P d) :=
-  Iff.rfl
 
 variable {P d}
 
@@ -337,19 +326,12 @@ theorem wellPoised_of_subsingleton [Finite σ] [Subsingleton ι] (P : ι → σ 
   obtain rfl := Subsingleton.elim i i₀
   cases z <;> simp [Pi.single_apply]
 
-/-- Over a field, the first-jet map is onto iff the first-jet matrix has full row rank. -/
-theorem firstJetMap_surjective_iff_rank {k : Type*} [Field k] [Fintype ι] [Fintype σ]
-    [DecidableEq σ] {P : ι → σ → k} :
-    Function.Surjective (firstJetMap P d) ↔
-      (firstJetMatrix P d).rank = Fintype.card ι * (Fintype.card σ + 1) := by
-  rw [firstJetMap_surjective_iff_mulVec_surjective, Matrix.mulVec_surjective_iff_rank_eq_card,
-    Fintype.card_prod, Fintype.card_option]
-
 /-- Over a field, points are well poised iff their first-jet matrix has full row rank. -/
 theorem wellPoised_iff_rank {k : Type*} [Field k] [Fintype ι] [Fintype σ] [DecidableEq σ]
     {P : ι → σ → k} :
-    WellPoised P d ↔ (firstJetMatrix P d).rank = Fintype.card ι * (Fintype.card σ + 1) :=
-  firstJetMap_surjective_iff_rank
+    WellPoised P d ↔ (firstJetMatrix P d).rank = Fintype.card ι * (Fintype.card σ + 1) := by
+  rw [WellPoised, firstJetMap_surjective_iff_mulVec_surjective,
+    Matrix.mulVec_surjective_iff_rank_eq_card, Fintype.card_prod, Fintype.card_option]
 
 end CommRing
 
