@@ -90,16 +90,15 @@ of de Rham cohomology with integral smooth singular homology is nonzero on the c
 theorem deRhamCohomology.smoothHomologyPeriod_mk_circleAngularClosedForm_circleLoopClass :
     deRhamCohomology.smoothHomologyPeriod (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm)
       circleLoopClass = 2 * Real.pi := by
+  -- reparametrising `t ↦ exp (2π i t)` on `[0, 1]` as `Circle.exp` on `[0, 2π]`
+  have h := pathIntegral_comp_mul_add (isSmoothForm_circleAngularForm.of_le (by simp))
+    (contMDiff_circleExp (m := 1)) (2 * Real.pi) 0 0 1
   rw [circleLoopClass_eq_homologyπ, deRhamCohomology.smoothHomologyPeriod_mk,
     LinearMap.toAddMonoidHom_coe, smoothHomologyPeriodHom_homologyπ
       (circleAngularClosedForm.1.isSmoothForm.of_le (by simp))
       ((mem_closedForms _ _).mp circleAngularClosedForm.2),
-    HomologicalComplex.iCycles_moduleCatCyclesMk,
-    integrationCochain_ιChainComplex, one_smul, coe_circleAngularClosedForm,
-    circleLoopSimplex_eq_ofCurve, SmoothSimplex.integral_ofCurve]
-  have h := pathIntegral_comp_mul_add (isSmoothForm_circleAngularForm.of_le (by simp))
-    (contMDiff_circleExp (m := 1)) (2 * Real.pi) 0 0 1
-  simp only [add_zero, mul_zero, mul_one] at h
-  rw [h, pathIntegral_circleAngularForm_circleExp, sub_zero]
+    HomologicalComplex.iCycles_moduleCatCyclesMk, integrationCochain_ιChainComplex]
+  simpa [circleLoopSimplex_eq_ofCurve, SmoothSimplex.integral_ofCurve,
+    pathIntegral_circleAngularForm_circleExp] using h
 
 end TauCeti

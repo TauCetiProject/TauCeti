@@ -54,7 +54,8 @@ is not used here.
 
 * `TauCeti.smoothHomologyPeriodHom_homologyπ`: the period on the class of a cycle is the integral
   over the cycle.
-* `TauCeti.smoothHomologyPeriodHom_mextDeriv`: exact forms have vanishing periods.
+* `TauCeti.smoothHomologyPeriodHom_mextDeriv`,
+  `TauCeti.smoothHomologyPeriodHom_eq_zero_of_mem_exactForms`: exact forms have vanishing periods.
 * `TauCeti.smoothHomologyPeriodHom_homologyMap`: naturality under smooth maps.
 * `TauCeti.deRhamCohomology.smoothHomologyPeriod_mk`,
   `TauCeti.deRhamCohomology.smoothHomologyPeriod_map`: the class-level pairing and its
@@ -137,28 +138,35 @@ theorem smoothHomologyPeriodHom_mextDeriv {θ : RoughForm I M F p} (hθ : IsSmoo
   by_cases h : IsSmoothForm I 1 (mextDeriv θ) ∧ mextDeriv (mextDeriv θ) = 0
   swap
   · exact smoothHomologyPeriodHom_undef h
-  refine LinearMap.toAddMonoidHom_injective <|
-    HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ fun z ↦ ?_
-  simp only [LinearMap.toAddMonoidHom_coe]
+  refine HomologicalComplex.moduleCat_linearMap_ext_homologyπ fun z ↦ ?_
   -- the integral of `dθ` over a cycle is the integral of `θ` over its boundary, which is zero
   rw [smoothHomologyPeriodHom_homologyπ h.1 h.2, LinearMap.zero_apply,
     ← d_comp_integrationCochain hθ]
   simp
+
+/-- **Exact smooth real forms have vanishing periods.** -/
+theorem smoothHomologyPeriodHom_eq_zero_of_mem_exactForms [Module R ℝ] {φ : SmoothForm I M ℝ p}
+    (hφ : φ ∈ exactForms I M p) : smoothHomologyPeriodHom (R := R) (φ : RoughForm I M ℝ p) = 0 := by
+  cases p with
+  | zero =>
+    rw [exactForms_zero, Submodule.mem_bot] at hφ
+    subst hφ
+    refine HomologicalComplex.moduleCat_linearMap_ext_homologyπ fun z ↦ ?_
+    rw [smoothHomologyPeriodHom_homologyπ ((0 : SmoothForm I M ℝ 0).isSmoothForm.of_le (by simp))
+      (by simp)]
+    simp
+  | succ p =>
+    rw [exactForms_succ, LinearMap.mem_range] at hφ
+    obtain ⟨θ, rfl⟩ := hφ
+    rw [mextDerivₗ_apply, smoothHomologyPeriodHom_mextDeriv (θ.isSmoothForm.of_le (by simp))]
 
 /-- The periods are additive in the closed form. -/
 theorem smoothHomologyPeriodHom_add {φ ψ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) (hψ : IsSmoothForm I 1 ψ) (hdψ : mextDeriv ψ = 0) :
     smoothHomologyPeriodHom (R := R) (φ + ψ) =
       smoothHomologyPeriodHom φ + smoothHomologyPeriodHom ψ := by
-  have hdφψ : mextDeriv (φ + ψ) = 0 := by
-    funext x
-    rw [mextDeriv_add
-      ((hφ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero)
-      ((hψ.contDiffWithinAt_inChartAt_self x).differentiableWithinAt one_ne_zero), hdφ, hdψ]
-    simp
-  refine LinearMap.toAddMonoidHom_injective <|
-    HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ fun z ↦ ?_
-  simp only [LinearMap.toAddMonoidHom_coe]
+  have hdφψ : mextDeriv (φ + ψ) = 0 := by rw [hφ.mextDeriv_add hψ, hdφ, hdψ, add_zero]
+  refine HomologicalComplex.moduleCat_linearMap_ext_homologyπ fun z ↦ ?_
   rw [LinearMap.add_apply, smoothHomologyPeriodHom_homologyπ (hφ.add hψ) hdφψ,
     smoothHomologyPeriodHom_homologyπ hφ hdφ, smoothHomologyPeriodHom_homologyπ hψ hdψ,
     integrationCochain_add (hφ.of_le (by simp)) (hψ.of_le (by simp)), ModuleCat.hom_add,
@@ -168,9 +176,7 @@ theorem smoothHomologyPeriodHom_add {φ ψ : RoughForm I M F p} (hφ : IsSmoothF
 theorem smoothHomologyPeriodHom_smul [SMulCommClass R ℝ F] (a : ℝ) {φ : RoughForm I M F p}
     (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) :
     smoothHomologyPeriodHom (R := R) (a • φ) = a • smoothHomologyPeriodHom φ := by
-  refine LinearMap.toAddMonoidHom_injective <|
-    HomologicalComplex.moduleCat_addMonoidHom_ext_homologyπ fun z ↦ ?_
-  simp only [LinearMap.toAddMonoidHom_coe]
+  refine HomologicalComplex.moduleCat_linearMap_ext_homologyπ fun z ↦ ?_
   rw [LinearMap.smul_apply, smoothHomologyPeriodHom_homologyπ (hφ.smul a) (by simp [hdφ]),
     smoothHomologyPeriodHom_homologyπ hφ hdφ, integrationCochain_smul, ModuleCat.hom_smul,
     LinearMap.smul_apply]
@@ -184,11 +190,13 @@ the period of `ψ` on the pushforward `f_* c` of a class `c ∈ H_p^sm(M; R)` is
 pullback `f^* ψ` on `c`. -/
 theorem smoothHomologyPeriodHom_homologyMap {f : M → N} (hf : ContMDiff I J ∞ f)
     {ψ : RoughForm J N F p} (hψ : IsSmoothForm J 1 ψ) (hdψ : mextDeriv ψ = 0)
-    (hfψ : IsSmoothForm I 1 (mpullback I J f ψ)) (hdfψ : mextDeriv (mpullback I J f ψ) = 0)
     (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).homology p) :
     smoothHomologyPeriodHom ψ
         ((SSet.homologyMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of R R) p).hom c) =
       smoothHomologyPeriodHom (mpullback I J f ψ) c := by
+  have hfψ : IsSmoothForm I 1 (mpullback I J f ψ) := hψ.mpullback (hf.of_le (by simp))
+  have hdfψ : mextDeriv (mpullback I J f ψ) = 0 :=
+    hψ.mextDeriv_mpullback_eq_zero hdψ (hf.of_le (by simp))
   -- the pullback of the class of the cocycle of `ψ` is the class of the cocycle of `f^* ψ`
   have hx : HomologicalComplex.homologyMap
       (K := ((smoothSingularSubcomplex J N : SSet).chainComplex
@@ -236,27 +244,22 @@ private def smoothHomologyPeriodClosedForms : closedForms I M p →ₗ[ℝ]
   map_smul' a φ := congrArg LinearMap.toAddMonoidHom (smoothHomologyPeriodHom_smul a
     (φ.1.isSmoothForm.of_le (by simp)) ((mem_closedForms I _).mp φ.2))
 
+/-- The periods of closed smooth real forms evaluate to the periods of the underlying form. -/
+private theorem smoothHomologyPeriodClosedForms_apply (φ : closedForms I M p) :
+    smoothHomologyPeriodClosedForms φ =
+      (smoothHomologyPeriodHom (φ.1 : RoughForm I M ℝ p)).toAddMonoidHom :=
+  (rfl)
+
 /-- Exact forms have vanishing periods on integral smooth singular homology. -/
 private theorem ker_mk_le_ker_smoothHomologyPeriodClosedForms :
     LinearMap.ker (mk I (M := M) p) ≤
       LinearMap.ker (smoothHomologyPeriodClosedForms (I := I) (M := M) (p := p)) := by
   intro φ hφ
   rw [LinearMap.mem_ker, mk_eq_zero_iff] at hφ
-  rw [LinearMap.mem_ker]
-  cases p with
-  | zero =>
-    rw [exactForms_zero, Submodule.mem_bot] at hφ
-    have hφ' : φ = 0 := Subtype.ext hφ
-    subst hφ'
-    exact map_zero _
-  | succ p =>
-    rw [exactForms_succ, LinearMap.mem_range] at hφ
-    obtain ⟨θ, hθ⟩ := hφ
-    have h : (φ.1 : RoughForm I M ℝ (p + 1)) = mextDeriv (θ : RoughForm I M ℝ p) := by
-      rw [← hθ, mextDerivₗ_apply]
-    change (smoothHomologyPeriodHom (φ.1 : RoughForm I M ℝ (p + 1))).toAddMonoidHom = 0
-    rw [h, smoothHomologyPeriodHom_mextDeriv (θ.isSmoothForm.of_le (by simp))]
-    rfl
+  refine AddMonoidHom.ext fun z ↦ ?_
+  rw [smoothHomologyPeriodClosedForms_apply, LinearMap.toAddMonoidHom_coe,
+    smoothHomologyPeriodHom_eq_zero_of_mem_exactForms hφ, LinearMap.zero_apply,
+    AddMonoidHom.zero_apply]
 
 /-- The **pairing of de Rham cohomology with integral smooth singular homology**: the periods
 `smoothHomologyPeriodHom` of any closed form representing a de Rham class, as a linear map from
@@ -291,14 +294,10 @@ theorem smoothHomologyPeriod_map {f : M → N} (hf : ContMDiff I J ∞ f)
       smoothHomologyPeriod c
         ((SSet.homologyMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ) p).hom z) := by
   obtain ⟨ψ, rfl⟩ := mk_surjective J p c
-  have hfψ : IsSmoothForm I 1 ((closedForms.mpullback f hf p ψ).1 : RoughForm I M ℝ p) :=
-    (closedForms.mpullback f hf p ψ).1.isSmoothForm.of_le (by simp)
-  have hdfψ := (mem_closedForms I _).mp (closedForms.mpullback f hf p ψ).2
-  simp only [closedForms.coe_mpullback, SmoothForm.coe_mpullback] at hfψ hdfψ
   rw [map_mk, smoothHomologyPeriod_mk, smoothHomologyPeriod_mk, LinearMap.toAddMonoidHom_coe,
     LinearMap.toAddMonoidHom_coe, closedForms.coe_mpullback, SmoothForm.coe_mpullback,
     smoothHomologyPeriodHom_homologyMap hf (ψ.1.isSmoothForm.of_le (by simp))
-      ((mem_closedForms J _).mp ψ.2) hfψ hdfψ]
+      ((mem_closedForms J _).mp ψ.2)]
 
 end deRhamCohomology
 
