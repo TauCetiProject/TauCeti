@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.LocalDegree
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.LoopSpace
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Sphere.Stiefel.MeridianProduct
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
@@ -15,7 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 /-!
 # The meridian loops generate the homology of the loop space of a sphere
 
-Let `p` be a point of the unit sphere `Sⁿ` of a real inner product space `E`, `n ≥ 3`, and fix a
+Let `p` be a point of the unit sphere `Sⁿ` of a real inner product space `E`, `n ≥ 2`, and fix a
 unit vector `u₀ ⊥ p`. Each unit vector `w ⊥ p` gives the loop `λ(w) = γ_w · γ_{u₀}⁻¹` at `p`
 (`TauCeti.meridianLoopFixedReturn p u₀ w`): along the meridian `γ_w` in the direction `w` to `-p`,
 and back along the meridian `γ_{u₀}`. The family `λ : S(p^⊥) → Ω_p Sⁿ` of these loops,
@@ -24,10 +24,11 @@ isomorphism
 
 `λ_* : Hₙ₋₁(S(p^⊥); ℤ) ≅ Hₙ₋₁(Ω_p Sⁿ; ℤ)`
 
-(`TauCeti.isIso_singularHomologyFunctor_map_meridianLoop`). So the class `x = λ_*[Sⁿ⁻¹]` generates
-`Hₙ₋₁(Ω_p Sⁿ; ℤ) ≅ ℤ`. In the proof of Proposition 6.17 of Barraud–Damian–Humilière–Oancea this
-class is the degree `n - 1` generator of the Pontryagin ring `H_*(Ω_p Sⁿ)`, there obtained from
-Morse homology with DG coefficients of the height function; here it is identified directly.
+(`TauCeti.isIso_singularHomologyFunctor_map_meridianLoopFixedReturn`). So the class
+`x = λ_*[Sⁿ⁻¹]` generates `Hₙ₋₁(Ω_p Sⁿ; ℤ) ≅ ℤ`. In the proof of Proposition 6.17 of
+Barraud–Damian–Humilière–Oancea this class is the degree `n - 1` generator of the Pontryagin ring
+`H_*(Ω_p Sⁿ)`, there obtained from Morse homology with DG coefficients of the height function;
+here it is identified directly.
 
 ## Proof
 
@@ -45,14 +46,15 @@ Hurewicz classes are read after transporting along the path of loops `χ_{u₀}�
   (`TauCeti.eq_and_eq_of_sphereMeridian_eq`, `TauCeti.exists_sphereMeridian_eq`), so the cube
   covers the open complement of `γ_{u₀}` exactly once, and its Hurewicz class generates
   `Hₙ(Sⁿ; ℤ)` (`GenLoop.isIso_hurewicz_of_bijOn_toSphere`).
-* By the Hurewicz theorems for `Sⁿ` and for the `(n - 2)`-connected space `Ω_p Sⁿ`, and the
-  loop-space shift `πₙ₋₁(Ω_p Sⁿ) ≅ πₙ(Sⁿ)`, the transported class generates `Hₙ₋₁(Ω_p Sⁿ; ℤ)`, so
-  `λ_*` carries a generator to a generator.
+* By the Hurewicz theorem for `Sⁿ`, the Hurewicz criterion for the `(n - 2)`-connected loop space
+  `Ω_p Sⁿ`, and the loop-space shift `πₙ₋₁(Ω_p Sⁿ) ≅ πₙ(Sⁿ)`
+  (`HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff`), the transported class generates
+  `Hₙ₋₁(Ω_p Sⁿ; ℤ)`, so `λ_*` carries a generator to a generator.
 
 ## Main results
 
-* `TauCeti.isIso_singularHomologyFunctor_map_meridianLoop`: for `n ≥ 3`, the meridian loops
-  `w ↦ γ_w · γ_{u₀}⁻¹` induce an isomorphism `Hₙ₋₁(S(p^⊥); ℤ) ≅ Hₙ₋₁(Ω_p Sⁿ; ℤ)`.
+* `TauCeti.isIso_singularHomologyFunctor_map_meridianLoopFixedReturn`: for `n ≥ 2`, the meridian
+  loops `w ↦ γ_w · γ_{u₀}⁻¹` induce an isomorphism `Hₙ₋₁(S(p^⊥); ℤ) ≅ Hₙ₋₁(Ω_p Sⁿ; ℤ)`.
 
 ## References
 
@@ -175,11 +177,11 @@ end Meridian
 /-- The cube of the transported meridian loops has a Hurewicz class generating `Hₙ(Sⁿ; ℤ)`, when
 `c` covers `S(p^⊥)` off `u₀` and identifies only points of the boundary of its cube: it covers the
 nonempty open complement of the meridian `γ_{u₀}` once. -/
-private theorem isIso_hurewicz_meridianCube {m : ℕ} (hE : finrank ℝ E = m + 4)
-    (u₀ : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (c : Ω^ (Fin (m + 2)) (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) u₀)
+private theorem isIso_hurewicz_meridianCube {m : ℕ} (hE : finrank ℝ E = m + 3)
+    (u₀ : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (c : Ω^ (Fin (m + 1)) (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) u₀)
     (hcs : ∀ q, q ≠ u₀ → ∃ y, c y = q)
-    (hci : ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin (m + 2)) ∧
-      z ∈ Cube.boundary (Fin (m + 2))) :
+    (hci : ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin (m + 1)) ∧
+      z ∈ Cube.boundary (Fin (m + 1))) :
     IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (meridianCube p u₀ c)) := by
   have hM : IsOpen (range (sphereMeridian p u₀))ᶜ :=
     (isCompact_range (sphereMeridian p u₀).continuous).isClosed.isOpen_compl
@@ -193,13 +195,13 @@ private theorem isIso_hurewicz_meridianCube {m : ℕ} (hE : finrank ℝ E = m + 
     simp only [coe_neg_sphere, coe_sphereMeridian, inner_neg_left, inner_add_left,
       real_inner_smul_left, hu, real_inner_self_eq_norm_sq, hn, mul_one_div, sin_pi_div_two] at h
     nlinarith [sin_pi_mul_nonneg t]
-  exact GenLoop.isIso_hurewicz_of_bijOn_toSphere (n := m + 1) hE (meridianCube p u₀ c) hM hMne
+  exact GenLoop.isIso_hurewicz_of_bijOn_toSphere (n := m) hE (meridianCube p u₀ c) hM hMne
     (bijOn_toSphere_meridianCube p u₀ c hcs hci)
 
 /-! ### The class of the meridian loops -/
 
 /-- **The meridian loops generate the homology of the loop space of a sphere.** Let `E` have
-dimension `m + 4`, so that its unit sphere is `Sⁿ` with `n = m + 3 ≥ 3`, and let `p` be a point of
+dimension `m + 3`, so that its unit sphere is `Sⁿ` with `n = m + 2 ≥ 2`, and let `p` be a point of
 `Sⁿ`. For a fixed unit vector `u₀ ⊥ p`, the family of loops at `p`
 
 `λ : S(p^⊥) → Ω_p Sⁿ`, `w ↦ γ_w · γ_{u₀}⁻¹`,
@@ -208,15 +210,16 @@ which runs to `-p` along the meridian in the direction `w` and back along the me
 direction `u₀` (`TauCeti.meridianLoopFixedReturn`), induces an isomorphism
 `λ_* : Hₙ₋₁(S(p^⊥); ℤ) ≅ Hₙ₋₁(Ω_p Sⁿ; ℤ)`. As `S(p^⊥)` is a sphere of dimension `n - 1`, this says
 that `λ_*` sends the fundamental class of `S(p^⊥)` to a generator of `Hₙ₋₁(Ω_p Sⁿ; ℤ) ≅ ℤ`. -/
-theorem isIso_singularHomologyFunctor_map_meridianLoop {m : ℕ} (hE : finrank ℝ E = m + 4)
+theorem isIso_singularHomologyFunctor_map_meridianLoopFixedReturn {m : ℕ}
+    (hE : finrank ℝ E = m + 3)
     (u₀ : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)).map
+    IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).obj (ModuleCat.of ℤ ℤ)).map
       (TopCat.ofHom (meridianLoopFixedReturn p u₀))) := by
   let R := ModuleCat.of ℤ ℤ
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   have hp0 : (p : E) ≠ 0 := ne_zero_of_mem_unit_sphere p
-  have hV : finrank ℝ (ℝ ∙ (p : E))ᗮ = m + 2 + 1 := by
-    have : Fact (finrank ℝ E = m + 3 + 1) := ⟨hE⟩
+  have hV : finrank ℝ (ℝ ∙ (p : E))ᗮ = m + 1 + 1 := by
+    have : Fact (finrank ℝ E = m + 2 + 1) := ⟨hE⟩
     exact Submodule.finrank_orthogonal_span_singleton hp0
   -- A generalized loop `c` of `S(p^⊥)` that is a homeomorphism off the boundary of its cube.
   obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphere hV u₀
@@ -226,7 +229,7 @@ theorem isIso_singularHomologyFunctor_map_meridianLoop {m : ℕ} (hE : finrank �
   -- since its shift to the sphere does.
   set f := GenLoop.map (meridianLoopFixedReturn p u₀) (meridianLoopFixedReturn_apply p u₀ u₀) c
   have hg := (HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff (n := m)
-    (fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := m + 3) hE (by simpa using hk) p)
+    (fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := m + 2) hE (by simpa using hk) p)
     (GenLoop.transport (meridianContraction p u₀).symm f)).1
     (isIso_hurewicz_meridianCube p hE u₀ c hcs hci)
   -- Transport does not change Hurewicz classes, and the class of `f` is that of `c` read
@@ -234,7 +237,7 @@ theorem isIso_singularHomologyFunctor_map_meridianLoop {m : ℕ} (hE : finrank �
   have hgf : GenLoop.hurewicz R (GenLoop.transport (meridianContraction p u₀).symm f) =
       GenLoop.hurewicz R f := by
     rw [← HomotopyGroup.hurewicz_mk, ← HomotopyGroup.hurewicz_mk, ← homotopyGroupTransport_mk]
-    exact HomotopyGroup.hurewicz_homotopyGroupTransport R (m + 1) _ _
+    exact HomotopyGroup.hurewicz_homotopyGroupTransport R m _ _
   rw [hgf, GenLoop.hurewicz_map] at hg
   exact IsIso.of_isIso_comp_left (GenLoop.hurewicz R c) _
 
