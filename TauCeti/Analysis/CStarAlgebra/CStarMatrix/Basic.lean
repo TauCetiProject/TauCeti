@@ -79,9 +79,10 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring
     SMulCommClass R (CStarMatrix n n A) (CStarMatrix n n A) :=
   ⟨fun r M N => (mul_smul M r N).symm⟩
 
-/-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
+/-- Reading a C⋆-matrix product as an ordinary matrix respects multiplication. -/
 @[simp]
-lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_mul {l m : Type*} [Fintype m] [Mul A] [AddCommMonoid A]
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N := (rfl)
 
 /-- Reading a C⋆-matrix as an ordinary matrix sends `star` to the conjugate transpose. -/
