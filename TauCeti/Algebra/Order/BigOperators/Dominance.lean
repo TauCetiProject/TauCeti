@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Order.Monoid.Defs
+import Mathlib.Algebra.Group.Pi.Lemmas
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Group.Int
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
@@ -112,12 +113,14 @@ end Dominates
 
 /-- Dominance compares the prefix sums `TauCeti.prefixSum k` of every length `k`; those of length
 at least `n` are the totals. -/
-theorem dominates_iff_forall_prefixSum_le [AddCommMonoid M] [Preorder M] {a g : Fin n → M} :
+theorem dominates_iff_forall_prefixSum_le [AddCommMonoid M] [LE M] {a g : Fin n → M} :
     Dominates a g ↔ ∑ i, g i = ∑ i, a i ∧ ∀ k, prefixSum k a ≤ prefixSum k g := by
-  refine and_congr_right fun hsum ↦ ⟨fun h k ↦ ?_, fun h k hk ↦ ?_⟩
+  refine and_congr_right fun _ ↦ ⟨fun h k ↦ ?_, fun h k hk ↦ ?_⟩
   · rcases le_or_gt k n with hk | hk
     · simpa only [prefixSum_eq_sum_castLE hk] using h k hk
-    · rw [prefixSum_of_le hk.le, prefixSum_of_le hk.le, hsum]
+    · rw [prefixSum_of_le hk.le, prefixSum_of_le hk.le, ← prefixSum_of_le le_rfl a,
+        ← prefixSum_of_le le_rfl g]
+      simpa only [prefixSum_eq_sum_castLE le_rfl] using h n le_rfl
   · simpa only [prefixSum_eq_sum_castLE hk] using h k
 
 /-- On vectors of length one, dominance is equality: only the totals are compared. -/
@@ -125,16 +128,6 @@ theorem dominates_iff_eq_fin_one [AddCommMonoid M] [Preorder M] {a g : Fin 1 →
     Dominates a g ↔ a = g := by
   refine ⟨fun h ↦ funext fun i ↦ ?_, fun h ↦ h ▸ Dominates.refl a⟩
   simpa only [Fin.sum_univ_one, Fin.fin_one_eq_zero i] using h.1.symm
-
-/-- The prefix sums of the combination `∑ᵢ cᵢ (eᵢ - eᵢ₊₁)` of consecutive coordinate differences:
-the prefix sum of length `k` is `c (k - 1)` when `1 ≤ k ≤ n`, and `0` otherwise. -/
-theorem prefixSum_sum_single_castSucc_sub_single_succ [AddCommGroup M] (c : Fin n → M) (k : ℕ) :
-    prefixSum k (∑ i, (Pi.single i.castSucc (c i) - Pi.single i.succ (c i))) =
-      ∑ i : Fin n with i.val + 1 = k, c i := by
-  rw [prefixSum_sum, sum_filter]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [prefixSum_sub, prefixSum_single, prefixSum_single, Fin.val_castSucc, Fin.val_succ]
-  split_ifs <;> first | omega | simp
 
 /-- **Dominance is the order of nonnegative combinations of consecutive differences.** In an
 ordered additive commutative group, `a` dominates `g` exactly when `g - a` is a combination
@@ -173,16 +166,18 @@ differences.** For `a g : Fin (n + 1) → ℤ`, `a` dominates `g` exactly when
 theorem dominates_iff_exists_nat_sub_eq_sum {a g : Fin (n + 1) → ℤ} :
     Dominates a g ↔ ∃ c : Fin n → ℕ,
       g - a = ∑ i, c i • (Pi.single i.castSucc 1 - Pi.single i.succ 1 : Fin (n + 1) → ℤ) := by
+  have hsmul (m : ℕ) (x y : Fin (n + 1)) :
+      m • (Pi.single x 1 - Pi.single y 1 : Fin (n + 1) → ℤ) =
+        Pi.single x (m : ℤ) - Pi.single y (m : ℤ) := by
+    rw [nsmul_sub, ← Pi.single_nsmul, ← Pi.single_nsmul, nsmul_one]
   rw [dominates_iff_exists_nonneg_sub_eq_sum]
   constructor
   · rintro ⟨c, hc, h⟩
     refine ⟨fun i ↦ (c i).toNat, h.trans (sum_congr rfl fun i _ ↦ ?_)⟩
-    ext j
-    simp [Pi.single_apply, mul_sub, mul_ite, Int.toNat_of_nonneg (hc i)]
+    rw [hsmul, Int.toNat_of_nonneg (hc i)]
   · rintro ⟨c, h⟩
-    refine ⟨fun i ↦ c i, fun i ↦ Int.natCast_nonneg (c i), h.trans (sum_congr rfl fun i _ ↦ ?_)⟩
-    ext j
-    simp [Pi.single_apply, mul_sub, mul_ite]
+    exact ⟨fun i ↦ c i, fun i ↦ Int.natCast_nonneg (c i),
+      h.trans (sum_congr rfl fun i _ ↦ hsmul _ _ _)⟩
 
 /-- The defects of the leading partial sums of `g` from its total, summed. It strictly decreases
 down the dominance order (`TauCeti.Dominates.dominanceDefect_lt`), so induction on it is

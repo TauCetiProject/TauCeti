@@ -46,15 +46,6 @@ open RootPairing
 
 universe u
 
-/-- The consecutive-root indices biject onto the support of the diagonal base. -/
-private theorem bijOn_diagonalSimpleRootIndex (n : ℕ) :
-    Set.BijOn (diagonalSimpleRootIndex n) Set.univ
-      ((diagonalRootBase.{u} n).flip.support : Set (DiagonalRootIndex.{u} (n + 1))) := by
-  refine ⟨fun i _ ↦ ?_, (diagonalSimpleRootIndex_injective n).injOn, fun p hp ↦ ?_⟩
-  · simp
-  · obtain ⟨i, hi⟩ := (mem_diagonalRootBase_support n p).1 hp
-    exact ⟨i, trivial, hi⟩
-
 /-- **The dominance order on the coweights of `GL_(n+1)` is the coroot order.** A coweight `ν` of
 the diagonal torus lies below `μ` for the standard base, that is, `μ - ν` is a sum of the simple
 coroots `e_i - e_(i+1)` with natural coefficients, exactly when `μ` and `ν` have the same total
@@ -63,11 +54,17 @@ theorem dominates_iff_rootLE_flip {n : ℕ} {ν μ : ULift.{u} (Fin (n + 1)) →
     Dominates (fun i ↦ ν (ULift.up i)) (fun i ↦ μ (ULift.up i)) ↔
       (diagonalRootDatum.{u} (n + 1)).flip.rootLE (diagonalRootBase.{u} n).flip ν μ := by
   rw [dominates_iff_exists_nat_sub_eq_sum, rootLE_iff_sub_mem_posRootCone,
-    mem_posRootCone_iff_exists_nat_of_bijOn _ _ (bijOn_diagonalSimpleRootIndex n)]
-  refine exists_congr fun c ↦ ⟨fun h ↦ funext fun j ↦ ?_, fun h ↦ funext fun j ↦ ?_⟩
-  · simpa [diagonalRootDatum_coroot_diagonalSimpleRootIndex, SplitTorus.coordinateCoroot_apply,
-      Pi.single_apply, ULift.ext_iff] using congrFun h j.down
-  · simpa [diagonalRootDatum_coroot_diagonalSimpleRootIndex, SplitTorus.coordinateCoroot_apply,
-      Pi.single_apply, ULift.ext_iff] using congrFun h (ULift.up j)
+    mem_posRootCone_iff_exists_nat_of_bijOn _ (diagonalRootBase n).flip
+      (bijOn_diagonalSimpleRootIndex n)]
+  refine exists_congr fun c ↦ ?_
+  have hcoroot : ∑ i, c i • (diagonalRootDatum.{u} (n + 1)).flip.root
+      (diagonalSimpleRootIndex n i) = fun j ↦ (∑ i, c i •
+        (Pi.single i.castSucc 1 - Pi.single i.succ 1 : Fin (n + 1) → ℤ)) j.down := by
+    funext ⟨j⟩
+    simp only [Finset.sum_apply, Pi.smul_apply]
+    exact Finset.sum_congr rfl fun i _ ↦
+      congrArg _ (diagonalRootDatum_coroot_diagonalSimpleRootIndex_apply n i j)
+  rw [hcoroot]
+  exact ⟨fun h ↦ funext fun j ↦ congrFun h j.down, fun h ↦ funext fun j ↦ congrFun h (ULift.up j)⟩
 
 end TauCeti.GeneralLinear
