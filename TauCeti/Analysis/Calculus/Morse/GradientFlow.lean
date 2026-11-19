@@ -52,6 +52,8 @@ route to Morse homology.
 * `IsIntegralCurveOn.antitoneOn_comp_neg_gradient` and
   `IsIntegralCurveOn.strictAntiOn_comp_neg_gradient`: Lyapunov monotonicity and strict
   descent away from critical points.
+* `IsIntegralCurve.exists_pos_forall_dist_lt_mem_Ioo`: near a point which is not critical, a
+  global trajectory passes only at nearby times.
 * `IsIntegralCurveOn.intervalIntegrable_norm_gradient_sq`: finite energy on compact time
   intervals.
 * `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` and
@@ -251,6 +253,48 @@ theorem strictAnti_comp_neg_gradient
     (fun t ↦ hasDerivAt_comp_neg_gradient hγ
       (by_contra fun h ↦ hcrit t (gradient_eq_zero_of_not_differentiableAt h)))
     fun t ↦ neg_lt_zero.mpr (sq_pos_of_ne_zero (norm_ne_zero_iff.mpr (hcrit t)))
+
+/-- **Near a regular point, a trajectory passes only at nearby times.** If `γ s₀` is not a
+critical point of `f`, then for every `δ > 0` there is a ball around `γ s₀` that the global
+negative gradient trajectory `γ` meets only at times within `δ` of `s₀`. The value of `f`
+decreases along `γ`, strictly so near `s₀`, and the ball is chosen so small that `f` stays within
+the drop of `f ∘ γ` over the times `s₀ ± δ`. -/
+theorem exists_pos_forall_dist_lt_mem_Ioo
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
+    {s₀ : ℝ} (hfc : ContinuousAt f (γ s₀)) (hg : ContinuousAt (fun t ↦ ∇ f (γ t)) s₀)
+    (hcrit : ∇ f (γ s₀) ≠ 0) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ r > 0, ∀ s, dist (γ s) (γ s₀) < r → s ∈ Ioo (s₀ - δ) (s₀ + δ) := by
+  have hanti := antitone_comp_neg_gradient hγ hf
+  -- The gradient does not vanish along `γ` on a time interval `[s₀ - δ', s₀ + δ']`.
+  obtain ⟨ε₀, hε₀, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hg.eventually_ne hcrit)
+  set δ' := min (ε₀ / 2) δ
+  have hδ'0 : 0 < δ' := lt_min (half_pos hε₀) hδ
+  have hstrict : StrictAntiOn (f ∘ γ) (Icc (s₀ - δ') (s₀ + δ')) :=
+    (hγ.isIntegralCurveOn _).strictAntiOn_comp_neg_gradient (convex_Icc _ _)
+      (fun t _ ↦ hf t) fun t ht ↦ hball t <| by
+        rw [interior_Icc] at ht
+        rw [Metric.mem_ball, Real.dist_eq, abs_lt]
+        constructor <;> linarith [ht.1, ht.2, min_le_left (ε₀ / 2) δ]
+  have hlo : f (γ s₀) < f (γ (s₀ - δ')) :=
+    hstrict ⟨le_rfl, by linarith⟩ ⟨by linarith, by linarith⟩ (by linarith)
+  have hhi : f (γ (s₀ + δ')) < f (γ s₀) :=
+    hstrict ⟨by linarith, by linarith⟩ ⟨by linarith, le_rfl⟩ (by linarith)
+  -- Points close to `γ s₀` have values of `f` strictly between those at `s₀ ± δ'`.
+  set ε := min (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))
+  have hε0 : 0 < ε := lt_min (by linarith) (by linarith)
+  obtain ⟨r, hr, hfr⟩ := Metric.continuousAt_iff.1 hfc ε hε0
+  refine ⟨r, hr, fun s hs ↦ ?_⟩
+  have hfs := hfr hs
+  rw [Real.dist_eq, abs_lt] at hfs
+  constructor
+  · by_contra h
+    have := hanti (show s ≤ s₀ - δ' by linarith [min_le_right (ε₀ / 2) δ])
+    simp only [Function.comp_apply] at this
+    linarith [min_le_left (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))]
+  · by_contra h
+    have := hanti (show s₀ + δ' ≤ s by linarith [min_le_right (ε₀ / 2) δ])
+    simp only [Function.comp_apply] at this
+    linarith [min_le_right (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))]
 
 /-- **Energy identity for a global negative gradient trajectory.**  The drop in `f` between two
 times equals the integral of the squared norm of its gradient along the trajectory. -/

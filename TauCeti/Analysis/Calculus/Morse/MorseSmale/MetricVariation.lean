@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Fredholm
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.InnerProductSpace.RankOne
 import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.LinearAlgebra.Submodule.Quotient
 
 /-!
 # Localized metric variations make the linearized gradient trajectory equation onto
@@ -34,10 +36,10 @@ neighbourhood of one point `γ s₀` of the trajectory that is not a critical po
 metric variations together span `L²(ℝ, E)`, for a trajectory between nondegenerate critical
 points. Finitely many variations already suffice
 (`TauCeti.exists_finset_subset_metricVariations_range_trajectoryOperator_sup_span_eq_top`), since
-the cokernel of `D_γ` is finite-dimensional. This is the transversality input of the
-Fredholm-theoretic proof that Morse–Smale metrics are generic: no condition on the metric is
-needed to make the universal section regular, only a free variation of the metric near one
-regular point of each trajectory.
+the cokernel of `D_γ` is finite-dimensional. These statements hold at the given inner product of
+`E`, and are the surjectivity input for the universal linearization in the Fredholm-theoretic
+proof that Morse–Smale metrics are generic: the variations need only be localized near one
+regular point of the trajectory.
 
 The proof goes through the cokernel. A path `v` orthogonal to the range of `D_γ` agrees almost
 everywhere with a solution `w` of the formal adjoint equation `w' = Hess f(γ) w`
@@ -114,69 +116,7 @@ theorem metricVariations_mono {U V : Set E} (h : U ⊆ V) :
     metricVariations f γ U ⊆ metricVariations f γ V :=
   fun _ ⟨H, hH, hc, hU, hsa, hg⟩ ↦ ⟨H, hH, hc, hU.trans h, hsa, hg⟩
 
-/-! ### Localizing in time near a regular point of a trajectory -/
-
-/-- Near a regular point `γ s₀` of a negative gradient trajectory, the trajectory passes only at
-times close to `s₀`: for every `δ > 0` there is a ball around `γ s₀`, inside a given neighbourhood,
-that `γ` meets only at times within `δ` of `s₀`. The value of `f` decreases along `γ`, strictly so
-near `s₀`, and the ball is chosen so small that `f` stays within the drop of `f ∘ γ` over the times
-`s₀ ± δ`. -/
-private theorem exists_ball_subset_forall_dist_lt_mem_Ioo (hf : ContDiff ℝ 2 f)
-    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {U : Set E} (hU : U ∈ 𝓝 (γ s₀))
-    (hcrit : ∇ f (γ s₀) ≠ 0) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ r > 0, Metric.ball (γ s₀) r ⊆ U ∧
-      ∀ s, dist (γ s) (γ s₀) < r → s ∈ Ioo (s₀ - δ) (s₀ + δ) := by
-  have hdiff (t : ℝ) : DifferentiableAt ℝ f (γ t) := hf.differentiable (by norm_num) _
-  have hanti := hγ.antitone_comp_neg_gradient hdiff
-  -- The gradient does not vanish along `γ` on a time interval `[s₀ - δ', s₀ + δ']`.
-  have hg : Continuous fun t ↦ ∇ f (γ t) :=
-    (hf.continuous_gradient (by norm_num)).comp hγ.continuous
-  obtain ⟨ε₀, hε₀, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hg.continuousAt.eventually_ne hcrit)
-  set δ' := min (ε₀ / 2) δ
-  have hδ'0 : 0 < δ' := lt_min (half_pos hε₀) hδ
-  have hstrict : StrictAntiOn (f ∘ γ) (Icc (s₀ - δ') (s₀ + δ')) :=
-    (hγ.isIntegralCurveOn _).strictAntiOn_comp_neg_gradient (convex_Icc _ _)
-      (fun t _ ↦ hdiff t) fun t ht ↦ hball t <| by
-        rw [interior_Icc] at ht
-        rw [Metric.mem_ball, Real.dist_eq, abs_lt]
-        constructor <;> linarith [ht.1, ht.2, min_le_left (ε₀ / 2) δ]
-  have hlo : f (γ s₀) < f (γ (s₀ - δ')) :=
-    hstrict ⟨le_rfl, by linarith⟩ ⟨by linarith, by linarith⟩ (by linarith)
-  have hhi : f (γ (s₀ + δ')) < f (γ s₀) :=
-    hstrict ⟨by linarith, by linarith⟩ ⟨by linarith, le_rfl⟩ (by linarith)
-  -- Points close to `γ s₀` have values of `f` strictly between those at `s₀ ± δ'`.
-  set ε := min (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))
-  have hε0 : 0 < ε := lt_min (by linarith) (by linarith)
-  obtain ⟨r₁, hr₁, hfr⟩ := Metric.continuousAt_iff.1
-    ((hf.continuous.continuousAt : ContinuousAt f (γ s₀))) ε hε0
-  obtain ⟨r₂, hr₂, hU₂⟩ := Metric.mem_nhds_iff.1 hU
-  refine ⟨min r₁ r₂, lt_min hr₁ hr₂, (Metric.ball_subset_ball (min_le_right _ _)).trans hU₂,
-    fun s hs ↦ ?_⟩
-  have hfs := hfr (hs.trans_le (min_le_left _ _))
-  rw [Real.dist_eq, abs_lt] at hfs
-  constructor
-  · by_contra h
-    have := hanti (show s ≤ s₀ - δ' by linarith [min_le_right (ε₀ / 2) δ])
-    simp only [Function.comp_apply] at this
-    linarith [min_le_left (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))]
-  · by_contra h
-    have := hanti (show s₀ + δ' ≤ s by linarith [min_le_right (ε₀ / 2) δ])
-    simp only [Function.comp_apply] at this
-    linarith [min_le_right (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))]
-
 /-! ### A metric variation pairing positively with a given path -/
-
-omit [FiniteDimensional ℝ E] in
-open InnerProductSpace in
-/-- The symmetric operator `u ↦ ⟪a, u⟫ b + ⟪b, u⟫ a` carries `a` to a vector pairing positively
-with `b`, for nonzero `a` and `b`. -/
-private theorem inner_rankOne_add_rankOne_apply_self_pos {a b : E} (ha : a ≠ 0) (hb : b ≠ 0) :
-    0 < ⟪(rankOne ℝ b a + rankOne ℝ a b) a, b⟫ := by
-  rw [add_apply, rankOne_apply, rankOne_apply, inner_add_left,
-    real_inner_smul_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
-    real_inner_self_eq_norm_sq, real_inner_comm a b]
-  have := mul_pos (pow_pos (norm_pos_iff.2 ha) 2) (pow_pos (norm_pos_iff.2 hb) 2)
-  nlinarith [sq_nonneg ⟪b, a⟫]
 
 open InnerProductSpace in
 /-- Near a point `γ s₀` of a negative gradient trajectory which is not a critical point of `f`, a
@@ -195,31 +135,35 @@ private theorem exists_integral_inner_metricVariation_pos (hf : ContDiff ℝ 2 f
   have hBsa : IsSelfAdjoint B := by
     rw [isSelfAdjoint_iff, ContinuousLinearMap.star_eq_adjoint, hB, map_add, adjoint_rankOne,
       adjoint_rankOne, add_comm]
-  have hq : Continuous fun s ↦ ⟪B (∇ f (γ s)), w s⟫ :=
-    (B.continuous.comp ((hf.continuous_gradient (by norm_num)).comp hγ.continuous)).inner hwc
+  have hg : Continuous fun t ↦ ∇ f (γ t) :=
+    (hf.continuous_gradient (by norm_num)).comp hγ.continuous
+  have hq : Continuous fun s ↦ ⟪B (∇ f (γ s)), w s⟫ := (B.continuous.comp hg).inner hwc
   obtain ⟨δ, hδ, hqδ⟩ := Metric.eventually_nhds_iff_ball.1
     (hq.continuousAt.eventually (lt_mem_nhds (inner_rankOne_add_rankOne_apply_self_pos hcrit hw0)))
   -- A small ball around `γ s₀` inside `U` meets the trajectory only at times within `δ` of `s₀`.
-  obtain ⟨r, hr, hrU, hrs⟩ := exists_ball_subset_forall_dist_lt_mem_Ioo hf hγ hU hcrit hδ
+  obtain ⟨r₁, hr₁, hrs⟩ := hγ.exists_pos_forall_dist_lt_mem_Ioo
+    (fun t ↦ hf.differentiable (by norm_num) _) hf.continuous.continuousAt hg.continuousAt hcrit hδ
+  obtain ⟨r₂, hr₂, hrU⟩ := Metric.mem_nhds_iff.1 hU
+  set r := min r₁ r₂
+  have hr : 0 < r := lt_min hr₁ hr₂
   let ψ : ContDiffBump (γ s₀) := ⟨r / 4, r / 2, by positivity, by linarith⟩
   have hψr : ψ.rOut = r / 2 := rfl
   have hψγ {s : ℝ} (hs : ψ (γ s) ≠ 0) : s ∈ Ioo (s₀ - δ) (s₀ + δ) :=
     hrs s ((Metric.mem_ball.1 (ψ.support_eq ▸ Function.mem_support.2 hs)).trans
-      (by rw [hψr]; linarith))
-  have hsupp {g : ℝ → ℝ} (hg : ∀ s, ψ (γ s) = 0 → g s = 0) : HasCompactSupport g :=
+      (by rw [hψr]; linarith [min_le_left r₁ r₂]))
+  have hψsupp : HasCompactSupport fun s ↦ ψ (γ s) :=
     HasCompactSupport.of_support_subset_isCompact (K := Icc (s₀ - δ) (s₀ + δ)) isCompact_Icc
-      fun s hs ↦ Ioo_subset_Icc_self (hψγ fun h ↦ hs (hg s h))
+      fun s hs ↦ Ioo_subset_Icc_self (hψγ hs)
   refine ⟨fun x ↦ ψ x • B, ψ.contDiff.smul contDiff_const, ψ.hasCompactSupport.smul_right,
     (tsupport_smul_subset_left _ _).trans ?_, fun x ↦ (IsSelfAdjoint.all (ψ x)).smul hBsa,
-    HasCompactSupport.of_support_subset_isCompact (K := Icc (s₀ - δ) (s₀ + δ)) isCompact_Icc
-      fun s hs ↦ Ioo_subset_Icc_self (hψγ fun h ↦ hs (by simp [h])), ?_⟩
+    hψsupp.mono fun s hs h ↦ hs (by simp [h]), ?_⟩
   · rw [ψ.tsupport_eq]
-    exact (Metric.closedBall_subset_ball (by rw [hψr]; linarith)).trans hrU
+    exact (Metric.closedBall_subset_ball (by rw [hψr]; linarith [min_le_right r₁ r₂])).trans hrU
   -- The pairing is the integral of a nonnegative function, positive at `s₀`.
   simp only [smul_apply, real_inner_smul_left]
   refine Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero (x := s₀)
     (((ψ.contDiff (n := 0)).continuous.comp hγ.continuous).mul hq)
-    (hsupp fun s h ↦ by simp [h]) (fun s ↦ ?_) ?_
+    (hψsupp.mono fun s hs h ↦ hs (by simp [h])) (fun s ↦ ?_) ?_
   · by_cases hs : ψ (γ s) = 0
     · simp [hs]
     · refine mul_nonneg ψ.nonneg (hqδ s ?_).le
@@ -327,24 +271,8 @@ theorem exists_finset_subset_metricVariations_range_trajectoryOperator_sup_span_
     ∃ t : Finset (Lp E 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))),
       (t : Set _) ⊆ metricVariations f γ U ∧
         (WeakDerivStep.trajectoryOperator (p := 2) AL).range ⊔ Submodule.span ℝ t = ⊤ := by
-  classical
-  set R := (WeakDerivStep.trajectoryOperator (p := 2) AL).range with hR
-  have hD := hγ.isFredholm_trajectoryOperator_hessianOperator hf hp hq hbot htop hAL
-  have := hD.finite_coker
-  have htop' := range_trajectoryOperator_sup_span_metricVariations_eq_top hf hγ hp hq hbot htop hAL
-    hU hcrit
-  -- In the finite-dimensional cokernel, the images of the variations span everything.
-  have hspan : Submodule.span ℝ (R.mkQ '' metricVariations f γ U) = ⊤ := by
-    rw [← Submodule.map_span, ← Submodule.range_mkQ R, ← Submodule.map_top, ← htop',
-      Submodule.map_sup, ← hR, Submodule.mkQ_map_self, bot_sup_eq]
-  obtain ⟨b, hbS, hbspan, hbli⟩ := exists_linearIndependent ℝ (R.mkQ '' metricVariations f γ U)
-  have hbfin : b.Finite := Set.finite_coe_iff.1 hbli.finite_of_isNoetherian
-  obtain ⟨t, htS, hti⟩ := (Finset.subset_set_image_iff (t := hbfin.toFinset)).1
-    (by simpa using hbS)
-  refine ⟨t, htS, ?_⟩
-  rw [← Submodule.comap_map_mkQ, Submodule.map_span, eq_top_iff]
-  intro x _
-  rw [Submodule.mem_comap, ← Finset.coe_image, hti, Set.Finite.coe_toFinset, hbspan, hspan]
-  exact Submodule.mem_top
+  have := (hγ.isFredholm_trajectoryOperator_hessianOperator hf hp hq hbot htop hAL).finite_coker
+  exact Submodule.exists_finset_subset_sup_span_eq_top
+    (range_trajectoryOperator_sup_span_metricVariations_eq_top hf hγ hp hq hbot htop hAL hU hcrit)
 
 end TauCeti
