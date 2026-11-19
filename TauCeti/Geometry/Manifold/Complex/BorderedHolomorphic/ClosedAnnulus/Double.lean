@@ -501,7 +501,6 @@ def doubleTorusDiffeomorph (r₁ r₂ : ℝ) [Fact (0 < r₁)] [Fact (r₁ < r�
     ⟨doubleTorusMap_injective, doubleTorusMap_surjective⟩
 
 /-- The biholomorphism evaluates as the seam-glued logarithmic map. -/
-@[simp]
 theorem doubleTorusDiffeomorph_apply (z : SchottkyDouble (closedAnnulus r₁ r₂)) :
     doubleTorusDiffeomorph r₁ r₂ z = doubleTorusMap r₁ r₂ z :=
   congrFun (IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _) z
