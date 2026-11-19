@@ -29,9 +29,10 @@ is a positive `(1,1)`-current exactly when `Θ` takes values in this cone at eve
 Taubes's passage from Seiberg–Witten solutions to pseudoholomorphic curves, the normalized
 curvature currents are only approximately positive: their pointwise distance to the cone is
 controlled by two quantities, the anti-`J`-invariant part of the form and the negative part of its
-Hermitian form `B(v, v) = η(v, J v)`. Conversely, a two-form `Ω` taming `J` controls the norm of
-a form by its pairing with `Ω` and its distance to the cone. These are the two pointwise
-estimates of this file.
+Hermitian form `B(v, v) = η(v, J v)`. This file proves that distance estimate and writes positive
+`(1,1)`-forms as nonnegative combinations of complex lines. The converse estimate, the control of
+the norm of a form by its pairing with a two-form `Ω` taming `J` and its distance to the cone, is
+in `TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.ComplexLineCone`.
 
 **Distance to the cone.** `D_J` satisfies `D_J³ = -4 D_J` (`lieMap_lieMap_lieMap`), so
 `η + D_J² η / 4` is `J`-invariant; it is the `(1,1)`-part of `η`, and `-D_J² η / 4` is its
@@ -75,12 +76,7 @@ analysis.
 `TauCeti.AlmostComplexStructure.isLeast_hermitianForm_apply_self`: the positive cone is a round
 cone about `ω`.
 
-Integrated over a tube, the inequality `c₀ ‖η‖ ≤ ⟪Ω, η⟫ + (‖Ω‖ + c₀) dist(η, positiveCone)` bounds
-the mass of an approximately positive current by its pairing with a taming form plus its integrated
-distance to the positive cone. That pairing
-is topological only under boundary conditions: for instance when the current is closed with compact
-support in the interior of the tube and the taming form is closed; otherwise a boundary term
-appears. The Hodge star preserves the cone
+The Hodge star preserves the cone
 (`hodgeStar_mem_positiveCone_iff`), so the positivity of the current `ζ ↦ ∫ Θ ∧ ζ`, whose
 representing two-vector is `⋆Θ`, is the positivity of `Θ`, and both have the same distance to the
 cone (`infDist_hodgeStar_positiveCone`).
