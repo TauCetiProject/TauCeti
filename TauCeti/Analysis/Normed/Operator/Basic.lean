@@ -65,7 +65,9 @@ and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the in
 is invertible if a sufficiently nearby operator is invertible
 (`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`).
 A family of operators continuous at a point and invertible there changes the size of a
-function near that point only up to constant factors (`TauCeti.isTheta_clm_apply_of_isUnit`).
+function near that point only up to constant factors (`TauCeti.isTheta_clm_apply_of_isUnit`),
+and a family continuous and invertible on a compact set does so uniformly there
+(`TauCeti.exists_norm_clm_apply_le_and_norm_le_of_isUnit`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
 most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
@@ -713,6 +715,27 @@ theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ
   refine (hbound (τ := fun x ↦ Φ x (σ x)) hinv).congr' ?_ EventuallyEq.rfl
   filter_upwards [hΦ.eventually (Units.isOpen.mem_nhds hΦa)] with x hx
   exact ContinuousLinearMap.ringInverse_apply_apply hx (σ x)
+
+/-- A family of linear maps continuous on a compact set `S` and invertible there changes norms only
+up to a constant factor, uniformly on `S`: `‖Φ x v‖ ≤ c ‖v‖` and `‖v‖ ≤ c ‖Φ x v‖`. -/
+theorem exists_norm_clm_apply_le_and_norm_le_of_isUnit {S : Set α} (hS : IsCompact S)
+    (hΦ : ContinuousOn Φ S) (hΦS : ∀ x ∈ S, IsUnit (Φ x)) :
+    ∃ c, 1 ≤ c ∧ ∀ x ∈ S, ∀ v, ‖Φ x v‖ ≤ c * ‖v‖ ∧ ‖v‖ ≤ c * ‖Φ x v‖ := by
+  obtain ⟨A, hA⟩ := hS.exists_bound_of_continuousOn hΦ
+  have hinv : ContinuousOn (fun x ↦ Ring.inverse (Φ x)) S := fun x hx ↦
+    (NormedRing.inverse_continuousAt (hΦS x hx).unit).comp_continuousWithinAt_of_eq (hΦ x hx)
+      (hΦS x hx).unit_spec.symm
+  obtain ⟨B, hB⟩ := hS.exists_bound_of_continuousOn hinv
+  refine ⟨max 1 (max A B), le_max_left _ _, fun x hx v ↦ ⟨?_, ?_⟩⟩
+  · calc ‖Φ x v‖ ≤ ‖Φ x‖ * ‖v‖ := (Φ x).le_opNorm v
+      _ ≤ max 1 (max A B) * ‖v‖ := by
+        gcongr
+        exact (hA x hx).trans ((le_max_left _ _).trans (le_max_right _ _))
+  · calc ‖v‖ ≤ ‖Ring.inverse (Φ x)‖ * ‖Φ x v‖ :=
+          ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply (hΦS x hx) v
+      _ ≤ max 1 (max A B) * ‖Φ x v‖ := by
+        gcongr
+        exact (hB x hx).trans ((le_max_right _ _).trans (le_max_right _ _))
 
 end
 
