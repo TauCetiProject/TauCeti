@@ -189,16 +189,9 @@ theorem support_withDensity_ofReal {X : Type*} [TopologicalSpace X] [MeasurableS
   simp only [Function.mem_support, ne_eq, ENNReal.ofReal_eq_zero]
   exact not_congr ⟨fun h ↦ le_antisymm h (hf0 x), fun h ↦ h.le⟩
 
-/-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
-which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to
-the two regions `f` maps onto each other. If a weight `h` upstairs factors almost everywhere as
-`jac` times a weight `g` downstairs, then `f` carries `μ.withDensity h` to `ν.withDensity g`: the
-change of variables for measures upgrades to one for densities.
-
-This is the step that turns a pointwise density computation into an identity of measures, so the
-work in an application is the factorization hypothesis alone. -/
-theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : α → β}
-    {jac h : α → ℝ≥0∞} {g : β → ℝ≥0∞} (hf : Measurable f)
+/-- The measurable case of `map_withDensity_eq_withDensity`. -/
+private theorem map_withDensity_eq_withDensity_of_measurable {μ : Measure α} {ν : Measure β}
+    {f : α → β} {jac h : α → ℝ≥0∞} {g : β → ℝ≥0∞} (hf : Measurable f)
     (hjac : AEMeasurable jac μ) (hg : Measurable g) (hmap : (μ.withDensity jac).map f = ν)
     (hh : ∀ᵐ z ∂μ, jac z * g (f z) = h z) :
     (μ.withDensity h).map f = ν.withDensity g := by
@@ -216,23 +209,44 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
   · rw [Set.indicator_of_notMem (Set.mem_preimage.not.mpr hzq), Pi.mul_apply,
       Set.indicator_of_notMem hzq, mul_zero]
 
-/-- **A pulled-back weight is pushed forward.** The image under a measurable `f` of `μ` weighted by
+
+/-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
+which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to
+the two regions `f` maps onto each other. If a weight `h` upstairs factors almost everywhere as
+`jac` times a weight `g` downstairs, then `f` carries `μ.withDensity h` to `ν.withDensity g`: the
+change of variables for measures upgrades to one for densities.
+
+This is the step that turns a pointwise density computation into an identity of measures, so the
+work in an application is the factorization hypothesis alone. The map `f` is only required to be
+`μ`-almost everywhere measurable and the weight `g` almost everywhere measurable for the image
+measure `ν`. -/
+theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : α → β}
+    {jac h : α → ℝ≥0∞} {g : β → ℝ≥0∞} (hf : AEMeasurable f μ)
+    (hjac : AEMeasurable jac μ) (hg : AEMeasurable g ν) (hmap : (μ.withDensity jac).map f = ν)
+    (hh : ∀ᵐ z ∂μ, jac z * g (f z) = h z) :
+    (μ.withDensity h).map f = ν.withDensity g := by
+  obtain ⟨f', hf', hff'⟩ := hf
+  obtain ⟨g', hg', hgg'⟩ := hg
+  have hmap' : (μ.withDensity jac).map f' = ν :=
+    (Measure.map_congr ((withDensity_absolutelyContinuous μ jac).ae_eq hff')).symm.trans hmap
+  have hgf : ∀ᵐ z ∂μ, jac z ≠ 0 → g (f' z) = g' (f' z) :=
+    (ae_withDensity_iff' hjac).1 (ae_of_ae_map hf'.aemeasurable (hmap' ▸ hgg'))
+  rw [Measure.map_congr ((withDensity_absolutelyContinuous μ h).ae_eq hff'),
+    withDensity_congr_ae hgg']
+  refine map_withDensity_eq_withDensity_of_measurable hf' hjac hg' hmap' ?_
+  filter_upwards [hh, hgf, hff'] with z hz hz' hz''
+  by_cases hj : jac z = 0
+  · rw [hj, zero_mul, ← hz, hj, zero_mul]
+  · rw [← hz, hz'', hz' hj]
+
+/-- **A pulled-back weight is pushed forward.** If `f` is `μ`-almost everywhere measurable and `g`
+is almost everywhere measurable with respect to `μ.map f`, the image under `f` of `μ` weighted by
 `g ∘ f` is the image of `μ` weighted by `g`. This is the case of
 `map_withDensity_eq_withDensity` with trivial Jacobian. -/
 theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞}
     (hf : AEMeasurable f μ) (hg : AEMeasurable g (μ.map f)) :
-    (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g := by
-  obtain ⟨g', hg', hgg'⟩ := hg
-  obtain ⟨f', hf', hff'⟩ := hf
-  have hmap : μ.map f = μ.map f' := Measure.map_congr hff'
-  rw [hmap] at hgg'
-  have h1 : g ∘ f =ᵐ[μ] g' ∘ f' := by
-    filter_upwards [ae_of_ae_map hf'.aemeasurable hgg', hff'] with x hx hx'
-    simp only [Function.comp_apply, hx', hx]
-  rw [Measure.map_congr ((withDensity_absolutelyContinuous _ _).ae_eq hff'),
-    withDensity_congr_ae h1, hmap, withDensity_congr_ae hgg']
-  exact map_withDensity_eq_withDensity (jac := fun _ => 1) hf' aemeasurable_const hg'
-    (by simp) (by simp)
+    (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g :=
+  map_withDensity_eq_withDensity (jac := fun _ => 1) hf aemeasurable_const hg (by simp) (by simp)
 
 /-- **A pulled-back weight is pushed forward along a measurable embedding.** Unlike
 `map_withDensity_comp`, no measurability of the weight `g` is needed. -/
