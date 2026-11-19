@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
 public import TauCeti.AlgebraicTopology.Quasicategory.Slice
+public import TauCeti.AlgebraicTopology.SimplicialSet.CompStruct
 public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
@@ -41,8 +42,6 @@ of a quasicategory with a fixed morphism.
 
 ## Main definitions
 
-* `SSet.rightMappingSpace.sliceFiberIso x y`: `Hom^R_X(x, y)` is the fibre over `x` of
-  `X_{/y} ⟶ X`.
 * `SSet.rightMappingSpace.postcompSpace x g`: the simplicial set `Hom^R_X(x, g)` of composites
   with `g`, the fibre over `x` of `X_{/g} ⟶ X` (`SSet.rightMappingSpace.postcompSpace_eq_fiber`).
 * `SSet.rightMappingSpace.postcompSpace.src`, `SSet.rightMappingSpace.postcompSpace.tgt`: its
@@ -82,75 +81,9 @@ variable {X : SSet.{u}}
 
 namespace rightMappingSpace
 
-/-! ### Right mapping spaces as fibres of slices -/
-
-variable (x y : X _⦋0⦌)
-
-/-- The `n`-simplices of the fibre over `x` of `X_{/y} ⟶ X` are those of `Hom^R_X(x, y)`, through
-`Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
-private noncomputable def sliceFiberEquiv (m : SimplexCategory) :
-    (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}).obj (op m) ≃
-      (X.rightMappingSpace x y : SSet.{u}).obj (op m) where
-  toFun s := ⟨(yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s.1).1) :
-      X.obj (op (joinVertex.obj m))), by
-    refine (mem_rightMappingSpace_obj_iff _).2 ⟨?_, ?_⟩
-    · rw [yonedaEquiv_naturality, join.joinVertexInl_comp_joinVertexIso_inv_assoc, ← slice.π_app,
-        ← mem_fiber_iff]
-      exact s.2
-    · rw [yonedaEquiv_naturality, join.joinVertexInr_comp_joinVertexIso_inv_assoc,
-        (slice.objEquiv s.1).2, Equiv.apply_symm_apply]⟩
-  invFun t := ⟨slice.objEquiv.symm ⟨(join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.1, by
-      rw [join.inr_comp_joinVertexIso_hom_assoc, yonedaEquiv_symm_naturality_left,
-        ((mem_rightMappingSpace_obj_iff _).1 t.2).2]⟩, by
-    rw [mem_fiber_iff, slice.π_app, Equiv.apply_symm_apply, join.inl_comp_joinVertexIso_hom_assoc,
-      yonedaEquiv_symm_naturality_left, Equiv.apply_symm_apply]
-    exact ((mem_rightMappingSpace_obj_iff _).1 t.2).1⟩
-  left_inv s := Subtype.ext (slice.objEquiv.injective (Subtype.ext (by
-    simp only [Equiv.apply_symm_apply, Equiv.symm_apply_apply, Iso.hom_inv_id_assoc])))
-  right_inv t := Subtype.ext (by
-    simp only [Equiv.apply_symm_apply, Iso.inv_hom_id_assoc])
-
-/-- **The right mapping space `Hom^R_X(x, y)` is the fibre over `x` of the projection
-`X_{/y} ⟶ X`** of the slice over `y`. Through `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, an `n`-simplex
-`Δ[n] ⋆ Δ[0] ⟶ X` of the slice is an `(n + 1)`-simplex of `X` with last vertex `y`, and it lies
-over `x` exactly when its face opposite to the last vertex is constant at `x`. -/
-noncomputable def sliceFiberIso :
-    (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}) ≅ (X.rightMappingSpace x y : SSet.{u}) :=
-  NatIso.ofComponents (fun m ↦ (sliceFiberEquiv x y m.unop).toIso) (fun {m m'} f ↦ by
-    ext s : 3
-    refine Subtype.ext ?_
-    -- Both sides are, by definition, the `(n + 1)`-simplices below; they agree by the naturality
-    -- of `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`.
-    have key : (yonedaEquiv ((join.joinVertexIso m'.unop).inv ≫
-        (slice.objEquiv ((slice (yonedaEquiv.symm y)).map f s.1)).1) :
-          X.obj (op (joinVertex.obj m'.unop))) =
-        X.map (joinVertex.map f.unop).op
-          (yonedaEquiv ((join.joinVertexIso m.unop).inv ≫ (slice.objEquiv s.1).1)) := by
-      rw [slice.objEquiv_map_coe, yonedaEquiv_naturality,
-        join.joinVertex_map_comp_joinVertexIso_inv_assoc]
-    -- `key` is the goal, with the maps of the fibre and of `Hom^R_X(x, y)` applied.
-    exact key)
-
-/-- The simplex of `Hom^R_X(x, y)` attached to a simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of
-`X_{/y} ⟶ X` is its composite with `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`. -/
-theorem sliceFiberIso_hom_app_coe {m : SimplexCategory}
-    (s : (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}).obj (op m)) :
-    ((sliceFiberIso x y).hom.app (op m) s).1 =
-      (yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s.1).1) :
-        X.obj (op (joinVertex.obj m))) :=
-  (rfl)
-
-/-- The simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of `X_{/y} ⟶ X` attached to a simplex of
-`Hom^R_X(x, y)` is its composite with `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
-theorem sliceFiberIso_inv_app_coe {m : SimplexCategory}
-    (t : (X.rightMappingSpace x y : SSet.{u}).obj (op m)) :
-    (slice.objEquiv ((sliceFiberIso x y).inv.app (op m) t).1).1 =
-      (join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.1 :=
-  congrArg Subtype.val (slice.objEquiv.apply_symm_apply _)
-
 /-! ### Composites with an edge -/
 
-variable {x} {y} {z : X _⦋0⦌}
+variable {x y z : X _⦋0⦌}
 
 variable (x) in
 /-- The simplicial set `Hom^R_X(x, g)` of composites with an edge `g : y ⟶ z`: the cones
@@ -220,7 +153,7 @@ theorem src_app_coe (g : Edge y z) {m : SimplexCategory}
         (slice.objEquiv ((slice.map (q := yonedaEquiv.symm y) (stdSimplex.δ 1) (𝟙 X)
           (by simp)).app _ s.1)).1) :
           X.obj (op (joinVertex.obj m))) :=
-    rfl
+    sliceFiberIso_hom_app_coe x y ((Subcomplex.fromPreimage _ _).app _ s)
   rw [h, slice.objEquiv_map_app_coe, Category.comp_id]
 
 /-- The simplex of `Hom^R_X(x, z)` underlying the image under `tgt` of a cone
@@ -237,7 +170,7 @@ theorem tgt_app_coe (g : Edge y z) {m : SimplexCategory}
         (slice.objEquiv ((slice.map (q := yonedaEquiv.symm z) (stdSimplex.δ 0) (𝟙 X)
           (by simp)).app _ s.1)).1) :
           X.obj (op (joinVertex.obj m))) :=
-    rfl
+    sliceFiberIso_hom_app_coe x z (Subcomplex.lift _ _ |>.app _ s)
   rw [h, slice.objEquiv_map_app_coe, Category.comp_id]
 
 variable (x) in
@@ -294,27 +227,6 @@ private lemma compStruct_simplex (v : (postcompSpace x g : SSet.{u}) _⦋0⦌) :
     (compStruct v).simplex = simplex v :=
   rfl
 
-/-- The vertex `0` of a composition triangle from `x` is `x`. -/
-private lemma map_const_zero_simplex {f : Edge x y} {h : Edge x z} (c : Edge.CompStruct f g h) :
-    X.map (SimplexCategory.const ⦋0⦌ ⦋2⦌ 0).op c.simplex = x := by
-  calc X.map (SimplexCategory.const ⦋0⦌ ⦋2⦌ 0).op c.simplex = X.δ 1 (X.δ 2 c.simplex) := by
-        rw [SimplicialObject.δ, SimplicialObject.δ, ← Functor.map_comp_apply, ← op_comp]
-        congr 3
-        ext a
-        fin_cases a
-        rfl
-    _ = x := by rw [c.d₂, f.src_eq]
-
-/-- Two composition triangles with last edge `g` are equal, together with their other edges,
-when their `2`-simplices are. -/
-private lemma sigma_ext {f f' : Edge x y} {h h' : Edge x z} {c : Edge.CompStruct f g h}
-    {c' : Edge.CompStruct f' g h'} (e : c.simplex = c'.simplex) :
-    (⟨f, h, c⟩ : Σ (f : Edge x y) (h : Edge x z), Edge.CompStruct f g h) = ⟨f', h', c'⟩ := by
-  obtain rfl : f = f' := Edge.ext (by rw [← c.d₂, ← c'.d₂, e])
-  obtain rfl : h = h' := Edge.ext (by rw [← c.d₁, ← c'.d₁, e])
-  obtain rfl : c = c' := Edge.CompStruct.ext e
-  rfl
-
 variable (x g) in
 /-- **The vertices of `Hom^R_X(x, g)` are the composition triangles with last edge `g`**: through
 `Δ[0] ⋆ Δ[1] ≅ Δ[2]`, a cone over `g : y ⟶ z` with cone point `x` is a `2`-simplex of `X` whose
@@ -327,7 +239,7 @@ noncomputable def obj₀Equiv :
       rw [join.inr_comp_coneIso_hom_assoc, Edge.CompStruct.δ_zero_yonedaEquiv_symm]⟩, by
     rw [mem_postcompSpace_iff, slice.π_app, Equiv.apply_symm_apply, join.inl_comp_coneIso_hom_assoc,
       yonedaEquiv_symm_naturality_left, Equiv.apply_symm_apply]
-    exact (map_const_zero_simplex c.2.2).trans (by simp)⟩
+    exact (Edge.CompStruct.map_const_zero_simplex c.2.2).trans (by simp)⟩
   -- `dsimp only` reduces the applications of `toFun` and `invFun` and the projections of
   -- anonymous constructors, so that the equivalences and isomorphisms cancel by `rw`.
   left_inv v := Subtype.ext (slice.objEquiv.injective (Subtype.ext (by
@@ -335,7 +247,7 @@ noncomputable def obj₀Equiv :
     rw [Equiv.apply_symm_apply]
     dsimp only
     rw [compStruct_simplex, simplex, Equiv.symm_apply_apply, Iso.hom_inv_id_assoc])))
-  right_inv c := sigma_ext (by
+  right_inv c := Edge.CompStruct.sigma_ext (by
     dsimp only
     rw [compStruct_simplex, simplex, Equiv.apply_symm_apply, Iso.inv_hom_id_assoc,
       Equiv.apply_symm_apply])
