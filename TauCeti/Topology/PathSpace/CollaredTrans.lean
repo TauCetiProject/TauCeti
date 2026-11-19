@@ -21,7 +21,8 @@ closes up. The **collared concatenation** `Path.collaredTrans γ₁ γ₂` repar
 So it rests at its start, at the junction and at its end on the collars `[0, 1/6]`, `[1/3, 2/3]`
 and `[5/6, 1]`, and the collared concatenation of two smooth loops based at a point is smooth as a
 periodic map. The collared concatenation of two constant paths is constant
-(`Path.collaredTrans_refl`).
+(`Path.collaredTrans_refl`). The map `unitInterval.smoothTransition` is `β` as a map into the unit
+interval.
 
 Being a reparametrization, the collared concatenation is joined to the concatenation by the
 straight-line reparametrization homotopy `Path.reparamHomotopy`, which is continuous on the whole
@@ -31,6 +32,7 @@ the path space, an identity for constant paths (`Path.collaredTransHom_refl`).
 
 ## Main definitions
 
+* `unitInterval.smoothTransition`: `Real.smoothTransition` as a map into the unit interval.
 * `Path.collaredTransReparam`: the reparametrization of the unit interval.
 * `Path.collaredTrans γ₁ γ₂`: the collared concatenation of two paths.
 * `Path.collaredTransHom γ₁ γ₂`: the class joining the concatenation to the collared
@@ -42,6 +44,29 @@ public section
 noncomputable section
 
 open Set CategoryTheory
+
+namespace unitInterval
+
+/-- `Real.smoothTransition` as a map into the unit interval. -/
+def smoothTransition (s : ℝ) : I :=
+  ⟨Real.smoothTransition s, Real.smoothTransition.nonneg s, Real.smoothTransition.le_one s⟩
+
+@[simp]
+theorem coe_smoothTransition (s : ℝ) : (smoothTransition s : ℝ) = Real.smoothTransition s :=
+  (rfl)
+
+theorem continuous_smoothTransition : Continuous smoothTransition :=
+  Real.smoothTransition.continuous.subtype_mk _
+
+@[simp]
+theorem smoothTransition_zero : smoothTransition 0 = 0 :=
+  Subtype.ext Real.smoothTransition.zero
+
+@[simp]
+theorem smoothTransition_one : smoothTransition 1 = 1 :=
+  Subtype.ext Real.smoothTransition.one
+
+end unitInterval
 
 namespace Path
 
@@ -88,6 +113,17 @@ def collaredTransReparam (t : unitInterval) : unitInterval :=
 private theorem coe_collaredTransReparam (t : unitInterval) :
     (collaredTransReparam t : ℝ) = collaredTransReparamAux t :=
   (rfl)
+
+/-- On `[0, 1/2]` the reparametrization of the collared concatenation is `t ↦ β (6 t - 1) / 2`. -/
+theorem coe_collaredTransReparam_of_le {t : unitInterval} (ht : (t : ℝ) ≤ 1 / 2) :
+    (collaredTransReparam t : ℝ) = Real.smoothTransition (6 * t - 1) / 2 := by
+  rw [coe_collaredTransReparam, collaredTransReparamAux_of_le ht]
+
+/-- On `(1/2, 1]` the reparametrization of the collared concatenation is
+`t ↦ (1 + β (6 t - 4)) / 2`. -/
+theorem coe_collaredTransReparam_of_lt {t : unitInterval} (ht : 1 / 2 < (t : ℝ)) :
+    (collaredTransReparam t : ℝ) = (1 + Real.smoothTransition (6 * t - 4)) / 2 := by
+  rw [coe_collaredTransReparam, collaredTransReparamAux_of_lt ht]
 
 /-- The reparametrization of the collared concatenation is continuous. -/
 theorem continuous_collaredTransReparam : Continuous collaredTransReparam :=
@@ -192,10 +228,10 @@ theorem collaredTransHom_refl (a : X) :
       collaredTransReparam_zero collaredTransReparam_one).evalAt ((refl a).trans (refl a)) r =
         (refl a).trans (refl a) :=
     Path.ext <| funext fun t ↦ by
-      rw [ContinuousMap.Homotopy.evalAt_apply, reparamHomotopy_apply, Homotopy.eval_apply]
-      simp only [Homotopy.reparam, refl_trans_refl, refl_apply]
-      -- The homotopy is a structure literal whose underlying function is constant.
-      rfl
+      rw [ContinuousMap.Homotopy.evalAt_apply, reparamHomotopy_apply, Homotopy.eval_apply,
+        ContinuousMap.Homotopy.curry_apply, ContinuousMap.HomotopyWith.coe_toHomotopy,
+        Homotopy.reparam_apply]
+      simp only [refl_trans_refl, refl_extend, ContinuousMap.const_apply, refl_apply]
   exact Homotopic.Quotient.mk_eq_eqToHom_of_forall_apply_eq _ h
 
 end Path

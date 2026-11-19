@@ -54,7 +54,8 @@ runs through the loop `u₁(s, ·)` on `[0, 1/2]` and through `u₂(s, ·)` on `
 so that it rests near `t = 1/2` and near the integers, and is `1`-periodic in `t`. It is as smooth
 as `u₁` and `u₂` (`TauCeti.contMDiff_loopwiseTrans`), and its integral over `[a₁, b₁] × [0, 1]` is
 the sum of those of `u₁` and `u₂` (`TauCeti.rectangleIntegral_loopwiseTrans`). This is how caps of
-two loops based at the same point are placed side by side, as a cap of their concatenation.
+two loops based at the same point are placed side by side, as a cap of their collared
+concatenation (`Path.collaredTrans`).
 
 Finally, a two-form vanishes on spheres (`TauCeti.VanishesOnSpheres`) or on tori
 (`TauCeti.VanishesOnTori`) when its integral over every map of the square factoring through a
@@ -384,8 +385,8 @@ is `u₁ (s, β (6 t - 1))` for `t ≤ 1/2` and `u₂ (s, β (6 t - 4))` for `t 
 `β = Real.smoothTransition`, and it is `1`-periodic in `t`. When `u₁ (s, 1) = u₂ (s, 0)` and
 `u₂ (s, 1) = u₁ (s, 0)` for all `s`, it rests at these common points for `t` near `1/2` and near
 the integers, so it is as smooth as `u₁` and `u₂` (`TauCeti.contMDiff_loopwiseTrans`). This is how
-caps of two loops based at the same point are placed side by side, as a cap of their
-concatenation. -/
+caps of two loops based at the same point are placed side by side, as a cap of their collared
+concatenation (`Path.collaredTrans`). -/
 def loopwiseTrans (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) : M :=
   if Int.fract z.2 ≤ 1 / 2 then u₁ (z.1, Real.smoothTransition (6 * Int.fract z.2 - 1))
   else u₂ (z.1, Real.smoothTransition (6 * Int.fract z.2 - 4))
