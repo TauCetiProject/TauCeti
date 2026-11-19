@@ -67,6 +67,8 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   of the orbits of `⟨σ⟩` on the carrier, with `Equiv.Perm.sameCycle_iff_mem_orbit_zpowers`,
   `Equiv.Perm.coe_support_cycleOf_eq_orbit_zpowers` and `Equiv.Perm.orbit_zpowers_eq_singleton`
   identifying those orbits with the cycle supports and the fixed points.
+* `Equiv.Perm.minimalPeriod_mem_fullCycleType`: the length of the cycle through any point is a
+  part of the full cycle type.
 
 ## Implementation notes
 
@@ -805,6 +807,16 @@ theorem fullCycleType_eq_map_card_orbit :
     _ = _ := by
         rw [Finset.map_val, Multiset.map_map]
         exact Multiset.map_congr rfl fun ω _ => (hcard ω).symm
+
+/-- The length of the cycle of `σ` through `x`, its minimal period, is a part of the full cycle
+type of `σ`. -/
+theorem minimalPeriod_mem_fullCycleType (x : α) :
+    Function.minimalPeriod σ x ∈ fullCycleType σ := by
+  classical
+  rw [fullCycleType_eq_map_card_orbit]
+  refine Multiset.mem_map.mpr ⟨Quotient.mk'' x, Finset.mem_univ _, ?_⟩
+  rw [orbitRel.Quotient.orbit_mk, Nat.card_coe_set_eq, ← ncard_setOf_sameCycle]
+  simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq]
 
 end OrbitSizes
 
