@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.Line
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
+import TauCeti.Topology.Instances.Real.Periodic
 
 /-!
 # Normalizing the end Hamiltonians of the pair of pants
@@ -179,7 +180,7 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const (ω : Sym
         (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : V) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
       ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, c q t := by
-  obtain ⟨B, hB⟩ := exists_forall_abs_le_of_periodic hc fun q ↦ (hcs q).continuous
+  choose B hB using fun q ↦ (hc q).exists_forall_abs_le one_ne_zero (hcs q).continuous
   -- Along the constant map `0`, the energy density and the area density vanish.
   have hE : ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : V) ↦ c q t)

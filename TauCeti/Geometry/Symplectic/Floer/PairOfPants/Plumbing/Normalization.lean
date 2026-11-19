@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Asymptotic
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.Line
+import TauCeti.Topology.Instances.Real.Periodic
 
 /-!
 # Normalizing the Hamiltonians of the plumbed four-punctured sphere
@@ -188,8 +189,8 @@ theorem setIntegral_hamiltonianCurvature_plumbedPerturbation_const (ω : Symplec
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
       (∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, ca r t) +
         ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, cb r t := by
-  obtain ⟨Ba, hBa⟩ := exists_forall_abs_le_of_periodic hca fun r ↦ (hcas r).continuous
-  obtain ⟨Bb, hBb⟩ := exists_forall_abs_le_of_periodic hcb fun r ↦ (hcbs r).continuous
+  choose Ba hBa using fun r ↦ (hca r).exists_forall_abs_le one_ne_zero (hcas r).continuous
+  choose Bb hBb using fun r ↦ (hcb r).exists_forall_abs_le one_ne_zero (hcbs r).continuous
   -- Along the constant map `0`, the energy density and the area density vanish.
   have hE : ω.constSmooth.floerEnergyDensity
       (fun z x ↦ plumbedPerturbation (fun r t (_ : V) ↦ ca r t) (fun r t (_ : V) ↦ cb r t) q L
@@ -439,8 +440,8 @@ theorem setIntegral_hamiltonianCurvature_plumbedPerturbation_add_const (ω : Smo
       {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-    obtain ⟨Ba, hBa⟩ := exists_forall_abs_le_of_periodic hca fun r ↦ (hcas r).continuous
-    obtain ⟨Bb, hBb⟩ := exists_forall_abs_le_of_periodic hcb fun r ↦ (hcbs r).continuous
+    choose Ba hBa using fun r ↦ (hca r).exists_forall_abs_le one_ne_zero (hcas r).continuous
+    choose Bb hBb using fun r ↦ (hcb r).exists_forall_abs_le one_ne_zero (hcbs r).continuous
     exact (ω.integrableOn_hamiltonianCurvature_plumbedPerturbation hq
       (fun r t ↦ funext fun _ ↦ hca r t) (fun r t ↦ funext fun _ ↦ hcb r t)
       (fun r ↦ (hcas r).contMDiff.comp contMDiff_fst)

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
-import Mathlib.Topology.Instances.Real.Lemmas
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
@@ -33,9 +32,7 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
   perturbation is linear in the end Hamiltonians.
 * `TauCeti.Floer.pairOfPantsPerturbation_add_const`: adding functions `c_q` of time to the end
   Hamiltonians adds the perturbation of the target-independent Hamiltonians `c_q`, which does
-  not depend on the target point (`TauCeti.Floer.pairOfPantsPerturbation_const_target`);
-  continuous period-one normalizations `c_q` are bounded
-  (`TauCeti.Floer.exists_forall_abs_le_of_periodic`).
+  not depend on the target point (`TauCeti.Floer.pairOfPantsPerturbation_const_target`).
 * `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation_prod`: for a vector space target and `Cⁿ`
   Hamiltonians, the perturbation is `Cⁿ` jointly in the domain and target points.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the part `±s > 0` of the
@@ -111,15 +108,6 @@ theorem pairOfPantsPerturbation_const_target (c : Puncture → ℝ → ℝ) (w :
     pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x =
       pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w y := by
   simp only [pairOfPantsPerturbation_def]
-
-/-- Continuous period-one normalizations `c_i` of the end Hamiltonians are bounded: there are
-bounds `B_i` with `|c_i(t)| ≤ B_i` for all times `t`. -/
-theorem exists_forall_abs_le_of_periodic {ι : Type*} {c : ι → ℝ → ℝ}
-    (hc : ∀ i, Function.Periodic (c i) 1) (hcs : ∀ i, Continuous (c i)) :
-    ∃ B : ι → ℝ, ∀ i t, |c i t| ≤ B i := by
-  choose B hB using fun i ↦ isBounded_iff_forall_norm_le.1
-    ((hc i).isBounded_of_continuous one_ne_zero (hcs i))
-  exact ⟨B, fun i t ↦ hB i _ (mem_range_self t)⟩
 
 /-- The pair-of-pants perturbation is homogeneous in the end Hamiltonians. -/
 theorem pairOfPantsPerturbation_smul (c : ℝ) (H : Puncture → ℝ → M → ℝ) :
