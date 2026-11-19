@@ -94,6 +94,13 @@ theorem alternatingFormEquiv_ιMulti_apply {k : ℕ} (u v : Fin k → V) :
     alternatingFormEquiv V k (ιMulti ℝ k u) v = (Matrix.of fun i j ↦ ⟪u j, v i⟫).det := by
   rw [alternatingFormEquiv_apply, inner_ιMulti_ιMulti]
 
+/-- The form of a wedge of vectors `u₁ ∧ ⋯ ∧ uₖ` vanishes on every frame `v` having a vector `vᵢ`
+orthogonal to every `uⱼ`. -/
+theorem alternatingFormEquiv_ιMulti_apply_eq_zero_of_forall_inner_eq_zero {k : ℕ} (u v : Fin k → V)
+    {i : Fin k} (h : ∀ j, ⟪u j, v i⟫ = 0) : alternatingFormEquiv V k (ιMulti ℝ k u) v = 0 := by
+  rw [alternatingFormEquiv_ιMulti_apply]
+  exact Matrix.det_eq_zero_of_row_eq_zero i fun j ↦ by simp [h]
+
 /-- The form of a wedge of vectors is the alternatization of the product of the covectors
 `⟪uⱼ, ·⟫`. -/
 private theorem alternatingFormEquiv_ιMulti_toAlternatingMap {k : ℕ} (u : Fin k → V) :
