@@ -84,7 +84,7 @@ variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSp
 `(1 + α) / 2`-Hölder, uniformly in space, with constant `‖D_t^(r+1) D_x^m u‖ + 2 ‖D_t^r D_x^m u‖`:
 they are Lipschitz with the first constant, and at time differences larger than one the
 oscillation bound wins. -/
-theorem holderWith_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab)
+private theorem holderWith_mixedDerivL_slabMk (f : ParabolicCkHolderSpace k α E F hab)
     {r m : ℕ} (h : 2 * r + m + 2 ≤ k) (hα : α ≤ 1) (x : E) :
     HolderWith (‖mixedDerivL (r + 1) m f‖₊ + 2 * ‖mixedDerivL r m f‖₊) ((1 + α) / 2)
       fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t) := by

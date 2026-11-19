@@ -206,7 +206,10 @@ private theorem hasFDerivAt_prodField {i j m : ℕ} (h : 2 * (i + j) + m + 1 ≤
   simp only [prodField_slabMk]
   -- The derivative of `D_x^m` is `D_x^(m+1)`, curried on the left (`fderiv_iteratedFDeriv`).
   exact ((hc.differentiable_iteratedFDeriv (by exact_mod_cast lt_add_one m)) x).hasFDerivAt
-    |>.congr_fderiv (by rw [fderiv_iteratedFDeriv]; rfl)
+    |>.congr_fderiv (by
+      ext y v
+      rw [fderiv_iteratedFDeriv, Function.comp_apply, continuousMultilinearCurryLeftEquiv_apply,
+        ContinuousMultilinearMap.curryLeft_apply])
 
 /-- **Time derivatives of the field**, by the product rule. -/
 private theorem hasDerivWithinAt_prodField {i j m : ℕ} (h : 2 * (i + j) + m + 2 ≤ k) (x : E)
