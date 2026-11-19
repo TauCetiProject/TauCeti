@@ -51,9 +51,10 @@ it is nondegenerate on `Hᵖ(Y)`
 
 For a closed oriented three-manifold `Y`, `d = 0`, `p = 1`, `k = ℝ` and `y = [Y]`, the pairing of
 `Y` is the Poincaré duality pairing `(b, c) ↦ ⟨b ⌣ c, [Y]⟩` of `H²(Y; ℝ)` with `H¹(Y; ℝ)`. It is
-then perfect, and the theorems say `b₂⁺(S¹ × Y) = b₂⁻(S¹ × Y) = b₁(Y)`. Poincaré duality on `Y` is
-not proved here, so the nondegeneracy of the pairing of `Y` is a hypothesis; nor is it proved here
-that `[S¹] × [Y]` is a fundamental class of `S¹ × Y`.
+then perfect, and once `[S¹] × [Y]` is known to be a fundamental class of `S¹ × Y` the theorems say
+`b₂⁺(S¹ × Y) = b₂⁻(S¹ × Y) = b₁(Y)`. Poincaré duality on `Y` is not proved here, so the
+nondegeneracy of the pairing of `Y` is a hypothesis; nor is it proved here that `[S¹] × [Y]` is a
+fundamental class of `S¹ × Y`.
 
 ## References
 
@@ -265,8 +266,9 @@ theorem sigNeg_singularCupPairing_sphere_of_injective_flip {d n p : ℕ} (hn : f
 `TopCat.sigPos_singularCupPairing_sphere`, if every nonzero `c ∈ Hᵖ(Y)` has some
 `b ∈ Hᵖ⁺ᵈ⁺¹(Y)` with `⟨b ⌣ c, y⟩ ≠ 0`, then the cup pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` against
 `[Sᵈ⁺¹] × y` has positive index of inertia `dim Hᵖ(Y)`. For `y = [Y]` the fundamental class of a
-closed oriented three-manifold, `d = 0` and `p = 1`, the hypothesis is Poincaré duality on `Y` and
-the conclusion is `b₂⁺(S¹ × Y) = b₁(Y)`. -/
+closed oriented three-manifold, `d = 0` and `p = 1`, the hypothesis is Poincaré duality on `Y`, and
+the conclusion is `b₂⁺(S¹ × Y) = b₁(Y)` once `[S¹] × [Y]` is known to be a fundamental class of
+`S¹ × Y`, which is not proved here. -/
 theorem sigPos_singularCupPairing_sphere_singularHomologyCross_of_injective_flip {d n p : ℕ}
     (hn : finrank ℝ E = n)
     (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))

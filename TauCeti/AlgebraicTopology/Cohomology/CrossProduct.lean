@@ -410,13 +410,13 @@ theorem singularKronecker_singularCup_fst_snd_singularHomologyCross {p q n : ℕ
   -- The coefficient change `e` undoes the coefficient change `λ` on homology.
   have hid : ((singularHomologyFunctor (ModuleCat.{w} k) n).map
       (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (X ⊗ Y) ≫ homologyMap e n = 𝟙 _ := by
-    have hunit : ((singularChainComplexFunctor (ModuleCat.{w} k)).map
-        (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (X ⊗ Y) ≫
-          ((singularChainComplexFunctor (ModuleCat.{w} k)).map
-            (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app (X ⊗ Y) = 𝟙 _ := by
+    have hunit : ((SSet.chainComplexFunctor (ModuleCat.{w} k)).map
+        (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (toSSet.obj (X ⊗ Y)) ≫ e = 𝟙 _ := by
       rw [← NatTrans.comp_app, ← Functor.map_comp, Iso.hom_inv_id, CategoryTheory.Functor.map_id,
         NatTrans.id_app]
-    -- `e` is the second map of `hunit`, written through the singular simplicial set.
+    -- By Mathlib's definition of `singularHomologyFunctor` as a functor composite, the first
+    -- factor of `hid` is `homologyMap` of the singular chain map of `λ`, which is the first factor
+    -- of `hunit` by `TauCeti.singularChainComplexFunctor_map_app`.
     exact (homologyMap_comp _ _ n).symm.trans
       ((congrArg (homologyMap · n) hunit).trans (homologyMap_id _ n))
   have hz : homologyMap e n (((singularHomologyFunctor (ModuleCat.{w} k) n).map
