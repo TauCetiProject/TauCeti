@@ -13,6 +13,7 @@ import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 import TauCeti.LinearAlgebra.Matrix.ToLin
+import TauCeti.LinearAlgebra.Matrix.Transvection
 import TauCeti.RepresentationTheory.Spin.Exceptional.Six.Hyperbolic
 import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Basic
 
@@ -75,27 +76,6 @@ open scoped Matrix
 
 variable {K : Type*} [Field K]
 
-/-! ### Exterior-square coordinates on `K⁴` -/
-
-section Wedge
-
-/-- Wedges of standard basis vectors are normalized to increasing order. The order hypothesis lets
-`simp` use this rule only in that direction. -/
-private theorem ιMulti_single_swap {p q : Fin 4} (_ : q < p) :
-    exteriorPower.ιMulti K 2 ![(Pi.single p (1 : K) : Fin 4 → K), Pi.single q (1 : K)] =
-      -exteriorPower.ιMulti K 2 ![(Pi.single q (1 : K) : Fin 4 → K), Pi.single p (1 : K)] :=
-  exteriorPower.ιMulti_two_swap _ _
-
-/-- A wedge of standard basis vectors indexed by a pair `p`, written as a vector of length two. -/
-private theorem ιMulti_comp_single (p : Fin 2 → Fin 4) :
-    exteriorPower.ιMulti K 2 (fun j ↦ (Pi.single (p j) (1 : K) : Fin 4 → K)) =
-      exteriorPower.ιMulti K 2 ![(Pi.single (p 0) (1 : K) : Fin 4 → K), Pi.single (p 1) 1] := by
-  congr 1
-  ext j : 1
-  fin_cases j <;> rfl
-
-end Wedge
-
 section Polarized
 
 variable {V : Type*} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
@@ -124,14 +104,15 @@ private theorem vectorCoordEquiv_basis (a : Fin 3) :
       exteriorPower.ιMulti K 2 ![Pi.single (![1, 1, 2] a) 1, Pi.single (![2, 3, 3] a) 1] := by
   rw [← P.typeDBasis_inl b hline, vectorCoordEquiv, Basis.equiv_apply]
   fin_cases a <;> simp [wedgeTarget, wedgeIndex, wedgeIndexSign, Basis.unitsSMul_apply,
-    ιMulti_comp_single]
+    exteriorPower.ιMulti_two_comp (R := K) fun q : Fin 4 ↦ (Pi.single q 1 : Fin 4 → K)]
 
 private theorem vectorCoordEquiv_dualVector (a : Fin 3) :
     vectorCoordEquiv P hline b (P.dualVector b a : V) =
       exteriorPower.ιMulti K 2 ![Pi.single (![3, 0, 1] a) 1, Pi.single (![0, 2, 0] a) 1] := by
   rw [← P.typeDBasis_inr b hline, vectorCoordEquiv, Basis.equiv_apply]
   fin_cases a <;> simp [wedgeTarget, wedgeIndex, wedgeIndexSign, Basis.unitsSMul_apply,
-    Units.smul_def, ιMulti_single_swap]
+    Units.smul_def,
+    exteriorPower.ιMulti_two_swap_of_lt (R := K) fun q : Fin 4 ↦ (Pi.single q 1 : Fin 4 → K)]
   -- The middle vector `f₁` carries the sign of `-e₀₂` twice.
   module
 
@@ -212,7 +193,8 @@ local macro "prove_liftIntertwines" : tactic => `(tactic|
      Matrix.toLin'_transvection_single, P.polar_W_eq_zero, P.polar_W'_eq_zero,
      polar_dualVector_basis, exteriorPower.ιMulti_two_add_left,
      exteriorPower.ιMulti_two_add_right, exteriorPower.ιMulti_two_smul_left,
-     exteriorPower.ιMulti_two_smul_right, QuadraticMap.map_smul, ιMulti_single_swap] <;>
+     exteriorPower.ιMulti_two_smul_right, QuadraticMap.map_smul,
+     exteriorPower.ιMulti_two_swap_of_lt (R := K) fun q : Fin 4 ↦ (Pi.single q 1 : Fin 4 → K)] <;>
    module))
 
 private theorem liftIntertwines_zero_one (c : K) :
