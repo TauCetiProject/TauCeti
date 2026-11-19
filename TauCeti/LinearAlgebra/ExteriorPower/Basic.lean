@@ -62,7 +62,11 @@ and moving the remaining factors by vectors of that subspace does not change the
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
   antisymmetrization and the canonical surjection are natural in the module.
 * `TauCeti.ExteriorAlgebra.ιMulti_comp_cast`: an exterior product in the exterior algebra is
-  unchanged by renumbering its factors along `Fin.cast`, and
+  unchanged by renumbering its factors along `Fin.cast`, an exterior product of an empty family
+  is `1` whatever the form of its length (`TauCeti.ExteriorAlgebra.ιMulti_eq_one_of_eq_zero`), an
+  empty part of an appended family can be dropped
+  (`TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left`,
+  `TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_right`), and
   `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family.
 * `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
   `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`, and so do all elements of `⋀ⁱ M`
@@ -427,6 +431,26 @@ theorem ιMulti_comp_cast {n m : ℕ} (h : n = m) (v : Fin m → M) :
     _root_.ExteriorAlgebra.ιMulti R n (v ∘ Fin.cast h) = _root_.ExteriorAlgebra.ιMulti R m v := by
   subst h
   rfl
+
+/-- An exterior product of an empty family is `1`, whatever the form of its length. -/
+theorem ιMulti_eq_one_of_eq_zero {n : ℕ} (hn : n = 0) (v : Fin n → M) :
+    _root_.ExteriorAlgebra.ιMulti R n v = 1 := by
+  subst hn
+  exact _root_.ExteriorAlgebra.ιMulti_zero_apply v
+
+/-- The exterior product of an appended family whose first part is empty is the exterior product
+of the second part. -/
+theorem ιMulti_append_of_eq_zero_left {n m : ℕ} (hn : n = 0) (a : Fin n → M) (b : Fin m → M) :
+    _root_.ExteriorAlgebra.ιMulti R (n + m) (Fin.append a b) =
+      _root_.ExteriorAlgebra.ιMulti R m b := by
+  rw [← _root_.ExteriorAlgebra.ιMulti_mul_ιMulti, ιMulti_eq_one_of_eq_zero hn, one_mul]
+
+/-- The exterior product of an appended family whose second part is empty is the exterior product
+of the first part. -/
+theorem ιMulti_append_of_eq_zero_right {n m : ℕ} (hm : m = 0) (a : Fin n → M) (b : Fin m → M) :
+    _root_.ExteriorAlgebra.ιMulti R (n + m) (Fin.append a b) =
+      _root_.ExteriorAlgebra.ιMulti R n a := by
+  rw [← _root_.ExteriorAlgebra.ιMulti_mul_ιMulti, ιMulti_eq_one_of_eq_zero hm, mul_one]
 
 /-- The exterior product of the image of an appended family under a linear map splits as the
 product of the exterior products of the images of the two parts. -/
