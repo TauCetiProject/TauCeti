@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Induction.Cyclotomic.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Realization
 import TauCeti.RepresentationTheory.Induction.Brauer.Induction
 import TauCeti.RepresentationTheory.Induction.Monomial
-public import Mathlib.NumberTheory.Cyclotomic.Basic
 
 /-!
 # Cyclotomic splitting fields for finite groups
