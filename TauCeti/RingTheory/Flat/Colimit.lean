@@ -51,6 +51,21 @@ open CategoryTheory Limits
 
 universe u
 
+/-- Finitely many elements of the point of a colimit cocone of a filtered diagram in a concrete
+category come from a common stage. -/
+private theorem CategoryTheory.Limits.Concrete.isColimit_exists_rep_fin {C : Type*} [Category C]
+    {FC : C → C → Type*} {CC : C → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
+    [ConcreteCategory C FC] {J : Type*} [Category J] [IsFiltered J] (F : J ⥤ C)
+    [PreservesColimit F (forget C)] {c : Cocone F} (hc : IsColimit c) {l : ℕ}
+    (x : Fin l → ToType c.pt) :
+    ∃ (k : J) (y : Fin l → ToType (F.obj k)), ∀ i, c.ι.app k (y i) = x i := by
+  classical
+  choose j y hy using fun i => Concrete.isColimit_exists_rep F hc (x i)
+  let O : Finset J := Finset.univ.image j
+  have hO (i : Fin l) : j i ∈ O := Finset.mem_image_of_mem j (Finset.mem_univ i)
+  refine ⟨IsFiltered.sup O ∅, fun i => F.map (IsFiltered.toSup O ∅ (hO i)) (y i), fun i => ?_⟩
+  rw [← hy i, ← c.w (IsFiltered.toSup O ∅ (hO i)), ConcreteCategory.comp_apply]
+
 namespace Module.Flat
 
 variable {R : Type u} [CommRing R]
@@ -59,16 +74,9 @@ variable {R : Type u} [CommRing R]
 @[stacks 05UU]
 theorem of_isColimit {J : Type u} [SmallCategory J] [IsFiltered J] {F : J ⥤ ModuleCat.{u} R}
     [∀ j, Module.Flat R (F.obj j)] {c : Cocone F} (hc : IsColimit c) : Module.Flat R c.pt := by
-  classical
   refine of_forall_isTrivialRelation fun {l f x} hfx => ?_
   -- The finitely many elements `x i` come from a common stage `k`.
-  choose j y hy using fun i => Concrete.isColimit_exists_rep F hc (x i)
-  let O : Finset J := Finset.univ.image j
-  have hO (i : Fin l) : j i ∈ O := Finset.mem_image_of_mem j (Finset.mem_univ i)
-  let k := IsFiltered.sup O ∅
-  let y' (i : Fin l) : F.obj k := F.map (IsFiltered.toSup O ∅ (hO i)) (y i)
-  have hy' (i : Fin l) : c.ι.app k (y' i) = x i := by
-    rw [← hy i, ← c.w (IsFiltered.toSup O ∅ (hO i)), ConcreteCategory.comp_apply]
+  obtain ⟨k, y', hy'⟩ := Concrete.isColimit_exists_rep_fin F hc x
   -- The relation holds at stage `k` up to an element dying in the colimit, so it holds at a
   -- later stage `m`.
   have h0 : c.ι.app k (∑ i, f i • y' i) = c.ι.app k 0 := by
@@ -93,17 +101,10 @@ homomorphism out of its point is flat as soon as its composite with every leg is
 theorem of_isColimit {J : Type u} [SmallCategory J] [IsFiltered J] {F : J ⥤ CommRingCat.{u}}
     {c : Cocone F} (hc : IsColimit c) {C : Type*} [CommRing C] (g : c.pt →+* C)
     (hg : ∀ j, (g.comp (c.ι.app j).hom).Flat) : g.Flat := by
-  classical
   algebraize [g]
   refine Module.Flat.of_forall_isTrivialRelation fun {l f x} hfx => ?_
   -- The finitely many coefficients `f i` come from a common stage `k`.
-  choose j y hy using fun i => Concrete.isColimit_exists_rep F hc (f i)
-  let O : Finset J := Finset.univ.image j
-  have hO (i : Fin l) : j i ∈ O := Finset.mem_image_of_mem j (Finset.mem_univ i)
-  let k := IsFiltered.sup O ∅
-  let y' (i : Fin l) : F.obj k := F.map (IsFiltered.toSup O ∅ (hO i)) (y i)
-  have hy' (i : Fin l) : c.ι.app k (y' i) = f i := by
-    rw [← hy i, ← c.w (IsFiltered.toSup O ∅ (hO i)), ConcreteCategory.comp_apply]
+  obtain ⟨k, y', hy'⟩ := Concrete.isColimit_exists_rep_fin F hc f
   -- Over the stage `k`, the relation has coefficients `y' i`, and flatness trivializes it.
   let := (g.comp (c.ι.app k).hom).toAlgebra
   have : Module.Flat (F.obj k) C := hg k
@@ -124,18 +125,11 @@ theorem of_isColimit_codomain {J : Type u} [SmallCategory J] [IsFiltered J]
     (g : R →+* c.pt) (ψ : ∀ j, R →+* F.obj j)
     (hψ : ∀ {j k : J} (t : j ⟶ k), (F.map t).hom.comp (ψ j) = ψ k)
     (hg : ∀ j, (c.ι.app j).hom.comp (ψ j) = g) (hflat : ∀ j, (ψ j).Flat) : g.Flat := by
-  classical
   algebraize [g]
   have hι (j : J) (r : R) : c.ι.app j (ψ j r) = g r := congr($(hg j) r)
   refine Module.Flat.of_forall_isTrivialRelation fun {l f x} hfx => ?_
   -- The finitely many elements `x i` come from a common stage `k`.
-  choose j y hy using fun i => Concrete.isColimit_exists_rep F hc (x i)
-  let O : Finset J := Finset.univ.image j
-  have hO (i : Fin l) : j i ∈ O := Finset.mem_image_of_mem j (Finset.mem_univ i)
-  let k := IsFiltered.sup O ∅
-  let y' (i : Fin l) : F.obj k := F.map (IsFiltered.toSup O ∅ (hO i)) (y i)
-  have hy' (i : Fin l) : c.ι.app k (y' i) = x i := by
-    rw [← hy i, ← c.w (IsFiltered.toSup O ∅ (hO i)), ConcreteCategory.comp_apply]
+  obtain ⟨k, y', hy'⟩ := Concrete.isColimit_exists_rep_fin F hc x
   -- The relation holds at stage `k` up to an element dying in the colimit, so it holds at a
   -- later stage `m`.
   have h0 : c.ι.app k (∑ i, ψ k (f i) * y' i) = c.ι.app k 0 := by
