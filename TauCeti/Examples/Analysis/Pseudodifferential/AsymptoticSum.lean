@@ -289,8 +289,9 @@ example : (asymptoticSum : Symbol n V V (order 0)).IsAsymptoticSum term := by
     coefficient_inclusion, coefficient_comp, coefficient_besselPotential_eq,
     coefficient_inverseBracketAddOne, ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp,
     smul_smul, Real.rpow_neg (bracket_pos p.2).le, Real.rpow_natCast]
+  congr 1
   push_cast
-  ring_nf
+  ring
 
 /-- At `ξ = 0`, where `r = 1`, the asymptotic sum is `b = 1 / 2`, and the remainders after `N`
 terms alternate between `1 / 2` and `-1 / 2`. -/
@@ -301,8 +302,7 @@ example (x : CoordinateSpace n) (N : ℕ) :
         ∑ j ∈ range N, (term j : Symbol n V V (order j)).coefficient) (x, 0) =
         (((-1) ^ N / 2 : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
   rw [coefficient_asymptoticSum, coefficient_asymptoticSum_sub_sum, bracket_zero]
-  norm_num
-  ring_nf
+  constructor <;> congr 2 <;> ring
 
 end InverseBracket
 
@@ -346,11 +346,13 @@ example : ((3 : ℂ) • const (ContinuousLinearMap.id ℂ V) :
   rcases N with _ | _ | N
   · exact ⟨(3 : ℂ) • const (ContinuousLinearMap.id ℂ V), by simp⟩
   · refine ⟨twoTerms 1, funext fun p ↦ ?_⟩
-    simp [twoTerms]
+    simp only [twoTerms, zero_add, range_one, sum_singleton, Pi.sub_apply, coefficient_smul,
+      Pi.smul_apply, coefficient_inclusion, coefficient_const]
     module
   · refine ⟨0, funext fun p ↦ ?_⟩
     rw [sum_range_succ', sum_range_succ']
-    simp [twoTerms]
+    simp only [twoTerms, coefficient_zero, sum_const_zero, zero_add, Pi.sub_apply, Pi.add_apply,
+      Pi.zero_apply, coefficient_smul, Pi.smul_apply, coefficient_inclusion, coefficient_const]
     module
 
 end TauCeti.Examples.AsymptoticSum
