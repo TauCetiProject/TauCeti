@@ -106,7 +106,7 @@ namespace TauCeti
 
 open Equiv.Perm Function Set Topology ThricePuncturedSphere PunctureFilling
 
-open scoped ContDiff Manifold OnePoint
+open scoped ContDiff _root_.Manifold OnePoint
 
 namespace FilledCover
 

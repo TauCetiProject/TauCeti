@@ -8,10 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Values
 public import TauCeti.Geometry.Manifold.Complex.FundamentalClass
 public import TauCeti.Geometry.Manifold.Degree.Homological
-import TauCeti.Analysis.Analytic.Order
-import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.Complex.Chart
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -42,21 +39,19 @@ The proof compares the topological degree of `f` with its analytic degree at one
 topological degree, defined through local homology, is the sum of the local indices of `f` over any
 finite fibre (`TauCeti.HomologicalOrientation.degree_eq_sum_localIndex`). At a point of local
 multiplicity one, `f` has a nonzero complex derivative, so it is a local biholomorphism by the
-inverse function theorem. A local biholomorphism preserves the canonical orientations
+inverse function theorem
+(`TauCeti.RiemannSurface.localMultiplicity_eq_one_iff_isLocalDiffeomorphAt`). A local
+biholomorphism preserves the canonical orientations
 (`IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOrientation`), so its local index
-there is `1` (`TauCeti.RiemannSurface.localIndex_complexHomologicalOrientation_eq_one`). Away from
+there is `1` (`IsLocalDiffeomorphAt.localIndex_complexHomologicalOrientation_eq_one`). Away from
 the finitely many branch values every point of the fibre has local multiplicity one, so the
 topological degree is the number of points of such a fibre, which is the analytic degree
 (`TauCeti.RiemannSurface.FiniteHolomorphicMap.card_fiber_eq_degree_iff`).
 
 ## Main results
 
-* `TauCeti.RiemannSurface.localMultiplicity_eq_one_iff_isRegularPoint`: a holomorphic map has
-  local multiplicity one exactly at the points where its complex derivative is nonzero.
-* `TauCeti.RiemannSurface.localMultiplicity_eq_one_iff_isLocalDiffeomorphAt`: a holomorphic map
-  has local multiplicity one exactly at the points where it is a local biholomorphism.
-* `TauCeti.RiemannSurface.localIndex_complexHomologicalOrientation_eq_one`: there its local index
-  is `1`.
+* `IsLocalDiffeomorphAt.localIndex_complexHomologicalOrientation_eq_one`: a local biholomorphism
+  has local index `1` for the canonical orientations.
 * `FiniteHolomorphicMap.degree_complexHomologicalOrientation`: the topological degree of a finite
   holomorphic map is its analytic degree.
 * `FiniteHolomorphicMap.mapFundamentalClass_complexHomologicalOrientation`: `f_*[X] = deg f • [Y]`.
@@ -83,63 +78,16 @@ open scoped Manifold ContDiff TauCeti.ComplexManifold
 namespace TauCeti.RiemannSurface
 
 variable {X Y : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
-  [TopologicalSpace Y] [ChartedSpace ℂ Y] [IsManifold 𝓘(ℂ) 1 Y]
+  [TopologicalSpace Y] [ChartedSpace ℂ Y] [IsManifold 𝓘(ℂ) 1 Y] [T2Space X] [T2Space Y]
 
-/-- **Multiplicity one means a regular point.** A map holomorphic near `x` has local multiplicity
-`1` at `x` exactly when its complex derivative at `x` is surjective, that is, nonzero. -/
-theorem localMultiplicity_eq_one_iff_isRegularPoint {f : X → Y} {x : X}
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
-    localMultiplicity f x = 1 ↔ IsRegularPoint 𝓘(ℂ) 𝓘(ℂ) f x := by
-  set c := chartAt ℂ x
-  set c' := chartAt ℂ (f x)
-  have hcx : x ∈ c.source := mem_chart_source ℂ x
-  have hFa : AnalyticAt ℂ (fun z ↦ c' (f (c.symm z))) (c x) :=
-    analyticAt_chartAt_comp_comp_chartAt_symm hf
-  -- Both conditions say that the representative of `f` in the preferred charts has nonzero
-  -- derivative.
-  have h := hFa.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero
-  rw [c.left_inv hcx] at h
-  have hw : writtenInExtChartAt 𝓘(ℂ) 𝓘(ℂ) x f = fun z ↦ c' (f (c.symm z)) := rfl
-  rw [localMultiplicity_def, analyticOrderNatAt, ENat.toNat_eq_iff one_ne_zero, Nat.cast_one, h,
-    isRegularPoint_iff, hf.self_of_nhds.mfderiv, ModelWithCorners.range_eq_univ,
-    fderivWithin_univ, hw, extChartAt_coe, Function.comp_apply, modelWithCornersSelf_coe, id_eq,
-    hFa.differentiableAt.hasDerivAt.hasFDerivAt.fderiv]
-  refine ⟨fun hd v ↦ ⟨(tangentSpaceCastModel 𝓘(ℂ) x).symm
-    (tangentSpaceCastModel 𝓘(ℂ) (f x) v / deriv (fun z ↦ c' (f (c.symm z))) (c x)), ?_⟩,
-    fun hs hd ↦ ?_⟩
-  · simp [div_mul_cancel₀ _ hd]
-  · obtain ⟨a, ha⟩ := hs ((tangentSpaceCastModel 𝓘(ℂ) (f x)).symm 1)
-    simp only [hd, ContinuousLinearMap.toSpanSingleton_zero, ContinuousLinearMap.zero_comp,
-      ContinuousLinearMap.comp_zero, zero_apply] at ha
-    simpa using congrArg (tangentSpaceCastModel 𝓘(ℂ) (f x)) ha
-
-/-- **Multiplicity one means a local biholomorphism.** A map holomorphic near `x` has local
-multiplicity `1` at `x` exactly when it is a local biholomorphism at `x`. -/
-theorem localMultiplicity_eq_one_iff_isLocalDiffeomorphAt {f : X → Y} {x : X}
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
-    localMultiplicity f x = 1 ↔ IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) 1 f x := by
-  refine ⟨fun hx ↦ ?_, fun h ↦ (localMultiplicity_eq_one_iff_isRegularPoint hf).2
-    ((isRegularPoint_iff_isInvertible_mfderiv rfl).2 (h.isInvertible_mfderiv one_ne_zero))⟩
-  -- The inverse function theorem at a point of invertible derivative.
-  obtain ⟨s, hs, hso, hxs⟩ := eventually_nhds_iff.1 hf
-  obtain ⟨e, he⟩ := (isRegularPoint_iff_isInvertible_mfderiv rfl).1
-    ((localMultiplicity_eq_one_iff_isRegularPoint hf).1 hx)
-  exact isLocalDiffeomorphAt_of_mfderiv_eq
-    (MDifferentiableOn.contMDiffOn (fun y hy ↦ (hs y hy).mdifferentiableWithinAt) hso) hso hxs
-    BoundarylessManifold.isInteriorPoint le_rfl he
-
-variable [T2Space X] [T2Space Y]
-
-/-- **A holomorphic map has local index one at a point of multiplicity one.** For the canonical
-orientations of the complex structures, the local index of a map holomorphic near `x` with local
-multiplicity `1` at `x` is `1`. -/
-theorem localIndex_complexHomologicalOrientation_eq_one {f : C(X, Y)} {x : X}
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) (hx : localMultiplicity f x = 1) :
+/-- **A local biholomorphism has local index one.** For the canonical orientations of the complex
+structures, the local index of a local biholomorphism at `x` is `1`. -/
+theorem _root_.IsLocalDiffeomorphAt.localIndex_complexHomologicalOrientation_eq_one
+    {f : C(X, Y)} {x : X} (hf : IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) 1 f x) :
     (complexHomologicalOrientation X).localIndex (complexHomologicalOrientation Y) f x = 1 := by
-  have hl := (localMultiplicity_eq_one_iff_isLocalDiffeomorphAt hf).1 hx
-  have hR : IsLocalDiffeomorphAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 f x := hl.restrictScalars ℝ
+  have hR : IsLocalDiffeomorphAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 f x := hf.restrictScalars ℝ
   obtain ⟨L, hL, hmap⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).1
-    (hl.isOrientationPreservingAt_complexManifoldOrientation 1)
+    (hf.isOrientationPreservingAt_complexManifoldOrientation 1)
   rw [complexHomologicalOrientation_def, complexHomologicalOrientation_def,
     Manifold.Orientation.localIndex_toHomologicalOrientation _ _ _ f
       (hR.isInvertible_mfderiv one_ne_zero)]
@@ -170,9 +118,11 @@ theorem degree_complexHomologicalOrientation (f : FiniteHolomorphicMap X Y) :
   rw [HomologicalOrientation.degree_eq_sum_localIndex _ _ Complex.finrank_real_complex
     Complex.finrank_real_complex (f.holomorphic.continuous.isProperMap) hfin]
   -- Every point of the fibre has local multiplicity one, hence local index one.
-  rw [Finset.sum_congr rfl fun x hx ↦ localIndex_complexHomologicalOrientation_eq_one
-    (f := ⟨f, f.holomorphic.continuous⟩) (.of_forall fun z ↦ f.holomorphic z)
-    ((f.notMem_branchValues_iff y).1 hy x (hfin.mem_toFinset.1 hx))]
+  rw [Finset.sum_congr rfl fun x hx ↦
+    IsLocalDiffeomorphAt.localIndex_complexHomologicalOrientation_eq_one
+      (f := ⟨f, f.holomorphic.continuous⟩) ((localMultiplicity_eq_one_iff_isLocalDiffeomorphAt
+        (.of_forall fun z ↦ f.holomorphic z)).1
+        ((f.notMem_branchValues_iff y).1 hy x (hfin.mem_toFinset.1 hx)))]
   simp [(f.card_fiber_eq_degree_iff y).2 hy]
 
 variable [CompactSpace Y]
