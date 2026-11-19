@@ -178,17 +178,17 @@ theorem IsSpectralCutOn.finiteDimensional_range_cfc_indicator_Icc (h : IsSpectra
 theorem IsSpectralCutOn.mono (h : IsSpectralCutOn A c s) (hts : t ⊆ s) : IsSpectralCutOn A c t :=
   ⟨h.1, fun u hu ↦ h.2 u (hts hu)⟩
 
-end General
-
-variable {A : ℝ → H →L[𝕜] H} {c : ℝ} {s t : Set ℝ}
-
-/-- A spectral cut of a reparametrized path `A ∘ φ` on `s` is a spectral cut of `A` on every set of
-times covered by `φ '' s`. -/
-theorem IsSpectralCutOn.of_comp {φ : ℝ → ℝ} (h : IsSpectralCutOn (A ∘ φ) c s) (hts : t ⊆ φ '' s) :
-    IsSpectralCutOn A c t := by
+/-- A spectral cut of a reparametrized family `A ∘ φ` on `s` is a spectral cut of `A` on every set
+of parameters covered by `φ '' s`. -/
+theorem IsSpectralCutOn.of_comp {β : Type*} {φ : β → α} {s : Set β}
+    (h : IsSpectralCutOn (A ∘ φ) c s) (hts : t ⊆ φ '' s) : IsSpectralCutOn A c t := by
   refine ⟨h.1, fun u hu ↦ ?_⟩
   obtain ⟨w, hw, rfl⟩ := hts hu
   exact h.2 w hw
+
+end General
+
+variable {A : ℝ → H →L[𝕜] H} {c : ℝ} {s t : Set ℝ}
 
 /-- `F` is a **spectral flow potential** of the path `A` on `[a, b]`: over every subinterval
 `[s, t]` of `[a, b]` on which `A` has a spectral cut `c`, the increment of `F` is the change of the
