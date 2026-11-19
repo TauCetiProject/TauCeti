@@ -269,6 +269,7 @@ example {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace 1) M]
   obtain ⟨ε, h0, h1, B, hB⟩ := exists_lineComparison c
   exact ⟨ε, h0, h1, B, fun p ↦ (hB p).1⟩
 
+/-- The native charted-space constructor on the literal empty carrier. -/
 local instance emptyCharted (n : ℕ) : ChartedSpace (EuclideanHalfSpace (n + 1)) Empty :=
   ChartedSpace.empty _ _
 

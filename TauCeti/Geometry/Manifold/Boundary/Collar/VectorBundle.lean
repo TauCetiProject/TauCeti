@@ -331,7 +331,9 @@ structure BundleComparison where
       mem_normalIioOpens.mpr (lt_trans (mem_normalIioOpens.mp ht) hε1)) (normalIioOpensZero hε0)))
       (equiv (y, normalIioOpensZero hε0) v)) = TotalSpace.mk' F (y : M) v
 
-attribute [simp] BundleComparison.apply_eq BundleComparison.symm_apply_eq BundleComparison.zero_eq
+-- The evaluation fields are used explicitly: simplifying ContinuousMap coercions in their
+-- implicit types changes the native pullback bundle instances, so they are not simp lemmas.
+attribute [simp] BundleComparison.zero_eq
 
 end ComparisonData
 
