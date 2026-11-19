@@ -872,18 +872,10 @@ theorem le_setIntegral_floerEnergyDensity_of_forall_le_mul (ω : SymplecticForm 
     (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) {h m : ℝ} (hh : 0 < h)
     (hR : Icc s (s + h) ×ˢ Icc (0 : ℝ) 1 ⊆ U)
     (hm : ∀ r ∈ Icc s (s + h), m ≤ h * ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t)) :
-    m ≤ ∫ z in Icc s (s + h) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z := by
-  have hRint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) (Icc s (s + h) ×ˢ Icc (0 : ℝ) 1) :=
-    ((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hR).integrableOn_compact
-      (isCompact_Icc.prod isCompact_Icc)
-  rw [← setIntegral_setIntegral_slice_eq_setIntegral_rect hRint]
-  calc m = ∫ _ in Icc s (s + h), m / h := by
-        rw [setIntegral_const, Real.volume_real_Icc_of_le (by linarith), smul_eq_mul,
-          add_sub_cancel_left, mul_div_cancel₀ _ hh.ne']
-    _ ≤ ∫ r in Icc s (s + h), ∫ t in Icc (0 : ℝ) 1, ω.floerEnergyDensity Ks Kt u (r, t) :=
-        setIntegral_mono_on (integrableOn_const isCompact_Icc.measure_lt_top.ne)
-          (integrableOn_setIntegral_slice hRint) measurableSet_Icc fun r hr ↦
-            (div_le_iff₀' hh).2 (hm r hr)
+    m ≤ ∫ z in Icc s (s + h) ×ˢ Icc 0 1, ω.floerEnergyDensity Ks Kt u z :=
+  le_setIntegral_rect_of_forall_le_mul_setIntegral_slice (lt_add_of_pos_right s hh)
+    (((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hR).integrableOn_compact
+      (isCompact_Icc.prod isCompact_Icc)) (by simpa only [add_sub_cancel_left] using hm)
 
 end Integral
 

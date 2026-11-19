@@ -45,6 +45,8 @@ a doubly (twisted) periodic map are used.
   slices `{r} × t` of a product set `s × t`, in particular of a rectangle.
 * `TauCeti.exists_mem_Icc_mul_setIntegral_slice_le_setIntegral_rect`: some vertical segment
   carries at most the average integral.
+* `TauCeti.le_setIntegral_rect_of_forall_le_mul_setIntegral_slice`: a lower bound on the
+  integral over every vertical segment bounds the integral over the rectangle.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: an inequality between the integrals
   over the vertical segments `{s} × [a₂, b₂]` integrates to the same inequality over the rectangle.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le_symm`: the same for the horizontal
@@ -212,6 +214,23 @@ theorem exists_mem_Icc_mul_setIntegral_slice_le_setIntegral_rect {f : ℝ × ℝ
   rw [setAverage_eq, Real.volume_real_Icc_of_le h₁.le, smul_eq_mul,
     setIntegral_setIntegral_slice_eq_setIntegral_rect hf] at hle
   exact ⟨s, hs, (le_inv_mul_iff₀ (sub_pos.2 h₁)).1 hle⟩
+
+/-- **A lower bound on every slice bounds the integral.** If `f` is integrable over the rectangle
+`[a₁, b₁] × [a₂, b₂]` with `a₁ < b₁` and `m ≤ (b₁ - a₁) ∫_{[a₂, b₂]} f(s, t) dt` for every
+`s ∈ [a₁, b₁]`, then `m ≤ ∫_{[a₁, b₁] × [a₂, b₂]} f`. -/
+theorem le_setIntegral_rect_of_forall_le_mul_setIntegral_slice {f : ℝ × ℝ → ℝ} {m : ℝ}
+    (h₁ : a₁ < b₁) (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂))
+    (hm : ∀ s ∈ Icc a₁ b₁, m ≤ (b₁ - a₁) * ∫ t in Icc a₂ b₂, f (s, t)) :
+    m ≤ ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z := by
+  have hpos : 0 < b₁ - a₁ := sub_pos.2 h₁
+  rw [← setIntegral_setIntegral_slice_eq_setIntegral_rect hf]
+  calc m = ∫ _ in Icc a₁ b₁, m / (b₁ - a₁) := by
+        rw [setIntegral_const, Real.volume_real_Icc_of_le h₁.le, smul_eq_mul,
+          mul_div_cancel₀ _ hpos.ne']
+    _ ≤ ∫ s in Icc a₁ b₁, ∫ t in Icc a₂ b₂, f (s, t) :=
+        setIntegral_mono_on (integrableOn_const isCompact_Icc.measure_lt_top.ne)
+          (integrableOn_setIntegral_slice hf) measurableSet_Icc fun s hs ↦
+            (div_le_iff₀' hpos).2 (hm s hs)
 
 /-- **Integrating a slicewise inequality.** If `f` and `g` are integrable over the rectangle
 `[a₁, b₁] × [a₂, b₂]` and, for every `s ∈ [a₁, b₁]`, the integral of `f (s, ·)` over `[a₂, b₂]` is
