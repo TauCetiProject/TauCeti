@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.RingTheory.TensorProduct.Free
 public import Mathlib.Topology.Category.Profinite.Nobeling.Induction
 public import Mathlib.Topology.DiscreteQuotient
+public import TauCeti.Topology.DiscreteQuotient
 public import TauCeti.Topology.LocallyConstant.Algebra
 
 /-!
@@ -43,8 +44,6 @@ discrete, `C⁰(S, Λ) = Λ^S` has rank the cardinality of `S`; for a nontrivial
   number of points.
 * `TauCeti.finite_locallyConstant_self_iff`: for a profinite set `S`, `LocallyConstant S Λ` is
   finitely generated exactly when `Λ` is the zero ring or `S` is finite.
-* `TauCeti.exists_discreteQuotient_injOn_proj`: finitely many points of a profinite set are
-  separated by a single finite discrete quotient.
 
 ## References
 
@@ -98,13 +97,6 @@ private theorem locallyConstantScalarRightHom_lTensor (Q : DiscreteQuotient X)
   | tmul n g => ext; simp
   | add t₁ t₂ h₁ h₂ => simp only [map_add, h₁, h₂]
 
-/-- A locally constant function is pulled back from the discrete quotient by its fibres. -/
-private theorem funLeft_lift {A M : Type*} [Semiring A] [AddCommMonoid M] [Module A M]
-    (f : LocallyConstant X M) : f.discreteQuotient.proj_isLocallyConstant.funLeft A M f.lift = f :=
-  LocallyConstant.ext fun x ↦ by
-    rw [IsLocallyConstant.coe_funLeft]
-    exact congrFun f.lift_comp_proj x
-
 /-- A tensor pulled back from a discrete quotient `Q'` is also pulled back from every finer
 discrete quotient `Q`. -/
 private theorem lTensor_funLeft_proj_of_le {Q Q' : DiscreteQuotient X} (h : Q ≤ Q')
@@ -112,10 +104,8 @@ private theorem lTensor_funLeft_proj_of_le {Q Q' : DiscreteQuotient X} (h : Q �
     (Q'.proj_isLocallyConstant.funLeft R R).lTensor N t =
       (Q.proj_isLocallyConstant.funLeft R R).lTensor N
         ((LinearMap.funLeft R R (DiscreteQuotient.ofLE h)).lTensor N t) := by
-  have hcomp : Q.proj_isLocallyConstant.funLeft R R ∘ₗ
-      LinearMap.funLeft R R (DiscreteQuotient.ofLE h) = Q'.proj_isLocallyConstant.funLeft R R :=
-    LinearMap.ext fun g ↦ LocallyConstant.ext fun x ↦ by simp [DiscreteQuotient.ofLE_proj]
-  rw [← LinearMap.lTensor_comp_apply, hcomp]
+  simp only [← LinearMap.lTensor_comp_apply, ← IsLocallyConstant.funLeft_comp,
+    DiscreteQuotient.ofLE_comp_proj]
 
 /-- Every tensor in `N ⊗[R] LocallyConstant X R` is pulled back from some discrete quotient. -/
 private theorem exists_eq_lTensor_funLeft_proj (t : N ⊗[R] LocallyConstant X R) :
@@ -124,7 +114,7 @@ private theorem exists_eq_lTensor_funLeft_proj (t : N ⊗[R] LocallyConstant X R
   induction t using TensorProduct.inductionOn with
   | tmul n f =>
     refine ⟨f.discreteQuotient, n ⊗ₜ f.lift, ?_⟩
-    rw [LinearMap.lTensor_tmul, funLeft_lift]
+    rw [LinearMap.lTensor_tmul, LocallyConstant.funLeft_lift]
   | add t₁ t₂ h₁ h₂ =>
     obtain ⟨Q₁, t₁, rfl⟩ := h₁
     obtain ⟨Q₂, t₂, rfl⟩ := h₂
@@ -155,7 +145,7 @@ theorem locallyConstantScalarRightHom_bijective [CompactSpace X] :
       ((piScalarRight R S N _).symm g.lift), ?_⟩
     rw [locallyConstantScalarRightHom_lTensor, ← piScalarRight_apply,
       LinearEquiv.apply_symm_apply]
-    exact funLeft_lift g
+    exact LocallyConstant.funLeft_lift S g
 
 /-- For a compact space `X`, `N ⊗[R] LocallyConstant X R` is canonically isomorphic to
 `LocallyConstant X N`, by `n ⊗ f ↦ (x ↦ f x • n)`. -/
@@ -169,37 +159,6 @@ theorem locallyConstantScalarRight_apply [CompactSpace X] (t : N ⊗[R] LocallyC
   (rfl)
 
 end ScalarRight
-
-section DiscreteQuotient
-
-variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
-  [TotallyDisconnectedSpace X]
-
-/-- Finitely many points of a profinite set are mapped to distinct points of a single discrete
-quotient. -/
-theorem exists_discreteQuotient_injOn_proj (s : Finset X) :
-    ∃ Q : DiscreteQuotient X, Set.InjOn Q.proj s := by
-  classical
-  have hsep (p : X × X) : ∃ Q : DiscreteQuotient X, p.1 ≠ p.2 → Q.proj p.1 ≠ Q.proj p.2 := by
-    by_cases hp : p.1 = p.2
-    · exact ⟨⊤, fun h ↦ (h hp).elim⟩
-    · obtain ⟨Q, hQ⟩ := not_forall.mp (mt DiscreteQuotient.eq_of_forall_proj_eq hp)
-      exact ⟨Q, fun _ ↦ hQ⟩
-  choose Q hQ using hsep
-  refine ⟨(s ×ˢ s).inf Q, fun x hx y hy hxy ↦ by_contra fun hne ↦ hQ (x, y) hne ?_⟩
-  have hle : (s ×ˢ s).inf Q ≤ Q (x, y) := Finset.inf_le (Finset.mk_mem_product hx hy)
-  rw [← DiscreteQuotient.ofLE_proj hle x, ← DiscreteQuotient.ofLE_proj hle y, hxy]
-
-/-- An infinite profinite set has finite discrete quotients of every finite size. -/
-theorem exists_discreteQuotient_lt_natCard [Infinite X] (n : ℕ) :
-    ∃ Q : DiscreteQuotient X, n < Nat.card Q := by
-  obtain ⟨s, hs⟩ := Infinite.exists_subset_card_eq X (n + 1)
-  obtain ⟨Q, hQ⟩ := exists_discreteQuotient_injOn_proj s
-  have := Nat.card_le_card_of_injective _ hQ.injective
-  rw [Nat.card_coe_set_eq, Set.ncard_coe_finset, hs] at this
-  exact ⟨Q, this⟩
-
-end DiscreteQuotient
 
 section Free
 
@@ -217,11 +176,8 @@ theorem finrank_locallyConstant_eq_natCard (Λ : Type*) [Ring Λ] [StrongRankCon
     (S : Type*) [TopologicalSpace S] [DiscreteTopology S] [Finite S] :
     Module.finrank Λ (LocallyConstant S Λ) = Nat.card S := by
   have := Fintype.ofFinite S
-  have hid : IsLocallyConstant (id : S → S) := .of_discrete _
-  have e := LinearEquiv.ofBijective (hid.funLeft Λ Λ)
-    ⟨hid.funLeft_injective Function.surjective_id Λ Λ,
-      hid.funLeft_surjective Function.injective_id Λ Λ⟩
-  rw [← e.finrank_eq, Module.finrank_pi, Nat.card_eq_fintype_card]
+  rw [(LocallyConstant.linearEquivFnOfDiscrete Λ).finrank_eq, Module.finrank_pi,
+    Nat.card_eq_fintype_card]
 
 /-- For a profinite set `S`, the module `LocallyConstant S Λ` is finitely generated exactly when
 `Λ` is the zero ring or `S` is finite. -/
@@ -231,7 +187,7 @@ theorem finite_locallyConstant_self_iff (Λ : Type*) [CommRing Λ] (S : Type*)
   refine ⟨fun h ↦ ?_, ?_⟩
   · rw [or_iff_not_imp_left, not_subsingleton_iff_nontrivial, ← not_infinite_iff_finite]
     intro _ _
-    obtain ⟨Q, hQ⟩ := exists_discreteQuotient_lt_natCard (X := S)
+    obtain ⟨Q, hQ⟩ := DiscreteQuotient.exists_lt_natCard (X := S)
       (Module.finrank Λ (LocallyConstant S Λ))
     have := Fintype.ofFinite Q
     have hle := LinearMap.finrank_le_finrank_of_injective
@@ -242,8 +198,7 @@ theorem finite_locallyConstant_self_iff (Λ : Type*) [CommRing Λ] (S : Type*)
     · have := Module.subsingleton Λ (LocallyConstant S Λ)
       infer_instance
     · have := Fintype.ofFinite S
-      have hid : IsLocallyConstant (id : S → S) := .of_discrete _
-      exact .of_surjective _ (hid.funLeft_surjective Function.injective_id Λ Λ)
+      exact .equiv (LocallyConstant.linearEquivFnOfDiscrete Λ).symm
 
 end Free
 
