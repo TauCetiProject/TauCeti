@@ -32,6 +32,12 @@ inclusion on degree-zero homology.  For a path-connected fibre the monodromy act
 `H₀(F)`, so `wangδ` is surjective onto `H₀(F)` (`TauCeti.MappingTorus.epi_wangδ_zero`).  With
 coefficients in a commutative ring `k`, exactness identifies the cokernel of `𝟙 - φ_*` on
 `Hₙ(F)` with the image of the fibre in `Hₙ(T_φ)` (`TauCeti.MappingTorus.wangCokernelEquiv`).
+
+When `𝟙 - φ_*` is a monomorphism on `Hₙ(F)`, the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)`
+vanishes (`TauCeti.MappingTorus.wangδ_eq_zero`), so the fibre inclusion is an epimorphism on
+`Hₙ₊₁` (`TauCeti.MappingTorus.epi_homologyMap_fibreInclusionChainMap_succ`). If moreover `φ_*` is
+the identity on `Hₙ₊₁(F)`, the fibre inclusion is an isomorphism `Hₙ₊₁(F) ≅ Hₙ₊₁(T_φ)`
+(`TauCeti.MappingTorus.isIso_homologyMap_fibreInclusionChainMap_succ`).
 -/
 
 public section
@@ -242,9 +248,46 @@ instance epi_homologyMap_fibreInclusionChainMap_zero :
 instance epi_wangδ_zero [PathConnectedSpace F] : Epi (wangδ φ R 0) :=
   (wang_exact₁ φ R 0).epi_f (by simp)
 
+/-- If `𝟙 - φ_*` is a monomorphism on `Hₙ(F)`, the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)`
+vanishes. -/
+theorem wangδ_eq_zero (n : ℕ) [Mono (homologyMap (wangEndomorphism φ R) n)] :
+    wangδ φ R n = 0 :=
+  (wang_exact₁ φ R n).mono_g_iff.1 inferInstance
+
+/-- If `𝟙 - φ_*` is a monomorphism on `Hₙ(F)`, the fibre inclusion `Hₙ₊₁(F) ⟶ Hₙ₊₁(T_φ)` is an
+epimorphism. -/
+instance epi_homologyMap_fibreInclusionChainMap_succ (n : ℕ)
+    [Mono (homologyMap (wangEndomorphism φ R) n)] :
+    Epi (homologyMap (fibreInclusionChainMap φ R) (n + 1)) :=
+  (wang_exact₃ φ R n).epi_f (wangδ_eq_zero φ R n)
+
+/-- If the monodromy acts trivially on `Hₙ(F)`, the fibre inclusion `Hₙ(F) ⟶ Hₙ(T_φ)` is a
+monomorphism. -/
+theorem mono_homologyMap_fibreInclusionChainMap (n : ℕ)
+    (hφ : homologyMap (monodromyChainMap φ R) n = 𝟙 _) :
+    Mono (homologyMap (fibreInclusionChainMap φ R) n) :=
+  (wang_exact₂ φ R n).mono_g (by simp [hφ])
+
+/-- If `𝟙 - φ_*` is a monomorphism on `Hₙ(F)` and the monodromy acts trivially on `Hₙ₊₁(F)`, the
+fibre inclusion is an isomorphism `Hₙ₊₁(F) ≅ Hₙ₊₁(T_φ)`. -/
+theorem isIso_homologyMap_fibreInclusionChainMap_succ (n : ℕ)
+    [Mono (homologyMap (wangEndomorphism φ R) n)]
+    (hφ : homologyMap (monodromyChainMap φ R) (n + 1) = 𝟙 _) :
+    IsIso (homologyMap (fibreInclusionChainMap φ R) (n + 1)) :=
+  have := mono_homologyMap_fibreInclusionChainMap φ R (n + 1) hφ
+  isIso_of_mono_of_epi _
+
 section ModuleCat
 
 variable {k : Type w} [CommRing k]
+
+/-- With coefficients in a module `R`, `𝟙 - φ_*` is a monomorphism on `Hₙ(F; R)` exactly when it is
+injective as a linear map. -/
+theorem mono_homologyMap_wangEndomorphism_iff (R : ModuleCat.{w} k) (n : ℕ) :
+    Mono (homologyMap (wangEndomorphism φ R) n) ↔
+      Function.Injective
+        (LinearMap.id - (homologyMap (monodromyChainMap φ R) n).hom : _ →ₗ[k] _) := by
+  simp [ModuleCat.mono_iff_injective]
 
 /-- The kernel of the map `Hₙ(F) → Hₙ(T_φ)` induced by the fibre inclusion is the image of
 `𝟙 - φ_*`. -/
