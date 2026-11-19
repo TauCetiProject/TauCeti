@@ -97,15 +97,9 @@ theorem isHomeomorph_map_of_isThickening (i : Z ⟶ X) (hi : i ≫ fX = fZ) [IsT
 /-- The homeomorphism of point spaces induced by a thickening over the base, with inverse the
 lift of points along the thickening. -/
 noncomputable def homeomorphOfIsThickening (i : Z ⟶ X) (hi : i ≫ fX = fZ) [IsThickening i] :
-    Points (R := R) fZ ≃ₜ Points (R := R) fX where
-  toFun := map i hi
-  invFun := liftOfIsThickening i hi
-  left_inv := liftOfIsThickening_map i hi
-  right_inv := map_liftOfIsThickening i hi
-  continuous_toFun := continuous_map i hi
-  continuous_invFun := (isHomeomorph_map_of_isThickening i hi).homeomorph.symm.continuous.congr
-    fun x ↦ (isHomeomorph_map_of_isThickening i hi).homeomorph.symm_apply_eq.2
-      (map_liftOfIsThickening i hi x).symm
+    Points (R := R) fZ ≃ₜ Points (R := R) fX :=
+  (isHomeomorph_map_of_isThickening i hi).homeomorph.changeInv (liftOfIsThickening i hi)
+    (map_liftOfIsThickening i hi)
 
 /-- The homeomorphism induced by a thickening is the induced map on points. -/
 @[simp]
