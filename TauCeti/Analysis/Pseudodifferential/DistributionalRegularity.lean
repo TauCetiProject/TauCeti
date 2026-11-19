@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.EllipticRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
-public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.Local
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
@@ -67,10 +66,6 @@ supported where `ψ = 1`.
 
 ## Main results
 
-* `TauCeti.ClassicalSymbol.toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id`: on
-  `H^{r,p}`, the quantization of the symbol of a differential operator with compactly supported
-  smooth scalar coefficients is that differential operator on tempered distributions; it is the
-  `H^{r,p}` counterpart of `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol`.
 * `TauCeti.differentialSymbol_filter_smul_id`,
   `TauCeti.ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff`: for scalar coefficients,
   the top-order differential symbol is `i ^ M` times the principal symbol
@@ -100,60 +95,6 @@ open Complex Filter LineDeriv MeasureTheory Set TopologicalSpace TestFunction
 open scoped BesselPotentialSpace ContDiff Distributions ENNReal LineDeriv SchwartzMap Topology
 
 namespace TauCeti
-
-namespace ClassicalSymbol
-
-section BesselPotentialSpace
-
-variable {n : ℕ} {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
-  [CompleteSpace V] {ι : Type*} {k : ι → ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- **Differential operators on `H^{r,p}`.** Let `1 < p < ∞`. For a differential operator
-`u ↦ ∑ i ∈ s, βᵢ ∂^{vᵢ} u` with smooth compactly supported scalar coefficients `βᵢ`, the operator
-`H^{r,p} → H^{r - m,p}` given by the quantization of its classical symbol is the differential
-operator acting on tempered distributions. -/
-theorem toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id (m : ℕ)
-    (s : Finset ι) (v : ∀ i, Fin (k i) → CoordinateSpace n) {β : ι → CoordinateSpace n → ℂ}
-    (hβ : ∀ i ∈ s, ContDiff ℝ ∞ (β i)) (hβc : ∀ i ∈ s, HasCompactSupport (β i))
-    (hk : ∀ i ∈ s, k i ≤ m) (r : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
-    (u : H^{r, p}(CoordinateSpace n, V)) :
-    ((ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ V)
-        (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.quantizeBesselPotentialSpace
-      (hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol m s v _ _ hk
-        fun i hi ↦ (hβc i hi).smul_right) r p u).toDistr =
-      ∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) (∂^{v i} u.toDistr) := by
-  set a := (ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ V)
-    (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol
-  have ha : a.HasCompactSpatialSupport :=
-    hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol m s v _ _ hk
-      fun i hi ↦ (hβc i hi).smul_right
-  have hgr (i : ι) (hi : i ∈ s) : (β i).HasTemperateGrowth :=
-    (hβc i hi).hasTemperateGrowth (hβ i hi)
-  -- On Schwartz functions the quantization is the differential operator.
-  have hq (w : 𝓢(CoordinateSpace n, V)) : Symbol.quantizeUniformCLM a ha.isUniform w =
-      ∑ i ∈ s, SchwartzMap.smulLeftCLM V (β i) (∂^{v i} w) := by
-    ext x
-    rw [Symbol.quantizeUniformCLM_apply]
-    simp only [a, quantizeSchwartzValue_ofDifferentialSymbol, sum_apply]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [SchwartzMap.smulLeftCLM_apply_apply (hgr i hi)]
-    simp
-  have key : BesselPotentialSpace.toDistrCLM _ V _ p ∘L a.quantizeBesselPotentialSpace ha r p =
-      (∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) ∘L
-        iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, V) (v i)) ∘L
-        BesselPotentialSpace.toDistrCLM _ V r p := by
-    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun w ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
-      Symbol.quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM ha r hp hp_top, hq,
-      SchwartzMap.toDistr_toBesselPotentialSpaceCLM, sum_apply, map_sum,
-      iteratedLineDerivOpCLM_apply,
-      TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
-      TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
-  simpa using congrArg (fun L ↦ L u) key
-
-end BesselPotentialSpace
-
-end ClassicalSymbol
 
 variable {n : ℕ} {ι : Type*} {t : Finset ι} {k : ι → ℕ} {m : ∀ i, Fin (k i) → CoordinateSpace n}
 
@@ -288,7 +229,7 @@ private theorem memSobolev_cutoffTempered_of_isEllipticAbove {p : ℝ≥0∞} [F
   have hβc (i : ι) (_ : i ∈ t) : HasCompactSupport (β i) :=
     (TestFunction.smulLeftCLM (hg i) ψ).hasCompactSupport.mul_left
   have hu := ClassicalSymbol.toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id M t
-    m hβ hβc hk _ hp hp_top hr.toBesselPotentialSpace
+    m hk hβ hβc _ hp hp_top hr.toBesselPotentialSpace
   rw [hr.toBesselPotentialSpace_toDistr, sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered hg T
     hχψ] at hu
   set φS : 𝓢(CoordinateSpace n, ℂ) := φ.hasCompactSupport.toSchwartzMap φ.contDiff
