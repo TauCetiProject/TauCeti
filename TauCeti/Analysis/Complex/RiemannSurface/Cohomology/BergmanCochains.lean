@@ -7,8 +7,12 @@ module
 
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bergman.Restriction
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Basic
+public import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Coordinate
 
 /-!
 # Square-integrable holomorphic Čech cochains on a Riemann surface
@@ -52,6 +56,16 @@ For the structure sheaf, these spaces are realized with its native holomorphic s
   (`mem_cocycles₁_iff_toSections₁`), restriction is the native restriction of sections
   (`toSections₁_restrictCochains₁`), and membership in `compatibleTriples` is the native
   coboundary identity (`mem_compatibleTriples_iff_toSections`).
+
+For a holomorphic line bundle with any normed rank-one model, actual holomorphic frames and
+scalar model coordinates give the injective realizations `toBundleSections₀` and
+`toBundleSections₁`. Their native cocycle and coboundary identities use the actual
+`Bundle.Trivialization.scalarCoordChange` factors and native presheaf restrictions.
+`Bundle.Trivialization.bergmanRestriction` reads a section on a larger open as a Bergman class
+only after compact shrinking; `bundleSections₁ToBergman` shrinks both overlap indices. The
+round trips recover restrictions. No unbounded frame change is asserted to induce a Bergman
+isomorphism, and no arbitrary section is asserted to be square-integrable up to the boundary
+of its original domain.
 
 These are the analytic Banach stages of the finiteness theorem for `H¹(X, 𝒪)`; the surjectivity of
 the projection of `compatibleTriples` to its middle cocycle, the Schwartz argument and the
@@ -471,3 +485,490 @@ theorem mem_compatibleTriples_iff_toSections (h' : ∀ i, W' i ≤ W i) (h'' : �
 end ChartBergman
 
 end TauCeti.RiemannSurface
+
+
+namespace Bundle.Trivialization
+
+open CategoryTheory Opposite Set TopologicalSpace
+open TauCeti
+
+variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {V : X → Type} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle ℂ F V] [ContMDiffVectorBundle ω F V 𝓘(ℂ)]
+  (τ : Trivialization F (π F V)) [τ.IsLinear ℂ] (q : F ≃L[ℂ] ℂ)
+  (hτa : τ.toOpenPartialHomeomorph ∈
+    (contMDiffFiberwiseLinear X F 𝓘(ℂ) ω).maximalAtlas (TotalSpace F V))
+  {e : OpenPartialHomeomorph X ℂ} {U U' : Opens X}
+
+/-- A scalar Bergman class, read in an actual holomorphic line-bundle frame, gives a native
+holomorphic section. No boundedness of the frame or compact containment is required. -/
+def bergmanSection (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    (hU : (U : Set X) ⊆ e.source) (hτ : (U : Set X) ⊆ τ.baseSet) :
+    bergmanSpace ℂ (e.imageOpens U) →ₗ[ℂ]
+      (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op U) :=
+  (τ.holomorphicSectionLinearEquiv q hτa hτ).symm.toLinearMap.comp
+    (RiemannSurface.chartSection he hU)
+
+/-- Evaluation of the native section in the chosen frame. -/
+@[simp]
+theorem bergmanSection_apply (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    (hU : (U : Set X) ⊆ e.source) (hτ : (U : Set X) ⊆ τ.baseSet)
+    (u : bergmanSpace ℂ (e.imageOpens U)) (x : U) :
+    τ.bergmanSection q hτa he hU hτ u x =
+      τ.symmL ℂ x (q.symm (BergmanSpace.representative u (e x))) := by
+  rw [bergmanSection, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    τ.holomorphicSectionLinearEquiv_symm_apply q hτa hτ
+      (RiemannSurface.chartSection he hU u) x, RiemannSurface.chartSection_apply he hU u x]
+
+/-- Realization in a line-bundle frame retains every Bergman class. -/
+theorem bergmanSection_injective (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    (hU : (U : Set X) ⊆ e.source) (hτ : (U : Set X) ⊆ τ.baseSet) :
+    Function.Injective (τ.bergmanSection q hτa he hU hτ) := by
+  exact (τ.holomorphicSectionLinearEquiv q hτa hτ).symm.injective.comp
+    (RiemannSurface.chartSection_injective he hU)
+
+/-- Restricting the Bergman class restricts its native bundle section. -/
+theorem bergmanSection_restrict (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+    (hU : (U : Set X) ⊆ e.source) (hτ : (U : Set X) ⊆ τ.baseSet) (h : U' ≤ U)
+    (u : bergmanSpace ℂ (e.imageOpens U)) :
+    τ.bergmanSection q hτa he ((SetLike.coe_subset_coe.2 h).trans hU)
+        ((SetLike.coe_subset_coe.2 h).trans hτ)
+        (BergmanSpace.restrict (OpenPartialHomeomorph.imageOpens_mono h) u) =
+      (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map (homOfLE h).op
+        (τ.bergmanSection q hτa he hU hτ u) := by
+  apply holomorphicSectionSheaf.ext
+  intro x
+  rw [holomorphicSectionSheaf.map_apply, bergmanSection_apply, bergmanSection_apply,
+    BergmanSpace.representative_restrict _ _ (OpenPartialHomeomorph.map_mem_imageOpens
+      (hU (h x.2)) x.2)]
+
+end Bundle.Trivialization
+
+
+namespace OpenPartialHomeomorph
+
+open CategoryTheory MeasureTheory Opposite Set TopologicalSpace
+open TauCeti
+
+variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
+  (e : OpenPartialHomeomorph X ℂ) (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+  {U W : Opens X} (hU : (U : Set X) ⊆ e.source)
+  (hK : IsCompact (closure (W : Set X))) (hKU : closure (W : Set X) ⊆ U)
+
+private def holomorphicSectionBoundedAux
+    (s : (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U)) :
+    boundedHolomorphicFunctions ℂ (e.imageOpens W) := by
+  let f : (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op U) :=
+    holomorphicStructureSheafModules.sectionsLinearEquiv 𝓘(ℂ) X (op U) s
+  let G : ℂ → ℂ := (Function.extend Subtype.val
+    (holomorphicStructureSheaf.toFun 𝓘(ℂ) X (op U) f) (fun _ ↦ 0)) ∘ e.symm
+  have ha : AnalyticOnNhd ℂ G (e.imageOpens U) := by
+    intro z hz
+    obtain ⟨hzt, hzU⟩ := mem_imageOpens.1 hz
+    have h := e.analyticAt_holomorphicSection_extend_comp_symm he (e.symm z)
+      (e.map_target hzt) U hzU f
+    simpa only [e.right_inv hzt] using h
+  have hcl := e.isCompact_closure_imageOpens hK (hKU.trans hU)
+  have hinc := e.closure_imageOpens_subset hK (hKU.trans hU) hKU
+  let bound := hcl.exists_bound_of_continuousOn (ha.continuousOn.mono hinc)
+  exact BoundedHolomorphicFunctions.of _ G
+    (ha.differentiableOn.mono (subset_closure.trans hinc)) bound.choose
+    (fun z hz ↦ bound.choose_spec z (subset_closure hz))
+
+private theorem holomorphicSectionBoundedAux_apply
+    (s : (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U)) (z : e.imageOpens W) :
+    (holomorphicSectionBoundedAux e he hU hK hKU s :
+      BoundedContinuousFunction (e.imageOpens W) ℂ) z =
+      s ⟨e.symm z, hKU (subset_closure (mem_imageOpens.1 z.2).2)⟩ := by
+  simp only [holomorphicSectionBoundedAux, BoundedHolomorphicFunctions.of_apply,
+    Function.comp_apply]
+  exact (Subtype.val_injective.extend_apply _ _
+    ⟨e.symm z, hKU (subset_closure (mem_imageOpens.1 z.2).2)⟩).trans
+      (holomorphicStructureSheafModules.sectionsLinearEquiv_apply _ _ _ _ _)
+
+/-- Read a native holomorphic function on a larger chart open as a Bergman class on a
+relatively compact smaller open. There is no integrability assertion on the larger open. -/
+def holomorphicSectionToBergman :
+    (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U) →ₗ[ℂ]
+      bergmanSpace ℂ (e.imageOpens W) := by
+  letI : IsFiniteMeasure (volume.restrict (e.imageOpens W : Set ℂ)) :=
+    isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt
+      (e.isCompact_closure_imageOpens hK (hKU.trans hU)).measure_lt_top).ne
+  let T : (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U) →ₗ[ℂ]
+      boundedHolomorphicFunctions ℂ (e.imageOpens W) :=
+    { toFun := holomorphicSectionBoundedAux e he hU hK hKU
+      map_add' s t := by
+        apply Subtype.ext
+        apply BoundedContinuousFunction.ext
+        intro z
+        simp [holomorphicSectionBoundedAux_apply, holomorphicStructureSheafModules.add_apply]
+      map_smul' c s := by
+        apply Subtype.ext
+        apply BoundedContinuousFunction.ext
+        intro z
+        simp [holomorphicSectionBoundedAux_apply, holomorphicStructureSheafModules.smul_apply] }
+  exact (BergmanSpace.ofBounded (F := ℂ)).toLinearMap.comp T
+
+/-- On the smaller open, the Bergman representative is exactly the original native function. -/
+@[simp]
+theorem holomorphicSectionToBergman_apply
+    (s : (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U)) (x : W) :
+    BergmanSpace.representative (e.holomorphicSectionToBergman he hU hK hKU s) (e x) =
+      s ⟨x, hKU (subset_closure x.2)⟩ := by
+  let : IsFiniteMeasure (volume.restrict (e.imageOpens W : Set ℂ)) :=
+    isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt
+      (e.isCompact_closure_imageOpens hK (hKU.trans hU)).measure_lt_top).ne
+  have hx := map_mem_imageOpens (hU (hKU (subset_closure x.2))) x.2
+  calc
+    BergmanSpace.representative (e.holomorphicSectionToBergman he hU hK hKU s) (e x) =
+        BoundedHolomorphicFunctions.extend (holomorphicSectionBoundedAux e he hU hK hKU s)
+          (e x) := by
+      exact BergmanSpace.representative_ofBounded
+        (holomorphicSectionBoundedAux e he hU hK hKU s) hx
+    _ = s ⟨x, hKU (subset_closure x.2)⟩ := by
+      rw [BoundedHolomorphicFunctions.extend_apply _ ⟨e x, hx⟩,
+        holomorphicSectionBoundedAux_apply]
+      congr 1
+      exact Subtype.ext (e.left_inv (hU (hKU (subset_closure x.2))))
+
+end OpenPartialHomeomorph
+
+namespace Bundle.Trivialization
+
+open CategoryTheory Opposite Set TopologicalSpace TauCeti
+
+variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {V : X → Type} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle ℂ F V] [ContMDiffVectorBundle ω F V 𝓘(ℂ)]
+  (τ : Trivialization F (π F V)) [τ.IsLinear ℂ] (q : F ≃L[ℂ] ℂ)
+  (hτa : τ.toOpenPartialHomeomorph ∈
+    (contMDiffFiberwiseLinear X F 𝓘(ℂ) ω).maximalAtlas (TotalSpace F V))
+  {e : OpenPartialHomeomorph X ℂ} {U W : Opens X}
+  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+  (hU : (U : Set X) ⊆ e.source) (hτ : (U : Set X) ⊆ τ.baseSet)
+
+/-- Realize the restriction of a native bundle section as a Bergman class, using compact
+containment to bound its actual holomorphic frame coordinate. -/
+def bergmanRestriction (hK : IsCompact (closure (W : Set X)))
+    (hKU : closure (W : Set X) ⊆ U) :
+    (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op U) →ₗ[ℂ]
+      bergmanSpace ℂ (e.imageOpens W) :=
+  (e.holomorphicSectionToBergman he hU hK hKU).comp
+    (τ.holomorphicSectionLinearEquiv q hτa hτ).toLinearMap
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The compact-shrink realization reads the actual fibre coordinate. -/
+@[simp]
+theorem bergmanRestriction_apply (hK : IsCompact (closure (W : Set X)))
+    (hKU : closure (W : Set X) ⊆ U)
+    (s : (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op U)) (x : W) :
+    BergmanSpace.representative (τ.bergmanRestriction q hτa he hU hτ hK hKU s) (e x) =
+      q (τ.continuousLinearMapAt ℂ x (s ⟨x, hKU (subset_closure x.2)⟩)) := by
+  rw [bergmanRestriction, LinearMap.comp_apply, e.holomorphicSectionToBergman_apply]
+  exact τ.holomorphicSectionLinearEquiv_apply q hτa hτ s
+    ⟨x, hKU (subset_closure x.2)⟩
+
+/-- Returning from the Bergman realization gives the native restriction of the original
+section, rather than an assertion that it was square-integrable on the larger open. -/
+theorem bergmanSection_bergmanRestriction (hK : IsCompact (closure (W : Set X)))
+    (hKU : closure (W : Set X) ⊆ U)
+    (s : (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op U)) :
+    τ.bergmanSection q hτa he ((subset_closure.trans hKU).trans hU)
+        ((subset_closure.trans hKU).trans hτ)
+        (τ.bergmanRestriction q hτa he hU hτ hK hKU s) =
+      (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map
+        (homOfLE (show W ≤ U from subset_closure.trans hKU)).op s := by
+  apply holomorphicSectionSheaf.ext
+  intro x
+  rw [bergmanSection_apply, bergmanRestriction_apply, q.symm_apply_apply,
+    τ.symmL_continuousLinearMapAt (hτ (hKU (subset_closure x.2))),
+    holomorphicSectionSheaf.map_apply]
+
+/-- Starting with a Bergman class, the native compact-shrink realization is the canonical
+Bergman restriction. -/
+theorem bergmanRestriction_bergmanSection (hK : IsCompact (closure (W : Set X)))
+    (hKU : closure (W : Set X) ⊆ U) (u : bergmanSpace ℂ (e.imageOpens U)) :
+    τ.bergmanRestriction q hτa he hU hτ hK hKU (τ.bergmanSection q hτa he hU hτ u) =
+      BergmanSpace.restrict
+        (OpenPartialHomeomorph.imageOpens_mono
+          (show W ≤ U from subset_closure.trans hKU)) u := by
+  apply BergmanSpace.ext
+  intro z hz
+  obtain ⟨hzt, hzx⟩ := OpenPartialHomeomorph.mem_imageOpens.1 hz
+  have hx : e.symm z ∈ W := hzx
+  have hez := e.right_inv hzt
+  have h := τ.bergmanRestriction_apply q hτa he hU hτ hK hKU
+    (τ.bergmanSection q hτa he hU hτ u) ⟨e.symm z, hx⟩
+  rw [bergmanSection_apply, τ.continuousLinearMapAt_symmL (hτ (hKU (subset_closure hx))),
+    q.apply_symm_apply, hez] at h
+  exact h.trans (BergmanSpace.representative_restrict _ u hz).symm
+
+/-- Reading a realized section in another actual frame multiplies by the native transition
+scalar, with source frame first and target frame second. -/
+theorem bergmanSection_coordinate (τ' : Trivialization F (π F V)) [τ'.IsLinear ℂ]
+    (q' : F ≃L[ℂ] ℂ) (u : bergmanSpace ℂ (e.imageOpens U)) (x : U)
+    (hx' : (x : X) ∈ τ'.baseSet) :
+    q' (τ'.continuousLinearMapAt ℂ x (τ.bergmanSection q hτa he hU hτ u x)) =
+      τ.scalarCoordChange τ' q q' x * BergmanSpace.representative u (e x) := by
+  rw [← τ.scalarCoordChange_mul_coordinate τ' q q' (hτ x.2) hx',
+    bergmanSection_apply, τ.continuousLinearMapAt_symmL (hτ x.2), q.apply_symm_apply]
+
+
+/-- A different holomorphic frame can read a realized section after compact shrinking. The
+actual transition factor appears in its representative, without a global bounded multiplier
+or a Bergman-space isomorphism. -/
+theorem bergmanRestriction_bergmanSection_coordinate
+    (τ' : Trivialization F (π F V)) [τ'.IsLinear ℂ] (q' : F ≃L[ℂ] ℂ)
+    (hτ'a : τ'.toOpenPartialHomeomorph ∈
+      (contMDiffFiberwiseLinear X F 𝓘(ℂ) ω).maximalAtlas (TotalSpace F V))
+    (hτ' : (U : Set X) ⊆ τ'.baseSet) (hK : IsCompact (closure (W : Set X)))
+    (hKU : closure (W : Set X) ⊆ U) (u : bergmanSpace ℂ (e.imageOpens U)) (x : W) :
+    BergmanSpace.representative
+        (τ'.bergmanRestriction q' hτ'a he hU hτ' hK hKU
+          (τ.bergmanSection q hτa he hU hτ u)) (e x) =
+      τ.scalarCoordChange τ' q q' x * BergmanSpace.representative u (e x) := by
+  rw [τ'.bergmanRestriction_apply]
+  exact τ.bergmanSection_coordinate q hτa he hU hτ τ' q' u
+    ⟨x, hKU (subset_closure x.2)⟩ (hτ' (hKU (subset_closure x.2)))
+
+end Bundle.Trivialization
+
+namespace TauCeti.RiemannSurface.ChartBergman
+
+open Bundle
+
+variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {V : X → Type} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle ℂ F V] [ContMDiffVectorBundle ω F V 𝓘(ℂ)]
+  {ι : Type*} (τ : ι → Trivialization F (π F V)) [∀ i, Bundle.Trivialization.IsLinear ℂ (τ i)]
+  (q : ι → F ≃L[ℂ] ℂ)
+  (hτa : ∀ i, (τ i).toOpenPartialHomeomorph ∈
+    (contMDiffFiberwiseLinear X F 𝓘(ℂ) ω).maximalAtlas (TotalSpace F V))
+  {e : ι → OpenPartialHomeomorph X ℂ} (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
+  {W W' W'' : ι → Opens X} (hW : ∀ i, (W i : Set X) ⊆ (e i).source)
+  (hτ : ∀ i, (W i : Set X) ⊆ (τ i).baseSet)
+
+/-- Realize a Bergman zero-cochain in the native bundle section sheaf using its actual frames. -/
+def toBundleSections₀ :
+    ((i : ι) → bergmanSpace ℂ ((e i).imageOpens (W i))) →ₗ[ℂ]
+      ((i : ι) → (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op (W i))) :=
+  LinearMap.piMap fun i ↦ (τ i).bergmanSection (q i) (hτa i) (he i) (hW i) (hτ i)
+
+/-- Realize a one-cochain in the frame of its first index, with no bounded frame-change
+hypothesis. -/
+def toBundleSections₁ :
+    ((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))) →ₗ[ℂ]
+      ((i j : ι) → (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op (W i ⊓ W j))) :=
+  LinearMap.piMap fun i ↦ LinearMap.piMap fun j ↦
+    (τ i).bergmanSection (q i) (hτa i) (he i) (inf_subset_source hW i j)
+      (fun _ hx ↦ hτ i hx.1)
+
+/-- Each native zero-component retains its original Bergman class. -/
+theorem toBundleSections₀_injective : Function.Injective (toBundleSections₀ τ q hτa he hW hτ) :=
+  fun _ _ h ↦ funext fun i ↦ (τ i).bergmanSection_injective (q i) (hτa i)
+    (he i) (hW i) (hτ i) (congrFun h i)
+
+/-- Each native overlap component retains its original Bergman class. -/
+theorem toBundleSections₁_injective : Function.Injective (toBundleSections₁ τ q hτa he hW hτ) :=
+  fun _ _ h ↦ funext fun i ↦ funext fun j ↦ (τ i).bergmanSection_injective (q i) (hτa i)
+    (he i) (inf_subset_source hW i j) _ (congrFun (congrFun h i) j)
+
+/-- Restricting a zero-cochain commutes with its realization in native bundle sections. -/
+theorem toBundleSections₀_restrictPi (h : ∀ i, W' i ≤ W i)
+    (η : (i : ι) → bergmanSpace ℂ ((e i).imageOpens (W i))) (i : ι) :
+    toBundleSections₀ τ q hτa he (subset_source_of_le hW h) (fun i _ hx ↦ hτ i (h i hx))
+        (BergmanSpace.restrictPi (fun i ↦ OpenPartialHomeomorph.imageOpens_mono (h i)) η) i =
+      (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map (homOfLE (h i)).op
+        (toBundleSections₀ τ q hτa he hW hτ η i) :=
+  (congrArg ((τ i).bergmanSection (q i) (hτa i) (he i) _ _)
+    (BergmanSpace.restrictPi_apply _ η i)).trans
+      ((τ i).bergmanSection_restrict (q i) (hτa i) (he i) (hW i) (hτ i) (h i) (η i))
+
+/-- Bergman restriction of twisted one-cochains is native restriction on every overlap. -/
+theorem toBundleSections₁_restrictCochains₁ (h : ∀ i, W' i ≤ W i)
+    (ξ : (i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))) (i j : ι) :
+    toBundleSections₁ τ q hτa he (subset_source_of_le hW h) (fun i _ hx ↦ hτ i (h i hx))
+        (restrictCochains₁ h ξ) i j =
+      (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map
+        (homOfLE (inf_le_inf (h i) (h j))).op (toBundleSections₁ τ q hτa he hW hτ ξ i j) :=
+  (congrArg ((τ i).bergmanSection (q i) (hτa i) (he i) _ _)
+    (restrictCochains₁_apply h ξ i j)).trans
+      ((τ i).bergmanSection_restrict (q i) (hτa i) (he i)
+        (inf_subset_source hW i j) _ _ (ξ i j))
+
+/-- The native cocycle identity has exactly the scalar transition factors computed from the
+actual holomorphic frames. The scalar for `(i,j)` converts frame `j` into frame `i`. -/
+theorem mem_cocycles₁_iff_toBundleSections₁_apply
+    {ξ : (i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))} :
+    ξ ∈ cocycles₁ (fun i j ↦ (τ j).scalarCoordChange (τ i) (q j) (q i)) hW ↔
+      ∀ i j k, ∀ x (hx : x ∈ W i ⊓ W j ⊓ W k),
+        toBundleSections₁ τ q hτa he hW hτ ξ j k ⟨x, hx.1.2, hx.2⟩ -
+            toBundleSections₁ τ q hτa he hW hτ ξ i k ⟨x, hx.1.1, hx.2⟩ +
+          toBundleSections₁ τ q hτa he hW hτ ξ i j ⟨x, hx.1⟩ = 0 := by
+  rw [mem_cocycles₁_iff]
+  refine forall₄_congr fun i j k x ↦ forall_congr' fun hx ↦ ?_
+  let L := ((τ i).continuousLinearEquivAt ℂ x (hτ i hx.1.1)).trans (q i)
+  rw [← L.map_eq_zero_iff]
+  simp only [map_add, map_sub, L, ContinuousLinearEquiv.trans_apply,
+    Trivialization.coe_continuousLinearEquivAt_eq, toBundleSections₁,
+    LinearMap.coe_piMap, Pi.map_apply]
+  rw [(τ j).bergmanSection_coordinate (q j) (hτa j) (he j)
+      (inf_subset_source hW j k) (fun _ hy ↦ hτ j hy.1) (τ i) (q i)
+      (ξ j k) ⟨x, hx.1.2, hx.2⟩ (hτ i hx.1.1),
+    (τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
+      (inf_subset_source hW i k) (fun _ hy ↦ hτ i hy.1) (τ i) (q i)
+      (ξ i k) ⟨x, hx.1.1, hx.2⟩ (hτ i hx.1.1),
+    (τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
+      (inf_subset_source hW i j) (fun _ hy ↦ hτ i hy.1) (τ i) (q i)
+      (ξ i j) ⟨x, hx.1⟩ (hτ i hx.1.1)]
+  simp only [Trivialization.scalarCoordChange_self _ _ (hτ i hx.1.1), one_mul]
+
+/-- A native overlap section on a larger cover becomes square-integrable after shrinking
+both indices. Compact containment of only one of the two opens is not assumed to suffice. -/
+def bundleSections₁ToBergman (hK : ∀ i, IsCompact (closure (W' i : Set X)))
+    (hKW : ∀ i, closure (W' i : Set X) ⊆ W i) :
+    ((i j : ι) → (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op (W i ⊓ W j))) →ₗ[ℂ]
+      ((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W' i ⊓ W' j))) :=
+  LinearMap.piMap fun i ↦ LinearMap.piMap fun j ↦
+    (τ i).bergmanRestriction (q i) (hτa i) (he i) (inf_subset_source hW i j)
+      (fun _ hx ↦ hτ i hx.1)
+      ((hK i).of_isClosed_subset isClosed_closure (closure_mono inter_subset_left))
+      (fun _ hx ↦ ⟨hKW i (closure_mono inter_subset_left hx),
+        hKW j (closure_mono inter_subset_right hx)⟩)
+
+/-- The compact-shrink realization of native overlaps returns exactly their native
+restrictions, simultaneously in both indices. -/
+theorem toBundleSections₁_bundleSections₁ToBergman
+    (hK : ∀ i, IsCompact (closure (W' i : Set X)))
+    (hKW : ∀ i, closure (W' i : Set X) ⊆ W i)
+    (s : (i j : ι) → (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.obj (op (W i ⊓ W j)))
+    (i j : ι) :
+    toBundleSections₁ τ q hτa he
+        (subset_source_of_le hW fun i ↦ subset_closure.trans (hKW i))
+        (fun i ↦ (subset_closure.trans (hKW i)).trans (hτ i))
+        (bundleSections₁ToBergman τ q hτa he hW hτ hK hKW s) i j =
+      (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map
+        (homOfLE (inf_le_inf (subset_closure.trans (hKW i))
+          (subset_closure.trans (hKW j)))).op (s i j) :=
+  (τ i).bergmanSection_bergmanRestriction (q i) (hτa i) (he i)
+    (inf_subset_source hW i j) _ _ _ (s i j)
+
+/-- Twisted scalar cocycles are precisely native section cocycles, with the three actual
+presheaf restrictions to the triple overlap and the usual alternating signs. -/
+theorem mem_cocycles₁_iff_toBundleSections₁
+    {ξ : (i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))} :
+    ξ ∈ cocycles₁ (fun i j ↦ (τ j).scalarCoordChange (τ i) (q j) (q i)) hW ↔
+      ∀ i j k,
+        (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map
+            (homOfLE (show W i ⊓ W j ⊓ W k ≤ W j ⊓ W k from
+              fun _ hx ↦ ⟨hx.1.2, hx.2⟩)).op (toBundleSections₁ τ q hτa he hW hτ ξ j k) -
+          (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map
+            (homOfLE (show W i ⊓ W j ⊓ W k ≤ W i ⊓ W k from
+              fun _ hx ↦ ⟨hx.1.1, hx.2⟩)).op (toBundleSections₁ τ q hτa he hW hτ ξ i k) +
+          (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map
+            (homOfLE inf_le_left).op (toBundleSections₁ τ q hτa he hW hτ ξ i j) = 0 := by
+  rw [mem_cocycles₁_iff_toBundleSections₁_apply τ q hτa he hW hτ]
+  refine forall₃_congr fun i j k ↦ ?_
+  constructor
+  · intro h
+    apply holomorphicSectionSheaf.ext
+    intro x
+    simpa only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
+      holomorphicSectionSheaf.map_apply, holomorphicSectionSheaf.zero_apply] using h x x.2
+  · intro h x hx
+    simpa only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
+      holomorphicSectionSheaf.map_apply, holomorphicSectionSheaf.zero_apply] using
+      congrArg (fun s ↦ holomorphicSectionSheaf.toFun 𝓘(ℂ) F V s ⟨x, hx⟩) h
+
+private theorem bundleSections_coboundary_iff
+    (h' : ∀ i, W' i ≤ W i) (h'' : ∀ i, W'' i ≤ W' i)
+    (t : ((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))) ×
+      ((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W' i ⊓ W' j))) ×
+        ((i : ι) → bergmanSpace ℂ ((e i).imageOpens (W'' i))))
+    (i j : ι) (x : X) (hx : x ∈ W'' i ⊓ W'' j) :
+      BergmanSpace.representative (t.2.1 i j) (e i x) =
+          BergmanSpace.representative (t.1 i j) (e i x) +
+            ((τ j).scalarCoordChange (τ i) (q j) (q i) x *
+              BergmanSpace.representative (t.2.2 j) (e j x) -
+                BergmanSpace.representative (t.2.2 i) (e i x)) ↔
+      toBundleSections₁ τ q hτa he (subset_source_of_le hW h')
+          (fun i _ hx ↦ hτ i (h' i hx)) t.2.1 i j ⟨x, h'' i hx.1, h'' j hx.2⟩ =
+        toBundleSections₁ τ q hτa he hW hτ t.1 i j
+          ⟨x, h' i (h'' i hx.1), h' j (h'' j hx.2)⟩ +
+        (toBundleSections₀ τ q hτa he
+            (subset_source_of_le (subset_source_of_le hW h') h'')
+            (fun i _ hx ↦ hτ i (h' i (h'' i hx))) t.2.2 j ⟨x, hx.2⟩ -
+          toBundleSections₀ τ q hτa he
+            (subset_source_of_le (subset_source_of_le hW h') h'')
+            (fun i _ hx ↦ hτ i (h' i (h'' i hx))) t.2.2 i ⟨x, hx.1⟩) := by
+  let L := ((τ i).continuousLinearEquivAt ℂ x (hτ i (h' i (h'' i hx.1)))).trans (q i)
+  rw [← L.injective.eq_iff]
+  simp only [map_add, map_sub, L, ContinuousLinearEquiv.trans_apply,
+    Trivialization.coe_continuousLinearEquivAt_eq, toBundleSections₀, toBundleSections₁,
+    LinearMap.coe_piMap, Pi.map_apply]
+  rw [(τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
+      (inf_subset_source (subset_source_of_le hW h') i j)
+      (fun _ hy ↦ hτ i (h' i hy.1)) (τ i) (q i) (t.2.1 i j)
+      ⟨x, h'' i hx.1, h'' j hx.2⟩ (hτ i (h' i (h'' i hx.1))),
+    (τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
+      (inf_subset_source hW i j) (fun _ hy ↦ hτ i hy.1) (τ i) (q i) (t.1 i j)
+      ⟨x, h' i (h'' i hx.1), h' j (h'' j hx.2)⟩ (hτ i (h' i (h'' i hx.1))),
+    (τ j).bergmanSection_coordinate (q j) (hτa j) (he j)
+      (subset_source_of_le (subset_source_of_le hW h') h'' j)
+      (fun _ hy ↦ hτ j (h' j (h'' j hy))) (τ i) (q i) (t.2.2 j)
+      ⟨x, hx.2⟩ (hτ i (h' i (h'' i hx.1))),
+    (τ i).bergmanSection_coordinate (q i) (hτa i) (he i)
+      (subset_source_of_le (subset_source_of_le hW h') h'' i)
+      (fun _ hy ↦ hτ i (h' i (h'' i hy))) (τ i) (q i) (t.2.2 i)
+      ⟨x, hx.1⟩ (hτ i (h' i (h'' i hx.1)))]
+  simp only [Trivialization.scalarCoordChange_self _ _ (hτ i (h' i (h'' i hx.1))), one_mul]
+
+/-- Compatible twisted triples have the actual native coboundary on the innermost overlaps.
+No assertion that multiplication by the frame changes is bounded on the larger Bergman
+spaces is needed. -/
+theorem mem_compatibleTriples_iff_toBundleSections
+    (h' : ∀ i, W' i ≤ W i) (h'' : ∀ i, W'' i ≤ W' i)
+    {t : ((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W i ⊓ W j))) ×
+      ((i j : ι) → bergmanSpace ℂ ((e i).imageOpens (W' i ⊓ W' j))) ×
+        ((i : ι) → bergmanSpace ℂ ((e i).imageOpens (W'' i)))} :
+    t ∈ compatibleTriples (fun i j ↦ (τ j).scalarCoordChange (τ i) (q j) (q i)) hW h' h'' ↔
+      t.1 ∈ cocycles₁ (fun i j ↦ (τ j).scalarCoordChange (τ i) (q j) (q i)) hW ∧
+      t.2.1 ∈ cocycles₁ (fun i j ↦ (τ j).scalarCoordChange (τ i) (q j) (q i))
+        (subset_source_of_le hW h') ∧ ∀ i j,
+      (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map
+          (homOfLE (inf_le_inf (h'' i) (h'' j))).op
+            (toBundleSections₁ τ q hτa he (subset_source_of_le hW h')
+              (fun i _ hx ↦ hτ i (h' i hx)) t.2.1 i j) =
+        (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map
+            (homOfLE (inf_le_inf ((h'' i).trans (h' i)) ((h'' j).trans (h' j)))).op
+            (toBundleSections₁ τ q hτa he hW hτ t.1 i j) +
+          ((holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map (homOfLE inf_le_right).op
+              (toBundleSections₀ τ q hτa he
+                (subset_source_of_le (subset_source_of_le hW h') h'')
+                (fun i _ hx ↦ hτ i (h' i (h'' i hx))) t.2.2 j) -
+            (holomorphicSectionSheaf 𝓘(ℂ) F V).obj.map (homOfLE inf_le_left).op
+              (toBundleSections₀ τ q hτa he
+                (subset_source_of_le (subset_source_of_le hW h') h'')
+                (fun i _ hx ↦ hτ i (h' i (h'' i hx))) t.2.2 i)) := by
+  rw [mem_compatibleTriples_iff]
+  refine and_congr_right' (and_congr_right' (forall₂_congr fun i j ↦ ?_))
+  have hp := bundleSections_coboundary_iff τ q hτa he hW hτ h' h'' t i j
+  constructor
+  · intro h
+    apply holomorphicSectionSheaf.ext
+    intro x
+    simpa only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
+      holomorphicSectionSheaf.map_apply] using (hp x x.2).1 (h x x.2)
+  · intro h x hx
+    apply (hp x hx).2
+    simpa only [holomorphicSectionSheaf.add_apply, holomorphicSectionSheaf.sub_apply,
+      holomorphicSectionSheaf.map_apply] using
+      congrArg (fun s ↦ holomorphicSectionSheaf.toFun 𝓘(ℂ) F V s ⟨x, hx⟩) h
+
+end TauCeti.RiemannSurface.ChartBergman
