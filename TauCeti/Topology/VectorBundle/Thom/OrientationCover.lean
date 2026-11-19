@@ -41,8 +41,9 @@ proved in this file. Through them, this isomorphism becomes the Thom isomorphism
 ## Main definitions and results
 
 * `TauCeti.VectorBundleOrientationCover.deckThomPairMap`: the lift of the deck involution to the
-  Thom pair of the pull-back bundle, with `deckThomPairMap_fst_comp_thomPairProj` (it covers the
-  deck involution), `lift_deckThomPairMap_fst` (it fixes the underlying vectors of `E`) and
+  Thom pair of the pull-back bundle, with `deckThomPairMap_fst_comp_thomPairProj` and its pointwise
+  form `deckThomPairMap_fst_proj` (it covers the deck involution), `lift_deckThomPairMap_fst` (it
+  fixes the underlying vectors of `E`) and
   `deckThomPairMap_comp_deckThomPairMap` (it is an involution).
 * `TauCeti.VectorBundleOrientationCover.singularCohomologyMap_deckThomPairMap_thomClassOfModel`:
   it negates the Thom class of the tautological orientation.
@@ -140,6 +141,15 @@ theorem lift_deckThomPairMap_fst
   rw [deckThomPairMap, thomPairMapOfFiberwise_fst_apply]
   -- Both are `⟨v.proj.proj, v.2⟩`: `deckMap` keeps the base point and `deckFiberEquiv` is the
   -- identity, by definition.
+  rfl
+
+-- Not a simp lemma, for the same reason as `lift_deckThomPairMap_fst`.
+/-- The lift of the deck involution carries a vector over a point `q` of the cover to a vector
+over `deck q`. -/
+theorem deckThomPairMap_fst_proj
+    (v : TotalSpace F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) :
+    (TopPair.Hom.fst (deckThomPairMap F E ι) v).proj = deck v.proj := by
+  rw [deckThomPairMap, thomPairMapOfFiberwise_fst_apply, deck_apply]
   rfl
 
 variable (F E ι) in
