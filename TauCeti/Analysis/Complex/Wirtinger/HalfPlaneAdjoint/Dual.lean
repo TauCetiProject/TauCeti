@@ -48,7 +48,8 @@ compact support on `ξ` and needs no completeness, and
   `φ`, `ξ`, `J` only `C¹` and `S` only continuous on an open set containing
   `tsupport φ ∩ tsupport ξ`, and `TauCeti.setIntegral_halfDisc_inner_crFormalAdjoint` on the
   half-disc `D⁺_r = {|z| < r, 0 < t}`.
-* `TauCeti.integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn`: for `C¹` data, the pairing
+* `TauCeti.integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn`:
+  for `C¹` coefficients and a continuous field, the pairing
   `⟪D* φ, ξ⟫` of the formal adjoint of a compactly supported `C¹` map `φ` with `ξ` is integrable on
   the half-plane.
 * `TauCeti.setIntegral_im_pos_inner_crFormalAdjoint_of_inner_eq_zero` and
@@ -144,22 +145,23 @@ theorem setIntegral_im_pos_inner_crFormalAdjoint (hU : IsOpen U) (hφ : ContDiff
     hS' hφ'U]
   ring
 
-/-- For `C¹` data with `DJ = fderiv ℝ J`, the pairing of the formal adjoint of a compactly
-supported `C¹` field `φ` with `ξ` is integrable on the upper half-plane. -/
+/-- For `C¹` coefficients with `DJ = fderiv ℝ J`, the pairing of the formal adjoint of a
+compactly supported `C¹` field `φ` with a continuous field `ξ` is integrable on the upper
+half-plane. -/
 theorem integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn
-    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
+    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContinuousOn ξ U)
     (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U) :
     IntegrableOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) {z : ℂ | 0 < z.im} := by
   have hdφ := hφ.continuous_fderiv one_ne_zero
   have hdJ := hJ.continuousOn_fderiv_of_isOpen hU le_rfl
   have hc : ContinuousOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) U := by
     simp only [inner_crFormalAdjoint]
-    exact ((((hdφ.clm_apply continuous_const).continuousOn.inner hξ.continuousOn).neg.sub
+    exact ((((hdφ.clm_apply continuous_const).continuousOn.inner hξ).neg.sub
       ((hdφ.clm_apply continuous_const).continuousOn.inner
-        (hJ.continuousOn.clm_apply hξ.continuousOn))).sub
+        (hJ.continuousOn.clm_apply hξ))).sub
       (hφ.continuous.continuousOn.inner
-        ((hdJ.clm_apply continuousOn_const).clm_apply hξ.continuousOn))).add
-      (hφ.continuous.continuousOn.inner (hS.clm_apply hξ.continuousOn))
+        ((hdJ.clm_apply continuousOn_const).clm_apply hξ))).add
+      (hφ.continuous.continuousOn.inner (hS.clm_apply hξ))
   exact (((hc.mono hφU).integrableOn_compact hφc).integrable_of_forall_notMem_eq_zero
     fun z hz => by simp [crFormalAdjoint_of_notMem_tsupport hz]).integrableOn
 

@@ -318,7 +318,7 @@ theorem isWeakCRSolutionHalf_of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω) (hS : Co
       (Ω.isOpen.measurableSet.inter (measurableSet_le measurable_const measurable_im))).congr hLη,
     fun φ hφΛ => ?_⟩
   refine ⟨integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn (φ.contDiff.of_le (by simp))
-    φ.hasCompactSupport Ω.isOpen hξ hJ hS φ.tsupport_subset, ?_⟩
+    φ.hasCompactSupport Ω.isOpen hξ.continuousOn hJ hS φ.tsupport_subset, ?_⟩
   rw [setIntegral_im_pos_inner_crFormalAdjoint_of_inner_eq_zero Ω.isOpen
     (φ.contDiff.of_le (by simp)).contDiffOn hξ hJ hS
     (φ.hasCompactSupport.isCompact.inter_right (isClosed_tsupport ξ))
@@ -426,7 +426,7 @@ theorem exists_setIntegral_inner_crFormalAdjoint_one_ne_zero (hΩ : ∃ s : ℝ,
       (fderiv ℝ fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 (fun _ => 1) 0 := by
     refine ⟨memLpLoc_const 1, locallyIntegrableOn_zero, fun φ _ =>
       ⟨integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn (φ.contDiff.of_le (by simp))
-        φ.hasCompactSupport Ω.isOpen contDiffOn_const contDiffOn_const continuousOn_const
+        φ.hasCompactSupport Ω.isOpen continuousOn_const contDiffOn_const continuousOn_const
         φ.tsupport_subset, ?_⟩⟩
     simpa [fderiv_const] using h0 φ
   have h' := ((isWeakCRSolutionHalf_iff_of_contDiffOn contDiffOn_const continuousOn_const
