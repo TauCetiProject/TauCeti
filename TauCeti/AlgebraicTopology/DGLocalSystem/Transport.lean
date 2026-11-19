@@ -157,12 +157,6 @@ def liftingLocalSystemIso {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ₀
     L.obj (liftingLocalSystem hΦ₀ b) ≅ L.obj (liftingLocalSystem hΦ₁ b) :=
   (transportLocalSystemIso hL hΦ₀).symm ≪≫ transportLocalSystemIso hL hΦ₁
 
-/-- The comparison is the image under `L` of the zigzag of transports, read as a right fraction. -/
-theorem liftingLocalSystemIso_hom {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ₀.IsTransitive)
-    (hΦ₁ : Φ₁.IsTransitive) :
-    (liftingLocalSystemIso hL hΦ₀ hΦ₁).hom = (liftingLocalSystemRoof hΦ₀ hΦ₁ b).map L hL :=
-  (rfl)
-
 /-- The comparison commutes with the transports: transport along `Φ₀` followed by the comparison is
 transport along `Φ₁`. -/
 @[reassoc (attr := simp)]
@@ -170,8 +164,15 @@ theorem map_transportLocalSystemHom_comp_liftingLocalSystemIso_hom
     {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ₀.IsTransitive) (hΦ₁ : Φ₁.IsTransitive) :
     L.map (transportLocalSystemHom hΦ₀ b) ≫ (liftingLocalSystemIso hL hΦ₀ hΦ₁).hom =
       L.map (transportLocalSystemHom hΦ₁ b) := by
-  rw [← transportLocalSystemIso_hom hL hΦ₀, liftingLocalSystemIso, Iso.trans_hom, Iso.symm_hom,
-    Iso.hom_inv_id_assoc, transportLocalSystemIso_hom]
+  simp [liftingLocalSystemIso, transportLocalSystemIso]
+
+/-- The comparison is the image under `L` of the zigzag of transports, read as a right fraction. -/
+theorem liftingLocalSystemIso_hom {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ₀.IsTransitive)
+    (hΦ₁ : Φ₁.IsTransitive) :
+    (liftingLocalSystemIso hL hΦ₀ hΦ₁).hom = (liftingLocalSystemRoof hΦ₀ hΦ₁ b).map L hL := by
+  rw [← cancel_epi (transportLocalSystemIso hL hΦ₀).hom, transportLocalSystemIso_hom,
+    map_transportLocalSystemHom_comp_liftingLocalSystemIso_hom]
+  exact ((liftingLocalSystemRoof hΦ₀ hΦ₁ b).map_s_comp_map L hL).symm
 
 /-- **Uniqueness of the comparison**: an isomorphism `L(C_*(F)_{Φ₀}) ≅ L(C_*(F)_{Φ₁})` that
 commutes with the transports along `Φ₀` and `Φ₁` is the comparison. -/
@@ -208,6 +209,23 @@ theorem liftingLocalSystemIso_trans_liftingLocalSystemIso {Φ₀ Φ₁ Φ₂ : M
   ext
   simp [liftingLocalSystemIso]
 
+/-- The inverse of the comparison of `Φ₀` with `Φ₁` is the comparison of `Φ₁` with `Φ₀`. -/
+@[simp]
+theorem liftingLocalSystemIso_inv {Φ₀ Φ₁ : MooreLiftingFunction p} (hΦ₀ : Φ₀.IsTransitive)
+    (hΦ₁ : Φ₁.IsTransitive) :
+    (liftingLocalSystemIso hL hΦ₀ hΦ₁).inv = (liftingLocalSystemIso hL hΦ₁ hΦ₀).hom :=
+  congrArg Iso.hom (liftingLocalSystemIso_symm hL hΦ₀ hΦ₁)
+
+/-- The comparison morphisms compose: comparing `Φ₀` with `Φ₁` and then `Φ₁` with `Φ₂` is
+comparing `Φ₀` with `Φ₂`. -/
+@[reassoc (attr := simp)]
+theorem liftingLocalSystemIso_hom_comp_liftingLocalSystemIso_hom
+    {Φ₀ Φ₁ Φ₂ : MooreLiftingFunction p} (hΦ₀ : Φ₀.IsTransitive) (hΦ₁ : Φ₁.IsTransitive)
+    (hΦ₂ : Φ₂.IsTransitive) :
+    (liftingLocalSystemIso hL hΦ₀ hΦ₁).hom ≫ (liftingLocalSystemIso hL hΦ₁ hΦ₂).hom =
+      (liftingLocalSystemIso hL hΦ₀ hΦ₂).hom :=
+  congrArg Iso.hom (liftingLocalSystemIso_trans_liftingLocalSystemIso hL hΦ₀ hΦ₁ hΦ₂)
+
 /-- The comparison is natural in the functor `L`: its image under a functor `G` is the comparison
 for `L ⋙ G`. -/
 theorem mapIso_liftingLocalSystemIso {D' : Type*} [Category* D'] (G : D ⥤ D')
@@ -215,8 +233,7 @@ theorem mapIso_liftingLocalSystemIso {D' : Type*} [Category* D'] (G : D ⥤ D')
     G.mapIso (liftingLocalSystemIso hL hΦ₀ hΦ₁) =
       liftingLocalSystemIso (MorphismProperty.IsInvertedBy.of_comp _ L hL G) hΦ₀ hΦ₁ := by
   refine eq_liftingLocalSystemIso (L := L ⋙ G) _ hΦ₀ hΦ₁ _ ?_
-  rw [Functor.comp_map, Functor.mapIso_hom, ← G.map_comp,
-    map_transportLocalSystemHom_comp_liftingLocalSystemIso_hom, Functor.comp_map]
+  simp [← G.map_comp]
 
 end Derived
 
