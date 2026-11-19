@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Basic
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 
 /-!
@@ -23,7 +24,9 @@ orientations used to construct fundamental classes.
 
 The oriented local homology isomorphism of any chart factors through that of the identity chart of
 the model, which is read through the connecting morphism and radial projection about the point.
-Translations of the model preserve the local orientations selected in the identity chart.
+Translations of the model preserve the local orientations selected in the identity chart, and the
+restriction of a chart to its source carries the local orientation it selects, read in the source
+through excision, to the one selected by the identity chart of the model.
 
 The local generator is the one associated to an oriented coordinate chart in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -300,6 +303,63 @@ theorem localHomologyMap_translate_localOrientationOfOrientedChart_refl {p c : E
   exact ((e hp).inv_hom_id_apply 1).trans ((e hc).inv_hom_id_apply 1).symm
 
 end Translation
+
+section Restriction
+
+variable {M X : Type w} [TopologicalSpace M] [T1Space M] [NormedAddCommGroup X]
+  [InnerProductSpace ℝ X] {n : ℕ}
+
+/-- **A chart carries the local orientation it selects to the one selected by the identity chart.**
+Let `φ` be a chart of `M` with values in a real inner product space `X` and `ν` an orientation of
+`X`. The restriction of `φ` to its source carries the local orientation of `M` at `z` selected by
+`ν` in `φ`, read in the source through excision, to the local orientation of `X` at `φ z` selected
+by `ν` in the identity chart. -/
+theorem localHomologyMap_sourceRestrict_localOrientationOfOrientedChart
+    (φ : OpenPartialHomeomorph M X) {z : M} (hz : z ∈ φ.source)
+    (ν : Orientation ℝ X (Fin (n + 1))) (hX : finrank ℝ X = n + 1)
+    (h : φ.sourceRestrict ⁻¹' {φ z} ⊆ {⟨z, hz⟩}) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) φ.sourceRestrict (S := {⟨z, hz⟩})
+        (T := {φ z}) h (n + 1)
+          ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩ (n + 1)).symm
+            (φ.localOrientationOfOrientedChart hz ν hX)).val =
+      ((OpenPartialHomeomorph.refl X).localOrientationOfOrientedChart
+        (OpenPartialHomeomorph.mem_refl_source (φ z)) ν hX).val := by
+  set Z := ModuleCat.of ℤ (ULift.{w} ℤ)
+  set c := ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩ (n + 1)).symm
+    (φ.localOrientationOfOrientedChart hz ν hX)).val
+  set sR := φ.sourceRestrict
+  have hsR' : sR ⁻¹' {φ z} ⊆ ContinuousMap.subtypeVal φ.source ⁻¹' {z} :=
+    φ.sourceRestrict_preimage hz
+  -- Read through the excision of the source, `c` is the oriented-chart local orientation, which
+  -- is defined by the chart isomorphism.
+  have hid : ContinuousMap.id φ.source ⁻¹' (ContinuousMap.subtypeVal φ.source ⁻¹' {z}) ⊆
+      {⟨z, hz⟩} := fun x (hx : x.1 = z) ↦ Subtype.ext hx
+  have hc : localHomologyMap Z (ContinuousMap.subtypeVal φ.source) (S := {⟨z, hz⟩}) (T := {z})
+      (fun x (hx : x.1 = z) ↦ Subtype.ext hx) (n + 1) c =
+        (φ.localOrientationOfOrientedChart hz ν hX).val :=
+    φ.open_source.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm ⟨z, hz⟩
+      (φ.localOrientationOfOrientedChart hz ν hX) (fun x (hx : x.1 = z) ↦ Subtype.ext hx)
+  have h₁ : localHomologyMap Z sR h (n + 1) c =
+      (localHomologyMap Z (ContinuousMap.id φ.source) hid (n + 1) ≫
+        localHomologyMap Z sR hsR' (n + 1)) c := by
+    rw [localHomologyMap_comp, localHomologyMap_congr Z (ContinuousMap.comp_id sR)]
+  have h₂ : (localHomologyMap Z (ContinuousMap.id φ.source) hid (n + 1) ≫
+      localHomologyMap Z sR hsR' (n + 1)) c =
+      (singularHomologyComplSingletonIsoOfChart Z φ hz (n + 1)).hom
+        (localHomologyMap Z (ContinuousMap.subtypeVal φ.source) (S := {⟨z, hz⟩}) (T := {z})
+          (fun x (hx : x.1 = z) ↦ Subtype.ext hx) (n + 1) c) := by
+    rw [← localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom Z φ hz
+      sR φ.sourceRestrict_apply hsR' (n + 1), ← Category.assoc, localHomologyMap_comp,
+      localHomologyMap_congr Z (ContinuousMap.comp_id _), ConcreteCategory.comp_apply]
+  rw [h₁, h₂, hc, OpenPartialHomeomorph.coe_localOrientationOfOrientedChart,
+    OpenPartialHomeomorph.coe_localOrientationOfOrientedChart]
+  let e₀ := singularHomologyComplSingletonIsoOfOrientation Z (OpenPartialHomeomorph.refl X)
+    (OpenPartialHomeomorph.mem_refl_source (φ z)) ν hX
+  apply (ConcreteCategory.bijective_of_isIso e₀.hom).1
+  rw [← ConcreteCategory.comp_apply, ← singularHomologyComplSingletonIsoOfOrientation_hom_eq,
+    Iso.inv_hom_id_apply, Iso.inv_hom_id_apply]
+
+end Restriction
 
 section Manifold
 
