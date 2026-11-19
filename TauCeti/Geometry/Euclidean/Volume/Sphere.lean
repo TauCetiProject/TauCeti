@@ -65,7 +65,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   `n`-dimensional Hausdorff measure (not the ambient Lebesgue measure, which vanishes).
 * `TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume`: the unit sphere of every
   real inner product space of dimension `n + 1` has `n`-dimensional Hausdorff measure `|Sⁿ|`; in
-  particular this measure is finite.
+  particular this measure is finite. The sphere of radius `r > 0` has measure `r ^ n |Sⁿ|`
+  (`TauCeti.euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume`).
 * `TauCeti.roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma`, `TauCeti.roundSphereVolume_pos`: the
   value `|Sⁿ| = 2 π ^ ((n + 1) / 2) / Γ((n + 1) / 2)` and the positivity of `|Sⁿ|`.
 
@@ -443,5 +444,16 @@ theorem euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume {n : ℕ}
     μHE[n] (sphere (0 : E) 1) = ENNReal.ofReal (roundSphereVolume n) := by
   rw [euclideanHausdorffMeasure_sphere_eq_ofReal_Gamma hE,
     roundSphereVolume_eq_two_mul_pi_rpow_div_Gamma]
+
+omit [FiniteDimensional ℝ E] in
+/-- A sphere of radius `r > 0` in a real inner product space of dimension `n + 1` has normalized
+`n`-dimensional Hausdorff measure `r ^ n |Sⁿ|`. -/
+theorem euclideanHausdorffMeasure_sphere_eq_ofReal_pow_mul_roundSphereVolume {n : ℕ}
+    (hE : finrank ℝ E = n + 1) (c : E) {r : ℝ} (hr : 0 < r) :
+    μHE[n] (sphere c r) = ENNReal.ofReal (r ^ n * roundSphereVolume n) := by
+  rw [← restrict_apply_univ, euclideanHausdorffMeasure_restrict_sphere_eq_smul_map _ c hr,
+    _root_.smul_apply, map_apply (by fun_prop) MeasurableSet.univ, preimage_univ,
+    restrict_apply_univ, euclideanHausdorffMeasure_sphere_eq_ofReal_roundSphereVolume hE,
+    smul_eq_mul, ← ENNReal.ofReal_pow hr.le, ← ENNReal.ofReal_mul (pow_nonneg hr.le n)]
 
 end TauCeti
