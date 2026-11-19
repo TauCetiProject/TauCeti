@@ -118,7 +118,8 @@ variable {hs : 1 < s}
 
 private theorem nonneg (hs : 1 < s) : 0 ≤ s := zero_le_one.trans hs.le
 
-instance : Group (SobolevTopologicalGaugeGroup hs) := inferInstanceAs (Group (sobolevGaugeGroup hs))
+instance : CommGroup (SobolevTopologicalGaugeGroup hs) :=
+  inferInstanceAs (CommGroup (sobolevGaugeGroup hs))
 
 variable (hs) in
 /-- The identification of `SobolevTopologicalGaugeGroup hs` with the subgroup
