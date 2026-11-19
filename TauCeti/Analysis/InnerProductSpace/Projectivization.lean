@@ -99,10 +99,10 @@ theorem rayTransitionProbability_le_one (p q : ℙ 𝕜 E) : p.rayTransitionProb
 are orthogonal. -/
 theorem rayTransitionProbability_mk_eq_zero_iff {v w : E} (hv : v ≠ 0) (hw : w ≠ 0) :
     (mk 𝕜 v hv).rayTransitionProbability (mk 𝕜 w hw) = 0 ↔ ⟪v, w⟫_𝕜 = 0 := by
-  rw [rayTransitionProbability_mk, div_eq_zero_iff, ← mul_pow, pow_eq_zero_iff two_ne_zero,
-    pow_eq_zero_iff two_ne_zero, norm_eq_zero]
-  exact ⟨fun h ↦ h.elim id fun h₀ ↦ norm_le_zero_iff.1 ((norm_inner_le_norm v w).trans h₀.le),
-    Or.inl⟩
+  have h₀ : ‖v‖ = 0 ∨ ‖w‖ = 0 → ⟪v, w⟫_𝕜 = 0 := fun h ↦
+    norm_le_zero_iff.1 <| (norm_inner_le_norm v w).trans (mul_eq_zero.2 h).le
+  rw [rayTransitionProbability_mk]
+  simpa using or_iff_left_of_imp h₀
 
 end Seminormed
 
@@ -118,10 +118,13 @@ theorem rayTransitionProbability_eq_one_iff {p q : ℙ 𝕜 E} :
     p.rayTransitionProbability q = 1 ↔ p = q := by
   induction p using ind with | h v hv =>
   induction q using ind with | h w hw =>
-  have hvw : ‖v‖ ^ 2 * ‖w‖ ^ 2 ≠ 0 := by positivity
-  rw [rayTransitionProbability_mk, div_eq_one_iff_eq hvw, ← mul_pow,
-    pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero, norm_inner_eq_norm_iff hv hw,
-    eq_comm, mk_eq_mk_iff']
+  have hvw : 0 < ‖v‖ * ‖w‖ := by positivity
+  -- The transition probability is `1` exactly in the equality case of Cauchy–Schwarz.
+  have hcs : (mk 𝕜 v hv).rayTransitionProbability (mk 𝕜 w hw) = 1 ↔
+      ‖⟪v, w⟫_𝕜‖ = ‖v‖ * ‖w‖ := by
+    rw [rayTransitionProbability_mk, ← mul_pow, div_eq_one_iff_eq (by positivity)]
+    exact pow_left_inj₀ (norm_nonneg _) hvw.le two_ne_zero
+  rw [hcs, norm_inner_eq_norm_iff hv hw, eq_comm, mk_eq_mk_iff']
   refine ⟨fun ⟨r, _, h⟩ ↦ ⟨r, h.symm⟩, fun ⟨a, h⟩ ↦ ⟨a, ?_, h.symm⟩⟩
   rintro rfl
   exact hw (by simpa using h.symm)

@@ -51,8 +51,7 @@ theorem rayTransitionProbability_single_zero_single_zero_add_single_one :
       (mk ℂ (e 0 + e 1) e_zero_add_e_one_ne_zero) = 1 / 2 := by
   rw [rayTransitionProbability_mk, EuclideanSpace.inner_single_left, EuclideanSpace.norm_sq_eq,
     EuclideanSpace.norm_sq_eq]
-  simp [Fin.sum_univ_two]
-  norm_num
+  norm_num [Fin.sum_univ_two]
 
 /-- The rescaled representatives `2 • e₀` and `I • (e₀ + e₁)` give the same transition
 probability `4 / (4 · 2) = 1 / 2`. -/
@@ -60,8 +59,7 @@ theorem rayTransitionProbability_two_smul_single_zero_I_smul :
     (mk ℂ ((2 : ℂ) • e 0) (by simp)).rayTransitionProbability
       (mk ℂ (I • (e 0 + e 1)) (smul_ne_zero I_ne_zero e_zero_add_e_one_ne_zero)) = 1 / 2 := by
   rw [rayTransitionProbability_mk, EuclideanSpace.norm_sq_eq, EuclideanSpace.norm_sq_eq]
-  simp [Fin.sum_univ_two, inner_smul_left, EuclideanSpace.inner_single_left]
-  norm_num
+  norm_num [Fin.sum_univ_two, inner_smul_left, EuclideanSpace.inner_single_left]
 
 /-- The complex line has a single ray, so every transition probability on it is `1`. -/
 theorem rayTransitionProbability_complex (p q : ℙ ℂ ℂ) : p.rayTransitionProbability q = 1 := by
