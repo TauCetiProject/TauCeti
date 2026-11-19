@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.VariableStructure
+public import TauCeti.Analysis.Complex.RealChart
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 
 /-!
@@ -67,7 +68,8 @@ the derivatives in the directions `1` and `i`
 (`TauCeti.fderiv_comp_equivRealProdCLM_one`, `TauCeti.fderiv_comp_equivRealProdCLM_I`), and
 transport the conclusions back with `TauCeti.eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM`,
 `TauCeti.isBigO_comp_equivRealProdCLM_pow` and
-`TauCeti.mem_codiscreteWithin_of_comp_equivRealProdCLM`.
+`TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM`
+(in `TauCeti.Analysis.Complex.RealChart`).
 
 ## References
 
@@ -186,7 +188,7 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_floerLinearization_eq_zero (hΩ : 
   obtain ⟨hΩ', hΩc', hJ', hJJ', hξ', hCm, hCb, heq⟩ :=
     floerLinearization_eq_zero_complexCoordinate hΩ hΩc hJ hJJ hKs hKt hu hξ hD
   obtain ⟨z₁, hz₁, hξz₁⟩ := hne
-  exact mem_codiscreteWithin_of_comp_equivRealProdCLM <|
+  exact setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM <|
     setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ' hΩc' hJ'
       hJJ' hξ' hCm hCb heq ⟨Complex.equivRealProdCLM.symm z₁, by simpa using hz₁,
         by simpa using hξz₁⟩
@@ -314,7 +316,7 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_floerLinearizationAdjoint_eq_zero 
   obtain ⟨hΩ', hΩc', hJ', hJJ', hη', hCm, hCb, heq⟩ :=
     floerLinearizationAdjoint_eq_zero_complexCoordinate hΩ hΩc hJ hJJ hKs hKt hu hη hD
   obtain ⟨z₁, hz₁, hηz₁⟩ := hne
-  exact mem_codiscreteWithin_of_comp_equivRealProdCLM <|
+  exact setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM <|
     setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ' hΩc' hJ'
       hJJ' hη' hCm hCb heq ⟨Complex.equivRealProdCLM.symm z₁, by simpa using hz₁,
         by simpa using hηz₁⟩
