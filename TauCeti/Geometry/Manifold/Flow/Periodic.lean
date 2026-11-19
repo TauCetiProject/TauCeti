@@ -139,6 +139,11 @@ theorem continuous_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ perio
     Continuous γ :=
   continuous_iff_continuousAt.2 fun t ↦ (hγ.1 t).continuousAt
 
+/-- A periodic solution is periodic. -/
+theorem periodic_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
+    Periodic γ T :=
+  (mem_periodicSolutions.1 hγ).2
+
 /-- **Reversing time.** If `γ` is a `T`-periodic solution of `X`, then `t ↦ γ (-t)` is a
 `T`-periodic solution of the reversed field `(t, x) ↦ -X (-t) x`. -/
 theorem comp_neg_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
