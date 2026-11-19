@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fredholm.Adjoint
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Analysis.Fredholm.Pow
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Isometry
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Shifts along Hilbert bases and the image of the Fredholm index

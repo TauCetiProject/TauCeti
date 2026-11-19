@@ -27,9 +27,7 @@ Hilbert basis (`HilbertBasis.ext_continuousLinearMap`, `HilbertBasis.ext_linearI
 
 Finally, the orthogonal complement of the span of the basis vectors indexed by a set `s` is the
 closed span of the basis vectors indexed by its complement (`HilbertBasis.orthogonal_span_image`).
-This computes the cokernels of isometries that send a Hilbert basis into another one. When `s`
-is finite, the span of the `b i` with `i ∈ s` is complemented by its orthogonal complement, as is
-the span of any finite set of vectors (`Submodule.isCompl_orthogonal_span_of_finite`).
+This computes the cokernels of isometries that send a Hilbert basis into another one.
 -/
 
 public section
@@ -145,15 +143,3 @@ theorem orthogonal_span_image {iota : Type*} (b : _root_.HilbertBasis iota 𝕜 
     exact b.orthonormal.inner_eq_zero fun hji ↦ hj (hji ▸ hi)
 
 end HilbertBasis
-
-namespace Submodule
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- The span of finitely many vectors is complemented by its orthogonal complement. -/
-theorem isCompl_orthogonal_span_of_finite {s : Set E} (hs : s.Finite) :
-    IsCompl (span 𝕜 s) (span 𝕜 s)ᗮ :=
-  have : FiniteDimensional 𝕜 (span 𝕜 s) := FiniteDimensional.span_of_finite 𝕜 hs
-  (span 𝕜 s).isCompl_orthogonal
-
-end Submodule
