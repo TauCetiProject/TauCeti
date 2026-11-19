@@ -10,6 +10,7 @@ module
 public import TauCeti.LinearAlgebra.SymplecticGroup
 -- This module supplies general-linear-group reindexing and re-exports the `GL` notation and its
 -- matrix coercion.
+public import TauCeti.Data.Fin.Sum
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
@@ -571,16 +572,6 @@ namespace GLSymplecticFin
 
 variable {m R}
 
-/-- An upper-block and a lower-block index have distinct images in `Fin (m + m)`. -/
-theorem finSumFinEquiv_inl_ne_inr (i j : Fin m) :
-    finSumFinEquiv (Sum.inl i) ≠ finSumFinEquiv (Sum.inr j) :=
-  finSumFinEquiv.injective.ne Sum.inl_ne_inr
-
-/-- A lower-block and an upper-block index have distinct images in `Fin (m + m)`. -/
-theorem finSumFinEquiv_inr_ne_inl (i j : Fin m) :
-    finSumFinEquiv (Sum.inr i) ≠ finSumFinEquiv (Sum.inl j) :=
-  finSumFinEquiv.injective.ne Sum.inr_ne_inl
-
 /-- Reindexing a transvection from `Fin (m + m)` coordinates to sum coordinates recovers the
 transvection at the corresponding sum indices. -/
 @[simp]
@@ -704,13 +695,19 @@ theorem positiveLongRootTransvectionUnit_add (i : Fin m) (c d : R) :
     ((positiveLongRootTransvectionHom (R := R) i).map_mul
       (Multiplicative.ofAdd c) (Multiplicative.ofAdd d))
 
-/-- Inverting a positive long-root transvection negates its parameter. -/
+/-- The positive long-root transvection with parameter `0` is the identity. -/
 @[simp]
-theorem positiveLongRootTransvectionUnit_inv (i : Fin m) (c : R) :
-    (positiveLongRootTransvectionUnit i c)⁻¹ =
-      positiveLongRootTransvectionUnit i (-c) := by
+theorem positiveLongRootTransvectionUnit_zero (i : Fin m) :
+    positiveLongRootTransvectionUnit (R := R) i 0 = 1 :=
+  map_one (positiveLongRootTransvectionHom (R := R) i)
+
+/-- Negating the parameter of a positive long-root transvection inverts it. -/
+@[simp]
+theorem positiveLongRootTransvectionUnit_neg (i : Fin m) (c : R) :
+    positiveLongRootTransvectionUnit i (-c) =
+      (positiveLongRootTransvectionUnit i c)⁻¹ := by
   simpa only [positiveLongRootTransvectionHom_apply, toAdd_ofAdd, toAdd_inv] using
-    (map_inv (positiveLongRootTransvectionHom (R := R) i) (Multiplicative.ofAdd c)).symm
+    map_inv (positiveLongRootTransvectionHom (R := R) i) (Multiplicative.ofAdd c)
 
 /-- Adding parameters multiplies negative long-root transvections. -/
 @[simp]
@@ -721,13 +718,19 @@ theorem negativeLongRootTransvectionUnit_add (i : Fin m) (c d : R) :
     ((negativeLongRootTransvectionHom (R := R) i).map_mul
       (Multiplicative.ofAdd c) (Multiplicative.ofAdd d))
 
-/-- Inverting a negative long-root transvection negates its parameter. -/
+/-- The negative long-root transvection with parameter `0` is the identity. -/
 @[simp]
-theorem negativeLongRootTransvectionUnit_inv (i : Fin m) (c : R) :
-    (negativeLongRootTransvectionUnit i c)⁻¹ =
-      negativeLongRootTransvectionUnit i (-c) := by
+theorem negativeLongRootTransvectionUnit_zero (i : Fin m) :
+    negativeLongRootTransvectionUnit (R := R) i 0 = 1 :=
+  map_one (negativeLongRootTransvectionHom (R := R) i)
+
+/-- Negating the parameter of a negative long-root transvection inverts it. -/
+@[simp]
+theorem negativeLongRootTransvectionUnit_neg (i : Fin m) (c : R) :
+    negativeLongRootTransvectionUnit i (-c) =
+      (negativeLongRootTransvectionUnit i c)⁻¹ := by
   simpa only [negativeLongRootTransvectionHom_apply, toAdd_ofAdd, toAdd_inv] using
-    (map_inv (negativeLongRootTransvectionHom (R := R) i) (Multiplicative.ofAdd c)).symm
+    map_inv (negativeLongRootTransvectionHom (R := R) i) (Multiplicative.ofAdd c)
 
 /-- Positive long-root transvections are natural in the coefficient ring. -/
 @[simp]
@@ -960,6 +963,63 @@ theorem negativeSumShortRootHom_apply {i j : Fin m} (hij : i ≠ j) (c : Multipl
     negativeSumShortRootHom hij c =
       negativeSumShortRootUnit hij c.toAdd := by
   rw [negativeSumShortRootUnit, ofAdd_toAdd]
+
+/-- The difference short-root element with parameter `0` is the identity. -/
+@[simp]
+theorem differenceShortRootUnit_zero {i j : Fin m} (hij : i ≠ j) :
+    differenceShortRootUnit (R := R) hij 0 = 1 :=
+  map_one (differenceShortRootHom (R := R) hij)
+
+/-- Adding parameters multiplies difference short-root elements. -/
+@[simp]
+theorem differenceShortRootUnit_add {i j : Fin m} (hij : i ≠ j) (c d : R) :
+    differenceShortRootUnit hij (c + d) =
+      differenceShortRootUnit hij c * differenceShortRootUnit hij d :=
+  map_mul (differenceShortRootHom hij) (Multiplicative.ofAdd c) (Multiplicative.ofAdd d)
+
+/-- Negating the parameter of a difference short-root element inverts it. -/
+@[simp]
+theorem differenceShortRootUnit_neg {i j : Fin m} (hij : i ≠ j) (c : R) :
+    differenceShortRootUnit hij (-c) = (differenceShortRootUnit hij c)⁻¹ :=
+  map_inv (differenceShortRootHom hij) (Multiplicative.ofAdd c)
+
+/-- The positiveSum short-root element with parameter `0` is the identity. -/
+@[simp]
+theorem positiveSumShortRootUnit_zero {i j : Fin m} (hij : i ≠ j) :
+    positiveSumShortRootUnit (R := R) hij 0 = 1 :=
+  map_one (positiveSumShortRootHom (R := R) hij)
+
+/-- Adding parameters multiplies positiveSum short-root elements. -/
+@[simp]
+theorem positiveSumShortRootUnit_add {i j : Fin m} (hij : i ≠ j) (c d : R) :
+    positiveSumShortRootUnit hij (c + d) =
+      positiveSumShortRootUnit hij c * positiveSumShortRootUnit hij d :=
+  map_mul (positiveSumShortRootHom hij) (Multiplicative.ofAdd c) (Multiplicative.ofAdd d)
+
+/-- Negating the parameter of a positiveSum short-root element inverts it. -/
+@[simp]
+theorem positiveSumShortRootUnit_neg {i j : Fin m} (hij : i ≠ j) (c : R) :
+    positiveSumShortRootUnit hij (-c) = (positiveSumShortRootUnit hij c)⁻¹ :=
+  map_inv (positiveSumShortRootHom hij) (Multiplicative.ofAdd c)
+
+/-- The negativeSum short-root element with parameter `0` is the identity. -/
+@[simp]
+theorem negativeSumShortRootUnit_zero {i j : Fin m} (hij : i ≠ j) :
+    negativeSumShortRootUnit (R := R) hij 0 = 1 :=
+  map_one (negativeSumShortRootHom (R := R) hij)
+
+/-- Adding parameters multiplies negativeSum short-root elements. -/
+@[simp]
+theorem negativeSumShortRootUnit_add {i j : Fin m} (hij : i ≠ j) (c d : R) :
+    negativeSumShortRootUnit hij (c + d) =
+      negativeSumShortRootUnit hij c * negativeSumShortRootUnit hij d :=
+  map_mul (negativeSumShortRootHom hij) (Multiplicative.ofAdd c) (Multiplicative.ofAdd d)
+
+/-- Negating the parameter of a negativeSum short-root element inverts it. -/
+@[simp]
+theorem negativeSumShortRootUnit_neg {i j : Fin m} (hij : i ≠ j) (c : R) :
+    negativeSumShortRootUnit hij (-c) = (negativeSumShortRootUnit hij c)⁻¹ :=
+  map_inv (negativeSumShortRootHom hij) (Multiplicative.ofAdd c)
 
 /-- **For a fixed parameter, the difference short-root element depends only on its index pair.**
 Two proofs that the indices differ, and two spellings of the same indices, give the same element. -/
