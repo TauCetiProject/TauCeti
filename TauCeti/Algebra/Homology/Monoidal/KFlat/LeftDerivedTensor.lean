@@ -463,19 +463,15 @@ variable (C) [HasDerivedCategory.{w} C]
 private def leftUnitorCompQ :
     (MonoidalCategory.curriedTensor (CochainComplex C ℤ)).obj (𝟙_ (CochainComplex C ℤ)) ⋙
       DerivedCategory.Q ≅ DerivedCategory.Q :=
-  NatIso.ofComponents (fun L ↦ DerivedCategory.Q.mapIso (λ_ L)) fun f ↦ by
-    simp only [Functor.comp_obj, MonoidalCategory.curriedTensor_obj_obj, Functor.comp_map,
-      MonoidalCategory.curriedTensor_obj_map, Functor.mapIso_hom, ← Functor.map_comp,
-      MonoidalCategory.leftUnitor_naturality]
+  Functor.isoWhiskerRight (MonoidalCategory.leftUnitorNatIso (CochainComplex C ℤ))
+    DerivedCategory.Q ≪≫ DerivedCategory.Q.leftUnitor
 
 /-- The right unitor of cochain complexes, followed by `DerivedCategory.Q`. -/
 private def rightUnitorCompQ :
     (MonoidalCategory.curriedTensor (CochainComplex C ℤ)).flip.obj (𝟙_ (CochainComplex C ℤ)) ⋙
       DerivedCategory.Q ≅ DerivedCategory.Q :=
-  NatIso.ofComponents (fun K ↦ DerivedCategory.Q.mapIso (ρ_ K)) fun f ↦ by
-    simp only [Functor.comp_obj, Functor.flip_obj_obj, MonoidalCategory.curriedTensor_obj_obj,
-      Functor.comp_map, Functor.flip_obj_map, MonoidalCategory.curriedTensor_map_app,
-      Functor.mapIso_hom, ← Functor.map_comp, MonoidalCategory.rightUnitor_naturality]
+  Functor.isoWhiskerRight (MonoidalCategory.rightUnitorNatIso (CochainComplex C ℤ))
+    DerivedCategory.Q ≪≫ DerivedCategory.Q.leftUnitor
 
 /-- The derived tensor product with the unit `𝟙_ C` placed in degree `0` on the left is naturally
 isomorphic to the identity of the derived category. -/

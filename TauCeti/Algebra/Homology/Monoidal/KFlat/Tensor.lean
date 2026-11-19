@@ -55,10 +55,6 @@ instance quasiIso_whiskerLeft (A : CochainComplex C ℤ) [A.IsKFlat]
   rw [whiskerLeft_eq_mapBifunctorMap, ← HomologicalComplex.tensorHom]
   infer_instance
 
-/-- The monoidal unit of cochain complexes, the unit `𝟙_ C` placed in degree `0`, is K-flat. -/
-instance isKFlat_tensorUnit : (𝟙_ (CochainComplex C ℤ)).IsKFlat :=
-  ⟨fun A hA i ↦ (hA i).of_iso (λ_ A).symm⟩
-
 variable [BraidedCategory C]
 
 /-- Right whiskering with a K-flat complex preserves quasi-isomorphisms. -/
