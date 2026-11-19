@@ -44,12 +44,11 @@ with invertible derivative has a density, so preimages of null sets are null.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_differentiableOn`: invariance under a holomorphic map,
   injective with nonvanishing derivative, between arbitrary sets `U → U'` (half-discs allowed),
   holomorphic on an open neighbourhood of `U`; `comp_differentiableOn_of_isOpen` is the open form.
-* `TauCeti.isWeakCauchyRiemannOn_image_iff_comp_openPartialHomeomorph`: for a holomorphic open
-  partial homeomorphism `φ`, the invariance is an equivalence, since the inverse is holomorphic
-  with derivative `1 / φ'` (`OpenPartialHomeomorph.hasDerivAt_symm_of_differentiableOn`)
-  and the native real-algebra map `Complex.liftAux (-J(w, u w))` is multiplicative, so the two
-  transformations of `η` compose
-  to multiplication by `φ'(z) · (1 / φ'(z)) = 1`.
+* `TauCeti.isWeakCauchyRiemannOn_image_iff_comp_openPartialHomeomorph`: let `φ` be a
+  holomorphic open partial homeomorphism, `U ⊆ φ.source`, and `J(w, u w)² = -1` on
+  `interior (φ '' U)`. Then `u` solves the weak equation on `φ '' U` if and only if `u ∘ φ`
+  solves it on `U` with field `J ∘ φ` and term
+  `a η(φ z, x) - b J(φ z, x) η(φ z, x)`, where `φ'(z) = a + b i`.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_differentiableOn_homogeneous`: the homogeneous equation is
   invariant.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_real_mul_add`: real dilations and translations, with the
