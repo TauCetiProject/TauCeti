@@ -30,7 +30,8 @@ Conversely, if at every point `x` of `A` all small closed balls satisfy
 diameter `ρ` meeting `A` at `x` lies in `closedBall x ρ`, so here a factor `2 ^ d` is lost. In
 particular `μ` vanishes on the `μH[d]`-null subsets of `A`. No constant is lost when the bound is
 known for all small sets rather than for balls: if every set `t ∋ x` of small diameter satisfies
-`μ t ≤ c * ediam t ^ d` at every `x ∈ A`, then `μ A ≤ c μH[d] A`.
+`μ t ≤ c * ediam t ^ d` at every `x ∈ A`, then `μ A ≤ c μH[d] A`; this small-set comparison
+holds in any extended metric space.
 
 As a consequence, a null-measurable set `A` of finite `d`-dimensional Hausdorff measure has upper
 density zero at almost every point outside it:
@@ -139,6 +140,51 @@ end TauCeti
 
 namespace MeasureTheory.Measure
 
+section EMetricSpace
+
+variable {X : Type u} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+
+/-- **Upper comparison with Hausdorff measure from small sets.** If every point `x` of `A` has a
+scale `ε > 0` such that every set `t` containing `x` with `ediam t < ε` satisfies
+`μ t ≤ c * ediam t ^ d`, where `c ≠ 0, ∞`, then `μ A ≤ c * μH[d] A`. The sets in a cover of `A`
+that meet `A` are themselves estimated, so no covering constant is lost. -/
+theorem measure_le_mul_hausdorffMeasure_of_le_mul_ediam_rpow (μ : Measure X) {d : ℝ}
+    {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) {A : Set X}
+    (h : ∀ x ∈ A, ∃ ε : ℝ≥0∞, 0 < ε ∧
+      ∀ t : Set X, x ∈ t → ediam t < ε → μ t ≤ c * ediam t ^ d) :
+    μ A ≤ c * μH[d] A := by
+  choose! ε hε hεA using h
+  -- `B j`: the points of `A` whose scale exceeds `1 / (j + 1)`.
+  set B : ℕ → Set X := fun j => {x | x ∈ A ∧ ((j : ℝ≥0∞) + 1)⁻¹ < ε x}
+  have hBmono : Monotone B := fun i j hij x hx =>
+    ⟨hx.1, lt_of_le_of_lt (ENNReal.inv_le_inv.2 (by gcongr)) hx.2⟩
+  have hAB : A ⊆ ⋃ j, B j := fun x hx => by
+    obtain ⟨j, hj⟩ := ENNReal.exists_inv_nat_lt (hε x hx).ne'
+    exact mem_iUnion.2 ⟨j, hx, lt_of_le_of_lt (ENNReal.inv_le_inv.2 le_self_add) hj⟩
+  refine (measure_mono hAB).trans ((hBmono.measure_iUnion (μ := μ)).trans_le (iSup_le fun j => ?_))
+  -- Every set of diameter at most `1 / (j + 1)` meets `B j` in measure at most `c diam ^ d`.
+  have hle : μ.toOuterMeasure.restrict (B j) ≤ OuterMeasure.mkMetric fun r => c * r ^ d := by
+    refine OuterMeasure.le_mkMetric _ _ ((j : ℝ≥0∞) + 1)⁻¹ (by simp) fun s hs => ?_
+    rw [OuterMeasure.restrict_apply]
+    rcases (s ∩ B j).eq_empty_or_nonempty with he | ⟨x, hxs, hxB⟩
+    · simp [he]
+    exact (measure_mono inter_subset_left).trans (hεA x hxB.1 s hxs (hs.trans_lt hxB.2))
+  calc μ (B j) = μ.toOuterMeasure.restrict (B j) (B j) := by
+        rw [OuterMeasure.restrict_apply, inter_self, toOuterMeasure_apply]
+    _ ≤ OuterMeasure.mkMetric (fun r => c * r ^ d) (B j) := hle _
+    _ = Measure.mkMetric (fun r => c * r ^ d) (B j) := by
+        rw [← Measure.mkMetric_toOuterMeasure, toOuterMeasure_apply]
+    _ ≤ (c • μH[d]) (B j) :=
+        Measure.mkMetric_mono_smul hc hc0 (Eventually.of_forall fun _ => le_rfl) _
+    _ ≤ c * μH[d] A := by
+        rw [smul_apply, smul_eq_mul]
+        gcongr
+        exact fun x hx => hx.1
+
+end EMetricSpace
+
+section MetricSpace
+
 variable {X : Type u} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
 
 /-- **Density comparison for Hausdorff measure**, open-set form. If at every point `x` of `A`
@@ -209,43 +255,6 @@ theorem mul_hausdorffMeasure_le_measure (μ : Measure X) [μ.OuterRegular] {d : 
   obtain ⟨U, hAU, hU, hUb⟩ := A.exists_isOpen_lt_of_lt b hb
   exact (mul_hausdorffMeasure_le_measure_of_isOpen μ hd hU hAU h).trans_lt hUb
 
-/-- **Upper comparison with Hausdorff measure from small sets.** If every point `x` of `A` has a
-scale `ε > 0` such that every set `t` containing `x` with `ediam t < ε` satisfies
-`μ t ≤ c * ediam t ^ d`, where `c ≠ 0, ∞`, then `μ A ≤ c * μH[d] A`. The sets in a cover of `A`
-that meet `A` are themselves estimated, so no covering constant is lost. -/
-theorem measure_le_mul_hausdorffMeasure_of_le_mul_ediam_rpow (μ : Measure X) {d : ℝ}
-    {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) {A : Set X}
-    (h : ∀ x ∈ A, ∃ ε : ℝ≥0∞, 0 < ε ∧
-      ∀ t : Set X, x ∈ t → ediam t < ε → μ t ≤ c * ediam t ^ d) :
-    μ A ≤ c * μH[d] A := by
-  choose! ε hε hεA using h
-  -- `B j`: the points of `A` whose scale exceeds `1 / (j + 1)`.
-  set B : ℕ → Set X := fun j => {x | x ∈ A ∧ ((j : ℝ≥0∞) + 1)⁻¹ < ε x}
-  have hBmono : Monotone B := fun i j hij x hx =>
-    ⟨hx.1, lt_of_le_of_lt (ENNReal.inv_le_inv.2 (by gcongr)) hx.2⟩
-  have hAB : A ⊆ ⋃ j, B j := fun x hx => by
-    obtain ⟨j, hj⟩ := ENNReal.exists_inv_nat_lt (hε x hx).ne'
-    exact mem_iUnion.2 ⟨j, hx, lt_of_le_of_lt (ENNReal.inv_le_inv.2 le_self_add) hj⟩
-  refine (measure_mono hAB).trans ((hBmono.measure_iUnion (μ := μ)).trans_le (iSup_le fun j => ?_))
-  -- Every set of diameter at most `1 / (j + 1)` meets `B j` in measure at most `c diam ^ d`.
-  have hle : μ.toOuterMeasure.restrict (B j) ≤ OuterMeasure.mkMetric fun r => c * r ^ d := by
-    refine OuterMeasure.le_mkMetric _ _ ((j : ℝ≥0∞) + 1)⁻¹ (by simp) fun s hs => ?_
-    rw [OuterMeasure.restrict_apply]
-    rcases (s ∩ B j).eq_empty_or_nonempty with he | ⟨x, hxs, hxB⟩
-    · simp [he]
-    exact (measure_mono inter_subset_left).trans (hεA x hxB.1 s hxs (hs.trans_lt hxB.2))
-  calc μ (B j) = μ.toOuterMeasure.restrict (B j) (B j) := by
-        rw [OuterMeasure.restrict_apply, inter_self, toOuterMeasure_apply]
-    _ ≤ OuterMeasure.mkMetric (fun r => c * r ^ d) (B j) := hle _
-    _ = Measure.mkMetric (fun r => c * r ^ d) (B j) := by
-        rw [← Measure.mkMetric_toOuterMeasure, toOuterMeasure_apply]
-    _ ≤ (c • μH[d]) (B j) :=
-        Measure.mkMetric_mono_smul hc hc0 (Eventually.of_forall fun _ => le_rfl) _
-    _ ≤ c * μH[d] A := by
-        rw [smul_apply, smul_eq_mul]
-        gcongr
-        exact fun x hx => hx.1
-
 /-- **Upper density comparison for Hausdorff measure.** If at every point `x` of `A` all small
 closed balls satisfy `μ (closedBall x r) ≤ c (2 r) ^ d`, where `c ≠ 0, ∞`, then
 `μ A ≤ 2 ^ d * c * μH[d] A`. A set of diameter `ρ` meeting `A` at `x` lies in
@@ -278,6 +287,8 @@ theorem measure_le_mul_hausdorffMeasure (μ : Measure X) {d : ℝ} {c : ℝ≥0�
     _ = 2 ^ d * c * ediam t ^ d := by
         rw [ENNReal.ofReal_mul_rpow zero_le_two, ENNReal.ofReal_toReal hstop, ENNReal.ofReal_ofNat]
         ring
+
+end MetricSpace
 
 end MeasureTheory.Measure
 
