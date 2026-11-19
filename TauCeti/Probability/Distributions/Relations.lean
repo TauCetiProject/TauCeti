@@ -60,21 +60,7 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fintype ι] [Nonempty ι] {P : Measure Ω}
-  {μ : Measure ℝ} {μs : ι → Measure ℝ} {X : ι → Ω → ℝ} {r : ℝ}
-
-/-- The maximum of a finite family is at most `x` exactly when every member is. -/
-private theorem setOf_max_le (X : ι → Ω → ℝ) (x : ℝ) :
-    {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x}
-      = ⋂ i ∈ (Finset.univ : Finset ι), X i ⁻¹' Iic x := by
-  ext ω
-  simp [Finset.sup'_le_iff]
-
-/-- The minimum of a finite family exceeds `x` exactly when every member does. -/
-private theorem setOf_lt_min (X : ι → Ω → ℝ) (x : ℝ) :
-    {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω}
-      = ⋂ i ∈ (Finset.univ : Finset ι), X i ⁻¹' Ioi x := by
-  ext ω
-  simp [Finset.lt_inf'_iff]
+  {μ : Measure ℝ} {μs : ι → Measure ℝ} {X : ι → Ω → ℝ}
 
 /-- The maximum of a finite independent family is at most `x` with probability equal to the
 product of the marginal lower-tail probabilities. -/
@@ -82,7 +68,12 @@ theorem measure_setOf_max_le_indep (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     P {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x} =
       ∏ i, μs i (Iic x) := by
-  rw [setOf_max_le,
+  -- The maximum is at most `x` exactly when every member is.
+  have hset : {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x}
+      = ⋂ i ∈ (Finset.univ : Finset ι), X i ⁻¹' Iic x := by
+    ext ω
+    simp [Finset.sup'_le_iff]
+  rw [hset,
     hindep.measure_inter_preimage_eq_mul Finset.univ (sets := fun _ => Iic x)
       fun i _ => measurableSet_Iic]
   exact Finset.prod_congr rfl fun i _ =>
@@ -94,7 +85,12 @@ theorem measure_setOf_lt_min_indep (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     P {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω} =
       ∏ i, μs i (Ioi x) := by
-  rw [setOf_lt_min,
+  -- The minimum exceeds `x` exactly when every member does.
+  have hset : {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω}
+      = ⋂ i ∈ (Finset.univ : Finset ι), X i ⁻¹' Ioi x := by
+    ext ω
+    simp [Finset.lt_inf'_iff]
+  rw [hset,
     hindep.measure_inter_preimage_eq_mul Finset.univ (sets := fun _ => Ioi x)
       fun i _ => measurableSet_Ioi]
   exact Finset.prod_congr rfl fun i _ =>
@@ -124,23 +120,17 @@ theorem measureReal_setOf_lt_min_indep
 
 /-- The minimum of a finite independent family is at most `x` with probability one minus the
 product of the marginal upper-tail probabilities. -/
-theorem measureReal_setOf_min_le_indep [∀ i, IsProbabilityMeasure (μs i)]
+theorem measureReal_setOf_min_le_indep
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     P.real {ω | (Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) ≤ x} =
       1 - ∏ i, (1 - cdf (μs i) x) := by
-  have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
-  have hcompl : {ω | (Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) ≤ x} =
-      {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω}ᶜ := by
-    ext ω
-    simp
+  have := hindep.isProbabilityMeasure
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
     simp_rw [Finset.inf'_univ_eq_ciInf]
     exact AEMeasurable.iInf fun i => (hlaw i).aemeasurable
-  have hnull : NullMeasurableSet
-      {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω} P :=
-    hmin.nullMeasurableSet_preimage measurableSet_Ioi
-  rw [hcompl, measureReal_compl₀ hnull, probReal_univ,
-    measureReal_setOf_lt_min_indep hindep hlaw x]
+  rw [← measureReal_setOf_lt_min_indep hindep hlaw x,
+    ← probReal_compl_eq_one_sub₀ (nullMeasurableSet_lt aemeasurable_const hmin)]
+  simp only [compl_ofPred, not_lt]
 
 /-- The maximum of an independent identically distributed finite family is at most `x` with
 probability the `Fintype.card ι`-th power of the common lower-tail probability. -/
@@ -180,58 +170,51 @@ theorem measureReal_setOf_lt_min_iid (hindep : iIndepFun X P)
 
 /-- The minimum of `d` independent identically distributed variables has cumulative distribution
 function `1 - (1 - cdf μ x) ^ d`. -/
-theorem measureReal_setOf_min_le_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
+theorem measureReal_setOf_min_le_iid (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     P.real {ω | (Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) ≤ x}
       = 1 - (1 - cdf μ x) ^ Fintype.card ι := by
-  let _ : ∀ _ : ι, IsProbabilityMeasure μ := fun _ => inferInstance
   simpa [Finset.card_univ] using
     measureReal_setOf_min_le_indep (μs := fun _ : ι => μ) hindep hlaw x
 
 /-- The cdf of the maximum of a finite independent family is the product of the marginal cdfs. -/
-theorem cdf_max_indep [∀ i, IsProbabilityMeasure (μs i)] (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
+theorem cdf_max_indep (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) x =
       ∏ i, cdf (μs i) x := by
+  have := hindep.isProbabilityMeasure
   have hmax : AEMeasurable (fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) P := by
     simp_rw [Finset.sup'_univ_eq_ciSup]
     exact AEMeasurable.iSup fun i => (hlaw i).aemeasurable
-  have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
-  rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmax measurableSet_Iic,
-    ← measureReal_setOf_max_le_indep hindep hlaw x]
-  rfl
+  rw [cdf_eq_real, ← Iic_def, ← (hasLaw_map hmax).measureReal_eq measurableSet_Iic,
+    measureReal_setOf_max_le_indep hindep hlaw x]
 
 /-- The cdf of the minimum of a finite independent family is one minus the product of the
 marginal survival probabilities. -/
-theorem cdf_min_indep [∀ i, IsProbabilityMeasure (μs i)] (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
+theorem cdf_min_indep (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x =
       1 - ∏ i, (1 - cdf (μs i) x) := by
+  have := hindep.isProbabilityMeasure
   have hmin : AEMeasurable (fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) P := by
     simp_rw [Finset.inf'_univ_eq_ciInf]
     exact AEMeasurable.iInf fun i => (hlaw i).aemeasurable
-  have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
-  rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hmin measurableSet_Iic,
-    ← measureReal_setOf_min_le_indep hindep hlaw x]
-  rfl
+  rw [cdf_eq_real, ← Iic_def, ← (hasLaw_map hmin).measureReal_eq measurableSet_Iic,
+    measureReal_setOf_min_le_indep hindep hlaw x]
 
 /-- The law of the maximum of `d` independent identically distributed variables, in cumulative
 distribution function form. -/
-theorem cdf_max_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
+theorem cdf_max_iid (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) x
       = cdf μ x ^ Fintype.card ι := by
-  let _ : ∀ _ : ι, IsProbabilityMeasure μ := fun _ => inferInstance
   simpa [Finset.card_univ] using
     cdf_max_indep (μs := fun _ : ι => μ) hindep hlaw x
 
 /-- The law of the minimum of `d` independent identically distributed variables, in cumulative
 distribution function form. -/
-theorem cdf_min_iid [IsProbabilityMeasure μ] (hindep : iIndepFun X P)
+theorem cdf_min_iid (hindep : iIndepFun X P)
     (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x
       = 1 - (1 - cdf μ x) ^ Fintype.card ι := by
-  let _ : ∀ _ : ι, IsProbabilityMeasure μ := fun _ => inferInstance
   simpa [Finset.card_univ] using
     cdf_min_indep (μs := fun _ : ι => μ) hindep hlaw x
 
