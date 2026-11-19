@@ -77,14 +77,13 @@ theorem inner_cfcₙ_smul_sub_self (f : ℝ → ℝ) (hxs : cfcₙ w s = inner A
     (hf : ContinuousOn f (quasispectrum ℝ s) := by cfc_cont_tac)
     (hf0 : f 0 = 0 := by cfc_zero_tac) :
     inner A (cfcₙ f s • x - x) (cfcₙ f s • x - x) = cfcₙ (fun u ↦ w u * (1 - f u) ^ 2) s := by
-  have hexp : (fun u ↦ w u * (1 - f u) ^ 2) =
-      fun u ↦ f u * w u * f u - w u * f u - (f u * w u - w u) := by
-    funext u
-    ring
   rw [inner_sub_left, inner_sub_right, inner_sub_right, inner_cfcₙ_smul_cfcₙ_smul f f hxs,
-    inner_cfcₙ_smul_left f hxs, inner_cfcₙ_smul_right f hxs, ← hxs, hexp,
-    cfcₙ_sub (fun u ↦ f u * w u * f u - w u * f u) (fun u ↦ f u * w u - w u) s,
-    cfcₙ_sub (fun u ↦ f u * w u * f u) (fun u ↦ w u * f u) s,
-    cfcₙ_sub (fun u ↦ f u * w u) w s]
+    inner_cfcₙ_smul_left f hxs, inner_cfcₙ_smul_right f hxs, ← hxs]
+  -- Fold the three differences of functional calculi into one, then compare pointwise.
+  rw [← cfcₙ_sub (hf := ?_) (hf0 := ?_) (hg := ?_) (hg0 := ?_),
+    ← cfcₙ_sub (hf := ?_) (hf0 := ?_) (hg := ?_) (hg0 := ?_),
+    ← cfcₙ_sub (hf := ?_) (hf0 := ?_) (hg := ?_) (hg0 := ?_)]
+  · exact cfcₙ_congr fun u _ ↦ by ring
+  all_goals first | fun_prop | simp [hf0, hw0]
 
 end CStarModule

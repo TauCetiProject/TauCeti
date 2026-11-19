@@ -272,8 +272,7 @@ theorem measurable_covariancePseudoInverse :
   exact Measurable.ite isClosed_setOfPred_posSemidef.measurableSet
     (TauCeti.measurable_matrix_cfc_of_tendsto
       (F := fun k x ↦ x / (x ^ 2 + 1 / (k + 1)))
-      (fun _ ↦ continuous_id.div ((continuous_id.pow 2).add continuous_const)
-        (fun _ ↦ by positivity))
+      (fun _ ↦ Real.continuous_div_sq_add Nat.one_div_pos_of_nat)
       (fun x ↦ (Real.tendsto_div_sq_add_nhdsGT_zero x).comp
         (tendsto_nhdsWithin_iff.mpr ⟨tendsto_one_div_add_atTop_nhds_zero_nat,
           Eventually.of_forall fun _ ↦ Nat.one_div_pos_of_nat⟩)))

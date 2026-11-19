@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Module.Action
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.CStarAlgebra.Module.FunctionalCalculus
+import TauCeti.Analysis.SpecificLimits.RegularizedInverse
 
 /-!
 # The special factorization of vectors in Hilbert C⋆-modules
@@ -66,7 +67,7 @@ private noncomputable def invApprox (ε u : ℝ) : ℝ := u / (u ^ 2 + ε ^ 2)
 
 /-- For `ε > 0`, the denominator `u ^ 2 + ε ^ 2` never vanishes, so `f_ε` is continuous. -/
 private lemma continuous_invApprox {ε : ℝ} (hε : 0 < ε) : Continuous (invApprox ε) :=
-  continuous_id.div (by fun_prop) fun u ↦ (by positivity : 0 < u ^ 2 + ε ^ 2).ne'
+  Real.continuous_div_sq_add (pow_pos hε 2)
 
 /-- `f_ε(0) = 0`, so only the nonunital functional calculus is needed. -/
 @[simp]
@@ -75,10 +76,8 @@ private lemma invApprox_zero (ε : ℝ) : invApprox ε 0 = 0 := by
 
 /-- The approximation error `1 - u f_ε(u) = ε ^ 2 / (u ^ 2 + ε ^ 2)`, shared by the estimates. -/
 private lemma one_sub_mul_invApprox {ε : ℝ} (hε : 0 < ε) (u : ℝ) :
-    1 - u * invApprox ε u = ε ^ 2 / (u ^ 2 + ε ^ 2) := by
-  unfold invApprox
-  field_simp
-  ring
+    1 - u * invApprox ε u = ε ^ 2 / (u ^ 2 + ε ^ 2) :=
+  Real.one_sub_mul_div_sq_add (pow_pos hε 2) u
 
 section Approximants
 

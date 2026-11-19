@@ -12,7 +12,9 @@ public import Mathlib.Topology.Instances.Real.Lemmas
 
 The functions `x ↦ x / (x² + ε)` converge pointwise to the totalized reciprocal as positive `ε`
 tends to zero. Unlike the reciprocal, each regularizing function is continuous everywhere.
-This limit is useful for regularizing inverses through functional calculus, including at zero.
+This limit is useful for regularizing inverses through functional calculus, including at zero;
+the error identity `1 - x (x / (x² + ε)) = ε / (x² + ε)` reduces approximation estimates to
+bounds on `ε / (x² + ε)`.
 -/
 
 public section
@@ -20,6 +22,16 @@ public section
 open Filter Topology
 
 namespace Real
+
+/-- For positive `ε`, the regularized reciprocal `x ↦ x / (x² + ε)` is continuous. -/
+theorem continuous_div_sq_add {ε : ℝ} (hε : 0 < ε) : Continuous fun x : ℝ ↦ x / (x ^ 2 + ε) :=
+  continuous_id.div (by fun_prop) fun x ↦ (by positivity : 0 < x ^ 2 + ε).ne'
+
+/-- The error of the regularized reciprocal: `1 - x (x / (x² + ε)) = ε / (x² + ε)`. -/
+theorem one_sub_mul_div_sq_add {ε : ℝ} (hε : 0 < ε) (x : ℝ) :
+    1 - x * (x / (x ^ 2 + ε)) = ε / (x ^ 2 + ε) := by
+  field_simp
+  ring
 
 /-- As positive `ε` tends to zero, `x / (x² + ε)` tends to `x⁻¹`, also when `x = 0`. -/
 theorem tendsto_div_sq_add_nhdsGT_zero (x : ℝ) :
