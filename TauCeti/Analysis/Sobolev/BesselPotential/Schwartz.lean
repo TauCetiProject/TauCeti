@@ -48,8 +48,9 @@ normed complex `F`.
   of its first derivatives, `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the `H^s`
   norm of a Schwartz function.
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le`: modulation by
-  `exp(i ⟪y, ξ⟫)` changes the `H^s` norm at most by the factor `2 ^ (|s| / 2) ⟨ξ / 2π⟩ ^ s`, and
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le`: the `H^s` norm of the
+  wave packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v` is at most `2 ^ (|s| / 2) ⟨ξ / 2π⟩ ^ s ‖φ‖_{H^{|s|}} ‖v‖`,
+  and
   `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_cutoffExponential_smul_le`: hence the `H^s`
   norms of the wave packets of frequency `t ξ` are `O(t ^ s)` as `t → ∞`.
 
@@ -212,7 +213,7 @@ open scoped Real in
 /-- **The `H^s` norm of a wave packet.** Modulating a Schwartz function by the character
 `exp(i ⟪y, ξ⟫)` translates its Fourier transform to `ξ / 2π`, so by Peetre's inequality the wave
 packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v` has `H^s` norm at most
-`2 ^ (|s| / 2) ⟨ξ / 2π⟩ ^ s ‖φ‖_{H^{|s|}} ‖v‖`. For high frequencies this grows like `‖ξ‖ ^ s`. -/
+`2 ^ (|s| / 2) ⟨ξ / 2π⟩ ^ s ‖φ‖_{H^{|s|}} ‖v‖`, which is `O(‖ξ‖ ^ s)` for high frequencies. -/
 theorem norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le {F : Type*}
     [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (φ : 𝓢(E, ℂ))
     (ξ : E) (v : F) :

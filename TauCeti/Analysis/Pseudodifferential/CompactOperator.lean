@@ -333,10 +333,10 @@ private theorem integral_smul_principal_eq_zero_of_isCompactOperator
       ((((k : ℝ) + 1) ^ (-m) : ℝ) : ℂ) := by
     rw [← Complex.ofReal_mul, ← Real.rpow_add (by positivity)]
     ring_nf
-  rw [Function.comp_apply, testFunctional_apply, map_smul, BesselPotentialSpace.toDistr_smul,
-    smul_apply, testPacket, map_smul,
-    Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, smul_smul, hts,
-    Complex.coe_smul]
+  simp only [Function.comp_apply, testFunctional_apply, testPacket, u, map_smul,
+    Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, smul_smul]
+  -- The scalars combine as `t ^ (-s) * t ^ (s - m) = t ^ (-m)`.
+  rw [hts, Complex.coe_smul]
 
 /-- **Compact quantizations have vanishing principal symbol.** If a classical symbol `a` of order
 `m` with compact spatial support quantizes to a compact operator `Op(a) : H^s → H^{s - m}` for
