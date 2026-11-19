@@ -40,6 +40,14 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
   whose lower-right block is invertible gives `M ≃ N`.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
+* `TauCeti.antidiagDiagEquiv`: when `2` is invertible, the linear automorphism
+  `(x, y) ↦ (x, -x) + (y, y)` of `M × M`, carrying the two coordinate axes onto the antidiagonal
+  `(-LinearMap.id).graph` and the diagonal `LinearMap.id.graph`.
+* `TauCeti.isCompl_graph_neg_id_graph_id`: when `2` is invertible, `M × M` is the direct sum of
+  the antidiagonal and the diagonal.
+* `TauCeti.linearMap_ext_antidiag_diag`, `TauCeti.linearMap_ext₂_antidiag_diag`: a semilinear map,
+  respectively a sesquilinear form, on `M × M` is determined by its values on the antidiagonal and
+  the diagonal.
 * `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
   `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
 * `LinearMap.coprod_neg_comp_prodComm`, `LinearMap.map_prodComm_ker_coprod_neg`,
@@ -233,6 +241,115 @@ theorem map_prodMap_graph {R M₁ M₂ M₃ M₄ : Type*} [Semiring R] [AddCommM
     exact LinearMap.congr_fun h x
   · obtain ⟨x, rfl⟩ := hf a
     exact ⟨x, φ x, rfl, rfl, (LinearMap.congr_fun h x).trans hb.symm⟩
+
+end LinearMap
+
+/-! ### The antidiagonal and the diagonal of `M × M` -/
+
+namespace TauCeti
+
+open LinearMap Submodule
+
+variable (R M : Type*) [CommRing R] [Invertible (2 : R)] [AddCommGroup M] [Module R M]
+
+/-- When `2` is invertible, the linear automorphism of `M × M` sending `(x, y)` to
+`(x, -x) + (y, y) = (x + y, y - x)`, that is, the first factor to the antidiagonal and the second
+to the diagonal. Its inverse is `(u, v) ↦ ((u - v) / 2, (u + v) / 2)`. -/
+def antidiagDiagEquiv : (M × M) ≃ₗ[R] M × M where
+  toFun p := (p.1 + p.2, p.2 - p.1)
+  invFun q := ((⅟2 : R) • (q.1 - q.2), (⅟2 : R) • (q.1 + q.2))
+  map_add' p q := by
+    ext <;> simp only [Prod.fst_add, Prod.snd_add] <;> abel
+  map_smul' c p := by
+    ext <;> simp [smul_add, smul_sub]
+  left_inv p := by
+    ext <;> dsimp only
+    · rw [show p.1 + p.2 - (p.2 - p.1) = (2 : R) • p.1 by module, invOf_smul_smul]
+    · rw [show p.1 + p.2 + (p.2 - p.1) = (2 : R) • p.2 by module, invOf_smul_smul]
+  right_inv q := by
+    ext <;> dsimp only
+    · rw [← smul_add, show q.1 - q.2 + (q.1 + q.2) = (2 : R) • q.1 by module, invOf_smul_smul]
+    · rw [← smul_sub, show q.1 + q.2 - (q.1 - q.2) = (2 : R) • q.2 by module, invOf_smul_smul]
+
+variable {R M}
+
+/-- The automorphism `antidiagDiagEquiv` sends `(x, y)` to `(x + y, y - x)`. -/
+@[simp]
+theorem antidiagDiagEquiv_apply (p : M × M) :
+    antidiagDiagEquiv R M p = (p.1 + p.2, p.2 - p.1) := (rfl)
+
+/-- The inverse of `antidiagDiagEquiv` sends `(u, v)` to `((u - v) / 2, (u + v) / 2)`. -/
+@[simp]
+theorem antidiagDiagEquiv_symm_apply (q : M × M) :
+    (antidiagDiagEquiv R M).symm q =
+      ((⅟2 : R) • (q.1 - q.2), (⅟2 : R) • (q.1 + q.2)) := (rfl)
+
+/-- The automorphism `antidiagDiagEquiv` decomposes a vector as an antidiagonal plus a diagonal
+vector. -/
+theorem antidiagDiagEquiv_apply_eq_add (x y : M) :
+    antidiagDiagEquiv R M (x, y) = (x, -x) + (y, y) := by
+  ext <;> simp [sub_eq_neg_add]
+
+/-- The automorphism `antidiagDiagEquiv` carries the first axis `M × 0` onto the antidiagonal. -/
+theorem map_antidiagDiagEquiv_range_inl :
+    (range (inl R M M)).map (antidiagDiagEquiv R M : (M × M) →ₗ[R] M × M) =
+      (-LinearMap.id : M →ₗ[R] M).graph := by
+  ext ⟨a, b⟩
+  simp only [mem_map, mem_range, inl_apply, mem_graph_iff, LinearMap.neg_apply, id_apply]
+  refine ⟨?_, fun h ↦ ⟨(a, 0), ⟨a, rfl⟩, by simp [h]⟩⟩
+  rintro ⟨_, ⟨x, rfl⟩, h⟩
+  simp only [LinearEquiv.coe_coe, antidiagDiagEquiv_apply, add_zero, zero_sub,
+    Prod.mk.injEq] at h
+  rw [← h.1, ← h.2]
+
+/-- The automorphism `antidiagDiagEquiv` carries the second axis `0 × M` onto the diagonal. -/
+theorem map_antidiagDiagEquiv_range_inr :
+    (range (inr R M M)).map (antidiagDiagEquiv R M : (M × M) →ₗ[R] M × M) =
+      (LinearMap.id : M →ₗ[R] M).graph := by
+  ext ⟨a, b⟩
+  simp only [mem_map, mem_range, inr_apply, mem_graph_iff, id_apply]
+  refine ⟨?_, fun h ↦ ⟨(0, a), ⟨a, rfl⟩, by simp [h]⟩⟩
+  rintro ⟨_, ⟨x, rfl⟩, h⟩
+  simp only [LinearEquiv.coe_coe, antidiagDiagEquiv_apply, zero_add, sub_zero,
+    Prod.mk.injEq] at h
+  rw [← h.1, ← h.2]
+
+/-- When `2` is invertible, `M × M` is the direct sum of the antidiagonal and the diagonal. -/
+theorem isCompl_graph_neg_id_graph_id :
+    IsCompl (-LinearMap.id : M →ₗ[R] M).graph (LinearMap.id : M →ₗ[R] M).graph := by
+  rw [← map_antidiagDiagEquiv_range_inl, ← map_antidiagDiagEquiv_range_inr]
+  exact (orderIsoMapComap (antidiagDiagEquiv R M)).isCompl_iff.1 isCompl_range_inl_inr
+
+/-- The automorphism `antidiagDiagEquiv` commutes with any linear map acting diagonally. -/
+theorem antidiagDiagEquiv_prodMap {M' : Type*} [AddCommGroup M'] [Module R M']
+    (f : M →ₗ[R] M') (p : M × M) :
+    antidiagDiagEquiv R M' (f.prodMap f p) =
+      f.prodMap f (antidiagDiagEquiv R M p) := by
+  simp
+
+/-- A semilinear map on `M × M` is determined by its values on the antidiagonal and on the
+diagonal. -/
+theorem linearMap_ext_antidiag_diag {S P : Type*} [Semiring S] [AddCommMonoid P] [Module S P]
+    {σ : R →+* S} {f g : M × M →ₛₗ[σ] P} (hA : ∀ x, f (x, -x) = g (x, -x))
+    (hD : ∀ x, f (x, x) = g (x, x)) : f = g :=
+  ext_on_codisjoint isCompl_graph_neg_id_graph_id.codisjoint
+    (fun ⟨x, y⟩ hp ↦ by rw [show y = -x by simpa using hp]; exact hA x)
+    fun ⟨x, y⟩ hp ↦ by rw [show y = x by simpa using hp]; exact hD x
+
+/-- A sesquilinear form on `M × M` is determined by its four blocks with respect to the
+antidiagonal and the diagonal. -/
+theorem linearMap_ext₂_antidiag_diag {N : Type*} [AddCommGroup N] [Module R N] {I₁ I₂ : R →+* R}
+    {C C' : M × M →ₛₗ[I₁] M × M →ₛₗ[I₂] N}
+    (hAA : ∀ x y, C (x, -x) (y, -y) = C' (x, -x) (y, -y))
+    (hAD : ∀ x y, C (x, -x) (y, y) = C' (x, -x) (y, y))
+    (hDA : ∀ x y, C (x, x) (y, -y) = C' (x, x) (y, -y))
+    (hDD : ∀ x y, C (x, x) (y, y) = C' (x, x) (y, y)) : C = C' :=
+  linearMap_ext_antidiag_diag (fun x ↦ linearMap_ext_antidiag_diag (hAA x) (hAD x))
+    fun x ↦ linearMap_ext_antidiag_diag (hDA x) (hDD x)
+
+end TauCeti
+
+namespace LinearMap
 
 section Semiring
 

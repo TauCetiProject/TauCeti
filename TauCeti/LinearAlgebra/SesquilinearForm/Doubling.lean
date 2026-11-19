@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.BilinearForm.Prod
+public import TauCeti.LinearAlgebra.Prod
 
 /-!
 # The doubled space of a sesquilinear form
@@ -33,9 +34,12 @@ Taking `φ = ±LinearMap.id`, both `D` and `A` are isotropic for every `B`, and 
 form both are maximal isotropic.
 
 When `2` is invertible in `R`, the map `(x, y) ↦ (x, -x) + (y, y)` is a linear automorphism of
-`M × M` (`TauCeti.doublingPolarizationEquiv`) with inverse `(u, v) ↦ ((u - v) / 2, (u + v) / 2)`;
-it carries the two coordinate axes onto `A` and `D`, so `W = A ⊕ D`, and in these coordinates the
-doubled form becomes twice the hyperbolic pairing between `A` and `D`. In particular
+`M × M` (`TauCeti.antidiagDiagEquiv`, in `TauCeti.LinearAlgebra.Prod`) with inverse
+`(u, v) ↦ ((u - v) / 2, (u + v) / 2)`; it carries the two coordinate axes onto `A` and `D`, so
+`W = A ⊕ D` (`TauCeti.isCompl_graph_neg_id_graph_id`), and a linear map or a sesquilinear form on
+`W` is determined by its values on `A` and `D` (`TauCeti.linearMap_ext_antidiag_diag`,
+`TauCeti.linearMap_ext₂_antidiag_diag`). These polarization coordinates do not involve `B`; in
+them the doubled form becomes twice the hyperbolic pairing between `A` and `D`. In particular
 `B.doubled (x, -x) (y, y) = 2 • B x y`.
 
 The forms are semilinear in both arguments with respect to arbitrary ring endomorphisms
@@ -45,7 +49,6 @@ split quadratic algebra `F × F` with the coordinate swap, where no field struct
 ## Main definitions
 
 * `LinearMap.doubled`: the doubled form `B ⊕ (-B)` on `M × M`.
-* `TauCeti.doublingPolarizationEquiv`: the polarization coordinates `A ⊕ D ≃ W`.
 
 ## Main results
 
@@ -58,10 +61,7 @@ split quadratic algebra `F × F` with the coordinate swap, where no field struct
 * `LinearMap.orthogonalBilin_graph_id_doubled_eq_iff`,
   `LinearMap.orthogonalBilin_graph_neg_id_doubled_eq_iff`: the diagonal and the antidiagonal are
   their own orthogonals if and only if `B` is right-separating.
-* `TauCeti.isCompl_graph_neg_id_graph_id`: `W = A ⊕ D` when `2` is invertible.
-* `LinearMap.doubled_doublingPolarizationEquiv`: the doubled form in polarization coordinates.
-* `TauCeti.linearMap_ext_antidiag_diag`, `TauCeti.linearMap_ext₂_antidiag_diag`: a linear map,
-  respectively a sesquilinear form, on `W` is determined by its values on `A` and `D`.
+* `LinearMap.doubled_antidiagDiagEquiv`: the doubled form in polarization coordinates.
 * `LinearMap.forall_doubled_prodMap_eq_smul_iff`: `f × g` scales the doubled forms by `c` if and
   only if `f` and `g` both scale the original forms by the same `c`; for `c = 1` this is the
   blockwise embedding of isometries.
@@ -231,128 +231,23 @@ theorem toMatrix₂_prod_doubled {ι : Type*} [Fintype ι] [DecidableEq ι] (b :
       Matrix.fromBlocks (toMatrix₂ b b B) 0 0 (-toMatrix₂ b b B) := by
   ext (i | i) (j | j) <;> simp [Basis.prod_apply]
 
-end LinearMap
-
 /-! ### Polarization coordinates -/
 
-namespace TauCeti
-
-open LinearMap
-
-variable (R M : Type*) [CommRing R] [Invertible (2 : R)] [AddCommGroup M] [Module R M]
-
-/-- The polarization coordinates of the doubled space: the linear automorphism of `M × M`
-sending `(x, y)` to `(x, -x) + (y, y) = (x + y, y - x)`, that is, the first factor to the
-antidiagonal and the second to the diagonal. Its inverse is
-`(u, v) ↦ ((u - v) / 2, (u + v) / 2)`. -/
-def doublingPolarizationEquiv : (M × M) ≃ₗ[R] M × M where
-  toFun p := (p.1 + p.2, p.2 - p.1)
-  invFun q := ((⅟2 : R) • (q.1 - q.2), (⅟2 : R) • (q.1 + q.2))
-  map_add' p q := by
-    ext <;> simp only [Prod.fst_add, Prod.snd_add] <;> abel
-  map_smul' c p := by
-    ext <;> simp [smul_add, smul_sub]
-  left_inv p := by
-    ext <;> dsimp only
-    · rw [show p.1 + p.2 - (p.2 - p.1) = (2 : R) • p.1 by module, invOf_smul_smul]
-    · rw [show p.1 + p.2 + (p.2 - p.1) = (2 : R) • p.2 by module, invOf_smul_smul]
-  right_inv q := by
-    ext <;> dsimp only
-    · rw [← smul_add, show q.1 - q.2 + (q.1 + q.2) = (2 : R) • q.1 by module, invOf_smul_smul]
-    · rw [← smul_sub, show q.1 + q.2 - (q.1 - q.2) = (2 : R) • q.2 by module, invOf_smul_smul]
-
-variable {R M}
-
-/-- The polarization coordinates send `(x, y)` to `(x + y, y - x)`. -/
-@[simp]
-theorem doublingPolarizationEquiv_apply (p : M × M) :
-    doublingPolarizationEquiv R M p = (p.1 + p.2, p.2 - p.1) := (rfl)
-
-/-- The inverse of the polarization coordinates sends `(u, v)` to
-`((u - v) / 2, (u + v) / 2)`. -/
-@[simp]
-theorem doublingPolarizationEquiv_symm_apply (q : M × M) :
-    (doublingPolarizationEquiv R M).symm q =
-      ((⅟2 : R) • (q.1 - q.2), (⅟2 : R) • (q.1 + q.2)) := (rfl)
-
-/-- The polarization coordinates decompose a vector as an antidiagonal plus a diagonal vector. -/
-theorem doublingPolarizationEquiv_apply_eq_add (x y : M) :
-    doublingPolarizationEquiv R M (x, y) = (x, -x) + (y, y) := by
-  ext <;> simp [sub_eq_neg_add]
-
-/-- The polarization coordinates carry the first axis `M × 0` onto the antidiagonal. -/
-theorem map_doublingPolarizationEquiv_range_inl :
-    (range (inl R M M)).map (doublingPolarizationEquiv R M : (M × M) →ₗ[R] M × M) =
-      (-LinearMap.id : M →ₗ[R] M).graph := by
-  ext ⟨a, b⟩
-  simp only [mem_map, mem_range, inl_apply, mem_graph_iff, LinearMap.neg_apply, id_apply]
-  refine ⟨?_, fun h ↦ ⟨(a, 0), ⟨a, rfl⟩, by simp [h]⟩⟩
-  rintro ⟨_, ⟨x, rfl⟩, h⟩
-  simp only [LinearEquiv.coe_coe, doublingPolarizationEquiv_apply, add_zero, zero_sub,
-    Prod.mk.injEq] at h
-  rw [← h.1, ← h.2]
-
-/-- The polarization coordinates carry the second axis `0 × M` onto the diagonal. -/
-theorem map_doublingPolarizationEquiv_range_inr :
-    (range (inr R M M)).map (doublingPolarizationEquiv R M : (M × M) →ₗ[R] M × M) =
-      (LinearMap.id : M →ₗ[R] M).graph := by
-  ext ⟨a, b⟩
-  simp only [mem_map, mem_range, inr_apply, mem_graph_iff, id_apply]
-  refine ⟨?_, fun h ↦ ⟨(0, a), ⟨a, rfl⟩, by simp [h]⟩⟩
-  rintro ⟨_, ⟨x, rfl⟩, h⟩
-  simp only [LinearEquiv.coe_coe, doublingPolarizationEquiv_apply, zero_add, sub_zero,
-    Prod.mk.injEq] at h
-  rw [← h.1, ← h.2]
-
-/-- When `2` is invertible, `M × M` is the direct sum of the antidiagonal and the diagonal. -/
-theorem isCompl_graph_neg_id_graph_id :
-    IsCompl (-LinearMap.id : M →ₗ[R] M).graph (LinearMap.id : M →ₗ[R] M).graph := by
-  rw [← map_doublingPolarizationEquiv_range_inl, ← map_doublingPolarizationEquiv_range_inr]
-  exact (orderIsoMapComap (doublingPolarizationEquiv R M)).isCompl_iff.1 isCompl_range_inl_inr
-
-/-- The polarization coordinates commute with any linear map acting diagonally. -/
-theorem doublingPolarizationEquiv_prodMap {M' : Type*} [AddCommGroup M'] [Module R M']
-    (f : M →ₗ[R] M') (p : M × M) :
-    doublingPolarizationEquiv R M' (f.prodMap f p) =
-      f.prodMap f (doublingPolarizationEquiv R M p) := by
-  simp
-
-/-- A semilinear map on `M × M` is determined by its values on the antidiagonal and on the
-diagonal. -/
-theorem linearMap_ext_antidiag_diag {S P : Type*} [Semiring S] [AddCommMonoid P] [Module S P]
-    {σ : R →+* S} {f g : M × M →ₛₗ[σ] P} (hA : ∀ x, f (x, -x) = g (x, -x))
-    (hD : ∀ x, f (x, x) = g (x, x)) : f = g :=
-  ext_on_codisjoint isCompl_graph_neg_id_graph_id.codisjoint
-    (fun ⟨x, y⟩ hp ↦ by rw [show y = -x by simpa using hp]; exact hA x)
-    fun ⟨x, y⟩ hp ↦ by rw [show y = x by simpa using hp]; exact hD x
-
-/-- A sesquilinear form on `M × M` is determined by its four blocks with respect to the
-antidiagonal and the diagonal. -/
-theorem linearMap_ext₂_antidiag_diag {N : Type*} [AddCommGroup N] [Module R N] {I₁ I₂ : R →+* R}
-    {C C' : M × M →ₛₗ[I₁] M × M →ₛₗ[I₂] N}
-    (hAA : ∀ x y, C (x, -x) (y, -y) = C' (x, -x) (y, -y))
-    (hAD : ∀ x y, C (x, -x) (y, y) = C' (x, -x) (y, y))
-    (hDA : ∀ x y, C (x, x) (y, -y) = C' (x, x) (y, -y))
-    (hDD : ∀ x y, C (x, x) (y, y) = C' (x, x) (y, y)) : C = C' :=
-  linearMap_ext_antidiag_diag (fun x ↦ linearMap_ext_antidiag_diag (hAA x) (hAD x))
-    fun x ↦ linearMap_ext_antidiag_diag (hDA x) (hDD x)
-
-end TauCeti
-
-namespace LinearMap
+section Polarization
 
 open TauCeti
 
-variable {R M N : Type*} [CommRing R] [Invertible (2 : R)] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {I₁ I₂ : R →+* R} (B : M →ₛₗ[I₁] M →ₛₗ[I₂] N)
+variable [Invertible (2 : R)]
 
 /-- In polarization coordinates the doubled form is twice the hyperbolic pairing of the
 antidiagonal with the diagonal. -/
-theorem doubled_doublingPolarizationEquiv (p q : M × M) :
-    B.doubled (doublingPolarizationEquiv R M p) (doublingPolarizationEquiv R M q) =
+theorem doubled_antidiagDiagEquiv (p q : M × M) :
+    B.doubled (antidiagDiagEquiv R M p) (antidiagDiagEquiv R M q) =
       2 • (B p.1 q.2 + B p.2 q.1) := by
-  simp only [doubled_apply, doublingPolarizationEquiv_apply, map_add, map_sub,
+  simp only [doubled_apply, antidiagDiagEquiv_apply, map_add, map_sub,
     LinearMap.add_apply, LinearMap.sub_apply]
   abel
+
+end Polarization
 
 end LinearMap
