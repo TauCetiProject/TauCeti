@@ -16,7 +16,8 @@ Mathlib knows that the fundamental *groupoid* preserves products
 (`FundamentalGroupoidFunctor.prodIso`, `FundamentalGroupoidFunctor.piIso`). This file records
 the group-level statement: the fundamental *group* of a product is the product of the
 fundamental groups, both for binary and for indexed products. It also records the simplest
-consequence for path classes: a product of two simply connected spaces is simply connected.
+consequence for path classes: a product of two simply connected spaces, or subsets, is simply
+connected.
 
 In both equivalences the forward map is the product of the homomorphisms `FundamentalGroup.map`
 induced by the coordinate projections, and the inverse assembles a loop class in the product
@@ -27,7 +28,7 @@ from its coordinate loop classes by `Path.Homotopic.prod`, respectively `Path.Ho
 * `FundamentalGroup.prodMulEquiv`: `π₁(X × Y, (x, y)) ≃* π₁(X, x) × π₁(Y, y)`.
 * `FundamentalGroup.piMulEquiv`: `π₁(Π i, X i, x) ≃* Π i, π₁(X i, x i)`.
 * `TauCeti.instSimplyConnectedSpaceProd`: a product of two simply connected spaces is simply
-  connected.
+  connected, and `IsSimplyConnected.prod` is its form for subsets.
 -/
 
 public section
@@ -103,5 +104,13 @@ instance instSimplyConnectedSpaceProd [SimplyConnectedSpace X] [SimplyConnectedS
     Subsingleton.elim (projLeft p) (projLeft q), Subsingleton.elim (projRight p) (projRight q)]
 
 end TauCeti
+
+/-- **A product of two simply connected sets is simply connected.** -/
+theorem IsSimplyConnected.prod {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    {s : Set X} {t : Set Y} (hs : IsSimplyConnected s) (ht : IsSimplyConnected t) :
+    IsSimplyConnected (s ×ˢ t) :=
+  have := hs.simplyConnectedSpace
+  have := ht.simplyConnectedSpace
+  (Homeomorph.Set.prod s t).toHomotopyEquiv.simplyConnectedSpace
 
 end
