@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.RingTheory.Polynomial.Vieta
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The integral Hecke polynomial of `GL_n`
@@ -83,6 +85,25 @@ residue cardinality `q`, this is the polynomial against which the characteristic
 Frobenius at that place is compared, for a Galois representation attached to the eigensystem. -/
 def glnHeckePolynomial (n : ℕ) (q : A) (T : Fin (n + 1) → A) : A[X] :=
   ∑ i : Fin (n + 1), C ((-1) ^ (i : ℕ) * q ^ (i : ℕ).choose 2 * T i) * X ^ (n - i)
+
+/-- The defining sum of the Hecke polynomial. -/
+theorem glnHeckePolynomial_def (n : ℕ) (q : A) (T : Fin (n + 1) → A) :
+    glnHeckePolynomial n q T =
+      ∑ i : Fin (n + 1), C ((-1) ^ (i : ℕ) * q ^ (i : ℕ).choose 2 * T i) * X ^ (n - i) :=
+  (rfl)
+
+/-- Twice `a(a-1)/2`, plus `a b`, is `a(a+b-1)`, with truncated subtraction. -/
+private theorem two_mul_choose_two_add_mul (a b : ℕ) :
+    2 * a.choose 2 + a * b = a * (a + b - 1) := by
+  have := Nat.le_mul_self a
+  rw [Nat.choose_two_right, Nat.mul_div_cancel' (Nat.even_mul_pred_self a).two_dvd,
+    Nat.mul_sub_one, Nat.mul_sub_one, mul_add]
+  omega
+
+/-- The case `k = 2` of Vandermonde's identity. -/
+private theorem choose_two_add (a b : ℕ) : (a + b).choose 2 = a.choose 2 + a * b + b.choose 2 := by
+  simp [Nat.add_choose_eq, Finset.Nat.antidiagonal_succ]
+  ring
 
 variable (q : A) (T : Fin (n + 1) → A)
 
@@ -172,14 +193,8 @@ theorem glnHeckePolynomial_eq_prod_X_sub_C (s : A) (z : Fin n → A) :
   refine Finset.sum_congr rfl fun i hi => ?_
   have hin : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
   have hexp : 2 * i.choose 2 + i * (n - i) = (n - 1) * i := by
-    rw [Nat.choose_two_right, Nat.mul_div_cancel' (Nat.even_mul_pred_self i).two_dvd]
     obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le hin
-    cases i with
-    | zero => simp
-    | succ k =>
-      rw [show k + 1 + m - (k + 1) = m by omega, show k + 1 + m - 1 = k + m by omega,
-        Nat.add_sub_cancel]
-      ring
+    rw [Nat.add_sub_cancel_left, two_mul_choose_two_add_mul, mul_comm]
   rw [← Multiset.pow_smul_esymm, smul_eq_mul, ← pow_mul, ← pow_mul, ← hexp, pow_add]
   simp only [map_mul, map_pow, map_neg, map_one]
   ring
@@ -220,28 +235,15 @@ theorem coeff_glnHeckePolynomial_sub_mul_coeff_zero {T' : Fin (n + 1) → A}
   have hrev : ((i.rev : Fin (n + 1)) : ℕ) = j := by rw [Fin.val_rev]; omega
   rw [hrev]
   have hsign : (-1 : A) ^ (i : ℕ) * (-1) ^ (i + j : ℕ) = (-1) ^ j := by
-    rw [← pow_add, ← add_assoc, ← two_mul, pow_add, pow_mul, neg_one_sq, one_pow, one_mul]
-  rw [← hj] at hsign
-  have hexp (a b : ℕ) : a.choose 2 + (a + b).choose 2 = a * (a + b - 1) + b.choose 2 := by
-    have h2 (m : ℕ) : 2 * m.choose 2 = m * (m - 1) := by
-      rw [Nat.choose_two_right, Nat.mul_div_cancel' (Nat.even_mul_pred_self m).two_dvd]
-    refine Nat.eq_of_mul_eq_mul_left two_pos ?_
-    rw [mul_add, mul_add, h2, h2, h2]
-    rcases Nat.eq_zero_or_pos a with rfl | ha
-    · simp
-    · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt ha
-      rcases b with _ | l
-      · rw [show 0 + k + 1 + 0 - 1 = k by omega]
-        ring
-      · rw [show 0 + k + 1 + (l + 1) - 1 = k + l + 1 by omega, show 0 + k + 1 - 1 = k by omega,
-          Nat.add_sub_cancel]
-        ring
-  have hexp' := hexp i j
-  rw [← hj] at hexp'
+    rw [← pow_add, ← add_assoc, pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_mul]
+  have hexp : (i : ℕ).choose 2 + (i + j).choose 2 = i * (i + j - 1) + j.choose 2 := by
+    rw [choose_two_add, ← two_mul_choose_two_add_mul]
+    ring
+  rw [← hj] at hsign hexp
   calc (-1) ^ (i : ℕ) * q ^ (i : ℕ).choose 2 * T' i * ((-1) ^ n * q ^ n.choose 2 * T (Fin.last n))
       = ((-1) ^ (i : ℕ) * (-1) ^ n) * q ^ ((i : ℕ).choose 2 + n.choose 2) *
           (T' i * T (Fin.last n)) := by rw [pow_add]; ring
-    _ = _ := by rw [hsign, hexp', pow_add]; ring
+    _ = _ := by rw [hsign, hexp, pow_add]; ring
 
 /-- The **inversion identity** as an identity of polynomials: if `T'_i T_n = T_{n-i}` for every
 `i`, then `P(0) P'(q^{n-1} X) = q^{n(n-1)} X^n P(1/X)`, where `P` and `P'` are the Hecke
@@ -261,8 +263,8 @@ theorem C_coeff_zero_mul_glnHeckePolynomial_comp_C_mul_X {T' : Fin (n + 1) → A
     have h := coeff_glnHeckePolynomial_sub_mul_coeff_zero q T hT' i
     have hexp : (i : ℕ) * (n - 1) + (n - 1) * (n - i) = n * (n - 1) := by
       rw [mul_comm (n - 1), ← add_mul, Nat.add_sub_cancel' hi]
-    rw [revAt_le (Nat.sub_le _ _), Nat.sub_sub_self hi, ← mul_assoc,
-      mul_comm ((glnHeckePolynomial n q T).coeff 0), h, ← pow_mul, mul_right_comm, ← pow_add, hexp]
+    rw [revAt_le (Nat.sub_le _ _), Nat.sub_sub_self hi, ← pow_mul, ← hexp, pow_add]
+    linear_combination q ^ ((n - 1) * (n - i)) * h
   · rw [revAt_eq_self_of_lt hk, coeff_glnHeckePolynomial_of_lt q T' hk,
       coeff_glnHeckePolynomial_of_lt q T hk, zero_mul, mul_zero, mul_zero]
 
