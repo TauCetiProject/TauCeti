@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Algebra.Monoid
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Monoid
 import TauCeti.Geometry.Manifold.VectorField.Related
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The Lie functor on smooth homomorphisms
