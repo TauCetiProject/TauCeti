@@ -219,6 +219,14 @@ def chainFiltrationAbutmentIso (hX : Monotone X) (n : ℕ) :
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     extendHomologyIso _ ComplexShape.embeddingDownNat rfl
 
+/-- The abutment isomorphism `TauCeti.chainFiltrationAbutmentIso` is the abutment isomorphism of
+the filtration, followed by the identification of the homology of the extended complex. -/
+lemma chainFiltrationAbutmentIso_hom (hX : Monotone X) (n : ℕ) :
+    (chainFiltrationAbutmentIso F hX n).hom =
+      (CochainComplex.filtrationAbutmentIso _ _ (-n)).hom ≫
+        (extendHomologyIso _ ComplexShape.embeddingDownNat rfl).hom :=
+  Iso.trans_hom _ _
+
 end ChainFunctor
 
 section ChainFunctorMap
@@ -357,17 +365,20 @@ lemma chainFiltrationSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom
         (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
         (chainFiltrationAbutmentIso G hX n).hom =
       (chainFiltrationAbutmentIso F hX n).hom ≫ HomologicalComplex.homologyMap (α.app Y) n := by
-  rw [chainFiltrationSpectralObjectIso_hom]
-  -- `chainFiltrationMap` is `CochainComplex.filtrationFunctorMap` of the extended chain map.
+  rw [chainFiltrationSpectralObjectIso_hom, chainFiltrationAbutmentIso_hom,
+    chainFiltrationAbutmentIso_hom]
+  -- `chainFiltrationMap` is `CochainComplex.filtrationFunctorMap` of the extended chain map. Its
+  -- proof argument `fun _ _ hx ↦ hx` only typechecks after unfolding `𝟙 Y`, which blocks `rw` and
+  -- `simp` with the general naturality lemma, so that lemma is applied as a term.
   refine
     (CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom_assoc
-    (hF := monotone_chainFiltration F hX) (hG := monotone_chainFiltration G hX) _
-    (factors_chainFiltration α (𝟙 Y) fun _ _ hx ↦ hx) (-n)
-    (extendHomologyIso (G.obj Y) ComplexShape.embeddingDownNat rfl).hom).trans ?_
+      (hF := monotone_chainFiltration F hX) (hG := monotone_chainFiltration G hX) _
+      (factors_chainFiltration α (𝟙 Y) fun _ _ hx ↦ hx) (-n) _).trans ?_
   rw [CategoryTheory.Functor.map_id, Category.id_comp]
-  exact ((CochainComplex.filtrationAbutmentIso _ _ _).hom ≫=
-    extendHomologyIso_hom_naturality (α.app Y) ComplexShape.embeddingDownNat (j := n) rfl).trans
-      (Category.assoc _ _ _).symm
+  -- The degree `-n` is `ComplexShape.embeddingDownNat.f n` only up to unfolding, so the
+  -- naturality of `extendHomologyIso` is applied as a term.
+  exact (_ ≫= extendHomologyIso_hom_naturality (α.app Y) ComplexShape.embeddingDownNat
+    (j := n) rfl).trans (Category.assoc _ _ _).symm
 
 /-- The identity of a filtered space induces the identity of its filtered chains. -/
 @[simp]
