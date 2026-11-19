@@ -49,9 +49,11 @@ characters on every nonzero lattice (`Differentiable.eq_zero_of_add_eq_fourierCh
 For a square-zero torus `C` in a symplectic four-manifold, with a flat normal line `N` of
 irrational holonomy, the last statement is the vanishing of holomorphic sections of `N ^ j` on
 every finite cover of `C`: the Cauchy–Riemann operators of these lines have zero kernel. This
-is the input which forces the coefficients `b_j ∈ H⁰(C, N ^ j)`, `1 ≤ j ≤ m`, of a compact
-holomorphic curve in the total space of `N` covering `C` with degree `m` to vanish, so that the
-curve lies on the zero section; that application is not formalized here.
+is the input which forces the coefficients `b_j ∈ H⁰(C, N ^ j)`, `1 ≤ j ≤ m`, of a holomorphic
+curve in the total space of `N` covering `C` with degree `m` to vanish, so that the curve lies on
+the zero section. `TauCeti.Analysis.Complex.QuasiPeriodic.Multisection` uses it this way for
+curves described by their fibres over the torus, with holomorphic power sums or local defining
+functions; that a compact curve has this form is not shown here.
 
 For a lattice in `ℂ` with a basis `ω₁, ω₂`, `TauCeti.Analysis.Complex.Wirtinger.FlatTorus` proves
 the quantitative counterpart: an `L²` coercivity estimate for `∂bar` on `C²` sections over the
