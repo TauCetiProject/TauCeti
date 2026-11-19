@@ -77,10 +77,8 @@ omit [CharZero K] [FiniteDimensional K M] [Finite ι] [P.IsCrystallographic] [P.
 eigenvalue `ζ`. -/
 private lemma hasEigenvector_of_isRegularWeight [Nonempty ι] {w : P.weylGroup} {x : M} {ζ : K}
     (hx : P.IsRegularWeight x) (hw : w • x = ζ • x) :
-    Module.End.HasEigenvector (P.weylGroupRootRep w) ζ x := by
-  obtain ⟨i⟩ := ‹Nonempty ι›
-  refine Module.End.hasEigenvector_iff.mpr ⟨Module.End.mem_eigenspace_iff.mpr hw, fun h0 ↦ ?_⟩
-  exact (P.isRegularWeight_iff x).mp hx i (by rw [h0, map_zero])
+    Module.End.HasEigenvector (P.weylGroupRootRep w) ζ x :=
+  Module.End.hasEigenvector_iff.mpr ⟨Module.End.mem_eigenspace_iff.mpr hw, hx.ne_zero⟩
 
 omit [FiniteDimensional K M] in
 /-- If a regular weight is an eigenvector of a Weyl-group element for a primitive `h`-th root of

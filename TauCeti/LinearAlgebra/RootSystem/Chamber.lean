@@ -44,6 +44,7 @@ Weyl-invariant.
 ## Main results
 
 * `RootPairing.isRegularWeight_smul`: regularity is invariant under the Weyl group.
+* `RootPairing.IsRegularWeight.ne_zero`: if there is a root, a regular weight is nonzero.
 * `RootPairing.smul_dominantChamber` and `RootPairing.smul_openDominantChamber`: an automorphism
   of the root pairing carries both chambers of a base to those of the transported base.
 * `RootPairing.mem_openDominantChamber_of_isRegularWeight` and
@@ -123,6 +124,12 @@ Not a `simp` lemma: unfolding the predicate would take `RootPairing.isRegularWei
 simp-normal form, and would dissolve `IsRegularWeight` out of the goals its own API is stated
 about. Use it explicitly, as `rw [isRegularWeight_iff]` or `simp [isRegularWeight_iff]`. -/
 lemma isRegularWeight_iff (x : M) : IsRegularWeight P x ↔ ∀ i, P.coroot' i x ≠ 0 := Iff.rfl
+
+variable {P} in
+/-- If there is a root, a regular weight is nonzero: every coroot functional vanishes at `0`. -/
+lemma IsRegularWeight.ne_zero [Nonempty ι] {x : M} (hx : IsRegularWeight P x) : x ≠ 0 := by
+  rintro rfl
+  exact (P.isRegularWeight_iff 0).mp hx (Classical.arbitrary ι) (map_zero _)
 
 /-- **Regularity is a Weyl-invariant condition on weights.** A Weyl-group element matches the
 coroot functional of a root with that of its image, so it can neither create nor destroy a
