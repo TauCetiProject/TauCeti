@@ -42,10 +42,11 @@ The inverse-free computation rule is `inv_smul_mk`.
   action orbits.
 * `TauCeti.UniversalCover.isQuotientCoveringMap`: `proj` is the quotient covering map for
   the fundamental-group action.
-* `TauCeti.UniversalCover.fibreShift`: for a homomorphism `P` from the fundamental group, the
-  value `P g` at the unique `g` relating two points of a fibre, `g • q = p`. It is additive in
-  the action (`TauCeti.UniversalCover.fibreShift_smul_left`) and locally constant along two
-  continuous lifts of the same map (`TauCeti.UniversalCover.eventually_fibreShift_eq`).
+* `TauCeti.UniversalCover.fiberShift`: for a homomorphism `P` from the fundamental group, the
+  value `P g` at the unique `g` relating two points of a fiber, `g • q = p`, and `0` for points of
+  different fibers. It is additive in the action (`TauCeti.UniversalCover.fiberShift_smul_left`)
+  and locally constant along two continuous lifts of the same map
+  (`TauCeti.UniversalCover.eventually_fiberShift_eq`).
 * `TauCeti.UniversalCover.exists_continuousOn_proj_eq`: over a path-connected base, the
   projection has a continuous section near every point.
 -/
@@ -219,43 +220,54 @@ theorem monodromy_basepointLift [LocallyPathConnectedSpace X]
         Path.Homotopic.Quotient.refl_trans]
       exact (Path.Homotopic.Quotient.trans_refl _).symm
 
-/-! ### Fibre shifts and local sections -/
+/-! ### Fiber shifts and local sections -/
 
-section FibreShift
+section FiberShift
 
 variable {A : Type*} [AddMonoid A]
 
 open Classical in
-/-- The **fibre shift** of two points `p` and `q` of the universal cover, relative to a
+/-- The **fiber shift** of two points `p` and `q` of the universal cover, relative to a
 homomorphism `P` from the fundamental group: `P g` for the unique `g` with `g • q = p` when `p` and
-`q` lie over the same point (`TauCeti.UniversalCover.fibreShift_smul_self`), and `0` otherwise. -/
-def fibreShift (P : Additive (FundamentalGroup X x₀) →+ A) (p q : UniversalCover x₀) : A :=
+`q` lie over the same point (`TauCeti.UniversalCover.fiberShift_smul_self`), and `0` otherwise
+(`TauCeti.UniversalCover.fiberShift_of_proj_ne`). -/
+def fiberShift (P : Additive (FundamentalGroup X x₀) →+ A) (p q : UniversalCover x₀) : A :=
   if h : ∃ g : FundamentalGroup X x₀, g • q = p then P (Additive.ofMul h.choose) else 0
 
 variable (P : Additive (FundamentalGroup X x₀) →+ A)
 
-/-- The fibre shift from `q` to `g • q` is `P g`. -/
+/-- The fiber shift from `q` to `g • q` is `P g`. -/
 @[simp]
-theorem fibreShift_smul_self (g : FundamentalGroup X x₀) (q : UniversalCover x₀) :
-    fibreShift P (g • q) q = P (Additive.ofMul g) := by
-  unfold fibreShift
+theorem fiberShift_smul_self (g : FundamentalGroup X x₀) (q : UniversalCover x₀) :
+    fiberShift P (g • q) q = P (Additive.ofMul g) := by
+  unfold fiberShift
   split_ifs with h
   · rw [IsCancelSMul.right_cancel _ _ _ h.choose_spec]
   · exact absurd ⟨g, rfl⟩ h
 
-/-- The fibre shift is additive in the action: moving the first point by `g` adds `P g`. -/
-theorem fibreShift_smul_left (g : FundamentalGroup X x₀) {p q : UniversalCover x₀}
-    (h : p.proj = q.proj) :
-    fibreShift P (g • p) q = P (Additive.ofMul g) + fibreShift P p q := by
-  obtain ⟨g', rfl⟩ := proj_eq_iff_mem_orbit.mp h
-  rw [smul_smul, fibreShift_smul_self, fibreShift_smul_self, ofMul_mul, map_add]
+/-- The fiber shift from a point to itself is `0`. -/
+@[simp]
+theorem fiberShift_self (q : UniversalCover x₀) : fiberShift P q q = 0 := by
+  simpa using fiberShift_smul_self P 1 q
 
-/-- The fibre shift of two continuous lifts of the same map is locally constant. -/
-theorem eventually_fibreShift_eq [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+/-- The fiber shift of two points over different points of the base is `0`. -/
+theorem fiberShift_of_proj_ne {p q : UniversalCover x₀} (h : p.proj ≠ q.proj) :
+    fiberShift P p q = 0 :=
+  dite_eq_right fun ⟨g, hg⟩ ↦ h (by rw [← hg, proj_smul])
+
+/-- The fiber shift is additive in the action: moving the first point by `g` adds `P g`. -/
+theorem fiberShift_smul_left (g : FundamentalGroup X x₀) {p q : UniversalCover x₀}
+    (h : p.proj = q.proj) :
+    fiberShift P (g • p) q = P (Additive.ofMul g) + fiberShift P p q := by
+  obtain ⟨g', rfl⟩ := proj_eq_iff_mem_orbit.mp h
+  rw [smul_smul, fiberShift_smul_self, fiberShift_smul_self, ofMul_mul, map_add]
+
+/-- The fiber shift of two continuous lifts of the same map is locally constant. -/
+theorem eventually_fiberShift_eq [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
     {Y : Type*} [TopologicalSpace Y] {s t : Y → UniversalCover x₀} {y : Y}
     (hs : ContinuousAt s y) (ht : ContinuousAt t y)
     (hst : ∀ᶠ y' in 𝓝 y, (s y').proj = (t y').proj) :
-    ∀ᶠ y' in 𝓝 y, fibreShift P (s y') (t y') = fibreShift P (s y) (t y) := by
+    ∀ᶠ y' in 𝓝 y, fiberShift P (s y') (t y') = fiberShift P (s y) (t y) := by
   obtain ⟨g, hg⟩ := proj_eq_iff_mem_orbit.mp hst.self_of_nhds
   -- `s` and `g • t` are lifts of the same map that agree at `y`; near `s y` the projection is
   -- injective, so they agree near `y`.
@@ -264,7 +276,7 @@ theorem eventually_fibreShift_eq [LocallyPathConnectedSpace X] [SemilocallySimpl
   have h₁ : ∀ᶠ y' in 𝓝 y, s y' ∈ U := hs (hU.mem_nhds hsU)
   have h₂ : ∀ᶠ y' in 𝓝 y, g • t y' ∈ U := hgt (by simpa [hg] using hU.mem_nhds hsU)
   filter_upwards [h₁, h₂, hst] with y' h₁ h₂ h₃
-  rw [← hinj h₂ h₁ (by rw [proj_smul, h₃]), ← hg, fibreShift_smul_self, fibreShift_smul_self]
+  rw [← hinj h₂ h₁ (by rw [proj_smul, h₃]), ← hg, fiberShift_smul_self, fiberShift_smul_self]
 
 variable (x₀) in
 /-- Over a neighbourhood of each point of a path-connected base, the universal cover has a
@@ -281,6 +293,6 @@ theorem exists_continuousOn_proj_eq [LocallyPathConnectedSpace X]
   · rw [he]
     exact e.right_inv hy
 
-end FibreShift
+end FiberShift
 
 end TauCeti.UniversalCover

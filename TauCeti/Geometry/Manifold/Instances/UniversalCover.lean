@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Group
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
 public import TauCeti.Geometry.Manifold.Instances.Comap
-public import Mathlib.Geometry.Manifold.PartitionOfUnity
+import Mathlib.Geometry.Manifold.PartitionOfUnity
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 
@@ -49,7 +49,7 @@ Lie group.
   fundamental group of a path-connected σ-compact manifold, a smooth function `F` on the universal
   cover with `F (g • p) = F p + P g`. It is the sum `∑ᶠ z, ρ_z (proj p) * P g_z(p)` over a smooth
   partition of unity `ρ_z` subordinate to local sections `s_z` of the projection, where
-  `g_z(p) • s_z (proj p) = p` (`TauCeti.UniversalCover.fibreShift`).
+  `g_z(p) • s_z (proj p) = p` (`TauCeti.UniversalCover.fiberShift`).
 
 ## References
 
@@ -176,20 +176,20 @@ theorem exists_contMDiff_smul_eq_add (P : Additive (FundamentalGroup M x₀) →
   obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ U hUo
     fun z _ ↦ mem_iUnion.mpr ⟨z, hzU z⟩
   -- The terms of the sum defining `F`, and the fact that they only matter over `U z`.
-  set T : M → UniversalCover x₀ → ℝ := fun z p ↦ ρ z p.proj * fibreShift P p (σ z p.proj)
+  set T : M → UniversalCover x₀ → ℝ := fun z p ↦ ρ z p.proj * fiberShift P p (σ z p.proj)
   have hmem {z : M} {y : M} (hy : ρ z y ≠ 0) : y ∈ U z := hρ z (subset_tsupport _ hy)
   refine ⟨fun p ↦ ∑ᶠ z, T z p, ?_, fun g p ↦ ?_⟩
   · refine contMDiff_finsum (fun z ↦ ?_) ?_
     · intro p
       by_cases hp : p.proj ∈ U z
-      · -- Over `U z` the fibre shift factor is locally constant.
+      · -- Over `U z` the fiber shift factor is locally constant.
         have hσ : ContinuousAt (fun p : UniversalCover x₀ ↦ σ z p.proj) p :=
           ((hσc z).continuousAt ((hUo z).mem_nhds hp)).comp (continuous_proj x₀).continuousAt
-        have hloc := eventually_fibreShift_eq P continuousAt_id hσ
+        have hloc := eventually_fiberShift_eq P continuousAt_id hσ
           (((hUo z).preimage (continuous_proj x₀)).eventually_mem hp |>.mono
             fun p' hp' ↦ (hσp z _ hp').symm)
         refine (((ρ z).contMDiff.comp (contMDiff_proj (I := I) x₀)).contMDiffAt.mul
-          (contMDiffAt_const (c := fibreShift P p (σ z p.proj)))).congr_of_eventuallyEq ?_
+          (contMDiffAt_const (c := fiberShift P p (σ z p.proj)))).congr_of_eventuallyEq ?_
         filter_upwards [hloc] with p' hp'
         simp only [id_eq] at hp'
         simp only [T, Pi.mul_apply, comp_apply, hp']
@@ -206,7 +206,7 @@ theorem exists_contMDiff_smul_eq_add (P : Additive (FundamentalGroup M x₀) →
     have hT (z : M) : T z (g • p) = ρ z p.proj * P (Additive.ofMul g) + T z p := by
       by_cases hz : ρ z p.proj = 0
       · simp [T, hz]
-      · simp only [T, proj_smul, fibreShift_smul_left P g (hσp z _ (hmem hz)).symm, mul_add]
+      · simp only [T, proj_smul, fiberShift_smul_left P g (hσp z _ (hmem hz)).symm, mul_add]
     have hfin (f : M → ℝ) (hf : ∀ z, ρ z p.proj = 0 → f z = 0) : (support f).Finite :=
       (ρ.locallyFinite.point_finite p.proj).subset fun z hz ↦ fun h ↦ hz (hf z h)
     simp only [hT]

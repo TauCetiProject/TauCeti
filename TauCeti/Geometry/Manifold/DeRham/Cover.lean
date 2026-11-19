@@ -12,8 +12,6 @@ public import TauCeti.Geometry.Manifold.Topology
 public import TauCeti.Geometry.Manifold.Instances.UniversalCover
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
-import TauCeti.Geometry.Manifold.DeRham.SimplyConnected
-import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # The period-kernel cover of a closed one-form
@@ -39,10 +37,11 @@ under the deck group, with `P` the period homomorphism on the deck group.
 
 The same holds on the universal cover itself: a primitive of the pulled-back form takes the value
 `f (mk x refl) + ∫_q θ` at the point represented by a path class `q`
-(`UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral`). Since the universal cover is
-simply connected, every closed form pulls back to an exact one there, and comparing primitives
-shows that integration commutes with continuous linear maps of the coefficients,
-`∫_γ L ∘ φ = L (∫_γ φ)` (`pathClassIntegral_mapCoeff`).
+(`UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral`).
+
+Integration commutes with continuous linear maps of the coefficients,
+`∫_γ L ∘ φ = L (∫_γ φ)` (`pathClassIntegral_mapCoeff`): applying `L` to the values of a lift of
+`γ` to the covering space of local primitives of `φ` gives a lift for `L ∘ φ`.
 
 The construction uses the subgroup-cover classification and the period exactness criterion.
 Our universal-cover action prepends inverse loops; consequently the deck transformation labelled
@@ -211,42 +210,48 @@ section MapCoeff
 variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {φ : RoughForm I M F 1} {x y : M}
 
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] [CompleteSpace F] [CompleteSpace G] in
+/-- A primitive of `φ` followed by `L` is a primitive of the form `L ∘ φ`. -/
+private theorem IsPrimitiveOn.mapCoeff (L : F →L[ℝ] G) {g : M → F} {U : Set M}
+    (hg : IsPrimitiveOn φ g U) : IsPrimitiveOn (RoughForm.mapCoeff L φ) (L ∘ g) U := by
+  refine ⟨hg.isOpen, L.mdifferentiable.comp_mdifferentiableOn hg.mdifferentiableOn,
+    fun y hy ↦ ?_⟩
+  have hgy := (hg.mdifferentiableOn y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy)
+  ext v
+  rw [RoughForm.mapCoeff_apply, ← hg.mextDeriv_eq y hy]
+  simp only [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_apply_eq_mfderiv_apply, mfderiv_comp y L.mdifferentiableAt hgy, L.mfderiv_eq]
+  -- `NormedSpace.fromTangentSpace` is the identity
+  rfl
+
 /-- **Integrals are natural in the coefficients.** A continuous linear map `L` of coefficient
-spaces carries the integral of a closed `C²` form `φ` along a path class to the integral of the
-form `L ∘ φ`. The proof integrates a primitive of the pullback of `φ` to the universal cover. -/
-theorem pathClassIntegral_mapCoeff (L : F →L[ℝ] G) (hφ : IsSmoothForm I 2 φ)
+spaces carries the integral of a closed `C¹` form `φ` along a path class to the integral of the
+form `L ∘ φ`. -/
+theorem pathClassIntegral_mapCoeff (L : F →L[ℝ] G) (hφ : IsSmoothForm I 1 φ)
     (hclosed : mextDeriv φ = 0) (γ : Path.Homotopic.Quotient x y) :
     pathClassIntegral (RoughForm.mapCoeff L φ) γ = L (pathClassIntegral φ γ) := by
-  let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
-  let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
-  have : T2Space (UniversalCover x) := (UniversalCover.isCoveringMap x).t2Space
-  have hproj := UniversalCover.contMDiff_proj (I := I) (n := 3) x
-  -- A `C²` primitive `f` of the pullback of `φ` to the simply connected universal cover.
-  obtain ⟨ψ, hψ, hdψ⟩ := exists_mextDeriv_eq_of_simplyConnectedSpace (r := 2) (by norm_num)
-    (hφ.mpullback hproj) (hφ.of_le (by norm_num) |>.mextDeriv_mpullback_eq_zero hclosed
-      (hproj.of_le (by norm_num)))
-  rw [RoughForm.eq_ofFunction ψ] at hψ hdψ
-  have hf := isSmoothForm_ofFunction_iff.mp hψ
-  -- `L ∘ f` is a primitive of the pullback of `L ∘ φ`.
-  have hLf : mextDeriv (RoughForm.ofFunction I (L ∘ fun p ↦ ψ p 0)) =
-      mpullback I I UniversalCover.proj (RoughForm.mapCoeff L φ) := by
-    have h : RoughForm.ofFunction I (L ∘ fun p ↦ ψ p 0) =
-        RoughForm.mapCoeff L (RoughForm.ofFunction I fun p ↦ ψ p 0) := by
-      ext p v
-      simp [RoughForm.ofFunction_apply]
-    rw [h, mextDeriv_mapCoeff L (hψ.of_le (by norm_num)), hdψ, mpullback_mapCoeff]
-  have hφL : IsSmoothForm I 1 (RoughForm.mapCoeff L φ) := (hφ.of_le (by norm_num)).mapCoeff L
-  have hφLc : mextDeriv (RoughForm.mapCoeff L φ) = 0 := by
-    rw [mextDeriv_mapCoeff L (hφ.of_le (by norm_num)), hclosed]
-    ext p v
-    simp
-  induction γ using Quotient.inductionOn with | h γ =>
-  have h₁ := UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral
-    (hφ.of_le (by norm_num)) hclosed hf hdψ (Path.Homotopic.Quotient.mk γ)
-  have h₂ := UniversalCover.apply_mk_eq_apply_mk_refl_add_pathClassIntegral hφL hφLc
-    (L.contDiff.contMDiff.comp hf) hLf (Path.Homotopic.Quotient.mk γ)
-  simp only [Function.comp_apply, h₁, map_add] at h₂
-  exact (add_left_cancel h₂).symm
+  induction γ with | mk γ =>
+  have hp := PrimitiveSpace.isCoveringMap_proj (r := 1) le_rfl hφ hclosed
+  -- A lift `Γ` of `γ` for `φ`; applying `L` to its values gives a lift `Λ` for `L ∘ φ`.
+  obtain ⟨Γ, hΓγ, -⟩ := hp.exists_path_lifts γ.toContinuousMap (PrimitiveSpace.graph φ 0 x)
+    (by simp)
+  have hΓγ' (t : unitInterval) : PrimitiveSpace.proj φ (Γ t) = γ t := congrFun hΓγ t
+  let Λ (t : unitInterval) : PrimitiveSpace (RoughForm.mapCoeff L φ) :=
+    PrimitiveSpace.graph _ (fun _ ↦ L (PrimitiveSpace.value φ (Γ t))) (γ t)
+  have hΛ : Continuous Λ := continuous_iff_continuousAt.mpr fun t₀ ↦ by
+    obtain ⟨g, -, U, hxU, hgU, c, hc⟩ :=
+      PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq le_rfl hφ hclosed
+        Γ.continuous.continuousAt (t := t₀)
+    refine PrimitiveSpace.continuousAt_of_eventually_value_eq
+      (by simp only [Λ, PrimitiveSpace.proj_graph]; exact γ.continuous.continuousAt)
+      ((hgU.mapCoeff L).add_const (L c)) (by simpa [Λ, hΓγ'] using hxU) ?_
+    filter_upwards [hc] with s hcs
+    simp [Λ, hcs.2, hΓγ']
+  rw [pathClassIntegral_mk_eq_sub (hφ.mapCoeff L)
+      (by rw [mextDeriv_mapCoeff L hφ, hclosed, RoughForm.mapCoeff_zero]) hΛ
+      fun t ↦ PrimitiveSpace.proj_graph (γ t),
+    pathClassIntegral_mk_eq_sub hφ hclosed Γ.continuous hΓγ']
+  simp [Λ]
 
 end MapCoeff
 
