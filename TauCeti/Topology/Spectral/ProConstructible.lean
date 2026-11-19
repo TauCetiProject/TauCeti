@@ -45,7 +45,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 ## Main results
 
 * `IsOpen.isOpen_constructibleTopology` — on a prespectral space the constructible
-  topology refines the given one; hence `IsClosed.isProConstructible`.
+  topology refines the given one; hence `IsClosed.isProConstructible`, and on a T₀ prespectral
+  space `TauCeti.isProConstructible_singleton`.
 * `IsCompact.isProConstructible` — a quasi-compact open subset is pro-constructible. It is
   in fact clopen for the constructible topology, which is what makes the two previous families
   interact.
@@ -187,6 +188,13 @@ theorem isProConstructible_setOfPred_specializes [PrespectralSpace X] (x : X) :
         (x := y) (y := x)
   rw [heq]
   exact IsProConstructible.sInter fun U hU ↦ hU.2.1.isProConstructible hU.1
+
+/-- Every singleton in a T₀ prespectral space is pro-constructible, as the constructible topology
+is Hausdorff. -/
+@[simp]
+theorem isProConstructible_singleton [T0Space X] [PrespectralSpace X] (x : X) :
+    IsProConstructible ({x} : Set X) :=
+  (Set.subsingleton_singleton.preimage (WithTopology.ofTopology_injective _)).isClosed
 
 /-! ### Functoriality -/
 

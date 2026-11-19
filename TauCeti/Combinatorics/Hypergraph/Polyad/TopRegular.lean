@@ -55,6 +55,9 @@ parameter worsened by a factor depending only on the relative size of `P'`.
   positive rank implies vertex-box regularity.
 * `TauCeti.Colored3Graph.isTopRegularOverPolyad_const`: a constant coloring is top-regular over
   every polyad, at every rank and every positive parameter.
+* `TauCeti.Colored3Graph.isTopRegularOverPolyad_of_card_support_le_one`: every coloring is
+  top-regular over any polyad of support cardinality at most `1`, at every rank and positive
+  parameter.
 
 ## References
 
@@ -247,6 +250,25 @@ theorem isTopRegularOverPolyad_const (c₀ : κ) (hδ : 0 < δ) :
     · subst hc
       simpa [relDensityOn_const_self hU, relDensityOn_const_self hP] using hδ.le
     · simpa [relDensityOn_const_of_ne hc] using hδ.le
+
+variable (H P r) in
+/-- Every coloring is `(δ, r)`-top-regular over any polyad whose support has cardinality at most
+`1`, for every positive parameter `δ` and every rank `r`: any nonempty subpolyad union equals the
+whole support. -/
+theorem isTopRegularOverPolyad_of_card_support_le_one (hP : #P.support ≤ 1) (hδ : 0 < δ) :
+    H.IsTopRegularOverPolyad P δ r := by
+  intro c Q hQ
+  obtain hP0 | hPne := P.support.eq_empty_or_nonempty
+  · have hU : unionSupport Q = ∅ := subset_empty.1 (hP0 ▸ unionSupport_subset Q)
+    rw [relativeDensity_of_support_eq_empty _ _ hP0, hU]
+    simpa using hδ.le
+  · have hUpos : 0 < #(unionSupport Q) := by
+      rw [← Nat.cast_pos (α := ℝ)]
+      exact (mul_pos hδ (Nat.cast_pos.2 hPne.card_pos)).trans_le hQ
+    have hUeq : unionSupport Q = P.support :=
+      eq_of_subset_of_card_le (unionSupport_subset Q) (hP.trans hUpos)
+    rw [relativeDensity_def, hUeq, sub_self, abs_zero]
+    exact hδ.le
 
 variable (H P) in
 /-- `H` is `ε`-vertex-box-regular over the polyad `P` when, for every top color `c` and all

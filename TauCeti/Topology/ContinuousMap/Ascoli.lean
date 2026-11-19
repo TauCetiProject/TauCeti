@@ -45,6 +45,9 @@ and adds companion statements used for compactness and finite approximation of f
 * An equicontinuous family with pointwise totally bounded values has finite uniform
   approximations on compact sets, with approximants drawn from the family itself.
 * Conversely, on a weakly locally compact domain, a compact subset of `C(X, Y)` is equicontinuous.
+* On an open subset `U` of a second-countable locally compact space, a sequence that is
+  equicontinuous on `U` with pointwise relatively compact values has a subsequence converging
+  locally uniformly on `U`.
 * A sequence of continuous `1`-periodic loops in a compact subset of a pseudometric space, with a
   common modulus of continuity on `[0, 1]`, has a subsequence converging uniformly on `ℝ`. In
   particular the `1`-periodic `L`-Lipschitz loops in a compact set form a compact subset of
@@ -76,6 +79,8 @@ endpoints `eₙ` stay at distance at least `1` from each other
   total boundedness of the values at the points of a dense set suffices.
 * `IsCompact.equicontinuous`: a compact set of continuous maps on a weakly locally compact space
   is equicontinuous.
+* `EquicontinuousOn.exists_strictMono_tendstoLocallyUniformlyOn`: a locally uniformly convergent
+  subsequence of a sequence that is equicontinuous on an open set.
 * `TauCeti.exists_tendstoUniformly_subseq_of_periodic_of_modulus`: Arzelà–Ascoli for periodic
   loops with a common modulus of continuity.
 * `TauCeti.isCompact_setOf_periodic_lipschitzWith`: the `1`-periodic `L`-Lipschitz loops in a
@@ -84,7 +89,7 @@ endpoints `eₙ` stay at distance at least `1` from each other
   are uniformly Lipschitz with values in a compact set on exhausting bands of the plane.
 * `TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn`: an equicontinuous
   sequence of maps on an open subset of a proper space, with values at each point in a compact
-  set, has a locally uniformly convergent subsequence.
+  set, has a locally uniformly convergent subsequence, with a limit continuous on that subset.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_of_lipschitzOnWith_closedBall`: Arzelà–Ascoli
   for uniformly Lipschitz maps with values in a compact set on exhausting discs of the plane.
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
@@ -231,6 +236,27 @@ theorem IsCompact.equicontinuous [WeaklyLocallyCompactSpace X] [UniformSpace Y]
   obtain ⟨g, hg, hfg⟩ := mem_iUnion₂.mp (hcover hf)
   exact hVU ⟨g x', ⟨g x, hfg x (mem_of_mem_nhds hNx), hx' g hg⟩, hVsymm.symm _ _ (hfg x' hx'N)⟩
 
+/-- **Arzelà–Ascoli on an open set.** On an open subset `U` of a second-countable locally compact
+space, a sequence of maps into a uniform space with countably generated uniformity, for instance a
+pseudometric space, that is equicontinuous on `U`, with values at each point of `U` in a common
+compact set, has a subsequence converging locally uniformly on `U`. -/
+theorem EquicontinuousOn.exists_strictMono_tendstoLocallyUniformlyOn [LocallyCompactSpace X]
+    [SecondCountableTopology X] [UniformSpace Y] [(𝓤 Y).IsCountablyGenerated] {u : ℕ → X → Y}
+    {U : Set X} (hequi : EquicontinuousOn u U) (hU : IsOpen U)
+    (hQ : ∀ x ∈ U, ∃ Q, IsCompact Q ∧ ∀ n, u n x ∈ Q) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ v : X → Y,
+      TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop U := by
+  have : LocallyCompactSpace U := hU.locallyCompactSpace
+  -- A subsequence of the restrictions converges in `C(U, Y)`, that is, locally uniformly on `U`.
+  set f : ℕ → C(U, Y) := fun n ↦ ⟨U.domRestrict (u n), (hequi.continuousOn n).domRestrict⟩
+  obtain ⟨a, -, φ, hφ, hconv⟩ := (ArzelaAscoli.isCompact_closure_range_of_equicontinuous (f := f)
+    ((equicontinuous_restrict_iff _).2 hequi) fun x ↦ hQ x x.2).tendsto_subseq
+    fun n ↦ subset_closure (mem_range_self n)
+  refine ⟨φ, hφ, Function.extend Subtype.val a (u 0), ?_⟩
+  rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe,
+    Function.extend_comp Subtype.val_injective]
+  exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.1 hconv
+
 namespace TauCeti
 
 open Function
@@ -304,20 +330,8 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn {X M : T
     (hbd : ∀ x ∈ Ω, ∃ Q, IsCompact Q ∧ ∀ n, u n x ∈ Q) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : X → M, ContinuousOn g Ω ∧
       TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) g atTop Ω := by
-  classical
-  let : LocallyCompactSpace Ω := hΩ.locallyCompactSpace
-  let U : ℕ → C(Ω, M) := fun n ↦ ⟨Ω.domRestrict (u n), (hu.continuousOn n).domRestrict⟩
-  obtain ⟨a, -, φ, hφ, hlim⟩ := (ArzelaAscoli.isCompact_closure_range_of_equicontinuous
-    ((equicontinuous_restrict_iff _).mpr hu) fun x : Ω ↦ hbd x x.2).tendsto_subseq
-    (x := U) fun n ↦ subset_closure (mem_range_self n)
-  -- Extend the limit off `Ω` by the first map, only to express convergence on a subset of `X`.
-  let g : X → M := fun x ↦ if hx : x ∈ Ω then a ⟨x, hx⟩ else u 0 x
-  have hg : g ∘ (Subtype.val : Ω → X) = fun x : Ω ↦ a x := by
-    funext x
-    simp [g, x.2]
-  have hconv : TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) g atTop Ω := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hg]
-    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hlim
+  -- The limit of a locally uniformly convergent sequence of continuous maps is continuous.
+  obtain ⟨φ, hφ, g, hconv⟩ := hu.exists_strictMono_tendstoLocallyUniformlyOn hΩ hbd
   exact ⟨φ, hφ, g, hconv.continuousOn
     (Eventually.of_forall fun n ↦ hu.continuousOn (φ n)).frequently, hconv⟩
 
