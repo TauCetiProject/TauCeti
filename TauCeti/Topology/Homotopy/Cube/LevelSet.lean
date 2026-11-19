@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Order.ProjIcc
-public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
-public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Pair
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 
 /-!
 # Zero level sets of monotone families on a cube deform onto their diagonal roots
@@ -23,9 +22,10 @@ that the zero level set
 deforms onto the graph of its *diagonal root*, fibrewise over `X`.
 
 * For each `x` there is exactly one point `t(x) · 1` of the diagonal of the cube with
-  `G x (t(x) · 1) = 0` (`TauCeti.cubeDiagonalRoot G x`), and it depends continuously on `x`
-  (`TauCeti.continuous_cubeDiagonalRoot`). When `G x 0 < 0 < G x 1`, it lies in the open cube
-  (`TauCeti.cubeDiagonalRoot_apply_mem_Ioo`).
+  `G x (t(x) · 1) = 0` (`TauCeti.cubeDiagonalRoot G x`, with `t(x)` being
+  `TauCeti.cubeDiagonalRootParam G x`), and it depends continuously on `x`
+  (`TauCeti.continuous_cubeDiagonalRoot`, `TauCeti.continuous_cubeDiagonalRootParam`). When
+  `G x 0 < 0 < G x 1`, it lies in the open cube (`TauCeti.cubeDiagonalRootParam_mem_Ioo`).
 * For every point `a` of the cube, the shifts `clamp(a + τ · 1)` of `a` along the diagonal,
   clamped back into the cube (`TauCeti.clampShift a τ`), increase with `τ`, so `G x` vanishes on
   exactly one of them (`TauCeti.cubeLevelPoint G x a`). Although `τ` may be non-unique, at a plateau
@@ -42,8 +42,8 @@ deforms onto the graph of its *diagonal root*, fibrewise over `X`.
   the section is a homotopy equivalence `X ≃ₕ Z` (`TauCeti.cubeLevelSetHomotopyEquiv`).
 * Since the equivalence is fibrewise, for any `A ⊆ X` the projection is also a homotopy
   equivalence of pairs `(Z, Z ∩ (A × [0, 1]^ι)) → (X, A)`, so it induces isomorphisms on relative
-  singular homology
-  (`TauCeti.isIso_singularHomologyMap_preimagePairMap_cubeLevelSetFiberHomotopyEquiv`).
+  singular homology (`TauCeti.FiberHomotopyEquiv.isIso_singularHomologyMap_preimagePairMap`
+  applied to `TauCeti.cubeLevelSetFiberHomotopyEquiv`).
 
 This is meant for the pair deformation in the isolating-block proof of the Poincaré–Birkhoff
 theorem by generating functions. There `x` collects the base point on the circle and the negative
@@ -217,10 +217,12 @@ theorem continuous_cubeLevelPoint [TopologicalSpace X] (hG : Continuous (uncurry
 
 /-! ### The diagonal root -/
 
-/-- The *diagonal root* of `G x`: the point `t · 1` of the diagonal of the cube at which `G x`
-vanishes, the level point of the corner `0`. It is a constant vector
-(`TauCeti.exists_cubeDiagonalRoot_eq_const`) and the only one on which a strictly increasing `G x`
-vanishes (`TauCeti.cubeDiagonalRoot_eq_of_apply_eq_zero`). -/
+/-- The *diagonal root* of `G x`: the level point of the corner `0`. It is a point
+`t · 1` of the diagonal of the cube (`TauCeti.cubeDiagonalRoot_eq_const`, with
+`t = TauCeti.cubeDiagonalRootParam G x`). When `G x` is continuous with `G x 0 ≤ 0 ≤ G x 1`,
+`G x` vanishes there (`TauCeti.apply_cubeDiagonalRoot_eq_zero`), and when `G x` is moreover
+strictly increasing it is the only point of the diagonal on which `G x` vanishes
+(`TauCeti.cubeDiagonalRoot_eq_of_apply_eq_zero`). -/
 def cubeDiagonalRoot (G : X → (ι → I) → ℝ) (x : X) : ι → I :=
   cubeLevelPoint G x 0
 
@@ -228,12 +230,23 @@ lemma cubeDiagonalRoot_def (G : X → (ι → I) → ℝ) (x : X) :
     cubeDiagonalRoot G x = cubeLevelPoint G x 0 :=
   (rfl)
 
-/-- The diagonal root lies on the diagonal of the cube. -/
-theorem exists_cubeDiagonalRoot_eq_const (G : X → (ι → I) → ℝ) (x : X) :
-    ∃ t : I, cubeDiagonalRoot G x = fun _ ↦ t := by
-  obtain ⟨τ, -, h⟩ := exists_cubeLevelPoint_eq_clampShift G x 0
-  exact ⟨projIcc 0 1 zero_le_one τ, by rw [cubeDiagonalRoot_def, h, clampShift_zero_left]⟩
+/-- The *diagonal root parameter* `t(x)` of `G x`: the common value of the coordinates of the
+diagonal root `t(x) · 1` (`TauCeti.cubeDiagonalRoot_eq_const`). -/
+def cubeDiagonalRootParam (G : X → (ι → I) → ℝ) (x : X) : I :=
+  projIcc 0 1 zero_le_one (exists_cubeLevelPoint_eq_clampShift G x 0).choose
 
+/-- The diagonal root lies on the diagonal of the cube. -/
+theorem cubeDiagonalRoot_eq_const (G : X → (ι → I) → ℝ) (x : X) :
+    cubeDiagonalRoot G x = fun _ ↦ cubeDiagonalRootParam G x := by
+  rw [cubeDiagonalRoot_def, (exists_cubeLevelPoint_eq_clampShift G x 0).choose_spec.2,
+    clampShift_zero_left, cubeDiagonalRootParam]
+
+@[simp]
+lemma cubeDiagonalRoot_apply (G : X → (ι → I) → ℝ) (x : X) (i : ι) :
+    cubeDiagonalRoot G x i = cubeDiagonalRootParam G x := by
+  rw [cubeDiagonalRoot_eq_const]
+
+/-- If `G x` is continuous with `G x 0 ≤ 0 ≤ G x 1`, it vanishes at its diagonal root. -/
 theorem apply_cubeDiagonalRoot_eq_zero (hG : Continuous (G x)) (h₀ : G x 0 ≤ 0)
     (h₁ : 0 ≤ G x 1) : G x (cubeDiagonalRoot G x) = 0 :=
   apply_cubeLevelPoint_eq_zero hG h₀ h₁ 0
@@ -252,12 +265,20 @@ theorem cubeDiagonalRoot_eq_of_apply_eq_zero (hmono : StrictMono (G x)) {t : I}
     rw [clampShift_zero_left, projIcc_val]
   rw [cubeDiagonalRoot_def, cubeLevelPoint_eq_of_apply_clampShift_eq_zero hmono (ht ▸ h), ht]
 
-/-- When `G x 0 < 0 < G x 1`, the diagonal root lies in the open cube. -/
-theorem cubeDiagonalRoot_apply_mem_Ioo (hG : Continuous (G x)) (h₀ : G x 0 < 0) (h₁ : 0 < G x 1)
-    (i : ι) : (cubeDiagonalRoot G x i : ℝ) ∈ Ioo 0 1 := by
-  obtain ⟨t, ht⟩ := exists_cubeDiagonalRoot_eq_const G x
+/-- **Uniqueness of the diagonal root parameter.** If the cube is nonempty, a constant vector
+`t · 1` on which the strictly increasing function `G x` vanishes has `t` the diagonal root
+parameter. -/
+theorem cubeDiagonalRootParam_eq_of_apply_eq_zero [Nonempty ι] (hmono : StrictMono (G x)) {t : I}
+    (h : G x (fun _ ↦ t) = 0) : cubeDiagonalRootParam G x = t := by
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  rw [← cubeDiagonalRoot_apply G x i, cubeDiagonalRoot_eq_of_apply_eq_zero hmono h]
+
+/-- When `G x 0 < 0 < G x 1`, the diagonal root parameter lies in the open interval `(0, 1)`. -/
+theorem cubeDiagonalRootParam_mem_Ioo (hG : Continuous (G x)) (h₀ : G x 0 < 0) (h₁ : 0 < G x 1) :
+    (cubeDiagonalRootParam G x : ℝ) ∈ Ioo 0 1 := by
   have hroot := apply_cubeDiagonalRoot_eq_zero hG h₀.le h₁.le
-  rw [ht] at hroot ⊢
+  rw [cubeDiagonalRoot_eq_const] at hroot
+  set t := cubeDiagonalRootParam G x
   refine ⟨lt_of_le_of_ne t.2.1 fun h ↦ h₀.ne ?_, lt_of_le_of_ne t.2.2 fun h ↦ h₁.ne' ?_⟩
   · have : (fun _ ↦ t : ι → I) = 0 := funext fun _ ↦ Subtype.ext h.symm
     rwa [this] at hroot
@@ -269,6 +290,15 @@ theorem continuous_cubeDiagonalRoot [TopologicalSpace X] (hG : Continuous (uncur
     (hmono : ∀ x, StrictMono (G x)) (h₀ : ∀ x, G x 0 ≤ 0) (h₁ : ∀ x, 0 ≤ G x 1) :
     Continuous (cubeDiagonalRoot G) :=
   (continuous_cubeLevelPoint hG hmono h₀ h₁).comp (continuous_id.prodMk continuous_const)
+
+/-- If the cube is nonempty, the diagonal root parameter depends continuously on the
+parameter. -/
+theorem continuous_cubeDiagonalRootParam [TopologicalSpace X] [Nonempty ι]
+    (hG : Continuous (uncurry G)) (hmono : ∀ x, StrictMono (G x)) (h₀ : ∀ x, G x 0 ≤ 0)
+    (h₁ : ∀ x, 0 ≤ G x 1) : Continuous (cubeDiagonalRootParam G) := by
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  exact ((continuous_apply i).comp (continuous_cubeDiagonalRoot hG hmono h₀ h₁)).congr
+    fun x ↦ cubeDiagonalRoot_apply G x i
 
 /-! ### The deformation of the zero level set -/
 
@@ -309,6 +339,27 @@ lemma coe_cubeLevelSetSection_apply (x : X) :
 private def segmentToRoot (G : X → (ι → I) → ℝ) (s : I) (p : X × (ι → I)) : ι → I :=
   fun i ↦ Icc.convexComb (p.2 i) (cubeDiagonalRoot G p.1 i) s
 
+omit [TopologicalSpace X] in
+@[simp]
+private lemma segmentToRoot_zero (p : X × (ι → I)) : segmentToRoot G 0 p = p.2 := by
+  ext i
+  simp [segmentToRoot]
+
+omit [TopologicalSpace X] in
+@[simp]
+private lemma segmentToRoot_one (p : X × (ι → I)) :
+    segmentToRoot G 1 p = cubeDiagonalRoot G p.1 := by
+  ext i
+  simp [segmentToRoot]
+
+omit [TopologicalSpace X] in
+/-- The segment from a diagonal root to itself is constant. -/
+@[simp]
+private lemma segmentToRoot_cubeDiagonalRoot (s : I) (x : X) :
+    segmentToRoot G s (x, cubeDiagonalRoot G x) = cubeDiagonalRoot G x := by
+  ext i
+  simp [segmentToRoot, Icc.convexComb_eq]
+
 private lemma continuous_segmentToRoot (hd : Continuous (cubeDiagonalRoot G)) :
     Continuous fun q : I × (X × (ι → I)) ↦ segmentToRoot G q.1 q.2 := by
   refine continuous_pi fun i ↦ continuous_induced_rng.2 ?_
@@ -334,23 +385,14 @@ def cubeLevelSetHomotopy :
           (by fun_prop : Continuous fun q : I × cubeLevelSet G ↦ (q.1, (q.2 : X × (ι → I))))))
   map_zero_left p := by
     refine Subtype.ext (Prod.ext rfl ?_)
-    have hseg : segmentToRoot G 0 p.1 = p.1.2 := by
-      ext i
-      simp [segmentToRoot]
-    simpa [hseg] using cubeLevelPoint_eq_self (hmono _) p.2
+    simpa using cubeLevelPoint_eq_self (hmono _) p.2
   map_one_left p := by
     refine Subtype.ext (Prod.ext rfl ?_)
-    have hseg : segmentToRoot G 1 p.1 = cubeDiagonalRoot G p.1.1 := by
-      ext i
-      simp [segmentToRoot]
-    simpa [hseg] using cubeLevelPoint_cubeDiagonalRoot (hG.uncurry_left _) (hmono _) (h₀ _) (h₁ _)
+    simpa using cubeLevelPoint_cubeDiagonalRoot (hG.uncurry_left _) (hmono _) (h₀ _) (h₁ _)
   prop' s := by
     rintro _ ⟨x, rfl⟩
     refine Subtype.ext (Prod.ext rfl ?_)
-    have hseg : segmentToRoot G s (x, cubeDiagonalRoot G x) = cubeDiagonalRoot G x := by
-      ext i
-      simp [segmentToRoot, Icc.convexComb_eq]
-    simpa [hseg] using cubeLevelPoint_cubeDiagonalRoot (hG.uncurry_left _) (hmono _) (h₀ _) (h₁ _)
+    simpa using cubeLevelPoint_cubeDiagonalRoot (hG.uncurry_left _) (hmono _) (h₀ _) (h₁ _)
 
 /-- The deformation of the zero level set preserves the parameter `x`. -/
 @[simp]
@@ -366,12 +408,6 @@ theorem cubeLevelSetHomotopy_apply_snd (s : I) (p : cubeLevelSet G) :
       cubeLevelPoint G p.1.1 fun i ↦ Icc.convexComb (p.1.2 i) (cubeDiagonalRoot G p.1.1 i) s :=
   (rfl)
 
-/-- The deformation of the zero level set moves points only within their fibre, so it commutes
-with the projection to the parameter space. -/
-theorem cubeLevelSetProj_cubeLevelSetHomotopy (s : I) (p : cubeLevelSet G) :
-    cubeLevelSetProj G (cubeLevelSetHomotopy hG hmono h₀ h₁ (s, p)) = cubeLevelSetProj G p :=
-  (rfl)
-
 /-- **The zero level set is fibre homotopy equivalent to the parameter space** over `X`: the
 projection `(x, u) ↦ x` and the section through the diagonal roots are inverse fibre homotopy
 equivalences, by the fibrewise deformation onto the diagonal roots
@@ -382,7 +418,8 @@ def cubeLevelSetFiberHomotopyEquiv :
   invFun := cubeLevelSetSection hG hmono h₀ h₁
   comp_toFun := rfl
   comp_invFun := rfl
-  left_inv := ⟨{ (cubeLevelSetHomotopy hG hmono h₀ h₁).toHomotopy.symm with prop' := fun _ ↦ rfl }⟩
+  left_inv := ⟨{ (cubeLevelSetHomotopy hG hmono h₀ h₁).toHomotopy.symm with
+    prop' t := ContinuousMap.ext fun p ↦ cubeLevelSetHomotopy_apply_fst hG hmono h₀ h₁ (σ t) p }⟩
   right_inv := .refl _ rfl
 
 @[simp]
@@ -416,32 +453,5 @@ lemma cubeLevelSetHomotopyEquiv_invFun :
       rw [FiberHomotopyEquiv.symm_invFun, cubeLevelSetFiberHomotopyEquiv_toFun]
 
 end Cube
-
-/-! ### Pairs over a subspace of the parameters -/
-
-section Pair
-
-open CategoryTheory
-
-variable {X ι : Type u} [TopologicalSpace X] {G : X → (ι → I) → ℝ}
-  (hG : Continuous (uncurry G)) (hmono : ∀ x, StrictMono (G x)) (h₀ : ∀ x, G x 0 ≤ 0)
-  (h₁ : ∀ x, 0 ≤ G x 1) (A : Set X)
-
-/-- **The projection of pairs `(Z, Z ∩ (A × [0, 1]^ι)) ⟶ (X, A)` induces isomorphisms on relative
-singular homology** in every degree: the fibre homotopy equivalence of the zero level set `Z`
-with the parameter space restricts to a homotopy equivalence of these pairs. -/
-theorem isIso_singularHomologyMap_preimagePairMap_cubeLevelSetFiberHomotopyEquiv {C : Type*}
-    [Category C] [Limits.HasCoproducts.{u} C] [Preadditive C] [CategoryWithHomology C] (R : C)
-    (n : ℕ) :
-    IsIso ((TopPair.ofSubset (X := TopCat.of (cubeLevelSet G))
-      (cubeLevelSetProj G ⁻¹' A)).singularHomologyMap
-        ((cubeLevelSetFiberHomotopyEquiv hG hmono h₀ h₁).preimagePairMap A) R n) := by
-  set Φ := cubeLevelSetFiberHomotopyEquiv hG hmono h₀ h₁
-  -- The homotopy for the other composite comes from `Φ.symm`, whose `symm` is `Φ` again.
-  have H' := Φ.symm.preimagePairCompHomotopy A
-  rw [FiberHomotopyEquiv.symm_symm] at H'
-  exact TopPair.isIso_singularHomologyMap _ _ (Φ.preimagePairCompHomotopy A) H' R n
-
-end Pair
 
 end TauCeti
