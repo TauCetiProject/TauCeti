@@ -60,6 +60,8 @@ Borel measurable structure on the scalar field.
   cardinality of `ι`.
 * `EuclideanSpace.exists_norm_eq_and_inner_eq`: consequently a finite family `ι → E` of vectors has
   a copy in `EuclideanSpace 𝕜 ι` with the same norms and mutual inner products.
+* `EuclideanSpace.sumEquivProd_apply_fst` and `EuclideanSpace.sumEquivProd_apply_snd`: the
+  coordinates of the two blocks of `EuclideanSpace.sumEquivProd`.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
 * `EuclideanSpace.take`: the first `m` coordinates of a point of `𝕜ⁿ`, a left inverse of the
@@ -347,6 +349,26 @@ theorem exists_norm_eq_and_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerPro
   refine ⟨fun i ↦ L ⟨w i, hw i⟩, fun i ↦ ?_, fun i j ↦ ?_⟩
   · rw [L.norm_map, ← Submodule.norm_coe]
   · rw [L.inner_map_map, Submodule.coe_inner]
+
+section sumEquivProd
+
+/-! `EuclideanSpace.sumEquivProd` is a reducible composite, so `simp` unfolds it through
+`ContinuousLinearEquiv.trans_apply` before these lemmas could fire; they are not `@[simp]` and
+are meant for `rw` and `simp only`. -/
+
+variable {κ : Type*} [Fintype κ]
+
+/-- The first block of `EuclideanSpace.sumEquivProd x` reads the `Sum.inl` coordinates of `x`. -/
+theorem sumEquivProd_apply_fst (x : EuclideanSpace 𝕜 (ι ⊕ κ)) (i : ι) :
+    (sumEquivProd x).1 i = x (Sum.inl i) :=
+  rfl
+
+/-- The second block of `EuclideanSpace.sumEquivProd x` reads the `Sum.inr` coordinates of `x`. -/
+theorem sumEquivProd_apply_snd (x : EuclideanSpace 𝕜 (ι ⊕ κ)) (k : κ) :
+    (sumEquivProd x).2 k = x (Sum.inr k) :=
+  rfl
+
+end sumEquivProd
 
 section sumCompl
 
