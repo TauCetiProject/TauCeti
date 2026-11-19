@@ -18,7 +18,9 @@ import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -161,14 +163,6 @@ theorem spectralAngleSum_conj {P Q : Matrix n n ℂ} (hPQ : P * Q = 1) (hQP : Q 
   have h := charpoly_units_conj (⟨P, Q, hPQ, hQP⟩ : (Matrix n n ℂ)ˣ) W
   rw [Units.val_mk, inv_eq_left_inv hQP] at h
   rw [spectralAngleSum, spectralAngleSum, h]
-
-/-- A point `z ≠ 1` of the unit circle has `-z` in the slit plane: `-z` is a nonpositive real
-number only if `z` is a nonnegative real number of modulus one, that is, `z = 1`. -/
-private theorem neg_mem_slitPlane_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) (hz1 : z ≠ 1) :
-    -z ∈ slitPlane := by
-  rw [mem_slitPlane_iff_not_le_zero, neg_nonpos]
-  intro h
-  exact hz1 (by rw [eq_coe_norm_of_nonneg h, hz, ofReal_one])
 
 /-- On the unit circle, complex conjugation negates the angle offset: away from `1`, the number
 `-z` lies in the slit plane, where conjugation negates the argument. -/

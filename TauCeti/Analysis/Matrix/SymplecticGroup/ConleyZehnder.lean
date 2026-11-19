@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
+
 /-!
 # The Conley–Zehnder index of a path of symplectic matrices
 

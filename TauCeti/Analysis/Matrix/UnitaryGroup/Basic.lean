@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
 # `U(n) = Circle · SU(n)`
@@ -143,14 +144,6 @@ theorem exists_circle_smul_mem_specialUnitaryGroup (U : unitaryGroup n ℂ) :
     mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero), Circle.exp_neg,
     Circle.coe_inv, hθ]
   exact inv_mul_cancel₀ (Circle.coe_ne_zero _)
-
-/-- Conjugating the entries of a matrix is mapping it through the ring homomorphism
-`starRingEnd α`, so that lemmas about ring homomorphisms, such as `Matrix.map_mul` and
-`RingHom.map_det`, apply to it. -/
-theorem map_star_eq_map_starRingEnd {l m α : Type*} [CommSemiring α] [StarRing α]
-    (M : Matrix l m α) : M.map star = M.map (starRingEnd α) := by
-  ext
-  exact (starRingEnd_apply _).symm
 
 end Matrix
 

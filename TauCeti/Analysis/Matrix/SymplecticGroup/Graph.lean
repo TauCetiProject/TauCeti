@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.SymplecticGroup.Maslov
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
 # The graph of a loop of symplectic matrices and its Maslov index

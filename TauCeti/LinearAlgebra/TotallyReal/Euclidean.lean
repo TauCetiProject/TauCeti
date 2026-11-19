@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
 # The real subspace of `ℂⁿ` and its images under matrices
@@ -32,8 +33,6 @@ symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
   invertible `M` up to right multiplication by an invertible real matrix.
 * `Matrix.exists_mem_orthogonalGroup_eq_mul_map_ofReal`: for frames orthonormal for `Re ⟪·, ·⟫`,
   that real matrix is orthogonal.
-* `Matrix.map_star_mulVec_of_star_eq`: on a vector fixed by `star`, such as a real vector, the
-  matrix `M.map star` takes the conjugate of the value of `M`.
 * `Matrix.realImage_map_star_eq_of_realImage_eq`: conjugating the entries of `M` conjugates
   `M ℝⁿ`, so the image of `ℝⁿ` under `M.map star` depends only on `M ℝⁿ`.
 * `Matrix.GeneralLinearGroup.realImage_ofEuclideanCLE`: the image of `ℝⁿ` under the matrix of a
@@ -178,13 +177,6 @@ theorem realImage_map_ofReal {N : Matrix n n ℝ} (hN : IsUnit N) :
 theorem realImage_mul_map_ofReal (M : Matrix n n ℂ) {N : Matrix n n ℝ} (hN : IsUnit N) :
     (M * N.map ((↑) : ℝ → ℂ)).realImage = M.realImage := by
   rw [realImage_mul, realImage_map_ofReal hN, realImage]
-
-omit [DecidableEq n] in
-/-- On a vector fixed by `star`, such as a real vector of `ℂⁿ`, the matrix `M.map star` with
-conjugated entries takes the conjugate value `star (M v)`. -/
-theorem map_star_mulVec_of_star_eq {m α : Type*} [CommSemiring α] [StarRing α]
-    (M : Matrix m n α) {v : n → α} (hv : star v = v) : M.map star *ᵥ v = star (M *ᵥ v) := by
-  rw [star_mulVec, hv, conjTranspose, transpose_map, vecMul_transpose]
 
 /-- **Conjugating the entries preserves equality of the images of `ℝⁿ`.** On a real vector `x`,
 the matrix `M.map star` takes the value `conj (M x)`, so `(M.map star) ℝⁿ` is the conjugate of
