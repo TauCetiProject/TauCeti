@@ -113,6 +113,7 @@ theorem mem_of_conj_subgroupB_le {P : Subgroup G} (hB : T.subgroupB ≤ P) {g : 
 `g P_J g⁻¹ ≤ P_{J'}` holds exactly when `J ⊆ J'` and `g ∈ P_{J'}`. For `J = ∅` this says that
 `g B g⁻¹ ≤ P_{J'}` forces `g ∈ P_{J'}`; applied to `g` and `g⁻¹` it says that conjugate standard
 parabolics are equal (Bourbaki, Ch. IV §2, nos. 5--6; Borel--Tits 1965, Corollaire 5.18 (ii)). -/
+@[simp]
 theorem conj_smul_standardParabolic_le_iff (J J' : Set T.simple) (g : G) :
     MulAut.conj g • T.standardParabolic J ≤ T.standardParabolic J' ↔
       J ⊆ J' ∧ g ∈ T.standardParabolic J' := by
@@ -130,6 +131,7 @@ theorem conj_smul_standardParabolic_le_iff (J J' : Set T.simple) (g : G) :
 
 /-- The elementwise form of `conj_smul_standardParabolic_le_iff`: `g p g⁻¹ ∈ P_{J'}` for every
 `p ∈ P_J` exactly when `J ⊆ J'` and `g ∈ P_{J'}`. -/
+@[simp]
 theorem conj_standardParabolic_le_iff (J J' : Set T.simple) (g : G) :
     (∀ p ∈ T.standardParabolic J, g * p * g⁻¹ ∈ T.standardParabolic J') ↔
       J ⊆ J' ∧ g ∈ T.standardParabolic J' := by
@@ -140,6 +142,7 @@ theorem conj_standardParabolic_le_iff (J J' : Set T.simple) (g : G) :
 
 /-- **Conjugate standard parabolics are equal.** For subsets `J, J'` of the simple reflections,
 `g P_J g⁻¹ = P_{J'}` holds exactly when `J = J'` and `g ∈ P_J`. -/
+@[simp]
 theorem conj_standardParabolic_eq_iff (J J' : Set T.simple) (g : G) :
     MulAut.conj g • T.standardParabolic J = T.standardParabolic J' ↔
       J = J' ∧ g ∈ T.standardParabolic J := by
