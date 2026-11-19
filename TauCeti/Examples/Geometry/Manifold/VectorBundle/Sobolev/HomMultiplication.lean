@@ -113,7 +113,7 @@ theorem chartValueL_homMulL_conjCoeff_ae {p q : ℝ≥0}
   rw [FiniteBundleAtlas.image_ofBaseSet] at hT
   filter_upwards [hT, chartValueL_conjCoeff_ae A μ p j] with y hT hα
   rw [hT, hα]
-  rfl
+  simp only [ContinuousLinearEquiv.coe_coe]
 
 private theorem finrank_lt_three : (finrank ℝ ℂ : ℝ≥0) < 3 := by
   norm_num

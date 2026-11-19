@@ -34,10 +34,10 @@ variable {𝕜 B E : Type*} [NontriviallyNormedField 𝕜]
 noncomputable def codRestrictBilin {F G : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] (T : B →L[𝕜] F →L[𝕜] G)
     (p : Submodule 𝕜 G) (hT : ∀ x y, T x y ∈ p) : B →L[𝕜] F →L[𝕜] p :=
-  (LinearMap.mk₂ 𝕜 (fun x y ↦ (⟨T x y, hT x y⟩ : p))
-    (by intros; ext; simp) (by intros; ext; simp)
-    (by intros; ext; simp) (by intros; ext; simp)).mkContinuous₂
-      ‖T‖ fun x y ↦ T.le_opNorm₂ x y
+  (T.toLinearMap₁₂.codRestrict₂ p.subtype p.injective_subtype
+    (fun x y ↦ by simpa using hT x y)).mkContinuous₂ ‖T‖ fun x y ↦ by
+      exact (congrArg norm (LinearMap.codRestrict₂_apply T.toLinearMap₁₂ p.subtype
+        p.injective_subtype (fun x y ↦ by simpa using hT x y) x y)).trans_le (T.le_opNorm₂ x y)
 
 @[simp]
 theorem coe_codRestrictBilin_apply {F G : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -45,7 +45,9 @@ theorem coe_codRestrictBilin_apply {F G : Type*} [SeminormedAddCommGroup F] [Nor
     (p : Submodule 𝕜 G) (hT : ∀ x y, T x y ∈ p) (x : B) (y : F) :
     (T.codRestrictBilin p hT x y : G) = T x y := by
   unfold codRestrictBilin
-  exact congrArg Subtype.val (LinearMap.mkContinuous₂_apply _ _ x y)
+  exact (congrArg Subtype.val (LinearMap.mkContinuous₂_apply _ _ x y)).trans
+    (LinearMap.codRestrict₂_apply T.toLinearMap₁₂ p.subtype p.injective_subtype
+      (fun x y ↦ by simpa using hT x y) x y)
 
 section Subspace
 

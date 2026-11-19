@@ -218,7 +218,19 @@ private theorem localHomComponentsL_ae_coord (hp : (finrank ℝ E : ℝ≥0) < p
       (localHomMulL A h μ hp hqp i hQc hQ α ξ),
     localHomMulL_ae_coord A h μ hp hqp i hQc hQ α ξ φ s hα hξ] with y hy hz
   rw [hy, hz]
-  rfl
+  simp only [LinearMap.coe_toContinuousLinearMap', Basis.coord_apply]
+
+omit [Nontrivial E] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  [ContMDiffVectorBundle ∞ F₂ V₂ 𝓘(ℝ, E)] in
+private theorem exists_hom_section_ae_eq_coord
+    (α : SobolevSection (A.hom (𝕜 := ℝ) h) μ p 0) :
+    ∃ φ : ∀ x, V₁ x →L[ℝ] V₂ x, ∀ i,
+      (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 i α
+        =ᵐ[μ.restrict (A.image i)] (A.hom (𝕜 := ℝ) h).coord i φ := by
+  obtain ⟨φ, hφ⟩ := exists_section_ae_eq_coord (A.hom (𝕜 := ℝ) h) μ p 0 α
+  refine ⟨φ, fun i ↦ ?_⟩
+  rw [← FiniteBundleAtlas.image_hom (A := A) (h := h) (𝕜 := ℝ) i]
+  exact hφ i
 
 omit [Nontrivial E] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [ContMDiffVectorBundle ∞ F₂ V₂ 𝓘(ℝ, E)] in
@@ -231,7 +243,8 @@ private theorem chartHomProduct_ae_coord
       =ᵐ[μ.restrict (A.image i)] A.coord i s) :
     (fun y ↦ (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 i α y
       (A.sectionChartData.chartValueL μ q 1 i ξ y))
-      =ᵐ[μ.restrict (A.image i)] (A.ofBaseSet h).coord i (fun x ↦ φ x (s x)) := by
+      =ᵐ[μ.restrict ((A.ofBaseSet h).image i)] (A.ofBaseSet h).coord i (fun x ↦ φ x (s x)) := by
+  rw [FiniteBundleAtlas.image_ofBaseSet]
   filter_upwards [hα, hξ, ae_restrict_mem (A.image i).isOpen.measurableSet] with y hα hξ hy
   rw [hα, hξ]
   exact A.coord_hom_apply h i φ s hy
@@ -286,17 +299,13 @@ private theorem pieceHomMulL_ae (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q �
       =ᵐ[μ.restrict P] fun y ↦ (finBasis ℝ F₂).repr
         ((A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α y
           (A.sectionChartData.chartValueL μ q 1 j ξ y)) m := by
-  obtain ⟨φ, hφ⟩ := exists_section_ae_eq_coord (A.hom (𝕜 := ℝ) h) μ p 0 α
+  obtain ⟨φ, hφ⟩ := exists_hom_section_ae_eq_coord A h μ α
   obtain ⟨s, hs⟩ := exists_section_ae_eq_coord A μ q 1 ξ
-  have hφA (l : Fin A.n) : (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 l α
-      =ᵐ[μ.restrict (A.image l)] (A.hom (𝕜 := ℝ) h).coord l φ := by
-    simpa only [FiniteBundleAtlas.image_hom] using hφ l
   have ht := pieceHomMulL_ae_coord A h μ hp hqp i j hQc hQ hP hPc hPD hPQ
-    α ξ φ s (hφA i) (hs i) m
-  have hg := chartHomProduct_ae_coord A h μ α ξ φ s j (hφA j) (hs j)
-  have hsub : (P : Set E) ⊆ A.image j := by
-    simpa only [FiniteBundleAtlas.image_ofBaseSet] using
-      hP.trans ((A.ofBaseSet h).overlap_subset_image i j)
+    α ξ φ s (hφ i) (hs i) m
+  have hg := chartHomProduct_ae_coord A h μ α ξ φ s j (hφ j) (hs j)
+  have hsub : (P : Set E) ⊆ (A.ofBaseSet h).image j :=
+    hP.trans ((A.ofBaseSet h).overlap_subset_image i j)
   filter_upwards [ht, ae_restrict_of_ae_restrict_of_subset hsub hg] with y hy hz
   exact hy.trans (congrArg (fun v ↦ (finBasis ℝ F₂).repr v m) hz.symm)
 
@@ -322,6 +331,30 @@ private theorem isCompactOperator_pieceHomMulL (hp : (finrank ℝ E : ℝ≥0) <
   simp only [pieceHomMulL, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
     Function.comp_apply]
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E]
+  [MeasurableSpace E] [BorelSpace E] [IsManifold 𝓘(ℝ, E) ∞ M]
+  [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁] [∀ x, Module ℝ (V₁ x)] [∀ x, AddCommGroup (V₁ x)]
+  [VectorBundle ℝ F₁ V₁] [NormedSpace ℝ F₂] [FiniteDimensional ℝ F₂]
+  [VectorBundle ℝ F₂ V₂] [∀ x, Module ℝ (V₂ x)] [∀ x, AddCommGroup (V₂ x)]
+  [∀ x, IsTopologicalAddGroup (V₂ x)]
+  [∀ x, ContinuousSMul ℝ (V₂ x)] [ContMDiffVectorBundle ∞ F₂ V₂ 𝓘(ℝ, E)] in
+private theorem exists_hom_transfer_cover :
+    let B := A.ofBaseSet h
+    ∃ (P : Fin A.n → Fin A.n → Opens E) (Q : Fin A.n → Opens E),
+      (∀ i j, (P i j : Set E) ⊆ B.overlap i j) ∧
+      (∀ i j, IsCompact (closure (P i j : Set E))) ∧
+      (∀ i j, closure (P i j : Set E) ⊆ B.transferDomain i j) ∧
+      (∀ i, IsCompact (closure (Q i : Set E))) ∧
+      (∀ i, closure (Q i : Set E) ⊆ A.image i) ∧
+      (∀ i j, MapsTo ((B.chart j).symm ≫ₕ B.chart i) (P i j) (Q i)) ∧
+      (∀ j, B.image j ≤ ⨆ i, P i j) ∧ (∀ i j, P i j ≤ B.image j) := by
+  obtain ⟨P, Q, hP, hPc, hPD, hQc, hQ, hPQ, hcov⟩ := (A.ofBaseSet h).exists_transfer_cover
+  refine ⟨P, Q, hP, hPc, hPD, hQc, ?_, hPQ, hcov, ?_⟩
+  · intro i
+    simpa only [FiniteBundleAtlas.image_ofBaseSet] using hQ i
+  · exact fun i j ↦ SetLike.coe_subset_coe.1
+      ((hP i j).trans ((A.ofBaseSet h).overlap_subset_image i j))
+
 private theorem exists_homMulComponents (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p) :
     ∃ Φ : ∀ (j : Fin A.n) (_ : Fin (finrank ℝ F₂)),
       SobolevSection (A.hom (𝕜 := ℝ) h) μ p 0 →L[ℝ] SobolevSection A μ q 1 →L[ℝ]
@@ -330,12 +363,7 @@ private theorem exists_homMulComponents (hp : (finrank ℝ E : ℝ≥0) < p) (hq
         =ᵐ[μ.restrict ((A.ofBaseSet h).image j)] fun y ↦ (finBasis ℝ F₂).repr
           ((A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α y
             (A.sectionChartData.chartValueL μ q 1 j ξ y)) m := by
-  let B := A.ofBaseSet h
-  obtain ⟨P, Q, hP, hPc, hPD, hQc, hQ, hPQ, hcov⟩ := B.exists_transfer_cover
-  have hPj (i j : Fin A.n) : P i j ≤ B.image j :=
-    SetLike.coe_subset_coe.1 ((hP i j).trans (B.overlap_subset_image i j))
-  have hQA (i : Fin A.n) : closure (Q i : Set E) ⊆ A.image i := by
-    simpa only [B, FiniteBundleAtlas.image_ofBaseSet] using hQ i
+  obtain ⟨P, Q, hP, hPc, hPD, hQc, hQA, hPQ, hcov, hPj⟩ := exists_hom_transfer_cover A h
   let f (j : Fin A.n) (m : Fin (finrank ℝ F₂)) (i : Fin A.n) :=
     pieceHomMulL A h μ hp hqp i j (hQc i) (hQA i) (hPc i j) (hPD i j) (hPQ i j) m
   have hf (j : Fin A.n) (m : Fin (finrank ℝ F₂)) (i : Fin A.n)
@@ -377,19 +405,12 @@ theorem exists_homMulL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p) :
         ((finBasis ℝ F₂).sum_repr _)
   have hmem (α : SobolevSection (A.hom (𝕜 := ℝ) h) μ p 0) (ξ : SobolevSection A μ q 1) :
       D α ξ ∈ B.sectionChartData.sobolevSections μ q 0 := by
-    obtain ⟨φ, hφ⟩ := exists_section_ae_eq_coord (A.hom (𝕜 := ℝ) h) μ p 0 α
+    obtain ⟨φ, hφ⟩ := exists_hom_section_ae_eq_coord A h μ α
     obtain ⟨s, hs⟩ := exists_section_ae_eq_coord A μ q 1 ξ
     have hcoord (j : Fin A.n) : B.sectionChartData.chartValueL μ q 0 j (D α ξ)
         =ᵐ[μ.restrict (B.image j)] B.sectionChartData.coord j (fun x ↦ φ x (s x)) := by
-      have hφA : (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α
-          =ᵐ[μ.restrict (A.image j)] (A.hom (𝕜 := ℝ) h).coord j φ := by
-        simpa only [FiniteBundleAtlas.image_hom] using hφ j
-      have hg := chartHomProduct_ae_coord A h μ α ξ φ s j hφA (hs j)
-      have hgB : (fun y ↦ (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α y
-          (A.sectionChartData.chartValueL μ q 1 j ξ y))
-          =ᵐ[μ.restrict (B.image j)] B.coord j (fun x ↦ φ x (s x)) := by
-        simpa only [B, FiniteBundleAtlas.image_ofBaseSet] using hg
-      exact (hD α ξ j).trans (hgB.trans (B.sectionChartData_coord_ae_eq μ j _).symm)
+      have hg := chartHomProduct_ae_coord A h μ α ξ φ s j (hφ j) (hs j)
+      exact (hD α ξ j).trans (hg.trans (B.sectionChartData_coord_ae_eq μ j _).symm)
     -- The membership criterion uses `Fin B.sectionChartData.n` and `B.sectionChartData.image`;
     -- these are `Fin A.n` and `B.image` by definition, so this fact needs no index cast.
     exact (B.sectionChartData.mem_sobolevSections_iff μ q 0).2 ⟨fun x ↦ φ x (s x), hcoord⟩
@@ -428,13 +449,8 @@ theorem chartValueL_homMulL_ae_coord (hp : (finrank ℝ E : ℝ≥0) < p) (hqp :
     (A.ofBaseSet h).sectionChartData.chartValueL μ q 0 j (homMulL A h μ hp hqp α ξ)
       =ᵐ[μ.restrict ((A.ofBaseSet h).image j)] (A.ofBaseSet h).coord j
         (fun x ↦ φ x (s x)) := by
-  have hg := chartHomProduct_ae_coord A h μ α ξ φ s j hα hξ
-  have hg' : (fun y ↦ (A.hom (𝕜 := ℝ) h).sectionChartData.chartValueL μ p 0 j α y
-      (A.sectionChartData.chartValueL μ q 1 j ξ y))
-      =ᵐ[μ.restrict ((A.ofBaseSet h).image j)] (A.ofBaseSet h).coord j
-        (fun x ↦ φ x (s x)) := by
-    simpa only [FiniteBundleAtlas.image_ofBaseSet] using hg
-  exact (chartValueL_homMulL_ae A h μ hp hqp α ξ j).trans hg'
+  exact (chartValueL_homMulL_ae A h μ hp hqp α ξ j).trans
+    (chartHomProduct_ae_coord A h μ α ξ φ s j hα hξ)
 
 /-- The chartwise almost-everywhere product formula uniquely determines the native bilinear
 multiplication operator. -/
@@ -493,11 +509,7 @@ theorem isCompactOperator_homMulL (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q 
     (α : SobolevSection (A.hom (𝕜 := ℝ) h) μ p 0) :
     IsCompactOperator (homMulL A h μ hp hqp α) := by
   let B := A.ofBaseSet h
-  obtain ⟨P, Q, hP, hPc, hPD, hQc, hQ, hPQ, hcov⟩ := B.exists_transfer_cover
-  have hPj (i j : Fin A.n) : P i j ≤ B.image j :=
-    SetLike.coe_subset_coe.1 ((hP i j).trans (B.overlap_subset_image i j))
-  have hQA (i : Fin A.n) : closure (Q i : Set E) ⊆ A.image i := by
-    simpa only [B, FiniteBundleAtlas.image_ofBaseSet] using hQ i
+  obtain ⟨P, Q, hP, hPc, hPD, hQc, hQA, hPQ, hcov, hPj⟩ := exists_hom_transfer_cover A h
   refine SectionChartData.isCompactOperator_of_forall_apply (B.aeTransition_sectionChartData μ)
     fun j m ↦ ?_
   refine Wkp.isCompactOperator_of_restrictL (fun i ↦ hPj i j) (hcov j) fun i ↦ ?_
