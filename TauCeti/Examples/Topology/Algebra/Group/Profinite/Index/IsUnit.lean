@@ -14,8 +14,8 @@ import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.Basic
 For `ℓ ≠ p` the group `ℤ_p` has pro-order prime to `ℓ`, so the index `p ^ k` of each level
 `p ^ k ℤ_p` is a unit of `𝔽_ℓ`; for `p = 2`, `ℓ = 5` and `k = 1` its inverse is `3`. A finite
 cyclic group of order prime to `ℓ` behaves the same way, and the trivial group has invertible
-indices in every ring, including the zero ring. For `K = ℤ_ℓ` over `𝔽_ℓ` the level `ℓ ℤ_ℓ` has
-index `ℓ = 0`, which is not a unit, and correspondingly `ℓ` has nonzero exponent in the
+indices in every commutative ring, including the zero ring. For `K = ℤ_ℓ` over `𝔽_ℓ` the level
+`ℓ ℤ_ℓ` has index `ℓ = 0`, which is not a unit, and correspondingly `ℓ` has nonzero exponent in the
 supernatural order of `ℤ_ℓ`.
 -/
 
@@ -39,7 +39,7 @@ example {m : ℕ} [NeZero m] {ℓ : Nat.Primes} (h : ¬ (ℓ : ℕ) ∣ m)
   refine U.isUnit_index_of_profiniteOrder_apply_eq_zero (ℓ := ℓ) ?_ (by simp)
   simpa [Nat.padicValNat_def] using multiplicity_eq_zero_of_not_dvd h
 
-example {Λ : Type*} [Semiring Λ] (ℓ : Nat.Primes) (hΛ : IsNilpotent ((ℓ : ℕ) : Λ))
+example {Λ : Type*} [CommRing Λ] (ℓ : Nat.Primes) (hΛ : IsNilpotent ((ℓ : ℕ) : Λ))
     (U : OpenSubgroup (Multiplicative (ZMod 1))) : IsUnit (U.toSubgroup.index : Λ) :=
   U.isUnit_index_of_profiniteOrder_apply_eq_zero (by simp [Nat.padicValNat_def]) hΛ
 
