@@ -22,6 +22,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
 # Wirtinger derivatives
@@ -484,6 +485,21 @@ theorem conjWirtingerDeriv_comp {X : Type*} [NormedAddCommGroup X] [NormedSpace 
   rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart,
     fderiv_comp x (hφ.restrictScalars ℝ) hg, hφ.fderiv_restrictScalars ℝ,
     ContinuousLinearMap.complexAntilinearPart_restrictScalars_comp]
+
+/-- **The chain rule for the conjugate Wirtinger derivative** before a complex-linear change of
+variables: `\bar∂(g ∘ e) = \bar∂g(e x) ∘ e`. No differentiability is needed, since `e` is an
+isomorphism. -/
+theorem conjWirtingerDeriv_comp_continuousLinearEquiv {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] (e : X ≃L[ℂ] V) (g : V → W) (x : X) :
+    conjWirtingerDeriv (g ∘ e) x = (conjWirtingerDeriv g (e x)).comp (e : X →L[ℂ] V) := by
+  have h := (e.restrictScalars' ℝ).comp_right_fderiv (f := g) (x := x)
+  rw [ContinuousLinearEquiv.coe_restrictScalars'] at h
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_eq_complexAntilinearPart, h,
+    ← ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars]
+  -- The real map underlying `e.restrictScalars' ℝ` is `e` with scalars restricted.
+  congr 2
+  ext
+  simp
 
 section Mul
 
