@@ -24,6 +24,7 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
   poles `0, -1, -2, ...`.
 * `Complex.digamma_ofReal`: at every real point, complex digamma is the coercion of real digamma.
 * `Complex.digamma_conj`: complex digamma commutes with conjugation, `ψ(conj s) = conj ψ(s)`.
+* `Complex.continuousOn_digamma_re_pos`: complex digamma is continuous on the right half-plane.
 * `Real.hasDerivAt_log_Gamma`, `Real.digamma_eq_deriv_log_Gamma`: at every regular real point,
   real digamma is the derivative of `log ∘ Gamma`.
 * `Real.digamma_one`, `Real.digamma_apply_add_one`, `Real.digamma_apply_add_nat`: the value
@@ -109,6 +110,15 @@ theorem digamma_conj (s : ℂ) : digamma (conj s) = conj (digamma s) := by
     rw [deriv_conj_conj]
     simp
   rw [digamma_def, logDeriv_apply, logDeriv_apply, hd, Gamma_conj, map_div₀]
+
+/-- The digamma function is continuous on the right half-plane `0 < Re s`. -/
+theorem continuousOn_digamma_re_pos : ContinuousOn digamma {s : ℂ | 0 < s.re} := by
+  have hU : IsOpen {s : ℂ | 0 < s.re} := isOpen_lt continuous_const continuous_re
+  have hG : DifferentiableOn ℂ Gamma {s : ℂ | 0 < s.re} := fun s hs =>
+    (hasDerivAt_Gamma_of_re_pos hs).differentiableAt.differentiableWithinAt
+  have hψ : ContinuousOn (fun s => deriv Gamma s / Gamma s) {s : ℂ | 0 < s.re} :=
+    (hG.deriv hU).continuousOn.div hG.continuousOn fun s hs => Gamma_ne_zero_of_re_pos hs
+  exact hψ.congr fun s _ => by rw [digamma_def, logDeriv_apply]
 
 end Complex
 
