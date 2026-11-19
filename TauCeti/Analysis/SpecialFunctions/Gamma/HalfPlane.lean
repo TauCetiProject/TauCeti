@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Growth
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 
 /-!
 # Elementary Gamma majorants on the right half-plane
@@ -62,34 +63,6 @@ theorem norm_Gamma_le_re_add_two_rpow_div {z : ℂ} (hz : 0 ≤ z.re) :
   apply (le_div_iff₀ (norm_pos_iff.mpr hz0)).mpr
   simpa only [add_re, one_re, add_assoc, one_add_one_eq_two, mul_comm] using h
 
-private theorem mul_add_two_mul_log_le {c r : ℝ} (hc : 0 ≤ c) (hr : 1 ≤ r) :
-    (c * r + 2) * Real.log (c * r + 2) ≤
-      (c + 2) * (2 * Real.log (c + 2) + 1) * r * Real.log (1 + r) := by
-  let K := c + 2
-  let D := K * (2 * Real.log K + 1)
-  have hK : 1 < K := by dsimp [K]; linarith
-  have hL : 1 / 2 ≤ Real.log (1 + r) := by
-    convert Real.one_half_le_log_two_add (r := r - 1) (by linarith) using 1
-    congr 1
-    ring
-  have hy : 0 < c * r + 2 := by positivity
-  have hyK : c * r + 2 ≤ K * r := by
-    dsimp [K]
-    nlinarith
-  have hlog : Real.log (c * r + 2) ≤ (2 * Real.log K + 1) * Real.log (1 + r) := by
-    have h := Real.log_le_log hy hyK
-    rw [Real.log_mul (by positivity : K ≠ 0) (by positivity : r ≠ 0)] at h
-    have hrlog : Real.log r ≤ Real.log (1 + r) :=
-      Real.log_le_log (by positivity) (by linarith)
-    nlinarith [mul_le_mul_of_nonneg_left hL (Real.log_pos hK).le]
-  have hprod : (c * r + 2) * Real.log (c * r + 2) ≤
-      D * r * Real.log (1 + r) := by
-    have h := mul_le_mul hyK hlog (Real.log_nonneg (by nlinarith : 1 ≤ c * r + 2))
-      (by positivity : 0 ≤ K * r)
-    dsimp [D]
-    nlinarith [h]
-  exact hprod
-
 /-- Every nonnegative real dilation of Gamma has logarithmic-exponential growth on the closed
 right half-plane outside the unit disk. The constant may depend on the dilation. -/
 theorem exists_norm_Gamma_mul_le_exp_mul_log {c : ℝ} (hc : 0 ≤ c) :
@@ -109,7 +82,7 @@ theorem exists_norm_Gamma_mul_le_exp_mul_log {c : ℝ} (hc : 0 ≤ c) :
     have hle : c * z.re + 2 ≤ c * ‖z‖ + 2 := by nlinarith [re_le_norm z]
     exact (mul_le_mul hle (Real.log_le_log hy hle)
       (Real.log_nonneg (by nlinarith : 1 ≤ c * z.re + 2))
-      (by positivity : 0 ≤ c * ‖z‖ + 2)).trans (mul_add_two_mul_log_le hc.le hr)
+      (by positivity : 0 ≤ c * ‖z‖ + 2)).trans (Real.mul_add_two_mul_log_le hc.le hr)
   have hΓ := norm_Gamma_le_re_add_two_rpow_div (z := c * z) (by simpa using mul_nonneg hc.le hz)
   simp only [mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero, norm_mul, norm_real,
     Real.norm_of_nonneg hc.le] at hΓ
@@ -118,20 +91,11 @@ theorem exists_norm_Gamma_mul_le_exp_mul_log {c : ℝ} (hc : 0 ≤ c) :
     ‖Gamma (c * z)‖ ≤ Real.exp (D * ‖z‖ * Real.log (1 + ‖z‖)) / c :=
       hΓ.trans (div_le_div₀ (by positivity) (Real.exp_le_exp.mpr (by nlinarith)) hc
         (by nlinarith))
-    _ ≤ Real.exp (D * ‖z‖ * Real.log (1 + ‖z‖)) * Real.exp c⁻¹ := by
-      rw [div_eq_mul_inv]
-      gcongr
-      linarith [Real.add_one_le_exp c⁻¹]
     _ ≤ Real.exp ((D + 2 / c) * ‖z‖ * Real.log (1 + ‖z‖)) := by
-      rw [← Real.exp_add]
-      apply Real.exp_le_exp.mpr
-      have hscale : 1 / 2 ≤ ‖z‖ * Real.log (1 + ‖z‖) := by
-        have hL : 1 / 2 ≤ Real.log (1 + ‖z‖) := by
-          convert Real.one_half_le_log_two_add (r := ‖z‖ - 1) (by linarith) using 1
-          congr 1
-          ring
-        nlinarith
-      rw [div_eq_mul_inv]
-      nlinarith [mul_le_mul_of_nonneg_left hscale (inv_nonneg.mpr hc.le)]
+      have hfirst : 1 + (‖z‖ - 1) = ‖z‖ := by ring
+      have hsecond : 2 + (‖z‖ - 1) = 1 + ‖z‖ := by ring
+      simpa only [hfirst, hsecond, div_eq_mul_inv, mul_comm] using
+        Real.mul_exp_mul_one_add_mul_log_two_add_le (C := D) (D := c⁻¹) (r := ‖z‖ - 1)
+          (inv_nonneg.mpr hc.le) (by linarith)
 
 end Complex
