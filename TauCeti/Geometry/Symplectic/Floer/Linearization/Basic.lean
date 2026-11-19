@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 
 /-!
 # Local-coordinate linearization of the inhomogeneous Floer equation
@@ -25,7 +24,7 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 `floerLinearization` is the map-direction operator with coefficients fixed. On a direction
 multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ` (`floerLinearization_smul_fst`), a case
 of the same rule for any operator `∂s + J ∂t + A` (`TauCeti.cauchyRiemann_smul_fst` in
-`TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure`); in particular,
+`TauCeti.Geometry.Symplectic.JHolomorphic.Line`); in particular,
 conjugated by an exponential weight `e^{δ s}` it becomes `floerLinearization - δ`
 (`floerLinearization_exp_smul`). Its value at a point depends only on the germ of the direction
 there (`floerLinearization_congr_of_eventuallyEq`), and on the Floer data only through their

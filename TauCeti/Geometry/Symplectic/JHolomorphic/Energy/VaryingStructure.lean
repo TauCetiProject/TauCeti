@@ -42,10 +42,6 @@ for every such `ξ`. This is the plane version
 `SymplecticForm.exists_forall_setIntegral_norm_fderiv_sq_le_of_tsupport_subset` and the cylinder
 version `SymplecticForm.exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic`, both derived from
 `SymplecticForm.exists_forall_setIntegral_norm_fderiv_sq_le_of_setIntegral_symplecticForm_eq_zero`.
-Two calculus facts about the real Cauchy--Riemann operator `P = ∂s + J ∂t + A`, for any
-coefficients `J, A : ℝ × ℝ → V →L[ℝ] V`, are recorded first: a cutoff `β(s)` acts as
-`P (β ξ) = β P ξ + β' ξ` (`TauCeti.cauchyRiemann_smul_fst`), and `P` sends `C¹` maps to continuous
-maps when `J` and `A` are continuous (`TauCeti.continuous_cauchyRiemann`).
 Linearized operators of Floer theory have this form
 (`TauCeti.Geometry.Symplectic.Floer.InteriorEstimate`), and this is their estimate on a compact
 part of the domain, which needs no nondegeneracy hypothesis. In contrast with
@@ -65,40 +61,6 @@ public section
 namespace TauCeti
 
 open MeasureTheory Set
-
-section CauchyRiemann
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the real Cauchy–Riemann
-operator `P = ∂s + J ∂t + A` sends `β(s) ξ` to `β(s) P ξ + β' ξ` at `z = (s, t)`: the factor only
-differentiates in the `s` direction, where `P` has the leading term `∂s`. -/
-theorem cauchyRiemann_smul_fst (J A : ℝ × ℝ → V →L[ℝ] V) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
-    {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1) (hξ : DifferentiableAt ℝ ξ z) :
-    fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal +
-        J z (fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag) + A z (β z.1 • ξ z) =
-      β z.1 • (fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) +
-        A z (ξ z)) + β' • ξ z := by
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
-    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
-  rw [hd.fderiv]
-  simp only [add_apply, smul_apply,
-    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
-    Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply, one_smul, zero_smul, add_zero]
-  module
-
-/-- The real Cauchy–Riemann operator `P = ∂s + J ∂t + A` sends a `C¹` map `ξ` to a continuous map
-when its coefficients `J` and `A` are continuous. -/
-theorem continuous_cauchyRiemann {J A : ℝ × ℝ → V →L[ℝ] V} (hJ : Continuous J)
-    (hA : Continuous A) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous fun z ↦
-      fderiv ℝ ξ z stdComplexLineReal + J z (fderiv ℝ ξ z stdComplexLineImag) + A z (ξ z) := by
-  have hdξ (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ ξ z v :=
-    (hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  exact ((hdξ _).add (hJ.clm_apply (hdξ _))).add (hA.clm_apply hξ.continuous)
-
-end CauchyRiemann
 
 namespace SymplecticForm
 
