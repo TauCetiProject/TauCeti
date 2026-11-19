@@ -110,8 +110,12 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
     hu.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg (by exact_mod_cast hq)
   have hTS : B ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
     inter_subset_inter_left _ (subset_closure.trans hsub)
-  have hOT : O ⊆ B ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hz.1, (mem_ofPred.1 hz.2).le⟩
-  have hO : IsOpen O := isOpen_ball.inter (isOpen_lt continuous_const Complex.continuous_im)
+  have hOT : O ⊆ B ∩ {z | 0 ≤ z.im} := by
+    simpa only [O, Opens.coe_upperHalf, Opens.coe_mk] using
+      Opens.coe_upperHalf_subset (⟨B, isOpen_ball⟩ : Opens ℂ)
+  have hO : IsOpen O := by
+    simpa only [O, Opens.coe_upperHalf, Opens.coe_mk] using
+      (Opens.upperHalf ⟨B, isOpen_ball⟩).isOpen
   have hOV : O ⊆ V := (hOT.trans hTS).trans hSV
   have hug₁ : u =ᵐ[volume.restrict O] g₁ := hv.symm.trans hvg₁
   have hug' : u =ᵐ[volume.restrict O] g := ae_restrict_of_ae_restrict_of_subset (hOT.trans hTS) hug
@@ -121,8 +125,7 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
     ((Filter.eventuallyEq_of_mem (hO.mem_nhds hz) hgg₁).iteratedFDeriv ℝ i).eq_of_nhds
   have hcl : B ∩ {z | 0 ≤ z.im} ⊆ closure O := fun z hz => by
     have h := subset_closure_interior_inter_setOf_im_nonneg (Ω := B) isOpen_ball hz
-    rwa [interior_inter, (show IsOpen B from isOpen_ball).interior_eq,
-      Complex.interior_setOfPred_le_im] at h
+    rwa [interior_inter_setOf_im_nonneg isOpen_ball] at h
   have hcont {i : ℕ} (hi : i ≤ j) (z : ℂ) (hz : z ∈ B ∩ {z | 0 ≤ z.im}) :
       ContinuousAt (iteratedFDeriv ℝ i g) z :=
     (ContinuousOn.continuousOn_iteratedFDeriv hg V.isOpen (by exact_mod_cast hi)).continuousAt
@@ -131,7 +134,8 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
     fun i hi => ⟨fun z hz => ?_, ?_⟩⟩
   · exact ContinuousWithinAt.closure_le (hcl hz) (hcont hi z hz).norm.continuousWithinAt
       continuousWithinAt_const fun y hy => heq i hy ▸ (hb i hi).1 y hy
-  · refine HolderOnWith.of_subset_closure (fun a ha b hb' => ?_) hcl (hcont hi)
+  · refine HolderOnWith.of_subset_closure (fun a ha b hb' => ?_) hcl
+      (fun z hz => (hcont hi z hz).continuousWithinAt)
     rw [heq i ha, heq i hb']
     exact (hb i hi).2 a ha b hb'
 
