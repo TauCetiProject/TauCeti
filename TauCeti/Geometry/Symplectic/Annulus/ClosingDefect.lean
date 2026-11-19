@@ -278,15 +278,22 @@ theorem strictMonoOn_stripClosingDefect [DecidablePred (· ∈ P)]
       {u | ∀ i, u i ∈ J} := by
   intro u hu u' hu' huu'
   set e := Equiv.piEquivPiSubtypeProd (fun i : Fin n ↦ (i : ℕ) ∈ P) fun _ ↦ ℝ
+  have he (w : {i : Fin n // (i : ℕ) ∈ P} → ℝ) (i : Fin n) :
+      e.symm (w, v) i = if hi : (i : ℕ) ∈ P then w ⟨i, hi⟩ else v ⟨i, hi⟩ :=
+    Equiv.piEquivPiSubtypeProd_symm_apply _ _ _ _
   have hmem {w : {i : Fin n // (i : ℕ) ∈ P} → ℝ} (hw : ∀ i, w i ∈ J) (i : Fin n) :
       e.symm (w, v) i ∈ J := by
     by_cases hi : (i : ℕ) ∈ P
-    · simpa [e, Equiv.piEquivPiSubtypeProd, hi] using hw ⟨i, hi⟩
-    · simpa [e, Equiv.piEquivPiSubtypeProd, hi] using hv ⟨i, hi⟩
+    · rw [he, dite_eq_left_of_eq_true (eq_true hi)]
+      exact hw ⟨i, hi⟩
+    · rw [he, dite_eq_right_of_eq_false (eq_false hi)]
+      exact hv ⟨i, hi⟩
   refine stripClosingDefect_lt_stripClosingDefect hx hP hN (hmem hu) (hmem hu') (fun i ↦ ?_) ?_
   · by_cases hi : (i : ℕ) ∈ P
-    · simpa [e, Equiv.piEquivPiSubtypeProd, hi] using huu'.le ⟨i, hi⟩
-    · simp [e, Equiv.piEquivPiSubtypeProd, hi]
+    · rw [he, he, dite_eq_left_of_eq_true (eq_true hi), dite_eq_left_of_eq_true (eq_true hi)]
+      exact ⟨fun _ ↦ huu'.le ⟨i, hi⟩, fun h ↦ (h hi).elim⟩
+    · rw [he, he, dite_eq_right_of_eq_false (eq_false hi), dite_eq_right_of_eq_false (eq_false hi)]
+      exact ⟨fun h ↦ (hi h).elim, fun _ ↦ le_rfl⟩
   · intro h
     exact huu'.ne (congrArg Prod.fst (e.symm.injective h))
 
@@ -400,7 +407,9 @@ theorem stripClosingDefect_affineShear_shear (x u v : ℝ) :
     stripClosingDefect
       (fun k q ↦ if k = 0 then (q.1 - (6 * q.2 + 1) / 8, q.2) else (q.1 + q.2, q.2))
       2 x ![v, u] = u - (6 * v + 1) / 8 := by
-  simp [stripClosingDefect_def, Fin.init]
+  simp only [stripClosingDefect_def, stripBrokenOrbitEnd_succ, stripBrokenOrbitEnd_zero, Fin.init,
+    Fin.last_zero, Fin.castSucc_zero, Fin.reduceLast, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, one_ne_zero, ↓reduceIte, Nat.reduceAdd]
   ring
 
 /-- The two shears satisfy the hypotheses of the sign theorems on `J = [0, 1]`, with the second
@@ -409,40 +418,38 @@ factor positive and the first negative, and the chain preserves both boundary li
 `1/8`, so the closing defect is negative on the lower face `u = 0` and positive on the upper face
 `u = 1` of the square of inputs. -/
 example (x v : ℝ) (hv : v ∈ Icc (0 : ℝ) 1) :
-    stripClosingDefect
-        (fun k q ↦ if k = 0 then (q.1 - (6 * q.2 + 1) / 8, q.2) else (q.1 + q.2, q.2))
-        2 x ![v, 0] < 0 ∧
-      0 < stripClosingDefect
-        (fun k q ↦ if k = 0 then (q.1 - (6 * q.2 + 1) / 8, q.2) else (q.1 + q.2, q.2))
-        2 x ![v, 1] := by
-  have hx : ∀ k < 2, ∀ t ∈ Icc (0 : ℝ) 1, Monotone fun x : ℝ ↦
-      ((if k = 0 then (x - (6 * t + 1) / 8, t) else (x + t, t)) : ℝ × ℝ).1 := by
+    let F : ℕ → ℝ × ℝ → ℝ × ℝ :=
+      fun k q ↦ if k = 0 then (q.1 - (6 * q.2 + 1) / 8, q.2) else (q.1 + q.2, q.2)
+    stripClosingDefect F 2 x ![v, 0] < 0 ∧ 0 < stripClosingDefect F 2 x ![v, 1] := by
+  intro F
+  have hx : ∀ k < 2, ∀ t ∈ Icc (0 : ℝ) 1, Monotone fun x ↦ (F k (x, t)).1 := by
     intro k _ t _ a b hab
-    split_ifs <;> simp only <;> linarith
-  have hP : ∀ k < 2, k ∈ ({1} : Set ℕ) → ∀ x : ℝ, MonotoneOn (fun t : ℝ ↦
-      ((if k = 0 then (x - (6 * t + 1) / 8, t) else (x + t, t)) : ℝ × ℝ).1) (Icc 0 1) := by
+    simp only [F]
+    split_ifs <;> linarith
+  have hP : ∀ k < 2, k ∈ ({1} : Set ℕ) → ∀ x, MonotoneOn (fun t ↦ (F k (x, t)).1) (Icc 0 1) := by
     rintro k _ rfl x a _ b _ hab
-    simp only [one_ne_zero, ite_false]
+    simp only [F, one_ne_zero, ite_false]
     linarith
-  have hN : ∀ k < 2, k ∉ ({1} : Set ℕ) → ∀ x : ℝ, AntitoneOn (fun t : ℝ ↦
-      ((if k = 0 then (x - (6 * t + 1) / 8, t) else (x + t, t)) : ℝ × ℝ).1) (Icc 0 1) := by
+  have hN : ∀ k < 2, k ∉ ({1} : Set ℕ) → ∀ x, AntitoneOn (fun t ↦ (F k (x, t)).1) (Icc 0 1) := by
     intro k hk hkP x a _ b _ hab
-    obtain rfl : k = 0 := by simp at hkP; omega
-    simp only [ite_true]
+    obtain rfl : k = 0 := by
+      rw [Set.mem_singleton_iff] at hkP
+      omega
+    simp only [F, ite_true]
     linarith
   have hy (w : ℝ) (hw : w ∈ Icc (0 : ℝ) 1) : ∀ i : Fin 2, ![v, w] i ∈ Icc (0 : ℝ) 1 :=
     Fin.forall_fin_two.2 ⟨hv, hw⟩
-  have hline (c : ℝ) : ∀ k < 2, ∀ x : ℝ,
-      ((if k = 0 then (x - (6 * c + 1) / 8, c) else (x + c, c)) : ℝ × ℝ).2 = c := by
+  have hline (c : ℝ) : ∀ k < 2, ∀ x, (F k (x, c)).2 = c := by
     intro k _ x
+    simp only [F]
     split_ifs <;> rfl
   constructor
   · refine stripClosingDefect_neg (J := Icc 0 1) (P := {1}) hx hP hN ⟨le_rfl, zero_le_one⟩
       (hline 0) (z := fun k ↦ if k = 0 then (x, 0) else (x - 1 / 8, 0)) (fun k hk ↦ ?_) rfl
       (by norm_num) (hy 0 ⟨le_rfl, zero_le_one⟩) (Fin.forall_fin_two.2 ⟨by simp [hv.1], by simp⟩)
     obtain _ | _ | k := k
-    · norm_num
-    · simp
+    · norm_num [F]
+    · norm_num [F]
     · omega
   · refine stripClosingDefect_pos (J := Icc 0 1) (P := {1}) hx hP hN ⟨zero_le_one, le_rfl⟩
       (hline 1)
@@ -450,8 +457,9 @@ example (x v : ℝ) (hv : v ∈ Icc (0 : ℝ) 1) :
       (fun k hk ↦ ?_) rfl (by norm_num) (hy 1 ⟨zero_le_one, le_rfl⟩)
       (Fin.forall_fin_two.2 ⟨by simp [hv.2], by simp⟩)
     obtain _ | _ | k := k
-    · norm_num
-    · norm_num
+    · norm_num [F]
+    · change (x + 1 / 8, (1 : ℝ)) = (x - 7 / 8 + 1, 1)
+      congr 1
       ring
     · omega
 
