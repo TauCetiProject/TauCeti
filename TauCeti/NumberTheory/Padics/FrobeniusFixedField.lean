@@ -77,7 +77,7 @@ theorem toSubfield_padicFixedField :
   Subfield.ext fun _ ↦ Iff.rfl
 
 /-- The fixed field of a continuous endomorphism of a complete field is closed, hence complete. -/
-theorem completeSpace_padicFixedField [CompleteSpace K] :
+instance completeSpace_padicFixedField [CompleteSpace K] :
     CompleteSpace (σ.padicFixedField p hσ) :=
   (isClosed_eq hσ continuous_id : IsClosed (σ.padicFixedField p hσ : Set K)).completeSpace_coe
 
@@ -85,7 +85,7 @@ variable [IsUltrametricDist K]
 
 /-- If the valuation ring of `K` is a discrete valuation ring, so is the valuation ring of the
 field fixed by a continuous ring endomorphism: `K^σ` is a discretely valued field. -/
-theorem isDiscreteValuationRing_integer_padicFixedField [IsDiscreteValuationRing 𝒪[K]] :
+instance isDiscreteValuationRing_integer_padicFixedField [IsDiscreteValuationRing 𝒪[K]] :
     IsDiscreteValuationRing 𝒪[σ.padicFixedField p hσ] :=
   (σ.padicFixedField p hσ).val.toRingHom.isDiscreteValuationRing_integer_of_norm_map_eq
     (K := K) fun _ ↦ rfl
@@ -116,7 +116,6 @@ theorem natCard_residueField_padicFixedField_le : Nat.card 𝓀[σ.padicFixedFie
 `K^σ` fixed by a `q`-Frobenius lift `σ` is a finite extension of `ℚ_[p]`. -/
 theorem finiteDimensional_padicFixedField [IsDiscreteValuationRing 𝒪[K]] :
     FiniteDimensional ℚ_[p] (σ.padicFixedField p hσ) := by
-  have := isDiscreteValuationRing_integer_padicFixedField (p := p) hσ
   have := finite_residueField_padicFixedField (p := p) hσ hq hσq
   exact Valued.integer.finiteDimensional_of_finite_residueField (K := σ.padicFixedField p hσ) ℚ_[p]
 

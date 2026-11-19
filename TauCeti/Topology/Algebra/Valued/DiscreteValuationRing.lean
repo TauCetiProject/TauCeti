@@ -66,18 +66,24 @@ valued. -/
 theorem _root_.RingHom.isDiscreteValuationRing_integer_of_norm_map_eq {L : Type*}
     [NontriviallyNormedField L] [IsUltrametricDist L] [IsDiscreteValuationRing 𝒪[K]]
     (φ : L →+* K) (hφ : ∀ x, ‖φ x‖ = ‖x‖) : IsDiscreteValuationRing 𝒪[L] := by
-  -- The value group of `K` is cyclic, since `𝒪[K]` is a discrete valuation ring.
+  -- The value group of `K` is cyclic, since `𝒪[K]` is a discrete valuation ring. The ring
+  -- `𝒪[K] = Valued.integer K` is by definition `Valued.v.integer`, which is also the carrier of
+  -- `Valued.v.valuationSubring`, so the instance on `𝒪[K]` applies to the latter by unfolding.
   have : IsDiscreteValuationRing (Valued.v : Valuation K ℝ≥0).valuationSubring := ‹_›
   have : (Valued.v : Valuation K ℝ≥0).IsRankOneDiscrete :=
     .of_isEquiv (Valuation.isEquiv_valuation_valuationSubring _).symm
-  -- `φ` preserves valuations, so the value group of `L` is a subgroup of that of `K`.
+  -- `φ` preserves valuations, so the value group of `L` is a subgroup of that of `K`. The
+  -- valuation `Valued.v` of `NormedField.toValued` is by definition `NormedField.valuation`,
+  -- which is `‖·‖₊` by `NormedField.valuation_apply`.
   have hle : (Valued.v : Valuation L ℝ≥0).valueGroup ≤ (Valued.v : Valuation K ℝ≥0).valueGroup :=
-    (Subgroup.closure_le _).2 fun _ ⟨x, hx⟩ ↦
-      MonoidWithZeroHom.mem_valueGroup _ ⟨φ x, (NNReal.eq (hφ x) : ‖φ x‖₊ = ‖x‖₊).trans hx⟩
+    (Subgroup.closure_le _).2 fun _ ⟨x, hx⟩ ↦ MonoidWithZeroHom.mem_valueGroup _ ⟨φ x,
+      ((NormedField.valuation_apply (φ x)).trans (NNReal.eq (hφ x) : ‖φ x‖₊ = ‖x‖₊)).trans
+        ((NormedField.valuation_apply x).symm.trans hx)⟩
   -- `L` is nontrivially normed, so its value group is nontrivial.
   have : (Valued.v : Valuation L ℝ≥0).RankOne :=
     inferInstanceAs (NormedField.valuation (K := L)).RankOne
   have : IsCyclic (Valued.v : Valuation L ℝ≥0).valueGroup := Subgroup.isCyclic_of_le hle
+  -- As for `K`, `𝒪[L]` is by definition the carrier of `Valued.v.valuationSubring`.
   exact inferInstanceAs (IsDiscreteValuationRing (Valued.v : Valuation L ℝ≥0).valuationSubring)
 
 end Discrete
