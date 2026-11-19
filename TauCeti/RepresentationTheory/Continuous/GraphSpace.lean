@@ -191,6 +191,16 @@ theorem toContinuousLinearMap_graphSndIntertwiningMap :
     (graphSndIntertwiningMap hf).toContinuousLinearMap = f.graphSnd :=
   (rfl)
 
+@[simp]
+theorem graphFstIntertwiningMap_apply (z : f.graphSpace) :
+    graphFstIntertwiningMap hf z = (z : WithLp 2 (E × F)).fst :=
+  f.graphFst_apply z
+
+@[simp]
+theorem graphSndIntertwiningMap_apply (z : f.graphSpace) :
+    graphSndIntertwiningMap hf z = (z : WithLp 2 (E × F)).snd :=
+  f.graphSnd_apply z
+
 /-- **The kernel of `f` as a representation.** The kernel representation of the intertwining map
 `LinearPMap.graphSndIntertwiningMap` is equivalent to the restriction of `π` to the kernel of `f`,
 through the first projection, which is isometric (`LinearPMap.kerGraphSndEquiv`). -/

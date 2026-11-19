@@ -240,8 +240,10 @@ theorem coe_kerGraphSndEquiv (z : f.graphSnd.ker) :
 /-- The graph space is closed in `WithLp 2 (E × F)` exactly when `f` is a closed operator. -/
 theorem isClosed_graphSpace_iff :
     _root_.IsClosed (f.graphSpace : Set (WithLp 2 (E × F))) ↔ f.IsClosed := by
-  rw [coe_graphSpace]
-  exact (WithLp.prodContinuousLinearEquiv 2 𝕜 E F).toHomeomorph.isClosed_preimage
+  rw [coe_graphSpace, LinearPMap.IsClosed]
+  exact ⟨fun h ↦ by
+    simpa [Set.preimage_preimage] using h.preimage (WithLp.prod_continuous_toLp 2 E F),
+    fun h ↦ h.preimage (WithLp.prod_continuous_ofLp 2 E F)⟩
 
 /-- **The graph space of a closed operator is a Hilbert space.** -/
 theorem IsClosed.completeSpace_graphSpace [CompleteSpace E] [CompleteSpace F] {f : E →ₗ.[𝕜] F}
