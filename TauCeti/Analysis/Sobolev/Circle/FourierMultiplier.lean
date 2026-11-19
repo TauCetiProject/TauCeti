@@ -36,8 +36,9 @@ symbol of order `m` and `s + m = t`:
   solvable exactly when the finitely many coefficients of `b` at those modes vanish;
 * `P` is **Fredholm of index zero** when `E` is finite-dimensional;
 * the **elliptic estimate** `‖a‖_{H^t} ≤ C (‖P a‖_{H^s} + ‖a‖_{H^r})` holds for every `r ≤ t`;
-  on the orthogonal complement of the kernel the lower-order term can be dropped, and when `P`
-  has a nonzero kernel it cannot be dropped on all of `H^t`.
+  on the elements supported off the zero modes of `p`, which form the orthogonal complement of the
+  kernel, the lower-order term can be dropped, and when `P` has a nonzero kernel it cannot be
+  dropped on all of `H^t`.
 
 ## Main definitions
 
@@ -57,9 +58,10 @@ symbol of order `m` and `s + m = t`:
 * `TauCeti.CircleSobolev.isFredholm_fourierMultiplier`,
   `TauCeti.CircleSobolev.index_fourierMultiplier`: the Fredholm property and the index.
 * `TauCeti.CircleSobolev.exists_norm_le_add`: the elliptic estimate with a lower-order term.
-* `TauCeti.CircleSobolev.exists_norm_le_of_mem_orthogonal_ker`: the estimate without it on the
-  orthogonal complement of the kernel, and `TauCeti.CircleSobolev.not_exists_norm_le_of_eq_zero`:
-  its failure on a nonzero kernel.
+* `TauCeti.CircleSobolev.exists_norm_le_of_mem_supported_compl`,
+  `TauCeti.CircleSobolev.exists_norm_le_of_mem_orthogonal_ker`: the estimate without it on the
+  elements supported off the zero modes, that is on the orthogonal complement of the kernel, and
+  `TauCeti.CircleSobolev.not_exists_norm_le_of_eq_zero`: its failure on a nonzero kernel.
 
 ## References
 
@@ -302,9 +304,10 @@ theorem ker_fourierMultiplier (hp : p =O[cofinite] weight m) (h : s + m ≤ t) :
       supported t E {n | p n = 0} := by
   refine Submodule.ext fun a ↦ ⟨fun ha ↦ mem_supported'.2 fun n hn ↦ ?_,
     fun ha ↦ CircleSobolev.ext (funext fun n ↦ ?_)⟩
-  · have hn' : p n ≠ 0 := hn
+  · simp only [Set.mem_ofPred_eq] at hn
+    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at ha
     have := congr_arg (fun b : CircleSobolev s E ↦ b.coeff n) ha
-    simpa [hn'] using this
+    simpa [hn] using this
   · by_cases hn : p n = 0
     · simp [hn]
     · simp [mem_supported'.1 ha n hn]
@@ -319,8 +322,8 @@ theorem range_fourierMultiplier (hp : p =Θ[cofinite] weight m) (h : s + m = t) 
     ⟨?_, fun hb ↦ ⟨_, fourierMultiplier_fourierMultiplier_inv hp h b |>.trans ?_⟩⟩
   · rintro ⟨a, rfl⟩
     refine mem_supported'.2 fun n hn ↦ ?_
-    have hn' : p n = 0 := not_not.1 hn
-    simp [hn']
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_not] at hn
+    simp [hn]
   · rw [indicator_eq_zero_iff.2 hb, sub_zero]
 
 /-- **Elliptic regularity.** Let `p` be elliptic of order `m`. If the formal Fourier series with
@@ -419,6 +422,16 @@ theorem not_exists_norm_le_of_eq_zero [Nontrivial E] (hp : p =O[cofinite] weight
   rw [fourierMultiplier_single, hn₀, zero_smul, map_zero, norm_zero, mul_zero, norm_single] at h₀
   exact (mul_pos (weight_pos t n₀) (norm_pos_iff.2 hx)).not_ge h₀
 
+/-- **The estimate off the zero modes.** For an elliptic symbol `p` of order `m` and
+`s + m = t`, the lower-order term of `exists_norm_le_add` can be dropped on the elements whose
+Fourier coefficients vanish at every frequency where `p` vanishes. -/
+theorem exists_norm_le_of_mem_supported_compl (hp : p =Θ[cofinite] weight m) (h : s + m = t) :
+    ∃ C, ∀ a ∈ supported t E {n | p n = 0}ᶜ, ‖a‖ ≤ C * ‖fourierMultiplier p hp.1 h.le a‖ := by
+  obtain ⟨C, hC⟩ := exists_norm_sub_indicator_le (E := E) hp h
+  refine ⟨C, fun a ha ↦ ?_⟩
+  rw [← indicator_eq_zero_iff] at ha
+  simpa [ha] using hC a
+
 section Inner
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
@@ -436,10 +449,8 @@ orthogonal complement of the kernel of `P`. -/
 theorem exists_norm_le_of_mem_orthogonal_ker (hp : p =Θ[cofinite] weight m) (h : s + m = t) :
     ∃ C, ∀ a ∈ (fourierMultiplier p hp.1 h.le : CircleSobolev t F →L[ℂ] CircleSobolev s F).kerᗮ,
       ‖a‖ ≤ C * ‖fourierMultiplier p hp.1 h.le a‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_sub_indicator_le (E := F) hp h
-  refine ⟨C, fun a ha ↦ ?_⟩
-  rw [orthogonal_ker_fourierMultiplier, ← indicator_eq_zero_iff] at ha
-  simpa [ha] using hC a
+  rw [orthogonal_ker_fourierMultiplier]
+  exact exists_norm_le_of_mem_supported_compl hp h
 
 end Inner
 
@@ -456,27 +467,25 @@ private theorem isTheta_add_indicator (hp : p =Θ[cofinite] weight m) :
 private theorem add_indicator_ne_zero (n : ℤ) : p n + {n | p n = 0}.indicator 1 n ≠ 0 := by
   by_cases hn : p n = 0 <;> simp [hn]
 
-private theorem isBigO_indicator_setOf_eq_zero (hp : p =Θ[cofinite] weight m) :
-    {n | p n = 0}.indicator (1 : ℤ → ℂ) =O[cofinite] weight m :=
-  isBigO_of_forall_notMem_eq_zero (F := (finite_setOf_eq_zero hp.2).toFinset)
-    (fun n hn ↦ Set.indicator_of_notMem (by simpa using hn) _) m
-
-/-- An elliptic multiplier is an isomorphism minus the finite-rank multiplier with the indicator
-function of the zeros of its symbol. -/
+/-- An elliptic multiplier is an isomorphism minus that isomorphism composed with the frequency
+projection onto the zeros of its symbol. -/
 private theorem fourierMultiplier_eq_sub (hp : p =Θ[cofinite] weight m) (h : s + m = t) :
     (fourierMultiplier p hp.1 h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E) =
       ((fourierMultiplierEquiv (isTheta_add_indicator hp) add_indicator_ne_zero h :
           CircleSobolev t E ≃L[ℂ] CircleSobolev s E) : CircleSobolev t E →L[ℂ] _) -
-        fourierMultiplier _ (isBigO_indicator_setOf_eq_zero hp) h.le :=
-  ContinuousLinearMap.ext fun a ↦ CircleSobolev.ext (funext fun n ↦ by simp [add_smul])
+        ((fourierMultiplierEquiv (isTheta_add_indicator hp) add_indicator_ne_zero h :
+          CircleSobolev t E ≃L[ℂ] CircleSobolev s E) : CircleSobolev t E →L[ℂ] _).comp
+          (indicator {n | p n = 0}) :=
+  ContinuousLinearMap.ext fun a ↦ CircleSobolev.ext (funext fun n ↦ by
+    by_cases hn : p n = 0 <;> simp [hn])
 
-private theorem hasFiniteRange_neg_fourierMultiplier_indicator [FiniteDimensional ℂ E]
-    (hp : p =Θ[cofinite] weight m) (h : s + m = t) :
-    (-fourierMultiplier _ (isBigO_indicator_setOf_eq_zero hp) h.le :
-      CircleSobolev t E →L[ℂ] CircleSobolev s E).toLinearMap.HasFiniteRange := by
-  rw [ContinuousLinearMap.toLinearMap_neg]
-  exact (hasFiniteRange_fourierMultiplier _ _ (F := (finite_setOf_eq_zero hp.2).toFinset)
-    fun n hn ↦ Set.indicator_of_notMem (by simpa using hn) _).neg
+/-- Composing with the frequency projection onto the zeros of an elliptic symbol gives a
+finite-rank operator when `E` is finite-dimensional. -/
+private theorem hasFiniteRange_neg_comp_indicator [FiniteDimensional ℂ E]
+    (hp : p =Θ[cofinite] weight m) (f : CircleSobolev t E →L[ℂ] CircleSobolev s E) :
+    (-f.comp (indicator {n | p n = 0})).toLinearMap.HasFiniteRange := by
+  rw [ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_comp]
+  exact ((hasFiniteRange_indicator (finite_setOf_eq_zero hp.2)).comp_left _).neg
 
 /-- A Fourier multiplier with an elliptic symbol of order `m` is a Fredholm operator
 `H^t → H^s`, `s + m = t`, when `E` is finite-dimensional. -/
@@ -485,7 +494,7 @@ theorem isFredholm_fourierMultiplier [FiniteDimensional ℂ E] (hp : p =Θ[cofin
     (fourierMultiplier p hp.1 h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E).IsFredholm := by
   rw [fourierMultiplier_eq_sub hp h, sub_eq_add_neg]
   exact (ContinuousLinearEquiv.isFredholm _).add_hasFiniteRange
-    (hasFiniteRange_neg_fourierMultiplier_indicator hp h)
+    (hasFiniteRange_neg_comp_indicator hp _)
 
 /-- A Fourier multiplier with an elliptic symbol has index zero. -/
 theorem index_fourierMultiplier [FiniteDimensional ℂ E] (hp : p =Θ[cofinite] weight m)
@@ -493,7 +502,7 @@ theorem index_fourierMultiplier [FiniteDimensional ℂ E] (hp : p =Θ[cofinite] 
     (fourierMultiplier p hp.1 h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E).index = 0 := by
   rw [fourierMultiplier_eq_sub hp h, sub_eq_add_neg,
     ContinuousLinearMap.index_add_of_hasFiniteRange (ContinuousLinearEquiv.isFredholm _)
-      (hasFiniteRange_neg_fourierMultiplier_indicator hp h),
+      (hasFiniteRange_neg_comp_indicator hp _),
     ContinuousLinearEquiv.index_eq_zero]
 
 end CircleSobolev

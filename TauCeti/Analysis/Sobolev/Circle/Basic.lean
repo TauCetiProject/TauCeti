@@ -93,6 +93,14 @@ def weight (s : ℝ) (n : ℤ) : ℝ :=
 theorem weight_def (s : ℝ) (n : ℤ) : weight s n = (1 + |(n : ℝ)|) ^ s :=
   (rfl)
 
+/-- At a natural-number order `k` the weight is the ordinary power `(1 + |n|) ^ k`. -/
+theorem weight_natCast (k : ℕ) (n : ℤ) : weight k n = (1 + |(n : ℝ)|) ^ k :=
+  Real.rpow_natCast _ k
+
+theorem weight_ofNat (k : ℕ) [k.AtLeastTwo] (n : ℤ) :
+    weight (OfNat.ofNat k) n = (1 + |(n : ℝ)|) ^ (OfNat.ofNat k : ℕ) :=
+  weight_natCast k n
+
 private theorem one_le_one_add_abs (n : ℤ) : 1 ≤ 1 + |(n : ℝ)| :=
   le_add_of_nonneg_right (abs_nonneg _)
 

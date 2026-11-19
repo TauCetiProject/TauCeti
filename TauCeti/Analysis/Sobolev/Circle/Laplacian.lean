@@ -17,13 +17,15 @@ It is an elliptic Fourier multiplier of order `2`, so the elliptic theory of
 `TauCeti/Analysis/Sobolev/Circle/FourierMultiplier.lean` applies to it, and it shows what that
 theory does and does not give when the operator has a kernel.
 
-* The kernel of `Δ : H^t → H^s` consists of the constants, and `Δ` is Fredholm of index zero.
+* The kernel of `Δ : H^t → H^s` consists of the constants, and, for `s + 2 = t` and
+  finite-dimensional `E`, `Δ` is Fredholm of index zero.
 * `Δ a = b` is solvable exactly when `b` has mean zero, that is `b.coeff 0 = 0`; in particular
   `Δ u = 1` has no solution.
 * Since `Δ 1 = 0` while `1 ≠ 0`, no estimate `‖a‖_{H^t} ≤ C ‖Δ a‖_{H^s}` holds on all of `H^t`;
   it does hold on the mean-zero elements.
-* The multiplier `G` with symbol `(2πn/T)⁻²` for `n ≠ 0` and `0` for `n = 0`, the Green operator,
-  satisfies `Δ G = G Δ = 1 - Π₀`, where `Π₀ a = a.coeff 0` is the projection onto the constants.
+* The multiplier `G` with symbol `(2πn/T)⁻²` for `n ≠ 0` and `0` for `n = 0`, the Green operator
+  (`TauCeti.CircleSobolev.greenOperator`), satisfies `Δ G = G Δ = 1 - Π₀`, where
+  `Π₀ a = single 0 (a.coeff 0)` is the projection onto the constants.
 * `1 + Δ = 1 - ∂²` has no kernel: it multiplies `e^{2πinx/T}` by `1 + (2πn/T)²`, which does not
   vanish even at `n = 0`, and it is an isomorphism `H^(s + 2) ≃ H^s` whose inverse divides by
   this factor (`TauCeti.CircleSobolev.oneAddLaplacianEquiv`).
@@ -33,6 +35,7 @@ theory does and does not give when the operator has a kernel.
 * `TauCeti.CircleSobolev.laplacianSymbol T n = (2πn/T)²`.
 * `TauCeti.CircleSobolev.laplacian T h`: the Laplacian `-∂²` as a bounded operator `H^t → H^s`
   for `s + 2 ≤ t`.
+* `TauCeti.CircleSobolev.greenOperator T h`: the Green operator `G : H^s → H^t` for `t ≤ s + 2`.
 * `TauCeti.CircleSobolev.oneAddLaplacianEquiv T h`: the isomorphism `1 - ∂² : H^t ≃ H^s` for
   `s + 2 = t`.
 
@@ -84,6 +87,7 @@ theorem laplacianSymbol_two_pi (n : ℤ) : laplacianSymbol (2 * π) n = (n : ℂ
   push_cast
   ring
 
+@[simp]
 theorem laplacianSymbol_eq_zero_iff (n : ℤ) : laplacianSymbol T n = 0 ↔ n = 0 := by
   have := hT.out.ne'
   simp [laplacianSymbol_def, Real.pi_ne_zero, this]
@@ -98,9 +102,13 @@ private theorem norm_laplacianSymbol (n : ℤ) :
     sq_abs]
   ring
 
-private theorem weight_two (n : ℤ) : weight 2 n = (1 + |(n : ℝ)|) ^ 2 := by
-  rw [weight_def, ← Real.rpow_natCast]
-  norm_num
+omit hT in
+/-- The norm of `1 + (2πn/T)²` is `1` plus the norm of the Laplacian symbol, since the symbol is a
+nonnegative real number. -/
+private theorem norm_one_add_laplacianSymbol (n : ℤ) :
+    ‖1 + laplacianSymbol T n‖ = 1 + ‖laplacianSymbol T n‖ := by
+  rw [laplacianSymbol_def, ← Complex.ofReal_one, ← Complex.ofReal_add, Complex.norm_real,
+    Complex.norm_real, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
 
 /-- The Laplacian symbol is elliptic of order `2`: `(2πn/T)²` is comparable to `(1 + |n|)²` at
 every frequency `n ≠ 0`. -/
@@ -109,12 +117,12 @@ theorem isTheta_laplacianSymbol : laplacianSymbol T =Θ[cofinite] weight 2 := by
   refine ⟨IsBigO.of_bound ((2 * π / T) ^ 2) (Eventually.of_forall fun n ↦ ?_),
     IsBigO.of_bound (4 * ((2 * π / T) ^ 2)⁻¹)
       ((Set.finite_singleton (0 : ℤ)).eventually_cofinite_notMem.mono fun n hn ↦ ?_)⟩
-  · rw [norm_laplacianSymbol, norm_weight, weight_two]
+  · rw [norm_laplacianSymbol, norm_weight, weight_ofNat]
     have : |(n : ℝ)| ^ 2 ≤ (1 + |(n : ℝ)|) ^ 2 := by
       gcongr
       linarith
     exact mul_le_mul_of_nonneg_left this (by positivity)
-  · rw [norm_laplacianSymbol, norm_weight, weight_two]
+  · rw [norm_laplacianSymbol, norm_weight, weight_ofNat]
     have hn1 : (1 : ℝ) ≤ |(n : ℝ)| := by
       rw [← Int.cast_abs]
       exact_mod_cast Int.one_le_abs (by simpa using hn)
@@ -147,9 +155,7 @@ theorem laplacian_eq_neg_derivative_comp_derivative {u : ℝ} (h₁ : s + 1 ≤ 
     laplacianSymbol_def]
   congr 1
   push_cast
-  ring_nf
-  rw [Complex.I_sq]
-  ring
+  linear_combination (2 * (π : ℂ) * n / T) ^ 2 * Complex.I_sq
 
 /-- The frequency projection onto the zero modes of the Laplacian is the projection onto the
 constants. -/
@@ -164,8 +170,8 @@ coefficient of `a` other than the zeroth one vanishes. -/
 theorem laplacian_eq_zero_iff (h : s + 2 ≤ t) (a : CircleSobolev t E) :
     laplacian T h a = 0 ↔ a = single 0 (a.coeff 0) := by
   rw [← indicator_setOf_laplacianSymbol_eq_zero T, eq_comm (a := a), indicator_eq_self_iff,
-    ← ker_fourierMultiplier (isTheta_laplacianSymbol T).1 h]
-  rfl
+    ← ker_fourierMultiplier (isTheta_laplacianSymbol T).1 h, LinearMap.mem_ker,
+    ContinuousLinearMap.coe_coe, laplacian]
 
 /-- **Solvability of `Δ a = b`**: for `s + 2 = t`, an element `b ∈ H^s` is `Δ a` for some
 `a ∈ H^t` exactly when it has mean zero, `b.coeff 0 = 0`. -/
@@ -192,29 +198,39 @@ theorem not_exists_norm_le_laplacian [Nontrivial E] (h : s + 2 ≤ t) :
 `‖a‖_{H^t} ≤ C ‖Δ a‖_{H^s}` for every `a ∈ H^t` of mean zero. -/
 theorem exists_norm_le_laplacian_of_coeff_zero_eq_zero (h : s + 2 = t) :
     ∃ C, ∀ a : CircleSobolev t E, a.coeff 0 = 0 → ‖a‖ ≤ C * ‖laplacian T h.le a‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_sub_indicator_le (E := E) (isTheta_laplacianSymbol T) h
-  refine ⟨C, fun a ha ↦ ?_⟩
-  have hproj : indicator {n | laplacianSymbol T n = 0} a = 0 := by
-    rw [indicator_setOf_laplacianSymbol_eq_zero, ha, map_zero]
-  simpa [laplacian, hproj] using hC a
+  obtain ⟨C, hC⟩ :=
+    exists_norm_le_of_mem_supported_compl (E := E) (isTheta_laplacianSymbol T) h
+  refine ⟨C, fun a ha ↦ hC a ?_⟩
+  rw [setOf_laplacianSymbol_eq_zero, mem_supported']
+  intro n hn
+  rw [Set.notMem_compl_iff, Set.mem_singleton_iff] at hn
+  rwa [hn]
 
-/-- **The Green operator of the Laplacian**: the multiplier `G` with symbol `(2πn/T)⁻²` for
-`n ≠ 0` and `0` for `n = 0` satisfies `Δ G b = b - b.coeff 0`. -/
+/-- **The Green operator of the Laplacian**, as a bounded operator `H^s → H^t` for `t ≤ s + 2`:
+the multiplier with symbol `(2πn/T)⁻²` for `n ≠ 0` and `0` for `n = 0`. -/
+def greenOperator (h : t ≤ s + 2) : CircleSobolev s E →L[ℂ] CircleSobolev t E :=
+  fourierMultiplier (fun n ↦ (laplacianSymbol T n)⁻¹) (isBigO_inv (isTheta_laplacianSymbol T).2)
+    (by linarith)
+
+@[simp]
+theorem coeff_greenOperator (h : t ≤ s + 2) (b : CircleSobolev s E) (n : ℤ) :
+    (greenOperator T h b).coeff n = (laplacianSymbol T n)⁻¹ • b.coeff n :=
+  coeff_fourierMultiplier _ _ b n
+
+/-- The Green operator is a right inverse of the Laplacian up to the constants:
+`Δ G b = b - single 0 (b.coeff 0)`. -/
 theorem laplacian_greenOperator (h : s + 2 = t) (b : CircleSobolev s E) :
-    laplacian T h.le (fourierMultiplier (fun n ↦ (laplacianSymbol T n)⁻¹)
-        (isBigO_inv (isTheta_laplacianSymbol T).2) (show t + -2 ≤ s by linarith) b) =
-      b - single 0 (b.coeff 0) := by
-  rw [laplacian, fourierMultiplier_fourierMultiplier_inv (isTheta_laplacianSymbol T) h,
+    laplacian T h.le (greenOperator T h.ge b) = b - single 0 (b.coeff 0) := by
+  rw [laplacian, greenOperator,
+    fourierMultiplier_fourierMultiplier_inv (isTheta_laplacianSymbol T) h,
     indicator_setOf_laplacianSymbol_eq_zero]
 
-/-- **The Green operator of the Laplacian** is also a left inverse up to the constants:
-`G Δ a = a - a.coeff 0`. -/
+/-- The Green operator is a left inverse of the Laplacian up to the constants:
+`G Δ a = a - single 0 (a.coeff 0)`. -/
 theorem greenOperator_laplacian (h : s + 2 = t) (a : CircleSobolev t E) :
-    fourierMultiplier (fun n ↦ (laplacianSymbol T n)⁻¹)
-        (isBigO_inv (isTheta_laplacianSymbol T).2) (show t + -2 ≤ s by linarith)
-        (laplacian T h.le a) =
-      a - single 0 (a.coeff 0) := by
-  rw [laplacian, fourierMultiplier_inv_fourierMultiplier (isTheta_laplacianSymbol T) h,
+    greenOperator T h.ge (laplacian T h.le a) = a - single 0 (a.coeff 0) := by
+  rw [laplacian, greenOperator,
+    fourierMultiplier_inv_fourierMultiplier (isTheta_laplacianSymbol T) h,
     indicator_setOf_laplacianSymbol_eq_zero]
 
 /-- The Laplacian `H^t → H^s`, `s + 2 = t`, is a Fredholm operator. -/
@@ -233,19 +249,15 @@ theorem index_laplacian [FiniteDimensional ℂ E] (h : s + 2 = t) :
 /-- The symbol `1 + (2πn/T)²` of `1 + Δ = 1 - ∂²` is elliptic of order `2`. -/
 theorem isTheta_one_add_laplacianSymbol :
     (fun n ↦ 1 + laplacianSymbol T n) =Θ[cofinite] weight 2 := by
-  have hk : 0 < 2 * π / T := div_pos (by positivity) hT.out
   have hnorm (n : ℤ) : ‖1 + laplacianSymbol T n‖ = 1 + (2 * π / T) ^ 2 * |(n : ℝ)| ^ 2 := by
-    rw [laplacianSymbol_def, ← Complex.ofReal_one, ← Complex.ofReal_add, Complex.norm_real,
-      Real.norm_eq_abs, abs_of_nonneg (by positivity), ← sq_abs (2 * π * n / T), abs_div,
-      abs_mul, abs_of_pos (by positivity : (0 : ℝ) < 2 * π), abs_of_pos hT.out]
-    ring
+    rw [norm_one_add_laplacianSymbol, norm_laplacianSymbol]
   refine ⟨IsBigO.of_bound (1 + (2 * π / T) ^ 2) (Eventually.of_forall fun n ↦ ?_),
     IsBigO.of_bound (2 * (1 + ((2 * π / T) ^ 2)⁻¹)) (Eventually.of_forall fun n ↦ ?_)⟩
-  · rw [hnorm, norm_weight, weight_two]
+  · rw [hnorm, norm_weight, weight_ofNat]
     have h0 : 0 ≤ |(n : ℝ)| := abs_nonneg _
     nlinarith [sq_nonneg (2 * π / T)]
-  · rw [hnorm, norm_weight, weight_two]
-    have hk2 : 0 < (2 * π / T) ^ 2 := by positivity
+  · rw [hnorm, norm_weight, weight_ofNat]
+    have hk2 : 0 < (2 * π / T) ^ 2 := pow_pos (div_pos (by positivity) hT.out) 2
     have hinv : ((2 * π / T) ^ 2)⁻¹ * (2 * π / T) ^ 2 = 1 := inv_mul_cancel₀ hk2.ne'
     nlinarith [sq_nonneg (|(n : ℝ)| - 1), mul_nonneg (inv_nonneg.2 hk2.le) (sq_nonneg |(n : ℝ)|),
       mul_nonneg hk2.le (sq_nonneg |(n : ℝ)|)]
