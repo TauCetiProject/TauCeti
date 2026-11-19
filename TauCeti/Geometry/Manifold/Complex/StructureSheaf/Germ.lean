@@ -34,6 +34,8 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
   and `exists_toFilterGerm_nhds_eq_iff_analyticAt` express this directly via `AnalyticAt`);
 * `eval_eq_of_toFilterGerm_eq`: the value of a holomorphic germ is the value of any function
   with the same germ;
+* `evalEquivOfNhdsEqPure`: at an isolated point (`𝓝 x = pure x`), evaluation identifies the
+  holomorphic stalk at `x` with `ℂ`;
 * `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
   is composition of germs with `f`;
 * `quotientMk_comp_stalkPrecomp_bijective`: if an ideal of germs at `p` on a normed space consists
@@ -253,6 +255,44 @@ theorem eval_eq_of_toFilterGerm_eq {x : X} {s : (holomorphicStructureSheaf I X).
 theorem eval_germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
     eval I X x (germOfContMDiff f hf x) = f x :=
   eval_eq_of_toFilterGerm_eq (toFilterGerm_germOfContMDiff f hf le_rfl)
+
+/-- At an isolated point (`𝓝 x = pure x`), evaluation identifies the holomorphic stalk at `x`
+with `ℂ`. -/
+def evalEquivOfNhdsEqPure (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x) :
+    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+* ℂ :=
+  RingEquiv.ofBijective (eval I X x)
+    ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ by
+      obtain ⟨φ, -, hφ⟩ := exists_toFilterGerm_eq x s
+      refine (eq_zero_iff_of_toFilterGerm_eq (hφ _ le_rfl)).2 ?_
+      rw [hx]
+      exact eventually_pure.2 ((eval_eq_of_toFilterGerm_eq (hφ _ le_rfl)).symm.trans hs),
+      eval_surjective I X x⟩
+
+/-- Evaluating the stalk isomorphism at an isolated point agrees with `eval`. -/
+@[simp]
+theorem evalEquivOfNhdsEqPure_apply (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x)
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    evalEquivOfNhdsEqPure I hx s = eval I X x s :=
+  RingEquiv.ofBijective_apply _ _ _
+
+/-- At an isolated point, the inverse stalk isomorphism recovers any germ from its value. -/
+@[simp]
+theorem evalEquivOfNhdsEqPure_symm_eval (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x)
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    (evalEquivOfNhdsEqPure I hx).symm (eval I X x s) = s := by
+  rw [← evalEquivOfNhdsEqPure_apply I hx, RingEquiv.symm_apply_apply]
+
+/-- Evaluating the inverse stalk isomorphism at an isolated point returns the given scalar. -/
+@[simp]
+theorem eval_evalEquivOfNhdsEqPure_symm (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x)
+    (c : ℂ) : eval I X x ((evalEquivOfNhdsEqPure I hx).symm c) = c := by
+  rw [← evalEquivOfNhdsEqPure_apply I hx, RingEquiv.apply_symm_apply]
+
+/-- At an isolated point, the inverse of `evalEquivOfNhdsEqPure` sends `c` to the constant germ. -/
+theorem evalEquivOfNhdsEqPure_symm_apply (I : ModelWithCorners ℂ E H) {x : X} (hx : 𝓝 x = pure x)
+    (c : ℂ) :
+    (evalEquivOfNhdsEqPure I hx).symm c = germOfContMDiff (fun _ ↦ c) contMDiff_const x :=
+  (evalEquivOfNhdsEqPure I hx).injective (by simp)
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}
