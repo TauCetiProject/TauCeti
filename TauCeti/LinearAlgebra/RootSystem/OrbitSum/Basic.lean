@@ -287,11 +287,7 @@ simple roots. -/
 theorem mem_support_of_mem_orbitIndices (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support)
     {s k : ι} (hs : s ∈ b.support) (hk : k ∈ P.orbitIndices σ s) : k ∈ b.support := by
   obtain ⟨m, rfl⟩ := mem_orbitIndices_iff_exists_pow.mp hk
-  induction m with
-  | zero => exact hs
-  | succ m ih =>
-    rw [pow_succ', Equiv.Perm.mul_apply]
-    exact hσ _ (ih (mem_orbitIndices_iff_exists_pow.mpr ⟨m, rfl⟩))
+  exact (Set.MapsTo.perm_pow (s := (↑b.support : Set ι)) hσ m) hs
 
 variable [CharZero R]
 
