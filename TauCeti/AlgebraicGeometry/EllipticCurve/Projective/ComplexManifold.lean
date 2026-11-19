@@ -31,10 +31,9 @@ the derivative of the affine equation; it is not identified here with the classi
 coordinates `x`, `y` or `X / Y`. These slice charts make the zero locus a complex submanifold of
 `ℂℙ²` modelled on `Fin 1 → ℂ` (`TauCeti.complexProjectiveZeroLocusChartedSpace`). Pulling that
 atlas back to `W.Point` and reading its model `Fin 1 → ℂ` in `ℂ`
-(`Diffeomorph.chartedSpaceComp`) gives an atlas of `W.Point` modelled on `ℂ`, whose transition
-maps are analytic. The embedding into `ℂℙ²` is transported along the same linear change of model,
-through the identity of `W.Point` between the two atlases (`Diffeomorph.chartedSpaceCompDiffeomorph`
-and `TauCeti.isImmersionAt_comp_diffeomorph_of_image_range_eq`).
+(`Homeomorph.chartedSpaceComp`) gives an atlas of `W.Point` modelled on `ℂ`, whose transition
+maps are analytic. The embedding into `ℂℙ²` is transported along the same linear change of model
+(`Diffeomorph.isSmoothEmbedding_chartedSpaceComp`).
 
 This makes the points of a complex elliptic curve, already compact and connected in their analytic
 topology, a one-dimensional complex manifold
@@ -121,7 +120,7 @@ charted by `ℂ`: the chart at a point reads the tangential coordinate of the an
 @[no_expose]
 noncomputable instance instChartedSpace : ChartedSpace ℂ W.Point :=
   letI := slicePointChartedSpace W
-  (modelEquiv.toContDiffDiffeomorph ω).chartedSpaceComp W.Point
+  (modelEquiv.toContDiffDiffeomorph ω).toHomeomorph.chartedSpaceComp W.Point
 
 /-- The points of `W` form a `C^r` manifold for the atlas pulled back from the zero locus. -/
 private theorem isManifold_slicePointChartedSpace (r : ℕ∞ω) :
@@ -164,14 +163,10 @@ theorem isSmoothEmbedding_toProjectivization (r : ℕ∞ω) :
     funext P
     rw [Function.comp_apply, coe_homeomorphZeroLocus_apply]
   rw [hP] at h
-  refine ⟨TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun P ↦ ?_, isEmbedding_toProjectivization⟩
   have := isManifold_slicePointChartedSpace W ω
-  have hP := TauCeti.isImmersionAt_comp_diffeomorph_of_image_range_eq modelEquiv.symm
+  exact (modelEquiv.toContDiffDiffeomorph ω).isSmoothEmbedding_chartedSpaceComp modelEquiv.symm
     (by simp only [modelWithCornersSelf_coe, range_id]
-        exact image_univ_of_surjective modelEquiv.symm.surjective)
-    ((modelEquiv.toContDiffDiffeomorph ω).chartedSpaceCompDiffeomorph W.Point) le_top (x := P)
-    (by rw [Diffeomorph.coe_chartedSpaceCompDiffeomorph]; exact h.isImmersion.isImmersionAt P)
-  rwa [Diffeomorph.coe_chartedSpaceCompDiffeomorph, Function.comp_id] at hP
+        exact image_univ_of_surjective modelEquiv.symm.surjective) le_top h
 
 variable {W} {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
   {I : ModelWithCorners ℂ E H} [TopologicalSpace M] [ChartedSpace H M] {r : ℕ∞ω}

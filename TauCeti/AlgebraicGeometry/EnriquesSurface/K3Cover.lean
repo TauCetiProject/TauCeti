@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.MvPolynomial.Jacobian
 public import TauCeti.Geometry.Manifold.Projectivization.ZeroLocus
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
-import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.ModelChange
 import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 import TauCeti.LinearAlgebra.Vandermonde
@@ -38,9 +37,9 @@ are nonzero, they all vanish (`TauCeti.exists_lt_card_sum_mul_pow_ne_zero`).
 The zero locus is the native projective zero locus `TauCeti.complexProjectiveZeroLocus` of the
 quadrics, so the Jacobian criterion makes it a complex submanifold of `ℂℙ⁵` of dimension
 `5 - 3 = 2`, through the slice-chart atlas `TauCeti.complexProjectiveZeroLocusChartedSpace`. Its
-model `Fin (5 - 3) → ℂ` is read in `Fin 2 → ℂ` (`Diffeomorph.chartedSpaceComp`), as for the
+model `Fin (5 - 3) → ℂ` is read in `Fin 2 → ℂ` (`Homeomorph.chartedSpaceComp`), as for the
 analytic structure of a complex elliptic curve, and the embedding of the zero locus into `ℂℙ⁵` is
-transported along the identity between the two atlases (`Diffeomorph.chartedSpaceCompDiffeomorph`).
+transported along this linear change of model (`Diffeomorph.isSmoothEmbedding_chartedSpaceComp`).
 
 ## Main definitions
 
@@ -350,6 +349,14 @@ private noncomputable def enriquesZeroSetSliceChartedSpace :
     isOpen_univ (Set.inter_univ _).symm fun _ ↦
       mulVec_surjective_jacobiMatrixAt_rep_of_mem_enriquesZeroSet
 
+/-- The Enriques K3 cover is a `C^r` manifold for its slice-chart atlas. -/
+private theorem isManifold_enriquesZeroSetSlice (r : ℕ∞ω) :
+    letI := enriquesZeroSetSliceChartedSpace
+    IsManifold 𝓘(ℂ, Fin (5 - Fintype.card (Fin 3)) → ℂ) r enriquesZeroSet :=
+  isManifold_complexProjectiveZeroLocus (s := enriquesZeroSet) isHomogeneous_enriquesQuadric
+    isOpen_univ (Set.inter_univ _).symm
+    (fun _ ↦ mulVec_surjective_jacobiMatrixAt_rep_of_mem_enriquesZeroSet) r
+
 /-- The slice-chart model `Fin (5 - 3) → ℂ`, read in `Fin 2 → ℂ`. -/
 private noncomputable def enriquesModelEquiv :
     (Fin (5 - Fintype.card (Fin 3)) → ℂ) ≃L[ℂ] (Fin 2 → ℂ) :=
@@ -361,15 +368,13 @@ coordinates of the analytic slice chart of `ℂℙ⁵` flattening the zero locus
 @[no_expose]
 noncomputable instance instChartedSpaceEnriquesZeroSet : ChartedSpace (Fin 2 → ℂ) enriquesZeroSet :=
   letI := enriquesZeroSetSliceChartedSpace
-  (enriquesModelEquiv.toContDiffDiffeomorph ω).chartedSpaceComp enriquesZeroSet
+  (enriquesModelEquiv.toContDiffDiffeomorph ω).toHomeomorph.chartedSpaceComp enriquesZeroSet
 
 /-- **The Enriques K3 cover is a complex surface.** Its atlas is analytic, and `C^r` for every
 `r`. -/
 instance instIsManifoldEnriquesZeroSet (r : ℕ∞ω) : IsManifold 𝓘(ℂ, Fin 2 → ℂ) r enriquesZeroSet :=
   letI := enriquesZeroSetSliceChartedSpace
-  haveI := isManifold_complexProjectiveZeroLocus (s := enriquesZeroSet)
-    isHomogeneous_enriquesQuadric isOpen_univ (Set.inter_univ _).symm
-    (fun _ ↦ mulVec_surjective_jacobiMatrixAt_rep_of_mem_enriquesZeroSet) ω
+  haveI := isManifold_enriquesZeroSetSlice ω
   haveI : IsManifold 𝓘(ℂ, Fin 2 → ℂ) ω enriquesZeroSet :=
     (enriquesModelEquiv.toContDiffDiffeomorph ω).isManifold_chartedSpaceComp enriquesZeroSet
   IsManifold.of_le le_top
@@ -380,21 +385,14 @@ theorem isSmoothEmbedding_subtypeVal_enriquesZeroSet (r : ℕ∞ω) :
     Manifold.IsSmoothEmbedding 𝓘(ℂ, Fin 2 → ℂ) 𝓘(ℂ, Fin 5 → ℂ) r
       (Subtype.val : enriquesZeroSet → ℙ ℂ (Fin 6 → ℂ)) := by
   let := enriquesZeroSetSliceChartedSpace
-  have hM (r : ℕ∞ω) := isManifold_complexProjectiveZeroLocus (s := enriquesZeroSet)
-    isHomogeneous_enriquesQuadric isOpen_univ (Set.inter_univ _).symm
-    (fun _ ↦ mulVec_surjective_jacobiMatrixAt_rep_of_mem_enriquesZeroSet) r
-  have := hM ω
-  have h := isSmoothEmbedding_subtypeVal_complexProjectiveZeroLocus (s := enriquesZeroSet)
-    isHomogeneous_enriquesQuadric isOpen_univ (Set.inter_univ _).symm
-    (fun _ ↦ mulVec_surjective_jacobiMatrixAt_rep_of_mem_enriquesZeroSet) r
-  -- Precompose the slice-chart immersion with the identity from the atlas on `Fin 2 → ℂ`.
-  refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun p ↦ ?_, Topology.IsEmbedding.subtypeVal⟩
-  have hp := isImmersionAt_comp_diffeomorph_of_image_range_eq enriquesModelEquiv.symm
+  have := isManifold_enriquesZeroSetSlice ω
+  -- Read the slice-chart embedding in the charts on `Fin 2 → ℂ`.
+  exact (enriquesModelEquiv.toContDiffDiffeomorph ω).isSmoothEmbedding_chartedSpaceComp
+    enriquesModelEquiv.symm
     (by simp only [modelWithCornersSelf_coe, Set.range_id]
-        exact Set.image_univ_of_surjective enriquesModelEquiv.symm.surjective)
-    ((enriquesModelEquiv.toContDiffDiffeomorph ω).chartedSpaceCompDiffeomorph enriquesZeroSet)
-    le_top (x := p)
-    (by rw [Diffeomorph.coe_chartedSpaceCompDiffeomorph]; exact h.isImmersion.isImmersionAt p)
-  rwa [Diffeomorph.coe_chartedSpaceCompDiffeomorph, Function.comp_id] at hp
+        exact Set.image_univ_of_surjective enriquesModelEquiv.symm.surjective) le_top
+    (isSmoothEmbedding_subtypeVal_complexProjectiveZeroLocus (s := enriquesZeroSet)
+      isHomogeneous_enriquesQuadric isOpen_univ (Set.inter_univ _).symm
+      (fun _ ↦ mulVec_surjective_jacobiMatrixAt_rep_of_mem_enriquesZeroSet) r)
 
 end TauCeti
