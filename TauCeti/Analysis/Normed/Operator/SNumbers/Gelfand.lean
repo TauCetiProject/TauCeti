@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Restrict
 public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
+public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import Mathlib.LinearAlgebra.Dimension.RankNullity
 
 /-!
@@ -24,9 +25,10 @@ does not increase the norm of the restriction, and does not increase the codimen
 subspaces of codimension at most `n`.
 
 The Gelfand numbers form a strict s-number sequence over every nontrivially normed field,
-without completeness of the field or of the spaces. The two-sided ideal inequality pulls an
-admissible subspace back along the right factor, the rank axiom uses the kernel, and the
-normalization on identities uses that every subspace of codimension below the dimension is
+without completeness of the field or of the spaces, and are bounded above by the approximation
+numbers (`ContinuousLinearMap.gelfandNumber_le_singularValue`). The two-sided ideal inequality
+pulls an admissible subspace back along the right factor, the rank axiom uses the kernel, and
+the normalization on identities uses that every subspace of codimension below the dimension is
 nonzero.
 
 ## Main declarations
@@ -36,6 +38,7 @@ nonzero.
   `cₙ(T)` by the norm of the restriction of `T` to it.
 * `ContinuousLinearMap.le_gelfandNumber_iff`: lower bounds for `cₙ(T)`.
 * `ContinuousLinearMap.gelfandNumber_comp_comp_le`: `cₙ(B T A) ≤ ‖B‖ cₙ(T) ‖A‖`.
+* `ContinuousLinearMap.gelfandNumber_le_singularValue`: `cₙ(T) ≤ aₙ(T)`.
 * `ContinuousLinearMap.gelfandNumber_id`: `cₙ(id_E) = 1` when `n` is below the rank of `E`.
 * `TauCeti.SNumbers.isStrictSNumberSequence_gelfand`: the Gelfand numbers form a strict
   s-number sequence.
@@ -177,6 +180,14 @@ theorem gelfandNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A 
       gcongr; exact (T ∘L M.1.subtypeL).le_opNNNorm ⟨A x, hx⟩
     _ ≤ ‖B‖₊ * (‖T ∘L M.1.subtypeL‖₊ * (‖A‖₊ * ‖x‖₊)) := by gcongr; exact A.le_opNNNorm _
     _ = ‖B‖₊ * ‖T ∘L M.1.subtypeL‖₊ * ‖A‖₊ * ‖x‖₊ := by ring
+
+/-- The `n`-th Gelfand number is bounded above by the `n`-th approximation number: `cₙ(T) ≤ aₙ(T)`.
+Neither completeness nor Hausdorffness of the spaces is required. -/
+theorem gelfandNumber_le_singularValue (T : E →L[𝕜] F) (n : ℕ) :
+    T.gelfandNumber n ≤ T.singularValue n := by
+  refine le_singularValue_iff.mpr fun R hR ↦ ?_
+  have h := R.gelfandNumber_add_le (T - R) n
+  simpa [gelfandNumber_eq_zero_of_rank_le hR] using h
 
 /-- **Identity normalization.** If `n` is strictly below the rank of a normed space `E`, then
 `cₙ(id_E) = 1`: every subspace of codimension at most `n` is nonzero, so its inclusion has
