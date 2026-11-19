@@ -49,8 +49,6 @@ on the identification used.
 * `Orientation.localOrientation_map`: continuous linear equivalences carry the selected local
   orientations to each other.
 * `Orientation.localOrientation_neg`: reversing the orientation reverses the local orientation.
-* `Orientation.localOrientation_euclideanSpace`: on the Euclidean model it is the oriented-chart
-  generator of the identity chart.
 * `Orientation.localOrientation_injective`, `Orientation.localOrientation_surjective`: the
   selection is a bijection; `Orientation.localOrientation_inj` is the injectivity as an iff.
 * `Orientation.localOrientation_eq_localOrientationOfOrientedChart_refl`: in a real inner product
@@ -162,7 +160,7 @@ private theorem localOrientation_eq_localOrientationVia (ω : Orientation ℝ F 
 
 /-- On the Euclidean model `EuclideanSpace ℝ (ULift (Fin (n + 1)))`, the local orientation
 selected by `ω` is the oriented-chart generator of the identity chart. -/
-theorem localOrientation_euclideanSpace
+private theorem localOrientation_euclideanSpace
     (ω : Orientation ℝ (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) (Fin (n + 1)))
     (hE : finrank ℝ (EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) = n + 1) :
     ω.localOrientation hE = (OpenPartialHomeomorph.refl _).localOrientationOfOrientedChart

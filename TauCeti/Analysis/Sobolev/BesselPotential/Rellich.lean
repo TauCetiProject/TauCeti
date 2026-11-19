@@ -13,6 +13,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Function.Lp.Operator.Compact
+import TauCeti.MeasureTheory.Group.Integral
 
 /-!
 # The Rellich theorem for Bessel-potential spaces
@@ -155,25 +156,17 @@ private theorem lintegral_enorm_le_of_norm_le_sub {L : E → E → F →L[ℂ] F
     (hL : ∀ ξ η, ‖L ξ η‖ ≤ c * rellichBound φ r s (ξ - η)) :
     (∀ ξ, ∫⁻ η, ‖L ξ η‖ₑ ≤ (((c * ∫ ζ, rellichBound φ r s ζ).toNNReal : ℝ≥0) : ℝ≥0∞)) ∧
       ∀ η, ∫⁻ ξ, ‖L ξ η‖ₑ ≤ (((c * ∫ ζ, rellichBound φ r s ζ).toNNReal : ℝ≥0) : ℝ≥0∞) := by
-  have hint : ∫⁻ ζ, ENNReal.ofReal (c * rellichBound φ r s ζ) =
-      (((c * ∫ ζ, rellichBound φ r s ζ).toNNReal : ℝ≥0) : ℝ≥0∞) := by
-    rw [← ENNReal.ofReal.eq_def, ← integral_const_mul,
-      ofReal_integral_eq_lintegral_ofReal (integrable_rellichBound.const_mul c)
-        (.of_forall fun ζ ↦ mul_nonneg hc (rellichBound_nonneg ζ))]
+  have hk : Integrable fun ζ ↦ c * rellichBound φ r s ζ := integrable_rellichBound.const_mul c
+  have hk0 : 0 ≤ᵐ[volume] fun ζ ↦ c * rellichBound φ r s ζ :=
+    .of_forall fun ζ ↦ mul_nonneg hc (rellichBound_nonneg ζ)
   have hle (ξ η : E) : ‖L ξ η‖ₑ ≤ ENNReal.ofReal (c * rellichBound φ r s (ξ - η)) := by
     rw [← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (hL ξ η)
-  refine ⟨fun ξ ↦ ?_, fun η ↦ ?_⟩
-  · calc ∫⁻ η, ‖L ξ η‖ₑ ≤ ∫⁻ η, ENNReal.ofReal (c * rellichBound φ r s (ξ - η)) :=
-          lintegral_mono (hle ξ)
-      _ = _ := by
-          rw [lintegral_sub_left_eq_self (fun ζ ↦ ENNReal.ofReal (c * rellichBound φ r s ζ)) ξ,
-            hint]
-  · calc ∫⁻ ξ, ‖L ξ η‖ₑ ≤ ∫⁻ ξ, ENNReal.ofReal (c * rellichBound φ r s (ξ - η)) :=
-          lintegral_mono fun ξ ↦ hle ξ η
-      _ = _ := by
-          rw [lintegral_sub_right_eq_self (fun ζ ↦ ENNReal.ofReal (c * rellichBound φ r s ζ)) η,
-            hint]
+  rw [← ENNReal.ofReal.eq_def, ← integral_const_mul]
+  exact ⟨fun ξ ↦ (lintegral_mono (hle ξ)).trans
+      (TauCeti.lintegral_ofReal_sub_left_eq_ofReal_integral hk hk0 ξ).le,
+    fun η ↦ (lintegral_mono (hle · η)).trans
+      (TauCeti.lintegral_ofReal_sub_right_eq_ofReal_integral hk hk0 η).le⟩
 
 /-- The integral operator on `L²` with the kernel `rellichKernel`. -/
 private def rellichOperator (φ : 𝓢(E, ℂ)) (h : r ≤ s) :
@@ -267,8 +260,7 @@ private theorem fourierWeighted_toBesselPotentialSpaceCLM (t : ℝ) (u : 𝓢(E,
   have h : fourierWeighted t (SchwartzMap.toBesselPotentialSpaceCLM t 2 u) =
       (SchwartzMap.smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))
         (𝓕 u)).toLp 2 := by
-    rw [fourierWeighted_apply, SchwartzMap.toLp_toBesselPotentialSpaceCLM,
-      SchwartzMap.toLp_fourier_eq, SchwartzMap.fourierMultiplierCLM_apply, fourier_fourierInv_eq]
+    rw [fourierWeighted_apply, SchwartzMap.fourier_toLp_toBesselPotentialSpaceCLM]
   rw [h]
   filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.smulLeftCLM F
     (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) (𝓕 u)) 2 volume] with ξ hξ
@@ -297,8 +289,7 @@ private theorem fourierWeighted_comp_eq (φ : 𝓢(E, ℂ)) (h : r ≤ s) :
   -- The weights `⟨η⟩ ^ (-s)` and `⟨η⟩ ^ s` cancel.
   have hcancel : (((1 + ‖η‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ) * (((1 + ‖η‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) =
       1 := by
-    rw [← Complex.ofReal_mul, ← Real.rpow_add (by positivity), neg_div, neg_add_cancel,
-      Real.rpow_zero, Complex.ofReal_one]
+    rw [← Complex.ofReal_mul, TauCeti.one_add_norm_sq_rpow_neg_mul_rpow, Complex.ofReal_one]
   rw [hη, rellichKernel, sub_sub_cancel, smul_apply,
     ContinuousLinearMap.id_apply, smul_smul, smul_smul]
   congr 1
