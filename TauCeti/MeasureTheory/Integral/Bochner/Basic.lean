@@ -62,6 +62,8 @@ for set and probability integrals.
 
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
   function's integral by the integral of its pointwise positive part.
+* `setIntegral_le_of_lintegral_ofReal_le` bounds every set integral of a real-valued function
+  by a bound `E` on the integral of its pointwise positive part over the whole space.
 * `ofReal_integral_sq_div_le_lintegral_enorm` bounds `∫ h² / C` by the `L¹` norm `∫⁻ ‖h‖ₑ` of
   a real-valued function `h` with `|h| ≤ C` almost everywhere.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
@@ -596,6 +598,14 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
       _ = ∫⁻ x, ENNReal.ofReal (f x) ∂μ := by simp
   · rw [integral_undef hf]
     simp
+
+/-- A set integral of a real function is at most `E` once the integral of its positive part over
+the whole space is. No integrability or sign assumption on `f` is needed. -/
+theorem setIntegral_le_of_lintegral_ofReal_le {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f : α → ℝ} {E : ℝ≥0} (hE : ∫⁻ x, ENNReal.ofReal (f x) ∂μ ≤ E) (s : Set α) :
+    ∫ x in s, f x ∂μ ≤ E :=
+  (ENNReal.ofReal_le_ofReal_iff E.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
+    ((setLIntegral_le_lintegral _ _).trans (hE.trans_eq ENNReal.ofReal_coe_nnreal.symm)))
 
 /-- For a real-valued function bounded by `C` almost everywhere, the integral of its square
 divided by `C` is at most its `L¹` norm. No integrability, measurability or sign assumption is
