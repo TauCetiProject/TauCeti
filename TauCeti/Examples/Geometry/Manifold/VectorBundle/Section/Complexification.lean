@@ -12,9 +12,9 @@ import Mathlib.Geometry.Manifold.Instances.Sphere
 # Native complexified-section topology examples
 
 Constant sections with values `2 + 3i` compute the real/imaginary product, its inverse, the
-quarter-turn and conjugation at finite, smooth, analytic, and zero regularity. The infinite
-fibre `C([0,1], ℝ)` retains a nonzero coordinate, so no finite-rank or local-compactness condition
-on the fibre is available. Further clients use rank zero, an empty base and frame family, a
+quarter-turn and conjugation at finite, smooth, analytic, and zero regularity. A nonzero
+coordinate in the infinite fibre `C([0,1], ℝ)` exercises the API without finite-rank or
+locally compact fibre hypotheses. Further clients use rank zero, an empty base and frame family, a
 disconnected base with distinct component values, and the actual native tangent bundle of `S²`.
 -/
 

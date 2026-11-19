@@ -21,7 +21,7 @@ splitting becomes a continuous linear equivalence, with the original section car
 
 No frame-cover, finite-rank, compactness, local compactness, completeness, or nonempty assumption
 is needed. Every regularity order, including zero, smooth, and analytic, is allowed. For covering
-frame domains, the existing comparison in `Section.FrameCover` supplies topology independence.
+frame domains, `Section.FrameCover` supplies topology independence under its own hypotheses.
 This is a statement about native section topologies; test-section LF topologies and distribution
 complexification require their own comparisons.
 
