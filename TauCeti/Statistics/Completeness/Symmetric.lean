@@ -114,7 +114,7 @@ private lemma integrable_and_integral_pi_eq_zero [NeZero n]
         Integrable g (Measure.pi fun k ↦ (Q (f k) : Measure X))) ∧
       ∑ f ∈ Fintype.piFinset (fun _ ↦ s),
         ∫ x, g x ∂Measure.pi (fun k ↦ (Q (f k) : Measure X)) = 0 := by
-    obtain ⟨R, hRC, hR⟩ := MeasureTheory.exists_mem_eq_smul_sum hconv hQ hs
+    obtain ⟨R, hRC, hR⟩ := MeasureTheory.exists_mem_eq_smul_sum hconv (fun i _ ↦ hQ i) hs
     exact integrable_and_sum_integral_eq_zero hint hs hRC hR
   set I : (Fin n → Fin n) → ℝ := fun f ↦ ∫ x, g x ∂Measure.pi (fun k ↦ (Q (f k) : Measure X))
   refine ⟨(hexp univ univ_nonempty).1 id (by simp), ?_⟩
