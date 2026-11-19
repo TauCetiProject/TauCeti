@@ -148,6 +148,14 @@ theorem nConnectedCoverFiberHomotopyEquivLoopSpace_apply (b : X)
           ((TopCat.Hom.homotopyFiberProj_apply _ x p.1).symm.trans p.2)⟩) :=
   MappingPathFiber.projFiberHomotopyEquivLoopSpace_apply _ _ _ _ _
 
+@[simp]
+theorem nConnectedCoverFiberHomotopyEquivLoopSpace_symm_apply (b : X)
+    (α : Path (killHomotopyGroupsIncl (n + 1) X x b) (killHomotopyGroupsIncl (n + 1) X x x))
+    (ℓ : Ω (killHomotopyGroups (n + 1) X x) (killHomotopyGroupsIncl (n + 1) X x x)) :
+    ((nConnectedCoverFiberHomotopyEquivLoopSpace n X x b α).symm ℓ).1 =
+      ((MappingPathFiber.projFiberHomeomorphPath _ _ b).symm (α.trans ℓ)).1 :=
+  congrArg Subtype.val (MappingPathFiber.projFiberHomotopyEquivLoopSpace_symm_apply _ _ b α ℓ)
+
 /-! ### The endpoint fibration -/
 
 section Endpoint

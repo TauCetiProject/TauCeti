@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.TwoDivisible
 public import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
 import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
-import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
+import TauCeti.AlgebraicTopology.Homotopy.WhiteheadTower
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
 /-!
@@ -36,8 +36,8 @@ homotopy group at a time, along the Whitehead tower.
   two-divisible, such a fibration is a mod-two homology isomorphism
   (`TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber`).
 * **The induction.** The cover `Z⟨n⟩` is `n`-connected and has the homotopy groups of `Z` above
-  `n`, so the first step applies to it in degree `n + 1`. Each stage is replaced by its CW
-  approximation, which is Hausdorff and changes neither homotopy nor homology.
+  `n`, so the first step applies to it in degree `n + 1`. This is the shared induction along the
+  Whitehead tower, `TauCeti.whiteheadTower_induction`.
 
 The Eilenberg--Mac Lane fibre sits over the `(n - 1)`-connected stage `Z`, never over the original
 space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between successive stages is used.
@@ -104,54 +104,6 @@ theorem subsingleton_singularHomology_nConnectedCover (X : TopCat.{0}) [T2Space 
   exact (subsingleton_singularChains_homology_iff_of_isIso _
     (nConnectedCoverProj (m + 2) X x) _).2 (hX₂ i)
 
-/-- The induction along the Whitehead tower: for an `(n + 1)`-connected space with the mod-two
-homology of a point, every homotopy group `π_{N + 2}` with `N ≥ n` is uniquely two-divisible. The
-degree is `N = n + d`, by induction on `d`. -/
-private theorem isUniquelyTwoDivisible_homotopyGroup_of_add (d : ℕ) :
-    ∀ (n : ℕ) {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z),
-      (∀ k, k ≠ 0 → k < n + 2 → Subsingleton (π_ k Z z)) →
-      (∀ i, Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of Z)).homology (i + 1))) →
-        ∀ N, N = n + d → IsUniquelyTwoDivisible (Additive (π_ (N + 2) Z z)) := by
-  induction d with
-  | zero =>
-    intro n Z _ _ z hZ hZ₂ N hN
-    rw [hN]
-    exact isUniquelyTwoDivisible_homotopyGroup_of_connected z n hZ hZ₂
-  | succ d ih =>
-    intro n Z _ _ z hZ hZ₂ N hN
-    rw [hN]
-    -- Replace `Z` by its CW approximation `X`, which is Hausdorff.
-    let X := cwApproximation (TopCat.of Z) z
-    let f := (cwApproximationMap (TopCat.of Z) z).hom
-    let x₀ := cwApproximationBasepoint (TopCat.of Z) z
-    have hf : f.IsWeakHomotopyEquivalence :=
-      isWeakHomotopyEquivalence_cwApproximationMap (TopCat.of Z) z
-    -- `f` identifies the homotopy groups of `X` at `x₀` with those of `Z` at `z`.
-    let e (k : ℕ) [NeZero k] : π_ k X x₀ ≃* π_ k Z z :=
-      MulEquiv.ofBijective
-        (HomotopyGroup.mapHom f (cwApproximationMap_cwApproximationBasepoint (TopCat.of Z) z))
-        ((HomotopyGroup.bijective_map_congr rfl rfl _).1 (hf.bijective k x₀))
-    have hX : ∀ k, k ≠ 0 → k < n + 2 → Subsingleton (π_ k X x₀) := fun k hk0 hk ↦ by
-      have : NeZero k := ⟨hk0⟩
-      have := hZ k hk0 hk
-      exact (e k).toEquiv.subsingleton
-    -- The `(n + 2)`-connected cover `C` of `X` is `(n + 2)`-connected and mod-two acyclic.
-    let C := nConnectedCover (n + 2) X x₀
-    let c₀ := nConnectedCoverBasepoint (n + 2) X x₀
-    have hC : ∀ k, k ≠ 0 → k < n + 1 + 2 → Subsingleton (π_ k C c₀) := fun k _ hk ↦
-      subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace (n + 2) X x₀ c₀
-        (by omega)
-    -- `f` is a homology isomorphism, so `X` is mod-two acyclic.
-    have hX₂ (i : ℕ) : Subsingleton (((singularChains (ZMod 2)).obj X).homology (i + 1)) := by
-      have := hf.isIso_singularHomologyMap (ModuleCat.of (ZMod 2) (ZMod 2)) (i + 1)
-      exact (subsingleton_singularChains_homology_iff_of_isIso _
-        (cwApproximationMap (TopCat.of Z) z) _).2 (hZ₂ i)
-    have hC₂ := subsingleton_singularHomology_nConnectedCover X x₀ n hX hX₂
-    -- The cover has the homotopy groups of `X`, hence of `Z`, above dimension `n + 2`.
-    exact (ih (n + 1) c₀ hC hC₂ _ (by omega)).of_addEquiv
-      ((nConnectedCoverHomotopyGroupMulEquiv (n + 2) X x₀ _ (by omega)).trans
-        (e _)).toAdditive
-
 /-- **Mod-two vanishing** (Serre). The homotopy groups `πᵢ(Y)`, `i ≥ 2`, of a simply connected
 space `Y` with the mod-two homology of a point are uniquely two-divisible: multiplication by two
 is a bijection on each of them. No finite generation or CW structure is assumed. -/
@@ -163,6 +115,15 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology {Y
   have h₁ (k : ℕ) (hk0 : k ≠ 0) (hk : k < 2) : Subsingleton (π_ k Y y) := by
     obtain rfl : k = 1 := by omega
     exact HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
-  exact isUniquelyTwoDivisible_homotopyGroup_of_add n 0 y h₁ hY n (Nat.zero_add n).symm
+  refine whiteheadTower_induction (N := n)
+    (fun X ↦ ∀ i, Subsingleton (((singularChains (ZMod 2)).obj X).homology (i + 1)))
+    (fun G _ ↦ IsUniquelyTwoDivisible (Additive G)) (fun _ _ f hf h₂ i ↦ ?_)
+    (fun _ _ _ _ e h ↦ h.of_addEquiv e.toAdditive)
+    (fun z hZ hZ₂ ↦ isUniquelyTwoDivisible_homotopyGroup_of_connected z n hZ hZ₂)
+    (fun m _ X _ _ x hX hX₂ ↦ subsingleton_singularHomology_nConnectedCover X x m hX hX₂)
+    (Nat.zero_le n) y h₁ hY
+  -- A weak homotopy equivalence is a homology isomorphism.
+  have := hf.isIso_singularHomologyMap (ModuleCat.of (ZMod 2) (ZMod 2)) (i + 1)
+  exact (subsingleton_singularChains_homology_iff_of_isIso _ f _).2 (h₂ i)
 
 end TauCeti

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.PowerTorsion
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
-import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
+import TauCeti.AlgebraicTopology.Homotopy.WhiteheadTower
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 import TauCeti.CategoryTheory.Abelian.SerreClass.MorphismProperty
 
@@ -17,7 +17,7 @@ import TauCeti.CategoryTheory.Abelian.SerreClass.MorphismProperty
 
 **Theorem** (Serre). Let `d` be a natural number, `Y` a simply connected space and `k` a natural
 number such that every integral homology group `Hᵢ(Y; ℤ)`, `1 ≤ i ≤ k`, is annihilated by some
-power of `d`. Then so is every homotopy group `πᵢ(Y)`, `i ≤ k`
+power of `d`. Then so is every homotopy group `πᵢ(Y)`, `2 ≤ i ≤ k`
 (`TauCeti.isKilledBySomePower_homotopyGroup_of_isKilledBySomePower_singularHomology`). No finite
 generation and no CW structure is assumed.
 
@@ -41,16 +41,16 @@ The proof climbs the Whitehead tower one homotopy group at a time, as for mod-tw
   `Hᵢ(Z⟨n⟩; ℤ)` is in the class for `1 ≤ i ≤ k`
   (`TauCeti.isKilledBySomePower_singularHomology_nConnectedCover`).
 * **The induction.** The cover `Z⟨n⟩` is `n`-connected and has the homotopy groups of `Z` above
-  `n`, so the first step applies to it in degree `n + 1`. Each stage is replaced by its CW
-  approximation, which is Hausdorff and changes neither homotopy nor homology.
+  `n`, so the first step applies to it in degree `n + 1`. This is the shared induction along the
+  Whitehead tower, `TauCeti.whiteheadTower_induction`.
 
 ## Main results
 
 * `TauCeti.isKilledBySomePower_singularHomology_nConnectedCover`: the `n`-connected cover of an
-  `(n - 1)`-connected Hausdorff space whose homology in degrees `1, …, k`, `n ≤ k`, is annihilated
-  by powers of `d` has the same property.
+  `(n - 1)`-connected Hausdorff space whose homology in degrees `1, …, k`, `2 ≤ n ≤ k`, is
+  annihilated by powers of `d` has the same property.
 * `TauCeti.isKilledBySomePower_homotopyGroup_of_isKilledBySomePower_singularHomology`: the
-  homotopy groups `πᵢ(Y)`, `i ≤ k`, of a simply connected space whose homology in degrees
+  homotopy groups `πᵢ(Y)`, `2 ≤ i ≤ k`, of a simply connected space whose homology in degrees
   `1, …, k` is annihilated by powers of `d` are annihilated by powers of `d`.
 
 ## References
@@ -76,15 +76,19 @@ variable {d : ℕ}
 whose homology `Hₙ₊₂(-; ℤ)` is annihilated by some power of `d` is annihilated by some power of
 `d`, by the Hurewicz theorem. -/
 private theorem isKilledBySomePower_homotopyGroup_of_connected {Z : Type} [TopologicalSpace Z]
-    {z : Z} {n : ℕ} (hZ : ∀ k < n + 2, Subsingleton (π_ k Z z))
+    [PathConnectedSpace Z] {z : Z} {n : ℕ}
+    (hZ : ∀ q, q ≠ 0 → q < n + 2 → Subsingleton (π_ q Z z))
     (h : AddCommGrpCat.isKilledBySomePower d
       (AddCommGrpCat.of (((singularChains ℤ).obj (TopCat.of Z)).homology (n + 2)))) :
-    AddCommGrpCat.isKilledBySomePower d (AddCommGrpCat.of (Additive (π_ (n + 2) Z z))) :=
-  (AddCommGrpCat.isKilledBySomePower d).prop_of_iso
-    (HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv hZ).symm.toAddCommGrpIso h
+    AddCommGrpCat.isKilledBySomePower d (AddCommGrpCat.of (Additive (π_ (n + 2) Z z))) := by
+  refine (AddCommGrpCat.isKilledBySomePower d).prop_of_iso
+    (HomotopyGroup.cubicalHurewiczSingularHomologyAddEquiv fun q hq ↦ ?_).symm.toAddCommGrpIso h
+  rcases eq_or_ne q 0 with rfl | hq0
+  · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
+  · exact hZ q hq0 hq
 
 /-- **The `n`-connected cover, modulo the groups annihilated by a power of `d`.** Let `X` be a
-Hausdorff, path-connected space whose homotopy groups `πₖ` vanish for `1 ≤ k < m + 2`, and whose
+Hausdorff, path-connected space whose homotopy groups `π_q` vanish for `1 ≤ q < m + 2`, and whose
 integral homology `H_q(X; ℤ)` is annihilated by some power of `d` for `1 ≤ q ≤ k`, where
 `m + 2 ≤ k`. Then the integral homology of its `(m + 2)`-connected cover `X⟨m + 2⟩` is annihilated
 by some power of `d` in the same degrees. -/
@@ -97,11 +101,7 @@ theorem isKilledBySomePower_singularHomology_nConnectedCover (X : TopCat.{0}) [T
     AddCommGrpCat.isKilledBySomePower d
       (AddCommGrpCat.of (((singularChains ℤ).obj (nConnectedCover (m + 2) X x)).homology q)) := by
   -- `πₘ₊₂(X)` is annihilated by a power of `d`, by the Hurewicz theorem.
-  have hπ := isKilledBySomePower_homotopyGroup_of_connected (Z := X) (z := x) (n := m)
-    (fun j hj ↦ by
-      rcases eq_or_ne j 0 with rfl | hj0
-      · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero x).1 inferInstance
-      · exact hX j hj0 hj)
+  have hπ := isKilledBySomePower_homotopyGroup_of_connected (Z := X) (z := x) (n := m) hX
     (hXd (m + 2) (by omega) hmk)
   -- The Postnikov section `K` of `X` is a `K(πₘ₊₂(X), m + 2)`, so its loop space is a
   -- `K(πₘ₊₂(X), m + 1)`, and one power `d ^ M` annihilates the homology of every fibre of the
@@ -128,64 +128,6 @@ theorem isKilledBySomePower_singularHomology_nConnectedCover (X : TopCat.{0}) [T
     fun b j hj0 hj ↦ hM b j hj0 (hj.trans hq)
   exact P.prop_of_monoModSerre hiso.1 (hXd q hq0 hq)
 
-/-- The induction along the Whitehead tower: for an `(n + 1)`-connected space whose homology in
-degrees `1, …, k` is annihilated by powers of `d`, every homotopy group `π_{N + 2}` with
-`n ≤ N` and `N + 2 ≤ k` is annihilated by a power of `d`. The degree is `N = n + j`, by induction
-on `j`. -/
-private theorem isKilledBySomePower_homotopyGroup_of_add {k : ℕ} (j : ℕ) :
-    ∀ (n : ℕ) {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z),
-      (∀ q, q ≠ 0 → q < n + 2 → Subsingleton (π_ q Z z)) →
-      (∀ q, q ≠ 0 → q ≤ k → AddCommGrpCat.isKilledBySomePower d
-        (AddCommGrpCat.of (((singularChains ℤ).obj (TopCat.of Z)).homology q))) →
-        ∀ N, N = n + j → N + 2 ≤ k →
-          AddCommGrpCat.isKilledBySomePower d (AddCommGrpCat.of (Additive (π_ (N + 2) Z z))) := by
-  induction j with
-  | zero =>
-    intro n Z _ _ z hZ hZd N hN hNk
-    subst hN
-    refine isKilledBySomePower_homotopyGroup_of_connected (fun q hq ↦ ?_) (hZd _ (by omega) hNk)
-    rcases eq_or_ne q 0 with rfl | hq0
-    · exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero z).1 inferInstance
-    · exact hZ q hq0 hq
-  | succ j ih =>
-    intro n Z _ _ z hZ hZd N hN hNk
-    subst hN
-    -- Replace `Z` by its CW approximation `X`, which is Hausdorff.
-    let X := cwApproximation (TopCat.of Z) z
-    let f := (cwApproximationMap (TopCat.of Z) z).hom
-    let x₀ := cwApproximationBasepoint (TopCat.of Z) z
-    have hf : f.IsWeakHomotopyEquivalence :=
-      isWeakHomotopyEquivalence_cwApproximationMap (TopCat.of Z) z
-    -- `f` identifies the homotopy groups of `X` at `x₀` with those of `Z` at `z`.
-    let e (q : ℕ) [NeZero q] : π_ q X x₀ ≃* π_ q Z z :=
-      MulEquiv.ofBijective
-        (HomotopyGroup.mapHom f (cwApproximationMap_cwApproximationBasepoint (TopCat.of Z) z))
-        ((HomotopyGroup.bijective_map_congr rfl rfl _).1 (hf.bijective q x₀))
-    have hX : ∀ q, q ≠ 0 → q < n + 2 → Subsingleton (π_ q X x₀) := fun q hq0 hq ↦ by
-      have : NeZero q := ⟨hq0⟩
-      have := hZ q hq0 hq
-      exact (e q).toEquiv.subsingleton
-    -- `f` is a homology isomorphism, so the homology of `X` is that of `Z`.
-    have hXd (q : ℕ) (hq0 : q ≠ 0) (hq : q ≤ k) : AddCommGrpCat.isKilledBySomePower d
-        (AddCommGrpCat.of (((singularChains ℤ).obj X).homology q)) :=
-      ((AddCommGrpCat.isKilledBySomePower d).inverseImage
-        (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)).prop_of_iso
-        (@asIso _ _ _ _ _ (hf.isIso_singularHomologyMap (ModuleCat.of ℤ ℤ) q)).symm
-        (hZd q hq0 hq)
-    -- The `(n + 2)`-connected cover `C` of `X` is `(n + 2)`-connected, with the same property.
-    let C := nConnectedCover (n + 2) X x₀
-    let c₀ := nConnectedCoverBasepoint (n + 2) X x₀
-    have hC : ∀ q, q ≠ 0 → q < n + 1 + 2 → Subsingleton (π_ q C c₀) := fun q _ hq ↦
-      subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace (n + 2) X x₀ c₀
-        (by omega)
-    have hCd (q : ℕ) (hq0 : q ≠ 0) (hq : q ≤ k) :=
-      isKilledBySomePower_singularHomology_nConnectedCover X x₀ n (by omega) hX hXd hq0 hq
-    -- The cover has the homotopy groups of `X`, hence of `Z`, above dimension `n + 2`.
-    exact (AddCommGrpCat.isKilledBySomePower d).prop_of_iso
-      ((nConnectedCoverHomotopyGroupMulEquiv (n + 2) X x₀ _ (by omega)).trans
-        (e _)).toAdditive.toAddCommGrpIso
-      (ih (n + 1) c₀ hC hCd _ (by omega) hNk)
-
 /-- **The Hurewicz theorem modulo the groups annihilated by a power of `d`** (Serre). Let `Y` be a
 simply connected space whose integral homology `Hᵢ(Y; ℤ)` is annihilated by some power of `d` for
 every `1 ≤ i ≤ k`. Then every homotopy group `πᵢ(Y)`, `2 ≤ i ≤ k`, is annihilated by some power of
@@ -200,6 +142,20 @@ theorem isKilledBySomePower_homotopyGroup_of_isKilledBySomePower_singularHomolog
   have h₁ (q : ℕ) (hq0 : q ≠ 0) (hq : q < 2) : Subsingleton (π_ q Y y) := by
     obtain rfl : q = 1 := by omega
     exact HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
-  exact isKilledBySomePower_homotopyGroup_of_add n 0 y h₁ hY n (Nat.zero_add n).symm hn
+  refine whiteheadTower_induction (N := n)
+    (fun X ↦ ∀ q, q ≠ 0 → q ≤ k → AddCommGrpCat.isKilledBySomePower d
+      (AddCommGrpCat.of (((singularChains ℤ).obj X).homology q)))
+    (fun G _ ↦ AddCommGrpCat.isKilledBySomePower d (AddCommGrpCat.of (Additive G)))
+    (fun _ _ f hf hd q hq0 hq ↦ ?_)
+    (fun _ _ _ _ e ↦
+      (AddCommGrpCat.isKilledBySomePower d).prop_of_iso e.toAdditive.toAddCommGrpIso)
+    (fun _ hZ hZd ↦ isKilledBySomePower_homotopyGroup_of_connected hZ (hZd _ (by omega) hn))
+    (fun m _ X _ _ x hX hXd _ hq0 hq ↦
+      isKilledBySomePower_singularHomology_nConnectedCover X x m (by omega) hX hXd hq0 hq)
+    (Nat.zero_le n) y h₁ hY
+  -- A weak homotopy equivalence is a homology isomorphism.
+  exact ((AddCommGrpCat.isKilledBySomePower d).inverseImage
+    (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)).prop_of_iso
+    (@asIso _ _ _ _ _ (hf.isIso_singularHomologyMap (ModuleCat.of ℤ ℤ) q)).symm (hd q hq0 hq)
 
 end TauCeti
