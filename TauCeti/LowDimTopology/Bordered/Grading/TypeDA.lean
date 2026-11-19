@@ -207,6 +207,8 @@ theorem IsGraded.boxCoeff_mem_homogeneousMatrices (hP : P.IsGraded Ag Bg gr l)
   refine Submodule.mem_iSup_of_mem ⟨h, ?_⟩ hb
   -- The degrees along the path multiply to `l_A ^ k`, which `π` turns into `l ^ k`, and
   -- `δ¹_{k+1}` contributes `l ^ (1 - k)`.
+  -- `Function.Semiconj f ga gb` is by definition `∀ x, f (ga x) = gb (f x)`, so `hπl u` is a
+  -- semiconjugacy; the ascription names the two actions so that `iterate_right` applies.
   have hpow (j : ℕ) (u : U) (t : T) : π u ((lA : GA) ^ j • t) = l ^ j • π u t := by
     simpa only [smul_iterate] using
       (show Function.Semiconj (π u) ((lA : GA) • ·) (l • ·) from hπl u).iterate_right j t
