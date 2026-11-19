@@ -26,7 +26,7 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 -- Proof-only: the place at infinity is the only place at which `x` has a pole.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Unique
 -- Proof-only: the place at infinity restricts to itself along `[n]`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 -- Proof-only: a place has finitely many places above it.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 -- Proof-only: `[n]` is separable when `n` is invertible, so it splits every place completely over a
@@ -71,9 +71,9 @@ statements are equivalences rather than equalities.
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.
 
 The construction follows `TauCeti.Isogeny.isEquiv_comap_infinityPlace`
-(`TauCeti/AlgebraicGeometry/EllipticCurve/Isogeny/InfinityPlace.lean`), the same statement for the
-place at infinity; the ordering of the argument, and the choice to work at the `Valuation.comap`
-level rather than through `Place.restrict`, are taken from there.
+(`TauCeti/AlgebraicGeometry/EllipticCurve/Isogeny/InfinityPlace/Basic.lean`), the same statement
+for the place at infinity; the ordering of the argument, and the choice to work at the
+`Valuation.comap` level rather than through `Place.restrict`, are taken from there.
 
 ## Prior art
 

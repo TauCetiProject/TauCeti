@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Normalize
+public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Topology.Homotopy.HurewiczFibration.LocallyTrivial
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -36,7 +38,9 @@ So the sphere bundle is locally trivial with fibre the unit sphere of the model 
   `n`-connected (`TauCeti.isNConnected_sphereBundleProj`): it induces isomorphisms on `πₖ` for
   `k < n` and a surjection on `πₙ`;
 * in particular, for `n ≥ 2`, the sphere bundle is simply connected exactly when the base is
-  (`TauCeti.simplyConnectedSpace_sphereBundle_iff`).
+  (`TauCeti.simplyConnectedSpace_sphereBundle_iff`);
+* when `F` has dimension one, so that the fibres are pairs of points, the projection is a covering
+  map (`TauCeti.isCoveringMap_sphereBundleProj`).
 
 These are the facts about a bundle `Sⁿ → Q → B` with structure group `O(n + 1)`, realized as the
 unit sphere bundle of a Euclidean vector bundle, that are used to compare the homotopy of `Q` with
@@ -52,6 +56,7 @@ that of its base and fibres.
   fibration over a normal paracompact base.
 * `TauCeti.isNConnected_sphereBundleProj`, `TauCeti.simplyConnectedSpace_sphereBundle_iff`: its
   connectivity.
+* `TauCeti.isCoveringMap_sphereBundleProj`: in rank one it is a covering map.
 
 ## References
 
@@ -314,5 +319,14 @@ theorem simplyConnectedSpace_sphereBundle_iff (hnorm : Continuous fun v : TotalS
     {n : ℕ} (hF : finrank ℝ F = n + 1) (hn : 2 ≤ n) :
     SimplyConnectedSpace (sphereBundle F E) ↔ SimplyConnectedSpace B :=
   (isNConnected_sphereBundleProj E hnorm hF).simplyConnectedSpace_iff hn
+
+variable (F E) in
+/-- **The sphere bundle of a line bundle is a covering.** For a real vector bundle of rank one whose
+fibre norm is continuous on the total space, the projection `S(E) → B` is a covering map, with
+fibre the two unit vectors of the model fibre. -/
+theorem isCoveringMap_sphereBundleProj (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖)
+    (hF : finrank ℝ F = 1) : IsCoveringMap (sphereBundleProj F E) :=
+  haveI := discreteTopology_sphere_of_finrank_eq_one hF (0 : F) 1
+  IsFiberBundle.isCoveringMap (exists_trivialization_sphereBundleProj F E hnorm)
 
 end TauCeti
