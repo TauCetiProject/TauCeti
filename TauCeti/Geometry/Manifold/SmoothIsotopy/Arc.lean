@@ -416,9 +416,8 @@ theorem exists_diffeomorph_apply_eq_line_of_four_le_finrank {n m : ℕ∞} (hm :
   refine ⟨Φ.final, K, hK, fun y hy => by rw [Diffeotopy.final_apply, hΦK 1 y hy], fun s => ?_⟩
   rw [Diffeotopy.final_apply]
   by_cases hs : |s| ≤ c + 1
-  · have h₁ : (⟨Real.smoothTransition ((1 : unitInterval) : ℝ), Real.smoothTransition.nonneg _,
-        Real.smoothTransition.le_one _⟩ : unitInterval) = 1 := Subtype.ext (by simp)
-    rw [hΦ 1 s (abs_le.1 hs), h₁, H.apply_one, hℓ]
+  · rw [hΦ 1 s (abs_le.1 hs), Set.Icc.coe_one, unitInterval.smoothTransition_one, H.apply_one,
+      hℓ]
   · have hcs : c ≤ |s| := by linarith
     rw [hγc s hcs]
     exact hΦC 1 _ ⟨s, (by linarith : c + 1 / 2 ≤ |s|), rfl⟩

@@ -85,9 +85,9 @@ theorem continuous_reparam {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0) (
 theorem Homotopy.reparam_apply (γ : Path x y) {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0)
     (hf₁ : f 1 = 1) (q : I × I) :
     Homotopy.reparam γ f hf hf₀ hf₁ q = γ.extend (σ q.1 * q.2 + q.1 * f q.2) := by
-  have h : (σ q.1 : ℝ) * q.2 + q.1 * f q.2 ∈ I :=
-    show (σ q.1 : ℝ) • (q.2 : ℝ) + (q.1 : ℝ) • (f q.2 : ℝ) ∈ I from
-      convex_Icc _ _ q.2.2 (f q.2).2 (by unit_interval) (by unit_interval) (by simp)
+  have h : (σ q.1 : ℝ) * q.2 + q.1 * f q.2 ∈ I := by
+    simpa only [smul_eq_mul] using
+      convex_Icc _ _ q.2.2 (f q.2).2 (nonneg (σ q.1)) (nonneg q.1) (by simp)
   rw [extend_apply _ h]
   rfl
 
