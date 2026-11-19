@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Limits
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
+public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Localization
 
 /-!
@@ -254,39 +255,17 @@ theorem isPullback :
   have := isOpenImmersion_specMap_infinityChartRestriction hF hx
   exact Scheme.isPullback_pushout_of_isOpenImmersion _ _
 
-instance : IsReduced (twoChartModel hF hx) := by
-  -- Every stalk is a stalk of one of the two charts, which are spectra of domains.
-  have (p : twoChartModel hF hx) : _root_.IsReduced ((twoChartModel hF hx).presheaf.stalk p) := by
-    rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
-      ⟨q, rfl⟩ | ⟨q, rfl⟩
-    · exact isReduced_of_injective _
-        (asIso ((ιFinite hF hx).stalkMap q)).commRingCatIsoToRingEquiv.injective
-    · exact isReduced_of_injective _
-        (asIso ((ιInfinity hF hx).stalkMap q)).commRingCatIsoToRingEquiv.injective
-  exact isReduced_of_isReduced_stalk _
-
-instance : IrreducibleSpace (twoChartModel hF hx) := by
-  -- Both charts are spectra of domains, so their images are irreducible.
-  have isIrreducible_range {R : CommRingCat.{u}} [IsDomain R] (f : Spec R ⟶ twoChartModel hF hx) :
-      IsIrreducible (Set.range f) := by
-    simpa only [Set.image_univ] using
-      (IrreducibleSpace.isIrreducible_univ _).image _ f.continuous.continuousOn
-  -- The finite chart is dense: it meets the irreducible chart at infinity in a nonempty open set,
-  -- which is dense there.
-  have hdense : closure (Set.range (ιFinite hF hx)) = Set.univ := by
-    refine Set.eq_univ_of_univ_subset ?_
-    rw [← range_ιFinite_union_range_ιInfinity hF hx]
-    refine Set.union_subset subset_closure ((subset_closure_inter_of_isPreirreducible_of_isOpen
-      (isIrreducible_range (ιInfinity hF hx)).isPreirreducible
-      (ιFinite hF hx).isOpenEmbedding.isOpen_range
-      (range_ιInfinity_inter_range_ιFinite_nonempty hF hx)).trans
-      (closure_mono Set.inter_subset_right))
-  rw [irreducibleSpace_def, Set.top_eq_univ, ← hdense]
-  exact (isIrreducible_range (ιFinite hF hx)).closure
-
-/-- **`twoChartModel` is an integral scheme.** -/
-instance : IsIntegral (twoChartModel hF hx) :=
-  isIntegral_of_irreducibleSpace_of_isReduced _
+/-- **`twoChartModel` is an integral scheme**: its charts are spectra of domains, glued along the
+nonempty spectrum of the overlap ring. -/
+instance : IsIntegral (twoChartModel hF hx) := by
+  have := isOpenImmersion_specMap_finiteChartRestriction hF hx
+  have := isOpenImmersion_specMap_infinityChartRestriction hF hx
+  have : Nonempty (Spec (.of (holomorphyRing
+      ({P : Place k F | x ∈ P.integers} ∩ {P : Place k F | x⁻¹ ∈ P.integers})))) :=
+    inferInstanceAs (Nonempty (PrimeSpectrum _))
+  exact inferInstanceAs (IsIntegral (pushout
+    (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom))
+    (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom))))
 
 /-- **`twoChartModel` is quasi-compact**, as the union of its two affine charts. -/
 instance : CompactSpace (twoChartModel hF hx) where
