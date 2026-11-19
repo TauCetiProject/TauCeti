@@ -9,7 +9,7 @@ public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Ideal.IdempotentFG
 public import Mathlib.RingTheory.Ideal.Maps
-public import Mathlib.RingTheory.LocalRing.Basic
+public import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Finitely generated subideals of an idempotent ideal
@@ -101,9 +101,7 @@ theorem isIdempotentElem_iff_eq_bot_or_top_of_isLocalRing_of_fg {R : Type*} [Com
     [IsLocalRing R] (I : Ideal R) (h : I.FG) : IsIdempotentElem I ↔ I = ⊥ ∨ I = ⊤ := by
   rw [isIdempotentElem_iff_of_fg I h]
   refine ⟨fun ⟨e, he, hI⟩ ↦ hI ▸ ?_, ?_⟩
-  · rcases IsLocalRing.isUnit_or_isUnit_one_sub_self e with hu | hu
-    · exact Or.inr (span_singleton_eq_top.2 hu)
-    · exact Or.inl (span_singleton_eq_bot.2 (hu.mul_left_eq_zero.1 he.mul_one_sub_self))
+  · obtain rfl | rfl := he.eq_zero_or_eq_one_of_isLocalRing <;> simp
   · rintro (rfl | rfl)
     · exact ⟨0, .zero, by simp⟩
     · exact ⟨1, .one, by simp⟩
