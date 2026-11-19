@@ -161,8 +161,8 @@ theorem expMeasure_map_const_mul {c : ℝ} (hc : 0 < c) :
     (expMeasure r).map (c * ·) = expMeasure (r / c) := by
   simpa only [expMeasure] using gammaMeasure_map_const_mul hc
 
-/-- `expMeasure r` presented by its real-valued density, the form in which the shared density
-bridge of `TauCeti/Probability/Density.lean` applies. -/
+/-- `expMeasure r` presented by its real-valued density, the form in which the real-density
+`withDensity` lemmas of `TauCeti/MeasureTheory/Integral/Bochner/WithDensity.lean` apply. -/
 private lemma expMeasure_eq_withDensity_ofReal (r : ℝ) :
     expMeasure r = volume.withDensity fun x => ENNReal.ofReal (exponentialPDFReal r x) :=
   (rfl)
