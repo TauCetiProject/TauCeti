@@ -55,6 +55,7 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   `w i₀ = 1` at some index `i₀`.
 * `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
   contractive scalar action.
+* `PadicInt.norm_smul_le_norm`: scalars in `ℤ_p` do not increase norms.
 * `PadicInt.norm_algebraMap_le_one`: a `p`-adic integer has norm at most `1` in every normed
   field extension of `ℚ_p`.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
@@ -178,6 +179,11 @@ theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZer
   calc ‖e‖ = ‖((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • (u : ℤ_[p]) • e‖ := by
         rw [smul_smul, Units.inv_mul, one_smul]
     _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
+
+/-- Scalars in `ℤ_p` do not increase norms, since they all have norm at most `1`. -/
+theorem norm_smul_le_norm {E : Type*} [SeminormedAddGroup E] [MulActionWithZero ℤ_[p] E]
+    [IsBoundedSMul ℤ_[p] E] (r : ℤ_[p]) (e : E) : ‖r • e‖ ≤ ‖e‖ :=
+  (norm_smul_le r e).trans (mul_le_of_le_one_left (norm_nonneg e) (norm_le_one r))
 
 /-- A `p`-adic integer has norm at most `1` in every normed field extension of `ℚ_p`. -/
 theorem norm_algebraMap_le_one {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] (y : ℤ_[p]) :
