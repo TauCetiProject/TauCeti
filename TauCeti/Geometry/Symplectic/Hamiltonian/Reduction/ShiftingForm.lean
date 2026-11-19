@@ -198,26 +198,16 @@ theorem mpullback_smul_prodMk_prod_neg_leftInvariantKirillovForm
       SmoothForm.mpullback Prod.snd contMDiff_snd (SmoothForm.mpullback i hi σ) := by
   have ha : ContMDiff (I.prod IZ) I' ∞ fun p : G × Z ↦ p.1 • i p.2 :=
     contMDiff_fst.smul (hi.comp contMDiff_snd)
-  refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
-  have hmain := congrArg (fun φ ↦ SmoothBundleForm.eval₂ φ p v w)
-    (h.mpullback_smul_eq_prod_leftInvariantKirillovForm hG hi hic)
-  rw [SmoothForm.eval₂_mpullback, eval₂_prod, SmoothForm.eval₂_mpullback,
-    Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply] at hmain
-  -- The derivative of `(g, z) ↦ (g • i z, g)` is `u ↦ (da u, u.1)`.
-  have hd (u : TangentSpace (I.prod IZ) p) :
-      Manifold.tangentSpaceProdEquiv (p.1 • i p.2, p.1)
-          (mfderiv (I.prod IZ) (I'.prod I) (fun p : G × Z ↦ (p.1 • i p.2, p.1)) p u) =
-        (mfderiv (I.prod IZ) I' (fun p : G × Z ↦ p.1 • i p.2) p u, u.1) := by
-    rw [Manifold.tangentSpaceProdEquiv_apply,
-      mfderiv_prodMk (ha.mdifferentiableAt (by simp)) mdifferentiableAt_fst, mfderiv_fst]
-    -- `ContinuousLinearMap.prod_apply` does not rewrite here, since `T_p (G × Z)` is not
-    -- syntactically `E × EZ`; the two sides agree by unfolding `prod` and `fst`.
-    rfl
-  rw [SmoothForm.eval₂_mpullback, eval₂_prod, SmoothBundleForm.eval₂_neg,
-    SmoothForm.eval₂_mpullback_snd, hd, hd, Manifold.tangentSpaceProdEquiv_apply,
-    Manifold.tangentSpaceProdEquiv_apply]
-  dsimp only
-  rw [hmain, add_neg_cancel_comm, SmoothForm.eval₂_mpullback]
+  -- The components of `(g, z) ↦ (g • i z, g)` are the action map and the first projection.
+  have hM : SmoothForm.mpullback _ (ha.prodMk contMDiff_fst)
+      (SmoothForm.mpullback Prod.fst contMDiff_fst σ) = SmoothForm.mpullback _ ha σ :=
+    SmoothForm.mpullback_mpullback _ _ _ _ _
+  have hK : SmoothForm.mpullback _ (ha.prodMk contMDiff_fst)
+      (SmoothForm.mpullback Prod.snd contMDiff_snd c.leftInvariantKirillovForm) =
+        SmoothForm.mpullback Prod.fst contMDiff_fst c.leftInvariantKirillovForm :=
+    SmoothForm.mpullback_mpullback _ _ _ _ _
+  rw [prod_def, map_add, map_neg, map_neg, hM, hK,
+    h.mpullback_smul_eq_prod_leftInvariantKirillovForm hG hi hic, prod_def, add_neg_cancel_comm]
 
 end IsEquivariantMomentMap
 
