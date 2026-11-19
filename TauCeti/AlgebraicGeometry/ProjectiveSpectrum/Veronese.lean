@@ -184,9 +184,8 @@ private theorem awayι_veroneseToProj_projToVeronese {f : veronese 𝒜 d} {k : 
     awayι (veroneseGrading 𝒜 d) f hf hk ≫ veroneseToProj 𝒜 d ≫ projToVeronese 𝒜 d =
       awayι (veroneseGrading 𝒜 d) f hf hk := by
   rw [awayι_veroneseToProj_assoc, toProjChart, Category.assoc, awayι_projToVeronese 𝒜 d hf hk,
-    fromProjChart]
-  exact (Scheme.Spec.mapIso (awayVeroneseEquiv f).toRingEquiv.toCommRingCatIso.op).inv_hom_id_assoc
-    _
+    fromProjChart, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp, AlgEquiv.symm_toRingEquiv,
+    RingEquiv.symm_toRingHom_comp_toRingHom, CommRingCat.ofHom_id, Spec.map_id, Category.id_comp]
 
 private theorem awayι_projToVeronese_veroneseToProj {f : veronese 𝒜 d} {k : ℕ}
     (hf : f ∈ veroneseGrading 𝒜 d k) (hk : 0 < k) :
@@ -194,9 +193,9 @@ private theorem awayι_projToVeronese_veroneseToProj {f : veronese 𝒜 d} {k : 
       projToVeronese 𝒜 d ≫ veroneseToProj 𝒜 d =
       awayι 𝒜 (f : A) (mem_veroneseGrading.1 hf) (Nat.mul_pos (NeZero.pos d) hk) := by
   rw [awayι_projToVeronese_assoc 𝒜 d hf hk, fromProjChart, Category.assoc,
-    awayι_veroneseToProj 𝒜 d hf hk, toProjChart]
-  exact (Scheme.Spec.mapIso (awayVeroneseEquiv f).toRingEquiv.toCommRingCatIso.op).hom_inv_id_assoc
-    _
+    awayι_veroneseToProj 𝒜 d hf hk, toProjChart, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp,
+    AlgEquiv.symm_toRingEquiv, RingEquiv.toRingHom_comp_symm_toRingHom, CommRingCat.ofHom_id,
+    Spec.map_id, Category.id_comp]
 
 /-- **The projective spectrum of a Veronese subalgebra.** For `d ≠ 0`, the projective spectra of
 `A^{(d)} = ⨁ₖ 𝒜 (d k)` and of `A` are isomorphic. On the chart of `f ∈ 𝒜 (d k)`, `k > 0`, it is
@@ -237,7 +236,7 @@ private theorem veroneseIso_hom_preimage_basicOpen_of_pos {f : veronese 𝒜 d} 
   rw [← Scheme.Hom.inv_image, ← opensRange_awayι 𝒜 _ (mem_veroneseGrading.1 hf)
       (Nat.mul_pos (NeZero.pos d) hk), ← Scheme.Hom.opensRange_comp]
   have : IsIso (CommRingCat.ofHom (awayVeroneseEquiv f).toRingHom) :=
-    (awayVeroneseEquiv f).toRingEquiv.toCommRingCatIso.isIso_hom
+    (ConcreteCategory.isIso_iff_bijective _).2 (awayVeroneseEquiv f).bijective
   -- `opensRange` takes an `IsOpenImmersion` instance, so the chart formula is rewritten by `congr`
   trans (Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).toRingHom) ≫
     awayι (veroneseGrading 𝒜 d) f hf hk).opensRange

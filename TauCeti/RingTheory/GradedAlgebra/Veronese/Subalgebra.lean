@@ -316,8 +316,11 @@ theorem irrelevant_le_map_veroneseMap [NeZero d] (f : 𝒜 →+*ᵍ ℬ)
   rw [← toIdeal_le_toIdeal_iff, HomogeneousIdeal.toIdeal_map,
     HomogeneousIdeal.toIdeal_irrelevant_le]
   intro k hk x (hx : x ∈ veroneseGrading ℬ d k)
-  rw [show x = ⟨decompose ℬ (x : B) (d * k), mem_veronese_of_mem (SetLike.coe_mem _)⟩ from
-    Subtype.ext (decompose_of_mem_same ℬ (mem_veroneseGrading.1 hx)).symm]
+  -- `x` is its own component of degree `d k`, so this is `key x k hk`
+  have hx' : (⟨decompose ℬ (x : B) (d * k), mem_veronese_of_mem (SetLike.coe_mem _)⟩ :
+      veronese ℬ d) = x :=
+    Subtype.ext (decompose_of_mem_same ℬ (mem_veroneseGrading.1 hx))
+  rw [← hx']
   exact key x k hk
 
 end CommSemiring
