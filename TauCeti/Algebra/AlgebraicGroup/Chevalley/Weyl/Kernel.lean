@@ -216,14 +216,14 @@ representative `nᵢ` going to the simple reflection `sᵢ`. -/
 noncomputable def weylQuotientEquiv :
     D.weylSubgroup k ⧸ (D.torusPoints k).range.subgroupOf (D.weylSubgroup k) ≃*
       (t.simplyConnectedRootDatum ht).weylGroup :=
-  (QuotientGroup.quotientMulEquivOfEq (D.ker_weylProjection k).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective _ (D.weylProjection_surjective k))
+  MulEquiv.ofBijective (D.quotientWeylProjection k) ⟨D.quotientWeylProjection_injective k,
+    QuotientGroup.lift_surjective_of_surjective _ _ (D.weylProjection_surjective k) _⟩
 
 /-- The equivalence `N / T ≅ W` sends the class of a point of `N` to its Weyl projection. -/
 @[simp]
 theorem weylQuotientEquiv_mk (g : D.weylSubgroup k) :
-    D.weylQuotientEquiv k (QuotientGroup.mk g) = D.weylProjection k g := by
-  simp [weylQuotientEquiv, QuotientGroup.quotientKerEquivOfSurjective]
+    D.weylQuotientEquiv k (QuotientGroup.mk g) = D.weylProjection k g :=
+  D.quotientWeylProjection_mk k g
 
 /-- A point of `N ∩ B` has Weyl projection keeping every positive root positive. -/
 private theorem mapsTo_weylProjection_posRoots (g : D.weylSubgroup k)
