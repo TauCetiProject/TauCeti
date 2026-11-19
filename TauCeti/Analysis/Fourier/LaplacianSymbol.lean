@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
+public import Mathlib.Analysis.Fourier.LpSpace
 
 /-!
 # The Fourier symbols of the Laplacian and of its square root
@@ -30,6 +31,8 @@ symbol identity `(2π ‖ξ‖)² = -(-4π² ‖ξ‖²)` (`TauCeti.sq_sqrtNegLa
   Fourier multiplier with symbol `TauCeti.laplacianSymbol`.
 * `TauCeti.sqrtNegLaplacianSymbol`: the symbol `2π ‖ξ‖` of `√(-Δ)`.
 * `TauCeti.sq_sqrtNegLaplacianSymbol`: its square is the symbol of `-Δ`.
+* `SchwartzMap.coeFn_fourier_toLp_laplacian`: in `L²`, `𝓕 (Δφ) = -4π² ‖ξ‖² 𝓕 φ` for Schwartz
+  `φ`.
 -/
 
 public section
@@ -92,6 +95,14 @@ end Homogeneity
 variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The symbol of the Laplacian has temperate growth. -/
+theorem hasTemperateGrowth_laplacianSymbol : (laplacianSymbol : E → ℝ).HasTemperateGrowth := by
+  convert (Function.HasTemperateGrowth.const (-(4 * π ^ 2))).mul
+    (Function.hasTemperateGrowth_norm_sq E) using 1
+  ext ξ
+  simp [laplacianSymbol_apply]
+
 /-- On Schwartz functions, the Laplacian is the Fourier multiplier with symbol
 `TauCeti.laplacianSymbol`. -/
 theorem _root_.SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol (f : 𝓢(E, F)) :
@@ -103,5 +114,27 @@ theorem _root_.SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol (f 
   rw [SchwartzMap.laplacian_eq_fourierMultiplierCLM, h,
     SchwartzMap.fourierMultiplierCLM_smul (Function.hasTemperateGrowth_norm_sq E),
     _root_.smul_apply]
+
+section L2
+
+open MeasureTheory
+open scoped FourierTransform
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
+
+/-- In `L²`, the Fourier transform of the Laplacian of a Schwartz function `φ` is
+`𝓕 (Δφ) = -4π² ‖ξ‖² 𝓕 φ`, almost everywhere. -/
+theorem _root_.SchwartzMap.coeFn_fourier_toLp_laplacian (φ : 𝓢(E, G)) :
+    ((𝓕 ((Δ φ).toLp 2) : Lp G 2 (volume : Measure E)) : E → G) =ᵐ[volume]
+      fun ξ ↦ (laplacianSymbol ξ : ℂ) • (𝓕 (φ.toLp 2) : Lp G 2 (volume : Measure E)) ξ := by
+  have hΔ : 𝓕 (Δ φ) = SchwartzMap.smulLeftCLM G (laplacianSymbol : E → ℝ) (𝓕 φ) := by
+    rw [SchwartzMap.laplacian_eq_fourierMultiplierCLM_laplacianSymbol,
+      SchwartzMap.fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq]
+  rw [SchwartzMap.toLp_fourier_eq, SchwartzMap.toLp_fourier_eq]
+  filter_upwards [(𝓕 (Δ φ)).coeFn_toLp 2 volume, (𝓕 φ).coeFn_toLp 2 volume] with ξ h₁ h₂
+  rw [h₁, h₂, hΔ, SchwartzMap.smulLeftCLM_apply_apply hasTemperateGrowth_laplacianSymbol,
+    Complex.coe_smul]
+
+end L2
 
 end TauCeti
