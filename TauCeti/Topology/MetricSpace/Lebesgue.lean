@@ -22,9 +22,11 @@ cover of the domain.
 
 * `TauCeti.lebesgue_number_lemma_of_metric_of_mem_nhds`: a Lebesgue number for a family of sets
   one of which is a neighbourhood of each point of a compact set.
-* `TauCeti.exists_pos_forall_dist_lt_exists_mem`: for an injective continuous map from a compact
-  space to a metric space and an open cover of the domain, a positive `m` such that any two points
-  whose images are at distance less than `m` lie in a common member of the cover.
+* `TauCeti.exists_pos_forall_exists_forall_dist_lt_mem`: for an injective continuous map `f` from a
+  compact space to a metric space and an open cover of the domain, a positive `m` such that the
+  points whose images are at distance less than `m` from any given image `f z` lie in a common
+  member of the cover.
+* `TauCeti.exists_pos_forall_dist_lt_exists_mem`: the same for two points at a time.
 -/
 
 public section
@@ -45,12 +47,12 @@ theorem lebesgue_number_lemma_of_metric_of_mem_nhds {α : Type*} {ι : Sort*} [P
   exact ⟨δ, hδ, fun x hx ↦ (h x hx).imp fun _ hi ↦ hi.trans interior_subset⟩
 
 /-- For an injective continuous map `f` from a compact space to a metric space, and an open cover
-`W` of the domain, there is `m > 0` such that any two points whose images are at distance less
-than `m` lie in a common member of the cover. -/
-theorem exists_pos_forall_dist_lt_exists_mem {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
-    [MetricSpace Y] {f : X → Y} (hf : Continuous f) (hinj : Injective f) {ι : Sort*}
-    {W : ι → Set X} (hWo : ∀ i, IsOpen (W i)) (ht : univ ⊆ ⋃ i, W i) :
-    ∃ m > 0, ∀ y z : X, dist (f y) (f z) < m → ∃ i, y ∈ W i ∧ z ∈ W i := by
+`W` of the domain, there is `m > 0` such that for every point `z` some member of the cover contains
+every point whose image is at distance less than `m` from `f z`. -/
+theorem exists_pos_forall_exists_forall_dist_lt_mem {X Y : Type*} [TopologicalSpace X]
+    [CompactSpace X] [MetricSpace Y] {f : X → Y} (hf : Continuous f) (hinj : Injective f)
+    {ι : Sort*} {W : ι → Set X} (hWo : ∀ i, IsOpen (W i)) (ht : univ ⊆ ⋃ i, W i) :
+    ∃ m > 0, ∀ z : X, ∃ i, ∀ y : X, dist (f y) (f z) < m → y ∈ W i := by
   have hemb := hf.isClosedEmbedding hinj
   choose U hUo hU using fun i => hemb.isInducing.isOpen_iff.mp (hWo i)
   obtain ⟨m, hm, hball⟩ := lebesgue_number_lemma_of_metric (isCompact_range hf) hUo
@@ -58,12 +60,18 @@ theorem exists_pos_forall_dist_lt_exists_mem {X Y : Type*} [TopologicalSpace X] 
       rintro _ ⟨y, rfl⟩
       obtain ⟨i, hi⟩ := mem_iUnion.mp (ht (mem_univ y))
       exact mem_iUnion.mpr ⟨i, by rw [← mem_preimage, hU]; exact hi⟩)
-  refine ⟨m, hm, fun y z hyz => ?_⟩
-  obtain ⟨i, hi⟩ := hball (f y) ⟨y, rfl⟩
-  refine ⟨i, ?_, ?_⟩
-  · rw [← hU i]
-    exact hi (mem_ball_self hm)
-  · rw [← hU i]
-    exact hi (by rwa [mem_ball, dist_comm])
+  refine ⟨m, hm, fun z => (hball (f z) ⟨z, rfl⟩).imp fun i hi y hyz => ?_⟩
+  rw [← hU i]
+  exact hi hyz
+
+/-- For an injective continuous map `f` from a compact space to a metric space, and an open cover
+`W` of the domain, there is `m > 0` such that any two points whose images are at distance less
+than `m` lie in a common member of the cover. -/
+theorem exists_pos_forall_dist_lt_exists_mem {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
+    [MetricSpace Y] {f : X → Y} (hf : Continuous f) (hinj : Injective f) {ι : Sort*}
+    {W : ι → Set X} (hWo : ∀ i, IsOpen (W i)) (ht : univ ⊆ ⋃ i, W i) :
+    ∃ m > 0, ∀ y z : X, dist (f y) (f z) < m → ∃ i, y ∈ W i ∧ z ∈ W i := by
+  obtain ⟨m, hm, h⟩ := exists_pos_forall_exists_forall_dist_lt_mem hf hinj hWo ht
+  exact ⟨m, hm, fun y z hyz => (h z).imp fun i hi => ⟨hi y hyz, hi z (by rwa [dist_self])⟩⟩
 
 end TauCeti
