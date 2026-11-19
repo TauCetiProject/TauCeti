@@ -248,10 +248,12 @@ private theorem integral_hamiltonianCurvature_plumbedPerturbation_inserted
     hamiltonianCurvature_pairOfPantsPerturbation_inserted ω hq hHa hHb hHas hHbs hab hL
       (hB w hw).1 (hB w hw).2]
 
-/-- Over the image under the plumbing chart of a measurable set `B` outside the circle
-`s_∞ = -L/2` of the inserted pair of pants, the Floer energy of `u` for the plumbed perturbation
-is that of `u ∘ ψ` over `B` for the perturbation of the inserted pair of pants. -/
-private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : SmoothTwoForm I M)
+/-- **The energy of the inserted pair of pants, for a manifold target.** For period-one `C¹`
+Hamiltonians with `Hb q = Ha ∞`, neck length `L > 4` and `u` of class `C¹` on the plumbed
+four-punctured sphere, over the image under the plumbing chart `ψ` of a measurable set `B` of the
+inserted pair of pants outside the circle `s_∞ = -L/2`, the Floer energy of `u` for the plumbed
+perturbation is that of `u ∘ ψ` over `B` for the perturbation of the inserted pair of pants. -/
+theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
@@ -279,7 +281,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
     fun w hw ↦ ?_
   rw [abs_of_nonneg (det_fderiv_realChart_plumbingMap_nonneg q L w), smul_eq_mul,
     ω.floerEnergyDensity_comp_realChart_plumbingMap hq hHa hHb hHas hHbs hab hL
-      (mem_thricePuncturedSphereReal_iff.1 (hB w hw).1) (hB w hw).2
+      (mem_thricePuncturedSphereReal_iff.1 (hB w hw).1) (by linarith [(hB w hw).2])
       ((hu.contMDiffAt ((isOpen_plumbedSphere q L).mem_nhds (hP hw))).mdifferentiableAt
         one_ne_zero)]
 
