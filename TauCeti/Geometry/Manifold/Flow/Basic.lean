@@ -33,6 +33,8 @@ compact set.
 * `TauCeti.ordConnected_setOf_mem_flowDomain`: the times of the flow through a point form an
   interval.
 * `TauCeti.isOpen_flowDomain`: openness of the domain for complete model spaces.
+* `TauCeti.isMIntegralCurveAt_flowOf`: a trajectory is an integral curve near every time in its
+  domain.
 * `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow for complete model spaces.
 * `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
 * `TauCeti.isOpen_setOf_mem_flowDomain`: the parameters of a continuous family of times and
@@ -151,6 +153,17 @@ theorem mem_flowDomain_zero [IsManifold I 1 M] {v : (x : M) → TangentSpace I x
     ((0 : ℝ), x) ∈ flowDomain v := by
   rw [mem_flowDomain]
   exact zero_mem_maximalIntegralCurveInterval hv.contMDiffAt
+
+omit [CompleteSpace E] in
+/-- The trajectory `t ↦ flowOf v t x` is an integral curve near every time in its domain. -/
+theorem isMIntegralCurveAt_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) :
+    IsMIntegralCurveAt (fun s ↦ flowOf v s x) v t := by
+  have hdom : {s | (s, x) ∈ flowDomain v} ∈ 𝓝 t := by
+    simpa only [mem_flowDomain, ofPred_mem_eq] using
+      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp ht)
+  exact (isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hdom
 
 omit [CompleteSpace E] in
 /-- A global integral curve of a `C¹` field is the maximal flow through its initial value.
