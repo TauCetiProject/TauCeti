@@ -169,13 +169,13 @@ theorem bettiNumber_eq_sum (s : ι → Opens X) (hs : Pairwise (Disjoint on s))
       hs).coconePointUniqueUpToIso (colimit.isColimit _)
   let e := (F.mapIso eX ≪≫ eS ≪≫ ModuleCat.coprodIsoDirectSum _).toLinearEquiv
   -- Each summand of a finite-dimensional direct sum is finite-dimensional.
-  let G (i : ι) : Type u := F.obj (TopCat.of (s i))
-  have : Module.Finite k (DirectSum ι G) := Module.Finite.equiv e
-  have (i : ι) : Module.Finite k (G i) :=
-    Module.Finite.of_surjective (DirectSum.component k ι G i)
-      fun x ↦ ⟨DirectSum.lof k ι G i x, DirectSum.component.lof_self k i x⟩
-  rw [bettiNumber_def, e.finrank_eq, finrank_directSum]
-  rfl
+  have : Module.Finite k (DirectSum ι fun i ↦ F.obj (TopCat.of (s i))) := Module.Finite.equiv e
+  have (i : ι) : Module.Finite k (F.obj (TopCat.of (s i))) :=
+    Module.Finite.of_surjective (DirectSum.component k ι (fun i ↦ F.obj (TopCat.of (s i))) i)
+      fun x ↦ ⟨DirectSum.lof k ι _ i x,
+        DirectSum.component.lof_self (M := fun i ↦ F.obj (TopCat.of (s i))) k i x⟩
+  simp only [bettiNumber_def]
+  rw [e.finrank_eq, finrank_directSum]
 
 /-- **Betti numbers are additive over connected components.** In a locally connected space `X`
 with finitely many connected components, each of them open, if `Hⱼ(X; k)` is finite-dimensional
