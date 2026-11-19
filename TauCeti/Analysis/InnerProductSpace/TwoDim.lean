@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import TauCeti.Analysis.InnerProductSpace.Orientation
+import TauCeti.Analysis.InnerProductSpace.StrictCauchySchwarz
 
 /-!
 # Oriented Euclidean planes
 
 The quarter turn `J = o.rightAngleRotation` of an oriented Euclidean plane carries the first vector
 of every positively oriented orthonormal basis `(e₀, e₁)` to the second, `J e₀ = e₁`, and hence
-`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn.
+`J e₁ = -e₀`. So in any such basis `J` is the standard quarter turn. The area form `ω(x, y)` is
+nonzero exactly when `x` is nonzero and `y` is not a multiple of `x`
+(`Orientation.areaForm_ne_zero_iff`).
 
 For unit vectors `a`, `b` the inner product and the area form `ω` are the cosine and the sine of
 the angle from `a` to `b`: `√(1 - ⟪a, b⟫²) = |ω(a, b)|`, so `⟪a, b⟫ ∈ (-1, 1)` whenever
@@ -70,6 +73,14 @@ theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
   refine ext_inner_right ℝ fun y ↦ ?_
   rw [real_inner_smul_left, real_inner_smul_left, ← o.inner_mul_inner_add_areaForm_mul_areaForm,
     h, zero_mul, add_zero]
+
+/-- The area form `ω(x, y)` is nonzero exactly when `x` is nonzero and `y` is not a multiple of
+`x`. -/
+theorem areaForm_ne_zero_iff {x y : E} :
+    o.areaForm x y ≠ 0 ↔ x ≠ 0 ∧ ∀ c : ℝ, y ≠ c • x := by
+  rw [← TauCeti.abs_real_inner_lt_norm_iff,
+    ← pow_lt_pow_iff_left₀ (abs_nonneg _) (by positivity) two_ne_zero, sq_abs, mul_pow,
+    ← o.inner_sq_add_areaForm_sq x y, lt_add_iff_pos_right, sq_pos_iff]
 
 /-- For unit vectors `a`, `b` of an oriented plane, `√(1 - ⟪a, b⟫²) = |ω(a, b)|`: the inner
 product and the area form are the cosine and the sine of the angle from `a` to `b`. -/
