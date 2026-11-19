@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import TauCeti.Topology.Algebra.Module.Trace
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
@@ -40,6 +41,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
   `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
   scalar function.
+* `TauCeti.trace_fderiv_exp_neg_smul`: the weighted divergence
+  `div (e^{−W} φ) = (div φ − DW φ) e^{−W}`.
 * `TauCeti.exists_testFunction_sum_smul_comp_add`: weighting translates of a test vector field
   `φ` by nonnegative smooth functions `ζ k` compactly supported in `Ω` with sum at most one gives
   a test vector field `∑ k, ζ k φ(· + τ k)` on `Ω`, of norm at most one when `‖φ‖ ≤ 1`, whose
@@ -143,6 +146,18 @@ theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : Differe
 theorem trace_fderiv_smul_const {χ : E → ℝ} {x : E} (hχ : DifferentiableAt ℝ χ x) (v : E) :
     LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • v) x : E →ₗ[ℝ] E) = fderiv ℝ χ x v := by
   simpa using trace_fderiv_smul hχ (differentiableAt_const v)
+
+/-- **The weighted divergence.** For a differentiable weight `W` and vector field `X`,
+`div (e^{−W} X) = (div X − DW X) e^{−W}`, where `div = tr ∘ D`. -/
+theorem trace_fderiv_exp_neg_smul {W : E → ℝ} {X : E → E} {x : E}
+    (hW : DifferentiableAt ℝ W x) (hX : DifferentiableAt ℝ X x) :
+    LinearMap.trace ℝ E (fderiv ℝ (fun y => Real.exp (-W y) • X y) x : E →ₗ[ℝ] E) =
+      (LinearMap.trace ℝ E (fderiv ℝ X x : E →ₗ[ℝ] E) - fderiv ℝ W x (X x)) *
+        Real.exp (-W x) := by
+  have hW' : DifferentiableAt ℝ (fun y => -W y) x := hW.neg
+  rw [trace_fderiv_smul hW'.exp hX, fderiv_exp hW', fderiv_fun_neg]
+  simp only [_root_.smul_apply, _root_.neg_apply, smul_eq_mul]
+  ring
 
 /-- Let `ζ k`, for `k ∈ s`, be nonnegative smooth functions compactly supported in `Ω` whose sum
 is at most one, and `φ` a test vector field on `Ω` with `‖φ‖ ≤ 1`. For any vectors `τ k`, the
