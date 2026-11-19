@@ -135,8 +135,9 @@ theorem hasDerivAt_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card)
     congr 2
     ext β
     simp only [Function.comp_apply]
+    congr 1
     push_cast
-    ring_nf
+    ring
   simp only [regularizedHGFunCoeff, ha, hb, Nat.factorial_succ]
   push_cast
   field_simp
@@ -208,44 +209,7 @@ theorem continuous_regularizedHGFun_zero_singleton_ofReal_re :
 theorem hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     HasDerivAt (fun y : ℝ => (regularizedHGFun 0 {(b : ℂ)} y).re)
       (regularizedHGFun 0 {(b : ℂ) + 1} y).re y := by
-  have heq : (fun y : ℝ => (regularizedHGFun 0 {(b : ℂ)} y).re) =
-      fun y => ∑' n : ℕ, y ^ n / (n ! * Real.Gamma (b + n)) :=
-    funext fun y => (hasSum_regularizedHGFun_zero_singleton_ofReal_re b y).tsum_eq.symm
-  obtain ⟨C, hC⟩ := Real.exists_abs_inv_Gamma_le b
-  set R := |y| + 1
-  have hu : Summable fun n : ℕ => C * (n * R ^ (n - 1) / n !) := by
-    refine (summable_nat_add_iff 1).1 ?_
-    convert (Real.summable_pow_div_factorial R).mul_left C using 2 with n
-    rw [Nat.factorial_succ]
-    push_cast
-    field_simp
-  have hd := hasDerivAt_tsum_of_isPreconnected (y₀ := 0) (y := y) hu isOpen_Ioo
-    isPreconnected_Ioo (t := Ioo (-R) R)
-    (g := fun n y => y ^ n / (n ! * Real.Gamma (b + n)))
-    (g' := fun n y => n * y ^ (n - 1) / (n ! * Real.Gamma (b + n)))
-    (fun n y _ => (hasDerivAt_pow n y).div_const _) (fun n z hz => ?_)
-    ⟨by linarith [abs_nonneg y], by linarith [abs_nonneg y]⟩
-    (hasSum_regularizedHGFun_zero_singleton_ofReal_re b 0).summable
-    ⟨by linarith [neg_abs_le y], by linarith [le_abs_self y]⟩
-  · rw [heq]
-    convert hd using 1
-    refine (HasSum.tsum_eq ?_).symm
-    rw [← hasSum_nat_add_iff' 1]
-    convert hasSum_regularizedHGFun_zero_singleton_ofReal_re (b + 1) y using 1
-    · ext n
-      have hadd : b + (n + 1 : ℝ) = b + 1 + n := by ring
-      rw [Nat.factorial_succ]
-      push_cast
-      rw [hadd]
-      field_simp
-    · simp
-  · have hz' : |z| ≤ R := (abs_lt.2 hz).le
-    have hG := hC (b + n) (by linarith [n.cast_nonneg (α := ℝ)])
-    rw [Real.norm_eq_abs, div_eq_mul_inv, mul_inv, abs_mul, abs_mul, abs_mul, abs_pow, abs_inv,
-      Nat.abs_cast, Nat.abs_cast]
-    calc (n : ℝ) * |z| ^ (n - 1) * ((n ! : ℝ)⁻¹ * |(Real.Gamma (b + n))⁻¹|)
-        ≤ n * R ^ (n - 1) * ((n ! : ℝ)⁻¹ * C) := by gcongr
-      _ = C * (n * R ^ (n - 1) / n !) := by ring
+  simpa using (hasDerivAt_regularizedHGFun_zero_singleton (b : ℂ) y).real_of_complex
 
 /-- The finite convolution of the coefficients of `₀F₁(; a; z)` and `₀F₁(; b; z)`, valid at every
 pair of complex parameters `a`, `b`, including poles of `Γ`. -/

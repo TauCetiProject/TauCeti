@@ -148,20 +148,12 @@ theorem iteratedDeriv_besselJ (ν : ℂ) (k : ℕ) {z : ℂ} (hz : z ∈ slitPla
     have hpascal (a : ℕ → ℂ) :
         ∑ n ∈ Finset.range (k + 1 + 1), (-1) ^ n * ((k + 1).choose n : ℂ) * a n =
           ∑ n ∈ Finset.range (k + 1), (-1) ^ n * (k.choose n : ℂ) * (a n - a (n + 1)) := by
-      have hshift : ∑ n ∈ Finset.range (k + 1),
-          (-1) ^ (n + 1) * (k.choose (n + 1) : ℂ) * a (n + 1) + a 0 =
-            ∑ n ∈ Finset.range (k + 1), (-1) ^ n * (k.choose n : ℂ) * a n := by
-        have h := Finset.sum_range_succ' (fun n => (-1) ^ n * (k.choose n : ℂ) * a n) (k + 1)
-        rw [Finset.sum_range_succ, Nat.choose_succ_self] at h
-        simpa using h.symm
-      have hneg : ∑ n ∈ Finset.range (k + 1), (-1) ^ (n + 1) * (k.choose n : ℂ) * a (n + 1) =
-          -∑ n ∈ Finset.range (k + 1), (-1) ^ n * (k.choose n : ℂ) * a (n + 1) := by
-        rw [← Finset.sum_neg_distrib]
-        exact Finset.sum_congr rfl fun n _ => by ring
-      rw [Finset.sum_range_succ']
-      simp only [Nat.choose_succ_succ', Nat.cast_add, mul_add, add_mul, Finset.sum_add_distrib,
-        mul_sub, Finset.sum_sub_distrib, pow_zero, Nat.choose_zero_right, Nat.cast_one, one_mul]
-      linear_combination hneg + hshift
+      calc _ = ∑ n ∈ Finset.range (k + 2), ((k + 1).choose n : ℂ) * ((-1) ^ n * a n) :=
+            Finset.sum_congr rfl fun n _ => by ring
+        _ = _ := Finset.sum_choose_succ_mul (fun n _ => (-1) ^ n * a n) k
+        _ = _ := by
+          rw [← Finset.sum_add_distrib]
+          exact Finset.sum_congr rfl fun n _ => by ring
     have h₁ (n : ℕ) : besselJ (ν - k + 2 * n - 1) z = besselJ (ν - (k + 1 : ℕ) + 2 * n) z := by
       congr 1; push_cast; ring
     have h₂ (n : ℕ) :
@@ -205,11 +197,11 @@ theorem iterate_inv_mul_deriv_cpow_mul_besselJ (ν : ℂ) (k : ℕ) {z : ℂ} (h
         =ᶠ[𝓝 z] fun w => w ^ (ν - k) * besselJ (ν - k) w := by
       filter_upwards [isOpen_slitPlane.mem_nhds hz] with w hw
       exact ih hw
+    have hk : ν - (k + 1 : ℕ) = ν - k - 1 := by push_cast; ring
     rw [Function.iterate_succ_apply', heq.deriv_eq,
-      (hasDerivAt_cpow_mul_besselJ (ν - k) hz).deriv, ← mul_assoc, ← cpow_neg_one,
-      ← cpow_add _ _ (slitPlane_ne_zero hz)]
-    push_cast
-    ring_nf
+      (hasDerivAt_cpow_mul_besselJ (ν - k) hz).deriv, hk,
+      cpow_sub (ν - k) 1 (slitPlane_ne_zero hz), cpow_one]
+    ring
 
 /-- The ladder relation of DLMF 10.6.6 for `z^{−ν} J_ν(z)`: on the slit plane,
 `(z⁻¹ d/dz)ᵏ (z^{−ν} J_ν(z)) = (−1)ᵏ z^{−ν−k} J_{ν+k}(z)`. -/
@@ -224,15 +216,11 @@ theorem iterate_inv_mul_deriv_cpow_neg_mul_besselJ (ν : ℂ) (k : ℕ) {z : ℂ
         =ᶠ[𝓝 z] fun w => (-1) ^ k * (w ^ (-(ν + k)) * besselJ (ν + k) w) := by
       filter_upwards [isOpen_slitPlane.mem_nhds hz] with w hw
       rw [ih hw, neg_add', mul_assoc]
+    have hk₁ : -ν - (k + 1 : ℕ) = -(ν + k) - 1 := by push_cast; ring
+    have hk₂ : ν + (k + 1 : ℕ) = ν + k + 1 := by push_cast; ring
     rw [Function.iterate_succ_apply', heq.deriv_eq,
-      ((hasDerivAt_cpow_neg_mul_besselJ (ν + k) hz).const_mul _).deriv,
-      ← cpow_neg_one, pow_succ]
-    have hc : z ^ (-1 : ℂ) * z ^ (-(ν + k)) = z ^ (-ν - (k + 1 : ℕ)) := by
-      rw [← cpow_add _ _ (slitPlane_ne_zero hz)]
-      push_cast
-      ring_nf
-    push_cast at hc ⊢
-    rw [← hc, add_assoc]
+      ((hasDerivAt_cpow_neg_mul_besselJ (ν + k) hz).const_mul _).deriv, hk₁, hk₂,
+      cpow_sub (-(ν + k)) 1 (slitPlane_ne_zero hz), cpow_one, pow_succ]
     ring
 
 end Complex
