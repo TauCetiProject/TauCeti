@@ -334,6 +334,13 @@ def orderedSimplicialChainComplexMap :
   orderedSimplicialChainComplexHomOfLinear R (OrderedSimplicialChain.map R f)
     (OrderedSimplicialChain.boundary_comp_map f)
 
+/-- The induced map of ordered chain complexes is built from the induced maps of chains. -/
+theorem orderedSimplicialChainComplexMap_def :
+    orderedSimplicialChainComplexMap R f =
+      orderedSimplicialChainComplexHomOfLinear R (OrderedSimplicialChain.map R f)
+        (OrderedSimplicialChain.boundary_comp_map f) :=
+  (rfl)
+
 /-- The degreewise map is the linear extension of the map on cells. -/
 @[simp]
 theorem orderedSimplicialChainComplexMap_f (n : ℕ) :
@@ -358,13 +365,7 @@ theorem orderedSimplicialChainComplexMap_comp
       L.toPreAbstractSimplicialComplex P.toPreAbstractSimplicialComplex) :
     orderedSimplicialChainComplexMap R (g.comp f) =
       orderedSimplicialChainComplexMap R f ≫ orderedSimplicialChainComplexMap R g := by
-  ext n : 1
-  simp only [orderedSimplicialChainComplexMap_f, HomologicalComplex.comp_f,
-    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-  congr 1
-  rw [← Category.assoc, cancel_mono, ← ModuleCat.ofHom_comp]
-  apply ModuleCat.hom_ext
-  simp only [ModuleCat.hom_ofHom]
-  exact OrderedSimplicialChain.map_comp f g n
+  simp only [orderedSimplicialChainComplexMap_def, orderedSimplicialChainComplexHomOfLinear_comp,
+    ← OrderedSimplicialChain.map_comp]
 
 end TauCeti

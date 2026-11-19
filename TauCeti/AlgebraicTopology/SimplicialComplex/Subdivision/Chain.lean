@@ -118,6 +118,18 @@ theorem augmentation_comp_subdivision_zero :
   refine lhom_ext' fun c ↦ LinearMap.ext_ring ?_
   simp
 
+/-- Every cell in the subdivision of the boundary of a cell `c` lies in the subdivision of a
+codimension-one face of `c`. -/
+theorem exists_mem_support_subdivision_face_of_mem_support_subdivision_boundary {n : ℕ}
+    (c : RealizationCell K (n + 1)) {e : RealizationCell L n}
+    (he : e ∈ (subdivision (L := L) R b n (boundary R n (single c 1))).support) :
+    ∃ j, e ∈ (subdivision (L := L) R b n (single (c.face j) 1)).support := by
+  classical
+  rw [boundary_single, map_sum] at he
+  obtain ⟨j, -, he⟩ := Finsupp.mem_support_finsetSum _ he
+  rw [map_smul] at he
+  exact ⟨j, Finsupp.support_smul he⟩
+
 /-- **Simplices of the subdivision of a cell are spanned by barycenters of its faces.** Every
 vertex of a cell in the support of the subdivision of a cell `c` is the barycenter of a face of
 `c`. -/
@@ -138,10 +150,8 @@ theorem exists_le_eq_of_mem_support_subdivision {n : ℕ} (c : RealizationCell K
     rw [RealizationCell.cone_val] at hw
     rcases Finset.mem_insert.mp hw with rfl | hw
     · exact ⟨c.1, le_rfl, rfl⟩
-    · rw [boundary_single, map_sum] at he
-      obtain ⟨j, -, he⟩ := Finsupp.mem_support_finsetSum _ he
-      rw [map_smul] at he
-      obtain ⟨τ, hτ, rfl⟩ := ih (c.face j) (Finsupp.support_smul he) hw
+    · obtain ⟨j, he⟩ := exists_mem_support_subdivision_face_of_mem_support_subdivision_boundary c he
+      obtain ⟨τ, hτ, rfl⟩ := ih (c.face j) he hw
       exact ⟨τ, hτ.trans (c.face_val_subset j), rfl⟩
 
 /-- If a simplicial map `f : L → K` sends the barycenter of every face `τ` to a vertex of `τ`,
@@ -185,13 +195,9 @@ theorem forall_lt_and_insert_mem_of_mem_support_subdivision_boundary {n : ℕ}
     (c : RealizationCell K (n + 1)) {e : RealizationCell L n}
     (he : e ∈ (subdivision (L := L) R b n (boundary R n (single c 1))).support) :
     (∀ w ∈ e.1.1, w < b c.1) ∧ insert (b c.1) e.1.1 ∈ L := by
-  classical
-  rw [boundary_single, map_sum] at he
-  obtain ⟨j, -, he⟩ := Finsupp.mem_support_finsetSum _ he
-  rw [map_smul] at he
+  obtain ⟨j, he⟩ := exists_mem_support_subdivision_face_of_mem_support_subdivision_boundary c he
   have hlt : ∀ w ∈ e.1.1, ∃ τ < c.1, b τ = w := fun w hw ↦ by
-    obtain ⟨τ, hτ, rfl⟩ :=
-      exists_le_eq_of_mem_support_subdivision (c.face j) (Finsupp.support_smul he) hw
+    obtain ⟨τ, hτ, rfl⟩ := exists_le_eq_of_mem_support_subdivision (c.face j) he hw
     exact ⟨τ, lt_of_le_of_lt hτ (c.face_val_ssubset j), rfl⟩
   refine ⟨fun w hw ↦ ?_, hL e.1.2 c.1 hlt⟩
   obtain ⟨τ, hτ, rfl⟩ := hlt w hw
@@ -308,12 +314,9 @@ theorem subdivisionChainMap_comp_orderedSimplicialChainComplexMap
       L.toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex)
     (hf : ∀ τ : TauCeti.SetLike.Face K, f (b τ) ∈ τ.1) :
     subdivisionChainMap R hb hL ≫ orderedSimplicialChainComplexMap R f = 𝟙 _ := by
-  ext n : 1
-  simp only [HomologicalComplex.comp_f, subdivisionChainMap_f, orderedSimplicialChainComplexMap_f,
-    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, HomologicalComplex.id_f]
-  rw [← Category.assoc (ModuleCat.ofHom _), ← ModuleCat.ofHom_comp,
-    map_comp_subdivision hb hL f hf n, ModuleCat.ofHom_id, Category.id_comp, eqToHom_trans,
-    eqToHom_refl]
+  simp only [subdivisionChainMap, orderedSimplicialChainComplexMap_def,
+    orderedSimplicialChainComplexHomOfLinear_comp, map_comp_subdivision hb hL f hf,
+    orderedSimplicialChainComplexHomOfLinear_id]
 
 end ChainMap
 

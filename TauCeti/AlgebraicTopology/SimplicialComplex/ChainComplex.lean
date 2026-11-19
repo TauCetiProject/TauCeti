@@ -285,6 +285,33 @@ theorem orderedSimplicialChainComplexHomOfLinear_f
         ModuleCat.ofHom (φ n) ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm :=
   (rfl)
 
+/-- The identity linear maps of chains give the identity morphism. -/
+@[simp]
+theorem orderedSimplicialChainComplexHomOfLinear_id
+    (h : ∀ n, OrderedSimplicialChain.boundary R n ∘ₗ LinearMap.id =
+      LinearMap.id ∘ₗ OrderedSimplicialChain.boundary (K := K) R n) :
+    orderedSimplicialChainComplexHomOfLinear R (fun _ ↦ LinearMap.id) h = 𝟙 _ := by
+  ext n : 1
+  simp
+
+/-- Composing morphisms built from linear maps of chains gives the morphism built from the
+composed linear maps. -/
+theorem orderedSimplicialChainComplexHomOfLinear_comp {μ : Type u} [LinearOrder μ]
+    {P : _root_.AbstractSimplicialComplex μ}
+    (φ : ∀ n, OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain L R n)
+    (hφ : ∀ n, OrderedSimplicialChain.boundary R n ∘ₗ φ (n + 1) =
+      φ n ∘ₗ OrderedSimplicialChain.boundary R n)
+    (ψ : ∀ n, OrderedSimplicialChain L R n →ₗ[R] OrderedSimplicialChain P R n)
+    (hψ : ∀ n, OrderedSimplicialChain.boundary R n ∘ₗ ψ (n + 1) =
+      ψ n ∘ₗ OrderedSimplicialChain.boundary R n) :
+    orderedSimplicialChainComplexHomOfLinear R φ hφ ≫
+        orderedSimplicialChainComplexHomOfLinear R ψ hψ =
+      orderedSimplicialChainComplexHomOfLinear R (fun n ↦ ψ n ∘ₗ φ n) fun n ↦ by
+        rw [← LinearMap.comp_assoc, hψ, LinearMap.comp_assoc, hφ, LinearMap.comp_assoc] := by
+  ext n : 1
+  simp only [HomologicalComplex.comp_f, orderedSimplicialChainComplexHomOfLinear_f,
+    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ModuleCat.ofHom_comp]
+
 end Hom
 
 section Augmentation
