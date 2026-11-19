@@ -71,6 +71,8 @@ The standard form `dx ∧ dy` is `-xᵀ J y`, and for it the flow of `H = ε (x�
 
 ## Main results
 
+* `TauCeti.map_star_diagonalStraightening_mul_graphFrame_sub`: the imaginary part of the
+  straightened graph frame, `conj (T Γ(A)) - T Γ(A) = i √2 J (A - 1)`.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_maslovIndex`: the index is minus the Maslov
   index of any path of unitary frames of the straightened graphs.
 * `TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopic`,
@@ -157,7 +159,7 @@ theorem diagonalStraightening_mem_unitaryGroup :
 
 /-- The diagonal straightening of the graph frame of the identity, whose columns span the
 diagonal, is the real matrix `√2 • 1`. -/
-private theorem diagonalStraightening_mul_graphFrame_one :
+theorem diagonalStraightening_mul_graphFrame_one :
     diagonalStraightening n * graphFrame 1 =
       ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) := by
   have h : graphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
@@ -173,6 +175,19 @@ of the graph `Γ(1)` of the identity is `ℝ^{n ⊕ n}`. -/
 theorem realImage_diagonalStraightening_mul_graphFrame_one :
     (diagonalStraightening n * graphFrame 1).realImage = realSubspace (n ⊕ n) := by
   rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
+
+/-- The imaginary part of the straightened graph frame: for every real matrix `A` on
+`ℝ^{n ⊕ n}`, `conj (T Γ(A)) - T Γ(A) = i √2 J (A - 1)`, where `T` is the diagonal straightening
+and `Γ(A)` the graph frame. So the straightened graph meets the real points nontrivially, that
+is, the graph of `A` meets the diagonal, exactly when `A` has the eigenvalue `1`. -/
+theorem map_star_diagonalStraightening_mul_graphFrame_sub (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (diagonalStraightening n * graphFrame A).map star - diagonalStraightening n * graphFrame A =
+      (Complex.I * ((√2 : ℝ) : ℂ)) • (J n ℝ * (A - 1)).map ((↑) : ℝ → ℂ) := by
+  conv_rhs => rw [← fromBlocks_toBlocks (A - 1), J, fromBlocks_multiply]
+  rw [diagonalStraightening_def, graphFrame_def, Matrix.smul_mul, fromBlocks_multiply]
+  ext (i | i) (j | j) <;>
+  simp [Matrix.one_apply, Complex.ext_iff, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁, toBlocks₂₂] <;>
+  split_ifs <;> simp <;> ring
 
 namespace GLSymplectic
 
@@ -219,6 +234,16 @@ theorem realImage_graphUnitaryFrame (A : GLSymplectic n ℝ) :
 theorem continuous_graphUnitaryFrame : Continuous (graphUnitaryFrame (n := n)) :=
   Continuous.subtype_mk (continuous_const.mul (Units.continuous_val.comp
     (continuous_realOrthonormalize continuous_graphFrameUnit))) _
+
+/-- The unitary graph frame of `A` is the straightened graph frame `T Γ(A)` times a positive
+definite real matrix, the real orthonormalization. -/
+theorem exists_posDef_coe_graphUnitaryFrame (A : GLSymplectic n ℝ) :
+    ∃ P : Matrix (n ⊕ n) (n ⊕ n) ℝ, P.PosDef ∧
+      (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+        diagonalStraightening n * graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+          P.map ((↑) : ℝ → ℂ) := by
+  obtain ⟨P, hP, h⟩ := exists_posDef_coe_realOrthonormalize (graphFrameUnit A)
+  exact ⟨P, hP, by rw [graphUnitaryFrame, Subtype.coe_mk, h, coe_graphFrameUnit, Matrix.mul_assoc]⟩
 
 /-- At the identity, the unitary graph frame frames the real points: the Souriau map of the
 straightened diagonal is the identity. -/
