@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.LocalDegree
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
-public import TauCeti.AlgebraicTopology.Sphere.Stiefel.DoubleLoop
+public import TauCeti.AlgebraicTopology.Sphere.Stiefel.MeridianProduct
 public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 
@@ -17,9 +17,10 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 
 Let `p` be a point of the unit sphere `Sⁿ` of a real inner product space `E`, `n ≥ 3`, and fix a
 unit vector `u₀ ⊥ p`. Each unit vector `w ⊥ p` gives the loop `λ(w) = γ_w · γ_{u₀}⁻¹` at `p`
-(`TauCeti.meridianLoop p (u₀, w)`): along the meridian `γ_w` in the direction `w` to `-p`, and back
-along the meridian `γ_{u₀}`. The family `λ : S(p^⊥) → Ω_p Sⁿ` of these loops, parametrized by the
-unit sphere `S(p^⊥) ≅ Sⁿ⁻¹` of the tangent space at `p`, induces an isomorphism
+(`TauCeti.meridianLoopFixedReturn p u₀ w`): along the meridian `γ_w` in the direction `w` to `-p`,
+and back along the meridian `γ_{u₀}`. The family `λ : S(p^⊥) → Ω_p Sⁿ` of these loops,
+parametrized by the unit sphere `S(p^⊥) ≅ Sⁿ⁻¹` of the tangent space at `p`, induces an
+isomorphism
 
 `λ_* : Hₙ₋₁(S(p^⊥); ℤ) ≅ Hₙ₋₁(Ω_p Sⁿ; ℤ)`
 
@@ -85,7 +86,7 @@ the meridian loops `w ↦ γ_w · γ_{u₀}⁻¹`, transported to the constant l
 shifted from the loop space to the sphere. -/
 private def meridianCube : Ω^ (Fin (k + 1)) (sphere (0 : E) 1) p :=
   GenLoop.genLoopLoopHomeomorph p k (GenLoop.transport (meridianContraction p u₀).symm
-    (GenLoop.map ⟨fun w ↦ meridianLoop p (u₀, w), by fun_prop⟩ rfl c))
+    (GenLoop.map (meridianLoopFixedReturn p u₀) (meridianLoopFixedReturn_apply p u₀ u₀) c))
 
 /-- The cube of the transported meridian loops: on the half-size cube in the first `k`
 coordinates it reads the loops `γ_w · γ_{u₀}⁻¹` along `c`, and outside it runs the path of loops
@@ -98,7 +99,7 @@ private theorem meridianCube_apply (z : I^(Fin (k + 1))) :
         (2 - 1 / max (cubeRadius fun i : Fin k ↦ z i.castSucc) (1 / 2))) (z (Fin.last k)) := by
   rw [meridianCube, GenLoop.genLoopLoopHomeomorph_apply, GenLoop.transport_apply_eq]
   split_ifs
-  · rw [GenLoop.map_apply, ContinuousMap.coe_mk]
+  · rw [GenLoop.map_apply, meridianLoopFixedReturn_apply]
   · rfl
 
 /-- Off the meridian `γ_{u₀}`, the cube of the transported meridian loops is on the first half of
@@ -204,14 +205,13 @@ dimension `m + 4`, so that its unit sphere is `Sⁿ` with `n = m + 3 ≥ 3`, and
 `λ : S(p^⊥) → Ω_p Sⁿ`, `w ↦ γ_w · γ_{u₀}⁻¹`,
 
 which runs to `-p` along the meridian in the direction `w` and back along the meridian in the
-direction `u₀` (`TauCeti.meridianLoop`), induces an isomorphism
+direction `u₀` (`TauCeti.meridianLoopFixedReturn`), induces an isomorphism
 `λ_* : Hₙ₋₁(S(p^⊥); ℤ) ≅ Hₙ₋₁(Ω_p Sⁿ; ℤ)`. As `S(p^⊥)` is a sphere of dimension `n - 1`, this says
 that `λ_*` sends the fundamental class of `S(p^⊥)` to a generator of `Hₙ₋₁(Ω_p Sⁿ; ℤ) ≅ ℤ`. -/
 theorem isIso_singularHomologyFunctor_map_meridianLoop {m : ℕ} (hE : finrank ℝ E = m + 4)
     (u₀ : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
     IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 2)).obj (ModuleCat.of ℤ ℤ)).map
-      (TopCat.ofHom (⟨fun w ↦ meridianLoop p (u₀, w), by fun_prop⟩ :
-        C(sphere (0 : (ℝ ∙ (p : E))ᗮ) 1, Path p p)))) := by
+      (TopCat.ofHom (meridianLoopFixedReturn p u₀))) := by
   let R := ModuleCat.of ℤ ℤ
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   have hp0 : (p : E) ≠ 0 := ne_zero_of_mem_unit_sphere p
@@ -224,8 +224,7 @@ theorem isIso_singularHomologyFunctor_map_meridianLoop {m : ℕ} (hE : finrank �
   -- Read through the meridian loops, `c` becomes a generalized loop `f` of `Ω_p Sⁿ` at
   -- `γ_{u₀} · γ_{u₀}⁻¹`. Transported to the constant loop, it has a generating Hurewicz class,
   -- since its shift to the sphere does.
-  set f := GenLoop.map (⟨fun w ↦ meridianLoop p (u₀, w), by fun_prop⟩ :
-    C(sphere (0 : (ℝ ∙ (p : E))ᗮ) 1, Path p p)) rfl c
+  set f := GenLoop.map (meridianLoopFixedReturn p u₀) (meridianLoopFixedReturn_apply p u₀ u₀) c
   have hg := (HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff (n := m)
     (fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := m + 3) hE (by simpa using hk) p)
     (GenLoop.transport (meridianContraction p u₀).symm f)).1
