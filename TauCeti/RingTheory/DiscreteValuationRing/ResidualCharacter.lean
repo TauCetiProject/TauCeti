@@ -5,16 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
-public import Mathlib.RingTheory.Ideal.GoingDown
-public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
+public import TauCeti.RingTheory.LocalRing.ResidueField.Character
 import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 import Mathlib.RingTheory.DedekindDomain.Dvr
-import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.Ideal.GoingUp
 
 /-!
 # Lifting residual characters of finite algebras over a DVR
@@ -34,15 +32,11 @@ in `L` is a Dedekind domain, with no separability hypothesis on `L / K`; lying o
 nonzero prime of it pulling back to the kernel of `χ`, and the localization there is the DVR
 `V`. The extension `L / K` may be inseparable, and `V` need not be finite over `O`.
 
+The steps over a general local ring, up to the embedding in an algebraic closure, are in
+`TauCeti/RingTheory/LocalRing/ResidueField/Character.lean`.
+
 ## Main results
 
-* `AlgHom.under_ker_eq_maximalIdeal`: the kernel of a residual character lies over the maximal
-  ideal.
-* `AlgHom.exists_isPrime_le_ker_under_eq_bot`: under going down, a prime below the kernel of a
-  residual character meets the base only in zero.
-* `AlgHom.exists_algHom_algebraicClosure_ker_le`: an integral algebra with going down has an
-  `O`-algebra map to an algebraic closure of `K` whose kernel lies in the kernel of a given
-  residual character.
 * `AlgHom.exists_valuationSubring_lift`: a residual character of a finite algebra with going
   down over a DVR lifts to a character valued in a DVR dominating `O` in a finite extension of
   `K`.
@@ -58,63 +52,6 @@ public section
 open IsLocalRing IsDedekindDomain
 
 namespace AlgHom
-
-section LocalRing
-
-variable {O H : Type*} [CommRing O] [IsLocalRing O] [CommRing H] [Algebra O H]
-
-/-- The kernel of an `O`-algebra map to the residue field of `O` lies over the maximal ideal. -/
-@[simp]
-theorem under_ker_eq_maximalIdeal (χ : H →ₐ[O] ResidueField O) :
-    (RingHom.ker χ).under O = maximalIdeal O := by
-  ext x
-  simp [Ideal.under, RingHom.mem_ker, ResidueField.algebraMap_eq, residue_eq_zero_iff]
-
-/-- The kernel of a residual character, as a prime lying over the maximal ideal. -/
-instance liesOver_ker (χ : H →ₐ[O] ResidueField O) :
-    (RingHom.ker χ).LiesOver (maximalIdeal O) :=
-  ⟨χ.under_ker_eq_maximalIdeal.symm⟩
-
-/-- Under going down over a local domain `O`, some prime below the kernel of a residual character
-meets `O` only in zero. -/
-theorem exists_isPrime_le_ker_under_eq_bot [IsDomain O] [Algebra.HasGoingDown O H]
-    (χ : H →ₐ[O] ResidueField O) :
-    ∃ P ≤ RingHom.ker χ, P.IsPrime ∧ P.under O = ⊥ := by
-  have := RingHom.ker_isPrime χ
-  obtain ⟨P, hPQ, hP, hlies⟩ :=
-    (RingHom.ker χ).exists_ideal_le_liesOver_of_le (p := ⊥) (q := maximalIdeal O) bot_le
-  exact ⟨P, hPQ, hP, hlies.over.symm⟩
-
-/-- An integral algebra `H` with going down over a local domain `O` has an `O`-algebra map to an
-algebraic closure of the fraction field `K` of `O` whose kernel lies in the kernel of a given
-residual character. -/
-theorem exists_algHom_algebraicClosure_ker_le [IsDomain O] [Algebra.HasGoingDown O H]
-    [Algebra.IsIntegral O H] (χ : H →ₐ[O] ResidueField O) (K : Type*) [Field K] [Algebra O K]
-    [IsFractionRing O K] :
-    ∃ φ : H →ₐ[O] AlgebraicClosure K, RingHom.ker φ ≤ RingHom.ker χ := by
-  obtain ⟨P, hPQ, hP, hbot⟩ := χ.exists_isPrime_le_ker_under_eq_bot
-  have hinj : Function.Injective (algebraMap O (H ⧸ P)) := by
-    rw [RingHom.injective_iff_ker_eq_bot, ← hbot]
-    ext x
-    rw [RingHom.mem_ker, ← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.eq_zero_iff_mem,
-      Ideal.under, Ideal.mem_comap]
-  have hΩ : Function.Injective (algebraMap O (AlgebraicClosure K)) := by
-    rw [IsScalarTower.algebraMap_eq O K (AlgebraicClosure K)]
-    exact (algebraMap K _).injective.comp (IsFractionRing.injective O K)
-  have := Module.isTorsionFree_iff_algebraMap_injective.mpr hinj
-  have := Module.isTorsionFree_iff_algebraMap_injective.mpr hΩ
-  have : Algebra.IsAlgebraic O (H ⧸ P) := Algebra.IsIntegral.isAlgebraic
-  let ι : H ⧸ P →ₐ[O] AlgebraicClosure K := IsAlgClosed.lift
-  -- `ι` is injective: its kernel meets `O` only in zero, and `H ⧸ P` is integral over `O`.
-  have hι : RingHom.ker ι = ⊥ := Ideal.eq_bot_of_under_eq_bot (R := O) <| by
-    ext x
-    simp [map_eq_zero_iff _ hΩ]
-  refine ⟨ι.comp (Ideal.Quotient.mkₐ O P), fun x hx ↦ hPQ ?_⟩
-  rw [RingHom.mem_ker, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, ← RingHom.mem_ker, hι,
-    Ideal.mem_bot, Ideal.Quotient.eq_zero_iff_mem] at hx
-  exact hx
-
-end LocalRing
 
 section ValuationSubring
 
@@ -154,11 +91,24 @@ private theorem exists_lift_of_isLocalization (χ : H →ₐ[O] ResidueField O) 
     exact (IsScalarTower.algebraMap_apply B V L _).symm
   · obtain ⟨o, ho⟩ := residue_surjective (χ h)
     have : h - algebraMap O H o ∈ RingHom.ker χ := by
-      rw [RingHom.mem_ker, map_sub, χ.commutes, ResidueField.algebraMap_eq, ho, sub_self]
-    rw [← hψ, map_sub, ψ.commutes, ← residue_eq_zero_iff, map_sub, sub_eq_zero] at this
-    rw [this, ← ho, ResidueField.map_residue]
+      simp [ResidueField.algebraMap_eq, ho]
+    rw [← hψ, ← residue_eq_zero_iff] at this
+    simpa [sub_eq_zero, ← ho] using this
 
 end ValuationSubring
+
+section FractionRing
+
+variable (O K L : Type*) [CommRing O] [Field K] [Field L] [Algebra O K] [IsFractionRing O K]
+  [Algebra K L] [Algebra O L] [IsScalarTower O K L]
+
+include K in
+/-- A ring maps injectively into any field extension of its fraction field. -/
+private theorem algebraMap_injective_of_isFractionRing : Function.Injective (algebraMap O L) := by
+  rw [IsScalarTower.algebraMap_eq O K L]
+  exact (algebraMap K L).injective.comp (IsFractionRing.injective O K)
+
+end FractionRing
 
 section IntegralClosure
 
@@ -181,18 +131,15 @@ private theorem exists_lift_of_isIntegralClosure (χ : H →ₐ[O] ResidueField 
   have : IsFractionRing B L := IsIntegralClosure.isFractionRing_of_finite_extension O K L B
   have hOB : Function.Injective (algebraMap O B) := by
     refine Function.Injective.of_comp (f := algebraMap B L) ?_
-    rw [← RingHom.coe_comp, ← IsScalarTower.algebraMap_eq, IsScalarTower.algebraMap_eq O K L]
-    exact (algebraMap K L).injective.comp (IsFractionRing.injective O K)
-  -- `B` is integral over `H` through `ψB`, so `ker χ` lies under a prime `𝔓` of `B`.
-  let : Algebra H B := ψB.toRingHom.toAlgebra
-  have : IsScalarTower O H B := IsScalarTower.of_algebraMap_eq fun x ↦ (ψB.commutes x).symm
+    rw [← RingHom.coe_comp, ← IsScalarTower.algebraMap_eq]
+    exact algebraMap_injective_of_isFractionRing O K L
+  -- `B` is integral over `H` through `ψB`, so `ker χ` is the pullback of a prime `𝔓` of `B`.
   have : Algebra.IsIntegral O B := IsIntegralClosure.isIntegral_algebra O L
-  have : Algebra.IsIntegral H B := Algebra.IsIntegral.tower_top O
+  have hψB : (ψB : H →+* B).IsIntegral := RingHom.IsIntegral.tower_top (algebraMap O H) _ <| by
+    rw [ψB.comp_algebraMap]
+    exact Algebra.IsIntegral.isIntegral
   have := RingHom.ker_isPrime χ
-  obtain ⟨𝔓, -, h𝔓, hunder⟩ :=
-    Ideal.exists_ideal_over_prime_of_isIntegral (RingHom.ker χ) (⊥ : Ideal B) fun x hx ↦ hker <| by
-      rw [Ideal.under, Ideal.mem_comap, Ideal.mem_bot, RingHom.algebraMap_toAlgebra] at hx
-      exact RingHom.mem_ker.mpr hx
+  obtain ⟨𝔓, h𝔓, hunder⟩ := (RingHom.ker χ).exists_comap_eq_of_isIntegral (ψB : H →+* B) hψB hker
   -- `𝔓` is nonzero: it contains the image of a uniformizer of `O`.
   have hne : 𝔓 ≠ ⊥ := by
     obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
@@ -200,8 +147,8 @@ private theorem exists_lift_of_isIntegralClosure (χ : H →ₐ[O] ResidueField 
     have : algebraMap O H ϖ ∈ RingHom.ker χ := by
       rw [RingHom.mem_ker, χ.commutes, ResidueField.algebraMap_eq, residue_eq_zero_iff]
       exact (mem_maximalIdeal _).mpr hϖ.not_isUnit
-    rw [← hunder, h, Ideal.under, Ideal.mem_comap, Ideal.mem_bot] at this
-    exact hϖ.ne_zero (hOB ((ψB.commutes ϖ).symm.trans (this.trans (map_zero _).symm)))
+    rw [← hunder, h] at this
+    simp [map_eq_zero_iff _ hOB, hϖ.ne_zero] at this
   obtain ⟨v, rfl⟩ : ∃ v : HeightOneSpectrum B, v.asIdeal = 𝔓 := ⟨⟨𝔓, h𝔓, hne⟩, rfl⟩
   exact ⟨_, exists_lift_of_isLocalization χ ψB v.ne_bot hunder (v.valuationSubringAtPrime L)⟩
 
@@ -263,10 +210,8 @@ theorem exists_valuationSubring_lift [Algebra.HasGoingDown O H] (χ : H →ₐ[O
     exists_lift_of_isIntegralClosure (L := L) K χ ψB fun x hx ↦ hφ <| by
       rw [RingHom.mem_ker] at hx ⊢
       rw [← hψB, hx, ZeroMemClass.coe_zero, ZeroMemClass.coe_zero]
-  have hOL : Function.Injective (algebraMap O L) := by
-    rw [IsScalarTower.algebraMap_eq O K L]
-    exact (algebraMap K L).injective.comp (IsFractionRing.injective O K)
-  refine ⟨L, V, _, j, ψ, hL, hV, fun x y hxy ↦ hOL ?_, j.injective, fun x ↦ ?_, hres, hmax, hψ⟩
+  refine ⟨L, V, _, j, ψ, hL, hV, fun x y hxy ↦ algebraMap_injective_of_isFractionRing O K L ?_,
+    j.injective, fun x ↦ ?_, hres, hmax, hψ⟩
   · rw [← hcompat, ← hcompat, hxy]
   · rw [hcompat, IsScalarTower.algebraMap_apply O K L]
 
