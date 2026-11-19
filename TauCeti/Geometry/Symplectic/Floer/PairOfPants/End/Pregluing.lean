@@ -144,7 +144,6 @@ theorem preglueEnd_positiveEndChart (hx : Periodic x 1) (hv : ∀ s, Periodic (f
     preglueEnd q x u v R (positiveEndChart q (s, t)) =
       preglue x (u ∘ positiveEndChart q) v R (s - R, t) := by
   obtain ⟨k, h₁, h₂⟩ := exists_endCoord_positiveEndChart q (s, t)
-  rw [fst_positiveEndCoord] at h₁
   have hU (s : ℝ) : Periodic (fun t ↦ (u ∘ positiveEndChart q) (s, t)) 1 := fun t ↦ by
     simp only [comp_apply, positiveEndChart_add_one]
   have hper := (periodic_preglue hx hU hv (R := R) (s - R)).int_mul k t
