@@ -131,6 +131,13 @@ theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne α r m) := f
   UnitaryGroup.ext A B fun k l ↦ by
     simpa using congrFun (congrFun (congrArg Subtype.val h) (natAdd r k)) (natAdd r l)
 
+/-- The block-diagonal embedding preserves determinants: `det (diag(1_r, B)) = det B`. -/
+@[simp]
+theorem det_fromBlocksOne (B : unitaryGroup (Fin m) α) :
+    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α).det =
+      (B : Matrix (Fin m) (Fin m) α).det := by
+  rw [coe_fromBlocksOne, det_reindex_self, det_fromBlocks_zero₂₁, det_one, one_mul]
+
 variable {α r}
 
 /-- **The block-diagonal unitary matrices are the stabilizer of the first `r` basis vectors**:
