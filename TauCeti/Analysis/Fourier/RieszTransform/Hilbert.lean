@@ -24,9 +24,9 @@ The Hilbert transform is the model Calderón–Zygmund operator. This file compu
 norm and shows, on an explicit example, that it is not bounded on `L¹`:
 
 * `H` is an isometry of `L²(ℝ)`, and more generally `‖R_v f‖ = |v| ‖f‖`
-  (`TauCeti.norm_rieszTransform_real_apply`), so `‖R_v‖ = |v|`
-  (`TauCeti.norm_rieszTransform_real`). In higher dimensions only the sum
-  `∑ⱼ ‖Rⱼ f‖² = ‖f‖²` survives.
+  (`TauCeti.norm_rieszTransform_real_apply`). In higher dimensions a single Riesz transform is
+  not a multiple of an isometry: only the operator norm `‖R_v‖ = ‖v‖`
+  (`TauCeti.norm_rieszTransform`) and the sum `∑ⱼ ‖Rⱼ f‖² = ‖f‖²` survive.
 * The Hilbert transform of the indicator of an interval `[a, b]` is
   `H 1_{[a, b]} (x) = π⁻¹ log |(x - a) / (x - b)|` off `[a, b]`
   (`TauCeti.ae_rieszTransform_indicatorConstLp_eq_log_smul`). This decays like
@@ -102,20 +102,6 @@ theorem norm_rieszTransform_real_apply (v : ℝ) (f : Lp F 2 (volume : Measure �
     simpa using rieszTransform_smul (F := F) v (1 : ℝ)
   rw [hv, smul_apply, norm_smul, h1]
   simp
-
-/-- On the real line the Riesz transform in the direction `v` has operator norm `|v|` on
-`L²(ℝ, F)` for nonzero `F`. In particular the Hilbert transform has norm `1`. -/
-theorem norm_rieszTransform_real [Nontrivial F] (v : ℝ) :
-    ‖rieszTransform (E := ℝ) F v‖ = |v| := by
-  refine le_antisymm (by simpa using norm_rieszTransform_le (F := F) v) ?_
-  obtain ⟨c, hc⟩ := exists_ne (0 : F)
-  set f : Lp F 2 (volume : Measure ℝ) :=
-    indicatorConstLp 2 measurableSet_Icc (by simp : volume (Icc (0 : ℝ) 1) ≠ ∞) c
-  have hf : ‖f‖ ≠ 0 := by
-    simp [f, norm_indicatorConstLp, hc]
-  have := (rieszTransform (E := ℝ) F v).le_opNorm f
-  rw [norm_rieszTransform_real_apply] at this
-  exact le_of_mul_le_mul_right this ((norm_nonneg f).lt_of_ne' hf)
 
 /-! ### The Hilbert transform of an interval -/
 
