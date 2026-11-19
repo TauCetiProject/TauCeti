@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import TauCeti.Analysis.Green.Directional
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Analysis.Calculus.FDeriv.Const
+import TauCeti.Analysis.Calculus.FDeriv.Const
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.Deriv.Complex
 import TauCeti.Analysis.Calculus.TangentCone.Basic
@@ -128,12 +128,6 @@ private theorem hasDerivAt_re_slice_of_im_nonneg {x y : ℝ} (hy : 0 ≤ y) :
   rw [← hasDerivWithinAt_univ]
   exact hd.comp_hasDerivWithinAt x hl.hasDerivWithinAt fun _ _ ↦ hy
 
-/-- The derivative within the closed half-plane vanishes outside the support. -/
-private theorem fderivWithin_eq_zero_of_notMem_tsupport {z : ℂ} (hz : z ∉ tsupport g) :
-    fderivWithin ℝ g {z : ℂ | 0 ≤ z.im} z = 0 := by
-  rw [(notMem_tsupport_iff_eventuallyEq.1 hz).fderivWithin_eq_of_nhds]
-  exact fderivWithin_const_apply _
-
 include hg in
 /-- The derivative within the closed half-plane, in a fixed direction, is integrable on every
 compact set of the closed half-plane. -/
@@ -156,7 +150,7 @@ theorem integrableOn_im_pos_fderiv_apply_of_contDiffOn (v : ℂ) :
   have h := (integrableOn_fderivWithin_apply hg hK inter_subset_right v).of_forall_sdiff_eq_zero
     hm fun z hz ↦ by
       have hz' : 0 ≤ z.im := le_of_lt hz.1
-      rw [fderivWithin_eq_zero_of_notMem_tsupport fun h ↦ hz.2 ⟨h, hz'⟩]
+      rw [fderivWithin_of_notMem_tsupport ℝ fun h ↦ hz.2 ⟨h, hz'⟩]
       rfl
   exact h.congr_fun (fun z (hz : 0 < z.im) ↦ by rw [(hasFDerivAt_of_im_pos hg hz).fderiv]) hm
 
@@ -186,7 +180,7 @@ theorem setIntegral_im_pos_fderiv_one_eq_zero_of_contDiffOn :
   rw [setIntegral_congr_fun (measurableSet_lt measurable_const Complex.measurable_im)
       fun z (hz : 0 < z.im) ↦ by rw [(hasFDerivAt_of_im_pos hg hz).fderiv],
     setIntegral_im_pos_eq_verticalRegion (R := R) fun z hz ↦ by
-      rw [fderivWithin_eq_zero_of_notMem_tsupport (hgR z hz)]; rfl,
+      rw [fderivWithin_of_notMem_tsupport ℝ (hgR z hz)]; rfl,
     hset, ← Green.integral_graphs_sub_eq_integral_horizontalRegion hR.le continuousOn_const
       continuousOn_const (fun _ _ ↦ by linarith)
       (fun y hy x _ ↦ (hasDerivAt_re_slice_of_im_nonneg hg hy.1).continuousAt.continuousWithinAt)
@@ -235,7 +229,7 @@ theorem setIntegral_im_pos_fderiv_I_eq_neg_integral_of_contDiffOn :
   rw [setIntegral_congr_fun (measurableSet_lt measurable_const Complex.measurable_im)
       fun z (hz : 0 < z.im) ↦ by rw [(hasFDerivAt_of_im_pos hg hz).fderiv],
     setIntegral_im_pos_eq_verticalRegion (R := R) fun z hz ↦ by
-      rw [fderivWithin_eq_zero_of_notMem_tsupport (hgR z hz)]; rfl, ← hbottom, hgreen, neg_neg]
+      rw [fderivWithin_of_notMem_tsupport ℝ (hgR z hz)]; rfl, ← hbottom, hgreen, neg_neg]
 
 end ClosedHalfPlane
 

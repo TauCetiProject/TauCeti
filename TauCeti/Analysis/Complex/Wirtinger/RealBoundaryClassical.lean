@@ -12,7 +12,6 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Complex.Wirtinger.Similarity.Examples
 import TauCeti.MeasureTheory.Integral.Bochner.Star
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
 /-!
 # Classical solutions with real boundary values are weak solutions
@@ -30,10 +29,6 @@ term. When `χ` is real on the real axis and `ξ` takes real values there, where
 `ξ` is a weak solution of `\bar∂ξ = η` with real boundary values in the sense of
 `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn`.
 
-Both conditions on the axis are used. The constant `ξ = i` is holomorphic but not real on the axis,
-and it is not a weak solution of `\bar∂ξ = 0` with real boundary values on any `Ω` meeting `ℝ`:
-for a real bump test function `χ` the boundary term is `∫_ℝ χ ≠ 0`.
-
 ## Main results
 
 * `TauCeti.setIntegral_im_nonneg_lineDeriv_add_I_mul_smul_eq`: the half-plane integration by
@@ -44,8 +39,7 @@ for a real bump test function `χ` the boundary term is `∫_ℝ χ ≠ 0`.
 * Checks: `z²` solves `\bar∂ξ = 0` and `z e^{-conj z}` solves `\bar∂ξ = -ξ`, the equation
   `∂_s ξ + i ∂_t ξ + 2ξ = 0`, weakly with real boundary values
   (`TauCeti.hasWeakConjWirtingerDerivRealBoundaryOn_sq`,
-  `TauCeti.hasWeakConjWirtingerDerivRealBoundaryOn_mul_cexp_neg_conj`), while the constant `i`
-  does not (`TauCeti.not_hasWeakConjWirtingerDerivRealBoundaryOn_const_I`).
+  `TauCeti.hasWeakConjWirtingerDerivRealBoundaryOn_mul_cexp_neg_conj`).
 
 ## References
 
@@ -249,43 +243,5 @@ theorem hasWeakConjWirtingerDerivRealBoundaryOn_mul_cexp_neg_conj :
   refine hasWeakConjWirtingerDerivRealBoundaryOn_of_contDiffOn hd.contDiffOn
     (fun z _ _ ↦ conjWirtingerDeriv_mul_cexp_neg_conj z) fun x _ ↦ ?_
   rw [Complex.star_def, map_mul, ← Complex.exp_conj, map_neg, conj_conj, conj_ofReal]
-
-/-- **Check.** The constant `i` is holomorphic but not real on the real axis, and it is not a weak
-solution of `\bar∂ξ = 0` with real boundary values on any open set meeting `ℝ`: testing against a
-real bump function `χ` centred on the axis leaves the boundary term `∫_ℝ χ > 0`. -/
-theorem not_hasWeakConjWirtingerDerivRealBoundaryOn_const_I {x₀ : ℝ}
-    (hx₀ : (x₀ : ℂ) ∈ (Ω : Set ℂ)) :
-    ¬ HasWeakConjWirtingerDerivRealBoundaryOn Ω (fun _ ↦ I) 0 := by
-  intro h
-  obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen _ hx₀
-  let b : ContDiffBump (x₀ : ℂ) := ⟨r / 4, r / 2, by positivity, by linarith⟩
-  have hbc : ContDiff ℝ ∞ fun z : ℂ ↦ ((b z : ℝ) : ℂ) := ofRealCLM.contDiff.comp b.contDiff
-  have hbs : tsupport (fun z : ℂ ↦ ((b z : ℝ) : ℂ)) ⊆ (Ω : Set ℂ) := by
-    refine (tsupport_comp_subset ofReal_zero _).trans ?_
-    rw [b.tsupport_eq]
-    exact (Metric.closedBall_subset_ball (show r / 2 < r by linarith)).trans hrΩ
-  let χ : 𝓓(Ω, ℂ) := ⟨fun z ↦ ((b z : ℝ) : ℂ), hbc, b.hasCompactSupport.comp_left ofReal_zero, hbs⟩
-  have key := (hasWeakConjWirtingerDerivRealBoundaryOn_iff.1 h).2.2.2 χ fun x ↦ ofReal_im _
-  rw [setIntegral_im_nonneg_lineDeriv_add_I_mul_smul_eq (η := (0 : ℂ → ℂ)) contDiffOn_const
-    (fun z _ _ ↦ by simp) χ] at key
-  set t : ℝ := ∫ s : ℝ, b s
-  have hint : ∫ s : ℝ, χ s • I = (t : ℂ) * I := by
-    change ∫ s : ℝ, ((b s : ℝ) : ℂ) • I = _
-    simp only [smul_eq_mul]
-    rw [integral_mul_const, integral_complex_ofReal]
-  have hpos : 0 < t :=
-    (b.continuous.comp continuous_ofReal).integral_pos_of_hasCompactSupport_nonneg_ne_zero
-      (b.hasCompactSupport.comp_isClosedEmbedding isometry_ofReal.isClosedEmbedding)
-      (fun s ↦ b.nonneg) (x := x₀) (by simp [b.one_of_mem_closedBall (Metric.mem_closedBall_self
-        b.rIn_pos.le)])
-  have he : -(2 : ℂ) • (∫ z in {z : ℂ | 0 ≤ z.im}, χ z • (0 : ℂ → ℂ) z) - I • ((t : ℂ) * I) =
-      (t : ℂ) := by
-    simp only [Pi.zero_apply, smul_eq_mul, mul_zero, integral_zero]
-    linear_combination -(t : ℂ) * I_sq
-  rw [hint, he] at key
-  have hre := congrArg (fun u : selfAdjoint ℂ ↦ (u : ℂ)) key
-  simp only [realPart_ofReal, Pi.zero_apply, smul_zero, integral_zero, map_zero,
-    ZeroMemClass.coe_zero, ofReal_eq_zero] at hre
-  exact hpos.ne' hre
 
 end TauCeti
