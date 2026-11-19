@@ -21,6 +21,9 @@ of derivatives under coefficient maps.
 The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
 `a (e₁ - e₂)(e₁ - e₃)`.
 The roots of all nonzero iterated derivatives of a polynomial form a finite set.
+In characteristic zero, a root of multiplicity `m` of `p` is a root of multiplicity at least
+`m - 1` of `p.derivative`; together with the roots of `p.derivative` that are not roots of `p`,
+this bounds `p.roots` as a multiset in terms of `p.derivative.roots` and the distinct roots of `p`.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
@@ -66,6 +69,26 @@ theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
     fun k hk ↦ not_lt.1 fun h ↦ hk (iterate_derivative_eq_zero h)
   exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
     fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
+
+/-- In characteristic zero, each root of `p` of multiplicity `m` is a root of `p.derivative` of
+multiplicity at least `m - 1`; the distinct roots of `p.derivative` that are not roots of `p`
+come on top. Counted with multiplicity, `p.roots` together with those extra roots is therefore
+bounded by `p.derivative.roots` together with one copy of each distinct root of `p`. -/
+theorem roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset
+    [CharZero R] [DecidableEq R] (p : R[X]) :
+    p.roots + (p.derivative.roots.toFinset \ p.roots.toFinset).val ≤
+      p.derivative.roots + p.roots.toFinset.val := by
+  refine Multiset.le_iff_count.2 fun x ↦ ?_
+  simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _), Finset.mem_val,
+    Finset.mem_sdiff, Multiset.mem_toFinset]
+  by_cases hx : x ∈ p.roots
+  · have := rootMultiplicity_sub_one_le_derivative_rootMultiplicity p x
+    simp only [hx, count_roots, ite_true, not_true_eq_false, and_false, ite_false]
+    omega
+  · simp only [hx, Multiset.count_eq_zero.2 hx, ite_false, not_false_eq_true, and_true,
+      zero_add, add_zero]
+    split_ifs with hx'
+    exacts [Multiset.count_pos.2 hx', Nat.zero_le _]
 
 end Polynomial
 

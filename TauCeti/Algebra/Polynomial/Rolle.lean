@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.FieldDivision
 import Mathlib.Data.Finset.Max
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Derivative
 
 /-! # Polynomial Rolle and mean value
 
@@ -138,21 +139,9 @@ theorem PolynomialRolle.card_roots_le_derivative (h : PolynomialRolle R) (p : R[
   have := h.charZero
   -- A root of multiplicity `m` of `p` is a root of multiplicity at least `m - 1` of `p'`; the
   -- remaining one per distinct root is paid for by the roots of `p'` that are not roots of `p`.
-  have hle : p.roots + (p.derivative.roots.toFinset \ p.roots.toFinset).val ≤
-      p.derivative.roots + p.roots.toFinset.val := by
-    refine Multiset.le_iff_count.2 fun x ↦ ?_
-    simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _), Finset.mem_val,
-      Finset.mem_sdiff, Multiset.mem_toFinset]
-    by_cases hx : x ∈ p.roots
-    · have := rootMultiplicity_sub_one_le_derivative_rootMultiplicity p x
-      simp only [hx, count_roots, ite_true, not_true_eq_false, and_false, ite_false]
-      omega
-    · simp only [hx, Multiset.count_eq_zero.2 hx, ite_false, not_false_eq_true, and_true,
-        zero_add, add_zero]
-      split_ifs with hx'
-      exacts [Multiset.count_pos.2 hx', Nat.zero_le _]
   -- Taking cardinalities, combine with the bound on distinct roots.
-  have hcard := Multiset.card_le_card hle
+  have hcard := Multiset.card_le_card
+    (roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset p)
   simp only [Multiset.card_add, Finset.card_val] at hcard
   have := h.card_roots_toFinset_le_card_roots_derivative_sdiff_roots_succ p
   omega
