@@ -77,16 +77,8 @@ private def spatialCLM : ((E × G) [⋀^Fin 1]→L[ℝ] V) →L[ℝ] (E →L[ℝ
 
 private theorem spatialCLM_apply (φ : (E × G) [⋀^Fin 1]→L[ℝ] V) (v : E) :
     spatialCLM φ v = φ ![(v, (0 : G))] := by
-  simp only [spatialCLM, ContinuousLinearMap.coe_comp, Function.comp_apply]
-  rw [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply,
-    ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply]
-  simp only [ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  congr 1
-  funext i
-  fin_cases i
-  rfl
+  simp [spatialCLM, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply, Function.comp_def,
+    Matrix.vec_single_eq_const]
 
 /-- The slice of `B` at `p`, read in the chart at `x₁`, is the spatial part of the chart
 expression of `B` in the product chart at `(x₁, p₁)`, at the chart point of `p`. -/
@@ -133,9 +125,9 @@ private theorem spatialCLM_inChartAt_apply (B : RoughForm (I.prod IP) (M × P) V
   congr 1
   funext i
   fin_cases i
-  simp only [ι, mfderiv_prod_left]
-  -- `inl w = (w, 0)`, and the inverse extended chart unfolds to `(chartAt H x₁).symm ∘ I.symm`.
-  rfl
+  simp only [ι, mfderiv_prod_left, Matrix.cons_val_fin_one, c, extChartAt_coe_symm]
+  -- `inl w = (w, 0)`, up to the tangent-space synonyms.
+  exact ContinuousLinearMap.inl_apply _
 
 /-- In the product chart at `(x₁, p₁)`, the derivative within the model range of a primitive `f` of
 the slice of `B` at `p`, read in the chart at `x₁`, is the spatial part of the chart expression of
