@@ -27,24 +27,26 @@ normalization of the Haar measure
 holds for `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0` with a bounded measurable drift `‖b‖ ≤ β`, on scales `R`
 with `βR/λ` bounded
 (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_drift`),
-and for `-∂ᵢ(aⁱʲ ∂ⱼu) = f` with a right-hand side `f ∈ L² ∩ Lʳ(U ∩ H)`, `r > 1` and `r > n/2`,
+for `-∂ᵢ(aⁱʲ ∂ⱼu) = f` with a right-hand side `f ∈ L² ∩ Lʳ(U ∩ H)`, `r > 1` and `r > n/2`,
 with `α` and `C` depending also on `r`
-(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp`).
-The divergence-form datum `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, with `F ∈ L² ∩ L^q(U ∩ H; ℝⁿ)`, `q > 2` and
-`q > n`, is treated in
-`exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_add_divergence`,
-and `F` alone in
-`exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_divergence`
-(both in `TauCeti.PDE`). This is the datum that arises when nonzero boundary values `g` are
-subtracted: `u - g` solves the equation with `F` replaced by `F + a ∇g`.
+(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp`),
+and for `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ` with moreover a divergence datum `F ∈ L² ∩ L^q(U ∩ H; ℝⁿ)`,
+`q > 2` and `q > n`, with `α` and `C` depending also on `q`
+(`exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_add_divergence`).
+The cases `F = 0` and `f = 0` are stated separately, the latter as
+`exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_divergence`.
+The divergence datum is what subtracting boundary values produces: if `u = g` on the flat part
+of the boundary, then `u - g` vanishes there and solves the equation with the extra datum
+`∂ᵢ(aⁱʲ ∂ⱼg)`.
 
 More precisely, for the homogeneous equation the precise representative of the odd reflection
 `w = u - u ∘ ρ` is `α`-Hölder on every set `K` whose closed `R`-thickening lies in `U`, with
 constant `C R^(-α - n/2) ‖w‖_{L²(U)}`, and `w` agrees with `u` on `U ∩ H`
 (`TauCeti.W1p.value_sub_compHyperplaneReflectionL_ae`). With a right-hand side `f` the constant is
-`C R^(-α) (R^(-n/2) ‖w‖_{L²(U)} + R^(2 - n/r) ‖f‖_{Lʳ(U ∩ H)} / λ)`, and a divergence datum `F`
-adds `C R^(-α) R^(1 - n/q) ‖F‖_{L^q(U ∩ H)} / λ`. The set `K` may meet the hyperplane: this is a
-boundary estimate, not an interior one.
+`C R^(-α) (R^(-n/2) ‖w‖_{L²(U)} + R^(2 - n/r) ‖f‖_{Lʳ(U ∩ H)} / λ)`, and with both data it is
+`C R^(-α) (R^(-n/2) ‖w‖_{L²(U)} + (R^(2 - n/r) ‖f‖_{Lʳ} + R^(1 - n/q) ‖F‖_{L^q}) / λ)`, with
+the norms of `f` and `F` taken on `U ∩ H`.
+The set `K` may meet the hyperplane: this is a boundary estimate, not an interior one.
 
 ## The argument
 
@@ -62,14 +64,14 @@ A right-hand side `f` is reflected oddly: `w` solves the reflected equation on `
 side `x ↦ 1_H f x - 1_H f (ρ x)`
 (`TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral`), whose
 `Lʳ(U)` norm is at most `2 ‖f‖_{Lʳ(U ∩ H)}`, and De Giorgi's interior theorem with a right-hand
-side (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp`) applies to it.
-
-A divergence datum `F` is reflected oddly together with its direction: below the hyperplane it
-becomes `-R F(ρ x)`, where `R` is the linear part of `ρ`, since `∇(φ ∘ ρ) = R (∇φ ∘ ρ)`
-(`TauCeti.W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL`). The reflected
-field again has `L^q(U)` norm at most `2 ‖F‖_{L^q(U ∩ H)}`, and De Giorgi's interior theorem for
-`f + ∂ᵢFⁱ` (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence`)
-applies.
+side (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp`) applies to it. A
+divergence datum `F` is reflected to the field equal to `F` on `H` and to `-R F(ρ x)` on the
+other side, where `R` is the linear part of `ρ`: testing `F` against the gradient of
+`φ - φ ∘ ρ` on `U ∩ H` is testing this field against the gradient of `φ` on `U`
+(`TauCeti.W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL`). Its `L^q(U)`
+norm is at most `2 ‖F‖_{L^q(U ∩ H)}`, since `R` is an isometry, and De Giorgi's interior theorem
+for the datum `f + ∂ᵢFⁱ`
+(`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp_add_divergence`) applies.
 
 ## References
 
@@ -177,39 +179,56 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL 
     hhol (beta := 0) hν hH hU ha ham aestronglyMeasurable_const (fun _ _ => by simp) hu0 hu hR hRK
       (by simp)⟩
 
-/-- The constant of the reflected estimate: bounding two data norms `x₁, x₂` by twice `y₁, y₂`
-at most doubles a constant of the form `C t (A + (s₁ x₁ + s₂ x₂) / λ)`. -/
-private theorem mul_add_add_div_le_two_mul {C t A s₁ s₂ x₁ x₂ y₁ y₂ lam : ℝ} (hCt : 0 ≤ C * t)
-    (hA : 0 ≤ A) (hs₁ : 0 ≤ s₁) (hs₂ : 0 ≤ s₂) (hlam : 0 < lam) (hx₁ : x₁ ≤ 2 * y₁)
-    (hx₂ : x₂ ≤ 2 * y₂) :
-    C * t * (A + (s₁ * x₁ + s₂ * x₂) / lam) ≤ 2 * C * t * (A + (s₁ * y₁ + s₂ * y₂) / lam) := by
-  have h : (s₁ * x₁ + s₂ * x₂) / lam ≤ 2 * ((s₁ * y₁ + s₂ * y₂) / lam) := by
-    rw [mul_div_assoc']
-    gcongr
-    nlinarith [mul_le_mul_of_nonneg_left hx₁ hs₁, mul_le_mul_of_nonneg_left hx₂ hs₂]
-  calc C * t * (A + (s₁ * x₁ + s₂ * x₂) / lam)
-      ≤ C * t * (2 * (A + (s₁ * y₁ + s₂ * y₂) / lam)) :=
-        mul_le_mul_of_nonneg_left (by linarith) hCt
-    _ = 2 * C * t * (A + (s₁ * y₁ + s₂ * y₂) / lam) := by ring
+omit [DecidableEq ι] in
+/-- The data of the reflected equation, as real numbers: if `‖g‖_{Lᵖ(U ∩ H)} = ‖f‖_{Lᵖ(U ∩ H)}`
+is finite, then `x ↦ 1_H f x - 1_H g (ρ x)` has `Lᵖ(U)` norm at most `2 ‖f‖_{Lᵖ(U ∩ H)}`. -/
+private theorem toReal_eLpNorm_indicator_sub_indicator_comp_le {E : Type*}
+    [NormedAddCommGroup E] {U H : Opens (EuclideanSpace ℝ ι)} {ν : EuclideanSpace ℝ ι} {c₀ : ℝ}
+    (hU : MapsTo (hyperplaneReflection ν c₀) U U) {p : ENNReal} (hp : 1 ≤ p)
+    {f g : EuclideanSpace ℝ ι → E} (hf : MemLp f p (mu.restrict (U ⊓ H)))
+    (hgf : eLpNorm g p (mu.restrict (U ⊓ H)) = eLpNorm f p (mu.restrict (U ⊓ H))) :
+    (eLpNorm (fun x => (H : Set (EuclideanSpace ℝ ι)).indicator f x -
+      (H : Set (EuclideanSpace ℝ ι)).indicator g (hyperplaneReflection ν c₀ x)) p
+        (mu.restrict U)).toReal ≤ 2 * (eLpNorm f p (mu.restrict (U ⊓ H))).toReal := by
+  have h := eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (μ := mu) (f := f)
+    (g := g) hp H.isOpen.measurableSet U.isOpen.measurableSet hU
+  rw [hgf, ← two_mul] at h
+  rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hf.eLpNorm_ne_top) h
 
-/-- **De Giorgi's theorem with a right-hand side `f + div F` up to a flat boundary.** Let `n ≥ 1`
-be the dimension, let `r > 1` with `r > n/2` and let `q > 2` with `q > n`. There are
+/-- Absorbing the reflected data into the constant of a Hölder estimate: if `s ≤ 2 s'`, then
+`K L (A + s / λ) ≤ 2 K L (A + s' / λ)` for `K L ≥ 0`, `A ≥ 0` and `λ > 0`. -/
+private theorem mul_mul_add_div_le_two_mul_mul_mul_add_div {K L A s s' lam : ℝ}
+    (hKL : 0 ≤ K * L) (hA : 0 ≤ A) (hlam : 0 < lam) (hs : s ≤ 2 * s') :
+    K * L * (A + s / lam) ≤ 2 * K * L * (A + s' / lam) := by
+  have h : s / lam ≤ 2 * (s' / lam) := by
+    rw [← mul_div_assoc]
+    exact div_le_div_of_nonneg_right hs hlam.le
+  calc K * L * (A + s / lam) ≤ K * L * (2 * (A + s' / lam)) :=
+        mul_le_mul_of_nonneg_left (by linarith) hKL
+    _ = 2 * K * L * (A + s' / lam) := by ring
+
+/-- **De Giorgi's theorem with a right-hand side `f + ∂ᵢFⁱ` up to a flat boundary.** Let `n ≥ 1`
+be the dimension, let `r > 1` with `r > n/2`, and let `q > 2` with `q > n`. There are
 `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, `n`, `r`, `q` and the normalization of the
 additive Haar measure `mu`, such that the following holds. Let `H = {x | c₀ < ⟪x, ν⟫}` with
 `ν ≠ 0`, let `ρ` be the reflection in the hyperplane `∂H` and let `U` be open with `ρ U ⊆ U`. Let
 `a` be measurable on `U ∩ H` and uniformly elliptic with constants `λ, Λ` on the part of `U` in
-the closed half-space `{x | c₀ ≤ ⟪x, ν⟫}`, let `f ∈ L²(U ∩ H) ∩ Lʳ(U ∩ H)` and let
-`F ∈ L²(U ∩ H; ℝⁿ) ∩ L^q(U ∩ H; ℝⁿ)`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction
-to `U ∩ H` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, that is
+the closed half-space `{x | c₀ ≤ ⟪x, ν⟫}`, and let `f ∈ L²(U ∩ H) ∩ Lʳ(U ∩ H)` and
+`F ∈ L²(U ∩ H; ℝⁿ) ∩ L^q(U ∩ H; ℝⁿ)`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to
+`U ∩ H` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f + ∂ᵢFⁱ`, that is
 `a(u, v) = ∫_{U ∩ H} f v - ∫_{U ∩ H} ⟪F, ∇v⟫` for every `v ∈ H¹₀(U ∩ H)`. If the closed
 `R`-thickening of a set `K` lies in `U`, then the precise representative of the odd reflection
 `w = u - u ∘ ρ`, which agrees with `u` on `U ∩ H`, is Hölder continuous on `K` with exponent `α`
 and constant
 
-`C R^(-α) (R^(-n/2) ‖w‖_{L²(U)} + (R^(2 - n/r) ‖f‖_{Lʳ(U ∩ H)} + R^(1 - n/q) ‖F‖_{L^q(U ∩ H)}) / λ)`
+`C R^(-α) (R^(-n/2) ‖w‖_{L²(U)} + (R^(2 - n/r) ‖f‖_{Lʳ(U ∩ H)} + R^(1 - n/q) ‖F‖_{L^q}) / λ)`,
+
+where `‖F‖_{L^q}` is the norm of `F` in `L^q(U ∩ H)`.
 
 The set `K` may meet the hyperplane, so this is an estimate up to the flat part of the boundary
-of `U ∩ H`, on which `u` vanishes. -/
+of `U ∩ H`, on which `u` vanishes. Each datum enters with its own Morrey gain, `2 - n/r` and
+`1 - n/q`. -/
 theorem
     exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_of_memLp_add_divergence
     [Nonempty ι] {lam Lam : ℝ} {r q : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
@@ -247,43 +266,45 @@ theorem
   have hlam := ha'.pos
   have hHm := H.isOpen.measurableSet
   have hUm := U.isOpen.measurableSet
-  -- The odd reflections `g` of `f` and `G` of `F` are the data of the reflected equation.
-  set g : EuclideanSpace ℝ ι → ℝ := fun x => (H : Set (EuclideanSpace ℝ ι)).indicator f x -
+  -- The data of the reflected equation: the odd reflection `g` of `f`, and the field `G`, equal
+  -- to `F` on `H` and to `-R F(ρ x)` on the other side, where `R = (ℝ ∙ ν)ᗮ.reflection` is the
+  -- linear part of `ρ`.
+  let g : EuclideanSpace ℝ ι → ℝ := fun x => (H : Set (EuclideanSpace ℝ ι)).indicator f x -
     (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)
   let G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun x =>
-    (H : Set (EuclideanSpace ℝ ι)).indicator F x - (ℝ ∙ ν)ᗮ.reflection
-      ((H : Set (EuclideanSpace ℝ ι)).indicator F (hyperplaneReflection ν c₀ x))
-  have hg : MemLp g r (mu.restrict U) :=
-    memLp_indicator_sub_indicator_comp_hyperplaneReflection (L := id) isometry_id rfl hHm hUm hU
-      hfr
-  have hG : MemLp G q (mu.restrict U) :=
-    memLp_indicator_sub_indicator_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection.isometry
-      (map_zero _) hHm hUm hU hFq
+    (H : Set (EuclideanSpace ℝ ι)).indicator F x -
+      (H : Set (EuclideanSpace ℝ ι)).indicator (fun y => (ℝ ∙ ν)ᗮ.reflection (F y))
+        (hyperplaneReflection ν c₀ x)
+  have hTF : MemLp (fun y => (ℝ ∙ ν)ᗮ.reflection (F y)) q (mu.restrict (U ⊓ H)) :=
+    ((ℝ ∙ ν)ᗮ.reflection : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι).comp_memLp' hFq
   have hgf : (eLpNorm g r (mu.restrict U)).toReal ≤
       2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal :=
-    toReal_eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (L := id) isometry_id rfl
-      (by exact_mod_cast hr.le) hHm hUm hU hfr
+    toReal_eLpNorm_indicator_sub_indicator_comp_le hU (by exact_mod_cast hr.le) hfr rfl
   have hGF : (eLpNorm G q (mu.restrict U)).toReal ≤
       2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal :=
-    toReal_eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le
-      (ℝ ∙ ν)ᗮ.reflection.isometry (map_zero _) (by exact_mod_cast (one_lt_two.trans hq).le)
-      hHm hUm hU hFq
-  have hw₀ := fun v : W1p0 mu U 2 =>
-    energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_setIntegral_inner
-      hν hH hU (memLp_energyIntegrand_reflectPrincipal (b := 0) (c := 0) (beta := 0) (gamma := 0)
-        hν hH hU ha ham aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
-        (fun _ _ => by simp)) hu0 hf2 hF2 hu v
+    toReal_eLpNorm_indicator_sub_indicator_comp_le hU
+      (by exact_mod_cast (one_lt_two.trans hq).le) hFq
+      (eLpNorm_congr_norm_ae hTF.aestronglyMeasurable hFq.aestronglyMeasurable
+        (ae_of_all _ fun y => LinearIsometryEquiv.norm_map _ (F y)))
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu -
           ∫ x in U, ⟪G x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := fun v => by
-    have h := hw₀ v
+    have h :=
+      energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub_setIntegral
+        hν hH hU (memLp_energyIntegrand_reflectPrincipal (b := 0) (c := 0) (beta := 0)
+          (gamma := 0) hν hH hU ha ham aestronglyMeasurable_const aestronglyMeasurable_const
+          (fun _ _ => by simp) (fun _ _ => by simp)) hu0 hf2 hF2 hu v
     rwa [reflectDrift_zero, reflectDensity_zero] at h
-  refine (hhol ha' (aestronglyMeasurable_reflectPrincipal hν hH hU ham) hg hG hw hR
-    hRK).mono_const (Real.toNNReal_le_toNNReal ?_)
   -- The constant: the reflected data have at most twice the norms of `f` and `F`.
-  exact mul_add_add_div_le_two_mul (by positivity) (by positivity) (by positivity)
-    (by positivity) hlam hgf hGF
+  refine (hhol ha' (aestronglyMeasurable_reflectPrincipal hν hH hU ham)
+    (memLp_indicator_sub_indicator_comp_hyperplaneReflection hHm hUm hU hfr hfr)
+    (memLp_indicator_sub_indicator_comp_hyperplaneReflection hHm hUm hU hFq hTF) hw hR
+    hRK).mono_const (Real.toNNReal_le_toNNReal (mul_mul_add_div_le_two_mul_mul_mul_add_div
+      (by positivity) (by positivity) hlam ?_))
+  have hr0 : 0 ≤ R ^ (2 - (Fintype.card ι : ℝ) / r) := by positivity
+  have hq0 : 0 ≤ R ^ (1 - (Fintype.card ι : ℝ) / q) := by positivity
+  linarith [mul_le_mul_of_nonneg_left hgf hr0, mul_le_mul_of_nonneg_left hGF hq0]
 
 /-- **De Giorgi's theorem with a right-hand side up to a flat boundary.** Let `n ≥ 1` be the
 dimension and let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
