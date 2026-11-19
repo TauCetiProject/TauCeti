@@ -545,17 +545,6 @@ theorem acyclic_matrixBaseChange_iff_of_cancel
 
 end Field
 
-/-- If in each residue field `Q ⧸ m` of a reduced Artinian ring the component of `x` is
-`(-1) ^ k m` times that of `y`, then `x = ε * y` for some `ε : Q` with `ε * ε = 1`. -/
-private theorem exists_mul_self_eq_one_and_eq_mul {Q : Type*} [CommRing Q] [IsArtinianRing Q]
-    [IsReduced Q] {x y : Q} (k : MaximalSpectrum Q → ℕ)
-    (h : ∀ m : MaximalSpectrum Q,
-      Ideal.Quotient.mk m.asIdeal x = (-1) ^ k m * Ideal.Quotient.mk m.asIdeal y) :
-    ∃ ε : Q, ε * ε = 1 ∧ x = ε * y :=
-  ⟨(IsArtinianRing.equivPi Q).symm fun m ↦ (-1) ^ k m,
-    (IsArtinianRing.equivPi Q).injective (funext fun m ↦ by simp [← mul_pow]),
-    (IsArtinianRing.equivPi Q).injective (funext fun m ↦ by simp [h])⟩
-
 section OneZero
 
 variable (hφ : ∀ l, (φ.f 1).hom (e 1 l) - c 1 l.succ ∈ A ∙ c 1 0)
@@ -604,14 +593,16 @@ in the whole reduced Artinian ring.** Let `φ : D ⟶ C` satisfy the hypotheses 
 `HomologicalComplex.parityTorsion_eq_of_cancel_one_zero` over the commutative ring `A`, and let the
 entry `a` of the matrix of `C.d 1 0` at the cancelled pair map to a unit of `Q`. Then
 `τ(C) = ε · (f a)⁻¹ · τ(D)` for the componentwise torsions along `f` and some `ε : Q` with
-`ε * ε = 1`, so that `ε` is `±1` in each residue field of `Q`;
-`HomologicalComplex.mk_componentwiseParityTorsion_eq_of_cancel_one_zero` gives these signs. -/
+`ε * ε = 1`, so that `ε` is `±1` in each residue field of `Q`. In each residue field where the
+complexes are acyclic, `HomologicalComplex.mk_componentwiseParityTorsion_eq_of_cancel_one_zero`
+forces this sign to be `(-1) ^ q`; in the other residue fields both torsions vanish and `ε` is
+unconstrained there. -/
 theorem exists_componentwiseParityTorsion_eq_of_cancel_one_zero
     (ha : IsUnit (f ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0))) :
     ∃ ε : Q, ε * ε = 1 ∧
       C.componentwiseParityTorsion c f = ε * ↑ha.unit⁻¹ * D.componentwiseParityTorsion e f := by
   simp_rw [mul_assoc]
-  exact exists_mul_self_eq_one_and_eq_mul _ fun m ↦
+  exact IsArtinianRing.exists_mul_self_eq_one_and_eq_mul _ fun m ↦
     (mk_componentwiseParityTorsion_eq_of_cancel_one_zero hφ hφ' f m
       (ha.map (Ideal.Quotient.mk m.asIdeal)).ne_zero).trans <| by
         rw [mul_assoc, map_mul, map_units_inv, IsUnit.unit_spec]
@@ -666,14 +657,16 @@ in the whole reduced Artinian ring.** Let `φ : D ⟶ C` satisfy the hypotheses 
 `HomologicalComplex.parityTorsion_eq_of_cancel_zero_one` over the commutative ring `A`, and let the
 entry `a` of the matrix of `C.d 0 1` at the cancelled pair map to a unit of `Q`. Then
 `τ(C) = ε · f a · τ(D)` for the componentwise torsions along `f` and some `ε : Q` with
-`ε * ε = 1`, so that `ε` is `±1` in each residue field of `Q`;
-`HomologicalComplex.mk_componentwiseParityTorsion_eq_of_cancel_zero_one` gives these signs. -/
+`ε * ε = 1`, so that `ε` is `±1` in each residue field of `Q`. In each residue field where the
+complexes are acyclic, `HomologicalComplex.mk_componentwiseParityTorsion_eq_of_cancel_zero_one`
+forces this sign to be `(-1) ^ q`; in the other residue fields both torsions vanish and `ε` is
+unconstrained there. -/
 theorem exists_componentwiseParityTorsion_eq_of_cancel_zero_one
     (ha : IsUnit (f ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0))) :
     ∃ ε : Q, ε * ε = 1 ∧ C.componentwiseParityTorsion c f =
       ε * f ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0) * D.componentwiseParityTorsion e f := by
   simp_rw [mul_assoc]
-  exact exists_mul_self_eq_one_and_eq_mul _ fun m ↦
+  exact IsArtinianRing.exists_mul_self_eq_one_and_eq_mul _ fun m ↦
     (mk_componentwiseParityTorsion_eq_of_cancel_zero_one hφ hφ' f m
       (ha.map (Ideal.Quotient.mk m.asIdeal)).ne_zero).trans <| by rw [mul_assoc, map_mul]
 
