@@ -37,6 +37,9 @@ virtual characters induced from `p`-elementary subgroups.
 * `IsCoprime.eq_of_zpow_eq_zpow` and its additive form `IsCoprime.eq_of_zsmul_eq_zsmul`: for
   coprime integers `p` and `q`, elements with the same `p`-th powers and the same `q`-th powers
   are equal.
+* `IsCoprime.exists_zpow_zpow_eq_of_zpow_eq_one` and its additive form
+  `IsCoprime.exists_zsmul_zsmul_eq_of_zsmul_eq_zero`: an integer `u` coprime to `n` has an inverse
+  `v` on the `n`-torsion, the same for every element.
 * `Commute.pow_eq_pow_iff_of_coprime'` and its additive form
   `AddCommute.nsmul_eq_nsmul_iff_of_coprime'`: for coprime `m` and `n`, commuting elements `x`
   and `y` of a group satisfy `x ^ m = y ^ n` exactly when they are `v ^ n` and `v ^ m` for a
@@ -101,6 +104,20 @@ protected theorem _root_.IsCoprime.eq_of_zpow_eq_zpow {G : Type*} [Group G] {p q
   have key (z : G) : z = (z ^ p) ^ u * (z ^ q) ^ v := by
     rw [← zpow_mul, ← zpow_mul, ← zpow_add, mul_comm p u, mul_comm q v, huv, zpow_one]
   rw [key x, key y, hp, hq]
+
+/-- An integer `u` coprime to `n` is invertible on the `n`-torsion of a group: a single integer
+`v`, the Bézout coefficient of `u`, satisfies `(x ^ u) ^ v = x` for every `x` with `x ^ n = 1`. -/
+@[to_additive
+/-- An integer `u` coprime to `n` is invertible on the `n`-torsion of an additive group: a single
+integer `v`, the Bézout coefficient of `u`, satisfies `v • u • x = x` for every `x` with
+`n • x = 0`. -/]
+protected theorem _root_.IsCoprime.exists_zpow_zpow_eq_of_zpow_eq_one {G : Type*} [Group G]
+    {u n : ℤ} (h : IsCoprime u n) : ∃ v : ℤ, ∀ x : G, x ^ n = 1 → (x ^ u) ^ v = x := by
+  obtain ⟨v, w, h⟩ := h
+  refine ⟨v, fun x hx ↦ ?_⟩
+  calc (x ^ u) ^ v = x ^ (v * u + w * n) := by
+        rw [zpow_add, mul_comm w, zpow_mul x n, hx, one_zpow, mul_one, ← zpow_mul, mul_comm]
+    _ = x := by rw [h, zpow_one]
 
 /-- **Common roots for coprime exponents.** For coprime `m` and `n`, two commuting elements `x`
 and `y` of a group satisfy `x ^ m = y ^ n` exactly when they are the `n`-th and `m`-th powers of a
