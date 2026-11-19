@@ -181,8 +181,9 @@ theorem det_skewProd (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (
   apply Units.ext
   simp only [coe_det, Units.val_mul]
   rw [LinearMap.det_eq_det_mul_det_of_fst_apply_inr fun y ↦ by simp [LinearEquiv.skewProd_apply]]
-  congr 2
-  exact LinearMap.ext fun x ↦ by simp [LinearEquiv.skewProd_apply]
+  exact congrArg₂ (· * ·)
+    (congrArg _ (LinearMap.ext fun x ↦ by simp [LinearEquiv.skewProd_apply]))
+    (congrArg _ (LinearMap.ext fun x ↦ by simp [LinearEquiv.skewProd_apply]))
 
 end CommRing
 
