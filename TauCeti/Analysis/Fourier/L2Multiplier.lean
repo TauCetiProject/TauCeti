@@ -14,6 +14,7 @@ import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Fourier multipliers on `L²`
@@ -407,10 +408,8 @@ theorem tendsto_fourierMultiplierCLM_apply_self {ι : Type*} {l : Filter ι}
     (hC : ∀ᶠ i in l, ∀ᵐ ξ, ‖m i ξ‖ ≤ C) (hm : ∀ᵐ ξ, Tendsto (fun i ↦ m i ξ) l (𝓝 1))
     (f : Lp F 2 (volume : Measure E)) :
     Tendsto (fun i ↦ fourierMultiplierCLM F (m i) f) l (𝓝 f) := by
-  have hC' : ∀ᶠ i in l, ‖m i‖ ≤ max C 0 := hC.mono fun i hi ↦ by
-    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-    exact ENNReal.toReal_le_of_le_ofReal (le_max_right C 0)
-      (eLpNormEssSup_le_of_ae_bound (hi.mono fun ξ hξ ↦ hξ.trans (le_max_left C 0)))
+  have hC' : ∀ᶠ i in l, ‖m i‖ ≤ max C 0 := hC.mono fun i hi ↦
+    Lp.norm_top_le_of_ae_bound (le_max_right C 0) (hi.mono fun ξ hξ ↦ hξ.trans (le_max_left C 0))
   have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
   have h := tendsto_fourierMultiplierCLM_apply (F := F) (m₀ := h1.toLp _) hC'
     (by filter_upwards [hm, h1.coeFn_toLp] with ξ h₁ h₂; rwa [h₂]) f
