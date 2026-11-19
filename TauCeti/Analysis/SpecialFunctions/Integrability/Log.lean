@@ -55,6 +55,8 @@ of the profile and the square of its derivative `-(r log (c / r))⁻¹`.
 * `TauCeti.locallyIntegrable_log_norm_pow`: `x ↦ (log ‖x‖) ^ k` is locally integrable.
 * `TauCeti.locallyIntegrable_log_norm`: `x ↦ log ‖x‖` is locally integrable.
 * `TauCeti.intervalIntegrable_log_pow`: `t ↦ (log t) ^ k` is interval integrable.
+* `TauCeti.integrable_log_abs_sub_restrict_Icc_prod`: `(x, y) ↦ log |x - y|` is integrable
+  on bounded rectangles.
 * `MeromorphicOn.intervalIntegrable_clog`: `t ↦ Log (f t)` is interval integrable for
   real-meromorphic `f : ℝ → ℂ`; `AnalyticOnNhd.intervalIntegrable_clog` is the analytic case.
 * `TauCeti.locallyIntegrableOn_log_log`: `t ↦ log (log t)` is locally integrable on `[1, ∞)`.
@@ -154,6 +156,30 @@ theorem intervalIntegrable_log_pow (k : ℕ) {a b : ℝ} :
   simpa [Real.norm_eq_abs, Real.log_abs] using
     ((locallyIntegrable_log_norm_pow (E := ℝ) (μ := volume) k).integrableOn_isCompact
       (isCompact_uIcc (a := a) (b := b))).intervalIntegrable
+
+/-- The logarithmic interaction `(x, y) ↦ log |x - y|` is Lebesgue integrable on every
+product of two closed bounded real intervals. -/
+theorem integrable_log_abs_sub_restrict_Icc_prod (a b c d : ℝ) :
+    Integrable (fun z : ℝ × ℝ ↦ Real.log |z.1 - z.2|)
+      ((volume.restrict (Set.Icc a b)).prod (volume.restrict (Set.Icc c d))) := by
+  let ν : Measure ℝ := volume.restrict (Set.Icc c d)
+  let g := (Set.Icc (a - d) (b - c)).indicator Real.log
+  have hgOn : IntegrableOn Real.log (Set.Icc (a - d) (b - c)) volume := by
+    simpa only [Real.norm_eq_abs, Real.log_abs] using
+      (locallyIntegrable_log_norm (E := ℝ) (μ := volume)).integrableOn_isCompact
+        (isCompact_Icc (a := a - d) (b := b - c))
+  have hg : Integrable g volume := hgOn.integrable_indicator measurableSet_Icc
+  have hprod : Integrable (fun z : ℝ × ℝ ↦ g z.2) (ν.prod volume) := hg.comp_snd ν
+  have hsub : Integrable (fun z : ℝ × ℝ ↦ g (z.1 - z.2)) (volume.prod ν) :=
+    ((measurePreserving_prod_sub_swap volume ν).integrable_comp hprod.aestronglyMeasurable).mpr
+      hprod
+  refine (hsub.mono_measure (Measure.prod_mono Measure.restrict_le_self le_rfl)).congr ?_
+  rw [Measure.prod_restrict]
+  filter_upwards [ae_restrict_mem (measurableSet_Icc.prod measurableSet_Icc)] with z hz
+  rcases hz with ⟨⟨hx₁, hx₂⟩, ⟨hy₁, hy₂⟩⟩
+  have hz' : z.1 - z.2 ∈ Set.Icc (a - d) (b - c) :=
+    ⟨sub_le_sub hx₁ hy₂, sub_le_sub hx₂ hy₁⟩
+  simp only [g, Set.indicator_of_mem hz', Real.log_abs]
 
 /-- The principal complex logarithm of a real-meromorphic function `f : ℝ → ℂ` is interval
 integrable, even across zeros and poles of `f`: its real part `log ‖f‖` has only integrable
