@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
@@ -40,6 +41,9 @@ energy and elliptic estimates.
   in the complex coordinate, the derivatives in the directions `1` and `i` are `∂s` and `∂t`.
 * `LinearMap.apply_stdComplexLine` and `ContinuousLinearMap.apply_stdComplexLine`: a real-linear
   map is determined by its values on the coordinate vectors.
+* `ContinuousLinearMap.opNorm_le_norm_apply_stdComplexLineReal_add`: the operator norm of a
+  continuous linear map out of `ℝ × ℝ` is at most the sum of the norms of its values on the
+  coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
   complex line is equivalent to the coordinate Cauchy--Riemann equation
   `F (0, 1) = J (F (1, 0))`.
@@ -175,6 +179,19 @@ lemma _root_.ContinuousLinearMap.apply_stdComplexLine [TopologicalSpace V]
     F z = z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag := by
   simpa only [map_add, map_smul] using
     congrArg F (stdComplexLine_eq_smul_real_add_smul_imag z)
+
+/-- A continuous linear map out of `ℝ × ℝ`, with its sup norm, has operator norm at most the sum of
+the norms of its values on the two coordinate vectors. -/
+lemma _root_.ContinuousLinearMap.opNorm_le_norm_apply_stdComplexLineReal_add {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] (L : ℝ × ℝ →L[ℝ] E) :
+    ‖L‖ ≤ ‖L stdComplexLineReal‖ + ‖L stdComplexLineImag‖ := by
+  -- `L` is the coproduct of the maps `t ↦ t • L (1, 0)` and `t ↦ t • L (0, 1)`.
+  have hL : L = (ContinuousLinearMap.toSpanSingleton ℝ (L stdComplexLineReal)).coprod
+      (ContinuousLinearMap.toSpanSingleton ℝ (L stdComplexLineImag)) :=
+    ContinuousLinearMap.ext fun z ↦ by simpa using L.toLinearMap.apply_stdComplexLine z
+  conv_lhs => rw [hL]
+  refine (ContinuousLinearMap.opNorm_coprod_le _ _).trans_eq ?_
+  rw [ContinuousLinearMap.norm_toSpanSingleton, ContinuousLinearMap.norm_toSpanSingleton]
 
 /-- Complex-linearity for a real-linear map out of the standard complex line is exactly the
 coordinate Cauchy--Riemann equation `F(0,1) = J(F(1,0))`. -/

@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Chart
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -93,8 +92,11 @@ vector-space theorem
 The theorem for fixed data is the case of a one-point window.
 
 Here the image of the solutions is assumed to stay in a single chart. Gromov–Floer compactness on
-a closed manifold also needs the mean-value inequality to localize the images of small discs of
-small energy into charts; that step is not treated here.
+a closed manifold also needs the mean-value inequality to localize the images of small squares of
+small energy into charts; it is
+`SmoothTwoForm.IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_mapsTo_iUnion`
+in `TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue`. Patching the chart-local limits into
+a limit in `M` is not treated here.
 
 ## References
 
@@ -314,38 +316,7 @@ variable {E H M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup V]
   [InnerProductSpace ℝ V] [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ V]
   {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V} {Ks Kt : ℝ × ℝ → M → ℝ}
-
-/-- At a point `z` with `u z` in the source of a smooth partial diffeomorphism `φ` pulling `ω₀`
-back to `ω` at `u z`, the coordinate map `φ ∘ u` has the energy density of `u`, and solves the
-coordinate Floer equation for the structure `J'` read in the chart if `u` solves the Floer equation
-for `J`. -/
-private theorem floerEnergyDensity_comp_and_isComplexLinearMap (hω : ω.IsNondegenerate)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {u : ℝ × ℝ → M} {z : ℝ × ℝ}
-    (hφ : ∀ v w : TangentSpace I (u z),
-      ω.eval₂ (u z) v w = ω₀ (mvfderiv I φ (u z) v) (mvfderiv I φ (u z) w))
-    {J : AlmostComplexStructure (TangentSpace I (u z))} {J' : AlmostComplexStructure V}
-    (hJJ' : IsComplexLinearMap J J' (mvfderiv I φ (u z)).toLinearMap)
-    (hKs : DifferentiableAt ℝ (fun y ↦ Ks z (φ.symm y)) (φ (u z)))
-    (hKt : DifferentiableAt ℝ (fun y ↦ Kt z (φ.symm y)) (φ (u z)))
-    (hx : u z ∈ φ.source) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z)
-    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
-    ω₀.floerEnergyDensity (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u) z =
-        ω.floerEnergyDensity Ks Kt u z ∧
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) J'
-        (ω₀.perturbedFDeriv (fun z y ↦ Ks z (φ.symm y)) (fun z y ↦ Kt z (φ.symm y)) (φ ∘ u)
-          z).toLinearMap := by
-  have hφx := φ.mdifferentiableAt (by simp) hx
-  have hsurj := (φ.bijective_mvfderiv (by simp) hx).surjective
-  -- Near `u z`, each Hamiltonian is its coordinate expression composed with `φ`.
-  have hK₁ (K : ℝ × ℝ → M → ℝ) : K z =ᶠ[𝓝 (u z)] (fun y ↦ K z (φ.symm y)) ∘ φ :=
-    (φ.toOpenPartialHomeomorph.eventually_left_inverse hx).mono fun y hy ↦
-      congrArg (K z) hy.symm
-  exact ⟨hω.floerEnergyDensity_comp hu hφx hsurj hφ (hK₁ Ks) (hK₁ Kt) hKs hKt,
-    (hω.isComplexLinearMap_perturbedFDeriv_comp_iff hu hφx hsurj hφ (hK₁ Ks) (hK₁ Kt) hKs
-      hKt hJJ').2 hfl⟩
-
-variable {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+  {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
 
 /-- **Floer solutions in a symplectic chart over a compact parameter window converge off finitely
@@ -399,29 +370,31 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
         TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (ψ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
         ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
   have hφK : IsCompact (φ '' K) := hK.image_of_continuousOn (φ.contMDiffOn.continuousOn.mono hKφ)
-  -- In the chart, `J'_p` is tamed by `ω₀` over `C × D × φ(K)`.
-  have hJ't : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ φ '' K, ω₀.Tames (J' p z y) := by
-    rintro p hp z hz _ ⟨x, hx, rfl⟩
-    exact tames_of_isComplexLinearMap_mvfderiv hω
-      (φ.bijective_mvfderiv (by simp) (hKφ hx)).surjective (hφ x hx) (hJJ' p hp z hz x hx)
-      (hJt p hp z hz x hx)
   obtain ⟨δ, hδ, hconv⟩ := ω₀.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     (Ks := fun p z y ↦ Ks p z (φ.symm y)) (Kt := fun p z y ↦ Kt p z (φ.symm y)) hW hKs hKt hJ' hC
-    hD hφK hCDKW hJ't
+    hD hφK hCDKW
+    fun p hp z hz ↦ hω.tames_of_mem_image φ (by simp) hφ (hJJ' p hp z hz) hKφ (hJt p hp z hz)
   refine ⟨δ, hδ, fun Ω p u A hΩ hΩD hpC hu hfl huK hint hA ↦ ?_⟩
-  -- The coordinate Hamiltonians are differentiable in the target variable on `W`.
-  have hdiff {f : P × ((ℝ × ℝ) × V) → ℝ} (hf : ContDiffOn ℝ 3 f W) {q : P} {z : ℝ × ℝ} {y : V}
-      (h : (q, (z, y)) ∈ W) : DifferentiableAt ℝ (fun y ↦ f (q, (z, y))) y :=
-    DifferentiableAt.comp (g := f) (f := fun y : V ↦ (q, (z, y))) y
+  -- At a fixed parameter, the coordinate Hamiltonians are differentiable on `W`.
+  have hdiff {f : P × ((ℝ × ℝ) × V) → ℝ} (hf : ContDiffOn ℝ 3 f W) {q : P} {y : (ℝ × ℝ) × V}
+      (h : (q, y) ∈ W) : DifferentiableAt ℝ (fun y ↦ f (q, y)) y :=
+    DifferentiableAt.comp (g := f) (f := fun y : (ℝ × ℝ) × V ↦ (q, y)) y
       (((hf.differentiableOn (by norm_num)) _ h).differentiableAt (hW.mem_nhds h))
-      ((differentiableAt_const q).prodMk ((differentiableAt_const z).prodMk differentiableAt_id))
+      ((differentiableAt_const q).prodMk differentiableAt_id)
   -- At each point of `Ω`, the chart transports the Floer equation and the energy density.
-  have hpt (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) :=
+  have hpt (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) :
+      ω₀.floerEnergyDensity (fun z y ↦ Ks (p k) z (φ.symm y)) (fun z y ↦ Kt (p k) z (φ.symm y))
+          (φ ∘ u k) z = ω.floerEnergyDensity (Ks (p k)) (Kt (p k)) (u k) z ∧
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J' (p k) z (φ (u k z)))
+          (ω₀.perturbedFDeriv (fun z y ↦ Ks (p k) z (φ.symm y))
+            (fun z y ↦ Kt (p k) z (φ.symm y)) (φ ∘ u k) z).toLinearMap := by
     have hW' : (p k, (z, φ (u k z))) ∈ W := hCDKW ⟨hpC k, hΩD hz, u k z, huK k hz, rfl⟩
-    floerEnergyDensity_comp_and_isComplexLinearMap hω φ (hφ _ (huK k hz))
-      (hJJ' (p k) (hpC k) z (hΩD hz) _ (huK k hz)) (hdiff hKs hW') (hdiff hKt hW')
-      (hKφ (huK k hz))
-      (((hu k).contMDiffAt (hΩ.mem_nhds hz)).mdifferentiableAt (by norm_num)) (hfl k z hz)
+    have hdu := ((hu k).contMDiffAt (hΩ.mem_nhds hz)).mdifferentiableAt (by norm_num)
+    exact ⟨hω.floerEnergyDensity_comp_of_mem_source φ (by simp) hdu (hKφ (huK k hz))
+      (hφ _ (huK k hz)) (hdiff hKs hW') (hdiff hKt hW'),
+      (hω.isComplexLinearMap_perturbedFDeriv_comp_iff_of_mem_source φ (by simp) hdu
+        (hKφ (huK k hz)) (hφ _ (huK k hz)) (hdiff hKs hW') (hdiff hKt hW')
+        (hJJ' (p k) (hpC k) z (hΩD hz) _ (huK k hz))).2 (hfl k z hz)⟩
   have hint_eq (k : ℕ) {S : Set (ℝ × ℝ)} (hS : MeasurableSet S) (hSΩ : S ⊆ Ω) :
       ∫ y in S, ω₀.floerEnergyDensity (fun z y ↦ Ks (p k) z (φ.symm y))
         (fun z y ↦ Kt (p k) z (φ.symm y)) (φ ∘ u k) y =

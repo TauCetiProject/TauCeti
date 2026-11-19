@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Differentials of a partial diffeomorphism
@@ -50,6 +51,9 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
   chain rule `D(ψ ∘ φ⁻¹) = D(ψ ∘ χ⁻¹) ∘ D(χ ∘ φ⁻¹)`.
+* `PartialDiffeomorph.mapsTo_ball_of_norm_fderiv_comp_le`: a map from a ball whose reading in the
+  chart `φ` has bounded derivative while it stays in the interior of `C` maps the whole ball into
+  the interior of `C`.
 -/
 
 public section
@@ -172,5 +176,34 @@ theorem fderiv_comp_symm_eq_comp (ψ : PartialDiffeomorph I 𝓘(𝕜, G'') M G'
   rw [← heq.fderiv_eq, fderiv_comp (φ x) h₁ (χ.differentiableAt_comp_symm φ hn hχ hφ), hχx]
 
 end Transition
+
+section Trapping
+
+open Metric Set
+
+variable [IsRCLikeNormedField 𝕜] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  [NormedSpace 𝕜 G]
+
+/-- **A map whose chart reading has bounded derivative stays in the chart.** Let `φ` be a partial
+diffeomorphism from a manifold `M` onto an open subset of `F`, `C ⊆ φ.source` closed, and `u`
+differentiable on the ball `B_s(y₀)` with `u y₀ ∈ C`. Suppose that every `x ∈ C` with
+`‖φ x - φ (u y₀)‖ < η` lies in the interior of `C`, where `0 < η`. If `‖d(φ ∘ u)‖ ≤ κ` at every
+point of the ball where `u` takes values in the interior of `C`, and `κ s ≤ η`, then `u` maps the
+ball into the interior of `C`, and `‖φ (u y) - φ (u y₀)‖ ≤ κ ‖y - y₀‖` on the ball. -/
+theorem mapsTo_ball_of_norm_fderiv_comp_le (φ : PartialDiffeomorph I 𝓘(𝕜, F) M F n) (hn : n ≠ 0)
+    {u : G → M} {C : Set M} {y₀ : G} {s κ η : ℝ} (hC : IsClosed C) (hCφ : C ⊆ φ.source)
+    (hu : MDifferentiableOn 𝓘(𝕜, G) I u (ball y₀ s)) (hy₀ : u y₀ ∈ C)
+    (hCO : ∀ x ∈ C, ‖φ x - φ (u y₀)‖ < η → x ∈ interior C)
+    (hd : ∀ y ∈ ball y₀ s, u y ∈ interior C → ‖fderiv 𝕜 (φ ∘ u) y‖ ≤ κ)
+    (hη : 0 < η) (hκs : κ * s ≤ η) :
+    MapsTo u (ball y₀ s) (interior C) ∧
+      ∀ y ∈ ball y₀ s, ‖φ (u y) - φ (u y₀)‖ ≤ κ * ‖y - y₀‖ :=
+  TauCeti.mapsTo_ball_of_norm_fderiv_comp_le hC isOpen_interior interior_subset
+    (φ.contMDiffOn.continuousOn.mono hCφ) hu.continuousOn hy₀ hCO
+    (fun y hy hyC ↦ ⟨mdifferentiableAt_iff_differentiableAt.1
+      ((φ.mdifferentiableAt hn (hCφ (interior_subset hyC))).comp y
+        (hu.mdifferentiableAt (isOpen_ball.mem_nhds hy))), hd y hy hyC⟩) hη hκs
+
+end Trapping
 
 end PartialDiffeomorph
