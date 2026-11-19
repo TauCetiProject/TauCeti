@@ -120,41 +120,15 @@ include h in
 private theorem inner_v_u (y : sphere (0 : E) 1) : ⟪v y, u y⟫ = 0 := by
   simpa using (h y).inner_eq_zero (by decide : (2 : Fin 3) ≠ 1)
 
-/-- The projection `(x, q) ↦ x` of the space of equators, as a morphism of `TopCat`. -/
-private def equatorProj (u v : sphere (0 : E) 1 → E) :
-    TopCat.of (twoFieldEquators u v) ⟶ TopCat.of (sphere (0 : E) 1) :=
-  TopCat.ofHom (ContinuousMap.fst.comp (ContinuousMap.subtypeVal (twoFieldEquators u v)))
-
-/-- The fibre of `equatorProj` over `y` is the subtype of the equators over `y`. -/
-private def equatorProjFiberHomeomorph (y : sphere (0 : E) 1) :
-    {xq : twoFieldEquators u v // xq.1.1 = y} ≃ₜ (equatorProj u v ⁻¹' {y} : Set _) where
-  toFun z := ⟨z.1, by simpa [equatorProj] using z.2⟩
-  invFun z := ⟨z.1, by simpa [equatorProj] using z.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- The fibre of the space of equators over `y` is the unit sphere of the orthogonal complement of
-`v y` in `(ℝ ∙ u y)ᗮ`. -/
-private def equatorProjFiberSphereIso (y : sphere (0 : E) 1) :
-    TopCat.of (sphere (0 : (ℝ ∙ (⟨v y, Submodule.mem_orthogonal_singleton_iff_inner_left.2
-      (inner_v_u h y)⟩ : (ℝ ∙ u y)ᗮ))ᗮ) 1) ≅ TopCat.of (equatorProj u v ⁻¹' {y} : Set _) :=
-  TopCat.isoOfHomeo ((orthogonalSphereHomeomorphEquator _).trans
-    ((twoFieldEquatorsFiberHomeomorph (inner_v_u h y)).trans (equatorProjFiberHomeomorph y)))
-
 include h in
 /-- The fibres of the space of equators of `Sⁿ` are spheres of dimension `n - 2`. -/
-private theorem finrank_equatorProjFiberSphere {n : ℕ} (hE : finrank ℝ E = n + 1)
-    (hn : 2 ≤ n) (y : sphere (0 : E) 1) :
+private theorem finrank_equatorFiber {n : ℕ} (hE : finrank ℝ E = n + 1) (hn : 2 ≤ n)
+    (y : sphere (0 : E) 1) :
     finrank ℝ (ℝ ∙ (⟨v y, Submodule.mem_orthogonal_singleton_iff_inner_left.2 (inner_v_u h y)⟩ :
-      (ℝ ∙ u y)ᗮ))ᗮ = n - 2 + 1 := by
-  have : Fact (finrank ℝ E = n + 1) := ⟨hE⟩
-  have hu : u y ≠ 0 := fun h0 ↦ by simpa [h0] using (h y).norm_eq_one 1
-  have : Fact (finrank ℝ (ℝ ∙ u y)ᗮ = n - 2 + 1 + 1) :=
-    ⟨(Submodule.finrank_orthogonal_span_singleton (n := n) hu).trans (by omega)⟩
-  refine Submodule.finrank_orthogonal_span_singleton fun h0 ↦ ?_
-  have := congrArg (fun w : (ℝ ∙ u y)ᗮ ↦ (w : E)) h0
-  simp only [Submodule.coe_zero] at this
-  simpa [this] using (h y).norm_eq_one 2
+      (ℝ ∙ u y)ᗮ))ᗮ = n - 2 + 1 :=
+  finrank_orthogonal_span_twoField (inner_v_u h y) (by omega)
+    (fun h0 ↦ by simpa [h0] using (h y).norm_eq_one 1)
+    (fun h0 ↦ by simpa [h0] using (h y).norm_eq_one 2)
 
 include h in
 /-- The fibres of the space of equators of `Sⁿ` have no homology in positive degrees other than
@@ -162,12 +136,13 @@ include h in
 private theorem isZero_singularHomology_equatorProj_fiber {n : ℕ} (hE : finrank ℝ E = n + 1)
     (hn : 2 ≤ n) (y : sphere (0 : E) 1) (R : ModuleCat.{0} ℤ) {q : ℕ} (hq : q + 1 ≠ n - 2) :
     IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (q + 1)).obj R).obj
-      (TopCat.of (equatorProj u v ⁻¹' {y} : Set _))) := by
+      (TopCat.of (twoFieldEquatorsProj u v ⁻¹' {y} : Set _))) := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   rw [← reducedSingularHomologyFunctor_succ]
   exact (isZero_reducedSingularHomologyFunctor_sphere_of_ne R
-    (finrank_equatorProjFiberSphere h hE hn y) hq).of_iso
-      ((reducedSingularHomologyFunctor R (q + 1)).mapIso (equatorProjFiberSphereIso h y).symm)
+    (finrank_equatorFiber h hE hn y) hq).of_iso
+      ((reducedSingularHomologyFunctor R (q + 1)).mapIso
+        (orthogonalSphereIsoTwoFieldEquatorsPreimage (inner_v_u h y)).symm)
 
 include h in
 /-- The fibres of the space of equators of `Sⁿ` have nonzero integral homology in degree
@@ -175,13 +150,15 @@ include h in
 private theorem nontrivial_singularHomology_equatorProj_fiber {n : ℕ} (hE : finrank ℝ E = n + 1)
     (hn : 3 ≤ n) (y : sphere (0 : E) 1) :
     Nontrivial (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n - 2)).obj
-      (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of (equatorProj u v ⁻¹' {y} : Set _))) := by
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
+        (TopCat.of (twoFieldEquatorsProj u v ⁻¹' {y} : Set _))) := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   have hrank := ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) (finrank_equatorProjFiberSphere h hE (by omega) y) (n - 2)
+    (ModuleCat.of ℤ (ULift.{0} ℤ)) (finrank_equatorFiber h hE (by omega) y) (n - 2)
   rw [((((singularHomologyFunctor (ModuleCat.{0} ℤ) (n - 2)).obj
     (ModuleCat.of ℤ (ULift.{0} ℤ))).mapIso
-      (equatorProjFiberSphereIso h y)).toLinearEquiv).finrank_eq] at hrank
+      (orthogonalSphereIsoTwoFieldEquatorsPreimage (inner_v_u h y))).toLinearEquiv).finrank_eq]
+    at hrank
   apply Module.nontrivial_of_finrank_pos (R := ℤ)
   rw [hrank]
   simp
@@ -196,7 +173,8 @@ private theorem isZero_singularHomology_equatorProj_compl {n : ℕ} (hE : finran
     (hn : 3 ≤ n) (x : sphere (0 : E) 1) :
     IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (2 * n - 3)).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).obj
-        (TopCat.of ((equatorProj u v ⁻¹' {x})ᶜ : Set (TopCat.of (twoFieldEquators u v))))) := by
+        (TopCat.of ((twoFieldEquatorsProj u v ⁻¹' {x})ᶜ :
+          Set (TopCat.of (twoFieldEquators u v))))) := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   have hπ := TopCat.mem_serreFibrations_twoFieldEquators hu hv
     fun y ↦ (orthonormal_vecCons_iff.1 (h y)).2.2
@@ -227,7 +205,8 @@ include h hu hv in
 the fibre over `x` is the localization of a class of the space of equators. -/
 private theorem epi_fiberLocalization_equatorProj {n : ℕ} (hE : finrank ℝ E = n + 1)
     (hn : 3 ≤ n) (x : sphere (0 : E) 1) :
-    Epi (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) (equatorProj u v) x (2 * n - 2)) :=
+    Epi (fiberLocalization (ModuleCat.of ℤ (ULift.{0} ℤ)) (twoFieldEquatorsProj u v) x
+      (2 * n - 2)) :=
   (TopPair.singularHomology_exact_relative _ _ (2 * n - 2) (2 * n - 3)).epi_f
     ((isZero_singularHomology_equatorProj_compl h hu hv hE hn x).eq_of_tgt _ _)
 
@@ -238,7 +217,7 @@ private abbrev twoFieldSphereFamilyHom :
 
 private theorem twoFieldSphereFamilyHom_comp :
     twoFieldSphereFamilyHom h hu hv ≫ TopCat.ofHom (mappingSpaceEval Sphere2.north) =
-      equatorProj u v :=
+      twoFieldEquatorsProj u v :=
   TopCat.hom_ext (mappingSpaceEval_comp_twoFieldSphereFamily h hu hv)
 
 /-- Over `x`, the family of two-spheres is the family of based two-spheres
@@ -246,12 +225,13 @@ private theorem twoFieldSphereFamilyHom_comp :
 private theorem preimageMap_twoFieldSphereFamilyHom (x : sphere (0 : E) 1) :
     (twoFieldSphereFamilyHom h hu hv).preimageMap (twoFieldSphereFamilyHom_comp h hu hv)
         ({x} : Set (sphere (0 : E) 1)) =
-      (TopCat.isoOfHomeo (equatorProjFiberHomeomorph x)).inv ≫
+      (TopCat.isoOfHomeo (twoFieldEquatorsFiberHomeomorphPreimage x)).inv ≫
         TopCat.ofHom (twoFieldSphereFamilyFiber h hu hv x) ≫
           (TopCat.isoOfHomeo (basedMapHomeomorphPreimage Sphere2.north x)).hom := by
   ext z a
   rw [TopCat.Hom.coe_preimageMap_apply]
-  simp [equatorProjFiberHomeomorph]
+  simpa using congrArg (fun xq ↦ (twoFieldSphereFamily h hu hv xq a : E))
+    (coe_twoFieldEquatorsFiberHomeomorphPreimage_symm_apply z).symm
 
 include h hu hv in
 /-- Over every point of `Sⁿ`, `n ≥ 4`, the family of two-spheres is an isomorphism on
@@ -302,10 +282,10 @@ theorem isAbundantWithTwoSpheres_sphere_of_orthonormal {n : ℕ} (hE : finrank �
   -- The localization at the fibre over `x`, followed by the shriek identification with the
   -- homology of the fibre and by the family of two-spheres over `x`, is onto.
   let j := TopCat.singularHomologyComplFiberIso (E := TopCat.of (twoFieldEquators u v))
-    (B := TopCat.of (sphere (0 : E) 1)) (p := equatorProj u v) R e hb hε hε₀ hπ (n - 2)
+    (B := TopCat.of (sphere (0 : E) 1)) (p := twoFieldEquatorsProj u v) R e hb hε hε₀ hπ (n - 2)
       (2 * n - 2) hdim
   have hc : Function.Surjective fun A ↦
-      G.hom (j.hom.hom ((fiberLocalization R (equatorProj u v) x (2 * n - 2)).hom A)) :=
+      G.hom (j.hom.hom ((fiberLocalization R (twoFieldEquatorsProj u v) x (2 * n - 2)).hom A)) :=
     ((ModuleCat.epi_iff_surjective G).1 inferInstance).comp
       (((ModuleCat.epi_iff_surjective j.hom).1 inferInstance).comp
         ((ModuleCat.epi_iff_surjective _).1 inferInstance))
@@ -317,8 +297,8 @@ theorem isAbundantWithTwoSpheres_sphere_of_orthonormal {n : ℕ} (hE : finrank �
       ({x} : Set (sphere (0 : E) 1)))))
   obtain ⟨A, rfl⟩ := hc y
   have hab := isAbundantWithTwoSpheres_of_fiberedFamily (S := TopCat.of (twoFieldEquators u v))
-    (π := equatorProj u v) e hb hε hε₀ hπ (twoFieldSphereFamilyHom_comp h hu hv) (by omega) hdim
-      (A := A) hy
+    (π := twoFieldEquatorsProj u v) e hb hε hε₀ hπ (twoFieldSphereFamilyHom_comp h hu hv)
+      (by omega) hdim (A := A) hy
   rwa [finrank_euclideanSpace_fin] at hab
 
 end TwoField
