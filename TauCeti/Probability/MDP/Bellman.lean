@@ -81,6 +81,12 @@ def IsGreedy (γ : ℝ≥0) (v : BoundedFn S) (π : S → A) : Prop :=
   ∀ s a, M.reward s a + γ * M.expect v s a ≤
     M.reward s (π s) + γ * M.expect v s (π s)
 
+omit [Finite A] [Nonempty A] in
+/-- A policy is greedy precisely when its chosen action dominates every action value. -/
+theorem isGreedy_iff (γ : ℝ≥0) (v : BoundedFn S) (π : S → A) :
+    M.IsGreedy γ v π ↔ ∀ s a, M.reward s a + γ * M.expect v s a ≤
+      M.reward s (π s) + γ * M.expect v s (π s) := Iff.rfl
+
 /-- A policy is greedy precisely when each chosen action attains the Bellman value. -/
 theorem isGreedy_iff_eq_bellman (γ : ℝ≥0) (v : BoundedFn S) (π : S → A) :
     M.IsGreedy γ v π ↔ ∀ s,
