@@ -80,6 +80,24 @@ theorem cechCupHomology_homologyπ {p q n : ℕ} (h : p + q = n)
   apply moduleCat_iCycles_injective
   simp
 
+/-- **The cup product on classes of cochains**: the cup product of the classes of two cocycles
+given as cochains is the class of their cup product. -/
+theorem cechCupHomology_homologyπ_moduleCatCyclesMk {p q n : ℕ} (h : p + q = n)
+    (x : (cechAlgebraComplex U F).X p) (m₁ : ℕ) (hm₁ : (ComplexShape.up ℕ).next p = m₁)
+    (hx : ((cechAlgebraComplex U F).d p m₁).hom x = 0) (y : (cechAlgebraComplex U F).X q)
+    (m₂ : ℕ) (hm₂ : (ComplexShape.up ℕ).next q = m₂)
+    (hy : ((cechAlgebraComplex U F).d q m₂).hom y = 0) :
+    cechCupHomology U F p q n h
+        (((cechAlgebraComplex U F).homologyπ p).hom
+          ((cechAlgebraComplex U F).moduleCatCyclesMk x m₁ hm₁ hx))
+        (((cechAlgebraComplex U F).homologyπ q).hom
+          ((cechAlgebraComplex U F).moduleCatCyclesMk y m₂ hm₂ hy)) =
+      ((cechAlgebraComplex U F).homologyπ n).hom ((cechAlgebraComplex U F).moduleCatCyclesMk
+        (cechCup p q n h x y) (n + 1) (by simp)
+        (d_cechCup_eq_zero h (by subst hm₁; rwa [CochainComplex.next] at hx)
+          (by subst hm₂; rwa [CochainComplex.next] at hy))) :=
+  CochainComplex.moduleCatHomologyMap₂_homologyπ_moduleCatCyclesMk _ _ h x m₁ hm₁ hx y m₂ hm₂ hy
+
 /-- **Associativity** of the cup product on Čech cohomology. -/
 theorem cechCupHomology_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂ : m + r = n)
     (h₃ : q + r = l) (h₄ : p + l = n) (α : (cechAlgebraComplex U F).homology p)

@@ -36,6 +36,8 @@ intertwine the products on cohomology (`CochainComplex.homologyMap_moduleCatHomo
   underlying cochains.
 * `CochainComplex.moduleCatHomologyMap₂_homologyπ`: the product of the classes of two cocycles is
   the class of their product.
+* `CochainComplex.moduleCatHomologyMap₂_homologyπ_moduleCatCyclesMk`: the same for cocycles given
+  as elements of the cochain modules.
 * `CochainComplex.homologyMap_moduleCatHomologyMap₂`: naturality under cochain maps intertwining the
   products.
 -/
@@ -184,6 +186,20 @@ theorem moduleCatHomologyMap₂_homologyπ (p q n : ℕ) (h : p + q = n) (a : K�
     (toCycles_comp_moduleCatHomologyMap₂Cycles μ hμ p q n h)).2 a
   rw [moduleCatHomologyMap₂, ← moduleCatHomologyMap₂Left_homologyπ]
   exact LinearMap.congr_fun hfac _
+
+/-- **The product on classes of elements**: the product of the classes of two cocycles given as
+elements of the cochain modules is the class of their product. -/
+theorem moduleCatHomologyMap₂_homologyπ_moduleCatCyclesMk {p q n : ℕ} (h : p + q = n)
+    (x : K₁.X p) (m₁ : ℕ) (hm₁ : (ComplexShape.up ℕ).next p = m₁) (hx : (K₁.d p m₁).hom x = 0)
+    (y : K₂.X q) (m₂ : ℕ) (hm₂ : (ComplexShape.up ℕ).next q = m₂) (hy : (K₂.d q m₂).hom y = 0) :
+    moduleCatHomologyMap₂ μ hμ p q n h ((K₁.homologyπ p).hom (K₁.moduleCatCyclesMk x m₁ hm₁ hx))
+        ((K₂.homologyπ q).hom (K₂.moduleCatCyclesMk y m₂ hm₂ hy)) =
+      (K₀.homologyπ n).hom (K₀.moduleCatCyclesMk (μ p q n h x y) (n + 1) (by simp)
+        (by subst hm₁ hm₂; rw [CochainComplex.next] at hx hy; simp [hμ, hx, hy])) := by
+  rw [moduleCatHomologyMap₂_homologyπ]
+  congr 1
+  apply K₀.moduleCat_iCycles_injective
+  simp
 
 section Naturality
 
