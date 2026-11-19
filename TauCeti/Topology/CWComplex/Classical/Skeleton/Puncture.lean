@@ -241,9 +241,9 @@ def skeletonDiffCenterHomotopyRel :
       (Subtype.val ⁻¹' skeletonDiffCore j) where
   toContinuousMap := pushMap j
   map_zero_left x := Subtype.ext <| by
+    rw [ContinuousMap.toFun_eq_coe, ContinuousMap.id_apply, pushMap_apply]
     by_cases hxo : (x : X) ∈ openCell (C := C) n j
-    · rw [ContinuousMap.toFun_eq_coe, ContinuousMap.id_apply, pushMap_apply, pushFun_of_mem j hxo,
-        puncturedBallPush_zero, map_map_symm n hxo]
+    · rw [pushFun_of_mem j hxo, puncturedBallPush_zero, map_map_symm n hxo]
     · exact pushFun_of_notMem j hxo
   map_one_left _ := rfl
   prop' t x hx := Subtype.ext (pushFun_of_notMem_image j t hx.2)
