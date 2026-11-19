@@ -456,8 +456,10 @@ private theorem exists_norm_iteratedFDeriv_amplitude_le (hφ : ContDiff ℝ ∞ 
           exact norm_iteratedFDeriv_mul_le_of_tsupport_subset hs (fun x hx ↦ by simpa using ha x hx)
             (hac.contDiffOn.inv fun z hz ↦ hz) hk hks (by exact_mod_cast le_top) (by positivity)
             (fun i' hi' x hx ↦ hQ i i' (by omega) x hx) (fun i' hi' x ↦ hC i i' (by omega) x) y
+      _ = 2 ^ (j + 1) * Q * C / τ i ^ (k + 1) := by
+          field_simp
+          ring
       _ ≤ 2 ^ (n + 1) * Q * C / τ i ^ (k + 1) := by
-          rw [mul_one, mul_assoc, div_mul_div_comm, ← pow_succ', mul_div_assoc', ← mul_assoc]
           gcongr
           exact one_le_two
 
@@ -581,15 +583,15 @@ the phase in the direction of `B ζ - ξ` is at least `c / 2 (‖ξ‖ + ‖ζ�
 private theorem le_inner_adjoint_sub {A B : E →L[ℝ] E} {c : ℝ} (hAB : ‖A† - B‖ ≤ c / 2)
     {ξ ζ : E} (hξζ : c * (‖ξ‖ + ‖ζ‖) ≤ ‖B ζ - ξ‖) :
     c / 2 * (‖ξ‖ + ‖ζ‖) ≤ ⟪‖B ζ - ξ‖⁻¹ • (B ζ - ξ), (A†) ζ - ξ⟫ := by
-  set d := ‖B ζ - ξ‖
+  set d := ‖B ζ - ξ‖ with hd_def
   have hsplit : (A†) ζ - ξ = (B ζ - ξ) + (A† - B) ζ := by
     simp only [sub_apply]
     abel
   have h1 : ⟪d⁻¹ • (B ζ - ξ), B ζ - ξ⟫ = d := by
     rcases eq_or_ne d 0 with hd | hd
     · simp [hd, norm_eq_zero.1 hd]
-    · rw [real_inner_smul_left, real_inner_self_eq_norm_sq, sq, ← mul_assoc, inv_mul_cancel₀ hd,
-        one_mul]
+    · rw [real_inner_smul_left, real_inner_self_eq_norm_sq, ← hd_def]
+      field_simp
   have h2 : -(c / 2 * ‖ζ‖) ≤ ⟪d⁻¹ • (B ζ - ξ), (A† - B) ζ⟫ := by
     have hw : ‖d⁻¹ • (B ζ - ξ)‖ ≤ 1 := by
       rw [norm_smul, norm_inv, norm_norm]
@@ -639,7 +641,8 @@ private theorem exists_norm_integral_mul_fourierChar_inner_sub_le_div {f : E →
         (hf.contDiffAt.of_le (by exact_mod_cast le_top)) _ _).trans ?_
       have h := hM k x hx
       have := hM0 k
-      field_simp
+      rw [show 2 / c * (M k + 1) * (c / 2 * (‖p.1.1‖ + ‖p.1.2‖)) =
+        (M k + 1) * (‖p.1.1‖ + ‖p.1.2‖) by field_simp]
       nlinarith [norm_nonneg p.1.1, norm_nonneg p.1.2, norm_nonneg (iteratedFDeriv ℝ (k + 1) f x)]⟩)
     N
   exact ⟨C₁, fun ξ ζ hξζ h1 ↦ hC₁ ⟨(ξ, ζ), hξζ, h1⟩⟩

@@ -268,15 +268,6 @@ theorem hasSum_localFourier_compCLMOfOpenPartialHomeomorph [MeasurableSpace E] [
   rw [← h0]
   simpa only [hF, zero_sub] using h
 
-omit [FiniteDimensional ℝ E] in
-/-- A smooth change of variables is differentiable at each point `x` of its source, and its inverse
-at `e x`. -/
-private theorem differentiableAt_and_differentiableAt_symm
-    (hes : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (hes' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
-    {x : E} (hx : x ∈ e.source) : DifferentiableAt ℝ e x ∧ DifferentiableAt ℝ e.symm (e x) :=
-  ⟨(hes.differentiableOn (by simp)).differentiableAt (e.open_source.mem_nhds hx),
-    (hes'.differentiableOn (by simp)).differentiableAt (e.open_target.mem_nhds (e.map_source hx))⟩
-
 /-- Near a point `x` of `U` there is a cutoff `φ` with `φ x = 1` such that `e` maps its support into
 a given neighbourhood of `e x` and `(De(y))†` stays within `δ` of `(De(x))†` on its support. -/
 private theorem exists_cutoff_adjoint_fderiv (hes : ContDiffOn ℝ (⊤ : ℕ∞) e e.source)
@@ -312,7 +303,8 @@ theorem IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph {T : 𝓓'(Ω, ℂ
   have hKΩ : (K : Set E) ⊆ Ω := hKU.trans inter_subset_right
   obtain ⟨C₀, k₀, hG⟩ := exists_norm_localFourier_le T (ofSupportedIn hKΩ χ)
   -- The cone `Γ'` around `(De x)† η` separated from the complement of `Γ`.
-  obtain ⟨hd, hds⟩ := differentiableAt_and_differentiableAt_symm he he' hxs
+  obtain ⟨hd, hds⟩ :=
+    e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he he' (by simp) hxs
   obtain ⟨A, hA⟩ := e.isInvertible_fderiv hxs hd hds
   obtain ⟨Γ', hΓ', hξΓ', hcone', c, hc, hsep⟩ :=
     hΓ.exists_cone_mul_add_le_norm_sub hcone hηΓ A.adjointEquiv
@@ -376,7 +368,8 @@ theorem isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff {T : 𝓓'(Ω,
     (hU := hU) (hUV := hUV) (he₁ := he') (he₁' := by simpa using he) (hV := hVt) (hVU := hVU)
     (restrictCLM T : 𝓓'(V, ℂ))
   rw [hback] at h'
-  obtain ⟨hd, hds⟩ := differentiableAt_and_differentiableAt_symm he he' hxs
+  obtain ⟨hd, hds⟩ :=
+    e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he he' (by simp) hxs
   rw [e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hxs hd hds] at h'
   exact (isMicrolocallySmoothAt_restrictCLM_iff hVΩ ⟨x, hx, rfl⟩).1 h'
 
@@ -390,7 +383,8 @@ theorem waveFrontSet_compCLMOfOpenPartialHomeomorph (T : 𝓓'(Ω, ℂ)) :
         (fun p : E × E ↦ (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2)) ⁻¹' T.waveFrontSet := by
   have hinv {x : E} (hx : x ∈ U) (ξ : E) :
       ((fderiv ℝ e x)†) (((fderiv ℝ e.symm (e x))†) ξ) = ξ :=
-    have hd := differentiableAt_and_differentiableAt_symm he he' (hU hx)
+    have hd :=
+      e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he he' (by simp) (hU hx)
     e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply (hU hx) hd.1 hd.2 ξ
   ext ⟨x, ξ⟩
   simp only [mem_waveFrontSet_iff, mem_inter_iff, mem_prod, mem_univ, and_true, mem_preimage]
