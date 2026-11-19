@@ -12,34 +12,42 @@ public import Mathlib.Topology.UniformSpace.Equicontinuity
 public import TauCeti.Analysis.Normed.Group.LocallyBounded
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.Liouville
+import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
-# Normal families: equicontinuity of a locally bounded family of holomorphic functions
+# Normal families: equicontinuity of a locally bounded family of holomorphic maps
 
-A family of holomorphic functions on an open set `U ⊆ ℂ` that is *locally bounded* — uniformly
-bounded on every compact subset of `U` — is automatically equicontinuous on `U`.  This is the
+A family of holomorphic maps on an open subset `U` of a proper complex normed space, such as `ℂ`
+or `ℂⁿ`, that is *locally bounded* — uniformly bounded on every compact subset of `U` — is
+automatically equicontinuous on `U` (`TauCeti.IsLocallyBoundedOn.equicontinuousOn`).  This is the
 analytic heart of Montel's normal-families theorem: for a proper target, equicontinuity and the
-pointwise norm bounds give relative compactness by the compact-open Arzelà–Ascoli theorem.
+pointwise norm bounds give relative compactness by the compact-open Arzelà–Ascoli theorem.  For a
+complex normed space, properness is equivalent to finite-dimensionality.
 
-The estimates here are stated for maps `ℂ → E` into a complex normed space, because nothing in a
-Cauchy estimate uses the multiplicative structure of the target: Mathlib's
-`Complex.norm_deriv_le_of_forall_mem_sphere_norm_le`, which is the sole analytic input, is itself
-`E`-valued.  Only `TauCeti.IsLocallyBoundedOn.equicontinuousOn_deriv` needs `E` complete, and
-that is because it differentiates twice.  Taking `E = ℂ` recovers the scalar statements.
+The analytic input to equicontinuity is Mathlib's Schwarz lemma
+`Complex.dist_le_div_mul_dist_of_mapsTo_ball`: a holomorphic map of a ball of radius `r` around `c`,
+on any complex normed space, into the closed ball of radius `2 * C` around `f c` satisfies
+`dist (f z) (f c) ≤ 2 * C / r * dist z c`.  A bound `C` on the norms gives exactly this mapping
+property, and when `C` bounds the whole family on a compact ball the constant is uniform in the
+family, which is equicontinuity at `c`.
 
-Local boundedness and its general compact-open API are defined in
-`TauCeti/Analysis/Normed/Group/LocallyBounded.lean`. The estimates below specialize the domain to
-`ℂ` and the target to a complex normed space.
-
-The mechanism is Cauchy's estimate for the first derivative.  Mathlib's
-`Complex.norm_deriv_le_of_forall_mem_sphere_norm_le` bounds `‖deriv f c‖` at the *centre* of a
-disc; halving the radius turns that pointwise bound into one that is uniform over a ball
+The remaining estimates concern one complex variable.  They are stated for maps `ℂ → E` into a
+complex normed space, because nothing in a Cauchy estimate uses the multiplicative structure of
+the target: Mathlib's `Complex.norm_deriv_le_of_forall_mem_sphere_norm_le`, their sole analytic
+input, is itself `E`-valued.  It bounds `‖deriv f c‖` at the *centre* of a disc; halving the radius
+turns that pointwise bound into one that is uniform over a ball
 (`norm_deriv_le_of_forall_mem_closedBall_two_mul_norm_le`), and the mean value inequality on that
 ball then bounds `dist (f z) (f w)` by a multiple of `dist z w` with a constant depending only on
-the sup bound (`dist_le_of_forall_mem_closedBall_two_mul_norm_le`).  That constant is uniform in
-the family, which is exactly equicontinuity.
+the sup bound (`dist_le_of_forall_mem_closedBall_two_mul_norm_le`).  The same estimate bounds the
+derivatives of a locally bounded family on compact sets.  Only
+`TauCeti.IsLocallyBoundedOn.equicontinuousOn_deriv` needs `E` complete, and that is because it
+differentiates twice.  Taking `E = ℂ` recovers the scalar statements.
+
+Local boundedness and its general compact-open API are defined in
+`TauCeti/Analysis/Normed/Group/LocallyBounded.lean`.
 
 ## Main results
 
@@ -52,8 +60,9 @@ the family, which is exactly equicontinuity.
 * `TauCeti.norm_inv_smul_sub_inv_smul_le`: the same bound makes `z ↦ (w - z)⁻¹ • f z` Lipschitz
   near `y`, uniformly in poles `w` at a fixed positive distance.
 * `TauCeti.IsLocallyBoundedOn.equicontinuousOn`: a locally bounded family of holomorphic
-  functions is equicontinuous.  With `TauCeti.IsLocallyBoundedOn.exists_forall_norm_le`, this
-  supplies the hypotheses of the compact-open Arzelà–Ascoli theorem when the target is proper.
+  maps on an open subset of a proper complex normed space is equicontinuous.  With
+  `TauCeti.IsLocallyBoundedOn.exists_forall_norm_le`, this supplies the hypotheses of the
+  compact-open Arzelà–Ascoli theorem when the target is proper.
 * `TauCeti.IsLocallyBoundedOn.deriv` and `TauCeti.IsLocallyBoundedOn.equicontinuousOn_deriv`: the
   derivatives of a locally bounded family of holomorphic functions are again locally bounded, hence
   also equicontinuous.
@@ -73,19 +82,6 @@ namespace TauCeti
 open Filter Metric Set Topology
 
 variable {ι E : Type*} {U : Set ℂ} {f : ℂ → E}
-
-/-- Every point of an open set admits a radius `r > 0` with `closedBall z (2 * r) ⊆ U`.
-
-The doubled radius is what lets the Cauchy estimate below be applied at every point of
-`ball z r`, not just at `z`. -/
-private theorem exists_pos_closedBall_two_mul_subset (hU : IsOpen U) {z : ℂ} (hz : z ∈ U) :
-    ∃ r > 0, closedBall z (2 * r) ⊆ U := by
-  obtain ⟨δ, hδ, hδU⟩ :=
-    isCompact_singleton.exists_cthickening_subset_open hU (singleton_subset_iff.2 hz)
-  refine ⟨δ / 2, by positivity, ?_⟩
-  have htwo : 2 * (δ / 2) = δ := by ring
-  rw [htwo]
-  exact (closedBall_subset_cthickening (mem_singleton z) δ).trans hδU
 
 section Estimates
 
@@ -124,7 +120,7 @@ on an open `U ⊇ closedBall c (2 * r)` and `‖f‖ ≤ M` there, then `f` move
 at most `M / r` times the distance between them.
 
 The constant `M / r` depends only on the sup bound and the radius, which is what makes this
-estimate usable uniformly across a family; see `IsLocallyBoundedOn.equicontinuousOn`. -/
+estimate usable uniformly across a family; see `norm_inv_smul_sub_inv_smul_le`. -/
 theorem dist_le_of_forall_mem_closedBall_two_mul_norm_le (hU : IsOpen U)
     (hf : DifferentiableOn ℂ f U) {c : ℂ} {r M : ℝ} (hr : 0 < r) (hsub : closedBall c (2 * r) ⊆ U)
     (hM : ∀ w ∈ closedBall c (2 * r), ‖f w‖ ≤ M) {z w : ℂ} (hz : z ∈ ball c r)
@@ -181,27 +177,6 @@ theorem norm_inv_smul_sub_inv_smul_le (hU : IsOpen U) (hf : DifferentiableOn ℂ
         gcongr
     _ = M * (r⁻¹ * d⁻¹ + (d ^ 2)⁻¹) * dist x y := by ring
 
-/-- **The equicontinuity half of Montel's theorem.** A locally bounded family of holomorphic
-functions on an open set `U ⊆ ℂ` is equicontinuous on `U`.
-
-Around a point `z₀ ∈ U` pick `r > 0` with `closedBall z₀ (2 * r) ⊆ U`; local boundedness supplies
-one constant `C` bounding the whole family on that compact ball, and
-`dist_le_of_forall_mem_closedBall_two_mul_norm_le` then makes every member of the family
-`C / r`-Lipschitz on `ball z₀ r`.  A single Lipschitz constant is a common continuity modulus. -/
-theorem IsLocallyBoundedOn.equicontinuousOn (hb : IsLocallyBoundedOn F U) (hU : IsOpen U)
-    (hF : ∀ i, DifferentiableOn ℂ (F i) U) : EquicontinuousOn F U := by
-  intro z₀ hz₀
-  refine EquicontinuousAt.equicontinuousWithinAt ?_ U
-  obtain ⟨r, hr, hsub⟩ := exists_pos_closedBall_two_mul_subset hU hz₀
-  obtain ⟨C, hC⟩ := isLocallyBoundedOn_def.mp hb _ hsub (isCompact_closedBall z₀ (2 * r))
-  refine Metric.equicontinuousAt_of_continuity_modulus (fun z => C / r * dist z₀ z) ?_ F ?_
-  · have hcont : Continuous fun z : ℂ => C / r * dist z₀ z :=
-      continuous_const.mul (continuous_const.dist continuous_id)
-    simpa using hcont.tendsto z₀
-  · filter_upwards [ball_mem_nhds z₀ hr] with z hz i
-    exact dist_le_of_forall_mem_closedBall_two_mul_norm_le hU (hF i) hr hsub (hC i)
-      (mem_ball_self hr) hz
-
 /-- **The derivatives of a locally bounded family of holomorphic functions are locally bounded.**
 
 On a compact `K ⊆ U` choose `δ > 0` with `cthickening δ K ⊆ U`; a bound `C` for the family on that
@@ -218,6 +193,48 @@ theorem IsLocallyBoundedOn.deriv (hb : IsLocallyBoundedOn F U) (hU : IsOpen U)
   exact norm_deriv_le_of_forall_mem_closedBall_norm_le (hF i) hδ (hsub.trans hδU)
     fun w hw => hC i w (hsub hw)
 
+end Estimates
+
+section Equicontinuity
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup E]
+  [NormedSpace ℂ E]
+
+/-- **The equicontinuity half of Montel's theorem.** A locally bounded family of holomorphic maps
+on an open subset `U` of a proper complex normed space `V`, such as `ℂ` or `ℂⁿ`, is equicontinuous
+on `U`.
+
+For a complex normed space, properness is equivalent to finite-dimensionality. Around a point
+`z₀ ∈ U`, local boundedness gives one constant `C` bounding the whole family on a closed ball
+`closedBall z₀ r ⊆ U`, and the Schwarz lemma then bounds `dist (F i z) (F i z₀)` by
+`2 * C / r * dist z z₀` on the open ball, uniformly in `i`. -/
+theorem IsLocallyBoundedOn.equicontinuousOn [ProperSpace V] {U : Set V} {F : ι → V → E}
+    (hb : IsLocallyBoundedOn F U) (hU : IsOpen U) (hF : ∀ i, DifferentiableOn ℂ (F i) U) :
+    EquicontinuousOn F U := by
+  intro z₀ hz₀
+  refine EquicontinuousAt.equicontinuousWithinAt ?_ U
+  obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp hU z₀ hz₀
+  have hr : 0 < R / 2 := half_pos hR
+  have hsub : closedBall z₀ (R / 2) ⊆ U := (closedBall_subset_ball (half_lt_self hR)).trans hRU
+  obtain ⟨C, hC⟩ := isLocallyBoundedOn_def.mp hb _ hsub (isCompact_closedBall z₀ (R / 2))
+  refine Metric.equicontinuousAt_of_continuity_modulus (fun z => 2 * C / (R / 2) * dist z z₀) ?_
+    F ?_
+  · have hcont : Continuous fun z : V => 2 * C / (R / 2) * dist z z₀ :=
+      continuous_const.mul (continuous_id.dist continuous_const)
+    simpa using hcont.tendsto z₀
+  · filter_upwards [ball_mem_nhds z₀ hr] with z hz i
+    rw [dist_comm]
+    exact Complex.dist_le_div_mul_dist_of_mapsTo_ball
+      ((hF i).mono (ball_subset_closedBall.trans hsub))
+      (mapsTo_closedBall_of_forall_norm_le (fun y hy => hC i y (ball_subset_closedBall hy))
+        (mem_ball_self hr)) hz
+
+end Equicontinuity
+
+section Derivatives
+
+variable [NormedAddCommGroup E] [NormedSpace ℂ E] {F : ι → ℂ → E}
+
 /-- The derivatives of a locally bounded family of holomorphic functions are equicontinuous.
 
 The result follows by applying the preceding equicontinuity theorem to the locally bounded
@@ -229,6 +246,6 @@ theorem IsLocallyBoundedOn.equicontinuousOn_deriv [CompleteSpace E]
     EquicontinuousOn (fun i => _root_.deriv (F i)) U :=
   (hb.deriv hU hF).equicontinuousOn hU fun i => (hF i).deriv hU
 
-end Estimates
+end Derivatives
 
 end TauCeti
