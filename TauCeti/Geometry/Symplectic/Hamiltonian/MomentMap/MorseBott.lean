@@ -24,9 +24,11 @@ the fixed-point set `M^{T_ξ}` (`TauCeti.SmoothTwoForm.IsMomentMap.criticalPoint
 and at a critical point `p` the null space of the Hessian of `μ^ξ` is the space of tangent vectors
 fixed by the differentials of all elements of `T_ξ`
 (`TauCeti.SmoothTwoForm.IsMomentMap.criticalHessian_apply_eq_zero_iff`), the fixed tangent subspace
-`TauCeti.fixedTangentSubspace`. This file proves that `μ^ξ` is a **Morse–Bott function**: its
-critical set is a disjoint union of embedded submanifolds, along each of which the null space of
-the Hessian is exactly the tangent space. Unqualified names below are in the namespace
+`TauCeti.fixedTangentSubspace`. This file proves that `μ^ξ` is a **Morse–Bott function** when
+`T_ξ` preserves a smooth Riemannian metric, for instance when `G` is compact and `M` is σ-compact:
+for manifolds modelled on a finite-dimensional real vector space (model `𝓘(ℝ, E')`), its critical
+set is a disjoint union of embedded submanifolds, along each of which the null space of the Hessian
+is exactly the tangent space. Unqualified names below are in the namespace
 `TauCeti.SmoothTwoForm.IsMomentMap`.
 
 The submanifolds come from the fixed locus of a group of isometries. When `T_ξ` preserves a smooth
@@ -43,9 +45,9 @@ For a compact group `G` acting on a σ-compact manifold, averaging a Riemannian 
 gives an invariant one (`TauCeti.exists_contMDiffRiemannianMetric_inner_mfderiv`), so no metric
 needs to be supplied: every component of the moment map of a compact symplectic action, in
 particular of a Hamiltonian torus action, is Morse–Bott
-(`exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace`). For an
-irrational direction `ξ` of a torus `T_ξ` is a subtorus of positive dimension, and when `T_ξ = G`
-the critical submanifolds are the components of the fixed-point set `M^G`.
+(`exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace`). For a torus
+`T` and a generic `ξ`, `T_ξ = T`; when `T_ξ = G`, the critical submanifolds are the sets `M^G_d`,
+the unions of the `d`-dimensional components of the fixed-point set `M^G`.
 
 For a compact group acting by symplectomorphisms, the Morse index and the coindex of `μ^ξ` at every
 critical point `p` are even (`even_manifoldMorseIndex`, `even_manifoldMorseIndex_neg`). The Hessian
@@ -68,7 +70,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 * `criticalPoints_eq_iUnion_fixedPointsOfFinrank`: the critical set of `μ^ξ` is the union of the
   sets `M^{T_ξ}_d`.
 * `exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank`: if `T_ξ` acts by isometries of
-  a smooth metric, each `M^{T_ξ}_d` is a Morse–Bott critical submanifold of `μ^ξ`.
+  a smooth metric, each `M^{T_ξ}_d` is a Morse–Bott critical submanifold of `μ^ξ`, with tangent
+  spaces the fixed tangent subspaces.
 * `exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace`: the same for
   a compact group, without a metric.
 * `even_manifoldMorseIndex`, `even_manifoldMorseIndex_neg`: for a compact group acting by
@@ -148,19 +151,6 @@ theorem criticalPoints_eq_iUnion_fixedPointsOfFinrank
 
 section Index
 
-omit [FiniteDimensional ℝ E'] [I'.Boundaryless] [IsManifold I' ∞ M] [T2Space M]
-  [ContMDiffSMul I I' ∞ G M] [IsTopologicalGroup G] in
-/-- The time-zero map `exp (0 • ξ) •` is the identity, so its differential fixes every tangent
-vector. -/
-private theorem mfderiv_mulInvariantExp_zero_smul_smul_apply (ξ : GroupLieAlgebra I G) (p : M)
-    (v : E') : mfderiv I' I' (fun y : M ↦ mulInvariantExp (I := I) ((0 : ℝ) • ξ) • y) p v = v := by
-  have hid : (fun y : M ↦ mulInvariantExp (I := I) ((0 : ℝ) • ξ) • y) = id := by
-    funext y
-    rw [zero_smul, mulInvariantExp_zero, one_smul, id]
-  -- Compare the two differentials as operators on the model space `E'`.
-  exact (congrArg (fun f : M → M ↦ (mfderiv I' I' f p : E' →L[ℝ] E') v) hid).trans
-    (by rw [mfderiv_id]; rfl)
-
 variable [CompactSpace G] [SigmaCompactSpace M]
 
 /-- At a critical point `p` of `μ^ξ`, for a compact group acting by symplectomorphisms, the Hessian
@@ -189,44 +179,42 @@ private theorem exists_toQuadraticMap_criticalHessian_eq
   set A : E' →L[ℝ] E' := deriv D 0
   have hD : HasDerivAt D A 0 :=
     (hasDerivAt_mfderiv_mulInvariantExp_smul_smul hp0).differentiableAt.hasDerivAt
-  have hD₀ : D 0 = 1 := ContinuousLinearMap.ext fun v ↦ by
-    rw [one_apply_eq_self]
-    exact mfderiv_mulInvariantExp_zero_smul_smul_apply ξ p v
+  have hD₀ : D 0 = 1 := mfderiv_mulInvariantExp_zero_smul_smul ξ p
   -- Each `D t` preserves `σ_p` and commutes with `J_p`, since `exp (t ξ)` fixes `p`; so `A` is
-  -- skew for `σ_p` and commutes with `J_p`.
+  -- skew for `σ_p` and commutes with `J_p`. Here `β` is `σ_p` read on the model space `E'`.
   let β : LinearMap.BilinForm ℝ E' := (hσ.symplecticFormAt p).toBilinForm
-  have hskew := hD.apply_left_eq_neg_of_forall_apply_apply_eq hD₀ β.toContinuousBilinearMap
-    fun t u v ↦ by
-      have := hσG (mulInvariantExp (I := I) (t • ξ)) p u v
-      rw [hfix t] at this
-      rw [LinearMap.toContinuousBilinearMap_apply, LinearMap.toContinuousBilinearMap_apply]
-      exact (hσ.symplecticFormAt_apply p _ _).trans
-        (this.trans (hσ.symplecticFormAt_apply p u v).symm)
+  have hβ (u v : E') : β u v = σ.eval₂ p u v := hσ.symplecticFormAt_apply p u v
+  have hskew (u v : E') : β (A u) v = -β u (A v) := by
+    simpa only [LinearMap.toContinuousBilinearMap_apply] using
+      hD.apply_left_eq_neg_of_eventually_apply_apply_eq hD₀ β.toContinuousBilinearMap
+        (Filter.Eventually.of_forall fun t u v ↦ by
+          have := hσG (mulInvariantExp (I := I) (t • ξ)) p u v
+          rw [hfix t] at this
+          rw [LinearMap.toContinuousBilinearMap_apply, LinearMap.toContinuousBilinearMap_apply,
+            hβ, hβ]
+          exact this) u v
   have hcomm := hD.apply_apply_eq_of_eventually_apply_apply_eq (J.toEndomorphism p)
     (Filter.Eventually.of_forall fun t v ↦ by
       have := hJG (mulInvariantExp (I := I) (t • ξ)) p v
       rwa [hfix t] at this)
-  -- The same operator `A` as an endomorphism of `T_p M`.
+  -- The same operator `A` as an endomorphism of `T_p M`: `A' v` is `A v` read in `T_p M`.
   let A' : Module.End ℝ (TangentSpace I' p) := (A : E' →ₗ[ℝ] E')
+  have hA'v (v : TangentSpace I' p) : A' v = A v := rfl
   have hA' : A' ∈ skewAdjointLieSubalgebra (hσ.symplecticFormAt p).toBilinForm := by
     refine (LinearMap.mem_skewAdjointSubmodule _).2 fun u v ↦ ?_
-    -- `A' u` is `A u` read in `T_p M`, and `β` is `σ_p` read on the model space.
-    exact (LinearMap.toContinuousBilinearMap_apply β (A u) v).symm.trans ((hskew u v).trans
-      ((congrArg Neg.neg (LinearMap.toContinuousBilinearMap_apply β u (A v))).trans
-        (map_neg _ _).symm))
+    rw [Pi.neg_apply, map_neg, hA'v, hA'v]
+    exact hskew u v
   have hAJ : IsComplexLinearMap (J.almostComplexStructureAt p) (J.almostComplexStructureAt p) A' :=
-    (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦
-      (congrArg A' (J.almostComplexStructureAt_apply p v)).trans
-        ((hcomm v).trans (J.almostComplexStructureAt_apply p (A' v)).symm)
+    (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ by
+      rw [J.almostComplexStructureAt_apply, J.almostComplexStructureAt_apply, hA'v, hA'v]
+      exact hcomm v
   refine ⟨J.almostComplexStructureAt p, ⟨A', hA'⟩, hJ.compatibleAt p, hAJ, ?_⟩
   -- The Hessian is `σ_p(A v, v)`, twice the quadratic Hamiltonian `½ σ_p(A v, v)` of `A`.
   ext v
   rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply,
     h.criticalHessian_apply_eq_eval₂_deriv hσ hp0, smul_apply,
     SymplecticForm.hamiltonianEndEquiv_symm_apply_apply, SymplecticForm.linearMomentMap_apply,
-    hσ.symplecticFormAt_apply, smul_eq_mul, mul_div_cancel₀ _ two_ne_zero]
-  -- `A' v` is `A v` read in `T_p M`.
-  rfl
+    hσ.symplecticFormAt_apply, smul_eq_mul, mul_div_cancel₀ _ two_ne_zero, hA'v]
 
 /-- **Moment map components have even Morse index.** For a compact Lie group acting smoothly by
 symplectomorphisms of a σ-compact manifold, with moment map `μ`, the Morse index of the component
@@ -276,8 +264,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 `{exp (t ξ) | t ∈ ℝ}` acts by isometries of a smooth Riemannian metric. For every subspace `L` of
 the model of dimension `d`, the set `M^{T_ξ}_d` of points fixed by `T_ξ` whose fixed tangent
 subspace has dimension `d` is a smooth manifold modelled on `L` whose inclusion into `M` is a
-smooth embedding and a nondegenerate critical submanifold of the component `μ^ξ`. These sets
-cover the critical set of `μ^ξ` (`criticalPoints_eq_iUnion_fixedPointsOfFinrank`). -/
+smooth embedding and a nondegenerate critical submanifold of the component `μ^ξ`, with tangent
+image at each point the fixed tangent subspace of `T_ξ`. These sets cover the critical set of `μ^ξ`
+(`criticalPoints_eq_iUnion_fixedPointsOfFinrank`). -/
 theorem exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank
     [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E') x)]
     [IsContMDiffRiemannianBundle 𝓘(ℝ, E') ∞ E' (fun x : M ↦ TangentSpace 𝓘(ℝ, E') x)]
@@ -295,14 +284,17 @@ theorem exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank
           (Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d →
             M),
           (SmoothEmbedding.ofIsSmoothEmbedding _ hi).IsNondegenerateCriticalSubmanifold
-            fun y ↦ μ y ξ := by
+              (fun y ↦ μ y ξ) ∧
+            ∀ y : fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d,
+              LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E') Subtype.val y).toLinearMap =
+                fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) (y : M) := by
   have : ContMDiffConstSMul 𝓘(ℝ, E') ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
   obtain ⟨C, hman, hemb, hrange⟩ :=
     exists_isSmoothEmbedding_fixedPointsOfFinrank (K := Lie.closedOneParameterSubgroup ξ)
       (fun g ↦ hK g g.2) hL
   let := C
   refine ⟨C, hman, hemb, h.isNondegenerateCriticalSubmanifold_of_fixedTangentSubspace_le hσ
-    (fun y ↦ ?_) fun y ↦ ?_⟩ <;> rw [SmoothEmbedding.coe_ofIsSmoothEmbedding]
+    (fun y ↦ ?_) (fun y ↦ ?_), hrange⟩ <;> rw [SmoothEmbedding.coe_ofIsSmoothEmbedding]
   · exact (mem_fixedPointsOfFinrank.1 y.2).1
   · exact (hrange y).ge
 
@@ -311,7 +303,8 @@ Lie group `G` acting smoothly on a σ-compact manifold with a nondegenerate two-
 map `μ`, and for every `ξ` in the Lie algebra and every subspace `L` of the model of dimension
 `d`, the set `M^{T_ξ}_d` of points fixed by the closure `T_ξ` of `{exp (t ξ) | t ∈ ℝ}` whose
 fixed tangent subspace has dimension `d` is a smooth manifold modelled on `L` whose inclusion into
-`M` is a smooth embedding and a nondegenerate critical submanifold of the component `μ^ξ`. -/
+`M` is a smooth embedding and a nondegenerate critical submanifold of the component `μ^ξ`, with
+tangent image at each point the fixed tangent subspace of `T_ξ`. -/
 theorem exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace
     [CompactSpace G] [SigmaCompactSpace M]
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M) μ)
@@ -324,7 +317,10 @@ theorem exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compac
           (Subtype.val : fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d →
             M),
           (SmoothEmbedding.ofIsSmoothEmbedding _ hi).IsNondegenerateCriticalSubmanifold
-            fun y ↦ μ y ξ := by
+              (fun y ↦ μ y ξ) ∧
+            ∀ y : fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d,
+              LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E') Subtype.val y).toLinearMap =
+                fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) (y : M) := by
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := 𝓘(ℝ, E')) (n := ⊤) (F := E')
     (E := fun x : M ↦ TangentSpace 𝓘(ℝ, E') x)
   -- Haar averaging needs the action to be `C^(n + 1)` for a `C^n` metric; for `n = ∞` this is

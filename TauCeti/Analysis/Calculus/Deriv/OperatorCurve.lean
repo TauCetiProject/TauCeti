@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
 # Infinitesimal symmetries of a curve of operators through the identity
@@ -16,11 +15,10 @@ import TauCeti.Analysis.Calculus.Bilinear
 Let `D : 𝕜 → E →L[𝕜] E` be a curve of operators with `D t₀ = 1` and derivative `L` at `t₀`. Every
 symmetry shared by the operators `D t` near `t₀` passes to an infinitesimal symmetry of `L`:
 
-* if every `D t` preserves a continuous bilinear map `B`, then `L` is skew for `B`,
-  `B (L u) w = -B u (L w)` (`HasDerivAt.apply_left_eq_neg_of_forall_apply_apply_eq`), the
-  derivative of the constant pairings `t ↦ B (D t u) (D t w)`
-  (`ContinuousLinearMap.apply_add_apply_eq_zero_of_const`);
-* if every `D t` commutes with an operator `J`, then so does `L`
+* if every `D t` with `t` near `t₀` preserves a continuous bilinear map `B`, then `L` is skew for
+  `B`, `B (L u) w = -B u (L w)` (`HasDerivAt.apply_left_eq_neg_of_eventually_apply_apply_eq`): this
+  is the derivative of the pairings `t ↦ B (D t u) (D t w)`, which are constant near `t₀`;
+* if every `D t` with `t` near `t₀` commutes with an operator `J`, then so does `L`
   (`HasDerivAt.apply_apply_eq_of_eventually_apply_apply_eq`).
 
 For instance, the differentials at a fixed point of a one-parameter group of symplectomorphisms
@@ -36,17 +34,19 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
   {D : 𝕜 → E →L[𝕜] E} {L : E →L[𝕜] E} {t₀ : 𝕜}
 
 /-- **Generators of curves preserving a bilinear map are skew.** Let `D` be a curve of operators
-with `D t₀ = 1` and derivative `L` at `t₀`. If every `D t` preserves a continuous bilinear map `B`,
-then `B (L u) w = -B u (L w)`. -/
-theorem HasDerivAt.apply_left_eq_neg_of_forall_apply_apply_eq {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace 𝕜 G] (hD : HasDerivAt D L t₀) (hD₀ : D t₀ = 1) (B : E →L[𝕜] E →L[𝕜] G)
-    (hB : ∀ t u w, B (D t u) (D t w) = B u w) (u w : E) :
+with `D t₀ = 1` and derivative `L` at `t₀`. If every `D t` with `t` near `t₀` preserves a continuous
+bilinear map `B`, then `B (L u) w = -B u (L w)`. -/
+theorem HasDerivAt.apply_left_eq_neg_of_eventually_apply_apply_eq {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] (hD : HasDerivAt D L t₀) (hD₀ : D t₀ = 1)
+    (B : E →L[𝕜] E →L[𝕜] G) (hB : ∀ᶠ t in 𝓝 t₀, ∀ u w, B (D t u) (D t w) = B u w) (u w : E) :
     B (L u) w = -B u (L w) := by
   have hDv (v : E) : HasDerivAt (fun t ↦ D t v) (L v) t₀ := by
     simpa using hD.clm_apply (hasDerivAt_const t₀ v)
-  have hzero := B.apply_add_apply_eq_zero_of_const (hDv u) (hDv w) fun t ↦ hB t u w
+  -- The pairing `t ↦ B (D t u) (D t w)` is constant near `t₀`, so its derivative vanishes.
+  have hzero := (B.hasDerivAt_of_bilinear (fun _ ↦ hDv u) (fun _ ↦ hDv w)).unique
+    ((hasDerivAt_const t₀ (B u w)).congr_of_eventuallyEq (hB.mono fun t ht ↦ ht u w))
   rw [hD₀, one_apply_eq_self, one_apply_eq_self] at hzero
-  exact eq_neg_of_add_eq_zero_left hzero
+  exact eq_neg_of_add_eq_zero_left ((add_comm _ _).trans hzero)
 
 /-- **Generators of curves commuting with an operator commute with it.** Let `D` be a curve of
 operators with derivative `L` at `t₀`. If every `D t` with `t` near `t₀` commutes with an operator
