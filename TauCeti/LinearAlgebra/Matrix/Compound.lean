@@ -155,7 +155,9 @@ theorem compound_mul [Fintype κ] (r : ℕ) (A : Matrix ι κ R) (B : Matrix κ 
     simp [Matrix.mul_apply]
   · rw [TauCeti.plucker_apply, TauCeti.plucker_apply, compound_apply, compound_apply,
       ← det_transpose (B.submatrix _ _)]
-    congr 2
+    refine congrArg₂ (· * ·) (congrArg det (Matrix.ext fun i j ↦ ?_))
+      (congrArg det (Matrix.ext fun i j ↦ ?_)) <;>
+    simp only [transpose_apply, submatrix_apply, of_apply]
 
 /-- The compound matrix `C_r(A)` is the matrix of the `r`-th exterior power of the linear map
 `Matrix.toLin' A : (κ → R) → (ι → R)`, in the bases of `⋀[R]^r (κ → R)` and `⋀[R]^r (ι → R)`
@@ -167,7 +169,8 @@ theorem compound_eq_toMatrix_exteriorPower_map [Finite ι] [Fintype κ] (r : ℕ
   ext S T
   rw [Module.Basis.toMatrix_exteriorPower_map, ← toLin_eq_toLin', LinearMap.toMatrix_toLin,
     compound_apply, ← det_transpose]
-  rfl
+  refine congrArg det (Matrix.ext fun i j ↦ ?_)
+  simp only [transpose_apply, submatrix_apply, of_apply]
 
 /-- The second compound of a `2 × 2` matrix is its determinant `a d - b c`, its only entry. -/
 example (a b c d : R) (S T : powersetCard (Fin 2) 2) :
