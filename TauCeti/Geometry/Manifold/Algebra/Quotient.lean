@@ -116,6 +116,10 @@ The following results also have additive counterparts in the `AddSubgroup` names
 * `Submodule.instLieAddGroupOrbitRelQuotient`: the quotient of a locally compact normed space by a
   discrete submodule is a `C^n` additive Lie group; for `𝕜 = ℂ` and `n = ω` it is a complex Lie
   group.
+* `Submodule.exists_eventuallyEq_sub_of_mem_atlas_orbitRelQuotient`: the orbit projection
+  read in a quotient chart is locally a translation by a submodule element.
+* `Submodule.hasMFDerivAt_orbitRelQuotient_mk`, `Submodule.mfderiv_orbitRelQuotient_mk`: the
+  differential of the orbit projection is the identity in quotient coordinates.
 * `Submodule.mfderiv_orbitRelQuotient_mk_eq`: the derivative of the orbit projection is the same
   at every representative of a class.
 * `Submodule.contMDiff_orbitRelQuotient_of_comp_mk`: a map of quotients by discrete submodules
@@ -256,6 +260,61 @@ instance Submodule.instLieAddGroupOrbitRelQuotient :
   IsLocalDiffeomorph.lieAddGroup
     (AddMonoidHom.mk' (_root_.Quotient.mk (AddAction.orbitRel L E)) L.orbitRelQuotient_mk_add)
     TauCeti.isLocalDiffeomorph_addQuotientMk _root_.Quotient.mk_surjective
+
+section Differential
+
+open Filter Function Set Topology
+
+/-- In a chart of a quotient by a discrete submodule, the orbit projection is locally a
+translation by a submodule element. -/
+theorem Submodule.exists_eventuallyEq_sub_of_mem_atlas_orbitRelQuotient
+    {c : OpenPartialHomeomorph (AddAction.orbitRel.Quotient L E) E}
+    (hc : c ∈ atlas E (AddAction.orbitRel.Quotient L E)) {x : E}
+    (hx : _root_.Quotient.mk (AddAction.orbitRel L E) x ∈ c.source) :
+    ∃ l ∈ L, (c ∘ _root_.Quotient.mk (AddAction.orbitRel L E)) =ᶠ[𝓝 x] fun y ↦ y - l := by
+  let q := _root_.Quotient.mk (AddAction.orbitRel L E)
+  have hmem : c (q x) ∈ c.target := c.map_source hx
+  have hrep : q (c (q x)) = q x :=
+    TauCeti.addQuotientMk_apply_of_mem_atlas_addQuotient hc hx
+  set l := x - c (q x)
+  have hl : l ∈ L := (L.orbitRelQuotient_mk_eq_mk_iff).mp hrep.symm
+  have htend : Tendsto (fun y : E ↦ y - l) (𝓝 x) (𝓝 (c (q x))) := by
+    have h : Tendsto (fun y : E ↦ y - l) (𝓝 x) (𝓝 (x - l)) :=
+      (continuous_id.sub continuous_const).tendsto x
+    simpa only [l, sub_sub_cancel] using h
+  refine ⟨l, hl, ?_⟩
+  filter_upwards [htend (c.open_target.mem_nhds hmem)] with y hy
+  have hy' : q (y - l) = q y := by
+    apply (L.orbitRelQuotient_mk_eq_mk_iff).mpr
+    rw [sub_sub_cancel_left]
+    exact neg_mem hl
+  have hs : c.symm (y - l) = q (y - l) :=
+    TauCeti.symm_eq_addQuotientMk_of_mem_atlas_addQuotient hc hy
+  exact (congrArg c hy'.symm).trans ((congrArg c hs.symm).trans (c.right_inv hy))
+
+/-- The differential of the orbit projection by a discrete submodule is the identity,
+with tangent spaces read in the quotient charts. -/
+theorem Submodule.hasMFDerivAt_orbitRelQuotient_mk (x : E) :
+    HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E) (_root_.Quotient.mk (AddAction.orbitRel L E)) x
+      (ContinuousLinearMap.id 𝕜 E) := by
+  obtain ⟨l, -, hc⟩ := L.exists_eventuallyEq_sub_of_mem_atlas_orbitRelQuotient
+    (chart_mem_atlas E (_root_.Quotient.mk (AddAction.orbitRel L E) x)) (mem_chart_source _ _)
+  refine ⟨continuous_quotient_mk'.continuousAt, ?_⟩
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe,
+    range_id, hasFDerivWithinAt_univ, extChartAt_coe, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Function.id_comp, Function.comp_id, id_eq]
+  convert ((hasFDerivAt_id x).sub_const l).congr_of_eventuallyEq hc using 1
+  ext
+  rfl
+
+/-- The manifold derivative of the orbit projection by a discrete submodule is the identity. -/
+@[simp]
+theorem Submodule.mfderiv_orbitRelQuotient_mk (x : E) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (_root_.Quotient.mk (AddAction.orbitRel L E)) x =
+      ContinuousLinearMap.id 𝕜 E :=
+  (L.hasMFDerivAt_orbitRelQuotient_mk x).mfderiv
+
+end Differential
 
 variable {L} in
 /-- The derivative of the orbit projection `E → E ⧸ L` is the same at every representative of a

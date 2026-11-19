@@ -131,52 +131,6 @@ local notation "𝕋" n => AddAction.orbitRel.Quotient (FlatTorus.lattice n) (�
 private abbrev proj (n : ℕ) : (ℝ^n) → 𝕋 n :=
   Quotient.mk (AddAction.orbitRel (lattice n) (ℝ^n))
 
-private theorem proj_eq_proj_iff {x y : ℝ^n} : proj n x = proj n y ↔ x - y ∈ lattice n :=
-  Submodule.orbitRelQuotient_mk_eq_mk_iff _
-
-/-- Read in a chart of the orbit space, the orbit projection is locally a translation by a
-lattice vector. -/
-private theorem proj_eventuallyEq_of_mem_atlas {c : OpenPartialHomeomorph (𝕋 n) (ℝ^n)}
-    (hc : c ∈ atlas (ℝ^n) (𝕋 n)) {x : ℝ^n} (hx : proj n x ∈ c.source) :
-    ∃ l ∈ lattice n, (c ∘ proj n) =ᶠ[𝓝 x] fun y ↦ y - l := by
-  have hmem : c (proj n x) ∈ c.target := c.map_source hx
-  have hrep : proj n (c (proj n x)) = proj n x :=
-    TauCeti.addQuotientMk_apply_of_mem_atlas_addQuotient hc hx
-  set l := x - c (proj n x)
-  have hl : l ∈ lattice n := by
-    rw [← proj_eq_proj_iff]
-    exact hrep.symm
-  have htend : Tendsto (fun y : ℝ^n ↦ y - l) (𝓝 x) (𝓝 (c (proj n x))) := by
-    have h : Tendsto (fun y : ℝ^n ↦ y - l) (𝓝 x) (𝓝 (x - l)) :=
-      (continuous_id.sub continuous_const).tendsto x
-    rwa [show x - l = c (proj n x) from sub_sub_cancel _ _] at h
-  refine ⟨l, hl, ?_⟩
-  filter_upwards [htend (c.open_target.mem_nhds hmem)] with y hy
-  have hy' : proj n (y - l) = proj n y := by
-    rw [proj_eq_proj_iff, sub_sub_cancel_left]
-    exact neg_mem hl
-  have hs : c.symm (y - l) = proj n (y - l) :=
-    TauCeti.symm_eq_addQuotientMk_of_mem_atlas_addQuotient hc hy
-  rw [comp_apply, ← hy', ← hs, c.right_inv hy]
-
-/-- The orbit projection, read in a chart of the orbit space at its value, is locally a
-translation, so its differential is the identity of `ℝⁿ`. -/
-private theorem hasMFDerivAt_proj (x : ℝ^n) :
-    HasMFDerivAt 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x (ContinuousLinearMap.id ℝ (ℝ^n)) := by
-  obtain ⟨l, -, hc⟩ :=
-    proj_eventuallyEq_of_mem_atlas (chart_mem_atlas (ℝ^n) (proj n x)) (mem_chart_source _ _)
-  refine ⟨continuous_quotient_mk'.continuousAt, ?_⟩
-  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe,
-    range_id, hasFDerivWithinAt_univ, extChartAt_coe, PartialEquiv.refl_symm,
-    PartialEquiv.refl_coe, Function.id_comp, Function.comp_id, id_eq]
-  convert ((hasFDerivAt_id x).sub_const l).congr_of_eventuallyEq hc using 1
-  ext
-  rfl
-
-private theorem mfderiv_proj (x : ℝ^n) :
-    mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x = ContinuousLinearMap.id ℝ (ℝ^n) :=
-  (hasMFDerivAt_proj x).mfderiv
-
 /-! ### The flat metric -/
 
 /-- The Euclidean metric of `ℝⁿ`, as a smooth Riemannian metric. -/
@@ -196,7 +150,8 @@ private theorem euclideanMetric_compat (x x' : ℝ^n) (v w : TangentSpace 𝓘(�
     (hv : mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x v = mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x' v')
     (hw : mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x w = mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (proj n) x' w') :
     (euclideanMetric n).inner x v w = (euclideanMetric n).inner x' v' w' := by
-  rw [mfderiv_proj, mfderiv_proj] at hv hw
+  rw [(lattice n).mfderiv_orbitRelQuotient_mk, (lattice n).mfderiv_orbitRelQuotient_mk]
+    at hv hw
   rw [euclideanMetric_inner, euclideanMetric_inner]
   exact congrArg₂ (fun a b : ℝ^n ↦ ⟪a, b⟫_ℝ) hv hw
 
@@ -206,13 +161,6 @@ def flatMetric (n : ℕ) :
     ContMDiffRiemannianMetric 𝓘(ℝ, ℝ^n) ∞ (ℝ^n) (fun x : 𝕋 n ↦ TangentSpace 𝓘(ℝ, ℝ^n) x) :=
   (euclideanMetric n).descend (f := proj n) TauCeti.isLocalDiffeomorph_addQuotientMk
     Quotient.mk_surjective euclideanMetric_compat
-
-private theorem flatMetric_inner_proj (x : ℝ^n) (v w : ℝ^n) :
-    (flatMetric n).inner (proj n x) v w = ⟪v, w⟫_ℝ := by
-  have h := (euclideanMetric n).descend_inner_mfderiv (f := proj n)
-    TauCeti.isLocalDiffeomorph_addQuotientMk Quotient.mk_surjective euclideanMetric_compat x v w
-  rw [mfderiv_proj] at h
-  exact h.trans (euclideanMetric_inner x v w)
 
 /-! ### The flat torus as a Riemannian manifold -/
 
@@ -270,15 +218,26 @@ instance instBorelSpace : BorelSpace (FlatTorus n) :=
 def mk : (ℝ^n) → FlatTorus n :=
   proj n
 
+/-- The flat metric at the image of a vector is the Euclidean inner product in quotient
+coordinates. -/
+@[simp]
+theorem flatMetric_inner_mk (x v w : ℝ^n) :
+    (flatMetric n).inner (mk x) v w = ⟪v, w⟫_ℝ := by
+  have h := (euclideanMetric n).descend_inner_mfderiv (f := proj n)
+    TauCeti.isLocalDiffeomorph_addQuotientMk Quotient.mk_surjective euclideanMetric_compat x v w
+  rw [(lattice n).mfderiv_orbitRelQuotient_mk] at h
+  exact h.trans (euclideanMetric_inner x v w)
+
 theorem mk_surjective : Surjective (mk : (ℝ^n) → FlatTorus n) :=
   Quotient.mk_surjective
 
 /-- Two vectors have the same image in the flat torus exactly when they differ by a vector of the
 integer lattice. -/
 theorem mk_eq_mk_iff {x y : ℝ^n} : mk x = mk y ↔ x - y ∈ lattice n :=
-  proj_eq_proj_iff
+  Submodule.orbitRelQuotient_mk_eq_mk_iff _
 
 /-- The projection is invariant under translations by the integer lattice. -/
+@[simp]
 theorem mk_add_of_mem (x : ℝ^n) {l : ℝ^n} (hl : l ∈ lattice n) : mk (x + l) = mk x := by
   rw [mk_eq_mk_iff, add_sub_cancel_left]
   exact hl
@@ -293,7 +252,7 @@ vector. -/
 theorem exists_eventuallyEq_sub_of_mem_atlas {c : OpenPartialHomeomorph (FlatTorus n) (ℝ^n)}
     (hc : c ∈ atlas (ℝ^n) (FlatTorus n)) {x : ℝ^n} (hx : mk x ∈ c.source) :
     ∃ l ∈ lattice n, (c ∘ mk) =ᶠ[𝓝 x] fun y ↦ y - l :=
-  proj_eventuallyEq_of_mem_atlas hc hx
+  (lattice n).exists_eventuallyEq_sub_of_mem_atlas_orbitRelQuotient hc hx
 
 /-- The projection is a covering map, the quotient map of the translation action of `ℤⁿ`. -/
 theorem isAddQuotientCoveringMap_mk :
@@ -320,8 +279,9 @@ flat torus being read in its charts. -/
 theorem hasMFDerivAt_mk (x : ℝ^n) :
     HasMFDerivAt 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) x
       (ContinuousLinearMap.id ℝ (ℝ^n)) :=
-  hasMFDerivAt_proj x
+  (lattice n).hasMFDerivAt_orbitRelQuotient_mk x
 
+@[simp]
 theorem mfderiv_mk (x : ℝ^n) :
     mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) x = ContinuousLinearMap.id ℝ (ℝ^n) :=
   (hasMFDerivAt_mk x).mfderiv
@@ -332,7 +292,7 @@ theorem inner_mfderiv_mk (x v w : ℝ^n) :
     ⟪mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) x v,
       mfderiv 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) x w⟫_ℝ = ⟪v, w⟫_ℝ := by
   rw [mfderiv_mk]
-  exact flatMetric_inner_proj x v w
+  exact flatMetric_inner_mk x v w
 
 /-- The flat norm of the image of a vector under the differential of the projection is its
 Euclidean norm. -/
@@ -342,6 +302,7 @@ theorem norm_mfderiv_mk (x v : ℝ^n) :
 
 /-- The flat norm of a tangent vector at a point of the torus is its Euclidean norm, the tangent
 space being read in the charts of the torus. -/
+@[simp]
 theorem norm_tangentSpace_mk (x v : ℝ^n) :
     @norm (TangentSpace 𝓘(ℝ, ℝ^n) (mk x)) _ v = ‖v‖ := by
   have h := norm_mfderiv_mk x v
@@ -350,12 +311,12 @@ theorem norm_tangentSpace_mk (x v : ℝ^n) :
 
 /-- **The projection is a local Riemannian isometry.** -/
 theorem isLocalRiemannianIsometry_mk :
-    IsLocalRiemannianIsometry 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) where
-  contMDiff := contMDiff_mk
-  isInvertible_mfderiv x := by
-    rw [mfderiv_mk]
-    exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
-  inner_mfderiv x v w := inner_mfderiv_mk x v w
+    IsLocalRiemannianIsometry 𝓘(ℝ, ℝ^n) 𝓘(ℝ, ℝ^n) (mk : (ℝ^n) → FlatTorus n) := by
+  obtain ⟨hc, hi, hinner⟩ := (euclideanMetric n).isLocalRiemannianIsometry_descend
+    TauCeti.isLocalDiffeomorph_addQuotientMk Quotient.mk_surjective euclideanMetric_compat
+  refine ⟨hc, hi, fun x v w ↦ ?_⟩
+  -- The descent theorem installs the packaged metric on the source; identify its inner product.
+  exact (hinner x v w).trans (euclideanMetric_inner x v w)
 
 end FlatTorus
 
