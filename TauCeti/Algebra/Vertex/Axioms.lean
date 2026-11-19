@@ -47,8 +47,7 @@ uses divided powers of `T` instead, so the definition is meant for `ℚ`-algebra
 * `TauCeti.FormalVertexAxioms.eq_field_of_ncoeff_apply_vacuum_eq`: such a field `B` with
   `B(z)|0⟩ = Y(b,z)|0⟩` is `Y(b,z)`.
 * `TauCeti.FormalVertexAxioms.eq_field_of_lie_translation`: if `V` has unique divisibility, a
-  translation covariant field `B` local with every `Y(a,z)` is `Y(B₍₋₁₎|0⟩, z)`; cancelling `k!`
-  recovers its creation series from `k! • B₍₋ₖ₋₁₎|0⟩ = Tᵏ B₍₋₁₎|0⟩`.
+  translation covariant field `B` local with every `Y(a,z)` is `Y(B₍₋₁₎|0⟩, z)`.
 
 ## References
 
@@ -215,8 +214,8 @@ theorem eq_field_of_ncoeff_apply_vacuum_eq {B : VertexOperator R V} {b : V}
     (h : ∀ n, (B[[n]]) A.vacuum = ((A.field b)[[n]]) A.vacuum) : B = A.field b :=
   A.eq_of_ncoeff_apply_vacuum_eq hB (A.exists_isLocalOfOrder b) h
 
-/-- A translation covariant field `B` that is local with every field `Y(a,z)` is the field of the
-state `B₍₋₁₎|0⟩`. -/
+/-- When `V` has unique divisibility (in particular over any `ℚ`-module), a translation covariant
+field `B` that is local with every field `Y(a,z)` is the field of the state `B₍₋₁₎|0⟩`. -/
 theorem eq_field_of_lie_translation [HasUniqueDiv V] {B : VertexOperator R V}
     (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
     (hT : ∀ n : ℤ, ⁅A.translation, B[[n]]⁆ = (derivative B)[[n]]) :
@@ -229,10 +228,10 @@ theorem eq_field_of_lie_translation [HasUniqueDiv V] {B : VertexOperator R V}
     induction d generalizing k with
     | zero => exact hN k (by omega)
     | succ d ih =>
-      have h := hrec ((k + 1 : ℕ) : ℤ)
-      rw [ih (k + 1) (by omega), map_zero, neg_smul, eq_comm, neg_eq_zero, natCast_zsmul,
-        show ((k + 1 : ℕ) : ℤ) - 1 = k by push_cast; ring] at h
-      exact nsmul_right_injective k.succ_ne_zero (h.trans (smul_zero _).symm)
+      have h0 : (B[[k + 1]]) A.vacuum = 0 := mod_cast ih (k + 1) (by omega)
+      have h := hrec (k + 1)
+      simp only [h0, map_zero, add_sub_cancel_right, neg_smul, zero_eq_neg, smul_eq_zero] at h
+      exact h.resolve_left (by omega)
   refine A.eq_field_of_ncoeff_apply_vacuum_eq hB fun n ↦ ?_
   by_cases hn : 0 ≤ n
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = k := ⟨n.toNat, by omega⟩
