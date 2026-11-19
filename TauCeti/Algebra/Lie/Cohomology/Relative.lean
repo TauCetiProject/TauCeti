@@ -48,7 +48,7 @@ separate datum and the `𝔨`-invariance is imposed. For `K` disconnected, as fo
   `TauCeti.LieModule.Cohomology.equivariantRelativeCochainComplex`,
   `TauCeti.LieModule.Cohomology.equivariantRelativeCohomology`: the complex of `K`-equivariant
   relative cochains and its cohomology, the relative complex of a pair `(𝔤, K)` when `𝔨` is the
-  `Ad(K)`-stable Lie algebra of `K`.
+  `Ad(K)`-stable Lie algebra of a Lie group `K` and `M` is a `(𝔤, K)`-module.
 
 ## Main results
 
@@ -243,8 +243,7 @@ theorem lie_compLinearMap_mk' {n : ℕ} (y : H)
   congr 2
   refine funext fun i ↦ congrArg η (funext fun j ↦ ?_)
   rcases eq_or_ne j i with rfl | hj
-  · rw [Function.update_self, Function.update_self, LieModuleHom.coe_toLinearMap,
-      ← LieModuleHom.map_lie, LieSubalgebra.coe_bracket_of_module]
+  · simpa using (LieSubmodule.Quotient.mk' H.toLieSubmodule).map_lie y (v j)
   · simp [Function.update_of_ne hj]
 
 variable {R M H} in
@@ -381,8 +380,8 @@ theorem d_mem_equivariantRelativeCochains (hAd : ∀ k x y, Ad k ⁅x, y⁆ = �
 variable (R M Ad ρ H)
 
 /-- The complex of `K`-equivariant `(L, H)`-relative cochains. When `H` is `Ad(K)`-stable and is
-the Lie algebra of `K`, this is the relative Chevalley–Eilenberg complex `C^•(L, K; M)` of the
-pair `(L, K)`. -/
+the Lie algebra of a Lie group `K`, and `M` is an `(L, K)`-module, this is the relative
+Chevalley–Eilenberg complex `C^•(L, K; M)` of the pair `(L, K)`. -/
 noncomputable abbrev equivariantRelativeCochainComplex
     (hAd : ∀ k x y, Ad k ⁅x, y⁆ = ⁅Ad k x, Ad k y⁆)
     (hρ : ∀ k x m, ρ k ⁅x, m⁆ = ⁅Ad k x, ρ k m⁆) : CochainComplex (ModuleCat R) ℕ :=
@@ -390,8 +389,8 @@ noncomputable abbrev equivariantRelativeCochainComplex
     d_mem_equivariantRelativeCochains hAd hρ
 
 /-- The `n`-th cohomology of the complex of `K`-equivariant `(L, H)`-relative cochains. When `H`
-is `Ad(K)`-stable and is the Lie algebra of `K`, this is the relative Lie algebra cohomology
-`H^n(L, K; M)` of the pair `(L, K)`. -/
+is `Ad(K)`-stable and is the Lie algebra of a Lie group `K`, and `M` is an `(L, K)`-module, this
+is the relative Lie algebra cohomology `H^n(L, K; M)` of the pair `(L, K)`. -/
 noncomputable abbrev equivariantRelativeCohomology
     (hAd : ∀ k x y, Ad k ⁅x, y⁆ = ⁅Ad k x, Ad k y⁆)
     (hρ : ∀ k x m, ρ k ⁅x, m⁆ = ⁅Ad k x, ρ k m⁆) (n : ℕ) : ModuleCat R :=

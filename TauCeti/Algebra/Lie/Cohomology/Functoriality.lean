@@ -90,8 +90,8 @@ theorem twoCochainEquiv_cochainMap (g : M →ₗ[R] M') (f : L' →ₗ⁅R⁆ L)
     (ω : L [⋀^Fin 2]→ₗ[R] M) :
     twoCochainEquiv R L' M' (cochainMap g f 2 ω) = twoCochainMap g f (twoCochainEquiv R L M ω) := by
   ext x y
-  change twoCochainEquiv R L' M' _ x y = twoCochainMap g f (twoCochainEquiv R L M ω) x y
-  rw [twoCochainEquiv_apply, twoCochainMap_apply_apply, twoCochainEquiv_apply, cochainMap_apply]
+  simp only [twoCochain_val_apply, twoCochainEquiv_apply, twoCochainMap_apply_apply,
+    cochainMap_apply]
   congr 2
   ext i
   fin_cases i <;> rfl
