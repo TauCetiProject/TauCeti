@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Smooth algebraic structures on additive and multiplicative type tags
 
 The type tags retain the topology, atlas and smooth structure of their original carrier.
 Smooth addition and negation become smooth multiplication and inversion on `Multiplicative`,
-and the reverse transfer equips `Additive` with its additive Lie-group structure.
+and the reverse transfer equips `Additive` with its additive Lie-group structure. Smooth addition
+also makes the translation action `g • x = toAdd g + x` of `Multiplicative M` on `M` smooth.
 The transfers preserve the field, model with corners, universes and regularity.
 
 ## References
@@ -55,6 +57,11 @@ instance lieGroup [AddGroup M] [LieAddGroup I n M] : LieGroup I n (Multiplicativ
 /-- Forgetting the type tag is smooth, since the type tag retains the original charts. -/
 theorem contMDiff_toAdd : ContMDiff I I n (toAdd : Multiplicative M → M) :=
   contMDiff_id
+
+/-- Smooth addition makes the action of `Multiplicative M` on `M` by translations,
+`g • x = toAdd g + x`, smooth. -/
+instance contMDiffSMul [Add M] [ContMDiffAdd I n M] : ContMDiffSMul I I n (Multiplicative M) M where
+  contMDiff_smul := contMDiff_add (I := I) (n := n) (G := M)
 
 end Multiplicative
 
