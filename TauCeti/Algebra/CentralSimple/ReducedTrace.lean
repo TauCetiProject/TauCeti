@@ -260,9 +260,8 @@ theorem eq_zero_of_forall_reducedTrace_mul_eq_zero {a : A}
       rw [TensorProduct.tmul_eq_smul_one_tmul l b, map_smul, mul_smul_comm, Matrix.trace_smul,
         ← map_mul, Algebra.TensorProduct.tmul_mul_tmul, one_mul, ← algebraMap_reducedTrace e, h,
         map_zero, smul_zero]
-  have hX : e (1 ⊗ₜ a) = 0 := by
-    ext i j
-    simpa [Matrix.trace_mul_single] using hzero (e.symm (Matrix.single j i 1))
+  have hX : e (1 ⊗ₜ a) = 0 :=
+    Matrix.ext_iff_trace_mul_right.2 fun X ↦ by simpa using hzero (e.symm X)
   apply Algebra.TensorProduct.includeRight_injective (A := SeparableClosure K)
     (algebraMap K (SeparableClosure K)).injective
   simpa using hX
