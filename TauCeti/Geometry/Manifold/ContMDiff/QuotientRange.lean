@@ -24,6 +24,14 @@ The neighbourhood theorem uses regularity on an open domain, rather than regular
 only at its centre. This distinction matters at smooth order: smoothness at one point
 does not in general give one neighbourhood on which the family is smooth.
 
+The same coordinates give smooth local frames of annihilators: if the family consists of
+injections of `𝕜ᵏ` into a space of dimension `k + r`, the coordinates of the quotient coordinate
+operators in a basis of the complement are `r` covectors depending `C^n` on the parameter, linearly
+independent and annihilating the range at every point
+(`ContMDiffOn.exists_contMDiffOn_linearIndependent_comp_eq_zero`). This adapts the chart
+construction of conormal frames (`chartConormalFrame` in
+`TauCeti/Geometry/Manifold/VectorBundle/Cotangent/Conormal/Subbundle.lean`).
+
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the normal-bundle
 construction preceding Theorem 6.24.
 -/
@@ -92,3 +100,42 @@ theorem ContMDiffOn.exists_contMDiffOn_quotientRangeCoordinate [CompleteSpace F]
     (fun y hy => hInv y hy.1), ?_⟩
   exact (hA.mono inter_subset_right).quotientRangeCoordinate Q.subtypeL
     (fun y hy => hInv y hy.1)
+
+/-- **Smooth local frames of annihilators.** Let `A y : 𝕜ᵏ →L[𝕜] F` be a family of operators,
+depending `C^n` on `y` in an open set `s`, into a space of dimension `k + r`, and injective at a
+point `x` of `s`. Near `x` there are `r` covectors `c j y`, depending `C^n` on `y`, which at every
+point are linearly independent and annihilate the range of `A y`. They are the coordinates of the
+quotient coordinate operators of `A y` for a fixed complement of the range of `A x`. -/
+theorem ContMDiffOn.exists_contMDiffOn_linearIndependent_comp_eq_zero [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 F] {k r : ℕ} {A : M → (Fin k → 𝕜) →L[𝕜] F}
+    (hA : ContMDiffOn I 𝓘(𝕜, (Fin k → 𝕜) →L[𝕜] F) n A s) (hs : IsOpen s) (hx : x ∈ s)
+    (hinj : Function.Injective (A x)) (hk : k + r = Module.finrank 𝕜 F) :
+    ∃ U ⊆ s, IsOpen U ∧ x ∈ U ∧ ∃ c : Fin r → M → F →L[𝕜] 𝕜,
+      (∀ j, ContMDiffOn I 𝓘(𝕜, F →L[𝕜] 𝕜) n (c j) U) ∧
+      ∀ y ∈ U, LinearIndependent 𝕜 (c · y) ∧ ∀ j, c j y ∘L A y = 0 := by
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
+  -- In finite dimensions every linear left inverse of `A x` is continuous.
+  obtain ⟨p, hp⟩ := (A x).toLinearMap.exists_leftInverse_of_injective
+    (LinearMap.ker_eq_bot.mpr hinj)
+  obtain ⟨Q, -, U, hU, hxU, hUs, hInv, hq⟩ := hA.exists_contMDiffOn_quotientRangeCoordinate hs hx
+    ⟨LinearMap.toContinuousLinearMap p, fun v ↦ LinearMap.congr_fun hp v⟩
+  -- The complement `Q` has dimension `r`; identify it with `𝕜ʳ`.
+  obtain ⟨e₀, -⟩ := hInv x hxU
+  have hQ : Module.finrank 𝕜 Q = Module.finrank 𝕜 (Fin r → 𝕜) := by
+    have he₀ := e₀.toLinearEquiv.finrank_eq
+    rw [Module.finrank_prod, Module.finrank_fin_fun] at he₀
+    rw [Module.finrank_fin_fun]
+    omega
+  let eQ : Q ≃L[𝕜] (Fin r → 𝕜) := ContinuousLinearEquiv.ofFinrankEq hQ
+  let c : Fin r → M → F →L[𝕜] 𝕜 := fun j y ↦
+    ContinuousLinearMap.proj j ∘L (eQ : Q →L[𝕜] Fin r → 𝕜) ∘L
+      (A y).quotientRangeCoordinate Q.subtypeL
+  refine ⟨U, hUs, hU, hxU, c, fun j ↦ contMDiffOn_const.clm_comp (contMDiffOn_const.clm_comp hq),
+    fun y hy ↦ ⟨Fintype.linearIndependent_iff.mpr fun μ hμ i ↦ ?_, fun j ↦ ?_⟩⟩
+  · -- Evaluate on the complement vector with coordinates `Pi.single i 1`.
+    have h := (A y).quotientRangeCoordinate_apply_right (hInv y hy) (eQ.symm (Pi.single i 1))
+    rw [Submodule.subtypeL_apply] at h
+    simpa [c, h, Pi.single_apply] using
+      DFunLike.congr_fun hμ (Q.subtypeL (eQ.symm (Pi.single i 1)))
+  · ext v
+    simp [c]

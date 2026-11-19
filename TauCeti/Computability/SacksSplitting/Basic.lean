@@ -54,6 +54,8 @@ No computable bound on the number of injuries is used or claimed.
 
 * `TauCeti.SacksSplitting.disjoint_splitHalf`,
   `TauCeti.SacksSplitting.splitHalf_false_union_splitHalf_true`: the halves split the limit of `B`.
+* `TauCeti.SacksSplitting.primrec₂_stage`, `TauCeti.SacksSplitting.computable₂_stage`:
+  uniform primitive recursiveness and computability of the stage pairs in a parameter.
 * `TauCeti.SacksSplitting.rePred_mem_splitHalf`: both halves are c.e.
 * `TauCeti.SacksSplitting.not_turingReducible_splitHalf`: neither half computes the limit of `C`.
 * `TauCeti.SacksSplitting.exists_split_not_turingReducible`: **Sacks's splitting theorem without
@@ -265,6 +267,28 @@ theorem splitHalf_false_union_splitHalf_true :
   simp only [Set.mem_union, splitHalf_def, mem_stageLimit, ← exists_or, hmem]
   exact ⟨fun ⟨_, t, _, ht⟩ => ⟨t, ht⟩, fun ⟨t, ht⟩ => ⟨t + 1, t, t.lt_succ_self, ht⟩⟩
 
+/-- When every input batch is empty, both halves stay empty at every stage regardless of `C`. -/
+@[simp]
+theorem stage_empty_left (C : ℕ → Finset ℕ) (s : ℕ) : stage (fun _ => ∅) C s = (∅, ∅) := by
+  have h : (stage (fun _ => ∅) C s).1 ∪ (stage (fun _ => ∅) C s).2 = ∅ := by
+    ext x
+    simpa using Finset.ext_iff.1 (halfStage_false_union_halfStage_true (fun _ => ∅) C s) x
+  exact Prod.ext (Finset.union_eq_empty.1 h).1 (Finset.union_eq_empty.1 h).2
+
+/-- When every input batch is empty, each half's stage stays empty at every stage. -/
+@[simp]
+theorem halfStage_empty_left (C : ℕ → Finset ℕ) (b : Bool) (s : ℕ) :
+    halfStage (fun _ => ∅) C b s = ∅ := by
+  cases b <;> simp
+
+/-- Splitting the empty stage sequence against any target sequence `C` produces `∅` on both
+sides. -/
+@[simp]
+theorem splitHalf_empty_left (C : ℕ → Finset ℕ) (b : Bool) : splitHalf (fun _ => ∅) C b = ∅ := by
+  rw [splitHalf_def]
+  ext x
+  simp
+
 /-! ### Effectivity -/
 
 section Effectivity
@@ -310,6 +334,47 @@ theorem computable_restraints (hC : Computable fun s => Finset.equivBitIndices.s
     simp only [Equiv.apply_symm_apply]
     rfl
 
+/-- The binary codes of the stage pairs are primitive recursive uniformly in a parameter and the
+stage, when those of the stages of `B` and `C` are. -/
+theorem primrec₂_stage {α : Type*} [Primcodable α] {B C : α → ℕ → Finset ℕ}
+    (hB : Primrec₂ fun a s => Finset.equivBitIndices.symm (B a s))
+    (hC : Primrec₂ fun a s => Finset.equivBitIndices.symm (C a s)) :
+    Primrec₂ fun a s =>
+      (Finset.equivBitIndices.symm (stage (B a) (C a) s).1,
+        Finset.equivBitIndices.symm (stage (B a) (C a) s).2) := by
+  have hr : Primrec fun p : α × (ℕ × ℕ × ℕ) =>
+      restraints (C p.1) (Finset.equivBitIndices p.2.2.1, Finset.equivBitIndices p.2.2.2) p.2.1 :=
+    (primrec_restraints_equivBitIndices.comp
+      (snd.pair (hC.comp fst (fst.comp snd)))).of_eq fun _ => by
+      simp only [Equiv.apply_symm_apply]
+      rfl
+  have hg : Primrec₂ fun (a : α) (q : ℕ × (ℕ × ℕ)) =>
+      let A := step (restraints (C a) (Finset.equivBitIndices q.2.1, Finset.equivBitIndices q.2.2)
+        q.1) (Finset.equivBitIndices q.2.1, Finset.equivBitIndices q.2.2) (B a q.1)
+      (Finset.equivBitIndices.symm A.1, Finset.equivBitIndices.symm A.2) :=
+    (primrec_step.comp (hr.pair
+      ((snd.comp snd).pair (hB.comp fst (fst.comp snd))))).to₂.of_eq fun _ _ => by
+      simp only [Equiv.apply_symm_apply]
+  refine (nat_rec (const (0, 0)) hg).of_eq fun a s => ?_
+  induction s with
+  | zero => simp
+  | succ s ih =>
+    simp only [ih, Equiv.apply_symm_apply, Prod.mk.eta, stage_succ]
+
+/-- The binary codes of the stages of each half are primitive recursive uniformly in a parameter,
+the side, and the stage. -/
+theorem primrec₂_halfStage {α : Type*} [Primcodable α] {B C : α → ℕ → Finset ℕ}
+    (hB : Primrec₂ fun a s => Finset.equivBitIndices.symm (B a s))
+    (hC : Primrec₂ fun a s => Finset.equivBitIndices.symm (C a s)) :
+    Primrec₂ fun (p : α × Bool) (s : ℕ) =>
+      Finset.equivBitIndices.symm (halfStage (B p.1) (C p.1) p.2 s) := by
+  have hst : Primrec fun q : (α × Bool) × ℕ =>
+      (Finset.equivBitIndices.symm (stage (B q.1.1) (C q.1.1) q.2).1,
+        Finset.equivBitIndices.symm (stage (B q.1.1) (C q.1.1) q.2).2) :=
+    (primrec₂_stage hB hC).comp (fst.comp fst) snd
+  exact (Primrec.cond (snd.comp fst) (snd.comp hst) (fst.comp hst)).to₂.of_eq
+    fun ⟨_, b⟩ _ => by cases b <;> simp
+
 section Primrec
 
 variable (hB : Primrec fun s => Finset.equivBitIndices.symm (B s))
@@ -319,27 +384,65 @@ include hB hC
 /-- The binary codes of the stage pairs are primitive recursive, when those of the stages of `B`
 and `C` are. -/
 theorem primrec_stage : Primrec fun s =>
-    (Finset.equivBitIndices.symm (stage B C s).1, Finset.equivBitIndices.symm (stage B C s).2) := by
-  have hf : Primrec₂ fun (s : ℕ) (m : ℕ × ℕ) =>
-      let A := step (restraints C (Finset.equivBitIndices m.1, Finset.equivBitIndices m.2) s)
-        (Finset.equivBitIndices m.1, Finset.equivBitIndices m.2) (B s)
+    (Finset.equivBitIndices.symm (stage B C s).1, Finset.equivBitIndices.symm (stage B C s).2) :=
+  (primrec₂_stage (B := fun _ : Unit => B) (C := fun _ : Unit => C)
+    (hB.comp snd).to₂ (hC.comp snd).to₂).comp (const ()) Primrec.id
+
+/-- The binary codes of the stages of each half are primitive recursive. -/
+theorem primrec_halfStage (b : Bool) :
+    Primrec fun s => Finset.equivBitIndices.symm (halfStage B C b s) :=
+  (primrec₂_halfStage (B := fun _ : Unit => B) (C := fun _ : Unit => C)
+    (hB.comp snd).to₂ (hC.comp snd).to₂).comp (const ((), b)) Primrec.id
+
+end Primrec
+
+/-- The binary codes of the stage pairs are computable uniformly in a parameter and the stage,
+when those of the stages of `B` and `C` are. -/
+theorem computable₂_stage {α : Type*} [Primcodable α] {B C : α → ℕ → Finset ℕ}
+    (hB : Computable₂ fun a s => Finset.equivBitIndices.symm (B a s))
+    (hC : Computable₂ fun a s => Finset.equivBitIndices.symm (C a s)) :
+    Computable₂ fun a s =>
+      (Finset.equivBitIndices.symm (stage (B a) (C a) s).1,
+        Finset.equivBitIndices.symm (stage (B a) (C a) s).2) := by
+  have hr : Computable fun p : (α × ℕ) × (ℕ × ℕ × ℕ) =>
+      restraints (C p.1.1) (Finset.equivBitIndices p.2.2.1, Finset.equivBitIndices p.2.2.2) p.2.1 :=
+    (primrec_restraints_equivBitIndices.to_comp.comp
+      (Computable.snd.pair
+        (hC.comp (Computable.fst.comp Computable.fst)
+          (Computable.fst.comp Computable.snd)))).of_eq fun _ => by
+      simp only [Equiv.apply_symm_apply]
+      rfl
+  have hh : Computable₂ fun (p : α × ℕ) (q : ℕ × (ℕ × ℕ)) =>
+      let A := step (restraints (C p.1)
+        (Finset.equivBitIndices q.2.1, Finset.equivBitIndices q.2.2) q.1)
+        (Finset.equivBitIndices q.2.1, Finset.equivBitIndices q.2.2) (B p.1 q.1)
       (Finset.equivBitIndices.symm A.1, Finset.equivBitIndices.symm A.2) :=
-    (primrec_step.comp ((primrec_restraints hC).pair
-      (snd.pair (hB.comp fst)))).of_eq fun p => by simp
-  refine (nat_rec₁ (0, 0) hf).of_eq fun s => ?_
+    (primrec_step.to_comp.comp (hr.pair
+      ((Computable.snd.comp Computable.snd).pair
+        (hB.comp (Computable.fst.comp Computable.fst)
+          (Computable.fst.comp Computable.snd))))).of_eq fun _ => by
+      simp only [Equiv.apply_symm_apply]
+  refine (Computable.nat_rec Computable.snd (Computable.const (0, 0)) hh).of_eq fun ⟨a, s⟩ => ?_
+  dsimp only
   induction s with
   | zero => simp
   | succ s ih =>
     simp only [ih, Equiv.apply_symm_apply, Prod.mk.eta, stage_succ]
 
-/-- The binary codes of the stages of each half are primitive recursive. -/
-theorem primrec_halfStage (b : Bool) :
-    Primrec fun s => Finset.equivBitIndices.symm (halfStage B C b s) := by
-  cases b
-  · exact (fst.comp (primrec_stage hB hC)).of_eq fun s => by simp
-  · exact (snd.comp (primrec_stage hB hC)).of_eq fun s => by simp
-
-end Primrec
+/-- The binary codes of the stages of each half are computable uniformly in a parameter, the side,
+and the stage. -/
+theorem computable₂_halfStage {α : Type*} [Primcodable α] {B C : α → ℕ → Finset ℕ}
+    (hB : Computable₂ fun a s => Finset.equivBitIndices.symm (B a s))
+    (hC : Computable₂ fun a s => Finset.equivBitIndices.symm (C a s)) :
+    Computable₂ fun (p : α × Bool) (s : ℕ) =>
+      Finset.equivBitIndices.symm (halfStage (B p.1) (C p.1) p.2 s) := by
+  have hst : Computable fun q : (α × Bool) × ℕ =>
+      (Finset.equivBitIndices.symm (stage (B q.1.1) (C q.1.1) q.2).1,
+        Finset.equivBitIndices.symm (stage (B q.1.1) (C q.1.1) q.2).2) :=
+    (computable₂_stage hB hC).comp (Computable.fst.comp Computable.fst) Computable.snd
+  exact (Computable.cond (Computable.snd.comp Computable.fst)
+    (Computable.snd.comp hst) (Computable.fst.comp hst)).of_eq
+    fun ⟨⟨_, b⟩, _⟩ => by cases b <;> simp
 
 section Computable
 
@@ -350,27 +453,17 @@ include hB hC
 /-- The binary codes of the stage pairs are computable, when those of the stages of `B` and `C`
 are. -/
 theorem computable_stage : Computable fun s =>
-    (Finset.equivBitIndices.symm (stage B C s).1, Finset.equivBitIndices.symm (stage B C s).2) := by
-  have hf : Computable₂ fun (_ : ℕ) (q : ℕ × ℕ × ℕ) =>
-      let A := step (restraints C (Finset.equivBitIndices q.2.1, Finset.equivBitIndices q.2.2) q.1)
-        (Finset.equivBitIndices q.2.1, Finset.equivBitIndices q.2.2) (B q.1)
-      (Finset.equivBitIndices.symm A.1, Finset.equivBitIndices.symm A.2) :=
-    (primrec_step.to_comp.comp ((computable_restraints hC).comp Computable.snd |>.pair
-      ((Computable.snd.comp Computable.snd).pair
-        (hB.comp (Computable.fst.comp Computable.snd))))).of_eq fun p => by simp
-  refine (Computable.nat_rec Computable.id (Computable.const (0, 0)) hf).of_eq fun s => ?_
-  dsimp only [id]
-  induction s with
-  | zero => simp
-  | succ s ih =>
-    simp only [ih, Equiv.apply_symm_apply, Prod.mk.eta, stage_succ]
+    (Finset.equivBitIndices.symm (stage B C s).1, Finset.equivBitIndices.symm (stage B C s).2) :=
+  (computable₂_stage (B := fun _ : Unit => B) (C := fun _ : Unit => C)
+    (hB.comp Computable.snd).to₂ (hC.comp Computable.snd).to₂).comp
+    (Computable.const ()) Computable.id
 
 /-- The binary codes of the stages of each half are computable. -/
 theorem computable_halfStage (b : Bool) :
-    Computable fun s => Finset.equivBitIndices.symm (halfStage B C b s) := by
-  cases b
-  · exact (Computable.fst.comp (computable_stage hB hC)).of_eq fun s => by simp
-  · exact (Computable.snd.comp (computable_stage hB hC)).of_eq fun s => by simp
+    Computable fun s => Finset.equivBitIndices.symm (halfStage B C b s) :=
+  (computable₂_halfStage (B := fun _ : Unit => B) (C := fun _ : Unit => C)
+    (hB.comp Computable.snd).to₂ (hC.comp Computable.snd).to₂).comp
+    (Computable.const ((), b)) Computable.id
 
 /-- Both halves are c.e. when the binary codes of the stages of `B` and `C` are computable. -/
 theorem rePred_mem_splitHalf (b : Bool) : REPred (· ∈ splitHalf B C b) :=
@@ -512,15 +605,14 @@ theorem exists_split_not_turingReducible {B C : Set ℕ} (hB : REPred (· ∈ B)
   have hCc : stageLimit c.domStage = C := by
     rw [Nat.Partrec.Code.stageLimit_domStage]
     exact Set.ext fun x => (hc x).symm
-  have hBp : Computable fun s => Finset.equivBitIndices.symm (b.domStage s) :=
-    (Nat.Partrec.Code.primrec_domStage.comp ((Primrec.const b).pair Primrec.id)).to_comp
-  have hCp : Computable fun s => Finset.equivBitIndices.symm (c.domStage s) :=
-    (Nat.Partrec.Code.primrec_domStage.comp ((Primrec.const c).pair Primrec.id)).to_comp
   rw [← hCc] at hnc ⊢
   rw [← hBc]
-  exact ⟨_, _, rePred_mem_splitHalf hBp hCp false, rePred_mem_splitHalf hBp hCp true,
+  exact ⟨_, _, rePred_mem_splitHalf b.computable_domStage c.computable_domStage false,
+    rePred_mem_splitHalf b.computable_domStage c.computable_domStage true,
     disjoint_splitHalf _ _, splitHalf_false_union_splitHalf_true _ _,
-    not_turingReducible_splitHalf hBp c.monotone_domStage hCp hnc false,
-    not_turingReducible_splitHalf hBp c.monotone_domStage hCp hnc true⟩
+    not_turingReducible_splitHalf b.computable_domStage c.monotone_domStage c.computable_domStage
+      hnc false,
+    not_turingReducible_splitHalf b.computable_domStage c.monotone_domStage c.computable_domStage
+      hnc true⟩
 
 end TauCeti.SacksSplitting

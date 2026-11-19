@@ -73,6 +73,8 @@ normality of it is equivalent to freeness of the action of the image.
   with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
   surjectivity and kernel.
 
+* `TauCeti.stabilizer_smul_eq_conj_smul`: the stabilizer of a translated point `g • a` is the
+  pointwise conjugate `MulAut.conj g • MulAction.stabilizer G a`.
 * `TauCeti.conj_smul_eq_conj_smul_of_smul_eq`: if the stabilizer of `a` normalizes `T`, then the
   conjugate `g T g⁻¹` depends only on `g • a`.
 * `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
@@ -232,6 +234,14 @@ element of the stabilizer of `x₀`. -/
 theorem smul_eq_smul_iff_inv_mul_mem_stabilizer (x₀ : α) (a b : G) :
     a • x₀ = b • x₀ ↔ a⁻¹ * b ∈ MulAction.stabilizer G x₀ := by
   rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, eq_comm]
+
+open scoped Pointwise in
+/-- The stabilizer of a translated point `g • a` is the pointwise conjugate
+`MulAut.conj g • MulAction.stabilizer G a`. -/
+theorem stabilizer_smul_eq_conj_smul (g : G) (a : α) :
+    MulAction.stabilizer G (g • a) = MulAut.conj g • MulAction.stabilizer G a := by
+  rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
+    map_conj_eq_conj_smul]
 
 open scoped Pointwise in
 /-- If the stabilizer of `a` normalizes a subgroup `T`, then the conjugate `g T g⁻¹` depends only
