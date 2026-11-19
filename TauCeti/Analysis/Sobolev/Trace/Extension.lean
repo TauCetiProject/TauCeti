@@ -88,23 +88,13 @@ private theorem jetFlip_snd (J : Sobolev1Jet (WithLp 2 (ℝ × E))) :
     (jetFlip J).snd = normalLinearReflection E J.snd := by
   simp [jetFlip]
 
-private theorem restrict_top :
-    (volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
-      Set (WithLp 2 (ℝ × E))) = volume := by
-  simp
-
-private theorem ae_restrict_top :
-    ae ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
-      Set (WithLp 2 (ℝ × E)))) = ae volume := by
-  rw [restrict_top]
-
 private theorem measurePreserving_normalReflection_top (a : ℝ) :
     MeasurePreserving (normalReflection E a)
       ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
         Set (WithLp 2 (ℝ × E))))
       ((volume : Measure (WithLp 2 (ℝ × E))).restrict ((⊤ : Opens (WithLp 2 (ℝ × E))) :
         Set (WithLp 2 (ℝ × E)))) := by
-  rw [restrict_top]
+  rw [Measure.restrict_coe_opens_top]
   exact measurePreserving_normalReflection a
 
 /-- Precomposition with the reflection, followed by flipping the gradient, on whole-space jets. -/
@@ -123,7 +113,7 @@ private theorem coeFn_reflectJetL (a : ℝ)
       (measurePreserving_normalReflection_top a) K)).trans
     ((Lp.coeFn_compMeasurePreserving K (measurePreserving_normalReflection_top a)).fun_comp
       jetFlip)
-  rw [ae_restrict_top] at h
+  rw [Measure.ae_restrict_coe_opens_top] at h
   exact h
 
 private theorem norm_reflectJetL_le (a : ℝ)
@@ -155,11 +145,11 @@ private theorem coeFn_extendJetL (a : ℝ)
         jetFlip ((normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator J
           (normalReflection E a x)) := by
   have hZ := Sobolev1JetLp.coeFn_extendByZeroₗᵢ (le_top : normalHalfSpace (E := E) a ≤ ⊤) J
-  rw [ae_restrict_top] at hZ
+  rw [Measure.ae_restrict_coe_opens_top] at hZ
   have hadd := Lp.coeFn_add
     (Sobolev1JetLp.extendByZeroₗᵢ (le_top : normalHalfSpace (E := E) a ≤ ⊤) J)
     (reflectJetL a (Sobolev1JetLp.extendByZeroₗᵢ (le_top : normalHalfSpace (E := E) a ≤ ⊤) J))
-  rw [ae_restrict_top] at hadd
+  rw [Measure.ae_restrict_coe_opens_top] at hadd
   have hρZ := (measurePreserving_normalReflection (E := E) a).quasiMeasurePreserving.ae_eq_comp hZ
   filter_upwards [hadd, hZ, coeFn_reflectJetL a
     (Sobolev1JetLp.extendByZeroₗᵢ (le_top : normalHalfSpace (E := E) a ≤ ⊤) J), hρZ]
@@ -200,7 +190,7 @@ private theorem extendJetL_mem_w1pSubmodule (a : ℝ)
     rw [hx]
   have hcore := hweak.add_comp_normalReflection hwl hGl hw0 hG0
   have hJ := coeFn_extendJetL a J
-  rw [← ae_restrict_top] at hJ
+  rw [← Measure.ae_restrict_coe_opens_top] at hJ
   rw [mem_w1pSubmodule_iff_hasWeakFDerivOn]
   refine (hcore.congr_ae ?_).congr_ae_deriv ?_
   · filter_upwards [Sobolev1JetLp.value_apply_ae (extendJetL a J), hJ] with x h1 h2
@@ -260,7 +250,7 @@ theorem W1p.value_extendByReflectionL_ae (a : ℝ)
         (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator (W1p.value u)
           (normalReflection E a x) := by
   have h1 := W1p.value_apply_ae (W1p.extendByReflectionL a u)
-  rw [ae_restrict_top] at h1
+  rw [Measure.ae_restrict_coe_opens_top] at h1
   filter_upwards [h1, coeFn_extendJetL a (u : Sobolev1JetLp (volume : Measure
     (WithLp 2 (ℝ × E))) (normalHalfSpace a) p),
     ae_indicator_eq_and_comp_normalReflection a (W1p.value_apply_ae u)]
@@ -278,7 +268,7 @@ theorem W1p.gradient_extendByReflectionL_ae (a : ℝ)
         normalLinearReflection E ((normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator
           (W1p.gradient u) (normalReflection E a x)) := by
   have h1 := W1p.gradient_apply_ae (W1p.extendByReflectionL a u)
-  rw [ae_restrict_top] at h1
+  rw [Measure.ae_restrict_coe_opens_top] at h1
   filter_upwards [h1, coeFn_extendJetL a (u : Sobolev1JetLp (volume : Measure
     (WithLp 2 (ℝ × E))) (normalHalfSpace a) p),
     ae_indicator_eq_and_comp_normalReflection a (W1p.gradient_apply_ae u)]
