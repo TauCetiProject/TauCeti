@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Coordinates
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Data.Set.Card
+import TauCeti.Data.Int.Round
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.CurveX3AddX
 
 /-!
 # Examples of coordinate pairs and of the image and fibres of the projective `x`-coordinate
@@ -26,13 +28,29 @@ while `(2 : 1)` is not, since `2³ + 2 = 3` is not a square modulo `7`: the proj
 
 The image consists of `(1 : 0)`, `(0 : 1)`, `(1 : 1)`, `(3 : 1)` and `(5 : 1)`.
 Only infinity and the distinguished point `(0, 0)` have singleton fibres. Each of the other
-three fibres has two native points, exchanged by negation. The finite arithmetic is verified
-by kernel reduction.
+three fibres has two native points, exchanged by negation.
+
+For the point `Q = (3, 3)` of order `8` on `y² = x³ + x` over `𝔽₇`, the cross-difference
+criterion `cross_coordinates_zsmul_eq_zero_iff` is illustrated on `(m, n) = (5, 3)` (matching
+`x = 5` and `[8]Q = 0`), `(m, n) = (3, 1)` (distinct `x`-coordinates `5` and `3`, with neither
+`[2]Q` nor `[4]Q` vanishing), and `m = n = 0` at infinity, together with step `w = 6` at `q = 7`
+and `q = 8`. Nearest-multiple decompositions for `w = 6` also illustrate the divisibility test
+`Int.abs_sub_mul_eq_zero_iff_dvd` and the midpoint obstruction `15 = 2 · 6 + 3` characterized by
+`Int.exists_two_mul_abs_sub_mul_lt_iff`. The finite arithmetic is verified by kernel reduction.
+
+## References
+
+* P. L. Montgomery, *Speeding the Pollard and elliptic curve methods of factorization*,
+  Math. Comp. 48 (1987), 243–264, §10.3.1.
+* P. Zimmermann, *20 years of ECM*, ANTS VII, Lecture Notes in Computer Science 4076 (2006),
+  §1.
 -/
 
 public section
 
 namespace TauCeti.Montgomery
+
+open TauCeti.Examples.Montgomery.CurveX3AddX
 
 section Seven
 
@@ -40,30 +58,19 @@ local instance fibresPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 /-! ### Coordinate pairs -/
 
-private theorem nonsingular_one_three : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
-  simp only [WeierstrassCurve.Affine.nonsingular_iff, WeierstrassCurve.Affine.equation_iff,
-    model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-  decide
-
-private theorem nonsingular_one_four : (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 4 := by
-  simp only [WeierstrassCurve.Affine.nonsingular_iff, WeierstrassCurve.Affine.equation_iff,
-    model_a₁, model_a₂, model_a₃, model_a₄, model_a₆]
-  decide
-
 -- Infinity, the distinguished point `(0, 0)` and the point `(1, 3)` have coordinate pairs
 -- `(1, 0)`, `(0, 1)` and `(1, 1)`.
 example : coordinates (0 : ZMod 7) 1 0 = ⟨1, 0⟩ ∧
     coordinates (0 : ZMod 7) 1 (twoTorsionPoint 0 one_ne_zero) = ⟨0, 1⟩ ∧
-    coordinates (0 : ZMod 7) 1 (.some 1 3 nonsingular_one_three) = ⟨1, 1⟩ :=
+    coordinates (0 : ZMod 7) 1 pointOneThreeSeven = ⟨1, 1⟩ :=
   ⟨coordinates_zero .., coordinates_twoTorsionPoint _, coordinates_some ..⟩
 
 -- The point `(1, 4)` is the negative of `(1, 3)` and has the same coordinate pair `(1, 1)`.
-example : WeierstrassCurve.Affine.Point.some 1 4 nonsingular_one_four =
-      -.some 1 3 nonsingular_one_three ∧
-    coordinates (0 : ZMod 7) 1 (.some 1 4 nonsingular_one_four) = ⟨1, 1⟩ := by
+example : pointOneFourSeven = -pointOneThreeSeven ∧
+    coordinates (0 : ZMod 7) 1 pointOneFourSeven = ⟨1, 1⟩ := by
   refine ⟨?_, coordinates_some ..⟩
-  simp only [WeierstrassCurve.Affine.Point.neg_some, WeierstrassCurve.Affine.negY, model_a₁,
-    model_a₃, WeierstrassCurve.Affine.Point.some.injEq]
+  simp only [pointOneFourSeven, pointOneThreeSeven, WeierstrassCurve.Affine.Point.neg_some,
+    WeierstrassCurve.Affine.negY, model_a₁, model_a₃, WeierstrassCurve.Affine.Point.some.injEq]
   decide
 
 private theorem nonsingular_two_four : (model (0 : ZMod 7) 2).toAffine.Nonsingular 2 4 := by
@@ -169,6 +176,206 @@ example (P : E) :
   · simp [← h, ← eq_neg_iff_seven]
   · simp [Set.ncard_pair h, ← eq_neg_iff_seven, h]
 
+/-! ### The stage-2 cross-difference criterion -/
+
+private theorem nonsingular_five_two : (model (0 : ZMod 7) 1).toAffine.Nonsingular 5 2 := by
+  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
+    model_a₄, model_a₆]
+  decide
+
+private theorem nonsingular_five_five : (model (0 : ZMod 7) 1).toAffine.Nonsingular 5 5 := by
+  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
+    model_a₄, model_a₆]
+  decide
+
+private theorem two_nsmul_pointThreeThreeSeven :
+    (2 : ℕ) • pointThreeThreeSeven = pointOneFourSeven := by
+  have hy : (3 : ZMod 7) ≠ (model (0 : ZMod 7) 1).toAffine.negY 3 3 := by
+    simp only [Affine.negY, model_a₁, model_a₃]
+    decide
+  have hsl : (model (0 : ZMod 7) 1).toAffine.slope 3 3 3 3 = 0 := by
+    rw [Affine.slope_of_Y_ne rfl hy, div_eq_zero_iff]
+    left
+    simp only [model_a₁, model_a₂, model_a₄]
+    decide
+  rw [two_nsmul, pointThreeThreeSeven, pointOneFourSeven, Affine.Point.add_self_of_Y_ne hy,
+    Affine.Point.some.injEq]
+  simp only [Affine.addX, Affine.addY, Affine.negAddY, Affine.negY, hsl,
+    model_a₁, model_a₂, model_a₃]
+  decide
+
+private theorem three_nsmul_pointThreeThreeSeven :
+    (3 : ℕ) • pointThreeThreeSeven = .some 5 5 nonsingular_five_five := by
+  have hx : (1 : ZMod 7) ≠ 3 := by decide
+  have hsl : (model (0 : ZMod 7) 1).toAffine.slope 1 3 4 3 = 3 := by
+    rw [Affine.slope_of_X_ne hx, div_eq_iff (by decide)]
+    decide
+  rw [succ_nsmul, two_nsmul_pointThreeThreeSeven, pointOneFourSeven, pointThreeThreeSeven,
+    Affine.Point.add_of_X_ne hx, Affine.Point.some.injEq]
+  simp only [Affine.addX, Affine.addY, Affine.negAddY, Affine.negY, hsl,
+    model_a₁, model_a₂, model_a₃]
+  decide
+
+private theorem four_nsmul_pointThreeThreeSeven :
+    (4 : ℕ) • pointThreeThreeSeven = twoTorsionPoint 0 one_ne_zero := by
+  have h22 : (4 : ℕ) = 2 + 2 := rfl
+  rw [h22, add_nsmul, two_nsmul_pointThreeThreeSeven]
+  exact (add_self_eq_twoTorsionPoint_iff one_ne_zero nonsingular_one_four_seven).mpr (by decide)
+
+private theorem eight_nsmul_pointThreeThreeSeven : (8 : ℕ) • pointThreeThreeSeven = 0 := by
+  have h44 : (8 : ℕ) = 4 + 4 := rfl
+  rw [h44, add_nsmul, four_nsmul_pointThreeThreeSeven, twoTorsionPoint_add_self]
+
+private theorem eight_zsmul_pointThreeThreeSeven : (8 : ℤ) • pointThreeThreeSeven = 0 :=
+  (natCast_zsmul pointThreeThreeSeven 8).trans eight_nsmul_pointThreeThreeSeven
+
+private theorem five_nsmul_pointThreeThreeSeven :
+    (5 : ℕ) • pointThreeThreeSeven = .some 5 2 nonsingular_five_two := by
+  have hsum : (5 : ℕ) • pointThreeThreeSeven + (3 : ℕ) • pointThreeThreeSeven = 0 := by
+    rw [← add_nsmul]
+    exact eight_nsmul_pointThreeThreeSeven
+  rw [eq_neg_of_add_eq_zero_left hsum, three_nsmul_pointThreeThreeSeven]
+  simp only [Affine.Point.neg_some, Affine.negY, model_a₁, model_a₃, Affine.Point.some.injEq]
+  decide
+
+private theorem six_nsmul_pointThreeThreeSeven :
+    (6 : ℕ) • pointThreeThreeSeven = pointOneThreeSeven := by
+  have hsum : (6 : ℕ) • pointThreeThreeSeven + (2 : ℕ) • pointThreeThreeSeven = 0 := by
+    rw [← add_nsmul]
+    exact eight_nsmul_pointThreeThreeSeven
+  rw [eq_neg_of_add_eq_zero_left hsum, two_nsmul_pointThreeThreeSeven, pointOneFourSeven,
+    pointOneThreeSeven]
+  simp only [Affine.Point.neg_some, Affine.negY, model_a₁, model_a₃, Affine.Point.some.injEq]
+  decide
+
+private theorem seven_zsmul_pointThreeThreeSeven :
+    (7 : ℤ) • pointThreeThreeSeven = -pointThreeThreeSeven := by
+  have hsum : (7 : ℤ) • pointThreeThreeSeven + (1 : ℤ) • pointThreeThreeSeven = 0 := by
+    rw [← add_zsmul]
+    exact eight_zsmul_pointThreeThreeSeven
+  simpa only [one_zsmul] using eq_neg_of_add_eq_zero_left hsum
+
+-- `(m, n) = (5, 3)` on `Q = (3, 3)` of order `8`: both `[5]Q` and `[3]Q` have coordinate pair
+-- `(5, 1)`, their cross difference vanishes, and `[5 + 3]Q = [8]Q = 0`.
+example :
+    coordinates 0 1 ((5 : ℤ) • pointThreeThreeSeven) = ⟨5, 1⟩ ∧
+    coordinates 0 1 ((3 : ℤ) • pointThreeThreeSeven) = ⟨5, 1⟩ ∧
+    (coordinates 0 1 ((5 : ℤ) • pointThreeThreeSeven)).cross
+      (coordinates 0 1 ((3 : ℤ) • pointThreeThreeSeven)) = 0 ∧
+    ((5 : ℤ) + 3) • pointThreeThreeSeven = 0 := by
+  have h₅ : (5 : ℤ) • pointThreeThreeSeven = .some 5 2 nonsingular_five_two :=
+    (natCast_zsmul pointThreeThreeSeven 5).trans five_nsmul_pointThreeThreeSeven
+  have h₃ : (3 : ℤ) • pointThreeThreeSeven = .some 5 5 nonsingular_five_five :=
+    (natCast_zsmul pointThreeThreeSeven 3).trans three_nsmul_pointThreeThreeSeven
+  refine ⟨by rw [h₅, coordinates_some], by rw [h₃, coordinates_some],
+    (cross_coordinates_zsmul_eq_zero_iff one_ne_zero).mpr (.inr eight_zsmul_pointThreeThreeSeven),
+    eight_zsmul_pointThreeThreeSeven⟩
+
+-- `(m, n) = (3, 1)` on `Q = (3, 3)`: `[3]Q` and `[1]Q` have coordinate pairs `(5, 1)` and
+-- `(3, 1)`, cross difference `5 - 3 = 2 ≠ 0`, and neither `[2]Q` nor `[4]Q` vanishes.
+example :
+    coordinates 0 1 ((3 : ℤ) • pointThreeThreeSeven) = ⟨5, 1⟩ ∧
+    coordinates 0 1 ((1 : ℤ) • pointThreeThreeSeven) = ⟨3, 1⟩ ∧
+    (coordinates 0 1 ((3 : ℤ) • pointThreeThreeSeven)).cross
+      (coordinates 0 1 ((1 : ℤ) • pointThreeThreeSeven)) = 2 ∧
+    ((3 : ℤ) - 1) • pointThreeThreeSeven ≠ 0 ∧
+    ((3 : ℤ) + 1) • pointThreeThreeSeven ≠ 0 := by
+  have h₃' : (3 : ℤ) • pointThreeThreeSeven = .some 5 5 nonsingular_five_five :=
+    (natCast_zsmul pointThreeThreeSeven 3).trans three_nsmul_pointThreeThreeSeven
+  have h₃ : coordinates 0 1 ((3 : ℤ) • pointThreeThreeSeven) = ⟨5, 1⟩ := by
+    rw [h₃', coordinates_some]
+  have h₁ : coordinates 0 1 ((1 : ℤ) • pointThreeThreeSeven) = ⟨3, 1⟩ := by
+    rw [one_zsmul, pointThreeThreeSeven, coordinates_some]
+  have hcross : (coordinates 0 1 ((3 : ℤ) • pointThreeThreeSeven)).cross
+      (coordinates 0 1 ((1 : ℤ) • pointThreeThreeSeven)) = 2 := by
+    rw [h₃, h₁, Pair.cross_def]
+    decide
+  have hne : ¬ (((3 : ℤ) - 1) • pointThreeThreeSeven = 0 ∨
+      ((3 : ℤ) + 1) • pointThreeThreeSeven = 0) := by
+    rw [← cross_coordinates_zsmul_eq_zero_iff (A := (0 : ZMod 7)) one_ne_zero, hcross]
+    decide
+  exact ⟨h₃, h₁, hcross, not_or.mp hne⟩
+
+-- `m = n = 0`: both coordinate pairs are `(1, 0)`, the cross difference `1 · 0 - 1 · 0` is `0`,
+-- and `[0]Q = 0`.
+example :
+    coordinates 0 1 ((0 : ℤ) • pointThreeThreeSeven) = ⟨1, 0⟩ ∧
+    (coordinates 0 1 ((0 : ℤ) • pointThreeThreeSeven)).cross
+      (coordinates 0 1 ((0 : ℤ) • pointThreeThreeSeven)) = 0 ∧
+    (0 : ℤ) • pointThreeThreeSeven = 0 := by
+  simp
+
+-- Step `w = 6` at `q = 7 = 6 + 1`: `[7]Q = -Q ≠ 0`, `[5]Q ≠ 0`, and the coordinate pairs of
+-- `[6]Q` and `[1]Q` have nonzero cross difference.
+example :
+    (7 : ℤ) • pointThreeThreeSeven = -pointThreeThreeSeven ∧
+    (7 : ℤ) • pointThreeThreeSeven ≠ 0 ∧
+    (coordinates 0 1 ((6 : ℤ) • pointThreeThreeSeven)).cross
+      (coordinates 0 1 ((1 : ℤ) • pointThreeThreeSeven)) ≠ 0 := by
+  have h₇ : (7 : ℤ) • pointThreeThreeSeven ≠ 0 := by
+    rw [seven_zsmul_pointThreeThreeSeven, neg_ne_zero, pointThreeThreeSeven]
+    exact Affine.Point.some_ne_zero _
+  have h₅ : ((6 : ℤ) - 1) • pointThreeThreeSeven ≠ 0 := by
+    have hsub : (6 : ℤ) - 1 = (5 : ℕ) := rfl
+    rw [hsub, natCast_zsmul, five_nsmul_pointThreeThreeSeven]
+    exact Affine.Point.some_ne_zero _
+  refine ⟨seven_zsmul_pointThreeThreeSeven, h₇, ?_⟩
+  rw [Ne, cross_coordinates_zsmul_eq_zero_iff one_ne_zero, not_or]
+  exact ⟨h₅, h₇⟩
+
+-- Step `w = 6` at `q = 8 = 6 + 2`: `[8]Q = 0`, `[6]Q = (1, 3)` and `[2]Q = (1, 4)` both have
+-- coordinate pair `(1, 1)` with cross difference `1 · 1 - 1 · 1 = 0`, and the stage-2 existence
+-- theorem applies directly.
+example :
+    (8 : ℤ) • pointThreeThreeSeven = 0 ∧
+    (6 : ℤ) • pointThreeThreeSeven = pointOneThreeSeven ∧
+    (2 : ℤ) • pointThreeThreeSeven = pointOneFourSeven ∧
+    coordinates 0 1 ((6 : ℤ) • pointThreeThreeSeven) = ⟨1, 1⟩ ∧
+    coordinates 0 1 ((2 : ℤ) • pointThreeThreeSeven) = ⟨1, 1⟩ ∧
+    (coordinates 0 1 ((6 : ℤ) • pointThreeThreeSeven)).cross
+      (coordinates 0 1 ((2 : ℤ) • pointThreeThreeSeven)) = 0 ∧
+    ∃ i : ℤ, 2 * |(8 : ℤ) - i * 6| ≤ 6 ∧
+      (coordinates 0 1 ((i * 6) • pointThreeThreeSeven)).cross
+        (coordinates 0 1 (|(8 : ℤ) - i * 6| • pointThreeThreeSeven)) = 0 := by
+  have h₆ : (6 : ℤ) • pointThreeThreeSeven = pointOneThreeSeven :=
+    (natCast_zsmul pointThreeThreeSeven 6).trans six_nsmul_pointThreeThreeSeven
+  have h₂ : (2 : ℤ) • pointThreeThreeSeven = pointOneFourSeven :=
+    (natCast_zsmul pointThreeThreeSeven 2).trans two_nsmul_pointThreeThreeSeven
+  refine ⟨eight_zsmul_pointThreeThreeSeven, h₆, h₂,
+    by rw [h₆, pointOneThreeSeven, coordinates_some],
+    by rw [h₂, pointOneFourSeven, coordinates_some], ?_,
+    exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero eight_zsmul_pointThreeThreeSeven
+      (by decide)⟩
+  rw [h₆, h₂, pointOneThreeSeven, pointOneFourSeven, coordinates_some, coordinates_some,
+    Pair.cross_def, sub_self]
+
 end Seven
+
+/-! ### Nearest multiples for step `w = 6` -/
+
+-- `13 = 2 · 6 + 1`, `17 = 3 · 6 - 1` and `12 = 2 · 6 + 0`: the baby-step index `|q - i · 6|`
+-- vanishes if and only if `6 ∣ q`.
+example :
+    ((13 : ℤ) = 2 * 6 + 1 ∧ 2 * |(13 : ℤ) - 2 * 6| ≤ 6 ∧ ¬ (6 : ℤ) ∣ 13) ∧
+    ((17 : ℤ) = 3 * 6 - 1 ∧ 2 * |(17 : ℤ) - 3 * 6| ≤ 6 ∧ ¬ (6 : ℤ) ∣ 17) ∧
+    (|(12 : ℤ) - 2 * 6| = 0 ∧ (6 : ℤ) ∣ 12) := by
+  have h₁₃ : ¬ (6 : ℤ) ∣ 13 := by
+    rw [← Int.abs_sub_mul_eq_zero_iff_dvd (c := 2) (by decide)]
+    decide
+  have h₁₇ : ¬ (6 : ℤ) ∣ 17 := by
+    rw [← Int.abs_sub_mul_eq_zero_iff_dvd (c := 3) (by decide)]
+    decide
+  have h₁₂ : (6 : ℤ) ∣ 12 :=
+    (Int.abs_sub_mul_eq_zero_iff_dvd (c := 2) (by decide)).mp (by decide)
+  exact ⟨⟨by decide, by decide, h₁₃⟩, ⟨by decide, by decide, h₁₇⟩, ⟨by decide, h₁₂⟩⟩
+
+-- At the midpoint `q = 15 = 2 · 6 + 3`, the non-strict bound `2 · |15 - 2 · 6| ≤ 6` holds,
+-- whereas no integer multiple of `6` lies strictly closer than `6 / 2 = 3`.
+example :
+    2 * |(15 : ℤ) - 2 * 6| ≤ |6| ∧
+    ¬ ∃ i : ℤ, 2 * |(15 : ℤ) - i * 6| < |(6 : ℤ)| := by
+  refine ⟨by decide, ?_⟩
+  rw [Int.exists_two_mul_abs_sub_mul_lt_iff (by decide)]
+  decide
 
 end TauCeti.Montgomery
