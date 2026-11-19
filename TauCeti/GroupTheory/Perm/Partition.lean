@@ -69,6 +69,8 @@ the API that a comparison with a multiset of factor degrees needs, on that multi
   identifying those orbits with the cycle supports and the fixed points.
 * `Equiv.Perm.mem_fullCycleType_iff`: the parts of the full cycle type are exactly the lengths
   of the cycles, the minimal periods of the points.
+* `Equiv.Perm.count_one_fullCycleType_eq_card_filter`: the parts equal to one in the full cycle
+  type count the fixed points.
 
 ## Implementation notes
 
@@ -92,6 +94,8 @@ refine.
 -/
 
 public section
+
+open scoped Finset
 
 namespace Equiv.Perm
 
@@ -693,6 +697,11 @@ theorem card_subtype_apply_eq :
     _ = Fintype.card {x : α // x ∈ σ.supportᶜ} := Fintype.card_congr (Equiv.subtypeEquivProp hp)
     _ = σ.supportᶜ.card := Fintype.card_coe _
     _ = Fintype.card α - σ.support.card := Finset.card_compl (s := σ.support)
+
+/-- The parts equal to one in the full cycle type of `σ` count its fixed points. -/
+theorem count_one_fullCycleType_eq_card_filter :
+    (fullCycleType σ).count 1 = #{x | σ x = x} := by
+  rw [count_one_fullCycleType, ← Fintype.card_subtype, card_subtype_apply_eq]
 
 /-- The cycle factor of a moved point, or the point itself when it is fixed: the point-level map
 underlying `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints`. -/

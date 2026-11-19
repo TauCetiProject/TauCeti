@@ -268,7 +268,7 @@ theorem _root_.Equiv.Perm.mul_orbitCount_of_pow_prime_eq_one {p : ℕ} [Fact p.P
     {σ : Equiv.Perm α} (hσ : σ ^ p = 1) :
     p * orbitCount σ = Fintype.card α + (p - 1) * #{x | σ x = x} := by
   have hfix : #{x | σ x = x} = Fintype.card α - #σ.support := by
-    rw [← Fintype.card_subtype, card_subtype_apply_eq]
+    rw [← count_one_fullCycleType_eq_card_filter, count_one_fullCycleType]
   have hsum := σ.sum_cycleType
   rw [cycleType_of_pow_prime_eq_one hσ, Multiset.sum_replicate, smul_eq_mul] at hsum
   obtain ⟨F, hF⟩ := Nat.exists_eq_add_of_le (Finset.card_le_univ σ.support)

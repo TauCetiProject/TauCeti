@@ -127,15 +127,13 @@ theorem pos_of_mem_cuspWidths {w : ℕ} (hw : w ∈ cuspWidths Γ' e) : 0 < w :=
 type of `permS Γ' e`. -/
 theorem ellipticTwo_eq_count_fullCycleType :
     ellipticTwo Γ' e = (permS Γ' e).fullCycleType.count 1 := by
-  rw [ellipticTwo, Perm.fullCycleType_def, Perm.count_one_parts_partition, ← Fintype.card_subtype,
-    Perm.card_subtype_apply_eq]
+  rw [ellipticTwo, Perm.count_one_fullCycleType_eq_card_filter]
 
 /-- The number of elliptic points of period three is the number of parts `1` of the full cycle
 type of `(modularTriple Γ' e).σ0`. -/
 theorem ellipticThree_eq_count_fullCycleType :
     ellipticThree Γ' e = (modularTriple Γ' e).σ0.fullCycleType.count 1 := by
-  rw [ellipticThree, Perm.fullCycleType_def, Perm.count_one_parts_partition, ← Fintype.card_subtype,
-    Perm.card_subtype_apply_eq]
+  rw [ellipticThree, Perm.count_one_fullCycleType_eq_card_filter]
 
 /-! ### The width of a cusp -/
 
