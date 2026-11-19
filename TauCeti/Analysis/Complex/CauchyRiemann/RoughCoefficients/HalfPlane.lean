@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 public import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Complex.Wirtinger.HalfPlaneAdjoint.Basic
+import TauCeti.Analysis.Complex.Wirtinger.HalfPlaneAdjoint.Dual
 import TauCeti.Analysis.Distribution.TestFunction.Inner
-import TauCeti.Analysis.Distribution.TestFunction.RealAxis
-import TauCeti.Analysis.Complex.Wirtinger.HalfPlaneAdjoint.Variable
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -50,9 +50,10 @@ imposes nothing.
   null subsets of `Ω ∩ {0 ≤ t}` (`TauCeti.isWeakCRSolutionHalf_congr_ae`).
 * `TauCeti.IsWeakCRSolutionHalf.isWeakCRSolution`: a weak solution up to the boundary is a weak
   solution of the interior equation on the open upper part `Ω ∩ {0 < t}`.
-* `TauCeti.setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn`: Green's formula
-  `∫_{0<t} ⟪D* φ, ξ⟫ = ∫_{0<t} ⟪φ, ∂_s ξ + J ∂_t ξ + S ξ⟫ + ∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds` for `C¹`
-  data with `DJ = fderiv ℝ J`.
+* `TauCeti.integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn`: for `C¹` data with
+  `DJ = fderiv ℝ J`, the pairing `⟪D* φ, ξ⟫` is integrable on the half-plane. Green's formula
+  `∫_{0<t} ⟪D* φ, ξ⟫ = ∫_{0<t} ⟪φ, ∂_s ξ + J ∂_t ξ + S ξ⟫ + ∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds` is
+  `TauCeti.setIntegral_im_pos_inner_crFormalAdjoint`.
 * `TauCeti.isWeakCRSolutionHalf_of_contDiffOn`: for `C¹` coefficients `J` with `DJ = fderiv ℝ J`
   and continuous `S`, a `C¹` field `ξ` solving the equation classically on `Ω ∩ {0 < t}`, with
   `⟪Λ, J(s) ξ(s)⟫ = 0` for real `s ∈ Ω`, is a weak solution;
@@ -293,77 +294,24 @@ theorem isWeakCRSolutionHalf_congr_ae
 
 /-! ### Classical solutions -/
 
-/-- The integrability and the identity of Green's formula for `TauCeti.crFormalAdjoint`, proved
-together since they share the decomposition of the integrand. -/
-private theorem integrableOn_and_setIntegral_im_pos_inner_crFormalAdjoint {φ ξ : ℂ → V} {U : Set ℂ}
-    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
-    (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U) :
-    IntegrableOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) {z : ℂ | 0 < z.im} ∧
-      ∫ z in {z : ℂ | 0 < z.im}, ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ =
-        (∫ z in {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)⟫_ℝ) +
-          ∫ s : ℝ, ⟪φ s, J s (ξ s)⟫_ℝ := by
-  have hint {f : ℂ → ℝ} (hf : ContinuousOn f U) (h0 : ∀ z, z ∉ tsupport φ → f z = 0) :
-      Integrable f :=
-    ((hf.mono hφU).integrableOn_compact hφc).integrable_of_forall_notMem_eq_zero h0
-  have hdφ := hφ.continuous_fderiv one_ne_zero
-  have hdξ := hξ.continuousOn_fderiv_of_isOpen hU le_rfl
-  have hdJ := hJ.continuousOn_fderiv_of_isOpen hU le_rfl
-  have hadj {A : ℂ → V →L[ℝ] V} (hA : ContinuousOn A U) :
-      ContinuousOn (fun z => ContinuousLinearMap.adjoint (A z)) U :=
-    (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := V) (F := V)).continuous.comp_continuousOn hA
-  set G : ℂ → ℝ := fun z => ⟪fderiv ℝ φ z 1 + ContinuousLinearMap.adjoint (J z)
-    (fderiv ℝ φ z I) - ContinuousLinearMap.adjoint (S z) (φ z), ξ z⟫_ℝ
-  set P : ℂ → ℝ := fun z => ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)⟫_ℝ
-  set T : ℂ → ℝ := fun z => ⟪φ z, fderiv ℝ J z I (ξ z)⟫_ℝ
-  have hpt (z : ℂ) : ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ = -G z - T z := by
-    simp only [G, T, inner_crFormalAdjoint, inner_add_left, inner_sub_left,
-      ContinuousLinearMap.adjoint_inner_left]
-    ring
-  have hG : Integrable G := hint
-    ((((hdφ.clm_apply continuous_const).continuousOn.add ((hadj hJ.continuousOn).clm_apply
-      (hdφ.clm_apply continuous_const).continuousOn)).sub
-      ((hadj hS).clm_apply hφ.continuous.continuousOn)).inner hξ.continuousOn)
-    fun z hz => by simp [G, fderiv_of_notMem_tsupport ℝ hz, image_eq_zero_of_notMem_tsupport hz]
-  have hP : Integrable P := hint
-    (hφ.continuous.continuousOn.inner (((hdξ.clm_apply continuousOn_const).add
-      (hJ.continuousOn.clm_apply (hdξ.clm_apply continuousOn_const))).add
-      (hS.clm_apply hξ.continuousOn)))
-    fun z hz => by simp [P, image_eq_zero_of_notMem_tsupport hz]
-  have hT : Integrable T := hint
-    (hφ.continuous.continuousOn.inner
-      ((hdJ.clm_apply continuousOn_const).clm_apply hξ.continuousOn))
-    fun z hz => by simp [T, image_eq_zero_of_notMem_tsupport hz]
-  have hgreen := setIntegral_im_pos_inner_cauchyRiemann_adjoint hφ hφc hU hξ hJ hS hφU
-  have hsplit : ∫ z in {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) +
-      S z (ξ z) + fderiv ℝ J z I (ξ z)⟫_ℝ =
-      (∫ z in {z : ℂ | 0 < z.im}, P z) + ∫ z in {z : ℂ | 0 < z.im}, T z := by
-    simp only [inner_add_right (x := φ _) (y := _ + _ + _)]
-    exact integral_add hP.integrableOn hT.integrableOn
-  refine ⟨(hG.neg.sub hT).integrableOn.congr_fun (fun z _ => (hpt z).symm)
-    (measurableSet_lt measurable_const measurable_im), ?_⟩
-  simp_rw [hpt]
-  rw [integral_sub (f := fun z => -G z) hG.neg.integrableOn hT.integrableOn, integral_neg, hgreen,
-    hsplit]
-  ring
-
 /-- For `C¹` data with `DJ = fderiv ℝ J`, the pairing of the formal adjoint of a compactly
 supported `C¹` field `φ` with `ξ` is integrable on the upper half-plane. -/
 theorem integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn {φ ξ : ℂ → V} {U : Set ℂ}
     (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
     (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U) :
-    IntegrableOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) {z : ℂ | 0 < z.im} :=
-  (integrableOn_and_setIntegral_im_pos_inner_crFormalAdjoint hφ hφc hU hξ hJ hS hφU).1
-
-/-- **Green's formula** for `TauCeti.crFormalAdjoint` on the half-plane with `C¹` data and
-`DJ = fderiv ℝ J`: the `∂_t J` terms of `D*` and of the integration by parts cancel, leaving
-`∫_{0<t} ⟪D* φ, ξ⟫ = ∫_{0<t} ⟪φ, ∂_s ξ + J ∂_t ξ + S ξ⟫ + ∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds`. -/
-theorem setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn {φ ξ : ℂ → V} {U : Set ℂ}
-    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
-    (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U) :
-    ∫ z in {z : ℂ | 0 < z.im}, ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ =
-      (∫ z in {z : ℂ | 0 < z.im}, ⟪φ z, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)⟫_ℝ) +
-        ∫ s : ℝ, ⟪φ s, J s (ξ s)⟫_ℝ :=
-  (integrableOn_and_setIntegral_im_pos_inner_crFormalAdjoint hφ hφc hU hξ hJ hS hφU).2
+    IntegrableOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) {z : ℂ | 0 < z.im} := by
+  have hdφ := hφ.continuous_fderiv one_ne_zero
+  have hdJ := hJ.continuousOn_fderiv_of_isOpen hU le_rfl
+  have hc : ContinuousOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) U := by
+    simp only [inner_crFormalAdjoint]
+    exact ((((hdφ.clm_apply continuous_const).continuousOn.inner hξ.continuousOn).neg.sub
+      ((hdφ.clm_apply continuous_const).continuousOn.inner
+        (hJ.continuousOn.clm_apply hξ.continuousOn))).sub
+      (hφ.continuous.continuousOn.inner
+        ((hdJ.clm_apply continuousOn_const).clm_apply hξ.continuousOn))).add
+      (hφ.continuous.continuousOn.inner (hS.clm_apply hξ.continuousOn))
+  exact (((hc.mono hφU).integrableOn_compact hφc).integrable_of_forall_notMem_eq_zero
+    fun z hz => by simp [crFormalAdjoint_of_notMem_tsupport hz]).integrableOn
 
 /-- **Classical solutions are weak solutions up to the boundary.** Let `J` be `C¹` on `Ω`, with
 `DJ = fderiv ℝ J`, and `S` continuous on `Ω`. If `ξ` is `C¹` on `Ω`, solves
@@ -392,14 +340,12 @@ theorem isWeakCRSolutionHalf_of_contDiffOn (hJ : ContDiffOn ℝ 1 J Ω) (hS : Co
     ((hL.mono inter_subset_left).locallyIntegrableOn
       (Ω.isOpen.measurableSet.inter (measurableSet_le measurable_const measurable_im))).congr hLη,
     fun φ hφΛ => ?_⟩
-  obtain ⟨hint, heq⟩ := integrableOn_and_setIntegral_im_pos_inner_crFormalAdjoint
-    (φ.contDiff.of_le (by simp)) φ.hasCompactSupport Ω.isOpen hξ hJ hS φ.tsupport_subset
-  have hbdry (s : ℝ) : ⟪(φ : ℂ → V) s, J s (ξ s)⟫_ℝ = 0 := by
-    by_cases hs : (s : ℂ) ∈ Ω
-    · exact hJξ s hs _ (hφΛ s)
-    · simp [image_eq_zero_of_notMem_tsupport fun h => hs (φ.tsupport_subset h)]
-  refine ⟨hint, heq.trans ?_⟩
-  simp only [hbdry, integral_zero, add_zero]
+  refine ⟨integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn (φ.contDiff.of_le (by simp))
+    φ.hasCompactSupport Ω.isOpen hξ hJ hS φ.tsupport_subset, ?_⟩
+  rw [setIntegral_im_pos_inner_crFormalAdjoint_of_inner_eq_zero Ω.isOpen
+    (φ.contDiff.of_le (by simp)).contDiffOn hξ hJ hS
+    (φ.hasCompactSupport.isCompact.inter_right (isClosed_tsupport ξ))
+    (inter_subset_left.trans φ.tsupport_subset) fun s hs => hJξ s hs _ (hφΛ s)]
   refine setIntegral_congr_fun hH fun z hz => ?_
   by_cases hzΩ : z ∈ (Ω : Set ℂ)
   · simp only [← hη z (Opens.mem_upperHalf.2 ⟨hzΩ, hz⟩)]
@@ -431,14 +377,20 @@ theorem isWeakCRSolutionHalf_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : C
   have hU : (Ω.upperHalf : Set ℂ) ⊆ Ω := fun z hz => (Opens.mem_upperHalf.1 hz).1
   have hint := (isWeakCRSolution_iff_of_contDiffOn (hJ.mono hU) (hS.mono hU) (hξ.mono hU)
     hη).1 h.isWeakCRSolution
-  refine ⟨hint, fun s hs => (Submodule.mem_orthogonal _ _).1 <|
-    mem_orthogonal_of_forall_integral_ofReal_inner_eq_zero (w := fun s : ℝ => J s (ξ s))
-      ((hJ.continuousOn.comp continuous_ofReal.continuousOn (mapsTo_preimage _ _)).clm_apply
-        (hξ.continuousOn.comp continuous_ofReal.continuousOn (mapsTo_preimage _ _)))
-      (fun φ hφΛ => ?_) hs⟩
+  have hbdry := (Λ.forall_integral_inner_clm_apply_eq_zero_iff_of_isOpen
+    (J := fun _ => ContinuousLinearMap.id ℝ V) (η := fun s : ℝ => J s (ξ s)) Ω.isOpen
+    continuousOn_const ((hJ.continuousOn.comp continuous_ofReal.continuousOn
+      (mapsTo_preimage _ _)).clm_apply
+        (hξ.continuousOn.comp continuous_ofReal.continuousOn (mapsTo_preimage _ _)))).1
+  refine ⟨hint, fun s hs v hv =>
+    real_inner_comm v _ ▸ hbdry (fun ψ hψ hψc hψΩ hψΛ => ?_) s hs v hv⟩
+  let φ : 𝓓(Ω, V) := ⟨ψ, hψ, hψc, hψΩ⟩
+  have hφΛ : ∀ s : ℝ, (φ : ℂ → V) s ∈ Λ := hψΛ
   -- The boundary term of Green's formula is all that remains of the weak identity.
-  have h1 := setIntegral_im_pos_inner_crFormalAdjoint_of_contDiffOn
-    (φ.contDiff.of_le (by simp)) φ.hasCompactSupport Ω.isOpen hξ hJ hS φ.tsupport_subset
+  have h1 := setIntegral_im_pos_inner_crFormalAdjoint Ω.isOpen
+    (φ.contDiff.of_le (by simp)).contDiffOn hξ hJ hS
+    (φ.hasCompactSupport.isCompact.inter_right (isClosed_tsupport ξ))
+    (inter_subset_left.trans φ.tsupport_subset)
   have h2 : ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z,
       fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + S z (ξ z)⟫_ℝ =
       ∫ z in {z : ℂ | 0 < z.im}, ⟪(φ : ℂ → V) z, η z⟫_ℝ := by
@@ -446,8 +398,9 @@ theorem isWeakCRSolutionHalf_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : C
     by_cases hzΩ : z ∈ (Ω : Set ℂ)
     · rw [hint z (Opens.mem_upperHalf.2 ⟨hzΩ, hz⟩)]
     · simp [image_eq_zero_of_notMem_tsupport fun h => hzΩ (φ.tsupport_subset h)]
-  rw [h.setIntegral_inner_crFormalAdjoint φ hφΛ, h2] at h1
-  linarith
+  rw [h.setIntegral_inner_crFormalAdjoint φ hφΛ, h2, left_eq_add] at h1
+  refine (integral_congr_ae (.of_forall fun s => ?_)).trans h1
+  exact real_inner_comm _ _
 
 /-! ### Checks: `J = i`, `S = 0` and the real boundary condition -/
 
