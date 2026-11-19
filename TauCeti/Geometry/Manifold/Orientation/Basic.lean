@@ -333,6 +333,15 @@ theorem orientationAt_real (x : ℝ) :
     orientationAt real x = (Module.Basis.singleton (Fin 1) ℝ).orientation := by
   rw [real_eq_model, orientationAt_model]
 
+/-- The basis of the tangent line of `ℝ` at `x` given by the unit vector `1` is positively
+oriented for the standard orientation. -/
+theorem orientation_map_fromTangentSpace_symm_singleton (x : ℝ) :
+    ((Module.Basis.singleton (Fin 1) ℝ).map
+        (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm.toLinearEquiv).orientation =
+      real.orientationAt x := by
+  rw [Module.Basis.orientation_map, ContinuousLinearEquiv.toLinearEquiv_symm,
+    ← _root_.Orientation.map_symm, Equiv.symm_apply_eq, real_eq_model, map_orientationAt_model]
+
 /-- Cast a manifold orientation along an equality of models on the same model vector space and
 chart carrier. -/
 def congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : Orientation I M ι) :
