@@ -9,8 +9,6 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Finiteness.Defs
 import Mathlib.LinearAlgebra.Isomorphisms
-import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
-import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 
 /-!
 # Quotients of submodules
@@ -40,9 +38,8 @@ packages this as an additive equivalence. For `I = Ring.jacobson R` it applies t
 `S`, by `IsSemisimpleModule.jacobson_le_annihilator`.
 
 The images of a set `S` span `M ⧸ p` exactly when `p ⊔ span S = ⊤`
-(`Submodule.span_image_mkQ_eq_top_iff`). When the quotient is finite-dimensional over a division
-ring, finitely many vectors of `S` already suffice
-(`Submodule.exists_finset_subset_sup_span_eq_top`).
+(`Submodule.span_image_mkQ_eq_top_iff`). When the quotient is finitely generated, finitely many
+vectors of `S` already suffice (`Submodule.exists_finset_subset_sup_span_eq_top`).
 -/
 
 public section
@@ -139,18 +136,17 @@ theorem span_image_mkQ_eq_top_iff {p : Submodule R M} {S : Set M} :
     span R (p.mkQ '' S) = ⊤ ↔ p ⊔ span R S = ⊤ := by
   rw [← map_span, map_mkQ_eq_top]
 
-/-- **Finitely many vectors complete a submodule of finite codimension.** If `p` has a
-finite-dimensional quotient and `p ⊔ span K S = ⊤`, then some finite subset `t ⊆ S` already gives
-`p ⊔ span K t = ⊤`. -/
-theorem exists_finset_subset_sup_span_eq_top {K M : Type*} [DivisionRing K] [AddCommGroup M]
-    [Module K M] {p : Submodule K M} [Module.Finite K (M ⧸ p)] {S : Set M}
-    (h : p ⊔ span K S = ⊤) : ∃ t : Finset M, ↑t ⊆ S ∧ p ⊔ span K t = ⊤ := by
+/-- **Finitely many vectors complete a submodule with finitely generated quotient.** If `M ⧸ p`
+is finitely generated and `p ⊔ span R S = ⊤`, then some finite subset `t ⊆ S` already gives
+`p ⊔ span R t = ⊤`. -/
+theorem exists_finset_subset_sup_span_eq_top {p : Submodule R M} [Module.Finite R (M ⧸ p)]
+    {S : Set M} (h : p ⊔ span R S = ⊤) : ∃ t : Finset M, ↑t ⊆ S ∧ p ⊔ span R t = ⊤ := by
   classical
-  obtain ⟨b, hbS, -, hbspan, -⟩ := exists_finset_span_eq_linearIndepOn K (p.mkQ '' S)
+  rw [← span_image_mkQ_eq_top_iff] at h
+  obtain ⟨b, hbS, hbspan⟩ := (fg_span_iff_fg_span_finset_subset _).1 (h ▸ Module.Finite.fg_top)
   obtain ⟨t, htS, rfl⟩ := Finset.subset_set_image_iff.1 hbS
   refine ⟨t, htS, ?_⟩
-  rw [← span_image_mkQ_eq_top_iff, ← Finset.coe_image, hbspan, span_image_mkQ_eq_top_iff]
-  exact h
+  rw [← span_image_mkQ_eq_top_iff, ← Finset.coe_image, ← hbspan, h]
 
 end Submodule
 

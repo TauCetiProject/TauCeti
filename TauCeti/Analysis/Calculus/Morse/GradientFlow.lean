@@ -261,7 +261,7 @@ decreases along `γ`, strictly so near `s₀`, and the ball is chosen so small t
 the drop of `f ∘ γ` over the times `s₀ ± δ`. -/
 theorem exists_pos_forall_dist_lt_mem_Ioo
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
-    {s₀ : ℝ} (hfc : ContinuousAt f (γ s₀)) (hg : ContinuousAt (fun t ↦ ∇ f (γ t)) s₀)
+    {s₀ : ℝ} (hg : ContinuousAt (fun t ↦ ∇ f (γ t)) s₀)
     (hcrit : ∇ f (γ s₀) ≠ 0) {δ : ℝ} (hδ : 0 < δ) :
     ∃ r > 0, ∀ s, dist (γ s) (γ s₀) < r → s ∈ Ioo (s₀ - δ) (s₀ + δ) := by
   have hanti := antitone_comp_neg_gradient hγ hf
@@ -282,7 +282,7 @@ theorem exists_pos_forall_dist_lt_mem_Ioo
   -- Points close to `γ s₀` have values of `f` strictly between those at `s₀ ± δ'`.
   set ε := min (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))
   have hε0 : 0 < ε := lt_min (by linarith) (by linarith)
-  obtain ⟨r, hr, hfr⟩ := Metric.continuousAt_iff.1 hfc ε hε0
+  obtain ⟨r, hr, hfr⟩ := Metric.continuousAt_iff.1 (hf s₀).continuousAt ε hε0
   refine ⟨r, hr, fun s hs ↦ ?_⟩
   have hfs := hfr hs
   rw [Real.dist_eq, abs_lt] at hfs

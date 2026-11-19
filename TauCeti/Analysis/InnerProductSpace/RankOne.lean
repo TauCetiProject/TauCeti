@@ -119,8 +119,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 with `b`, for nonzero `a` and `b`: the pairing is `‖a‖² ‖b‖² + ⟪a, b⟫²`. -/
 theorem inner_rankOne_add_rankOne_apply_self_pos {a b : E} (ha : a ≠ 0) (hb : b ≠ 0) :
     0 < ⟪(rankOne ℝ b a + rankOne ℝ a b) a, b⟫ := by
-  rw [add_apply, rankOne_apply, rankOne_apply, inner_add_left,
-    real_inner_smul_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
+  simp only [add_apply, rankOne_apply, inner_add_left, real_inner_smul_left,
     real_inner_self_eq_norm_sq, real_inner_comm a b]
   have := mul_pos (pow_pos (norm_pos_iff.2 ha) 2) (pow_pos (norm_pos_iff.2 hb) 2)
   nlinarith [sq_nonneg ⟪b, a⟫]
