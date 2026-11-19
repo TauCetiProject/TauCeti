@@ -285,6 +285,11 @@ theorem comp_comp_reverse (q : 𝔸.Path x y) (p : 𝔸.Path y z) :
     Homotopic ((q.comp p).comp p.reverse) q := by
   simpa only [Quiver.Path.comp_assoc, Quiver.Path.comp_nil] using (comp_reverse p).comp_left q
 
+/-- A path followed by the reverse of a path and then that path is homotopic to the first path. -/
+theorem comp_reverse_comp (q : 𝔸.Path x y) (p : 𝔸.Path z y) :
+    Homotopic ((q.comp p.reverse).comp p) q :=
+  comp_reverse_comp_comp q p .nil
+
 /-- Reversing homotopic paths gives homotopic paths. -/
 theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse q.reverse := by
   -- `p⁻¹ ~ p⁻¹ (q q⁻¹) = (p⁻¹ q) q⁻¹ ~ (p⁻¹ p) q⁻¹ ~ q⁻¹`.
@@ -294,7 +299,24 @@ theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse 
   rw [Quiver.Path.nil_comp] at h₂
   exact h₁.trans h₂
 
+/-- A common initial path can be cancelled from homotopic paths. -/
+theorem comp_left_iff {p : 𝔸.Path x y} {q r : 𝔸.Path y z} :
+    Homotopic (p.comp q) (p.comp r) ↔ Homotopic q r := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_left p⟩
+  -- `q ~ p⁻¹ (p q) ~ p⁻¹ (p r) ~ r`.
+  have hq := comp_reverse_comp_comp .nil p q
+  have hr := comp_reverse_comp_comp .nil p r
+  rw [Quiver.Path.nil_comp, Quiver.Path.nil_comp] at hq hr
+  exact hq.symm.trans ((h.comp_left p.reverse).trans hr)
+
 end Homotopic
+
+/-- A path is homotopic to `r p⁻¹` exactly when its concatenation with `p` is homotopic to `r`. -/
+theorem homotopic_comp_reverse_iff {x y z : 𝔸.LetterVertex} {q : 𝔸.Path x y} {p : 𝔸.Path y z}
+    {r : 𝔸.Path x z} : Homotopic q (r.comp p.reverse) ↔ Homotopic (q.comp p) r := by
+  refine ⟨fun h ↦ (h.comp_right p).trans ?_, fun h ↦ Homotopic.trans ?_ (h.comp_right p.reverse)⟩
+  · simpa using Homotopic.comp_reverse_comp_comp r p .nil
+  · simpa using (Homotopic.comp_reverse_comp_comp q p.reverse .nil).symm
 
 variable (𝔸) in
 /-- Homotopy of `𝔸`-paths as a setoid. -/
