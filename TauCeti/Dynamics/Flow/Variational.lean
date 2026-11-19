@@ -45,6 +45,8 @@ compute the first-order dependence of the flow on parameters of the vector field
 * `TauCeti.contDiff_timeDependentFlow` and `TauCeti.hasDerivAt_fderiv_timeDependentFlow`: the
   time-dependent flow `φ(s, t)` of a jointly `C^(n+1)` field (`TauCeti.timeDependentFlow`) is
   `C^(n+1)` in `(s, t, x)`, and `∂ₜ Dφ(s, t)(x) = Dvₜ(φ(s, t) x) ∘ Dφ(s, t)(x)`.
+* `TauCeti.contDiff_timeDependentFlow_apply`: the time maps of a `C^r` time-dependent field are
+  `C^r`, for every `r : ℕ∞`.
 * `TauCeti.differentiable_timeDependentFlow` and
   `TauCeti.fderiv_timeDependentFlow_eq_dysonSeriesLeft`: consequently `Dφ(s, t)(x)` exists and is
   the propagator `TauCeti.dysonSeriesLeft` of the linearized equation `ξ' = Dv_r(φ(s, r) x) ξ`
@@ -301,6 +303,15 @@ theorem contDiff_timeDependentFlow (n : ℕ)
   convert contDiff_snd.comp h using 1
   funext p
   simp [globalSolution_timeDependentSuspension]
+
+/-- A time-dependent field which is jointly `C^r` has `C^r` time maps, for every `r : ℕ∞`. -/
+theorem contDiff_timeDependentFlow_apply {r : ℕ∞} (hvs : ContDiff ℝ r fun p : ℝ × E ↦ v p.1 p.2)
+    (s t : ℝ) : ContDiff ℝ r (timeDependentFlow v hv s t) := by
+  refine contDiff_iff_forall_nat_le.2 fun m hm ↦ ?_
+  have hι : ContDiff ℝ m fun x : E ↦ ((s, t), x) := contDiff_const.prodMk contDiff_id
+  cases m with
+  | zero => exact contDiff_zero.2 ((continuous_timeDependentFlow v hv).comp hι.continuous)
+  | succ m => exact (contDiff_timeDependentFlow hv m (hvs.of_le (by exact_mod_cast hm))).comp hι
 
 variable (hvs : ContDiff ℝ 1 fun p : ℝ × E ↦ v p.1 p.2)
 include hvs
