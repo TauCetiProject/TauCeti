@@ -38,9 +38,9 @@ that pass to the limit from smooth data:
 * the one-sided maximum principle bound `u ≤ exp (γ t) (M + t K)` for `f ≤ K`, `g ≤ M`, hence the
   two-sided bound and the comparison principle;
 * `u(·, 0) = g`, and `u(·, t) → g` uniformly as `t → 0⁺`;
-* it is the only bounded solution that is classical for `t > 0`: a bounded function `v` on
-  `[0, T] × ℝⁿ`, continuous there, `C²` in space and differentiable in time for `0 < t < T`, with
-  `P v = f` there and `v(·, 0) = g`, is the extended solution
+* any bounded solution that is classical for `0 < t < T` is the extended solution: a bounded
+  function `v` on `[0, T] × ℝⁿ`, continuous there, `C²` in space and differentiable in time for
+  `0 < t < T`, with `P v = f` there and `v(·, 0) = g`, is the extended solution
   (`eq_euclideanCauchySolutionBUC_apply_of_deriv_sub_eq`). More precisely, bounded classical
   subsolutions lie below it and supersolutions above it
   (`le_euclideanCauchySolutionBUC_apply_of_deriv_sub_le`,
@@ -467,9 +467,9 @@ private theorem sub_le_exp_mul_of_deriv_sub_le
     (c := fun s y ↦ c (slabMk y (projIcc (0 : ℝ) T hT.le s)))
     (Lam := ∑ i, ‖a i i‖) (β := ∑ i, ‖b i‖) (M := δ) (F := 0)
     (fun s _ y ξ ↦ nonneg_quadraticForm ha _ ξ)
-    (fun s _ y ↦ (trace_of_le_sum_norm a _).trans (le_mul_of_one_le_right (by positivity)
+    (fun s _ y ↦ (HolderSpace.trace_le_sum_norm a _).trans (le_mul_of_one_le_right (by positivity)
       (le_add_of_nonneg_right (by positivity))))
-    (fun s _ y ↦ (norm_sum_smul_single_le_sum_norm b _).trans
+    (fun s _ y ↦ (HolderSpace.norm_sum_apply_smul_single_le_sum_norm b _).trans
       (le_mul_of_one_le_right (by positivity) (le_add_of_nonneg_right (norm_nonneg y))))
     (fun s _ y ↦ (le_abs_self _).trans (HolderSpace.norm_apply_le c _)) (norm_nonneg c) hδ le_rfl
     ((hcont.add (hUcont.continuousOn.const_smul (-1 : ℝ))).congr fun _ _ ↦ rfl)

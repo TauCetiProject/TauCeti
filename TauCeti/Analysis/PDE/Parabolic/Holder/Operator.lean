@@ -474,13 +474,14 @@ theorem deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_euclideanParabolic
 
 omit [DecidableEq ι] in
 /-- The trace of the coefficient matrix `(aⁱʲ(p))` is at most `∑ᵢ ‖aⁱⁱ‖`. -/
-theorem trace_of_le_sum_norm (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+theorem _root_.TauCeti.HolderSpace.trace_le_sum_norm
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
     (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) :
     (Matrix.of fun i j ↦ a i j p).trace ≤ ∑ i, ‖a i i‖ :=
   Finset.sum_le_sum fun i _ ↦ (le_abs_self _).trans (HolderSpace.norm_apply_le (a i i) _)
 
 /-- The drift vector `∑ᵢ bⁱ(p) eᵢ` has norm at most `∑ᵢ ‖bⁱ‖`. -/
-theorem norm_sum_smul_single_le_sum_norm
+theorem _root_.TauCeti.HolderSpace.norm_sum_apply_smul_single_le_sum_norm
     (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
     (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) :
     ‖∑ i, b i p • EuclideanSpace.single i (1 : ℝ)‖ ≤ ∑ i, ‖b i‖ :=
@@ -517,9 +518,9 @@ theorem le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le
       (c := fun t x ↦ c (slabMk x (projIcc t₀ t₁ ht.le (t + t₀))))
       (T := t₁ - t₀) (Lam := ∑ i, ‖a i i‖) (β := ∑ i, ‖b i‖)
       (fun t _ x ξ ↦ ha _ ξ)
-      (fun t _ x ↦ (trace_of_le_sum_norm a _).trans (le_mul_of_one_le_right (by positivity)
+      (fun t _ x ↦ (HolderSpace.trace_le_sum_norm a _).trans (le_mul_of_one_le_right (by positivity)
         (by nlinarith [sq_nonneg ‖x‖])))
-      (fun t _ x ↦ (norm_sum_smul_single_le_sum_norm b _).trans
+      (fun t _ x ↦ (HolderSpace.norm_sum_apply_smul_single_le_sum_norm b _).trans
         (le_mul_of_one_le_right (by positivity) (by linarith [norm_nonneg x])))
       (fun t _ x ↦ hc _) hγ hM hK hcont.continuousOn
       (hbdd.subset (image_subset_range _ _)).bddAbove
