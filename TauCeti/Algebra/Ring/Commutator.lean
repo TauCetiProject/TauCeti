@@ -26,7 +26,7 @@ element being powered, and the nilpotency results additionally need a `ℚ`-alge
 divide by the multiplicity a power releases. Over a ring the same `z` is the commutator
 `x * y - y * x`, which is the form the integer-eigenvector results take.
 
-For elements `a`, `b`, `c` of a ring, the double commutator of a square is
+For elements `a`, `b`, `c` of a non-unital ring, the double commutator of a square is
 `⁅⁅a * a, b⁆, c⁆ = a * ⁅⁅a, b⁆, c⁆ + ⁅a, c⁆ * ⁅a, b⁆ + ⁅a, b⁆ * ⁅a, c⁆ + ⁅⁅a, b⁆, c⁆ * a`.
 When `a` is a first-order differential operator and `b`, `c` are multiplication operators, the
 outer terms vanish, so this computes the second-order symbol of `a²` from the first-order symbol
@@ -270,11 +270,11 @@ end CentralCommutator
 
 end Associative
 
-/-- **The double commutator of a square**: in any ring,
+/-- **The double commutator of a square**: in any non-unital ring,
 `⁅⁅a * a, b⁆, c⁆ = a * ⁅⁅a, b⁆, c⁆ + ⁅a, c⁆ * ⁅a, b⁆ + ⁅a, b⁆ * ⁅a, c⁆ + ⁅⁅a, b⁆, c⁆ * a`. In
 particular, if `⁅⁅a, b⁆, c⁆ = 0`, then `⁅⁅a * a, b⁆, c⁆` is the anticommutator of `⁅a, b⁆` and
 `⁅a, c⁆`. -/
-theorem lie_lie_mul_self {A : Type*} [Ring A] (a b c : A) :
+theorem lie_lie_mul_self {A : Type*} [NonUnitalRing A] (a b c : A) :
     ⁅⁅a * a, b⁆, c⁆ = a * ⁅⁅a, b⁆, c⁆ + ⁅a, c⁆ * ⁅a, b⁆ + ⁅a, b⁆ * ⁅a, c⁆ + ⁅⁅a, b⁆, c⁆ * a := by
   simp only [Ring.lie_def]
   noncomm_ring

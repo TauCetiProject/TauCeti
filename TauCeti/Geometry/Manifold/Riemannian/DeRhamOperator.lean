@@ -62,6 +62,8 @@ codifferentials `δ` with these properties, in parallel with the Laplacian
 * `TauCeti.SmoothForm.lie_diffAddCodiff_piMap`,
   `TauCeti.SmoothForm.lie_deRhamOperator_piMap_funSMulₗ`:
   the commutator of `D + δ` with a degreewise operator, and the symbol of `d + d*`.
+* `TauCeti.SmoothForm.coe_lie_deRhamOperator_piMap_funSMulₗ_apply_add_one_add_one` and its
+  boundary-degree cases: the symbol `[d + d*, f] = df ∧ · - ι_(grad f)` degree by degree.
 * `TauCeti.SmoothForm.lie_lie_deRhamOperator_piMap_funSMulₗ`: `d + d*` has order one.
 * `TauCeti.SmoothForm.coe_lie_mul_lie_add_lie_mul_lie_deRhamOperator_apply`,
   `TauCeti.SmoothForm.coe_lie_deRhamOperator_mul_self_apply`: the Clifford relation of the symbol,
@@ -314,7 +316,9 @@ private theorem sum_pairing_diffAddCodiff (α β : (j : Fin (m + 1)) → SmoothF
       · exact .inr (h ⟨k + 1, hk⟩)
   rw [Finset.sum_congr rfl fun j _ ↦ hsplit j, Finset.sum_add_distrib, Fin.sum_univ_succ,
     Fin.sum_univ_castSucc, Finset.sum_add_distrib]
-  simp [A, B, ha, hb]
+  simp only [ha, Fin.cases_zero, Fin.cases_succ, zero_add, hb, Fin.eta, Fin.val_castSucc, Fin.is_lt,
+    ↓reduceDIte, Fin.val_last, lt_self_iff_false, add_zero, add_right_inj, A, B]
+  -- The remaining sums differ only in `Fin.castSucc i`, which is `⟨i, _⟩` by definition.
   rfl
 
 variable (hadj : ∀ {k l : ℕ} (hkl : k + 1 + l = m) (α : SmoothForm I M ℝ k)
@@ -355,8 +359,7 @@ theorem sum_integralTopForm_inner_diffAddCodiff_eq_inner_diffAddCodiff
     (h.imp (fun h ↦ h ⟨i + 1, by omega⟩) fun h ↦ h ⟨i, by omega⟩).symm
   rw [add_comm]
   congr 1
-  · rw [hcomm, pairing, ← hadj _ _ _ hcs']
-    rfl
+  · rw [hcomm, pairing, ← hadj _ _ _ hcs', pairing]
   · rw [pairing, hadj _ _ _ hcs]
     exact hcomm _ _ _
 
@@ -392,13 +395,11 @@ theorem diffAddCodiff_eq_zero_iff (hDD : ∀ k, D (k + 1) ∘ₗ D k = 0)
   obtain ⟨l, hkl⟩ : ∃ l, k + l = m := ⟨m - k, by omega⟩
   rcases k with _ | k <;> rcases l with _ | l
   · exact diffAddCodiff_apply_zero_zero D δ hkl α
-  · rw [diffAddCodiff_apply_zero_add_one D δ (show 0 + 1 + l = m by omega), hcodiff]
-    rfl
-  · rw [diffAddCodiff_apply_add_one_zero D δ hkl, hdiff k (by omega)]
-    rfl
+  · rw [diffAddCodiff_apply_zero_add_one D δ (show 0 + 1 + l = m by omega), hcodiff,
+      Pi.zero_apply]
+  · rw [diffAddCodiff_apply_add_one_zero D δ hkl, hdiff k (by omega), Pi.zero_apply]
   · rw [diffAddCodiff_apply_add_one_add_one D δ (show k + 1 + 1 + l = m by omega),
-      hdiff k (by omega), hcodiff, add_zero]
-    rfl
+      hdiff k (by omega), hcodiff, add_zero, Pi.zero_apply]
 
 end Pairing
 
@@ -508,37 +509,6 @@ end Boundaryless
 
 section Symbol
 
-omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The exterior derivative is a first-order operator: `[[d, f], g] = 0`. -/
-private theorem mextDerivₗ_lie_lie_eq_zero (f g : C^∞⟮I, M; ℝ⟯) (k : ℕ) :
-    (mextDerivₗ I k ∘ₗ funSMulₗ (F := ℝ) f - funSMulₗ f ∘ₗ mextDerivₗ I k) ∘ₗ funSMulₗ g -
-      funSMulₗ g ∘ₗ (mextDerivₗ I k ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ mextDerivₗ I k) = 0 := by
-  refine LinearMap.ext fun α ↦ Subtype.ext (funext fun x ↦ ?_)
-  ext v
-  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply, LinearMap.zero_apply, Submodule.coe_zero, Pi.zero_apply,
-    ContinuousAlternatingMap.coe_zero, mextDerivₗ_funSMulₗ_apply, coe_funSMulₗ,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul, RoughForm.wedge_def,
-    RoughForm.wedgeWith_apply', ContinuousAlternatingMap.pairedWedge_smul_right]
-  ring
-
-/-- The codifferential is a first-order operator: `[[d*, f], g] = 0`. -/
-private theorem codifferential_lie_lie_eq_zero (o : Manifold.Orientation I M (Fin m))
-    (hkl : k + 1 + l = m) (f g : C^∞⟮I, M; ℝ⟯) :
-    (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) ∘ₗ funSMulₗ g -
-      funSMulₗ g ∘ₗ (codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) =
-      0 := by
-  refine LinearMap.ext fun β ↦ Subtype.ext (funext fun x ↦ ?_)
-  ext v
-  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply, LinearMap.zero_apply, Submodule.coe_zero, Pi.zero_apply,
-    ContinuousAlternatingMap.coe_zero, coe_codifferential_funSMulₗ, coe_funSMulₗ,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul, RoughForm.interior_apply]
-  ring
-
-variable (o : Manifold.Orientation I M (Fin m))
-
 /-- **The symbol of the de Rham operator**: the commutator of `d + d*` with multiplication by a
 smooth function `f` is the operator `D + δ` of the commutators `[d, f] = df ∧ ·` and
 `[d*, f] = -ι_(grad f)` (`TauCeti.SmoothForm.mextDerivₗ_funSMulₗ_apply`,
@@ -549,6 +519,57 @@ theorem lie_deRhamOperator_piMap_funSMulₗ (f : C^∞⟮I, M; ℝ⟯) :
       diffAddCodiff (fun k ↦ mextDerivₗ I k ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ mextDerivₗ I k)
         (fun hkl ↦ codifferential o hkl ∘ₗ funSMulₗ f - funSMulₗ f ∘ₗ codifferential o hkl) :=
   lie_diffAddCodiff_piMap (fun _ ↦ funSMulₗ f)
+
+/-- On a zero-dimensional manifold the symbol `[d + d*, f]` of the de Rham operator is zero. -/
+theorem lie_deRhamOperator_piMap_funSMulₗ_apply_zero_zero (hkl : 0 + 0 = m)
+    (f : C^∞⟮I, M; ℝ⟯) (α : (j : Fin (m + 1)) → SmoothForm I M ℝ j) :
+    ⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆ α
+      ⟨0, by omega⟩ = 0 := by
+  rw [lie_deRhamOperator_piMap_funSMulₗ, diffAddCodiff_apply_zero_zero _ _ hkl]
+
+/-- **The symbol of the de Rham operator in degree `0`**: in positive dimension the degree-`0`
+component of `[d + d*, f]α` is `-ι_(grad f) α₁`. -/
+theorem coe_lie_deRhamOperator_piMap_funSMulₗ_apply_zero_add_one (hkl : 0 + 1 + l = m)
+    (f : C^∞⟮I, M; ℝ⟯) (α : (j : Fin (m + 1)) → SmoothForm I M ℝ j) :
+    (⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆ α
+      ⟨0, by omega⟩ : RoughForm I M ℝ 0) =
+      -RoughForm.interior (Manifold.mgradient I f) (α ⟨0 + 1, by omega⟩).1 := by
+  rw [lie_deRhamOperator_piMap_funSMulₗ, diffAddCodiff_apply_zero_add_one _ _ hkl]
+  funext x
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, Pi.sub_apply,
+    coe_codifferential_funSMulₗ, coe_funSMulₗ, Pi.neg_apply]
+  abel
+
+/-- **The symbol of the de Rham operator in the top degree**: the top-degree component of
+`[d + d*, f]α` is `df ∧ α_(m-1)`. -/
+theorem coe_lie_deRhamOperator_piMap_funSMulₗ_apply_add_one_zero (hkl : k + 1 + 0 = m)
+    (f : C^∞⟮I, M; ℝ⟯) (α : (j : Fin (m + 1)) → SmoothForm I M ℝ j) (x : M)
+    (v : Fin (k + 1) → TangentSpace I x) :
+    (⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆ α
+      ⟨k + 1, by omega⟩ : RoughForm I M ℝ (k + 1)) x v =
+      (mextDeriv (RoughForm.ofFunction I f)).wedge (α ⟨k, by omega⟩).1 x
+        (v ∘ Fin.cast (show 0 + 1 + k = k + 1 by omega)) := by
+  rw [lie_deRhamOperator_piMap_funSMulₗ, diffAddCodiff_apply_add_one_zero _ _ hkl]
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_sub, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, mextDerivₗ_funSMulₗ_apply, coe_funSMulₗ,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul, add_sub_cancel_right]
+
+/-- **The symbol of the de Rham operator**: strictly between degree `0` and the top degree, the
+degree-`(k + 1)` component of `[d + d*, f]α` is `df ∧ α_k - ι_(grad f) α_(k+2)`. -/
+theorem coe_lie_deRhamOperator_piMap_funSMulₗ_apply_add_one_add_one (hkl : k + 1 + 1 + l = m)
+    (f : C^∞⟮I, M; ℝ⟯) (α : (j : Fin (m + 1)) → SmoothForm I M ℝ j) (x : M)
+    (v : Fin (k + 1) → TangentSpace I x) :
+    (⁅deRhamOperator o, LinearMap.piMap fun j : Fin (m + 1) ↦ funSMulₗ (F := ℝ) (k := j) f⁆ α
+      ⟨k + 1, by omega⟩ : RoughForm I M ℝ (k + 1)) x v =
+      (mextDeriv (RoughForm.ofFunction I f)).wedge (α ⟨k, by omega⟩).1 x
+          (v ∘ Fin.cast (show 0 + 1 + k = k + 1 by omega)) -
+        RoughForm.interior (Manifold.mgradient I f) (α ⟨k + 1 + 1, by omega⟩).1 x v := by
+  rw [lie_deRhamOperator_piMap_funSMulₗ, diffAddCodiff_apply_add_one_add_one _ _ hkl]
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, Submodule.coe_add, Submodule.coe_sub,
+    Pi.add_apply, Pi.sub_apply, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.sub_apply, mextDerivₗ_funSMulₗ_apply, coe_codifferential_funSMulₗ,
+    coe_funSMulₗ, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  ring
 
 /-- **The de Rham operator has order one**: its double commutator with multiplication by smooth
 functions `f` and `g` vanishes, `[[d + d*, f], g] = 0`. -/
