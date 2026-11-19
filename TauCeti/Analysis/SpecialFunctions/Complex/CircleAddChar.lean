@@ -8,25 +8,34 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Data.ZMod.ValMinAbs
 
+import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import Mathlib.NumberTheory.Harmonic.Bounds
+import TauCeti.Data.ZMod.Count
 
 /-!
 # Values of the standard circle character of `ZMod N`
 
 Mathlib's `ZMod.toCircle` sends `j : ZMod N` to `exp (2πij/N)`. At level `2n` it sends `n`
 to `exp (πi) = -1`. The distance from `1` to a character value is bounded below using the distance
-of the corresponding residue to zero around the circle.
+of the corresponding residue to zero around the circle. The resulting reciprocal-chord and
+geometric-sum bounds give a logarithmic estimate after summing over nonzero frequencies.
 
 ## Main results
 
 * `ZMod.coe_toCircle_natCast_self`: `ZMod.toCircle (n : ZMod (2n)) = -1`.
 * `ZMod.le_norm_stdAddChar_sub_one`: a lower bound for the distance to `1`.
+* `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
+* `ZMod.norm_sum_range_stdAddChar_mul_add_le`: a geometric-sum bound at nonzero frequency.
+* `ZMod.sum_inv_val_le_one_add_log`: a logarithmic bound for reciprocal representatives.
+* `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le`: the summed geometric-sum bound.
 -/
 
 public section
 
 namespace ZMod
 
+open Finset
 open scoped Real
 
 /-- The standard circle character of `ZMod (2n)` sends `n` to `exp (πi) = -1`. -/
@@ -69,5 +78,102 @@ theorem le_norm_stdAddChar_sub_one {N : ℕ} [NeZero N] (k : ZMod N) :
       field_simp [Real.pi_ne_zero]
       ring
     _ ≤ _ := mul_le_mul_of_nonneg_left (Real.mul_abs_le_abs_sin hhalf) (by norm_num)
+
+variable {N : ℕ} [NeZero N]
+
+/-- The reciprocal chord bound in terms of the least nonnegative representatives of a
+nonzero residue and its negative. -/
+theorem two_div_norm_stdAddChar_sub_one_le (k : ZMod N) (hk : k ≠ 0) :
+    2 / ‖ZMod.stdAddChar k - 1‖ ≤
+      (N : ℝ) / 2 * ((k.val : ℝ)⁻¹ + ((-k).val : ℝ)⁻¹) := by
+  have : NeZero k := ⟨hk⟩
+  have hkpos : (0 : ℝ) < k.val := Nat.cast_pos.mpr (ZMod.val_pos.mpr hk)
+  have hnegpos : (0 : ℝ) < (-k).val := Nat.cast_pos.mpr (ZMod.val_pos.mpr (neg_ne_zero.mpr hk))
+  have hm : (0 : ℝ) < min (k.val : ℝ) ((-k).val : ℝ) := lt_min hkpos hnegpos
+  have hc := ZMod.le_norm_stdAddChar_sub_one k
+  rw [ZMod.valMinAbs_natAbs_eq_min, ← ZMod.val_neg_of_ne_zero k, Nat.cast_min] at hc
+  calc
+    2 / ‖ZMod.stdAddChar k - 1‖ ≤
+        2 / (4 * min (k.val : ℝ) ((-k).val : ℝ) / N) :=
+      div_le_div_of_nonneg_left (by norm_num)
+        (div_pos (mul_pos (by norm_num) hm) (Nat.cast_pos.mpr (NeZero.pos N))) hc
+    _ = (N : ℝ) / 2 * (min (k.val : ℝ) ((-k).val : ℝ))⁻¹ := by
+      field_simp
+      ring
+    _ ≤ _ := by
+      refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+      rcases le_total (k.val : ℝ) ((-k).val : ℝ) with h | h
+      · rw [min_eq_left h]
+        exact le_add_of_nonneg_right (by positivity)
+      · rw [min_eq_right h]
+        exact le_add_of_nonneg_left (by positivity)
+
+/-- A geometric sum of standard additive-character values on an interval is bounded by
+the reciprocal chord length of its nonzero frequency. -/
+theorem norm_sum_range_stdAddChar_mul_add_le (a k : ZMod N) (H : ℕ)
+    (hk : k ≠ 0) :
+    ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤
+      2 / ‖stdAddChar k - 1‖ := by
+  have hz : stdAddChar k ≠ 1 := by
+    intro h
+    apply hk
+    apply injective_stdAddChar
+    simpa only [AddChar.map_zero_eq_one] using h
+  have heq : ∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N))) =
+      stdAddChar (k * a) * ∑ j ∈ range H, (stdAddChar k) ^ j := by
+    rw [mul_sum]
+    apply sum_congr rfl
+    intro j _
+    simp only [mul_add, AddChar.map_add_eq_mul]
+    congr 1
+    simpa only [nsmul_eq_mul, mul_comm] using
+      (stdAddChar (N := N)).map_nsmul_eq_pow j k
+  rw [heq, norm_mul, ZMod.stdAddChar_apply, Circle.norm_coe, one_mul, geom_sum_eq hz, norm_div]
+  apply div_le_div_of_nonneg_right _ (norm_nonneg _)
+  calc ‖stdAddChar k ^ H - 1‖ ≤ ‖stdAddChar k ^ H‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
+    _ = 2 := by
+      simp only [norm_pow, ZMod.stdAddChar_apply, Circle.norm_coe, one_pow, norm_one]
+      norm_num
+
+/-- The sum of reciprocal least nonnegative representatives of the nonzero residues is
+bounded by one plus the logarithm of the modulus. -/
+theorem sum_inv_val_le_one_add_log :
+    ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ ≤ 1 + Real.log N := by
+  have hh : ∑ j ∈ range N, (j : ℝ)⁻¹ ≤ (harmonic N : ℝ) := by
+    rw [sum_range_eq_add_Ico _ (NeZero.pos N), harmonic_eq_sum_Icc]
+    simp only [Nat.cast_zero, _root_.inv_zero, zero_add, Rat.cast_sum, Rat.cast_inv,
+      Rat.cast_natCast]
+    exact sum_le_sum_of_subset_of_nonneg Ico_subset_Icc_self fun j _ _ ↦ by positivity
+  have he : ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ =
+      ∑ k : ZMod N, (k.val : ℝ)⁻¹ := by
+    rw [← sum_erase_add _ _ (mem_univ (0 : ZMod N))]
+    simp
+  rw [he, ZMod.sum_val_eq_sum_range (fun j ↦ (j : ℝ)⁻¹)]
+  exact hh.trans (harmonic_le_one_add_log N)
+
+/-- Summing the norms of interval sums of the standard additive character over nonzero
+frequencies is bounded by the modulus times one plus its logarithm. -/
+theorem sum_norm_sum_range_stdAddChar_mul_add_le (a : ZMod N) (H : ℕ) :
+    ∑ k ∈ univ.erase (0 : ZMod N),
+        ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤
+      N * (1 + Real.log N) := by
+  have hneg : ∑ k ∈ univ.erase (0 : ZMod N), ((-k).val : ℝ)⁻¹ =
+      ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ := by
+    apply sum_equiv (Equiv.neg (ZMod N))
+    · intro k
+      simp only [mem_erase, mem_univ, and_true, Equiv.neg_apply, neg_ne_zero]
+    · intro k _
+      rfl
+  calc
+    _ ≤ ∑ k ∈ univ.erase (0 : ZMod N),
+        (N : ℝ) / 2 * ((k.val : ℝ)⁻¹ + ((-k).val : ℝ)⁻¹) := by
+      apply sum_le_sum
+      intro k hk
+      exact (norm_sum_range_stdAddChar_mul_add_le a k H (mem_erase.mp hk).1).trans
+        (two_div_norm_stdAddChar_sub_one_le k (mem_erase.mp hk).1)
+    _ = (N : ℝ) * ∑ k ∈ univ.erase (0 : ZMod N), (k.val : ℝ)⁻¹ := by
+      rw [← mul_sum, sum_add_distrib, hneg]
+      ring
+    _ ≤ _ := mul_le_mul_of_nonneg_left sum_inv_val_le_one_add_log (Nat.cast_nonneg N)
 
 end ZMod
