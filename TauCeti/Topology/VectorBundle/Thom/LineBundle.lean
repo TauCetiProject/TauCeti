@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.VectorBundle.FiniteDimensional
+public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Permutation
 public import TauCeti.AlgebraicTopology.Singular.Transfer.CoveringPair
+public import TauCeti.Topology.VectorBundle.Orientation.TwistedHomology
 public import TauCeti.Topology.VectorBundle.SphereBundle.LocallyTrivial
 
 /-!
@@ -41,6 +44,38 @@ lifts the connecting map of the pair: composed with the map `Hₙ(B; L) ⟶ Hₙ
 induced by `L ⟶ R[S(E)]`, it is that connecting map
 (`TauCeti.gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_comp`).
 
+The canonical such `L` is the orientation local system `o(E)`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystem`), whose fibre over `b` has the two
+orientations of `E_b` as generators. A unit vector `v` orients its fibre, and `-v` gives the
+opposite orientation, so the unit sphere bundle maps to the orientation double cover as a map of
+double covers over `B` (`TauCeti.sphereBundleOrientation`). Precomposition with it identifies `o(E)`
+with the sign local system of the involution `v ↦ -v` of `S(E)`
+(`TauCeti.signLocalSystemIsoSphereBundle`), which is the kernel of the augmentation of `R[S(E)]`.
+This gives the **Thom isomorphism of a line bundle with orientation coefficients**,
+
+`Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; o(E))`
+
+(`TauCeti.thomPairSingularHomologySuccIsoOrientationTwistedHomology`). In degree `1`, over a
+path-connected base, `H₁(E, E₀; R)` is therefore `R` when `E` is orientable
+(`TauCeti.VectorBundleOrientation.thomPairSingularHomologyOneEquiv`) and `R ⧸ 2R` when it is not
+(`TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo`). With integer
+coefficients a non-orientable line bundle, such as the Möbius line over the circle, has
+`H₁(E, E₀; ℤ) ≅ ℤ/2`, not the `H₀(B; ℤ) ≅ ℤ` that constant coefficients would give. This is the
+relative homology across the level of a critical submanifold of index one whose negative normal
+bundle is `E`.
+
+## Main results
+
+* `TauCeti.thomPairSingularHomologySuccIsoTwistedHomology`: `Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; L)` for the
+  kernel `L` of the augmentation of `R[S(E)]`.
+* `TauCeti.signLocalSystemIsoSphereBundle`: the orientation local system of a line bundle is the
+  sign local system of its unit sphere bundle.
+* `TauCeti.thomPairSingularHomologySuccIsoOrientationTwistedHomology`:
+  `Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; o(E))`.
+* `TauCeti.VectorBundleOrientation.thomPairSingularHomologyOneEquiv` and
+  `TauCeti.VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo`:
+  `H₁(E, E₀; R)` is `R` for an oriented and `R ⧸ 2R` for a non-orientable line bundle.
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.H (local coefficients and the local system of a
@@ -63,6 +98,8 @@ variable {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
   {E : B → Type u} [∀ b, NormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
   (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) (hF : Module.finrank ℝ F = 1)
+
+section LocalSystem
 
 variable {R : Type u} [Ring R] {L : LocalCoefficientSystem.{u, u, u} R (TopCat.of B)}
   {ι : L ⟶ (isCoveringMap_sphereBundleProj F E hnorm hF).permutationLocalSystem
@@ -122,5 +159,170 @@ theorem gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomolo
         (ModuleCat.of R R) (n + 1) n := by
   rw [gaugeDiscSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_assoc]
   exact TopPair.singularHomologySuccIsoTwistedHomology_hom_comp _ _ _ _ _ _ n
+
+end LocalSystem
+
+/-! ### The orientation local system of a line bundle -/
+
+section Orientation
+
+include hF in
+/-- In a bundle of rank one, two unit vectors in the same fibre are equal or opposite. -/
+theorem eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq {v w : sphereBundle F E}
+    (h : sphereBundleProj F E w = sphereBundleProj F E v) :
+    w = v ∨ w = sphereBundleNeg F E v := by
+  obtain ⟨⟨b, x⟩, hx⟩ := v
+  obtain ⟨⟨b', y⟩, hy⟩ := w
+  obtain rfl : b' = b := by simpa only [sphereBundleProj_apply] using h
+  have hx₀ : x ≠ 0 := norm_ne_zero_iff.1 ((mem_sphereBundle.1 hx).trans_ne one_ne_zero)
+  -- In the line `E b`, `y = c • x` with `|c| = 1`.
+  obtain ⟨c, rfl⟩ :=
+    (finrank_eq_one_iff_of_ne_zero' x hx₀).1 ((VectorBundle.finrank_eq ℝ F E _).trans hF) y
+  have hc : |c| = 1 := by
+    simpa [norm_smul, mem_sphereBundle.1 hx] using mem_sphereBundle.1 hy
+  rcases (abs_eq zero_le_one).1 hc with rfl | rfl
+  · exact .inl (Subtype.ext (by simp))
+  · exact .inr (Subtype.ext (by simp))
+
+/-- In rank one a unit vector `v` orients its fibre: the map from the unit sphere bundle to the
+orientation double cover sending `v` to the orientation of its fibre in which `v` is positive.
+It lies over the base and carries `-v` to the opposite orientation
+(`TauCeti.sphereBundleOrientation_sphereBundleNeg`). -/
+def sphereBundleOrientation : C(sphereBundle F E, VectorBundleOrientationCover F E (Fin 1)) where
+  toFun v := ⟨(v : TotalSpace F E).proj,
+    (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
+      (v : TotalSpace F E).2
+      (norm_ne_zero_iff.1 ((mem_sphereBundle.1 v.2).trans_ne one_ne_zero))).orientation⟩
+  continuous_toFun :=
+    VectorBundleOrientationCover.continuous_mk_basis_orientation
+      ((FiberBundle.continuous_proj F E).comp continuous_subtype_val) _ fun i ↦ by
+        simp only [FiniteDimensional.basisSingleton_apply]
+        exact continuous_subtype_val
+
+/-- The orientation map sends a unit vector `v` over `b` to the orientation of `E_b` given by the
+basis `(v)`. -/
+theorem sphereBundleOrientation_apply (v : sphereBundle F E) :
+    sphereBundleOrientation hF v = ⟨(v : TotalSpace F E).proj,
+      (FiniteDimensional.basisSingleton (Fin 1) ((VectorBundle.finrank_eq ℝ F E _).trans hF)
+        (v : TotalSpace F E).2
+        (norm_ne_zero_iff.1 ((mem_sphereBundle.1 v.2).trans_ne one_ne_zero))).orientation⟩ :=
+  (rfl)
+
+/-- The orientation given by a unit vector lies over the base point of the vector. -/
+@[simp]
+theorem proj_sphereBundleOrientation (v : sphereBundle F E) :
+    (sphereBundleOrientation hF v).proj = (v : TotalSpace F E).proj :=
+  (rfl)
+
+/-- The orientation map of the unit sphere bundle lies over the base. -/
+theorem proj_comp_sphereBundleOrientation :
+    VectorBundleOrientationCover.proj ∘ ⇑(sphereBundleOrientation hF) = ⇑(sphereBundleProj F E) :=
+  funext fun v ↦ (sphereBundleProj_apply F E v).symm
+
+/-- The opposite unit vector gives the opposite orientation. -/
+theorem sphereBundleOrientation_sphereBundleNeg (v : sphereBundle F E) :
+    sphereBundleOrientation hF (sphereBundleNeg F E v) =
+      VectorBundleOrientationCover.deck (sphereBundleOrientation hF v) := by
+  obtain ⟨⟨b, x⟩, hx⟩ := v
+  have hneg : sphereBundleNeg F E ⟨⟨b, x⟩, hx⟩ =
+      ⟨⟨b, -x⟩, mem_sphereBundle.2 ((norm_neg x).trans (mem_sphereBundle.1 hx))⟩ :=
+    Subtype.ext (coe_sphereBundleNeg_apply F E _)
+  rw [hneg, VectorBundleOrientationCover.deck_apply, sphereBundleOrientation_apply,
+    sphereBundleOrientation_apply]
+  refine VectorBundleOrientationCover.mk_eq_mk_iff.2 ?_
+  -- The basis `(-x)` is the basis `(x)` with its vector multiplied by the unit `-1`.
+  convert Module.Basis.orientation_neg_single (FiniteDimensional.basisSingleton (Fin 1)
+    ((VectorBundle.finrank_eq ℝ F E _).trans hF) x
+    (norm_ne_zero_iff.1 ((mem_sphereBundle.1 hx).trans_ne one_ne_zero))) 0 using 2
+  refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
+  rw [Module.Basis.unitsSMul_apply, Fin.fin_one_eq_zero i, Function.update_self]
+  simp [FiniteDimensional.basisSingleton_apply]
+
+variable (R : Type u) [Ring R]
+
+/-- **The orientation local system of a line bundle is the sign local system of its unit sphere
+bundle.** For a real vector bundle of rank one whose fibre norm is continuous on the total space,
+the orientation map of the unit sphere bundle `S(E)` (`TauCeti.sphereBundleOrientation`) is a map
+of double covers over the base, so precomposition with it identifies the orientation local system
+`o(E)` with the sign local system of the deck involution `v ↦ -v` of `S(E)`. -/
+def signLocalSystemIsoSphereBundle :
+    VectorBundleOrientationCover.signLocalSystem F E R ((Fintype.card_fin 1).trans hF.symm) ≅
+      (isCoveringMap_sphereBundleProj F E hnorm hF).signLocalSystem
+        (X := TopCat.of B) R (sphereBundleNeg F E) (sphereBundleProj_comp_sphereBundleNeg F E) :=
+  haveI : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  eqToIso (VectorBundleOrientationCover.signLocalSystem_def _) ≪≫
+    IsCoveringMap.signLocalSystemIsoOfMap (R := R) (X := TopCat.of B)
+      (σ := sphereBundleNeg F E) (hσ := sphereBundleProj_comp_sphereBundleNeg F E)
+      (isCoveringMap_sphereBundleProj F E hnorm hF)
+      (VectorBundleOrientationCover.isCoveringMap_proj ((Fintype.card_fin 1).trans hF.symm))
+      (proj_comp_sphereBundleOrientation hF) (funext (sphereBundleOrientation_sphereBundleNeg hF))
+      VectorBundleOrientationCover.deck_ne_self
+      (fun _ _ h ↦ eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF h)
+      (fun _ _ h ↦
+        VectorBundleOrientationCover.eq_or_eq_deck ((Fintype.card_fin 1).trans hF.symm) h)
+      (surjective_sphereBundleProj F E)
+
+include hF in
+/-- In rank one, each fibre of the unit sphere bundle consists of two opposite unit vectors. -/
+theorem finite_preimage_sphereBundleProj (b : B) : (sphereBundleProj F E ⁻¹' {b}).Finite := by
+  have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  obtain ⟨v, rfl⟩ := surjective_sphereBundleProj F E b
+  refine (Set.toFinite {v, sphereBundleNeg F E v}).subset fun w hw ↦ ?_
+  rcases eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF hw with h | h <;> simp [h]
+
+/-- **The Thom isomorphism of a line bundle with orientation coefficients.** Let `E → B` be a real
+vector bundle of rank one whose fibre norm is continuous on the total space, and `o(E)` its
+orientation local system (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). Then
+`Hₙ₊₁(E, E₀; R) ≅ Hₙ(B; o(E))` for every ring `R`, over an arbitrary base. This is
+`TauCeti.thomPairSingularHomologySuccIsoTwistedHomology` for the short exact sequence
+`0 ⟶ o(E) ⟶ R[S(E)] ⟶ R ⟶ 0` of the double cover `S(E) → B`, through the identification of `o(E)`
+with the sign local system of `S(E)` (`TauCeti.signLocalSystemIsoSphereBundle`). -/
+def thomPairSingularHomologySuccIsoOrientationTwistedHomology (n : ℕ) :
+    (thomPair F E).singularHomology (ModuleCat.of R R) (n + 1) ≅
+      (VectorBundleOrientationCover.signLocalSystem F E R
+        ((Fintype.card_fin 1).trans hF.symm)).twistedHomology n :=
+  haveI : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
+  thomPairSingularHomologySuccIsoTwistedHomology hnorm hF
+      ((isCoveringMap_sphereBundleProj F E hnorm hF).shortExact_signPermutationShortComplex
+        (p := TopCat.ofHom (sphereBundleProj F E)) R (sphereBundleProj_comp_sphereBundleNeg F E)
+        (sphereBundleNeg_involutive F E)
+        (fun b ↦ (finite_preimage_sphereBundleProj hF b).to_subtype)
+        (sphereBundleNeg_ne_self F E)
+        (fun _ _ h ↦ eq_or_eq_sphereBundleNeg_of_sphereBundleProj_eq hF h)
+        (surjective_sphereBundleProj F E)) n ≪≫
+    (HomologicalComplex.homologyFunctor _ _ n).mapIso
+      (LocalCoefficientSystem.twistedChainComplexCoefficientIso
+        (signLocalSystemIsoSphereBundle hnorm hF R).symm)
+
+end Orientation
+
+section OrientationCoefficients
+
+variable {R : Type u} [CommRing R]
+
+/-- **The first homology of the Thom pair of an oriented line bundle.** Over a path-connected
+base, an orientation `o` of a line bundle `E` identifies `H₁(E, E₀; R)` with `R`. -/
+def VectorBundleOrientation.thomPairSingularHomologyOneEquiv [PathConnectedSpace B]
+    (o : VectorBundleOrientation F E (Fin 1)) (b : B) :
+    ((thomPair F E).singularHomology (ModuleCat.of R R) 1 : ModuleCat R) ≃ₗ[R] R :=
+  haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
+  (thomPairSingularHomologySuccIsoOrientationTwistedHomology hnorm hF R 0).toLinearEquiv ≪≫ₗ
+    VectorBundleOrientation.twistedHomology₀Equiv _ o b
+
+/-- **The first homology of the Thom pair of a non-orientable line bundle.** Over a connected,
+locally path-connected base, if the line bundle `E` is not orientable, then
+`H₁(E, E₀; R) ≅ H₀(B; o(E)) ≅ R ⧸ 2R`. With integer coefficients this is `ℤ/2`, not the group
+`H₀(B; ℤ) ≅ ℤ` that constant coefficients would give. The orientation `o` of one fibre is only used
+in the construction. -/
+def VectorBundleOrientationCover.thomPairSingularHomologyOneEquivQuotientTwo [ConnectedSpace B]
+    [LocallyPathConnectedSpace B] (h : IsEmpty (VectorBundleOrientation F E (Fin 1))) {b : B}
+    (o : Orientation ℝ (E b) (Fin 1)) :
+    ((thomPair F E).singularHomology (ModuleCat.of R R) 1 : ModuleCat R) ≃ₗ[R]
+      R ⧸ Ideal.span {(2 : R)} :=
+  haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
+  (thomPairSingularHomologySuccIsoOrientationTwistedHomology hnorm hF R 0).toLinearEquiv ≪≫ₗ
+    VectorBundleOrientationCover.twistedHomology₀EquivQuotientTwo _ h o
+
+end OrientationCoefficients
 
 end TauCeti

@@ -27,7 +27,10 @@ a continuous family of positive definite quadratic forms `Q_b`. Its disc bundle 
 be the unit disc bundle of any norm already carried by the fibres: for instance the negative disc
 bundle `{-½ Hess(v, v) ≤ ε}` of a Morse–Bott critical submanifold, where `q v = -Hess(v, v) / (2ε)`
 on the negative normal bundle. The unit sphere bundle projects continuously onto the base
-(`TauCeti.sphereBundleProj`).
+(`TauCeti.sphereBundleProj`), onto every point when the model fibre is nonzero
+(`TauCeti.surjective_sphereBundleProj`), and fibrewise negation `v ↦ -v` is a fixed-point-free
+involution of it over the base (`TauCeti.sphereBundleNeg`); for a line bundle it exchanges the two
+unit vectors of each fibre.
 
 The unit disc and sphere bundles are closed in the total space (`TauCeti.isClosed_discBundle`,
 `TauCeti.isClosed_sphereBundle`). For a finite-rank bundle whose fibres carry inner products, the
@@ -308,6 +311,61 @@ theorem isEmbedding_sphereBundleFiberIncl (b : B) :
     fun _ _ h ↦ Subtype.ext (TotalSpace.mk_inj.1 (congrArg Subtype.val h))⟩
 
 end Proj
+
+section Neg
+
+variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
+  (E : B → Type w) [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [∀ b, NormedSpace ℝ (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- Fibrewise negation `v ↦ -v` of the unit sphere bundle: a fixed-point-free involution over the
+base, the deck involution of the sphere bundle of a line bundle. -/
+def sphereBundleNeg : C(sphereBundle F E, sphereBundle F E) where
+  toFun v := ⟨⟨(v : TotalSpace F E).proj, -(v : TotalSpace F E).2⟩,
+    mem_sphereBundle.2 ((norm_neg _).trans (mem_sphereBundle.1 v.2))⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk ?_ _
+    -- Negation is the scalar multiplication by `-1`, which is continuous on the total space.
+    refine ((VectorBundle.continuous_smul ℝ F E).comp
+      ((continuous_const (y := (-1 : ℝ))).prodMk continuous_subtype_val)).congr fun v ↦ ?_
+    simp only [Function.comp_apply, TotalSpace.mk', neg_one_smul (R := ℝ)]
+
+@[simp]
+theorem coe_sphereBundleNeg_apply (v : sphereBundle F E) :
+    (sphereBundleNeg F E v : TotalSpace F E) =
+      ⟨(v : TotalSpace F E).proj, -(v : TotalSpace F E).2⟩ :=
+  (rfl)
+
+/-- Negation of the sphere bundle lies over the identity of the base. -/
+@[simp]
+theorem sphereBundleProj_comp_sphereBundleNeg :
+    ⇑(sphereBundleProj F E) ∘ ⇑(sphereBundleNeg F E) = ⇑(sphereBundleProj F E) :=
+  (rfl)
+
+/-- Negation of the sphere bundle is an involution. -/
+theorem sphereBundleNeg_involutive : Function.Involutive (sphereBundleNeg F E) :=
+  fun ⟨⟨b, x⟩, _⟩ ↦ Subtype.ext (congrArg (TotalSpace.mk b) (neg_neg x))
+
+/-- Negation of the sphere bundle has no fixed points: a unit vector is not its own negative. -/
+theorem sphereBundleNeg_ne_self (v : sphereBundle F E) : sphereBundleNeg F E v ≠ v := fun h ↦ by
+  obtain ⟨⟨b, x⟩, hx⟩ := v
+  have h₂ : -x = x := TotalSpace.mk_inj.1 (congrArg Subtype.val h)
+  have hx₀ : x ≠ 0 := norm_ne_zero_iff.1 ((mem_sphereBundle.1 hx).trans_ne one_ne_zero)
+  -- `-x = x` gives `2 • x = 0`, so `x = 0`.
+  refine hx₀ ((smul_eq_zero.1 (?_ : (2 : ℝ) • x = 0)).resolve_left two_ne_zero)
+  rw [two_smul]
+  nth_rewrite 1 [← h₂]
+  exact neg_add_cancel x
+
+/-- If the model fibre is nonzero, the unit sphere bundle has a unit vector over every point. -/
+theorem surjective_sphereBundleProj [Nontrivial F] : Function.Surjective (sphereBundleProj F E) :=
+  fun b ↦ by
+    have : Nontrivial (E b) := ((trivializationAt F E b).continuousLinearEquivAt ℝ b
+      (FiberBundle.mem_baseSet_trivializationAt' b)).toEquiv.nontrivial
+    obtain ⟨x, hx⟩ := (NormedSpace.sphere_nonempty (x := (0 : E b)) (r := 1)).2 zero_le_one
+    exact ⟨⟨⟨b, x⟩, mem_sphereBundle.2 (mem_sphere_zero_iff_norm.1 hx)⟩, rfl⟩
+
+end Neg
 
 section Closed
 
