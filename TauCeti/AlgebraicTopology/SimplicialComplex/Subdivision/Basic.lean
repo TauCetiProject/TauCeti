@@ -249,7 +249,7 @@ def orderedBarycentricSubdivision :
 
 /-- The face of `K` that a vertex of `orderedBarycentricSubdivision K` is, as an element of
 `TauCeti.SetLike.Face K`. This is the identity, since `LinearExtension β` is the type synonym `β`;
-it is the inverse of `toLinearExtension`, and the only place the synonym is unfolded. -/
+it is the inverse of `toLinearExtension`. -/
 def ofSubdivisionVertex
     (p : LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex)) :
     TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex :=
