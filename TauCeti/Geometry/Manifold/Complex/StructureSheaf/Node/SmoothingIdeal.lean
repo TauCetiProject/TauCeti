@@ -153,20 +153,30 @@ def nodeFstZeroRestriction : R →+* B :=
   stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) (fun w ↦ ((w.1, (0 : ℂ)), w.2))
     (contMDiff_iff_contDiff.mpr (by fun_prop)) (b, 0)
 
+/-- Restriction of a function representative to `x = 0` sets the first vertical coordinate to
+zero. -/
+theorem toFilterGerm_nodeFstZeroRestriction {s : R} {f : (E × ℂ) × ℂ → ℂ}
+    (hs : toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) ((b, (0 : ℂ)), 0)
+      (𝓝 ((b, (0 : ℂ)), 0)) le_rfl s = f) :
+    toFilterGerm 𝓘(ℂ, E × ℂ) (E × ℂ) (b, 0) (𝓝 (b, 0)) le_rfl (nodeFstZeroRestriction b s) =
+      (fun w : E × ℂ ↦ f ((w.1, 0), w.2)) := by
+  rw [nodeFstZeroRestriction, toFilterGerm_stalkPrecomp, hs, Germ.coe_compTendsto]
+  -- `f ∘ (fun w ↦ ((w.1, 0), w.2))` is the displayed function by definition of composition.
+  rfl
+
 @[simp]
 theorem nodeFstZeroRestriction_nodeFstCoordinate :
     nodeFstZeroRestriction b (nodeFstCoordinate b) = 0 := by
   apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [nodeFstZeroRestriction, toFilterGerm_stalkPrecomp, toFilterGerm_nodeFstCoordinate,
-    Germ.coe_compTendsto, map_zero]
-  simp [← Germ.coe_zero, Pi.zero_def, Function.comp_def]
+  rw [toFilterGerm_nodeFstZeroRestriction b (toFilterGerm_nodeFstCoordinate b), map_zero]
+  simp [← Germ.coe_zero, Pi.zero_def]
 
 @[simp]
 theorem nodeFstZeroRestriction_nodeSndCoordinate :
     nodeFstZeroRestriction b (nodeSndCoordinate b) = hyperplaneCoordinateGerm b 0 := by
   apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [nodeFstZeroRestriction, toFilterGerm_stalkPrecomp, toFilterGerm_nodeSndCoordinate,
-    Germ.coe_compTendsto, OpenPartialHomeomorph.toFilterGerm_holomorphicLinearCoordinateGerm]
+  rw [toFilterGerm_nodeFstZeroRestriction b (toFilterGerm_nodeSndCoordinate b),
+    OpenPartialHomeomorph.toFilterGerm_holomorphicLinearCoordinateGerm]
   congr 1
   funext w
   simp
@@ -179,9 +189,8 @@ theorem nodeFstZeroRestriction_nodeBaseExtension (a : A) :
       stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0) a := by
   obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq b a
   apply toFilterGerm_nhds_injective (b, (0 : ℂ))
-  rw [nodeFstZeroRestriction, toFilterGerm_stalkPrecomp,
-    toFilterGerm_nodeBaseExtension b (hf _ le_rfl), toFilterGerm_stalkPrecomp, hf _ le_rfl,
-    Germ.coe_compTendsto, Germ.coe_compTendsto]
+  rw [toFilterGerm_nodeFstZeroRestriction b (toFilterGerm_nodeBaseExtension b (hf _ le_rfl)),
+    toFilterGerm_stalkPrecomp, hf _ le_rfl, Germ.coe_compTendsto]
   -- Both sides are `f` composed with the projection `(b, w) ↦ b`.
   congr 1
 
