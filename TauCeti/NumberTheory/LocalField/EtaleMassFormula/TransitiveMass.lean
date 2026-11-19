@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.Unramified.IntermediateField
 public import TauCeti.FieldTheory.Galois.GaloisSet.Relabelling
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.NumberTheory.LocalField.EtaleMassFormula.SubfieldCount
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Splitting symbols of Galois sets and the transitive mass
@@ -73,10 +74,22 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 def splittingEntry (L : IntermediateField K (SeparableClosure K)) : ℕ × ℕ :=
   (L.inertiaDegree, Module.finrank K L / L.inertiaDegree)
 
+/-- The first component of the splitting entry is the residue degree. -/
+@[simp]
+theorem splittingEntry_fst (L : IntermediateField K (SeparableClosure K)) :
+    L.splittingEntry.1 = L.inertiaDegree := by
+  rw [splittingEntry]
+
+/-- The second component of the splitting entry is the degree divided by the residue degree. -/
+@[simp]
+theorem splittingEntry_snd (L : IntermediateField K (SeparableClosure K)) :
+    L.splittingEntry.2 = Module.finrank K L / L.inertiaDegree := by
+  rw [splittingEntry]
+
 /-- The splitting entry is invariant under `K`-algebra equivalence. -/
 theorem splittingEntry_eq_of_algEquiv {L M : IntermediateField K (SeparableClosure K)}
     (e : L ≃ₐ[K] M) : L.splittingEntry = M.splittingEntry := by
-  rw [splittingEntry, splittingEntry, inertiaDegree_eq_of_algEquiv e, e.toLinearEquiv.finrank_eq]
+  ext <;> simp [inertiaDegree_eq_of_algEquiv e, e.toLinearEquiv.finrank_eq]
 
 /-- The product `f e` of the splitting entry is the degree. -/
 theorem splittingEntry_fst_mul_snd (L : IntermediateField K (SeparableClosure K)) :
@@ -89,12 +102,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-/-- Two sums over subtypes agree when their summands, extended by zero, agree. -/
-private theorem tsum_subtype_congr {β : Type*} {p q : β → Prop} {g g' : β → ℝ≥0∞}
-    (h : ∀ b, {b | p b}.indicator g b = {b | q b}.indicator g' b) :
-    ∑' b : {b // p b}, g b = ∑' b : {b // q b}, g' b :=
-  (tsum_subtype {b | p b} g).trans <| (tsum_congr h).trans (tsum_subtype {b | q b} g').symm
 
 namespace GaloisSet
 
@@ -204,8 +211,8 @@ theorem splittingSymbol_of_isTransitive (ρ : GaloisSet K n) (hρ : ρ.IsTransit
   let := Fintype.ofFinite (orbitRel.Quotient Gal(SeparableClosure K/K) (Fin n))
   rw [splittingSymbol_eq_map, Finset.univ_unique, Finset.singleton_val, Multiset.map_singleton,
     weight_fixedField_stabilizer_out splittingEntry_eq_of_algEquiv (x := i)
-      (Subsingleton.elim _ _),
-    splittingEntry, ρ.finrank_fixedField_stabilizer_of_isTransitive hρ]
+      (Subsingleton.elim _ _), Multiset.singleton_inj]
+  ext <;> simp [ρ.finrank_fixedField_stabilizer_of_isTransitive hρ]
 
 /-- A Galois set of size `f e` has splitting symbol `{(f, e)}` exactly when it is transitive and
 the fixed field of a point stabilizer has residue degree `f`. The label `i` makes the size
@@ -234,7 +241,7 @@ theorem splittingSymbol_trivial : (trivial K n).splittingSymbol = Multiset.repli
   have hmem : ∀ x ∈ (trivial K n).splittingSymbol, x = (1, 1) := by
     intro x hx
     obtain ⟨i, rfl⟩ := (trivial K n).mem_splittingSymbol.1 hx
-    simp [splittingEntry]
+    ext <;> simp
   rw [Multiset.eq_replicate]
   refine ⟨?_, hmem⟩
   have h := (trivial K n).sum_map_mul_splittingSymbol
