@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import Mathlib.Tactic.Choose
-import Mathlib.Tactic.Linarith
 
 /-!
 # Signed flow entry into the interior sheets of a Schottky double
@@ -53,18 +52,18 @@ omit [T2Space M] in
 /-- The fixed-chart directional derivative varies continuously on its chart source. -/
 private theorem continuousOn_chart_im_mvfderiv
     {v : (z : D) → TangentSpace J z}
-    (hv : ContMDiff J (J).tangent 1 (fun z ↦ (⟨z, v z⟩ : TangentBundle J D))) (p : D) :
+    (hv : ContMDiff J (J).tangent 0 (fun z ↦ (⟨z, v z⟩ : TangentBundle J D))) (p : D) :
     ContinuousOn
       (fun z ↦ mvfderiv J (fun w : D ↦ (chartAt ℂ p w).im) z (v z))
       (chartAt ℂ p).source := by
   exact ((contMDiffOn_chart_im p).contMDiffOn_mvfderiv_apply (m := 0)
-    (chartAt ℂ p).open_source (hv.of_le (by simp)).contMDiffOn (by simp)).continuousOn
+    (chartAt ℂ p).open_source hv.contMDiffOn (by simp)).continuousOn
 
 /-- Strict chart-coordinate crossing along a flow which stays in its positive-derivative domain. -/
 private theorem globalFlow_im_chartAt_sign
     {v : (z : D) → TangentSpace J z}
     (hv : ContMDiff J (J).tangent 1 (fun z ↦ (⟨z, v z⟩ : TangentBundle J D)))
-    (hc : IsCompleteVectorField v) {x y : M} {ε : ℝ} (hε : 0 < ε) (hy : y ∈ A)
+    (hc : IsCompleteVectorField v) {x y : M} {ε : ℝ} (hy : y ∈ A)
     (hstay : ∀ t ∈ Ioo (-ε) ε,
       globalFlow v hv hc t (DoubleAlong.inl A y) ∈ (chartAt ℂ (DoubleAlong.inl A x)).source ∧
       0 < mvfderiv J (fun z : D ↦ (chartAt ℂ (DoubleAlong.inl A x) z).im)
@@ -74,37 +73,37 @@ private theorem globalFlow_im_chartAt_sign
       0 < (chartAt ℂ (DoubleAlong.inl A x) (globalFlow v hv hc t (DoubleAlong.inl A y))).im) ∧
     (∀ t ∈ Ioo (-ε) 0,
       (chartAt ℂ (DoubleAlong.inl A x) (globalFlow v hv hc t (DoubleAlong.inl A y))).im < 0) := by
-  let p := DoubleAlong.inl A x
-  let c := chartAt ℂ p
-  let f : D → ℝ := fun z ↦ (c z).im
-  let γ : ℝ → D := fun t ↦ globalFlow v hv hc t (DoubleAlong.inl A y)
-  have hγ := (isMIntegralCurve_globalFlow hv hc (DoubleAlong.inl A y)).isMIntegralCurveOn
-    (Ioo (-ε) ε)
-  have hz : f (γ 0) = 0 := by
-    simp only [γ, Flow.map_zero_apply]
-    exact im_chartAt_inl_eq_zero hy (by
-      simpa only [Flow.map_zero_apply] using (hstay 0 ⟨neg_neg_of_pos hε, hε⟩).1)
-  have hdiff (t : ℝ) (ht : t ∈ Ioo (-ε) ε) :
-      MDifferentiableAt J 𝓘(ℝ) f (γ t) ∧ 0 < mvfderiv J f (γ t) (v (γ t)) :=
-    ⟨((contMDiffOn_chart_im p).contMDiffAt
-      (c.open_source.mem_nhds (hstay t ht).1)).mdifferentiableAt one_ne_zero, (hstay t ht).2⟩
-  have hcont : ContinuousOn (f ∘ γ) (Ioo (-ε) ε) :=
-    (contMDiffOn_chart_im p).continuousOn.comp hγ.continuousOn (fun t ht ↦ (hstay t ht).1)
-  constructor
-  · intro t ht
-    have hsub : Icc 0 t ⊆ Ioo (-ε) ε := by
-      intro u hu
-      rcases hu with ⟨hu0, hut⟩
-      constructor <;> linarith [ht.1, ht.2]
-    exact hγ.lt_apply_of_le_apply isOpen_Ioo hsub (hcont.mono hsub)
-      (fun u hu _ ↦ hdiff u (hsub hu)) (by rw [hz]) ⟨ht.1, le_rfl⟩
-  · intro t ht
-    have hsub : Icc t 0 ⊆ Ioo (-ε) ε := by
-      intro u hu
-      rcases hu with ⟨hu0, hut⟩
-      constructor <;> linarith [ht.1, ht.2]
-    exact hγ.apply_lt_of_apply_le isOpen_Ioo hsub (hcont.mono hsub)
-      (fun u hu _ ↦ hdiff u (hsub hu)) (by rw [hz]) ⟨le_rfl, ht.2⟩
+  by_cases hε : 0 < ε
+  · let p := DoubleAlong.inl A x
+    let c := chartAt ℂ p
+    let f : D → ℝ := fun z ↦ (c z).im
+    let γ : ℝ → D := fun t ↦ globalFlow v hv hc t (DoubleAlong.inl A y)
+    have hγ := (isMIntegralCurve_globalFlow hv hc (DoubleAlong.inl A y)).isMIntegralCurveOn
+      (Ioo (-ε) ε)
+    have hz : f (γ 0) = 0 := by
+      simp only [γ, Flow.map_zero_apply]
+      exact im_chartAt_inl_eq_zero hy (by
+        simpa only [Flow.map_zero_apply] using (hstay 0 ⟨neg_neg_of_pos hε, hε⟩).1)
+    have hdiff (t : ℝ) (ht : t ∈ Ioo (-ε) ε) :
+        MDifferentiableAt J 𝓘(ℝ) f (γ t) ∧ 0 < mvfderiv J f (γ t) (v (γ t)) :=
+      ⟨((contMDiffOn_chart_im p).contMDiffAt
+        (c.open_source.mem_nhds (hstay t ht).1)).mdifferentiableAt one_ne_zero, (hstay t ht).2⟩
+    have hcont : ContinuousOn (f ∘ γ) (Ioo (-ε) ε) :=
+      (contMDiffOn_chart_im p).continuousOn.comp hγ.continuousOn (fun t ht ↦ (hstay t ht).1)
+    constructor
+    · intro t ht
+      have hsub : Icc 0 t ⊆ Ioo (-ε) ε := Icc_subset_Ioo (neg_lt_zero.mpr hε) ht.2
+      exact hγ.lt_apply_of_le_apply isOpen_Ioo hsub (hcont.mono hsub)
+        (fun u hu _ ↦ hdiff u (hsub hu)) (by rw [hz]) ⟨ht.1, le_rfl⟩
+    · intro t ht
+      have hsub : Icc t 0 ⊆ Ioo (-ε) ε := Icc_subset_Ioo ht.1 hε
+      exact hγ.apply_lt_of_apply_le isOpen_Ioo hsub (hcont.mono hsub)
+        (fun u hu _ ↦ hdiff u (hsub hu)) (by rw [hz]) ⟨le_rfl, ht.2⟩
+  · constructor
+    · intro t ht
+      exact False.elim (hε (ht.1.trans ht.2))
+    · intro t ht
+      exact False.elim (hε (neg_lt_zero.mp (ht.1.trans ht.2)))
 
 /-- Uniform crossing on a box around a fixed seam point, using its fixed native chart. -/
 theorem exists_local_globalFlow_mem_interiorSheets
@@ -125,7 +124,8 @@ theorem exists_local_globalFlow_mem_interiorSheets
   let R : D → ℝ := fun z ↦ mvfderiv J f z (v z)
   have hcp : p ∈ c.source := mem_chart_source ℂ p
   have hR : ContinuousAt R p :=
-    (continuousOn_chart_im_mvfderiv hv p).continuousAt (c.open_source.mem_nhds hcp)
+    (continuousOn_chart_im_mvfderiv (hv.of_le (by simp)) p).continuousAt
+      (c.open_source.mem_nhds hcp)
   have hgood : {z | z ∈ c.source ∧ 0 < R z} ∈ 𝓝 p :=
     inter_mem (c.open_source.mem_nhds hcp) (hR.preimage_mem_nhds (Ioi_mem_nhds hpos))
   obtain ⟨W, hWsub, hWopen, hpW⟩ := mem_nhds_iff.mp hgood
@@ -145,15 +145,15 @@ theorem exists_local_globalFlow_mem_interiorSheets
     simpa only [Metric.mem_ball, dist_zero_right, Real.norm_eq_abs, abs_lt, mem_Ioo] using ht
   refine ⟨ε, hε, U, hUopen, hxU, ?_⟩
   intro y hy hyA
-  obtain ⟨hplus, hminus⟩ := globalFlow_im_chartAt_sign hv hc hε hyA
+  obtain ⟨hplus, hminus⟩ := globalFlow_im_chartAt_sign hv hc hyA
     (fun t ht ↦ hWsub (hstay y hy t ht))
   constructor
   · intro t ht
     exact (mem_range_interiorInl_iff_im_chartAt_pos
-      (hWsub (hstay y hy t ⟨by linarith [ht.1], ht.2⟩)).1).2 (hplus t ht)
+      (hWsub (hstay y hy t ⟨(neg_neg_of_pos hε).trans ht.1, ht.2⟩)).1).2 (hplus t ht)
   · intro t ht
     exact (mem_range_interiorInr_iff_im_chartAt_neg
-      (hWsub (hstay y hy t ⟨ht.1, by linarith [ht.2]⟩)).1).2 (hminus t ht)
+      (hWsub (hstay y hy t ⟨ht.1, ht.2.trans hε⟩)).1).2 (hminus t ht)
 
 /-- A compact set in the actual seam has a common signed flow-side interval. -/
 theorem exists_uniform_globalFlow_mem_interiorSheets

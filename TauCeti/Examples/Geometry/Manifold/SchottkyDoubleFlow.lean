@@ -203,16 +203,15 @@ theorem empty_original_seam :
 theorem empty_original_unit_time
     (v : (z : SchottkyDouble PEmpty.{u + 1}) → TangentSpace J z)
     (hv : ContMDiff J (J).tangent 1
-      (fun z ↦ (⟨z, v z⟩ : TangentBundle J (SchottkyDouble PEmpty.{u + 1}))))
-    (hc : IsCompleteVectorField v) :
+      (fun z ↦ (⟨z, v z⟩ : TangentBundle J (SchottkyDouble PEmpty.{u + 1})))) :
     ∃ ε : ℝ, ε = 1 ∧ 0 < ε ∧ ∀ x : PEmpty.{u + 1},
       ∀ t ∈ Ioo (-ε) ε,
-        globalFlow v hv hc t
+        globalFlow v hv (isCompleteVectorField_of_compactSpace hv) t
           (DoubleAlong.inl (borderedInterior PEmpty.{u + 1} : Set PEmpty.{u + 1})ᶜ x) ∈
             DoubleAlong.inl (borderedInterior PEmpty.{u + 1} : Set PEmpty.{u + 1})ᶜ ''
               (borderedInterior PEmpty.{u + 1} : Set PEmpty.{u + 1})ᶜ ↔ t = 0 := by
   obtain ⟨ε, hεone, hε, h⟩ := exists_unit_globalFlow_mem_interiorSheets_of_eq_empty
-    hv hc empty_original_seam
+    hv (isCompleteVectorField_of_compactSpace hv) empty_original_seam
   refine ⟨ε, hεone, hε, ?_⟩
   intro x
   exact (h x (x.elim : x ∈ (borderedInterior PEmpty.{u + 1} : Set PEmpty.{u + 1})ᶜ)).2.2
