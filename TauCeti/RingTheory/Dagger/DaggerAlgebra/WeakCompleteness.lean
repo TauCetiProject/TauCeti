@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RingTheory.Dagger.SupSeminorm
 
-import Mathlib.RingTheory.Filtration
-import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.Affinoid.Integral.Equation
 import TauCeti.RingTheory.Algebraic.Basic
 import TauCeti.RingTheory.Dagger.AnalyticSubst
@@ -16,6 +14,7 @@ import TauCeti.RingTheory.Dagger.FaithfullyFlat
 import TauCeti.RingTheory.Dagger.NoetherNormalization
 import TauCeti.RingTheory.Dagger.Noetherian
 import TauCeti.RingTheory.Dagger.Weierstrass
+import TauCeti.RingTheory.Ideal.KrullIntersection
 import TauCeti.RingTheory.Ideal.Quotient.Integral
 import TauCeti.RingTheory.RingHom.Flat
 
@@ -33,7 +32,7 @@ needs to be imposed on them.
 *Uniqueness.* Two homomorphisms agreeing on the variables agree modulo every power `m ^ k` of a
 maximal ideal of `C`, since `C ⧸ m ^ k` is finite-dimensional over `K` and homomorphisms into it
 are determined by the variables (`TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isIntegral`).
-Krull's intersection theorem in the noetherian local rings of `C` gives equality. This holds for
+Krull's intersection theorem (`Ideal.iInf_isMaximal_pow_eq_bot`) gives equality. This holds for
 every noetherian target whose residue fields at maximal ideals are integral over `K`.
 
 *Existence.* Choose a presentation `π : W_m ↠ C` with kernel `I`, and let `f ∈ C` with
@@ -97,22 +96,16 @@ theorem algHom_ext_of_isNoetherianRing [IsNoetherianRing B]
     (hB : ∀ m : Ideal B, m.IsMaximal → Algebra.IsIntegral K (B ⧸ m))
     {φ ψ : washnitzerAlgebra σ K →ₐ[K] B} (h : ∀ i, φ (X σ K i) = ψ (X σ K i)) : φ = ψ := by
   ext f
-  rw [← sub_eq_zero]
-  refine eq_zero_of_localization _ fun m hm ↦ ?_
-  -- Modulo every power of `m` the two maps agree, since `B ⧸ m ^ k` is integral over `K`.
-  have hmem (k : ℕ) : φ f - ψ f ∈ m ^ k := by
-    have := (hB m hm).quotient_pow k
-    have hk := algHom_ext_of_isIntegral (φ := (Ideal.Quotient.mkₐ K (m ^ k)).comp φ)
-      (ψ := (Ideal.Quotient.mkₐ K (m ^ k)).comp ψ) fun i ↦ by simp [h i]
-    rw [← Ideal.Quotient.eq]
-    simpa using AlgHom.congr_fun hk f
-  -- By Krull's intersection theorem the difference vanishes in the local ring at `m`.
-  have hbot := Ideal.iInf_pow_eq_bot_of_isLocalRing (R := Localization.AtPrime m) _
-    (IsLocalRing.maximalIdeal.isMaximal _).ne_top
-  rw [← Ideal.mem_bot, ← hbot, Ideal.mem_iInf]
-  intro k
-  rw [← Localization.AtPrime.map_eq_maximalIdeal, ← Ideal.map_pow]
-  exact Ideal.mem_map_of_mem _ (hmem k)
+  -- By Krull's intersection theorem it suffices to compare the maps modulo every `m ^ k`.
+  rw [← sub_eq_zero, ← Ideal.mem_bot, ← Ideal.iInf_isMaximal_pow_eq_bot]
+  simp only [Ideal.mem_iInf]
+  intro m hm k _
+  -- Modulo `m ^ k` the two maps agree, since `B ⧸ m ^ k` is integral over `K`.
+  have := (hB m hm).quotient_pow k
+  have hk := algHom_ext_of_isIntegral (φ := (Ideal.Quotient.mkₐ K (m ^ k)).comp φ)
+    (ψ := (Ideal.Quotient.mkₐ K (m ^ k)).comp ψ) fun i ↦ by simp [h i]
+  rw [← Ideal.Quotient.eq]
+  simpa using AlgHom.congr_fun hk f
 
 /-- **Homomorphisms into a dagger algebra are determined by the variables.** -/
 @[ext]
