@@ -35,8 +35,8 @@ the pullback of the Liouville form `λ` of `T*M` along the inclusion `j : ξ⁰ 
 (`TauCeti.IsContactDistribution.annihilatorLiouvilleForm`, with
 `TauCeti.IsContactDistribution.annihilatorLiouvilleForm_apply`). This file proves that `dθ` is a
 symplectic form on `ξ⁰ ∖ 0`
-(`TauCeti.IsContactDistribution.isSymplectic_mextDerivₗ_annihilatorLiouvilleForm`). With the
-conventions `ω = -dλ` of the cotangent bundle, `dθ = j^* dλ = -j^* ω`
+(`IsContactDistribution.isSymplectic_mpullback_subtype_val_mextDerivₗ_annihilatorLiouvilleForm`).
+With the conventions `ω = -dλ` of the cotangent bundle, `dθ = j^* dλ = -j^* ω`
 (`TauCeti.IsContactDistribution.mextDerivₗ_annihilatorLiouvilleForm`), so `j` restricted to
 `ξ⁰ ∖ 0` is a symplectic embedding into `(T*M, -ω)`, and `λ_ξ = -θ` is a primitive of `dθ` in the
 convention `ω = -dλ` for exact symplectic manifolds.
@@ -68,8 +68,8 @@ differential of `κ` at `(t, x)` is injective, hence bijective between these spa
 * `TauCeti.IsContactDistribution.mextDerivₗ_annihilatorLiouvilleForm`: `dθ = j^* dλ = -j^* ω`.
 * `TauCeti.IsContactDistribution.nondegenerate_bilinFormAt_mextDerivₗ_annihilatorLiouvilleForm`:
   `dθ` is nondegenerate at every nonzero covector of `ξ⁰`.
-* `TauCeti.IsContactDistribution.isSymplectic_mextDerivₗ_annihilatorLiouvilleForm`: `dθ` is a
-  symplectic form on `ξ⁰ ∖ 0`.
+* `IsContactDistribution.isSymplectic_mpullback_subtype_val_mextDerivₗ_annihilatorLiouvilleForm`:
+  `dθ` is a symplectic form on `ξ⁰ ∖ 0`.
 
 ## References
 
@@ -102,38 +102,32 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 local instance : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
 
 omit [FiniteDimensional ℝ E] in
-/-- A nonzero covector annihilating `ξ` at a point `x` of an open set `W` on which a one-form `α`
-defines `ξ` and is a contact form is a positive multiple `eᵗ β_x` of `β = α` or `β = -α`, and `β`
-has the same properties on `W`. -/
-private theorem exists_exp_smul_eq {α : SmoothForm I M ℝ 1} {W : Set M}
-    (hα : ∀ y ∈ W, RoughForm.ker α.1 y = ξ y ∧ IsContactFormAt α.1 y) {x : M} (hx : x ∈ W)
-    {w : TangentSpace I x →L[ℝ] ℝ} (hw : w ∈ annihilatorSpace I ξ x) (hw0 : w ≠ 0) :
+/-- A nonzero covector `z` annihilating `ξ` over a point `x` of an open set `W` on which a one-form
+`α` defines `ξ` and is a contact form is `eᵗ β_x` for `β = α` or `β = -α`, and `β` has the same
+properties on `W`. -/
+private theorem exists_symplectizationToCotangent_eq {α : SmoothForm I M ℝ 1} {W : Set M}
+    (hα : ∀ y ∈ W, RoughForm.ker α.1 y = ξ y ∧ IsContactFormAt α.1 y)
+    {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x} (hzW : z.proj ∈ W)
+    (hz : z.2 ≠ 0) :
     ∃ β : SmoothForm I M ℝ 1, (∀ y ∈ W, RoughForm.ker β.1 y = ξ y ∧ IsContactFormAt β.1 y) ∧
-      ∃ t : ℝ, Real.exp t • SmoothForm.degreeOneEquiv β x = w := by
-  -- The annihilator of the hyperplane `ξ x = ker α_x` is the line spanned by `α_x`.
-  have hker : LinearMap.ker (SmoothForm.degreeOneEquiv α x).toLinearMap = ξ x := by
-    rw [← (hα x hx).1]
-    ext v
-    rw [LinearMap.mem_ker, RoughForm.mem_ker, ContinuousLinearMap.coe_coe,
-      SmoothForm.degreeOneEquiv_apply_apply_vec]
-  rw [annihilatorSpace_eq_span_singleton hker, Submodule.mem_span_singleton] at hw
-  obtain ⟨c, rfl⟩ := hw
-  have hc : c ≠ 0 := by
-    rintro rfl
-    exact hw0 (zero_smul ℝ _)
-  rcases hc.lt_or_gt with hneg | hpos
-  · -- A negative multiple of `α_x` is a positive multiple of `(-α)_x`.
-    refine ⟨-α, fun y hy ↦ ⟨?_, ?_⟩, Real.log (-c), ?_⟩
-    · ext v
-      simp only [RoughForm.mem_ker, NegMemClass.coe_neg, Pi.neg_apply,
-        ContinuousAlternatingMap.neg_apply, neg_eq_zero, ← (hα y hy).1]
-    · simpa [NegMemClass.coe_neg] using (hα y hy).2
-    · rw [Real.exp_log (neg_pos.2 hneg)]
-      ext v
-      simp only [FunLike.coe_smul, Pi.smul_apply,
-        SmoothForm.degreeOneEquiv_apply_apply_vec, NegMemClass.coe_neg, Pi.neg_apply,
-        ContinuousAlternatingMap.neg_apply, smul_eq_mul, neg_mul_neg]
-  · exact ⟨α, hα, Real.log c, by rw [Real.exp_log hpos]⟩
+      ∃ t : ℝ,
+        β.symplectizationToCotangent (t, z.proj) = annihilatorInclusion I ξ (Fin 1 → ℝ) z := by
+  -- `z` is a nonzero covector vanishing on `ker α_x = ξ x`, so it is `eᵗ α_x` or `eᵗ (-α)_x`.
+  have hmem := (SmoothForm.mem_range_symplectizationToCotangent_or_neg_iff
+    (z := ⟨z.proj, z.2⟩) (hα _ hzW).2.ne_zero).2
+      ⟨fun h ↦ hz (Subtype.ext h), fun v hv ↦ mem_annihilatorSpace_iff.1 z.2.2 v
+        (by rwa [← (hα _ hzW).1, RoughForm.mem_ker])⟩
+  obtain ⟨β, hβ, ⟨t, y⟩, hp⟩ : ∃ β : SmoothForm I M ℝ 1,
+      (∀ y ∈ W, RoughForm.ker β.1 y = ξ y ∧ IsContactFormAt β.1 y) ∧
+        ⟨z.proj, z.2⟩ ∈ range β.symplectizationToCotangent := by
+    rcases hmem with h | h
+    · exact ⟨α, hα, h⟩
+    · refine ⟨-α, fun y hy ↦ ⟨?_, ?_⟩, h⟩
+      · rw [NegMemClass.coe_neg, RoughForm.ker_neg, (hα y hy).1]
+      · simpa [NegMemClass.coe_neg] using (hα y hy).2
+  obtain rfl : y = z.proj :=
+    (SmoothForm.proj_symplectizationToCotangent β (t, y)).symm.trans (congrArg TotalSpace.proj hp)
+  exact ⟨β, hβ, t, hp.trans (annihilatorInclusion_apply I ξ (Fin 1 → ℝ) z).symm⟩
 
 variable [Nonempty M] (hξ : IsContactDistribution I ∞ ξ)
 
@@ -143,7 +137,7 @@ the pullback of the Liouville form of `T*M` along the inclusion `ξ⁰ → T*M`,
 carries the manifold structure of the rank-one annihilator bundle
 `TauCeti.IsContMDiffDistribution.annihilatorFiberBundle`. The exterior derivative of `θ` is a
 symplectic form on the complement of the zero section
-(`TauCeti.IsContactDistribution.isSymplectic_mextDerivₗ_annihilatorLiouvilleForm`). -/
+(`IsContactDistribution.isSymplectic_mpullback_subtype_val_mextDerivₗ_annihilatorLiouvilleForm`). -/
 def annihilatorLiouvilleForm :
     letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
     haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
@@ -188,14 +182,13 @@ theorem annihilatorLiouvilleForm_apply
   haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
   by
   intro v
-  unfold annihilatorLiouvilleForm
-  rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_apply_of_proj_comp_eq
+  rw [annihilatorLiouvilleForm_def, SmoothForm.coe_mpullback,
+    mpullback_liouvilleForm_apply_of_proj_comp_eq
       (ψ := annihilatorInclusion I ξ (Fin 1 → ℝ)) (g := TotalSpace.proj)
       (fun _ ↦ annihilatorInclusion_proj _ _ _ _)
       ((hξ.isContMDiffDistribution.contMDiff_annihilatorInclusion hξ.finrank_sub_one_add_one
         z).mdifferentiableAt (by simp)),
-    annihilatorInclusion_snd]
-  rfl
+    Matrix.cons_val_zero, annihilatorInclusion_apply]
 
 /-- **The symplectic form of the symplectization.** The exterior derivative of the tautological
 one-form of `ξ⁰` is the pullback of `dλ` along the inclusion `ξ⁰ → T*M`. With the canonical
@@ -239,8 +232,8 @@ private theorem eval₂_mpullback_mfderiv_of_eventuallyEq {j : X → CotangentBu
       mpullback (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (j ∘ κ)
         (mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1 (liouvilleForm I M)).1 p ![u, u'] := by
     rw [mpullback_apply_pair, mfderiv_comp p ((hj (κ p)).mdifferentiableAt (by simp)) hκ,
-      SmoothForm.eval₂_mpullback, SmoothBundleForm.eval₂_apply]
-    rfl
+      SmoothForm.eval₂_mpullback, SmoothBundleForm.eval₂_apply, Function.comp_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
   have h₂ : SmoothBundleForm.eval₂ (mextDerivₗ (𝓘(ℝ).prod I) 1 α.symplectization) p u u' =
       mpullback (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) α.symplectizationToCotangent
         (mextDerivₗ (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 1 (liouvilleForm I M)).1 p ![u, u'] := by
@@ -291,8 +284,7 @@ private theorem exists_lift_annihilatorInclusion
       (annihilatorInclusion I ξ (Fin 1 → ℝ)))
     {α : SmoothForm I M ℝ 1} {W : Set M} (hW : IsOpen W) (hα : ∀ y ∈ W, RoughForm.ker α.1 y = ξ y)
     {z : TotalSpace (Fin 1 → ℝ) fun x ↦ annihilatorSpace I ξ x} (hzW : z.proj ∈ W) {t : ℝ}
-    (hz : Real.exp t • SmoothForm.degreeOneEquiv α z.proj =
-      (z.2 : TangentSpace I z.proj →L[ℝ] ℝ)) :
+    (hz : α.symplectizationToCotangent (t, z.proj) = annihilatorInclusion I ξ (Fin 1 → ℝ) z) :
     ∃ κ : ℝ × M → TotalSpace (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x),
       κ (t, z.proj) = z ∧
         annihilatorInclusion I ξ (Fin 1 → ℝ) ∘ κ =ᶠ[𝓝 (t, z.proj)] α.symplectizationToCotangent ∧
@@ -305,18 +297,18 @@ private theorem exists_lift_annihilatorInclusion
     intro v hv
     rw [← hα q.2 hq, RoughForm.mem_ker] at hv
     simp [SmoothForm.degreeOneEquiv_apply_apply_vec, hv]
-  obtain ⟨κ, hκp, hev⟩ : ∃ κ : ℝ × M → TotalSpace (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x),
-      κ (t, z.proj) = z ∧
-        annihilatorInclusion I ξ (Fin 1 → ℝ) ∘ κ =ᶠ[𝓝 (t, z.proj)]
-          α.symplectizationToCotangent := by
+  obtain ⟨κ, hev⟩ : ∃ κ : ℝ × M → TotalSpace (Fin 1 → ℝ) (fun x ↦ annihilatorSpace I ξ x),
+      annihilatorInclusion I ξ (Fin 1 → ℝ) ∘ κ =ᶠ[𝓝 (t, z.proj)]
+        α.symplectizationToCotangent := by
     refine ⟨fun q ↦ if hq : q.2 ∈ W then TotalSpace.mk' (Fin 1 → ℝ) q.2 ⟨_, hmem q hq⟩
-      else zeroSection (Fin 1 → ℝ) _ q.2, ?_, ?_⟩
-    · simp only [hzW, ↓reduceDIte]
-      exact congrArg (TotalSpace.mk z.proj) (Subtype.ext hz)
-    · filter_upwards [(hW.preimage continuous_snd).mem_nhds hzW] with q hq
-      simp only [comp_apply, show q.2 ∈ W from hq, ↓reduceDIte, annihilatorInclusion_mk']
-      refine CotangentBundle.ext (by simp) fun v ↦ ?_
-      simp [SmoothForm.degreeOneEquiv_apply_apply_vec]
+      else zeroSection (Fin 1 → ℝ) _ q.2, ?_⟩
+    filter_upwards [(hW.preimage continuous_snd).mem_nhds hzW] with q hq
+    simp only [comp_apply, show q.2 ∈ W from hq, ↓reduceDIte, annihilatorInclusion_mk']
+    refine CotangentBundle.ext (by simp) fun v ↦ ?_
+    simp [SmoothForm.degreeOneEquiv_apply_apply_vec]
+  -- `κ` sends `(t, x)` to `z` because `j` is injective.
+  have hκp : κ (t, z.proj) = z :=
+    annihilatorInclusion_injective I ξ (Fin 1 → ℝ) (hev.self_of_nhds.trans hz)
   have hι := α.contMDiff_symplectizationToCotangent
   -- `κ` is smooth at `(t, x)` because `j` is a smooth embedding and `j ∘ κ` is smooth there.
   exact ⟨κ, hκp, hev, (ContMDiffAt.iff_comp_isImmersionAt (hj.isImmersion.isImmersionAt _)).2
@@ -359,7 +351,7 @@ theorem nondegenerate_bilinFormAt_mextDerivₗ_annihilatorLiouvilleForm
     hξ.finrank_sub_one_add_one
   rw [mextDerivₗ_annihilatorLiouvilleForm]
   obtain ⟨W, hW, hxW, α, hα⟩ := hξ.exists_smoothForm_ker_eq_isContactFormAt z.proj
-  obtain ⟨β, hβ, t, ht⟩ := exists_exp_smul_eq hα hxW z.2.2 fun h ↦ hz (Subtype.ext h)
+  obtain ⟨β, hβ, t, ht⟩ := exists_symplectizationToCotangent_eq hα hxW hz
   obtain ⟨κ, hκp, hev, hκ⟩ := exists_lift_annihilatorInclusion hj hW (fun y hy ↦ (hβ y hy).1)
     hxW ht
   rw [← hκp]
@@ -371,7 +363,7 @@ theorem nondegenerate_bilinFormAt_mextDerivₗ_annihilatorLiouvilleForm
 /-- **The symplectization of a contact structure is a symplectic manifold.** The exterior
 derivative `dθ` of the tautological one-form restricts to a symplectic form on the open set
 `ξ⁰ ∖ 0` of nonzero covectors annihilating `ξ`. No coorientation of `ξ` is needed. -/
-theorem isSymplectic_mextDerivₗ_annihilatorLiouvilleForm :
+theorem isSymplectic_mpullback_subtype_val_mextDerivₗ_annihilatorLiouvilleForm :
     letI := hξ.isContMDiffDistribution.annihilatorFiberBundle hξ.finrank_sub_one_add_one
     haveI := hξ.isContMDiffDistribution.annihilatorVectorBundle hξ.finrank_sub_one_add_one
     haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle
