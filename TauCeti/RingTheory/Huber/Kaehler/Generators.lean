@@ -141,6 +141,7 @@ theorem span_range_D_eq_top [IsNoetherianType (CompletedTensor A B B)] :
 
 /-- If `B ⊗̂_A B` is of noetherian type, two `B`-linear maps out of `Ωᶜ[B⁄A]` agreeing on every
 `d b` are equal. -/
+@[ext]
 theorem linearMap_ext [IsNoetherianType (CompletedTensor A B B)] {M : Type*} [AddCommMonoid M]
     [Module B M] {u v : ContinuousKaehlerDifferential A B →ₗ[B] M}
     (h : ∀ b, u (D A B b) = v (D A B b)) : u = v :=
