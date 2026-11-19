@@ -76,7 +76,9 @@ theorem abscissaOfAbsConv_cpow (ν : ℂ) : abscissaOfAbsConv ↗(cpow ν) = (1 
 theorem LSeries_sigmaC {ν s : ℂ} (hs : max 1 (1 + ν.re) < s.re) :
     LSeries ↗(sigmaC ν) s = riemannZeta s * riemannZeta (s - ν) := by
   rw [max_lt_iff] at hs
-  rw [sigmaC_eq_zeta_mul_cpow, LSeries_mul' (LSeriesSummable_natCoe_zeta hs.1)
+  have hζ : LSeriesSummable (fun n ↦ (ArithmeticFunction.zeta : ArithmeticFunction ℂ) n) s := by
+    simpa only [natCoe_apply] using LSeriesSummable_zeta_iff.mpr hs.1
+  rw [sigmaC_eq_zeta_mul_cpow, LSeries_mul' hζ
     (LSeriesSummable_cpow_iff.mpr hs.2), LSeries_cpow hs.2]
   simp only [natCoe_apply]
   rw [LSeries_zeta_eq_riemannZeta hs.1]
@@ -146,7 +148,9 @@ theorem LSeriesSummable_sigmaC_iff {ν s : ℂ} :
     (h.of_re_le_re (by simpa using hs)), fun hs ↦ ?_⟩
   rw [max_lt_iff] at hs
   rw [sigmaC_eq_zeta_mul_cpow]
-  exact LSeriesSummable_mul (LSeriesSummable_natCoe_zeta hs.1) (LSeriesSummable_cpow_iff.mpr hs.2)
+  have hζ : LSeriesSummable (fun n ↦ (ArithmeticFunction.zeta : ArithmeticFunction ℂ) n) s := by
+    simpa only [natCoe_apply] using LSeriesSummable_zeta_iff.mpr hs.1
+  exact LSeriesSummable_mul hζ (LSeriesSummable_cpow_iff.mpr hs.2)
 
 /-- The abscissa of absolute convergence of the series of `σ_ν` is `max(1, 1 + Re ν)`. -/
 theorem abscissaOfAbsConv_sigmaC (ν : ℂ) :
