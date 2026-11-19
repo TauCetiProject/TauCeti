@@ -25,6 +25,8 @@ moduli `2`, `4` and `8`.
 * `ZMod.negOnePow`: the sign `(-1)^p` of `p : ZMod n` for even `n`.
 * `ZMod.negOnePow_add`, `ZMod.negOnePow_intCast`: it is multiplicative, and it is
   `Int.negOnePow k` at the class of `k : ℤ`.
+* `ZMod.negOnePow_eq_one_iff`, `ZMod.negOnePow_eq_neg_one_iff`: it is `1` or `-1` according to
+  the reduction of `p` modulo `2`.
 * `ZMod.apply_intCast_eq_negOnePow`: a sign function which is `1` at `0` and alternates along
   `p ↦ p + 1` is `Int.negOnePow k` at the class of `k`, for every `n`.
 -/
@@ -99,6 +101,36 @@ theorem negOnePow_intCast (k : ℤ) : (k : ZMod n).negOnePow = k.negOnePow := by
 @[simp]
 theorem negOnePow_natCast (k : ℕ) : (k : ZMod n).negOnePow = (-1) ^ k := by
   rw [← Int.cast_natCast, negOnePow_intCast, Int.negOnePow_def, zpow_natCast]
+
+/-- The sign of a numeral `k` is `(-1)^k`. -/
+@[simp]
+theorem negOnePow_ofNat (k : ℕ) [k.AtLeastTwo] :
+    (no_index (OfNat.ofNat k) : ZMod n).negOnePow = (-1) ^ (OfNat.ofNat k : ℕ) := by
+  have h := negOnePow_natCast (n := n) (OfNat.ofNat k)
+  rwa [Nat.cast_ofNat] at h
+
+/-- The sign of `-p` is the sign of `p`. -/
+@[simp]
+theorem negOnePow_neg (p : ZMod n) : (-p).negOnePow = p.negOnePow := by
+  rw [negOnePow, map_neg, uzpow_neg, Int.units_inv_eq_self, negOnePow]
+
+/-- The sign of a difference is the product of the signs. -/
+theorem negOnePow_sub (p q : ZMod n) : (p - q).negOnePow = p.negOnePow * q.negOnePow := by
+  rw [sub_eq_add_neg, negOnePow_add, negOnePow_neg]
+
+/-- The sign of `p` is `1` exactly when `p` is even, that is, when its reduction modulo `2`
+vanishes. -/
+theorem negOnePow_eq_one_iff (p : ZMod n) :
+    p.negOnePow = 1 ↔ castHom (Fact.out : 2 ∣ n) (ZMod 2) p = 0 := by
+  rw [negOnePow, ← natCast_zmod_val (castHom _ (ZMod 2) p), uzpow_natCast,
+    natCast_eq_zero_iff_even, neg_one_pow_eq_one_iff_even (by decide)]
+
+/-- The sign of `p` is `-1` exactly when `p` is odd, that is, when its reduction modulo `2`
+is `1`. -/
+theorem negOnePow_eq_neg_one_iff (p : ZMod n) :
+    p.negOnePow = -1 ↔ castHom (Fact.out : 2 ∣ n) (ZMod 2) p = 1 := by
+  rw [negOnePow, ← natCast_zmod_val (castHom _ (ZMod 2) p), uzpow_natCast,
+    natCast_eq_one_iff_odd, neg_one_pow_eq_neg_one_iff_odd (by decide)]
 
 /-- The sign of `p` is `(-1)^k` for the integer representative `k` of `p`. -/
 theorem negOnePow_eq (p : ZMod n) : p.negOnePow = (p.cast : ℤ).negOnePow := by

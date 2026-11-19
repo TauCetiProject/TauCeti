@@ -266,6 +266,15 @@ theorem σ_down_zmod_natCast (k l : ℕ) :
     σ (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) k l = (-1) ^ (k * l) := by
   rw [σ, totalComplexShapeSymmetryDownZMod_σ, ← Nat.cast_mul, ZMod.negOnePow_natCast]
 
+/-- The Koszul symmetry sign on `ComplexShape.down (ZMod n)` at numerals `k` and `l` is
+`(-1)^(k * l)`. -/
+@[simp]
+theorem σ_down_zmod_ofNat (k l : ℕ) [k.AtLeastTwo] [l.AtLeastTwo] :
+    σ (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) (no_index (OfNat.ofNat k) : ZMod n)
+      (no_index (OfNat.ofNat l) : ZMod n) = (-1) ^ ((OfNat.ofNat k : ℕ) * (OfNat.ofNat l : ℕ)) := by
+  have h := σ_down_zmod_natCast (n := n) (OfNat.ofNat k) (OfNat.ofNat l)
+  rwa [Nat.cast_ofNat, Nat.cast_ofNat] at h
+
 /-- The Koszul symmetry sign on `ComplexShape.down (ZMod n)` at `(p, q)` is `(-1)^(k * l)` for the
 integer representatives `k` and `l` of `p` and `q`. -/
 theorem σ_down_zmod (p q : ZMod n) :
@@ -287,6 +296,15 @@ and `l` is `(-1)^(k * l)`. -/
 theorem σ_up_zmod_natCast (k l : ℕ) :
     σ (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) k l = (-1) ^ (k * l) := by
   rw [σ, totalComplexShapeSymmetryUpZMod_σ, ← Nat.cast_mul, ZMod.negOnePow_natCast]
+
+/-- The Koszul symmetry sign on `ComplexShape.up (ZMod n)` at numerals `k` and `l` is
+`(-1)^(k * l)`. -/
+@[simp]
+theorem σ_up_zmod_ofNat (k l : ℕ) [k.AtLeastTwo] [l.AtLeastTwo] :
+    σ (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) (no_index (OfNat.ofNat k) : ZMod n)
+      (no_index (OfNat.ofNat l) : ZMod n) = (-1) ^ ((OfNat.ofNat k : ℕ) * (OfNat.ofNat l : ℕ)) := by
+  have h := σ_up_zmod_natCast (n := n) (OfNat.ofNat k) (OfNat.ofNat l)
+  rwa [Nat.cast_ofNat, Nat.cast_ofNat] at h
 
 /-- The Koszul symmetry sign on `ComplexShape.up (ZMod n)` at `(p, q)` is `(-1)^(k * l)` for the
 integer representatives `k` and `l` of `p` and `q`. -/
