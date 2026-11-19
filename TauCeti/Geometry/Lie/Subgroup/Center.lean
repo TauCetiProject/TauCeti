@@ -70,9 +70,9 @@ nontrivial monodromy.
   `TauCeti.Lie.lieSubalgebraOfSubgroup_centralizer_connectedComponent_one`: the identity
   component has Lie algebra `𝔤`, and its centralizer has Lie algebra `𝔷(𝔤)`.
 * `TauCeti.Lie.Ad_apply_mem_center`, `TauCeti.Lie.Ad_apply_eq_self_of_mem_connectedComponentOfOne`
-  and `TauCeti.Lie.Ad_apply_eq_Ad_apply_of_mem_center`: the adjoint action preserves `𝔷(𝔤)`, the
-  identity component acts trivially on it, and so the action on `𝔷(𝔤)` only depends on the
-  connected component.
+  and `TauCeti.Lie.Ad_apply_eq_Ad_apply_of_mk_eq_mk_of_mem_center`: the adjoint action preserves
+  `𝔷(𝔤)`, the identity component acts trivially on it, and so the action on `𝔷(𝔤)` only depends on
+  the connected component.
 * `TauCeti.Lie.centerSubrepresentation` and `TauCeti.Lie.componentGroupCenterRepresentation`: the
   centre as a subrepresentation of the adjoint representation, and the induced representation of
   the component group `G ⧸ G⁰` on it.
@@ -159,7 +159,8 @@ theorem lieSubalgebraOfSubgroup_centralizer_connectedComponent_one :
       (center ℝ (LeftInvariantDerivation I G) : LieSubalgebra ℝ (LeftInvariantDerivation I G)) := by
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   refine le_antisymm (fun X hX => ?_) fun X hX => ?_
-  · rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
+  · rw [← Subgroup.coe_connectedComponentOfOne] at hX
+    rw [LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
     intro Y
     rw [← lie_skew, lie_eq_zero_of_mem_lieSubalgebraOfSubgroup_centralizer
       (K := Subgroup.connectedComponentOfOne G) hX (by simp), neg_zero]
@@ -348,7 +349,7 @@ theorem componentGroupCenterRepresentation_mk (g : G) :
 /-- **The adjoint action on the centre of the Lie algebra factors through the component group**
 `π₀ G = G ⧸ G⁰`: two elements in the same connected component act in the same way on every
 central element. -/
-theorem Ad_apply_eq_Ad_apply_of_mem_center {g g' : G}
+theorem Ad_apply_eq_Ad_apply_of_mk_eq_mk_of_mem_center {g g' : G}
     (h : (g : G ⧸ Subgroup.connectedComponentOfOne G) = g') {Y : LeftInvariantDerivation I G}
     (hY : Y ∈ center ℝ (LeftInvariantDerivation I G)) : Ad (I := I) g Y = Ad (I := I) g' Y := by
   rw [QuotientGroup.eq] at h
