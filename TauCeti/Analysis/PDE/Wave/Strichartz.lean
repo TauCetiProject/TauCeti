@@ -171,9 +171,9 @@ private theorem fourierMultiplierCLM_littlewoodPaley_eq_zero
   rw [h, Subsingleton.elim ξ 0, φ.littlewoodPaley_eq_zero_of_norm_le (by
     rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le), Complex.ofReal_zero]
 
-/-- Dropping the `1` in `1 + 2^j |τ|`: for `τ ≠ 0`, `θ ≥ 0` and `0 ≤ b ≤ (n - 1) θ / 2`,
+/-- Dropping the `1` in `1 + 2^j |τ|`: for `τ ≠ 0` and `0 ≤ b ≤ (n - 1) θ / 2`,
 `(C 2^{jn} (1 + 2^j |τ|)^(-(n - 1)/2))^θ ≤ C^θ 2^{j (n θ - b)} |τ|^(-b)`. -/
-private theorem rpow_mul_one_add_rpow_le {C θ b : ℝ} (hC : 0 ≤ C) (hθ : 0 ≤ θ) (j : ℤ) {τ : ℝ}
+private theorem rpow_mul_one_add_rpow_le {C θ b : ℝ} (hC : 0 ≤ C) (j : ℤ) {τ : ℝ}
     (hτ : τ ≠ 0) {n : ℕ} (hb : 0 ≤ b) (hbθ : b ≤ ((n : ℝ) - 1) / 2 * θ) :
     (C * ((2 : ℝ) ^ j) ^ n * (1 + 2 ^ j * |τ|) ^ (-((n : ℝ) - 1) / 2)) ^ θ ≤
       C ^ θ * ((2 : ℝ) ^ j) ^ ((n : ℝ) * θ - b) * |τ| ^ (-b) := by
@@ -194,7 +194,6 @@ private theorem rpow_mul_one_add_rpow_le {C θ b : ℝ} (hC : 0 ≤ C) (hθ : 0 
     _ = _ := by
         rw [Real.mul_rpow h2.le hτ'.le, ← mul_assoc, mul_assoc (C ^ θ), ← Real.rpow_add h2]
         congr 3
-        ring
 
 /-- The square root of the constant `A 2^{2ja}` of the time pairings is `√A 2^{ja}`. -/
 private theorem coe_mul_ofReal_rpow_two_mul_rpow_inv_two (A : ℝ≥0) {x : ℝ} (hx : 0 ≤ x)
@@ -216,11 +215,10 @@ variable {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 include r' in
 /-- In positive dimension `n`, a wave-admissible pair `2 / q + (n - 1) / r ≤ (n - 1) / 2` with
-`2 < q` has `n ≥ 2` and `r > 2`. -/
-private theorem two_le_finrank_of_admissible (hq : 2 < q)
+`2 < q` has `r ≥ 2`, since it forces `n ≥ 2`. -/
+private theorem two_le_of_admissible (hq : 2 < q)
     (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
-      ((Module.finrank ℝ E : ℝ) - 1) / 2) (hE : 0 < Module.finrank ℝ E) :
-    2 ≤ Module.finrank ℝ E ∧ (r⁻¹).toReal < 2⁻¹ ∧ 2 ≤ r := by
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) (hE : 0 < Module.finrank ℝ E) : 2 ≤ r := by
   have hq0 : (0 : ℝ) < 2 / q := div_pos two_pos (by exact_mod_cast zero_lt_two.trans hq)
   have hn : 2 ≤ Module.finrank ℝ E := by
     by_contra h
@@ -233,7 +231,6 @@ private theorem two_le_finrank_of_admissible (hq : 2 < q)
   have hρ : (r⁻¹).toReal < 2⁻¹ := by
     have h : 0 < ((Module.finrank ℝ E : ℝ) - 1) * (2⁻¹ - (r⁻¹).toReal) := by linarith
     linarith [pos_of_mul_pos_right h (by linarith)]
-  refine ⟨hn, hρ, ?_⟩
   rw [← ENNReal.inv_le_inv,
     ← ENNReal.ofReal_toReal (ENNReal.inv_ne_top.2 (ENNReal.HolderConjugate.ne_zero r r')),
     ← ENNReal.ofReal_toReal (a := 2⁻¹) (by simp)]
@@ -254,7 +251,7 @@ private theorem exists_eLpNorm_halfWavePropagator_littlewoodPaley_le_rpow (hq : 
           ‖τ‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' volume := by
   obtain ⟨C, hC0, hC⟩ :=
     φ.exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_le_of_memLp
-  set ρ := (r⁻¹).toReal with hρdef
+  set ρ := (r⁻¹).toReal
   set θ := 1 - 2 * ρ with hθdef
   refine ⟨(C ^ θ).toNNReal, fun j m hm τ hτ g ↦ ?_⟩
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
@@ -262,9 +259,8 @@ private theorem exists_eLpNorm_halfWavePropagator_littlewoodPaley_le_rpow (hq : 
     rw [fourierMultiplierCLM_littlewoodPaley_eq_zero hm hE, zero_apply, map_zero,
       eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
     exact zero_le
-  -- In positive dimension, admissibility with `2 < q` forces `n ≥ 2` and `r > 2`.
-  obtain ⟨hn, hρ, hr⟩ := two_le_finrank_of_admissible (r' := r') hq hqr hE
-  have hθ : 0 ≤ θ := by linarith
+  -- In positive dimension, admissibility with `2 < q` forces `r ≥ 2`.
+  have hr := two_le_of_admissible (r' := r') hq hqr hE
   have hτ' : 0 < |τ| := abs_pos.2 hτ
   set D := (C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
     (1 + 2 ^ j * |τ|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) ^ θ
@@ -286,7 +282,7 @@ private theorem exists_eLpNorm_halfWavePropagator_littlewoodPaley_le_rpow (hq : 
     _ ≤ ENNReal.ofReal (C ^ θ * ((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) * θ - 2 / q) *
           |τ| ^ (-(2 / q : ℝ))) * eLpNorm g r' volume := by
         gcongr
-        exact rpow_mul_one_add_rpow_le hC0.le hθ j hτ (by positivity) hb
+        exact rpow_mul_one_add_rpow_le hC0.le j hτ (by positivity) hb
     _ = _ := by
         rw [he, ENNReal.ofNNReal_toNNReal, ← ofReal_norm, Real.norm_eq_abs,
           ENNReal.ofReal_rpow_of_pos hτ', ENNReal.ofReal_mul (by positivity),
@@ -424,7 +420,7 @@ theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le (hq : 2 
   -- Without integrability the integral is `0`.
   by_cases hWF : Integrable fun s ↦ halfWavePropagator ℂ (-s) (Lp.fourierMultiplierCLM ℂ m (F s))
   swap
-  · rw [integral_undef hWF, enorm_zero]
+  · rw [integral_undef hWF, eNorm_zero]
     exact zero_le
   have h := hC (fun t ↦ (halfWavePropagator ℂ t).comp (Lp.fourierMultiplierCLM ℂ m)) _
     (fun s t hst g ↦ hA j m hm s t hst g) F hF
