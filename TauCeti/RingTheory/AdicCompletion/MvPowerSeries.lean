@@ -10,7 +10,8 @@ public import Mathlib.RingTheory.MvPowerSeries.Basic
 import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.RingTheory.MvPowerSeries.Trunc
 import TauCeti.RingTheory.AdicCompletion.AlgHom
-import TauCeti.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.AdicCompletion.Surjective
+import TauCeti.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 
 /-!
@@ -72,13 +73,6 @@ private theorem comp_eval₂Hom :
     T.comp (MvPolynomial.eval₂Hom c z) = MvPolynomial.coeToMvPowerSeries.ringHom :=
   MvPolynomial.ringHom_ext (fun r ↦ by simpa using congr($hTc r)) fun i ↦ by simp [hTz]
 
-include h𝔪 in
-/-- Evaluation at the `z i` carries the ideal of the variables onto `𝔪`. -/
-private theorem map_eval₂Hom_idealOfVars :
-    (MvPolynomial.idealOfVars ι k).map (MvPolynomial.eval₂Hom c z) = 𝔪 := by
-  rw [MvPolynomial.idealOfVars, Ideal.map_span, ← Set.range_comp, ← h𝔪]
-  exact congrArg _ (Set.ext fun _ ↦ by simp)
-
 include hTc hTz h𝔪 in
 /-- **The preimage of the powers of the ideal of the variables.** If `T` sends the constants
 `c r` to the constant series and the generators `z i` of `𝔪` to the variables, and every element
@@ -88,7 +82,8 @@ theorem comap_pow_span_range_X [Finite ι] (hc : Function.Surjective ((Ideal.Quo
     (n : ℕ) : (Ideal.span (Set.range X) ^ n).comap T = 𝔪 ^ n := by
   refine le_antisymm (fun a ha ↦ ?_) (pow_le_comap_pow_span_range_X hTz h𝔪 n)
   set ψ := MvPolynomial.eval₂Hom c z
-  have hψ : (MvPolynomial.idealOfVars ι k).map ψ = 𝔪 := map_eval₂Hom_idealOfVars h𝔪
+  have hψ : (MvPolynomial.idealOfVars ι k).map ψ = 𝔪 :=
+    h𝔪 ▸ MvPolynomial.map_eval₂Hom_idealOfVars c z
   -- Modulo `𝔪 ^ n`, `a` is a polynomial `p` in the `z i`.
   have h₁ : Function.Surjective
       ((Ideal.Quotient.mk ((MvPolynomial.idealOfVars ι k).map ψ)).comp ψ) := by

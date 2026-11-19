@@ -179,15 +179,12 @@ theorem taylorSeries_germ_algebraMap (r : ℂ) :
 private theorem eval_constGerm (r : ℂ) : eval 𝓘(ℂ, ι → ℂ) (ι → ℂ) x (constGerm x r) = r :=
   eval_eq_of_toFilterGerm_eq (toFilterGerm_constGerm x r)
 
-/-- The centred coordinate germ `y ↦ y i - x i`, as a linear coordinate of the identity chart. -/
-private abbrev coordinateGerm (i : ι) :
-    (holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x :=
-  (OpenPartialHomeomorph.refl (ι → ℂ)).holomorphicLinearCoordinateGerm
-    (StructureGroupoid.id_mem_maximalAtlas _) x
-    (LinearMap.toContinuousLinearMap ((Pi.basisFun ℂ ι).coord i)) (Set.mem_univ x)
-
-private theorem taylorSeries_coordinateGerm (i : ι) :
-    taylorSeries x (coordinateGerm x i) = X i := by
+/-- The Taylor series of the centred coordinate germ `y ↦ y i - x i` is the variable `X i`. -/
+@[simp]
+theorem taylorSeries_holomorphicLinearCoordinateGerm_basisFun (i : ι) :
+    taylorSeries x ((OpenPartialHomeomorph.refl (ι → ℂ)).holomorphicLinearCoordinateGerm
+      (StructureGroupoid.id_mem_maximalAtlas _) x
+      (LinearMap.toContinuousLinearMap ((Pi.basisFun ℂ ι).coord i)) (Set.mem_univ x)) = X i := by
   classical
   have h : (fun y : ι → ℂ ↦ ∏ j, (y j - x j) ^ (Pi.single i 1 : ι → ℕ) j) =
       fun y ↦ LinearMap.toContinuousLinearMap ((Pi.basisFun ℂ ι).coord i)
@@ -196,18 +193,10 @@ private theorem taylorSeries_coordinateGerm (i : ι) :
     rw [Fintype.prod_eq_single i fun j hj ↦ by simp [Pi.single_eq_of_ne hj]]
     simp
   ext α
-  rw [coeff_taylorSeries (s := coordinateGerm x i)
-    (OpenPartialHomeomorph.toFilterGerm_holomorphicLinearCoordinateGerm _ _ _ _ _ le_rfl), ← h,
-    mvTaylorCoeff_prod_sub_pow, coeff_X, ← Finsupp.single_eq_pi_single]
+  refine (coeff_taylorSeries (α := α)
+    (OpenPartialHomeomorph.toFilterGerm_holomorphicLinearCoordinateGerm _ _ _ _ _ le_rfl)).trans ?_
+  rw [← h, mvTaylorCoeff_prod_sub_pow, coeff_X, ← Finsupp.single_eq_pi_single]
   simp only [DFunLike.coe_fn_eq]
-
-/-- The Taylor series of the centred coordinate germ `y ↦ y i - x i` is the variable `X i`. -/
-@[simp]
-theorem taylorSeries_holomorphicLinearCoordinateGerm_basisFun (i : ι) :
-    taylorSeries x ((OpenPartialHomeomorph.refl (ι → ℂ)).holomorphicLinearCoordinateGerm
-      (StructureGroupoid.id_mem_maximalAtlas _) x
-      (LinearMap.toContinuousLinearMap ((Pi.basisFun ℂ ι).coord i)) (Set.mem_univ x)) = X i :=
-  taylorSeries_coordinateGerm x i
 
 /-- The centred coordinate germs `y ↦ y i - x i` generate the maximal ideal of the stalk at `x`. -/
 theorem span_range_holomorphicLinearCoordinateGerm_basisFun :
@@ -220,12 +209,6 @@ theorem span_range_holomorphicLinearCoordinateGerm_basisFun :
   rw [maximalIdeal_stalk, OpenPartialHomeomorph.ker_eval_eq_span_holomorphicLinearCoordinateGerm
     (OpenPartialHomeomorph.refl (ι → ℂ)) (StructureGroupoid.id_mem_maximalAtlas _)
     (Pi.basisFun ℂ ι) (Set.mem_univ x)]
-
-private theorem span_range_coordinateGerm :
-    Ideal.span (Set.range (coordinateGerm x)) =
-      IsLocalRing.maximalIdeal
-        ((holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x) :=
-  span_range_holomorphicLinearCoordinateGerm_basisFun x
 
 private theorem mk_maximalIdeal_comp_constGerm_surjective :
     Function.Surjective ((Ideal.Quotient.mk (IsLocalRing.maximalIdeal
@@ -243,8 +226,10 @@ theorem comap_taylorSeries_maximalIdeal_pow (n : ℕ) :
       IsLocalRing.maximalIdeal
         ((holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x) ^ n := by
   rw [maximalIdeal_eq_span_range_X]
-  exact comap_pow_span_range_X (taylorSeries_comp_constGerm x) (taylorSeries_coordinateGerm x)
-    (span_range_coordinateGerm x) (mk_maximalIdeal_comp_constGerm_surjective x) n
+  exact comap_pow_span_range_X (taylorSeries_comp_constGerm x)
+    (taylorSeries_holomorphicLinearCoordinateGerm_basisFun x)
+    (span_range_holomorphicLinearCoordinateGerm_basisFun x)
+    (mk_maximalIdeal_comp_constGerm_surjective x) n
 
 variable {x} in
 /-- A holomorphic germ at `x` lies in the `n`-th power of the maximal ideal exactly when the Taylor
@@ -271,8 +256,10 @@ def adicCompletionEquiv :
     AdicCompletion
       (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x))
       ((holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x) ≃+* MvPowerSeries ι ℂ :=
-  adicCompletionEquivMvPowerSeries (taylorSeries_comp_constGerm x) (taylorSeries_coordinateGerm x)
-    (span_range_coordinateGerm x) (mk_maximalIdeal_comp_constGerm_surjective x)
+  adicCompletionEquivMvPowerSeries (taylorSeries_comp_constGerm x)
+    (taylorSeries_holomorphicLinearCoordinateGerm_basisFun x)
+    (span_range_holomorphicLinearCoordinateGerm_basisFun x)
+    (mk_maximalIdeal_comp_constGerm_surjective x)
 
 /-- The completion isomorphism `adicCompletionEquiv` extends the Taylor series. -/
 @[simp]
@@ -293,7 +280,8 @@ theorem mk_adicCompletionEquiv (n : ℕ)
         (AdicCompletion.evalₐ _ n y) := by
   obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ _ n y)
   have h := mk_adicCompletionEquivMvPowerSeries (taylorSeries_comp_constGerm x)
-    (taylorSeries_coordinateGerm x) (span_range_coordinateGerm x)
+    (taylorSeries_holomorphicLinearCoordinateGerm_basisFun x)
+    (span_range_holomorphicLinearCoordinateGerm_basisFun x)
     (mk_maximalIdeal_comp_constGerm_surjective x) n y
   rw [← hs, Ideal.quotientMap_mk, Ideal.Quotient.eq] at h ⊢
   rwa [maximalIdeal_eq_span_range_X]
