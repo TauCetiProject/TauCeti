@@ -53,16 +53,12 @@ private theorem contMDiff_secondTime (hn : n ≤ ∞) :
   exact (h.contMDiff.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))).smoothTransition hn
 
 private theorem firstTime_eq_one {t : unitInterval} (ht : 1 / 4 ≤ (t : ℝ)) :
-    firstTime t = 1 := by
-  apply Subtype.ext
-  rw [firstTime, unitInterval.coe_smoothTransition]
-  exact Real.smoothTransition.one_of_one_le (by linarith)
+    firstTime t = 1 :=
+  unitInterval.smoothTransition_of_one_le (by linarith)
 
 private theorem secondTime_eq_zero {t : unitInterval} (ht : (t : ℝ) ≤ 3 / 4) :
-    secondTime t = 0 := by
-  apply Subtype.ext
-  rw [secondTime, unitInterval.coe_smoothTransition]
-  exact Real.smoothTransition.zero_of_nonpos (by linarith)
+    secondTime t = 0 :=
+  unitInterval.smoothTransition_of_nonpos (by linarith)
 
 private def concatMotion (F : SmoothIsotopy f₀ f₁) (G : SmoothIsotopy f₁ f₂)
     (p : unitInterval × M) : N :=

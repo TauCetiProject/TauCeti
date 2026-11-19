@@ -73,6 +73,14 @@ theorem smoothTransition_zero : smoothTransition 0 = 0 :=
 theorem smoothTransition_one : smoothTransition 1 = 1 :=
   Subtype.ext Real.smoothTransition.one
 
+/-- The smooth transition rests at `0` for `s ≤ 0`. -/
+theorem smoothTransition_of_nonpos {s : ℝ} (h : s ≤ 0) : smoothTransition s = 0 :=
+  Subtype.ext (Real.smoothTransition.zero_of_nonpos h)
+
+/-- The smooth transition rests at `1` for `1 ≤ s`. -/
+theorem smoothTransition_of_one_le {s : ℝ} (h : 1 ≤ s) : smoothTransition s = 1 :=
+  Subtype.ext (Real.smoothTransition.one_of_one_le h)
+
 end unitInterval
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
