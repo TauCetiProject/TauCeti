@@ -64,7 +64,8 @@ preserving every lattice; these maps respect identities, composition, and monomi
 * `TauCeti.LaurentSeries.iSup_lattice`, `TauCeti.LaurentSeries.iInf_lattice`: the lattices
   exhaust all series and meet in `0`.
 * `TauCeti.LaurentSeries.mem_lattice_iff_exists`: `U_a(R) = Xᵃ R⟦X⟧`.
-* `TauCeti.LaurentSeries.mul_mem_lattice`: `U_a U_b ⊆ U_{a + b}`.
+* `TauCeti.LaurentSeries.mul_mem_lattice`: `U_a U_b ⊆ U_{a + b}`, and
+  `TauCeti.LaurentSeries.coeff_mul_of_mem_lattice`: the coefficient of `Xᵃ⁺ᵇ` of such a product.
 * `TauCeti.LaurentSeries.mem_lattice_iff_valuation_le`: over a field, `U_a` is a closed
   valuation ball.
 * `TauCeti.LaurentSeries.hasBasis_nhds_zero_lattice`: the lattices form a neighbourhood basis
@@ -155,6 +156,14 @@ theorem iInf_lattice : ⨅ a, lattice R V a = ⊥ := by
   ext n
   exact hf (n + 1) n (Int.lt_succ n)
 
+/-- Two series of `U_a(V)` are equal once their coefficients agree at every exponent `n ≥ a`. -/
+theorem eq_of_mem_lattice_of_coeff_eq {a : ℤ} {f f' : HahnSeries ℤ V} (hf : f ∈ lattice R V a)
+    (hf' : f' ∈ lattice R V a) (h : ∀ n, a ≤ n → f.coeff n = f'.coeff n) : f = f' := by
+  ext n
+  obtain hn | hn := lt_or_ge n a
+  · rw [hf n hn, hf' n hn]
+  · exact h n hn
+
 end Module
 
 section Ring
@@ -189,6 +198,19 @@ theorem mem_lattice_iff_exists {a : ℤ} {f : R⸨X⸩} :
 /-- The lattice `U_0` consists of the formal power series. -/
 theorem mem_lattice_zero_iff {f : R⸨X⸩} : f ∈ lattice R R 0 ↔ ∃ p : R⟦X⟧, (p : R⸨X⸩) = f := by
   simp only [mem_lattice_iff_exists, single_zero_one, one_mul]
+
+/-- The coefficient of `Xᵃ⁺ᵇ` in a product of series of `U_a` and `U_b` is the product of their
+coefficients of `Xᵃ` and `Xᵇ`. -/
+theorem coeff_mul_of_mem_lattice {R : Type*} [CommSemiring R] {a b : ℤ} {f g : R⸨X⸩}
+    (hf : f ∈ lattice R R a) (hg : g ∈ lattice R R b) :
+    (f * g).coeff (a + b) = f.coeff a * g.coeff b := by
+  obtain ⟨p, rfl⟩ := mem_lattice_iff_exists.1 hf
+  obtain ⟨q, rfl⟩ := mem_lattice_iff_exists.1 hg
+  have hcoeff (c : ℤ) (r : R⟦X⟧) :
+      (single c (1 : R) * (r : R⸨X⸩)).coeff c = PowerSeries.constantCoeff r := by
+    rw [coeff_single_mul, sub_self, one_mul, ← Nat.cast_zero,
+      _root_.LaurentSeries.coeff_coe_powerSeries, PowerSeries.coeff_zero_eq_constantCoeff_apply]
+  rw [mul_mul_mul_comm, single_mul_single, one_mul, ← map_mul, hcoeff, hcoeff, hcoeff, map_mul]
 
 /-- Over a field, `U_a` is the closed valuation ball `{f | v f ≤ exp (-a)}`. -/
 theorem mem_lattice_iff_valuation_le {K : Type*} [Field K] {a : ℤ} {f : K⸨X⸩} :
