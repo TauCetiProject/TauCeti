@@ -36,7 +36,9 @@ For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u
 
 The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the only one: a vector
 `w` with `‖w‖ ≤ ‖P_U w‖` equals `P_U w`. Equivalently, `v ∈ U` exactly when adding a vector of
-`Uᗮ` never decreases the norm of `v`. Over `ℝ`, Pythagoras splits the squared distance from a
+`Uᗮ` never decreases the norm of `v`. Perturbing a subspace increases the distance from any vector
+to the subspace by at most the operator-norm change in orthogonal projection times the vector's
+norm. Over `ℝ`, Pythagoras splits the squared distance from a
 point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`. For the
 projection `P` onto a real line, `⟪P x, y⟫ ⟪P y, z⟫ = ⟪P y, y⟫ ⟪P x, z⟫`, so lying strictly on the
 same side of the orthogonal hyperplane is transitive.
@@ -94,6 +96,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   is its projection.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
+* `Submodule.infDist_le_add_norm_starProjection_sub_mul`:
+  `infDist w U ≤ infDist w V + ‖P_U - P_V‖ * ‖w‖`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
 * `Submodule.inner_starProjection_mul_inner_starProjection_of_finrank_eq_one`: the sign identity
@@ -281,6 +285,21 @@ theorem mem_iff_forall_mem_orthogonal_norm_le_norm_add {v : E} :
     rw [add_sub_cancel] at hle
     rw [U.eq_starProjection_of_norm_le hle]
     exact U.starProjection_apply_mem v
+
+/-- Perturbing a subspace in orthogonal-projection operator norm increases the distance from any
+vector `w` to the subspace by at most `‖P_U - P_V‖ * ‖w‖`. -/
+theorem infDist_le_add_norm_starProjection_sub_mul (w : E) :
+    Metric.infDist w U ≤ Metric.infDist w V + ‖U.starProjection - V.starProjection‖ * ‖w‖ := by
+  rw [← U.dist_starProjection_eq_infDist, ← V.dist_starProjection_eq_infDist,
+    dist_eq_norm, dist_eq_norm]
+  calc ‖w - U.starProjection w‖
+      ≤ ‖w - V.starProjection w‖ + ‖V.starProjection w - U.starProjection w‖ := by
+        simpa only [sub_add_sub_cancel] using
+          norm_add_le (w - V.starProjection w) (V.starProjection w - U.starProjection w)
+    _ ≤ ‖w - V.starProjection w‖ + ‖U.starProjection - V.starProjection‖ * ‖w‖ := by
+        rw [norm_sub_rev (V.starProjection w), ← sub_apply]
+        gcongr
+        exact le_opNorm _ w
 
 omit [U.HasOrthogonalProjection] in
 /-- The orthogonal projection onto `V` is injective on `U` exactly when `U ⊓ Vᗮ = ⊥`, since its

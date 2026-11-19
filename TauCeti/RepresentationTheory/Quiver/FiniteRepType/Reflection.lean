@@ -110,7 +110,7 @@ theorem IsFiniteRepType.of_reflect_of_isSink (hi : IsSink i)
   exact isFiniteRepType_of_map (fun M ↦ ∀ a : Q, a ≠ i → Subsingleton (M.obj a))
     (fun M ↦ reflectRep M hi)
     (fun M hfin hM hE ↦ ⟨isFinDim_iff.mpr
-        (finiteDimensional_reflectRep_obj M hi (isFinDim_iff.mp hfin)),
+        (finiteDimensional_reflectRep_obj M hi fun a _ ↦ isFinDim_iff.mp hfin a),
       indecomposable_reflectRep hi hM
         ((incomingSum_surjective_or_forall_subsingleton hi hM).resolve_right hE)⟩)
     (fun _ _ hM hN hEM hEN ↦ nonempty_iso_of_nonempty_iso_reflectRep hi
