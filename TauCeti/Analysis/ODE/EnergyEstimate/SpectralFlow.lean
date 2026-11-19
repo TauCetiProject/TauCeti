@@ -40,10 +40,11 @@ in the convention of the operator `d/ds - A`, whose coefficient is `-A`, the ind
 spectral flow of `A`
 (`TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_neg_eq_neg_spectralFlow`): for
 `A s = tanh s` the spectral flow is `1` and the index of `d/ds - tanh s` is `-1`, its cokernel
-being spanned by `1 / cosh`. Both follow from the computation of the spectral flow in finite
+being spanned by `1 / cosh`. The first follows from the computation of the spectral flow in finite
 dimensions as the drop `n⁻(A (-T)) - n⁻(A T)` of the number of negative eigenvalues
 (`TauCeti.spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank`), which for large `T` is
-`n⁻(A⁻) - n⁻(A⁺)`.
+`n⁻(A⁻) - n⁻(A⁺)`. The second follows from the first applied to `-A`, together with
+`TauCeti.spectralFlow_neg_of_ker_eq_bot`.
 
 The proof combines two computations. The index of `D_A` is the number of negative eigenvalues of
 `A⁻` minus that of `A⁺`

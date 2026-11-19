@@ -54,7 +54,7 @@ constant, so `t ↦ dim ker A(t) - F t` is a spectral flow potential of `-A` whe
 
 public section
 
-open Metric Set
+open Filter Metric Set Topology
 open scoped Pointwise
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
@@ -62,80 +62,25 @@ variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpac
 
 namespace TauCeti
 
-/-- The spectral projection of `-S` for `Ω` is the spectral projection of `S` for `-Ω`. -/
-private theorem cfc_indicator_neg {S : H →L[𝕜] H} (hS : IsSelfAdjoint S) {Ω : Set ℝ}
-    (hf : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ (-S))) :
-    cfc (Ω.indicator (1 : ℝ → ℝ)) (-S) = cfc ((-Ω).indicator (1 : ℝ → ℝ)) S := by
-  have hcomp : (fun x ↦ Ω.indicator (1 : ℝ → ℝ) (-x)) = (-Ω).indicator 1 := by
-    ext x
-    by_cases hx : -x ∈ Ω
-    · rw [indicator_of_mem hx, indicator_of_mem (Set.mem_neg.2 hx), Pi.one_apply, Pi.one_apply]
-    · rw [indicator_of_notMem hx, indicator_of_notMem (mt Set.mem_neg.1 hx)]
-  rw [← hcomp, cfc_comp_neg _ _ (by rwa [image_neg_eq_neg, spectrum.neg_eq])]
-
-omit [CompleteSpace H] [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint] in
-/-- `-c` is in the spectrum of `-S` exactly when `c` is in the spectrum of `S`. -/
-private theorem neg_mem_spectrum_neg_iff {S : H →L[𝕜] H} {c : ℝ} :
-    -c ∈ spectrum ℝ (-S) ↔ c ∈ spectrum ℝ S := by
-  rw [← spectrum.neg_eq, neg_mem_neg]
-
-/-- **Spectral cuts of the negated family.** For a family of self-adjoint operators, `c` is a
-spectral cut of `u ↦ -A u` on `s` exactly when it is a spectral cut of `A` on `s`. -/
-theorem isSpectralCutOn_neg_iff {α : Type*} {A : α → H →L[𝕜] H} {c : ℝ} {s : Set α}
-    (hsa : ∀ u ∈ s, IsSelfAdjoint (A u)) :
+/-- **Spectral cuts of the negated family.** `c` is a spectral cut of `u ↦ -A u` on `s` exactly
+when it is a spectral cut of `A` on `s`. -/
+theorem isSpectralCutOn_neg_iff {α : Type*} {A : α → H →L[𝕜] H} {c : ℝ} {s : Set α} :
     IsSpectralCutOn (fun u ↦ -A u) c s ↔ IsSpectralCutOn A c s := by
   simp only [isSpectralCutOn_iff]
-  refine and_congr_right fun _ ↦ forall₂_congr fun u hu ↦ ?_
+  refine and_congr_right fun _ ↦ forall₂_congr fun u _ ↦ ?_
   have hmem : -c ∉ spectrum ℝ (-A u) ∧ c ∉ spectrum ℝ (-A u) ↔
       -c ∉ spectrum ℝ (A u) ∧ c ∉ spectrum ℝ (A u) := by
-    rw [neg_mem_spectrum_neg_iff, ← neg_neg c, neg_mem_spectrum_neg_iff, neg_neg]
+    simp only [← spectrum.neg_eq, Set.mem_neg, neg_neg]
     exact and_comm
   rw [← and_assoc, ← and_assoc, hmem]
   refine and_congr_right fun ⟨h₁, h₂⟩ ↦ ?_
   have hf : ContinuousOn ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (spectrum ℝ (-A u)) :=
     continuousOn_const.continuousOn_indicator_of_disjoint_frontier
-      (disjoint_frontier_Icc (by rwa [neg_mem_spectrum_neg_iff])
-        (by rwa [← neg_neg c, neg_mem_spectrum_neg_iff]))
-  rw [cfc_indicator_neg (hsa u hu) hf, neg_Icc, neg_neg]
+      (disjoint_frontier_Icc (by rwa [← spectrum.neg_eq, Set.mem_neg, neg_neg])
+        (by rwa [← spectrum.neg_eq, Set.mem_neg]))
+  rw [cfc_indicator_neg _ hf, neg_Icc, neg_neg]
 
 variable [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)]
-
-omit [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
-/-- The spectral projection for `{0}` of a self-adjoint operator with finitely many spectral values
-in `[-c, c]`, `c > 0`, is the projection onto its kernel. -/
-private theorem finrank_range_cfc_indicator_Icc_zero_zero {S : H →L[𝕜] H} (hS : IsSelfAdjoint S)
-    {c : ℝ} (hc : 0 < c) (hfin : (spectrum ℝ S ∩ Icc (-c) c).Finite) :
-    Module.finrank 𝕜 (cfc ((Icc (0 : ℝ) 0).indicator (1 : ℝ → ℝ)) S).range =
-      Module.finrank 𝕜 S.ker := by
-  -- `0` is isolated in the spectrum: some `[-ε, ε]` meets it at most in `0`.
-  have hG : ((spectrum ℝ S ∩ Icc (-c) c) \ {0}).Finite := hfin.sdiff
-  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1
-    (hG.isClosed.compl_mem_nhds fun h ↦ h.2 rfl)
-  set ε := min (δ / 2) (c / 2)
-  have hε : 0 < ε := by positivity
-  have hsub : spectrum ℝ S ∩ Icc (-ε) ε ⊆ {0} := by
-    rintro x ⟨hxσ, hx₁, hx₂⟩
-    by_contra hx0
-    refine hball ?_ ⟨⟨hxσ, ?_, ?_⟩, hx0⟩
-    · rw [mem_ball, Real.dist_eq, sub_zero, abs_lt]
-      constructor <;> linarith [min_le_left (δ / 2) (c / 2)]
-    · linarith [min_le_right (δ / 2) (c / 2)]
-    · linarith [min_le_right (δ / 2) (c / 2)]
-  have hfr : Disjoint (frontier (Icc (-ε) ε)) (spectrum ℝ S) := by
-    refine disjoint_frontier_Icc (fun h ↦ ?_) (fun h ↦ ?_)
-    · exact (neg_ne_zero.2 hε.ne') (hsub ⟨h, le_rfl, by linarith⟩)
-    · exact hε.ne' (hsub ⟨h, by linarith, le_rfl⟩)
-  have hker := hS.cfc_indicator_eq_starProjection_ker (by constructor <;> linarith) hsub hfr
-  have hcongr : cfc ((Icc (0 : ℝ) 0).indicator (1 : ℝ → ℝ)) S =
-      cfc ((Icc (-ε) ε).indicator (1 : ℝ → ℝ)) S := by
-    refine cfc_congr fun x hx ↦ ?_
-    by_cases hxε : x ∈ Icc (-ε) ε
-    · rw [mem_singleton_iff.1 (hsub ⟨hx, hxε⟩)]
-      simp only [indicator, mem_Icc, le_refl, and_self, ↓reduceIte, Pi.one_apply, neg_nonpos,
-        hε.le]
-    · have hx0 : x ∉ Icc (0 : ℝ) 0 := fun h ↦ hxε (Icc_subset_Icc (by linarith) hε.le h)
-      rw [indicator_of_notMem hx0, indicator_of_notMem hxε]
-  rw [hcongr, hker, Submodule.range_starProjection]
 
 /-- **The eigenvalue counts of `-S` and of `S`.** Let `S` be self-adjoint and `c > 0` with `±c`
 outside its spectrum and a spectral projection for `[-c, c]` of finite rank. The eigenvalues of
@@ -176,9 +121,9 @@ theorem spectralCount_neg_add_spectralCount {S : H →L[𝕜] H} (hS : IsSelfAdj
       exact hfin.neg
     have hf : ContinuousOn ((Icc 0 c).indicator (1 : ℝ → ℝ)) (spectrum ℝ (-S)) :=
       hfin'.continuousOn_indicator (Icc_subset_Icc (by linarith) le_rfl)
-        (disjoint_frontier_Icc (by rwa [neg_mem_spectrum_neg_iff])
-          (by rwa [← neg_neg c, neg_mem_spectrum_neg_iff]))
-    rw [spectralCount_def, cfc_indicator_neg hS hf, neg_Icc, neg_zero]
+        (disjoint_frontier_Icc (by rwa [← spectrum.neg_eq, Set.mem_neg, neg_neg])
+          (by rwa [← spectrum.neg_eq, Set.mem_neg]))
+    rw [spectralCount_def, cfc_indicator_neg _ hf, neg_Icc, neg_zero]
   have hdisj : Disjoint (Icc (-c) (0 : ℝ)) (Ioc 0 c) :=
     disjoint_left.2 fun x hx hx' ↦ (not_lt.2 hx.2) hx'.1
   have hdisj₀ : Disjoint (Icc (0 : ℝ) 0) (Ioc 0 c) :=
@@ -188,8 +133,14 @@ theorem spectralCount_neg_add_spectralCount {S : H →L[𝕜] H} (hS : IsSelfAdj
   have hnonneg := S.finrank_range_cfc_indicator_union hdisj₀ (hcont hzero) (hcont hpos)
   rw [Icc_union_Ioc_eq_Icc (by linarith) hc.le] at hall
   rw [Icc_union_Ioc_eq_Icc le_rfl hc.le] at hnonneg
-  rw [hcount, spectralCount_def, hall, hnonneg,
-    finrank_range_cfc_indicator_Icc_zero_zero hS hc hfin]
+  -- `0` is isolated in the spectrum, so the projection for `{0}` is the kernel projection.
+  have hG : ((spectrum ℝ S ∩ Icc (-c) c) \ {0}).Finite := hfin.sdiff
+  have hiso : ∀ᶠ x in 𝓝[≠] (0 : ℝ), x ∉ spectrum ℝ S := by
+    filter_upwards [nhdsWithin_le_nhds (hG.isClosed.compl_mem_nhds fun h ↦ h.2 rfl),
+      nhdsWithin_le_nhds (Icc_mem_nhds (neg_neg_of_pos hc) hc), self_mem_nhdsWithin]
+      with x hx hxc hx0 hxσ using hx ⟨⟨hxσ, hxc⟩, hx0⟩
+  rw [hcount, spectralCount_def, hall, hnonneg, Icc_self,
+    hS.cfc_indicator_singleton_zero_eq_starProjection_ker hiso, Submodule.range_starProjection]
   ring
 
 variable {A : ℝ → H →L[𝕜] H} {a b : ℝ}
@@ -213,7 +164,7 @@ theorem spectralFlow_neg (hab : a ≤ b) (hA : ContinuousOn A (Icc a b))
     intro s t c has hst htb hc
     have hsub : Icc s t ⊆ Icc a b := Icc_subset_Icc has htb
     have hsa' : ∀ u ∈ Icc s t, IsSelfAdjoint (A u) := fun u hu ↦ hsa u (hsub hu)
-    have hcA := (isSpectralCutOn_neg_iff hsa').1 hc
+    have hcA := isSpectralCutOn_neg_iff.1 hc
     have hs : s ∈ Icc s t := ⟨le_rfl, hst⟩
     have ht : t ∈ Icc s t := ⟨hst, le_rfl⟩
     have hcount (u : ℝ) (hu : u ∈ Icc s t) := spectralCount_neg_add_spectralCount (hsa' u hu)

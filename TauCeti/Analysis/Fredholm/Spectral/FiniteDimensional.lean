@@ -39,9 +39,10 @@ crossings count positively. This is Robbin and Salamon's formula, and it rests o
 negative index along a path of symmetric bilinear forms with regular crossings
 (`ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`).
 
-These are the finite-dimensional forms of the statements that the spectral flow of `A` is the
-index of the trajectory operator `d/ds + A` and minus that of `d/ds - A`; see
-`TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`.
+This is the finite-dimensional form of the statement that the spectral flow of `A` is the index
+of the trajectory operator `d/ds + A`; see
+`TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`. The form for
+`d/ds - A` also needs `TauCeti.spectralFlow_neg_of_ker_eq_bot` from `Fredholm/Spectral/Neg.lean`.
 
 ## Main results
 
