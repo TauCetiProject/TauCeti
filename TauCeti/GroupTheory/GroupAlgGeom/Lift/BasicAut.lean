@@ -43,8 +43,6 @@ formulas with `A ^ k` in place of `A`, for every integer `k` ([IFT], Lemma 41).
 * `TauCeti.GroupAlgGeom.Lift.coeffAtom`, `TauCeti.GroupAlgGeom.Lift.commAtom`: the atoms
   `zⱼ⁻¹ cⱼ zⱼ` and `[xᵢ, yᵢ]`.
 * `TauCeti.GroupAlgGeom.Lift.basicWord`: the word `S₀`.
-* `TauCeti.GroupAlgGeom.Lift.blockExp`: the exponents of a twist that are prescribed at the
-  variables of an injective family and zero at the other variables.
 * `TauCeti.GroupAlgGeom.Lift.basicCoeff`, `basicLink`, `basicY`, `basicX`, `basicComm`: the basic
   automorphisms.
 
@@ -132,31 +130,6 @@ theorem eval_basicWord :
   simp [basicWord_def, map_list_prod, List.map_ofFn, Function.comp_def]
 
 end Word
-
-/-! ### Exponents supported on a family of variables -/
-
-section BlockExp
-
-variable {ι : Sort*} {f : ι → X} {e : ι → ℤ × ℤ}
-
-/-- The exponents on `X` that are `e a` at the variable `f a` of an injective family `f`
-(`blockExp_apply`) and zero at the variables outside the family (`blockExp_eq_zero`). -/
-noncomputable def blockExp (f : ι → X) (e : ι → ℤ × ℤ) : X → ℤ × ℤ :=
-  Function.extend f e 0
-
-theorem blockExp_def (f : ι → X) (e : ι → ℤ × ℤ) : blockExp f e = Function.extend f e 0 := (rfl)
-
-theorem blockExp_apply (hf : f.Injective) (a : ι) : blockExp f e (f a) = e a :=
-  hf.extend_apply _ _ a
-
-theorem blockExp_eq_zero {v : X} (h : ∀ a, f a = v → e a = 0) : blockExp f e v = 0 := by
-  classical
-  rw [blockExp_def, Function.extend_def]
-  split_ifs with hv
-  · exact h _ (Classical.choose_spec hv)
-  · rfl
-
-end BlockExp
 
 /-! ### Twists fixing the atoms of `S₀` -/
 
