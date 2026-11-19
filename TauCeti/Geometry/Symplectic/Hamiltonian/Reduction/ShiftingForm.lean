@@ -164,8 +164,8 @@ theorem mpullback_smul_eq_prod_leftInvariantKirillovForm (h : σ.IsEquivariantMo
   obtain ⟨η, hη⟩ := exists_mulInvariantVectorField_eq (I := I) (g := g) w.1
   rw [SmoothForm.eval₂_mpullback, eval₂_prod, hda v hξ, hda w hη]
   refine (h.eval₂_mfderiv_smul_add_fundamentalVectorField (hG g) (i z) ξ η
-    (h.toIsMomentMap.differential_mfderiv_eq_zero hi hic z v.2)
-    (h.toIsMomentMap.differential_mfderiv_eq_zero hi hic z w.2)).trans ?_
+    (h.toIsMomentMap.differential_mfderiv_eq_zero hic z v.2)
+    (h.toIsMomentMap.differential_mfderiv_eq_zero hic z w.2)).trans ?_
   rw [hic z, SmoothForm.eval₂_mpullback, Manifold.tangentSpaceProdEquiv_apply,
     Manifold.tangentSpaceProdEquiv_apply, ← hξ, ← hη,
     c.eval₂_leftInvariantKirillovForm_mulInvariantVectorField]
