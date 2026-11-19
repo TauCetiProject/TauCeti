@@ -25,14 +25,14 @@ coordinates (`ContMDiffMap.exists_chartCkSeminorm_le_coordChange`).
   `1`, `1` and `1 / 2` on `K`, against `1`, `2` and `2` for `x ^ 2` on `[-1, 1]`: the `m`th
   derivative is scaled by `(1 / 2) ^ m`, so the compact `C^k` seminorm does not increase, with
   constant `1` in every order
-  (`ContMDiffMap.chartCkSeminorm_selfChartCompacts_le_of_forall_apply_eq_mul_of_norm_le_one`).
+  (`ContMDiffMap.chartCkSeminorm_selfChartCompacts_le_of_forall_apply_eq_apply_mul_of_norm_le_one`).
 * **An expansion.** The reverse change `y = 2 x` scales the `m`th derivative by `2 ^ m`. The
   exponential attains the resulting constant `2 ^ k`: the compact `C^k` seminorm of `exp (2 x)`
   on `[-1, 1]` is `2 ^ k` times that of `exp` on `[-2, 2]`
   (`ContMDiffMap.chartCkSeminorm_Icc_exp_two_mul_eq`). So no constant independent of the order
   `k` bounds the `C^k` seminorms after this change of coordinates
-  (`ContMDiffMap.not_exists_forall_chartCkSeminorm_le_of_forall_apply_eq_two_mul`): the constants
-  of `ContMDiffMap.exists_chartCkSeminorm_le_coordChange` depend on `k`.
+  (`ContMDiffMap.not_exists_forall_chartCkSeminorm_le_of_forall_apply_eq_apply_two_mul`): the
+  constants of `ContMDiffMap.exists_chartCkSeminorm_le_coordChange` depend on `k`.
 
 ## References
 
@@ -124,7 +124,7 @@ example {f g : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯} (hg : ∀ y, g y = f (1 
     chartCkSeminorm 0 (selfChartCompacts 0 ⟨Icc (-2) 2, isCompact_Icc⟩) k hk g ≤
       chartCkSeminorm 0 (selfChartCompacts 0 ⟨Icc (-1) 1, isCompact_Icc⟩) k hk f := by
   rw [← map_half_mul_Icc]
-  exact chartCkSeminorm_selfChartCompacts_le_of_forall_apply_eq_mul_of_norm_le_one hg
+  exact chartCkSeminorm_selfChartCompacts_le_of_forall_apply_eq_apply_mul_of_norm_le_one hg
     (by norm_num) 0 0 _ k hk
 
 /-- **Compact `C^k` seminorms of an exponential.** For `g x = exp (c * x)` on `ℝ` with `c ≥ 1`
@@ -164,7 +164,7 @@ theorem chartCkSeminorm_Icc_exp_two_mul_eq {f g : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ
 /-- **The constants of the change of coordinates `x ↦ 2 * x` depend on the order.** No constant
 `C` bounds the compact `C^k` seminorm on `[-1, 1]` of every `g = f (2 ·)` by `C` times the compact
 `C^k` seminorm of `f` on `[-2, 2]`, for all orders `k` at once. -/
-theorem not_exists_forall_chartCkSeminorm_le_of_forall_apply_eq_two_mul (x : ℝ) :
+theorem not_exists_forall_chartCkSeminorm_le_of_forall_apply_eq_apply_two_mul (x : ℝ) :
     ¬ ∃ C : ℝ, ∀ (k : ℕ) (f g : C^∞⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯), (∀ y, g y = f (2 * y)) →
       chartCkSeminorm x (selfChartCompacts x ⟨Icc (-1) 1, isCompact_Icc⟩) k
           (by exact_mod_cast le_top) g ≤
