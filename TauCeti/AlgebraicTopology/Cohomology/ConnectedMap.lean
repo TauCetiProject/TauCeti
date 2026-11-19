@@ -308,29 +308,11 @@ private theorem twistedCohomologyMap_mem (P : MorphismProperty (ModuleCat.{v} k)
       ((LocalCoefficientSystem.pullback (i ≫ p).hom).obj L) m) :=
     (MappingCylinder.inclHomeomorph f).toHomotopyEquiv.isWeakHomotopyEquivalence
       |>.isIso_twistedCohomologyMap k M _ m
-  have hcoeff {Z : TopCat.{v}} {L₁ L₂ : LocalCoefficientSystem.{u, v, v} R Z} (η : L₁ ⟶ L₂)
-      [IsIso η] : IsIso (twistedCohomologyCoefficientMap k M η m) := by
-    rw [← asIso_hom η, ← twistedCohomologyCoefficientIso_hom]
-    infer_instance
-  -- Equal maps induce the same map on cohomology, up to the identification of the pulled-back
-  -- systems.
-  have hcongr (g g' : TopCat.of X ⟶ TopCat.of Y) (h : g = g') :
-      twistedCohomologyMap k M g L m =
-        twistedCohomologyMap k M g' L m ≫ twistedCohomologyCoefficientMap k M
-          (eqToHom (congrArg (fun g : TopCat.of X ⟶ TopCat.of Y ↦
-            (LocalCoefficientSystem.pullback g.hom).obj L) h)) m := by
-    subst h
-    rw [eqToHom_refl, twistedCohomologyCoefficientMap_id, Category.comp_id]
   -- Factor `f^*` through `p^*`, `i^*` and `ψ^*`, up to the coefficient isomorphisms comparing the
   -- pulled-back systems.
-  have e := hcongr _ _ hf'
-  rw [twistedCohomologyMap_comp k M ψ (i ≫ p), twistedCohomologyMap_comp k M i p] at e
-  simp only [Category.assoc] at e
-  have := hcoeff ((pullbackCompIso i.hom p.hom).hom.app L)
-  have := hcoeff ((pullbackCompIso ψ.hom (i ≫ p).hom).hom.app L)
-  have := hcoeff (eqToHom (congrArg (fun g : TopCat.of X ⟶ TopCat.of Y ↦
-    (LocalCoefficientSystem.pullback g.hom).obj L) hf'))
-  rw [e]
+  rw [twistedCohomologyMap_congr k M _ L hf' m, twistedCohomologyMap_comp k M ψ (i ≫ p),
+    twistedCohomologyMap_comp k M i p]
+  simp only [Category.assoc]
   exact (P.cancel_left_of_respectsIso _ _).2 ((P.cancel_right_of_respectsIso _ _).2 hi)
 
 /-- **An `n`-connected map induces monomorphisms on cohomology with local coefficients up to degree

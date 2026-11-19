@@ -485,10 +485,8 @@ lemma homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem
   -- transparency, so the equation is restated for the `τ₃` component.
   have e : HomologicalComplex.homologyMap (twistedCochainComplexShortComplexMap k M f L).τ₃ n = _ :=
     homologyMap_twistedSubspaceCochainComplexMap k M f L n
-  rw [e, ← LocalCoefficientSystem.twistedCohomologyCoefficientIso_hom]
-  -- Instance search does not find `IsIso` for maps of these cohomology modules, so it is passed by
-  -- hand.
-  exact @MorphismProperty.RespectsIso.postcomp _ _ Pr _ _ _ _ _ (Iso.isIso_hom _) _ h
+  rw [e]
+  exact MorphismProperty.RespectsIso.postcomp _ _ _ h
 
 /-- The map from relative to absolute twisted cohomology is natural in the pair. -/
 @[reassoc]
