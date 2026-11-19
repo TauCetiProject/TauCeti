@@ -270,7 +270,6 @@ lemma cwApproximationMap_cwApproximationBasepoint :
 /-- The first stage, a single `0`-cell, is a point. -/
 private instance instSubsingletonCWApproximationStageZero :
     Subsingleton (cwApproximationStage X x 0).1 := by
-  have : Subsingleton (TopCat.disk.{u} 0) := (diskHomeomorphCube.{u} 0).injective.subsingleton
   -- Every point lies in the cell, since the old space is empty.
   have h := (cellAttachmentAttachCells
     cwApproximationVertexAttachingMap).compl_range_eq_iUnion_image_cell
