@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.GroupTheory.GroupAction.Hom
 import Mathlib.Algebra.BigOperators.Finprod
 
 /-!
@@ -76,7 +77,7 @@ private theorem discriminantExponent_fixedField_stabilizer_out_of_injective
         (IntermediateField.fixedField
           (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent := by
   rw [discriminantExponent_fixedField_stabilizer_out K hx,
-    MulAction.stabilizer_eq_of_injective f hf he]
+    MulAction.stabilizer_eq_of_injective f hf (he · x)]
 
 /-- The sum of the discriminant exponents of the fixed fields of point stabilizers, one per
 orbit. An infinite fixed field contributes zero; infinitely many nonzero summands give a total
