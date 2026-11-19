@@ -27,7 +27,9 @@ of the point configurations. Without points this is the count of index-zero clas
 (`TauCeti.pointConfigurationCount_of_isEmpty`). The finiteness, area-cutoff and conditional
 comparison statements carry over, and the count does not depend on how the points are labelled
 (`TauCeti.pointConfigurationCount_map_equiv`). With at least one point, the count in class zero
-vanishes (`TauCeti.pointConfigurationCount_zero`).
+vanishes (`TauCeti.pointConfigurationCount_zero`). As for the count without points, the count
+vanishes in a class `A` that is not good, `A · S < -1` for an exceptional sphere `S` counted only
+with multiplicity one (`TauCeti.pointConfigurationCount_eq_zero_of_apply_lt_neg_one`).
 
 The geometry of curves through generic points supplies three numerical facts about the classes
 of the candidates in the intersection form `B` on integral homology, with canonical class `κ` and
@@ -252,6 +254,27 @@ theorem pointConfigurationCount_eq_of_area_lt (hts : t ⊆ s)
 end Area
 
 end Configuration
+
+/-! ### Vanishing in a bad class -/
+
+section BadClass
+
+variable [AddCommGroup H] [CommSemiring R] {r : ι → ι → Prop} {cls : ι → H} {pts : ι → Finset P}
+  {w : ι → ℕ → R} {s : Set ι} {A : H} {B : BilinForm ℤ H}
+
+/-- **Vanishing in a bad class.** Let `S` be a candidate of self-intersection at least `-1`, such
+as an exceptional sphere, which every other candidate meets nonnegatively, and which is counted
+only with multiplicity one: `w S k = 0` for `k ≥ 2`. If `A · S < -1`, that is, if `A` is not
+good, then the count through the points in class `A` vanishes. -/
+theorem pointConfigurationCount_eq_zero_of_apply_lt_neg_one {S : ι}
+    (hpos : ∀ c ∈ s, c ≠ S → 0 ≤ B (cls c) (cls S)) (hS : -1 ≤ B (cls S) (cls S))
+    (hw : ∀ k, 2 ≤ k → w S k = 0) (hA : B A (cls S) < -1) :
+    pointConfigurationCount r cls pts w s A = 0 := by
+  rw [pointConfigurationCount_def]
+  exact finsum_mem_eq_zero_of_forall_eq_zero fun _ hl ↦
+    prod_eq_zero_of_apply_lt_neg_one hpos hS hw hA (pointConfigurations_subset hl)
+
+end BadClass
 
 /-! ### The intersection algebra of a point configuration -/
 
