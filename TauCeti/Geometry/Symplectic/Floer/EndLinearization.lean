@@ -85,7 +85,9 @@ of `V`). Undoing the conjugation by `e^{δ s}`
 
 `∫ e^{2 δ s} (|∂s η|² + |∂t η - S η|² + |η|²) ≤ C ∫ e^{2 δ s} |D_u η|²`
 
-on the far part of the end, uniformly in the window `[a, b]`
+on the far part of the end, uniformly in the window `[a, b]`, at every such fixed weight
+(`exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization`), and so for every
+`δ` close enough to `0` at a nondegenerate orbit
 (`eventually_exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization`).
 For `δ > 0` on a positive end, or `δ < 0` on a negative end, the weight penalizes maps that do not
 decay like `e^{-|δ s|}` along the end; these weighted norms are the ones in which the Fredholm and
@@ -487,6 +489,91 @@ theorem exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization
     (eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul ω hX hH
       hx hnd hJ hJx hu hux hδ).self_of_nhds
 
+/-- **The weighted `L²` estimate of the linearized operator on an end, at a fixed weight.** Under
+the hypotheses of `exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul`
+(a continuous loop `x`, `J_t` compatible along `x`, and a weight `δ` for which
+`S_δ = dX_{H_t}(x(t)) - δ J_t(x(t))` has a nondegenerate return map), there are a constant `C ≥ 0`
+and a set `U ∈ l` of slices such that every `C²` map `η` of period one in `t`, vanishing on the
+slices `s = a` and `s = b` with `[a, b] ⊆ U`, satisfies
+
+`∫ e^{2 δ s} (g(∂s η, ∂s η) + g(∂t η - S η, ∂t η - S η) + g(η, η)) ≤ C ∫ e^{2 δ s} g(D_u η, D_u η)`
+
+over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K = H_t dt`,
+`S_t = dX_{H_t}(x(t))` and `g_t = ω(·, J_t(x(t)) ·)`. This is the estimate of `D_u` in the
+`L²` norm with weight `e^{δ s}`; the weight need not be small. For `δ > 0` on a positive end
+(`l = atTop`), or `δ < 0` on a negative end (`l = atBot`), the weight forces exponential decay.
+The constant does not depend on `a`, `b` or `η`. -/
+theorem exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
+    (hxc : Continuous x) {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJx : ∀ t, ω.Compatible (J t (x t))) {δ : ℝ}
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft (fun t ↦
+      fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) -
+        δ • (J t (x t)).toLinearMap.toContinuousLinearMap) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠ 0)
+    {l : Filter ℝ} {u : ℝ × ℝ → V} (hu : ∀ᶠ s in l, ∀ t ∈ Icc (0 : ℝ) 1, ContDiffAt ℝ 1 u (s, t))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l (Icc 0 1)) :
+    ∃ C, 0 ≤ C ∧ ∃ U ∈ l, ∀ ⦃η : ℝ × ℝ → V⦄, ContDiff ℝ 2 η →
+      (∀ s t, η (s, t + 1) = η (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ U →
+      (∀ t, η (a, t) = 0) → (∀ t, η (b, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc 0 1, Real.exp (2 * δ * z.1) *
+            ((ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ η z stdComplexLineReal)
+                (fderiv ℝ η z stdComplexLineReal) +
+              ω.associatedBilinForm (J z.2 (x z.2)) (fderiv ℝ η z stdComplexLineImag -
+                  fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (η z))
+                (fderiv ℝ η z stdComplexLineImag -
+                  fderiv ℝ (ω.hamiltonianVectorField (H z.2)) (x z.2) (η z))) +
+              ω.associatedBilinForm (J z.2 (x z.2)) (η z) (η z)) ≤
+          C * ∫ z in Icc a b ×ˢ Icc 0 1, Real.exp (2 * δ * z.1) *
+            ω.associatedBilinForm (J z.2 (x z.2))
+              (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+                (fun _ _ ↦ 0) (fun w ↦ H w.2) u η z)
+              (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+                (fun _ _ ↦ 0) (fun w ↦ H w.2) u η z) := by
+  obtain ⟨C, hC, U, hU, hest⟩ :=
+    ω.exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul hH hxc hJ hJx
+      hdet hu hux hδ
+  refine ⟨(2 + 4 * δ ^ 2) * C, by positivity, U, hU, fun η hη hper a b hab hUab ha hb ↦ ?_⟩
+  -- Apply the conjugated estimate to `ξ = e^{δ s} η`.
+  set ξ : ℝ × ℝ → V := fun w ↦ Real.exp (δ * w.1) • η w
+  have hξ : ContDiff ℝ 2 ξ :=
+    (Real.contDiff_exp.comp (contDiff_const.mul contDiff_fst)).smul hη
+  have h := hest hξ (fun s t ↦ by simp only [ξ, hper]) hab hUab (fun t ↦ by simp [ξ, ha])
+    (fun t ↦ by simp [ξ, hb])
+  set D : (ℝ × ℝ → V) → ℝ × ℝ → V :=
+    ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun w ↦ H w.2) u with hDdef
+  -- `D_u ξ - δ ξ = e^{δ s} D_u η`, by conjugating `D_u` with the weight.
+  have hη' : (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) = η := funext fun w ↦ by
+    simp only [ξ, smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
+  have hD (z : ℝ × ℝ) : D ξ z - δ • ξ z = Real.exp (δ * z.1) • D η z := by
+    have hc := ω.floerLinearization_exp_smul
+      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ
+      δ (hξ.differentiable two_ne_zero z)
+    rw [hη', ← hDdef] at hc
+    simp only [hc, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
+  have hR : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  -- `g(D_u ξ - δ ξ, D_u ξ - δ ξ) = e^{2 δ s} g(D_u η, D_u η)`.
+  have hRHS : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2 (x z.2))
+      (D ξ z - δ • ξ z) (D ξ z - δ • ξ z) = ∫ z in Icc a b ×ˢ Icc 0 1,
+        Real.exp (2 * δ * z.1) * ω.associatedBilinForm (J z.2 (x z.2)) (D η z) (D η z) := by
+    refine setIntegral_congr_fun hR.measurableSet fun z _ ↦ ?_
+    have hexp : Real.exp (2 * δ * z.1) = Real.exp (δ * z.1) * Real.exp (δ * z.1) := by
+      rw [← Real.exp_add]
+      ring_nf
+    simp only [hD z, map_smul, LinearMap.smul_apply, smul_eq_mul, hexp]
+    ring
+  -- The weighted energy of `η` is controlled by the energy of `ξ`.
+  have hJxc : Continuous fun p : ℝ × V ↦ J p.1 (x p.1) p.2 :=
+    ((hJ.continuous.comp (continuous_id.prodMk hxc)).comp continuous_fst).clm_apply continuous_snd
+  calc _ ≤ _ := Floer.setIntegral_exp_mul_associatedBilinForm_le hJx hJxc
+        (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc) δ (hη.of_le one_le_two) hR
+    _ ≤ (2 + 4 * δ ^ 2) * (C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2 (x z.2))
+        (D ξ z - δ • ξ z) (D ξ z - δ • ξ z)) := by gcongr
+    _ = _ := by rw [hRHS, mul_assoc]
+
 /-- **The weighted `L²` estimate of the linearized operator on an end.** Under the hypotheses of
 `eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul`, for
 every weight `δ` close enough to `0` there are a constant `C ≥ 0` and a
@@ -499,7 +586,9 @@ over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` of the datum `K
 `S_t = dX_{H_t}(x(t))` and `g_t = ω(·, J_t(x(t)) ·)`. This is the estimate of `D_u` in the
 `L²` norm with weight `e^{δ s}`; for `δ > 0` on a positive end (`l = atTop`), or `δ < 0` on a
 negative end (`l = atBot`), the weight forces exponential decay. The constant does not depend on
-`a`, `b` or `η`. -/
+`a`, `b` or `η`. This is
+`exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization` at the weights `δ`
+near `0`, where the return map of `S_t - δ J_t` stays nondegenerate. -/
 theorem eventually_exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
@@ -530,48 +619,14 @@ theorem eventually_exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floe
                 (fun _ _ ↦ 0) (fun w ↦ H w.2) u η z)
               (ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
                 (fun _ _ ↦ 0) (fun w ↦ H w.2) u η z) := by
-  filter_upwards [
-    eventually_exists_mem_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul ω hX hH
-      hx hnd hJ hJx hu hux hδ] with δ ⟨C, hC, U, hU, hest⟩
-  refine ⟨(2 + 4 * δ ^ 2) * C, by positivity, U, hU, fun η hη hper a b hab hUab ha hb ↦ ?_⟩
-  -- Apply the conjugated estimate to `ξ = e^{δ s} η`.
-  set ξ : ℝ × ℝ → V := fun w ↦ Real.exp (δ * w.1) • η w
-  have hξ : ContDiff ℝ 2 ξ :=
-    (Real.contDiff_exp.comp (contDiff_const.mul contDiff_fst)).smul hη
-  have h := hest hξ (fun s t ↦ by simp only [ξ, hper]) hab hUab (fun t ↦ by simp [ξ, ha])
-    (fun t ↦ by simp [ξ, hb])
-  set D : (ℝ × ℝ → V) → ℝ × ℝ → V :=
-    ω.floerLinearization (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun w ↦ H w.2) u with hDdef
-  -- `D_u ξ - δ ξ = e^{δ s} D_u η`, by conjugating `D_u` with the weight.
-  have hη' : (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) = η := funext fun w ↦ by
-    simp only [ξ, smul_smul, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul]
-  have hD (z : ℝ × ℝ) : D ξ z - δ • ξ z = Real.exp (δ * z.1) • D η z := by
-    have hc := ω.floerLinearization_exp_smul
-      (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u ξ
-      δ (hξ.differentiable two_ne_zero z)
-    rw [hη', ← hDdef] at hc
-    simp only [hc, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
-  have hR : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  -- `g(D_u ξ - δ ξ, D_u ξ - δ ξ) = e^{2 δ s} g(D_u η, D_u η)`.
-  have hRHS : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2 (x z.2))
-      (D ξ z - δ • ξ z) (D ξ z - δ • ξ z) = ∫ z in Icc a b ×ˢ Icc 0 1,
-        Real.exp (2 * δ * z.1) * ω.associatedBilinForm (J z.2 (x z.2)) (D η z) (D η z) := by
-    refine setIntegral_congr_fun hR.measurableSet fun z _ ↦ ?_
-    have hexp : Real.exp (2 * δ * z.1) = Real.exp (δ * z.1) * Real.exp (δ * z.1) := by
-      rw [← Real.exp_add]
-      ring_nf
-    simp only [hD z, map_smul, LinearMap.smul_apply, smul_eq_mul, hexp]
-    ring
-  -- The weighted energy of `η` is controlled by the energy of `ξ`.
-  have hJxc : Continuous fun p : ℝ × V ↦ J p.1 (x p.1) p.2 :=
-    ((hJ.continuous.comp (continuous_id.prodMk hxc)).comp continuous_fst).clm_apply continuous_snd
-  calc _ ≤ _ := Floer.setIntegral_exp_mul_associatedBilinForm_le hJx hJxc
-        (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc) δ (hη.of_le one_le_two) hR
-    _ ≤ (2 + 4 * δ ^ 2) * (C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2 (x z.2))
-        (D ξ z - δ • ξ z) (D ξ z - δ • ξ z)) := by gcongr
-    _ = _ := by rw [hRHS, mul_assoc]
+  -- The return map of `S_t - δ J_t` stays nondegenerate for `δ` close to `0`.
+  filter_upwards [Floer.eventually_det_one_sub_dysonSeriesLeft_sub_smul_ne_zero
+    (ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc)
+    (AlmostComplexStructure.continuous_iff.2 (hJ.continuous.comp (continuous_id.prodMk hxc)))
+    (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH hx hnd)] with δ hdet
+  exact ω.exists_mem_forall_setIntegral_exp_mul_le_mul_setIntegral_floerLinearization hH hxc hJ hJx
+    hdet hu hux hδ
 
 open MeasureTheory in
 /-- **The weighted end estimate in the norm of `V`.** Under the hypotheses of
