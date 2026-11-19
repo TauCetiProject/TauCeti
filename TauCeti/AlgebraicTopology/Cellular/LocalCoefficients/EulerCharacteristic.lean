@@ -17,13 +17,14 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basi
 Let `L` be a local coefficient system on a CW complex `C` whose fibres are finitely generated
 modules. The cellular chain group `Hₙ(Xⁿ, Xⁿ⁻¹; L)` is the direct sum of the fibres of `L` at the
 centres of the `n`-cells (`TauCeti.twistedCellularChainGroupIso`), so it is finitely generated
-when there are finitely many `n`-cells, and over a division ring its dimension is
-`#(n-cells) · r` when every fibre has dimension `r`. Through the comparison of cellular and
+when there are finitely many `n`-cells, and its rank is `#(n-cells) · r` when every fibre is free
+of rank `r` (over a ring with the strong rank condition). Through the comparison of cellular and
 singular homology with local coefficients (`TauCeti.twistedCellularSingularHomologyIso`), this
 gives, as for constant coefficients:
 
-* over a noetherian ring, the singular homology `Hₙ(C; L)` of a CW complex is finitely generated
-  in every degree with finitely many cells, and vanishes in every degree without cells;
+* over a noetherian ring, with finitely generated fibres, the singular homology `Hₙ(C; L)` of a CW
+  complex is finitely generated in every degree with finitely many cells;
+* over any ring, `Hₙ(C; L)` vanishes in every degree without cells;
 * over a division ring, for a finite CW complex and a system whose fibres all have dimension `r`,
   the alternating sum of the dimensions of `Hᵢ(C; L)` is `r` times the alternating count of the
   cells (Euler--Poincaré).
@@ -37,16 +38,18 @@ path-connected space has constant rank, the dimension of any one fibre. For a sy
 such as the orientation system of a real vector bundle with coefficients in a field, the twisted
 Euler characteristic is therefore the ordinary one.
 
-Compact manifolds have finite CW type (`TauCeti.FiniteCWType.of_isManifold`), so these results
-apply to the homology of a compact manifold twisted by the orientation system of a vector bundle
-over it. Twisted homology of this kind is what the Thom isomorphism of a nonorientable bundle
+Compact Hausdorff boundaryless smooth manifolds with a finite-dimensional model have finite CW
+type (`TauCeti.FiniteCWType.of_isManifold`), so these results apply to the homology of such a
+manifold with coefficients in any local system. Mathematically, this includes homology twisted by
+the orientation system of a vector bundle over the manifold, a local system that this file does
+not construct. Twisted homology of this kind is what the Thom isomorphism of a nonorientable bundle
 produces, for instance the contribution of a critical submanifold of a Morse--Bott function, so its
 dimensions are finite.
 
 ## Main results
 
-* `TauCeti.finrank_twistedCellularChainGroup`: the dimension of the cellular chain group with local
-  coefficients of constant rank `r` is `#(n-cells) · r`.
+* `TauCeti.finrank_twistedCellularChainGroup`: the rank of the cellular chain group with local
+  coefficients whose fibres are free of constant rank `r` is `#(n-cells) · r`.
 * `TauCeti.finite_twistedHomology_complexBasePair`,
   `TauCeti.isZero_twistedHomology_complexBasePair_of_isEmpty_cell` and
   `TauCeti.eventually_isZero_twistedHomology_complexBasePair`: finite generation and vanishing of
@@ -106,6 +109,16 @@ instance finite_twistedCellularChainGroup [∀ x, Module.Finite R (L.obj x)] (n 
     [Finite (cell C n)] : Module.Finite R (twistedCellularChainGroup C L n) :=
   .equiv (twistedCellularChainGroupLinearEquiv C L n).symm
 
+/-- If every fibre of `L` is free of rank `r`, the cellular chain group with coefficients in `L` in
+a degree with finitely many cells has rank `#(n-cells) · r`. -/
+theorem finrank_twistedCellularChainGroup [StrongRankCondition R] [∀ x, Module.Free R (L.obj x)]
+    [∀ x, Module.Finite R (L.obj x)] {r : ℕ} (hL : ∀ x, finrank R (L.obj x) = r) (n : ℕ)
+    [Finite (cell C n)] :
+    finrank R (twistedCellularChainGroup C L n) = Nat.card (cell C n) * r := by
+  have := Fintype.ofFinite (cell C n)
+  rw [(twistedCellularChainGroupLinearEquiv C L n).finrank_eq, finrank_directSum]
+  simp [hL, Nat.card_eq_fintype_card]
+
 /-- Over a noetherian ring, with finitely generated fibres, the cellular homology with local
 coefficients in a degree with finitely many cells is finitely generated. -/
 theorem finite_twistedCellularHomology [IsNoetherianRing R] [∀ x, Module.Finite R (L.obj x)]
@@ -149,15 +162,6 @@ section DivisionRing
 
 variable {k : Type u} [DivisionRing k] (L : LocalCoefficientSystem.{u, w, max w v} k (TopCat.of C))
   [∀ x, Module.Finite k (L.obj x)] {r : ℕ}
-
-/-- If every fibre of `L` has dimension `r`, the cellular chain group with coefficients in `L` in
-a degree with finitely many cells has dimension `#(n-cells) · r`. -/
-theorem finrank_twistedCellularChainGroup (hL : ∀ x, finrank k (L.obj x) = r) (n : ℕ)
-    [Finite (cell C n)] :
-    finrank k (twistedCellularChainGroup C L n) = Nat.card (cell C n) * r := by
-  have := Fintype.ofFinite (cell C n)
-  rw [(twistedCellularChainGroupLinearEquiv C L n).finrank_eq, finrank_directSum]
-  simp [hL, Nat.card_eq_fintype_card]
 
 /-- **Euler--Poincaré for cellular chains with local coefficients.** For a finite relative CW
 complex and a local system whose fibres all have dimension `r`, the alternating sum of the
@@ -250,6 +254,17 @@ section FiniteCWType
 
 variable {R : Type u} [Ring R] (X : Type w) [TopologicalSpace X] [h : FiniteCWType X]
 
+omit h in
+/-- A homotopy equivalence `e : Y ≃ₕ X` identifies the homology of `Y` with coefficients in the
+pulled-back system with the homology of `X` with coefficients in `L`. -/
+private def twistedHomologyIsoOfHomotopyEquiv {Y : Type w} [TopologicalSpace Y]
+    (e : ContinuousMap.HomotopyEquiv Y X)
+    (L : LocalCoefficientSystem.{u, w, max w v} R (TopCat.of X)) (n : ℕ) :
+    ((LocalCoefficientSystem.pullback (TopCat.ofHom e.toFun).hom).obj L).twistedHomology n ≅
+      L.twistedHomology n :=
+  have := e.isIso_twistedHomologyMap L n
+  asIso (LocalCoefficientSystem.twistedHomologyMap (TopCat.ofHom e.toFun) L n)
+
 /-- Over a noetherian ring, the homology of a space of finite CW type with coefficients in a local
 system of finitely generated modules is finitely generated in every degree. -/
 theorem finite_twistedHomology_of_finiteCWType [IsNoetherianRing R]
@@ -257,14 +272,9 @@ theorem finite_twistedHomology_of_finiteCWType [IsNoetherianRing R]
     (n : ℕ) : Module.Finite R (L.twistedHomology n) := by
   obtain ⟨Y, _, _, C, _, _, ⟨e⟩⟩ := h.exists_homotopyEquiv
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
-  have (x : _) : Module.Finite R
-      (((LocalCoefficientSystem.pullback (TopCat.ofHom e.symm.toFun).hom).obj L).obj x) :=
-    inferInstanceAs (Module.Finite R (L.obj _))
   have := finite_twistedHomology_of_cwComplex C
     ((LocalCoefficientSystem.pullback (TopCat.ofHom e.symm.toFun).hom).obj L) n
-  have := e.symm.isIso_twistedHomologyMap L n
-  exact .equiv (asIso (LocalCoefficientSystem.twistedHomologyMap
-    (TopCat.ofHom e.symm.toFun) L n)).toLinearEquiv
+  exact .equiv (twistedHomologyIsoOfHomotopyEquiv X e.symm L n).toLinearEquiv
 
 /-- The homology of a space of finite CW type with coefficients in any local system vanishes in
 all sufficiently large degrees. -/
@@ -274,10 +284,9 @@ theorem eventually_isZero_twistedHomology_of_finiteCWType
   obtain ⟨Y, _, _, C, _, _, ⟨e⟩⟩ := h.exists_homotopyEquiv
   refine (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅)).mono fun n hn ↦ ?_
   have : IsEmpty (cell C n) := hn
-  have := e.symm.isIso_twistedHomologyMap L n
   exact (isZero_twistedHomology_of_isEmpty_cell C
     ((LocalCoefficientSystem.pullback (TopCat.ofHom e.symm.toFun).hom).obj L) n).of_iso
-      (asIso (LocalCoefficientSystem.twistedHomologyMap (TopCat.ofHom e.symm.toFun) L n)).symm
+      (twistedHomologyIsoOfHomotopyEquiv X e.symm L n).symm
 
 /-- **Euler--Poincaré for homology with local coefficients of a space of finite CW type.** If
 every fibre of the local system `L` has dimension `r`, the alternating sum of the dimensions of the
@@ -287,14 +296,10 @@ theorem finsum_finrank_twistedHomology_of_finiteCWType {k : Type u} [DivisionRin
     {r : ℕ} (hL : ∀ x, finrank k (L.obj x) = r) :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k (L.twistedHomology i) = r * eulerChar X := by
   obtain ⟨Y, _, _, C, _, _, ⟨e⟩⟩ := h.exists_homotopyEquiv
-  let L' := (LocalCoefficientSystem.pullback (TopCat.ofHom e.symm.toFun).hom).obj L
-  have (x : _) : Module.Finite k (L'.obj x) := inferInstanceAs (Module.Finite k (L.obj _))
-  rw [eulerChar_eq_cwEulerChar e, ← finsum_finrank_twistedHomology_of_finite_cwComplex C L'
-    fun x ↦ hL _]
+  rw [eulerChar_eq_cwEulerChar e, ← finsum_finrank_twistedHomology_of_finite_cwComplex C
+    ((LocalCoefficientSystem.pullback (TopCat.ofHom e.symm.toFun).hom).obj L) fun x ↦ hL _]
   refine finsum_congr fun i ↦ ?_
-  have := e.symm.isIso_twistedHomologyMap L i
-  rw [(asIso (LocalCoefficientSystem.twistedHomologyMap (TopCat.ofHom e.symm.toFun) L
-    i)).toLinearEquiv.finrank_eq]
+  rw [(twistedHomologyIsoOfHomotopyEquiv X e.symm L i).toLinearEquiv.finrank_eq]
 
 end FiniteCWType
 
