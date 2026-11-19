@@ -22,9 +22,10 @@ blocks `y` and `z` permutes the arguments by a block swap, which has `b * c` inv
 Koszul sign rules for reordering blocks of vectors in a determinant, as in the multiplicativity of
 the torsion of chain complexes.
 
-Similarly, negating the last block `y` of a concatenation `(x, y)` of families of lengths `a` and
-`b` multiplies the value of an alternating map by `(-1) ^ b` (`AlternatingMap.map_append_neg`), as
-for the negated differential of a shifted chain complex.
+Similarly, multiplying the last block `y` of a concatenation `(x, y)` of families of lengths `a`
+and `b` by a scalar `r` multiplies the value of an alternating map by `r ^ b`
+(`AlternatingMap.map_append_smul`); for `r = -1` this is the sign `(-1) ^ b` of the negated
+differential of a shifted chain complex (`AlternatingMap.map_append_neg`).
 -/
 
 public section
@@ -122,15 +123,23 @@ theorem map_append_append_append_comm {a₁ a₂ a₃ b₁ b₂ b₃ : ℕ}
   rw [h₁, hsw₁, h₂, f.map_append_append_comm (Fin.append x₁ x₂) x₃ (Fin.append y₁ y₂) y₃,
     smul_smul, ← pow_add, mul_comm a₂, mul_comm a₃]
 
+/-- Multiplying the last block of arguments, of length `b`, of an alternating map evaluated on a
+concatenation of two families by a scalar `r` multiplies its value by `r ^ b`. -/
+theorem map_append_smul {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] {a b : ℕ} (f : M [⋀^Fin (a + b)]→ₗ[R] N) (x : Fin a → M)
+    (r : R) (y : Fin b → M) : f (Fin.append x (r • y)) = r ^ b • f (Fin.append x y) := by
+  have hv : Fin.append x (r • y) = fun k ↦ Fin.append (1 : Fin a → R) (fun _ ↦ r) k •
+      Fin.append x y k := by
+    ext k
+    induction k using Fin.addCases <;> simp
+  rw [hv, map_smul_univ, Fin.prod_univ_add]
+  simp
+
 /-- Negating the last block of arguments, of length `b`, of an alternating map evaluated on a
 concatenation of two families multiplies its value by `(-1) ^ b`. -/
 theorem map_append_neg {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     [AddCommGroup N] [Module R N] {a b : ℕ} (f : M [⋀^Fin (a + b)]→ₗ[R] N) (x : Fin a → M)
     (y : Fin b → M) : f (Fin.append x (-y)) = (-1 : R) ^ b • f (Fin.append x y) := by
-  have hv : Fin.append x (-y) = fun k ↦ Fin.append (1 : Fin a → R) (-1) k • Fin.append x y k := by
-    ext k
-    induction k using Fin.addCases <;> simp
-  rw [hv, map_smul_univ, Fin.prod_univ_add]
-  simp
+  rw [← f.map_append_smul, neg_one_smul]
 
 end AlternatingMap
