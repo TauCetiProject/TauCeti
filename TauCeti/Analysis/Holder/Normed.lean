@@ -67,7 +67,7 @@ supremum-plus-Hölder norm. The wrapper separates this norm from the inherited s
 the underlying submodule. -/
 structure HolderSpace where
   /-- The underlying bounded continuous Hölder function. -/
-  toHolderSubmodule : holderSubmodule (X := X) (Y := Y) α
+  toHolderSubmodule : holderSubmodule (X := X) (Y := Y) ℝ α
 
 namespace HolderSpace
 
@@ -234,7 +234,7 @@ instance instNormedAddCommGroup : NormedAddCommGroup (HolderSpace α X Y) :=
         exact holderNorm_nonneg f.toBoundedContinuousFunction
       norm_smul := fun c f ↦ by
         rw [norm_eq_holderNorm, norm_eq_holderNorm, toBoundedContinuousFunction_smul]
-        exact holderNorm_smul c f.toBoundedContinuousFunction f.memHolder
+        exact holderNorm_smul c f.toBoundedContinuousFunction
       norm_triangle := fun f g ↦ by
         rw [norm_eq_holderNorm, norm_eq_holderNorm, norm_eq_holderNorm,
           toBoundedContinuousFunction_add]
@@ -261,7 +261,7 @@ instance instNormedSpace : NormedSpace ℝ (HolderSpace α X Y) :=
   { toModule := inferInstance
     norm_smul_le := fun c f ↦ by
       rw [norm_eq_holderNorm, norm_eq_holderNorm, toBoundedContinuousFunction_smul]
-      exact (holderNorm_smul c f.toBoundedContinuousFunction f.memHolder).le }
+      exact (holderNorm_smul c f.toBoundedContinuousFunction).le }
 
 /-- The supremum norm is controlled by the Hölder-space norm. -/
 theorem norm_toBoundedContinuousFunction_le (f : HolderSpace α X Y) :
@@ -578,6 +578,11 @@ theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
     ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ 1 := by
   simpa using norm_compLipschitzL_le (α := α) (Y := Y) hg
 
+/-- Precomposing a Hölder function with a `1`-Lipschitz map does not increase its norm. -/
+theorem norm_compLipschitzL_apply_le (hg : LipschitzWith 1 g) (f : HolderSpace α X Y) :
+    ‖compLipschitzL g hg f‖ ≤ ‖f‖ := by
+  simpa using (compLipschitzL g hg).le_of_opNorm_le (norm_compLipschitzL_le_one hg) f
+
 variable (α Y) in
 /-- Precomposition with an isometric equivalence `g : X' ≃ᵢ X`, as a linear isometric equivalence
 between bounded Hölder spaces of the same exponent. Its inverse is precomposition with
@@ -588,9 +593,8 @@ def compIsometryEquivLIE (g : X' ≃ᵢ X) : HolderSpace α X Y ≃ₗᵢ[ℝ] H
       invFun := compLipschitzL g.symm g.symm.isometry.lipschitzWith
       left_inv f := ext fun x ↦ by simp
       right_inv f := ext fun x ↦ by simp }
-    (fun f ↦ by simpa using (compLipschitzL g _).le_of_opNorm_le (norm_compLipschitzL_le_one _) f)
-    (fun f ↦ by
-      simpa using (compLipschitzL g.symm _).le_of_opNorm_le (norm_compLipschitzL_le_one _) f)
+    (fun f ↦ by simpa using norm_compLipschitzL_apply_le g.isometry.lipschitzWith f)
+    (fun f ↦ by simpa using norm_compLipschitzL_apply_le g.symm.isometry.lipschitzWith f)
 
 @[simp]
 theorem compIsometryEquivLIE_apply (g : X' ≃ᵢ X) (f : HolderSpace α X Y) (x : X') :
