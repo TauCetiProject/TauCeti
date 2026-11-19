@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.CartierDivisor.LocalEquations
-public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Cartier.Basic
 
 /-!
@@ -23,20 +22,12 @@ valuation rings, it is inverse to the construction which glues the local equatio
 divisor. Consequently, Weil divisors and Cartier divisors are additively equivalent under these
 hypotheses.
 
-On a Noetherian normal integral scheme, of any dimension, the homomorphism is injective: a local
-equation of a Cartier divisor with zero Weil divisor has order zero at every codimension-one point,
-hence is a regular unit by algebraic Hartogs' principle. This is the uniqueness statement behind
-ℚ-Cartier Weil divisors: if `r • W` and `r' • W` are the Weil divisors of Cartier divisors `A` and
-`A'`, then `r' • A = r • A'`.
-
 ## Main declarations
 
 * `Scheme.CartierDivisor.orderAt` is the order of a Cartier divisor at a codimension-one point;
 * `Scheme.CartierDivisor.toWeilDivisorHom` sends a Cartier divisor to its Weil divisor;
 * `Scheme.CartierDivisor.isLocallyPrincipal_toWeilDivisor` supplies its local equations;
-* `SchemeWeilDivisor.equivCartierDivisor` is the Weil--Cartier additive equivalence;
-* `Scheme.CartierDivisor.toWeilDivisorHom_injective`: on a Noetherian normal integral scheme of
-  any dimension, a Cartier divisor is determined by its Weil divisor.
+* `SchemeWeilDivisor.equivCartierDivisor` is the Weil--Cartier additive equivalence.
 
 The construction follows Hartshorne, *Algebraic Geometry*, II.6.11, and the Stacks Project,
 *Divisors*, Tag 0BE9.
@@ -217,7 +208,7 @@ theorem finite_support_orderAt (D : CartierDivisor X) :
   have hDg : D |_ U = rationalUnitClass X U g := by
     rw [rationalUnitClass_apply]
     simpa only [g, AddEquiv.symm_apply_apply] using hf.symm
-  refine ((SchemeWeilDivisor.finite_setOfPred_not_mem U).union
+  refine ((CodimensionOnePoint.finite_setOfPred_notMem U).union
     (SchemeWeilDivisor.finite_support_orderAt g)).subset ?_
   intro y hy
   by_cases hyU : (y : X) ∈ U
@@ -295,35 +286,6 @@ theorem isLocallyPrincipal_toWeilDivisor (D : CartierDivisor X) :
   refine ⟨U, hxU, g, fun y hy ↦ ?_⟩
   rw [coeff_toWeilDivisor,
     orderAt_eq_of_restrict_eq_rationalUnitClass D y U hy g hDg]
-
-/-- **A Cartier divisor on a normal scheme is determined by its Weil divisor.** On a Noetherian
-normal integral scheme, a Cartier divisor has zero Weil divisor only if it is zero: near every
-point, a local equation of a divisor with zero Weil divisor has order zero at every
-codimension-one point, so it is a regular unit by algebraic Hartogs' principle. Hartshorne,
-*Algebraic Geometry*, Remark II.6.11.2. -/
-@[simp]
-theorem toWeilDivisor_eq_zero_iff [IsNormalScheme X] {D : CartierDivisor X} :
-    D.toWeilDivisor = 0 ↔ D = 0 := by
-  refine ⟨fun hD ↦ ?_, fun hD ↦ by rw [hD, ← toWeilDivisorHom_apply, map_zero]⟩
-  -- near every point `x`, the divisor `D` has a local equation which is a regular unit
-  have key : ∀ x : X, ∃ V : X.Opens, x ∈ V ∧ D |_ V = 0 := fun x ↦ by
-    obtain ⟨V, -, hxV, g, hg⟩ := D.exists_localEquation_le ⊤ (Opens.mem_top x)
-    have : Nonempty V := ⟨⟨x, hxV⟩⟩
-    refine ⟨V, hxV, hg.symm.trans <| (SchemeWeilDivisor.rationalUnitClass_eq_of_forall_orderAt_eq
-      (fun _ _ ↦ inferInstance) (h := 0) fun y hy ↦ ?_).trans (map_zero _)⟩
-    rw [map_zero, SchemeWeilDivisor.orderAt_apply, toMul_ofMul,
-      ← coeff_toWeilDivisor_eq_ord D y hy g hg, hD, WeilDivisor.coeff_zero]
-  choose V hxV hV using key
-  refine (cartierDivisorSheaf X).eq_of_locally_eq' V ⊤ (fun _ ↦ homOfLE le_top)
-    (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxV x⟩) _ _ fun x ↦ ?_
-  exact (hV x).trans (by simp)
-
-/-- **The Cartier-to-Weil map is injective on a normal scheme.** On a Noetherian normal integral
-scheme, distinct Cartier divisors have distinct Weil divisors. -/
-theorem toWeilDivisorHom_injective [IsNormalScheme X] :
-    Function.Injective (toWeilDivisorHom (X := X)) :=
-  (injective_iff_map_eq_zero _).mpr fun D hD ↦
-    toWeilDivisor_eq_zero_iff.mp (by rwa [toWeilDivisorHom_apply] at hD)
 
 end Noetherian
 

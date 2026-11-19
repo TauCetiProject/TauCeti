@@ -25,10 +25,10 @@ The local step is that a Noetherian integrally closed domain is the intersection
 localizations at the primes of height one (`TauCeti.mem_range_algebraMap_of_forall_height_eq_one`),
 and the localizations of `𝒪_{X,x}` at its primes of height one are the local rings at the
 codimension-one generizations of `x`
-(`TauCeti.AlgebraicGeometry.Scheme.exists_comap_stalkSpecializes_maximalIdeal_eq`). In dimension at
-most one with discrete valuation rings in codimension one, every local ring is a discrete
-valuation ring or the function field, so the principle applies there with no normality hypothesis
-to check.
+(`TauCeti.AlgebraicGeometry.Scheme.exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq`).
+In dimension at most one with discrete valuation rings in codimension one, every local ring is a
+discrete valuation ring or the function field, so the principle applies there with no normality
+hypothesis to check.
 
 ## Main declarations
 
@@ -122,7 +122,7 @@ theorem exists_algebraMap_stalk_eq_of_forall_ord_nonneg {x : X}
     ∃ g : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField g = f := by
   refine TauCeti.mem_range_algebraMap_of_forall_height_eq_one fun Q _ hQ ↦ ?_
   -- `Q` is the prime of a generization `y` of `x`, of codimension one
-  obtain ⟨y, h, rfl, hcoh⟩ := exists_comap_stalkSpecializes_maximalIdeal_eq Q
+  obtain ⟨y, hcoh, h, rfl⟩ := exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq Q
   rw [hQ] at hcoh
   let := (X.presheaf.stalkSpecializes h).hom.toAlgebra
   have := isLocalization_stalkSpecializes h

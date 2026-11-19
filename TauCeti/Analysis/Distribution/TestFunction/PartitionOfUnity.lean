@@ -143,6 +143,15 @@ theorem exists_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsO
   exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχW.trans hWΩ⟩, fun x ↦ hχ01 ⟨x, rfl⟩,
     subset_interior_iff_mem_nhdsSet.1 hχ1, hχW⟩
 
+/-- A compact subset `K` of an open set `W` contained in the domain has a complex test function
+equal to one on a neighbourhood of `K` whose topological support lies in `W`. -/
+theorem exists_complex_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
+    (hKW : K ⊆ W) (hWΩ : W ⊆ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℂ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ tsupport χ ⊆ W := by
+  obtain ⟨χ, -, hχ1, hχW⟩ := exists_cutoff_tsupport_subset (n := n) hK hW hKW hWΩ
+  refine ⟨postcompCLM (𝕜 := ℝ) Complex.ofRealCLM χ, hχ1.mono fun x hx ↦ by simp [hx], ?_⟩
+  exact (tsupport_comp_subset (g := Complex.ofRealCLM) (by simp) χ).trans hχW
+
 /-- Every compact subset of the domain has a test function with values in `[0, 1]` that is equal
 to one on a neighbourhood of it. -/
 theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
