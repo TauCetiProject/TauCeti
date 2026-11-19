@@ -86,11 +86,6 @@ lemma IsCoCartesian.of_edge_eq {x' y' : X _⦋0⦌} {f : Edge x y} {f' : Edge x'
     (hf : f.IsCoCartesian p) (h : f.edge = f'.edge) : f'.IsCoCartesian p :=
   IsCartesian.of_edge_eq hf (by simp [h])
 
-/-- Reversing an edge commutes with taking its image along a map. -/
-lemma opEquiv_map_edge {Y : SSet.{u}} (f : Edge x y) (g : X ⟶ Y) :
-    (opEquiv (f.map g)).edge = ((opEquiv f).map (opFunctor.map g)).edge := by
-  rw [Edge.map_edge, opEquiv_edge, Edge.map_edge, opEquiv_edge, opFunctor_map]; rfl
-
 /-- Every edge is coCartesian along an isomorphism. -/
 lemma isCoCartesian_of_isIso (f : Edge x y) (p : X ⟶ S) [IsIso p] : f.IsCoCartesian p :=
   isCartesian_of_isIso _ _

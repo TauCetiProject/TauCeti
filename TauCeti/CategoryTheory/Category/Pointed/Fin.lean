@@ -143,6 +143,14 @@ def Hom.IsInert (f : m ⟶ n) : Prop :=
 def Hom.IsActive (f : m ⟶ n) : Prop :=
   ∀ i : Fin (m.len + 1), f.toFun i = 0 → i = 0
 
+lemma Hom.isInert_iff (f : m ⟶ n) :
+    f.IsInert ↔ ∀ j : Fin (n.len + 1), j ≠ 0 → ∃! i, f.toFun i = j :=
+  Iff.rfl
+
+lemma Hom.isActive_iff (f : m ⟶ n) :
+    f.IsActive ↔ ∀ i : Fin (m.len + 1), f.toFun i = 0 → i = 0 :=
+  Iff.rfl
+
 /-- The inert maps of `FinPointed`. -/
 def inert : MorphismProperty FinPointed.{u} := fun _ _ f ↦ f.IsInert
 
@@ -217,9 +225,8 @@ private lemma isInert_inertPart : (inertPart f).IsInert := by
   intro j hj
   obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.2 hj
   have hmem : (support f).orderEmbOfFin rfl j ∈ support f := Finset.orderEmbOfFin_mem _ _ _
-  refine ⟨(support f).orderEmbOfFin rfl j, ?_, fun i (hi : (inertPart f).toFun i = _) ↦ ?_⟩
-  · change (inertPart f).toFun _ = _
-    rw [inertPart_toFun_of_mem f hmem, Fin.succ_inj, OrderIso.symm_apply_eq]
+  refine .intro ((support f).orderEmbOfFin rfl j) ?_ fun i hi ↦ ?_
+  · rw [inertPart_toFun_of_mem f hmem, Fin.succ_inj, OrderIso.symm_apply_eq]
     exact Subtype.ext (Finset.coe_orderIsoOfFin_apply _ _ _).symm
   · have h : i ∈ support f := by
       by_contra h

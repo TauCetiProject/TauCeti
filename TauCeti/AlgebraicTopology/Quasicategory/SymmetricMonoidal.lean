@@ -95,6 +95,14 @@ def IsSegal (p : X ⟶ nerve FinPointed.{u}) [InnerFibration p] : Prop :=
       (Y := ⟨∏ᶜ fun _ : Fin n.len ↦ (fiber p (FinPointed.mk 1).vertex : SSet), inferInstance⟩)
       (ObjectProperty.homMk (segalMap T))
 
+lemma isSegal_iff (p : X ⟶ nerve FinPointed.{u}) [InnerFibration p] :
+    IsSegal p ↔ ∀ n : FinPointed.{u},
+      ∃ T : ∀ i : Fin n.len, CoCartesianTransport p (nerve.edgeMk (FinPointed.ρ i)),
+      QCat.IsCategoricalEquivalence (X := ⟨fiber p n.vertex, inferInstance⟩)
+        (Y := ⟨∏ᶜ fun _ : Fin n.len ↦ (fiber p (FinPointed.mk 1).vertex : SSet), inferInstance⟩)
+        (ObjectProperty.homMk (segalMap T)) :=
+  Iff.rfl
+
 /-- A symmetric monoidal quasicategory: a coCartesian fibration `p : C^⊗ ⟶ N(Fin_*)` satisfying
 the Segal condition. Its underlying quasicategory is the fiber `C_⟨1⟩`. -/
 class SymmetricMonoidal (p : X ⟶ nerve FinPointed.{u}) : Prop extends CoCartesianFibration p where
