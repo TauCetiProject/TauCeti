@@ -8,6 +8,7 @@ module
 public import TauCeti.QuantumGroups.UqSl2.Dual.Basic
 public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.ZPow
 
 /-!
@@ -200,15 +201,9 @@ theorem contragredientEquiv_vec_apply_vec_zero (hq : IsGenericQuantumParameter q
       ∏ t ∈ Finset.range n, q ^ ((m : ℤ) - 2 * t) = q ^ ((n : ℤ) * m - n * (n - 1)) := by
     rw [Finset.prod_zpow_eq_zpow_sum_of_isUnit _ (IsUnit.mk0 q hq0)]
     congr 1
-    rcases n with _ | n
-    · simp
-    · have h := Finset.sum_range_id_mul_two (n + 1)
-      rw [Nat.add_sub_cancel] at h
-      simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul,
-        ← Finset.mul_sum]
-      have h' : ((∑ i ∈ Finset.range (n + 1), i : ℕ) : ℤ) * 2 = (n + 1) * n := by exact_mod_cast h
-      push_cast at h' ⊢
-      linear_combination -h'
+    simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_range, nsmul_eq_mul,
+      ← Finset.mul_sum]
+    linear_combination -Finset.sum_range_natCast_mul_two (R := ℤ) n
   rw [contragredientEquiv_vec_apply_vec]
   simp only [zero_add, ↓reduceIte, mul_one, Finset.prod_mul_distrib, Finset.prod_const,
     Finset.card_range, hprod]
