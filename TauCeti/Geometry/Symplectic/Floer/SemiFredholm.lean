@@ -200,6 +200,28 @@ private theorem setIntegral_norm_floerLinearization_sub_smul_smul_sq_le (ω : Sy
         rw [integral_const_mul] at h
         linarith
 
+omit [FiniteDimensional ℝ V] in
+/-- **Removing a bounded zeroth-order term.** If `|c| ≤ B`, then pointwise
+`‖f‖² ≤ 2 ‖f - c(s) g‖² + 2 B² ‖g‖²`, so the same bound holds for the `L²` norms over
+`[p, q] × [0, 1]`. -/
+private theorem setIntegral_norm_sq_le_two_mul_setIntegral_norm_sub_smul_sq_add
+    {f g : ℝ × ℝ → V} (hf : Continuous f) (hg : Continuous g) {c : ℝ → ℝ} (hc : Continuous c)
+    {B : ℝ} (hcB : ∀ s, ‖c s‖ ≤ B) (p q : ℝ) :
+    ∫ z in Icc p q ×ˢ Icc (0 : ℝ) 1, ‖f z‖ ^ 2 ≤
+      2 * (∫ z in Icc p q ×ˢ Icc (0 : ℝ) 1, ‖f z - c z.1 • g z‖ ^ 2) +
+        2 * B ^ 2 * ∫ z in Icc p q ×ˢ Icc (0 : ℝ) 1, ‖g z‖ ^ 2 := by
+  have hI {h : ℝ × ℝ → ℝ} (hh : Continuous h) : IntegrableOn h (Icc p q ×ˢ Icc (0 : ℝ) 1) :=
+    hh.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
+  rw [← integral_const_mul, ← integral_const_mul, ← integral_add (hI (by fun_prop))
+    (hI (by fun_prop))]
+  refine setIntegral_mono_on (hI (by fun_prop)) (hI (by fun_prop))
+    (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_
+  have h := norm_sub_sq_le_two_mul (f z) 0 (c z.1 • g z)
+  rw [sub_zero, zero_sub, norm_neg, norm_smul, mul_pow] at h
+  have hB := mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) (hcB z.1) 2)
+    (sq_nonneg ‖g z‖)
+  linarith
+
 /-- **Patching end estimates into the semi-Fredholm estimate, with a zeroth-order weight term.**
 Let `J(z)` be compatible along `u`, with `J` `C¹` and `K_s`, `K_t` `C²` at the points `(z, u z)`,
 and `u` `C¹`, and let `c : ℝ → ℝ` be continuous and bounded by `B`. Consider the operator
@@ -393,33 +415,14 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul
       simp only [ξ₀, norm_smul, Real.norm_eq_abs]
       gcongr
       exact mul_le_of_le_one_left (norm_nonneg _) (hβ₀1 z.1)
-    -- `‖D_u ξ₀‖² ≤ 2 ‖D_u ξ₀ - c ξ₀‖² + 2 B² ‖ξ₀‖²`, integrated over `[-T, T] × [0, 1]`.
-    have hD₀ : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1,
-        ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2 ≤ 2 * (L * (X + Y)) + 2 * B ^ 2 * Y := by
-      refine (setIntegral_mono_on (hI (by fun_prop) _ _)
-        (hI (f := fun z ↦ 2 * ‖ω.floerLinearization J' Ks Kt u ξ₀ z - c z.1 • ξ₀ z‖ ^ 2 +
-          2 * B ^ 2 * ‖ξ₀ z‖ ^ 2) (by fun_prop) _ _)
-        (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ ?_).trans ?_
-      · have h : ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ≤
-            ‖ω.floerLinearization J' Ks Kt u ξ₀ z - c z.1 • ξ₀ z‖ + B * ‖ξ₀ z‖ := by
-          refine (norm_le_norm_sub_add _ (c z.1 • ξ₀ z)).trans ?_
-          rw [norm_smul]
-          gcongr
-          exact hcB z.1
-        calc _ ≤ (‖ω.floerLinearization J' Ks Kt u ξ₀ z - c z.1 • ξ₀ z‖ + B * ‖ξ₀ z‖) ^ 2 := by
-              gcongr
-          _ ≤ 2 * (‖ω.floerLinearization J' Ks Kt u ξ₀ z - c z.1 • ξ₀ z‖ ^ 2 +
-              (B * ‖ξ₀ z‖) ^ 2) := add_sq_le
-          _ = _ := by ring
-      · rw [integral_add (hI (by fun_prop) _ _) (hI (by fun_prop) _ _), integral_const_mul,
-          integral_const_mul]
-        gcongr
+    have hD₀ := setIntegral_norm_sq_le_two_mul_setIntegral_norm_sub_smul_sq_add hDξ₀ hξ₀1 hcc
+      hcB (-T) T
     have h₁ : C₀ * ((∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1,
         ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2) +
           ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ₀ z‖ ^ 2) ≤
         C₀ * ((2 * L + 2 * B ^ 2 + 1) * (X + Y)) := by
       refine mul_le_mul_of_nonneg_left ?_ hC₀
-      nlinarith [mul_nonneg (sq_nonneg B) hX]
+      nlinarith [mul_nonneg (sq_nonneg B) hX, mul_le_mul_of_nonneg_left hξ₀Y (sq_nonneg B)]
     linarith
   -- Summing the three pieces.
   have hsum : ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
