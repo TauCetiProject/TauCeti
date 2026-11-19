@@ -66,6 +66,7 @@ theorem minorsIdeal_map_semilinear_le (e : F →ₛₗ[σ] F') (N : Submodule R 
 /-- **Minors are transported along semilinear equivalences**: if `e : F ≃ₛₗ[σ] F'` is
 semilinear over a ring isomorphism `σ`, the minors of `e(N)` are the image under `σ` of the
 minors of `N`. -/
+@[simp]
 theorem minorsIdeal_map_semilinearEquiv (e : F ≃ₛₗ[σ] F') (N : Submodule R F) (p : ℕ) :
     (N.map (e : F →ₛₗ[σ] F')).minorsIdeal p = (N.minorsIdeal p).map σ := by
   refine le_antisymm (minorsIdeal_map_semilinear_le (e : F →ₛₗ[σ] F') N p) ?_
