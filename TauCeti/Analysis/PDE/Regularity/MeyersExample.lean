@@ -40,6 +40,11 @@ on the ellipticity: weak solutions of `div(a ∇u) = 0` with bounded measurable,
 coefficients have gradients in `L^p_loc` for some `p > 2`, but `p` cannot be chosen independently
 of the ellipticity ratio, and tends to `2` as the ratio tends to infinity.
 
+For `0 < μ ≤ 1` the solution is `μ`-Hölder on the plane and, being `t ^ μ` along the ray through
+`e₀`, no better at the origin. So the Hölder exponent of De Giorgi's theorem cannot be chosen
+independently of the ellipticity ratio either; this is drawn out in
+`TauCeti.Analysis.PDE.Regularity.DeGiorgiExponent`.
+
 ## Main declarations
 
 * `TauCeti.PDE.uniformlyEllipticOn_meyersCoefficient`: for `μ ≤ 1`, Meyers' coefficient is
@@ -57,6 +62,9 @@ of the ellipticity ratio, and tends to `2` as the ratio tends to infinity.
   lower bound `μ ‖x‖ ^ (μ - 1) ≤ ‖∇u(x)‖` for `0 < μ ≤ 1`.
 * `TauCeti.PDE.gradient_ae_eq_gradient_meyersSolution`: the weak gradient of an element of
   `W^{1,p}(Ω)` equal to Meyers' solution is its classical gradient.
+* `TauCeti.PDE.abs_meyersSolution_le`, `TauCeti.PDE.holderWith_meyersSolution`,
+  `TauCeti.PDE.not_holderOnWith_meyersSolution`: Meyers' solution is bounded by `‖x‖ ^ μ`, and for
+  `0 ≤ μ ≤ 1` it is `μ`-Hölder on the plane but not `α`-Hölder near the origin for any `α > μ`.
 * `TauCeti.PDE.energyFormH1_meyersCoefficient_eq_zero`: an element of `H¹(Ω)` equal to Meyers'
   solution is a weak solution of `div(a ∇u) = 0` on `Ω`.
 * `TauCeti.PDE.exists_w1p_value_ae_eq_meyersSolution`: on a bounded open set, Meyers' solution
@@ -285,10 +293,10 @@ private theorem hasFDerivAt_radialCoord {x : EuclideanSpace ℝ (Fin 2)} (hx : x
   simp [radialCoordGradient, EuclideanSpace.inner_single_left, show μ - 1 - 2 = μ - 3 by ring]
   ring
 
-private theorem abs_radialCoord_le (i : Fin 2) (x : EuclideanSpace ℝ (Fin 2)) (hμ : 0 < μ) :
+private theorem abs_radialCoord_le (i : Fin 2) (x : EuclideanSpace ℝ (Fin 2)) :
     |radialCoord μ i x| ≤ ‖x‖ ^ μ := by
   rcases eq_or_ne x 0 with rfl | hx
-  · simp [radialCoord, Real.zero_rpow hμ.ne']
+  · simpa [radialCoord] using Real.rpow_nonneg le_rfl μ
   rw [radialCoord, abs_mul, abs_of_nonneg (by positivity)]
   calc ‖x‖ ^ (μ - 1) * |x i| ≤ ‖x‖ ^ (μ - 1) * ‖x‖ :=
         mul_le_mul_of_nonneg_left (by simpa using PiLp.norm_apply_le x i) (by positivity)
@@ -303,7 +311,7 @@ private theorem continuous_radialCoord (hμ : 0 < μ) (i : Fin 2) :
   rcases eq_or_ne x 0 with rfl | hx
   · have h0 : radialCoord μ i 0 = 0 := by simp [radialCoord]
     rw [ContinuousAt, h0]
-    refine squeeze_zero_norm (fun y => (abs_radialCoord_le i y hμ)) ?_
+    refine squeeze_zero_norm (fun y => (abs_radialCoord_le i y)) ?_
     simpa [Real.zero_rpow hμ.ne'] using
       ((continuous_norm.rpow_const fun _ => Or.inr hμ.le).tendsto
         (0 : EuclideanSpace ℝ (Fin 2)))
@@ -578,6 +586,119 @@ theorem gradient_ae_eq_gradient_meyersSolution (hμ0 : 0 < μ)
     (compl_mem_ae_iff.2 (measure_singleton (0 : EuclideanSpace ℝ (Fin 2))))] with x hx h0
   rw [hx, gradient_meyersSolution_eq_radialCoordGradient h0]
 
+/-! ### Hölder continuity -/
+
+/-- Meyers' solution is bounded by `‖x‖ ^ μ`. -/
+theorem abs_meyersSolution_le (x : EuclideanSpace ℝ (Fin 2)) :
+    |meyersSolution μ x| ≤ ‖x‖ ^ μ :=
+  abs_radialCoord_le 0 x
+
+/-- For `0 ≤ μ ≤ 1`, on the ball of radius `‖x‖ / 2` about a point `x`, which avoids the origin,
+Meyers' solution is Lipschitz with constant `2 (‖x‖ / 2) ^ (μ - 1)`. -/
+private theorem abs_meyersSolution_sub_le_of_dist_lt (hμ0 : 0 ≤ μ) (hμ1 : μ ≤ 1)
+    {x y : EuclideanSpace ℝ (Fin 2)} (hxy : dist y x < ‖x‖ / 2) :
+    |meyersSolution μ y - meyersSolution μ x| ≤ 2 * (‖x‖ / 2) ^ (μ - 1) * ‖y - x‖ := by
+  have hx : 0 < ‖x‖ / 2 := dist_nonneg.trans_lt hxy
+  -- On the ball, `‖z‖ > ‖x‖ / 2`, so the gradient bound `(1 + |μ - 1|) ‖z‖ ^ (μ - 1)` is at
+  -- most `2 (‖x‖ / 2) ^ (μ - 1)`.
+  have hball : ∀ z ∈ ball x (‖x‖ / 2), ‖x‖ / 2 < ‖z‖ := fun z hz => by
+    rw [mem_ball, dist_eq_norm] at hz
+    linarith [norm_sub_norm_le x z, norm_sub_rev x z]
+  have hz0 : ∀ z ∈ ball x (‖x‖ / 2), z ≠ 0 := fun z hz =>
+    norm_pos_iff.1 (hx.trans (hball z hz))
+  have h := (convex_ball x (‖x‖ / 2)).norm_image_sub_le_of_norm_hasFDerivWithin_le
+    (f := meyersSolution μ) (C := 2 * (‖x‖ / 2) ^ (μ - 1))
+    (f' := fun z => InnerProductSpace.toDual ℝ _ (∇ (meyersSolution μ) z))
+    (fun z hz => (hasGradientAt_iff_hasFDerivAt.1
+      (hasGradientAt_meyersSolution (hz0 z hz)).differentiableAt.hasGradientAt).hasFDerivWithinAt)
+    (fun z hz => ?_) (mem_ball_self hx) hxy
+  · simpa only [Real.norm_eq_abs] using h
+  rw [LinearIsometryEquiv.norm_map]
+  calc ‖∇ (meyersSolution μ) z‖ ≤ (1 + |μ - 1|) * ‖z‖ ^ (μ - 1) :=
+        norm_gradient_meyersSolution_le (hz0 z hz)
+    _ ≤ 2 * (‖x‖ / 2) ^ (μ - 1) := by
+        gcongr ?_ * ?_
+        · rw [abs_of_nonpos (by linarith)]
+          linarith
+        · exact Real.rpow_le_rpow_of_nonpos hx (hball z hz).le (by linarith)
+
+/-- **Meyers' solution is `μ`-Hölder.** For `0 ≤ μ ≤ 1` the function `‖x‖ ^ (μ - 1) x₀`,
+homogeneous of degree `μ`, is Hölder continuous on the whole plane with exponent `μ` and
+constant `4`. By `TauCeti.PDE.not_holderOnWith_meyersSolution` no larger exponent works near the
+origin. -/
+theorem holderWith_meyersSolution (hμ0 : 0 ≤ μ) (hμ1 : μ ≤ 1) :
+    HolderWith 4 μ.toNNReal (meyersSolution μ) := by
+  -- It suffices to bound `|u y - u x|` for `‖y‖ ≤ ‖x‖`.
+  suffices h : ∀ x y : EuclideanSpace ℝ (Fin 2), ‖y‖ ≤ ‖x‖ →
+      |meyersSolution μ y - meyersSolution μ x| ≤ 4 * dist y x ^ μ by
+    refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ => ?_)
+    rw [Real.dist_eq, NNReal.coe_ofNat, Real.coe_toNNReal μ hμ0]
+    rcases le_total ‖y‖ ‖x‖ with hyx | hxy
+    · rw [abs_sub_comm, dist_comm]
+      exact h x y hyx
+    · exact h y x hxy
+  intro x y hyx
+  rcases lt_or_ge (dist y x) (‖x‖ / 2) with hd | hd
+  · -- Nearby points: the Lipschitz bound on the ball, and `d ^ (1 - μ) ≤ (‖x‖ / 2) ^ (1 - μ)`.
+    have hx : 0 < ‖x‖ / 2 := dist_nonneg.trans_lt hd
+    refine (abs_meyersSolution_sub_le_of_dist_lt hμ0 hμ1 hd).trans ?_
+    rw [← dist_eq_norm]
+    rcases eq_or_lt_of_le (dist_nonneg : 0 ≤ dist y x) with h0 | h0
+    · rw [← h0, mul_zero]
+      positivity
+    calc 2 * (‖x‖ / 2) ^ (μ - 1) * dist y x
+        = 2 * ((‖x‖ / 2) ^ (μ - 1) * dist y x ^ (1 - μ)) * dist y x ^ μ := by
+          rw [mul_assoc 2, mul_assoc, mul_assoc, ← Real.rpow_add h0, sub_add_cancel,
+            Real.rpow_one]
+      _ ≤ 2 * ((‖x‖ / 2) ^ (μ - 1) * (‖x‖ / 2) ^ (1 - μ)) * dist y x ^ μ := by
+          gcongr
+      _ ≤ 4 * dist y x ^ μ := by
+          rw [← Real.rpow_add hx, sub_add_sub_cancel, sub_self, Real.rpow_zero]
+          nlinarith [Real.rpow_nonneg h0.le μ]
+  · -- Distant points: `|u y| + |u x| ≤ 2 ‖x‖ ^ μ ≤ 2 (2 d) ^ μ ≤ 4 d ^ μ`.
+    have hxd : ‖x‖ ≤ 2 * dist y x := by linarith
+    calc |meyersSolution μ y - meyersSolution μ x|
+        ≤ |meyersSolution μ y| + |meyersSolution μ x| := abs_sub _ _
+      _ ≤ ‖y‖ ^ μ + ‖x‖ ^ μ := add_le_add (abs_meyersSolution_le y) (abs_meyersSolution_le x)
+      _ ≤ 2 * (2 * dist y x) ^ μ := by
+          have h1 := Real.rpow_le_rpow (norm_nonneg y) hyx hμ0
+          have h2 := Real.rpow_le_rpow (norm_nonneg x) hxd hμ0
+          linarith
+      _ ≤ 4 * dist y x ^ μ := by
+          rw [Real.mul_rpow zero_le_two dist_nonneg]
+          have : (2 : ℝ) ^ μ ≤ 2 := by
+            simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hμ1
+          nlinarith [Real.rpow_nonneg (dist_nonneg : 0 ≤ dist y x) μ]
+
+/-- **Meyers' solution is no better than `μ`-Hölder at the origin.** For every exponent `α > μ`,
+the function `‖x‖ ^ (μ - 1) x₀` is not `α`-Hölder on any neighbourhood of the origin, with any
+constant: along the ray through `e₀` it equals `t ^ μ`, and `t ^ μ ≤ C t ^ α` fails for small
+`t > 0`. -/
+theorem not_holderOnWith_meyersSolution {α : ℝ≥0} (hα : μ < α) (C : ℝ≥0)
+    {s : Set (EuclideanSpace ℝ (Fin 2))} (hs : s ∈ 𝓝 0) :
+    ¬ HolderOnWith C α (meyersSolution μ) s := by
+  intro h
+  have hray : Filter.Tendsto (fun t : ℝ => t • EuclideanSpace.single (0 : Fin 2) (1 : ℝ))
+      (𝓝[>] 0) (𝓝 0) := by
+    simpa using ((Filter.tendsto_id (x := 𝓝[>] (0 : ℝ))).mono_right nhdsWithin_le_nhds).smul_const
+      (EuclideanSpace.single (0 : Fin 2) (1 : ℝ))
+  have hsmall : Filter.Tendsto (fun t : ℝ => (C : ℝ) * t ^ ((α : ℝ) - μ)) (𝓝[>] 0) (𝓝 0) := by
+    simpa [Real.zero_rpow (sub_pos.2 hα).ne'] using
+      (((continuous_id.rpow_const fun _ => Or.inr (sub_pos.2 hα).le).tendsto (0 : ℝ)).mono_left
+        nhdsWithin_le_nhds).const_mul (C : ℝ)
+  obtain ⟨t, ht, hts, htC⟩ := (eventually_mem_nhdsWithin.and ((hray.eventually_mem hs).and
+    (hsmall.eventually (gt_mem_nhds one_pos)))).exists
+  have ht0 : (0 : ℝ) < t := ht
+  have hd := h.dist_le hts (mem_of_mem_nhds hs)
+  rw [meyersSolution_smul_single_zero ht0, meyersSolution_zero, dist_zero_right, dist_zero_right,
+    Real.norm_eq_abs, abs_of_pos (Real.rpow_pos_of_pos ht0 _), norm_smul, PiLp.norm_single,
+    norm_one, mul_one, Real.norm_of_nonneg ht0.le] at hd
+  -- `t ^ μ ≤ C t ^ α = (C t ^ (α - μ)) t ^ μ < t ^ μ`.
+  have : (C : ℝ) * t ^ (α : ℝ) = (C * t ^ ((α : ℝ) - μ)) * t ^ μ := by
+    rw [mul_assoc, ← Real.rpow_add ht0, sub_add_cancel]
+  rw [this] at hd
+  nlinarith [Real.rpow_pos_of_pos ht0 μ]
+
 /-- If the gradient of Meyers' solution is `p`-integrable on an open set containing the origin,
 then `p (1 - μ) < 2`: near the origin it is bounded below by `μ ‖x‖ ^ (μ - 1)`. -/
 private theorem lt_two_of_memLp_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1) {p : ℝ≥0∞}
@@ -643,7 +764,7 @@ private theorem memLp_meyersSolution (hμ0 : 0 < μ) {p : ℝ≥0∞}
   refine MemLp.of_bound (continuous_radialCoord hμ0 0).aestronglyMeasurable (R ^ μ) ?_
   filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with x hx
   rw [Real.norm_eq_abs, meyersSolution_eq_radialCoord]
-  refine (abs_radialCoord_le 0 x hμ0).trans (Real.rpow_le_rpow (norm_nonneg x) ?_ hμ0.le)
+  refine (abs_radialCoord_le 0 x).trans (Real.rpow_le_rpow (norm_nonneg x) ?_ hμ0.le)
   exact (mem_ball_zero_iff.1 (hR hx)).le
 
 /-- **Sobolev integrability of Meyers' solution.** Let `0 < μ`, `1 ≤ p < ∞`, and let `Ω ⊆ ℝ²`
