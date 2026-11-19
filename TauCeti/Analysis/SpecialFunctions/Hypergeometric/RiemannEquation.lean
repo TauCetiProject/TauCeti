@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
-import TauCeti.Analysis.Analytic.Deriv
 import TauCeti.Analysis.Calculus.Deriv.Second
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Riemann's equation from the hypergeometric equation (DLMF 15.11.7)
@@ -24,10 +24,8 @@ equation (DLMF 15.10.1) with `a = a₁ + b₁ + c₁`, `b = a₁ + b₁ + c₂`,
 `w(z) = ((z − α)/(z − γ))^{a₁} ((z − β)/(z − γ))^{b₁} u(ζ)`, with the Möbius variable
 `ζ = (z − α)(β − γ)/((z − γ)(β − α))`, solves Riemann's equation (DLMF 15.11.7).
 
-## Main results
+## Main result
 
-* `TauCeti.hasDerivAt_sub_div_sub_cpow`: the derivative of the power `((z − α)/(z − γ))^a`, a
-  factor of the prefactor of `w`.
 * `TauCeti.riemannEquation_of_hypergeometricEquation`: DLMF 15.11.7, from a solution of the
   hypergeometric equation to a solution of Riemann's equation.
 
@@ -37,7 +35,8 @@ Write `w = P · (u ∘ T)` with the prefactor `P` and the Möbius variable `T`. 
 product and chain rule `AnalyticAt.deriv_deriv_mul_comp` expresses `w′′` and `w′` through
 `P, P′, P′′`, `T′, T′′` and `u, u′, u′′` at `T z`. The prefactor has logarithmic derivative
 `L = a₁ (1/(z − α) − 1/(z − γ)) + b₁ (1/(z − β) − 1/(z − γ))`, so `P′ = P L` and
-`P′′ = P (L ^ 2 + L′)` (`TauCeti.deriv_deriv_of_eventually_hasDerivAt_mul`), and `T` is a constant
+`P′′ = P (L ^ 2 + L′)` (`TauCeti.hasDerivAt_sub_div_sub_cpow`,
+`TauCeti.deriv_deriv_of_eventually_hasDerivAt_mul`), and `T` is a constant
 multiple of `(z − α)/(z − γ)` (`TauCeti.hasDerivAt_sub_div_sub`,
 `TauCeti.hasDerivAt_deriv_sub_div_sub`). After these substitutions Riemann's equation at `z` is a
 multiple of the hypergeometric equation at `T z`, which clearing denominators verifies.
@@ -58,19 +57,10 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- The derivative of the power `w ↦ ((w - α) / (w - γ)) ^ a` at a point `z` where the quotient
-lies in the slit plane is the power times its logarithmic derivative
-`a ((z - α)⁻¹ - (z - γ)⁻¹)`. -/
-theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) ∈ slitPlane) :
-    HasDerivAt (fun w => ((w - α) / (w - γ)) ^ a)
-      (((z - α) / (z - γ)) ^ a * (a * ((z - α)⁻¹ - (z - γ)⁻¹))) z := by
-  have hq : (z - α) / (z - γ) ≠ 0 := slitPlane_ne_zero h
-  have hzα : z - α ≠ 0 := left_ne_zero_of_mul (div_eq_mul_inv (z - α) (z - γ) ▸ hq)
-  have hzγ : z - γ ≠ 0 := fun h0 => hq (by rw [h0, div_zero])
-  refine ((hasDerivAt_sub_div_sub (sub_ne_zero.mp hzγ)).cpow_const h).congr_deriv ?_
-  rw [cpow_sub _ _ hq, cpow_one]
-  field_simp
-  ring
+/-- A quotient `(z - δ) / (z - γ)` in the slit plane has nonzero numerator and denominator. -/
+private theorem sub_ne_zero_and_of_div_mem_slitPlane {δ γ z : ℂ}
+    (h : (z - δ) / (z - γ) ∈ slitPlane) : z - δ ≠ 0 ∧ z - γ ≠ 0 :=
+  div_ne_zero_iff.mp (slitPlane_ne_zero h)
 
 /-! ### The prefactor and the Möbius variable of DLMF 15.11.7 -/
 
@@ -79,7 +69,7 @@ analytic where both quotients lie in the slit plane. -/
 private theorem analyticAt_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
     (hA : (z - α) / (z - γ) ∈ slitPlane) (hB : (z - β) / (z - γ) ∈ slitPlane) :
     AnalyticAt ℂ (fun w => ((w - α) / (w - γ)) ^ a₁ * ((w - β) / (w - γ)) ^ b₁) z := by
-  have hzγ : z - γ ≠ 0 := fun h => slitPlane_ne_zero hA (by simp [h])
+  have hzγ : z - γ ≠ 0 := (sub_ne_zero_and_of_div_mem_slitPlane hA).2
   exact ((analyticAt_id.sub analyticAt_const).div (analyticAt_id.sub analyticAt_const) hzγ
     |>.cpow analyticAt_const hA).mul
     (((analyticAt_id.sub analyticAt_const).div (analyticAt_id.sub analyticAt_const) hzγ).cpow
@@ -103,9 +93,8 @@ private theorem deriv_deriv_riemannPrefactor {α β γ a₁ b₁ z : ℂ}
         ((a₁ * ((z - α)⁻¹ - (z - γ)⁻¹) + b₁ * ((z - β)⁻¹ - (z - γ)⁻¹)) ^ 2 +
           (a₁ * (-((z - α) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹) +
             b₁ * (-((z - β) ^ 2)⁻¹ + ((z - γ) ^ 2)⁻¹))) := by
-  have hzα : z - α ≠ 0 := fun h => slitPlane_ne_zero hA (by simp [h])
-  have hzβ : z - β ≠ 0 := fun h => slitPlane_ne_zero hB (by simp [h])
-  have hzγ : z - γ ≠ 0 := fun h => slitPlane_ne_zero hA (by simp [h])
+  obtain ⟨hzα, hzγ⟩ := sub_ne_zero_and_of_div_mem_slitPlane hA
+  have hzβ : z - β ≠ 0 := (sub_ne_zero_and_of_div_mem_slitPlane hB).1
   -- Both quotients stay in the open slit plane near `z`, so `P′ = P L` near `z`.
   have hc : ∀ δ : ℂ, ContinuousAt (fun w : ℂ => (w - δ) / (w - γ)) z := fun δ =>
     (continuousAt_id.sub continuousAt_const).div (continuousAt_id.sub continuousAt_const) hzγ
@@ -144,11 +133,9 @@ private theorem derivs_riemannMobius {α β γ z : ℂ} (hz : z ≠ γ) :
 `w(z) = ((z − α)/(z − γ))^{a₁} ((z − β)/(z − γ))^{b₁} u((z − α)(β − γ)/((z − γ)(β − α)))` solves
 Riemann's equation (DLMF 15.11.1) with singular points `α, β, γ` and exponents `{a₁, a₂}`,
 `{b₁, b₂}`, `{c₁, c₂}` under Fuchs's relation (DLMF 15.11.2), on every open set `U` where the two
-quotients lie in the slit plane and the Möbius variable lies in `V`.
-
-The hypotheses `β ≠ γ` and `IsOpen U` of the roadmap's statement are not used by the proof. -/
+quotients lie in the slit plane and the Möbius variable lies in `V`. -/
 theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ c₁ c₂ : ℂ} (hαβ : α ≠ β)
-    (_hβγ : β ≠ γ) (hαγ : α ≠ γ) (hsum : a₁ + a₂ + b₁ + b₂ + c₁ + c₂ = 1) {U V : Set ℂ}
+    (_hβγ : β ≠ γ) (_hαγ : α ≠ γ) (hsum : a₁ + a₂ + b₁ + b₂ + c₁ + c₂ = 1) {U V : Set ℂ}
     (_hU : IsOpen U) (hV : IsOpen V)
     (hUs : ∀ z ∈ U, (z - α) / (z - γ) ∈ slitPlane ∧ (z - β) / (z - γ) ∈ slitPlane)
     (hUV : ∀ z ∈ U, (z - α) * (β - γ) / ((z - γ) * (β - α)) ∈ V) {u : ℂ → ℂ}
@@ -169,9 +156,8 @@ theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ 
   have hw : w = fun z => P z * u (T z) := rfl
   have hne : ∀ z ∈ U, z - α ≠ 0 ∧ z - β ≠ 0 ∧ z - γ ≠ 0 := by
     intro z hz
-    obtain ⟨hA', hB'⟩ := hUs z hz
-    refine ⟨fun h => slitPlane_ne_zero hA' ?_, fun h => slitPlane_ne_zero hB' ?_,
-      fun h => slitPlane_ne_zero hA' ?_⟩ <;> simp [h]
+    obtain ⟨hzα, hzγ⟩ := sub_ne_zero_and_of_div_mem_slitPlane (hUs z hz).1
+    exact ⟨hzα, (sub_ne_zero_and_of_div_mem_slitPlane (hUs z hz).2).1, hzγ⟩
   -- Analyticity of the three ingredients, for the product and chain rules.
   have hPa : ∀ z ∈ U, AnalyticAt ℂ P z := fun z hz =>
     analyticAt_riemannPrefactor (hUs z hz).1 (hUs z hz).2
@@ -208,8 +194,12 @@ theorem riemannEquation_of_hypergeometricEquation {α β γ a₁ a₂ b₁ b₂ 
   generalize deriv (deriv u) (T z) = F2 at *
   generalize P z = P0
   simp only [T, hL] at hode ⊢
-  linear_combination (norm := skip) (P0 * ((β - γ) * (α - γ) / (β - α)) ^ 2 * (β - α) ^ 2 *
-    (z - γ) ^ 2 / ((z - α) * (β - γ) * (γ - α) * (z - β)) / (z - γ) ^ 4) * hode
+  -- The multiplier is `P T′ ^ 2 / (T (1 − T))`, which matches the `u′′` terms. With
+  -- `T′ = k / (z − γ) ^ 2`, `k = (β − γ)(α − γ)/(β − α)`, and
+  -- `T (1 − T) = (z − α)(z − β)(β − γ)(γ − α) / ((z − γ)(β − α)) ^ 2`
+  -- it reduces to the factor below.
+  linear_combination (norm := skip)
+    (-P0 * (β - γ) * (α - γ) / ((z - α) * (z - β) * (z - γ) ^ 2)) * hode
   have hβα : β - α ≠ 0 := sub_ne_zero.mpr hαβ.symm
   field_simp
   ring
