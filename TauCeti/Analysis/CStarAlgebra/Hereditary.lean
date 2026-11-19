@@ -123,24 +123,6 @@ theorem IsHereditary.mul_mul_mem (hB : B.IsHereditary) {b c : A} (hb : b ∈ B) 
   · exact SMulMemClass.smul_mem _ <|
       hB.star_mul_mul_mem (sub_mem hc (SMulMemClass.smul_mem _ hu)) x
 
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- If `x * e → x` and `e * x → x` along a proper filter of contractions `e ∈ B` with
-`e * x * e ∈ B`, then `x` lies in the closed star subalgebra `B`. -/
-private theorem mem_of_tendsto_mul {x : A} (hBc : IsClosed (B : Set A)) {l : Filter A} [l.NeBot]
-    (hlB : ∀ᶠ e in l, e ∈ B) (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) (hmul : ∀ e ∈ B, e * x * e ∈ B)
-    (hr : Tendsto (x * ·) l (𝓝 x)) (hl : Tendsto (· * x) l (𝓝 x)) : x ∈ B := by
-  -- `e * x * e = (e * x - x) * e + (x * e - x) + x`, and `e` stays bounded.
-  have hbdd : IsBoundedUnder (· ≤ ·) l ((‖·‖) ∘ id) := isBoundedUnder_of_eventually_le hnorm
-  have h₁ : Tendsto (fun e ↦ (e * x - x) * e) l (𝓝 0) :=
-    (tendsto_sub_nhds_zero_iff.mpr hl).zero_mul_isBoundedUnder_le hbdd
-  have h₂ : Tendsto (fun e ↦ x * e - x) l (𝓝 0) := tendsto_sub_nhds_zero_iff.mpr hr
-  have hlim : Tendsto (fun e ↦ e * x * e) l (𝓝 x) := by
-    convert (h₁.add h₂).add_const x using 1
-    · ext e
-      noncomm_ring
-    · simp
-  exact hBc.mem_of_tendsto hlim (hlB.mono hmul)
-
 /-- A closed star subalgebra `B` of a C⋆-algebra with `B * A * B ⊆ B` is hereditary. -/
 theorem isHereditary_of_mul_mul_mem (hBc : IsClosed (B : Set A))
     (h : ∀ b ∈ B, ∀ x : A, ∀ c ∈ B, b * x * c ∈ B) : B.IsHereditary := by
@@ -315,6 +297,7 @@ noncomputable def hereditaryOf (a : A) : NonUnitalStarSubalgebra ℂ A :=
   (starMulMul a).topologicalClosure
 
 /-- `hereditaryOf a` is the closure of the set of elements `star a * x * a`. -/
+@[simp]
 theorem coe_hereditaryOf (a : A) :
     (hereditaryOf a : Set A) = closure (Set.range fun x ↦ star a * x * a) :=
   (rfl)
