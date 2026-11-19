@@ -248,6 +248,13 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (Codiscrete X) where
     simpa only [Function.comp_def, arrowHomeomorph_apply,
       Quiver.Total.comp_left, Quiver.Total.comp_right] using h
 
+instance instT2SpaceArrows [T2Space X] : T2Space (Quiver.Total (Codiscrete X)) :=
+  (arrowHomeomorph X).symm.t2Space
+
+instance instSecondCountableTopologyArrows [SecondCountableTopology X] :
+    SecondCountableTopology (Quiver.Total (Codiscrete X)) :=
+  (arrowHomeomorph X).isInducing.secondCountableTopology
+
 /-- Composable arrows, in categorical order, have coordinates `(z, y, x)` when they run
 from `x` to `y` and then from `y` to `z`. The topology is the inherited subspace topology. -/
 def composablePairsHomeomorph :

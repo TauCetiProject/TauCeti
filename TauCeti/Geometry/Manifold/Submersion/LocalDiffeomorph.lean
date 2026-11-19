@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # Composing submersions with local diffeomorphisms
@@ -37,6 +38,8 @@ lift of the map to the covering manifold.
 * `IsLocalDiffeomorphAt.isSubmersionAtOfComplement_comp`,
   `IsLocalDiffeomorphAt.comp_isSubmersionAtOfComplement`: the pointwise normal form with a
   fixed complement survives composing with a local diffeomorphism on the source or on the target.
+* `IsLocalDiffeomorph.isSubmersion_comp`, `IsLocalDiffeomorph.comp_isSubmersion`: the global
+  statements, for composing with a local diffeomorphism everywhere.
 * `IsLocalDiffeomorphAt.isSubmersionAtOfComplement_comp_iff`: precomposing with a local
   diffeomorphism at `x` neither creates nor destroys the normal form at `x`.
 * `IsLocalDiffeomorphAt.isSubmersionAt_comp_iff`,
@@ -184,3 +187,33 @@ theorem comp_isSubmersionAt [IsManifold J n P] {k : N → P} {x : M}
     h.isSubmersionAtOfComplement_complement).isSubmersionAt
 
 end IsLocalDiffeomorphAt
+
+namespace IsLocalDiffeomorph
+
+open Manifold
+open scoped Manifold ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H : Type*} [TopologicalSpace H] {G : Type*} [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M']
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
+  {P : Type*} [TopologicalSpace P] [ChartedSpace G P]
+  {n : ℕ∞ω} {f : M → N}
+
+/-- Precomposing a submersion with a local diffeomorphism of the source gives a submersion. -/
+theorem isSubmersion_comp [IsManifold I n M'] {g : M' → M} (hg : IsLocalDiffeomorph I I n g)
+    (h : IsSubmersion I J n f) : IsSubmersion I J n (f ∘ g) :=
+  (isSubmersionOfComplement_iff.mpr fun x ↦ (hg x).isSubmersionAtOfComplement_comp
+    (h.isSubmersionOfComplement_complement.isSubmersionAt (g x))).isSubmersion
+
+/-- Postcomposing a submersion with a local diffeomorphism of the target gives a submersion. -/
+theorem comp_isSubmersion [IsManifold J n P] {k : N → P} (hk : IsLocalDiffeomorph J J n k)
+    (h : IsSubmersion I J n f) : IsSubmersion I J n (k ∘ f) :=
+  (isSubmersionOfComplement_iff.mpr fun x ↦ (hk (f x)).comp_isSubmersionAtOfComplement
+    (h.isSubmersionOfComplement_complement.isSubmersionAt x)).isSubmersion
+
+end IsLocalDiffeomorph
