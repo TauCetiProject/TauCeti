@@ -131,35 +131,34 @@ theorem schottkyDoubleHomeomorphDiscDouble_symm_swap (p : DoubleAlong DoubleAlon
 
 /-- The matrix `!![-ζ, ζ * I; 1, I]` of the Möbius transformation `w ↦ ζ (I - w) / (w + I)`, the
 inverse of the Cayley chart centred at `ζ` extended to the whole sphere. Its determinant is
-`-2 ζ I`, nonzero for `ζ` on the unit circle. -/
-def cayleyMoebius (ζ : ℂ) (hζ : ‖ζ‖ = 1) : GL (Fin 2) ℂ :=
+`-2 ζ I`, nonzero for `ζ ≠ 0`. -/
+def cayleyMoebius (ζ : ℂ) (hζ : ζ ≠ 0) : GL (Fin 2) ℂ :=
   GeneralLinearGroup.mkOfDetNeZero !![-ζ, ζ * I; 1, I] (by
     rw [det_fin_two_of]
     have : -ζ * I - ζ * I * 1 = -2 * I * ζ := by ring
     rw [this]
-    exact mul_ne_zero (mul_ne_zero (by norm_num) I_ne_zero)
-      (ne_zero_of_norm_ne_zero (hζ ▸ one_ne_zero)))
+    exact mul_ne_zero (mul_ne_zero (by norm_num) I_ne_zero) hζ)
 
 /-- The matrix of `cayleyMoebius ζ`. -/
 @[simp]
-theorem coe_cayleyMoebius (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
+theorem coe_cayleyMoebius (ζ : ℂ) (hζ : ζ ≠ 0) :
     (cayleyMoebius ζ hζ : Matrix (Fin 2) (Fin 2) ℂ) = !![-ζ, ζ * I; 1, I] :=
   (rfl)
 
 /-- The Möbius transformation of `cayleyMoebius ζ` sends `-I` to `∞`. -/
 @[simp]
-theorem cayleyMoebius_smul_neg_I (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
+theorem cayleyMoebius_smul_neg_I (ζ : ℂ) (hζ : ζ ≠ 0) :
     cayleyMoebius ζ hζ • ((-I : ℂ) : OnePoint ℂ) = (∞ : OnePoint ℂ) := by
   simp [smul_some_eq_ite, coe_cayleyMoebius]
 
 /-- The Möbius transformation of `cayleyMoebius ζ` sends `∞` to `-ζ`. -/
 @[simp]
-theorem cayleyMoebius_smul_infty (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
+theorem cayleyMoebius_smul_infty (ζ : ℂ) (hζ : ζ ≠ 0) :
     cayleyMoebius ζ hζ • (∞ : OnePoint ℂ) = ((-ζ : ℂ) : OnePoint ℂ) := by
   simp [smul_infty_eq_ite, coe_cayleyMoebius]
 
 /-- Away from `-I`, the Möbius transformation of `cayleyMoebius ζ` is `w ↦ ζ (I - w) / (w + I)`. -/
-theorem cayleyMoebius_smul_coe (ζ : ℂ) (hζ : ‖ζ‖ = 1) {w : ℂ} (hw : w + I ≠ 0) :
+theorem cayleyMoebius_smul_coe (ζ : ℂ) (hζ : ζ ≠ 0) {w : ℂ} (hw : w + I ≠ 0) :
     cayleyMoebius ζ hζ • (w : OnePoint ℂ) = ((ζ * (I - w) / (w + I) : ℂ) : OnePoint ℂ) := by
   simp [smul_some_eq_ite, hw]
   ring
@@ -181,13 +180,13 @@ Möbius transformation `w ↦ ζ (I - w) / (w + I)` on the whole plane. -/
 private theorem toSphere_doubleChart_symm {ζ : ℂ} (hζ : ‖ζ‖ = 1)
     (he : cayleyChart ζ hζ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 𝕔𝔻) (w : ℂ) :
     toSphere ((SchottkyDouble.doubleChart (cayleyChart ζ hζ) he).symm w) =
-      cayleyMoebius ζ hζ • (w : OnePoint ℂ) := by
+      cayleyMoebius ζ (ne_zero_of_norm_ne_zero (hζ ▸ one_ne_zero)) • (w : OnePoint ℂ) := by
   have hζ0 : ζ ≠ 0 := ne_zero_of_norm_ne_zero (hζ ▸ one_ne_zero)
   rcases le_or_gt 0 w.im with hnn | hneg
   · have hw : w + I ≠ 0 := add_I_ne_zero_of_im_nonneg hnn
     rw [SchottkyDouble.doubleChart_symm_apply_of_im_nonneg he hnn, toSphere_inl,
       coe_cayleyChart_symm_apply, ClosedUpperHalfPlane.coe_fold_of_im_nonneg hnn,
-      cayleyMoebius_smul_coe ζ hζ hw]
+      cayleyMoebius_smul_coe ζ hζ0 hw]
   · rw [SchottkyDouble.doubleChart_symm_apply_of_im_neg he hneg, toSphere_inr,
       coe_cayleyChart_symm_apply, ClosedUpperHalfPlane.coe_fold_of_im_nonpos hneg.le]
     rcases eq_or_ne w (-I) with rfl | hwI
@@ -201,7 +200,7 @@ private theorem toSphere_doubleChart_symm {ζ : ℂ} (hζ : ‖ζ‖ = 1)
         rw [sub_eq_zero] at h
         rw [← conj_conj w, ← h, conj_I]
       rw [unitCircleInversion_coe (div_ne_zero (mul_ne_zero hζ0 hcw') hcw),
-        cayleyMoebius_smul_coe ζ hζ hw, coe_eq_coe]
+        cayleyMoebius_smul_coe ζ hζ0 hw, coe_eq_coe]
       have hw2 : -I - w ≠ 0 := by
         rw [← neg_add', neg_ne_zero, add_comm]
         exact hw
@@ -211,7 +210,8 @@ private theorem toSphere_doubleChart_symm {ζ : ℂ} (hζ : ‖ζ‖ = 1)
 
 /-- The Möbius transformation attached to the chart of the double at `p`. -/
 private def chartMoebius (p : SchottkyDouble 𝕔𝔻) : GL (Fin 2) ℂ :=
-  cayleyMoebius (chartCenter (DoubleAlong.fold _ p)) (norm_chartCenter _)
+  cayleyMoebius (chartCenter (DoubleAlong.fold _ p))
+    (ne_zero_of_norm_ne_zero ((norm_chartCenter _).symm ▸ one_ne_zero))
 
 /-- On the source of the chart of the double at `p`, the homeomorphism to the sphere is the chart
 followed by a Möbius transformation. -/
@@ -297,7 +297,7 @@ transformation `w ↦ ζ (I - w) / (w + I)` of the whole plane, with `-I ↦ ∞
 theorem schottkyDoubleDiffeomorph_doubleChart_symm {ζ : ℂ} (hζ : ‖ζ‖ = 1)
     (he : cayleyChart ζ hζ ∈ IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 𝕔𝔻) (w : ℂ) :
     schottkyDoubleDiffeomorph ((SchottkyDouble.doubleChart (cayleyChart ζ hζ) he).symm w) =
-      cayleyMoebius ζ hζ • (w : OnePoint ℂ) :=
+      cayleyMoebius ζ (ne_zero_of_norm_ne_zero (hζ ▸ one_ne_zero)) • (w : OnePoint ℂ) :=
   toSphere_doubleChart_symm hζ he w
 
 /-! ### The sheet swap and the Euler characteristic -/
