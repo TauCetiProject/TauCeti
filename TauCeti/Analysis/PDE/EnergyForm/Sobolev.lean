@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Sobolev.Poincare.W1p0
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The divergence-form energy form on `H¹(Ω)`, and Gårding's inequality
@@ -309,8 +310,7 @@ theorem memLp_energyIntegrand_of_continuous (hLam : ∀ x, ‖matrixBilinearForm
       (mu.restrict U) :=
   memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0)
     ((norm_nonneg (matrixBilinearForm (a 0))).trans (hLam 0))
-    (aestronglyMeasurable_of_continuousOn_matrixBilinearForm ha.continuousOn
-      U.isOpen.measurableSet)
+    (continuous_of_continuous_matrixBilinearForm ha).aestronglyMeasurable
     aestronglyMeasurable_const aestronglyMeasurable_const
     (fun x _ eta xi => by
       simpa [Real.norm_eq_abs] using

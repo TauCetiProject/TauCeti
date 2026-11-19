@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.PDE.EnergyForm.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.DifferenceQuotient
 import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # `H²` regularity of whole-space weak solutions, and tangential regularity
@@ -219,7 +220,7 @@ theorem UniformlyEllipticOn.norm_gradient_differenceQuotient_le_of_lipschitzOnWi
       ‖w‖ * (‖f‖ + K * ‖W1p.gradient (u : W1p mu Omega 2)‖) / lam := by
   have hlam := ha.pos
   have hmeas : AEStronglyMeasurable a (mu.restrict Omega) :=
-    aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
+    (continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
       Omega.isOpen.measurableSet
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
     memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) ha.upper_nonneg hmeas

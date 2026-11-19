@@ -15,6 +15,7 @@ import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
 import TauCeti.Analysis.PDE.Regularity.Interior
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # `H²` regularity up to a `C²` boundary
@@ -375,7 +376,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph
   -- The coefficients are essentially bounded, so the energy form is a continuous bilinear form.
   have hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) :=
     memLp_energyIntegrand_of_memLp_top ha.upper_nonneg
-      (aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
+      ((continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
         Omega.isOpen.measurableSet) (fun _ hx => ha.upper_bound hx) hb hc
   -- The map `(w, f) ↦ (w', f)`, where `w'` is the first-order part of `w`, from the closed
   -- subspace of solutions in `W^{2,2}(Ω) × L²(Ω)` onto the graph of the Dirichlet problem.
@@ -460,7 +461,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_norm_value_of_contD
   -- Gårding's inequality and the equation tested against `u` itself bound `‖u‖_{H¹}`.
   have hu_le : ‖u‖ ≤ 2 / lam * (‖f‖ + κ * ‖W1p.value u‖) :=
     ha.norm_le_of_isWeakSolutionDirichlet_of_norm_le (u := ⟨u, hu0⟩)
-      (aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
+      ((continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
         Omega.isOpen.measurableSet) hb.aestronglyMeasurable hc.aestronglyMeasurable
       (ae_le_lpNorm_exponent_top hb) (ae_le_lpNorm_exponent_top hc)
       ((isWeakSolutionDirichlet_iff f _).2 hu)
