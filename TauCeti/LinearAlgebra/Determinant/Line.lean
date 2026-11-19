@@ -267,12 +267,15 @@ theorem detLineEquiv_symm_one (b : Basis (Fin (finrank R V)) R V) :
 
 /-- In the coordinate `Module.Basis.detLineEquiv`, an automorphism `e` of `V` acts on the
 determinant line by multiplication by its determinant. -/
-theorem detLineEquiv_detLineCongr (b : Basis (Fin (finrank R V)) R V) (e : V ≃ₗ[R] V)
+theorem detLineEquiv_exteriorPower (b : Basis (Fin (finrank R V)) R V) (e : V ≃ₗ[R] V)
     (x : detLine R V) :
-    b.detLineEquiv (LinearEquiv.detLineCongr e x) =
+    b.detLineEquiv (e.exteriorPower (finrank R V) x) =
       LinearMap.det (e : V →ₗ[R] V) * b.detLineEquiv x := by
   have := Module.Free.of_basis b
-  rw [LinearEquiv.detLineCongr_apply_eq_det_smul, map_smul, smul_eq_mul]
+  have h : e.exteriorPower (finrank R V) x = LinearMap.det (e : V →ₗ[R] V) • x := by
+    rw [← LinearEquiv.coe_toLinearMap (e.exteriorPower _), LinearEquiv.exteriorPower_toLinearMap,
+      LinearMap.map_exteriorPower_finrank_eq_det_smul, LinearMap.smul_apply, LinearMap.id_apply]
+  rw [h, map_smul, smul_eq_mul]
 
 end Module.Basis
 
