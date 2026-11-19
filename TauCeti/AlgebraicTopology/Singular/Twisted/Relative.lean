@@ -45,6 +45,8 @@ only the absolute one of `TauCeti.AlgebraicTopology.Singular.Twisted.Basic`, nec
 * `TopPair.twistedHomology`, `TopPair.twistedHomologyπ` and `TopPair.twistedHomologyδ`, with the
   three exactness statements `TopPair.twistedHomology_exact_subspace`,
   `TopPair.twistedHomology_exact_space` and `TopPair.twistedHomology_exact_relative`.
+* `TopPair.isIso_twistedHomologyπ_of_isEmpty`: read off the long exact sequence, relative twisted
+  homology is that of the ambient space when the subspace is empty.
 * `TopPair.twistedHomologyConstantIso`: for a constant system, relative twisted homology is
   ordinary relative singular homology.
 
@@ -525,6 +527,21 @@ lemma twistedHomology_exact_space (k : ℕ) :
 lemma twistedHomology_exact_relative (n m : ℕ) (h : m + 1 = n := by lia) :
     (ShortComplex.mk _ _ (P.twistedHomologyπ_comp_twistedHomologyδ L n m h)).Exact :=
   (P.shortExact_twistedChainComplexShortComplex L).homology_exact₃ n m (by simpa)
+
+/-- For a pair with empty subspace, relative twisted homology is the twisted homology of the
+ambient space. -/
+instance isIso_twistedHomologyπ_of_isEmpty [IsEmpty P.snd] (k : ℕ) :
+    IsIso (P.twistedHomologyπ L k) := by
+  have hA (j : ℕ) :=
+    LocalCoefficientSystem.isZero_twistedHomology_of_isEmpty (P.subspaceSystem L) j
+  have : Mono (P.twistedHomologyπ L k) :=
+    (P.twistedHomology_exact_space L k).mono_g ((hA k).eq_of_src _ _)
+  cases k with
+  | zero => exact isIso_of_mono_of_epi _
+  | succ j =>
+    have : Epi (P.twistedHomologyπ L (j + 1)) :=
+      (P.twistedHomology_exact_relative L (j + 1) j).epi_f ((hA j).eq_of_tgt _ _)
+    exact isIso_of_mono_of_epi _
 
 end Homology
 
