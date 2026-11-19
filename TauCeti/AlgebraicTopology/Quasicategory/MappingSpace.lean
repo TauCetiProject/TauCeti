@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
 public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.JoinVertex
 import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
+import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.One
 import Mathlib.AlgebraicTopology.Quasicategory.TwoTruncatedQuasicategory
 import TauCeti.AlgebraicTopology.SimplicialSet.Vertex
 
@@ -384,111 +385,6 @@ lemma toMappingSpace_comp_map {Y : SSet.{u}} (f : X ⟶ Y) :
 
 section π₀
 
-/-- A `2`-simplex `CompStruct (id x) f g` of `X` is an edge of `Hom^R_X(x, y)` from `g` to `f`,
-so that `f` and `g` lie in the same connected component of `Hom^R_X(x, y)`. -/
-private lemma π₀_mk_eq_of_compStruct {f g : Edge x y} (h : Edge.CompStruct (.id x) f g) :
-    π₀.mk (obj₀Equiv.symm g) = π₀.mk (obj₀Equiv.symm f) := by
-  have hmem : h.simplex ∈ (X.rightMappingSpace x y).obj (op ⦋1⦌) := by
-    refine (mem_rightMappingSpace_iff _).2 ⟨?_, ?_⟩
-    · exact h.d₂.trans (by
-        rw [Edge.id_edge, SimplicialObject.σ,
-          SimplexCategory.eq_const_to_zero (SimplexCategory.σ 0)])
-    · -- The last vertex of the `2`-simplex is the target of its face `f` opposite to `0`.
-      have h' := map_const_map (X := X) (SimplexCategory.δ (0 : Fin 3)).op h.simplex 1
-      rw [← SimplexCategory.δ_zero_eq_const, ← SimplicialObject.δ_def, ← SimplicialObject.δ_def,
-        h.d₀, f.tgt_eq] at h'
-      exact h'.symm
-  let s : (X.rightMappingSpace x y : SSet.{u}) _⦋1⦌ := ⟨h.simplex, hmem⟩
-  have h₁ : obj₀Equiv.symm g = (X.rightMappingSpace x y : SSet.{u}).δ 1 s :=
-    obj₀Equiv.symm_apply_eq.2 (Edge.ext
-      (((obj₀Equiv_apply_edge _).trans ((coe_δ 1 s).trans h.d₁)).symm))
-  have h₀ : obj₀Equiv.symm f = (X.rightMappingSpace x y : SSet.{u}).δ 0 s :=
-    obj₀Equiv.symm_apply_eq.2 (Edge.ext
-      (((obj₀Equiv_apply_edge _).trans ((coe_δ 0 s).trans h.d₀)).symm))
-  rw [h₁, h₀]
-  exact π₀.sound (Edge.mk' s)
-
-/-- The constant map `Δ[1] ⟶ X` at a vertex `x` is the degenerate edge at `x`. -/
-private lemma yonedaEquiv_const_one (x : X _⦋0⦌) :
-    yonedaEquiv (const x : Δ[1] ⟶ X) = (Edge.id x).edge := by
-  rw [Edge.id_edge, ← comp_const (stdSimplex.σ 0), ← yonedaEquiv_symm_zero,
-    stdSimplex.yonedaEquiv_σ_comp, Equiv.apply_symm_apply]
-
-/-! The square `Δ[1] ⊗ Δ[1]` is the union of the `2`-simplices `square₀`, with vertices
-`(0, 0), (0, 1), (1, 1)`, and `square₁`, with vertices `(0, 0), (1, 0), (1, 1)`. The following
-identities describe their faces; both sides are maps out of a standard simplex, so they are
-checked on vertices. -/
-
-/-- The `2`-simplex of `Δ[1] ⊗ Δ[1]` with vertices `(0, 0), (0, 1), (1, 1)`. -/
-private noncomputable abbrev square₀ : Δ[2] ⟶ (Δ[1] ⊗ Δ[1] : SSet.{u}) :=
-  lift (stdSimplex.σ 0) (stdSimplex.σ 1)
-
-/-- The `2`-simplex of `Δ[1] ⊗ Δ[1]` with vertices `(0, 0), (1, 0), (1, 1)`. -/
-private noncomputable abbrev square₁ : Δ[2] ⟶ (Δ[1] ⊗ Δ[1] : SSet.{u}) :=
-  lift (stdSimplex.σ 1) (stdSimplex.σ 0)
-
-/-- The map `Δ[1] ⟶ Δ[0]`. -/
-private noncomputable abbrev toPt : Δ[1] ⟶ Δ[0] := const (stdSimplex.obj₀Equiv.{u}.symm 0)
-
-@[reassoc]
-private lemma δ_two_square₀ :
-    stdSimplex.δ 2 ≫ square₀.{u} = lift toPt (𝟙 _) ≫ stdSimplex.δ 1 ▷ Δ[1] := by
-  apply yonedaEquiv.injective
-  apply prodStdSimplex.objEquiv.injective
-  ext i : 2
-  fin_cases i <;> rfl
-
-@[reassoc]
-private lemma δ_zero_square₁ :
-    stdSimplex.δ 0 ≫ square₁.{u} = lift toPt (𝟙 _) ≫ stdSimplex.δ 0 ▷ Δ[1] := by
-  apply yonedaEquiv.injective
-  apply prodStdSimplex.objEquiv.injective
-  ext i : 2
-  fin_cases i <;> rfl
-
-@[reassoc]
-private lemma δ_zero_square₀ :
-    stdSimplex.δ 0 ≫ square₀.{u} = lift (𝟙 _) toPt ≫ Δ[1] ◁ stdSimplex.δ 0 := by
-  apply yonedaEquiv.injective
-  apply prodStdSimplex.objEquiv.injective
-  ext i : 2
-  fin_cases i <;> rfl
-
-@[reassoc]
-private lemma δ_two_square₁ :
-    stdSimplex.δ 2 ≫ square₁.{u} = lift (𝟙 _) toPt ≫ Δ[1] ◁ stdSimplex.δ 1 := by
-  apply yonedaEquiv.injective
-  apply prodStdSimplex.objEquiv.injective
-  ext i : 2
-  fin_cases i <;> rfl
-
-@[reassoc]
-private lemma δ_one_square₀ : stdSimplex.δ 1 ≫ square₀.{u} = stdSimplex.δ 1 ≫ square₁ := by
-  apply yonedaEquiv.injective
-  apply prodStdSimplex.objEquiv.injective
-  ext i : 2
-  fin_cases i <;> rfl
-
-@[reassoc]
-private lemma δ_one_δ_one_square₀ :
-    stdSimplex.δ 1 ≫ stdSimplex.δ 1 ≫ square₀.{u} =
-      stdSimplex.δ 1 ≫ stdSimplex.δ 2 ≫ square₀ := by
-  apply yonedaEquiv.injective
-  apply prodStdSimplex.objEquiv.injective
-  ext i : 2
-  fin_cases i
-  rfl
-
-@[reassoc]
-private lemma δ_zero_δ_one_square₀ :
-    stdSimplex.δ 0 ≫ stdSimplex.δ 1 ≫ square₀.{u} =
-      stdSimplex.δ 0 ≫ stdSimplex.δ 0 ≫ square₁ := by
-  apply yonedaEquiv.injective
-  apply prodStdSimplex.objEquiv.injective
-  ext i : 2
-  fin_cases i
-  rfl
-
 variable [X.Quasicategory]
 
 /-- The two endpoints of an edge of `Hom_X(x, y)` correspond to vertices in the same connected
@@ -509,32 +405,40 @@ private lemma π₀_mk_eq_of_edge {v₀ v₁ : (X.mappingSpace x y : SSet.{u}) _
   have h₁ : Δ[1] ◁ stdSimplex.δ 0 ≫ h = fst _ _ ≫ ihomObj₀Equiv _ X v₁.1 := by
     rw [fst_comp_ihomObj₀Equiv, ← E.tgt_eq]
     exact (ihomObjEquiv_map _ (SimplexCategory.δ 0) E.edge.1).symm
+  -- The square is the union of the `2`-simplices `ι 0` and `ι 1`; the endpoints of their common
+  -- diagonal lie on the vertical sides.
+  have e₁ : stdSimplex.δ.{u} (1 : Fin 2) ≫ stdSimplex.δ (1 : Fin 3) =
+      stdSimplex.δ 1 ≫ stdSimplex.δ 2 :=
+    stdSimplex.δ_comp_δ_self
+  have e₀ : stdSimplex.δ.{u} (0 : Fin 2) ≫ stdSimplex.δ (0 : Fin 3) =
+      stdSimplex.δ 0 ≫ stdSimplex.δ 1 :=
+    stdSimplex.δ_comp_δ_self
   -- The diagonal of the square.
-  let d : Edge x y := Edge.mk (yonedaEquiv (stdSimplex.δ 1 ≫ square₀ ≫ h))
+  let d : Edge x y := Edge.mk (yonedaEquiv (stdSimplex.δ 1 ≫ prodStdSimplex₁.ι 0 ≫ h))
     (by
-      rw [← stdSimplex.yonedaEquiv_δ_comp, δ_one_δ_one_square₀_assoc, δ_two_square₀_assoc, hx,
+      rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% e₁, prodStdSimplex₁.δ_two_ι_zero_assoc, hx,
         comp_const, comp_const, yonedaEquiv_const])
     (by
-      rw [← stdSimplex.yonedaEquiv_δ_comp, δ_zero_δ_one_square₀_assoc, δ_zero_square₁_assoc, hy,
-        comp_const, comp_const, yonedaEquiv_const])
+      rw [← stdSimplex.yonedaEquiv_δ_comp, prodStdSimplex₁.δ_one_ι_zero_assoc, ← reassoc_of% e₀,
+        prodStdSimplex₁.δ_zero_ι_one_assoc, hy, comp_const, comp_const, yonedaEquiv_const])
   have t₀ : Edge.CompStruct (.id x) (mappingSpace.obj₀Equiv v₁) d :=
-    Edge.CompStruct.mk (yonedaEquiv (square₀ ≫ h))
+    Edge.CompStruct.mk (yonedaEquiv (prodStdSimplex₁.ι 0 ≫ h))
       (by
-        rw [← stdSimplex.yonedaEquiv_δ_comp, δ_two_square₀_assoc, hx, comp_const,
+        rw [← stdSimplex.yonedaEquiv_δ_comp, prodStdSimplex₁.δ_two_ι_zero_assoc, hx, comp_const,
           yonedaEquiv_const_one])
       (by
-        rw [← stdSimplex.yonedaEquiv_δ_comp, δ_zero_square₀_assoc, h₁, lift_fst_assoc,
-          Category.id_comp, mappingSpace.obj₀Equiv_apply_edge])
+        rw [← stdSimplex.yonedaEquiv_δ_comp, prodStdSimplex₁.δ_zero_ι_zero_assoc, h₁,
+          lift_fst_assoc, Category.id_comp, mappingSpace.obj₀Equiv_apply_edge])
       (by rw [← stdSimplex.yonedaEquiv_δ_comp]; rfl)
   have t₁ : Edge.CompStruct (mappingSpace.obj₀Equiv v₀) (.id y) d :=
-    Edge.CompStruct.mk (yonedaEquiv (square₁ ≫ h))
+    Edge.CompStruct.mk (yonedaEquiv (prodStdSimplex₁.ι 1 ≫ h))
       (by
-        rw [← stdSimplex.yonedaEquiv_δ_comp, δ_two_square₁_assoc, h₀, lift_fst_assoc,
+        rw [← stdSimplex.yonedaEquiv_δ_comp, prodStdSimplex₁.δ_two_ι_one_assoc, h₀, lift_fst_assoc,
           Category.id_comp, mappingSpace.obj₀Equiv_apply_edge])
       (by
-        rw [← stdSimplex.yonedaEquiv_δ_comp, δ_zero_square₁_assoc, hy, comp_const,
+        rw [← stdSimplex.yonedaEquiv_δ_comp, prodStdSimplex₁.δ_zero_ι_one_assoc, hy, comp_const,
           yonedaEquiv_const_one])
-      (by rw [← stdSimplex.yonedaEquiv_δ_comp, ← δ_one_square₀_assoc]; rfl)
+      (by rw [← stdSimplex.yonedaEquiv_δ_comp, ← prodStdSimplex₁.δ_one_ι_zero_assoc]; rfl)
   -- In a quasicategory, the left homotopy `t₁` from `e₀` to `d` is also a right homotopy.
   have t₁' : Edge.CompStruct (.id x) (mappingSpace.obj₀Equiv v₀) d :=
     .ofTruncated (Truncated.Edge.HomotopyL.homotopyR t₁.toTruncated)
