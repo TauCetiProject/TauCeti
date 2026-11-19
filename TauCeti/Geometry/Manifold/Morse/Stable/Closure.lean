@@ -1,0 +1,392 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Morse.Gluing.Broken
+public import TauCeti.Geometry.Manifold.Morse.Stable.Breaking
+
+/-!
+# Closures of stable and unstable manifolds
+
+Let `f` be a Morse function on a compact boundaryless manifold `M`, and `X` a pseudo-gradient
+adapted to `f` satisfying the Morse–Smale condition. Write `p ⇝ q` when a trajectory of `X` runs
+from `p` to `q`, that is, when `W^u(p) ∩ W^s(q)` is nonempty, and `⇝*` for its reflexive and
+transitive closure (`Relation.ReflTransGen`): `p ⇝* q` when `q = p` or a finite chain of
+trajectories, broken at critical points, runs from `p` to `q`. This file shows that the closure of
+an unstable manifold is the union of the unstable manifolds of the critical points below it,
+
+`closure W^u(p) = ⋃_{p ⇝* q} W^u(q)`
+
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_unstableSet`), and dually
+`closure W^s(q) = ⋃_{p ⇝* q} W^s(p)`
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_stableSet`).
+
+The relation `⇝*` is a partial order, in which `f` strictly decreases
+(`TauCeti.IsAdaptedPseudoGradient.lt_of_reflTransGen`) and, under the Morse–Smale condition, so
+does the Morse index
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen`). Only
+finitely many points lie below a given one
+(`TauCeti.IsAdaptedPseudoGradient.finite_setOf_reflTransGen`), all of them critical except
+possibly the point itself. Consequently the closure of `W^u(p)` is a finite union of unstable
+manifolds, and what it adds to `W^u(p)` lies in the unstable manifolds of critical points of
+smaller index (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_unstableSet_diff_subset`).
+Since `W^u(q)` is a manifold of dimension `ind q`, this is the frontier condition for the
+decomposition of `M` into the unstable manifolds: what the closure of each piece adds lies in
+pieces of lower dimension. Dually, what
+the closure of `W^s(q)` adds lies in the stable manifolds of critical points of larger index.
+
+The two inclusions come from the two halves of the compactness and gluing theory of trajectories.
+
+* **Breaking** gives `⊆`. A point `y` of the closure of `W^u(p)` lies on the unstable manifold of
+  the critical point `a` to which it flows backwards. If `a ≠ p`, limits of trajectories from `p`
+  through `y` break at `a`: the closure of `W^u(p)` also meets `W^s(a)` at a point `z ≠ a`
+  (`exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet` in the namespace
+  `TauCeti.IsAdaptedPseudoGradient`), which flows backwards to a critical point `b` with `b ⇝ a`
+  and `ind a < ind b`. Induction on the codimension of `W^u(a)` gives `p ⇝* b`, so `p ⇝* a`.
+* **Gluing** gives `⊇`. If `p ⇝ q`, every point `y ≠ q` of `W^u(q)` flows forwards to a critical
+  point `r ≠ q`, and the broken trajectory from `p` to `r` through `q` and `y` is a limit of
+  unbroken trajectories from `p` to `r`
+  (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet`),
+  so `y` lies in the closure of `W^u(p)`; so does `q`, the forward limit of a trajectory from `p`.
+
+## Main results
+
+In the namespace `TauCeti.IsAdaptedPseudoGradient`:
+
+* `lt_of_reflTransGen`, `eq_of_reflTransGen_of_reflTransGen`: `f` strictly decreases along chains
+  of trajectories, which therefore form a partial order.
+* `finite_setOf_reflTransGen`: finitely many points lie below a given one.
+* `IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen`: the Morse index strictly decreases along
+  chains of trajectories.
+* `IsMorseSmale.closure_unstableSet`, `IsMorseSmale.closure_stableSet`: the closures of unstable
+  and stable manifolds.
+* `IsMorseSmale.mem_closure_unstableSet_iff`, `IsMorseSmale.mem_closure_stableSet_iff`: a critical
+  point lies in the closure of `W^u(p)` exactly when it lies below `p`, and in the closure of
+  `W^s(q)` exactly when it lies above `q`.
+* `IsMorseSmale.closure_unstableSet_diff_subset`, `IsMorseSmale.closure_stableSet_diff_subset`:
+  the closure of `W^u(p)` adds only unstable manifolds of smaller index, and that of `W^s(q)` only
+  stable manifolds of larger index.
+
+## References
+
+* F. Laudenbach, *On the Thom–Smale complex*, appendix to J.-M. Bismut and W. Zhang, *An extension
+  of a theorem by Cheeger and Müller*, Astérisque **205** (1992) (the closure of an unstable
+  manifold of a Morse–Smale gradient is the union of the unstable manifolds below it).
+* M. Audin and M. Damian, *Morse Theory and Floer Homology*, Springer Universitext, 2014,
+  Chapter 3 (breaking and gluing of trajectories).
+-/
+
+public section
+
+open Filter Set Topology
+open scoped ContDiff Manifold
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  [CompactSpace M] [T2Space M] {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+
+namespace IsAdaptedPseudoGradient
+
+variable {hX : IsAdaptedPseudoGradient f X} {p q : M}
+
+/-! ### Chains of trajectories -/
+
+/-- **Points below `p` are critical.** A point reached from `p` by a chain of trajectories is `p`
+itself or a critical point of `f`, the forward limit of the last trajectory. -/
+theorem eq_or_mfderiv_eq_zero_of_reflTransGen
+    (hpq : Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q) :
+    q = p ∨ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 := by
+  rcases hpq.cases_tail with rfl | ⟨b, -, y, -, hy⟩
+  · exact Or.inl rfl
+  · exact Or.inr (hX.mfderiv_eq_zero_of_mem_stableSet hy)
+
+/-- **Finitely many points lie below `p`.** For a Morse function on a compact manifold, the points
+reached from `p` by chains of trajectories form a finite set: besides `p` they are critical points
+of `f`. -/
+theorem finite_setOf_reflTransGen (hf : IsMorse 𝓘(ℝ, E) f) (p : M) :
+    {q | Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q}.Finite := by
+  refine (hf.finite_criticalPoints.insert p).subset fun q hq ↦ ?_
+  rcases eq_or_mfderiv_eq_zero_of_reflTransGen hq with rfl | hq
+  · exact mem_insert _ _
+  · exact mem_insert_of_mem _ (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq)
+
+/-- **The function strictly decreases along chains of trajectories.** If a chain of trajectories
+runs from `p` to a different point `q`, then `f q < f p`. -/
+theorem lt_of_reflTransGen
+    (hpq : Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q) (hqp : q ≠ p) :
+    f q < f p := by
+  suffices q = p ∨ f q < f p from this.resolve_left hqp
+  clear hqp
+  induction hpq with
+  | refl => exact Or.inl rfl
+  | @tail b c _ hbc ih =>
+    -- A trajectory from `b` to `c ≠ b` lies strictly between their critical values.
+    have hcb : c = b ∨ f c < f b := by
+      rcases eq_or_ne b c with rfl | hbc'
+      · exact Or.inl rfl
+      · obtain ⟨y, hy⟩ := hbc
+        have hy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbc' hy
+        exact Or.inr (hy.1.trans hy.2)
+    rcases ih with rfl | ih
+    · exact hcb
+    · rcases hcb with rfl | hcb
+      · exact Or.inr ih
+      · exact Or.inr (hcb.trans ih)
+
+/-- **Chains of trajectories form a partial order.** If chains of trajectories run from `p` to `q`
+and from `q` to `p`, then `p = q`. -/
+theorem eq_of_reflTransGen_of_reflTransGen
+    (hpq : Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q)
+    (hqp : Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) q p) :
+    p = q := by
+  by_contra hne
+  exact (lt_of_reflTransGen hpq (Ne.symm hne)).asymm (lt_of_reflTransGen hqp hne)
+
+/-! ### Gluing: unstable manifolds below `p` lie in the closure of `W^u(p)` -/
+
+/-- If a trajectory runs from `p` to `q`, then `W^u(q)` lies in the closure of `W^u(p)`. -/
+private theorem IsMorseSmale.unstableSet_subset_closure_unstableSet_of_nonempty
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    (hpq : (hX.flow.unstableSet p ∩ hX.flow.stableSet q).Nonempty) :
+    hX.flow.unstableSet q ⊆ closure (hX.flow.unstableSet p) := by
+  rcases eq_or_ne p q with rfl | hpq'
+  · exact subset_closure
+  obtain ⟨a, ha⟩ := hpq
+  intro y hy
+  by_cases hyq : y = q
+  · -- `q` is the forward limit of the trajectory through `a`, which stays in `W^u(p)`.
+    subst hyq
+    exact mem_closure_of_tendsto (Flow.mem_stableSet.1 ha.2)
+      (Eventually.of_forall fun t ↦ Flow.isInvariant_unstableSet _ p t ha.1)
+  -- Otherwise `y` flows forwards to some `r ≠ q`, and the trajectory from `p` to `r` broken at `q`
+  -- through `a` and `y` is a limit of unbroken trajectories from `p` to `r`.
+  obtain ⟨r, -, hr⟩ := hX.exists_tendsto_atTop hf y
+  have hyr : y ∈ hX.flow.stableSet r := Flow.mem_stableSet.2 hr
+  have hqr : q ≠ r := fun hqr ↦
+    hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hy, hqr ▸ hyr⟩)
+  refine map_mem_closure continuous_snd
+    (h.mem_closure_of_mem_unstableSet_inter_stableSet hf hpq' hqr ha ⟨hy, hyr⟩) fun w hw ↦ ?_
+  obtain ⟨⟨hw₁, -⟩, -, -, t, ht⟩ := hw
+  rw [← ht]
+  exact Flow.isInvariant_unstableSet _ p t hw₁
+
+/-- If a trajectory runs from `p` to `q`, then `W^s(p)` lies in the closure of `W^s(q)`. -/
+private theorem IsMorseSmale.stableSet_subset_closure_stableSet_of_nonempty
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    (hpq : (hX.flow.unstableSet p ∩ hX.flow.stableSet q).Nonempty) :
+    hX.flow.stableSet p ⊆ closure (hX.flow.stableSet q) := by
+  rcases eq_or_ne p q with rfl | hpq'
+  · exact subset_closure
+  obtain ⟨a, ha⟩ := hpq
+  intro y hy
+  by_cases hyp : y = p
+  · -- `p` is the backward limit of the trajectory through `a`, which stays in `W^s(q)`.
+    subst hyp
+    exact mem_closure_of_tendsto (Flow.mem_unstableSet.1 ha.1)
+      (Eventually.of_forall fun t ↦ Flow.isInvariant_stableSet _ q t ha.2)
+  -- Otherwise `y` flows backwards to some `x ≠ p`, and the trajectory from `x` to `q` broken at `p`
+  -- through `y` and `a` is a limit of unbroken trajectories from `x` to `q`.
+  obtain ⟨x, -, hx⟩ := hX.exists_tendsto_atBot hf y
+  have hyx : y ∈ hX.flow.unstableSet x := Flow.mem_unstableSet.2 hx
+  have hxp : x ≠ p := fun hxp ↦
+    hyp (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hxp ▸ hyx, hy⟩)
+  exact map_mem_closure continuous_fst
+    (h.mem_closure_of_mem_unstableSet_inter_stableSet hf hxp hpq' ⟨hyx, hy⟩ ha)
+    fun w hw ↦ hw.1.2
+
+/-- **Unstable manifolds below `p` lie in the closure of `W^u(p)`.** Under the Morse–Smale
+condition, if a chain of trajectories runs from `p` to `q`, then `W^u(q)` lies in the closure of
+`W^u(p)`. -/
+theorem IsMorseSmale.unstableSet_subset_closure_unstableSet (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    (hpq : Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q) :
+    hX.flow.unstableSet q ⊆ closure (hX.flow.unstableSet p) := by
+  induction hpq with
+  | refl => exact subset_closure
+  | tail _ hbc ih =>
+    exact (h.unstableSet_subset_closure_unstableSet_of_nonempty hf hbc).trans
+      (closure_minimal ih isClosed_closure)
+
+/-- **Stable manifolds above `q` lie in the closure of `W^s(q)`.** Under the Morse–Smale
+condition, if a chain of trajectories runs from `p` to `q`, then `W^s(p)` lies in the closure of
+`W^s(q)`. -/
+theorem IsMorseSmale.stableSet_subset_closure_stableSet (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    (hpq : Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q) :
+    hX.flow.stableSet p ⊆ closure (hX.flow.stableSet q) := by
+  induction hpq with
+  | refl => exact subset_closure
+  | tail _ hbc ih =>
+    exact ih.trans (closure_minimal (h.stableSet_subset_closure_stableSet_of_nonempty hf hbc)
+      isClosed_closure)
+
+/-- **The Morse index strictly decreases along chains of trajectories.** Under the Morse–Smale
+condition, if a chain of trajectories runs from `p` to a different point `q`, then
+`ind q < ind p`: the critical point `q` lies in the closure of `W^u(p)`, which meets unstable
+manifolds only of smaller index. -/
+theorem IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    (hpq : Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q) (hqp : q ≠ p) :
+    manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p := by
+  have hq := (hX.mem_unstableSet_inter_stableSet_self
+    ((eq_or_mfderiv_eq_zero_of_reflTransGen hpq).resolve_left hqp)).1
+  exact h.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hf hqp
+    ⟨q, h.unstableSet_subset_closure_unstableSet hf hpq hq, hq⟩
+
+/-! ### Breaking: the closure of `W^u(p)` meets only unstable manifolds below `p` -/
+
+/-- **The closure of `W^u(p)` meets only unstable manifolds below `p`.** Under the Morse–Smale
+condition, if a point of the closure of `W^u(p)` lies on `W^u(a)`, then a chain of trajectories
+runs from `p` to `a`. -/
+theorem IsMorseSmale.reflTransGen_of_mem_closure_unstableSet (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) {a y : M} (hy : y ∈ closure (hX.flow.unstableSet p))
+    (hya : y ∈ hX.flow.unstableSet a) :
+    Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p a := by
+  -- Break the limit at `a` and follow the incoming orbit back to the previous critical point `b`,
+  -- of larger index; then induct on the codimension `n - ind a`.
+  induction hn : Module.finrank ℝ E - manifoldMorseIndex 𝓘(ℝ, E) f a
+    using Nat.strong_induction_on generalizing a y with
+  | _ n ih =>
+    rcases eq_or_ne p a with rfl | hpa
+    · exact Relation.ReflTransGen.refl
+    obtain ⟨z, hz, hza⟩ := hX.exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet
+      hf (Flow.isInvariant_unstableSet _ p) (Flow.disjoint_unstableSet hpa) ⟨hy, hya⟩
+    obtain ⟨b, -, hzb⟩ := hX.exists_tendsto_atBot hf z
+    have hzb : z ∈ hX.flow.unstableSet b := Flow.mem_unstableSet.2 hzb
+    have hba : b ≠ a := fun hba ↦
+      hza (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hba ▸ hzb, hz.2⟩)
+    have hlt := h.manifoldMorseIndex_lt hf hba ⟨z, hzb, hz.2⟩
+    have hle := manifoldMorseIndex_le_finrank (I := 𝓘(ℝ, E)) (f := f) (x := b)
+    exact (ih _ (by omega) hz.1 hzb rfl).tail ⟨z, hzb, hz.2⟩
+
+/-- **The closure of `W^s(q)` meets only stable manifolds above `q`.** Under the Morse–Smale
+condition, if a point of the closure of `W^s(q)` lies on `W^s(b)`, then a chain of trajectories
+runs from `b` to `q`. -/
+theorem IsMorseSmale.reflTransGen_of_mem_closure_stableSet (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) {b y : M} (hy : y ∈ closure (hX.flow.stableSet q))
+    (hyb : y ∈ hX.flow.stableSet b) :
+    Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) b q := by
+  -- Break the limit at `b` and follow the outgoing orbit to the next critical point `a`, of
+  -- smaller index; then induct on the index of `b`.
+  induction hn : manifoldMorseIndex 𝓘(ℝ, E) f b
+    using Nat.strong_induction_on generalizing b y with
+  | _ n ih =>
+    rcases eq_or_ne q b with rfl | hqb
+    · exact Relation.ReflTransGen.refl
+    obtain ⟨z, hz, hzb⟩ := hX.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet
+      hf (Flow.isInvariant_stableSet _ q) (Flow.disjoint_stableSet hqb) ⟨hy, hyb⟩
+    obtain ⟨a, -, hza⟩ := hX.exists_tendsto_atTop hf z
+    have hza : z ∈ hX.flow.stableSet a := Flow.mem_stableSet.2 hza
+    have hba : b ≠ a := fun hba ↦
+      hzb (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hz.2, hba ▸ hza⟩)
+    have hlt := h.manifoldMorseIndex_lt hf hba ⟨z, hz.2, hza⟩
+    exact Relation.ReflTransGen.head ⟨z, hz.2, hza⟩ (ih _ (by omega) hz.1 hza rfl)
+
+/-! ### The closures -/
+
+/-- **The closure of an unstable manifold.** Under the Morse–Smale condition, the closure of
+`W^u(p)` is the union of the unstable manifolds `W^u(q)` of the points `q` reached from `p` by
+chains of trajectories. -/
+theorem IsMorseSmale.closure_unstableSet (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    (p : M) :
+    closure (hX.flow.unstableSet p) = ⋃ (q) (_ : Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q),
+        hX.flow.unstableSet q := by
+  refine Subset.antisymm (fun y hy ↦ ?_)
+    (iUnion₂_subset fun q hq ↦ h.unstableSet_subset_closure_unstableSet hf hq)
+  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atBot hf y
+  have hya : y ∈ hX.flow.unstableSet a := Flow.mem_unstableSet.2 ha
+  exact mem_iUnion₂.2 ⟨a, h.reflTransGen_of_mem_closure_unstableSet hf hy hya, hya⟩
+
+/-- **The closure of a stable manifold.** Under the Morse–Smale condition, the closure of `W^s(q)`
+is the union of the stable manifolds `W^s(p)` of the points `p` from which chains of trajectories
+run to `q`. -/
+theorem IsMorseSmale.closure_stableSet (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) (q : M) :
+    closure (hX.flow.stableSet q) = ⋃ (p) (_ : Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q),
+        hX.flow.stableSet p := by
+  refine Subset.antisymm (fun y hy ↦ ?_)
+    (iUnion₂_subset fun p hp ↦ h.stableSet_subset_closure_stableSet hf hp)
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop hf y
+  have hyb : y ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
+  exact mem_iUnion₂.2 ⟨b, h.reflTransGen_of_mem_closure_stableSet hf hy hyb, hyb⟩
+
+/-- **The critical points in the closure of `W^u(p)`** are the critical points below `p`: under the
+Morse–Smale condition, a critical point `q` lies in the closure of `W^u(p)` exactly when a chain of
+trajectories runs from `p` to `q`. -/
+theorem IsMorseSmale.mem_closure_unstableSet_iff (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) :
+    q ∈ closure (hX.flow.unstableSet p) ↔ Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q :=
+  ⟨fun hq' ↦ h.reflTransGen_of_mem_closure_unstableSet hf hq'
+      (hX.mem_unstableSet_inter_stableSet_self hq).1,
+    fun hpq ↦ h.unstableSet_subset_closure_unstableSet hf hpq
+      (hX.mem_unstableSet_inter_stableSet_self hq).1⟩
+
+/-- **The critical points in the closure of `W^s(q)`** are the critical points above `q`: under the
+Morse–Smale condition, a critical point `p` lies in the closure of `W^s(q)` exactly when a chain of
+trajectories runs from `p` to `q`. -/
+theorem IsMorseSmale.mem_closure_stableSet_iff (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) :
+    p ∈ closure (hX.flow.stableSet q) ↔ Relation.ReflTransGen
+      (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q :=
+  ⟨fun hp' ↦ h.reflTransGen_of_mem_closure_stableSet hf hp'
+      (hX.mem_unstableSet_inter_stableSet_self hp).2,
+    fun hpq ↦ h.stableSet_subset_closure_stableSet hf hpq
+      (hX.mem_unstableSet_inter_stableSet_self hp).2⟩
+
+/-- **The closure of `W^u(p)` adds only unstable manifolds of smaller index.** Under the
+Morse–Smale condition, the points of the closure of `W^u(p)` outside `W^u(p)` lie on the unstable
+manifolds of critical points `q` below `p` with `ind q < ind p`, which have smaller dimension
+than `W^u(p)`. -/
+theorem IsMorseSmale.closure_unstableSet_diff_subset (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) (p : M) :
+    closure (hX.flow.unstableSet p) \ hX.flow.unstableSet p ⊆
+      ⋃ (q) (_ : Relation.ReflTransGen
+          (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q)
+        (_ : manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p),
+        hX.flow.unstableSet q := by
+  rintro y ⟨hy, hyp⟩
+  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atBot hf y
+  have hya : y ∈ hX.flow.unstableSet a := Flow.mem_unstableSet.2 ha
+  have hap : a ≠ p := fun hap ↦ hyp (hap ▸ hya)
+  simp only [mem_iUnion]
+  exact ⟨a, h.reflTransGen_of_mem_closure_unstableSet hf hy hya,
+    h.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hf hap ⟨y, hy, hya⟩, hya⟩
+
+/-- **The closure of `W^s(q)` adds only stable manifolds of larger index.** Under the Morse–Smale
+condition, the points of the closure of `W^s(q)` outside `W^s(q)` lie on the stable manifolds of
+critical points `p` above `q` with `ind q < ind p`. -/
+theorem IsMorseSmale.closure_stableSet_diff_subset (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) (q : M) :
+    closure (hX.flow.stableSet q) \ hX.flow.stableSet q ⊆
+      ⋃ (p) (_ : Relation.ReflTransGen
+          (fun a b ↦ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) p q)
+        (_ : manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p),
+        hX.flow.stableSet p := by
+  rintro y ⟨hy, hyq⟩
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop hf y
+  have hyb : y ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
+  have hbq : b ≠ q := fun hbq ↦ hyq (hbq ▸ hyb)
+  simp only [mem_iUnion]
+  exact ⟨b, h.reflTransGen_of_mem_closure_stableSet hf hy hyb,
+    h.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stableSet hf hbq ⟨y, hy, hyb⟩, hyb⟩
+
+end IsAdaptedPseudoGradient
+
+end TauCeti
