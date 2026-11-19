@@ -252,8 +252,8 @@ theorem IsFramedTube.pontryaginThomCollapseMap_homotopic_comp_prodUnitsHomeomorp
 /-- **Independence of the Pontryagin–Thom collapse from the tube.** Let `τ₀` and `τ₁` be framed
 tubes around the same map `f : S → M`, with compact `S` and Hausdorff `M`, such that near the core
 `τ₁ (x, v) = τ₀ (x', B (0, x) v + o(‖v‖))` uniformly in `x`, for a homotopy `B` through linear
-automorphisms of `V` ending at the identity. Then the framings of the two tubes agree up to
-homotopy, and their Pontryagin–Thom collapses are homotopic. -/
+automorphisms of `V` ending at the identity (so the transition derivative `B (0, ·)` is homotopic
+to the identity). Then their Pontryagin–Thom collapses are homotopic. -/
 theorem IsFramedTube.pontryaginThomCollapseMap_homotopic [CompactSpace S] [T2Space M]
     {f : S → M} {τ₀ τ₁ : S × V → M} (h₁ : IsFramedTube f τ₁) (h₀ : IsFramedTube f τ₀)
     {B : unitInterval × S → (V →L[ℝ] V)ˣ} (hB : Continuous B)
