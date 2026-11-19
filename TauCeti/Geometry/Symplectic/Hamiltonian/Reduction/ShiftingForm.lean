@@ -49,14 +49,16 @@ translate of some `ξ ∈ 𝔤` and a tangent vector `v` of `Z`, and the action 
 
 The moment map identity `σ(ξ_M, w) = ⟨dμ(w), ξ⟩` kills the two cross terms when `v` and `w` are
 tangent to the level, and infinitesimal equivariance gives `σ(ξ_M, η_M) = μ(z) ⁅ξ, η⁆ = c ⁅ξ, η⁆`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.eval₂_mfderiv_smul_add_fundamentalVectorField`).
+(`TauCeti.SmoothTwoForm.IsMomentMap.eval₂_mfderiv_smul_add_fundamentalVectorField`).
 
 ## Main results
 
-All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`.
+The pointwise identity is in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`, and the shifting
+identities are in `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`.
 
-* `eval₂_mfderiv_smul_add_fundamentalVectorField`: the pointwise identity
-  `σ(d(g •)(ξ_M + v), d(g •)(η_M + w)) = μ(x) ⁅ξ, η⁆ + σ(v, w)` for `v`, `w` in `ker dμ_x`.
+* `IsMomentMap.eval₂_mfderiv_smul_add_fundamentalVectorField`: the pointwise identity
+  `σ(d(g •)(ξ_M + v), d(g •)(η_M + w)) = μ(x) ⁅ξ, η⁆ + σ(v, w)` for `v`, `w` in `ker dμ_x`,
+  wherever the moment cocycle vanishes at `x`.
 * `mpullback_smul_eq_prod_leftInvariantKirillovForm`: the shifting identity
   `a^* σ = pr_G^* σ_c + pr_Z^* (i^* σ)` on `G × Z`.
 * `mpullback_smul_prodMk_prod_neg_leftInvariantKirillovForm`: equivalently, the map
@@ -83,8 +85,6 @@ namespace TauCeti
 
 namespace SmoothTwoForm
 
-namespace IsEquivariantMomentMap
-
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -96,33 +96,42 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MulAction G M] [ContMDiffSMul I I' ∞ G M]
   {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
 
+namespace IsMomentMap
+
 /-- **The shifting identity at a point.** Let `g` act by a symplectomorphism and let `v`, `w` be
 tangent to the level of `μ` through `x`, that is in the kernel of `dμ_x`. Then
 `σ(d(g •)(ξ_M + v), d(g •)(η_M + w)) = μ(x) ⁅ξ, η⁆ + σ(v, w)`: the orbit directions pair through
-the Kirillov form of `μ(x)`, and they are `σ`-orthogonal to the level. -/
-theorem eval₂_mfderiv_smul_add_fundamentalVectorField (h : σ.IsEquivariantMomentMap μ) {g : G}
+the Kirillov form of `μ(x)`, and they are `σ`-orthogonal to the level. Only the vanishing of the
+moment cocycle at `x` is needed, not equivariance of `μ`. -/
+theorem eval₂_mfderiv_smul_add_fundamentalVectorField
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {g : G}
     (hg : SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
-    (x : M) (ξ η : GroupLieAlgebra I G) {v w : TangentSpace I' x}
-    (hv : h.toIsMomentMap.differential x v = 0) (hw : h.toIsMomentMap.differential x w = 0) :
+    {x : M} (hc : σ.momentCocycle (InfinitesimalAction.fundamental I G I' M) μ x = 0)
+    (ξ η : GroupLieAlgebra I G) {v w : TangentSpace I' x}
+    (hv : h.differential x v = 0) (hw : h.differential x w = 0) :
     σ.eval₂ (g • x)
         (mfderiv I' I' (fun y : M ↦ g • y) x (fundamentalVectorField I' ξ x + v))
         (mfderiv I' I' (fun y : M ↦ g • y) x (fundamentalVectorField I' η x + w)) =
       μ x ⁅ξ, η⁆ + σ.eval₂ x v w := by
   -- The cross terms are `⟨dμ_x w, ξ⟩` and `-⟨dμ_x v, η⟩`.
   have hcross (ζ : GroupLieAlgebra I G) {u : TangentSpace I' x}
-      (hu : h.toIsMomentMap.differential x u = 0) :
+      (hu : h.differential x u = 0) :
       σ.eval₂ x (fundamentalVectorField I' ζ x) u = 0 := by
-    rw [← InfinitesimalAction.fundamental_apply, ← h.toIsMomentMap.differential_apply_eq_eval₂,
+    rw [← InfinitesimalAction.fundamental_apply, ← h.differential_apply_eq_eval₂,
       hu, LinearMap.zero_apply]
   have horbit : σ.eval₂ x (fundamentalVectorField I' ξ x) (fundamentalVectorField I' η x) =
       μ x ⁅ξ, η⁆ := by
     simpa only [InfinitesimalAction.fundamental_apply] using
-      momentCocycle_eq_zero_iff.1 (h.momentCocycle_eq_zero x) ξ η
+      momentCocycle_eq_zero_iff.1 hc ξ η
   rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) g), hg,
     SmoothBundleForm.eval₂_add_left, SmoothBundleForm.eval₂_add_right,
     SmoothBundleForm.eval₂_add_right, horbit, hcross ξ hw,
     SmoothBundleForm.eval₂_swap σ x v, hcross η hv, neg_zero, add_zero, zero_add]
+
+end IsMomentMap
+
+namespace IsEquivariantMomentMap
 
 variable {EZ HZ : Type*} [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
   {IZ : ModelWithCorners ℝ EZ HZ} {Z : Type*} [TopologicalSpace Z] [ChartedSpace HZ Z]
@@ -163,7 +172,8 @@ theorem mpullback_smul_eq_prod_leftInvariantKirillovForm (h : σ.IsEquivariantMo
   obtain ⟨ξ, hξ⟩ := exists_mulInvariantVectorField_eq (I := I) (g := g) v.1
   obtain ⟨η, hη⟩ := exists_mulInvariantVectorField_eq (I := I) (g := g) w.1
   rw [SmoothForm.eval₂_mpullback, eval₂_prod, hda v hξ, hda w hη]
-  refine (h.eval₂_mfderiv_smul_add_fundamentalVectorField (hG g) (i z) ξ η
+  refine (h.toIsMomentMap.eval₂_mfderiv_smul_add_fundamentalVectorField (hG g)
+    (h.momentCocycle_eq_zero (i z)) ξ η
     (h.toIsMomentMap.differential_mfderiv_eq_zero hic z v.2)
     (h.toIsMomentMap.differential_mfderiv_eq_zero hic z w.2)).trans ?_
   rw [hic z, SmoothForm.eval₂_mpullback, Manifold.tangentSpaceProdEquiv_apply,
