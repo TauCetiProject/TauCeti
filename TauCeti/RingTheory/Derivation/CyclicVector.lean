@@ -170,12 +170,6 @@ theorem IsDifferentialModuleMap.exists_iterate_smul_sub_sum_notMem
   exact hv ((W.smul_mem_iff (mul_ne_zero (Nat.cast_ne_zero.2 k.factorial_ne_zero)
     (pow_ne_zero k ht))).1 hk)
 
-/-- The first `k + 1` iterates of `e` are the first `k` iterates followed by `Dᵏ e`. -/
-private theorem iterate_fin_succ_eq_snoc (D : V →+ V) (k : ℕ) (e : V) :
-    (fun i : Fin (k + 1) ↦ (⇑D)^[i] e) = Fin.snoc (fun i : Fin k ↦ (⇑D)^[i] e) ((⇑D)^[k] e) := by
-  funext i
-  refine Fin.lastCases ?_ (fun j ↦ ?_) i <;> simp
-
 /-- The inductive step of the cyclic-vector theorem: a vector with `k < dim V` independent
 iterates can be perturbed to one with `k + 1` independent iterates. -/
 private theorem IsDifferentialModuleMap.exists_linearIndependent_iterate_succ
@@ -185,7 +179,9 @@ private theorem IsDifferentialModuleMap.exists_linearIndependent_iterate_succ
     ∃ e' : V, LinearIndependent F fun i : Fin (k + 1) ↦ (⇑D)^[i] e' := by
   set W := Submodule.span F (Set.range fun i : Fin k ↦ (⇑D)^[i] e)
   by_cases hke : (⇑D)^[k] e ∉ W
-  · exact ⟨e, by rw [iterate_fin_succ_eq_snoc]; exact he.finSnoc hke⟩
+  · refine ⟨e, ?_⟩
+    rw [← Fin.snoc_init_self (fun i : Fin (k + 1) ↦ (⇑D)^[i] e)]
+    exact he.finSnoc hke
   push Not at hke
   obtain ⟨a, ha⟩ := (Submodule.mem_span_range_iff_exists_fun F).1 hke
   obtain ⟨f, hf⟩ : ∃ f, f ∉ W := by
@@ -213,7 +209,7 @@ private theorem IsDifferentialModuleMap.exists_linearIndependent_iterate_succ
   rw [heq] at hn
   obtain ⟨hz, hyz⟩ := linearIndependent_finSnoc.1 hn
   refine ⟨e + (n : F) • g, ?_⟩
-  rw [iterate_fin_succ_eq_snoc]
+  rw [← Fin.snoc_init_self (fun i : Fin (k + 1) ↦ (⇑D)^[i] (e + (n : F) • g))]
   refine hz.finSnoc fun hmem ↦ hyz ?_
   -- `Dᵏ` of the perturbed vector is a combination of its lower iterates plus `n • y`.
   have hDk : (⇑D)^[k] (e + (n : F) • g) =
@@ -221,7 +217,7 @@ private theorem IsDifferentialModuleMap.exists_linearIndependent_iterate_succ
     simp only [hiter, y, smul_add, Finset.sum_add_distrib, smul_sub, ← ha, Finset.smul_sum,
       smul_comm (n : F)]
     abel
-  rw [hDk] at hmem
+  rw [Fin.val_last, hDk] at hmem
   have hsum : ∑ i, a i • (⇑D)^[i] (e + (n : F) • g) ∈
       Submodule.span F (Set.range fun i : Fin k ↦ (⇑D)^[i] (e + (n : F) • g)) :=
     Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)

@@ -50,9 +50,8 @@ theorem eventually_cofinite_add_smul {x : ι → V} (hx : LinearIndependent K x)
   have hφx (i j : ι) : φ i (x j) = (1 : Matrix ι ι K) i j := by
     have h := LinearMap.congr_fun (hφ i) ⟨x j, Submodule.subset_span (Set.mem_range_self j)⟩
     rw [LinearMap.comp_apply, Submodule.subtype_apply] at h
-    rw [h, ← Module.Basis.span_apply hx j, Module.Basis.coord_apply, Module.Basis.repr_self,
-      Finsupp.single_apply, Matrix.one_apply]
-    exact if_congr eq_comm rfl rfl
+    rw [h, ← Module.Basis.span_apply hx j]
+    simp [Matrix.one_apply, Finsupp.single_apply, eq_comm]
   let B : Matrix ι ι K := Matrix.of fun i j ↦ φ i (y j)
   let P : K[X] := (1 + (X : K[X]) • B.map C).det
   have hP (c : K) : P.eval c = (1 + c • B).det := by
