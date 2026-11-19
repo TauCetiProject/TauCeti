@@ -22,8 +22,8 @@ A particle of mass `m > 0` with angular momentum `ℓ ≠ 0` in the isotropic os
 so the minimum value of `U_ℓ` is `ν |ℓ|`, attained at the circular radius `√(|ℓ| / (m ν))`.
 At every energy `E ≥ ν |ℓ|` the turning-point equation `U_ℓ(r) = E` is a quadratic equation in
 `r²` with the two positive roots `(E ∓ √(E² - ν² ℓ²)) / (m ν²)`. This file constructs the
-corresponding turning radii (`TauCeti.isotropicOscillatorPericenterRadius`,
-`TauCeti.isotropicOscillatorApocenterRadius`), shows that they are the only positive turning
+corresponding turning radii (`TauCeti.isotropicOscillatorPeriapsisRadius`,
+`TauCeti.isotropicOscillatorApoapsisRadius`), shows that they are the only positive turning
 points and that the allowed radii are exactly the closed interval between them, and evaluates the
 radial action on this whole energy domain:
 
@@ -48,9 +48,9 @@ variables; no action-angle chart on the phase space is constructed here.
 * `TauCeti.effectivePotential_isotropicOscillator_sub_min`,
   `TauCeti.effectivePotential_isotropicOscillator_min_le`: the minimum `ν |ℓ|` of the effective
   potential.
-* `TauCeti.isotropicOscillatorPericenterRadius_pos`,
-  `TauCeti.isotropicOscillatorPericenterRadius_le_apocenterRadius`,
-  `TauCeti.isotropicOscillatorPericenterRadius_lt_apocenterRadius`: the turning radii are
+* `TauCeti.isotropicOscillatorPeriapsisRadius_pos`,
+  `TauCeti.isotropicOscillatorPeriapsisRadius_le_apoapsisRadius`,
+  `TauCeti.isotropicOscillatorPeriapsisRadius_lt_apoapsisRadius`: the turning radii are
   positive for `ℓ ≠ 0`, ordered, and distinct above the circular energy.
 * `TauCeti.effectivePotential_isotropicOscillator_eq_iff`,
   `TauCeti.effectivePotential_isotropicOscillator_le_iff`: the positive turning points and the
@@ -90,25 +90,25 @@ namespace TauCeti
 
 /-! ### Turning radii -/
 
-/-- The pericenter radius of an isotropic oscillator orbit, the smaller positive root of
+/-- The periapsis radius of an isotropic oscillator orbit, the smaller positive root of
 `U_ℓ(r) = E`. Its physical domain is `m > 0`, `ν > 0`, `ℓ ≠ 0` and `ν |ℓ| ≤ E`. -/
-def isotropicOscillatorPericenterRadius (m ν ℓ E : ℝ) : ℝ :=
+def isotropicOscillatorPeriapsisRadius (m ν ℓ E : ℝ) : ℝ :=
   √((E - √(E ^ 2 - ν ^ 2 * ℓ ^ 2)) / (m * ν ^ 2))
 
-/-- The apocenter radius of an isotropic oscillator orbit, the larger positive root of
-`U_ℓ(r) = E`, on the same energy domain as `isotropicOscillatorPericenterRadius`. At the circular
+/-- The apoapsis radius of an isotropic oscillator orbit, the larger positive root of
+`U_ℓ(r) = E`, on the same energy domain as `isotropicOscillatorPeriapsisRadius`. At the circular
 energy the two radii agree. -/
-def isotropicOscillatorApocenterRadius (m ν ℓ E : ℝ) : ℝ :=
+def isotropicOscillatorApoapsisRadius (m ν ℓ E : ℝ) : ℝ :=
   √((E + √(E ^ 2 - ν ^ 2 * ℓ ^ 2)) / (m * ν ^ 2))
 
-/-- The explicit pericenter formula. -/
-theorem isotropicOscillatorPericenterRadius_def (m ν ℓ E : ℝ) :
-    isotropicOscillatorPericenterRadius m ν ℓ E =
+/-- The explicit periapsis formula. -/
+theorem isotropicOscillatorPeriapsisRadius_def (m ν ℓ E : ℝ) :
+    isotropicOscillatorPeriapsisRadius m ν ℓ E =
       √((E - √(E ^ 2 - ν ^ 2 * ℓ ^ 2)) / (m * ν ^ 2)) := (rfl)
 
-/-- The explicit apocenter formula. -/
-theorem isotropicOscillatorApocenterRadius_def (m ν ℓ E : ℝ) :
-    isotropicOscillatorApocenterRadius m ν ℓ E =
+/-- The explicit apoapsis formula. -/
+theorem isotropicOscillatorApoapsisRadius_def (m ν ℓ E : ℝ) :
+    isotropicOscillatorApoapsisRadius m ν ℓ E =
       √((E + √(E ^ 2 - ν ^ 2 * ℓ ^ 2)) / (m * ν ^ 2)) := (rfl)
 
 variable {m ν ℓ E r : ℝ}
@@ -129,39 +129,60 @@ theorem effectivePotential_isotropicOscillator_min_le (hm : 0 < m) (hr : r ≠ 0
   have : 0 ≤ (m * ν * r ^ 2 - |ℓ|) ^ 2 / (2 * m * r ^ 2) := by positivity
   linarith
 
+/-- The discriminant in the turning-radius formulas, written with the circular energy `ν |ℓ|`. -/
+private theorem isotropicOscillator_discriminant_eq (ν ℓ E : ℝ) :
+    E ^ 2 - ν ^ 2 * ℓ ^ 2 = E ^ 2 - (ν * |ℓ|) ^ 2 := by
+  rw [mul_pow, sq_abs]
+
 /-- The square root in the turning-radius formulas is real on the energy domain and at most `E`,
 so both roots in `r²` are nonnegative. -/
 private theorem isotropicOscillator_sqrt_discriminant_bounds (hν : 0 < ν) (hmin : ν * |ℓ| ≤ E) :
     0 ≤ E ^ 2 - ν ^ 2 * ℓ ^ 2 ∧ √(E ^ 2 - ν ^ 2 * ℓ ^ 2) ≤ E := by
   have hνℓ : 0 ≤ ν * |ℓ| := mul_nonneg hν.le (abs_nonneg ℓ)
-  have hsq : ν ^ 2 * ℓ ^ 2 = (ν * |ℓ|) ^ 2 := by rw [mul_pow, sq_abs]
-  refine ⟨by nlinarith, (sqrt_le_left (hνℓ.trans hmin)).2 (by nlinarith)⟩
+  rw [isotropicOscillator_discriminant_eq]
+  exact ⟨by nlinarith, (sqrt_le_left (hνℓ.trans hmin)).2 (by nlinarith)⟩
 
-/-- For nonzero angular momentum the pericenter radius is positive: the orbit avoids collision. -/
-theorem isotropicOscillatorPericenterRadius_pos (hm : 0 < m) (hν : 0 < ν) (hℓ : ℓ ≠ 0)
-    (hmin : ν * |ℓ| ≤ E) : 0 < isotropicOscillatorPericenterRadius m ν ℓ E := by
+/-- For `ℓ ≠ 0` the square root in the turning-radius formulas is strictly less than `E`. -/
+private theorem isotropicOscillator_sqrt_discriminant_lt (hν : 0 < ν) (hℓ : ℓ ≠ 0)
+    (hmin : ν * |ℓ| ≤ E) : √(E ^ 2 - ν ^ 2 * ℓ ^ 2) < E := by
   have hνℓ : 0 < ν * |ℓ| := mul_pos hν (abs_pos.2 hℓ)
-  have hsq : ν ^ 2 * ℓ ^ 2 = (ν * |ℓ|) ^ 2 := by rw [mul_pow, sq_abs]
-  have hs : √(E ^ 2 - ν ^ 2 * ℓ ^ 2) < E := (sqrt_lt' (hνℓ.trans_le hmin)).2 (by nlinarith)
-  rw [isotropicOscillatorPericenterRadius_def]
+  rw [isotropicOscillator_discriminant_eq]
+  exact (sqrt_lt' (hνℓ.trans_le hmin)).2 (by nlinarith)
+
+/-- Above the circular energy the square root in the turning-radius formulas is positive. -/
+private theorem isotropicOscillator_sqrt_discriminant_pos (hν : 0 ≤ ν) (hmin : ν * |ℓ| < E) :
+    0 < √(E ^ 2 - ν ^ 2 * ℓ ^ 2) := by
+  have hνℓ : 0 ≤ ν * |ℓ| := mul_nonneg hν (abs_nonneg ℓ)
+  rw [isotropicOscillator_discriminant_eq]
+  exact sqrt_pos.2 (by nlinarith)
+
+/-- At the circular energy `ν |ℓ|` the discriminant in the turning-radius formulas vanishes. -/
+private theorem isotropicOscillator_discriminant_circular (ν ℓ : ℝ) :
+    (ν * |ℓ|) ^ 2 - ν ^ 2 * ℓ ^ 2 = 0 := by
+  rw [isotropicOscillator_discriminant_eq, sub_self]
+
+/-- For nonzero angular momentum the periapsis radius is positive: the orbit avoids collision. -/
+theorem isotropicOscillatorPeriapsisRadius_pos (hm : 0 < m) (hν : 0 < ν) (hℓ : ℓ ≠ 0)
+    (hmin : ν * |ℓ| ≤ E) : 0 < isotropicOscillatorPeriapsisRadius m ν ℓ E := by
+  have hs := isotropicOscillator_sqrt_discriminant_lt hν hℓ hmin
+  rw [isotropicOscillatorPeriapsisRadius_def]
   exact sqrt_pos.2 (div_pos (sub_pos.2 hs) (by positivity))
 
-/-- The pericenter radius is at most the apocenter radius. -/
-theorem isotropicOscillatorPericenterRadius_le_apocenterRadius (hm : 0 ≤ m) :
-    isotropicOscillatorPericenterRadius m ν ℓ E ≤ isotropicOscillatorApocenterRadius m ν ℓ E := by
-  rw [isotropicOscillatorPericenterRadius_def, isotropicOscillatorApocenterRadius_def]
+/-- The periapsis radius is at most the apoapsis radius. -/
+theorem isotropicOscillatorPeriapsisRadius_le_apoapsisRadius (hm : 0 ≤ m) :
+    isotropicOscillatorPeriapsisRadius m ν ℓ E ≤ isotropicOscillatorApoapsisRadius m ν ℓ E := by
+  rw [isotropicOscillatorPeriapsisRadius_def, isotropicOscillatorApoapsisRadius_def]
   exact sqrt_le_sqrt (div_le_div_of_nonneg_right
     (by linarith [sqrt_nonneg (E ^ 2 - ν ^ 2 * ℓ ^ 2)]) (by positivity))
 
 /-- Above the circular energy the two turning radii are distinct. -/
-theorem isotropicOscillatorPericenterRadius_lt_apocenterRadius (hm : 0 < m) (hν : 0 < ν)
+theorem isotropicOscillatorPeriapsisRadius_lt_apoapsisRadius (hm : 0 < m) (hν : 0 < ν)
     (hmin : ν * |ℓ| < E) :
-    isotropicOscillatorPericenterRadius m ν ℓ E < isotropicOscillatorApocenterRadius m ν ℓ E := by
+    isotropicOscillatorPeriapsisRadius m ν ℓ E < isotropicOscillatorApoapsisRadius m ν ℓ E := by
   have hνℓ : 0 ≤ ν * |ℓ| := mul_nonneg hν.le (abs_nonneg ℓ)
-  have hsq : ν ^ 2 * ℓ ^ 2 = (ν * |ℓ|) ^ 2 := by rw [mul_pow, sq_abs]
-  have hd : 0 < √(E ^ 2 - ν ^ 2 * ℓ ^ 2) := sqrt_pos.2 (by nlinarith)
+  have hd := isotropicOscillator_sqrt_discriminant_pos hν.le hmin
   have hden : 0 < m * ν ^ 2 := by positivity
-  rw [isotropicOscillatorPericenterRadius_def, isotropicOscillatorApocenterRadius_def,
+  rw [isotropicOscillatorPeriapsisRadius_def, isotropicOscillatorApoapsisRadius_def,
     sqrt_lt_sqrt_iff_of_pos (div_pos (by linarith) hden), div_lt_div_iff_of_pos_right hden]
   linarith
 
@@ -169,14 +190,14 @@ theorem isotropicOscillatorPericenterRadius_lt_apocenterRadius (hm : 0 < m) (hν
 `(m ν)² r⁴ - 2 m E r² + ℓ² = 0`. -/
 private theorem isotropicOscillator_turningRadii_vieta (hm : 0 < m) (hν : 0 < ν)
     (hmin : ν * |ℓ| ≤ E) :
-    (isotropicOscillatorPericenterRadius m ν ℓ E ^ 2 +
-        isotropicOscillatorApocenterRadius m ν ℓ E ^ 2) * (m * ν ^ 2) = 2 * E ∧
-      isotropicOscillatorPericenterRadius m ν ℓ E ^ 2 *
-          isotropicOscillatorApocenterRadius m ν ℓ E ^ 2 * (m * ν) ^ 2 = ℓ ^ 2 := by
+    (isotropicOscillatorPeriapsisRadius m ν ℓ E ^ 2 +
+        isotropicOscillatorApoapsisRadius m ν ℓ E ^ 2) * (m * ν ^ 2) = 2 * E ∧
+      isotropicOscillatorPeriapsisRadius m ν ℓ E ^ 2 *
+          isotropicOscillatorApoapsisRadius m ν ℓ E ^ 2 * (m * ν) ^ 2 = ℓ ^ 2 := by
   obtain ⟨hd, hs⟩ := isotropicOscillator_sqrt_discriminant_bounds hν hmin
   have hden : 0 < m * ν ^ 2 := by positivity
   have hs2 := sq_sqrt hd
-  rw [isotropicOscillatorPericenterRadius_def, isotropicOscillatorApocenterRadius_def,
+  rw [isotropicOscillatorPeriapsisRadius_def, isotropicOscillatorApoapsisRadius_def,
     sq_sqrt (div_nonneg (by linarith) hden.le),
     sq_sqrt (div_nonneg (by linarith [sqrt_nonneg (E ^ 2 - ν ^ 2 * ℓ ^ 2)]) hden.le)]
   generalize √(E ^ 2 - ν ^ 2 * ℓ ^ 2) = s at hs2 ⊢
@@ -191,8 +212,8 @@ turning radii. -/
 private theorem isotropicOscillator_radialPolynomial_eq (hm : 0 < m) (hν : 0 < ν)
     (hmin : ν * |ℓ| ≤ E) (r : ℝ) :
     (m * ν) ^ 2 * r ^ 4 - 2 * m * E * r ^ 2 + ℓ ^ 2 =
-      (m * ν) ^ 2 * ((r ^ 2 - isotropicOscillatorPericenterRadius m ν ℓ E ^ 2) *
-        (r ^ 2 - isotropicOscillatorApocenterRadius m ν ℓ E ^ 2)) := by
+      (m * ν) ^ 2 * ((r ^ 2 - isotropicOscillatorPeriapsisRadius m ν ℓ E ^ 2) *
+        (r ^ 2 - isotropicOscillatorApoapsisRadius m ν ℓ E ^ 2)) := by
   obtain ⟨hsum, hprod⟩ := isotropicOscillator_turningRadii_vieta hm hν hmin
   linear_combination m * r ^ 2 * hsum - hprod
 
@@ -204,58 +225,81 @@ private theorem effectivePotential_isotropicOscillator_sub (hm : m ≠ 0) (hr : 
   field_simp
   ring
 
-/-- The only positive turning points of the isotropic oscillator are its pericenter and
-apocenter. For `ℓ = 0` the pericenter radius is the collision radius `0`, so the apocenter is
+/-- The effective potential minus the energy is a positive multiple of the quadratic in `r²`
+factored by the squares of the turning radii. -/
+private theorem effectivePotential_isotropicOscillator_sub_eq_mul (hm : 0 < m) (hν : 0 < ν)
+    (hmin : ν * |ℓ| ≤ E) (hr : r ≠ 0) :
+    effectivePotential m ℓ (fun r ↦ m * ν ^ 2 * r ^ 2 / 2) r - E =
+      (m * ν) ^ 2 / (2 * m * r ^ 2) *
+        ((r ^ 2 - isotropicOscillatorPeriapsisRadius m ν ℓ E ^ 2) *
+          (r ^ 2 - isotropicOscillatorApoapsisRadius m ν ℓ E ^ 2)) := by
+  rw [effectivePotential_isotropicOscillator_sub hm.ne' hr,
+    isotropicOscillator_radialPolynomial_eq hm hν hmin, mul_div_right_comm]
+
+/-- The only positive turning points of the isotropic oscillator are its periapsis and
+apoapsis. For `ℓ = 0` the periapsis radius is the collision radius `0`, so the apoapsis is
 then the only positive turning point. -/
 theorem effectivePotential_isotropicOscillator_eq_iff (hm : 0 < m) (hν : 0 < ν)
     (hmin : ν * |ℓ| ≤ E) (hr : 0 < r) :
     effectivePotential m ℓ (fun r ↦ m * ν ^ 2 * r ^ 2 / 2) r = E ↔
-      r = isotropicOscillatorPericenterRadius m ν ℓ E ∨
-        r = isotropicOscillatorApocenterRadius m ν ℓ E := by
-  have h₁ : 0 ≤ isotropicOscillatorPericenterRadius m ν ℓ E := sqrt_nonneg _
-  have hle := isotropicOscillatorPericenterRadius_le_apocenterRadius (ν := ν) (ℓ := ℓ) (E := E)
-    hm.le
-  rw [← sub_eq_zero, effectivePotential_isotropicOscillator_sub hm.ne' hr.ne',
-    div_eq_zero_iff, or_iff_left (by positivity),
-    isotropicOscillator_radialPolynomial_eq hm hν hmin, mul_eq_zero,
-    or_iff_right (by positivity), mul_eq_zero, sub_eq_zero, sub_eq_zero,
-    pow_left_inj₀ hr.le h₁ two_ne_zero, pow_left_inj₀ hr.le (h₁.trans hle) two_ne_zero]
+      r = isotropicOscillatorPeriapsisRadius m ν ℓ E ∨
+        r = isotropicOscillatorApoapsisRadius m ν ℓ E := by
+  have h₁ : 0 ≤ isotropicOscillatorPeriapsisRadius m ν ℓ E := sqrt_nonneg _
+  have h₂ : 0 ≤ isotropicOscillatorApoapsisRadius m ν ℓ E := sqrt_nonneg _
+  have hc : 0 < (m * ν) ^ 2 / (2 * m * r ^ 2) := by positivity
+  -- Cancelling the positive factor, the turning-point equation says that `r²` is a root of the
+  -- factored quadratic ...
+  have key : effectivePotential m ℓ (fun r ↦ m * ν ^ 2 * r ^ 2 / 2) r = E ↔
+      (r ^ 2 - isotropicOscillatorPeriapsisRadius m ν ℓ E ^ 2) *
+        (r ^ 2 - isotropicOscillatorApoapsisRadius m ν ℓ E ^ 2) = 0 := by
+    rw [← sub_eq_zero, effectivePotential_isotropicOscillator_sub_eq_mul hm hν hmin hr.ne',
+      mul_eq_zero_iff_left hc.ne']
+  -- ... and taking nonnegative square roots identifies `r` with one of the turning radii.
+  rw [key, mul_eq_zero, sub_eq_zero, sub_eq_zero, pow_left_inj₀ hr.le h₁ two_ne_zero,
+    pow_left_inj₀ hr.le h₂ two_ne_zero]
 
 /-- At an energy `E ≥ ν |ℓ|` the allowed positive radii of the isotropic oscillator form exactly
 the closed interval between the turning radii. -/
 theorem effectivePotential_isotropicOscillator_le_iff (hm : 0 < m) (hν : 0 < ν)
     (hmin : ν * |ℓ| ≤ E) (hr : 0 < r) :
     effectivePotential m ℓ (fun r ↦ m * ν ^ 2 * r ^ 2 / 2) r ≤ E ↔
-      r ∈ Icc (isotropicOscillatorPericenterRadius m ν ℓ E)
-        (isotropicOscillatorApocenterRadius m ν ℓ E) := by
-  have h₁ : 0 ≤ isotropicOscillatorPericenterRadius m ν ℓ E := sqrt_nonneg _
-  have hle := isotropicOscillatorPericenterRadius_le_apocenterRadius (ν := ν) (ℓ := ℓ) (E := E)
+      r ∈ Icc (isotropicOscillatorPeriapsisRadius m ν ℓ E)
+        (isotropicOscillatorApoapsisRadius m ν ℓ E) := by
+  have h₁ : 0 ≤ isotropicOscillatorPeriapsisRadius m ν ℓ E := sqrt_nonneg _
+  have h₂ : 0 ≤ isotropicOscillatorApoapsisRadius m ν ℓ E := sqrt_nonneg _
+  have hle := isotropicOscillatorPeriapsisRadius_le_apoapsisRadius (ν := ν) (ℓ := ℓ) (E := E)
     hm.le
-  have hc : 0 < (m * ν) ^ 2 := by positivity
-  rw [← sub_nonpos, effectivePotential_isotropicOscillator_sub hm.ne' hr.ne',
-    div_le_iff₀ (by positivity), zero_mul, isotropicOscillator_radialPolynomial_eq hm hν hmin,
-    ← neg_nonneg, ← mul_neg, mul_nonneg_iff_of_pos_left hc, neg_nonneg,
-    sub_mul_sub_nonpos_iff _ (pow_le_pow_left₀ h₁ hle 2), mem_Icc,
-    pow_le_pow_iff_left₀ h₁ hr.le two_ne_zero,
-    pow_le_pow_iff_left₀ hr.le (h₁.trans hle) two_ne_zero]
+  have hc : 0 < (m * ν) ^ 2 / (2 * m * r ^ 2) := by positivity
+  -- Cancelling the positive factor, the energy condition says that the factored quadratic is
+  -- nonpositive at `r²`, that is, `r²` lies between its roots ...
+  have key : effectivePotential m ℓ (fun r ↦ m * ν ^ 2 * r ^ 2 / 2) r ≤ E ↔
+      (r ^ 2 - isotropicOscillatorPeriapsisRadius m ν ℓ E ^ 2) *
+        (r ^ 2 - isotropicOscillatorApoapsisRadius m ν ℓ E ^ 2) ≤ 0 := by
+    rw [← sub_nonpos, effectivePotential_isotropicOscillator_sub_eq_mul hm hν hmin hr.ne']
+    exact ⟨fun h ↦ nonpos_of_mul_nonpos_right h hc, mul_nonpos_of_nonneg_of_nonpos hc.le⟩
+  -- ... and taking nonnegative square roots puts `r` between the turning radii.
+  rw [key, sub_mul_sub_nonpos_iff _ (pow_le_pow_left₀ h₁ hle 2), mem_Icc,
+    pow_le_pow_iff_left₀ h₁ hr.le two_ne_zero, pow_le_pow_iff_left₀ hr.le h₂ two_ne_zero]
 
-/-- At the circular energy `ν |ℓ|` the pericenter is the circular radius `√(|ℓ| / (m ν))`. -/
+/-- At the circular energy `ν |ℓ|` the periapsis is the circular radius `√(|ℓ| / (m ν))`. -/
 @[simp]
-theorem isotropicOscillatorPericenterRadius_circular (hm : m ≠ 0) (hν : ν ≠ 0) :
-    isotropicOscillatorPericenterRadius m ν ℓ (ν * |ℓ|) = √(|ℓ| / (m * ν)) := by
-  have hd : (ν * |ℓ|) ^ 2 - ν ^ 2 * ℓ ^ 2 = 0 := by rw [mul_pow, sq_abs, sub_self]
-  rw [isotropicOscillatorPericenterRadius_def, hd, sqrt_zero, sub_zero]
-  congr 1
-  field_simp
+theorem isotropicOscillatorPeriapsisRadius_circular :
+    isotropicOscillatorPeriapsisRadius m ν ℓ (ν * |ℓ|) = √(|ℓ| / (m * ν)) := by
+  rw [isotropicOscillatorPeriapsisRadius_def, isotropicOscillator_discriminant_circular, sqrt_zero,
+    sub_zero]
+  rcases eq_or_ne ν 0 with rfl | hν
+  · simp
+  · rw [mul_comm ν, sq, ← mul_assoc, mul_div_mul_right _ _ hν]
 
-/-- At the circular energy the apocenter is the circular radius too. -/
+/-- At the circular energy the apoapsis is the circular radius too. -/
 @[simp]
-theorem isotropicOscillatorApocenterRadius_circular (hm : m ≠ 0) (hν : ν ≠ 0) :
-    isotropicOscillatorApocenterRadius m ν ℓ (ν * |ℓ|) = √(|ℓ| / (m * ν)) := by
-  have hd : (ν * |ℓ|) ^ 2 - ν ^ 2 * ℓ ^ 2 = 0 := by rw [mul_pow, sq_abs, sub_self]
-  rw [isotropicOscillatorApocenterRadius_def, hd, sqrt_zero, add_zero]
-  congr 1
-  field_simp
+theorem isotropicOscillatorApoapsisRadius_circular :
+    isotropicOscillatorApoapsisRadius m ν ℓ (ν * |ℓ|) = √(|ℓ| / (m * ν)) := by
+  rw [isotropicOscillatorApoapsisRadius_def, isotropicOscillator_discriminant_circular, sqrt_zero,
+    add_zero]
+  rcases eq_or_ne ν 0 with rfl | hν
+  · simp
+  · rw [mul_comm ν, sq, ← mul_assoc, mul_div_mul_right _ _ hν]
 
 /-- **The radial action of the isotropic oscillator on its whole energy domain.** For `m > 0`,
 `ν > 0`, `ℓ ≠ 0` and `E ≥ ν |ℓ|`, the radial action between the constructed turning radii is
@@ -263,27 +307,27 @@ theorem isotropicOscillatorApocenterRadius_circular (hm : m ≠ 0) (hν : ν ≠
 theorem isotropicOscillator_radialAction_turningRadii (hm : 0 < m) (hν : 0 < ν) (hℓ : ℓ ≠ 0)
     (hmin : ν * |ℓ| ≤ E) :
     radialAction m (fun r ↦ m * ν ^ 2 * r ^ 2 / 2) ℓ E
-        (isotropicOscillatorPericenterRadius m ν ℓ E)
-        (isotropicOscillatorApocenterRadius m ν ℓ E) =
+        (isotropicOscillatorPeriapsisRadius m ν ℓ E)
+        (isotropicOscillatorApoapsisRadius m ν ℓ E) =
       (E / ν - |ℓ|) / 2 := by
   rcases hmin.eq_or_lt with rfl | hmin
-  · rw [isotropicOscillatorPericenterRadius_circular hm.ne' hν.ne',
-      isotropicOscillatorApocenterRadius_circular hm.ne' hν.ne', radialAction_def,
+  · rw [isotropicOscillatorPeriapsisRadius_circular, isotropicOscillatorApoapsisRadius_circular,
+      radialAction_def,
       intervalIntegral.integral_same, mul_zero]
     field_simp
     ring
-  have h₁ := isotropicOscillatorPericenterRadius_pos hm hν hℓ hmin.le
-  have h₂ := h₁.trans (isotropicOscillatorPericenterRadius_lt_apocenterRadius hm hν hmin)
+  have h₁ := isotropicOscillatorPeriapsisRadius_pos hm hν hℓ hmin.le
+  have h₂ := h₁.trans (isotropicOscillatorPeriapsisRadius_lt_apoapsisRadius hm hν hmin)
   have hturn (r : ℝ) (hr : 0 < r)
-      (h : r = isotropicOscillatorPericenterRadius m ν ℓ E ∨
-        r = isotropicOscillatorApocenterRadius m ν ℓ E) :
+      (h : r = isotropicOscillatorPeriapsisRadius m ν ℓ E ∨
+        r = isotropicOscillatorApoapsisRadius m ν ℓ E) :
       2 * m * (E - m * ν ^ 2 * r ^ 2 / 2) = ℓ ^ 2 / r ^ 2 := by
     have := (effectivePotential_isotropicOscillator_eq_iff hm hν hmin.le hr).2 h
     rw [effectivePotential_apply] at this
     field_simp at this ⊢
     linarith
   exact isotropicOscillator_radialAction hm hν h₁
-    (isotropicOscillatorPericenterRadius_lt_apocenterRadius hm hν hmin)
+    (isotropicOscillatorPeriapsisRadius_lt_apoapsisRadius hm hν hmin)
     (hturn _ h₁ (Or.inl rfl)) (hturn _ h₂ (Or.inr rfl))
 
 /-! ### The energy in action variables and its frequencies -/
@@ -317,8 +361,8 @@ theorem isotropicOscillatorActionHamiltonian_radialAction_turningRadii (hm : 0 <
     (hℓ : ℓ ≠ 0) (hmin : ν * |ℓ| ≤ E) :
     isotropicOscillatorActionHamiltonian ν
       (radialAction m (fun r ↦ m * ν ^ 2 * r ^ 2 / 2) ℓ E
-        (isotropicOscillatorPericenterRadius m ν ℓ E)
-        (isotropicOscillatorApocenterRadius m ν ℓ E), ℓ) = E := by
+        (isotropicOscillatorPeriapsisRadius m ν ℓ E)
+        (isotropicOscillatorApoapsisRadius m ν ℓ E), ℓ) = E := by
   rw [isotropicOscillatorActionHamiltonian_def,
     isotropicOscillator_radialAction_turningRadii hm hν hℓ hmin]
   field_simp
@@ -355,7 +399,8 @@ theorem deriv_isotropicOscillatorActionHamiltonian_snd (ν J ℓ : ℝ) :
     deriv (fun l ↦ isotropicOscillatorActionHamiltonian ν (J, l)) ℓ =
       (SignType.sign ℓ : ℝ) * ν := by
   simp only [isotropicOscillatorActionHamiltonian_def, deriv_const_mul_field', deriv_const_add',
-    deriv_abs, mul_comm]
+    deriv_abs]
+  ring
 
 /-- **The signed isotropic oscillator resonance**: `2 Ω_θ = sign(ℓ) Ω_r`. -/
 theorem two_mul_deriv_isotropicOscillatorActionHamiltonian_snd_eq_sign_mul (ν J ℓ : ℝ) :
