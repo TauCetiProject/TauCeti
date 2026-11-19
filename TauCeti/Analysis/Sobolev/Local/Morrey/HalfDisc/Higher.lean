@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
 import TauCeti.Analysis.Sobolev.Local.Reflection
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.Local.Wkp.HalfDisc
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Higher-order Morrey embedding on half-discs
@@ -175,23 +176,6 @@ theorem MemWkpLoc.exists_continuousOn_ae_eq_of_two_lt_mul_inter_setOf_im_nonneg 
 
 /-! ### Local bounds -/
 
-/-- A function continuous at the points of `t ⊆ closure s` that is Hölder on `s` is Hölder on `t`
-with the same constant and exponent. -/
-private theorem holderOnWith_of_subset_closure {X Y : Type*} [PseudoEMetricSpace X]
-    [PseudoEMetricSpace Y] {C r : ℝ≥0} {f : X → Y} {s t : Set X} (h : HolderOnWith C r f s)
-    (hts : t ⊆ closure s) (hf : ∀ x ∈ t, ContinuousAt f x) : HolderOnWith C r f t := by
-  intro a ha b hb
-  have hab : (a, b) ∈ closure (s ×ˢ s) := by
-    rw [closure_prod_eq]
-    exact ⟨hts ha, hts hb⟩
-  have h1 : ContinuousAt (fun q : X × X => edist (f q.1) (f q.2)) (a, b) :=
-    ((hf a ha).comp continuousAt_fst).edist ((hf b hb).comp continuousAt_snd)
-  have h2 : Continuous fun q : X × X => (C : ℝ≥0∞) * edist q.1 q.2 ^ (r : ℝ) :=
-    (ENNReal.continuous_const_mul ENNReal.coe_ne_top).comp
-      (ENNReal.continuous_rpow_const.comp continuous_edist)
-  exact ContinuousWithinAt.closure_le hab h1.continuousWithinAt h2.continuousWithinAt
-    fun q hq => h q.1 hq.1 q.2 hq.2
-
 variable {q : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
 
 /-- **Local `C^{j,1-2/q}` bounds on a half-disc, up to the real axis.** For `2 < q < ∞`, a real
@@ -249,7 +233,7 @@ theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball_inter_setOf
     fun i hi => ⟨fun z hz => ?_, ?_⟩⟩
   · exact ContinuousWithinAt.closure_le (hcl hz) (hcont hi z hz).norm.continuousWithinAt
       continuousWithinAt_const fun y hy => heq i hy ▸ (hb i hi).1 y hy
-  · refine holderOnWith_of_subset_closure (fun a ha b hb' => ?_) hcl (hcont hi)
+  · refine HolderOnWith.of_subset_closure (fun a ha b hb' => ?_) hcl (hcont hi)
     rw [heq i ha, heq i hb']
     exact (hb i hi).2 a ha b hb'
 
