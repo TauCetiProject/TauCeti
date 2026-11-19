@@ -261,16 +261,21 @@ theorem H1_le_strip : H1 V ≤ StripSobolev.H1 (⊤ : Submodule ℝ V) ⊤ := by
   rw [jetₗ_eq_strip]
   exact StripSobolev.jetₗ_mem_H1 _
 
+/-- The value of an element of `H1` is its value as an element of `H1` of the strip with no
+boundary conditions. -/
+theorem valueL_eq_strip (x : H1 V) :
+    valueL x = StripSobolev.valueL ⊤ ⊤ (Submodule.inclusion H1_le_strip x) := by
+  refine Lp.ext ((coeFn_valueL x).trans ?_)
+  filter_upwards [StripSobolev.coeFn_valueL (Submodule.inclusion H1_le_strip x)] with z hz
+  rw [hz, Submodule.coe_inclusion]
+
 /-- **An element of `H1` is determined by its value.** The value map `(ξ, ξ_s, ξ_t) ↦ ξ` is
 injective on `H1`, as it is on `H1` of the strip (`TauCeti.StripSobolev.valueL_injective`). Thus
 `H1` is a space of sections of the cylinder, the Sobolev space `W^{1,2}(ℝ × S¹, V)`. -/
 theorem valueL_injective [CompleteSpace V] : Function.Injective (valueL (V := V)) := by
-  have hval : ∀ x : H1 V, StripSobolev.valueL ⊤ ⊤ ⟨x, H1_le_strip x.2⟩ = valueL x := fun x ↦
-    Lp.ext ((StripSobolev.coeFn_valueL _).trans (coeFn_valueL x).symm)
   intro x y h
-  rw [← hval, ← hval] at h
-  have h' := congrArg Subtype.val (StripSobolev.valueL_injective h)
-  exact Subtype.ext h'
+  rw [valueL_eq_strip, valueL_eq_strip] at h
+  exact Submodule.inclusion_injective _ (StripSobolev.valueL_injective h)
 
 /-! ### The cutoff -/
 
