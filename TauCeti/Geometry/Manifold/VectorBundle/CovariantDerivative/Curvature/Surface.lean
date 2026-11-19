@@ -38,7 +38,7 @@ for the curvature tensor (`CovariantDerivative.curvatureTensor_symm_trivializati
 
 * `CovariantDerivative.alongCurve_alongCurve_sub_alongCurve_alongCurve`: the commutator of the two
   covariant derivatives along a `C²` field on a parametrized surface is the curvature tensor.
-* `CovariantDerivative.differentiableAt_sectionCoord_alongCurve`: the covariant derivatives of a
+* `CovariantDerivative.differentiableAt_sectionCoord_alongCurve_snd`: the covariant derivatives of a
   `C²` field along the curves of one parameter are differentiable along the other parameter.
 
 ## References
@@ -201,7 +201,7 @@ private theorem alongCurve_alongCurve_eq_symmL
 vector field `W` along a parametrized surface `f`, the covariant derivatives `D_r W` along the
 second-parameter curves form a field along the first-parameter curve `q ↦ f q v` whose reading in
 the chart at `f u v` is differentiable at `u`. -/
-theorem differentiableAt_sectionCoord_alongCurve
+theorem differentiableAt_sectionCoord_alongCurve_snd
     (hW : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
       (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
     DifferentiableAt ℝ (sectionCoord ℝ (F := E) (fun q ↦ f q v)

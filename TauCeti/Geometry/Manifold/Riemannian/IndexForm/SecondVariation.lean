@@ -81,17 +81,38 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {F : ℝ → ℝ → M} {a b : ℝ}
 
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+variable (I) in
+/-- The squared speed `‖∂_t F‖²` of the family at `z = (s, t)`, written through the differential
+of the uncurried family. -/
+private abbrev sqSpeed (F : ℝ → ℝ → M) (z : ℝ × ℝ) : ℝ :=
+  inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
+    (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- The squared speed is `C²` on the open set of points where the family is `C³`. -/
+private theorem contDiffOn_sqSpeed :
+    ContDiffOn ℝ 2 (sqSpeed I F)
+      {z : ℝ × ℝ | ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) z} := by
+  have : IsManifold I 3 M := IsManifold.of_le (n := ∞) (by simp)
+  exact (show ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2)
+    {z : ℝ × ℝ | ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) z} from
+      fun _ hz ↦ hz.contMDiffWithinAt).contDiffOn_inner_mfderiv (by norm_num)
+        (TauCeti.isOpen_setOfPred_contMDiffAt (by simp)) _ _
+
 omit [FiniteDimensional ℝ E] [T2Space M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The transverse velocities `∂_s F` of a `C³` family form a `C²` field on the surface, read
-with the transverse parameter first. -/
-private theorem contMDiffAt_curveVelocity_fst {t : ℝ}
-    (hF : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
-    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2 (fun z : ℝ × ℝ ↦
-      TotalSpace.mk' E (F z.2 z.1) (curveVelocity I (fun q ↦ F q z.1) z.2)) (t, 0) :=
-  ContMDiffAt.contMDiffAt_curveVelocity_snd (f := fun a b ↦ F b a) (hF.comp (t, 0)
-    (contMDiff_iff_contDiff.mpr
-      (by fun_prop : ContDiff ℝ 3 fun z : ℝ × ℝ ↦ (z.2, z.1))).contMDiffAt) (by norm_num)
+/-- At a point `(s, t)` where the family is `C³`, the velocities `P q = ∂_t F (q, t)` form a `C²`
+field along the transverse curve `q ↦ F q t`, which is differentiable at `s`. -/
+private theorem contMDiffAt_curveVelocity_slice {s t : ℝ}
+    (hF : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (s, t)) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
+        (fun q ↦ TotalSpace.mk' E (F q t) (curveVelocity I (F q) t)) s ∧
+      MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) s := by
+  have hP := hF.contMDiffAt_curveVelocity_snd_slice (m := 2) (by norm_num)
+  exact ⟨hP, ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp s hP).mdifferentiableAt
+    two_ne_zero⟩
 
 /-- **The second transverse derivative of the squared speed.** At a parameter `t` where the
 family is `C³`, the transverse derivative at `s = 0` of `⟪D_s ∂_t F, ∂_t F⟫ = ½ ∂_s ‖∂_t F‖²` is
@@ -116,11 +137,7 @@ private theorem hasDerivAt_inner_alongCurve_curveVelocity {t : ℝ}
     hF.of_le (by rw [minSmoothness_of_isRCLikeNormedField]; norm_num)
   -- The velocity field `P q = ∂_t F (q, t)` along the transverse curve `c q = F q t` is `C²`, so
   -- `X = D_s P` has differentiable coordinates and the product rule applies to `⟪X, P⟫`.
-  have hP : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
-      (fun q ↦ TotalSpace.mk' E (F q t) (curveVelocity I (F q) t)) 0 :=
-    hF.contMDiffAt_curveVelocity_snd_slice (by norm_num)
-  have hc : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) 0 :=
-    ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp 0 hP).mdifferentiableAt two_ne_zero
+  obtain ⟨hP, hc⟩ := contMDiffAt_curveVelocity_slice hF
   have hprod := hcov.hasDerivAt_inner_alongCurve hc
     (differentiableAt_sectionCoord_alongCurve_leviCivitaConnection hP)
     (differentiableAt_sectionCoord (fun q ↦ F q t) _ (hP.mdifferentiableAt two_ne_zero)
@@ -138,8 +155,7 @@ private theorem hasDerivAt_inner_alongCurve_curveVelocity {t : ℝ}
   -- Exchanging the covariant derivatives costs the curvature term.
   have hcomm := alongCurve_alongCurve_sub_alongCurve_alongCurve cov
     (W := fun q r ↦ curveVelocity I (fun q' ↦ F q' r) q) (u := 0) (v := t)
-    ((contMDiffAt_curveVelocity_fst hF).comp (0, t) (contMDiff_iff_contDiff.mpr
-      (by fun_prop : ContDiff ℝ 2 fun z : ℝ × ℝ ↦ (z.2, z.1))).contMDiffAt)
+    (hF.contMDiffAt_curveVelocity_fst (m := 2) (by norm_num))
   simp only [← acceleration_def] at hcomm
   rw [alongCurve_congr cov _ _ hsymm, hsymm.self_of_nhds, sub_eq_iff_eq_add.mp hcomm] at hprod
   refine hprod.congr_deriv ?_
@@ -154,35 +170,20 @@ omit [T2Space M] in
 differential of the uncurried family, is `2 ⟪D_s ∂_t F, ∂_t F⟫`. -/
 private theorem fderiv_inner_mfderiv_snd_eq {s t : ℝ}
     (hF : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (s, t)) :
-    fderiv ℝ (fun z : ℝ × ℝ ↦
-        inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))) (s, t)
-        (1, 0) =
+    fderiv ℝ (sqSpeed I F) (s, t) (1, 0) =
       2 * inner ℝ (alongCurve (leviCivitaConnection I M) (fun q ↦ F q t)
         (fun q ↦ curveVelocity I (F q) t) s) (curveVelocity I (F s) t) := by
   have : IsManifold I 3 M := IsManifold.of_le (n := ∞) (by simp)
-  -- The family is `C³` on the open set `W` of points where it is `C³`.
-  set W := {z : ℝ × ℝ | ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) z}
-  have hWo : IsOpen W := TauCeti.isOpen_setOfPred_contMDiffAt (by simp)
-  have hG := (show ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) W from
-    fun _ hz ↦ hz.contMDiffWithinAt).contDiffOn_inner_mfderiv (m := 1) (by norm_num) hWo
-      ((0 : ℝ), (1 : ℝ)) ((0 : ℝ), (1 : ℝ))
-  have hGs := (((hG.differentiableOn one_ne_zero) _ hF).differentiableAt
-    (hWo.mem_nhds hF)).hasFDerivAt.comp_hasDerivAt s
-      (show HasDerivAt (fun q : ℝ ↦ (q, t)) ((1 : ℝ), (0 : ℝ)) s from
-        (hasDerivAt_id' (x := s)).prodMk (hasDerivAt_const s t))
+  have hWo := TauCeti.isOpen_setOfPred_contMDiffAt (I := 𝓘(ℝ, ℝ × ℝ)) (I' := I)
+    (f := fun z : ℝ × ℝ ↦ F z.1 z.2) (n := 3) (by simp)
+  have hGs := TauCeti.hasDerivAt_slice_left ((contDiffOn_sqSpeed.differentiableOn two_ne_zero _ hF)
+    |>.differentiableAt (hWo.mem_nhds hF))
   -- Near `s`, the squared speed is `⟪P, P⟫` for the field `P q = ∂_t F (q, t)` along the transverse
   -- curve `q ↦ F q t`, which the product rule differentiates.
-  have hP : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
-      (fun q ↦ TotalSpace.mk' E (F q t) (curveVelocity I (F q) t)) s :=
-    hF.contMDiffAt_curveVelocity_snd_slice (by norm_num)
+  obtain ⟨hP, hc⟩ := contMDiffAt_curveVelocity_slice hF
   have hP' := differentiableAt_sectionCoord (fun q ↦ F q t) _ (hP.mdifferentiableAt two_ne_zero)
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (F s t))
-  have hc : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) s :=
-    ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp s hP).mdifferentiableAt two_ne_zero
-  have heq : ∀ᶠ q in 𝓝 s, inner ℝ
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) (q, t) ((0 : ℝ), (1 : ℝ)))
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) (q, t) ((0 : ℝ), (1 : ℝ))) =
+  have heq : ∀ᶠ q in 𝓝 s, sqSpeed I F (q, t) =
         inner ℝ (curveVelocity I (F q) t) (curveVelocity I (F q) t) := by
     filter_upwards [((Continuous.prodMk_left t).tendsto s).eventually (hWo.mem_nhds hF)]
       with q hq
@@ -198,30 +199,21 @@ the second partial derivative in `s` at `s = 0` of the squared speed `‖∂_t F
 index-form integrand of the variation field plus `⟪D_t A, γ'⟫`. -/
 private theorem fderiv_fderiv_inner_mfderiv_snd_eq {t : ℝ}
     (hF : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
-    fderiv ℝ (fun y : ℝ × ℝ ↦ fderiv ℝ (fun z : ℝ × ℝ ↦
-        inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))) y (1, 0))
-        (0, t) (1, 0) / 2 =
+    fderiv ℝ (fun y : ℝ × ℝ ↦ fderiv ℝ (sqSpeed I F) y (1, 0)) (0, t) (1, 0) / 2 =
       indexFormIntegrand I (F 0) (variationField I F) (variationField I F) t +
         inner ℝ (alongCurve (leviCivitaConnection I M) (F 0)
             (fun r ↦ acceleration (leviCivitaConnection I M) (fun q ↦ F q r) 0) t)
           (curveVelocity I (F 0) t) := by
   have : IsManifold I 3 M := IsManifold.of_le (n := ∞) (by simp)
-  set W := {z : ℝ × ℝ | ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) z}
-  have hWo : IsOpen W := TauCeti.isOpen_setOfPred_contMDiffAt (by simp)
-  -- The squared speed is `C²` on `W`, so its partial derivative in `s` is `C¹` there.
-  have hG₁ := ((show ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) W from
-    fun _ hz ↦ hz.contMDiffWithinAt).contDiffOn_inner_mfderiv (m := 2) (by norm_num) hWo
-      ((0 : ℝ), (1 : ℝ)) ((0 : ℝ), (1 : ℝ))).fderiv_of_isOpen hWo (m := 1) (by norm_num)
-      |>.clm_apply (contDiffOn_const (c := ((1 : ℝ), (0 : ℝ))))
-  have hG₁s := (((hG₁.differentiableOn one_ne_zero) _ hF).differentiableAt
-    (hWo.mem_nhds hF)).hasFDerivAt.comp_hasDerivAt 0
-      (show HasDerivAt (fun q : ℝ ↦ (q, t)) ((1 : ℝ), (0 : ℝ)) 0 from
-        (hasDerivAt_id' (x := (0 : ℝ))).prodMk (hasDerivAt_const (0 : ℝ) t))
-  have heq : ∀ᶠ q in 𝓝 (0 : ℝ), fderiv ℝ (fun z : ℝ × ℝ ↦
-      inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))) (q, t)
-      (1, 0) = 2 * inner ℝ (alongCurve (leviCivitaConnection I M) (fun q ↦ F q t)
+  have hWo := TauCeti.isOpen_setOfPred_contMDiffAt (I := 𝓘(ℝ, ℝ × ℝ)) (I' := I)
+    (f := fun z : ℝ × ℝ ↦ F z.1 z.2) (n := 3) (by simp)
+  -- The squared speed is `C²` on the open set of `C³` points, so its partial derivative in `s` is
+  -- `C¹` there.
+  have hG₁s := TauCeti.hasDerivAt_slice_left (((contDiffOn_sqSpeed.fderiv_of_isOpen hWo (m := 1)
+    (by norm_num)).clm_apply (contDiffOn_const (c := ((1 : ℝ), (0 : ℝ))))).differentiableOn
+      one_ne_zero _ hF |>.differentiableAt (hWo.mem_nhds hF))
+  have heq : ∀ᶠ q in 𝓝 (0 : ℝ), fderiv ℝ (sqSpeed I F) (q, t) (1, 0) =
+      2 * inner ℝ (alongCurve (leviCivitaConnection I M) (fun q ↦ F q t)
         (fun q ↦ curveVelocity I (F q) t) q) (curveVelocity I (F q) t) := by
     filter_upwards [((Continuous.prodMk_left t).tendsto 0).eventually (hWo.mem_nhds hF)]
       with q hq
@@ -238,20 +230,17 @@ private theorem hasDerivAt_energy_integral_fderiv {U V : Set ℝ} (hUo : IsOpen 
     (hVo : IsOpen V) (hV : uIcc a b ⊆ V)
     (hF : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ F z.1 z.2) (U ×ˢ V)) {s : ℝ}
     (hs : s ∈ U) :
-    HasDerivAt (fun s ↦ energy I (F s) a b) ((∫ t in a..b, fderiv ℝ (fun z : ℝ × ℝ ↦
-        inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))) (s, t)
-        (1, 0)) / 2) s := by
+    HasDerivAt (fun s ↦ energy I (F s) a b)
+      ((∫ t in a..b, fderiv ℝ (sqSpeed I F) (s, t) (1, 0)) / 2) s := by
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
-  have henergy : (fun s ↦ energy I (F s) a b) =ᶠ[𝓝 s] fun s ↦ (∫ t in a..b, inner ℝ
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) (s, t) ((0 : ℝ), (1 : ℝ)))
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) (s, t) ((0 : ℝ), (1 : ℝ)))) / 2 := by
+  have henergy : (fun s ↦ energy I (F s) a b) =ᶠ[𝓝 s]
+      fun s ↦ (∫ t in a..b, sqSpeed I F (s, t)) / 2 := by
     filter_upwards [hUo.mem_nhds hs] with q hq
     rw [energy_def]
     congr 1
     refine intervalIntegral.integral_congr fun t ht ↦ ?_
-    rw [← curveVelocity_eq_mfderiv_snd ((hF.contMDiffAt (hUVo.mem_nhds ⟨hq, hV ht⟩))
+    rw [sqSpeed, ← curveVelocity_eq_mfderiv_snd ((hF.contMDiffAt (hUVo.mem_nhds ⟨hq, hV ht⟩))
       |>.mdifferentiableAt two_ne_zero), real_inner_self_eq_norm_sq]
   exact ((TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn hUVo
     (hF.contDiffOn_inner_mfderiv (by norm_num) hUVo _ _)
@@ -290,10 +279,8 @@ private theorem intervalIntegrable_and_hasDerivAt_deriv_energy
       (hasDerivAt_energy_integral_fderiv hUo hVo hV (hfUV.of_le (by norm_num)) hs).deriv)
   -- The variation field has a `C²` lift on `V`, so the index-form integrand is integrable.
   have hVuIcc : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
-      (fun r ↦ TotalSpace.mk' E (F 0 r) (variationField I F r)) (uIcc a b) := fun t ht ↦ by
-    rw [variationField_def]
-    exact (((contMDiffAt_curveVelocity_fst (hsurf (hV ht))).comp t (contMDiff_iff_contDiff.mpr
-      (contDiff_prodMk_left (n := 2) (0 : ℝ))).contMDiffAt).of_le one_le_two).contMDiffWithinAt
+      (fun r ↦ TotalSpace.mk' E (F 0 r) (variationField I F r)) (uIcc a b) := fun t ht ↦
+    ((hsurf (hV ht)).contMDiffAt_variationField (m := 1) (by norm_num)).contMDiffWithinAt
   have hIint := intervalIntegrable_indexFormIntegrand hVuIcc hVuIcc
   have hAeq := fun t (ht : t ∈ uIcc a b) ↦ fderiv_fderiv_inner_mfderiv_snd_eq (hsurf (hV ht))
   have hAint : IntervalIntegrable (fun t ↦ inner ℝ (alongCurve (leviCivitaConnection I M) (F 0)
@@ -354,9 +341,10 @@ theorem hasDerivAt_deriv_energy_of_acceleration_eq_zero
     have hγt : ContMDiffAt 𝓘(ℝ, ℝ) I 3 (F 0) t :=
       (hF t ht).comp t
         (contMDiff_iff_contDiff.mpr (contDiff_prodMk_right (n := 3) (0 : ℝ))).contMDiffAt
-    have hA := differentiableAt_sectionCoord_alongCurve cov (f := fun r q ↦ F q r)
+    have hA := differentiableAt_sectionCoord_alongCurve_snd cov (f := fun r q ↦ F q r)
       (W := fun r q ↦ curveVelocity I (fun q' ↦ F q' r) q) (u := t) (v := 0)
-      (contMDiffAt_curveVelocity_fst (hF t ht))
+      ((hF t ht).comp (t, 0) (contDiff_snd.prodMk contDiff_fst).contMDiff.contMDiffAt
+        |>.contMDiffAt_curveVelocity_snd (f := fun r q ↦ F q r) (by norm_num))
     simp only [← acceleration_def] at hA
     have hd := (isMetricCompatible_leviCivitaConnection (I := I) (M := M))
       |>.hasDerivAt_inner_alongCurve (hγt.mdifferentiableAt (by norm_num)) hA
