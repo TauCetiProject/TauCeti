@@ -224,14 +224,9 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
     ((hK' Complex.I).mono inter_subset_right)
     (hJ'.mono inter_subset_left) hC hD hK hKφ hDKW fun c hc z hz x _ ↦ hJt c hc z (hD₁ z hz) x
   refine ⟨δ, hδ, fun Ω c u x₁ xinf A hΩ hΩD hcC hu hfl hx₁ hxinf hint harea hA huK ↦ ?_⟩
-  -- Up to the capped puncture `0`, a null set, `Ω` lies in the pair of pants `S`.
+  -- The pair of pants `S` has null complement, so `Ω` lies in `S` up to a null set.
   have hΩS : Ω ≤ᵐ[volume] thricePuncturedSphereReal := by
-    have h0 : volume ({0} : Set (ℝ × ℝ)) = 0 := by
-      rw [Measure.volume_eq_prod]
-      exact measure_singleton _
-    filter_upwards [compl_mem_ae_iff.2 h0] with z hz0 hzΩ
-    refine ⟨fun h ↦ hz0 ?_, hD₁ z (hΩD hzΩ)⟩
-    rw [mem_singleton_iff, ← equivRealProdCLM.symm.map_eq_zero_iff, h]
+    filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz _ using hz
   -- The Floer energy over `Ω` is at most the energy over `S`, which exceeds the topological
   -- energy by at most `B_0 + (B_0 + B_1 + B_∞)`.
   have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
