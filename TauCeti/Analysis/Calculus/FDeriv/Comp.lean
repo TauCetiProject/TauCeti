@@ -18,7 +18,9 @@ import Mathlib.Tactic.Abel
 
 By the chain rule, the differential of `f ∘ φ` at `b` is the differential of `f` at `φ b`
 precomposed with that of `φ` at `b`. When the latter is invertible, one vanishes exactly when the
-other does, so criticality does not depend on the coordinates.
+other does, so criticality does not depend on the coordinates. When `φ` is `C¹`, its differential
+is locally bounded, so near a point the differential of `f ∘ φ` is at most a fixed multiple of that
+of `f`, and estimates bounding a function by its differential survive changes of coordinates.
 
 At a fixed point of a map preserving the germ of `f`, the derivative of `f` is unchanged by
 precomposition with the derivative of that map.
@@ -33,6 +35,8 @@ precomposition with the derivative of that map.
   differentiable along its orbit.
 * `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: `b` is a critical point of `f ∘ φ` exactly
   when `φ b` is a critical point of `f`, if the differential of `φ` at `b` is invertible.
+* `TauCeti.exists_norm_fderiv_comp_le_mul_norm_fderiv`: near a point where `φ` is `C¹`, the
+  differential of `f ∘ φ` is at most a fixed multiple of that of `f`.
 * `ContinuousLinearMap.fderiv_comp_right_of_rightInverse`,
   `ContinuousLinearMap.fderiv_comp_left_of_leftInverse`: the chain rule for precomposition with a
   split surjection and postcomposition with a split injection, with no differentiability
@@ -90,6 +94,24 @@ theorem fderiv_comp_eq_zero_iff_of_isInvertible {f : E → G} {φ : F → E} {b 
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
   ext u
   simpa using congrArg (fun L : F →L[𝕜] G ↦ L (e.symm u)) h
+
+/-- **A change of coordinates distorts the differential by a locally bounded factor.** If `g`
+agrees near `x` with `f ∘ φ`, where `φ` is differentiable near `x` with derivative continuous at
+`x`, and `f` is differentiable at `φ y` for `y` near `x`, then near `x` the differential of `g` at
+`y` has norm at most a fixed multiple of that of `f` at `φ y`. -/
+theorem exists_norm_fderiv_comp_le_mul_norm_fderiv {f : E → G} {φ : F → E} {g : F → G} {x : F}
+    (hg : g =ᶠ[nhds x] f ∘ φ) (hφ : ∀ᶠ y in nhds x, DifferentiableAt 𝕜 φ y)
+    (hφ' : ContinuousAt (fderiv 𝕜 φ) x) (hf : ∀ᶠ y in nhds x, DifferentiableAt 𝕜 f (φ y)) :
+    ∃ K > 0, ∀ᶠ y in nhds x, ‖fderiv 𝕜 g y‖ ≤ K * ‖fderiv 𝕜 f (φ y)‖ := by
+  refine ⟨‖fderiv 𝕜 φ x‖ + 1, by positivity, ?_⟩
+  filter_upwards [hg.eventuallyEq_nhds, hφ, hf,
+    hφ'.norm.eventually (eventually_le_nhds (lt_add_one _))] with y hgy hφy hfy hKy
+  rw [hgy.fderiv_eq, fderiv_comp y hfy hφy]
+  calc ‖fderiv 𝕜 f (φ y) ∘L fderiv 𝕜 φ y‖ ≤ ‖fderiv 𝕜 f (φ y)‖ * ‖fderiv 𝕜 φ y‖ :=
+        ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ (‖fderiv 𝕜 φ x‖ + 1) * ‖fderiv 𝕜 f (φ y)‖ := by
+        rw [mul_comm]
+        exact mul_le_mul_of_nonneg_right hKy (norm_nonneg _)
 
 /-- Precomposing a real-valued function with scalar multiplication scales the norm of its
 Fréchet derivative by the absolute value of the scalar. -/
