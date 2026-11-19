@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Perfectoid.FontaineTheta
 public import TauCeti.RingTheory.Perfectoid.Untilt
+public import TauCeti.RingTheory.Teichmuller
 public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
 
 /-!
@@ -21,7 +22,8 @@ the sharp map `x ↦ x♯` (Mathlib's `PreTilt.untilt`) and Fontaine's map
 * `f (x♯) = (PreTilt.map p f x)♯`;
 * `f (θ_A w) = θ_B (W(PreTilt.map p f) w)`.
 
-The first identity holds because `x♯` is the `p`-adic limit of the `p ^ n`-th powers of lifts of
+The first identity is the case `I = (p)` of the naturality of the Teichmüller map
+(`Perfection.teichmuller₀_map`): `x♯` is the `p`-adic limit of the `p ^ n`-th powers of lifts of
 the coordinates of `x`, and `f` preserves these congruences. The second follows from the first,
 since a ring homomorphism out of `W(A♭)` into a `p`-adically separated ring is determined by its
 values on Teichmüller representatives (`WittVector.ringHom_ext_teichmuller`), and
@@ -113,18 +115,13 @@ theorem map_comp (g : B →+* C) (f : A →+* B) :
 @[simp]
 theorem untilt_map [IsAdicComplete (span {(p : A)}) A] [IsAdicComplete (span {(p : B)}) B]
     (f : A →+* B) (x : PreTilt A p) : (map p f x).untilt = f x.untilt := by
-  rw [← teichmuller₀_equivPerfection]
-  -- `x♯ ≡ y ^ p ^ n` modulo `p ^ (n + 1)` for a lift `y` of the `n`-th coordinate of `x`, and `f`
-  -- preserves these congruences, so `f (x♯)` satisfies the characterisation of `(map p f x)♯`
-  refine Perfection.teichmuller₀_spec fun n ↦ ⟨f (coeff n x).out, ?_, ?_⟩
-  · rw [coeff_equivPerfection, coeff_map, ← Ideal.Quotient.mk_out (coeff n x), ModP.map_mk,
-      Ideal.Quotient.mk_out]
-  · have h := Perfection.teichmuller₀_sModEq (I := span {(p : A)}) (x := equivPerfection x)
-      (y := (coeff n x).out) (by rw [Ideal.Quotient.mk_out, coeff_equivPerfection])
-    rw [teichmuller₀_equivPerfection] at h
-    simp only [SModEq.sub_mem, span_singleton_pow, mem_span_singleton] at h ⊢
-    rw [dvd_sub_comm]
-    simpa only [map_sub, map_pow, map_natCast] using map_dvd f h
+  rw [← teichmuller₀_equivPerfection, ← teichmuller₀_equivPerfection]
+  refine Eq.trans ?_ (Perfection.teichmuller₀_map (J := span {(p : B)}) f ?_ (equivPerfection x))
+  · -- `PreTilt.map p f` is `Perfection.map` of `ModP.map p f`, an `Ideal.quotientMap`
+    congr 1
+    ext n
+    simp [ModP.map]
+  · rw [← Ideal.map_le_iff_le_comap, Ideal.map_span, Set.image_singleton, map_natCast]
 
 end PreTilt
 

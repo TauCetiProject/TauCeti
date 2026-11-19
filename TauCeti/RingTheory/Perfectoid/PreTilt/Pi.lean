@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.AdicCompletion.Pi
 public import TauCeti.RingTheory.Perfectoid.PreTilt.Map
+public import TauCeti.RingTheory.WittVector.MapEquiv
+public import TauCeti.RingTheory.WittVector.Pi
 
 /-!
 # Tilts and `A_inf` of products
@@ -33,7 +35,6 @@ every factor (`Pi.fact_not_isUnit_natCast`).
 
 * `ModP.piEquiv`: `ModP (∀ i, A i) p ≃+* ∀ i, ModP (A i) p`.
 * `PreTilt.piEquiv`: `PreTilt (∀ i, A i) p ≃+* ∀ i, PreTilt (A i) p`, by the projections.
-* `WittVector.piEquiv`: `WittVector p (∀ i, R i) ≃+* ∀ i, WittVector p (R i)`.
 * `PreTilt.wittVectorPiEquiv`: `A_inf(∏ A i) ≃+* ∏ A_inf(A i)`.
 
 ## Main results
@@ -121,6 +122,7 @@ theorem piEquiv_apply (x : PreTilt (∀ i, A i) p) (i : ι) :
   (rfl)
 
 /-- The coordinates of `(piEquiv p).symm y` are the families of coordinates of the `y i`. -/
+@[simp]
 theorem coeff_piEquiv_symm (y : ∀ i, PreTilt (A i) p) (n : ℕ) :
     coeff n ((piEquiv p).symm y) = (ModP.piEquiv p).symm fun i ↦ coeff n (y i) := by
   refine ((ModP.piEquiv (A := A) p).symm_apply_eq.mpr (funext fun i ↦ ?_)).symm
@@ -141,50 +143,15 @@ theorem untilt_piEquiv_symm (y : ∀ i, PreTilt (A i) p) :
 
 end PreTilt
 
-namespace WittVector
-
-variable (p : ℕ) [Fact p.Prime] {R : ι → Type*} [∀ i, CommRing (R i)]
-
-/-- **Witt vectors commute with products**: `W(∏ R i) ≃+* ∏ W(R i)`, by the Witt vectors of the
-projections; Witt coordinates are taken coordinatewise. -/
-noncomputable def piEquiv : WittVector p (∀ i, R i) ≃+* ∀ i, WittVector p (R i) :=
-  RingEquiv.ofBijective (RingHom.pi fun i ↦ map (Pi.evalRingHom R i)) <| by
-    refine ⟨fun x y hxy ↦ ext fun n ↦ funext fun i ↦ ?_, fun y ↦
-      ⟨mk p fun n i ↦ (y i).coeff n, funext fun i ↦ ext fun n ↦ by
-        rw [RingHom.pi_apply, map_coeff, coeff_mk, Pi.evalRingHom_apply]⟩⟩
-    have h := congr(($hxy i).coeff n)
-    rwa [RingHom.pi_apply, RingHom.pi_apply, map_coeff, map_coeff, Pi.evalRingHom_apply,
-      Pi.evalRingHom_apply] at h
-
-variable {p}
-
-@[simp]
-theorem piEquiv_apply (x : WittVector p (∀ i, R i)) (i : ι) :
-    piEquiv p x i = map (Pi.evalRingHom R i) x :=
-  (rfl)
-
-theorem coeff_piEquiv_apply (x : WittVector p (∀ i, R i)) (i : ι) (n : ℕ) :
-    (piEquiv p x i).coeff n = x.coeff n i := by
-  rw [piEquiv_apply, map_coeff, Pi.evalRingHom_apply]
-
-@[simp]
-theorem coeff_piEquiv_symm (y : ∀ i, WittVector p (R i)) (n : ℕ) :
-    ((piEquiv p).symm y).coeff n = fun i ↦ (y i).coeff n :=
-  funext fun i ↦ by rw [← coeff_piEquiv_apply, RingEquiv.apply_symm_apply]
-
-end WittVector
-
 namespace PreTilt
 
 variable (p : ℕ) [Fact p.Prime] [∀ i, Fact ¬IsUnit (p : A i)] [Fact ¬IsUnit (p : ∀ i, A i)]
 
 /-- **`A_inf` of a product is the product of the `A_inf`**: `W((∏ A i)♭) ≃+* ∏ W((A i)♭)`, the
-Witt vectors of `PreTilt.piEquiv` followed by `WittVector.piEquiv`. -/
+Witt vectors of `PreTilt.piEquiv` (`WittVector.mapEquiv`) followed by `WittVector.piEquiv`. -/
 noncomputable def wittVectorPiEquiv :
     WittVector p (PreTilt (∀ i, A i) p) ≃+* ∀ i, WittVector p (PreTilt (A i) p) :=
-  (RingEquiv.ofBijective (WittVector.map (piEquiv (A := A) p).toRingHom)
-    ⟨WittVector.map_injective _ (piEquiv (A := A) p).injective,
-      WittVector.map_surjective _ (piEquiv (A := A) p).surjective⟩).trans (WittVector.piEquiv p)
+  (WittVector.mapEquiv (piEquiv p)).trans (WittVector.piEquiv p)
 
 variable {p}
 
