@@ -23,9 +23,8 @@ each grade, composed grade-wise by matrix multiplication. The object `Model.simp
 basis vector, in grade `a`.
 
 This file sets up the linear structure of the model. The monoidal structure, whose associator is
-read off from the F-matrices of `P`, is built on top of it; that is why the category is indexed by
-`P` although its morphisms do not depend on `P`. The models of two F-symbols over the same fusion
-rules are then different categories, which can be compared by monoidal equivalences.
+read off from the F-matrices of `P`, is to be built on this category; that is why the category is
+indexed by `P` although its morphisms do not depend on `P`.
 
 ## Main definitions and results
 
@@ -50,8 +49,8 @@ rules are then different categories, which can be compared by monoidal equivalen
 ## Implementation notes
 
 The basis of each grade is a type in the universe of `ι`, carrying `Fintype` and `DecidableEq`
-instances, rather than an object of `FintypeCat`: the tensor product of the monoidal structure has
-basis `Σ a b, X.basis a × Y.basis b × Fin N_{ab}^c` in grade `c`, and with the instances as data,
+instances, rather than an object of `FintypeCat`: the intended tensor product has basis
+`Σ a b, X.basis a × Y.basis b × Fin N_{ab}^c` in grade `c`, and with the instances as data,
 matrix products and identity matrices on such sums compute with their canonical instances.
 Mathlib's `CategoryTheory.Mat R` would give one grade, but its objects live in the universe of
 `R`, not of `ι`.
@@ -83,8 +82,8 @@ variable [CommSemiring R] {N : FusionRules ι}
 
 /-- An object of the **model category** of F-symbols `P`: an `ι`-graded free module of finite
 rank with a chosen basis, given by the finite basis set `basis a` of each grade `a`. Morphisms
-are grade-wise matrices with entries in `R`. The category depends on `P` only through the
-monoidal structure built on it. -/
+are grade-wise matrices with entries in `R`. The morphisms do not depend on `P`; the index
+records the F-symbols for the monoidal structure intended on this category. -/
 structure Model (P : FSymbols R N) : Type (u + 1) where
   /-- The basis of the grade-`a` component. -/
   basis : ι → Type u
