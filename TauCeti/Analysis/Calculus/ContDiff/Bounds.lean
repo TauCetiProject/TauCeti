@@ -57,8 +57,13 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`: for `x` in a compact set
   and `ξ` in a ball, the derivatives of a `C^k` function of `(x, ξ)` are bounded by every power of
   the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
+* `Continuous.exists_norm_le_one_add_norm_sq_rpow_of_norm_le`: on a ball, a continuous function
+  is bounded by every power of the Japanese bracket.
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
+* `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_eq_zero_of_lt_norm`: the
+  order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of the
+  Japanese bracket.
 * `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le`: composing on the left with a
   continuous linear map preserves a bound on the `k`-th derivative by a multiple of a weight.
 * `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
@@ -239,13 +244,17 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {
       ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
   obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
     (hf.continuous_iteratedFDeriv le_rfl).continuousOn
-  refine ⟨max C 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun x hx ξ hξ ↦ ?_⟩
-  calc ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ max C 0 :=
-        (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (le_max_left _ _)
-    _ = max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
-    _ ≤ max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
-        mul_le_mul_of_nonneg_left (TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r)
-          (by positivity)
+  obtain ⟨C', hC'0, hC'⟩ := TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le (E := F) C R r
+  exact ⟨C', hC'0, fun x hx ξ hξ ↦ (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (hC' ξ hξ)⟩
+
+/-- On a ball, a continuous function is bounded by every power of the Japanese bracket:
+`‖f ξ‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for `‖ξ‖ ≤ R`. -/
+theorem Continuous.exists_norm_le_one_add_norm_sq_rpow_of_norm_le {E F : Type*}
+    [NormedAddCommGroup E] [ProperSpace E] [NormedAddCommGroup F] {f : E → F} (hf : Continuous f)
+    (R r : ℝ) : ∃ C, 0 ≤ C ∧ ∀ ξ, ‖ξ‖ ≤ R → ‖f ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn hf.continuousOn
+  obtain ⟨C, hC0, hC⟩ := TauCeti.exists_le_mul_one_add_norm_sq_rpow_of_norm_le (E := E) M R r
+  exact ⟨C, hC0, fun ξ hξ ↦ (hM ξ (mem_closedBall_zero_iff.2 hξ)).trans (hC ξ hξ)⟩
 
 /-- A `C^n` map which agrees outside a ball with a map whose order-`n` derivative is bounded
 there has a bounded order-`n` derivative: on the closed ball the derivative is continuous, and
@@ -265,6 +274,26 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm [ProperSpace E] 
     exact hfg y hy
   rw [(hfg'.iteratedFDeriv 𝕜 n).eq_of_nhds]
   exact (hg x hx).trans (le_max_right _ _)
+
+/-- The order-`n` derivative of a `C^n` map vanishing outside a ball is bounded by every power of
+the Japanese bracket: `‖D^n f(x)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r / 2)`. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_eq_zero_of_lt_norm
+    [ProperSpace E] {n : ℕ} {f : E → F} (hf : ContDiff 𝕜 n f) {R : ℝ}
+    (hf0 : ∀ x, R < ‖x‖ → f x = 0) (r : ℝ) :
+    ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨C, hC0, hC⟩ :=
+    (hf.continuous_iteratedFDeriv le_rfl).exists_norm_le_one_add_norm_sq_rpow_of_norm_le R r
+  refine ⟨C, fun x ↦ ?_⟩
+  rcases le_or_gt ‖x‖ R with hx | hx
+  · exact hC x hx
+  -- Outside the ball, `x` lies outside the topological support of `f`.
+  have hsupp : tsupport f ⊆ Metric.closedBall 0 R :=
+    closure_minimal (fun y hy ↦ mem_closedBall_zero_iff.2 (not_lt.1 (mt (hf0 y) hy)))
+      Metric.isClosed_closedBall
+  rw [image_eq_zero_of_notMem_tsupport fun h ↦
+      hx.not_ge (mem_closedBall_zero_iff.1 (hsupp (tsupport_iteratedFDeriv_subset n h))),
+    norm_zero]
+  positivity
 
 /-- Composing on the left with a continuous linear map `L` preserves a bound
 `‖D^k g x‖ ≤ C w x` on the `k`-th derivative of a `C^k` map `g` by a multiple of a weight `w`. -/
