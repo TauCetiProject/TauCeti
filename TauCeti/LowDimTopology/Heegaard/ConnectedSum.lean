@@ -48,10 +48,12 @@ counted domains from `p` to `q`; they cancel modulo two and put `p` and `q` one 
 Maslov grading.
 
 Unlike adding a basepoint, the connected sum creates a new periodic domain: `B₁ - B₂`, whose
-boundary is `α - β`, the class of the sphere `S²` in `S¹ × S²`. The periodic domains of the
-connected sum are those of the original diagram plus multiples of `B₁ - B₂`
-(`TauCeti.HeegaardRegionSystem.mem_periodicDomains_sumCircleTimesSphere_iff`), and the connected
-sum is weakly admissible exactly when the original diagram is
+boundary is `α - β`, the class of the sphere `S²` in `S¹ × S²`. A domain of the connected sum is
+periodic exactly when its restriction to the old regions is periodic and its multiplicities on the
+two bigons add up to twice that on `R₀`
+(`TauCeti.HeegaardRegionSystem.mem_periodicDomains_sumCircleTimesSphere_iff`). So the periodic
+domains are the old ones, extended by their multiplicity on `R₀` over both bigons, plus multiples
+of `B₁ - B₂`, and the connected sum is weakly admissible exactly when the original diagram is
 (`TauCeti.HeegaardRegionSystem.weaklyAdmissible_sumCircleTimesSphere_iff`).
 
 ## Main definitions
@@ -258,52 +260,48 @@ theorem isDomainBetween_sumCircleTimesSphere_iff {D : Region ⊕ Fin 2 → ℤ} 
   · rintro ⟨hD, hs⟩
     exact ⟨hD, by linarith⟩
 
-/-- A domain of the connected sum with `S¹ × S²` in a region containing a basepoint is periodic
-exactly when its restriction to the old regions is periodic and the multiplicities of the two
-bigons add up to zero: the periodic domains are those of the original diagram plus multiples of
-`B₁ - B₂`. -/
-theorem mem_periodicDomains_sumCircleTimesSphere_iff (hr₀ : r₀ ∈ Set.range H.basepoint)
-    {P : Region ⊕ Fin 2 → ℤ} :
+/-- A domain of the connected sum with `S¹ × S²` in `r₀` is periodic exactly when its restriction
+to the old regions is periodic and the multiplicities of the two bigons add up to twice that of
+`r₀`. -/
+theorem mem_periodicDomains_sumCircleTimesSphere_iff {P : Region ⊕ Fin 2 → ℤ} :
     P ∈ (H.sumCircleTimesSphere r₀).periodicDomains ↔
-      P ∘ Sum.inl ∈ H.periodicDomains ∧ P (Sum.inr 0) + P (Sum.inr 1) = 0 := by
-  obtain ⟨z₀, rfl⟩ := hr₀
+      P ∘ Sum.inl ∈ H.periodicDomains ∧ P (Sum.inr 0) + P (Sum.inr 1) = 2 * P (Sum.inl r₀) := by
   rw [mem_periodicDomains_iff, mem_periodicDomains_iff]
   simp [funext_iff, Sum.forall, Fin.forall_fin_two]
   grind
 
 /-- The difference `B₁ - B₂` of the two bigons is a periodic domain of the connected sum, with
 boundary `α - β`: the class of the sphere `S²` in `S¹ × S²`. -/
-theorem single_sub_single_mem_periodicDomains_sumCircleTimesSphere [DecidableEq Region]
-    (hr₀ : r₀ ∈ Set.range H.basepoint) :
+theorem single_sub_single_mem_periodicDomains_sumCircleTimesSphere [DecidableEq Region] :
     Pi.single (Sum.inr 0) 1 - Pi.single (Sum.inr 1) 1 ∈
       (H.sumCircleTimesSphere r₀).periodicDomains := by
-  rw [H.mem_periodicDomains_sumCircleTimesSphere_iff r₀ hr₀]
+  rw [H.mem_periodicDomains_sumCircleTimesSphere_iff r₀]
   refine ⟨?_, by simp⟩
   have : (Pi.single (Sum.inr 0) 1 - Pi.single (Sum.inr 1) 1 : Region ⊕ Fin 2 → ℤ) ∘ Sum.inl =
       0 := funext fun r => by simp
   rw [this]
   exact zero_mem _
 
-/-- The connected sum with `S¹ × S²` in a region containing a basepoint is weakly admissible
-exactly when the original diagram is: its new periodic domains `k (B₁ - B₂)` have coefficients of
-both signs. -/
-theorem weaklyAdmissible_sumCircleTimesSphere_iff (hr₀ : r₀ ∈ Set.range H.basepoint) :
+/-- The connected sum with `S¹ × S²` in any region is weakly admissible exactly when the original
+diagram is: its new periodic domains `k (B₁ - B₂)` have coefficients of both signs. -/
+theorem weaklyAdmissible_sumCircleTimesSphere_iff :
     (H.sumCircleTimesSphere r₀).WeaklyAdmissible ↔ H.WeaklyAdmissible := by
-  simp only [weaklyAdmissible_iff, H.mem_periodicDomains_sumCircleTimesSphere_iff r₀ hr₀]
+  simp only [weaklyAdmissible_iff, H.mem_periodicDomains_sumCircleTimesSphere_iff r₀]
   constructor
   · intro h P hP hP₀
-    have := h (Sum.elim P 0) ⟨by simpa using hP, by simp⟩ fun r => by
-      rcases r with r | k
+    have := h (Sum.elim P fun _ => P r₀) ⟨by simpa using hP, by simp [two_mul]⟩ fun r => by
+      rcases r with r | -
       · exact hP₀ r
-      · simp
+      · exact hP₀ r₀
     funext r
     simpa using congrFun this (Sum.inl r)
   · rintro h P ⟨hP, hs⟩ hP₀
     have hold := h _ hP fun r => hP₀ (Sum.inl r)
+    have hr := congrFun hold r₀
     have h0 := hP₀ (Sum.inr 0)
     have h1 := hP₀ (Sum.inr 1)
     obtain ⟨h0', h1'⟩ : P (Sum.inr 0) = 0 ∧ P (Sum.inr 1) = 0 := by
-      simp only [Pi.zero_apply] at h0 h1
+      simp only [comp_apply, Pi.zero_apply] at h0 h1 hr
       omega
     funext r
     rcases r with r | k
