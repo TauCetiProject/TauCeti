@@ -75,7 +75,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasSimilarityFactorizationAt_sta
     (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt (starSchwarzReflection ξ) z₀ :=
   hasSimilarityFactorizationAt_of_hasWeakConjWirtingerDerivOn hp (hC.starSchwarzReflectionCoeff hΩ)
     (continuousOn_starSchwarzReflection_of_symmetric hΩ hξc hξr)
-    (h.hasWeakConjWirtingerDerivOn_reflection_clm hΩ) hz₀
+    (h.hasWeakConjWirtingerDerivOn_starSchwarzReflectionCoeff hΩ) hz₀
 
 /-- **The similarity principle up to a real boundary.** Let `p > 2`, let `Ω` be conjugation
 invariant, and let `ξ` be continuous on `Ω ∩ {0 ≤ im}` and real on `Ω ∩ ℝ`, solving
@@ -96,7 +96,7 @@ theorem exists_similarity_of_hasWeakConjWirtingerDerivRealBoundaryOn (hp : 2 < p
   obtain ⟨r, hr, hrΩ, Φ, σ, hΦ, hΦu, hσ, hξσ⟩ := exists_similarity_of_hasWeakConjWirtingerDerivOn
     hp (hC.starSchwarzReflectionCoeff hΩ)
     (continuousOn_starSchwarzReflection_of_symmetric hΩ hξc hξr)
-    (h.hasWeakConjWirtingerDerivOn_reflection_clm hΩ) hz₀
+    (h.hasWeakConjWirtingerDerivOn_starSchwarzReflectionCoeff hΩ) hz₀
   exact ⟨r, hr, hrΩ, Φ, σ, hΦ, hΦu, hσ, fun z hz ↦
     (starSchwarzReflection_of_im_nonneg hz.2.out).symm.trans (hξσ hz.1)⟩
 
@@ -118,7 +118,7 @@ private theorem exists_opens_reflection (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     exists_isPreconnected_isOpen_superset_inter_im_nonneg_of_symmetric Ω.isOpen hΩ hΩc
   exact ⟨⟨W, hWo⟩, hWc, hW, (hC.starSchwarzReflectionCoeff hΩ).mono_set hWΩ,
     (continuousOn_starSchwarzReflection_of_symmetric hΩ hξc hξr).mono hWΩ,
-    (h.hasWeakConjWirtingerDerivOn_reflection_clm hΩ).mono hWΩ⟩
+    (h.hasWeakConjWirtingerDerivOn_starSchwarzReflectionCoeff hΩ).mono hWΩ⟩
 
 omit [NormedSpace ℂ F] [FiniteDimensional ℂ F] [StarModule ℂ F] [ContinuousStar F] in
 /-- If the reflection of `ξ` vanishes on `T`, then `ξ` vanishes on every part of `T` in the closed

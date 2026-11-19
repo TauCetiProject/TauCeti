@@ -36,7 +36,7 @@ McDuff–Salamon's normalization `∂ₛ + i ∂ₜ = 2 \bar∂` this is `∂ₛ
   `R (C ξ) = (R C) (R ξ)`.
 * `TauCeti.MemLpLoc.starSchwarzReflectionCoeff`: a coefficient field locally `Lᵖ` up to the
   boundary reflects to one locally `Lᵖ` on the doubled domain.
-* `HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_reflection_clm`:
+* `HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_starSchwarzReflectionCoeff`:
   the reflection of a solution solves the reflected weak equation on `Ω`.
 * `HasWeakConjWirtingerDerivRealBoundaryOn.isWeakLinearCauchyRiemannOn_starSchwarzReflection`:
   for `1 < p < ∞` and finite-dimensional `F`, a continuous solution real on the axis with
@@ -131,11 +131,13 @@ section Complex
 variable [NormedSpace ℂ F] [StarAddMonoid F] [StarModule ℂ F] [ContinuousStar F]
   {C : ℂ → F →L[ℝ] F} {ξ : ℂ → F}
 
+namespace HasWeakConjWirtingerDerivRealBoundaryOn
+
 /-- **The reflected weak equation.** Let `Ω` be conjugation invariant and let `ξ` solve
 `∂ₛξ + i ∂ₜξ + C(z) ξ = 0` weakly on `Ω ∩ {0 ≤ im}` with the real boundary condition. Then the
 reflection `R ξ` weakly solves `∂ₛ(R ξ) + i ∂ₜ(R ξ) + (R C)(R ξ) = 0` on all of `Ω`, in the form
 `\bar∂ (R ξ) = ½ (-(R C) (R ξ))` consumed by the interior similarity principle. -/
-theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_reflection_clm
+theorem hasWeakConjWirtingerDerivOn_starSchwarzReflectionCoeff
     {Ω : Opens ℂ} (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
     (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ fun z ↦ -(2 : ℂ)⁻¹ • C z (ξ z)) :
     HasWeakConjWirtingerDerivOn volume Ω (starSchwarzReflection ξ)
@@ -147,6 +149,8 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_refl
   have hw := h.hasWeakConjWirtingerDerivOn_starSchwarzReflection hΩ
   simp only [hs, starSchwarzReflection_const_smul, starSchwarzReflection_clm_apply] at hw
   simpa only [smul_neg, ← neg_smul, hs] using hw
+
+end HasWeakConjWirtingerDerivRealBoundaryOn
 
 /-- **Reflection of the linear Cauchy–Riemann equation with a real boundary condition.** Let
 `1 < p < ∞`, let `F` be finite-dimensional, let `Ω` be conjugation invariant, and let `ξ` be
@@ -163,7 +167,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.isWeakLinearCauchyRiemannOn_star
     IsWeakLinearCauchyRiemannOn p Ω (fun _ ↦ I • ContinuousLinearMap.id ℝ F)
       (starSchwarzReflectionCoeff C) (starSchwarzReflection ξ) := by
   have hc := continuousOn_starSchwarzReflection_of_symmetric hΩ hξc hξr
-  have hw := h.hasWeakConjWirtingerDerivOn_reflection_clm hΩ
+  have hw := h.hasWeakConjWirtingerDerivOn_starSchwarzReflectionCoeff hΩ
   have hf : MemLpLoc p Ω
       (fun z ↦ (2 : ℂ)⁻¹ • -starSchwarzReflectionCoeff C z (starSchwarzReflection ξ z)) := by
     -- The factor `1/2` is real.
