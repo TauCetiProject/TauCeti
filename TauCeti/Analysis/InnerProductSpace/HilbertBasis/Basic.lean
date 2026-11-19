@@ -22,6 +22,10 @@ It also expands the value of a continuous linear map in a Hilbert basis,
 linear map vanishing on all but finitely many vectors of a Hilbert basis has finite rank, since
 every vector is the sum of its basis expansion, and that a continuous linear map is determined by
 its matrix entries in Hilbert bases of its source and target (`HilbertBasis.ext_inner_apply`).
+
+Finally, the orthogonal complement of the span of the basis vectors indexed by a set `s` is the
+closed span of the basis vectors indexed by its complement (`HilbertBasis.orthogonal_span_image`).
+This computes the cokernels of isometries that send a Hilbert basis into another one.
 -/
 
 public section
@@ -85,5 +89,27 @@ theorem hasFiniteRange_of_apply_eq_zero {iota F : Type*}
   · rw [Submodule.span_le]
     rintro _ ⟨i, -, rfl⟩
     exact ⟨b i, rfl⟩
+
+/-- The orthogonal complement of the span of the basis vectors indexed by `s` is the closed span
+of the basis vectors indexed by the complement of `s`. -/
+theorem orthogonal_span_image {iota : Type*} (b : _root_.HilbertBasis iota 𝕜 E) (s : Set iota) :
+    (Submodule.span 𝕜 (b '' s))ᗮ = (Submodule.span 𝕜 (b '' sᶜ)).topologicalClosure := by
+  apply le_antisymm
+  · intro y hy
+    -- The basis expansion of `y` has no terms indexed by `s`.
+    have hzero : ∀ i ∈ s, ⟪b i, y⟫_𝕜 = 0 := fun i hi ↦
+      Submodule.inner_right_of_mem_orthogonal (K := Submodule.span 𝕜 (b '' s))
+        (Submodule.subset_span ⟨i, hi, rfl⟩) hy
+    rw [← SetLike.mem_coe, Submodule.topologicalClosure_coe]
+    refine mem_closure_of_tendsto (b.hasSum_repr y) (Filter.Eventually.of_forall fun t ↦ ?_)
+    refine SetLike.mem_coe.2 (Submodule.sum_mem _ fun i _ ↦ ?_)
+    by_cases hi : i ∈ s
+    · rw [b.repr_apply_apply, hzero i hi, zero_smul]
+      exact Submodule.zero_mem _
+    · exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
+  · refine Submodule.topologicalClosure_minimal _ ?_ (Submodule.isClosed_orthogonal _)
+    rw [← Submodule.isOrtho_iff_le, Submodule.isOrtho_span]
+    rintro _ ⟨j, hj, rfl⟩ _ ⟨i, hi, rfl⟩
+    exact b.orthonormal.inner_eq_zero fun hji ↦ hj (hji ▸ hi)
 
 end HilbertBasis
