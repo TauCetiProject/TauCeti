@@ -107,7 +107,8 @@ Hölder continuous on the whole space with exponent `α` and constant
 
 `C R^(-α) (|Ω|^(2/n - 1/r) + R^(2 - n/r)) ‖f‖_{Lʳ(Ω)} / λ`.
 
-No regularity of `∂Ω` and of the coefficients beyond measurability is assumed. -/
+No regularity of `∂Ω` beyond the exterior density condition, and no regularity of the
+coefficients beyond measurability, is assumed. -/
 theorem exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_diff
     [Nonempty ι] {lam Lam : ℝ} {r : ℝ≥0} (hr : 1 < r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
     {θ : ℝ} (hθ : 0 < θ) :
