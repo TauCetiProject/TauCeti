@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Fibers.Composition
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.ProjectiveLine
-import TauCeti.AlgebraicGeometry.Curves.Normalization
 
 /-!
 # Numerically trivial line-bundle classes
@@ -36,8 +35,6 @@ the other hand every class pulled back from the base is relatively numerically t
 
 * `LineBundleClass.NumericallyTrivial k x a`: the class `a` on a scheme `X` with structure
   morphism `x : X ⟶ Spec k` has degree zero on every integral closed curve of `X` over `k`;
-* `LineBundleClass.intersectionNumber_mul_of_isClosedImmersion`: for `X` proper over `k`, the
-  intersection number with an integral closed curve of `X` is additive;
 * `LineBundleClass.numericallyTrivialClasses k x`: for `X` proper over `k`, the subgroup
   `Pic^τ(X/k)` of numerically trivial classes;
 * `LineBundleClass.NumericallyTrivial.pullback_of_isClosedImmersion`: numerical triviality
@@ -111,29 +108,6 @@ variable (k x) in
 theorem numericallyTrivial_one : NumericallyTrivial k x (1 : LineBundleClass X) :=
   fun _ _ _ i _ _ _ ↦ intersectionNumber_one k i
 
-/-- **Additivity on closed curves.** The intersection number with an integral closed curve `C` of
-a proper `k`-scheme is additive; `C` may be singular. -/
-theorem intersectionNumber_mul_of_isClosedImmersion [IsProper x] {C : Scheme.{u}} [IsIntegral C]
-    [C.Over (Spec (.of k))] (i : C ⟶ X) [IsClosedImmersion i] (hi : C ↘ Spec (.of k) = i ≫ x)
-    (hC : topologicalKrullDim C = 1) (a b : LineBundleClass X) :
-    intersectionNumber k i (a * b) = intersectionNumber k i a + intersectionNumber k i b := by
-  have : IsProper (C ↘ Spec (.of k)) := hi ▸ inferInstance
-  have : RelativeDimensionLE 1 (C ↘ Spec (.of k)) :=
-    (relativeDimensionLE_iff_of_field _).mpr hC.le
-  have := Scheme.Modules.finiteDimensional_cohomology_trivial_of_topologicalKrullDim_le_one k
-    (X := C) hC.le
-  exact intersectionNumber_mul_of_isIntegral k i a b
-
-/-- The intersection number with an integral closed curve of a proper `k`-scheme changes sign
-under inversion. -/
-theorem intersectionNumber_inv_of_isClosedImmersion [IsProper x] {C : Scheme.{u}} [IsIntegral C]
-    [C.Over (Spec (.of k))] (i : C ⟶ X) [IsClosedImmersion i] (hi : C ↘ Spec (.of k) = i ≫ x)
-    (hC : topologicalKrullDim C = 1) (a : LineBundleClass X) :
-    intersectionNumber k i a⁻¹ = -intersectionNumber k i a := by
-  have h := intersectionNumber_mul_of_isClosedImmersion i hi hC a⁻¹ a
-  rw [inv_mul_cancel, intersectionNumber_one] at h
-  omega
-
 section Proper
 
 variable [IsProper x] {a b : LineBundleClass X}
@@ -141,15 +115,15 @@ variable [IsProper x] {a b : LineBundleClass X}
 /-- On a proper `k`-scheme, a product of numerically trivial classes is numerically trivial. -/
 theorem NumericallyTrivial.mul (ha : NumericallyTrivial k x a) (hb : NumericallyTrivial k x b) :
     NumericallyTrivial k x (a * b) := fun _ _ _ i _ hi hC ↦ by
-  rw [intersectionNumber_mul_of_isClosedImmersion i hi hC, ha.intersectionNumber_eq_zero i hi hC,
+  rw [intersectionNumber_mul_of_isClosedImmersion k i hi hC, ha.intersectionNumber_eq_zero i hi hC,
     hb.intersectionNumber_eq_zero i hi hC, add_zero]
 
 /-- On a proper `k`-scheme, the inverse of a numerically trivial class is numerically
 trivial. -/
 theorem NumericallyTrivial.inv (ha : NumericallyTrivial k x a) : NumericallyTrivial k x a⁻¹ :=
   fun _ _ _ i _ hi hC ↦ by
-    rw [intersectionNumber_inv_of_isClosedImmersion i hi hC, ha.intersectionNumber_eq_zero i hi hC,
-      neg_zero]
+    rw [intersectionNumber_inv_of_isClosedImmersion k i hi hC,
+      ha.intersectionNumber_eq_zero i hi hC, neg_zero]
 
 /-- On a proper `k`-scheme, a class is numerically trivial exactly when its inverse is. -/
 @[simp]
