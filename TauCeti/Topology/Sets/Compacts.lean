@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Sets.Compacts
 
@@ -17,8 +18,10 @@ The preimage of a compact set under a proper map is compact
 monotone and functorial in `f`. It is the operation through which the cohomology with compact
 supports of a space, a colimit over its compact subsets, is contravariant in proper maps. It also
 records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which makes cohomology
-with compact supports covariant in open embeddings. Finally, a compact set lies in one member of a
-directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`).
+with compact supports covariant in open embeddings. A compact set lies in one member of a
+directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). Finally, in a
+Hausdorff space, viewing a compact set as a closed set is monotone, and so a functor
+(`TopologicalSpace.Compacts.toClosedsFunctor`).
 -/
 
 public section
@@ -65,5 +68,18 @@ lemma exists_subset_of_iSup_eq_top {ι : Type*} [Nonempty ι] {U : ι → Opens 
     ∃ i, (K : Set α) ⊆ U i :=
   K.isCompact.elim_directed_cover (fun i ↦ (U i : Set α)) (fun i ↦ (U i).isOpen)
     (fun x _ ↦ by simp [← Opens.coe_iSup, hcover]) (hU.mono_comp _ fun _ _ h ↦ h)
+
+lemma toCloseds_mono [T2Space α] : Monotone (Compacts.toCloseds (α := α)) :=
+  fun _ _ h ↦ h
+
+@[simp]
+lemma toCloseds_top [T2Space α] [CompactSpace α] : (⊤ : Compacts α).toCloseds = ⊤ :=
+  Closeds.ext (by simp)
+
+open CategoryTheory in
+variable (α) in
+/-- A compact subset of a Hausdorff space as a closed subset, functorially for inclusions. -/
+abbrev toClosedsFunctor [T2Space α] : Compacts α ⥤ Closeds α :=
+  toCloseds_mono.functor
 
 end TopologicalSpace.Compacts
