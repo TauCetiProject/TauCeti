@@ -467,8 +467,11 @@ theorem degeneracyQuotientComplex_d_mk (n : ℕ) (x : A.X (n + 1)) :
 def normalizedComplexι : A.normalizedComplex ⟶ A.complex :=
   ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (A.normalized n).subtype) fun n ↦ by
     rw [complex_d, normalizedComplex_d]
-    exact congr_arg ModuleCat.ofHom
-      (LinearMap.ext fun x ↦ (A.coe_normalizedBoundary_apply n x).symm)
+    -- As in `complexFunctor`, the objects agree only up to unfolding, so `ofHom_comp` is applied as
+    -- a term rather than by `rw`.
+    exact (ModuleCat.ofHom_comp _ _).symm.trans ((congr_arg ModuleCat.ofHom
+      (LinearMap.ext fun x ↦ (A.coe_normalizedBoundary_apply n x).symm)).trans
+        (ModuleCat.ofHom_comp _ _))
 
 @[simp]
 theorem normalizedComplexι_f_apply (n : ℕ) (x : A.normalized n) :
@@ -479,7 +482,9 @@ theorem normalizedComplexι_f_apply (n : ℕ) (x : A.normalized n) :
 def degeneracyQuotientComplexπ : A.complex ⟶ A.degeneracyQuotientComplex :=
   ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (A.degenerate n).mkQ) fun n ↦ by
     rw [complex_d, degeneracyQuotientComplex_d]
-    exact congr_arg ModuleCat.ofHom (LinearMap.ext (A.degeneracyQuotientBoundary_mk n))
+    -- As in `complexFunctor`, `ofHom_comp` is applied as a term rather than by `rw`.
+    exact (ModuleCat.ofHom_comp _ _).symm.trans ((congr_arg ModuleCat.ofHom
+      (LinearMap.ext (A.degeneracyQuotientBoundary_mk n))).trans (ModuleCat.ofHom_comp _ _))
 
 @[simp]
 theorem degeneracyQuotientComplexπ_f_apply (n : ℕ) (x : A.X n) :
@@ -513,8 +518,12 @@ def normalizedComplexIsoDegeneracyQuotient :
     (fun n ↦ (A.normalizedEquivDegeneracyQuotient n).toModuleIso) fun i j hij ↦ by
       obtain rfl : i = j + 1 := hij.symm
       rw [normalizedComplex_d, degeneracyQuotientComplex_d]
-      exact congr_arg ModuleCat.ofHom
-        (LinearMap.ext fun x : A.normalized (j + 1) ↦ A.degeneracyQuotientBoundary_mk j x)
+      rw [LinearEquiv.toModuleIso_hom, LinearEquiv.toModuleIso_hom]
+      -- As in `complexFunctor`, the objects agree only up to unfolding, so `ofHom_comp` is applied
+      -- as a term rather than by `rw`; the components then agree by
+      -- `normalizedEquivDegeneracyQuotient_apply` and `degeneracyQuotientBoundary_mk`.
+      exact (ModuleCat.ofHom_comp _ _).symm.trans ((congr_arg ModuleCat.ofHom
+        (LinearMap.ext fun x : A.normalized (j + 1) ↦ by simp)).trans (ModuleCat.ofHom_comp _ _))
 
 @[simp]
 theorem normalizedComplexIsoDegeneracyQuotient_hom :
@@ -571,7 +580,10 @@ cubical complex. -/
   map φ := ChainComplex.ofHom
     (fun n ↦ ModuleCat.ofHom ((φ.f n).restrict fun _ hx ↦ φ.f_mem_normalized hx)) fun n ↦ by
       rw [normalizedComplex_d, normalizedComplex_d]
-      exact congr_arg ModuleCat.ofHom (LinearMap.ext fun x : _ ↦ Subtype.ext (φ.boundary_f x.1))
+      -- As in `complexFunctor`, `ofHom_comp` is applied as a term rather than by `rw`.
+      exact (ModuleCat.ofHom_comp _ _).symm.trans ((congr_arg ModuleCat.ofHom
+        (LinearMap.ext fun x : _ ↦ Subtype.ext (φ.boundary_f x.1))).trans
+          (ModuleCat.ofHom_comp _ _))
 
 @[simp]
 theorem normalizedComplexFunctor_obj : normalizedComplexFunctor.obj A = A.normalizedComplex :=
@@ -591,8 +603,10 @@ cubical boundary complex by the degenerate cubes. -/
     (fun n ↦ ModuleCat.ofHom ((A.degenerate n).mapQ (B.degenerate n) (φ.f n) fun _ hx ↦
       φ.f_mem_degenerate hx)) fun n ↦ by
       rw [degeneracyQuotientComplex_d, degeneracyQuotientComplex_d]
-      exact congr_arg ModuleCat.ofHom (Submodule.linearMap_qext _
-        (LinearMap.ext fun x ↦ congr_arg Submodule.Quotient.mk (φ.boundary_f x)))
+      -- As in `complexFunctor`, `ofHom_comp` is applied as a term rather than by `rw`.
+      exact (ModuleCat.ofHom_comp _ _).symm.trans ((congr_arg ModuleCat.ofHom
+        (Submodule.linearMap_qext _ (LinearMap.ext fun x ↦
+          congr_arg Submodule.Quotient.mk (φ.boundary_f x)))).trans (ModuleCat.ofHom_comp _ _))
   -- On a class `[x]`, both sides of `map_id` are `[x]` and both sides of `map_comp` are
   -- `[ψ (φ x)]` by the definition of `mapQ`; `degeneracyQuotientComplexFunctor_map_f_mk` is only
   -- available after this declaration.
