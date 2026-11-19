@@ -152,11 +152,8 @@ identity. -/
 theorem quantizeUniformOrderZero_const_id :
     (const (ContinuousLinearMap.id ℂ V) : Symbol n V V 0).quantizeUniformOrderZero
       (isUniform_const _) = ContinuousLinearMap.id ℂ _ := by
-  have hC : ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(CoordinateSpace n, V),
-      eLpNorm (quantizeSchwartzValue
-        (const (ContinuousLinearMap.id ℂ V) : Symbol n V V 0).coefficient u) 2 volume ≤
-        ENNReal.ofReal C * eLpNorm u 2 volume :=
-    ⟨1, zero_le_one, fun u ↦ by simp [funext (quantizeSchwartzValue_const _ u)]⟩
+  have hC := (isUniform_const (ContinuousLinearMap.id ℂ V) :
+    (const _ : Symbol n V V 0).IsUniform).exists_eLpNorm_quantizeSchwartzValue_le
   refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦ ?_
   rw [quantizeUniformOrderZero_toBesselPotentialSpaceCLM _ hC, ContinuousLinearMap.id_apply]
   congr 1
@@ -296,16 +293,7 @@ theorem not_exists_quantizeOrderZero_ofSpatial_smul (hT : T ≠ 0)
     ext φ
     rw [hA, SchwartzMap.toDistr_toBesselPotentialSpaceCLM, SchwartzMap.coe_apply]
     simp only [quantizeSchwartzValue_ofSpatial, smul_apply, hwx]
-  have hle := A.le_opNorm (SchwartzMap.toBesselPotentialSpaceCLM 0 2 u)
-  rw [hAu, SchwartzMap.norm_toBesselPotentialSpaceCLM_zero,
-    SchwartzMap.norm_toBesselPotentialSpaceCLM_zero] at hle
-  have hw2 : eLpNorm w 2 volume ≤ ENNReal.ofReal ‖A‖ * eLpNorm u 2 volume := by
-    have hwt : eLpNorm w 2 volume ≠ ⊤ := (w.memLp 2).eLpNorm_ne_top
-    have hut : eLpNorm u 2 volume ≠ ⊤ := (u.memLp 2).eLpNorm_ne_top
-    rw [← ENNReal.ofReal_toReal hwt, ← ENNReal.ofReal_toReal hut,
-      ← ENNReal.ofReal_mul (norm_nonneg A)]
-    exact ENNReal.ofReal_le_ofReal hle
-  refine hw2.not_gt ?_
+  refine (SchwartzMap.eLpNorm_le_of_toBesselPotentialSpaceCLM_eq hAu).not_gt ?_
   simpa only [← hwx] using hlt
 
 end CoordinateL2
