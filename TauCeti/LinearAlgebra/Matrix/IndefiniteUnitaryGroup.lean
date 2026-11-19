@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.DotProduct
 # The indefinite unitary group `U(p, q)`
 
 Let `R` be a commutative ring with an involution `star`. For a square matrix `A` over `R`, the
-**unitary group of `A`**, `TauCeti.Matrix.unitaryGroupOf A`, is the subgroup of `GL n R` of the
+**unitary group of `A`**, `Matrix.unitaryGroupOf A`, is the subgroup of `GL n R` of the
 matrices `g` with `star g * A * g = A`: the invertible matrices preserving the sesquilinear form
 `⟨z, w⟩ = star z ⬝ᵥ A *ᵥ w` of Gram matrix `A`, conjugate-linear in the first slot.
 
@@ -36,7 +36,7 @@ The basic structure of these groups is recorded here.
   preservation of the values `⟨z, z⟩` alone; that statement, with the topological facts, is in
   `TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup`.)
 * For invertible `A`, every matrix preserving the form is invertible, with inverse
-  `A⁻¹ * star g * A` (`TauCeti.Matrix.unitaryGroupOf.ofMatrix`), and its determinant is a unitary
+  `A⁻¹ * star g * A` (`Matrix.unitaryGroupOf.ofMatrix`), and its determinant is a unitary
   scalar. For `U(p, q)` the inverse is `J * star g * J`.
 * The block-diagonal matrices `diag(A, D)` with `A ∈ U(p)` and `D ∈ U(q)` form a subgroup of
   `U(p, q)` isomorphic to `U(p) × U(q)` (`TauCeti.Matrix.indefiniteUnitaryGroup.fromBlocksHom`). It
@@ -53,11 +53,11 @@ The basic structure of these groups is recorded here.
 
 ## Main definitions
 
-* `TauCeti.Matrix.unitaryGroupOf A`: the group of invertible matrices preserving the sesquilinear
+* `Matrix.unitaryGroupOf A`: the group of invertible matrices preserving the sesquilinear
   form of Gram matrix `A`.
-* `TauCeti.Matrix.unitaryGroupOf.ofMatrix`: the element of `unitaryGroupOf A` defined by a matrix
+* `Matrix.unitaryGroupOf.ofMatrix`: the element of `unitaryGroupOf A` defined by a matrix
   preserving the form, for invertible `A`.
-* `TauCeti.Matrix.unitaryGroupOf.scalarHom`: the embedding `λ ↦ λ • 1` of the unitary scalars.
+* `Matrix.unitaryGroupOf.scalarHom`: the embedding `λ ↦ λ • 1` of the unitary scalars.
 * `TauCeti.Matrix.indefiniteUnitaryGroup p q R`: the group `U(p, q)` of invertible matrices
   preserving the Hermitian form of Gram matrix `diag(1, …, 1, -1, …, -1)`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.fromBlocksHom`: the block-diagonal embedding of
@@ -66,11 +66,13 @@ The basic structure of these groups is recorded here.
 
 ## Main results
 
-* `TauCeti.Matrix.mem_unitaryGroupOf_iff_forall_dotProduct`: membership as preservation of the
+* `Matrix.mem_unitaryGroupOf_iff_forall_dotProduct`: membership as preservation of the
   form.
-* `TauCeti.Matrix.mem_unitaryGroupOf_iff'`: membership as the equation `g * A⁻¹ * star g = A⁻¹`.
-* `TauCeti.Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`.
-* `TauCeti.Matrix.det_mem_unitary_of_mem_unitaryGroupOf`: `star (det g) * det g = 1`.
+* `Matrix.mem_unitaryGroupOf_iff'`: membership as the equation `g * A⁻¹ * star g = A⁻¹`.
+* `Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`.
+* `Matrix.det_mem_unitary_of_mem_unitaryGroupOf`: `star (det g) * det g = 1`.
+* `Matrix.unitaryGroupOf.scalarHom_injective`: the embedding of the unitary scalars is
+  injective.
 * `TauCeti.Matrix.mem_indefiniteUnitaryGroup_iff'`: membership in `U(p, q)` as the equation
   `g * J * star g = J`.
 * `TauCeti.Matrix.val_inv_of_mem_indefiniteUnitaryGroup`: the inverse of `g ∈ U(p, q)` is
@@ -94,18 +96,15 @@ public section
 
 open LieAlgebra.Orthogonal Matrix
 
-namespace TauCeti
-
 namespace Matrix
-
-section General
 
 variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [StarRing R]
 
 /-- The **unitary group of a sesquilinear form**: the invertible matrices `g` with
 `star g * A * g = A`, that is the invertible matrices preserving the form
 `⟨z, w⟩ = star z ⬝ᵥ A *ᵥ w` of Gram matrix `A`. For `A = 1` this is the unitary group, and for
-`A = diag(1, …, 1, -1, …, -1)` it is the indefinite unitary group `indefiniteUnitaryGroup`. -/
+`A = diag(1, …, 1, -1, …, -1)` it is the indefinite unitary group
+`TauCeti.Matrix.indefiniteUnitaryGroup`. -/
 def unitaryGroupOf (A : Matrix n n R) : Subgroup (GL n R) where
   carrier := {g | star (g : Matrix n n R) * A * g = A}
   one_mem' := by simp
@@ -202,7 +201,7 @@ theorem val_ofMatrix (hA : IsUnit A) (M : Matrix n n R) (hM : star M * A * M = A
 variable (A) in
 /-- The embedding `λ ↦ λ • 1` of the unitary scalars in `unitaryGroupOf A`. For the indefinite
 unitary group over a field of characteristic zero its image is the centre
-(`indefiniteUnitaryGroup.center_eq_range_scalarHom`). -/
+(`TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`). -/
 def scalarHom : unitary R →* unitaryGroupOf A :=
   ((GeneralLinearGroup.scalar n).comp Unitary.toUnits).codRestrict _ fun u => by
     rw [mem_unitaryGroupOf_iff, MonoidHom.comp_apply, GeneralLinearGroup.coe_scalar,
@@ -216,9 +215,18 @@ theorem val_scalarHom (u : unitary R) :
     ((scalarHom A u : GL n R) : Matrix n n R) = scalar n (u : R) :=
   GeneralLinearGroup.coe_scalar _
 
+/-- The embedding of the unitary scalars in `unitaryGroupOf A` is injective for nonempty `n`. -/
+theorem scalarHom_injective [Nonempty n] : Function.Injective (scalarHom A) := fun u v h => by
+  rw [unitaryGroupOf.ext_iff, val_scalarHom, val_scalarHom] at h
+  exact Subtype.ext (scalar_inj.mp h)
+
 end unitaryGroupOf
 
-end General
+end Matrix
+
+namespace TauCeti
+
+namespace Matrix
 
 variable (p q R : Type*) [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
 
