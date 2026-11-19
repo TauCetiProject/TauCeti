@@ -138,6 +138,11 @@ theorem HasWeakFDerivOn.contDiffOn_succ
 
 section LineDeriv
 
+/-! ### Weak derivatives along an orthonormal basis
+
+These lemmas factor out, and their proofs are adapted from, the inductive step of
+`TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL`. -/
+
 variable {H ι : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [FiniteDimensional ℝ H]
   [MeasurableSpace H] [BorelSpace H] {μ : Measure H} [μ.IsAddHaarMeasure] {Ω : Opens H}
   [Fintype ι] {b : OrthonormalBasis ι ℝ H} {v : H → ℝ} {G : ι → H → ℝ}
@@ -171,8 +176,7 @@ theorem norm_iteratedFDeriv_succ_le_sum_of_forall_hasWeakLineDerivOn (hv : Conti
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun l _ => ?_)
   rw [iteratedFDeriv_smul_const_apply (hGx l)]
   refine (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans_eq ?_
-  rw [ContinuousLinearMap.norm_smulRight_apply, ContinuousLinearMap.norm_id, innerSL_apply_norm,
-    b.orthonormal.1 l, one_mul, one_mul]
+  simp [ContinuousLinearMap.norm_smulRight_apply, b.orthonormal.1 l]
 
 end LineDeriv
 

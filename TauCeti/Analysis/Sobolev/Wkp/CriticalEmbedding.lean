@@ -55,7 +55,8 @@ representatives `Gₗ` are `Cʲ`, with bounded derivatives vanishing at infinity
 field of linear maps, they form a continuous weak derivative of the continuous representative of
 `u`, which is therefore its classical derivative (`TauCeti.HasWeakFDerivOn.contDiffOn_succ`). The
 `(i + 1)`-th derivative of the representative is then controlled by the `i`-th derivatives of the
-`Gₗ`.
+`Gₗ`. The induction follows that of
+`TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_of_forall_holderSpaceL`.
 
 ## Main declarations
 
@@ -334,11 +335,6 @@ theorem tendsto_iteratedFDeriv_toZeroAtInftyOne (hk : finrank ℝ E ≤ k) {i : 
 
 /-! ### The embedding `W^{n+j,1}(ℝⁿ) → W^{j,∞}(ℝⁿ)` -/
 
-/-- A function in `W^{j,∞}(E)` is determined by its value. -/
-private theorem eq_of_value_ae_eq_top {j : ℕ} {w w' : Wkp (volume : Measure E) ⊤ ∞ j}
-    (h : value j w =ᵐ[volume] value j w') : w = w' :=
-  ext j (Lp.ext (by simpa only [Opens.coe_top, Measure.restrict_univ] using h))
-
 /-- For `dim E + j ≤ k`, the continuous representative of `u ∈ W^{k,1}(E)` is `Cʲ` with bounded
 derivatives, so it represents an element of `W^{j,∞}(E)` of norm at most `C ‖u‖`. -/
 private theorem exists_wkp_top_value_ae_eq {j : ℕ} (hj : finrank ℝ E + j ≤ k) :
@@ -371,28 +367,22 @@ private theorem exists_wkp_top_value_ae_eq {j : ℕ} (hj : finrank ℝ E + j ≤
         push_cast
         ring
 
-/-- The embedding `W^{k,1}(E) → W^{j,∞}(E)` as a linear map. -/
-private def toWkpTopOneₗ {j : ℕ} (hj : finrank ℝ E + j ≤ k) :
+/-- A map `W^{k,1}(E) → W^{j,∞}(E)` preserving values is linear. -/
+private def toWkpTopOneₗ {j : ℕ}
+    (w : Wkp (volume : Measure E) ⊤ 1 k → Wkp (volume : Measure E) ⊤ ∞ j)
+    (hw : ∀ u, value j (w u) =ᵐ[volume] value k u) :
     Wkp (volume : Measure E) ⊤ 1 k →ₗ[ℝ] Wkp (volume : Measure E) ⊤ ∞ j where
-  toFun u := ((exists_wkp_top_value_ae_eq hj).choose_spec u).choose
+  toFun := w
   map_add' u v := by
-    have h := fun u => ((exists_wkp_top_value_ae_eq hj).choose_spec u).choose_spec.1
-    refine eq_of_value_ae_eq_top ?_
-    have hadd {m : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (a b : Wkp (volume : Measure E) ⊤ p m) :
-        ⇑(value m a + value m b) =ᵐ[volume] ⇑(value m a) + ⇑(value m b) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_add (value m a) (value m b)
-    filter_upwards [h (u + v), h u, h v, hadd u v,
-      hadd ((exists_wkp_top_value_ae_eq hj).choose_spec u).choose
-        ((exists_wkp_top_value_ae_eq hj).choose_spec v).choose] with x h₁ h₂ h₃ h₄ h₅
+    refine ext j (Lp.ext ?_)
+    filter_upwards [ae_restrict_of_ae (hw (u + v)), ae_restrict_of_ae (hw u),
+      ae_restrict_of_ae (hw v), Lp.coeFn_add (value k u) (value k v),
+      Lp.coeFn_add (value j (w u)) (value j (w v))] with x h₁ h₂ h₃ h₄ h₅
     rw [h₁, value_add, value_add, h₄, h₅, Pi.add_apply, Pi.add_apply, h₂, h₃]
   map_smul' c u := by
-    have h := fun u => ((exists_wkp_top_value_ae_eq hj).choose_spec u).choose_spec.1
-    refine eq_of_value_ae_eq_top ?_
-    have hsmul {m : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (a : Wkp (volume : Measure E) ⊤ p m) :
-        ⇑(c • value m a) =ᵐ[volume] c • ⇑(value m a) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_smul c (value m a)
-    filter_upwards [h (c • u), h u, hsmul u,
-      hsmul ((exists_wkp_top_value_ae_eq hj).choose_spec u).choose] with x h₁ h₂ h₃ h₄
+    refine ext j (Lp.ext ?_)
+    filter_upwards [ae_restrict_of_ae (hw (c • u)), ae_restrict_of_ae (hw u),
+      Lp.coeFn_smul c (value k u), Lp.coeFn_smul c (value j (w u))] with x h₁ h₂ h₃ h₄
     rw [h₁, RingHom.id_apply, value_smul, value_smul, h₃, h₄, Pi.smul_apply, Pi.smul_apply, h₂]
 
 /-- **The critical Sobolev embedding `W^{k,1}(ℝⁿ) →L[ℝ] W^{j,∞}(ℝⁿ)`** for `dim E + j ≤ k`: the
@@ -401,8 +391,9 @@ value (`TauCeti.Wkp.value_toWkpTopOne_ae_eq`). Its value is therefore also repre
 function `TauCeti.Wkp.toZeroAtInftyOne` (`TauCeti.Wkp.value_ae_eq_toZeroAtInftyOne`). -/
 def toWkpTopOne {j : ℕ} (hj : finrank ℝ E + j ≤ k) :
     Wkp (volume : Measure E) ⊤ 1 k →L[ℝ] Wkp (volume : Measure E) ⊤ ∞ j :=
-  (toWkpTopOneₗ hj).mkContinuousOfExistsBound ⟨(exists_wkp_top_value_ae_eq hj).choose,
-    fun u => ((exists_wkp_top_value_ae_eq hj).choose_spec u).choose_spec.2⟩
+  have H := exists_wkp_top_value_ae_eq hj
+  (toWkpTopOneₗ (fun u => (H.choose_spec u).choose) fun u => (H.choose_spec u).choose_spec.1)
+    |>.mkContinuousOfExistsBound ⟨H.choose, fun u => (H.choose_spec u).choose_spec.2⟩
 
 /-- The embedding into `W^{j,∞}` preserves the value of a Sobolev function. -/
 theorem value_toWkpTopOne_ae_eq {j : ℕ} (hj : finrank ℝ E + j ≤ k)
@@ -415,14 +406,13 @@ theorem toWkpTopOne_eq_iff {j : ℕ} (hj : finrank ℝ E + j ≤ k) (u : Wkp (vo
     (w : Wkp (volume : Measure E) ⊤ ∞ j) :
     toWkpTopOne hj u = w ↔ value j w =ᵐ[volume] value k u :=
   ⟨fun h => h ▸ value_toWkpTopOne_ae_eq hj u,
-    fun h => eq_of_value_ae_eq_top ((value_toWkpTopOne_ae_eq hj u).trans h.symm)⟩
+    fun h => ext j (Lp.ext (ae_restrict_of_ae ((value_toWkpTopOne_ae_eq hj u).trans h.symm)))⟩
 
 /-- The embedding into `W^{j,∞}` is injective. -/
 theorem toWkpTopOne_injective {j : ℕ} (hj : finrank ℝ E + j ≤ k) :
     Function.Injective (toWkpTopOne (E := E) hj) := fun u v huv =>
-  ext k (Lp.ext (by
-    simpa only [Opens.coe_top, Measure.restrict_univ] using
-      (value_toWkpTopOne_ae_eq hj u).symm.trans (huv ▸ value_toWkpTopOne_ae_eq hj v)))
+  ext k (Lp.ext (ae_restrict_of_ae
+    ((value_toWkpTopOne_ae_eq hj u).symm.trans (huv ▸ value_toWkpTopOne_ae_eq hj v))))
 
 end Wkp
 
