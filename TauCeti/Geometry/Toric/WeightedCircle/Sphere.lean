@@ -144,6 +144,19 @@ private def levelHomeomorph (a b : ℕ) (ε : ℝ) :
     weightedEllipsoid a b ε ≃ₜ {z : ℂ × ℂ // weightedNormSq a b z = 2 * ε} :=
   (Homeomorph.refl _).subtype fun _ ↦ mem_weightedEllipsoid_iff_weightedNormSq
 
+/-- `levelHomeomorph` is the identity on points: it is the restriction of `Homeomorph.refl`. -/
+@[simp]
+private theorem coe_levelHomeomorph (x : weightedEllipsoid a b ε) :
+    (levelHomeomorph a b ε x : ℂ × ℂ) = x :=
+  rfl
+
+/-- `z ↦ a |z₁|² + b |z₂|²` is `C^n` at every point of the level, in the form the regular-level
+API takes. -/
+private theorem contMDiffAt_weightedNormSq {n : ℕ∞ω} (z : ℂ × ℂ)
+    (_ : weightedNormSq a b z = 2 * ε) :
+    ContMDiffAt 𝓘(ℝ, ℂ × ℂ) 𝓘(ℝ, ℝ) n (weightedNormSq a b) z :=
+  (contDiff_weightedNormSq a b).contMDiff.contMDiffAt
+
 /-- The regular level `2 ε` of `z ↦ a |z₁|² + b |z₂|²` has dimension `4 - 1 = 3`. -/
 private theorem finrank_sub_finrank_weightedNormSq :
     finrank ℝ (ℂ × ℂ) - finrank ℝ ℝ = 3 := by
@@ -153,22 +166,21 @@ private theorem finrank_sub_finrank_weightedNormSq :
 private abbrev levelChartedSpace (a b : ℕ) (ε : ℝ) [NeZero ε] :
     ChartedSpace (Fin 3 → ℝ)
       {z : ℂ × ℂ // weightedNormSq a b z = 2 * ε} :=
-  regularLevelChartedSpace (fun _ _ ↦ (contDiff_weightedNormSq a b).contMDiff.contMDiffAt)
-    (isRegularValue_weightedNormSq (NeZero.ne ε)) finrank_sub_finrank_weightedNormSq
+  regularLevelChartedSpace contMDiffAt_weightedNormSq (isRegularValue_weightedNormSq (NeZero.ne ε))
+    finrank_sub_finrank_weightedNormSq
 
 private theorem isManifold_levelChartedSpace [NeZero ε] :
     letI := levelChartedSpace a b ε
     IsManifold 𝓘(ℝ, Fin 3 → ℝ) ω
       {z : ℂ × ℂ // weightedNormSq a b z = 2 * ε} :=
-  isManifold_regularLevel (m := ω) (by simp)
-    (fun _ _ ↦ (contDiff_weightedNormSq a b).contMDiff.contMDiffAt)
+  isManifold_regularLevel (m := ω) (by simp) contMDiffAt_weightedNormSq
     (isRegularValue_weightedNormSq (NeZero.ne ε)) finrank_sub_finrank_weightedNormSq
 
 /-- The ellipsoid `a |z₁|² + b |z₂|² = 2 ε`, for `ε ≠ 0`, with the atlas of the regular level of
 `z ↦ a |z₁|² + b |z₂|²` (`TauCeti.regularLevelChartedSpace`), modelled on `ℝ³`. -/
 instance [NeZero ε] : ChartedSpace (Fin 3 → ℝ) (weightedEllipsoid a b ε) :=
   -- The body of a public instance is exposed, so it cannot mention the private
-  -- `levelChartedSpace` and `levelHomeomorph`; this is the same term.
+  -- `levelChartedSpace`, `levelHomeomorph` and `contMDiffAt_weightedNormSq`; this is the same term.
   letI := regularLevelChartedSpace (n := 3)
     (fun _ _ ↦ (contDiff_weightedNormSq a b).contMDiff.contMDiffAt)
     (isRegularValue_weightedNormSq (NeZero.ne ε)) (by simp [Complex.finrank_real_complex])
@@ -191,12 +203,10 @@ theorem isSmoothEmbedding_coe_weightedEllipsoid [NeZero ε] :
   have hcoe : (Subtype.val : weightedEllipsoid a b ε → ℂ × ℂ) =
       Subtype.val ∘ (levelHomeomorph a b ε).pullbackDiffeomorph 𝓘(ℝ, Fin 3 → ℝ) ω := by
     funext x
-    rw [Function.comp_apply, Homeomorph.coe_pullbackDiffeomorph]
-    rfl
+    rw [Function.comp_apply, Homeomorph.coe_pullbackDiffeomorph, coe_levelHomeomorph]
   rw [hcoe]
   exact isSmoothEmbedding_comp_diffeomorph _
-    (isSmoothEmbedding_coe_regularLevel (m := ω) (by simp)
-      (fun _ _ ↦ (contDiff_weightedNormSq a b).contMDiff.contMDiffAt)
+    (isSmoothEmbedding_coe_regularLevel (m := ω) (by simp) contMDiffAt_weightedNormSq
       (isRegularValue_weightedNormSq (NeZero.ne ε)) finrank_sub_finrank_weightedNormSq)
 
 /-- The inclusion of the ellipsoid into `ℂ²` is analytic. -/
