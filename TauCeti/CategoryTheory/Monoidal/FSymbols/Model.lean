@@ -154,9 +154,9 @@ instance : EssentiallySmall.{max u v} (Model P) := by
   let std (n : ι → ℕ) : Model P := ⟨fun a ↦ ULift (Fin (n a))⟩
   have : Small.{u} (Skeleton (Model P)) :=
     small_of_surjective (f := fun n ↦ toSkeleton (std n)) fun X ↦ by
-      induction X using Quotient.inductionOn with | h X => ?_
-      refine ⟨fun a ↦ Fintype.card (X.basis a), Quotient.sound ⟨isoOfEquiv fun a ↦ ?_⟩⟩
-      exact (Equiv.ulift.trans (Fintype.equivFin (X.basis a)).symm)
+      refine ⟨fun a ↦ Fintype.card (((fromSkeleton _).obj X).basis a),
+        toSkeleton_eq_iff.2 ⟨isoOfEquiv fun a ↦ ?_⟩⟩
+      exact Equiv.ulift.trans (Fintype.equivFin _).symm
   exact small_lift _
 
 end Model
@@ -288,17 +288,21 @@ variable [CommSemiring R] {N : FusionRules ι} {P : FSymbols R N}
 
 variable (P) in
 /-- The **simple object** `simple a` of the model: a single basis vector, in grade `a`. -/
-@[expose]
 def simple (a : ι) : Model P :=
   ⟨fun b ↦ {_x : PUnit.{u + 1} // b = a}⟩
 
+@[no_expose]
 instance (a : ι) : Unique ((simple P a).basis a) where
   default := ⟨PUnit.unit, rfl⟩
   uniq _ := Subtype.ext rfl
 
+/-- The basis vectors of `simple a` all lie in grade `a`. -/
+theorem eq_of_simple_basis {a b : ι} (i : (simple P a).basis b) : b = a :=
+  i.2
+
 /-- `simple a` has no basis vectors outside grade `a`. -/
 theorem isEmpty_simple_basis {a b : ι} (h : b ≠ a) : IsEmpty ((simple P a).basis b) :=
-  ⟨fun i ↦ h i.2⟩
+  ⟨fun i ↦ h (eq_of_simple_basis i)⟩
 
 variable {X : Model P}
 
@@ -324,7 +328,7 @@ theorem proj_apply (p : Σ a, X.basis a) (c : ι) (y : X.basis c) (i : (simple P
 theorem incl_comp_proj (p : Σ a, X.basis a) : incl X p ≫ proj X p = 𝟙 _ := by
   obtain ⟨a, x⟩ := p
   ext c i j
-  obtain rfl : c = a := i.2
+  obtain rfl := eq_of_simple_basis i
   rw [Subsingleton.elim i j]
   simp [incl_apply, proj_apply, Matrix.mul_apply]
 
@@ -376,22 +380,24 @@ theorem isoBiproduct_inv (X : Model P) : X.isoBiproduct.inv = biproduct.desc (in
 /-- Morphisms out of `simple a` are vectors indexed by the grade-`a` basis of the target. -/
 def simpleHomEquiv (X : Model P) (a : ι) : (simple P a ⟶ X) ≃ₗ[R] (X.basis a → R) where
   toFun f := f a default
-  invFun v b i := cast (congrArg (fun c ↦ X.basis c → R) i.2.symm) v
+  invFun v b i := cast (congrArg (fun c ↦ X.basis c → R) (eq_of_simple_basis i).symm) v
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv f := by
-    ext b ⟨_, rfl⟩
+    ext b i
+    obtain rfl := eq_of_simple_basis i
     rfl
   right_inv _ := rfl
 
 /-- Morphisms into `simple a` are vectors indexed by the grade-`a` basis of the source. -/
 def homSimpleEquiv (X : Model P) (a : ι) : (X ⟶ simple P a) ≃ₗ[R] (X.basis a → R) where
   toFun f x := f a x default
-  invFun v b x i := cast (congrArg (fun c ↦ X.basis c → R) i.2.symm) v x
+  invFun v b x i := cast (congrArg (fun c ↦ X.basis c → R) (eq_of_simple_basis i).symm) v x
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv f := by
-    ext b x ⟨_, rfl⟩
+    ext b x i
+    obtain rfl := eq_of_simple_basis i
     rfl
   right_inv _ := rfl
 
@@ -405,21 +411,31 @@ theorem homSimpleEquiv_apply (a : ι) (f : X ⟶ simple P a) (x : X.basis a) :
     homSimpleEquiv X a f x = f a x default :=
   (rfl)
 
+@[simp]
+theorem simpleHomEquiv_symm_apply (a : ι) (v : X.basis a → R) (i : (simple P a).basis a) :
+    (simpleHomEquiv X a).symm v a i = v :=
+  (rfl)
+
+@[simp]
+theorem homSimpleEquiv_symm_apply (a : ι) (v : X.basis a → R) (x : X.basis a)
+    (i : (simple P a).basis a) : (homSimpleEquiv X a).symm v a x i = v x :=
+  (rfl)
+
 /-- The endomorphisms of `simple a` are the scalars. -/
 theorem bijective_algebraMap_simple (a : ι) :
     Function.Bijective (algebraMap R (End (simple P a))) := by
   refine ⟨fun r s h ↦ ?_, fun e ↦ ⟨e.asHom a default default, End.ext ?_⟩⟩
   · simpa using congr_fun (congr_fun (congr_fun (congrArg End.asHom h) a) default) default
   · ext c i j
-    obtain rfl : c = a := i.2
+    obtain rfl := eq_of_simple_basis i
     rw [Subsingleton.elim i default, Subsingleton.elim j default]
     simp
 
 /-- There are no nonzero morphisms between distinct simple objects. -/
 theorem homOrthogonal_simple : HomOrthogonal (simple P) := fun a b hab ↦
   ⟨fun f g ↦ by
-    ext c ⟨_, rfl⟩ ⟨_, h⟩
-    exact absurd h hab⟩
+    ext c i j
+    exact absurd ((eq_of_simple_basis i).symm.trans (eq_of_simple_basis j)) hab⟩
 
 /-- Over a nontrivial ring, distinct simple objects are not isomorphic. -/
 theorem isEmpty_simple_iso [Nontrivial R] {a b : ι} (hab : a ≠ b) :
