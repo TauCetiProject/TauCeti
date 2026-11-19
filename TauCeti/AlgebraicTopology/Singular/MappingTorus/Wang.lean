@@ -329,6 +329,29 @@ def cyclicCoverShortComplexMap : cyclicCoverShortComplex φ R ⟶ cyclicCoverSho
       deckChainMap_comp_map_prodMap φ R ψ g h]
   comm₂₃ := (coverChainMap_comp_mappingTorusChainMap φ R ψ g h).symm
 
+/-- On the chains of the source cylinder, the morphism of infinite cyclic cover sequences is
+`g × 𝟙ℝ`. -/
+@[simp]
+lemma cyclicCoverShortComplexMap_τ₁ :
+    (cyclicCoverShortComplexMap φ R ψ g h).τ₁ = ((singularChainComplexFunctor A).obj R).map
+      (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) :=
+  (rfl)
+
+/-- On the chains of the middle cylinder, the morphism of infinite cyclic cover sequences is
+`g × 𝟙ℝ`. -/
+@[simp]
+lemma cyclicCoverShortComplexMap_τ₂ :
+    (cyclicCoverShortComplexMap φ R ψ g h).τ₂ = ((singularChainComplexFunctor A).obj R).map
+      (TopCat.ofHom (g.prodMap (ContinuousMap.id ℝ))) :=
+  (rfl)
+
+/-- On the chains of the mapping tori, the morphism of infinite cyclic cover sequences is the chain
+map induced by the map of mapping tori. -/
+@[simp]
+lemma cyclicCoverShortComplexMap_τ₃ :
+    (cyclicCoverShortComplexMap φ R ψ g h).τ₃ = mappingTorusChainMap φ R ψ g h :=
+  (rfl)
+
 /-- **Naturality of the Wang connecting morphism.** For a map `g : F → G` intertwining the
 monodromies, `g ∘ φ = ψ ∘ g`, the Wang connecting morphisms `Hₙ₊₁(T_φ) ⟶ Hₙ(F)` and
 `Hₙ₊₁(T_ψ) ⟶ Hₙ(G)` commute with the induced maps `Hₙ₊₁(T_φ) ⟶ Hₙ₊₁(T_ψ)` and

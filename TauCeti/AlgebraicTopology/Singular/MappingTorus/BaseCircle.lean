@@ -14,10 +14,12 @@ public import TauCeti.AlgebraicTopology.Singular.Reduced
 Let `φ : F ≃ₜ F` be a homeomorphism and `T_φ` its mapping torus. The Wang sequence ends with
 `H₁(T_φ) ⟶ H₀(F) ⟶ 0`, where the first map is the Wang connecting morphism `δ`
 (`TauCeti.MappingTorus.wangδ`). Composing with the augmentation `ε : H₀(F) ⟶ R` gives the
-**Wang class** `ε ∘ δ : H₁(T_φ) ⟶ R` (`TauCeti.MappingTorus.wangClass`). When the fibre is
-path-connected and `det (𝟙 - φ_*)` is nonzero, it spans the first cohomology
-(`TauCeti.MappingTorus.cohomologyOneEquiv`). This file shows that the Wang class is pulled back
-from the circle along the projection `T_φ → ℝ/ℤ` (`TauCeti.MappingTorus.proj`).
+**Wang class** `ε ∘ δ : H₁(T_φ) ⟶ R` (`TauCeti.MappingTorus.wangClass`). Under the hypotheses
+of `TauCeti.MappingTorus.cohomologyOneEquiv` (coefficients in an integral domain `k`, a
+path-connected fibre, `H₁(F; k)` free of finite rank, `det (𝟙 - φ_*) ≠ 0` on it and a torsion-free
+module `M`), `H¹(T_φ; M) ≃ M`, and the class corresponding to `m` evaluates on `c ∈ H₁(T_φ)` to
+`ε(δ c) • m`. This file shows that the Wang class is pulled back from the circle along the
+projection `T_φ → ℝ/ℤ` (`TauCeti.MappingTorus.proj`).
 
 * **Naturality.** For a map `g : F → G` with `g ∘ φ = ψ ∘ g`, the Wang class of `T_φ` is the
   pullback of the Wang class of `T_ψ` along the induced map of mapping tori
@@ -84,9 +86,16 @@ theorem singularHomologyMap_map_comp_wangClass {G : Type w} [TopologicalSpace G]
       wangδ ψ R 0 = wangδ φ R 0 ≫ ((singularHomologyFunctor A 0).obj R).map (TopCat.ofHom g) := by
     have hnat := wangδ_naturality φ R ψ g h 0
     rw [fibreChainMap_def, mappingTorusChainMap_def] at hnat
+    -- `hnat` is stated with `homologyMap (((singularChainComplexFunctor A).obj R).map f) n`
+    -- in degree `0 + 1`. Mathlib defines `singularHomologyFunctor A n` as
+    -- `singularChainComplexFunctor A` followed by `homologyFunctor _ _ n`, so
+    -- `((singularHomologyFunctor A n).obj R).map f` unfolds to exactly this, and `0 + 1`
+    -- reduces to `1`: the two statements agree definitionally.
     exact hnat.symm
-  -- The composites are only type-correct up to unfolding `singularHomologyFunctor`, so the
-  -- equalities are chained in term mode rather than rewritten.
+  -- `wangδ` has chain-complex homology as source and target, while `singularHomology₀ε` and
+  -- `wangClass` are stated with `singularHomologyFunctor`. The composites are therefore only
+  -- type-correct up to the same unfolding, and `rw` cannot form the motive, so the equalities
+  -- are chained in term mode.
   exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) hδ).trans <|
     (Category.assoc _ _ _).trans <|
       congrArg (wangδ φ R 0 ≫ ·) (singularHomologyMap_singularHomology₀ε R (TopCat.ofHom g))
