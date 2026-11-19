@@ -29,10 +29,10 @@ with `v₀ ∈ V`, then
   `∫ₐᵇ ‖d‖² ≤ 2 A v₀ v₀ + 4 ∫ₐᵇ ‖g‖²`;
 * `u` is essentially bounded in `V`: `A u(t) u(t) ≤ A v₀ v₀ + ∫ₐᵇ ‖g‖²` for almost every `t`
 
-(`TauCeti.HasWeakLineDerivOn.exists_hasWeakLineDerivOn_of_gelfandDual`). For a parabolic equation
-`∂ₜu - div(a ∇u) + … = f` this says `∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))` when
-`f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`. Lower-order terms `M u` with `M : V →L[ℝ] H`, and a
-Gårding shift, are absorbed into `g`, since `M ∘ u ∈ L²(a, b; H)`.
+(`TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm`).
+For a parabolic equation `∂ₜu - div(a ∇u) + … = f` this says `∂ₜu ∈ L²(0, T; L²(Ω))` and
+`u ∈ L^∞(0, T; H¹₀(Ω))` when `f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`. Lower-order terms `M u`
+with `M : V →L[ℝ] H`, and a Gårding shift, are absorbed into `g`, since `M ∘ u ∈ L²(a, b; H)`.
 
 ## The argument
 
@@ -59,11 +59,11 @@ formal estimate above: `A u(t) u(t) + ∫ₐᵗ ‖z‖² ≤ A v₀ v₀ + ∫�
 
 ## Main declarations
 
-* `TauCeti.HasWeakLineDerivOn.exists_hasWeakLineDerivOn_of_gelfandDual`: the weak time derivative
-  in `L²(a, b; H)` and the essential bound in `V`.
+* `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm`: the weak
+  time derivative in `L²(a, b; H)` and the essential bound in `V`.
 
 The parabolic Dirichlet problem with time-independent symmetric principal coefficients is the
-instance `TauCeti.PDE.exists_hasWeakLineDerivOn_valueL_of_energyFormH1`.
+instance `TauCeti.PDE.exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm`.
 
 ## References
 
@@ -161,11 +161,14 @@ private theorem exists_shiftedSolution [TopologicalSpace.SeparableSpace H] (hab 
     fun t ht ↦ ?_⟩
   have := hzd.norm_sq_add_mul_integral_le_of_gelfandDual hz hz' hf₁ one_pos le_rfl hA₁_coer
     (Eventually.of_forall fun s ↦ sub_add_cancel _ _) hw₁ hae₁ ht
-  simpa [hw₁a, innerSL_apply_norm] using this
+  -- With `β = 0` and `α = 1` the exponential factor and the constants are `1`.
+  simp only [hw₁a, mul_zero, zero_mul, Real.exp_zero, one_mul, inv_one, innerSL_apply_norm]
+    at this
+  exact this
 
-/-- `TauCeti.HasWeakLineDerivOn.exists_hasWeakLineDerivOn_of_gelfandDual` for `a ≤ b`, where the
-shifted problem can be solved. -/
-private theorem exists_hasWeakLineDerivOn_of_gelfandDual_of_le
+/-- `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm` for
+`a ≤ b`, where the shifted problem can be solved. -/
+private theorem exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm_of_le
     [TopologicalSpace.SeparableSpace H] (hab : a ≤ b) (hι : Function.Injective ι)
     (hsymm : ∀ v w, A v w = A w v) (hα : 0 < α) (hA : ∀ v, α * ‖v‖ ^ 2 ≤ A v v)
     {g : ℝ → H} (hg : MemLp g 2 (volume.restrict (Ioo a b))) {v₀ : V} {u : ℝ → V}
@@ -239,7 +242,7 @@ for some `v₀ ∈ V`. Then `ι ∘ u` has a weak time derivative `d ∈ L²(a, 
 
 `A u(t) u(t) ≤ A v₀ v₀ + ∫ₐᵇ ‖g‖²` for almost every `t ∈ (a, b)`, and
 `∫ₐᵇ ‖d‖² ≤ 2 A v₀ v₀ + 4 ∫ₐᵇ ‖g‖²`. -/
-theorem HasWeakLineDerivOn.exists_hasWeakLineDerivOn_of_gelfandDual
+theorem HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm
     [TopologicalSpace.SeparableSpace H] (hι : Function.Injective ι)
     (hsymm : ∀ v w, A v w = A w v) (hα : 0 < α) (hA : ∀ v, α * ‖v‖ ^ 2 ≤ A v v)
     {g : ℝ → H} (hg : MemLp g 2 (volume.restrict (Ioo a b))) {v₀ : V} {u : ℝ → V}
@@ -261,6 +264,7 @@ theorem HasWeakLineDerivOn.exists_hasWeakLineDerivOn_of_gelfandDual
     refine ⟨0, MemLp.zero, hasWeakLineDerivOn_iff_locally.2 fun x hx ↦ ?_, by simp [hI],
       by simp [hI], by simp [hI, hA₀]⟩
     simp [hI] at hx
-  exact exists_hasWeakLineDerivOn_of_gelfandDual_of_le hab hι hsymm hα hA hg h hu hu' heq hw hae h₀
+  exact exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm_of_le hab hι hsymm hα hA hg h hu
+    hu' heq hw hae h₀
 
 end TauCeti
