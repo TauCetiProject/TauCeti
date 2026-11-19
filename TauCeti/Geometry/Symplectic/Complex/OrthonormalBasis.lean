@@ -274,10 +274,10 @@ variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedA
   [InnerProductSpace ℂ F] {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
 /-- **A symplectic form in a unitary frame is the imaginary part of the Hermitian product.** If
-the inner product of `V` is the metric `ω(·, J ·)` and a real linear isometry `Φ : F ≃ V` from a
+the inner product of `V` is the metric `ω(·, J ·)` and a real linear isometry `Φ : F → V` from a
 complex inner product space turns multiplication by `i` into `J`, then
 `ω(Φ x, Φ y) = Im ⟪x, y⟫`. -/
-theorem apply_map_map_eq_im_inner (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (Φ : F ≃ₗᵢ[ℝ] V)
+theorem apply_map_map_eq_im_inner (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (Φ : F →ₗᵢ[ℝ] V)
     (hΦ : ∀ x, Φ (Complex.I • x) = J (Φ x)) (x y : F) :
     ω (Φ x) (Φ y) = (inner ℂ x y).im := by
   let := InnerProductSpace.complexToReal (G := F)

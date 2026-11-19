@@ -35,16 +35,18 @@ hypotheses:
 * `S'_t` is infinitesimally symplectic for `Im ⟪·, ·⟫` when `S_t` is for `ω`
   (`TauCeti.Floer.im_inner_frameLoop_add_im_inner_frameLoop_eq_zero`);
 * the loop operator `η ↦ η' - S' η` on `H¹` is invertible when the orbit is nondegenerate, that is,
-  when the only one-periodic loop in the kernel of `A` is zero
+  when the only one-periodic loop in the kernel of `A`, a solution of `ζ' = S ζ`
+  (`TauCeti.Floer.asymptoticOperator_eq_zero_iff`), is zero
   (`TauCeti.Floer.isInvertible_loopOperator_frameLoop`): `η' = S' η` exactly when `ζ = Θ η` solves
   `ζ' = S ζ`.
 
 The result (`TauCeti.Floer.exists_hilbertBasis_asymptoticOperator_eq_smul`) is a Hilbert basis
 `(b_i)` of `H⁰(F)` and eigenvalues `λ_i` with `|λ_i| ≥ c > 0`. The continuous representatives
 `η_i` of the `b_i` give classical eigenfunctions `ζ_i(t) = Θ_t (η_i(t))` of the actual operator,
-`A ζ_i = λ_i ζ_i`. The frames are unitary: `Θ_t` carries `Re ⟪·, ·⟫` to the metric
-`g_t = ω(·, J_t ·)`
-(`TauCeti.SymplecticForm.Compatible.apply_unitaryFrame_apply_unitaryFrame_eq_re_inner`).
+`A ζ_i = λ_i ζ_i`. The frames are unitary: `Φ` carries `Re ⟪x, y⟫ = Im ⟪x, i y⟫` to
+`ω (Φ x) (J₀ (Φ y))`, the inner product of `V`, and `Ψ_t` carries the inner product to the metric
+`g_t = ω(·, J_t ·)` (`TauCeti.SymplecticForm.Compatible.apply_unitaryFrame_apply_unitaryFrame`),
+so `Θ_t` carries `Re ⟪·, ·⟫` to `g_t`.
 With Parseval's identity (`TauCeti.CircleSobolev.real_inner_ofContinuousMap`), the orthonormality
 of the `b_i` is therefore orthonormality of the `ζ_i` for the mean of `g_t(·, ·)` over the circle,
 the pairing for which `A` is symmetric
@@ -74,29 +76,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {F : Type u} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V} {J : ℝ → AlmostComplexStructure V}
   {S : ℝ → V →L[ℝ] V} {Φ : F ≃L[ℝ] V}
-
-/-- **The loop in the frames `Ψ_t Φ` is infinitesimally symplectic for `Im ⟪·, ·⟫`.** Let the
-inner product of `V` be the metric `ω(·, J₀ ·)`, let `Φ : F ≃ V` satisfy
-`ω (Φ x) (Φ y) = Im ⟪x, y⟫`, and let `Ψ_s` be the unitary frames of a family `J_s` of compatible
-structures, differentiable at `t`. If `S_t` is infinitesimally `ω`-symplectic, then the loop `S'_t`
-of `S` in the frames `Ψ_s Φ` is infinitesimally symplectic for `Im ⟪·, ·⟫`. -/
-theorem im_inner_frameLoop_add_im_inner_frameLoop_eq_zero (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫)
-    (hΦω : ∀ x y, ω (Φ x) (Φ y) = (inner ℂ x y).im) (hJc : ∀ s, ω.Compatible (J s)) {t : ℝ}
-    (hJ : DifferentiableAt ℝ (fun s ↦ LinearMap.toContinuousLinearMap (J s).toLinearMap) t)
-    (hS : ∀ u v, ω (S t u) v + ω u (S t v) = 0) (u v : F) :
-    (inner ℂ (frameLoop (fun s ↦ ω.unitaryFrame (J s) ∘L (Φ : F →L[ℝ] V)) S t u) v).im +
-      (inner ℂ u (frameLoop (fun s ↦ ω.unitaryFrame (J s) ∘L (Φ : F →L[ℝ] V)) S t v)).im =
-      0 := by
-  -- Pull `ω` back to `F` along `Φ`; it is `Im ⟪·, ·⟫`, and every `Ψ_s Φ` carries it to `ω`.
-  let ω₀ : SymplecticForm F := ω.transport (Φ.symm : V ≃ₗ[ℝ] F)
-  have hω₀ (x y : F) : ω₀ x y = (inner ℂ x y).im := by
-    simpa [ω₀, SymplecticForm.transport_apply] using hΦω x y
-  have h := frameLoop_apply_add_apply_eq_zero (ω₀ := ω₀)
-    (Φ := fun s ↦ ω.unitaryFrame (J s) ∘L (Φ : F →L[ℝ] V))
-    ((hJ.unitaryFrame (.of_forall hJc)).clm_comp (differentiableAt_const _))
-    ((hJc t).isInvertible_unitaryFrame.comp ⟨Φ, rfl⟩)
-    (fun s x y ↦ by simp [(hJc s).apply_unitaryFrame_unitaryFrame hg, hΦω, hω₀]) hS u v
-  rwa [hω₀, hω₀] at h
 
 /-- **The eigenbasis of the asymptotic operator of a loop of compatible structures.** Let the inner
 product of `V` be the metric `ω(·, J₀ ·)`, and let `Φ : F ≃ V` be a frame of `J₀` from a
@@ -142,8 +121,9 @@ theorem exists_hilbertBasis_asymptoticOperator_eq_smul [FiniteDimensional ℂ F]
       (hJ.differentiable one_ne_zero t) (hS t) v w
     rwa [← hS' t] at h
   obtain ⟨ι, b, a, lam, c, hc, hab⟩ := CircleSobolev.exists_hilbertBasis_I_smul_loopOperator_eq_smul
-    1 S' hSs (isInvertible_loopOperator_frameLoop (hΘ1.differentiable one_ne_zero) hΘp hΘinv hnd
-      hS')
+    1 S' hSs (isInvertible_loopOperator_frameLoop (hΘ1.differentiable one_ne_zero) hΘp hΘinv
+      (fun ζ hζp hζd ↦ hnd ζ (fun t ↦ (hζd t).differentiableAt) hζp fun t ↦
+        (asymptoticOperator_eq_zero_iff (hζd t).differentiableAt).2 (hζd t)) hS')
   refine ⟨ι, b, a, lam, c, hc, fun i ↦ ?_⟩
   obtain ⟨hai, hlam, hev⟩ := hab i
   -- The continuous representative `η` of `a i` solves `η' = S' η - λ i η` classically.

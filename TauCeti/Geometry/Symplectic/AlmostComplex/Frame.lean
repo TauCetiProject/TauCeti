@@ -211,19 +211,6 @@ theorem Compatible.apply_unitaryFrame_unitaryFrame (hg : ∀ v w, ω v (J₀ w) 
   rw [h, inner_neg_right, ← hg, AlmostComplexStructure.apply_apply]
   simp
 
-/-- **The frames `Ψ Φ` are unitary.** Let the inner product of `V` be the metric `ω(·, J₀ ·)` and
-let `Φ : F ≃ V` satisfy `Φ (i x) = J₀ (Φ x)` and `ω (Φ x) (Φ y) = Im ⟪x, y⟫`. Then the unitary frame
-`Ψ` of an `ω`-compatible `J` carries the real part of the Hermitian product of `F` to the metric
-`ω(·, J ·)`: `ω (Ψ (Φ x)) (J (Ψ (Φ y))) = Re ⟪x, y⟫`. -/
-theorem Compatible.apply_unitaryFrame_apply_unitaryFrame_eq_re_inner {F : Type*}
-    [NormedAddCommGroup F] [InnerProductSpace ℂ F] {Φ : F ≃L[ℝ] V} (hJ : ω.Compatible J)
-    (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) (hΦ : ∀ x, Φ (Complex.I • x) = J₀ (Φ x))
-    (hΦω : ∀ x y, ω (Φ x) (Φ y) = (inner ℂ x y).im) (x y : F) :
-    ω (ω.unitaryFrame J (Φ x)) (J (ω.unitaryFrame J (Φ y))) = (inner ℂ x y).re := by
-  rw [hJ.apply_unitaryFrame hg, ← hΦ, hJ.apply_unitaryFrame_unitaryFrame hg, hΦω,
-    inner_smul_right]
-  simp
-
 /-- The unitary frame of a compatible structure as a continuous linear equivalence. Its inverse is
 the square root of the Riesz operator of `ω(·, J ·)`. -/
 def Compatible.unitaryFrameEquiv (hJ : ω.Compatible J) : V ≃L[ℝ] V :=
