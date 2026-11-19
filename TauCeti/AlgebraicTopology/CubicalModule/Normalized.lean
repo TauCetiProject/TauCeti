@@ -326,11 +326,9 @@ theorem ker_normalize (n : ℕ) : LinearMap.ker (A.normalize n) = A.degenerate n
     fun _ hx ↦ A.normalize_eq_zero hx
 
 /-- Every module of cubes is the direct sum of its normalized and its degenerate cubes. -/
-theorem isCompl_normalized_degenerate (n : ℕ) : IsCompl (A.normalized n) (A.degenerate n) where
-  disjoint := Submodule.disjoint_def.2 fun x hxN hxD ↦ by
-    rw [← A.normalize_eq_self hxN, A.normalize_eq_zero hxD]
-  codisjoint := codisjoint_iff.2 <| eq_top_iff.2 fun x _ ↦ Submodule.mem_sup.2
-    ⟨_, A.normalize_mem_normalized n x, _, A.sub_normalize_mem_degenerate n x, add_sub_cancel _ _⟩
+theorem isCompl_normalized_degenerate (n : ℕ) : IsCompl (A.normalized n) (A.degenerate n) := by
+  rw [← A.range_normalize, ← A.ker_normalize]
+  exact LinearMap.IsIdempotentElem.isCompl (LinearMap.ext (A.normalize_normalize n))
 
 /-! ### The boundary on normalized and degenerate cubes -/
 
@@ -375,12 +373,24 @@ theorem boundary_mem_degenerate {n : ℕ} {x : A.X (n + 1)} (hx : x ∈ A.degene
         Submodule.smul_of_tower_mem _ _ (A.faceDiff_degen_mem_degenerate i j y)
   exact this hx
 
+variable {A} in
+/-- A linear map sending normalized cubes to normalized cubes and degenerate cubes to degenerate
+cubes commutes with the normalization projectors. -/
+theorem normalize_comp_of_le {B : CubicalModule.{v} R} {m n : ℕ} (f : A.X m →ₗ[R] B.X n)
+    (hN : A.normalized m ≤ (B.normalized n).comap f)
+    (hD : A.degenerate m ≤ (B.degenerate n).comap f) :
+    B.normalize n ∘ₗ f = f ∘ₗ A.normalize m := by
+  ext x
+  have h := B.normalize_eq_zero (hD (A.sub_normalize_mem_degenerate m x))
+  rw [map_sub, map_sub, sub_eq_zero] at h
+  rw [LinearMap.comp_apply, h, B.normalize_eq_self (hN (A.normalize_mem_normalized m x)),
+    LinearMap.comp_apply]
+
 /-- The normalization projector commutes with the cubical boundary. -/
 theorem normalize_boundary (n : ℕ) (x : A.X (n + 1)) :
-    A.normalize n (A.boundary n x) = A.boundary n (A.normalize (n + 1) x) := by
-  have h := A.normalize_eq_zero (A.boundary_mem_degenerate (A.sub_normalize_mem_degenerate _ x))
-  rw [map_sub, map_sub, sub_eq_zero] at h
-  rw [h, A.normalize_eq_self (A.boundary_mem_normalized (A.normalize_mem_normalized _ x))]
+    A.normalize n (A.boundary n x) = A.boundary n (A.normalize (n + 1) x) :=
+  congr($(normalize_comp_of_le (A.boundary n) (fun _ ↦ A.boundary_mem_normalized)
+    fun _ ↦ A.boundary_mem_degenerate) x)
 
 /-! ### The normalized complex and the degeneracy quotient -/
 
@@ -428,7 +438,8 @@ theorem normalizedComplex_X (n : ℕ) : A.normalizedComplex.X n = ModuleCat.of R
 @[simp]
 theorem normalizedComplex_d_apply (n : ℕ) (x : A.normalized (n + 1)) :
     A.normalizedComplex.d (n + 1) n x = A.normalizedBoundary n x := by
-  simp only [normalizedComplex, ChainComplex.of_d]
+  simp only [normalizedComplex, ChainComplex.of_d, ModuleCat.hom_ofHom]
+  -- The two sides differ only in the module instances on the carrier of `ModuleCat.of`.
   rfl
 
 @[simp]
@@ -440,14 +451,16 @@ theorem degeneracyQuotientComplex_X (n : ℕ) :
 theorem degeneracyQuotientComplex_d_mk (n : ℕ) (x : A.X (n + 1)) :
     A.degeneracyQuotientComplex.d (n + 1) n (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (A.boundary n x) := by
-  simp only [degeneracyQuotientComplex, ChainComplex.of_d]
+  simp only [degeneracyQuotientComplex, ChainComplex.of_d, ModuleCat.hom_ofHom]
+  -- The two sides differ only in the module instances on the carrier of `ModuleCat.of`.
   rfl
 
 /-- The inclusion of the normalized complex into the cubical boundary complex. -/
 def normalizedComplexι : A.normalizedComplex ⟶ A.complex :=
   ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (A.normalized n).subtype) fun n ↦ by
     simp only [complex, normalizedComplex, ChainComplex.of_d, ← ModuleCat.ofHom_comp]
-    rfl
+    refine congr_arg ModuleCat.ofHom (LinearMap.ext fun x ↦ ?_)
+    simp
 
 @[simp]
 theorem normalizedComplexι_f_apply (n : ℕ) (x : A.normalized n) :
@@ -493,12 +506,16 @@ def normalizedComplexIsoDegeneracyQuotient :
       obtain rfl : i = j + 1 := hij.symm
       simp only [normalizedComplex, degeneracyQuotientComplex, ChainComplex.of_d,
         LinearEquiv.toModuleIso_hom, ← ModuleCat.ofHom_comp]
-      rfl
+      refine congr_arg ModuleCat.ofHom (LinearMap.ext fun x ↦ ?_)
+      simp
 
 @[simp]
 theorem normalizedComplexIsoDegeneracyQuotient_hom :
     A.normalizedComplexIsoDegeneracyQuotient.hom =
       A.normalizedComplexι ≫ A.degeneracyQuotientComplexπ := by
+  -- The components of both sides are the inclusion followed by the projection, as maps between
+  -- objects that agree with `A.normalizedComplex.X n` and `A.degeneracyQuotientComplex.X n` only
+  -- up to unfolding, so `rw` and `simp` cannot match them.
   ext n : 1
   rfl
 
@@ -535,10 +552,9 @@ theorem Hom.f_mem_degenerate (φ : A ⟶ B) {n : ℕ} {x : A.X n} (hx : x ∈ A.
 
 /-- A morphism of cubical modules commutes with the normalization projectors. -/
 theorem Hom.f_normalize (φ : A ⟶ B) (n : ℕ) (x : A.X n) :
-    φ.f n (A.normalize n x) = B.normalize n (φ.f n x) := by
-  have h := B.normalize_eq_zero (φ.f_mem_degenerate (A.sub_normalize_mem_degenerate n x))
-  rw [map_sub, map_sub, sub_eq_zero] at h
-  rw [h, B.normalize_eq_self (φ.f_mem_normalized (A.normalize_mem_normalized n x))]
+    φ.f n (A.normalize n x) = B.normalize n (φ.f n x) :=
+  congr($(normalize_comp_of_le (φ.f n) (fun _ ↦ φ.f_mem_normalized)
+    fun _ ↦ φ.f_mem_degenerate) x).symm
 
 /-- The **normalized cubical complex functor**, sending a cubical module to its normalized
 cubical complex. -/
@@ -573,6 +589,9 @@ cubical boundary complex by the degenerate cubes. -/
       congr 1
       ext x
       simp
+  -- On a class `[x]`, both sides of `map_id` are `[x]` and both sides of `map_comp` are
+  -- `[ψ (φ x)]` by the definition of `mapQ`; `degeneracyQuotientComplexFunctor_map_f_mk` is only
+  -- available after this declaration.
   map_id A := by
     ext n x
     obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective _ x
@@ -594,7 +613,7 @@ theorem degeneracyQuotientComplexFunctor_map_f_mk (φ : A ⟶ B) (n : ℕ) (x : 
   (rfl)
 
 /-- The inclusion of the normalized complex, natural in the cubical module. -/
-@[expose] def normalizedComplexFunctorι : normalizedComplexFunctor ⟶ complexFunctor (R := R) where
+def normalizedComplexFunctorι : normalizedComplexFunctor ⟶ complexFunctor (R := R) where
   app A := A.normalizedComplexι
 
 @[simp]
@@ -602,7 +621,7 @@ theorem normalizedComplexFunctorι_app : normalizedComplexFunctorι.app A = A.no
   (rfl)
 
 /-- The projection onto the degeneracy quotient complex, natural in the cubical module. -/
-@[expose] def degeneracyQuotientComplexFunctorπ :
+def degeneracyQuotientComplexFunctorπ :
     complexFunctor ⟶ degeneracyQuotientComplexFunctor (R := R) where
   app A := A.degeneracyQuotientComplexπ
 
@@ -615,6 +634,8 @@ theorem degeneracyQuotientComplexFunctorπ_app :
 def normalizedComplexFunctorIsoDegeneracyQuotient :
     normalizedComplexFunctor ≅ degeneracyQuotientComplexFunctor (R := R) :=
   NatIso.ofComponents (fun A ↦ A.normalizedComplexIsoDegeneracyQuotient) fun φ ↦ by
+    -- Both components send `x` to the class of `φ x`, between objects that agree with the
+    -- functors' objects only up to unfolding.
     simp only [normalizedComplexIsoDegeneracyQuotient_hom]
     ext n x
     rfl

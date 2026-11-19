@@ -166,7 +166,7 @@ theorem boundary_boundary (n : ℕ) (x : A.X (n + 2)) : A.boundary n (A.boundary
 @[expose] def complex : ChainComplex (ModuleCat.{v} R) ℕ :=
   ChainComplex.of A.X (fun n ↦ ModuleCat.ofHom (A.boundary n)) fun n ↦ by
     rw [← ModuleCat.ofHom_comp, A.boundary_comp_boundary]
-    rfl
+    exact ModuleCat.ofHom_zero
 
 @[simp]
 theorem complex_X (n : ℕ) : A.complex.X n = A.X n :=
@@ -174,7 +174,8 @@ theorem complex_X (n : ℕ) : A.complex.X n = A.X n :=
 
 @[simp]
 theorem complex_d_apply (n : ℕ) (x : A.X (n + 1)) : A.complex.d (n + 1) n x = A.boundary n x := by
-  simp only [complex, ChainComplex.of_d]
+  simp only [complex, ChainComplex.of_d, ModuleCat.hom_ofHom]
+  -- The two sides differ only in the module instances on the carrier of `ModuleCat.of`.
   rfl
 
 /-! ### Morphisms of cubical modules -/
