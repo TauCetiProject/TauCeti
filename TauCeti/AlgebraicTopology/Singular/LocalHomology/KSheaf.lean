@@ -51,6 +51,8 @@ while `H₀(S¹, S¹ ∖ (K₁ ∪ K₂)) = H₀(S¹)` is not zero.
 * `TauCeti.isPullback_localHomologyKPresheaf_map`: the union axiom, when `Hₖ₊₁` vanishes along the
   intersection.
 * `TauCeti.localHomologyKPresheaf.isColimitCoconeOfCompacts`: the continuity axiom.
+* `TauCeti.isKSheaf_localHomologyKPresheaf_of_isZero`: on a locally compact Hausdorff space, the
+  local homology K-presheaf in degree `k` is a K-sheaf when `Hₖ₊₁` vanishes along compact sets.
 * `TauCeti.isKSheaf_localHomologyKPresheaf`: in the dimension of a manifold, the local homology
   K-presheaf is a K-sheaf.
 * `TauCeti.orientationKSheaf`: the orientation K-sheaf of a manifold, as an object of
@@ -149,6 +151,17 @@ def localHomologyKPresheaf.isColimitCoconeOfCompacts (k : ℕ) (K : Compacts (To
   exact (Category.comp_id _).trans ((localHomologyRestriction_def R
     (Compacts.subset_of_mem_compactNhds L.unop.2) k).symm.trans (Category.id_comp _).symm)
 
+/-- On a locally compact Hausdorff space, for coefficients in an abelian category whose filtered
+colimits are exact, the local homology K-presheaf `K ↦ Hₖ(M, M ∖ K)` is a K-sheaf as soon as
+`Hₖ₊₁(M, M ∖ K)` vanishes for every compact `K`. -/
+theorem isKSheaf_localHomologyKPresheaf_of_isZero {k : ℕ}
+    (h : ∀ K : Compacts (TopCat.of M), IsZero (localHomology R (K : Set M) (k + 1))) :
+    (localHomologyKPresheaf R M k).IsKSheaf where
+  nonempty_isTerminal := ⟨(isZero_localHomology_empty R k).isTerminal⟩
+  isPullback sq := isPullback_localHomologyKPresheaf_map R sq (h _)
+  nonempty_isColimit_coconeOfCompacts K :=
+    ⟨localHomologyKPresheaf.isColimitCoconeOfCompacts R k K⟩
+
 end LocallyCompact
 
 section Manifold
@@ -160,13 +173,10 @@ variable {Λ : Type w} [Ring Λ] (N : ModuleCat.{w} Λ) (M : Type w) [Topologica
 finite dimension `n`, a topological `n`-manifold without boundary, the local homology K-presheaf
 `K ↦ Hₙ(M, M ∖ K)` with coefficients in a module is a K-sheaf. -/
 theorem isKSheaf_localHomologyKPresheaf {n : ℕ} (hn : Module.finrank ℝ E = n) :
-    (localHomologyKPresheaf N M n).IsKSheaf where
-  nonempty_isTerminal := ⟨(isZero_localHomology_empty N n).isTerminal⟩
-  isPullback sq := isPullback_localHomologyKPresheaf_map N sq
-    (isZero_localHomology_of_isCompact N hn (Compacts.isCompact _) (Nat.lt_succ_self n))
-  nonempty_isColimit_coconeOfCompacts K :=
-    have := ChartedSpace.locallyCompactSpace E M
-    ⟨localHomologyKPresheaf.isColimitCoconeOfCompacts N n K⟩
+    (localHomologyKPresheaf N M n).IsKSheaf :=
+  have := ChartedSpace.locallyCompactSpace E M
+  isKSheaf_localHomologyKPresheaf_of_isZero N fun K ↦
+    isZero_localHomology_of_isCompact N hn K.isCompact (Nat.lt_succ_self n)
 
 variable (E) in
 /-- The **orientation K-sheaf** `K ↦ Hₙ(M, M ∖ K)` of a Hausdorff space `M` modelled on a real
