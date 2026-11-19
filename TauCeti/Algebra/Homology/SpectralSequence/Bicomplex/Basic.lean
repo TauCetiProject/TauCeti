@@ -49,6 +49,8 @@ object stabilizes after finitely many pages to the corresponding graded piece of
 * `HomologicalComplex₂.rowFiltration`: the filtration of the total complex by rows.
 * `HomologicalComplex₂.ιTotalRowsGE`: the summand inclusions of the total complex of the rows
   `≥ s`, which describe the projection `HomologicalComplex₂.toTotalRowsGE` onto it.
+* `HomologicalComplex₂.totalRowCyclesIso`, `HomologicalComplex₂.totalRowHomologyIso`: the cycles
+  and the homology of a row placed in the degrees of the total complex are those of the row.
 * `HomologicalComplex₂.rowFiltrationGradedIso`: the graded pieces of the row filtration are the
   rows.
 * `HomologicalComplex₂.rowFiltrationSpectralSequence`: its spectral sequence.
@@ -133,6 +135,7 @@ def totalRowXIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) :
 omit [HasFiniteCoproducts C] in
 /-- The identification of the terms of the row `0` placed in the degrees of the total complex is
 the identity. -/
+@[simp]
 lemma totalRowXIso_zero (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) (p : ℕ) :
     K.totalRowXIso 0 p = Iso.refl _ :=
   (rfl)
@@ -293,6 +296,7 @@ def totalRowHomologyIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : (s
 
 /-- The identification of the homology of the row `0` placed in the degrees of the total complex
 is the identity. -/
+@[simp]
 lemma totalRowHomologyIso_zero (k : ℕ) : K.totalRowHomologyIso 0 k = Iso.refl _ :=
   (rfl)
 
@@ -303,6 +307,50 @@ lemma totalRowHomologyIso_succ (s k : ℕ) :
       (K.rowsSucc.totalRow s).extendHomologyIso (embeddingDownNatAdd 1)
         (embeddingDownNatAdd_f 1 (k + s)) ≪≫ K.rowsSucc.totalRowHomologyIso s k :=
   (rfl)
+
+/-- The cycles of the row `s` placed in the degrees of the total complex: in degree `k + s` they
+are the cycles of the row `s` in degree `k`. -/
+def totalRowCyclesIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : (s k : ℕ) →
+    (K.totalRow s).cycles (k + s) ≅
+      (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K).cycles k
+  | 0, _ => Iso.refl _
+  | s + 1, k =>
+    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
+    (K.rowsSucc.totalRow s).extendCyclesIso (embeddingDownNatAdd 1)
+      (embeddingDownNatAdd_f 1 (k + s)) ≪≫
+      totalRowCyclesIso K.rowsSucc s k
+
+/-- The identification `HomologicalComplex₂.totalRowCyclesIso` is compatible with the inclusions
+of the cycles and with `HomologicalComplex₂.totalRowXIso`. -/
+@[reassoc (attr := simp)]
+lemma totalRowCyclesIso_hom_iCycles (s k : ℕ) :
+    (K.totalRowCyclesIso s k).hom ≫
+      (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K).iCycles k =
+    (K.totalRow s).iCycles (k + s) ≫ (K.totalRowXIso s k).hom := by
+  induction s generalizing K with
+  | zero => simp [totalRowCyclesIso]
+  | succ s ih =>
+    simp only [totalRowCyclesIso, totalRowXIso_succ, Iso.trans_hom, Category.assoc]
+    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
+    exact (congrArg _ (ih K.rowsSucc)).trans
+      (HomologicalComplex.extendCyclesIso_hom_iCycles_assoc _ _ _ _)
+
+/-- The identifications `HomologicalComplex₂.totalRowCyclesIso` and
+`HomologicalComplex₂.totalRowHomologyIso` are compatible with the projections of the cycles onto
+the homology. -/
+@[reassoc]
+lemma homologyπ_totalRowHomologyIso_hom (s k : ℕ) :
+    (K.totalRow s).homologyπ (k + s) ≫ (K.totalRowHomologyIso s k).hom =
+      (K.totalRowCyclesIso s k).hom ≫
+      (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K).homologyπ
+        k := by
+  induction s generalizing K with
+  | zero => simp [totalRowCyclesIso]
+  | succ s ih =>
+    simp only [totalRowCyclesIso, totalRowHomologyIso_succ, Iso.trans_hom, Category.assoc]
+    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
+    exact (HomologicalComplex.homologyπ_extendHomologyIso_hom_assoc _ _ _ _).trans
+      (congrArg _ (ih K.rowsSucc))
 
 /-- The row `s` placed in the degrees of the total complex has no homology below degree `s`. -/
 lemma isZero_totalRow_homology (s n : ℕ) (hn : n < s) : IsZero ((K.totalRow s).homology n) := by

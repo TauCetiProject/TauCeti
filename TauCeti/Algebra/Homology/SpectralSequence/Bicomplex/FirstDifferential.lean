@@ -67,50 +67,6 @@ variable {C : Type*} [Category* C] [Abelian C] (K : HomologicalComplex₂ C (dow
 
 /-! ### The connecting map of a row and the rows above it -/
 
-/-- The cycles of the row `s` placed in the degrees of the total complex: in degree `k + s` they
-are the cycles of the row `s` in degree `k`. -/
-def totalRowCyclesIso (K : HomologicalComplex₂ C (down ℕ) (down ℕ)) : (s k : ℕ) →
-    (K.totalRow s).cycles (k + s) ≅
-      (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K).cycles k
-  | 0, _ => Iso.refl _
-  | s + 1, k =>
-    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
-    (K.rowsSucc.totalRow s).extendCyclesIso (embeddingDownNatAdd 1)
-      (embeddingDownNatAdd_f 1 (k + s)) ≪≫
-      totalRowCyclesIso K.rowsSucc s k
-
-/-- The identification `HomologicalComplex₂.totalRowCyclesIso` is compatible with the inclusions
-of the cycles and with `HomologicalComplex₂.totalRowXIso`. -/
-@[reassoc (attr := simp)]
-lemma totalRowCyclesIso_hom_iCycles (s k : ℕ) :
-    (K.totalRowCyclesIso s k).hom ≫
-      (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K).iCycles k =
-    (K.totalRow s).iCycles (k + s) ≫ (K.totalRowXIso s k).hom := by
-  induction s generalizing K with
-  | zero => simp [totalRowCyclesIso, totalRowXIso_zero]
-  | succ s ih =>
-    simp only [totalRowCyclesIso, totalRowXIso_succ, Iso.trans_hom, Category.assoc]
-    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
-    exact (congrArg _ (ih K.rowsSucc)).trans
-      (HomologicalComplex.extendCyclesIso_hom_iCycles_assoc _ _ _ _)
-
-/-- The identifications `HomologicalComplex₂.totalRowCyclesIso` and
-`HomologicalComplex₂.totalRowHomologyIso` are compatible with the projections of the cycles onto
-the homology. -/
-@[reassoc]
-lemma homologyπ_totalRowHomologyIso_hom (s k : ℕ) :
-    (K.totalRow s).homologyπ (k + s) ≫ (K.totalRowHomologyIso s k).hom =
-      (K.totalRowCyclesIso s k).hom ≫
-      (((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).obj K).homologyπ
-        k := by
-  induction s generalizing K with
-  | zero => simp [totalRowCyclesIso, totalRowHomologyIso_zero]
-  | succ s ih =>
-    simp only [totalRowCyclesIso, totalRowHomologyIso_succ, Iso.trans_hom, Category.assoc]
-    -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
-    exact (HomologicalComplex.homologyπ_extendHomologyIso_hom_assoc _ _ _ _).trans
-      (congrArg _ (ih K.rowsSucc))
-
 /-- The horizontal part of the differential of the total complex vanishes on the cycles of a
 row. -/
 lemma iCycles_d₁ (s k n : ℕ) :
@@ -337,13 +293,27 @@ lemma rowFiltrationSpectralSequence_page_two_d_totalRow (p : ℤ) (s : ℕ) :
     HomologicalComplex.homologyMapIso_inv, HomologicalComplex.homologyMapIso_hom]
   rw [reassoc_of% h]
   -- The first component of `HomologicalComplex₂.rowFiltrationShortComplexHom` is the composite
-  -- of the comparison of cokernels with `HomologicalComplex₂.rowFiltrationGradedIso s`.
-  refine (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans ((congrArg _
-    (HomologicalComplex.homologyMap_comp _ _ _).symm).trans hφ))).trans ?_
-  refine (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) ?_)
-  rw [rowFiltrationShortComplexHom_τ₃]
-  exact (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
-    (congrArg (HomologicalComplex.homologyMap · _) (Iso.inv_hom_id_assoc _ _))
+  -- of the comparison of cokernels with `HomologicalComplex₂.rowFiltrationGradedIso s`, and its
+  -- third component is `HomologicalComplex₂.rowFiltrationGradedIso (s + 1)` followed by the
+  -- inclusion of the row `s + 1`.
+  have hτ₃ : HomologicalComplex.homologyMap (K.rowFiltrationGradedIso (s + 1)).inv _ ≫
+      HomologicalComplex.homologyMap (K.rowFiltrationShortComplexHom s).τ₃ (p + (s + 1 : ℕ)) =
+      HomologicalComplex.homologyMap
+        (HomologicalComplex.extendMap (K.totalRowι (s + 1)) embeddingDownNat) _ := by
+    rw [rowFiltrationShortComplexHom_τ₃]
+    exact (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
+      (congrArg (HomologicalComplex.homologyMap · _) (Iso.inv_hom_id_assoc _ _))
+  -- The objects of the snake-input sequence are only definitionally the cokernels, so the goal
+  -- is not type-correct at reducible transparency and `rw`/`simp` cannot reassociate it; the
+  -- steps are given as terms, through the naturality `hφ` of the connecting maps.
+  calc _ = HomologicalComplex.homologyMap (K.rowFiltrationGradedIso (s + 1)).inv _ ≫ _ ≫
+        HomologicalComplex.homologyMap (K.rowFiltrationShortComplexHom s).τ₁ _ :=
+        congrArg _ ((Category.assoc _ _ _).trans
+          (congrArg _ (HomologicalComplex.homologyMap_comp _ _ _).symm))
+    _ = HomologicalComplex.homologyMap (K.rowFiltrationGradedIso (s + 1)).inv _ ≫
+        HomologicalComplex.homologyMap (K.rowFiltrationShortComplexHom s).τ₃ _ ≫ _ :=
+        congrArg _ hφ
+    _ = _ := (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hτ₃)
 
 /-- The form of `HomologicalComplex₂.rowFiltrationSpectralSequence_page_two_d_totalRow` in which
 the homology of the rows placed in the degrees of the total complex, regarded as cochain
@@ -358,20 +328,24 @@ lemma rowFiltrationSpectralSequence_page_two_d_totalRow_extendHomologyIso (p : �
         (by simp; omega)).hom ≫
       HomologicalComplex.homologyMap (K.totalRowι (s + 1)) (k + (s + 1)) ≫
       (K.totalRowShortComplex_shortExact s).δ (k + (s + 1)) (k + s) (by simp; omega) := by
-  rw [reassoc_of% (K.rowFiltrationSpectralSequence_page_two_d_totalRow p s)]
   -- The connecting maps and the homology maps commute with the extension along
   -- `embeddingDownNat`.
-  refine (Category.assoc _ _ _).trans ?_
-  exact (congrArg (_ ≫ ·) (ShortComplex.ShortExact.extend_δ_comp_extendHomologyIso_hom
-      (K.totalRowShortComplex_shortExact s) embeddingDownNat
-      (show (down ℕ).Rel (k + (s + 1)) (k + s) by simp; omega)
-      (show embeddingDownNat.f (k + (s + 1)) = p + (s + 1 : ℕ) by simp; omega)
-      (show embeddingDownNat.f (k + s) = p + 2 + s by simp; omega) (by simp; omega))).trans
-    ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
-      (HomologicalComplex.extendHomologyIso_hom_naturality (K.totalRowι (s + 1))
-        embeddingDownNat
-        (show embeddingDownNat.f (k + (s + 1)) = p + (s + 1 : ℕ) by simp; omega))).trans
-        (Category.assoc _ _ _)))
+  have hi : embeddingDownNat.f (k + (s + 1)) = p + (s + 1 : ℕ) := by simp; omega
+  have hδ := ShortComplex.ShortExact.extend_δ_comp_extendHomologyIso_hom
+    (K.totalRowShortComplex_shortExact s) embeddingDownNat
+    (show (down ℕ).Rel (k + (s + 1)) (k + s) by simp; omega) hi
+    (show embeddingDownNat.f (k + s) = p + 2 + s by simp; omega) (by simp; omega)
+  have hι := HomologicalComplex.extendHomologyIso_hom_naturality (K.totalRowι (s + 1))
+    embeddingDownNat hi
+  rw [reassoc_of% (K.rowFiltrationSpectralSequence_page_two_d_totalRow p s)]
+  -- The objects of the extended sequence are only definitionally the extended complexes, so the
+  -- steps are given as terms: `hδ` for the connecting maps, then `hι` for the homology maps.
+  calc _ = HomologicalComplex.homologyMap
+          (HomologicalComplex.extendMap (K.totalRowι (s + 1)) embeddingDownNat) _ ≫ _ ≫
+          (K.totalRowShortComplex_shortExact s).δ (k + (s + 1)) (k + s) _ :=
+        (Category.assoc _ _ _).trans (congrArg _ hδ)
+    _ = _ := (Category.assoc _ _ _).symm.trans
+        ((congrArg (· ≫ _) hι).trans (Category.assoc _ _ _))
 
 /-! ### The first differentials -/
 
