@@ -433,6 +433,7 @@ theorem chainComplexMap_comp_singularChainComplexPermutationIso_hom_of_section :
 singular homology of `E` with homology of `B` twisted by the permutation local system,
 `s_* : H(B; R) ⟶ H(E; R)` for a continuous section `s` of `p` is induced by the morphism from the
 constant system sending `r` to `r • s x`. -/
+@[reassoc]
 theorem homologyMap_comp_singularHomologyPermutationIso_hom_of_section (k : ℕ) :
     SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom s)) (ModuleCat.of R R) k ≫
         (hp.singularHomologyPermutationIso R k).hom =

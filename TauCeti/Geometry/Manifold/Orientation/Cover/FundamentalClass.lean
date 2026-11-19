@@ -455,20 +455,21 @@ theorem mapFundamentalClass_coverSection_sub_mapFundamentalClass_coverSection_ne
   -- point of either sheet determines its base point, and the two sheets are disjoint since the
   -- deck involution has no fixed point.
   obtain ⟨x, rfl | rfl⟩ : ∃ x, y = s x ∨ y = t x :=
-    ⟨y.proj, hst y.proj ▸ VectorBundleOrientationCover.eq_or_eq_deck (Fintype.card_fin _) rfl⟩
+    ⟨y.proj, hst y.proj ▸ VectorBundleOrientationCover.eq_or_eq_deck (Fintype.card_fin _)
+      (VectorBundleOrientation.proj_coverSection _ _ _).symm⟩
   · have h₁ : s ⁻¹' {s x} = {x} := Set.eq_singleton_iff_unique_mem.2
-      ⟨rfl, fun z hz ↦ congrArg VectorBundleOrientationCover.proj hz⟩
+      ⟨rfl, fun z hz ↦ by simpa [s, t] using congrArg VectorBundleOrientationCover.proj hz⟩
     have h₂ : s x ∉ Set.range t := by
       rintro ⟨z, hz⟩
-      obtain rfl : z = x := congrArg VectorBundleOrientationCover.proj hz
+      obtain rfl : z = x := by simpa [s, t] using congrArg VectorBundleOrientationCover.proj hz
       exact VectorBundleOrientationCover.deck_ne_self _ ((hst z).symm.trans hz)
     rw [oM.localDegree_eq_localIndex _ hE hE s h₁, localIndex_coverSection,
       oM.localDegree_eq_zero_of_notMem_range _ hE hE _ h₂, one_zsmul, zero_zsmul, sub_zero]
   · have h₁ : t ⁻¹' {t x} = {x} := Set.eq_singleton_iff_unique_mem.2
-      ⟨rfl, fun z hz ↦ congrArg VectorBundleOrientationCover.proj hz⟩
+      ⟨rfl, fun z hz ↦ by simpa [s, t] using congrArg VectorBundleOrientationCover.proj hz⟩
     have h₂ : t x ∉ Set.range s := by
       rintro ⟨z, hz⟩
-      obtain rfl : z = x := congrArg VectorBundleOrientationCover.proj hz
+      obtain rfl : z = x := by simpa [s, t] using congrArg VectorBundleOrientationCover.proj hz
       exact VectorBundleOrientationCover.deck_ne_self _ ((hst z).symm.trans hz.symm)
     rw [oM.localDegree_eq_zero_of_notMem_range _ hE hE _ h₂,
       oM.localDegree_eq_localIndex _ hE hE t h₁, localIndex_coverSection_neg, zero_zsmul,
@@ -504,7 +505,7 @@ theorem twistedHomologyCoefficientMap_inv_fundamentalClass :
       VectorBundleOrientationCover.proj_comp_deck (finite_preimage_projHom M)
       VectorBundleOrientationCover.deck_ne_self
       (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck (Fintype.card_fin _) h) s t
-      (fun _ ↦ rfl) (fun _ ↦ rfl) hst)) (Zu.inv.hom (oM.fundamentalClass hE))
+      (fun _ ↦ by simp [s]) (fun _ ↦ by simp [t]) hst)) (Zu.inv.hom (oM.fundamentalClass hE))
   rw [← VectorBundleOrientation.signLocalSystemIso_def] at hcoef
   simp only [hφ, twistedHomologyCoefficientMap_comp, twistedHomologyCoefficientMap_sub,
     ModuleCat.hom_comp, ModuleCat.hom_sub, LinearMap.comp_apply, LinearMap.sub_apply] at hcoef
@@ -534,7 +535,8 @@ theorem twistedHomologyCoefficientMap_inv_fundamentalClass :
     ← mapFundamentalClass_coverSection_sub_mapFundamentalClass_coverSection_neg hE o]
   -- The two sides agree only up to the presentation of singular homology, so the last steps are
   -- checked up to that identification.
-  exact (congrArg₂ (· - ·) (hsec s fun _ ↦ rfl) (hsec t fun _ ↦ rfl)).trans (map_sub _ _ _).symm
+  exact (congrArg₂ (· - ·) (hsec s fun _ ↦ by simp [s]) (hsec t fun _ ↦ by simp [t])).trans
+    (map_sub _ _ _).symm
 
 /-- **The twisted fundamental class of an oriented manifold is its fundamental class.** An
 orientation `o` of `M` trivializes the orientation local system `o(TM)`, by evaluating a function

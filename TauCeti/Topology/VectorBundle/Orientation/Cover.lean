@@ -514,7 +514,7 @@ theorem continuous_mk_cover (hι : Fintype.card ι = finrank ℝ F)
 
 /-- The continuous section `b ↦ (b, o b)` of the orientation double cover given by an orientation
 `o` of the bundle, provided `ι` has cardinality the rank of the bundle. -/
-@[expose] def coverSection (hι : Fintype.card ι = finrank ℝ F) (o : VectorBundleOrientation F E ι) :
+def coverSection (hι : Fintype.card ι = finrank ℝ F) (o : VectorBundleOrientation F E ι) :
     C(B, VectorBundleOrientationCover F E ι) :=
   ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩
 
@@ -523,6 +523,11 @@ theorem continuous_mk_cover (hι : Fintype.card ι = finrank ℝ F)
 theorem coverSection_apply (hι : Fintype.card ι = finrank ℝ F)
     (o : VectorBundleOrientation F E ι) (b : B) :
     o.coverSection hι b = ⟨b, o b⟩ :=
+  (rfl)
+
+/-- The section given by an orientation is a section of the projection. -/
+theorem proj_coverSection (hι : Fintype.card ι = finrank ℝ F)
+    (o : VectorBundleOrientation F E ι) (b : B) : (o.coverSection hι b).proj = b :=
   (rfl)
 
 /-- The deck involution exchanges the sections given by `o` and by the opposite orientation. -/
@@ -536,7 +541,8 @@ continuous section. -/
 theorem nonempty_iff_exists_section (hι : Fintype.card ι = finrank ℝ F) :
     Nonempty (VectorBundleOrientation F E ι) ↔
       ∃ s : B → VectorBundleOrientationCover F E ι, Continuous s ∧ ∀ b, (s b).proj = b := by
-  refine ⟨fun ⟨o⟩ ↦ ⟨_, (o.coverSection hι).continuous, fun _ ↦ rfl⟩, fun ⟨s, hs, hproj⟩ ↦ ?_⟩
+  refine ⟨fun ⟨o⟩ ↦ ⟨_, (o.coverSection hι).continuous, o.proj_coverSection hι⟩,
+    fun ⟨s, hs, hproj⟩ ↦ ?_⟩
   -- A section is determined by its fibre orientations, transported along `(s b).proj = b`.
   have key (p : VectorBundleOrientationCover F E ι) (b : B) (h : p.proj = b) :
       (⟨b, h ▸ p.orientation⟩ : VectorBundleOrientationCover F E ι) = p := by

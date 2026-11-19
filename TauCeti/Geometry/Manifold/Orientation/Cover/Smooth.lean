@@ -230,15 +230,19 @@ theorem isOrientationPreservingAt_coverSection (o : Orientation I M (Fin (finran
     IsOrientationPreservingAt o canonicalOrientation
       (o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)) x := by
   set s := o.toVectorBundleOrientation.coverSection (Fintype.card_fin _)
-  have hπs : VectorBundleOrientationCover.proj ∘ ⇑s = id := rfl
+  have hπs : VectorBundleOrientationCover.proj ∘ ⇑s = id :=
+    funext (o.toVectorBundleOrientation.proj_coverSection _)
   have hs : ContMDiff I I 1 s :=
     ContMDiff.of_comp_isLocalDiffeomorph isLocalDiffeomorph_proj s.continuous
       (hπs ▸ contMDiff_id)
   obtain ⟨D, hD⟩ := (isLocalDiffeomorph_proj (I := I) (M := M) (n := 1)).isInvertible_mfderiv
     one_ne_zero (s x)
+  have hsx : (s x).orientation = o.orientationAt (s x).proj := by
+    rw [VectorBundleOrientation.coverSection_apply]
+    exact o.toVectorBundleOrientation_apply x
   refine IsOrientationPreservingAt.of_comp (g := VectorBundleOrientationCover.proj)
     ((isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ D hD).2
-      ((map_orientationAt_canonicalOrientation _ D hD).trans (o.toVectorBundleOrientation_apply x)))
+      ((map_orientationAt_canonicalOrientation _ D hD).trans hsx))
     ?_ (hs.mdifferentiableAt one_ne_zero)
   rw [hπs]
   exact isOrientationPreservingAt_id o x
