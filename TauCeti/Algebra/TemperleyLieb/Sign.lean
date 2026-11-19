@@ -44,6 +44,9 @@ radicals correspond (`comap_traceRadical_signEquiv`), inducing algebra isomorphi
 `TauCeti.TemperleyLieb.IsMarkovTrace.quotientSignEquiv` between the trace-radical quotients that
 intertwine the quotient strand inclusions.
 
+The positivity of the signed closure forms at negative loop values, which combines these results
+with Jones's positivity theorem, is in `TauCeti.Algebra.TemperleyLieb.Positivity.Sign`.
+
 ## Main definitions
 
 * `TauCeti.TemperleyLieb.signEquiv δ n`: the algebra isomorphism
