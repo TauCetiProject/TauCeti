@@ -42,10 +42,11 @@ base point only up to conjugation by étale paths.
 
 A point of a geometric fibre is a lift of the geometric point (`fiberCompInclIso`), and the image
 under `pullbackCompFiberIso` of a lift to `X ×_S T` is its composite with the projection to `X`
-(`fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left`). Hence loops at `x` and at `y`
-that both act on lifts by precomposition with one endomorphism of `Spec Ω` correspond under
-`mapAutFiber` (`mapAutFiber_eq_of_fiberCompInclIso_left`); this is how the homomorphism induced by
-a morphism of spectra of fields is identified with restriction of Galois automorphisms.
+(`fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left`, in
+`TauCeti/AlgebraicGeometry/FiniteEtale/Fiber.lean`). Hence loops at `x` and at `y` that both act
+on lifts by precomposition with one endomorphism of `Spec Ω` correspond under `mapAutFiber`
+(`mapAutFiber_eq_of_fiberCompInclIso_left`); this is how the homomorphism induced by a morphism of
+spectra of fields is identified with restriction of Galois automorphisms.
 
 ## Main definitions
 
@@ -234,34 +235,6 @@ theorem mapAutFiber_conjAut (f : T ⟶ S) {x : Spec (.of Ω) ⟶ T} {x' : Spec (
   rw [mapAutFiber_apply_asIso, Iso.conjAut_apply, Iso.conjAut_apply, mapAutFiber_apply_asIso,
     mapFiberIso_trans f hx' hx hx', mapFiberIso_trans f hx hx hx', mapFiberIso_symm]
 
-/-- A point of the geometric fibre at `x` of the base change `X ×_S T` is a lift of `x` to
-`X ×_S T`. Its image under `pullbackCompFiberIso`, a point of the geometric fibre of `X` at
-`x ≫ f`, is the lift of `x ≫ f` obtained by composing with the projection `X ×_S T ⟶ X`. -/
-theorem fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left (f : T ⟶ S)
-    (x : Spec (.of Ω) ⟶ T) (X : FiniteEtaleScheme S) (z : (fiber x).obj ((pullback f).obj X)) :
-    ((fiberCompInclIso (x ≫ f)).hom.app X ((pullbackCompFiberIso f x).hom.app X z)).left =
-      ((fiberCompInclIso x).hom.app ((pullback f).obj X) z).left ≫
-        Limits.pullback.fst _ _ := by
-  have h := NatTrans.naturality_apply (equivOfIsSepClosedFunctorCompInclIso Ω).hom
-    ((pullbackComp x f).inv.app X) z
-  have hc : ((Over.pullbackComp x f).inv.app X.obj).left ≫ Limits.pullback.fst _ _ =
-      Limits.pullback.fst _ _ ≫ Limits.pullback.fst _ _ := by
-    simp [Over.pullbackComp]
-  have key (s : Over.mk (𝟙 (Spec (.of Ω))) ⟶ ((pullback x).obj ((pullback f).obj X)).obj) :
-      (s ≫ ((pullbackComp x f).inv.app X).hom).left ≫ Limits.pullback.fst _ _ =
-        (s.left ≫ Limits.pullback.fst _ _) ≫ Limits.pullback.fst _ _ := by
-    rw [Over.comp_left]
-    refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ?_).trans (Category.assoc _ _ _).symm)
-    rw [pullbackComp_inv_app_hom]
-    exact hc
-  rw [fiberCompInclIso_hom_app_apply, fiberCompInclIso_hom_app_apply, pullbackCompFiberIso_hom_app]
-  -- `erw`: the naturality square is stated for the composite `equivOfIsSepClosed Ω ⋙ incl`.
-  erw [h]
-  -- Both sides unfold, through the adjunction `Over.map ⊣ Over.pullback`, to `key`.
-  exact (Category.id_comp _).trans ((key ((equivOfIsSepClosedFunctorCompInclIso Ω).hom.app
-    ((pullback x).obj ((pullback f).obj X)) z)).trans
-      (congrArg (· ≫ _) (Category.id_comp _).symm))
-
 /-- **Recognizing the image of a loop by its action on lifts.** Let `φ` be an endomorphism of
 `Spec Ω`. If a loop `σ` at `x` acts on the lifts of `x` to every finite étale `T`-scheme by
 precomposition with `φ`, and a loop `τ` at `y` does the same on the lifts of `y`, then
@@ -285,10 +258,12 @@ theorem mapAutFiber_eq_of_fiberCompInclIso_left (f : T ⟶ S) {x : Spec (.of Ω)
   -- A point of the fibre is determined by the underlying morphism of schemes of its lift.
   refine (ConcreteCategory.bijective_of_isIso ((fiberCompInclIso (x ≫ f)).hom.app X)).1
     (Over.OverMorphism.ext ?_)
-  rw [hτ, mapAutFiber_apply_asIso, mapFiberIso_hom_app, FintypeCat.comp_apply,
-    FintypeCat.comp_apply, ← FintypeCat.comp_apply ((pullbackCompFiberIso f x).hom.app X),
-    Iso.hom_inv_id_app, FintypeCat.id_apply,
-    fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left,
+  rw [hτ, mapAutFiber_apply_asIso, mapFiberIso_hom_app]
+  -- Evaluate the composite and cancel `pullbackCompFiberIso` against its inverse.
+  simp only [FintypeCat.comp_apply, ← Iso.app_hom, ← Iso.app_inv, FintypeCat.hom_inv_id_apply]
+  simp only [Iso.app_hom]
+  -- Both sides are lifts to `X ×_S T` composed with the projection to `X`; there `σ` acts by `φ`.
+  rw [fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left,
     fiberCompInclIso_hom_app_pullbackCompFiberIso_hom_app_left, hσ]
   exact Category.assoc _ _ _
 
