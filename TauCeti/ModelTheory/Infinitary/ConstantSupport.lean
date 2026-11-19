@@ -39,6 +39,9 @@ constants. A term mentions only finitely many (`Term.finite_constantSupport`).
 * `FirstOrder.Language.BoundedFormulaInf.constantSupport_onBoundedFormulaInf`,
   `FirstOrder.Language.BoundedFormulaInf.constantSupport_eq_empty_iff`: a formula of `L[[γ]]` has
   empty support precisely when it comes from `L`.
+* `FirstOrder.Language.LHom.constantSupport_addConstants_onTerm` and
+  `FirstOrder.Language.LHom.constantSupport_addConstants_onBoundedFormulaInf`: lifting any
+  language map via `LHom.addConstants` preserves constant supports.
 
 ## References
 
@@ -50,7 +53,7 @@ constants. A term mentions only finitely many (`Term.finite_constantSupport`).
 
 public section
 
-universe u v uγ uι uκ uα w
+universe u v u' v' uγ uι uκ uα w
 
 namespace FirstOrder.Language
 
@@ -354,5 +357,43 @@ theorem realize_congr_of_eqOn_constantSupport {M : Type w} [L.Structure M] {e e'
   · exact R.elim
 
 end BoundedFormulaInf
+
+namespace LHom
+
+variable {L' : Language.{u', v'}}
+
+/-- Lifting a language map by `LHom.addConstants` preserves the constant support of a term, with
+no injectivity hypothesis on the base map. -/
+@[simp]
+theorem constantSupport_addConstants_onTerm (g : L →ᴸ L') (t : L[[γ]].Term α) :
+    ((g.addConstants γ).onTerm t).constantSupport = t.constantSupport := by
+  ext c
+  simp only [Term.mem_constantSupport, Term.functionsIn_onTerm, Set.mem_image]
+  refine ⟨?_, fun hc => ⟨⟨0, L.con c⟩, hc, rfl⟩⟩
+  rintro ⟨⟨k, f | d⟩, hf, h⟩
+  · obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
+    exact (Sum.inl_ne_inr (eq_of_heq h)).elim
+  · cases k with
+    | zero =>
+      obtain ⟨-, h⟩ := Sigma.mk.inj_iff.1 h
+      exact Sum.inr_injective (eq_of_heq h) ▸ hf
+    | succ _ => exact isEmptyElim d
+
+/-- Lifting a language map by `LHom.addConstants` preserves the constant support of an infinitary
+formula, with no injectivity hypothesis on the base map. -/
+@[simp]
+theorem constantSupport_addConstants_onBoundedFormulaInf (g : L →ᴸ L')
+    (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    ((g.addConstants γ).onBoundedFormulaInf φ).constantSupport = φ.constantSupport := by
+  induction φ with
+  | falsum => simp
+  | equal t₁ t₂ => simp
+  | rel R ts => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+end LHom
 
 end FirstOrder.Language
