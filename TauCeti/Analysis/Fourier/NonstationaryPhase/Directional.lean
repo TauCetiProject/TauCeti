@@ -7,11 +7,15 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.Fourier.FourierTransform
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 
 /-!
 # Non-stationary phase in a direction
@@ -37,9 +41,17 @@ the derivatives of `∂_w Φ / r` give bounds on those of `v` that do not depend
 (`norm_iteratedFDeriv_comp_le`), and the Leibniz rule bounds the derivatives of the successive
 amplitudes.
 
+As a consequence, on a finite-dimensional real inner product space the Fourier transform at `m`
+of a cutoff `ψ` with the nonlinear phase `⟪y, Bᵀ ξ⟫ - ⟪σ y, ξ⟫` decays faster than every power of
+`‖m‖`, uniformly in `ξ`, once `Dσ` stays within `ε` of `B` on the support of `ψ` and
+`2 ε ‖ξ‖ ≤ ‖m‖` (`TauCeti.exists_norm_pow_mul_norm_fourier_mul_fourierChar_le`): the phase of
+the Fourier integral then has derivative at least `‖m‖ / 2` in the direction `-m / ‖m‖`.
+
 ## Main results
 
 * `TauCeti.exists_norm_integral_mul_fourierChar_le`: the non-stationary phase estimate.
+* `TauCeti.exists_norm_pow_mul_norm_fourier_mul_fourierChar_le`: rapid decay of the Fourier
+  transform of a cutoff with a nonlinear phase close to a linear one.
 
 ## References
 
@@ -54,7 +66,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped ContDiff FourierTransform Nat Real
+open scoped ContDiff FourierTransform InnerProduct Nat Real RealInnerProductSpace
 
 namespace TauCeti
 
@@ -88,6 +100,10 @@ multiplier `v`: `h₀ = f` and `h_(k+1) = ∂_w (h_k v)`. -/
 private def ibpAmplitude (f v : E → ℂ) (w : E) : ℕ → E → ℂ
   | 0 => f
   | k + 1 => fun y ↦ fderiv ℝ (fun z ↦ ibpAmplitude f v w k z * v z) y w
+
+private theorem ibpAmplitude_succ (f v : E → ℂ) (w : E) (k : ℕ) (y : E) :
+    ibpAmplitude f v w (k + 1) y = fderiv ℝ (fun z ↦ ibpAmplitude f v w k z * v z) y w := by
+  rw [ibpAmplitude]
 
 private theorem contDiff_ibpAmplitude {f v : E → ℂ} (hf : ContDiff ℝ ∞ f) (hv : ContDiff ℝ ∞ v)
     (w : E) (k : ℕ) : ContDiff ℝ ∞ (ibpAmplitude f v w k) := by
@@ -124,10 +140,7 @@ private theorem integral_ibpAmplitude_mul_fourierChar [MeasurableSpace E] [Borel
       ((hΦ.differentiable (by simp)) y).hasFDerivAt
     rw [show (fun z ↦ (𝐞 (Φ z) : ℂ)) = (fun t : ℝ ↦ (𝐞 t : ℂ)) ∘ Φ from rfl, h1.fderiv]
     simp [mul_comm]
-  have hGc : ContDiff ℝ ∞ fun z ↦ (𝐞 (Φ z) : ℂ) := by
-    simp_rw [Real.fourierChar_apply]
-    exact Complex.contDiff_exp.comp ((Complex.ofRealCLM.contDiff.comp
-      (contDiff_const.mul hΦ)).mul contDiff_const)
+  have hGc : ContDiff ℝ ∞ fun z ↦ (𝐞 (Φ z) : ℂ) := hΦ.fourierChar
   have hibp := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport (μ := μ)
     (ContinuousLinearMap.mul ℝ ℂ) (f := fun z ↦ (𝐞 (Φ z) : ℂ)) (g := fun z ↦ h z * v z)
     (fun x _ ↦ hGc.contDiffAt.of_le (by simp)) ((hh.mul hv).of_le (by simp)) hhv w
@@ -184,7 +197,9 @@ private theorem norm_iteratedFDeriv_ibpAmplitude_le {f v : E → ℂ} (hf : Cont
     have hF : ContDiff ℝ ∞ fun z ↦ h z * v z := hh.mul hv
     -- `h_(k+1)` is the derivative of `h v` evaluated at `w`.
     have hcomp : ibpAmplitude f v w (k + 1) =
-        (ContinuousLinearMap.apply ℝ ℂ w) ∘ fderiv ℝ fun z ↦ h z * v z := rfl
+        (ContinuousLinearMap.apply ℝ ℂ w) ∘ fderiv ℝ fun z ↦ h z * v z := by
+      funext y
+      simp [h, ibpAmplitude_succ]
     have happ : ‖ContinuousLinearMap.apply ℝ ℂ w‖ ≤ 1 :=
       ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun L ↦ by
         simpa using (L.le_opNorm w).trans (mul_le_of_le_one_right (norm_nonneg _) hw)
@@ -273,9 +288,11 @@ theorem exists_norm_integral_mul_fourierChar_le (μ : Measure E) [μ.IsAddHaarMe
   have haI {y : E} (hy : y ∈ tsupport f) : a y ∈ Icc 1 D' := by
     obtain ⟨h1, h2⟩ := hΦr y hy
     constructor
-    · rw [show a y = r⁻¹ * fderiv ℝ Φ y w from rfl, le_inv_mul_iff₀ hr]
+    · simp only [a]
+      rw [le_inv_mul_iff₀ hr]
       linarith
-    · rw [show a y = r⁻¹ * fderiv ℝ Φ y w from rfl, inv_mul_le_iff₀ hr]
+    · simp only [a]
+      rw [inv_mul_le_iff₀ hr]
       nlinarith [le_max_left D 1]
   have hvΦ : ∀ y ∈ tsupport f, v y * (fderiv ℝ Φ y w : ℂ) = r := by
     intro y hy
@@ -290,7 +307,9 @@ theorem exists_norm_integral_mul_fourierChar_le (μ : Measure E) [μ.IsAddHaarMe
     intro j hj y hy
     refine norm_iteratedFDeriv_ofReal_smoothRecip_comp_le ha hD' hCg hgb (haI hy)
       (fun i hi1 hiM ↦ ?_) hj
-    have heq : a = r⁻¹ • fun z ↦ fderiv ℝ Φ z w := rfl
+    have heq : a = r⁻¹ • fun z ↦ fderiv ℝ Φ z w := by
+      funext z
+      simp [a, smul_eq_mul]
     rw [heq, iteratedFDeriv_const_smul_apply (hda.of_le (m := i) (by simp)).contDiffAt, norm_smul,
       Real.norm_of_nonneg (inv_nonneg.2 hr.le), inv_mul_le_iff₀ hr]
     calc ‖iteratedFDeriv ℝ i (fun z ↦ fderiv ℝ Φ z w) y‖ ≤ D * r := hΦd y hy i hi1 hiM
@@ -317,5 +336,115 @@ theorem exists_norm_integral_mul_fourierChar_le (μ : Measure E) [μ.IsAddHaarMe
     _ = (2 ^ M * Cv) ^ M * Cf * μ.real (tsupport f) / (2 * π) ^ M / r ^ M := by
         rw [inv_pow, mul_pow]
         field_simp
+
+/-! ### Fourier transforms of cutoffs with a nonlinear phase -/
+
+section InnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- The derivatives of positive order of `z ↦ a - ⟪ξ, Dσ(z) w⟫` are bounded by
+`‖ξ‖ ‖D^(i+1) σ‖ ‖w‖`. -/
+private theorem norm_iteratedFDeriv_const_sub_inner_fderiv_le {σ : V → V} (hσ : ContDiff ℝ ∞ σ)
+    (a : ℝ) (ξ w : V) {i : ℕ} (hi : i ≠ 0) (y : V) :
+    ‖iteratedFDeriv ℝ i (fun z ↦ a - ⟪ξ, fderiv ℝ σ z w⟫) y‖ ≤
+      ‖ξ‖ * (‖iteratedFDeriv ℝ (i + 1) σ y‖ * ‖w‖) := by
+  have hσw : ContDiff ℝ ∞ fun z ↦ fderiv ℝ σ z w :=
+    (hσ.fderiv_right (m := ∞) (by simp)).clm_apply contDiff_const
+  have heq : (fun z ↦ a - ⟪ξ, fderiv ℝ σ z w⟫) =
+      (fun _ ↦ a) - (innerSL ℝ ξ) ∘ fun z ↦ fderiv ℝ σ z w := by
+    ext z
+    simp
+  rw [heq, iteratedFDeriv_sub_apply contDiff_const.contDiffAt
+    (((innerSL ℝ ξ).contDiff.comp hσw).contDiffAt.of_le (by simp)),
+    iteratedFDeriv_const_of_ne hi, Pi.zero_apply, zero_sub, norm_neg]
+  calc ‖iteratedFDeriv ℝ i ((innerSL ℝ ξ) ∘ fun z ↦ fderiv ℝ σ z w) y‖
+      ≤ ‖innerSL ℝ ξ‖ * ‖iteratedFDeriv ℝ i (fun z ↦ fderiv ℝ σ z w) y‖ :=
+        (innerSL ℝ ξ).norm_iteratedFDeriv_comp_left hσw.contDiffAt (by simp)
+    _ ≤ ‖ξ‖ * (‖iteratedFDeriv ℝ (i + 1) σ y‖ * ‖w‖) := by
+        gcongr
+        · exact (innerSL_apply_norm ℝ ξ).le
+        · exact hσ.norm_iteratedFDeriv_fderiv_apply_le (by simp) w y
+
+/-- **Decay of the Fourier transform of a cutoff with a nonlinear phase.** Let `ψ` be smooth with
+compact support and `σ` smooth with `‖Dσ(y) - B‖ ≤ ε` on the support of `ψ`. Then the Fourier
+transform at `m` of `y ↦ ψ(y) 𝐞(⟪y, Bᵀ ξ⟫ - ⟪σ y, ξ⟫)` decays faster than every power of `‖m‖`,
+uniformly in `ξ`, at the frequencies `m ≠ 0` with `2 ε ‖ξ‖ ≤ ‖m‖`. The phase of the Fourier
+integral has derivative at least `‖m‖ / 2` in the direction `-m / ‖m‖`. -/
+theorem exists_norm_pow_mul_norm_fourier_mul_fourierChar_le [FiniteDimensional ℝ V]
+    [MeasurableSpace V] [BorelSpace V] {ψ : V → ℂ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
+    {σ : V → V} (hσ : ContDiff ℝ ∞ σ) (B : V →L[ℝ] V) {ε : ℝ} (hε : 0 < ε)
+    (hσB : ∀ y ∈ tsupport ψ, ‖fderiv ℝ σ y - B‖ ≤ ε) (M : ℕ) :
+    ∃ C, ∀ ξ m : V, m ≠ 0 → 2 * ε * ‖ξ‖ ≤ ‖m‖ →
+      ‖m‖ ^ M * ‖𝓕 (fun y ↦ ψ y * 𝐞 (⟪y, (B†) ξ⟫ - ⟪σ y, ξ⟫)) m‖ ≤ C := by
+  -- The derivatives of `σ` of order at most `M + 1` are bounded on the support of `ψ`.
+  obtain ⟨Cσ, hCσ, hσb⟩ := ((hσ.of_le (m := ((M + 1 : ℕ) : WithTop ℕ∞)) (by simp)).contDiffOn
+    (s := univ)).exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ hψc.isCompact
+    (subset_univ _)
+  obtain ⟨C, hC⟩ := exists_norm_integral_mul_fourierChar_le (volume : Measure V) hψ hψc M
+    (max 3 (Cσ / ε))
+  refine ⟨C * 2 ^ M, fun ξ m hm hξm ↦ ?_⟩
+  have hm' : 0 < ‖m‖ := norm_pos_iff.2 hm
+  set w : V := -(‖m‖⁻¹ • m)
+  have hw : ‖w‖ = 1 := by simp [w, norm_smul, hm'.ne']
+  -- The phase, its derivative in the direction `w`, and the Fourier integral.
+  set Φ : V → ℝ := fun y ↦ innerSL ℝ ((B†) ξ - m) y - innerSL ℝ ξ (σ y)
+  have hΦ : ContDiff ℝ ∞ Φ :=
+    (innerSL ℝ ((B†) ξ - m)).contDiff.sub ((innerSL ℝ ξ).contDiff.comp hσ)
+  have hΦd (y : V) : fderiv ℝ Φ y w = ‖m‖ + ⟪ξ, (B - fderiv ℝ σ y) w⟫ := by
+    have h : HasFDerivAt Φ (innerSL ℝ ((B†) ξ - m) - (innerSL ℝ ξ).comp (fderiv ℝ σ y)) y :=
+      ((innerSL ℝ ((B†) ξ - m)).hasFDerivAt (x := y)).sub
+        ((innerSL ℝ ξ).hasFDerivAt.comp y ((hσ.differentiable (by simp)) y).hasFDerivAt)
+    have hm0 : ‖m‖ ≠ 0 := hm'.ne'
+    rw [h.fderiv]
+    simp only [sub_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, inner_sub_left,
+      ContinuousLinearMap.adjoint_inner_left, w, map_neg, map_smul, inner_neg_right,
+      inner_smul_right, real_inner_self_eq_norm_sq, inner_sub_right]
+    have hmm : ‖m‖⁻¹ * ‖m‖ ^ 2 = ‖m‖ := by field_simp
+    linear_combination hmm
+  have hFourier : 𝓕 (fun y ↦ ψ y * 𝐞 (⟪y, (B†) ξ⟫ - ⟪σ y, ξ⟫)) m = ∫ y, ψ y * 𝐞 (Φ y) := by
+    rw [Real.fourier_eq]
+    refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
+    simp only [Circle.smul_def, smul_eq_mul, Φ, innerSL_apply_apply]
+    rw [mul_left_comm, ← Circle.coe_mul, ← AddChar.map_add_eq_mul, inner_sub_left,
+      real_inner_comm ((B†) ξ) y, real_inner_comm m y, real_inner_comm ξ (σ y)]
+    ring_nf
+  -- `∂_w Φ` lies in `[‖m‖ / 2, 3 ‖m‖ / 2]` and its derivatives are `O(‖ξ‖) = O(‖m‖)`.
+  have hsmall {y : V} (hy : y ∈ tsupport ψ) : |⟪ξ, (B - fderiv ℝ σ y) w⟫| ≤ ‖m‖ / 2 := by
+    calc |⟪ξ, (B - fderiv ℝ σ y) w⟫| ≤ ‖ξ‖ * (‖B - fderiv ℝ σ y‖ * ‖w‖) :=
+          (abs_real_inner_le_norm _ _).trans (by gcongr; exact ContinuousLinearMap.le_opNorm _ _)
+      _ ≤ ‖ξ‖ * ε := by rw [hw, mul_one, norm_sub_rev]; gcongr; exact hσB y hy
+      _ ≤ ‖m‖ / 2 := by nlinarith
+  have hrange : ∀ y ∈ tsupport ψ, ‖m‖ / 2 ≤ fderiv ℝ Φ y w ∧
+      fderiv ℝ Φ y w ≤ max 3 (Cσ / ε) * (‖m‖ / 2) := by
+    intro y hy
+    have h := abs_le.1 (hsmall hy)
+    rw [hΦd]
+    exact ⟨by linarith, by nlinarith [le_max_left 3 (Cσ / ε)]⟩
+  have hderiv : ∀ y ∈ tsupport ψ, ∀ i, 1 ≤ i → i ≤ M →
+      ‖iteratedFDeriv ℝ i (fun z ↦ fderiv ℝ Φ z w) y‖ ≤ max 3 (Cσ / ε) * (‖m‖ / 2) := by
+    intro y hy i hi1 hiM
+    have heq : (fun z ↦ fderiv ℝ Φ z w) = fun z ↦ (‖m‖ + ⟪ξ, B w⟫) - ⟪ξ, fderiv ℝ σ z w⟫ := by
+      ext z
+      simp only [hΦd, sub_apply, inner_sub_right]
+      ring
+    rw [heq]
+    calc _ ≤ ‖ξ‖ * (‖iteratedFDeriv ℝ (i + 1) σ y‖ * ‖w‖) :=
+          norm_iteratedFDeriv_const_sub_inner_fderiv_le hσ _ ξ w (by omega) y
+      _ ≤ ‖ξ‖ * Cσ := by
+          rw [hw, mul_one]
+          exact mul_le_mul_of_nonneg_left (hσb (i + 1) (by omega) y hy) (norm_nonneg _)
+      _ ≤ Cσ / ε * (‖m‖ / 2) := by
+          rw [div_mul_eq_mul_div, le_div_iff₀ hε]
+          nlinarith
+      _ ≤ max 3 (Cσ / ε) * (‖m‖ / 2) := by gcongr; exact le_max_right _ _
+  have h := hC Φ hΦ w hw.le (‖m‖ / 2) (by positivity) hrange hderiv
+  rw [hFourier]
+  calc ‖m‖ ^ M * ‖∫ y, ψ y * 𝐞 (Φ y)‖ ≤ ‖m‖ ^ M * (C / (‖m‖ / 2) ^ M) := by gcongr
+    _ = C * 2 ^ M := by
+        rw [div_pow]
+        field_simp
+
+end InnerProductSpace
 
 end TauCeti

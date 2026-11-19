@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Fourier.FourierTransform
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
@@ -34,6 +35,7 @@ are bounded by a first frequency moment.
 * `Real.norm_fourierChar_sub_fourierChar_le`: `‖𝐞 t - 𝐞 t'‖ ≤ 2π |t - t'|`.
 * `Real.norm_fourierChar_smul_sub_fourierChar_smul_le`:
   `‖𝐞 ⟪ζ, z⟫ • v - 𝐞 ⟪ζ, z'⟫ • v‖ ≤ 2π ‖ζ‖ ‖z - z'‖ ‖v‖`.
+* `ContDiff.fourierChar`: `y ↦ 𝐞 (Φ y)` is `C^n` when the phase `Φ` is.
 -/
 
 public section
@@ -88,3 +90,9 @@ theorem norm_fourierChar_smul_sub_fourierChar_smul_le {F : Type*} [NormedAddComm
     _ = 2 * π * ‖ζ‖ * ‖z - z'‖ := by ring
 
 end Real
+
+/-- The Fourier character composed with a `C^n` real phase is `C^n`. -/
+theorem ContDiff.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : WithTop ℕ∞} {Φ : F → ℝ} (hΦ : ContDiff ℝ n Φ) : ContDiff ℝ n fun y ↦ (𝐞 (Φ y) : ℂ) := by
+  simp_rw [Real.fourierChar_apply]
+  exact ((Complex.ofRealCLM.contDiff.comp (contDiff_const.mul hΦ)).mul contDiff_const).cexp
