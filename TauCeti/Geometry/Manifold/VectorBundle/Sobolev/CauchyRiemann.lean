@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
