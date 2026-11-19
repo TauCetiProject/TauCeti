@@ -34,8 +34,8 @@ norm and shows, on an explicit example, that it is not bounded on `L¹`:
   (`TauCeti.not_integrable_rieszTransform_indicatorConstLp`).
 * Hence `R_v` is not bounded on `L¹` for `v ≠ 0`: no estimate `‖R_v f‖₁ ≤ C ‖f‖₁` holds on
   `L² ∩ L¹` (`TauCeti.not_exists_eLpNorm_one_rieszTransform_real_le`). At `p = 1` the weak type
-  `(1, 1)` bound `TauCeti.exists_mul_volume_lt_enorm_rieszTransform_le` cannot be upgraded to a
-  strong type bound.
+  `(1, 1)` bound, `TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le` applied to
+  `TauCeti.hasStandardKernel_rieszTransform`, cannot be upgraded to a strong type bound.
 
 ## References
 
@@ -180,7 +180,8 @@ theorem not_integrable_rieszTransform_indicatorConstLp {v : ℝ} (hv : v ≠ 0) 
 /-- **The Hilbert transform is not bounded on `L¹`.** On the real line, for `v ≠ 0` and nonzero
 `F`, there is no constant `C` with `‖R_v f‖₁ ≤ C ‖f‖₁` for every `f ∈ L²`: the indicator of
 `[0, 1]` is integrable while its Riesz transform is not. The weak type `(1, 1)` bound
-`TauCeti.exists_mul_volume_lt_enorm_rieszTransform_le` is the substitute at this endpoint. -/
+(`TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le` applied to
+`TauCeti.hasStandardKernel_rieszTransform`) is the substitute at this endpoint. -/
 theorem not_exists_eLpNorm_one_rieszTransform_real_le [Nontrivial F] {v : ℝ} (hv : v ≠ 0) :
     ¬ ∃ C : ℝ≥0, ∀ f : Lp F 2 (volume : Measure ℝ),
       eLpNorm (rieszTransform F v f) 1 volume ≤ C * eLpNorm f 1 volume := by
