@@ -107,6 +107,27 @@ lemma localHomologyPointClass_def (S : Set M) (x : M) :
     localHomologyPointClass R S x = singularHomology₀Section R (X := TopCat.of M) x ≫
       (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomologyπ R 0 := by rfl
 
+/-- The inverse of a rank-zero chart's homology coordinate is the actual relative point class. -/
+@[elementwise nosimp]
+lemma singularHomologyComplSingletonIsoOfFinrankEqZero_inv_eq_localHomologyPointClass
+    {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [T1Space M] (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source)
+    (h : Module.finrank ℝ E = 0) :
+    (singularHomologyComplSingletonIsoOfFinrankEqZero R φ hx h).inv =
+      localHomologyPointClass R {x} x := by
+  rw [localHomologyPointClass_def]
+  apply (cancel_mono (singularHomologyComplSingletonIsoOfChart R φ hx 0).hom).1
+  calc
+    _ = singularHomology₀Section R (φ x) ≫
+        (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).singularHomologyπ R 0 := by
+      rw [singularHomologyComplSingletonIsoOfFinrankEqZero_inv]
+      -- The point section uses the singular functor's object, whereas the projection uses
+      -- simplicial homology; `erw` unfolds these equal presentations before reassociating.
+      erw [Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+      rfl
+    _ = _ := (singularHomology₀Section_comp_singularHomologyComplSingletonIsoOfChart_hom
+      R φ hx).symm
+
 /-- The subspace `M ∖ M` of the pair `(M, M ∖ M)` is empty, so `Hₖ(M, M ∖ M)` is the singular
 homology of `M`. -/
 instance isEmpty_ofSubset_compl_univ_snd :

@@ -428,25 +428,6 @@ lemma singularHomologyComplSingletonIsoOfFinrankEqZero_inv [FiniteDimensional �
   congr 1
   exact IsIso.inv_eq_of_inv_hom_id (singularHomology₀Section_singularHomology₀ε R _)
 
-/-- The zero-dimensional chart generator is intrinsically the relative class of the original
-point, independently of its chart coordinate. -/
-lemma singularHomologyComplSingletonIsoOfFinrankEqZero_inv_eq_pointClass
-    [FiniteDimensional ℝ E] (h : finrank ℝ E = 0) :
-    (singularHomologyComplSingletonIsoOfFinrankEqZero R φ hx h).inv =
-      singularHomology₀Section R (X := TopCat.of M) x ≫
-        (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomologyπ R 0 := by
-  apply (cancel_mono (singularHomologyComplSingletonIsoOfChart R φ hx 0).hom).1
-  calc
-    _ = singularHomology₀Section R (φ x) ≫
-        (TopPair.ofSubset ({φ x}ᶜ : Set (TopCat.of E))).singularHomologyπ R 0 := by
-      rw [singularHomologyComplSingletonIsoOfFinrankEqZero_inv]
-      -- The point section uses the singular functor's object, whereas the projection uses
-      -- simplicial homology; `erw` unfolds these equal presentations before reassociating.
-      erw [Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-      rfl
-    _ = _ := (singularHomology₀Section_comp_singularHomologyComplSingletonIsoOfChart_hom
-      R φ hx).symm
-
 /-- **Local homology in the top degree**: at a point with a chart to a real normed space of
 dimension `n + 1`, the local homology `Hₙ₊₁(M, M ∖ {x})` is one copy of the coefficients.  It is
 `TauCeti.singularHomologyComplSingletonIso` followed by the map on reduced homology induced by the

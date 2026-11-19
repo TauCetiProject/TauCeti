@@ -284,10 +284,8 @@ theorem localOrientationOfZeroDimChart_coe
     (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source) (hE : finrank ℝ E = 0) :
     (localOrientationOfZeroDimChart φ hx hE).val =
       localHomologyPointClass (ModuleCat.of ℤ (ULift.{w} ℤ)) {x} x 1 := by
-  rw [localHomologyPointClass_def]
-  exact congrArg (fun f ↦ f (1 : ULift.{w} ℤ))
-    (singularHomologyComplSingletonIsoOfFinrankEqZero_inv_eq_pointClass
-      (ModuleCat.of ℤ (ULift.{w} ℤ)) φ hx hE)
+  exact singularHomologyComplSingletonIsoOfFinrankEqZero_inv_eq_localHomologyPointClass_apply
+    (ModuleCat.of ℤ (ULift.{w} ℤ)) φ hx hE 1
 
 /-- Zero-dimensional charts, even in different real normed models, select the same positive
 local point class. -/
