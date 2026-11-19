@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import TauCeti.MeasureTheory.Function.Lp.Duality
-import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
+import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
