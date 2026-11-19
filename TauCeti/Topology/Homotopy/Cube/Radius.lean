@@ -48,7 +48,8 @@ splitting off the first coordinate identifies the closed unit ball with the cube
 * `TauCeti.cubeRadius_le_one` and `TauCeti.cubeRadius_eq_one_iff`: the radius is at most one,
   with equality exactly on `Cube.boundary N`.
 * `TauCeti.cubeScale`: radial rescaling of a cube point, and `TauCeti.cubeRadius_cubeScale`: it
-  scales the radius.
+  scales the radius. Rescaling by `s ≥ 1` maps the points of radius at most `1 / s` bijectively
+  onto the cube (`TauCeti.cubeScale_injOn`, `TauCeti.exists_cubeScale_eq`).
 * `TauCeti.openBoxContraction`: the contraction of the open box of `I × I^N` onto the centre of
   its top face, which keeps the open box inside itself (`TauCeti.openBoxContraction_mem_openBox`).
 * `TauCeti.openBoxContractionTo`: the contraction of the open box onto an arbitrary point `(1, c)`
@@ -326,6 +327,31 @@ theorem cubeRadius_cubeScale {s : ℝ} (hs : 0 ≤ s) {z : I^N} (h : s * cubeRad
     intro i
     rw [dist_apply_cubeCenter, le_div_iff₀' hs0, ← key i, ← dist_apply_cubeCenter]
     exact dist_le_pi_dist _ _ i
+
+/-- Rescaling radially by a positive factor `s` is injective on the points whose rescaled radius
+still fits in the cube. -/
+theorem cubeScale_injOn {s : ℝ} (hs : 0 < s) :
+    Set.InjOn (cubeScale (N := N) s) {z | s * cubeRadius z ≤ 1} := fun z hz z' hz' h ↦
+  funext fun i ↦ Subtype.ext <| by
+    have h₁ := cubeScale_apply_coe hs.le hz i
+    rw [h, cubeScale_apply_coe hs.le hz' i] at h₁
+    exact (sub_left_inj.1 (mul_right_cancel₀ hs.ne' (add_left_cancel h₁))).symm
+
+/-- Rescaling radially by `s ≥ 1` maps the points whose rescaled radius fits in the cube onto the
+cube: `y` is the rescaling of `TauCeti.cubeScale s⁻¹ y`. -/
+theorem exists_cubeScale_eq {s : ℝ} (hs : 1 ≤ s) (y : I^N) :
+    ∃ z, s * cubeRadius z ≤ 1 ∧ cubeScale s z = y := by
+  have hs0 : 0 < s := zero_lt_one.trans_le hs
+  have hy := cubeRadius_le_one y
+  have hinv : s⁻¹ * cubeRadius y ≤ 1 := by
+    nlinarith [inv_le_one_of_one_le₀ hs, cubeRadius_nonneg y]
+  have hr : s * cubeRadius (cubeScale s⁻¹ y) = cubeRadius y := by
+    rw [cubeRadius_cubeScale (inv_nonneg.2 hs0.le) hinv, ← mul_assoc, mul_inv_cancel₀ hs0.ne',
+      one_mul]
+  refine ⟨cubeScale s⁻¹ y, hr ▸ hy, funext fun i ↦ Subtype.ext ?_⟩
+  rw [cubeScale_apply_coe hs0.le (hr ▸ hy), cubeScale_apply_coe (inv_nonneg.2 hs0.le) hinv]
+  field_simp
+  ring
 
 
 /-! ### The cube as the closed unit ball of the sup norm -/
