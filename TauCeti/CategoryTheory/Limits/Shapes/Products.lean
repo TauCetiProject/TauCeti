@@ -23,6 +23,12 @@ type of any size, is a split epimorphism, with section the product of the sectio
 (`TauCeti.isSplitEpi_piMap`). Unlike `CategoryTheory.Limits.Pi.map_epi`, this needs no finiteness
 and no biproducts; it is how products of skyscraper presheaves are shown to be flasque.
 
+## Naturality of the coproduct comparison
+
+For a functor `G`, the comparison map `sigmaComparison G f : ∐ (G ∘ f) ⟶ G (∐ f)` is natural with
+respect to maps of families: it commutes with `Sigma.map p` on both sides
+(`TauCeti.sigmaComparison_map_sigmaMap`). Mathlib states the analogous fact for `Sigma.desc`.
+
 ## Reindexing a coproduct along an injection is split
 
 Let `X : I → C` be a family of objects of a category with zero morphisms, and let `f : J → I` be
@@ -110,6 +116,23 @@ instance isSplitEpi_piMap (p : ∀ b, f b ⟶ g b) [∀ b, IsSplitEpi (p b)] :
   IsSplitEpi.mk' { section_ := Limits.Pi.map fun b ↦ section_ (p b), id := by ext; simp }
 
 end PiMap
+
+section SigmaComparison
+
+variable {C D : Type*} [Category* C] [Category* D] (G : C ⥤ D) {β : Type*} {f g : β → C}
+  [HasCoproduct f] [HasCoproduct g] [HasCoproduct fun b ↦ G.obj (f b)]
+  [HasCoproduct fun b ↦ G.obj (g b)]
+
+/-- The comparison map `∐ (G ∘ f) ⟶ G (∐ f)` is natural with respect to maps of families. -/
+@[reassoc]
+theorem sigmaComparison_map_sigmaMap (p : ∀ b, f b ⟶ g b) :
+    sigmaComparison G f ≫ G.map (Limits.Sigma.map p) =
+      Limits.Sigma.map (fun b ↦ G.map (p b)) ≫ sigmaComparison G g :=
+  Sigma.hom_ext _ _ fun b ↦ by
+    rw [ι_comp_sigmaComparison_assoc, ← G.map_comp, Sigma.ι_map, Sigma.ι_map_assoc, G.map_comp,
+      ι_comp_sigmaComparison]
+
+end SigmaComparison
 
 section Reindex
 
