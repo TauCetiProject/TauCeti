@@ -18,7 +18,9 @@ structure rather than a global instance, since it depends on `J`.
 
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
 real inner product, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
-`⟪J v, v⟫ = 0`.
+`⟪J v, v⟫ = 0`. Conversely, on a complex normed space whose norm comes from a real inner product,
+multiplication by `i` is orthogonal
+(`TauCeti.AlmostComplexStructure.inner_ofComplexModule_apply_ofComplexModule_apply`).
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -43,6 +45,14 @@ theorem inner_apply_self {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J
     (v : V) : ⟪J v, v⟫ = 0 := by
   rw [real_inner_comm]
   exact J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun x y ↦ real_inner_comm y x⟩ hJ v
+
+/-- Multiplication by `i` is an orthogonal almost complex structure on a complex normed space
+whose norm comes from a real inner product. -/
+theorem inner_ofComplexModule_apply_ofComplexModule_apply {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [NormedSpace ℂ E] [IsScalarTower ℝ ℂ E] (u v : E) :
+    ⟪ofComplexModule E u, ofComplexModule E v⟫ = ⟪u, v⟫ :=
+  ({ (ofComplexModule E).toLinearMap with
+      norm_map' := fun w ↦ by simp [norm_smul] } : E →ₗᵢ[ℝ] E).inner_map_map u v
 
 /-- The complex inner product induced by an orthogonal complex structure, using the original
 norm on `V` and the scalar action `J.complexModule`. Its real part is the original inner product.
