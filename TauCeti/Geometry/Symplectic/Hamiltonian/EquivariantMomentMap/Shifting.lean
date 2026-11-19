@@ -37,10 +37,13 @@ This file proves the following.
   submersion at every point over the orbit.
 * Hence `Ψ⁻¹(0)` is an embedded submanifold of `M × N`. If the tangent images of `ι` are the tangent
   spaces `𝔤 · ι(n)` of the orbit, then the projection `Ψ⁻¹(0) → M`, `(x, n) ↦ x`, has tangent
-  image `dμ⁻¹(𝔤 · μ(x)) = ker dμ_x + 𝔤 · x` at `(x, n)`, and it is a coisotropic map
-  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isCoisotropicMap_fst_sub`). So the preimage
-  `μ⁻¹(ι(N))` of the part `ι(N)` of the coadjoint orbit of a regular value is coisotropic, whether
-  or not the orbit is a point; when `ι` is onto the orbit, this is the preimage of the whole orbit.
+  image `dμ⁻¹(𝔤 · μ(x)) = ker dμ_x + 𝔤 · x` at `(x, n)`
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.range_mfderiv_fst_sub`), and for a nondegenerate
+  form it is a coisotropic map
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isCoisotropicMap_fst_sub`), whether or not the
+  orbit is a point. Its image is `μ⁻¹(ι(N))`; when `ι` is injective, as the orbit map
+  `G / G_c → 𝔤*` is, `Ψ⁻¹(0)` is a copy of `μ⁻¹(ι(N))`, and of `μ⁻¹(O)` when `ι` is moreover onto
+  `O`.
 
 ## References
 
@@ -195,19 +198,17 @@ theorem isRegularValue_sub (h : σ.IsEquivariantMomentMap μ)
     (h.differential_surjective_of_apply_eq hreg
       ((b.ext fun i ↦ sub_eq_zero.1 (congrFun hp i)).trans hg))
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [I'.Boundaryless] [J.Boundaryless]
-  [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E''] [IsManifold J ∞ N]
+variable [I'.Boundaryless] [J.Boundaryless] [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E'']
+  [IsManifold J ∞ N]
 
-/-- **The preimage of a part of a coadjoint orbit of a regular value is coisotropic.** For a
-nondegenerate form and a coadjoint-equivariant moment map of a Lie group action, let `c` be a
-regular value of `μ`, and let `ι : N → 𝔤*` be a smooth map into the coadjoint orbit of `c` whose
-tangent image at each `n` consists of the coordinates of the tangent space `𝔤 · ι(n)` of the orbit,
-such as the orbit map `G / G_c → 𝔤*`. Give the zero level of the shifting map
+/-- **The tangent image of the zero level of the shifting map.** For a coadjoint-equivariant moment
+map of a Lie group action, let `c` be a regular value of `μ`, and let `ι : N → 𝔤*` be a smooth map
+into the coadjoint orbit of `c` whose tangent image at each `n` consists of the coordinates of the
+tangent space `𝔤 · ι(n)` of the orbit. Give the zero level of the shifting map
 `(x, n) ↦ μ(x) - ι(n)`, read in a basis of `𝔤`, its regular-fibre manifold structure. Then the
-projection `(x, n) ↦ x` of this zero level to `M`, whose image is the preimage `μ⁻¹(ι(N))`, is a
-coisotropic map. The image is the preimage of the whole orbit when `ι` is onto it, as the orbit map
-is. -/
-theorem isCoisotropicMap_fst_sub (h : σ.IsEquivariantMomentMap μ) (hσ : σ.IsNondegenerate)
+projection `(x, n) ↦ x` of this zero level to `M` has tangent image `dμ_x⁻¹(𝔤 · μ(x))` at
+`(x, n)`. -/
+theorem range_mfderiv_fst_sub (h : σ.IsEquivariantMomentMap μ)
     (hreg : ∀ y, μ y = c → Function.Surjective (h.toIsMomentMap.differential y))
     (b : Basis κ ℝ (GroupLieAlgebra I G))
     (hιs : ContMDiff J 𝓘(ℝ, κ → ℝ) ∞ (fun m i ↦ ι m (b i)))
@@ -217,8 +218,11 @@ theorem isCoisotropicMap_fst_sub (h : σ.IsEquivariantMomentMap μ) (hσ : σ.Is
     letI := regularFiberChartedSpace (by simp) (h.toIsMomentMap.contMDiff_sub b hιs)
       BoundarylessManifold.isInteriorPoint
       (h.isRegularValue_sub hreg b (fun n ↦ (hιs n).mdifferentiableAt (by simp)) hιc)
-    hσ.IsCoisotropicMap 𝓘(ℝ, Fin (finrank ℝ (E' × E'') - finrank ℝ (κ → ℝ)) → ℝ)
-      (fun z : {p : M × N // (fun i ↦ μ p.1 (b i) - ι p.2 (b i)) = 0} ↦ z.1.1) := by
+    ∀ z : {p : M × N // (fun i ↦ μ p.1 (b i) - ι p.2 (b i)) = 0},
+      LinearMap.range (mfderiv 𝓘(ℝ, Fin (finrank ℝ (E' × E'') - finrank ℝ (κ → ℝ)) → ℝ) I'
+          (fun z : {p : M × N // (fun i ↦ μ p.1 (b i) - ι p.2 (b i)) = 0} ↦ z.1.1) z).toLinearMap =
+        (LinearMap.range (μ z.1.1).coadjointTangentMap).comap
+          (h.toIsMomentMap.differential z.1.1) := by
   have hΨ := h.toIsMomentMap.contMDiff_sub b hιs
   have hι : ∀ n, MDifferentiableAt J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n :=
     fun n ↦ (hιs n).mdifferentiableAt (by simp)
@@ -229,8 +233,7 @@ theorem isCoisotropicMap_fst_sub (h : σ.IsEquivariantMomentMap μ) (hσ : σ.Is
     hregΨ
   have hker := range_mfderiv_coe_regularFiber (by simp) hΨ BoundarylessManifold.isInteriorPoint
     hregΨ
-  refine h.toIsMomentMap.isCoisotropicMap_of_range_mfderiv_eq hσ
-    (fun z ↦ h.momentCocycle_eq_zero z.1.1) fun z ↦ ?_
+  intro z
   have hxn : μ z.1.1 = ι z.1.2 := b.ext fun i ↦ sub_eq_zero.1 (congrFun z.2 i)
   have hval : MDifferentiableAt 𝓘(ℝ, Fin (finrank ℝ (E' × E'') - finrank ℝ (κ → ℝ)) → ℝ)
       (I'.prod J) Subtype.val z :=
@@ -257,6 +260,33 @@ theorem isCoisotropicMap_fst_sub (h : σ.IsEquivariantMomentMap μ) (hσ : σ.Is
     rw [← hker z] at hmem
     obtain ⟨ξ, hξ⟩ := hmem
     exact ⟨ξ, congrArg Prod.fst hξ⟩
+
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+
+/-- **The zero level of the shifting map projects coisotropically to `M`.** For a nondegenerate
+form and a coadjoint-equivariant moment map of a Lie group action, let `c` be a regular value of
+`μ`, and let `ι : N → 𝔤*` be a smooth map into the coadjoint orbit of `c` whose tangent image at
+each `n` consists of the coordinates of the tangent space `𝔤 · ι(n)` of the orbit, such as the
+orbit map `G / G_c → 𝔤*`. Give the zero level of the shifting map `(x, n) ↦ μ(x) - ι(n)`, read in a
+basis of `𝔤`, its regular-fibre manifold structure. Then the projection `(x, n) ↦ x` of this zero
+level to `M`, whose image is the preimage `μ⁻¹(ι(N))`, is a coisotropic map. -/
+theorem isCoisotropicMap_fst_sub (h : σ.IsEquivariantMomentMap μ) (hσ : σ.IsNondegenerate)
+    (hreg : ∀ y, μ y = c → Function.Surjective (h.toIsMomentMap.differential y))
+    (b : Basis κ ℝ (GroupLieAlgebra I G))
+    (hιs : ContMDiff J 𝓘(ℝ, κ → ℝ) ∞ (fun m i ↦ ι m (b i)))
+    (hιc : ∀ n, ∃ g : G, ι n = Lie.coadjointRepresentation ℝ I G g c)
+    (hιT : ∀ n, Set.range (mfderiv J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n) =
+      Set.range fun Z : GroupLieAlgebra I G ↦ fun i ↦ (⁅Z, ι n⁆ : Module.Dual ℝ _) (b i)) :
+    letI := regularFiberChartedSpace (by simp) (h.toIsMomentMap.contMDiff_sub b hιs)
+      BoundarylessManifold.isInteriorPoint
+      (h.isRegularValue_sub hreg b (fun n ↦ (hιs n).mdifferentiableAt (by simp)) hιc)
+    hσ.IsCoisotropicMap 𝓘(ℝ, Fin (finrank ℝ (E' × E'') - finrank ℝ (κ → ℝ)) → ℝ)
+      (fun z : {p : M × N // (fun i ↦ μ p.1 (b i) - ι p.2 (b i)) = 0} ↦ z.1.1) := by
+  let := regularFiberChartedSpace (by simp) (h.toIsMomentMap.contMDiff_sub b hιs)
+    BoundarylessManifold.isInteriorPoint
+    (h.isRegularValue_sub hreg b (fun n ↦ (hιs n).mdifferentiableAt (by simp)) hιc)
+  exact h.toIsMomentMap.isCoisotropicMap_of_range_mfderiv_eq hσ
+    (fun z ↦ h.momentCocycle_eq_zero z.1.1) (h.range_mfderiv_fst_sub hreg b hιs hιc hιT)
 
 end IsEquivariantMomentMap
 

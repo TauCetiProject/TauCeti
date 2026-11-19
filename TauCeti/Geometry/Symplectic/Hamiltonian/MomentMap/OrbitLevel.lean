@@ -22,8 +22,10 @@ vanishes, as it does everywhere for a coadjoint-equivariant moment map of a Lie 
 
 A level `μ⁻¹(c)` is coisotropic only when `c` is coadjoint-fixed
 (`TauCeti.SmoothTwoForm.IsMomentMap.isCoisotropic_ker_differential_iff`). The preimage `μ⁻¹(O)` of
-the whole coadjoint orbit, on the other hand, is always coisotropic. This file proves the pointwise
-statement, at the level of tangent spaces:
+the whole coadjoint orbit, on the other hand, is coisotropic wherever `σ` is nondegenerate and the
+cocycle of `μ` vanishes (for instance everywhere, for a coadjoint-equivariant moment map of a Lie
+group action and a symplectic form). This file proves the pointwise statement, at the level of
+tangent spaces:
 
 * `dμ_x` maps the orbit tangent space `𝔤 · x` onto `𝔤 · c`, since `dμ_x(Z_M x) = ⁅Z, c⁆`
   (`TauCeti.SmoothTwoForm.IsMomentMap.map_differential_orbitTangent`). Hence the tangent space
