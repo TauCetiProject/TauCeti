@@ -384,7 +384,7 @@ theorem exists_holderOnWith_preciseRepresentative_lowerOrder (σ : ℝ) :
     rw [mul_assoc]
     simp only [M, D]
     gcongr _ * ?_ * (_ * ?_)
-    · exact Real.one_add_div_sq_pow_le _ hbeta hR.le hlam hβR
+    · exact Real.one_add_div_sq_pow_le _ (mul_nonneg hbeta hR.le) hlam hβR
     · exact Real.sqrt_le_sqrt (setIntegral_mono_set (Lp.memLp (W1p.value u)).integrable_sq
         (ae_of_all _ fun y => sq_nonneg _) (hball x hx).eventuallySubset)
   have hRK' : cthickening (R / 2) K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=

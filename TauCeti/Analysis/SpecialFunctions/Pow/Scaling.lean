@@ -88,12 +88,11 @@ theorem div_rpow_neg_le_mul_rpow_neg {N R α : ℝ} (hα1 : α ≤ 1) (hN : 1 �
   gcongr
   exact rpow_le_self_of_one_le hN hα1
 
-/-- `(1 + (βR/λ)²)ⁿ ≤ (1 + σ²)ⁿ` for `0 ≤ β`, `0 ≤ R`, `0 < λ` and `βR ≤ σλ`. -/
-theorem one_add_div_sq_pow_le {beta R lam σ : ℝ} (n : ℕ) (hbeta : 0 ≤ beta)
-    (hR : 0 ≤ R) (hlam : 0 < lam) (hβR : beta * R ≤ σ * lam) :
-    (1 + (beta * R / lam) ^ 2) ^ n ≤ (1 + σ ^ 2) ^ n := by
+/-- `(1 + (x/λ)²)ⁿ ≤ (1 + σ²)ⁿ` for `0 ≤ x`, `0 < λ` and `x ≤ σλ`. -/
+theorem one_add_div_sq_pow_le {x lam σ : ℝ} (n : ℕ) (hx : 0 ≤ x) (hlam : 0 < lam)
+    (hxσ : x ≤ σ * lam) : (1 + (x / lam) ^ 2) ^ n ≤ (1 + σ ^ 2) ^ n := by
   gcongr
-  exact (div_le_iff₀ hlam).2 hβR
+  exact (div_le_iff₀ hlam).2 hxσ
 
 /-- `(R^{d/2+a} Q)² = R^d (R^a Q)²`. -/
 theorem rpow_div_two_add_mul_sq {R d a : ℝ} (Q : ℝ) (hR : 0 < R) :

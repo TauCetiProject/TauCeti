@@ -136,7 +136,7 @@ theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le_drift [Nonempty ι] {lam
     simp only [D₀]
     gcongr ?_ * _ * _
     exact mul_le_mul_of_nonneg_left
-      (Real.one_add_div_sq_pow_le _ hbeta hR.le h.pos hβR) hD₁.le
+      (Real.one_add_div_sq_pow_le _ (mul_nonneg hbeta hR.le) h.pos hβR) hD₁.le
   -- `‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`.
   have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
