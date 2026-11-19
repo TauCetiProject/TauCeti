@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # Pointwise and integrated energy for curves into almost complex manifolds
@@ -73,6 +74,8 @@ $J$-holomorphic curves.
   energy--area identity for the within-set derivative of a pseudoholomorphic curve.
 * `TauCeti.SmoothTwoForm.Tames.eval₂_mfderiv_nonneg`: under tameness, the symplectic area density
   of a curve satisfying the Cauchy--Riemann equation is nonnegative.
+* `TauCeti.SmoothTwoForm.Tames.exists_pos_eval₂_mfderiv`: under tameness, a nonconstant `C¹`
+  curve satisfying the Cauchy--Riemann equation has positive symplectic area density somewhere.
 * `TauCeti.SmoothTwoForm.continuous_eval₂_mfderiv`: continuity of the symplectic area density
   of a `C¹` curve.
 * `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm`: the Wirtinger
@@ -330,6 +333,26 @@ lemma Tames.eval₂_mfderiv_nonneg (htame : form.Tames J) {u : ℝ × ℝ → M}
   rw [(isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq hCR)
     |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm] at h
   exact (mul_nonneg_iff_of_pos_left two_pos).1 h
+
+/-- Under tameness, a nonconstant `C¹` curve `u` satisfying the Cauchy--Riemann equation
+`∂ₜu = J(u) ∂ₛu` has positive symplectic area density `ω(∂ₛu, ∂ₜu)` somewhere. -/
+theorem Tames.exists_pos_eval₂_mfderiv (htame : form.Tames J) {u : ℝ × ℝ → M}
+    (hu : ContMDiff (modelWithCornersSelf ℝ (ℝ × ℝ)) I 1 u)
+    (hCR : ∀ z, mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag =
+      J (u z) (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal))
+    (hnc : ∃ z w, u z ≠ u w) :
+    ∃ z, 0 < SmoothBundleForm.eval₂ form (u z)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) := by
+  by_contra! h
+  -- Where the area density vanishes, so does the energy density `2 ω(∂ₛu, ∂ₜu)`, hence `du`.
+  have hzero : ∀ w, mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u w = 0 := fun w ↦ by
+    refine (htame.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff (u w) _).1 ?_
+    rw [(isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq (hCR w))
+      |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm]
+    exact mul_eq_zero_of_right 2 (le_antisymm (h w) (htame.eval₂_mfderiv_nonneg (hCR w)))
+  obtain ⟨z, w, hzw⟩ := hnc
+  exact hzw ((hu.mdifferentiable (by norm_num)).apply_eq_of_mfderiv_eq_zero hzero z w)
 
 /-- For a `C¹` map `u`, the area density `ω(∂ₛu, ∂ₜu)` is continuous. -/
 theorem continuous_eval₂_mfderiv (form : SmoothTwoForm I M) {u : ℝ × ℝ → M}

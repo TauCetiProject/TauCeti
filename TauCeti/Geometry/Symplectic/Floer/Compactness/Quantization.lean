@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Hofer
 import TauCeti.Analysis.Normed.Operator.Prod
-import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import TauCeti.Geometry.Symplectic.Manifold.Energy
 import TauCeti.Topology.Order.Interval
@@ -469,24 +468,6 @@ private theorem exists_pos_forall_ofReal_le_lintegral_of_chart [I.Boundaryless] 
     rw [← (Complex.volume_preserving_equiv_real_prod).lintegral_comp_emb
       Complex.measurableEquivRealProd.measurableEmbedding, ← hφ, Function.comp_def]
 
-omit [FiniteDimensional ℝ E] in
-/-- A nonconstant `C¹` solution of `∂ₜu = J(u) ∂ₛu`, for `J` tamed by `ω`, has positive area
-density somewhere. -/
-private theorem exists_pos_eval₂_mfderiv (hJ : ω.Tames J) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
-    (hCR : ∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
-      J (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) (hnc : ∃ z w, u z ≠ u w) :
-    ∃ z, 0 < SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
-  by_contra! h
-  -- Where the area density vanishes, so does the energy density `2 ω(∂ₛu, ∂ₜu)`, hence `du`.
-  have hzero : ∀ w, mfderiv 𝓘(ℝ, ℝ × ℝ) I u w = 0 := fun w ↦ by
-    refine (hJ.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff (u w) _).1 ?_
-    rw [(isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq (hCR w))
-      |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm]
-    exact mul_eq_zero_of_right 2 (le_antisymm (h w) (hJ.eval₂_mfderiv_nonneg (hCR w)))
-  obtain ⟨z, w, hzw⟩ := hnc
-  exact hzw ((hu.mdifferentiable (by norm_num)).apply_eq_of_mfderiv_eq_zero hzero z w)
-
 /-- **Energy quantization for pseudoholomorphic planes in a manifold.** Let `J` be a smooth almost
 complex structure on a boundaryless Hausdorff manifold `M`, tamed by a two-form `ω`, as on a closed
 symplectic manifold, and let `K ⊆ M` be compact. There is an energy `κ > 0` such that every
@@ -529,7 +510,7 @@ theorem Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne [I.Boundaryles
   have hsq (w : ℝ × ℝ) : √(ρ w) ^ 2 = ρ w := Real.sq_sqrt (hJ.eval₂_mfderiv_nonneg (hCR w))
   -- Hofer's lemma gives a point `w'` of density `m² > 0`, with density at most `(2m)²` on a ball
   -- about `w'` of radius at least `R / m`.
-  obtain ⟨w₁, hw₁⟩ := exists_pos_eval₂_mfderiv hJ (hu.of_le (by norm_num)) hCR hnc
+  obtain ⟨w₁, hw₁⟩ := hJ.exists_pos_eval₂_mfderiv (hu.of_le (by norm_num)) hCR hnc
   have hϕ1 : 0 < √(ρ w₁) := Real.sqrt_pos.2 hw₁
   obtain ⟨ε', hε', w', -, -, hmono, hball⟩ := hofer_of_continuousOn_closedBall w₁
     (show 0 < R / √(ρ w₁) by positivity)
