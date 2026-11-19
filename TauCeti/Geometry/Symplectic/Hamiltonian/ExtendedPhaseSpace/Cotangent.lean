@@ -131,6 +131,20 @@ theorem prodRealDiffeomorph_snd_snd (z : CotangentBundle (I.prod 𝓘(ℝ)) (Q �
   rw [prodRealDiffeomorph_apply, lineDiffeomorph_apply]
   exact (prodDiffeomorph_snd_snd_apply z (1 : ℝ)).trans (congrArg z.2 h)
 
+/-- The time and the `T*Q` component of `prodRealDiffeomorph z`, the arguments at which a
+time-dependent function on `T*Q` is evaluated, are the time of `z` and its restriction to `Q`. -/
+private theorem mk_prodRealDiffeomorph_snd_fst_fst (z : CotangentBundle (I.prod 𝓘(ℝ)) (Q × ℝ)) :
+    ((prodRealDiffeomorph I Q z).2.1, (prodRealDiffeomorph I Q z).1) =
+      (z.proj.2, (prodDiffeomorph I 𝓘(ℝ) Q ℝ z).1) := by
+  rw [prodRealDiffeomorph_snd_fst, prodRealDiffeomorph_fst]
+
+/-- A time-dependent function `F` on `T*Q`, read on the model `T*Q × (ℝ × ℝ)` and composed with
+`prodRealDiffeomorph`, is `z ↦ F(t, z|_Q)` on `T*(Q × ℝ)`. -/
+private theorem comp_prodRealDiffeomorph (F : ℝ → CotangentBundle I Q → ℝ) :
+    (fun y : CotangentBundle I Q × (ℝ × ℝ) ↦ F y.2.1 y.1) ∘ prodRealDiffeomorph I Q =
+      fun z ↦ F z.proj.2 (prodDiffeomorph I 𝓘(ℝ) Q ℝ z).1 :=
+  funext fun z ↦ by rw [comp_apply, prodRealDiffeomorph_snd_fst, prodRealDiffeomorph_fst]
+
 /-- The inverse of `prodRealDiffeomorph` reads the time coordinates `(t, e)` as the covector
 `v ↦ v e` at `t` and combines it with the covector on `Q` by the inverse of the splitting
 `T*(Q × ℝ) ≃ T*Q × T*ℝ`. -/
@@ -212,7 +226,7 @@ theorem mfderiv_prodRealDiffeomorph_hamiltonianVectorField {H : ℝ → Cotangen
   have hσ := (isSymplectic_symplecticForm (I := I) (M := Q)).isNondegenerate
   have hH' : MDifferentiableAt (𝓘(ℝ).prod (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))) 𝓘(ℝ) (uncurry H)
       ((prodRealDiffeomorph I Q z).2.1, (prodRealDiffeomorph I Q z).1) := by
-    rwa [prodRealDiffeomorph_snd_fst, prodRealDiffeomorph_fst]
+    rwa [mk_prodRealDiffeomorph_snd_fst_fst]
   rw [(isSymplectic_symplecticForm (I := I.prod 𝓘(ℝ)) (M := Q × ℝ)).isNondegenerate
     |>.mfderiv_hamiltonianVectorField_comp hσ.extended (prodRealDiffeomorph I Q).contMDiff
       mpullback_prodRealDiffeomorph_extended (surjective_mfderiv_prodRealDiffeomorph z)
@@ -237,9 +251,7 @@ theorem poissonBracket_extendedHamiltonian_prodRealDiffeomorph
   have hσ := (isSymplectic_symplecticForm (I := I) (M := Q)).isNondegenerate
   -- Both functions are read on the model `T*Q × (ℝ × ℝ)` and composed with
   -- `prodRealDiffeomorph`, at whose image `F` and `H` are differentiable.
-  have hpt : ((prodRealDiffeomorph I Q z).2.1, (prodRealDiffeomorph I Q z).1) =
-      (z.proj.2, (prodDiffeomorph I 𝓘(ℝ) Q ℝ z).1) := by
-    rw [prodRealDiffeomorph_snd_fst, prodRealDiffeomorph_fst]
+  have hpt := mk_prodRealDiffeomorph_snd_fst_fst (I := I) z
   have hpair : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ, ℝ × ℝ))
       (𝓘(ℝ).prod (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)))
       (fun y : CotangentBundle I Q × (ℝ × ℝ) ↦ (y.2.1, y.1)) (prodRealDiffeomorph I Q z) :=
@@ -252,10 +264,7 @@ theorem poissonBracket_extendedHamiltonian_prodRealDiffeomorph
   have hF' : MDifferentiableAt ((I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ, ℝ × ℝ)) 𝓘(ℝ)
       (fun y : CotangentBundle I Q × (ℝ × ℝ) ↦ F y.2.1 y.1) (prodRealDiffeomorph I Q z) :=
     hF₀.comp (f := fun y : CotangentBundle I Q × (ℝ × ℝ) ↦ (y.2.1, y.1)) _ hpair
-  have hcomp : (fun w ↦ F w.proj.2 (prodDiffeomorph I 𝓘(ℝ) Q ℝ w).1) =
-      (fun y : CotangentBundle I Q × (ℝ × ℝ) ↦ F y.2.1 y.1) ∘ prodRealDiffeomorph I Q :=
-    funext fun w ↦ by rw [comp_apply, prodRealDiffeomorph_snd_fst, prodRealDiffeomorph_fst]
-  rw [hcomp]
+  rw [← comp_prodRealDiffeomorph]
   refine ((isSymplectic_symplecticForm (I := I.prod 𝓘(ℝ)) (M := Q × ℝ)).isNondegenerate
     |>.poissonBracket_comp hσ.extended (prodRealDiffeomorph I Q).contMDiff
       mpullback_prodRealDiffeomorph_extended (surjective_mfderiv_prodRealDiffeomorph z) hF'

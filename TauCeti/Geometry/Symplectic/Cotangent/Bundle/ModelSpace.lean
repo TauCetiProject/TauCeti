@@ -56,9 +56,11 @@ theorem mpullback_modelSpaceDiffeomorph_constSmooth (E : Type*) [NormedAddCommGr
       symplecticForm 𝓘(ℝ, E) E := by
   refine SmoothBundleForm.ext_eval₂ fun z v w ↦ ?_
   rw [SmoothForm.eval₂_mpullback, mfderiv_modelSpaceDiffeomorph,
-    SymplecticForm.fromTangentSpace_constSmooth_apply, eval₂_symplecticForm]
+    SymplecticForm.fromTangentSpace_constSmooth_apply, eval₂_symplecticForm,
+    NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply]
   -- Both sides evaluate the linear form on the coordinate vectors `v` and `w`.
-  rfl
+  exact congrArg₂ (fun a b ↦ strongDualCotangentSymplecticForm a b)
+    (ContinuousLinearMap.id_apply v) (ContinuousLinearMap.id_apply w)
 
 /-- On the line, the linear cotangent form is the standard area form in the coordinates
 `(q, p 1)`: a covector `p` is multiplication by `p 1`. -/

@@ -108,14 +108,23 @@ theorem mfderiv_modelSpaceDiffeomorph (z : CotangentBundle 𝓘(𝕜, E) E) :
   exact mfderiv_extChartAt_self
 
 variable (𝕜) in
+/-- The linear coordinates `(q, p) ↦ (q, p 1)` of `𝕜 × (𝕜 →L[𝕜] 𝕜)`. -/
+private def lineEquiv : (𝕜 × (𝕜 →L[𝕜] 𝕜)) ≃L[𝕜] 𝕜 × 𝕜 :=
+  (ContinuousLinearEquiv.refl 𝕜 𝕜).prodCongr
+    (ContinuousLinearMap.toSpanSingletonLIE 𝕜 𝕜).toContinuousLinearEquiv.symm
+
+variable (𝕜) in
+/-- `lineEquiv` reads a covector `p` as its value `p 1`. -/
+private theorem lineEquiv_apply (v : 𝕜 × (𝕜 →L[𝕜] 𝕜)) : lineEquiv 𝕜 v = (v.1, v.2 1) := by
+  simp [lineEquiv]
+
+variable (𝕜) in
 /-- **The cotangent bundle of the line is the plane.** The smooth diffeomorphism
 `T*𝕜 ≃ 𝕜 × 𝕜` sending a covector `p` at `q` to `(q, p 1)`: the covector `p` is multiplication by
 its value `p 1` on the unit tangent vector. -/
 def lineDiffeomorph :
     CotangentBundle 𝓘(𝕜) 𝕜 ≃ₘ⟮𝓘(𝕜).prod 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜), 𝓘(𝕜, 𝕜 × 𝕜)⟯ 𝕜 × 𝕜 :=
-  (modelSpaceDiffeomorph 𝕜).trans
-    ((ContinuousLinearEquiv.refl 𝕜 𝕜).prodCongr
-      (ContinuousLinearMap.toSpanSingletonLIE 𝕜 𝕜).toContinuousLinearEquiv.symm).toDiffeomorph
+  (modelSpaceDiffeomorph 𝕜).trans (lineEquiv 𝕜).toDiffeomorph
 
 variable (𝕜) in
 /-- `lineDiffeomorph` sends a covector `p` at `q` to `(q, p 1)`. -/
@@ -138,22 +147,15 @@ variable (𝕜) in
 @[simp]
 theorem mfderiv_lineDiffeomorph_apply (z : CotangentBundle 𝓘(𝕜) 𝕜) (v : 𝕜 × (𝕜 →L[𝕜] 𝕜)) :
     mfderiv (𝓘(𝕜).prod 𝓘(𝕜, 𝕜 →L[𝕜] 𝕜)) 𝓘(𝕜, 𝕜 × 𝕜) (lineDiffeomorph 𝕜) z v = (v.1, v.2 1) := by
-  set e : (𝕜 × (𝕜 →L[𝕜] 𝕜)) ≃L[𝕜] 𝕜 × 𝕜 := (ContinuousLinearEquiv.refl 𝕜 𝕜).prodCongr
-    (ContinuousLinearMap.toSpanSingletonLIE 𝕜 𝕜).toContinuousLinearEquiv.symm
-  have he : mfderiv 𝓘(𝕜, 𝕜 × (𝕜 →L[𝕜] 𝕜)) 𝓘(𝕜, 𝕜 × 𝕜) e (modelSpaceDiffeomorph 𝕜 z) =
-      (e : 𝕜 × (𝕜 →L[𝕜] 𝕜) →L[𝕜] 𝕜 × 𝕜) :=
-    (mfderiv_eq_fderiv).trans e.fderiv
+  have he : mfderiv 𝓘(𝕜, 𝕜 × (𝕜 →L[𝕜] 𝕜)) 𝓘(𝕜, 𝕜 × 𝕜) (lineEquiv 𝕜) (modelSpaceDiffeomorph 𝕜 z) =
+      (lineEquiv 𝕜 : 𝕜 × (𝕜 →L[𝕜] 𝕜) →L[𝕜] 𝕜 × 𝕜) :=
+    (mfderiv_eq_fderiv).trans (lineEquiv 𝕜).fderiv
   have hcomp := mfderiv_comp_apply (I' := 𝓘(𝕜, 𝕜 × (𝕜 →L[𝕜] 𝕜))) z
-    (e.toDiffeomorph.mdifferentiable (by simp) _)
+    ((lineEquiv 𝕜).toDiffeomorph.mdifferentiable (by simp) _)
     ((modelSpaceDiffeomorph 𝕜).mdifferentiable (by simp) z) v
   rw [mfderiv_modelSpaceDiffeomorph] at hcomp
-  -- `e` reads `p` as `p 1`.
-  have hev : (e : 𝕜 × (𝕜 →L[𝕜] 𝕜) →L[𝕜] 𝕜 × 𝕜) v = (v.1, v.2 1) := by
-    rw [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.prodCongr_apply,
-      ContinuousLinearEquiv.refl_apply, LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv,
-      ContinuousLinearMap.toSpanSingletonLIE_symm_apply]
-  -- The identity of the tangent space followed by `e`.
+  -- The identity of the tangent space followed by `lineEquiv`, which reads `p` as `p 1`.
   rw [lineDiffeomorph, Diffeomorph.coe_trans, hcomp, ContinuousLinearEquiv.coe_toDiffeomorph, he]
-  exact hev
+  exact lineEquiv_apply 𝕜 v
 
 end TauCeti.CotangentBundle
