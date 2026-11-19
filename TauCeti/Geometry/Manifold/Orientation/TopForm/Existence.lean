@@ -82,16 +82,17 @@ theorem exists_ofTopForm_eq (hk : finrank ℝ E = m) (o : Orientation I M (Fin m
       ofTopForm hk φ.1 (φ.isSmoothForm.of_le zero_le) h0 = o := by
   obtain ⟨φ, h0, hφ⟩ := exists_topForm_of_orientation o
   refine ⟨φ, h0, ext fun x ↦ ?_⟩
-  -- Compare the two tangent orientations at `x` on a single basis `b`.
+  -- On a basis `b`, both tangent orientations at `x` are read off the sign of `φ x b`. So `b` is
+  -- positive for one exactly when it is positive for the other, and otherwise both are
+  -- `-b.orientation`. (`adjustToOrientation` would need `Nonempty (Fin m)`, failing for `m = 0`.)
   let b := finBasisOfFinrankEq ℝ (TangentSpace I x) hk
-  have hb := orientation_eq_ite_orientationAt_ofTopForm hk (φ.isSmoothForm.of_le zero_le) h0 b
-  split_ifs at hb with hpos
-  · rw [← hb, (hφ x b).mp hpos]
-  · have hcard : Fintype.card (Fin m) = finrank ℝ (TangentSpace I x) := by simpa using hk.symm
-    rcases (o.orientationAt x).eq_or_eq_neg b.orientation hcard with h | h
-    · exact absurd ((hφ x b).mpr h.symm) hpos
-    · rw [h, hb]
-      exact (_root_.neg_neg (G := _root_.Orientation ℝ (TangentSpace I x) (Fin m)) _).symm
+  have hcard : Fintype.card (Fin m) = finrank ℝ (TangentSpace I x) := by simpa using hk.symm
+  have h := (orientation_eq_orientationAt_ofTopForm_iff hk (φ.isSmoothForm.of_le zero_le) h0
+    b).trans (hφ x b)
+  by_cases hb : b.orientation = o.orientationAt x
+  · exact (h.mpr hb).symm.trans hb
+  · exact neg_injective (((b.orientation.ne_iff_eq_neg _ hcard).mp (mt h.mp hb)).symm.trans
+      ((b.orientation.ne_iff_eq_neg _ hcard).mp hb))
 
 end Manifold.Orientation
 
