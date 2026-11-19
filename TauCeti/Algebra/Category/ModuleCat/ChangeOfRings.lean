@@ -242,6 +242,10 @@ theorem extendScalars_map_comp_extendScalarsAlgebraMapIso_hom {M N : ModuleCat.{
       (extendScalarsAlgebraMapIso M).hom ≫ ofHom (g.hom.baseChange S) :=
   ExtendScalars.hom_ext fun m ↦ by
     -- Evaluate both composites at `1 ⊗ m`; `extendScalarsAlgebraMapIso` sends it to `1 ⊗ m`.
+    -- The goal from `ExtendScalars.hom_ext` types `1 : S` as an element of the restricted module
+    -- `(restrictScalars (algebraMap R S)).obj S`, which is not type-correct at instance
+    -- transparency, so no `rw` or `simp only` (not even `ConcreteCategory.comp_apply`) matches it.
+    -- `change` restates it at `S`, with the composites and `ofHom` already applied.
     change (extendScalarsAlgebraMapIso N).hom
         ((extendScalars (algebraMap R S)).map g ((1 : S) ⊗ₜ[R, algebraMap R S] m)) =
       g.hom.baseChange S ((1 : S) ⊗ₜ[R] m)
