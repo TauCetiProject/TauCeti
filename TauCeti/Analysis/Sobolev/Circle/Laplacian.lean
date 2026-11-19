@@ -29,15 +29,18 @@ lower-order term in the elliptic estimate.
   obstruction: `Δ a = 1` has no solution (`CircleSobolev.laplacian_ne_single_zero`).
 * *Green operator.* The Fourier multiplier `G` with symbol `λₙ⁻¹` for `n ≠ 0` and `0` for `n = 0`
   (`CircleSobolev.greenOperator`) gains two orders and inverts `Δ` up to the projection
-  `Π a = a.coeff 0` onto the constants: `Δ G b = b - Π b` and `G Δ a = a - Π a`.
+  `Π a = single 0 (a.coeff 0)` onto the constants: `Δ G b = b - Π b` and `G Δ a = a - Π a`.
 * *The invertible operator `1 + Δ = 1 - ∂²`.* It multiplies the `n`-th coefficient by
   `1 + λₙ ≥ 1`, so it is an isomorphism `H^(s + 2) ≃ H^s` for every `s`, whose inverse has
-  symbol `(1 + λₙ)⁻¹` on every mode, including `n = 0` (`CircleSobolev.oneAddLaplacianEquiv`).
+  symbol `(1 + λₙ)⁻¹` on every mode, including `n = 0`
+  (`CircleSobolev.laplacianAddInclusionEquiv`).
 * *Fredholm property.* The kernel of `Δ : H^(s + 2) → H^s` (the constants) and its cokernel
-  (detected by the mean) are both copies of `E`, so `Δ` has index zero
-  (`CircleSobolev.index_laplacian`). For finite-dimensional `E`, `Δ = (1 + Δ) - 1` differs from
-  the isomorphism `1 + Δ` by the inclusion `H^(s + 2) → H^s`, which is compact by Rellich's
-  theorem, so `Δ` is a Fredholm operator (`CircleSobolev.isFredholm_laplacian`).
+  (detected by the mean) are both copies of `E`, so `finrank (ker Δ) = finrank (coker Δ)`
+  (`CircleSobolev.index_laplacian`). For finite-dimensional `E` this says that the Fredholm index
+  `dim E - dim E` of `Δ` is zero; for infinite-dimensional `E` both finranks are `0` by convention
+  and the statement carries no information. For finite-dimensional `E`, `Δ = (1 + Δ) - 1`
+  differs from the isomorphism `1 + Δ` by the inclusion `H^(s + 2) → H^s`, which is compact by
+  Rellich's theorem, so `Δ` is a Fredholm operator (`CircleSobolev.isFredholm_laplacian`).
 * *Elliptic estimate.* `‖a‖_{H^(s+2)} ≤ (T/π)² ‖Δ a‖_{H^s} + ‖a‖_{H^r}` for every `r ≤ s + 2`
   (`CircleSobolev.norm_le_mul_norm_laplacian_add_norm_inclusion`). The lower-order term cannot be
   dropped, since constants are killed by `Δ`
@@ -52,7 +55,8 @@ lower-order term in the elliptic estimate.
 * `TauCeti.CircleSobolev.laplacian T h`: for `h : s + 2 ≤ t`, the Laplacian `-∂²` as a bounded
   operator `H^t → H^s`.
 * `TauCeti.CircleSobolev.greenOperator T`: the Green operator `H^s → H^(s + 2)`.
-* `TauCeti.CircleSobolev.oneAddLaplacianEquiv T`: the isomorphism `1 + Δ : H^(s + 2) ≃ H^s`.
+* `TauCeti.CircleSobolev.laplacianAddInclusionEquiv T`: the isomorphism
+  `1 + Δ : H^(s + 2) ≃ H^s`, written `Δ + inclusion` between the two spaces.
 
 ## References
 
@@ -76,69 +80,79 @@ variable (T : ℝ) [hT : Fact (0 < T)]
 
 /-! ### The Laplacian -/
 
+omit hT in
+/-- The Laplacian symbol costs two orders of regularity: for `s + 2 ≤ t`,
+`(1 + |n|) ^ s (2πn/T)² ≤ (2π/T)² (1 + |n|) ^ t`. -/
+private theorem weight_mul_norm_laplacianSymbol_le (h : s + 2 ≤ t) (n : ℤ) :
+    weight s n * ‖(((2 * π * n / T) ^ 2 : ℝ) : ℂ)‖ ≤ (2 * π / T) ^ 2 * weight t n := by
+  have hn : (n : ℝ) ^ 2 ≤ (1 + |(n : ℝ)|) ^ 2 := by
+    nlinarith [sq_abs (n : ℝ), abs_nonneg (n : ℝ)]
+  rw [norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+  calc weight s n * (2 * π * n / T) ^ 2 = (2 * π / T) ^ 2 * (weight s n * (n : ℝ) ^ 2) := by ring
+    _ ≤ (2 * π / T) ^ 2 * weight t n := by
+        refine mul_le_mul_of_nonneg_left ?_ (sq_nonneg _)
+        calc weight s n * (n : ℝ) ^ 2 ≤ weight s n * (1 + |(n : ℝ)|) ^ 2 :=
+              mul_le_mul_of_nonneg_left hn (weight_nonneg s n)
+          _ = weight (s + 2) n := by rw [weight_add, weight_def 2, Real.rpow_two]
+          _ ≤ weight t n := weight_le_weight h n
+
 /-- The **Laplacian** `Δ = -∂²` on the circle `AddCircle T`, as a bounded operator `H^t → H^s`
-for `s + 2 ≤ t`: it multiplies the `n`-th Fourier coefficient by `(2πn/T)²`
-(`CircleSobolev.coeff_laplacian`). -/
+for `s + 2 ≤ t`: the Fourier multiplier with symbol `(2πn/T)²` (`CircleSobolev.coeff_laplacian`).
+It is minus the second derivative (`CircleSobolev.laplacian_apply`). -/
 def laplacian (h : s + 2 ≤ t) : CircleSobolev t E →L[ℂ] CircleSobolev s E :=
-  -(derivative T (le_refl (s + 1)) ∘L derivative T (show s + 1 + 1 ≤ t by linarith))
+  fourierMultiplier (fun n ↦ (((2 * π * n / T) ^ 2 : ℝ) : ℂ))
+    (weight_mul_norm_laplacianSymbol_le T h)
 
-theorem laplacian_apply (h : s + 2 ≤ t) (a : CircleSobolev t E) :
-    laplacian T h a = -derivative T (le_refl (s + 1)) (derivative T (by linarith) a) :=
-  (rfl)
-
+omit hT in
 /-- The Laplacian multiplies the `n`-th Fourier coefficient by `(2πn/T)²`. -/
 @[simp]
 theorem coeff_laplacian (h : s + 2 ≤ t) (a : CircleSobolev t E) (n : ℤ) :
-    (laplacian T h a).coeff n = (((2 * π * n / T) ^ 2 : ℝ) : ℂ) • a.coeff n := by
-  rw [laplacian_apply, coeff_neg, Pi.neg_apply, coeff_derivative, coeff_derivative, smul_smul,
+    (laplacian T h a).coeff n = (((2 * π * n / T) ^ 2 : ℝ) : ℂ) • a.coeff n :=
+  coeff_fourierMultiplier _ a n
+
+/-- The Laplacian is minus the second derivative: `Δ a = -(a'')`. -/
+theorem laplacian_apply (h : s + 2 ≤ t) (a : CircleSobolev t E) :
+    laplacian T h a = -derivative T (le_refl (s + 1)) (derivative T (by linarith) a) := by
+  refine CircleSobolev.ext (funext fun n ↦ ?_)
+  rw [coeff_laplacian, coeff_neg, Pi.neg_apply, coeff_derivative, coeff_derivative, smul_smul,
     ← neg_smul]
   congr 1
   push_cast
-  linear_combination (-(2 * π * n / T : ℂ) ^ 2) * I_sq
+  linear_combination ((2 * π * n / T : ℂ) ^ 2) * I_sq
 
+omit hT in
 @[simp]
 theorem laplacian_single (h : s + 2 ≤ t) (n : ℤ) (x : E) :
     laplacian T h (single n x) = single n ((((2 * π * n / T) ^ 2 : ℝ) : ℂ) • x) :=
-  CircleSobolev.ext (funext fun m ↦ by
-    rcases eq_or_ne m n with rfl | hm
-    · simp
-    · simp [hm])
+  fourierMultiplier_single _ n x
 
+omit hT in
 @[simp]
 theorem laplacian_inclusion {u : ℝ} (h : s + 2 ≤ t) (htu : t ≤ u) (a : CircleSobolev u E) :
     laplacian T h (inclusion htu a) = laplacian T (h.trans htu) a :=
   CircleSobolev.ext (funext fun n ↦ by simp)
 
+omit hT in
 @[simp]
 theorem inclusion_laplacian (hrs : r ≤ s) (h : s + 2 ≤ t) (a : CircleSobolev t E) :
     inclusion hrs (laplacian T h a) = laplacian T (by linarith) a :=
   CircleSobolev.ext (funext fun n ↦ by simp)
 
+omit hT in
 /-- The constant Fourier coefficient of `Δ a` vanishes: `Δ a` has mean zero. -/
-theorem coeff_laplacian_zero (h : s + 2 ≤ t) (a : CircleSobolev t E) :
+theorem coeff_zero_laplacian (h : s + 2 ≤ t) (a : CircleSobolev t E) :
     (laplacian T h a).coeff 0 = 0 := by
   simp
-
-omit hT in
-/-- For `n ≠ 0` the Laplacian eigenvalue `(2πn/T)²` is nonzero. -/
-private theorem sq_two_pi_mul_intCast_div_ne_zero (hT0 : T ≠ 0) {n : ℤ} (hn : n ≠ 0) :
-    (2 * π * n / T) ^ 2 ≠ 0 :=
-  pow_ne_zero 2 (div_ne_zero (mul_ne_zero (mul_ne_zero two_ne_zero pi_ne_zero)
-    (Int.cast_ne_zero.2 hn)) hT0)
 
 /-- **The kernel of the Laplacian consists of the constants**: `Δ a = 0` exactly when every
 Fourier coefficient of `a` other than the zeroth one vanishes. -/
 theorem laplacian_eq_zero_iff (h : s + 2 ≤ t) (a : CircleSobolev t E) :
     laplacian T h a = 0 ↔ a = single 0 (a.coeff 0) := by
-  refine ⟨fun ha ↦ CircleSobolev.ext (funext fun n ↦ ?_), fun ha ↦ ?_⟩
-  · rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · have hc : (((2 * π * n / T) ^ 2 : ℝ) : ℂ) ≠ 0 :=
-        ofReal_ne_zero.2 (sq_two_pi_mul_intCast_div_ne_zero T hT.out.ne' hn)
-      have := congr_arg (fun b : CircleSobolev s E ↦ b.coeff n) ha
-      simp only [coeff_laplacian, coeff_zero, Pi.zero_apply] at this
-      rw [coeff_single, Pi.single_eq_of_ne hn]
-      exact (smul_eq_zero.1 this).resolve_left hc
+  refine ⟨fun ha ↦ ?_, fun ha ↦ ?_⟩
+  · -- `Δ a = -(a'')`, and `a'' = 0` forces `a'` constant, hence zero since it has no mean.
+    rw [laplacian_apply, neg_eq_zero, derivative_eq_zero_iff, coeff_derivative] at ha
+    rw [← derivative_eq_zero_iff T (show s + 1 + 1 ≤ t by linarith), ha]
+    simp
   · rw [ha, laplacian_single]
     simp
 
@@ -226,9 +240,10 @@ theorem greenOperator_laplacian (h : s + 2 ≤ t) (a : CircleSobolev t E) :
 exactly when its mean, the constant Fourier coefficient, vanishes. A solution is `G b`. -/
 theorem exists_laplacian_eq_iff (b : CircleSobolev s E) :
     (∃ a : CircleSobolev (s + 2) E, laplacian T le_rfl a = b) ↔ b.coeff 0 = 0 := by
-  refine ⟨fun ⟨a, ha⟩ ↦ ha ▸ coeff_laplacian_zero T le_rfl a, fun hb ↦ ⟨greenOperator T b, ?_⟩⟩
+  refine ⟨fun ⟨a, ha⟩ ↦ ha ▸ coeff_zero_laplacian T le_rfl a, fun hb ↦ ⟨greenOperator T b, ?_⟩⟩
   rw [laplacian_greenOperator, hb, map_zero, sub_zero]
 
+omit hT in
 /-- A nonzero constant is not a Laplacian: the equation `Δ a = x`, `x ≠ 0` constant, has no
 solution in any `H^t`, since its right-hand side does not have mean zero. -/
 theorem laplacian_ne_single_zero (h : s + 2 ≤ t) (a : CircleSobolev t E) {x : E} (hx : x ≠ 0) :
@@ -260,48 +275,54 @@ private theorem weight_mul_norm_resolventSymbol_le (hT0 : T ≠ 0) (n : ℤ) :
         mul_le_mul_of_nonneg_left ((mul_inv_le_iff₀ hpos).2 hle) (weight_nonneg s n)
     _ = 2 * (1 + (T / (2 * π)) ^ 2) * weight s n := by ring
 
+omit hT in
 /-- The operator `1 + Δ = 1 - ∂²` multiplies the `n`-th Fourier coefficient by
 `1 + (2πn/T)²`. -/
-private theorem coeff_inclusion_add_laplacian (a : CircleSobolev (s + 2) E) (n : ℤ) :
-    ((inclusion (by linarith) + laplacian T le_rfl : CircleSobolev (s + 2) E →L[ℂ]
+private theorem coeff_laplacian_add_inclusion (a : CircleSobolev (s + 2) E) (n : ℤ) :
+    ((laplacian T le_rfl + inclusion (by linarith) : CircleSobolev (s + 2) E →L[ℂ]
       CircleSobolev s E) a).coeff n = (((1 + (2 * π * n / T) ^ 2 : ℝ)) : ℂ) • a.coeff n := by
-  simp [add_smul]
+  simp [add_smul, add_comm]
 
-/-- **`1 + Δ = 1 - ∂²` is an isomorphism `H^(s + 2) ≃ H^s`** for every real `s`. It multiplies
-the `n`-th Fourier coefficient by `1 + (2πn/T)² ≥ 1`, and its inverse multiplies it by
-`(1 + (2πn/T)²)⁻¹` (`CircleSobolev.coeff_oneAddLaplacianEquiv_symm`), on every mode including the
-constant one. -/
-def oneAddLaplacianEquiv : CircleSobolev (s + 2) E ≃L[ℂ] CircleSobolev s E :=
-  ContinuousLinearEquiv.equivOfInverse (inclusion (by linarith) + laplacian T le_rfl)
+omit hT in
+/-- The symbol `1 + (2πn/T)²` of `1 + Δ` times its inverse is `1`. -/
+private theorem inv_mul_one_add_eigenvalue (n : ℤ) :
+    ((((1 + (2 * π * n / T) ^ 2)⁻¹ : ℝ)) : ℂ) * (((1 + (2 * π * n / T) ^ 2 : ℝ)) : ℂ) = 1 := by
+  rw [← ofReal_mul, inv_mul_cancel₀ (by positivity), ofReal_one]
+
+/-- **`1 + Δ = 1 - ∂²` is an isomorphism `H^(s + 2) ≃ H^s`** for every real `s`, written
+`Δ + inclusion` since its two summands act between different spaces. It multiplies the `n`-th
+Fourier coefficient by `1 + (2πn/T)² ≥ 1`, and its inverse multiplies it by `(1 + (2πn/T)²)⁻¹`
+(`CircleSobolev.coeff_laplacianAddInclusionEquiv_symm`), on every mode including the constant
+one. -/
+def laplacianAddInclusionEquiv : CircleSobolev (s + 2) E ≃L[ℂ] CircleSobolev s E :=
+  ContinuousLinearEquiv.equivOfInverse (laplacian T le_rfl + inclusion (by linarith))
     (fourierMultiplier (fun n ↦ ((((1 + (2 * π * n / T) ^ 2)⁻¹ : ℝ)) : ℂ))
       (weight_mul_norm_resolventSymbol_le T hT.out.ne'))
     (fun a ↦ CircleSobolev.ext (funext fun n ↦ by
-      have hpos : 0 < 1 + (2 * π * n / T) ^ 2 := by positivity
-      rw [coeff_fourierMultiplier, coeff_inclusion_add_laplacian, smul_smul, ← ofReal_mul,
-        inv_mul_cancel₀ hpos.ne', ofReal_one, one_smul]))
+      rw [coeff_fourierMultiplier, coeff_laplacian_add_inclusion, smul_smul,
+        inv_mul_one_add_eigenvalue, one_smul]))
     (fun b ↦ CircleSobolev.ext (funext fun n ↦ by
-      have hpos : 0 < 1 + (2 * π * n / T) ^ 2 := by positivity
-      rw [coeff_inclusion_add_laplacian, coeff_fourierMultiplier, smul_smul, ← ofReal_mul,
-        mul_inv_cancel₀ hpos.ne', ofReal_one, one_smul]))
+      rw [coeff_laplacian_add_inclusion, coeff_fourierMultiplier, smul_smul, mul_comm,
+        inv_mul_one_add_eigenvalue, one_smul]))
 
 @[simp]
-theorem oneAddLaplacianEquiv_apply (a : CircleSobolev (s + 2) E) :
-    oneAddLaplacianEquiv T a = inclusion (by linarith) a + laplacian T le_rfl a :=
+theorem laplacianAddInclusionEquiv_apply (a : CircleSobolev (s + 2) E) :
+    laplacianAddInclusionEquiv T a = laplacian T le_rfl a + inclusion (by linarith) a :=
   (rfl)
 
 /-- The inverse of `1 + Δ` multiplies the `n`-th Fourier coefficient by `(1 + (2πn/T)²)⁻¹`. -/
 @[simp]
-theorem coeff_oneAddLaplacianEquiv_symm (b : CircleSobolev s E) (n : ℤ) :
-    ((oneAddLaplacianEquiv T).symm b).coeff n =
+theorem coeff_laplacianAddInclusionEquiv_symm (b : CircleSobolev s E) (n : ℤ) :
+    ((laplacianAddInclusionEquiv T).symm b).coeff n =
       ((((1 + (2 * π * n / T) ^ 2)⁻¹ : ℝ)) : ℂ) • b.coeff n :=
   coeff_fourierMultiplier _ b n
 
 /-! ### The Fredholm property -/
 
 /-- The Laplacian is `1 + Δ` minus the inclusion `H^(s + 2) → H^s`. -/
-private theorem laplacian_eq_oneAddLaplacianEquiv_sub :
+private theorem laplacian_eq_laplacianAddInclusionEquiv_sub :
     (laplacian T le_rfl : CircleSobolev (s + 2) E →L[ℂ] CircleSobolev s E) =
-      (oneAddLaplacianEquiv (s := s) (E := E) T :
+      (laplacianAddInclusionEquiv (s := s) (E := E) T :
         CircleSobolev (s + 2) E →L[ℂ] CircleSobolev s E) + -inclusion (by linarith) := by
   ext a : 1
   simp
@@ -312,8 +333,8 @@ Fredholm operator for every real `s`. It differs from the isomorphism `1 + Δ` b
 theorem isFredholm_laplacian [FiniteDimensional ℂ E] :
     (laplacian T le_rfl : CircleSobolev (s + 2) E →L[ℂ] CircleSobolev s E).IsFredholm := by
   have := FiniteDimensional.completeSpace ℂ E
-  rw [laplacian_eq_oneAddLaplacianEquiv_sub]
-  exact (oneAddLaplacianEquiv T).isFredholm.add_of_isCompactOperator
+  rw [laplacian_eq_laplacianAddInclusionEquiv_sub]
+  exact (laplacianAddInclusionEquiv T).isFredholm.add_of_isCompactOperator
     (isCompactOperator_inclusion (by linarith)).neg
 
 /-- The range of `Δ : H^(s + 2) → H^s` consists of the elements of mean zero: it is the kernel of
@@ -325,7 +346,10 @@ theorem range_laplacian :
   simpa using exists_laplacian_eq_iff T b
 
 /-- **The circle Laplacian has index zero**: the kernel of `Δ : H^(s + 2) → H^s`, the constants,
-and its cokernel, detected by the mean, are both identified with `E`. -/
+and its cokernel, detected by the mean, are both identified with `E`. For finite-dimensional `E`
+this is the Fredholm index `dim E - dim E` of the Fredholm operator `Δ`
+(`CircleSobolev.isFredholm_laplacian`); for infinite-dimensional `E` both finranks are `0` by
+convention, and the statement carries no information. -/
 theorem index_laplacian :
     (laplacian T le_rfl : CircleSobolev (s + 2) E →L[ℂ] CircleSobolev s E).index = 0 := by
   rw [ContinuousLinearMap.index_def, LinearMap.index_eq_finrank_sub, sub_eq_zero]
@@ -334,8 +358,8 @@ theorem index_laplacian :
       CircleSobolev s E).toLinearMap ≃ₗ[ℂ] E :=
     { toFun a := a.1.coeff 0
       invFun x := ⟨single 0 x, by simp⟩
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl
+      map_add' _ _ := by simp
+      map_smul' _ _ := by simp
       left_inv a := Subtype.ext ((laplacian_eq_zero_iff T le_rfl a.1).1 a.2).symm
       right_inv x := by simp }
   -- The mean identifies the cokernel with `E`.
@@ -364,6 +388,7 @@ theorem norm_le_mul_norm_laplacian_add_norm_inclusion (hr : r ≤ s + 2)
         rw [norm_single, weight_zero_right, one_mul]
         exact add_le_add (norm_greenOperator_le T _) h0
 
+omit hT in
 /-- **Without the lower-order term the elliptic estimate fails**: if `E` is nontrivial, no
 constant `C` satisfies `‖a‖_{H^t} ≤ C ‖Δ a‖_{H^s}` for all `a`, since `Δ` kills the nonzero
 constants. -/
@@ -371,11 +396,7 @@ theorem not_exists_forall_norm_le_mul_norm_laplacian [Nontrivial E] (h : s + 2 �
     ¬∃ C : ℝ, ∀ a : CircleSobolev t E, ‖a‖ ≤ C * ‖laplacian T h a‖ := by
   rintro ⟨C, hC⟩
   obtain ⟨x, hx⟩ := exists_ne (0 : E)
-  have := hC (single 0 x)
-  simp only [laplacian_single, Int.cast_zero, mul_zero, zero_div, ne_eq, OfNat.ofNat_ne_zero,
-    not_false_eq_true, zero_pow, ofReal_zero, zero_smul, map_zero, norm_zero, mul_zero,
-    norm_single, weight_zero_right, one_mul] at this
-  exact hx (norm_le_zero_iff.1 this)
+  exact hx (by simpa [norm_single] using hC (single 0 x))
 
 /-- **On the complement of the kernel the lower-order term can be dropped**: an element `a` of
 mean zero satisfies `‖a‖_{H^(s+2)} ≤ (T/π)² ‖Δ a‖_{H^s}`. -/
@@ -398,8 +419,8 @@ theorem exists_inclusion_eq_of_laplacian_eq_inclusion (h : r + 2 ≤ t) (hts : t
   rcases eq_or_ne n 0 with rfl | hn0
   · simp
   · rw [coeff_inclusion, coeff_add, Pi.add_apply, coeff_greenOperator, ← hn, smul_smul,
-      green_mul_eigenvalue T hT.out.ne' hn0, one_smul, coeff_single, Pi.single_eq_of_ne hn0,
-      add_zero]
+      green_mul_eigenvalue T hT.out.ne' hn0]
+    simp [hn0]
 
 end CircleSobolev
 
