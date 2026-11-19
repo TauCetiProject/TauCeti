@@ -5,11 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.LinearlyReductive
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
-import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.LinearlyReductive
 import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Radical
 import TauCeti.Algebra.AlgebraicGroup.Solvable.Reductive
@@ -30,14 +28,10 @@ this radical trivial, so the unipotent part of every rational point of `G` is th
 point is semisimple. The diagonalization criterion
 `TauCeti.torusCommHopfAlgProperty_of_isSemisimplePoint` then identifies `G` as a split torus.
 
-Consequently such a group is linearly reductive.
-
 ## Main declarations
 
 * `TauCeti.reductiveCommHopfAlgProperty.torus_of_geometricallySolvable`: a solvable reductive
   group is a torus.
-* `TauCeti.reductiveCommHopfAlgProperty.linearlyReductive_of_geometricallySolvable`: a solvable
-  reductive group is linearly reductive.
 
 ## References
 
@@ -102,13 +96,5 @@ theorem torus_of_geometricallySolvable
       (hH.isSemisimplePoint_geometricFiber_of_geometricallySolvable hsolv)
   exact (torusCommHopfAlgProperty_iff k H).mpr
     ((splitTorusCommHopfAlgProperty_iff K G).mp (hT.split K G))
-
-/-- A reductive group with solvable geometric points is linearly reductive, in every
-characteristic and including when its torus does not split over the ground field. -/
-theorem linearlyReductive_of_geometricallySolvable
-    (hH : reductiveCommHopfAlgProperty k H)
-    (hsolv : geometricallySolvablePointsCommHopfAlgProperty k H.obj) :
-    linearlyReductiveCommHopfAlgProperty k H.obj :=
-  (hH.torus_of_geometricallySolvable hsolv).linearlyReductive
 
 end TauCeti.reductiveCommHopfAlgProperty
