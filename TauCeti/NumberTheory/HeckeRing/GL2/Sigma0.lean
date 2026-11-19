@@ -10,6 +10,8 @@ public import TauCeti.NumberTheory.HeckeRing.GL2.Delta0
 public import TauCeti.NumberTheory.HeckeRing.GLn.OfIntMatrix
 
 import Mathlib.Data.ZMod.Units
+-- the `Γ₀(N)` divisibility and unit-entry lemmas, only inside proofs
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
 # The monoid `Σ₀(N)` of integral matrices
@@ -26,8 +28,9 @@ action. It differs from the semigroup `HeckeRing.GL2.Delta0 N` of the Hecke ring
 elements are integral matrices rather than elements of `GL₂(ℚ)`, so that it can act on modules
 over rings in which `det` is not invertible. And it admits negative determinants: the involution
 `ι = !![-1, 0; 0, 1]`, which splits modular symbols into their plus and minus parts, lies in
-`Σ₀(N)` but not in `Δ₀(N)`. The two are related by `HeckeRing.GL2.mem_Delta0_iff`: `Δ₀(N)` is the
-image in `GL₂(ℚ)` of the positive-determinant part of `Σ₀(N)`.
+`Σ₀(N)` but not in `Δ₀(N)`. The two are related by
+`HeckeRing.GL2.mem_Delta0_iff_exists_Sigma0`: `Δ₀(N)` is the image in `GL₂(ℚ)` of the
+positive-determinant part of `Σ₀(N)`.
 
 ## Main definitions
 
@@ -68,20 +71,15 @@ namespace HeckeRing.GL2
 variable (N : ℕ)
 
 /-- **The monoid `Σ₀(N)`**: integral matrices `!![a, b; c, d]` of nonzero determinant with `N ∣ c`
-and `a` a unit modulo `N`. It is a monoid because the lower-left entry `c a' + d c'` of a product
-is again divisible by `N`, and its upper-left entry `a a' + b c'` is `a a'` modulo `N`. -/
+and `a` a unit modulo `N`. -/
 def Sigma0 : Submonoid (Matrix (Fin 2) (Fin 2) ℤ) where
   carrier := {A | A.det ≠ 0 ∧ (N : ℤ) ∣ A 1 0 ∧ IsUnit (A 0 0 : ZMod N)}
   one_mem' := ⟨by simp, by simp, by simp⟩
   mul_mem' {A B} := by
     rintro ⟨hA, hAN, hAu⟩ ⟨hB, hBN, hBu⟩
     refine ⟨by simpa [det_mul] using mul_ne_zero hA hB, ?_, ?_⟩
-    · simp only [Matrix.mul_apply, Fin.sum_univ_two]
-      exact dvd_add (dvd_mul_of_dvd_left hAN _) (dvd_mul_of_dvd_right hBN _)
-    · -- the upper-left entry of the product is `a a'` modulo `N`, since `N ∣ c'`
-      have h : ((A * B) 0 0 : ZMod N) = (A 0 0 : ZMod N) * (B 0 0 : ZMod N) := by
-        simp [Matrix.mul_apply, Fin.sum_univ_two, (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mpr hBN]
-      rw [h]
+    · exact dvd_mul_apply_one_zero hAN hBN
+    · rw [intCast_mul_apply_zero_zero hBN]
       exact hAu.mul hBu
 
 variable {N}
@@ -103,17 +101,10 @@ theorem det_ne_zero_of_mem_Sigma0 {A : Matrix (Fin 2) (Fin 2) ℤ} (hA : A ∈ S
     A.det ≠ 0 :=
   (mem_Sigma0_iff.mp hA).1
 
-/-- **`Γ₀(N) ⊆ Σ₀(N)`.** An element of `Γ₀(N)` has determinant `1` and `N ∣ c`, so `ad ≡ 1`
-modulo `N` and `a` is a unit modulo `N`. -/
+/-- **`Γ₀(N) ⊆ Σ₀(N)`.** -/
 theorem coe_mem_Sigma0_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
-    (γ : Matrix (Fin 2) (Fin 2) ℤ) ∈ Sigma0 N := by
-  have hc : ((γ 1 0 : ℤ) : ZMod N) = 0 := Gamma0_mem.mp hγ
-  refine ⟨by simp, (ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp hc, IsUnit.of_mul_eq_one
-    (γ 1 1 : ZMod N) ?_⟩
-  have hdet : ((γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 : ℤ) : ZMod N) = 1 := by
-    rw [← det_fin_two, γ.det_coe, Int.cast_one]
-  push_cast at hdet
-  simpa [hc] using hdet
+    (γ : Matrix (Fin 2) (Fin 2) ℤ) ∈ Sigma0 N :=
+  ⟨by simp, mem_Gamma0_iff_dvd.mp hγ, isUnit_intCast_apply_zero_zero_of_mem_Gamma0 hγ⟩
 
 variable (N) in
 /-- The inclusion `Γ₀(N) →* Σ₀(N)` of `HeckeRing.GL2.coe_mem_Sigma0_of_mem_Gamma0`, sending
@@ -142,8 +133,7 @@ theorem upperTriangular_mem_Sigma0_iff {a b d : ℤ} :
   simp
 
 /-- The matrices `!![1, b; 0, ℓ]` with `ℓ ≠ 0`, which appear in the Hecke operators `T_ℓ` and
-`U_ℓ`, lie in `Σ₀(N)` for every `N`: their lower-left entry is `0` and their upper-left entry
-is `1`. -/
+`U_ℓ`, lie in `Σ₀(N)` for every `N`. -/
 theorem one_upperTriangular_mem_Sigma0 (b : ℤ) {ℓ : ℤ} (hℓ : ℓ ≠ 0) :
     !![1, b; 0, ℓ] ∈ Sigma0 N :=
   upperTriangular_mem_Sigma0_iff.mpr ⟨by simpa using hℓ, Int.gcd_one_left _⟩
