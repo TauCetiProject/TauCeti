@@ -133,9 +133,15 @@ def smoothVectors : Subrepresentation ρ where
       smul_mem' := fun c v hv ↦ Subgroup.isOpen_mono (ρ.le_stabilizer_smul c v) hv }
   apply_mem_toSubmodule g v hv := by
     -- The stabilizer of `ρ g v` is the image of that of `v` under `x ↦ g * x * g⁻¹`.
+    -- `mem_smoothVectors_iff` is not available inside this definition, so `change` unfolds
+    -- membership in the carrier above.
     change IsOpen (ρ.stabilizer v : Set G) at hv
     change IsOpen (ρ.stabilizer (ρ g v) : Set G)
-    rw [stabilizer_conj, Subgroup.coe_map]
+    have himage : (((ρ.stabilizer v).map (MulAut.conj g) : Subgroup G) : Set G) =
+        (Homeomorph.mulLeft g).trans (Homeomorph.mulRight g⁻¹) '' ρ.stabilizer v := by
+      ext
+      simp [MulAut.conj_apply]
+    rw [stabilizer_conj, himage]
     exact ((Homeomorph.mulLeft g).trans (Homeomorph.mulRight g⁻¹)).isOpenMap _ hv
 
 @[simp]
@@ -318,16 +324,10 @@ theorem smoothVectors_leftRegular_eq_bot [SeparatelyContinuousMul G] [T1Space G]
   have hfin : (H : Set G).Finite := by
     refine ((f.coeff.support.finite_toSet.image fun y ↦ y * x⁻¹)).subset fun g hg ↦ ?_
     refine ⟨g * x, ?_, by simp⟩
-    have hg' : (leftRegular A G) g f = f := mem_stabilizer.1 hg
-    rw [Finset.mem_coe, Finsupp.mem_support_iff, ← hg', coeff_ofMulAction, smul_eq_mul,
-      inv_mul_cancel_left]
-    exact Finsupp.mem_support_iff.1 hx
-  have hopen : IsOpen ({1} : Set G) := by
-    have : ({1} : Set G) = (H : Set G) \ ((H : Set G) \ {1}) := by
-      rw [sdiff_sdiff_cancel_left (singleton_subset_iff.2 H.one_mem)]
-    rw [this]
-    exact (mem_smoothVectors_iff.1 hf).sdiff hfin.sdiff.isClosed
-  exact hG (discreteTopology_of_isOpen_singleton_one hopen)
+    rw [← mem_stabilizer.1 hg]
+    simpa [coeff_ofMulAction] using hx
+  exact hG (discreteTopology_of_isOpen_singleton_one
+    (isOpen_singleton_of_finite_mem_nhds 1 ((mem_smoothVectors_iff.1 hf).mem_nhds H.one_mem) hfin))
 
 end OfMulAction
 
