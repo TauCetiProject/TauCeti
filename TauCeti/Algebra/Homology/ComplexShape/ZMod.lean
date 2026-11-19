@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ComplexShapeSigns
-public import Mathlib.Algebra.Ring.NegOnePow
-public import Mathlib.Data.ZMod.Basic
+public import TauCeti.Data.ZMod.NegOnePow
 
 /-!
 # Tensor signs for cyclically graded complexes
@@ -42,7 +41,8 @@ cyclic analogues of Mathlib's instance for `ComplexShape.up ℤ` and of
 ## Main definitions and results
 
 * `ComplexShape.tensorSignsDownZMod`, `ComplexShape.tensorSignsUpZMod`: the tensor signs on the
-  cyclic shapes, for `n` even.
+  cyclic shapes, for `n` even, with sign `ZMod.negOnePow p` at `p`
+  (`ComplexShape.ε_down_zmod_eq_negOnePow`, `ComplexShape.ε_up_zmod_eq_negOnePow`).
 * `ComplexShape.ε_down_zmod_intCast`, `ComplexShape.ε_up_zmod_intCast`: every tensor sign datum
   on a cyclic shape has sign `Int.negOnePow k` at the class of `k : ℤ`.
 * `ComplexShape.two_dvd_of_tensorSigns_down_zmod`, `ComplexShape.two_dvd_of_tensorSigns_up_zmod`:
@@ -61,18 +61,6 @@ namespace ComplexShape
 
 variable {n : ℕ}
 
-/-- A sign function on `ZMod n` which is `1` at `0` and changes sign at each step `p ↦ p + 1` is
-`Int.negOnePow k` at the class of `k`. -/
-private lemma eq_negOnePow_of_add_one (e : ZMod n → ℤˣ) (h₀ : e 0 = 1)
-    (h : ∀ p, e (p + 1) = -e p) (k : ℤ) : e k = k.negOnePow := by
-  induction k using Int.induction_on with
-  | zero => simpa using h₀
-  | succ k ih => rw [Int.cast_add, Int.cast_one, h, ih, Int.negOnePow_succ]
-  | pred k ih =>
-    have hk := h ((-(k : ℤ) - 1 : ℤ) : ZMod n)
-    rw [Int.cast_sub, Int.cast_one, sub_add_cancel, ← Int.cast_one, ← Int.cast_sub, ih] at hk
-    rw [Int.negOnePow_sub, Int.negOnePow_one, mul_neg_one, hk, neg_neg]
-
 section Down
 
 variable [TensorSigns (down (ZMod n))]
@@ -81,7 +69,7 @@ variable [TensorSigns (down (ZMod n))]
 `k` is `(-1)^k`. -/
 @[simp]
 theorem ε_down_zmod_intCast (k : ℤ) : (down (ZMod n)).ε k = k.negOnePow :=
-  eq_negOnePow_of_add_one _ (ε_zero _) (fun _ ↦ neg_eq_iff_eq_neg.mp (ε_succ _ rfl).symm) k
+  ZMod.apply_intCast_eq_negOnePow _ (ε_zero _) (fun _ ↦ neg_eq_iff_eq_neg.mp (ε_succ _ rfl).symm) k
 
 /-- The sign of a tensor sign datum on `ComplexShape.down (ZMod n)` at the class of a natural
 number `k` is `(-1)^k`. -/
@@ -134,7 +122,7 @@ variable [TensorSigns (up (ZMod n))]
 is `(-1)^k`. -/
 @[simp]
 theorem ε_up_zmod_intCast (k : ℤ) : (up (ZMod n)).ε k = k.negOnePow :=
-  eq_negOnePow_of_add_one _ (ε_zero _) (fun _ ↦ ε_succ _ rfl) k
+  ZMod.apply_intCast_eq_negOnePow _ (ε_zero _) (fun _ ↦ ε_succ _ rfl) k
 
 /-- The sign of a tensor sign datum on `ComplexShape.up (ZMod n)` at the class of a natural number
 `k` is `(-1)^k`. -/
@@ -183,134 +171,100 @@ section Even
 
 variable [Fact (2 ∣ n)]
 
-/-- The sign `(-1)^p`, read through `ZMod n → ZMod 2`, changes at each step `p ↦ p + 1`. -/
-private lemma uzpow_castHom_add_one (p : ZMod n) :
-    (-1 : ℤˣ) ^ ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) (p + 1) =
-      -(-1 : ℤˣ) ^ ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p := by
-  rw [map_add, map_one, uzpow_add, uzpow_one, mul_neg_one]
-
-/-- The tensor signs on `ComplexShape.down (ZMod n)` for even `n`: the sign of `p` is `(-1)^p`,
-read through the reduction `ZMod n → ZMod 2`. They are computed by
-`ComplexShape.ε_down_zmod_intCast`. -/
+/-- The tensor signs on `ComplexShape.down (ZMod n)` for even `n`: the sign of `p` is
+`ZMod.negOnePow p = (-1)^p` (`ComplexShape.ε_down_zmod_eq_negOnePow`). -/
 instance tensorSignsDownZMod : TensorSigns (down (ZMod n)) where
-  ε' := MonoidHom.mk' (fun p ↦ (-1 : ℤˣ) ^ ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p.toAdd)
-    (fun p q ↦ by simp only [toAdd_mul, map_add, uzpow_add])
+  ε' := MonoidHom.mk' (fun p ↦ p.toAdd.negOnePow) fun p q ↦ ZMod.negOnePow_add p.toAdd q.toAdd
   rel_add p q r (hpq : q + 1 = p) := by rw [down_Rel, ← hpq, add_right_comm]
   add_rel p q r (hpq : q + 1 = p) := by rw [down_Rel, ← hpq, add_assoc]
   ε'_succ := by
     rintro _ q rfl
-    exact neg_eq_iff_eq_neg.mp (uzpow_castHom_add_one q).symm
+    -- `ε'` applied to `q` is `ZMod.negOnePow q`, by the definition of `MonoidHom.mk'`.
+    change q.negOnePow = -(q + 1).negOnePow
+    rw [ZMod.negOnePow_add_one, neg_neg]
 
-/-- The tensor signs on `ComplexShape.up (ZMod n)` for even `n`: the sign of `p` is `(-1)^p`,
-read through the reduction `ZMod n → ZMod 2`. They are computed by
-`ComplexShape.ε_up_zmod_intCast`. -/
+/-- The tensor signs on `ComplexShape.up (ZMod n)` for even `n`: the sign of `p` is
+`ZMod.negOnePow p = (-1)^p` (`ComplexShape.ε_up_zmod_eq_negOnePow`). -/
 instance tensorSignsUpZMod : TensorSigns (up (ZMod n)) where
-  ε' := MonoidHom.mk' (fun p ↦ (-1 : ℤˣ) ^ ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p.toAdd)
-    (fun p q ↦ by simp only [toAdd_mul, map_add, uzpow_add])
+  ε' := MonoidHom.mk' (fun p ↦ p.toAdd.negOnePow) fun p q ↦ ZMod.negOnePow_add p.toAdd q.toAdd
   rel_add p q r (hpq : p + 1 = q) := by rw [up_Rel, ← hpq, add_right_comm]
   add_rel p q r (hpq : p + 1 = q) := by rw [up_Rel, ← hpq, add_assoc]
   ε'_succ := by
     rintro p _ rfl
-    exact uzpow_castHom_add_one p
+    -- `ε'` applied to `p` is `ZMod.negOnePow p`, by the definition of `MonoidHom.mk'`.
+    change (p + 1).negOnePow = -p.negOnePow
+    rw [ZMod.negOnePow_add_one]
 
-/-- The Koszul sign `(-1)^(p * q)`, read through `ZMod n → ZMod 2`, changes by `(-1)^q` at each
-step `p ↦ p + 1`. -/
-private lemma uzpow_castHom_add_one_mul (p q : ZMod n) :
-    (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) (p + 1) *
-        ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q) =
-      (-1 : ℤˣ) ^ ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q *
-        (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p *
-          ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q) := by
-  rw [map_add, map_one, add_mul, one_mul, uzpow_add, mul_comm]
+/-- For even `n`, the sign of the tensor sign datum on `ComplexShape.down (ZMod n)` at `p` is
+`ZMod.negOnePow p`. -/
+theorem ε_down_zmod_eq_negOnePow (p : ZMod n) : (down (ZMod n)).ε p = p.negOnePow := by
+  rw [ε_down_zmod, ZMod.negOnePow_eq]
 
-/-- The Koszul sign `(-1)^(p * q)`, read through `ZMod n → ZMod 2`, changes by `(-1)^p` at each
-step `q ↦ q + 1`. -/
-private lemma uzpow_mul_castHom_add_one_mul (p q : ZMod n) :
-    (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p *
-        ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) (q + 1)) *
-          (-1 : ℤˣ) ^ ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p =
-      (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p *
-        ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q) := by
-  rw [map_add, map_one, mul_add, mul_one, uzpow_add, mul_assoc, Int.units_mul_self, mul_one]
-
-/-- `uzpow_castHom_add_one_mul`, solved for the sign at `(p, q)`. -/
-private lemma uzpow_castHom_mul_eq (p q : ZMod n) :
-    (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p *
-        ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q) =
-      (-1 : ℤˣ) ^ ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q *
-        (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) (p + 1) *
-          ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q) := by
-  rw [uzpow_castHom_add_one_mul, ← mul_assoc, Int.units_mul_self, one_mul]
-
-/-- `uzpow_mul_castHom_add_one_mul`, solved for the sign at `(p, q + 1)`. -/
-private lemma uzpow_mul_castHom_mul_eq (p q : ZMod n) :
-    (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p *
-        ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q) *
-          (-1 : ℤˣ) ^ ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p =
-      (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p *
-        ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) (q + 1)) := by
-  rw [← uzpow_mul_castHom_add_one_mul, mul_assoc, Int.units_mul_self, mul_one]
+/-- For even `n`, the sign of the tensor sign datum on `ComplexShape.up (ZMod n)` at `p` is
+`ZMod.negOnePow p`. -/
+theorem ε_up_zmod_eq_negOnePow (p : ZMod n) : (up (ZMod n)).ε p = p.negOnePow := by
+  rw [ε_up_zmod, ZMod.negOnePow_eq]
 
 /-- The Koszul symmetry of the total complex of a bicomplex graded by `ZMod n` with `n` even,
 with differentials of `ComplexShape.down (ZMod n)`: the sign in bidegree `(p, q)` is
-`(-1)^(p * q)` (`ComplexShape.σ_down_zmod_intCast`). -/
+`ZMod.negOnePow (p * q) = (-1)^(p * q)` (`ComplexShape.σ_down_zmod_intCast`). -/
+@[simps -isSimp]
 instance totalComplexShapeSymmetryDownZMod :
     TotalComplexShapeSymmetry (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) where
   symm p q := add_comm q p
-  σ p q := (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p *
-    ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q)
+  σ p q := (p * q).negOnePow
   σ_ε₁ := by
     rintro _ p rfl q
-    exact (mul_one _).trans (uzpow_castHom_add_one_mul p q)
+    dsimp
+    rw [ε_down_zmod_eq_negOnePow, mul_one, add_mul, one_mul, add_comm, ZMod.negOnePow_add]
   σ_ε₂ := by
     rintro p _ q rfl
-    exact (uzpow_mul_castHom_add_one_mul p q).trans (one_mul _).symm
+    dsimp
+    rw [ε_down_zmod_eq_negOnePow, one_mul, mul_add, mul_one, ZMod.negOnePow_add, mul_assoc,
+      Int.units_mul_self, mul_one]
 
 /-- The Koszul symmetry of the total complex of a bicomplex graded by `ZMod n` with `n` even,
 with differentials of `ComplexShape.up (ZMod n)`: the sign in bidegree `(p, q)` is
-`(-1)^(p * q)` (`ComplexShape.σ_up_zmod_intCast`). -/
+`ZMod.negOnePow (p * q) = (-1)^(p * q)` (`ComplexShape.σ_up_zmod_intCast`). -/
+@[simps -isSimp]
 instance totalComplexShapeSymmetryUpZMod :
     TotalComplexShapeSymmetry (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) where
   symm p q := add_comm q p
-  σ p q := (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) p *
-    ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) q)
+  σ p q := (p * q).negOnePow
   σ_ε₁ := by
     rintro p _ rfl q
-    exact (mul_one _).trans (uzpow_castHom_mul_eq p q)
+    dsimp
+    rw [ε_up_zmod_eq_negOnePow, mul_one, add_mul, one_mul, ZMod.negOnePow_add, mul_left_comm,
+      Int.units_mul_self, mul_one]
   σ_ε₂ := by
     rintro p q _ rfl
-    exact (uzpow_mul_castHom_mul_eq p q).trans (one_mul _).symm
+    dsimp
+    rw [ε_up_zmod_eq_negOnePow, one_mul, mul_add, mul_one, ZMod.negOnePow_add]
 
 /-- The Koszul symmetry signs on `ComplexShape.down (ZMod n)` are symmetric in the two
 factors. -/
 instance : TotalComplexShapeSymmetrySymmetry (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) where
-  σ_symm _ _ := congrArg ((-1 : ℤˣ) ^ ·) (mul_comm _ _)
+  σ_symm p q := by
+    rw [σ, σ, totalComplexShapeSymmetryDownZMod_σ, totalComplexShapeSymmetryDownZMod_σ, mul_comm]
 
 /-- The Koszul symmetry signs on `ComplexShape.up (ZMod n)` are symmetric in the two factors. -/
 instance : TotalComplexShapeSymmetrySymmetry (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) where
-  σ_symm _ _ := congrArg ((-1 : ℤˣ) ^ ·) (mul_comm _ _)
-
-/-- The Koszul sign `(-1)^(p * q)`, read through `ZMod n → ZMod 2`, at the classes of two
-integers. -/
-private lemma uzpow_castHom_intCast_mul (k l : ℤ) :
-    (-1 : ℤˣ) ^ (ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) k *
-      ZMod.castHom (Fact.out : 2 ∣ n) (ZMod 2) l) = (k * l).negOnePow := by
-  rw [map_intCast, map_intCast, ← Int.cast_mul, uzpow_intCast, Int.negOnePow_def]
+  σ_symm p q := by
+    rw [σ, σ, totalComplexShapeSymmetryUpZMod_σ, totalComplexShapeSymmetryUpZMod_σ, mul_comm]
 
 /-- The Koszul symmetry sign on `ComplexShape.down (ZMod n)` at the classes of integers `k` and
 `l` is `(-1)^(k * l)`. -/
 @[simp]
 theorem σ_down_zmod_intCast (k l : ℤ) :
-    σ (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) k l = (k * l).negOnePow :=
-  uzpow_castHom_intCast_mul k l
+    σ (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) k l = (k * l).negOnePow := by
+  rw [σ, totalComplexShapeSymmetryDownZMod_σ, ← Int.cast_mul, ZMod.negOnePow_intCast]
 
 /-- The Koszul symmetry sign on `ComplexShape.down (ZMod n)` at the classes of natural numbers `k`
 and `l` is `(-1)^(k * l)`. -/
 @[simp]
 theorem σ_down_zmod_natCast (k l : ℕ) :
     σ (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) k l = (-1) ^ (k * l) := by
-  rw [← Int.cast_natCast, ← Int.cast_natCast (R := ZMod n) l, σ_down_zmod_intCast, ← Nat.cast_mul,
-    Int.negOnePow_def, zpow_natCast]
+  rw [σ, totalComplexShapeSymmetryDownZMod_σ, ← Nat.cast_mul, ZMod.negOnePow_natCast]
 
 /-- The Koszul symmetry sign on `ComplexShape.down (ZMod n)` at `(p, q)` is `(-1)^(k * l)` for the
 integer representatives `k` and `l` of `p` and `q`. -/
@@ -324,16 +278,15 @@ theorem σ_down_zmod (p q : ZMod n) :
 is `(-1)^(k * l)`. -/
 @[simp]
 theorem σ_up_zmod_intCast (k l : ℤ) :
-    σ (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) k l = (k * l).negOnePow :=
-  uzpow_castHom_intCast_mul k l
+    σ (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) k l = (k * l).negOnePow := by
+  rw [σ, totalComplexShapeSymmetryUpZMod_σ, ← Int.cast_mul, ZMod.negOnePow_intCast]
 
 /-- The Koszul symmetry sign on `ComplexShape.up (ZMod n)` at the classes of natural numbers `k`
 and `l` is `(-1)^(k * l)`. -/
 @[simp]
 theorem σ_up_zmod_natCast (k l : ℕ) :
     σ (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) k l = (-1) ^ (k * l) := by
-  rw [← Int.cast_natCast, ← Int.cast_natCast (R := ZMod n) l, σ_up_zmod_intCast, ← Nat.cast_mul,
-    Int.negOnePow_def, zpow_natCast]
+  rw [σ, totalComplexShapeSymmetryUpZMod_σ, ← Nat.cast_mul, ZMod.negOnePow_natCast]
 
 /-- The Koszul symmetry sign on `ComplexShape.up (ZMod n)` at `(p, q)` is `(-1)^(k * l)` for the
 integer representatives `k` and `l` of `p` and `q`. -/
