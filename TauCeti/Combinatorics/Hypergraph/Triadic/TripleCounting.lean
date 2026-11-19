@@ -23,7 +23,8 @@ of injective triples with coordinates in its cells, times the densities of its t
 over the corresponding pairs of cells, times the relative density of `c` over `P`.
 
 Over a polyad decomposition, the exact number of injective triples of color `c` is the sum over
-the selected polyads of the support size times the relative density of `c`. For this pattern the
+the selected polyads of the support size times the relative density of `c`
+(`Colored3Graph.card_filter_color_eq_sum_card_support_mul_relativeDensity`). For this pattern the
 prediction therefore replaces the support of each polyad by its lower-skeleton estimate (the
 injective triples of its cells times its three pair densities) and keeps the relative densities.
 The counting lemma bounds the total error by `ε |V| ^ 3`.
@@ -32,9 +33,6 @@ The counting lemma bounds the total error by `ε |V| ^ 3`.
 
 * `TauCeti.Colored3Graph.expectedInducedCount_const_three`: the prediction for a single colored
   triple as a sum over the selected polyads.
-* `TauCeti.Colored3Graph.card_filter_color_eq_sum_card_support_mul_relativeDensity`: over a
-  polyad decomposition, the number of injective triples of a color is the support-weighted sum
-  of its relative densities.
 * `TauCeti.Colored3Graph.abs_card_filter_color_sub_sum_le_of_topRegular`: the counting lemma
   for a single colored triple.
 
@@ -117,20 +115,11 @@ private theorem polyadOfRoute_placementOfPolyad (P : Polyad3 C.skeleton) (hP : P
     polyadOfRoute (placementOfPolyad (G := G) P hP) = P := by
   ext <;> simp [polyadOfRoute, placementOfPolyad]
 
-/-- A placement with a route is determined by its cells and its pair colors. -/
-private theorem sigma_ext {F : FiniteColored3Pattern κ}
-    {σ τ : Σ φ : PatternPlacement3 C F, PairColorPlacement3 φ}
-    (h₁ : σ.1.vertexCell = τ.1.vertexCell) (h₂ : σ.2.pairColor = τ.2.pairColor) : σ = τ := by
-  obtain ⟨⟨A, hA⟩, ⟨k, hk⟩⟩ := σ
-  obtain ⟨⟨A', hA'⟩, ⟨k', hk'⟩⟩ := τ
-  subst h₁ h₂
-  rfl
-
 private theorem placementOfPolyad_polyadOfRoute
     (σ : Σ φ : PatternPlacement3 C (⟨3, G⟩ : FiniteColored3Pattern κ), PairColorPlacement3 φ) :
     placementOfPolyad (polyadOfRoute σ) (polyadOfRoute_mem σ) = σ := by
   -- Both the cells and the pair colors are determined by their values at `0, 1, 2`.
-  refine sigma_ext (funext fun i ↦ ?_) (funext fun p ↦ ?_)
+  refine PairColorPlacement3.sigma_ext (funext fun i ↦ ?_) (funext fun p ↦ ?_)
   · rcases fin_three_cases i with rfl | rfl | rfl <;> simp [placementOfPolyad, polyadOfRoute]
   · rcases pair_fin_three_cases p with rfl | rfl | rfl <;> simp [placementOfPolyad, polyadOfRoute]
 
@@ -176,29 +165,6 @@ theorem expectedInducedCount_const_three (H : Colored3Graph κ V) (C : TriadicCo
   -- The polyad of the route has the cells and pair colors of `φ` and `ψ`, and the pattern color
   -- of its triple is `c`.
   simp [polyadOfRoute, FiniteColored3Pattern.tripleColor_def, mul_assoc]
-
-/-- **Counting triples of a color over a polyad decomposition.** When the selected polyads of `C`
-decompose the injective triples, the number of injective triples whose underlying triple has
-color `c` is the sum over the selected polyads of the support size times the relative density
-of `c`. -/
-theorem card_filter_color_eq_sum_card_support_mul_relativeDensity
-    (hC : C.IsPolyadDecomposition) (H : Colored3Graph κ V) (c : κ) :
-    (#{x : {x : Fin 3 → V // Injective x} |
-        H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℝ) =
-      ∑ P ∈ C.polyads, (#P.support : ℝ) * (H.relativeDensity c P : ℝ) := by
-  have hcover : ({x : {x : Fin 3 → V // Injective x} |
-      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : Finset _) =
-      C.polyads.biUnion fun P ↦
-        {x ∈ P.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} := by
-    ext x
-    obtain ⟨P, hP, hx⟩ := (C.isPolyadDecomposition_iff.1 hC) x
-    simp only [mem_filter, mem_univ, true_and, mem_biUnion]
-    exact ⟨fun h ↦ ⟨P, hP, hx, h⟩, fun ⟨_, _, _, h⟩ ↦ h⟩
-  rw [hcover, card_biUnion fun P _ Q _ hPQ ↦ disjoint_filter_filter
-    (Polyad3.pairwise_disjoint_support hPQ), Nat.cast_sum]
-  refine sum_congr rfl fun P _ ↦ ?_
-  rw [mul_comm, relativeDensity_def, ← Rat.cast_natCast, ← Rat.cast_natCast (#P.support),
-    ← Rat.cast_mul, relDensityOn_mul_card]
 
 /-- **Counting a single colored triple.** Let `C` be a polyad decomposition and `0 < ε`, and
 suppose that `H` approximates `H'`, that the lower skeleton of `C` is regular, and that `H'` is
