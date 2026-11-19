@@ -229,17 +229,11 @@ theorem apply_tmul_ne_zero (hd : finrank ℝ E = d) (o : HomologicalOrientation 
     {N : ModuleCat.{0} ℤ} {a : N} (ha : a ≠ 0) :
     ((o x).val ⊗ₜ[ℤ] a : ((localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
       ({x} : Set M) d) ⊗ N : ModuleCat.{0} ℤ)) ≠ 0 := by
-  -- `c ↦ c • o x` identifies `ℤ` with the local homology; `int_smul_eq_zsmul` matches the module
-  -- action of `ℤ` with the `zsmul` of `zsmul_left_injective` and `isLocalOrientation_iff`.
-  let e : ℤ ≃ₗ[ℤ] (localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ))
-      ({x} : Set M) d) :=
-    LinearEquiv.ofBijective (LinearMap.toSpanSingleton ℤ _ (o x).val)
-      ⟨fun c c' h ↦ o.zsmul_left_injective hd x
-          ((int_smul_eq_zsmul _ c _).symm.trans (h.trans (int_smul_eq_zsmul _ c' _))),
-        fun y ↦ let ⟨c, hc⟩ := (isLocalOrientation_iff _ _ _).1 (o x).property y
-          ⟨c, (int_smul_eq_zsmul _ c _).trans hc⟩⟩
-  have he : e.symm (o x).val = 1 :=
-    e.symm_apply_eq.2 (LinearMap.toSpanSingleton_apply_one ℤ _ _).symm
+  subst hd
+  -- `c ↦ c • o x` identifies `ℤ` with the local homology.
+  let e := (o x).property.linearEquiv
+    (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
+  have he : e.symm (o x).val = 1 := IsLocalOrientation.linearEquiv_symm_self _ _
   intro h
   apply ha
   -- `e⁻¹ ⊗ id` followed by `ℤ ⊗ N ≅ N` sends `o x ⊗ a` to `a`.

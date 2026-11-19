@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
-public import Mathlib.LinearAlgebra.Basis.Basic
 import TauCeti.Algebra.Group.ZMultiples
 
 /-!
@@ -19,10 +18,11 @@ local homology group in degree `n`. This file defines that generator condition a
 every point in a finite-dimensional charted space has local orientations. Integral coefficients
 are represented by the universe-lifted module `ULift ℤ`. The construction is the inverse image of
 `1` under the chart computation of local homology. The two generators of a fibre isomorphic to
-`ℤ` differ by sign, and each of them is a basis of the fibre (`TauCeti.IsLocalOrientation.basis`);
-reversal and preservation by local homology isomorphisms are also proved, and
-isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport local orientations
-(`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and composites.
+`ℤ` differ by sign, and each of them identifies `ℤ` with the fibre
+(`TauCeti.IsLocalOrientation.linearEquiv`); reversal and preservation by local homology
+isomorphisms are also proved, and isomorphisms of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` transport
+local orientations (`TauCeti.LocalOrientation.map`), compatibly with reversal, identities and
+composites.
 
 The local orientation is the generator of `Hₙ(M, M ∖ {x}; ℤ)` described in Hatcher's
 *Algebraic Topology*, Section 3.3.
@@ -248,29 +248,38 @@ theorem IsLocalOrientation.neg_ne {M : Type w} [TopologicalSpace M] {x : M} {d :
     exact neg_add_cancel z
   exact two_ne_zero ((hz.zsmul_eq_zero_iff e).1 h2)
 
-/-- In a local homology fibre isomorphic to `ℤ`, a local orientation `z` is a basis: every class
-is a unique integral multiple of `z`. -/
-def IsLocalOrientation.basis {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+/-- In a local homology fibre isomorphic to `ℤ`, a local orientation `z` identifies `ℤ` with the
+fibre: every class is a unique integral multiple `c • z` of `z`. -/
+def IsLocalOrientation.linearEquiv {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
     (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
       ModuleCat.of ℤ (ULift.{w} ℤ))
     {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
     (hz : IsLocalOrientation x d z) :
-    Basis Unit ℤ
-      (localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) :=
-  (Basis.singleton Unit ℤ).map <| LinearEquiv.ofBijective (LinearMap.toSpanSingleton ℤ _ z)
+    ℤ ≃ₗ[ℤ] localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d :=
+  LinearEquiv.ofBijective (LinearMap.toSpanSingleton ℤ _ z)
     ⟨(injective_iff_map_eq_zero _).2 fun c hc ↦
         (hz.zsmul_eq_zero_iff e).1 ((int_smul_eq_zsmul _ c z).symm.trans hc),
       fun y ↦ let ⟨c, hc⟩ := hz y; ⟨c, (int_smul_eq_zsmul _ c z).trans hc⟩⟩
 
-/-- The basis given by a local orientation consists of that local orientation. -/
+/-- The identification of `ℤ` with the fibre given by a local orientation `z` sends `1` to `z`. -/
 @[simp]
-theorem IsLocalOrientation.basis_apply {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
+theorem IsLocalOrientation.linearEquiv_apply_one {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ}
     (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
       ModuleCat.of ℤ (ULift.{w} ℤ))
     {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
-    (hz : IsLocalOrientation x d z) (i : Unit) : hz.basis e i = z := by
-  rw [IsLocalOrientation.basis, Basis.map_apply, Basis.singleton_apply]
-  exact LinearMap.toSpanSingleton_apply_one ℤ _ z
+    (hz : IsLocalOrientation x d z) : hz.linearEquiv e 1 = z :=
+  LinearMap.toSpanSingleton_apply_one ℤ _ z
+
+/-- The identification of `ℤ` with the fibre given by a local orientation `z` sends `z` back
+to `1`. -/
+@[simp]
+theorem IsLocalOrientation.linearEquiv_symm_self {M : Type w} [TopologicalSpace M] {x : M}
+    {d : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ))
+    {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
+    (hz : IsLocalOrientation x d z) : (hz.linearEquiv e).symm z = 1 :=
+  (hz.linearEquiv e).symm_apply_eq.2 (hz.linearEquiv_apply_one e).symm
 
 /-- The local orientation at `x` selected by a chart and its chart-induced local homology
 isomorphism. -/

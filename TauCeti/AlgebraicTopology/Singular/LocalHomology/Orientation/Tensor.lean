@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Prod
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Symmetric
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 
 /-!
 # The tensor identification of orientation lines of vector spaces
@@ -21,7 +22,7 @@ as an isomorphism in the monoidal category of `ℤ`-modules (`TauCeti.LocalOrien
 It sends `z ⊗ z'` to the ordered product `z × z'` (`TauCeti.LocalOrientation.prod`) for all local
 orientations `z` of `E` and `z'` of `F` at the origin
 (`TauCeti.LocalOrientation.tensorIso_hom_tmul`); this determines it, because a local orientation
-is a basis of its orientation line (`TauCeti.IsLocalOrientation.basis`).
+identifies `ℤ` with its orientation line (`TauCeti.IsLocalOrientation.linearEquiv`).
 
 The laws of the generator-level product become laws of the isomorphism.
 
@@ -81,16 +82,13 @@ sending a local orientation `z` of `E` at the origin to `1`. -/
 private def unitIso (hE : finrank ℝ E = m + 1) (z : LocalOrientation E 0 (m + 1)) :
     localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) ({0} : Set E) (m + 1) ≅
       𝟙_ (ModuleCat.{0} ℤ) :=
-  ((z.property.basis (singularHomologyComplSingletonIsoOfFinrankEq _
-    (OpenPartialHomeomorph.refl E) (Set.mem_univ (0 : E)) hE)).equiv (Basis.singleton Unit ℤ)
-      (Equiv.refl Unit)).toModuleIso
+  (z.property.linearEquiv (singularHomologyComplSingletonIsoOfFinrankEq _
+    (OpenPartialHomeomorph.refl E) (Set.mem_univ (0 : E)) hE)).symm.toModuleIso
 
 @[simp]
 private theorem unitIso_inv_one (hE : finrank ℝ E = m + 1) (z : LocalOrientation E 0 (m + 1)) :
-    (unitIso hE z).inv.hom (1 : ℤ) = z.val := by
-  rw [unitIso, LinearEquiv.toModuleIso_inv, ModuleCat.hom_ofHom, LinearEquiv.coe_coe,
-    Basis.equiv_symm, ← Basis.singleton_apply Unit ℤ (), Basis.equiv_apply,
-    IsLocalOrientation.basis_apply]
+    (unitIso hE z).inv.hom (1 : ℤ) = z.val :=
+  IsLocalOrientation.linearEquiv_apply_one _ _
 
 /-- The identification of `o_E ⊗ o_F` with the unit `ℤ`, sending `z ⊗ z'` to `1`. -/
 private def tensorUnitIso (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1)
@@ -106,11 +104,11 @@ private theorem tensorUnitIso_inv_one (hE : finrank ℝ E = m + 1) (hF : finrank
     (tensorUnitIso hE hF z z').inv.hom (1 : ℤ) = z.val ⊗ₜ[ℤ] z'.val := by
   simp [tensorUnitIso]
 
-/-- Two maps out of a module identified with the unit `ℤ` agree as soon as they agree on the
-element corresponding to `1`. -/
-private theorem ext_of_iso_unit {X P : ModuleCat.{0} ℤ} (ψ : X ≅ 𝟙_ (ModuleCat.{0} ℤ))
-    {f g : X ⟶ P} (h : f.hom (ψ.inv.hom (1 : ℤ)) = g.hom (ψ.inv.hom (1 : ℤ))) : f = g :=
-  (cancel_epi ψ.inv).1 (ModuleCat.hom_ext (LinearMap.ext_ring h))
+@[simp]
+private theorem tensorUnitIso_hom_tmul (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n + 1)
+    (z : LocalOrientation E 0 (m + 1)) (z' : LocalOrientation F 0 (n + 1)) :
+    (tensorUnitIso hE hF z z').hom.hom (z.val ⊗ₜ[ℤ] z'.val) = 1 := by
+  rw [← tensorUnitIso_inv_one hE hF, Iso.inv_hom_id_apply]
 
 /-- **The tensor identification of orientation lines.** For real normed spaces `E` and `F` of
 dimensions `m + 1` and `n + 1`, the isomorphism `o_E ⊗ o_F ≅ o_{E × F}` of integral orientation
@@ -142,8 +140,7 @@ theorem tensorIso_hom_tmul (hE : finrank ℝ E = m + 1) (hF : finrank ℝ F = n 
       ((Classical.arbitrary (LocalOrientation E 0 (m + 1))).val ⊗ₜ
         (Classical.arbitrary (LocalOrientation F 0 (n + 1))).val) =
       (prod hE hF hd (Classical.arbitrary _) (Classical.arbitrary _)).val := by
-    rw [tensorIso, Iso.trans_hom, ModuleCat.hom_comp, LinearMap.comp_apply,
-      ← tensorUnitIso_inv_one hE hF, Iso.inv_hom_id_apply, Iso.symm_hom, unitIso_inv_one]
+    simp [tensorIso]
   rcases eq_or_eq_neg hE z (Classical.arbitrary _) with rfl | rfl <;>
     rcases eq_or_eq_neg hF z' (Classical.arbitrary _) with rfl | rfl <;>
     simp [key, TensorProduct.neg_tmul, TensorProduct.tmul_neg]
@@ -171,7 +168,7 @@ theorem tensorIso_hom_naturality (hE : finrank ℝ E = m + 1) (hF : finrank ℝ 
   obtain ⟨z⟩ := exists_localOrientation_of_chart (0 : E) hE
   obtain ⟨z'⟩ := exists_localOrientation_of_chart (0 : F) hF
   -- Both sides are determined by their value on `z ⊗ z'`, which corresponds to `1 : ℤ`.
-  refine ext_of_iso_unit (tensorUnitIso hE hF z z') ?_
+  refine ModuleCat.hom_ext_of_iso_tensorUnit (tensorUnitIso hE hF z z') ?_
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, tensorUnitIso_inv_one,
     ModuleCat.MonoidalCategory.tensorHom_tmul, tensorIso_hom_tmul]
   rw [← coe_map, ← coe_map, tensorIso_hom_tmul, prod_map_complZeroPairIso, coe_map]
@@ -188,7 +185,7 @@ theorem tensorIso_hom_comp_prodComm (hE : finrank ℝ E = m + 1) (hF : finrank �
   obtain ⟨z⟩ := exists_localOrientation_of_chart (0 : E) hE
   obtain ⟨z'⟩ := exists_localOrientation_of_chart (0 : F) hF
   -- Both sides are determined by their value on `z ⊗ z'`, which corresponds to `1 : ℤ`.
-  refine ext_of_iso_unit (tensorUnitIso hE hF z z') ?_
+  refine ModuleCat.hom_ext_of_iso_tensorUnit (tensorUnitIso hE hF z z') ?_
   simp only [ModuleCat.hom_comp, ModuleCat.hom_smul, LinearMap.comp_apply, LinearMap.smul_apply,
     tensorUnitIso_inv_one, tensorIso_hom_tmul, ModuleCat.MonoidalCategory.braiding_hom_apply]
   rw [← coe_map, coe_map_prodComm_prod hE hF hd hd']
@@ -211,7 +208,8 @@ theorem tensorIso_hom_comp_prodAssoc {e f : ℕ} (hE : finrank ℝ E = m + 1)
   obtain ⟨z'⟩ := exists_localOrientation_of_chart (0 : F) hF
   obtain ⟨z''⟩ := exists_localOrientation_of_chart (0 : G) hG
   -- Both sides are determined by their value on `(z ⊗ z') ⊗ z''`, which corresponds to `1 : ℤ`.
-  refine ext_of_iso_unit ((tensorUnitIso hE hF z z' ⊗ᵢ unitIso hG z'') ≪≫ λ_ _) ?_
+  refine ModuleCat.hom_ext_of_iso_tensorUnit
+    ((tensorUnitIso hE hF z z' ⊗ᵢ unitIso hG z'') ≪≫ λ_ _) ?_
   simp only [Iso.trans_inv, ModuleCat.hom_comp, LinearMap.comp_apply, tensorIso_inv,
     ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.MonoidalCategory.leftUnitor_inv_apply,
     tensorUnitIso_inv_one, unitIso_inv_one, ModuleCat.MonoidalCategory.whiskerRight_apply,
