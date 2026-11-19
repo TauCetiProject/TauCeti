@@ -70,6 +70,8 @@ apply to all three ends.
 * `TauCeti.Floer.injOn_endChart`, `TauCeti.Floer.det_fderiv_endChart_nonneg`,
   `TauCeti.Floer.det_fderiv_endChart_pos`: the end chart is injective on the strip, preserves
   orientation and is a local diffeomorphism.
+* `TauCeti.Floer.det_fderiv_endChart`: the Jacobian of the end chart `φ_q` is
+  `4π² |φ_q - c_q|²`, for the center `c_q` of the end.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
 * `TauCeti.Floer.mem_image_endChart`: they contain every point of `S` with signed longitudinal
   coordinate greater than `1/2` on some end.
@@ -632,6 +634,17 @@ theorem det_fderiv_endChart_pos (q : Puncture) (ζ : ℝ × ℝ) :
   rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
     (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt]
   exact Complex.normSq_pos.2 (q.deriv_cylindricalEndLift_ne_zero _)
+
+/-- The Jacobian of the end chart of `q` at `z` is `4π² |φ_q(z) - c_q|²`. -/
+theorem det_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
+    (fderiv ℝ (endChart q) z).det =
+      4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm (endChart q z) - q.endCenter‖ ^ 2 := by
+  rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
+    (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt, deriv_cylindricalEndLift,
+    ← endChart_eq_realChart, equivRealProdCLM_symm_endChart, Complex.normSq_eq_norm_sq]
+  simp only [norm_neg, Complex.norm_mul, Complex.norm_ofNat, Complex.norm_real, norm_eq_abs,
+    abs_of_pos pi_pos]
+  ring
 
 /-- The three end strips have disjoint images. -/
 theorem pairwise_disjoint_image_endChart :
