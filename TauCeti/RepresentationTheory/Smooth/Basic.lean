@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact

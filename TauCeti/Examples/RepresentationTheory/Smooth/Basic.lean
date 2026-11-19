@@ -7,6 +7,7 @@ module
 
 import TauCeti.RepresentationTheory.Smooth.Basic
 import Mathlib.NumberTheory.Padics.PadicNumbers
+import Mathlib.Topology.Algebra.Group.Quotient
 
 /-!
 # Examples of smooth representations
