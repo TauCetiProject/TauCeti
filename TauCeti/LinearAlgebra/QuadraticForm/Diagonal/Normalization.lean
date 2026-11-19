@@ -99,8 +99,9 @@ noncomputable def isometryEquivSumSquaresOfIsOrthoᵢ (Q : QuadraticForm R M) (b
     Q.IsometryEquiv (weightedSumSquares R (1 : ι → R)) where
   toLinearEquiv := (Q.isometryEquivBasisRepr b).toLinearEquiv
   map_app' x := by
+    have hw : (fun i => Q (b i)) = 1 := funext hQ
     have h : Q.basisRepr b = weightedSumSquares R (1 : ι → R) := by
-      rw [basisRepr_eq_of_iIsOrtho Q b hb, show (fun i => Q (b i)) = 1 from funext hQ]
+      rw [basisRepr_eq_of_iIsOrtho Q b hb, hw]
     rw [← h]
     exact (Q.isometryEquivBasisRepr b).map_app x
 
