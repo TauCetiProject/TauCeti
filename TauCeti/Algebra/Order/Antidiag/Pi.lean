@@ -6,12 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Antidiag.Pi
+import Mathlib.Data.Finsupp.Multiset
+import Mathlib.Data.Fintype.Fin
 
 /-!
-# Vanishing off the index set of a function antidiagonal
+# Function antidiagonals: vanishing off the index set, and coordinate counts
 
 `Finset.piAntidiag s n` is the finset of functions with support contained in `s` whose values sum
-to `n` over `s`.  Such a function therefore vanishes at every point outside `s`.
+to `n` over `s`.  Such a function therefore vanishes at every point outside `s`.  Over a finite
+type, the members of `Finset.univ.piAntidiag k` are exactly the coordinate counts of the tuples
+`Fin k → ι`, the multi-indices of total degree `k`.
 
 ## Main results
 
@@ -19,6 +23,8 @@ to `n` over `s`.  Such a function therefore vanishes at every point outside `s`.
   the single function with value `n` at `i`.
 * `Finset.eq_zero_of_notMem_of_mem_piAntidiag`: a member of `Finset.piAntidiag s n` vanishes off
   `s`.
+* `Finset.exists_card_fiber_eq_of_mem_piAntidiag`: every member `α` of `Finset.univ.piAntidiag k`
+  is the coordinate count of some tuple `a : Fin k → ι`, in which each `i` occurs `α i` times.
 -/
 
 public section
@@ -51,5 +57,17 @@ theorem piAntidiag_singleton_eq (i : ι) (N : μ) :
     refine ⟨by simp, fun j hj ↦ ?_⟩
     by_contra hji
     simp [Function.update_of_ne hji] at hj
+
+/-- Every multi-index `α` of total degree `k` is the coordinate count of a tuple: there is
+`a : Fin k → ι` in which each `i` occurs exactly `α i` times. -/
+theorem exists_card_fiber_eq_of_mem_piAntidiag [Fintype ι] {k : ℕ} {α : ι → ℕ}
+    (hα : α ∈ univ.piAntidiag k) : ∃ a : Fin k → ι, ∀ i, Fintype.card {j // a j = i} = α i := by
+  -- List the multiset in which each `i` occurs `α i` times, and read off its entries.
+  set l := (Finsupp.toMultiset (Finsupp.equivFunOnFinite.symm α)).toList
+  have hl : l.length = k := by
+    simp [l, Finsupp.card_toMultiset, Finsupp.sum_fintype, (mem_piAntidiag.1 hα).1]
+  refine ⟨fun j ↦ l.get (Fin.cast hl.symm j), fun i ↦ ?_⟩
+  rw [Fintype.card_subtype, ← List.count_ofFn, ← List.ofFn_congr hl l.get, List.ofFn_get]
+  simp [l, ← Multiset.coe_count, Finsupp.count_toMultiset]
 
 end Finset
