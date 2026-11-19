@@ -92,9 +92,7 @@ private lemma isIso_twistedCohomologyMap_comp (H : TopCat.Homotopy (a ≫ b) (�
     (L : TauCeti.LocalCoefficientSystem.{u, v, max v w} R X) (n : ℕ) :
     IsIso (twistedCohomologyMap k M b L n ≫ twistedCohomologyMap k M a ((pullback b.hom).obj L) n ≫
       twistedCohomologyCoefficientMap k M ((pullbackCompIso a.hom b.hom).hom.app L) n) := by
-  rw [← twistedCohomologyMap_comp, H.twistedCohomologyMap_eq_comp, twistedCohomologyMap_id,
-    ← Iso.app_hom, ← Iso.app_hom, ← twistedCohomologyCoefficientIso_hom,
-    ← twistedCohomologyCoefficientIso_hom]
+  rw [← twistedCohomologyMap_comp, H.twistedCohomologyMap_eq_comp, twistedCohomologyMap_id]
   infer_instance
 
 end TopCat.Homotopy
@@ -119,10 +117,6 @@ theorem isIso_twistedCohomologyMap (e : X ≃ₕ Y)
     e.right_inv.some L n
   have h₂ := TopCat.Homotopy.isIso_twistedCohomologyMap_comp (a := f) (b := g) k M
     e.left_inv.some ((pullback f.hom).obj L) n
-  have :
-      IsIso (twistedCohomologyCoefficientMap k M ((pullbackCompIso g.hom f.hom).hom.app L) n) := by
-    rw [← Iso.app_hom, ← twistedCohomologyCoefficientIso_hom]
-    infer_instance
   rw [← Category.assoc] at h₁
   have h₃ : IsIso (twistedCohomologyMap k M f L n ≫
       twistedCohomologyMap k M g ((pullback f.hom).obj L) n) :=

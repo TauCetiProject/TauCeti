@@ -97,7 +97,7 @@ def H0IsoOfForallMemZpowers (A : Rep k G) {g : G} (hg : ∀ x, x ∈ Subgroup.zp
 
 /-- `H0IsoOfForallMemZpowers` is compatible with the inclusions of `ker (ρ(g) - 𝟙)` and of the
 invariants into `A`. -/
-@[reassoc]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 theorem H0IsoOfForallMemZpowers_hom_comp_subtype (A : Rep k G) {g : G}
     (hg : ∀ x, x ∈ Subgroup.zpowers g) :
     (H0IsoOfForallMemZpowers A hg).hom ≫

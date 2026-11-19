@@ -177,6 +177,13 @@ lemma twistedCohomologyCoefficientIso_inv (e : L ≅ K) (n : ℕ) :
   rw [twistedCohomologyCoefficientIso, Functor.mapIso_inv, twistedCochainComplexCoefficientIso_inv,
     HomologicalComplex.homologyFunctor_map]
 
+/-- An isomorphism of local coefficient systems induces an isomorphism of twisted cochain
+complexes. -/
+instance isIso_twistedCochainComplexCoefficientMap (η : L ⟶ K) [IsIso η] :
+    IsIso (twistedCochainComplexCoefficientMap k M η) := by
+  rw [← asIso_hom η, ← twistedCochainComplexCoefficientIso_hom]
+  infer_instance
+
 end Coefficients
 
 section Homotopy
