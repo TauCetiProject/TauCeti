@@ -257,6 +257,16 @@ lemma singularChainComplexπ_pair_naturality
     ((SSetPair.chainComplexFunctorπ C).app M).naturality (toSSetPair.map f)
   rwa [toSSetPair_map_right] at h
 
+/-- The quotient map from ambient to relative singular chains is natural in the map of pairs of
+subsets `(X, B) ⟶ (Y, B')` induced by a continuous map `g : X ⟶ Y` carrying `B` into `B'`. -/
+@[reassoc]
+lemma singularChainComplexπ_ofSubsetMap_naturality {X Y : TopCat.{w}} (g : X ⟶ Y) {B : Set X}
+    {B' : Set Y} (hB : Set.MapsTo g B B') (M : C) :
+    SSet.chainComplexMap (TopCat.toSSet.map g) M ≫ (ofSubset B').singularChainComplexπ M =
+      (ofSubset B).singularChainComplexπ M ≫ singularChainComplexMap (ofSubsetMap g hB) M := by
+  have h := singularChainComplexπ_pair_naturality (ofSubsetMap g hB) M
+  rwa [ofSubsetMap_fst] at h
+
 /-- The quotient map from ambient to relative singular chains is natural in the coefficient
 object. -/
 @[reassoc]

@@ -26,8 +26,10 @@ scalar tower.
 
 When a scalar multiple `r • 𝟙` of the identity is invertible, its inverse commutes with every
 morphism (`CategoryTheory.Linear.comp_inv_smul_id`), and an `R`-linear functor keeps it
-invertible (`CategoryTheory.Functor.isIso_smul_id_obj`). For `r` a natural number or an integer
-these apply in every preadditive category, through Mathlib's `ℕ`- and `ℤ`-linear structures.
+invertible (`CategoryTheory.Functor.isIso_smul_id_obj`), as does passing to a cokernel
+(`CategoryTheory.Limits.CokernelCofork.IsColimit.isIso_smul_id_pt`). For `r` a natural number or
+an integer these apply in every preadditive category, through Mathlib's `ℕ`- and `ℤ`-linear
+structures.
 An endomorphism with a scalar multiple equal to the identity is invertible
 (`CategoryTheory.Linear.isIso_of_smul_eq_id`).
 
@@ -130,6 +132,22 @@ lemma Functor.isIso_smul_id_obj {D : Type*} [Category D] [Preadditive D]
     IsIso (r • 𝟙 (F.obj X)) := by
   rw [← F.map_id, ← F.map_smul]
   infer_instance
+
+/-- If multiplication by a scalar `r` is invertible on the source and on the target of `f`, then it
+is invertible on every cokernel of `f`. -/
+lemma Limits.CokernelCofork.IsColimit.isIso_smul_id_pt {X Y : C} {f : X ⟶ Y}
+    {c : Limits.CokernelCofork f} (hc : Limits.IsColimit c) (r : R) [IsIso (r • 𝟙 X)]
+    [IsIso (r • 𝟙 Y)] : IsIso (r • 𝟙 c.pt) := by
+  -- The inverse is induced by `inv (r • 𝟙 Y)`, which commutes with `f`.
+  obtain ⟨g, hg⟩ := Limits.CokernelCofork.IsColimit.desc' hc (inv (r • 𝟙 Y) ≫ c.π) (by
+    rw [← Category.assoc, Linear.comp_inv_smul_id, Category.assoc, Limits.CokernelCofork.condition,
+      Limits.comp_zero])
+  have hπ : c.π ≫ (r • 𝟙 c.pt) = (r • 𝟙 Y) ≫ c.π := by simp
+  refine ⟨g, Limits.Cofork.IsColimit.hom_ext hc ?_, Limits.Cofork.IsColimit.hom_ext hc ?_⟩
+  · rw [← Category.assoc, hπ, Category.assoc, hg, ← Category.assoc, IsIso.hom_inv_id,
+      Category.id_comp, Category.comp_id]
+  · rw [← Category.assoc, hg, Category.assoc, hπ, ← Category.assoc, IsIso.inv_hom_id,
+      Category.id_comp, Category.comp_id]
 
 end CategoryTheory
 

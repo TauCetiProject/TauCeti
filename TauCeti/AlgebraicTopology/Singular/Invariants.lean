@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Coinvariants
+public import TauCeti.AlgebraicTopology.Singular.Transfer.Relative
+public import TauCeti.Topology.Category.TopPair.Action
 
 /-!
 # The transfer identifies the homology of the base of a finite quotient covering with invariants
@@ -23,6 +25,15 @@ transfer exhibits `Hₙ(B; R)` as the invariants `Hₙ(E; R)^G`:
   complexes, and in particular homology, sends `hG.transferCone R` to a limit cone.
 * `IsQuotientCoveringMap.isLimitHomologyMapConeTransferCone`: `Hₙ(B; R)` is the limit
   `Hₙ(E; R)^G` of the action of `G` on `Hₙ(E; R)`, with leg the transfer.
+
+The same holds for relative homology. For a subset `A ⊆ B`, the preimage `p⁻¹ A` is invariant under
+`G`, which therefore acts on the relative chains `C(E, p⁻¹ A; R)`, and the relative transfer
+`C(B, A; R) ⟶ C(E, p⁻¹ A; R)` (`IsCoveringMap.singularPairTransfer`) is a cone over this action:
+
+* `IsQuotientCoveringMap.isLimitMapConePairTransferCone`: every additive functor out of chain
+  complexes sends `hG.pairTransferCone A R` to a limit cone.
+* `IsQuotientCoveringMap.isLimitHomologyMapConePairTransferCone`: `Hₙ(B, A; R)` is the limit
+  `Hₙ(E, p⁻¹ A; R)^G` of the action of `G` on `Hₙ(E, p⁻¹ A; R)`, with leg the relative transfer.
 
 The argument is the one for coinvariants
 (`IsQuotientCoveringMap.isColimitMapCoconeSingularHomology`) read backwards: `t ≫ p_* = |G| • 𝟙`
@@ -49,7 +60,7 @@ universe w v u
 namespace IsQuotientCoveringMap
 
 variable {E B : TopCat.{w}} {p : E ⟶ B} {G : Type*} [Group G] [MulAction G E]
-  (hG : IsQuotientCoveringMap p G)
+  (hG : IsQuotientCoveringMap p G) (A : Set B)
   {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
 
 /-- **The transfer is invariant under the action.** For the quotient covering map `p : E ⟶ B` of
@@ -121,5 +132,84 @@ def isLimitHomologyMapConeTransferCone [Fintype G] [CategoryWithHomology C] (n :
     [IsIso (Fintype.card G • 𝟙 R)] :
     IsLimit ((HomologicalComplex.homologyFunctor C _ n).mapCone (hG.transferCone R)) :=
   hG.isLimitMapConeTransferCone R _
+
+/-- **The relative transfer is invariant under the action.** For the quotient covering map
+`p : E ⟶ B` of an action of a finite group `G` and a subset `A ⊆ B`, the relative transfer
+`C(B, A; R) ⟶ C(E, p⁻¹ A; R)` commutes with the action of `G` on `C(E, p⁻¹ A; R)` by the chain
+maps `g_*`, so it is a natural transformation from the constant functor at `C(B, A; R)` to that
+action. -/
+def pairTransferπ [Finite G] :
+    (Functor.const _).obj ((TopPair.ofSubset A).singularChainComplex R) ⟶
+      @TopPair.ofSubsetActionFunctor E G _ _ hG.toContinuousConstSMul (p ⁻¹' A)
+          (hG.mapsTo_smul_preimage A) ⋙
+        TopPair.toSSetPair ⋙ (SSetPair.chainComplexFunctor C).obj R where
+  app _ := hG.isCoveringMap.singularPairTransfer hG.finite_fiber A R
+  naturality _ _ g := by
+    have := hG.toContinuousConstSMul
+    refine (Category.id_comp _).trans ?_
+    exact (hG.isCoveringMap.singularPairTransfer_comp_singularChainComplexMap_of_comp_eq
+      hG.finite_fiber A R (f := TopCat.ofHom ⟨(g • ·), hG.continuous_const_smul g⟩)
+      (MulAction.bijective g) (by ext e; exact hG.map_smul g) _).symm
+
+/-- Each component of `hG.pairTransferπ A R` is the relative transfer
+`C(B, A; R) ⟶ C(E, p⁻¹ A; R)`. -/
+@[simp]
+theorem pairTransferπ_app [Finite G] (X : SingleObj G) :
+    (hG.pairTransferπ A R).app X = hG.isCoveringMap.singularPairTransfer hG.finite_fiber A R :=
+  (rfl)
+
+/-- **The relative transfer as a cone over the action.** For the quotient covering map
+`p : E ⟶ B` of an action of a finite group `G` and a subset `A ⊆ B`, the relative transfer
+`C(B, A; R) ⟶ C(E, p⁻¹ A; R)` is a cone over the action of `G` on `C(E, p⁻¹ A; R)`, with point
+`C(B, A; R)` and legs `hG.pairTransferπ A R`. -/
+@[expose, simps]
+def pairTransferCone [Finite G] :
+    Cone (@TopPair.ofSubsetActionFunctor E G _ _ hG.toContinuousConstSMul (p ⁻¹' A)
+        (hG.mapsTo_smul_preimage A) ⋙
+      TopPair.toSSetPair ⋙ (SSetPair.chainComplexFunctor C).obj R) where
+  pt := (TopPair.ofSubset A).singularChainComplex R
+  π := hG.pairTransferπ A R
+
+/-- **The relative transfer exhibits invariants.** For the quotient covering map `p : E ⟶ B` of an
+action of a finite group `G`, a subset `A ⊆ B`, and coefficients `R` on which multiplication by
+`|G|` is invertible, every additive functor `F` out of chain complexes sends the relative transfer
+`C(B, A; R) ⟶ C(E, p⁻¹ A; R)` to a limit cone: `F(C(B, A; R))` is the object of invariants
+`F(C(E, p⁻¹ A; R))^G`. -/
+def isLimitMapConePairTransferCone [Fintype G] [IsIso (Fintype.card G • 𝟙 R)] {D : Type*}
+    [Category D] [Preadditive D] (F : ChainComplex C ℕ ⥤ D) [F.Additive] :
+    IsLimit (F.mapCone (hG.pairTransferCone A R)) := by
+  have := hG.toContinuousConstSMul
+  -- Multiplication by `|G|` is invertible on relative chains, and the additive functor `F` keeps it
+  -- invertible on their images. By `TopPair.ofSubsetActionFunctor_obj` and
+  -- `pairTransferCone_pt` (both `rfl`), these are the images of the acted-on object and of the
+  -- cone point of `hG.pairTransferCone A R`.
+  have : IsIso (Fintype.card G • 𝟙 ((TopPair.ofSubset (p ⁻¹' A)).singularChainComplex R)) :=
+    SSetPair.isIso_smul_id_chainComplex _ R _
+  have : IsIso (Fintype.card G • 𝟙 ((TopPair.ofSubset A).singularChainComplex R)) :=
+    SSetPair.isIso_smul_id_chainComplex _ R _
+  have : IsIso (Fintype.card G • 𝟙 (((@TopPair.ofSubsetActionFunctor E G _ _
+      hG.toContinuousConstSMul (p ⁻¹' A) (hG.mapsTo_smul_preimage A) ⋙ TopPair.toSSetPair ⋙
+        (SSetPair.chainComplexFunctor C).obj R) ⋙ F).obj (SingleObj.star G))) :=
+    F.isIso_smul_id_obj _ ((TopPair.ofSubset (p ⁻¹' A)).singularChainComplex R)
+  have : IsIso (Fintype.card G • 𝟙 (F.mapCone (hG.pairTransferCone A R)).pt) :=
+    F.isIso_smul_id_obj _ ((TopPair.ofSubset A).singularChainComplex R)
+  refine SingleObj.isLimitMapConeOfTransfer (hG.pairTransferCone A R)
+    (TopPair.singularChainComplexMap (TopPair.ofSubsetMap p (Set.mapsTo_preimage p A)) R) F ?_ ?_
+  · exact hG.isCoveringMap.singularPairTransfer_comp_singularChainComplexMap hG.finite_fiber A R
+      fun b ↦ by
+        obtain ⟨e, he⟩ := hG.surjective b
+        rw [Nat.card_congr (hG.fiberEquivGroup ⟨e, he⟩), Nat.card_eq_fintype_card]
+  -- The action functor sends `g` to the map of pairs induced by `g • ·`.
+  · exact hG.singularChainComplexMap_comp_singularPairTransfer A R
+
+/-- **The relative singular homology of the base of a finite quotient covering is invariants.** For
+the quotient covering map `p : E ⟶ B` of an action of a finite group `G`, a subset `A ⊆ B`, and
+coefficients `R` on which multiplication by `|G|` is invertible, the relative transfer
+`Hₙ(B, A; R) ⟶ Hₙ(E, p⁻¹ A; R)` exhibits `Hₙ(B, A; R)` as the limit `Hₙ(E, p⁻¹ A; R)^G` of the
+action of `G` on `Hₙ(E, p⁻¹ A; R)`. -/
+def isLimitHomologyMapConePairTransferCone [Fintype G] [CategoryWithHomology C] (n : ℕ)
+    [IsIso (Fintype.card G • 𝟙 R)] :
+    IsLimit ((HomologicalComplex.homologyFunctor C _ n).mapCone (hG.pairTransferCone A R)) :=
+  hG.isLimitMapConePairTransferCone A R _
 
 end IsQuotientCoveringMap
