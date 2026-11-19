@@ -95,6 +95,16 @@ theorem minimallyUncountableOn_iff : MinimallyUncountableOn K ↔
         (Quotient.mk (isoSetoid L ℕ) '' (K \ modelsOf θ)).Countable :=
   Iff.rfl
 
+/-- The models on `ℕ` of a sentence `φ` are minimally uncountable exactly when they meet
+uncountably many isomorphism classes, and for every sentence `θ` the models of `φ ⊓ θ` or those
+of `φ ⊓ θ.not` meet only countably many. -/
+theorem minimallyUncountableOn_modelsOf_iff_inf {φ : L.Sentenceω} :
+    MinimallyUncountableOn (modelsOf (V := ℕ) φ) ↔
+      ¬ (Quotient.mk (isoSetoid L ℕ) '' modelsOf φ).Countable ∧
+        ∀ θ : L.Sentenceω, (Quotient.mk (isoSetoid L ℕ) '' modelsOf (φ ⊓ θ)).Countable ∨
+          (Quotient.mk (isoSetoid L ℕ) '' modelsOf (φ ⊓ θ.not)).Countable := by
+  simp only [minimallyUncountableOn_iff, modelsOf_inf, modelsOf_not, sdiff_eq]
+
 /-- The empty class is not minimally uncountable: it meets no isomorphism class. -/
 theorem not_minimallyUncountableOn_empty :
     ¬ MinimallyUncountableOn (∅ : Set (RelationalConfiguration L ℕ)) :=
