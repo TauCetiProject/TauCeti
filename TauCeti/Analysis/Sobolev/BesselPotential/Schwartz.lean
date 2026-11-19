@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import Mathlib.Analysis.Fourier.LpSpace
-import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
@@ -51,6 +53,11 @@ normed complex `F`.
   of its first derivatives, `‖u‖²_{H¹} = ∫ ‖u‖² + (2π)⁻² ∑ᵢ ∫ ‖∂_{bᵢ} u‖²`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_compSubConstCLM`: translation preserves the `H^s`
   norm of a Schwartz function.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le`: the `H^s` norm of the
+  wave packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v` is at most `2 ^ (|s| / 2) ⟨ξ / 2π⟩ ^ s ‖φ‖_{H^{|s|}} ‖v‖`,
+  and
+  `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_cutoffExponential_smul_le`: hence the `H^s`
+  norms of the wave packets of frequency `t ξ` are `O(t ^ s)` as `t → ∞`.
 
 ## References
 
@@ -215,6 +222,71 @@ theorem norm_toBesselPotentialSpaceCLM_compSubConstCLM {F : Type*} [NormedAddCom
     (memLp_one_add_norm_sq_rpow_smul_fourier s _ 2).aestronglyMeasurable
     (memLp_one_add_norm_sq_rpow_smul_fourier s u 2).aestronglyMeasurable (.of_forall fun ξ ↦ ?_)
   simp [fourier_compSubConstCLM_apply, norm_smul]
+
+open scoped Real in
+/-- **The `H^s` norm of a wave packet.** Modulating a Schwartz function by the character
+`exp(i ⟪y, ξ⟫)` translates its Fourier transform to `ξ / 2π`, so by Peetre's inequality the wave
+packet `y ↦ exp(i ⟪y, ξ⟫) φ(y) v` has `H^s` norm at most
+`2 ^ (|s| / 2) ⟨ξ / 2π⟩ ^ s ‖φ‖_{H^{|s|}} ‖v‖`, which is `O(‖ξ‖ ^ s)` for high frequencies. -/
+theorem norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (φ : 𝓢(E, ℂ))
+    (ξ : E) (v : F) :
+    ‖toBesselPotentialSpaceCLM s 2 (φ.cutoffExponential 1 ξ v)‖ ≤
+      2 ^ (|s| / 2) * (1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) *
+        ‖toBesselPotentialSpaceCLM |s| 2 φ‖ * ‖v‖ := by
+  set c : E := (2 * π)⁻¹ • ξ
+  set g : E → ℂ := fun η ↦ (((1 + ‖η‖ ^ 2) ^ (|s| / 2) : ℝ) : ℂ) • 𝓕 φ η
+  set K : ℝ := 2 ^ (|s| / 2) * (1 + ‖c‖ ^ 2) ^ (s / 2) * ‖v‖
+  have hg : MemLp g 2 volume := memLp_one_add_norm_sq_rpow_smul_fourier |s| φ 2
+  -- Pointwise, Peetre's inequality with `ζ = c + (ζ - c)` bounds the weight at `ζ`.
+  have hpt : ∀ ζ, ‖(((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 (φ.cutoffExponential 1 ξ v) ζ‖ ≤
+      K * ‖g (ζ - c)‖ := by
+    intro ζ
+    have hP := TauCeti.one_add_norm_add_sq_rpow_le_mul s c (ζ - c)
+    rw [add_sub_cancel] at hP
+    rw [fourier_cutoffExponential φ one_ne_zero]
+    simp only [g, K, one_pow, abs_one, inv_one, one_smul, norm_smul, Complex.norm_real,
+      Real.norm_of_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 1 + ‖ζ‖ ^ 2) _),
+      Real.norm_of_nonneg (Real.rpow_nonneg (by positivity : (0 : ℝ) ≤ 1 + ‖ζ - c‖ ^ 2) _)]
+    calc (1 + ‖ζ‖ ^ 2) ^ (s / 2) * (‖𝓕 φ (ζ - c)‖ * ‖v‖)
+        ≤ 2 ^ (|s| / 2) * (1 + ‖c‖ ^ 2) ^ (s / 2) * (1 + ‖ζ - c‖ ^ 2) ^ (|s| / 2) *
+            (‖𝓕 φ (ζ - c)‖ * ‖v‖) := by gcongr
+      _ = _ := by ring
+  have hle := eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+    (memLp_one_add_norm_sq_rpow_smul_fourier s (φ.cutoffExponential 1 ξ v) 2).aestronglyMeasurable
+    (.of_forall hpt) 2
+  -- Translation by `c` does not change the `L²` norm.
+  have htr : eLpNorm (fun ζ ↦ g (ζ - c)) 2 volume = eLpNorm g 2 volume :=
+    eLpNorm_comp_measurePreserving (f := fun ζ ↦ ζ - c) hg.aestronglyMeasurable
+      (measurePreserving_sub_right volume c)
+  rw [htr] at hle
+  rw [norm_toBesselPotentialSpaceCLM, norm_toBesselPotentialSpaceCLM]
+  calc _ ≤ (ENNReal.ofReal K * eLpNorm g 2 volume).toReal :=
+        ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hg.eLpNorm_ne_top) hle
+    _ = _ := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+        ring
+
+open scoped Real in
+/-- **High-frequency wave packets.** For a nonzero frequency `ξ`, the `H^s` norms of the wave
+packets `y ↦ exp(i ⟪y, t ξ⟫) φ(y) v` grow at most like `t ^ s` as `t → ∞`: they are at most
+`C t ^ s` for all `t ≥ 1`. -/
+theorem exists_norm_toBesselPotentialSpaceCLM_cutoffExponential_smul_le {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] (s : ℝ) (φ : 𝓢(E, ℂ))
+    {ξ : E} (hξ : ξ ≠ 0) (v : F) :
+    ∃ C, ∀ t : ℝ, 1 ≤ t →
+      ‖toBesselPotentialSpaceCLM s 2 (φ.cutoffExponential 1 (t • ξ) v)‖ ≤ C * t ^ s := by
+  set c : E := (2 * π)⁻¹ • ξ
+  have hc : 0 < ‖c‖ := norm_pos_iff.2 (smul_ne_zero (by positivity) hξ)
+  set M := max ((‖c‖ ^ 2) ^ (s / 2)) ((1 + ‖c‖ ^ 2) ^ (s / 2))
+  refine ⟨2 ^ (|s| / 2) * M * ‖toBesselPotentialSpaceCLM |s| 2 φ‖ * ‖v‖, fun t ht ↦ ?_⟩
+  have hM : (1 + ‖t • c‖ ^ 2) ^ (s / 2) ≤ M * t ^ s :=
+    TauCeti.one_add_norm_smul_sq_rpow_le_max_mul_rpow hc ht ⟨le_rfl, le_rfl⟩ s
+  refine (norm_toBesselPotentialSpaceCLM_cutoffExponential_one_le s φ _ v).trans ?_
+  rw [smul_comm (2 * π)⁻¹ t ξ]
+  calc 2 ^ (|s| / 2) * (1 + ‖t • c‖ ^ 2) ^ (s / 2) * ‖toBesselPotentialSpaceCLM |s| 2 φ‖ * ‖v‖
+      ≤ 2 ^ (|s| / 2) * (M * t ^ s) * ‖toBesselPotentialSpaceCLM |s| 2 φ‖ * ‖v‖ := by gcongr
+    _ = _ := by ring
 
 end SchwartzMap
 
