@@ -113,7 +113,9 @@ theorem fderiv_fderiv_halfSq (y : E) :
   (hasFDerivAt_fderiv_halfSq y).fderiv
 
 theorem contDiff_halfSq : ContDiff ℝ ⊤ (halfSq (n := n)) := by
-  have : halfSq = fun z : E ↦ ℓ₀ z ^ 2 / 2 := rfl
+  have : halfSq = fun z : E ↦ ℓ₀ z ^ 2 / 2 := by
+    funext z
+    simp [halfSq]
   rw [this]
   fun_prop
 

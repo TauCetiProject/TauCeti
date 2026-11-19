@@ -128,8 +128,7 @@ private theorem halfSpacePoissonKernel_eq_rpow_one_add (v : U) {x : E}
         (1 + ‖⟪(v : E), x⟫⁻¹ • (y - foot v x)‖ ^ 2) ^ (-(n : ℝ) / 2) := by
   have hy : ⟪(v : E), y⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.2
   have hnorm : ‖y - foot v x‖ = ‖(y : E) - (x - ⟪(v : E), x⟫ • (v : E))‖ := by
-    rw [← coe_foot]
-    rfl
+    rw [← coe_foot, ← Submodule.coe_sub, Submodule.norm_coe]
   have h1 : ‖(y : E) - x‖ ^ 2 =
       ⟪(v : E), x⟫ ^ 2 * (1 + ‖⟪(v : E), x⟫⁻¹ • (y - foot v x)‖ ^ 2) := by
     rw [norm_smul, mul_pow, hnorm, norm_sub_sq_eq_of_inner_eq_zero v.2 x hy, Real.norm_eq_abs,
@@ -628,6 +627,8 @@ theorem exists_abs_halfSpacePoissonIntegral_sub_le (v : U) {α : ℝ≥0} (hα0 
         have := integral_add hint h2
         refine this.trans ?_
         rw [integral_const_mul, integral_halfSpacePoissonKernel v hx, hval, mul_one]
+        -- The sum produced by `integral_add` uses the addition of `NormedAddCommGroup ℝ`, which
+        -- `rfl` unfolds to the addition of `ℝ` on the right-hand side.
         rfl
     _ ≤ _ := by
         gcongr
