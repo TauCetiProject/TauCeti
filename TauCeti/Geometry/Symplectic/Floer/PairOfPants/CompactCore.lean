@@ -31,6 +31,8 @@ symplectic vector space target is its specialization to the constant form
 
 ## Main results
 
+* `Floer.pairOfPantsPerturbation_add_eq_smul_endAngularForm`: a perturbation supported in the core
+  leaves the datum `H_q(t) dt` beyond the height `2` on each end `q`.
 * `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_add_le`: for a
   single perturbation supported in the core, on any manifold target, the curvature allowance of
   the sum is at most `B₀ + B₁ + B_∞` plus the curvature allowance of the core perturbation.
@@ -54,6 +56,29 @@ public section
 open Function MeasureTheory Set
 open scoped Manifold
 open TauCeti.ThricePuncturedSphere
+
+namespace TauCeti.Floer
+
+/-- **A core perturbation leaves the ends untouched.** If `δ = δ_s ds + δ_t dt` vanishes off a set
+`D` on which the signed longitudinal coordinate of every end is at most `1`, then beyond the height
+`2` on each end `q` the perturbed datum `K + δ` is still `H_q(t) dt`. -/
+theorem pairOfPantsPerturbation_add_eq_smul_endAngularForm {M : Type*}
+    {H : Puncture → ℝ → M → ℝ} {δs δt : ℝ × ℝ → M → ℝ} {D : Set (ℝ × ℝ)}
+    (hcore : ∀ z ∈ D, ∀ q : Puncture,
+      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {q : Puncture} {w : ℂ}
+    (hw : 2 ≤ q.endSign * (q.endCoord w).re) (x : M) :
+    pairOfPantsPerturbation H w x + (δs (Complex.equivRealProdCLM w) x • Complex.reCLM +
+      δt (Complex.equivRealProdCLM w) x • Complex.imCLM) =
+      H q (q.endCoord w).im x • q.endAngularForm w := by
+  have hwD : Complex.equivRealProdCLM w ∉ D := fun hwD ↦ by
+    have := hcore _ hwD q
+    rw [ContinuousLinearEquiv.symm_apply_apply] at this
+    linarith
+  simp only [congrFun (hs _ hwD) x, congrFun (ht _ hwD) x, Pi.zero_apply, zero_smul, add_zero,
+    pairOfPantsPerturbation_eq_smul_endAngularForm hw]
+
+end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
 
