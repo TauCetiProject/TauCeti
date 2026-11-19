@@ -26,8 +26,9 @@ and a module `N` with trivial action, precomposition with `φ` gives an equivari
 This is the coefficient map on dual representations used in contravariant change of group
 for cohomology. Its underlying linear map sends `ℓ` to `ℓ ∘ φ`.
 
-On `Homₖ(A, N)` with `N` trivial, an element `g⁻¹` acts by precomposition with `ρ(g)`, so
-`ρ(g⁻¹) - 𝟙` is precomposition with `ρ(g) - 𝟙` (`Rep.ihom_obj_trivial_ρ_inv_sub_id`). For a
+On `Homₖ(A, N)` with `N` trivial, an element `g` acts by precomposition with `ρ(g⁻¹)`
+(`Rep.ihom_obj_trivial_ρ_apply`), so `ρ(g⁻¹) - 𝟙` is precomposition with `ρ(g) - 𝟙`
+(`Rep.ihom_obj_trivial_ρ_inv_sub_id`). For a
 cyclic group this identifies the cohomology of `Homₖ(A, N)` with that of the dual of the complex
 `A --(ρ(g) - 𝟙)--> A`.
 -/
@@ -75,17 +76,27 @@ theorem shortExact_map_ihom [Module.Projective k A] {S : ShortComplex (Rep.{w} k
   · rintro ⟨(ℓ : A →ₗ[k] S.X₁), rfl⟩
     exact LinearMap.ext fun a ↦ hfg.apply_apply_eq_zero (ℓ a)
 
+/-- On the internal hom `Homₖ(A, N)` into a trivial representation, `g` acts by precomposition
+with `ρ(g⁻¹)`. -/
+-- Match before `Rep.ihom_obj_ρ` changes the presentation of the internal-hom action.
+@[simp↓]
+theorem ihom_obj_trivial_ρ_apply (N : Type w) [AddCommGroup N] [Module k N] (g : G)
+    (φ : A →ₗ[k] N) : ((Rep.ihom A).obj (Rep.trivial k G N)).ρ g φ = φ ∘ₗ A.ρ g⁻¹ := by
+  -- The carrier of `(Rep.ihom A).obj (Rep.trivial k G N)` is `A →ₗ[k] N` only up to unfolding
+  -- `Rep.trivial`, so `Rep.ihom_obj_ρ_apply` does not rewrite here; this states the action as
+  -- Mathlib's `Representation.linHom`, which it is by definition of `Rep.ihom`.
+  change A.ρ.linHom (Representation.trivial k G N) g φ = _
+  rw [Representation.linHom_apply]
+  ext a
+  simp
+
 /-- On the internal hom `Homₖ(A, N)` into a trivial representation, `g⁻¹` acts by precomposition
 with `ρ(g)`, so `ρ(g⁻¹) - 𝟙` is `φ ↦ φ ∘ (ρ(g) - 𝟙)`. -/
 theorem ihom_obj_trivial_ρ_inv_sub_id (N : Type w) [AddCommGroup N] [Module k N] (g : G) :
     ((Rep.ihom A).obj (Rep.trivial k G N)).ρ g⁻¹ - LinearMap.id =
       LinearMap.lcomp k N (A.ρ g - LinearMap.id) := by
-  refine LinearMap.ext fun φ ↦ ?_
-  -- The carrier of `(Rep.ihom A).obj (Rep.trivial k G N)` is `A →ₗ[k] N` only up to unfolding
-  -- `Rep.trivial`, so `Rep.ihom_obj_ρ_apply` does not rewrite here; this states the action as
-  -- Mathlib's `Representation.linHom`, which it is by definition of `Rep.ihom`.
-  change A.ρ.linHom (Representation.trivial k G N) g⁻¹ φ - φ = φ ∘ₗ (A.ρ g - LinearMap.id)
-  rw [Representation.linHom_apply, inv_inv]
+  refine LinearMap.ext fun φ ↦
+    (congrArg (· - φ) (ihom_obj_trivial_ρ_apply A N g⁻¹ φ)).trans ?_
   ext a
   simp
 
