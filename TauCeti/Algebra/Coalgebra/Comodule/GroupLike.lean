@@ -43,8 +43,9 @@ spaces, while this one builds a comodule from a basis equipped with a prescribed
 * `TauCeti.Comodule.basis_mem_weightSpace_ofWeights`: the `x`-th basis vector has weight `wt x`.
 * `TauCeti.Comodule.weightProj_ofWeights_eq`: for distinct weights, weight projection extracts
   the corresponding basis coordinate.
-* `TauCeti.Comodule.weightProj_ofWeights_eq_sum` and `weightProj_ofWeights_pi_eq`: for repeated
-  weights, weight projection keeps the coordinates of the given weight.
+* `TauCeti.Comodule.weightProj_ofWeights_eq_repr_sum`, `weightProj_ofWeights_eq_sum` and
+  `weightProj_ofWeights_pi_eq`: for repeated weights, weight projection keeps the coordinates of the
+  given weight.
 
 ## References
 
@@ -146,6 +147,24 @@ theorem basis_mem_weightSpace_ofWeights (b : Module.Basis η R M) (wt : η → G
   rw [mem_weightSpace]
   exact ofWeights_coact_basis b wt x
 
+/-- **Weight projection of a diagonal comodule.** Projecting to the weight `g` keeps exactly the
+coordinates whose weight is `g`; the weights need not be distinct and the basis need not be
+finite. -/
+theorem weightProj_ofWeights_eq_repr_sum [DecidableEq G] (b : Module.Basis η R M)
+    (wt : η → G) (g : G) (m : M) :
+    letI : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+    weightProj R G M g m = (b.repr m).sum fun x r ↦ if wt x = g then r • b x else 0 := by
+  classical
+  let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
+  conv_lhs => rw [← b.linearCombination_repr m]
+  rw [Finsupp.linearCombination_apply, map_finsuppSum, Finsupp.sum, Finsupp.sum]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [map_smul]
+  split_ifs with h
+  · rw [weightProj_of_mem]
+    exact h ▸ basis_mem_weightSpace_ofWeights b wt x
+  · rw [weightProj_of_mem_of_ne (Ne.symm h) (basis_mem_weightSpace_ofWeights b wt x), smul_zero]
+
 /-- In a basis with pairwise distinct weights, projection to the weight of a basis vector
 extracts exactly that basis coordinate. -/
 @[simp]
@@ -155,20 +174,11 @@ theorem weightProj_ofWeights_eq (b : Module.Basis η R M) (wt : η → G)
     weightProj R G M (wt x) m = (b.repr m x) • b x := by
   classical
   let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
-  conv_lhs => rw [← b.linearCombination_repr m]
-  rw [Finsupp.linearCombination_apply, map_finsuppSum, Finsupp.sum, Finset.sum_eq_single x]
-  · rw [map_smul, weightProj_of_mem]
-    exact basis_mem_weightSpace_ofWeights b wt x
-  · intro y _ hyx
-    rw [map_smul, weightProj_of_mem_of_ne]
-    · simp
-    · exact fun h ↦ hyx (hwt h).symm
-    · exact basis_mem_weightSpace_ofWeights b wt y
-  · intro hx
-    have hx' : b.repr m x = 0 := by simpa [Finsupp.mem_support_iff] using hx
-    rw [hx', zero_smul, map_zero]
+  rw [weightProj_ofWeights_eq_repr_sum, Finsupp.sum]
+  simp only [hwt.eq_iff, Finset.sum_ite_eq', Finsupp.mem_support_iff, ne_eq, ite_not]
+  split_ifs with h <;> simp [h]
 
-/-- **Weight projection of a diagonal comodule.** For a finite basis, projecting to the weight `g`
+/-- **Weight projection of a diagonal comodule on a finite basis.** Projecting to the weight `g`
 keeps exactly the coordinates whose weight is `g`; the weights need not be distinct. -/
 theorem weightProj_ofWeights_eq_sum [Fintype η] [DecidableEq G] (b : Module.Basis η R M)
     (wt : η → G) (g : G) (m : M) :
@@ -176,15 +186,7 @@ theorem weightProj_ofWeights_eq_sum [Fintype η] [DecidableEq G] (b : Module.Bas
     weightProj R G M g m = ∑ x with wt x = g, (b.repr m x) • b x := by
   classical
   let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
-  conv_lhs => rw [← b.linearCombination_repr m]
-  rw [Finsupp.linearCombination_apply, Finsupp.sum_fintype _ _ (by simp), map_sum,
-    Finset.sum_filter]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  rw [map_smul]
-  split_ifs with h
-  · rw [weightProj_of_mem]
-    exact h ▸ basis_mem_weightSpace_ofWeights b wt x
-  · rw [weightProj_of_mem_of_ne (Ne.symm h) (basis_mem_weightSpace_ofWeights b wt x), smul_zero]
+  rw [weightProj_ofWeights_eq_repr_sum, Finsupp.sum_fintype _ _ (by simp), Finset.sum_filter]
 
 /-- The weight projection of the diagonal comodule on `I → R` keeps the coordinates of weight `g`
 and zeroes the others. -/
