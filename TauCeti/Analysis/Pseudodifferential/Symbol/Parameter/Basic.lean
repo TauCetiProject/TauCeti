@@ -900,6 +900,27 @@ theorem isSmoothing_iff {a : ParameterSymbol n Λ V W m} :
     a.IsSmoothing ↔ ∀ m' : ℝ, ∃ b : ParameterSymbol n Λ V W m', b.coefficient = a.coefficient :=
   Iff.rfl
 
+/-- The estimates characterizing parameter-dependent smoothing symbols: a symbol is smoothing
+exactly when, for every real order `m'`, every compact set `K` of positions and every derivative
+order `k`, the dilated derivatives of order `k` are bounded by `C (1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)) ^ m'`
+for all `x ∈ K`, all frequencies `ξ` and all `z ∈ Λ`. -/
+theorem isSmoothing_iff_forall_exists_bound {a : ParameterSymbol n Λ V W m} :
+    a.IsSmoothing ↔ ∀ m' : ℝ, ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ k : ℕ,
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ∀ z ∈ Λ,
+        ‖parameterIteratedFDeriv k a.coefficient ((x, ξ), z)‖ ≤ C * parameterWeight ξ z ^ m' := by
+  refine ⟨fun h m' K hK k => ?_, fun h m' =>
+    ⟨⟨a.coefficient, a.contDiffOn_coefficient, a.coefficient_of_notMem, h m'⟩, rfl⟩⟩
+  obtain ⟨b, hb⟩ := h m'
+  exact hb ▸ b.exists_bound K hK k
+
+/-- A parameter-dependent symbol is smoothing iff for every `N` its coefficient is that of a
+parameter-dependent symbol of order `m - N`. -/
+theorem isSmoothing_iff_forall_nat {a : ParameterSymbol n Λ V W m} :
+    a.IsSmoothing ↔
+      ∀ N : ℕ, ∃ b : ParameterSymbol n Λ V W (m - N), b.coefficient = a.coefficient := by
+  refine ⟨fun h N => h _, fun h m' => (h ⌈m - m'⌉₊).elim fun b hb => ?_⟩
+  exact ⟨inclusion (by linarith [Nat.le_ceil (m - m')]) b, by rw [coefficient_inclusion, hb]⟩
+
 @[simp]
 theorem isSmoothing_zero : (0 : ParameterSymbol n Λ V W m).IsSmoothing :=
   fun _ => ⟨0, rfl⟩
@@ -928,6 +949,24 @@ theorem IsSmoothing.sub {a b : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
 theorem IsSmoothing.inclusion {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing) (h : m ≤ m') :
     (inclusion h a).IsSmoothing :=
   fun m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]
+
+theorem IsSmoothing.spatialDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
+    (v : CoordinateSpace n) : (a.spatialDeriv v).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha m'
+  refine ⟨a'.spatialDeriv v, funext fun ⟨⟨x, ξ⟩, z⟩ => ?_⟩
+  by_cases hz : z ∈ Λ
+  · simp [coefficient_spatialDeriv_eq_fderiv _ _ _ _ hz, ha']
+  · rw [coefficient_of_notMem _ _ hz, coefficient_of_notMem _ _ hz]
+
+theorem IsSmoothing.frequencyDeriv {a : ParameterSymbol n Λ V W m} (ha : a.IsSmoothing)
+    (w : CoordinateSpace n) : (a.frequencyDeriv w).IsSmoothing := fun m' => by
+  obtain ⟨a', ha'⟩ := ha (m' + 1)
+  refine ⟨ParameterSymbol.inclusion (by linarith) (a'.frequencyDeriv w),
+    funext fun ⟨⟨x, ξ⟩, z⟩ => ?_⟩
+  rw [coefficient_inclusion]
+  by_cases hz : z ∈ Λ
+  · simp [coefficient_frequencyDeriv_eq_fderiv _ _ _ _ hz, ha']
+  · rw [coefficient_of_notMem _ _ hz, coefficient_of_notMem _ _ hz]
 
 /-- Smoothing symbols form a right ideal under composition. -/
 theorem IsSmoothing.comp_right {b : ParameterSymbol n Λ W U m'} (hb : b.IsSmoothing)

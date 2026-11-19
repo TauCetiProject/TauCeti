@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Parametrix
-import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
+import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -33,10 +33,10 @@ symbol of Seeley's approximation of the resolvent `(A - z)⁻¹`.
 ## The construction
 
 As in Borel's theorem, the sum is `b = ∑ⱼ ψ_{tⱼ} aⱼ` for cutoffs `ψₜ` and radii `tⱼ → ∞`, but the
-cutoffs are taken in the frequency and the spectral parameter jointly. With
-`g(η, μ) = smoothTransition (‖η‖⁴ + ‖μ‖² - 1)`, put `ψₜ((x, ξ), z) = g(ξ / t, z / t²)`. Since
-`‖ξ‖⁴ + ‖z‖²` is homogeneous of degree `4` under the anisotropic dilations
-`(ξ, z) ↦ (t ξ, t² z)`, the dilated derivatives of `ψₜ` are bounded uniformly in `t ≥ 1`. The cutoff
+cutoffs are taken in the frequency and the spectral parameter jointly. For a frequency cutoff `χ`
+on `ℝⁿ × ℂ` (`TauCeti.FrequencyCutoff`), put `ψₜ((x, ξ), z) = χ(ξ / t, z / t²)`. Since the scaling
+`(ξ, z) ↦ (ξ / t, z / t²)` undoes the anisotropic dilations `(ξ, z) ↦ (t ξ, t² z)`, the dilated
+derivatives of `ψₜ` are bounded uniformly in `t ≥ 1`. The cutoff
 `ψₜ` vanishes where the weight `1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)` is less than `t` and equals `1` where it
 exceeds `5 t`. Hence, for a symbol `a` of order `μ`, the products `ψₜ a` satisfy the estimates of
 order `μ + 1` with constants `C / t`, and `(ψₜ - 1) a` vanishes where the weight exceeds `5 t`, so
@@ -82,54 +82,9 @@ variable {n : ℕ} {Λ : TopologicalSpace.Opens ℂ} {V W : Type*} [NormedAddCom
 
 /-! ### The anisotropic cutoffs -/
 
-/-- The profile `g(η, μ) = smoothTransition ((‖η‖²)² + ‖μ‖² - 1)` of the cutoffs. -/
-private def cutoffProfile (y : CoordinateSpace n × ℂ) : ℝ :=
-  Real.smoothTransition ((‖y.1‖ ^ 2) ^ 2 + ‖y.2‖ ^ 2 - 1)
-
-private theorem contDiff_cutoffProfile : ContDiff ℝ ∞ (cutoffProfile (n := n)) := by
-  have h₁ : ContDiff ℝ ∞ fun y : CoordinateSpace n × ℂ => ‖y.1‖ ^ 2 :=
-    (contDiff_norm_sq ℝ).comp contDiff_fst
-  have h₂ : ContDiff ℝ ∞ fun y : CoordinateSpace n × ℂ => ‖y.2‖ ^ 2 :=
-    (contDiff_norm_sq ℝ).comp contDiff_snd
-  exact (Real.smoothTransition.contDiff (n := ⊤)).comp (((h₁.pow 2).add h₂).sub contDiff_const)
-
-private theorem continuous_gauge :
-    Continuous fun y : CoordinateSpace n × ℂ => (‖y.1‖ ^ 2) ^ 2 + ‖y.2‖ ^ 2 := by
-  fun_prop
-
-/-- The profile is `0` near the points where `‖η‖⁴ + ‖μ‖² < 1`. -/
-private theorem cutoffProfile_eventuallyEq_zero {y : CoordinateSpace n × ℂ}
-    (hy : (‖y.1‖ ^ 2) ^ 2 + ‖y.2‖ ^ 2 < 1) : cutoffProfile =ᶠ[𝓝 y] fun _ => 0 := by
-  filter_upwards [continuous_gauge.continuousAt.eventually (gt_mem_nhds hy)] with y' hy'
-  exact Real.smoothTransition.zero_of_nonpos (by linarith)
-
-/-- The profile is `1` near the points where `‖η‖⁴ + ‖μ‖² > 2`. -/
-private theorem cutoffProfile_eventuallyEq_one {y : CoordinateSpace n × ℂ}
-    (hy : 2 < (‖y.1‖ ^ 2) ^ 2 + ‖y.2‖ ^ 2) : cutoffProfile =ᶠ[𝓝 y] fun _ => 1 := by
-  filter_upwards [continuous_gauge.continuousAt.eventually (lt_mem_nhds hy)] with y' hy'
-  exact Real.smoothTransition.one_of_one_le (by linarith)
-
-/-- Every derivative of the profile is bounded: outside the ball of radius `2` the profile is
-constant. -/
-private theorem exists_norm_iteratedFDeriv_cutoffProfile_le (k : ℕ) :
-    ∃ M, 0 ≤ M ∧ ∀ y : CoordinateSpace n × ℂ, ‖iteratedFDeriv ℝ k cutoffProfile y‖ ≤ M := by
-  obtain ⟨C, hC⟩ :=
-    (isCompact_closedBall (0 : CoordinateSpace n × ℂ) 2).exists_bound_of_continuousOn
-    (contDiff_cutoffProfile.continuous_iteratedFDeriv (by exact_mod_cast le_top)).continuousOn
-  refine ⟨max C 1, le_max_of_le_right zero_le_one, fun y => ?_⟩
-  by_cases hy : y ∈ Metric.closedBall (0 : CoordinateSpace n × ℂ) 2
-  · exact (hC y hy).trans (le_max_left _ _)
-  have h2 : 2 < (‖y.1‖ ^ 2) ^ 2 + ‖y.2‖ ^ 2 := by
-    rw [Metric.mem_closedBall, dist_zero_right, Prod.norm_def, not_le, lt_max_iff] at hy
-    rcases hy with h | h
-    · have h4 : 4 < ‖y.1‖ ^ 2 := by nlinarith
-      nlinarith [sq_nonneg ‖y.2‖]
-    · have h4 : 4 < ‖y.2‖ ^ 2 := by nlinarith
-      nlinarith [sq_nonneg (‖y.1‖ ^ 2)]
-  rw [((cutoffProfile_eventuallyEq_one h2).iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds]
-  rcases k with _ | k
-  · simp
-  · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero k)]
+/-- The frequency cutoff `χ` on `ℝⁿ × ℂ` whose anisotropic dilations are the cutoffs. -/
+private def cutoffProfile : FrequencyCutoff (CoordinateSpace n × ℂ) :=
+  default
 
 /-- The linear map `((x, ξ), z) ↦ (t⁻¹ ξ, t⁻² z)`. -/
 private def cutoffScaling (t : ℝ) :
@@ -142,43 +97,32 @@ private theorem cutoffScaling_apply (t : ℝ) (p : (CoordinateSpace n × Coordin
     cutoffScaling t p = (t⁻¹ • p.1.2, (t ^ 2)⁻¹ • p.2) :=
   (rfl)
 
-/-- The cutoff `ψₜ((x, ξ), z) = g(ξ / t, z / t²)` in the frequency and the spectral parameter. -/
+/-- The cutoff `ψₜ((x, ξ), z) = χ(ξ / t, z / t²)` in the frequency and the spectral parameter. -/
 private def parameterCutoff (t : ℝ) (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) : ℝ :=
   cutoffProfile (cutoffScaling t p)
 
 private theorem parameterCutoff_eq_comp (t : ℝ) :
-    parameterCutoff (n := n) t = cutoffProfile ∘ cutoffScaling t :=
+    parameterCutoff (n := n) t = ⇑cutoffProfile ∘ cutoffScaling t :=
   (rfl)
 
 private theorem contDiff_parameterCutoff (t : ℝ) : ContDiff ℝ ∞ (parameterCutoff (n := n) t) :=
-  contDiff_cutoffProfile.comp (cutoffScaling t).contDiff
+  cutoffProfile.contDiff.comp (cutoffScaling t).contDiff
 
-/-- The value of the gauge at the scaled point, in terms of `a = ‖ξ‖ / t` and
-`b = ‖z‖ ^ (1 / 2) / t`. -/
-private theorem gauge_cutoffScaling {t : ℝ} (ht : 0 < t) (x ξ : CoordinateSpace n) (z : ℂ) :
-    (‖(cutoffScaling t ((x, ξ), z)).1‖ ^ 2) ^ 2 + ‖(cutoffScaling t ((x, ξ), z)).2‖ ^ 2 =
-      (t⁻¹ * ‖ξ‖) ^ 4 + (t⁻¹ * Real.sqrt ‖z‖) ^ 4 := by
-  have hz : ‖z‖ ^ 2 = Real.sqrt ‖z‖ ^ 4 := by
-    rw [show Real.sqrt ‖z‖ ^ 4 = (Real.sqrt ‖z‖ ^ 2) ^ 2 by ring, Real.sq_sqrt (norm_nonneg z)]
-  simp only [cutoffScaling_apply, norm_smul, norm_inv, norm_pow, Real.norm_eq_abs, abs_of_pos ht]
-  linear_combination (t⁻¹) ^ 4 * hz
+/-- The sup norm of the scaled point is `max (‖ξ‖ / t) (‖z‖ / t²)`. -/
+private theorem norm_cutoffScaling {t : ℝ} (ht : 0 < t) (x ξ : CoordinateSpace n) (z : ℂ) :
+    ‖cutoffScaling t ((x, ξ), z)‖ = max (t⁻¹ * ‖ξ‖) ((t ^ 2)⁻¹ * ‖z‖) := by
+  simp [Prod.norm_def, norm_smul, abs_of_pos ht]
 
 /-- The cutoff vanishes near the points where the weight is less than `t`. -/
 private theorem parameterCutoff_eventuallyEq_zero {t : ℝ} (ht : 0 < t) {x ξ : CoordinateSpace n}
     {z : ℂ} (hw : parameterWeight ξ z < t) : parameterCutoff t =ᶠ[𝓝 ((x, ξ), z)] fun _ => 0 := by
   refine (cutoffScaling t).continuous.continuousAt.eventually
-    (cutoffProfile_eventuallyEq_zero ?_)
-  rw [gauge_cutoffScaling ht]
-  have hs := Real.sqrt_nonneg ‖z‖
-  have ha : 0 ≤ t⁻¹ * ‖ξ‖ := by positivity
-  have hb : 0 ≤ t⁻¹ * Real.sqrt ‖z‖ := by positivity
-  have hab : t⁻¹ * ‖ξ‖ + t⁻¹ * Real.sqrt ‖z‖ < 1 := by
-    rw [← mul_add, inv_mul_lt_iff₀ ht, mul_one]
-    rw [parameterWeight_def] at hw
-    linarith
-  have h₁ := pow_le_of_le_one ha (by linarith) (by norm_num : (4 : ℕ) ≠ 0)
-  have h₂ := pow_le_of_le_one hb (by linarith) (by norm_num : (4 : ℕ) ≠ 0)
-  linarith
+    (cutoffProfile.eventuallyEq_zero_of_norm_lt_one ?_)
+  rw [parameterWeight_def] at hw
+  have hs : Real.sqrt ‖z‖ < t := by linarith [norm_nonneg ξ]
+  rw [norm_cutoffScaling ht, max_lt_iff, inv_mul_lt_iff₀ ht, inv_mul_lt_iff₀ (by positivity),
+    mul_one, mul_one]
+  exact ⟨by linarith [Real.sqrt_nonneg ‖z‖], (Real.sqrt_lt' ht).1 hs⟩
 
 /-- The cutoff is `1` near the points where the weight exceeds `5 t`. -/
 private theorem parameterCutoff_eventuallyEq_one {t : ℝ} (ht : 1 ≤ t) {x ξ : CoordinateSpace n}
@@ -186,18 +130,16 @@ private theorem parameterCutoff_eventuallyEq_one {t : ℝ} (ht : 1 ≤ t) {x ξ 
     parameterCutoff t =ᶠ[𝓝 ((x, ξ), z)] fun _ => 1 := by
   have ht0 : 0 < t := by linarith
   refine (cutoffScaling t).continuous.continuousAt.eventually
-    (cutoffProfile_eventuallyEq_one ?_)
-  rw [gauge_cutoffScaling ht0]
-  have ha : 0 ≤ t⁻¹ * ‖ξ‖ := by positivity
-  have hb : 0 ≤ t⁻¹ * Real.sqrt ‖z‖ := by positivity
-  have hab : 4 < t⁻¹ * ‖ξ‖ + t⁻¹ * Real.sqrt ‖z‖ := by
-    rw [← mul_add, lt_inv_mul_iff₀ ht0]
-    rw [parameterWeight_def] at hw
-    linarith
-  rcases le_or_gt (t⁻¹ * ‖ξ‖) 2 with h | h
-  · have : 2 < t⁻¹ * Real.sqrt ‖z‖ := by linarith
-    nlinarith [pow_le_pow_left₀ (by norm_num : (0 : ℝ) ≤ 2) this.le 4, pow_nonneg ha 4]
-  · nlinarith [pow_le_pow_left₀ (by norm_num : (0 : ℝ) ≤ 2) h.le 4, pow_nonneg hb 4]
+    (cutoffProfile.eventuallyEq_one_of_two_lt_norm ?_)
+  rw [parameterWeight_def] at hw
+  rw [norm_cutoffScaling ht0, lt_max_iff, lt_inv_mul_iff₀ ht0, lt_inv_mul_iff₀ (by positivity)]
+  -- Either `‖ξ‖ > 2 t`, or `‖z‖ ^ (1 / 2) > 2 t`, so that `‖z‖ > 4 t² > 2 t²`.
+  by_cases h : 2 * t < ‖ξ‖
+  · exact Or.inl (by linarith)
+  have hs : 2 * t < Real.sqrt ‖z‖ := by linarith
+  have := (Real.lt_sqrt (by positivity)).1 hs
+  right
+  nlinarith
 
 /-- The scaling undoes the dilation by the weight up to the factor `w / t`. -/
 private theorem norm_cutoffScaling_comp_parameterDilation_le {t w : ℝ} (ht : 0 < t) (hw : 0 ≤ w) :
@@ -220,7 +162,8 @@ uniformly in `t ≥ 1`. -/
 private theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ) :
     ∃ C, 0 ≤ C ∧ ∀ t, 1 ≤ t → ∀ p : (CoordinateSpace n × CoordinateSpace n) × ℂ,
       ‖parameterIteratedFDeriv k (parameterCutoff t) p‖ ≤ C := by
-  obtain ⟨M, hM, hMb⟩ := exists_norm_iteratedFDeriv_cutoffProfile_le (n := n) k
+  obtain ⟨M, hMb⟩ := cutoffProfile.exists_bound_iteratedFDeriv (E := CoordinateSpace n × ℂ) k
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hMb 0)
   refine ⟨M * 30 ^ k, by positivity, fun t ht p => ?_⟩
   obtain ⟨⟨x, ξ⟩, z⟩ := p
   have ht0 : 0 < t := by linarith
@@ -236,7 +179,7 @@ private theorem exists_norm_parameterIteratedFDeriv_parameterCutoff_le (k : ℕ)
     ext v
     rw [parameterIteratedFDeriv_apply,
       parameterCutoff_eq_comp,
-      (cutoffScaling t).iteratedFDeriv_comp_right contDiff_cutoffProfile _
+      (cutoffScaling t).iteratedFDeriv_comp_right cutoffProfile.contDiff _
         (by exact_mod_cast le_top)]
     simp
   rw [hid]
