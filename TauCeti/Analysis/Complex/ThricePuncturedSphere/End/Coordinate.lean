@@ -427,6 +427,11 @@ theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
   rintro rfl
   exact h q.re_endCoord_endCenter
 
+/-- A point with positive signed longitudinal coordinate is not the center of the end. -/
+theorem ne_endCenter_of_endSign_mul_re_endCoord_pos (q : Puncture) {w : ℂ}
+    (h : 0 < q.endSign * (q.endCoord w).re) : w ≠ q.endCenter :=
+  q.ne_endCenter_of_re_endCoord_ne_zero (right_ne_zero_of_mul h.ne')
+
 /-- The angular coordinate of a point of an end. -/
 theorem im_endCoord (q : Puncture) (w : ℂ) :
     (q.endCoord w).im = -Complex.arg ((w - q.endCenter) / q.endScale) / (2 * π) := by
@@ -628,7 +633,7 @@ theorem cylindricalEndLift_ne_zero_and_ne_one (q : Puncture) {z : ℂ}
 sphere: it is neither `0` nor `1`. -/
 theorem ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos (q : Puncture) {w : ℂ}
     (h : 0 < q.endSign * (q.endCoord w).re) : w ≠ 0 ∧ w ≠ 1 := by
-  have hw : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero fun h' => by simp [h'] at h
+  have hw : w ≠ q.endCenter := q.ne_endCenter_of_endSign_mul_re_endCoord_pos h
   rw [← q.cylindricalEndLift_endCoord hw]
   exact q.cylindricalEndLift_ne_zero_and_ne_one h
 
@@ -648,8 +653,8 @@ longitudinal coordinate on every other end. -/
 theorem endSign_mul_re_endCoord_nonpos {q r : Puncture} (hqr : q ≠ r) {w : ℂ}
     (h : 0 < q.endSign * (q.endCoord w).re) : r.endSign * (r.endCoord w).re ≤ 0 := by
   by_contra! h'
-  have hq : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero fun h₀ => by simp [h₀] at h
-  have hr : w ≠ r.endCenter := r.ne_endCenter_of_re_endCoord_ne_zero fun h₀ => by simp [h₀] at h'
+  have hq : w ≠ q.endCenter := q.ne_endCenter_of_endSign_mul_re_endCoord_pos h
+  have hr : w ≠ r.endCenter := r.ne_endCenter_of_endSign_mul_re_endCoord_pos h'
   exact cylindricalEndLift_ne_cylindricalEndLift hqr h h'
     ((q.cylindricalEndLift_endCoord hq).trans (r.cylindricalEndLift_endCoord hr).symm)
 
