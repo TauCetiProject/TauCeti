@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.GroupTheory.Submonoid.Center
+import Mathlib.Data.List.OfFn
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Products along lists in a noncommutative monoid
@@ -23,6 +26,10 @@ remaining first factors. Erasing an entry whose image is `1` does not change the
 images, in any monoid. Two orderings of a list have the same product of images when every pair of
 entries whose relative order differs has commuting images.
 
+The ordered product `b₀ ⋯ bₙ₋₁` of a tuple (`List.prod (List.ofFn b)`) is the product of the
+ordered products of its first `k` and its last `n - k` entries, and is unchanged when two adjacent
+entries are multiplied together first (`Fin.contractNth`), by associativity.
+
 ## Main results
 
 * `List.prod_map_mem_of_isChain`: along a nonempty `r`-chain `x :: l`, the product of the `f y`
@@ -32,6 +39,10 @@ entries whose relative order differs has commuting images.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
 * `List.prod_map_eq_of_perm`: two orderings of the same entries have the same product of images if
   the images of every inverted pair commute.
+* `List.prod_ofFn_mul_prod_ofFn`: the ordered product of a tuple splits after its first `k`
+  entries.
+* `List.prod_ofFn_contractNth`: contracting two adjacent entries of a tuple by multiplication does
+  not change its ordered product.
 -/
 
 public section
@@ -107,5 +118,28 @@ theorem prod_map_eq_of_perm (f : ι → M) {l l' : List ι} (hp : l.Perm l')
     rw [map_cons, prod_cons, key,
       ih hp' fun x y hxy hyx => h x y (hxy.trans (sublist_cons_self a t))
         (hyx.trans ((sublist_cons_self a v).append_left u))]
+
+section OfFn
+
+variable {M : Type*} [Monoid M]
+
+/-- **The ordered product of a tuple splits** after its first `k` entries:
+`(b₀ ⋯ bₖ₋₁) (bₖ ⋯ bₙ₋₁) = b₀ ⋯ bₙ₋₁`. -/
+theorem prod_ofFn_mul_prod_ofFn {n k : ℕ} (hk : k ≤ n) (b : Fin n → M) :
+    (ofFn fun l : Fin k => b ⟨l, by omega⟩).prod *
+        (ofFn fun l : Fin (n - k) => b ⟨k + l, by omega⟩).prod = (ofFn b).prod := by
+  rw [← prod_take_mul_prod_drop (ofFn b) k]
+  congr 2 <;> apply ext_getElem <;> simp [hk]
+
+/-- **Contracting two adjacent entries does not change the ordered product**:
+`b₀ ⋯ (bₗ bₗ₊₁) ⋯ bₙ = b₀ ⋯ bₙ`. This is `Fin.partialProd_contractNth_castSucc` for the final
+partial products. -/
+@[simp]
+theorem prod_ofFn_contractNth {n : ℕ} (b : Fin (n + 1) → M) (l : Fin n) :
+    (ofFn (Fin.contractNth l.castSucc (· * ·) b)).prod = (ofFn b).prod := by
+  rw [← Fin.partialProd_last_eq_prod_ofFn, ← Fin.partialProd_last_eq_prod_ofFn,
+    Fin.partialProd_contractNth_castSucc]
+
+end OfFn
 
 end List
