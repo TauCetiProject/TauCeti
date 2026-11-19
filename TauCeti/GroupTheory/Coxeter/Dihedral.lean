@@ -181,15 +181,9 @@ theorem wordProd_alternatingWord_eq_of_mem_parabolic_pair {i i' : B} {w : W}
 word alternating between `i` and `i'` and ending with `i'` is the word ending with `i` followed by
 `(s i * s i') ^ m`. -/
 theorem wordProd_alternatingWord_eq_mul_pow (i i' : B) (m : ℕ) :
-    π (alternatingWord i i' m) = π (alternatingWord i' i m) * (s i * s i') ^ m := by
-  induction m generalizing i i' with
-  | zero => simp [alternatingWord]
-  | succ m ih =>
-    -- Conjugating by `s i'` carries the rotation `s i * s i'` to its inverse `s i' * s i`.
-    have hsemi : SemiconjBy (s i') ((s i * s i') ^ m) ((s i' * s i) ^ m) :=
-      SemiconjBy.pow_right (by simp only [SemiconjBy, mul_assoc]) m
-    simp only [alternatingWord_succ, wordProd_concat, ih i' i, pow_succ', mul_assoc,
-      simple_mul_simple_cancel_left, hsemi.eq]
+    π (alternatingWord i i' m) = π (alternatingWord i' i m) * (s i * s i') ^ m :=
+  TauCeti.prod_map_alternatingWord_eq_mul_pow cs.simple (cs.simple_mul_simple_self i)
+    (cs.simple_mul_simple_self i') m
 
 /-- **The two alternating words of length `m` have the same product exactly when the rotation
 `s i * s i'` is killed by `m`.** This is the dihedral arithmetic of a rank-two parabolic
