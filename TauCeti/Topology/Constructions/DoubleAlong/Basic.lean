@@ -290,11 +290,16 @@ section Congr
 
 variable {A} {Y : Type v} [TopologicalSpace Y] (e : X ≃ₜ Y) {B : Set Y} (h : e '' A = B)
 
+include h in
+/-- The two sheet maps of `DoubleAlong B`, composed with a homeomorphism carrying `A` onto `B`,
+agree on `A`. -/
+private theorem inl_comp_eq_inr_comp (x : A) : inl B (e x) = inr B (e x) :=
+  inl_coe_eq_inr B ⟨e x, h ▸ mem_image_of_mem e x.2⟩
+
 /-- Two copies of a homeomorphism that carries `A` onto `B` glue to a homeomorphism of the
 doubles. -/
 noncomputable def congr : DoubleAlong A ≃ₜ DoubleAlong B where
-  toFun := desc A ((inl B).comp e) ((inr B).comp e)
-    fun x ↦ inl_coe_eq_inr B ⟨e x, h ▸ mem_image_of_mem e x.2⟩
+  toFun := desc A ((inl B).comp e) ((inr B).comp e) (inl_comp_eq_inr_comp e h)
   invFun := desc B ((inl A).comp e.symm) ((inr A).comp e.symm)
     fun y ↦ inl_coe_eq_inr A ⟨e.symm y, by
       have hy : (y : Y) ∈ e '' A := by rw [h]; exact y.2
@@ -309,13 +314,11 @@ noncomputable def congr : DoubleAlong A ≃ₜ DoubleAlong B where
 
 @[simp]
 theorem congr_inl (x : X) : congr e h (inl A x) = inl B (e x) :=
-  desc_inl A ((inl B).comp e) ((inr B).comp e)
-    (fun x ↦ inl_coe_eq_inr B ⟨e x, h ▸ mem_image_of_mem e x.2⟩) x
+  desc_inl A ((inl B).comp e) ((inr B).comp e) (inl_comp_eq_inr_comp e h) x
 
 @[simp]
 theorem congr_inr (x : X) : congr e h (inr A x) = inr B (e x) :=
-  desc_inr A ((inl B).comp e) ((inr B).comp e)
-    (fun x ↦ inl_coe_eq_inr B ⟨e x, h ▸ mem_image_of_mem e x.2⟩) x
+  desc_inr A ((inl B).comp e) ((inr B).comp e) (inl_comp_eq_inr_comp e h) x
 
 /-- The inverse of the glued homeomorphism is the glued inverse. -/
 @[simp]

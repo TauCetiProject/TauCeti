@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc
+public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc.Basic
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.SchottkyDouble
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
 public import TauCeti.Topology.Constructions.DoubleAlong.EulerCharacteristic
@@ -161,8 +161,7 @@ theorem cayleyMoebius_smul_infty (ζ : ℂ) (hζ : ‖ζ‖ = 1) :
 /-- Away from `-I`, the Möbius transformation of `cayleyMoebius ζ` is `w ↦ ζ (I - w) / (w + I)`. -/
 theorem cayleyMoebius_smul_coe (ζ : ℂ) (hζ : ‖ζ‖ = 1) {w : ℂ} (hw : w + I ≠ 0) :
     cayleyMoebius ζ hζ • (w : OnePoint ℂ) = ((ζ * (I - w) / (w + I) : ℂ) : OnePoint ℂ) := by
-  simp only [smul_some_eq_ite, coe_cayleyMoebius, of_apply, cons_val', cons_val_zero,
-    cons_val_one, empty_val', cons_val_fin_one, one_mul, hw, ↓reduceIte, coe_eq_coe]
+  simp [smul_some_eq_ite, hw]
   ring
 
 /-- The biholomorphism of the Schottky double of the disc onto the sphere, as a homeomorphism. -/
@@ -224,8 +223,7 @@ private theorem toSphere_eq_smul_chartAt {p q : SchottkyDouble 𝕔𝔻}
     rw [← chartAt_eq]
     exact IsManifold.chart_mem_maximalAtlas _
   have hc : chartAt ℂ p = SchottkyDouble.doubleChart _ he := by
-    rw [SchottkyDouble.chartAt_eq]
-    congr 1
+    simp only [SchottkyDouble.chartAt_eq, chartAt_eq]
   rw [hc] at hq ⊢
   rw [chartMoebius, ← toSphere_doubleChart_symm (norm_chartCenter _) he,
     (SchottkyDouble.doubleChart _ he).left_inv hq]
@@ -354,11 +352,6 @@ theorem schottkyDoubleDiffeomorph_image_fixed :
     ← schottkyDoubleHomeomorphDiscDouble_image_fixed, image_image,
     ← schottkyDoubleDiffeomorph.coe_toHomeomorph, schottkyDoubleDiffeomorph_toHomeomorph]
   exact congrArg (· '' _) (funext fun x ↦ Homeomorph.trans_apply _ _ x)
-
-/-- The Euler characteristic of the closed unit disc is `1`, the disc being contractible. -/
-@[simp]
-theorem eulerChar_eq_one : eulerChar 𝕔𝔻 = 1 :=
-  eulerChar_of_contractibleSpace
 
 /-- The Schottky double of the closed unit disc has finite CW type, being the Riemann sphere. -/
 instance finiteCWType_schottkyDouble : FiniteCWType (SchottkyDouble 𝕔𝔻) :=
