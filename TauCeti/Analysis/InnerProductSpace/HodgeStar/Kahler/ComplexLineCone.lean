@@ -41,9 +41,10 @@ positive `(1,1)`-forms: `‖κ‖ ≤ ⟪ω, κ⟫` (`norm_le_inner_kahlerForm_o
 
 (`mul_norm_le_inner_add_mul_infDist_positiveCone`). Integrated over a tube, this bounds the mass
 of an approximately positive current by its pairing with a taming form plus its integrated distance
-to the positive cone. That pairing is topological only under boundary conditions: for instance when
-the current is closed with compact support in the interior of the tube and the taming form is
-closed; otherwise a boundary term appears.
+to the positive cone (`TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Taming`). That pairing
+is topological only under boundary conditions: for instance when the current is closed with
+compact support in the interior of the tube and the taming form is closed; otherwise a boundary
+term appears.
 
 **Changing the almost complex structure.** Let `J` be orthogonal and `J'` arbitrary, with
 `‖J' v - J v‖ ≤ ε ‖v‖`. Replacing each complex line `bᵢ ∧ J bᵢ` of a positive `(1,1)`-form
