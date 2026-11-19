@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Analysis.Complex.IsolatedZero
 import TauCeti.Analysis.Normed.Module.Ball.Radial.ProperExtension
@@ -149,26 +150,32 @@ include hE in
 /-- If `x` is the only solution of `f z = f x` in the ball of radius `r` about `x`, and `f` stays
 at distance at least `δ > 0` from `f x` on the sphere of radius `r`, then `f` agrees on the closed
 ball with a proper map `g` which stays at distance at least `δ` from `f x` outside the open ball,
-and the local index of `f` at `x` is the degree of `g`. -/
+whose fibre over each value `y` within `δ` of `f x` is the set of solutions of `f z = y` in the
+open ball, and the local index of `f` at `x` is the degree of `g`. -/
 private theorem exists_isProperMap_eqOn_localIndex_eq_degree {f : C(E, E)} {x : E} {r δ : ℝ}
     (hr : 0 < r) (hδ : 0 < δ) (hfδ : ∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖)
     (hiso : ∀ z ∈ ball x r, f z = f x → z = x) :
     ∃ g : C(E, E), IsProperMap g ∧ EqOn g f (closedBall x r) ∧
-      (∀ z, r ≤ dist z x → δ ≤ ‖g z - f x‖) ∧ o.localIndex o f x = o.degree o hE g := by
+      (∀ z, r ≤ dist z x → δ ≤ ‖g z - f x‖) ∧
+      (∀ y, ‖y - f x‖ < δ → g ⁻¹' {y} = {z ∈ ball x r | f z = y}) ∧
+      o.localIndex o f x = o.degree o hE g := by
   obtain ⟨g, hgp, hgf, hgout⟩ :=
     f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub hr hδ hfδ
-  refine ⟨g, hgp, hgf, hgout, ?_⟩
+  -- Outside the open ball `g` stays at distance at least `δ` from `f x`, so its fibre over a value
+  -- `y` within `δ` of `f x` is the set of solutions in the open ball.
+  have hgfib (y : E) (hy : ‖y - f x‖ < δ) : g ⁻¹' {y} = {z ∈ ball x r | f z = y} := by
+    ext z
+    simp only [mem_preimage, mem_singleton_iff, mem_ofPred_eq]
+    refine ⟨fun hz ↦ ?_, fun hz ↦ (hgf (ball_subset_closedBall hz.1)).trans hz.2⟩
+    have hzb : z ∈ ball x r := mem_ball.2 (not_le.1 fun h ↦ (hgout z h).not_gt (hz ▸ hy))
+    exact ⟨hzb, (hgf (ball_subset_closedBall hzb)).symm.trans hz⟩
+  refine ⟨g, hgp, hgf, hgout, hgfib, ?_⟩
   -- `x` is the only preimage of `f x` under `g`, so the local index is the degree.
   have hfib₀ : g ⁻¹' {f x} = {x} := by
+    rw [hgfib (f x) (by rwa [sub_self, norm_zero])]
     ext z
-    simp only [mem_preimage, mem_singleton_iff]
-    refine ⟨fun hz ↦ ?_, fun hz ↦ by subst hz; exact hgf (mem_closedBall_self hr.le)⟩
-    by_cases hzr : r ≤ dist z x
-    · have h := hgout z hzr
-      rw [hz, sub_self, norm_zero] at h
-      linarith
-    · have hzB : z ∈ ball x r := mem_ball.2 (not_le.1 hzr)
-      exact hiso z hzB ((hgf (ball_subset_closedBall hzB)).symm.trans hz)
+    simp only [mem_ofPred_eq, mem_singleton_iff]
+    exact ⟨fun hz ↦ hiso z hz.1 hz.2, by rintro rfl; exact ⟨mem_ball_self hr, rfl⟩⟩
   have hgf_nhds : g =ᶠ[𝓝 x] f :=
     eventually_of_mem (ball_mem_nhds x hr) fun _ hw ↦ hgf (ball_subset_closedBall hw)
   rw [o.localIndex_congr o hE hgf_nhds.symm, ← o.localDegree_eq_localIndex o hE hE g hfib₀,
@@ -186,16 +193,9 @@ theorem localIndex_eq_ncard_of_hasFDerivAt {f : C(E, E)} {x y : E} {r δ : ℝ} 
     (hderiv : ∀ z ∈ ball x r, f z = y → HasFDerivAt f (f' z) z)
     (hinj : ∀ z ∈ ball x r, f z = y → Function.Injective (f' z)) :
     o.localIndex o f x = {z ∈ ball x r | f z = y}.ncard := by
-  obtain ⟨g, hgp, hgf, hgout, hidx⟩ :=
+  obtain ⟨g, hgp, hgf, -, hgfib, hidx⟩ :=
     o.exists_isProperMap_eqOn_localIndex_eq_degree hE hr hδ hfδ hiso
-  -- Outside the open ball `g` stays at distance at least `δ` from `f x`, so its fibre over `y` is
-  -- the set of solutions in the open ball.
-  have hgfib : g ⁻¹' {y} = {z ∈ ball x r | f z = y} := by
-    ext z
-    simp only [mem_preimage, mem_singleton_iff, mem_ofPred_eq]
-    refine ⟨fun hz ↦ ?_, fun hz ↦ (hgf (ball_subset_closedBall hz.1)).trans hz.2⟩
-    have hzb : z ∈ ball x r := mem_ball.2 (not_le.1 fun h ↦ (hgout z h).not_gt (hz ▸ hy))
-    exact ⟨hzb, (hgf (ball_subset_closedBall hzb)).symm.trans hz⟩
+  replace hgfib := hgfib y hy
   rw [hidx, o.degree_eq_ncard_of_hasFDerivAt hE hgp (f' := f') (y := y), hgfib]
   · intro z hz
     rw [hgfib] at hz
@@ -258,7 +258,7 @@ private theorem exists_isProperMap_localIndex_eq_degree {f : C(E, E)} {x : E} {r
     ∃ G : C(E, E), IsProperMap G ∧ o.localIndex o f x = o.degree o hE G ∧
       EqOn G (fun z ↦ f z + c • (z - x)) (closedBall x r) ∧
       ∀ z, r ≤ dist z x → δ - ‖c‖ * r ≤ ‖G z - f x‖ := by
-  obtain ⟨g, hgp, hgf, hgout, hidx⟩ :=
+  obtain ⟨g, hgp, hgf, hgout, -, hidx⟩ :=
     o.exists_isProperMap_eqOn_localIndex_eq_degree hE hr hδ hfδ hiso
   -- The perturbation `t • c • ρ`, with `ρ z = radialRetraction r (z - x)` equal to `z - x` on the
   -- closed ball and of norm at most `r`.
@@ -390,24 +390,6 @@ section Disc
 
 variable {n : ℕ} (o : HomologicalOrientation (ℂ × ℂ) (ℂ × ℂ) n) (hn : finrank ℝ (ℂ × ℂ) = n)
 
-/-- The map `(z, w) ↦ u₁ z - u₂ w` has derivative `(s, t) ↦ s • a - t • b` at `(z, w)` when `u₁`
-and `u₂` have derivatives `a` at `z` and `b` at `w`. -/
-private theorem hasFDerivAt_of_apply_eq_sub {F : C(ℂ × ℂ, ℂ × ℂ)} {u₁ u₂ : ℂ → ℂ × ℂ}
-    (hF : ∀ p, F p = u₁ p.1 - u₂ p.2) {z w : ℂ} {a b : ℂ × ℂ} (h₁ : HasDerivAt u₁ a z)
-    (h₂ : HasDerivAt u₂ b w) :
-    HasFDerivAt F ((ContinuousLinearMap.fst ℂ ℂ ℂ).smulRight a -
-      (ContinuousLinearMap.snd ℂ ℂ ℂ).smulRight b) (z, w) := by
-  have h := (h₁.hasFDerivAt.comp (z, w) (hasFDerivAt_fst (𝕜 := ℂ) (p := (z, w)))).sub
-    (h₂.hasFDerivAt.comp (z, w) (hasFDerivAt_snd (𝕜 := ℂ) (p := (z, w))))
-  have hF' : (F : ℂ × ℂ → ℂ × ℂ) = u₁ ∘ Prod.fst - u₂ ∘ Prod.snd := funext hF
-  have hL : (ContinuousLinearMap.fst ℂ ℂ ℂ).smulRight a -
-      (ContinuousLinearMap.snd ℂ ℂ ℂ).smulRight b =
-      (ContinuousLinearMap.toSpanSingleton ℂ a).comp (ContinuousLinearMap.fst ℂ ℂ ℂ) -
-        (ContinuousLinearMap.toSpanSingleton ℂ b).comp (ContinuousLinearMap.snd ℂ ℂ ℂ) := by
-    ext <;> simp
-  rw [hF', hL]
-  exact h
-
 include hn in
 /-- **Positivity of intersections of holomorphic discs in `ℂ²`.** Let `u₁` and `u₂` be holomorphic
 near `z₀` and `w₀`, meeting at `u₁ z₀ = u₂ w₀` in an isolated point: `u₁ z ≠ u₂ w` for
@@ -433,7 +415,8 @@ theorem localIndex_eq_one_of_apply_eq_sub {F : C(ℂ × ℂ, ℂ × ℂ)} {u₁ 
     (hF : ∀ p, F p = u₁ p.1 - u₂ p.2) {z₀ w₀ : ℂ} {a b : ℂ × ℂ} (h₁ : HasDerivAt u₁ a z₀)
     (h₂ : HasDerivAt u₂ b w₀) (hab : LinearIndependent ℂ ![a, b]) :
     o.localIndex o F (z₀, w₀) = 1 :=
-  o.localIndex_eq_one_of_hasFDerivAt hn (hasFDerivAt_of_apply_eq_sub hF h₁ h₂)
+  o.localIndex_eq_one_of_hasFDerivAt hn
+    ((h₁.hasFDerivAt_comp_fst_sub_comp_snd h₂).congr_of_eventuallyEq (.of_forall hF))
     (LinearMap.injective_fst_smulRight_sub_snd_smulRight_iff.2 hab)
 
 /-! #### Examples -/
@@ -508,8 +491,8 @@ example : o.localIndex o ⟨fun p ↦ (p.1 - p.2, -p.2 ^ 2), by fun_prop⟩ (0, 
     (by norm_num) (fun p hp ↦ by simpa using one_div_four_le_norm_sub_neg_sq hp) ?iso ?hy
     (f' := fun p ↦ (ContinuousLinearMap.fst ℂ ℂ ℂ).smulRight ((1 : ℂ), (0 : ℂ)) -
       (ContinuousLinearMap.snd ℂ ℂ ℂ).smulRight ((1 : ℂ), 2 * p.2))
-    (fun p _ _ ↦ hasFDerivAt_of_apply_eq_sub (u₁ := fun z ↦ (z, 0)) (fun p ↦ by simp)
-      (hasDerivAt_lineZero p.1) (hu₂ p.2)) ?inj]
+    (fun p _ _ ↦ ((hasDerivAt_lineZero p.1).hasFDerivAt_comp_fst_sub_comp_snd
+      (hu₂ p.2)).congr_of_eventuallyEq (.of_forall fun p ↦ by simp)) ?inj]
   · simp only [ContinuousMap.coe_mk]
     rw [setOf_sub_neg_sq_eq, ncard_pair (by norm_num), Nat.cast_ofNat]
   case iso =>
