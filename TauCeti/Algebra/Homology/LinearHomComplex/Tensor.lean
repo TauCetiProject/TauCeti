@@ -90,7 +90,8 @@ noncomputable def tensor {p q : ℤ} (z₁ : Cochain X₁ Y₁ p) (z₂ : Cochai
 
 /-- The tensor product of cochains on the summand `X₁.X a ⊗ X₂.X b`: the tensor product of the
 components, with the Koszul sign `(-1)^(q a)`, followed by the inclusion of the summand
-`Y₁.X a' ⊗ Y₂.X b'`. The target degrees `a'` and `b'` are arbitrary. -/
+`Y₁.X a' ⊗ Y₂.X b'`. The target degrees `a' = a + p` and `b' = b + q` are passed as separate
+variables so that callers need not rewrite them. -/
 @[reassoc]
 lemma ιTensorObj_tensor_v {p q n : ℤ} (z₁ : Cochain X₁ Y₁ p) (z₂ : Cochain X₂ Y₂ q)
     (h : p + q = n) (a b i j a' b' : ℤ) (hab : a + b = i) (hij : i + n = j) (ha : a + p = a')
@@ -186,6 +187,24 @@ lemma tensor_smul (r : R) (z₁ : Cochain X₁ Y₁ p) (z₂ : Cochain X₂ Y₂
     simp only [smul_v, Linear.comp_smul, ιTensorObj_tensor_v _ _ h a b i j _ _ hab hij rfl rfl,
       tensorHom_def, MonoidalLinear.whiskerLeft_smul, Linear.smul_comp, Linear.comp_smul,
       smul_comm r]
+
+/-- The tensor product of cochains commutes with signs in the first factor. -/
+@[simp]
+lemma units_smul_tensor (ε : ℤˣ) (z₁ : Cochain X₁ Y₁ p) (z₂ : Cochain X₂ Y₂ q) (h : p + q = n) :
+    (ε • z₁).tensor z₂ n h = ε • z₁.tensor z₂ n h :=
+  ext_tensorObj fun a b i j hab hij ↦ by
+    simp only [units_smul_v, Linear.comp_units_smul,
+      ιTensorObj_tensor_v _ _ h a b i j _ _ hab hij rfl rfl]
+    simp only [Units.smul_def, zsmul_tensorHom, Preadditive.zsmul_comp, smul_comm (ε : ℤ)]
+
+/-- The tensor product of cochains commutes with signs in the second factor. -/
+@[simp]
+lemma tensor_units_smul (ε : ℤˣ) (z₁ : Cochain X₁ Y₁ p) (z₂ : Cochain X₂ Y₂ q) (h : p + q = n) :
+    z₁.tensor (ε • z₂) n h = ε • z₁.tensor z₂ n h :=
+  ext_tensorObj fun a b i j hab hij ↦ by
+    simp only [units_smul_v, Linear.comp_units_smul,
+      ιTensorObj_tensor_v _ _ h a b i j _ _ hab hij rfl rfl]
+    simp only [Units.smul_def, tensorHom_zsmul, Preadditive.zsmul_comp, smul_comm (ε : ℤ)]
 
 /-- The tensor product of cochains vanishes when the first factor does. -/
 @[simp]
