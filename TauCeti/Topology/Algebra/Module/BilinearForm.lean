@@ -391,6 +391,26 @@ theorem isOpen_setOf_forall_bilinear_apply_self_pos
   simpa only [star_trivial, RCLike.re_to_real] using
     (isOpen_setOfPred_re_dotProduct_pos (𝕜 := ℝ)).preimage hA
 
+/-- The diagonal of a continuous bilinear form at `v` is `‖v‖²` times its value at the unit
+vector `‖v‖⁻¹ • v` (both sides vanish at `v = 0`). -/
+private theorem apply_self_eq_norm_sq_mul_apply_inv_norm_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (b : E →L[ℝ] E →L[ℝ] ℝ) (v : E) :
+    b v v = ‖v‖ ^ 2 * b (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  simp only [map_smul, _root_.smul_apply, smul_eq_mul]
+  field_simp [norm_ne_zero_iff.2 hv]
+
+/-- On a real normed space, a continuous bilinear form `b` with `c ≤ b u u` on the unit sphere
+satisfies `c ‖v‖² ≤ b v v` for every `v`. -/
+private theorem mul_norm_sq_le_of_forall_mem_sphere {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {b : E →L[ℝ] E →L[ℝ] ℝ} {c : ℝ}
+    (h : ∀ u ∈ Metric.sphere (0 : E) 1, c ≤ b u u) (v : E) : c * ‖v‖ ^ 2 ≤ b v v := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  rw [apply_self_eq_norm_sq_mul_apply_inv_norm_smul, mul_comm]
+  exact mul_le_mul_of_nonneg_left (h _ (by simp [norm_smul, hv])) (by positivity)
+
 /-- **Uniform coercivity over a compact family.** On a finite-dimensional real normed space, let
 `b x` be a family of continuous bilinear forms, continuous on a compact set `K`, such that
 `b x v v` is positive for every `x ∈ K` and every nonzero `v`. Then one positive constant `c`
@@ -406,18 +426,7 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
       continuousOn_snd).clm_apply continuousOn_snd
   obtain ⟨c, hc, hle⟩ := (hK.prod (isCompact_sphere 0 1)).exists_forall_le' hcont
     fun p hp ↦ hpos p.1 hp.1 p.2 (ne_zero_of_mem_sphere one_ne_zero ⟨p.2, hp.2⟩)
-  refine ⟨c, hc, fun x hx v ↦ ?_⟩
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp
-  have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv
-  have hu : ‖v‖⁻¹ • v ∈ Metric.sphere (0 : E) 1 := by
-    simp [norm_smul, hn.ne']
-  have hh := hle (x, ‖v‖⁻¹ • v) ⟨hx, hu⟩
-  have heq : b x (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) = (‖v‖ ^ 2)⁻¹ * b x v v := by
-    simp only [map_smul, _root_.smul_apply, smul_eq_mul]
-    ring
-  rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
-  linarith
+  exact ⟨c, hc, fun x hx ↦ mul_norm_sq_le_of_forall_mem_sphere fun u hu ↦ hle (x, u) ⟨hx, hu⟩⟩
 
 /-- **Coercivity persists near a point, uniformly over a compact family.** On a finite-dimensional
 real normed space, let `b (x, y)` be continuous bilinear forms, continuous on `D × L` for a compact
@@ -441,20 +450,8 @@ theorem _root_.IsCompact.eventually_forall_mul_norm_sq_le
       rw [mem_sphere_zero_iff_norm.1 hq.2, one_pow, mul_one] at h₀
       exact (eventually_nhdsWithin_iff.1 ((hψ _ ⟨hy₀, hq⟩).eventually
         (lt_mem_nhds (hc'.trans_le h₀)))).mono fun _ hp ↦ hp
-  refine eventually_nhdsWithin_iff.2 (hunit.mono fun y hy hyL x hx v ↦ ?_)
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp
-  -- On the unit vector `u = v / ‖v‖` the diagonal at `y` is above `c'`.
-  have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv
-  set u := ‖v‖⁻¹ • v with hu_def
-  have hu : u ∈ Metric.sphere (0 : E) 1 := by simp [hu_def, norm_smul, hn.ne']
-  have heq : b (x, y) v v = ‖v‖ ^ 2 * b (x, y) u u := by
-    rw [hu_def]
-    simp only [map_smul, _root_.smul_apply, smul_eq_mul]
-    field_simp
-  rw [heq]
-  have hpos : c' ≤ b (x, y) u u := (hy (x, u) ⟨hx, hu⟩ ⟨hyL, hx, hu⟩).le
-  nlinarith [sq_nonneg ‖v‖]
+  exact eventually_nhdsWithin_iff.2 (hunit.mono fun y hy hyL x hx ↦
+    mul_norm_sq_le_of_forall_mem_sphere fun u hu ↦ (hy (x, u) ⟨hx, hu⟩ ⟨hyL, hx, hu⟩).le)
 
 /-- **Uniform coercivity over a compact set of operators.** On a finite-dimensional real normed
 space, let `b` be a continuous bilinear form and `T` a compact set of continuous endomorphisms
@@ -503,14 +500,10 @@ theorem _root_.IsCompact.eventually_exists_pos_forall_mul_norm_sq_le_mul_add
     @IsTopologicalAddGroup.toContinuousAdd _ _ _ ContinuousLinearMap.isTopologicalAddGroup
   obtain ⟨c, hc, hle⟩ := hK.exists_pos_forall_mul_norm_sq_le (b := fun x ↦ t • a x + b x)
     ((ha.const_smul t).add hb) fun x hx v hv ↦ by
-      have hn : 0 < ‖v‖ := norm_pos_iff.mpr hv
-      have h := ht (x, ‖v‖⁻¹ • v) ⟨hx, by simp [norm_smul, hn.ne']⟩
-      simp only [map_smul, smul_apply, smul_eq_mul] at h
-      have heq : t * (‖v‖⁻¹ * (‖v‖⁻¹ * a x v v)) + ‖v‖⁻¹ * (‖v‖⁻¹ * b x v v) =
-          (‖v‖ ^ 2)⁻¹ * (t * a x v v + b x v v) := by
-        ring
-      rw [heq] at h
-      simpa using pos_of_mul_pos_right h (by positivity)
+      rw [apply_self_eq_norm_sq_mul_apply_inv_norm_smul]
+      exact mul_pos (by positivity) (by
+        simpa only [_root_.add_apply, _root_.smul_apply, smul_eq_mul]
+          using ht (x, ‖v‖⁻¹ • v) ⟨hx, by simp [norm_smul, hv]⟩)
   exact ⟨c, hc, fun x hx v ↦ by simpa using hle x hx v⟩
 
 /-- On a finite-dimensional real normed space, a continuous bilinear form positive on
