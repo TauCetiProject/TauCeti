@@ -51,6 +51,8 @@ and the `m`-torsion of the Shafarevich–Tate group out of the right-hand term
 * `WeierstrassCurve.kummerCocycle`: the cocycle `σ ↦ σ Q - Q` attached to an `m`th division point.
 * `WeierstrassCurve.kummerMap`: the Kummer map `E(K) → H¹(G_K, E[m])`.
 * `WeierstrassCurve.kummerClassMap`: the induced map on `E(K) ⧸ m E(K)`.
+* `WeierstrassCurve.quotientRangeEquivRangeKummerMap`: the identification of `E(K) ⧸ m E(K)` with
+  the image of the Kummer map.
 * `WeierstrassCurve.torsionCoeffInclH1`: the map `H¹(G_K, E[m]) → H¹(G_K, E)[m]`.
 
 ## Main results
@@ -60,6 +62,8 @@ and the `m`-torsion of the Shafarevich–Tate group out of the right-hand term
 * `WeierstrassCurve.ker_kummerMap`: the kernel of the Kummer map is `m E(K)`, with
   `WeierstrassCurve.kummerMap_eq_zero_iff` the pointwise form.
 * `WeierstrassCurve.kummerClassMap_injective`: `E(K) ⧸ m E(K)` injects into `H¹(G_K, E[m])`.
+* `WeierstrassCurve.natCard_range_kummerMap`: the image of the Kummer map has order
+  `[E(K) : m E(K)]`; `WeierstrassCurve.finite_range_kummerMap_iff` characterises its finiteness.
 * `WeierstrassCurve.range_kummerMap`: the image of the Kummer map is the kernel of
   `H¹(G_K, E[m]) → H¹(G_K, E)`.
 * `WeierstrassCurve.range_explicitCoeff1_torsionCoeffIncl`: the image of
@@ -252,6 +256,37 @@ theorem kummerClassMap_mk (P : W.toAffine.Point) :
 `m E(K)`. -/
 theorem kummerClassMap_injective : Function.Injective (W.kummerClassMap m hm) :=
   (QuotientAddGroup.injective_lift_iff _ _ _).2 (W.ker_kummerMap m hm).symm
+
+/-- **The Kummer image is a copy of the cokernel**: the Kummer map induces an isomorphism of
+`E(K) ⧸ m E(K)` onto its image in `H¹(G_K, E[m])`, its kernel being `m E(K)`
+(`WeierstrassCurve.ker_kummerMap`). -/
+def quotientRangeEquivRangeKummerMap :
+    W.toAffine.Point ⧸ (nsmulAddMonoidHom (α := W.toAffine.Point) m).range ≃+
+      (W.kummerMap m hm).range :=
+  (QuotientAddGroup.quotientAddEquivOfEq (W.ker_kummerMap m hm).symm).trans
+    (QuotientAddGroup.quotientKerEquivRange (W.kummerMap m hm))
+
+/-- `quotientRangeEquivRangeKummerMap` sends the class of `P` to its Kummer class. -/
+@[simp]
+theorem coe_quotientRangeEquivRangeKummerMap_mk (P : W.toAffine.Point) :
+    (W.quotientRangeEquivRangeKummerMap m hm (QuotientAddGroup.mk P) :
+        H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) = W.kummerMap m hm P :=
+  (rfl)
+
+/-- **The Kummer image has order the Kummer-cokernel index** `[E(K) : m E(K)]`. As a `Nat.card`
+identity it holds without finiteness hypotheses, both sides being `0` when the cokernel is
+infinite. -/
+theorem natCard_range_kummerMap :
+    Nat.card (W.kummerMap m hm).range =
+      (nsmulAddMonoidHom (α := W.toAffine.Point) m).range.index := by
+  rw [← AddSubgroup.index_ker, W.ker_kummerMap m hm]
+
+/-- The Kummer image is finite exactly when `m E(K)` has finite index in `E(K)`. -/
+theorem finite_range_kummerMap_iff :
+    Finite (W.kummerMap m hm).range ↔
+      (nsmulAddMonoidHom (α := W.toAffine.Point) m).range.FiniteIndex := by
+  rw [AddSubgroup.finiteIndex_iff_finite_quotient]
+  exact (Equiv.finite_iff (W.quotientRangeEquivRangeKummerMap m hm).toEquiv).symm
 
 /-! ### Exactness at `H¹(G_K, E[m])` -/
 

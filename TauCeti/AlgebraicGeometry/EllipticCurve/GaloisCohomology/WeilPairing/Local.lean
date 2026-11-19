@@ -8,6 +8,10 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Kummer
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
+import TauCeti.Algebra.Module.ZMod.Dual
+import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Cardinality
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
+import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
 
 /-!
 # Local Tate duality for elliptic torsion and isogeny kernels
@@ -23,10 +27,15 @@ followed by the local invariant gives a perfect pairing
 
 `H¹(K, E₁[φ]) × H¹(K, E₂[φ̂]) → ℤ/n`.
 
-Here perfection is stated as bijectivity of the curried map: every additive character of
-`H¹(K, E[m])`, respectively of `H¹(K, E₂[φ̂])`, is pairing with a unique class. This is the
-finite-coefficient duality used to study annihilators of local Kummer images; for an isogeny it is
-the local duality between the local conditions of `Sel_φ` and `Sel_φ̂` in Cassels' comparison of
+Because `H¹(K, E[m])` and `H¹(K, E₁[φ])` are finite (`WeierstrassCurve.finite_H1_torsionCoeff`,
+`TauCeti.Isogeny.finite_H1_kerCoeff`), perfection holds on both sides: both the left adjoints
+(`WeierstrassCurve.localTateWeilPairing_bijective`,
+`TauCeti.Isogeny.localTateKerWeilPairing_bijective`) and the transposed right adjoints
+(`WeierstrassCurve.localTateWeilPairing_flip_bijective`,
+`TauCeti.Isogeny.localTateKerWeilPairing_flip_bijective`) are bijective, and `H¹(K, E₁[φ])` and
+`H¹(K, E₂[φ̂])` have the same finite order (`TauCeti.Isogeny.natCard_H1_kerCoeff_eq_dual`). This is
+the finite-coefficient duality used to study annihilators of local Kummer images; for an isogeny it
+is the local duality between the local conditions of `Sel_φ` and `Sel_φ̂` in Cassels' comparison of
 these Selmer groups. The image of the Kummer map `E(K) → H¹(K, E[m])` is isotropic for the first
 pairing (`WeierstrassCurve.localTateWeilPairing_kummerMap_kummerMap_eq_zero`); orthogonality of
 the Kummer images of an isogeny and of its dual is a further result.
@@ -93,6 +102,24 @@ theorem localTateWeilPairing_bijective : Function.Bijective (W.localTateWeilPair
   intro a b
   simp only [localTateWeilPairing_apply, torsionH1WeilPairing_eq_dualityMap1,
     AddMonoidHom.id_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply]
+
+include hm in
+/-- `H¹(K, E[m])` is finite when `m` is invertible in the nonarchimedean local field `K`. -/
+theorem finite_H1_torsionCoeff :
+    Finite (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) := by
+  have := hm.neZero_natCast
+  exact finite_H1_of_nsmul_eq_zero hm.ne_zero (W.TorsionCoeff m)
+    fun P ↦ AddSubgroup.torsionBy.nsmul P
+
+/-- **Two-sided perfection of local Tate duality for `E[m]`.** Pairing in the second variable gives
+a bijection from `H¹(K, E[m])` to its additive characters with values in `ℤ/m`. -/
+theorem localTateWeilPairing_flip_bijective :
+    Function.Bijective (W.localTateWeilPairing m hm).flip := by
+  have := hm.neZero_natCast
+  have := W.finite_H1_torsionCoeff m hm
+  exact (W.localTateWeilPairing m hm).bijective_flip_of_bijective_zmod
+    (W.localTateWeilPairing_bijective m hm)
+    (nsmul_H1_eq_zero fun P ↦ AddSubgroup.torsionBy.nsmul P)
 
 /-- **The local Kummer image is isotropic for local Tate duality**: the local Tate pairing of the
 Kummer classes of two points of `E(K)` vanishes. -/
@@ -167,6 +194,39 @@ theorem localTateKerWeilPairing_bijective :
   intro a b
   simp only [localTateKerWeilPairing_apply, kerH1WeilPairing_eq_dualityMap1,
     AddMonoidHom.id_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.trans_apply]
+
+include hn in
+/-- `H¹(K, E₁[φ])` is finite when `deg φ` is invertible in the nonarchimedean local field `K`. -/
+theorem finite_H1_kerCoeff :
+    Finite (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) := by
+  have := (φ.isSeparable_dual_and_self_iff.mpr hn.ne_zero).2
+  have : Finite (ofIsogeny φ).KerCoeff :=
+    Nat.finite_of_card_ne_zero (φ.natCard_kerCoeff_eq_degree ▸ φ.degree_pos.ne')
+  exact finite_H1_of_nsmul_eq_zero hn.ne_zero (ofIsogeny φ).KerCoeff
+    φ.degree_nsmul_kerCoeff_eq_zero
+
+/-- **Dual perfect local Tate duality for an isogeny.** Pairing in the second variable gives a
+bijection from `H¹(K, E₂[φ̂])` to the additive characters of `H¹(K, E₁[φ])` with values in
+`ℤ/deg φ`. -/
+theorem localTateKerWeilPairing_flip_bijective :
+    Function.Bijective (φ.localTateKerWeilPairing hn).flip := by
+  have := hn.neZero_natCast
+  have : Finite (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :=
+    φ.dual.finite_H1_kerCoeff (φ.degree_dual.symm ▸ hn)
+  exact (φ.localTateKerWeilPairing hn).bijective_flip_of_bijective_zmod
+    (φ.localTateKerWeilPairing_bijective hn)
+    (φ.degree_dual ▸ nsmul_H1_eq_zero φ.dual.degree_nsmul_kerCoeff_eq_zero)
+
+include hn in
+/-- Over any nonarchimedean local field in which `deg φ` is invertible, `H¹(K, E₁[φ])` and
+`H¹(K, E₂[φ̂])` have the same finite order by local Tate duality. -/
+theorem natCard_H1_kerCoeff_eq_dual :
+    Nat.card (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) =
+      Nat.card (H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) := by
+  have := hn.neZero_natCast
+  rw [Nat.card_congr (Equiv.ofBijective _ (φ.localTateKerWeilPairing_bijective hn)),
+    TauCeti.natCard_addMonoidHom_zmod
+      (φ.degree_dual ▸ nsmul_H1_eq_zero φ.dual.degree_nsmul_kerCoeff_eq_zero)]
 
 end TauCeti.Isogeny
 

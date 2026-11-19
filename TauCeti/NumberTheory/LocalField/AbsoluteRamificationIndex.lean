@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.LocalField.Padic
 public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
+import TauCeti.NumberTheory.LocalField.InertiaDegree
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # The absolute ramification index of a mixed-characteristic local field
@@ -44,6 +46,8 @@ The definition is confined to mixed characteristic by requiring an algebra struc
 * `TauCeti.residuePrime_mem_maximalIdeal`: the residue prime lies in the maximal ideal of `𝒪[K]`.
 * `TauCeti.charP_residueField`: the residue field has characteristic `p`.
 * `TauCeti.absoluteRamificationIndex_tower`: the absolute index is multiplicative in a tower.
+* `TauCeti.natCard_quotient_span_natCast_eq_pow_finrank`: for `n ≠ 0`,
+  `Nat.card (𝒪[L] ⧸ Ideal.span {(n : 𝒪[L])}) = p ^ ([L : ℚ_[p]] * padicValNat p n)`.
 
 ## References
 
@@ -101,6 +105,14 @@ instance neZero_natCast (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace
     NeZero (p : K) :=
   have := charZero K p
   ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero⟩
+
+/-- Shortcut `𝓀[ℚ_[p]]`-module instance on `𝓀[K]` for a finite compatible extension of `ℚ_[p]`,
+bypassing `Submodule.Quotient.module'` before `Algebra.toModule` (which has priority `100`). -/
+noncomputable instance (priority := 1100) residueFieldModule (K : Type*) [Field K]
+    [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime]
+    [FinitePadicExtension K p] :
+    Module 𝓀[ℚ_[p]] 𝓀[K] :=
+  Algebra.toModule
 
 end FinitePadicExtension
 
@@ -196,5 +208,20 @@ theorem absoluteRamificationIndex_tower (L : Type*) [Field L] [ValuativeRel L]
   have : ValuativeExtension K L := .of_isScalarTower (K := ℚ_[p])
   simpa only [absoluteRamificationIndex, Nat.mul_comm] using
     ramificationIndex_tower (K := ℚ_[p]) (L := K) L
+
+/-- In a finite compatible extension `L/ℚ_[p]`, for any nonzero natural number `n`, the quotient of
+`𝒪[L]` by `(n)` has cardinality `p ^ ([L : ℚ_[p]] * padicValNat p n)`. -/
+theorem natCard_quotient_span_natCast_eq_pow_finrank (L : Type*) [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] (p : ℕ) [Fact p.Prime]
+    [FinitePadicExtension L p] {n : ℕ} (hn : n ≠ 0) :
+    Nat.card (𝒪[L] ⧸ Ideal.span {(n : 𝒪[L])}) =
+      p ^ (Module.finrank ℚ_[p] L * padicValNat p n) := by
+  have := FinitePadicExtension.charZero L p
+  rw [span_natCast_eq_maximalIdeal_pow L n (Nat.cast_ne_zero.mpr hn),
+    IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow,
+    natCard_residueField ℚ_[p] L, Padic.natCard_residueField p,
+    natCastValuation_eq_absoluteRamificationIndex_mul_padicValNat L p n hn,
+    absoluteRamificationIndex, ← pow_mul, ← mul_assoc,
+    mul_comm (inertiaDegree ℚ_[p] L), ramificationIndex_mul_inertiaDegree ℚ_[p] L]
 
 end TauCeti
