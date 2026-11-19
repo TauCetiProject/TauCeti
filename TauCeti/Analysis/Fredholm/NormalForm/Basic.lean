@@ -224,7 +224,9 @@ theorem normalFormOpenPartialHomeomorph_symm_self {f : E → F} {a : E}
 
 /-- `normalFormOpenPartialHomeomorph_symm_self` with the essential coordinate written as
 `pkg.decCodom.proj (f a)`, the form in which the base coordinate appears in the rest of the
-normal-form API. -/
+normal-form API. Not a `simp` lemma: `simp` rewrites `pkg.decCodom.proj (f a)` to the
+`projectionOnto` form by `Submodule.coe_projectionOntoL`, after which
+`normalFormOpenPartialHomeomorph_symm_self` applies. -/
 theorem normalFormOpenPartialHomeomorph_symm_proj_self {f : E → F} {a : E}
     (hf : HasStrictFDerivAt f T a) :
     (pkg.normalFormOpenPartialHomeomorph hf).symm (pkg.decCodom.proj (f a), 0) = a := by
