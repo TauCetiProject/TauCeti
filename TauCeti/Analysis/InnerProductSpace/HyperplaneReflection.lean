@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Affine
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.InnerProductSpace.Reflection
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
@@ -44,6 +45,8 @@ normal vector and an offset.
 * `TauCeti.hyperplaneReflection_hyperplaneReflection`: it is an involution.
 * `TauCeti.inner_hyperplaneReflection`: it reverses the signed height `⟪x, ν⟫ - c`.
 * `TauCeti.hyperplaneReflection_eq_self_iff`: its fixed points are the points of the hyperplane.
+* `TauCeti.mapsTo_hyperplaneReflection_ball`: it maps every ball centred on the hyperplane into
+  itself.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
 * `TauCeti.dist_le_dist_hyperplaneReflection`: a point of the closed half-space
@@ -138,6 +141,12 @@ theorem hyperplaneReflection_eq_self_iff {ν : F} (hν : ν ≠ 0) (c : ℝ) {x 
   have hν2 : ‖ν‖ ^ 2 ≠ 0 := pow_ne_zero _ (norm_ne_zero_iff.2 hν)
   rw [hyperplaneReflection_apply, sub_eq_self, smul_eq_zero, or_iff_left hν, mul_eq_zero,
     or_iff_right two_ne_zero, div_eq_zero_iff, or_iff_left hν2, sub_eq_zero]
+
+/-- A ball centred on the hyperplane `{x | ⟪x, ν⟫ = c}` is mapped into itself by the reflection. -/
+theorem mapsTo_hyperplaneReflection_ball {ν z : F} {c : ℝ} (hz : ⟪z, ν⟫_ℝ = c) (r : ℝ) :
+    Set.MapsTo (hyperplaneReflection ν c) (Metric.ball z r) (Metric.ball z r) := fun y hy => by
+  rw [Metric.mem_ball] at hy ⊢
+  rwa [← hyperplaneReflection_eq_self_of_inner_eq hz, AffineIsometryEquiv.dist_map]
 
 /-- Points of the closure of an open half-space `H = {x | c < ⟪x, ν⟫}` outside `H` lie on the
 hyperplane, where the reflection is the identity. -/
@@ -338,6 +347,29 @@ theorem setIntegral_inner_reflection_comp_hyperplaneReflection (hUm : Measurable
   simp only [hyperplaneReflection_hyperplaneReflection] at h
   rw [← h]
   simp only [LinearIsometryEquiv.inner_map_eq_flip, Submodule.reflection_symm]
+
+/-- **Averages of fields odd under the reflection are normal.** Let `ρ` be the reflection in the
+hyperplane `{x | ⟪x, ν⟫ = c}` and `R` its linear part, and let `V` be a measurable set mapped into
+itself by `ρ`. If a field `G` satisfies `G ∘ ρ = -R ∘ G` almost everywhere on `V`, as the gradient
+of a function odd under `ρ` does, then its average over `V` is a multiple of `ν`. -/
+theorem setAverage_eq_inner_div_smul_of_ae_comp_hyperplaneReflection [CompleteSpace F]
+    {V : Set F} (hV : Set.MapsTo (hyperplaneReflection ν c) V V) (hVm : MeasurableSet V) {G : F → F}
+    (hG : ∀ᵐ x ∂μ.restrict V, G (hyperplaneReflection ν c x) = -(ℝ ∙ ν)ᗮ.reflection (G x)) :
+    ⨍ x in V, G x ∂μ = (⟪⨍ x in V, G x ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν := by
+  set m := ⨍ x in V, G x ∂μ
+  -- Changing variables by `ρ`, which preserves `μ` on `V`, gives `R m = -m`.
+  have hcv := (measurePreserving_restrict_hyperplaneReflection (μ := μ) hV hVm).integral_comp
+    (hyperplaneReflection ν c).toHomeomorph.measurableEmbedding G
+  have hR := (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry.integral_comp_comm (μ := μ.restrict V) G
+  simp only [LinearIsometryEquiv.coe_toLinearIsometry] at hR
+  rw [integral_congr_ae hG, integral_neg, hR] at hcv
+  have hRm : (ℝ ∙ ν)ᗮ.reflection m = -m := by
+    simp only [m, setAverage_eq, map_smul, neg_eq_iff_eq_neg.1 hcv, smul_neg]
+  -- Writing `R m = m - 2 p` with `p` the projection of `m` onto `ν`, this says `2 m = 2 p`.
+  have h2 : (2 : ℝ) • m = (2 : ℝ) • ((⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) := by
+    rw [reflection_orthogonal_singleton_apply_div_norm_sq, real_inner_comm m ν] at hRm
+    linear_combination (norm := module) hRm
+  exact smul_right_injective F (two_ne_zero' ℝ) h2
 
 end OddReflection
 
