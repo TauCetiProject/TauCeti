@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
 public import TauCeti.Topology.MetricSpace.Holder
 
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
+
 /-!
 # Hölder bounds from bounds on a function and its derivative
 
@@ -28,6 +30,7 @@ controls its oscillation between distant points (`HolderOnWith.of_le_of_dist_le`
 * `TauCeti.holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le`: on a ball `B_R`, the
   derivative of a `C²` function with second derivative bounded by `N₂` is Hölder with constant
   `N₂ (2R)^(1 - α)`.
+* `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
 -/
 
 public section
@@ -112,3 +115,14 @@ theorem holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le {g : E → F} {x�
     fun x hx => by rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]; exact hN x hx
 
 end TauCeti
+
+/-- A function that is `C¹` on a compact convex set is `α`-Hölder there for every `α ≤ 1`: it is
+Lipschitz and bounded on that set. -/
+theorem ContDiffOn.exists_holderOnWith {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E} {g : E → F} (hg : ContDiffOn ℝ 1 g s)
+    (hs : Convex ℝ s) (hs' : IsCompact s) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ C, HolderOnWith C α g s := by
+  obtain ⟨K, hK⟩ := hg.exists_lipschitzOnWith one_ne_zero hs hs'
+  obtain ⟨M, hM⟩ := hs'.exists_bound_of_continuousOn hg.continuousOn
+  exact ⟨_, hK.holderOnWith_of_norm_le (M := M.toNNReal)
+    (fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)) hα⟩

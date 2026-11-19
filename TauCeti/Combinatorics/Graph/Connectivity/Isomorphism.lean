@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
+public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.OfSimpleGraph
 public import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.VertexConnectivity
@@ -377,3 +378,23 @@ theorem componentCount_eq (f : Iso G H) : H.componentCount = G.componentCount :=
 end Iso
 
 end Graph
+
+namespace SimpleGraph.Subgraph
+
+variable {α : Type u} {H : SimpleGraph α} {S : H.Subgraph}
+
+@[simp]
+theorem isForest_toGraph_iff : S.toGraph.IsForest ↔ S.coe.IsAcyclic :=
+  S.ofSimpleGraphCoeIso.isForest_iff.trans Graph.isForest_ofSimpleGraph_iff
+
+@[simp]
+theorem isEdgeConnected_toGraph_iff (k : ℕ) :
+    S.toGraph.IsEdgeConnected k ↔ S.coe.IsEdgeConnected k :=
+  (S.ofSimpleGraphCoeIso.isEdgeConnected_iff k).trans
+    (Graph.isEdgeConnected_ofSimpleGraph_iff S.coe k)
+
+@[simp]
+theorem edgeConnectivity_toGraph : S.toGraph.edgeConnectivity = S.coe.edgeConnectivity :=
+  S.ofSimpleGraphCoeIso.edgeConnectivity_eq.trans (Graph.edgeConnectivity_ofSimpleGraph S.coe)
+
+end SimpleGraph.Subgraph

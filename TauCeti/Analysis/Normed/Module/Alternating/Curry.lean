@@ -14,7 +14,10 @@ public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 
 The normed `ContinuousAlternatingMap.curryLeft` agrees pointwise with the norm-free
 `ContinuousAlternatingMap.curryLeftTopological`. This comparison lets normed applications use
-the topological interior-product API without importing wedge constructions.
+the topological interior-product API without importing wedge constructions. Currying commutes
+with subtraction (`ContinuousAlternatingMap.curryLeft_sub`), and the difference of two curried maps
+`f(u, ·)` and `g(v, ·)` is bounded by `‖f - g‖ ‖u‖ + ‖g‖ ‖u - v‖`
+(`ContinuousAlternatingMap.norm_curryLeft_sub_curryLeft_le`).
 
 A continuous alternating map of one vector is read as a continuous linear functional by
 `ContinuousAlternatingMap.toDual`. Currying a continuous alternating map of two vectors in its
@@ -37,6 +40,31 @@ theorem curryLeft_eq_curryLeftTopological {n : ℕ}
   ext v
   simp only [ContinuousAlternatingMap.curryLeft_apply_apply,
     ContinuousAlternatingMap.curryLeftTopological_apply_apply]
+
+section Lipschitz
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Currying commutes with subtraction. -/
+@[simp]
+theorem curryLeft_sub {n : ℕ} (f g : E [⋀^Fin (n + 1)]→L[𝕜] F) :
+    (f - g).curryLeft = f.curryLeft - g.curryLeft := by
+  simpa using (curryLeftLI (𝕜 := 𝕜) (E := E) (F := F) (n := n)).map_sub f g
+
+/-- The difference of the curried maps `f(u, ·)` and `g(v, ·)` is bounded by
+`‖f - g‖ ‖u‖ + ‖g‖ ‖u - v‖`. -/
+theorem norm_curryLeft_sub_curryLeft_le {n : ℕ} (f g : E [⋀^Fin (n + 1)]→L[𝕜] F) (u v : E) :
+    ‖f.curryLeft u - g.curryLeft v‖ ≤ ‖f - g‖ * ‖u‖ + ‖g‖ * ‖u - v‖ := by
+  have hsplit : f.curryLeft u - g.curryLeft v = (f - g).curryLeft u + g.curryLeft (u - v) := by
+    rw [curryLeft_sub, map_sub, _root_.sub_apply]
+    abel
+  rw [hsplit]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
+  · refine (ContinuousLinearMap.le_opNorm _ _).trans ?_
+    rw [norm_curryLeft]
+
+end Lipschitz
 
 section toDual
 
