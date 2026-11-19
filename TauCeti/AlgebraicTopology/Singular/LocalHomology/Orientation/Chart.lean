@@ -314,7 +314,7 @@ Let `φ` be a chart of `M` with values in a real inner product space `X` and `ν
 `X`. The restriction of `φ` to its source carries the local orientation of `M` at `z` selected by
 `ν` in `φ`, read in the source through excision, to the local orientation of `X` at `φ z` selected
 by `ν` in the identity chart. -/
-theorem localHomologyMap_sourceRestrict_localOrientationOfOrientedChart
+theorem _root_.OpenPartialHomeomorph.localHomologyMap_sourceRestrict_localOrientationOfOrientedChart
     (φ : OpenPartialHomeomorph M X) {z : M} (hz : z ∈ φ.source)
     (ν : Orientation ℝ X (Fin (n + 1))) (hX : finrank ℝ X = n + 1)
     (h : φ.sourceRestrict ⁻¹' {φ z} ⊆ {⟨z, hz⟩}) :

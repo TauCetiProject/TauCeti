@@ -37,7 +37,7 @@ orientation of `oM` at `z` to the local orientation of `F` selected by the orien
 reads on the fibres near `z`. That follows from the description of the homological orientation of
 `oM` by oriented charts (`TauCeti.localOrientationOfManifoldOrientation_eq`) and from the
 transport of the local orientation selected by an oriented chart along a linear equivalence
-(`TauCeti.localHomologyMap_chart_localOrientationOfOrientedChart`).
+(`OpenPartialHomeomorph.localHomologyMap_chart_localOrientationOfOrientedChart`).
 
 ## Main results
 
@@ -193,7 +193,7 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
     refine (Orientation.map_trans D.toLinearEquiv (e.linearEquivAt ℝ z hze)
       (oM.orientationAt z)).trans ?_
     rw [ho, Trivialization.mapOrientation_apply]
-  have hφ := localHomologyMap_chart_localOrientationOfOrientedChart (chartAt X z)
+  have hφ := (chartAt X z).localHomologyMap_chart_localOrientationOfOrientedChart
     (mem_chart_source X z) Λ (oM.orientationAt z) hX hF
     ⟨fun x : φ.source ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩
     (fun x ↦ (map_sub Λ _ _).symm)

@@ -56,10 +56,10 @@ on the identification used.
 * `Orientation.localOrientation_eq_localOrientationOfOrientedChart_refl`: in a real inner product
   space it is the oriented-chart generator of the identity chart, by comparison with the Euclidean
   model through a linear isometry
-  (`TauCeti.localHomologyMap_linearIsometryEquiv_localOrientationOfOrientedChart_refl`).
-* `TauCeti.localHomologyMap_chart_localOrientationOfOrientedChart`: an oriented chart, centred at
-  a point and followed by a continuous linear equivalence `L`, carries the local orientation it
-  selects to the local orientation selected by the transported orientation.
+  (`LinearIsometryEquiv.localHomologyMap_localOrientationOfOrientedChart_refl`).
+* `OpenPartialHomeomorph.localHomologyMap_chart_localOrientationOfOrientedChart`: an oriented
+  chart, centred at a point and followed by a continuous linear equivalence `L`, carries the local
+  orientation it selects to the local orientation selected by the transported orientation.
 
 ## References
 
@@ -280,7 +280,7 @@ variable {X Y : Type w} [NormedAddCommGroup X] [InnerProductSpace ℝ X]
 chart to the one selected by the transported orientation in the identity chart: both are read
 through the connecting morphism, radial projection, and the sphere generators, which the isometry
 preserves. -/
-theorem localHomologyMap_linearIsometryEquiv_localOrientationOfOrientedChart_refl
+theorem _root_.LinearIsometryEquiv.localHomologyMap_localOrientationOfOrientedChart_refl
     (f : X ≃ₗᵢ[ℝ] Y) (ν : Orientation ℝ X (Fin (n + 1))) (hX : finrank ℝ X = n + 1)
     (hY : finrank ℝ Y = n + 1)
     (h : (⟨f, f.continuous⟩ : C(X, Y)) ⁻¹' {0} ⊆ {0}) :
@@ -350,7 +350,7 @@ theorem localOrientation_eq_localOrientationOfOrientedChart_refl
   apply (ConcreteCategory.bijective_of_isIso (TopPair.singularHomologyMap
     f.toContinuousLinearEquiv.complZeroPairIso.hom (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1))).1
   rw [← LocalOrientation.coe_map, ← hmap, ContinuousLinearEquiv.complZeroPairIso_hom]
-  have h := localHomologyMap_linearIsometryEquiv_localOrientationOfOrientedChart_refl f ν hX hM
+  have h := f.localHomologyMap_localOrientationOfOrientedChart_refl ν hX hM
     (fun x hx ↦ by simpa using hx)
   rw [← localHomologyMap_def]
   exact h.symm
@@ -370,7 +370,7 @@ a real inner product space `X`, `ν` an orientation of `X`, and `L : X ≃L[ℝ]
 equivalence. The map `x ↦ L (φ x - φ z)` on the source of `φ` carries the local orientation of `M`
 at `z` selected by `ν` in `φ`, read in the source through excision, to the local orientation of `F`
 at the origin selected by the transported orientation `ν.map L`. -/
-theorem localHomologyMap_chart_localOrientationOfOrientedChart
+theorem _root_.OpenPartialHomeomorph.localHomologyMap_chart_localOrientationOfOrientedChart
     (φ : OpenPartialHomeomorph M X) {z : M} (hz : z ∈ φ.source) (L : X ≃L[ℝ] F)
     (ν : Orientation ℝ X (Fin (n + 1))) (hX : finrank ℝ X = n + 1) (hF : finrank ℝ F = n + 1)
     (σ : C(φ.source, F)) (hσ : ∀ x : φ.source, σ x = L (φ x - φ z))
@@ -397,7 +397,7 @@ theorem localHomologyMap_chart_localOrientationOfOrientedChart
     exact localHomologyMap_congr Z hσ' h (n + 1)
   -- The restricted chart carries `c` to the local orientation of `X` at `φ z` selected by `ν` in
   -- the identity chart.
-  have hA := localHomologyMap_sourceRestrict_localOrientationOfOrientedChart φ hz ν hX hsR
+  have hA := φ.localHomologyMap_sourceRestrict_localOrientationOfOrientedChart hz ν hX hsR
   -- The translation carries it to the local orientation at the origin, which `L` carries to the
   -- local orientation selected by `ν.map L`.
   have hB := localHomologyMap_translate_localOrientationOfOrientedChart_refl
