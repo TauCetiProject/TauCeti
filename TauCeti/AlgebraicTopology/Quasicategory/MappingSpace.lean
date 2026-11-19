@@ -71,22 +71,12 @@ namespace SSet
 
 variable (X : SSet.{u})
 
-/-- The map `∂Δ[1] ⟶ X` sending the vertex `0` to `x` and the vertex `1` to `y`. The face of
-`Δ[1]` opposite to the vertex `i` is its other vertex. -/
-private noncomputable def boundaryOneMap (x y : X _⦋0⦌) : (∂Δ[1] : SSet.{u}) ⟶ X :=
-  boundary.IsCompatible.desc (f := ![const y, const x])
-    ((boundary.isCompatible_zero_iff_true _).2 trivial)
-
-private lemma ι_boundaryOneMap (x y : X _⦋0⦌) (i : Fin 2) :
-    boundary.ι i ≫ boundaryOneMap X x y = ![const y, const x] i :=
-  boundary.IsCompatible.ι_desc _ _
-
 /-- The (two-sided) mapping space `Hom_X(x, y)` between vertices `x` and `y` of a simplicial set
 `X`: the fibre over `(x, y)` of the restriction map `Fun(Δ[1], X) ⟶ Fun(∂Δ[1], X)` to the two
 endpoints. Its `n`-simplices are the maps `Δ[1] ⊗ Δ[n] ⟶ X` which are constant at `x` on
 `{0} × Δ[n]` and constant at `y` on `{1} × Δ[n]` (`SSet.mem_mappingSpace_iff`). -/
 noncomputable def mappingSpace (x y : X _⦋0⦌) : ((ihom Δ[1]).obj X).Subcomplex :=
-  fiber ((pre ∂Δ[1].ι).app X) ((ihomObj₀Equiv _ X).symm (boundaryOneMap X x y))
+  fiber ((pre ∂Δ[1].ι).app X) ((ihomObj₀Equiv _ X).symm (boundary.descOne x y))
 
 variable {X} {x y : X _⦋0⦌}
 
@@ -97,14 +87,14 @@ lemma range_le_mappingSpace_iff {Z : SSet.{u}} (g : Z ⟶ (ihom Δ[1]).obj X) :
     Subcomplex.range g ≤ X.mappingSpace x y ↔
       stdSimplex.δ 1 ▷ Z ≫ uncurry g = const x ∧ stdSimplex.δ 0 ▷ Z ≫ uncurry g = const y := by
   rw [mappingSpace, range_le_fiber_iff, const_ihomObj₀Equiv_symm, eq_curry_iff, uncurry_pre_app]
-  -- Restricted to the face `ι i` of `∂Δ[1]`, the composite `fst ≫ boundaryOneMap X x y` is
+  -- Restricted to the face `ι i` of `∂Δ[1]`, the composite `fst ≫ boundary.descOne x y` is
   -- constant at the vertex `1 - i`.
   have key (i : Fin 2) :
       boundary.ι i ▷ Z ≫ ∂Δ[1].ι ▷ Z ≫ uncurry g = stdSimplex.δ i ▷ Z ≫ uncurry g := by
     rw [← comp_whiskerRight_assoc, boundary.ι_ι]
-  have key' (i : Fin 2) : boundary.ι i ▷ Z ≫ fst _ Z ≫ boundaryOneMap X x y =
+  have key' (i : Fin 2) : boundary.ι i ▷ Z ≫ fst _ Z ≫ boundary.descOne x y =
       ![const y, const x] i := by
-    rw [whiskerRight_fst_assoc, ι_boundaryOneMap]
+    rw [whiskerRight_fst_assoc, boundary.ι_descOne]
     fin_cases i <;> exact comp_const _ _
   refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨h₁, h₀⟩ ↦ boundary.hom_ext_whiskerRight fun i ↦ ?_⟩
   · simpa [key, key'] using boundary.ι 1 ▷ Z ≫= h

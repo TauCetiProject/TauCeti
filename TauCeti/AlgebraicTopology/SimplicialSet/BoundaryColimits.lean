@@ -27,6 +27,8 @@ This is the analogue for boundaries of Mathlib's description of horns in
 * `SSet.boundary.IsCompatible.desc`: the map `∂Δ[n + 1] ⟶ X` glued from a compatible family of
   faces, characterised by `SSet.boundary.IsCompatible.ι_desc`.
 * `SSet.boundary.IsCompatible.of_hom`: the faces of a map `∂Δ[n + 1] ⟶ X` are compatible.
+* `SSet.boundary.descOne`: the map `∂Δ[1] ⟶ X` given by two vertices, characterised by
+  `SSet.boundary.ι_descOne`.
 * `SSet.boundary.eq_ι_comp_iff`: a map `∂Δ[n + 1] ⟶ X` is the restriction of a simplex `σ`
   exactly when its faces are the faces of `σ`.
 * `SSet.boundary.hom_ext_whiskerRight`: a map `∂Δ[n + 1] ⊗ Z ⟶ X` is determined by its
@@ -157,6 +159,17 @@ lemma ι_desc (hf : boundary.IsCompatible f) (j : Fin (n + 2)) :
   hf.exists_desc.choose_spec j
 
 end IsCompatible
+
+/-- The map `∂Δ[1] ⟶ X` sending the vertex `0` to `x` and the vertex `1` to `y`, glued from its
+two faces: the face of `∂Δ[1]` opposite to the vertex `i` is its other vertex. -/
+noncomputable def descOne (x y : X _⦋0⦌) : (∂Δ[1] : SSet.{u}) ⟶ X :=
+  IsCompatible.desc (f := ![const y, const x]) ((isCompatible_zero_iff_true _).2 trivial)
+
+/-- The face of `descOne x y` opposite to the vertex `i` is constant at the other vertex: at `y`
+for `i = 0` and at `x` for `i = 1`. -/
+lemma ι_descOne (x y : X _⦋0⦌) (i : Fin 2) :
+    ι i ≫ descOne x y = ![const y, const x] i :=
+  IsCompatible.ι_desc _ _
 
 /-- A map `σ₀ : ∂Δ[n + 1] ⟶ X` is the restriction of `σ : Δ[n + 1] ⟶ X` exactly when every face
 of the simplex `σ` is the corresponding face of `σ₀`. -/
