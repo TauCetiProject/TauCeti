@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 import Mathlib.Tactic.NormNum.LegendreSymbol
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 
 /-!
 # Values of fundamental-discriminant characters
@@ -14,7 +16,8 @@ import Mathlib.Tactic.NormNum.LegendreSymbol
 The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker character
 `TauCeti.kroneckerChar` of `D`. At an odd natural number `n` its value is `jacobiSym D n`, including
 zero when `n` is not coprime to `D`. At even arguments the Jacobi symbol need not agree with the
-character.
+character. At odd arguments `D` may be replaced by its squarefree part `d`, since `D` is `d` or
+`4 * d`; so the character is the Jacobi symbol `(d / n)` of the radicand of its quadratic field.
 
 This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
 and `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -33,6 +36,18 @@ theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
     fundamentalDiscriminantChar D hD (n : ℤ) = jacobiSym D n := by
   rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_jacobiSym D hn]
+
+/-- At an odd natural number, the Jacobi symbol of a fundamental discriminant is that of its
+squarefree part, the two differing by the square `1` or `4` of an integer prime to `n`. -/
+theorem _root_.Int.IsFundamentalDiscr.jacobiSym_squarefreePart {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
+    jacobiSym (D : ℚ).squarefreePart n = jacobiSym D n := by
+  obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant (D : ℚ).squarefreePart
+  conv_rhs => rw [← hD.fundamentalDiscriminant_squarefreePart, ← hcd]
+  refine (jacobiSym_sq_mul_of_isCoprime ?_ _).symm
+  rcases hc with rfl | rfl
+  · exact isCoprime_one_left
+  · exact Nat.isCoprime_iff_coprime.mpr (Nat.coprime_two_left.mpr hn)
 
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/
