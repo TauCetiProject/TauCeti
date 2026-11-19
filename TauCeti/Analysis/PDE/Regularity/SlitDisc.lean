@@ -343,17 +343,6 @@ private theorem lt_four_of_memLp_gradient_slitSolution {p : ℝ≥0∞} (hp0 : p
   have hpr : p.toReal < 4 := by push_cast at this; linarith
   exact (ENNReal.toReal_lt_toReal hp (by norm_num)).1 (by simpa using hpr)
 
-/-- The weak gradient of an element of `W^{1,p}(Ω)` equal to the slit-plane solution, on an open
-set `Ω` off the ray `[0, ∞) × {0}`, is its classical gradient. -/
-theorem gradient_ae_eq_gradient_slitSolution {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    {Ω : Opens (WithLp 2 (ℝ × ℝ))}
-    (hΩ : (Ω : Set (WithLp 2 (ℝ × ℝ))) ⊆ {x | x.fst < 0 ∨ x.snd ≠ 0}) (u : W1p volume Ω p)
-    (hu : W1p.value u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × ℝ)))] slitSolution) :
-    W1p.gradient u =ᵐ[volume.restrict (Ω : Set (WithLp 2 (ℝ × ℝ)))] ∇ slitSolution := by
-  filter_upwards [((W1p.hasWeakFDerivOn u).congr_ae hu).ae_eq
-    (hasWeakFDerivOn_gradient_of_contDiffOn (contDiffOn_slitSolution.mono hΩ))] with x hx
-  exact innerSL_inj.1 hx
-
 /-- **Sobolev integrability of the slit-plane solution.** On a bounded open set `Ω` off the ray
 `[0, ∞) × {0}`, for instance the slit disc, the function `r^{1/2} sin(θ/2)` lies in `W^{1,p}(Ω)`
 for every `1 ≤ p < 4`. -/
@@ -372,12 +361,8 @@ theorem exists_w1p_value_ae_eq_slitSolution {p : ℝ≥0∞} [Fact (1 ≤ p)] (h
     rw [Real.norm_of_nonneg (slitSolution_nonneg x)]
     exact (slitSolution_le_sqrt_norm x).trans
       (Real.sqrt_le_sqrt (mem_ball_zero_iff.1 (hR hx)).le)
-  have hg := memLp_gradient_slitSolution hp0 hp Ω.isOpen.measurableSet hb hΩ
-  refine ⟨W1p.mk hu.toLp hg.toLp
-    (((hasWeakFDerivOn_gradient_of_contDiffOn (contDiffOn_slitSolution.mono hΩ)).congr_ae
-      hu.coeFn_toLp.symm).congr_ae_deriv (hg.coeFn_toLp.mono fun x hx => by simp only [hx])), ?_⟩
-  rw [W1p.value_mk]
-  exact hu.coeFn_toLp
+  exact (W1p.exists_value_gradient_ae_eq_of_contDiffOn (contDiffOn_slitSolution.mono hΩ) hu
+    (memLp_gradient_slitSolution hp0 hp Ω.isOpen.measurableSet hb hΩ)).imp fun _ h => h.1
 
 /-- **The slit-plane solution lies in `W^{1,p}` of the slit disc exactly for `p < 4`.** On the
 slit disc `B(0, 1) ∖ [0, 1) × {0}` the harmonic function `r^{1/2} sin(θ/2)`, which is continuous
@@ -392,8 +377,8 @@ theorem exists_w1p_value_ae_eq_slitSolution_iff {p : ℝ≥0∞} [Fact (1 ≤ p)
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   have hmem : MemLp (∇ slitSolution) p (volume.restrict slitUnitDisc) :=
     (Lp.memLp (W1p.gradient u)).ae_eq
-      (gradient_ae_eq_gradient_slitSolution (Ω := ⟨slitUnitDisc, isOpen_slitUnitDisc⟩)
-        slitUnitDisc_subset_setOf_fst_lt_zero_or_snd_ne_zero u hu)
+      (W1p.gradient_ae_eq_of_contDiffOn u
+        (contDiffOn_slitSolution.mono slitUnitDisc_subset_setOf_fst_lt_zero_or_snd_ne_zero) hu)
   rcases eq_or_ne p ∞ with rfl | hp
   · have : IsFiniteMeasure (volume.restrict slitUnitDisc) :=
       isFiniteMeasure_restrict.2
