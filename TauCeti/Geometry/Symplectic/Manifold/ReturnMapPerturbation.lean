@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.Darboux
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 import TauCeti.Geometry.Symplectic.Hamiltonian.RadialTwist
 import TauCeti.Geometry.Symplectic.WittExtension
+import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Manifold.Diffeomorph.Extend
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Dynamics.PeriodicPts.LocalPerturbation
@@ -109,47 +110,6 @@ private theorem exists_diffeomorph_of_symplectomorphism {ω₀ : SymplecticForm 
       simp [hw, mul_comm]
     exact e.symm.hasFDerivAt.comp _ (h₀.comp _ e.hasFDerivAt)
 
-/-- A diffeomorphism which, on the source of a Darboux chart `κ`, is `κ⁻¹ ∘ ψ ∘ κ` for a
-diffeomorphism `ψ` of the model space preserving the model form, and which is the identity near
-every point outside the source, preserves the symplectic form. -/
-private theorem eval₂_mfderiv_eq_of_darbouxChart {σ : SmoothTwoForm I M}
-    {κ : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞} {ω₀ : SymplecticForm E}
-    (hκσ : ∀ x ∈ κ.source, ∀ v w : TangentSpace I x,
-      σ.eval₂ x v w = ω₀ (mvfderiv I κ x v) (mvfderiv I κ x w))
-    {ψ : E ≃ₘ⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E}
-    (hψσ : ∀ y u v, ω₀ (fderiv ℝ ψ y u) (fderiv ℝ ψ y v) = ω₀ u v)
-    (hψt : ∀ y ∈ κ.target, ψ y ∈ κ.target) {Φ : M ≃ₘ⟮I, I⟯ M}
-    (hΦs : ∀ x ∈ κ.source, Φ x = κ.symm (ψ (κ x)))
-    (hΦid : ∀ x ∉ κ.source, ⇑Φ =ᶠ[𝓝 x] id) (x : M) (v w : TangentSpace I x) :
-    σ.eval₂ (Φ x) (mfderiv I I Φ x v) (mfderiv I I Φ x w) = σ.eval₂ x v w := by
-  by_cases hx : x ∈ κ.source
-  · have hκx : κ x ∈ κ.target := κ.toPartialEquiv.map_source hx
-    have hΦx : Φ x ∈ κ.source := by
-      rw [hΦs x hx]
-      exact κ.toPartialEquiv.map_target (hψt _ hκx)
-    -- Read in the chart, `Φ` is `ψ`: `κ ∘ Φ = ψ ∘ κ` near `x`.
-    have hcomp : κ ∘ Φ =ᶠ[𝓝 x] ψ ∘ κ := eventually_of_mem (κ.open_source.mem_nhds hx)
-      fun z hz ↦ by
-        rw [comp_apply, hΦs z hz]
-        exact κ.toPartialEquiv.right_inv (hψt _ (κ.toPartialEquiv.map_source hz))
-    have h₁ : HasMFDerivAt I 𝓘(ℝ, E) (κ ∘ Φ) x
-        ((mfderiv I 𝓘(ℝ, E) κ (Φ x)).comp (mfderiv I I Φ x)) :=
-      (κ.mdifferentiableAt (by simp) hΦx).hasMFDerivAt.comp x
-        ((Φ.contMDiff.mdifferentiable (by simp)) x).hasMFDerivAt
-    have h₂ : HasMFDerivAt I 𝓘(ℝ, E) (ψ ∘ κ) x
-        ((fderiv ℝ ψ (κ x)).comp (mfderiv I 𝓘(ℝ, E) κ x)) :=
-      (hasMFDerivAt_iff_hasFDerivAt.2 (((contMDiff_iff_contDiff.1 ψ.contMDiff).differentiable
-        (by simp)) (κ x)).hasFDerivAt).comp x (κ.mdifferentiableAt (by simp) hx).hasMFDerivAt
-    have h₃ (u : TangentSpace I x) :
-        mvfderiv I κ (Φ x) (mfderiv I I Φ x u) = fderiv ℝ ψ (κ x) (mvfderiv I κ x u) :=
-      congrArg (· u) ((h₁.congr_of_eventuallyEq hcomp.symm).mfderiv.symm.trans h₂.mfderiv)
-    rw [hκσ _ hΦx, hκσ _ hx, h₃, h₃, hψσ]
-  · have hD : mfderiv I I Φ x = ContinuousLinearMap.id ℝ (TangentSpace I x) :=
-      ((hasMFDerivAt_id x).congr_of_eventuallyEq (hΦid x hx)).mfderiv
-    simp only [hD]
-    rw [(hΦid x hx).eq_of_nhds]
-    rfl
-
 variable [BoundarylessManifold I M] [T2Space M]
 
 omit [BoundarylessManifold I M] in
@@ -175,13 +135,14 @@ private theorem exists_diffeomorph_of_darbouxChart {σ : SmoothTwoForm I M}
   obtain ⟨ψ, hψσ, hψn, hψid, hψd⟩ := exists_diffeomorph_of_symplectomorphism e he (half_pos hρ) θ
   set C : Set E := e ⁻¹' Metric.closedBall 0 (ρ / 2)
   have hCc : IsCompact C := e.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall 0 _)
-  have hCt : C ⊆ κ.target := fun y hy ↦ by
-    simpa using (hρV (e y) (lt_of_le_of_lt (mem_closedBall_zero_iff.1 hy) (half_lt_self hρ))).1
+  have hCV (y : E) (hy : y ∈ C) : e.symm (e y) ∈ κ.target ∧ κ.symm (e.symm (e y)) ∈ U :=
+    hρV (e y) (lt_of_le_of_lt (mem_closedBall_zero_iff.1 hy) (half_lt_self hρ))
+  have hCt : C ⊆ κ.target := fun y hy ↦ by simpa using (hCV y hy).1
   have hψC (y : E) (hy : y ∉ C) : ψ y = y :=
     hψid y (le_of_lt (not_le.1 (by simpa [C] using hy)))
   have hψt (y : E) (hy : y ∈ κ.target) : ψ y ∈ κ.target := by
     by_cases hyC : y ∈ C
-    · exact hCt (by simpa [C, hψn] using hyC)
+    · exact hCt (ψ.injective.mapsTo_of_eq_self hψC hyC)
     · rwa [hψC y hyC]
   obtain ⟨Φ, hΦs, hΦC⟩ := κ.exists_diffeomorph_eq_symm_apply_apply ψ hCc hCt hψC
   have hKc : IsCompact (κ.symm '' C) :=
@@ -197,7 +158,7 @@ private theorem exists_diffeomorph_of_darbouxChart {σ : SmoothTwoForm I M}
   · obtain ⟨y, hy, rfl⟩ := h
     exact κ.toPartialEquiv.map_target (hCt hy)
   · rintro _ ⟨y, hy, rfl⟩
-    simpa using (hρV (e y) (lt_of_le_of_lt (mem_closedBall_zero_iff.1 hy) (half_lt_self hρ))).2
+    simpa using (hCV y hy).2
   · rw [hΦs p hpκ, hψ0, hl]
   · -- Near `p`, `Φ = κ⁻¹ ∘ ψ ∘ κ`, and `ψ` is the rotation by `θ` near `κ p = 0`.
     have hs : HasMFDerivAt 𝓘(ℝ, E) I κ.symm (ψ (κ p)) (mfderiv 𝓘(ℝ, E) I κ.symm (κ p)) := by
@@ -239,15 +200,27 @@ theorem IsSymplectic.exists_continuousLinearEquiv_forall_exists_diffeomorph
     obtain ⟨ρ, hρ, hball⟩ := Metric.isOpen_iff.1 hV 0
       ⟨by rw [map_zero, ← hκp]; exact hκt, by rw [mem_preimage, map_zero, ← hκp, hl]; exact hpU⟩
     exact ⟨ρ, hρ, fun w hw ↦ hball (by simpa using hw)⟩
-  refine ⟨(ContinuousLinearEquiv.equivOfInverse (mfderiv I 𝓘(ℝ, E) κ p)
-    (mfderiv 𝓘(ℝ, E) I κ.symm (κ p)) (κ.mfderiv_symm_apply_mfderiv_apply (by simp) hpκ)
-    fun y ↦ by
+  -- The identification `L = e ∘ dκ_p`, with inverse `dκ⁻¹_{κ p} ∘ e⁻¹`.
+  set L : TangentSpace I p ≃L[ℝ] ℂ := (ContinuousLinearEquiv.equivOfInverse
+    (mfderiv I 𝓘(ℝ, E) κ p) (mfderiv 𝓘(ℝ, E) I κ.symm (κ p))
+    (κ.mfderiv_symm_apply_mfderiv_apply (by simp) hpκ) fun y ↦ by
       have h := κ.mfderiv_apply_mfderiv_symm_apply (by simp) hκt y
-      rwa [hl] at h).trans e,
-    fun θ ↦ ?_⟩
+      rwa [hl] at h).trans e
+  have hLa (u : TangentSpace I p) : L u = e (mfderiv I 𝓘(ℝ, E) κ p u) :=
+    (ContinuousLinearEquiv.trans_apply _ _ u).trans
+      (congrArg e (ContinuousLinearEquiv.equivOfInverse_apply (mfderiv I 𝓘(ℝ, E) κ p) _ _ _ u))
+  have hLs (z : ℂ) : L.symm z = mfderiv 𝓘(ℝ, E) I κ.symm (κ p) (e.symm z) :=
+    (ContinuousLinearEquiv.symm_trans_apply _ _ z).trans
+      ((congrArg (fun f : TangentSpace 𝓘(ℝ, E) (κ p) ≃L[ℝ] TangentSpace I p ↦ f (e.symm z))
+        (ContinuousLinearEquiv.symm_equivOfInverse (mfderiv I 𝓘(ℝ, E) κ p)
+          (mfderiv 𝓘(ℝ, E) I κ.symm (κ p)) _ _)).trans
+        (ContinuousLinearEquiv.equivOfInverse_apply _ _ _ _ _))
+  refine ⟨L, fun θ ↦ ?_⟩
   obtain ⟨Φ, hΦσ, hΦK, hΦp, hΦd⟩ := exists_diffeomorph_of_darbouxChart hκσ he hpκ hκp hρ hρV θ
-  -- The derivative is `L⁻¹ ∘ (rotation by θ) ∘ L`, by the definition of `L`.
-  exact ⟨Φ, hΦσ, hΦK, hΦp, hΦd.congr_mfderiv (by ext v; rfl)⟩
+  -- The derivative is `L⁻¹ ∘ (rotation by θ) ∘ L`, by `hLa` and `hLs`.
+  refine ⟨Φ, hΦσ, hΦK, hΦp, hΦd.congr_mfderiv ?_⟩
+  ext v
+  exact ((congrArg (fun z ↦ L.symm (exp (θ * Complex.I) • z)) (hLa v)).trans (hLs _)).symm
 
 /-- **Making a periodic orbit nondegenerate in all iterates by a symplectic twist.** Let
 `(M, σ)` be a boundaryless symplectic surface and `p` a periodic point of period `k > 0` of a map

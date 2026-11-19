@@ -155,13 +155,10 @@ theorem exists_diffeomorph_eq_symm_apply_apply (κ : PartialDiffeomorph I J M N 
     ∃ Φ : M ≃ₘ^n⟮I, I⟯ M, (∀ x ∈ κ.source, Φ x = κ.symm (ψ (κ x))) ∧
       ∀ x ∉ κ.symm '' C, Φ x = x := by
   -- `ψ` maps `C` into itself, since it is injective and fixes the complement of `C`.
-  have hψC (y : N) (hy : y ∈ C) : ψ y ∈ C := by
-    by_contra h
-    have h' : ψ y = y := ψ.injective (hψ _ h)
-    exact h (by rw [h']; exact hy)
+  have hψC : MapsTo ψ C C := ψ.injective.mapsTo_of_eq_self hψ
   have hψt (y : N) : y ∈ κ.target ↔ ψ y ∈ κ.target := by
     by_cases hy : y ∈ C
-    · exact iff_of_true (hCt hy) (hCt (hψC y hy))
+    · exact iff_of_true (hCt hy) (hCt (hψC hy))
     · rw [hψ y hy]
   let S : TopologicalSpace.Opens M := ⟨κ.source, κ.open_source⟩
   let T : TopologicalSpace.Opens N := ⟨κ.target, κ.open_target⟩
