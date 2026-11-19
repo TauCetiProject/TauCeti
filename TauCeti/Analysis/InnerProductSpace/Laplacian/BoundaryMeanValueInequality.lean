@@ -110,7 +110,7 @@ private theorem continuousOn_evenReflection_closedBall (hx₀ : 0 ≤ x₀.im)
     (hwc : ContinuousOn w ({z | 0 ≤ z.im} ∩ closedBall x₀ r)) :
     ContinuousOn (evenReflection w) (closedBall x₀ r) :=
   (continuousOn_evenReflection (s := closedBall x₀ r ∪ conj ⁻¹' closedBall x₀ r)
-    (fun _ hz ↦ hz.symm.imp id fun h ↦ by simpa using h) (by
+    (fun _ ↦ conj_mem_union_preimage_conj) (by
     rwa [setOfPred_le_im_inter_union_preimage_conj fun _ hz ↦
       mem_closedBall_of_conj_mem_closedBall_of_im_nonneg hx₀ hz])).mono subset_union_left
 
@@ -186,7 +186,7 @@ theorem pi_mul_sq_mul_le_sixteen_mul_setIntegral_inter_ball_of_neg_mul_sq_le_lap
   -- conjugation and meets the closed upper half-plane in the half-disc.
   set U := ball x₀ r ∪ conj ⁻¹' ball x₀ r
   have hU : IsOpen U := isOpen_ball.union (isOpen_ball.preimage continuous_conj)
-  have hUc : ∀ y ∈ U, conj y ∈ U := fun _ hy ↦ hy.symm.imp id fun h ↦ by simpa using h
+  have hUc : ∀ y ∈ U, conj y ∈ U := fun _ ↦ conj_mem_union_preimage_conj
   have hHU : {z : ℂ | 0 ≤ z.im} ∩ U = {z : ℂ | 0 ≤ z.im} ∩ ball x₀ r :=
     setOfPred_le_im_inter_union_preimage_conj fun _ hz ↦
       mem_ball_of_conj_mem_ball_of_im_nonneg hx₀ hz

@@ -17,6 +17,8 @@ domains for reflection across the real axis, for instance the even reflection
 its mirror image meets the closed upper half-plane inside the disc itself, since a point of the
 closed upper half-plane is at least as close to such a centre as to its mirror image
 (`TauCeti.dist_le_dist_conj_of_im_nonneg`, `TauCeti.mem_ball_of_conj_mem_ball_of_im_nonneg`).
+Any set becomes invariant under conjugation once its mirror image is added
+(`TauCeti.conj_mem_union_preimage_conj`).
 Conjugation maps the real axis into itself
 (`TauCeti.mapsTo_conj_setOf_im_eq_zero`), whereas the rotation `z ↦ I z` does not
 (`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`).
@@ -150,9 +152,9 @@ theorem conj_mem_closedBall_of_im_eq_zero (hx₀ : x₀.im = 0) (hz : z ∈ clos
 upper half-plane as to its mirror image `conj z`. -/
 theorem dist_le_dist_conj_of_im_nonneg {w : ℂ} (hw : 0 ≤ w.im) (hz : 0 ≤ z.im) :
     dist w z ≤ dist w (conj z) := by
-  rw [dist_eq_norm, dist_eq_norm, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm,
-    Complex.sq_norm, Complex.normSq_apply, Complex.normSq_apply]
-  simp only [Complex.sub_re, Complex.sub_im, Complex.conj_re, Complex.conj_im]
+  rw [Complex.dist_eq_re_im, Complex.dist_eq_re_im]
+  refine Real.sqrt_le_sqrt ?_
+  simp only [Complex.conj_re, Complex.conj_im]
   nlinarith [mul_nonneg hw hz]
 
 /-- If the mirror image of a point `z` of the closed upper half-plane lies in an open disc centred
@@ -166,6 +168,12 @@ in the closed upper half-plane, then so does `z`. -/
 theorem mem_closedBall_of_conj_mem_closedBall_of_im_nonneg (hx₀ : 0 ≤ x₀.im) (hz : 0 ≤ z.im)
     (h : conj z ∈ closedBall x₀ r) : z ∈ closedBall x₀ r :=
   (dist_le_dist_conj_of_im_nonneg hz hx₀).trans (by rwa [← Complex.dist_conj_comm])
+
+/-- The union of a set `s` with its preimage under conjugation is invariant under conjugation. -/
+theorem conj_mem_union_preimage_conj {s : Set ℂ} (hz : z ∈ s ∪ conj ⁻¹' s) :
+    conj z ∈ s ∪ conj ⁻¹' s := by
+  simp only [Set.mem_union, Set.mem_preimage, Complex.conj_conj] at hz ⊢
+  exact hz.symm
 
 /-- A set `s` and its preimage under conjugation meet the closed upper half-plane in the same set,
 provided every point of the closed upper half-plane whose mirror image lies in `s` lies in `s`,

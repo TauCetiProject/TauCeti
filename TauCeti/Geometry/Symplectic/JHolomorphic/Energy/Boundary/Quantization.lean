@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.Convex
 import TauCeti.Analysis.Calculus.TangentCone.Basic
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
@@ -108,8 +109,6 @@ theorem exists_pos_forall_le_setIntegral_norm_fderivWithin_one_sq_of_ne
   by_contra! hE
   set H : Set ℂ := {z | 0 ≤ z.im}
   set E := ∫ y in H, ‖fderivWithin ℝ u H y 1‖ ^ 2
-  have hE0 : 0 ≤ E := setIntegral_nonneg (measurableSet_le measurable_const
-    continuous_im.measurable) fun _ _ ↦ sq_nonneg _
   have hDu : ContinuousOn (fderivWithin ℝ u H) H :=
     hu.continuousOn_fderivWithin (uniqueDiffOn_setOfPred_le_im 0) (by norm_num)
   -- The mean-value inequality on `H ∩ ball x r` bounds `π r² ‖∂ₛu(x)‖²` by `16 E`, uniformly in
@@ -125,17 +124,8 @@ theorem exists_pos_forall_le_setIntegral_norm_fderivWithin_one_sq_of_ne
         ((hDu.clm_apply continuousOn_const).mono inter_subset_left)
         (fun y hy ↦ hCR y hy.1) (fun y _ hy0 ↦ huL y hy0) (fun y hy ↦ huK hy.1)
         (hball.trans_lt hE)).trans (by gcongr)
-    by_contra! hx0
-    have _ : 0 < ‖fderivWithin ℝ u H x 1‖ ^ 2 := by positivity
-    -- Take `r` with `π r² ‖∂ₛu(x)‖² = 16 E + 1`.
-    set r := √((16 * E + 1) / (Real.pi * ‖fderivWithin ℝ u H x 1‖ ^ 2))
-    have hr : 0 < r := Real.sqrt_pos.mpr (by positivity)
-    have hr2 : r ^ 2 = (16 * E + 1) / (Real.pi * ‖fderivWithin ℝ u H x 1‖ ^ 2) :=
-      Real.sq_sqrt (by positivity)
-    have hr3 : Real.pi * r ^ 2 * ‖fderivWithin ℝ u H x 1‖ ^ 2 = 16 * E + 1 := by
-      rw [hr2]
-      field_simp
-    linarith [hbound r hr]
+    exact norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp
+      ((nonpos_of_forall_pos_mul_sq_mul_le Real.pi_pos hbound).antisymm (sq_nonneg _)))
   -- By the Cauchy--Riemann equation the whole differential vanishes, so `u` is constant on the
   -- convex set `H`.
   have hfderiv : ∀ x ∈ H, fderivWithin ℝ u H x = 0 := by
