@@ -39,9 +39,6 @@ degree, which is the horizontal degree of `K.flip`.
 
 ## Main results
 
-* `CochainComplex.spectralSequence_first_page_d_eq_cokernelMap`: the first differential of the
-  spectral sequence of a filtered complex as a connecting map, with the filtration indices given
-  by equations.
 * `HomologicalComplex₂.totalRowHomologyIso_inv_homologyMap_totalRowι_δ`: the connecting map of
   `row s ⟶ Tot (rows ≥ s) ⟶ Tot (rows ≥ s + 1)`, restricted to the row `s + 1`, is induced by the
   vertical differentials, with the sign `(-1)^k`.
@@ -63,44 +60,6 @@ public section
 noncomputable section
 
 open CategoryTheory Limits ComplexShape
-
-namespace CochainComplex
-
-variable {C : Type*} [Category* C] [Abelian C] (F : EInt ⥤ CochainComplex C ℤ)
-
-/-- **The first differential of the spectral sequence of a filtered complex**, with the
-filtration indices given by equations. When `F_{q₀} ⟶ F_{q₁}` and `F_{q₁} ⟶ F_{q₂}` are
-monomorphisms, with `q₀ + 1 = q₁` and `q₁ + 1 = q₂`, the differential of the first page from
-`(p, q₁)` to `(p + 2, q₀)` is the connecting map of `F_{q₁}/F_{q₀} ⟶ F_{q₂}/F_{q₀} ⟶ F_{q₂}/F_{q₁}`,
-followed by the identification of `F_{q₁}/F_{q₀}` with `F_{q₁'}/F_{q₀}` for an index `q₁'` equal
-to `q₁`. This is `CochainComplex.spectralSequence_first_page_d_eq`, in a form that applies when
-the indices are not syntactically of the form `q - 1`, `q`, `q + 1`. -/
-theorem spectralSequence_first_page_d_eq_cokernelMap (p p' q₀ q₁ q₁' q₂ n₀ n₁ : ℤ)
-    (hp : p + 2 = p') (h₀ : q₀ + 1 = q₁) (h₁ : q₁ + 1 = q₂) (h' : q₁ = q₁')
-    (hn₀ : n₀ = p + q₁) (hn₁ : n₀ + 1 = n₁)
-    [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₁ = q₁) h₁.symm)))]
-    [Mono (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₀ = q₀) (h₀ ▸ h').symm)))] :
-    (spectralSequenceFirstPageXIsoCokernel F (p, q₁) q₁ q₂ rfl h₁.symm n₀ hn₀).inv ≫
-      ((spectralSequence F).page 2).d (p, q₁) (p', q₀) ≫
-      (spectralSequenceFirstPageXIsoCokernel F (p', q₀) q₀ q₁' rfl (h₀ ▸ h').symm n₁
-        (by dsimp; lia)).hom =
-    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
-        (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₀ = q₀) h₀.symm)))
-        (F.map (homOfLE (coe_le_coe_of_eq_add_one (rfl : q₁ = q₁) h₁.symm)))).δ
-        n₀ n₁ (by simp [← hn₁]) ≫
-      HomologicalComplex.homologyMap (cokernel.map _ _ (𝟙 _)
-        (F.map (homOfLE (by simp [h'] : (q₁ : EInt) ≤ q₁')))
-        (by rw [Category.id_comp, ← F.map_comp]; exact congrArg F.map (Subsingleton.elim _ _)))
-        n₁ := by
-  subst hp h' h₁ hn₀ hn₁
-  obtain rfl : q₀ = q₁ - 1 := by lia
-  rw [spectralSequence_first_page_d_eq]
-  simp only [homOfLE_leOfHom, Category.assoc, Iso.inv_hom_id_assoc, homOfLE_refl,
-    CategoryTheory.Functor.map_id, cokernel.map_id, HomologicalComplex.homologyMap_id]
-  -- What remains is `(δ ≫ e.inv) ≫ e.hom = δ ≫ 𝟙 _`, up to the types of the homology objects.
-  exact (Category.assoc _ _ _).trans (congrArg _ (Iso.inv_hom_id _))
-
-end CochainComplex
 
 namespace HomologicalComplex₂
 
@@ -175,11 +134,13 @@ lemma iCycles_ιTotalRowsGE_d (s k : ℕ) :
     ((-1 : ℤ) ^ k) • ((((HomologicalComplex.eval C (down ℕ) (s + 1)).mapHomologicalComplex
         (down ℕ)).obj K).iCycles k ≫
       (K.X k).d (s + 1) s ≫ K.ιTotalRowsGE s k s (k + s) le_rfl rfl) := by
+  -- Write the summand inclusions through the total complex, whose projection is a chain map.
   rw [← K.ιTotal_toTotalRowsGE_f s k (s + 1) _ (by omega) rfl,
-    ← K.ιTotal_toTotalRowsGE_f s k s _ le_rfl rfl, Category.assoc, (K.toTotalRowsGE s).comm,
-    total_d, Preadditive.add_comp, Preadditive.comp_add, ι_D₁_assoc, ι_D₂_assoc,
-    Preadditive.comp_add, reassoc_of% K.iCycles_d₁, zero_comp, zero_add,
-    d₂_eq K _ _ (ComplexShape.down_mk _ _ rfl) _ (by simp)]
+    ← K.ιTotal_toTotalRowsGE_f s k s _ le_rfl rfl, Category.assoc, (K.toTotalRowsGE s).comm]
+  simp only [total_d, Preadditive.add_comp, Preadditive.comp_add, ι_D₁_assoc, ι_D₂_assoc,
+    reassoc_of% K.iCycles_d₁, zero_comp, zero_add]
+  -- The vertical part sends the row `s + 1` to the row `s`, with the sign `ε₂ = (-1)^k`.
+  rw [d₂_eq K _ _ (ComplexShape.down_mk _ _ rfl) _ (by simp)]
   simp [ComplexShape.ε_down_ℕ, Units.smul_def]
 
 /-- The connecting map of `row s ⟶ Tot (rows ≥ s) ⟶ Tot (rows ≥ s + 1)`, restricted to the row
@@ -213,14 +174,17 @@ private lemma totalRowHomologyIso_inv_homologyMap_totalRowι_δ_of_f (s k : ℕ)
         hx₃ := by
     rw [← cancel_mono ((K.totalRowsGE (s + 1)).iCycles (k + (s + 1)))]
     simp [x₃]
+  have hl : ∀ h, (K.totalRow s).liftCycles x₁ _ rfl h ≫ (K.totalRowCyclesIso s k).hom =
+      ((-1 : ℤ) ^ k) • ((K.totalRowCyclesIso (s + 1) k).hom ≫
+        HomologicalComplex.cyclesMap φ k) := fun _ ↦ by
+    simp [← cancel_mono ((((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex
+      (down ℕ)).obj K).iCycles k), x₁, hφ]
+  -- Compute on the cycles: lift through `Tot (rows ≥ s)` and apply the connecting map.
   rw [Iso.inv_comp_eq, ← cancel_epi ((K.totalRow (s + 1)).homologyπ (k + (s + 1))),
     HomologicalComplex.homologyπ_naturality_assoc, hc, reassoc_of% hδ,
-    homologyπ_totalRowHomologyIso_hom, homologyπ_totalRowHomologyIso_hom_assoc,
-    Preadditive.comp_zsmul, HomologicalComplex.homologyπ_naturality]
-  simp only [Preadditive.comp_zsmul, ← Category.assoc, ← Preadditive.zsmul_comp]
-  congr 1
-  simp [← cancel_mono ((((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex
-    (down ℕ)).obj K).iCycles k), x₁, hφ]
+    homologyπ_totalRowHomologyIso_hom, reassoc_of% (hl _)]
+  simp only [Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc]
+  rw [homologyπ_totalRowHomologyIso_hom_assoc, HomologicalComplex.homologyπ_naturality]
 
 /-- The rows of `K` are the columns `K.flip.X s` of the flipped bicomplex, and the chain map
 between them induced by the vertical differentials is `K.flip.d (s + 1) s`. -/
