@@ -151,8 +151,7 @@ theorem standardKahlerForm_apply (n : ℕ) (v : Fin 2 → EuclideanSpace ℂ (Fi
   simp only [AlmostComplexStructure.ofComplexModule_apply, PiLp.inner_apply, PiLp.smul_apply,
     Complex.inner, Complex.im_sum]
   refine Finset.sum_congr rfl fun _ _ ↦ ?_
-  simp
-  ring
+  simp [sub_eq_neg_add]
 
 /-- The standard Kähler form on `ℂ⁰` is zero; this is why `norm_standardKahlerForm` needs
 `n ≠ 0`. -/
