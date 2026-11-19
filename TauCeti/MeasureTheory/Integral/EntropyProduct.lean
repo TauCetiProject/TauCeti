@@ -280,8 +280,8 @@ private theorem entropy_integral_le_integral_entropy_of_pos {α β : Type*}
       ∫ y, b y * Real.log (b y) ∂ν := by
     rw [integral_prod_symm _ hcross]
     apply integral_congr_ae
-    filter_upwards [hg.prod_left_ae] with y
-    exact integral_mul_const _ _
+    filter_upwards with y
+    exact integral_mul_const (μ := μ) (Real.log (b y)) (fun x : α ↦ g (x, y))
   change (∫ x, a x * Real.log (a x) ∂μ) - m * Real.log m ≤
     ∫ x, ∫ y, ((fun p ↦ g p * Real.log (g p)) -
       (fun p ↦ g p * Real.log (b p.2))) (x, y) ∂ν ∂μ at hint
