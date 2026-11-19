@@ -25,7 +25,8 @@ via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving
 
 Multiplication by the indicator of a measurable set `s` is the operator
 `MeasureTheory.Lp.indicatorMultiplication 𝕜 p hs` on `Lp E p μ`, built from the class of `1_s` in
-scalar `L∞`. It acts as `f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`), the `Lʳ`
+scalar `L∞`. It acts as `f ↦ 1_s f` almost everywhere (`indicatorMultiplication_ae`,
+`indicatorMultiplication_eq_iff`), it is a contraction (`norm_indicatorMultiplication_le`), the `Lʳ`
 seminorm of `1_s f` is that of `f` on `s` (`eLpNorm_indicatorMultiplication`), and it is symmetric
 on `L²` (`inner_indicatorMultiplication_left`).
 
@@ -199,6 +200,25 @@ theorem indicatorMultiplication_ae (hs : MeasurableSet s) (f : Lp E p μ) :
     with x h h₁
   rw [indicatorMultiplication, holderL_apply_apply, h, h₁]
   by_cases hx : x ∈ s <;> simp [hx]
+
+/-- `indicatorMultiplication` is characterized by its almost-everywhere pointwise action. -/
+theorem indicatorMultiplication_eq_iff {hs : MeasurableSet s} {f g : Lp E p μ} :
+    indicatorMultiplication 𝕜 p hs f = g ↔ s.indicator f =ᵐ[μ] g :=
+  ⟨fun h ↦ h ▸ (indicatorMultiplication_ae hs f).symm,
+    fun h ↦ Lp.ext ((indicatorMultiplication_ae hs f).trans h)⟩
+
+/-- Applying `indicatorMultiplication` does not increase the `Lᵖ` norm. -/
+theorem norm_indicatorMultiplication_apply_le (hs : MeasurableSet s) (f : Lp E p μ) :
+    ‖indicatorMultiplication 𝕜 p hs f‖ ≤ ‖f‖ :=
+  Lp.norm_le_norm_of_ae_le <| by
+    filter_upwards [indicatorMultiplication_ae (𝕜 := 𝕜) hs f] with x hx
+    rw [hx]; exact norm_indicator_le_norm_self _ _
+
+/-- `indicatorMultiplication` is a contraction: its operator norm is at most `1`. -/
+theorem norm_indicatorMultiplication_le (hs : MeasurableSet s) :
+    ‖(indicatorMultiplication 𝕜 p hs : Lp E p μ →L[𝕜] Lp E p μ)‖ ≤ 1 :=
+  opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa only [one_mul] using norm_indicatorMultiplication_apply_le hs f
 
 /-- The `Lʳ` seminorm of `1_s f` is the `Lʳ` seminorm of `f` on `s`, for every exponent `r`. -/
 theorem eLpNorm_indicatorMultiplication (hs : MeasurableSet s) (f : Lp E p μ) (r : ℝ≥0∞) :
