@@ -287,6 +287,12 @@ theorem measureAverageForm_eq_self_iff [IsProbabilityMeasure μ] (hα : IsSmooth
   ⟨fun h a ↦ by simpa only [h] using mpullback_smul_measureAverageForm μ J hα a,
     measureAverageForm_eq_self μ⟩
 
+/-- For a right-invariant probability measure, averaging a continuous form twice gives the same
+invariant form. -/
+theorem measureAverageForm_idempotent [IsProbabilityMeasure μ] (hα : IsSmoothForm I 0 α) :
+    measureAverageForm μ (measureAverageForm μ α) = measureAverageForm μ α :=
+  measureAverageForm_eq_self μ (mpullback_smul_measureAverageForm μ J hα)
+
 end Invariance
 
 /-- **Smoothness of the average.** Averaging a `C^m` form over a `C^(m+1)` action of a compact

@@ -113,6 +113,7 @@ theorem inCoordinates_eq_inChartAt [IsManifold I 1 M] (φ : RoughForm I M F k)
   rw [(extChartAt I x₀).left_inv hx]
 
 /-- Over the model space, the fibre coordinates of a form are its values. -/
+@[simp]
 theorem inCoordinates_modelSpace (φ : RoughForm 𝓘(ℝ, E) E F k) (x₀ x : E) :
     ContinuousAlternatingMap.inCoordinates E F x₀ x x₀ x (φ x) = φ x :=
   (inCoordinates_eq_inChartAt φ (by simp)).trans (congrFun (inChartAt_modelSpace φ x₀) _)
