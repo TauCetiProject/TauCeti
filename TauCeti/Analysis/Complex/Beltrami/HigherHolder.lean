@@ -396,7 +396,7 @@ theorem exists_ckHolder_conjWirtingerDeriv_eq_mul_wirtingerDeriv (k : ℕ) (hα 
   · rw [fderiv_fun_add differentiableAt_fun_id (hTd z), fderiv_fun_id, add_sub_cancel_left]
     push_cast
     exact hfd z hz
-  · refine (((holderOnWith_iteratedFDeriv_succ_add_left_iff (ContinuousLinearMap.id ℝ ℂ)
+  · refine ((((ContinuousLinearMap.id ℝ ℂ).holderOnWith_iteratedFDeriv_succ_add_left_iff
       fun _ _ ↦ Filter.Eventually.of_forall hTd).2 hTH).mono hsub).mono_const ?_
     rw [← NNReal.coe_le_coe]
     push_cast
