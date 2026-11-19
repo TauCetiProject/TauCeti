@@ -147,7 +147,7 @@ theorem existsUnique_mem_edges_of_hexGraph_adj {f g : TriFace} (h : hexGraph.Adj
 
 /-- Sending an edge of the triangular lattice to the pair of its white and black faces is a
 bijection from `TriEdge` onto the edge set of `hexGraph`. -/
-@[expose] noncomputable def TriEdge.equivHexGraphEdgeSet : TriEdge ≃ hexGraph.edgeSet :=
+noncomputable def TriEdge.equivHexGraphEdgeSet : TriEdge ≃ hexGraph.edgeSet :=
   Equiv.ofBijective (fun e => ⟨s(e.whiteFace, e.blackFace), e.hexGraph_adj⟩) <| by
     constructor
     · intro e e' h
@@ -165,10 +165,10 @@ bijection from `TriEdge` onto the edge set of `hexGraph`. -/
 
 /-- An edge corresponds to the pair of its white and black faces. -/
 @[simp] theorem TriEdge.equivHexGraphEdgeSet_apply (e : TriEdge) :
-    (e.equivHexGraphEdgeSet : Sym2 TriFace) = s(e.whiteFace, e.blackFace) := rfl
+    (e.equivHexGraphEdgeSet : Sym2 TriFace) = s(e.whiteFace, e.blackFace) := (rfl)
 
 /-- Translation by `w` is an automorphism of `hexGraph`. -/
-@[expose] def hexGraphTranslate (w : ℤ × ℤ) : hexGraph ≃g hexGraph where
+def hexGraphTranslate (w : ℤ × ℤ) : hexGraph ≃g hexGraph where
   toEquiv := AddAction.toPerm w
   map_rel_iff' {f g} := by
     simp only [AddAction.toPerm_apply, hexGraph_adj, ne_eq, vadd_left_cancel_iff]
@@ -180,7 +180,7 @@ bijection from `TriEdge` onto the edge set of `hexGraph`. -/
 
 /-- The automorphism `hexGraphTranslate w` is translation by `w`. -/
 @[simp] theorem hexGraphTranslate_apply (w : ℤ × ℤ) (f : TriFace) :
-    hexGraphTranslate w f = w +ᵥ f := rfl
+    hexGraphTranslate w f = w +ᵥ f := (rfl)
 
 /-- The rotation `ρ` of order three, as a permutation of the faces. -/
 @[expose] def TriFace.rotateEquiv : TriFace ≃ TriFace where
@@ -190,7 +190,7 @@ bijection from `TriEdge` onto the edge set of `hexGraph`. -/
   right_inv := rotate_rotate_rotate
 
 /-- The rotation `ρ` is an automorphism of `hexGraph`. -/
-@[expose] def hexGraphRotate : hexGraph ≃g hexGraph where
+def hexGraphRotate : hexGraph ≃g hexGraph where
   toEquiv := TriFace.rotateEquiv
   map_rel_iff' {f g} := by
     simp only [TriFace.rotateEquiv, Equiv.coe_fn_mk, hexGraph_adj, ne_eq,
@@ -202,7 +202,7 @@ bijection from `TriEdge` onto the edge set of `hexGraph`. -/
     · rwa [← TriFace.rotate_mem_edges_rotate, TriEdge.rotate_rotate_rotate]
 
 /-- The automorphism `hexGraphRotate` is the rotation of faces. -/
-@[simp] theorem hexGraphRotate_apply (f : TriFace) : hexGraphRotate f = f.rotate := rfl
+@[simp] theorem hexGraphRotate_apply (f : TriFace) : hexGraphRotate f = f.rotate := (rfl)
 
 /-- The closed walk `W(u) – B(u) – W(u - e₁) – B(u - e₃) – W(u - e₃) – B(u - e₂) – W(u)` through
 the six faces at the vertex `u`, across the six edges at `u`. -/

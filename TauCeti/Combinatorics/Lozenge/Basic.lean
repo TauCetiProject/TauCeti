@@ -50,17 +50,17 @@ namespace TauCeti
 
 /-- The positive directions `e₁ = (1,0)`, `e₂ = (0,1)`, `e₃ = (1,1)` of the triangular lattice on
 `ℤ × ℤ`. The direction `k ∈ {1, 2, 3}` is stored as the index `k - 1 : Fin 3`. -/
-@[expose] def latticeDir : Fin 3 → ℤ × ℤ := ![(1, 0), (0, 1), (1, 1)]
+def latticeDir : Fin 3 → ℤ × ℤ := ![(1, 0), (0, 1), (1, 1)]
 
 /-- The direction `e₁ = (1, 0)`. -/
-@[simp] theorem latticeDir_zero : latticeDir 0 = (1, 0) := rfl
+@[simp] theorem latticeDir_zero : latticeDir 0 = (1, 0) := (rfl)
 /-- The direction `e₂ = (0, 1)`. -/
-@[simp] theorem latticeDir_one : latticeDir 1 = (0, 1) := rfl
+@[simp] theorem latticeDir_one : latticeDir 1 = (0, 1) := (rfl)
 /-- The direction `e₃ = (1, 1)`. -/
-@[simp] theorem latticeDir_two : latticeDir 2 = (1, 1) := rfl
+@[simp] theorem latticeDir_two : latticeDir 2 = (1, 1) := (rfl)
 
 /-- The rotation `ρ(x, y) = (-y, x - y)` of the triangular lattice, of order three. -/
-@[expose] def latticeRotation : ℤ × ℤ ≃+ ℤ × ℤ where
+def latticeRotation : ℤ × ℤ ≃+ ℤ × ℤ where
   toFun u := (-u.2, u.1 - u.2)
   invFun u := (u.2 - u.1, -u.1)
   left_inv u := by ext <;> simp
@@ -68,11 +68,11 @@ namespace TauCeti
   map_add' u u' := by ext <;> simp <;> abel
 
 /-- The rotation sends `(x, y)` to `(-y, x - y)`. -/
-@[simp] theorem latticeRotation_apply (u : ℤ × ℤ) : latticeRotation u = (-u.2, u.1 - u.2) := rfl
+@[simp] theorem latticeRotation_apply (u : ℤ × ℤ) : latticeRotation u = (-u.2, u.1 - u.2) := (rfl)
 
 /-- The inverse rotation sends `(x, y)` to `(y - x, -x)`. -/
 @[simp] theorem latticeRotation_symm_apply (u : ℤ × ℤ) :
-    latticeRotation.symm u = (u.2 - u.1, -u.1) := rfl
+    latticeRotation.symm u = (u.2 - u.1, -u.1) := (rfl)
 
 /-- The rotation has order three. -/
 theorem latticeRotation_latticeRotation_latticeRotation (u : ℤ × ℤ) :
@@ -105,6 +105,9 @@ namespace TriEdge
 
 /-- The final vertex `v + e_k` of an edge. -/
 def target (e : TriEdge) : ℤ × ℤ := e.v + latticeDir e.k
+
+/-- The final vertex of `(v, k)` is `v + e_k`. -/
+theorem target_def (e : TriEdge) : e.target = e.v + latticeDir e.k := (rfl)
 
 /-- `ℤ²` acts on edges by translation, `w +ᵥ (v, k) = (w + v, k)`. -/
 instance instAddActionTriEdge : AddAction (ℤ × ℤ) TriEdge where
