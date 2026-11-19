@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
 public import TauCeti.NumberTheory.NumberField.Global.Places.ScalarExtension
@@ -187,15 +186,11 @@ theorem Nondegenerate.atFinitePlace [NumberField K]
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (v : HeightOneSpectrum (𝓞 K)) :
     (Q.atFinitePlace v).Nondegenerate := by
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Invertible (2 : v.adicCompletion K) :=
-    (Invertible.map (algebraMap K (v.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
-  rw [atFinitePlace_def, ← QuadraticMap.nondegenerate_associated_iff,
-    _root_.QuadraticForm.associated_baseChange]
-  exact LinearMap.BilinForm.Nondegenerate.baseChange (v.adicCompletion K)
-    (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
+  rw [atFinitePlace_def]
+  exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every real place. -/
-theorem Nondegenerate.atRealPlace [FiniteDimensional K V]
+/-- A nondegenerate quadratic form stays nondegenerate at every real place. -/
+theorem Nondegenerate.atRealPlace
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.atRealPlace w).Nondegenerate := by
   let : CharZero K := RingHom.charZero w.1.embedding
@@ -204,9 +199,9 @@ theorem Nondegenerate.atRealPlace [FiniteDimensional K V]
   rw [atRealPlace_def]
   exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after scalar extension
+/-- A nondegenerate quadratic form stays nondegenerate after scalar extension
 through a complex embedding. -/
-theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
+theorem Nondegenerate.atComplexEmbedding
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
     (Q.atComplexEmbedding w).Nondegenerate := by
   let : CharZero K := RingHom.charZero w.embedding
