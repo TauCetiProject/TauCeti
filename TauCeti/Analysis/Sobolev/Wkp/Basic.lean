@@ -544,7 +544,7 @@ theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → 
 /-- On the whole space, a Sobolev function is determined by its value almost everywhere. -/
 theorem ext_ae {k : ℕ} {u v : Wkp mu ⊤ p k} (h : (value k u : E → ℝ) =ᵐ[mu] value k v) :
     u = v :=
-  ext k (Lp.ext (by rwa [Filter.EventuallyEq, congrArg ae (Measure.restrict_coe_opens_top mu)]))
+  ext k (Lp.ext (by rwa [Filter.EventuallyEq, Measure.ae_restrict_coe_opens_top]))
 
 /-- On an empty domain every Sobolev space is trivial. -/
 theorem subsingleton_of_eq_empty (k : ℕ) (h : (Omega : Set E) = ∅) :

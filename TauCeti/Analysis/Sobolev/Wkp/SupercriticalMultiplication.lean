@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.SupercriticalMultiplication
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Multiplication in supercritical Sobolev spaces of every order
@@ -74,11 +75,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 /-! ### Bounded representatives -/
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] in
-/-- On the whole space, almost everywhere on `⊤` is almost everywhere. -/
-private theorem ae_restrict_top : ae (mu.restrict ((⊤ : Opens E) : Set E)) = ae mu := by
-  rw [Opens.coe_top, Measure.restrict_univ]
-
 /-- A positive-order Sobolev function on `ℝⁿ`, `n < p`, is represented by the Morrey
 representative of its first-order part. -/
 private theorem value_ae_eq_morreyRepresentative (hp : (finrank ℝ E : ℝ≥0) < p) {k : ℕ}
@@ -106,7 +102,7 @@ private theorem memLp_value_mul (hp : (finrank ℝ E : ℝ≥0) < p) {i m : ℕ}
     MemLp (fun x => value i u x * value (m + 1) v x) p (mu.restrict ⊤) := by
   refine (MemLp.fun_mul (p := ∞) (q := (p : ℝ≥0∞)) (r := (p : ℝ≥0∞))
     (W1p.memLp_top_morreyRepresentative hp (firstOrder m v)) (Lp.memLp (value i u))).ae_eq ?_
-  rw [EventuallyEq, ae_restrict_top]
+  rw [EventuallyEq, Measure.ae_restrict_coe_opens_top]
   filter_upwards [value_ae_eq_morreyRepresentative hp v] with x hx
   rw [hx, mul_comm]
 
@@ -156,7 +152,7 @@ theorem exists_value_ae_eq_mul (hp : (finrank ℝ E : ℝ≥0) < p) {i j m : ℕ
   induction j generalizing i m with
   | zero =>
     refine ⟨(memLp_value_mul hp u v).toLp _, ?_⟩
-    rw [value_zero, EventuallyEq, ← ae_restrict_top]
+    rw [value_zero, EventuallyEq, ← Measure.ae_restrict_coe_opens_top]
     exact (memLp_value_mul hp u v).coeFn_toLp
   | succ j ih =>
     obtain ⟨i, rfl⟩ : ∃ i', i = i' + 1 := ⟨i - 1, by omega⟩
@@ -174,7 +170,7 @@ theorem exists_value_ae_eq_mul (hp : (finrank ℝ E : ℝ≥0) < p) {i j m : ℕ
     choose d hd using hd
     obtain ⟨w, hw⟩ := exists_value_ae_eq_of_forall_hasWeakLineDerivOn j
       (memLp_value_mul hp u v) d hd
-    exact ⟨w, by rwa [EventuallyEq, ae_restrict_top] at hw⟩
+    exact ⟨w, by rwa [EventuallyEq, Measure.ae_restrict_coe_opens_top] at hw⟩
 
 /-! ### Multiplication as a bounded bilinear map -/
 
@@ -206,16 +202,18 @@ private theorem mulAux_add_right (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
     (u v w : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) :
     mulAux hp k u (v + w) = mulAux hp k u v + mulAux hp k u w := by
   refine ((eq_mulAux_iff hp).2 ?_).symm
-  filter_upwards [ae_restrict_top.ge (value_add_ae (k + 1) (mulAux hp k u v) (mulAux hp k u w)),
-    value_mulAux hp k u v, value_mulAux hp k u w, ae_restrict_top.ge (value_add_ae (k + 1) v w)]
-    with x h₁ h₂ h₃ h₄
+  filter_upwards [(Measure.ae_restrict_coe_opens_top mu).ge
+      (value_add_ae (k + 1) (mulAux hp k u v) (mulAux hp k u w)),
+    value_mulAux hp k u v, value_mulAux hp k u w,
+    (Measure.ae_restrict_coe_opens_top mu).ge (value_add_ae (k + 1) v w)] with x h₁ h₂ h₃ h₄
   rw [h₁, Pi.add_apply, h₂, h₃, h₄, Pi.add_apply, mul_add]
 
 private theorem mulAux_smul_right (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ) (c : ℝ)
     (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) : mulAux hp k u (c • v) = c • mulAux hp k u v := by
   refine ((eq_mulAux_iff hp).2 ?_).symm
-  filter_upwards [ae_restrict_top.ge (value_smul_ae (k + 1) c (mulAux hp k u v)),
-    value_mulAux hp k u v, ae_restrict_top.ge (value_smul_ae (k + 1) c v)] with x h₁ h₂ h₃
+  filter_upwards [(Measure.ae_restrict_coe_opens_top mu).ge
+      (value_smul_ae (k + 1) c (mulAux hp k u v)), value_mulAux hp k u v,
+    (Measure.ae_restrict_coe_opens_top mu).ge (value_smul_ae (k + 1) c v)] with x h₁ h₂ h₃
   rw [h₁, Pi.smul_apply, h₂, h₃, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_left_comm]
 
 private theorem mulAux_sub_right (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
@@ -242,7 +240,7 @@ private theorem norm_value_mulAux_le (hp : (finrank ℝ E : ℝ≥0) < p) (k : �
     (ψ := W1p.morreyRepresentative (firstOrder k u) hp)
     (Eventually.of_forall fun x => norm_morreyRepresentative_firstOrder_le hp k u x) ?_).trans
     (mul_le_mul_of_nonneg_left (norm_value_le _ v) (by positivity))
-  rw [EventuallyEq, ae_restrict_top]
+  rw [EventuallyEq, Measure.ae_restrict_coe_opens_top]
   filter_upwards [value_mulAux hp k u v, value_ae_eq_morreyRepresentative hp u] with x h₁ h₂
   rw [h₁, h₂, smul_eq_mul]
 
@@ -363,7 +361,7 @@ theorem firstOrder_mulL (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
     (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) :
     firstOrder k (mulL hp k u v) = W1p.mul hp (firstOrder k u) (firstOrder k v) := by
   refine W1p.ext_value (Lp.ext ?_)
-  rw [EventuallyEq, ae_restrict_top, value_firstOrder]
+  rw [EventuallyEq, Measure.ae_restrict_coe_opens_top, value_firstOrder]
   filter_upwards [value_mulL_ae hp k u v, W1p.value_mul_ae hp (firstOrder k u) (firstOrder k v),
     value_ae_eq_morreyRepresentative hp u, value_ae_eq_morreyRepresentative hp v]
     with x h₁ h₂ h₃ h₄
