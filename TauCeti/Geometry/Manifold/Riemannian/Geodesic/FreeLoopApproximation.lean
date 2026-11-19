@@ -111,17 +111,28 @@ private def arcDuration (s : unitInterval) (γ : MooreFreeLoopSpace M) (i : Fin 
       nndist (γ.closedSample (n + 1) i.castSucc) (γ.closedSample (n + 1) i.succ)
 
 omit [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- At the start of the homotopy every arc lasts `L / (n + 1)`. -/
+private theorem arcDuration_zero (γ : MooreFreeLoopSpace M) (i : Fin (n + 1)) :
+    arcDuration n 0 γ i = γ.length / (n + 1) := by
+  simp [arcDuration]
+
+omit [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- At the end of the homotopy every arc lasts the distance between its vertices. -/
+private theorem arcDuration_one (γ : MooreFreeLoopSpace M) (i : Fin (n + 1)) :
+    arcDuration n 1 γ i =
+      nndist (γ.closedSample (n + 1) i.castSucc) (γ.closedSample (n + 1) i.succ) := by
+  simp [arcDuration]
+
+omit [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- An arc of duration zero joins equal vertices. -/
 private theorem eq_of_arcDuration_eq_zero {s : unitInterval} {γ : MooreFreeLoopSpace M}
     {i : Fin (n + 1)} (h : arcDuration n s γ i = 0) :
     γ.closedSample (n + 1) i.castSucc = γ.closedSample (n + 1) i.succ := by
-  obtain ⟨h₁, h₂⟩ := add_eq_zero.1 h
-  rcases mul_eq_zero.1 h₂ with hs | hd
+  rcases mul_eq_zero.1 (add_eq_zero.1 h).2 with hs | hd
   · -- At `s = 0` the duration is `L / (n + 1)`, which only vanishes for a loop of length zero.
-    have hs : s = 0 := Subtype.ext (by simpa using congrArg NNReal.toReal hs)
-    rw [hs, unitInterval.symm_zero, unitInterval.toNNReal_one, one_mul,
-      div_eq_zero_iff] at h₁
-    have hγ := h₁.resolve_right (by exact_mod_cast n.succ_ne_zero)
+    obtain rfl : s = 0 := Subtype.ext (by simpa using congrArg NNReal.toReal hs)
+    rw [arcDuration_zero, div_eq_zero_iff] at h
+    have hγ := h.resolve_right (by exact_mod_cast n.succ_ne_zero)
     rw [MooreFreeLoopSpace.closedSample_of_length_eq_zero hγ,
       MooreFreeLoopSpace.closedSample_of_length_eq_zero hγ]
   · exact nndist_eq_zero.1 hd
@@ -174,7 +185,7 @@ private theorem arcDurationMap_one
       exact MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.2 i,
     brokenGeodesic_eq_brokenMoorePath hr]
   exact brokenMoorePath_congr _ _ _ (MooreFreeLoopSpace.closedSample_eq_snoc _ _)
-    (funext fun i ↦ by simp [arcDuration, MooreFreeLoopSpace.closedSample_eq_snoc])
+    (funext fun i ↦ by simp [arcDuration_one, MooreFreeLoopSpace.closedSample_eq_snoc])
 
 /-- **The closed broken geodesic through the sampled vertices** of a free Moore loop whose `n + 1`
 arcs lie within distance `r` of their initial vertices, as a continuous map. -/
@@ -214,8 +225,8 @@ def brokenPathDurationHomotopy :
       rw [MooreFreeLoopSpace.coe_toArcsWithin]
       exact MooreFreeLoopSpace.closedSample_eq_toUnitPath (γ : MooreFreeLoopSpace M) n.succ_pos i)
       fun i ↦ ⟨MooreFreeLoopSpace.closedSample_mem_of_mem_arcsWithin γ.2 i, fun h ↦
-        eq_of_arcDuration_eq_zero n (s := 0) (by simpa [arcDuration] using h)⟩]
-    exact brokenMoorePath_congr _ _ _ rfl (funext fun i ↦ by simp [arcDuration])
+        eq_of_arcDuration_eq_zero n (s := 0) (by simpa [arcDuration_zero] using h)⟩]
+    exact brokenMoorePath_congr _ _ _ rfl (funext fun i ↦ by simp [arcDuration_zero])
   map_one_left := arcDurationMap_one hr n
 
 /-- At time `s` of the homotopy changing the durations, the `i`-th arc runs along the geodesic
