@@ -16,9 +16,12 @@ public import Mathlib.GroupTheory.FreeGroup.Basic
 A degree function `d : S → D` on generators cuts the completed module `NovikovModule R F` into
 the homogeneous pieces `NovikovModule.gradeBy R F d k`. These pieces are always independent, but
 in general they do not span: a completed combination may meet infinitely many degrees, and then
-it is not a finite sum of homogeneous combinations. If `d` takes only finitely many values, every
-completed combination is the finite sum of its homogeneous parts
-(`NovikovModule.gradeProj`), so the completion is the internal direct sum of its homogeneous
+it is not a finite sum of homogeneous combinations. The finite sums of homogeneous combinations
+are exactly the combinations meeting finitely many degrees (`NovikovModule.mem_iSup_gradeBy_iff`),
+and the completion is the internal direct sum of its homogeneous pieces exactly when every
+combination does (`NovikovModule.isInternal_gradeBy_iff`). This is the case if `d` takes only
+finitely many values: every completed combination is then the finite sum of its homogeneous parts
+(`NovikovModule.gradeProj`), and the completion is the internal direct sum of its homogeneous
 pieces (`NovikovModule.isInternal_gradeBy`).
 
 For a finite union of torsors `P i` under a group `H`, this applies to any degree that is
@@ -48,8 +51,11 @@ soon as `δ ≠ 0`, and then the homogeneous integer pieces need not span the co
 
 * `TauCeti.NovikovModule.iSupIndep_of_forall_mem_iff`,
   `TauCeti.NovikovModule.isInternal_of_forall_mem_iff`: independence of the homogeneous pieces,
-  and the internal direct sum decomposition for a degree with finite range, over any ring of
-  scalars for which the pieces are submodules.
+  and the internal direct sum decomposition when every combination meets finitely many degrees,
+  over any ring of scalars for which the pieces are submodules.
+* `TauCeti.NovikovModule.mem_iSup_gradeBy_iff`, `TauCeti.NovikovModule.isInternal_gradeBy_iff`:
+  a combination is a finite sum of homogeneous ones exactly when it meets finitely many degrees,
+  and the homogeneous pieces decompose the completion exactly when every combination does.
 * `TauCeti.NovikovModule.smul_mem_gradeBy_of_forall_vadd_eq`: every Novikov series preserves the
   homogeneous pieces of an orbit-invariant degree.
 * `TauCeti.NovikovModule.isInternal_novikovGradeBy`: the completion is the direct sum of its
@@ -126,12 +132,21 @@ theorem gradeProj_eq_zero_of_mem_gradeBy {j k : D} (hjk : j ≠ k) {a : NovikovM
   · simp [h, val_eq_zero_of_mem_gradeBy ha (h.trans_ne hjk.symm)]
   · simp [h]
 
-/-- If every degree lies in the finite set `T`, a completed combination is the sum of its
-homogeneous parts of degrees in `T`. -/
-theorem sum_gradeProj (T : Finset D) (hT : ∀ s, d s ∈ T) (a : NovikovModule R F) :
-    ∑ k ∈ T, gradeProj R F d k a = a := by
+/-- The coefficients of a finite sum of homogeneous parts: those of the generators whose degree
+lies in the summation range, with all other coefficients set to zero. -/
+theorem sum_gradeProj_val (T : Finset D) (a : NovikovModule R F) (s : S) :
+    (∑ k ∈ T, gradeProj R F d k a).val s = if d s ∈ T then a.val s else 0 := by
+  simp only [Submodule.coe_sum, Finset.sum_apply, gradeProj_val, Finset.sum_ite_eq]
+
+/-- If the finite set `T` contains the degree of every generator at which `a` has a nonzero
+coefficient, then `a` is the sum of its homogeneous parts of degrees in `T`. -/
+theorem sum_gradeProj (T : Finset D) {a : NovikovModule R F}
+    (hT : ∀ s, a.val s ≠ 0 → d s ∈ T) : ∑ k ∈ T, gradeProj R F d k a = a := by
   ext s
-  simp only [Submodule.coe_sum, Finset.sum_apply, gradeProj_val, Finset.sum_ite_eq, hT, ite_true]
+  rw [sum_gradeProj_val]
+  split_ifs with h
+  · rfl
+  · exact (not_imp_comm.1 (hT s) h).symm
 
 end Proj
 
@@ -175,24 +190,63 @@ theorem gradeProj_coeAddMonoidHom [DecidableEq D] (hA : ∀ k a, a ∈ A k ↔ a
         gradeProj_eq_zero_of_mem_gradeBy hjk ((hA _ _).1 x.property), ZeroMemClass.coe_zero]
   | add f g hf hg => simp only [map_add, hf, hg, DirectSum.add_apply, AddMemClass.coe_add]
 
-/-- For a degree with finitely many values, the completed module is the internal direct sum of
-its homogeneous pieces, over any ring of scalars `Λ` for which the pieces are submodules. -/
-theorem isInternal_of_forall_mem_iff [DecidableEq D] (hd : (range d).Finite)
+/-- If every completed combination has nonzero coefficients in only finitely many degrees, as
+happens for a degree with finitely many values, the completed module is the internal direct sum
+of its homogeneous pieces, over any ring of scalars `Λ` for which the pieces are submodules. -/
+theorem isInternal_of_forall_mem_iff [DecidableEq D]
+    (hd : ∀ a : NovikovModule R F, (d '' Function.support a.val).Finite)
     (hA : ∀ k a, a ∈ A k ↔ a ∈ gradeBy R F d k) : DirectSum.IsInternal A := by
   refine ⟨fun f g hfg => DirectSum.ext fun k => Subtype.ext ?_, fun a => ?_⟩
   · rw [← gradeProj_coeAddMonoidHom hA, ← gradeProj_coeAddMonoidHom hA, hfg]
   · -- `a` is the sum of its finitely many homogeneous parts.
-    refine ⟨∑ k ∈ hd.toFinset, DirectSum.of (fun k => A k) k
+    refine ⟨∑ k ∈ (hd a).toFinset, DirectSum.of (fun k => A k) k
       ⟨gradeProj R F d k a, (hA k _).2 (gradeProj_mem_gradeBy d k a)⟩, ?_⟩
     rw [map_sum]
     simp only [DirectSum.coeAddMonoidHom_of]
-    exact sum_gradeProj hd.toFinset (fun s => hd.mem_toFinset.2 ⟨s, rfl⟩) a
+    exact sum_gradeProj _ fun s hs => (hd a).mem_toFinset.2 ⟨s, hs, rfl⟩
 
 /-- For a degree with finitely many values, the completed module is the internal direct sum of
 its homogeneous pieces. -/
 theorem isInternal_gradeBy [DecidableEq D] (hd : (range d).Finite) :
     DirectSum.IsInternal (gradeBy R F d) :=
-  isInternal_of_forall_mem_iff hd fun _ _ => Iff.rfl
+  isInternal_of_forall_mem_iff (fun _ => hd.subset (image_subset_range _ _)) fun _ _ => Iff.rfl
+
+/-- A completed combination is a finite sum of homogeneous combinations exactly when its nonzero
+coefficients occur in only finitely many degrees. -/
+theorem mem_iSup_gradeBy_iff {a : NovikovModule R F} :
+    a ∈ ⨆ k, gradeBy R F d k ↔ (d '' Function.support a.val).Finite := by
+  classical
+  refine ⟨fun ha => ?_, fun ha => ?_⟩
+  · refine Submodule.iSup_induction _
+      (motive := fun x : NovikovModule R F => (d '' Function.support x.val).Finite) ha
+      (fun k x hx => (finite_singleton k).subset ?_) (by simp) fun x y hx hy => ?_
+    · rintro _ ⟨s, hs, rfl⟩
+      exact mem_gradeBy_iff.1 hx s hs
+    · refine (hx.union hy).subset ?_
+      rw [← image_union, Submodule.coe_add]
+      exact image_mono (Function.support_add x.val y.val)
+  · rw [← sum_gradeProj ha.toFinset fun s hs => ha.mem_toFinset.2 ⟨s, hs, rfl⟩]
+    exact Submodule.sum_mem _ fun k _ =>
+      Submodule.mem_iSup_of_mem k (gradeProj_mem_gradeBy d k a)
+
+/-- The homogeneous pieces span the completed module exactly when every completed combination has
+nonzero coefficients in only finitely many degrees. -/
+theorem iSup_gradeBy_eq_top_iff :
+    ⨆ k, gradeBy R F d k = ⊤ ↔ ∀ a : NovikovModule R F, (d '' Function.support a.val).Finite := by
+  simp [Submodule.eq_top_iff', mem_iSup_gradeBy_iff]
+
+/-- Every finite combination is a finite sum of homogeneous combinations. -/
+theorem range_ofFinsupp_le_iSup_gradeBy :
+    LinearMap.range (ofFinsupp F) ≤ ⨆ k, gradeBy R F d k := fun _ ha =>
+  mem_iSup_gradeBy_iff.2 ((mem_range_ofFinsupp_iff.1 ha).image d)
+
+/-- The completed module is the internal direct sum of its homogeneous pieces exactly when every
+completed combination has nonzero coefficients in only finitely many degrees. -/
+theorem isInternal_gradeBy_iff [DecidableEq D] :
+    DirectSum.IsInternal (gradeBy R F d) ↔
+      ∀ a : NovikovModule R F, (d '' Function.support a.val).Finite :=
+  ⟨fun h => iSup_gradeBy_eq_top_iff.1 h.submodule_iSup_eq_top,
+    fun hd => isInternal_of_forall_mem_iff hd fun _ _ => Iff.rfl⟩
 
 end Decomposition
 
@@ -245,7 +299,8 @@ theorem isInternal_novikovGradeBy [DecidableEq D] :
     letI := module (R := R) hF
     DirectSum.IsInternal (novikovGradeBy (R := R) hF hd) :=
   letI := module (R := R) hF
-  isInternal_of_forall_mem_iff (AddTorsor.finite_range_sigma_of_forall_vadd_eq hd)
+  isInternal_of_forall_mem_iff
+    (fun _ => (AddTorsor.finite_range_sigma_of_forall_vadd_eq hd).subset (image_subset_range _ _))
     fun _ _ => Iff.rfl
 
 end Orbit
