@@ -335,6 +335,13 @@ theorem coefficient_comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymb
     (p : X × E) : (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) :=
   (rfl)
 
+/-- If the composite `b a` of two homogeneous symbols vanishes, so does the composite of their
+values at every point. -/
+theorem coefficient_comp_coefficient_eq_zero {b : HomogeneousSymbol X E W U m'}
+    {a : HomogeneousSymbol X E V W m} (h : b.comp a = 0) (p : X × E) :
+    b.coefficient p ∘L a.coefficient p = 0 := by
+  simpa using congrFun (congrArg coefficient h) p
+
 @[simp]
 theorem comp_add (b : HomogeneousSymbol X E W U m') (a₁ a₂ : HomogeneousSymbol X E V W m) :
     b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
