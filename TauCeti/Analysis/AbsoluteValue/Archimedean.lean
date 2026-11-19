@@ -38,12 +38,14 @@ namespace AbsoluteValue
 theorem eq_norm_of_apply_ofReal (f : AbsoluteValue ℂ ℝ) (h : ∀ r : ℝ, f r = |r|) :
     ⇑f = norm := by
   let g : MulAlgebraNorm ℝ ℂ :=
-    { MulRingNorm.mulRingNormEquivAbsoluteValue.symm f with
+    { toFun := f
+      map_zero' := map_zero f
+      add_le' := f.add_le
+      neg' := f.map_neg
+      map_one' := map_one f
+      map_mul' := map_mul f
+      eq_zero_of_map_eq_zero' _ := f.eq_zero.mp
       smul' r z := by
-        simp only [MulRingNorm.mulRingNormEquivAbsoluteValue_symm_apply,
-          AddGroupSeminorm.toFun_eq_coe, MulRingSeminorm.toFun_eq_coe,
-          MulRingNorm.toMulRingSeminorm_apply, MulRingNorm.ofAbsoluteValue_toFun,
-          MulHom.toFun_eq_coe, AbsoluteValue.coe_toMulHom]
         rw [Algebra.smul_def, map_mul, Complex.coe_algebraMap, h, Real.norm_eq_abs] }
   exact congrArg DFunLike.coe (MulAlgebraNorm.unique g (NormedAlgebra.toMulAlgebraNorm ℝ ℂ))
 
