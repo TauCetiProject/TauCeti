@@ -248,7 +248,7 @@ theorem isEven_restrictFull {L : IntegralLattice V} (hL : L.IsEven) (N : Submodu
 
 /-- The intersection of the carriers of two integral lattices on the same rational space is a
 full lattice. -/
-instance isLattice_carrier_inf (L M : IntegralLattice V) :
+instance isFullLattice_carrier_inf (L M : IntegralLattice V) :
     (L.carrier ⊓ M.carrier).IsFullLattice ℚ :=
   have := L.finiteDimensional
   inferInstance
@@ -304,7 +304,7 @@ theorem restrictFullIsometry_apply (L : IntegralLattice V) (S : Submodule ℤ L)
   let e := (L.restrictCarrierEquiv S).symm.trans
     ((Submodule.equivMapOfInjective L.carrier.subtype L.carrier.injective_subtype S).trans
       (LinearEquiv.ofEq _ _ (L.restrictFull_carrier _ (L.carrier.map_subtype_le S)).symm))
-  have he := LinearEquiv.eq_extendOfIsLattice e
+  have he := LinearEquiv.eq_extendOfIsFullLattice e
     (LinearEquiv.ofBijective (L.restrictMap S) (L.restrictMap_bijective S)) (by
       intro y
       obtain ⟨s, rfl⟩ := (L.restrictCarrierEquiv S).surjective y

@@ -27,8 +27,8 @@ arbitrary one.
 
 ## Main declarations
 
-* `TauCeti.IsChevalleySystem.instIsLatticeChevalleyLieLattice`: the root--coroot Lie lattice is a
-  full integral lattice.
+* `TauCeti.IsChevalleySystem.instIsFullLatticeChevalleyLieLattice`: the root--coroot Lie lattice
+  is a full integral lattice.
 * `TauCeti.IsChevalleySystem.chevalleyLieLatticeRationalization`: its scalar extension recovers
   the ambient rational Lie algebra as a Lie algebra.
 
@@ -62,7 +62,7 @@ include hx
 
 /-- The Chevalley root--coroot Lie lattice is a full integral lattice in the ambient rational Lie
 algebra. -/
-instance instIsLatticeChevalleyLieLattice :
+instance instIsFullLatticeChevalleyLieLattice :
     hx.chevalleyLieLattice.toSubmodule.IsFullLattice ℚ where
   toIsLattice := Submodule.IsLattice.of_fg ℚ (by
     rw [hx.chevalleyLieLattice_toSubmodule, rootCorootSpan_eq_span_generators]

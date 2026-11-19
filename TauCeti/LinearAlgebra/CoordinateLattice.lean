@@ -108,7 +108,7 @@ coordinate. -/
 
 /-- The standard coordinate lattice is finitely generated and spans its rational coordinate
 space. -/
-instance instIsLatticeCoordinateLattice : Submodule.IsFullLattice ℚ (coordinateLattice ι) where
+instance instIsFullLatticeCoordinateLattice : Submodule.IsFullLattice ℚ (coordinateLattice ι) where
   __ := Submodule.IsLattice.of_fg ℚ (by
     rw [coordinateLattice]
     exact Submodule.fg_span (Set.finite_range _))

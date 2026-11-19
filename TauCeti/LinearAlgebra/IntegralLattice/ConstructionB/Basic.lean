@@ -138,7 +138,7 @@ private theorem four_smul_mem_lattice {x : ι → ℚ}
 open scoped Pointwise in
 /-- The Construction B carrier is a full lattice: it lies in Construction A and contains four
 times every Construction A vector. -/
-instance isLattice : (lattice C).IsFullLattice ℚ := by
+instance isFullLattice : (lattice C).IsFullLattice ℚ := by
   refine Submodule.IsFullLattice.of_le_of_fg ℚ
     (M := Units.mk0 (4 : ℚ) (by norm_num) • ConstructionA.lattice 2 C.toAddSubgroup) ?_
     (Submodule.FG.of_le (Submodule.IsLattice.fg ℚ (ConstructionA.lattice 2 C.toAddSubgroup))

@@ -97,7 +97,7 @@ theorem mem_radicalQuotientCarrier_iff (x : V ⧸ L.radical) :
     Submodule.mkQ_apply]
 
 /-- The image of a full integral carrier in the radical quotient is again a full lattice. -/
-instance isLattice_radicalQuotientCarrier : L.radicalQuotientCarrier.IsFullLattice ℚ where
+instance isFullLattice_radicalQuotientCarrier : L.radicalQuotientCarrier.IsFullLattice ℚ where
   toIsLattice := Submodule.IsLattice.of_fg ℚ (M := L.radicalQuotientCarrier)
     ((Submodule.IsLattice.fg ℚ L.carrier).map _)
   span_eq_top := by
@@ -107,7 +107,7 @@ instance isLattice_radicalQuotientCarrier : L.radicalQuotientCarrier.IsFullLatti
       ext x
       simp only [SetLike.mem_coe, radicalQuotientCarrier, Submodule.mem_map,
         LinearMap.restrictScalars_apply, Set.mem_image]
-    rw [hcoe, ← Submodule.map_span, L.isLattice.span_eq_top, Submodule.map_top,
+    rw [hcoe, ← Submodule.map_span, L.isFullLattice.span_eq_top, Submodule.map_top,
       Submodule.range_mkQ]
 
 /-- The radical quotient of an integral lattice. Its carrier is the image of the original carrier,

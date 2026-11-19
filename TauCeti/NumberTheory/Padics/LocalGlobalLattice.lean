@@ -32,7 +32,7 @@ lattice at almost every prime is the family of localizations of exactly one latt
   other, and `d` is a `p`-adic unit at almost every prime.
 * Given a full lattice `N` and full `ℤ_p`-lattices `X_p ⊆ V_p` with `X_p = N_p` for almost every
   `p`, the lattice `M = {v ∈ V | 1 ⊗ v ∈ X_p for every p}` is the unique full lattice with
-  `M_p = X_p` at every prime (`Submodule.existsUnique_isLattice_padicLocalization_eq`).
+  `M_p = X_p` at every prime (`Submodule.existsUnique_isFullLattice_padicLocalization_eq`).
 
 The last statement is what turns a finite adelic point `g = (g_p)` of the orthogonal group of
 `V` into a lattice `g L` with `(g L)_p = g_p L_p`, on which the description of the classes in the
@@ -46,7 +46,7 @@ genus of an integral lattice by finite adelic double cosets rests.
 
 * `Submodule.padicLocalization_le_iff`: `N_p` is the least `ℤ_p`-submodule containing every
   `1 ⊗ v`, `v ∈ N`.
-* `Submodule.isLattice_padicLocalization`: the localization of a full lattice is a full
+* `Submodule.isFullLattice_padicLocalization`: the localization of a full lattice is a full
   `ℤ_p`-lattice.
 * `Submodule.mem_padicLocalization_iff_repr_mem`: in the scalar extension of the rational basis
   of a basis of `N`, the localization `N_p` consists of the vectors with `p`-adic integral
@@ -57,9 +57,9 @@ genus of an integral lattice by finite adelic double cosets rests.
 * `Submodule.eventually_padicLocalization_eq`: two full lattices have equal localizations at
   almost every prime.
 * `Submodule.exists_eq_one_tmul_add_pow_smul`: `N` is dense in `N_p`.
-* `Submodule.IsLattice.exists_forall_pow_smul_mem`: a power of `p` multiplies a finitely
+* `Submodule.IsFullLattice.exists_forall_pow_smul_mem`: a power of `p` multiplies a finitely
   generated `ℤ_p`-submodule into a full `ℤ_p`-lattice.
-* `Submodule.existsUnique_isLattice_padicLocalization_eq`: a family of full local lattices
+* `Submodule.existsUnique_isFullLattice_padicLocalization_eq`: a family of full local lattices
   agreeing almost everywhere with the localizations of a full lattice is the family of
   localizations of a unique full lattice.
 
@@ -123,7 +123,7 @@ theorem padicLocalization_span (s : Set V) :
 
 variable (N p) in
 /-- The localization of a full lattice is a full `ℤ_p`-lattice in `ℚ_p ⊗[ℚ] V`. -/
-instance isLattice_padicLocalization [N.IsFullLattice ℚ] :
+instance isFullLattice_padicLocalization [N.IsFullLattice ℚ] :
     (N.padicLocalization p).IsFullLattice ℚ_[p] where
   toIsLattice := IsLattice.of_fg ℚ_[p] (by
     obtain ⟨s, hs⟩ := IsLattice.fg (A := ℚ) (M := N)
@@ -153,7 +153,7 @@ rational basis of a basis of `N`. -/
 theorem padicLocalization_eq_span_range :
     N.padicLocalization p =
       span ℤ_[p] (Set.range ((e.extendOfIsFullLattice ℚ).baseChange ℚ_[p])) := by
-  conv_lhs => rw [← e.span_range_extendOfIsLattice (K := ℚ)]
+  conv_lhs => rw [← e.span_range_extendOfIsFullLattice (K := ℚ)]
   rw [padicLocalization_span, ← Set.range_comp]
   congr 2
   ext i
@@ -188,7 +188,7 @@ theorem mem_iff_forall_one_tmul_mem_padicLocalization (v : V) :
   let b := e.extendOfIsFullLattice ℚ
   -- Globally, membership is integrality of the rational coordinates of `v` in `b`.
   have hglob : v ∈ N ↔ ∀ i, (b.repr v i).den = 1 := by
-    conv_lhs => rw [← e.span_range_extendOfIsLattice (K := ℚ)]
+    conv_lhs => rw [← e.span_range_extendOfIsFullLattice (K := ℚ)]
     rw [Basis.mem_span_iff_repr_mem]
     refine forall_congr' fun i ↦ ⟨?_, fun h ↦ ⟨_, (Rat.den_eq_one_iff _).mp h⟩⟩
     rintro ⟨n, hn⟩
@@ -278,11 +278,11 @@ section Existence
 
 /-- **Commensurability over `ℤ_p`.** A power of `p` multiplies a finitely generated
 `ℤ_p`-submodule of a `ℚ_p`-vector space into a full `ℤ_p`-lattice. -/
-theorem IsLattice.exists_forall_pow_smul_mem (p : ℕ) [Fact p.Prime] {W : Type*} [AddCommGroup W]
+theorem IsFullLattice.exists_forall_pow_smul_mem (p : ℕ) [Fact p.Prime] {W : Type*} [AddCommGroup W]
     [Module ℚ_[p] W] [Module ℤ_[p] W] [IsScalarTower ℤ_[p] ℚ_[p] W] (Z : Submodule ℤ_[p] W)
     [Z.IsFullLattice ℚ_[p]] {Y : Submodule ℤ_[p] W} (hY : Y.FG) :
     ∃ k : ℕ, ∀ x ∈ Y, (p : ℤ_[p]) ^ k • x ∈ Z := by
-  obtain ⟨k, hk⟩ := IsLattice.exists_maximalIdeal_pow_smul_le ℚ_[p] Z hY
+  obtain ⟨k, hk⟩ := IsFullLattice.exists_maximalIdeal_pow_smul_le ℚ_[p] Z hY
   refine ⟨k, fun x hx ↦ hk (smul_mem_smul ?_ hx)⟩
   rw [PadicInt.maximalIdeal_eq_span_p]
   exact Ideal.pow_mem_pow (Ideal.mem_span_singleton_self _) k
@@ -298,9 +298,9 @@ private theorem exists_pow_smul_mem_padicLocalization
       (∀ (p : Nat.Primes) {x}, x ∈ X p → (p : ℤ_[p]) ^ k p • x ∈ N.padicLocalization p) ∧
       ∀ (p : Nat.Primes) {x}, x ∈ N.padicLocalization p → (p : ℤ_[p]) ^ k p • x ∈ X p := by
   classical
-  choose k₁ hk₁ using fun p : Nat.Primes ↦ IsLattice.exists_forall_pow_smul_mem p
+  choose k₁ hk₁ using fun p : Nat.Primes ↦ IsFullLattice.exists_forall_pow_smul_mem p
     (N.padicLocalization p) (IsLattice.fg (A := ℚ_[p]) (M := X p))
-  choose k₂ hk₂ using fun p : Nat.Primes ↦ IsLattice.exists_forall_pow_smul_mem p (X p)
+  choose k₂ hk₂ using fun p : Nat.Primes ↦ IsFullLattice.exists_forall_pow_smul_mem p (X p)
     (IsLattice.fg (A := ℚ_[p]) (M := N.padicLocalization p))
   refine ⟨fun p ↦ if X p = N.padicLocalization p then 0 else k₁ p + k₂ p,
     hX.mono fun p h ↦ by simp [h], fun p x hx ↦ ?_, fun p x hx ↦ ?_⟩
@@ -376,7 +376,7 @@ private theorem exists_forall_one_tmul_mem_add
   exact sub_mem (smul_mem _ _ hy) (smul_mem _ _ (hkN p ht))
 
 open scoped Pointwise in
-/-- The existence half of `Submodule.existsUnique_isLattice_padicLocalization_eq`: the lattice
+/-- The existence half of `Submodule.existsUnique_isFullLattice_padicLocalization_eq`: the lattice
 `M = {v ∈ V | 1 ⊗ v ∈ X p for every p}` has `M_p = X p` at every prime. -/
 private theorem exists_isLattice_padicLocalization_eq
     (X : ∀ p : Nat.Primes, Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V)) [∀ p, (X p).IsFullLattice ℚ_[p]]
@@ -400,7 +400,7 @@ private theorem exists_isLattice_padicLocalization_eq
     refine (mem_iff_forall_one_tmul_mem_padicLocalization _).mpr fun p ↦ ?_
     rw [tmul_smul, ← Nat.cast_smul_eq_nsmul ℤ_[p], hDsmul]
     exact smul_mem _ _ (hkX p (hv p))
-  refine ⟨M, IsLattice.of_nsmul_mem_of_nsmul_mem hD0 (fun v hv ↦ hNM hv) fun v hv ↦ hMN hv,
+  refine ⟨M, IsFullLattice.of_nsmul_mem_of_nsmul_mem hD0 (fun v hv ↦ hNM hv) fun v hv ↦ hMN hv,
     fun p ↦ le_antisymm (padicLocalization_le_iff.mpr fun v hv ↦ hv p) fun y hy ↦ ?_⟩
   -- `M_p ⊇ X p`. First, `p ^ k p • N_p ⊆ M_p`, because `D • N ⊆ M` and `D' p` is a unit.
   have hNMp {x} (hx : x ∈ N.padicLocalization p) :
@@ -421,7 +421,7 @@ private theorem exists_isLattice_padicLocalization_eq
 /-- **The local–global correspondence for lattices.** Let `N` be a full lattice in `V` and, for
 every prime `p`, let `X p` be a full `ℤ_p`-lattice in `ℚ_p ⊗[ℚ] V`, with `X p = N_p` at almost
 every prime. Then exactly one full lattice `M` has `M_p = X p` at every prime. -/
-theorem existsUnique_isLattice_padicLocalization_eq
+theorem existsUnique_isFullLattice_padicLocalization_eq
     (X : ∀ p : Nat.Primes, Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V)) [∀ p, (X p).IsFullLattice ℚ_[p]]
     (hX : ∀ᶠ p : Nat.Primes in cofinite, X p = N.padicLocalization p) :
     ∃! M : Submodule ℤ V, M.IsFullLattice ℚ ∧ ∀ p : Nat.Primes, M.padicLocalization p = X p := by

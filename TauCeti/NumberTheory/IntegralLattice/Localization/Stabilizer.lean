@@ -187,7 +187,7 @@ theorem forall_orthogonalGroupBaseChange_mem_localStabilizer_iff (g : orthogonal
   have hint (f : V →ₗ[ℚ] V) : Set.MapsTo f L.carrier L.carrier ↔
       ∀ i j, (LinearMap.toMatrix b b f i j).den = 1 := by
     have h := b.mapsTo_span_range_iff_forall_toMatrix_mem (A := ℤ) f
-    rw [e.span_range_extendOfIsLattice] at h
+    rw [e.span_range_extendOfIsFullLattice] at h
     rw [h]
     refine forall₂_congr fun i j ↦ ⟨?_, fun h ↦ ⟨_, (Rat.den_eq_one_iff _).mp h⟩⟩
     rintro ⟨n, hn⟩

@@ -61,7 +61,7 @@ structure IntegralLattice where
   /-- The rational symmetric bilinear form on the ambient vector space. -/
   form : LinearMap.BilinForm ℚ V
   /-- The carrier is finitely generated and spans the ambient rational vector space. -/
-  isLattice : carrier.IsFullLattice ℚ
+  isFullLattice : carrier.IsFullLattice ℚ
   /-- The rational bilinear form is symmetric. -/
   isSymm : form.IsSymm
   /-- Every vector of the carrier lies in its dual submodule. -/
@@ -72,7 +72,7 @@ namespace IntegralLattice
 variable {V}
 
 /-- The carrier of an integral lattice is a Mathlib lattice. -/
-instance (L : IntegralLattice V) : L.carrier.IsFullLattice ℚ := L.isLattice
+instance (L : IntegralLattice V) : L.carrier.IsFullLattice ℚ := L.isFullLattice
 
 /-- The carrier of an integral lattice is a free `ℤ`-module. -/
 instance (L : IntegralLattice V) : Module.Free ℤ L.carrier :=
@@ -198,7 +198,7 @@ def ofSubmodule (S : Submodule ℤ V) [hS : S.IsFullLattice ℚ] (B : LinearMap.
     (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) : IntegralLattice V where
   carrier := S
   form := B
-  isLattice := hS
+  isFullLattice := hS
   isSymm := hB
   le_dual := hle
 
@@ -217,9 +217,9 @@ section Basis
 variable {ι : Type*} [Finite ι]
 
 /-- The `ℤ`-span of a finite rational basis is a Mathlib full lattice. -/
-theorem isLattice_span_basis (b : Basis ι ℚ V) :
+theorem isFullLattice_span_basis (b : Basis ι ℚ V) :
     (Submodule.span ℤ (Set.range b)).IsFullLattice ℚ :=
-  Submodule.isLattice_span (Set.finite_range b) b.span_eq
+  Submodule.isFullLattice_span (Set.finite_range b) b.span_eq
 
 /-- A symmetric rational form that is integral on basis vectors defines an integral lattice.
 
@@ -229,7 +229,7 @@ noncomputable def ofBasis (b : Basis ι ℚ V) (B : LinearMap.BilinForm ℚ V) (
     (hint : ∀ i j, B (b i) (b j) ∈ (1 : Submodule ℤ ℚ)) : IntegralLattice V where
   carrier := Submodule.span ℤ (Set.range b)
   form := B
-  isLattice := isLattice_span_basis b
+  isFullLattice := isFullLattice_span_basis b
   isSymm := hB
   le_dual := by
     rw [Submodule.span_le]

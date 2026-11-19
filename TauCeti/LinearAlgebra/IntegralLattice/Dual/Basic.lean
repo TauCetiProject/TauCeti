@@ -33,7 +33,7 @@ that `Lᵛ` is again a full lattice.  It also identifies the natural pairing map
 * `TauCeti.IntegralLattice.dualCarrier`: the dual lattice as a submodule of the common ambient
   rational vector space.
 * `TauCeti.IntegralLattice.le_dualCarrier`: the inclusion `L.carrier ≤ L.dualCarrier`.
-* `TauCeti.IntegralLattice.instIsLatticeDualCarrier`: the dual carrier is a full lattice.
+* `TauCeti.IntegralLattice.instIsFullLatticeDualCarrier`: the dual carrier is a full lattice.
 * `TauCeti.IntegralLattice.finrank_dualCarrier`: the dual carrier has the same rank as the ambient
   rational space.
 * `TauCeti.IntegralLattice.dualPairing`: the pairing of a dual-lattice vector with a lattice vector,
@@ -87,17 +87,17 @@ theorem dualCarrier_eq_span_dualBasis (L : IntegralLattice V) [L.IsNondegenerate
   calc
     L.dualCarrier = L.form.dualSubmodule
         (Submodule.span ℤ (Set.range (b.extendOfIsFullLattice ℚ))) :=
-      congrArg L.form.dualSubmodule b.span_range_extendOfIsLattice.symm
+      congrArg L.form.dualSubmodule b.span_range_extendOfIsFullLattice.symm
     _ = _ := L.form.dualSubmodule_span_of_basis L.form_nondegenerate (b.extendOfIsFullLattice ℚ)
 
 open Classical in
 /-- The dual carrier of a nondegenerate integral lattice is a full lattice in the same rational
 ambient space. -/
-noncomputable instance instIsLatticeDualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
+noncomputable instance instIsFullLatticeDualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
     L.dualCarrier.IsFullLattice ℚ := by
   let b := Module.Free.chooseBasis ℤ L.carrier
   rw [L.dualCarrier_eq_span_dualBasis b]
-  exact isLattice_span_basis (L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ))
+  exact isFullLattice_span_basis (L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ))
 
 instance (L : IntegralLattice V) [L.IsNondegenerate] : Module.Free ℤ L.dualCarrier :=
   Submodule.IsLattice.free ℚ L.dualCarrier

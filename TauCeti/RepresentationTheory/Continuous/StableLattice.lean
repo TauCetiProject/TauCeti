@@ -23,7 +23,7 @@ lattice, which is the starting point for integral models of `ℓ`-adic Galois re
 Over a nonarchimedean local field this gives the classical criterion: a subgroup `K` of
 `GL(V) = V ≃ₗ[E] V` stabilizes a lattice exactly when its closure is compact. The converse
 direction uses that the stabilizer of a lattice is compact
-(`Submodule.IsLattice.isCompact_stabilizer`).
+(`Submodule.IsFullLattice.isCompact_stabilizer`).
 
 ## Main results
 
@@ -68,7 +68,8 @@ theorem exists_le_stable_lattice (ρ : Representation E Γ V)
   -- `ρ h` maps `L` into `ρ g L` for `h` in the open neighbourhood `W g` of `g`.
   let W : Γ → Set Γ := fun g => ⋂ v ∈ s, (fun h => ρ g⁻¹ (ρ h v)) ⁻¹' L
   have hWo (g : Γ) : IsOpen (W g) := isOpen_biInter_finset fun v _ =>
-    (IsLattice.isOpen L).preimage ((IsModuleTopology.continuous_of_linearMap (ρ g⁻¹)).comp (hρ v))
+    (IsFullLattice.isOpen L).preimage
+      ((IsModuleTopology.continuous_of_linearMap (ρ g⁻¹)).comp (hρ v))
   have hWm (g : Γ) : g ∈ W g := mem_iInter₂.mpr fun v hv => by
     simpa [← mul_apply_eq_comp, ← map_mul] using hs ▸ subset_span hv
   obtain ⟨t, ht⟩ :=
@@ -100,7 +101,7 @@ theorem exists_le_stable_lattice (ρ : Representation E Γ V)
 theorem exists_stable_lattice [FiniteDimensional E V] (ρ : Representation E Γ V)
     (hρ : ∀ x, Continuous fun g => ρ g x) :
     ∃ L : Submodule 𝒪[E] V, IsFullLattice E L ∧ ∀ g, ∀ x ∈ L, ρ g x ∈ L := by
-  have := isLattice_span (R := 𝒪[E]) (finite_range (Module.finBasis E V))
+  have := isFullLattice_span (R := 𝒪[E]) (finite_range (Module.finBasis E V))
     (Module.finBasis E V).span_eq
   obtain ⟨L, -, hL⟩ := ρ.exists_le_stable_lattice hρ (span 𝒪[E] (range (Module.finBasis E V)))
   exact ⟨L, hL⟩
@@ -147,7 +148,7 @@ theorem isCompact_closure_iff_exists_stable_lattice (K : Subgroup (V ≃ₗ[E] V
     obtain ⟨L, hL, hρL⟩ := ρ.exists_stable_lattice hρ
     exact ⟨L, hL, fun k hk => hρL ⟨k, K.le_topologicalClosure hk⟩⟩
   · rintro ⟨L, hL, hKL⟩
-    have hS := IsLattice.isCompact_stabilizer L
+    have hS := IsFullLattice.isCompact_stabilizer L
     have hKS : (K : Set (V ≃ₗ[E] V)) ⊆ MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) :=
       fun k hk => TauCeti.mem_stabilizer_set_iff_mapsTo.mpr
         ⟨fun x => hKL k hk x, fun x => hKL k⁻¹ (K.inv_mem hk) x⟩

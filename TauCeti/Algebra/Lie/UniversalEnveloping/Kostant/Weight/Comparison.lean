@@ -58,7 +58,7 @@ variable [LieRing.IsNilpotent H] (N : Submodule ℤ V) [N.IsFullLattice ℚ]
 
 include hN hV in
 /-- A full admissible lattice makes generalized Cartan weight spaces honest weight spaces. -/
-theorem genWeightSpace_eq_weightSpace_of_isLattice (χ : H → ℚ) :
+theorem genWeightSpace_eq_weightSpace_of_isFullLattice (χ : H → ℚ) :
     genWeightSpace V χ = weightSpace V χ := by
   have := Submodule.IsLattice.finite ℚ N
   have hN' : ∀ u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm b.rootGenerator b.h,
@@ -88,7 +88,7 @@ theorem span_weightSublattice_eq_genWeightSpace (χ : Dual ℚ H) (μ : ι → �
     Submodule.span ℚ ((fun x : N.toAddSubgroup => (x : V)) ''
         (weightSublattice b.h (representation ℚ L V) N.toAddSubgroup μ : Set N.toAddSubgroup)) =
       (genWeightSpace V (χ : H → ℚ)).toSubmodule := by
-  rw [b.genWeightSpace_eq_weightSpace_of_isLattice N hN hV]
+  rw [b.genWeightSpace_eq_weightSpace_of_isFullLattice N hN hV]
   exact (span_weightSublattice_eq_jointWeightSpace b.h (representation ℚ L V) N
     Submodule.IsFullLattice.span_eq_top μ).trans (b.jointWeightSpace_eq_weightSpace χ μ hχ)
 

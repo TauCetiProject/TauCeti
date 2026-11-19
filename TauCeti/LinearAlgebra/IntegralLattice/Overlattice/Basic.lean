@@ -271,7 +271,8 @@ theorem coe_intermediateCarrierOfDiscriminantSubgroup_closure (S : Set L.dualCar
 
 /-- The bottom intermediate carrier is the carrier of `L` itself, hence a full `ℤ`-lattice in the
 ambient rational space. No nondegeneracy is required. -/
-instance instIsLatticeBotIntermediateCarrier : (⊥ : L.IntermediateCarrier).1.IsFullLattice ℚ := by
+instance instIsFullLatticeBotIntermediateCarrier :
+    (⊥ : L.IntermediateCarrier).1.IsFullLattice ℚ := by
   rw [Set.Icc.coe_bot]
   infer_instance
 
@@ -300,7 +301,8 @@ variable [L.IsNondegenerate]
 
 /-- Every intermediate carrier of a nondegenerate integral lattice is a full `ℤ`-lattice in the
 same rational ambient space. -/
-instance instIsLatticeIntermediateCarrier (M : L.IntermediateCarrier) : M.1.IsFullLattice ℚ := by
+instance instIsFullLatticeIntermediateCarrier (M : L.IntermediateCarrier) :
+    M.1.IsFullLattice ℚ := by
   apply Submodule.IsFullLattice.of_le_of_fg ℚ M.2.1
   exact isNoetherian_submodule.mp (isNoetherian_of_le M.2.2) M.1 le_rfl
 

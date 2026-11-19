@@ -53,7 +53,7 @@ theorem two_smul_mem_evenSubmodule (x : L) : (2 : ℤ) • x ∈ L.evenSubmodule
   simp [show (2 : ZMod 2) = 0 by decide]
 
 /-- The embedded even-norm submodule is full: it contains the full sublattice `2L`. -/
-instance instIsLatticeEvenSubmodule :
+instance instIsFullLatticeEvenSubmodule :
     (L.evenSubmodule.map L.carrier.subtype).IsFullLattice ℚ := by
   refine Submodule.IsFullLattice.of_le_of_fg ℚ
     (M := Units.mk0 (2 : ℚ) (by norm_num) • L.carrier) ?_

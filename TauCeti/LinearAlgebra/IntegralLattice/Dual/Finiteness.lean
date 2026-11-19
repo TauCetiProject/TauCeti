@@ -30,7 +30,7 @@ gives nondegeneracy on both sides.
   finite `ℤ`-module exactly when the form is nondegenerate.
 * `TauCeti.IntegralLattice.fg_dualCarrier_iff_nondegenerate`: the equivalent finite-generation
   formulation.
-* `TauCeti.IntegralLattice.isLattice_dualCarrier_iff_nondegenerate`: the dual carrier is a full
+* `TauCeti.IntegralLattice.isFullLattice_dualCarrier_iff_nondegenerate`: the dual carrier is a full
   lattice exactly when the form is nondegenerate.
 
 ## References
@@ -131,7 +131,7 @@ theorem fg_dualCarrier_iff_nondegenerate (L : IntegralLattice V) :
 
 /-- The dual carrier is a full integral lattice exactly when the lattice form is
 nondegenerate. -/
-theorem isLattice_dualCarrier_iff_nondegenerate (L : IntegralLattice V) :
+theorem isFullLattice_dualCarrier_iff_nondegenerate (L : IntegralLattice V) :
     L.dualCarrier.IsFullLattice ℚ ↔ L.form.Nondegenerate := by
   constructor
   · intro h

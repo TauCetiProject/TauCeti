@@ -197,7 +197,7 @@ theorem span_range_localizationToCompletion :
   | add s t hs ht => simpa only [map_add] using add_mem hs ht
 
 /-- The image of the integral localization is a full `ℤ_p`-lattice in the completion. -/
-instance isLattice_range_localizationToCompletion :
+instance isFullLattice_range_localizationToCompletion :
     (LinearMap.range (L.localizationToCompletion p)).IsFullLattice ℚ_[p] where
   toIsLattice := Submodule.IsLattice.of_fg ℚ_[p] (Submodule.fg_range _)
   span_eq_top := by

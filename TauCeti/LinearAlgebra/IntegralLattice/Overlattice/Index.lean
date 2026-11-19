@@ -276,7 +276,7 @@ omit [M.1.IsFullLattice ℚ] in
 theorem IsIntegral.index_sq_dvd_discriminant (hM : IsIntegral M) :
     index M ^ 2 ∣ L.discriminant := by
   by_cases h : L.form.Nondegenerate
-  · -- nondegeneracy makes `M.1` a full lattice, via `instIsLatticeIntermediateCarrier`
+  · -- nondegeneracy makes `M.1` a full lattice, via `instIsFullLatticeIntermediateCarrier`
     let _ : L.IsNondegenerate := ⟨h⟩
     exact Dvd.intro_left _ hM.discriminant_mul_index_sq
   · rw [(L.discriminant_eq_zero_iff).mpr h]
@@ -298,7 +298,7 @@ theorem IsIntegral.isUnimodular_iff_index_sq_eq_discriminant (hM : IsIntegral M)
       infer_instance
     let _ : L.IsNondegenerate := ⟨by
       rw [← hM.toIntegralLattice_form]
-      exact (hM.toIntegralLattice.isLattice_dualCarrier_iff_nondegenerate).mp hdual⟩
+      exact (hM.toIntegralLattice.isFullLattice_dualCarrier_iff_nondegenerate).mp hdual⟩
     rw [hM.toIntegralLattice.isUnimodular_iff_discriminant_eq_one] at h
     rw [← hM.discriminant_mul_index_sq, h, one_mul]
   · intro h

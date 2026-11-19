@@ -29,7 +29,7 @@ This file develops the elementary theory of integral models.
   `Submodule.rationalizationEquiv` (`TauCeti.GaloisLattice.IntegralModel.genericFiberIso`). This
   is stated for `Λ` with its `O`-module topology; over the valuation ring of a field with a
   valuative topology, such as a nonarchimedean local field, the subspace topology on a lattice is
-  its module topology (`Submodule.IsLattice.isModuleTopology`), and the valuation ring of a
+  its module topology (`Submodule.IsFullLattice.isModuleTopology`), and the valuation ring of a
   nonarchimedean local field is a discrete valuation ring, so every lattice there is free.
 * The units of `E` act on integral models by homothety, and integral models are ordered by
   inclusion. When `E` is a field and the fraction field of `O` they have sums, and when moreover
@@ -77,11 +77,11 @@ structure IntegralModel (ρ : ContinuousRep Γ E V) where
   lattice : Submodule O V
   /-- The lattice is full: finitely generated over `O`, spanning `V` over `E`, and with
   `O`-linearly independent subsets `E`-linearly independent. -/
-  isLattice : lattice.IsFullLattice E
+  isFullLattice : lattice.IsFullLattice E
   /-- The lattice is stable under the action. -/
   stable : ∀ g, ∀ x ∈ lattice, ρ g x ∈ lattice
 
-attribute [instance] IntegralModel.isLattice
+attribute [instance] IntegralModel.isFullLattice
 
 namespace IntegralModel
 
@@ -122,7 +122,7 @@ theorem coe_toContinuousRep_apply (Λ : IntegralModel O ρ) (g : Γ) (x : Λ.lat
 instance : MulAction Eˣ (IntegralModel O ρ) where
   smul c Λ :=
     { lattice := c • Λ.lattice
-      isLattice := inferInstance
+      isFullLattice := inferInstance
       stable g x hx := by
         obtain ⟨y, hy, rfl⟩ := (mem_smul_pointwise_iff_exists x c Λ.lattice).mp hx
         rw [LinearMap.map_smul_of_tower]
@@ -167,7 +167,7 @@ namespace IntegralModel
 instance : Max (IntegralModel O ρ) where
   max Λ Λ' :=
     { lattice := Λ.lattice ⊔ Λ'.lattice
-      isLattice := inferInstance
+      isFullLattice := inferInstance
       stable g x hx := by
         obtain ⟨y, hy, z, hz, rfl⟩ := mem_sup.mp hx
         rw [map_add]
@@ -198,8 +198,8 @@ field `E`. -/
 instance : Min (IntegralModel O ρ) where
   min Λ Λ' :=
     { lattice := Λ.lattice ⊓ Λ'.lattice
-      isLattice :=
-        have := Module.Finite.of_isLattice (A := E) Λ.lattice
+      isFullLattice :=
+        have := Module.Finite.of_isFullLattice (A := E) Λ.lattice
         inferInstance
       stable g x hx := ⟨Λ.stable g x hx.1, Λ'.stable g x hx.2⟩ }
 
@@ -281,9 +281,9 @@ variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O]
 theorem IntegralModel.exists_pow_le (Λ Λ' : IntegralModel O ρ) :
     ∃ a : ℕ, IsLocalRing.maximalIdeal O ^ a • Λ.lattice ≤ Λ'.lattice ∧
       IsLocalRing.maximalIdeal O ^ a • Λ'.lattice ≤ Λ.lattice := by
-  obtain ⟨m, hm⟩ := IsLattice.exists_maximalIdeal_pow_smul_le E Λ'.lattice
+  obtain ⟨m, hm⟩ := IsFullLattice.exists_maximalIdeal_pow_smul_le E Λ'.lattice
     (IsLattice.fg (A := E) (M := Λ.lattice))
-  obtain ⟨n, hn⟩ := IsLattice.exists_maximalIdeal_pow_smul_le E Λ.lattice
+  obtain ⟨n, hn⟩ := IsFullLattice.exists_maximalIdeal_pow_smul_le E Λ.lattice
     (IsLattice.fg (A := E) (M := Λ'.lattice))
   -- Powers of the maximal ideal decrease, so `a = max m n` works in both directions.
   refine ⟨max m n, (smul_mono_left ?_).trans hm, (smul_mono_left ?_).trans hn⟩ <;>

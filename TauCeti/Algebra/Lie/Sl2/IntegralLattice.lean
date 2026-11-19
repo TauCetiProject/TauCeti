@@ -328,10 +328,10 @@ theorem ringChoose_diag_mem_integralLattice (k : ℕ) {v : Sl2Std ℚ n}
 /-- The rational span of the standard integral lattice is the whole standard module. -/
 theorem span_integralLattice_eq_top :
     Submodule.span ℚ (integralLattice n : Set (Sl2Std ℚ n)) = ⊤ := by
-  exact (TauCeti.instIsLatticeCoordinateLattice (Fin (n + 1))).span_eq_top
+  exact (TauCeti.instIsFullLatticeCoordinateLattice (Fin (n + 1))).span_eq_top
 
 instance : Submodule.IsFullLattice ℚ (integralLattice n) where
-  __ := TauCeti.instIsLatticeCoordinateLattice (Fin (n + 1))
+  __ := TauCeti.instIsFullLatticeCoordinateLattice (Fin (n + 1))
 
 /-! ### The restricted rank-one Kostant action -/
 

@@ -57,7 +57,7 @@ variable {E : Type*} [CommRing E] [Algebra O E]
 def submodel [IsFractionRing O E] [IsNoetherianRing O] :
     IntegralModel O (ρ.subrepresentation W hW) where
   lattice := Λ.lattice.comap (W.subtype.restrictScalars O)
-  isLattice := Λ.lattice.isLattice_comap W.subtype W.injective_subtype
+  isFullLattice := Λ.lattice.isFullLattice_comap W.subtype W.injective_subtype
   stable g x hx := by
     simp only [Submodule.mem_comap, LinearMap.restrictScalars_apply,
       Submodule.subtype_apply, ContinuousRep.coe_subrepresentation_apply] at hx ⊢
@@ -122,7 +122,7 @@ variable {E : Type*} [Field E] [Algebra O E] [IsFractionRing O E]
 /-- The image of `Λ` in the quotient by an invariant vector subspace. -/
 def quotientModel : IntegralModel O (ρ.quotient W hW) where
   lattice := Λ.lattice.map (W.mkQ.restrictScalars O)
-  isLattice := Λ.lattice.isLattice_map W.mkQ W.mkQ_surjective
+  isFullLattice := Λ.lattice.isFullLattice_map W.mkQ W.mkQ_surjective
   stable g x hx := by
     obtain ⟨y, hy, rfl⟩ := hx
     exact ⟨ρ g y, Λ.stable g y hy, by simp⟩

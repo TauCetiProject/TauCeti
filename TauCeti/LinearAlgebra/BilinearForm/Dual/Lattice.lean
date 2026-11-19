@@ -108,7 +108,7 @@ theorem dualSubmoduleToDual_surjective
     Function.Surjective (B.dualSubmoduleToDual N) := by
   -- A linear form on the lattice extends to the fraction field, where nondegeneracy represents it
   -- by an ambient vector; that vector lies in the dual lattice and maps to the form.
-  have := Module.Finite.of_isLattice (A := K) N
+  have := Module.Finite.of_isFullLattice (A := K) N
   have := Submodule.IsLattice.isLocalizedModule_subtype K N Submodule.IsFullLattice.span_eq_top
   intro f
   let fK : Module.Dual K V :=
@@ -158,10 +158,10 @@ theorem dualSubmodule_dualSubmodule_flip
     B.dualSubmodule (B.flip.dualSubmodule N) =
         B.dualSubmodule (B.flip.dualSubmodule (Submodule.span R (Set.range b_ext))) :=
       congrArg (fun S => B.dualSubmodule (B.flip.dualSubmodule S))
-        (b.span_range_extendOfIsLattice (K := K)).symm
+        (b.span_range_extendOfIsFullLattice (K := K)).symm
     _ = Submodule.span R (Set.range b_ext) :=
       B.dualSubmodule_dualSubmodule_flip_of_basis hB b_ext
-    _ = N := b.span_range_extendOfIsLattice (K := K)
+    _ = N := b.span_range_extendOfIsFullLattice (K := K)
 
 omit [IsDomain R] [Module.IsTorsionFree R K] [IsFractionRing R K] in
 /-- Dualizing by `B` and then by `B.flip` recovers the original free full lattice. -/

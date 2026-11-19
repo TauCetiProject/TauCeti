@@ -154,7 +154,7 @@ variable {R F E : Type*} [CommRing R] [Field F] [Ring E]
   [Algebra R F] [IsFractionRing R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
 
 /-- Over a fraction field `F` of `R`, being an order is being a full `R`-lattice in `E`. -/
-theorem isOrder_iff_isLattice {Λ : Subalgebra R E} :
+theorem isOrder_iff_isFullLattice {Λ : Subalgebra R E} :
     IsOrder F Λ ↔ (Subalgebra.toSubmodule Λ).IsFullLattice F :=
   ⟨fun h => { toIsLattice := IsLattice.of_fg F h.1, span_eq_top := h.2 },
     fun h => ⟨IsLattice.fg F _, h.span_eq_top⟩⟩

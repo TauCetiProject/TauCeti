@@ -101,7 +101,7 @@ theorem intCast_div_sqrt_mem_realLattice [NeZero m] {C : AddSubgroup (ι → ZMo
 
 /-- For a nonzero modulus and finite coordinates, the real Construction A carrier is a full,
 finitely generated lattice in `ι → ℝ`. -/
-instance isLattice_realLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
+instance isFullLattice_realLattice [NeZero m] [Finite ι] (C : AddSubgroup (ι → ZMod m)) :
     (realLattice m C).IsFullLattice ℝ :=
   have hspan : Submodule.span ℝ (realLattice m C : Set (ι → ℝ)) = ⊤ := by
     classical

@@ -36,13 +36,13 @@ compactness uses that `𝒪[E]` is compact.
 ## Main results
 
 * `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite `E`-basis is open.
-* `Submodule.IsLattice.isOpen`, `Submodule.IsLattice.isClosed`, `Submodule.IsLattice.isCompact`:
-  a lattice is open, closed and compact.
-* `Submodule.IsLattice.isModuleTopology`: the subspace topology on a lattice is its
+* `Submodule.IsFullLattice.isOpen`, `Submodule.IsFullLattice.isClosed`,
+  `Submodule.IsFullLattice.isCompact`: a lattice is open, closed and compact.
+* `Submodule.IsFullLattice.isModuleTopology`: the subspace topology on a lattice is its
   `𝒪[E]`-module topology.
-* `Submodule.IsLattice.isOpen_setOf_mapsTo`, `Submodule.IsLattice.isCompact_setOf_mapsTo`: the
-  endomorphisms mapping a lattice into itself form a compact open subset of `Module.End E V`.
-* `Submodule.IsLattice.isOpen_stabilizer`, `Submodule.IsLattice.isCompact_stabilizer`: the
+* `Submodule.IsFullLattice.isOpen_setOf_mapsTo`, `Submodule.IsFullLattice.isCompact_setOf_mapsTo`:
+  the endomorphisms mapping a lattice into itself form a compact open subset of `Module.End E V`.
+* `Submodule.IsFullLattice.isOpen_stabilizer`, `Submodule.IsFullLattice.isCompact_stabilizer`: the
   stabilizer of a lattice in `V ≃ₗ[E] V` is open and compact.
 
 ## References
@@ -80,22 +80,22 @@ theorem _root_.Module.Basis.isOpen_span_range {ι : Type*} [Finite ι] (b : Basi
 variable (L : Submodule 𝒪[E] V) [IsFullLattice E L]
 
 /-- **A lattice is open.** It contains the `𝒪[E]`-span of an `E`-basis of `V`, which is open. -/
-theorem IsLattice.isOpen : IsOpen (L : Set V) := by
+theorem IsFullLattice.isOpen : IsOpen (L : Set V) := by
   have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
-  have := Module.Finite.of_isLattice (A := E) L
+  have := Module.Finite.of_isFullLattice (A := E) L
   have hs : ⊤ ≤ span E (L : Set V) := (IsFullLattice.span_eq_top (A := E) (M := L)).ge
   let b := Basis.ofSpan hs
   have : Finite _ := Module.Finite.finite_basis b
   exact isOpen_mono (span_le.mpr (Basis.ofSpan_subset hs)) b.isOpen_span_range
 
 /-- **A lattice is closed**, being an open subgroup. -/
-theorem IsLattice.isClosed : IsClosed (L : Set V) := by
+theorem IsFullLattice.isClosed : IsClosed (L : Set V) := by
   have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
-  exact AddSubgroup.isClosed_of_isOpen L.toAddSubgroup (IsLattice.isOpen L)
+  exact AddSubgroup.isClosed_of_isOpen L.toAddSubgroup (IsFullLattice.isOpen L)
 
 /-- **A lattice carries the module topology.** The subspace topology on a lattice `L ⊆ V` is its
 `𝒪[E]`-module topology. -/
-instance IsLattice.isModuleTopology : IsModuleTopology 𝒪[E] L := by
+instance IsFullLattice.isModuleTopology : IsModuleTopology 𝒪[E] L := by
   -- For a finite generating set `s`, the map `𝒪[E] ^ s → L` is a quotient map for the subspace
   -- topology: it is the restriction of the open surjection `E ^ s → V` to the open `𝒪[E] ^ s`.
   have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
@@ -134,7 +134,7 @@ instance IsLattice.isModuleTopology : IsModuleTopology 𝒪[E] L := by
     exact ⟨_, ⟨w, hw, rfl⟩, (hcomm w).symm⟩
 
 /-- **The endomorphisms preserving a lattice form an open set** of `Module.End E V`. -/
-theorem IsLattice.isOpen_setOf_mapsTo : IsOpen {f : Module.End E V | MapsTo f L L} := by
+theorem IsFullLattice.isOpen_setOf_mapsTo : IsOpen {f : Module.End E V | MapsTo f L L} := by
   have : ContinuousAdd V := IsModuleTopology.toContinuousAdd E V
   obtain ⟨s, hs⟩ := IsLattice.fg (A := E) (M := L)
   have h : {f : Module.End E V | MapsTo f L L} = ⋂ v ∈ s, {f | f v ∈ L} := by
@@ -143,11 +143,11 @@ theorem IsLattice.isOpen_setOf_mapsTo : IsOpen {f : Module.End E V | MapsTo f L 
     rw [hs] at h
     simpa [mapsTo_iff_image_subset] using h
   rw [h]
-  exact isOpen_biInter_finset fun v _ => (IsLattice.isOpen L).preimage
+  exact isOpen_biInter_finset fun v _ => (IsFullLattice.isOpen L).preimage
     (IsModuleTopology.continuous_of_linearMap (LinearMap.applyₗ v : Module.End E V →ₗ[E] V))
 
 /-- **The stabilizer `GL(L)` of a lattice is open** in the group of linear automorphisms. -/
-theorem IsLattice.isOpen_stabilizer :
+theorem IsFullLattice.isOpen_stabilizer :
     IsOpen (MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) : Set (V ≃ₗ[E] V)) := by
   have hc := TauCeti.continuous_linearEquiv_iff.mp
     (continuous_id : Continuous fun g : V ≃ₗ[E] V => g)
@@ -158,8 +158,8 @@ theorem IsLattice.isOpen_stabilizer :
     rw [SetLike.mem_coe, TauCeti.mem_stabilizer_set_iff_mapsTo]
     simp [LinearEquiv.smul_def]
   rw [h]
-  exact ((IsLattice.isOpen_setOf_mapsTo L).preimage hc.1).inter
-    ((IsLattice.isOpen_setOf_mapsTo L).preimage hc.2)
+  exact ((IsFullLattice.isOpen_setOf_mapsTo L).preimage hc.1).inter
+    ((IsFullLattice.isOpen_setOf_mapsTo L).preimage hc.2)
 
 end ValuativeTopology
 
@@ -172,7 +172,7 @@ variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   (L : Submodule 𝒪[E] V) [IsFullLattice E L]
 
 /-- **A lattice is compact**: it is finitely generated over the compact ring `𝒪[E]`. -/
-theorem IsLattice.isCompact : IsCompact (L : Set V) := by
+theorem IsFullLattice.isCompact : IsCompact (L : Set V) := by
   have : ContinuousAdd V := IsModuleTopology.toContinuousAdd E V
   have : ContinuousSMul 𝒪[E] V := ⟨((continuous_subtype_val.comp continuous_fst).smul
     continuous_snd).congr fun p => algebraMap_smul E p.1 p.2⟩
@@ -181,9 +181,9 @@ theorem IsLattice.isCompact : IsCompact (L : Set V) := by
 /-- **The endomorphisms preserving a lattice form a compact set** of `Module.End E V`: such an
 endomorphism is determined by the images in the compact lattice of an `E`-basis of `V` contained
 in the lattice. -/
-theorem IsLattice.isCompact_setOf_mapsTo : IsCompact {f : Module.End E V | MapsTo f L L} := by
+theorem IsFullLattice.isCompact_setOf_mapsTo : IsCompact {f : Module.End E V | MapsTo f L L} := by
   have : ContinuousAdd V := IsModuleTopology.toContinuousAdd E V
-  have := Module.Finite.of_isLattice (A := E) L
+  have := Module.Finite.of_isFullLattice (A := E) L
   have hs : ⊤ ≤ span E (L : Set V) := (IsFullLattice.span_eq_top (A := E) (M := L)).ge
   let b := Basis.ofSpan hs
   have : Finite _ := Module.Finite.finite_basis b
@@ -192,18 +192,18 @@ theorem IsLattice.isCompact_setOf_mapsTo : IsCompact {f : Module.End E V | MapsT
       ext f
       simp [MapsTo]
     rw [h]
-    exact isClosed_biInter fun x _ => (IsLattice.isClosed L).preimage
+    exact isClosed_biInter fun x _ => (IsFullLattice.isClosed L).preimage
       (IsModuleTopology.continuous_of_linearMap (LinearMap.applyₗ x : Module.End E V →ₗ[E] V))
-  refine ((isCompact_univ_pi fun _ => IsLattice.isCompact L).image
+  refine ((isCompact_univ_pi fun _ => IsFullLattice.isCompact L).image
     (IsModuleTopology.continuous_of_linearMap (b.constr E).toLinearMap)).of_isClosed_subset
     hclosed fun f hf => ⟨fun i => f (b i), fun i _ => hf (Basis.ofSpan_subset hs ⟨i, rfl⟩),
       b.constr_self E f⟩
 
 /-- **The stabilizer `GL(L)` of a lattice is compact**: it is the group of units of the compact
 monoid of endomorphisms preserving `L`. -/
-theorem IsLattice.isCompact_stabilizer :
+theorem IsFullLattice.isCompact_stabilizer :
     IsCompact (MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V) : Set (V ≃ₗ[E] V)) := by
-  have := Module.Finite.of_isLattice (A := E) L
+  have := Module.Finite.of_isFullLattice (A := E) L
   let T : Submonoid (Module.End E V) :=
     { carrier := {f | MapsTo f L L}
       mul_mem' := fun hf hg => hf.comp hg
@@ -221,7 +221,7 @@ theorem IsLattice.isCompact_stabilizer :
       SetLike.mem_coe, Submonoid.mem_units_iff, ← map_inv, ← he u, ← he u⁻¹]
     simp [T, LinearEquiv.smul_def]
   rw [h]
-  exact (Submonoid.units_isCompact (IsLattice.isCompact_setOf_mapsTo L)).image e.continuous
+  exact (Submonoid.units_isCompact (IsFullLattice.isCompact_setOf_mapsTo L)).image e.continuous
 
 end LocalField
 

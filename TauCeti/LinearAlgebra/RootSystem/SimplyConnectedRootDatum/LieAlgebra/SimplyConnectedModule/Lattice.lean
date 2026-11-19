@@ -48,7 +48,7 @@ weight basis is a closed subgroup scheme of `GLₙ`
 * `TauCeti.DynkinType.representation_mem_scLattice`: its stability under the Kostant form.
 * `TauCeti.DynkinType.scLattice_eq_orbitOfRep`: it is the Kostant orbit `U_ℤ · {v⁺ᵢ}` of the
   highest weight vectors of the summands.
-* `TauCeti.DynkinType.instIsLatticeScLattice`: it is a full lattice in `V_sc(t)`.
+* `TauCeti.DynkinType.instIsFullLatticeScLattice`: it is a full lattice in `V_sc(t)`.
 * `TauCeti.DynkinType.mem_iSup_jointWeightSpace_scModule`: the integral weight spaces span it.
 * `TauCeti.DynkinType.scWeightBasis` and `TauCeti.DynkinType.scWeight`: its numbered weight basis
   and the weights of the basis vectors.
@@ -160,8 +160,8 @@ theorem scLattice_eq_orbitOfRep :
 
 /-- **The full-weight lattice is a full lattice in `V_sc(t)`**: it is finitely generated over `ℤ`
 and spans `V_sc(t)` over `ℚ`, being the direct sum of full lattices of the summands. -/
-instance instIsLatticeScLattice : (t.scLattice ht).IsFullLattice ℚ :=
-  Submodule.isLattice_map _ _
+instance instIsFullLatticeScLattice : (t.scLattice ht).IsFullLattice ℚ :=
+  Submodule.isFullLattice_map _ _
     (linearEquivFunOnFintype ℚ (Fin t.rank) (t.fundamentalModule ht)).symm.surjective
 
 /-- The full-weight lattice is a finite `ℤ`-module. -/

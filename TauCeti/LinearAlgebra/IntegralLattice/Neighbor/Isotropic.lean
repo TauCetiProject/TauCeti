@@ -155,14 +155,14 @@ theorem relIndex_neighborKernel {v w : L} (hvw : IsCoprime (L.integralForm v w) 
   simp
 
 /-- The neighbor kernel is a full lattice in the ambient space, since it contains `p L`. -/
-instance isLattice_neighborKernel [NeZero p] (v : L) :
+instance isFullLattice_neighborKernel [NeZero p] (v : L) :
     (L.neighborKernel p v).IsFullLattice ℚ where
   toIsLattice := Submodule.IsLattice.of_fg ℚ (M := L.neighborKernel p v) (by
     rw [neighborKernel]
     exact (IsNoetherian.noetherian _).map _)
   span_eq_top := by
     apply top_unique
-    rw [← L.isLattice.span_eq_top, Submodule.span_le]
+    rw [← L.isFullLattice.span_eq_top, Submodule.span_le]
     intro x hx
     have h := (Submodule.span ℚ (L.neighborKernel p v : Set V)).smul_mem (p : ℚ)⁻¹
       (Submodule.subset_span (L.smul_mem_neighborKernel p v ⟨x, hx⟩))

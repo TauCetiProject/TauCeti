@@ -368,8 +368,8 @@ of `b'`. -/
 theorem ofGramMatrixEq_apply_basis {ι : Type v} (b : Basis ι ℤ L) (b' : Basis ι ℤ M)
     (h : L.gramMatrix b = M.gramMatrix b') (i : ι) :
     ofGramMatrixEq b b' h (b i) = b' i := by
-  rw [ofGramMatrixEq, ofCarrierEquiv_apply, LinearEquiv.extendOfIsLattice_apply, Basis.equiv_apply,
-    Equiv.refl_apply]
+  rw [ofGramMatrixEq, ofCarrierEquiv_apply, LinearEquiv.extendOfIsFullLattice_apply,
+    Basis.equiv_apply, Equiv.refl_apply]
 
 end Isometry
 

@@ -145,7 +145,7 @@ variable {M : L.IntermediateCarrier} [M.1.IsFullLattice ℚ]
 
 /-- An integral intermediate carrier which is itself a full `ℤ`-lattice is an integral lattice,
 for the same ambient rational form. Over a nondegenerate lattice every intermediate carrier is
-such a lattice, by `TauCeti.IntegralLattice.instIsLatticeIntermediateCarrier`. -/
+such a lattice, by `TauCeti.IntegralLattice.instIsFullLatticeIntermediateCarrier`. -/
 def IsIntegral.toIntegralLattice (hM : IsIntegral M) : IntegralLattice V :=
   IntegralLattice.ofSubmodule M.1 L.form L.isSymm fun _ hx ↦
     L.form.mem_dualSubmodule.mpr fun _ hy ↦ isIntegral_def.mp hM _ hx _ hy

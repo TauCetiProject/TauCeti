@@ -77,7 +77,7 @@ values. Its integral dual is the weight lattice
 structure CoweightLattice (R : CartanRealization (A.map (Int.cast : ℤ → ℚ)) H) where
   /-- The coweight lattice, as a `ℤ`-submodule of the ambient space. -/
   lattice : Submodule ℤ H
-  [isLattice : lattice.IsFullLattice ℚ]
+  [isFullLattice : lattice.IsFullLattice ℚ]
   /-- Every simple coroot is a coweight. -/
   coroot_mem (i : I) : R.coroot i ∈ lattice
   /-- Every simple root is integral on the coweight lattice. -/
@@ -85,7 +85,7 @@ structure CoweightLattice (R : CartanRealization (A.map (Int.cast : ℤ → ℚ)
 
 namespace CoweightLattice
 
-attribute [instance] isLattice
+attribute [instance] isFullLattice
 
 variable {R : CartanRealization (A.map (Int.cast : ℤ → ℚ)) H} (L : R.CoweightLattice)
 
@@ -116,8 +116,8 @@ theorem mem_weightLattice_iff (φ : Dual ℚ H) :
   simp [weightLattice, Submodule.mem_one]
 
 /-- The weight lattice is a full lattice in the dual space. -/
-instance isLattice_weightLattice : L.weightLattice.IsFullLattice ℚ :=
-  Submodule.isLattice_dualLattice L.lattice
+instance isFullLattice_weightLattice : L.weightLattice.IsFullLattice ℚ :=
+  Submodule.isFullLattice_dualLattice L.lattice
 
 /-- The integral pairing `⟨λ, y⟩` between weights and coweights. -/
 noncomputable def pairing : L.weightLattice →ₗ[ℤ] L.lattice →ₗ[ℤ] ℤ :=
@@ -204,7 +204,7 @@ variable {κ : Type*} [Finite κ] (b : Basis κ ℚ H)
 simple coroot and every simple root is integral on the basis. -/
 noncomputable def ofBasis : R.CoweightLattice where
   lattice := Submodule.span ℤ (Set.range b)
-  isLattice := Submodule.isLattice_span (Set.finite_range b) b.span_eq
+  isFullLattice := Submodule.isFullLattice_span (Set.finite_range b) b.span_eq
   coroot_mem := hcoroot
   root_mem_dualLattice i := (Submodule.mem_dualLattice_span_iff _ _).mpr <| by
     rintro _ ⟨k, rfl⟩
