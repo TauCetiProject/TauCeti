@@ -11,6 +11,7 @@ public import TauCeti.Probability.PointProcess.Poisson.Superposition.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
 
 /-!
 # Counts of temporal Poisson random measures
@@ -75,15 +76,9 @@ of the intensity rules out infinite counts simultaneously on all bounded time in
 theorem ae_monotone_nat_count [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) :
     ∀ᵐ ω ∂P, Monotone (fun t : ℝ≥0 ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) := by
-  filter_upwards [ae_all_iff.2 (fun n : ℕ ↦
-    h.ae_exists_eq_natCast (A := Ioc 0 (n : ℝ≥0)) measurableSet_Ioc measure_Ioc_lt_top)] with ω hω
-  have hfin (t : ℝ≥0) : M ω (Ioc 0 t) ≠ ∞ := by
-    obtain ⟨n, hn⟩ := hω ⌈t⌉₊
-    exact ne_top_of_le_ne_top (by rw [hn]; exact ENNReal.natCast_ne_top n)
-      (measure_mono (Ioc_subset_Ioc_right (Nat.le_ceil t)))
-  intro s t hst
-  exact Nat.floor_mono (ENNReal.toNNReal_mono (hfin t)
-    (measure_mono (Ioc_subset_Ioc_right hst)))
+  filter_upwards [h.ae_isLocallyFiniteMeasure] with ω hω
+  let := hω
+  exact Measure.monotone_nat_count
 
 /-- If the intensity gives no mass to the origin, cumulative masses equal the natural-valued
 counts simultaneously at every time, on one event of full probability. In particular the
@@ -95,15 +90,13 @@ theorem ae_forall_measure_Iic_eq_natCast_nat_count [IsLocallyFiniteMeasure Λ]
     h.ae_eq_zero hΛ]
     with ω hint hfin hz t
   let := hfin
-  obtain ⟨n, hn⟩ := hint.exists_eq_natCast (A := Ioc 0 t)
-    measurableSet_Ioc measure_Ioc_lt_top
   have hinterval : M ω (Iic t) = M ω (Ioc 0 t) := by
     have hu := measure_union (μ := M ω) (s₁ := Iic 0) (s₂ := Ioc 0 t)
       (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc
     have hbot : Iic (0 : ℝ≥0) = {0} := by ext x; simp
     rw [Iic_union_Ioc_eq_Iic (zero_le (a := t)), hbot, hz, zero_add] at hu
     exact hu
-  simp [hinterval, hn]
+  rw [hinterval, hint.natCast_nat_count_Ioc]
 
 private theorem ae_nat_count_sub_eq [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) {s t : ℝ≥0} (hst : s ≤ t) :
@@ -171,10 +164,8 @@ theorem ae_nat_count_finsetSum [∀ i : I, IsLocallyFiniteMeasure (Λs i)]
   let (i : I) : IsLocallyFiniteMeasure (N i ω) := hfin i
   intro t
   have he (i : I) : N i ω (Ioc 0 t) =
-      (⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ : ℝ≥0∞) := by
-    obtain ⟨n, hn⟩ := (hint i).exists_eq_natCast (A := Ioc 0 t)
-      measurableSet_Ioc measure_Ioc_lt_top
-    simp [hn]
+      (⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ : ℝ≥0∞) :=
+    ((hint i).natCast_nat_count_Ioc 0 t).symm
   have hsum : (∑ i ∈ I, N i ω (Ioc 0 t)) =
       ((∑ i ∈ I, ⌊(N i ω (Ioc 0 t)).toNNReal⌋₊ : ℕ) : ℝ≥0∞) := by
     rw [Nat.cast_sum]
