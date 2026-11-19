@@ -215,29 +215,6 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.congr_ae_deriv {η' : ℂ → F}
 
 /-! ### Test functions -/
 
-/-- Conjugation, as a continuous real-linear equivalence, maps a conjugation-invariant open set
-into itself. -/
-private theorem mapsTo_conjLIE (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) :
-    MapsTo (conjLIE.toContinuousLinearEquiv : ℂ → ℂ) Ω Ω := fun z hz ↦ by
-  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply]
-  exact hΩ hz
-
-/-- A real test function on a conjugation-invariant open set, composed with conjugation. -/
-private def conjTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ)) : 𝓓(Ω, ℝ) :=
-  conjLIE.toContinuousLinearEquiv.transportTestFunction (mapsTo_conjLIE hΩ) φ
-
-private theorem conjTest_apply (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ)) (z : ℂ) :
-    conjTest hΩ φ z = φ (conj z) := by
-  rw [conjTest, ContinuousLinearEquiv.transportTestFunction_apply,
-    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply]
-
-private theorem lineDeriv_conjTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ))
-    (z v : ℂ) :
-    lineDeriv ℝ (conjTest hΩ φ : ℂ → ℝ) z v = lineDeriv ℝ (φ : ℂ → ℝ) (conj z) (conj v) := by
-  simp only [lineDeriv, conjTest_apply, map_add, Complex.real_smul, map_mul,
-    Complex.conj_ofReal]
-
 /-- The complex test function `ψ • c`, for a real test function `ψ` and `c : ℂ`. -/
 private def smulTest (ψ : 𝓓(Ω, ℝ)) (c : ℂ) : 𝓓(Ω, ℂ) :=
   TestFunction.postcompCLM ((ContinuousLinearMap.id ℝ ℝ).smulRight c) ψ
@@ -386,12 +363,12 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_star
   have hU := locallyIntegrableOn_starSchwarzReflection hΩ h.2.1
   have hG := locallyIntegrableOn_starSchwarzReflection hΩ h.2.2.1
   refine hasWeakConjWirtingerDerivOn_iff.2 ⟨h.1, hU, hG, fun φ ↦ ?_⟩
-  set φs := conjTest hΩ φ
+  set φs := TestFunction.compConj hΩ φ
   -- The pairing of `φ` plus the conjugate of the pairing of `φ ∘ conj` vanishes.
   have hsym : halfPairing ξ η φ + star (halfPairing ξ η φs) = 0 := by
     have he := add_star_halfPairing h (φ + φs)
     have ho := halfPairing_eq_zero h (φ + -φs) fun x ↦ by
-      simp [φs, conjTest_apply, Complex.conj_ofReal]
+      simp [φs, TestFunction.compConj_apply, Complex.conj_ofReal]
     rw [halfPairing_add h] at he ho
     rw [halfPairing_neg h, ← sub_eq_add_neg, sub_eq_zero] at ho
     rw [ho, star_add] at he
@@ -406,10 +383,11 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_star
     integral_smul_starSchwarzReflection _ (hd I),
     integral_smul_starSchwarzReflection _ (φ.integrable_smul hG)]
   have h1 (z : ℂ) : lineDeriv ℝ (φ : ℂ → ℝ) (conj z) 1 = lineDeriv ℝ (φs : ℂ → ℝ) z 1 := by
-    rw [lineDeriv_conjTest, map_one]
+    rw [TestFunction.lineDeriv_compConj, map_one]
   have hI (z : ℂ) : lineDeriv ℝ (φ : ℂ → ℝ) (conj z) I = -lineDeriv ℝ (φs : ℂ → ℝ) z I := by
-    rw [lineDeriv_conjTest, conj_I, lineDeriv_neg, neg_neg]
-  have h0 (z : ℂ) : (φ : ℂ → ℝ) (conj z) = (φs : ℂ → ℝ) z := (conjTest_apply hΩ φ z).symm
+    rw [TestFunction.lineDeriv_compConj, conj_I, lineDeriv_neg, neg_neg]
+  have h0 (z : ℂ) : (φ : ℂ → ℝ) (conj z) = (φs : ℂ → ℝ) z :=
+    (TestFunction.compConj_apply hΩ φ z).symm
   simp only [h1, hI, h0, neg_smul, integral_neg, star_neg]
   simp only [halfPairing, star_add, star_smul, conj_I, Complex.star_def, map_ofNat] at hsym
   rw [← sub_eq_zero, ← hsym]
