@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.HomologyPeriod
 public import TauCeti.Geometry.Manifold.Morse.CWModel
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
-public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Period coordinates on the first de Rham cohomology
@@ -29,11 +28,12 @@ function).
 When `H¹_dR(M)` is finite-dimensional, of dimension `b`, there are integral classes
 `c₁, …, c_b ∈ H₁(M; ℤ)` (`TauCeti.deRhamCohomology.periodHomologyClass`) on which the periods
 are coordinates: `x ↦ (⟨x, c₁⟩, …, ⟨x, c_b⟩)` is a linear isomorphism `H¹_dR(M) ≃ ℝ^b`
-(`TauCeti.deRhamCohomology.bijective_homologyPeriods_periodHomologyClass`). Its inverse sends
+(`TauCeti.deRhamCohomology.homologyPeriods_periodHomologyClass_bijective`). Its inverse sends
 the standard basis to the **period-dual basis** `θ₁, …, θ_b` of `H¹_dR(M)`
 (`TauCeti.deRhamCohomology.periodDualBasis`), characterized by `⟨θ_i, c_j⟩ = δ_ij`.
-The classes `c_j` are chosen among all integral classes: the periods on all of `H₁(M; ℤ)` span
-the dual of `H¹_dR(M)`, and a basis of the dual is extracted from them.
+The classes `c_j` are chosen among all integral classes: the periods on all of `H₁(M; ℤ)` have
+no common zero but `0`, and `b` of them form coordinates
+(`Module.Dual.exists_bijective_pi_of_iInf_ker_eq_bot`).
 
 On closed forms, the **class coordinates** `α ↦ (∫_{c₁} α, …, ∫_{c_b} α)`
 (`TauCeti.deRhamCohomology.classCoordinates`) form a surjective linear map onto `ℝ^b` whose kernel
@@ -156,43 +156,20 @@ section PeriodDualBasis
 
 variable [FiniteDimensional ℝ (deRhamCohomology I M 1)]
 
-/-- The periods on all of `H₁(M; ℤ)` span the dual of `H¹_dR(M)`. -/
-private theorem span_range_proj_comp_homologyPeriods_eq_top :
-    Submodule.span ℝ (Set.range fun c : ((singularChains ℤ).obj (.of M)).homology 1 ↦
-      LinearMap.proj c ∘ₗ homologyPeriods I id) = ⊤ := by
-  refine Submodule.eq_top_iff'.mpr fun f ↦ FiniteDimensional.mem_span_of_iInf_ker_le_ker ?_
-  intro x hx
-  have h0 : x = 0 := by
-    refine homologyPeriods_injective (I := I) (c := id) (by simp) ?_
-    ext c
-    simpa using (Submodule.mem_iInf _).mp hx c
-  simp [h0]
-
 /-- **Period coordinates.** There are `b = dim H¹_dR(M)` integral classes `c₁, …, c_b` of
 `H₁(M; ℤ)` on which the periods are coordinates on `H¹_dR(M)`. -/
 theorem exists_bijective_homologyPeriods :
     ∃ c : Fin (finrank ℝ (deRhamCohomology I M 1)) →
         ((singularChains ℤ).obj (.of M)).homology 1,
       Function.Bijective (homologyPeriods I c) := by
-  set L := fun c : ((singularChains ℤ).obj (.of M)).homology 1 ↦
-    LinearMap.proj c ∘ₗ homologyPeriods I id
-  obtain ⟨κ, a, -, hspan, hli⟩ := exists_linearIndependent' ℝ L
-  rw [span_range_proj_comp_homologyPeriods_eq_top] at hspan
-  let e : κ ≃ Fin (finrank ℝ (deRhamCohomology I M 1)) :=
-    (Basis.mk hli hspan.ge).indexEquiv (finBasis ℝ (deRhamCohomology I M 1)).dualBasis
-  refine ⟨a ∘ e.symm, ?_⟩
-  -- The periods on the `c i` span the dual, so they detect every nonzero class.
-  have hspan' : Submodule.span ℝ (Set.range (L ∘ a ∘ e.symm)) = ⊤ := by
-    rwa [← Function.comp_assoc, EquivLike.range_comp]
-  have hinj : Function.Injective (homologyPeriods I (a ∘ e.symm)) := by
-    refine (injective_iff_map_eq_zero _).mpr fun x hx ↦
-      (forall_dual_apply_eq_zero_iff ℝ x).mp fun f ↦ ?_
-    have hle : Submodule.span ℝ (Set.range (L ∘ a ∘ e.symm)) ≤
-        LinearMap.ker (Dual.eval ℝ (deRhamCohomology I M 1) x) := by
-      refine Submodule.span_le.mpr (Set.range_subset_iff.mpr fun i ↦ ?_)
-      simpa [L] using congrFun hx i
-    simpa using hle (hspan' ▸ Submodule.mem_top (x := f))
-  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by simp)).mp hinj⟩
+  -- The periods on all of `H₁(M; ℤ)` have no common zero but `0`.
+  have h : ⨅ c : ((singularChains ℤ).obj (.of M)).homology 1,
+      LinearMap.ker (LinearMap.proj c ∘ₗ homologyPeriods I id) = ⊥ := by
+    refine eq_bot_iff.mpr fun x hx ↦
+      homologyPeriods_injective (I := I) (c := id) (by simp) (funext fun c ↦ ?_)
+    simpa using (Submodule.mem_iInf _).mp hx c
+  obtain ⟨c, hc⟩ := Dual.exists_bijective_pi_of_iInf_ker_eq_bot _ h
+  exact ⟨c, by convert hc using 2; ext; simp⟩
 
 variable (I M) in
 /-- **Period classes**: integral classes `c₁, …, c_b` of `H₁(M; ℤ)`, `b = dim H¹_dR(M)`, on
@@ -202,7 +179,7 @@ def periodHomologyClass :
   (exists_bijective_homologyPeriods (I := I) (M := M)).choose
 
 /-- The periods on the period classes are a linear isomorphism `H¹_dR(M) ≃ ℝ^b`. -/
-theorem bijective_homologyPeriods_periodHomologyClass :
+theorem homologyPeriods_periodHomologyClass_bijective :
     Function.Bijective (homologyPeriods I (periodHomologyClass I M)) :=
   (exists_bijective_homologyPeriods (I := I) (M := M)).choose_spec
 
@@ -212,7 +189,7 @@ classes are `⟨θ_i, c_j⟩ = δ_ij`. Its coordinates are the periods on the pe
 (`TauCeti.deRhamCohomology.periodDualBasis_repr_apply`). -/
 def periodDualBasis :
     Basis (Fin (finrank ℝ (deRhamCohomology I M 1))) ℝ (deRhamCohomology I M 1) :=
-  .ofEquivFun (.ofBijective _ bijective_homologyPeriods_periodHomologyClass)
+  .ofEquivFun (.ofBijective _ homologyPeriods_periodHomologyClass_bijective)
 
 /-- The coordinates of a class in the period-dual basis are its periods on the period classes. -/
 @[simp]

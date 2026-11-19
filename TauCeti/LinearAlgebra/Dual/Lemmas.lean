@@ -21,7 +21,8 @@ algebra is finite-dimensional is itself finite-dimensional.
 Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
 and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
 family of vectors. Linearly independent functionals, as many as the dimension, span the dual space
-and so separate points.
+and so separate points. Conversely, a separating family of functionals on a finite-dimensional
+space contains such a family, which gives coordinates on the space.
 
 ## Main results
 
@@ -36,6 +37,8 @@ and so separate points.
   codimension one.
 * `Module.Dual.apply_smul_eq_apply_smul_of_finrank_eq_one`: any two functionals on a line are
   proportional, `c w • ψ = ψ w • c`.
+* `Module.Dual.exists_bijective_pi_of_iInf_ker_eq_bot`: on a finite-dimensional space, a family
+  of functionals with no common zero but `0` contains `finrank K V` members that form coordinates.
 * `Module.Dual.smul_evalEquiv_symm_dualMap`: on a line `L`, the vector whose pairings are
   `ψ ↦ β (C.symm ψ)` for `C : P ≃ L^*` is `β p / C p w` times `w`, in the multiplied-out form
   `C p w • x = β p • w`.
@@ -218,6 +221,31 @@ theorem smul_evalEquiv_symm_dualMap {L P : Type*} [AddCommGroup L] [Module K L]
   simp only [map_smul, LinearEquiv.symm_apply_apply, smul_eq_mul] at h
   simp only [map_sub, map_smul, apply_evalEquiv_symm_apply, LinearEquiv.dualMap_apply, smul_eq_mul,
     h, mul_comm, sub_self]
+
+/-- **Coordinates from separating functionals.** On a finite-dimensional space, a family of
+functionals with no common zero but `0` contains `finrank K V` members that assemble into a
+linear isomorphism `V ≃ K^(finrank K V)`. -/
+theorem exists_bijective_pi_of_iInf_ker_eq_bot [FiniteDimensional K V] (L : ι → Dual K V)
+    (h : ⨅ i, LinearMap.ker (L i) = ⊥) :
+    ∃ c : Fin (finrank K V) → ι, Function.Bijective (LinearMap.pi (L ∘ c)) := by
+  have hspan : Submodule.span K (Set.range L) = ⊤ := Submodule.eq_top_iff'.mpr fun f ↦
+    FiniteDimensional.mem_span_of_iInf_ker_le_ker (by simp [h])
+  obtain ⟨κ, a, -, hspan', hli⟩ := exists_linearIndependent' K L
+  rw [hspan] at hspan'
+  let e : κ ≃ Fin (finrank K V) := (Basis.mk hli hspan'.ge).indexEquiv (finBasis K V).dualBasis
+  refine ⟨a ∘ e.symm, ?_⟩
+  -- The chosen functionals span the dual, so they detect every nonzero vector.
+  have hspan'' : Submodule.span K (Set.range (L ∘ a ∘ e.symm)) = ⊤ := by
+    rwa [← Function.comp_assoc, EquivLike.range_comp]
+  have hinj : Function.Injective (LinearMap.pi (L ∘ a ∘ e.symm)) := by
+    refine (injective_iff_map_eq_zero _).mpr fun x hx ↦
+      (forall_dual_apply_eq_zero_iff K x).mp fun f ↦ ?_
+    have hle : Submodule.span K (Set.range (L ∘ a ∘ e.symm)) ≤
+        LinearMap.ker (Dual.eval K V x) := by
+      refine Submodule.span_le.mpr (Set.range_subset_iff.mpr fun i ↦ ?_)
+      simpa using congrFun hx i
+    simpa using hle (hspan'' ▸ Submodule.mem_top (x := f))
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by simp)).mp hinj⟩
 
 end Field
 
