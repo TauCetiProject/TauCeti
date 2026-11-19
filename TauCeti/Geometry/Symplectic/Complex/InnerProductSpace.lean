@@ -18,7 +18,8 @@ structure rather than a global instance, since it depends on `J`.
 
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
 real inner product, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
-`⟪J v, v⟫ = 0`.
+`⟪J v, v⟫ = 0`. Consequently, by `TauCeti.AlmostComplexStructure.norm_re_smul_add_im_smul`, the
+parametrization `z ↦ Re z • n + Im z • J n` of the complex line of a unit vector `n` is isometric.
 
 Conversely, multiplication by `i` on a complex inner product space preserves the real inner product
 `Re ⟪·, ·⟫_ℂ` (`TauCeti.AlmostComplexStructure.real_inner_ofComplexModule_ofComplexModule`).
@@ -46,6 +47,17 @@ theorem inner_apply_self {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J
     (v : V) : ⟪J v, v⟫ = 0 := by
   rw [real_inner_comm]
   exact J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun x y ↦ real_inner_comm y x⟩ hJ v
+
+/-- **The complex line of a unit vector is isometric to `ℂ`.** For an orthogonal `J` and a unit
+vector `n`, the vectors `n` and `J n` are orthonormal, so `‖Re z • n + Im z • J n‖ = ‖z‖`. -/
+theorem norm_re_smul_add_im_smul (J : AlmostComplexStructure V)
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {n : V} (hn : ‖n‖ = 1) (z : ℂ) :
+    ‖z.re • n + z.im • J n‖ = ‖z‖ := by
+  have hJn : ‖J n‖ = 1 := by rw [J.norm_apply hJ, hn]
+  have horth : ⟪n, J n⟫ = 0 := by rw [real_inner_comm, J.inner_apply_self hJ]
+  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply]
+  simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, horth, hn, hJn,
+    ← sq]
 
 /-- The complex inner product induced by an orthogonal complex structure, using the original
 norm on `V` and the scalar action `J.complexModule`. Its real part is the original inner product.
