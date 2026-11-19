@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
@@ -302,23 +301,6 @@ noncomputable def thetaConnectionForm (k : ℤ) (τ z : ℂ) : ℂ :=
 theorem thetaConnectionForm_def (z : ℂ) :
     thetaConnectionForm k τ z = 2 * π * I * k * z.im / τ.im :=
   (rfl)
-
-/-- The imaginary part, as a map `ℂ → ℂ`, is `ℝ`-linear, so it is its own derivative. -/
-private theorem fderiv_ofReal_im (z : ℂ) :
-    fderiv ℝ (fun w : ℂ ↦ (w.im : ℂ)) z = ofRealCLM.comp imCLM :=
-  (ofRealCLM.comp imCLM).hasFDerivAt.fderiv
-
-/-- The Wirtinger derivative of the imaginary part: `∂ Im = -i/2`. -/
-theorem wirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
-    wirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = -I / 2 := by
-  rw [wirtingerDeriv_apply, fderiv_ofReal_im]
-  simp [div_eq_inv_mul]
-
-/-- The conjugate Wirtinger derivative of the imaginary part: `∂bar Im = i/2`. -/
-theorem conjWirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
-    conjWirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = I / 2 := by
-  rw [conjWirtingerDeriv_apply, fderiv_ofReal_im]
-  simp [div_eq_inv_mul]
 
 /-- **The Chern connection form**: `∂ log h = A`, where `h` is the theta metric. -/
 theorem wirtingerDeriv_apply_one_log_thetaMetric (z : ℂ) :
