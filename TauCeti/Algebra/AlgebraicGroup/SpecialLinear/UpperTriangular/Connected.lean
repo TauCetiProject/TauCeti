@@ -141,7 +141,7 @@ private theorem inclusionAlgHom_comp_retractionAlgHom :
   rw [h, retractionAlgHom, toConv_ofConv, MulEquiv.apply_symm_apply, ← hrescale]
   ext a b
   simp only [Matrix.SpecialLinearGroup.coe_GL_coe_matrix, Matrix.SpecialLinearGroup.map_apply_coe,
-    RingHom.mapMatrix_apply, Matrix.map_apply, coe_detOneRescalePoint,
+    Matrix.map_apply, coe_detOneRescalePoint,
     Matrix.GeneralLinearGroup.map_apply]
 
 /-- The coordinate map of the retraction is injective, since it has a left inverse. -/
