@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.SerreClass.MorphismProperty
 public import Mathlib.CategoryTheory.Filtered.Final
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
+public import Mathlib.CategoryTheory.Linear.FunctorCategory
 
 /-!
 # Pro-zero diagrams and pro-isomorphisms
@@ -38,6 +39,10 @@ the error terms that derived limits of towers cannot see.
 * `CategoryTheory.Functor.isSerreClass_isProZero`: in an abelian category, pro-zero diagrams form a
   Serre class.
 * `CategoryTheory.Functor.proIsomorphisms`: the pro-isomorphisms of diagrams.
+* `CategoryTheory.Functor.proIsomorphisms_kernel_ι_smul_id_iff`: in an `R`-linear abelian
+  category, the inclusion of the kernel of `r • 𝟙 F` (for a tower of modules, the subtower of
+  `r`-torsion) is a pro-isomorphism exactly when `r` kills, for every `j`, some map `F i ⟶ F j`
+  of the diagram.
 
 ## References
 
@@ -179,6 +184,26 @@ lemma proIsomorphisms_iff {F G : J ⥤ C} (f : F ⟶ G) :
 example : (proIsomorphisms J C).IsMultiplicative := inferInstance
 
 example : (proIsomorphisms J C).HasTwoOutOfThreeProperty := inferInstance
+
+/-- **Torsion subdiagrams.** In an `R`-linear abelian category, the inclusion of the kernel of
+`r • 𝟙 F` (for a tower of modules, the subtower of `r`-torsion elements) is a pro-isomorphism
+exactly when `r` kills, for every `j`, some map `F.map f : F i ⟶ F j` of the diagram. -/
+theorem proIsomorphisms_kernel_ι_smul_id_iff {R : Type u₃} [Semiring R] [Linear R C] (r : R)
+    (F : J ⥤ C) :
+    proIsomorphisms J C (kernel.ι (r • 𝟙 F)) ↔ ∀ j, ∃ (i : J) (f : i ⟶ j), r • F.map f = 0 := by
+  -- The inclusion is a monomorphism, so it is a pro-isomorphism iff its cokernel, the coimage of
+  -- `r • 𝟙 F`, is pro-zero. The coimage sits between the epimorphism `coimage.π` out of `F` and
+  -- the monomorphism `factorThruCoimage` into `F`, whose composite is `r • 𝟙 F`.
+  set g := r • 𝟙 F
+  have key : ∀ {i j : J} (f : i ⟶ j),
+      (Abelian.coimage g).map f = 0 ↔ r • F.map f = 0 := fun {i j} f ↦ by
+    rw [← cancel_epi ((Abelian.coimage.π g).app i), ← cancel_mono
+      ((Abelian.factorThruCoimage g).app j), comp_zero, zero_comp, Category.assoc,
+      ← NatTrans.naturality_assoc,
+      ← NatTrans.comp_app, Abelian.coimage.fac]
+    simp [g]
+  refine (ObjectProperty.isoModSerre_iff_of_mono (P := IsProZero) (kernel.ι g)).trans ?_
+  exact forall_congr' fun j ↦ exists_congr fun i ↦ exists_congr fun f ↦ key f
 
 end Abelian
 
