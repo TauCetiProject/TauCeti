@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
+public import TauCeti.LinearAlgebra.Dual.FinitePresentation
 public import TauCeti.RingTheory.SplitAlgebra.Basic
 
 import Mathlib.RingTheory.Flat.Localization
@@ -19,9 +20,10 @@ Let `S` be an `R`-algebra that is finitely presented as an `R`-module (for insta
 algebra over a noetherian ring, by `Module.finitePresentation_of_finite`). The values `ρ 1` of
 the linear functionals `ρ : S → R` form an ideal `I` of `R`, the range of evaluation at `1` on
 the dual, and `S` is split over `R` exactly when `I = R`
-(`TauCeti.splitAlgebra_iff_surjective_eval`). Because `Hom_R(S, R)` commutes with flat base
+(`TauCeti.splitAlgebra_iff_eval_surjective`). Because `Hom_R(S, R)` commutes with flat base
 change for finitely presented `S` (`Module.FinitePresentation.isBaseChange_map`), the ideal
-attached to `R' ⊗[R] S` over a flat `R`-algebra `R'` is the extension `I R'`. Two consequences
+attached to `R' ⊗[R] S` over a flat `R`-algebra `R'` is the extension `I R'`
+(`TauCeti.Module.Dual.range_eval_one_tmul`). Two consequences
 follow:
 
 * splitting descends along faithfully flat maps;
@@ -54,31 +56,6 @@ namespace TauCeti
 
 variable {R S : Type*} [CommRing R] [Ring S] [Algebra R S]
 
-/-- Over a flat `R`-algebra `R'` and for `S` finitely presented as an `R`-module, every
-`R'`-linear functional on `R' ⊗[R] S` takes its value at `1` in the extension to `R'` of the
-ideal of values `ρ 1` of `R`-linear functionals `ρ : S → R`. The functionals `R' ⊗ ρ` span
-`Hom_{R'}(R' ⊗[R] S, R' ⊗[R] R)` by `Module.FinitePresentation.isBaseChange_map`. -/
-private theorem map_one_mem_map_range_eval (R' : Type*) [CommRing R'] [Algebra R R']
-    [Module.Flat R R'] [Module.FinitePresentation R S] (ψ : R' ⊗[R] S →ₗ[R'] R') :
-    ψ 1 ∈ Ideal.map (algebraMap R R') (LinearMap.range (Module.Dual.eval R S 1)) := by
-  let e := AlgebraTensorModule.rid R R' R'
-  suffices H : ∀ g : R' ⊗[R] S →ₗ[R'] R' ⊗[R] R,
-      e (g 1) ∈ Ideal.map (algebraMap R R') (LinearMap.range (Module.Dual.eval R S 1)) by
-    simpa using H (e.symm.toLinearMap ∘ₗ ψ)
-  intro g
-  induction g using (Module.FinitePresentation.isBaseChange_map R S R R').inductionOn with
-  | tmul ρ =>
-    rw [Algebra.TensorProduct.one_def]
-    simp only [LinearMap.baseChangeHom_apply, LinearMap.baseChange_tmul, e,
-      AlgebraTensorModule.rid_tmul, Algebra.smul_def, mul_one]
-    exact Ideal.mem_map_of_mem _ ⟨ρ, rfl⟩
-  | smul r g hg =>
-    rw [LinearMap.smul_apply, map_smul, smul_eq_mul]
-    exact Ideal.mul_mem_left _ _ hg
-  | add g₁ g₂ h₁ h₂ =>
-    rw [LinearMap.add_apply, map_add]
-    exact Ideal.add_mem _ h₁ h₂
-
 /-- For a flat `R`-algebra `R'` and an `R`-algebra `S` finitely presented as an `R`-module,
 `R' ⊗[R] S` is split over `R'` exactly when the ideal of values `ρ 1` of linear functionals
 `ρ : S → R` generates the unit ideal of `R'`. -/
@@ -86,17 +63,8 @@ theorem splitAlgebra_tensorProduct_iff_map_range_eval (R' : Type*) [CommRing R']
     [Module.Flat R R'] [Module.FinitePresentation R S] :
     SplitAlgebra R' (R' ⊗[R] S) ↔
       Ideal.map (algebraMap R R') (LinearMap.range (Module.Dual.eval R S 1)) = ⊤ := by
-  constructor
-  · rw [splitAlgebra_iff_exists_linearMap]
-    rintro ⟨ψ, hψ⟩
-    rw [Ideal.eq_top_iff_one, ← hψ]
-    exact map_one_mem_map_range_eval R' ψ
-  · intro h
-    rw [splitAlgebra_iff_surjective_eval, ← LinearMap.range_eq_top, eq_top_iff, ← h,
-      Ideal.map_le_iff_le_comap]
-    rintro _ ⟨ρ, rfl⟩
-    refine Ideal.mem_comap.2 ⟨Module.Dual.baseChange R' ρ, ?_⟩
-    simp [Algebra.TensorProduct.one_def, Algebra.smul_def]
+  rw [splitAlgebra_iff_eval_surjective, ← LinearMap.range_eq_top, Algebra.TensorProduct.one_def,
+    Module.Dual.range_eval_one_tmul]
 
 /-- Splittings descend along faithfully flat maps: for a faithfully flat `R`-algebra `R'` and an
 `R`-algebra `S` finitely presented as an `R`-module, `R' ⊗[R] S` is split over `R'` exactly when
@@ -106,7 +74,7 @@ theorem splitAlgebra_tensorProduct_iff_of_faithfullyFlat (R' : Type*) [CommRing 
     SplitAlgebra R' (R' ⊗[R] S) ↔ SplitAlgebra R S := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.baseChange R'⟩
   rw [splitAlgebra_tensorProduct_iff_map_range_eval] at h
-  rw [splitAlgebra_iff_surjective_eval, ← LinearMap.range_eq_top,
+  rw [splitAlgebra_iff_eval_surjective, ← LinearMap.range_eq_top,
     ← Ideal.comap_map_eq_self_of_faithfullyFlat (B := R') (LinearMap.range _), h]
   exact Ideal.comap_top
 
@@ -118,7 +86,7 @@ theorem splitAlgebra_iff_localized_maximal [Module.FinitePresentation R S] :
       ∀ (m : Ideal R) [m.IsMaximal],
         SplitAlgebra (Localization.AtPrime m) (Localization.AtPrime m ⊗[R] S) := by
   refine ⟨fun h m _ ↦ h.baseChange _, fun h ↦ ?_⟩
-  rw [splitAlgebra_iff_surjective_eval, ← LinearMap.range_eq_top]
+  rw [splitAlgebra_iff_eval_surjective, ← LinearMap.range_eq_top]
   by_contra hI
   obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hI
   have := (splitAlgebra_tensorProduct_iff_map_range_eval (Localization.AtPrime m)).1 (h m)

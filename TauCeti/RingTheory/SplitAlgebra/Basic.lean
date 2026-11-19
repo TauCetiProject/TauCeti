@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.Rat
-public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.LinearAlgebra.Dual.BaseChange
 
 import Mathlib.Tactic.NormNum
 
@@ -33,13 +33,13 @@ maps and their detection at maximal ideals are in
 
 ## Main results
 
-* `TauCeti.splitAlgebra_iff_surjective_eval`: `S` is split exactly when evaluation at `1` on the
+* `TauCeti.splitAlgebra_iff_eval_surjective`: `S` is split exactly when evaluation at `1` on the
   dual `Module.Dual R S` is surjective.
 * `TauCeti.SplitAlgebra.trans`: splittings compose along a tower `R → S → T`.
 * `TauCeti.SplitAlgebra.of_algHom`: if `T` is split over `R`, so is every `R`-algebra mapping to
   `T`.
 * `TauCeti.SplitAlgebra.baseChange`: splittings are stable under base change.
-* `TauCeti.SplitAlgebra.injective_algebraMap`: the unit map of a split algebra is injective.
+* `TauCeti.SplitAlgebra.algebraMap_injective`: the unit map of a split algebra is injective.
 * `TauCeti.SplitAlgebra.tmul_one_injective`: a split algebra is tensor-pure, i.e.
   `m ↦ m ⊗ 1 : M → M ⊗[R] S` is injective for every `R`-module `M`.
 * `TauCeti.not_splitAlgebra_int_rat`: the injective flat map `ℤ → ℚ` is not split.
@@ -86,11 +86,11 @@ theorem SplitAlgebra.of_isUnit_map_one (ρ : S →ₗ[R] R) (hρ : IsUnit (ρ 1)
 variable (R S) in
 /-- `S` is split over `R` exactly when evaluation at `1` on the dual `Hom_R(S, R)` is surjective.
 The range of this evaluation is the ideal of `R` formed by the values `ρ 1`. -/
-theorem splitAlgebra_iff_surjective_eval :
+theorem splitAlgebra_iff_eval_surjective :
     SplitAlgebra R S ↔ Function.Surjective (Module.Dual.eval R S 1) := by
   refine ⟨fun ⟨ρ, hρ⟩ r ↦ ⟨r • ρ, by simp [hρ]⟩, fun h ↦ ?_⟩
   obtain ⟨ρ, hρ⟩ := h 1
-  exact ⟨ρ, hρ⟩
+  exact ⟨ρ, by rwa [Module.Dual.eval_apply] at hρ⟩
 
 variable (R) in
 /-- Every commutative semiring is split over itself, by the identity. -/
@@ -117,7 +117,7 @@ theorem SplitAlgebra.exists_leftInverse (h : SplitAlgebra R S) :
   exact ⟨ρ, fun r ↦ by simp [Algebra.algebraMap_eq_smul_one, hρ]⟩
 
 /-- The unit map of a split algebra is injective. -/
-theorem SplitAlgebra.injective_algebraMap (h : SplitAlgebra R S) :
+theorem SplitAlgebra.algebraMap_injective (h : SplitAlgebra R S) :
     Function.Injective (algebraMap R S) := by
   obtain ⟨ρ, hρ⟩ := h.exists_leftInverse
   exact hρ.injective
@@ -125,7 +125,7 @@ theorem SplitAlgebra.injective_algebraMap (h : SplitAlgebra R S) :
 /-- A split algebra over a nontrivial semiring is nontrivial. In particular the zero algebra
 over a nontrivial semiring is not split. -/
 theorem SplitAlgebra.nontrivial [Nontrivial R] (h : SplitAlgebra R S) : Nontrivial S :=
-  h.injective_algebraMap.nontrivial
+  h.algebraMap_injective.nontrivial
 
 /-- A nonzero algebra over a semifield that is projective as a module (for instance any
 nonzero algebra over a field) is split: `1` extends to a linear functional taking the
@@ -160,7 +160,7 @@ over `R'` for every commutative `R`-algebra `R'`. -/
 theorem SplitAlgebra.baseChange (R' : Type*) [CommSemiring R'] [Algebra R R']
     (h : SplitAlgebra R S) : SplitAlgebra R' (R' ⊗[R] S) := by
   obtain ⟨ρ, hρ⟩ := h
-  exact ⟨Module.Dual.baseChange R' ρ, by simp [Algebra.TensorProduct.one_def, hρ]⟩
+  exact ⟨Module.Dual.baseChange R' ρ, by rw [Module.Dual.baseChange_apply_one, hρ, map_one]⟩
 
 /-- A split algebra is tensor-pure: for every `R`-module `M`, the map `m ↦ m ⊗ 1` from `M` to
 `M ⊗[R] S` is injective. -/
