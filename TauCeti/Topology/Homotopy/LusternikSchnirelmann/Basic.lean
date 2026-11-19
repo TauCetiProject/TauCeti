@@ -74,7 +74,8 @@ its attainment give actual finite categorical covers of compact locally contract
   on the empty set.
 * `TauCeti.lsCategoryCount_eq_sum_inter`: additivity over finitely many pairwise disjoint clopen
   sets, and `TauCeti.lsCategoryCount_sigma`, `TauCeti.lsCategoryCount_univ_sigma`: the count of a
-  finite disjoint union is the sum of the counts of its summands.
+  finite disjoint union is the sum of the counts of its summands, with
+  `TauCeti.lsCategoryCount_sum` and `TauCeti.lsCategoryCount_univ_sum` for `X ⊕ Y`.
 * `TauCeti.lsCategoryCount_univ_eq_finsum_connectedComponents`: the count of a space with
   finitely many components is the sum of the counts of its components.
 * `TauCeti.lsCategoryCount_preimage_subtypeVal`: a clopen subspace computes the counts of its
@@ -628,6 +629,56 @@ theorem lsCategoryCount_univ_sigma [Fintype ι] :
   simp [lsCategoryCount_sigma]
 
 end Sigma
+
+section Sum
+
+/-- A subset of the left summand of `X ⊕ Y` has the same Lusternik–Schnirelmann count in `X ⊕ Y`
+as in `X`. -/
+@[simp]
+theorem lsCategoryCount_image_inl (A : Set X) :
+    lsCategoryCount (X ⊕ Y) (Sum.inl '' A) = lsCategoryCount X A := by
+  refine le_antisymm (IsOpenEmbedding.inl.lsCategoryCount_image_le A) ?_
+  obtain rfl | ⟨x, -⟩ := A.eq_empty_or_nonempty
+  · simp
+  -- Collapsing `Y` to `x` gives a retraction onto `X`.
+  let r : C(X ⊕ Y, X) := ⟨Sum.elim id fun _ ↦ x, continuous_id.sumElim continuous_const⟩
+  have hr : r.comp ⟨Sum.inl, continuous_inl⟩ = ContinuousMap.id X :=
+    ContinuousMap.ext fun _ ↦ rfl
+  exact lsCategoryCount_le_of_mapsTo _ r (by rw [hr]) (mapsTo_image _ _)
+
+/-- A subset of the right summand of `X ⊕ Y` has the same Lusternik–Schnirelmann count in `X ⊕ Y`
+as in `Y`. -/
+@[simp]
+theorem lsCategoryCount_image_inr (A : Set Y) :
+    lsCategoryCount (X ⊕ Y) (Sum.inr '' A) = lsCategoryCount Y A := by
+  refine le_antisymm (IsOpenEmbedding.inr.lsCategoryCount_image_le A) ?_
+  obtain rfl | ⟨y, -⟩ := A.eq_empty_or_nonempty
+  · simp
+  -- Collapsing `X` to `y` gives a retraction onto `Y`.
+  let r : C(X ⊕ Y, Y) := ⟨Sum.elim (fun _ ↦ y) id, continuous_const.sumElim continuous_id⟩
+  have hr : r.comp ⟨Sum.inr, continuous_inr⟩ = ContinuousMap.id Y :=
+    ContinuousMap.ext fun _ ↦ rfl
+  exact lsCategoryCount_le_of_mapsTo _ r (by rw [hr]) (mapsTo_image _ _)
+
+/-- The Lusternik–Schnirelmann count of a subset of `X ⊕ Y` is the sum of the counts of its parts
+in the two summands. -/
+theorem lsCategoryCount_sum (A : Set (X ⊕ Y)) :
+    lsCategoryCount (X ⊕ Y) A =
+      lsCategoryCount X (Sum.inl ⁻¹' A) + lsCategoryCount Y (Sum.inr ⁻¹' A) := by
+  have hd : Pairwise (Disjoint on fun b ↦ cond b (range (@Sum.inl X Y)) (range Sum.inr)) :=
+    pairwise_on_bool.2 isCompl_range_inl_range_inr.disjoint
+  rw [lsCategoryCount_eq_sum_inter (fun b ↦ by cases b <;> simp [isClopen_range_inl,
+    isClopen_range_inr]) hd fun x _ ↦ by cases x <;> simp]
+  simp [← image_preimage_eq_inter_range]
+
+/-- **The Lusternik–Schnirelmann count of a disjoint union** `X ⊕ Y` is the sum of the counts of
+`X` and `Y`. -/
+@[simp]
+theorem lsCategoryCount_univ_sum :
+    lsCategoryCount (X ⊕ Y) univ = lsCategoryCount X univ + lsCategoryCount Y univ := by
+  simp [lsCategoryCount_sum]
+
+end Sum
 
 section Clopen
 
