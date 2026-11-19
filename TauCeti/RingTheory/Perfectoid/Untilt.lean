@@ -44,6 +44,8 @@ isomorphism `PreTilt A p ⧸ (ϖ) ≃+* A ⧸ (ϖ.untilt)`.
 * `PreTilt.coeff_eq_mk_untilt_iterate`, `PreTilt.untilt_iterate_frobeniusEquiv_symm_succ_pow`:
   the `n`-th `ModP A p` coordinate of `x : PreTilt A p` is the reduction modulo `p` of
   `untilt ((frobeniusEquiv.symm^[n]) x)`, whose `p`-th powers step along the root tower.
+* `PreTilt.untilt_eq_one_of_geom_sum_eq_zero`: if `ζ = (ε ^ (1 / p))♯` satisfies
+  `∑_{j < p} ζ ^ j = 0`, then `ε♯ = 1`.
 * `PreTilt.mem_nonZeroDivisors_of_untilt`: `ϖ` is a nonzerodivisor of `PreTilt A p` whenever
   `ϖ.untilt` is a nonzerodivisor of `A`.
 * `PreTilt.exists_mul_natCast_dvd_sub_untilt`, `PreTilt.exists_associated_untilt`: every element of
@@ -82,6 +84,13 @@ theorem untilt_iterate_frobeniusEquiv_symm_succ_pow (x : PreTilt A p) (n : ℕ) 
     untilt (((frobeniusEquiv (PreTilt A p) p).symm^[n + 1]) x) ^ p =
       untilt (((frobeniusEquiv (PreTilt A p) p).symm^[n]) x) := by
   rw [← map_pow, Function.iterate_succ_apply', frobeniusEquiv_symm_pow_p]
+
+/-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then `ε♯ = ζ ^ p = 1`. -/
+theorem untilt_eq_one_of_geom_sum_eq_zero {ε : PreTilt A p}
+    (hε : ∑ j ∈ Finset.range p, ((frobeniusEquiv (PreTilt A p) p).symm ε).untilt ^ j = 0) :
+    ε.untilt = 1 := by
+  rw [← sub_eq_zero, ← untilt_iterate_frobeniusEquiv_symm_pow ε 1, pow_one,
+    Function.iterate_one, ← mul_geom_sum, hε, mul_zero]
 
 /-- `PreTilt.untilt` on `equivPerfection.symm x` is `Perfection.teichmuller₀` on `x`. -/
 @[simp]
