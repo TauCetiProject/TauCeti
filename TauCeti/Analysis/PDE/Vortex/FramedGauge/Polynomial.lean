@@ -208,12 +208,8 @@ private theorem contDiff_polynomialPhase :
     filter_upwards [isOpen_cutoffArg_lt.mem_nhds hp] with q hq
     simp [polynomialPhase, Real.smoothTransition.zero_of_nonpos (le_of_lt hq)]
   · have hp0 := (ne_zero_and_norm_tail_lt_one hp).1
-    have hlog : ContDiffAt ℂ ∞ (log ∘ fun q : (Fin m → ℂ) × ℂ ↦ 1 + tail q.1 q.2) p :=
-      (contDiffAt_log (one_add_tail_mem_slitPlane hp)).comp p
-        ((contDiffAt_const (c := (1 : ℂ))).add (contDiffAt_tail hp0))
-    have harg : ContDiffAt ℝ ∞ (fun q : (Fin m → ℂ) × ℂ ↦ arg (1 + tail q.1 q.2)) p := by
-      simpa only [Function.comp_def, imCLM_apply, log_im] using
-        imCLM.contDiff.contDiffAt.comp p (hlog.restrict_scalars ℝ)
+    have harg := (contDiffAt_arg (one_add_tail_mem_slitPlane hp)).comp p
+      (((contDiffAt_const (c := (1 : ℂ))).add (contDiffAt_tail hp0)).restrict_scalars ℝ)
     exact ((Real.smoothTransition.contDiff.comp contDiff_cutoffArg).contDiffAt.mul harg).neg
 
 /-- **The polynomial gauge is jointly smooth** in the coefficients and the point. -/
@@ -304,15 +300,10 @@ theorem polynomialGauge_mul_eval {c : Fin m → ℂ} {z : ℂ}
   have hz0 := (ne_zero_and_norm_tail_lt_one h0).1
   have hw0 : 1 + tail c z ≠ 0 := slitPlane_ne_zero (one_add_tail_mem_slitPlane h0)
   set w := 1 + tail c z with hw
-  have hnw : (‖w‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hw0)
   have hnz : (‖z‖ : ℂ) ≠ 0 := ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz0)
-  -- `exp (-i arg w) = ‖w‖ / w`.
-  have he : exp (arg w * I) = w / ‖w‖ := by
-    rw [eq_div_iff hnw, mul_comm]
-    exact norm_mul_exp_arg_mul_I w
   have hg : (polynomialGauge c z : ℂ) = ‖w‖ / w := by
     rw [polynomialGauge, Circle.coe_exp, polynomialPhase_eq hz, ← hw, ofReal_neg, neg_mul,
-      exp_neg, he, inv_div]
+      exp_neg, exp_arg_mul_I hw0, inv_div]
   rw [hg, eval_monicOfCoeff_eq_mul_tail c hz0, ← hw, coe_windingPhase m hz0]
   simp only [norm_mul, norm_pow, ofReal_mul, ofReal_pow, div_pow]
   field_simp
