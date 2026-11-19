@@ -102,12 +102,10 @@ theorem isManifold_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) 
     [ChartedSpace H M] [IsManifold I n M] :
     letI := Φ.toHomeomorph.chartedSpaceComp M
     IsManifold I' n M := by
-  let := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-  let := ChartedSpace.comp H' H M
+  let := Φ.toHomeomorph.chartedSpaceComp M
   refine { compatible := ?_ }
-  rintro _ _ ⟨c, hc, φ, hφ, rfl⟩ ⟨c', hc', φ', hφ', rfl⟩
-  obtain rfl := OpenPartialHomeomorph.singletonChartedSpace_mem_atlas_eq _ _ φ hφ
-  obtain rfl := OpenPartialHomeomorph.singletonChartedSpace_mem_atlas_eq _ _ φ' hφ'
+  rw [Φ.toHomeomorph.atlas_chartedSpaceComp M]
+  rintro _ _ ⟨c, hc, rfl⟩ ⟨c', hc', rfl⟩
   rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_assoc,
     ← OpenPartialHomeomorph.trans_assoc c.symm]
   exact Φ.symm_trans_trans_mem_contDiffGroupoid (HasGroupoid.compatible hc hc')
