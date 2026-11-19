@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.Deriv.Mul
+
 /-!
 # The antiperiodic loop operator in the periodic gauge
 
@@ -18,8 +21,8 @@ continuous loop of real-linear maps, with propagator `Ψ` of `ζ' = S ζ` and re
 loops, `ζ (t + T) = -ζ t`. Its kernel and cokernel are those of `-1 - P`
 (`TauCeti.kerTwistedLinearOperatorEquiv`, `TauCeti.quotientRangeTwistedLinearOperatorEquiv`, for
 the realization on `C¹` maps). For the normal operator of an orbit torus these are the operators
-twisted by the sign character which is `-1` along the orbit, and `det (-1 - P)` is the
-determinant of the label `det (1 + P)`.
+twisted by the sign character which is `-1` along the orbit. Since `E` is a complex space, its real
+dimension is even, so `det (-1 - P) = (-1) ^ dim_ℝ E * det (1 + P) = det (1 + P)`.
 
 Since `E` is a complex space, multiplication by the phase `u(t) = exp (π i t / T)`, which
 satisfies `u (t + T) = -u t`, identifies `T`-periodic loops `η` with `T`-antiperiodic loops
@@ -28,13 +31,12 @@ satisfies `u (t + T) = -u t`, identifies `T`-periodic loops `η` with `T`-antipe
 `Sₐ(t) v = u(t)⁻¹ S(t) (u(t) v) - (π i / T) v`
 
 (`TauCeti.CircleSobolev.antiperiodicGaugeLoop`,
-`TauCeti.CircleSobolev.hasDerivAt_antiperiodicGaugeLoop_iff`).
+`TauCeti.CircleSobolev.hasDerivAt_antiperiodicGaugeLoop_add_iff`).
 The loop `Sₐ` is `T`-periodic: replacing `u` by `-u` does not change the conjugation
-`v ↦ u⁻¹ S (u v)`, because `S` is real-linear. This is the only twist compatible with real-linear
-coefficients; conjugating by a phase `exp (i θ t / T)` with `θ ∉ π ℤ` does not give a periodic
-loop. So the antiperiodic operator is realized on the circle Sobolev spaces as the periodic
-operator `L_Sₐ = loopOperator T Sₐ : H¹(E) → H⁰(E)`, a Fredholm operator of index zero
-(`TauCeti.CircleSobolev.isFredholm_loopOperator`, `TauCeti.CircleSobolev.index_loopOperator`).
+`v ↦ u⁻¹ S (u v)`, because `S` is real-linear. So the antiperiodic operator is realized on the
+circle Sobolev spaces as the periodic operator `L_Sₐ = loopOperator T Sₐ : H¹(E) → H⁰(E)`, a
+Fredholm operator of index zero (`TauCeti.CircleSobolev.isFredholm_loopOperator`,
+`TauCeti.CircleSobolev.index_loopOperator`).
 
 This file computes the propagator and the invertibility of this realization:
 
@@ -47,7 +49,9 @@ This file computes the propagator and the invertibility of this realization:
 * `L_Sₐ` is invertible exactly when `ζ' = S ζ` has no nonzero continuous antiperiodic solution
   (`TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff`), that is,
   exactly when `det (-1 - P) ≠ 0`
-  (`TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero`).
+  (`TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero`), and
+  equivalently when `det (1 + P) ≠ 0`
+  (`TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_one_add_ne_zero`).
 
 ## Main definitions
 
@@ -56,15 +60,17 @@ This file computes the propagator and the invertibility of this realization:
 ## Main statements
 
 * `TauCeti.CircleSobolev.antiperiodicGaugeLoop_apply_coe`: the formula for `Sₐ(t)`.
-* `TauCeti.CircleSobolev.hasDerivAt_antiperiodicGaugeLoop_iff`: `η' = Sₐ η + f` exactly when
-  `(u η)' = S (u η) + u f`.
+* `TauCeti.CircleSobolev.hasDerivAt_antiperiodicGaugeLoop_add_iff`,
+  `TauCeti.CircleSobolev.hasDerivAt_antiperiodicGaugeLoop_iff`: `η' = Sₐ η + f` exactly when
+  `(u η)' = S (u η) + u f`, and its homogeneous case `f = 0`.
 * `TauCeti.CircleSobolev.dysonSeriesLeft_antiperiodicGaugeLoop_apply`,
   `TauCeti.CircleSobolev.dysonSeriesLeft_antiperiodicGaugeLoop_period`: `Ψₐ(t) = u(t)⁻¹ Ψ(t)` and
   `Ψₐ(T) = -Ψ(T)`.
 * `TauCeti.CircleSobolev.loopOperator_antiperiodicGaugeLoop_eq_zero_iff`: the kernel of `L_Sₐ`.
 * `TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff`,
-  `TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero`: the
-  Fredholm alternative for the antiperiodic operator.
+  `TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero`,
+  `TauCeti.CircleSobolev.isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_one_add_ne_zero`:
+  the Fredholm alternative for the antiperiodic operator.
 
 ## References
 
@@ -101,38 +107,6 @@ private theorem hasDerivAt_phase (t : ℝ) :
 private theorem continuous_phase : Continuous fun t : ℝ ↦ cexp (↑(π / T * t) * I) := by
   fun_prop
 
-private theorem continuous_coe_loop (S : C(AddCircle T, E →L[ℝ] E)) :
-    Continuous fun t : ℝ ↦ S t :=
-  S.continuous.comp (AddCircle.continuous_mk' T)
-
-private theorem periodic_coe_loop (S : C(AddCircle T, E →L[ℝ] E)) :
-    Function.Periodic (fun t : ℝ ↦ S t) T := fun t ↦ by
-  simp only [AddCircle.coe_add_period]
-
-/-- The gauge identity for a phase `u` with `u' = c u`: `η' = u⁻¹ A (u η) - c η + f` at `x`
-exactly when `(u η)' = A (u η) + u f` at `x`. -/
-private theorem hasDerivAt_smul_iff_of_hasDerivAt {u : ℝ → ℂ} {c : ℂ}
-    (hu : ∀ t, HasDerivAt u (u t * c) t) (hu0 : ∀ t, u t ≠ 0) (A : E →L[ℝ] E) {η : ℝ → E}
-    {f : E} {x : ℝ} :
-    HasDerivAt η ((u x)⁻¹ • A (u x • η x) - c • η x + f) x ↔
-      HasDerivAt (fun t ↦ u t • η t) (A (u x • η x) + u x • f) x := by
-  constructor
-  · intro h
-    refine ((hu x).smul h).congr_deriv ?_
-    rw [smul_add, smul_sub, smul_smul, mul_inv_cancel₀ (hu0 x), one_smul]
-    module
-  · intro h
-    -- `η = u⁻¹ (u η)`, and `u⁻¹` has derivative `-c u⁻¹`.
-    have hinv : HasDerivAt (fun t ↦ (u t)⁻¹) (-c * (u x)⁻¹) x := by
-      refine ((hu x).inv (hu0 x)).congr_deriv ?_
-      field_simp [hu0 x]
-    refine ((hinv.smul h).congr_of_eventuallyEq (Filter.Eventually.of_forall fun t ↦ ?_))
-      |>.congr_deriv ?_
-    · simp only [Pi.smul_apply', smul_smul, inv_mul_cancel₀ (hu0 t), one_smul]
-    · rw [smul_add, smul_smul (u x)⁻¹ (u x), inv_mul_cancel₀ (hu0 x), one_smul, smul_smul,
-        mul_assoc, inv_mul_cancel₀ (hu0 x), mul_one]
-      module
-
 /-! ### The periodic loop `Sₐ` -/
 
 /-- The loop `t ↦ u(t)⁻¹ S(t) (u(t) ·) - (π i / T)` on `ℝ`, with `u(t) = exp (π i t / T)`. -/
@@ -150,7 +124,8 @@ private theorem continuous_gaugeFun (S : C(AddCircle T, E →L[ℝ] E)) :
     Continuous (gaugeFun T S) := by
   have hu := continuous_phase T
   exact ((hu.inv₀ fun _ ↦ exp_ne_zero _).smul
-    ((continuous_coe_loop T S).clm_comp (hu.smul continuous_const))).sub continuous_const
+    ((S.continuous.comp (AddCircle.continuous_mk' T)).clm_comp (hu.smul continuous_const))).sub
+      continuous_const
 
 variable [hT : Fact (0 < T)]
 
@@ -158,7 +133,8 @@ private theorem phase_add_period (t : ℝ) :
     cexp (↑(π / T * (t + T)) * I) = -cexp (↑(π / T * t) * I) := by
   have hT0 : T ≠ 0 := hT.out.ne'
   have h : π / T * (t + T) = π / T * t + π := by field_simp
-  rw [h, ofReal_add, add_mul, exp_add, exp_pi_mul_I, mul_neg_one]
+  rw [h, ofReal_add, add_mul]
+  exact exp_antiperiodic _
 
 private theorem phase_period : cexp (↑(π / T * T) * I) = -1 := by
   simpa [phase_zero] using phase_add_period T 0
@@ -177,7 +153,8 @@ maps of a complex space `E`, the `T`-periodic loop
 `Sₐ(t) v = u(t)⁻¹ S(t) (u(t) v) - (π i / T) v`,  `u(t) = exp (π i t / T)`.
 
 Multiplication by `u` identifies `T`-periodic loops `η` with `T`-antiperiodic loops `u η`, and
-`(u η)' - S (u η) = u (η' - Sₐ η)` (`TauCeti.CircleSobolev.hasDerivAt_antiperiodicGaugeLoop_iff`),
+`(u η)' - S (u η) = u (η' - Sₐ η)`
+(`TauCeti.CircleSobolev.hasDerivAt_antiperiodicGaugeLoop_add_iff`),
 so the periodic operator `loopOperator T (antiperiodicGaugeLoop T S)` realizes `ζ ↦ ζ' - S ζ` on
 antiperiodic loops. -/
 def antiperiodicGaugeLoop (S : C(AddCircle T, E →L[ℝ] E)) : C(AddCircle T, E →L[ℝ] E) :=
@@ -189,20 +166,30 @@ theorem antiperiodicGaugeLoop_apply_coe (S : C(AddCircle T, E →L[ℝ] E)) (t :
     antiperiodicGaugeLoop T S t v =
       (cexp (↑(π / T * t) * I))⁻¹ • S t (cexp (↑(π / T * t) * I) • v) -
         (↑(π / T) * I) • v := by
-  rw [← gaugeFun_apply]
-  rfl
+  rw [← gaugeFun_apply, antiperiodicGaugeLoop, ContinuousMap.coe_mk, Function.Periodic.lift_coe]
 
 /-! ### Solutions -/
 
 /-- **The gauge identity.** With `u(t) = exp (π i t / T)`, a map `η : ℝ → E` satisfies
 `η' = Sₐ η + f` at `x` exactly when `u η` satisfies `(u η)' = S (u η) + u f` at `x`. -/
-theorem hasDerivAt_antiperiodicGaugeLoop_iff (S : C(AddCircle T, E →L[ℝ] E)) {η : ℝ → E} {f : E}
-    {x : ℝ} :
+theorem hasDerivAt_antiperiodicGaugeLoop_add_iff (S : C(AddCircle T, E →L[ℝ] E)) {η : ℝ → E}
+    {f : E} {x : ℝ} :
     HasDerivAt η (antiperiodicGaugeLoop T S x (η x) + f) x ↔
       HasDerivAt (fun t ↦ cexp (↑(π / T * t) * I) • η t)
         (S x (cexp (↑(π / T * x) * I) • η x) + cexp (↑(π / T * x) * I) • f) x := by
+  rw [antiperiodicGaugeLoop_apply_coe,
+    ← hasDerivAt_smul_iff_of_hasDerivAt (hasDerivAt_phase T x) (exp_ne_zero _), smul_add,
+    inv_smul_smul₀ (exp_ne_zero _), add_sub_right_comm]
+
+/-- **The homogeneous gauge identity.** With `u(t) = exp (π i t / T)`, a map `η : ℝ → E`
+satisfies `η' = Sₐ η` at `x` exactly when `u η` satisfies `(u η)' = S (u η)` at `x`. -/
+theorem hasDerivAt_antiperiodicGaugeLoop_iff (S : C(AddCircle T, E →L[ℝ] E)) {η : ℝ → E}
+    {x : ℝ} :
+    HasDerivAt η (antiperiodicGaugeLoop T S x (η x)) x ↔
+      HasDerivAt (fun t ↦ cexp (↑(π / T * t) * I) • η t)
+        (S x (cexp (↑(π / T * x) * I) • η x)) x := by
   rw [antiperiodicGaugeLoop_apply_coe]
-  exact hasDerivAt_smul_iff_of_hasDerivAt (hasDerivAt_phase T) (fun _ ↦ exp_ne_zero _) _
+  exact hasDerivAt_smul_iff_of_hasDerivAt (hasDerivAt_phase T x) (exp_ne_zero _)
 
 variable [FiniteDimensional ℂ E]
 
@@ -218,13 +205,10 @@ theorem dysonSeriesLeft_antiperiodicGaugeLoop_apply (S : C(AddCircle T, E →L[�
       (cexp (↑(π / T * t) * I))⁻¹ • dysonSeriesLeft (fun t : ℝ ↦ S t) t v := by
   set w : ℝ → E := fun t ↦ (cexp (↑(π / T * t) * I))⁻¹ • dysonSeriesLeft (fun t : ℝ ↦ S t) t v
   have hw (x : ℝ) : HasDerivAt w (antiperiodicGaugeLoop T S x (w x)) x := by
-    have h := (hasDerivAt_antiperiodicGaugeLoop_iff T S (η := w) (f := 0) (x := x)).2
-    simp only [add_zero, smul_zero] at h
-    have heq (t : ℝ) : cexp (↑(π / T * t) * I) • w t = dysonSeriesLeft (fun t : ℝ ↦ S t) t v := by
-      simp only [w, smul_smul, mul_inv_cancel₀ (exp_ne_zero _), one_smul]
-    simp only [heq] at h
-    exact h (hasDerivAt_dysonSeriesLeft_apply (continuous_coe_loop T S) v x)
-  have h := eq_dysonSeriesLeft_apply (continuous_coe_loop T (antiperiodicGaugeLoop T S)) hw t
+    simp only [hasDerivAt_antiperiodicGaugeLoop_iff, w, smul_inv_smul₀ (exp_ne_zero _)]
+    exact hasDerivAt_dysonSeriesLeft_apply (S.continuous.comp (AddCircle.continuous_mk' T)) v x
+  have h := eq_dysonSeriesLeft_apply
+    ((antiperiodicGaugeLoop T S).continuous.comp (AddCircle.continuous_mk' T)) hw t
   have hw0 : w 0 = v := by simp [w, dysonSeriesLeft_zero]
   rw [hw0] at h
   exact h.symm
@@ -249,17 +233,14 @@ theorem loopOperator_antiperiodicGaugeLoop_eq_zero_iff (S : C(AddCircle T, E →
       HasDerivAt (fun y : ℝ ↦ cexp (↑(π / T * y) * I) • toContinuousMap T (by norm_num) a y)
         (S x (cexp (↑(π / T * x) * I) • toContinuousMap T (by norm_num) a x)) x := by
   rw [loopOperator_eq_zero_iff]
-  refine forall_congr' fun x ↦ ?_
-  simpa only [add_zero, smul_zero] using
-    hasDerivAt_antiperiodicGaugeLoop_iff T S
-      (η := fun y : ℝ ↦ toContinuousMap T (by norm_num) a y) (f := 0)
+  exact forall_congr' fun x ↦ hasDerivAt_antiperiodicGaugeLoop_iff T S
 
 /-- **Invertibility of the antiperiodic operator.** The realization `L_Sₐ : H¹(E) → H⁰(E)` of
 `ζ ↦ ζ' - S ζ` on antiperiodic loops is invertible exactly when `ζ' = S ζ` has no nonzero
 continuous `T`-antiperiodic solution. -/
 theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff (S : C(AddCircle T, E →L[ℝ] E)) :
     (loopOperator T (antiperiodicGaugeLoop T S)).IsInvertible ↔
-      ∀ ζ : ℝ → E, Continuous ζ → (∀ t, ζ (t + T) = -ζ t) →
+      ∀ ζ : ℝ → E, Continuous ζ → Function.Antiperiodic ζ T →
         (∀ x : ℝ, HasDerivAt ζ (S x (ζ x)) x) → ζ = 0 := by
   rw [isInvertible_loopOperator_iff]
   constructor
@@ -267,28 +248,23 @@ theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff (S : C(AddCircle T, 
     -- `u⁻¹ ζ` is periodic, so it descends to a continuous loop solving `η' = Sₐ η`.
     set η : ℝ → E := fun t ↦ (cexp (↑(π / T * t) * I))⁻¹ • ζ t
     have hηp : Function.Periodic η T := fun t ↦ by
-      simp only [η, phase_add_period, hζa, inv_neg, neg_smul, smul_neg, neg_neg]
+      simp only [η, phase_add_period, hζa t, inv_neg, neg_smul, smul_neg, neg_neg]
     have hηc : Continuous η :=
       ((continuous_phase T).inv₀ fun _ ↦ exp_ne_zero _).smul hζc
     set ηc : C(AddCircle T, E) := ⟨hηp.lift, continuous_coinduced_dom.2 hηc⟩
     have hηc_coe (t : ℝ) : ηc t = η t := hηp.lift_coe t
-    have huη (t : ℝ) : cexp (↑(π / T * t) * I) • η t = ζ t := by
-      simp only [η, smul_smul, mul_inv_cancel₀ (exp_ne_zero _), one_smul]
+    have huη (t : ℝ) : cexp (↑(π / T * t) * I) • η t = ζ t := smul_inv_smul₀ (exp_ne_zero _) _
     have hsol (x : ℝ) : HasDerivAt (fun y : ℝ ↦ ηc y) (antiperiodicGaugeLoop T S x (ηc x)) x := by
-      simp only [hηc_coe]
-      have h' := (hasDerivAt_antiperiodicGaugeLoop_iff T S (η := η) (f := 0) (x := x)).2
-      simp only [add_zero, smul_zero, huη] at h'
-      exact h' (hζ x)
+      simp only [hηc_coe, hasDerivAt_antiperiodicGaugeLoop_iff, huη]
+      exact hζ x
     have h0 := h ηc hsol
     funext t
     rw [← huη t, ← hηc_coe, h0, ContinuousMap.zero_apply, smul_zero, Pi.zero_apply]
   · intro h η hη
     -- `u η` is an antiperiodic solution of `ζ' = S ζ`.
     have hsol (x : ℝ) : HasDerivAt (fun y ↦ cexp (↑(π / T * y) * I) • η y)
-        (S x (cexp (↑(π / T * x) * I) • η x)) x := by
-      simpa only [add_zero, smul_zero] using
-        (hasDerivAt_antiperiodicGaugeLoop_iff T S (η := fun y : ℝ ↦ η y) (f := 0) (x := x)).1 (by
-          simpa only [add_zero] using hη x)
+        (S x (cexp (↑(π / T * x) * I) • η x)) x :=
+      (hasDerivAt_antiperiodicGaugeLoop_iff T S).1 (hη x)
     have h0 := h (fun y : ℝ ↦ cexp (↑(π / T * y) * I) • η y)
       ((continuous_phase T).smul (η.continuous.comp (AddCircle.continuous_mk' T)))
       (fun t ↦ by simp only [phase_add_period, AddCircle.coe_add_period, neg_smul]) hsol
@@ -301,15 +277,15 @@ theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff (S : C(AddCircle T, 
 
 /-- **The Fredholm alternative for the antiperiodic operator.** The realization
 `L_Sₐ : H¹(E) → H⁰(E)` of `ζ ↦ ζ' - S ζ` on antiperiodic loops is invertible exactly when
-`det (-1 - P) ≠ 0`, where `P = Ψ(T)` is the return map of `ζ' = S ζ`; equivalently, exactly when
-`det (1 + P) ≠ 0`. -/
+`det (-1 - P) ≠ 0`, where `P = Ψ(T)` is the return map of `ζ' = S ζ`. -/
 theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero
     (S : C(AddCircle T, E →L[ℝ] E)) :
     (loopOperator T (antiperiodicGaugeLoop T S)).IsInvertible ↔
       LinearMap.det ((-1 : ℝ) • 1 -
         (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) ≠ 0 := by
-  have hM := continuous_coe_loop T S
-  have hper := periodic_coe_loop T S
+  have hM : Continuous fun t : ℝ ↦ S t := S.continuous.comp (AddCircle.continuous_mk' T)
+  have hper : Function.Periodic (fun t : ℝ ↦ S t) T := fun t ↦ by
+    simp only [AddCircle.coe_add_period]
   rw [isInvertible_loopOperator_antiperiodicGaugeLoop_iff,
     ← ker_twistedLinearOperator_eq_bot_iff_det_ne_zero hM hper, LinearMap.ker_eq_bot']
   constructor
@@ -327,6 +303,18 @@ theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero
     have hw : w ∈ LinearMap.ker (twistedLinearOperator hM hper (-1)) :=
       (mem_ker_twistedLinearOperator_iff hM hper w).2 hζ
     exact congrArg Subtype.val (h w hw)
+
+/-- **The Fredholm alternative in the form `det (1 + P)`.** The realization `L_Sₐ : H¹(E) → H⁰(E)`
+of `ζ ↦ ζ' - S ζ` on antiperiodic loops is invertible exactly when `det (1 + P) ≠ 0`, where
+`P = Ψ(T)` is the return map of `ζ' = S ζ`. Since `E` is a complex space, its real dimension is
+even, so `det (-1 - P) = det (1 + P)`. -/
+theorem isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_one_add_ne_zero
+    (S : C(AddCircle T, E →L[ℝ] E)) :
+    (loopOperator T (antiperiodicGaugeLoop T S)).IsInvertible ↔
+      LinearMap.det (1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)) ≠ 0 := by
+  rw [isInvertible_loopOperator_antiperiodicGaugeLoop_iff_det_ne_zero, neg_one_smul, ← neg_add',
+    ← neg_one_smul ℝ (1 + _), LinearMap.det_smul, finrank_real_of_complex, pow_mul, neg_one_sq,
+    one_pow, one_mul]
 
 end CircleSobolev
 
