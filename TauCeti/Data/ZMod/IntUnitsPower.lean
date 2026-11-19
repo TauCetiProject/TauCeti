@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Module.ZMod
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The sign group as a line over `ZMod 2`
@@ -37,6 +38,9 @@ map into a `ZMod 2`-space of dimension `#ι`, and lets such a family be compared
 * `TauCeti.uzpow_mul_eq_of_forall_uzpow_eq`: any map between Koszul-signed degree semirings
   that preserves `u ^ ·` for a unit `u : ℤˣ` automatically preserves pairwise powers
   `u ^ (p * q)`.
+* `TauCeti.negOnePow_mul_uzpow`: `Int.negOnePow p * (-1) ^ τ = (-1) ^ (p + τ)`.
+* `TauCeti.uzpow_mul_intCast_add_one`: the sign `(-1) ^ (τ k)` changes by `(-1) ^ τ` from `k` to
+  `k + 1`.
 -/
 
 public section
@@ -104,6 +108,21 @@ theorem uzpow_mul_eq_of_forall_uzpow_eq {ι κ : Type*} [CommSemiring ι] [Modul
     rcases Int.units_eq_one_or ((-1 : ℤˣ) ^ p) with h | h
     · rw [h, one_uzpow, one_uzpow]
     · rw [h, hf q]
+
+/-- The sign `Int.negOnePow p * (-1) ^ τ` is the sign `(-1) ^ (p + τ)` of the sum of the parity
+of `p` and `τ`. -/
+theorem negOnePow_mul_uzpow (p : ℤ) (τ : ZMod 2) :
+    p.negOnePow * (-1 : ℤˣ) ^ τ = (-1 : ℤˣ) ^ ((p : ZMod 2) + τ) := by
+  rw [uzpow_add, uzpow_intCast_eq_negOnePow]
+
+/-- The sign `(-1)^(τ k)` changes by `(-1)^τ` from degree `i` to degree `i + 1`. -/
+theorem uzpow_mul_intCast_add_one (τ : ZMod 2) (i : ℤ) :
+    (-1 : ℤˣ) ^ (τ * ((i + 1 : ℤ) : ZMod 2)) * (-1 : ℤˣ) ^ τ = (-1 : ℤˣ) ^ (τ * i) := by
+  rw [← uzpow_add]
+  congr 1
+  have h2 : (2 : ZMod 2) = 0 := rfl
+  push_cast
+  linear_combination τ * h2
 
 /-- The sign dictionary turns addition of mod-two invariants into multiplication of signs. -/
 theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * hilbertSign y :=
