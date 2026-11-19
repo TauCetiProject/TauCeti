@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Mul
+import Mathlib.Data.Matrix.Basis
 
 /-!
-# Matrix products: positivity of powers and nonvanishing of factors
+# Matrix products: positive powers, nonzero factors, outer products, and noncommutativity
 
 Over a strictly ordered semiring, once some power `A ^ k` with `k > 0` of an entrywise nonnegative
 square matrix `A` is strictly positive, every later power is strictly positive too: each row of `A`
@@ -22,6 +23,9 @@ zero.
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
+Over a nontrivial coefficient `NonAssocSemiring` and a nontrivial finite index type, square matrix
+multiplication is noncommutative.
+
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
@@ -31,6 +35,8 @@ out to the left without any commutativity, since the left factor has entries `0`
   is nonempty and neither factor is zero.
 * `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
+* `Matrix.not_isMulCommutative`: `Matrix m m R` is not multiplicatively commutative when `m` and
+  `R` are nontrivial.
 -/
 
 public section
@@ -39,10 +45,9 @@ open scoped Matrix
 
 namespace Matrix
 
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
 section StrictOrderedSemiring
 
+variable {n : Type*} [Fintype n] [DecidableEq n]
 variable {R : Type*} [Semiring R] [PartialOrder R] [IsStrictOrderedRing R] {A : Matrix n n R}
 
 /-- If `A` is entrywise nonnegative and its power `A ^ k`, for some `k > 0`, is strictly positive,
@@ -104,5 +109,15 @@ theorem vecMulVec_single_one_smul (r : R) (i : m) (v : p → α) :
   · simp [vecMulVec_apply, h]
 
 end MulZeroOneClass
+
+/-- A square matrix semiring `Matrix m m R` over a nontrivial `NonAssocSemiring` and a nontrivial
+finite index type is not multiplicatively commutative. -/
+theorem not_isMulCommutative {m R : Type*} [Fintype m] [Nontrivial m] [NonAssocSemiring R]
+    [Nontrivial R] : ¬IsMulCommutative (Matrix m m R) := by
+  classical
+  rintro ⟨⟨hcomm⟩⟩
+  obtain ⟨i, j, hij⟩ := exists_pair_ne m
+  have h := congrFun (congrFun (hcomm (single i j (1 : R)) (single j i 1)) i) i
+  simp [hij.symm] at h
 
 end Matrix
