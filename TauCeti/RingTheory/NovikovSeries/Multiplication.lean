@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.NovikovSeries.Basic
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.MonoidAlgebra.Defs
+public import Mathlib.RingTheory.Ideal.Operations
+import Mathlib.RingTheory.Ideal.BigOperators
 
 /-!
 # Convolution of Novikov series
@@ -673,6 +675,30 @@ theorem coeffZeroRingEquiv_symm_apply [NonUnitalNonAssocSemiring R] (r : R) :
   (rfl)
 
 end Subsingleton
+
+section Coefficients
+
+/-! ### Coefficients in an ideal -/
+
+variable {R H : Type*} [CommSemiring R] [AddMonoid H] {N : H →+ ℝ}
+
+/-- If the coefficients of `a` lie in an ideal `I` and those of `b` lie in `J`, then the
+coefficients of `a * b` lie in `I * J`. -/
+theorem coeff_mul_mem_mul {I J : Ideal R} {a b : NovikovSeries R H N} (ha : ∀ h, a.coeff h ∈ I)
+    (hb : ∀ h, b.coeff h ∈ J) (h : H) : (a * b).coeff h ∈ I * J := by
+  rw [coeff_mul]
+  exact Ideal.sum_mem _ fun p _ => Ideal.mul_mem_mul (ha p.1) (hb p.2)
+
+/-- If the coefficients of `a` lie in an ideal `I`, then those of `a ^ n` lie in `I ^ n`. -/
+theorem coeff_pow_mem_pow {I : Ideal R} {a : NovikovSeries R H N} (ha : ∀ h, a.coeff h ∈ I)
+    (n : ℕ) (h : H) : (a ^ n).coeff h ∈ I ^ n := by
+  induction n generalizing h with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, pow_succ]
+    exact coeff_mul_mem_mul ih ha h
+
+end Coefficients
 
 end NovikovSeries
 
