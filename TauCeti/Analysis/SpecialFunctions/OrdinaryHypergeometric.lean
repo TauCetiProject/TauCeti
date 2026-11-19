@@ -35,6 +35,7 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
 * `TauCeti.ordinaryHypergeometric_neg_nat_eq_sum`: a terminating `₂F₁(−n, b; c; z)` is the sum of
   its first `n + 1` terms.
+* `TauCeti.ordinaryHypergeometricCoefficient_eq_div`: the coefficient as `(a)ₙ (b)ₙ / ((c)ₙ n!)`.
 * `TauCeti.ordinaryHypergeometricCoefficient_add_one`: the coefficient recurrence.
 * `TauCeti.iteratedDeriv_ordinaryHypergeometric_zero`: the iterated derivatives at `0`; in
   particular `TauCeti.deriv_ordinaryHypergeometric_zero` gives `(₂F₁ a b c)' 0 = a b / c`.
@@ -59,6 +60,15 @@ theorem ordinaryHypergeometric_eq_ofScalarsSum {𝕂 𝔸 : Type*} [Field 𝕂] 
     (₂F₁ a b c : 𝔸 → 𝔸) =
       FormalMultilinearSeries.ofScalarsSum (ordinaryHypergeometricCoefficient a b c) :=
   rfl
+
+/-- The coefficient `cₙ` of `₂F₁(a, b; c; ·)` written as the quotient
+`(a)ₙ (b)ₙ / ((c)ₙ n!)`, the form in which DLMF 15.2.1 prints the terms of the series. -/
+theorem ordinaryHypergeometricCoefficient_eq_div {K : Type*} [Field K] (a b c : K) (n : ℕ) :
+    ordinaryHypergeometricCoefficient a b c n =
+      (ascPochhammer K n).eval a * (ascPochhammer K n).eval b /
+        ((ascPochhammer K n).eval c * n.factorial) := by
+  simp only [ordinaryHypergeometricCoefficient, div_eq_mul_inv, mul_inv]
+  ring
 
 /-- **The hypergeometric coefficient recurrence.** The coefficients `cₙ = (a)ₙ (b)ₙ / ((c)ₙ n!)`
 of `₂F₁(a, b; c; ·)` satisfy `cₙ₊₁ = (a + n) (b + n) / ((n + 1) (c + n)) cₙ`. With the convention
