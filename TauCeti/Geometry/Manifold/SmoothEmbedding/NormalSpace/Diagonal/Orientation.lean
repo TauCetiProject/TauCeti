@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Diagonal
 public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Topology.VectorBundle.Orientation.Comap
-import TauCeti.LinearAlgebra.Orientation.Exact.Basic
 
 /-!
 # Orienting the normal bundle of the diagonal
@@ -34,51 +33,9 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothEmbedding
 
-private theorem map_shear_orientation {V : Type*} [AddCommGroup V] [Module ℝ V]
-    [FiniteDimensional ℝ V] {m : ℕ} (o : Orientation ℝ V (Fin m)) (hm : finrank ℝ V = m) :
-    Orientation.map (Fin (m + m))
-      ((LinearEquiv.refl ℝ V).skewProd (LinearEquiv.refl ℝ V) LinearMap.id)
-      (Orientation.prod o o hm hm) = Orientation.prod o o hm hm := by
-  let hf := LinearMap.inr_injective (R := ℝ) (M := V) (M₂ := V)
-  let hfg := Function.Exact.inr_fst (R := ℝ) (M := V) (N := V)
-  let hg := LinearMap.fst_surjective (R := ℝ) (M := V) (M₂ := V)
-  let q := Orientation.prod o o hm hm
-  let k := Orientation.kerOfExact hf hfg hg q o hm hm
-  have h := Orientation.map_ofExact hf hfg hg hf hfg hg
-    (LinearEquiv.refl ℝ V)
-    ((LinearEquiv.refl ℝ V).skewProd (LinearEquiv.refl ℝ V) LinearMap.id)
-    (LinearEquiv.refl ℝ V) (by intro v; simp) (by intro v; simp) k o hm hm
-  simpa only [k, q, Orientation.map_refl, Equiv.refl_apply,
-    Orientation.ofExact_kerOfExact] using h
-
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-/-- The splitting of the ambient tangent space into tangent directions followed by intrinsic
-normal directions, using the canonical difference comparison. -/
-def diagonalTangentNormalEquiv (x : M) :
-    (TangentSpace I x × (diagonal (I := I) (M := M)).NormalSpace x (by simp))
-      ≃L[ℝ] TangentSpace (I.prod I) (x, x) := by
-  exact ((ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).prodCongr
-    (diagonalNormalEquiv (I := I) x)).trans
-      (((ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).skewProd
-        (ContinuousLinearEquiv.refl ℝ (TangentSpace I x))
-        (ContinuousLinearMap.id ℝ (TangentSpace I x))).trans
-          (TauCeti.Manifold.tangentSpaceProdEquiv (I := I) (J := I) (x, x)).symm)
-
-/-- In native product tangent coordinates, the splitting sends `(a, q)` to `(a, a + φ q)`.
--/
-@[simp]
-theorem diagonalTangentNormalEquiv_apply (x : M) (a : TangentSpace I x)
-    (q : (diagonal (I := I) (M := M)).NormalSpace x (by simp)) :
-    TauCeti.Manifold.tangentSpaceProdEquiv (I := I) (J := I) (x, x)
-      (diagonalTangentNormalEquiv (I := I) x (a, q)) =
-        (a, a + diagonalNormalEquiv (I := I) x q) := by
-  simp only [diagonalTangentNormalEquiv, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.refl_apply,
-    ContinuousLinearEquiv.skewProd_apply, ContinuousLinearMap.id_apply,
-    ContinuousLinearEquiv.apply_symm_apply, add_comm]
 
 variable [FiniteDimensional ℝ E]
 
@@ -168,10 +125,16 @@ theorem diagonalTangentNormalEquiv_map_orientation {m : ℕ}
       (((LinearEquiv.refl ℝ (TangentSpace I x)).skewProd
         (LinearEquiv.refl ℝ (TangentSpace I x)) LinearMap.id).trans
         (TauCeti.Manifold.tangentSpaceProdEquiv (I := I) (J := I) (x, x)).symm.toLinearEquiv) := by
-    rfl
+    ext ⟨a, q⟩
+    apply (TauCeti.Manifold.tangentSpaceProdEquiv (I := I) (J := I) (x, x)).injective
+    simpa only [ContinuousLinearEquiv.coe_toLinearEquiv, LinearEquiv.trans_apply,
+      LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply, LinearEquiv.skewProd_apply,
+      LinearMap.id_apply, ContinuousLinearEquiv.apply_symm_apply, add_comm] using
+        diagonalTangentNormalEquiv_apply (I := I) x a q
   rw [hsplit, Orientation.map_trans, Orientation.map_prod, Orientation.map_refl,
     Equiv.refl_apply, diagonalNormalOrientation_map, Orientation.map_trans,
-    map_shear_orientation]
+    Orientation.map_skewProd_refl _ _ (by
+      simp [Module.finrank_prod, o.finrank_tangentSpace_eq x])]
   have he : (TauCeti.Manifold.tangentSpaceProdEquiv (I := I) (J := I)
       (x, x)).symm.toLinearEquiv = LinearEquiv.refl ℝ (E × E) := by
     ext v

@@ -33,10 +33,6 @@ abbrev ZeroModel := Fin 0 → ℝ
 /-- A two-dimensional real model with its native product norm. -/
 abbrev PlaneModel := Fin 2 → ℝ
 
-private theorem model_normal_dimension (V : Type*) [NormedAddCommGroup V] [NormedSpace ℝ V]
-    [FiniteDimensional ℝ V] : finrank ℝ V = finrank ℝ (V × V) - finrank ℝ V := by
-  simp [Module.finrank_prod]
-
 /-- The genuine quotient normal fibre in dimension zero has just its zero vector. -/
 theorem zero_normal_eq_zero
     (q : (SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)).NormalSpace 0
@@ -63,6 +59,39 @@ theorem real_normal_nontrivial :
     (NormedSpace.fromTangentSpace (𝕜 := ℝ) (0 : ℝ)).surjective.nontrivial
   exact (SmoothEmbedding.diagonalNormalEquiv (I := 𝓘(ℝ, ℝ)) 0).surjective.nontrivial
 
+/-- The actual quotient normal fibre of the complex line has complex dimension one. -/
+theorem complex_normal_finrank :
+    finrank ℂ ((SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ)) (M := ℂ)).NormalSpace 0
+      (WithTop.coe_ne_zero.2 ENat.top_ne_zero)) = 1 :=
+  ((SmoothEmbedding.diagonalNormalEquiv (I := 𝓘(ℂ, ℂ)) (0 : ℂ)).trans
+    (NormedSpace.fromTangentSpace (𝕜 := ℂ) (0 : ℂ))).toLinearEquiv.finrank_eq.trans
+      (Module.finrank_self ℂ)
+
+-- The same native quotient and smooth bundle comparison are complex linear over ℂ.
+example (v w : TangentSpace 𝓘(ℂ, ℂ) (0 : ℂ)) :
+    (SmoothEmbedding.diagonalNormalEquiv (I := 𝓘(ℂ, ℂ)) 0).symm (w - v) =
+      (SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ))).normalClass 0
+        (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
+        ((TauCeti.Manifold.tangentSpaceProdEquiv (I := 𝓘(ℂ, ℂ)) (J := 𝓘(ℂ, ℂ)) (0, 0)).symm
+          (v, w)) := by
+  apply (SmoothEmbedding.diagonalNormalEquiv (I := 𝓘(ℂ, ℂ)) 0).injective
+  rw [ContinuousLinearEquiv.apply_symm_apply]
+  -- The quotient uses the tangent instance at `diagonal 0`; the representative uses `(0,0)`.
+  erw [SmoothEmbedding.diagonalNormalEquiv_normalClass, ContinuousLinearEquiv.apply_symm_apply]
+
+example :
+    letI := SmoothEmbedding.instTopologicalSpaceNormalBundle
+      (SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ)) (M := ℂ)) (K := ℂ)
+        (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
+    letI := SmoothEmbedding.normalSpaceFiberBundle
+      (SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ)) (M := ℂ)) (P := ℂ)
+        (WithTop.coe_ne_zero.2 ENat.top_ne_zero) (by simp [Module.finrank_prod])
+    Nonempty (TotalSpace ℂ
+      ((SmoothEmbedding.diagonal (I := 𝓘(ℂ, ℂ)) (M := ℂ)).NormalSpace ·
+        (WithTop.coe_ne_zero.2 ENat.top_ne_zero))
+      ≃ₘ^∞⟮(𝓘(ℂ, ℂ)).prod 𝓘(ℂ, ℂ), (𝓘(ℂ, ℂ)).prod 𝓘(ℂ, ℂ)⟯ TangentBundle 𝓘(ℂ, ℂ) ℂ) :=
+  ⟨SmoothEmbedding.diagonalNormalBundleDiffeomorph (I := 𝓘(ℂ, ℂ))⟩
+
 -- The source is the native quotient bundle, including on a two-component manifold.
 example :
     letI := SmoothEmbedding.instTopologicalSpaceNormalBundle
@@ -71,7 +100,7 @@ example :
     letI := SmoothEmbedding.normalSpaceFiberBundle
       (SmoothEmbedding.diagonal (I := 𝓘(ℝ, ℝ)) (M := ℝ ⊕ ℝ)) (P := ℝ)
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-      (model_normal_dimension _)
+      (by simp [Module.finrank_prod])
     Nonempty (TotalSpace ℝ
       ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ℝ)) (M := ℝ ⊕ ℝ)).NormalSpace ·
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero))
@@ -87,7 +116,7 @@ example :
     letI := SmoothEmbedding.normalSpaceFiberBundle
       (SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)) (P := ZeroModel)
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-      (model_normal_dimension _)
+      (by simp [Module.finrank_prod])
     Nonempty (TotalSpace ZeroModel
       ((SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)).NormalSpace ·
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero))
@@ -103,11 +132,11 @@ example (o : Manifold.Orientation 𝓘(ℝ, ZeroModel) ZeroModel (Fin 0)) :
     letI := SmoothEmbedding.normalSpaceFiberBundle
       (SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)) (P := ZeroModel)
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-      (model_normal_dimension _)
+      (by simp [Module.finrank_prod])
     letI := SmoothEmbedding.normalSpaceVectorBundle
       (SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)) (P := ZeroModel)
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-      (model_normal_dimension _)
+      (by simp [Module.finrank_prod])
     SmoothEmbedding.diagonalNormalOrientation o (0 : ZeroModel) ≠
       SmoothEmbedding.diagonalNormalOrientation (-o) (0 : ZeroModel) := by
   let := SmoothEmbedding.instTopologicalSpaceNormalBundle
@@ -116,11 +145,11 @@ example (o : Manifold.Orientation 𝓘(ℝ, ZeroModel) ZeroModel (Fin 0)) :
   let := SmoothEmbedding.normalSpaceFiberBundle
     (SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)) (P := ZeroModel)
       (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-    (model_normal_dimension _)
+    (by simp [Module.finrank_prod])
   let := SmoothEmbedding.normalSpaceVectorBundle
     (SmoothEmbedding.diagonal (I := 𝓘(ℝ, ZeroModel)) (M := ZeroModel)) (P := ZeroModel)
       (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-    (model_normal_dimension _)
+    (by simp [Module.finrank_prod])
   intro h
   have hh := congrArg (Orientation.map (Fin 0)
     (SmoothEmbedding.diagonalNormalEquiv (I := 𝓘(ℝ, ZeroModel)) (0 : ZeroModel)).toLinearEquiv) h
@@ -142,11 +171,12 @@ example (o : Manifold.Orientation 𝓘(ℝ, PlaneModel) M (Fin 2)) :
     letI := SmoothEmbedding.normalSpaceFiberBundle
       (SmoothEmbedding.diagonal (I := 𝓘(ℝ, PlaneModel)) (M := M)) (P := PlaneModel)
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-      (model_normal_dimension _)
+      (by simp [Module.finrank_prod])
     letI := SmoothEmbedding.normalSpaceVectorBundle
       (SmoothEmbedding.diagonal (I := 𝓘(ℝ, PlaneModel)) (M := M)) (P := PlaneModel)
         (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-      (model_normal_dimension PlaneModel)
+      (Nat.eq_sub_of_add_eq
+        (Module.finrank_prod (R := ℝ) (M := PlaneModel) (M' := PlaneModel)).symm)
     (o.toHomologicalOrientation (by simp : finrank ℝ PlaneModel = 1 + 1)).evalFundamentalClass
         (by simp) (ModuleCat.of ℤ (ULift ℤ)) (ContinuousMap.id M)
         ((SmoothEmbedding.diagonalNormalOrientation o).eulerClass (by simp)) =
@@ -159,11 +189,11 @@ example (o : Manifold.Orientation 𝓘(ℝ, PlaneModel) M (Fin 2)) :
   let := SmoothEmbedding.normalSpaceFiberBundle
     (SmoothEmbedding.diagonal (I := 𝓘(ℝ, PlaneModel)) (M := M)) (P := PlaneModel)
       (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-    (model_normal_dimension _)
+    (by simp [Module.finrank_prod])
   let := SmoothEmbedding.normalSpaceVectorBundle
     (SmoothEmbedding.diagonal (I := 𝓘(ℝ, PlaneModel)) (M := M)) (P := PlaneModel)
       (WithTop.coe_ne_zero.2 ENat.top_ne_zero)
-    (model_normal_dimension _)
+    (by simp [Module.finrank_prod])
   apply congrArg
     ((o.toHomologicalOrientation (by simp : finrank ℝ PlaneModel = 1 + 1)).evalFundamentalClass
       (by simp) (ModuleCat.of ℤ (ULift ℤ)) (ContinuousMap.id M))

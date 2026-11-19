@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Quotient
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.Graph
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diagonal
 import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
@@ -34,38 +33,10 @@ open scoped Manifold ContDiff
 
 namespace TauCeti.SmoothEmbedding
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-/-- The smooth diagonal embedding. The first projection is a smooth left inverse. -/
-abbrev diagonal : SmoothEmbedding I (I.prod I) ∞ M (M × M) where
-  toContMDiffMap := ⟨fun x ↦ (x, x), contMDiff_id.prodMk contMDiff_id⟩
-  isSmoothEmbedding_toFun := _root_.ContMDiff.isSmoothEmbedding_graph
-    (I := I) (J := I) (n := ∞) (f := _root_.id) contMDiff_id
-
-/-- The diagonal embedding sends `x` to `(x, x)`. -/
-@[simp]
-theorem diagonal_apply (x : M) : diagonal (I := I) x = (x, x) := by
-  rfl
-
-/-- The function underlying the diagonal embedding is the diagonal map. -/
-@[simp]
-theorem coe_diagonal : (diagonal (I := I) : M → M × M) = fun x ↦ (x, x) :=
-  funext diagonal_apply
-
-/-- Under the native product tangent identification, the differential of the diagonal is diagonal.
--/
-@[simp]
-theorem mfderiv_diagonal (x : M) (v : TangentSpace I x) :
-    mfderiv I (I.prod I) (diagonal (I := I) : M → M × M) x v =
-      (tangentSpaceProdEquiv (I := I) (J := I) (x, x)).symm (v, v) := by
-  rw [tangentSpaceProdEquiv_symm_apply]
-  rw [coe_diagonal]
-  -- The target tangent space is a type synonym for the product model.
-  erw [mfderiv_prodMk mdifferentiableAt_id mdifferentiableAt_id]
-  simp only [mfderiv_id]
-  rfl
 
 /-- The tangent range of the actual diagonal differential consists of pairs of equal tangent
 vectors, under the native product tangent identification. -/
@@ -74,14 +45,13 @@ theorem mem_diagonal_tangentRange_iff (x : M)
     v ∈ (diagonal (I := I) (M := M)).tangentRange x (by simp) ↔
       (tangentSpaceProdEquiv (I := I) (J := I) (x, x) v).1 =
         (tangentSpaceProdEquiv (I := I) (J := I) (x, x) v).2 := by
+  rw [mem_tangentRange_iff]
   constructor
   · rintro ⟨u, rfl⟩
-    -- The tangent range records the underlying linear map of the differential.
-    erw [mfderiv_diagonal, ContinuousLinearEquiv.apply_symm_apply]
+    rw [mfderiv_diagonal, ContinuousLinearEquiv.apply_symm_apply]
   · intro h
     refine ⟨(tangentSpaceProdEquiv (I := I) (J := I) (x, x) v).1, ?_⟩
-    -- Expose the same differential coercion before comparing native tangent components.
-    erw [mfderiv_diagonal]
+    rw [mfderiv_diagonal]
     apply (tangentSpaceProdEquiv (I := I) (J := I) (x, x)).injective
     rw [ContinuousLinearEquiv.apply_symm_apply]
     exact Prod.ext rfl h
@@ -92,19 +62,17 @@ private theorem sub_eq_zero_of_mem_diagonal_tangentRange (x : M)
     (v : TangentSpace (I.prod I) (diagonal (I := I) x))
     (hv : v ∈ (diagonal (I := I) (M := M)).tangentRange x (by simp)) :
     (tangentSpaceProdEquiv (I := I) (J := I) (x, x) v).2 -
-      (tangentSpaceProdEquiv (I := I) (J := I) (x, x) v).1 = 0 := by
-  obtain ⟨u, rfl⟩ := hv
-  -- Membership gives a linear-map application of the differential; expose its CLM coercion.
-  erw [mfderiv_diagonal, ContinuousLinearEquiv.apply_symm_apply, sub_self]
+      (tangentSpaceProdEquiv (I := I) (J := I) (x, x) v).1 = 0 :=
+  sub_eq_zero.2 ((mem_diagonal_tangentRange_iff x v).1 hv).symm
 
 /-- The intrinsic normal-to-tangent map of the diagonal, descended from `w - v`. -/
 private def diagonalNormalToTangentL (x : M) :
-    (diagonal (I := I) (M := M)).NormalSpace x (by simp) →L[ℝ] TangentSpace I x :=
+    (diagonal (I := I) (M := M)).NormalSpace x (by simp) →L[𝕜] TangentSpace I x :=
   (diagonal (I := I)).normalLiftL x (by simp)
-    (((ContinuousLinearMap.snd ℝ (TangentSpace I x) (TangentSpace I x)) -
-      ContinuousLinearMap.fst ℝ (TangentSpace I x) (TangentSpace I x)).comp
+    (((ContinuousLinearMap.snd 𝕜 (TangentSpace I x) (TangentSpace I x)) -
+      ContinuousLinearMap.fst 𝕜 (TangentSpace I x) (TangentSpace I x)).comp
         (tangentSpaceProdEquiv (I := I) (J := I) (x, x) :
-          TangentSpace (I.prod I) (x, x) →L[ℝ] TangentSpace I x × TangentSpace I x))
+          TangentSpace (I.prod I) (x, x) →L[𝕜] TangentSpace I x × TangentSpace I x))
     (sub_eq_zero_of_mem_diagonal_tangentRange x)
 
 /-- The normal-to-tangent map evaluates to the difference on the normal class of a representative.
@@ -120,41 +88,47 @@ private theorem diagonalNormalToTangentL_normalClass (x : M)
 
 /-- The inverse comparison sends `u` to the actual quotient class of `(0, u)`. -/
 private def tangentToDiagonalNormalL (x : M) :
-    TangentSpace I x →L[ℝ] (diagonal (I := I) (M := M)).NormalSpace x (by simp) :=
+    TangentSpace I x →L[𝕜] (diagonal (I := I) (M := M)).NormalSpace x (by simp) :=
   ((diagonal (I := I)).normalClassL x (by simp)).comp
     (((tangentSpaceProdEquiv (I := I) (J := I) (x, x)).symm :
-      TangentSpace I x × TangentSpace I x →L[ℝ] TangentSpace (I.prod I) (x, x)).comp
-        (ContinuousLinearMap.inr ℝ (TangentSpace I x) (TangentSpace I x)))
+      TangentSpace I x × TangentSpace I x →L[𝕜] TangentSpace (I.prod I) (x, x)).comp
+        (ContinuousLinearMap.inr 𝕜 (TangentSpace I x) (TangentSpace I x)))
 
 /-- The inverse comparison is the normal class of the second-factor inclusion. -/
 @[simp]
 private theorem tangentToDiagonalNormalL_apply (x : M) (u : TangentSpace I x) :
     tangentToDiagonalNormalL (I := I) x u = (diagonal (I := I)).normalClass x (by simp)
       ((tangentSpaceProdEquiv (I := I) (J := I) (x, x)).symm (0, u)) := by
-  simp only [tangentToDiagonalNormalL, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.inr_apply, ContinuousLinearEquiv.coe_coe, normalClassL_apply]
+  unfold tangentToDiagonalNormalL
+  -- The first composition meets tangent instances at `diagonal x` and `(x,x)`; `erw` exposes
+  -- these instances to apply the composition and quotient evaluation lemmas.
+  erw [ContinuousLinearMap.comp_apply, normalClassL_apply, ContinuousLinearMap.comp_apply]
 
 /-- The intrinsic normal space of the smooth diagonal is canonically the tangent space. -/
 def diagonalNormalEquiv (x : M) :
-    (diagonal (I := I) (M := M)).NormalSpace x (by simp) ≃L[ℝ] TangentSpace I x :=
+    (diagonal (I := I) (M := M)).NormalSpace x (by simp) ≃L[𝕜] TangentSpace I x :=
   ContinuousLinearEquiv.equivOfInverse (diagonalNormalToTangentL (I := I) x)
     (tangentToDiagonalNormalL (I := I) x)
     (by
       intro q
       obtain ⟨v, rfl⟩ := (diagonal (I := I)).normalClass_surjective x (by simp) q
       rw [diagonalNormalToTangentL_normalClass]
+      -- The representative tangent types are written at `diagonal x` and `(x,x)`; `erw`
+      -- identifies their model instances to apply the inverse evaluation formula.
       erw [tangentToDiagonalNormalL_apply (I := I)]
       apply ((diagonal (I := I)).normalClass_eq_iff x (by simp) _ _).2
-      refine ⟨-(tangentSpaceProdEquiv (I := I) (J := I) (x, x) v).1, ?_⟩
-      -- The tangent range uses the underlying linear map of the differential.
-      erw [mfderiv_diagonal]
-      apply (tangentSpaceProdEquiv (I := I) (J := I) (x, x)).injective
-      simp only [map_sub, ContinuousLinearEquiv.apply_symm_apply, Prod.sub_def]
-      ext <;> simp)
+      -- The quotient criterion and product reading use tangent fibres at `diagonal x` and
+      -- `(x,x)`, respectively. `erw` identifies their model instances in the named range formula.
+      erw [mem_diagonal_tangentRange_iff, map_sub, ContinuousLinearEquiv.apply_symm_apply]
+      simp only [Prod.sub_def]
+      abel)
     (by
       intro u
+      -- The inverse obligation has the same two presentations of the ambient tangent fibre.
       erw [tangentToDiagonalNormalL_apply]
-      rw [diagonalNormalToTangentL_normalClass, ContinuousLinearEquiv.apply_symm_apply,
+      -- The normal class uses the tangent space at `diagonal x`, while the representative is
+      -- written at `(x,x)`; `erw` identifies the model instances after `diagonal_apply`.
+      erw [diagonalNormalToTangentL_normalClass, ContinuousLinearEquiv.apply_symm_apply,
         sub_zero])
 
 /-- On the class of an ambient vector, the canonical equivalence is the difference of its two
@@ -171,11 +145,11 @@ theorem diagonalNormalEquiv_normalClass (x : M)
 representative tangent coordinates. -/
 theorem diagonalNormalEquiv_normalClass_tangentCoordinates (x₀ x : M)
     (v : TangentSpace (I.prod I) (diagonal (I := I) x)) :
-    (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x
+    (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt 𝕜 x
       (diagonalNormalEquiv (I := I) x ((diagonal (I := I)).normalClass x (by simp) v)) =
-        (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x
+        (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt 𝕜 x
           (tangentSpaceProdEquiv (I := I) (J := I) (x, x) v).2 -
-        (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt ℝ x
+        (trivializationAt E (TangentSpace I) x₀).continuousLinearMapAt 𝕜 x
           (tangentSpaceProdEquiv (I := I) (J := I) (x, x) v).1 := by
   rw [diagonalNormalEquiv_normalClass, map_sub]
 
@@ -187,54 +161,84 @@ theorem diagonalNormalEquiv_symm_apply (x : M) (u : TangentSpace I x) :
         ((tangentSpaceProdEquiv (I := I) (J := I) (x, x)).symm (0, u)) := by
   exact tangentToDiagonalNormalL_apply x u
 
+/-- The splitting of the ambient tangent space into tangent directions followed by intrinsic
+normal directions, using the canonical difference comparison. -/
+def diagonalTangentNormalEquiv (x : M) :
+    (TangentSpace I x × (diagonal (I := I) (M := M)).NormalSpace x (by simp))
+      ≃L[𝕜] TangentSpace (I.prod I) (x, x) := by
+  exact ((ContinuousLinearEquiv.refl 𝕜 (TangentSpace I x)).prodCongr
+    (diagonalNormalEquiv (I := I) x)).trans
+      (((ContinuousLinearEquiv.refl 𝕜 (TangentSpace I x)).skewProd
+        (ContinuousLinearEquiv.refl 𝕜 (TangentSpace I x))
+        (ContinuousLinearMap.id 𝕜 (TangentSpace I x))).trans
+          (TauCeti.Manifold.tangentSpaceProdEquiv (I := I) (J := I) (x, x)).symm)
+
+/-- In native product tangent coordinates, the splitting sends `(a, q)` to `(a, a + φ q)`.
+-/
+@[simp]
+theorem diagonalTangentNormalEquiv_apply (x : M) (a : TangentSpace I x)
+    (q : (diagonal (I := I) (M := M)).NormalSpace x (by simp)) :
+    TauCeti.Manifold.tangentSpaceProdEquiv (I := I) (J := I) (x, x)
+      (diagonalTangentNormalEquiv (I := I) x (a, q)) =
+        (a, a + diagonalNormalEquiv (I := I) x q) := by
+  simp only [diagonalTangentNormalEquiv, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.refl_apply,
+    ContinuousLinearEquiv.skewProd_apply, ContinuousLinearMap.id_apply,
+    ContinuousLinearEquiv.apply_symm_apply, add_comm]
+
+-- Tangent maps of smooth maps are smooth since `∞ + 1 = ∞` in `ℕ∞ω`.
+local instance : IsManifold I ((∞ : ℕ∞ω) + 1) M := .of_le (n := ∞) (by simp)
+
+/-- A tangent projection gives a smooth component of the pulled-back ambient tangent bundle. -/
+private theorem contMDiff_diagonal_tangentRead {project : M × M → M}
+    (hproject : ContMDiff (I.prod I) I ∞ project)
+    (read : ∀ x : M, TangentSpace I x × TangentSpace I x → TangentSpace I x)
+    (hread : ∀ (x : M) (v : TangentSpace (I.prod I) (x, x)),
+      tangentMap (I.prod I) I project ⟨(x, x), v⟩ =
+        TotalSpace.mk' E x (read x (tangentSpaceProdEquiv (I := I) (J := I) (x, x) v))) :
+    ContMDiff (I.prod 𝓘(𝕜, E × E)) (I.prod 𝓘(𝕜, E)) ∞
+      (fun p : TotalSpace (E × E)
+          ((diagonal (I := I) (M := M) : M → M × M) *ᵖ (TangentSpace (I.prod I))) ↦
+        TotalSpace.mk' E p.proj
+          (read p.proj (tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj) p.2))) := by
+  apply ((hproject.contMDiff_tangentMap (by simp : (∞ : ℕ∞ω) + 1 ≤ ∞)).comp
+    (Bundle.Pullback.contMDiff_lift (F := E × E) (E := TangentSpace (I.prod I))
+      (diagonal (I := I) (M := M)) (diagonal (I := I) (M := M)).contMDiff)).congr
+  rintro ⟨x, v⟩
+  simp only [Function.comp_apply, Pullback.lift]
+  -- The pullback fibre is at `diagonal x`; the named evaluation formula identifies its
+  -- ambient tangent model with the one at `(x,x)` at default transparency.
+  erw [diagonal_apply (I := I) x]
+  exact (hread x v).symm
+
+
 section FiniteDimensional
 
-variable [FiniteDimensional ℝ E]
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 
 /-- The quotient-to-tangent comparison is smooth for the existing intrinsic normal atlas. -/
 theorem contMDiff_diagonalNormalEquiv :
     let := (diagonal (I := I) (M := M)).instTopologicalSpaceNormalBundle (K := E) (by simp)
     let := (diagonal (I := I) (M := M)).normalSpaceFiberBundle (P := E) (by simp)
       (by simp [Module.finrank_prod])
-    ContMDiff (I.prod 𝓘(ℝ, E)) (I.prod 𝓘(ℝ, E)) ∞
+    ContMDiff (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E)) ∞
       (fun p : TotalSpace E ((diagonal (I := I) (M := M)).NormalSpace · (by simp)) ↦
         TotalSpace.mk' E p.proj (diagonalNormalEquiv (I := I) p.proj p.2)) := by
-  have : IsManifold I ((∞ : ℕ∞ω) + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold (I.prod I) ((∞ : ℕ∞ω) + 1) (M × M) := by
-    simpa using (inferInstance : IsManifold (I.prod I) ∞ (M × M))
   let := (diagonal (I := I) (M := M)).instTopologicalSpaceNormalBundle (K := E) (by simp)
   let := (diagonal (I := I) (M := M)).normalSpaceFiberBundle (P := E) (by simp)
     (by simp [Module.finrank_prod])
   rw [(diagonal (I := I) (M := M)).contMDiff_normalBundle_iff (P := E) (by simp)
     (by simp) (by simp [Module.finrank_prod])]
-  have hlift := Bundle.Pullback.contMDiff_lift (F := E × E) (E := TangentSpace (I.prod I))
-    (diagonal (I := I) (M := M))
-    (diagonal (I := I) (M := M)).contMDiff
-  have hsnd : ContMDiff (I.prod 𝓘(ℝ, E × E)) (I.prod 𝓘(ℝ, E)) ∞
-      (fun p : TotalSpace (E × E)
-          ((diagonal (I := I) (M := M) : M → M × M) *ᵖ (TangentSpace (I.prod I))) ↦
-        TotalSpace.mk' E p.proj
-          (tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj) p.2).2) := by
-    apply ((contMDiff_snd.contMDiff_tangentMap
-      (by simp : (∞ : ℕ∞ω) + 1 ≤ ∞)).comp hlift).congr
-    rintro ⟨x, v⟩
-    simp only [Function.comp_apply, tangentMap_prodSnd]
-    -- The product tangent equivalence identifies the native product tangent type synonym.
-    erw [tangentSpaceProdEquiv_apply]
-    rfl
-  have hfst : ContMDiff (I.prod 𝓘(ℝ, E × E)) (I.prod 𝓘(ℝ, E)) ∞
-      (fun p : TotalSpace (E × E)
-          ((diagonal (I := I) (M := M) : M → M × M) *ᵖ (TangentSpace (I.prod I))) ↦
-        TotalSpace.mk' E p.proj
-          (tangentSpaceProdEquiv (I := I) (J := I) (p.proj, p.proj) p.2).1) := by
-    apply ((contMDiff_fst.contMDiff_tangentMap
-      (by simp : (∞ : ℕ∞ω) + 1 ≤ ∞)).comp hlift).congr
-    rintro ⟨x, v⟩
-    simp only [Function.comp_apply, tangentMap_prodFst]
-    -- The product tangent equivalence identifies the native product tangent type synonym.
-    erw [tangentSpaceProdEquiv_apply]
-    rfl
+  have hsnd := contMDiff_diagonal_tangentRead (I := I) (M := M) contMDiff_snd
+    (fun _ v ↦ v.2) fun x v ↦ by
+      rw [tangentMap_prodSnd]
+      -- Reading the native tangent-product synonym needs its component instances unfolded.
+      erw [tangentSpaceProdEquiv_apply]
+  have hfst := contMDiff_diagonal_tangentRead (I := I) (M := M) contMDiff_fst
+    (fun _ v ↦ v.1) fun x v ↦ by
+      rw [tangentMap_prodFst]
+      -- The first projection uses the same native product reading.
+      erw [tangentSpaceProdEquiv_apply]
   apply (hsnd.sub_sectionAlong hfst).congr
   intro p
   simp only [Function.comp_apply]
@@ -249,11 +253,7 @@ def diagonalNormalBundleDiffeomorph :
     letI := (diagonal (I := I) (M := M)).normalSpaceFiberBundle (P := E) (by simp)
       (by simp [Module.finrank_prod])
     TotalSpace E ((diagonal (I := I) (M := M)).NormalSpace · (by simp))
-      ≃ₘ^∞⟮I.prod 𝓘(ℝ, E), I.prod 𝓘(ℝ, E)⟯ TangentBundle I M := by
-  have : IsManifold I ((∞ : ℕ∞ω) + 1) M := by
-    simpa using (inferInstance : IsManifold I ∞ M)
-  have : IsManifold (I.prod I) ((∞ : ℕ∞ω) + 1) (M × M) := by
-    simpa using (inferInstance : IsManifold (I.prod I) ∞ (M × M))
+      ≃ₘ^∞⟮I.prod 𝓘(𝕜, E), I.prod 𝓘(𝕜, E)⟯ TangentBundle I M := by
   letI := (diagonal (I := I) (M := M)).instTopologicalSpaceNormalBundle (K := E) (by simp)
   letI := (diagonal (I := I) (M := M)).normalSpaceFiberBundle (P := E) (by simp)
     (by simp [Module.finrank_prod])
