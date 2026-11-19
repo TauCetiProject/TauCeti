@@ -36,8 +36,10 @@ be continuous.
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
-and a pointwise limit of Hölder functions with a common constant is Hölder with that constant.
+Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants;
+the second differences `f (x + h) + f (x - h) - 2 f x` of a Hölder function on a normed group are
+bounded by twice its constant times `‖h‖ ^ r`; and a pointwise limit of Hölder functions with a
+common constant is Hölder with that constant.
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
 Littlewood–Paley series.
@@ -84,6 +86,8 @@ seminorm of `g`.
   constant and exponent.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `HolderWith.norm_add_add_sub_two_nsmul_le`: the second differences of an `r`-Hölder function
+  with constant `C` are at most `2 C ‖h‖ ^ r`.
 * `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
   a common constant is Hölder with that constant.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
@@ -322,6 +326,21 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
   HolderOnWith.of_dist_le fun x hx y hy => by
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
+
+/-- The second differences of an `r`-Hölder function with constant `C` on a normed group are at
+most `2 C ‖h‖ ^ r`. -/
+theorem HolderWith.norm_add_add_sub_two_nsmul_le {X Y : Type*} [SeminormedAddCommGroup X]
+    [SeminormedAddCommGroup Y] {C r : ℝ≥0} {f : X → Y} (hf : HolderWith C r f) (x h : X) :
+    ‖f (x + h) + f (x - h) - 2 • f x‖ ≤ 2 * C * ‖h‖ ^ (r : ℝ) := by
+  have h₁ : ‖f (x + h) - f x‖ ≤ C * ‖h‖ ^ (r : ℝ) := by
+    simpa [dist_eq_norm] using hf.dist_le (x + h) x
+  have h₂ : ‖f (x - h) - f x‖ ≤ C * ‖h‖ ^ (r : ℝ) := by
+    simpa [dist_eq_norm] using hf.dist_le (x - h) x
+  have heq : f (x + h) + f (x - h) - 2 • f x = (f (x + h) - f x) + (f (x - h) - f x) := by
+    rw [two_nsmul]
+    abel
+  rw [heq]
+  linarith [norm_add_le (f (x + h) - f x) (f (x - h) - f x)]
 
 /-- A pointwise limit on `s` of maps that are `r`-Hölder on `s` with a common constant `C` is
 `r`-Hölder on `s` with constant `C`. -/
