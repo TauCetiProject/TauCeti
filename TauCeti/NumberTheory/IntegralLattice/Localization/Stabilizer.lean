@@ -120,9 +120,9 @@ theorem localStabilizer_eq_integralOrthogonalSubgroup {ι : Type*} [Fintype ι] 
     (e : Basis ι ℤ L) :
     L.localStabilizer p =
       integralOrthogonalSubgroup (L.norm.baseChange ℚ_[p])
-        ((e.extendOfIsLattice ℚ).baseChange ℚ_[p]) := by
+        ((e.extendOfIsFullLattice ℚ).baseChange ℚ_[p]) := by
   have hspan : (Submodule.span (PadicInt.subring p)
-      (Set.range ((e.extendOfIsLattice ℚ).baseChange ℚ_[p])) : Set (ℚ_[p] ⊗[ℚ] V)) =
+      (Set.range ((e.extendOfIsFullLattice ℚ).baseChange ℚ_[p])) : Set (ℚ_[p] ⊗[ℚ] V)) =
         LinearMap.range (L.localizationToCompletion p) := Set.ext fun x ↦ by
     rw [SetLike.mem_coe, SetLike.mem_coe, Basis.mem_span_iff_repr_mem,
       L.mem_range_localizationToCompletion_iff p e]
@@ -159,7 +159,7 @@ theorem eventually_localStabilizer_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
         integralOrthogonalSubgroup (L.norm.baseChange ℚ_[p]) (b.baseChange ℚ_[p]) := by
   classical
   filter_upwards [eventually_integralOrthogonalSubgroup_baseChange_eq L.norm
-    ((Free.chooseBasis ℤ L).extendOfIsLattice ℚ) b] with p hp
+    ((Free.chooseBasis ℤ L).extendOfIsFullLattice ℚ) b] with p hp
   rw [L.localStabilizer_eq_integralOrthogonalSubgroup p (Free.chooseBasis ℤ L)]
   exact hp
 
@@ -170,7 +170,7 @@ theorem forall_orthogonalGroupBaseChange_mem_localStabilizer_iff (g : orthogonal
       ∀ x, (g : V ≃ₗ[ℚ] V) x ∈ L.carrier ↔ x ∈ L.carrier := by
   classical
   let e := Free.chooseBasis ℤ L
-  let b := e.extendOfIsLattice ℚ
+  let b := e.extendOfIsFullLattice ℚ
   -- Locally, membership is `p`-adic integrality of the rational matrices of `g` and `g⁻¹`.
   have hloc (p : Nat.Primes) :
       orthogonalGroupBaseChange (A := ℚ_[p]) L.norm g ∈ L.localStabilizer p ↔
@@ -187,7 +187,7 @@ theorem forall_orthogonalGroupBaseChange_mem_localStabilizer_iff (g : orthogonal
   have hint (f : V →ₗ[ℚ] V) : Set.MapsTo f L.carrier L.carrier ↔
       ∀ i j, (LinearMap.toMatrix b b f i j).den = 1 := by
     have h := b.mapsTo_span_range_iff_forall_toMatrix_mem (A := ℤ) f
-    rw [e.span_range_extendOfIsLattice] at h
+    rw [e.span_range_extendOfIsFullLattice] at h
     rw [h]
     refine forall₂_congr fun i j ↦ ⟨?_, fun h ↦ ⟨_, (Rat.den_eq_one_iff _).mp h⟩⟩
     rintro ⟨n, hn⟩
@@ -224,8 +224,8 @@ theorem orthogonalCompactOpens_orthogonal [L.IsNondegenerate] (p : Nat.Primes) :
     L.orthogonalCompactOpens.orthogonal p = L.localStabilizer p := by
   classical
   rw [L.localStabilizer_eq_integralOrthogonalSubgroup p (Free.chooseBasis ℤ L)]
-  have h : L.rationalBasis = (Free.chooseBasis ℤ L).extendOfIsLattice ℚ :=
-    Basis.eq_of_apply_eq fun i ↦ by rw [rationalBasis_apply, Basis.extendOfIsLattice_apply]
+  have h : L.rationalBasis = (Free.chooseBasis ℤ L).extendOfIsFullLattice ℚ :=
+    Basis.eq_of_apply_eq fun i ↦ by rw [rationalBasis_apply, Basis.extendOfIsFullLattice_apply]
   simp only [orthogonalCompactOpens, OrthogonalCompactOpens.integral_orthogonal, h]
 
 end CompactOpens
