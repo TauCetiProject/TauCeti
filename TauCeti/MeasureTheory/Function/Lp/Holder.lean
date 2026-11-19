@@ -133,6 +133,13 @@ theorem pointwiseApplyEquiv_apply (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = Cont
     pointwiseApplyEquiv p hΨΦ hΦΨ f = (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holder p Φ f :=
   (rfl)
 
+/-- As a continuous linear map, `pointwiseApplyEquiv` is Hölder multiplication by `Φ`. -/
+theorem coe_pointwiseApplyEquiv (hΨΦ : ∀ᵐ x ∂μ, Ψ x ∘L Φ x = ContinuousLinearMap.id 𝕜 E)
+    (hΦΨ : ∀ᵐ x ∂μ, Φ x ∘L Ψ x = ContinuousLinearMap.id 𝕜 F) :
+    (pointwiseApplyEquiv p hΨΦ hΦΨ : Lp E p μ →L[𝕜] Lp F p μ) =
+      (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p Φ :=
+  (rfl)
+
 /-- The inverse of `pointwiseApplyEquiv` is pointwise application of `Ψ`. -/
 @[simp]
 theorem pointwiseApplyEquiv_symm_apply

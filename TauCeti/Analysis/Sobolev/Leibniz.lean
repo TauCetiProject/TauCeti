@@ -85,8 +85,10 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`,
   `TauCeti.HasWeakFDerivOn.contDiffOn_smul_of_ne_zero`: the rule in both forms for a factor that
   is `C^n` on `Ω` with `n ≠ 0` (at least `C¹`), for an additive Haar measure.
-* `TauCeti.HasWeakLineDerivOn.contDiffOn_clm_apply_of_ne_zero`: the same rule for a `C¹` factor
-  with values in linear maps between finite-dimensional spaces, `∂_v (Φ u) = Φ ∂_v u + (∂_v Φ) u`.
+* `TauCeti.HasWeakLineDerivOn.contDiffOn_clm_apply_of_ne_zero`,
+  `TauCeti.HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero`: the same rule in both forms for a
+  `C¹` factor with values in linear maps between finite-dimensional spaces,
+  `∂_v (Φ u) = Φ ∂_v u + (∂_v Φ) u`.
 * `TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`: a bounded Lipschitz factor keeps
   an `Lᵖ` weak derivative in `Lᵖ`.
 * `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: for `1 ≤ p`, the `Lᵖ` bound
@@ -427,6 +429,21 @@ theorem HasWeakLineDerivOn.contDiffOn_clm_apply_of_ne_zero [FiniteDimensional �
       hx).differentiableAt (Ω.isOpen.mem_nhds hx)
   simp only [Finset.sum_add_distrib, fderiv_comp x (c _).differentiableAt hd,
     ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply, Function.comp_apply, hexp]
+
+/-- **The Leibniz rule for weak Fréchet derivatives with a `C¹` operator-valued factor**:
+`D(Φ u) = Φ Du + (DΦ) u` on `Ω` for `Φ : E → (F →L[ℝ] G)` that is `C^n` on `Ω` with `n ≠ 0`,
+between finite-dimensional spaces, for an additive Haar measure. -/
+theorem HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero [FiniteDimensional ℝ F]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    {n : WithTop ℕ∞} {Φ : E → F →L[ℝ] G} {U : E → E →L[ℝ] F} (h : HasWeakFDerivOn μ Ω u U)
+    (hΦ : ContDiffOn ℝ n Φ Ω) (hn : n ≠ 0) :
+    HasWeakFDerivOn μ Ω (fun x => Φ x (u x))
+      (fun x => (Φ x).comp (U x) + (fderiv ℝ Φ x).flip (u x)) := by
+  rw [hasWeakFDerivOn_iff]
+  intro v
+  have hv := (h.hasWeakLineDerivOn v).contDiffOn_clm_apply_of_ne_zero hΦ hn
+  convert hv using 2 with x
+  simp
 
 /-- **A bounded Lipschitz factor keeps an `Lᵖ` weak derivative.** If `u ∈ Lᵖ(Ω)` has a weak
 derivative `u' ∈ Lᵖ(Ω)` in the direction `v` and `ψ` is bounded and Lipschitz on `Ω`, then `ψ u`

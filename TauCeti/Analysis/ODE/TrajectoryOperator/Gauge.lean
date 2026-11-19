@@ -30,7 +30,7 @@ finite-dimensional real space `F`.
 When `Φ` is `C¹` on `Omega` and `Φ` and `Φ'` are essentially bounded, multiplication by `Φ` is a
 continuous linear endomorphism `TauCeti.WeakDerivStep.gaugeL` of the weak-derivative graph: the
 weak derivative of `Φ u` is `Φ u' + Φ' u` by the Leibniz rule for weak derivatives with a `C¹`
-operator-valued factor (`TauCeti.HasWeakLineDerivOn.contDiffOn_clm_apply_of_ne_zero`). When `Φ`
+operator-valued factor (`TauCeti.HasWeakFDerivOn.contDiffOn_clm_apply_of_ne_zero`). When `Φ`
 has an essentially bounded pointwise left inverse `Ψ`, then `Ψ` is a two-sided inverse, as `F` is
 finite-dimensional, and is `C¹` with the essentially bounded derivative `-Ψ Φ' Ψ`. So
 multiplication by `Φ` is an isomorphism (`TauCeti.WeakDerivStep.gaugeEquiv`) of the
@@ -155,25 +155,23 @@ private theorem gaugeJetL_mem (hΦ : ContDiffOn ℝ 1 Φ Omega) (hΦL : ΦL =ᵐ
   let lift := (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap
   let g : Lp F p (mu.restrict Omega) := H.holder p Φ'L (prev base u) +
     H.holder p ΦL ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp (weakFDeriv base u))
-  -- The product rule, with the derivative written as the `Lᵖ` path `g`.
-  have h : HasWeakLineDerivOn mu Omega (⇑(H.holder p ΦL (prev base u))) g 1 := by
-    refine (hasWeakLineDerivOn_holder_prev hΦ hΦL u).congr_ae_deriv ?_
-    filter_upwards [Lp.coeFn_add (H.holder p Φ'L (prev base u))
-        (H.holder p ΦL ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp (weakFDeriv base u))),
-      H.coeFn_holder (r := p) Φ'L (prev base u),
-      H.coeFn_holder (r := p) ΦL
-        ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp (weakFDeriv base u)),
-      (ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLp (weakFDeriv base u), hΦL, hΦ'L]
-      with s hsum h₁ h₂ h₃ hΦs hΦ's
-    rw [hsum, Pi.add_apply, h₁, h₂, h₃, hΦs, hΦ's]
-    simp only [H, ContinuousLinearMap.id_apply, ContinuousLinearMap.apply_apply]
-    exact add_comm _ _
+  -- The product rule, with the derivative written through the `Lᵖ` path `g`.
   have hD : HasWeakFDerivOn mu Omega (⇑(H.holder p ΦL (prev base u))) (lift.compLp g) := by
-    rw [hasWeakFDerivOn_iff]
-    intro r
-    refine (by simpa using h.smul_direction r : HasWeakLineDerivOn _ _ _ _ r).congr_ae_deriv ?_
-    filter_upwards [lift.coeFn_compLp g] with s hs
-    simp [lift, hs]
+    have hu : HasWeakFDerivOn mu Omega (⇑(prev base u)) (weakFDeriv base u) := by
+      simpa only [base, ContinuousLinearMap.id_apply] using hasWeakFDerivOn_base_prev base u
+    refine ((hu.contDiffOn_clm_apply_of_ne_zero hΦ one_ne_zero).congr_ae ?_).congr_ae_deriv ?_
+    · filter_upwards [H.coeFn_holder (r := p) ΦL (prev base u), hΦL] with s hs hΦs
+      rw [hs, hΦs, ContinuousLinearMap.id_apply]
+    · filter_upwards [lift.coeFn_compLp g, Lp.coeFn_add (H.holder p Φ'L (prev base u))
+          (H.holder p ΦL ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp (weakFDeriv base u))),
+        H.coeFn_holder (r := p) Φ'L (prev base u),
+        H.coeFn_holder (r := p) ΦL
+          ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp (weakFDeriv base u)),
+        (ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLp (weakFDeriv base u), hΦL, hΦ'L]
+        with s hs hsum h₁ h₂ h₃ hΦs hΦ's
+      ext1
+      rw [hs, hsum, Pi.add_apply, h₁, h₂, h₃, hΦs, hΦ's]
+      simp [H, lift, add_comm]
   refine (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).mpr ?_
   rw [fst_gaugeJetL, snd_gaugeJetL, ContinuousLinearMap.id_apply]
   exact hD
@@ -376,17 +374,6 @@ theorem trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm :
   -- The right side is the composite applied to `u`, by definition.
   rfl
 
-omit [mu.IsAddHaarMeasure] hΦ hΦ'L hAB in
-/-- Multiplication of `Lᵖ` paths by `Φ` is the automorphism `Lp.pointwiseApplyEquiv`. -/
-private theorem holderL_eq_pointwiseApplyEquiv :
-    (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holderL (mu.restrict Omega) ∞ p p ΦL =
-      (Lp.pointwiseApplyEquiv p (ae_comp_eq_id hΦL hΨL hΨΦ)
-          (ae_comp_eq_id hΨL hΦL (comp_eq_id_of_comp_eq_id hΨΦ)) :
-        Lp F p (mu.restrict Omega) →L[ℝ] Lp F p (mu.restrict Omega)) := by
-  ext1 f
-  simp only [ContinuousLinearMap.holderL_apply_apply, ContinuousLinearEquiv.coe_coe,
-    Lp.pointwiseApplyEquiv_apply]
-
 /-- **The kernel under a change of trivialization**: the kernel of `D_A` is the image of the
 kernel of `D_B` under multiplication by `Φ`. -/
 theorem ker_trajectoryOperator_eq_map_gaugeL :
@@ -394,7 +381,9 @@ theorem ker_trajectoryOperator_eq_map_gaugeL :
       (LinearMap.ker (trajectoryOperator (p := p) B).toLinearMap).map
         (gaugeL (p := p) hΦ hΦL hΦ'L).toLinearMap := by
   rw [trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm hΦ hΦL hΦ'L hΨL hΨΦ hAB,
-    holderL_eq_pointwiseApplyEquiv hΦL hΨL hΨΦ, ContinuousLinearMap.toLinearMap_comp,
+    ← Lp.coe_pointwiseApplyEquiv (p := p) (ae_comp_eq_id hΦL hΨL hΨΦ)
+      (ae_comp_eq_id hΨL hΦL (comp_eq_id_of_comp_eq_id hΨΦ)),
+    ContinuousLinearMap.toLinearMap_comp,
     ContinuousLinearMap.toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
     ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearEquiv.ker_comp,
     LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm,
@@ -406,14 +395,18 @@ when `D_B` is. -/
 theorem isFredholm_trajectoryOperator_iff_of_gauge :
     (trajectoryOperator (p := p) A).IsFredholm ↔ (trajectoryOperator (p := p) B).IsFredholm := by
   rw [trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm hΦ hΦL hΦ'L hΨL hΨΦ hAB,
-    holderL_eq_pointwiseApplyEquiv hΦL hΨL hΨΦ, ContinuousLinearMap.isFredholm_equiv_comp,
+    ← Lp.coe_pointwiseApplyEquiv (p := p) (ae_comp_eq_id hΦL hΨL hΨΦ)
+      (ae_comp_eq_id hΨL hΦL (comp_eq_id_of_comp_eq_id hΨΦ)),
+    ContinuousLinearMap.isFredholm_equiv_comp,
     ContinuousLinearMap.isFredholm_comp_equiv]
 
 /-- **The index does not depend on the trivialization**: `D_A` and `D_B` have the same index. -/
 theorem index_trajectoryOperator_eq_of_gauge :
     (trajectoryOperator (p := p) A).index = (trajectoryOperator (p := p) B).index := by
   rw [trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm hΦ hΦL hΦ'L hΨL hΨΦ hAB,
-    holderL_eq_pointwiseApplyEquiv hΦL hΨL hΨΦ, ContinuousLinearMap.toLinearMap_comp,
+    ← Lp.coe_pointwiseApplyEquiv (p := p) (ae_comp_eq_id hΦL hΨL hΨΦ)
+      (ae_comp_eq_id hΨL hΦL (comp_eq_id_of_comp_eq_id hΨΦ)),
+    ContinuousLinearMap.toLinearMap_comp,
     ContinuousLinearMap.toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
     ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearMap.index_equiv_comp,
     LinearMap.index_comp_equiv]
