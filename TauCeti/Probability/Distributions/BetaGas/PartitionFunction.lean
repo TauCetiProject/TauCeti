@@ -153,6 +153,7 @@ private theorem gaussianBetaGasPartitionFunction_two_eq_pair (β : ℝ) :
 theorem gaussianBetaGasPartitionFunction_two_eq {β : ℝ} (hβ : 0 < β) :
     gaussianBetaGasPartitionFunction 2 β =
       2 ^ (β + 1) * sqrt π * β ^ (-(β + 2) / 2) * Gamma ((β + 1) / 2) := by
-  rw [gaussianBetaGasPartitionFunction_two_eq_pair, twoParticleGaussianBetaGasPartitionFunction_eq hβ]
+  rw [gaussianBetaGasPartitionFunction_two_eq_pair,
+    twoParticleGaussianBetaGasPartitionFunction_eq hβ]
 
 end TauCeti.Probability
