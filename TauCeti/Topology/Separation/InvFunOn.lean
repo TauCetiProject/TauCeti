@@ -42,7 +42,9 @@ With `U = K`, the continuous inverse reads limits back through `f`: a continuous
 `g` of maps `f ∘ x i`, where the `x i` take values in `K`, is `f ∘ y` for a continuous pointwise
 limit `y` of the `x i` (`IsCompact.exists_tendsto_of_tendsto_comp`). This is how a limit in a
 manifold without a metric is constructed from a limit measured through an embedding into a normed
-space.
+space. In the same way, points of `K` with images near `f x` are near `x`
+(`IsCompact.comap_nhds_inf_principal_le_nhds`), so a set of points of `K` with small image through
+such an embedding lies in a prescribed neighbourhood, for instance in a chart.
 -/
 
 public section
@@ -94,6 +96,23 @@ theorem IsCompact.exists_tendsto_of_tendsto_comp [Nonempty α] [T2Space β] {K :
   refine ((hinv _ (hgK ht)).tendsto.comp (tendsto_nhdsWithin_iff.2 ⟨hlim t ht,
     Eventually.of_forall fun i ↦ mem_image_of_mem f (hxK i ht)⟩)).congr fun i ↦ ?_
   exact hinj.leftInvOn_invFunOn (hxK i ht)
+
+/-- **Nearby images come from nearby points.** Let `f` be continuous and injective on a compact
+set `K`, with values in a Hausdorff space. Points of `K` whose images are close to the image of
+`x ∈ K` are close to `x`: every neighbourhood of `x` contains the points of `K` whose images lie in
+some neighbourhood of `f x`. -/
+theorem IsCompact.comap_nhds_inf_principal_le_nhds [T2Space β] {K : Set α} (hK : IsCompact K)
+    {f : α → β} (hf : ContinuousOn f K) (hinj : InjOn f K) {x : α} (hx : x ∈ K) :
+    comap f (𝓝 (f x)) ⊓ 𝓟 K ≤ 𝓝 x := by
+  have : Nonempty α := ⟨x⟩
+  have h := hf.continuousOn_invFunOn_image_of_isCompact hK subset_rfl hinj (by simp) (f x)
+    (mem_image_of_mem f hx)
+  rw [ContinuousWithinAt, hinj.leftInvOn_invFunOn hx] at h
+  intro N hN
+  obtain ⟨V, hV, hVN⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 (h hN)
+  refine mem_inf_of_inter (preimage_mem_comap hV) (mem_principal_self K) fun y hy ↦ ?_
+  simpa only [mem_preimage, hinj.leftInvOn_invFunOn hy.2] using
+    hVN ⟨hy.1, mem_image_of_mem f hy.2⟩
 
 /-- **Lifting a map which is the identity near a point.** Let `f` be continuous on `Q`, with
 values in a `T₁` space, and injective on `P` with inverse continuous on `f '' P`. Let `k` be
