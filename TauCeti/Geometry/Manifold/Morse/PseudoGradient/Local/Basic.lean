@@ -84,6 +84,12 @@ theorem linearFlow_zero (z : Fin (Module.finrank ℝ E) → ℝ) : φ.linearFlow
   ext i
   simp [linearFlow_apply]
 
+/-- The linear flow fixes the origin. -/
+@[simp]
+theorem linearFlow_zero_right (t : ℝ) : φ.linearFlow t 0 = 0 := by
+  ext i
+  simp
+
 /-- The flow law of the linear flow. -/
 theorem linearFlow_add (s t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
     φ.linearFlow (s + t) z = φ.linearFlow s (φ.linearFlow t z) := by

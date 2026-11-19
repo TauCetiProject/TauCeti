@@ -52,10 +52,12 @@ unstable manifold of `p` and the stable manifold of `q`
 (`TauCeti.IsAdaptedPseudoGradient.neg_trajectorySign_of_orientationAt_eq`), and the signed count
 of the trajectories of `-X` from `q` to `p` is that of `X` from `p` to `q` times
 `-(-1) ^ (ind_f q * ind_{-f} p)`
-(`TauCeti.IsAdaptedPseudoGradient.neg_signedTrajectoryCount_of_orientationAt_eq`): the boundary of
-`-f` is the transpose of the boundary of `f` up to these signs. The linear algebra is
-`Orientation.ite_map_eq_prod_of_exact`: the comparison maps of `f` and `-f` at `y` are the two
-comparison maps of the pair of exact sequences, for the linear form `df_y`, since `d(-f) = -df`.
+(`TauCeti.IsAdaptedPseudoGradient.neg_signedTrajectoryCount_of_orientationAt_eq`): the signed
+counts of `-f` are those of `f`, transposed, up to these signs. Assembling them into
+`signedMorseBoundary` for `-f`, with matching `MorseOrientation` data, is not done here. The
+linear algebra is `Orientation.ite_map_eq_prod_of_exact`: the comparison maps of `f` and `-f` at
+`y` are the two comparison maps of the pair of exact sequences, for the linear form `df_y`, since
+`d(-f) = -df`.
 
 ## Main results
 
@@ -173,15 +175,12 @@ theorem neg_trajectorySign_of_orientationAt_eq (hMS : hX.IsMorseSmale) (hf : IsM
     (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
         hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
       (Orientation.ofExact (injective_unstableFrame_of_mem hφp hf
-          (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp.mem_criticalPoints)).1)
+          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)
         (exact_unstableFrame_neg_stableNormal hφp hf hp
-          (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp.mem_criticalPoints)).1)
+          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)
         (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
           ((hX.unstableSet_eq_stableSet_neg hf p).subset
-            (hX.mem_unstableSet_inter_stableSet_self
-              (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp.mem_criticalPoints)).1)) op op'
+            (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)) op op'
         φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun) =
       o.orientationAt p)
     (hoq : Orientation.reindex ℝ _
@@ -189,14 +188,11 @@ theorem neg_trajectorySign_of_orientationAt_eq (hMS : hX.IsMorseSmale) (hf : IsM
       (Orientation.ofExact
         (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
           ((hX.stableSet_eq_unstableSet_neg hf q).subset
-            (hX.mem_unstableSet_inter_stableSet_self
-              (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2))
+            (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2))
         (exact_neg_unstableFrame_stableNormal hφq hf hq
-          (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2)
+          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2)
         (surjective_stableNormal_of_mem hφq
-          (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2) oq' oq
+          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2) oq' oq
         (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
       o.orientationAt q) :
     (hX.neg hf).trajectorySign (φq.neg hq) (φp.neg hp) oq' op'
@@ -204,23 +200,20 @@ theorem neg_trajectorySign_of_orientationAt_eq (hMS : hX.IsMorseSmale) (hf : IsM
       -(-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f q * manifoldMorseIndex 𝓘(ℝ, E) (-f) p) *
         hX.trajectorySign φp φq op oq hpq y := by
   have hp' := ((reindex_ofExact_unstableFrame_eq_orientationAt_iff hφp hf hp o _ op op' hy.1
-    (hX.mem_unstableSet_inter_stableSet_self
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp.mem_criticalPoints)).1).2 hop)
+    (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1).2 hop)
   have hq' := ((reindex_ofExact_stableNormal_eq_orientationAt_iff hφq hf hq o _ oq' oq hy.2
-    (hX.mem_unstableSet_inter_stableSet_self
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2).2 hoq)
+    (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2).2 hoq)
   rw [neg_trajectorySign hφp hφq hMS hf hp hq hpq hy, ite_eq_left, mul_one]
   refine (Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
     hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))).injective ?_
   rw [Orientation.reindex_finCongr_reindex_finCongr, hp']
   exact hq'
 
-
 /-- **Integral duality of trajectory counts on an oriented manifold.** With orientations chosen
 at `p` and `q` as in `neg_trajectorySign_of_orientationAt_eq`, the signed count of the
 trajectories of `-X` from `q` to `p` is the signed count of the trajectories of `X` from `p` to
-`q` times `-(-1) ^ (ind_f q * ind_{-f} p)`. So the boundary of `-f` is the transpose of the
-boundary of `f`, up to these signs. -/
+`q` times `-(-1) ^ (ind_f q * ind_{-f} p)`. This is the coefficient-level form of the duality
+between the boundaries of `-f` and of `f`, still to be assembled into the boundary operators. -/
 theorem neg_signedTrajectoryCount_of_orientationAt_eq (hMS : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f)
     (hp : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f p)
@@ -236,15 +229,12 @@ theorem neg_signedTrajectoryCount_of_orientationAt_eq (hMS : hX.IsMorseSmale)
     (hop : Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
         hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
       (Orientation.ofExact (injective_unstableFrame_of_mem hφp hf
-          (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp.mem_criticalPoints)).1)
+          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)
         (exact_unstableFrame_neg_stableNormal hφp hf hp
-          (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp.mem_criticalPoints)).1)
+          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)
         (surjective_stableNormal_of_mem (hX := hX.neg hf) (φp.coord_mfderiv_neg hφp hp)
           ((hX.unstableSet_eq_stableSet_neg hf p).subset
-            (hX.mem_unstableSet_inter_stableSet_self
-              (mem_criticalPoints_iff_mfderiv_eq_zero.1 hp.mem_criticalPoints)).1)) op op'
+            (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1)) op op'
         φp.finrank_negativeWeight_fun (φp.neg hp).finrank_negativeWeight_fun) =
       o.orientationAt p)
     (hoq : Orientation.reindex ℝ _
@@ -252,14 +242,11 @@ theorem neg_signedTrajectoryCount_of_orientationAt_eq (hMS : hX.IsMorseSmale)
       (Orientation.ofExact
         (injective_unstableFrame_of_mem (hX := hX.neg hf) (φq.coord_mfderiv_neg hφq hq) hf.neg
           ((hX.stableSet_eq_unstableSet_neg hf q).subset
-            (hX.mem_unstableSet_inter_stableSet_self
-              (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2))
+            (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2))
         (exact_neg_unstableFrame_stableNormal hφq hf hq
-          (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2)
+          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2)
         (surjective_stableNormal_of_mem hφq
-          (hX.mem_unstableSet_inter_stableSet_self
-            (mem_criticalPoints_iff_mfderiv_eq_zero.1 hq.mem_criticalPoints)).2) oq' oq
+          (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2) oq' oq
         (φq.neg hq).finrank_negativeWeight_fun φq.finrank_negativeWeight_fun) =
       o.orientationAt q) :
     (hX.neg hf).signedTrajectoryCount (φq.neg hq) (φp.neg hp) oq' op'

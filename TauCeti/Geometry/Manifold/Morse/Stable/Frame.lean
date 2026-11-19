@@ -69,6 +69,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   the tangent space of the stable manifold, and are onto.
 * `range_unstableFrame`, `injective_unstableFrame`: the frame is an isomorphism onto the tangent
   space of the unstable manifold.
+* `zero_mem_linearForwardTimes`, `zero_mem_linearBackwardTimes`: `0` is a time of linear flow of
+  the centre of the chart.
 * `neg_linearForwardTimes`, `neg_linearBackwardTimes`: the times of linear flow of `-X` in the
   negated Morse chart are those of `X`, in the opposite direction.
 * `stableNormal_mfderiv_flow`, `unstableFrame_flow`: along the flow, the derivative of the time-`t`
@@ -137,6 +139,20 @@ theorem mem_linearBackwardTimes {y : M} {T : ℝ} :
     T ∈ hX.linearBackwardTimes φ y ↔ hX.flow (-T) y ∈ φ.toChart.source ∧ ∀ t, t ≤ 0 →
       φ.coord.symm (φ.linearFlow t (φ.coord (φ.toChart (hX.flow (-T) y)))) ∈ φ.toChart.target :=
   Iff.rfl
+
+/-- `0` is a time of linear forward flow of the centre of a Morse chart. -/
+theorem zero_mem_linearForwardTimes (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
+    (0 : ℝ) ∈ hX.linearForwardTimes φ x := by
+  have hfix := hX.flow_apply_of_mfderiv_eq_zero hx
+  refine (hX.mem_linearForwardTimes φ).2 ⟨by simp [hfix], fun t _ ↦ ?_⟩
+  simpa [hfix, φ.apply_self] using φ.toChart.map_source φ.mem_source
+
+/-- `0` is a time of linear backward flow of the centre of a Morse chart. -/
+theorem zero_mem_linearBackwardTimes (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
+    (0 : ℝ) ∈ hX.linearBackwardTimes φ x := by
+  have hfix := hX.flow_apply_of_mfderiv_eq_zero hx
+  refine (hX.mem_linearBackwardTimes φ).2 ⟨by simp [hfix], fun t _ ↦ ?_⟩
+  simpa [hfix, φ.apply_self] using φ.toChart.map_source φ.mem_source
 
 /-- The **normal coordinates** of the stable manifold of the centre of the Morse chart `φ` at a
 point `y`: `e^{-T}` times the coordinates of negative weight of the derivative of `φ ∘ Φ_T` at

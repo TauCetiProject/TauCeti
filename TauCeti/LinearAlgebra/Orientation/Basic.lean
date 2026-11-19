@@ -22,6 +22,8 @@ compatibility under linear equivalences.
 * `Orientation.map_trans`: transport along a composite is the composite of the transports.
 * `Orientation.map_symm_map`, `Orientation.map_map_symm`: transport along a linear equivalence
   and back along its inverse is the identity.
+* `Orientation.eq_iff_eq_of_map_eq`: two equations between orientations are equivalent when a pair
+  of linear equivalences carries their sides to the same orientations.
 * `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
 * `Orientation.reindex_trans`: reindexing along a composite is the composite of the reindexings.
 * `Orientation.reindex_finCongr_reindex_finCongr`: two successive casts of the index type compose.
@@ -82,6 +84,14 @@ equivalence gives the original orientation. -/
 theorem Orientation.map_map_symm (e : M ≃ₗ[R] N) (x : Orientation R N ι) :
     Orientation.map ι e (Orientation.map ι e.symm x) = x :=
   (Orientation.map ι e).apply_symm_apply x
+
+/-- Two equations between orientations are equivalent when both sides of each are carried to
+the same orientations by a pair of linear equivalences. -/
+theorem Orientation.eq_iff_eq_of_map_eq {M' : Type*} [AddCommMonoid M'] [Module R M']
+    {a b : Orientation R M ι} {a' b' : Orientation R M' ι} (e : M ≃ₗ[R] N) (e' : M' ≃ₗ[R] N)
+    (ha : Orientation.map ι e a = Orientation.map ι e' a')
+    (hb : Orientation.map ι e b = Orientation.map ι e' b') : a = b ↔ a' = b' := by
+  rw [← (Orientation.map ι e).injective.eq_iff, ha, hb, (Orientation.map ι e').injective.eq_iff]
 
 /-- Transporting an orientation along a linear equivalence commutes with reindexing its index
 type. -/
