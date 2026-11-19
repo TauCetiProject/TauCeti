@@ -68,6 +68,8 @@ form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
 * `TauCeti.SymplecticForm.subsingleton_reducedSpace_iff`,
   `TauCeti.SymplecticForm.isSymplectomorphism_quotEquivOfEqBot`: the reduced space is trivial
   exactly for isotropic `U`, and is `U` itself with the restricted form for symplectic `U`.
+* `TauCeti.SymplecticForm.reducedQuadraticForm_comp_reducedSpaceCongr`: the induced map of
+  reduced spaces intertwines the quadratic forms induced by `Q` and by its pullback `Q ∘ e`.
 * `TauCeti.SymplecticForm.IsIsotropic.reduction_map`,
   `TauCeti.SymplecticForm.IsLagrangian.reduction_map`: reduction of isotropic and Lagrangian
   subspaces.
@@ -340,6 +342,21 @@ theorem isSymplectomorphism_reducedSpaceCongr (e : V ≃ₗ[ℝ] V')
   | H u =>
   induction y using Submodule.Quotient.induction_on with
   | H v => simpa using he.apply u v
+
+/-- The map of reduced spaces induced by a linear symplectomorphism `e` carries the quadratic form
+induced by `Q` back to the quadratic form induced by its pullback `Q ∘ e`. -/
+theorem reducedQuadraticForm_comp_reducedSpaceCongr (e : V ≃ₗ[ℝ] V')
+    (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
+    (hU : U.map (e : V →ₗ[ℝ] V') = U') (Q : QuadraticForm ℝ V')
+    (hQ : ∀ w ∈ U' ⊓ ω'.orthogonal U', ∀ u ∈ U', QuadraticMap.polar Q w u = 0)
+    (hQe : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U,
+      QuadraticMap.polar (Q.comp (e : V →ₗ[ℝ] V')) w u = 0) :
+    (ω'.reducedQuadraticForm U' Q hQ).comp
+        (reducedSpaceCongr ω ω' e he hU : ω.ReducedSpace U →ₗ[ℝ] ω'.ReducedSpace U') =
+      ω.reducedQuadraticForm U (Q.comp (e : V →ₗ[ℝ] V')) hQe := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H u => simp
 
 /-- The identity induces the identity of reduced spaces. -/
 @[simp]
