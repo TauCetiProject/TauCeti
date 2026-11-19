@@ -215,8 +215,7 @@ theorem range_one_sub_coe_grassmannian (P : grassmannian 𝕜 E k) :
     LinearMap.range (1 - ((P : E →L[𝕜] E) : E →ₗ[𝕜] E)) = (P : E →L[𝕜] E).rangeᗮ := by
   obtain ⟨_, h⟩ := isStarProjection_iff_eq_starProjection_range.mp P.2.1
   rw [← ContinuousLinearMap.toLinearMap_one, ← ContinuousLinearMap.toLinearMap_sub, h,
-    ← Submodule.starProjection_orthogonal', Submodule.range_starProjection,
-    Submodule.range_starProjection]
+    Submodule.range_one_sub_starProjection, Submodule.range_starProjection]
 
 /-- The passage to orthogonal complements `P ↦ 1 - P`, a homeomorphism from `G(E, k)` onto
 `G(E, l)` when `k + l = dim E`: if `P` projects onto `S`, then `1 - P` projects onto `Sᗮ`

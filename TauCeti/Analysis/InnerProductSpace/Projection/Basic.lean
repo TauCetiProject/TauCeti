@@ -48,6 +48,8 @@ nonzero vector of `U` is orthogonal to `V`. In that case the rank of `U` is at m
 Compressing the square of the difference `P_U - P_V` to `U`, from either side, gives
 `P_U - P_U P_V P_U`.
 
+The complementary projection `1 - P_U` has range `Uᗮ`.
+
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
 complement of its kernel whenever the kernel admits an orthogonal projection.
 
@@ -70,6 +72,7 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`.
+* `Submodule.range_one_sub_starProjection`: the range of `1 - P_U` is `Uᗮ`.
 * `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`,
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
@@ -329,6 +332,10 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   have hQ := V.isIdempotentElem_starProjection
   simp only [sq, sub_mul, mul_sub, mul_assoc, hP.eq, hQ.eq, hP.mul_self_mul]
   abel
+
+/-- The range of the complementary projection `1 - P_U` is the orthogonal complement `Uᗮ`. -/
+theorem range_one_sub_starProjection : (1 - U.starProjection).range = Uᗮ := by
+  rw [← starProjection_orthogonal', range_starProjection]
 
 /-- Restricting the orthogonal projection onto `U` to `U` itself gives the identity map. -/
 @[simp]
