@@ -106,7 +106,9 @@ theorem balanced_Icc_neg (e : E) : Balanced ℝ (Icc (-e) e) :=
   (balanced_iff_neg_mem (convex_Icc _ _)).2 fun _ hx => ⟨neg_le_neg hx.2, neg_le.1 hx.1⟩
 
 omit [IsOrderedAddMonoid E] in
-private theorem mem_smul_Icc_neg_iff (hr : 0 < r) :
+/-- For `r > 0`, the dilation `r • [-e, e]` of an order interval is the order interval
+`[-r • e, r • e]`. -/
+theorem mem_smul_Icc_neg_iff (hr : 0 < r) :
     a ∈ r • Icc (-e) e ↔ -(r • e) ≤ a ∧ a ≤ r • e := by
   rw [mem_smul_set_iff_inv_smul_mem₀ hr.ne', mem_Icc, le_inv_smul_iff_of_pos hr,
     inv_smul_le_iff_of_pos hr, smul_neg]
@@ -222,6 +224,12 @@ noncomputable abbrev normedSpace (he : IsArchimedeanOrderUnit e) :
   letI := he.normedAddCommGroup
   { norm_smul_le := fun c a => (map_smul_eq_mul (orderUnitSeminorm he.toIsOrderUnit) c a).le }
 
+/-- The norm of `TauCeti.IsArchimedeanOrderUnit.normedAddCommGroup` is the order-unit seminorm. -/
+theorem norm_eq_orderUnitSeminorm (he : IsArchimedeanOrderUnit e) (a : E) :
+    letI := he.normedAddCommGroup
+    ‖a‖ = orderUnitSeminorm he.toIsOrderUnit a :=
+  (rfl)
+
 end IsArchimedeanOrderUnit
 
 end OrderedModule
@@ -248,18 +256,20 @@ theorem IsArchimedeanOrderUnit.isOrderUnitNorm {E : Type*} [AddCommGroup E] [Mod
     letI : Norm E := he.normedAddCommGroup.toNorm
     IsOrderUnitNorm e :=
   letI : Norm E := he.normedAddCommGroup.toNorm
-  ⟨he.orderUnitSeminorm_self he₀, he.orderUnitSeminorm_le_iff⟩
+  ⟨(he.norm_eq_orderUnitSeminorm e).trans (he.orderUnitSeminorm_self he₀), fun {a} _ hr =>
+    (iff_of_eq (congrArg (· ≤ _) (he.norm_eq_orderUnitSeminorm a))).trans
+      (he.orderUnitSeminorm_le_iff hr)⟩
 
 namespace IsOrderUnitNorm
 
 variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [PartialOrder E] {e a b : E}
   {r : ℝ}
 
-/-- Every vector lies in the order interval `[-‖a‖ • e, ‖a‖ • e]`. -/
+/-- Every vector `a` is bounded below by `-‖a‖ • e`. -/
 theorem neg_norm_smul_le (h : IsOrderUnitNorm e) (a : E) : -(‖a‖ • e) ≤ a :=
   ((h.norm_le_iff (norm_nonneg a)).1 le_rfl).1
 
-/-- Every vector lies in the order interval `[-‖a‖ • e, ‖a‖ • e]`. -/
+/-- Every vector `a` is bounded above by `‖a‖ • e`. -/
 theorem le_norm_smul (h : IsOrderUnitNorm e) (a : E) : a ≤ ‖a‖ • e :=
   ((h.norm_le_iff (norm_nonneg a)).1 le_rfl).2
 
@@ -289,7 +299,7 @@ theorem nonneg (h : IsOrderUnitNorm e) : 0 ≤ e := by
 variable [IsOrderedAddMonoid E]
 
 /-- Multiples of the unit of an order-unit norm are monotone in the scalar. -/
-theorem monotone_smul (h : IsOrderUnitNorm e) : Monotone fun r : ℝ => r • e := fun r s hrs =>
+theorem monotone_smul_right (h : IsOrderUnitNorm e) : Monotone fun r : ℝ => r • e := fun r s hrs =>
   sub_nonneg.1 <| by
     rw [← sub_smul]
     exact h.smul_nonneg (sub_nonneg.2 hrs)
@@ -304,11 +314,11 @@ theorem mem_interior_Ici_zero (h : IsOrderUnitNorm e) : e ∈ interior (Ici 0) :
   mem_interior.2 ⟨ball e 1, h.ball_subset_Ici_zero, isOpen_ball, mem_ball_self one_pos⟩
 
 /-- The interval formula excludes non-Archimedean cones: the unit of an order-unit norm is an
-Archimedean order unit. If `a ≤ ε • e` for every `ε > 0`, then `‖‖a‖ • e + a‖ ≤ ‖a‖`, which
-forces `a ≤ 0`. -/
+Archimedean order unit. -/
 theorem isArchimedeanOrderUnit (h : IsOrderUnitNorm e) : IsArchimedeanOrderUnit e where
   toIsOrderUnit := h.isOrderUnit
   le_zero_of_forall_le_smul {a} ha := by
+    -- `a ≤ ε • e` for every `ε > 0` gives `‖‖a‖ • e + a‖ ≤ ‖a‖`, which forces `a ≤ 0`.
     have h₀ : 0 ≤ ‖a‖ • e + a := neg_le_iff_add_nonneg'.1 (h.neg_norm_smul_le a)
     have hb : ‖‖a‖ • e + a‖ ≤ ‖a‖ := by
       refine le_of_forall_pos_le_add fun ε hε => (h.norm_le_iff (by positivity)).2 ⟨?_, ?_⟩
@@ -319,7 +329,7 @@ theorem isArchimedeanOrderUnit (h : IsOrderUnitNorm e) : IsArchimedeanOrderUnit 
     simpa using ((h.norm_le_iff (norm_nonneg a)).1 hb).2
 
 /-- An order-unit norm is monotone on the positive cone. -/
-theorem norm_le_norm_of_nonneg_of_le (h : IsOrderUnitNorm e) (ha : 0 ≤ a) (hab : a ≤ b) :
+theorem norm_le_norm_of_le_of_nonneg (h : IsOrderUnitNorm e) (hab : a ≤ b) (ha : 0 ≤ a) :
     ‖a‖ ≤ ‖b‖ :=
   (h.norm_le_iff (norm_nonneg b)).2
     ⟨(neg_nonpos.2 (h.smul_nonneg (norm_nonneg b))).trans ha,
@@ -341,7 +351,7 @@ theorem isClosed_nonneg (h : IsOrderUnitNorm e) : IsClosed {a : E | 0 ≤ a} := 
   calc -a ≤ b + -a := le_add_of_nonneg_left hb
     _ = b - a := (sub_eq_add_neg b a).symm
     _ ≤ ‖b - a‖ • e := h.le_norm_smul _
-    _ ≤ ε • e := h.monotone_smul (by rw [← dist_eq_norm']; exact hab.le)
+    _ ≤ ε • e := h.monotone_smul_right (by rw [← dist_eq_norm']; exact hab.le)
 
 /-- An order-unit norm makes `E` an ordered topological group: the order relation is closed. -/
 theorem orderClosedTopology (h : IsOrderUnitNorm e) : OrderClosedTopology E :=
