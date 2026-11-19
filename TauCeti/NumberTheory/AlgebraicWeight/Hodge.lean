@@ -164,10 +164,12 @@ theorem hodgeMultiset_zero :
   have h : ∀ i : Fin n, (0 : DominantWeight n).hodgeShift i.rev = ((i : ℕ) : ℤ) := fun i => by
     simp only [hodgeShift_apply, zero_apply, Fin.natCast_val_rev]
     ring
-  rw [hodgeMultiset, ← Multiset.map_univ_val_equiv Fin.revPerm, Multiset.map_map]
-  simp only [Function.comp_def, Fin.revPerm_apply, h]
-  simp [← Finset.range_val, ← Nat.Iio_eq_range, ← Fin.map_valEmbedding_univ, Finset.map_val,
-    Function.comp_def]
+  have hval : ((univ : Finset (Fin n)).map Fin.valEmbedding).val.map ((↑) : ℕ → ℤ) =
+      (Multiset.range n).map (↑) := by
+    rw [Fin.map_valEmbedding_univ, Nat.Iio_eq_range, Finset.range_val]
+  rw [hodgeMultiset, ← Multiset.map_univ_val_equiv Fin.revPerm, Multiset.map_map, ← hval,
+    Finset.map_val, Multiset.map_map]
+  simp only [Function.comp_def, Fin.revPerm_apply, Fin.valEmbedding_apply, h]
 
 /-- For `GL 2` the Hodge–Tate multiset of `(λ₁, λ₂)` is `{λ₁ + 1, λ₂}`; for the weight
 `(k - 2, 0)` of a classical eigenform of weight `k` it is `{k - 1, 0}`. -/

@@ -313,8 +313,7 @@ theorem IsExtremelyRegular.baseChange {F F' Ω : Type*} [Field F] [Field F'] [Fi
     (h : a.IsExtremelyRegular) : (a.baseChange F').IsExtremelyRegular := by
   refine h.comp fun τ => ?_
   let := τ.toAlgebra
-  refine ⟨(IsAlgClosed.lift : F' →ₐ[F] Ω).toRingHom, ?_⟩
-  rw [AlgHom.toRingHom_eq_coe, AlgHom.comp_algebraMap_of_tower, RingHom.algebraMap_toAlgebra']
+  exact ⟨(IsAlgClosed.lift : F' →ₐ[F] Ω), (IsAlgClosed.lift : F' →ₐ[F] Ω).comp_algebraMap⟩
 
 end EmbeddingWeight
 
