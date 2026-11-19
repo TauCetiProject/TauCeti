@@ -77,6 +77,17 @@ private theorem one_add_star_mul_self_mul (he : IsIdempotentElem e) :
   simp only [star_sub, star_star, add_mul, one_mul, sub_mul, mul_sub, mul_assoc, he.eq, h]
   abel
 
+/-- The range projection `p` of an idempotent `e` lies in the range of `e`: `e * p = p`. -/
+@[simp] theorem _root_.IsIdempotentElem.mul_rangeStarProjection (he : IsIdempotentElem e) :
+    e * rangeStarProjection e = rangeStarProjection e := by
+  rw [rangeStarProjection, ← mul_assoc, ← mul_assoc, he.eq]
+
+/-- A star projection is its own range projection. -/
+@[simp] theorem _root_.IsStarProjection.rangeStarProjection_eq {p : A} (hp : IsStarProjection p) :
+    rangeStarProjection p = p := by
+  rw [rangeStarProjection, hp.isSelfAdjoint.star_eq, sub_self, mul_zero, add_zero,
+    Ring.inverse_one, mul_one, hp.isIdempotentElem.eq]
+
 end StarRing
 
 variable [CStarAlgebra A] {e : A}
@@ -90,8 +101,7 @@ theorem isUnit_one_add_star_mul_self (x : A) : IsUnit (1 + star x * x) := by
 /-- The defining properties of the range projection, proved together from the invertibility of
 `z = 1 + star x * x` and the commutation of `z` with `e` and `star e`. -/
 private theorem rangeStarProjection_spec (he : IsIdempotentElem e) :
-    IsStarProjection (rangeStarProjection e) ∧ e * rangeStarProjection e = rangeStarProjection e ∧
-      rangeStarProjection e * e = e := by
+    IsStarProjection (rangeStarProjection e) ∧ rangeStarProjection e * e = e := by
   obtain ⟨z, hz⟩ := isUnit_one_add_star_mul_self (e - star e)
   have hez : e * z = e * star e * e := by rw [hz, mul_one_add_star_mul_self he]
   have hze : Commute e z := by
@@ -107,12 +117,11 @@ private theorem rangeStarProjection_spec (he : IsIdempotentElem e) :
   have hp : rangeStarProjection e = e * star e * ↑z⁻¹ := by
     rw [rangeStarProjection, ← hz, Ring.inverse_unit]
   rw [hp]
-  refine ⟨⟨?_, ?_⟩, ?_, ?_⟩
+  refine ⟨⟨?_, ?_⟩, ?_⟩
   · rw [IsIdempotentElem, hfw.symm.mul_mul_mul_comm, hff, mul_assoc, ← mul_assoc (z : A),
       Units.mul_inv, one_mul]
   · rw [IsSelfAdjoint, star_mul, ← Units.coe_star_inv, hzs, star_mul, star_star]
     exact hfw.eq.symm
-  · rw [← mul_assoc, ← mul_assoc, he.eq]
   · rw [mul_assoc, ← hze.units_inv_right.eq, ← mul_assoc, ← hez, mul_assoc, Units.mul_inv,
       mul_one]
 
@@ -129,15 +138,10 @@ theorem isStarProjection_rangeStarProjection (he : IsIdempotentElem e) :
     IsStarProjection (rangeStarProjection e) :=
   (rangeStarProjection_spec he).1
 
-/-- The range projection `p` of an idempotent `e` lies in the range of `e`: `e * p = p`. -/
-@[simp] theorem mul_rangeStarProjection (he : IsIdempotentElem e) :
-    e * rangeStarProjection e = rangeStarProjection e :=
-  (rangeStarProjection_spec he).2.1
-
 /-- The range of an idempotent `e` lies in that of its range projection `p`: `p * e = e`. -/
 @[simp] theorem rangeStarProjection_mul (he : IsIdempotentElem e) :
     rangeStarProjection e * e = e :=
-  (rangeStarProjection_spec he).2.2
+  (rangeStarProjection_spec he).2
 
 /-- The range projection of an idempotent `e` is the only self-adjoint element `q` with
 `e * q = q` and `q * e = e`. -/
@@ -159,16 +163,3 @@ theorem isConj_rangeStarProjection (he : IsIdempotentElem e) :
   isConj_of_mul_eq he.mul_rangeStarProjection he.rangeStarProjection_mul
 
 end IsIdempotentElem
-
-namespace IsStarProjection
-
-open TauCeti
-
-variable {A : Type*} [CStarAlgebra A] {p : A}
-
-/-- A star projection is its own range projection. -/
-@[simp] theorem rangeStarProjection_eq (hp : IsStarProjection p) : rangeStarProjection p = p :=
-  ((hp.isIdempotentElem.eq_rangeStarProjection_iff hp.isSelfAdjoint).2
-    ⟨hp.isIdempotentElem.eq, hp.isIdempotentElem.eq⟩).symm
-
-end IsStarProjection

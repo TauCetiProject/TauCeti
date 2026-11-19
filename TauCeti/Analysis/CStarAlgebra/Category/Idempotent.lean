@@ -72,7 +72,7 @@ private theorem isIdempotentElem_of {X : C} {e : X ⟶ X} (he : e ≫ e = e) :
 
 section Dagger
 
-variable [Preadditive C] [DaggerCategory C] [DaggerPreadditive C] {X : C}
+variable [Preadditive C] [DaggerCategory C] [DaggerPreadditive C] {X : C} {e q : X ⟶ X}
 
 /-- The **range projection** of an arrow `e : X ⟶ X`: the range projection
 `TauCeti.rangeStarProjection` of `e` in the star ring `End X`. For an idempotent `e` of a
@@ -84,6 +84,16 @@ def rangeStarProjection (e : X ⟶ X) : X ⟶ X :=
 /-- As an endomorphism, the range projection of `e` is that of `End.of e` in `End X`. -/
 @[simp] theorem of_rangeStarProjection (e : X ⟶ X) :
     End.of (rangeStarProjection e) = TauCeti.rangeStarProjection (End.of e) := (rfl)
+
+/-- The range projection `p` of an idempotent `e` lies in the range of `e`: `p ≫ e = p`. -/
+@[simp, reassoc] theorem rangeStarProjection_comp (he : e ≫ e = e) :
+    rangeStarProjection e ≫ e = rangeStarProjection e :=
+  congrArg End.asHom (isIdempotentElem_of he).mul_rangeStarProjection
+
+/-- A self-adjoint idempotent is its own range projection. -/
+@[simp] theorem rangeStarProjection_eq (hq : dagger q = q) (hqq : q ≫ q = q) :
+    rangeStarProjection q = q :=
+  congrArg End.asHom (IsStarProjection.rangeStarProjection_eq ⟨isIdempotentElem_of hqq, End.ext hq⟩)
 
 end Dagger
 
@@ -101,11 +111,6 @@ variable {X Y : C} {e q : X ⟶ X}
     rangeStarProjection e ≫ rangeStarProjection e = rangeStarProjection e :=
   congrArg End.asHom (isIdempotentElem_of he).isStarProjection_rangeStarProjection.isIdempotentElem
 
-/-- The range projection `p` of an idempotent `e` lies in the range of `e`: `p ≫ e = p`. -/
-@[simp, reassoc] theorem rangeStarProjection_comp (he : e ≫ e = e) :
-    rangeStarProjection e ≫ e = rangeStarProjection e :=
-  congrArg End.asHom (isIdempotentElem_of he).mul_rangeStarProjection
-
 /-- The range of an idempotent `e` lies in that of its range projection `p`: `e ≫ p = e`. -/
 @[simp, reassoc] theorem comp_rangeStarProjection (he : e ≫ e = e) :
     e ≫ rangeStarProjection e = e :=
@@ -117,11 +122,6 @@ theorem eq_rangeStarProjection_iff (he : e ≫ e = e) (hq : dagger q = q) :
     q = rangeStarProjection e ↔ q ≫ e = q ∧ e ≫ q = e := by
   have := (isIdempotentElem_of he).eq_rangeStarProjection_iff (q := End.of q) (End.ext hq)
   simpa only [End.ext_iff, End.mul_asHom, rangeStarProjection] using this
-
-/-- A self-adjoint idempotent is its own range projection. -/
-@[simp] theorem rangeStarProjection_eq (hq : dagger q = q) (hqq : q ≫ q = q) :
-    rangeStarProjection q = q :=
-  ((eq_rangeStarProjection_iff hqq hq).2 ⟨hqq, hqq⟩).symm
 
 /-- An idempotent `e` is similar to its range projection `p`: `e = u⁻¹ p u` for an automorphism
 `u` of `X`, written `u.inv ≫ p ≫ u.hom = e` in categorical composition order. -/
