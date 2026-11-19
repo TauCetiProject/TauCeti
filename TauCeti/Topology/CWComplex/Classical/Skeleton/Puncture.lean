@@ -46,6 +46,8 @@ the inverse of `χ` is continuous.
 
 ## Main results
 
+* `TauCeti.skeletonDiffCenterHomotopyRel_map`, `TauCeti.skeletonDiffCenterEndpoint_map`: inside
+  the open cell, read through its characteristic map, the deformation is the radial push.
 * `TauCeti.skeletonDiffCenterEndpoint_mem`: the endpoint takes values in
   `TauCeti.skeletonDiffCore j`.
 * `TauCeti.skeletonDiffCore_eq_skeletonNeighborhood`: for a single `n`-cell, the complement of the
@@ -245,6 +247,41 @@ def skeletonDiffCenterHomotopyRel :
     · exact pushFun_of_notMem j hxo
   map_one_left _ := rfl
   prop' t x hx := Subtype.ext (pushFun_of_notMem_image j t hx.2)
+
+private lemma coe_skeletonDiffCenterHomotopyRel_apply (t : I) (x : skeletonDiffCenter j) :
+    (skeletonDiffCenterHomotopyRel j (t, x) : X) = pushFun j (t, x) :=
+  rfl
+
+/-- Inside the open cell `j`, read through its characteristic map, the deformation at time `t` is
+the radial push `TauCeti.puncturedBallPush 2⁻¹ t`. -/
+lemma skeletonDiffCenterHomotopyRel_map (t : I) {y : Fin n → ℝ} (hy : ‖y‖ < 1)
+    (x : skeletonDiffCenter j) (hx : (x : X) = map n j y) :
+    (skeletonDiffCenterHomotopyRel j (t, x) : X) = map n j (puncturedBallPush 2⁻¹ t y) := by
+  have hy' : y ∈ (map n j).source := by rw [source_eq]; exact mem_ball_zero_iff.2 hy
+  rw [coe_skeletonDiffCenterHomotopyRel_apply,
+    pushFun_of_mem j (hx ▸ mem_image_of_mem _ (mem_ball_zero_iff.2 hy)), hx,
+    (map n j).left_inv hy']
+
+/-- Inside the open cell `j`, read through its characteristic map, the endpoint of the
+deformation is the radial push `TauCeti.puncturedBallPush 2⁻¹ 1`. -/
+lemma skeletonDiffCenterEndpoint_map {y : Fin n → ℝ} (hy : ‖y‖ < 1)
+    (x : skeletonDiffCenter j) (hx : (x : X) = map n j y) :
+    (skeletonDiffCenterEndpoint j x : X) = map n j (puncturedBallPush 2⁻¹ 1 y) := by
+  rw [← (skeletonDiffCenterHomotopyRel j).apply_one, skeletonDiffCenterHomotopyRel_map j 1 hy x hx]
+
+/-- The deformation fixes every point outside the inner half of the cell `j`. -/
+@[simp]
+lemma skeletonDiffCenterHomotopyRel_apply_of_notMem (t : I) (x : skeletonDiffCenter j)
+    (hx : (x : X) ∉ map n j '' ball 0 2⁻¹) : skeletonDiffCenterHomotopyRel j (t, x) = x :=
+  Subtype.ext ((coe_skeletonDiffCenterHomotopyRel_apply j t x).trans
+    (pushFun_of_notMem_image j t hx))
+
+/-- The endpoint of the deformation fixes every point outside the inner half of the cell `j`. -/
+@[simp]
+lemma skeletonDiffCenterEndpoint_apply_of_notMem (x : skeletonDiffCenter j)
+    (hx : (x : X) ∉ map n j '' ball 0 2⁻¹) : skeletonDiffCenterEndpoint j x = x := by
+  rw [← (skeletonDiffCenterHomotopyRel j).apply_one,
+    skeletonDiffCenterHomotopyRel_apply_of_notMem j 1 x hx]
 
 /-- The endpoint of the deformation takes values in the complement of the inner half of the
 cell. -/
