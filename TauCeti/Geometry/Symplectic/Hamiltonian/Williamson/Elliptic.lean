@@ -159,7 +159,8 @@ theorem exists_isDarbouxBasis_span_eq_span_elliptic (h : ω.IsNondegenerateQuadr
     (fun i j _ ↦ (quadraticPoissonBracket_eq_zero_iff ω).1 (h.quadraticPoissonBracket_eq_zero i j))
     (fun i ↦ ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra (Q i)) fun i ↦
       hJcomm _ <| (quadraticPoissonBracket_eq_zero_iff ω).1 <|
-        h.quadraticPoissonBracket_eq_zero_of_mem_span (Submodule.subset_span ⟨i, rfl⟩) hP
+        ω.quadraticPoissonBracket_eq_zero_of_mem_span h.quadraticPoissonBracket_eq_zero
+          (Submodule.subset_span ⟨i, rfl⟩) hP
   -- Each `A_{Q i}` rotates every plane `span(qₖ, pₖ)`, so `Q i = ∑ₖ -(Im cᵢₖ) Iₖ`.
   have hQ (i : ι) : Q i = ∑ k, -(c i k).im • elliptic b k :=
     hb.eq_sum_smul_elliptic_of_hamiltonianEnd_apply_eq fun k ↦ by

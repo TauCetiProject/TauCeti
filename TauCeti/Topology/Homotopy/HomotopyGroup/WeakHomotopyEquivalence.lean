@@ -48,6 +48,9 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
   on path components inducing bijections on the positive-dimensional homotopy groups.
 * `ContinuousMap.HomotopyEquiv.isWeakHomotopyEquivalence`: a homotopy equivalence is a weak
   homotopy equivalence.
+* `ContinuousMap.isWeakHomotopyEquivalence_inclusion_preimage_val_iff`: an inclusion of subsets
+  of a subspace `W` is a weak homotopy equivalence exactly when the inclusion of their preimages
+  in `W` is.
 * `ContinuousMap.IsWeakHomotopyEquivalence.of_homotopic`,
   `ContinuousMap.IsWeakHomotopyEquivalence.comp`,
   `ContinuousMap.IsWeakHomotopyEquivalence.of_postcomp`,
@@ -432,6 +435,29 @@ theorem HomotopyEquiv.isWeakHomotopyEquivalence (e : X ≃ₕ Y) :
     e.toFun.IsWeakHomotopyEquivalence where
   exists_joined y := ⟨e.invFun y, ⟨e.right_inv.some.evalAt y⟩⟩
   bijective _ x := HomotopyGroup.map_bijective_of_homotopyEquiv e x
+
+/-- **Inclusions read in a subspace.** Let `S ⊆ T` be subsets of `X` lying in a subspace `W`. The
+inclusion `S ⊆ T` is a weak homotopy equivalence exactly when the inclusion of their preimages in
+`W` is: the two inclusions are identified by the homeomorphisms between the preimages in `W` and
+the subsets themselves. -/
+theorem isWeakHomotopyEquivalence_inclusion_preimage_val_iff {W S T : Set X} (hT : T ⊆ W)
+    (hST : S ⊆ T) :
+    (inclusion (Set.preimage_mono hST :
+      (Subtype.val ⁻¹' S : Set W) ⊆ Subtype.val ⁻¹' T)).IsWeakHomotopyEquivalence ↔
+      (inclusion hST).IsWeakHomotopyEquivalence := by
+  let eS := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+    ((hST.trans hT).trans (Subtype.range_coe (s := W)).ge)
+  let eT := Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange
+    (hT.trans (Subtype.range_coe (s := W)).ge)
+  have heq : eT.toHomotopyEquiv.toFun.comp (inclusion (Set.preimage_mono hST)) =
+      (inclusion hST).comp eS.toHomotopyEquiv.toFun := by
+    ext
+    simp [eS, eT]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · exact IsWeakHomotopyEquivalence.of_precomp eS.toHomotopyEquiv.isWeakHomotopyEquivalence
+      (heq ▸ eT.toHomotopyEquiv.isWeakHomotopyEquivalence.comp h)
+  · exact IsWeakHomotopyEquivalence.of_postcomp eT.toHomotopyEquiv.isWeakHomotopyEquivalence
+      (heq ▸ h.comp eS.toHomotopyEquiv.isWeakHomotopyEquivalence)
 
 
 /-- **A map between contractible spaces is a weak homotopy equivalence.** It is homotopic to a
