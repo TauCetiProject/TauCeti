@@ -372,15 +372,13 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph
         ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
       ∃ w : Wkp mu Omega 2 2, Wkp.lowerOrder 1 w = u ∧ ‖w‖ ≤ C * (‖u‖ + ‖f‖) := by
   -- The coefficients are essentially bounded, so the energy form is a continuous bilinear form.
-  have hameas : AEStronglyMeasurable a (mu.restrict Omega) :=
-    aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
-      Omega.isOpen.measurableSet
   have hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) :=
-    memLp_energyIntegrand_of_memLp_top ha.upper_nonneg hameas (fun _ hx => ha.upper_bound hx) hb hc
+    memLp_energyIntegrand_of_memLp_top ha.upper_nonneg
+      (aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
+        Omega.isOpen.measurableSet) (fun _ hx => ha.upper_bound hx) hb hc
   have hweak {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2} :
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
-        dirichletForcing f v) ↔
-        ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u v = dirichletForcing f v) ↔
+        ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u v =
           ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
     simp only [dirichletForcing_apply_eq_setIntegral]
   -- The map `(w, f) ↦ (w', f)`, where `w'` is the first-order part of `w`, from the closed
@@ -397,8 +395,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph
   have : CompleteSpace X := hX.completeSpace_coe
   have : CompleteSpace S := (hX.preimage P.continuous).completeSpace_coe
   let π : S →L[ℝ] X := (P.comp S.subtypeL).codRestrict X fun q => q.2
-  -- A corestriction has the values of the map it corestricts
-  -- (`ContinuousLinearMap.coe_codRestrict_apply`).
+  -- `π` has the values of `P` (`ContinuousLinearMap.coe_codRestrict_apply`).
   have hπ : ∀ q : S, (π q : W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)) = P q := fun _ => rfl
   -- By the qualitative regularity theorem it is surjective, so the open mapping theorem bounds
   -- a preimage.
