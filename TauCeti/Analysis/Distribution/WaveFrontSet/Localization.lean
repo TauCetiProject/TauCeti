@@ -64,6 +64,10 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   `IsMicrolocallySmoothAt.exists_nhds_cone_forall_one_add_norm_pow_mul_norm_localFourier_le`
   makes the decay uniform over the cutoffs supported in `U` with bounded derivatives of some order,
   so that it applies to cutoffs depending on the frequency.
+* `Distribution.exists_compacts_cutoff_lattice`: around every point of `Ω` there are a compact box
+  `K` inside a given neighbourhood, a smooth function supported in `K` equal to one near the point,
+  and a full lattice none of whose nonzero translates of `K` meet `K`: the data of the Fourier
+  expansions above.
 * `Distribution.exists_isOpen_cone_forall_decay_of_isCompact`: the same holds uniformly over a
   compact set `K` of points of microlocal smoothness: there is an open `W ⊇ K` such that it holds
   for every cutoff supported in `W ∪ (dsupport T)ᶜ`, that is, whose support meets the support of
@@ -337,7 +341,7 @@ theorem hasSum_localFourier_ofSupportedIn [MeasurableSpace E] [BorelSpace E] (T 
 smaller neighbourhood `K₁` of the point, a smooth function supported in `K` equal to one on `K₁`,
 and a full lattice none of whose nonzero translates of `K` meet `K`: the data of a Fourier expansion
 of the cutoffs supported in `K₁`. -/
-private theorem exists_compacts_cutoff_lattice {x : E} (hx : x ∈ Ω) {U : Set E} (hU : U ∈ 𝓝 x) :
+theorem exists_compacts_cutoff_lattice {x : E} (hx : x ∈ Ω) {U : Set E} (hU : U ∈ 𝓝 x) :
     ∃ (K : Compacts E) (K₁ : Set E), (K : Set E) ⊆ U ∩ Ω ∧ K₁ ∈ 𝓝 x ∧ K₁ ⊆ K ∧
       (∃ χ : 𝓓_{K}(E, ℂ), ∀ y ∈ K₁, χ y = 1) ∧ ∃ (L : Submodule ℤ E) (_ : DiscreteTopology L)
         (_ : IsZLattice ℝ L), ∀ y ∈ K, ∀ ℓ : L, y + ℓ ∈ K → ℓ = 0 := by
