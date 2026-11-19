@@ -150,6 +150,12 @@ lemma mem_orthogonal_span_iff {s : Set V} {x : V} :
   -- Both sides say that the span, respectively `s`, lies in the kernel of `ω (·, x)`.
   (Submodule.span_le (p := LinearMap.ker (ω.toBilinForm.flip x)))
 
+/-- The symplectic complement of the span of two vectors is tested on the two vectors. -/
+lemma mem_orthogonal_span_pair_iff {e e' x : V} :
+    x ∈ ω.orthogonal (Submodule.span ℝ {e, e'}) ↔ ω e x = 0 ∧ ω e' x = 0 := by
+  rw [mem_orthogonal_span_iff]
+  simp
+
 /-- A span is isotropic exactly when `ω` vanishes on pairs of spanning vectors. -/
 lemma isIsotropic_span_iff {s : Set V} :
     ω.IsIsotropic (Submodule.span ℝ s) ↔ ∀ v ∈ s, ∀ w ∈ s, ω v w = 0 := by

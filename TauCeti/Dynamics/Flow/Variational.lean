@@ -34,6 +34,8 @@ compute the first-order dependence of the flow on parameters of the vector field
 * `TauCeti.fderiv_flowOfLipschitz_eq_id_add_integral`: the integral form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz`: the differential form.
 * `TauCeti.hasDerivAt_fderiv_flowOfLipschitz_apply`: the differential form applied to a vector.
+* `TauCeti.hasFDerivAt_flowOfLipschitz_comp`: the derivative of `q ↦ φ_{τ q} (k q)`, at varying
+  time and point.
 * `Flow.fderiv_add`, `Flow.fderiv_neg_comp`, `Flow.fderiv_comp_neg`,
   `Flow.fderivUnit`, `Flow.ringInverse_fderiv`: for a flow whose time maps are
   differentiable at the relevant points, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is
@@ -146,6 +148,37 @@ theorem hasDerivAt_fderiv_flowOfLipschitz_apply (x w : E) (t : ℝ) :
       (fderiv ℝ v (flowOfLipschitz v hv t x) (fderiv ℝ (flowOfLipschitz v hv t) x w)) t :=
   (hasDerivAt_fderiv_flowOfLipschitz hv hvs x t).clm_apply (hasDerivAt_const t w)
     |>.congr_deriv (by simp)
+
+/-- **The derivative of the flow at varying time and point.** For maps `τ` to times and `k` to
+points, the derivative of `q ↦ φ_{τ q} (k q)` is `dτ ⊗ v + Dφ_{τ p} ∘ dk`. -/
+theorem hasFDerivAt_flowOfLipschitz_comp {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {τ : P → ℝ} {k : P → E} {τ' : P →L[ℝ] ℝ} {k' : P →L[ℝ] E} {p : P}
+    (hτ : HasFDerivAt τ τ' p) (hk : HasFDerivAt k k' p) :
+    HasFDerivAt (fun q ↦ flowOfLipschitz v hv (τ q) (k q))
+      (τ'.smulRight (v (flowOfLipschitz v hv (τ p) (k p))) +
+        (fderiv ℝ (flowOfLipschitz v hv (τ p)) (k p)).comp k') p := by
+  set Φ := flowOfLipschitz v hv
+  set D := fderiv ℝ (Function.uncurry Φ) (τ p, k p)
+  have hD : HasFDerivAt (Function.uncurry Φ) D (τ p, k p) :=
+    ((contDiff_uncurry_flowOfLipschitz hv hvs).differentiable one_ne_zero _).hasFDerivAt
+  -- The derivative in the time direction is the vector field.
+  have h₁ : D.comp (ContinuousLinearMap.inl ℝ ℝ E) =
+      ContinuousLinearMap.toSpanSingleton ℝ (v (Φ (τ p) (k p))) := by
+    have h' := hD.comp (τ p) (hasFDerivAt_prodMk_left (𝕜 := ℝ) (τ p) (k p))
+    have h : HasFDerivAt (fun t ↦ Φ t (k p)) (D.comp (ContinuousLinearMap.inl ℝ ℝ E)) (τ p) := h'
+    exact h.unique (hasDerivAt_flowOfLipschitz hv (k p) (τ p)).hasFDerivAt
+  -- The derivative in the space direction is that of the time map.
+  have h₂ : D.comp (ContinuousLinearMap.inr ℝ ℝ E) = fderiv ℝ (Φ (τ p)) (k p) := by
+    have h' := hD.comp (k p) (hasFDerivAt_prodMk_right (𝕜 := ℝ) (τ p) (k p))
+    have h : HasFDerivAt (Φ (τ p)) (D.comp (ContinuousLinearMap.inr ℝ ℝ E)) (k p) := h'
+    exact h.unique ((differentiable_flowOfLipschitz_apply hv hvs (τ p)) (k p)).hasFDerivAt
+  refine (hD.comp p (hτ.prodMk hk)).congr_fderiv ?_
+  ext ξ
+  have h₃ : D (τ' ξ, k' ξ) = D.comp (ContinuousLinearMap.inl ℝ ℝ E) (τ' ξ) +
+      D.comp (ContinuousLinearMap.inr ℝ ℝ E) (k' ξ) := by
+    simp [← map_add]
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply, h₃, h₁, h₂]
+  simp [Φ]
 
 end Smooth
 

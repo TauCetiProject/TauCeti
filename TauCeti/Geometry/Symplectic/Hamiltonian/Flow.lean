@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Dynamics.Flow.Variational
+import TauCeti.Dynamics.Flow.LieBracket
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.FDeriv.Const
@@ -26,6 +27,18 @@ translation. A bound `M` on the vector field bounds the displacement of the time
 `M |t|`. For a `C²`
 Hamiltonian, every time map preserves the symplectic form on tangent vectors: differentiating the
 pairing of two variations and using symmetry of the Hessian gives zero.
+
+The time maps carry the Hamiltonian vector field to itself
+(`TauCeti.SymplecticForm.fderiv_hamiltonianFlow_apply_hamiltonianVectorField`), and the flow of a
+`C^(n + 2)` Hamiltonian is `C^(n + 1)` jointly in time and space
+(`TauCeti.SymplecticForm.contDiff_uncurry_hamiltonianFlow`). For maps `τ` to times and `k` to
+points, the map `q ↦ φ_{τ q} (k q)` pulls `ω` back to the pullback along `k`
+corrected by `dτ ∧ d(H ∘ k)` (`TauCeti.SymplecticForm.apply_fderiv_hamiltonianFlow_comp`). A
+function whose derivative along the Hamiltonian vector field is a constant `c` on a region grows
+at the rate `c` along the pieces of flow lines in that region
+(`TauCeti.SymplecticForm.apply_hamiltonianFlow_eq_add_mul`). The derivative at varying time and the
+constant-rate statement specialize `TauCeti.hasFDerivAt_flowOfLipschitz_comp` and
+`TauCeti.apply_flowOfLipschitz_eq_add_mul`.
 
 The construction and variational equation reuse `TauCeti.flowOfLipschitz`.
 See McDuff--Salamon, *Introduction to Symplectic Topology*, Hamiltonian flows.
@@ -158,5 +171,104 @@ theorem apply_fderiv_hamiltonianFlow (hX : LipschitzWith K (ω.hamiltonianVector
   have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt)
     (fun s ↦ (hd s).deriv) t 0
   simpa using hc
+
+/-- The time-`t` map of a Hamiltonian flow carries the Hamiltonian vector field to itself. -/
+theorem fderiv_hamiltonianFlow_apply_hamiltonianVectorField
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ 2 H) (t : ℝ) (x : V) :
+    fderiv ℝ (ω.hamiltonianFlow H hX t) x (ω.hamiltonianVectorField H x) =
+      ω.hamiltonianVectorField H (ω.hamiltonianFlow H hX t x) := by
+  have hXs : ContDiff ℝ 1 (ω.hamiltonianVectorField H) := ω.contDiff_hamiltonianVectorField hH
+  rw [hamiltonianFlow_eq]
+  exact fderiv_flowOfLipschitz_apply_of_lieBracket_eq_zero hX hXs (hXs.differentiable one_ne_zero)
+    VectorField.lieBracket_self t x
+
+/-- The time maps of the flow of a `C²` Hamiltonian are differentiable. -/
+theorem differentiable_hamiltonianFlow_apply
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ 2 H) (t : ℝ) :
+    Differentiable ℝ (ω.hamiltonianFlow H hX t) := by
+  rw [hamiltonianFlow_eq]
+  exact differentiable_flowOfLipschitz_apply hX (ω.contDiff_hamiltonianVectorField hH) t
+
+/-- The flow of a `C^(n + 2)` Hamiltonian is `C^(n + 1)` jointly in time and space; for `n = ∞`,
+the flow of a smooth Hamiltonian is smooth. -/
+theorem contDiff_uncurry_hamiltonianFlow (n : ℕ∞)
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ (n + 2) H) :
+    ContDiff ℝ (n + 1) (Function.uncurry fun t x ↦ ω.hamiltonianFlow H hX t x) := by
+  induction n using ENat.recTopCoe with
+  | top =>
+    refine contDiff_infty.2 fun n ↦ ?_
+    rw [hamiltonianFlow_eq]
+    exact (contDiff_flowOfLipschitz n _ hX (ω.contDiff_hamiltonianVectorField
+      (hH.of_le ((WithTop.coe_le_coe.2 le_top).trans le_self_add)))).of_le le_self_add
+  | coe n =>
+    rw [hamiltonianFlow_eq]
+    exact contDiff_flowOfLipschitz n _ hX
+      (ω.contDiff_hamiltonianVectorField (by exact_mod_cast hH))
+
+/-- The derivative of `q ↦ φ_{τ q} (k q)`, where `φ` is the flow of a `C²` Hamiltonian with
+globally Lipschitz vector field. -/
+theorem hasFDerivAt_hamiltonianFlow_comp {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ 2 H)
+    {τ : P → ℝ} {k : P → V} {τ' : P →L[ℝ] ℝ} {k' : P →L[ℝ] V} {p : P}
+    (hτ : HasFDerivAt τ τ' p) (hk : HasFDerivAt k k' p) :
+    HasFDerivAt (fun q ↦ ω.hamiltonianFlow H hX (τ q) (k q))
+      (τ'.smulRight (ω.hamiltonianVectorField H (ω.hamiltonianFlow H hX (τ p) (k p))) +
+        (fderiv ℝ (ω.hamiltonianFlow H hX (τ p)) (k p)).comp k') p := by
+  rw [hamiltonianFlow_eq]
+  exact hasFDerivAt_flowOfLipschitz_comp hX (ω.contDiff_hamiltonianVectorField hH) hτ hk
+
+/-- The pullback of `ω` along `q ↦ φ_{τ q} (k q)`, where `φ` is the flow of a `C²` Hamiltonian
+`H`: it is the pullback along `k`, corrected by `dτ ∧ d(H ∘ k)`. -/
+theorem apply_fderiv_hamiltonianFlow_comp {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) (hH : ContDiff ℝ 2 H)
+    {τ : P → ℝ} {k : P → V} {τ' : P →L[ℝ] ℝ} {k' : P →L[ℝ] V} {p : P}
+    (hτ : HasFDerivAt τ τ' p) (hk : HasFDerivAt k k' p) (ξ ξ' : P) :
+    ω (fderiv ℝ (fun q ↦ ω.hamiltonianFlow H hX (τ q) (k q)) p ξ)
+        (fderiv ℝ (fun q ↦ ω.hamiltonianFlow H hX (τ q) (k q)) p ξ') =
+      ω (k' ξ) (k' ξ') + τ' ξ * fderiv ℝ H (k p) (k' ξ') -
+        τ' ξ' * fderiv ℝ H (k p) (k' ξ) := by
+  set Φ := ω.hamiltonianFlow H hX
+  set X := ω.hamiltonianVectorField H
+  set A := fderiv ℝ (Φ (τ p)) (k p)
+  rw [(ω.hasFDerivAt_hamiltonianFlow_comp H hX hH hτ hk).fderiv]
+  -- Both tangent vectors are images under `A` of `τ' ζ • X (k p) + k' ζ`.
+  have hA (ζ : P) : (τ'.smulRight (X (Φ (τ p) (k p))) + A.comp k') ζ =
+      A (τ' ζ • X (k p) + k' ζ) := by
+    simp [A, X, Φ, map_add, map_smul, ω.fderiv_hamiltonianFlow_apply_hamiltonianVectorField H hX hH]
+  rw [hA, hA, ω.apply_fderiv_hamiltonianFlow H hX hH]
+  have h₁ : ω.toBilinForm (X (k p)) (X (k p)) = 0 := ω.self_eq_zero _
+  have h₂ (v : V) : ω.toBilinForm (X (k p)) v = fderiv ℝ H (k p) v :=
+    ω.apply_hamiltonianVectorField H (k p) v
+  have h₃ (v : V) : ω.toBilinForm v (X (k p)) = -fderiv ℝ H (k p) v := by
+    rw [← h₂]
+    exact (ω.neg_eq (X (k p)) v).symm
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, h₁, h₂,
+    h₃]
+  ring
+
+/-- **A first integral up to a constant rate.** If the derivative of `F` along the Hamiltonian
+vector field of `H` is the constant `c` at every point of `R`, and the flow line of `H` through `y`
+stays in `R` between the times `0` and `t`, then `F` grows at the rate `c` along it:
+`F (φ_t y) = F y + c t`. -/
+theorem apply_hamiltonianFlow_eq_add_mul (hX : LipschitzWith K (ω.hamiltonianVectorField H))
+    {F : V → ℝ} {R : Set V} {c : ℝ} (hF : ∀ z ∈ R, DifferentiableAt ℝ F z)
+    (hc : ∀ z ∈ R, fderiv ℝ F z (ω.hamiltonianVectorField H z) = c) {y : V} {t : ℝ}
+    (hy : ∀ s ∈ Set.uIcc 0 t, ω.hamiltonianFlow H hX s y ∈ R) :
+    F (ω.hamiltonianFlow H hX t y) = F y + c * t := by
+  rw [mul_comm, ← smul_eq_mul]
+  exact apply_flowOfLipschitz_eq_add_mul hX hF hc hy
+
+/-- **A first integral up to a constant rate, near a point.** If the derivative of `F` along the
+Hamiltonian vector field of `H` is the constant `c` near `x₀`, then for some `δ > 0` and every
+point `z` near `x₀`, `F (φ_t z) = F z + c t` for `t ∈ (-δ, δ)`. -/
+theorem exists_pos_eventually_apply_hamiltonianFlow_eq_add_mul
+    (hX : LipschitzWith K (ω.hamiltonianVectorField H)) {F : V → ℝ} {c : ℝ} {x₀ : V}
+    (hc : ∀ᶠ z in nhds x₀,
+      DifferentiableAt ℝ F z ∧ fderiv ℝ F z (ω.hamiltonianVectorField H z) = c) :
+    ∃ δ > 0, ∀ᶠ z in nhds x₀, ∀ t ∈ Set.Ioo (-δ) δ,
+      F (ω.hamiltonianFlow H hX t z) = F z + c * t := by
+  rw [hamiltonianFlow_eq]
+  simpa only [smul_eq_mul, mul_comm] using
+    exists_pos_eventually_apply_flowOfLipschitz_eq_add_mul hX hc
 
 end TauCeti.SymplecticForm
