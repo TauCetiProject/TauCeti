@@ -335,6 +335,7 @@ theorem euler_X_field (a b : α) (J : ι →₀ ℕ) :
   · simp [hab, Ne.symm hab]
 
 /-- **The Euler operator annihilates total derivatives**: `E_a(Dᵢ f) = 0`. -/
+@[simp]
 theorem euler_totalDeriv (a : α) (i : ι) (f : PolynomialJet R ι α) :
     euler a (totalDeriv i f) = 0 := by
   classical
@@ -364,7 +365,7 @@ theorem euler_totalDeriv (a : α) (i : ι) (f : PolynomialJet R ι α) :
 @[simp]
 theorem euler_totalDivergence (a : α) (Θ : ι →₀ PolynomialJet R ι α) :
     euler a (totalDivergence R ι α Θ) = 0 := by
-  simp [totalDivergence_apply, Finsupp.sum, euler_totalDeriv]
+  simp [totalDivergence_apply, Finsupp.sum]
 
 /-- **Integration by parts** modulo total divergences:
 `g · D_I h ≡ (-1)^|I| (D_I g) · h`. -/
