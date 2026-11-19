@@ -66,6 +66,10 @@ is not made here.
 * `Subgroup.dynamicLevi_inf_dynamicUnipotent`: the Levi and unipotent subgroups meet trivially.
 * `Subgroup.tendsto_dynamicLevi_mul_dynamicUnipotent`: the conjugates of `l * u`, with `l` Levi and
   `u` unipotent, tend to `l`.
+* `Subgroup.mem_dynamicParabolic_diagonal_iff`, `Subgroup.mem_dynamicUnipotent_diagonal_iff`,
+  `Subgroup.mem_dynamicParabolic_units_conj_diagonal_iff`,
+  `Subgroup.mem_dynamicUnipotent_units_conj_diagonal_iff`: the block triangular and block
+  unipotent coordinate descriptions for `X = O * diagonal d * O⁻¹`.
 * `Subgroup.isClosed_dynamicLevi`, `Subgroup.isClosed_dynamicParabolic`,
   `Subgroup.isClosed_dynamicUnipotent`: closedness, the last two for symmetric `X`.
 * `Subgroup.dynamicParabolic_inf_map_inverseTranspose`: for symmetric `X` and `θ`-stable `G`, the
@@ -498,6 +502,40 @@ private lemma isClosed_iInter_apply_eq (P Q : Matrix m m ℝ) (p : m → m → P
     (isClosed_eq (((continuous_const.mul Units.continuous_val).mul continuous_const).matrix_elem
       i j) continuous_const)
 
+/-- For diagonal `X = diagonal d`, the dynamic parabolic subgroup is block triangular: `g ∈ G` lies
+in it exactly when its entries `(i, j)` with `d i < d j` vanish. -/
+theorem mem_dynamicParabolic_diagonal_iff :
+    g ∈ G.dynamicParabolic (diagonal d) ↔
+      g ∈ G ∧ ∀ i j, d i < d j → (g : Matrix m m ℝ) i j = 0 :=
+  and_congr_right fun _ ↦ bddFlow_diagonal_iff _
+
+/-- For diagonal `X = diagonal d`, the dynamic unipotent subgroup is block unipotent: `g ∈ G` lies
+in it exactly when `g i j = δ i j` for all `(i, j)` with `d i ≤ d j`. -/
+theorem mem_dynamicUnipotent_diagonal_iff :
+    g ∈ G.dynamicUnipotent (diagonal d) ↔
+      g ∈ G ∧ ∀ i j, d i ≤ d j → (g : Matrix m m ℝ) i j = (1 : Matrix m m ℝ) i j :=
+  and_congr_right fun _ ↦ tendsto_flow_diagonal_one_iff _
+
+/-- For `X = O * diagonal d * O⁻¹`, for instance a symmetric `X` in an orthonormal eigenbasis,
+`g ∈ G` lies in the dynamic parabolic subgroup exactly when the entries `(i, j)` of
+`O⁻¹ * g * O` with `d i < d j` vanish. -/
+theorem mem_dynamicParabolic_units_conj_diagonal_iff :
+    g ∈ G.dynamicParabolic (O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)) ↔
+      g ∈ G ∧ ∀ i j, d i < d j → (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * g * O) i j = 0 :=
+  and_congr_right fun _ ↦ (bddFlow_iff_diagonal rfl _).trans (bddFlow_diagonal_iff _)
+
+/-- For `X = O * diagonal d * O⁻¹`, for instance a symmetric `X` in an orthonormal eigenbasis,
+`g ∈ G` lies in the dynamic unipotent subgroup exactly when `(O⁻¹ * g * O) i j = δ i j` for all
+`(i, j)` with `d i ≤ d j`. -/
+theorem mem_dynamicUnipotent_units_conj_diagonal_iff :
+    g ∈ G.dynamicUnipotent (O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)) ↔
+      g ∈ G ∧ ∀ i j, d i ≤ d j →
+        (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * g * O) i j = (1 : Matrix m m ℝ) i j := by
+  refine and_congr_right fun _ ↦ ?_
+  have h := tendsto_flow_iff_diagonal (O := O) (d := d) rfl (g : Matrix m m ℝ) 1
+  rw [Matrix.mul_one, Units.inv_mul] at h
+  exact h.trans (tendsto_flow_diagonal_one_iff _)
+
 end Symmetric
 
 variable {G : Subgroup (GL m ℝ)} {X : Matrix m m ℝ}
@@ -507,12 +545,13 @@ orthonormal eigenbasis of `X`, with eigenvalues `d`, it is cut out by the vanish
 entries `(i, j)` with `d i < d j`. -/
 theorem isClosed_dynamicParabolic (hG : IsClosed (G : Set (GL m ℝ))) (hX : X.IsSymm) :
     IsClosed (G.dynamicParabolic X : Set (GL m ℝ)) := by
-  obtain ⟨O, d, -, hXd⟩ := hX.exists_orthogonal_diagonal
-  have : (G.dynamicParabolic X : Set (GL m ℝ)) = (G : Set (GL m ℝ)) ∩ ⋂ i, ⋂ j,
-      {g | d i < d j → (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * g * O) i j = 0} := by
+  obtain ⟨O, d, -, rfl⟩ := hX.exists_orthogonal_diagonal
+  have : (G.dynamicParabolic (O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)) :
+      Set (GL m ℝ)) = (G : Set (GL m ℝ)) ∩ ⋂ i, ⋂ j,
+        {g | d i < d j → (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * g * O) i j = 0} := by
     ext g
     simp only [SetLike.mem_coe, Set.mem_inter_iff, Set.mem_iInter, Set.mem_ofPred_eq]
-    exact and_congr_right fun _ ↦ (bddFlow_iff_diagonal hXd g).trans (bddFlow_diagonal_iff _)
+    exact mem_dynamicParabolic_units_conj_diagonal_iff
   rw [this]
   exact hG.inter (isClosed_iInter_apply_eq _ _ _ _)
 
@@ -521,16 +560,14 @@ orthonormal eigenbasis of `X`, with eigenvalues `d`, it is cut out by the equati
 `g i j = δ i j` for `d i ≤ d j`. -/
 theorem isClosed_dynamicUnipotent (hG : IsClosed (G : Set (GL m ℝ))) (hX : X.IsSymm) :
     IsClosed (G.dynamicUnipotent X : Set (GL m ℝ)) := by
-  obtain ⟨O, d, -, hXd⟩ := hX.exists_orthogonal_diagonal
-  have : (G.dynamicUnipotent X : Set (GL m ℝ)) = (G : Set (GL m ℝ)) ∩ ⋂ i, ⋂ j,
-      {g | d i ≤ d j → (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * g * O) i j =
-        (1 : Matrix m m ℝ) i j} := by
+  obtain ⟨O, d, -, rfl⟩ := hX.exists_orthogonal_diagonal
+  have : (G.dynamicUnipotent (O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)) :
+      Set (GL m ℝ)) = (G : Set (GL m ℝ)) ∩ ⋂ i, ⋂ j,
+        {g | d i ≤ d j → (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * g * O) i j =
+          (1 : Matrix m m ℝ) i j} := by
     ext g
     simp only [SetLike.mem_coe, Set.mem_inter_iff, Set.mem_iInter, Set.mem_ofPred_eq]
-    refine and_congr_right fun _ ↦ ?_
-    have h := tendsto_flow_iff_diagonal hXd (g : Matrix m m ℝ) 1
-    rw [Matrix.mul_one, Units.inv_mul] at h
-    exact h.trans (tendsto_flow_diagonal_one_iff _)
+    exact mem_dynamicUnipotent_units_conj_diagonal_iff
   rw [this]
   exact hG.inter (isClosed_iInter_apply_eq _ _ _ _)
 
