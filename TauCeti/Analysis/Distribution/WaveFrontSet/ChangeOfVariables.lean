@@ -102,8 +102,9 @@ private theorem localFourier_compCLMOfOpenPartialHomeomorph_eq (T : 𝓓'(Ω, �
     · simp only [bilinLeftCLM_apply, ContinuousLinearMap.mul_apply', coe_ofSupportedIn, hG,
         pushforwardCLM_apply_of_mem _ hy, hσ y hy hφy, TauCeti.fourierAtom_eq_fourierChar,
         real_smul, real_inner_comm ζ]
-      rw [mul_assoc, ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
-      ring_nf
+      rw [mul_assoc, ← Circle.coe_mul, ← AddChar.map_add_eq_mul, ← mul_assoc]
+      congr 3
+      ring
   · simp [pushforwardCLM_apply_of_notMem _ hy, hG]
 
 omit [FiniteDimensional ℝ E] in

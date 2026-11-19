@@ -136,9 +136,7 @@ private theorem integral_ibpAmplitude_mul_fourierChar [MeasurableSpace E] [Borel
   -- The derivative of the phase factor `𝐞 ∘ Φ`.
   have hG (y : E) : fderiv ℝ (fun z ↦ (𝐞 (Φ z) : ℂ)) y w =
       (2 * π * Complex.I * 𝐞 (Φ y)) * (fderiv ℝ Φ y w : ℂ) := by
-    have h1 := (Real.hasDerivAt_fourierChar (Φ y)).hasFDerivAt.comp y
-      ((hΦ.differentiable (by simp)) y).hasFDerivAt
-    rw [show (fun z ↦ (𝐞 (Φ z) : ℂ)) = (fun t : ℝ ↦ (𝐞 t : ℂ)) ∘ Φ from rfl, h1.fderiv]
+    rw [((hΦ.differentiable (by simp)) y).hasFDerivAt.fourierChar.fderiv]
     simp [mul_comm]
   have hGc : ContDiff ℝ ∞ fun z ↦ (𝐞 (Φ z) : ℂ) := hΦ.fourierChar
   have hibp := integral_bilinear_fderiv_right_eq_neg_left_of_hasCompactSupport (μ := μ)
@@ -241,7 +239,8 @@ private theorem norm_iteratedFDeriv_ofReal_smoothRecip_comp_le {a : E → ℝ} (
     (hy : a y ∈ Icc 1 D) (hDa : ∀ i, 1 ≤ i → i ≤ M → ‖iteratedFDeriv ℝ i a y‖ ≤ D ^ i) {j : ℕ}
     (hj : j ≤ M) :
     ‖iteratedFDeriv ℝ j (fun z ↦ (smoothRecip (a z) : ℂ)) y‖ ≤ M ! * Cg * D ^ M := by
-  have hcomp : (fun z ↦ (smoothRecip (a z) : ℂ)) = Complex.ofRealLI ∘ (smoothRecip ∘ a) := rfl
+  have hcomp : (fun z ↦ (smoothRecip (a z) : ℂ)) = Complex.ofRealLI ∘ (smoothRecip ∘ a) :=
+    funext fun _ ↦ by simp [Complex.ofRealLI_apply]
   rw [hcomp, LinearIsometry.norm_iteratedFDeriv_comp_left _
     ((contDiff_smoothRecip.comp ha).contDiffAt) (by simp)]
   calc ‖iteratedFDeriv ℝ j (smoothRecip ∘ a) y‖ ≤ j ! * Cg * D ^ j :=
@@ -366,6 +365,38 @@ private theorem norm_iteratedFDeriv_const_sub_inner_fderiv_le {σ : V → V} (h�
         · exact (innerSL_apply_norm ℝ ξ).le
         · exact hσ.norm_iteratedFDeriv_fderiv_apply_le (by simp) w y
 
+/-- The phase `y ↦ ⟪Bᵀ ξ - m, y⟫ - ⟪ξ, σ y⟫` has derivative `‖m‖ + ⟪ξ, (B - Dσ(y)) w⟫` in the
+direction `w = -m / ‖m‖`. -/
+private theorem fderiv_phase_apply_neg_smul [FiniteDimensional ℝ V] {σ : V → V}
+    (hσ : ContDiff ℝ ∞ σ) (B : V →L[ℝ] V) (ξ : V) {m : V} (hm : m ≠ 0) (y : V) :
+    fderiv ℝ (fun y ↦ innerSL ℝ ((B†) ξ - m) y - innerSL ℝ ξ (σ y)) y (-(‖m‖⁻¹ • m)) =
+      ‖m‖ + ⟪ξ, (B - fderiv ℝ σ y) (-(‖m‖⁻¹ • m))⟫ := by
+  have h : HasFDerivAt (fun y ↦ innerSL ℝ ((B†) ξ - m) y - innerSL ℝ ξ (σ y))
+      (innerSL ℝ ((B†) ξ - m) - (innerSL ℝ ξ).comp (fderiv ℝ σ y)) y :=
+    ((innerSL ℝ ((B†) ξ - m)).hasFDerivAt (x := y)).sub
+      ((innerSL ℝ ξ).hasFDerivAt.comp y ((hσ.differentiable (by simp)) y).hasFDerivAt)
+  have hm0 : ‖m‖ ≠ 0 := norm_ne_zero_iff.2 hm
+  rw [h.fderiv]
+  simp only [sub_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, inner_sub_left,
+    ContinuousLinearMap.adjoint_inner_left, map_neg, map_smul, inner_neg_right,
+    inner_smul_right, real_inner_self_eq_norm_sq, inner_sub_right]
+  have hmm : ‖m‖⁻¹ * ‖m‖ ^ 2 = ‖m‖ := by field_simp
+  linear_combination hmm
+
+/-- The Fourier transform at `m` of `y ↦ ψ(y) 𝐞(⟪y, Bᵀ ξ⟫ - ⟪σ y, ξ⟫)` is the oscillatory integral
+of `ψ` against the phase `y ↦ ⟪Bᵀ ξ - m, y⟫ - ⟪ξ, σ y⟫`. -/
+private theorem fourier_mul_fourierChar_eq_integral [FiniteDimensional ℝ V] [MeasurableSpace V]
+    [BorelSpace V] (ψ : V → ℂ) (σ : V → V) (B : V →L[ℝ] V) (ξ m : V) :
+    𝓕 (fun y ↦ ψ y * 𝐞 (⟪y, (B†) ξ⟫ - ⟪σ y, ξ⟫)) m =
+      ∫ y, ψ y * 𝐞 (innerSL ℝ ((B†) ξ - m) y - innerSL ℝ ξ (σ y)) := by
+  rw [Real.fourier_eq]
+  refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
+  simp only [Circle.smul_def, smul_eq_mul, innerSL_apply_apply]
+  rw [mul_left_comm, ← Circle.coe_mul, ← AddChar.map_add_eq_mul, inner_sub_left,
+    real_inner_comm ((B†) ξ) y, real_inner_comm m y, real_inner_comm ξ (σ y)]
+  congr 3
+  ring
+
 /-- **Decay of the Fourier transform of a cutoff with a nonlinear phase.** Let `ψ` be smooth with
 compact support and `σ` smooth with `‖Dσ(y) - B‖ ≤ ε` on the support of `ψ`. Then the Fourier
 transform at `m` of `y ↦ ψ(y) 𝐞(⟪y, Bᵀ ξ⟫ - ⟪σ y, ξ⟫)` decays faster than every power of `‖m‖`,
@@ -387,28 +418,12 @@ theorem exists_norm_pow_mul_norm_fourier_mul_fourierChar_le [FiniteDimensional �
   have hm' : 0 < ‖m‖ := norm_pos_iff.2 hm
   set w : V := -(‖m‖⁻¹ • m)
   have hw : ‖w‖ = 1 := by simp [w, norm_smul, hm'.ne']
-  -- The phase, its derivative in the direction `w`, and the Fourier integral.
+  -- The phase and its derivative in the direction `w`.
   set Φ : V → ℝ := fun y ↦ innerSL ℝ ((B†) ξ - m) y - innerSL ℝ ξ (σ y)
   have hΦ : ContDiff ℝ ∞ Φ :=
     (innerSL ℝ ((B†) ξ - m)).contDiff.sub ((innerSL ℝ ξ).contDiff.comp hσ)
-  have hΦd (y : V) : fderiv ℝ Φ y w = ‖m‖ + ⟪ξ, (B - fderiv ℝ σ y) w⟫ := by
-    have h : HasFDerivAt Φ (innerSL ℝ ((B†) ξ - m) - (innerSL ℝ ξ).comp (fderiv ℝ σ y)) y :=
-      ((innerSL ℝ ((B†) ξ - m)).hasFDerivAt (x := y)).sub
-        ((innerSL ℝ ξ).hasFDerivAt.comp y ((hσ.differentiable (by simp)) y).hasFDerivAt)
-    have hm0 : ‖m‖ ≠ 0 := hm'.ne'
-    rw [h.fderiv]
-    simp only [sub_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, inner_sub_left,
-      ContinuousLinearMap.adjoint_inner_left, w, map_neg, map_smul, inner_neg_right,
-      inner_smul_right, real_inner_self_eq_norm_sq, inner_sub_right]
-    have hmm : ‖m‖⁻¹ * ‖m‖ ^ 2 = ‖m‖ := by field_simp
-    linear_combination hmm
-  have hFourier : 𝓕 (fun y ↦ ψ y * 𝐞 (⟪y, (B†) ξ⟫ - ⟪σ y, ξ⟫)) m = ∫ y, ψ y * 𝐞 (Φ y) := by
-    rw [Real.fourier_eq]
-    refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
-    simp only [Circle.smul_def, smul_eq_mul, Φ, innerSL_apply_apply]
-    rw [mul_left_comm, ← Circle.coe_mul, ← AddChar.map_add_eq_mul, inner_sub_left,
-      real_inner_comm ((B†) ξ) y, real_inner_comm m y, real_inner_comm ξ (σ y)]
-    ring_nf
+  have hΦd (y : V) : fderiv ℝ Φ y w = ‖m‖ + ⟪ξ, (B - fderiv ℝ σ y) w⟫ :=
+    fderiv_phase_apply_neg_smul hσ B ξ hm y
   -- `∂_w Φ` lies in `[‖m‖ / 2, 3 ‖m‖ / 2]` and its derivatives are `O(‖ξ‖) = O(‖m‖)`.
   have hsmall {y : V} (hy : y ∈ tsupport ψ) : |⟪ξ, (B - fderiv ℝ σ y) w⟫| ≤ ‖m‖ / 2 := by
     calc |⟪ξ, (B - fderiv ℝ σ y) w⟫| ≤ ‖ξ‖ * (‖B - fderiv ℝ σ y‖ * ‖w‖) :=
@@ -424,10 +439,8 @@ theorem exists_norm_pow_mul_norm_fourier_mul_fourierChar_le [FiniteDimensional �
   have hderiv : ∀ y ∈ tsupport ψ, ∀ i, 1 ≤ i → i ≤ M →
       ‖iteratedFDeriv ℝ i (fun z ↦ fderiv ℝ Φ z w) y‖ ≤ max 3 (Cσ / ε) * (‖m‖ / 2) := by
     intro y hy i hi1 hiM
-    have heq : (fun z ↦ fderiv ℝ Φ z w) = fun z ↦ (‖m‖ + ⟪ξ, B w⟫) - ⟪ξ, fderiv ℝ σ z w⟫ := by
-      ext z
-      simp only [hΦd, sub_apply, inner_sub_right]
-      ring
+    have heq : (fun z ↦ fderiv ℝ Φ z w) = fun z ↦ (‖m‖ + ⟪ξ, B w⟫) - ⟪ξ, fderiv ℝ σ z w⟫ :=
+      funext fun z ↦ by rw [hΦd, sub_apply, inner_sub_right]; ring
     rw [heq]
     calc _ ≤ ‖ξ‖ * (‖iteratedFDeriv ℝ (i + 1) σ y‖ * ‖w‖) :=
           norm_iteratedFDeriv_const_sub_inner_fderiv_le hσ _ ξ w (by omega) y
@@ -439,7 +452,7 @@ theorem exists_norm_pow_mul_norm_fourier_mul_fourierChar_le [FiniteDimensional �
           nlinarith
       _ ≤ max 3 (Cσ / ε) * (‖m‖ / 2) := by gcongr; exact le_max_right _ _
   have h := hC Φ hΦ w hw.le (‖m‖ / 2) (by positivity) hrange hderiv
-  rw [hFourier]
+  rw [fourier_mul_fourierChar_eq_integral]
   calc ‖m‖ ^ M * ‖∫ y, ψ y * 𝐞 (Φ y)‖ ≤ ‖m‖ ^ M * (C / (‖m‖ / 2) ^ M) := by gcongr
     _ = C * 2 ^ M := by
         rw [div_pow]
