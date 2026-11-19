@@ -8,6 +8,8 @@ module
 public import TauCeti.QuantumGroups.UqSl2.ClebschGordan.Projection
 public import TauCeti.QuantumGroups.UqSl2.Dual.LadderModule
 
+import TauCeti.Algebra.Ring.Int.Units
+
 /-!
 # The trivial Clebsch–Gordan channel and duality
 
@@ -59,37 +61,6 @@ namespace TauCeti.UqSl2
 open BialgebraModule LadderModule
 
 variable {q : ℂ} [Fact (q ≠ 0)] {m : ℕ} {ε : ℤˣ}
-
-/-- An invariant functional, that is a module map to the trivial module, kills every vector of
-weight different from `1`. -/
-private theorem apply_eq_zero_of_mem_weightSpace {V : Type*} [AddCommGroup V] [Module ℂ V]
-    [Module (UqSl2 q) V] [IsScalarTower ℂ (UqSl2 q) V]
-    (g : V →ₗ[UqSl2 q] Trivial ℂ (UqSl2 q)) {μ : ℂ} (hμ : μ ≠ 1) {v : V}
-    (hv : v ∈ weightSpace q V μ) : g v = 0 := by
-  have h := congrArg (trivialEquiv ℂ (UqSl2 q)) (g.map_smul (k q) v)
-  rw [mem_weightSpace_iff.mp hv, LinearMapClass.map_smul_of_tower, map_smul, trivialEquiv_smul,
-    counit_k, smul_eq_mul, one_mul] at h
-  apply (trivialEquiv ℂ (UqSl2 q)).injective
-  rw [map_zero]
-  have h' : (μ - 1) * trivialEquiv ℂ (UqSl2 q) (g v) = 0 := by linear_combination h
-  exact (mul_eq_zero.mp h').resolve_left (sub_ne_zero.mpr hμ)
-
-/-- An invariant functional on `L_k^ζ` is determined by its value on `v₀`: it kills every lower
-ladder vector, since `F` acts by `0` on the trivial module. -/
-private theorem apply_eq_basis_repr_zero_smul (hq : IsGenericQuantumParameter q) {k : ℕ}
-    {ζ : ℤˣ} (h : LadderModule q k ζ →ₗ[UqSl2 q] Trivial ℂ (UqSl2 q)) (z : LadderModule q k ζ) :
-    h z = (basis q k ζ).repr z 0 • h (vec q k ζ 0) := by
-  have hvec (l : ℕ) : h (vec q k ζ ((l : ℤ) + 1)) = 0 := by
-    have h1 := congrArg (trivialEquiv ℂ (UqSl2 q)) (h.map_smul (f q) (vec q k ζ l))
-    rw [f_smul_vec, LinearMapClass.map_smul_of_tower, map_smul, trivialEquiv_smul, counit_f,
-      zero_mul, smul_eq_mul] at h1
-    apply (trivialEquiv ℂ (UqSl2 q)).injective
-    rw [map_zero]
-    exact (mul_eq_zero.mp h1).resolve_left (quantumInteger_ne_zero hq (by omega))
-  conv_lhs => rw [← (basis q k ζ).sum_repr z]
-  rw [map_sum, Fin.sum_univ_succ, Finset.sum_eq_zero fun i _ => ?_, add_zero]
-  · rw [LinearMap.map_smul_of_tower, ← vec_coe, Fin.val_zero, Nat.cast_zero]
-  · rw [LinearMap.map_smul_of_tower, ← vec_coe, Fin.val_succ, Nat.cast_succ, hvec, smul_zero]
 
 omit [Fact (q ≠ 0)] in
 /-- The weight `εδ q^(m + n - 2j)` of a Clebsch–Gordan vector of `L_m^ε ⊗ L_m^ε` is not `1`
@@ -189,8 +160,7 @@ private theorem clebschGordanCoeff_mul_contragredientEquiv_vec (hq : IsGenericQu
       mul_ne_zero (quantumInteger_ne_zero hq (by omega)) (quantumInteger_ne_zero hq (by omega))
     have hqq : q ^ ((m : ℤ) - 2 * i) * q ^ (2 * (i : ℤ) + 2 - m) = q ^ 2 := by
       rw [← zpow_add₀ hq0, show (m : ℤ) - 2 * i + (2 * i + 2 - m) = (2 : ℕ) by ring, zpow_natCast]
-    have hε : (ε : ℂ) ^ 2 = 1 := by
-      rw [sq, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
+    have hε : ((ε : ℤ) : ℂ) ^ 2 = 1 := Int.cast_units_sq ε
     push_cast
     apply mul_left_cancel₀ hne
     linear_combination
@@ -203,19 +173,6 @@ private theorem clebschGordanCoeff_mul_contragredientEquiv_vec (hq : IsGenericQu
       (q ^ ((m : ℤ) - 2 * i) * q ^ (2 * (i : ℤ) + 2 - m) * quantumInteger q ((i : ℤ) + 1) *
         quantumInteger q ((m : ℤ) - i) * q ^ (2 * i)) * hε +
       (quantumInteger q ((i : ℤ) + 1) * quantumInteger q ((m : ℤ) - i) * q ^ (2 * i)) * hqq
-
-/-- The geometric sum `∑_(i ≤ m) q^(2i)` is `q^m [m + 1]_q`. -/
-private theorem sum_range_pow_two_mul (hq : IsGenericQuantumParameter q) (m : ℕ) :
-    ∑ i ∈ Finset.range (m + 1), q ^ (2 * i) = q ^ m * quantumInteger q ((m : ℤ) + 1) := by
-  have hq0 : q ≠ 0 := Fact.out
-  have h := quantumInteger_natCast_eq_sum hq.sub_inv_ne_zero (m + 1)
-  push_cast at h
-  rw [h, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← zpow_natCast, ← zpow_natCast, ← zpow_add₀ hq0]
-  congr 1
-  push_cast
-  ring
 
 /-- The functional `v ⊗ w ↦ (v₀-coordinate of v) · C(w)(v₀)` on `L_m^ε ⊗ L_m^ε`, used to read off
 the scalar relating coevaluation and the trivial-channel Clebsch–Gordan vector. -/
@@ -284,11 +241,9 @@ theorem tensorMap_hopfDualEquiv_symm_dualCoeval (hq : IsGenericQuantumParameter 
   have hs : trivialEquiv ℂ (UqSl2 q) r = s * ((-(ε : ℂ)) ^ m * q ^ m) := by
     rw [← coevalCoord_tensorMap_dualCoeval hq r, ← hxdef, ← coevalCoord_clebschGordanVector hq,
       hx, LinearMap.map_smul_of_tower, smul_eq_mul]
-  have hε : (ε : ℂ) ^ 2 = 1 := by
-    rw [sq, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
   have hprod : ((-(ε : ℂ)) ^ m * q ^ m) * ((-(ε : ℂ)) ^ m * q ^ (-(m : ℤ))) = 1 := by
-    rw [mul_mul_mul_comm, ← pow_add, ← two_mul, pow_mul, neg_sq, hε, one_pow, one_mul,
-      ← zpow_natCast, ← zpow_add₀ hq0, add_neg_cancel, zpow_zero]
+    rw [mul_mul_mul_comm, ← pow_add, ← two_mul, pow_mul, neg_sq, Int.cast_units_sq, one_pow,
+      one_mul, ← zpow_natCast, ← zpow_add₀ hq0, add_neg_cancel, zpow_zero]
   rw [hx, hs]
   congr 1
   linear_combination (-s) * hprod
@@ -312,7 +267,7 @@ theorem trivialEquiv_dualEval_tensorMap_hopfDualEquiv (hq : IsGenericQuantumPara
   simp only [clebschGordanVector_def, LinearMap.comp_apply, map_sum,
     LinearMap.map_smul_of_tower, tensorMap_tmul, LinearEquiv.coe_toLinearMap, LinearMap.id_apply,
     dualEval_tmul, map_smul, LinearEquiv.apply_symm_apply, dualEquiv_hopfDualEquiv, smul_eq_mul]
-  rw [← sum_range_pow_two_mul hq m]
+  rw [← sum_range_pow_two_mul_eq_pow_mul_quantumInteger hq.sub_inv_ne_zero m]
   refine Finset.sum_congr rfl fun i hi => ?_
   exact clebschGordanCoeff_mul_contragredientEquiv_vec hq
     (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi))
