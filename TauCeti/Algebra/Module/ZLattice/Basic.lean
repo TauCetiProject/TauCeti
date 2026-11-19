@@ -24,7 +24,9 @@ the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is a
 so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
 equivalence; precomposing a linear map with a linear equivalence likewise preserves discreteness
 and fullness of its range. A discrete subgroup containing a full lattice is a full lattice, and so
-is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`).
+is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`). At most `dim E`
+vectors whose integer span contains a full lattice are linearly independent
+(`IsZLattice.linearIndependent_of_le_span`).
 
 ## Main results
 
@@ -54,6 +56,8 @@ is a discrete subgroup of finite index in one (`IsZLattice.of_relIndex_ne_zero`)
 * `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
   multiples of a positive constant `c` by integers is discrete.
 * `IsZLattice.of_le`: a discrete subgroup containing a full lattice is a full lattice.
+* `IsZLattice.linearIndependent_of_le_span`: at most `dim E` vectors whose integer span contains a
+  full lattice are linearly independent.
 * `ZLattice.instDiscreteTopologySpanSingleton`: the `ℤ`-span of a single vector in a real normed
   space is discrete.
 -/
@@ -259,6 +263,18 @@ theorem _root_.IsZLattice.of_relIndex_ne_zero {K : Type*} [NormedField K] [CharZ
     rw [← Nat.cast_smul_eq_nsmul K, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn.ne')]
   rw [hx']
   exact Submodule.smul_mem _ _ (Submodule.subset_span hmem.1)
+
+/-- **At most `dim E` vectors whose integer span contains a full lattice are independent.** If the
+integer span of a family of at most `dim E` vectors contains a full lattice `L`, the family spans
+`E` over `K`, as `L` does, so it is linearly independent over `K`. -/
+theorem _root_.IsZLattice.linearIndependent_of_le_span {K : Type*} [NormedField K] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace K E] {L : Submodule ℤ E} [DiscreteTopology L]
+    [IsZLattice K L] {ι : Type*} [Fintype ι] {v : ι → E} (hcard : Fintype.card ι ≤ finrank K E)
+    (hv : L ≤ Submodule.span ℤ (range v)) : LinearIndependent K v := by
+  have hspan : (⊤ : Submodule K E) ≤ Submodule.span K (range v) := by
+    rw [← IsZLattice.span_top (K := K) (L := L), Submodule.span_le]
+    exact fun x hx ↦ Submodule.span_le_restrictScalars ℤ K _ (hv hx)
+  exact linearIndependent_of_top_le_span_of_card_le_finrank hspan hcard
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
