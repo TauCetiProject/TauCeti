@@ -75,6 +75,13 @@ theorem ncoeff_derivative (A : VertexOperator R V) (n : ℤ) :
   have h₂ : -(n - 1) - 1 = -n := by omega
   rw [h₁, h₂]
 
+/-- The identity field is constant: `∂ id = 0`. -/
+@[simp]
+theorem derivative_idField : derivative (idField : VertexOperator R V) = 0 :=
+  ext_ncoeff fun n ↦ by
+    rw [ncoeff_derivative, ncoeff_idField]
+    split_ifs <;> simp_all
+
 /-- **Creation recursion.** If an endomorphism `T` kills `vac` and acts as `∂` on a field `B` by
 commutation, then `T (B₍ₘ₎ vac) = -m • B₍ₘ₋₁₎ vac` for every `m : ℤ`. -/
 theorem apply_ncoeff_apply_of_lie {T : Module.End R V} {vac : V} (hvac : T vac = 0)
