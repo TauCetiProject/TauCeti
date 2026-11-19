@@ -12,11 +12,12 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Generic
 # Generic sections that do not vanish on a given countable set
 
 Let `s₀ + ∑ i, a i • s i` be the affine finite-parameter perturbation of a smooth section of a
-real vector bundle by a family `s` spanning every fiber (`ContMDiffSection.affineFamily`). For a
-point `x`, the parameters whose section does not vanish at `x` form an open set, and a dense one
+real vector bundle by a finite family `s` of smooth sections (`ContMDiffSection.affineFamily`).
+For a point `x`, the parameters whose section does not vanish there form an open set, dense
 when one perturbing section is nonzero there: its complement is a proper affine subspace of the
-parameter space. Intersecting countably many of these open dense sets
-with the residual set of regular parameters with finitely many zeros
+parameter space. On a compact base of the same dimension as the fiber, when the family spans
+every fiber, intersecting countably many of these open dense sets with the residual set of regular
+parameters with finitely many zeros
 (`ContMDiffSection.mem_residual_setOf_regular_and_finite_zero_affineFamily`) shows that a generic
 smooth section with regular, finitely many zeros is nonzero on a given countable set.
 
