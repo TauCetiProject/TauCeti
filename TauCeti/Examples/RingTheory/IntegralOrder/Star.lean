@@ -105,7 +105,7 @@ theorem mem_adjoin_two_omega {x : QuadraticAlgebra ℚ (-1) 0} :
     | add x y _ _ hx hy =>
       obtain ⟨m, k, rfl⟩ := hx
       obtain ⟨m', k', rfl⟩ := hy
-      exact ⟨m + m', k + k', by ext <;> simp; ring⟩
+      exact ⟨m + m', k + k', by ext <;> simp [mul_add]⟩
     | mul x y _ _ hx hy =>
       obtain ⟨m, k, rfl⟩ := hx
       obtain ⟨m', k', rfl⟩ := hy

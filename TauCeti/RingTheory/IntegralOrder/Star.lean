@@ -219,7 +219,7 @@ section Bot
 variable [StarRing R] [StarRing F] [StarModule R F]
 
 variable (R F) in
-/-- The image of `R` is a star-order in its fraction field `F`. -/
+/-- The image of `R` is a star-order in `F`. -/
 def bot : StarOrder R F F :=
   ofSubalgebra ⊥ isOrder_bot fun x hx => by
     obtain ⟨r, rfl⟩ := Algebra.mem_bot.1 hx
