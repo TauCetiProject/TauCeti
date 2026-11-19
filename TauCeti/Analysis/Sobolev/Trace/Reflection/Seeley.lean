@@ -48,8 +48,8 @@ form a convergent product. Tannery's theorem passes the identities to the limit 
 * `TauCeti.HalfSpaceExtension.seeleyExtension`: Seeley's extension operator.
 * `TauCeti.HalfSpaceExtension.contDiff_seeleyExtension`: the extension of a function `C^∞` on the
   closed upper half-space is `C^∞`.
-* `TauCeti.HalfSpaceExtension.exists_smooth_extension_halfSpace`: every function `C^∞` on the closed
-  upper half-space is the restriction of a `C^∞` function.
+* `TauCeti.HalfSpaceExtension.exists_contDiff_infty_extension_halfSpace`: every function `C^∞` on
+  the closed upper half-space is the restriction of a `C^∞` function.
 
 ## References
 
@@ -128,8 +128,10 @@ private theorem one_le_seeleyFactor_add (k i : ℕ) :
     linarith
   have heq : seeleyFactor k (k + 1 + i) =
       1 + (1 + 2 ^ k) / ((2 : ℝ) ^ (k + 1 + i) - 2 ^ k) := by
-    rw [seeleyFactor, ← neg_div_neg_eq, neg_sub, one_add_div hpos.ne']
-    ring_nf
+    have hne : (2 : ℝ) ^ k - 2 ^ (k + 1 + i) ≠ 0 := by linarith
+    rw [seeleyFactor]
+    field_simp
+    ring
   rw [heq]
   refine ⟨le_add_of_nonneg_right (by positivity), ?_⟩
   gcongr 1 + ?_
@@ -139,19 +141,20 @@ private theorem one_le_seeleyFactor_add (k i : ℕ) :
       rw [one_div, inv_pow]; field_simp
     _ ≤ 2 * (1 / 2) ^ i * ((2 : ℝ) ^ (k + 1 + i) - 2 ^ k) := by gcongr
 
-private theorem seeleyTail_mono (k : ℕ) : Monotone (seeleyTail k) := by
-  refine monotone_nat_of_le_succ fun M ↦ ?_
-  simp only [seeleyTail, Finset.prod_range_succ]
-  have h0 : 0 ≤ ∏ i ∈ Finset.range M, seeleyFactor k (k + 1 + i) :=
-    Finset.prod_nonneg fun i _ ↦ zero_le_one.trans (one_le_seeleyFactor_add k i).1
-  exact le_mul_of_one_le_right h0 (one_le_seeleyFactor_add k M).1
+private theorem seeleyFactor_add_nonneg (k i : ℕ) : 0 ≤ seeleyFactor k (k + 1 + i) :=
+  zero_le_one.trans (one_le_seeleyFactor_add k i).1
 
 private theorem seeleyTail_nonneg (k M : ℕ) : 0 ≤ seeleyTail k M :=
-  Finset.prod_nonneg fun i _ ↦ zero_le_one.trans (one_le_seeleyFactor_add k i).1
+  Finset.prod_nonneg fun i _ ↦ seeleyFactor_add_nonneg k i
+
+private theorem seeleyTail_mono (k : ℕ) : Monotone (seeleyTail k) := by
+  refine monotone_nat_of_le_succ fun M ↦ ?_
+  rw [seeleyTail, seeleyTail, Finset.prod_range_succ]
+  exact le_mul_of_one_le_right (seeleyTail_nonneg k M) (one_le_seeleyFactor_add k M).1
 
 private theorem seeleyTail_le (k M : ℕ) : seeleyTail k M ≤ Real.exp 4 := by
   calc seeleyTail k M ≤ ∏ i ∈ Finset.range M, (1 + 2 * (1 / 2 : ℝ) ^ i) :=
-        Finset.prod_le_prod₀ (fun i _ ↦ zero_le_one.trans (one_le_seeleyFactor_add k i).1)
+        Finset.prod_le_prod₀ (fun i _ ↦ seeleyFactor_add_nonneg k i)
           fun i _ ↦ (one_le_seeleyFactor_add k i).2
     _ ≤ Real.exp (∑ i ∈ Finset.range M, 2 * (1 / 2 : ℝ) ^ i) :=
         Real.prod_one_add_le_exp_sum _ fun i ↦ by positivity
@@ -168,11 +171,10 @@ private theorem abs_seeleyHead_succ_le (k : ℕ) :
     have hd : 0 < (2 : ℝ) ^ k - 2 ^ j := by linarith
     have hd' : 2 * ((2 : ℝ) ^ k - 2 ^ j) ≤ 2 ^ (k + 1) - 2 ^ j := by
       rw [pow_succ]; linarith [pow_pos (two_pos : (0 : ℝ) < 2) j]
-    rw [seeleyFactor, seeleyFactor, abs_div, abs_div, abs_of_pos hd,
-      abs_of_pos (hd.trans_le (le_trans (by linarith) hd'))]
-    rw [div_le_iff₀ (hd.trans_le (le_trans (by linarith) hd')), mul_comm, ← mul_assoc,
-      mul_div_assoc']
-    rw [le_div_iff₀ hd]
+    -- The denominator at least doubles from `k` to `k + 1`, so the factor at least halves.
+    have hd2 : 0 < (2 : ℝ) ^ (k + 1) - 2 ^ j := by linarith
+    rw [seeleyFactor, seeleyFactor, abs_div, abs_div, abs_of_pos hd, abs_of_pos hd2,
+      div_le_iff₀ hd2, mul_comm, ← mul_assoc, mul_div_assoc', le_div_iff₀ hd]
     nlinarith [abs_nonneg (-1 - (2 : ℝ) ^ j)]
   have hlast : |seeleyFactor (k + 1) k| ≤ 2 := by
     have hk : (0 : ℝ) < 2 ^ k := by positivity
@@ -204,7 +206,8 @@ private theorem summable_abs_seeleyHead_mul_pow (n : ℕ) :
     _ ≤ 1 / 2 * (|seeleyHead k| * ((2 : ℝ) ^ k) ^ n) := by gcongr
 
 /-- **Seeley's coefficients** `aₖ = ∏_{j ≠ k} (1 + 2ʲ) / (2ʲ - 2ᵏ)`: the factors of the nodes
-`j < k` times the convergent product of the factors of the nodes `j > k`. They satisfy
+`j < k` times the convergent product of the factors of the nodes `j > k`
+(`tendsto_prod_seeleyCoeff`). They satisfy
 `∑ₖ aₖ (-2ᵏ) ^ j = 1` for every `j` (`tsum_seeleyCoeff_mul_neg_pow`) with absolute convergence
 against every power of `2ᵏ` (`summable_abs_seeleyCoeff_mul_pow`). -/
 def seeleyCoeff (k : ℕ) : ℝ := seeleyHead k * ⨆ M, seeleyTail k M
@@ -227,6 +230,18 @@ private theorem tendsto_seeleyWeight (k : ℕ) :
   refine (htail.const_mul (seeleyHead k)).congr' ?_
   filter_upwards [eventually_ge_atTop k] with N hN
   exact (seeleyWeight_eq_head_mul_tail hN).symm
+
+/-- **Seeley's product formula.** The coefficient `aₖ` is the limit of the finite products
+`∏_{j ≤ N, j ≠ k} (1 + 2ʲ) / (2ʲ - 2ᵏ)`, the Lagrange weights of the node `2ᵏ` among the nodes
+`2⁰, …, 2ᴺ` at the point `-1`. -/
+theorem tendsto_prod_seeleyCoeff (k : ℕ) :
+    Tendsto (fun N ↦ ∏ j ∈ (Finset.range (N + 1)).erase k, (1 + (2 : ℝ) ^ j) / (2 ^ j - 2 ^ k))
+      atTop (𝓝 (seeleyCoeff k)) := by
+  refine (tendsto_seeleyWeight k).congr fun N ↦ ?_
+  rw [seeleyWeight_eq_prod]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  rw [seeleyFactor, ← neg_div_neg_eq]
+  congr 1 <;> ring
 
 /-- Seeley's coefficients are absolutely summable against every power of `2ᵏ`. -/
 theorem summable_abs_seeleyCoeff_mul_pow (n : ℕ) :
@@ -346,7 +361,7 @@ def seeleyExtension (f : ℝ × E → F) (x : ℝ × E) : F :=
   simp [seeleyExtension, hx]
 
 /-- At negative times the extension is Seeley's infinite reflection. -/
-theorem seeleyExtension_of_neg (f : ℝ × E → F) {x : ℝ × E} (hx : x.1 < 0) :
+@[simp] theorem seeleyExtension_of_neg (f : ℝ × E → F) {x : ℝ × E} (hx : x.1 < 0) :
     seeleyExtension f x =
       ∑' k, seeleyCoeff k • Real.smoothTransition (2 + 2 ^ k * x.1) • f (timeScale (-2 ^ k) x) := by
   simp [seeleyExtension, hx.not_ge]
@@ -401,8 +416,7 @@ private theorem seeleyCutoff_eq_self (f : ℝ × E → F) {y : ℝ × E} (hy : y
 private theorem seeleyCutoff_timeScale (f : ℝ × E → F) (k : ℕ) (x : ℝ × E) :
     seeleyCutoff f (timeScale (-2 ^ k) x) =
       Real.smoothTransition (2 + 2 ^ k * x.1) • f (timeScale (-2 ^ k) x) := by
-  rw [seeleyCutoff, timeScale_apply]
-  ring_nf
+  rw [seeleyCutoff, timeScale_apply, neg_mul, sub_neg_eq_add]
 
 /-- Along the orbits of a point of the lower half-space under the dilations by `-2ᵏ`, a function
 continuous on the upper half-space and vanishing at normal coordinates `t > 2` is bounded,
@@ -411,7 +425,7 @@ private theorem exists_forall_norm_timeScale_le {G : Type*} [NormedAddCommGroup 
     {φ : ℝ × E → G} (hφ : ContinuousOn φ (upperHalfSpace E))
     (h0 : ∀ y : ℝ × E, 2 < y.1 → φ y = 0) (z₀ : ℝ × E) :
     ∃ C, ∀ᶠ z in 𝓝 z₀, z.1 ≤ 0 → ∀ k : ℕ, ‖φ (timeScale (-2 ^ k) z)‖ ≤ C := by
-  let K : Set (ℝ × E) := Icc 0 2 ×ˢ {z₀.2}
+  set K : Set (ℝ × E) := Icc 0 2 ×ˢ {z₀.2} with hKdef
   have hK : IsCompact K := isCompact_Icc.prod isCompact_singleton
   have hKs : K ⊆ upperHalfSpace E := fun y hy ↦ mem_upperHalfSpace.mpr hy.1.1
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (hφ.mono hKs)
@@ -422,7 +436,7 @@ private theorem exists_forall_norm_timeScale_le {G : Type*} [NormedAddCommGroup 
     exact eventually_nhdsWithin_iff.mp ((hφ y (hKs hy)).norm.eventually
       (gt_mem_nhds (by linarith [hC y hy])))
   have hprod : 𝓝ˢ K = 𝓝ˢ (Icc (0 : ℝ) 2) ×ˢ 𝓝 z₀.2 := by
-    rw [show K = Icc 0 2 ×ˢ {z₀.2} from rfl, isCompact_Icc.nhdsSet_prod_eq isCompact_singleton,
+    rw [hKdef, isCompact_Icc.nhdsSet_prod_eq isCompact_singleton,
       nhdsSet_singleton]
   rw [hprod, eventually_prod_iff] at hev
   obtain ⟨pa, hpa, pb, hpb, hab⟩ := hev
@@ -555,7 +569,7 @@ theorem contDiff_seeleyExtension [CompleteSpace F] {f : ℝ × E → F}
 
 /-- Every function which is `C^∞` on the closed upper half-space is the restriction of a `C^∞`
 function on the whole space, namely its Seeley extension. -/
-theorem exists_smooth_extension_halfSpace [CompleteSpace F] {f : ℝ × E → F}
+theorem exists_contDiff_infty_extension_halfSpace [CompleteSpace F] {f : ℝ × E → F}
     (hf : ContDiffOn ℝ ∞ f (upperHalfSpace E)) :
     ∃ g : ℝ × E → F, ContDiff ℝ ∞ g ∧ EqOn g f (upperHalfSpace E) :=
   ⟨seeleyExtension f, contDiff_seeleyExtension hf, seeleyExtension_eqOn_upperHalfSpace f⟩

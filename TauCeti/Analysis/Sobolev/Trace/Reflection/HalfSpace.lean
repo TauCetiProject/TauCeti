@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.TangentCone.Prod
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
+public import Mathlib.Analysis.Normed.Operator.Prod
 public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Higher
 
@@ -52,12 +53,11 @@ def timeScale (a : ℝ) : (ℝ × E) →L[ℝ] ℝ × E :=
 
 /-- A time dilation by `a` has operator norm at most `max |a| 1`. -/
 theorem norm_timeScale_le (a : ℝ) : ‖(timeScale a : (ℝ × E) →L[ℝ] ℝ × E)‖ ≤ max |a| 1 := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ ?_
-  rw [timeScale_apply, Prod.norm_def, Prod.norm_def, Real.norm_eq_abs, abs_mul, Real.norm_eq_abs]
-  refine max_le (mul_le_mul (le_max_left _ _) (le_max_left _ _) (abs_nonneg _) (by positivity)) ?_
-  calc ‖x.2‖ = 1 * ‖x.2‖ := (one_mul _).symm
-    _ ≤ max |a| 1 * max |x.1| ‖x.2‖ :=
-      mul_le_mul (le_max_right _ _) (le_max_right _ _) (norm_nonneg _) (by positivity)
+  rw [timeScale, ContinuousLinearMap.opNorm_prod, Prod.norm_mk]
+  refine max_le_max ((ContinuousLinearMap.opNorm_smul_le _ _).trans ?_)
+    (ContinuousLinearMap.norm_snd_le ℝ ℝ E)
+  rw [Real.norm_eq_abs]
+  exact mul_le_of_le_one_right (abs_nonneg a) (ContinuousLinearMap.norm_fst_le ℝ ℝ E)
 
 /-- Expand a time-dilated multilinear term by its subset of time-direction slots. -/
 theorem map_timeScale_eq_sum_pow_card_smul {m : ℕ}
@@ -131,9 +131,19 @@ omit [NormedSpace ℝ E] in
 theorem isClosed_lowerHalfSpace : IsClosed (lowerHalfSpace E) :=
   isClosed_Iic.prod isClosed_univ
 
+/-- The upper half-space is convex. -/
+theorem convex_upperHalfSpace : Convex ℝ (upperHalfSpace E) :=
+  (convex_Ici 0).prod convex_univ
+
 /-- The lower half-space is convex. -/
 theorem convex_lowerHalfSpace : Convex ℝ (lowerHalfSpace E) :=
   (convex_Iic 0).prod convex_univ
+
+omit [NormedSpace ℝ E] in
+/-- The upper half-space has nonempty interior. -/
+theorem nonempty_interior_upperHalfSpace : (interior (upperHalfSpace E)).Nonempty :=
+  ⟨(1, 0), mem_interior_iff_mem_nhds.mpr
+    (prod_mem_nhds (Ici_mem_nhds (show (0 : ℝ) < 1 by norm_num)) univ_mem)⟩
 
 omit [NormedSpace ℝ E] in
 /-- The lower half-space has nonempty interior. -/
