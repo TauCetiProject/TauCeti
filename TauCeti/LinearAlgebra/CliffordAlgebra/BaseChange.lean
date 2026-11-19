@@ -186,9 +186,9 @@ theorem ofBaseChange_map_map {N : Type*} [AddCommGroup N] [Module R N]
   DFunLike.congr_fun (ofBaseChange_comp_map_map f) z
 
 /-- Under `CliffordAlgebra.toBaseChange`, the algebra map induced by the extended isometry
-`f.baseChange A` is the scalar extension `A ⊗ map f` of the algebra map induced by `f`. With
-`CliffordAlgebra.toBaseChange_ofBaseChangeAux` this is the scalar-extension square for
-`CliffordAlgebra.equivBaseChange`. -/
+`f.baseChange A` is the scalar extension `A ⊗ map f` of the algebra map induced by `f`. Since the
+forward map of `CliffordAlgebra.equivBaseChange` is `toBaseChange`, this is the naturality square
+of `equivBaseChange`. -/
 @[simp]
 theorem toBaseChange_map {N : Type*} [AddCommGroup N] [Module R N]
     {Q : QuadraticForm R M} {Q' : QuadraticForm R N} (f : Q →qᵢ Q')
