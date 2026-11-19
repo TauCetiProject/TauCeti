@@ -73,8 +73,8 @@ coordinate characters are pairwise distinct.
 * B. Mazur, *Deforming Galois representations*, in *Galois groups over `ℚ`*, MSRI Publications 16
   (1989), Section 1.1.
 * T. Gee, *Modularity lifting theorems*, Essential Number Theory 1 (2022), Section 3.1.
-* M. Kisin, *Moduli of finite flat group schemes and modularity*, lecture notes, Lecture 1, (1.2)
-  and Exercise 1.
+* M. Kisin, *Lectures on deformations of Galois representations*, Lecture 1, (1.2) and Exercise 1,
+  https://people.math.harvard.edu/~kisin/notes/notes.pdf.
 -/
 
 public section
@@ -103,7 +103,7 @@ condition imposed only at this level would not be `Φ_p`. -/
 theorem MazurFiniteness.finite_continuousZModDual (h : MazurFiniteness p G) :
     Finite (continuousZModDual p G) :=
   have := h ⊤
-  .of_injective _ (ContinuousMonoidHom.continuousZModDualMap_injective
+  .of_injective _ (ContinuousMonoidHom.continuousZModDualMap_injective_of_surjective
     (f := ⟨(⊤ : Subgroup G).subtype, continuous_subtype_val⟩) fun g ↦ ⟨⟨g, trivial⟩, rfl⟩)
 
 /-- **`Φ_p` passes to open subgroups.** An open subgroup of an open subgroup `U` of `G` is an open
@@ -131,7 +131,7 @@ theorem MazurFiniteness.of_surjective {H : Type*} [Group H] [TopologicalSpace H]
     MazurFiniteness p H := fun V ↦
   have : Finite (continuousZModDual p (V.toSubgroup.comap f.toMonoidHom)) :=
     h (V.comap f.toMonoidHom f.continuous)
-  .of_injective _ (ContinuousMonoidHom.continuousZModDualMap_injective
+  .of_injective _ (ContinuousMonoidHom.continuousZModDualMap_injective_of_surjective
     (f := ⟨f.toMonoidHom.subgroupComap V.toSubgroup, f.continuous.comp continuous_subtype_val
       |>.subtype_mk _⟩) (f.toMonoidHom.subgroupComap_surjective V.toSubgroup hf))
 
@@ -232,11 +232,10 @@ theorem subsingleton_continuousZModDual_semidirectProduct_zpowers_inv {N : Type*
     exact_mod_cast (ZMod.isUnit_iff_coprime 2 p).mpr (Nat.coprime_two_left.mpr hp)
   -- every element of the acting group is an involution
   have hσ (s : Subgroup.zpowers (MulEquiv.inv N)) : s * s = 1 := by
-    obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp s.2
+    obtain ⟨_, k, rfl⟩ := s
     have hinv : MulEquiv.inv N * MulEquiv.inv N = 1 := MulEquiv.ext fun _ ↦ inv_inv _
     ext1
-    rw [Subgroup.coe_mul, ← hk, ← zpow_add, ← two_mul, zpow_mul, zpow_two, hinv, one_zpow,
-      Subgroup.coe_one]
+    simp [← zpow_add, ← two_mul, zpow_mul, sq, hinv]
   -- twice every value of a character vanishes
   have hsq (χ : continuousZModDual p
       (N ⋊[(Subgroup.zpowers (MulEquiv.inv N)).subtype] Subgroup.zpowers (MulEquiv.inv N))) g :
@@ -244,8 +243,7 @@ theorem subsingleton_continuousZModDual_semidirectProduct_zpowers_inv {N : Type*
     have hl (n : N) : χ.toMul (.inl n) * χ.toMul (.inl n) = 1 := by
       have := congrArg χ.toMul
         (SemidirectProduct.inl_aut ⟨MulEquiv.inv N, Subgroup.mem_zpowers _⟩ n)
-      rw [Subgroup.coe_subtype, MulEquiv.inv_apply, map_inv SemidirectProduct.inl,
-        map_inv χ.toMul, map_mul, map_mul, map_inv SemidirectProduct.inr, map_inv χ.toMul,
+      simp only [Subgroup.coe_subtype, MulEquiv.inv_apply, map_inv, map_mul,
         mul_inv_cancel_comm] at this
       exact inv_eq_iff_mul_eq_one.mp this
     have hr (s : Subgroup.zpowers (MulEquiv.inv N)) :

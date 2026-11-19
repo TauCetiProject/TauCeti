@@ -131,7 +131,7 @@ theorem _root_.ContinuousMonoidHom.continuousZModDualMap_comp (g : H →ₜ* K) 
 
 /-- **The transpose of a surjective continuous homomorphism is injective**: a character of `H` is
 determined by its values on the image of `f`. -/
-theorem _root_.ContinuousMonoidHom.continuousZModDualMap_injective {f : G →ₜ* H}
+theorem _root_.ContinuousMonoidHom.continuousZModDualMap_injective_of_surjective {f : G →ₜ* H}
     (hf : Function.Surjective f) : Function.Injective (f.continuousZModDualMap (n := n)) :=
   fun _ _ h ↦ Additive.toMul.injective <| ContinuousMonoidHom.ext fun x ↦ by
     obtain ⟨g, rfl⟩ := hf x
