@@ -146,22 +146,8 @@ theorem comp_val_tangentHom (q : Q × M) :
 
 /-- The reparametrization of the zero term is zero. -/
 @[simp]
-theorem comp_zero : (0 : InhomogeneousTerm j J).comp j' g hg hgj = 0 := by
-  ext q v
-  have h := comp_val_tangentHom_apply (0 : InhomogeneousTerm j J) j' g hg hgj q v
-  rw [Submodule.coe_zero, DomainDependentHomSection.tangentHom_zero,
-    zero_apply] at h
-  refine ((DomainDependentHomSection.tangentHom_apply _ q v).symm.trans h).trans ?_
-  -- The zero maps of the pulled-back and original tangent fibres agree.
-  rfl
-
-omit [FiniteDimensional ℝ EP] [FiniteDimensional ℝ EQ] in
-/-- Two terms are equal when their readings in the tangent spaces agree. -/
-private theorem ext_tangentHom {j'' : ContMDiffAlmostComplexStructure IQ n Q}
-    {J' : ContMDiffAlmostComplexStructureFamily I M IQ Q n} {ν₁ ν₂ : InhomogeneousTerm j'' J'}
-    (h : ∀ q v, ν₁.val.tangentHom q v = ν₂.val.tangentHom q v) : ν₁ = ν₂ :=
-  InhomogeneousTerm.ext fun q v ↦ (DomainDependentHomSection.tangentHom_apply _ q v).symm.trans
-    ((h q v).trans (DomainDependentHomSection.tangentHom_apply _ q v))
+theorem comp_zero : (0 : InhomogeneousTerm j J).comp j' g hg hgj = 0 :=
+  ext_tangentHom fun q v ↦ by simp
 
 /-- Reparametrization is additive. -/
 @[simp]

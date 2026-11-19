@@ -67,9 +67,8 @@ namespace ContMDiffAlmostComplexStructureFamily
 biholomorphism `f : X' → X` of the domains. -/
 def compBiholomorph (J : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X ℓ)
     (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X' ℓ :=
-  J.comp ⟨f, (by simpa only [modelWithCornersSelf_restrictScalars,
-    Diffeomorph.coe_restrictScalars] using (f.restrictScalars ℝ).contMDiff :
-      ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ f).of_le (by exact_mod_cast le_top)⟩
+  J.comp ⟨f, (f.contMDiff_modelWithCornersSelf_restrictScalars ℝ).of_le
+    (by exact_mod_cast le_top)⟩
 
 omit [IsManifold 𝓘(ℂ) ∞ X] [IsManifold 𝓘(ℂ) ∞ X'] in
 /-- The reparametrized structure at `(x, y)` is the structure at `(f x, y)`. -/
@@ -101,9 +100,8 @@ def compBiholomorph
     (f : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X) :
     InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X').toContMDiff ℓ)
       (J.compBiholomorph f) :=
-  ν.comp _ _ ((by simpa only [modelWithCornersSelf_restrictScalars,
-    Diffeomorph.coe_restrictScalars] using (f.restrictScalars ℝ).contMDiff :
-      ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ f).of_le (by exact_mod_cast le_top))
+  ν.comp _ _ ((f.contMDiff_modelWithCornersSelf_restrictScalars ℝ).of_le
+      (by exact_mod_cast le_top))
     fun x v ↦ by
       simpa only [SmoothAlmostComplexStructure.toContMDiff_apply, ContMDiffMap.coeFn_mk] using
         ((f.contMDiff x).mdifferentiableAt (by simp)).mfderiv_ofComplexManifold_apply v
