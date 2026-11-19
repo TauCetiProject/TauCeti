@@ -54,7 +54,10 @@ bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear t
 and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
 `Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
 fields has the same continuous linear map at every point over either field
-(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`); when the two
+scalar actions are compatible, the one over `𝕜'` is the scalar restriction of the one over `𝕜`,
+including its zero extension off the base set
+(`Bundle.Trivialization.restrictScalars_continuousLinearMapAt`).
 -/
 
 public section
@@ -327,6 +330,20 @@ theorem coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt (𝕜' 𝕜 : Typ
     ⇑(e.continuousLinearMapAt 𝕜' b) = e.continuousLinearMapAt 𝕜 b := by
   ext v
   simp only [continuousLinearMapAt_apply, coe_linearMapAt]
+
+/-- The fibre-coordinate map of a trivialization over `𝕜'` is the scalar restriction of the
+fibre-coordinate map over `𝕜`, including its zero extension off the base set. Only compatibility
+of the two scalar actions is needed, not a field extension. -/
+@[simp]
+theorem restrictScalars_continuousLinearMapAt (𝕜' 𝕜 : Type*)
+    [NontriviallyNormedField 𝕜'] [NontriviallyNormedField 𝕜] {F : Type*} {E : B → Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜' F] [NormedSpace 𝕜 F] [∀ x, AddCommMonoid (E x)]
+    [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, LinearMap.CompatibleSMul (E x) F 𝕜' 𝕜]
+    [TopologicalSpace (TotalSpace F E)] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
+    (e : Trivialization F (π F E)) [e.IsLinear 𝕜'] [e.IsLinear 𝕜] (b : B) :
+    (e.continuousLinearMapAt 𝕜 b).restrictScalars 𝕜' = e.continuousLinearMapAt 𝕜' b :=
+  DFunLike.coe_injective
+    (coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt 𝕜' 𝕜 e b).symm
 
 end Bundle.Trivialization
 
