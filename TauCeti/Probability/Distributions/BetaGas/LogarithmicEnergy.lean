@@ -583,7 +583,8 @@ theorem truncatedLogarithmicEnergy_def (V : ℝ → ℝ) (M : ℝ) (μ : Probabi
       ∫ z, truncatedLogarithmicEnergyKernel V M z ∂(μ.prod μ).toMeasure :=
   (rfl)
 
-private theorem truncatedLogarithmicEnergyKernel_bounds {V : ℝ → ℝ} (M : ℝ) {a : ℝ}
+/-- With kernel floor `a` and cutoff `M`, the capped kernel takes values in `[min a M, M]`. -/
+theorem truncatedLogarithmicEnergyKernel_bounds {V : ℝ → ℝ} (M : ℝ) {a : ℝ}
     (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z) (z : ℝ × ℝ) :
     min a M ≤ truncatedLogarithmicEnergyKernel V M z ∧
       truncatedLogarithmicEnergyKernel V M z ≤ M := by
@@ -603,10 +604,12 @@ private def boundedTruncatedLogarithmicEnergyKernel {V : ℝ → ℝ} (hV : Cont
       simp only [ContinuousMap.coe_mk]
       exact ⟨by linarith [hx.1, hy.2], by linarith [hx.2, hy.1]⟩
 
-private theorem integrable_truncatedLogarithmicEnergyKernel {V : ℝ → ℝ} (hV : Measurable V)
+/-- For a measurable potential with a lower-bounded kernel, the capped kernel is integrable
+against any finite measure on the pair space. -/
+theorem integrable_truncatedLogarithmicEnergyKernel {V : ℝ → ℝ} (hV : Measurable V)
     (M : ℝ) {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z)
-    (μ : ProbabilityMeasure ℝ) :
-    Integrable (truncatedLogarithmicEnergyKernel V M) (μ.prod μ).toMeasure := by
+    (ν : Measure (ℝ × ℝ)) [IsFiniteMeasure ν] :
+    Integrable (truncatedLogarithmicEnergyKernel V M) ν := by
   have hm : Measurable (truncatedLogarithmicEnergyKernel V M) :=
     ((measurable_logarithmicEnergyKernel hV).min measurable_const).ereal_toReal
   refine (integrable_const (max (-min a M) M)).mono' hm.aestronglyMeasurable
@@ -629,8 +632,8 @@ theorem monotone_truncatedLogarithmicEnergy {V : ℝ → ℝ} (hV : Measurable V
     Monotone fun M ↦ truncatedLogarithmicEnergy V M μ := by
   intro M N hMN
   dsimp only [truncatedLogarithmicEnergy]
-  apply integral_mono (integrable_truncatedLogarithmicEnergyKernel hV M ha μ)
-    (integrable_truncatedLogarithmicEnergyKernel hV N ha μ)
+  apply integral_mono (integrable_truncatedLogarithmicEnergyKernel hV M ha (μ.prod μ).toMeasure)
+    (integrable_truncatedLogarithmicEnergyKernel hV N ha (μ.prod μ).toMeasure)
   intro z
   rw [← EReal.coe_le_coe_iff, coe_truncatedLogarithmicEnergyKernel,
     coe_truncatedLogarithmicEnergyKernel]
@@ -645,7 +648,7 @@ private theorem truncatedLogarithmicEnergy_sub_eq_lintegral {V : ℝ → ℝ} (h
         ∂(μ.prod μ).toMeasure : ℝ≥0∞) : EReal) := by
   let ν := (μ.prod μ).toMeasure
   let g := truncatedLogarithmicEnergyKernel V M
-  have hi : Integrable g ν := integrable_truncatedLogarithmicEnergyKernel hV M ha μ
+  have hi : Integrable g ν := integrable_truncatedLogarithmicEnergyKernel hV M ha ν
   have hpoint (z : ℝ × ℝ) :
       (g z : EReal) - (a : EReal) =
         min (logarithmicEnergyKernel V z - (a : EReal)) ((M - a : ℝ) : EReal) := by
@@ -724,6 +727,17 @@ theorem logarithmicEnergy_eq_iSup_truncated {V : ℝ → ℝ} (hV : Measurable V
       EReal.coe_ennreal_strictMono.monotone
   rw [logarithmicEnergy_eq_lintegral_sub_add μ ha, hJ, hsup]
   simp_rw [hfin, EReal.iSup_sub_coe, EReal.sub_add_cancel]
+
+/-- For a measurable potential with a lower-bounded kernel, the truncated energy at every real
+cutoff is at most the full logarithmic energy. -/
+theorem coe_truncatedLogarithmicEnergy_le_logarithmicEnergy {V : ℝ → ℝ} (hV : Measurable V)
+    {a : ℝ} (ha : ∀ z, (a : EReal) ≤ logarithmicEnergyKernel V z)
+    (M : ℝ) (μ : ProbabilityMeasure ℝ) :
+    (truncatedLogarithmicEnergy V M μ : EReal) ≤ logarithmicEnergy V μ := by
+  obtain ⟨n, hn⟩ := exists_nat_ge (M - a)
+  have hM : M ≤ a + (n : ℝ) := sub_le_iff_le_add'.mp hn
+  rw [logarithmicEnergy_eq_iSup_truncated hV ha]
+  exact le_iSup_of_le n (EReal.coe_le_coe_iff.mpr (monotone_truncatedLogarithmicEnergy hV ha μ hM))
 
 /-- For an empirical measure the truncated energy is the average over ordered pairs. -/
 theorem truncatedLogarithmicEnergy_empiricalMeasureOfFintype (V : ℝ → ℝ)
