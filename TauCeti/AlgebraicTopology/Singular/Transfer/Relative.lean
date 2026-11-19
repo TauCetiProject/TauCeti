@@ -119,9 +119,8 @@ theorem singularChainComplexπ_comp_singularPairTransfer_assoc {K : ChainComplex
 on relative singular chains for every bijective self-map `f` of `E` over `B`. -/
 theorem singularPairTransfer_comp_singularChainComplexMap_of_comp_eq {f : E ⟶ E}
     (hf : Function.Bijective f) (hfp : f ≫ p = p) :
-    hp.singularPairTransfer hfin A R ≫ TopPair.singularChainComplexMap (TopPair.ofSubsetMap f
-        (by intro e he; rwa [Set.mem_preimage, ← ConcreteCategory.comp_apply, hfp] :
-          Set.MapsTo f (p ⁻¹' A) (p ⁻¹' A))) R =
+    hp.singularPairTransfer hfin A R ≫ TopPair.singularChainComplexMap
+        (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hfp A)) R =
       hp.singularPairTransfer hfin A R := by
   refine (cancel_epi ((TopPair.ofSubset A).singularChainComplexπ R)).1 ?_
   rw [singularChainComplexπ_comp_singularPairTransfer_assoc,
@@ -152,9 +151,8 @@ on relative singular homology for every bijective self-map `f` of `E` over `B`. 
 theorem homologyMap_singularPairTransfer_comp_singularHomologyMap_of_comp_eq {f : E ⟶ E}
     (hf : Function.Bijective f) (hfp : f ≫ p = p) :
     HomologicalComplex.homologyMap (hp.singularPairTransfer hfin A R) n ≫
-        (TopPair.ofSubset (p ⁻¹' A)).singularHomologyMap (TopPair.ofSubsetMap f
-          (by intro e he; rwa [Set.mem_preimage, ← ConcreteCategory.comp_apply, hfp] :
-            Set.MapsTo f (p ⁻¹' A) (p ⁻¹' A))) R n =
+        (TopPair.ofSubset (p ⁻¹' A)).singularHomologyMap
+          (TopPair.ofSubsetMap f (f.mapsTo_preimage_of_comp_eq hfp A)) R n =
       HomologicalComplex.homologyMap (hp.singularPairTransfer hfin A R) n :=
   (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <| congrArg
     (HomologicalComplex.homologyMap · n)

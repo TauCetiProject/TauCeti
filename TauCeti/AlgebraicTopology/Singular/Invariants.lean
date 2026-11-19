@@ -117,9 +117,8 @@ def isLimitMapConeTransferCone [Fintype G] [IsIso (Fintype.card G • 𝟙 R)] {
     (singularChainComplexFunctor C ⋙ (evaluation _ _).obj B ⋙ F).isIso_smul_id_obj _ R
   refine SingleObj.isLimitMapConeOfTransfer (hG.transferCone R)
     (SSet.chainComplexMap (TopCat.toSSet.map p) R) F ?_ ?_
-  · exact hG.isCoveringMap.singularTransfer_comp_chainComplexMap hG.finite_fiber R fun b ↦ by
-      obtain ⟨e, he⟩ := hG.surjective b
-      rw [Nat.card_congr (hG.fiberEquivGroup ⟨e, he⟩), Nat.card_eq_fintype_card]
+  · exact hG.isCoveringMap.singularTransfer_comp_chainComplexMap hG.finite_fiber R fun b ↦
+      (hG.natCard_fiber b).trans Nat.card_eq_fintype_card
   -- The functor `(singularChainComplexFunctor C).obj R` sends the action of `g` to `(g • ·)_*`.
   · simp only [Functor.comp_map, TopCat.actionFunctor_map]
     exact hG.chainComplexMap_comp_singularTransfer R
@@ -196,9 +195,7 @@ def isLimitMapConePairTransferCone [Fintype G] [IsIso (Fintype.card G • 𝟙 R
   refine SingleObj.isLimitMapConeOfTransfer (hG.pairTransferCone A R)
     (TopPair.singularChainComplexMap (TopPair.ofSubsetMap p (Set.mapsTo_preimage p A)) R) F ?_ ?_
   · exact hG.isCoveringMap.singularPairTransfer_comp_singularChainComplexMap hG.finite_fiber A R
-      fun b ↦ by
-        obtain ⟨e, he⟩ := hG.surjective b
-        rw [Nat.card_congr (hG.fiberEquivGroup ⟨e, he⟩), Nat.card_eq_fintype_card]
+      fun b ↦ (hG.natCard_fiber b).trans Nat.card_eq_fintype_card
   -- The action functor sends `g` to the map of pairs induced by `g • ·`.
   · exact hG.singularChainComplexMap_comp_singularPairTransfer A R
 
