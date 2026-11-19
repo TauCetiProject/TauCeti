@@ -286,13 +286,19 @@ def isotropyOrientationCharacter (hd : finrank ℝ E = d) (x : M) : stabilizer G
       map_one' := stabilizerScalar_one hd x
       map_mul' := stabilizerScalar_mul hd x }
 
+private lemma coe_isotropyOrientationCharacter (hd : finrank ℝ E = d) (x : M)
+    (h : stabilizer G x) :
+    (isotropyOrientationCharacter hd x h : ℤ) = stabilizerScalar hd x h :=
+  MonoidHom.coe_toHomUnits _ _
+
 /-- **An element of the stabilizer acts on top local homology by its orientation character.** -/
 theorem localHomologySMulIso_hom_apply_eq_zsmul (hd : finrank ℝ E = d) {x : M}
     (h : stabilizer G x)
     (z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) :
     (localHomologySMulIso (ModuleCat.of ℤ (ULift.{w} ℤ)) (h : G) (mem_stabilizer_iff.1 h.2)
-      d).hom z = (isotropyOrientationCharacter hd x h : ℤ) • z :=
-  stabilizerScalar_spec hd x h z
+      d).hom z = (isotropyOrientationCharacter hd x h : ℤ) • z := by
+  rw [coe_isotropyOrientationCharacter]
+  exact stabilizerScalar_spec hd x h z
 
 /-- An element of the stabilizer has trivial orientation character exactly when it acts trivially
 on `H_d(M, M ∖ {x}; ℤ)`, that is, when it preserves the local orientations at `x`. -/
@@ -303,6 +309,7 @@ theorem isotropyOrientationCharacter_eq_one_iff (hd : finrank ℝ E = d) {x : M}
         (mem_stabilizer_iff.1 h.2) d).hom z = z := by
   refine ⟨fun h1 z ↦ by rw [localHomologySMulIso_hom_apply_eq_zsmul hd h, h1, Units.val_one,
     one_zsmul], fun hall ↦ Units.ext ?_⟩
+  rw [coe_isotropyOrientationCharacter, Units.val_one]
   exact stabilizerScalar_eq hd x h fun z ↦ (hall z).trans (one_zsmul z).symm
 
 /-- **The trivialization along the orbit is equivariant up to the orientation character.** For
@@ -353,7 +360,9 @@ theorem isotropyOrientationCharacter_eq_of_joined [TopologicalSpace G] [Continuo
     -- `key` is stated at the points `π h = x` and `π h' = x` of the constant path `π`, and `hT`
     -- at the first of them; these are all `x` by definition, so they combine by `Eq.trans`.
     exact (Category.comp_id _).symm.trans ((congrArg _ hT.symm).trans key)
-  refine Units.ext (stabilizerScalar_eq hd x h fun z ↦ ?_)
+  refine Units.ext ?_
+  rw [coe_isotropyOrientationCharacter, coe_isotropyOrientationCharacter]
+  refine stabilizerScalar_eq hd x h fun z ↦ ?_
   rw [hhh']
   exact localHomologySMulIso_hom_apply_eq_zsmul hd h' z
 
