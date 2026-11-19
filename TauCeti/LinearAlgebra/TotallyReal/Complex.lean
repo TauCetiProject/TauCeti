@@ -32,6 +32,8 @@ conjugate-linear involution.
   totally real subspace are complex-linearly independent.
 * `TauCeti.IsMaximalTotallyReal.complexBasis`: a real basis of a maximal totally real subspace,
   as a complex basis of the ambient space.
+* `TauCeti.IsMaximalTotallyReal.mem_iff_forall_conj_complexBasis_repr`: the subspace consists of
+  the vectors whose coordinates in `complexBasis b` are real.
 * `TauCeti.IsMaximalTotallyReal.det_eq_det_restrict`: a complex-linear map preserving a maximal
   totally real subspace has the same (real) determinant as its restriction.
 * `TauCeti.IsMaximalTotallyReal.exists_linearEquiv_map_eq`: complex-linear automorphisms act
@@ -312,6 +314,17 @@ theorem complexBasis_repr_coe {ι : Type*} (b : Basis ι ℝ L) (x : L) (i : ι)
       rw [complexBasis_apply] at hj
       simp [hj]
   simpa using DFunLike.congr_fun (LinearMap.congr_fun h x) i
+
+/-- A vector lies in `L` exactly when its complex coordinates in `complexBasis b` are real. -/
+theorem mem_iff_forall_conj_complexBasis_repr {ι : Type*} (b : Basis ι ℝ L) {x : E} :
+    x ∈ L ↔ ∀ i, starRingEnd ℂ ((hL.complexBasis b).repr x i) = (hL.complexBasis b).repr x i := by
+  refine ⟨fun hx i => ?_, fun h => ?_⟩
+  · rw [show x = ((⟨x, hx⟩ : L) : E) from rfl, complexBasis_repr_coe, Complex.conj_ofReal]
+  · rw [← (hL.complexBasis b).linearCombination_repr x, Finsupp.linearCombination_apply]
+    refine Submodule.finsuppSum_mem _ _ _ _ fun i _ => ?_
+    have hi := L.smul_mem ((hL.complexBasis b).repr x i).re (b i).2
+    rwa [← algebraMap_smul ℂ, Complex.coe_algebraMap, Complex.conj_eq_iff_re.mp (h i),
+      ← complexBasis_apply hL] at hi
 
 /-- A complex-linear automorphism maps maximal totally real subspaces to maximal totally real
 subspaces. -/

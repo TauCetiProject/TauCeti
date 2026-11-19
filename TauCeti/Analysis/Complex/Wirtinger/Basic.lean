@@ -255,6 +255,13 @@ theorem conjWirtingerDeriv_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differentia
   simp only [conjWirtingerDeriv_apply, fderiv_sub h₁ h₂, sub_apply]
   module
 
+/-- Adding a constant does not change the conjugate Wirtinger derivative. -/
+@[simp]
+theorem conjWirtingerDeriv_add_const (g : V → W) (c : W) (x : V) :
+    conjWirtingerDeriv (fun y ↦ g y + c) x = conjWirtingerDeriv g x := by
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, fderiv_add_const,
+    conjWirtingerDeriv_eq_complexAntilinearPart]
+
 /-- The conjugate Wirtinger derivative commutes with multiplication by a complex constant. -/
 theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
     conjWirtingerDeriv (c • g) x = c • conjWirtingerDeriv g x := by
