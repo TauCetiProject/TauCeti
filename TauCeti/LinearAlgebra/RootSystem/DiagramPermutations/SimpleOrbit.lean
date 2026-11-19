@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.FixedNode
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum
 import TauCeti.Combinatorics.SimpleGraph.Acyclic
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
 /-!
 # Orthogonality of simple orbits of a based automorphism
@@ -56,18 +57,6 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 variable [Finite ι] [IsDomain R] [CharZero R] [P.IsReduced] [P.IsCrystallographic] [P.IsIrreducible]
 
-omit [IsDomain R] [P.IsReduced] [P.IsIrreducible] in
-/-- The permutation of the simple indices induced by a based automorphism preserves the Cartan
-matrix. -/
-private theorem cartanMatrix_subtypePerm_apply (b : P.Base) {σ : P.Aut}
-    (hσ : ∀ i ∈ b.support, σ.indexEquiv i ∈ b.support) (i j : b.support) :
-    b.cartanMatrix (Equiv.Perm.subtypePermOfFintype σ.indexEquiv hσ i)
-      (Equiv.Perm.subtypePermOfFintype σ.indexEquiv hσ j) =
-      b.cartanMatrix i j := by
-  simp only [Equiv.Perm.subtypePermOfFintype_apply, RootPairing.Base.cartanMatrix,
-    RootPairing.Base.cartanMatrixIn_def]
-  exact RootPairing.Hom.pairingIn_indexEquiv _ ℤ (i : ι) j
-
 /-- **A based automorphism fixing a simple root has orthogonal simple orbits.** Its powers act on
 the Dynkin diagram, a tree, by automorphisms fixing that root, and such an automorphism moves no
 vertex to a neighbour. -/
@@ -78,20 +67,15 @@ theorem pairing_eq_zero_of_mem_orbitIndices (b : P.Base) {σ : P.Aut}
   have : Nonempty ι := ⟨v⟩
   obtain ⟨k, rfl⟩ := mem_orbitIndices_iff_exists_pow.mp hj
   set φ := Equiv.Perm.subtypePermOfFintype σ.indexEquiv hσ
-  have hφ (k : ℕ) (x y : b.support) :
-      b.cartanMatrix ((φ ^ k) x) ((φ ^ k) y) = b.cartanMatrix x y := by
-    induction k with
-    | zero => rfl
-    | succ k ih =>
-      rw [pow_succ', Equiv.Perm.mul_apply, Equiv.Perm.mul_apply,
-        cartanMatrix_subtypePerm_apply b hσ, ih]
+  have hφ : φ ^ k ∈ matrixSymmetryGroup b.cartanMatrix :=
+    pow_mem (b.subtypePerm_mem_matrixSymmetryGroup σ _) k
   have hφv : (φ ^ k) ⟨v, hv⟩ = ⟨v, hv⟩ := by
     ext
     simp [φ, Equiv.Perm.subtypePerm_pow, Equiv.Perm.pow_apply_eq_self_of_apply_eq_self hσv]
   have hφi : ((φ ^ k) ⟨i, hi⟩ : ι) = (σ.indexEquiv ^ k) i := by
     simp [φ, Equiv.Perm.subtypePerm_pow]
   have hnadj := (isTree_diagramGraph_cartanMatrix b).not_adj_apply_of_apply_eq_self
-    ⟨φ ^ k, diagramGraph_adj_apply_iff (hφ k)⟩ hφv ⟨i, hi⟩
+    ⟨φ ^ k, diagramGraph_adj_apply_iff (congrFun₂ (mem_matrixSymmetryGroup_iff.mp hφ))⟩ hφv ⟨i, hi⟩
   simp only [RelIso.coe_fn_mk, diagramGraph_adj, not_and, not_not] at hnadj
   rw [← hφi]
   refine (b.cartanMatrix_apply_eq_zero_iff_pairing (i := ⟨i, hi⟩)).mp ?_
@@ -127,11 +111,8 @@ theorem simpleOrbit_pairing_eq_zero_or_typeA_even (b : P.Base) {σ : P.Aut}
   obtain ⟨t, ⟨ht, hb⟩, -⟩ := existsUnique_dynkinType b
   obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp hb
   have hρ : e.symm.trans (φ.trans e) ∈ t.diagramSymmetry :=
-    DynkinType.mem_diagramSymmetry_iff.mpr fun x y ↦ by
-      have hxy := he (φ (e.symm x)) (φ (e.symm y))
-      rw [cartanMatrix_subtypePerm_apply b hσ, he, Equiv.apply_symm_apply,
-        Equiv.apply_symm_apply] at hxy
-      simpa only [Equiv.trans_apply] using hxy.symm
+    DynkinType.mem_diagramSymmetry_of_mem_matrixSymmetryGroup he
+      (b.subtypePerm_mem_matrixSymmetryGroup σ _)
   have hfix {x : Fin t.rank} (hx : e.symm.trans (φ.trans e) x = x) : ∃ v, φ v = v :=
     ⟨e.symm x, e.injective (by simpa using hx)⟩
   by_cases hA : ∃ n, t = DynkinType.A (2 * n)
