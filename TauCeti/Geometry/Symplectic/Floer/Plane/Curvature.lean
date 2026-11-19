@@ -207,6 +207,36 @@ theorem injOn_realChart_positive (a : ℝ) :
     rintro _ ⟨p, hp, rfl⟩
     simpa using hp.2
 
+/-- **The end lift recovers a point from its end coordinates.** At a point `w ≠ 0` of the plane,
+the end lift of the positive plane sends the end coordinates `(log ‖w‖ / 2π, arg w / 2π)` of `w`
+back to `w`. -/
+theorem realChart_positive_endCoord {z : ℝ × ℝ} (hz : Complex.equivRealProdCLM.symm z ≠ 0) :
+    realChart positive.cylindricalEndLift
+        ((positive.endCoord (Complex.equivRealProdCLM.symm z)).re,
+          (positive.endCoord (Complex.equivRealProdCLM.symm z)).im) = z := by
+  rw [← Complex.equivRealProdCLM_apply, TauCeti.Complex.realChart_equivRealProdCLM,
+    positive.cylindricalEndLift_endCoord hz, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- **The end coordinates of a point of the end.** The image of `(s, t)` under the end lift of the
+positive plane has height `s` and angular coordinate `t` up to an integer. -/
+theorem exists_endCoord_realChart_positive (s t : ℝ) :
+    ∃ k : ℤ,
+      (positive.endCoord (Complex.equivRealProdCLM.symm
+          (realChart positive.cylindricalEndLift (s, t)))).re = s ∧
+        (positive.endCoord (Complex.equivRealProdCLM.symm
+          (realChart positive.cylindricalEndLift (s, t)))).im = t + k := by
+  obtain ⟨k, hk⟩ :=
+    positive.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm (s, t))
+  refine ⟨k, ?_, ?_⟩ <;> rw [TauCeti.Complex.equivRealProdCLM_symm_realChart, hk] <;>
+    simp [Complex.equivRealProdCLM_symm_apply]
+
+/-- The end lift of the positive plane has period one in the angular coordinate. -/
+theorem realChart_positive_add_one (s t : ℝ) :
+    realChart positive.cylindricalEndLift (s, t + 1) =
+      realChart positive.cylindricalEndLift (s, t) := by
+  simp only [realChart_apply, Complex.equivRealProdCLM_symm_apply]
+  exact congrArg _ (positive.periodic_cylindricalEndLift s t)
+
 /-- **Change of variables on the end of the positive plane.** If `g` is the pullback of a density
 `f` under the end lift `φ` of the positive plane, `g = det (dφ) · f ∘ φ` on the half-strip `s > a`,
 `0 ≤ t < 1`, then the integral of `g` over the half-cylinder `s > a`, `0 ≤ t ≤ 1` is at most the
