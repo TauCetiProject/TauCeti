@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
+import TauCeti.Analysis.Complex.Basic
 
 /-!
 # Stirling's formula for the archimedean gamma factors on vertical strips

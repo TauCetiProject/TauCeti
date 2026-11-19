@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Archimedean
 public import TauCeti.NumberTheory.LFunctions.Data.Basic
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!

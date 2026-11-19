@@ -14,8 +14,7 @@ Mathlib uses total division for the gamma function, so the archimedean factor `G
 has value zero at the nonpositive integers. These are poles of its meromorphic germ.
 This characterization complements `Complex.Gammaℝ_eq_zero_iff` for the real factor and
 identifies the exceptional values in finite products of shifted gamma factors. Off the real axis
-none of `Γ`, `Γ_ℝ` and `Γ_ℂ` vanishes, and a shift `s + μ` stays off the real axis once
-`|Im μ| < |Im s|`.
+none of `Γ`, `Γ_ℝ` and `Γ_ℂ` vanishes.
 
 The moduli of the archimedean factors are `‖Γ_ℝ(s)‖ = π^(-Re s / 2) ‖Γ(s / 2)‖` and
 `‖Γ_ℂ(s)‖ = 2 (2π)^(-Re s) ‖Γ(s)‖`.
@@ -30,13 +29,6 @@ namespace Complex
 /-- The total zero values of the complex archimedean factor occur at the nonpositive integers. -/
 theorem Gammaℂ_eq_zero_iff (z : ℂ) : Gammaℂ z = 0 ↔ ∃ n : ℕ, z = -(n : ℂ) := by
   simp [Gammaℂ_def, Real.pi_ne_zero, Gamma_eq_zero_iff]
-
-/-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
-theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=
-  fun h0 ↦ by
-    rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
-    rw [h0, abs_neg] at h
-    exact h.false
 
 /-- The gamma function does not vanish off the real axis. -/
 theorem Gamma_ne_zero_of_im_ne_zero {s : ℂ} (h : s.im ≠ 0) : Gamma s ≠ 0 :=
