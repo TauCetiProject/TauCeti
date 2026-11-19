@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.GraphStep.Density
+public import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
+public import TauCeti.Analysis.Sobolev.W1p.Zero
+public import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
 # Scalar coordinates of a finite-dimensional weak-derivative graph
@@ -15,8 +17,19 @@ to a finite tuple of scalar `W1p` spaces, for any finite basis of a finite-dimen
 space `F`. The value and derivative of the inverse are reconstructed in that basis. This permits
 scalar Sobolev estimates to be applied to vector-valued fields without a new Sobolev carrier.
 
+The inverse is built from coordinate fields: a scalar Sobolev function `u` and a vector `b : F` give
+the field `x ↦ u x • b` (`TauCeti.WeakDerivStep.smulRightW1pL`), with weak derivative
+`v ↦ ∂ᵥ u • b`, and for a basis `bᵢ` of `F`, with coordinate functionals `ℓᵢ`, a field `u` is the
+sum of the fields `ℓᵢ ∘ u • bᵢ` built from its scalar projections `TauCeti.WeakDerivStep.toW1pL`.
+Only the reconstruction needs `F` to be finite-dimensional.
+
 ## Main declarations
 
+* `TauCeti.WeakDerivStep.smulRightW1pL`: the bounded linear map `u ↦ (x ↦ u x • b)` from scalar
+  Sobolev functions to `F`-valued ones.
+* `TauCeti.WeakDerivStep.prev_smulRightW1pL_ofTestFunctionₗ_ae_eq`: for a test function `ψ`, this
+  field is represented by `x ↦ ψ x • b`.
+* `TauCeti.WeakDerivStep.sum_smulRightW1pL_toW1pL`: a field is the sum of its coordinate fields.
 * `coordinatesL`: the native scalar projections, bundled into one continuous linear map.
 * `coordinatesEquiv`: their continuous linear equivalence with scalar `W1p` tuples.
 * `prev_coordinatesEquiv_symm_ae`, `weakFDeriv_coordinatesEquiv_symm_ae`: reconstruction
@@ -32,7 +45,104 @@ public noncomputable section
 namespace TauCeti.WeakDerivStep
 
 open MeasureTheory TopologicalSpace
-open scoped ENNReal InnerProductSpace
+open scoped ENNReal InnerProductSpace Distributions
+
+section Gradient
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The derivative `v ↦ ⟪g, v⟫ • b` of the field `x ↦ u x • b` at a point where the scalar
+function `u` has gradient `g`. -/
+def smulRightGradientL (b : F) : E →L[ℝ] E →L[ℝ] F :=
+  (ContinuousLinearMap.compL ℝ E ℝ F (ContinuousLinearMap.toSpanSingleton ℝ b)).comp
+    (InnerProductSpace.toDual ℝ E).toContinuousLinearEquiv.toContinuousLinearMap
+
+/-- Evaluation formula for `smulRightGradientL`. -/
+@[simp]
+theorem smulRightGradientL_apply (b : F) (g v : E) :
+    smulRightGradientL b g v = inner ℝ g v • b := by
+  simp [smulRightGradientL]
+
+end Gradient
+
+section CoordinateFields
+
+variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
+  [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+
+section CompleteSpace
+
+variable [CompleteSpace F]
+
+/-- The field `x ↦ u x • b` of a scalar Sobolev function has weak derivative
+`v ↦ ⟪∇u x, v⟫ • b`. -/
+theorem hasWeakFDerivOn_smulRight (b : F) (u : W1p mu Omega p) :
+    HasWeakFDerivOn mu Omega
+      ((ContinuousLinearMap.toSpanSingleton ℝ b).compLpL p (mu.restrict Omega) (W1p.value u))
+      ((smulRightGradientL b).compLpL p (mu.restrict Omega) (W1p.gradient u)) := by
+  refine ((W1p.hasWeakFDerivOn u).clm_comp (ContinuousLinearMap.toSpanSingleton ℝ b)).congr_ae
+    ((ContinuousLinearMap.toSpanSingleton ℝ b).coeFn_compLpL (W1p.value u)).symm
+    |>.congr_ae_deriv ?_
+  filter_upwards [(smulRightGradientL b).coeFn_compLpL (W1p.gradient u)] with x hx
+  rw [hx]
+  ext v
+  simp [real_inner_comm]
+
+/-- The bounded linear map sending a scalar Sobolev function `u` to the `F`-valued Sobolev field
+`x ↦ u x • b`. -/
+def smulRightW1pL (b : F) :
+    W1p mu Omega p →L[ℝ]
+      WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) :=
+  ContinuousLinearMap.codRestrict
+    ((WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.toContinuousLinearMap.comp
+      ((((ContinuousLinearMap.toSpanSingleton ℝ b).compLpL p (mu.restrict Omega)).comp
+          W1p.valueL).prod
+        (((smulRightGradientL b).compLpL p (mu.restrict Omega)).comp W1p.gradientL)))
+    _ fun u ↦ (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn _ _).mpr (by
+      simpa using hasWeakFDerivOn_smulRight b u)
+
+/-- The value of `smulRightW1pL b u` is the class of `x ↦ u x • b`. -/
+@[simp]
+theorem prev_smulRightW1pL (b : F) (u : W1p mu Omega p) :
+    prev _ (smulRightW1pL b u) =
+      (ContinuousLinearMap.toSpanSingleton ℝ b).compLpL p (mu.restrict Omega) (W1p.value u) := by
+  simp [prev_coe, smulRightW1pL]
+
+/-- The weak derivative of `smulRightW1pL b u` is the class of `x ↦ (v ↦ ⟪∇u x, v⟫ • b)`. -/
+@[simp]
+theorem weakFDeriv_smulRightW1pL (b : F) (u : W1p mu Omega p) :
+    weakFDeriv _ (smulRightW1pL b u) =
+      (smulRightGradientL b).compLpL p (mu.restrict Omega) (W1p.gradient u) := by
+  simp [weakFDeriv_coe, smulRightW1pL]
+
+/-- The field `smulRightW1pL b φ` of a test function `φ` is represented by `x ↦ φ x • b`. -/
+theorem prev_smulRightW1pL_ofTestFunctionₗ_ae_eq (b : F) (φ : 𝓓(Omega, ℝ)) :
+    ⇑(prev _ (smulRightW1pL b (W1p.ofTestFunctionₗ mu Omega p φ)))
+      =ᵐ[mu.restrict Omega] fun x ↦ φ x • b := by
+  rw [prev_smulRightW1pL, W1p.value_ofTestFunctionₗ]
+  filter_upwards [(ContinuousLinearMap.toSpanSingleton ℝ b).coeFn_compLpL
+    (testFunctionLp (mu := mu) p φ), testFunctionLp_apply_ae (mu := mu) p φ] with x hx hφ
+  rw [hx, ContinuousLinearMap.toSpanSingleton_apply, hφ]
+
+end CompleteSpace
+
+/-- **Coordinate reconstruction.** For a basis `b` of `F`, an `F`-valued Sobolev field is the sum
+of the fields `ℓᵢ ∘ u • bᵢ` built from its scalar coordinate projections. -/
+theorem sum_smulRightW1pL_toW1pL [FiniteDimensional ℝ F] {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι ℝ F)
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
+    ∑ i, smulRightW1pL (b i) (toW1pL _ (b.coord i).toContinuousLinearMap u) = u := by
+  apply ext
+  rw [← prevL_apply, map_sum]
+  simp only [prevL_apply, prev_smulRightW1pL, value_toW1pL, ContinuousLinearMap.id_apply]
+  exact (eq_sum_basis_compLpL b (prev _ u)).symm
+
+end CoordinateFields
+
+section Coordinates
 
 variable {E F ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -165,5 +275,7 @@ theorem weakFDeriv_coordinatesEquiv_symm_ae (b : Module.Basis ι ℝ F) (u : ι 
       (smulRightGradientL (b i)).coeFn_compLpL (W1p.gradient (u i)))] with x hs hc
   intro v
   simp only [hs, hc, sum_apply, smulRightGradientL_apply]
+
+end Coordinates
 
 end TauCeti.WeakDerivStep
