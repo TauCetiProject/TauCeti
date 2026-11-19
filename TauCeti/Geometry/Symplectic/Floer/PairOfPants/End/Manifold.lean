@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
+import TauCeti.Geometry.Symplectic.Hamiltonian.PeriodicOrbit
 import TauCeti.Topology.Instances.Real.Periodic
 
 /-!
@@ -396,20 +397,12 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer
     ∃ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       TendstoUniformly (fun s t ↦ e (u (endChart q (q.endSign * s, t)))) (e ∘ y) atTop ∧
       ∀ t, Tendsto (fun s ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (y t)) := by
-  have hX := hω.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp)
-    ((hHs q).of_le (by norm_num))
-  -- A nondegenerate orbit starts at an isolated fixed point of the time-one map, so it is
-  -- isolated among the orbits.
-  have hiso (y) (hy : y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1) :
-      ∀ᶠ p in 𝓝 (y 0), ∀ y' ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
-        y' 0 = p → y' = y :=
-    eventually_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX hy
-      (by simpa only [zero_add] using (hnd y hy).eventually_not_isFixedPt)
   obtain ⟨y, hy, -, h⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of_isCompact hKH hH
       (fun q ↦ (hHs q).of_le one_le_two) he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu
       (fun _ _ ↦ mem_univ _) J hc hJc hfloer hE q hC fun y hy _ ↦
-        (hiso y hy).mono fun _ hp y' hy' _ ↦ hp y' hy'
+        (hω.eventually_forall_mem_periodicSolutions_hamiltonianVectorField_eq (hHs q) hy
+          (hnd y hy)).mono fun _ hp y' hy' _ ↦ hp y' hy'
   exact ⟨y, hy, h⟩
 
 end IsNondegenerate
