@@ -321,10 +321,10 @@ theorem doublingPolarizationEquiv_prodMap {M' : Type*} [AddCommGroup M'] [Module
 diagonal. -/
 theorem linearMap_ext_antidiag_diag {S P : Type*} [Semiring S] [AddCommMonoid P] [Module S P]
     {σ : R →+* S} {f g : M × M →ₛₗ[σ] P} (hA : ∀ x, f (x, -x) = g (x, -x))
-    (hD : ∀ x, f (x, x) = g (x, x)) : f = g := by
-  ext p
-  rw [← (doublingPolarizationEquiv R M).apply_symm_apply p, doublingPolarizationEquiv_apply_eq_add,
-    map_add, map_add, hA, hD]
+    (hD : ∀ x, f (x, x) = g (x, x)) : f = g :=
+  ext_on_codisjoint isCompl_graph_neg_id_graph_id.codisjoint
+    (fun ⟨x, y⟩ hp ↦ by rw [show y = -x by simpa using hp]; exact hA x)
+    fun ⟨x, y⟩ hp ↦ by rw [show y = x by simpa using hp]; exact hD x
 
 /-- A sesquilinear form on `M × M` is determined by its four blocks with respect to the
 antidiagonal and the diagonal. -/
