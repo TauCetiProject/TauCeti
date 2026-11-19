@@ -40,6 +40,10 @@ radical `ξ` becomes `p`, so `ξ` and `ξ'` are distinguished: their first Witt 
 * `TauCeti.WittVector.cyclotomicMu_eq_cyclotomicXi_mul`: `μ = ξ · φ⁻¹(μ)`.
 * `TauCeti.WittVector.frobenius_cyclotomicMu_eq_cyclotomicXiTilde_mul`: `φ(μ) = ξ' · μ`.
 * `TauCeti.WittVector.cyclotomicXiTilde_eq_sum`: `ξ' = ∑_{j < p} [ε] ^ j`.
+* `TauCeti.WittVector.frobeniusEquiv_symm_cyclotomicXi`,
+  `TauCeti.WittVector.frobenius_cyclotomicXi`,
+  `TauCeti.WittVector.cyclotomicXiTilde_eq_cyclotomicXi_pow`: `φ⁻¹(ξ(ε)) = ξ(ε ^ (1 / p))`,
+  `φ(ξ) = ξ'` and `ξ'(ε) = ξ(ε ^ p)`.
 * `TauCeti.WittVector.isDistinguished_cyclotomicXi`,
   `TauCeti.WittVector.isDistinguished_cyclotomicXiTilde`: if `ε - 1` lies in the Jacobson radical
   of `S`, then `ξ` and `ξ'` are distinguished.
@@ -100,6 +104,11 @@ noncomputable def cyclotomicXiTilde (ε : S) : 𝕎 S :=
 theorem cyclotomicXiTilde_def (ε : S) : cyclotomicXiTilde p ε = frobenius (cyclotomicXi p ε) :=
   (rfl)
 
+/-- The Frobenius of `ξ` is `ξ'`. -/
+@[simp]
+theorem frobenius_cyclotomicXi (ε : S) : frobenius (cyclotomicXi p ε) = cyclotomicXiTilde p ε :=
+  (rfl)
+
 /-- `ξ' = ∑_{j < p} [ε] ^ j`. -/
 theorem cyclotomicXiTilde_eq_sum (ε : S) :
     cyclotomicXiTilde p ε = ∑ j ∈ Finset.range p, teichmuller p ε ^ j := by
@@ -107,12 +116,24 @@ theorem cyclotomicXiTilde_eq_sum (ε : S) :
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [map_pow, frobenius_teichmuller, ← map_pow, frobeniusEquiv_symm_pow_p]
 
+/-- `ξ'(ε) = ξ(ε ^ p)`. -/
+theorem cyclotomicXiTilde_eq_cyclotomicXi_pow (ε : S) :
+    cyclotomicXiTilde p ε = cyclotomicXi p (ε ^ p) := by
+  rw [cyclotomicXiTilde_eq_sum, cyclotomicXi_def, frobeniusEquiv_symm_pow]
+
 /-- The inverse Frobenius of `μ(ε) = [ε] - 1` is `μ(ε ^ (1 / p)) = [ε ^ (1 / p)] - 1`. -/
 @[simp]
 theorem frobeniusEquiv_symm_cyclotomicMu (ε : S) :
     (frobeniusEquiv p S).symm (cyclotomicMu p ε) =
       cyclotomicMu p ((_root_.frobeniusEquiv S p).symm ε) := by
   simp [cyclotomicMu_def]
+
+/-- The inverse Frobenius of `ξ(ε) = ∑_{j < p} [ε ^ (1 / p)] ^ j` is `ξ(ε ^ (1 / p))`. -/
+@[simp]
+theorem frobeniusEquiv_symm_cyclotomicXi (ε : S) :
+    (frobeniusEquiv p S).symm (cyclotomicXi p ε) =
+      cyclotomicXi p ((_root_.frobeniusEquiv S p).symm ε) := by
+  simp [cyclotomicXi_def, map_sum]
 
 /-- The inverse Frobenius of `ξ'` is `ξ`. -/
 @[simp]
