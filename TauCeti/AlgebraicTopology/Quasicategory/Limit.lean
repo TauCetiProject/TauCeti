@@ -29,7 +29,9 @@ the coslice are `C` itself, so that its limits are the terminal vertices of `C`
 (`SSet.slice.isLimit_iff_isTerminalVertex_π`) and its colimits the initial vertices
 (`SSet.coslice.isColimit_iff_isInitialVertex_π`). In the nerve of a category these are the
 terminal and the initial objects (`SSet.slice.isLimit_iff_nonempty_isTerminal`,
-`SSet.coslice.isColimit_iff_nonempty_isInitial`).
+`SSet.coslice.isColimit_iff_nonempty_isInitial`). In the point `Δ[0]`, whose slices and coslices
+have a single simplex in each dimension, every cone is a limit cone and every cocone is a colimit
+cocone (`SSet.slice.isLimit_of_stdSimplex_zero`, `SSet.coslice.isColimit_of_stdSimplex_zero`).
 
 ## References
 
@@ -75,6 +77,11 @@ lemma isEquivalence (hc : IsLimit p c) (hc' : IsLimit p c') (e : (slice p).Edge 
   I.isEquivalence
 
 end IsLimit
+
+/-- Every cone in the point `Δ[0]` is a limit cone. -/
+lemma isLimit_of_stdSimplex_zero {L : SSet.{u}} (q : L ⟶ Δ[0]) (c : (slice q) _⦋0⦌) :
+    IsLimit q c :=
+  (isLimit_iff c).2 (isTerminalVertex_of_subsingleton c)
 
 variable (p) in
 /-- The limit cones of the empty diagram are the terminal vertices: when `K` is empty, a cone over
@@ -135,6 +142,11 @@ lemma isEquivalence (hc : IsColimit p c) (hc' : IsColimit p c') (e : (coslice p)
   I.isEquivalence
 
 end IsColimit
+
+/-- Every cocone in the point `Δ[0]` is a colimit cocone. -/
+lemma isColimit_of_stdSimplex_zero {L : SSet.{u}} (q : L ⟶ Δ[0]) (c : (coslice q) _⦋0⦌) :
+    IsColimit q c :=
+  (isColimit_iff c).2 (isInitialVertex_of_subsingleton c)
 
 variable (p) in
 /-- The colimit cocones of the empty diagram are the initial vertices: when `K` is empty, a cocone

@@ -135,29 +135,6 @@ end prodStdSimplex
 
 namespace join
 
-/-- A map `k : X ⟶ Δ[3]` that sends no edge of `X` to the edge from the vertex `1` to the vertex
-`2` lands in the simplices missing `1` or `2`: a simplex hitting both has this edge as a face. -/
-private lemma range_le_of_forall_edge {X : SSet.{u}} (k : X ⟶ Δ[3])
-    (hk : ∀ t : X _⦋1⦌, ¬ (k.app _ t 0 = 1 ∧ k.app _ t 1 = 2)) :
-    Subcomplex.range k ≤ stdSimplex.face {1}ᶜ ⊔ stdSimplex.face {2}ᶜ := by
-  rintro ⟨n⟩ _ ⟨x, rfl⟩
-  induction n using SimplexCategory.rec with | _ d
-  simp only [Subfunctor.max_obj, Set.mem_union, stdSimplex.mem_face_iff, Finset.mem_compl,
-    Finset.mem_singleton]
-  by_contra h
-  simp only [not_or, not_forall, not_not] at h
-  obtain ⟨⟨i, hi⟩, ⟨j, hj⟩⟩ := h
-  have hij : i ≤ j := by
-    by_contra hji
-    have h : k.app _ x j ≤ k.app _ x i := stdSimplex.monotone_apply _ (le_of_not_ge hji)
-    rw [hi, hj] at h
-    exact absurd h (by decide)
-  refine hk (X.map (SimplexCategory.mkOfLe i j hij).op x) ⟨?_, ?_⟩
-  · rw [NatTrans.naturality_apply, stdSimplex.obj_map_apply]
-    exact hi
-  · rw [NatTrans.naturality_apply, stdSimplex.obj_map_apply]
-    exact hj
-
 /-! ### The cone `Δ[0] ⋆ Λ[2, 2]` -/
 
 /-- The embedding `Δ[0] ⋆ Λ[2, 2] ⟶ Δ[0] ⋆ Δ[2] ≅ Δ[3]`. -/
@@ -189,10 +166,20 @@ private lemma inr_comp_coneHornToStdSimplex :
     inr _ _ ≫ coneHornToStdSimplex.{u} = Λ[2, 2].ι ≫ stdSimplex.δ 0 := by
   simp [coneHornToStdSimplex]
 
-/-- The face `δ j : Δ[n] ⟶ Δ[n + 1]` sends the vertex `i` to `j.succAbove i`. -/
-private lemma yonedaEquiv_δ_apply {n : ℕ} (j : Fin (n + 2)) (i : Fin (n + 1)) :
-    yonedaEquiv (stdSimplex.δ.{u} j) i = j.succAbove i :=
-  stdSimplex.yonedaEquiv_map_apply _ _
+/-- The cone point of `Δ[0] ⋆ Λ[2, 2]` is sent to the vertex `0` of `Δ[3]`. -/
+private lemma coneHornToStdSimplex_app_inl_app {d : ℕ} (v : Δ[0] _⦋d⦌) (i : Fin (d + 1)) :
+    coneHornToStdSimplex.{u}.app _ ((inl _ _).app _ v) i = 0 := by
+  rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, inl_comp_coneHornToStdSimplex,
+    stdSimplex.hom_app_apply, stdSimplex.yonedaEquiv_map_apply]
+  rfl
+
+/-- The vertex `i` of `Λ[2, 2]` is sent to the vertex `i + 1` of `Δ[3]`. -/
+private lemma coneHornToStdSimplex_app_inr_app {d : ℕ} (v : (Λ[2, 2] : SSet.{u}) _⦋d⦌)
+    (i : Fin (d + 1)) : coneHornToStdSimplex.app _ ((inr _ _).app _ v) i = (v.1 i).succ := by
+  rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, inr_comp_coneHornToStdSimplex,
+    NatTrans.comp_app, ConcreteCategory.comp_apply, stdSimplex.hom_app_apply,
+    CosimplicialObject.δ, stdSimplex.yonedaEquiv_map_apply]
+  exact congrFun Fin.succAbove_zero _
 
 /-- No edge of `Δ[0] ⋆ Λ[2, 2]` goes from the vertex `1` to the vertex `2` of `Δ[3]`: an edge
 starting at the cone point starts at `0`, and the other edges are edges of `Λ[2, 2]`, which does not
@@ -211,10 +198,7 @@ private lemma not_coneHornToStdSimplex_edge (t : (join Δ[0] (Λ[2, 2] : SSet.{u
     have hv' : coneHornToStdSimplex.app _ v 0 = 1 := by
       rw [NatTrans.naturality_apply, stdSimplex.obj_map_apply]
       exact h₀
-    rw [← inl_app_univ_left_app v hv] at hv'
-    rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, inl_comp_coneHornToStdSimplex,
-      stdSimplex.hom_app_apply,
-      yonedaEquiv_map, stdSimplex.objEquiv_symm_apply, SimplexCategory.const_apply] at hv'
+    rw [← inl_app_univ_left_app v hv, coneHornToStdSimplex_app_inl_app] at hv'
     exact absurd hv' (by decide)
   · -- Otherwise `t` lies over the vertex `1`, so it is an edge of `Λ[2, 2]`.
     have hp₁ : (π _ _).app _ t 0 = 1 := Fin.eq_one_of_ne_zero _ hp
@@ -224,11 +208,7 @@ private lemma not_coneHornToStdSimplex_edge (t : (join Δ[0] (Λ[2, 2] : SSet.{u
       refine le_antisymm (Fin.le_last _) ?_
       rw [← hp₁]
       exact stdSimplex.monotone_apply _ (Fin.zero_le i)
-    rw [← inr_app_univ_right_app t ht, ← ConcreteCategory.comp_apply, ← NatTrans.comp_app]
-      at h₀ h₁
-    rw [inr_comp_coneHornToStdSimplex] at h₀ h₁
-    rw [NatTrans.comp_app, ConcreteCategory.comp_apply, stdSimplex.hom_app_apply,
-      yonedaEquiv_δ_apply, Fin.succAbove_zero] at h₀ h₁
+    rw [← inr_app_univ_right_app t ht, coneHornToStdSimplex_app_inr_app] at h₀ h₁
     have hy := ((univ _ _).right.app _ ⟨t, ht⟩).2
     obtain ⟨k, hk, hky⟩ := (mem_horn_iff_notMem_range _ _).1 hy
     fin_cases k
@@ -238,7 +218,8 @@ private lemma not_coneHornToStdSimplex_edge (t : (join Δ[0] (Λ[2, 2] : SSet.{u
 
 private lemma range_coneHornToStdSimplex :
     Subcomplex.range coneHornToStdSimplex.{u} = stdSimplex.face {1}ᶜ ⊔ stdSimplex.face {2}ᶜ :=
-  le_antisymm (range_le_of_forall_edge _ not_coneHornToStdSimplex_edge)
+  le_antisymm (stdSimplex.range_le_face_singleton_compl_sup_face_singleton_compl _
+      (by decide) not_coneHornToStdSimplex_edge)
     (sup_le (face_le_range_coneHornToStdSimplex 0 (by decide))
       (face_le_range_coneHornToStdSimplex 1 (by decide)))
 
@@ -248,29 +229,21 @@ private lemma range_coneHornToStdSimplex :
 private noncomputable abbrev hornConeToStdSimplex : join (Λ[2, 0] : SSet.{u}) Δ[0] ⟶ Δ[3] :=
   map Λ[2, 0].ι (𝟙 Δ[0]) ≫ (stdSimplexIso 2 0).hom
 
-/-- The isomorphism `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]` is natural for the faces of `Δ[n]`, which act on
-`Δ[n + 1]` by fixing the cone point `n + 1`. -/
-private lemma map_δ_comp_stdSimplexIso_hom {n : ℕ} (j : Fin (n + 2)) :
-    map (stdSimplex.δ j) (𝟙 Δ[0]) ≫ (stdSimplexIso.{u} (n + 1) 0).hom =
-      (stdSimplexIso n 0).hom ≫ stdSimplex.δ j.castSucc := by
-  refine hom_ext_stdSimplex ?_ ?_
-  · rw [inl_map_assoc]
-    apply yonedaEquiv.injective
-    refine stdSimplex.ext _ _ fun i ↦ ?_
-    rw [stdSimplex.yonedaEquiv_comp_apply,
-      yonedaEquiv_inl_comp_stdSimplexIso_hom (n := n + 1) (m := 0), ← Category.assoc,
-      stdSimplex.yonedaEquiv_comp_apply, yonedaEquiv_inl_comp_stdSimplexIso_hom (n := n) (m := 0)]
-    rw [yonedaEquiv_δ_apply, yonedaEquiv_δ_apply, Fin.ext_iff, Fin.val_castLE]
-    simp only [Fin.succAbove, Fin.lt_def, Fin.val_castSucc, Fin.val_castLE]
-    split_ifs <;> simp
-  · rw [inr_map_assoc, Category.id_comp]
-    apply yonedaEquiv.injective
-    refine stdSimplex.ext _ _ fun i ↦ ?_
-    rw [yonedaEquiv_inr_comp_stdSimplexIso_hom (n := n + 1) (m := 0), ← Category.assoc,
-      stdSimplex.yonedaEquiv_comp_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom (n := n) (m := 0)]
-    rw [yonedaEquiv_δ_apply, Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega),
-      Fin.ext_iff]
-    simp
+/-- The vertex `i` of `Λ[2, 0]` is sent to the vertex `i` of `Δ[3]`. -/
+private lemma hornConeToStdSimplex_app_inl_app {d : ℕ} (v : (Λ[2, 0] : SSet.{u}) _⦋d⦌)
+    (i : Fin (d + 1)) :
+    hornConeToStdSimplex.app _ ((inl _ _).app _ v) i = Fin.castLE (by omega) (v.1 i) := by
+  rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, inl_map_assoc, NatTrans.comp_app,
+    ConcreteCategory.comp_apply, stdSimplex.hom_app_apply,
+    yonedaEquiv_inl_comp_stdSimplexIso_hom (n := 2) (m := 0)]
+  rfl
+
+/-- The cone point of `Λ[2, 0] ⋆ Δ[0]` is sent to the vertex `3` of `Δ[3]`. -/
+private lemma hornConeToStdSimplex_app_inr_app {d : ℕ} (v : Δ[0] _⦋d⦌) (i : Fin (d + 1)) :
+    hornConeToStdSimplex.{u}.app _ ((inr _ _).app _ v) i = 3 := by
+  rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, inr_map_assoc, Category.id_comp,
+    stdSimplex.hom_app_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom (n := 2) (m := 0)]
+  simp [Fin.ext_iff]
 
 /-- The faces of `Δ[3]` opposite to the vertices `1` and `2` lie in `Λ[2, 0] ⋆ Δ[0]`: they are the
 cocones on the faces of `Δ[2]` opposite to the vertices `1` and `2`. -/
@@ -304,10 +277,8 @@ private lemma not_hornConeToStdSimplex_edge (t : (join (Λ[2, 0] : SSet.{u}) Δ[
     have hv' : hornConeToStdSimplex.app _ v 0 = 2 := by
       rw [NatTrans.naturality_apply, stdSimplex.obj_map_apply]
       exact h₁
-    rw [← inr_app_univ_right_app v hv, ← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
-      inr_map_assoc, Category.id_comp, stdSimplex.hom_app_apply,
-      yonedaEquiv_inr_comp_stdSimplexIso_hom (n := 2) (m := 0)] at hv'
-    exact absurd hv' (by simp [Fin.ext_iff])
+    rw [← inr_app_univ_right_app v hv, hornConeToStdSimplex_app_inr_app] at hv'
+    exact absurd hv' (by decide)
   · -- Otherwise `t` lies over the vertex `0`, so it is an edge of `Λ[2, 0]`.
     have hp₀ : (π _ _).app _ t 1 = 0 := by
       by_contra h
@@ -318,10 +289,7 @@ private lemma not_hornConeToStdSimplex_edge (t : (join (Λ[2, 0] : SSet.{u}) Δ[
       refine le_antisymm ?_ (Fin.zero_le _)
       rw [← hp₀]
       exact stdSimplex.monotone_apply _ (Fin.le_last i)
-    rw [← inl_app_univ_left_app t ht, ← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
-      inl_map_assoc] at h₀ h₁
-    rw [NatTrans.comp_app, ConcreteCategory.comp_apply, stdSimplex.hom_app_apply,
-      yonedaEquiv_inl_comp_stdSimplexIso_hom (n := 2) (m := 0)] at h₀ h₁
+    rw [← inl_app_univ_left_app t ht, hornConeToStdSimplex_app_inl_app] at h₀ h₁
     have hy := ((univ _ _).left.app _ ⟨t, ht⟩).2
     obtain ⟨k, hk, hky⟩ := (mem_horn_iff_notMem_range _ _).1 hy
     fin_cases k
@@ -331,7 +299,8 @@ private lemma not_hornConeToStdSimplex_edge (t : (join (Λ[2, 0] : SSet.{u}) Δ[
 
 private lemma range_hornConeToStdSimplex :
     Subcomplex.range hornConeToStdSimplex.{u} = stdSimplex.face {1}ᶜ ⊔ stdSimplex.face {2}ᶜ :=
-  le_antisymm (range_le_of_forall_edge _ not_hornConeToStdSimplex_edge)
+  le_antisymm (stdSimplex.range_le_face_singleton_compl_sup_face_singleton_compl _
+      (by decide) not_hornConeToStdSimplex_edge)
     (sup_le (face_le_range_hornConeToStdSimplex 1 (by decide))
       (face_le_range_hornConeToStdSimplex 2 (by decide)))
 
@@ -352,6 +321,15 @@ private lemma coneHornIso_hom_comp_toStdSimplexThree :
     coneHornIso.{u}.hom ≫ prodStdSimplex.toStdSimplexThree = coneHornToStdSimplex := by
   simp [coneHornIso, prodStdSimplex.inv_toRange_toStdSimplexThree_comp]
 
+/-- The vertex `i` of the image of `x` under `Δ[0] ⋆ Λ[2, 2] ≅ Δ[1] ⊗ Δ[1]`, seen in `Δ[3]`, is the
+vertex `i` of the image of `x` in `Δ[3]`. -/
+private lemma squareVertex_objEquiv_coneHornIso_hom_app {d : ℕ}
+    (x : (join Δ[0] (Λ[2, 2] : SSet.{u})) _⦋d⦌) (i : Fin (d + 1)) :
+    prodStdSimplex.squareVertex (prodStdSimplex.objEquiv (coneHornIso.hom.app _ x) i) =
+      coneHornToStdSimplex.app _ x i := by
+  rw [← prodStdSimplex.toStdSimplexThree_app_apply, ← ConcreteCategory.comp_apply,
+    ← NatTrans.comp_app, coneHornIso_hom_comp_toStdSimplexThree]
+
 /-- **The square as a cocone under a span.** The join `Λ[2, 0] ⋆ Δ[0]` of the horn `Λ[2, 0]` (the
 span `1 ⟵ 0 ⟶ 2`) and a point is the square `Δ[1] ⊗ Δ[1]`: the vertices `0`, `1` and `2` of the
 horn are the vertices `(0, 0)`, `(1, 0)` and `(0, 1)`, and the cone point is the vertex `(1, 1)`
@@ -366,14 +344,20 @@ private lemma hornConeIso_hom_comp_toStdSimplexThree :
     hornConeIso.{u}.hom ≫ prodStdSimplex.toStdSimplexThree = hornConeToStdSimplex := by
   simp [hornConeIso, prodStdSimplex.inv_toRange_toStdSimplexThree_comp]
 
+/-- The vertex `i` of the image of `x` under `Λ[2, 0] ⋆ Δ[0] ≅ Δ[1] ⊗ Δ[1]`, seen in `Δ[3]`, is the
+vertex `i` of the image of `x` in `Δ[3]`. -/
+private lemma squareVertex_objEquiv_hornConeIso_hom_app {d : ℕ}
+    (x : (join (Λ[2, 0] : SSet.{u}) Δ[0]) _⦋d⦌) (i : Fin (d + 1)) :
+    prodStdSimplex.squareVertex (prodStdSimplex.objEquiv (hornConeIso.hom.app _ x) i) =
+      hornConeToStdSimplex.app _ x i := by
+  rw [← prodStdSimplex.toStdSimplexThree_app_apply, ← ConcreteCategory.comp_apply,
+    ← NatTrans.comp_app, hornConeIso_hom_comp_toStdSimplexThree]
+
 /-- Under `Δ[0] ⋆ Λ[2, 2] ≅ Δ[1] ⊗ Δ[1]`, the cone point is the vertex `(0, 0)`. -/
 lemma objEquiv_coneHornIso_hom_app_inl (v : Δ[0] _⦋0⦌) :
     prodStdSimplex.objEquiv (coneHornIso.{u}.hom.app _ ((inl _ _).app _ v)) 0 = (0, 0) := by
   refine prodStdSimplex.squareVertex_injective ?_
-  rw [← prodStdSimplex.toStdSimplexThree_app_apply, ← ConcreteCategory.comp_apply,
-    ← NatTrans.comp_app, coneHornIso_hom_comp_toStdSimplexThree, ← ConcreteCategory.comp_apply,
-    ← NatTrans.comp_app, inl_comp_coneHornToStdSimplex, stdSimplex.hom_app_apply,
-    yonedaEquiv_map, stdSimplex.objEquiv_symm_apply, SimplexCategory.const_apply]
+  rw [squareVertex_objEquiv_coneHornIso_hom_app, coneHornToStdSimplex_app_inl_app]
   rfl
 
 /-- Under `Δ[0] ⋆ Λ[2, 2] ≅ Δ[1] ⊗ Δ[1]`, the vertices `0`, `1` and `2` of the horn are the
@@ -382,10 +366,7 @@ lemma objEquiv_coneHornIso_hom_app_inr (v : (Λ[2, 2] : SSet.{u}) _⦋0⦌) :
     prodStdSimplex.objEquiv (coneHornIso.{u}.hom.app _ ((inr _ _).app _ v)) 0 =
       ![(1, 0), (0, 1), (1, 1)] (v.1 0) := by
   refine prodStdSimplex.squareVertex_injective ?_
-  rw [← prodStdSimplex.toStdSimplexThree_app_apply, ← ConcreteCategory.comp_apply,
-    ← NatTrans.comp_app, coneHornIso_hom_comp_toStdSimplexThree, ← ConcreteCategory.comp_apply,
-    ← NatTrans.comp_app, inr_comp_coneHornToStdSimplex, NatTrans.comp_app,
-    ConcreteCategory.comp_apply, stdSimplex.hom_app_apply, yonedaEquiv_δ_apply, Fin.succAbove_zero]
+  rw [squareVertex_objEquiv_coneHornIso_hom_app, coneHornToStdSimplex_app_inr_app]
   exact ((by decide : ∀ a : Fin 3, prodStdSimplex.squareVertex (![(1, 0), (0, 1), (1, 1)] a) =
     a.succ) _).symm
 
@@ -395,10 +376,7 @@ lemma objEquiv_hornConeIso_hom_app_inl (v : (Λ[2, 0] : SSet.{u}) _⦋0⦌) :
     prodStdSimplex.objEquiv (hornConeIso.{u}.hom.app _ ((inl _ _).app _ v)) 0 =
       ![(0, 0), (1, 0), (0, 1)] (v.1 0) := by
   refine prodStdSimplex.squareVertex_injective ?_
-  rw [← prodStdSimplex.toStdSimplexThree_app_apply, ← ConcreteCategory.comp_apply,
-    ← NatTrans.comp_app, hornConeIso_hom_comp_toStdSimplexThree, ← ConcreteCategory.comp_apply,
-    ← NatTrans.comp_app, inl_map_assoc, NatTrans.comp_app, ConcreteCategory.comp_apply,
-    stdSimplex.hom_app_apply, yonedaEquiv_inl_comp_stdSimplexIso_hom (n := 2) (m := 0)]
+  rw [squareVertex_objEquiv_hornConeIso_hom_app, hornConeToStdSimplex_app_inl_app]
   exact ((by decide : ∀ a : Fin 3, prodStdSimplex.squareVertex (![(0, 0), (1, 0), (0, 1)] a) =
     Fin.castLE (by omega) a) _).symm
 
@@ -406,11 +384,8 @@ lemma objEquiv_hornConeIso_hom_app_inl (v : (Λ[2, 0] : SSet.{u}) _⦋0⦌) :
 lemma objEquiv_hornConeIso_hom_app_inr (v : Δ[0] _⦋0⦌) :
     prodStdSimplex.objEquiv (hornConeIso.{u}.hom.app _ ((inr _ _).app _ v)) 0 = (1, 1) := by
   refine prodStdSimplex.squareVertex_injective ?_
-  rw [← prodStdSimplex.toStdSimplexThree_app_apply, ← ConcreteCategory.comp_apply,
-    ← NatTrans.comp_app, hornConeIso_hom_comp_toStdSimplexThree, ← ConcreteCategory.comp_apply,
-    ← NatTrans.comp_app, inr_map_assoc, Category.id_comp, stdSimplex.hom_app_apply,
-    yonedaEquiv_inr_comp_stdSimplexIso_hom (n := 2) (m := 0), Fin.ext_iff]
-  simp [prodStdSimplex.squareVertex]
+  rw [squareVertex_objEquiv_hornConeIso_hom_app, hornConeToStdSimplex_app_inr_app]
+  rfl
 
 end join
 

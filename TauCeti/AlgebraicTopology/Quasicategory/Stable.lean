@@ -238,37 +238,17 @@ theorem not_isStable_of_not_nonempty (hC : ¬ C.Nonempty) : ¬ C.IsStable :=
 
 /-! ### The point is stable -/
 
-/-- All simplices of a slice of the point `Δ[0]` agree: they are maps to `Δ[0]`. -/
-private instance {K : SSet.{u}} (p : K ⟶ Δ[0]) (n : SimplexCategoryᵒᵖ) :
-    Subsingleton ((slice p).obj n) :=
-  ⟨fun _ _ ↦ slice.objEquiv.injective (Subtype.ext (stdSimplex.isTerminalObj₀.hom_ext _ _))⟩
-
-/-- All simplices of a coslice of the point `Δ[0]` agree: they are maps to `Δ[0]`. -/
-private instance {K : SSet.{u}} (p : K ⟶ Δ[0]) (n : SimplexCategoryᵒᵖ) :
-    Subsingleton ((coslice p).obj n) :=
-  ⟨fun _ _ ↦ coslice.objEquiv.injective (Subtype.ext (stdSimplex.isTerminalObj₀.hom_ext _ _))⟩
-
-/-- Every cone in the point `Δ[0]` is a limit cone. -/
-private lemma isLimit_of_stdSimplex_zero {K : SSet.{u}} (p : K ⟶ Δ[0]) (c : (slice p) _⦋0⦌) :
-    slice.IsLimit p c :=
-  (slice.isLimit_iff c).2 (isTerminalVertex_of_subsingleton c)
-
-/-- Every cocone in the point `Δ[0]` is a colimit cocone. -/
-private lemma isColimit_of_stdSimplex_zero {K : SSet.{u}} (p : K ⟶ Δ[0]) (c : (coslice p) _⦋0⦌) :
-    coslice.IsColimit p c :=
-  (coslice.isColimit_iff c).2 (isInitialVertex_of_subsingleton c)
-
 /-- **The point is stable**: in `Δ[0]` its vertex is a zero vertex, every diagram has a limit cone
 and a colimit cocone, and every cone and every cocone is a limit and a colimit. -/
 instance isStable_stdSimplex_zero : (Δ[0] : SSet.{u}).IsStable where
   exists_isZeroVertex := ⟨stdSimplex.obj₀Equiv.symm 0, stdSimplex.isInitialVertex_zero 0,
     stdSimplex.isTerminalVertex_last 0⟩
   exists_isLimit _ _ _ := ⟨slice.objEquiv.symm ⟨stdSimplex.isTerminalObj₀.from _,
-    stdSimplex.isTerminalObj₀.hom_ext _ _⟩, isLimit_of_stdSimplex_zero _ _⟩
+    stdSimplex.isTerminalObj₀.hom_ext _ _⟩, slice.isLimit_of_stdSimplex_zero _ _⟩
   exists_isColimit _ _ _ := ⟨coslice.objEquiv.symm ⟨stdSimplex.isTerminalObj₀.from _,
-    stdSimplex.isTerminalObj₀.hom_ext _ _⟩, isColimit_of_stdSimplex_zero _ _⟩
+    stdSimplex.isTerminalObj₀.hom_ext _ _⟩, coslice.isColimit_of_stdSimplex_zero _ _⟩
   isPullbackSquare_iff_isPushoutSquare σ :=
-    iff_of_true ((isPullbackSquare_iff σ).2 (isLimit_of_stdSimplex_zero _ _))
-      ((isPushoutSquare_iff σ).2 (isColimit_of_stdSimplex_zero _ _))
+    iff_of_true ((isPullbackSquare_iff σ).2 (slice.isLimit_of_stdSimplex_zero _ _))
+      ((isPushoutSquare_iff σ).2 (coslice.isColimit_of_stdSimplex_zero _ _))
 
 end SSet
