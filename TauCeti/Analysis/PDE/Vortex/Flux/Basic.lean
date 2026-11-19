@@ -332,12 +332,12 @@ private theorem isBigO_norm_pow_mul_one_sub_normSq
 /-- **Integrability of polynomial moments of the modulus defect.** For a `C²` vortex on the whole
 plane whose section satisfies `|α| → 1` at infinity, the modulus defect `1 - |α|²` against a
 continuous weight `g` with `g = O(‖z‖ᵏ)` at infinity is integrable. -/
-theorem integrable_one_sub_normSq_smul_of_isBigO {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
-    (hsol : ∀ z, equation x z = 0)
+theorem integrable_one_sub_normSq_smul_of_isBigO (μ : Measure ℂ) [μ.IsAddHaarMeasure]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (hp : ContDiff ℝ 2 (fun w ↦ x w 2))
+    (hq : ContDiff ℝ 2 (fun w ↦ x w 3)) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {g : ℂ → E}
     (hg : Continuous g) {k : ℕ} (hgk : g =O[cocompact ℂ] fun z ↦ ‖z‖ ^ k) :
-    Integrable fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z := by
+    Integrable (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z) μ := by
   have hdec : (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z) =O[cocompact ℂ]
       fun z ↦ Real.exp (-(1 / 8 * ‖z‖)) := by
     refine ((isBigO_refl (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) _).smul hgk).trans ?_
@@ -390,8 +390,8 @@ theorem integral_mul_one_sub_normSq_eq_mul_finsum
   set F : ℂ → ℝ := fun z ↦ (s z - 1) / 4 with hF
   -- The weighted defect is integrable.
   have hhF : Integrable fun z ↦ h z * F z := by
-    refine ((integrable_one_sub_normSq_smul_of_isBigO hp hq hsol hlim hh.continuous hhk).const_mul
-      (-1 / 4)).congr (.of_forall fun z ↦ ?_)
+    refine ((integrable_one_sub_normSq_smul_of_isBigO volume hp hq hsol hlim hh.continuous
+      hhk).const_mul (-1 / 4)).congr (.of_forall fun z ↦ ?_)
     simp only [hF, hs, smul_eq_mul]
     ring
   -- Dilated cutoffs `χ_m`, equal to `1` on a disc of radius `R m` containing every zero.

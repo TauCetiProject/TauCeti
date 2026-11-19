@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Existence
-public import TauCeti.Analysis.PDE.Vortex.Flux
+public import TauCeti.Analysis.PDE.Vortex.Flux.Basic
 public import TauCeti.RingTheory.Polynomial.PrescribedPowerSums
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
-import Mathlib.Analysis.Polynomial.Basic
+import TauCeti.Analysis.Polynomial.AtInfinity
 
 /-!
 # The flux moments of a plane vortex
@@ -81,15 +81,6 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-! ### Polynomial weights -/
 
-/-- A complex polynomial `Q` of degree at most `deg P` is `O(‖z‖^deg P)` at infinity. -/
-private theorem isBigO_eval_norm_pow {P Q : ℂ[X]} (hQ : Q.natDegree ≤ P.natDegree) :
-    (fun z ↦ Q.eval z) =O[cocompact ℂ] fun z ↦ ‖z‖ ^ P.natDegree := by
-  refine (cobounded_eq_cocompact (α := ℂ) ▸ (isBigO_cobounded_pow_natDegree Q).norm_right).trans
-    (.of_bound 1 ?_)
-  filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop 1] with z hz
-  simp only [norm_pow, norm_norm, one_mul]
-  exact pow_le_pow_right₀ hz hQ
-
 /-- The moment identity for the harmonic weight `L ∘ P`, where `P` is a complex polynomial and `L`
 a real linear functional on `ℂ`, in terms of the zero divisor `D`. -/
 private theorem integral_clm_eval_mul_one_sub_normSq_eq
@@ -102,12 +93,8 @@ private theorem integral_clm_eval_mul_one_sub_normSq_eq
       16 * π * (D.map fun z ↦ L (P.eval z)).sum := by
   have hP : ContDiff ℂ ∞ fun z ↦ P.eval z := P.differentiable.contDiff
   -- `L ∘ P` is harmonic, as the real part of a holomorphic function is.
-  have hΔ : Δ (fun z ↦ L (P.eval z)) = 0 := funext fun z ↦ by
-    have h := ((hP.restrict_scalars ℝ).of_le (by simp)).contDiffAt.laplacian_CLM_comp_left
-      (l := L) (x := z)
-    simp only [Function.comp_def] at h
-    rw [h, ((hP.contDiffAt.of_le (by simp)).harmonicAt).2.self_of_nhds, Pi.zero_apply,
-      map_zero, Pi.zero_apply]
+  have hΔ : Δ (fun z ↦ L (P.eval z)) = 0 :=
+    funext fun z ↦ ((hP.contDiffAt.of_le (by simp)).harmonicAt.comp_CLM L).2.self_of_nhds
   -- `‖D(L ∘ P)‖ ≤ ‖L‖ ‖P'‖`.
   have hfd (z : ℂ) : ‖fderiv ℝ (fun z ↦ L (P.eval z)) z‖ ≤ ‖L‖ * ‖P.derivative.eval z‖ := by
     have hd : HasFDerivAt (fun w ↦ P.eval w)
@@ -125,9 +112,9 @@ private theorem integral_clm_eval_mul_one_sub_normSq_eq
   have h := integral_mul_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim
     (isZeroMultiplicity_iff.1 hD) (h := fun z ↦ L (P.eval z))
     (L.contDiff.comp (hP.restrict_scalars ℝ)) hΔ
-    ((L.isBigO_comp _ _).trans (isBigO_eval_norm_pow le_rfl))
+    ((L.isBigO_comp _ _).trans (isBigO_cocompact_eval_norm_pow_of_natDegree_le le_rfl))
     ((isBigO_of_le _ fun z ↦ (hfd z).trans_eq (Real.norm_of_nonneg (by positivity)).symm).trans
-      (((isBigO_refl _ _).const_mul_left ‖L‖).trans (isBigO_eval_norm_pow
+      (((isBigO_refl _ _).const_mul_left ‖L‖).trans (isBigO_cocompact_eval_norm_pow_of_natDegree_le
         ((natDegree_derivative_le P).trans (Nat.sub_le _ _))).norm_left))
   -- The sum against the multiplicities of `D` is the sum over `D`.
   rw [h, finsum_eq_sum_of_support_subset _ (s := D.toFinset) fun a ha ↦ ?_,
@@ -148,8 +135,8 @@ theorem integral_one_sub_normSq_smul_eval_eq
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
     (hD : IsZeroMultiplicity (sectionValue x) (D.count ·)) (P : ℂ[X]) :
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • P.eval z = 16 * π * (D.map fun z ↦ P.eval z).sum := by
-  have hint := integrable_one_sub_normSq_smul_of_isBigO hp hq hsol hlim P.continuous
-    (isBigO_eval_norm_pow le_rfl)
+  have hint := integrable_one_sub_normSq_smul_of_isBigO volume hp hq hsol hlim P.continuous
+    (isBigO_cocompact_eval_norm_pow_of_natDegree_le le_rfl)
   -- Both sides have the same image under every real linear functional `L`.
   have hL (L : ℂ →L[ℝ] ℝ) : L (∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • P.eval z) =
       L (16 * π * (D.map fun z ↦ P.eval z).sum) := by
@@ -211,6 +198,16 @@ theorem fluxMoment_eq_sum_map_pow
   rw [fluxMoment_def, h]
   field_simp
 
+/-- The flux moments of a plane vortex, as a sequence, are the power sums of its zeros. -/
+theorem fluxMoment_eq_fun_sum_map_pow
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
+    (hD : IsZeroMultiplicity (sectionValue x) (D.count ·)) :
+    fluxMoment x = fun k ↦ (D.map (· ^ k)).sum :=
+  funext (fluxMoment_eq_sum_map_pow hb₁ hb₂ hp hq hsol hlim hD)
+
 /-- **The moment polynomial of a plane vortex.** For a `C²` vortex on the whole plane whose section
 satisfies `|α| → 1` at infinity, with zero divisor `D`, the monic polynomial of degree `deg D`
 whose Newton coefficients are given by the flux moments is `∏_{z ∈ D} (W - z)`. -/
@@ -221,8 +218,7 @@ theorem newtonPolynomial_fluxMoment
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
     (hD : IsZeroMultiplicity (sectionValue x) (D.count ·)) :
     newtonPolynomial (fluxMoment x) (Multiset.card D) = (D.map fun z ↦ X - C z).prod := by
-  rw [show fluxMoment x = fun k ↦ (D.map (· ^ k)).sum from
-    funext (fluxMoment_eq_sum_map_pow hb₁ hb₂ hp hq hsol hlim hD), newtonPolynomial_sum_map_pow]
+  rw [fluxMoment_eq_fun_sum_map_pow hb₁ hb₂ hp hq hsol hlim hD, newtonPolynomial_sum_map_pow]
 
 /-- **The zero divisor of a plane vortex from its flux moments.** For a `C²` vortex on the whole
 plane whose section satisfies `|α| → 1` at infinity, with zero divisor `D`, the roots of the monic
@@ -251,16 +247,20 @@ theorem fluxMoment_eq_sum_map_pow_framedVortexDivisor (x : framedVortexSubMulAct
     (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
     (isZeroMultiplicity_sectionValue_framedVortexDivisor x) k
 
+/-- The flux moments of a smooth framed degree-`m` vortex, as a sequence, are the power sums of
+its divisor. -/
+theorem fluxMoment_eq_fun_sum_map_pow_framedVortexDivisor (x : framedVortexSubMulAction m) :
+    fluxMoment x = fun k ↦ ((framedVortexDivisor x : Multiset ℂ).map (· ^ k)).sum :=
+  funext (fluxMoment_eq_sum_map_pow_framedVortexDivisor x)
+
 /-- **The divisor of a framed vortex from its flux moments.** The divisor of a smooth framed
 degree-`m` vortex is the multiset of roots of the monic polynomial of degree `m` whose Newton
 coefficients are given by its flux moments `(2π)⁻¹ ∫ zᵏ iF_a`. -/
 theorem framedVortexDivisor_eq_roots_newtonPolynomial_fluxMoment
     (x : framedVortexSubMulAction m) :
     (framedVortexDivisor x : Multiset ℂ) = (newtonPolynomial (fluxMoment x) m).roots := by
-  rw [show fluxMoment x = fun k ↦ ((framedVortexDivisor x : Multiset ℂ).map (· ^ k)).sum from
-    funext (fluxMoment_eq_sum_map_pow_framedVortexDivisor x)]
   have h := roots_newtonPolynomial_sum_map_pow (framedVortexDivisor x : Multiset ℂ)
-  rw [Sym.card_coe] at h
+  rw [Sym.card_coe, ← fluxMoment_eq_fun_sum_map_pow_framedVortexDivisor] at h
   exact h.symm
 
 /-- **Symmetric coordinates of a framed vortex.** The elementary symmetric functions of the
@@ -268,7 +268,6 @@ divisor of a smooth framed degree-`m` vortex, the coordinates of `Sym ℂ m ≃ 
 coefficients of its flux moments `(2π)⁻¹ ∫ zᵏ iF_a`. -/
 theorem esymm_framedVortexDivisor_eq_newtonCoeff_fluxMoment (x : framedVortexSubMulAction m)
     (j : ℕ) : (framedVortexDivisor x : Multiset ℂ).esymm j = newtonCoeff (fluxMoment x) j := by
-  rw [show fluxMoment x = fun k ↦ ((framedVortexDivisor x : Multiset ℂ).map (· ^ k)).sum from
-    funext (fluxMoment_eq_sum_map_pow_framedVortexDivisor x), newtonCoeff_sum_map_pow]
+  rw [fluxMoment_eq_fun_sum_map_pow_framedVortexDivisor, newtonCoeff_sum_map_pow]
 
 end TauCeti.Vortex

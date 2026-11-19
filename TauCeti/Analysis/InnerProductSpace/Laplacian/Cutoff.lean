@@ -198,6 +198,20 @@ private theorem norm_laplacian_mul_smul_le {χ h : E → ℝ} {f : E → F} {x :
         linarith [show 2 / r + 1 / r = 3 / r by ring]
     _ = 3 * c * C * ε / r ^ 2 := by ring
 
+/-- In a two-dimensional space, a function bounded by `a / r²` and supported in
+`closedBall 0 (2 * r)` has integral of norm at most `4 a μ(closedBall 0 1)`. -/
+private theorem norm_integral_le_of_norm_le_indicator_closedBall (μ : Measure E)
+    [μ.IsAddHaarMeasure] (hE : Module.finrank ℝ E = 2) {f : E → F} {r a : ℝ} (hr : 0 < r)
+    (hf : ∀ x, ‖f x‖ ≤ (closedBall (0 : E) (2 * r)).indicator (fun _ ↦ a / r ^ 2) x) :
+    ‖∫ x, f x ∂μ‖ ≤ 4 * a * μ.real (closedBall (0 : E) 1) := by
+  have hg : Integrable ((closedBall (0 : E) (2 * r)).indicator fun _ ↦ a / r ^ 2) μ :=
+    (integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator measurableSet_closedBall
+  refine (norm_integral_le_of_norm_le hg (.of_forall hf)).trans_eq ?_
+  rw [integral_indicator_const _ measurableSet_closedBall,
+    Measure.addHaar_real_closedBall' μ _ (by positivity), hE, smul_eq_mul]
+  field_simp
+  ring
+
 /-- **Laplacians of planar cutoffs of harmonic weights against decaying functions.** In a
 two-dimensional space, let the `C²` cutoffs `χ i` equal `1` near `ball 0 (R i)` and `0` near the
 complement of `closedBall 0 (2 * R i)`, with `‖Dχ i‖ ≤ C / R i`, `|Δ χ i| ≤ C / (R i)²` and
@@ -252,16 +266,10 @@ theorem tendsto_integral_laplacian_mul_smul_of_tendsto_cocompact (μ : Measure E
       (hdhx.trans (by gcongr; exact (le_max_right _ _).trans (le_max_left _ _))) ?_
     simpa [norm_smul, norm_pow] using
       (hR' ((le_max_left _ _ |>.trans (le_max_left _ _)).trans (hi.le.trans hxr))).le
-  have hg : Integrable g μ :=
-    (integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator measurableSet_closedBall
   rw [dist_zero_right]
-  calc ‖∫ x, Δ (fun y ↦ χ i y * h y) x • f x ∂μ‖ ≤ ∫ x, g x ∂μ :=
-        norm_integral_le_of_norm_le hg (.of_forall hbound)
-    _ = 12 * c * C' * V * ε' := by
-      rw [integral_indicator_const _ measurableSet_closedBall,
-        Measure.addHaar_real_closedBall' μ _ (by positivity), hE, smul_eq_mul]
-      field_simp
-      ring
+  calc ‖∫ x, Δ (fun y ↦ χ i y * h y) x • f x ∂μ‖ ≤ 4 * (3 * c * C' * ε') * V :=
+        norm_integral_le_of_norm_le_indicator_closedBall μ hE (by positivity) hbound
+    _ = 12 * c * C' * V * ε' := by ring
     _ < ε := by
       rw [hε', mul_div_assoc', div_lt_iff₀ (by positivity)]
       nlinarith [mul_nonneg (mul_nonneg (mul_nonneg (by norm_num : (0 : ℝ) ≤ 12)
