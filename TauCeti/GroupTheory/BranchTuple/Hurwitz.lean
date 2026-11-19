@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.GroupTheory.BranchTuple.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
 import Mathlib.Tactic.Group
@@ -398,27 +399,20 @@ namespace NielsenClass
 
 variable {G : Type*} [Group G] {A : Subgroup (MulAut G)} {r : ℕ}
 
-/-- Two branch tuples are related by `A` exactly when their images under a braid are. -/
-private theorem orbitRel_hurwitzAction_iff (b : BraidGroup r) (t t' : BranchTuple r G) :
-    MulAction.orbitRel A (BranchTuple r G) t t' ↔
-      MulAction.orbitRel A (BranchTuple r G)
-        (BranchTuple.hurwitzAction b t) (BranchTuple.hurwitzAction b t') := by
-  simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-  refine exists_congr fun φ ↦ ?_
-  rw [Subgroup.smul_def, Subgroup.smul_def, ← BranchTuple.hurwitzAction_smul,
-    (BranchTuple.hurwitzAction b).injective.eq_iff]
-
 /-- The Hurwitz action of the braid group on Nielsen classes relative to a group `A` of
 automorphisms, induced by the action on branch tuples. -/
 def hurwitzAction : BraidGroup r →* Equiv.Perm (NielsenClass A r) where
-  toFun b := Quotient.congr (BranchTuple.hurwitzAction b) (orbitRel_hurwitzAction_iff b)
+  toFun b := MulAction.orbitRelQuotientCongr (MulEquiv.refl A) (BranchTuple.hurwitzAction b)
+    fun φ t ↦ by
+      rw [MulEquiv.refl_apply, Subgroup.smul_def, Subgroup.smul_def,
+        BranchTuple.hurwitzAction_smul]
   map_one' := by
     ext q
-    induction q using Quotient.inductionOn
+    induction q using Quotient.inductionOn'
     simp
   map_mul' b b' := by
     ext q
-    induction q using Quotient.inductionOn
+    induction q using Quotient.inductionOn'
     simp
 
 /-- The Hurwitz action on Nielsen classes is computed on representatives. -/
@@ -426,7 +420,7 @@ def hurwitzAction : BraidGroup r →* Equiv.Perm (NielsenClass A r) where
 theorem hurwitzAction_mk (b : BraidGroup r) (t : BranchTuple r G) :
     hurwitzAction b (Quotient.mk'' t : NielsenClass A r) =
       Quotient.mk'' (BranchTuple.hurwitzAction b t) :=
-  (rfl)
+  MulAction.orbitRelQuotientCongr_mk _ _ _ t
 
 end NielsenClass
 
