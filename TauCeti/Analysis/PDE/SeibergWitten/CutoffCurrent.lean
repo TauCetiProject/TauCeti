@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.PhaseForm
 public import TauCeti.Analysis.Calculus.DifferentialForm.TwistedDifferential
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
@@ -34,7 +35,10 @@ Write `s = |α|²`. Away from the zeros of `α` the pair has the gauge-invariant
 whose first summand is the differential of a local branch of `arg α`. The modulus is governed by
 the real part instead: `ds = 2 Re (conj α ∇_a α)`, so `|ds| ≤ 2 |α| |∇_a α|`
 (`fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv`,
-`norm_fderiv_norm_sq_le_mul_norm_covariantDeriv`). In Taubes's passage from
+`norm_fderiv_norm_sq_le_mul_norm_covariantDeriv`), while `|dα| ≤ |∇_a α| + |b| |α|`
+(`norm_fderiv_le_norm_covariantDeriv_add`). A gauge transformation
+`(b, α) ↦ (b - dθ, exp (i θ) α)` by a phase `θ : E → ℝ` multiplies `∇_a α` by `exp (i θ)`
+(`covariantDeriv_exp_mul`, `norm_covariantDeriv_exp_mul`). In Taubes's passage from
 Seiberg–Witten solutions to pseudoholomorphic curves, `α` is the component of the rescaled
 spinor along the canonical unit spinor, its zero set concentrates along the limiting curve, and
 the curvature `i F_a = -db` is compared with the current of that curve through the **cutoff
@@ -199,6 +203,40 @@ theorem norm_fderiv_norm_sq_le_mul_norm_covariantDeriv (hα : DifferentiableAt �
     _ ≤ ‖α x‖ * (‖covariantDeriv b α x‖ * ‖v‖) := by
       gcongr
       exact ContinuousLinearMap.le_opNorm _ _
+
+/-- **Gauge covariance of the covariant derivative.** If `b' = b - dθ` at `x`, then the covariant
+derivative of `exp (i θ) α` for `b'` is `exp (i θ)` times that of `α` for `b`. -/
+theorem covariantDeriv_exp_mul {θ : E → ℝ} {b' : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    (hθ : DifferentiableAt ℝ θ x) (hα : DifferentiableAt ℝ α x)
+    (hb' : b' x = b x - .ofSubsingleton ℝ E ℝ (0 : Fin 1) (fderiv ℝ θ x)) :
+    covariantDeriv b' (fun y ↦ cexp (θ y * I) * α y) x = cexp (θ x * I) • covariantDeriv b α x := by
+  have hθc : HasFDerivAt (fun y ↦ (θ y : ℂ) * I) (I • (ofRealCLM.comp (fderiv ℝ θ x))) x :=
+    HasFDerivAt.mul_const ((ofRealCLM.hasFDerivAt (x := θ x)).comp x hθ.hasFDerivAt) I
+  have hd := (HasFDerivAt.fun_mul (HasFDerivAt.cexp hθc) hα.hasFDerivAt).fderiv
+  ext v
+  simp [covariantDeriv_apply, hd, hb']
+  ring
+
+/-- The gauge transformation by a phase preserves the norm of the covariant derivative. -/
+theorem norm_covariantDeriv_exp_mul {θ : E → ℝ} {b' : E → E [⋀^Fin 1]→L[ℝ] ℝ}
+    (hθ : DifferentiableAt ℝ θ x) (hα : DifferentiableAt ℝ α x)
+    (hb' : b' x = b x - .ofSubsingleton ℝ E ℝ (0 : Fin 1) (fderiv ℝ θ x)) :
+    ‖covariantDeriv b' (fun y ↦ cexp (θ y * I) * α y) x‖ = ‖covariantDeriv b α x‖ := by
+  rw [covariantDeriv_exp_mul hθ hα hb', norm_smul, norm_exp_ofReal_mul_I, one_mul]
+
+/-- The derivative of a section is bounded by its covariant derivative and the connection form:
+`|dα| ≤ |∇_a α| + |b| |α|`. -/
+theorem norm_fderiv_le_norm_covariantDeriv_add (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ)
+    (x : E) : ‖fderiv ℝ α x‖ ≤ ‖covariantDeriv b α x‖ + ‖b x‖ * ‖α x‖ := by
+  have h : fderiv ℝ α x = covariantDeriv b α x -
+      ((ofSubsingletonLIE (0 : Fin 1)).symm (b x)).smulRight (I * α x) := by
+    ext v
+    simp [covariantDeriv_apply]
+    ring
+  rw [h]
+  refine (norm_sub_le _ _).trans (add_le_add_right ?_ _)
+  rw [ContinuousLinearMap.norm_smulRight_apply, LinearIsometryEquiv.norm_map, norm_mul, norm_I,
+    one_mul]
 
 /-- The phase form `τ = Im (α⁻¹ dα) + b` of a pair `(a, α)` with `a = i b`. Away from the zeros
 of `α` it is `Im (conj α ∇_a α) / |α|²` (`covariantPhaseForm_apply_eq_div`). -/

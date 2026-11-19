@@ -203,7 +203,7 @@ theorem isFinDim_reflectionFunctorList_obj :
       rw [reflectionFunctor_obj]
       exact (@isFinDim_iff.{u, v, w, max v w x} k V fld (Quiver.reflectAt q i) _).mpr
         (finiteDimensional_reflectRep_obj M (Quiver.isSinkAdmissible_cons.mp hl).1
-          ((@isFinDim_iff.{u, v, w, max v w x} k V fld q M).mp hfd))
+          fun a _ ↦ (@isFinDim_iff.{u, v, w, max v w x} k V fld q M).mp hfd a)
 
 /-! ### The action on an indecomposable representation -/
 
@@ -249,7 +249,7 @@ theorem indecomposable_and_dimVector_reflectionFunctorList_or_isZero [DecidableE
         rcases indecomposable_and_dimVector_reflectionFunctorList_or_isZero l
             (Quiver.reflectAt q i) (@instFintypeReflectHom V q hq i) hl' (reflectRep M hi)
             (indecomposable_reflectRep hi hM hs)
-            (finiteDimensional_reflectRep_obj M hi hfd) with ⟨h1, h2⟩ | h
+            (finiteDimensional_reflectRep_obj M hi fun a _ ↦ hfd a) with ⟨h1, h2⟩ | h
         · refine Or.inl ⟨h1, ?_⟩
           calc (fun j : V ↦ (@dimVector k V fld (Quiver.reflectList q (i :: l))
                 ((reflectionFunctorList k l (Quiver.reflectAt q i)

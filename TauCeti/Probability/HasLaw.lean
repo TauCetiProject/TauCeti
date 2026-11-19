@@ -8,15 +8,19 @@ module
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.ConditionalProbability
+public import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.MeasureTheory.Measure.Dirac
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
+import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
+import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 import TauCeti.MeasureTheory.Measure.AEMeasurable
 import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
-# Conditioning laws, source atoms and connected sources
+# Conditioning laws, source atoms, connected sources and almost-sure limits
 
 Conditioning a map on the preimage of a measurable event conditions its law on that event.
 This allows conditional distribution identities proved on a canonical law to be used for
@@ -27,7 +31,9 @@ A finite-mass measurable atom of a source measure is an obstruction to a prescri
 almost-everywhere measurable map sends its whole mass to a single point of a standard Borel target.
 For singleton atoms this needs no condition on the target measurable space, since their image is
 already explicit. This file records both forms of the constraint and their consequences for
-transporting Dirac measures and for laws that are null on singletons.
+transporting Dirac measures and for laws that are null on singletons. In the other direction, an
+almost everywhere measurable map whose level set at a point has mass one, under a measure that is
+zero or a probability measure, has the Dirac law at that point.
 
 Connectedness of the source is a second obstruction, this time to continuous maps. A map that is
 continuous on a set `s` carrying `μ`, with every point of `s` in the support of `μ`, sends all of
@@ -37,7 +43,10 @@ connected support onto a law split into two separated pieces is continuous on th
 is the topological reason why optimal transport maps onto disconnected targets are discontinuous.
 
 Adjoining a coordinate with an s-finite measure to a random variable gives the pair the product
-measure. Completing the source measure preserves every random variable's law.
+measure. Completing the source measure preserves every random variable's law, finite-dimensional
+marginals determine the path-space law of an a.e.-measurable process on a finite measure space, and
+passing to an almost-sure limit along a countably generated nontrivial filter on a finite measure
+space preserves a common law when the target Borel space has outer closed approximation.
 Nonnegative random variables whose real coercions have a common law are identically distributed.
 
 Finite product laws are characterized by coordinate independence and marginal laws;
@@ -52,6 +61,10 @@ measurable equivalences let these characterizations pass to other representation
 * `ProbabilityTheory.HasLaw.ae` — almost-everywhere properties of a law transfer to any random
   variable with that law, without requiring the property to be measurable;
 * `ProbabilityTheory.HasLaw.cond` — conditioning transports a prescribed law;
+* `ProbabilityTheory.HasLaw.cond_of_restrict`,
+  `ProbabilityTheory.HasLaw.of_restrict_inter_of_ae_mem`, and
+  `ProbabilityTheory.HasLaw.of_restrict_of_ae_mem` — normalizing a scalar-multiple restricted law
+  under conditional probability and removing almost-surely holding events from the restriction;
 * `ProbabilityTheory.HasLaw.aemeasurable_of_ae_eq_comp` — a map almost everywhere equal to an
   a.e. measurable map composed with a random variable of the right law is a.e. measurable;
 * `ProbabilityTheory.HasLaw.measure_singleton_le` — the law of `T` gives `{T x}` at least the
@@ -72,14 +85,25 @@ measurable equivalences let these characterizations pass to other representation
   `Measure.dirac x` exactly when `ν` is the Dirac measure at its value at `x`;
 * `TauCeti.Probability.not_hasLaw_dirac_source_of_forall_ne_dirac` — no map at all has a
   non-Dirac law under a Dirac measure;
+* `TauCeti.Probability.hasLaw_dirac_of_prob_eq_one` — an a.e. measurable map whose level set
+  `{T = y}` has mass one, under a measure that is zero or a probability measure, has law
+  `Measure.dirac y`;
 * `ProbabilityTheory.HasLaw.mapsTo_support_of_continuousOn` — a map continuous on a carrier of
   `μ` inside its support sends that carrier into the support of its law;
 * `ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_continuousOn` — a map
   continuous on a preconnected such carrier has a law that does not charge both of two disjoint
-  closed sets carrying it.
+  closed sets carrying it;
+* `ProbabilityTheory.hasLaw_pi_iff_forall_finset_restrict` — finite-dimensional marginal
+  characterization of path-space laws on finite measure spaces;
+* `ProbabilityTheory.HasLaw.of_ae_tendsto` and
+  `ProbabilityTheory.HasLaw.of_ae_tendsto_metrizable` — almost-sure limits along countably
+  generated nontrivial filters preserve a common law on a finite measure space.
 
-Mathlib's `ProbabilityTheory.hasLaw_dirac_iff` is the statement for a Dirac *target*; the results
-here are about a Dirac *source*, which is what `dirac_source` records in their names.
+Mathlib's `ProbabilityTheory.hasLaw_dirac_iff` and `ProbabilityTheory.hasLaw_dirac_of_ae_eq` are
+statements for a Dirac *target*, and so is `TauCeti.Probability.hasLaw_dirac_of_prob_eq_one`.
+`TauCeti.Probability.hasLaw_dirac_source_iff` and
+`TauCeti.Probability.not_hasLaw_dirac_source_of_forall_ne_dirac` are about a Dirac *source*, which
+is what `dirac_source` records in their names.
 -/
 
 public section
@@ -140,6 +164,45 @@ theorem _root_.ProbabilityTheory.HasLaw.cond (hT : HasLaw T ν μ) {s : Set Y}
     ← Measure.restrict_map_of_aemeasurable hT.aemeasurable hs,
     ← Measure.map_apply_of_aemeasurable hT.aemeasurable hs, hT.map_eq,
     ProbabilityTheory.cond]
+
+section Restrict
+
+open Set
+open scoped ENNReal
+
+/-- A scalar-multiple law `P S • ν` under `P.restrict S` normalizes to law `ν` under the
+conditional probability measure `ProbabilityTheory.cond P S` whenever `S` has positive finite
+measure. -/
+theorem _root_.ProbabilityTheory.HasLaw.cond_of_restrict {Ω β : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace β] {P : Measure Ω} {ν : Measure β} {Z : Ω → β} {S : Set Ω}
+    (h : HasLaw Z (P S • ν) (P.restrict S)) (hS₀ : P S ≠ 0) (hSₜ : P S ≠ ∞) :
+    HasLaw Z ν (ProbabilityTheory.cond P S) := by
+  rw [ProbabilityTheory.cond]
+  refine ⟨h.aemeasurable.smul_measure _, ?_⟩
+  rw [Measure.map_smul _ h.aemeasurable, h.map_eq, smul_smul, ENNReal.inv_mul_cancel hS₀ hSₜ,
+    one_smul]
+
+/-- Intersecting the restriction set with an almost-surely holding event does not alter a
+restricted scalar-multiple law. -/
+theorem _root_.ProbabilityTheory.HasLaw.of_restrict_inter_of_ae_mem {Ω β : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace β] {P : Measure Ω} {ν : Measure β} {Z : Ω → β}
+    {A F : Set Ω} (h : HasLaw Z (P (A ∩ F) • ν) (P.restrict (A ∩ F))) (hF : ∀ᵐ ω ∂P, ω ∈ F) :
+    HasLaw Z (P A • ν) (P.restrict A) := by
+  have heq : (A ∩ F : Set Ω) =ᵐ[P] A := by
+    filter_upwards [hF] with ω hω
+    exact and_iff_left hω
+  simpa only [Measure.restrict_congr_set heq, measure_congr heq] using h
+
+/-- Under a probability measure, a restricted scalar-multiple law on an almost-surely holding
+event gives the unconditional law. -/
+theorem _root_.ProbabilityTheory.HasLaw.of_restrict_of_ae_mem {Ω β : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace β] {P : Measure Ω} [IsProbabilityMeasure P] {ν : Measure β} {Z : Ω → β}
+    {F : Set Ω} (h : HasLaw Z (P F • ν) (P.restrict F)) (hF : ∀ᵐ ω ∂P, ω ∈ F) :
+    HasLaw Z ν P := by
+  have huniv : HasLaw Z (P (univ ∩ F) • ν) (P.restrict (univ ∩ F)) := by simpa using h
+  simpa using huniv.of_restrict_inter_of_ae_mem hF
+
+end Restrict
 
 /-- Nonnegative random variables whose real coercions have the same law are identically
 distributed, even when defined on different measure spaces. -/
@@ -333,6 +396,17 @@ theorem not_hasLaw_dirac_source_of_forall_ne_dirac (hν : ∀ y : Y, ν ≠ Meas
     ¬HasLaw T ν (Measure.dirac x) :=
   fun h ↦ hν (T x) ((hasLaw_dirac_source_iff h.aemeasurable).1 h)
 
+/-- An a.e. measurable map whose level set `{T = y}` has mass one has the Dirac measure at `y` as
+its law. This is the analogue of `ProbabilityTheory.hasLaw_dirac_of_ae_eq` with the almost sure
+equality `T =ᵐ[μ] fun _ ↦ y` replaced by `μ {T = y} = 1`. Singletons of `Y` need not be
+measurable, so `{T = y}` need not be a measurable event and `μ` is evaluated on it as an outer
+measure. The measure is only assumed to be zero or a probability measure; the hypothesis `h` rules
+out the zero measure. -/
+theorem hasLaw_dirac_of_prob_eq_one [IsZeroOrProbabilityMeasure μ] {y : Y}
+    (hT : AEMeasurable T μ) (h : μ {x | T x = y} = 1) : HasLaw T (Measure.dirac y) μ :=
+  ⟨hT, Measure.eq_dirac_of_measure_singleton_eq_one <|
+    one_le_prob_iff.1 (h.ge.trans (Measure.le_map_apply hT {y}))⟩
+
 section Topology
 
 variable [TopologicalSpace X] [TopologicalSpace Y] {s : Set X}
@@ -376,6 +450,97 @@ theorem _root_.ProbabilityTheory.HasLaw.measure_eq_zero_or_measure_eq_zero_of_co
   · exact Or.inl (hnull hA (Set.mapsTo_iff_image_subset.2 hsB) hAB.symm)
 
 end Topology
+
+section Projective
+
+/-- For an almost-everywhere measurable sample-path map on a finite measure space, having path law
+`ρ` is equivalent to every finite-dimensional restriction `I.restrict (X · ω)` having law
+`ρ.map I.restrict`. Finiteness of `ρ` need not be assumed separately. -/
+theorem _root_.ProbabilityTheory.hasLaw_pi_iff_forall_finset_restrict
+    {T Ω : Type*} {𝓧 : T → Type*} [MeasurableSpace Ω] [∀ t, MeasurableSpace (𝓧 t)]
+    {μ : Measure Ω} [IsFiniteMeasure μ] {ρ : Measure (∀ t, 𝓧 t)} {X : (t : T) → Ω → 𝓧 t}
+    (hX : AEMeasurable (fun ω t ↦ X t ω) μ) :
+    HasLaw (fun ω t ↦ X t ω) ρ μ ↔
+      ∀ I : Finset T, HasLaw (fun ω ↦ I.restrict (X · ω)) (ρ.map I.restrict) μ := by
+  refine ⟨fun h I ↦ (hasLaw_map (Finset.measurable_restrict I).aemeasurable).comp h, fun h ↦ ?_⟩
+  have (I : Finset T) : IsFiniteMeasure (ρ.map I.restrict) := (h I).map_eq ▸ inferInstance
+  have hlim : IsProjectiveLimit (μ.map (fun ω t ↦ X t ω)) (fun I ↦ ρ.map I.restrict) :=
+    fun I ↦ (isProjectiveLimit_map hX I).trans (h I).map_eq
+  exact ⟨hX, hlim.unique fun _ ↦ rfl⟩
+
+end Projective
+
+section Limit
+
+open Filter
+open scoped Topology
+
+/-- An almost-sure limit along a countably generated nontrivial filter preserves a common law
+into a Borel space with outer closed approximation. Only finiteness of the source measure is
+required; no moment bound on the random variables is needed. -/
+theorem _root_.ProbabilityTheory.HasLaw.of_ae_tendsto {ι Ω E : Type*} [MeasurableSpace Ω]
+    [TopologicalSpace E] [MeasurableSpace E] [BorelSpace E] [HasOuterApproxClosed E]
+    {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {ν : Measure E} {X : ι → Ω → E} {Y : Ω → E}
+    (hX : ∀ᶠ i in l, HasLaw (X i) ν μ) (hY : AEMeasurable Y μ)
+    (hlim : ∀ᵐ ω ∂μ, Tendsto (fun i ↦ X i ω) l (𝓝 (Y ω))) :
+    HasLaw Y ν μ := by
+  classical
+  obtain ⟨i₀, hi₀⟩ := hX.exists
+  by_cases hμ0 : μ Set.univ = 0
+  · have hμ : μ = 0 := Measure.measure_univ_eq_zero.1 hμ0
+    subst hμ
+    have hν : ν = 0 := by simpa using hi₀.map_eq.symm
+    exact hν ▸ ⟨hY, by simp⟩
+  · let P : Measure Ω := (μ Set.univ)⁻¹ • μ
+    have : IsProbabilityMeasure P :=
+      ⟨by simp [P, ENNReal.inv_mul_cancel hμ0 (measure_ne_top μ Set.univ)]⟩
+    let X' : ι → Ω → E := fun i ↦ if HasLaw (X i) ν μ then X i else X i₀
+    have hX' (i : ι) : HasLaw (X' i) ν μ := by
+      dsimp only [X']
+      split_ifs with hi
+      · exact hi
+      · exact hi₀
+    have hX'P (i : ι) : HasLaw (X' i) ((μ Set.univ)⁻¹ • ν) P :=
+      ⟨(hX' i).aemeasurable.smul_measure _, by
+        rw [Measure.map_smul _ (hX' i).aemeasurable, (hX' i).map_eq]⟩
+    have hYP : AEMeasurable Y P := hY.smul_measure _
+    have hlim' : ∀ᵐ ω ∂P, Tendsto (fun i ↦ X' i ω) l (𝓝 (Y ω)) := by
+      filter_upwards [Measure.ae_smul_measure hlim _] with ω hω
+      exact hω.congr' (hX.mono fun i hi ↦ by simp [X', hi])
+    have h1 : TendstoInDistribution X' l Y (fun _ ↦ P) P :=
+      tendstoInDistribution_of_ae_tendsto (fun i ↦ (hX'P i).aemeasurable) hYP hlim'
+    have h2 : TendstoInDistribution X' l (X' i₀) (fun _ ↦ P) P :=
+      tendstoInDistribution_of_identDistrib i₀
+        (fun j ↦ ⟨(hX'P i₀).aemeasurable, (hX'P j).aemeasurable,
+          (hX'P i₀).map_eq.trans (hX'P j).map_eq.symm⟩)
+        (IdentDistrib.refl (hX'P i₀).aemeasurable)
+    have hmap : P.map Y = P.map (X' i₀) := tendstoInDistribution_unique X' h1 h2
+    refine ⟨hY, ?_⟩
+    have hsmul : (μ Set.univ)⁻¹ • μ.map Y = (μ Set.univ)⁻¹ • ν := by
+      rw [Measure.map_smul _ hY, Measure.map_smul _ (hX' i₀).aemeasurable,
+        (hX' i₀).map_eq] at hmap
+      exact hmap
+    have h := congrArg (μ Set.univ • ·) hsmul
+    simpa [smul_smul, ENNReal.mul_inv_cancel hμ0 (measure_ne_top μ Set.univ)] using h
+
+/-- In a pseudo-metrizable Borel space, almost-everywhere measurability of the limit is automatic,
+so an almost-sure limit of random variables eventually sharing a law retains that law. -/
+theorem _root_.ProbabilityTheory.HasLaw.of_ae_tendsto_metrizable {ι Ω E : Type*}
+    [MeasurableSpace Ω] [TopologicalSpace E] [TopologicalSpace.PseudoMetrizableSpace E]
+    [MeasurableSpace E] [BorelSpace E] {l : Filter ι} [l.NeBot] [l.IsCountablyGenerated]
+    {μ : Measure Ω} [IsFiniteMeasure μ] {ν : Measure E} {X : ι → Ω → E} {Y : Ω → E}
+    (hX : ∀ᶠ i in l, HasLaw (X i) ν μ)
+    (hlim : ∀ᵐ ω ∂μ, Tendsto (fun i ↦ X i ω) l (𝓝 (Y ω))) :
+    HasLaw Y ν μ := by
+  obtain ⟨u, hu⟩ := l.exists_seq_tendsto
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 (hu.eventually hX)
+  have hY : AEMeasurable Y μ := aemeasurable_of_tendsto_metrizable_ae'
+    (fun n ↦ (hN (n + N) (Nat.le_add_left N n)).aemeasurable)
+    (hlim.mono fun ω hω ↦ (hω.comp hu).comp (tendsto_add_atTop_nat N))
+  exact HasLaw.of_ae_tendsto hX hY hlim
+
+end Limit
 
 end Probability
 
