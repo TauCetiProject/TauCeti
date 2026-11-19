@@ -386,7 +386,7 @@ the open set `U`. -/
 private lemma surjective_dolbeaultDbar_app_top :
     Function.Surjective ((dolbeaultSequence U).g.app (op ⊤)) := by
   intro (s : (smoothSheafModule 𝓘(ℝ, ℂ) U ℂ ℂ).obj.obj (op ⊤))
-  obtain ⟨g, hg, hgf⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_isOpen U.isOpen
+  obtain ⟨g, hg, hgf⟩ := U.isOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq
     (n := ⊤) le_top (contDiffOn_amb U (mem_smoothSections_iff.1 (secE U ⊤ s).2))
   refine ⟨(secE U ⊤).symm ⟨_, mem_smoothSections_iff.2 (contMDiff_restrict U hg)⟩,
     smoothSheafModule.ext fun y ↦ ?_⟩

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.Runge.Approximation
 import TauCeti.Analysis.Complex.UniformLimit
@@ -40,12 +39,8 @@ the structure sheaf of holomorphic functions has no first cohomology on open sub
 
 ## Main results
 
-* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_isOpen`: the Dolbeault lemma on an
-  open set `Ω ⊆ ℂ`.
-* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball`: the same on a disc
-  `Metric.eball c R`, `R ≤ ∞`.
-* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_ball`: the same for a disc of
-  real radius.
+* `IsOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq`: the Dolbeault lemma on an open set
+  `Ω ⊆ ℂ`.
 * `TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eq`: every `Cⁿ` function on the plane is
   `\bar∂` of a `Cⁿ` function, without any support condition.
 
@@ -59,8 +54,7 @@ the structure sheaf of holomorphic functions has no first cohomology on open sub
 
 public section
 
-open Complex Filter Metric Set Topology
-open scoped NNReal ENNReal
+open Complex Filter Set Topology
 
 namespace TauCeti
 
@@ -68,8 +62,8 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W
 
 /-- **The Dolbeault lemma on an open subset of the plane.** Let `f` be `Cⁿ`, `n ≥ 1`, on an open
 set `Ω ⊆ ℂ`. Then there is a function `g`, `Cⁿ` on `Ω`, with `\bar∂ g = f` on `Ω`. -/
-theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_isOpen {f : ℂ → W} {Ω : Set ℂ}
-    (hΩ : IsOpen Ω) (hn : 1 ≤ n) (hf : ContDiffOn ℝ n f Ω) :
+theorem _root_.IsOpen.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq {f : ℂ → W}
+    {Ω : Set ℂ} (hΩ : IsOpen Ω) (hn : 1 ≤ n) (hf : ContDiffOn ℝ n f Ω) :
     ∃ g : ℂ → W, ContDiffOn ℝ n g Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv g z 1 = f z := by
   -- The Runge exhaustion `K k` of `Ω`, each stage inside the interior of the next.
   set K : ℕ → Set ℂ := rungeExhaustion Ω
@@ -116,31 +110,13 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_isOpen {f : ℂ →
         hR.contDiffOn isOpen_interior, hGR⟩
   exact ⟨G, hglue.1, fun z hz ↦ hglue.2 z hz ()⟩
 
-/-- **The Dolbeault lemma on a disc.** Let `f` be `Cⁿ`, `n ≥ 1`, on the open disc `eball c R`
-of radius `R ≤ ∞`. Then there is a function `g`, `Cⁿ` on the disc, with `\bar∂ g = f` on the
-disc. -/
-theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball {f : ℂ → W} {c : ℂ}
-    {R : ℝ≥0∞} (hn : 1 ≤ n) (hf : ContDiffOn ℝ n f (eball c R)) :
-    ∃ g : ℂ → W, ContDiffOn ℝ n g (eball c R) ∧
-      ∀ z ∈ eball c R, conjWirtingerDeriv g z 1 = f z :=
-  exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_isOpen isOpen_eball hn hf
-
-/-- **The Dolbeault lemma on a disc of real radius.** If `f` is `Cⁿ`, `n ≥ 1`, on `ball c R`,
-there is a function `g`, `Cⁿ` on `ball c R`, with `\bar∂ g = f` there. -/
-theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_ball {f : ℂ → W} {c : ℂ} {R : ℝ}
-    (hn : 1 ≤ n) (hf : ContDiffOn ℝ n f (ball c R)) :
-    ∃ g : ℂ → W, ContDiffOn ℝ n g (ball c R) ∧
-      ∀ z ∈ ball c R, conjWirtingerDeriv g z 1 = f z := by
-  rw [← eball_ofReal] at hf ⊢
-  exact exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball hn hf
-
 /-- **The Dolbeault lemma on the plane.** Every `Cⁿ` function `f : ℂ → W`, `n ≥ 1`, is `\bar∂ g`
 for a `Cⁿ` function `g`; no support condition on `f` is needed. -/
 theorem exists_contDiff_conjWirtingerDeriv_apply_one_eq {f : ℂ → W} (hn : 1 ≤ n)
     (hf : ContDiff ℝ n f) :
     ∃ g : ℂ → W, ContDiff ℝ n g ∧ ∀ z, conjWirtingerDeriv g z 1 = f z := by
-  obtain ⟨g, hg, hgf⟩ := exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball
-    (c := 0) (R := ⊤) hn (by simpa using hf.contDiffOn)
-  exact ⟨g, contDiffOn_univ.1 (by simpa using hg), fun z ↦ hgf z (by simp)⟩
+  obtain ⟨g, hg, hgf⟩ :=
+    isOpen_univ.exists_contDiffOn_conjWirtingerDeriv_apply_one_eq hn hf.contDiffOn
+  exact ⟨g, contDiffOn_univ.1 hg, fun z ↦ hgf z (mem_univ z)⟩
 
 end TauCeti
