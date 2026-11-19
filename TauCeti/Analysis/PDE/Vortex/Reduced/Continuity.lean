@@ -324,6 +324,12 @@ private theorem sobolevReducedFunctional_eq_realFunctional {P : Polynomial ℂ}
   rw [potential_def] at hu
   rw [sobolevReducedFunctional_eq_coe hu, realFunctional_def, potential_def, linearCoeff_def]
 
+/-- A function of `H¹(ℂ)` bounded above has integrable potential. -/
+private theorem integrable_potential {P : Polynomial ℂ} {u : W1p (volume : Measure ℂ) ⊤ 2}
+    {M : ℝ} (hM : 0 ≤ M) (hu : ∀ᵐ z, W1p.value u z ≤ M) : Integrable (potential P u) := by
+  rw [potential_def]
+  exact integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hu
+
 /-- If the weights `h` of `P` and `Q` differ by at most `ε`, then for `u ≤ M` the potentials
 differ by at most `2 ε exp (2M) ‖u‖₂²`. -/
 private theorem integral_potential_sub_le {P Q : Polynomial ℂ} {ε M : ℝ} (hε : 0 ≤ ε) (hM : 0 ≤ M)
@@ -331,10 +337,8 @@ private theorem integral_potential_sub_le {P Q : Polynomial ℂ} {ε M : ℝ} (h
     {u : W1p (volume : Measure ℂ) ⊤ 2} (hu : ∀ᵐ z, W1p.value u z ≤ M) :
     (∫ z, potential P u z) - ∫ z, potential Q u z ≤
       ε * (2 * Real.exp (2 * M) * ‖W1p.value u‖ ^ 2) := by
-  have hiP : Integrable (potential P u) :=
-    integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hu
-  have hiQ : Integrable (potential Q u) :=
-    integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hu
+  have hiP := integrable_potential (P := P) hM hu
+  have hiQ := integrable_potential (P := Q) hM hu
   rw [← integral_sub hiP hiQ, ← W1p.integral_value_sq_eq_norm_value_sq_top, ← integral_const_mul,
     ← integral_const_mul]
   refine integral_mono_ae (hiP.sub hiQ)
@@ -405,12 +409,8 @@ private theorem realFunctional_le_of_forall_le {P : Polynomial ℂ} {M : ℝ} (h
     (hu : ∀ᵐ z, W1p.value u z ≤ M) (hv : ∀ᵐ z, W1p.value v z ≤ M) :
     realFunctional P u ≤ realFunctional P v := by
   have h := hmin v
-  have hpu : Integrable (potential P u) :=
-    integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hu
-  have hpv : Integrable (potential P v) :=
-    integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hv
-  rwa [sobolevReducedFunctional_eq_realFunctional hpu,
-    sobolevReducedFunctional_eq_realFunctional hpv,
+  rwa [sobolevReducedFunctional_eq_realFunctional (integrable_potential hM hu),
+    sobolevReducedFunctional_eq_realFunctional (integrable_potential hM hv),
     EReal.coe_le_coe_iff] at h
 
 /-- **Quadratic growth with the convexity defect of the potential.** If `u` minimizes Taubes's
@@ -435,14 +435,10 @@ private theorem realFunctional_add_add_le {Q : Polynomial ℂ} {M : ℝ} (hM : 0
   have hm : ∀ᵐ z, W1p.value (midpoint ℝ v u) z ≤ M := by
     filter_upwards [hval, hu, hv] with z hz hzu hzv
     rw [hz]; linarith
-  have hpu : Integrable (potential Q u) :=
-    integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hu
-  have hpv : Integrable (potential Q v) :=
-    integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hv
-  have hpm : Integrable (potential Q (midpoint ℝ v u)) :=
-    integrable_norm_eval_sq_div_mul_exp_two_mul_sub_one_sub_two_mul hM hm
+  have hpu := integrable_potential (P := Q) hM hu
+  have hpv := integrable_potential (P := Q) hM hv
   have h := sobolevReducedFunctional_midpoint_add_add_exp_sub_exp_sq_le hQ v u
-  rw [sobolevReducedFunctional_eq_realFunctional hpm,
+  rw [sobolevReducedFunctional_eq_realFunctional (integrable_potential hM hm),
     sobolevReducedFunctional_eq_realFunctional hpv, sobolevReducedFunctional_eq_realFunctional hpu,
     ← EReal.coe_add, ← EReal.coe_add, ← EReal.coe_add, EReal.coe_le_coe_iff] at h
   have hle := realFunctional_le_of_forall_le hM hmin hu hm
