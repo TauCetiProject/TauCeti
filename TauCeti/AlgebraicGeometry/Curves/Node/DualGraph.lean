@@ -9,8 +9,8 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Genus
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Basic
 public import TauCeti.AlgebraicGeometry.Curves.Node.Normalization
 public import TauCeti.AlgebraicGeometry.Curves.Prestable
+public import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
 import TauCeti.AlgebraicGeometry.Curves.Normalization
-import TauCeti.AlgebraicGeometry.IrreducibleOfConnectedDomainStalk
 import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 
 /-!
@@ -22,10 +22,11 @@ gives a finite surjective morphism `ν : X^ν ⟶ X` from a regular scheme which
 the smooth locus. Exactly one point of `X^ν` lies over each smooth point of `X`, and exactly two lie
 over each node, one on each branch
 (`AlgebraicGeometry.Scheme.natCard_preimage_blowupToBase_singularLocus_of_mem_support`). The
-irreducible components of the regular scheme `X^ν` are disjoint and open, so each point of `X^ν`
-lies on exactly one of them. Since `ν` is finite with regular source, and an isomorphism over the
-dense smooth locus, `X^ν` is the normalization of `X` and its components are the normalizations of
-the components of `X`; this identification is not used here.
+irreducible components of the regular scheme `X^ν` are disjoint and open, so each point `b` of
+`X^ν` lies on exactly one of them, `TauCeti.AlgebraicGeometry.componentOf b`. Since `ν` is finite
+with regular source, and an isomorphism over the dense smooth locus, `X^ν` is the normalization of
+`X` and its components are the normalizations of the components of `X`; this identification is not
+used here.
 
 This file assembles these data into the dual graph of `X` (`AlgebraicGeometry.Scheme.dualGraph`),
 a `TauCeti.DualGraph`:
@@ -59,9 +60,11 @@ here.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.dualGraphVertexEquiv_endpoint_eq_iff`: the endpoints of an edge are
+* `AlgebraicGeometry.Scheme.dualGraphVertexEquiv_endpoint` and
+  `AlgebraicGeometry.Scheme.dualGraphVertexEquiv_endpoint_eq_iff`: the endpoints of an edge are
   the components carrying the two points over the node.
-* `AlgebraicGeometry.Scheme.dualGraphVertexEquiv_marking_eq_iff`: a marking is attached to the
+* `AlgebraicGeometry.Scheme.dualGraphVertexEquiv_marking` and
+  `AlgebraicGeometry.Scheme.dualGraphVertexEquiv_marking_eq_iff`: a marking is attached to the
   component carrying the point over it.
 * `AlgebraicGeometry.Scheme.dualGraph_genus`: the genus of a vertex is the genus of its component.
 
@@ -98,24 +101,6 @@ private instance isRegular_blowup : IsRegular (X.singularLocus K).blowup :=
 private theorem isDomain_stalk_blowup (b : (X.singularLocus K).blowup) :
     IsDomain ((X.singularLocus K).blowup.presheaf.stalk b) :=
   inferInstance
-
-/-- The irreducible component of the blowup containing a point; it is unique since the blowup is
-regular. -/
-private def componentOf (b : (X.singularLocus K).blowup) :
-    irreducibleComponents (X.singularLocus K).blowup :=
-  (existsUnique_mem_irreducibleComponents_of_isDomain_stalk (isDomain_stalk_blowup X)
-    b).exists.choose
-
-private theorem mem_componentOf (b : (X.singularLocus K).blowup) :
-    b ∈ (componentOf X b : Set (X.singularLocus K).blowup) :=
-  (existsUnique_mem_irreducibleComponents_of_isDomain_stalk (isDomain_stalk_blowup X)
-    b).exists.choose_spec
-
-private theorem componentOf_eq {b : (X.singularLocus K).blowup}
-    {v : irreducibleComponents (X.singularLocus K).blowup}
-    (hb : b ∈ (v : Set (X.singularLocus K).blowup)) : componentOf X b = v :=
-  (existsUnique_mem_irreducibleComponents_of_isDomain_stalk (isDomain_stalk_blowup X) b).unique
-    (mem_componentOf X b) hb
 
 /-- An irreducible component of the blowup of a prestable curve along its singular subscheme, as
 an open subscheme: the blowup is regular, so its irreducible components are disjoint and open. Each
@@ -202,27 +187,23 @@ private theorem nonempty_irreducibleComponents_blowup :
   obtain ⟨x⟩ : Nonempty X := (X ↘ Spec (.of K)).surjective.nonempty
   obtain ⟨b, -⟩ := X.surjective_blowupToBase_singularLocus
     (atWorstNodal K X) |>.surj x
-  exact ⟨componentOf X b⟩
+  exact ⟨componentOf b⟩
 
 /-- Two components of the blowup are adjacent when they carry the two points over some node. -/
 private def Adj (v w : irreducibleComponents (X.singularLocus K).blowup) : Prop :=
   ∃ e : ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ),
-    (componentOf X (X.branchPointEquiv e 0) = v ∧ componentOf X (X.branchPointEquiv e 1) = w) ∨
-      (componentOf X (X.branchPointEquiv e 0) = w ∧ componentOf X (X.branchPointEquiv e 1) = v)
+    (componentOf (X.branchPointEquiv e 0) = v ∧ componentOf (X.branchPointEquiv e 1) = w) ∨
+      (componentOf (X.branchPointEquiv e 0) = w ∧ componentOf (X.branchPointEquiv e 1) = v)
 
 /-- Two components of the blowup meeting over a point of the curve are equal or joined by the
 edge of a node. -/
 private theorem eq_or_adj_of_blowupToBase_eq {b b' : (X.singularLocus K).blowup}
     (h : (X.singularLocus K).blowupToBase b = (X.singularLocus K).blowupToBase b') :
-    componentOf X b = componentOf X b' ∨ Adj X (componentOf X b) (componentOf X b') := by
+    componentOf b = componentOf b' ∨ Adj X (componentOf b) (componentOf b') := by
   let ν := (X.singularLocus K).blowupToBase
   by_cases hx : ν b ∈ (X ↘ Spec (.of K)).smoothLocus
   · -- over a smooth point there is only one point of the blowup
-    have := X.natCard_preimage_blowupToBase_singularLocus_of_mem_smoothLocus hx
-    have : Subsingleton (ν ⁻¹' {ν b}) := (Nat.card_eq_one_iff_unique.mp this).1
-    left
-    congr 1
-    exact congr(($(Subsingleton.elim (α := ν ⁻¹' {ν b}) ⟨b, rfl⟩ ⟨b', h.symm⟩)).1)
+    exact .inl (by rw [X.eq_of_blowupToBase_singularLocus_eq_of_mem_smoothLocus h hx])
   · -- over a node the two points are the two branch points
     let e : ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ) := ⟨ν b, hx⟩
     obtain ⟨i, hi⟩ := (X.branchPointEquiv e).surjective ⟨b, rfl⟩
@@ -257,17 +238,17 @@ private theorem reflTransGen_adj (v w : irreducibleComponents (X.singularLocus K
     simp only [A, B, Set.mem_iUnion, Set.mem_image, Set.mem_ofPred_eq] at hA hB
     obtain ⟨u, hu, b, hb, rfl⟩ := hA
     obtain ⟨u', hu', b', hb', hbb'⟩ := hB
-    obtain rfl := componentOf_eq (K := K) X hb
-    obtain rfl := componentOf_eq (K := K) X hb'
+    obtain rfl := (componentOf_eq_iff (isDomain_stalk_blowup X)).mpr hb
+    obtain rfl := (componentOf_eq_iff (isDomain_stalk_blowup X)).mpr hb'
     rcases eq_or_adj_of_blowupToBase_eq X hbb'.symm with h | ⟨e, he⟩
     · exact hu' (h ▸ hu)
     · exact hu' (hu.tail ⟨e, he⟩)
   have hcover (x : X) : x ∈ A ∪ B := by
     obtain ⟨b, rfl⟩ := X.surjective_blowupToBase_singularLocus
       (atWorstNodal K X) |>.surj x
-    by_cases hb : R (componentOf X b)
-    · exact .inl (Set.mem_biUnion hb ⟨b, mem_componentOf X b, rfl⟩)
-    · exact .inr (Set.mem_biUnion hb ⟨b, mem_componentOf X b, rfl⟩)
+    by_cases hb : R (componentOf b)
+    · exact .inl (Set.mem_biUnion hb ⟨b, mem_componentOf b, rfl⟩)
+    · exact .inr (Set.mem_biUnion hb ⟨b, mem_componentOf b, rfl⟩)
   have hAB : A = Bᶜ := Set.ext fun x ↦ ⟨fun hA hB ↦ hdisj x hA hB,
     fun hB ↦ (hcover x).resolve_right hB⟩
   have hA : IsClopen A := ⟨hclosed _, hAB ▸ (hclosed _).isOpen_compl⟩
@@ -286,6 +267,11 @@ private def pointOver (x : (X ↘ Spec (.of K)).smoothLocus) : (X.singularLocus 
   (X.surjective_blowupToBase_singularLocus
     (atWorstNodal K X)).surj x.1 |>.choose
 
+omit [IsAlgClosed K] in
+private theorem blowupToBase_pointOver (x : (X ↘ Spec (.of K)).smoothLocus) :
+    (X.singularLocus K).blowupToBase (pointOver X x) = x :=
+  ((X.surjective_blowupToBase_singularLocus (atWorstNodal K X)).surj x.1).choose_spec
+
 /-- **The dual graph of a prestable curve** `X` over an algebraically closed field `K`, with
 markings at the smooth points `p i`. Its vertices are the irreducible components of the blowup
 `X^ν` of `X` along its singular subscheme (`AlgebraicGeometry.Scheme.dualGraphVertexEquiv`); its
@@ -302,9 +288,9 @@ def dualGraph {ι : Type v} (p : ι → (X ↘ Spec (.of K)).smoothLocus) : Dual
   Edge := ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ)
   edgeFintype := (X.finite_compl_smoothLocus (atWorstNodal K X)).fintype
   edgeDecidableEq := Classical.decEq _
-  endpoint e i := componentOf X (X.branchPointEquiv e i)
+  endpoint e i := componentOf (X.branchPointEquiv e i)
   genus v := (X.blowupComponent v).toScheme.genus K
-  marking i := componentOf X (pointOver X (p i))
+  marking i := componentOf (pointOver X (p i))
   connected := reflTransGen_adj X
 
 variable {ι : Type v} (p : ι → (X ↘ Spec (.of K)).smoothLocus)
@@ -321,13 +307,20 @@ def dualGraphEdgeEquiv :
     (X.dualGraph p).Edge ≃ ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ) :=
   Equiv.refl _
 
+/-- The endpoint of the edge at a node is the component of the blowup through the corresponding
+point over the node. -/
+theorem dualGraphVertexEquiv_endpoint (e : (X.dualGraph p).Edge) (i : Fin 2) :
+    X.dualGraphVertexEquiv p ((X.dualGraph p).endpoint e i) =
+      componentOf (X.branchPointEquiv (X.dualGraphEdgeEquiv p e) i : (X.singularLocus K).blowup) :=
+  (rfl)
+
 /-- The endpoints of the edge at a node are the components of the blowup carrying the two points
 over the node. -/
 theorem branchPointEquiv_mem_dualGraph_endpoint (e : (X.dualGraph p).Edge) (i : Fin 2) :
     (X.branchPointEquiv (X.dualGraphEdgeEquiv p e) i : (X.singularLocus K).blowup) ∈
       (X.dualGraphVertexEquiv p ((X.dualGraph p).endpoint e i) :
         Set (X.singularLocus K).blowup) :=
-  mem_componentOf X _
+  mem_componentOf _
 
 /-- The endpoints of the edge at a node are the components of the blowup carrying the two points
 over the node: this determines them, as every point lies on exactly one component. -/
@@ -336,22 +329,22 @@ theorem dualGraphVertexEquiv_endpoint_eq_iff (e : (X.dualGraph p).Edge) (i : Fin
     X.dualGraphVertexEquiv p ((X.dualGraph p).endpoint e i) = v ↔
       (X.branchPointEquiv (X.dualGraphEdgeEquiv p e) i : (X.singularLocus K).blowup) ∈
         (v : Set (X.singularLocus K).blowup) :=
-  ⟨fun h ↦ h ▸ X.branchPointEquiv_mem_dualGraph_endpoint p e i, componentOf_eq X⟩
+  componentOf_eq_iff (isDomain_stalk_blowup X)
 
 /-- A marking is attached to the component of the blowup carrying the point over it. -/
 theorem mem_dualGraph_marking (i : ι) {b : (X.singularLocus K).blowup}
     (hb : (X.singularLocus K).blowupToBase b = p i) :
     b ∈ (X.dualGraphVertexEquiv p ((X.dualGraph p).marking i) :
       Set (X.singularLocus K).blowup) := by
-  have h := X.natCard_preimage_blowupToBase_singularLocus_of_mem_smoothLocus (p i).2
-  have : Subsingleton ((X.singularLocus K).blowupToBase ⁻¹' {(p i : X)}) :=
-    (Nat.card_eq_one_iff_unique.mp h).1
-  have hpt : (X.singularLocus K).blowupToBase (pointOver X (p i)) = p i :=
-    ((X.surjective_blowupToBase_singularLocus (atWorstNodal K X)).surj (p i).1).choose_spec
-  have : b = pointOver X (p i) := congrArg Subtype.val
-    (Subsingleton.elim (α := (X.singularLocus K).blowupToBase ⁻¹' {(p i : X)}) ⟨b, hb⟩ ⟨_, hpt⟩)
-  rw [this]
-  exact mem_componentOf X _
+  rw [X.eq_of_blowupToBase_singularLocus_eq_of_mem_smoothLocus
+    (hb.trans (X.blowupToBase_pointOver (p i)).symm) (hb ▸ (p i).2)]
+  exact mem_componentOf _
+
+/-- The `i`-th marking is the component of the blowup through any point over `p i`. -/
+theorem dualGraphVertexEquiv_marking (i : ι) {b : (X.singularLocus K).blowup}
+    (hb : (X.singularLocus K).blowupToBase b = p i) :
+    X.dualGraphVertexEquiv p ((X.dualGraph p).marking i) = componentOf b :=
+  ((componentOf_eq_iff (isDomain_stalk_blowup X)).mpr (X.mem_dualGraph_marking p i hb)).symm
 
 /-- The `i`-th marking is the component of the blowup carrying the point over `p i`: this
 determines it, as every point lies on exactly one component. -/
@@ -360,10 +353,10 @@ theorem dualGraphVertexEquiv_marking_eq_iff (i : ι) {b : (X.singularLocus K).bl
     (v : irreducibleComponents (X.singularLocus K).blowup) :
     X.dualGraphVertexEquiv p ((X.dualGraph p).marking i) = v ↔
       b ∈ (v : Set (X.singularLocus K).blowup) :=
-  ⟨fun h ↦ h ▸ X.mem_dualGraph_marking p i hb,
-    fun h ↦ ((componentOf_eq X (X.mem_dualGraph_marking p i hb)).symm.trans (componentOf_eq X h))⟩
+  X.dualGraphVertexEquiv_marking p i hb ▸ componentOf_eq_iff (isDomain_stalk_blowup (K := K) X)
 
 /-- The genus of a vertex of the dual graph is the genus of its component of the blowup. -/
+@[simp]
 theorem dualGraph_genus (v : (X.dualGraph p).Vertex) :
     (X.dualGraph p).genus v = (X.blowupComponent (X.dualGraphVertexEquiv p v)).toScheme.genus K :=
   (rfl)

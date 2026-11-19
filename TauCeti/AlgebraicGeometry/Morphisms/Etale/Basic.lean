@@ -63,7 +63,7 @@ point factors through `κ`, so the base change `L ⊗[A] B` is the base change o
   with at least `f.finrank s` points of `X` over `Spec K` is étale.
 * `AlgebraicGeometry.Scheme.Hom.natCard_eq_finrank_of_etale`: over a separably closed field `K`,
   a finite étale morphism `f : X ⟶ Spec K` has exactly `f.finrank s` points of `X` over `Spec K`.
-* `AlgebraicGeometry.Scheme.Hom.natCard_eq_finrank_of_etale_of_isSepClosed` and
+* `AlgebraicGeometry.Scheme.Hom.natCard_source_eq_finrank_of_etale` and
   `AlgebraicGeometry.Scheme.Hom.natCard_preimage_singleton_eq_finrank`: the underlying set of such
   an `X` has `f.finrank s` elements, and a finite étale morphism has `f.finrank y` points over
   each point `y` with separably closed residue field.
@@ -159,7 +159,7 @@ theorem Scheme.Hom.natCard_eq_finrank_of_etale [IsSepClosed K] (f : X ⟶ Spec (
 `K` be separably closed and `f : X ⟶ Spec K` finite étale. Then the underlying set of `X` has
 exactly `f.finrank s` elements: its coordinate ring is the product of copies of `K` indexed by
 its prime ideals. -/
-theorem Scheme.Hom.natCard_eq_finrank_of_etale_of_isSepClosed [IsSepClosed K]
+theorem Scheme.Hom.natCard_source_eq_finrank_of_etale [IsSepClosed K]
     (f : X ⟶ Spec (.of K)) [IsFinite f] [Etale f] (s : Spec (.of K)) :
     Nat.card X = f.finrank s := by
   have : IsAffine X := isAffine_of_isAffineHom f
@@ -184,7 +184,7 @@ theorem Scheme.Hom.natCard_preimage_singleton_eq_finrank {Y : Scheme.{u}} (f : X
   have : IsFinite g := inferInstanceAs (IsFinite (Limits.pullback.snd f (Y.fromSpecResidueField y)))
   have : Etale g := inferInstanceAs (Etale (Limits.pullback.snd f (Y.fromSpecResidueField y)))
   obtain ⟨s⟩ : Nonempty (Spec (Y.residueField y)) := inferInstance
-  rw [← Nat.card_congr (f.fiberHomeo y).toEquiv, g.natCard_eq_finrank_of_etale_of_isSepClosed s]
+  rw [← Nat.card_congr (f.fiberHomeo y).toEquiv, g.natCard_source_eq_finrank_of_etale s]
   exact (Scheme.Hom.finrank_of_isPullback _ _ _ _
     (IsPullback.of_hasPullback f (Y.fromSpecResidueField y)) s).trans
       (by rw [Scheme.fromSpecResidueField_apply])

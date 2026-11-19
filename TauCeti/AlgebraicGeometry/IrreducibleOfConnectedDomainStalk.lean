@@ -21,7 +21,8 @@ minimal primes is irreducible (`irreducibleSpace_of_connected_of_unique_minimalP
 from which we deduce that such a scheme is irreducible if its stalks are
 integral domains (`irreducibleSpace_of_connected_of_isDomain_stalk`). On the way, every point of
 a scheme whose stalks are integral domains lies on exactly one irreducible component
-(`existsUnique_mem_irreducibleComponents_of_isDomain_stalk`), and if the scheme is locally
+(`existsUnique_mem_irreducibleComponents_of_isDomain_stalk`), namely `componentOf x`
+(`componentOf_eq_iff`), and if the scheme is locally
 noetherian these components are open (`isOpen_of_mem_irreducibleComponents_of_isDomain_stalk`).
 Since regular local rings are domains (`TauCeti.IsRegularLocalRing.isDomain`), a locally
 noetherian connected scheme whose stalks are regular local rings is integral
@@ -420,6 +421,25 @@ theorem existsUnique_mem_irreducibleComponents_of_isDomain_stalk {Z : Scheme.{u}
   have := hStalks x
   have := uniqueMinimalPrimesOfIsDomain x
   existsUnique_irreducibleComponent_of_unique_minimalPrime x
+
+/-- An irreducible component of a scheme containing the point `x`, namely Mathlib's
+`irreducibleComponent x`. When the stalks are integral domains it is the only one
+(`componentOf_eq_iff`). -/
+noncomputable def componentOf {Z : Scheme.{u}} (x : Z) : irreducibleComponents Z.carrier :=
+  ⟨irreducibleComponent x, irreducibleComponent_mem_irreducibleComponents x⟩
+
+/-- A point lies on the irreducible component `componentOf x`. -/
+theorem mem_componentOf {Z : Scheme.{u}} (x : Z) : x ∈ (componentOf x : Set Z.carrier) :=
+  mem_irreducibleComponent
+
+/-- In a scheme whose stalks are integral domains, `componentOf x` is the irreducible component
+containing `x`. -/
+theorem componentOf_eq_iff {Z : Scheme.{u}}
+    (hStalks : ∀ x : Z.carrier, IsDomain (Z.presheaf.stalk x)) {x : Z}
+    {c : irreducibleComponents Z.carrier} : componentOf x = c ↔ x ∈ (c : Set Z.carrier) :=
+  ⟨fun h ↦ h ▸ mem_componentOf x,
+    (existsUnique_mem_irreducibleComponents_of_isDomain_stalk hStalks x).unique
+      (mem_componentOf x)⟩
 
 /-- In a locally noetherian scheme whose stalks are integral domains, every irreducible component
 is open, hence a connected component. -/
