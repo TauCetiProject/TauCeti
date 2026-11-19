@@ -135,6 +135,13 @@ theorem scalarCurvature_eq_zero_of_ricciTensor_eq_zero (x : M)
     (h : cov.ricciTensor x = 0) : cov.scalarCurvature x = 0 := by
   rw [scalarCurvature_apply, h, map_zero]
 
+/-- On a manifold modelled on the zero space the scalar curvature vanishes: the Ricci tensor is a
+bilinear form on the zero space. -/
+theorem scalarCurvature_eq_zero_of_subsingleton [Subsingleton E] (x : M) :
+    cov.scalarCurvature x = 0 :=
+  have : Subsingleton (TangentSpace I x) := inferInstanceAs (Subsingleton E)
+  scalarCurvature_eq_zero_of_ricciTensor_eq_zero cov x (Subsingleton.elim _ _)
+
 /-- A point with zero curvature tensor has zero scalar curvature. -/
 theorem scalarCurvature_eq_zero_of_curvatureTensor_eq_zero (x : M)
     (h : curvature x = 0) : cov.scalarCurvature x = 0 :=
@@ -274,5 +281,23 @@ theorem contMDiff_scalarCurvature : ContMDiff I 𝓘(ℝ) ∞ g.scalarCurvature 
 /-- The scalar curvature of a smooth Riemannian metric is continuous. -/
 theorem continuous_scalarCurvature : Continuous g.scalarCurvature :=
   g.contMDiff_scalarCurvature.continuous
+
+/-- On a manifold modelled on the zero space the scalar curvature of every metric vanishes. -/
+theorem scalarCurvature_eq_zero_of_subsingleton [Subsingleton E] (x : M) :
+    g.scalarCurvature x = 0 := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  exact (CovariantDerivative.leviCivitaConnection I M).scalarCurvature_eq_zero_of_subsingleton x
+
+/-- A lower bound for the scalar curvature on a dense set holds everywhere, by continuity. -/
+theorem le_scalarCurvature_of_dense {s : Set M} (hs : Dense s) {c : ℝ}
+    (h : ∀ y ∈ s, c ≤ g.scalarCurvature y) (x : M) : c ≤ g.scalarCurvature x :=
+  le_on_closure h continuous_const.continuousOn g.continuous_scalarCurvature.continuousOn (hs x)
+
+/-- A value taken by the scalar curvature at every point near `x`, except possibly `x` itself, is
+also taken at `x`, by continuity. -/
+theorem scalarCurvature_eq_of_eventually_nhdsNE {x : M} [(𝓝[≠] x).NeBot] {c : ℝ}
+    (h : ∀ᶠ y in 𝓝[≠] x, g.scalarCurvature y = c) : g.scalarCurvature x = c :=
+  ((g.continuous_scalarCurvature.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+    continuousAt_const).1 h).self_of_nhds
 
 end Bundle.ContMDiffRiemannianMetric
