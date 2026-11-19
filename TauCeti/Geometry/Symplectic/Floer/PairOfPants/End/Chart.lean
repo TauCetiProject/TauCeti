@@ -496,10 +496,10 @@ theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
 /-- Where `K = H_q(t) dt` on the end `q`, its pullback along the end chart sends `∂_t` to
 `H_q(t)`. -/
 theorem perturbationPullback_endChart_stdComplexLineImag_of_le {X : Type*}
-    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ q.endSign * ζ.1) (x : X) :
+    (hH : Periodic (H q) 1) {ζ : ℝ × ℝ} (hζ : T₀ ≤ q.endSign * ζ.1) (x : X) :
     perturbationPullback (endChart q)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag ζ x =
@@ -511,16 +511,16 @@ theorem perturbationPullback_endChart_stdComplexLineImag_of_le {X : Type*}
   obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm ζ)
   have hre : (q.endCoord (q.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ))).re = ζ.1 := by
     simp [hk]
-  rw [hKH q _ x (by rwa [hre]), smul_apply, endAngularForm_cylindricalEndLift,
+  rw [hKH _ x (by rwa [hre]), smul_apply, endAngularForm_cylindricalEndLift,
     hk, smul_eq_mul, Complex.I_im, mul_one]
-  simpa using congrFun ((hH q).int_mul k ζ.2) x
+  simpa using congrFun (hH.int_mul k ζ.2) x
 
 /-- Where `K = H_q(t) dt` on the end `q`, its pullback along the end chart sends `∂_s` to `0`. -/
 theorem perturbationPullback_endChart_stdComplexLineReal_of_le {X : Type*}
-    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ q.endSign * ζ.1) (x : X) :
+    {ζ : ℝ × ℝ} (hζ : T₀ ≤ q.endSign * ζ.1) (x : X) :
     perturbationPullback (endChart q)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineReal ζ x =
@@ -532,7 +532,7 @@ theorem perturbationPullback_endChart_stdComplexLineReal_of_le {X : Type*}
   have hre : (q.endCoord (q.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ))).re = ζ.1 := by
     rw [re_endCoord_cylindricalEndLift]
     simp [Complex.equivRealProdCLM_symm_apply]
-  rw [hKH q _ x (by rwa [hre]), smul_apply, endAngularForm_cylindricalEndLift, Complex.one_im,
+  rw [hKH _ x (by rwa [hre]), smul_apply, endAngularForm_cylindricalEndLift, Complex.one_im,
     smul_zero]
 
 /-- The end chart is injective on every band `ℝ × [t₀, t₀ + 1)` of angular width one: two points
@@ -1011,10 +1011,10 @@ theorem perturbationPullback_positiveEndChart {X : Type*} {K : ℂ → X → ℂ
 /-- Where `K = H_q(t) dt` on the end `q`, its pullback along the positive end chart sends `∂_s`
 to `0`. -/
 theorem perturbationPullback_positiveEndChart_stdComplexLineReal_of_le {X : Type*}
-    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (x : X) :
+    {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (x : X) :
     perturbationPullback (positiveEndChart q)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineReal ζ x =
@@ -1026,10 +1026,10 @@ theorem perturbationPullback_positiveEndChart_stdComplexLineReal_of_le {X : Type
 /-- Where `K = H_q(t) dt` on the end `q`, its pullback along the positive end chart sends `∂_t`
 to the end Hamiltonian `H'_q(t)` of the positive end. -/
 theorem perturbationPullback_positiveEndChart_stdComplexLineImag_of_le {X : Type*}
-    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (x : X) :
+    (hH : Periodic (H q) 1) {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (x : X) :
     perturbationPullback (positiveEndChart q)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag ζ x =
@@ -1041,10 +1041,10 @@ theorem perturbationPullback_positiveEndChart_stdComplexLineImag_of_le {X : Type
 /-- Where `K = H_q(t) dt` on the end `q`, each component of `K` at the point `φ'_q(ζ)` of the end is
 a constant multiple of the end Hamiltonian `H_q(t₀)`, for the end coordinate `t₀` of the point. -/
 theorem perturbation_positiveEndChart_eq_mul_of_le {X : Type*}
-    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ} {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (x : X) (v : ℂ) :
+    {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (x : X) (v : ℂ) :
     K (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v =
       q.endAngularForm (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) v *
         H q (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q ζ))).im x := by
@@ -1052,14 +1052,14 @@ theorem perturbation_positiveEndChart_eq_mul_of_le {X : Type*}
       (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q ζ))).re := by
     rw [positiveEndChart_apply, re_endCoord_endChart]
     simpa [← mul_assoc] using hζ
-  rw [hKH q _ x hre, smul_apply, smul_eq_mul, mul_comm]
+  rw [hKH _ x hre, smul_apply, smul_eq_mul, mul_comm]
 
 /-- Where `K = H_q(t) dt` on the end `q` and the Hamiltonians `H_q(t)` are differentiable, the
 components of `K` at the point `φ'_q(ζ)` of the end are differentiable in the target point. -/
 theorem differentiableAt_perturbation_positiveEndChart {K : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    {q : Puncture} (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    {q : Puncture} (hHd : ∀ t, Differentiable ℝ (H q t)) {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (v : ℂ)
+    (hHd : ∀ t, Differentiable ℝ (H q t)) {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) (v : ℂ)
     (y : V) :
     DifferentiableAt ℝ (fun x ↦ K (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v)
       y := by
