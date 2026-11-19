@@ -104,12 +104,19 @@ suffices that this group be finitely generated. This is the converse of
 `fg_of_finiteType_of_linearIndependent_of_groupLikeSetSpan_eq_top`, and needs no linear
 independence. -/
 theorem finiteType_of_fg_of_groupLikeSetSpan_eq_top
-    (R : Type u) (H : Type v) [CommRing R] [Semiring H] [Bialgebra R H]
+    (R : Type u) (H : Type v) [CommSemiring R] [Semiring H] [Bialgebra R H]
     [Monoid.FG (_root_.GroupLike R H)]
     (hspan : Subcoalgebra.groupLikeSetSpan (R := R) (C := H) Set.univ = ⊤) :
-    Algebra.FiniteType R H :=
-  .of_surjective (MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H)).toAlgHom
-    ((liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top R H).mpr hspan)
+    Algebra.FiniteType R H := by
+  -- Mathlib's finite-type instance for monoid algebras assumes a base ring, so compose the
+  -- evaluation with the presentation of the monoid algebra by a free algebra directly.
+  obtain ⟨S, hS, hfinite⟩ := Monoid.fg_iff.mp ‹Monoid.FG (_root_.GroupLike R H)›
+  have : Finite S := hfinite.to_subtype
+  exact .of_surjective
+    ((MonoidAlgebra.liftGroupLikeBialgHom (R := R) (A := H)).toAlgHom.comp
+      (FreeAlgebra.lift R fun s : S => MonoidAlgebra.of R (_root_.GroupLike R H) ↑s))
+    (((liftGroupLikeBialgHom_surjective_iff_groupLikeSetSpan_eq_top R H).mpr hspan).comp
+      (MonoidAlgebra.freeAlgebra_lift_of_surjective_of_closure hS))
 
 end GroupLike
 
