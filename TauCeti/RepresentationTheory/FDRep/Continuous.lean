@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Limits.FullSubcategory
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Algebra.Category.FGModuleCat.Zero
 public import TauCeti.CategoryTheory.ObjectProperty
 public import TauCeti.RepresentationTheory.FDRep.Basic
 
@@ -45,7 +46,8 @@ continuous representations, is built in
 
 * `FDRep.isContinuous_biprod`, `FDRep.isContinuous_tensor` and `FDRep.isContinuous_tensorUnit`:
   continuous representations are closed under direct sums and tensor products, and the trivial
-  representation is continuous.
+  representation is continuous. The zero representation is continuous as well, so
+  `TauCeti.ContFDRep k G` has a zero object.
 * `FDRep.isContinuous_ofShrink_iff`: continuity of a representation given on any carrier.
 * `ContRepresentation.isContinuous_ofShrink_iff_continuous`: over a complete nontrivially normed
   field, a continuous representation on a finite-dimensional normed space has continuous matrix
@@ -56,7 +58,7 @@ continuous representations, is built in
 
 public section
 
-open CategoryTheory CategoryTheory.Limits MonoidalCategory
+open CategoryTheory CategoryTheory.Limits MonoidalCategory ZeroObject
 
 universe u v w w'
 
@@ -109,6 +111,15 @@ theorem isContinuous_biprod [ContinuousAdd k] {X Y : FDRep k G} (hX : isContinuo
 instance [ContinuousAdd k] : (isContinuous k G).IsClosedUnderBinaryProducts :=
   ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun _ _ hX hY =>
     isContinuous_biprod hX hY
+
+/-- The zero representation is continuous, so the continuous representations contain a zero
+object and `TauCeti.ContFDRep k G` has a zero object. -/
+instance : (isContinuous k G).ContainsZero where
+  exists_zero := ⟨0, isZero_zero _, fun f v => by
+    have : Subsingleton (0 : FDRep k G).V := FGModuleCat.isZero_iff_subsingleton.mp
+      ((Action.forget _ _).map_isZero (isZero_zero (FDRep k G)))
+    simp only [Subsingleton.elim v 0, map_zero]
+    exact continuous_const⟩
 
 /-- The trivial one-dimensional representation, the tensor unit, is continuous. -/
 theorem isContinuous_tensorUnit : isContinuous k G (𝟙_ (FDRep k G)) := fun f v => by
