@@ -403,11 +403,14 @@ def cutoffProduct (S T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (h : NoOppositeCov
     { toFun ψ := ∫ η, S.localFourier φ η *
         T.localFourier (TestFunction.smulLeftCLM ψ.contDiff φ) (-η)
       map_add' ψ₁ ψ₂ := by
+        -- The multiplier `⇑(ψ₁ + ψ₂)` of `(ψ₁ + ψ₂).contDiff` is definitionally `⇑ψ₁ + ⇑ψ₂`,
+        -- since addition of test functions is pointwise, so `rw` matches `smulLeftCLM_add`.
         rw [TestFunction.smulLeftCLM_add ψ₁.contDiff ψ₂.contDiff]
         simp only [_root_.add_apply, localFourier_add_cutoff, mul_add]
         exact integral_add (h.integrable_localFourier_mul_localFourier_smulLeftCLM ψ₁)
           (h.integrable_localFourier_mul_localFourier_smulLeftCLM ψ₂)
       map_smul' c ψ := by
+        -- Likewise `⇑(c • ψ)` is definitionally `c • ⇑ψ`, so `rw` matches `smulLeftCLM_smul`.
         rw [TestFunction.smulLeftCLM_smul ψ.contDiff c]
         simp only [_root_.smul_apply, ← Complex.coe_smul, localFourier_smul_cutoff,
           RingHom.id_apply, mul_left_comm _ (c : ℂ)]
