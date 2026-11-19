@@ -368,12 +368,12 @@ private theorem YZConcave.exists_affine {g : ℤ × ℤ → 𝕜} (hg : YZConcav
     linear_combination (g (⌊q.1⌋ + 1, ⌊q.2⌋ + 1) - g (⌊q.1⌋, ⌊q.2⌋ + 1)) * e₁ +
       (g (⌊q.1⌋ + 1, ⌊q.2⌋ + 1) - g (⌊q.1⌋ + 1, ⌊q.2⌋)) * e₂
 
-/-- `yzInterp_up` with the point and the value in any equal form. -/
+/-- `yzInterp_up` with the point (componentwise) and the value in any equal form. -/
 private theorem yzInterp_eq_of_up (g : ℤ × ℤ → 𝕜) (i j : ℤ) {a b : 𝕜} (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (hab : a + b ≤ 1) {q : 𝕜 × 𝕜} (hq : q = ((i : 𝕜) + a, (j : 𝕜) + b)) {c : 𝕜}
+    (hab : a + b ≤ 1) {q : 𝕜 × 𝕜} (hq₁ : q.1 = i + a) (hq₂ : q.2 = j + b) {c : 𝕜}
     (hc : (1 - a - b) * g (i, j) + a * g (i + 1, j) + b * g (i, j + 1) = c) :
     yzInterp g q = c := by
-  rw [hq, yzInterp_up g i j ha hb hab, hc]
+  rw [show q = ((i : 𝕜) + a, (j : 𝕜) + b) from Prod.ext hq₁ hq₂, yzInterp_up g i j ha hb hab, hc]
 
 /-- The interpolation at the midpoint of a unit lattice edge is the average of the two ends. -/
 private theorem yzInterp_midpoint (g : ℤ × ℤ → 𝕜) {x x' : ℤ × ℤ}
@@ -383,19 +383,19 @@ private theorem yzInterp_midpoint (g : ℤ × ℤ → 𝕜) {x x' : ℤ × ℤ}
   obtain ⟨i, j⟩ := x
   -- the edge is a side of the upward unit triangle at the componentwise minimum of its ends
   fin_cases m <;> [
-    refine yzInterp_eq_of_up g i j (a := 1 / 2) (b := 0) (by norm_num) le_rfl (by norm_num) ?_ ?_;
-    refine yzInterp_eq_of_up g i j (a := 0) (b := 1 / 2) le_rfl (by norm_num) (by norm_num) ?_ ?_;
+    refine yzInterp_eq_of_up g i j (a := 1 / 2) (b := 0) (by norm_num) le_rfl (by norm_num)
+      ?_ ?_ ?_;
+    refine yzInterp_eq_of_up g i j (a := 0) (b := 1 / 2) le_rfl (by norm_num) (by norm_num)
+      ?_ ?_ ?_;
     refine yzInterp_eq_of_up g (i - 1) j (a := 1 / 2) (b := 1 / 2) (by norm_num) (by norm_num)
-      (by norm_num) ?_ ?_;
+      (by norm_num) ?_ ?_ ?_;
     refine yzInterp_eq_of_up g (i - 1) j (a := 1 / 2) (b := 0) (by norm_num) le_rfl (by norm_num)
-      ?_ ?_;
+      ?_ ?_ ?_;
     refine yzInterp_eq_of_up g i (j - 1) (a := 0) (b := 1 / 2) le_rfl (by norm_num) (by norm_num)
-      ?_ ?_;
+      ?_ ?_ ?_;
     refine yzInterp_eq_of_up g i (j - 1) (a := 1 / 2) (b := 1 / 2) (by norm_num) (by norm_num)
-      (by norm_num) ?_ ?_] <;>
-    first
-    | ext <;> simp [yzStep_def] <;> ring1
-    | simp [yzStep_def]; ring1!
+      (by norm_num) ?_ ?_ ?_] <;>
+    simp [yzStep_def, ← sub_eq_add_neg] <;> ring
 
 /-- **The concavity criterion.** The interpolation of `f : Vertex n → 𝕜` is concave on the
 triangle exactly when `f` satisfies every unit-rhombus inequality. -/
