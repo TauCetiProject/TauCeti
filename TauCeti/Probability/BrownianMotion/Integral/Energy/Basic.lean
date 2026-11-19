@@ -10,6 +10,7 @@ public import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # Elementary Brownian isometry in the predictable energy measure
@@ -74,11 +75,7 @@ theorem eLpNorm_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
     hτ (mem_range.mp hi).le (mem_range.mp hi) (Nat.le_succ i)
   have hdisj : ((range n : Finset ℕ) : Set ℕ).Pairwise
       fun i j ↦ τ (i + 1) ≤ τ j ∨ τ (j + 1) ≤ τ i := by
-    intro i hi j hj hij
-    simp only [coe_range, Set.mem_Iio] at hi hj
-    rcases lt_or_gt_of_ne hij with h | h
-    · exact Or.inl (hτ (by simp only [Set.mem_Iic]; omega) hj.le h)
-    · exact Or.inr (hτ (by simp only [Set.mem_Iic]; omega) hi.le h)
+    simpa only [coe_range] using hτ.pairwise_succ_le_or_succ_le
   have hG : simpleGains τ n a W t = fun ω ↦ ∑ i ∈ range n,
       a i ω * (W (min (τ (i + 1)) t) ω - W (min (τ i) t) ω) :=
     funext (simpleGains_def τ n a W t)
@@ -131,6 +128,6 @@ theorem lintegral_enorm_sq_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
     ← eLpNorm_two_sq_eq_lintegral (hW.memLp_simpleGains hτ ha ha₂ _).aestronglyMeasurable,
     hW.eLpNorm_simpleGains hτ ha ha₂,
     eLpNorm_two_sq_eq_lintegral (hholding.mono ℱ.predictable_le_prod).aestronglyMeasurable]
-  rfl
+  simp only [Function.uncurry_def]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Basic
 public import Mathlib.Logic.Function.Basic
+public import Mathlib.Logic.Pairwise
+public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Order.Monotone.Defs
 public import Mathlib.Order.SetNotation
 
@@ -17,10 +20,16 @@ the new value lies strictly between the values at the points of `s` on either si
 (`StrictMonoOn.update`). For instance, a crossing time may be moved along a parameter interval
 containing no other crossing time without changing the order of the crossings.
 
+The consecutive intervals `[f i, f (i + 1)]`, `i < n`, of a grid `f` monotone through its last
+point `f n` follow one another: of two distinct ones, one ends before the other starts
+(`MonotoneOn.pairwise_succ_le_or_succ_le`).
+
 ## Main results
 
 * `StrictMonoOn.update`: a function strictly monotone on `s \ {a}`, updated at `a` to a value
   above its values before `a` and below its values after `a`, is strictly monotone on `s`.
+* `MonotoneOn.pairwise_succ_le_or_succ_le`: distinct consecutive intervals of a monotone grid
+  overlap at most at an endpoint.
 -/
 
 public section
@@ -45,3 +54,15 @@ theorem StrictMonoOn.update {α β : Type*} [Preorder α] [Preorder β] [Decidab
     exact hlt x hx hxy
   rw [update_of_ne hxa, update_of_ne hya]
   exact hf ⟨hx, hxa⟩ ⟨hy, hya⟩ hxy
+
+/-- Distinct consecutive intervals `[f i, f (i + 1)]`, `i < n`, of a grid monotone through its last
+point `f n` overlap at most at an endpoint: one of them ends before the other starts. -/
+theorem MonotoneOn.pairwise_succ_le_or_succ_le {α : Type*} [Preorder α] {f : ℕ → α} {n : ℕ}
+    (hf : MonotoneOn f (Iic n)) :
+    (Iio n).Pairwise fun i j ↦ f (i + 1) ≤ f j ∨ f (j + 1) ≤ f i := by
+  intro i hi j hj hij
+  rcases Nat.lt_or_gt_of_ne hij with h | h
+  · exact Or.inl (hf (mem_Iic.mpr (Nat.succ_le_of_lt hi)) (mem_Iic.mpr (le_of_lt hj))
+      (Nat.succ_le_of_lt h))
+  · exact Or.inr (hf (mem_Iic.mpr (Nat.succ_le_of_lt hj)) (mem_Iic.mpr (le_of_lt hi))
+      (Nat.succ_le_of_lt h))
