@@ -59,6 +59,8 @@ smoothly varying segments interpolate broken geodesics through finitely many nea
 
 * `TauCeti.Manifold.contMDiffOn_totalSpaceMk_riemannianLog`: the logarithm is jointly smooth in
   both points.
+* `TauCeti.Manifold.continuousOn_totalSpaceMk_riemannianLog`: the logarithm is jointly continuous
+  even when the base points do not form an open set.
 * `TauCeti.Manifold.contMDiffAt_riemannianExp_smul_riemannianLog`,
   `TauCeti.Manifold.contMDiffOn_riemannianExp_smul_riemannianLog`: the short geodesic segments are
   jointly smooth in both endpoints and time.
@@ -129,6 +131,52 @@ theorem contMDiffOn_totalSpaceMk_riemannianLog (hWo : IsOpen W)
     calc L y = invFunOn F S (F (L y)) := (hinj.leftInvOn_invFunOn (hL y hy).1).symm
       _ = invFunOn F S y := by rw [(hL y hy).2]
   exact (h x hx).congr hinv (hinv x hx)
+
+/-- **The Riemannian logarithm is continuous in both points.** The map `(x, y) ↦ (x, log_x y)` to
+the tangent bundle is continuous on the pairs such that the tangent ball of radius `r` at `x` is a
+normal domain and `y ∈ exp_x '' B(0, r)`. Unlike `contMDiffOn_totalSpaceMk_riemannianLog`, the
+base points need not form an open set. -/
+theorem continuousOn_totalSpaceMk_riemannianLog :
+    ContinuousOn
+      (fun x : M × M ↦ (⟨x.1, riemannianLog I M x.1 (Metric.ball 0 r) x.2⟩ : TangentBundle I M))
+      {x : M × M | IsNormalDomain I M x.1 (Metric.ball 0 r) ∧
+        x.2 ∈ riemannianExp I M x.1 '' Metric.ball 0 r} := by
+  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)
+  set S := {z : TangentBundle I M | IsNormalDomain I M z.proj (Metric.ball 0 r) ∧ ‖z.2‖ < r}
+  set L := fun x : M × M ↦
+    (⟨x.1, riemannianLog I M x.1 (Metric.ball 0 r) x.2⟩ : TangentBundle I M)
+  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
+  have hL : ∀ x ∈ {x : M × M | IsNormalDomain I M x.1 (Metric.ball 0 r) ∧
+      x.2 ∈ riemannianExp I M x.1 '' Metric.ball 0 r}, L x ∈ S ∧ F (L x) = x := by
+    rintro ⟨x₁, x₂⟩ ⟨hx₁, hx₂⟩
+    exact ⟨⟨hx₁, mem_ball_zero_iff.1 (riemannianLog_mem hx₂)⟩,
+      Prod.ext rfl (riemannianExp_riemannianLog hx₂)⟩
+  have hinj : InjOn F S :=
+    injOn_prodMk_proj_riemannianExp (W := {q | IsNormalDomain I M q (Metric.ball 0 r)})
+      fun q hq ↦ hq.injOn
+  intro x hx
+  obtain ⟨e, hxe, hFe⟩ := (isLocalDiffeomorphOn_prodMk_proj_riemannianExp
+    (W := {q | IsNormalDomain I M q (Metric.ball 0 r)}) (fun q hq ↦ hq.subset_expDomain)
+    fun q hq ↦ hq.isLocalDiffeomorphOn).isLocalHomeomorphOn (L x) (hL x hx).1
+  have hex : e (L x) = x := by rw [← hFe]; exact (hL x hx).2
+  have hcont : ContinuousAt e.symm x := by
+    have := e.continuousAt_symm (e.map_source hxe)
+    rwa [hex] at this
+  have hsrc : ∀ᶠ y in 𝓝 x, e.symm y ∈ {z : TangentBundle I M | ‖z.2‖ < r} := by
+    refine hcont.preimage_mem_nhds ?_
+    rw [← hex, e.left_inv hxe]
+    exact (isOpen_lt (TauCeti.continuous_norm_bundle E _) continuous_const).mem_nhds (hL x hx).1.2
+  have htgt : ∀ᶠ y in 𝓝 x, y ∈ e.target := by
+    rw [← hex]
+    exact e.open_target.mem_nhds (e.map_source hxe)
+  refine hcont.continuousWithinAt.congr_of_eventuallyEq ?_
+    ((e.left_inv hxe).symm.trans (congrArg e.symm hex))
+  filter_upwards [self_mem_nhdsWithin, mem_nhdsWithin_of_mem_nhds hsrc,
+    mem_nhdsWithin_of_mem_nhds htgt] with y hy hys hyt
+  have hFy : F (e.symm y) = y := (congrFun hFe (e.symm y)).trans (e.right_inv hyt)
+  have hproj : (e.symm y).proj = y.1 := congrArg Prod.fst hFy
+  exact hinj (hL y hy).1 ⟨hproj ▸ hy.1, hys⟩ ((hL y hy).2.trans hFy.symm)
 
 /-- **Geodesics from `x` towards `y` are smooth in both endpoints and time.** For an open set `W`
 of points at which the tangent ball of radius `r` is a normal domain, the map
