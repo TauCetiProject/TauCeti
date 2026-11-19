@@ -140,7 +140,8 @@ of the finite products. -/
 noncomputable def wittenQProduct : A⟦X⟧⟦X⟧ :=
   mk fun m ↦ coeff m (∏ n ∈ range m, wittenFactor A n)
 
-/-- The `qᵐ`-coefficient of the product is that of any finite product of at least `m` factors. -/
+/-- The `qᵐ`-coefficient of the product is that of the product of the first `M` factors, for any
+`M ≥ m`. -/
 theorem coeff_wittenQProduct_of_le {m M : ℕ} (h : m ≤ M) :
     coeff m (wittenQProduct A) = coeff m (∏ n ∈ range M, wittenFactor A n) := by
   rw [wittenQProduct, coeff_mk, coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one
