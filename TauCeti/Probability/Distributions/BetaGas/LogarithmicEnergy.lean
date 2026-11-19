@@ -487,12 +487,26 @@ theorem logarithmicEnergyRate_def (V : ℝ → ℝ) (μ : ProbabilityMeasure ℝ
     logarithmicEnergyRate V μ = (logarithmicEnergy V μ - ⨅ ν, logarithmicEnergy V ν).toENNReal :=
   (rfl)
 
-private theorem iInf_logarithmicEnergy_ne_bot (V : ℝ → ℝ) :
+/-- The infimum of the weighted logarithmic energy over probability measures is above `-∞`. -/
+theorem iInf_logarithmicEnergy_ne_bot (V : ℝ → ℝ) :
     (⨅ ν, logarithmicEnergy V ν) ≠ ⊥ := by
   let b := (sInf (range (logarithmicEnergyKernel V))).toReal
   have hb (μ : ProbabilityMeasure ℝ) : (b : EReal) ≤ logarithmicEnergy V μ :=
     le_add_of_nonneg_left (EReal.coe_ennreal_nonneg _)
   exact ne_bot_of_le_ne_bot (EReal.coe_ne_bot b) (le_iInf hb)
+
+/-- The energy infimum is real whenever a probability measure has finite energy. -/
+theorem coe_toReal_iInf_logarithmicEnergy {V : ℝ → ℝ} {μ : ProbabilityMeasure ℝ}
+    (hμ : logarithmicEnergy V μ < ⊤) :
+    ((⨅ ν, logarithmicEnergy V ν).toReal : EReal) = ⨅ ν, logarithmicEnergy V ν :=
+  EReal.coe_toReal (ne_top_of_le_ne_top hμ.ne (iInf_le _ μ)) (iInf_logarithmicEnergy_ne_bot V)
+
+/-- With a finite-energy competitor, the centered rate subtracts the real energy infimum. -/
+theorem logarithmicEnergyRate_eq_sub_toReal_iInf {V : ℝ → ℝ} {μ : ProbabilityMeasure ℝ}
+    (hμ : logarithmicEnergy V μ < ⊤) (ν : ProbabilityMeasure ℝ) :
+    logarithmicEnergyRate V ν =
+      (logarithmicEnergy V ν - ((⨅ η, logarithmicEnergy V η).toReal : EReal)).toENNReal := by
+  rw [logarithmicEnergyRate_def, coe_toReal_iInf_logarithmicEnergy hμ]
 
 /-- A rate sublevel is the energy sublevel with threshold shifted by the energy infimum. -/
 theorem logarithmicEnergyRate_le_iff {V : ℝ → ℝ} {μ : ProbabilityMeasure ℝ} {α : ℝ≥0∞} :
@@ -515,17 +529,12 @@ theorem logarithmicEnergyRate_eq_zero_iff {V : ℝ → ℝ} {μ : ProbabilityMea
 theorem isGoodRateFunction_logarithmicEnergyRate {V : ℝ → ℝ} (hV : Continuous V)
     (hconf : Tendsto (logarithmicConfinement V) (cocompact ℝ) atTop) :
     IsGoodRateFunction (logarithmicEnergyRate V) := by
-  obtain ⟨μ, hμ, hfin⟩ := exists_isMinOn_logarithmicEnergy hV hconf
-  have hmin : logarithmicEnergy V μ = ⨅ ν, logarithmicEnergy V ν :=
-    le_antisymm (le_iInf fun ν ↦ hμ (mem_univ ν)) (iInf_le _ μ)
+  obtain ⟨μ, _, hfin⟩ := exists_isMinOn_logarithmicEnergy hV hconf
   let m := (⨅ ν, logarithmicEnergy V ν).toReal
   have hm : (m : EReal) = ⨅ ν, logarithmicEnergy V ν :=
-    EReal.coe_toReal (hmin ▸ hfin.ne) (iInf_logarithmicEnergy_ne_bot V)
-  have hr (ν : ProbabilityMeasure ℝ) :
-      logarithmicEnergyRate V ν = (logarithmicEnergy V ν - (m : EReal)).toENNReal := by
-    rw [logarithmicEnergyRate_def, ← hm]
+    coe_toReal_iInf_logarithmicEnergy hfin
   constructor
-  · rw [funext hr]
+  · rw [funext (logarithmicEnergyRate_eq_sub_toReal_iInf hfin)]
     simp only [sub_eq_add_neg, ← EReal.coe_neg]
     apply EReal.continuous_toENNReal.comp_lowerSemicontinuous _
       (fun _ _ h ↦ EReal.toENNReal_le_toENNReal h)
