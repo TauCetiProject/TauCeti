@@ -80,26 +80,19 @@ theorem fontaineTheta_cyclotomicXiTilde (ε : A♭) :
     fontaineTheta A p (cyclotomicXiTilde p ε) = ∑ j ∈ Finset.range p, ε.untilt ^ j := by
   simp [cyclotomicXiTilde_eq_sum, fontaineTheta_teichmuller]
 
-/-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then `ε♯ = ζ ^ p = 1`. -/
-private theorem untilt_eq_one_of_geom_sum_eq_zero {ε : A♭}
-    (hε : ∑ j ∈ Finset.range p, ((_root_.frobeniusEquiv A♭ p).symm ε).untilt ^ j = 0) :
-    ε.untilt = 1 := by
-  rw [← sub_eq_zero, ← PreTilt.untilt_iterate_frobeniusEquiv_symm_pow ε 1, pow_one,
-    Function.iterate_one, ← mul_geom_sum, hε, mul_zero]
-
 /-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then Fontaine's map kills
 `μ = [ε] - 1`. -/
 theorem fontaineTheta_cyclotomicMu_eq_zero {ε : A♭}
     (hε : ∑ j ∈ Finset.range p, ((_root_.frobeniusEquiv A♭ p).symm ε).untilt ^ j = 0) :
     fontaineTheta A p (cyclotomicMu p ε) = 0 := by
-  rw [fontaineTheta_cyclotomicMu, untilt_eq_one_of_geom_sum_eq_zero hε, sub_self]
+  rw [fontaineTheta_cyclotomicMu, PreTilt.untilt_eq_one_of_geom_sum_eq_zero hε, sub_self]
 
 /-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then Fontaine's map sends
 `ξ' = φ(ξ)` to `p`. -/
 theorem fontaineTheta_cyclotomicXiTilde_eq_natCast {ε : A♭}
     (hε : ∑ j ∈ Finset.range p, ((_root_.frobeniusEquiv A♭ p).symm ε).untilt ^ j = 0) :
     fontaineTheta A p (cyclotomicXiTilde p ε) = p := by
-  simp [untilt_eq_one_of_geom_sum_eq_zero hε]
+  simp [PreTilt.untilt_eq_one_of_geom_sum_eq_zero hε]
 
 /-- **`ξ` is distinguished** (Bhatt–Morrow–Scholze, Example 3.16). If `ζ = (ε ^ (1 / p))♯`
 satisfies `∑_{j < p} ζ ^ j = 0`, then `ε♯ = 1`, so the zeroth coordinate of `ε - 1` in `A ⧸ p`
@@ -109,7 +102,7 @@ theorem isDistinguished_cyclotomicXi_of_geom_sum_eq_zero {ε : A♭}
     (cyclotomicXi p ε).IsDistinguished := by
   refine isDistinguished_cyclotomicXi p (RingHom.ker_le_jacobson_of_isLocalHom (PreTilt.coeff 0) ?_)
   rw [RingHom.mem_ker, map_sub, map_one, ← PreTilt.mk_untilt_eq_coeff_zero,
-    untilt_eq_one_of_geom_sum_eq_zero hε, map_one, sub_self]
+    PreTilt.untilt_eq_one_of_geom_sum_eq_zero hε, map_one, sub_self]
 
 /-- If `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, then `ξ` lies in the kernel of
 Fontaine's map. -/
