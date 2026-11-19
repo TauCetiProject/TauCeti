@@ -11,7 +11,7 @@ public import TauCeti.Geometry.ScatteringDiagram.SingularSupport
 /-!
 # Two transverse segments between allowed wall endpoints
 
-For a finite family of codimension-one polyhedra, endpoints off all walls can
+For a countable family of codimension-one polyhedra, endpoints off all walls can
 be joined through a freely chosen vertex by two segments transverse to every
 wall and avoiding the actual singular support. The vertex lies off every wall
 and may be chosen in any nonempty open set. In fact both full affine lines
@@ -32,12 +32,12 @@ namespace TauCeti
 
 variable {V ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- Between endpoints outside all walls, an intermediate vertex can be chosen
+/-- Between endpoints outside a countable family of walls, an intermediate vertex can be chosen
 in any nonempty open set so that it avoids all walls, both segment directions
 are transverse to every wall, and both full affine lines avoid actual singular support.
 
 The endpoints need not avoid the affine subspaces covering singular support. -/
-theorem exists_mem_open_two_transverse_lineMaps [FiniteDimensional ℝ V] [Finite ι]
+theorem exists_mem_open_two_transverse_lineMaps [Countable ι]
     (W : ι → Set V) (hpoly : ∀ i, TauCeti.IsConvexPolyhedron (W i))
     (hdim : ∀ i, Module.finrank ℝ (affineSpan ℝ (W i)).direction + 1 = Module.finrank ℝ V)
     {x y : V} (hx : ∀ i, x ∉ W i) (hy : ∀ i, y ∉ W i)
@@ -48,36 +48,40 @@ theorem exists_mem_open_two_transverse_lineMaps [FiniteDimensional ℝ V] [Finit
       ∀ t : ℝ, AffineMap.lineMap x z t ∉ singularSupport W ∧
         AffineMap.lineMap y z t ∉ singularSupport W := by
   classical
-  obtain ⟨S, hcover, hS⟩ := exists_finite_singularSupport_cover W hpoly hdim
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · obtain ⟨z, hz⟩ := hne
+    exact ⟨z, hz, by simp, by simp, by simp [mem_singularSupport]⟩
+  let : FiniteDimensional ℝ V := .of_finrank_pos (by
+    have := hdim (Classical.arbitrary ι)
+    omega)
+  obtain ⟨S, hcount, hcover, hS⟩ := exists_countable_singularSupport_cover W hpoly hdim
+  let : Countable S := hcount.to_subtype
   let A : ι ⊕ (ι ⊕ ι) → AffineSubspace ℝ V := Sum.elim
     (fun i => affineSpan ℝ (W i))
     (Sum.elim (fun i => mk' x ((affineSpan ℝ (W i)).direction))
       (fun i => mk' y ((affineSpan ℝ (W i)).direction)))
   have hA : ∀ i, A i ≠ ⊤ := by
     intro i
-    rcases i with i | i
+    rcases i with i | i | i
     · exact (affineSpan ℝ (W i)).ne_top_of_finrank_direction_add_one_eq (hdim i)
-    · rcases i with i | i
-      · apply (mk' x ((affineSpan ℝ (W i)).direction)).ne_top_of_finrank_direction_add_one_eq
-        rw [AffineSubspace.direction_mk']
-        exact hdim i
-      · apply (mk' y ((affineSpan ℝ (W i)).direction)).ne_top_of_finrank_direction_add_one_eq
-        rw [AffineSubspace.direction_mk']
-        exact hdim i
+    · apply (mk' x ((affineSpan ℝ (W i)).direction)).ne_top_of_finrank_direction_add_one_eq
+      rw [AffineSubspace.direction_mk']
+      exact hdim i
+    · apply (mk' y ((affineSpan ℝ (W i)).direction)).ne_top_of_finrank_direction_add_one_eq
+      rw [AffineSubspace.direction_mk']
+      exact hdim i
   have hcover' : singularSupport W ⊆ ⋃ k : S, (k.val : Set V) := by
     intro p hp
     obtain ⟨B, hB, hpB⟩ := Set.mem_iUnion₂.mp (hcover hp)
     exact Set.mem_iUnion.mpr ⟨⟨B, hB⟩, hpB⟩
-  have hxE : x ∉ singularSupport W := by
-    intro hxE
-    obtain ⟨i, hxi⟩ := Set.mem_iUnion.mp
-      (singularSupport_subset_iUnion W (fun i => (hpoly i).isClosed) hxE)
-    exact hx i hxi
-  have hyE : y ∉ singularSupport W := by
-    intro hyE
-    obtain ⟨i, hyi⟩ := Set.mem_iUnion.mp
-      (singularSupport_subset_iUnion W (fun i => (hpoly i).isClosed) hyE)
-    exact hy i hyi
+  have hxE : x ∉ singularSupport W := fun hp => by
+    obtain ⟨i, hi⟩ := Set.mem_iUnion.mp
+      (singularSupport_subset_iUnion W (fun i => (hpoly i).isClosed) hp)
+    exact hx i hi
+  have hyE : y ∉ singularSupport W := fun hp => by
+    obtain ⟨i, hi⟩ := Set.mem_iUnion.mp
+      (singularSupport_subset_iUnion W (fun i => (hpoly i).isClosed) hp)
+    exact hy i hi
   obtain ⟨z, hzU, hzA, hzE⟩ := AffineSubspace.exists_mem_open_two_lineMaps_avoid_set
     (fun k : S => k.val) (fun k => hS k.val k.property) A hA hcover' hxE hyE hU hne
   refine ⟨z, hzU, ?_, ?_, hzE⟩
