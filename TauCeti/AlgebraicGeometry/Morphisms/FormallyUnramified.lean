@@ -50,7 +50,9 @@ The residue field extensions of a morphism formally unramified and locally of fi
 finite separable, so their embeddings into an extension `Ω'` of a separably closed field `Ω` all
 land in `Ω`. Hence lifts of an `Ω`-valued point along such a morphism do not change under extension
 of `Ω` (`AlgebraicGeometry.Scheme.Hom.bijective_comp_of_formallyUnramified`); this is why stalks of
-étale sheaves at separably closed points do not change under extension of the field.
+étale sheaves at separably closed points do not change under extension of the field. For the same
+reason, a point over an algebraically closed point of the target has an algebraically closed
+residue field (`AlgebraicGeometry.Scheme.Hom.isAlgClosed_residueField_of_formallyUnramified`).
 
 ## References
 
@@ -271,5 +273,16 @@ theorem Scheme.Hom.bijective_comp_of_formallyUnramified (f : X ⟶ Y)
   · simp [Scheme.SpecToEquivOfField_symm_apply, ← hcb, Spec.map_comp]
   · ext1
     simp [Scheme.SpecToEquivOfField_symm_apply, ← hca]
+
+/-- **Points over an algebraically closed point of an unramified morphism.** If `f` is formally
+unramified and locally of finite type and the residue field of `f x` is algebraically closed, then
+so is the residue field of `x`: the finite separable extension `κ(f x) → κ(x)` is an isomorphism. -/
+theorem Scheme.Hom.isAlgClosed_residueField_of_formallyUnramified (f : X ⟶ Y)
+    [FormallyUnramified f] [LocallyOfFiniteType f] (x : X)
+    [IsAlgClosed (Y.residueField (f x))] : IsAlgClosed (X.residueField x) := by
+  let := (f.residueFieldMap x).hom.toAlgebra
+  exact IsAlgClosed.of_ringEquiv _ _
+    (RingEquiv.ofBijective _ (IsSepClosed.algebraMap_bijective (Y.residueField (f x))
+      (X.residueField x)))
 
 end AlgebraicGeometry

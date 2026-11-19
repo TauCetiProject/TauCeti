@@ -32,6 +32,8 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
 * `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
   it is invertible in the residue field of `Spec K`.
+* `AlgebraicGeometry.Spec.isAlgClosed_residueField`: the residue field of the spectrum of an
+  algebraically closed field is algebraically closed.
 * `AlgebraicGeometry.Scheme.eq_of_SpecMap_comp_fromSpecResidueField`: maps out of `κ(x)` are
   determined by their spectra composed with `Spec κ(x) ⟶ X`, since this morphism is a monomorphism.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_closedPoint_mem`: the closed point of
@@ -96,6 +98,18 @@ theorem Spec.natCast_residueField_ne_zero {K : Type u} [Field K] {N : ℕ} (hN :
   rw [← map_natCast ((Scheme.ΓSpecIso (.of K)).inv ≫
     (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
   exact (map_ne_zero _).mpr hN
+
+/-- The residue field of the spectrum of an algebraically closed field is algebraically closed:
+it is the field itself, as its only prime ideal is `⊥`. -/
+instance Spec.isAlgClosed_residueField {K : Type u} [Field K] [IsAlgClosed K]
+    (s : Spec (.of K)) : IsAlgClosed ((Spec (.of K)).residueField s) := by
+  have := s.isPrime
+  have hs : s.asIdeal = ⊥ := Ideal.eq_bot_of_prime s.asIdeal
+  have : s.asIdeal.IsMaximal := by rw [hs]; exact Ideal.bot_isMaximal
+  exact IsAlgClosed.of_ringEquiv _ _ (((RingEquiv.quotientBot K).symm.trans
+    (Ideal.quotEquivOfEq hs.symm)).trans
+      ((RingEquiv.ofBijective _ s.asIdeal.bijective_algebraMap_quotient_residueField).trans
+        (Scheme.Spec.residueFieldIso (.of K) s).symm.commRingCatIsoToRingEquiv))
 
 section residueFieldCongr
 
