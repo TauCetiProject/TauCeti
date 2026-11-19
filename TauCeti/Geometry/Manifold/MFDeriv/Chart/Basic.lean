@@ -883,6 +883,19 @@ theorem _root_.ContinuousAt.fderiv_extChartAt_comp_apply {Q : F → M} {z : F} {
     rw [mfderiv_zero_of_not_mdifferentiableAt hQ, fderiv_zero_of_not_differentiableAt hd]
     exact (map_zero _).symm
 
+/-- In the tangent coordinates of a preferred chart, the derivative of the coordinate expression of
+a map from a normed space is its manifold derivative: the inverse tangent coordinates `symmL`
+recover `mfderiv` from the coordinate derivative. -/
+theorem _root_.ContinuousAt.symmL_fderiv_extChartAt_comp_apply {Q : F → M} {z : F} {α : M}
+    (hQc : ContinuousAt Q z) (hz : Q z ∈ (extChartAt I α).source) (v : F) :
+    (trivializationAt E (TangentSpace I) α).symmL 𝕜 (Q z)
+        (fderiv 𝕜 (extChartAt I α ∘ Q) z v) = mfderiv 𝓘(𝕜, F) I Q z v := by
+  have hb : Q z ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
+    rwa [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  rw [hQc.fderiv_extChartAt_comp_apply hz,
+    ← TangentBundle.continuousLinearMapAt_trivializationAt (by rwa [← extChartAt_source I])]
+  exact Bundle.Trivialization.symmL_continuousLinearMapAt _ hb _
+
 end NormedFieldCharts
 
 section ManifoldCharts
