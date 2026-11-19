@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Chow.OpenRestriction
 import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
 import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
@@ -25,10 +26,6 @@ pushforward along the complementary closed immersion it gives the localization s
 `CH_n(Z) → CH_n(X) → CH_n(U) → 0` (Fulton, *Intersection Theory*, Proposition 1.8;
 [Stacks, Lemma 42.19.3](https://stacks.math.columbia.edu/tag/02RX)).
 
-* `Chow.RatEquivFamily.cycle_mem_cyclesOfDimension`: over a field the cycle `Σ_j (i_j)_* div(r_j)`
-  of a family of integral closed subschemes of dimension `n + 1` with rational functions is an
-  `n`-cycle. By the dimension formula, the points of codimension one of an integral scheme of
-  dimension `n + 1` locally of finite type over `k` have dimension `n`.
 * `Chow.cyclesRestrict_mem_ratEquiv`: restriction preserves rational equivalence. A subscheme
   `W` of the family restricts to `W ∩ U`, the pullback of `W` along `j`, with the restricted
   rational function; orders of vanishing are local (`Scheme.ord_functionFieldMap`).
@@ -36,7 +33,8 @@ pushforward along the complementary closed immersion it gives the localization s
   `RatEquiv U n`. An integral closed subscheme `W` of `U` extends to its scheme-theoretic closure
   in `X`, which contains `W` as a dense open subscheme with the same function field, and a
   locally finite family of subschemes of `U` has locally finite closures in `X`, since `X` is
-  covered by Noetherian opens.
+  covered by Noetherian opens (`LocallyFinite.closure_image_of_isOpenImmersion`). The extended
+  family is a family of `n`-cycles by `Chow.RatEquivFamily.cycle_mem_cyclesOfDimension`.
 * `Chow.ChowGroup.restrict k j`: the induced restriction `CH_n(X) →+ CH_n(U)`, functorial in `j`
   (`Chow.ChowGroup.restrict_id`, `Chow.ChowGroup.restrict_comp`) and surjective
   (`Chow.ChowGroup.restrict_surjective`).
@@ -57,75 +55,15 @@ variable (k : Type u) [Field k] {X U : Scheme.{u}}
   [X.Over (Spec (.of k))] [U.Over (Spec (.of k))]
   [LocallyOfFiniteType (X ↘ Spec (.of k))] [LocallyOfFiniteType (U ↘ Spec (.of k))]
 
-section Dimension
-
-include k in
-/-- On an irreducible scheme locally of finite type over a field whose generic point has dimension
-`n + 1`, the points of codimension one have dimension `n`. -/
-private lemma mem_pointsOfDimension_of_coheight_eq_one {W : Scheme.{u}}
-    [W.Over (Spec (.of k))] [LocallyOfFiniteType (W ↘ Spec (.of k))] [IrreducibleSpace W] {n : ℤ}
-    (hW : genericPoint W ∈ pointsOfDimension W (n + 1)) {w : W} (hw : coheight w = 1) :
-    w ∈ pointsOfDimension W n := by
-  obtain ⟨m, hm, hmn⟩ := mem_pointsOfDimension.mp hW
-  -- The generic point has codimension zero, so the dimension formula at it gives `dim W = m`.
-  have hdim : topologicalKrullDim W = m := by
-    rw [← coheight_add_height_eq_topologicalKrullDim k (genericPoint W), hm,
-      coheight_eq_zero.mpr (Scheme.isMax_iff_eq_genericPoint.mpr rfl)]
-    simp
-  have h := (coheight_eq_one_iff_mem_pointsOfDimension k hdim).mp hw
-  rwa [show (m : ℤ) - 1 = n by omega] at h
-
-variable [IsLocallyNoetherian X]
-
-include k in
-/-- Over a field, the cycle `Σ_j (i_j)_* div(r_j)` of a family of integral closed subschemes of
-dimension `n + 1` with nonzero rational functions is an `n`-cycle. -/
-lemma RatEquivFamily.cycle_mem_cyclesOfDimension {n : ℤ} (F : RatEquivFamily X n) :
-    F.cycle ∈ cyclesOfDimension X n := by
-  refine mem_cyclesOfDimension_iff.mpr fun x hx ↦ ?_
-  rw [Function.mem_support, RatEquivFamily.cycle_apply] at hx
-  obtain ⟨a, ha⟩ : ∃ a, F.component a x ≠ 0 := by
-    by_contra! h
-    exact hx (finsum_eq_zero_of_forall_eq_zero h)
-  obtain ⟨w, rfl⟩ : x ∈ Set.range (F.i a) := by
-    by_contra h
-    exact ha (F.component_apply_eq_zero_of_notMem_range a h)
-  rw [F.component_apply] at ha
-  have hw : coheight w = 1 := by
-    by_contra h
-    exact ha (Scheme.ord_eq_zero_of_coheight_neq_one h _)
-  -- `W a` is locally of finite type over `k` through `X`.
-  let : (F.W a).Over (Spec (.of k)) := ⟨F.i a ≫ X ↘ Spec (.of k)⟩
-  have : LocallyOfFiniteType (F.W a ↘ Spec (.of k)) :=
-    inferInstanceAs (LocallyOfFiniteType (F.i a ≫ X ↘ Spec (.of k)))
-  simpa only [mem_pointsOfDimension, Scheme.Hom.height_apply_eq_height] using
-    mem_pointsOfDimension_of_coheight_eq_one k (F.genericPoint_mem a) hw
-
-end Dimension
-
 section Subschemes
 
-/-- A pullback of schemes is nonempty when the images of the two morphisms meet. -/
-private lemma nonempty_pullback {W : Scheme.{u}} (i : W ⟶ X) (j : U ⟶ X)
-    (h : (Set.range i ∩ Set.range j).Nonempty) : Nonempty ↥(pullback i j) := by
-  obtain ⟨_, ⟨w, rfl⟩, hw⟩ := h
-  rw [← Set.mem_preimage, ← Scheme.Pullback.range_fst] at hw
-  exact ⟨hw.choose⟩
-
-/-- In a locally Noetherian scheme, the closures of the images of a locally finite family of
-subsets of an open subscheme form a locally finite family: an affine open `V` of `X` is
-Noetherian, so `j⁻¹ V` is quasi-compact and meets only finitely many members of the family. -/
-private lemma locallyFinite_closure_image [IsLocallyNoetherian X] (j : U ⟶ X) [IsOpenImmersion j]
-    {ι : Type*} {S : ι → Set U} (hS : LocallyFinite S) :
-    LocallyFinite fun a ↦ closure (j '' S a) := by
-  intro x
-  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, -⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
-  refine ⟨V, V.isOpen.mem_nhds hxV,
-    (hS.finite_nonempty_inter_compact (j.isCompact_preimage hV.isCompact)).subset ?_⟩
-  rintro a ⟨y, hy, hyV⟩
-  obtain ⟨_, hV', u, hu, rfl⟩ := mem_closure_iff.mp hy V V.isOpen hyV
-  exact ⟨u, hu, hV'⟩
+/-- The pullback of an integral scheme along an open immersion whose image it meets is integral. -/
+private lemma isIntegral_pullback {W : Scheme.{u}} [IsIntegral W] (i : W ⟶ X) (j : U ⟶ X)
+    [IsOpenImmersion j] (h : (Set.range i ∩ Set.range j).Nonempty) :
+    IsIntegral (pullback i j) :=
+  have : Nonempty ↥(pullback i j) := not_isEmpty_iff.mp
+    (Scheme.isEmpty_pullback_iff.not.mpr (Set.not_disjoint_iff_nonempty_inter.mpr h))
+  isIntegral_of_isOpenImmersion (pullback.fst i j)
 
 end Subschemes
 
@@ -133,6 +71,20 @@ section Restriction
 
 variable {k} [IsLocallyNoetherian X] [IsLocallyNoetherian U] (j : U ⟶ X) [IsOpenImmersion j]
   [j.IsOver (Spec (.of k))]
+
+variable (k) in
+include k in
+omit [IsLocallyNoetherian X] [IsLocallyNoetherian U] in
+/-- Over a field, consider a commutative square `i ≫ j = f ≫ i'` with `j` the open immersion,
+`i` and `i'` closed immersions of irreducible schemes and `f` dominant. Then the generic points of
+the sources of `i` and `i'` have the same dimension. -/
+private lemma genericPoint_mem_pointsOfDimension_iff {W W' : Scheme.{u}} [IrreducibleSpace W]
+    [IrreducibleSpace W'] {i : W ⟶ U} {i' : W' ⟶ X} [IsClosedImmersion i] [IsClosedImmersion i']
+    {f : W ⟶ W'} [IsDominant f] (h : i ≫ j = f ≫ i') {n : ℤ} :
+    genericPoint W ∈ pointsOfDimension W n ↔ genericPoint W' ∈ pointsOfDimension W' n := by
+  rw [mem_pointsOfDimension, mem_pointsOfDimension, ← i.height_apply_eq_height,
+    ← height_apply_of_isOpenImmersion k j, ← Scheme.Hom.comp_apply, h, Scheme.Hom.comp_apply,
+    i'.height_apply_eq_height, f.genericPoint_eq_of_isDominant]
 
 namespace RatEquivFamily
 
@@ -142,36 +94,24 @@ variable (k)
 subscheme `j : U ⟶ X`: the members `W` meeting `U` are replaced by their pullbacks `W ×_X U`, with
 the pulled-back rational functions. -/
 private noncomputable def restrict {n : ℤ} (F : RatEquivFamily X n) : RatEquivFamily U n :=
-  have hN (a : {a : F.ι // (Set.range (F.i a) ∩ Set.range j).Nonempty}) :=
-    nonempty_pullback (F.i a.1) j a.2
   have hI (a : {a : F.ι // (Set.range (F.i a) ∩ Set.range j).Nonempty}) :=
-    have := hN a
-    isIntegral_of_isOpenImmersion (pullback.fst (F.i a.1) j)
+    isIntegral_pullback (F.i a.1) j a.2
   { ι := {a : F.ι // (Set.range (F.i a) ∩ Set.range j).Nonempty}
     W a := pullback (F.i a.1) j
     i a := pullback.snd (F.i a.1) j
     isIntegral := hI
-    genericPoint_mem a := by
-      have := hN a
+    genericPoint_mem a :=
       have := hI a
-      have hgen := (pullback.fst (F.i a.1) j).genericPoint_eq_of_isDominant
-      have hcond : j (pullback.snd (F.i a.1) j (genericPoint _)) =
-          F.i a.1 (pullback.fst (F.i a.1) j (genericPoint _)) := by
-        rw [← Scheme.Hom.comp_apply, ← pullback.condition, Scheme.Hom.comp_apply]
-      have hdim := F.genericPoint_mem a.1
-      rw [mem_pointsOfDimension] at hdim ⊢
-      rwa [← Scheme.Hom.height_apply_eq_height (pullback.snd (F.i a.1) j),
-        ← height_apply_of_isOpenImmersion k j, hcond, Scheme.Hom.height_apply_eq_height, hgen]
+      (genericPoint_mem_pointsOfDimension_iff k j pullback.condition.symm).mpr
+        (F.genericPoint_mem a.1)
     r a :=
-      have := hN a
       have := hI a
       Units.map (pullback.fst (F.i a.1) j).functionFieldMap.hom.toMonoidHom (F.r a.1)
     locallyFinite := by
       refine ((F.locallyFinite.preimage_continuous j.continuous).comp_injective
         Subtype.val_injective).subset fun a ↦ ?_
       -- The `a`-th member is `pullback.snd`, whose range is the preimage of the range of `F.i a`.
-      rw [Scheme.Pullback.range_snd]
-      rfl }
+      exact (Scheme.Pullback.range_snd (F.i a.1) j).subset }
 
 variable {k}
 
@@ -180,8 +120,7 @@ private lemma component_restrict_apply {n : ℤ} (F : RatEquivFamily X n)
     (F.restrict k j).component a u = F.component a.1 (j u) := by
   by_cases hu : u ∈ Set.range (pullback.snd (F.i a.1) j)
   · obtain ⟨p, rfl⟩ := hu
-    have := nonempty_pullback (F.i a.1) j a.2
-    have := isIntegral_of_isOpenImmersion (pullback.fst (F.i a.1) j)
+    have := isIntegral_pullback (F.i a.1) j a.2
     have := LocallyOfFiniteType.isLocallyNoetherian (pullback.snd (F.i a.1) j)
     -- The `a`-th member of `F.restrict k j` is `W ×_X U ⟶ U` with the pulled-back function.
     refine ((F.restrict k j).component_apply a p).trans ?_
@@ -216,17 +155,13 @@ private noncomputable def extend {n : ℤ} (G : RatEquivFamily U n) : RatEquivFa
     W a := (G.i a ≫ j).image
     i a := (G.i a ≫ j).imageι
     isIntegral _ := inferInstance
-    genericPoint_mem a := by
-      have hgen := (G.i a ≫ j).toImage.genericPoint_eq_of_isDominant
-      have hdim := G.genericPoint_mem a
-      rw [mem_pointsOfDimension] at hdim ⊢
-      rwa [← Scheme.Hom.height_apply_eq_height (G.i a ≫ j).imageι, ← hgen,
-        ← Scheme.Hom.comp_apply, Scheme.Hom.toImage_imageι, Scheme.Hom.comp_apply,
-        height_apply_of_isOpenImmersion k j, Scheme.Hom.height_apply_eq_height]
+    genericPoint_mem a :=
+      (genericPoint_mem_pointsOfDimension_iff k j (G.i a ≫ j).toImage_imageι.symm).mp
+        (G.genericPoint_mem a)
     r a := Units.map (asIso (G.i a ≫ j).toImage.functionFieldMap).inv.hom.toMonoidHom (G.r a)
     locallyFinite := by
-      refine (locallyFinite_closure_image j G.locallyFinite).subset fun a ↦ ?_
-      rw [Scheme.IdealSheafData.range_subschemeι, Scheme.Hom.support_ker]
+      refine (G.locallyFinite.closure_image_of_isOpenImmersion j).subset fun a ↦ ?_
+      rw [Scheme.Hom.range_imageι]
       refine closure_mono ?_
       rintro _ ⟨w, rfl⟩
       exact ⟨G.i a w, ⟨w, rfl⟩, (Scheme.Hom.comp_apply _ _ _).symm⟩ }
@@ -239,7 +174,7 @@ private lemma component_extend_apply {n : ℤ} (G : RatEquivFamily U n) (a : G.�
   · obtain ⟨w, rfl⟩ := hu
     have := LocallyOfFiniteType.isLocallyNoetherian (G.i a ≫ j).imageι
     have hw : (G.i a ≫ j).imageι ((G.i a ≫ j).toImage w) = j (G.i a w) := by
-      rw [← Scheme.Hom.comp_apply, Scheme.Hom.toImage_imageι, Scheme.Hom.comp_apply]
+      rw [Scheme.Hom.imageι_toImage_apply, Scheme.Hom.comp_apply]
     -- The `a`-th member of `G.extend k j` is the closure of `W` with the transported function.
     rw [← hw, G.component_apply]
     refine ((G.extend k j).component_apply a _).trans
@@ -251,10 +186,9 @@ private lemma component_extend_apply {n : ℤ} (G : RatEquivFamily U n) (a : G.�
     -- The closure of `j '' W` in `X` meets `U` in the closed subset `W`. The `change` unfolds the
     -- `a`-th member of `G.extend k j`, which is by definition the closure `(G.i a ≫ j).imageι`.
     change j u ∈ Set.range (G.i a ≫ j).imageι at hx
-    rw [Scheme.IdealSheafData.range_subschemeι, Scheme.Hom.support_ker, Scheme.Hom.comp_base,
-      TopCat.coe_comp, Set.range_comp, ← Set.mem_preimage,
-      ← j.isOpenEmbedding.isInducing.closure_eq_preimage_closure_image,
-      (G.i a).isClosedEmbedding.isClosed_range.closure_eq] at hx
+    rw [Scheme.Hom.range_imageι, Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp] at hx
+    rw [← (G.i a).isClosedEmbedding.isClosed_range.closure_eq,
+      j.isOpenEmbedding.isInducing.closure_eq_preimage_closure_image]
     exact hx
 
 /-- The restriction of the cycle of the extension of a family is the cycle of the family. -/

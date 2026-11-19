@@ -23,7 +23,10 @@ hypothesis on `f`: over affine opens `Spec B ⟶ Spec R` it is `Spec (κ(p) ⊗[
 `κ(p) ⊗[R] B` is a quotient of a localization of `B`.
 
 The underlying space of a locally Noetherian scheme is locally connected, since it is covered by
-the Noetherian spaces of its affine opens. In particular its connected components are open.
+the Noetherian spaces of its affine opens. In particular its connected components are open. For the
+same reason, the closures in a locally Noetherian scheme of the images of a locally finite family of
+subsets of an open subscheme form a locally finite family
+(`LocallyFinite.closure_image_of_isOpenImmersion`).
 -/
 
 public section
@@ -59,6 +62,22 @@ instance locallyConnectedSpace_of_isLocallyNoetherian (X : Scheme.{u}) [IsLocall
   · exact isConnected_connectedComponent.image _ continuous_subtype_val.continuousOn
 
 end TauCeti.AlgebraicGeometry
+
+/-- In a locally Noetherian scheme `X`, the closures of the images of a locally finite family of
+subsets of an open subscheme `j : U ⟶ X` form a locally finite family: an affine open `V` of `X` is
+Noetherian, so `j⁻¹ V` is quasi-compact and meets only finitely many members of the family. -/
+theorem LocallyFinite.closure_image_of_isOpenImmersion {X U : Scheme} [IsLocallyNoetherian X]
+    (j : U ⟶ X) [IsOpenImmersion j]
+    {ι : Type*} {S : ι → Set U} (hS : LocallyFinite S) :
+    LocallyFinite fun a ↦ closure (j '' S a) := by
+  intro x
+  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, -⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
+  refine ⟨V, V.isOpen.mem_nhds hxV,
+    (hS.finite_nonempty_inter_compact (j.isCompact_preimage hV.isCompact)).subset ?_⟩
+  rintro a ⟨y, hy, hyV⟩
+  obtain ⟨_, hV', u, hu, rfl⟩ := mem_closure_iff.mp hy V V.isOpen hyV
+  exact ⟨u, hu, hV'⟩
 
 open Limits
 

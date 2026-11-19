@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
-public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 
 /-!
 # Scheme-theoretic images
@@ -15,7 +15,8 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 This file contains general results about Mathlib's scheme-theoretic image construction.
 For a quasi-compact morphism the map onto its scheme-theoretic image is
 scheme-theoretically dominant. In particular, a reduced source gives a reduced image, and an
-integral source gives an integral image.
+integral source gives an integral image. The underlying set of the image is the closure of the
+topological image.
 When the topological image is closed, the factorization is surjective on points.
 
 ## Main declarations
@@ -75,6 +76,18 @@ instance isSchemeTheoreticallyDominant_toImage : IsSchemeTheoreticallyDominant f
   intro V
   rw [Scheme.Hom.ker_apply, Scheme.IdealSheafData.ideal_bot]
   exact (RingHom.injective_iff_ker_eq_bot _).mp (f.toImage_app_injective V)
+
+omit [QuasiCompact f] in
+/-- The inclusion of the scheme-theoretic image sends the image of a point to its image under the
+original morphism. -/
+@[simp]
+lemma imageι_toImage_apply (x : X) : f.imageι (f.toImage x) = f x := by
+  rw [← Scheme.Hom.comp_apply, f.toImage_imageι]
+
+/-- The underlying set of the scheme-theoretic image of a quasi-compact morphism is the closure of
+its topological image. -/
+lemma range_imageι : Set.range f.imageι = closure (Set.range f) := by
+  rw [Scheme.IdealSheafData.range_subschemeι, Scheme.Hom.support_ker]
 
 /-- The scheme-theoretic image of a quasi-compact morphism from a reduced scheme is reduced. -/
 instance isReduced_image [IsReduced X] : IsReduced f.image :=

@@ -28,6 +28,12 @@ cycle has finite support. Hence:
   the `(n - 1)`-cycles `Z_{n-1}(X)`, by extension by zero away from codimension one
   (`SchemeWeilDivisor.toAlgebraicCycle`).
 
+The same dimension formula shows that on an irreducible scheme whose generic point has dimension
+`n + 1`, the points of codimension one have dimension `n`
+(`Chow.mem_pointsOfDimension_of_coheight_eq_one`). Hence, on any locally Noetherian scheme locally
+of finite type over `κ`, the cycle `Σ_j (i_j)_* div(r_j)` of a rational-equivalence family of
+dimension `n + 1` is automatically an `n`-cycle (`Chow.RatEquivFamily.cycle_mem_cyclesOfDimension`).
+
 If `X` is moreover integral and Noetherian, rational equivalence of `(n - 1)`-cycles is linear
 equivalence of Weil divisors:
 
@@ -96,6 +102,21 @@ lemma mem_pointsOfDimension_iff_eq_genericPoint (hn : topologicalKrullDim X = n)
   simp only [hd, mem_pointsOfDimension, Nat.cast_inj, exists_eq_left']
   omega
 
+include κ in
+/-- On an irreducible scheme locally of finite type over a field whose generic point has dimension
+`d + 1`, the points of codimension one have dimension `d`. -/
+lemma mem_pointsOfDimension_of_coheight_eq_one {d : ℤ}
+    (hX : genericPoint X ∈ pointsOfDimension X (d + 1)) {x : X} (hx : coheight x = 1) :
+    x ∈ pointsOfDimension X d := by
+  obtain ⟨m, hm, hmd⟩ := mem_pointsOfDimension.mp hX
+  -- The generic point has codimension zero, so the dimension formula at it gives `dim X = m`.
+  have hdim : topologicalKrullDim X = m := by
+    rw [← coheight_add_height_eq_topologicalKrullDim κ (genericPoint X), hm,
+      coheight_eq_zero.mpr (Scheme.isMax_iff_eq_genericPoint.mpr rfl)]
+    simp
+  have h := (coheight_eq_one_iff_mem_pointsOfDimension κ hdim).mp hx
+  rwa [show (m : ℤ) - 1 = d by omega] at h
+
 variable [CompactSpace X]
 
 include κ in
@@ -136,6 +157,36 @@ lemma weilDivisorEquivCyclesOfDimension_symm_apply_apply (hn : topologicalKrullD
   SchemeWeilDivisor.equivFiniteCodimensionOneCycles_symm_apply_apply _ x
 
 end Dimension
+
+section RationalEquivalence
+
+variable [IsLocallyNoetherian X]
+
+include κ in
+/-- Over a field, the cycle `Σ_j (i_j)_* div(r_j)` of a family of integral closed subschemes of
+dimension `n + 1` with nonzero rational functions is an `n`-cycle. -/
+lemma RatEquivFamily.cycle_mem_cyclesOfDimension {n : ℤ} (F : RatEquivFamily X n) :
+    F.cycle ∈ cyclesOfDimension X n := by
+  refine mem_cyclesOfDimension_iff.mpr fun x hx ↦ ?_
+  rw [Function.mem_support, RatEquivFamily.cycle_apply] at hx
+  obtain ⟨a, ha⟩ : ∃ a, F.component a x ≠ 0 := by
+    by_contra! h
+    exact hx (finsum_eq_zero_of_forall_eq_zero h)
+  obtain ⟨w, rfl⟩ : x ∈ Set.range (F.i a) := by
+    by_contra h
+    exact ha (F.component_apply_eq_zero_of_notMem_range a h)
+  rw [F.component_apply] at ha
+  have hw : coheight w = 1 := by
+    by_contra h
+    exact ha (Scheme.ord_eq_zero_of_coheight_neq_one h _)
+  -- `W a` is locally of finite type over `κ` through `X`.
+  let : (F.W a).Over (Spec (.of κ)) := ⟨F.i a ≫ X ↘ Spec (.of κ)⟩
+  have : LocallyOfFiniteType (F.W a ↘ Spec (.of κ)) :=
+    inferInstanceAs (LocallyOfFiniteType (F.i a ≫ X ↘ Spec (.of κ)))
+  simpa only [mem_pointsOfDimension, Scheme.Hom.height_apply_eq_height] using
+    mem_pointsOfDimension_of_coheight_eq_one κ (F.genericPoint_mem a) hw
+
+end RationalEquivalence
 
 section ClassGroup
 
