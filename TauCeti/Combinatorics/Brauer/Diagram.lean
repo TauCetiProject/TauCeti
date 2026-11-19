@@ -237,6 +237,12 @@ theorem permToBrauer_val_inl (σ : Equiv.Perm (Fin k)) (i : Fin k) :
 theorem permToBrauer_val_inr (σ : Equiv.Perm (Fin k)) (j : Fin k) :
     (permToBrauer σ).val (Sum.inr j) = Sum.inl (σ.symm j) := by simp [permToBrauer]
 
+/-- The underlying involution of the identity diagram is `Sum.swap`. -/
+@[simp]
+theorem permToBrauer_one_val_apply (x : Fin k ⊕ Fin k) :
+    (permToBrauer (1 : Equiv.Perm (Fin k))).val x = x.swap := by
+  cases x <;> simp [Equiv.Perm.one_def]
+
 /-- A permutation diagram has no cap and no cup: every arc goes through. -/
 @[simp]
 theorem isThrough_permToBrauer (σ : Equiv.Perm (Fin k)) (x : Fin k ⊕ Fin k) :
@@ -276,7 +282,7 @@ theorem throughPerm_apply (hD : ∀ x, D.IsThrough x) (i : Fin k) :
 @[simp]
 theorem permToBrauer_throughPerm (hD : ∀ x, D.IsThrough x) :
     permToBrauer (throughPerm D hD) = D := by
-  refine Subtype.ext (Equiv.ext fun x => ?_)
+  ext x
   rcases x with i | j
   · rw [permToBrauer_val_inl, throughPerm_apply, Sum.inr_getRight]
   · obtain ⟨m, hm⟩ : ∃ m, D.val (Sum.inr j) = Sum.inl m :=

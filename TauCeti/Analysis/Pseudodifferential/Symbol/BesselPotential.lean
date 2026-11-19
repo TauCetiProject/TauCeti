@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 public import Mathlib.RingTheory.Binomial
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Expansion
 
 /-!
@@ -142,7 +143,7 @@ private theorem exists_norm_iteratedFDeriv_besselRemainder_le
   rw [← besselRemainder_eq] at hC
   have hN : (N : ℝ) ≤ 2 * ((N + 1) / 2 : ℕ) := by
     exact_mod_cast (by omega : N ≤ 2 * ((N + 1) / 2))
-  refine ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
+  refine ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le
     (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V))
     ((contDiff_besselRemainder χ s _).of_le (mod_cast le_top)) ⟨max C 0, fun ξ ↦ (hC ξ).trans ?_⟩
   calc C * (1 + ‖ξ‖ ^ 2) ^ (s / 2 - ((N + 1) / 2 : ℕ) - k / 2)

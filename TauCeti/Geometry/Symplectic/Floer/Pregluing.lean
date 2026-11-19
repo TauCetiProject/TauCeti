@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Linearization
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -36,25 +36,34 @@ which needs the error `F(w_R)` to be small. This file proves that it is.
   `‖F(w)‖ ≤ (1 + M) ‖Dξ‖ + M L ‖ξ‖` whenever `‖J_t(w)‖ ≤ M` and
   `‖X_{H_t}(w) - X_{H_t}(x)‖ ≤ L ‖ξ‖` (`TauCeti.SymplecticForm.norm_floerOperator_le`). So a map
   `C¹`-close to the stationary cylinder over `x` is an approximate solution.
+* **The pre-glued map.** It is `Cⁿ` where `x`, `u` and `v` are
+  (`TauCeti.Floer.contDiffAt_preglue`), and of period one in `t` when they are
+  (`TauCeti.Floer.periodic_preglue`).
 * **Locality.** For `s < -1` the Floer operator of `w_R` is that of `u` at `(s + R, t)`, and for
   `s > 1` that of `v` at `(s - R, t)`
   (`TauCeti.SymplecticForm.floerOperator_preglue_of_lt_neg_one`,
   `TauCeti.SymplecticForm.floerOperator_preglue_of_one_lt`). If `u` and `v` are solutions, the
-  error is supported in the neck.
+  error is supported in the neck, so a bound on the neck bounds it everywhere
+  (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le_of_floerOperator_eq_zero`).
 * **The error on the neck.** On the neck, `‖F(w_R)‖` is bounded by a constant times the
   `C¹` distances of `u` from `x` at `s + R` and of `v` from `x` at `s - R`
   (`TauCeti.SymplecticForm.norm_floerOperator_preglue_le`).
 * **Exponential smallness.** If `u` and `v` converge to `x` exponentially in `C¹`, at the rate `κ`,
   as finite-energy solutions at a nondegenerate orbit do, then the error on the neck is
   `O(e^{-κ R})` uniformly
-  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`). For solutions `u`
-  and `v` this bounds the error on all of `ℝ × [0, 1]` (`TauCeti.SymplecticForm.`
+  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`). Where `u` and `v`
+  solve the Floer equation the error vanishes off the neck, so the bound extends to every point
+  at which `w_R` is a translate of a solution
+  (`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le_of_eqOn`), such as the
+  points of a half-cylinder on which `u` is a solution; for solutions `u` and `v` on the whole
+  cylinder it bounds the error on all of `ℝ × [0, 1]` (`TauCeti.SymplecticForm.`
   `exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero`).
 
-Estimates are stated on the fundamental domain `t ∈ [0, 1]` of the cylinder, so no periodicity is
-assumed. The construction is local in the cylindrical coordinates, so it applies equally at a
-cylindrical end of a pair of pants, where the perturbation is `H_t dt`. The Sobolev setting, the
-right inverse of the linearized operator and the Newton iteration are not treated here.
+Estimates are stated on the fundamental domain `t ∈ [0, 1]` of the cylinder, so they assume no
+periodicity. The construction is local in the cylindrical coordinates, so it applies equally at a
+cylindrical end of a pair of pants, where the perturbation is `H_t dt`
+(`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pregluing`). The Sobolev setting, the right
+inverse of the linearized operator and the Newton iteration are not treated here.
 
 ## References
 
@@ -196,6 +205,14 @@ theorem preglue_of_one_le (hz : 1 ≤ z.1) : preglue x u v R z = v (z - (R, 0)) 
   rw [preglue, pregluingCutoff_of_one_le hz, pregluingCutoff_of_le_neg_one (by linarith)]
   simp
 
+/-- The pre-glued map of an orbit `x` and of maps `u` and `v` of period one in `t` has period one
+in `t`. -/
+theorem periodic_preglue (hx : Periodic x 1) (hu : ∀ s, Periodic (fun t ↦ u (s, t)) 1)
+    (hv : ∀ s, Periodic (fun t ↦ v (s, t)) 1) (s : ℝ) :
+    Periodic (fun t ↦ preglue x u v R (s, t)) 1 := fun t ↦ by
+  simp only [preglue, Prod.mk_add_mk, Prod.mk_sub_mk, add_zero, sub_zero, hx t, hu (s + R) t,
+    hv (s - R) t]
+
 /-- Near a point with `s < -1` the pre-glued map agrees with the translate of `u`. -/
 theorem preglue_eventuallyEq_of_lt_neg_one (hz : z.1 < -1) :
     preglue x u v R =ᶠ[𝓝 z] fun p ↦ u (p + (R, 0)) :=
@@ -218,14 +235,22 @@ theorem fderiv_preglue_of_one_lt (hz : 1 < z.1) :
     fderiv ℝ (preglue x u v R) z = fderiv ℝ v (z - (R, 0)) := by
   rw [(preglue_eventuallyEq_of_one_lt hz).fderiv_eq, fderiv_comp_sub]
 
+/-- The pre-glued map is `Cⁿ` at `z = (s, t)` when `x` is `Cⁿ` at `t`, `u` at `z + (R, 0)` and
+`v` at `z - (R, 0)`. -/
+theorem contDiffAt_preglue {n : ℕ∞} (hx : ContDiffAt ℝ n x z.2)
+    (hu : ContDiffAt ℝ n u (z + (R, 0))) (hv : ContDiffAt ℝ n v (z - (R, 0))) :
+    ContDiffAt ℝ n (preglue x u v R) z := by
+  have hx' : ContDiffAt ℝ n (fun p : ℝ × ℝ ↦ x p.2) z := hx.comp z contDiffAt_snd
+  exact (hx'.add ((contDiff_pregluingCutoff.comp contDiff_fst).contDiffAt.smul
+    ((hu.comp z (contDiffAt_id.add contDiffAt_const)).sub hx'))).add
+    ((contDiff_pregluingCutoff.comp contDiff_fst.neg).contDiffAt.smul
+      ((hv.comp z (contDiffAt_id.sub contDiffAt_const)).sub hx'))
+
 /-- The pre-glued map of `Cⁿ` maps is `Cⁿ`. -/
 theorem contDiff_preglue {n : ℕ∞} (hx : ContDiff ℝ n x) (hu : ContDiff ℝ n u)
-    (hv : ContDiff ℝ n v) : ContDiff ℝ n (preglue x u v R) := by
-  have hx' : ContDiff ℝ n fun p : ℝ × ℝ ↦ x p.2 := hx.comp contDiff_snd
-  exact (hx'.add ((contDiff_pregluingCutoff.comp contDiff_fst).smul
-    ((hu.comp (contDiff_id.add contDiff_const)).sub hx'))).add
-    ((contDiff_pregluingCutoff.comp contDiff_fst.neg).smul
-      ((hv.comp (contDiff_id.sub contDiff_const)).sub hx'))
+    (hv : ContDiff ℝ n v) : ContDiff ℝ n (preglue x u v R) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦
+    contDiffAt_preglue hx.contDiffAt hu.contDiffAt hv.contDiffAt
 
 /-- The pre-glued map is within `‖u(s + R, t) - x(t)‖ + ‖v(s - R, t) - x(t)‖` of the loop `x`. -/
 theorem norm_preglue_sub_le :
@@ -461,6 +486,60 @@ theorem exists_eventually_norm_floerOperator_preglue_le (ω : SymplecticForm V)
         mul_le_mul_of_nonneg_left (by linarith) hK
     _ = _ := by ring
 
+/-- **The pre-gluing error off the neck.** Let `z = (s, t)`. If the Floer operator of the
+pre-glued map `w_R` is at most `c` on the segment `[-1, 1] × {t}` of the neck, `u` solves the Floer
+equation at `(s + R, t)` if `s < -1`, and `v` solves it at `(s - R, t)` if `s > 1`, then the Floer
+operator of `w_R` is at most `c` at `z`. -/
+theorem norm_floerOperator_preglue_le_of_floerOperator_eq_zero (ω : SymplecticForm V)
+    (J : ℝ → V → V →L[ℝ] V) (H : ℝ → V → ℝ) {x : ℝ → V} {u v : ℝ × ℝ → V} {R c : ℝ} {z : ℝ × ℝ}
+    (hc : ∀ s ∈ Icc (-1 : ℝ) 1,
+      ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) (s, z.2)‖ ≤
+        c)
+    (huF : z.1 < -1 →
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u (z + (R, 0)) = 0)
+    (hvF : 1 < z.1 →
+      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v (z - (R, 0)) = 0) :
+    ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z‖ ≤ c := by
+  have hpos : 0 ≤ c := (norm_nonneg _).trans (hc 0 ⟨by norm_num, by norm_num⟩)
+  rcases lt_or_ge z.1 (-1) with h₁ | h₁
+  · rwa [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁, huF h₁, norm_zero]
+  rcases lt_or_ge 1 z.1 with h₂ | h₂
+  · rwa [ω.floerOperator_preglue_of_one_lt J H x u v R h₂, hvF h₂, norm_zero]
+  exact hc z.1 ⟨h₁, h₂⟩
+
+/-- **The pre-gluing error away from the neck.** Under the hypotheses of
+`TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, suppose moreover that `u`
+solves the Floer equation on a set `A` and `v` on a set `B`. Then for every large gluing parameter
+`R`, the Floer operator of the pre-glued map `w_R` is at most `C' e^{-κ R}` at every point
+`z = (s, t)` with `t ∈ [0, 1]` such that `z + (R, 0) ∈ A` if `s < -1` and `z - (R, 0) ∈ B` if
+`s > 1`: there `w_R` is a translate of `u` or of `v`, or `z` lies on the neck. -/
+theorem exists_eventually_norm_floerOperator_preglue_le_of_eqOn (ω : SymplecticForm V)
+    {J : ℝ → V → V →L[ℝ] V} {H : ℝ → V → ℝ} {x : ℝ → V} {u v : ℝ × ℝ → V} {C κ : ℝ}
+    (hH : ContDiff ℝ 2 (uncurry H)) (hJ : Continuous (uncurry J))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hκ : 0 < κ)
+    (hud : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ u (s, t))
+    (hu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t) - x t‖ ≤ C * Real.exp (-(κ * s)))
+    (hdu : ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ u (s, t) - (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (-(κ * s)))
+    (hvd : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ v (s, t))
+    (hv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1, ‖v (s, t) - x t‖ ≤ C * Real.exp (κ * s))
+    (hdv : ∀ᶠ s in atBot, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖fderiv ℝ v (s, t) - (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
+        C * Real.exp (κ * s))
+    {A B : Set (ℝ × ℝ)}
+    (huF : EqOn (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u) 0 A)
+    (hvF : EqOn (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v) 0 B) :
+    ∃ C', ∀ᶠ R in atTop, ∀ z : ℝ × ℝ, z.2 ∈ Icc (0 : ℝ) 1 → (z.1 < -1 → z + (R, 0) ∈ A) →
+      (1 < z.1 → z - (R, 0) ∈ B) →
+      ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z‖ ≤
+        C' * Real.exp (-(κ * R)) := by
+  obtain ⟨C', hC'⟩ :=
+    ω.exists_eventually_norm_floerOperator_preglue_le hH hJ hx hκ hud hu hdu hvd hv hdv
+  exact ⟨C', hC'.mono fun R hR z hz hA hB ↦
+    ω.norm_floerOperator_preglue_le_of_floerOperator_eq_zero J H
+      (fun s hs ↦ hR (s, z.2) ⟨hs, hz⟩) (fun h ↦ huF (hA h)) fun h ↦ hvF (hB h)⟩
+
 /-- **The pre-gluing error of two Floer cylinders.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, suppose moreover that `u`
 and `v` solve the Floer equation on `ℝ × [0, 1]`. Then for every large gluing parameter `R`, the
@@ -487,20 +566,10 @@ theorem exists_eventually_norm_floerOperator_preglue_le_of_floerOperator_eq_zero
     ∃ C', ∀ᶠ R in atTop, ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
       ‖ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z‖ ≤
         C' * Real.exp (-(κ * R)) := by
-  obtain ⟨C', hC'⟩ :=
-    ω.exists_eventually_norm_floerOperator_preglue_le hH hJ hx hκ hud hu hdu hvd hv hdv
-  refine ⟨C', hC'.mono fun R hR z hz ↦ ?_⟩
-  have hpos : 0 ≤ C' * Real.exp (-(κ * R)) :=
-    (norm_nonneg _).trans (hR (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
-  rcases lt_or_ge z.1 (-1) with h₁ | h₁
-  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁,
-      huF _ ⟨mem_univ _, by simpa using hz.2⟩, norm_zero]
-    exact hpos
-  rcases lt_or_ge 1 z.1 with h₂ | h₂
-  · rw [ω.floerOperator_preglue_of_one_lt J H x u v R h₂,
-      hvF _ ⟨mem_univ _, by simpa using hz.2⟩, norm_zero]
-    exact hpos
-  exact hR z ⟨⟨h₁, h₂⟩, hz.2⟩
+  obtain ⟨C', hC'⟩ := ω.exists_eventually_norm_floerOperator_preglue_le_of_eqOn hH hJ hx hκ hud hu
+    hdu hvd hv hdv (fun z hz ↦ huF z hz) fun z hz ↦ hvF z hz
+  exact ⟨C', hC'.mono fun R hR z hz ↦ hR z hz.2 (fun _ ↦ ⟨mem_univ _, by simpa using hz.2⟩)
+    fun _ ↦ ⟨mem_univ _, by simpa using hz.2⟩⟩
 
 end SymplecticForm
 

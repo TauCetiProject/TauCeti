@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
+import TauCeti.Analysis.Calculus.FDeriv.ExpSmul
 import TauCeti.Analysis.ODE.Periodic
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -307,9 +308,6 @@ theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
   refine ⟨ε, by positivity, 4 * C₀ * M / m, by positivity,
     fun ξ hξ a b hest η hη hclose ↦ ?_⟩
   have hR : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  have hw : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) :=
-    ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).sub
-      ((hSc.comp continuous_snd).clm_apply hξ.continuous)
   have hQi : IntegrableOn (fun z : ℝ × ℝ ↦
       (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
           (fderiv ℝ ξ z stdComplexLineReal) +
@@ -319,10 +317,7 @@ theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
     ((continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc hξ).add
     (continuous_associatedBilinForm_apply_self (ω := ω) hJc hξ.continuous)).continuousOn
     |>.integrableOn_compact (μ := volume) hR
-  have hDc : Continuous (stationaryCylinderOperator J S ξ) :=
-    (((hξ.continuous_fderiv one_ne_zero).clm_apply
-      (continuous_const (y := stdComplexLineReal))).add
-      (hJc.comp (continuous_snd.prodMk hw))).congr fun z ↦ by simp [stationaryCylinderOperator_def]
+  have hDc := continuous_stationaryCylinderOperator he hSc hξ
   have hdi := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hDc).continuousOn
     |>.integrableOn_compact (μ := volume) hR
   have hηi : IntegrableOn (fun z ↦ ω.associatedBilinForm (J z.2) (η z) (η z))
@@ -422,28 +417,19 @@ theorem exp_mul_associatedBilinForm_le {J₀ : AlmostComplexStructure V} (hJ₀ 
               (T - δ • J₀.toLinearMap.toContinuousLinearMap) (Real.exp (δ * z.1) • η z))) +
           ω.associatedBilinForm J₀ (Real.exp (δ * z.1) • η z) (Real.exp (δ * z.1) • η z)) := by
   set e := Real.exp (δ * z.1)
-  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (δ * w.1))
-      (e • δ • ContinuousLinearMap.fst ℝ ℝ ℝ) z := by
-    simpa [e] using ((hasFDerivAt_fst (p := z)).const_smul δ).exp
-  have hd : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z =
-      e • fderiv ℝ η z + (e • δ • ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (η z) :=
-    (hc.smul hη.hasFDerivAt).fderiv
+  have hd := fderiv_exp_smul_apply (φ := fun w : ℝ × ℝ ↦ δ * w.1)
+    ((hasFDerivAt_fst (p := z)).const_smul δ) hη
   -- The derivatives of `ξ = e^{δ s} η` in terms of those of `η`.
   have hs : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineReal =
       e • fderiv ℝ η z stdComplexLineReal + δ • (e • η z) := by
-    rw [hd]
-    simp only [add_apply, smul_apply,
-      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst,
-      smul_eq_mul, mul_one, smul_smul]
-    ring_nf
+    simp only [hd, smul_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, smul_eq_mul,
+      mul_one]
+    module
   have ht : fderiv ℝ (fun w ↦ Real.exp (δ * w.1) • η w) z stdComplexLineImag -
       (T - δ • J₀.toLinearMap.toContinuousLinearMap) (e • η z) =
       e • (fderiv ℝ η z stdComplexLineImag - T (η z)) + δ • J₀ (e • η z) := by
-    rw [hd]
-    simp only [add_apply, smul_apply,
-      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineImag_fst,
-      smul_eq_mul, mul_zero, zero_smul, add_zero, sub_apply,
-      LinearMap.coe_toContinuousLinearMap', map_smul]
+    simp only [hd, smul_apply, ContinuousLinearMap.coe_fst', stdComplexLineImag_fst, smul_eq_mul,
+      mul_zero, zero_smul, add_zero, sub_apply, LinearMap.coe_toContinuousLinearMap', map_smul]
     module
   have hexp : Real.exp (2 * δ * z.1) = e * e := by
     rw [← Real.exp_add]
