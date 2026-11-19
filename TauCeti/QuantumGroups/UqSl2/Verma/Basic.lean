@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
-public import Mathlib.LinearAlgebra.Quotient.Basic
-public import TauCeti.QuantumGroups.UqSl2.Commutator
 public import TauCeti.QuantumGroups.UqSl2.Weights
 
-import Mathlib.Tactic
+import TauCeti.QuantumGroups.UqSl2.Commutator
 
 /-!
 # Verma modules of `U_q(sl₂)`
