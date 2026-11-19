@@ -50,8 +50,9 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
 * `MvPowerSeries.pairSubstitution` : the substitution family `Unit ⊕ Unit → MvPowerSeries σ O`
   sending the left variable to `q₁` and the right one to `q₂`; substituting a pair of series into
   a two-variable one is `subst (pairSubstitution q₁ q₂) f`.
-* `MvPowerSeries.hasSubst_pair` : a pair of series with vanishing constant coefficient is a
-  legitimate substitution family for the two variables indexed by `Unit ⊕ Unit`.
+* `MvPowerSeries.hasSubst_pair` and `MvPowerSeries.hasSubst_pair_of_hasSubst` : a pair of series
+  with vanishing (or nilpotent) constant coefficient is a legitimate substitution family for the
+  two variables indexed by `Unit ⊕ Unit`.
 * `MvPowerSeries.coordSpecialize`, `MvPowerSeries.hasSubst_coordSpecialize` and the two
   `subst_coordSpecialize_X_*` lemmas : the substitution sending one coordinate variable to `X` and
   every other to `0`, for an index type of any size.
@@ -217,6 +218,14 @@ series. -/
 theorem hasSubst_pair (h₁ : constantCoeff q₁ = 0) (h₂ : constantCoeff q₂ = 0) :
     HasSubst (pairSubstitution q₁ q₂) :=
   hasSubst_of_constantCoeff_zero (by rintro (j | j) <;> simpa)
+
+/-- A pair of series that can each be substituted into a one-variable series forms a substitution
+family for the two variables indexed by `Unit ⊕ Unit`. -/
+theorem hasSubst_pair_of_hasSubst (hq₁ : PowerSeries.HasSubst q₁)
+    (hq₂ : PowerSeries.HasSubst q₂) :
+    HasSubst (pairSubstitution q₁ q₂) :=
+  hasSubst_of_constantCoeff_nilpotent fun i ↦ by
+    rcases i with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simpa [pairSubstitution]
 
 end HasSubstPair
 

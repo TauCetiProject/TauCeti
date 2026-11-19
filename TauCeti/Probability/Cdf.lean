@@ -40,7 +40,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   reached, respectively strictly exceeded, are bounded below;
 * `MeasureTheory.Measure.continuousAt_cdf_iff` characterizes continuity of a real probability
   law's cdf at a point by vanishing singleton mass;
-* `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
+* `MeasureTheory.Measure.continuous_cdf_of_noAtoms` and `MeasureTheory.Measure.continuous_cdf_iff`
+  characterize global cdf continuity of real probability laws by null singletons;
 * `MeasureTheory.Measure.measure_Ioo_eq_zero_of_cdf_eq` shows that an open interval on which the
   cdf is constant is null;
 * `MeasureTheory.Measure.measure_plateau_eq_zero` and
@@ -354,6 +355,13 @@ probability measure on `ℝ` is continuous when every singleton has measure zero
 theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] : Continuous (cdf ν) :=
   continuous_iff_continuousAt.2 fun x ↦ (continuousAt_cdf_iff ν x).2 (measure_singleton x)
+
+/-- The cumulative distribution function of a real probability measure `ν` is continuous if and
+only if every singleton has `ν`-measure zero. -/
+theorem continuous_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    Continuous (cdf ν) ↔ NullSingletonClass ν :=
+  ⟨fun h ↦ ⟨fun x ↦ (continuousAt_cdf_iff ν x).1 h.continuousAt⟩,
+    fun _ ↦ continuous_cdf_of_noAtoms ν⟩
 
 /-- A real probability law gives no mass to an open interval on which its cumulative distribution
 function is constant. -/
