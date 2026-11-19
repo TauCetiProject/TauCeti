@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 public import TauCeti.Geometry.Manifold.DeRham.MayerVietoris
 public import TauCeti.Geometry.Manifold.DeRham.CompactlySupportedMayerVietoris
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 
 /-!
 # The Poincaré pairing and the Mayer–Vietoris sequences
