@@ -33,9 +33,11 @@ Hence the orbit map is an **immersion** exactly
 when the action is locally free at `x`, that is, `𝔤_x = 0`
 (`TauCeti.isImmersion_smul_const_iff`). For finite-dimensional `G`, by
 `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot` this means that the stabilizer `G_x`
-is discrete; in particular the orbit map is an immersion where the stabilizer is trivial
-(`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map is
-moreover a closed topological embedding at such a point
+is discrete; in particular, where the stabilizer is trivial, `𝔤_x = 0`
+(`TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`), `𝔤 · x` has dimension `dim G`
+(`TauCeti.finrank_orbitTangent_fundamental_of_stabilizer_eq_bot`), and the orbit map is an
+immersion (`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map
+is moreover a closed topological embedding at such a point
 (`ProperSMul.isClosedEmbedding_smul_const`). Hence **the orbit map of a free point of a proper
 smooth action is a smooth embedding with closed image** (`TauCeti.isSmoothEmbedding_smul_const`).
 This is the first step of the proof of the quotient manifold theorem for free proper actions.
@@ -58,6 +60,31 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+section OrbitDimension
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M]
+
+/-- **Dimension of the orbit tangent space at a free point.** Where the stabilizer of `x` is
+trivial, the orbit tangent space `𝔤 · x` of a smooth action on a boundaryless Hausdorff manifold
+has dimension `dim G`. -/
+theorem finrank_orbitTangent_fundamental_of_stabilizer_eq_bot [FiniteDimensional ℝ E] [T2Space M]
+    [BoundarylessManifold I' M] {x : M} (hx : MulAction.stabilizer G x = ⊥) :
+    Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) =
+      Module.finrank ℝ E := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  exact (InfinitesimalAction.fundamental I G I' M).finrank_orbitTangent_of_isotropy_eq_bot x
+    (Lie.isotropy_eq_bot_of_stabilizer_eq_bot hx)
+
+end OrbitDimension
+
+section OrbitImmersion
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -105,5 +132,7 @@ theorem isSmoothEmbedding_smul_const [ProperSMul G M] {x : M}
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   exact ⟨isImmersion_smul_const_of_stabilizer_eq_bot hx,
     (ProperSMul.isClosedEmbedding_smul_const hx).isEmbedding⟩
+
+end OrbitImmersion
 
 end TauCeti

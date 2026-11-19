@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.Submersion
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
-public import Mathlib.Geometry.Manifold.MFDeriv.Defs
-import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+public import Mathlib.Geometry.Manifold.Diffeomorph
+import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 
 -- Access the body of `Manifold.IsSubmersionOfComplement`, which Mathlib does not expose, to supply
 -- its missing pointwise characterization.
@@ -39,9 +38,13 @@ When the model of the source has no boundary, a submersion at `x` has a `C^n` lo
 `x` over an open neighbourhood of `f x`, read off from the normal-form charts
 (`Manifold.IsSubmersionAt.exists_contMDiffOn_section`). Consequently smoothness descends along a
 submersion: `g` is `C^m` at `f x` exactly when `g ∘ f` is `C^m` at `x`
-(`Manifold.IsSubmersionAt.contMDiffAt_comp_iff`), and along a surjective submersion a `C^m` map
+(`Manifold.IsSubmersionAt.contMDiffAt_comp_iff`), along a surjective submersion a `C^m` map
 constant on the fibres factors through a unique `C^m` map
-(`Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`).
+(`Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`), two surjective `C^n` submersions out
+of the same manifold with identical fibres have `C^n` diffeomorphic targets
+(`Manifold.IsSubmersion.diffeomorphOfSurjective`), and two `C^n` manifold structures on the same
+target making a surjective map a `C^n` submersion have the same `C^n` maximal atlas
+(`Manifold.IsSubmersion.maximalAtlas_eq`).
 
 ## Main results
 
@@ -65,13 +68,17 @@ constant on the fibres factors through a unique `C^m` map
   smoothness descends along a submersion.
 * `Manifold.IsSubmersion.existsUnique_contMDiff_comp_eq`: smooth maps constant on the fibres of a
   surjective submersion descend to smooth maps.
+* `Manifold.IsSubmersion.diffeomorphOfSurjective`: uniqueness of quotient manifolds up to `C^n`
+  diffeomorphism along surjective submersions with identical fibres.
+* `Manifold.IsSubmersion.maximalAtlas_eq`: uniqueness of the `C^n` maximal atlas on the target of
+  a surjective `C^n` submersion.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
   Theorem 4.12 (local form of a submersion), Theorem 4.26 (local sections of submersions) and
-  Theorems 4.29 and 4.30 (characteristic property of surjective submersions, passing smoothly to
-  the quotient).
+  Theorems 4.29–4.31 (characteristic property of surjective submersions, passing smoothly to
+  the quotient, and uniqueness of smooth quotients).
 -/
 
 public section
@@ -382,7 +389,124 @@ theorem IsSubmersion.existsUnique_contMDiff_comp_eq [I.Boundaryless] (h : IsSubm
   refine ⟨g ∘ surjInv hsurj, ⟨(h.contMDiff_comp_iff hsurj hm).1 (by rwa [hcomp]), hcomp⟩,
     fun g' hg' ↦ hsurj.injective_comp_right (hg'.2.trans hcomp.symm)⟩
 
+/-- **Uniqueness of quotient manifolds along surjective submersions.** Two surjective `C^n`
+submersions out of a manifold with boundaryless model that have identical fibres induce a canonical
+`C^n` diffeomorphism between their targets, commuting with the two projections. -/
+noncomputable def IsSubmersion.diffeomorphOfSurjective [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) : N ≃ₘ^n⟮J, K⟯ P where
+  toFun := q ∘ surjInv hsurj
+  invFun := f ∘ surjInv hq_surj
+  left_inv y := by
+    obtain ⟨x, rfl⟩ := hsurj y
+    have h₁ : q (surjInv hsurj (f x)) = q x := (hfib _ _).1 (surjInv_eq hsurj (f x))
+    rw [comp_apply, comp_apply, h₁]
+    exact (hfib _ _).2 (surjInv_eq hq_surj (q x))
+  right_inv z := by
+    obtain ⟨x, rfl⟩ := hq_surj z
+    have h₁ : f (surjInv hq_surj (q x)) = f x := (hfib _ _).2 (surjInv_eq hq_surj (q x))
+    rw [comp_apply, comp_apply, h₁]
+    exact (hfib _ _).1 (surjInv_eq hsurj (f x))
+  contMDiff_toFun := by
+    have hcomp : (q ∘ surjInv hsurj) ∘ f = q :=
+      funext fun x ↦ (hfib _ _).1 (surjInv_eq hsurj (f x))
+    exact (h.contMDiff_comp_iff hsurj le_rfl).1 (hcomp.symm ▸ hq.contMDiff)
+  contMDiff_invFun := by
+    have hcomp : (f ∘ surjInv hq_surj) ∘ q = f :=
+      funext fun x ↦ (hfib _ _).2 (surjInv_eq hq_surj (q x))
+    exact (hq.contMDiff_comp_iff hq_surj le_rfl).1 (hcomp.symm ▸ h.contMDiff)
+
+/-- The diffeomorphism `IsSubmersion.diffeomorphOfSurjective` sends `f x` to `q x`. -/
+@[simp]
+theorem IsSubmersion.diffeomorphOfSurjective_apply [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) (x : M) :
+    h.diffeomorphOfSurjective hsurj hq hq_surj hfib (f x) = q x :=
+  (hfib _ _).1 (surjInv_eq hsurj (f x))
+
+/-- Composing `IsSubmersion.diffeomorphOfSurjective` with `f` recovers `q`. -/
+@[simp]
+theorem IsSubmersion.diffeomorphOfSurjective_comp [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) :
+    ⇑(h.diffeomorphOfSurjective hsurj hq hq_surj hfib) ∘ f = q :=
+  funext (h.diffeomorphOfSurjective_apply hsurj hq hq_surj hfib)
+
+/-- Reversing the roles of the two surjective submersions inverts
+`IsSubmersion.diffeomorphOfSurjective`. -/
+@[simp]
+theorem IsSubmersion.diffeomorphOfSurjective_symm [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) :
+    (h.diffeomorphOfSurjective hsurj hq hq_surj hfib).symm =
+      hq.diffeomorphOfSurjective hq_surj h hsurj fun x y ↦ (hfib x y).symm := by
+  ext z
+  obtain ⟨x, rfl⟩ := hq_surj z
+  rw [hq.diffeomorphOfSurjective_apply, ← h.diffeomorphOfSurjective_apply hsurj hq hq_surj hfib x,
+    Diffeomorph.symm_apply_apply]
+
+/-- `IsSubmersion.diffeomorphOfSurjective` is the unique map between the targets intertwining the
+two surjective submersions. -/
+theorem IsSubmersion.eq_diffeomorphOfSurjective_iff [I.Boundaryless]
+    (h : IsSubmersion I J n f) (hsurj : Surjective f)
+    {q : M → P} (hq : IsSubmersion I K n q) (hq_surj : Surjective q)
+    (hfib : ∀ x y : M, f x = f y ↔ q x = q y) {e : N → P} :
+    e = ⇑(h.diffeomorphOfSurjective hsurj hq hq_surj hfib) ↔ e ∘ f = q := by
+  refine ⟨fun he ↦ he ▸ h.diffeomorphOfSurjective_comp hsurj hq hq_surj hfib, fun he ↦ ?_⟩
+  exact hsurj.injective_comp_right
+    (he.trans (h.diffeomorphOfSurjective_comp hsurj hq hq_surj hfib).symm)
+
 end Descent
+
+private theorem contMDiffOn_comp_pair {N₁ N₂ : Type*}
+    [TopologicalSpace N₁] [ChartedSpace G N₁]
+    [TopologicalSpace N₂] [ChartedSpace G N₂]
+    {g : N₁ → N₂} {g' : N₂ → N₁} (hg : ContMDiff J J n g) (hg' : ContMDiff J J n g')
+    {ψ : OpenPartialHomeomorph N₁ G}
+    (hψ : ContMDiffOn J J n ψ ψ.source) (hψ' : ContMDiffOn J J n ψ.symm ψ.target) :
+    ContMDiffOn J J n (ψ ∘ g') (g' ⁻¹' ψ.source) ∧ ContMDiffOn J J n (g ∘ ψ.symm) ψ.target :=
+  ⟨hψ.comp hg'.contMDiffOn fun _ hx ↦ hx, hg.comp_contMDiffOn hψ'⟩
+
+omit [ChartedSpace G N] in
+private theorem maximalAtlas_subset_of_contMDiff_id
+    {c c' : ChartedSpace G N}
+    (hc : letI := c; IsManifold J n N) (hc' : letI := c'; IsManifold J n N)
+    (hid : @ContMDiff 𝕜 _ E'' _ _ G _ J N _ c E'' _ _ G _ J N _ c' n id)
+    (hid' : @ContMDiff 𝕜 _ E'' _ _ G _ J N _ c' E'' _ _ G _ J N _ c n id) :
+    (letI := c; IsManifold.maximalAtlas J n N) ⊆
+      (letI := c'; IsManifold.maximalAtlas J n N) := by
+  intro φ hφ
+  have hφ_on :=
+    (@IsManifold.mem_maximalAtlas_iff_contMDiffOn 𝕜 _ E'' _ _ G _ J N _ c n hc φ).1 hφ
+  refine (@IsManifold.mem_maximalAtlas_iff_contMDiffOn 𝕜 _ E'' _ _ G _ J N _ c' n hc' φ).2 ?_
+  exact @contMDiffOn_comp_pair 𝕜 _ E'' _ _ G _ J n N N _ c _ c' id id hid hid' φ hφ_on.1 hφ_on.2
+
+omit [ChartedSpace G N] in
+/-- **Uniqueness of the maximal atlas along a surjective submersion.** Two `C^n` manifold
+structures on `N` with the same model with corners for which a surjective map `f : M → N` from a
+manifold with boundaryless model is a `C^n` submersion have the same `C^n` maximal atlas. -/
+theorem IsSubmersion.maximalAtlas_eq [I.Boundaryless]
+    {c₁ c₂ : ChartedSpace G N}
+    (hc₁ : letI := c₁; IsManifold J n N) (hc₂ : letI := c₂; IsManifold J n N)
+    (h₁ : letI := c₁; IsSubmersion I J n f) (h₂ : letI := c₂; IsSubmersion I J n f)
+    (hsurj : Surjective f) :
+    (letI := c₁; IsManifold.maximalAtlas J n N) =
+      (letI := c₂; IsManifold.maximalAtlas J n N) := by
+  have hcont₁ : letI := c₁; ContMDiff I J n f := letI := c₁; h₁.contMDiff
+  have hcont₂ : letI := c₂; ContMDiff I J n f := letI := c₂; h₂.contMDiff
+  have hid₁₂ : @ContMDiff 𝕜 _ E'' _ _ G _ J N _ c₁ E'' _ _ G _ J N _ c₂ n id :=
+    (@IsSubmersion.contMDiff_comp_iff 𝕜 _ E _ _ E'' _ _ H _ G _ I J M _ _ N _ c₁ n f
+      E'' _ _ G _ J N _ c₂ n id _ h₁ hsurj le_rfl).1 hcont₂
+  have hid₂₁ : @ContMDiff 𝕜 _ E'' _ _ G _ J N _ c₂ E'' _ _ G _ J N _ c₁ n id :=
+    (@IsSubmersion.contMDiff_comp_iff 𝕜 _ E _ _ E'' _ _ H _ G _ I J M _ _ N _ c₂ n f
+      E'' _ _ G _ J N _ c₁ n id _ h₂ hsurj le_rfl).1 hcont₁
+  exact Subset.antisymm
+    (maximalAtlas_subset_of_contMDiff_id hc₁ hc₂ hid₁₂ hid₂₁)
+    (maximalAtlas_subset_of_contMDiff_id hc₂ hc₁ hid₂₁ hid₁₂)
 
 end LocalSection
 
