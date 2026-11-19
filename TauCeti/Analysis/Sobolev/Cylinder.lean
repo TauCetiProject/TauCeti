@@ -5,8 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.Holder
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.Strip.Basic
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
@@ -30,14 +35,17 @@ bounded coefficients on the cylinder into finite-dimensional kernel and closed r
 setting of the linearized operators of Floer theory along Floer cylinders.
 
 * **Test sections** (`TauCeti.CylinderSobolev.testSection`) are the `C²` maps of period one in
-  `t` that vanish for `|s|` large. They are test maps of the strip
-  (`TauCeti.CylinderSobolev.testSection_le_testMap`), so their jets `(ξ, ∂s ξ, ∂t ξ)` are square
-  integrable on the strip, which gives the linear map `TauCeti.CylinderSobolev.jetₗ` into
-  `L²(ℝ × [0, 1], V × V × V)`. Its norm is the `W^{1,2}` norm up to a factor between `1` and `√3`.
-* `TauCeti.CylinderSobolev.H1` is the closure of the jets of test sections: the `W^{1,2}`
-  completion `TauCeti.StripSobolev.H1` of the maps of period one in `t`, a closed subspace of `L²`,
-  hence complete, whose elements are determined by their values
-  (`TauCeti.StripSobolev.valueL_injective`).
+  `t` that vanish for `|s|` large.
+* The **jet** of a section is `jet ξ = (ξ, ∂s ξ, ∂t ξ)`. The jet of a test section is square
+  integrable on the strip (`TauCeti.CylinderSobolev.memLp_jet`), which gives the linear map
+  `TauCeti.CylinderSobolev.jetₗ` into `L²(ℝ × [0, 1], V × V × V)`. Its norm is the `W^{1,2}` norm
+  up to a factor between `1` and `√3`.
+* `TauCeti.CylinderSobolev.H1` is the closure of the jets of test sections: the completion of the
+  test sections in the `W^{1,2}` norm, realized inside `L²` as a closed subspace, hence complete.
+  An element is an `L²` jet `(ξ, ξ_s, ξ_t)`, and it is determined by its value `ξ`
+  (`TauCeti.CylinderSobolev.valueL_injective`): `H1` lies in the Sobolev space of the strip with
+  no boundary conditions (`TauCeti.CylinderSobolev.H1_le_strip`), whose elements are determined
+  by their values (`TauCeti.StripSobolev.valueL_injective`).
 * **Rellich's theorem on the cylinder.** The value on a compact piece `[-T, T] × [0, 1]`
   (`TauCeti.CylinderSobolev.restrictValue`) is a compact operator on `H1`
   (`TauCeti.CylinderSobolev.isCompactOperator_restrictValue_comp_subtypeL`). The proof cuts a test
@@ -58,6 +66,11 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   `ContinuousLinearMap.finiteDimensional_ker_of_compact_estimate`. The estimate is stated in the
   form proved for the linearized Floer operator in
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`.
+* **An estimate from below.** If `D` moreover bounds every test section in `L²` over the whole
+  strip, `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`, the compact error term disappears: the extension satisfies
+  `‖x‖ ≤ K ‖D x‖` on `H1`
+  (`TauCeti.CylinderSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`), so it is
+  injective (`TauCeti.CylinderSobolev.ker_jetOperator_comp_subtypeL_eq_bot`).
 * Integrals of functions of period one in `t` over `ℝ × [-1, 2]` are controlled by those over the
   strip (`TauCeti.setLIntegral_univ_prod_Icc_neg_one_two_le`), and the smooth cutoff comes from
   `IsCompact.exists_contDiff_cutoff_eventuallyEq_one`.
@@ -82,7 +95,9 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.CylinderSobolev
 
-open StripSobolev (stripMeasure jet jet_apply testMap continuous_jet memLp_jet)
+open StripSobolev (stripMeasure jet jet_apply continuous_jet jet_add jet_smul
+  jet_eq_zero_of_lt_abs memLp_jet_of_contDiff norm_le_norm_jet norm_fderiv_one_zero_le_norm_jet
+  norm_fderiv_zero_one_le_norm_jet integral_strip_eq_setIntegral_of_jet_eq_zero)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -106,12 +121,7 @@ theorem mem_testSection_iff {ξ : ℝ × ℝ → V} : ξ ∈ testSection V ↔ C
     (∀ s t, ξ (s, t + 1) = ξ (s, t)) ∧ ∃ R, ∀ s t, R ≤ |s| → ξ (s, t) = 0 :=
   Iff.rfl
 
-/-- A test section of the cylinder is a test map of the strip. -/
-theorem testSection_le_testMap : testSection V ≤ testMap V := fun _ hξ ↦
-  have h := mem_testSection_iff.1 hξ
-  StripSobolev.mem_testMap_iff.2 ⟨h.1, h.2.2⟩
-
-variable {ξ : ℝ × ℝ → V}
+variable {ξ η : ℝ × ℝ → V}
 
 /-- The jet of a test section has period one in `t`. -/
 theorem jet_add_one (hξ : ξ ∈ testSection V) (s t : ℝ) : jet ξ (s, t + 1) = jet ξ (s, t) := by
@@ -123,80 +133,147 @@ theorem jet_add_one (hξ : ξ ∈ testSection V) (s t : ℝ) : jet ξ (s, t + 1)
   simp only [Prod.mk_add_mk, add_zero] at h
   simp [jet_apply, ← h, hξp]
 
+/-- The jet of a test section tends to zero as `|s| → ∞`. -/
+theorem tendsto_jet_comap_fst_cocompact (hξ : ξ ∈ testSection V) :
+    Tendsto (jet ξ) (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
+  obtain ⟨-, -, R, hR⟩ := mem_testSection_iff.1 hξ
+  refine tendsto_const_nhds.congr' ?_
+  have hev : ∀ᶠ z : ℝ × ℝ in comap Prod.fst (cocompact ℝ), R < |z.1| :=
+    tendsto_comap.eventually ((tendsto_norm_cocompact_atTop.eventually_gt_atTop R).mono
+      fun s hs ↦ by rwa [Real.norm_eq_abs] at hs)
+  filter_upwards [hev] with z hz
+  exact (jet_eq_zero_of_lt_abs hR hz).symm
+
+/-- A continuous function that vanishes wherever the jet of a test section vanishes is integrable
+on the strip. -/
+theorem integrable_of_jet_eq_zero {E : Type*} [NormedAddCommGroup E] (hξ : ξ ∈ testSection V)
+    {F : ℝ × ℝ → E} (hF : Continuous F) (h0 : ∀ z, jet ξ z = 0 → F z = 0) :
+    Integrable F stripMeasure := by
+  obtain ⟨-, -, R, hR⟩ := mem_testSection_iff.1 hξ
+  have hK : IsCompact (Icc (-R) R ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (hF.continuousOn.integrableOn_compact hK).of_forall_sdiff_eq_zero
+    (MeasurableSet.univ.prod measurableSet_Icc) fun z hz ↦ h0 z (jet_eq_zero_of_lt_abs hR ?_)
+  have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
+  rwa [mem_Icc, ← abs_le, not_le] at h
+
+/-- The jet of a test section is square integrable on the strip. -/
+theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure := by
+  obtain ⟨hξ2, -, R, hR⟩ := mem_testSection_iff.1 hξ
+  exact memLp_jet_of_contDiff (hξ2.of_le (by norm_num)) hR
+
 variable (V) in
 /-- The `L²` jet `(ξ, ∂s ξ, ∂t ξ)` of a test section, as a linear map into
-`L²(ℝ × [0, 1], V × V × V)`: the jet of the underlying test map of the strip. -/
-def jetₗ : testSection V →ₗ[ℝ] Lp (V × V × V) 2 stripMeasure :=
-  (StripSobolev.jetₗ V).comp (Submodule.inclusion testSection_le_testMap)
-
-/-- The `L²` jet of a test section is the `L²` jet of the underlying test map of the strip. -/
-theorem jetₗ_eq_stripJetₗ (ξ : testSection V) :
-    jetₗ V ξ = StripSobolev.jetₗ V (Submodule.inclusion testSection_le_testMap ξ) :=
-  LinearMap.comp_apply _ _ _
+`L²(ℝ × [0, 1], V × V × V)`. -/
+def jetₗ : testSection V →ₗ[ℝ] Lp (V × V × V) 2 stripMeasure where
+  toFun ξ := (memLp_jet ξ.2).toLp (jet (ξ : ℝ × ℝ → V))
+  map_add' ξ η := by
+    simp only [Submodule.coe_add, ← MemLp.toLp_add]
+    exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ by
+      rw [jet_add ((mem_testSection_iff.1 ξ.2).1.differentiable (by norm_num))
+        ((mem_testSection_iff.1 η.2).1.differentiable (by norm_num))])
+  map_smul' c ξ := by
+    simp only [SetLike.val_smul, RingHom.id_apply, ← MemLp.toLp_const_smul]
+    exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ by rw [jet_smul])
 
 /-- The `L²` jet of a test section is represented by its jet. -/
-theorem coeFn_jetₗ (ξ : testSection V) : jetₗ V ξ =ᵐ[stripMeasure] jet (ξ : ℝ × ℝ → V) := by
-  rw [jetₗ_eq_stripJetₗ]
-  exact StripSobolev.coeFn_jetₗ _
+theorem coeFn_jetₗ (ξ : testSection V) : jetₗ V ξ =ᵐ[stripMeasure] jet (ξ : ℝ × ℝ → V) :=
+  MemLp.coeFn_toLp (memLp_jet ξ.2)
 
 /-- The `L²` jet of a test section is the class of its jet. -/
 theorem jetₗ_apply (ξ : testSection V) :
-    jetₗ V ξ = (memLp_jet (testSection_le_testMap ξ.2)).toLp (jet (ξ : ℝ × ℝ → V)) := by
-  rw [jetₗ_eq_stripJetₗ]
-  exact StripSobolev.jetₗ_apply _
+    jetₗ V ξ = (memLp_jet ξ.2).toLp (jet (ξ : ℝ × ℝ → V)) :=
+  (rfl)
 
 /-- The norm of the `L²` jet of a test section is the `L²` norm of its jet on the strip. -/
 theorem norm_jetₗ (ξ : testSection V) :
     ‖jetₗ V ξ‖ = (eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure).toReal := by
-  rw [jetₗ_eq_stripJetₗ]
-  exact StripSobolev.norm_jetₗ _
+  rw [jetₗ_apply, Lp.norm_toLp]
 
 variable (V) in
 /-- The Sobolev space `W^{1,2}(ℝ × S¹, V)`: the closure in `L²(ℝ × [0, 1], V × V × V)` of the jets
-of test sections, that is, the completion of the test sections in the `W^{1,2}` norm. It is the
-`W^{1,2}` completion on the strip of the maps of period one in `t`
-(`TauCeti.StripSobolev.H1`), so it is complete and its elements are determined by their values
-(`TauCeti.StripSobolev.valueL_injective`). -/
-abbrev H1 : Submodule ℝ (Lp (V × V × V) 2 stripMeasure) :=
-  StripSobolev.H1 (testSection V)
+of test sections, that is, the completion of the test sections in the `W^{1,2}` norm. An element
+is an `L²` jet `(ξ, ξ_s, ξ_t)`; it is determined by its value `ξ`
+(`TauCeti.CylinderSobolev.valueL_injective`). -/
+def H1 : Submodule ℝ (Lp (V × V × V) 2 stripMeasure) :=
+  (LinearMap.range (jetₗ V)).topologicalClosure
+
+/-- The definition of `H1`: the closure of the span of the jets of test sections. -/
+theorem H1_def : H1 V = (LinearMap.range (jetₗ V)).topologicalClosure :=
+  (rfl)
 
 /-- `H1` is the closure of the set of jets of test sections. -/
 theorem coe_H1 :
     (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) = closure (Set.range (jetₗ V)) := by
-  rw [StripSobolev.coe_H1]
-  congr 1
-  ext x
-  simp only [Set.mem_image, Set.mem_range, jetₗ_eq_stripJetₗ, Submodule.inclusion_apply,
-    Subtype.exists, Set.mem_ofPred_eq]
-  exact ⟨fun ⟨ξ, _, hξ, h⟩ ↦ ⟨ξ, hξ, h⟩, fun ⟨ξ, hξ, h⟩ ↦ ⟨ξ, testSection_le_testMap hξ, hξ, h⟩⟩
+  rw [H1_def, Submodule.topologicalClosure_coe, LinearMap.coe_range]
+
+/-- A closed set containing the jets of all test sections contains `H1`. -/
+theorem H1_subset_of_isClosed {S : Set (Lp (V × V × V) 2 stripMeasure)} (hS : IsClosed S)
+    (h : Set.range (jetₗ V) ⊆ S) : (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ S := by
+  rw [coe_H1]
+  exact closure_minimal h hS
+
+/-- `H1` is a closed subspace of `L²`. -/
+theorem isClosed_H1 : IsClosed (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) :=
+  Submodule.isClosed_topologicalClosure _
+
+/-- `H1` is complete: it is a closed subspace of the complete space `L²`. -/
+instance [CompleteSpace V] : CompleteSpace (H1 V) :=
+  Submodule.topologicalClosure.completeSpace _
 
 /-- The jet of a test section lies in `H1`. -/
-theorem jetₗ_mem_H1 (ξ : testSection V) : jetₗ V ξ ∈ H1 V := by
-  rw [← SetLike.mem_coe, coe_H1]
-  exact subset_closure ⟨ξ, rfl⟩
+theorem jetₗ_mem_H1 (ξ : testSection V) : jetₗ V ξ ∈ H1 V :=
+  Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ ξ)
 
 /-- The jets of test sections are dense in `H1`. -/
 theorem denseRange_codRestrict_jetₗ : DenseRange ((jetₗ V).codRestrict (H1 V) jetₗ_mem_H1) := by
   rw [DenseRange, Subtype.dense_iff, ← range_comp]
   exact coe_H1.subset
 
+/-- The value `(ξ, ξ_s, ξ_t) ↦ ξ` of an element of `H1`, in `L²(ℝ × [0, 1], V)`. It is injective
+(`TauCeti.CylinderSobolev.valueL_injective`). -/
+def valueL : H1 V →L[ℝ] Lp V 2 stripMeasure :=
+  ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure).comp (H1 V).subtypeL
+
+/-- The value of an element of `H1` is represented by the first component of its jet. -/
+theorem coeFn_valueL (x : H1 V) :
+    valueL x =ᵐ[stripMeasure] fun z ↦ ((x : Lp (V × V × V) 2 stripMeasure) z).1 :=
+  (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL _
+
+/-! ### Elements of `H1` are determined by their values -/
+
+/-- A test section of the cylinder is a test section of the strip with no boundary
+conditions. -/
+theorem testSection_le_strip : testSection V ≤ StripSobolev.testSection (⊤ : Submodule ℝ V) ⊤ :=
+  fun _ hξ ↦ by
+    obtain ⟨h2, -, hR⟩ := mem_testSection_iff.1 hξ
+    exact StripSobolev.mem_testSection_iff.2
+      ⟨h2, fun _ ↦ Submodule.mem_top, fun _ ↦ Submodule.mem_top, hR⟩
+
+/-- The jet of a test section of the cylinder is its jet as a test section of the strip. -/
+theorem jetₗ_eq_strip (ξ : testSection V) :
+    jetₗ V ξ = StripSobolev.jetₗ ⊤ ⊤ (Submodule.inclusion testSection_le_strip ξ) := by
+  rw [jetₗ_apply, StripSobolev.jetₗ_apply]
+  rfl
+
+/-- `H1` of the cylinder lies in `H1` of the strip with no boundary conditions. -/
+theorem H1_le_strip : H1 V ≤ StripSobolev.H1 (⊤ : Submodule ℝ V) ⊤ := by
+  refine Submodule.topologicalClosure_minimal _ ?_ StripSobolev.isClosed_H1
+  rintro _ ⟨ξ, rfl⟩
+  rw [jetₗ_eq_strip]
+  exact StripSobolev.jetₗ_mem_H1 _
+
+/-- **An element of `H1` is determined by its value.** The value map `(ξ, ξ_s, ξ_t) ↦ ξ` is
+injective on `H1`, as it is on `H1` of the strip (`TauCeti.StripSobolev.valueL_injective`). Thus
+`H1` is a space of sections of the cylinder, the Sobolev space `W^{1,2}(ℝ × S¹, V)`. -/
+theorem valueL_injective [CompleteSpace V] : Function.Injective (valueL (V := V)) := by
+  have hval : ∀ x : H1 V, StripSobolev.valueL ⊤ ⊤ ⟨x, H1_le_strip x.2⟩ = valueL x := fun x ↦
+    Lp.ext ((StripSobolev.coeFn_valueL _).trans (coeFn_valueL x).symm)
+  intro x y h
+  rw [← hval, ← hval] at h
+  have h' := congrArg Subtype.val (StripSobolev.valueL_injective h)
+  exact Subtype.ext h'
+
 /-! ### The cutoff -/
-
-private theorem norm_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ‖ξ z‖ ≤ ‖jet ξ z‖ := by
-  rw [jet_apply]
-  exact norm_fst_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))
-
-private theorem norm_fderiv_one_zero_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ‖fderiv ℝ ξ z (1, 0)‖ ≤ ‖jet ξ z‖ := by
-  rw [jet_apply]
-  exact (norm_fst_le (fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))).trans
-    (norm_snd_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)))
-
-private theorem norm_fderiv_zero_one_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ‖fderiv ℝ ξ z (0, 1)‖ ≤ ‖jet ξ z‖ := by
-  rw [jet_apply]
-  exact (norm_snd_le (fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))).trans
-    (norm_snd_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)))
 
 private theorem norm_fderiv_le_two_mul_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ‖fderiv ℝ ξ z‖ ≤ 2 * ‖jet ξ z‖ := by
@@ -234,10 +311,10 @@ private theorem cutoff_estimates (T : ℝ) : ∃ (χ : ℝ × ℝ → ℝ) (A : 
   refine ⟨χ, 2 * (C + 2), hχT, hχB, fun ξ hξ ↦ ?_⟩
   set P : Set (ℝ × ℝ) := univ ×ˢ Icc (-1 : ℝ) 2
   have hP : MeasurableSet P := MeasurableSet.univ.prod measurableSet_Icc
-  have hjm : AEStronglyMeasurable (jet ξ) volume :=
-    (continuous_jet ((mem_testSection_iff.1 hξ).1.of_le (by norm_num))).aestronglyMeasurable
-  have hper := TauCeti.eLpNorm_restrict_univ_prod_Icc_neg_one_two_le hjm (jet_add_one hξ)
   have hξ2 := (mem_testSection_iff.1 hξ).1
+  have hjm : AEStronglyMeasurable (jet ξ) volume :=
+    (continuous_jet (hξ2.of_le (by norm_num))).aestronglyMeasurable
+  have hper := TauCeti.eLpNorm_restrict_univ_prod_Icc_neg_one_two_le hjm (jet_add_one hξ)
   have hf : ContDiff ℝ 2 (fun z ↦ χ z • ξ z) := hχ.smul hξ2
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
   refine ⟨hf, ?_, ?_⟩
@@ -367,8 +444,7 @@ private theorem mem_closure_image_jetₗ (x : H1 V) (hx : ‖x‖ < 1) :
     linarith [min_le_right ε 1]
   have hnorm' : (eLpNorm (jet (ξ : ℝ × ℝ → V)) 2 stripMeasure).toReal < 2 := by
     rwa [norm_jetₗ] at hnorm
-  have := (ENNReal.le_ofReal_iff_toReal_le (memLp_jet (testSection_le_testMap ξ.2)).ne
-    (by norm_num)).2 hnorm'.le
+  have := (ENNReal.le_ofReal_iff_toReal_le (memLp_jet ξ.2).ne (by norm_num)).2 hnorm'.le
   simpa using this
 
 /-- **Rellich's theorem on the cylinder.** The value on the compact piece `[-T, T] × [0, 1]` is a
@@ -390,8 +466,7 @@ theorem isCompactOperator_restrictValue_comp_subtypeL [FiniteDimensional ℝ V] 
       ⊆ Res '' S := by
     rintro _ ⟨_, ⟨ξ, hξ, rfl⟩, rfl⟩
     have hmem : MemLp (fun z ↦ χ z • (ξ : ℝ × ℝ → V) z) 2 volume :=
-      (hest ξ ξ.2).2.1.trans_lt
-        (ENNReal.mul_lt_top (by simp) (memLp_jet (testSection_le_testMap ξ.2)))
+      (hest ξ ξ.2).2.1.trans_lt (ENNReal.mul_lt_top (by simp) (memLp_jet ξ.2))
     refine ⟨hmem.toLp _, ⟨ξ, ξ.2, hξ, hmem.coeFn_toLp⟩, Lp.ext ?_⟩
     have h₁ := coeFn_restrictValue T (jetₗ V ξ)
     have h₂ : (jetₗ V ξ : ℝ × ℝ → V × V × V) =ᵐ[stripMeasure.restrict rect]
@@ -491,7 +566,7 @@ private theorem sq_norm_jet_le (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
 private theorem sq_norm_jetₗ_le_integral (ξ : testSection V) :
     ‖jetₗ V ξ‖ ^ 2 ≤ ∫ z, (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 +
       ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 + ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) ∂stripMeasure := by
-  have hjm := memLp_jet (testSection_le_testMap ξ.2)
+  have hjm := memLp_jet ξ.2
   rw [jetₗ_apply, hjm.norm_toLp_sq]
   refine integral_mono_of_nonneg (Eventually.of_forall fun z ↦ by positivity) ?_
     (Eventually.of_forall fun z ↦ sq_norm_jet_le _ z)
@@ -546,7 +621,7 @@ private theorem norm_jetₗ_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM 
         fun z ↦ ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 :=
       (jetOperator_jetₗ_ae_eq hM ξ).mono fun z hz ↦ by simp only [hz]
     rw [← Lp.integral_norm_sq_eq_norm_sq, integral_congr_ae hae]
-    exact StripSobolev.integral_strip_eq_setIntegral_of_jet_eq_zero hR₀ fun z hz ↦ by
+    exact integral_strip_eq_setIntegral_of_jet_eq_zero hR₀ fun z hz ↦ by
       rw [hz, map_zero, norm_zero, zero_pow two_ne_zero]
   have hy : y ^ 2 = ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 :=
     sq_norm_restrictValue_jetₗ T ξ
@@ -556,7 +631,7 @@ private theorem norm_jetₗ_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM 
     simp only [jet_apply, Prod.mk_eq_zero] at hz
     obtain ⟨h₀, h₁, h₂⟩ := hz
     simp [h₀, h₁, h₂]
-  rw [← StripSobolev.integral_strip_eq_setIntegral_of_jet_eq_zero hR₀ hF, ← hx, ← hy] at hmain
+  rw [← integral_strip_eq_setIntegral_of_jet_eq_zero hR₀ hF, ← hx, ← hy] at hmain
   -- Conclude by taking square roots.
   have hsq : ‖jetₗ V ξ‖ ^ 2 ≤ (√(max C 0) * (x + y)) ^ 2 := by
     rw [mul_pow, Real.sq_sqrt (le_max_right _ _)]
@@ -591,9 +666,8 @@ private theorem exists_compact_estimate [FiniteDimensional ℝ V] {M : ℝ × �
     have := norm_jetₗ_le hM hest ξ
     simp only [S, mem_ofPred_eq]
     linarith
-  have hH1 : (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ S := by
-    rw [coe_H1]
-    exact closure_minimal hrange hS
+  have hH1 : (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ S :=
+    H1_subset_of_isClosed hS hrange
   intro x
   have := hH1 x.2
   simp only [S, mem_ofPred_eq] at this
@@ -625,6 +699,76 @@ theorem isClosed_range_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
       Set (Lp W 2 stripMeasure)) := by
   obtain ⟨K, hK, hbound⟩ := exists_compact_estimate hM hest
   exact ContinuousLinearMap.isClosed_range_of_compact_estimate _ hK hbound
+
+/-- An `L²` bound `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²` over the strip bounds the restricted value of the jet of
+a test section by `√C' ‖D ξ‖`. -/
+private theorem norm_restrictValue_jetₗ_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {C' : ℝ} (T : ℝ) (ξ : testSection V)
+    (hL2 : ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
+    ‖restrictValue T (jetₗ V ξ)‖ ≤ √(max C' 0) * ‖jetOperator M (jetₗ V ξ)‖ := by
+  have hint := integrable_of_jet_eq_zero ξ.2 ((mem_testSection_iff.1 ξ.2).1.continuous.norm.pow 2)
+    fun z h ↦ by rw [jet_apply, Prod.mk_eq_zero] at h; simp [h.1]
+  have hD : ‖jetOperator M (jetₗ V ξ)‖ ^ 2 =
+      ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    exact integral_congr_ae ((jetOperator_jetₗ_ae_eq hM ξ).mono fun z hz ↦ by simp only [hz])
+  have hsub : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ≤
+      ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure :=
+    setIntegral_mono_set hint (Eventually.of_forall fun z ↦ by positivity)
+      (Eventually.of_forall (prod_mono (subset_univ _) subset_rfl))
+  have hsq : ‖restrictValue T (jetₗ V ξ)‖ ^ 2 ≤
+      (√(max C' 0) * ‖jetOperator M (jetₗ V ξ)‖) ^ 2 := by
+    rw [sq_norm_restrictValue_jetₗ, mul_pow, Real.sq_sqrt (le_max_right _ _), hD]
+    refine hsub.trans (hL2.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) ?_))
+    exact integral_nonneg fun z ↦ by positivity
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hsq
+
+/-- **An estimate from below on `W^{1,2}`.** Let `M` be an essentially bounded coefficient field on
+the cylinder whose first-order operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` satisfies the semi-Fredholm
+estimate (`TauCeti.CylinderSobolev.HasSemiFredholmEstimate`), and suppose that `D` also bounds the
+value of every test section in `L²` over the whole strip: `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`. Then the
+extension of `D` to `W^{1,2}(ℝ × S¹, V)` is bounded below: `‖x‖ ≤ K ‖D x‖` for every `x`. The
+global `L²` bound removes the compact error term of the semi-Fredholm estimate. -/
+theorem exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T C' : ℝ}
+    (hest : HasSemiFredholmEstimate M C T)
+    (hL2 : ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
+    ∃ K : ℝ≥0, ∀ x : H1 V, ‖x‖ ≤ K * ‖(jetOperator M).comp (H1 V).subtypeL x‖ := by
+  set c := √(max C 0) * (1 + √(max C' 0))
+  have hc : 0 ≤ c := by positivity
+  refine ⟨⟨c, hc⟩, ?_⟩
+  -- The estimate holds on a closed set containing the jets of all test sections.
+  set S : Set (Lp (V × V × V) 2 stripMeasure) := {f | ‖f‖ ≤ c * ‖jetOperator M f‖}
+  have hS : IsClosed S := isClosed_le continuous_norm
+    (continuous_const.mul (continuous_norm.comp (jetOperator M).continuous))
+  have hrange : Set.range (jetₗ V) ⊆ S := by
+    rintro _ ⟨ξ, rfl⟩
+    have h₁ := norm_jetₗ_le hM hest ξ
+    have h₂ := norm_restrictValue_jetₗ_le hM T ξ (hL2 ξ)
+    simp only [S, mem_ofPred_eq]
+    calc ‖jetₗ V ξ‖
+        ≤ √(max C 0) * (‖jetOperator M (jetₗ V ξ)‖ + ‖restrictValue T (jetₗ V ξ)‖) := h₁
+      _ ≤ √(max C 0) * (‖jetOperator M (jetₗ V ξ)‖ +
+          √(max C' 0) * ‖jetOperator M (jetₗ V ξ)‖) := by gcongr
+      _ = c * ‖jetOperator M (jetₗ V ξ)‖ := by ring
+  intro x
+  have := H1_subset_of_isClosed hS hrange x.2
+  simp only [S, mem_ofPred_eq] at this
+  exact this
+
+/-- **Injectivity on `W^{1,2}`.** Under the hypotheses of
+`TauCeti.CylinderSobolev.exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL`, a semi-Fredholm
+estimate together with a global `L²` bound `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²` on test sections, the extension
+of `D` to `W^{1,2}(ℝ × S¹, V)` has trivial kernel. -/
+theorem ker_jetOperator_comp_subtypeL_eq_bot {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ stripMeasure) {C T C' : ℝ} (hest : HasSemiFredholmEstimate M C T)
+    (hL2 : ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
+      C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
+    ((jetOperator M).comp (H1 V).subtypeL).ker = ⊥ := by
+  obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL hM hest hL2
+  exact LinearMap.ker_eq_bot.2 ((ContinuousLinearMap.antilipschitz_of_bound _ hK).injective)
 
 end Operator
 

@@ -12,7 +12,9 @@ public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 For a nonempty set in a pseudometric space, the extended distance `Metric.infEDist x S` equals
 `ENNReal.ofReal t` for some `t ≥ 0` exactly when the real distance `Metric.infDist x S` equals `t`
-(`Metric.infEDist_eq_ofReal_iff`).
+(`Metric.infEDist_eq_ofReal_iff`). For any two sets `S` and `T` in a pseudometric space, the real
+infimum `sInf ((fun z ↦ infDist z T) '' S)` agrees with `(⨅ z ∈ S, ⨅ ζ ∈ T, edist z ζ).toReal`
+(`Metric.sInf_image_infDist_eq_toReal_biInf`), including when `S` or `T` is empty.
 
 Hausdorff convergence to zero passes along chains of sets: if `A i` approaches `B i` and `B i`
 approaches `Z` in the Hausdorff extended distance, then `A i` approaches `Z`
@@ -22,7 +24,8 @@ every limit of points `y i ∈ A i` lies in `Z` (`Metric.mem_of_tendsto_hausdorf
 
 public section
 
-open Filter Topology
+open Filter Set Topology
+open scoped ENNReal
 
 namespace Metric
 
@@ -36,6 +39,18 @@ theorem infEDist_eq_ofReal_iff {X : Type*} [PseudoMetricSpace X] {x : X} {S : Se
     rw [infDist, h, ENNReal.toReal_ofReal ht]
   · intro h
     rw [← h, infDist, ENNReal.ofReal_toReal (infEDist_ne_top hS)]
+
+/-- For any subsets `S` and `T` of a pseudometric space, the infimum over `z ∈ S` of the ordinary
+distance `infDist z T` equals `(⨅ z ∈ S, ⨅ ζ ∈ T, edist z ζ).toReal` (evaluating to `0` on both
+sides when `S` or `T` is empty). -/
+theorem sInf_image_infDist_eq_toReal_biInf {X : Type*} [PseudoMetricSpace X] (S T : Set X) :
+    sInf ((fun z ↦ infDist z T) '' S) = (⨅ z ∈ S, ⨅ ζ ∈ T, edist z ζ).toReal := by
+  rcases S.eq_empty_or_nonempty with rfl | hS
+  · simp
+  rcases T.eq_empty_or_nonempty with rfl | hT
+  · simp [hS.image_const]
+  · simp_rw [sInf_image', infDist, iInf_subtype',
+      ← ENNReal.toReal_iInf (fun _ : S ↦ infEDist_ne_top hT), infEDist, iInf_subtype']
 
 variable {X ι : Type*} [PseudoEMetricSpace X] {l : Filter ι}
 
