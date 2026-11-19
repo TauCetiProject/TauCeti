@@ -149,6 +149,20 @@ def norm (σ : K →+* ℂ) (x : E) : ℝ :=
 /-- The rank of a hermitian vector bundle: the dimension of its generic fibre `K ⊗[𝓞 K] E`. -/
 def rank : ℕ := finrank K (K ⊗[𝓞 K] E)
 
+/-- The inner product of `E` at `σ` is the one of its metric. -/
+theorem inner_def (σ : K →+* ℂ) (v w : ComplexFiber σ E) :
+    E.inner σ v w = (E.metric.core σ).inner v w :=
+  (rfl)
+
+/-- The norm of `x : E` at `σ` is `h_σ(1 ⊗ x, 1 ⊗ x) ^ (1 / 2)`. -/
+theorem norm_def (σ : K →+* ℂ) (x : E) :
+    E.norm σ x = Real.sqrt (RCLike.re (E.inner σ (1 ⊗ₜ x) (1 ⊗ₜ x))) :=
+  (rfl)
+
+/-- The rank of `E` is the dimension of its generic fibre `K ⊗[𝓞 K] E`. -/
+theorem rank_def : E.rank = finrank K (K ⊗[𝓞 K] E) :=
+  (rfl)
+
 /-- The inner products at conjugate embeddings are conjugate on the integral elements. -/
 theorem inner_conjugate (σ : K →+* ℂ) (x y : E) :
     E.inner (ComplexEmbedding.conjugate σ) (1 ⊗ₜ x) (1 ⊗ₜ y) =
@@ -201,13 +215,11 @@ variable (E) in
 `E` is flat and `𝓞 K → ℂ` is injective. -/
 theorem one_tmul_ne_zero (σ : K →+* ℂ) {x : E} (hx : x ≠ 0) :
     (1 : ComplexAlong σ) ⊗ₜ[𝓞 K] x ≠ 0 := by
-  have hinj : Function.Injective (Algebra.linearMap (𝓞 K) (ComplexAlong σ)) :=
-    (RingHom.injective σ).comp (FaithfulSMul.algebraMap_injective (𝓞 K) K)
+  have : FaithfulSMul (𝓞 K) (ComplexAlong σ) :=
+    (faithfulSMul_iff_algebraMap_injective (𝓞 K) (ComplexAlong σ)).mpr
+      ((RingHom.injective σ).comp (FaithfulSMul.algebraMap_injective (𝓞 K) K))
   intro h
-  apply hx
-  have := Module.Flat.rTensor_preserves_injective_linearMap (M := E) _ hinj
-    (a₁ := 1 ⊗ₜ x) (a₂ := 0) (by simpa using h)
-  simpa using congrArg (TensorProduct.lid (𝓞 K) E) this
+  exact hx (Module.Flat.tensorProduct_mk_injective (𝓞 K) E (ComplexAlong σ) (by simpa using h))
 
 variable (E) in
 /-- The norm of a nonzero element of a hermitian vector bundle is positive at every
@@ -297,9 +309,8 @@ theorem rescaleCore_inner (c : ℝ) (σ : K →+* ℂ) (v w : ComplexFiber σ E)
     (E.rescaleCore c σ).inner v w = ((Real.exp (-c) ^ 2 : ℝ) : ℂ) * E.inner σ v w := by
   set a : ℂ := ((Real.exp (-c) : ℝ) : ℂ)
   have h : (E.rescaleCore c σ).inner v w = (E.metric.core σ).inner (a • v) (a • w) := rfl
-  have hr : (E.metric.core σ).inner v (a • w) = a * (E.metric.core σ).inner v w := by
-    rw [← (E.metric.core σ).conj_inner_symm, (E.metric.core σ).smul_left, map_mul,
-      Complex.conj_conj, (E.metric.core σ).conj_inner_symm]
+  have hr : (E.metric.core σ).inner v (a • w) = a * (E.metric.core σ).inner v w :=
+    InnerProductSpace.Core.inner_smul_right (c := (E.metric.core σ).toCore) v w
   rw [h, (E.metric.core σ).smul_left, hr, Complex.conj_ofReal, ← mul_assoc, ← Complex.ofReal_mul,
     ← sq, inner]
 
@@ -349,6 +360,12 @@ variable [NumberField K]
 the bundle; its independence of the section is the product formula. -/
 def sectionDegree (s : E) : ℝ :=
   Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (E.norm σ s)
+
+/-- The degree computed with `s` is `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ`. -/
+theorem sectionDegree_def (s : E) :
+    E.sectionDegree s =
+      Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (E.norm σ s) :=
+  (rfl)
 
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/
 @[simp]
