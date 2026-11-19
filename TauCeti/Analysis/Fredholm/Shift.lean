@@ -62,13 +62,6 @@ variable {ι κ 𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerPro
   [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
   (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) {f : ι → κ} (hf : Function.Injective f)
 
-omit [CompleteSpace F] in
-/-- The span of finitely many vectors is complemented by its orthogonal complement. -/
-private theorem isCompl_orthogonal_span_of_finite {s : Set F} (hs : s.Finite) :
-    IsCompl (Submodule.span 𝕜 s) (Submodule.span 𝕜 s)ᗮ :=
-  have : FiniteDimensional 𝕜 (Submodule.span 𝕜 s) := FiniteDimensional.span_of_finite 𝕜 hs
-  Submodule.isCompl_orthogonal _
-
 /-- The isometry `b i ↦ c (f i)` along an injection `f` of the index types of two Hilbert bases is
 a Fredholm operator when `f` misses only finitely many indices. -/
 theorem isFredholm_linearIsometryOfOrthonormal_comp (hfin : (Set.range f)ᶜ.Finite) :
@@ -77,7 +70,7 @@ theorem isFredholm_linearIsometryOfOrthonormal_comp (hfin : (Set.range f)ᶜ.Fin
   rw [LinearIsometry.toLinearMap_toContinuousLinearMap,
     range_linearIsometryOfOrthonormal_comp b c hf]
   exact (Submodule.fg_span (hfin.image _)).cofg_of_isCompl
-    (isCompl_orthogonal_span_of_finite (hfin.image _))
+    (Submodule.isCompl_orthogonal_span_of_finite (hfin.image _))
 
 omit [CompleteSpace E] in
 /-- The isometry `b i ↦ c (f i)` along an injection `f` of the index types of two Hilbert bases
@@ -95,7 +88,7 @@ theorem index_linearIsometryOfOrthonormal_comp (hfin : (Set.range f)ᶜ.Finite) 
   rw [ContinuousLinearMap.index_of_injective _ (b.linearIsometryOfOrthonormal _).injective,
     LinearIsometry.toLinearMap_toContinuousLinearMap, range_linearIsometryOfOrthonormal_comp b c hf,
     (Submodule.quotientEquivOfIsCompl _ _
-      (isCompl_orthogonal_span_of_finite (hfin.image _)).symm).finrank_eq, hK]
+      (Submodule.isCompl_orthogonal_span_of_finite (hfin.image _)).symm).finrank_eq, hK]
 
 end HilbertBasis
 
