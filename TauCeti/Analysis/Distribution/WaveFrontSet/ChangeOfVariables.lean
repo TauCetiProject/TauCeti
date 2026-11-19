@@ -370,7 +370,7 @@ theorem isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff {T : 𝓓'(Ω,
   rw [hback] at h'
   obtain ⟨hd, hds⟩ :=
     e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he he' (by simp) hxs
-  rw [e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hxs hd hds] at h'
+  rw [e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_mem_source hxs hd hds] at h'
   exact (isMicrolocallySmoothAt_restrictCLM_iff hVΩ ⟨x, hx, rfl⟩).1 h'
 
 /-- **The wave front set under a change of variables.** The wave front set of the pullback `e^* T`
@@ -385,7 +385,7 @@ theorem waveFrontSet_compCLMOfOpenPartialHomeomorph (T : 𝓓'(Ω, ℂ)) :
       ((fderiv ℝ e x)†) (((fderiv ℝ e.symm (e x))†) ξ) = ξ :=
     have hd :=
       e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he he' (by simp) (hU hx)
-    e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply (hU hx) hd.1 hd.2 ξ
+    e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_mem_source (hU hx) hd.1 hd.2 ξ
   ext ⟨x, ξ⟩
   simp only [mem_waveFrontSet_iff, mem_inter_iff, mem_prod, mem_univ, and_true, mem_preimage]
   refine ⟨fun ⟨hx, hξ, hT⟩ ↦ ⟨hx, hUΩ hx, fun h0 ↦ hξ ?_, fun h ↦ hT ?_⟩,

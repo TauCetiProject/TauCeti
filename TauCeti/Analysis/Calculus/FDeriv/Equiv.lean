@@ -45,9 +45,10 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `OpenPartialHomeomorph.fderiv_symm_apply_fderiv_apply_of_mem_source`,
   `OpenPartialHomeomorph.fderiv_apply_fderiv_symm_apply_of_mem_source`: the identities at a point
   `p` of the source and its image `e p`.
-* `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply`,
-  `OpenPartialHomeomorph.adjoint_fderiv_symm_apply_adjoint_fderiv_apply`: between inner product
-  spaces, the transposed derivatives `(De_p)†` and `(De⁻¹_{e p})†` are mutually inverse.
+* `OpenPartialHomeomorph.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_mem_source`,
+  `OpenPartialHomeomorph.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_mem_source`: between
+  inner product spaces, the transposed derivatives `(De_p)†` and `(De⁻¹_{e p})†` are mutually
+  inverse.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
 * `OpenPartialHomeomorph.det_fderiv_ne_zero`: for an open partial homeomorphism of a space to
@@ -262,18 +263,20 @@ namespace OpenPartialHomeomorph
 
 /-- Adjoint form of `OpenPartialHomeomorph.fderiv_symm_comp_fderiv_of_mem_source`: for `p` in the
 source, `(De_p)† ((De⁻¹_{e p})† v) = v`. -/
-theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply (e : OpenPartialHomeomorph E F) {p : E}
-    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p))
-    (v : E) : ((fderiv 𝕜 e p)†) (((fderiv 𝕜 e.symm (e p))†) v) = v := by
+theorem adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_mem_source (e : OpenPartialHomeomorph E F)
+    {p : E} (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p)
+    (hds : DifferentiableAt 𝕜 e.symm (e p)) (v : E) :
+    ((fderiv 𝕜 e p)†) (((fderiv 𝕜 e.symm (e p))†) v) = v := by
   rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
     e.fderiv_symm_comp_fderiv_of_mem_source hp hd hds, ContinuousLinearMap.adjoint_id,
     ContinuousLinearMap.id_apply]
 
 /-- Adjoint form of `OpenPartialHomeomorph.fderiv_comp_fderiv_symm_of_mem_source`: for `p` in the
 source, `(De⁻¹_{e p})† ((De_p)† w) = w`. -/
-theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply (e : OpenPartialHomeomorph E F) {p : E}
-    (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p) (hds : DifferentiableAt 𝕜 e.symm (e p))
-    (w : F) : ((fderiv 𝕜 e.symm (e p))†) (((fderiv 𝕜 e p)†) w) = w := by
+theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_mem_source (e : OpenPartialHomeomorph E F)
+    {p : E} (hp : p ∈ e.source) (hd : DifferentiableAt 𝕜 e p)
+    (hds : DifferentiableAt 𝕜 e.symm (e p)) (w : F) :
+    ((fderiv 𝕜 e.symm (e p))†) (((fderiv 𝕜 e p)†) w) = w := by
   rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
     e.fderiv_comp_fderiv_symm_of_mem_source hp hd hds, ContinuousLinearMap.adjoint_id,
     ContinuousLinearMap.id_apply]
