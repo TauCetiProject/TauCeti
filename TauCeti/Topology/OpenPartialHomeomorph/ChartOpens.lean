@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.Sets.Opens
@@ -23,7 +24,10 @@ spaces can be indexed by them and nested covers by coordinate balls can be built
   `X`, written as `e.target ∩ e.symm ⁻¹' V`. When `Y` is R₁ and `closure V'` is compact and
   lies in `e.source`, `e.imageOpens V'` has compact closure
   (`OpenPartialHomeomorph.isCompact_closure_imageOpens`), contained in `e.imageOpens V` whenever
-  `closure V' ⊆ V` (`OpenPartialHomeomorph.closure_imageOpens_subset`).
+  `closure V' ⊆ V` (`OpenPartialHomeomorph.closure_imageOpens_subset`). For every measure finite
+  on compact sets, if `closure V'` is compact and inside `e.source`, the image has finite
+  measure without any separation or Borel hypothesis on `Y`
+  (`OpenPartialHomeomorph.isFiniteMeasure_restrict_imageOpens`).
 * `OpenPartialHomeomorph.preimageBall`: for a pseudometric codomain, the coordinate ball
   `e.source ∩ e ⁻¹' ball c r`, which is `e.symm.imageOpens (ball c r)`. When `X` is R₁,
   `Y` is proper and `closedBall c r ⊆ e.target`, its closure is compact
@@ -84,6 +88,19 @@ theorem isCompact_closure_imageOpens [R1Space Y] (hK : IsCompact (closure (V' : 
     IsCompact (closure (e.imageOpens V' : Set Y)) :=
   (hK.image_of_continuousOn (e.continuousOn.mono hKe)).closure_of_subset
     fun _ hz ↦ ⟨_, subset_closure hz.2, e.right_inv hz.1⟩
+
+/-- A chart image of an open set with compact closure in the chart source has finite
+measure for every measure finite on compact sets. The compact image of the closure suffices;
+no separation or Borel compatibility of the codomain is required. -/
+theorem isFiniteMeasure_restrict_imageOpens [MeasurableSpace Y]
+    (e : OpenPartialHomeomorph X Y) (μ : MeasureTheory.Measure Y)
+    [MeasureTheory.IsFiniteMeasureOnCompacts μ]
+    (hK : IsCompact (closure (V' : Set X))) (hKe : closure (V' : Set X) ⊆ e.source) :
+    MeasureTheory.IsFiniteMeasure (μ.restrict (e.imageOpens V' : Set Y)) :=
+  MeasureTheory.isFiniteMeasure_restrict.2 <|
+    MeasureTheory.measure_ne_top_of_subset (s := e '' closure (V' : Set X))
+      (fun y hy ↦ ⟨e.symm y, subset_closure hy.2, e.right_inv hy.1⟩)
+      (hK.image_of_continuousOn (e.continuousOn.mono hKe)).measure_ne_top
 
 /-- If `closure V'` is compact and lies in `V` and in `e.source`, the closure of `e.imageOpens V'`
 lies in `e.imageOpens V`. -/

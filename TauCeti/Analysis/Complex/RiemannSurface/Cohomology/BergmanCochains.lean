@@ -559,13 +559,6 @@ namespace OpenPartialHomeomorph
 open CategoryTheory MeasureTheory Opposite Set TopologicalSpace
 open TauCeti
 
-private theorem isFiniteMeasure_restrict_imageOpens
-    {X : Type} [TopologicalSpace X] (e : OpenPartialHomeomorph X ℂ) {W : Opens X}
-    (hK : IsCompact (closure (W : Set X))) (hKe : closure (W : Set X) ⊆ e.source) :
-    IsFiniteMeasure (volume.restrict (e.imageOpens W : Set ℂ)) :=
-  isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt
-    (e.isCompact_closure_imageOpens hK hKe).measure_lt_top).ne
-
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
   (e : OpenPartialHomeomorph X ℂ) (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X)
   {U W : Opens X} (hU : (U : Set X) ⊆ e.source)
@@ -608,7 +601,7 @@ def holomorphicSectionToBergman :
     (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U) →ₗ[ℂ]
       bergmanSpace ℂ (e.imageOpens W) := by
   letI : IsFiniteMeasure (volume.restrict (e.imageOpens W : Set ℂ)) :=
-    e.isFiniteMeasure_restrict_imageOpens hK (hKU.trans hU)
+    e.isFiniteMeasure_restrict_imageOpens volume hK (hKU.trans hU)
   let T : (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U) →ₗ[ℂ]
       boundedHolomorphicFunctions ℂ (e.imageOpens W) :=
     { toFun := holomorphicSectionBoundedAux e he hU hK hKU
@@ -631,7 +624,7 @@ theorem holomorphicSectionToBergman_apply
     BergmanSpace.representative (e.holomorphicSectionToBergman he hU hK hKU s) (e x) =
       s ⟨x, hKU (subset_closure x.2)⟩ := by
   let : IsFiniteMeasure (volume.restrict (e.imageOpens W : Set ℂ)) :=
-    e.isFiniteMeasure_restrict_imageOpens hK (hKU.trans hU)
+    e.isFiniteMeasure_restrict_imageOpens volume hK (hKU.trans hU)
   have hx := map_mem_imageOpens (hU (hKU (subset_closure x.2))) x.2
   calc
     BergmanSpace.representative (e.holomorphicSectionToBergman he hU hK hKU s) (e x) =
