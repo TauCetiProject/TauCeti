@@ -27,11 +27,14 @@ Its geometry is governed by two subspaces, which we write as graphs:
 * the diagonal `D = {(x, x)}`, which is `(LinearMap.id : M →ₗ[R] M).graph`;
 * the antidiagonal `A = {(x, -x)}`, which is `(-LinearMap.id : M →ₗ[R] M).graph`.
 
-Both are isotropic for every `B`, and each equals its own orthogonal exactly when `B` is
-right-separating, so for a nondegenerate form both are maximal isotropic. When `2` is invertible
-in `R`, the map `(x, y) ↦ (x, -x) + (y, y)` is a linear automorphism of `M × M`
-(`TauCeti.doublingPolarizationEquiv`) with inverse `(u, v) ↦ ((u - v) / 2, (u + v) / 2)`; it
-carries the two coordinate axes onto `A` and `D`, so `W = A ⊕ D`, and in these coordinates the
+More generally the graph of `φ` is isotropic exactly when `φ` is an isometry of `B`, and the
+graph of an invertible isometry equals its own orthogonal exactly when `B` is right-separating.
+Taking `φ = ±LinearMap.id`, both `D` and `A` are isotropic for every `B`, and for a nondegenerate
+form both are maximal isotropic.
+
+When `2` is invertible in `R`, the map `(x, y) ↦ (x, -x) + (y, y)` is a linear automorphism of
+`M × M` (`TauCeti.doublingPolarizationEquiv`) with inverse `(u, v) ↦ ((u - v) / 2, (u + v) / 2)`;
+it carries the two coordinate axes onto `A` and `D`, so `W = A ⊕ D`, and in these coordinates the
 doubled form becomes twice the hyperbolic pairing between `A` and `D`. In particular
 `B.doubled (x, -x) (y, y) = 2 • B x y`.
 
@@ -48,6 +51,10 @@ split quadratic algebra `F × F` with the coordinate swap, where no field struct
 
 * `LinearMap.toMatrix₂_prod_doubled`: in a basis of the form `b.prod b` the Gram matrix of the
   doubled form is `Matrix.fromBlocks H 0 0 (-H)`.
+* `LinearMap.graph_le_orthogonalBilin_doubled_iff`: the graph of `φ` is isotropic exactly when
+  `φ` is an isometry of `B`.
+* `LinearMap.orthogonalBilin_graph_doubled_eq_iff`: the graph of an invertible isometry is its own
+  orthogonal if and only if `B` is right-separating.
 * `LinearMap.orthogonalBilin_graph_id_doubled_eq_iff`,
   `LinearMap.orthogonalBilin_graph_neg_id_doubled_eq_iff`: the diagonal and the antidiagonal are
   their own orthogonals if and only if `B` is right-separating.
@@ -93,7 +100,7 @@ theorem doubled_apply (u v : M × M) : B.doubled u v = B u.1 v.1 - B u.2 v.2 := 
 
 /-- Flipping the doubled form doubles the flipped form. -/
 @[simp]
-theorem doubled_flip : B.doubled.flip = B.flip.doubled := by
+theorem flip_doubled : B.doubled.flip = B.flip.doubled := by
   ext u v
   simp
 
@@ -120,7 +127,7 @@ theorem separatingLeft_doubled_iff : B.doubled.SeparatingLeft ↔ B.SeparatingLe
 /-- The doubled form is right-separating exactly when the original form is. -/
 @[simp]
 theorem separatingRight_doubled_iff : B.doubled.SeparatingRight ↔ B.SeparatingRight := by
-  rw [← flip_separatingLeft, doubled_flip, separatingLeft_doubled_iff, flip_separatingLeft]
+  rw [← flip_separatingLeft, flip_doubled, separatingLeft_doubled_iff, flip_separatingLeft]
 
 /-- The doubled form is nondegenerate exactly when the original form is. -/
 @[simp]
@@ -135,55 +142,61 @@ theorem isSymm_doubled_iff {I : R →+* R} {B : M →ₛₗ[I] M →ₗ[R] R} :
     fun h ↦ isSymm_def.2 fun u v ↦ ?_⟩
   simp [h.eq]
 
-/-! ### The diagonal and the antidiagonal are maximal isotropic -/
+/-! ### Graphs of isometries; the diagonal and the antidiagonal are maximal isotropic -/
+
+/-- The graph of `φ` is isotropic for the doubled form exactly when `φ` is an isometry of `B`. -/
+theorem graph_le_orthogonalBilin_doubled_iff (φ : M →ₗ[R] M) :
+    φ.graph ≤ φ.graph.orthogonalBilin B.doubled ↔ ∀ x y, B (φ x) (φ y) = B x y := by
+  refine ⟨fun h x y ↦ ?_, fun h ⟨x, y⟩ hv ⟨x', y'⟩ hu ↦ ?_⟩
+  · have := h (by simp : (y, φ y) ∈ φ.graph) (x, φ x) (by simp)
+    rw [doubled_apply, sub_eq_zero] at this
+    exact this.symm
+  · simp only [mem_graph_iff] at hu hv
+    simp [hu, hv, h]
+
+/-- The graph of an isometry `φ` of `B` is its own orthogonal for the doubled form exactly when
+`B` is right-separating. -/
+theorem orthogonalBilin_graph_doubled_eq_iff (φ : M ≃ₗ[R] M)
+    (hφ : ∀ x y, B (φ x) (φ y) = B x y) :
+    (φ : M →ₗ[R] M).graph.orthogonalBilin B.doubled = (φ : M →ₗ[R] M).graph ↔
+      B.SeparatingRight := by
+  refine ⟨fun h y hy ↦ ?_, fun h ↦ le_antisymm (fun ⟨x, y⟩ hxy ↦ ?_)
+    ((B.graph_le_orthogonalBilin_doubled_iff φ).2 hφ)⟩
+  · have hmem : ((y, 0) : M × M) ∈ (φ : M →ₗ[R] M).graph.orthogonalBilin B.doubled := by
+      intro u _
+      simp [hy]
+    rw [h, mem_graph_iff] at hmem
+    simpa using hmem.symm
+  · rw [mem_graph_iff, eq_comm, ← sub_eq_zero]
+    refine h _ fun z ↦ ?_
+    obtain ⟨x', rfl⟩ := φ.surjective z
+    have := hxy (x', φ x') (by simp)
+    rw [doubled_apply, sub_eq_zero, ← hφ x' x] at this
+    simpa [sub_eq_zero] using this
 
 /-- The diagonal is isotropic for the doubled form. -/
 theorem graph_id_le_orthogonalBilin_doubled :
-    (LinearMap.id : M →ₗ[R] M).graph ≤ (LinearMap.id.graph).orthogonalBilin B.doubled := by
-  rintro ⟨x, y⟩ hv ⟨x', y'⟩ hu
-  simp only [mem_graph_iff, id_apply] at hu hv
-  simp [hu, hv]
+    (LinearMap.id : M →ₗ[R] M).graph ≤ (LinearMap.id.graph).orthogonalBilin B.doubled :=
+  (B.graph_le_orthogonalBilin_doubled_iff _).2 fun _ _ ↦ rfl
 
 /-- The antidiagonal is isotropic for the doubled form. -/
 theorem graph_neg_id_le_orthogonalBilin_doubled :
-    (-LinearMap.id : M →ₗ[R] M).graph ≤ ((-LinearMap.id).graph).orthogonalBilin B.doubled := by
-  rintro ⟨x, y⟩ hv ⟨x', y'⟩ hu
-  simp only [mem_graph_iff, LinearMap.neg_apply, id_apply] at hu hv
-  simp [hu, hv]
+    (-LinearMap.id : M →ₗ[R] M).graph ≤ ((-LinearMap.id).graph).orthogonalBilin B.doubled :=
+  (B.graph_le_orthogonalBilin_doubled_iff _).2 fun _ _ ↦ by simp
 
 /-- The diagonal is its own orthogonal for the doubled form exactly when `B` is
 right-separating. -/
 theorem orthogonalBilin_graph_id_doubled_eq_iff :
     (LinearMap.id.graph).orthogonalBilin B.doubled = (LinearMap.id : M →ₗ[R] M).graph ↔
-      B.SeparatingRight := by
-  refine ⟨fun h y hy ↦ ?_, fun h ↦ le_antisymm (fun ⟨x, y⟩ hxy ↦ ?_)
-    (B.graph_id_le_orthogonalBilin_doubled)⟩
-  · have hmem : ((y, 0) : M × M) ∈ (LinearMap.id.graph).orthogonalBilin B.doubled := by
-      rintro ⟨x', y'⟩ hu
-      simp only [mem_graph_iff, id_apply] at hu
-      simp [hu, hy]
-    rw [h, mem_graph_iff] at hmem
-    exact hmem.symm
-  · rw [mem_graph_iff, id_apply, eq_comm, ← sub_eq_zero]
-    refine h _ fun z ↦ ?_
-    simpa [sub_eq_zero] using hxy (z, z) (by simp)
+      B.SeparatingRight :=
+  B.orthogonalBilin_graph_doubled_eq_iff (LinearEquiv.refl R M) fun _ _ ↦ rfl
 
 /-- The antidiagonal is its own orthogonal for the doubled form exactly when `B` is
 right-separating. -/
 theorem orthogonalBilin_graph_neg_id_doubled_eq_iff :
     ((-LinearMap.id).graph).orthogonalBilin B.doubled = (-LinearMap.id : M →ₗ[R] M).graph ↔
-      B.SeparatingRight := by
-  refine ⟨fun h y hy ↦ ?_, fun h ↦ le_antisymm (fun ⟨x, y⟩ hxy ↦ ?_)
-    (B.graph_neg_id_le_orthogonalBilin_doubled)⟩
-  · have hmem : ((y, 0) : M × M) ∈ ((-LinearMap.id).graph).orthogonalBilin B.doubled := by
-      rintro ⟨x', y'⟩ hu
-      simp only [mem_graph_iff, LinearMap.neg_apply, id_apply] at hu
-      simp [hu, hy]
-    rw [h, mem_graph_iff] at hmem
-    simpa using hmem.symm
-  · rw [mem_graph_iff, LinearMap.neg_apply, id_apply, eq_neg_iff_add_eq_zero, add_comm]
-    refine h _ fun z ↦ ?_
-    simpa [sub_neg_eq_add] using hxy (z, -z) (by simp)
+      B.SeparatingRight :=
+  B.orthogonalBilin_graph_doubled_eq_iff (LinearEquiv.neg R) fun _ _ ↦ by simp
 
 /-! ### Similitudes acting blockwise -/
 
