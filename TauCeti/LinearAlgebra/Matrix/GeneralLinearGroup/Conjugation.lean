@@ -35,6 +35,7 @@ matrices can be decided on the linear maps, for instance through Jordan-chain ba
   induce the same conjugation of `GL n R` exactly when they differ by a unit scalar.
 * `Matrix.GeneralLinearGroup.inv_mulVec_mulVec_of_eq_mul_mul_inv`: if `A = g * B * g⁻¹` then
   `g⁻¹ *ᵥ (A *ᵥ v) = B *ᵥ (g⁻¹ *ᵥ v)`.
+* `Matrix.GeneralLinearGroup.vecMul_inv_eq_iff`: `v ᵥ* g⁻¹ = w` exactly when `v = w ᵥ* g`.
 * `Matrix.GeneralLinearGroup.scalar_injective`: for nonempty `n`, the scalar embedding
   `Rˣ → GL n R` is injective.
 * `Matrix.mem_orbit_conjAct_iff_exists_linearEquiv_conj`: matrices are conjugate under `GL n R`
@@ -61,6 +62,15 @@ theorem inv_mulVec_mulVec_of_eq_mul_mul_inv [Semiring R] (g : GL n R)
     (g⁻¹ : GL n R) *ᵥ (A *ᵥ v) = B *ᵥ ((g⁻¹ : GL n R) *ᵥ v) := by
   rw [mulVec_mulVec, mulVec_mulVec, h, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
     Units.inv_mul, Matrix.one_mul]
+
+/-- Solving `v ᵥ* g⁻¹ = w` for the row vector `v`: it is `w ᵥ* g`. -/
+theorem vecMul_inv_eq_iff [Semiring R] (g : GL n R) (v w : n → R) :
+    v ᵥ* ((g⁻¹ : GL n R) : Matrix n n R) = w ↔ v = w ᵥ* (g : Matrix n n R) := by
+  constructor
+  · rintro rfl
+    rw [vecMul_vecMul, ← Units.val_mul, inv_mul_cancel, Units.val_one, vecMul_one]
+  · rintro rfl
+    rw [vecMul_vecMul, ← Units.val_mul, mul_inv_cancel, Units.val_one, vecMul_one]
 
 variable [CommRing R]
 

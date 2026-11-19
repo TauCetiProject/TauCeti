@@ -7,8 +7,10 @@ module
 
 -- `IsLocalRing.ResidueField` occurs in the statements below.
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
--- Non-public: `TauCeti.residueFieldAlgEquivOfSurjective` gives the bijection of residue fields.
+-- Non-public: `TauCeti.quotientEquivResidueField` identifies `R ⧸ 𝔪` with the residue field, and
+-- `TauCeti.IsLocalRing.unitsEquivNotMemMaximalIdeal` the units with the complement of `𝔪`.
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
+import TauCeti.RingTheory.LocalRing.Basic
 -- `Module.IsUnimodular` occurs in the statements below; the coordinate criterion
 -- `TauCeti.Module.isUnimodular_iff_exists_isUnit` is what the count runs on.
 public import TauCeti.LinearAlgebra.Unimodular
@@ -34,17 +36,11 @@ Both are stated multiplied out, so that they hold in `ℕ` without division. For
 pairs not both even. These are the counts behind the indices of the congruence levels `K₀(I)` and
 `K₁(I)` of `GL₂` over a local ring, whose right cosets are parametrized by unimodular rows.
 
-The residue field of a quotient of a local ring by a proper ideal is that of the ring itself
-(`TauCeti.IsLocalRing.card_residueField_of_surjective`), so the counts for `A ⧸ I` may be stated
-with the residue field of `A`.
-
 ## Main results
 
 * `TauCeti.IsLocalRing.card_residueField_mul_card_units`: `q · #Rˣ = #R · (q - 1)`.
 * `TauCeti.IsLocalRing.card_residueField_pow_mul_card_isUnimodular`:
   `qⁿ · #{v : ι → R | v unimodular} = #Rⁿ · (qⁿ - 1)` for `n = #ι`.
-* `TauCeti.IsLocalRing.card_residueField_of_surjective`: a surjective ring homomorphism of local
-  rings induces a bijection of residue fields.
 
 ## References
 
@@ -58,23 +54,7 @@ namespace TauCeti.IsLocalRing
 
 open _root_.IsLocalRing
 
-/-- A surjective ring homomorphism between local rings induces a bijection of residue fields, so
-the residue field of a quotient `A ⧸ I` by a proper ideal has as many elements as that of `A`. -/
-theorem card_residueField_of_surjective {A B : Type*} [CommRing A] [IsLocalRing A] [CommRing B]
-    [IsLocalRing B] {f : A →+* B} (hf : Function.Surjective f) :
-    Nat.card (ResidueField B) = Nat.card (ResidueField A) :=
-  (Nat.card_congr (residueFieldAlgEquivOfSurjective (ψ := ((residue B).comp f).toIntAlgHom)
-    (residue_surjective.comp hf)).toEquiv).symm
-
 variable {R : Type*} [CommRing R] [IsLocalRing R]
-
-/-- In a local ring, an element outside the maximal ideal is the same as a unit, so the units
-are equinumerous with the complement of the maximal ideal. -/
-private noncomputable def unitsEquivCompl : Rˣ ≃ {x : R // x ∉ maximalIdeal R} where
-  toFun u := ⟨u, notMem_maximalIdeal.mpr u.isUnit⟩
-  invFun x := (notMem_maximalIdeal.mp x.2).unit
-  left_inv _ := Units.ext rfl
-  right_inv _ := Subtype.ext rfl
 
 /-- The arithmetic shared by the two counts: if a finite set of size `r = q · m` splits into a
 part of size `u` and a part of size `m`, then `q · u = r · (q - 1)`. -/
@@ -84,6 +64,14 @@ private theorem mul_eq_of_add_eq {q u m r : ℕ} (hr : r = m * q) (h : u + m = r
   rw [Nat.mul_sub_one, mul_comm r q]
   omega
 
+variable (R) in
+/-- The maximal ideal has index `q` in `R`: `#R = #𝔪 · q`, as `R ⧸ 𝔪` is the residue field
+(`TauCeti.quotientEquivResidueField`). -/
+private theorem card_eq_card_maximalIdeal_mul_card_residueField :
+    Nat.card R = Nat.card (maximalIdeal R) * Nat.card (ResidueField R) := by
+  rw [Submodule.card_eq_card_quotient_mul_card (maximalIdeal R),
+    Nat.card_congr (quotientEquivResidueField (maximalIdeal.isMaximal R)).toEquiv]
+
 variable (R) [Finite R]
 
 /-- **The units of a finite local ring**: `q · #Rˣ = #R · (q - 1)`, where `q` is the size of the
@@ -92,9 +80,9 @@ theorem card_residueField_mul_card_units :
     Nat.card (ResidueField R) * Nat.card Rˣ =
       Nat.card R * (Nat.card (ResidueField R) - 1) := by
   refine mul_eq_of_add_eq (m := Nat.card (maximalIdeal R))
-    (Submodule.card_eq_card_quotient_mul_card (maximalIdeal R)) ?_
+    (card_eq_card_maximalIdeal_mul_card_residueField R) ?_
   classical
-  rw [Nat.card_congr unitsEquivCompl, add_comm, ← Nat.card_sum,
+  rw [Nat.card_congr unitsEquivNotMemMaximalIdeal, add_comm, ← Nat.card_sum,
     Nat.card_congr (Equiv.sumCompl fun x : R ↦ x ∈ maximalIdeal R)]
 
 /-- **The unimodular vectors over a finite local ring**: for a finite index type `ι` with `n`
@@ -111,8 +99,7 @@ theorem card_residueField_pow_mul_card_isUnimodular (ι : Type*) [Fintype ι] :
     rw [Nat.card_congr ((Equiv.subtypeEquivRight hcompl).trans Equiv.subtypePiEquivPi),
       Nat.card_fun, Nat.card_eq_fintype_card (α := ι)]
   refine mul_eq_of_add_eq (m := Nat.card (maximalIdeal R) ^ Fintype.card ι) ?_ ?_
-  · rw [Submodule.card_eq_card_quotient_mul_card (maximalIdeal R), mul_pow]
-    rfl
+  · rw [card_eq_card_maximalIdeal_mul_card_residueField R, mul_pow]
   · classical
     rw [← hnon, ← Nat.card_sum,
       Nat.card_congr (Equiv.sumCompl fun v : ι → R ↦ Module.IsUnimodular R v), Nat.card_fun,
