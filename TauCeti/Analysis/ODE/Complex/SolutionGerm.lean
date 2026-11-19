@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Complex.LinearEquation
-public import Mathlib.Order.Filter.Germ.Basic
+public import TauCeti.Analysis.Analytic.Germ
 
 /-!
 # Solution germs of analytic linear equations and the local initial-value theorem
@@ -99,13 +99,6 @@ theorem IsSolutionNear.const_smul (hf : E.IsSolutionNear a f) (c : ℂ) :
   simp only [iteratedDeriv_const_smul_field, smul_eq_mul]
   simpa [Finset.mul_sum, mul_add, mul_left_comm] using congrArg (c * ·) hf0
 
--- The restricted coefficients agree with the original ones on the smaller domain.
-private theorem extend_restrict_coeff {V : Opens ℂ} (h : V ≤ U) {z : ℂ} (hz : z ∈ V)
-    (j : Fin n) : HolomorphicFunctions.extend ((E.restrict h).coeff j) z =
-      HolomorphicFunctions.extend (E.coeff j) z := by
-  simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩,
-    HolomorphicFunctions.extend_apply _ ⟨z, h hz⟩]
-
 /-- On a smaller open domain containing `a`, the restricted equation has the same local solutions
 near `a`. -/
 @[simp]
@@ -114,10 +107,10 @@ theorem isSolutionNear_restrict_iff {V : Opens ℂ} (h : V ≤ U) (ha : a ∈ V)
   constructor
   · intro hy
     filter_upwards [hy] with z ⟨hzV, hyz, hy0⟩
-    exact ⟨h hzV, hyz, by simpa only [extend_restrict_coeff h hzV] using hy0⟩
+    exact ⟨h hzV, hyz, by simpa only [E.extend_restrict_coeff_of_mem h hzV] using hy0⟩
   · intro hy
     filter_upwards [hy, V.isOpen.mem_nhds ha] with z ⟨_, hyz, hy0⟩ hzV
-    exact ⟨hzV, hyz, by simpa only [extend_restrict_coeff h hzV] using hy0⟩
+    exact ⟨hzV, hyz, by simpa only [E.extend_restrict_coeff_of_mem h hzV] using hy0⟩
 
 /-- A function solves the equation near `a` exactly when it solves the restriction of the equation
 to some positive-radius disc about `a` inside the domain. -/
@@ -129,7 +122,7 @@ theorem isSolutionNear_iff_exists_ball :
     obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.mp hy
     have h : (⟨Metric.ball a r, Metric.isOpen_ball⟩ : Opens ℂ) ≤ U := fun z hz ↦ (hball z hz).1
     refine ⟨r, hr, h, (isSolution_iff _ _).mpr ⟨fun z hz ↦ (hball z hz).2.1, fun z hz ↦ ?_⟩⟩
-    simpa only [extend_restrict_coeff h hz] using (hball z hz).2.2
+    simpa only [E.extend_restrict_coeff_of_mem h hz] using (hball z hz).2.2
   · rintro ⟨r, hr, h, hy⟩
     exact (isSolutionNear_restrict_iff h (Metric.mem_ball_self hr)).mp
       (hy.isSolutionNear (Metric.mem_ball_self hr))
@@ -170,34 +163,28 @@ theorem solutionGerms_restrict {V : Opens ℂ} (h : V ≤ U) (ha : a ∈ V) :
   ext φ
   simp only [mem_solutionGerms_iff, isSolutionNear_restrict_iff h ha]
 
-/-- The unscaled `n`-jet at `a` of an arbitrary function germ, computed on any representative. -/
-private def germJet (a : ℂ) (n : ℕ) (φ : Germ (𝓝 a) ℂ) : Fin n → ℂ :=
-  φ.liftOn (fun y j ↦ iteratedDeriv j y a) fun _ _ h ↦ funext fun j ↦ h.iteratedDeriv_eq j
-
 variable (E) in
 /-- The unscaled initial jet `(y(a), y'(a), …, y⁽ⁿ⁻¹⁾(a))` of a solution germ at `a`. It is
 computed on any representative, and no factorials enter it. -/
 def initialJetGerm (ha : a ∈ U) : E.solutionGerms ha →ₗ[ℂ] (Fin n → ℂ) where
-  toFun φ := germJet a n φ
+  toFun φ := (φ : Germ (𝓝 a) ℂ).iteratedDerivJet n
   map_add' := by
     rintro ⟨_, f, hf, rfl⟩ ⟨_, g, hg, rfl⟩
     funext j
-    simp only [Submodule.coe_add, ← Germ.coe_add, Pi.add_apply]
+    simp only [Submodule.coe_add, ← Germ.coe_add, Germ.iteratedDerivJet_coe, Pi.add_apply]
     exact iteratedDeriv_add hf.analyticAt.contDiffAt hg.analyticAt.contDiffAt
   map_smul' := by
     rintro c ⟨_, f, hf, rfl⟩
     funext j
-    simp only [Submodule.coe_smul, ← Germ.coe_smul, Pi.smul_apply, smul_eq_mul,
-      RingHom.id_apply]
+    simp only [Submodule.coe_smul, ← Germ.coe_smul, Germ.iteratedDerivJet_coe, Pi.smul_apply,
+      smul_eq_mul, RingHom.id_apply]
     exact iteratedDeriv_const_smul_field c f
 
 /-- The components of the initial jet of a solution germ are the iterated derivatives of any of
 its representatives at the base point. -/
 theorem initialJetGerm_apply (ha : a ∈ U) (φ : E.solutionGerms ha) (hφ : (φ : Germ (𝓝 a) ℂ) = y)
     (j : Fin n) : E.initialJetGerm ha φ j = iteratedDeriv j y a := by
-  have h : E.initialJetGerm ha φ = germJet a n φ := rfl
-  rw [h, hφ]
-  rfl
+  simp only [initialJetGerm, LinearMap.coe_mk, AddHom.coe_mk, hφ, Germ.iteratedDerivJet_coe]
 
 /-- The initial jet of the germ of a local solution is its vector of unscaled derivatives. -/
 @[simp]
