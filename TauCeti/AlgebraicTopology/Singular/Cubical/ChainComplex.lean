@@ -30,6 +30,8 @@ simplicial singular chain complex.
 
 * `TauCeti.NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology`: if the normalized
   cubical homology vanishes in dimension `n + 1`, every `(n + 1)`-cycle is a boundary.
+* `TauCeti.isZero_normalizedCubicalChainComplex_obj`: the normalized cubical chains of an empty
+  space vanish.
 -/
 
 @[expose] public section
@@ -149,5 +151,17 @@ theorem NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology {X : TopCat
     ShortComplex.moduleCat_exact_iff] at hex
   obtain ⟨c', hc'⟩ := hex c ((normalizedCubicalChainComplex_obj_d_apply X n c).trans hc)
   exact ⟨c', (normalizedCubicalChainComplex_obj_d_apply X (n + 1) c').symm.trans hc'⟩
+
+variable (R) in
+/-- The normalized cubical chains of an empty space vanish, since it has no singular cubes. -/
+theorem isZero_normalizedCubicalChainComplex_obj (Z : TopCat.{u}) [IsEmpty Z] :
+    Limits.IsZero ((normalizedCubicalChainComplex R).obj Z) := by
+  rw [Limits.IsZero.iff_id_eq_zero]
+  ext n : 1
+  have : IsEmpty (SingularCube Z n) := ⟨fun c ↦ isEmptyElim (c fun _ ↦ 0)⟩
+  have : Subsingleton (((normalizedCubicalChainComplex R).obj Z).X n) :=
+    (normalizedCubicalChainComplexXEquiv (R := R) _ n).toEquiv.subsingleton_congr.2
+      (Submodule.Quotient.mk_surjective _).subsingleton
+  exact (ModuleCat.isZero_of_subsingleton _).eq_of_src _ _
 
 end TauCeti

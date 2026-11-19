@@ -35,6 +35,9 @@ spectral sequences induced by `φ`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
 * `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`: on the objects `E^n(𝟙, f, 𝟙)`,
   identified with `H^n(f)`, `EMap φ` is the component of `φ` at `f`.
+* `CategoryTheory.Abelian.SpectralObject.isIso_of_isIso_hom_app`: a morphism of spectral objects
+  which is an isomorphism on every component is an isomorphism. Conversely, the components of an
+  isomorphism are isomorphisms (an instance on `φ.hom n`).
 
 ## References
 
@@ -301,6 +304,27 @@ lemma d_EMap :
     toCycles_cyclesMapOfHom_assoc]
 
 end Differentials
+
+section IsIso
+
+/-- The components of an isomorphism of spectral objects are isomorphisms. -/
+instance [IsIso φ] (n : ℤ) : IsIso (φ.hom n) :=
+  ⟨(inv φ).hom n, by rw [← comp_hom, IsIso.hom_inv_id, id_hom],
+    by rw [← comp_hom, IsIso.inv_hom_id, id_hom]⟩
+
+/-- **A morphism of spectral objects is an isomorphism when all its components are.** -/
+lemma isIso_of_isIso_hom_app
+    (h : ∀ (n : ℤ) (D : ComposableArrows ι 1), IsIso ((φ.hom n).app D)) : IsIso φ := by
+  have (n : ℤ) : IsIso (φ.hom n) := NatIso.isIso_of_isIso_app _
+  let ψ : Y ⟶ X :=
+    { hom n := inv (φ.hom n)
+      comm n₀ n₁ hn₁ i j k f g := by
+        rw [← cancel_epi ((φ.hom n₀).app (mk₁ g)), ← cancel_mono ((φ.hom n₁).app (mk₁ f))]
+        simp only [Category.assoc, NatIso.isIso_inv_app, IsIso.inv_hom_id, Category.comp_id,
+          IsIso.hom_inv_id_assoc, Hom.comm] }
+  exact ⟨ψ, Hom.ext <| funext fun n ↦ by simp [ψ], Hom.ext <| funext fun n ↦ by simp [ψ]⟩
+
+end IsIso
 
 section FirstPage
 
