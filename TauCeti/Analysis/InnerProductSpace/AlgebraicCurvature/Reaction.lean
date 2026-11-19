@@ -30,16 +30,17 @@ first sum, using the Bianchi identity of `r`, through the single contraction
 identity follows from the two symmetries `C(a, b, c, d) = C(c, d, a, b) = C(b, a, d, c)`.
 
 The reaction tensor is equivariant under linear isometric equivalences and homogeneous of degree
-two. It is the diagonal `Q(r) = B(r, r)` of a bilinear map of the finite-dimensional space of
-four-tensors, hence smooth and locally Lipschitz, as the reaction ODE `dR/dt = Q(R)` requires.
+two. It is the diagonal `Q(r) = B(r, r)` of its polarization, a symmetric bilinear map of the
+finite-dimensional space of four-tensors, hence smooth and locally Lipschitz, as the reaction
+ODE `dR/dt = Q(R)` requires.
 On the constant-curvature tensor `r₁` of the unit sphere it is `Q(r₁) = 2 (n - 1) r₁` in
 dimension `n`, which is the reaction term of the round sphere's curvature under Ricci flow.
 
 ## Main definitions
 
 * `TauCeti.FourTensor.reactionTensor`: the reaction tensor `Q(r)` of a four-tensor `r`.
-* `TauCeti.FourTensor.reactionBilin`: its polarization, the continuous bilinear map `B` of
-  four-tensors with `Q(r) = B(r, r)`.
+* `TauCeti.FourTensor.reactionBilin`: its polarization, the symmetric continuous bilinear map
+  `B` of four-tensors with `Q(r) = B(r, r)`.
 
 ## Main statements
 
@@ -47,7 +48,9 @@ dimension `n`, which is the reaction term of the round sphere's curvature under 
   every orthonormal basis.
 * `TauCeti.FourTensor.reactionTensor_eq_reactionBilin` and
   `TauCeti.FourTensor.reactionBilin_apply_orthonormalBasis`: `Q(r) = B(r, r)`, and `B` is the
-  polarized contraction in every orthonormal basis.
+  symmetrized polarized contraction in every orthonormal basis, with
+  `TauCeti.FourTensor.reactionBilin_comm`: `B(r, s) = B(s, r)`.
+* `TauCeti.FourTensor.reactionTensor_add`: `Q(r + s) = Q(r) + 2 B(r, s) + Q(s)`.
 * `TauCeti.FourTensor.reactionTensor_mem`: `Q` preserves `algebraicCurvatureSubmodule`.
 * `TauCeti.FourTensor.reactionTensor_compContinuousLinearMap_linearIsometryEquiv`: `Q` is
   equivariant under linear isometric equivalences.
@@ -317,23 +320,44 @@ private def reactionPair (r s : FourTensor V) : FourTensor V :=
             reactionSum_smul_fourth])
   { f with cont := f.continuous_of_finiteDimensional }
 
+/-- The unfolding lemma of `reactionPair`. It holds by `rfl`, through the `let`, the structure
+update and `MultilinearMap.mk'` in the definition; the other proofs about `reactionPair` go
+through this lemma instead of unfolding it. -/
+private theorem reactionPair_apply_std (r s : FourTensor V) (m : Fin 4 → V) :
+    reactionPair r s m = reactionSum (stdOrthonormalBasis ℝ V) r s (m 0) (m 1) (m 2) (m 3) :=
+  rfl
+
 private theorem reactionPair_apply {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
     (r s : FourTensor V) (u v z w : V) :
-    reactionPair r s ![u, v, z, w] = reactionSum b r s u v z w :=
-  reactionSum_eq (stdOrthonormalBasis ℝ V) b r s u v z w
+    reactionPair r s ![u, v, z, w] = reactionSum b r s u v z w := by
+  rw [reactionPair_apply_std]
+  simpa using reactionSum_eq (stdOrthonormalBasis ℝ V) b r s u v z w
 
 /-- The polarized reaction tensor as a bilinear map. -/
-private def reactionBilinₗ : FourTensor V →ₗ[ℝ] FourTensor V →ₗ[ℝ] FourTensor V :=
+private def reactionPairₗ : FourTensor V →ₗ[ℝ] FourTensor V →ₗ[ℝ] FourTensor V :=
   LinearMap.mk₂ ℝ reactionPair
-    (fun r r' s ↦ by ext m; exact reactionSum_add_left _ r s _ _ _ _ r')
-    (fun t r s ↦ by ext m; exact reactionSum_smul_left _ r s _ _ _ _ t)
-    (fun r s s' ↦ by ext m; exact reactionSum_add_right _ r s _ _ _ _ s')
-    (fun t r s ↦ by ext m; exact reactionSum_smul_right _ r s _ _ _ _ t)
+    (fun r r' s ↦ by
+      ext m
+      simp only [add_apply, reactionPair_apply_std, reactionSum_add_left])
+    (fun t r s ↦ by
+      ext m
+      simp only [smul_apply, reactionPair_apply_std, reactionSum_smul_left, smul_eq_mul])
+    (fun r s s' ↦ by
+      ext m
+      simp only [add_apply, reactionPair_apply_std, reactionSum_add_right])
+    (fun t r s ↦ by
+      ext m
+      simp only [smul_apply, reactionPair_apply_std, reactionSum_smul_right, smul_eq_mul])
+
+/-- The symmetrization of the polarized reaction tensor as a bilinear map. -/
+private def reactionBilinₗ : FourTensor V →ₗ[ℝ] FourTensor V →ₗ[ℝ] FourTensor V :=
+  (2⁻¹ : ℝ) • (reactionPairₗ + reactionPairₗ.flip)
 
 variable (V) in
-/-- The polarization of the reaction tensor: the continuous bilinear map `B` of four-tensors with
-`B(r, r) = Q(r)`. In an orthonormal basis `(eᵢ)`,
-`B(r, s)ᵢⱼₖₗ = ∑ₚ,q rᵢⱼₚq sₖₗₚq + 2 ∑ₚ,q rᵢₚₖq sⱼₚₗq - 2 ∑ₚ,q rᵢₚₗq sⱼₚₖq`; see
+/-- The polarization of the reaction tensor: the symmetric continuous bilinear map `B` of
+four-tensors with `B(r, r) = Q(r)`, so that `Q(r + s) = Q(r) + 2 B(r, s) + Q(s)`. In an
+orthonormal basis `(eᵢ)` it is the symmetrization of the contraction
+`∑ₚ,q rᵢⱼₚq sₖₗₚq + 2 ∑ₚ,q rᵢₚₖq sⱼₚₗq - 2 ∑ₚ,q rᵢₚₗq sⱼₚₖq` in `r` and `s`; see
 `TauCeti.FourTensor.reactionBilin_apply_orthonormalBasis`. -/
 def reactionBilin : FourTensor V →L[ℝ] FourTensor V →L[ℝ] FourTensor V :=
   LinearMap.toContinuousLinearMap (𝕜 := ℝ) (E := FourTensor V)
@@ -342,21 +366,32 @@ def reactionBilin : FourTensor V →L[ℝ] FourTensor V →L[ℝ] FourTensor V :
       (F' := FourTensor V)).toLinearMap ∘ₗ reactionBilinₗ)
 
 private theorem reactionBilin_apply (r s : FourTensor V) :
-    reactionBilin V r s = reactionPair r s := by
-  simp only [reactionBilin, reactionBilinₗ, LinearMap.coe_toContinuousLinearMap',
-    LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.mk₂_apply]
+    reactionBilin V r s = (2⁻¹ : ℝ) • (reactionPair r s + reactionPair s r) := by
+  simp only [reactionBilin, reactionBilinₗ, reactionPairₗ, LinearMap.coe_toContinuousLinearMap',
+    LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.smul_apply,
+    LinearMap.add_apply, LinearMap.flip_apply, LinearMap.mk₂_apply]
+
+/-- The polarization of the reaction tensor is symmetric: `B(r, s) = B(s, r)`. -/
+theorem reactionBilin_comm (r s : FourTensor V) : reactionBilin V r s = reactionBilin V s r := by
+  rw [reactionBilin_apply, reactionBilin_apply, add_comm]
 
 /-- In every orthonormal basis `(eᵢ)` the polarization of the reaction tensor is the contraction
-`B(r, s)(u, v, z, w) = ∑ₚ,q r(u, v, eₚ, e_q) s(z, w, eₚ, e_q)
-  + 2 ∑ₚ,q r(u, eₚ, z, e_q) s(v, eₚ, w, e_q) - 2 ∑ₚ,q r(u, eₚ, w, e_q) s(v, eₚ, z, e_q)`. -/
+`B(r, s)(u, v, z, w)
+  = ½ ∑ₚ,q (r(u, v, eₚ, e_q) s(z, w, eₚ, e_q) + s(u, v, eₚ, e_q) r(z, w, eₚ, e_q))
+  + ∑ₚ,q (r(u, eₚ, z, e_q) s(v, eₚ, w, e_q) + s(u, eₚ, z, e_q) r(v, eₚ, w, e_q))
+  - ∑ₚ,q (r(u, eₚ, w, e_q) s(v, eₚ, z, e_q) + s(u, eₚ, w, e_q) r(v, eₚ, z, e_q))`. -/
 theorem reactionBilin_apply_orthonormalBasis {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) (r s : FourTensor V) (u v z w : V) :
     reactionBilin V r s ![u, v, z, w] =
-      (∑ p, ∑ q, r ![u, v, b p, b q] * s ![z, w, b p, b q]) +
-        2 * (∑ p, ∑ q, r ![u, b p, z, b q] * s ![v, b p, w, b q]) -
-        2 * (∑ p, ∑ q, r ![u, b p, w, b q] * s ![v, b p, z, b q]) := by
-  rw [reactionBilin_apply]
-  exact reactionPair_apply b r s u v z w
+      (∑ p, ∑ q, (r ![u, v, b p, b q] * s ![z, w, b p, b q] +
+          s ![u, v, b p, b q] * r ![z, w, b p, b q])) / 2 +
+        (∑ p, ∑ q, (r ![u, b p, z, b q] * s ![v, b p, w, b q] +
+          s ![u, b p, z, b q] * r ![v, b p, w, b q])) -
+        (∑ p, ∑ q, (r ![u, b p, w, b q] * s ![v, b p, z, b q] +
+          s ![u, b p, w, b q] * r ![v, b p, z, b q])) := by
+  rw [reactionBilin_apply, smul_apply, add_apply, reactionPair_apply b, reactionPair_apply b]
+  simp only [reactionSum, Finset.sum_add_distrib, smul_eq_mul]
+  ring
 
 end Polarization
 
@@ -373,7 +408,8 @@ def reactionTensor (r : FourTensor V) : FourTensor V :=
 /-- The reaction tensor is the diagonal of its polarization: `Q(r) = B(r, r)`. -/
 theorem reactionTensor_eq_reactionBilin (r : FourTensor V) :
     reactionTensor r = reactionBilin V r r := by
-  rw [reactionTensor, reactionBilin_apply]
+  rw [reactionTensor, reactionBilin_apply, ← two_smul ℝ, smul_smul,
+    inv_mul_cancel₀ two_ne_zero, one_smul]
 
 private theorem reactionTensor_apply_eq_reactionSum {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) (r : FourTensor V) (u v z w : V) :
@@ -437,6 +473,14 @@ theorem reactionTensor_smul (c : ℝ) (r : FourTensor V) :
     reactionTensor (c • r) = c ^ 2 • reactionTensor r := by
   rw [reactionTensor_eq_reactionBilin, reactionTensor_eq_reactionBilin, map_smul,
     map_smul, smul_apply, smul_smul, sq]
+
+/-- The reaction tensor of a sum: `Q(r + s) = Q(r) + 2 B(r, s) + Q(s)` for the polarization `B`. -/
+theorem reactionTensor_add (r s : FourTensor V) :
+    reactionTensor (r + s) =
+      reactionTensor r + (2 : ℝ) • reactionBilin V r s + reactionTensor s := by
+  simp only [reactionTensor_eq_reactionBilin, map_add, add_apply, reactionBilin_comm s r,
+    two_smul]
+  abel
 
 /-- The reaction tensor vanishes at zero. -/
 @[simp]
