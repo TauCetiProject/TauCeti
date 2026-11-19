@@ -45,6 +45,8 @@ conjugating the coordinates exchanges them.
   is Lagrangian for the standard area form.
 * `TauCeti.stdComplexSymplecticForm_apply_ofComplexModule`: area paired with multiplication
   by `I` is the norm square.
+* `TauCeti.stdComplexSymplecticForm_apply_ofComplexModule_eq_inner`: more generally, the metric
+  `σ(z, I w)` is the Euclidean inner product of `ℂ`.
 * `TauCeti.stdComplexSymplecticForm_smul_sub_smul`: a real-linear map `v ↦ α v - β ⟪z, v⟫ z`
   scales the area form by its determinant.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
@@ -169,6 +171,14 @@ theorem stdComplexSymplecticForm_apply_ofComplexModule (z : ℂ) :
       Complex.normSq z := by
   simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply,
     Complex.normSq_apply]
+
+/-- The metric of the standard area form and the standard complex structure is the Euclidean inner
+product of `ℂ`. -/
+theorem stdComplexSymplecticForm_apply_ofComplexModule_eq_inner (z w : ℂ) :
+    stdComplexSymplecticForm z (AlmostComplexStructure.ofComplexModule ℂ w) = inner ℝ z w := by
+  simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply,
+    Complex.inner]
+  ring
 
 open scoped InnerProductSpace in
 /-- A real-linear map `v ↦ α v - β ⟪z, v⟫ z` of `ℂ` scales the area form by its determinant
