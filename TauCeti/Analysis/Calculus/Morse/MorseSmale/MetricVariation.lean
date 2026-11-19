@@ -139,7 +139,7 @@ private theorem exists_integral_inner_metricVariation_pos (hf : ContDiff ℝ 2 f
     (hf.continuous_gradient (by norm_num)).comp hγ.continuous
   have hq : Continuous fun s ↦ ⟪B (∇ f (γ s)), w s⟫ := (B.continuous.comp hg).inner hwc
   obtain ⟨δ, hδ, hqδ⟩ := Metric.eventually_nhds_iff_ball.1
-    (hq.continuousAt.eventually (lt_mem_nhds (inner_rankOne_add_rankOne_apply_self_pos hcrit hw0)))
+    (hq.continuousAt.eventually (lt_mem_nhds (inner_rankOne_add_rankOne_apply_pos hcrit hw0)))
   -- A small ball around `γ s₀` inside `U` meets the trajectory only at times within `δ` of `s₀`.
   obtain ⟨r₁, hr₁, hrs⟩ := hγ.exists_pos_forall_dist_lt_mem_Ioo
     (fun t ↦ hf.differentiable (by norm_num) _) hcrit hδ
@@ -171,7 +171,7 @@ private theorem exists_integral_inner_metricVariation_pos (hf : ContDiff ℝ 2 f
       rw [Metric.mem_ball, Real.dist_eq, abs_lt]
       constructor <;> linarith [this.1, this.2]
   · rw [ψ.one_of_mem_closedBall (Metric.mem_closedBall_self ψ.rIn_pos.le), one_mul]
-    exact (inner_rankOne_add_rankOne_apply_self_pos hcrit hw0).ne'
+    exact (inner_rankOne_add_rankOne_apply_pos hcrit hw0).ne'
 
 /-! ### The cokernel is detected by metric variations -/
 

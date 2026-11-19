@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.ODE.Transform
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.Gradient
 
 /-!
@@ -264,17 +265,15 @@ theorem exists_pos_forall_dist_lt_mem_Ioo
     {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) {δ : ℝ} (hδ : 0 < δ) :
     ∃ r > 0, ∀ s, dist (γ s) (γ s₀) < r → s ∈ Ioo (s₀ - δ) (s₀ + δ) := by
   have hanti := antitone_comp_neg_gradient hγ hf
-  -- The slopes of `f ∘ γ` at `s₀` are eventually negative, since its derivative there is.
-  have hslope : ∀ᶠ t in 𝓝[≠] s₀, slope (f ∘ γ) s₀ t < 0 :=
-    (hasDerivAt_iff_tendsto_slope.1 (hasDerivAt_comp_neg_gradient hγ (hf s₀))).eventually
-      (gt_mem_nhds (neg_lt_zero.mpr (sq_pos_of_ne_zero (norm_ne_zero_iff.mpr hcrit))))
-  obtain ⟨t₁, ht₁, ht₁I⟩ := ((hslope.filter_mono (nhdsLT_le_nhdsNE s₀)).and
+  -- `-(f ∘ γ)` has positive derivative at `s₀`, so `f ∘ γ` drops strictly on both sides of `s₀`.
+  have hd := (hasDerivAt_comp_neg_gradient hγ (hf s₀)).neg
+  have hpos : 0 < -(-‖∇ f (γ s₀)‖ ^ 2) := by
+    rw [neg_neg]; exact pow_pos (norm_pos_iff.2 hcrit) 2
+  obtain ⟨t₁, ht₁, ht₁I⟩ := ((hd.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos hpos).and
     (Ioo_mem_nhdsLT (by linarith : s₀ - δ < s₀))).exists
-  obtain ⟨t₂, ht₂, ht₂I⟩ := ((hslope.filter_mono (nhdsGT_le_nhdsNE s₀)).and
+  obtain ⟨t₂, ht₂, ht₂I⟩ := ((hd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hpos).and
     (Ioo_mem_nhdsGT (by linarith : s₀ < s₀ + δ))).exists
-  rw [slope_def_field, div_lt_iff_of_neg (sub_neg.2 ht₁I.2), zero_mul] at ht₁
-  rw [slope_def_field, div_lt_iff₀ (sub_pos.2 ht₂I.1), zero_mul] at ht₂
-  simp only [Function.comp_apply, sub_pos, sub_neg] at ht₁ ht₂
+  simp only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] at ht₁ ht₂
   -- Points close to `γ s₀` have values of `f` strictly between those at `t₁` and `t₂`.
   set ε := min (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))
   have hε0 : 0 < ε := lt_min (by linarith) (by linarith)
