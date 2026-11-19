@@ -103,11 +103,6 @@ theorem antipodeOfBijective_apply (b : B) :
         ((LinearEquiv.ofBijective _ h).symm (1 ⊗ₜ[R] b)) :=
   (rfl)
 
-/-- The universal point action undoes its inverse. -/
-private theorem endOfPoint_id_ofBijective_symm (x : B ⊗[R] B) :
-    Comodule.endOfPoint B (AlgHom.id R B) ((LinearEquiv.ofBijective _ h).symm x) = x := by
-  simp
-
 /-- Multiplication after applying the antipode to the left tensor factor is counit evaluation of
 the inverse universal point action, after swapping the factors. -/
 private theorem mul'_rTensor_antipodeOfBijective (x : B ⊗[R] B) :
@@ -192,7 +187,7 @@ private theorem ofBijective_symm_one_tmul (b : B) :
       TensorProduct.comm R B B ((antipodeOfBijective h).lTensor B (comul (R := R) b)) := by
   rw [← one_smul B (TensorProduct.comm R B B _), ← inverseCandidate_tmul,
     ← inverseCandidate_endOfPoint_id h ((LinearEquiv.ofBijective _ h).symm _),
-    endOfPoint_id_ofBijective_symm]
+    LinearEquiv.apply_ofBijective_symm_apply]
 
 /-- The second antipode identity: `∑ b₍₁₎ S(b₍₂₎) = ε(b)`. -/
 theorem mul_antipodeOfBijective_lTensor_comul :
@@ -201,8 +196,8 @@ theorem mul_antipodeOfBijective_lTensor_comul :
   refine LinearMap.ext fun b ↦ ?_
   rw [LinearMap.comp_apply, LinearMap.comp_apply, ← LinearMap.mul'_comm,
     ← ofBijective_symm_one_tmul, ← baseChange_counit_endOfPoint_id,
-    endOfPoint_id_ofBijective_symm, Module.Dual.baseChange_apply_tmul, LinearMap.comp_apply,
-    Algebra.linearMap_apply, Algebra.algebraMap_eq_smul_one]
+    LinearEquiv.apply_ofBijective_symm_apply, Module.Dual.baseChange_apply_tmul,
+    LinearMap.comp_apply, Algebra.linearMap_apply, Algebra.algebraMap_eq_smul_one]
 
 /-- A commutative bialgebra on which the universal point acts bijectively is a Hopf algebra, with
 antipode `TauCeti.HopfAlgebra.antipodeOfBijective`. This is not an instance because it depends

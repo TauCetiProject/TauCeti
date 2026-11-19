@@ -187,9 +187,10 @@ private theorem exists_finite_subcomodule_subset_range (s : Set (A ⊗[R] M)) (h
     (Module.Finite.iff_fg.mp hP)
   refine ⟨N, hN, hsP.trans ?_⟩
   rintro _ ⟨z, rfl⟩
-  induction z using TensorProduct.inductionOn with
-  | tmul a p => exact ⟨a ⊗ₜ[R] ⟨p, hPN p.2⟩, by simp⟩
-  | add x y hx hy => rw [map_add]; exact Submodule.add_mem _ hx hy
+  obtain ⟨w, hw⟩ := Submodule.baseChange_mono (A := A) hPN
+    ⟨z, congrFun (LinearMap.baseChange_eq_lTensor (A := A) P.subtype) z⟩
+  rw [Subcomodule.subtype_toLinearMap]
+  exact ⟨w, hw⟩
 
 /-- If a point acts bijectively on the scalar extension of every finite subcomodule, it acts
 bijectively on the scalar extension of the whole comodule. This uses that the finite subcomodules
