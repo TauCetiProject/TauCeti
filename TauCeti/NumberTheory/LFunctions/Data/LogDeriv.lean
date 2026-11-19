@@ -6,8 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import TauCeti.NumberTheory.LFunctions.Data.Basic
-public import Mathlib.Analysis.Calculus.LogDeriv
-public import Mathlib.Analysis.Calculus.Deriv.Shift
+public import TauCeti.Analysis.Calculus.LogDeriv
 
 /-!
 # Logarithmic derivatives of the completed functional equation
@@ -36,8 +35,7 @@ including at poles. No condition on the value at the centre is imposed. -/
 theorem HasFunctionalEquation.logDeriv_eventuallyEq (h : d.HasFunctionalEquation) (s : ℂ) :
     logDeriv d.completed =ᶠ[𝓝[≠] s] fun z ↦ -logDeriv d.dual.completed (1 - z) := by
   filter_upwards [logDeriv_congr_nhdsNE (h.eventuallyEq s)] with z hz
-  rw [hz, logDeriv_const_mul z _ h.rootNumber_ne_zero, logDeriv_apply, logDeriv_apply,
-    deriv_comp_const_sub, neg_div]
+  rw [hz, logDeriv_const_mul z _ h.rootNumber_ne_zero, logDeriv_comp_const_sub]
 
 /-- Where the two completed representatives are continuous, the logarithmic functional
 equation holds pointwise, even at zeros. Continuity excludes arbitrary values assigned at poles. -/
@@ -48,6 +46,6 @@ theorem HasFunctionalEquation.logDeriv_eq (h : d.HasFunctionalEquation) {s : ℂ
     continuousAt_const.mul (hd.comp (by fun_prop))
   have hg := (hs.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hcont).mp (h.eventuallyEq s)
   rw [(logDeriv_congr_nhds hg).eq_of_nhds, logDeriv_const_mul s _ h.rootNumber_ne_zero,
-    logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, neg_div]
+    logDeriv_comp_const_sub]
 
 end TauCeti.LFunctions.AnalyticLFunctionData

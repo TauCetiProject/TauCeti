@@ -6,6 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
+public import TauCeti.Analysis.Calculus.LogDeriv
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 
 /-!
@@ -38,10 +39,8 @@ theorem logDeriv_completedRiemannZeta_one_sub (s : ℂ) :
     logDeriv completedRiemannZeta (1 - s) = -logDeriv completedRiemannZeta s := by
   have h := congrArg (fun f : ℂ → ℂ ↦ logDeriv f s)
     (funext completedRiemannZeta_one_sub)
-  simp only [logDeriv_apply] at h ⊢
-  rw [deriv_comp_const_sub, completedRiemannZeta_one_sub, neg_div] at h
-  rw [completedRiemannZeta_one_sub]
-  linear_combination -h
+  rw [logDeriv_comp_const_sub] at h
+  exact neg_eq_iff_eq_neg.mp h
 
 /-- Away from the origin, a nonzero zeta value excludes a zero of the real-place gamma factor. -/
 theorem Gammaℝ_ne_zero_of_riemannZeta_ne_zero {s : ℂ} (hs : s ≠ 0)
