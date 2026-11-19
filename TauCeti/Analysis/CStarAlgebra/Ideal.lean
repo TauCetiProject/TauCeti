@@ -112,14 +112,14 @@ theorem star_mem_of_isClosed {a : A} (ha : a ∈ I) : star a ∈ I := by
   -- The closed self-adjoint core `S = I ∩ star I` is a C⋆-subalgebra containing `star a * a`.
   have hL (b : A) {x : A} (hx : x ∈ I.toSubmodule) : b * x ∈ I.toSubmodule := I.mul_mem_left b x hx
   have hk : star a * a ∈ I.toSubmodule.interStar hL :=
-    ⟨hL _ ha, by rw [star_mul, star_star]; exact hL _ ha⟩
+    Submodule.mem_interStar.mpr ⟨hL _ ha, by rw [star_mul, star_star]; exact hL _ ha⟩
   obtain ⟨l, _, hlS, -, hsa, hnorm, hl⟩ := NonUnitalStarSubalgebra.exists_approximateUnit
     (Submodule.isClosed_interStar (hL := hL) I.isClosed_toSubmodule)
   -- Along an approximate unit `e` of `S`, `a * e → a`, so `e * star a → star a` with
   -- `e * star a ∈ I`.
   exact hI.mem_of_tendsto (TauCeti.tendsto_mul_star_of_tendsto_mul hsa <|
       TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le hsa hnorm le_rfl (hl _ hk).1)
-    (hlS.mono fun e he ↦ I.mul_mem_right e (star a) he.1)
+    (hlS.mono fun e he ↦ I.mul_mem_right e (star a) (Submodule.mem_interStar.mp he).1)
 
 @[simp]
 theorem star_mem_iff_of_isClosed {a : A} : star a ∈ I ↔ a ∈ I :=

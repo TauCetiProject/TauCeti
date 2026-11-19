@@ -42,6 +42,6 @@ variable {R A : Type*} [CommSemiring R] [Star R] [NonUnitalNonAssocSemiring A] [
 
 /-- For a closed left ideal `L`, the star subalgebra `L ∩ star L` is closed. -/
 theorem isClosed_interStar (hLc : IsClosed (L : Set A)) : IsClosed (L.interStar hL : Set A) :=
-  hLc.inter (hLc.preimage continuous_star)
+  coe_interStar (hL := hL) ▸ hLc.inter (hLc.preimage continuous_star)
 
 end Submodule

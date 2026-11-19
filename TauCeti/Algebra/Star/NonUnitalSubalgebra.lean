@@ -19,8 +19,8 @@ the hereditary C⋆-subalgebra attached to a closed left ideal.
 ## Main declarations
 
 * `Submodule.interStar`: the star subalgebra `L ∩ star L` of a left ideal `L`.
-* `Submodule.mem_interStar` and `Submodule.interStar_mono`: its membership criterion and
-  monotonicity in `L`.
+* `Submodule.mem_interStar`, `Submodule.coe_interStar` and `Submodule.interStar_mono`: its
+  membership criterion, underlying set and monotonicity in `L`.
 -/
 
 public section
@@ -31,7 +31,7 @@ variable {R A : Type*} [CommSemiring R] [Star R] [NonUnitalNonAssocSemiring A] [
   [Module R A] [StarModule R A]
 
 /-- For a left ideal `L`, the star subalgebra `L ∩ star L`. -/
-@[expose] def interStar (L : Submodule R A) (hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L) :
+def interStar (L : Submodule R A) (hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L) :
     NonUnitalStarSubalgebra R A where
   carrier := {x | x ∈ L ∧ star x ∈ L}
   add_mem' hx hy := ⟨L.add_mem hx.1 hy.1, by rw [star_add]; exact L.add_mem hx.2 hy.2⟩
@@ -46,6 +46,11 @@ variable {L : Submodule R A} {hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L}
 @[simp]
 theorem mem_interStar {x : A} : x ∈ L.interStar hL ↔ x ∈ L ∧ star x ∈ L :=
   Iff.rfl
+
+/-- The underlying set of `L ∩ star L`. -/
+@[simp]
+theorem coe_interStar : (L.interStar hL : Set A) = (L : Set A) ∩ star ⁻¹' (L : Set A) :=
+  (rfl)
 
 /-- `L ↦ L ∩ star L` is monotone. -/
 theorem interStar_mono {L' : Submodule R A} {hL' : ∀ (a : A) {x : A}, x ∈ L' → a * x ∈ L'}

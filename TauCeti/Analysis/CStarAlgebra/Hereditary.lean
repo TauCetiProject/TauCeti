@@ -240,7 +240,7 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 /-- For a closed left ideal `L`, the star subalgebra `L ∩ star L` is hereditary. -/
 theorem isHereditary_interStar (hLc : IsClosed (L : Set A)) : (L.interStar hL).IsHereditary := by
   refine NonUnitalStarSubalgebra.isHereditary_of_mul_mul_mem (isClosed_interStar hLc)
-    fun b hb x c hc ↦ ⟨hL _ (mem_interStar.mp hc).1, ?_⟩
+    fun b hb x c hc ↦ mem_interStar.mpr ⟨hL _ (mem_interStar.mp hc).1, ?_⟩
   rw [star_mul, star_mul, ← mul_assoc]
   exact hL _ (mem_interStar.mp hb).2
 
@@ -256,8 +256,8 @@ theorem leftIdeal_interStar (hLc : IsClosed (L : Set A)) :
     NonUnitalStarSubalgebra.exists_approximateUnit (B := L.interStar hL) (isClosed_interStar hLc)
   -- Along an approximate unit `e` of `L ∩ star L`, `x * e → x` and `x * e ∈ L`.
   have hr := TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le hsa hnorm le_rfl
-    (hl _ ⟨hx, by rw [star_mul, star_star]; exact hx⟩).1
-  exact hLc.mem_of_tendsto hr (hlB.mono fun e he ↦ hL x he.1)
+    (hl _ (mem_interStar.mpr ⟨hx, by rw [star_mul, star_star]; exact hx⟩)).1
+  exact hLc.mem_of_tendsto hr (hlB.mono fun e he ↦ hL x (mem_interStar.mp he).1)
 
 /-- A closed hereditary star subalgebra `B` is recovered from its left ideal as
 `{x | star x * x ∈ B} ∩ star {x | star x * x ∈ B}`. -/
