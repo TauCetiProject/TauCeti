@@ -42,6 +42,8 @@ complexes.
   differential, and the resulting behaviour of closed degree-zero cochains on kernels.
 * `CochainComplex.HomComplex.Cochain.vLinearMap`: for complexes of modules over a commutative
   ring, the component of a cochain on a single term, as a linear map into linear maps.
+* `CochainComplex.HomComplex.Cochain.v_eq_zero_of_isZero`: a cochain vanishes on a zero term of
+  its source.
 
 The cochain modules, the differential `δ`, its `R`-linearity and the Leibniz rule for composition
 are supplied by Mathlib.
@@ -253,5 +255,16 @@ lemma vLinearMap_apply {R : Type*} [CommRing R] {K L : CochainComplex (ModuleCat
     {n i j : ℤ} (hij : i + n = j) (z : Cochain K L n) :
     vLinearMap K L n i j hij z = (z.v i j hij).hom :=
   (rfl)
+
+/-- A cochain vanishes on every term of its source that is a zero object. -/
+theorem v_eq_zero_of_isZero {C : Type*} [Category C] [Preadditive C] {K L : CochainComplex C ℤ}
+    {n i j : ℤ} (hij : i + n = j) (hK : IsZero (K.X i)) (z : Cochain K L n) : z.v i j hij = 0 :=
+  hK.eq_of_src _ _
+
+/-- The component of a cochain of complexes of modules on a zero term of its source vanishes. -/
+theorem vLinearMap_eq_zero_of_isZero {R : Type*} [CommRing R]
+    {K L : CochainComplex (ModuleCat R) ℤ} {n i j : ℤ} (hij : i + n = j) (hK : IsZero (K.X i))
+    (z : Cochain K L n) : vLinearMap K L n i j hij z = 0 := by
+  rw [vLinearMap_apply, v_eq_zero_of_isZero hij hK, ModuleCat.hom_zero]
 
 end CochainComplex.HomComplex.Cochain

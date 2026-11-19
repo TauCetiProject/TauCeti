@@ -304,12 +304,6 @@ private lemma vLinearMap_linearHomComplexDualTensor_eq_zero {p q n : ℤ} (h : p
     rw [Cochain.vLinearMap_apply,
       linearHomComplexDualTensor_ιTensorObj_tmul_v_eq_zero A B h b φ hij hi, ModuleCat.hom_zero]
 
-private lemma vLinearMap_eq_zero_of_isZero {n i j : ℤ} (hij : i + n = j)
-    (hA : IsZero (A.X i)) (z : Cochain A B n) : Cochain.vLinearMap A B n i j hij z = 0 := by
-  have : Subsingleton (A.X i) := ModuleCat.subsingleton_of_isZero hA
-  ext a
-  rw [Subsingleton.elim a 0, map_zero, LinearMap.zero_apply]
-
 variable [∀ i, Module.Finite R (A.X i)] [∀ i, Module.Projective R (A.X i)]
 
 /-- Under finite projectivity of `Aⁱ`, the contraction of `Bᵖ ⊗ Hom(A, R[0])^q` onto
@@ -358,7 +352,7 @@ private lemma dualTensorInv_linearHomComplexDualTensor (S : Finset ℤ)
       map_zero]
   · intro hq
     rw [LinearMap.comp_apply, LinearMap.comp_apply,
-      vLinearMap_eq_zero_of_isZero A B rfl (hS _ hq), map_zero, map_zero]
+      Cochain.vLinearMap_eq_zero_of_isZero rfl (hS _ hq), map_zero, map_zero]
 
 /-- The dual-tensor comparison undoes the inverse on every cochain. -/
 private lemma linearHomComplexDualTensor_dualTensorInv (S : Finset ℤ)
@@ -375,7 +369,7 @@ private lemma linearHomComplexDualTensor_dualTensorInv (S : Finset ℤ)
     rw [LinearMap.comp_apply, LinearMap.comp_apply,
       vLinearMap_linearHomComplexDualTensor_eq_zero A B _ rfl (by omega)]
   · intro hi
-    exact vLinearMap_eq_zero_of_isZero A B rfl (hS _ hi) _
+    exact Cochain.vLinearMap_eq_zero_of_isZero rfl (hS _ hi) _
 
 end Isomorphism
 
