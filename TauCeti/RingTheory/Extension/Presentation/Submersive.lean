@@ -48,12 +48,10 @@ theorem det_jacobiMatrix_points_coordinates (x : S →ₐ[k] E) :
       (fun i ↦ x (P.val i))).mapMatrix P.jacobiMatrix).det =
         x P.jacobian := by
   rw [P.jacobian_eq_jacobiMatrix_det, P.algebraMap_apply]
-  -- Definitionally, `aevalTower` has underlying ring hom `eval₂Hom`, with coefficient map
-  -- `x.toRingHom.comp (algebraMap R S)` after unfolding `AlgHom.comp` and `toAlgHom`.
-  -- Also, `AlgHom.mapMatrix` and its underlying `RingHom.mapMatrix` agree on matrices.
+  -- `AlgHom.mapMatrix` and its underlying `RingHom.mapMatrix` agree on matrices.
   exact ((aevalTower (x.comp (IsScalarTower.toAlgHom k R S))
     (fun i ↦ x (P.val i))).toRingHom.map_det _).symm.trans
-      (MvPolynomial.map_aeval P.val x.toRingHom _).symm
+      (P.toPresentation.aevalTower_comp_toAlgHom_val x _)
 
 end Algebra.PreSubmersivePresentation
 

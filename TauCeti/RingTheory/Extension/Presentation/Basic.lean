@@ -87,8 +87,19 @@ theorem lift_val (x : ι → T) (hx : ∀ r, aeval x (P.relation r) = 0) (i : ι
 
 section Points
 
-variable {k E : Type*} [CommSemiring k] [Algebra k R] [Algebra k S] [IsScalarTower k R S]
-  [CommRing E] [Algebra k E]
+variable {k : Type*} [CommSemiring k] [Algebra k R] [Algebra k S] [IsScalarTower k R S]
+
+/-- Evaluating a polynomial at the coefficient restriction and generator values of a point
+agrees with applying the point to its evaluation in the presented algebra. -/
+theorem aevalTower_comp_toAlgHom_val {E : Type*} [CommSemiring E] [Algebra k E]
+    (x : S →ₐ[k] E) (p : MvPolynomial ι R) :
+    aevalTower (x.comp (IsScalarTower.toAlgHom k R S)) (fun i ↦ x (P.val i)) p =
+      x (aeval P.val p) := by
+  -- The underlying ring hom of `aevalTower` is `eval₂Hom`; its coefficient map here is
+  -- `x.toRingHom.comp (algebraMap R S)`, by the definitions of `AlgHom.comp` and `toAlgHom`.
+  exact (MvPolynomial.map_aeval P.val x.toRingHom p).symm
+
+variable {E : Type*} [CommRing E] [Algebra k E]
 
 /-- The coordinate image of a presented algebra is the solution set of its defining relations,
 with the coefficient point varying over points of the base algebra. -/
@@ -99,7 +110,8 @@ theorem range_points_coordinates :
   ext z
   constructor
   · rintro ⟨x, rfl⟩ j
-    exact (MvPolynomial.map_aeval P.val x.toRingHom (P.relation j)).symm.trans (by simp)
+    rw [P.aevalTower_comp_toAlgHom_val]
+    simp
   · intro hz
     let f := (aeval (R := R) P.val).restrictScalars k
     have hker : RingHom.ker f ≤ RingHom.ker (aevalTower z.1 z.2) := by
