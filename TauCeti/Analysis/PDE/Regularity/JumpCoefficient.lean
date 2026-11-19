@@ -17,10 +17,11 @@ import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 
 /-!
-# De Giorgi's theorem for a coefficient with a jump
+# De Giorgi's theorem and failure of `H²` regularity for a coefficient with a jump
 
 This file runs the energy method and De Giorgi's theorem on an explicit equation whose coefficient
-is discontinuous, so that no regularity theory for continuous coefficients applies to it.
+is discontinuous, so that no regularity theory for continuous coefficients applies to it, and shows
+that interior `H²` regularity fails for the same coefficient.
 
 The coefficient field is `TauCeti.PDE.jumpCoefficient n`, the matrix `κ(x) I` on `ℝⁿ⁺¹` with
 `κ(x) = 1` on the open half-space `{x₀ > 0}` and `κ(x) = 2` on its complement. It is measurable
@@ -43,12 +44,13 @@ coordinate `x₀` almost everywhere, and `∫_Ω κ ∇u · ∇v = 0` for every 
 * by De Giorgi's theorem its precise representative is Hölder continuous on every compact subset
   of `Ω`, with an exponent `α ∈ (0, 1]` depending only on the dimension.
 
-Hölder continuity is all that survives for this coefficient: weak solutions need not lie in `H²`
-near the jump. The function `u(x) = κ(x)⁻¹ x₀` (`TauCeti.PDE.jumpSolution`), equal to `x₀` where
-`x₀ > 0` and to `x₀ / 2` elsewhere, has the constant flux `κ ∇u = e₀`, so on every bounded open set
-it is a weak solution of `-div(κ ∇u) = 0` (`TauCeti.PDE.energyFormH1_jumpCoefficient_eq_zero`). Its
-weak derivative `∂₀u = κ⁻¹` jumps across the hyperplane, and no element of `W^{2,p}(V)`, for any
-`1 ≤ p < ∞`, agrees with `u` on an open set `V` meeting the hyperplane
+For this coefficient De Giorgi's theorem gives Hölder continuity, but `H²` regularity fails near
+the jump: weak solutions need not lie in `H²`. The function `u(x) = κ(x)⁻¹ x₀`
+(`TauCeti.PDE.jumpSolution`), equal to `x₀` where `x₀ > 0` and to `x₀ / 2` elsewhere, has the
+constant flux `κ ∇u = e₀`, so on every bounded open set it is a weak solution of
+`-div(κ ∇u) = 0` (`TauCeti.PDE.energyFormH1_jumpCoefficient_eq_zero`). Its weak derivative
+`∂₀u = κ⁻¹` jumps across the hyperplane, and no element of `W^{2,p}(V)`, for any `1 ≤ p < ∞`,
+agrees with `u` on an open set `V` meeting the hyperplane
 (`TauCeti.PDE.not_exists_wkp_two_value_ae_eq_jumpSolution`). Together
 (`TauCeti.PDE.exists_energyFormH1_jumpCoefficient_eq_zero_not_exists_wkp_two`) this shows that the
 interior `H²` regularity theorem for Lipschitz coefficients
@@ -371,26 +373,28 @@ theorem not_exists_wkp_two_value_ae_eq_jumpSolution {p : ℝ≥0∞} [Fact (1 �
 `Ω ⊆ ℝⁿ⁺¹` there is a weak solution `u ∈ H¹(Ω)` of `-div(κ ∇u) = 0` for the jump coefficient
 `κ I = TauCeti.PDE.jumpCoefficient n`, which is measurable and uniformly elliptic with constants `1`
 and `2`, such that on no open `V ⊆ Ω` meeting the hyperplane `{x₀ = 0}` does `u` agree with an
-element of `W^{2,p}(V)`, for any `1 ≤ p < ∞`.
+element of `W^{2,p}(V)`, for any `1 ≤ p < ∞`; the same `u` works for every such `p`.
 
 So the Lipschitz hypothesis on the coefficients of interior `H²` regularity
 (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`) cannot be
 weakened to measurability, even with `b = 0`, `c = 0` and `f = 0`. For the same coefficient,
 De Giorgi's theorem still gives Hölder continuity
 (`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_jumpCoefficient`). -/
-theorem exists_energyFormH1_jumpCoefficient_eq_zero_not_exists_wkp_two {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : p ≠ ⊤) {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+theorem exists_energyFormH1_jumpCoefficient_eq_zero_not_exists_wkp_two
+    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :
     ∃ u : W1p volume Omega 2,
       (∀ v : W1p0 volume Omega 2,
         energyFormH1 (jumpCoefficient n) 0 0 u (v : W1p volume Omega 2) = 0) ∧
-      ∀ V : Opens (EuclideanSpace ℝ (Fin (n + 1))), V ≤ Omega → (∃ z ∈ V, z 0 = 0) →
-        ¬ ∃ U : Wkp volume V p 2,
-          Wkp.value 2 U =ᵐ[volume.restrict (V : Set (EuclideanSpace ℝ (Fin (n + 1))))]
-            W1p.value u := by
+      ∀ (p : ℝ≥0∞) [Fact (1 ≤ p)], p ≠ ⊤ →
+        ∀ V : Opens (EuclideanSpace ℝ (Fin (n + 1))), V ≤ Omega → (∃ z ∈ V, z 0 = 0) →
+          ¬ ∃ U : Wkp volume V p 2,
+            Wkp.value 2 U =ᵐ[volume.restrict (V : Set (EuclideanSpace ℝ (Fin (n + 1))))]
+              W1p.value u := by
   obtain ⟨u, hu, -⟩ := exists_w1p_value_gradient_ae_eq_jumpSolution (n := n) (p := 2)
     ENNReal.ofNat_ne_top hb
-  refine ⟨u, energyFormH1_jumpCoefficient_eq_zero hb u hu, fun V hV ⟨z, hzV, hz⟩ ⟨U, hU⟩ => ?_⟩
+  refine ⟨u, energyFormH1_jumpCoefficient_eq_zero hb u hu,
+    fun p _ hp V hV ⟨z, hzV, hz⟩ ⟨U, hU⟩ => ?_⟩
   exact not_exists_wkp_two_value_ae_eq_jumpSolution hp hzV hz
     ⟨U, hU.trans (ae_restrict_of_ae_restrict_of_subset hV hu)⟩
 
