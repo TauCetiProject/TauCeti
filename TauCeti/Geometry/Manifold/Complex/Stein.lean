@@ -9,7 +9,6 @@ public import Mathlib.Geometry.Manifold.Complex
 public import TauCeti.Analysis.Complex.Runge.Hull
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.HahnBanach
-import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
@@ -21,7 +20,7 @@ holomorphic function `f : M → ℂ` satisfies every modulus bound it satisfies 
 `K` this is the set of `x` with `‖f x‖ ≤ sup_K ‖f‖` for all holomorphic `f`; the hull of the empty
 set is empty. Holomorphic functions are `MDifferentiable I 𝓘(ℂ)` maps.
 
-A *Stein manifold* (`TauCeti.SteinManifold I M`) is a complex manifold which is
+A *Stein manifold* (`TauCeti.IsSteinManifold I M`) is a complex manifold which is
 * holomorphically convex: the holomorphic hull of every compact set is compact;
 * holomorphically separable: global holomorphic functions separate points;
 * supplied with holomorphic local coordinates by global functions: at every point some global
@@ -31,21 +30,23 @@ We show that a complex normed space with compact closed balls, that is a finite-
 such as `ℂⁿ` for every `n`, is a Stein manifold: continuous linear functionals separate points
 and bound compact hulls, and the identity is a global coordinate. A complex manifold of
 dimension zero is Stein, since there every function is holomorphic and the hull of a set is the
-set itself. Conversely, holomorphic functions on a compact complex manifold are locally
-constant, so a compact Stein manifold is finite; for instance the Riemann sphere is not Stein.
+set itself. Conversely, holomorphic functions on a compact complex manifold without boundary are
+locally constant, so a compact Stein manifold without boundary is finite; for instance the Riemann
+sphere is not Stein.
 The separation axiom also forces every Stein manifold to be Hausdorff.
 
 ## Main declarations
 
 * `TauCeti.mholomorphicHull`: the holomorphic hull of a subset of a complex manifold, with
-  `TauCeti.IsCompact.mem_mholomorphicHull_iff` characterizing it on compact sets by suprema.
+  `IsCompact.mem_mholomorphicHull_iff` characterizing it on compact sets by suprema.
 * `TauCeti.mholomorphicHull_eq_holomorphicHull_univ`: on `ℂ` it is the planar holomorphic hull
   `TauCeti.holomorphicHull Set.univ`.
-* `TauCeti.SteinManifold`: the class of Stein manifolds.
-* `TauCeti.SteinManifold.self`: a complex normed space with compact closed balls is Stein.
-* `TauCeti.SteinManifold.of_subsingleton`: a complex manifold of dimension zero is Stein.
-* `TauCeti.SteinManifold.t2Space`: a Stein manifold is Hausdorff.
-* `TauCeti.SteinManifold.finite_of_compactSpace`: a compact Stein manifold is finite.
+* `TauCeti.IsSteinManifold`: the class of Stein manifolds.
+* `TauCeti.IsSteinManifold.self`: a complex normed space with compact closed balls is Stein.
+* `TauCeti.IsSteinManifold.of_subsingleton`: a complex manifold of dimension zero is Stein.
+* `TauCeti.IsSteinManifold.t2Space`: a Stein manifold is Hausdorff.
+* `TauCeti.IsSteinManifold.finite_of_compactSpace`: a compact Stein manifold without boundary is
+  finite.
 
 ## References
 
@@ -69,7 +70,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSp
 /-- The holomorphic hull of a subset `K` of a complex manifold `M`: the points at which every
 global holomorphic function `M → ℂ` satisfies every real modulus bound it satisfies on `K`. For
 compact `K` these are the points `x` with `‖f x‖ ≤ sup_K ‖f‖` for every holomorphic `f`
-(`TauCeti.IsCompact.mem_mholomorphicHull_iff`); the hull of the empty set is empty. -/
+(`IsCompact.mem_mholomorphicHull_iff`); the hull of the empty set is empty. -/
 def mholomorphicHull (K : Set M) : Set M :=
   {x | ∀ f : M → ℂ, MDifferentiable I 𝓘(ℂ) f → ∀ B : ℝ, (∀ y ∈ K, ‖f y‖ ≤ B) → ‖f x‖ ≤ B}
 
@@ -96,11 +97,11 @@ theorem subset_mholomorphicHull : K ⊆ mholomorphicHull I K :=
 theorem mholomorphicHull_mono (h : K ⊆ L) : mholomorphicHull I K ⊆ mholomorphicHull I L :=
   fun _ hx f hf B hB ↦ hx f hf B fun y hy ↦ hB y (h hy)
 
-/-- The holomorphic hull of the empty set is empty: the constant function `1` is bounded by `0`
-on the empty set. -/
+/-- The holomorphic hull of the empty set is empty. -/
 @[simp]
 theorem mholomorphicHull_empty : mholomorphicHull I (∅ : Set M) = ∅ :=
   eq_empty_of_forall_notMem fun _ hx ↦ by
+    -- The constant function `1` is bounded by `0` on the empty set.
     have := norm_le_of_mem_mholomorphicHull hx mdifferentiable_const (f := fun _ ↦ 1) (B := 0)
       (by simp)
     norm_num at this
@@ -142,17 +143,19 @@ theorem mholomorphicHull_eq_holomorphicHull_univ (K : Set ℂ) :
   simp [mem_mholomorphicHull_iff, mem_holomorphicHull_iff, mdifferentiable_iff_differentiable,
     differentiableOn_univ]
 
-/-- In dimension zero the holomorphic hull of a set is the set itself: every function is
-holomorphic, in particular the indicator function of a point. -/
+/-- In dimension zero the holomorphic hull of a set is the set itself. -/
 @[simp]
 theorem mholomorphicHull_eq_self_of_subsingleton [Subsingleton E] (K : Set M) :
     mholomorphicHull I K = K := by
   classical
   refine subset_antisymm (fun x hx ↦ ?_) subset_mholomorphicHull
   by_contra hxK
+  -- Every function is holomorphic, in particular the indicator function of `x`, which vanishes
+  -- on `K`.
   have := norm_le_of_mem_mholomorphicHull hx (f := fun y ↦ if y = x then 1 else 0)
     mdifferentiable_of_subsingleton (B := 0) fun y hy ↦ by
-      simp [show y ≠ x from fun h ↦ hxK (h ▸ hy)]
+      have hyx : y ≠ x := fun h ↦ hxK (h ▸ hy)
+      simp [hyx]
   norm_num at this
 
 /-! ### Stein manifolds -/
@@ -162,7 +165,7 @@ variable (I M) in
 global holomorphic functions separate its points, and at every point some global holomorphic map
 to the model space `E` has injective differential, so that global holomorphic functions supply
 local coordinates. Holomorphic maps are `MDifferentiable` maps. -/
-class SteinManifold : Prop where
+class IsSteinManifold : Prop where
   /-- Holomorphic convexity: the holomorphic hull of a compact set is compact. -/
   isCompact_mholomorphicHull {K : Set M} : IsCompact K → IsCompact (mholomorphicHull I K)
   /-- Holomorphic separability: distinct points are separated by a global holomorphic
@@ -174,13 +177,12 @@ class SteinManifold : Prop where
   exists_mdifferentiable_injective_mfderiv (x : M) :
     ∃ F : M → E, MDifferentiable I 𝓘(ℂ, E) F ∧ Injective (mfderiv I 𝓘(ℂ, E) F x)
 
-namespace SteinManifold
+namespace IsSteinManifold
 
-/-- A complex normed space with compact closed balls, for instance `ℂⁿ`, is a Stein manifold.
-By Hahn–Banach, the hull of a set bounded by `R` is bounded by `R`, and continuous linear
-functionals separate points; the identity map gives global coordinates. -/
-instance self [ProperSpace E] : SteinManifold 𝓘(ℂ, E) E where
+/-- A complex normed space with compact closed balls, for instance `ℂⁿ`, is a Stein manifold. -/
+instance self [ProperSpace E] : IsSteinManifold 𝓘(ℂ, E) E where
   isCompact_mholomorphicHull {K} hK := by
+    -- By Hahn–Banach, the hull of a set bounded by `R` is bounded by `R`.
     obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
     refine (isCompact_closedBall (0 : E) R).of_isClosed_subset isClosed_mholomorphicHull
       fun x hx ↦ ?_
@@ -195,9 +197,8 @@ instance self [ProperSpace E] : SteinManifold 𝓘(ℂ, E) E where
   exists_mdifferentiable_injective_mfderiv x :=
     ⟨id, mdifferentiable_id, by simpa [mfderiv_id] using injective_id⟩
 
-/-- A complex manifold of dimension zero is a Stein manifold: every function on it is
-holomorphic and the hull of a set is the set itself. -/
-instance (priority := 100) of_subsingleton [Subsingleton E] : SteinManifold I M where
+/-- A complex manifold of dimension zero is a Stein manifold. -/
+instance (priority := 100) of_subsingleton [Subsingleton E] : IsSteinManifold I M where
   isCompact_mholomorphicHull hK := by rwa [mholomorphicHull_eq_self_of_subsingleton]
   exists_mdifferentiable_apply_ne {x y} hxy := by
     classical
@@ -210,19 +211,21 @@ instance (priority := 100) of_subsingleton [Subsingleton E] : SteinManifold I M 
 
 variable (I)
 
-/-- A Stein manifold is Hausdorff: its points are separated by continuous functions. -/
-theorem t2Space [SteinManifold I M] : T2Space M := by
+/-- A Stein manifold is Hausdorff. -/
+theorem t2Space [IsSteinManifold I M] : T2Space M := by
+  -- Global holomorphic functions are continuous and separate points.
   refine .of_injective_continuous (f := fun x (f : {f : M → ℂ // MDifferentiable I 𝓘(ℂ) f}) ↦
     f.1 x) (fun x y hxy ↦ ?_) (continuous_pi fun f ↦ f.2.continuous)
   by_contra hne
   obtain ⟨f, hf, hfxy⟩ := exists_mdifferentiable_apply_ne (I := I) hne
   exact hfxy (congrFun hxy ⟨f, hf⟩)
 
-/-- A compact Stein manifold is finite. Holomorphic functions on a compact complex manifold are
-locally constant, hence constant on connected components; as they separate points, every
-connected component, which is open, is a single point. -/
-theorem finite_of_compactSpace [SteinManifold I M] [I.Boundaryless] [IsManifold I 1 M]
+/-- A compact Stein manifold without boundary is finite. -/
+theorem finite_of_compactSpace [IsSteinManifold I M] [I.Boundaryless] [IsManifold I 1 M]
     [CompactSpace M] : Finite M := by
+  -- Holomorphic functions on a compact complex manifold without boundary are locally constant,
+  -- hence constant on connected components; as they separate points, every connected component,
+  -- which is open, is a single point.
   have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
   have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
   have : DiscreteTopology M := discreteTopology_iff_isOpen_singleton.2 fun x ↦ by
@@ -234,6 +237,6 @@ theorem finite_of_compactSpace [SteinManifold I M] [I.Boundaryless] [IsManifold 
       hy mem_connectedComponent)
   exact finite_of_compact_of_discrete
 
-end SteinManifold
+end IsSteinManifold
 
 end TauCeti
