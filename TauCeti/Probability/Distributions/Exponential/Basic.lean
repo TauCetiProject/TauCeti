@@ -342,6 +342,7 @@ theorem not_integrable_exp_mul_centered_expMeasure (hr : 0 < r) :
   exact (integrable_exp_mul_centered_expMeasure_iff hr r).not.mpr (lt_irrefl r)
 
 /-- The centered MGF of a positive-rate exponential law, on its integrability domain. -/
+@[simp]
 theorem mgf_centered_expMeasure (hr : 0 < r) (ht : t < r) :
     mgf (fun x : ℝ => x - r⁻¹) (expMeasure r) t =
       exp (-(t / r)) * (r / (r - t)) := by
@@ -367,6 +368,7 @@ theorem not_integrable_exp_centered_expMeasure_one :
   simpa using not_integrable_exp_mul_centered_expMeasure (r := 1) one_pos
 
 /-- The centered MGF of the standard exponential law, on its integrability domain. -/
+@[simp]
 theorem mgf_centered_expMeasure_one {t : ℝ} (ht : t < 1) :
     mgf (fun x : ℝ => x - 1) (expMeasure 1) t = exp (-t) / (1 - t) := by
   simpa [div_eq_mul_inv] using mgf_centered_expMeasure (r := 1) one_pos ht
