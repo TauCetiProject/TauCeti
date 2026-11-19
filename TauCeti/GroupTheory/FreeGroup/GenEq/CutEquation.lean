@@ -45,8 +45,9 @@ solution, is the word of the section letter by letter.
 
 This differs from the source in three places. The source assigns the word `U[μ]` to the
 representative, which is not a solution when `ε(μ) = -1`. It states (4) without hypotheses, which
-fails for this construction in the presence of boundary connections. And it does not list constant
-bases among the elements of a partition, without which (4) loses the coefficient equations.
+can fail for this construction in the presence of boundary connections. And it does not list
+constant bases among the elements of a partition, without which (4) loses the coefficient
+equations.
 
 ## Main definitions
 
@@ -62,8 +63,9 @@ bases among the elements of a partition, without which (4) loses the coefficient
 * `TauCeti.GenEq.exists_solution_of_isSolution_cutEquation`: Lemma 34 (4).
 * `TauCeti.GenEq.mem_V_toSystem_of_isGroupSolution_cutEquation`: Lemma 34 (4) for group
   solutions.
-* `TauCeti.GenEq.exists_isSolution_cutEquation_not_mem_V_toSystem`: for a generalised equation
-  with boundary connections, the converse fails for `Π_Ω`, for solutions and group solutions.
+* `TauCeti.GenEq.exists_isSolution_cutEquation_not_mem_V_toSystem`: there is a generalised
+  equation with boundary connections for which the converse fails for `Π_Ω` (on all closed
+  sections), for solutions and group solutions.
 
 ## References
 
@@ -343,49 +345,6 @@ theorem sectionValue_point (s : Ω.closedSections) :
     Ω.sectionValue U.point s = FreeGroup.mk (substituteVars U.word (Ω.segment s.1.1 s.1.2 true)) :=
   U.eval_point_mk _
 
-/-- In a solution, if `U[i, m]` is reduced as written and the boundary `m` crosses a base `μ`,
-then `U[i, m + 1]` is reduced as written: `U[m - 1, m + 1]` lies in `U[μ]`. -/
-private theorem isReduced_substituteVars_segment_succ {i m : ℕ} {μ : Fin Ω.numBases} (him : i < m)
-    (hm : m < Ω.numItems) (hμ₁ : (Ω.left μ : ℕ) < m) (hμ₂ : m < Ω.right μ)
-    (h : IsReduced (substituteVars U.word (Ω.segment i m true))) :
-    IsReduced (substituteVars U.word (Ω.segment i (m + 1) true)) := by
-  have h' := U.isReduced_substituteVars_segment_of_le μ (i := m - 1) (j := m + 1) (by omega)
-    (by omega)
-  rw [← Ω.segment_append (i := i) (j := m - 1) (k := m) (by omega) (by omega) (by omega),
-    FreeGroup.substituteVars_append] at h
-  rw [← Ω.segment_append (i := m - 1) (j := m) (k := m + 1) (by omega) (by omega) (by omega),
-    FreeGroup.substituteVars_append] at h'
-  rw [← Ω.segment_append (i := i) (j := m) (k := m + 1) (by omega) (by omega) (by omega),
-    ← Ω.segment_append (i := i) (j := m - 1) (k := m) (by omega) (by omega) (by omega)]
-  simp only [FreeGroup.substituteVars_append]
-  exact h.append_overlap h' (U.substituteVars_word_ne_nil (List.ne_nil_of_length_pos
-    (by simp; omega)))
-
-/-- In a solution, the word `U[i, j]` of a section whose inner boundaries are all open is reduced
-as written: each inner boundary crosses a base, whose word is reduced. -/
-theorem isReduced_substituteVars_segment_of_isOpenBoundary {i j : Fin (Ω.numItems + 1)}
-    (h : ∀ l, i < l → l < j → Ω.IsOpenBoundary l) :
-    IsReduced (substituteVars U.word (Ω.segment i j true)) := by
-  suffices ∀ m : ℕ, m ≤ j → IsReduced (substituteVars U.word (Ω.segment i m true)) from
-    this j le_rfl
-  intro m hm
-  have hj := j.isLt
-  induction m with
-  | zero => simp [Ω.segment_eq_nil_of_le (Nat.zero_le _)]
-  | succ m ih =>
-    rcases Nat.lt_or_ge (i : ℕ) m with him | him
-    · -- The boundary `m` is open: a base `μ` crosses it.
-      obtain ⟨μ, hμ⟩ :=
-        Ω.isOpenBoundary_iff.1 (h ⟨m, by omega⟩ (Fin.lt_def.2 him) (Fin.lt_def.2 hm))
-      exact U.isReduced_substituteVars_segment_succ him (by omega)
-        (Fin.lt_def.1 (Ω.crosses_iff.1 hμ).1) (Fin.lt_def.1 (Ω.crosses_iff.1 hμ).2) (ih (by omega))
-    · obtain him | him := him.lt_or_eq
-      · simp [Ω.segment_eq_nil_of_le (show m + 1 ≤ i by omega)]
-      · have hseg := Ω.segment_succ ⟨m, by omega⟩ true
-        simp only at hseg
-        rw [← him, hseg, FreeGroup.substituteVars_singleton_inl]
-        exact U.isReduced_word _
-
 /-- In a solution, a partition element, substituted, is the word of the items it spans. -/
 private theorem substituteVars_cutPieces_partLetter (e : Ω.PartElem) :
     substituteVars U.cutPieces [Ω.partLetter e] =
@@ -427,7 +386,7 @@ theorem isSolution_cutEquation (T : Set Ω.closedSections) :
     | .inr μ => by simpa using (U.isReduced_subst _ (Ω.basicEquation_mem_equations μ)).1
   isReduced_substituteVars σ := by
     rw [cutEquation_pieceLabel, U.substituteVars_cutPieces_map_partLetter σ.2.2]
-    exact U.isReduced_substituteVars_segment_of_isOpenBoundary
+    exact U.isReduced_substituteVars_segment_of_forall_isOpenBoundary
       (Ω.mem_closedSections.1 σ.1.1.2).isOpenBoundary
   isGroupSolution := CutEquation.isGroupSolution_mk_iff.2 fun σ => by
     rw [cutEquation_pieceLabel, U.substituteVars_cutPieces_map_partLetter σ.2.2,
@@ -588,13 +547,13 @@ private theorem substituteVars_boundaryExamplePieces_partLetter (e : boundaryExa
   · fin_cases μ <;> (rw [segment_true]; decide)
   · exact (Finset.notMem_empty b hb).elim
 
-/-- Property (4) of Lemma 34 fails for the cut equation `Π_Ω` constructed here (the construction of
-the source's proof) when `Ω` has boundary connections, since `Π_Ω` does not see the boundary
-equations. Over `F(a)`, take four items, the dual bases
-`μ = [0, 2]` and `Δ(μ) = [2, 4]` with positive signs, and the boundary connection `(1, μ, 3)` with
-its dual. The items `(a, a², a², a)` and the piece `a³` of `μ` are a solution of `Π_Ω`, but the
-items are not even a group solution of `Ω`, since the boundary equation `h₀ = h₂` fails. In
-particular they are the words of no solution of `Ω` (`TauCeti.GenEq.Solution.point_mem_V`). -/
+/-- Property (4) of Lemma 34 can fail for the cut equation `Π_Ω` constructed here (the construction
+of the source's proof) when `Ω` has boundary connections, since `Π_Ω` does not see the boundary
+equations. For example, over `F(a)`, take four items, the dual bases `μ = [0, 2]` and
+`Δ(μ) = [2, 4]` with positive signs, and the boundary connection `(1, μ, 3)` with its dual. The
+items `(a, a², a², a)` and the piece `a³` of `μ` are a solution of `Π_Ω`, but the items are not
+even a group solution of `Ω`, since the boundary equation `h₀ = h₂` fails. In particular they are
+the words of no solution of `Ω` (`TauCeti.GenEq.Solution.point_mem_V`). -/
 theorem exists_isSolution_cutEquation_not_mem_V_toSystem :
     ∃ (Ω : GenEq Unit) (β : Ω.closedSections → FreeGroup Unit)
       (α : Ω.CutPiece → List (Unit × Bool)), (Ω.cutEquation Set.univ).IsSolution β α ∧
