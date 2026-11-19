@@ -53,6 +53,7 @@ This file sets up the family and the facts about it that do not depend on the fr
   onto `G^(Q,P)`.
 * `TauCeti.comap_stabilizeGL_vanDerKallenSubgroup`: the preimage of `G_k^(P,Q)` under the
   stabilization from `GL_m`.
+* `TauCeti.range_blockComplGL`: the block diagonal matrices `diag(1, g)` form `G^(T,T)`.
 
 ## References
 
@@ -281,83 +282,51 @@ section Square
 
 variable [Ring R] (T : Set n) [DecidablePred (· ∈ T)]
 
-/-- The block diagonal embedding `g ↦ diag(1, g)` of the general linear group of the coordinates
-outside `T` into `GL n R`. -/
-private def blockComplGL : GL (Tᶜ : Set n) R →* GL n R :=
-  ((Equiv.Set.sumCompl T).reindexGL R).toMonoidHom.comp
-    (fromBlocksGL.comp (MonoidHom.inr (GL T R) (GL (Tᶜ : Set n) R)))
-
-private theorem coe_blockComplGL (g : GL (Tᶜ : Set n) R) :
-    (blockComplGL R T g : Matrix n n R) =
-      (fromBlocks 1 0 0 (g : Matrix (Tᶜ : Set n) (Tᶜ : Set n) R)).submatrix
-        (Equiv.Set.sumCompl T).symm (Equiv.Set.sumCompl T).symm := by
-  simp [blockComplGL]
-
-private theorem blockComplGL_injective : Function.Injective (blockComplGL R T) := by
-  intro g g' hgg'
-  have := congrArg (fun g : GL n R ↦ (g : Matrix n n R).submatrix (Equiv.Set.sumCompl T)
-    (Equiv.Set.sumCompl T)) hgg'
-  simp only [coe_blockComplGL, submatrix_submatrix, Equiv.symm_comp_self,
-    submatrix_id_id] at this
-  exact Units.ext (fromBlocks_inj.1 this).2.2.2
-
 /-- Membership in the square group `G^(T,T)` through the block decomposition along `T` and its
 complement: the three blocks touching `T` are those of the identity matrix. -/
 private theorem mem_vanDerKallenSubgroup_self_iff_toBlocks (g : GL n R) :
     g ∈ vanDerKallenSubgroup R T T ↔
       ∃ D : Matrix (Tᶜ : Set n) (Tᶜ : Set n) R,
-        (g : Matrix n n R).submatrix (Equiv.Set.sumCompl T) (Equiv.Set.sumCompl T) =
-          fromBlocks 1 0 0 D := by
+        ↑((Equiv.Set.sumCompl T).symm.reindexGL R g) = fromBlocks (1 : Matrix T T R) 0 0 D := by
+  set g' : Matrix (T ⊕ (Tᶜ : Set n)) (T ⊕ (Tᶜ : Set n)) R :=
+    ↑((Equiv.Set.sumCompl T).symm.reindexGL R g)
   rw [mem_vanDerKallenSubgroup_iff_apply]
   constructor
   · rintro ⟨hP, hQ⟩
-    refine ⟨((g : Matrix n n R).submatrix (Equiv.Set.sumCompl T)
-      (Equiv.Set.sumCompl T)).toBlocks₂₂, ?_⟩
-    conv_lhs => rw [← fromBlocks_toBlocks ((g : Matrix n n R).submatrix (Equiv.Set.sumCompl T)
-      (Equiv.Set.sumCompl T))]
+    refine ⟨g'.toBlocks₂₂, ?_⟩
+    conv_lhs => rw [← fromBlocks_toBlocks g']
     congr 1 <;> ext i j
-    · simpa [toBlocks₁₁, Matrix.one_apply, Subtype.ext_iff] using hQ i i.2 j
-    · simpa [toBlocks₁₂, Matrix.one_apply, ne_of_mem_of_not_mem i.2 j.2] using hQ i i.2 j
-    · simpa [toBlocks₂₁, Matrix.one_apply, (ne_of_mem_of_not_mem j.2 i.2).symm] using
+    · simpa [g', toBlocks₁₁, Matrix.one_apply, Subtype.ext_iff] using hQ i i.2 j
+    · simpa [g', toBlocks₁₂, Matrix.one_apply, ne_of_mem_of_not_mem i.2 j.2] using hQ i i.2 j
+    · simpa [g', toBlocks₂₁, Matrix.one_apply, (ne_of_mem_of_not_mem j.2 i.2).symm] using
         hP j j.2 i
   · rintro ⟨D, hD⟩
-    have key (i j : T ⊕ (Tᶜ : Set n)) : (g : Matrix n n R) (Equiv.Set.sumCompl T i)
-        (Equiv.Set.sumCompl T j) = fromBlocks 1 0 0 D i j :=
-      congrFun₂ hD i j
-    have key₁ (i j : T ⊕ (Tᶜ : Set n)) : (1 : Matrix n n R) (Equiv.Set.sumCompl T i)
-        (Equiv.Set.sumCompl T j) = fromBlocks 1 0 0 1 i j := by
-      rw [fromBlocks_one, ← submatrix_one_equiv (Equiv.Set.sumCompl T), submatrix_apply]
-    refine ⟨fun j hj i ↦ ?_, fun i hi j ↦ ?_⟩
-    · obtain ⟨i, rfl⟩ := (Equiv.Set.sumCompl T).surjective i
-      obtain ⟨j, rfl⟩ : ∃ j' : T, (j' : n) = j := ⟨⟨j, hj⟩, rfl⟩
-      rw [← Equiv.Set.sumCompl_apply_inl T j, key, key₁]
-      rcases i with i | i <;> rfl
-    · obtain ⟨j, rfl⟩ := (Equiv.Set.sumCompl T).surjective j
-      obtain ⟨i, rfl⟩ : ∃ i' : T, (i' : n) = i := ⟨⟨i, hi⟩, rfl⟩
-      rw [← Equiv.Set.sumCompl_apply_inl T i, key, key₁]
-      rcases j with j | j <;> rfl
+    -- an entry in a row or column indexed by `T` lies in one of the identity blocks
+    have hT (i j : n) (h : i ∈ T ∨ j ∈ T) : (g : Matrix n n R) i j = (1 : Matrix n n R) i j := by
+      have key : (g : Matrix n n R) i j =
+          fromBlocks 1 0 0 D ((Equiv.Set.sumCompl T).symm i) ((Equiv.Set.sumCompl T).symm j) := by
+        simp [← hD, g']
+      rw [key]
+      by_cases hi : i ∈ T <;> by_cases hj : j ∈ T
+      · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem, Matrix.one_apply, Subtype.ext_iff]
+      · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem,
+          Equiv.Set.sumCompl_symm_apply_of_notMem, ne_of_mem_of_not_mem hi hj]
+      · simp [hi, hj, Equiv.Set.sumCompl_symm_apply_of_mem,
+          Equiv.Set.sumCompl_symm_apply_of_notMem, (ne_of_mem_of_not_mem hj hi).symm]
+      · exact absurd h (by simp [hi, hj])
+    exact ⟨fun j hj i ↦ hT i j (.inr hj), fun i hi j ↦ hT i j (.inl hi)⟩
 
-private theorem range_blockComplGL : (blockComplGL R T).range = vanDerKallenSubgroup R T T := by
+/-- The block diagonal matrices `diag(1, g)` are exactly the square group `G^(T,T)`. -/
+theorem range_blockComplGL : (blockComplGL R T).range = vanDerKallenSubgroup R T T := by
   ext g
   rw [MonoidHom.mem_range, mem_vanDerKallenSubgroup_self_iff_toBlocks]
   constructor
   · rintro ⟨g', rfl⟩
-    exact ⟨g', by simp [coe_blockComplGL]⟩
+    exact ⟨g', by rw [reindexGL_symm_blockComplGL, coe_fromBlocksGL, Units.val_one]⟩
   · rintro ⟨D, hD⟩
-    obtain ⟨D', hD'⟩ := (mem_vanDerKallenSubgroup_self_iff_toBlocks R T g⁻¹).1
-      (inv_mem ((mem_vanDerKallenSubgroup_self_iff_toBlocks R T g).2 ⟨D, hD⟩))
-    have hmul (a b : GL n R) : ((a * b : GL n R) : Matrix n n R).submatrix (Equiv.Set.sumCompl T)
-        (Equiv.Set.sumCompl T) = (a : Matrix n n R).submatrix (Equiv.Set.sumCompl T)
-          (Equiv.Set.sumCompl T) * (b : Matrix n n R).submatrix (Equiv.Set.sumCompl T)
-            (Equiv.Set.sumCompl T) := by
-      simp [submatrix_mul_equiv]
-    have h₁ := hmul g g⁻¹
-    have h₂ := hmul g⁻¹ g
-    simp only [mul_inv_cancel, inv_mul_cancel, Units.val_one, submatrix_one_equiv, hD, hD',
-      fromBlocks_multiply, Matrix.mul_one, Matrix.mul_zero, Matrix.zero_mul, add_zero,
-      zero_add, ← fromBlocks_one, fromBlocks_inj] at h₁ h₂
-    refine ⟨⟨D, D', h₁.2.2.2.symm, h₂.2.2.2.symm⟩, Units.ext ?_⟩
-    rw [coe_blockComplGL, ← hD, submatrix_submatrix, Equiv.self_comp_symm, submatrix_id_id]
+    obtain ⟨u, -, hu⟩ := exists_fromBlocksGL_one_eq hD
+    refine ⟨u, ((Equiv.Set.sumCompl T).symm.reindexGL R).injective ?_⟩
+    rw [reindexGL_symm_blockComplGL, hu]
 
 /-- The square group `G^(T,T)`, the invertible matrices fixing the standard basis columns and
 rows indexed by `T`, is the general linear group of the coordinates outside `T`: its elements
@@ -368,7 +337,9 @@ def vanDerKallenSubgroupEquiv : vanDerKallenSubgroup R T T ≃* GL (Tᶜ : Set n
 
 variable {R T}
 
-private theorem coe_vanDerKallenSubgroupEquiv_symm (g : GL (Tᶜ : Set n) R) :
+/-- The inverse of `vanDerKallenSubgroupEquiv` is the block diagonal embedding
+`g ↦ diag(1, g)`. -/
+theorem coe_vanDerKallenSubgroupEquiv_symm (g : GL (Tᶜ : Set n) R) :
     ((vanDerKallenSubgroupEquiv R T).symm g : GL n R) = blockComplGL R T g := by
   simp [vanDerKallenSubgroupEquiv, MonoidHom.ofInjective_apply]
 
