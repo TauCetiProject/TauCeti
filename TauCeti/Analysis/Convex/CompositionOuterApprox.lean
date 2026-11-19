@@ -178,17 +178,23 @@ theorem componentRow_le (hc : ∀ j, ConvexOn ℝ D fun x ↦ g x j) (ha : a ∈
     (hg : HasFDerivWithinAt g Dg D a) : componentRow g a Dg x ≤ g x :=
   fun j ↦ componentRow_apply_le (hc j) ha hx hg
 
-/-- **Exact component rows.** If the coordinate `j` of `g` is a continuous affine map and `g` has
-derivative `Dg` at `a`, then the component row reproduces that coordinate everywhere. -/
+/-- **Exact component rows.** If the coordinate `j` of `g` is a continuous affine map, `D` is
+convex and `g` has derivative `Dg` within `D` at the anchor `a ∈ D`, then the component row
+reproduces that coordinate at every `x ∈ D`. -/
 theorem componentRow_apply_eq_of_eq_continuousAffineMap {j : ι} (φ : X →ᴬ[ℝ] ℝ)
-    (hφ : (fun x ↦ g x j) = φ) (hg : HasFDerivAt g Dg a) (x : X) :
-    componentRow g a Dg x j = g x j := by
+    (hφ : (fun x ↦ g x j) = φ) (hD : Convex ℝ D) (ha : a ∈ D) (hx : x ∈ D)
+    (hg : HasFDerivWithinAt g Dg D a) : componentRow g a Dg x j = g x j := by
   have := Fintype.ofFinite ι
-  -- The `j`-th coordinate of `Dg` is the derivative `φ.contLinear` of `φ`.
-  have hd : (ContinuousLinearMap.proj j).comp Dg = φ.contLinear :=
-    (hasFDerivAt_pi'.1 hg j).unique (hφ ▸ φ.hasFDerivAt)
-  have hj : Dg (x - a) j = φ.contLinear (x - a) := by
-    simpa using DFunLike.congr_fun hd (x - a)
+  -- Along the segment `[a, x] ⊆ D`, both `Dg (x - a) j` and `φ.contLinear (x - a)` are the
+  -- derivative of `t ↦ φ (a + t • (x - a))` within `[0, 1]` at `0`.
+  have hseg : Icc (0 : ℝ) 1 ⊆ (fun t : ℝ ↦ a + t • (x - a)) ⁻¹' D :=
+    fun _ ht ↦ hD.add_smul_sub_mem ha hx ht
+  have h₁ : HasLineDerivWithinAt ℝ φ (Dg (x - a) j) D a (x - a) := by
+    simpa [← hφ] using (hasFDerivWithinAt_pi'.1 hg j).hasLineDerivWithinAt (x - a)
+  have hj : Dg (x - a) j = φ.contLinear (x - a) :=
+    (uniqueDiffOn_Icc_zero_one 0 (left_mem_Icc.2 zero_le_one)).eq_deriv _
+      (HasDerivWithinAt.mono h₁ hseg)
+      (HasDerivWithinAt.mono (φ.hasFDerivAt.hasFDerivWithinAt.hasLineDerivWithinAt (x - a)) hseg)
   have hφx : φ x = φ.contLinear (x - a) + φ a := by
     simpa using φ.map_vadd a (x - a)
   rw [componentRow_def, Pi.add_apply, hj, congr_fun hφ a, congr_fun hφ x, hφx, add_comm]
