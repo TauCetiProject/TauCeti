@@ -37,10 +37,10 @@ power.
 * `Module.Basis.trace_map_exteriorPower_of_apply` sums those eigenvalues to compute the trace.
 * `Module.Basis.exteriorPower_ιMulti_eq_det_smul` expands a degree-`n` exterior product in terms
   of the wedge of a basis indexed by `Fin n`.
-* `Module.Basis.exteriorPowerTopEquiv_map` gives its scalar coordinate formula for every
-  endomorphism.
 * `Module.Basis.map_exteriorPower_top_eq_det_smul` gives the degree-`n` action as its determinant
   for a basis indexed by `Fin n`.
+* `Module.Basis.exteriorPowerTopEquiv_map` gives the scalar coordinate formula for every
+  endomorphism in this identification.
 * `LinearMap.map_exteriorPower_finrank_eq_det_smul` gives the action in degree `Module.finrank`
   as its determinant.
 * `Module.Basis.trace_map_exteriorPower_top` gives the degree-`n` trace as the determinant

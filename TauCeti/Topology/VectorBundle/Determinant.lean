@@ -8,9 +8,9 @@ module
 public import TauCeti.LinearAlgebra.Determinant.Line
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.VectorBundle.FiniteRank.ExteriorPower
 public import TauCeti.Topology.VectorBundle.Hom
-public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
@@ -30,7 +30,7 @@ topology of a finite-dimensional vector space. It is a vector bundle with model 
 * its coordinate changes are the determinants of the coordinate changes of `E`
   (`TauCeti.DetBundle.coordChangeL_trivialization`).
 
-For `𝕜 = ℂ` these are exactly the carriers of `TauCeti.complexEulerClass`.
+For `𝕜 = ℂ`, the determinant bundle is a complex line bundle.
 
 The construction is natural:
 
@@ -375,15 +375,6 @@ theorem coordChangeL_trivialization (e e' : Trivialization F (π F E)) [MemTrivi
 
 end Bundle
 
-/-! ### Continuity of maps into a determinant line -/
-
-section Continuity
-
-variable [TopologicalSpace B]
-
-
-end Continuity
-
 /-! ### Functoriality in bundle isomorphisms -/
 
 section CongrFiber
@@ -503,11 +494,11 @@ def congrHomeomorph (e : ∀ x, E x ≃L[𝕜] E' x)
     (he : Continuous (fun p : TotalSpace F E ↦ TotalSpace.mk' F p.proj (e p.proj p.2))) :
     TotalSpace 𝕜 (DetBundle 𝕜 F E) ≃ₜ TotalSpace 𝕜 (DetBundle 𝕜 F E') :=
   bundleHomeomorph (congrEquiv e) <| by
-    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl)
-      (FiberBundle.continuous_proj 𝕜 _) fun p ↦ ?_
+    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
     obtain ⟨s, hs, hs'⟩ := continuousAt_chartCoord_congrEquiv e he p.proj
-    refine ⟨trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj, fun x c ↦ s x * c,
-      mem_baseSet_trivializationAt 𝕜 _ p.proj,
+    refine ⟨trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj,
+      trivializationAt 𝕜 (DetBundle 𝕜 F E') p.proj, fun x c ↦ s x * c,
+      mem_baseSet_trivializationAt 𝕜 _ p.proj, mem_baseSet_trivializationAt 𝕜 _ p.proj,
       (hs.comp (FiberBundle.continuous_proj 𝕜 _).continuousAt).mul
         ((trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj).continuousOn.continuousAt
           ((trivializationAt 𝕜 (DetBundle 𝕜 F E) p.proj).open_source.mem_nhds
@@ -608,10 +599,10 @@ def pullbackHomeomorph :
     TotalSpace 𝕜 ((f : B' → B) *ᵖ (DetBundle 𝕜 F E)) ≃ₜ
       TotalSpace 𝕜 (DetBundle 𝕜 F ((f : B' → B) *ᵖ E)) :=
   bundleHomeomorph (pullbackEquiv (f : B' → B)) <| by
-    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl)
-      (FiberBundle.continuous_proj 𝕜 _) fun p ↦ ?_
-    refine ⟨trivializationAt 𝕜 ((f : B' → B) *ᵖ (DetBundle 𝕜 F E)) p.proj, fun _ c ↦ c,
-      mem_baseSet_trivializationAt 𝕜 _ p.proj,
+    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
+    refine ⟨trivializationAt 𝕜 ((f : B' → B) *ᵖ (DetBundle 𝕜 F E)) p.proj,
+      trivializationAt 𝕜 (DetBundle 𝕜 F ((f : B' → B) *ᵖ E)) p.proj, fun _ c ↦ c,
+      mem_baseSet_trivializationAt 𝕜 _ p.proj, mem_baseSet_trivializationAt 𝕜 _ p.proj,
       ((trivializationAt 𝕜 ((f : B' → B) *ᵖ (DetBundle 𝕜 F E)) p.proj).continuousOn.continuousAt
         ((trivializationAt 𝕜 _ p.proj).open_source.mem_nhds
           (FiberBundle.mem_trivializationAt_proj_source))).snd, ?_⟩
@@ -683,9 +674,10 @@ def ofBundleDetHomeomorph :
       TotalSpace 𝕜 (DetBundle 𝕜 (Fin n → 𝕜) E) :=
   bundleHomeomorph (ofBundleDetFiberEquiv E) <| by
     set A := FiniteRankBundleCore.ofBundle 𝕜 n E
-    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl)
-      A.det.core.continuous_proj fun p ↦ ?_
-    refine ⟨A.det.core.localTriv p.proj, fun _ ↦ detCoord A, A.det.mem_baseSet_self p.proj,
+    refine FiberBundle.continuous_of_forall_trivialization _ (fun _ ↦ rfl) fun p ↦ ?_
+    refine ⟨A.det.core.localTriv p.proj,
+      trivializationAt 𝕜 (DetBundle 𝕜 (Fin n → 𝕜) E) p.proj, fun _ ↦ detCoord A,
+      A.det.mem_baseSet_self p.proj, mem_baseSet_trivializationAt 𝕜 _ p.proj,
       (detCoord A).continuous.continuousAt.comp
         ((A.det.core.localTriv p.proj).continuousOn.continuousAt
           ((A.det.core.localTriv p.proj).open_source.mem_nhds
@@ -694,20 +686,12 @@ def ofBundleDetHomeomorph :
       (hx' : x ∈ (trivializationAt (Fin n → 𝕜) E p.proj).baseSet)
     simp only [trivializationAt_eq]
     have hsmul (c : 𝕜) (w : Fin A.det.rank → 𝕜) :
-        detCoord A ((c • ContinuousLinearMap.id 𝕜 (Fin A.det.rank → 𝕜)) w) = c * detCoord A w := by
+        detCoord A ((c • ContinuousLinearMap.id 𝕜 _) w) = c * detCoord A w := by
       simp
-    have hcc : A.core.coordChange x p.proj x =
-        ((trivializationAt (Fin n → 𝕜) E x).coordChangeL 𝕜 (trivializationAt (Fin n → 𝕜) E p.proj)
-          x : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)) :=
-      pointIndexedCore_coordChange 𝕜 (Fin n → 𝕜) E x p.proj x
-    rw [trivialization_apply_mk _ hx', VectorBundleCore.localTriv_apply, A.det.indexAt_eq,
-      FiniteRankBundleCore.coordChange_det, ofBundleDetFiberEquiv_apply,
+    -- Reconstructed-core fibres are aliases of the model; expose them for the coordinate formula.
+    erw [trivialization_apply_mk _ hx', VectorBundleCore.localTriv_apply, A.det.indexAt_eq,
+      FiniteRankBundleCore.coordChange_det_ofBundle, hsmul, ofBundleDetFiberEquiv_apply,
       chartCoord_chartCoord_symm]
-    refine ((hsmul _ v).trans ?_).symm
-    rw [hcc]
-    simp only [ContinuousLinearMap.det]
-    rw [ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
-    congr 1
 
 @[simp]
 theorem ofBundleDetHomeomorph_apply
