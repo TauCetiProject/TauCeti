@@ -93,6 +93,7 @@ def angularClass : (TopCat.of (AddCircle p)).singularCohomology (𝟙_ (ModuleCa
     (ModuleCat.ofHom (firstHomologyAddEquiv p).toIntLinearEquiv.toLinearMap)
 
 /-- The angular class evaluates a class of `H₁(ℝ / pℤ; ℤ)` to its winding number. -/
+@[simp]
 theorem singularKronecker_angularClass
     (c : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homology 1) :
     (TopCat.of (AddCircle p)).singularKronecker ℤ 1 (angularClass p) c =
@@ -104,7 +105,6 @@ theorem singularKronecker_angularClass
   exact congr($h c)
 
 /-- The angular class takes the value `1` on the circuit class. -/
-@[simp]
 theorem singularKronecker_angularClass_fundamentalClass :
     (TopCat.of (AddCircle p)).singularKronecker ℤ 1 (angularClass p) (fundamentalClass p) =
       (1 : ℤ) := by
