@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubeGenerator
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Generator
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.NormNum
@@ -15,7 +15,7 @@ import Mathlib.Tactic.NormNum
 
 The square and three-cube have negative selected coordinates; the four-cube has positive
 coordinate. These are the actual relative identity classes, read through the native comparison
-and the unchanged cube-pair isomorphism. The same formula works in characteristic two,
+and `singularHomologyCubeBoundaryPairIso`. The same formula works in characteristic two,
 for matrix coefficients and in a larger common universe. No coefficient-transport comparison
 between different universes is asserted.
 -/

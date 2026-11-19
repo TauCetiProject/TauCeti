@@ -34,7 +34,7 @@ homology, it is `±` the generator `TauCeti.singularHomologyCubeBoundaryPairIso`
 `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹; ℤ) ≅ ℤ`
 (`TauCeti.exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_eq_units_smul`).
 The exact sign, over every ring and universe, is determined in
-`TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubeGenerator`.
+`TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Generator`.
 In dimension one, over every ring `k`, it is exactly the singular generator of `H₁(I¹, ∂I¹; k)`
 (`TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_zero`), so `a ↦ a • [I¹]`
 is an isomorphism from `k` onto the relative cubical homology of `(I¹, ∂I¹)` even when `k` is not

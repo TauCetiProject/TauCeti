@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.CubePair
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Pair
 public import TauCeti.AlgebraicTopology.Disk.CubeBoundary
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
 import Mathlib.Tactic.FunProp
@@ -16,7 +16,7 @@ import Mathlib.Tactic.NormNum
 # Calibrating the identity cube against the selected relative generator
 
 The normalized cubical identity class of the `(n + 1)`-cube, read in singular homology,
-has coordinate `(-1)^(n(n+1)/2)` under the existing cube-pair isomorphism. This determines
+has coordinate `(-1)^(n(n+1)/2)` under `singularHomologyCubeBoundaryPairIso`. This determines
 the sign left undetermined by the integral unit-generator theorem. Coefficients may be any
 ring, including a noncommutative or trivial ring, and the cube and coefficients lie in any
 common universe.
@@ -30,7 +30,7 @@ scalar recurrence. The native dimension-one result supplies the initial value.
 
 * `TauCeti.singularHomologyCubeBoundaryPairIso_hom_cubeBoundaryPairCycle`: the literal coefficient.
 * `TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle`: the equivalent class
-  formula, with the unchanged native selected generator.
+  formula, with the native selected generator.
 
 ## References
 
@@ -102,29 +102,32 @@ private lemma boundaryFace_map (n : ℕ) (i : Fin (n + 2)) (t : unitInterval) (h
 
 private def sideOverlap (n : ℕ) (i : Fin (n + 1)) (t : unitInterval) (ht : t = 0 ∨ t = 1) :
     SingularCube (U.{u} (n + 1) ∩ V (n + 1) : Set (S (n + 2))) (n + 1) where
-  toFun z := ⟨radialMap (n + 2) (boundaryFace n i.castSucc t ht z), by
-    apply radialMap_mem_overlap_of_apply_castSucc_ne_half (n + 1) _ i
+  toFun z := ⟨(ContinuousMap.ofClass (radialHomeomorph (n + 2))) (boundaryFace n i.castSucc t
+    ht z), by
+    apply radialHomeomorph_mem_overlap_of_apply_castSucc_ne_half (n + 1) _ i
     rw [boundaryFace_coordinate]
     rcases ht with rfl | rfl <;> norm_num⟩
-  continuous_toFun := ((radialMap (n + 2)).continuous.comp
+  continuous_toFun := ((ContinuousMap.ofClass (radialHomeomorph (n + 2))).continuous.comp
     (boundaryFace n i.castSucc t ht).continuous).subtype_mk _
 
 private def bottomU (n : ℕ) : SingularCube (U.{u} (n + 1)) (n + 1) where
-  toFun z := ⟨radialMap (n + 2)
+  toFun z := ⟨(ContinuousMap.ofClass (radialHomeomorph (n + 2)))
       (boundaryFace n (Fin.last (n + 1)) 0 (Or.inl rfl) z),
-    radialMap_mem_compl_lastPole_of_last_eq_zero (n + 1) _ (congrArg (fun t : unitInterval ↦ (t :
+    radialHomeomorph_mem_compl_lastPole_of_last_eq_zero (n + 1) _ (congrArg (fun t :
+      unitInterval ↦ (t :
       ℝ))
       (boundaryFace_coordinate.{u} n (Fin.last (n + 1)) 0 (Or.inl rfl) z))⟩
-  continuous_toFun := ((radialMap (n + 2)).continuous.comp
+  continuous_toFun := ((ContinuousMap.ofClass (radialHomeomorph (n + 2))).continuous.comp
     (boundaryFace n (Fin.last (n + 1)) 0 (Or.inl rfl)).continuous).subtype_mk _
 
 private def topV (n : ℕ) : SingularCube (V.{u} (n + 1)) (n + 1) where
-  toFun z := ⟨radialMap (n + 2)
+  toFun z := ⟨(ContinuousMap.ofClass (radialHomeomorph (n + 2)))
       (boundaryFace n (Fin.last (n + 1)) 1 (Or.inr rfl) z),
-    radialMap_mem_compl_neg_lastPole_of_last_eq_one (n + 1) _ (congrArg (fun t : unitInterval ↦ (t :
+    radialHomeomorph_mem_compl_neg_lastPole_of_last_eq_one (n + 1) _ (congrArg (fun t :
+      unitInterval ↦ (t :
       ℝ))
       (boundaryFace_coordinate.{u} n (Fin.last (n + 1)) 1 (Or.inr rfl) z))⟩
-  continuous_toFun := ((radialMap (n + 2)).continuous.comp
+  continuous_toFun := ((ContinuousMap.ofClass (radialHomeomorph (n + 2))).continuous.comp
     (boundaryFace n (Fin.last (n + 1)) 1 (Or.inr rfl)).continuous).subtype_mk _
 
 private lemma boundaryFace_apply (n : ℕ) (i : Fin (n + 2)) (t : unitInterval)
@@ -148,17 +151,21 @@ private lemma liftSnd_eq_boundaryFace (n : ℕ) (i : Fin (n + 2)) (t : unitInter
 private lemma sideOverlap_coe (n : ℕ) (i : Fin (n + 1)) (t : unitInterval)
     (ht : t = 0 ∨ t = 1) (z : Fin (n + 1) → unitInterval) :
     (sideOverlap.{u} n i t ht z : S (n + 2)) =
-      radialMap (n + 2) (boundaryFace n i.castSucc t ht z) := by
+      (ContinuousMap.ofClass (radialHomeomorph (n + 2))) (boundaryFace n i.castSucc t ht z) := by
   rw [sideOverlap]
   rfl
 private lemma bottomU_coe (n : ℕ) (z : Fin (n + 1) → unitInterval) :
     (bottomU.{u} n z : S (n + 2)) =
-      radialMap (n + 2) (boundaryFace n (Fin.last (n + 1)) 0 (Or.inl rfl) z) := by
+      (ContinuousMap.ofClass (radialHomeomorph (n + 2))) (boundaryFace n (Fin.last (n + 1)) 0
+        (Or.inl
+        rfl) z) := by
   rw [bottomU]
   rfl
 private lemma topV_coe (n : ℕ) (z : Fin (n + 1) → unitInterval) :
     (topV.{u} n z : S (n + 2)) =
-      radialMap (n + 2) (boundaryFace n (Fin.last (n + 1)) 1 (Or.inr rfl) z) := by
+      (ContinuousMap.ofClass (radialHomeomorph (n + 2))) (boundaryFace n (Fin.last (n + 1)) 1
+        (Or.inr
+        rfl) z) := by
   rw [topV]
   rfl
 
@@ -177,7 +184,7 @@ private def sideU (n : ℕ) (i : Fin (n + 1)) (t : unitInterval) (ht : t = 0 ∨
 
 private lemma sideU_ambient (n : ℕ) (i : Fin (n + 1)) (t : unitInterval) (ht : t = 0 ∨ t = 1) :
     (ContinuousMap.subtypeVal (U.{u} (n + 1))).comp (sideU n i t ht) =
-      (radialMap (n + 2)).comp (boundaryFace n i.castSucc t ht) := by
+      (ContinuousMap.ofClass (radialHomeomorph (n + 2))).comp (boundaryFace n i.castSucc t ht) := by
   apply ContinuousMap.ext
   intro z
   rw [sideU]
@@ -185,14 +192,14 @@ private lemma sideU_ambient (n : ℕ) (i : Fin (n + 1)) (t : unitInterval) (ht :
 
 private lemma bottomU_ambient (n : ℕ) :
     (ContinuousMap.subtypeVal (U.{u} (n + 1))).comp (bottomU n) =
-      (radialMap (n + 2)).comp
+      (ContinuousMap.ofClass (radialHomeomorph (n + 2))).comp
         (boundaryFace n (Fin.last (n + 1)) 0 (Or.inl rfl)) := by
   apply ContinuousMap.ext
   exact bottomU_coe n
 
 private lemma topV_ambient (n : ℕ) :
     (ContinuousMap.subtypeVal (V.{u} (n + 1))).comp (topV n) =
-      (radialMap (n + 2)).comp
+      (ContinuousMap.ofClass (radialHomeomorph (n + 2))).comp
         (boundaryFace n (Fin.last (n + 1)) 1 (Or.inr rfl)) := by
   apply ContinuousMap.ext
   exact topV_coe n
@@ -239,29 +246,15 @@ private lemma fullBoundary_cycle (n : ℕ) :
 private lemma cover_sum (n : ℕ) :
     NormalizedCubicalChain.map k (ContinuousMap.subtypeVal (U (n + 1))) (n + 1) (uNorm k n) +
       NormalizedCubicalChain.map k (ContinuousMap.subtypeVal (V (n + 1))) (n + 1) (vNorm k n) =
-    NormalizedCubicalChain.map k (radialMap (n + 2)) (n + 1) (fullBoundary k n) := by
+    NormalizedCubicalChain.map k (ContinuousMap.ofClass (radialHomeomorph (n + 2))) (n + 1)
+      (fullBoundary k n) := by
   rw [fullBoundary_faces]
   conv_rhs => rw [Fin.sum_univ_castSucc]
   rw [uNorm, vNorm]
   simp only [map_sum, map_add, map_sub, map_smul, NormalizedCubicalChain.map_ofCube,
     sideU_ambient, bottomU_ambient, topV_ambient, Fin.val_castSucc, Fin.val_last]
   rw [upperFace_coefficient k n]
-  simp only [neg_smul, sub_eq_add_neg, add_assoc]
-  let A : NormalizedCubicalChain (S.{u} (n + 2)) k (n + 1) :=
-    ∑ i : Fin (n + 1), (-1 : k) ^ (i : ℕ) •
-      (NormalizedCubicalChain.ofCube _ k ((radialMap (n + 2)).comp
-        (boundaryFace n i.castSucc 0 (Or.inl rfl))) +
-       -NormalizedCubicalChain.ofCube _ k ((radialMap (n + 2)).comp
-        (boundaryFace n i.castSucc 1 (Or.inr rfl))))
-  let b : NormalizedCubicalChain (S.{u} (n + 2)) k (n + 1) :=
-    NormalizedCubicalChain.ofCube _ k ((radialMap (n + 2)).comp
-      (boundaryFace n (Fin.last (n + 1)) 0 (Or.inl rfl)))
-  let t : NormalizedCubicalChain (S.{u} (n + 2)) k (n + 1) :=
-    NormalizedCubicalChain.ofCube _ k ((radialMap (n + 2)).comp
-      (boundaryFace n (Fin.last (n + 1)) 1 (Or.inr rfl)))
-  change A + ((-1 : k) ^ (n + 1) • b + -((-1 : k) ^ (n + 1) • t)) =
-    A + (-1 : k) ^ (n + 1) • (b + -t)
-  rw [smul_add, smul_neg]
+  simp only [neg_smul, sub_eq_add_neg, add_assoc, smul_add, smul_neg]
 
 end NormalizedBoundarySplit
 
@@ -271,7 +264,7 @@ private lemma lastFace_eq_upperInclusion (n : ℕ) (x : B.{u} (n + 1)) :
     boundaryFace n (Fin.last (n + 1)) 1 (Or.inr rfl) x.val.down = upperInclusion (n + 1) x := by
   apply Subtype.ext
   apply ULift.ext
-  rw [boundaryFace_apply, upperInclusion_down]
+  rw [boundaryFace_apply, upperInclusion_apply_down]
   exact Fin.insertNth_last' 1 x.val.down
 
 private def upperCubeMap (n : ℕ) : C((cubeBoundaryPair.{u} (n + 1)).fst, V.{u} (n + 1)) :=
@@ -291,32 +284,11 @@ private lemma upperCubeMap_on_boundary (n : ℕ) :
   intro x
   apply Subtype.ext
   exact (topV_coe n x.val.down).trans
-    ((congrArg (radialMap (n + 2)) (lastFace_eq_upperInclusion n x)).trans
-      (upperOverlap_coe (n + 1) x).symm)
+    ((congrArg (ContinuousMap.ofClass (radialHomeomorph (n + 2))) (lastFace_eq_upperInclusion n
+      x)).trans
+      (coe_upperOverlap_apply (n + 1) x).symm)
 
 variable (k : Type u) [Ring k]
-private lemma boundary_mapped_cube {Y : Type u} [TopologicalSpace Y] (P : TopPair.{u})
-    {m : ℕ} (c : SingularCube P.fst (m + 1))
-    (hc : MapsTo c (Cube.boundary (Fin (m + 1))) (Set.range P.map))
-    (q : C(P.fst, Y)) (r : C(P.snd, Y)) (hw : q.comp P.map.hom = r) :
-    NormalizedCubicalChain.boundary Y k m
-      (NormalizedCubicalChain.ofCube Y k (q.comp c)) =
-      NormalizedCubicalChain.map k r m (P.cubicalBoundaryChainOfCube k c hc) := by
-  calc
-    _ = NormalizedCubicalChain.boundary Y k m
-        (NormalizedCubicalChain.map k q (m + 1) (NormalizedCubicalChain.ofCube P.fst k c)) :=
-      congrArg _ (NormalizedCubicalChain.map_ofCube k q c).symm
-    _ = NormalizedCubicalChain.map k q m
-        (NormalizedCubicalChain.boundary P.fst k m (NormalizedCubicalChain.ofCube P.fst k c)) :=
-      (NormalizedCubicalChain.map_boundary_apply k q _).symm
-    _ = NormalizedCubicalChain.map k q m
-        (NormalizedCubicalChain.map k P.map.hom m (P.cubicalBoundaryChainOfCube k c hc)) :=
-      congrArg _ (P.map_cubicalBoundaryChainOfCube k c hc).symm
-    _ = NormalizedCubicalChain.map k (q.comp P.map.hom) m
-        (P.cubicalBoundaryChainOfCube k c hc) :=
-      (LinearMap.congr_fun (NormalizedCubicalChain.map_comp k q P.map.hom m) _).symm
-    _ = _ := congrArg (fun f : C(P.snd, Y) ↦ NormalizedCubicalChain.map k f m
-      (P.cubicalBoundaryChainOfCube k c hc)) hw
 
 private def lowerBoundary (n : ℕ) : NormalizedCubicalChain (B.{u} (n + 1)) k n :=
   TopPair.cubicalBoundaryChainOfCube k (upCube (n + 1)) (mapsTo_upCube_boundary (n + 1))
@@ -326,10 +298,10 @@ private lemma topV_boundary (n : ℕ) :
       (NormalizedCubicalChain.ofCube (V (n + 1)) k (topV n)) =
       NormalizedCubicalChain.map k (overlapToV (n + 1)) n
         (NormalizedCubicalChain.map k (upperOverlap (n + 1)) n (lowerBoundary k n)) := by
-  have h := boundary_mapped_cube k (cubeBoundaryPair.{u} (n + 1)) (upCube (n + 1))
+  have h := TopPair.boundary_ofCube_comp k (cubeBoundaryPair.{u} (n + 1)) (upCube (n + 1))
     (mapsTo_upCube_boundary (n + 1)) (upperCubeMap n)
-    ((overlapToV (n + 1)).comp (upperOverlap (n + 1))) (upperCubeMap_on_boundary n)
-  rw [upperCubeMap_comp_upCube, NormalizedCubicalChain.map_comp] at h
+  rw [upperCubeMap_on_boundary, upperCubeMap_comp_upCube,
+    NormalizedCubicalChain.map_comp] at h
   exact h
 
 private lemma lowerBoundary_i (n : ℕ) :
@@ -349,42 +321,7 @@ private lemma vNorm_boundary (n : ℕ) : NormalizedCubicalChain.boundary (V.{u} 
 
 end UpperFaceBoundary
 
-section ChosenComparison
 
-variable {k : Type u} [Ring k]
-
-private lemma comparison_naturality {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
-    (c : NormalizedCubicalChain X k n) :
-    ((cubicalToSingular k).app Y).f n (NormalizedCubicalChain.map k f.hom n c) =
-      ((singularChains k).map f).f n (((cubicalToSingular k).app X).f n c) :=
-  congrArg (fun φ ↦ φ.f n c) ((cubicalToSingular k).naturality f)
-
-private lemma comparison_boundary {X : TopCat.{u}} (n : ℕ) (c : NormalizedCubicalChain X k (n + 1))
-  :
-    ((singularChains k).obj X).d (n + 1) n (((cubicalToSingular k).app X).f (n + 1) c) =
-      ((cubicalToSingular k).app X).f n (NormalizedCubicalChain.boundary X k n c) :=
-  (HomologicalComplex.Hom.comm_apply _ (n + 1) n c).trans
-    (congrArg (((cubicalToSingular k).app X).f n) (normalizedCubicalChainComplex_obj_d_apply X n c))
-
-private lemma comparison_small_inclusion {X : TopCat.{u}} {ι : Type*} (F : ι → Set X)
-    {S : Set X} {i : ι} (hS : S ⊆ F i) (n : ℕ)
-    (c : NormalizedCubicalChain (TopCat.of S) k n) :
-    (SSet.chainComplexMap (X.smallSingularSubcomplex F).ι (Coeff k)).f n
-      ((SSet.chainComplexMap (TopCat.toSmallSingularSubcomplex F hS) (Coeff k)).f n
-        (((cubicalToSingular k).app (TopCat.of S)).f n c)) =
-    ((cubicalToSingular k).app X).f n
-      (NormalizedCubicalChain.map k (ContinuousMap.subtypeVal S) n c) := by
-  let v := ((cubicalToSingular k).app (TopCat.of S)).f n c
-  have hm : (SSet.chainComplexMap (TopCat.toSmallSingularSubcomplex F hS) (Coeff k)).f n ≫
-      (SSet.chainComplexMap (X.smallSingularSubcomplex F).ι (Coeff k)).f n =
-      (SSet.chainComplexMap
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal S))) (Coeff k)).f n := by
-    rw [← HomologicalComplex.comp_f, ← Functor.map_comp,
-      TopCat.toSmallSingularSubcomplex_ι]
-  exact (ConcreteCategory.congr_hom hm v).trans
-    (comparison_naturality (TopCat.ofHom (ContinuousMap.subtypeVal S)) n c).symm
-
-end ChosenComparison
 
 section SmallSingularCycles
 
@@ -459,24 +396,30 @@ private lemma wCycle_i : (KI k n).iCycles n (wCycle k n) =
 
 private def sphereCycle : (KSphere k n).cycles (n + 1) := HomologicalComplex.cyclesMap
   ((cubicalToSingular k).app (TopCat.of (B.{u} (n + 2))) ≫
-    (singularChains k).map (TopCat.ofHom (radialMap (n + 2)))) (n + 1)
+    (singularChains k).map (TopCat.ofHom (ContinuousMap.ofClass (radialHomeomorph (n + 2)))))
+      (n + 1)
       (cubeBoundaryCycle k (n + 1))
 
 private lemma sphereCycle_i : (KSphere k n).iCycles (n + 1) (sphereCycle k n) =
     ((cubicalToSingular k).app (TopCat.of (S.{u} (n + 2)))).f (n + 1)
-      (NormalizedCubicalChain.map k (radialMap (n + 2)) (n + 1) (fullBoundary k n)) := by
+      (NormalizedCubicalChain.map k (ContinuousMap.ofClass (radialHomeomorph (n + 2))) (n + 1)
+        (fullBoundary k n)) := by
   rw [sphereCycle, HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, fullBoundary_i]
-  exact (comparison_naturality (TopCat.ofHom (radialMap (n + 2))) (n + 1) (fullBoundary k n)).symm
+  exact (cubicalToSingular_app_f_map (TopCat.ofHom (ContinuousMap.ofClass (radialHomeomorph (n
+    + 2))))
+    (n + 1) (fullBoundary k n)).symm
 
 private lemma zSmall_inclusion : (SSet.chainComplexMap (incS n) (Coeff k)).f (n + 1) (zSmall k n) =
     (KSphere k n).iCycles (n + 1) (sphereCycle k n) := by
   rw [zSmall]
   rw [map_add]
   rw [uSing, vSing, sphereCycle_i]
-  have hu := comparison_small_inclusion (k := k) (X := TopCat.of (S.{u} (n + 2)))
+  have hu := chainComplexMap_ι_toSmallSingularSubcomplex_cubicalToSingular (k := k) (X :=
+    TopCat.of (S.{u} (n + 2)))
     ![U (n + 1), V (n + 1)] (S := U (n + 1)) (i := (0 : Fin 2))
     (Set.Subset.refl _) (n + 1) (uNorm k n)
-  have hv := comparison_small_inclusion (k := k) (X := TopCat.of (S.{u} (n + 2)))
+  have hv := chainComplexMap_ι_toSmallSingularSubcomplex_cubicalToSingular (k := k) (X :=
+    TopCat.of (S.{u} (n + 2)))
     ![U (n + 1), V (n + 1)] (S := V (n + 1)) (i := (1 : Fin 2))
     (Set.Subset.refl _) (n + 1) (vNorm k n)
   exact (congrArg₂ (· + ·) hu hv).trans
@@ -506,8 +449,9 @@ private lemma vSing_boundary : (KV k n).d (n + 1) n (vSing k n) =
     -((SSet.chainComplexMap (tV n) (Coeff k)).f n ((KI k n).iCycles n (wCycle k n))) := by
   rw [vSing]
   -- KV uses simplicial chains; the comparison uses singular and normalized cubical chains.
-  erw [comparison_boundary, vNorm_boundary, wCycle_i, map_neg]
-  exact congrArg Neg.neg (comparison_naturality (TopCat.ofHom (overlapToV (n + 1))) n (wNorm k n))
+  erw [singularChains_d_cubicalToSingular, vNorm_boundary, wCycle_i, map_neg]
+  exact congrArg Neg.neg (cubicalToSingular_app_f_map (TopCat.ofHom (overlapToV (n + 1))) n
+    (wNorm k n))
 
 private lemma uSing_boundary : (KU k n).d (n + 1) n (uSing k n) =
     (SSet.chainComplexMap (tU n) (Coeff k)).f n ((KI k n).iCycles n (wCycle k n)) := by
@@ -582,35 +526,24 @@ private def cubeToSphereBoundary :
 
 private def sphereBoundaryCycle : (KUnitSphere k n).cycles n :=
   HomologicalComplex.cyclesMap ((cubicalToSingular k).app (TopCat.of (B.{u} (n + 1))) ≫
-    (singularChains k).map (TopCat.ofHom (radialMap (n + 1)))) n (cubeBoundaryCycle k n)
+    (singularChains k).map (TopCat.ofHom (ContinuousMap.ofClass (radialHomeomorph (n + 1))))) n
+      (cubeBoundaryCycle k n)
 
 private lemma sphereBoundaryCycle_i : (KUnitSphere k n).iCycles n (sphereBoundaryCycle k n) =
-    ((singularChains k).map (TopCat.ofHom (radialMap (n + 1)))).f n
+    ((singularChains k).map (TopCat.ofHom (ContinuousMap.ofClass (radialHomeomorph (n + 1))))).f n
       (((cubicalToSingular k).app (TopCat.of (B.{u} (n + 1)))).f n
         ((KBoundary k n).iCycles n (cubeBoundaryCycle k n))) := by
   rw [sphereBoundaryCycle, HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
   rfl
 
-private lemma relative_comparison_inv_δ :
-    (TopPair.singularCubicalHomologyIso k (P n) (n + 1)).inv ≫
-        (P n).singularHomologyδ (Coeff k) (n + 1) n =
-      (P n).cubicalHomologyδ k (n + 1) n ≫ (singularCubicalHomologyIso k (P n).snd n).inv := by
-  have key : (TopPair.singularCubicalHomologyIso k (P n) (n + 1)).hom ≫
-      (P n).cubicalHomologyδ k (n + 1) n =
-        (P n).singularHomologyδ (Coeff k) (n + 1) n ≫ (singularCubicalHomologyIso k (P n).snd n).hom
-          :=
-    TopPair.singularCubicalHomologyIso_hom_cubicalHomologyδ k (P n) (n + 1) n
-  apply (Iso.eq_comp_inv (singularCubicalHomologyIso k (P n).snd n)).2
-  exact (Category.assoc _ _ _).trans
-    ((congrArg ((TopPair.singularCubicalHomologyIso k (P n) (n + 1)).inv ≫ ·) key.symm).trans
-      (Iso.inv_hom_id_assoc _ _))
 
 private lemma relativeCubeClass_boundary :
     (P n).singularHomologyδ (Coeff k) (n + 1) n rfl (relativeCubeClass k n) =
       (singularCubicalHomologyIso k (P n).snd n).inv
         ((KBoundary k n).homologyπ n (cubeBoundaryCycle k n)) := by
   rw [relativeCubeClass]
-  have h := ConcreteCategory.congr_hom (relative_comparison_inv_δ k n)
+  have h := ConcreteCategory.congr_hom
+    (TopPair.singularCubicalHomologyIso_inv_singularHomologyδ k (P n) (n + 1) n rfl)
     (((P n).cubicalChainComplex k).homologyπ (n + 1) (cubeBoundaryPairCycle k n))
   exact (ModuleCat.comp_apply _ _ _).symm.trans
     (h.trans ((ModuleCat.comp_apply _ _ _).trans
@@ -618,7 +551,7 @@ private lemma relativeCubeClass_boundary :
 
 private lemma sphereBoundaryCycle_class : (KUnitSphere k n).homologyπ n (sphereBoundaryCycle k n) =
     HomologicalComplex.homologyMap ((singularChains k).map
-      (TopCat.ofHom (radialMap (n + 1)))) n
+      (TopCat.ofHom (ContinuousMap.ofClass (radialHomeomorph (n + 1))))) n
         ((singularCubicalHomologyIso k (P n).snd n).inv
           ((KBoundary k n).homologyπ n (cubeBoundaryCycle k n))) := by
   rw [singularCubicalHomologyIso_inv, ← ModuleCat.comp_apply,
@@ -627,7 +560,8 @@ private lemma sphereBoundaryCycle_class : (KUnitSphere k n).homologyπ n (sphere
 
 private lemma cubeToSphereBoundary_eq_redδ : cubeToSphereBoundary k n =
     (P n).reducedSingularHomologyδ (Coeff k) n ≫
-      (reducedSingularHomologyFunctor (Coeff k) n).map (TopCat.ofHom (radialMap (n + 1))) := by
+      (reducedSingularHomologyFunctor (Coeff k) n).map (TopCat.ofHom (ContinuousMap.ofClass
+        (radialHomeomorph (n + 1)))) := by
   rw [cubeToSphereBoundary]
   -- Normalize the pair boundary object before composing its TopCat boundary maps.
   erw [← Category.assoc,
@@ -638,13 +572,14 @@ private lemma cubeToSphereBoundary_eq_redδ : cubeToSphereBoundary k n =
   congr 1
   apply ConcreteCategory.hom_ext
   intro x
-  exact (radialMap_apply (n + 1) x).symm
+  exact (radialHomeomorph_apply (n + 1) x).symm
 
 private lemma cubeToSphereBoundary_comp_ι :
     cubeToSphereBoundary k n ≫ (reducedSingularHomologyι (Coeff k) n).app (TopCat.of (S.{u} (n +
       1))) =
       (P n).singularHomologyδ (Coeff k) (n + 1) n ≫
-        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (radialMap (n + 1)))) (Coeff k) n := by
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.ofClass
+          (radialHomeomorph (n + 1))))) (Coeff k) n := by
   rw [cubeToSphereBoundary_eq_redδ]
   -- The inclusion uses the ordinary homology functor, and the pair boundary uses SSet maps.
   erw [Category.assoc, (reducedSingularHomologyι (Coeff k) n).naturality,
@@ -716,7 +651,7 @@ private abbrev lowerEqMap (n : ℕ) : TopCat.of (S.{u} (n + 1)) ⟶ QSphere n :=
 
 private lemma equator_diagram (n : ℕ) :
     TopCat.ofHom (upperOverlap.{u} (n + 1)) ≫ eqMap n =
-      TopCat.ofHom (radialMap (n + 1)) ≫ lowerEqMap n :=
+      TopCat.ofHom (ContinuousMap.ofClass (radialHomeomorph (n + 1))) ≫ lowerEqMap n :=
   ConcreteCategory.hom_ext _ _ (equatorHomotopyEquiv_upperOverlap (n + 1))
 
 variable (k : Type u) [Ring k] (n : ℕ)
@@ -748,15 +683,16 @@ private lemma chosen_chain_equator (c : NormalizedCubicalChain (B.{u} (n + 1)) k
         (TopCat.of (U.{u} (n + 1) ∩ V (n + 1) : Set (S (n + 2))))).f n
           (NormalizedCubicalChain.map k (upperOverlap (n + 1)) n c)) =
     ((singularChains k).map (lowerEqMap n)).f n
-      (((singularChains k).map (TopCat.ofHom (radialMap (n + 1)))).f n
+      (((singularChains k).map (TopCat.ofHom (ContinuousMap.ofClass (radialHomeomorph (n +
+        1))))).f n
         (((cubicalToSingular k).app (TopCat.of (B.{u} (n + 1)))).f n c)) := by
   have h : (singularChains k).map (TopCat.ofHom (upperOverlap (n + 1))) ≫
       (singularChains k).map (eqMap n) =
-    (singularChains k).map (TopCat.ofHom (radialMap (n + 1))) ≫
+    (singularChains k).map (TopCat.ofHom (ContinuousMap.ofClass (radialHomeomorph (n + 1)))) ≫
       (singularChains k).map (lowerEqMap n) := by
     rw [← Functor.map_comp, ← Functor.map_comp, equator_diagram]
   exact (congrArg (((singularChains k).map (eqMap n)).f n)
-    (comparison_naturality (TopCat.ofHom (upperOverlap (n + 1))) n c)).trans
+    (cubicalToSingular_app_f_map (TopCat.ofHom (upperOverlap (n + 1))) n c)).trans
       (congrArg (fun f ↦ f.f n (((cubicalToSingular k).app (TopCat.of (B.{u} (n + 1)))).f n c)) h)
 
 private lemma wCycle_equator : HomologicalComplex.cyclesMap ((singularChains k).map (eqMap n)) n
@@ -804,7 +740,9 @@ private abbrev redLowerMap := (reducedSingularHomologyFunctor (Coeff k) n).map (
 private lemma sphereCycle_eq : sphereCycle k n = sphereBoundaryCycle k (n + 1) := by
   apply (KSphere k n).moduleCat_iCycles_injective (n + 1)
   rw [sphereCycle_i, sphereBoundaryCycle_i, fullBoundary_i]
-  exact comparison_naturality (TopCat.ofHom (radialMap (n + 2))) (n + 1)
+  exact cubicalToSingular_app_f_map (TopCat.ofHom (ContinuousMap.ofClass (radialHomeomorph (n +
+    2))))
+    (n + 1)
     (fullBoundary k n)
 
 private lemma upper_reduced_inclusion :
@@ -874,7 +812,8 @@ private lemma equator_basis_naturality : redLowerMap k n ≫
       (reducedSingularHomologySphereIso (Coeff k) (stdBasis (n + 1))).hom :=
   reducedSingularHomologySphereIso_hom_naturality (Coeff k) (stdBasis (n + 1))
     (stdBasis (n + 2)).orthogonalLast (equatorIsometry (n + 1)).toLinearIsometry
-    (equatorIsometry_apply_basis (n + 1))
+    (fun i ↦ OrthonormalBasis.equiv_apply_basis (stdBasis.{u} (n + 1))
+      (stdBasis.{u} (n + 2)).orthogonalLast (Equiv.refl _) i)
 
 private lemma cubeCoordinateValue_eq : cubeCoordinateValue k n =
     (reducedSingularHomologySphereIso (Coeff k) (stdBasis (n + 1))).hom (reducedCubeClass k n) := by
@@ -926,7 +865,7 @@ theorem singularHomologyCubeBoundaryPairIso_hom_cubeBoundaryPairCycle
           (cubeBoundaryPairCycle k n))) = (-1 : k) ^ (n * (n + 1) / 2) :=
   CubeBoundary.cubeCoordinateValue_triangular k n
 
-/-- The literal identity-cube class is the triangular sign times the unchanged native selected
+/-- The literal identity-cube class is the triangular sign times the native selected
 relative generator. The formula includes dimension one and arbitrary ring coefficients. -/
 theorem singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle
     (k : Type u) [Ring k] (n : ℕ) :
