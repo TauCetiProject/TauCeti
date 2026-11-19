@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
@@ -25,7 +26,11 @@ Coordinate expressions on `N × M` are read in product charts. The coordinate ex
 vertical form is that of the family member read in the chart of `M`, precomposed with the second
 projection (`TauCeti.inChartAt_verticalForm`). So a vertical form is `C^n` as soon as these
 coordinate expressions are jointly `C^n` in the chart coordinates of the parameter and the point
-(`TauCeti.contMDiffAt_verticalForm`, `TauCeti.isSmoothForm_verticalForm`).
+(`TauCeti.contMDiffAt_verticalForm`, `TauCeti.isSmoothForm_verticalForm`). In particular a family
+of flat forms pulled back along a chart and cut off by a function supported in the chart domain is
+`C^n` as soon as the flat family is jointly `C^n`
+(`TauCeti.isSmoothForm_verticalForm_smul_mpullback_extChartAt`), the family version of
+`TauCeti.isSmoothForm_smul_mpullback_extChartAt`.
 
 ## Main definitions
 
@@ -39,6 +44,10 @@ coordinate expressions are jointly `C^n` in the chart coordinates of the paramet
   chart.
 * `TauCeti.contMDiffAt_verticalForm` and `TauCeti.isSmoothForm_verticalForm`: a vertical form is
   `C^n` where the coordinate expressions of the family are jointly `C^n`.
+* `TauCeti.contMDiffAt_verticalForm_mpullback_extChartAt` and
+  `TauCeti.isSmoothForm_verticalForm_smul_mpullback_extChartAt`: the vertical form of a family of
+  flat forms pulled back along a chart, and cut off by a function supported in the chart domain, is
+  `C^n` where the flat family is jointly `C^n`.
 -/
 
 public section
@@ -139,5 +148,52 @@ theorem isSmoothForm_verticalForm {n : WithTop ℕ∞} [IsManifold I 1 M] [IsMan
       (range J ×ˢ range I) (extChartAt J z.1 z.1, extChartAt I z.2 z.2)) :
     IsSmoothForm (J.prod I) n (verticalForm J σ) :=
   (isSmoothForm_def _ _).mpr fun z ↦ contMDiffAt_verticalForm (mem_extChartAt_source z) (hσ z)
+
+/-- The vertical form of a family `K p` of flat forms pulled back along the chart at `x` is `C^n` at
+a point `z` over the chart domain if `K p`, for the point `p` of `N` with coordinate `X.1` in the
+chart at `z.1`, is jointly `C^n` in `X` at the coordinates of `z`. -/
+theorem contMDiffAt_verticalForm_mpullback_extChartAt {n : WithTop ℕ∞} [IsManifold I 1 M]
+    [IsManifold J 1 N] [IsManifold I (n + 1) M] [IsManifold J (n + 1) N] {x : M}
+    {K : N → E → E [⋀^Fin k]→L[ℝ] F} {z : N × M} (hz : z.2 ∈ (extChartAt I x).source)
+    (hK : ContDiffWithinAt ℝ n (fun X : EN × E ↦ K ((extChartAt J z.1).symm X.1) X.2)
+      (range J ×ˢ range I) (extChartAt J z.1 z.1, extChartAt I x z.2)) :
+    ContMDiffAt (J.prod I) ((J.prod I).prod 𝓘(ℝ, (EN × E) [⋀^Fin k]→L[ℝ] F)) n
+      (fun z ↦ TotalSpace.mk' ((EN × E) [⋀^Fin k]→L[ℝ] F) z (verticalForm J (fun p ↦
+        mpullback I 𝓘(ℝ, E) (extChartAt I x) (K p : RoughForm 𝓘(ℝ, E) E F k)) z)) z := by
+  have hz' : z ∈ (extChartAt (J.prod I) (z.1, x)).source := by
+    rw [extChartAt_prod, PartialEquiv.prod_source]
+    exact ⟨mem_extChartAt_source _, hz⟩
+  -- In the chart at `x` the coordinate expression of the pullback of `K p` is `K p`.
+  refine contMDiffAt_verticalForm hz' (hK.congr_of_eventuallyEq_of_mem ?_
+    ⟨extChartAt_target_subset_range _ (mem_extChartAt_target _),
+      extChartAt_target_subset_range _ ((extChartAt I x).map_source hz)⟩)
+  rw [nhdsWithin_prod_eq]
+  filter_upwards [Filter.prod_mem_prod self_mem_nhdsWithin
+    (extChartAt_target_mem_nhdsWithin' hz)] with X hX
+  exact RoughForm.inChartAt_mpullback_extChartAt _ x hX.2
+
+/-- A family `K p` of flat forms on an open set `s` intersected with the model range, jointly `C^n`
+in the chart coordinates of `p` and the point, pulled back along the chart at `x` and cut off by a
+`C^n` function supported where the chart lands in `s`, is a `C^n` vertical form on `N × M`. This is
+the family version of `TauCeti.isSmoothForm_smul_mpullback_extChartAt`. -/
+theorem isSmoothForm_verticalForm_smul_mpullback_extChartAt {n : WithTop ℕ∞} [IsManifold I 1 M]
+    [IsManifold J 1 N] [IsManifold I (n + 1) M] [IsManifold J (n + 1) N] {x : M} {s : Set E}
+    (hs : IsOpen s) {K : N → E → E [⋀^Fin k]→L[ℝ] F}
+    (hK : ∀ p₀ : N, ∀ w ∈ s ∩ range I, ContDiffWithinAt ℝ n
+      (fun X : EN × E ↦ K ((extChartAt J p₀).symm X.1) X.2) (range J ×ˢ range I)
+      (extChartAt J p₀ p₀, w))
+    {χ : M → ℝ} (hχ : ContMDiff I 𝓘(ℝ) n χ)
+    (hχs : tsupport χ ⊆ (chartAt H x).source ∩ extChartAt I x ⁻¹' s) :
+    IsSmoothForm (J.prod I) n (verticalForm J fun p y ↦
+      χ y • mpullback I 𝓘(ℝ, E) (extChartAt I x) (K p : RoughForm 𝓘(ℝ, E) E F k) y) := by
+  rw [isSmoothForm_def, verticalForm_fun_smul]
+  -- The uncut vertical form is `C^n` over the chart domain, which contains the support of the
+  -- cutoff.
+  refine (hχ.comp contMDiff_snd).contMDiffOn.smul_section_of_tsupport
+    (isOpen_univ.prod (isOpen_extChartAt_preimage x hs))
+    ((tsupport_comp_subset_preimage χ continuous_snd).trans fun z hz ↦ ⟨mem_univ _, hχs hz⟩)
+    fun z hz ↦ ContMDiffAt.contMDiffWithinAt ?_
+  obtain ⟨hzs, hzr⟩ := mem_extChartAt_source_and_mem_of_mem_preimage hz.2
+  exact contMDiffAt_verticalForm_mpullback_extChartAt hzs (hK z.1 _ hzr)
 
 end TauCeti
