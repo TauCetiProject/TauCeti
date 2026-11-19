@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.SimpleGraph.IntegralNullVector
 public import TauCeti.LinearAlgebra.Matrix.ZMatrix
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Order.Star.Int
+import TauCeti.Data.Matrix.DotProduct
 
 /-!
 # Singular positive semidefinite graph Cartan matrices
@@ -82,15 +83,10 @@ theorem Preconnected.exists_sum_eq_two_mul_iff_posSemidef_and_det_eq_zero (hG : 
       refine .of_dotProduct_mulVec_nonneg ?_ fun y ↦ ?_
       · rw [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial,
           isSymm_graphCartanMatrix]
-      · have h := hC.dotProduct_mulVec_nonneg fun i ↦ (y i : R)
-        have hcast : (Int.castRingHom R) (y ⬝ᵥ (G.graphCartanMatrix ℤ *ᵥ y)) =
-            (fun i ↦ (y i : R)) ⬝ᵥ (G.graphCartanMatrix R *ᵥ fun i ↦ (y i : R)) := by
-          rw [RingHom.map_dotProduct, ← graphCartanMatrix_map G (Int.castRingHom R)]
-          congr 1
-          ext i
-          exact RingHom.map_mulVec (Int.castRingHom R) _ y i
-        rw [star_trivial] at h ⊢
-        rw [← hcast, eq_intCast] at h
+      · have h := hC.dotProduct_mulVec_nonneg (Int.castRingHom R ∘ y)
+        rw [star_trivial, ← graphCartanMatrix_map G (Int.castRingHom R),
+          ← RingHom.map_dotProduct_mulVec, eq_intCast] at h
+        rw [star_trivial]
         exact_mod_cast h
     -- The absolute value of `v` is a natural-valued null vector.
     have habs := hCℤ.mulVec_abs_eq_zero (fun i j hij ↦ by
