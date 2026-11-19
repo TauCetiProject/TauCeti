@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.Analysis.Polynomial.Order
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.LineBundle.Sections
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Zeros and point evaluations of holomorphic sections of `𝒪(n)`
@@ -36,7 +37,7 @@ at `0` of the reflected polynomial `wⁿ p(w⁻¹)`. Since `p` splits over `ℂ`
 add up to its degree, which gives the zero count
 `∑ᶠ x, twistOrderAt n s x = n` (`OnePoint.finsum_twistOrderAt_eq`) for every nonzero holomorphic
 section `s` of `𝒪(n)`. In particular a nonzero holomorphic section has at most `n` zeros
-(`OnePoint.ncard_setOf_eq_zero_le`).
+(`OnePoint.ncard_setOf_eq_zero_le_of_mem_holomorphicTwistSections`).
 
 For points `x : ι → OnePoint ℂ`, the evaluation map
 `OnePoint.holomorphicTwistSectionsEval k x : H⁰(𝒪(k)) → (ι → ℂ)` sends `s` to `i ↦ s (x i)`.
@@ -60,8 +61,8 @@ a linear isomorphism (`OnePoint.holomorphicTwistSectionsEvalEquiv`).
   degree drop at `∞`.
 * `OnePoint.finsum_twistOrderAt_eq`: a nonzero holomorphic section of `𝒪(n)` has `n` zeros,
   counted with multiplicity.
-* `OnePoint.ncard_setOf_eq_zero_le`: a nonzero holomorphic section of `𝒪(n)` vanishes at no more
-  than `n` points.
+* `OnePoint.ncard_setOf_eq_zero_le_of_mem_holomorphicTwistSections`: a nonzero holomorphic section
+  of `𝒪(n)` vanishes at no more than `n` points.
 * `OnePoint.holomorphicTwistSectionsEval_bijective`: evaluation at `n + 1` distinct points is
   bijective.
 * `OnePoint.exists_mem_holomorphicTwistSections_apply_eq`: every value at every point is attained
@@ -82,6 +83,28 @@ open Function Polynomial Set
 noncomputable section
 
 namespace OnePoint
+
+/-- A nonzero holomorphic section of `𝒪(n)` is the polynomial section of a nonzero polynomial of
+degree at most `n`. -/
+private theorem exists_polynomialSection_eq {n : ℕ} {s : OnePoint ℂ → ℂ}
+    (hs : s ∈ holomorphicTwistSections n) (hs0 : s ≠ 0) :
+    ∃ p ∈ degreeLT ℂ (n + 1), p ≠ 0 ∧ polynomialSection n p = s := by
+  rw [holomorphicTwistSections_natCast_eq_map] at hs
+  obtain ⟨p, hp, rfl⟩ := hs
+  exact ⟨p, hp, by rintro rfl; simp at hs0, rfl⟩
+
+/-- A holomorphic section of `𝒪(k)` is either zero, or `k = n ≥ 0` and the section is the
+polynomial section of a nonzero polynomial of degree at most `n`. -/
+private theorem eq_zero_or_exists_polynomialSection_eq {k : ℤ} {s : OnePoint ℂ → ℂ}
+    (hs : s ∈ holomorphicTwistSections k) :
+    s = 0 ∨ ∃ n : ℕ, k = n ∧ ∃ p ∈ degreeLT ℂ (n + 1), p ≠ 0 ∧ polynomialSection n p = s := by
+  rcases eq_or_ne s 0 with hs0 | hs0
+  · exact .inl hs0
+  rcases lt_or_ge k 0 with hk | hk
+  · rw [holomorphicTwistSections_eq_bot hk, Submodule.mem_bot] at hs
+    exact absurd hs hs0
+  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hk
+  exact .inr ⟨n, rfl, exists_polynomialSection_eq hs hs0⟩
 
 /-! ### The order of vanishing of a section -/
 
@@ -115,13 +138,8 @@ vanish. -/
 theorem twistOrderAt_eq_zero_iff {k : ℤ} {s : OnePoint ℂ → ℂ}
     (hs : s ∈ holomorphicTwistSections k) (x : OnePoint ℂ) :
     twistOrderAt k s x = 0 ↔ s x ≠ 0 := by
-  rcases lt_or_ge k 0 with hk | hk
-  · rw [holomorphicTwistSections_eq_bot hk, Submodule.mem_bot] at hs
-    subst hs
-    simp
-  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hk
-  rw [holomorphicTwistSections_natCast_eq_map] at hs
-  obtain ⟨p, hp, rfl⟩ := hs
+  obtain rfl | ⟨n, rfl, p, hp, -, rfl⟩ := eq_zero_or_exists_polynomialSection_eq hs
+  · simp
   -- Both coordinates of a polynomial section are polynomial functions, hence analytic.
   induction x using OnePoint.rec with
   | infty =>
@@ -150,10 +168,9 @@ theorem twistOrderAt_polynomialSection_coe (n : ℕ) {p : ℂ[X]} (hp : p ≠ 0)
 the degree drop `n - p.natDegree`. -/
 theorem twistOrderAt_polynomialSection_infty {n : ℕ} {p : ℂ[X]} (hp : p ∈ degreeLT ℂ (n + 1))
     (hp0 : p ≠ 0) : twistOrderAt n (polynomialSection n p) ∞ = (n - p.natDegree : ℕ) := by
-  have hn : p.natDegree ≤ n :=
-    natDegree_le_iff_degree_le.2 <| mem_degreeLE.1 <| by rwa [← degreeLT_succ_eq_degreeLE]
   rw [twistOrderAt_infty, twistInvCoeff_polynomialSection hp,
-    analyticOrderAt_eval (reflect_eq_zero_iff.not.2 hp0), rootMultiplicity_reflect_zero p hp0 hn]
+    analyticOrderAt_eval (reflect_eq_zero_iff.not.2 hp0),
+    rootMultiplicity_reflect_zero p hp0 (mem_degreeLT_succ_iff_natDegree_le.1 hp)]
 
 /-- A holomorphic section of `𝒪(k)` vanishes to infinite order at a point only if it is the zero
 section. -/
@@ -161,32 +178,24 @@ theorem twistOrderAt_eq_top_iff {k : ℤ} {s : OnePoint ℂ → ℂ}
     (hs : s ∈ holomorphicTwistSections k) (x : OnePoint ℂ) :
     twistOrderAt k s x = ⊤ ↔ s = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ twistOrderAt_zero k x⟩
-  rcases lt_or_ge k 0 with hk | hk
-  · rwa [holomorphicTwistSections_eq_bot hk, Submodule.mem_bot] at hs
-  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hk
-  rw [holomorphicTwistSections_natCast_eq_map] at hs
-  obtain ⟨p, hp, rfl⟩ := hs
-  by_contra hp0
-  replace hp0 : p ≠ 0 := by rintro rfl; simp at hp0
+  obtain hs0 | ⟨n, rfl, p, hp, hp0, rfl⟩ := eq_zero_or_exists_polynomialSection_eq hs
+  · exact hs0
   induction x using OnePoint.rec with
   | infty => simp [twistOrderAt_polynomialSection_infty hp hp0] at h
   | coe z => simp [twistOrderAt_polynomialSection_coe n hp0] at h
 
 /-- **The order of vanishing does not depend on the chart.** At a finite point `z ≠ 0`, the order
-of vanishing of a holomorphic section of `𝒪(n)` may also be computed from its inverted coordinate
+of vanishing of a holomorphic section of `𝒪(k)` may also be computed from its inverted coordinate
 at `z⁻¹`. -/
-theorem twistOrderAt_coe_eq_analyticOrderAt_twistInvCoeff {n : ℕ} {s : OnePoint ℂ → ℂ}
-    (hs : s ∈ holomorphicTwistSections n) {z : ℂ} (hz : z ≠ 0) :
-    twistOrderAt n s z = analyticOrderAt (twistInvCoeff n s) z⁻¹ := by
-  rw [holomorphicTwistSections_natCast_eq_map] at hs
-  obtain ⟨p, hp, rfl⟩ := hs
-  rcases eq_or_ne p 0 with rfl | hp0
+theorem twistOrderAt_coe_eq_analyticOrderAt_twistInvCoeff {k : ℤ} {s : OnePoint ℂ → ℂ}
+    (hs : s ∈ holomorphicTwistSections k) {z : ℂ} (hz : z ≠ 0) :
+    twistOrderAt k s z = analyticOrderAt (twistInvCoeff k s) z⁻¹ := by
+  obtain rfl | ⟨n, rfl, p, hp, hp0, rfl⟩ := eq_zero_or_exists_polynomialSection_eq hs
   · simp
-  have hn : p.natDegree ≤ n :=
-    natDegree_le_iff_degree_le.2 <| mem_degreeLE.1 <| by rwa [← degreeLT_succ_eq_degreeLE]
   rw [twistOrderAt_polynomialSection_coe n hp0, twistInvCoeff_polynomialSection hp,
     analyticOrderAt_eval (reflect_eq_zero_iff.not.2 hp0),
-    rootMultiplicity_reflect_eq_inv p hn (inv_ne_zero hz), inv_inv]
+    rootMultiplicity_reflect_eq_inv p (mem_degreeLT_succ_iff_natDegree_le.1 hp) (inv_ne_zero hz),
+    inv_inv]
 
 /-! ### The zero count -/
 
@@ -200,8 +209,6 @@ private theorem support_twistOrderAt_polynomialSection_subset_and_sum_eq {n : �
     (hp : p ∈ degreeLT ℂ (n + 1)) (hp0 : p ≠ 0) :
     support (twistOrderAt n (polynomialSection n p)) ⊆ rootsAndInfty p ∧
       ∑ x ∈ rootsAndInfty p, twistOrderAt n (polynomialSection n p) x = n := by
-  have hn : p.natDegree ≤ n :=
-    natDegree_le_iff_degree_le.2 <| mem_degreeLE.1 <| by rwa [← degreeLT_succ_eq_degreeLE]
   refine ⟨fun x hx ↦ ?_, ?_⟩
   · induction x using OnePoint.rec with
     | infty => simp [rootsAndInfty]
@@ -215,39 +222,33 @@ private theorem support_twistOrderAt_polynomialSection_subset_and_sum_eq {n : �
     have hsum : ∑ z ∈ p.roots.toFinset, p.rootMultiplicity z = p.natDegree := by
       rw [← IsAlgClosed.card_roots_eq_natDegree, ← Multiset.toFinset_sum_count_eq]
       exact Finset.sum_congr rfl fun z _ ↦ (count_roots p).symm
-    rw [hsum, ← Nat.cast_add, Nat.sub_add_cancel hn]
-
-/-- **Zero count for `𝒪(n)`.** A nonzero holomorphic section of `𝒪(n)` on the Riemann sphere has
-exactly `n` zeros, counted with multiplicity. -/
-theorem finsum_twistOrderAt_eq {n : ℕ} {s : OnePoint ℂ → ℂ}
-    (hs : s ∈ holomorphicTwistSections n) (hs0 : s ≠ 0) :
-    ∑ᶠ x, twistOrderAt n s x = n := by
-  rw [holomorphicTwistSections_natCast_eq_map] at hs
-  obtain ⟨p, hp, rfl⟩ := hs
-  have hp0 : p ≠ 0 := by rintro rfl; simp at hs0
-  obtain ⟨hsupp, hsum⟩ := support_twistOrderAt_polynomialSection_subset_and_sum_eq hp hp0
-  rw [finsum_eq_sum_of_support_subset _ hsupp, hsum]
+    rw [hsum, ← Nat.cast_add, Nat.sub_add_cancel (mem_degreeLT_succ_iff_natDegree_le.1 hp)]
 
 /-- The zeros of a nonzero holomorphic section of `𝒪(n)` lie in a finite set on which its orders
 of vanishing add up to `n`. -/
 private theorem exists_finset_zeros_subset_and_sum_eq {n : ℕ} {s : OnePoint ℂ → ℂ}
     (hs : s ∈ holomorphicTwistSections n) (hs0 : s ≠ 0) :
     ∃ T : Finset (OnePoint ℂ), {x | s x = 0} ⊆ T ∧ ∑ x ∈ T, twistOrderAt n s x = n := by
-  have hs' := hs
-  rw [holomorphicTwistSections_natCast_eq_map] at hs'
-  obtain ⟨p, hp, rfl⟩ := hs'
-  have hp0 : p ≠ 0 := by rintro rfl; simp at hs0
+  obtain ⟨p, hp, hp0, rfl⟩ := exists_polynomialSection_eq hs hs0
   obtain ⟨hsupp, hsum⟩ := support_twistOrderAt_polynomialSection_subset_and_sum_eq hp hp0
   exact ⟨rootsAndInfty p, fun x hx ↦ hsupp ((twistOrderAt_ne_zero_iff hs x).2 hx), hsum⟩
 
+/-- **Zero count for `𝒪(n)`.** A nonzero holomorphic section of `𝒪(n)` on the Riemann sphere has
+exactly `n` zeros, counted with multiplicity. -/
+theorem finsum_twistOrderAt_eq {n : ℕ} {s : OnePoint ℂ → ℂ}
+    (hs : s ∈ holomorphicTwistSections n) (hs0 : s ≠ 0) :
+    ∑ᶠ x, twistOrderAt n s x = n := by
+  obtain ⟨T, hT, hsum⟩ := exists_finset_zeros_subset_and_sum_eq hs hs0
+  rw [finsum_eq_sum_of_support_subset _ fun x hx ↦ hT ((twistOrderAt_ne_zero_iff hs x).1 hx), hsum]
+
 /-- The zeros of a nonzero holomorphic section of `𝒪(n)` form a finite set. -/
-theorem finite_setOf_eq_zero {n : ℕ} {s : OnePoint ℂ → ℂ}
+theorem finite_setOf_eq_zero_of_mem_holomorphicTwistSections {n : ℕ} {s : OnePoint ℂ → ℂ}
     (hs : s ∈ holomorphicTwistSections n) (hs0 : s ≠ 0) : {x | s x = 0}.Finite := by
   obtain ⟨T, hT, -⟩ := exists_finset_zeros_subset_and_sum_eq hs hs0
   exact T.finite_toSet.subset hT
 
 /-- A nonzero holomorphic section of `𝒪(n)` vanishes at no more than `n` points. -/
-theorem ncard_setOf_eq_zero_le {n : ℕ} {s : OnePoint ℂ → ℂ}
+theorem ncard_setOf_eq_zero_le_of_mem_holomorphicTwistSections {n : ℕ} {s : OnePoint ℂ → ℂ}
     (hs : s ∈ holomorphicTwistSections n) (hs0 : s ≠ 0) : {x | s x = 0}.ncard ≤ n := by
   classical
   obtain ⟨T, hT, hsum⟩ := exists_finset_zeros_subset_and_sum_eq hs hs0
@@ -278,7 +279,7 @@ theorem holomorphicTwistSectionsEval_apply (k : ℤ) (x : ι → OnePoint ℂ)
 /-- **Zero counting makes evaluation injective.** A holomorphic section of `𝒪(n)` is determined by
 its values at any `n + 1` or more distinct points. -/
 theorem holomorphicTwistSectionsEval_injective {n : ℕ} {x : ι → OnePoint ℂ}
-    (hx : Injective x) (hcard : n + 1 ≤ Nat.card ι) :
+    (hx : Injective x) (hcard : n + 1 ≤ ENat.card ι) :
     Injective (holomorphicTwistSectionsEval n x) := by
   rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
   rintro ⟨s, hs⟩ hker
@@ -287,19 +288,21 @@ theorem holomorphicTwistSectionsEval_injective {n : ℕ} {x : ι → OnePoint �
   have hsub : range x ⊆ {y | s y = 0} := by
     rintro _ ⟨i, rfl⟩
     exact congrFun hker i
-  have h := ncard_le_ncard hsub (finite_setOf_eq_zero hs hs0)
-  rw [ncard_range_of_injective hx] at h
-  have := ncard_setOf_eq_zero_le hs hs0
+  have hfin := finite_setOf_eq_zero_of_mem_holomorphicTwistSections hs hs0
+  have h := encard_le_encard hsub
+  rw [hx.encard_range, ← hfin.cast_ncard_eq] at h
+  have := ncard_setOf_eq_zero_le_of_mem_holomorphicTwistSections hs hs0
+  have := hcard.trans h
+  norm_cast at this
   omega
 
 /-- **Evaluation at `n + 1` distinct points is bijective.** -/
 theorem holomorphicTwistSectionsEval_bijective [Finite ι] {n : ℕ} {x : ι → OnePoint ℂ}
     (hx : Injective x) (hcard : Nat.card ι = n + 1) :
     Bijective (holomorphicTwistSectionsEval n x) := by
+  have hinj := holomorphicTwistSectionsEval_injective (n := n) hx
+    (by rw [ENat.card_eq_coe_natCard, hcard, Nat.cast_add_one])
   have := Fintype.ofFinite ι
-  have : FiniteDimensional ℂ (holomorphicTwistSections n) :=
-    Module.finite_of_finrank_pos (by rw [finrank_holomorphicTwistSections]; omega)
-  have hinj := holomorphicTwistSectionsEval_injective hx hcard.ge
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
   rw [finrank_holomorphicTwistSections, Module.finrank_fintype_fun_eq_card,
     ← Nat.card_eq_fintype_card, hcard]
