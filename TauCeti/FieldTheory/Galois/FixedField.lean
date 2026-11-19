@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
 /-!
 # Fixed fields and fixing subgroups
@@ -68,6 +69,11 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
 * `Subgroup.fixedField_map_conj`
 * `IntermediateField.fixedField_stabilizer_smul`: fixed fields of the stabilizers along an orbit
   are conjugate
+* `IntermediateField.weight_fixedField_stabilizer_smul`,
+  `IntermediateField.weight_fixedField_stabilizer_out` and
+  `IntermediateField.weight_fixedField_stabilizer_out_of_injective`: hence any weight of
+  intermediate fields invariant under `K`-algebra equivalence takes the same value at the fixed
+  fields of all stabilizers along an orbit
 * `IntermediateField.fixingSubgroup_inf`
 * `IntermediateField.fixingSubgroup_iSup`
 * `IntermediateField.fixingSubgroup_isClosed_of_isAlgebraic`
@@ -523,6 +529,48 @@ theorem fixedField_stabilizer_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X] (σ
       (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).map σ.toAlgHom := by
   rw [MulAction.stabilizer_smul_eq_stabilizer_map_conj, MulEquiv.toMonoidHom_eq_coe,
     Subgroup.fixedField_map_conj]
+
+section Weight
+
+variable {X Y : Type*} [MulAction (M ≃ₐ[K] M) X] [MulAction (M ≃ₐ[K] M) Y]
+variable {α : Type*} {w : IntermediateField K M → α}
+
+/-- Translating a point does not change a `K`-isomorphism-invariant weight of its stabilizer's
+fixed field, since the two fixed fields are conjugate. -/
+theorem weight_fixedField_stabilizer_smul
+    (hw : ∀ {L L' : IntermediateField K M}, (L ≃ₐ[K] L') → w L = w L')
+    (σ : M ≃ₐ[K] M) (x : X) :
+    w (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) (σ • x))) =
+      w (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
+  rw [fixedField_stabilizer_smul]
+  exact (hw ((fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)).equivMap σ.toAlgHom)).symm
+
+/-- A `K`-isomorphism-invariant weight of the fixed field of the stabilizer of an orbit's
+representative can be computed at any point in that orbit. -/
+theorem weight_fixedField_stabilizer_out
+    (hw : ∀ {L L' : IntermediateField K M}, (L ≃ₐ[K] L') → w L = w L')
+    {ω : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) X} {x : X}
+    (hx : (Quotient.mk'' x : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) X) = ω) :
+    w (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
+      w (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
+  obtain ⟨σ, rfl⟩ := TauCeti.MulAction.exists_smul_out_eq hx
+  exact (weight_fixedField_stabilizer_smul hw σ ω.out).symm
+
+/-- A `K`-isomorphism-invariant weight of the fixed field of the stabilizer of an orbit's
+representative can be computed at any point mapping into that orbit under an injective
+equivariant map, which preserves stabilizers. -/
+theorem weight_fixedField_stabilizer_out_of_injective
+    (hw : ∀ {L L' : IntermediateField K M}, (L ≃ₐ[K] L') → w L = w L')
+    (f : X → Y) (hf : Function.Injective f)
+    (he : ∀ (σ : M ≃ₐ[K] M) (x : X), f (σ • x) = σ • f x)
+    {ω : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y} {x : X}
+    (hx : (Quotient.mk'' (f x) : MulAction.orbitRel.Quotient (M ≃ₐ[K] M) Y) = ω) :
+    w (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) ω.out)) =
+      w (fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) := by
+  rw [weight_fixedField_stabilizer_out hw hx,
+    TauCeti.MulAction.stabilizer_eq_of_injective f hf he]
+
+end Weight
 
 end IntermediateField
 

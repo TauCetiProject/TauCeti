@@ -17,9 +17,9 @@ For an action of `Gal(SeparableClosure K / K)`, `TauCeti.orbitDiscriminantExpone
 discriminant exponents of the fields fixed by point stabilizers, one per orbit. Conjugate
 stabilizers have isomorphic fixed fields, so the summands do not depend on the representatives.
 This is the discriminant weight used to count finite étale algebras by their Galois sets.
-The lemmas `TauCeti.weight_fixedField_stabilizer_smul` and
-`TauCeti.weight_fixedField_stabilizer_out` record this independence over any field extension, for
-every weight of intermediate fields invariant under `K`-algebra equivalence.
+The lemmas `IntermediateField.weight_fixedField_stabilizer_smul` and
+`IntermediateField.weight_fixedField_stabilizer_out` record this independence over any field
+extension, for every weight of intermediate fields invariant under `K`-algebra equivalence.
 
 The weight is invariant under equivariant bijections and additive on disjoint unions with
 finitely many orbits. For a transitive nonempty action it is the discriminant exponent of any
@@ -43,49 +43,6 @@ namespace TauCeti
 
 open _root_.MulAction
 
-section Weight
-
-variable {K M : Type*} [Field K] [Field M] [Algebra K M]
-variable {X Y : Type*} [MulAction (M ≃ₐ[K] M) X] [MulAction (M ≃ₐ[K] M) Y]
-variable {α : Type*} {w : IntermediateField K M → α}
-
-/-- Translating a point does not change a `K`-isomorphism-invariant weight of its stabilizer's
-fixed field, since the two fixed fields are conjugate. -/
-theorem weight_fixedField_stabilizer_smul
-    (hw : ∀ {L L' : IntermediateField K M}, (L ≃ₐ[K] L') → w L = w L')
-    (σ : M ≃ₐ[K] M) (x : X) :
-    w (IntermediateField.fixedField (stabilizer (M ≃ₐ[K] M) (σ • x))) =
-      w (IntermediateField.fixedField (stabilizer (M ≃ₐ[K] M) x)) := by
-  rw [IntermediateField.fixedField_stabilizer_smul]
-  exact (hw ((IntermediateField.fixedField (stabilizer (M ≃ₐ[K] M) x)).equivMap
-    σ.toAlgHom)).symm
-
-/-- A `K`-isomorphism-invariant weight of the fixed field of the stabilizer of an orbit's
-representative can be computed at any point in that orbit. -/
-theorem weight_fixedField_stabilizer_out
-    (hw : ∀ {L L' : IntermediateField K M}, (L ≃ₐ[K] L') → w L = w L')
-    {ω : orbitRel.Quotient (M ≃ₐ[K] M) X} {x : X}
-    (hx : (Quotient.mk'' x : orbitRel.Quotient (M ≃ₐ[K] M) X) = ω) :
-    w (IntermediateField.fixedField (stabilizer (M ≃ₐ[K] M) ω.out)) =
-      w (IntermediateField.fixedField (stabilizer (M ≃ₐ[K] M) x)) := by
-  obtain ⟨σ, rfl⟩ := MulAction.exists_smul_out_eq hx
-  exact (weight_fixedField_stabilizer_smul hw σ ω.out).symm
-
-/-- A `K`-isomorphism-invariant weight of the fixed field of the stabilizer of an orbit's
-representative can be computed at any point mapping into that orbit under an injective
-equivariant map, which preserves stabilizers. -/
-theorem weight_fixedField_stabilizer_out_of_injective
-    (hw : ∀ {L L' : IntermediateField K M}, (L ≃ₐ[K] L') → w L = w L')
-    (f : X → Y) (hf : Function.Injective f)
-    (he : ∀ (σ : M ≃ₐ[K] M) (x : X), f (σ • x) = σ • f x)
-    {ω : orbitRel.Quotient (M ≃ₐ[K] M) Y} {x : X}
-    (hx : (Quotient.mk'' (f x) : orbitRel.Quotient (M ≃ₐ[K] M) Y) = ω) :
-    w (IntermediateField.fixedField (stabilizer (M ≃ₐ[K] M) ω.out)) =
-      w (IntermediateField.fixedField (stabilizer (M ≃ₐ[K] M) x)) := by
-  rw [weight_fixedField_stabilizer_out hw hx, MulAction.stabilizer_eq_of_injective f hf he]
-
-end Weight
-
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 variable {X Y : Type*} [MulAction Gal(SeparableClosure K/K) X]
@@ -100,7 +57,8 @@ theorem discriminantExponent_fixedField_stabilizer_smul
       (stabilizer Gal(SeparableClosure K/K) (σ • x))).discriminantExponent =
         (IntermediateField.fixedField
           (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
-  weight_fixedField_stabilizer_smul IntermediateField.discriminantExponent_eq_of_algEquiv σ x
+  IntermediateField.weight_fixedField_stabilizer_smul
+    IntermediateField.discriminantExponent_eq_of_algEquiv σ x
 
 /-- The summand of an orbit can be computed at any point in that orbit. -/
 theorem discriminantExponent_fixedField_stabilizer_out
@@ -110,7 +68,8 @@ theorem discriminantExponent_fixedField_stabilizer_out
       (stabilizer Gal(SeparableClosure K/K) ω.out)).discriminantExponent =
         (IntermediateField.fixedField
           (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
-  weight_fixedField_stabilizer_out IntermediateField.discriminantExponent_eq_of_algEquiv hx
+  IntermediateField.weight_fixedField_stabilizer_out
+    IntermediateField.discriminantExponent_eq_of_algEquiv hx
 
 private theorem discriminantExponent_fixedField_stabilizer_out_of_injective
     (f : X → Y) (hf : Function.Injective f)
@@ -121,7 +80,7 @@ private theorem discriminantExponent_fixedField_stabilizer_out_of_injective
       (stabilizer Gal(SeparableClosure K/K) ω.out)).discriminantExponent =
         (IntermediateField.fixedField
           (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent :=
-  weight_fixedField_stabilizer_out_of_injective
+  IntermediateField.weight_fixedField_stabilizer_out_of_injective
     IntermediateField.discriminantExponent_eq_of_algEquiv f hf he hx
 
 /-- The sum of the discriminant exponents of the fixed fields of point stabilizers, one per
