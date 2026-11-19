@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Abelianization.Character
+public import TauCeti.GroupTheory.FiniteAbelian.Duality
 public import Mathlib.Topology.Algebra.Group.Quotient
 
 /-!
