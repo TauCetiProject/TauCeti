@@ -341,7 +341,9 @@ theorem localMultiplicity_eq_one_iff_isRegularPoint
   rw [localMultiplicity_def, analyticOrderNatAt, ENat.toNat_eq_iff one_ne_zero, Nat.cast_one, h,
     Ne, ← mfderiv_eq_zero_iff_deriv_chartAt_comp_comp_chartAt_symm_eq_zero hf.self_of_nhds,
     isRegularPoint_iff]
-  -- A linear functional on `ℂ` is surjective exactly when it is nonzero.
+  -- A linear functional on `ℂ` is surjective exactly when it is nonzero. The tangent spaces
+  -- `TangentSpace 𝓘(ℂ) x` and `TangentSpace 𝓘(ℂ) (f x)` are by definition the model space `ℂ`,
+  -- so `@id` reads `mfderiv 𝓘(ℂ) 𝓘(ℂ) f x` as a map `ℂ →L[ℂ] ℂ` without changing it.
   exact ((LinearMap.surjective_iff_ne_zero
     (f := (@id (ℂ →L[ℂ] ℂ) (mfderiv 𝓘(ℂ) 𝓘(ℂ) f x)).toLinearMap)).trans
     (not_congr (ContinuousLinearMap.coe_inj (g := 0)))).symm

@@ -135,8 +135,9 @@ theorem mfderiv_eq_zero_iff_deriv_chartAt_comp_comp_chartAt_symm_eq_zero
       fun z ↦ chartAt ℂ (f x) (f ((chartAt ℂ x).symm z)) := by
     simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
       modelWithCornersSelf_coe_symm, Function.comp_def, id_eq]
-  rw [hf.mfderiv, ModelWithCorners.range_eq_univ, fderivWithin_univ, hw, extChartAt_coe,
-    Function.comp_apply, modelWithCornersSelf_coe, id_eq, ← toSpanSingleton_deriv]
+  rw [hf.mfderiv, hw]
+  simp only [mfld_simps, fderivWithin_univ]
+  rw [← toSpanSingleton_deriv]
   -- The identifications `tangentSpaceCastModel` of the tangent spaces with `ℂ` are linear
   -- equivalences, so they do not affect vanishing.
   refine ((tangentSpaceCastModel 𝓘(ℂ) x).arrowCongr
