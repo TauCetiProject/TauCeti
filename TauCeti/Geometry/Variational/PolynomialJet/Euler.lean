@@ -71,16 +71,6 @@ section CommSemiring
 
 variable [CommSemiring R]
 
-/-- Partial derivatives in field coordinates vanish outside the finitely many variables of an
-expression, so any family built from them by zero-preserving maps has finite support. -/
-private theorem hasFiniteSupport_pderiv {κ M : Type*} [Zero M]
-    {e : κ → ι ⊕ (α × (ι →₀ ℕ))} (he : Function.Injective e) (f : PolynomialJet R ι α)
-    (φ : κ → PolynomialJet R ι α → M) (hφ : ∀ k, φ k 0 = 0) :
-    Function.HasFiniteSupport fun k ↦ φ k (pderiv (e k) f) := by
-  refine (f.vars.finite_toSet.preimage he.injOn).subset fun k hk ↦ ?_
-  by_contra h
-  exact hk (by simp only [pderiv_eq_zero_of_notMem_vars h, hφ])
-
 /-- Partial differentiation preserves every finite stage. -/
 theorem pderiv_mem_stage (v : ι ⊕ (α × (ι →₀ ℕ))) {r : ℕ} {p : PolynomialJet R ι α}
     (hp : p ∈ stage R ι α r) : pderiv v p ∈ stage R ι α r := by
@@ -235,6 +225,16 @@ theorem evolutionaryDeriv_X_base (Q : α → PolynomialJet R ι α) (j : ι) :
 theorem evolutionaryDeriv_X_field (Q : α → PolynomialJet R ι α) (a : α) (I : ι →₀ ℕ) :
     evolutionaryDeriv Q (X (Sum.inr (a, I))) = iteratedTotalDeriv I (Q a) := by
   simp [evolutionaryDeriv]
+
+/-- A derivation that annihilates the base coordinates and sends each `uᵃ_I` to `D_I Qᵃ` is the
+prolonged evolutionary derivation `pr Q`. -/
+theorem evolutionaryDeriv_unique (Q : α → PolynomialJet R ι α)
+    (D : Derivation R (PolynomialJet R ι α) (PolynomialJet R ι α))
+    (hx : ∀ j, D (X (Sum.inl j)) = 0)
+    (hu : ∀ a I, D (X (Sum.inr (a, I))) = iteratedTotalDeriv I (Q a)) :
+    D = evolutionaryDeriv Q := by
+  apply MvPolynomial.derivation_ext
+  rintro (j | ⟨a, I⟩) <;> simp [hx, hu]
 
 /-- Prolonged evolutionary derivations commute with total derivatives. -/
 theorem evolutionaryDeriv_totalDeriv_comm (Q : α → PolynomialJet R ι α) (i : ι)
