@@ -40,8 +40,8 @@ functions with the ground field.
 
 ## Main results
 
-* `InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus`: Riemann–Roch
-  `χ(L) = deg L + 1 - g` for line bundles without a rational point;
+* `InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus_of_geometricallyIntegral`:
+  Riemann–Roch `χ(L) = deg L + 1 - g` for line bundles without a rational point;
 * in the namespace `SchemeWeilDivisor`, without a rational point:
   * `finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf_of_geometricallyIntegral`:
     Riemann–Roch `dim H⁰(𝒪_X(D)) - dim H¹(𝒪_X(D)) = deg D + 1 - g` for divisor sheaves;
@@ -76,7 +76,7 @@ closed geometrically integral scheme over a field `k` with finite-dimensional `H
 line bundle `L` satisfies `χ(L) = deg L + 1 - g`. Here `χ(L) = dim H⁰(X, L) - dim H¹(X, L)`,
 `deg L = χ(L) - χ(𝒪_X)` is the Euler-characteristic degree and `g` is the genus. For instance,
 this holds on every smooth proper geometrically connected curve over any field. -/
-theorem InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus
+theorem InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus_of_geometricallyIntegral
     (L : InvertibleSheaf X) :
     Scheme.Modules.eulerCharBelow k X L.obj 2 = L.eulerDegree k + 1 - X.genus k := by
   have := GeometricallyIntegral.isIntegral_of_subsingleton (X ↘ Spec (.of k))

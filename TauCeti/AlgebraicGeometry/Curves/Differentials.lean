@@ -145,7 +145,8 @@ theorem finrank_cohomology_zero_sub_finrank_cohomology_zero_differentials_tensor
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
   rw [← finrank_cohomology_one_eq_finrank_cohomology_zero_differentials_tensor_dual_of_smooth
     (k := k) L, ← Scheme.Modules.eulerCharBelow_two]
-  exact InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus k L
+  exact InvertibleSheaf.eulerCharBelow_eq_eulerDegree_add_one_sub_genus_of_geometricallyIntegral
+    k L
 
 end
 
