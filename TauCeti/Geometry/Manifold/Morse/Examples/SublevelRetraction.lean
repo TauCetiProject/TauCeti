@@ -12,10 +12,10 @@ import TauCeti.Geometry.Manifold.Morse.Examples.QuadraticWell
 # Retracting the sublevels of the quadratic well
 
 For `f(x) = x²` on `ℝ` and `0 ≤ a`, the sublevel `{x² ≤ a}` is the interval `[-√a, √a]`. Clamping
-to this interval, `x ↦ max (-√a) (min √a x)`, is a retraction of every sublevel `{x² ≤ b}` onto it
-(`TauCeti.sqSublevelRetraction`, `TauCeti.sqSublevelRetraction_sublevelInclusion`): it fixes
-`[-√a, √a]` and sends a point `x` outside it to `sign(x) √a`
-(`TauCeti.coe_sqSublevelRetraction_apply_of_sqrt_le`,
+to this interval, `x ↦ max (-√a) (min √a x)`, maps every sublevel `{x² ≤ b}` into it
+(`TauCeti.sqSublevelRetraction`), and for `a ≤ b` it is a retraction of `{x² ≤ b}` onto it
+(`TauCeti.sqSublevelRetraction_sublevelInclusion`): it fixes `[-√a, √a]` and sends a point `x`
+outside it to `sign(x) √a` (`TauCeti.coe_sqSublevelRetraction_apply_of_sqrt_le`,
 `TauCeti.coe_sqSublevelRetraction_apply_of_le_neg_sqrt`). This is where the descent at unit speed
 along the field `-1 / (2x)`, for which `f` decreases with derivative `-1`, takes a point `x` of the
 band `f⁻¹[a, b]` at time `x² - a`.
@@ -28,8 +28,8 @@ example.
   relative to `{x² ≤ a}` (`TauCeti.homotopicRel_sqSublevelRetraction`, an instance of
   `TauCeti.homotopicRel_sublevel_retraction`).
 * **Restriction to smaller bands.** For `a ≤ a'` and `b' ≤ b`, restricting the clamp of `{x² ≤ b}`
-  onto `{x² ≤ a}` to `{x² ≤ b'}` is equal, not merely homotopic, to the composite of the clamp of
-  `{x² ≤ b'}` onto `{x² ≤ a'}` and the clamp of `{x² ≤ a'}` onto `{x² ≤ a}`
+  into `{x² ≤ a}` to `{x² ≤ b'}` is equal, not merely homotopic, to the composite of the clamp of
+  `{x² ≤ b'}` into `{x² ≤ a'}` and the clamp of `{x² ≤ a'}` onto `{x² ≤ a}`
   (`TauCeti.sqSublevelRetraction_comp_sublevelInclusion`): a point of `[√a', √b']` goes to `√a'`
   and then to `√a`, which is where the clamp onto `[-√a, √a]` sends it. In general these two maps
   agree only up to homotopy relative to the lower sublevel
@@ -48,8 +48,10 @@ open scoped Manifold
 
 namespace TauCeti
 
-/-- The retraction of the sublevel `{x² ≤ b}` of `x ↦ x²` on `ℝ` onto the sublevel
-`{x² ≤ a} = [-√a, √a]`, for `0 ≤ a`, clamping `x` to that interval by `Set.projIcc`. -/
+/-- The clamp of the sublevel `{x² ≤ b}` of `x ↦ x²` on `ℝ` into the sublevel
+`{x² ≤ a} = [-√a, √a]`, for `0 ≤ a`, sending `x` to the nearest point of that interval by
+`Set.projIcc`. For `a ≤ b` it is a retraction of `{x² ≤ b}` onto `{x² ≤ a}`
+(`TauCeti.sqSublevelRetraction_sublevelInclusion`). -/
 noncomputable def sqSublevelRetraction {a : ℝ} (ha : 0 ≤ a) (b : ℝ) :
     C({x : ℝ | x ^ 2 ≤ b}, {x : ℝ | x ^ 2 ≤ a}) where
   toFun x := ⟨projIcc (-√a) √a (neg_le_self (Real.sqrt_nonneg a)) x,
@@ -84,9 +86,9 @@ theorem coe_sqSublevelRetraction_apply_of_le_neg_sqrt {a : ℝ} (ha : 0 ≤ a) (
   rw [coe_sqSublevelRetraction_apply, ← coe_projIcc _ _ (neg_le_self (Real.sqrt_nonneg a)),
     projIcc_of_le_left _ hx]
 
-/-- **Clamping across nested bands.** For `0 ≤ a ≤ a'` and `b' ≤ b`, the retraction of `{x² ≤ b}`
-onto `{x² ≤ a}`, restricted to `{x² ≤ b'}`, is the retraction of `{x² ≤ b'}` onto `{x² ≤ a'}`
-followed by the retraction of `{x² ≤ a'}` onto `{x² ≤ a}`. -/
+/-- **Clamping across nested bands.** For `0 ≤ a ≤ a'` and `b' ≤ b`, the clamp of `{x² ≤ b}` into
+`{x² ≤ a}`, restricted to `{x² ≤ b'}`, is the clamp of `{x² ≤ b'}` into `{x² ≤ a'}` followed by
+the retraction of `{x² ≤ a'}` onto `{x² ≤ a}`. -/
 theorem sqSublevelRetraction_comp_sublevelInclusion {a a' b' b : ℝ} (ha : 0 ≤ a)
     (haa' : a ≤ a') (hb'b : b' ≤ b) :
     (sqSublevelRetraction ha b).comp (sublevelInclusion (fun x : ℝ ↦ x ^ 2) b' b hb'b) =
