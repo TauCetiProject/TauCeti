@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
 # Bessel-potential spaces as spaces of tempered distributions
@@ -19,6 +20,8 @@ continuous linear map, so that the spaces `H^{s,p}` for different `s` can be com
 
 * `BesselPotentialSpace.toDistrCLM`: the inclusion `H^{s,p}(E, F) →L[ℂ] 𝓢'(E, F)`.
 * `BesselPotentialSpace.toDistrCLM_injective`: it is injective.
+* `BesselPotentialSpace.toDistr_eq_toDistr_iff`: elements of `H^{s,p₀}` and `H^{s,p₁}` are the
+  same tempered distribution exactly when their `Lᵖ` functions agree almost everywhere.
 * `BesselPotentialSpace.norm_copy`, `BesselPotentialSpace.memSobolev_toDistr_of_eq`: moving an
   element along an equality of orders `s = s'`.
 -/
@@ -51,6 +54,21 @@ theorem toDistrCLM_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, 
 theorem toDistrCLM_injective {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     Function.Injective (toDistrCLM E F s p) := fun u v h ↦
   ext (by simpa using h)
+
+section Exponents
+
+variable {s : ℝ} {p₀ p₁ : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)]
+
+/-- Elements `u₀ ∈ H^{s,p₀}` and `u₁ ∈ H^{s,p₁}` of one order `s` are the same tempered
+distribution exactly when their `Lᵖ` functions `J^s u₀` and `J^s u₁` agree almost everywhere. -/
+theorem toDistr_eq_toDistr_iff {u₀ : H^{s, p₀}(E, F)} {u₁ : H^{s, p₁}(E, F)} :
+    u₀.toDistr = u₁.toDistr ↔ u₀.toLp =ᵐ[volume] u₁.toLp := by
+  rw [← Lp.toTemperedDistribution_eq_toTemperedDistribution_iff]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [← u₀.bessel_toDistr_eq_toLp, ← u₁.bessel_toDistr_eq_toLp, h]
+  · rw [← besselPotential_neg_toLp_eq (f := u₀), ← besselPotential_neg_toLp_eq (f := u₁), h]
+
+end Exponents
 
 /-- Transferring an element of `H^{s,p}` to `H^{s',p}` along `s = s'` keeps its norm. -/
 @[simp]
