@@ -116,11 +116,11 @@ theorem _root_.CategoryTheory.Over.representableDiagonal_overYonedaEquivPresheaf
   rw [Functor.relativelyRepresentable.diag_iff, representableDiagonal_iff]
   constructor
   · intro h U g
-    exact (relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff
+    exact (Over.relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff
       (Over.postHomMk g)).1 (h _)
   · intro h Y g
     obtain ⟨g, rfl⟩ := (Over.overYonedaEquivPresheafOverHomEquiv Y F).surjective g
-    exact (relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff g).2 (h g.left)
+    exact (Over.relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff g).2 (h g.left)
 
 /-- A presheaf on schemes over `h_S` has an étale atlas exactly when the corresponding presheaf
 on `Over S` has an étale atlas by a scheme over `S`. -/

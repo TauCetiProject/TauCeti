@@ -33,7 +33,7 @@ whose underlying morphisms are in `P`).
 * `CategoryTheory.Functor.relativelyRepresentable_overPost_iff` and
   `CategoryTheory.MorphismProperty.relative_overPost_iff`: relative representability with respect
   to `Over.post F` is relative representability of the underlying morphism.
-* `TauCeti.relativelyRepresentable_overYonedaEquivPresheafOver_map_iff` and
+* `CategoryTheory.Over.relativelyRepresentable_overYonedaEquivPresheafOver_map_iff` and
   `CategoryTheory.MorphismProperty.presheaf_overYonedaEquivPresheafOver_map_iff`: the case of
   presheaves over a representable presheaf.
 -/
@@ -177,7 +177,7 @@ variable {C : Type u₁} [Category.{v₁} C] {X : C}
 
 /-- A morphism of presheaves over `yoneda.obj X` is representable exactly when the corresponding
 morphism of presheaves on `Over X` is representable by objects of `Over X`. -/
-theorem relativelyRepresentable_overYonedaEquivPresheafOver_map_iff
+theorem _root_.CategoryTheory.Over.relativelyRepresentable_overYonedaEquivPresheafOver_map_iff
     {A B : Over (yoneda.obj X)} (f : A ⟶ B) :
     yoneda.relativelyRepresentable ((overYonedaEquivPresheafOver X).functor.map f) ↔
       yoneda.relativelyRepresentable f.left :=
@@ -196,30 +196,16 @@ theorem _root_.CategoryTheory.MorphismProperty.presheaf_overYonedaEquivPresheafO
     (overYonedaEquivPresheafOverYonedaIso X) _ f).trans
       (MorphismProperty.relative_overPost_iff P f)
 
-/-- Morphisms in `Over (yoneda.obj X)` from `yoneda.obj Y` lying over `yoneda.obj X` through
-`yoneda.map Y.hom` correspond to morphisms from the representable presheaf `yoneda.obj Y` on
-`Over X`, through the equivalence `overYonedaEquivPresheafOver X`. -/
-@[expose, simps]
-noncomputable def _root_.CategoryTheory.Over.overYonedaEquivPresheafOverHomEquiv (Y : Over X)
-    (F : Over (yoneda.obj X)) :
-    (Over.mk (yoneda.map Y.hom) ⟶ F) ≃
-      (yoneda.obj Y ⟶ (overYonedaEquivPresheafOver X).functor.obj F) where
-  toFun g := (overYonedaEquivPresheafOverYonedaIso X).inv.app Y ≫
-    (overYonedaEquivPresheafOver X).functor.map g
-  invFun g := (overYonedaEquivPresheafOver X).functor.preimage
-    ((overYonedaEquivPresheafOverYonedaIso X).hom.app Y ≫ g)
-  left_inv g := by simp
-  right_inv g := by simp
-
 /-- A morphism from a representable presheaf on `Over X` is representable by objects of
 `Over X` exactly when the underlying morphism of presheaves on `C` of the corresponding morphism
 over `yoneda.obj X` is representable. -/
-theorem relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff {Y : Over X}
-    {F : Over (yoneda.obj X)} (g : Over.mk (yoneda.map Y.hom) ⟶ F) :
+theorem _root_.CategoryTheory.Over.relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff
+    {Y : Over X} {F : Over (yoneda.obj X)} (g : Over.mk (yoneda.map Y.hom) ⟶ F) :
     yoneda.relativelyRepresentable (Over.overYonedaEquivPresheafOverHomEquiv Y F g) ↔
-      yoneda.relativelyRepresentable g.left :=
-  (MorphismProperty.cancel_left_of_respectsIso _ _ _).trans
-    (relativelyRepresentable_overYonedaEquivPresheafOver_map_iff g)
+      yoneda.relativelyRepresentable g.left := by
+  rw [Over.overYonedaEquivPresheafOverHomEquiv_apply]
+  exact (MorphismProperty.cancel_left_of_respectsIso _ _ _).trans
+    (Over.relativelyRepresentable_overYonedaEquivPresheafOver_map_iff g)
 
 /-- A morphism from a representable presheaf on `Over X` is representable with base changes
 whose underlying morphisms are in `P` exactly when the underlying morphism of presheaves on `C`
@@ -228,8 +214,9 @@ theorem _root_.CategoryTheory.MorphismProperty.presheaf_overYonedaEquivPresheafO
     (P : MorphismProperty C) {Y : Over X}
     {F : Over (yoneda.obj X)} (g : Over.mk (yoneda.map Y.hom) ⟶ F) :
     (P.inverseImage (Over.forget X)).presheaf (Over.overYonedaEquivPresheafOverHomEquiv Y F g) ↔
-      P.presheaf g.left :=
-  (MorphismProperty.cancel_left_of_respectsIso _ _ _).trans
+      P.presheaf g.left := by
+  rw [Over.overYonedaEquivPresheafOverHomEquiv_apply]
+  exact (MorphismProperty.cancel_left_of_respectsIso _ _ _).trans
     (P.presheaf_overYonedaEquivPresheafOver_map_iff g)
 
 end TauCeti
