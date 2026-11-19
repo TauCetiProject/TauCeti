@@ -540,9 +540,10 @@ private theorem hasFTaylorSeriesUpToOn_tsum_seeleyCoeff_smul [CompleteSpace F] {
         (mul_le_mul_of_nonneg_left (hUC z hz.2 (mem_lowerHalfSpace.mp hz.1) k) (by positivity))
     exact (tendstoUniformlyOn_iff_tendstoUniformlyOnFilter.mp hunif).mono_right
       (le_principal_iff.mpr (inter_mem_nhdsWithin _ hU))
-  exact .of_tendstoLocallyUniformlyOn_of_convex isClosed_lowerHalfSpace convex_lowerHalfSpace
-    nonempty_interior_lowerHalfSpace (fun N ↦ HasFTaylorSeriesUpToOn.sum fun k _ ↦ hT k)
-    hloc fun z hz ↦ (hsum z hz).hasSum.tendsto_sum_nat
+  exact .of_tendstoLocallyUniformlyOn_of_convex
+    (fun _ _ ↦ ⟨_, subset_rfl, convex_lowerHalfSpace, self_mem_nhdsWithin⟩)
+    (fun N ↦ HasFTaylorSeriesUpToOn.sum fun k _ ↦ hT k) hloc
+    fun z hz ↦ (hsum z hz).hasSum.tendsto_sum_nat
 
 /-- On the closed lower half-space, the reflected series of the cut-off input has the reflected
 Taylor series of the cut-off input. -/

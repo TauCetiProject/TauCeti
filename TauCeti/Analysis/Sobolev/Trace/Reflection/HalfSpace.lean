@@ -139,18 +139,6 @@ theorem convex_upperHalfSpace : Convex ℝ (upperHalfSpace E) :=
 theorem convex_lowerHalfSpace : Convex ℝ (lowerHalfSpace E) :=
   (convex_Iic 0).prod convex_univ
 
-omit [NormedSpace ℝ E] in
-/-- The upper half-space has nonempty interior. -/
-theorem nonempty_interior_upperHalfSpace : (interior (upperHalfSpace E)).Nonempty :=
-  ⟨(1, 0), mem_interior_iff_mem_nhds.mpr
-    (prod_mem_nhds (Ici_mem_nhds (show (0 : ℝ) < 1 by norm_num)) univ_mem)⟩
-
-omit [NormedSpace ℝ E] in
-/-- The lower half-space has nonempty interior. -/
-theorem nonempty_interior_lowerHalfSpace : (interior (lowerHalfSpace E)).Nonempty :=
-  ⟨(-1, 0), mem_interior_iff_mem_nhds.mpr
-    (prod_mem_nhds (Iic_mem_nhds (show (-1 : ℝ) < 0 by norm_num)) univ_mem)⟩
-
 /-- Within-set derivatives are unique on the upper half-space. -/
 theorem uniqueDiffOn_upperHalfSpace : UniqueDiffOn ℝ (upperHalfSpace E) :=
   (uniqueDiffOn_Ici 0).prod uniqueDiffOn_univ

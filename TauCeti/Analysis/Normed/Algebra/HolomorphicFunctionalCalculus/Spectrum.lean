@@ -21,6 +21,15 @@ The key step is that a germ vanishing at `λ ∈ σ(a)` factors as `(z - λ) h(z
 `f(a) = (a - λ) h(a) = h(a) (a - λ)` cannot be invertible. The zero algebra, where the spectrum
 and the germ algebra are trivial, is included.
 
+## Main results
+
+* `TauCeti.isUnit_holomorphicCalculus_iff`, `TauCeti.isUnit_holomorphicCalculus_ofFun_iff`, and
+  `TauCeti.isUnit_holomorphicCalculusOn_iff`: `f(a)` is invertible exactly when `f` has no zero on
+  the spectrum of `a`.
+* `TauCeti.spectrum_holomorphicCalculus`, `TauCeti.spectrum_holomorphicCalculus_ofFun`,
+  `TauCeti.spectrum_holomorphicCalculusOn`, and `TauCeti.spectrum_holomorphicCalculusOn_of`: the
+  spectral mapping theorem for germs, represented germs, and functions on an open neighbourhood.
+
 ## References
 
 * H. G. Dales, *Banach Algebras and Automatic Continuity*, Theorem 2.4.4.
@@ -29,9 +38,11 @@ and the germ algebra are trivial, is included.
 
 public noncomputable section
 
-open Set
+open Set TopologicalSpace
 
 namespace TauCeti
+
+open HolomorphicFunctions
 
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
@@ -60,18 +71,18 @@ theorem holomorphicCalculus_ringInverse (a : A) (g : holomorphicGerms (spectrum 
     holomorphicCalculus a (Ring.inverse g) = Ring.inverse (holomorphicCalculus a g) :=
   map_ringInverse _ g
 
-/-- **Spectral mapping theorem** for the holomorphic calculus: the spectrum of `f(a)` is the set
-of values of the germ `f` on the spectrum of `a`. -/
+/-- **Spectral mapping theorem** for the holomorphic calculus: the spectrum of `f(a)` is the
+spectrum of the germ `f`, that is, the set of values of `f` on the spectrum of `a`
+(`holomorphicGerms.spectrum_eq`). This includes the zero algebra, where both sides are empty. -/
 theorem spectrum_holomorphicCalculus (a : A) (g : holomorphicGerms (spectrum ℂ a)) :
-    spectrum ℂ (holomorphicCalculus a g) =
-      {c | ∃ (x : ℂ) (hx : x ∈ spectrum ℂ a), holomorphicGerms.eval x hx g = c} := by
-  rw [AlgHom.spectrum_apply_eq, holomorphicGerms.spectrum_eq]
+    spectrum ℂ (holomorphicCalculus a g) = spectrum ℂ g :=
+  AlgHom.spectrum_apply_eq _ g
 
 /-- **Spectral mapping theorem** for a holomorphic representative: `σ(f(a)) = f(σ(a))`. -/
 theorem spectrum_holomorphicCalculus_ofFun (a : A) (f : ℂ → ℂ)
     (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) :
     spectrum ℂ (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) = f '' spectrum ℂ a := by
-  rw [AlgHom.spectrum_apply_eq, holomorphicGerms.spectrum_ofFun]
+  rw [spectrum_holomorphicCalculus, holomorphicGerms.spectrum_ofFun]
 
 /-- The calculus sends the reciprocal of a function without zeros on the spectrum to the inverse
 of its value. -/
@@ -112,5 +123,37 @@ theorem holomorphicCalculus_inv_sub (a : A) {μ : ℂ} (hμ : μ ∉ spectrum �
   rw [holomorphicCalculus_polynomial] at h
   simpa only [Polynomial.eval_sub, Polynomial.eval_C, Polynomial.eval_X, map_sub,
     Polynomial.aeval_C, Polynomial.aeval_X, resolvent] using h
+
+/-- **Spectral mapping theorem (open-domain form).** For `f : holomorphicFunctions U` with
+`spectrum ℂ a ⊆ U`, `spectrum ℂ (holomorphicCalculusOn a U ha f) = extend f '' spectrum ℂ a`. -/
+theorem spectrum_holomorphicCalculusOn (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
+    (f : holomorphicFunctions U) :
+    spectrum ℂ (holomorphicCalculusOn a U ha f) = extend f '' spectrum ℂ a := by
+  rw [← holomorphicCalculus_toGerm, spectrum_holomorphicCalculus, toGerm_apply,
+    holomorphicGerms.spectrum_ofFun]
+
+/-- **Spectral mapping theorem (ambient differentiable representative).** For `f` differentiable on
+an open neighbourhood `U` of `spectrum ℂ a`,
+`spectrum ℂ (holomorphicCalculusOn a U ha (of U f hf)) = f '' spectrum ℂ a`. -/
+theorem spectrum_holomorphicCalculusOn_of (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
+    (f : ℂ → ℂ) (hf : DifferentiableOn ℂ f U) :
+    spectrum ℂ (holomorphicCalculusOn a U ha (of U f hf)) = f '' spectrum ℂ a := by
+  rw [← holomorphicCalculus_toGerm, toGerm_of, spectrum_holomorphicCalculus_ofFun]
+
+/-- A represented holomorphic germ evaluates to a unit at `a` if and only if its representative
+does not vanish on `spectrum ℂ a`. -/
+theorem isUnit_holomorphicCalculus_ofFun_iff (a : A) (f : ℂ → ℂ)
+    (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) :
+    IsUnit (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) ↔
+      ∀ z ∈ spectrum ℂ a, f z ≠ 0 := by
+  rw [isUnit_map_iff, holomorphicGerms.isUnit_iff]
+  simp
+
+/-- On an open neighbourhood `U` of `spectrum ℂ a`, `holomorphicCalculusOn a U ha f` is a unit if
+and only if `f` does not vanish on `spectrum ℂ a`. -/
+theorem isUnit_holomorphicCalculusOn_iff (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
+    (f : holomorphicFunctions U) :
+    IsUnit (holomorphicCalculusOn a U ha f) ↔ ∀ z ∈ spectrum ℂ a, extend f z ≠ 0 := by
+  rw [← holomorphicCalculus_toGerm, toGerm_apply, isUnit_holomorphicCalculus_ofFun_iff]
 
 end TauCeti

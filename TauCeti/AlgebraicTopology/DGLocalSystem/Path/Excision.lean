@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Skeleton
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Relative.QuasiIso
-public import TauCeti.AlgebraicTopology.Singular.Fibration.CubicalCells
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Cubical.Cells
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Equiv
 
 /-!

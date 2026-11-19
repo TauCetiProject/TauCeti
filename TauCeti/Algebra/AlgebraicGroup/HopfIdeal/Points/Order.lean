@@ -28,8 +28,9 @@ on all value algebras recovers the ideal inclusion, including infinitesimal stru
   subgroup inclusion on all value algebras.
 * `HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq`: recover ideal equality from point
   subgroup equality on all value algebras.
-* `CommHopfAlgCat.quotientPointsSubgroup_sup`: the point subgroup cut out by a join of Hopf
-  ideals is the intersection of the point subgroups cut out by the joinands.
+* `CommHopfAlgCat.quotientPointsSubgroup_sup` and `CommHopfAlgCat.quotientPointsSubgroup_iSup`:
+  the point subgroup cut out by a join or indexed supremum of Hopf ideals is the intersection of
+  the point subgroups cut out by the joinands.
 * `CommHopfAlgCat.quotientPointsSubgroupInclusion`: the bundled natural inclusion between
   subgroup functors induced by `I ≤ J`.
 * `CommHopfAlgCat.mapQuotientPointsSubgroup_inclusion_apply`: these inclusions commute with
@@ -141,6 +142,25 @@ theorem quotientPointsSubgroup_sup (H : _root_.CommHopfAlgCat.{v} R)
   intro x hx
   obtain ⟨y, hy, z, hz, rfl⟩ := HopfIdeal.mem_sup.mp hx
   rw [map_add, hI y hy, hJ z hz, add_zero]
+
+/-- The point subgroup cut out by an indexed supremum of Hopf ideals is the intersection of the
+point subgroups cut out by the individual ideals. -/
+theorem _root_.CommHopfAlgCat.quotientPointsSubgroup_iSup (H : _root_.CommHopfAlgCat.{v} R)
+    {ι : Sort*} (I : ι → HopfIdeal R H) (A : CommAlgCat.{w} R) :
+    quotientPointsSubgroup H (⨆ i, I i) A = ⨅ i, quotientPointsSubgroup H (I i) A := by
+  refine le_antisymm
+    (le_iInf fun i ↦ quotientPointsSubgroup_le_of_le H
+      (HopfIdeal.toIdeal_le_toIdeal.mp
+        (by rw [HopfIdeal.iSup_toIdeal]; exact le_iSup (fun j ↦ (I j).toIdeal) i)) A)
+    fun g hg ↦ ?_
+  rw [Subgroup.mem_iInf] at hg
+  rw [mem_quotientPointsSubgroup_iff]
+  have hle : (⨆ i, I i).toIdeal ≤ RingHom.ker g.ofConv.toRingHom := by
+    rw [HopfIdeal.iSup_toIdeal, iSup_le_iff]
+    intro i x hx
+    exact RingHom.mem_ker.mpr
+      ((mem_quotientPointsSubgroup_iff H (I i) A g).mp (hg i) x (HopfIdeal.mem_toIdeal.mp hx))
+  exact fun x hx ↦ RingHom.mem_ker.mp (hle (HopfIdeal.mem_toIdeal.mpr hx))
 
 /-- The subgroup inclusions associated to `I ≤ J` commute with maps of value algebras. -/
 @[simp]

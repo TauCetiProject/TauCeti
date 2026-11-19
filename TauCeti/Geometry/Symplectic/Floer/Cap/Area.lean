@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Sphere
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Loop
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 import TauCeti.Algebra.Order.ToIntervalMod
+import TauCeti.Topology.Homotopy.Path
 
 /-!
 # The symplectic area of raw caps
@@ -206,19 +207,16 @@ theorem apply_seam_one (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) (s : unitInt
 
 /-- The path `s ↦ w (s, ·)` in the loop space of a smooth based homotopy `w`, from `γ₁` to
 `γ₂`. -/
-def toPath (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) : Path γ₁ γ₂ where
-  toFun s := ⟨⟨fun t ↦ w (s, t),
-    hw.contMDiff.continuous.comp (continuous_const.prodMk continuous_subtype_val)⟩,
-    hw.apply_seam s, hw.apply_seam_one s⟩
-  continuous_toFun := Path.continuous_uncurry_iff.1 <|
-    hw.contMDiff.continuous.comp (by fun_prop)
-  source' := Path.ext <| funext hw.apply_zero
-  target' := Path.ext <| funext hw.apply_one
+def toPath (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) : Path γ₁ γ₂ :=
+  Path.ofContinuousFamily (fun s t : unitInterval ↦ w (s, t))
+    (hw.contMDiff.continuous.comp (by fun_prop)) hw.apply_seam hw.apply_seam_one
+    (fun t ↦ by rw [Icc.coe_zero, hw.apply_zero])
+    (fun t ↦ by rw [Icc.coe_one, hw.apply_one])
 
 @[simp]
 theorem toPath_apply (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w) (s t : unitInterval) :
     hw.toPath s t = w (s, t) :=
-  (rfl)
+  Path.ofContinuousFamily_apply _ _ _ _ _ _ s t
 
 /-- The homotopy class of a smooth based homotopy: the class of its path in the loop space, a
 morphism from `γ₁` to `γ₂` in the fundamental groupoid of `Ω M x`. It glues to raw caps of `γ₂`
@@ -332,7 +330,8 @@ theorem homotopyClass_rectangleTrans (hw : IsSmoothBasedHomotopy I γ₁ γ₂ w
   have hrep : (hw.rectangleTrans hv).toPath =
       (hw.toPath.trans hv.toPath).reparam concatReparamI continuous_concatReparamI
         concatReparamI_zero concatReparamI_one :=
-    Path.ext <| funext fun s ↦ Path.ext <| funext fun t ↦ (trans_reparam_apply hw hv s t).symm
+    Path.ext <| funext fun s ↦ Path.ext <| funext fun t ↦
+      (toPath_apply _ s t).trans (trans_reparam_apply hw hv s t).symm
   rw [hrep]
   exact Quotient.sound ⟨(Path.Homotopy.reparam (hw.toPath.trans hv.toPath) _
     continuous_concatReparamI concatReparamI_zero concatReparamI_one).symm⟩
