@@ -501,6 +501,23 @@ private theorem intervalIntegrable_homotopyIntegrand [IsManifold I 1 M]
     (Ioc_subset_Icc_self ht) (D := D') hD, extChartAt_to_inv]
   exact L.symm_apply_apply _
 
+/-- For a continuous form `φ` on the cylinder, the homotopy operator evaluates on tangent vectors
+`v₁, …, vₖ` of `M` as the time integral `∫₀¹ φ(x, t)(∂ₜ, (v₁, 0), …, (vₖ, 0)) dt`. -/
+theorem IsSmoothForm.homotopyOperator_apply_apply [IsManifold I 1 M] [CompleteSpace F]
+    {φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)}
+    (hφ : IsSmoothForm (I.prod (𝓡∂ 1)) 0 φ) (x : M) (v : Fin k → TangentSpace I x) :
+    TauCeti.homotopyOperator φ x v = ∫ t in (0 : ℝ)..1, φ (x, projIcc 0 1 zero_le_one t)
+      (Fin.cons ((0 : E), (1 : TangentSpace (𝓡∂ 1) (projIcc 0 1 zero_le_one t)))
+        fun i ↦ ((v i : E), (0 : EuclideanSpace ℝ (Fin 1)))) :=
+  -- Evaluation at `v` is a continuous linear map, so it commutes with the time integral. The rest
+  -- holds by definition: `homotopyOperator φ x` is the integral of `homotopyIntegrand φ x`, whose
+  -- value on `v` is the right-hand integrand by `ContinuousAlternatingMap.curryLeft_apply_apply`
+  -- and `compContinuousLinearMap_apply`. Those lemmas cannot be applied by `rw` or `simp` here:
+  -- `homotopyIntegrand` reads `TangentSpace (I.prod (𝓡∂ 1)) _` as `E × EuclideanSpace ℝ (Fin 1)`,
+  -- so its unfolding is not type-correct at the transparency these tactics match at.
+  ((ContinuousAlternatingMap.apply ℝ E F v).intervalIntegral_comp_comm
+    (intervalIntegrable_homotopyIntegrand hφ x)).symm
+
 /-- **Naturality of the homotopy operator** for continuous forms. Pulling a continuous form on
 the cylinder, with values in a Banach space, back along `g × id` commutes with the homotopy
 operator, for every differentiable map `g`. Unlike `TauCeti.homotopyOperator_mpullback_prodMap_id`,
