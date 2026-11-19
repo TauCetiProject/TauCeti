@@ -110,15 +110,18 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
   have hA := e.hasFDerivAt_comp_chartAt_transHomeomorph_symm_sectionLinearization_id
     hze hz hg Λ fun v ↦ by
     -- `Λ v` is `e_z (D v)` by definition of the composite.
-    rw [← hD, ← e.coe_continuousLinearEquivAt_eq hze]
-    rfl
+    rw [← hD, ← e.coe_continuousLinearEquivAt_eq hze, ContinuousLinearEquiv.coe_coe]
+    exact D.trans_apply _ v
   obtain ⟨U, hUo, hzU, hUz, hUe, hUφ, ho'⟩ := exists_isolating_nhds_of_hasFDerivAt o hF e φ hze hzφ
     hz hA ⟨1, by simpa using AntilipschitzWith.id⟩
   -- The chart carries the manifold orientation to the fibre orientation read in `e`.
   have hmap : (oM.orientationAt z).map _ Λ.toLinearEquiv =
       e.mapOrientation (Fin (n + 1)) hze (o z) := by
-    have hΛ : Λ.toLinearEquiv = D.toLinearEquiv.trans (e.linearEquivAt ℝ z hze) :=
-      LinearEquiv.ext fun _ ↦ rfl
+    have hΛ : Λ.toLinearEquiv = D.toLinearEquiv.trans (e.linearEquivAt ℝ z hze) := by
+      rw [ContinuousLinearEquiv.trans_toLinearEquiv]
+      -- `continuousLinearEquivAt.toLinearEquiv` is the same trivialization's `linearEquivAt`;
+      -- the former adds continuity fields to the latter, with no change to the linear map.
+      rfl
     rw [hΛ]
     refine (Orientation.map_trans D.toLinearEquiv (e.linearEquivAt ℝ z hze)
       (oM.orientationAt z)).trans ?_
@@ -130,10 +133,16 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
         ((⟨fun y ↦ y - (chartAt X z) z, by fun_prop⟩ : C(X, X)).comp
           (chartAt X z).sourceRestrict) :=
     ContinuousMap.ext fun x ↦ by
-      change Λ ((chartAt X z) x) - Λ ((chartAt X z) z) =
-        Λ ((chartAt X z).sourceRestrict x - (chartAt X z) z)
-      simpa only [(chartAt X z).sourceRestrict_apply x] using
-        (map_sub Λ ((chartAt X z) x) ((chartAt X z) z)).symm
+      -- The source subtype is written as `φ.source` on the left and `(chartAt X z).source`
+      -- on the right. Their induced topologies become identical after unfolding the composite
+      -- chart, so `erw` is needed for the composition and source-restriction application
+      -- lemmas to match. The final equality uses the same source identification as `hσ`.
+      erw [ContinuousMap.comp_apply, ContinuousMap.comp_apply]
+      simp only [ContinuousMap.coe_mk, ContinuousMap.coe_apply, ContinuousLinearEquiv.coe_coe,
+        φ, OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
+        ContinuousLinearEquiv.coe_toHomeomorph]
+      erw [(chartAt X z).sourceRestrict_apply]
+      exact (map_sub Λ ((chartAt X z) x) ((chartAt X z) z)).symm
   have hφ := (chartAt X z).localHomologyMap_chart_localOrientationOfOrientedChart
     (mem_chart_source X z) Λ (oM.orientationAt z) hX hF (by
       rw [← hσ]

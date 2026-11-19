@@ -387,8 +387,8 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_chart_localOrientationOfOr
   have hcomp : localHomologyMap Z (Lc.comp (T.comp sR)) h (n + 1) =
       localHomologyMap Z sR hsR (n + 1) ≫
       localHomologyMap Z T hT (n + 1) ≫ localHomologyMap Z Lc hL (n + 1) := by
-    rw [localHomologyMap_comp, localHomologyMap_comp]
-    rfl
+    rw [localHomologyMap_comp, localHomologyMap_comp,
+      localHomologyMap_congr Z (ContinuousMap.comp_assoc Lc T sR).symm]
   -- The restricted chart carries `c` to the local orientation of `X` at `φ z` selected by `ν` in
   -- the identity chart.
   have hA := φ.localHomologyMap_sourceRestrict_localOrientationOfOrientedChart hz ν hX hsR
