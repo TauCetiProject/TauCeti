@@ -202,6 +202,11 @@ theorem path_incl {p : C(E, B)} (e : E) : (incl p e).path = .refl (p e) := by
 theorem endpoint_incl {p : C(E, B)} (e : E) : endpoint p (incl p e) = p e := by
   simp
 
+/-- The inclusion `E → E'` is a map over `B`. -/
+@[simp]
+theorem endpoint_comp_incl (p : C(E, B)) : (endpoint p).comp (incl p) = p :=
+  ContinuousMap.ext endpoint_incl
+
 /-- The projection `E' → E`, `(e, γ) ↦ e`. -/
 def proj (p : C(E, B)) : C(MooreReplacement p, E) :=
   ⟨point, continuous_point⟩
@@ -573,6 +578,16 @@ theorem map_comp (h : C(E, E')) (h' : C(E', E'')) (hh : p'.comp h = p) (hh' : p'
     map (b := b) (h'.comp h) (by rw [← ContinuousMap.comp_assoc, hh', hh]) =
       (map h' hh').comp (map h hh) :=
   ContinuousMap.ext fun _ ↦ ext (MooreReplacement.ext (by simp) (by simp))
+
+/-- Transport along the lifting function of the endpoint map, after the map of fibres induced by
+the inclusion `E → E'`, is the identity of the underlying pairs: `(e, γ) ↦ (e, const · γ) = (e, γ)`.
+So the fibre `F'` of `p` is identified with the fibre over `b` of its replacement `p'`. -/
+theorem coe_transport_map_incl (x : Fiber p b) :
+    ((endpointLiftingFunction p).transport b (map (incl p) (endpoint_comp_incl p) x) :
+      MooreReplacement p) = x.val := by
+  rw [MooreLiftingFunction.coe_transport, endpointLiftingFunction_lift, MoorePath.target_def]
+  refine MooreReplacement.ext (by simp) ?_
+  simp [MoorePath.truncate_length, MoorePath.refl_trans]
 
 end MooreReplacement.Fiber
 

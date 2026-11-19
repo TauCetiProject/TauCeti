@@ -148,7 +148,7 @@ def fiberHomotopyEquiv {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) :
     FiberHomotopyEquiv p (endpoint p) where
   toFun := incl p
   invFun := homotopyInverse hp
-  comp_toFun := ContinuousMap.ext fun e ↦ by simp
+  comp_toFun := endpoint_comp_incl p
   comp_invFun := ContinuousMap.ext fun x ↦ by simp
   left_inv := ⟨(leftHomotopy hp).symm⟩
   right_inv := ⟨(rightHomotopy hp).symm⟩
