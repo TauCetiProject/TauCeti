@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
+public import TauCeti.FieldTheory.RatFunc.NumDenom
 
 /-!
 # Specializing the parameter of polynomials over `K(T)`
@@ -73,18 +74,6 @@ public section
 noncomputable section
 
 open Polynomial
-
-namespace RatFunc
-
-variable {K : Type*} [Field K]
-
-/-- Evaluating a rational function over `K` at `t ∈ K` divides the values at `t` of its reduced
-numerator and denominator. -/
-theorem eval_id_eq_div (t : K) (f : RatFunc K) :
-    eval (RingHom.id K) t f = f.num.eval t / f.denom.eval t := by
-  rw [eval, eval₂_id, eval₂_id]
-
-end RatFunc
 
 namespace TauCeti.RationalSpecialization
 
@@ -271,15 +260,19 @@ its nonzero coefficients. It is a product with repetitions, not a least common d
 def denomProduct (p : (RatFunc K)[X]) : K[X] :=
   ∏ n ∈ p.support, (p.coeff n).denom
 
+theorem denomProduct_def (p : (RatFunc K)[X]) :
+    denomProduct p = ∏ n ∈ p.support, (p.coeff n).denom :=
+  (rfl)
+
 @[simp]
 theorem denomProduct_zero : denomProduct (0 : (RatFunc K)[X]) = 1 := by
-  simp [denomProduct]
+  simp [denomProduct_def]
 
 @[simp]
 theorem denomProduct_C (f : RatFunc K) : denomProduct (C f) = f.denom := by
   rcases eq_or_ne f 0 with rfl | hf
   · simp [RatFunc.denom_zero]
-  · simp [denomProduct, support_C hf]
+  · simp [denomProduct_def, support_C hf]
 
 /-- A polynomial with polynomial coefficients has denominator product `1`. -/
 @[simp]
@@ -298,7 +291,7 @@ theorem denomProduct_ne_zero (p : (RatFunc K)[X]) : denomProduct p ≠ 0 :=
 `t` exactly when every coefficient of `p` is regular at `t`. -/
 theorem eval_denomProduct_ne_zero_iff {t : K} {p : (RatFunc K)[X]} :
     (denomProduct p).eval t ≠ 0 ↔ ∀ n, (p.coeff n).denom.eval t ≠ 0 := by
-  rw [denomProduct, eval_prod, Finset.prod_ne_zero_iff]
+  rw [denomProduct_def, eval_prod, Finset.prod_ne_zero_iff]
   refine ⟨fun h n ↦ ?_, fun h n _ ↦ h n⟩
   by_cases hn : n ∈ p.support
   · exact h n hn
@@ -323,10 +316,14 @@ coefficient of `p` is regular and specialization preserves the degree
 def specializationGuard (p : (RatFunc K)[X]) : K[X] :=
   denomProduct p * p.leadingCoeff.num
 
+theorem specializationGuard_def (p : (RatFunc K)[X]) :
+    specializationGuard p = denomProduct p * p.leadingCoeff.num :=
+  (rfl)
+
 @[simp]
 theorem specializationGuard_eq_zero_iff {p : (RatFunc K)[X]} :
     specializationGuard p = 0 ↔ p = 0 := by
-  simp [specializationGuard, denomProduct_ne_zero, RatFunc.num_eq_zero_iff]
+  simp [specializationGuard_def, denomProduct_ne_zero, RatFunc.num_eq_zero_iff]
 
 theorem specializationGuard_ne_zero {p : (RatFunc K)[X]} (hp : p ≠ 0) :
     specializationGuard p ≠ 0 :=
@@ -336,7 +333,7 @@ theorem specializationGuard_ne_zero {p : (RatFunc K)[X]} (hp : p ≠ 0) :
 theorem eval_denom_coeff_ne_zero_of_eval_specializationGuard_ne_zero {t : K}
     {p : (RatFunc K)[X]} (h : (specializationGuard p).eval t ≠ 0) (n : ℕ) :
     (p.coeff n).denom.eval t ≠ 0 := by
-  rw [specializationGuard, eval_mul] at h
+  rw [specializationGuard_def, eval_mul] at h
   exact eval_denomProduct_ne_zero_iff.mp (left_ne_zero_of_mul h) n
 
 /-- **The specialization guard.** Away from the roots of the guard, specialization preserves the
@@ -346,7 +343,7 @@ theorem natDegree_specialize_of_eval_specializationGuard_ne_zero {t : K}
     (specialize t p).natDegree = p.natDegree := by
   apply natDegree_specialize_of_eval_leadingCoeff_ne_zero
   have hden := eval_denom_coeff_ne_zero_of_eval_specializationGuard_ne_zero h p.natDegree
-  rw [specializationGuard, eval_mul] at h
+  rw [specializationGuard_def, eval_mul] at h
   rw [RatFunc.eval_id_eq_div]
   exact div_ne_zero (right_ne_zero_of_mul h) hden
 
