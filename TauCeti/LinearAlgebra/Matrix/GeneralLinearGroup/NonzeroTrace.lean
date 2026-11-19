@@ -156,8 +156,8 @@ theorem closure_setOfPred_trace_ne_zero_eq_top (ρ : G →* GL (Fin 2) K)
   have hker : ρ.ker ≤ Subgroup.closure S := fun k hk ↦ by
     have hkg₀ : k * g₀ ∈ S := by simpa [S, (mem_ker.mp hk)] using hg₀
     simpa using mul_mem (Subgroup.subset_closure hkg₀) (inv_mem (Subgroup.subset_closure hg₀))
-  rw [eq_top_iff, ← Subgroup.comap_top ρ.rangeRestrict, ← hmap, Subgroup.comap_map_eq,
-    ker_rangeRestrict, sup_eq_left.mpr hker]
+  rw [eq_top_iff, ← Subgroup.comap_top ρ.rangeRestrict, ← hmap,
+    Subgroup.comap_map_eq_self (by rwa [ker_rangeRestrict])]
 
 variable {A : Type*} [CommRing A] [IsLocalRing A]
 
@@ -168,18 +168,12 @@ theorem eq_one_of_forall_mul_trace_eq (χ : G →* Aˣ) (ρ : G →* GL (Fin 2) 
       ((Matrix.GeneralLinearGroup.map (IsLocalRing.residue A)).comp ρ).range)
     (h : ∀ g, (χ g : A) * trace ((ρ g : GL (Fin 2) A) : Matrix (Fin 2) (Fin 2) A) =
       trace ((ρ g : GL (Fin 2) A) : Matrix (Fin 2) (Fin 2) A)) :
-    χ = 1 := by
-  have hle : Subgroup.closure {g | trace
-      ((((Matrix.GeneralLinearGroup.map (IsLocalRing.residue A)).comp ρ) g :
-        GL (Fin 2) (IsLocalRing.ResidueField A)) :
-          Matrix (Fin 2) (Fin 2) (IsLocalRing.ResidueField A)) ≠ 0} ≤ χ.ker :=
-    (Subgroup.closure_le _).mpr fun g hg ↦ by
-      have hunit : IsUnit (trace ((ρ g : GL (Fin 2) A) : Matrix (Fin 2) (Fin 2) A)) := by
-        rw [← IsLocalRing.residue_ne_zero_iff_isUnit]
-        simpa [trace_fin_two, Matrix.GeneralLinearGroup.map_apply] using hg
-      exact mem_ker.mpr (Units.ext (hunit.mul_left_inj.mp (by simpa using h g)))
-  refine MonoidHom.ext fun g ↦ ?_
-  exact mem_ker.mp (hle ((closure_setOfPred_trace_ne_zero_eq_top _ hρ).symm ▸ Subgroup.mem_top g))
+    χ = 1 :=
+  eq_of_eqOn_dense (closure_setOfPred_trace_ne_zero_eq_top _ hρ) fun g hg ↦ by
+    have hunit : IsUnit (trace ((ρ g : GL (Fin 2) A) : Matrix (Fin 2) (Fin 2) A)) := by
+      rw [← IsLocalRing.residue_ne_zero_iff_isUnit]
+      simpa [trace_fin_two, Matrix.GeneralLinearGroup.map_apply] using hg
+    exact Units.ext (hunit.mul_left_inj.mp (by simpa using h g))
 
 /-- Let `ρ : G →* GL₂(A)` be a representation over a local ring whose residual image is not
 solvable. A character `χ : G →* Aˣ` for which the twist `g ↦ χ(g) • ρ(g)` is conjugate to `ρ` is
