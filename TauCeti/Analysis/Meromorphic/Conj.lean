@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 
 /-!
@@ -16,7 +16,7 @@ import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 For `f : ℂ → ℂ`, the reflected function `conj ∘ f ∘ conj` is again holomorphic, meromorphic, and
 has the same order, at the reflected point. Mathlib records the differentiable case as
 `DifferentiableAt.conj_conj`; this file supplies the analytic and meromorphic versions together
-with the invariance of `meromorphicOrderAt`.
+with the invariance of `meromorphicOrderAt` and `MeromorphicOn.divisor`.
 
 These are the statements needed to transport the analytic properties of a completed L-function to
 its dual, whose completed function is the reflection of the original one.
@@ -28,6 +28,10 @@ its dual, whose completed function is the reflection of the original one.
   reflection preserves meromorphy.
 * `TauCeti.meromorphicOrderAt_conj_conj`: reflection preserves the order of a meromorphic
   function.
+* `TauCeti.meromorphicOrderAt_sub_conj_of_ne_zero`, `TauCeti.meromorphicOrderAt_sub_conj`,
+  `TauCeti.divisor_sub_conj`: under punctured-neighbourhood functional-conjugation symmetry
+  `f (a - w) = c * conj (f (conj w))`, `z ↦ a - conj z` preserves `meromorphicOrderAt f` and
+  `MeromorphicOn.divisor f U`.
 -/
 
 public section
@@ -91,3 +95,59 @@ theorem TauCeti.meromorphicOrderAt_conj_conj :
       ⟨conj ∘ g ∘ conj, analyticAt_conj_conj_iff.2 hg, by simpa using hg0, ?_⟩
     filter_upwards [hconj.eventually hfg] with z hz
     simp [hz]
+
+/-- Under a punctured-neighbourhood functional-conjugation identity at `conj z` with a nonzero
+multiplier `c ≠ 0`, the reflection `z ↦ a - conj z` preserves `meromorphicOrderAt f`. -/
+theorem TauCeti.meromorphicOrderAt_sub_conj_of_ne_zero {f : ℂ → ℂ} {a c z : ℂ}
+    (hfe : (fun w ↦ f (a - w)) =ᶠ[𝓝[≠] (conj z)] fun w ↦ c * conj (f (conj w))) (hc : c ≠ 0) :
+    meromorphicOrderAt f (a - conj z) = meromorphicOrderAt f z := by
+  have hlhs : meromorphicOrderAt (fun w : ℂ ↦ f (a - w)) (conj z) =
+      meromorphicOrderAt f (a - conj z) :=
+    meromorphicOrderAt_comp_of_deriv_ne_zero (f := f) (g := fun w : ℂ ↦ a - w)
+      (by fun_prop) (by simp)
+  have hrhs : meromorphicOrderAt (fun w : ℂ ↦ c * conj (f (conj w))) (conj z) =
+      meromorphicOrderAt f z := by
+    have hsmul : (fun w : ℂ ↦ c * conj (f (conj w))) = c • (conj ∘ f ∘ conj) := by
+      funext w
+      simp [Function.comp_def, smul_eq_mul]
+    rw [hsmul, meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc,
+      meromorphicOrderAt_conj_conj, Complex.conj_conj]
+  rw [← hlhs, meromorphicOrderAt_congr hfe, hrhs]
+
+/-- Under punctured-neighbourhood functional-conjugation identities at `conj z` and `a - z`
+(including the degenerate case `c = 0`), the reflection `z ↦ a - conj z` preserves
+`meromorphicOrderAt f`. -/
+theorem TauCeti.meromorphicOrderAt_sub_conj {f : ℂ → ℂ} {a c z : ℂ}
+    (hfe : (fun w ↦ f (a - w)) =ᶠ[𝓝[≠] (conj z)] fun w ↦ c * conj (f (conj w)))
+    (hfe' : (fun w ↦ f (a - w)) =ᶠ[𝓝[≠] (a - z)] fun w ↦ c * conj (f (conj w))) :
+    meromorphicOrderAt f (a - conj z) = meromorphicOrderAt f z := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · have hsub (u : ℂ) : Tendsto (fun v : ℂ ↦ a - v) (𝓝[≠] u) (𝓝[≠] (a - u)) :=
+      (continuous_const.sub continuous_id).continuousWithinAt.tendsto_nhdsWithin fun v hv ↦
+        sub_right_injective.ne hv
+    have h1 : ∀ᶠ v in 𝓝[≠] (a - conj z), f v = 0 := by
+      have ht := hsub (a - conj z)
+      rw [sub_sub_cancel] at ht
+      filter_upwards [ht.eventually hfe] with v hv
+      simpa using hv
+    have h2 : ∀ᶠ v in 𝓝[≠] z, f v = 0 := by
+      filter_upwards [(hsub z).eventually hfe'] with v hv
+      simpa using hv
+    rw [meromorphicOrderAt_eq_top_iff.mpr h1, meromorphicOrderAt_eq_top_iff.mpr h2]
+  · exact meromorphicOrderAt_sub_conj_of_ne_zero hfe hc
+
+/-- Under punctured-neighbourhood functional-conjugation identities at `conj z` and `a - z`
+(including the degenerate case `c = 0`), if `a - conj z ∈ U ↔ z ∈ U`, then the reflection
+`z ↦ a - conj z` preserves `MeromorphicOn.divisor f U`. -/
+theorem TauCeti.divisor_sub_conj {f : ℂ → ℂ} {U : Set ℂ} {a c z : ℂ}
+    (hU : a - conj z ∈ U ↔ z ∈ U)
+    (hfe : (fun w ↦ f (a - w)) =ᶠ[𝓝[≠] (conj z)] fun w ↦ c * conj (f (conj w)))
+    (hfe' : (fun w ↦ f (a - w)) =ᶠ[𝓝[≠] (a - z)] fun w ↦ c * conj (f (conj w))) :
+    MeromorphicOn.divisor f U (a - conj z) = MeromorphicOn.divisor f U z := by
+  by_cases hm : MeromorphicOn f U
+  · by_cases hz : z ∈ U
+    · rw [hm.divisor_apply (hU.mpr hz), hm.divisor_apply hz,
+        meromorphicOrderAt_sub_conj hfe hfe']
+    · rw [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ (mt hU.mp hz),
+        Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hz]
+  · simp [MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm]

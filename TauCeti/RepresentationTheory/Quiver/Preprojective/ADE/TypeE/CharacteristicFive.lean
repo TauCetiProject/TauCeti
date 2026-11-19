@@ -47,8 +47,6 @@ verified modulo five by a single kernel computation over an explicit enumeration
 
 ## Main results
 
-* `TauCeti.signlessWord_E8_cyclicWord_mem_grade_ten`: the closed walk `y z⁴` has path degree
-  ten.
 * `TauCeti.signlessWord_E8_cyclicWord_notMem_commutatorSubmodule` and
   `TauCeti.mkQ_signlessWord_E8_cyclicWord_ne_zero`: when `5 = 0`, it is not a sum of
   commutators in `Π⁺(E₈)`, and its class in the cyclic quotient is nonzero.
@@ -214,12 +212,6 @@ private theorem isSignlessNecklaceWeight_e8Weight (h5 : (5 : k) = 0) :
 local notation "Q" => DoubledQuiver zigzagE8Graph
 local notation "Π" => signlessPreprojectiveAlgebra k Q
 
-/-- The closed walk `y z⁴` at the branch node of `E₈` is homogeneous of path degree ten. -/
-theorem signlessWord_E8_cyclicWord_mem_grade_ten :
-    signlessWord k zigzagE8Graph [3, 2, 3, 4, 3, 4, 3, 4, 3, 4, 3] ∈
-      signlessPreprojectiveGrade k Q 10 :=
-  signlessWord_mem_grade k zigzagE8Graph [3, 2, 3, 4, 3, 4, 3, 4, 3, 4, 3]
-
 /-- **In characteristic five, the closed walk `y z⁴` of degree ten is not a sum of commutators**
 in the signless preprojective algebra of `E₈`. -/
 theorem signlessWord_E8_cyclicWord_notMem_commutatorSubmodule [Nontrivial k] (h5 : (5 : k) = 0) :
@@ -251,7 +243,7 @@ theorem exists_mem_preprojectiveGrade_E8_ten_notMem_commutatorSubmodule [Nontriv
       z ∈ preprojectiveGrade k (OrientedQuiver zigzagE8Graph o) 10 ∧
         z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver zigzagE8Graph o)) :=
   SimpleGraph.Coloring.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule k zigzagE8Coloring o
-    ⟨_, signlessWord_E8_cyclicWord_mem_grade_ten k,
+    ⟨_, signlessWord_mem_grade k zigzagE8Graph [3, 2, 3, 4, 3, 4, 3, 4, 3, 4, 3],
       signlessWord_E8_cyclicWord_notMem_commutatorSubmodule k h5⟩
 
 end TauCeti

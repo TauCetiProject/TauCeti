@@ -58,11 +58,6 @@ private theorem signlessPreprojectiveD4FrobeniusFunctional_cyclicWord :
   rw [signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _]
   norm_num [List.reverse_cons]
 
-/-- The detecting closed walk is homogeneous of path degree four. -/
-theorem signlessWord_D4_cyclicWord_mem_grade_four :
-    W [1, 2, 1, 0, 1] ∈ signlessPreprojectiveGrade k Q 4 :=
-  signlessWord_mem_grade k zigzagD4Graph [1, 2, 1, 0, 1]
-
 /-- In characteristic two, the closed walk through leaves `0` and `2` is not a sum of
 commutators. This is stronger than its nonvanishing in the algebra itself. -/
 theorem signlessWord_D4_cyclicWord_not_mem_commutatorSubmodule [Nontrivial k]
@@ -110,7 +105,7 @@ theorem signlessPreprojectiveGrade_D4_four_le_commutatorSubmodule_iff :
     signlessPreprojectiveGrade k Q 4 ≤ commutatorSubmodule k Π ↔ (2 : k) ≠ 0 := by
   refine ⟨fun h h2 => ?_, fun h2 => ?_⟩
   · exact signlessWord_D4_cyclicWord_not_mem_commutatorSubmodule k h2
-      (h (signlessWord_D4_cyclicWord_mem_grade_four k))
+      (h (signlessWord_mem_grade k zigzagD4Graph [1, 2, 1, 0, 1]))
   · exact signlessPreprojectiveGrade_le_commutatorSubmodule k
       (d4Path_mem_commutatorSubmodule k (isUnit_iff_ne_zero.mpr h2)) (by decide)
 

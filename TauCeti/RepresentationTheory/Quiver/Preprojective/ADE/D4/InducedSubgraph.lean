@@ -7,7 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.Basic
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
+import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 
 /-!
 # Characteristic-two cyclic classes from induced `D₄` subdiagrams
@@ -47,29 +48,11 @@ theorem exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule_of
     ∃ z : signlessPreprojectiveAlgebra k (DoubledQuiver G),
       z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 4 ∧
         z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-  let a := fun {i j : Fin 4} (h : zigzagD4Graph.Adj i j) =>
-    signlessPreprojectiveMk k _ (ofArrow (arrow G (f.map_adj_iff.mpr h)))
-  let h21 : zigzagD4Graph.Adj 2 1 := by decide
-  let h12 : zigzagD4Graph.Adj 1 2 := by decide
-  let h01 : zigzagD4Graph.Adj 0 1 := by decide
-  let h10 : zigzagD4Graph.Adj 1 0 := by decide
-  let z := a h21 * (a h12 * (a h01 * a h10))
-  have ha {i j : Fin 4} (h : zigzagD4Graph.Adj i j) :
-      a h ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 1 :=
-    signlessPreprojectiveMk_mem_grade k _ (ofArrow_mem_grade_one _)
-  refine ⟨z, mul_mem_signlessPreprojectiveGrade k _ (ha h21)
-    (mul_mem_signlessPreprojectiveGrade k _ (ha h12)
-      (mul_mem_signlessPreprojectiveGrade k _ (ha h01) (ha h10))), fun h => ?_⟩
-  have hmap : signlessPreprojectiveEmbeddingHom k f z =
-      signlessWord k zigzagD4Graph [1, 2, 1, 0, 1] := by
-    simp only [z, a, map_mul, signlessPreprojectiveEmbeddingHom_ofArrow k f h21,
-      signlessPreprojectiveEmbeddingHom_ofArrow k f h12,
-      signlessPreprojectiveEmbeddingHom_ofArrow k f h01,
-      signlessPreprojectiveEmbeddingHom_ofArrow k f h10, ← signlessArrow_of_adj,
-      signlessWord_cons_cons, signlessWord_singleton, signlessArrow_mul_vertexIdempotent,
-      ↓reduceIte]
-  apply signlessWord_D4_cyclicWord_not_mem_commutatorSubmodule k h2
-  rw [← hmap]
+  obtain ⟨z, hz, hfz⟩ :=
+    exists_mem_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom_eq k f
+      (signlessWord_mem_grade k zigzagD4Graph [1, 2, 1, 0, 1])
+  refine ⟨z, hz, fun h => signlessWord_D4_cyclicWord_not_mem_commutatorSubmodule k h2 ?_⟩
+  rw [← hfz]
   exact map_mem_commutatorSubmodule (signlessPreprojectiveEmbeddingHom k f) h
 
 end TauCeti

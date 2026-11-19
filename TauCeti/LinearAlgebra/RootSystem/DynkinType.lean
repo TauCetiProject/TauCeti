@@ -48,7 +48,6 @@ same root system; `Valid` keeps only `B 2` of those two names.
 * `TauCeti.DynkinType.rank`: the number of simple roots of a type.
 * `TauCeti.DynkinType.Valid`: the rank ranges on which the types are the classification list.
 * `TauCeti.DynkinType.IsSimplyLaced`: the types `A`, `D`, `E` with only single edges.
-* `TauCeti.DynkinType.IsBadPrime`: the bad primes of a type.
 * `TauCeti.DynkinType.cartanMatrix`: the standard integer Cartan matrix of a type.
 * `TauCeti.HasCartanType`: a base whose Cartan matrix reindexes to a standard one.
 
@@ -206,49 +205,6 @@ instance : DecidablePred IsSimplyLaced := fun t ↦
 @[simp] lemma not_isSimplyLaced_C (n : ℕ) : ¬ (C n).IsSimplyLaced := not_false
 @[simp] lemma not_isSimplyLaced_F4 : ¬ F4.IsSimplyLaced := not_false
 @[simp] lemma not_isSimplyLaced_G2 : ¬ G2.IsSimplyLaced := not_false
-
-/-- The bad primes of a Dynkin type: none for `Aₙ`; `2` for `Bₙ`, `Cₙ` and `Dₙ`; `2` and `3` for
-`E₆`, `E₇`, `F₄` and `G₂`; and `2`, `3` and `5` for `E₈`. On the valid types these are the primes
-dividing a coefficient of the highest root in the basis of simple roots. The argument is a natural
-number so that it can be `ringChar k` for a field `k`; characteristic zero is never bad. -/
-def IsBadPrime : DynkinType → ℕ → Prop
-  | .A _, _ => False
-  | .B _, p | .C _, p | .D _, p => p = 2
-  | .E6, p | .E7, p | .F4, p | .G2, p => p = 2 ∨ p = 3
-  | .E8, p => p = 2 ∨ p = 3 ∨ p = 5
-
-instance (t : DynkinType) : DecidablePred t.IsBadPrime := fun p ↦
-  match t with
-  | .A _ => inferInstanceAs (Decidable False)
-  | .B _ | .C _ | .D _ => inferInstanceAs (Decidable (p = 2))
-  | .E6 | .E7 | .F4 | .G2 => inferInstanceAs (Decidable (p = 2 ∨ p = 3))
-  | .E8 => inferInstanceAs (Decidable (p = 2 ∨ p = 3 ∨ p = 5))
-
-@[simp] lemma not_isBadPrime_A (n p : ℕ) : ¬ (A n).IsBadPrime p := not_false
-@[simp] lemma isBadPrime_B {n p : ℕ} : (B n).IsBadPrime p ↔ p = 2 := Iff.rfl
-@[simp] lemma isBadPrime_C {n p : ℕ} : (C n).IsBadPrime p ↔ p = 2 := Iff.rfl
-@[simp] lemma isBadPrime_D {n p : ℕ} : (D n).IsBadPrime p ↔ p = 2 := Iff.rfl
-@[simp] lemma isBadPrime_E6 {p : ℕ} : E6.IsBadPrime p ↔ p = 2 ∨ p = 3 := Iff.rfl
-@[simp] lemma isBadPrime_E7 {p : ℕ} : E7.IsBadPrime p ↔ p = 2 ∨ p = 3 := Iff.rfl
-@[simp] lemma isBadPrime_E8 {p : ℕ} : E8.IsBadPrime p ↔ p = 2 ∨ p = 3 ∨ p = 5 := Iff.rfl
-@[simp] lemma isBadPrime_F4 {p : ℕ} : F4.IsBadPrime p ↔ p = 2 ∨ p = 3 := Iff.rfl
-@[simp] lemma isBadPrime_G2 {p : ℕ} : G2.IsBadPrime p ↔ p = 2 ∨ p = 3 := Iff.rfl
-
-/-- Every bad prime is prime. -/
-lemma IsBadPrime.prime {t : DynkinType} {p : ℕ} (h : t.IsBadPrime p) : p.Prime := by
-  cases t <;> simp only [not_isBadPrime_A, isBadPrime_B, isBadPrime_C, isBadPrime_D, isBadPrime_E6,
-    isBadPrime_E7, isBadPrime_E8, isBadPrime_F4, isBadPrime_G2] at h <;>
-    rcases h with rfl | rfl | rfl
-  all_goals first | exact Nat.prime_two | exact Nat.prime_three | exact Nat.prime_five
-
-/-- Characteristic zero is never bad. -/
-@[simp] lemma not_isBadPrime_zero (t : DynkinType) : ¬ t.IsBadPrime 0 :=
-  fun h ↦ Nat.not_prime_zero h.prime
-
-/-- Every bad prime is at most `5`. -/
-lemma IsBadPrime.le_five {t : DynkinType} {p : ℕ} (h : t.IsBadPrime p) : p ≤ 5 := by
-  cases t <;> simp only [not_isBadPrime_A, isBadPrime_B, isBadPrime_C, isBadPrime_D, isBadPrime_E6,
-    isBadPrime_E7, isBadPrime_E8, isBadPrime_F4, isBadPrime_G2] at h <;> omega
 
 /-- The standard integer Cartan matrix of a Dynkin type, indexed by `Fin t.rank` in the Bourbaki
 node numbering, so that `cartanMatrix t i j = ⟨αᵢ, αⱼ^∨⟩` for Bourbaki node `i + 1` at index `i`.
