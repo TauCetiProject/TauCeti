@@ -8,8 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Basic
 public import Mathlib.AlgebraicGeometry.RelativeGluing
 public import Mathlib.AlgebraicGeometry.Sites.BigZariski
-public import Mathlib.CategoryTheory.Sites.Over
+public import TauCeti.AlgebraicGeometry.Cover.Directed
 public import TauCeti.CategoryTheory.Adjunction.Representable
+public import TauCeti.CategoryTheory.Sites.Over
 
 /-!
 # Representability on the big Zariski site is local on the base
@@ -41,7 +42,7 @@ By the Zariski sheaf property the universal elements glue to an element of `F` o
 pulling it back is a bijection from morphisms `T ⟶ X` over `S` to elements of `F` over `T`: the
 inverse glues morphisms from the parts of `T` over the `𝒰.X i` to the pieces `Y i` of `X`. A
 general open cover is refined to the locally directed cover of `S` by the opens contained in the
-image of a member of the cover. Mathlib's
+image of a member of the cover (`AlgebraicGeometry.Scheme.OpenCover.directedRefinement`). Mathlib's
 `AlgebraicGeometry.Scheme.LocalRepresentability.isRepresentable` proves the absolute form, for
 Zariski sheaves on all schemes with a jointly surjective family of representable open
 subfunctors; it does not apply directly to presheaves on `Over S`, whose restrictions to the
@@ -64,16 +65,6 @@ namespace AlgebraicGeometry.Scheme.OpenCover
 
 variable {S : Scheme.{u}} {F : (Over S)ᵒᵖ ⥤ Type w}
 
-/-- A Zariski sheaf on schemes over `S` satisfies the sheaf condition for a family of morphisms
-over `S` whose underlying morphisms of schemes generate a Zariski covering sieve. -/
-private theorem isSheafFor_ofArrows (hF : Presieve.IsSheaf (zariskiTopology.over S) F)
-    {T : Over S} {ι : Type*} {Z : ι → Over S} (g : ∀ k, Z k ⟶ T)
-    (hg : Sieve.ofArrows (fun k ↦ (Z k).left) (fun k ↦ (g k).left) ∈ zariskiTopology T.left) :
-    Presieve.IsSheafFor F (Presieve.ofArrows Z g) := by
-  rw [Presieve.isSheafFor_iff_generate]
-  exact hF _ (by
-    rwa [GrothendieckTopology.mem_over_iff, ← Sieve.ofArrows, Sieve.overEquiv_ofArrows])
-
 section Gluing
 
 variable {𝒰 : S.OpenCover} {Y : ∀ i, Over (𝒰.X i)}
@@ -93,6 +84,11 @@ private def mapObjIso {i : 𝒰.I₀} {T : Over S} (c : T.left ⟶ 𝒰.X i)
     (hc : c ≫ 𝒰.f i = T.hom) : (Over.map (𝒰.f i)).obj (Over.mk c) ≅ T :=
   Over.isoMk (Iso.refl _) (by simp [hc])
 
+/-- Pulling back along an isomorphism and then along its inverse is the identity. -/
+private theorem map_inv_map_hom {T T' : Over S} (ι : T ≅ T') (ζ : F.obj (op T')) :
+    F.map ι.inv.op (F.map ι.hom.op ζ) = ζ := by
+  simp [← F.map_comp_apply, ← op_comp]
+
 /-- Over a scheme `T` lying over `𝒰.X i`, every element of `F` is pulled back from the universal
 element along a morphism to `Y i`. -/
 private theorem exists_map_univ {i : 𝒰.I₀} {T : Over S} (c : T.left ⟶ 𝒰.X i)
@@ -100,8 +96,7 @@ private theorem exists_map_univ {i : 𝒰.I₀} {T : Over S} (c : T.left ⟶ �
     ∃ a : T ⟶ (Over.map (𝒰.f i)).obj (Y i), F.map a.op (univ e i) = ζ := by
   let ι := mapObjIso c hc
   refine ⟨ι.inv ≫ (Over.map (𝒰.f i)).map ((e i).homEquiv.symm (F.map ι.hom.op ζ)), ?_⟩
-  rw [op_comp, F.map_comp_apply, map_map_univ, Equiv.apply_symm_apply, ← F.map_comp_apply,
-    ← op_comp, ι.inv_hom_id, op_id, F.map_id_apply]
+  simp only [op_comp, F.map_comp_apply, map_map_univ, Equiv.apply_symm_apply, map_inv_map_hom]
 
 /-- Morphisms to `Y i` are determined by the pullback of the universal element. -/
 private theorem map_univ_injective {i : 𝒰.I₀} {T : Over S}
@@ -163,7 +158,7 @@ private theorem transition_id (i : 𝒰.I₀) : transition e (𝟙 i) = 𝟙 _ :
 private theorem transition_comp {i j k : 𝒰.I₀} (hij : i ⟶ j) (hjk : j ⟶ k) :
     transition e (hij ≫ hjk) = transition e hij ≫ transition e hjk :=
   map_univ_injective e (by
-    rw [map_transition_univ, op_comp, F.map_comp_apply, map_transition_univ, map_transition_univ])
+    simp only [op_comp, F.map_comp_apply, map_transition_univ])
 
 private theorem transition_left_comp_hom {i j : 𝒰.I₀} (hij : i ⟶ j) :
     (transition e hij).left ≫ (Y j).hom = (Y i).hom ≫ 𝒰.trans hij := by
@@ -185,7 +180,7 @@ private theorem isPullback_transition {i j : 𝒰.I₀} (hij : i ⟶ j) :
   have hl (s) : F.map (l s).op (univ e i) = F.map (Over.homMk s.fst (hs s)).op (univ e j) :=
     (exists_map_univ e (T := Over.mk (s.snd ≫ 𝒰.f i)) (i := i) s.snd rfl _).choose_spec
   have hl₁ (s) : l s ≫ transition e hij = Over.homMk s.fst (hs s) :=
-    map_univ_injective e (by rw [op_comp, F.map_comp_apply, map_transition_univ, hl])
+    map_univ_injective e (by simp only [op_comp, F.map_comp_apply, map_transition_univ, hl])
   have hl₂ (s : PullbackCone (Y j).hom (𝒰.trans hij)) : (l s).left ≫ (Y i).hom = s.snd := by
     rw [← cancel_mono (𝒰.f i), Category.assoc]
     simpa using Over.w (l s)
@@ -256,7 +251,7 @@ private theorem exists_map_univ_eq_of_hom {i l : 𝒰.I₀} (hli : l ⟶ i) {W :
       w ≫ ιGlued e l = z ≫ ιGlued e i ∧ F.map w.op (univ e l) = F.map z.op (univ e i) := by
   obtain ⟨w, hw⟩ := exists_map_univ e c hc (F.map z.op (univ e i))
   have : w ≫ transition e hli = z :=
-    map_univ_injective e (by rw [op_comp, F.map_comp_apply, map_transition_univ, hw])
+    map_univ_injective e (by simp only [op_comp, F.map_comp_apply, map_transition_univ, hw])
   exact ⟨w, by rw [← this, Category.assoc, transition_ιGlued], hw⟩
 
 private theorem trans_pieceLift_comp_ιGlued {T : Over S} (ζ : F.obj (op T))
@@ -273,8 +268,7 @@ private theorem trans_pieceLift_comp_ιGlued {T : Over S} (ζ : F.obj (op T))
   have ht : t ≫ pieceHom T j = pieceHom T i := Over.OverMorphism.ext h
   have key : t ≫ pieceLift e ζ j = pieceLift e ζ i ≫ transition e hij :=
     map_univ_injective e (by
-      rw [op_comp, F.map_comp_apply, map_pieceLift_univ, ← F.map_comp_apply, ← op_comp, ht,
-        op_comp, F.map_comp_apply, map_transition_univ, map_pieceLift_univ])
+      simp only [← ht, op_comp, F.map_comp_apply, map_pieceLift_univ, map_transition_univ])
   have := congr(($key ≫ ιGlued e j).left)
   rw [Category.assoc, Category.assoc, transition_ιGlued] at this
   exact this
@@ -314,7 +308,7 @@ private theorem map_univ_eq_of_comp_ιGlued_eq {Z : Over S} {i j : 𝒰.I₀}
   -- `𝒰.X i ×_S 𝒰.X j` by the `𝒰.X l`.
   have hπ : Sieve.ofArrows _ (fun k ↦ (π k).left) ∈ zariskiTopology Z.left :=
     Cover.mem_grothendieckTopology ((𝒰.intersectionOfLocallyDirected i j).pullback₁ q)
-  refine (isSheafFor_ofArrows hF π hπ).isSeparatedFor.ext ?_
+  refine (hF.isSheafFor_ofArrows_over π hπ).isSeparatedFor.ext ?_
   rintro _ _ ⟨k⟩
   have hc : pullback.snd q (r k) ≫ 𝒰.f k.1 = pullback.fst q (r k) ≫ Z.hom := by
     have h₂ : q ≫ pullback.fst _ _ ≫ 𝒰.f i = Z.hom := by simpa [q] using Over.w z₁
@@ -323,7 +317,8 @@ private theorem map_univ_eq_of_comp_ιGlued_eq {Z : Over S} {i j : 𝒰.I₀}
   obtain ⟨w₁, hw₁, hw₁'⟩ := exists_map_univ_eq_of_hom e k.2.1 _ hc (π k ≫ z₁)
   obtain ⟨w₂, hw₂, hw₂'⟩ := exists_map_univ_eq_of_hom e k.2.2 _ hc (π k ≫ z₂)
   have : w₁ = w₂ := cancel_ιGlued e (by rw [hw₁, hw₂, Category.assoc, Category.assoc, h])
-  rw [← F.map_comp_apply, ← F.map_comp_apply, ← op_comp, ← op_comp, ← hw₁', ← hw₂', this]
+  simp only [op_comp, F.map_comp_apply] at hw₁' hw₂'
+  rw [← hw₁', ← hw₂', this]
 
 /-- There is an element of `F` over the glued scheme restricting to the universal element over
 each `Y i`. -/
@@ -332,7 +327,7 @@ private theorem exists_univGlued :
   -- The members of the open cover of the glued scheme by the `Y i` are the morphisms `ιGlued e i`
   -- of the underlying schemes.
   obtain ⟨ξ, hξ, -⟩ := (Presieve.isSheafFor_arrows_iff _ _).1
-    (isSheafFor_ofArrows hF (ιGlued e) (gluingData e).cover.mem_grothendieckTopology) (univ e)
+    (hF.isSheafFor_ofArrows_over (ιGlued e) (gluingData e).cover.mem_grothendieckTopology) (univ e)
     fun i j Z z₁ z₂ h ↦ map_univ_eq_of_comp_ιGlued_eq e hF h
   exact ⟨ξ, hξ⟩
 
@@ -349,18 +344,20 @@ private noncomputable def representableByGlued : F.RepresentableBy (glued e) whe
           pullback.condition.symm (pieceHom T i ≫ g)
         have : pieceLift e (F.map g.op (exists_univGlued e hF).choose) i = b :=
           map_univ_injective e (by
-            rw [map_pieceLift_univ, ← (exists_univGlued e hF).choose_spec i, ← F.map_comp_apply,
-              ← F.map_comp_apply, ← op_comp, ← op_comp, hb])
+            rw [map_pieceLift_univ, ← (exists_univGlued e hF).choose_spec i]
+            simpa only [op_comp, F.map_comp_apply] using
+              congr(F.map ($hb).op (exists_univGlued e hF).choose).symm)
         have h :=
           congr($(pieceHom_comp_toGlued e (F.map g.op (exists_univGlued e hF).choose) i).left)
         rw [this, hb] at h
         exact h
       right_inv ζ := by
-        refine (isSheafFor_ofArrows hF (pieceHom T)
+        refine (hF.isSheafFor_ofArrows_over (pieceHom T)
           (Cover.mem_grothendieckTopology (𝒰.pullback₁ T.hom))).isSeparatedFor.ext ?_
         rintro _ _ ⟨i⟩
-        rw [← F.map_comp_apply, ← op_comp, pieceHom_comp_toGlued, op_comp, F.map_comp_apply,
-          (exists_univGlued e hF).choose_spec, map_pieceLift_univ] }
+        simpa only [op_comp, F.map_comp_apply, (exists_univGlued e hF).choose_spec,
+          map_pieceLift_univ] using
+          congr(F.map ($(pieceHom_comp_toGlued e ζ i)).op (exists_univGlued e hF).choose) }
   homEquiv_comp f g := by simp
 
 omit hF in
@@ -384,32 +381,6 @@ private theorem exists_hom_mem_nonempty_representableBy_of_locallyDirected
 
 end Gluing
 
-/-- The open cover of `S` by the opens contained in the image of a member of `𝒰`. -/
-private def refinedCover (𝒰 : S.OpenCover) : S.OpenCover where
-  I₀ := {V : S.Opens // ∃ i, V ≤ (𝒰.f i).opensRange}
-  X V := V.1
-  f V := V.1.ι
-  mem₀ := by
-    rw [presieve₀_mem_precoverage_iff]
-    refine ⟨fun x ↦ ⟨⟨(𝒰.f (𝒰.idx x)).opensRange, 𝒰.idx x, le_rfl⟩, ?_⟩,
-      inferInstance⟩
-    simpa using 𝒰.covers x
-
-private instance (𝒰 : S.OpenCover) : Preorder (refinedCover 𝒰).I₀ :=
-  inferInstanceAs (Preorder {V : S.Opens // ∃ i, V ≤ (𝒰.f i).opensRange})
-
-/-- The opens contained in the image of a member of `𝒰` form a basis, so the refined cover is
-locally directed by inclusion. -/
-private noncomputable instance (𝒰 : S.OpenCover) : (refinedCover 𝒰).LocallyDirected :=
-  .ofIsBasisOpensRange (fun {V W} ↦ by
-      simp only [refinedCover, Scheme.Opens.opensRange_ι]
-      exact Iff.rfl) <| by
-    rw [TopologicalSpace.Opens.isBasis_iff_nbhd]
-    intro U x hx
-    refine ⟨_, ⟨⟨U ⊓ (𝒰.f (𝒰.idx x)).opensRange, 𝒰.idx x, inf_le_right⟩, rfl⟩, ?_, ?_⟩
-    all_goals simp only [refinedCover, Scheme.Opens.opensRange_ι]
-    exacts [⟨hx, 𝒰.covers x⟩, inf_le_left]
-
 /-- **Representability on the big Zariski site is local on the base.** Let `F` be a presheaf on
 the category of schemes over `S` which is a sheaf for the Zariski topology, and let `𝒰` be an
 open cover of `S`. If, for every `i`, the restriction of `F` to schemes over `𝒰.X i` is
@@ -424,23 +395,17 @@ theorem exists_hom_mem_nonempty_representableBy (𝒰 : S.OpenCover)
     (P : MorphismProperty Scheme.{u}) [IsZariskiLocalAtTarget P] (hP : ∀ i, P (Y i).hom) :
     ∃ X : Over S, P X.hom ∧ Nonempty (F.RepresentableBy X) := by
   -- Over an open `V` contained in the image of `𝒰.f i`, the part of `Y i` over `V` represents
-  -- the restriction of `F`; these representations form the data over the refined cover.
-  let i (V : (refinedCover 𝒰).I₀) : 𝒰.I₀ := V.2.choose
-  let g (V : (refinedCover 𝒰).I₀) : V.1.toScheme ⟶ 𝒰.X (i V) :=
-    IsOpenImmersion.lift (𝒰.f (i V)) V.1.ι (by
-      rw [Scheme.Opens.range_ι]
-      exact fun _ hx ↦ V.2.choose_spec hx)
-  have hg (V : (refinedCover 𝒰).I₀) : g V ≫ 𝒰.f (i V) = V.1.ι :=
-    IsOpenImmersion.lift_fac _ _ _
-  refine exists_hom_mem_nonempty_representableBy_of_locallyDirected (𝒰 := refinedCover 𝒰)
-    (Y := fun V ↦ (Over.pullback (g V)).obj (Y (i V)))
-    (fun V ↦ ((Over.mapPullbackAdj (g V)).representableByComp (e (i V))).ofIso
+  -- the restriction of `F`; these representations form the data over the directed refinement.
+  let r := 𝒰.fromDirectedRefinement
+  refine exists_hom_mem_nonempty_representableBy_of_locallyDirected (𝒰 := 𝒰.directedRefinement)
+    (Y := fun V ↦ (Over.pullback (r.h₀ V)).obj (Y (r.s₀ V)))
+    (fun V ↦ ((Over.mapPullbackAdj (r.h₀ V)).representableByComp (e (r.s₀ V))).ofIso
       (Functor.isoWhiskerRight
-        (NatIso.op (Over.mapCongr _ _ (hg V).symm ≪≫ Over.mapComp _ _)) F))
+        (NatIso.op (Over.mapCongr _ _ (r.w₀ V).symm ≪≫ Over.mapComp _ _)) F))
     hF P fun V ↦ ?_
-  have : IsOpenImmersion (g V ≫ 𝒰.f (i V)) := by rw [hg]; infer_instance
-  have : IsOpenImmersion (g V) := .of_comp (g V) (𝒰.f (i V))
-  exact IsZariskiLocalAtTarget.of_isPullback (iY := g V)
-    (IsPullback.of_hasPullback (Y (i V)).hom (g V)) (hP (i V))
+  have : IsOpenImmersion (r.h₀ V ≫ 𝒰.f (r.s₀ V)) := by rw [r.w₀]; infer_instance
+  have : IsOpenImmersion (r.h₀ V) := .of_comp (r.h₀ V) (𝒰.f (r.s₀ V))
+  exact IsZariskiLocalAtTarget.of_isPullback (iY := r.h₀ V)
+    (IsPullback.of_hasPullback (Y (r.s₀ V)).hom (r.h₀ V)) (hP (r.s₀ V))
 
 end AlgebraicGeometry.Scheme.OpenCover
