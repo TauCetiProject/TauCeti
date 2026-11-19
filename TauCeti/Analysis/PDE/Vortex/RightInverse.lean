@@ -97,15 +97,11 @@ variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace �
 /-- The compactly supported `C²` test fields. -/
 private abbrev TestField := TestFunction (⊤ : TopologicalSpace.Opens ℂ) (EuclideanSpace ℝ (Fin 4)) 2
 
-private theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (η : TestField) :
-    MemLp (gaugeFixedAdjoint x η) 2 μ :=
-  (continuous_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))).memLp_of_hasCompactSupport
-    (hasCompactSupport_gaugeFixedAdjoint η.hasCompactSupport)
-
 /-- The formal adjoint `L_x*` on test fields, with values in `L²`. -/
 private noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure]
     (hx : Continuous x) : TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun η := (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η)
+  toFun η := (memLp_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))
+    η.hasCompactSupport).toLp (gaugeFixedAdjoint x η)
   map_add' η ν := by
     rw [← MemLp.toLp_add]
     refine MemLp.toLp_congr _ _ (ae_of_all _ fun z ↦ ?_)
@@ -119,14 +115,15 @@ private noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaar
     exact gaugeFixedAdjoint_smul x η t z
 
 private theorem gaugeFixedAdjointToLp_apply (hx : Continuous x) (η : TestField) :
-    gaugeFixedAdjointToLp μ hx η = (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η) :=
+    gaugeFixedAdjointToLp μ hx η = (memLp_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))
+      η.hasCompactSupport).toLp (gaugeFixedAdjoint x η) :=
   rfl
 
 private theorem inner_gaugeFixedAdjointToLp (hx : Continuous x)
     (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
     ⟪u, gaugeFixedAdjointToLp μ hx η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ := by
   rw [gaugeFixedAdjointToLp_apply]
-  exact L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
+  exact L2.inner_toLp u _
 
 /-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
 field and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`,
@@ -229,7 +226,8 @@ private theorem exists_integral_norm_sub_gaugeFixedAdjoint_sq_lt (hx : Continuou
     rw [← Lp.integral_norm_sq_eq_norm_sq]
     refine integral_congr_ae ?_
     filter_upwards [Lp.coeFn_sub y (S η),
-      (memLp_gaugeFixedAdjoint (μ := μ) hx η).coeFn_toLp] with z h₁ h₂
+      (memLp_gaugeFixedAdjoint (μ := μ) hx (η.contDiff.of_le (by norm_cast))
+        η.hasCompactSupport).coeFn_toLp] with z h₁ h₂
     rw [h₁, Pi.sub_apply, gaugeFixedAdjointToLp_apply, h₂]
   rw [hn]
   rw [dist_eq_norm] at hd
@@ -252,11 +250,9 @@ private theorem integral_sq_mul_inner_gaugeFixedOperator_eq_add
   have hVηc : HasCompactSupport (fun t ↦ V t ^ 2 • η t) := hηc.smul_left (f := fun t ↦ V t ^ 2)
   have hA := contDiff_gaugeFixedAdjoint hx hη
   have hAc := hasCompactSupport_gaugeFixedAdjoint (x := x) hηc
-  have hH : MemLp H 2 μ :=
-    (continuous_gaugeFixedAdjoint hx.continuous
-      (hVη.of_le (by norm_num))).memLp_of_hasCompactSupport
-      (hasCompactSupport_gaugeFixedAdjoint hVηc)
-  have hG : MemLp (gaugeFixedAdjoint x η) 2 μ := hA.continuous.memLp_of_hasCompactSupport hAc
+  have hH : MemLp H 2 μ := memLp_gaugeFixedAdjoint hx.continuous (hVη.of_le (by norm_num)) hVηc
+  have hG : MemLp (gaugeFixedAdjoint x η) 2 μ :=
+    memLp_gaugeFixedAdjoint hx.continuous (hη.of_le (by norm_num)) hηc
   have hi₁ : Integrable (fun z ↦ ⟪gaugeFixedAdjoint x η z - y z, H z⟫) μ :=
     (hG.sub hy).integrable_inner hH
   have hi₂ : Integrable (fun z ↦ ⟪y z, H z⟫) μ := hy.integrable_inner hH
@@ -379,12 +375,9 @@ private theorem integral_sq_mul_norm_sq_le_add_mul_integral_norm_sub_sq
   set H := gaugeFixedAdjoint x (fun t ↦ V t ^ 2 • η t)
   have hwt {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : MemLp g 2 μ) :=
     hg.integrable_sq_mul_norm_sq hV.continuous.aestronglyMeasurable (ae_of_all _ hVB)
-  have hG : MemLp G 2 μ := (contDiff_gaugeFixedAdjoint hx hη).continuous.memLp_of_hasCompactSupport
-    (hasCompactSupport_gaugeFixedAdjoint hηc)
-  have hH : MemLp H 2 μ :=
-    (continuous_gaugeFixedAdjoint hx.continuous
-      (((hV.pow 2).smul hη).of_le (by norm_num))).memLp_of_hasCompactSupport
-      (hasCompactSupport_gaugeFixedAdjoint (hηc.smul_left (f := fun t ↦ V t ^ 2)))
+  have hG : MemLp G 2 μ := memLp_gaugeFixedAdjoint hx.continuous (hη.of_le (by norm_num)) hηc
+  have hH : MemLp H 2 μ := memLp_gaugeFixedAdjoint hx.continuous
+    (((hV.pow 2).smul hη).of_le (by norm_num)) (hηc.smul_left (f := fun t ↦ V t ^ 2))
   have hη₂ : MemLp η 2 μ := hη.continuous.memLp_of_hasCompactSupport hηc
   have iyG : Integrable (fun z ↦ ‖y z - G z‖ ^ 2) μ := (hy.sub hG).norm.integrable_sq
   have iy := hy.norm.integrable_sq
