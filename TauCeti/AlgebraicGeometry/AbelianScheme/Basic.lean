@@ -300,6 +300,14 @@ lemma Hom.equivIsMonHom_apply_coe {A B : AbelianScheme S} (f : A ⟶ B) :
     (Hom.equivIsMonHom A B f : A.toOver ⟶ B.toOver) = Hom.toOverHom f :=
   (rfl)
 
+/-- The homomorphism attached to a morphism over `S` preserving the group law has that morphism
+as its morphism over `S`. -/
+@[simp]
+lemma Hom.toOverHom_equivIsMonHom_symm_apply {A B : AbelianScheme S}
+    (g : {f : A.toOver ⟶ B.toOver // IsMonHom f}) :
+    Hom.toOverHom ((Hom.equivIsMonHom A B).symm g) = g.1 :=
+  (rfl)
+
 /-- The base-change functor along `f : T ⟶ S`, sending an abelian scheme `A` to `A.baseChange f`
 and a homomorphism to its pullback. -/
 @[expose] def baseChangeFunctor (f : T ⟶ S) : AbelianScheme S ⥤ AbelianScheme T where
