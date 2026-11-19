@@ -353,6 +353,7 @@ theorem card_multiIndexWord {n : ℕ} (α : Fin n → ℕ) (i : Fin n) :
   simp [apply_ite]
 
 /-- A product over the letters of `TauCeti.multiIndexWord α` is the monomial `∏ᵢ gᵢ ^ αᵢ`. -/
+@[simp]
 theorem prod_multiIndexWord {n : ℕ} {M : Type*} [CommMonoid M] (α : Fin n → ℕ) (g : Fin n → M) :
     ∏ j, g (multiIndexWord α j) = ∏ i, g i ^ α i := by
   rw [← Fintype.prod_equiv finSigmaFinEquiv (fun p ↦ g p.1) _ fun p ↦ by simp]
