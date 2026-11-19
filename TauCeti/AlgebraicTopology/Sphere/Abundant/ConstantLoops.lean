@@ -33,9 +33,10 @@ class `α' = α - c_* ev_* α`, where `c : Q → Map(S², Q)` is the section of 
   evaluation at the north pole.
 * The localization of `α'` at the fibre over `b` differs from that of `α` by the localization of
   a class of constant spheres (`TauCeti.fiberLocalization_sub_homologyMap_section`). In degree
-  `k = n` the second condition of abundance says exactly that this does not make it vanish; in
-  degree `k > n` the local homology of `Q` at `b` vanishes, so the localization is unchanged. So
-  `α'` still witnesses abundance
+  `k = n` the second condition of abundance implies that this does not make it vanish, and the
+  condition is preserved since the correction is itself the localization of a class of constant
+  spheres; in degree `k > n` the local homology of `Q` at `b` vanishes, so the localization is
+  unchanged. So `α'` still witnesses abundance
   (`TauCeti.IsAbundantWithTwoSpheres.exists_homologyMap_mappingSpaceEval_eq_zero`).
 
 Transported to the Moore model `P_{Q→Q} 𝓛₀Q ≃ Map(S², Q)`
