@@ -9,14 +9,14 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Topology.Algebra.Module.LinearPMap
 
 /-!
-# The graph Hilbert space of a partial linear map
+# The graph space of a partial linear map
 
 Let `f : E →ₗ.[𝕜] F` be a partial linear map between normed spaces. Its **graph space**
-`f.graphSpace` is the graph `{(x, f x) | x ∈ dom f}`, regarded as a subspace of the Hilbert direct
-sum `WithLp 2 (E × F)`. The graph map `x ↦ (x, f x)` identifies the domain of `f` with it
-(`LinearPMap.toGraphSpace`), and transports the graph norm `(‖x‖² + ‖f x‖²)^(1/2)`
-(`LinearPMap.norm_toGraphSpace_sq`). When `E` and `F` are inner product spaces, this is the norm
-of the *graph inner product*
+`f.graphSpace` is the graph `{(x, f x) | x ∈ dom f}`, regarded as a subspace of the `L²` product
+`WithLp 2 (E × F)`, which is the Hilbert direct sum when `E` and `F` are inner product spaces. The
+graph map `x ↦ (x, f x)` identifies the domain of `f` with it (`LinearPMap.toGraphSpace`), and
+transports the graph norm `(‖x‖² + ‖f x‖²)^(1/2)` (`LinearPMap.norm_toGraphSpace_sq`). When `E`
+and `F` are inner product spaces, this is the norm of the *graph inner product*
 
 `⟪(x, f x), (y, f y)⟫ = ⟪x, y⟫ + ⟪f x, f y⟫`
 
@@ -60,8 +60,9 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- The **graph space** of a partial linear map `f`: its graph `{(x, f x) | x ∈ dom f}` as a
-subspace of the Hilbert direct sum `WithLp 2 (E × F)`. It carries the graph inner product
-`⟪x, y⟫ + ⟪f x, f y⟫` (`LinearPMap.inner_toGraphSpace`). -/
+subspace of the `L²` product `WithLp 2 (E × F)`. When `E` and `F` are inner product spaces this is
+the Hilbert direct sum, and the graph space carries the graph inner product `⟪x, y⟫ + ⟪f x, f y⟫`
+(`LinearPMap.inner_toGraphSpace`). -/
 def graphSpace (f : E →ₗ.[𝕜] F) : Submodule 𝕜 (WithLp 2 (E × F)) :=
   f.graph.comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap
 
@@ -245,7 +246,8 @@ theorem isClosed_graphSpace_iff :
     simpa [Set.preimage_preimage] using h.preimage (WithLp.prod_continuous_toLp 2 E F),
     fun h ↦ h.preimage (WithLp.prod_continuous_ofLp 2 E F)⟩
 
-/-- **The graph space of a closed operator is a Hilbert space.** -/
+/-- **The graph space of a closed operator is complete.** For a closed operator between Banach
+spaces the graph space is a Banach space, and a Hilbert space when `E` and `F` are. -/
 theorem IsClosed.completeSpace_graphSpace [CompleteSpace E] [CompleteSpace F] {f : E →ₗ.[𝕜] F}
     (hf : f.IsClosed) : CompleteSpace f.graphSpace :=
   ((f.isClosed_graphSpace_iff.2 hf)).completeSpace_coe

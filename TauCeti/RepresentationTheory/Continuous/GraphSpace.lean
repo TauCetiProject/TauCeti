@@ -29,13 +29,14 @@ the kernel of `f` (`LinearPMap.kerRepresentationGraphSndEquiv`).
 
 This turns an equivariant closed operator, such as an invariant elliptic operator between
 `L²`-sections with its Sobolev domain, into an intertwining map between strongly continuous unitary
-representations on fixed Hilbert spaces; when `f` is closed and `E`, `F` are complete, the graph
-space is a Hilbert space (`LinearPMap.IsClosed.completeSpace_graphSpace`). When this intertwining
-map is Fredholm, its equivariant index `ContIntertwiningMap.equivariantIndex` is defined. The same
-representations serve every bounded equivariant operator on the graph space, such as an equivariant
-approximation of `f` in the norm of bounded operators from the graph space to `F`.
+representations on fixed Hilbert spaces; when `f` is closed and `E`, `F` are Hilbert spaces, the
+graph space is a Hilbert space (`LinearPMap.IsClosed.completeSpace_graphSpace`). When this
+intertwining map is Fredholm, its equivariant index `ContIntertwiningMap.equivariantIndex` is
+defined. The same representations serve every bounded equivariant operator on the graph space,
+such as an equivariant approximation of `f` in the norm of bounded operators from the graph space
+to `F`.
 
-The representation of `G` on the Hilbert direct sum `WithLp 2 (E × F)` used here is the direct sum
+The representation of `G` on the `L²` product `WithLp 2 (E × F)` used here is the direct sum
 `ContRepresentation.withLpProd`.
 
 ## Main declarations
