@@ -98,6 +98,7 @@ theorem _root_.Module.Dual.baseChange_apply_one_tmul (φ : Module.Dual R M) (m :
 
 /-- The base change of a functional `φ` on an `R`-algebra `S` takes the unit of `A ⊗[R] S` to
 the image of `φ 1` in `A`. -/
+@[simp]
 theorem _root_.Module.Dual.baseChange_apply_one {S : Type*} [Semiring S] [Algebra R S]
     (φ : Module.Dual R S) : φ.baseChange A 1 = algebraMap R A (φ 1) := by
   rw [Algebra.TensorProduct.one_def, Module.Dual.baseChange_apply_one_tmul]
