@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Analytic.Submanifold.Immersion
 import TauCeti.Analysis.Analytic.Submanifold.Transport
+import TauCeti.Topology.Maps.DomRestrict
 
 /-!
 # Topographic analytic submanifolds with Lipschitz height
@@ -204,6 +205,29 @@ theorem IsAnalyticSubmanifold.exists_topographic (hψ : IsAnalyticSubmanifold d 
           ψ = {v : Fin (n + 1) → 𝕜 | Fin.tail v ∈ Fin.tail '' ψ ∧ v 0 = f (Fin.tail v)} := by
   obtain ⟨f, hfL, hf, hψf⟩ := exists_lipschitzOnWith_eq_graph h
   exact ⟨f, hfL, hψ.analyticOnSubmanifold_image_tail h hf, hψ.image_tail h, hf, hψf⟩
+
+/-- **Full-dimensional Lipschitz graphs project openly** (Łojasiewicz). If an `n`-dimensional
+analytic submanifold `ψ ⊆ 𝕜ⁿ⁺¹` satisfies `dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)`
+for all its points, then the projection to the base `𝕜ⁿ` of each relatively open subset of `ψ` is
+open: `ψ` has property (P). Indeed its projection is an `n`-dimensional analytic submanifold of
+`𝕜ⁿ`, hence open, and `ψ` is the graph of a continuous function over it. -/
+theorem IsAnalyticSubmanifold.isOpenMap_domRestrict_tail (hψ : IsAnalyticSubmanifold n ψ)
+    (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w)) :
+    IsOpenMap (ψ.domRestrict Fin.tail) := by
+  obtain ⟨f, hf, hfψ, hψf⟩ := exists_lipschitzOnWith_eq_graph h
+  have hT : IsOpen (Fin.tail '' ψ) := (hψ.image_tail h).isOpen
+  refine isOpenMap_domRestrict_iff.2 fun v hv t ht ↦ ?_
+  -- Points of the projection near `Fin.tail v` lift to points of `ψ` near `v`.
+  let Γ : (Fin n → 𝕜) → Fin (n + 1) → 𝕜 := fun u ↦ Fin.cons (f u) u
+  have hΓv : Γ (Fin.tail v) = v := by
+    simp only [Γ]
+    rw [hfψ v hv, Fin.cons_self_tail]
+  have hΓ : ContinuousAt Γ (Fin.tail v) :=
+    ((hf.continuousOn _ ⟨v, hv, rfl⟩).continuousAt (hT.mem_nhds ⟨v, hv, rfl⟩)).finCons
+      continuousAt_id
+  filter_upwards [hT.mem_nhds ⟨v, hv, rfl⟩, hΓ.preimage_mem_nhds (hΓv ▸ ht)] with u hu hut
+  have hΓu : Γ u ∈ ψ := (Set.ext_iff.1 hψf _).2 ⟨by simpa [Γ] using hu, by simp [Γ]⟩
+  exact ⟨Γ u, ⟨hut, hΓu⟩, by simp [Γ]⟩
 
 end Analytic
 
