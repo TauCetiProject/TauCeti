@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.ZMod.IntUnitsPower
 import TauCeti.LinearAlgebra.BilinearForm.Prod
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
@@ -47,8 +48,6 @@ obstruction in dimensions `4k + 2`.
 
 ## Main results
 
-* `QuadraticMap.exists_basis_polarBilin_apply_eq_J`: a nondegenerate polar form in characteristic
-  two has a symplectic basis.
 * `QuadraticMap.sum_neg_one_uzpow_eq_of_basis`: the Gauss sum of `q` computed in a symplectic
   basis.
 * `QuadraticMap.arf_eq_sum`: the Arf invariant equals `∑ᵢ q(aᵢ) q(bᵢ)` in *every* symplectic
@@ -56,7 +55,7 @@ obstruction in dimensions `4k + 2`.
 * `QuadraticMap.sum_neg_one_uzpow_eq`: the Gauss sum formula `∑ᵥ (-1)^{q(v)} = (-1)^{Arf(q)} 2^m`.
 * `QuadraticMap.arf_congr`: isometric forms have the same Arf invariant.
 * `QuadraticMap.arf_prod`: the Arf invariant is additive on orthogonal sums.
-* `QuadraticMap.card_filter_eq_zero`: the number of zeros of `q`.
+* `QuadraticMap.card_filter_apply_eq_zero_eq`: the number of zeros of `q`.
 * `QuadraticMap.arf_eq_mul_of_polar_eq_one`: the Arf invariant of a binary form.
 * `QuadraticMap.arf_linMulLin_fst_snd`,
   `QuadraticMap.arf_sq_comp_fst_add_linMulLin_fst_snd_add_sq_comp_snd`: the hyperbolic plane `xy`
@@ -66,7 +65,9 @@ obstruction in dimensions `4k + 2`.
 
 * C. Arf, *Untersuchungen über quadratische Formen in Körpern der Charakteristik 2 (Teil I)*,
   J. Reine Angew. Math. 183 (1941), 148–167.
-* A. Pyronneau, *The Arf invariant*, §2.1, Lemmas 2.11–2.13, Corollary 2.14 and Theorem 2.15.
+* A. Pyronneau, *The Arf and Rohklin's invariant*, January 2024,
+  https://web.ma.utexas.edu/SMC/2024/Rokhlin_s_Invariant.pdf, §2.1, Lemmas 2.11–2.13,
+  Corollary 2.14 and Theorem 2.15, pp. 4–5.
 -/
 
 public section
@@ -78,45 +79,15 @@ open LinearMap (BilinForm)
 
 namespace QuadraticMap
 
-/-- **A nondegenerate polar form in characteristic two has a symplectic basis**: a basis indexed
-by `Fin m ⊕ Fin m` in which the polar form has the standard symplectic matrix `Matrix.J`. -/
-theorem exists_basis_polarBilin_apply_eq_J {K V : Type*} [Field K] [CharP K 2] [AddCommGroup V]
-    [Module K V] [FiniteDimensional K V] {q : QuadraticForm K V}
-    (hq : q.polarBilin.Nondegenerate) :
-    ∃ (m : ℕ) (b : Basis (Fin m ⊕ Fin m) K V),
-      ∀ x y, q.polarBilin (b x) (b y) = Matrix.J (Fin m) K x y := by
-  obtain ⟨m, b, hb⟩ := BilinForm.IsAlt.exists_basis_toMatrix_eq_J q.isAlt_polarBilin hq
-  exact ⟨m, b, fun x y => by rw [← BilinForm.toMatrix_apply, hb]⟩
-
 variable {V V₁ V₂ : Type*} [AddCommGroup V] [Module (ZMod 2) V] [AddCommGroup V₁]
   [Module (ZMod 2) V₁] [AddCommGroup V₂] [Module (ZMod 2) V₂]
 
 section Sign
 
-/-- `x ↦ (-1)^x` is injective on `ZMod 2`. -/
-private theorem neg_one_uzpow_injective {x y : ZMod 2}
-    (h : (((-1 : ℤˣ) ^ x : ℤˣ) : ℤ) = (((-1 : ℤˣ) ^ y : ℤˣ) : ℤ)) : x = y := by
-  revert x y
-  decide
-
-/-- `(-1)` raised to a finite sum in `ZMod 2` is the product of the powers. -/
-private theorem neg_one_uzpow_sum {ι : Type*} (s : Finset ι) (f : ι → ZMod 2) :
-    (((-1 : ℤˣ) ^ (∑ i ∈ s, f i) : ℤˣ) : ℤ) = ∏ i ∈ s, (((-1 : ℤˣ) ^ f i : ℤˣ) : ℤ) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih => rw [Finset.sum_insert hi, Finset.prod_insert hi, uzpow_add,
-      Units.val_mul, ih]
-
 /-- The four-term sum behind the Gauss sum of a hyperbolic pair, as an identity in `𝔽₂`. -/
 private theorem sum_neg_one_uzpow_two : ∀ α β : ZMod 2,
     ∑ x : ZMod 2, ∑ y : ZMod 2, (((-1 : ℤˣ) ^ (x * α + y * β + x * y) : ℤˣ) : ℤ) =
       2 * (((-1 : ℤˣ) ^ (α * β) : ℤˣ) : ℤ) := by
-  decide
-
-/-- `(-1)^x` is `1` at `x = 0` and `-1` at `x = 1`. -/
-private theorem neg_one_uzpow_eq_ite : ∀ x : ZMod 2,
-    (((-1 : ℤˣ) ^ x : ℤˣ) : ℤ) = 2 * (if x = 0 then 1 else 0) - 1 := by
   decide
 
 end Sign
@@ -150,22 +121,27 @@ section SymplecticBasis
 
 variable {q : QuadraticForm (ZMod 2) V} {m : ℕ} {b : Basis (Fin m ⊕ Fin m) (ZMod 2) V}
 
+/-- In a symplectic basis, the polar form pairs the basis vectors by the entries of `Matrix.J`. -/
+private theorem polar_apply_eq_J
+    (hb : BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2)) (x y : Fin m ⊕ Fin m) :
+    polar q (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y := by
+  rw [← polarBilin_apply_apply, ← BilinForm.toMatrix_apply, hb]
+
 /-- In a symplectic basis, `aᵢ = b (inl i)` pairs with `bᵢ = b (inr i)` to `1`. -/
 private theorem polar_inl_inr
-    (hb : ∀ x y, q.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y) (i : Fin m) :
+    (hb : BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2)) (i : Fin m) :
     polar q (b (.inl i)) (b (.inr i)) = 1 := by
-  rw [← polarBilin_apply_apply, hb]
+  rw [polar_apply_eq_J hb]
   simp [Matrix.J]
 
 /-- In a symplectic basis, the planes `span {aᵢ, bᵢ}` and `span {aⱼ, bⱼ}` are orthogonal for
 `i ≠ j`. -/
 private theorem polar_plane_eq_zero
-    (hb : ∀ x y, q.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y) {i j : Fin m}
+    (hb : BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2)) {i j : Fin m}
     (hij : i ≠ j) (x y x' y' : ZMod 2) :
     polar q (x • b (.inl i) + y • b (.inr i)) (x' • b (.inl j) + y' • b (.inr j)) = 0 := by
-  have h : ∀ u v, polar q (b u) (b v) = Matrix.J (Fin m) (ZMod 2) u v := fun u v => by
-    rw [← polarBilin_apply_apply, hb]
-  simp only [polar_add_left, polar_add_right, polar_smul_left, polar_smul_right, h]
+  simp only [polar_add_left, polar_add_right, polar_smul_left, polar_smul_right,
+    polar_apply_eq_J hb]
   simp [Matrix.J, Matrix.fromBlocks, hij]
 
 /-- The coordinate identification `(Fin m → 𝔽₂ × 𝔽₂) ≃ V` sending `c` to
@@ -185,7 +161,7 @@ variable (q b) in
 /-- **The Gauss sum in a symplectic basis.** If `aᵢ = b (inl i)`, `bᵢ = b (inr i)` form a
 symplectic basis for the polar form of `q`, then `∑ᵥ (-1)^{q(v)} = (-1)^{∑ᵢ q(aᵢ) q(bᵢ)} 2^m`. -/
 theorem sum_neg_one_uzpow_eq_of_basis [Fintype V]
-    (hb : ∀ x y, q.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y) :
+    (hb : BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2)) :
     ∑ v, (((-1 : ℤˣ) ^ q v : ℤˣ) : ℤ) =
       (((-1 : ℤˣ) ^ (∑ i, q (b (.inl i)) * q (b (.inr i))) : ℤˣ) : ℤ) * 2 ^ m := by
   -- Sum over the coordinates of `v` in the planes `span {aᵢ, bᵢ}`.
@@ -195,7 +171,7 @@ theorem sum_neg_one_uzpow_eq_of_basis [Fintype V]
       ∑ i, q ((c i).1 • b (.inl i) + (c i).2 • b (.inr i)) := fun c => by
     rw [planeEquiv_apply]
     exact q.map_sum_of_polar_eq_zero _ _ fun i _ j _ hij => polar_plane_eq_zero hb hij _ _ _ _
-  simp_rw [hq, neg_one_uzpow_sum]
+  simp_rw [hq, TauCeti.uzpow_sum, Units.coe_prod]
   -- Each plane contributes `2 (-1)^{q(aᵢ) q(bᵢ)}`.
   rw [← Fintype.prod_sum (fun i (p : ZMod 2 × ZMod 2) =>
     (((-1 : ℤˣ) ^ q (p.1 • b (.inl i) + p.2 • b (.inr i)) : ℤˣ) : ℤ))]
@@ -213,7 +189,7 @@ depend on the basis (`QuadraticMap.arf_eq_sum`). When the polar form has no symp
 is when it is degenerate or `V` is infinite-dimensional, it is `0` by convention. -/
 def arf : ZMod 2 :=
   if h : ∃ (m : ℕ) (b : Basis (Fin m ⊕ Fin m) (ZMod 2) V),
-      ∀ x y, q.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y then
+      BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2) then
     ∑ i, q (h.choose_spec.choose (.inl i)) * q (h.choose_spec.choose (.inr i))
   else 0
 
@@ -223,8 +199,8 @@ variable {q}
 sum of `q`. -/
 private theorem sum_mul_eq_of_basis {m m' : ℕ} {b : Basis (Fin m ⊕ Fin m) (ZMod 2) V}
     {b' : Basis (Fin m' ⊕ Fin m') (ZMod 2) V}
-    (hb : ∀ x y, q.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y)
-    (hb' : ∀ x y, q.polarBilin (b' x) (b' y) = Matrix.J (Fin m') (ZMod 2) x y) :
+    (hb : BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2))
+    (hb' : BilinForm.toMatrix b' q.polarBilin = Matrix.J (Fin m') (ZMod 2)) :
     ∑ i, q (b (.inl i)) * q (b (.inr i)) = ∑ i, q (b' (.inl i)) * q (b' (.inr i)) := by
   have : Module.Finite (ZMod 2) V := Module.Finite.of_basis b
   have : Finite V := Module.finite_of_finite (ZMod 2)
@@ -237,63 +213,67 @@ private theorem sum_mul_eq_of_basis {m m' : ℕ} {b : Basis (Fin m ⊕ Fin m) (Z
     omega
   have hg := (sum_neg_one_uzpow_eq_of_basis q b hb).symm.trans
     (sum_neg_one_uzpow_eq_of_basis q b' hb')
-  exact neg_one_uzpow_injective (mul_right_cancel₀ (pow_ne_zero _ two_ne_zero) hg)
+  exact TauCeti.neg_one_uzpow_injective
+    (Units.ext (mul_right_cancel₀ (pow_ne_zero _ two_ne_zero) hg))
 
 /-- **The Arf invariant does not depend on the symplectic basis**: in every symplectic basis
 `aᵢ = b (inl i)`, `bᵢ = b (inr i)` of the polar form of `q`, `Arf(q) = ∑ᵢ q(aᵢ) q(bᵢ)`. -/
 theorem arf_eq_sum {m : ℕ} (b : Basis (Fin m ⊕ Fin m) (ZMod 2) V)
-    (hb : ∀ x y, q.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y) :
+    (hb : BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2)) :
     q.arf = ∑ i, q (b (.inl i)) * q (b (.inr i)) := by
-  have h : ∃ (m : ℕ) (b : Basis (Fin m ⊕ Fin m) (ZMod 2) V),
-      ∀ x y, q.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y := ⟨m, b, hb⟩
-  rw [arf, dite_eq_left_of_eq_true (eq_true h)]
-  exact sum_mul_eq_of_basis h.choose_spec.choose_spec hb
+  rw [arf]
+  split_ifs with h
+  · exact sum_mul_eq_of_basis h.choose_spec.choose_spec hb
+  · exact absurd ⟨m, b, hb⟩ h
+
+/-- The Arf invariant is `0` by convention when the polar form has no symplectic basis. -/
+private theorem arf_eq_zero_of_not_exists_basis
+    (h : ¬ ∃ (m : ℕ) (b : Basis (Fin m ⊕ Fin m) (ZMod 2) V),
+      BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2)) :
+    q.arf = 0 := by
+  rw [arf, dite_eq_right h]
 
 /-- The Arf invariant of a form whose polar form is degenerate is `0` by convention: a symplectic
 basis makes the polar form nondegenerate, since `Matrix.J` is invertible. -/
-theorem arf_eq_zero_of_not_nondegenerate (hq : ¬ q.polarBilin.Nondegenerate) : q.arf = 0 := by
-  rw [arf]
-  refine dite_eq_right_of_eq_false (eq_false fun ⟨m, b, hb⟩ => hq ?_)
-  have hJ : BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin m) (ZMod 2) :=
-    Matrix.ext fun x y => by rw [BilinForm.toMatrix_apply, hb]
-  refine (BilinForm.nondegenerate_iff_det_ne_zero b).mpr ?_
-  rw [hJ]
-  exact left_ne_zero_of_mul_eq_one (Matrix.J_det_mul_J_det (Fin m) (ZMod 2))
+theorem arf_eq_zero_of_not_nondegenerate (hq : ¬ q.polarBilin.Nondegenerate) : q.arf = 0 :=
+  arf_eq_zero_of_not_exists_basis fun ⟨m, b, hb⟩ => hq <|
+    (BilinForm.nondegenerate_iff_det_ne_zero b).mpr <| by
+      rw [hb]
+      exact (Matrix.isUnit_det_J (Fin m) (ZMod 2)).ne_zero
 
 /-- **The Gauss sum formula.** If the polar form of `q` is nondegenerate on the finite space `V`,
 of dimension `2 m`, then `∑ᵥ (-1)^{q(v)} = (-1)^{Arf(q)} 2^m`. -/
 theorem sum_neg_one_uzpow_eq [Fintype V] (hq : q.polarBilin.Nondegenerate) :
     ∑ v, (((-1 : ℤˣ) ^ q v : ℤˣ) : ℤ) =
       (((-1 : ℤˣ) ^ q.arf : ℤˣ) : ℤ) * 2 ^ (finrank (ZMod 2) V / 2) := by
-  obtain ⟨m, b, hb⟩ := exists_basis_polarBilin_apply_eq_J (K := ZMod 2) hq
+  obtain ⟨m, b, hb⟩ := BilinForm.IsAlt.exists_basis_toMatrix_eq_J q.isAlt_polarBilin hq
   have hm : finrank (ZMod 2) V / 2 = m := by
     rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]
     omega
   rw [hm, arf_eq_sum b hb, sum_neg_one_uzpow_eq_of_basis q b hb]
 
 /-- An isometry carries symplectic bases of `q₁` to symplectic bases of `q₂`. -/
-private theorem polarBilin_map_apply_eq_J {q₁ : QuadraticForm (ZMod 2) V₁}
+private theorem toMatrix_map_polarBilin_eq_J {q₁ : QuadraticForm (ZMod 2) V₁}
     {q₂ : QuadraticForm (ZMod 2) V₂} (e : q₁.IsometryEquiv q₂) {m : ℕ}
     {b : Basis (Fin m ⊕ Fin m) (ZMod 2) V₁}
-    (hb : ∀ x y, q₁.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y)
-    (x y : Fin m ⊕ Fin m) :
-    q₂.polarBilin (b.map e.toLinearEquiv x) (b.map e.toLinearEquiv y) =
-      Matrix.J (Fin m) (ZMod 2) x y := by
-  rw [Basis.map_apply, Basis.map_apply, polarBilin_apply_apply, ← hb, polarBilin_apply_apply]
+    (hb : BilinForm.toMatrix b q₁.polarBilin = Matrix.J (Fin m) (ZMod 2)) :
+    BilinForm.toMatrix (b.map e.toLinearEquiv) q₂.polarBilin = Matrix.J (Fin m) (ZMod 2) := by
+  rw [← hb]
+  ext x y
+  rw [BilinForm.toMatrix_apply, BilinForm.toMatrix_apply, Basis.map_apply, Basis.map_apply,
+    polarBilin_apply_apply, polarBilin_apply_apply]
   exact e.polar_apply (b x) (b y)
 
 /-- Isometric quadratic forms over `ZMod 2` have the same Arf invariant. -/
 theorem arf_congr {q₁ : QuadraticForm (ZMod 2) V₁} {q₂ : QuadraticForm (ZMod 2) V₂}
     (e : q₁.IsometryEquiv q₂) : q₁.arf = q₂.arf := by
   by_cases h : ∃ (m : ℕ) (b : Basis (Fin m ⊕ Fin m) (ZMod 2) V₁),
-      ∀ x y, q₁.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y
+      BilinForm.toMatrix b q₁.polarBilin = Matrix.J (Fin m) (ZMod 2)
   · obtain ⟨m, b, hb⟩ := h
-    rw [arf_eq_sum b hb, arf_eq_sum _ (polarBilin_map_apply_eq_J e hb)]
+    rw [arf_eq_sum b hb, arf_eq_sum _ (toMatrix_map_polarBilin_eq_J e hb)]
     simp [IsometryEquiv.map_app]
-  · have h' : ¬ ∃ (m : ℕ) (b : Basis (Fin m ⊕ Fin m) (ZMod 2) V₂),
-        ∀ x y, q₂.polarBilin (b x) (b y) = Matrix.J (Fin m) (ZMod 2) x y :=
-      fun ⟨m, b, hb⟩ => h ⟨m, b.map e.symm.toLinearEquiv, polarBilin_map_apply_eq_J e.symm hb⟩
-    rw [arf, dite_eq_right_of_eq_false (eq_false h), arf, dite_eq_right_of_eq_false (eq_false h')]
+  · rw [arf_eq_zero_of_not_exists_basis h, arf_eq_zero_of_not_exists_basis (q := q₂)
+      fun ⟨m, b, hb⟩ => h ⟨m, b.map e.symm.toLinearEquiv, toMatrix_map_polarBilin_eq_J e.symm hb⟩]
 
 /-- **The Arf invariant is additive on orthogonal sums** of forms with nondegenerate polar forms
 on finite-dimensional spaces. -/
@@ -321,7 +301,8 @@ theorem arf_prod [FiniteDimensional (ZMod 2) V₁] [FiniteDimensional (ZMod 2) V
     obtain ⟨k₂, hk₂⟩ := ‹Even (finrank (ZMod 2) V₂)›
     omega
   rw [hm, pow_add] at hg
-  refine neg_one_uzpow_injective ?_
+  refine TauCeti.neg_one_uzpow_injective (Units.ext ?_)
+  dsimp only
   rw [uzpow_add, Units.val_mul]
   refine mul_right_cancel₀ (pow_ne_zero _ two_ne_zero :
     (2 : ℤ) ^ (finrank (ZMod 2) V₁ / 2 + finrank (ZMod 2) V₂ / 2) ≠ 0) ?_
@@ -331,7 +312,7 @@ theorem arf_prod [FiniteDimensional (ZMod 2) V₁] [FiniteDimensional (ZMod 2) V
 /-- **The number of zeros of a quadratic form over `ZMod 2`.** If the polar form of `q` is
 nondegenerate on a space of dimension `2 (m + 1)`, then `q` has
 `2^{2m+1} + (-1)^{Arf(q)} 2^m` zeros. -/
-theorem card_filter_eq_zero [Fintype V] (hq : q.polarBilin.Nondegenerate)
+theorem card_filter_apply_eq_zero_eq [Fintype V] (hq : q.polarBilin.Nondegenerate)
     {m : ℕ} (hm : finrank (ZMod 2) V = 2 * (m + 1)) :
     ((Finset.univ.filter fun v => q v = 0).card : ℤ) =
       2 ^ (2 * m + 1) + (((-1 : ℤˣ) ^ q.arf : ℤˣ) : ℤ) * 2 ^ m := by
@@ -340,7 +321,10 @@ theorem card_filter_eq_zero [Fintype V] (hq : q.polarBilin.Nondegenerate)
   -- Each zero contributes `+1` and each nonzero value `-1` to the Gauss sum.
   have hsum : ∑ v, (((-1 : ℤˣ) ^ q v : ℤˣ) : ℤ) =
       2 * ((Finset.univ.filter fun v => q v = 0).card : ℤ) - 2 ^ (2 * (m + 1)) := by
-    simp_rw [neg_one_uzpow_eq_ite (q _)]
+    have h : ∀ v, (((-1 : ℤˣ) ^ q v : ℤˣ) : ℤ) = 2 * (if q v = 0 then 1 else 0) - 1 := fun v => by
+      rw [TauCeti.coe_neg_one_uzpow_eq_ite]
+      split_ifs <;> norm_num
+    simp_rw [h]
     rw [Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_boole, Finset.sum_const,
       Finset.card_univ, Module.card_eq_pow_finrank (K := ZMod 2), hm, ZMod.card]
     simp
@@ -357,8 +341,10 @@ theorem arf_eq_mul_of_polar_eq_one {q : QuadraticForm (ZMod 2) (ZMod 2 × ZMod 2
   let b := (Basis.singleton (Fin 1) (ZMod 2)).prod (Basis.singleton (Fin 1) (ZMod 2))
   have hb₁ : b (.inl 0) = (1, 0) := by simp [b]
   have hb₂ : b (.inr 0) = (0, 1) := by simp [b]
-  have hb : ∀ x y, q.polarBilin (b x) (b y) = Matrix.J (Fin 1) (ZMod 2) x y := by
-    rintro (x | x) (y | y) <;> obtain rfl := Subsingleton.elim x 0 <;>
+  have hb : BilinForm.toMatrix b q.polarBilin = Matrix.J (Fin 1) (ZMod 2) := by
+    ext x y
+    rw [BilinForm.toMatrix_apply]
+    rcases x with x | x <;> rcases y with y | y <;> obtain rfl := Subsingleton.elim x 0 <;>
       obtain rfl := Subsingleton.elim y 0 <;>
       simp [hb₁, hb₂, polar_self, polar_comm q (0, 1), hq, Matrix.J,
         (by decide : (2 : ZMod 2) = 0)]
