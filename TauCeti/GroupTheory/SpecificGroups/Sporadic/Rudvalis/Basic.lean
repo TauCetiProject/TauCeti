@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Digits.Defs
 public import Mathlib.GroupTheory.OrderOfElement
+public import TauCeti.Data.Nat.BitField
 public import TauCeti.GroupTheory.Perm.Fin
 
 /-!
@@ -31,6 +32,8 @@ permutations that generate the model and satisfy the relators of the presentatio
 ## Main declarations
 
 * `TauCeti.Sporadic.Ru`: the permutation model of the Rudvalis group on `4060` points.
+* `TauCeti.Sporadic.Ru.a_inv`, `TauCeti.Sporadic.Ru.b_inv`: the inverses of the generators, the
+  first generator itself and the cube of the second.
 * `TauCeti.Sporadic.Ru.orderOf_a`, `TauCeti.Sporadic.Ru.orderOf_b`,
   `TauCeti.Sporadic.Ru.orderOf_a_mul_b`: the generators have orders `2` and `4`, and their product
   has order `13`.
@@ -39,9 +42,12 @@ permutations that generate the model and satisfy the relators of the presentatio
 
 * R. A. Wilson, R. A. Parker, J. N. Bray et al., *ATLAS of Finite Group Representations*,
   version 3, representation `RuG1-p4060B0`,
-  <https://brauer.maths.qmul.ac.uk/Atlas/v3/permrep/RuG1-p4060B0>. Forward image files:
-  <https://brauer.maths.qmul.ac.uk/Atlas/spor/Ru/mtx/RuG1-p4060B0.m1> and
-  <https://brauer.maths.qmul.ac.uk/Atlas/spor/Ru/mtx/RuG1-p4060B0.m2>.
+  <https://brauer.maths.qmul.ac.uk/Atlas/v3/permrep/RuG1-p4060B0>. Forward image files, with the
+  SHA-256 digests of the bytes the tables were read from:
+  <https://brauer.maths.qmul.ac.uk/Atlas/spor/Ru/mtx/RuG1-p4060B0.m1>
+  (`1c60df2cdd1207bdaa1c563ba96cb9423645d15e6cac85e26762d078820f6c55`) and
+  <https://brauer.maths.qmul.ac.uk/Atlas/spor/Ru/mtx/RuG1-p4060B0.m2>
+  (`e05e50192b822500c5a0d8c27e63404ef7cb5577521db3d50049e826a254ff83`).
 -/
 
 public section
@@ -53,12 +59,9 @@ numeral of 90 digits holding 30 entries of three digits (the last row holds 10):
 point `30 * r + j` is the group of three digits of row `r` in position `j` counted from the right,
 starting at zero. The table is the natural number having the rows as its digits in base `2 ^ 360`,
 so that the entry of the point `i` is its field `i` of width `12`, the bits `12 * i` to
-`12 * i + 11`. The kernel reads such a field by binary arithmetic in one step, whereas a lookup in
-a list or an array costs one reduction for every position passed. The field is the number
-`Nat.bitField 12 t i` of `TauCeti.Data.Nat.BitField`; it is read here as
-`t >>> (12 * i) % 2 ^ 12`, because the kernel shifts faster than it divides by `2 ^ (12 * i)`:
-with the division the relator checks of the presentation module take about five minutes, and
-with the shift about three.
+`12 * i + 11`, which is the number `Nat.bitField 12 t i`. The kernel reads such a field by binary
+arithmetic in one step, whereas a lookup in a list or an array costs one reduction for every
+position passed.
 
 The kernel decides a statement quantified over `Fin n` by a recursion of depth `n`. To keep that
 depth small, every statement about all the points is checked in the form
@@ -209,7 +212,7 @@ preimage. -/
      0x105deef062869c832921fdca8e554a13b8aada2b2564f941167611e0ba046b5e8b7747238373ad35bdd18322f5,
      0xcab089c2bda690d06f13ad3c739a0b6d666b6b633dc47ad7309b955d1909c30a8b389f839deaaaa1a074bd0c78,
      0x0012484a9db3f04f2677b91d24318e]
-  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (t >>> (12 * i.val) % 2 ^ 12)
+  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (Nat.bitField 12 t i.val)
   Function.Involutive.toPerm f <|
     (finProdFinEquiv (m := 58) (n := 70)).forall_congr_right.mp <|
       Prod.forall.mpr (by decide +kernel)
@@ -355,7 +358,7 @@ the preimage of a point is its image under the cube. -/
      0xa8b60357177412a14277bd4f545c90ab17008551a1399ea461501ad581240054ba3d82158a6af9003eb5208286,
      0xeccb0943f9a823418a18ddf08658c450793c331832dadc6116f9f5955c98bcddb468a5b9524155d2b123f971d6,
      0x9c2200bc01f303ecb942def234e460]
-  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (t >>> (12 * i.val) % 2 ^ 12)
+  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (Nat.bitField 12 t i.val)
   have h : ∀ x, f (f (f (f x))) = x :=
     (finProdFinEquiv (m := 58) (n := 70)).forall_congr_right.mp <|
       Prod.forall.mpr (by decide +kernel)
@@ -374,9 +377,11 @@ theorem Ru_def : Ru = Subgroup.closure {Ru.a, Ru.b} := (rfl)
 namespace Ru
 
 /-- The first generator lies in the model. -/
+@[simp]
 theorem a_mem : a ∈ Ru := Ru_def ▸ Subgroup.subset_closure (by simp)
 
 /-- The second generator lies in the model. -/
+@[simp]
 theorem b_mem : b ∈ Ru := Ru_def ▸ Subgroup.subset_closure (by simp)
 
 /-! ### Transcription checks -/
@@ -387,17 +392,32 @@ private theorem direction_checks : a 0 = 2451 ∧ b 0 = 2242 ∧ a 4059 = 1 ∧ 
     b⁻¹ 0 = 1488 ∧ (a * b) 0 = 2549 ∧ (b * a) 0 = 186 := by
   decide +kernel
 
+/-! ### Inverses of the generators -/
+
+/-- The first generator is its own inverse. -/
+@[simp]
+theorem a_inv : a⁻¹ = a :=
+  -- `a` is built by `Function.Involutive.toPerm`, whose inverse function is the function itself.
+  Equiv.ext fun _ ↦ rfl
+
+/-- The inverse of the second generator is its cube. -/
+theorem b_inv : b⁻¹ = b ^ 3 := by
+  -- The inverse function in the definition of `b` is the threefold iterate of its function.
+  refine Equiv.ext fun _ ↦ ?_
+  rw [pow_three, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply]
+  rfl
+
 /-! ### Generator orders -/
 
 /-- The first generator is an involution. -/
 theorem orderOf_a : orderOf a = 2 :=
-  orderOf_eq_prime (Equiv.Perm.eq_one_of_rows (m := 58) (n := 70) _ (by decide +kernel))
+  orderOf_eq_prime (by rw [pow_two, mul_eq_one_iff_eq_inv, a_inv])
     (DFunLike.ne_iff.mpr ⟨0, by decide +kernel⟩)
 
 /-- The second generator has order four. -/
 theorem orderOf_b : orderOf b = 4 :=
-  (orderOf_eq_prime_pow (p := 2) (n := 1) (DFunLike.ne_iff.mpr ⟨0, by decide +kernel⟩)
-    (Equiv.Perm.eq_one_of_rows (m := 58) (n := 70) _ (by decide +kernel))).trans (by norm_num)
+  orderOf_eq_prime_pow (p := 2) (n := 1) (DFunLike.ne_iff.mpr ⟨0, by decide +kernel⟩)
+    (by rw [show 2 ^ (1 + 1) = 3 + 1 by norm_num, pow_succ, ← b_inv, inv_mul_cancel])
 
 /-- The product of the two generators has order thirteen. -/
 theorem orderOf_a_mul_b : orderOf (a * b) = 13 :=

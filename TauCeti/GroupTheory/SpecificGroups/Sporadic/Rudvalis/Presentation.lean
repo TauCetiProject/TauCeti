@@ -47,9 +47,13 @@ The lift and range arguments use `GroupPresentation.homEquiv` and
   images of the three generators, with `TauCeti.Sporadic.Ru.presentationImage` the resulting
   assignment.
 * `TauCeti.Sporadic.Ru.lift_presentationImage_toFreeGroup_eq_one`: the twelve relators hold.
+* `TauCeti.Sporadic.Ru.imageU_mem`, `TauCeti.Sporadic.Ru.imageV_mem`,
+  `TauCeti.Sporadic.Ru.imageT_mem`, `TauCeti.Sporadic.Ru.presentationImage_mem`: the images lie in
+  the model.
 * `TauCeti.Sporadic.Ru.closure_range_presentationImage`: the images generate the model.
-* `TauCeti.Sporadic.Ru.presentationHom`, `TauCeti.Sporadic.Ru.range_presentationHom`: the
-  homomorphism from the presented group and its range.
+* `TauCeti.Sporadic.Ru.presentationHom`, `TauCeti.Sporadic.Ru.range_presentationHom`,
+  `TauCeti.Sporadic.Ru.presentationHom_mem`: the homomorphism from the presented group, its range,
+  and the membership of its values in the model.
 * `TauCeti.Sporadic.exists_surjective_Ru`: the presented group maps onto the model.
 
 ## References
@@ -365,16 +369,16 @@ entry `i` of the second table is its preimage. -/
      0x828c29691cf11c691758f7149b522dadc626a48122327e2cd425c8ab172033f0a36c9715ad75d56399a98bf300,
      0x79f98d4b2316b4434564fbf8aca46e82a34147155312966a279169dd86bbd51962d3765576a952a4a4d9cb31b5,
      0xac6ba65b20f0dc4fb9d10901cc97eb]
-  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (t >>> (12 * i.val) % 2 ^ 12)
-  let g (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (u >>> (12 * i.val) % 2 ^ 12)
+  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (Nat.bitField 12 t i.val)
+  let g (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (Nat.bitField 12 u i.val)
+  have hl : Function.LeftInverse g f :=
+    (finProdFinEquiv (m := 58) (n := 70)).forall_congr_right.mp <|
+      Prod.forall.mpr (by decide +kernel)
   { toFun := f
     invFun := g
-    left_inv :=
-      (finProdFinEquiv (m := 58) (n := 70)).forall_congr_right.mp <|
-        Prod.forall.mpr (by decide +kernel)
-    right_inv :=
-      (finProdFinEquiv (m := 58) (n := 70)).forall_congr_right.mp <|
-        Prod.forall.mpr (by decide +kernel) }
+    left_inv := hl
+    -- On a finite type a left inverse is also a right inverse.
+    right_inv := hl.rightInverse_of_card_le le_rfl }
 
 /-- The image of the generator `v` of the presentation of `Ru`, of index one: an involution of
 the `4060` points. Entry `i` of the table is the image of the point `i`, and also its preimage. -/
@@ -516,7 +520,7 @@ the `4060` points. Entry `i` of the table is the image of the point `i`, and als
      0x8fccd307d3e14823bc3a3285a0a9ca063b4efa7c422b6c1eca9e0ddd5edd426c20e691be5e1cf17068be52891b,
      0x4d36f93baead66da260bff4d2be744eba159a8079346ec000ed0907880e55b1f4618e096a1f8ccfb74c12088d1,
      0x81f9724f93c36c4cd8c482a73f19cf]
-  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (t >>> (12 * i.val) % 2 ^ 12)
+  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (Nat.bitField 12 t i.val)
   Function.Involutive.toPerm f <|
     (finProdFinEquiv (m := 58) (n := 70)).forall_congr_right.mp <|
       Prod.forall.mpr (by decide +kernel)
@@ -661,10 +665,24 @@ the `4060` points. Entry `i` of the table is the image of the point `i`, and als
      0x1a430e5a6f706f3133de96e6f4a36253c2194829d8badcf3243300582af1225ae433b5f90ccc69f60ef2aa47bb,
      0xfc5ed00a5f4c0830006d7a44d70f4b741a66fd14b2f8037a9c25081d33d138e29fd96c3194670eb3f6474cbc3f,
      0xbda590f5614d88cef5650871f2abc1]
-  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (t >>> (12 * i.val) % 2 ^ 12)
+  let f (i : Fin 4060) : Fin 4060 := Fin.ofNat 4060 (Nat.bitField 12 t i.val)
   Function.Involutive.toPerm f <|
     (finProdFinEquiv (m := 58) (n := 70)).forall_congr_right.mp <|
       Prod.forall.mpr (by decide +kernel)
+
+/-- The image of `v` is its own inverse. -/
+@[simp]
+theorem imageV_inv : imageV⁻¹ = imageV :=
+  -- `imageV` is built by `Function.Involutive.toPerm`, whose inverse function is the function
+  -- itself.
+  Equiv.ext fun _ ↦ rfl
+
+/-- The image of `t` is its own inverse. -/
+@[simp]
+theorem imageT_inv : imageT⁻¹ = imageT :=
+  -- `imageT` is built by `Function.Involutive.toPerm`, whose inverse function is the function
+  -- itself.
+  Equiv.ext fun _ ↦ rfl
 
 /-! ### The images and the generators of the model as words in each other -/
 
@@ -750,14 +768,15 @@ theorem range_presentationImage :
     exacts [⟨⟨0, by omega⟩, presentationImage_zero _⟩, ⟨⟨1, by omega⟩, presentationImage_one _⟩,
       ⟨⟨2, by omega⟩, presentationImage_two _⟩]
 
-/- The twelve relators are checked one at a time, in the order of the transcription; the kernel
-evaluates each word at every point. The commutators are those of the source, written with
-Mathlib's `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹` at inverted arguments. -/
-private theorem relator0 : imageV ^ 2 = 1 :=
-  Equiv.Perm.eq_one_of_rows (m := 58) (n := 70) _ (by decide +kernel)
+/- The twelve relators are checked one at a time, in the order of the transcription. The first two
+say that the images of `v` and `t` are involutions, which their definitions already checked; for
+each of the others the kernel evaluates the word at every point. The commutators are those of the
+source, written with Mathlib's `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹` at inverted arguments. -/
+private theorem relator0 : imageV ^ 2 = 1 := by
+  rw [pow_two, mul_eq_one_iff_eq_inv, imageV_inv]
 
-private theorem relator1 : imageT ^ 2 = 1 :=
-  Equiv.Perm.eq_one_of_rows (m := 58) (n := 70) _ (by decide +kernel)
+private theorem relator1 : imageT ^ 2 = 1 := by
+  rw [pow_two, mul_eq_one_iff_eq_inv, imageT_inv]
 
 private theorem relator2 : imageU ^ 4 = 1 :=
   Equiv.Perm.eq_one_of_rows (m := 58) (n := 70) _ (by decide +kernel)
@@ -819,8 +838,8 @@ theorem lift_presentationImage_toFreeGroup_eq_one :
 
 /-- The image of `u` has order four. -/
 theorem orderOf_imageU : orderOf imageU = 4 :=
-  (orderOf_eq_prime_pow (p := 2) (n := 1) (DFunLike.ne_iff.mpr ⟨0, by decide +kernel⟩)
-    (Equiv.Perm.eq_one_of_rows (m := 58) (n := 70) _ (by decide +kernel))).trans (by norm_num)
+  orderOf_eq_prime_pow (p := 2) (n := 1) (DFunLike.ne_iff.mpr ⟨0, by decide +kernel⟩)
+    (by simpa using relator2)
 
 /-- The image of `v` is an involution. -/
 theorem orderOf_imageV : orderOf imageV = 2 :=
@@ -832,22 +851,43 @@ theorem orderOf_imageT : orderOf imageT = 2 :=
 
 /-! ### Generation and the surjection -/
 
+/- Each image is a word in the two generators of the model; the word is peeled from the right. -/
+
+/-- The image of `u` lies in the model. -/
+@[simp]
+theorem imageU_mem : imageU ∈ Ru := by
+  simp only [imageU_eq, mul_mem_cancel_right a_mem, mul_mem_cancel_right b_mem,
+    mul_mem_cancel_right (inv_mem b_mem), b_mem]
+
+/-- The image of `v` lies in the model. -/
+@[simp]
+theorem imageV_mem : imageV ∈ Ru :=
+  imageV_eq ▸ mul_mem b_mem b_mem
+
+/-- The image of `t` lies in the model. -/
+@[simp]
+theorem imageT_mem : imageT ∈ Ru := by
+  simp only [imageT_eq, mul_mem_cancel_right a_mem, mul_mem_cancel_right b_mem,
+    mul_mem_cancel_right (inv_mem b_mem), a_mem]
+
+/-- Every image of a presentation generator lies in the model. -/
+@[simp]
+theorem presentationImage_mem (i : Fin SporadicName.Ru.presentation.generatorCount) :
+    presentationImage i ∈ Ru := by
+  rw [presentationImage_def]
+  split_ifs
+  exacts [imageU_mem, imageV_mem, imageT_mem]
+
 /-- **The images generate the model.** The subgroup generated by the three images of the
 presentation generators is the permutation model `Ru`. -/
 theorem closure_range_presentationImage :
     Subgroup.closure (Set.range presentationImage) = Ru := by
-  rw [range_presentationImage, Ru_def]
   apply le_antisymm
   · refine (Subgroup.closure_le _).mpr ?_
-    have ha : a ∈ Subgroup.closure ({a, b} : Set (Equiv.Perm (Fin 4060))) :=
-      Subgroup.subset_closure (by simp)
-    have hb : b ∈ Subgroup.closure ({a, b} : Set (Equiv.Perm (Fin 4060))) :=
-      Subgroup.subset_closure (by simp)
-    -- Each image is a word in the two generators; a word is peeled from the right.
-    rintro σ (rfl | rfl | rfl) <;>
-    · simp only [SetLike.mem_coe, imageU_eq, imageV_eq, imageT_eq, mul_mem_cancel_right ha,
-        mul_mem_cancel_right hb, mul_mem_cancel_right (inv_mem hb), ha, hb]
-  · refine (Subgroup.closure_le _).mpr ?_
+    rintro _ ⟨i, rfl⟩
+    exact presentationImage_mem i
+  · rw [range_presentationImage, Ru_def]
+    refine (Subgroup.closure_le _).mpr ?_
     have hU : imageU ∈ Subgroup.closure ({imageU, imageV, imageT} : Set (Equiv.Perm (Fin 4060))) :=
       Subgroup.subset_closure (by simp)
     have hV : imageV ∈ Subgroup.closure ({imageU, imageV, imageT} : Set (Equiv.Perm (Fin 4060))) :=
@@ -879,8 +919,14 @@ theorem presentationHom_of (i : Fin SporadicName.Ru.presentation.generatorCount)
   GroupPresentation.homEquiv_symm_apply_of _ _ i
 
 /-- The range of `presentationHom` is the permutation model `Ru`. -/
+@[simp]
 theorem range_presentationHom : presentationHom.range = Ru :=
   (GroupPresentation.range_homEquiv_symm _ _).trans closure_range_presentationImage
+
+/-- Every value of `presentationHom` lies in the model. -/
+@[simp]
+theorem presentationHom_mem (g : SporadicName.Ru.Group) : presentationHom g ∈ Ru :=
+  range_presentationHom ▸ MonoidHom.mem_range.mpr ⟨g, rfl⟩
 
 end Ru
 
