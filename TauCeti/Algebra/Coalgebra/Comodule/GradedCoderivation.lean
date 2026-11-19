@@ -211,7 +211,8 @@ theorem IsGradedCoderivationOver.square_eq_zero_iff_counit_of_negOnePow_eq_neg_o
     simp
   · intro hc
     have hz : f = 0 := (Hom.eq_zero_iff_counit f).2 (by
-      simpa only [f, squareHomOfNegOnePowEqNegOne_toLinearMap] using hc)
+      simpa only [f, squareHomOfNegOnePowEqNegOne_toLinearMap, cofreeCounit_def,
+        LinearMap.comp_assoc] using hc)
     have hlin := congrArg (fun g : Hom R C (N ⊗[R] C) (N ⊗[R] C) => g.toLinearMap) hz
     simpa only [f, squareHomOfNegOnePowEqNegOne_toLinearMap, Hom.zero_toLinearMap] using hlin
 

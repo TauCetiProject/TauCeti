@@ -164,7 +164,7 @@ module of rank one: `b ∘ h + h ∘ b = 1` for `h (y ⊗ w) = e ⊗ y w`. -/
 theorem barDifferential_toRightModule_comp_tmulConcat_add (he : AA.StrictUnit e) :
     AA.toRightModule.barDifferential ∘ₗ tmulConcat R A A e +
       tmulConcat R A A e ∘ₗ AA.toRightModule.barDifferential = LinearMap.id := by
-  have hid := Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp
+  have hid := Comodule.Hom.cofreeLift_cofreeCounit_comp
     (Comodule.Hom.id R (TensorWords R A) (A ⊗[R] TensorWords R A))
   have hτ : (AA.toRightModule.grading.shift 1).koszulTwist 1 e = -e := by
     rw [toRightModule_grading, InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply,
@@ -305,10 +305,11 @@ theorem evalUnit_homDifferential (he : AA.differential e = 0) {p : ℤ}
 
 /-- Evaluating the Yoneda cochain of `x` at `e` gives the binary module operation `m₂(x, e)`. -/
 theorem evalUnit_yonedaCochain (x : M) : evalUnit e (MM.yonedaCochain x) = MM.m 2 x ![e] := by
-  have h := LinearMap.congr_fun (Comodule.Hom.rid_comp_lTensor_counit_comp_cofreeLift
+  have h := LinearMap.congr_fun (Comodule.Hom.cofreeCounit_comp_cofreeLift
     (C := TensorWords R A) (MM.taylor ∘ₗ tmulConcat R A M (MM.grading.koszulTwist 1 x)))
     (e ⊗ₜ[R] 1)
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe] at h
+  rw [Comodule.cofreeCounit_def, LinearMap.comp_assoc, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_coe] at h
   rw [evalUnit_apply, yonedaCochain_apply, h, LinearMap.comp_apply, tmulConcat_tmul, prepend_one,
     ReducedTensorWords.ofLetter_eq_of_tprod, reducedInclusion_of, taylor_tmul_of_tprod]
   congr 2

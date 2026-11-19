@@ -124,7 +124,7 @@ theorem hochschildCodegeneracy_last_comp_rTensor {m n : ℕ}
     hochschildCodegeneracy R H M n (Fin.last n) ∘ₗ f.rTensor H =
       f ∘ₗ hochschildCodegeneracy R H M m (Fin.last m) := by
   rw [hochschildCodegeneracy_last, hochschildCodegeneracy_last, LinearMap.comp_assoc]
-  exact rid_comp_lTensor_counit_comp_rTensor f
+  exact cofreeCounit_comp_rTensor f
 
 /-- The last codegeneracy commutes with the earlier codegeneracies. -/
 private theorem hochschildCodegeneracy_last_comp (n : ℕ) (i : Fin (n + 1)) :
@@ -338,7 +338,7 @@ theorem hochschildCodegeneracy_comp_hochschildCoface_succ {n : ℕ} (i : Fin (n 
       induction i using Fin.lastCases with
       | last =>
         rw [Fin.succ_last, hochschildCoface_succ_castSucc_last, hochschildCodegeneracy_last]
-        exact rTensor_rid_comp_lTensor_counit_comp_cofreeCoact
+        exact rTensor_cofreeCounit_comp_cofreeCoact
       | cast i =>
         rw [Fin.succ_castSucc, hochschildCoface_succ_castSucc_castSucc, ← Fin.succ_castSucc,
           ← LinearMap.rTensor_comp, ih, LinearMap.rTensor_id]

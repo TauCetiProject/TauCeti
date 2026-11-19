@@ -105,12 +105,6 @@ variable [Semiring H] [Bialgebra R H]
 -- The Hochschild complex in this file is that of the cofree comodule `N ⊗ H`.
 attribute [local instance] cofree
 
-/-- The counit projection `N ⊗ H → N` is a left inverse of `x ↦ x ⊗ 1`. -/
-private theorem cofreeCounit_comp_mk_flip_one :
-    cofreeCounit R H N ∘ₗ (TensorProduct.mk R N H).flip 1 = LinearMap.id := by
-  ext x
-  simp
-
 /-- The extra codegeneracy is a left inverse of the coface applying the coaction. -/
 theorem hochschildExtraCodegeneracy_comp_hochschildCoface_zero (n : ℕ) :
     hochschildExtraCodegeneracy R H N n ∘ₗ hochschildCoface R H (N ⊗[R] H) n 0 =
@@ -118,9 +112,8 @@ theorem hochschildExtraCodegeneracy_comp_hochschildCoface_zero (n : ℕ) :
   induction n with
   | zero =>
     -- The coaction of the cofree comodule is `cofreeCoact`, and the identity is its counit law.
-    rw [← Fin.castSucc_zero, hochschildCoface_zero_castSucc, hochschildExtraCodegeneracy_zero,
-      cofreeCounit_def]
-    exact rTensor_rid_comp_lTensor_counit_comp_cofreeCoact
+    rw [← Fin.castSucc_zero, hochschildCoface_zero_castSucc, hochschildExtraCodegeneracy_zero]
+    exact rTensor_cofreeCounit_comp_cofreeCoact
   | succ n ih =>
     -- The coface `0` acts on all but the last factor `H`.
     have h := hochschildCoface_succ_castSucc_castSucc R H (N ⊗[R] H) n 0
@@ -298,7 +291,7 @@ noncomputable def hochschildComplexCofreeHomotopyEquiv :
       CochainComplex.fromSingle₀Equiv_symm_apply_f_zero,
       CochainComplex.toSingle₀Equiv_symm_apply_f_zero]
     -- In degree zero, this is the counit law of `x ↦ x ⊗ 1`.
-    exact ModuleCat.hom_ext (cofreeCounit_comp_mk_flip_one R H N))
+    exact ModuleCat.hom_ext (cofreeCounit_comp_mk_flip_one R N H))
 
 /-- In degree zero, the map from the Hochschild complex of `N ⊗ H` to `N` applies the counit. -/
 @[simp]

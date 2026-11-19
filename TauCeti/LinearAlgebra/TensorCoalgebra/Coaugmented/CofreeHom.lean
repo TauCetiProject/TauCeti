@@ -107,10 +107,11 @@ private theorem apply_tmul_subword
       ((TensorProduct.rid R N).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ F.toLinearMap)
           (x ⊗ₜ subword R a b c) ⊗ₜ[R] subword R a (b + c) (l - c) := by
-  conv_lhs => rw [← Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp F]
+  conv_lhs => rw [← Comodule.Hom.cofreeLift_cofreeCounit_comp F]
   rw [Comodule.Hom.cofreeLift_apply, Comodule.cofree_coact_tmul, comul_eq_deconcatenation,
     deconcatenation_subword, TensorProduct.tmul_sum, map_sum, map_sum]
-  simp only [TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul]
+  simp only [TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul, Comodule.cofreeCounit_def,
+    LinearMap.comp_assoc]
 
 /-- A cofree comodule endomorphism fixing the empty words moves a word of length at most `n` by
 words of length less than `n`. -/

@@ -195,7 +195,8 @@ noncomputable def ofTaylor (F : (M ⊗[R] TensorWords R A) →ₗ[R] N)
     (by
       have hret := (Comodule.Hom.cofreeEquiv (R := R) (C := TensorWords R A) (M := N)
         (P := M ⊗[R] TensorWords R A)).apply_symm_apply F
-      rw [Comodule.Hom.cofreeEquiv_symm_apply, Comodule.Hom.cofreeEquiv_apply] at hret
+      rw [Comodule.Hom.cofreeEquiv_symm_apply, Comodule.Hom.cofreeEquiv_apply,
+        Comodule.cofreeCounit_def, LinearMap.comp_assoc] at hret
       rw [hret]
       exact h)
 

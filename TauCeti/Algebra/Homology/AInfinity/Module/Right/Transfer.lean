@@ -143,9 +143,9 @@ theorem unaryBarDifferential_eq_gradedCoderiv :
       ((TensorProduct.rid R M).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor M ∘ₗ
           d.rTensor (TensorWords R A)) := by
-  have h := Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp
+  have h := Comodule.Hom.cofreeLift_cofreeCounit_comp
     (Comodule.Hom.cofreeMap (C := TensorWords R A) d)
-  rw [Comodule.Hom.cofreeMap_toLinearMap] at h
+  rw [Comodule.Hom.cofreeMap_toLinearMap, Comodule.cofreeCounit_def, LinearMap.comp_assoc] at h
   rw [gradedCoderiv_def, ← comul_eq_deconcatenation, ← Comodule.cofree_coact,
     ← Comodule.Hom.cofreeLift_toLinearMap, h, Comodule.Hom.cofreeMap_toLinearMap,
     unaryBarDifferential_def]

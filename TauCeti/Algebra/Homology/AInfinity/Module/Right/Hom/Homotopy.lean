@@ -178,7 +178,9 @@ theorem barMap_sub_barMap_iff
       apply (Comodule.Hom.cofreeEquiv (R := R) (C := TensorWords R A) (M := N)
         (P := M ⊗[R] TensorWords R A)).injective
       rw [Comodule.Hom.cofreeEquiv_apply, Comodule.Hom.cofreeEquiv_apply,
-        Comodule.Hom.add_toLinearMap, LinearMap.comp_add, LinearMap.comp_add, hKtaylor]
+        Comodule.Hom.add_toLinearMap, LinearMap.comp_add]
+      simp only [Comodule.cofreeCounit_def, LinearMap.comp_assoc]
+      rw [hKtaylor]
       rw [← f.taylor_def, ← g.taylor_def]
       rw [sub_eq_iff_eq_add] at e
       simpa only [add_comm] using e

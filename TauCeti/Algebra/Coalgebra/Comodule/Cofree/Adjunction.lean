@@ -125,6 +125,6 @@ theorem cofreeAdjunction_counit_app_hom (M : ModuleCat.{max v w} R) :
       (TensorProduct.rid R M).toLinearMap ∘ₗ Coalgebra.counit.lTensor M := by
   -- The counit is the counit component of the identity of the cofree comodule.
   change Comodule.Hom.cofreeEquiv (Comodule.Hom.id R C (M ⊗[R] C)) = _
-  simp [Comodule.Hom.cofreeEquiv_apply]
+  simp [Comodule.Hom.cofreeEquiv_apply, Comodule.cofreeCounit_def]
 
 end TauCeti.ComoduleCat

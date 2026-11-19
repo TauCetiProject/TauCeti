@@ -183,20 +183,19 @@ theorem lTensor_coaugmentedBarMap_comp_cofreeLift
       LinearMap.comp_assoc, coact_comp_lTensor_coaugmentedBarMap]
     simp only [← LinearMap.comp_assoc, ← TensorProduct.map_comp, LinearMap.id_comp,
       LinearMap.rTensor_comp_lTensor])
-  have hX' : (TensorProduct.rid R N).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor N ∘ₗ
+  have hX' : Comodule.cofreeCounit R (TensorWords R B) N ∘ₗ
         f.coaugmentedBarMap.lTensor N ∘ₗ (Comodule.Hom.cofreeLift (C := TensorWords R A)
           (G ∘ₗ f.coaugmentedBarMap.lTensor M)).toLinearMap =
         G ∘ₗ f.coaugmentedBarMap.lTensor M := by
-    rw [rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap,
-      Comodule.Hom.rid_comp_lTensor_counit_comp_cofreeLift]
-  have hY' : (TensorProduct.rid R N).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor N ∘ₗ
+    rw [Comodule.cofreeCounit_def, LinearMap.comp_assoc,
+      rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap]
+    simpa only [Comodule.cofreeCounit_def, LinearMap.comp_assoc] using
+      Comodule.Hom.cofreeCounit_comp_cofreeLift (C := TensorWords R A)
+        (G ∘ₗ f.coaugmentedBarMap.lTensor M)
+  have hY' : Comodule.cofreeCounit R (TensorWords R B) N ∘ₗ
         (Comodule.Hom.cofreeLift (C := TensorWords R B) G).toLinearMap ∘ₗ
           f.coaugmentedBarMap.lTensor M = G ∘ₗ f.coaugmentedBarMap.lTensor M := by
-    rw [← LinearMap.comp_assoc (f.coaugmentedBarMap.lTensor M),
-      ← LinearMap.comp_assoc (f.coaugmentedBarMap.lTensor M),
-      Comodule.Hom.rid_comp_lTensor_counit_comp_cofreeLift]
+    rw [← LinearMap.comp_assoc, Comodule.Hom.cofreeCounit_comp_cofreeLift]
   rw [hX, hY, hX', hY']
 
 /-- **Naturality of generated coderivations.**  The map `id ⊗ F` intertwines the coderivation
@@ -249,7 +248,8 @@ theorem lTensor_coaugmentedBarMap_comp_gradedCoderiv (G : InternalGrading R M �
       rid_comp_lTensor_counit_comp_lTensor_coaugmentedBarMap,
       rid_comp_lTensor_counit_comp_gradedCoderiv, ← LinearMap.comp_assoc L DB,
       ← LinearMap.comp_assoc L, rid_comp_lTensor_counit_comp_gradedCoderiv, sub_self]
-  rw [hπ, LinearMap.rTensor_zero, LinearMap.zero_comp] at hE
+  rw [Comodule.cofreeCounit_def, LinearMap.comp_assoc, hπ, LinearMap.rTensor_zero,
+    LinearMap.zero_comp] at hE
   exact sub_eq_zero.mp hE
 
 end BarComodule

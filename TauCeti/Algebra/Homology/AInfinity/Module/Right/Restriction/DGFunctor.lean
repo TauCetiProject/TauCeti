@@ -131,7 +131,8 @@ theorem taylor_restrictScalars {p : ℤ} (φ : homCochains MM NN p) :
         (Coalgebra.counit (R := R) (A := TensorWords R B)).lTensor N ∘ₗ
           (φ : (M ⊗[R] TensorWords R B) →ₗ[R] N ⊗[R] TensorWords R B)) ∘ₗ
         f.coaugmentedBarMap.lTensor M := by
-  rw [coe_restrictScalars, Comodule.Hom.rid_comp_lTensor_counit_comp_cofreeLift]
+  rw [coe_restrictScalars]
+  exact Comodule.Hom.cofreeCounit_comp_cofreeLift _
 
 /-- **A restricted cochain is intertwined with the original cochain** by the maps `id ⊗ F` of
 cofree bar comodules. -/

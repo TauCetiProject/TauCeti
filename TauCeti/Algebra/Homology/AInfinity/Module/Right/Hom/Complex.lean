@@ -199,7 +199,7 @@ theorem eq_cofreeLift (F : homCochains MM NN p) :
           (Coalgebra.counit (R := R) (A := TensorWords R A)).lTensor N ∘ₗ
             (F : (M ⊗[R] TensorWords R A) →ₗ[R] N ⊗[R] TensorWords R A))).toLinearMap :=
   (congrArg Comodule.Hom.toLinearMap
-    (Comodule.Hom.cofreeLift_rid_comp_lTensor_counit_comp (toComoduleHom F))).symm
+    (Comodule.Hom.cofreeLift_cofreeCounit_comp (toComoduleHom F))).symm
 
 end homCochains
 

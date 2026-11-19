@@ -201,7 +201,8 @@ theorem assoc_comp_rTensor_map_counit_comp_cofreeCoact (δ : Y →ₗ[R] C ⊗[R
           (Coalgebra.counit (R := R) (A := E)).lTensor Y) ∘ₗ leftCoactRTensor E δ).rTensor E ∘ₗ
           cofreeCoact R E Y =
       b.rTensor (Y ⊗[R] E) ∘ₗ leftCoactRTensor E δ := by
-  rw [assoc_comp_rTensor_comp_cofreeCoact, rTensor_rid_comp_lTensor_counit_comp_cofreeCoact,
+  rw [assoc_comp_rTensor_comp_cofreeCoact, ← cofreeCounit_def,
+    rTensor_cofreeCounit_comp_cofreeCoact,
     ← LinearMap.rTensor_def]
 
 end Bicomodule
