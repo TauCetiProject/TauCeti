@@ -282,8 +282,9 @@ variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A] [IsIntegralPerfectoid
 cohomology*, (2.1.2.2); Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, proof of
 Lemma 3.10(i)). For an integral perfectoid ring `A` and `t : PreTilt A p` with `t♯ ∣ p`, the sharp
 map induces a ring isomorphism `PreTilt A p ⧸ (t) ≃+* A ⧸ (t♯)`
-(`PreTilt.quotientSpanEquiv_mk`). With `t = (ϖ♭) ^ p` this is `A♭ ⧸ (ϖ♭) ^ p ≅ A ⧸ ϖ ^ p`, and
-with `t = p♭` it is `A♭ ⧸ p♭ ≅ A ⧸ p`. -/
+(`PreTilt.quotientSpanEquiv_mk`). With `t = (ϖ♭) ^ p` and `((ϖ♭)♯) ^ p ∣ p` this is
+`A♭ ⧸ (ϖ♭) ^ p ≅ A ⧸ ((ϖ♭)♯) ^ p`, and with `t = p♭` and `(p♭)♯` a unit multiple of `p` it is
+`A♭ ⧸ p♭ ≅ A ⧸ p`. -/
 noncomputable def quotientSpanEquiv {t : PreTilt A p} (ht : t.untilt ∣ (p : A)) :
     PreTilt A p ⧸ span {t} ≃+* A ⧸ span {t.untilt} := by
   have hle : span {(p : A)} ≤ span {t.untilt} :=
