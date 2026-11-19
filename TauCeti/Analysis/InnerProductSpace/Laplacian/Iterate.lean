@@ -15,8 +15,8 @@ On a finite-dimensional real inner product space `E`, the `r`-th iterated Laplac
 of a map of class `C^n` is of class `C^(n - 2r)`, and its derivatives are controlled by those of
 `f`: pointwise, `‖D^m Δ^[r] f x‖ ≤ (dim E)^r ‖D^(m + 2r) f x‖`, and the same bound holds for the
 differences of these derivatives at two points. In particular a Hölder bound on `D^(m + 2r) f`
-gives one on `D^m Δ^[r] f`. These are the bounds on the time derivatives `∂ₜ^r D^m u = D^m Δ^r g`
-of the solution of the heat equation with initial datum `g`.
+gives one on `D^m Δ^[r] f`. These bound the data `D^m Δ^r g` whose Cauchy potentials are the time
+derivatives `∂ₜ^r D^m u` of the solution of the heat equation with initial datum `g`.
 
 ## Main declarations
 

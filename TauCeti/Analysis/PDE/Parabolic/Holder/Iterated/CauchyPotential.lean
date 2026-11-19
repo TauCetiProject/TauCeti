@@ -229,8 +229,7 @@ private theorem mixedDerivL_potential (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤
     mixedDerivL r m (potential hα hab ha g) = field g r m := by
   by_cases h : 2 * r + m ≤ k
   · exact mixedDerivL_mk _ _ _ _ h
-  · rw [mixedDerivL_of_lt (by omega), field, dite_eq_right h]
-    rfl
+  · rw [mixedDerivL_of_lt (by omega), zero_apply, field, dite_eq_right h]
 
 private theorem potential_apply (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤ a)
     (g : CkHolderSpace k α E F) (p : slab (E := E) a b) :
@@ -244,17 +243,6 @@ private theorem potential_apply (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤ a)
   simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv] at this
   rw [this]
   simp
-
-private theorem card_parabolicDerivPairs_le (k : ℕ) :
-    ((parabolicDerivPairs k).card : ℝ) ≤ (k + 1) ^ 2 := by
-  have h : (parabolicDerivPairs k).card ≤ (k + 1) ^ 2 := by
-    refine (Finset.card_le_card fun p hp ↦ ?_).trans_eq
-      (by rw [Finset.card_product, Finset.card_range, sq] :
-        (Finset.range (k + 1) ×ˢ Finset.range (k + 1)).card = (k + 1) ^ 2)
-    rw [mem_parabolicDerivPairs] at hp
-    simp only [Finset.mem_product, Finset.mem_range]
-    omega
-  exact_mod_cast h
 
 /-- The contribution of the field of index `(r, m)` to the norm of the potential: its supremum
 norm, the norm of its time slices and its Hölder norm. -/
@@ -316,7 +304,7 @@ private theorem norm_potential_le (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤ a)
     _ = (parabolicDerivPairs k).card * C := by rw [Finset.sum_const, nsmul_eq_mul]
     _ ≤ (k + 1) ^ 2 * C := by
         gcongr
-        exact card_parabolicDerivPairs_le k
+        exact_mod_cast card_parabolicDerivPairs_le k
     _ = _ := by ring
 
 variable (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤ a)

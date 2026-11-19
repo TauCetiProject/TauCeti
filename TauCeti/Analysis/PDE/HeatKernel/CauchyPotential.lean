@@ -15,7 +15,6 @@ import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
-import TauCeti.Analysis.SpecialFunctions.Pow.Holder
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -569,16 +568,6 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
 
 /-! ### The temporal Hölder estimate for data with a Hölder derivative -/
 
-/-- A continuous linear map is integrable against `K_1`. -/
-theorem integrable_heatKernel_one_smul_apply (L : E →L[ℝ] F) :
-    Integrable fun y : E ↦ heatKernel 1 y • L y := by
-  refine ((integrable_norm_rpow_mul_heatKernel (E := E) one_pos zero_le_one).const_mul
-    ‖L‖).mono' ((contDiff_heatKernel (k := 0) 1).continuous.smul L.continuous).aestronglyMeasurable
-    (ae_of_all _ fun y ↦ ?_)
-  rw [norm_smul, norm_of_nonneg (heatKernel_pos one_pos y).le, rpow_one, mul_comm,
-    ← mul_assoc]
-  exact mul_le_mul_of_nonneg_right (L.le_opNorm y) (heatKernel_pos one_pos y).le
-
 /-- **The temporal Hölder estimate of the Cauchy heat potential of `C^{1,α}` data.** If `g` is
 bounded and differentiable with an `α`-Hölder derivative of constant `H`, and `α ≤ 1`, its Cauchy
 potential `u` satisfies `‖u(t, x) - u(s, x)‖ ≤ H M_{1+α} |t - s|^((1 + α)/2)`, where
@@ -605,8 +594,9 @@ theorem norm_heatCauchyPotential_sub_heatCauchyPotential_le_of_holderWith_fderiv
     have hR : ∀ c, 0 ≤ c → c ≤ max a b → ‖(x - c • y) - x‖ ≤ max a b * ‖y‖ := fun c hc hcm ↦ by
       rw [sub_sub_cancel_left, norm_neg, norm_smul, norm_of_nonneg hc]
       gcongr
-    have key := norm_sub_sub_le_of_holderWith hg hg'
-      (hR a (sqrt_nonneg _) (le_max_left _ _)) (hR b (sqrt_nonneg _) (le_max_right _ _))
+    have key := norm_sub_sub_le_of_holderOnWith (fun z _ ↦ (hg z).hasFDerivWithinAt)
+      (hg'.holderOnWith _) (hR a (sqrt_nonneg _) (le_max_left _ _))
+      (hR b (sqrt_nonneg _) (le_max_right _ _))
     rw [sub_sub_sub_cancel_left, ← sub_smul, map_smul, norm_smul, norm_eq_abs,
       abs_sub_comm] at key
     rw [show L y = (b - a) • g' x y from rfl]
@@ -620,7 +610,7 @@ theorem norm_heatCauchyPotential_sub_heatCauchyPotential_le_of_holderWith_fderiv
     have h12 : Integrable fun y ↦ heatKernel 1 y • g (x - a • y) - heatKernel 1 y • g (x - b • y) :=
       hint₁.sub hint₂
     simp_rw [smul_sub]
-    rw [integral_sub h12 (integrable_heatKernel_one_smul_apply L), integral_sub hint₁ hint₂,
+    rw [integral_sub h12 (integrable_heatKernel_smul_apply one_pos L), integral_sub hint₁ hint₂,
       integral_heatKernel_smul_apply_eq_zero,
       sub_zero, heatCauchyPotential_def, heatCauchyPotential_def]
   rw [hdiff]

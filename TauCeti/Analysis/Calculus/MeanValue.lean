@@ -58,9 +58,9 @@ The file also records the one-variable form of Mathlib's
 `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'`, bounding the increment of a function
 against a fixed derivative `φ` (`Convex.norm_image_sub_le_of_norm_hasDerivWithin_le'`).
 
-For a map whose derivative is `α`-Hölder with constant `H`, the linearization error at `x` of an
-increment between two points within distance `R` of `x` is at most `H R^α` times the increment
-(`TauCeti.norm_sub_sub_le_of_holderWith`).
+For a map whose derivative is `α`-Hölder with constant `H` on the closed ball of radius `R` about
+`x`, the linearization error at `x` of an increment between two points of that ball is at most
+`H R^α` times the increment (`TauCeti.norm_sub_sub_le_of_holderOnWith`).
 
 For a function on the real line with derivative of norm at most `D r ^ (β - 1)` at every `r > 0`,
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
@@ -359,24 +359,25 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
 
 open Metric in
 open scoped NNReal in
-/-- **The linearization error of a map with a Hölder derivative.** If `g` has derivative `g'`
-everywhere and `g'` is `α`-Hölder with constant `H`, then for points `u, v` within distance `R` of
-`x`, `‖g u - g v - g' x (u - v)‖ ≤ H R^α ‖u - v‖`: on the segment from `v` to `u` the derivative
-stays within `H R^α` of `g' x`. -/
-theorem norm_sub_sub_le_of_holderWith {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {g : E → F} {g' : E → E →L[ℝ] F} (hg : ∀ z, HasFDerivAt g (g' z) z) {H α : ℝ≥0}
-    (hg' : HolderWith H α g') {x u v : E} {R : ℝ} (hu : ‖u - x‖ ≤ R) (hv : ‖v - x‖ ≤ R) :
+/-- **The linearization error of a map with a Hölder derivative.** If on the closed ball of radius
+`R` about `x` the map `g` has derivative `g'` and `g'` is `α`-Hölder with constant `H`, then for
+points `u, v` of that ball, `‖g u - g v - g' x (u - v)‖ ≤ H R^α ‖u - v‖`: on the segment from `v`
+to `u` the derivative stays within `H R^α` of `g' x`. -/
+theorem norm_sub_sub_le_of_holderOnWith {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {g : E → F} {g' : E → E →L[ℝ] F} {x : E} {R : ℝ}
+    (hg : ∀ z ∈ closedBall x R, HasFDerivWithinAt g (g' z) (closedBall x R) z) {H α : ℝ≥0}
+    (hg' : HolderOnWith H α g' (closedBall x R)) {u v : E} (hu : ‖u - x‖ ≤ R)
+    (hv : ‖v - x‖ ≤ R) :
     ‖g u - g v - g' x (u - v)‖ ≤ H * R ^ (α : ℝ) * ‖u - v‖ := by
-  have hseg : segment ℝ v u ⊆ closedBall x R :=
-    (convex_closedBall x R).segment_subset (by rwa [mem_closedBall, dist_eq_norm])
-      (by rwa [mem_closedBall, dist_eq_norm])
-  refine (convex_segment v u).norm_image_sub_le_of_norm_hasFDerivWithin_le'
-    (fun z _ ↦ (hg z).hasFDerivWithinAt) (fun z hz ↦ ?_) (left_mem_segment ℝ v u)
-    (right_mem_segment ℝ v u)
+  have hu' : u ∈ closedBall x R := by rwa [mem_closedBall, dist_eq_norm]
+  have hv' : v ∈ closedBall x R := by rwa [mem_closedBall, dist_eq_norm]
+  have hx : x ∈ closedBall x R := mem_closedBall_self ((norm_nonneg _).trans hu)
+  refine (convex_closedBall x R).norm_image_sub_le_of_norm_hasFDerivWithin_le' hg
+    (fun z hz ↦ ?_) hv' hu'
   rw [← dist_eq_norm]
-  refine (hg'.dist_le z x).trans ?_
+  refine (hg'.dist_le hz hx).trans ?_
   gcongr
-  exact mem_closedBall.1 (hseg hz)
+  exact mem_closedBall.1 hz
 
 section Direction
 

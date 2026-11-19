@@ -53,6 +53,7 @@ the constant function `1`.
 * `TauCeti.integrable_norm_iteratedFDeriv_heatKernel_mul_rpow`: integrability of the weighted
   derivatives.
 * `TauCeti.integrable_norm_rpow_mul_heatKernel`: integrability of the weight `‖x‖^α K_t(x)`.
+* `TauCeti.integrable_heatKernel_smul_apply`: integrability of `K_t(y) L y` for linear `L`.
 * `TauCeti.heatKernelMoment`: the absolute moment `∫ ‖y‖^α K_1(y) dy`.
 * `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: the weighted `L¹` bound.
 * `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_le`: the `L¹` bound.
@@ -388,6 +389,15 @@ theorem integrable_norm_rpow_mul_heatKernel {t : ℝ} (ht : 0 < t) {α : ℝ} (h
     (ae_of_all _ fun x => ?_)
   dsimp only
   rw [norm_iteratedFDeriv_zero, norm_of_nonneg (heatKernel_pos ht x).le, mul_comm]
+
+/-- For `t > 0`, a continuous linear map is integrable against `K_t`. -/
+theorem integrable_heatKernel_smul_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {t : ℝ} (ht : 0 < t) (L : E →L[ℝ] F) : Integrable fun y : E ↦ heatKernel t y • L y := by
+  refine ((integrable_norm_rpow_mul_heatKernel (E := E) ht zero_le_one).const_mul
+    ‖L‖).mono' ((contDiff_heatKernel (k := 0) t).continuous.smul L.continuous).aestronglyMeasurable
+    (ae_of_all _ fun y ↦ ?_)
+  rw [norm_smul, norm_of_nonneg (heatKernel_pos ht y).le, rpow_one, mul_comm, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right (L.le_opNorm y) (heatKernel_pos ht y).le
 
 variable (E) in
 /-- The **absolute moment** `M_α = ∫ ‖y‖^α K_1(y) dy` of order `α` of the heat kernel at time one.
