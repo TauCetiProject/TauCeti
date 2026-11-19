@@ -102,6 +102,19 @@ theorem compress_zero (p q : M →L[R] M) : compress p q 0 = 0 := by
 
 end Semiring
 
+section CommSemiring
+
+variable {R M : Type*} [CommSemiring R] [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  [ContinuousConstSMul R M]
+
+/-- Compression commutes with scalar multiplication. -/
+@[simp]
+theorem compress_smul (c : R) (p q T : M →L[R] M) : compress p q (c • T) = c • compress p q T := by
+  ext x
+  simp
+
+end CommSemiring
+
 section Ring
 
 variable {R M : Type*} [Ring R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
@@ -129,6 +142,12 @@ variable [IsTopologicalAddGroup M]
 /-- Compression is additive. -/
 theorem compress_add (p q S T : M →L[R] M) :
     compress p q (S + T) = compress p q S + compress p q T := by
+  ext x
+  simp
+
+/-- Compression commutes with negation. -/
+@[simp]
+theorem compress_neg (p q T : M →L[R] M) : compress p q (-T) = -compress p q T := by
   ext x
   simp
 
@@ -229,8 +248,9 @@ end ConjStarAlgEquiv
 
 /-- For a left inverse `S` of `T` and an idempotent `p` of a ring, the defect `p S p T p - p` is
 `p S [p, T] p`. -/
-private theorem mul_mul_mul_mul_sub_eq {R : Type*} [Ring R] {p S T : R} (hp : IsIdempotentElem p)
-    (hST : S * T = 1) : p * S * p * T * p - p = p * S * (p * T - T * p) * p :=
+private theorem mul_inv_mul_compress_sub_eq {R : Type*} [Ring R] {p S T : R}
+    (hp : IsIdempotentElem p) (hST : S * T = 1) :
+    p * S * p * T * p - p = p * S * (p * T - T * p) * p :=
   calc p * S * p * T * p - p = p * S * p * T * p - p * (S * T) * p * p := by
         rw [hST, mul_one, hp.eq, hp.eq]
     _ = p * S * (p * T - T * p) * p := by noncomm_ring
@@ -280,9 +300,9 @@ theorem isFredholm_compress_self (hp : IsIdempotentElem p) {S T : E →L[𝕜] E
     rw [isCompactOperator_sub_comm, heq]
     exact (hT.mul_left S).mul_right S
   refine isFredholm_compress hp hp (S := S) ?_ ?_
-  · rw [mul_mul_mul_mul_sub_eq hp hST]
+  · rw [mul_inv_mul_compress_sub_eq hp hST]
     exact (hT.mul_left (p * S)).mul_right p
-  · rw [mul_mul_mul_mul_sub_eq hp hTS]
+  · rw [mul_inv_mul_compress_sub_eq hp hTS]
     exact (hS.mul_left (p * T)).mul_right p
 
 /-- **Relatively compact perturbations of compressions.** If the compression of `T` is Fredholm
@@ -316,7 +336,7 @@ theorem index_compress_mul (hp : IsIdempotentElem p) {S T : E →L[𝕜] E}
   have := IsIdempotentElem.completeSpace_range hp
   rw [← add_sub_cancel (compress p p S ∘L compress p p T) (compress p p (S * T)),
     index_add_of_isCompactOperator (hS.comp hT) (isCompactOperator_compress_mul_sub hp S hTc)]
-  simpa only [index_def, toLinearMap_comp] using hS.index_comp hT
+  exact index_comp hS hT
 
 end Fredholm
 

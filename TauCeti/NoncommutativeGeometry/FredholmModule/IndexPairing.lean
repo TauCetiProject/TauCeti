@@ -88,7 +88,8 @@ variable {A H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [Complet
 /-! ### Compactness of the defect of a compressed Fredholm operator -/
 
 /-- For an idempotent `E` of a ring, `E F E F E - E` is `E F (E F - F E) E + E (F² - 1) E`. -/
-private theorem mul_mul_mul_mul_sub_eq {R : Type*} [Ring R] {E F : R} (hE : IsIdempotentElem E) :
+private theorem mul_operator_mul_sq_sub_eq {R : Type*} [Ring R] {E F : R}
+    (hE : IsIdempotentElem E) :
     E * F * E * F * E - E = E * F * (E * F - F * E) * E + E * ((F * F - 1) * E) := by
   rw [show E * F * (E * F - F * E) * E + E * ((F * F - 1) * E) =
       E * F * E * F * E - E * F * F * (E * E) + E * F * F * E - E * E by noncomm_ring, hE.eq]
@@ -118,7 +119,7 @@ operators. -/
 private theorem isCompactOperator_rep_mul_operator_mul_rep_mul_operator_mul_rep_sub {e : A}
     (he : IsIdempotentElem e) :
     IsCompactOperator (M.rep e * M.operator * M.rep e * M.operator * M.rep e - M.rep e) := by
-  rw [mul_mul_mul_mul_sub_eq (he.map M.rep)]
+  rw [mul_operator_mul_sq_sub_eq (he.map M.rep)]
   exact (((M.isCompactOperator_rep_mul_operator_sub e).mul_left _).mul_right _).add
     ((M.isCompactOperator_mul_self_sub_one_mul e).mul_left _)
 
@@ -307,6 +308,7 @@ def unitizedRep : A →* H →L[ℂ] H :=
   MulHom.unitize M.rep
 
 /-- The unitized representation of `a` is `π(a) + 1 - π(1)`. -/
+@[simp]
 theorem unitizedRep_apply (a : A) : M.unitizedRep a = M.rep a + (1 - M.rep 1) := by
   rw [unitizedRep, MulHom.unitize_apply, MulHom.coe_coe]
 
