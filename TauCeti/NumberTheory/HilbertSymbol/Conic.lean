@@ -25,8 +25,9 @@ The hypothesis `2 ≠ 0` cannot be dropped: over `𝔽₂(t)` the conic `x² + t
 `(1, 0)`, while `x² - y² = (x + y)²` never equals `t`.
 
 Over `ℝ` the conic sign is `-1` exactly when both coefficients are nonpositive
-(`TauCeti.conicSymbol_real_eq_neg_one_iff`); on nonzero coefficients this is the familiar
-negative-quadrant criterion for the real Hilbert symbol, while `(0, 0)` also has sign `-1`.
+(`TauCeti.conicSymbol_real_eq_neg_one_iff`). On nonzero coefficients this is the familiar
+negative-quadrant criterion for the real Hilbert symbol; the criterion also covers zero
+coefficients, so pairs such as `(0, -1)`, `(-1, 0)` and `(0, 0)` have sign `-1` as well.
 
 The conic sign is not multiplicative over an arbitrary field. Over `ℚ`, the conic
 `r x² - y² = 1` has no point when some prime `p ≡ 3 [MOD 4]` has odd valuation in `r`
