@@ -94,6 +94,17 @@ namespace TauCeti.EisensteinSeries
 
 /-! ### The Lipschitz formula along residue classes -/
 
+/-- A bounded coefficient sequence against `(z + n)^(-k)` is summable for `k ≥ 2`. -/
+private lemma summable_mul_zpow_of_norm_le (z : ℍ) {k : ℕ} (hk : 2 ≤ k) {f : ℤ → ℂ} {C : ℝ}
+    (hf : ∀ n, ‖f n‖ ≤ C) : Summable fun n : ℤ ↦ f n * ((z : ℂ) + n) ^ (-(k : ℤ)) := by
+  have h0 : Summable fun n : ℤ ↦ ‖((z : ℂ) + n) ^ (-(k : ℤ))‖ :=
+    summable_norm_iff.mpr <| (linear_right_summable (z : ℂ) 1 (k := k) (by omega)).congr
+      fun n ↦ by simp [zpow_neg]
+  refine (h0.mul_left C).of_norm_bounded fun n ↦ ?_
+  rw [norm_mul]
+  gcongr
+  exact hf n
+
 variable {v : ℕ} [NeZero v]
 
 /-- The point `(z + r) / v` of the upper half-plane. -/
@@ -135,15 +146,9 @@ theorem qExpansion_identity_zmod (f : ZMod v → ℂ) {k : ℕ} (hk : 2 ≤ k) (
       (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * ∑' m : ℕ+,
         𝓕 f (-(m : ZMod v)) * (m : ℂ) ^ (k - 1) * cexp (2 * π * I * z / v) ^ (m : ℕ) := by
   -- the series converges absolutely, as `f` is bounded
-  have hS : Summable fun n : ℤ ↦ f n * ((z : ℂ) + n) ^ (-(k : ℤ)) := by
-    have h0 : Summable fun n : ℤ ↦ ‖((z : ℂ) + n) ^ (-(k : ℤ))‖ :=
-      summable_norm_iff.mpr <| (linear_right_summable (z : ℂ) 1 (k := k) (by omega)).congr
-        fun n ↦ by simp [zpow_neg]
-    refine (h0.mul_left (∑ x, ‖f x‖)).of_norm_bounded fun n ↦ ?_
-    rw [norm_mul]
-    gcongr
-    exact Finset.single_le_sum (f := fun x ↦ ‖f x‖) (fun _ _ ↦ norm_nonneg _)
-      (Finset.mem_univ _)
+  have hS : Summable fun n : ℤ ↦ f n * ((z : ℂ) + n) ^ (-(k : ℤ)) :=
+    summable_mul_zpow_of_norm_le z hk (C := ∑ x, ‖f x‖) fun n ↦
+      Finset.single_le_sum (f := fun x ↦ ‖f x‖) (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ _)
   -- split `n = q v + r` according to the residue `r` of `n` modulo `v`
   let e : Fin v × ℤ ≃ ℤ := (Equiv.prodComm _ _).trans (Int.divModEquiv v).symm
   have he (p : Fin v × ℤ) : e p = p.2 * v + (p.1 : ℕ) := by
@@ -551,11 +556,7 @@ variable {N : ℕ} [NeZero N] (W : (Fin 2 → ZMod N) → ℂ) {k : ℕ}
 weighted Eisenstein series is, by the Lipschitz formula along residue classes modulo `N`, a power
 series in `e^{2πi z / N}` supported on the multiples of `c`. Its coefficients are the Fourier
 coefficients of the folded weight `d ↦ W(c, d) + (-1)^k W(-c, -d)`. -/
-private lemma tsum_row_add_tsum_row_neg (hk : 2 ≤ k) (z : ℍ) (c : ℕ+)
-    (h₁ : Summable fun d : ℤ ↦
-      W ![((c : ℕ) : ZMod N), (d : ZMod N)] * eisSummand k ![((c : ℕ) : ℤ), d] z)
-    (h₂ : Summable fun d : ℤ ↦
-      W ![-((c : ℕ) : ZMod N), (d : ZMod N)] * eisSummand k ![-((c : ℕ) : ℤ), d] z) :
+private lemma tsum_row_add_tsum_row_neg (hk : 2 ≤ k) (z : ℍ) (c : ℕ+) :
     ∑' d : ℤ, W ![((c : ℕ) : ZMod N), (d : ZMod N)] * eisSummand k ![((c : ℕ) : ℤ), d] z +
       ∑' d : ℤ, W ![-((c : ℕ) : ZMod N), (d : ZMod N)] * eisSummand k ![-((c : ℕ) : ℤ), d] z =
     (-2 * π * I) ^ k / ((k - 1).factorial * N ^ k) * ∑' m : ℕ+,
@@ -586,8 +587,11 @@ private lemma tsum_row_add_tsum_row_neg (hk : 2 ≤ k) (z : ℍ) (c : ℕ+)
         (-1) ^ k * W ![-((c : ℕ) : ZMod N), -(d : ZMod N)] * ((w : ℂ) + d) ^ (-(k : ℤ)) := by
     rw [← (Equiv.neg ℤ).tsum_eq]
     exact tsum_congr hneg
-  have h₂' := (h₂.comp_injective neg_injective).congr fun d ↦ hneg d
-  rw [tsum_congr hpos, hrow, ← Summable.tsum_add (h₁.congr hpos) h₂']
+  have hW (x : Fin 2 → ZMod N) : ‖W x‖ ≤ ∑ y, ‖W y‖ :=
+    Finset.single_le_sum (f := fun y ↦ ‖W y‖) (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ _)
+  rw [tsum_congr hpos, hrow, ← Summable.tsum_add
+    (summable_mul_zpow_of_norm_le w hk fun d ↦ by simpa [norm_mul] using hW _)
+    (summable_mul_zpow_of_norm_le w hk fun d ↦ by simpa [norm_mul] using hW _)]
   have H := qExpansion_identity_zmod
     (fun d ↦ W ![((c : ℕ) : ZMod N), d] + (-1) ^ k * W ![-((c : ℕ) : ZMod N), -d]) hk w
   trans ∑' n : ℤ, (W ![((c : ℕ) : ZMod N), (n : ZMod N)] +
@@ -645,10 +649,7 @@ private lemma tsum_weightedEisensteinSummand_fold (hk : 2 ≤ k) (z : ℍ)
   · exact tsum_congr fun d ↦ by simp [hFdef]
   refine tsum_congr fun c ↦ ?_
   simp only [hFdef, Int.cast_natCast, Int.cast_neg]
-  rw [tsum_row_add_tsum_row_neg W hk z c
-    (by simpa only [hFdef, Int.cast_natCast] using hF.prod_factor ((c : ℕ) : ℤ))
-    (by simpa only [hFdef, Int.cast_natCast, Int.cast_neg] using
-      hF.prod_factor (-((c : ℕ) : ℤ)))]
+  rw [tsum_row_add_tsum_row_neg W hk z c]
 
 /-- **The `q`-expansion of a weighted Eisenstein series at the period `N`.** Let `k ≥ 3` and let
 `f` be a modular form, on any group having `N` as a strict period, whose values are those of the
