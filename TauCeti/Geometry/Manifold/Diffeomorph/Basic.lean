@@ -14,8 +14,9 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 /-!
 # Differentials of diffeomorphisms
 
-The differentials of a diffeomorphism and its inverse undo each other, and the differential of a
-diffeomorphism undoes the pullback of vector fields along it.
+The differentials of a diffeomorphism and its inverse undo each other, so the differential is
+nonzero wherever the tangent space is nontrivial, and the differential of a diffeomorphism undoes
+the pullback of vector fields along it.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
 diffeomorphism, so the chain rule for such compositions holds without differentiability
 assumptions, injectivity of the differential is preserved by precomposition and postcomposition,
@@ -98,6 +99,15 @@ theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
   have hh := mfderiv_apply_mfderiv_symm_apply h.symm hn (h x) v
   rw [hss, h.symm_apply_apply] at hh
   exact hh
+
+/-- The differential of a diffeomorphism at a point with a nontrivial tangent space is nonzero. -/
+theorem mfderiv_ne_zero (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {x : M}
+    [Nontrivial (TangentSpace J (h x))] : mfderiv I J h x ≠ 0 := by
+  intro h0
+  obtain ⟨v, hv⟩ := exists_ne (0 : TangentSpace J (h x))
+  have hv' := h.mfderiv_apply_mfderiv_symm_apply hn x v
+  rw [h0] at hv'
+  exact hv (hv'.symm.trans (zero_apply _))
 
 /-- The differential of a diffeomorphism maps the pullback of a vector field at `x` to the value
 of the field at `h x`. -/
