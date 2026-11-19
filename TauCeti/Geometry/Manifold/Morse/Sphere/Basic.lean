@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+public import TauCeti.Geometry.Sphere.LinearIsometry
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Connected
@@ -42,6 +43,7 @@ multiple of `x`.
   with `TauCeti.isNondegenerateCriticalPoint_stereographicHeight_zero` and
   `TauCeti.morseIndex_stereographicHeight_zero` computing its Morse data at the origin.
 * `TauCeti.sphereHeight`: the height function on the unit sphere in the direction of a unit vector.
+* `TauCeti.sphereHeight_unitSphereEquiv`: a linear isometry fixing `v` preserves the height.
 * `TauCeti.sphereHeight_comp_extChartAt_symm`: in the preferred chart at the north pole it is
   `stereographicHeight`.
 * `TauCeti.mvfderiv_sphereHeight_eq_zero_iff` and `TauCeti.mfderiv_sphereHeight_eq_zero_iff`: its
@@ -242,6 +244,14 @@ theorem sphereHeight_one_apply (z : sphere (0 : ℂ) 1) : sphereHeight 1 z = (z 
 theorem sphereHeight_neg (v : sphere (0 : E) 1) : sphereHeight (-v) = -sphereHeight v := by
   funext x
   simp
+
+/-- A linear isometry fixing `v` preserves the height in the direction `v`. -/
+theorem sphereHeight_unitSphereEquiv {e : E ≃ₗᵢ[ℝ] E} {v : sphere (0 : E) 1}
+    (he : e (v : E) = v) (x : sphere (0 : E) 1) :
+    sphereHeight v (e.unitSphereEquiv x) = sphereHeight v x := by
+  rw [sphereHeight_apply, sphereHeight_apply, LinearIsometryEquiv.coe_unitSphereEquiv_apply]
+  nth_rw 1 [← he]
+  exact e.inner_map_map _ _
 
 /-- The height function is smooth. -/
 theorem contMDiff_sphereHeight {m : WithTop ℕ∞} (v : sphere (0 : E) 1) :
