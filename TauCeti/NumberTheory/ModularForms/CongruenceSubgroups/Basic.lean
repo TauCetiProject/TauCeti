@@ -91,8 +91,8 @@ infrastructure independent of the diamond operators.
   modulo the level, so the sheared entry is a unit too.
 * `CongruenceSubgroup.Gamma0Map_apply`: the value of Mathlib's `Gamma0Map`, the lower-right entry
   reduced modulo `N`, as a named rewrite rule.
-* `CongruenceSubgroup.mul_inv_mem_Gamma1_iff_Gamma0Map_eq`: two elements of `Γ₀(N)` have the same
-  lower-right entry exactly when their ratio lies in `Γ₁(N)`.
+* `CongruenceSubgroup.mul_inv_mem_Gamma1_iff_Gamma0Map_eq`: two elements of `Γ₀(N)` have
+  lower-right entries that agree modulo `N` exactly when their ratio lies in `Γ₁(N)`.
 * `CongruenceSubgroup.mem_Gamma1_iff_toHomUnits_eq_one`: inside `Γ₀(N)`, `Γ₁(N)` is the kernel of
   the unit-valued lower-right entry.
 * `CongruenceSubgroup.Gamma0_normalizes_Gamma1` and
@@ -475,9 +475,10 @@ lemma mul_inv_mem_Gamma1_of_Gamma0Map_eq (g₁ g₂ : ↥(Gamma0 N))
     exact (MonoidHom.div_mem_ker_iff (Gamma0Map N)).mpr heq
   exact (Gamma1_mem _ _).mpr <| (Gamma1_to_Gamma0_mem _).mp hker
 
-/-- **Two `Γ₀(N)` elements have the same lower-right entry exactly when their ratio lies in
-`Γ₁(N)`.** The `mpr` direction is `mul_inv_mem_Gamma1_of_Gamma0Map_eq`; the converse reads the
-membership back through `Gamma1_mem'`, which says that `Gamma0Map N` is trivial on `Γ₁(N)`. -/
+/-- **Two `Γ₀(N)` elements have lower-right entries that agree modulo `N` exactly when their
+ratio lies in `Γ₁(N)`.** The `mpr` direction is `mul_inv_mem_Gamma1_of_Gamma0Map_eq`; the converse
+reads the membership back through `Gamma1_mem'`, which says that `Gamma0Map N` is trivial on
+`Γ₁(N)`. -/
 lemma mul_inv_mem_Gamma1_iff_Gamma0Map_eq (g₁ g₂ : ↥(Gamma0 N)) :
     ((g₁ : SL(2, ℤ)) * (g₂ : SL(2, ℤ))⁻¹) ∈ Gamma1 N ↔ Gamma0Map N g₁ = Gamma0Map N g₂ := by
   refine ⟨fun hmem ↦ ?_, mul_inv_mem_Gamma1_of_Gamma0Map_eq g₁ g₂⟩
