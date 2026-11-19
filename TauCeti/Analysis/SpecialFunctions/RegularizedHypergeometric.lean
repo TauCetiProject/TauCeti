@@ -34,6 +34,8 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   everywhere when `a.card ≤ b.card`, absolutely by `Complex.summable_norm_regularizedHGFun`.
 * `Complex.hasSum_deriv_regularizedHGFun` — the termwise differentiated series converges to the
   derivative.
+* `Complex.regularizedHGFunCoeff_singleton_singleton` — the coefficients `(α)ₙ / (n! Γ(β + n))` of
+  the regularized Kummer function `𝐌(α, β, z)`.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.sum_regularizedHGFunCoeff_zero_singleton_mul` and
@@ -110,6 +112,12 @@ theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.car
     rw [norm_mul, norm_mul, norm_pow, norm_pow, Complex.norm_real,
       Real.norm_of_nonneg (by positivity)]
     gcongr
+
+/-- The coefficients of the regularized Kummer function `𝐌(α, β, z) = ₁F₁(α; β; z) / Γ(β)` are
+`(α)ₙ / (n! Γ(β + n))`. -/
+theorem regularizedHGFunCoeff_singleton_singleton (α β : ℂ) (n : ℕ) :
+    regularizedHGFunCoeff {α} {β} n = (ascPochhammer ℂ n).eval α / (n ! * Gamma (β + n)) := by
+  simp [regularizedHGFunCoeff]
 
 /-- The coefficients of the Kummer function `𝐌(1, b, z) = ₁F₁(1; b; z) / Γ(b)` are
 `1 / Γ(b + n)`. -/
