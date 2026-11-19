@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.Bounded
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.BoundaryMeanValue
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Boundary.MeanValue
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Measure.InterBall
