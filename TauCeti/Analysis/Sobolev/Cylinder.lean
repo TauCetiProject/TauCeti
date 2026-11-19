@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.Strip.Basic
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff

@@ -233,6 +233,7 @@ theorem H1_mono (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') : H1 F₀ F₁ �
 
 /-- The jet in `H1` of a test section does not depend on the boundary conditions it is
 considered with. -/
+@[simp]
 theorem inclusion_jetH1 (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : testSection F₀ F₁) :
     Submodule.inclusion (H1_mono h₀ h₁) (jetH1 F₀ F₁ ξ) =
       jetH1 F₀' F₁' (Submodule.inclusion (testSection_mono h₀ h₁) ξ) := by
@@ -562,6 +563,7 @@ theorem traceₗ_apply (ξ : testSection F₀ F₁) :
 
 /-- The boundary values of a test section do not depend on the boundary conditions it is
 considered with. -/
+@[simp]
 theorem traceₗ_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : testSection F₀ F₁) :
     traceₗ F₀' F₁' (Submodule.inclusion (testSection_mono h₀ h₁) ξ) = traceₗ F₀ F₁ ξ :=
   (rfl)
@@ -575,16 +577,6 @@ theorem coeFn_traceₗ_fst (ξ : testSection F₀ F₁) :
 theorem coeFn_traceₗ_snd (ξ : testSection F₀ F₁) :
     (traceₗ F₀ F₁ ξ).2 =ᵐ[volume] fun s ↦ (ξ : ℝ × ℝ → V) (s, 1) :=
   MemLp.coeFn_toLp (memLp_slice ξ.2 1)
-
-/-- If the values of a continuous map on the line `ℝ × {t}` lie in a closed subspace `F` almost
-everywhere, they lie in `F` everywhere. -/
-private theorem forall_mem_of_ae_mem {F : Submodule ℝ V} (hF : IsClosed (F : Set V))
-    (hξ : Continuous ξ) {t : ℝ} (h : ∀ᵐ s, ξ (s, t) ∈ F) (s : ℝ) : ξ (s, t) ∈ F := by
-  have hc : IsClosed {s | ξ (s, t) ∈ F} :=
-    hF.preimage (hξ.comp (continuous_id.prodMk continuous_const))
-  have h0 : ({s | ξ (s, t) ∈ F}ᶜ : Set ℝ) = ∅ :=
-    (hc.isOpen_compl.measure_eq_zero_iff volume).1 (ae_iff.1 h)
-  exact Set.eq_univ_iff_forall.1 (Set.compl_empty_iff.1 h0) s
 
 end NormedSpace
 
@@ -685,6 +677,7 @@ theorem ae_traceL_snd_mem (hF₁ : IsClosed (F₁ : Set V)) (x : H1 F₀ F₁) :
 
 /-- The trace of an element of `H1` does not depend on the boundary conditions it is considered
 with. -/
+@[simp]
 theorem traceL_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (x : H1 F₀ F₁) :
     traceL F₀' F₁' (Submodule.inclusion (H1_mono h₀ h₁) x) = traceL F₀ F₁ x := by
   refine H1_induction
@@ -708,8 +701,11 @@ theorem jetₗ_mem_H1_iff (hF₀ : IsClosed (F₀ : Set V)) (hF₁ : IsClosed (F
     rw [← traceL_inclusion le_top le_top, ← traceL_jetH1]
     exact congrArg _ (Subtype.ext (by rw [Submodule.coe_inclusion, coe_jetH1]))
   obtain ⟨hξ, -, -, hR⟩ := mem_testSection_iff.1 ξ.2
-  refine mem_testSection_iff.2 ⟨hξ, forall_mem_of_ae_mem hF₀ hξ.continuous ?_,
-    forall_mem_of_ae_mem hF₁ hξ.continuous ?_, hR⟩
+  have hall {F : Submodule ℝ V} (hF : IsClosed (F : Set V)) (t : ℝ)
+      (h : ∀ᵐ s, (ξ : ℝ × ℝ → V) (s, t) ∈ F) (s : ℝ) : (ξ : ℝ × ℝ → V) (s, t) ∈ F :=
+    Set.eq_univ_iff_forall.1 ((hF.preimage (hξ.continuous.comp
+      (continuous_id.prodMk continuous_const))).dense_iff.1 (Measure.dense_of_ae h)) s
+  refine mem_testSection_iff.2 ⟨hξ, hall hF₀ 0 ?_, hall hF₁ 1 ?_, hR⟩
   · filter_upwards [ae_traceL_fst_mem hF₀ ⟨_, h⟩, coeFn_traceₗ_fst ξ] with s h₁ h₂
     rwa [htr, h₂] at h₁
   · filter_upwards [ae_traceL_snd_mem hF₁ ⟨_, h⟩, coeFn_traceₗ_snd ξ] with s h₁ h₂
