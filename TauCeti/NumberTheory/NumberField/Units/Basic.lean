@@ -26,6 +26,8 @@ to see that a non-torsion unit of a field of prime degree generates the field.
 
 ## Main results
 
+* `TauCeti.NumberField.Units.val_unitsMap_algebraMap_ringOfIntegers_subfield`: the image in
+  `(𝓞 K)ˣ` of an integral unit of a subfield `F` has the same value in `K`.
 * `TauCeti.NumberField.Units.coeff_zero_minpoly_eq_one_or_neg_one`: the constant coefficient
   of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
@@ -75,6 +77,19 @@ theorem prod_norm_embedding_eq_one (u : (𝓞 K)ˣ) : ∏ σ : K →+* ℂ, ‖�
 end Units
 
 namespace TauCeti.NumberField.Units
+
+section Coe
+
+variable {K : Type*} [Field K]
+
+/-- The image in `(𝓞 K)ˣ` of an integral unit of a subfield `F` has the same value in `K`. -/
+theorem val_unitsMap_algebraMap_ringOfIntegers_subfield (F : Subfield K) (u : (𝓞 F)ˣ) :
+    (((Units.map (algebraMap (𝓞 F) (𝓞 K)).toMonoidHom u : (𝓞 K)ˣ) : 𝓞 K) : K) =
+      (((u : 𝓞 F) : F) : K) := by
+  simp [RingOfIntegers.coe_eq_algebraMap, ← IsScalarTower.algebraMap_apply (𝓞 F) (𝓞 K) K,
+    IsScalarTower.algebraMap_apply (𝓞 F) F K, Subfield.algebraMap_ofSubfield]
+
+end Coe
 
 variable {K : Type*} [Field K] [NumberField K]
 
