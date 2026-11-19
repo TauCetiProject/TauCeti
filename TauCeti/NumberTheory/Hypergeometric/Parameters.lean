@@ -190,8 +190,10 @@ variable (P : Parameters)
 /-- The degree `d` of a parameter pair, the common cardinality of `α` and `β`. -/
 def degree : ℕ := Multiset.card P.α
 
+@[simp]
 theorem card_α : Multiset.card P.α = P.degree := (rfl)
 
+@[simp]
 theorem card_β : Multiset.card P.β = P.degree := P.card_eq.symm
 
 theorem degree_eq_zero_iff : P.degree = 0 ↔ P.α = 0 ∧ P.β = 0 := by
@@ -245,7 +247,8 @@ instance : InvolutiveNeg Parameters where
 
 @[simp]
 theorem degree_neg : (-P).degree = P.degree := by
-  simp [degree]
+  rw [← card_α, ← card_α]
+  simp
 
 @[simp]
 theorem swap_neg : (-P).swap = -P.swap := (rfl)
@@ -274,7 +277,8 @@ instance : AddAction (AddCircle (1 : ℚ)) Parameters where
 
 @[simp]
 theorem degree_vadd (μ : AddCircle (1 : ℚ)) : (μ +ᵥ P).degree = P.degree := by
-  simp [degree]
+  rw [← card_α, ← card_α]
+  simp
 
 @[simp]
 theorem swap_vadd (μ : AddCircle (1 : ℚ)) : (μ +ᵥ P).swap = μ +ᵥ P.swap := (rfl)
@@ -370,7 +374,8 @@ theorem scale_β : (P.scale hu).β = P.β.map (u • ·) := (rfl)
 
 @[simp]
 theorem degree_scale : (P.scale hu).degree = P.degree := by
-  simp [degree]
+  rw [← card_α, ← card_α]
+  simp
 
 /-- Scaling by a unit preserves the common denominator. -/
 @[simp]
