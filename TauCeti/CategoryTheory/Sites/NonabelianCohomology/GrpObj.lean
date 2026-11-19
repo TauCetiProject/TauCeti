@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Sites.Canonical
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.Action
+public import TauCeti.CategoryTheory.Sites.Canonical
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Map
 
 /-!
@@ -192,15 +193,6 @@ lemma toTorsor_smul_down {T : Cᵒᵖ} (g : (J.uliftYonedaGrp.{w}.obj G).obj.obj
     (g • x).down = uliftYonedaGrpObjEquiv G T g • ULift.down (α := unop T ⟶ X) x :=
   rfl
 
-omit [CartesianMonoidalCategory C] [ModObj G.X X] in
-/-- A morphism of represented sheaves evaluates on a point `z : T ⟶ X` by composition with the
-morphism `X ⟶ Y` it comes from. -/
-private lemma app_up_down (F : J.uliftYoneda.{w}.obj X ⟶ J.uliftYoneda.{w}.obj Y) {T : C}
-    (z : T ⟶ X) :
-    (F.hom.app (op T) (ULift.up z)).down = z ≫ J.fullyFaithfulUliftYoneda.preimage F := by
-  conv_lhs => rw [← J.fullyFaithfulUliftYoneda.map_preimage F]
-  rfl
-
 variable (h' : J.IsTorsor G Y)
 
 /-- Morphisms between the torsors of points of two torsors `X` and `Y` under `G` are the
@@ -208,9 +200,10 @@ variable (h' : J.IsTorsor G Y)
 noncomputable def toTorsorHomEquiv :
     (toTorsor.{w} h ⟶ h'.toTorsor) ≃ {f : X ⟶ Y // IsModHom G.X f} where
   toFun F := ⟨J.fullyFaithfulUliftYoneda.preimage F.hom, (TauCeti.isModHom_iff_map_smul _).2
-    fun T g x ↦ (app_up_down F.hom (g • x)).symm.trans <| (congrArg ULift.down
-      (F.map_smul (op T) ((uliftYonedaGrpObjEquiv G (op T)).symm g) (ULift.up x))).trans
-        (congrArg (g • ·) (app_up_down F.hom x))⟩
+    fun T g x ↦ (down_hom_app_up_eq_comp_preimage F.hom (g • x)).symm.trans <|
+      (congrArg ULift.down
+        (F.map_smul (op T) ((uliftYonedaGrpObjEquiv G (op T)).symm g) (ULift.up x))).trans
+          (congrArg (g • ·) (down_hom_app_up_eq_comp_preimage F.hom x))⟩
   invFun f :=
     haveI := f.2
     ⟨J.uliftYoneda.map f.1, fun T g x ↦ congrArg ULift.up (IsModHom.map_smul f.1 _ x.down)⟩
@@ -245,19 +238,12 @@ lemma mk_toTorsor_eq_mk_toTorsor_iff :
   exact ⟨fun ⟨e⟩ ↦ ⟨_, (toTorsorHomEquiv h h' e.hom).2⟩,
     fun ⟨f, hf⟩ ↦ ⟨asIso ((toTorsorHomEquiv h h').symm ⟨f, hf⟩)⟩⟩
 
-/-- Global sections of the sheaf represented by `X` are the morphisms from the terminal object
-`𝟙_ C` to `X`. -/
-private lemma nonempty_sections_uliftYoneda_iff :
-    (J.uliftYoneda.{w}.obj X).obj.sections.Nonempty ↔ Nonempty (𝟙_ C ⟶ X) := by
-  refine ⟨fun ⟨s, _⟩ ↦ ⟨(s (op (𝟙_ C))).down⟩, fun ⟨x⟩ ↦ ?_⟩
-  refine ⟨fun T ↦ ULift.up (toUnit (unop T) ≫ x), fun {T T'} f ↦ ?_⟩
-  exact congrArg ULift.up (by simp)
-
 /-- A torsor under `G` has the trivial class if and only if it has a global section
 (Stacks, Lemma 21.4.2 (03AI)). -/
 lemma mk_toTorsor_eq_one_iff :
     Sheaf.NonabelianH1.mk (toTorsor.{w} h) = 1 ↔ Nonempty (𝟙_ C ⟶ X) :=
-  (Sheaf.NonabelianH1.mk_eq_one_iff _).trans nonempty_sections_uliftYoneda_iff
+  (Sheaf.NonabelianH1.mk_eq_one_iff _).trans
+    (J.nonempty_sections_uliftYoneda_obj_iff isTerminalTensorUnit)
 
 section Functoriality
 
@@ -276,9 +262,9 @@ lemma map_mk_toTorsor_eq_mk_toTorsor_iff (φ : G ⟶ H) (hY : J.IsTorsor H Y) :
   rw [Sheaf.NonabelianH1.map_mk_eq_mk_iff]
   refine ⟨fun ⟨u, hu⟩ ↦ ⟨J.fullyFaithfulUliftYoneda.preimage u, fun T g x ↦ ?_⟩,
     fun ⟨f, hf⟩ ↦ ⟨J.uliftYoneda.map f, fun T g x ↦ congrArg ULift.up (hf _ _ _)⟩⟩
-  exact (app_up_down u (g • x)).symm.trans <| (congrArg ULift.down
+  exact (down_hom_app_up_eq_comp_preimage u (g • x)).symm.trans <| (congrArg ULift.down
     (hu (op T) ((uliftYonedaGrpObjEquiv G (op T)).symm g) (ULift.up x))).trans
-      (congrArg ((g ≫ φ.hom.hom) • ·) (app_up_down u x))
+      (congrArg ((g ≫ φ.hom.hom) • ·) (down_hom_app_up_eq_comp_preimage u x))
 
 /-- A `φ`-equivariant morphism from a torsor `X` under `G` to a torsor `Y` under `H` identifies
 the image of the class of `X` under the map induced by `φ` with the class of `Y`. -/

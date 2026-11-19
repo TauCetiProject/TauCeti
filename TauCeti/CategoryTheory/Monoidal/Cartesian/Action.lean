@@ -77,8 +77,8 @@ theorem isModHom_iff_map_smul (f : X ⟶ Y) :
     IsModHom G f ↔ ∀ (T : C) (g : T ⟶ G) (x : T ⟶ X), (g • x) ≫ f = g • (x ≫ f) := by
   refine ⟨fun _ T g x ↦ IsModHom.map_smul f g x, fun hf ↦ ⟨?_⟩⟩
   have := hf (G ⊗ X) (fst G X) (snd G X)
-  rwa [Hom.smul_def, Hom.smul_def, lift_fst_snd, Category.id_comp, ← lift_whiskerLeft,
-    lift_fst_snd, Category.id_comp] at this
+  simp only [Hom.smul_def, ← lift_whiskerLeft, lift_fst_snd, Category.id_comp] at this
+  exact this
 
 variable {G} in
 /-- A point `x : Z ⟶ X` of a pseudo-torsor trivialises it over `Z`: when

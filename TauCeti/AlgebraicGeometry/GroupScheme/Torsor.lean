@@ -41,9 +41,10 @@ a section, and the empty scheme over a nonempty base is never a torsor.
 
 * `TauCeti.GroupScheme.isTorsor_of_isIso_leftSMul`: a pseudo-torsor which is flat, surjective and
   locally of finite presentation over `S` is a torsor.
-* `TauCeti.GroupScheme.of_isTorsor`: a property of the structure morphism of `G` which is stable
-  under base change and descends along fppf coverings passes to every `G`-torsor; in particular
-  `flat_of_isTorsor`, `surjective_of_isTorsor` and `locallyOfFinitePresentation_of_isTorsor`.
+* `CategoryTheory.MorphismProperty.of_isTorsor`: a property of the structure morphism of `G`
+  which is stable under base change and descends along fppf coverings passes to every `G`-torsor;
+  in particular `flat_of_isTorsor`, `surjective_of_isTorsor` and
+  `locallyOfFinitePresentation_of_isTorsor`.
 * `TauCeti.GroupScheme.isTorsor_iff`: for `G` flat and locally of finite presentation, the
   torsors are the flat, surjective pseudo-torsors locally of finite presentation over `S`.
 * `TauCeti.GroupScheme.isTorsor_pullback_obj`: the base change of a torsor is a torsor under the
@@ -136,6 +137,12 @@ private lemma exists_cover_section
   ext1 s
   simp [hx]
 
+end TauCeti.GroupScheme
+
+namespace CategoryTheory.MorphismProperty
+
+variable {S : Scheme.{u}} {G : Grp (Over S)} {X : Over S} [ModObj G.X X]
+
 /-- Let `P` be a property of morphisms of schemes which is stable under base change and descends
 along flat, surjective morphisms locally of finite presentation. If the structure morphism of the
 group scheme `G` has `P`, so does that of every `G`-torsor `X`: over an fppf covering
@@ -143,42 +150,45 @@ group scheme `G` has `P`, so does that of every `G`-torsor `X`: over an fppf cov
 theorem of_isTorsor (P : MorphismProperty Scheme.{u}) [P.IsStableUnderBaseChange]
     [P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation)] (hG : P G.X.hom)
     (h : (Scheme.fppfTopology.over S).IsTorsor G X) : P X.hom := by
-  obtain ⟨Z, q, x, _, _, _, hx⟩ := exists_cover_section h
-  have : P.RespectsIso := MorphismProperty.IsStableUnderBaseChange.respectsIso
+  obtain ⟨Z, q, x, _, _, _, hx⟩ := TauCeti.GroupScheme.exists_cover_section h
+  have : P.RespectsIso := IsStableUnderBaseChange.respectsIso
   have := h.isIso_leftSMul
   -- The trivialisation `(g, z) ↦ (g • x z, z)` of `X ×_S Z` over `Z`.
-  have := isIso_lift_smul_snd_of_isIso_leftSMul (G := G.X) (Over.homMk x hx : Over.mk q ⟶ X)
-  refine MorphismProperty.of_pullback_snd_of_descendsAlong
+  have := TauCeti.isIso_lift_smul_snd_of_isIso_leftSMul (G := G.X)
+    (CategoryTheory.Over.homMk x hx : CategoryTheory.Over.mk q ⟶ X)
+  refine of_pullback_snd_of_descendsAlong
     (Q := @Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) ⟨⟨‹_›, ‹_›⟩, ‹_›⟩ ?_
   rw [← P.cancel_left_of_respectsIso
-    (lift (fst G.X (Over.mk q) • (snd G.X (Over.mk q) ≫ Over.homMk x hx))
-      (snd G.X (Over.mk q))).left]
+    (lift (fst G.X (CategoryTheory.Over.mk q) •
+      (snd G.X (CategoryTheory.Over.mk q) ≫ CategoryTheory.Over.homMk x hx))
+        (snd G.X (CategoryTheory.Over.mk q))).left]
   simpa using P.pullback_snd _ q hG
 
-/-- Mathlib's passage from fpqc to fppf descent for a property local on the target, stated for
-a generic predicate: instance search does not unify it with concrete predicates such as `@Flat`. -/
-private lemma descendsAlong_fppf (P : MorphismProperty Scheme.{u})
-    [P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact)] [IsZariskiLocalAtTarget P] :
-    P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) :=
-  inferInstance
+end CategoryTheory.MorphismProperty
+
+namespace TauCeti.GroupScheme
+
+variable {S : Scheme.{u}} {G : Grp (Over S)} {X : Over S} [ModObj G.X X]
 
 /-- The structure morphism of a torsor is surjective. -/
 theorem surjective_of_isTorsor (h : (Scheme.fppfTopology.over S).IsTorsor G X) :
     Surjective X.hom := by
-  have := descendsAlong_fppf @Surjective.{u}
+  have := MorphismProperty.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation
+    @Surjective.{u}
   -- The unit section shows that the structure morphism of `G` is surjective.
   have : Surjective (η[G.X].left ≫ G.X.hom) := by
     rw [Over.w]
     exact inferInstanceAs (Surjective (𝟙 S))
-  exact of_isTorsor @Surjective (Surjective.of_comp η[G.X].left G.X.hom) h
+  exact MorphismProperty.of_isTorsor @Surjective (Surjective.of_comp η[G.X].left G.X.hom) h
 
 /-- A torsor under a flat group scheme is flat over the base. -/
 theorem flat_of_isTorsor [Flat G.X.hom]
     (h : (Scheme.fppfTopology.over S).IsTorsor G X) : Flat X.hom := by
   have : IsZariskiLocalAtTarget @Flat.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget @Flat.{u} (Q := @RingHom.Flat)
-  have := descendsAlong_fppf @Flat.{u}
-  exact of_isTorsor @Flat ‹_› h
+  have := MorphismProperty.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation
+    @Flat.{u}
+  exact MorphismProperty.of_isTorsor @Flat ‹_› h
 
 /-- A torsor under a group scheme locally of finite presentation is locally of finite
 presentation over the base. -/
@@ -188,8 +198,9 @@ theorem locallyOfFinitePresentation_of_isTorsor
   have : IsZariskiLocalAtTarget @LocallyOfFinitePresentation.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget @LocallyOfFinitePresentation.{u}
       (Q := @RingHom.FinitePresentation)
-  have := descendsAlong_fppf @LocallyOfFinitePresentation.{u}
-  exact of_isTorsor @LocallyOfFinitePresentation ‹_› h
+  have := MorphismProperty.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation
+    @LocallyOfFinitePresentation.{u}
+  exact MorphismProperty.of_isTorsor @LocallyOfFinitePresentation ‹_› h
 
 /-- For a group scheme `G` flat and locally of finite presentation over `S`, a scheme `X` over `S`
 with an action of `G` is a `G`-torsor for the fppf topology if and only if
