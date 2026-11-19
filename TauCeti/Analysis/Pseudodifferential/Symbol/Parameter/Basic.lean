@@ -262,9 +262,7 @@ theorem norm_parameterIteratedFDeriv_zero (f : (CoordinateSpace n × CoordinateS
     ‖parameterIteratedFDeriv 0 f p‖ = ‖f p‖ := by
   simp [parameterIteratedFDeriv_eq_iteratedFDeriv_comp, Prod.mk_zero_zero]
 
-/-- `TauCeti.parameterIteratedFDeriv_eq_iteratedFDeriv_comp` at a point `((x, ξ), z)`, with the
-weight written as `parameterWeight ξ z`. -/
-theorem parameterIteratedFDeriv_mk_eq
+private theorem parameterIteratedFDeriv_mk_eq
     (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A) (x ξ : CoordinateSpace n) (z : ℂ)
     (k : ℕ) : parameterIteratedFDeriv k f ((x, ξ), z) = iteratedFDeriv ℝ k
       (fun v => f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v)) 0 :=
