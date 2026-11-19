@@ -180,6 +180,7 @@ theorem mk_monomial (g : G) : mk m (m g) = 1 := by
   simpa using mk_monomial_mul m g 1
 
 /-- A unit has trivial class exactly when it is a signed deck monomial. -/
+@[simp]
 theorem mk_coe_eq_one_iff (u : Aˣ) : mk m u = 1 ↔ u ∈ signedMonomialSubgroup m := by
   rw [← map_one (mk m), mk_eq_mk_iff_exists_unit]
   refine ⟨fun ⟨v, hv, h⟩ ↦ ?_, fun hu ↦ ⟨u, hu, (mul_one _).symm⟩⟩
