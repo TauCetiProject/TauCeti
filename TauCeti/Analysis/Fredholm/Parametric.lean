@@ -626,16 +626,6 @@ theorem finiteDimensional_ker_coprod [FiniteDimensional 𝕜 D₁.ker]
     (LinearMap.quotKerEquivRange (parameterProj D₁ D₂).toLinearMap).symm.finiteDimensional
   exact Module.Finite.of_submodule_quotient (parameterProj D₁ D₂).ker
 
-omit [ContinuousAdd F] in
-/-- The kernel of a direct sum of operators with finite-dimensional kernels is
-finite-dimensional. -/
-instance finiteDimensional_ker_prodMap {E' F' : Type*} [AddCommGroup E'] [Module 𝕜 E']
-    [TopologicalSpace E'] [AddCommGroup F'] [Module 𝕜 F'] [TopologicalSpace F']
-    {T : E →L[𝕜] F} {T' : E' →L[𝕜] F'} [FiniteDimensional 𝕜 T.ker] [FiniteDimensional 𝕜 T'.ker] :
-    FiniteDimensional 𝕜 (T.prodMap T').ker :=
-  ((LinearEquiv.ofEq _ _ (LinearMap.ker_prodMap (T : E →ₗ[𝕜] F) (T' : E' →ₗ[𝕜] F'))).trans
-    (Submodule.prodEquiv _ _)).symm.finiteDimensional
-
 /-- The cokernel of the parameter projection is finite dimensional as soon as that of `D₁` is;
 surjectivity of the total linearization is not needed. -/
 theorem finiteDimensional_quotient_range_parameterProj
