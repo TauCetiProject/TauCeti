@@ -98,20 +98,21 @@ theorem memLp_indicator_of_memLp_restrict_inter {α ε : Type*} [MeasurableSpace
     Set.inter_comm]
 
 /-- **Exhaustion.** If the restrictions of `f` to measurable sets `A k` have `Lᵖ` seminorm at
-most `M`, and every point where `f` does not vanish lies in `A k` for all large `k`, then
+most `M`, and almost every point where `f` does not vanish lies in `A k` for all large `k`, then
 `‖f‖_p ≤ M`. -/
 theorem eLpNorm_le_of_forall_eLpNorm_indicator_le {α E : Type*} [MeasurableSpace α]
     [SeminormedAddGroup E] {μ : Measure α} {p : ℝ≥0∞} {f : α → E}
     (hf : AEStronglyMeasurable f μ) {A : ℕ → Set α} (hA : ∀ k, MeasurableSet (A k)) {M : ℝ≥0∞}
     (hM : ∀ k, eLpNorm ((A k).indicator f) p μ ≤ M)
-    (hmem : ∀ x, f x ≠ 0 → ∀ᶠ k in atTop, x ∈ A k) : eLpNorm f p μ ≤ M := by
+    (hmem : ∀ᵐ x ∂μ, f x ≠ 0 → ∀ᶠ k in atTop, x ∈ A k) : eLpNorm f p μ ≤ M := by
   refine Lp.eLpNorm_le_of_ae_tendsto (u := atTop) (f := fun k ↦ (A k).indicator f)
-    (Eventually.of_forall hM) (fun k ↦ hf.indicator (hA k)) hf
-    (ae_of_all _ fun x ↦ tendsto_const_nhds.congr' ?_)
+    (Eventually.of_forall hM) (fun k ↦ hf.indicator (hA k)) hf ?_
+  filter_upwards [hmem] with x hx
+  refine tendsto_const_nhds.congr' ?_
   by_cases h0 : f x = 0
   · exact Eventually.of_forall fun k ↦
       ((Set.indicator_apply_eq_self (s := A k) (f := f)).2 fun _ ↦ h0).symm
-  · filter_upwards [hmem x h0] with k hk
+  · filter_upwards [hx h0] with k hk
     rw [Set.indicator_of_mem hk]
 
 end TauCeti

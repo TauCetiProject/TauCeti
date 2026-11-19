@@ -422,7 +422,7 @@ private theorem eLpNorm_truncNorm_le [SigmaFinite ρ] (hq : q ≠ ∞) (hr : r �
   refine TauCeti.eLpNorm_le_of_forall_eLpNorm_indicator_le hψ.aestronglyMeasurable hA (fun k ↦
     eLpNorm_indicator_truncNorm_le hq hr hr2 hΦ hM N (hA k)
       ((measure_mono Set.inter_subset_left).trans_lt (measure_spanningSets_lt_top ρ k)).ne
-      (by positivity) fun b hb ↦ hb.2) fun b hb ↦ ?_
+      (by positivity) fun b hb ↦ hb.2) (ae_of_all _ fun b hb ↦ ?_)
   -- Every `b` with `ψ b > 0` lies in `A k` for all large `k`.
   have hpos : 0 < ψ b := truncNorm_nonneg.lt_of_ne' hb
   filter_upwards [eventually_mem_spanningSets ρ b,
@@ -667,9 +667,9 @@ private theorem mul_integral_add_sub_le (N : ℝ≥0) (u : Lp E 2 μ) {t t' s : 
     simp only [Set.indicator_apply, Set.mem_ofPred_eq]
     exact hx
 
-/-- **The ratio tends to the essential supremum.** If `t` is below the essential supremum
-`‖u_N‖_∞` of `min (‖u‖, N)`, then `t ≤ ∫ ‖u‖ min (‖u‖, N) ^ s / ∫ min (‖u‖, N) ^ s` for all
-large `s = m + 2`. -/
+/-- **The ratio eventually exceeds every level below the essential supremum.** If `t` is below
+the essential supremum `‖u_N‖_∞` of `min (‖u‖, N)`, then
+`t ≤ ∫ ‖u‖ min (‖u‖, N) ^ s / ∫ min (‖u‖, N) ^ s` for all large `s = m + 2`. -/
 private theorem eventually_le_truncRatio (N : ℝ≥0) (u : Lp E 2 μ) {t : ℝ}
     (ht : t < truncNorm (𝕜 := 𝕜) N ∞ u) :
     ∀ᶠ m : ℕ in atTop, t ≤ truncRatio (𝕜 := 𝕜) N (one_le_natCast_add_two m) u := by
@@ -819,7 +819,8 @@ private theorem eLpNorm_truncRatio_le [SigmaFinite ρ] (hq : q ≠ ∞) {Φ : β
   refine TauCeti.eLpNorm_le_of_forall_eLpNorm_indicator_le hψ.aestronglyMeasurable hA (fun k ↦
     eLpNorm_indicator_truncRatio_le hq hΦ hM N hs (hA k)
       ((measure_mono Set.inter_subset_left).trans_lt (measure_spanningSets_lt_top ρ k)).ne
-      (by positivity) fun b hb ↦ ⟨hb.2.1, hb.2.2.1, hb.2.2.2.1, hb.2.2.2.2⟩) fun b hb ↦ ?_
+      (by positivity) fun b hb ↦ ⟨hb.2.1, hb.2.2.1, hb.2.2.2.1, hb.2.2.2.2⟩)
+    (ae_of_all _ fun b hb ↦ ?_)
   -- Where `ψ b ≠ 0`, also `J b ≠ 0`, since `ψ = I / J`; then `b ∈ A k` for all large `k`.
   have hpos : 0 < ψ b := truncRatio_nonneg.lt_of_ne' hb
   have hJpos : 0 < J b := by
@@ -835,9 +836,10 @@ private theorem eLpNorm_truncRatio_le [SigmaFinite ρ] (hq : q ≠ ∞) {Φ : β
   exact ⟨h1, h2, h4', h3, h5'⟩
 
 /-- **The bound at `r = ∞` for each truncation.** The essential suprema `‖u_N‖_∞` of the
-truncations `u_N` of `Φ b` have `L^q` norm at most `M`: they are the limits of the ratios
-`ψ_m = ∫ ‖Φ b‖ min (‖Φ b‖, N) ^ (m + 2) / ∫ min (‖Φ b‖, N) ^ (m + 2)` from below, and each
-`ψ_m` has `L^q` norm at most `M`. -/
+truncations `u_N` of `Φ b` have `L^q` norm at most `M`: `‖u_N‖_∞` is the limit of
+`min (ψ_m, ‖u_N‖_∞)`, where
+`ψ_m = ∫ ‖Φ b‖ min (‖Φ b‖, N) ^ (m + 2) / ∫ min (‖Φ b‖, N) ^ (m + 2)`, and each of these minima
+has `L^q` norm at most `‖ψ_m‖_q ≤ M`. -/
 private theorem eLpNorm_truncNorm_top_le [SigmaFinite ρ] (hq : q ≠ ∞) {Φ : β → Lp E 2 μ}
     (hΦ : StronglyMeasurable Φ) {M : ℝ≥0∞}
     (hM : ∀ G : β → Lp E 2 μ, Integrable G ρ → Integrable (fun b ↦ ⟪Φ b, G b⟫_𝕜) ρ →
