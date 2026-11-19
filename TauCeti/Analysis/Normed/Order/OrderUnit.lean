@@ -63,6 +63,8 @@ unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.OrderUnit`.
 * `TauCeti.IsArchimedeanOrderUnit.isOrderUnitNorm`: the constructed norm is an order-unit norm.
 * `TauCeti.IsOrderUnitNorm.isArchimedeanOrderUnit`: the interval formula excludes
   non-Archimedean cones.
+* `TauCeti.IsOrderUnitNorm.norm_eq_orderUnitSeminorm`: an order-unit norm is the order-unit
+  seminorm of its unit.
 * `TauCeti.IsOrderUnitNorm.nonneg_iff_norm_smul_sub_le`: recovery of the order from the norm.
 * `TauCeti.IsOrderUnitNorm.norm_map`: unital linear order embeddings are isometric.
 * `TauCeti.IsOrderUnitNorm.isClosed_nonneg`, `TauCeti.IsOrderUnitNorm.orderClosedTopology`,
@@ -150,7 +152,7 @@ theorem orderUnitSeminorm_apply (he : IsOrderUnit e) (a : E) :
 
 /-- The order-unit seminorm of `a` is at most `r ≥ 0` exactly when `a` lies in every order
 interval `[-s • e, s • e]` with `s > r`. -/
-theorem orderUnitSeminorm_le_iff_forall_lt (he : IsOrderUnit e) (hr : 0 ≤ r) :
+theorem IsOrderUnit.orderUnitSeminorm_le_iff_forall_lt (he : IsOrderUnit e) (hr : 0 ≤ r) :
     orderUnitSeminorm he a ≤ r ↔ ∀ s, r < s → -(s • e) ≤ a ∧ a ≤ s • e := by
   have := congrArg (a ∈ ·) <|
     setOfPred_gauge_le_eq (convex_Icc _ _) he.zero_mem_Icc_neg he.absorbent_Icc_neg hr
@@ -159,21 +161,21 @@ theorem orderUnitSeminorm_le_iff_forall_lt (he : IsOrderUnit e) (hr : 0 ≤ r) :
   exact forall₂_congr fun s hs => mem_smul_Icc_neg_iff (hr.trans_lt hs)
 
 /-- A vector in the order interval `[-r • e, r • e]` has order-unit seminorm at most `r`. -/
-theorem orderUnitSeminorm_le (he : IsOrderUnit e) (hr : 0 ≤ r) (h₁ : -(r • e) ≤ a)
-    (h₂ : a ≤ r • e) : orderUnitSeminorm he a ≤ r :=
-  (orderUnitSeminorm_le_iff_forall_lt he hr).2 fun _s hs =>
+theorem IsOrderUnit.orderUnitSeminorm_le (he : IsOrderUnit e) (hr : 0 ≤ r)
+    (h₁ : -(r • e) ≤ a) (h₂ : a ≤ r • e) : orderUnitSeminorm he a ≤ r :=
+  (he.orderUnitSeminorm_le_iff_forall_lt hr).2 fun _s hs =>
     ⟨(neg_le_neg (smul_le_smul_of_nonneg_right hs.le he.nonneg)).trans h₁,
       h₂.trans (smul_le_smul_of_nonneg_right hs.le he.nonneg)⟩
 
 /-- A nonzero order unit has order-unit seminorm one. -/
 theorem IsOrderUnit.orderUnitSeminorm_self (he : IsOrderUnit e) (he₀ : e ≠ 0) :
     orderUnitSeminorm he e = 1 := by
-  refine le_antisymm (orderUnitSeminorm_le he zero_le_one ?_ ?_) (not_lt.1 fun hlt => he₀ ?_)
+  refine le_antisymm (he.orderUnitSeminorm_le zero_le_one ?_ ?_) (not_lt.1 fun hlt => he₀ ?_)
   · simpa using neg_le_self he.nonneg
   · simp
   · set n := orderUnitSeminorm he e
     have hs : n < (n + 1) / 2 := by linarith
-    have hle := ((orderUnitSeminorm_le_iff_forall_lt he (apply_nonneg _ e)).1 le_rfl _ hs).2
+    have hle := ((he.orderUnitSeminorm_le_iff_forall_lt (apply_nonneg _ e)).1 le_rfl _ hs).2
     have hpos : (0 : ℝ) < 1 - (n + 1) / 2 := by linarith
     have : (1 - (n + 1) / 2) • e ≤ (1 - (n + 1) / 2) • (0 : E) := by
       rwa [sub_smul, one_smul, smul_zero, sub_nonpos]
@@ -193,8 +195,8 @@ theorem le_smul_of_forall_lt (he : IsArchimedeanOrderUnit e) (h : ∀ s, r < s �
 most `r ≥ 0` exactly when `-r • e ≤ a ≤ r • e`. -/
 theorem orderUnitSeminorm_le_iff (he : IsArchimedeanOrderUnit e) (hr : 0 ≤ r) :
     orderUnitSeminorm he.toIsOrderUnit a ≤ r ↔ -(r • e) ≤ a ∧ a ≤ r • e := by
-  refine ⟨fun h => ?_, fun h => orderUnitSeminorm_le he.toIsOrderUnit hr h.1 h.2⟩
-  rw [orderUnitSeminorm_le_iff_forall_lt he.toIsOrderUnit hr] at h
+  refine ⟨fun h => ?_, fun h => he.orderUnitSeminorm_le hr h.1 h.2⟩
+  rw [he.orderUnitSeminorm_le_iff_forall_lt hr] at h
   exact ⟨neg_le.1 <| he.le_smul_of_forall_lt fun s hs => neg_le.1 (h s hs).1,
     he.le_smul_of_forall_lt fun s hs => (h s hs).2⟩
 
@@ -327,6 +329,13 @@ theorem isArchimedeanOrderUnit (h : IsOrderUnitNorm e) : IsArchimedeanOrderUnit 
         gcongr
         exact ha ε hε
     simpa using ((h.norm_le_iff (norm_nonneg a)).1 hb).2
+
+/-- An order-unit norm is the order-unit seminorm of its unit. -/
+theorem norm_eq_orderUnitSeminorm [PosSMulMono ℝ E] (h : IsOrderUnitNorm e) (a : E) :
+    ‖a‖ = orderUnitSeminorm h.isOrderUnit a := by
+  have key (r : ℝ) (hr : 0 ≤ r) : ‖a‖ ≤ r ↔ orderUnitSeminorm h.isOrderUnit a ≤ r := by
+    rw [h.norm_le_iff hr, h.isArchimedeanOrderUnit.orderUnitSeminorm_le_iff hr]
+  exact le_antisymm ((key _ (apply_nonneg _ a)).2 le_rfl) ((key _ (norm_nonneg a)).1 le_rfl)
 
 /-- An order-unit norm is monotone on the positive cone. -/
 theorem norm_le_norm_of_le_of_nonneg (h : IsOrderUnitNorm e) (hab : a ≤ b) (ha : 0 ≤ a) :
