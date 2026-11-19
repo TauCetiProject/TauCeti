@@ -120,38 +120,22 @@ underlying subgroup by `ConjAct.toConjAct g`. -/
 theorem conj_smul_compactOpenSubgroup_toSubgroup (g : G) (U : CompactOpenSubgroup G) :
     (conj g • U).toSubgroup = ConjAct.toConjAct g • U.toSubgroup := by
   ext x
-  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def,
-    CompactOpenSubgroup.mem_toSubgroup, CompactOpenSubgroup.mem_toSubgroup,
-    mem_conj_smul_compactOpenSubgroup_iff]
-  simp
-
-/-- Conjugating a compact open subgroup by `g` is Mathlib's pointwise action of `MulAut.conj g` on
-the underlying subgroup. -/
-theorem conj_smul_compactOpenSubgroup_toSubgroup_eq_mulAut_conj_smul (g : G)
-    (U : CompactOpenSubgroup G) : (conj g • U).toSubgroup = MulAut.conj g • U.toSubgroup := by
-  ext x
-  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, CompactOpenSubgroup.mem_toSubgroup,
-    CompactOpenSubgroup.mem_toSubgroup, mem_conj_smul_compactOpenSubgroup_iff]
-  simp
+  rw [CompactOpenSubgroup.mem_toSubgroup, mem_conj_smul_compactOpenSubgroup_iff]
+  simp [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def]
 
 /-- Conjugating a compact open subgroup by an element of the normalizer of its underlying subgroup
 does not move it. -/
 theorem conj_smul_compactOpenSubgroup_eq_self_of_mem_normalizer {g : G}
     {U : CompactOpenSubgroup G} (hg : g ∈ Subgroup.normalizer (U.toSubgroup : Set G)) :
     conj g • U = U :=
-  CompactOpenSubgroup.toSubgroup_injective <| by
-    dsimp only
-    rw [conj_smul_compactOpenSubgroup_toSubgroup_eq_mulAut_conj_smul,
-      Subgroup.pointwise_smul_def]
-    exact Subgroup.mem_normalizer_iff_map_conj_eq.1 hg
+  CompactOpenSubgroup.toSubgroup_injective <| (conj_smul_compactOpenSubgroup_toSubgroup g U).trans
+    (Subgroup.conjAct_pointwise_smul_eq_self hg)
 
 /-- Conjugating a compact open subgroup by one of its own elements does not move it. -/
 theorem conj_smul_compactOpenSubgroup_eq_self_of_mem {g : G} {U : CompactOpenSubgroup G}
     (hg : g ∈ U) : conj g • U = U :=
-  CompactOpenSubgroup.toSubgroup_injective <| by
-    dsimp only
-    rw [conj_smul_compactOpenSubgroup_toSubgroup_eq_mulAut_conj_smul]
-    exact Subgroup.conj_smul_eq_self_of_mem (H := U.toSubgroup) hg
+  conj_smul_compactOpenSubgroup_eq_self_of_mem_normalizer <|
+    Subgroup.le_normalizer (U.mem_toSubgroup.2 hg)
 
 end Conj
 
@@ -182,11 +166,12 @@ theorem exists_le_conj_smul_eq [SeparatelyContinuousMul G] (K₀ : CompactOpenSu
   have hC : ((C.map K.subtype).subgroupOf K).Normal := by
     rw [Subgroup.subgroupOf, Subgroup.comap_map_eq_self_of_injective K.subtype_injective]
     exact Subgroup.normalCore_normal _
-  refine ⟨N, ?_, hCK, fun k hk ↦
+  refine ⟨N, ?_, (N.toSubgroup_le K₀).1 hCK, fun k hk ↦
     ContinuousAut.conj_smul_compactOpenSubgroup_eq_self_of_mem_normalizer
       (Subgroup.le_normalizer_of_normal_subgroupOf hCK hk)⟩
-  rintro _ ⟨c, hc, rfl⟩
-  exact Subgroup.normalCore_le W'.toSubgroup hc
+  rw [← OpenSubgroup.toSubgroup_le]
+  exact Subgroup.map_le_iff_le_comap.2 <|
+    (Subgroup.normalCore_le _).trans (OpenSubgroup.toSubgroup_comap W _ _).le
 
 /-- **A descending normal basis below a level.** In a first countable nonarchimedean group, every
 compact open subgroup `K₀` contains a descending sequence of compact open subgroups, each
