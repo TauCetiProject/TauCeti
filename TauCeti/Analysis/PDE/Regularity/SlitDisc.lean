@@ -323,8 +323,7 @@ private theorem memLp_gradient_slitSolution {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp
     ((continuousOn_gradient_slitSolution.mono hΩ).aestronglyMeasurable hΩm) hp0 hp').1 ?_
   have hker : IntegrableOn (fun x : WithLp 2 (ℝ × ℝ) => ‖x‖ ^ (-(2⁻¹ : ℝ) * p.toReal)) Ω :=
     (integrableOn_norm_rpow_ball (by
-      rw [WithLp.finrank_prod, Module.finrank_self]
-      push_cast
+      simp
       linarith)).mono_set hR
   exact IntegrableOn.congr_fun (hker.const_mul ((2 : ℝ)⁻¹ ^ p.toReal))
     (fun x hx => (norm_gradient_slitSolution_rpow (hΩ hx) _).symm) hΩm
@@ -345,8 +344,7 @@ private theorem lt_four_of_memLp_gradient_slitSolution {p : ℝ≥0∞} (hp0 : p
       ← Real.mul_rpow zero_le_two (by norm_num)]
     norm_num
   have := (integrableOn_norm_rpow_ball_iff zero_lt_one).1 hpow
-  rw [WithLp.finrank_prod, Module.finrank_self] at this
-  have hpr : p.toReal < 4 := by push_cast at this; linarith
+  have hpr : p.toReal < 4 := by simp at this; linarith
   exact (ENNReal.toReal_lt_toReal hp (by norm_num)).1 (by simpa using hpr)
 
 /-- **Sobolev integrability of the slit-plane solution.** On a bounded open set `Ω` off the ray

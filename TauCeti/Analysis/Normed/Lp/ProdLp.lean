@@ -260,6 +260,7 @@ theorem rank_withLpMap {p : ℝ≥0∞} {K V V' : Type*} [Semiring K] [AddCommGr
 end LinearMap
 
 /-- The `L^p` product of two finite free modules has the sum of their dimensions. -/
+@[simp]
 theorem WithLp.finrank_prod {p : ℝ≥0∞} {R M M' : Type*} [Ring R] [StrongRankCondition R]
     [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
     [AddCommGroup M'] [Module R M'] [Module.Free R M'] [Module.Finite R M'] :
