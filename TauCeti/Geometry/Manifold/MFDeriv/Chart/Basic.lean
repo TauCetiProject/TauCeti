@@ -791,7 +791,10 @@ theorem exists_forall_norm_mvfderiv_le_mul_norm {f : M → F} {x : M}
       ((trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 y v) := by
     conv_lhs => rw [← Bundle.Trivialization.symmL_continuousLinearMapAt (R := 𝕜) _ hyT v,
       TangentBundle.symmL_trivializationAt_eq_core hyc]
-    rw [fderivWithin_comp_extChartAt_symm x hy]
+    rw [fderivWithin_comp_extChartAt_symm x hy, mvfderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.comp_apply]
+    -- `NormedSpace.fromTangentSpace` is the identity on vectors, and `tangentCoordChange` is an
+    -- abbreviation of the core coordinate change.
     rfl
   rw [hv]
   exact (ContinuousLinearMap.le_opNorm _ _).trans (by gcongr; exact hB _ hyL)
