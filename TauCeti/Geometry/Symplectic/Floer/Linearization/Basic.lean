@@ -223,7 +223,7 @@ omit [FiniteDimensional ℝ V] in
 /-- **Multiplying by a cutoff in `s`.** If `β` has derivative `β'` at `s`, the real Cauchy–Riemann
 operator `P = ∂s + J ∂t + A` sends `β(s) ξ` to `β(s) P ξ + β' ξ` at `z = (s, t)`: the factor only
 differentiates in the `s` direction, where `P` has the leading term `∂s`. -/
-theorem cauchyRiemann_smul_fst (J A : ℝ × ℝ → V →L[ℝ] V) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
+theorem _root_.TauCeti.cauchyRiemann_smul_fst (J A : ℝ × ℝ → V →L[ℝ] V) {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
     {β : ℝ → ℝ} {β' : ℝ} (hβ : HasDerivAt β β' z.1) (hξ : DifferentiableAt ℝ ξ z) :
     fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal +
         J z (fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag) + A z (β z.1 • ξ z) =

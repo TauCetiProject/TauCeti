@@ -41,7 +41,7 @@ finite-dimensional kernel and closed range of the extension of `P` to `W^{1,2}`
   argument: estimates of `P` on the two ends imply the semi-Fredholm estimate. Cut `ξ` into three
   pieces with cutoffs `β(s)` near `+∞`, near `-∞` and on a compact cylinder; since `P` only
   differentiates the cutoffs in `s`, `P (β ξ) = β P ξ + β' ξ`
-  (`TauCeti.SymplecticForm.cauchyRiemann_smul_fst`), and on the compact cylinder the
+  (`TauCeti.cauchyRiemann_smul_fst`), and on the compact cylinder the
   `L²` estimate for domain-dependent compatible structures
   (`TauCeti.SymplecticForm.exists_forall_setIntegral_norm_fderiv_sq_le_of_periodic`) applies.
 * `exists_mem_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_of_tendstoUniformlyOn` is the
@@ -114,7 +114,7 @@ private theorem continuous_sobolev {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1
   fun_prop
 
 /-- `P ξ` is continuous for a `C¹` map `ξ` and continuous coefficients. -/
-theorem continuous_cauchyRiemann {J : ℝ × ℝ → AlmostComplexStructure V}
+theorem _root_.TauCeti.continuous_cauchyRiemann {J : ℝ × ℝ → AlmostComplexStructure V}
     {A : ℝ × ℝ → V →L[ℝ] V} (hJc : Continuous fun z ↦ (J z).toLinearMap.toContinuousLinearMap)
     (hAc : Continuous A) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
     Continuous fun z ↦
@@ -254,6 +254,26 @@ private theorem setIntegral_sobolev_le_three_mul_add {ξ ξp ξm ξ₀ : ℝ × 
           (hI (continuous_sobolev (hξm.of_le one_le_two)))]
 
 omit [FiniteDimensional ℝ V] in
+/-- **The window of a piece near `+∞`.** If `ξ` vanishes for `s ∉ (a, b)` and `β` vanishes for
+`s ≤ R`, then `β(s) ξ` vanishes for `s ∉ (max a R, max b R)`. -/
+private theorem smul_eq_zero_of_notMem_Ioo_max {ξ : ℝ × ℝ → V} {β : ℝ → ℝ} {a b R : ℝ}
+    (hξ : ∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) (hβ : ∀ s, s ≤ R → β s = 0) (s t : ℝ)
+    (hs : s ∉ Ioo (max a R) (max b R)) : β s • ξ (s, t) = 0 := by
+  rcases le_or_gt s R with hR | hR
+  · exact smul_eq_zero_of_left (hβ s hR) _
+  · exact smul_eq_zero_of_right _ (hξ s t fun h ↦ hs ⟨max_lt h.1 hR, lt_max_of_lt_left h.2⟩)
+
+omit [FiniteDimensional ℝ V] in
+/-- **The window of a piece near `-∞`.** If `ξ` vanishes for `s ∉ (a, b)` and `β` vanishes for
+`R ≤ s`, then `β(s) ξ` vanishes for `s ∉ (min a R, min b R)`. -/
+private theorem smul_eq_zero_of_notMem_Ioo_min {ξ : ℝ × ℝ → V} {β : ℝ → ℝ} {a b R : ℝ}
+    (hξ : ∀ s t, s ∉ Ioo a b → ξ (s, t) = 0) (hβ : ∀ s, R ≤ s → β s = 0) (s t : ℝ)
+    (hs : s ∉ Ioo (min a R) (min b R)) : β s • ξ (s, t) = 0 := by
+  rcases le_or_gt R s with hR | hR
+  · exact smul_eq_zero_of_left (hβ s hR) _
+  · exact smul_eq_zero_of_right _ (hξ s t fun h ↦ hs ⟨min_lt_of_left_lt h.1, lt_min h.2 hR⟩)
+
+omit [FiniteDimensional ℝ V] in
 /-- **The energy of an end piece.** Let `η` vanish for `s ∉ (c, d)`, with `[c, d] ⊆ [a', b']`. An
 estimate `∫ (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C ∫ ‖P η‖²` over `[c, d] × [0, 1]` and a bound `K` on
 `∫ ‖P η‖²` over `[a', b'] × [0, 1]` bound the energy of `η` over `[a', b'] × [0, 1]` by
@@ -359,8 +379,6 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_ends
   set L := 2 + 2 * M ^ 2
   refine ⟨3 * ((max Cp 0 + max Cm 0) * L + C₀ * (L + 1) + 1), by positivity, T,
     fun ξ hξ hper a b hab hξ₀ ↦ ?_⟩
-  have hξ₀' (s t : ℝ) (h : s ≤ a ∨ b ≤ s) : ξ (s, t) = 0 :=
-    hξ₀ s t fun h' ↦ by rcases h with h | h <;> linarith [h'.1, h'.2]
   have hI {f : ℝ × ℝ → ℝ} (hf : Continuous f) (p q : ℝ) :
       IntegrableOn f (Icc p q ×ˢ Icc (0 : ℝ) 1) :=
     hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
@@ -374,22 +392,10 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_cauchyRiemann_add_of_ends
   have hsplit : ξ = fun w ↦ ξp w + ξm w + ξ₀ w := funext fun w ↦ by
     simp only [ξp, ξm, ξ₀, ← add_smul, hβsum, one_smul]
   -- Each piece vanishes outside a window: near `+∞`, near `-∞`, and in `[-T, T]`.
-  have hvp (s t : ℝ) (hs : s ∉ Ioo (max a R) (max b R)) : ξp (s, t) = 0 := by
-    rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
-    simp only [ξp]
-    rcases hs with hs | hs
-    · rcases le_max_iff.1 hs with h | h
-      · rw [hξ₀' s t (Or.inl h), smul_zero]
-      · rw [hβpR s h, zero_smul]
-    · rw [hξ₀' s t (Or.inr (max_le_iff.1 hs).1), smul_zero]
-  have hvm (s t : ℝ) (hs : s ∉ Ioo (min a (-R)) (min b (-R))) : ξm (s, t) = 0 := by
-    rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
-    simp only [ξm]
-    rcases hs with hs | hs
-    · rw [hξ₀' s t (Or.inl (le_min_iff.1 hs).1), smul_zero]
-    · rcases min_le_iff.1 hs with h | h
-      · rw [hξ₀' s t (Or.inr h), smul_zero]
-      · rw [hβmR s h, zero_smul]
+  have hvp : ∀ s t, s ∉ Ioo (max a R) (max b R) → ξp (s, t) = 0 :=
+    smul_eq_zero_of_notMem_Ioo_max hξ₀ hβpR
+  have hvm : ∀ s t, s ∉ Ioo (min a (-R)) (min b (-R)) → ξm (s, t) = 0 :=
+    smul_eq_zero_of_notMem_Ioo_min hξ₀ hβmR
   have hv₀ (s t : ℝ) (hs : s ∉ Ioo (-T) T) : ξ₀ (s, t) = 0 := by
     simp only [ξ₀, hβ₀T s hs, zero_smul]
   have hper₀ (s t : ℝ) : ξ₀ (s, t + 1) = ξ₀ (s, t) := by simp only [ξ₀, hper]
