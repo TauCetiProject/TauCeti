@@ -64,6 +64,20 @@ lemma ordinaryPairQuotientπ_map (P : TopPair.{u}) (b : P.snd) :
     P.ordinaryPairQuotientπ (P.map b) = P.ordinaryPairQuotientBasepoint :=
   ConcreteCategory.congr_hom (pushout.condition (f := P.map) (g := quotientPointMap P)) b
 
+/-- **The pointed quotient is a pushout.** It is the pushout of the inclusion of the subspace and
+the map from the subspace to a point, with the collapse map and the basepoint as the two maps into
+it. -/
+lemma isPushout_ordinaryPairQuotient (P : TopPair.{u}) :
+    IsPushout P.map (TopCat.ofHom (ContinuousMap.const P.snd PUnit.unit))
+      P.ordinaryPairQuotientπ
+      (TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} P.ordinaryPairQuotientBasepoint)) := by
+  -- The added point is the image of the unique point of `PUnit`.
+  have h : quotientPointIncl P =
+      TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} P.ordinaryPairQuotientBasepoint) := by
+    ext ⟨⟩
+    rfl
+  exact h ▸ IsPushout.of_hasPushout P.map (quotientPointMap P)
+
 /-- Every point of the quotient is either the basepoint or the image of an ambient point. -/
 lemma exists_ordinaryPairQuotientπ_or_eq_basepoint (P : TopPair.{u}) (z : P.ordinaryPairQuotient) :
     (∃ x, P.ordinaryPairQuotientπ x = z) ∨ z = P.ordinaryPairQuotientBasepoint := by
