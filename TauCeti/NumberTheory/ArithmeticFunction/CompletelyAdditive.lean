@@ -19,10 +19,11 @@ function is additive, satisfies `f (n ^ k) = k • f n` for positive `n`, and is
 values at primes through the factorization formula
 `f n = ∑ p ∈ n.primeFactors, n.factorization p • f p`. Mathlib's `Ω` is completely additive.
 
-`ArithmeticFunction.powOfAdditive k f` is the arithmetic function with value `k ^ f n` at every
-positive `n`, for `k` in a monoid with zero and a natural-valued `f`. It is multiplicative when `f`
-is additive, so `n ↦ k ^ ω n` is multiplicative, and it is multiplicative on all pairs of inputs
-when `f` is completely additive, as for `n ↦ k ^ Ω n`.
+`ArithmeticFunction.powOfAdditive k f`, the arithmetic function with value `k ^ f n` at every
+positive `n`, is defined in `TauCeti.NumberTheory.ArithmeticFunction.Additive`, where it is shown
+to be multiplicative when `f` is additive. Here it is multiplicative on all pairs of inputs when
+`f` is completely additive, as for `n ↦ k ^ Ω n`. The function `n ↦ k ^ ω n` is multiplicative,
+and for a commutative base it is Mathlib's `prodPrimeFactors` of the constant function `k`.
 
 ## References
 
@@ -125,29 +126,6 @@ section powOfAdditive
 
 variable {R : Type*} [MonoidWithZero R]
 
-/-- The arithmetic function with value `k ^ f n` at every positive `n`. Its value at zero is zero,
-as for every arithmetic function, rather than `k ^ f 0 = 1`. -/
-def powOfAdditive (k : R) (f : ArithmeticFunction ℕ) : ArithmeticFunction R where
-  toFun n := if n = 0 then 0 else k ^ f n
-  map_zero' := ite_eq_left rfl
-
-@[simp]
-theorem powOfAdditive_apply (k : R) (f : ArithmeticFunction ℕ) {n : ℕ} (hn : n ≠ 0) :
-    powOfAdditive k f n = k ^ f n :=
-  ite_eq_right hn
-
-theorem powOfAdditive_apply_zero (k : R) (f : ArithmeticFunction ℕ) : powOfAdditive k f 0 = 0 :=
-  map_zero
-
-theorem powOfAdditive_apply_one (k : R) {f : ArithmeticFunction ℕ} (hf : f 1 = 0) :
-    powOfAdditive k f 1 = 1 := by
-  simp [hf]
-
-/-- Powers along an additive function form a multiplicative arithmetic function. -/
-theorem IsAdditive.isMultiplicative_powOfAdditive {f : ArithmeticFunction ℕ} (hf : IsAdditive f)
-    (k : R) : (powOfAdditive k f).IsMultiplicative :=
-  hf.isMultiplicative_of_eq_monoidHom (powersHom R k) fun n hn => by simp [hn]
-
 /-- Powers along a completely additive function are multiplicative on all pairs of inputs, with
 no coprimality hypothesis. -/
 theorem IsCompletelyAdditive.powOfAdditive_mul {f : ArithmeticFunction ℕ}
@@ -164,6 +142,15 @@ theorem isMultiplicative_powOfAdditive_cardDistinctFactors (k : R) :
     (powOfAdditive k cardDistinctFactors).IsMultiplicative :=
   IsAdditive.isMultiplicative_powOfAdditive
     { map_one := cardDistinctFactors_one, map_mul := fun _ _ h => cardDistinctFactors_mul h } k
+
+/-- The arithmetic function `n ↦ k ^ ω n` is Mathlib's product over prime factors of the constant
+function `k`, for a commutative base. -/
+theorem powOfAdditive_cardDistinctFactors_eq_prodPrimeFactors {S : Type*} [CommMonoidWithZero S]
+    (k : S) : powOfAdditive k cardDistinctFactors = prodPrimeFactors fun _ => k := by
+  ext n
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  simp [hn, prodPrimeFactors_apply hn, cardDistinctFactors_eq_card_primeFactors]
 
 end powOfAdditive
 
