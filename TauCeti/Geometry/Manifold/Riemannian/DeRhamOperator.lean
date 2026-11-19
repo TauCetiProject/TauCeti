@@ -302,18 +302,20 @@ private theorem sum_pairing_diffAddCodiff (α β : (j : Fin (m + 1)) → SmoothF
     rcases k with _ | k <;> rcases l with _ | l
     · rw [show diffAddCodiff D δ α ⟨0, hk⟩ = 0 from diffAddCodiff_apply_zero_zero D δ hkl α]
       simp only [A, B, show ¬(0 : ℕ) < m by omega, ↓reduceDIte, add_zero]
+      rw [pairing]
       exact integralTopForm_inner_zero_left o _
     · rw [diffAddCodiff_apply_zero_add_one D δ (l := m - (0 + 1)) (by omega)]
       simp only [A, B, show (0 : ℕ) < m by omega, ↓reduceDIte]
       -- `⟨0, hk⟩` is the numeral `0` of `Fin (m + 1)` (`Fin.mk_zero`).
       rw [show Fin.cases (motive := fun _ ↦ ℝ) 0 a ⟨0, hk⟩ = 0 from Fin.cases_zero]
-      exact (zero_add (b ⟨0, by omega⟩)).symm
+      rw [zero_add (b _), hb]
     · rw [diffAddCodiff_apply_add_one_zero D δ hkl]
       simp only [A, B, show ¬k + 1 < m by omega, ↓reduceDIte]
       rw [Fin.cases_succ', add_zero]
     · rw [diffAddCodiff_apply_add_one_add_one D δ (l := m - (k + 1 + 1)) (by omega)]
       simp only [A, B, show k + 1 < m by omega, ↓reduceDIte]
-      rw [Fin.cases_succ']
+      rw [Fin.cases_succ', ha, hb]
+      unfold pairing
       refine integralTopForm_inner_add_left o hkl _ _ _ ?_
       rcases h with h | h
       · exact .inl ⟨hD (h ⟨k, by omega⟩), hδ _ (h ⟨k + 1 + 1, by omega⟩)⟩
