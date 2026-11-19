@@ -24,8 +24,9 @@ bound, `D_σ` has a left inverse of norm at most `|σₙ|⁻¹` on the span `M` 
 coordinate vectors (`lp.exists_comp_diagonalCLM_comp_subtypeL_eq_id`). So the identity of `M`,
 a space of rank `n + 1`, factors through `D_σ`, and strictness normalizes it at index `n`
 (`TauCeti.SNumbers.IsStrictSNumberSequence.le_of_comp_eq_id`). The lower bound needs
-strictness: the identity of `ℓ₁^m` is the diagonal operator with all coefficients `1`, and its
-Hilbert numbers at index `n` are of order `(n + 1)^(-1/2)` (Pietsch 1974, §8).
+strictness: the identity of `ℓ₁^m` is the diagonal operator with all coefficients `1`, and by
+Grothendieck's inequality its Hilbert numbers at index `n` are at most a constant times
+`(n + 1)^(-1/2)`, hence below `1` for large `n < m`.
 
 The statements fix the index types `ℕ` and `Fin m`, which live in the lowest universe, so that the
 sequence spaces lie in the universe of the scalar field, as `TauCeti.SNumbers.SNumberFamily`
