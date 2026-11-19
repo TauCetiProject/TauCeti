@@ -237,9 +237,7 @@ theorem mapOfLE_surjective (h : D ≤ E) : Function.Surjective (mapOfLE h) :=
 @[simp]
 theorem mapOfLE_refl : mapOfLE (le_refl D) = LinearMap.id := by
   ext μ x : 2
-  rw [mapOfLE_apply, LinearMap.id_apply]
-  induction μ x using Submodule.Quotient.induction_on with
-  | _ φ => rw [LocalPrincipalPart.mapOfLE_mk]
+  rw [mapOfLE_apply, LinearMap.id_apply, LocalPrincipalPart.mapOfLE_refl_apply]
 
 @[simp]
 theorem mapOfLE_comp (hDE : D ≤ E) (hEF : E ≤ F) :
