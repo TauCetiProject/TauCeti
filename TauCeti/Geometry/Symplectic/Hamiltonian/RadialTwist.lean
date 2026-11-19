@@ -50,11 +50,10 @@ corresponding term (`TauCeti.sum_radialHamiltonian_eventuallyEq`). Its flow ther
 of these discs as the corresponding term does (`TauCeti.hamiltonianFlow_sum_radialHamiltonian`)
 and fixes every point outside them (`TauCeti.hamiltonianFlow_sum_radialHamiltonian_eq_self`).
 
-Constructing it as the time-one map of such a twist, whose inverse is the time `-1` map given by
-the same formula, gives a smooth diffeomorphism of `ℂ` preserving the area form
-(`TauCeti.exists_diffeomorph_eventuallyEq_rotation`). The statement records only these
-properties, not the Hamiltonian it comes from. In this form it can be transported through Darboux
-charts to any symplectic surface.
+For every `R > 0` and angle `θ`, `TauCeti.exists_diffeomorph_eventuallyEq_rotation` gives a smooth
+diffeomorphism of `ℂ` preserving the area form and the norm, equal to the rotation by `θ` near `0`
+and to the identity outside the disc of radius `R`; in this form it can be transported through
+Darboux charts.
 
 This is the local mechanism for perturbing an area-preserving map of a surface so as to change
 the linearized return map of a periodic orbit by a rotation, independently for finitely many
@@ -84,9 +83,9 @@ orbits. If `p` is a periodic point of `φ` of period `k` and the twist is suppor
 * `TauCeti.hamiltonianFlow_sum_radialHamiltonian` and
   `TauCeti.hamiltonianFlow_sum_radialHamiltonian_eq_self`: the flow of a sum of radial twists with
   disjoint supports.
-* `TauCeti.exists_diffeomorph_eventuallyEq_rotation`: a smooth diffeomorphism of `ℂ`, constructed
-  as a time-one twist map, preserving the area form, rotating a neighbourhood of `0` by a
-  prescribed angle and fixing every point outside a prescribed disc.
+* `TauCeti.exists_diffeomorph_eventuallyEq_rotation`: a smooth diffeomorphism of `ℂ` preserving
+  the area form, rotating a neighbourhood of `0` by a prescribed angle and fixing every point
+  outside a prescribed disc.
 
 ## References
 
@@ -388,9 +387,7 @@ open scoped Manifold
 /-- **A compactly supported area-preserving rotation of the plane.** For every radius `R > 0` and
 every angle `θ` there is a smooth diffeomorphism `ψ` of `ℂ` which preserves the standard area form,
 preserves the norm, is the identity outside the open disc of radius `R` about `0`, and agrees near
-`0` with the rotation by `θ`, so that its derivative at `0` is multiplication by `exp (i θ)`. It is
-constructed as the time-one map of a radial Hamiltonian twist whose profile vanishes for squared
-radii at least `R²`; the statement does not record this Hamiltonian. -/
+`0` with the rotation by `θ`, so that its derivative at `0` is multiplication by `exp (i θ)`. -/
 theorem exists_diffeomorph_eventuallyEq_rotation {R : ℝ} (hR : 0 < R) (θ : ℝ) :
     ∃ ψ : ℂ ≃ₘ⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ ℂ,
       (∀ x u v, stdComplexSymplecticForm (fderiv ℝ ψ x u) (fderiv ℝ ψ x v) =
@@ -399,6 +396,7 @@ theorem exists_diffeomorph_eventuallyEq_rotation {R : ℝ} (hR : 0 < R) (θ : �
       ⇑ψ =ᶠ[𝓝 0] fun w ↦ exp (I * θ) * w := by
   obtain ⟨k, hk, -, hk_large, hk_deriv⟩ :=
     exists_contDiff_cutoff_id (r := R ^ 2 / 4) (R := R ^ 2 / 2) (by positivity) (by nlinarith)
+  -- `ψ` is the time-one map of the radial twist with profile `G`, with inverse the time `-1` map.
   set G : ℝ → ℝ := fun s ↦ θ * k s
   have hG : ContDiff ℝ ∞ G := contDiff_const.mul hk
   have hGR : ∀ s, R ^ 2 / 2 ≤ s → G s = 0 := fun s hs ↦ by

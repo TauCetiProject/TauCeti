@@ -35,8 +35,7 @@ the orbit is unchanged and only its linearized return map changes. It is the tra
 the planar construction of `TauCeti.exists_hamiltonianFlow_forall_det_one_sub_pow_ne_zero`.
 
 In a Darboux chart at `p`, read in `ℂ` through a linear symplectomorphism, `Φ` is the
-area-preserving diffeomorphism `TauCeti.exists_diffeomorph_eventuallyEq_rotation`, constructed from
-a radial Hamiltonian twist (the results here assert only that `Φ` preserves `σ`). It rotates a
+area-preserving diffeomorphism `TauCeti.exists_diffeomorph_eventuallyEq_rotation`. It rotates a
 small disc about `p` by an angle `θ` near its centre and is the identity outside it; it is extended
 to `M` by the identity (`PartialDiffeomorph.exists_diffeomorph_eq_symm_apply_apply`). Its
 derivative at `p` is the rotation by `θ` read through a fixed identification `L` of `T_p M` with `ℂ`
@@ -171,8 +170,7 @@ private theorem exists_diffeomorph_of_darbouxChart {σ : SmoothTwoForm I M}
 surface, `p` a point and `U` a neighbourhood of `p`. There is a real-linear identification `L` of
 `T_p M` with `ℂ` such that, for every angle `θ`, some diffeomorphism `Φ` of `M` preserving `σ`
 fixes `p` and every point outside a compact subset of `U`, and has derivative at `p` the rotation
-by `θ` read through `L`. In a Darboux chart at `p`, `Φ` is constructed from a radial Hamiltonian
-twist; the statement asserts only that `Φ` preserves `σ`. -/
+by `θ` read through `L`. -/
 theorem IsSymplectic.exists_continuousLinearEquiv_forall_exists_diffeomorph
     {σ : SmoothTwoForm I M} (hσ : σ.IsSymplectic) (hE : finrank ℝ E = 2) {p : M} {U : Set M}
     (hU : IsOpen U) (hpU : p ∈ U) :
