@@ -163,7 +163,7 @@ private lemma isoModSerre_singularHomologyMap_preimagePairMap (hQP : Q ≤ P)
         IsZero ((preimageSkeletonPair r C n).singularHomology (ModuleCat.of R R) m) := by
       rw [IsZero.iff_id_eq_zero]
       exact (isColimitCofanSingularHomologyPreimageSkeletonPair C hr R n m).hom_ext fun ⟨j⟩ ↦
-        (isZero_singularHomology_preimage_sphere R
+        (isZero_singularHomology_preimage_sphere (ModuleCat.of R R)
           (mem_serreFibrations_pullbackFst hr (cellULiftMap C n j)) (by simpa using hm)).eq_of_src
           _ _
     have := (hz hp).isIso (hz hp') (TopPair.singularHomologyMap (TopCat.Hom.preimagePairMap f hf
