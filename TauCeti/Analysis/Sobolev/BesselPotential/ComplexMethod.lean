@@ -489,15 +489,6 @@ open MeasureTheory
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
   {s θ : ℝ} {p₀ p₁ p : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ p)]
 
-/-- Elements of `H^{s,p₀}` and `H^{s,p₁}` with the same tempered distribution have almost
-everywhere equal Bessel potentials `J^s u ∈ Lᵖ`. -/
-private theorem toLp_ae_eq_of_toDistr_eq {u₀ : H^{s, p₀}(E, F)} {u₁ : H^{s, p₁}(E, F)}
-    (h : u₀.toDistr = u₁.toDistr) : ⇑u₀.toLp =ᵐ[volume] ⇑u₁.toLp :=
-  Lp.ae_eq_of_toTemperedDistribution_apply_eq u₀.toLp
-    ((Lp.memLp u₁.toLp).locallyIntegrable Fact.out) fun φ ↦ by
-      rw [← u₀.bessel_toDistr_eq_toLp, h, u₁.bessel_toDistr_eq_toLp,
-        Lp.toTemperedDistribution_apply]
-
 /-- The Bessel potential `J^s`, which identifies `H^{s,p₀}` with `L^{p₀}` and `H^{s,p₁}` with
 `L^{p₁}`, is compatible with the intersections of the couples `(H^{s,p₀}, H^{s,p₁})` and
 `(L^{p₀}, L^{p₁})`. -/
@@ -509,7 +500,7 @@ private theorem toLp_compatible (x : (besselPotentialSpace E F p₀ p₁ s s).in
         ((toLpₗᵢ E F s p₁).toContinuousLinearEquiv
           ((besselPotentialSpace E F p₀ p₁ s s).interSnd x)) := by
   refine (lebesgue ℂ F (volume : Measure E) p₀ p₁).sumSpace_ext ?_
-  simpa [L1AddLinfty.ofLp_eq_ofLp_iff] using toLp_ae_eq_of_toDistr_eq
+  simpa [L1AddLinfty.ofLp_eq_ofLp_iff] using BesselPotentialSpace.toLp_ae_eq_of_toDistr_eq
     (by simpa using (besselPotentialSpace E F p₀ p₁ s s).embed₀_interFst x)
 
 /-- The inverse Bessel potential `J^{-s}`, which identifies `L^{p₀}` with `H^{s,p₀}` and
@@ -600,11 +591,10 @@ theorem toDistr_besselPotentialSpaceExponentComplexMethodEquiv_apply (hθ : θ �
       sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁,
       L1AddLinfty.sumSpaceEmbed_ofLp] at h
     exact ((L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff ℂ).1 h.symm).symm
-  rw [besselPotentialSpaceExponentComplexMethodEquiv, LinearIsometryEquiv.trans_apply,
-    LinearIsometryEquiv.trans_apply, toLpₗᵢ_symm_apply,
-    Lp.toTemperedDistribution_eq_add_of_ae_eq hw, map_add, besselPotential_neg_toLp_eq,
-    besselPotential_neg_toLp_eq, ← hx, map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum,
-    besselPotentialSpace_embed₀_apply, besselPotentialSpace_embed₁_apply]
+  simp only [besselPotentialSpaceExponentComplexMethodEquiv, LinearIsometryEquiv.trans_apply,
+    toLpₗᵢ_symm_apply]
+  rw [Lp.toTemperedDistribution_eq_add_of_ae_eq hw, ← hx]
+  simp [besselPotential_neg_toLp_eq]
 
 /-- The inverse identification `H^{s,p} = [H^{s,p₀}, H^{s,p₁}]_θ` keeps the underlying tempered
 distribution. -/

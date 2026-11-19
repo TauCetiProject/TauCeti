@@ -220,14 +220,11 @@ omit [FiniteDimensional ℝ E] in
 /-- Applying a continuous linear map `L` to the values of an `Lᵖ` function `u` applies `L` to the
 pairings of its tempered distribution. -/
 theorem toTemperedDistribution_compLp_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
-    [CompleteSpace G] {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal} [hp : Fact (1 ≤ p)]
+    [CompleteSpace G] {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal} [Fact (1 ≤ p)]
     (L : F →L[ℂ] G) (u : Lp F p μ) (φ : 𝓢(E, ℂ)) :
     ((L.compLp u : Lp G p μ) : 𝓢'(E, G)) φ = L ((u : 𝓢'(E, F)) φ) := by
-  have : (1 - p⁻¹)⁻¹.HolderConjugate p :=
-    (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
-  have hφu : Integrable (fun x ↦ φ x • u x) μ :=
-    memLp_one_iff_integrable.1 ((φ.memLp (1 - p⁻¹)⁻¹ (μ := μ)).smul (Lp.memLp u))
-  rw [Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply, ← L.integral_comp_comm hφu]
+  rw [Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
+    ← L.integral_comp_comm (integrable_schwartzMap_smul φ u)]
   refine integral_congr_ae ((L.coeFn_compLp u).mono fun x hx ↦ ?_)
   simp only [hx, map_smul]
 
