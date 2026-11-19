@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Interpolation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
 public import TauCeti.Analysis.Holder.Bilinear
+public import TauCeti.Analysis.Holder.Coefficient
 
 /-!
 # Second-order parabolic operators on order-two parabolic Hölder spaces
@@ -471,22 +472,6 @@ theorem deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_euclideanParabolic
   rw [(hasDerivAt_timeSlice_add_const u x h).deriv, u.fderiv_fderiv_eq, u.fderiv_eq,
     euclideanParabolicOperatorL_apply]
   simp only [Matrix.of_apply, map_sum, map_smul, smul_eq_mul]
-
-omit [DecidableEq ι] in
-/-- The trace of the coefficient matrix `(aⁱʲ(p))` is at most `∑ᵢ ‖aⁱⁱ‖`. -/
-theorem _root_.TauCeti.HolderSpace.trace_le_sum_norm
-    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
-    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) :
-    (Matrix.of fun i j ↦ a i j p).trace ≤ ∑ i, ‖a i i‖ :=
-  Finset.sum_le_sum fun i _ ↦ (le_abs_self _).trans (HolderSpace.norm_apply_le (a i i) _)
-
-/-- The drift vector `∑ᵢ bⁱ(p) eᵢ` has norm at most `∑ᵢ ‖bⁱ‖`. -/
-theorem _root_.TauCeti.HolderSpace.norm_sum_apply_smul_single_le_sum_norm
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
-    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) :
-    ‖∑ i, b i p • EuclideanSpace.single i (1 : ℝ)‖ ≤ ∑ i, ‖b i‖ :=
-  (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ by
-    simpa [norm_smul] using HolderSpace.norm_apply_le (b i) _)
 
 /-- **The one-sided a priori bound for the Cauchy problem.** Let `a` be degenerate elliptic and
 `c ≤ γ` with `0 ≤ γ`. If `u ∈ C_b^{2+α,1+α/2}` on `ℝⁿ × [t₀, t₁]` satisfies `P u ≤ K` and
