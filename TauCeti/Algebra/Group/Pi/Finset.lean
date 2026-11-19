@@ -168,22 +168,14 @@ Its inverse reads the coordinate at `i` in position `f i`. -/
 @[to_additive /-- Relabelling a family indexed by `s` along an embedding `f`, as a family indexed by
 `s.map f`. Its inverse reads the coordinate at `i` in position `f i`. -/]
 noncomputable def piFinsetMap [∀ i, Mul (π i)] : (∀ i : s, π (f i)) ≃* ∀ j : s.map f, π j :=
-  (ofBijective (M := ∀ j : s.map f, π j) (N := ∀ i : s, π (f i))
-    ({ toFun g i := g ⟨f i, mem_map_of_mem f i.2⟩, map_mul' _ _ := (rfl) } :
-      (∀ j : s.map f, π j) →ₙ* ∀ i : s, π (f i))
-    ⟨fun g g' h ↦ funext fun ⟨j, hj⟩ ↦ by
-      obtain ⟨i, hi, rfl⟩ := mem_map.1 hj
-      exact congrFun h ⟨i, hi⟩,
-    -- `Equiv.piCongrLeft` along `Finset.equivMap` supplies a preimage.
-    fun g ↦ ⟨Equiv.piCongrLeft (fun j : s.map f ↦ π j) (s.equivMap f) g,
-      funext (Equiv.piCongrLeft_apply_apply (fun j : s.map f ↦ π j) (s.equivMap f) g)⟩⟩).symm
+  piCongrLeft (fun j : s.map f ↦ π j) (s.equivMap f)
 
 /-- The inverse of `MulEquiv.piFinsetMap` reads the coordinate at `i` in position `f i`. -/
 @[to_additive (attr := simp) /-- The inverse of `AddEquiv.piFinsetMap` reads the coordinate at `i`
 in position `f i`. -/]
 theorem piFinsetMap_symm_apply [∀ i, Mul (π i)] (g : ∀ j : s.map f, π j) (i : s) :
     (piFinsetMap π f s).symm g i = g ⟨f i, mem_map_of_mem f i.2⟩ :=
-  (rfl)
+  piCongrLeft_symm_apply (fun j : s.map f ↦ π j) (s.equivMap f) g i
 
 /-- `MulEquiv.piFinsetMap` puts the coordinate at `i` in position `f i`. -/
 @[to_additive (attr := simp) /-- `AddEquiv.piFinsetMap` puts the coordinate at `i` in position

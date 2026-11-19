@@ -200,18 +200,12 @@ noncomputable def relabel (hf : ⋃ I : Finset A', 𝒜.footprint (I.map f) = un
       𝒜.exists_openPartialHomeomorph (map_subset_map.2 h) ⟨x.1, _⟩ hx
     -- The indices `J \ I` correspond to the indices `f J \ f I` of the original atlas.
     let σ : ↥(J \ I) ≃ ↥(J.map f \ I.map f) :=
-      Equiv.ofBijective (fun α ↦ ⟨f α, by simp [mem_sdiff.1 α.2]⟩)
-        ⟨fun α β hαβ ↦ Subtype.ext (f.injective (congrArg Subtype.val hαβ)), fun ⟨β, hβ⟩ ↦ by
-          obtain ⟨hβJ, hβI⟩ := mem_sdiff.1 hβ
-          obtain ⟨α, hα, rfl⟩ := mem_map.1 hβJ
-          exact ⟨⟨α, mem_sdiff.2 ⟨hα, fun h ↦ hβI (mem_map_of_mem f h)⟩⟩, rfl⟩⟩
+      ((J \ I).equivMap f).trans (Equiv.subtypeEquivRight fun _ ↦ by rw [map_sdiff])
     refine ⟨n, by rw [hn, sum_map], e.transHomeomorph ((Homeomorph.refl _).prodCongr
       (Homeomorph.piCongrLeft (Y := fun α : ↥(J.map f \ I.map f) ↦ E α) σ).symm), hxe,
       fun y hy ↦ ?_⟩
-    simp only [OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
-      Homeomorph.coe_prodCongr, Prod.map_snd, Homeomorph.piCongrLeft_symm_apply, he y hy]
     -- Both sides are `s_(f α)(y)` for `α ∈ J \ I`, since `σ α` is `f α` by definition.
-    rfl
+    exact funext fun α ↦ congrFun (he y hy) (σ α)
   exists_footprintMap_eq y := by
     obtain ⟨I, hI⟩ := mem_iUnion.1 (hf.ge (mem_univ y))
     obtain ⟨x, hx, hxy⟩ := 𝒜.mem_footprint.1 hI
@@ -292,6 +286,38 @@ theorem footprint_restrict (S : Set A)
     (hS : ⋃ (I : Finset A) (_ : (I : Set A) ⊆ S), 𝒜.footprint I = univ) (I : Finset S) :
     (𝒜.restrict S hS).footprint I = 𝒜.footprint (I.map (.subtype (· ∈ S))) :=
   footprint_relabel ..
+
+/-- The base identification of the subatlas on `S` is that of `𝒜`. -/
+@[simp]
+theorem baseHomeomorph_restrict (S : Set A)
+    (hS : ⋃ (I : Finset A) (_ : (I : Set A) ⊆ S), 𝒜.footprint I = univ) :
+    (𝒜.restrict S hS).baseHomeomorph = 𝒜.baseHomeomorph :=
+  (rfl)
+
+/-- The Kuranishi maps of the subatlas on `S` are those of `𝒜` at the indices in `S`. -/
+@[simp]
+theorem kuranishi_restrict (S : Set A)
+    (hS : ⋃ (I : Finset A) (_ : (I : Set A) ⊆ S), 𝒜.footprint I = univ) :
+    (𝒜.restrict S hS).kuranishi = relabelKuranishi (.subtype (· ∈ S)) 𝒜.kuranishi :=
+  (rfl)
+
+/-- The regular loci of the subatlas on `S` are those of `𝒜`. -/
+@[simp]
+theorem regLocus_restrict (S : Set A)
+    (hS : ⋃ (I : Finset A) (_ : (I : Set A) ⊆ S), 𝒜.footprint I = univ) (I : Finset S) :
+    (𝒜.restrict S hS).regLocus I = 𝒜.regLocus (I.map (.subtype (· ∈ S))) :=
+  (rfl)
+
+/-- The footprint maps of the subatlas on `S` are those of `𝒜`. -/
+theorem footprintMap_restrict (S : Set A)
+    (hS : ⋃ (I : Finset A) (_ : (I : Set A) ⊆ S), 𝒜.footprint I = univ) {I J : Finset S}
+    (h : I ⊆ J)
+    (x : kuranishiZeroSet (T := fun J ↦ T (J.map (.subtype (· ∈ S)))) (E := fun α : S ↦ E α)
+      (𝒜.restrict S hS).kuranishi I J) :
+    (𝒜.restrict S hS).footprintMap h x =
+      𝒜.footprintMap (map_subset_map.2 h) ⟨x.1,
+        kuranishiZeroSet_relabelKuranishi _ 𝒜.kuranishi I J ▸ 𝒜.kuranishi_restrict S hS ▸ x.2⟩ :=
+  (rfl)
 
 /-- **Finite subatlases.** On a compact space, the regular footprints `V_I` with `I` contained
 in some finite set `S` of indices cover, so that `𝒜.restrict S` is a finite subatlas. -/
