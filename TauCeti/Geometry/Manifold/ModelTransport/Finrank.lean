@@ -43,7 +43,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 
 /-- Transport a `ChartedSpace E M` structure to `ChartedSpace E' M` along
 `ContinuousLinearEquiv.ofFinrankEq` when `E` and `E'` have the same finite dimension over `𝕜`. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 def ofFinrankEq (M : Type*) [TopologicalSpace M] [ChartedSpace E M]
     (h : Module.finrank 𝕜 E = Module.finrank 𝕜 E') : ChartedSpace E' M :=
   (ContinuousLinearEquiv.ofFinrankEq h).toHomeomorph.chartedSpaceComp M

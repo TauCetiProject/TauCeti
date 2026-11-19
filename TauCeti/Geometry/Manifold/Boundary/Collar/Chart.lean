@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Basic
-public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
+public import TauCeti.Geometry.Manifold.ModelTransport.Homeomorph
 
 /-!
 # Collar charts on a manifold with boundary

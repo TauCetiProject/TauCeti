@@ -112,4 +112,12 @@ theorem coe_chartedSpaceCompDiffeomorph (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Typ
     ⇑(Φ.chartedSpaceCompDiffeomorph M) = id :=
   (rfl)
 
+/-- The inverse of `Φ.chartedSpaceCompDiffeomorph M` is the identity of `M`. -/
+@[simp]
+theorem coe_chartedSpaceCompDiffeomorph_symm (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I n M] :
+    letI := Φ.toHomeomorph.chartedSpaceComp M
+    ⇑(Φ.chartedSpaceCompDiffeomorph M).symm = id :=
+  (rfl)
+
 end Diffeomorph

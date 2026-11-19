@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Projectivization.ZeroLocus
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.Immersion.ModelChange
 import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
-import TauCeti.Geometry.Manifold.ModelTransport.Finrank
 import TauCeti.LinearAlgebra.Vandermonde
 
 /-!
@@ -365,24 +364,11 @@ private noncomputable def enriquesModelEquiv :
 
 /-- **The complex charts of the Enriques K3 cover.** The chart at a point reads the tangential
 coordinates of the analytic slice chart of `ℂℙ⁵` flattening the zero locus near that point, in
-`Fin 2 → ℂ` through `ChartedSpace.ofFinrankEq`. -/
+`Fin 2 → ℂ` through `enriquesModelEquiv`. -/
 @[no_expose]
 noncomputable instance instChartedSpaceEnriquesZeroSet : ChartedSpace (Fin 2 → ℂ) enriquesZeroSet :=
   letI := enriquesZeroSetSliceChartedSpace
-  ChartedSpace.ofFinrankEq (𝕜 := ℂ) (E := Fin (5 - Fintype.card (Fin 3)) → ℂ) enriquesZeroSet
-    (by simp)
-
-/-- The charts on `Fin 2 → ℂ` are the slice charts followed by the analytic diffeomorphism
-`enriquesModelEquiv`. -/
-private theorem instChartedSpaceEnriquesZeroSet_eq :
-    instChartedSpaceEnriquesZeroSet =
-      letI := enriquesZeroSetSliceChartedSpace
-      (enriquesModelEquiv.toContDiffDiffeomorph ω).toHomeomorph.chartedSpaceComp
-        enriquesZeroSet := by
-  unfold instChartedSpaceEnriquesZeroSet ChartedSpace.ofFinrankEq
-  congr 1
-  ext
-  simp [enriquesModelEquiv]
+  (enriquesModelEquiv.toContDiffDiffeomorph ω).toHomeomorph.chartedSpaceComp enriquesZeroSet
 
 /-- **The Enriques K3 cover is a complex surface.** Its atlas is analytic, and `C^r` for every
 `r`. -/
@@ -390,9 +376,8 @@ instance instIsManifoldEnriquesZeroSet (r : ℕ∞ω) :
     IsManifold 𝓘(ℂ, Fin 2 → ℂ) r enriquesZeroSet := by
   let := enriquesZeroSetSliceChartedSpace
   have := isManifold_enriquesZeroSetSlice ω
-  have : IsManifold 𝓘(ℂ, Fin 2 → ℂ) ω enriquesZeroSet := by
-    rw [instChartedSpaceEnriquesZeroSet_eq]
-    exact (enriquesModelEquiv.toContDiffDiffeomorph ω).isManifold_chartedSpaceComp enriquesZeroSet
+  have : IsManifold 𝓘(ℂ, Fin 2 → ℂ) ω enriquesZeroSet :=
+    (enriquesModelEquiv.toContDiffDiffeomorph ω).isManifold_chartedSpaceComp enriquesZeroSet
   exact IsManifold.of_le le_top
 
 /-- **The Enriques K3 cover is holomorphically embedded in `ℂℙ⁵`.** The inclusion of the zero
@@ -403,7 +388,6 @@ theorem isSmoothEmbedding_subtypeVal_enriquesZeroSet (r : ℕ∞ω) :
   let := enriquesZeroSetSliceChartedSpace
   have := isManifold_enriquesZeroSetSlice ω
   -- Read the slice-chart embedding in the charts on `Fin 2 → ℂ`.
-  rw [instChartedSpaceEnriquesZeroSet_eq]
   exact (enriquesModelEquiv.toContDiffDiffeomorph ω).isSmoothEmbedding_chartedSpaceComp
     enriquesModelEquiv.symm
     (by simp only [modelWithCornersSelf_coe, Set.range_id]

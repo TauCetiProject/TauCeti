@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Chart
+import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 
 /-!
 # The manifold structure of collar coordinates
