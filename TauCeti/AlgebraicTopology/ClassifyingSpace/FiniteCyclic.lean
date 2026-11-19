@@ -24,8 +24,10 @@ Let `G` be a finite cyclic group of order `n`. The singular homology of Milnor's
 With integral coefficients, `Hᵢ(BG; ℤ) ≅ ℤ/n` in odd degree
 (`TauCeti.classifyingSpaceSingularHomologyIntLinearEquivOdd`), and `Hᵢ(BG; ℤ) = 0` in positive
 even degree (`TauCeti.subsingleton_classifyingSpace_singularHomology_int_of_even`); in particular
-`H₂(BG; ℤ) = 0`. If `n` vanishes in a nontrivial ring `k`, then `Hᵢ(BG; k)` has rank one in every
-degree (`TauCeti.finrank_classifyingSpace_singularHomology_of_natCast_card_eq_zero`).
+`H₂(BG; ℤ) = 0`. If `n` vanishes in `k`, then `Hᵢ(BG; k)` has `finrank` one in every degree
+(`TauCeti.finrank_classifyingSpace_singularHomology_of_natCast_card_eq_zero`), and it is
+finite-dimensional when `k` is a field
+(`TauCeti.finite_classifyingSpace_singularHomology_of_natCast_card_eq_zero`).
 
 Dually, the singular cohomology of `BG` with coefficients in a `k`-module `M` is
 
@@ -33,12 +35,13 @@ Dually, the singular cohomology of `BG` with coefficients in a `k`-module `M` is
 * `Hⁱ(BG; M) ≅ M / n M` for positive even `i`
   (`TauCeti.classifyingSpaceSingularCohomologyLinearEquivEven`).
 
-When `n` kills `M`, both are `M`, and so is `H⁰(BG; M)`; hence `Hⁱ(BG; M)` has the rank of `M` in
-every degree (`TauCeti.finrank_classifyingSpace_singularCohomology_of_isTorsionBy`). In particular
-the mod `p` cohomology of the classifying space of a cyclic group of order `p` is one-dimensional
-in every degree (`TauCeti.finrank_classifyingSpace_singularCohomology_zmod`). Together with the
-Künneth formula, this computes the mod `p` cohomology of `B(ℤ/p × ℤ/p)` in
-`TauCeti.AlgebraicTopology.ClassifyingSpace.ElementaryAbelian`.
+When `n` kills `M`, both are `M`, and so is `H⁰(BG; M)`; hence `Hⁱ(BG; M)` has the same `finrank`
+as `M` in every degree (`TauCeti.finrank_classifyingSpace_singularCohomology_of_isTorsionBy`). In
+particular, if `p` divides `n`, then `Hⁱ(BG; ℤ/p)` has `finrank` one over `ℤ/p` in every degree
+(`TauCeti.finrank_classifyingSpace_singularCohomology_zmod`); for a cyclic group of prime order
+`p`, its mod `p` cohomology is one-dimensional in every degree. Together with the Künneth formula,
+this computes the mod `p` cohomology of `B(ℤ/p × ℤ/p)` in
+`TauCeti.AlgebraicTopology.ClassifyingSpace.FiniteCyclic.Prod`.
 
 These are computed by transport, not topologically. The singular homology and cohomology of the
 classifying space are the group homology and cohomology of `G` with trivial coefficients
@@ -72,11 +75,13 @@ is cyclic.
 * `TauCeti.subsingleton_classifyingSpace_singularHomology_int_of_even`: `Hᵢ(BG; ℤ) = 0` for
   positive even `i`.
 * `TauCeti.finrank_classifyingSpace_singularHomology_of_natCast_card_eq_zero`: if `|G|` vanishes in
-  `k`, then `Hᵢ(BG; k)` has rank one for every `i`.
+  `k`, then `Hᵢ(BG; k)` has `finrank` one for every `i`.
+* `TauCeti.finite_classifyingSpace_singularHomology_of_natCast_card_eq_zero`: if `|G|` vanishes in
+  the field `k`, then `Hᵢ(BG; k)` is finite-dimensional for every `i`.
 * `TauCeti.finrank_classifyingSpace_singularCohomology_of_isTorsionBy`: if `|G|` kills `M`, then
-  `Hⁱ(BG; M)` has the rank of `M` for every `i`.
-* `TauCeti.finrank_classifyingSpace_singularCohomology_zmod`: if `|G| = p`, then `Hⁱ(BG; ℤ/p)` is
-  one-dimensional over `ℤ/p` for every `i`.
+  `Hⁱ(BG; M)` has the same `finrank` as `M` for every `i`.
+* `TauCeti.finrank_classifyingSpace_singularCohomology_zmod`: if `p` divides `|G|`, then
+  `Hⁱ(BG; ℤ/p)` has `finrank` one over `ℤ/p` for every `i`.
 
 ## References
 
@@ -153,17 +158,25 @@ theorem subsingleton_classifyingSpace_singularHomology_int_of_even {G : Type} [G
     (IsSMulRegular.of_ne_zero (Nat.cast_ne_zero.2 Nat.card_pos.ne')) i hi
 
 /-- **The homology of the classifying space of a finite cyclic group with coefficients in a ring
-of characteristic dividing its order.** If the order of `G` vanishes in the nontrivial commutative
-ring `k`, then `Hᵢ(BG; k)` has rank one over `k` for every `i`. -/
-theorem finrank_classifyingSpace_singularHomology_of_natCast_card_eq_zero [Nontrivial k]
+of characteristic dividing its order.** If the order of `G` vanishes in the commutative ring `k`,
+then `Hᵢ(BG; k)` has `finrank` one over `k` for every `i`. -/
+theorem finrank_classifyingSpace_singularHomology_of_natCast_card_eq_zero
     (hk : (Nat.card G : k) = 0) (i : ℕ) :
     Module.finrank k (((singularChains k).obj (TopCat.of (classifyingSpace G))).homology i) =
       1 :=
   (classifyingSpaceSingularHomologyIsoGroupHomology k G i).toLinearEquiv.finrank_eq.trans <|
     (Rep.FiniteCyclicGroup.finrank_groupHomology_trivial_of_isTorsionBy k k
-      (fun x ↦ by rw [hk, zero_smul]) i).trans (Module.finrank_self k)
+      (fun x ↦ by rw [hk, zero_smul]) i).trans (CommSemiring.finrank_self k)
 
 end IsCyclic
+
+/-- Over a field in which the order of a finite cyclic group `G` vanishes, the homology of `BG` is
+finite-dimensional in every degree. -/
+theorem finite_classifyingSpace_singularHomology_of_natCast_card_eq_zero (k : Type u) [Field k]
+    {G : Type u} [Group G] [Finite G] [IsCyclic G] (hk : (Nat.card G : k) = 0) (i : ℕ) :
+    Module.Finite k (((singularChains k).obj (TopCat.of (classifyingSpace G))).homology i) :=
+  Module.finite_of_finrank_eq_succ
+    (finrank_classifyingSpace_singularHomology_of_natCast_card_eq_zero k hk i)
 
 /-! ### Cohomology -/
 
@@ -181,6 +194,27 @@ def classifyingSpaceSingularCohomologyLinearEquivOdd (i : ℕ) (hi : Odd i) :
   (classifyingSpaceSingularCohomologyIsoGroupCohomology k G M i).toLinearEquiv.trans
     (Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivOdd k g hg M i hi)
 
+/-- The odd-degree identification is the comparison with group cohomology followed by the
+odd-degree computation of the group cohomology of `G`. -/
+@[simp]
+theorem classifyingSpaceSingularCohomologyLinearEquivOdd_apply (i : ℕ) (hi : Odd i)
+    (x : (TopCat.of (classifyingSpace G)).singularCohomology (ModuleCat.of k k) k
+      (ModuleCat.of k M) i) :
+    classifyingSpaceSingularCohomologyLinearEquivOdd k g hg M i hi x =
+      Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivOdd k g hg M i hi
+        ((classifyingSpaceSingularCohomologyIsoGroupCohomology k G M i).hom x) :=
+  (rfl)
+
+/-- The inverse of the odd-degree identification sends `x ∈ M[|G|]` to the singular cohomology
+class corresponding to the group cohomology class of `x`. -/
+@[simp]
+theorem classifyingSpaceSingularCohomologyLinearEquivOdd_symm_apply (i : ℕ) (hi : Odd i)
+    (x : Submodule.torsionBy k M (Nat.card G : k)) :
+    (classifyingSpaceSingularCohomologyLinearEquivOdd k g hg M i hi).symm x =
+      (classifyingSpaceSingularCohomologyIsoGroupCohomology k G M i).inv
+        ((Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivOdd k g hg M i hi).symm x) :=
+  (rfl)
+
 /-- **Even-degree cohomology of the classifying space of a finite cyclic group.** If `G` is a
 finite group generated by `g` and `M` is a `k`-module, then `Hⁱ(BG; M) ≃ M / |G| M` for every
 positive even `i`. -/
@@ -191,6 +225,27 @@ def classifyingSpaceSingularCohomologyLinearEquivEven (i : ℕ) [NeZero i]
   (classifyingSpaceSingularCohomologyIsoGroupCohomology k G M i).toLinearEquiv.trans
     (Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivEven k g hg M i hi)
 
+/-- The even-degree identification is the comparison with group cohomology followed by the
+even-degree computation of the group cohomology of `G`. -/
+@[simp]
+theorem classifyingSpaceSingularCohomologyLinearEquivEven_apply (i : ℕ) [NeZero i] (hi : Even i)
+    (x : (TopCat.of (classifyingSpace G)).singularCohomology (ModuleCat.of k k) k
+      (ModuleCat.of k M) i) :
+    classifyingSpaceSingularCohomologyLinearEquivEven k g hg M i hi x =
+      Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivEven k g hg M i hi
+        ((classifyingSpaceSingularCohomologyIsoGroupCohomology k G M i).hom x) :=
+  (rfl)
+
+/-- The inverse of the even-degree identification sends a residue class in `M / |G| M` to the
+singular cohomology class corresponding to its group cohomology class. -/
+@[simp]
+theorem classifyingSpaceSingularCohomologyLinearEquivEven_symm_apply (i : ℕ) [NeZero i]
+    (hi : Even i) (x : QuotSMulTop (Nat.card G : k) M) :
+    (classifyingSpaceSingularCohomologyLinearEquivEven k g hg M i hi).symm x =
+      (classifyingSpaceSingularCohomologyIsoGroupCohomology k G M i).inv
+        ((Rep.FiniteCyclicGroup.groupCohomologyTrivialLinearEquivEven k g hg M i hi).symm x) :=
+  (rfl)
+
 end CohomologyGenerator
 
 section CohomologyIsCyclic
@@ -200,7 +255,7 @@ variable (k : Type u) [CommRing k] {G : Type u} [Group G] [Finite G] [IsCyclic G
 
 /-- **The cohomology of the classifying space of a finite cyclic group with coefficients killed
 by its order.** If multiplication by `|G|` vanishes on the `k`-module `M`, then `Hⁱ(BG; M)` has
-the same rank over `k` as `M` in every degree `i`. -/
+the same `finrank` over `k` as `M` in every degree `i`. -/
 theorem finrank_classifyingSpace_singularCohomology_of_isTorsionBy
     (hM : Module.IsTorsionBy k M (Nat.card G : k)) (i : ℕ) :
     Module.finrank k
@@ -210,15 +265,17 @@ theorem finrank_classifyingSpace_singularCohomology_of_isTorsionBy
   (classifyingSpaceSingularCohomologyIsoGroupCohomology k G M i).toLinearEquiv.finrank_eq.trans
     (Rep.FiniteCyclicGroup.finrank_groupCohomology_trivial_of_isTorsionBy k M hM i)
 
-/-- **The mod `p` cohomology of the classifying space of `ℤ/p`**: if `G` is a cyclic group of
-order `p`, then `Hⁱ(BG; ℤ/p)` is one-dimensional over `ℤ/p` in every degree `i`. -/
-theorem finrank_classifyingSpace_singularCohomology_zmod {p : ℕ} [Fact (1 < p)] {G : Type}
-    [Group G] [Finite G] [IsCyclic G] (hG : Nat.card G = p) (i : ℕ) :
+/-- **The mod `p` cohomology of the classifying space of `ℤ/p`**: if `G` is a finite cyclic group
+whose order is divisible by `p`, then `Hⁱ(BG; ℤ/p)` has `finrank` one over `ℤ/p` in every
+degree `i`; for `p` prime, it is one-dimensional over the field `𝔽_p`. -/
+theorem finrank_classifyingSpace_singularCohomology_zmod {p : ℕ} {G : Type}
+    [Group G] [Finite G] [IsCyclic G] (hG : p ∣ Nat.card G) (i : ℕ) :
     Module.finrank (ZMod p)
         ((TopCat.of (classifyingSpace G)).singularCohomology (ModuleCat.of (ZMod p) (ZMod p))
           (ZMod p) (ModuleCat.of (ZMod p) (ZMod p)) i) = 1 := by
   rw [finrank_classifyingSpace_singularCohomology_of_isTorsionBy (ZMod p) (ZMod p)
-    (fun x ↦ by rw [hG, ZMod.natCast_self, zero_smul]) i, Module.finrank_self]
+    (fun x ↦ by rw [(ZMod.natCast_eq_zero_iff _ _).2 hG, zero_smul]) i,
+    CommSemiring.finrank_self]
 
 end CohomologyIsCyclic
 

@@ -51,7 +51,7 @@ and `Hᵢ(G, ℤ) = 0` in positive even degree.
   is injective on `A`, then `Hᵢ(G, A)` vanishes in positive even degree; in particular
   `Hᵢ(G, ℤ) = 0` (`Rep.FiniteCyclicGroup.subsingleton_groupHomology_trivial_int_of_even`).
 * `Rep.FiniteCyclicGroup.finrank_groupHomology_trivial_of_isTorsionBy`: if `|G|` kills `A`, then
-  `Hᵢ(G, A)` has the rank of `A` in every degree.
+  `Hᵢ(G, A)` has the same `finrank` as `A` in every degree.
 
 ## References
 
@@ -231,7 +231,7 @@ theorem subsingleton_groupHomology_trivial_int_of_even {G : Type} [Group G] [Fin
 
 /-- **The homology of a finite cyclic group with coefficients killed by its order.** If `G` is a
 finite cyclic group and `A` is a `k`-module with the trivial action on which multiplication by
-`|G|` vanishes, then `Hᵢ(G, A)` has the same rank as `A` in every degree `i`. -/
+`|G|` vanishes, then `Hᵢ(G, A)` has the same `finrank` as `A` in every degree `i`. -/
 theorem finrank_groupHomology_trivial_of_isTorsionBy
     (hA : Module.IsTorsionBy k A (Nat.card G : k)) (i : ℕ) :
     Module.finrank k (groupHomology (Rep.trivial k G A) i) = Module.finrank k A := by
@@ -246,7 +246,7 @@ theorem finrank_groupHomology_trivial_of_isTorsionBy
       rw [(groupHomologyTrivialLinearEquivEven k A g hg i hi).finrank_eq,
         (Module.isTorsionBy_iff_torsionBy_eq_top _).1 hA, finrank_top]
   · rw [(groupHomologyTrivialLinearEquivOdd k A g hg i hi).finrank_eq,
-      (QuotSMulTop.equivOfIsTorsionBy hA).finrank_eq]
+      hA.quotSMulTopEquiv.finrank_eq]
 
 end IsCyclic
 
