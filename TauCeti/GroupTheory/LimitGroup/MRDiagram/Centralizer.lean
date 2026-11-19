@@ -180,7 +180,7 @@ theorem isSound_centralizerExt (D : MRDiagram (of : G →* CentralizerExt u 1)) 
       fun _ => t 0 :=
   isSound_iff.2 fun φ _ => by
     simpa [V_singleton_commutatorElement, mem_centralizer_singleton_iff] using
-      ((commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map φ).symm.eq
+      ((commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map φ).symm
 
 /-- The twist diagram of `G(u, ℤ)` is complete exactly when every element commuting with the
 centralizer of `u` is a power of `u`. -/
