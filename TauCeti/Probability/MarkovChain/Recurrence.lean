@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.MarkovChain.Visits
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
+public import TauCeti.Probability.Process.HittingTime.Orbit
 
 /-!
 # Recurrence and communicating classes
@@ -28,6 +29,14 @@ supply the state-classification input to coupling arguments.
 On a finite nonempty state space some state is recurrent: the chain spends its infinitely many
 time steps among finitely many states, so some diagonal Green function diverges. Hence every
 state of a finite irreducible chain is recurrent.
+
+As checks on the definitions, for a deterministic kernel `deterministic f hf` the first positive
+return time to `x` is almost surely `Function.minimalPeriod f x` on `Function.periodicPts f` and
+`⊤` off it, the mean return time is `Function.minimalPeriod f x` on `Function.periodicPts f` and
+`∞` off it, and recurrence (respectively transience) coincides with membership (respectively
+non-membership) in `Function.periodicPts f`; for a constant point-mass kernel `const S (dirac a)`
+the mean return time is `1` at `a` and `∞` away from `a`, distinguishing positive return times
+from time-zero entrance.
 
 The first entrance and first return use `hittingAfter` starting at zero and one,
 respectively. The class-property and hitting results need only measurable singletons;
@@ -321,5 +330,77 @@ theorem isRecurrent_of_finite [Finite S] [IsIrreducible Measure.count κ] (x : S
   exact (isRecurrent_iff_isRecurrent y x).mp hy
 
 end Finite
+
+/-! ### Deterministic and constant-kernel evaluations -/
+
+section Deterministic
+
+open scoped Classical in
+/-- Under `markovChainLaw (Measure.dirac x) (deterministic f hf)`, the first positive return time
+to `x` is almost surely `Function.minimalPeriod f x` when `x` is periodic under `f`, and `⊤`
+otherwise. -/
+theorem ae_hittingAfter_one_deterministic {f : S → S} (hf : Measurable f) (x : S) :
+    ∀ᵐ w ∂markovChainLaw (Measure.dirac x) (deterministic f hf),
+      hittingAfter (fun n w => w n) {x} 1 w =
+        if x ∈ Function.periodicPts f then
+          (Function.minimalPeriod f x : WithTop ℕ)
+        else ⊤ := by
+  simp [markovChainLaw_dirac_deterministic]
+
+open scoped Classical in
+/-- Under `deterministic f hf`, the mean return time of `x` is `Function.minimalPeriod f x` when
+`x` is periodic under `f`, and `∞` otherwise. -/
+@[simp]
+theorem meanReturnTime_deterministic {f : S → S} (hf : Measurable f) (x : S) :
+    (deterministic f hf).meanReturnTime x =
+      if x ∈ Function.periodicPts f then (Function.minimalPeriod f x : ℝ≥0∞) else ∞ := by
+  rw [meanReturnTime_def, markovChainLaw_dirac_deterministic, lintegral_dirac,
+    hittingAfter_one_iterate]
+  split_ifs
+  · exact ENat.toENNReal_coe _
+  · exact ENat.toENNReal_top
+
+/-- Under `deterministic f hf`, `x` is recurrent if and only if `x` is a periodic point of `f`. -/
+@[simp]
+theorem isRecurrent_deterministic {f : S → S} (hf : Measurable f) (x : S) :
+    (deterministic f hf).IsRecurrent x ↔ x ∈ Function.periodicPts f := by
+  classical
+  rw [isRecurrent_iff, markovChainLaw_dirac_deterministic, Measure.dirac_apply]
+  simp [Set.indicator_apply]
+
+/-- Under `deterministic f hf`, `x` is transient if and only if `x` is not a periodic point of
+`f`. -/
+@[simp]
+theorem isTransient_deterministic {f : S → S} (hf : Measurable f) (x : S) :
+    (deterministic f hf).IsTransient x ↔ x ∉ Function.periodicPts f := by
+  rw [isTransient_iff, isRecurrent_deterministic]
+
+/-- Under the constant kernel `const S (Measure.dirac a)` sending every state to `a`, the mean
+return time is `1` at `a` and `∞` at every `x ≠ a` (distinguishing positive return times
+`t ≥ 1` from time-zero entrance). -/
+@[simp]
+theorem meanReturnTime_const_dirac [DecidableEq S] (a x : S) :
+    (const S (Measure.dirac a)).meanReturnTime x = if x = a then 1 else ∞ := by
+  have hconst : const S (Measure.dirac a) = deterministic (fun _ : S => a) measurable_const := by
+    ext1 _
+    simp [deterministic_apply]
+  rw [meanReturnTime_congr hconst, meanReturnTime_deterministic]
+  by_cases hxa : x = a
+  · subst hxa
+    have hper : x ∈ Function.periodicPts (fun _ : S => x) :=
+      Function.mk_mem_periodicPts zero_lt_one rfl
+    have hmin : Function.minimalPeriod (fun _ : S => x) x = 1 :=
+      Function.minimalPeriod_eq_one_iff_isFixedPt.mpr rfl
+    simp [hper, hmin]
+  · have hnper : x ∉ Function.periodicPts (fun _ : S => a) := by
+      rw [Function.mem_periodicPts]
+      rintro ⟨n, hn, hfix⟩
+      obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+      have ha : (fun _ : S => a)^[k + 1] x = a := by
+        rw [Function.iterate_succ_apply']
+      exact hxa (hfix.symm.trans ha)
+    simp [hxa, hnper]
+
+end Deterministic
 
 end ProbabilityTheory.Kernel

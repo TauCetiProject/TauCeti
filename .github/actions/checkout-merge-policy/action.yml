@@ -4,12 +4,11 @@ description: >-
   reusable review workflow. Read-only readiness and reporting consumers use this policy.
 
 # This is the only place in TauCeti that names the policy commit outside the reusable workflow `uses:` lines,
-# which GitHub requires to be literal. scripts/test_workflow_pins.py fails if the pins disagree.
+# which GitHub requires to be literal. Keep the pins identical.
 # To re-pin, replace the SHA everywhere at once:
 #   git grep -l <old-sha> | xargs sed -i 's/<old-sha>/<new-sha>/g'
 #
-# Production callers use a trusted checkout. The independent infrastructure tests also
-# use this action from an unprivileged PR checkout, without secrets or write access.
+# Callers use a trusted checkout.
 # A sparse checkout must include .github/actions/checkout-merge-policy.
 
 runs:

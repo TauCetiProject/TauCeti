@@ -36,7 +36,7 @@ For maps out of a circle or a sphere, the based maps are an iterated loop space,
 be the loop-space shift gives the split short exact sequences
 `1 → π_{m+1+k}(Q) → π_{m+1}(Map(Sᵏ, Q)) → π_{m+1}(Q) → 1` of
 `TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FreeLoop` and
-`TauCeti.AlgebraicTopology.Homotopy.LoopSpace.SphereMap`.
+`TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Sphere.Map`.
 
 ## References
 
