@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Determinant
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -53,6 +54,8 @@ A measure of temperate growth is finite on compact sets.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
+* `Function.HasTemperateGrowth.repr`: the coordinates of `f` in a finite basis have temperate
+  growth.
 * `Function.HasTemperateGrowth.basis_repr_fderiv_apply`: so do the coordinates of `Df(x) v` in a
   basis.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
@@ -112,6 +115,16 @@ growth. -/
 theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
     (fun x ↦ _root_.fderiv ℝ f x v).HasTemperateGrowth :=
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
+
+/-- The coordinates `x ↦ b.repr (f x) i` of a function of temperate growth in a finite basis `b`
+have temperate growth. -/
+theorem repr {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜]
+    [Finite ι] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+    (hf : f.HasTemperateGrowth) (b : Module.Basis ι 𝕜 F) (i : ι) :
+    (fun x ↦ b.repr (f x) i).HasTemperateGrowth := by
+  have := b.finiteDimensional_of_finite
+  simpa [Function.comp_def] using
+    ((LinearMap.toContinuousLinearMap (b.coord i)).restrictScalars ℝ).hasTemperateGrowth.comp hf
 
 /-- The coordinates in a basis `b` of the directional derivative `x ↦ Df(x) v` of a function `f` of
 temperate growth have temperate growth. These are the coefficients of the chain rule for

@@ -24,7 +24,7 @@ Hilbert-space values with Plancherel's theorem transfer to any finite-dimensiona
 ## Main declarations
 
 * `BesselPotentialSpace.postcomp`: the operator `H^{s,p}(E, F) →L[ℂ] H^{s,p}(E, G)` induced by
-  `L : F →L[ℂ] G`.
+  `L : F →L[ℂ] G`, of norm at most `‖L‖` (`BesselPotentialSpace.norm_postcomp_le`).
 * `SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM`: on Schwartz functions it is
   `u ↦ L ∘ u`.
 -/
@@ -74,6 +74,10 @@ theorem toDistr_postcomp_apply (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) (φ : �
 theorem toLp_postcomp (L : F →L[ℂ] G) (f : H^{s, p}(E, F)) :
     (postcomp E s p L f).toLp = L.compLp f.toLp :=
   (rfl)
+
+/-- The operator induced by `L` on `H^{s,p}` has norm at most `‖L‖`. -/
+theorem norm_postcomp_le (L : F →L[ℂ] G) : ‖postcomp E s p L‖ ≤ ‖L‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg L) _
 
 end BesselPotentialSpace
 

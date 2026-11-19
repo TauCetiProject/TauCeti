@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -46,6 +47,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   continuous map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
+* `SchwartzMap.bilinLeftCLM_eq_sum_smulLeftCLM`: the expansion of `x ↦ B (u x) (g x)` in a basis
+  of `G` as a finite sum of scalar multiplications.
 * `IsOpen.eqOn_of_integral_clm_apply_eq`: two operator families continuous on an open set `U`
   agree there if they have the same integrals against compactly supported Schwartz functions
   supported in `U`.
@@ -280,6 +283,29 @@ theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → 𝕜} (hg : ¬g.HasTemp
   simp [smulLeftCLM, hg]
 
 end Smul
+
+section Bilin
+
+variable {𝕜 D F G K ι : Type*} [RCLike 𝕜] [NormedAddCommGroup D] [NormedSpace ℝ D]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G]
+  [NormedAddCommGroup K] [NormedSpace ℝ K] [NormedSpace 𝕜 K] [Fintype ι]
+
+/-- **Expansion of a bilinear multiplier in a basis.** If `gₖ` are the coordinates of `g` in a
+basis `bₖ` of `G`, then `B (u x) (g x) = ∑ₖ gₖ x • (B.flip bₖ) (u x)`: the operator
+`u ↦ (x ↦ B (u x) (g x))` is a finite sum of scalar multiplications by the `gₖ` after the pointwise
+maps `B.flip bₖ`. -/
+theorem bilinLeftCLM_eq_sum_smulLeftCLM (b : Module.Basis ι 𝕜 G) (B : F →L[𝕜] G →L[𝕜] K)
+    {g : D → G} (hg : g.HasTemperateGrowth) (u : 𝓢(D, F)) :
+    bilinLeftCLM B hg u =
+      ∑ k, smulLeftCLM K (fun x ↦ b.repr (g x) k) (u.postcompCLM (B.flip (b k))) := by
+  ext x
+  have hx : B (u x) (g x) = ∑ k, b.repr (g x) k • B (u x) (b k) := by
+    conv_lhs => rw [← b.sum_repr (g x)]
+    simp only [map_sum, map_smul]
+  simp [smulLeftCLM_apply_apply (hg.repr b _), hx]
+
+end Bilin
 
 section Conj
 
