@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Relative.FirstJet
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
-# First jets of relative Poincaré primitives on a vector bundle
+# First jets of relative Poincaré primitives on a vector bundle and on a tube
 
 Let `V → B` be a `C¹` real vector bundle, and let `P` be its relative Poincaré operator
 (`TauCeti.vectorBundlePoincareHomotopy`), which integrates the time contraction of the pullback of
@@ -40,10 +40,22 @@ is a primitive with zero first jet along the zero section. Vanishing of `η` as 
 tensor is needed here: vanishing of its restriction to the zero section alone does not make the
 first jet of `P η` vanish.
 
+Everything transports along a diffeomorphism `Φ` from the total space onto a manifold `M`, such as
+a tubular neighbourhood of an embedded submanifold
+(`TauCeti.SmoothEmbedding.exists_isSmoothForm_relative_primitive`). With the zero-section inclusion
+`i = Φ ∘ 0` and the retraction `ρ = Φ ∘ 0 ∘ π ∘ Φ⁻¹`, every closed `C^r` form `η` of positive
+degree on `M`, with `r ≥ 1`, has a `C^r` form `β` with `d β = η - ρ^* η` that vanishes along
+`i` as a full ambient tensor (`Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback`), and
+`d β = η` when `i^* η = 0` (`Diffeomorph.exists_isSmoothForm_relative_primitive`). This needs `Φ`
+and the bundle to be `C^(r + 1)`. Since pullback along a `C¹` map preserves zero first jets
+(`TauCeti.hasFDerivWithinAt_inChartAt_mpullback_of_apply_eq_zero`), `β` moreover has zero first
+jet at every point of `i` where `η` vanishes as a full ambient tensor.
+
 A primitive with zero first jet along a submanifold is the input to the relative Moser argument
 which, for two symplectic forms agreeing on the full ambient tangent spaces along a compact
 submanifold, produces a neighbourhood diffeomorphism fixing the submanifold whose differential is
-the identity along it.
+the identity along it
+(`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_embedding_eventually_mpullback_eq`).
 
 ## Main results
 
@@ -52,6 +64,9 @@ the identity along it.
 * `TauCeti.hasFDerivWithinAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection`,
   `TauCeti.hasFDerivAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection`: the relative
   Poincaré primitive of a form vanishing at `0_b` has zero first jet at `0_b`.
+* `Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback`,
+  `Diffeomorph.exists_isSmoothForm_relative_primitive`: the relative Poincaré lemma on a tube,
+  with primitives of zero first jet where the form vanishes along the core.
 
 ## References
 
@@ -76,6 +91,8 @@ variable {B FV : Type*} {V : B → Type*} [∀ b, AddCommGroup (V b)] [∀ b, Mo
   [∀ b, TopologicalSpace (V b)] [TopologicalSpace (TotalSpace FV V)] [FiberBundle FV V]
   [VectorBundle ℝ FV V]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+
+section Chart
 
 variable [IsManifold IB 1 B] [ContMDiffVectorBundle 1 FV V IB]
 
@@ -177,5 +194,99 @@ theorem hasFDerivAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection [IB.Bound
       (extChartAt (IB.prod 𝓘(ℝ, FV)) (zeroSection FV V b) (zeroSection FV V b)) := by
   have h := hasFDerivWithinAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection hη hb
   rwa [ModelWithCorners.range_eq_univ, hasFDerivWithinAt_univ] at h
+
+end Chart
+
+/-! ### Transport to a tube -/
+
+section Tube
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  {n : WithTop ℕ∞} [IsManifold IB n B] [ContMDiffVectorBundle n FV V IB] [CompleteSpace F]
+
+/-- **The relative Poincaré lemma on a tube.** Let `Φ` be a `C^n` diffeomorphism from the total
+space of a `C^n` vector bundle onto `M`, such as a tubular neighbourhood, with zero-section
+inclusion `i = Φ ∘ 0` and retraction `ρ = Φ ∘ 0 ∘ π ∘ Φ⁻¹` onto its image. Every closed `C^r`
+form `η` of positive degree on `M`, with `1 ≤ r` and `r + 1 ≤ n`, has a `C^r` form `β` with
+`d β = η - ρ^* η` that vanishes along `i` as a full ambient tensor. Moreover `β` has zero first
+jet at every point of `i` where `η` vanishes as a full ambient tensor: its coordinate expression
+in the chart at that point has zero derivative within the model range at its chart point. -/
+theorem _root_.Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback
+    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) {r : ℕ∞} (hr : 1 ≤ r) (hn : r + 1 ≤ n)
+    {η : RoughForm I M F (k + 1)} (hη : IsSmoothForm I r η) (hclosed : mextDeriv η = 0) :
+    ∃ β : RoughForm I M F k, IsSmoothForm I r β ∧
+      mextDeriv β = η - mpullback I I (Φ ∘ zeroSection FV V ∘ π FV V ∘ Φ.symm) η ∧
+      (∀ b, β (Φ (zeroSection FV V b)) = 0) ∧
+      ∀ b, η (Φ (zeroSection FV V b)) = 0 →
+        HasFDerivWithinAt (β.inChartAt (Φ (zeroSection FV V b)))
+          (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F) (range I)
+          (extChartAt I (Φ (zeroSection FV V b)) (Φ (zeroSection FV V b))) := by
+  have hr' : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
+  have h2 : (2 : WithTop ℕ∞) ≤ n := le_trans (by rw [← one_add_one_eq_two]; gcongr) hn
+  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by norm_num) h2).ne'
+  have : IsManifold IB ((r : WithTop ℕ∞) + 1) B := .of_le hn
+  have : ContMDiffVectorBundle ((r : WithTop ℕ∞) + 1) FV V IB := .of_le hn
+  have : IsManifold IB 2 B := .of_le h2
+  have : ContMDiffVectorBundle 2 FV V IB := .of_le h2
+  have hη₀ := hη.mpullback (Φ.contMDiff.of_le hn)
+  have hβ₀ := hη₀.vectorBundlePoincareHomotopy
+  refine ⟨mpullback I (IB.prod 𝓘(ℝ, FV)) Φ.symm (vectorBundlePoincareHomotopy
+    (mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η)), hβ₀.mpullback (Φ.symm.contMDiff.of_le hn), ?_,
+    fun b ↦ ?_, fun b hb ↦ ?_⟩
+  · have hd := Φ.mdifferentiable hn0
+    have hds := Φ.symm.mdifferentiable hn0
+    have hZ := (contMDiff_zeroSection ℝ V (IB := IB) (F := FV) (n := 1)).mdifferentiable one_ne_zero
+    have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
+    rw [← mpullback_mextDeriv (Φ.symm.contMDiff.of_le h2)
+        ((isSmoothBundleForm_def 1 _).mpr (hβ₀.of_le hr').contMDiff),
+      mextDeriv_vectorBundlePoincareHomotopy (hη₀.of_le hr')
+        (hη.of_le hr' |>.mextDeriv_mpullback_eq_zero hclosed (Φ.contMDiff.of_le h2)),
+      mpullback_sub, mpullback_symm_mpullback hn0, ← mpullback_comp (hZ.comp hp) hd,
+      ← mpullback_comp hds (hd.comp (hZ.comp hp))]
+    -- Both retractions are `Φ ∘ 0 ∘ π ∘ Φ⁻¹`, associated differently.
+    simp only [Function.comp_assoc]
+  · exact mpullback_apply_eq_zero ((congrArg _ (Φ.symm_apply_apply _)).trans
+      (vectorBundlePoincareHomotopy_zeroSection _ b))
+  · -- The primitive on the total space has zero first jet at `0_b`, and pulling back along `Φ⁻¹`
+    -- preserves this.
+    have hx : Φ.symm (Φ (zeroSection FV V b)) = zeroSection FV V b := Φ.symm_apply_apply _
+    have hη0 : mpullback (IB.prod 𝓘(ℝ, FV)) I Φ η (zeroSection FV V b) = 0 :=
+      mpullback_apply_eq_zero hb
+    refine hasFDerivWithinAt_inChartAt_mpullback_of_apply_eq_zero
+      ((Φ.symm.contMDiff.of_le (one_le_two.trans h2)).contMDiffAt) ?_ ?_
+    · rw [hx]
+      exact vectorBundlePoincareHomotopy_zeroSection _ b
+    · rw [hx]
+      exact hasFDerivWithinAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection
+        (hη₀.of_le (by simp)) hη0
+
+/-- **The relative Poincaré lemma on a tube**, for forms restricting to zero on the core. Let `Φ`
+be a `C^n` diffeomorphism from the total space of a `C^n` vector bundle onto `M`, such as a
+tubular neighbourhood, with zero-section inclusion `i = Φ ∘ 0`. Every closed `C^r` form `η` of
+positive degree on `M` with `i^* η = 0`, where `1 ≤ r` and `r + 1 ≤ n`, is the exterior
+derivative of a `C^r` form `β` that vanishes along `i` as a full ambient tensor, and has zero
+first jet at every point of `i` where `η` vanishes as a full ambient tensor. -/
+theorem _root_.Diffeomorph.exists_isSmoothForm_relative_primitive
+    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) {r : ℕ∞} (hr : 1 ≤ r) (hn : r + 1 ≤ n)
+    {η : RoughForm I M F (k + 1)} (hη : IsSmoothForm I r η) (hclosed : mextDeriv η = 0)
+    (hi : mpullback IB I (Φ ∘ zeroSection FV V) η = 0) :
+    ∃ β : RoughForm I M F k, IsSmoothForm I r β ∧ mextDeriv β = η ∧
+      (∀ b, β (Φ (zeroSection FV V b)) = 0) ∧
+      ∀ b, η (Φ (zeroSection FV V b)) = 0 →
+        HasFDerivWithinAt (β.inChartAt (Φ (zeroSection FV V b)))
+          (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F) (range I)
+          (extChartAt I (Φ (zeroSection FV V b)) (Φ (zeroSection FV V b))) := by
+  obtain ⟨β, hβ, hdβ, hβ₀, hβ₁⟩ :=
+    Φ.exists_isSmoothForm_mextDeriv_eq_sub_mpullback hr hn hη hclosed
+  refine ⟨β, hβ, ?_, hβ₀, hβ₁⟩
+  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by simp) hn).ne'
+  have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
+  have hiΦ := (Φ.contMDiff.comp (contMDiff_zeroSection ℝ V (IB := IB) (F := FV))).mdifferentiable
+    hn0
+  rw [hdβ, ← Function.comp_assoc (Φ : TotalSpace FV V → M) (zeroSection FV V),
+    mpullback_comp (hp.comp (Φ.symm.mdifferentiable hn0)) hiΦ, hi, mpullback_zero, sub_zero]
+
+end Tube
 
 end TauCeti
