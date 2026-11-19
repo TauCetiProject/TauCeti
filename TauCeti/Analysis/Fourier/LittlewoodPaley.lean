@@ -570,6 +570,18 @@ variable {V F : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
   [MeasurableSpace V] [BorelSpace V] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F]
 
+/-- If the symbols `mₖ ∈ L^∞` are almost everywhere the real functions `aₖ`, and
+`∑_{k ∈ s} aₖ aⱼ = aⱼ` pointwise, then `∑_{k ∈ s} mₖ mⱼ = mⱼ` in `L^∞`. -/
+private theorem sum_smul_eq_of_ae_eq_ofReal {α ι : Type*} [MeasurableSpace α] {μ : Measure α}
+    [Countable ι] {m : ι → Lp ℂ ∞ μ} {a : ι → α → ℝ} (hm : ∀ k, m k =ᵐ[μ] fun x ↦ (a k x : ℂ))
+    {s : Finset ι} {j : ι} (h : ∀ x, ∑ k ∈ s, a k x * a j x = a j x) :
+    ∑ k ∈ s, (m k • m j : Lp ℂ ∞ μ) = m j := by
+  apply Lp.ext
+  filter_upwards [coeFn_fun_finsetSum s fun k ↦ (m k • m j : Lp ℂ ∞ μ),
+    ae_all_iff.2 fun k ↦ coeFn_lpSMul (r := ∞) (m k) (m j), ae_all_iff.2 hm] with x h₁ h₂ h₃
+  rw [h₁]
+  simp only [h₂, Pi.smul_apply', h₃, smul_eq_mul, ← Complex.ofReal_mul, ← Complex.ofReal_sum, h]
+
 /-- **Littlewood–Paley reconstruction in `L²`.** The partial sums `∑_{j < N} Δⱼ f` of the
 Littlewood–Paley blocks of `f ∈ L²(V, F)` converge to `f` in `L²`. Each symbol enters as any
 element of `L^∞` almost everywhere equal to the piece `ψⱼ` of the inhomogeneous partition. -/
@@ -587,15 +599,10 @@ theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
     filter_upwards [coeFn_fun_finsetSum (Finset.range N) m, ae_all_iff.2 hm] with ξ h₁ h₂
     rw [h₁]
     exact Finset.sum_congr rfl fun j _ ↦ h₂ j
-  have h1 : MemLp (fun _ : V ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
-  have h := tendsto_fourierMultiplierCLM_apply (F := F) (l := atTop)
-    (m := fun N ↦ ∑ j ∈ Finset.range N, m j) (m₀ := h1.toLp _) (C := 1) ?_ ?_ f
-  · rw [fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp] at h
-    simpa only [one_smul, id_apply, fourierMultiplierCLM_sum, FunLike.coe_sum,
-      Finset.sum_apply] using h
+  have h := tendsto_fourierMultiplierCLM_apply_self (F := F) (l := atTop)
+    (m := fun N ↦ ∑ j ∈ Finset.range N, m j) (C := 1) ?_ ?_ f
+  · simpa only [fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply] using h
   · refine Eventually.of_forall fun N ↦ ?_
-    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-    refine ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound ?_)
     filter_upwards [hae] with ξ hξ
     rw [hξ N]
     rcases N with _ | N
@@ -603,8 +610,8 @@ theorem tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley
     · rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range, Complex.norm_real,
         Real.norm_of_nonneg φ.nonneg]
       exact φ.le_one
-  · filter_upwards [hae, h1.coeFn_toLp] with ξ h₁ h₂
-    simp only [h₁, h₂]
+  · filter_upwards [hae] with ξ h₁
+    simp only [h₁]
     simpa [Function.comp_def] using (Complex.continuous_ofReal.tendsto _).comp
       (φ.hasSum_inhomogeneousLittlewoodPaley ξ).tendsto_sum_nat
 
@@ -630,20 +637,10 @@ private theorem sum_toLp_symbol_smul_toLp_symbol {L : ℕ}
       ((φ.inhomogeneousLittlewoodPaleySchwartz k).toLp ∞ volume •
           (φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞ volume : Lp ℂ ∞ (volume : Measure V)) =
       (φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞ volume := by
-  apply Lp.ext
-  filter_upwards [Lp.coeFn_fun_finsetSum (Finset.Ico (j + 1 - L) (j + L)) fun k ↦
-      ((φ.inhomogeneousLittlewoodPaleySchwartz k).toLp ∞ volume •
-          (φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞ volume : Lp ℂ ∞ (volume : Measure V)),
-    ae_all_iff.2 fun k ↦ Lp.coeFn_lpSMul (r := ∞)
-      ((φ.inhomogeneousLittlewoodPaleySchwartz k).toLp ∞ (volume : Measure V))
-      ((φ.inhomogeneousLittlewoodPaleySchwartz j).toLp ∞ volume),
-    ae_all_iff.2 fun k ↦
-      (φ.inhomogeneousLittlewoodPaleySchwartz k).coeFn_toLp ∞ (volume : Measure V)]
-    with ξ h₁ h₂ h₃
-  rw [h₁]
-  simp only [h₂, Pi.smul_apply', h₃, φ.inhomogeneousLittlewoodPaleySchwartz_apply, smul_eq_mul,
-    ← Complex.ofReal_mul,
-    ← Complex.ofReal_sum, ← Finset.sum_mul, ← φ.enlargedLittlewoodPaley_apply,
+  refine Lp.sum_smul_eq_of_ae_eq_ofReal (fun k ↦
+    ((φ.inhomogeneousLittlewoodPaleySchwartz k).coeFn_toLp ∞ volume).trans
+      (.of_forall (φ.inhomogeneousLittlewoodPaleySchwartz_apply k))) fun ξ ↦ ?_
+  rw [← Finset.sum_mul, ← φ.enlargedLittlewoodPaley_apply,
     φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL]
 
 /-- The block `Δⱼ f` only sees the blocks of `g` whose indices are within `L` of `j`:
@@ -880,15 +877,10 @@ theorem tendsto_sum_fourierMultiplierCLM_littlewoodPaley [Nontrivial V]
       φ.sum_littlewoodPaley_Ioc (by omega)]
   have hne : ∀ᵐ ξ ∂(volume : Measure V), ξ ≠ 0 :=
     ae_iff.2 (by simpa only [not_not, Set.ofPred_eq_eq_singleton] using measure_singleton 0)
-  have h1 : MemLp (fun _ : V ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
-  have h := Lp.tendsto_fourierMultiplierCLM_apply (F := F) (l := atTop)
-    (m := fun N : ℕ ↦ ∑ j ∈ Finset.Ioc (-(N : ℤ)) N, m j) (m₀ := h1.toLp _) (C := 1) ?_ ?_ f
-  · rw [Lp.fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp] at h
-    simpa only [one_smul, id_apply, Lp.fourierMultiplierCLM_sum, FunLike.coe_sum,
-      Finset.sum_apply] using h
+  have h := Lp.tendsto_fourierMultiplierCLM_apply_self (F := F) (l := atTop)
+    (m := fun N : ℕ ↦ ∑ j ∈ Finset.Ioc (-(N : ℤ)) N, m j) (C := 1) ?_ ?_ f
+  · simpa only [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply] using h
   · refine Eventually.of_forall fun N ↦ ?_
-    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-    refine ENNReal.toReal_le_of_le_ofReal zero_le_one (eLpNormEssSup_le_of_ae_bound ?_)
     filter_upwards [hae] with ξ hξ
     rw [hξ N, Complex.norm_real, Real.norm_eq_abs, abs_sub_le_iff]
     have := φ.nonneg (x := ((2 : ℝ) ^ (N : ℤ))⁻¹ • ξ)
@@ -896,8 +888,8 @@ theorem tendsto_sum_fourierMultiplierCLM_littlewoodPaley [Nontrivial V]
     have := φ.nonneg (x := ((2 : ℝ) ^ (-(N : ℤ)))⁻¹ • ξ)
     have := φ.le_one (x := ((2 : ℝ) ^ (-(N : ℤ)))⁻¹ • ξ)
     constructor <;> linarith
-  · filter_upwards [hae, h1.coeFn_toLp, hne] with ξ h₁ h₂ hξ
-    simp only [h₁, h₂]
+  · filter_upwards [hae, hne] with ξ h₁ hξ
+    simp only [h₁]
     refine (Complex.continuous_ofReal.tendsto 1).comp ?_
     have hpow : Tendsto (fun N : ℕ ↦ (2 : ℝ) ^ N) atTop atTop :=
       tendsto_pow_atTop_atTop_of_one_lt one_lt_two
@@ -931,15 +923,8 @@ theorem sum_fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley {L : ℕ}
       Lp.fourierMultiplierCLM F (m j) f := by
   -- As symbols in `L^∞`, `∑_{j - L < k < j + L} ψₖ ψⱼ = ψⱼ`.
   have hsym : ∑ k ∈ Finset.Ioo (j - L) (j + L), (m k • m j : Lp ℂ ∞ (volume : Measure V)) =
-      m j := by
-    apply Lp.ext
-    filter_upwards [Lp.coeFn_fun_finsetSum (Finset.Ioo (j - L) (j + L))
-        fun k ↦ (m k • m j : Lp ℂ ∞ (volume : Measure V)),
-      ae_all_iff.2 fun k ↦ Lp.coeFn_lpSMul (r := ∞) (m k) (m j), ae_all_iff.2 hm]
-      with ξ h₁ h₂ h₃
-    rw [h₁]
-    simp only [h₂, Pi.smul_apply', h₃, smul_eq_mul, ← Complex.ofReal_mul, ← Complex.ofReal_sum,
-      φ.sum_littlewoodPaley_mul_littlewoodPaley hL]
+      m j :=
+    Lp.sum_smul_eq_of_ae_eq_ofReal hm (φ.sum_littlewoodPaley_mul_littlewoodPaley hL j)
   simp only [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
   conv_rhs => rw [← hsym]
   rw [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply]

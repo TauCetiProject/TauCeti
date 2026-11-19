@@ -397,6 +397,23 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
     simp only [h₁, h₂, Pi.smul_apply']
     exact h₃.smul_const _
 
+/-- **Approximate identities among multipliers.** If the symbols `m i` are eventually bounded
+almost everywhere by a constant along a countably generated filter `l` and tend to `1` almost
+everywhere along `l`, then `T_{m i} f → f` in `L²` along `l` for every `f ∈ L²`. -/
+theorem tendsto_fourierMultiplierCLM_apply_self {ι : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] {m : ι → Lp ℂ ∞ (volume : Measure E)} {C : ℝ}
+    (hC : ∀ᶠ i in l, ∀ᵐ ξ, ‖m i ξ‖ ≤ C) (hm : ∀ᵐ ξ, Tendsto (fun i ↦ m i ξ) l (𝓝 1))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun i ↦ fourierMultiplierCLM F (m i) f) l (𝓝 f) := by
+  have hC' : ∀ᶠ i in l, ‖m i‖ ≤ max C 0 := hC.mono fun i hi ↦ by
+    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
+    exact ENNReal.toReal_le_of_le_ofReal (le_max_right C 0)
+      (eLpNormEssSup_le_of_ae_bound (hi.mono fun ξ hξ ↦ hξ.trans (le_max_left C 0)))
+  have h1 : MemLp (fun _ : E ↦ (1 : ℂ)) ∞ volume := memLp_top_const 1
+  have h := tendsto_fourierMultiplierCLM_apply (F := F) (m₀ := h1.toLp _) hC'
+    (by filter_upwards [hm, h1.coeFn_toLp] with ξ h₁ h₂; rwa [h₂]) f
+  rwa [fourierMultiplierCLM_of_ae_eq_const h1.coeFn_toLp, one_smul, id_apply] at h
+
 end MeasureTheory.Lp
 
 /-! ### Convolution with an integrable kernel -/
