@@ -148,6 +148,7 @@ lemma tensorProductCongrLeft_refl (M N : SheafOfModules.{u} (ringCatSheaf R)) :
   Functor.mapIso_refl _ _
 
 /-- Transport through the first argument respects composition. -/
+@[simp]
 lemma tensorProductCongrLeft_trans {M M' M'' N : SheafOfModules.{u} (ringCatSheaf R)}
     (e : M ≅ M') (e' : M' ≅ M'') :
     tensorProductCongrLeft R (N := N) (e ≪≫ e') =
@@ -161,6 +162,7 @@ lemma tensorProductCongrRight_refl (M N : SheafOfModules.{u} (ringCatSheaf R)) :
   Functor.mapIso_refl _ _
 
 /-- Transport through the second argument respects composition. -/
+@[simp]
 lemma tensorProductCongrRight_trans {M N N' N'' : SheafOfModules.{u} (ringCatSheaf R)}
     (e : N ≅ N') (e' : N' ≅ N'') :
     tensorProductCongrRight R (M := M) (e ≪≫ e') =

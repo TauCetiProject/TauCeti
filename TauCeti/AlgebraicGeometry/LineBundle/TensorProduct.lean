@@ -165,6 +165,7 @@ lemma tensorProductCongrLeft_refl (L K : InvertibleSheaf X) :
   exact h
 
 /-- Transport through the first tensor factor respects composition. -/
+@[simp]
 lemma tensorProductCongrLeft_trans {L L' L'' K : InvertibleSheaf X} (e : L ≅ L')
     (e' : L' ≅ L'') :
     tensorProductCongrLeft (K := K) (e ≪≫ e') =
@@ -193,6 +194,7 @@ lemma tensorProductCongrRight_refl (L K : InvertibleSheaf X) :
   exact h
 
 /-- Transport through the second tensor factor respects composition. -/
+@[simp]
 lemma tensorProductCongrRight_trans {L K K' K'' : InvertibleSheaf X} (e : K ≅ K')
     (e' : K' ≅ K'') :
     tensorProductCongrRight (L := L) (e ≪≫ e') =
