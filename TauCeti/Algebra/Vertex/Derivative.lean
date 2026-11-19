@@ -20,6 +20,8 @@ its lower bound by at most one. In normalized mode indexing its coefficients are
 requires no characteristic-zero assumption. When an endomorphism `T` kills a vector `vac` and acts
 as `∂` by commutation on a field `B`, iterating this mode formula yields the division-free creation
 identity `k! • B₍₋ₖ₋₁₎ vac = Tᵏ (B₍₋₁₎ vac)` (`VertexOperator.factorial_smul_ncoeff_apply`).
+Descending from the truncation of `B(z) vac`, the same recursion shows that the nonnegative modes
+of `B` kill `vac` when `V` has unique divisibility (`VertexOperator.ncoeff_apply_of_nonneg`).
 
 Differentiation preserves mutual locality, increasing a locality bound by one. More generally,
 iterated derivatives in the two variables increase the bound by the sum of their orders.
@@ -89,6 +91,29 @@ theorem factorial_smul_ncoeff_apply {T : Module.End R V} {vac : V} (hvac : T vac
     rw [h₁, h₂, natCast_zsmul] at h
     rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
       smul_comm]
+
+/-- **Creation from translation covariance.** If `V` has unique divisibility, an endomorphism `T`
+kills `vac` and acts as `∂` on a field `B` by commutation, then every nonnegative mode of `B` kills
+`vac`: `B(z) vac` has no negative powers of `z`. -/
+theorem ncoeff_apply_of_nonneg [HasUniqueDiv V] {T : Module.End R V} {vac : V}
+    (hvac : T vac = 0) {B : VertexOperator R V}
+    (hT : ∀ m : ℤ, ⁅T, B[[m]]⁆ = (derivative B)[[m]]) {n : ℤ} (hn : 0 ≤ n) :
+    (B[[n]]) vac = 0 := by
+  -- Descend from the truncation of `B(z) vac`: `T (B₍ₖ₊₁₎ vac) = -(k + 1) • B₍ₖ₎ vac`.
+  obtain ⟨P, hP⟩ := B.exists_forall_ncoeff_apply_eq_zero vac
+  suffices hd : ∀ d k : ℕ, P ≤ k + d → (B[[k]]) vac = 0 by
+    simpa [hn] using hd P n.toNat (by omega)
+  intro d
+  induction d with
+  | zero => exact fun k hk ↦ hP k (by omega)
+  | succ d ih =>
+    intro k hk
+    have h := LinearMap.congr_fun (hT (k + 1)) vac
+    rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, hvac, map_zero,
+      sub_zero, ncoeff_derivative, LinearMap.smul_apply, add_sub_cancel_right,
+      show ((k : ℤ) + 1) = ((k + 1 : ℕ) : ℤ) by push_cast; ring, ih (k + 1) (by omega), map_zero,
+      eq_comm, neg_smul, neg_eq_zero, natCast_zsmul] at h
+    exact nsmul_right_injective k.succ_ne_zero (h.trans (smul_zero _).symm)
 
 namespace IsLocalOfOrder
 
