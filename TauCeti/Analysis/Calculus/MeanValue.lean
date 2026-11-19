@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
@@ -56,6 +57,10 @@ value theorem on the part of the segment where the function crosses the band.
 The file also records the one-variable form of Mathlib's
 `Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le'`, bounding the increment of a function
 against a fixed derivative `φ` (`Convex.norm_image_sub_le_of_norm_hasDerivWithin_le'`).
+
+For a map whose derivative is `α`-Hölder with constant `H`, the linearization error at `x` of an
+increment between two points within distance `R` of `x` is at most `H R^α` times the increment
+(`TauCeti.norm_sub_sub_le_of_holderWith`).
 
 For a function on the real line with derivative of norm at most `D r ^ (β - 1)` at every `r > 0`,
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
@@ -351,6 +356,27 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
   calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
     _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
     _ = _ := by ring
+
+open Metric in
+open scoped NNReal in
+/-- **The linearization error of a map with a Hölder derivative.** If `g` has derivative `g'`
+everywhere and `g'` is `α`-Hölder with constant `H`, then for points `u, v` within distance `R` of
+`x`, `‖g u - g v - g' x (u - v)‖ ≤ H R^α ‖u - v‖`: on the segment from `v` to `u` the derivative
+stays within `H R^α` of `g' x`. -/
+theorem norm_sub_sub_le_of_holderWith {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {g : E → F} {g' : E → E →L[ℝ] F} (hg : ∀ z, HasFDerivAt g (g' z) z) {H α : ℝ≥0}
+    (hg' : HolderWith H α g') {x u v : E} {R : ℝ} (hu : ‖u - x‖ ≤ R) (hv : ‖v - x‖ ≤ R) :
+    ‖g u - g v - g' x (u - v)‖ ≤ H * R ^ (α : ℝ) * ‖u - v‖ := by
+  have hseg : segment ℝ v u ⊆ closedBall x R :=
+    (convex_closedBall x R).segment_subset (by rwa [mem_closedBall, dist_eq_norm])
+      (by rwa [mem_closedBall, dist_eq_norm])
+  refine (convex_segment v u).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+    (fun z _ ↦ (hg z).hasFDerivWithinAt) (fun z hz ↦ ?_) (left_mem_segment ℝ v u)
+    (right_mem_segment ℝ v u)
+  rw [← dist_eq_norm]
+  refine (hg'.dist_le z x).trans ?_
+  gcongr
+  exact mem_closedBall.1 (hseg hz)
 
 section Direction
 

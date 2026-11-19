@@ -60,6 +60,7 @@ the constant function `1`.
   `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_sub_mul_rpow_le`: the weighted bounds
   on time differences.
 * `TauCeti.integral_iteratedFDeriv_heatKernel_eq_zero`: the derivatives have integral zero.
+* `TauCeti.integral_heatKernel_smul_apply_eq_zero`: the first moment `∫ K_t(y) L y dy` vanishes.
 
 ## References
 
@@ -469,5 +470,17 @@ theorem integral_iteratedFDeriv_heatKernel_eq_zero {t : ℝ} (ht : 0 < t) {m : �
       (ContinuousMultilinearMap.apply ℝ _ ℝ v).integrable_comp (hint (k + 1)))
     (by simpa using (ContinuousMultilinearMap.apply ℝ _ ℝ (Fin.tail v)).integrable_comp (hint k))
     (fun x _ => differentiableAt_const _) (fun x _ => hh x)
+
+/-- **The first moment of the heat kernel vanishes.** For every time `t` and every continuous
+linear map `L`, `∫ K_t(y) L y dy = 0`, since `K_t` is even. -/
+theorem integral_heatKernel_smul_apply_eq_zero {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (t : ℝ) (L : E →L[ℝ] F) : ∫ y, heatKernel t y • L y = 0 := by
+  have h := integral_neg_eq_self (fun y ↦ heatKernel t y • L y) (volume : Measure E)
+  simp only [heatKernel_neg, map_neg, smul_neg, integral_neg] at h
+  have h2 : (2 : ℝ) • ∫ y, heatKernel t y • L y = 0 := by
+    rw [two_smul]
+    nth_rw 1 [← h]
+    exact neg_add_cancel _
+  exact (smul_eq_zero.mp h2).resolve_left two_ne_zero
 
 end TauCeti
