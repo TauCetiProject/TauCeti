@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Continuation
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.Line
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Continuation
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Normalization.Basic
 
 /-!
 # Normalizing the Hamiltonians of the pair of pants with continuation necks
@@ -100,11 +101,6 @@ private theorem pairOfPantsContinuationPerturbation_add_const_fun (G H : Punctur
   rw [pairOfPantsContinuationPerturbation_add_const, add_apply,
     pairOfPantsContinuationPerturbation_const_target c d L _ x y]
 
-/-- Periodic normalizations `c_q` give period-one target-independent Hamiltonians. -/
-private theorem periodic_const_target {c : Puncture → ℝ → ℝ} (hc : ∀ q, Periodic (c q) 1)
-    (q : Puncture) : Periodic (fun t (_ : M) ↦ c q t) 1 :=
-  fun t ↦ funext fun _ ↦ hc q t
-
 end Floer
 
 /-! ### Manifold targets -/
@@ -116,13 +112,6 @@ open Floer
 variable {E F M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace F]
   {I : ModelWithCorners ℝ E F} [TopologicalSpace M] [ChartedSpace F M] [IsManifold I ⊤ M]
   {G H : Puncture → ℝ → M → ℝ} {c d : Puncture → ℝ → ℝ} {L : Puncture → ℝ}
-
-omit [IsManifold I ⊤ M] in
-/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians on `M`. -/
-private theorem contMDiff_uncurry_const_target {c : Puncture → ℝ → ℝ}
-    (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
-  (hcs q).contMDiff.comp contMDiff_fst
 
 /-- **Normalizing the Hamiltonians does not change the Floer equation.** The perturbed derivative
 `du - X_K` of any map into `M` is the same for the inner and outer Hamiltonians `G_q`, `H_q` and

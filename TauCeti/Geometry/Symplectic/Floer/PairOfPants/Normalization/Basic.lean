@@ -95,9 +95,16 @@ private theorem pairOfPantsPerturbation_add_const_fun (H : Puncture → ℝ → 
     pairOfPantsPerturbation_const_target c _ x y]
 
 /-- Periodic normalizations `c_q` give period-one target-independent Hamiltonians. -/
-private theorem periodic_const_target (hc : ∀ q, Periodic (c q) 1) (q : Puncture) :
+theorem periodic_const_target (hc : ∀ q, Periodic (c q) 1) (q : Puncture) :
     Periodic (fun t (_ : M) ↦ c q t) 1 :=
   fun t ↦ funext fun _ ↦ hc q t
+
+/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians on a manifold `M`. -/
+theorem contMDiff_uncurry_const_target {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+    (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
+  (hcs q).contMDiff.comp contMDiff_fst
 
 /-- Continuous periodic normalizations `c_q` are bounded. -/
 private theorem exists_forall_abs_le (hc : ∀ q, Periodic (c q) 1)
@@ -237,12 +244,6 @@ open Floer
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
   {H : Puncture → ℝ → M → ℝ} {c : Puncture → ℝ → ℝ}
-
-omit [IsManifold I ⊤ M] in
-/-- `C¹` normalizations `c_q` give `C¹` target-independent Hamiltonians on `M`. -/
-private theorem contMDiff_uncurry_const_target (hcs : ∀ q, ContDiff ℝ 1 (c q)) (q : Puncture) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry fun t (_ : M) ↦ c q t) :=
-  (hcs q).contMDiff.comp contMDiff_fst
 
 /-- **Normalizing the end Hamiltonians does not change the Floer equation, for a manifold
 target.** The perturbed derivative `du - X_K` of any map into `M` is the same for the end
