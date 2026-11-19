@@ -54,6 +54,8 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
 * `RiemannianIsometry.riemannianLog_apply`: if `dΦ_p` maps a normal domain `U` at `p` into a normal
   domain `V` at `Φ p`, then `log_{Φ p} (Φ q) = dΦ_p (log_p q)` on the normal neighbourhood
   `exp_p '' U`.
+* `RiemannianIsometry.riemannianLog_apply_riemannianExp`: `log_{Φ p} (Φ (exp_p v)) = dΦ_p v`
+  whenever `dΦ_p v` lies in a normal domain at `Φ p`.
 * `TauCeti.riemannianExp_mfderiv_smul`, `TauCeti.smul_riemannianExp_image_ball`: for an element `a`
   of a group acting by smooth maps, whose differential preserves the metric,
   `exp_{a • x} (d(a •)_x v) = a • exp_x v`, and `a` carries `exp_x '' ball 0 r` onto
@@ -256,6 +258,15 @@ theorem riemannianLog_apply [I.Boundaryless] [J.Boundaryless] [T2Space M]
   obtain ⟨v, hv, rfl⟩ := hq
   rw [← Φ.riemannianExp_mfderiv, hU.riemannianLog_riemannianExp hv,
     hV.riemannianLog_riemannianExp (hUV hv)]
+
+/-- A smooth Riemannian isometry carries the exponential map at `p` to the logarithm at `Φ p`:
+`log_{Φ p} (Φ (exp_p v)) = dΦ_p v` whenever `dΦ_p v` lies in a normal domain `V` at `Φ p`. Unlike
+`TauCeti.RiemannianIsometry.riemannianLog_apply`, this needs no normal domain at `p`. -/
+theorem riemannianLog_apply_riemannianExp [I.Boundaryless] [J.Boundaryless] [T2Space M]
+    (Φ : RiemannianIsometry I J M N) {p : M} {V : Set (TangentSpace J (Φ p))}
+    (hV : IsNormalDomain J N (Φ p) V) {v : TangentSpace I p} (hv : mfderiv I J Φ p v ∈ V) :
+    riemannianLog J N (Φ p) V (Φ (riemannianExp I M p v)) = mfderiv I J Φ p v := by
+  rw [← Φ.riemannianExp_mfderiv, hV.riemannianLog_riemannianExp hv]
 
 end RiemannianIsometry
 
