@@ -40,7 +40,10 @@ theorem eq_norm_of_apply_ofReal (f : AbsoluteValue ℂ ℝ) (h : ∀ r : ℝ, f 
   let g : MulAlgebraNorm ℝ ℂ :=
     { MulRingNorm.mulRingNormEquivAbsoluteValue.symm f with
       smul' r z := by
-        change f (r • z) = ‖r‖ * f z
+        simp only [MulRingNorm.mulRingNormEquivAbsoluteValue_symm_apply,
+          AddGroupSeminorm.toFun_eq_coe, MulRingSeminorm.toFun_eq_coe,
+          MulRingNorm.toMulRingSeminorm_apply, MulRingNorm.ofAbsoluteValue_toFun,
+          MulHom.toFun_eq_coe, AbsoluteValue.coe_toMulHom]
         rw [Algebra.smul_def, map_mul, Complex.coe_algebraMap, h, Real.norm_eq_abs] }
   exact congrArg DFunLike.coe (MulAlgebraNorm.unique g (NormedAlgebra.toMulAlgebraNorm ℝ ℂ))
 
