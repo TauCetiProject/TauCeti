@@ -45,7 +45,7 @@ the metric `(1 + c |x| ^ (2 - n)) ^ (4 / (n - 2)) δ` has mass `2 c`
 Schwarzschild metric `(1 + m |x| ^ (2 - n) / 2) ^ (4 / (n - 2)) δ` has mass `m`. The coefficients
 `x_i x_j |x| ^ (-n)` have normalized flux `1 / 2` at every radius
 (`TauCeti.normalizedCoordinateFlux_mul_mul_rpow`), so the metric `δ_ij + ε x_i x_j |x| ^ (-n)`,
-which is not conformally flat, has mass `ε / 2`.
+whose coefficients are not of the conformal form `f δ_ij`, has mass `ε / 2`.
 
 ## References
 
@@ -162,12 +162,6 @@ theorem normalizedCoordinateFlux_eq_of_eqOn_sphere
     smul_eq_mul]
   field_simp
 
-/-- `r ^ (n - 1) r ^ (1 - n) = 1` for `r > 0` and `n ≥ 1`. -/
-private theorem pow_mul_rpow_one_sub {r : ℝ} (hr : 0 < r) (hn : n ≠ 0) :
-    r ^ (n - 1) * r ^ (1 - n : ℝ) = 1 := by
-  rw [← Real.rpow_natCast, ← Real.rpow_add hr, Nat.cast_sub (by omega), Nat.cast_one,
-    sub_add_sub_cancel', sub_self, Real.rpow_zero]
-
 /-! ### Linearity -/
 
 /-- The flux density is homogeneous in the coefficients. -/
@@ -253,17 +247,6 @@ theorem coordinateFluxIntegrand_comp_smul (g : EuclideanSpace ℝ (Fin n) → Fi
   simp only [coordinateFluxIntegrand_def, hd, hx, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
     ← mul_sub, ← Finset.mul_sum, mul_assoc]
 
-/-- A set integral over a sphere of radius `r ≤ 0`, or in dimension zero, of a function vanishing
-at the origin is zero: such a sphere contains at most the origin. -/
-private theorem setIntegral_sphere_eq_zero {f : EuclideanSpace ℝ (Fin n) → ℝ} (hf : f 0 = 0)
-    {r : ℝ} (h : r ≤ 0 ∨ n = 0) :
-    ∫ x in sphere (0 : EuclideanSpace ℝ (Fin n)) r, f x ∂μHE[n - 1] = 0 := by
-  refine setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ ?_
-  convert hf
-  rcases h with h | rfl
-  · exact norm_le_zero_iff.1 ((mem_sphere_zero_iff_norm.1 hx).le.trans h)
-  · exact Subsingleton.elim _ _
-
 /-- **Scaling of the flux.** Rescaling the coordinates by `s > 0` multiplies the normalized flux
 by `s ^ (2 - n)`. For the metric `λ g` in the coordinates `√λ x`, whose coefficients are
 `g (x / √λ)`, this is the scaling law `m(λ g) = λ ^ ((n - 2) / 2) m(g)` of the mass. -/
@@ -273,13 +256,11 @@ theorem normalizedCoordinateFlux_comp_smul (g : EuclideanSpace ℝ (Fin n) → F
       s ^ (2 - (n : ℤ)) * normalizedCoordinateFlux g (s * r) := by
   simp only [normalizedCoordinateFlux_def, coordinateFluxIntegrand_comp_smul g hs]
   rcases le_or_gt r 0 with hr | hr
-  · rw [setIntegral_sphere_eq_zero (by simp) (.inl hr),
-      setIntegral_sphere_eq_zero (by simp) (.inl (mul_nonpos_of_nonneg_of_nonpos hs.le hr))]
+  · rw [setIntegral_sphere_eq_zero_of_nonpos _ _ hr (by simp),
+      setIntegral_sphere_eq_zero_of_nonpos _ _ (mul_nonpos_of_nonneg_of_nonpos hs.le hr) (by simp)]
     simp
   rcases n.eq_zero_or_pos with rfl | hn
-  · rw [setIntegral_sphere_eq_zero (by simp) (.inr rfl), setIntegral_sphere_eq_zero (by simp)
-      (.inr rfl)]
-    simp
+  · simp [coordinateFluxIntegrand_def]
   -- Both sphere integrals are pulled back to the unit sphere.
   rw [setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one _ _ hr,
     setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one _ _ (mul_pos hs hr)]
@@ -334,17 +315,8 @@ theorem coordinateFluxIntegrand_conformal_radial (w : ℝ → ℝ) {x : Euclidea
   · have h : HasFDerivAt (fun y ↦ w ‖y‖) (deriv w ‖x‖ • fderiv ℝ (‖·‖) x) x :=
       hw.hasDerivAt.comp_hasFDerivAt x hnorm.hasFDerivAt
     simp [h.fderiv, hnorm.fderiv_norm_self, hx']
-  -- If `w` is not differentiable at `|x|`, then neither is `w(|y|)` at `x`, since `w(t)` is
-  -- `w(|t u|)` for `t > 0` and the unit vector `u = x / |x|`.
-  have hf : ¬ DifferentiableAt ℝ (fun y ↦ w ‖y‖) x := by
-    intro hf
-    have hu : ‖x‖ • (‖x‖⁻¹ • x) = x := by rw [smul_smul, mul_inv_cancel₀ hx', one_smul]
-    refine hw (DifferentiableAt.congr_of_eventuallyEq
-      ((hu.symm ▸ hf).comp ‖x‖ (differentiableAt_id.smul_const (‖x‖⁻¹ • x))) ?_)
-    filter_upwards [lt_mem_nhds (norm_pos_iff.2 hx)] with t ht
-    rw [Function.comp_apply, id, norm_smul, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ hx', mul_one, Real.norm_of_nonneg ht.le]
-  rw [fderiv_zero_of_not_differentiableAt hf, deriv_zero_of_not_differentiableAt hw]
+  rw [fderiv_zero_of_not_differentiableAt ((differentiableAt_comp_norm_iff hx).not.2 hw),
+    deriv_zero_of_not_differentiableAt hw]
   simp
 
 /-- **The flux of a radial conformally flat metric.** For `n ≥ 2` and `r > 0`, the normalized
@@ -387,7 +359,8 @@ theorem tendsto_normalizedCoordinateFlux_conformal_one_add_mul_rpow (hn : 3 ≤ 
     beta_reduce at hflux
     rw [hflux, hd.deriv]
     have hr' : r ^ (n - 1) * r ^ ((2 - n : ℝ) - 1) = 1 := by
-      rw [show (2 - n : ℝ) - 1 = 1 - n by ring, pow_mul_rpow_one_sub hr (by omega)]
+      rw [show (2 - n : ℝ) - 1 = 1 - n by ring, ← Real.rpow_natCast, ← Real.rpow_add hr,
+        Nat.cast_sub (by omega), Nat.cast_one, sub_add_sub_cancel', sub_self, Real.rpow_zero]
     have hp : (2 - n) * p = -4 := by
       simp only [p]
       field_simp [show (n : ℝ) - 2 ≠ 0 by linarith]
@@ -456,7 +429,8 @@ theorem coordinateFluxIntegrand_mul_mul_rpow {x : EuclideanSpace ℝ (Fin n)} (h
 
 /-- **The mass sees non-conformal terms.** For `n ≥ 2` and `r > 0`, the normalized flux of the
 coefficients `x_i x_j |x| ^ (-n)` at radius `r` is `1 / 2`. So the metric
-`δ_ij + ε x_i x_j |x| ^ (-n)`, which is not conformally flat for `ε ≠ 0`, has mass `ε / 2`
+`δ_ij + ε x_i x_j |x| ^ (-n)`, whose coefficients are not a multiple of `δ_ij` for `ε ≠ 0`, has
+mass `ε / 2`
 (`TauCeti.normalizedCoordinateFlux_const_add`, `TauCeti.normalizedCoordinateFlux_smul`). -/
 theorem normalizedCoordinateFlux_mul_mul_rpow (hn : 2 ≤ n) {r : ℝ} (hr : 0 < r) :
     normalizedCoordinateFlux (fun y : EuclideanSpace ℝ (Fin n) ↦ fun i j ↦
@@ -466,8 +440,11 @@ theorem normalizedCoordinateFlux_mul_mul_rpow (hn : 2 ≤ n) {r : ℝ} (hr : 0 <
     linarith
   rw [normalizedCoordinateFlux_eq_of_eqOn_sphere (c := (n - 1) * r ^ (1 - n : ℝ)) (by omega) hr
     fun x hx ↦ ?_]
-  · field_simp
-    linear_combination pow_mul_rpow_one_sub (n := n) hr (by omega)
+  · have h : r ^ (n - 1) * r ^ (1 - n : ℝ) = 1 := by
+      rw [← Real.rpow_natCast, ← Real.rpow_add hr, Nat.cast_sub (by omega), Nat.cast_one,
+        sub_add_sub_cancel', sub_self, Real.rpow_zero]
+    field_simp
+    linear_combination h
   · have hx' : ‖x‖ = r := mem_sphere_zero_iff_norm.1 hx
     exact (coordinateFluxIntegrand_mul_mul_rpow (norm_pos_iff.1 (hx' ▸ hr))).trans (by rw [hx'])
 

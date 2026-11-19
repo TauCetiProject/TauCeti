@@ -50,7 +50,8 @@ lower bound on the dimension is needed: in dimension one, both measures count po
   spheres, with the integral and integrability forms
   `TauCeti.setLIntegral_sphere_eq_mul_setLIntegral_sphere_zero_one`,
   `TauCeti.setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one` and
-  `TauCeti.integrableOn_sphere_iff`.
+  `TauCeti.integrableOn_sphere_iff`. For `r ≤ 0` the sphere contains at most its center
+  (`TauCeti.setIntegral_sphere_eq_zero_of_nonpos`).
 * `TauCeti.euclideanHausdorffMeasure_image_eq_finrank_mul_volume_Ioo_smul`: the cone formula for
   a regular injective parametrization of a piece of the unit sphere.
 * `TauCeti.toSphere_volume_eq_comap_euclideanHausdorffMeasure`: Mathlib's surface measure on the
@@ -146,6 +147,15 @@ theorem setIntegral_sphere_eq_smul_setIntegral_sphere_zero_one {F : Type*}
     (addSMulEquiv c hr.ne').measurableEmbedding.integral_map, ← ENNReal.ofReal_pow hr.le,
     ENNReal.toReal_ofReal (pow_nonneg hr.le d)]
   simp only [addSMulEquiv_apply]
+
+omit [NormedSpace ℝ E] [BorelSpace E] in
+/-- A sphere of radius `r ≤ 0` contains at most its center, so the integral over it of a function
+vanishing at the center is zero, for every measure. -/
+theorem setIntegral_sphere_eq_zero_of_nonpos {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (μ : Measure E) (c : E) {r : ℝ} (hr : r ≤ 0) {f : E → F} (hf : f c = 0) :
+    ∫ y in sphere c r, f y ∂μ = 0 :=
+  setIntegral_eq_zero_of_forall_eq_zero fun _ hy ↦ by
+    rwa [dist_le_zero.1 ((mem_sphere.1 hy).le.trans hr)]
 
 /-- A function is integrable for `d`-dimensional Hausdorff measure on `sphere c r`, `r > 0`, if
 and only if its pullback by `u ↦ c + r • u` is integrable on the unit sphere. -/
