@@ -48,8 +48,7 @@ the position and the frequency.
   (`TauCeti.Symbol.coefficient_sharpTerm_eq_sum_left` and its companions), and near a point
   only on their values near that point
   (`TauCeti.Symbol.coefficient_sharpTerm_of_eq_smul_of_eventuallyEq`,
-  `TauCeti.Symbol.coefficient_sharpTerm_congr_of_eventually`,
-  `TauCeti.Symbol.coefficient_sharpTerm_eq_zero_of_eventually`). For a constant symbol
+  `TauCeti.Symbol.coefficient_sharpTerm_congr_of_eventually`). For a constant symbol
   only the pointwise composition survives (`TauCeti.Symbol.const_sharpTerm_succ`,
   `TauCeti.Symbol.sharpTerm_const_succ`), and on the right this holds for every symbol that does
   not depend on the position (`TauCeti.Symbol.sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero`).
@@ -242,14 +241,6 @@ theorem coefficient_sharpTerm_congr_of_eventually {μ : ℝ} {b : Symbol n V W m
     (a : Symbol n W U m') (k : ℕ) (ξ : CoordinateSpace n) :
     (a.sharpTerm b' k).coefficient (x, ξ) = (a.sharpTerm b k).coefficient (x, ξ) := by
   simp only [coefficient_sharpTerm, mixedDeriv_congr_of_eventually hb]
-
-/-- The terms of the composition expansion vanish at a position `x` near which the right factor
-vanishes. -/
-theorem coefficient_sharpTerm_eq_zero_of_eventually {b : Symbol n V W m} {x : CoordinateSpace n}
-    (hb : ∀ᶠ y in 𝓝 x, ∀ η, b.coefficient (y, η) = 0) (a : Symbol n W U m') (k : ℕ)
-    (ξ : CoordinateSpace n) : (a.sharpTerm b k).coefficient (x, ξ) = 0 := by
-  rw [coefficient_sharpTerm, Finset.sum_eq_zero fun w _ ↦ by
-    rw [mixedDeriv_eq_zero_of_eventually hb, ContinuousLinearMap.comp_zero], smul_zero]
 
 /-- **Locality of the composition expansion.** Let `ψ` be a function of the position, `a'` a
 symbol with `a'(x, ξ) = ψ(x) a(x, ξ)`, and `b'` a symbol which agrees with `b` at all positions

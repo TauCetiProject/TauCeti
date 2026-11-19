@@ -777,8 +777,8 @@ private theorem IsBallFamily.mixedDeriv_sharpRemainder_eq {p : Symbol n W U m'}
   filter_upwards [(isOpen_lt continuous_const (continuous_id.dist continuous_const)).mem_nhds hx]
     with y hy η
   rw [coefficient_sharpRemainder, Pi.sub_apply, Finset.sum_apply, sub_eq_self]
-  exact Finset.sum_eq_zero fun k _ ↦ coefficient_sharpTerm_eq_zero_of_eventually
-    (hc.eventually_eq_zero i hy) p k η
+  exact Finset.sum_eq_zero fun k _ ↦ coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_right
+    (((hc.eventually_eq_zero i hy).prod_inl_nhds η).mono fun q hq ↦ hq q.2) p k
 
 omit [CompleteSpace V] in
 /-- The remainder estimates of the composition expansion hold uniformly over a ball family: every
@@ -992,9 +992,9 @@ private theorem hasSum_coefficient_sharpTerm_latticePiece (p : Symbol n W U m')
   rw [hsum]
   -- The other pieces vanish near `x`.
   refine hasSum_sum_of_ne_finset_zero fun j hj ↦
-    coefficient_sharpTerm_eq_zero_of_eventually ?_ p k ξ
-  filter_upwards [hnear] with y hy η
-  rw [coefficient_latticePiece,
+    coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_right ?_ p k
+  filter_upwards [hnear.prod_inl_nhds ξ] with ⟨y, η⟩ hy
+  rw [Pi.zero_apply, coefficient_latticePiece,
     latticeBump_sub_eq_zero_of_notMem (s := (hfin.toFinset : Set (Fin n → ℤ))) hs hy hj, zero_smul]
 
 /-- **The asymptotic expansion of the composition of uniform symbols.** Let `p` and `a` be symbols
