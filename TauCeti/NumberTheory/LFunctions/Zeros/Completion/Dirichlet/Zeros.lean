@@ -83,17 +83,6 @@ theorem re_mem_Ioo_of_divisor_dirichletData_entireCompletion_pos (hne : χ ≠ 1
     (h.analyticAt_entireCompletion ρ).analyticOrderAt_eq_zero.mpr h0] at hρ
   simp at hρ
 
-/-- On the positive half-plane the multiplicity read from the divisor of the entire completion is
-the analytic order of `L(χ, ·)`. -/
-theorem divisor_dirichletData_entireCompletion_toNat_eq_analyticOrderNatAt (hne : χ ≠ 1)
-    {ρ : ℂ} (hρ : 0 < ρ.re) :
-    (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat =
-      analyticOrderNatAt χ.LFunction ρ := by
-  have h := dirichletData_hasMeromorphicContinuation χ hχ
-  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt h.meromorphicOn_entireCompletion
-    (h.analyticAt_entireCompletion ρ) (Set.mem_univ ρ), Int.toNat_natCast, analyticOrderNatAt,
-    analyticOrderNatAt, analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hρ]
-
 /-- For a zero `ρ` of a nonprincipal primitive Dirichlet entire completion and `1 ≤ Re s`,
 the summand `Re (1 / (s - ρ))` is positive. -/
 theorem re_one_div_sub_pos_of_dirichletData_entireCompletion_eq_zero (hne : χ ≠ 1) {ρ s : ℂ}
@@ -184,3 +173,22 @@ theorem divisor_dirichletData_entireCompletion_one_sub_of_inv_eq (hreal : χ⁻�
     divisor_dirichletData_entireCompletion_one_sub χ hχ s
 
 end TauCeti.LFunctions
+
+namespace DirichletCharacter
+
+open TauCeti.LFunctions
+
+variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
+
+/-- On the positive half-plane the multiplicity read from the divisor of the entire completion is
+the analytic order of `L(χ, ·)`. -/
+theorem divisor_dirichletData_entireCompletion_toNat_eq_analyticOrderNatAt (hne : χ ≠ 1)
+    {ρ : ℂ} (hρ : 0 < ρ.re) :
+    (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat =
+      analyticOrderNatAt χ.LFunction ρ := by
+  have h := dirichletData_hasMeromorphicContinuation χ hχ
+  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt h.meromorphicOn_entireCompletion
+    (h.analyticAt_entireCompletion ρ) (Set.mem_univ ρ), Int.toNat_natCast, analyticOrderNatAt,
+    analyticOrderNatAt, analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hρ]
+
+end DirichletCharacter

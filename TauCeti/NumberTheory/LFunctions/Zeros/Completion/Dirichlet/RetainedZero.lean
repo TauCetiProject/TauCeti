@@ -98,7 +98,7 @@ theorem finite_zero_sum_le_logDeriv (hne : χ ≠ 1) (S : Finset ℂ) (hS : ∀ 
     exact summable_subtype_iff_indicator.mp h
   calc ∑ ρ ∈ S, (analyticOrderNatAt χ.LFunction ρ : ℝ) * (1 / (σ - ρ)).re
       = ∑ ρ ∈ S, f ρ := Finset.sum_congr rfl fun ρ hρ ↦ by
-        simp only [f, d, divisor_dirichletData_entireCompletion_toNat_eq_analyticOrderNatAt χ hχ
+        simp only [f, d, χ.divisor_dirichletData_entireCompletion_toNat_eq_analyticOrderNatAt hχ
           hne (hS ρ hρ)]
     _ ≤ ∑' ρ, f ρ := hsum.sum_le_tsum S fun ρ _ ↦
         divisor_dirichletData_entireCompletion_mul_re_one_div_sub_nonneg χ hχ hne hσre ρ
