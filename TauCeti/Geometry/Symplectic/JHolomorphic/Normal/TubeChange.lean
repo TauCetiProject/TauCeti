@@ -161,7 +161,7 @@ private theorem integral_fderiv_snd_eq {g : E × N → E × N} {Ω : Set (E × N
       ∫ t in (0 : ℝ)..1, fderiv ℝ (fun x ↦ (g x).2) (q.2.1, t • q.1 • q.2.2) (0, q.2.2) := by
   simpa only [ContinuousLinearMap.coe_snd'] using
     integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain
-      (ContinuousLinearMap.snd ℝ E N) hΩ hg hq
+      (ContinuousLinearMap.snd ℝ E N) hΩ (hg.differentiableOn one_ne_zero) hq
 
 /-- The Hadamard form of the normal dilation is `Cⁿ` in `(a, z, W)` where the normal segments lie
 in an open set on which `g` is `C^(n+1)`. -/
@@ -266,7 +266,8 @@ theorem IsCompact.exists_pos_forall_norm_sub_le_mul_norm_sq {K : Set E} (hK : Is
     ∃ r > 0, ∃ C, ∀ z ∈ K, ∀ ξ : N, ‖ξ‖ ≤ r → ‖g (z, ξ) - (z, ξ)‖ ≤ C * ‖ξ‖ ^ 2 := by
   -- The normal slices `ξ ↦ g(z, ξ)` have a uniformly quadratic Taylor remainder at `ξ = 0`.
   obtain ⟨r, hr, C, hC⟩ := hK.exists_pos_forall_norm_sub_sub_fderiv_sub_le_mul
-    (F := fun z ξ ↦ g (z, ξ)) (x := fun _ ↦ (0 : N)) hg continuousOn_const
+    (F := fun z ξ ↦ g (z, ξ)) (x := fun _ ↦ (0 : N))
+    (fun z hz ↦ by simpa only [Function.uncurry_def, Prod.mk.eta] using hg z hz) continuousOn_const
   refine ⟨r, hr, C, fun z hz ξ hξ ↦ ?_⟩
   -- The slice at `z` has derivative `ξ ↦ (0, ξ)` at `0`.
   have hd : fderiv ℝ (fun ξ ↦ g (z, ξ)) 0 ξ = (0, ξ) := by

@@ -141,16 +141,17 @@ theorem inv_smul_sub_eq_integral_fderiv_of_mem_normalSegmentDomain [CompleteSpac
   rw [← hI, inv_smul_smul₀ ha]
 
 /-- On `normalSegmentDomain Ω`, a fixed continuous linear map `L` commutes with the average normal
-derivative of a function `f` that is `C¹` on the open set `Ω`. -/
+derivative of a function `f` that is differentiable on the open set `Ω`. -/
 theorem integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain {H : Type*}
     [NormedAddCommGroup H] [NormedSpace ℝ H] (L : G →L[ℝ] H) {f : E × N → G} {Ω : Set (E × N)}
-    (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ 1 f Ω) {q : ℝ × (E × N)} (hq : q ∈ normalSegmentDomain Ω) :
+    (hΩ : IsOpen Ω) (hf : DifferentiableOn ℝ f Ω) {q : ℝ × (E × N)}
+    (hq : q ∈ normalSegmentDomain Ω) :
     ∫ t in (0 : ℝ)..1, L (fderiv ℝ f (q.2.1, t • q.1 • q.2.2) (0, q.2.2)) =
       ∫ t in (0 : ℝ)..1, fderiv ℝ (fun x ↦ L (f x)) (q.2.1, t • q.1 • q.2.2) (0, q.2.2) := by
   refine intervalIntegral.integral_congr fun t ht ↦ ?_
   rw [uIcc_of_le zero_le_one] at ht
-  have hd := (hf.contDiffAt (hΩ.mem_nhds (hq t ht))).differentiableAt one_ne_zero
-  rw [← Function.comp_def, L.fderiv_comp_left hd, ContinuousLinearMap.comp_apply]
+  rw [← Function.comp_def, L.fderiv_comp_left (hf.differentiableAt (hΩ.mem_nhds (hq t ht))),
+    ContinuousLinearMap.comp_apply]
 
 end HadamardNormalSegment
 

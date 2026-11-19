@@ -406,7 +406,7 @@ private theorem integral_fderiv_blockNE_eq {J : E × N → E × N →L[ℝ] E ×
   have h := integral_clm_fderiv_eq_integral_fderiv_of_mem_normalSegmentDomain
     ((ContinuousLinearMap.compL ℝ E (E × N) N (ContinuousLinearMap.snd ℝ E N)).comp
       ((ContinuousLinearMap.compL ℝ E (E × N) (E × N)).flip (ContinuousLinearMap.inl ℝ E N)))
-    hΩ hJ hq
+    hΩ (hJ.differentiableOn one_ne_zero) hq
   simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply,
     ContinuousLinearMap.compL_apply] using h
 
