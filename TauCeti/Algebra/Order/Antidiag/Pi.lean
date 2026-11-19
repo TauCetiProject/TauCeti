@@ -19,6 +19,8 @@ to `n` over `s`.  Such a function therefore vanishes at every point outside `s`.
   the single function with value `n` at `i`.
 * `Finset.eq_zero_of_notMem_of_mem_piAntidiag`: a member of `Finset.piAntidiag s n` vanishes off
   `s`.
+* `Finset.pairwiseDisjoint_piAntidiag`, `Finset.sum_biUnion_piAntidiag`: the antidiagonals of
+  distinct values are disjoint, so a sum over a union of antidiagonals is taken value by value.
 -/
 
 public section
@@ -51,5 +53,19 @@ theorem piAntidiag_singleton_eq (i : ι) (N : μ) :
     refine ⟨by simp, fun j hj ↦ ?_⟩
     by_contra hji
     simp [Function.update_of_ne hji] at hj
+
+/-- The function antidiagonals `Finset.piAntidiag s n` of distinct values `n` are disjoint. -/
+theorem pairwiseDisjoint_piAntidiag (s : Finset ι) (t : Set μ) :
+    t.PairwiseDisjoint (piAntidiag s) :=
+  fun _ _ _ _ hkl ↦ disjoint_left.2 fun _ hk hl ↦
+    hkl ((mem_piAntidiag.1 hk).1.symm.trans (mem_piAntidiag.1 hl).1)
+
+/-- A product over a union of function antidiagonals is taken antidiagonal by antidiagonal. -/
+@[to_additive /-- A sum over a union of function antidiagonals is taken antidiagonal by
+antidiagonal. -/]
+theorem prod_biUnion_piAntidiag {M : Type*} [CommMonoid M] [DecidableEq (ι → μ)] (s : Finset ι)
+    (t : Finset μ) (g : (ι → μ) → M) :
+    ∏ f ∈ t.biUnion (piAntidiag s), g f = ∏ k ∈ t, ∏ f ∈ piAntidiag s k, g f :=
+  prod_biUnion (pairwiseDisjoint_piAntidiag s (t : Set μ))
 
 end Finset

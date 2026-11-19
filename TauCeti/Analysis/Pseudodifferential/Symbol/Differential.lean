@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.DifferentialSymbol
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Coordinates
+import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
@@ -54,8 +55,8 @@ For the differential symbol of order `m`:
   with no continuity assumed), through its coordinate expression `D = ∑_{|α| ≤ m} c_α ∂^α`
   (`Module.Basis.eq_coordinateOperator_coordinateCoeff`). Its full symbol is
   `∑_{|α| ≤ m} c_α(x) (i ξ)^α`
-  (`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialOperator`), and its quantization
-  is `D` itself, acting on `V`-valued functions componentwise
+  (`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialOperator`), and on Schwartz input
+  its quantization is `D` itself, acting on `V`-valued functions componentwise
   (`TauCeti.ClassicalSymbol.map_quantizeSchwartzValue_ofDifferentialOperator`) and on
   complex-valued functions through their real and imaginary parts
   (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator`). Its principal symbol is
@@ -321,30 +322,6 @@ namespace ClassicalSymbol
 open Finset
 open scoped _root_.Manifold
 
-/-- The word in the coordinate indices listing each index `i` exactly `αᵢ` times. -/
-private def multiIndexWord (α : Fin n → ℕ) (j : Fin (∑ i, α i)) : Fin n :=
-  (finSigmaFinEquiv.symm j).1
-
-private theorem card_multiIndexWord (α : Fin n → ℕ) (i : Fin n) :
-    #{j | multiIndexWord α j = i} = α i := by
-  rw [card_filter, ← Fintype.sum_equiv finSigmaFinEquiv (fun p ↦ if p.1 = i then 1 else 0)
-    (fun j ↦ if multiIndexWord α j = i then 1 else 0) fun p ↦ by simp [multiIndexWord],
-    Fintype.sum_sigma]
-  simp [apply_ite]
-
-private theorem prod_multiIndexWord {M : Type*} [CommMonoid M] (α : Fin n → ℕ) (g : Fin n → M) :
-    ∏ j, g (multiIndexWord α j) = ∏ i, g i ^ α i := by
-  rw [← Fintype.prod_equiv finSigmaFinEquiv (fun p ↦ g p.1) _ fun p ↦ by simp [multiIndexWord]]
-  simp [Fintype.prod_sigma]
-
-/-- The multi-indices `α` of order `|α| ≤ m`, as a union over the orders. -/
-private theorem sum_biUnion_piAntidiag {M : Type*} [AddCommMonoid M] (m : ℕ)
-    (g : (Fin n → ℕ) → M) :
-    ∑ α ∈ (range (m + 1)).biUnion (piAntidiag univ), g α =
-      ∑ k ∈ range (m + 1), ∑ α ∈ piAntidiag univ k, g α :=
-  sum_biUnion fun _ _ _ _ hkl ↦ disjoint_left.2 fun _ hk hl ↦
-    hkl ((mem_piAntidiag.1 hk).1.symm.trans (mem_piAntidiag.1 hl).1)
-
 /-- The standard basis of `ℝⁿ`, along which differential operators are written in coordinates. -/
 private abbrev coordinateBasis (n : ℕ) : Module.Basis (Fin n) ℝ (CoordinateSpace n) :=
   (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
@@ -366,7 +343,8 @@ smooth real functions on `ℝⁿ`, in Grothendieck's sense of iterated commutato
 operators, acting on `V`-valued functions componentwise. Writing `D = ∑_{|α| ≤ m} c_α ∂^α` in the
 coordinates of `ℝⁿ` (`Module.Basis.eq_coordinateOperator_coordinateCoeff`), it is the polynomial
 symbol `∑_{|α| ≤ m} c_α(x) (i ξ)^α`
-(`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialOperator`), whose quantization is `D`
+(`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialOperator`), whose quantization on
+Schwartz input is `D`
 (`TauCeti.ClassicalSymbol.map_quantizeSchwartzValue_ofDifferentialOperator`). Only the local
 symbol estimates hold: the coefficients need not be bounded. -/
 def ofDifferentialOperator {m : ℕ}
@@ -376,10 +354,8 @@ def ofDifferentialOperator {m : ℕ}
     ClassicalSymbol n V V m :=
   ofDifferentialSymbol (k := fun α ↦ ∑ i, α i) m ((range (m + 1)).biUnion (piAntidiag univ))
     (fun α j ↦ coordinateBasis n (multiIndexWord α j))
-    (fun α x ↦ (coordinateCoeff (coordinateBasis n).smoothCoord
-      (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ →ₗ[ℝ]
-          C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯) α x : ℂ) •
-        ContinuousLinearMap.id ℂ V)
+    (fun α x ↦ (coordinateCoeff (coordinateBasis n).smoothCoord D.1 α x : ℂ) •
+      ContinuousLinearMap.id ℂ V)
     (fun α _ ↦ contDiff_ofReal_smul_id V _)
     fun α hα ↦ by
       obtain ⟨k, hk, hαk⟩ := mem_biUnion.1 hα
@@ -390,19 +366,14 @@ variable {m : ℕ}
     C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯
     C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ m)
 
-/-- The value of the differential symbol of `ofDifferentialOperator` on the multi-indices in
-`t`. -/
-private theorem differentialSymbol_ofDifferentialOperator (t : Finset (Fin n → ℕ))
+/-- The differential symbol of the coordinate expression `∑_{α ∈ t} c_α ∂^α` with smooth real
+coefficients `c_α` is `∑_{α ∈ t} c_α(x) (i ξ)^α`. -/
+private theorem differentialSymbol_multiIndexWord (t : Finset (Fin n → ℕ))
+    (c : (Fin n → ℕ) → C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯)
     (x ξ : CoordinateSpace n) :
     differentialSymbol (k := fun α ↦ ∑ i, α i) t (fun α j ↦ coordinateBasis n (multiIndexWord α j))
-        (fun α x ↦ (coordinateCoeff (coordinateBasis n).smoothCoord
-          (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ →ₗ[ℝ]
-          C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯) α x : ℂ) •
-            ContinuousLinearMap.id ℂ V) (x, ξ) =
-      ∑ α ∈ t, ((coordinateCoeff (coordinateBasis n).smoothCoord
-          (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ →ₗ[ℝ]
-          C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯) α x : ℂ) *
-        ∏ i, (Complex.I * ξ i) ^ α i) • ContinuousLinearMap.id ℂ V := by
+        (fun α x ↦ (c α x : ℂ) • ContinuousLinearMap.id ℂ V) (x, ξ) =
+      ∑ α ∈ t, ((c α x : ℂ) * ∏ i, (Complex.I * ξ i) ^ α i) • ContinuousLinearMap.id ℂ V := by
   rw [differentialSymbol_def]
   refine sum_congr rfl fun α _ ↦ ?_
   rw [smul_smul, prod_multiIndexWord α fun i ↦ Complex.I * (⟪ξ, coordinateBasis n i⟫ : ℂ),
@@ -416,12 +387,10 @@ private theorem differentialSymbol_ofDifferentialOperator (t : Finset (Fin n →
 theorem coefficient_toSymbol_ofDifferentialOperator (x ξ : CoordinateSpace n) :
     (ofDifferentialOperator V D).toSymbol.coefficient (x, ξ) =
       ∑ k ∈ range (m + 1), ∑ α ∈ piAntidiag univ k,
-        ((coordinateCoeff (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.smoothCoord
-          (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ →ₗ[ℝ]
-          C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯) α x : ℂ) *
-            ∏ i, (Complex.I * ξ i) ^ α i) • ContinuousLinearMap.id ℂ V := by
+        ((coordinateCoeff (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.smoothCoord D.1 α x : ℂ) *
+          ∏ i, (Complex.I * ξ i) ^ α i) • ContinuousLinearMap.id ℂ V := by
   rw [ofDifferentialOperator, coefficient_toSymbol_ofDifferentialSymbol,
-    differentialSymbol_ofDifferentialOperator, sum_biUnion_piAntidiag]
+    differentialSymbol_multiIndexWord, sum_biUnion_piAntidiag]
 
 /-- **Differential operators are pseudodifferential operators.** On Schwartz input `u`, the
 quantization of `ofDifferentialOperator V D` is the differential operator `D` acting on `V`-valued
@@ -430,34 +399,25 @@ applied to the smooth function `ℓ ∘ u`. -/
 theorem map_quantizeSchwartzValue_ofDifferentialOperator [CompleteSpace V] (ℓ : V →L[ℝ] ℝ)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     ℓ (quantizeSchwartzValue (ofDifferentialOperator V D).toSymbol.coefficient u x) =
-      (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ →ₗ[ℝ]
-          C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯)
-        ⟨fun y ↦ ℓ (u y), (ℓ.contDiff.comp (u.smooth ⊤)).contMDiff⟩ x := by
+      D.1 ⟨fun y ↦ ℓ (u y), (ℓ.contDiff.comp (u.smooth ⊤)).contMDiff⟩ x := by
   set g : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ :=
     ⟨fun y ↦ ℓ (u y), (ℓ.contDiff.comp (u.smooth ⊤)).contMDiff⟩
-  set c := coordinateCoeff (coordinateBasis n).smoothCoord
-    (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ →ₗ[ℝ]
-          C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯)
   rw [congr($((coordinateBasis n).eq_coordinateOperator_coordinateCoeff D.2) g x),
-    coordinateOperator_apply, ContMDiffMap.coe_sum, Finset.sum_apply, ofDifferentialOperator,
-    quantizeSchwartzValue_ofDifferentialSymbol, map_sum, sum_biUnion_piAntidiag]
-  refine sum_congr rfl fun k _ ↦ ?_
-  rw [ContMDiffMap.coe_sum, Finset.sum_apply]
-  refine sum_congr rfl fun α _ ↦ ?_
-  -- The derivative `∂^α` along the word listing each coordinate `i` exactly `αᵢ` times.
-  have hα : (fun i ↦ #{j | multiIndexWord α j = i}) = α := funext (card_multiIndexWord α)
+    ofDifferentialOperator, quantizeSchwartzValue_ofDifferentialSymbol, sum_biUnion_piAntidiag]
+  simp only [coordinateOperator_apply, ContMDiffMap.coe_sum, Finset.sum_apply, map_sum]
+  refine sum_congr rfl fun k _ ↦ sum_congr rfl fun α _ ↦ ?_
+  -- `ℓ` commutes with the derivative `∂^α`, taken along the word listing each coordinate `i`
+  -- exactly `αᵢ` times.
   have hu := ℓ.iteratedFDeriv_comp_left (u.smooth ⊤).contDiffAt (x := x)
     (i := ∑ i, α i) (by exact_mod_cast le_top)
   have hu' : ℓ (iteratedFDeriv ℝ (∑ i, α i) u x fun j ↦ coordinateBasis n (multiIndexWord α j)) =
       iteratedFDeriv ℝ (∑ i, α i) g x fun j ↦ coordinateBasis n (multiIndexWord α j) := by
     rw [ContMDiffMap.coeFn_mk]
     exact congr($hu _).symm
-  rw [_root_.smul_apply, ContinuousLinearMap.id_apply, Complex.coe_smul, map_smul,
-    SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv, hu', smul_eq_mul, smul_eq_mul,
-    ContMDiffMap.coe_mul, Pi.mul_apply, mul_comm]
-  have key := multiIndexDeriv_apply_eq_iteratedFDeriv (coordinateBasis n) (multiIndexWord α) g x
-  rw [hα] at key
-  rw [key, Function.comp_def]
+  simp only [_root_.smul_apply, ContinuousLinearMap.id_apply, Complex.coe_smul, map_smul,
+    SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv, hu', smul_eq_mul, ContMDiffMap.coe_mul,
+    Pi.mul_apply, multiIndexDeriv_apply_eq_iteratedFDeriv_multiIndexWord, Function.comp_def]
+  exact mul_comm _ _
 
 /-- **Scalar differential operators are pseudodifferential operators.** On complex-valued
 Schwartz input `u`, the quantization of `ofDifferentialOperator ℂ D` is `D` applied separately to
@@ -465,13 +425,9 @@ the real and imaginary parts of `u`. -/
 theorem quantizeSchwartzValue_ofDifferentialOperator (u : 𝓢(CoordinateSpace n, ℂ))
     (x : CoordinateSpace n) :
     quantizeSchwartzValue (ofDifferentialOperator ℂ D).toSymbol.coefficient u x =
-      (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ →ₗ[ℝ]
-          C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯)
-          ⟨fun y ↦ (u y).re, (Complex.reCLM.contDiff.comp (u.smooth ⊤)).contMDiff⟩ x +
-        (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯ →ₗ[ℝ]
-          C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; ℝ⟯)
-          ⟨fun y ↦ (u y).im, (Complex.imCLM.contDiff.comp (u.smooth ⊤)).contMDiff⟩ x *
-            Complex.I := by
+      D.1 ⟨fun y ↦ (u y).re, (Complex.reCLM.contDiff.comp (u.smooth ⊤)).contMDiff⟩ x +
+        D.1 ⟨fun y ↦ (u y).im, (Complex.imCLM.contDiff.comp (u.smooth ⊤)).contMDiff⟩ x *
+          Complex.I := by
   refine Complex.ext ?_ ?_
   · simpa using map_quantizeSchwartzValue_ofDifferentialOperator D Complex.reCLM u x
   · simpa using map_quantizeSchwartzValue_ofDifferentialOperator D Complex.imCLM u x
@@ -493,7 +449,7 @@ theorem coefficient_principal_ofDifferentialOperator {x ξ : CoordinateSpace n} 
   have hσ := (coordinateBasis n).smoothPrincipalSymbol_eq_sum_coordinateCoeff D x η
   simp only [hinner] at hσ
   rw [← hη, ofDifferentialOperator, coefficient_principal_ofDifferentialSymbol _ _ _ _ _ _ hξ,
-    differentialSymbol_ofDifferentialOperator, hσ, Complex.ofReal_sum, mul_sum, sum_smul]
+    differentialSymbol_multiIndexWord, hσ, Complex.ofReal_sum, mul_sum, sum_smul]
   refine sum_congr ?_ fun α hα ↦ ?_
   · ext α
     simp only [mem_filter, mem_biUnion, mem_range, mem_piAntidiag, mem_univ, ne_eq,

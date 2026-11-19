@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Analysis.Analytic.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
+import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Analysis.Analytic.InfiniteSum
 import TauCeti.Algebra.MvPolynomial.Funext
 
@@ -230,14 +231,11 @@ theorem hasSum_mvCoeff {f : (ι → 𝕜) → F} {p : FormalMultilinearSeries �
     fun α hα ↦ by
       simp only [S, mem_biUnion, mem_range, mem_piAntidiag]
       exact ⟨∑ i, α i, (le_sup (f := fun α ↦ ∑ i, α i) hα).trans_lt hK, by simp⟩
-  have hdisj (K : ℕ) : (range K : Set ℕ).PairwiseDisjoint (univ.piAntidiag (ι := ι) ·) :=
-    fun k _ l _ hkl ↦ disjoint_left.2 fun α hk hl ↦
-      hkl ((mem_piAntidiag.1 hk).1.symm.trans (mem_piAntidiag.1 hl).1)
   refine hasSum_of_subseq_of_summable (p.summable_norm_prod_pow_smul_mvCoeff h) (s := S)
     (p := atTop) ?_ ?_
   · exact tendsto_atTop_atTop.2 fun s ↦ ⟨s.sup (fun α ↦ ∑ i, α i) + 1,
       fun K hK ↦ hS s K ((lt_add_one _).trans_le hK)⟩
-  · simp_rw [S, sum_biUnion (hdisj _), ← apply_eq_sum_mvCoeff]
+  · simp_rw [S, sum_biUnion_piAntidiag, ← apply_eq_sum_mvCoeff]
     exact (hf.hasSum hz).tendsto_sum_nat
 
 end HasFPowerSeriesOnBall

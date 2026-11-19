@@ -50,7 +50,9 @@ algebraic operators with the classical differential operators of analysis.
   supports. For general differential operators on a boundaryless manifold this is
   `TauCeti.tsupport_differentialOperators_apply_subset`.
 * `TauCeti.multiIndexDeriv_apply_eq_iteratedFDeriv`: `∂^α f (x)` is the Fréchet derivative
-  `D^{|α|} f (x)` evaluated on a word of directions in which each `vᵢ` occurs `αᵢ` times.
+  `D^{|α|} f (x)` evaluated on a word of directions in which each `vᵢ` occurs `αᵢ` times; for
+  coordinates indexed by `Fin n`, `TauCeti.multiIndexDeriv_apply_eq_iteratedFDeriv_multiIndexWord`
+  uses the word `TauCeti.multiIndexWord α` listing each index `i` exactly `αᵢ` times.
 * `TauCeti.smoothPrincipalSymbol_coordinateOperator`: the principal symbol of the coordinate
   expression `∑_{|α| ≤ m} c_α ∂^α` of order `m` at `x` is `ξ ↦ ∑_{|α| = m} c_α(x) ξ^α`, where
   `ξ^α = ∏ᵢ ξ(vᵢ) ^ αᵢ`; only the top-order coefficients enter.
@@ -238,7 +240,8 @@ theorem multiIndexDeriv_apply_eq_iteratedFDeriv {k : ℕ} (r : Fin k → ι)
     rw [hcount, multiIndexDeriv_add_single, mul_apply_eq_comp, Derivation.coeFn_coe,
       ih (fun j ↦ r (Fin.castSucc j)), iteratedFDeriv_succ_apply_right, hderiv,
       ContinuousLinearMap.iteratedFDeriv_comp_left _ hf.contDiffAt (by exact_mod_cast le_top)]
-    rfl
+    simp only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_def,
+      ContinuousLinearMap.apply_apply, Fin.init_def]
 
 /-- **The principal symbol of a coordinate expression.** The principal symbol at `x` of the
 coordinate expression `∑_{|α| ≤ m} c_α ∂^α` of order `m` in the directional derivatives along the
@@ -258,11 +261,10 @@ theorem smoothPrincipalSymbol_coordinateOperator (m : ℕ) (c : (ι → ℕ) →
   obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) ξ
   rw [smoothPrincipalSymbol_mvfderiv]
   dsimp only
-  rw [coordinateOperator_eq_sum_mulLeft, map_sum,
-    LinearMap.sum_apply, ContMDiffMap.coe_sum, Finset.sum_apply, Finset.mul_sum,
-    Finset.sum_range_succ, Finset.sum_eq_zero, zero_add]
+  rw [coordinateOperator_eq_sum_mulLeft]
+  simp only [map_sum, LinearMap.sum_apply, ContMDiffMap.coe_sum, Finset.sum_apply, Finset.mul_sum]
+  rw [Finset.sum_range_succ, Finset.sum_eq_zero, zero_add]
   · -- The summands of order exactly `m`.
-    rw [map_sum, LinearMap.sum_apply, ContMDiffMap.coe_sum, Finset.sum_apply, Finset.mul_sum]
     refine Finset.sum_congr rfl fun α hα ↦ ?_
     have hαm : 0 + ∑ i, α i = m := by simpa using (Finset.mem_piAntidiag.1 hα).1
     rw [← smoothPrincipalSymbol_mvfderiv BoundarylessManifold.isInteriorPoint ⟨_, hαm ▸ hmem α⟩,
@@ -273,11 +275,47 @@ theorem smoothPrincipalSymbol_coordinateOperator (m : ℕ) (c : (ι → ℕ) →
     simp
   · -- The summands of order less than `m` have vanishing `m`-fold commutators.
     intro k hk
-    rw [map_sum, LinearMap.sum_apply, ContMDiffMap.coe_sum, Finset.sum_apply, Finset.mul_sum]
     refine Finset.sum_eq_zero fun α hα ↦ ?_
     have hαk : 0 + ∑ i, α i = k := by simpa using (Finset.mem_piAntidiag.1 hα).1
     rw [smulCommutator_pow_eq_zero (hαk ▸ hmem α) (Finset.mem_range.1 hk)]
     simp
+
+/-! ### Multi-indices as words -/
+
+variable {n : ℕ}
+
+/-- The word in the indices `Fin n` listing each index `i` exactly `αᵢ` times, in increasing
+order. Evaluating the iterated derivative on the directions of this word computes `∂^α`
+(`TauCeti.multiIndexDeriv_apply_eq_iteratedFDeriv_multiIndexWord`). -/
+def multiIndexWord (α : Fin n → ℕ) (j : Fin (∑ i, α i)) : Fin n :=
+  (finSigmaFinEquiv.symm j).1
+
+/-- Each index `i` occurs exactly `αᵢ` times in `TauCeti.multiIndexWord α`. -/
+@[simp]
+theorem card_multiIndexWord (α : Fin n → ℕ) (i : Fin n) :
+    #{j | multiIndexWord α j = i} = α i := by
+  rw [card_filter, ← Fintype.sum_equiv finSigmaFinEquiv (fun p ↦ if p.1 = i then 1 else 0)
+    (fun j ↦ if multiIndexWord α j = i then 1 else 0) fun p ↦ by simp [multiIndexWord],
+    Fintype.sum_sigma]
+  simp [apply_ite]
+
+/-- A product over the letters of `TauCeti.multiIndexWord α` is the monomial `∏ᵢ gᵢ ^ αᵢ`. -/
+theorem prod_multiIndexWord {M : Type*} [CommMonoid M] (α : Fin n → ℕ) (g : Fin n → M) :
+    ∏ j, g (multiIndexWord α j) = ∏ i, g i ^ α i := by
+  rw [← Fintype.prod_equiv finSigmaFinEquiv (fun p ↦ g p.1) _ fun p ↦ by simp [multiIndexWord]]
+  simp [Fintype.prod_sigma]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Monomials in directional derivatives are iterated derivatives.** For directions
+`v : Fin n → E`, the monomial `∂^α` sends `f` to the `|α|`-th Fréchet derivative of `f`
+evaluated on the word `TauCeti.multiIndexWord α` of directions, in which each `vᵢ` occurs `αᵢ`
+times. -/
+theorem multiIndexDeriv_apply_eq_iteratedFDeriv_multiIndexWord (v : Fin n → E) (α : Fin n → ℕ)
+    (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (x : E) :
+    multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
+        (fun i j ↦ commute_lineDerivation (v i) (v j)) α f x =
+      iteratedFDeriv ℝ (∑ i, α i) f x (v ∘ multiIndexWord α) := by
+  simpa using multiIndexDeriv_apply_eq_iteratedFDeriv v (multiIndexWord α) f x
 
 end TauCeti
 
