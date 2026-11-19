@@ -16,15 +16,20 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 Let `p > 2`, `1 ≤ q ≤ p` and let `Ω` be an open planar domain. Fix real normed spaces `F`, `G`
 and `H` with `G` finite-dimensional. This file proves the local bounds that accompany the
-order-zero and order-one mixed-exponent products of `TauCeti.Analysis.Sobolev.Local.Multiplication`,
-stated with the `W^{k,p}` size `TauCeti.eLpNormWkp`. There is a constant `C` such that for every
+mixed-exponent products of `TauCeti.Analysis.Sobolev.Local.Multiplication` and
+`TauCeti.Analysis.Sobolev.Local.Multiplication.Higher`, stated with the `W^{k,p}` size
+`TauCeti.eLpNormWkp`. There is a constant `C` such that for every
 continuous bilinear map `B : F × G → H`:
 
 * order zero, on a set `U` whose closure is compact and contained in `Ω`:
   `‖B(f, g)‖_{L^q(U)} ≤ C ‖B‖ ‖f‖_{Lᵖ(U)} ‖g‖_{W^{1,q}(Ω)}`;
 * order one, for `1 < q`, finite-dimensional `F` and complete `H`, on such a set `U`:
   `‖B(f, g)‖_{W^{1,q}(U)} ≤ C ‖B‖ ‖f‖_{W^{1,p}(Ω)} ‖g‖_{W^{1,q}(Ω)}`. Taking `U` open controls
-  the weak derivative of the product on all of `U`.
+  the weak derivative of the product on all of `U`;
+* every positive order, under the same hypotheses:
+  `‖B(f, g)‖_{W^{k+1,q}(U)} ≤ C ‖B‖ ‖f‖_{W^{k+1,p}(Ω)} ‖g‖_{W^{k+1,q}(Ω)}`. This follows from the
+  order-one bound by induction on `k`: the weak derivative of `B(f, g)` is
+  `B(Df, g) + B(f, Dg)`, two products of one order lower for bilinear maps of norm at most `‖B‖`.
 
 The constant depends on the spaces, the exponents and the sets, and is uniform in `B`, `f` and
 `g`. No membership hypothesis is needed: the bounds hold trivially when a norm on the right is
@@ -35,6 +40,8 @@ infinite.
 * `TauCeti.exists_eLpNorm_bilin_le_eLpNormWkp_one`: the order-zero bound.
 * `TauCeti.exists_eLpNormWkp_one_bilin_le`: the order-one bound. At `q = p` this is the local
   bound for the algebra property of `W^{1,p}_loc`.
+* `TauCeti.exists_eLpNormWkp_succ_bilin_le`: the bound at every positive order, the quantitative
+  form of `TauCeti.MemWkpLoc.bilin_succ`.
 
 ## References
 
@@ -184,6 +191,117 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
       ring
     _ ≤ _ := by
       gcongr
+      exact_mod_cast le_self_add
+
+/-- The inductive step of `exists_eLpNormWkp_succ_bilin_le` for factors of finite norm. By the
+weak Leibniz rule the weak derivative of `B(f, g)` is `B(Df, g) + B(f, Dg)`, so the
+`W^{k+2,q}(U)` norm of `B(f, g)` is bounded through its `L^q(U)` norm, given by the order-zero
+bound `hC₀`, and the `W^{k+1,q}(U)` norms of the products for `B.precompL ℂ` and `B.precompR ℂ`,
+given by `hC₁` and `hC₂`. -/
+private theorem eLpNormWkp_succ_succ_bilin_le_of_ne_top [FiniteDimensional ℝ F] [CompleteSpace H]
+    (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) {U : Set ℂ} (hUΩ : closure U ⊆ Ω) {k : ℕ}
+    {C₀ C₁ C₂ : ℝ≥0} (B : F →L[ℝ] G →L[ℝ] H) {f : ℂ → F} {g : ℂ → G}
+    (hf : eLpNormWkp p Ω (k + 2) f ≠ ∞) (hg : eLpNormWkp q Ω (k + 2) g ≠ ∞)
+    (hC₀ : eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) ≤
+      C₀ * ‖B‖ₑ * eLpNorm f p (volume.restrict U) * eLpNormWkp q Ω 1 g)
+    (hC₁ : ∀ (f' : ℂ → ℂ →L[ℝ] F) (g' : ℂ → G),
+      eLpNormWkp q U (k + 1) (fun z => B.precompL ℂ (f' z) (g' z)) ≤
+        C₁ * ‖B‖ₑ * eLpNormWkp p Ω (k + 1) f' * eLpNormWkp q Ω (k + 1) g')
+    (hC₂ : ∀ (f' : ℂ → F) (g' : ℂ → ℂ →L[ℝ] G),
+      eLpNormWkp q U (k + 1) (fun z => B.precompR ℂ (f' z) (g' z)) ≤
+        C₂ * ‖B‖ₑ * eLpNormWkp p Ω (k + 1) f' * eLpNormWkp q Ω (k + 1) g') :
+    eLpNormWkp q U (k + 2) (fun z => B (f z) (g z)) ≤
+      ↑(C₀ + C₁ + C₂) * ‖B‖ₑ * eLpNormWkp p Ω (k + 2) f * eLpNormWkp q Ω (k + 2) g := by
+  have hq1 : (1 : ℝ≥0∞) ≤ q := by exact_mod_cast hq.le
+  let _ : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨hq1⟩
+  let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨hq1.trans (by exact_mod_cast hqp)⟩
+  obtain ⟨Df, hDf, hDfk, hfΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hf
+  obtain ⟨Dg, hDg, hDgk, hgΩ⟩ := exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top hg
+  -- `f` is locally bounded on `Ω`, so the weak Leibniz rule applies there.
+  have hfloc : MemWkpLoc p Ω 1 f := (memWkpLoc_of_eLpNormWkp_ne_top hf).of_le (by omega)
+  have hLeib := hDf.bilin_of_memLpLoc B hp hq hqp
+    ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top)
+    (memWkpLoc_of_eLpNormWkp_ne_top hDfk).memLpLoc hDg
+    (memWkpLoc_of_eLpNormWkp_ne_top hg).memLpLoc (memWkpLoc_of_eLpNormWkp_ne_top hDgk).memLpLoc
+  have hint : Opens.interior U ≤ Ω := fun z hz => hUΩ (subset_closure (interior_subset hz))
+  have hUm : volume.restrict U ≤ volume.restrict Ω :=
+    Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl
+  calc
+    _ ≤ eLpNorm (fun z => B (f z) (g z)) q (volume.restrict U) +
+        eLpNormWkp q U (k + 1)
+          (fun z => B.precompL ℂ (Df z) (g z) + B.precompR ℂ (f z) (Dg z)) :=
+      eLpNormWkp_succ_le (hLeib.mono hint)
+    _ ≤ C₀ * ‖B‖ₑ * eLpNormWkp p Ω (k + 2) f * eLpNormWkp q Ω (k + 2) g +
+        (C₁ * ‖B‖ₑ * eLpNormWkp p Ω (k + 2) f * eLpNormWkp q Ω (k + 2) g +
+          C₂ * ‖B‖ₑ * eLpNormWkp p Ω (k + 2) f * eLpNormWkp q Ω (k + 2) g) := by
+      refine add_le_add (hC₀.trans ?_) ((eLpNormWkp_add_le hq1).trans
+        (add_le_add ((hC₁ Df g).trans ?_) ((hC₂ f Dg).trans ?_)))
+      · gcongr
+        · exact (eLpNorm_mono_measure f hUm).trans eLpNorm_le_eLpNormWkp
+        · exact eLpNormWkp_mono_order (by omega)
+      · gcongr
+        · exact hfΩ ▸ le_add_self
+        · exact eLpNormWkp_mono_order (by omega)
+      · gcongr
+        · exact eLpNormWkp_mono_order (by omega)
+        · exact hgΩ ▸ le_add_self
+    _ = _ := by
+      push_cast
+      ring
+
+/-- **Local bound for mixed products at every positive order.** Fix real normed spaces `F`, `G`
+and `H` with `F` and `G` finite-dimensional and `H` complete. For `p > 2`, `1 < q ≤ p`, an order
+`k` and a set `U` whose closure is compact and contained in `Ω`, there is a constant `C` such that
+`‖B(f, g)‖_{W^{k+1,q}(U)} ≤ C ‖B‖ ‖f‖_{W^{k+1,p}(Ω)} ‖g‖_{W^{k+1,q}(Ω)}` for every continuous
+bilinear map `B : F →L[ℝ] G →L[ℝ] H` and all `f : ℂ → F` and `g : ℂ → G`. At `q = p` this is the
+local bound for the algebra property of `W^{k+1,p}_loc`, and it is the quantitative form of
+`TauCeti.MemWkpLoc.bilin_succ`. -/
+theorem exists_eLpNormWkp_succ_bilin_le [FiniteDimensional ℝ F] [CompleteSpace H] (hp : 2 < p)
+    (hq : 1 < q) (hqp : q ≤ p) {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω)
+    (k : ℕ) :
+    ∃ C : ℝ≥0, ∀ (B : F →L[ℝ] G →L[ℝ] H) (f : ℂ → F) (g : ℂ → G),
+      eLpNormWkp q U (k + 1) (fun z => B (f z) (g z)) ≤
+        C * ‖B‖ₑ * eLpNormWkp p Ω (k + 1) f * eLpNormWkp q Ω (k + 1) g := by
+  -- Induction on the order from the order-one bound `exists_eLpNormWkp_one_bilin_le`; the step
+  -- is `eLpNormWkp_succ_succ_bilin_le_of_ne_top`, applied with the induction hypothesis for the
+  -- bilinear maps `B.precompL ℂ` and `B.precompR ℂ`.
+  induction k generalizing F G H with
+  | zero => exact exists_eLpNormWkp_one_bilin_le hp hq hqp hU hUΩ
+  | succ k ih =>
+    have hq0 : (q : ℝ≥0∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans hq).ne'
+    have hp0 : (p : ℝ≥0∞) ≠ 0 := by exact_mod_cast (zero_lt_two.trans hp).ne'
+    obtain ⟨C₀, hC₀⟩ := exists_eLpNorm_bilin_le_eLpNormWkp_one (F := F) (G := G) (H := H) hp
+      hq.le hqp hU hUΩ
+    obtain ⟨C₁, hC₁⟩ := ih (F := ℂ →L[ℝ] F) (G := G) (H := ℂ →L[ℝ] H)
+    obtain ⟨C₂, hC₂⟩ := ih (F := F) (G := ℂ →L[ℝ] G) (H := ℂ →L[ℝ] H)
+    refine ⟨C₀ + C₁ + C₂ + 1, fun B f g => ?_⟩
+    have hUm : volume.restrict U ≤ volume.restrict Ω :=
+      Measure.restrict_mono (subset_closure.trans hUΩ) le_rfl
+    -- If `B = 0` or either factor vanishes almost everywhere on `Ω`, so does the product on `U`.
+    have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict Ω] 0) :
+        eLpNormWkp q U (k + 2) (fun z => B (f z) (g z)) = 0 := by
+      rw [eLpNormWkp_congr_ae (ae_mono hUm h), eLpNormWkp_zero_fun]
+    refine ENNReal.le_mul_mul_of_ne_top_imp_le (fun hCB => hvanish (.of_forall fun z => ?_))
+      (fun hf0 => hvanish ?_) (fun hg0 => hvanish ?_) fun _ hf hg => ?_
+    · -- `eNorm_eq_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
+      simp [B.opNorm_zero_iff.1 <| (norm_nonneg B).antisymm' <| by simpa [← ofReal_norm] using hCB]
+    · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hp0 hf0] with z hz
+      simp [hz]
+    · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0] with z hz
+      simp [hz]
+    -- The operator spaces of `B.precompL ℂ` and `B.precompR ℂ` are too deeply nested for their
+    -- norms to be stated directly, so they are bounded inside the inequalities `hC₁` and `hC₂`.
+    refine (eLpNormWkp_succ_succ_bilin_le_of_ne_top (C₁ := C₁) (C₂ := C₂) hp hq hqp hUΩ B hf hg
+      (hC₀ B f g)
+      (fun f' g' => (hC₁ (B.precompL ℂ) f' g').trans ?_)
+      (fun f' g' => (hC₂ (B.precompR ℂ) f' g').trans ?_)).trans ?_
+    · gcongr
+      rw [← ofReal_norm, ← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal (B.norm_precompL_le ℂ)
+    · gcongr
+      rw [← ofReal_norm, ← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal (B.norm_precompR_le ℂ)
+    · gcongr ?_ * _ * _ * _
       exact_mod_cast le_self_add
 
 end TauCeti
