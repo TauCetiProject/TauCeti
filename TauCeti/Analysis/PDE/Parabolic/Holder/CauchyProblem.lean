@@ -234,19 +234,7 @@ theorem isInvertible_euclideanParabolicOperatorL_prod_spatialTraceL (hα₀ : 0 
     ((euclideanParabolicOperatorL hα₁.le a b c).prod
       (spatialTraceL (F := ℝ) (hab := hT) ⟨0, left_mem_Icc.2 hT.le⟩)).IsInvertible := by
   -- One bound `K` for all the coefficient norms.
-  set K : ℝ≥0 := ∑ i, ∑ j, ‖a i j‖₊ + ∑ i, ‖b i‖₊ + ‖c‖₊
-  have hak (i j : ι) : ‖a i j‖ ≤ K := by
-    have h : ‖a i j‖₊ ≤ ∑ i, ∑ j, ‖a i j‖₊ :=
-      (Finset.single_le_sum (f := fun j ↦ ‖a i j‖₊) (fun _ _ ↦ zero_le)
-        (Finset.mem_univ j)).trans (Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖₊)
-          (fun _ _ ↦ zero_le) (Finset.mem_univ i))
-    exact_mod_cast h.trans (le_add_right (le_add_right le_rfl))
-  have hbk (i : ι) : ‖b i‖ ≤ K := by
-    have h : ‖b i‖₊ ≤ ∑ i, ‖b i‖₊ :=
-      Finset.single_le_sum (f := fun i ↦ ‖b i‖₊) (fun _ _ ↦ zero_le) (Finset.mem_univ i)
-    exact_mod_cast h.trans (le_add_right (le_add_left le_rfl))
-  have hck : ‖c‖ ≤ K := by
-    exact_mod_cast (le_add_left le_rfl : ‖c‖₊ ≤ K)
+  obtain ⟨K, hak, hbk, hck⟩ := exists_norm_coeff_le a b c
   obtain ⟨C, -, hC⟩ := exists_norm_le_lineMap (ι := ι) hα₀ hα₁ hlam K T
   -- The heat operator is surjective, by the constant-coefficient theory.
   have h₀ := (bijective_euclideanParabolicOperatorL_const_prod_spatialTraceL hα₀ hα₁ one_pos

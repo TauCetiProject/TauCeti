@@ -442,34 +442,32 @@ private theorem restrictedSolution_apply (hT : (0 : ℝ) < T)
   (rfl)
 
 /-- The weighted Schauder estimate at positive times for the classical solutions, in the norm of
-the data space `C_b^{α,α/2} × BUC`: `δ^(1 + α/2) ‖u‖_{2+α,par;[δ,T]} ≤ C max (‖f‖, ‖g‖_∞)`,
+the data space `C_b^{α,α/2} × BUC`: `‖u‖_{2+α,par;[δ,T]} ≤ C / δ^(1 + α/2) * max (‖f‖, ‖g‖_∞)`,
 uniformly over the coefficients and horizons in the given bounds. -/
-private theorem exists_rpow_mul_norm_restrictedSolution_le {lam : ℝ} (hlam : 0 < lam)
+private theorem exists_norm_restrictedSolution_le_div {lam : ℝ} (hlam : 0 < lam)
     (K T₀ : ℝ≥0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (T : ℝ≥0) (hT : (0 : ℝ) < T), T ≤ T₀ →
       ∀ (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
         (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-        (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ),
-        (∀ p (ξ : EuclideanSpace ℝ ι),
-          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) →
+        (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+        (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
+          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ),
         (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) → ‖c‖ ≤ K →
-        ∀ (ha' : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-          lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-          {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T)
+        ∀ {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T)
           (d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
             CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ),
-          δ ^ (1 + (α : ℝ) / 2) * ‖restrictedSolution hα₀ hα₁ hT a b c ha' hδ hδT d‖ ≤
-            C * ‖dataMap d‖ := by
+          ‖restrictedSolution hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩ hδ hδT d‖ ≤
+            C / δ ^ (1 + (α : ℝ) / 2) * ‖dataMap d‖ := by
   obtain ⟨C, hC, hest⟩ := exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL (ι := ι)
     hα₀ hα₁ (Lam := ∑ _i : ι, ∑ _j : ι, (K : ℝ)) hlam K T₀
-  refine ⟨2 * C, by positivity, fun T hT hTT₀ a b c ha hak hbk hck ha' δ hδ hδT d ↦ ?_⟩
+  refine ⟨2 * C, by positivity, fun T hT hTT₀ a b c ha hak hbk hck δ hδ hδT d ↦ ?_⟩
   -- The coefficient bound gives the upper ellipticity bound.
   have hup : ∀ p (ξ : EuclideanSpace ℝ ι), (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ ≤
       (∑ _i : ι, ∑ _j : ι, (K : ℝ)) * ‖ξ‖ ^ 2 := fun p ↦
     Matrix.toQuadraticForm'_le_of_forall_abs_le fun i j ↦
       ((Real.norm_eq_abs _).symm.trans_le (HolderSpace.norm_apply_le (a i j) p)).trans (hak i j)
   -- The initial values of the classical solution are bounded by the supremum norm of the datum.
-  have hM : ∀ x, |(euclideanInitialDataCLE hα₀ hα₁ hT a b c ha').symm d
+  have hM : ∀ x, |(euclideanInitialDataCLE hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩).symm d
       (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤ ‖toBUC d.2‖ := fun x ↦ by
     rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, ← toBUC_apply, ← Real.norm_eq_abs,
       ← ClosedSubmodule.norm_coe]
@@ -478,41 +476,8 @@ private theorem exists_rpow_mul_norm_restrictedSolution_le {lam : ℝ} (hlam : 0
   rw [euclideanParabolicOperatorL_euclideanInitialDataCLE_symm_apply] at h
   have hf : ‖d.1‖ ≤ ‖dataMap d‖ := by simp
   have hg : ‖toBUC d.2‖ ≤ ‖dataMap d‖ := by simp
-  rw [restrictedSolution_apply]
+  rw [restrictedSolution_apply, div_mul_eq_mul_div, le_div_iff₀' (Real.rpow_pos_of_pos hδ _)]
   nlinarith
-
-/-- The classical solutions restricted to `ℝⁿ × [δ, T]` are bounded in the supremum norm of the
-initial datum, for fixed coefficients. -/
-private theorem exists_norm_restrictedSolution_le (hT : (0 : ℝ) < T)
-    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
-    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    {δ : ℝ} (hδ : 0 < δ) (hδT : δ < T) :
-    ∃ C, ∀ d : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ ×
-        CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ,
-      ‖restrictedSolution hα₀ hα₁ hT a b c ha hδ hδT d‖ ≤ C * ‖dataMap d‖ := by
-  obtain ⟨lam, hlam, hlam'⟩ := id ha
-  -- A common bound `K` on the norms of all the coefficients.
-  have hA : ∀ i j, ‖a i j‖ ≤ ∑ i, ∑ j, ‖a i j‖ := fun i j ↦
-    (Finset.single_le_sum (f := fun j ↦ ‖a i j‖) (fun _ _ ↦ norm_nonneg _)
-      (Finset.mem_univ j)).trans (Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖)
-        (fun _ _ ↦ by positivity) (Finset.mem_univ i))
-  have hB : ∀ i, ‖b i‖ ≤ ∑ i, ‖b i‖ := fun i ↦
-    Finset.single_le_sum (f := fun i ↦ ‖b i‖) (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ i)
-  have hA₀ : 0 ≤ ∑ i, ∑ j, ‖a i j‖ := by positivity
-  have hB₀ : 0 ≤ ∑ i, ‖b i‖ := by positivity
-  obtain ⟨K, hK⟩ : ∃ K : ℝ≥0, (K : ℝ) = ∑ i, ∑ j, ‖a i j‖ + ∑ i, ‖b i‖ + ‖c‖ :=
-    ⟨⟨_, by positivity⟩, rfl⟩
-  have hak : ∀ i j, ‖a i j‖ ≤ K := fun i j ↦ by linarith [hA i j, norm_nonneg c]
-  have hbk : ∀ i, ‖b i‖ ≤ K := fun i ↦ by linarith [hB i, norm_nonneg c]
-  have hck : ‖c‖ ≤ K := by linarith
-  obtain ⟨C, -, hC⟩ := exists_rpow_mul_norm_restrictedSolution_le (ι := ι) hα₀ hα₁ hlam K T
-  have hδα : 0 < δ ^ (1 + (α : ℝ) / 2) := Real.rpow_pos_of_pos hδ _
-  exact ⟨C / δ ^ (1 + (α : ℝ) / 2), fun d ↦
-    ((le_div_iff₀' hδα).2 (hC T hT le_rfl a b c hlam' hak hbk hck ha hδ hδT d)).trans_eq
-      (div_mul_eq_mul_div _ _ _).symm⟩
 
 variable (hT : (0 : ℝ) < T) (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
   (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
@@ -547,11 +512,14 @@ private theorem euclideanCauchySolutionBUCRestrictL_dataMap
     euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ha hδ hδT (dataMap d) =
       restrictL hδ.le le_rfl hδT ((euclideanInitialDataCLE hα₀ hα₁ hT a b c ha).symm d) :=
   LinearMap.extendOfNorm_eq (denseRange_dataMap hα₁.le) (by
-    obtain ⟨C, hC⟩ := exists_norm_restrictedSolution_le hα₀ hα₁ hT a b c ha hδ hδT
+    obtain ⟨lam, hlam, hlam'⟩ := ha
+    obtain ⟨K, hak, hbk, hck⟩ := exists_norm_coeff_le a b c
+    obtain ⟨C, -, hC⟩ := exists_norm_restrictedSolution_le_div (ι := ι) hα₀ hα₁ hlam K T
     -- `convert` matches the instance arguments of the coercion of `restrictedSolution` with those
     -- in the statement of `extendOfNorm_eq`; `exact` would instead unfold the norm of the order-two
     -- space, whose carrier is not exposed here.
-    exact ⟨C, fun d ↦ by convert hC d using 2⟩) d
+    exact ⟨C / δ ^ (1 + (α : ℝ) / 2), fun d ↦ by
+      convert hC T hT le_rfl a b c hlam' hak hbk hck hδ hδT d using 2⟩) d
 
 /-- **The extended solution is `C^{2+α,1+α/2}` at positive times.** On `ℝⁿ × [δ, T]`, the values
 of `euclideanCauchySolutionBUCRestrictL` are those of the extended solution
@@ -634,15 +602,14 @@ theorem exists_rpow_mul_norm_euclideanCauchySolutionBUCRestrictL_le {lam : ℝ} 
           δ ^ (1 + (α : ℝ) / 2) *
               ‖euclideanCauchySolutionBUCRestrictL hα₀ hα₁ hT a b c ⟨lam, hlam, ha⟩ hδ hδT d‖ ≤
             C * ‖d‖ := by
-  obtain ⟨C, hC, hest⟩ := exists_rpow_mul_norm_restrictedSolution_le (ι := ι) hα₀ hα₁ hlam K T₀
+  obtain ⟨C, hC, hest⟩ := exists_norm_restrictedSolution_le_div (ι := ι) hα₀ hα₁ hlam K T₀
   refine ⟨C, hC, fun T hT hTT₀ a b c ha hak hbk hck δ hδ hδT d ↦ ?_⟩
   have hδα : 0 < δ ^ (1 + (α : ℝ) / 2) := Real.rpow_pos_of_pos hδ _
   -- As in `euclideanCauchySolutionBUCRestrictL_dataMap`, `convert` matches the instance arguments
   -- of the coercions in the statement of `norm_extendOfNorm_apply_le` with ours.
   have h := LinearMap.norm_extendOfNorm_apply_le (denseRange_dataMap hα₁.le)
     (C / δ ^ (1 + (α : ℝ) / 2)) (fun d' ↦ by
-      convert ((le_div_iff₀' hδα).2 (hest T hT hTT₀ a b c ha hak hbk hck ⟨lam, hlam, ha⟩ hδ hδT
-        d')).trans_eq (div_mul_eq_mul_div _ _ _).symm using 2) d
+      convert hest T hT hTT₀ a b c ha hak hbk hck hδ hδT d' using 2) d
   rw [euclideanCauchySolutionBUCRestrictL_eq]
   convert (le_div_iff₀' hδα).1 (h.trans_eq (div_mul_eq_mul_div _ _ _)) using 2
 

@@ -49,6 +49,8 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   `TauCeti.ParabolicC2HolderSpace.norm_euclideanParabolicOperatorL_sub_le` and
   `TauCeti.ParabolicC2HolderSpace.continuous_euclideanParabolicOperatorL`: the operator is affine
   and Lipschitz continuous in its scalar coefficients.
+* `TauCeti.ParabolicC2HolderSpace.exists_norm_coeff_le`: a common bound on the norms of the
+  scalar coefficients.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_restrictL`: the operator commutes
   with restriction to a smaller slab.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_const_apply_eq_add`: freezing the
@@ -419,6 +421,24 @@ theorem continuous_euclideanParabolicOperatorL :
       ∑ i, ∑ j, ‖y.1 i j - x.1 i j‖ + 24 * (∑ i, ‖y.2.1 i - x.2.1 i‖ + ‖y.2.2 - x.2.2‖) := by
     fun_prop
   simpa using h.tendsto x
+
+omit [DecidableEq ι] in
+/-- A common bound `K` on the norms of all the scalar coefficients `aⁱʲ`, `bⁱ`, `c`, as needed
+for the estimates that are uniform over coefficients with norms at most `K`. -/
+theorem exists_norm_coeff_le (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ∃ K : ℝ≥0, (∀ i j, ‖a i j‖ ≤ K) ∧ (∀ i, ‖b i‖ ≤ K) ∧ ‖c‖ ≤ K := by
+  refine ⟨∑ i, ∑ j, ‖a i j‖₊ + ∑ i, ‖b i‖₊ + ‖c‖₊, fun i j ↦ ?_, fun i ↦ ?_, ?_⟩
+  · have h : ‖a i j‖₊ ≤ ∑ i, ∑ j, ‖a i j‖₊ :=
+      (Finset.single_le_sum (f := fun j ↦ ‖a i j‖₊) (fun _ _ ↦ zero_le)
+        (Finset.mem_univ j)).trans (Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖₊)
+          (fun _ _ ↦ zero_le) (Finset.mem_univ i))
+    exact_mod_cast h.trans (le_add_right (le_add_right le_rfl))
+  · have h : ‖b i‖₊ ≤ ∑ i, ‖b i‖₊ :=
+      Finset.single_le_sum (f := fun i ↦ ‖b i‖₊) (fun _ _ ↦ zero_le) (Finset.mem_univ i)
+    exact_mod_cast h.trans (le_add_right (le_add_left le_rfl))
+  · exact_mod_cast (le_add_left le_rfl : ‖c‖₊ ≤ _)
 
 /-- **Restriction to a smaller slab.** The operator commutes with restriction from
 `ℝⁿ × [t₀, t₁]` to `ℝⁿ × [t₀', t₁']`, when the coefficients are restricted as well. -/
