@@ -71,13 +71,13 @@ end Compact
 
 section Face
 
-variable {A B F : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
-/-- **The extensions of a pure state form a face.** Along a star homomorphism `f : A → B` from a
-unital C⋆-algebra to a C⋆-algebra, the states of `B` restricting to a pure state `φ` of `A` form an
-extreme subset of the state space of `B`. Neither `B` nor `f` need be unital. -/
+/-- **The extensions of a pure state form a face.** Along a star homomorphism `f : A → B` of
+C⋆-algebras, the states of `B` restricting to a pure state `φ` of `A` form an extreme subset of the
+state space of `B`. Neither `A`, `B` nor `f` need be unital. -/
 theorem isExtreme_stateSpace_inter_preimage_pullbackFunctional (f : F) {φ : WeakDual ℂ A}
     (hφ : φ ∈ extremePoints ℝ (stateSpace A)) :
     IsExtreme ℝ (stateSpace B) (stateSpace B ∩ pullbackFunctional A f ⁻¹' {φ}) := by
@@ -86,27 +86,32 @@ theorem isExtreme_stateSpace_inter_preimage_pullbackFunctional (f : F) {φ : Wea
   have hcomb : a • pullbackFunctional A f ψ₁ + b • pullbackFunctional A f ψ₂ = φ := by
     rw [← (hψ.2 : pullbackFunctional A f (a • ψ₁ + b • ψ₂) = φ)]
     exact DFunLike.ext _ _ fun x => by simp
-  -- the restriction of a state of `B` has value at most `1` at the unit, and is a state if `1`
-  have hres {χ : WeakDual ℂ B} (hχ : χ ∈ stateSpace B) : (χ (f 1)).re ≤ 1 ∧
-      ((χ (f 1)).re = 1 → pullbackFunctional A f χ ∈ stateSpace A) := by
-    have hpos (x : A) (hx : 0 ≤ x) : 0 ≤ χ (f x) :=
-      map_nonneg_of_mem_stateSpace hχ (map_nonneg f hx)
-    refine ⟨?_, fun h => mem_stateSpace_iff_map_one.2
-      ⟨fun x hx => by simpa using hpos x hx, ?_⟩⟩
-    · calc (χ (f 1)).re ≤ ‖χ (f 1)‖ := Complex.re_le_norm _
-        _ ≤ ‖f 1‖ := norm_apply_le_of_mem_stateSpace hχ _
-        _ ≤ ‖(1 : A)‖ := NonUnitalStarAlgHom.norm_apply_le f 1
-        _ ≤ 1 := by nontriviality A; simp
+  -- the restriction of a state of `B` is nonnegative and has norm at most `1`
+  have hres {χ : WeakDual ℂ B} (hχ : χ ∈ stateSpace B) :
+      (∀ x, 0 ≤ x → 0 ≤ pullbackFunctional A f χ x) ∧
+        ‖toStrongDual (pullbackFunctional A f χ)‖ ≤ 1 := by
+    refine ⟨fun x hx => ?_, ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => ?_⟩
     · rw [pullbackFunctional_apply]
-      exact Complex.ext (by simpa using h)
-        (by simpa using (Complex.nonneg_iff.1 (hpos 1 zero_le_one)).2.symm)
-  obtain ⟨hle₁, hstate₁⟩ := hres hψ₁
-  obtain ⟨hle₂, hstate₂⟩ := hres hψ₂
-  -- the values at the unit average to `φ 1 = 1`, so both are `1`
-  have h1 : a * (ψ₁ (f 1)).re + b * (ψ₂ (f 1)).re = 1 := by
-    have := congrArg (fun χ : WeakDual ℂ A => (χ 1).re) hcomb
-    simpa [map_one_of_mem_stateSpace hφ.1, real_smul_apply] using this
-  exact hφ.2 (hstate₁ (by nlinarith)) (hstate₂ (by nlinarith)) ⟨a, b, ha, hb, hab, hcomb⟩
+      exact map_nonneg_of_mem_stateSpace hχ (map_nonneg f hx)
+    calc ‖toStrongDual (pullbackFunctional A f χ) x‖ = ‖χ (f x)‖ := by
+          rw [toStrongDual_apply, pullbackFunctional_apply]
+      _ ≤ ‖f x‖ := norm_apply_le_of_mem_stateSpace hχ _
+      _ ≤ ‖x‖ := NonUnitalStarAlgHom.norm_apply_le f x
+      _ = 1 * ‖x‖ := (one_mul _).symm
+  obtain ⟨hpos₁, hle₁⟩ := hres hψ₁
+  obtain ⟨hpos₂, hle₂⟩ := hres hψ₂
+  -- the norms of the restrictions average to at least `‖φ‖ = 1`, so both are `1`
+  have h1 : 1 ≤ a * ‖toStrongDual (pullbackFunctional A f ψ₁)‖ +
+      b * ‖toStrongDual (pullbackFunctional A f ψ₂)‖ := by
+    have hsplit : toStrongDual φ = (a : ℂ) • toStrongDual (pullbackFunctional A f ψ₁) +
+        (b : ℂ) • toStrongDual (pullbackFunctional A f ψ₂) := by
+      rw [← hcomb]
+      exact ContinuousLinearMap.ext fun x => by simp
+    calc (1 : ℝ) = ‖toStrongDual φ‖ := (norm_toStrongDual_of_mem_stateSpace hφ.1).symm
+      _ ≤ _ := hsplit ▸ norm_add_le _ _
+      _ = _ := by simp [norm_smul, abs_of_pos ha, abs_of_pos hb]
+  exact hφ.2 (mem_stateSpace_iff.2 ⟨hpos₁, by nlinarith⟩)
+    (mem_stateSpace_iff.2 ⟨hpos₂, by nlinarith⟩) ⟨a, b, ha, hb, hab, hcomb⟩
 
 end Face
 
