@@ -18,8 +18,10 @@ function extension by zero, over any additive commutative monoid. For an arbitra
 the range of `Finsupp.mapDomain f` consists of the finitely supported functions vanishing outside
 the range of `f` (`Finsupp.mem_range_mapDomain_iff'`). Restricting to a predicate commutes with
 pushing forward along `f` when the predicate on the source is the pullback along `f` of a
-predicate on the target (`Finsupp.mapDomain_subtypeDomain`). The weight of the push-forward along
-`f` is the weight for the pulled-back weights (`Finsupp.weight_mapDomain`).
+predicate on the target (`Finsupp.mapDomain_subtypeDomain`), and restricting to a predicate and
+pushing forward along the inclusion keeps the part of the function on the predicate
+(`Finsupp.mapDomain_subtypeDomain_eq_filter`). The weight of the push-forward along `f` is the
+weight for the pulled-back weights (`Finsupp.weight_mapDomain`).
 
 Pushing forward along a strictly monotone map of linearly ordered indices preserves and reflects
 the strict and non-strict lexicographic orders, since the relabeled functions vanish off the image
@@ -66,6 +68,16 @@ theorem mapDomain_subtypeDomain_subtype {α M : Type*} [AddCommMonoid M] {s : Se
   classical
   have h := extendDomain_subtypeDomain f (P := (· ∈ s)) fun _ ha ↦ hf ha
   rwa [extendDomain_eq_embDomain_subtype, embDomain_eq_mapDomain] at h
+
+/-- Restricting a finitely supported function to a predicate `p` and pushing it forward along the
+inclusion keeps the part of the function on `p`. -/
+@[simp]
+theorem mapDomain_subtypeDomain_eq_filter {α M : Type*} [AddCommMonoid M] (p : α → Prop)
+    [DecidablePred p] (f : α →₀ M) : (f.subtypeDomain p).mapDomain Subtype.val = f.filter p := by
+  ext a
+  by_cases ha : p a
+  · simpa [ha] using mapDomain_apply_of_injective Subtype.val_injective (f.subtypeDomain p) ⟨a, ha⟩
+  · rw [filter_apply_neg _ _ ha, mapDomain_of_notMem_range _ _ (by simpa using ha)]
 
 /-- If the predicate `p` on the source is the pullback along `f` of the predicate `q` on the
 target, restricting to `p` and then pushing forward along `f` is pushing forward along `f` and
