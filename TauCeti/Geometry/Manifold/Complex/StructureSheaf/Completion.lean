@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.Analytic.MultiIndex.TaylorCoeff
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import Mathlib.RingTheory.MvPowerSeries.Inverse
 public import TauCeti.RingTheory.AdicCompletion.MvPowerSeries
 import TauCeti.Data.Finsupp.Interval
-import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 
 /-!
@@ -36,7 +36,13 @@ algebraic comparison `TauCeti.adicCompletionEquivMvPowerSeries`.
 ## Main definitions and results
 
 * `TauCeti.holomorphicStructureSheaf.taylorSeries`: the Taylor series of holomorphic germs, with
-  coefficients `TauCeti.holomorphicStructureSheaf.coeff_taylorSeries`.
+  coefficients `TauCeti.holomorphicStructureSheaf.coeff_taylorSeries` and constant term the value
+  at `x` (`TauCeti.holomorphicStructureSheaf.constantCoeff_taylorSeries`). It sends constant germs
+  to constants (`TauCeti.holomorphicStructureSheaf.taylorSeries_germ_algebraMap`) and the centred
+  coordinate germs to the variables
+  (`TauCeti.holomorphicStructureSheaf.taylorSeries_holomorphicLinearCoordinateGerm_basisFun`).
+* `TauCeti.holomorphicStructureSheaf.span_range_holomorphicLinearCoordinateGerm_basisFun`: the
+  centred coordinate germs generate the maximal ideal of the stalk.
 * `TauCeti.holomorphicStructureSheaf.taylorSeries_injective`: a germ is determined by its
   Taylor series.
 * `TauCeti.holomorphicStructureSheaf.comap_taylorSeries_maximalIdeal_pow`: the germs whose Taylor
@@ -103,6 +109,11 @@ def taylorSeries :
     rw [map_add, hs, ht, ← Germ.coe_add, map_add, coeff_germTaylorSeries, coeff_germTaylorSeries,
       coeff_germTaylorSeries, hφ.mvTaylorCoeff_add hψ]
 
+private theorem taylorSeries_apply
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x) :
+    taylorSeries x s = germTaylorSeries x (toFilterGerm 𝓘(ℂ, ι → ℂ) (ι → ℂ) x (𝓝 x) le_rfl s) :=
+  rfl
+
 variable {x} in
 /-- The coefficients of the Taylor series of a holomorphic germ are the Taylor coefficients of any
 function with the same germ. -/
@@ -110,7 +121,17 @@ theorem coeff_taylorSeries {s : (holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ)
     {φ : (ι → ℂ) → ℂ}
     (h : toFilterGerm 𝓘(ℂ, ι → ℂ) (ι → ℂ) x (𝓝 x) le_rfl s = φ) (α : ι →₀ ℕ) :
     coeff α (taylorSeries x s) = mvTaylorCoeff φ x α := by
-  rw [taylorSeries, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, h, coeff_germTaylorSeries]
+  rw [taylorSeries_apply, h, coeff_germTaylorSeries]
+
+/-- The constant term of the Taylor series of a holomorphic germ is its value at `x`. -/
+@[simp]
+theorem constantCoeff_taylorSeries
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x) :
+    constantCoeff (taylorSeries x s) = eval 𝓘(ℂ, ι → ℂ) (ι → ℂ) x s := by
+  obtain ⟨φ, hφ, hs⟩ := exists_analyticAt_toFilterGerm_eq x s
+  rw [← coeff_zero_eq_constantCoeff_apply, coeff_taylorSeries (hs _ le_rfl),
+    eval_eq_of_toFilterGerm_eq (hs _ le_rfl)]
+  exact hφ.mvTaylorCoeff_zero
 
 /-- The Taylor series of the germ of a globally holomorphic function has its Taylor coefficients. -/
 @[simp]
@@ -148,6 +169,13 @@ private theorem taylorSeries_comp_constGerm : (taylorSeries x).comp (constGerm x
     coeff_C]
   simp only [Finsupp.coe_eq_zero]
 
+/-- The Taylor series of a constant germ is the constant power series. -/
+@[simp]
+theorem taylorSeries_germ_algebraMap (r : ℂ) :
+    taylorSeries x ((holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.germ ⊤ x trivial
+      (algebraMap ℂ _ r)) = C r :=
+  RingHom.congr_fun (taylorSeries_comp_constGerm x) r
+
 private theorem eval_constGerm (r : ℂ) : eval 𝓘(ℂ, ι → ℂ) (ι → ℂ) x (constGerm x r) = r :=
   eval_eq_of_toFilterGerm_eq (toFilterGerm_constGerm x r)
 
@@ -173,13 +201,31 @@ private theorem taylorSeries_coordinateGerm (i : ι) :
     mvTaylorCoeff_prod_sub_pow, coeff_X, ← Finsupp.single_eq_pi_single]
   simp only [DFunLike.coe_fn_eq]
 
-private theorem span_range_coordinateGerm :
-    Ideal.span (Set.range (coordinateGerm x)) =
+/-- The Taylor series of the centred coordinate germ `y ↦ y i - x i` is the variable `X i`. -/
+@[simp]
+theorem taylorSeries_holomorphicLinearCoordinateGerm_basisFun (i : ι) :
+    taylorSeries x ((OpenPartialHomeomorph.refl (ι → ℂ)).holomorphicLinearCoordinateGerm
+      (StructureGroupoid.id_mem_maximalAtlas _) x
+      (LinearMap.toContinuousLinearMap ((Pi.basisFun ℂ ι).coord i)) (Set.mem_univ x)) = X i :=
+  taylorSeries_coordinateGerm x i
+
+/-- The centred coordinate germs `y ↦ y i - x i` generate the maximal ideal of the stalk at `x`. -/
+theorem span_range_holomorphicLinearCoordinateGerm_basisFun :
+    Ideal.span (Set.range fun i ↦
+      (OpenPartialHomeomorph.refl (ι → ℂ)).holomorphicLinearCoordinateGerm
+        (StructureGroupoid.id_mem_maximalAtlas _) x
+        (LinearMap.toContinuousLinearMap ((Pi.basisFun ℂ ι).coord i)) (Set.mem_univ x)) =
       IsLocalRing.maximalIdeal
         ((holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x) := by
   rw [maximalIdeal_stalk, OpenPartialHomeomorph.ker_eval_eq_span_holomorphicLinearCoordinateGerm
     (OpenPartialHomeomorph.refl (ι → ℂ)) (StructureGroupoid.id_mem_maximalAtlas _)
     (Pi.basisFun ℂ ι) (Set.mem_univ x)]
+
+private theorem span_range_coordinateGerm :
+    Ideal.span (Set.range (coordinateGerm x)) =
+      IsLocalRing.maximalIdeal
+        ((holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x) :=
+  span_range_holomorphicLinearCoordinateGerm_basisFun x
 
 private theorem mk_maximalIdeal_comp_constGerm_surjective :
     Function.Surjective ((Ideal.Quotient.mk (IsLocalRing.maximalIdeal

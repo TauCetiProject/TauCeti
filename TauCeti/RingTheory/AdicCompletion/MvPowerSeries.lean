@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.MvPowerSeries.Basic
 import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.RingTheory.MvPowerSeries.Trunc
 import TauCeti.RingTheory.AdicCompletion.AlgHom
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 
 /-!
@@ -26,14 +27,10 @@ Germs of holomorphic functions with their Taylor series are the motivating examp
 injective but far from surjective, and only the quotients by the powers of `𝔪` agree.
 
 The polynomials in the `z i` play the role of the Taylor polynomials. They exhaust `A` modulo
-every power of `𝔪`, by the following lifting statement for an arbitrary ring homomorphism
-`f : R →+* A` and ideal `J` of `R`: if every element of `A` is congruent to an element of the
-image of `f` modulo the extended ideal `J.map f`, then the same holds modulo `(J.map f) ^ n` for
-every `n`.
+every power of `𝔪` by `Ideal.mk_map_pow_comp_surjective`.
 
 ## Main results
 
-* `Ideal.mk_map_pow_comp_surjective`: lifting congruences from `J.map f` to its powers.
 * `TauCeti.comap_pow_span_range_X`: the preimage under `T` of the `n`-th power of the ideal of the
   variables is `𝔪 ^ n`.
 * `TauCeti.quotientMap_pow_span_range_X_bijective`: `T` induces isomorphisms of the quotients by
@@ -45,47 +42,6 @@ every `n`.
 public section
 
 open MvPowerSeries
-
-/-- **Lifting congruences to powers of an extended ideal.** If every element of `A` is congruent
-modulo `J.map f` to an element of the image of `f : R →+* A`, then it is so modulo every power
-`(J.map f) ^ n`. -/
-theorem Ideal.mk_map_pow_comp_surjective {R A : Type*} [CommRing R] [CommRing A] {f : R →+* A}
-    {J : Ideal R} (h : Function.Surjective ((Ideal.Quotient.mk (J.map f)).comp f)) (n : ℕ) :
-    Function.Surjective ((Ideal.Quotient.mk (J.map f ^ n)).comp f) := by
-  have h₁ (a : A) : ∃ r, f r - a ∈ J.map f :=
-    (h (Ideal.Quotient.mk _ a)).imp fun _ hr ↦ Ideal.Quotient.eq.1 hr
-  -- An element of `(J.map f) ^ n` is congruent modulo the next power to an element of the image.
-  have step (n : ℕ) (b : A) (hb : b ∈ J.map f ^ n) : ∃ r, f r - b ∈ J.map f ^ (n + 1) := by
-    rw [← Ideal.map_pow, Ideal.map] at hb
-    induction hb using Submodule.span_induction with
-    | mem b hb =>
-      obtain ⟨j, -, rfl⟩ := hb
-      exact ⟨j, by simp⟩
-    | zero => exact ⟨0, by simp⟩
-    | add b₁ b₂ _ _ h₁ h₂ =>
-      obtain ⟨r₁, hr₁⟩ := h₁
-      obtain ⟨r₂, hr₂⟩ := h₂
-      exact ⟨r₁ + r₂, by simpa [add_sub_add_comm] using add_mem hr₁ hr₂⟩
-    | smul a b hb ih =>
-      obtain ⟨s, hs⟩ := h₁ a
-      obtain ⟨r, hr⟩ := ih
-      refine ⟨s * r, ?_⟩
-      have hb' : b ∈ J.map f ^ n := by rwa [← Ideal.map_pow]
-      have heq : f (s * r) - a • b = (f s - a) * b + f s * (f r - b) := by
-        rw [map_mul, smul_eq_mul]
-        ring
-      rw [heq, pow_succ']
-      exact add_mem (Ideal.mul_mem_mul hs hb') (Ideal.mul_mem_left _ _ (pow_succ' (J.map f) n ▸ hr))
-  have key (n : ℕ) (a : A) : ∃ r, f r - a ∈ J.map f ^ n := by
-    induction n generalizing a with
-    | zero => exact ⟨0, by simp⟩
-    | succ n ih =>
-      obtain ⟨r, hr⟩ := ih a
-      obtain ⟨r', hr'⟩ := step n _ (neg_mem hr)
-      exact ⟨r' + r, by simpa [sub_eq_add_neg, add_assoc] using hr'⟩
-  intro y
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective y
-  exact (key n a).imp fun _ hr ↦ Ideal.Quotient.eq.2 hr
 
 namespace TauCeti
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Module.SpanRank
+import Mathlib.RingTheory.AdicCompletion.Functoriality
 
 /-!
 # Operations on ideal quotients
@@ -33,7 +34,10 @@ the component of `R` cut out by `e`.
 If `R / I → B / IB` is surjective, algebra maps from `B` to an algebra annihilated by `I`
 are unique. This quotient extensionality lemma is used to construct compatible residue maps.
 More generally, if `R ⧸ I → S ⧸ J` is surjective, every element of `S` is congruent modulo `J` to
-the image of an element of `R` (`Ideal.exists_sub_mem_of_surjective_quotientMap`).
+the image of an element of `R` (`Ideal.exists_sub_mem_of_surjective_quotientMap`). If every
+element of `A` is congruent modulo `J.map f` to an element of the image of `f : R →+* A`, then the
+same holds modulo every power `(J.map f) ^ n` (`Ideal.mk_map_pow_comp_surjective`), by iterating
+Mathlib's `AdicCompletion.exists_smodEq_pow_smul_top_and_smodEq_pow_add_one_smul_top`.
 
 An action of a monoid by ring automorphisms preserving a two-sided ideal `I` descends to an action
 on the quotient by `I` (`MonoidHom.quotientRingAut`), assembled from Mathlib's
@@ -104,6 +108,37 @@ theorem exists_sub_mem_of_surjective_quotientMap {S : Type*} [CommRing S] {I : I
   obtain ⟨r, rfl⟩ := Quotient.mk_surjective x
   rw [quotientMap_mk] at hx
   exact ⟨r, Quotient.eq.mp hx.symm⟩
+
+/-- **Lifting congruences to powers of an extended ideal.** If every element of `A` is congruent
+modulo `J.map f` to an element of the image of `f : R →+* A`, then it is so modulo every power
+`(J.map f) ^ n`. This is the ring form of `AdicCompletion.exists_smodEq_pow_add_one_smul`, iterated
+through `AdicCompletion.exists_smodEq_pow_smul_top_and_smodEq_pow_add_one_smul_top`. -/
+theorem mk_map_pow_comp_surjective {A : Type*} [CommRing A] {f : R →+* A} {J : Ideal R}
+    (h : Function.Surjective ((Quotient.mk (J.map f)).comp f)) (n : ℕ) :
+    Function.Surjective ((Quotient.mk (J.map f ^ n)).comp f) := by
+  let := f.toAlgebra
+  have hmem (k : ℕ) (a : A) : a ∈ (J ^ k • ⊤ : Submodule R A) ↔ a ∈ J.map f ^ k := by
+    rw [smul_top_eq_map, Submodule.restrictScalars_mem, Ideal.map_pow]
+    rfl
+  have h' : Function.Surjective (Submodule.mkQ (J • ⊤) ∘ₗ Algebra.linearMap R A) := by
+    intro y
+    obtain ⟨a, rfl⟩ := Submodule.mkQ_surjective _ y
+    obtain ⟨r, hr⟩ := h (Quotient.mk _ a)
+    refine ⟨r, (Submodule.Quotient.eq _).2 ?_⟩
+    rw [← pow_one J, hmem, pow_one]
+    exact Quotient.eq.1 hr
+  have key (n : ℕ) (a : A) : ∃ r, f r - a ∈ J.map f ^ n := by
+    induction n with
+    | zero => exact ⟨0, by simp⟩
+    | succ n ih =>
+      obtain ⟨r, hr⟩ := ih
+      obtain ⟨r', -, hr'⟩ :=
+        AdicCompletion.exists_smodEq_pow_smul_top_and_smodEq_pow_add_one_smul_top h' (x := r)
+          (SModEq.sub_mem.2 ((hmem n _).2 hr))
+      exact ⟨r', (hmem _ _).1 (SModEq.sub_mem.1 hr')⟩
+  intro y
+  obtain ⟨a, rfl⟩ := Quotient.mk_surjective y
+  exact (key n a).imp fun _ hr ↦ Quotient.eq.2 hr
 
 /-- If `I ≤ J` are ideals with `I` finitely generated, then `J.spanFinrank` is at most the sum
 of the `spanFinrank`s of its image in `R ⧸ I` and `I`. For finitely generated `J`, this bounds
