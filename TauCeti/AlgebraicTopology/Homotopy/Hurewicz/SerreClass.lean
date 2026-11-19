@@ -30,11 +30,14 @@ has torsion integral homology through degree `k`
 The class must satisfy Serre's axiom on Eilenberg--Mac Lane spaces: a `K(G, n)` space with
 `G ∈ P` has its positive-degree homology in `P`. As in the comparison theorem for Serre fibrations
 modulo a class (`TauCeti.TopCat.isoModSerre_singularHomologyMap_of_prop_fiber`), the homology of
-the fibres is asked to lie in a property `Q ≤ P` closed under direct sums, which may be smaller
-than `P` when `P` is not closed under infinite direct sums. When `P` itself is closed under direct
-sums, the axiom for `K(G, 1)` spaces implies it for all `K(G, n)`, through the based path
-fibrations `K(G, n) → P → K(G, n + 1)` with contractible total space
-(`TauCeti.IsEilenbergMacLaneSpace.prop_singularHomology_of_one`).
+the fibres is asked to lie in a property `Q ≤ P` closed under direct sums. Only the degrees
+`1, …, k` matter, and `Q` may be chosen separately for each `G` and `n`, so `P` need not be closed
+under infinite direct sums. For the groups annihilated by some power of `d`, `Q` can be the groups
+annihilated by a single power `dᴺ`: all `K(G, n + 1)` spaces have isomorphic homology, so in the
+finitely many degrees `1, …, k` it is annihilated by one power of `d` as soon as each degree lies
+in the class. When `P` itself is closed under direct sums, the axiom for `K(G, 1)` spaces implies
+it for all `K(G, n)`, through the based path fibrations `K(G, n) → P → K(G, n + 1)` with
+contractible total space (`TauCeti.IsEilenbergMacLaneSpace.prop_singularHomology_of_one`).
 
 The proof climbs the Whitehead tower.
 
@@ -88,17 +91,16 @@ variable (P Q : ObjectProperty (ModuleCat.{0} ℤ)) [P.IsSerreClass] [Q.IsClosed
 
 /-- **One step down the Whitehead tower.** Let `X` be a Hausdorff path-connected space whose
 homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and suppose that `πₘ₊₂(X)` lies in the Serre
-class `P`, while the positive-degree homology of every `K(πₘ₊₂(X), m + 1)` space lies in `Q ≤ P`.
-Then the homology `Hᵢ(X; ℤ)` lies in `P` whenever the homology of the `(m + 2)`-connected cover
-`X⟨m + 2⟩` does. -/
+class `P`, while the homology in degrees `1, …, i` of every `K(πₘ₊₂(X), m + 1)` space lies in
+`Q ≤ P`. Then the homology `Hᵢ(X; ℤ)` lies in `P` whenever the homology of the `(m + 2)`-connected
+cover `X⟨m + 2⟩` does. -/
 theorem prop_singularHomology_of_nConnectedCover (hQP : Q ≤ P) (X : TopCat.{0}) [T2Space X]
-    [PathConnectedSpace X] (x : X) (m : ℕ)
+    [PathConnectedSpace X] (x : X) (m i : ℕ)
     (hX : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k X x))
     (hK : ∀ (Z : Type) [TopologicalSpace Z] (z : Z),
-      IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) Z z → ∀ q, q ≠ 0 →
+      IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) Z z → ∀ q, q ≠ 0 → q ≤ i →
         Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
           (TopCat.of Z)))
-    (i : ℕ)
     (hC : P (((singularHomologyFunctor (ModuleCat.{0} ℤ) i).obj (ModuleCat.of ℤ ℤ)).obj
       (nConnectedCover (m + 2) X x))) :
     P (((singularHomologyFunctor (ModuleCat.{0} ℤ) i).obj (ModuleCat.of ℤ ℤ)).obj X) := by
@@ -110,7 +112,7 @@ theorem prop_singularHomology_of_nConnectedCover (hQP : Q ≤ P) (X : TopCat.{0}
   have hiso := TopCat.isoModSerre_singularHomologyMap_of_prop_fiber P Q hQP
     (serreFibrations_nConnectedCoverProj (m + 2) X x) i
     (fun b ↦ (hfib b).choose_spec.pathConnectedSpace)
-    (fun b q hq0 _ ↦ hK _ _ (hfib b).choose_spec q hq0)
+    (fun b q hq0 hqi ↦ hK _ _ (hfib b).choose_spec q hq0 hqi)
   -- `Hᵢ(X⟨m + 2⟩) ⟶ Hᵢ(X) ⟶ coker` is exact, with both ends in `P`.
   exact P.prop_X₂_of_exact (ShortComplex.exact_cokernel (H.map p)) hC hiso.2
 
@@ -143,13 +145,15 @@ private theorem prop_singularHomology_of_cwApproximation {Z : Type} [Topological
 groups `π_{j + 2}` lie in `P` for `n ≤ j` and `j + 2 ≤ k`, the homology `Hᵢ` lies in `P` for
 `0 < i ≤ k`. The number of homotopy groups still to be killed is `d = k - n`, by induction on
 `d`. -/
-private theorem prop_singularHomology_of_add (hQP : Q ≤ P)
-    (hK : ∀ (G : Type) [CommGroup G], P (ModuleCat.of ℤ (Additive G)) →
-      ∀ (n : ℕ) (Z : Type) [TopologicalSpace Z] (z : Z),
-        IsEilenbergMacLaneSpace G (n + 1) Z z → ∀ q, q ≠ 0 →
-          Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
-            (TopCat.of Z)))
-    (k : ℕ) (d : ℕ) :
+private theorem prop_singularHomology_of_add (k : ℕ)
+    (hK : ∀ (G : Type) [CommGroup G], P (ModuleCat.of ℤ (Additive G)) → ∀ n : ℕ,
+      ∃ Q : ObjectProperty (ModuleCat.{0} ℤ), Q ≤ P ∧ Q.IsClosedUnderIsomorphisms ∧
+        Q.ContainsZero ∧ (∀ J : Type, Q.IsClosedUnderColimitsOfShape (Discrete J)) ∧
+        ∀ (Z : Type) [TopologicalSpace Z] (z : Z), IsEilenbergMacLaneSpace G (n + 1) Z z →
+          ∀ q, q ≠ 0 → q ≤ k →
+            Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
+              (TopCat.of Z)))
+    (d : ℕ) :
     ∀ (n : ℕ) {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z),
       k ≤ n + 1 + d →
       (∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j Z z)) →
@@ -193,22 +197,26 @@ private theorem prop_singularHomology_of_add (hQP : Q ≤ P)
       P.prop_of_iso (LinearEquiv.toModuleIso
         (nConnectedCoverHomotopyGroupMulEquiv (n + 2) X x₀ (j + 2)
           (by omega)).toAdditive.toIntLinearEquiv).symm (hπX j (by omega) hjk)
-    refine prop_singularHomology_of_nConnectedCover P Q hQP X x₀ n hX
-      (fun Z' _ z' hZ' q hq ↦ hK _ (hπX n le_rfl hkn') n Z' z' hZ' q hq) i ?_
+    -- The fibres are `K(πₙ₊₂(X), n + 1)` spaces, with homology through degree `k` in some `Q`.
+    obtain ⟨Q, hQP, _, _, _, hQ⟩ := hK _ (hπX n le_rfl hkn') n
+    refine prop_singularHomology_of_nConnectedCover P Q hQP X x₀ n i hX
+      (fun Z' _ z' hZ' q hq hqi ↦ hQ Z' z' hZ' q hq (hqi.trans hik)) ?_
     exact ih (n + 1) c₀ (by omega) hC hπC i hi0 hik
 
 /-- **Serre's Hurewicz theorem modulo a class, from homotopy to homology.** Let `P` be a Serre
-class of abelian groups and `Q ≤ P` a property closed under isomorphisms and direct sums, such
-that every `K(G, n)` space with `G ∈ P` has its positive-degree integral homology in `Q`. Let `Y`
-be a simply connected space whose homotopy groups `πᵢ(Y)` lie in `P` for `2 ≤ i ≤ k`. Then
-`Hᵢ(Y; ℤ)` lies in `P` for `1 ≤ i ≤ k`. -/
-theorem prop_singularHomology_of_prop_homotopyGroup (hQP : Q ≤ P)
-    (hK : ∀ (G : Type) [CommGroup G], P (ModuleCat.of ℤ (Additive G)) →
-      ∀ (n : ℕ) (Z : Type) [TopologicalSpace Z] (z : Z),
-        IsEilenbergMacLaneSpace G (n + 1) Z z → ∀ q, q ≠ 0 →
-          Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
-            (TopCat.of Z)))
-    {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y] (y : Y) (k : ℕ)
+class of abelian groups such that for every `G ∈ P` and `n ≥ 1` there is a property `Q ≤ P`
+closed under isomorphisms and direct sums containing the integral homology in degrees `1, …, k`
+of every `K(G, n)` space. Let `Y` be a simply connected space whose homotopy groups `πᵢ(Y)` lie
+in `P` for `2 ≤ i ≤ k`. Then `Hᵢ(Y; ℤ)` lies in `P` for `1 ≤ i ≤ k`. -/
+theorem prop_singularHomology_of_prop_homotopyGroup (k : ℕ)
+    (hK : ∀ (G : Type) [CommGroup G], P (ModuleCat.of ℤ (Additive G)) → ∀ n : ℕ,
+      ∃ Q : ObjectProperty (ModuleCat.{0} ℤ), Q ≤ P ∧ Q.IsClosedUnderIsomorphisms ∧
+        Q.ContainsZero ∧ (∀ J : Type, Q.IsClosedUnderColimitsOfShape (Discrete J)) ∧
+        ∀ (Z : Type) [TopologicalSpace Z] (z : Z), IsEilenbergMacLaneSpace G (n + 1) Z z →
+          ∀ q, q ≠ 0 → q ≤ k →
+            Q (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
+              (TopCat.of Z)))
+    {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y] (y : Y)
     (hY : ∀ j, j + 2 ≤ k → P (ModuleCat.of ℤ (Additive (π_ (j + 2) Y y))))
     {i : ℕ} (hi0 : i ≠ 0) (hik : i ≤ k) :
     P (((singularHomologyFunctor (ModuleCat.{0} ℤ) i).obj (ModuleCat.of ℤ ℤ)).obj
@@ -217,7 +225,7 @@ theorem prop_singularHomology_of_prop_homotopyGroup (hQP : Q ≤ P)
   have h₁ (j : ℕ) (hj0 : j ≠ 0) (hj : j < 2) : Subsingleton (π_ j Y y) := by
     obtain rfl : j = 1 := by omega
     exact HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
-  exact prop_singularHomology_of_add P Q hQP hK k k 0 y (by omega) h₁
+  exact prop_singularHomology_of_add P k hK k 0 y (by omega) h₁
     (fun j _ hjk ↦ hY j hjk) i hi0 hik
 
 /-! ### Eilenberg--Mac Lane spaces in all degrees -/
@@ -267,10 +275,12 @@ theorem isAddTorsion_singularHomology_of_isMulTorsion_homotopyGroup {Y : Type}
       (AddCommGrpCat.isTorsion.inverseImage (forget₂ (ModuleCat.{0} ℤ) AddCommGrpCat)) M ↔
         IsAddTorsion M :=
     (ObjectProperty.prop_inverseImage_iff _ _ _).trans (AddCommGrpCat.prop_isTorsion_iff _)
-  refine (hP _).1 (prop_singularHomology_of_prop_homotopyGroup _ _ le_rfl ?_ y k
+  refine (hP _).1 (prop_singularHomology_of_prop_homotopyGroup _ k ?_ y
     (fun j hj ↦ (hP _).2 fun a : Additive (π_ (j + 2) Y y) ↦
       (isOfFinAddOrder_ofMul_iff (x := a.toMul)).2 (hY j hj _)) hi0 hik)
-  intro G _ hG n Z _ z hZ q hq
+  -- Torsion groups are closed under direct sums, so they serve as `Q` at every stage.
+  intro G _ hG n
+  refine ⟨_, le_rfl, inferInstance, inferInstance, inferInstance, fun Z _ z hZ q hq _ ↦ ?_⟩
   refine IsEilenbergMacLaneSpace.prop_singularHomology_of_one _ (fun Z _ z hZ q hq ↦ ?_) n hZ hq
   -- A `K(G, 1)` space receives a weak homotopy equivalence from the classifying space of `G`,
   -- a locally finite group.
