@@ -21,6 +21,7 @@ which forms an `OrthonormalBasis` of `(ℝ ∙ x)ᗮ` whenever `finrank ℝ E = 
 
 * `TauCeti.inner_apply_self_eq_zero_of_skew`, `TauCeti.mem_orthogonal_span_singleton_of_skew`:
   for a skew-symmetric map `f`, `⟪f x, x⟫ = 0` and `f x ∈ (ℝ ∙ x)ᗮ`.
+* `TauCeti.norm_sq_apply_of_skew`: for a skew-symmetric map `f`, `‖f x‖ ^ 2 = -⟪x, f (f x)⟫`.
 * `TauCeti.inner_apply_apply_of_skew_of_sq_neg_id`, `TauCeti.norm_apply_of_skew_of_sq_neg_id`:
   a skew-symmetric map satisfying `f (f x) = -x` preserves inner products and norms.
 * `TauCeti.inner_apply_apply_eq_zero_of_skew_anticommute`: anticommuting skew-symmetric maps take
@@ -67,6 +68,12 @@ theorem mem_orthogonal_span_singleton_of_skew {f : E → E}
     (hf : ∀ x y, ⟪f x, y⟫_ℝ = -⟪x, f y⟫_ℝ) (x : E) :
     f x ∈ (ℝ ∙ x)ᗮ :=
   Submodule.mem_orthogonal_singleton_iff_inner_right.mpr (inner_self_apply_eq_zero_of_skew hf x)
+
+/-- For a skew-symmetric map `f` on a real inner product space, `‖f x‖ ^ 2 = -⟪x, f (f x)⟫`. -/
+theorem norm_sq_apply_of_skew {f : E → E}
+    (hf : ∀ x y, ⟪f x, y⟫_ℝ = -⟪x, f y⟫_ℝ) (x : E) :
+    ‖f x‖ ^ 2 = -⟪x, f (f x)⟫_ℝ := by
+  rw [← real_inner_self_eq_norm_sq, hf]
 
 /-- A skew-symmetric map satisfying `f (f y) = -y` preserves the inner product. -/
 theorem inner_apply_apply_of_skew_of_sq_neg_id {f : E → E}
