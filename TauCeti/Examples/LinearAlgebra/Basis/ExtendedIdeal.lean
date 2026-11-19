@@ -10,15 +10,16 @@ import Mathlib.Tactic.FinCases
 import TauCeti.Algebra.QuadraticAlgebra.Ideal
 import TauCeti.LinearAlgebra.Basis.ExtendedIdeal
 import TauCeti.LinearAlgebra.Matrix.ToLin
-import TauCeti.NumberTheory.QuadraticOrder.Reduction
 
 /-!
-# Coordinates and extended ideals in the Gaussian quadratic algebra
+# Coordinates, extended ideals and quadratic-algebra determinants
 
 The native basis `(1, ω)` of `QuadraticAlgebra ℤ (-1) 0` identifies the two coordinates without
 identifying their multiplication with coordinatewise multiplication. These examples compute a
 coefficient matrix and its quotient reduction, distinguish extended ideals from `(1 + ω)`, and
 show why taking a determinant does not commute with splitting coordinates.
+Two rational quadratic-algebra matrices use the relation `ω² = 2`: their determinants are
+zero and one, with the latter having actual basis coordinates `(1, 0)`.
 -/
 
 open QuadraticAlgebra Matrix
@@ -185,5 +186,16 @@ example :
       (M.map (fun z ↦ (basis (-1) 0).repr z 1)).det = 1 := by
   intro M
   norm_num [M, det_fin_two, diagonal]
+
+/-- The relation `ω² = 2` makes this rational quadratic-algebra determinant zero. -/
+example : (!![1, ω; ω, 2] : Matrix (Fin 2) (Fin 2) (QuadraticAlgebra ℚ 2 0)).det = 0 := by
+  norm_num [det_fin_two, omega_mul_omega_eq_mk]
+
+/-- Changing the bottom-right entry to three gives determinant one and coordinates `(1, 0)`. -/
+example :
+    let M : Matrix (Fin 2) (Fin 2) (QuadraticAlgebra ℚ 2 0) := !![1, ω; ω, 3]
+    M.det = 1 ∧ ⇑((basis (2 : ℚ) 0).repr M.det) = ![1, 0] := by
+  intro M
+  norm_num [M, det_fin_two, omega_mul_omega_eq_mk]
 
 end TauCeti.ExtendedIdealExamples
