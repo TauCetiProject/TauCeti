@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.CutoffInverse
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.Pseudodifferential.Symbol.HighFrequency
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -104,19 +105,11 @@ private theorem tendsto_rpow_neg_mul_bracket_rpow_add_one {s : ℝ} (hs : 0 < s)
       (𝓝 ((0 + c ^ 2) ^ (s / 2) + 0)) :=
     (((tendsto_inv_atTop_zero.comp (tendsto_pow_atTop two_ne_zero)).add_const _).rpow_const
       (Or.inr (by positivity))).add (tendsto_rpow_neg_atTop hs)
-  have hcs : (c ^ 2) ^ (s / 2) = c ^ s := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg _)]
-    congr 1
-    push_cast
-    ring
-  rw [zero_add, add_zero, hcs] at h₁
+  rw [zero_add, add_zero, Real.sq_rpow_div_two (norm_nonneg _)] at h₁
   refine h₁.congr' ((eventually_gt_atTop 0).mono fun t ht ↦ ?_)
   dsimp only
   have hts : t ^ (-s) = ((t ^ 2)⁻¹) ^ (s / 2) := by
-    rw [Real.inv_rpow (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul ht.le,
-      Real.rpow_neg ht.le]
-    push_cast
-    ring_nf
+    rw [Real.inv_rpow (by positivity), Real.sq_rpow_div_two ht.le, Real.rpow_neg ht.le]
   rw [bracket_smul ht.le, ← Real.rpow_mul (by positivity), mul_add, mul_one, hts,
     show 1 / 2 * s = s / 2 by ring, ← Real.mul_rpow (by positivity) (by positivity)]
   congr 2
@@ -129,15 +122,10 @@ private theorem one_le_bracket_rpow_add_one_sub {s : ℝ} (hs : 0 ≤ s) (ξ : C
   set u := t * ‖(2 * π)⁻¹ • ξ‖
   have hu : 0 ≤ u := by positivity
   have hmono : u ^ s ≤ bracket (t • ξ) ^ s := by
-    rw [bracket_smul ht, ← Real.rpow_mul (by positivity)]
-    calc u ^ s = (u ^ 2) ^ (1 / 2 * s) := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul hu]
-          congr 1
-          push_cast
-          ring
-      _ ≤ (1 + u ^ 2) ^ (1 / 2 * s) := by
-          gcongr
-          linarith
+    rw [bracket_smul ht, ← Real.rpow_mul (by positivity), one_div_mul_eq_div,
+      ← Real.sq_rpow_div_two hu s]
+    gcongr
+    linarith
   linarith
 
 /-- For `0 < s < 1` and `n ≥ 1`, the symbol `r ^ s + 1` of order `s` has no classical expansion of
