@@ -127,10 +127,8 @@ theorem singularCohomologyMap_comp_gysinMap {n p q m : ℕ} (h : p + n = q)
   rw [ConcreteCategory.comp_apply]
   refine (gysinMap_eq_iff F E h hu hm _ 0).2 ?_
   rw [map_zero, TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply,
-    ← ConcreteCategory.comp_apply (TopCat.singularCohomologyMap (thomPair F E).map m),
-    TopPair.singularCohomologyMap_comp_singularCohomologyδ (thomPair F E) (ModuleCat.of K K) K M m
-      q hm]
-  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+    TopPair.singularCohomologyMap_comp_singularCohomologyδ_apply (thomPair F E)
+      (ModuleCat.of K K) K M m q hm]
 
 end FiberBundle
 
@@ -155,7 +153,6 @@ def eulerCup {n : ℕ} (u : (thomPair F E).singularCohomology (ModuleCat.of K K)
   ModuleCat.ofHom <| ((TopCat.of B).singularCup K (λ_ (𝟙_ (ModuleCat.{w} K))).inv (ρ_ M).hom
     p n m h).flip (eulerClass (ModuleCat.of K K) K (ModuleCat.of K K) F E n u)
 
-@[simp]
 theorem eulerCup_apply {n : ℕ}
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) {p m : ℕ}
     (h : p + n = m) (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
@@ -188,9 +185,9 @@ theorem eulerCup_comp_singularCohomologyMap {n : ℕ}
       TopCat.singularCohomologyMap ((thomPair F E).map ≫ thomPairProj F E) m = 0 := by
   ext a
   rw [TopCat.singularCohomologyMap_comp, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-    ← singularCohomologyπ_thomMap, ← ConcreteCategory.comp_apply,
-    TopPair.singularCohomologyπ_comp_singularCohomologyMap]
-  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+    ← singularCohomologyπ_thomMap,
+    TopPair.singularCohomologyπ_comp_singularCohomologyMap_apply (thomPair F E) (ModuleCat.of K K)
+      K M m, ModuleCat.hom_zero, LinearMap.zero_apply]
 
 /-- **Exactness of the Gysin sequence at `Hᵐ(B)`**: if the Thom map `Hᵖ(B) ⟶ Hᵐ(E, E₀)` of `u` is
 surjective, `p + n = m`, then a class of `Hᵐ(B; M)` pulls back to zero on `E₀` exactly when it is
@@ -247,10 +244,8 @@ theorem gysinMap_comp_eulerCup {n p q m : ℕ} (h : p + n = q)
   rw [ConcreteCategory.comp_apply]
   refine singularCohomologyMap_thomPairProj_injective F E q ?_
   rw [ModuleCat.hom_zero, LinearMap.zero_apply, map_zero, ← singularCohomologyπ_thomMap,
-    thomMap_gysinMap, ← ConcreteCategory.comp_apply,
-    TopPair.singularCohomologyδ_comp_singularCohomologyπ (thomPair F E) (ModuleCat.of K K) K M m q
-      hm]
-  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+    thomMap_gysinMap, TopPair.singularCohomologyδ_comp_singularCohomologyπ_apply (thomPair F E)
+      (ModuleCat.of K K) K M m q hm]
 
 /-- **Exactness of the Gysin sequence at `Hᵖ(B)`**: if the Thom map `Hᵖ(B) ⟶ Hᵐ⁺¹(E, E₀)` of `u`
 is bijective, `p + n = m + 1`, then `a ∈ Hᵖ(B; M)` satisfies `a ⌣ e(u) = 0` exactly when it is the

@@ -354,15 +354,39 @@ lemma singularCohomologyπ_comp_singularCohomologyMap (n : ℕ) :
   rw [← HomologicalComplex.homologyMap_comp, (P.singularCochainComplexShortComplex R k M).zero,
     HomologicalComplex.homologyMap_zero]
 
+/-- A relative class restricts to zero on the subspace. -/
+@[simp]
+lemma singularCohomologyπ_comp_singularCohomologyMap_apply (n : ℕ)
+    (x : P.singularCohomology R k M n) :
+    TopCat.singularCohomologyMap P.map n (P.singularCohomologyπ R k M n x) = 0 := by
+  rw [← ConcreteCategory.comp_apply, singularCohomologyπ_comp_singularCohomologyMap P R k M n]
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+
 @[reassoc (attr := simp)]
 lemma singularCohomologyMap_comp_singularCohomologyδ (n m : ℕ) (h : n + 1 = m := by lia) :
     TopCat.singularCohomologyMap P.map n ≫ P.singularCohomologyδ R k M n m h = 0 :=
   (P.shortExact_singularCochainComplexShortComplex R k M).comp_δ n m (by simpa)
 
+/-- The connecting map kills classes restricted from the ambient space. -/
+@[simp]
+lemma singularCohomologyMap_comp_singularCohomologyδ_apply (n m : ℕ) (h : n + 1 = m := by lia)
+    (x : P.fst.singularCohomology R k M n) :
+    P.singularCohomologyδ R k M n m h (TopCat.singularCohomologyMap P.map n x) = 0 := by
+  rw [← ConcreteCategory.comp_apply, singularCohomologyMap_comp_singularCohomologyδ P R k M n m h]
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+
 @[reassoc]
 lemma singularCohomologyδ_comp_singularCohomologyπ (n m : ℕ) (h : n + 1 = m := by lia) :
     P.singularCohomologyδ R k M n m h ≫ P.singularCohomologyπ R k M m = 0 :=
   (P.shortExact_singularCochainComplexShortComplex R k M).δ_comp n m (by simpa)
+
+/-- The image in absolute cohomology of a connecting-map class is zero. -/
+@[simp]
+lemma singularCohomologyδ_comp_singularCohomologyπ_apply (n m : ℕ) (h : n + 1 = m := by lia)
+    (x : P.snd.singularCohomology R k M n) :
+    P.singularCohomologyπ R k M m (P.singularCohomologyδ R k M n m h x) = 0 := by
+  rw [← ConcreteCategory.comp_apply, singularCohomologyδ_comp_singularCohomologyπ P R k M n m h]
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
 
 /-- Exactness at relative cohomology: `Hⁿ(A) ⟶ Hᵐ(X, A) ⟶ Hᵐ(X)` is exact for `n + 1 = m`. -/
 lemma singularCohomology_exact_relative (n m : ℕ) (h : n + 1 = m := by lia) :
