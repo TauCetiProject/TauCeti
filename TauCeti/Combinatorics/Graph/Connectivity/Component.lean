@@ -635,3 +635,15 @@ theorem componentCount_banana {x y : α} {F : Set β} (hF : F.Nonempty) :
 end
 
 end Graph
+
+namespace SimpleGraph.Subgraph
+
+/-- `S.toGraph` is connected as a multigraph if and only if `S` is connected as a simple-graph
+subgraph. -/
+@[simp]
+theorem connected_toGraph_iff {α : Type u} {H : SimpleGraph α} {S : H.Subgraph} :
+    S.toGraph.Connected ↔ S.Connected := by
+  rw [Graph.connected_iff_toSimpleGraph_connected, ← S.toSimpleGraphToGraphIso.symm.connected_iff,
+    ← Subgraph.connected_iff']
+
+end SimpleGraph.Subgraph

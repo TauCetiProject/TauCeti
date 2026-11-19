@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.PolePoints
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PullbackAdd
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.GenericPoint
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 
 /-!
 # The additive group of morphisms between elliptic curves
