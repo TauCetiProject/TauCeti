@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
+public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Eisenstein
 public import TauCeti.RingTheory.PowerSeries.CharacteristicSeries
 public import TauCeti.RingTheory.PowerSeries.PiTopology
 public import TauCeti.RingTheory.PowerSeries.Swap
@@ -26,10 +26,10 @@ a power series in `x` whose coefficients are power series in `q`. Its `q⁰`-par
 `log Q(x, q) = ∑_{k ≥ 1} 2 G₂ₖ(q) x²ᵏ / (2k)!`, with
 `G₂ₖ(q) = -B₂ₖ / (4k) + ∑_{n ≥ 1} σ₂ₖ₋₁(n) qⁿ`
 
-the Bernoulli-normalized Eisenstein series. Thus `G₂(0) = -1/24` and `G₄(0) = 1/240`. For a
-Spin manifold of dimension `4k` with vanishing first Pontryagin class the factor `G₂` drops out
-of the genus, and the remaining `G₂ₖ`, `k ≥ 2`, are level-one modular forms; this is how the
-Witten genus of such a manifold becomes a modular form of weight `2k`.
+the Bernoulli-normalized Eisenstein series `TauCeti.eisensteinGSeries`. Thus `G₂(0) = -1/24` and
+`G₄(0) = 1/240`. For a Spin manifold of dimension `4k` with vanishing first Pontryagin class the
+factor `G₂` drops out of the genus, and the remaining `G₂ₖ`, `k ≥ 2`, are level-one modular
+forms; this is how the Witten genus of such a manifold becomes a modular form of weight `2k`.
 
 ## The two variables
 
@@ -56,7 +56,6 @@ over the factors `n ∣ N` gives the divisor sum `σ₂ₖ₋₁(N)`.
 * `TauCeti.wittenFactor A n`: `(1 - qⁿ⁺¹)² / ((1 - qⁿ⁺¹ eˣ) (1 - qⁿ⁺¹ e⁻ˣ))`, with `q` outer.
 * `TauCeti.wittenQProduct A`: the product of the factors, with `q` outer.
 * `TauCeti.wittenSeries A`: the characteristic series `Q(x, q)`, with `x` outer.
-* `TauCeti.eisensteinGSeries A k`: `-Bₖ / (2k) + ∑_{n ≥ 1} σₖ₋₁(n) qⁿ`.
 
 ## Main results
 
@@ -285,25 +284,6 @@ theorem coeff_coeff_logOf_swap_wittenQProduct {j : ℕ} (hj : j ≠ 0) (N : ℕ)
   rw [Ideal.mem_span_singleton, X_pow_dvd_iff] at h
   rw [← coeff_coeff_logOf_swap_prod_wittenFactor A hj N, ← sub_eq_zero, ← map_sub]
   exact h N (by omega)
-
-/-- The **Bernoulli-normalized Eisenstein series** `Gₖ(q) = -Bₖ / (2k) + ∑_{n ≥ 1} σₖ₋₁(n) qⁿ`,
-as a formal power series. For even `k ≥ 4` it is the `q`-expansion of the level-one Eisenstein
-series of weight `k`, normalized so that `Eₖ = -(2k / Bₖ) Gₖ`; for `k = 2` it is the
-quasimodular `G₂ = -1/24 + q + 3q² + …`. -/
-noncomputable def eisensteinGSeries (k : ℕ) : A⟦X⟧ :=
-  C (algebraMap ℚ A (-bernoulli k / (2 * k))) + divisorSumSeries (k - 1)
-
-theorem eisensteinGSeries_def (k : ℕ) :
-    eisensteinGSeries A k =
-      C (algebraMap ℚ A (-bernoulli k / (2 * k))) + divisorSumSeries (k - 1) :=
-  (rfl)
-
-@[simp]
-theorem coeff_eisensteinGSeries (k n : ℕ) :
-    coeff n (eisensteinGSeries A k) =
-      if n = 0 then algebraMap ℚ A (-bernoulli k / (2 * k)) else (σ (k - 1) n : A) := by
-  rw [eisensteinGSeries_def, map_add, coeff_C, coeff_divisorSumSeries]
-  split_ifs with hn <;> simp [hn]
 
 /-- The **characteristic series of the Witten genus**
 `Q(x, q) = (x / 2) / sinh (x / 2) · ∏_{n ≥ 1} (1 - qⁿ)² / ((1 - qⁿ eˣ) (1 - qⁿ e⁻ˣ))`, as a power
