@@ -42,7 +42,8 @@ the identity on `Hₙ₊₁(F)`, the fibre inclusion is an isomorphism `Hₙ₊�
 The Wang connecting morphism is natural for maps of mapping tori: if `g : F → G` satisfies
 `g ∘ φ = ψ ∘ g`, then `g × 𝟙ℝ` and the induced map `T_φ → T_ψ` form a morphism of the short exact
 sequences of the infinite cyclic covers (`TauCeti.MappingTorus.cyclicCoverShortComplexMap`), so
-`wangδ` commutes with the induced maps on homology (`TauCeti.MappingTorus.wangδ_naturality`).
+`wangδ` commutes with the induced maps on homology (`TauCeti.MappingTorus.wangδ_naturality`, and
+`TauCeti.MappingTorus.singularHomologyMap_map_comp_wangδ` for the maps on singular homology).
 -/
 
 public section
@@ -377,6 +378,21 @@ theorem wangδ_naturality (n : ℕ) :
   rw [wangδ_def, wangδ_def, Category.assoc, ← homologyMap_comp, hfst, homologyMap_comp,
     ← Category.assoc, ← Category.assoc]
   exact congrArg (· ≫ _) hδ
+
+/-- **Naturality of the Wang connecting morphism**, stated with the maps induced on singular
+homology by the map of mapping tori and by `g`. -/
+@[reassoc]
+theorem singularHomologyMap_map_comp_wangδ (n : ℕ) :
+    ((singularHomologyFunctor A (n + 1)).obj R).map (TopCat.ofHom (map φ ψ g h)) ≫
+        wangδ ψ R n =
+      wangδ φ R n ≫ ((singularHomologyFunctor A n).obj R).map (TopCat.ofHom g) := by
+  have hnat := wangδ_naturality φ R ψ g h n
+  rw [fibreChainMap_def, mappingTorusChainMap_def] at hnat
+  -- `hnat` is stated with `homologyMap (((singularChainComplexFunctor A).obj R).map f) n`.
+  -- Mathlib defines `singularHomologyFunctor A n` as `singularChainComplexFunctor A` followed by
+  -- `homologyFunctor _ _ n`, so `((singularHomologyFunctor A n).obj R).map f` unfolds to exactly
+  -- this: the two statements agree definitionally.
+  exact hnat.symm
 
 end Naturality
 

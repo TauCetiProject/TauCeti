@@ -24,7 +24,8 @@ projection `T_φ → ℝ/ℤ` (`TauCeti.MappingTorus.proj`).
 * **Naturality.** For a map `g : F → G` with `g ∘ φ = ψ ∘ g`, the Wang class of `T_φ` is the
   pullback of the Wang class of `T_ψ` along the induced map of mapping tori
   (`TauCeti.MappingTorus.singularHomologyMap_map_comp_wangClass`), because the Wang connecting
-  morphism (`TauCeti.MappingTorus.wangδ_naturality`) and the augmentation are natural.
+  morphism (`TauCeti.MappingTorus.singularHomologyMap_map_comp_wangδ`) and the augmentation are
+  natural.
 * **The circle.** For the mapping torus of the identity of a point, the Wang sequence reads
   `0 = H₁(pt) ⟶ H₁(T) ⟶ H₀(pt) ⟶ 0`, so its Wang connecting morphism and its Wang class are
   isomorphisms (`TauCeti.MappingTorus.isIso_wangδ_refl_punit`,
@@ -37,7 +38,9 @@ projection `T_φ → ℝ/ℤ` (`TauCeti.MappingTorus.proj`).
   `Type`, the Wang class of `T_φ` is the map `proj_* : H₁(T_φ) ⟶ H₁(ℝ/ℤ)` followed by
   `circleWangClass R`
   (`TauCeti.MappingTorus.wangClass_eq_singularHomologyMap_proj_comp_circleWangClass`). Thus the
-  Wang class is the pullback along `proj` of a generator of the first cohomology of the circle.
+  Wang class factors through `proj_*` via the isomorphism `circleWangClass R`. Reading it as the
+  pullback of a generator of `H¹(ℝ/ℤ; ℤ)` needs the universal coefficient identification
+  `Hom(H₁(ℝ/ℤ), ℤ) ≅ H¹(ℝ/ℤ; ℤ)`, which is not made here.
 
 Which generator this is, that is, the value of `circleWangClass` on the circuit class
 `AddCircle.fundamentalClass` (one of `1` and `-1` with integer coefficients), is not computed
@@ -83,15 +86,9 @@ theorem singularHomologyMap_map_comp_wangClass {G : Type w} [TopologicalSpace G]
       wangClass R φ := by
   -- The Wang connecting morphism and the augmentation are natural.
   have hδ : ((singularHomologyFunctor A 1).obj R).map (TopCat.ofHom (map φ ψ g h)) ≫
-      wangδ ψ R 0 = wangδ φ R 0 ≫ ((singularHomologyFunctor A 0).obj R).map (TopCat.ofHom g) := by
-    have hnat := wangδ_naturality φ R ψ g h 0
-    rw [fibreChainMap_def, mappingTorusChainMap_def] at hnat
-    -- `hnat` is stated with `homologyMap (((singularChainComplexFunctor A).obj R).map f) n`
-    -- in degree `0 + 1`. Mathlib defines `singularHomologyFunctor A n` as
-    -- `singularChainComplexFunctor A` followed by `homologyFunctor _ _ n`, so
-    -- `((singularHomologyFunctor A n).obj R).map f` unfolds to exactly this, and `0 + 1`
-    -- reduces to `1`: the two statements agree definitionally.
-    exact hnat.symm
+      wangδ ψ R 0 = wangδ φ R 0 ≫ ((singularHomologyFunctor A 0).obj R).map (TopCat.ofHom g) :=
+    -- The degree `0 + 1` of the naturality lemma reduces to `1`.
+    singularHomologyMap_map_comp_wangδ φ R ψ g h 0
   -- `wangδ` has chain-complex homology as source and target, while `singularHomology₀ε` and
   -- `wangClass` are stated with `singularHomologyFunctor`. The composites are therefore only
   -- type-correct up to the same unfolding, and `rw` cannot form the motive, so the equalities
@@ -153,6 +150,14 @@ def circleWangClass : ((singularHomologyFunctor A 1).obj R).obj (TopCat.of UnitA
       (TopCat.ofHom ⟨proj (Homeomorph.refl PUnit.{1}), continuous_proj _⟩)) ≫
     wangClass R (Homeomorph.refl PUnit.{1})
 
+/-- The Wang class of the circle is the inverse of the isomorphism induced by the projection of
+the mapping torus of the identity of a point, followed by the Wang class of that mapping torus. -/
+lemma circleWangClass_def :
+    circleWangClass R = inv (((singularHomologyFunctor A 1).obj R).map
+        (TopCat.ofHom ⟨proj (Homeomorph.refl PUnit.{1}), continuous_proj _⟩)) ≫
+      wangClass R (Homeomorph.refl PUnit.{1}) :=
+  (rfl)
+
 /-- The Wang class of the circle is an isomorphism `H₁(ℝ/ℤ; R) ≅ R`. -/
 instance isIso_circleWangClass : IsIso (circleWangClass R) :=
   inferInstanceAs (IsIso (_ ≫ _))
@@ -164,7 +169,7 @@ theorem singularHomologyMap_proj_comp_circleWangClass :
     ((singularHomologyFunctor A 1).obj R).map
         (TopCat.ofHom ⟨proj (Homeomorph.refl PUnit.{1}), continuous_proj _⟩) ≫
       circleWangClass R = wangClass R (Homeomorph.refl PUnit.{1}) := by
-  rw [circleWangClass, IsIso.hom_inv_id_assoc]
+  rw [circleWangClass_def, IsIso.hom_inv_id_assoc]
 
 /-- **The Wang class of a mapping torus is pulled back from the circle.** For a homeomorphism `φ`
 of a space `F`, the Wang class `ε ∘ δ : H₁(T_φ) ⟶ R` is the map induced on `H₁` by the projection
