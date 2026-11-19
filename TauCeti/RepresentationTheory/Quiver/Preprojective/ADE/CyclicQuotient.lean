@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.BadCha
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.CharacteristicFive
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.CharacteristicThree
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeE.CyclicQuotient
+import TauCeti.Algebra.CharP.Lemmas
 
 /-!
 # The positive-degree cyclic quotient of a Dynkin preprojective algebra
@@ -67,12 +68,6 @@ private abbrev CyclicVanishes {n : ℕ} (G : SimpleGraph (Fin n)) (o : Orientati
     commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o))
 
 variable {k}
-
-/-- In a field, a prime number other than the characteristic is a unit. -/
-private theorem isUnit_ofNat_of_ringChar_ne {p : ℕ} [p.AtLeastTwo] (hp : p.Prime)
-    (h : ringChar k ≠ p) : IsUnit (OfNat.ofNat p : k) := by
-  rw [← Nat.cast_ofNat]
-  exact isUnit_iff_ne_zero.mpr fun h0 => h (CharP.ringChar_of_prime_eq_zero hp h0)
 
 /-- A class of degree at least three outside the commutators, in the preprojective algebras of all
 orientations of a graph equal to `H`, refutes the vanishing for every orientation of `H`. The

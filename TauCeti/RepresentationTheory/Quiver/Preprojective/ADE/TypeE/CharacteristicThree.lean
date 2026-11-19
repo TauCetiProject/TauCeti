@@ -346,14 +346,6 @@ private theorem e6Trace_cyclicWord : letI := neighborFintype;
     List.map_cons, List.map_nil, List.dropLast_cons_cons,
     List.dropLast_singleton, vertexEquiv_symm_vertex, hw, map_one]
 
-omit [CharP k 3] in
-/-- The closed branch-node word `y²x` in type `E₆` is homogeneous of path degree six.
-The explicit neighbourhood enumeration preserves the caller's quotient carrier. -/
-theorem signlessWord_E6_cyclicWord_mem_grade_six : letI := neighborFintype;
-    signlessWord k G [3, 2, 3, 2, 3, 1, 3] ∈ signlessPreprojectiveGrade k Q 6 :=
-  letI := neighborFintype
-  signlessWord_mem_grade k G [3, 2, 3, 2, 3, 1, 3]
-
 /-- In characteristic three the degree-six branch-node word `y²x` is not a sum of
 commutators. The neighbourhood enumeration is retained as data in the quotient carrier. -/
 theorem signlessWord_E6_cyclicWord_not_mem_commutatorSubmodule :
@@ -417,14 +409,10 @@ theorem exists_mem_preprojectiveGrade_E_six_notMem_commutatorSubmodule
     ∃ z : preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o),
       z ∈ preprojectiveGrade k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o) 6 ∧
         z ∉ commutatorSubmodule k
-          (preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o)) := by
-  obtain ⟨z, hz, hz0⟩ :=
-    exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k hn
-  let C := eColoring _ (diagramGraph_E_adj (n := n))
-  let E := C.signlessPreprojectiveAlgebraEquiv k o
-  refine ⟨E z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, fun h => ?_⟩
-  apply hz0
-  simpa only [AlgEquiv.symm_apply_apply] using map_mem_commutatorSubmodule E.symm h
+          (preprojectiveAlgebra k (OrientedQuiver (diagramGraph (CartanMatrix.E n)) o)) :=
+  SimpleGraph.Coloring.exists_mem_preprojectiveGrade_notMem_commutatorSubmodule k
+    (eColoring _ (diagramGraph_E_adj (n := n))) o
+    (exists_mem_signlessPreprojectiveGrade_E_six_notMem_commutatorSubmodule k hn)
 
 end EGraph
 

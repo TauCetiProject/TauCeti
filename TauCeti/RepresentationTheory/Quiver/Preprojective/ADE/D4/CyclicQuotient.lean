@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.SelfInjective
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.CyclicQuotient
+import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 
 /-!
 # A positive-degree cyclic class in type `D₄` in characteristic two
@@ -59,19 +60,8 @@ private theorem signlessPreprojectiveD4FrobeniusFunctional_cyclicWord :
 
 /-- The detecting closed walk is homogeneous of path degree four. -/
 theorem signlessWord_D4_cyclicWord_mem_grade_four :
-    W [1, 2, 1, 0, 1] ∈ signlessPreprojectiveGrade k Q 4 := by
-  simp only [signlessWord_cons_cons, signlessWord_singleton]
-  have he : signlessPreprojectiveMk k Q (vertexIdempotent k (vertex zigzagD4Graph 1)) ∈
-      signlessPreprojectiveGrade k Q 0 :=
-    signlessPreprojectiveMk_mem_grade k Q (vertexIdempotent_mem_grade_zero _)
-  exact mul_mem_signlessPreprojectiveGrade k Q
-    (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
-    (mul_mem_signlessPreprojectiveGrade k Q
-      (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
-      (mul_mem_signlessPreprojectiveGrade k Q
-        (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _)
-        (mul_mem_signlessPreprojectiveGrade k Q
-          (signlessArrow_mem_signlessPreprojectiveGrade_one k _ _) he)))
+    W [1, 2, 1, 0, 1] ∈ signlessPreprojectiveGrade k Q 4 :=
+  signlessWord_mem_grade k zigzagD4Graph [1, 2, 1, 0, 1]
 
 /-- In characteristic two, the closed walk through leaves `0` and `2` is not a sum of
 commutators. This is stronger than its nonvanishing in the algebra itself. -/
