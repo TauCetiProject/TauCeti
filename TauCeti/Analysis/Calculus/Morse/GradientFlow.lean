@@ -257,30 +257,26 @@ theorem strictAnti_comp_neg_gradient
 /-- **Near a regular point, a trajectory passes only at nearby times.** If `γ s₀` is not a
 critical point of `f`, then for every `δ > 0` there is a ball around `γ s₀` that the global
 negative gradient trajectory `γ` meets only at times within `δ` of `s₀`. The value of `f`
-decreases along `γ`, strictly so near `s₀`, and the ball is chosen so small that `f` stays within
-the drop of `f ∘ γ` over the times `s₀ ± δ`. -/
+decreases along `γ`, with negative derivative at `s₀`, and the ball is chosen so small that `f`
+stays strictly between its values at two times within `δ` before and after `s₀`. -/
 theorem exists_pos_forall_dist_lt_mem_Ioo
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t))
-    {s₀ : ℝ} (hg : ContinuousAt (fun t ↦ ∇ f (γ t)) s₀)
-    (hcrit : ∇ f (γ s₀) ≠ 0) {δ : ℝ} (hδ : 0 < δ) :
+    {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) {δ : ℝ} (hδ : 0 < δ) :
     ∃ r > 0, ∀ s, dist (γ s) (γ s₀) < r → s ∈ Ioo (s₀ - δ) (s₀ + δ) := by
   have hanti := antitone_comp_neg_gradient hγ hf
-  -- The gradient does not vanish along `γ` on a time interval `[s₀ - δ', s₀ + δ']`.
-  obtain ⟨ε₀, hε₀, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hg.eventually_ne hcrit)
-  set δ' := min (ε₀ / 2) δ
-  have hδ'0 : 0 < δ' := lt_min (half_pos hε₀) hδ
-  have hstrict : StrictAntiOn (f ∘ γ) (Icc (s₀ - δ') (s₀ + δ')) :=
-    (hγ.isIntegralCurveOn _).strictAntiOn_comp_neg_gradient (convex_Icc _ _)
-      (fun t _ ↦ hf t) fun t ht ↦ hball t <| by
-        rw [interior_Icc] at ht
-        rw [Metric.mem_ball, Real.dist_eq, abs_lt]
-        constructor <;> linarith [ht.1, ht.2, min_le_left (ε₀ / 2) δ]
-  have hlo : f (γ s₀) < f (γ (s₀ - δ')) :=
-    hstrict ⟨le_rfl, by linarith⟩ ⟨by linarith, by linarith⟩ (by linarith)
-  have hhi : f (γ (s₀ + δ')) < f (γ s₀) :=
-    hstrict ⟨by linarith, by linarith⟩ ⟨by linarith, le_rfl⟩ (by linarith)
-  -- Points close to `γ s₀` have values of `f` strictly between those at `s₀ ± δ'`.
-  set ε := min (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))
+  -- The slopes of `f ∘ γ` at `s₀` are eventually negative, since its derivative there is.
+  have hslope : ∀ᶠ t in 𝓝[≠] s₀, slope (f ∘ γ) s₀ t < 0 :=
+    (hasDerivAt_iff_tendsto_slope.1 (hasDerivAt_comp_neg_gradient hγ (hf s₀))).eventually
+      (gt_mem_nhds (neg_lt_zero.mpr (sq_pos_of_ne_zero (norm_ne_zero_iff.mpr hcrit))))
+  obtain ⟨t₁, ht₁, ht₁I⟩ := ((hslope.filter_mono (nhdsLT_le_nhdsNE s₀)).and
+    (Ioo_mem_nhdsLT (by linarith : s₀ - δ < s₀))).exists
+  obtain ⟨t₂, ht₂, ht₂I⟩ := ((hslope.filter_mono (nhdsGT_le_nhdsNE s₀)).and
+    (Ioo_mem_nhdsGT (by linarith : s₀ < s₀ + δ))).exists
+  rw [slope_def_field, div_lt_iff_of_neg (sub_neg.2 ht₁I.2), zero_mul] at ht₁
+  rw [slope_def_field, div_lt_iff₀ (sub_pos.2 ht₂I.1), zero_mul] at ht₂
+  simp only [Function.comp_apply, sub_pos, sub_neg] at ht₁ ht₂
+  -- Points close to `γ s₀` have values of `f` strictly between those at `t₁` and `t₂`.
+  set ε := min (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))
   have hε0 : 0 < ε := lt_min (by linarith) (by linarith)
   obtain ⟨r, hr, hfr⟩ := Metric.continuousAt_iff.1 (hf s₀).continuousAt ε hε0
   refine ⟨r, hr, fun s hs ↦ ?_⟩
@@ -288,13 +284,13 @@ theorem exists_pos_forall_dist_lt_mem_Ioo
   rw [Real.dist_eq, abs_lt] at hfs
   constructor
   · by_contra h
-    have := hanti (show s ≤ s₀ - δ' by linarith [min_le_right (ε₀ / 2) δ])
+    have := hanti (show s ≤ t₁ by linarith [ht₁I.1])
     simp only [Function.comp_apply] at this
-    linarith [min_le_left (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))]
+    linarith [min_le_left (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))]
   · by_contra h
-    have := hanti (show s₀ + δ' ≤ s by linarith [min_le_right (ε₀ / 2) δ])
+    have := hanti (show t₂ ≤ s by linarith [ht₂I.2])
     simp only [Function.comp_apply] at this
-    linarith [min_le_right (f (γ (s₀ - δ')) - f (γ s₀)) (f (γ s₀) - f (γ (s₀ + δ')))]
+    linarith [min_le_right (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))]
 
 /-- **Energy identity for a global negative gradient trajectory.**  The drop in `f` between two
 times equals the integral of the squared norm of its gradient along the trajectory. -/

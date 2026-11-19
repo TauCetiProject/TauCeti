@@ -142,7 +142,7 @@ private theorem exists_integral_inner_metricVariation_pos (hf : ContDiff ℝ 2 f
     (hq.continuousAt.eventually (lt_mem_nhds (inner_rankOne_add_rankOne_apply_self_pos hcrit hw0)))
   -- A small ball around `γ s₀` inside `U` meets the trajectory only at times within `δ` of `s₀`.
   obtain ⟨r₁, hr₁, hrs⟩ := hγ.exists_pos_forall_dist_lt_mem_Ioo
-    (fun t ↦ hf.differentiable (by norm_num) _) hg.continuousAt hcrit hδ
+    (fun t ↦ hf.differentiable (by norm_num) _) hcrit hδ
   obtain ⟨r₂, hr₂, hrU⟩ := Metric.mem_nhds_iff.1 hU
   set r := min r₁ r₂
   have hr : 0 < r := lt_min hr₁ hr₂
