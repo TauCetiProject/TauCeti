@@ -20,9 +20,8 @@ at positive small times and
 into the second interior sheet at negative small times. One time interval works for every start
 in that compact set. On the same interval the flow meets the gluing set exactly at time zero.
 
-The field is given. No construction of an ambient inward field, original boundary identification,
-collar or doubled bundle is assumed or supplied here. For compact original surfaces, ambient
-completeness follows from the existing compact-manifold theorem.
+For compact original surfaces, ambient completeness follows from the existing compact-manifold
+theorem.
 -/
 
 public section
