@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Retraction
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.Homotopy
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 
 /-!
 # Compression of cubical chains with local coefficients
@@ -88,6 +89,8 @@ local coefficients.
   `TauCeti.isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`: transported to
   simplicial chains, the inclusion of a subspace is surjective on singular homology with local
   coefficients below the connectivity of the pair, and bijective one degree lower.
+* `TauCeti.isZero_twistedHomology_ofSubset_of_relHomotopyGroup`: by the long exact sequence of the
+  pair, the relative homology with local coefficients vanishes below the connectivity of the pair.
 
 ## References
 
@@ -878,5 +881,38 @@ theorem isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt
     infer_instance
   exact IsIso.of_isIso_comp_left (HomologicalComplex.homologyMap
     (twistedCubicalToSingularMap ((LocalCoefficientSystem.pullback i.hom).obj L)) m) _
+
+/-- **Relative homology with local coefficients vanishes below the connectivity of the pair.** If
+every point of `X` is joined by a path to a point of `A`, and the relative homotopy set
+`π_{k+1}(X, A, a)` is trivial for every `k + 1 < n` and every `a ∈ A`, then for every local
+coefficient system `L` on `X` the relative homology `H_m(X, A; L)` vanishes for every `m < n`. -/
+theorem isZero_twistedHomology_ofSubset_of_relHomotopyGroup {R : Type u} [Ring R]
+    {X : TopCat.{v}} {A : Set X} {n : ℕ} (h₀ : ∀ x : X, ∃ a ∈ A, Joined x a)
+    (h : ∀ k : ℕ, k + 1 < n → ∀ a : A,
+      Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset A, a⟩))
+    (L : LocalCoefficientSystem.{u, v, v} R X) {m : ℕ} (hm : m < n) :
+    Limits.IsZero ((TopPair.ofSubset A).twistedHomology L m) := by
+  -- In the exact sequence `H_m(A) ⟶ H_m(X) ⟶ H_m(X, A) ⟶ H_{m-1}(A) ⟶ H_{m-1}(X)` of the pair,
+  -- the first map is onto and the last one is injective.
+  have := epi_twistedHomologyMap_subtypeVal_of_relHomotopyGroup h₀ h L hm
+  have hπ : (TopPair.ofSubset A).twistedHomologyπ L m = 0 :=
+    (cancel_epi (twistedHomologyMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L m)).1
+      (((TopPair.ofSubset A).twistedHomologyMap_comp_twistedHomologyπ L m).trans
+        Limits.comp_zero.symm)
+  cases m with
+  | zero =>
+    -- The instance for pairs applies once `L` is read as a system on the ambient space of the
+    -- pair, which unfolds to `X` only up to instance transparency.
+    let L' : LocalCoefficientSystem.{u, v, v} R (TopPair.ofSubset A).fst := L
+    have : Epi ((TopPair.ofSubset A).twistedHomologyπ L' 0) := inferInstance
+    exact Limits.IsZero.of_epi_eq_zero _ hπ
+  | succ j =>
+    have := isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt h₀ h L
+      (m := j) hm
+    exact ((TopPair.ofSubset A).twistedHomology_exact_relative L (j + 1) j).isZero_of_both_zeros
+      hπ (((TopPair.ofSubset A).twistedHomology_exact_subspace L (j + 1) j).mono_g_iff.1
+        -- The goal's map is the `g` field of the short complex of the exact sequence, which
+        -- instance search does not reduce to the map of `this`, so the instance is passed by hand.
+        (@IsIso.mono_of_iso _ _ _ _ _ this))
 
 end TauCeti
