@@ -215,6 +215,27 @@ private theorem bijective_toSphere_genLoopLoopHomeomorph_map_tangentCircleDouble
     refine ⟨fun i ↦ y (e.symm i), ?_⟩
     simp only [GenLoop.congr_apply, Equiv.symm_apply_apply, c₂, c₁]
 
+/-- For `n ≥ 3`, every point `p₀` of the equator `Σ` is the base point of a generalized loop `c`
+of `Σ` that is a homeomorphism off the boundary of its cube, so whose Hurewicz class generates
+`H_{n-2}(Σ; ℤ)`. -/
+private theorem exists_genLoop_sphereEquator_isIso_hurewicz {m : ℕ}
+    (hE : Module.finrank ℝ E = m + 4) (hu : ‖u‖ = 1) (hv : ‖v‖ = 1) (p₀ : sphereEquator v) :
+    ∃ c : Ω^ (Fin (m + 1)) (sphereEquator v) p₀, (∀ q, q ≠ p₀ → ∃ y, c y = q) ∧
+      (∀ y z, c y = c z →
+        y = z ∨ y ∈ Cube.boundary (Fin (m + 1)) ∧ z ∈ Cube.boundary (Fin (m + 1))) ∧
+      IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) c) := by
+  have hV : Module.finrank ℝ (ℝ ∙ u)ᗮ = m + 3 := by
+    have : Fact (Module.finrank ℝ E = m + 3 + 1) := ⟨hE⟩
+    exact Submodule.finrank_orthogonal_span_singleton (norm_ne_zero_iff.1 (hu ▸ one_ne_zero))
+  obtain ⟨c, hcs, hci⟩ :=
+    exists_genLoop_sphereEquator (norm_ne_zero_iff.1 (hv ▸ one_ne_zero)) (k := m + 1) hV p₀
+  have hcs' : Function.Surjective c := fun q ↦ by
+    by_cases hq : q = p₀
+    · exact ⟨0, hq ▸ GenLoop.boundary c 0 ⟨0, Or.inl rfl⟩⟩
+    · exact hcs q hq
+  exact ⟨c, hcs, hci, GenLoop.isIso_hurewicz_of_bijective_toSphere _
+    ⟨(GenLoop.injective_toSphere_iff c).2 hci, (GenLoop.surjective_toSphere_iff c).2 hcs'⟩⟩
+
 /-- **The double loops generate the homology of the double loop space** (Proposition 6.21 of
 Barraud–Damian–Humilière–Oancea). For a unit vector `u` of a real inner product space `E` of
 dimension `n + 1 ≥ 4`, a unit vector `v` of `u⊥` and a point `p₀` of the equator `Σ` of the unit
@@ -227,20 +248,8 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
     IsIso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).obj (ModuleCat.of ℤ ℤ)).map
       (TopCat.ofHom (tangentCircleDoubleLoop hu hv p₀))) := by
   let R := ModuleCat.of ℤ ℤ
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
-  have hu0 : u ≠ 0 := norm_ne_zero_iff.1 (hu ▸ one_ne_zero)
-  have hv0 : v ≠ 0 := norm_ne_zero_iff.1 (hv ▸ one_ne_zero)
-  have hV : Module.finrank ℝ (ℝ ∙ u)ᗮ = m + 3 := by
-    have : Fact (Module.finrank ℝ E = m + 3 + 1) := ⟨hE⟩
-    exact Submodule.finrank_orthogonal_span_singleton hu0
   -- A generalized loop `c` of `Σ` that is a homeomorphism off the boundary of its cube.
-  obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphereEquator hv0 (k := m + 1) hV p₀
-  have hcs' : Function.Surjective c := fun q ↦ by
-    by_cases hq : q = p₀
-    · exact ⟨0, hq ▸ GenLoop.boundary c 0 ⟨0, Or.inl rfl⟩⟩
-    · exact hcs q hq
-  have hc : IsIso (GenLoop.hurewicz R c) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
-    ⟨(GenLoop.injective_toSphere_iff c).2 hci, (GenLoop.surjective_toSphere_iff c).2 hcs'⟩
+  obtain ⟨c, hcs, hci, hc⟩ := exists_genLoop_sphereEquator_isIso_hurewicz hE hu hv p₀
   -- Read through `σ` and the loop-space shifts, `c` becomes a cube `Q` of `Sⁿ` that is again a
   -- homeomorphism off the boundary.
   set γ := GenLoop.map (tangentCircleDoubleLoop hu hv p₀) (tangentCircleDoubleLoop_self hu hv p₀) c
@@ -303,20 +312,10 @@ theorem exists_not_isOfFinAddOrder_homology_basedMap_sphere {m : ℕ}
   let p₀ : sphereEquator v' :=
     ⟨⟨⟨x, Submodule.mem_orthogonal_singleton_iff_inner_right.2 hux⟩, by simp⟩,
       mem_sphereEquator.2 (hxv (x : E) (by simp))⟩
-  have hV : Module.finrank ℝ (ℝ ∙ u)ᗮ = m + 3 := by
-    have : Fact (Module.finrank ℝ E = m + 3 + 1) := ⟨hE⟩
-    exact Submodule.finrank_orthogonal_span_singleton (norm_ne_zero_iff.1 (hu ▸ one_ne_zero))
   -- The Hurewicz class of a generalized loop of `Σ` that is a homeomorphism off the boundary of
   -- its cube generates `H_{m+1}(Σ; ℤ)`.
   let R := ModuleCat.of ℤ ℤ
-  obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphereEquator
-    (norm_ne_zero_iff.1 (hv' ▸ one_ne_zero)) (k := m + 1) hV p₀
-  have hcs' : Function.Surjective c := fun q ↦ by
-    by_cases hq : q = p₀
-    · exact ⟨0, hq ▸ GenLoop.boundary c 0 ⟨0, Or.inl rfl⟩⟩
-    · exact hcs q hq
-  have : IsIso (GenLoop.hurewicz R c) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
-    ⟨(GenLoop.injective_toSphere_iff c).2 hci, (GenLoop.surjective_toSphere_iff c).2 hcs'⟩
+  obtain ⟨c, -, -, _⟩ := exists_genLoop_sphereEquator_isIso_hurewicz hE hu hv' p₀
   have := isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop hE hu hv' p₀
   -- The double loops are based at `x`, and read as based maps `(S², north) → (Sⁿ, x)`.
   set a := (orthogonalSphereToEquator u (p₀ : sphere (0 : (ℝ ∙ u)ᗮ) 1) : sphere (0 : E) 1)

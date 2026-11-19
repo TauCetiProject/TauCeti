@@ -279,13 +279,15 @@ theorem coe_sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ (Fin N)) 1)
       UnitaryGroup.ofLinearIsometryEquiv (sphereRotationIsometry p x) :=
   (rfl)
 
-/-- The matrix `TauCeti.sphereRotationMatrix p x` acts on `ℝᴺ` as the rotation
+/-- The matrix `TauCeti.sphereRotationMatrix p x`, as a unitary matrix through the inclusion of
+`SO(N)` in `O(N)` along which `SO(N)` acts on the sphere, acts on `ℝᴺ` as the rotation
 `TauCeti.sphereRotationIsometry p x`. -/
 @[simp]
 theorem toLinearIsometryEquiv_sphereRotationMatrix (p : sphere (0 : EuclideanSpace ℝ (Fin N)) 1)
     (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ (Fin N)))ᗮ) 1 × sphere (0 : ℂ) 1) :
     UnitaryGroup.toLinearIsometryEquiv
-        ⟨(sphereRotationMatrix p x : Matrix (Fin N) (Fin N) ℝ), (sphereRotationMatrix p x).2.1⟩ =
+        (Submonoid.inclusion (S := specialOrthogonalGroup (Fin N) ℝ)
+          (T := unitaryGroup (Fin N) ℝ) (fun _ hA ↦ hA.1) (sphereRotationMatrix p x)) =
       sphereRotationIsometry p x :=
   UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv _
 
@@ -295,9 +297,8 @@ theorem sphereRotationMatrix_smul (p : sphere (0 : EuclideanSpace ℝ (Fin N)) 1
     (x : sphere (0 : (ℝ ∙ (p : EuclideanSpace ℝ (Fin N)))ᗮ) 1 × sphere (0 : ℂ) 1)
     (y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
     sphereRotationMatrix p x • y = sphereRotationIsometry p x • y :=
-  Subtype.ext <| by
-    rw [SpecialOrthogonalGroup.coe_smul_sphere, LinearIsometryEquiv.coe_smul_unitSphere,
-      ← toLinearIsometryEquiv_sphereRotationMatrix, UnitaryGroup.toLinearIsometryEquiv_apply]
+  -- `SO(N)` acts through `toLinearIsometryEquiv` of the inclusion in `O(N)`.
+  congrArg (· • y) (toLinearIsometryEquiv_sphereRotationMatrix p x)
 
 /-- **The matrices act on `p` by the rotation family of the sphere.** -/
 @[simp]

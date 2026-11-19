@@ -252,7 +252,7 @@ variable {N : ℕ}
 through the linear isometry `Matrix.UnitaryGroup.toLinearIsometryEquiv` of the matrix. -/
 noncomputable instance instMulActionSphere :
     MulAction (specialOrthogonalGroup (Fin N) ℝ) (sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :=
-  MulAction.compHom _ (UnitaryGroup.toLinearIsometryEquiv.comp
+  MulAction.compHom _ (UnitaryGroup.toLinearIsometryEquiv.toMonoidHom.comp
     (Submonoid.inclusion fun _ hA ↦ hA.1 :
       specialOrthogonalGroup (Fin N) ℝ →* unitaryGroup (Fin N) ℝ))
 

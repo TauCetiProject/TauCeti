@@ -63,7 +63,7 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   of the induced continuous linear map are those of the conjugate transpose and of the matrix;
 * `Matrix.inner_toEuclideanCLM_mul_mul_conjTranspose` — the sesquilinear form of `A * B * Aᴴ`
   at `x, y` is that of `B` at `Aᴴ x, Aᴴ y`;
-* `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group homomorphism from the unitary group to
+* `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group isomorphism from the unitary group to
   the linear isometry group of Euclidean space, acting as the matrix does
   (`Matrix.UnitaryGroup.toLinearIsometryEquiv_apply`); it is bijective
   (`Matrix.UnitaryGroup.toLinearIsometryEquiv_injective`,
@@ -245,12 +245,12 @@ theorem inner_toEuclideanCLM_mul_mul_conjTranspose (A B : Matrix ι ι 𝕜)
 
 
 /-- A unitary matrix acts on `EuclideanSpace 𝕜 ι` as a linear isometry equivalence, and this is a
-group homomorphism from the unitary group to the linear isometry group: the continuous linear map
-of a unitary matrix is a unitary operator. -/
+group isomorphism from the unitary group to the linear isometry group: the continuous linear map
+of a unitary matrix is a unitary operator, and every unitary operator arises this way. -/
 noncomputable def UnitaryGroup.toLinearIsometryEquiv :
-    unitaryGroup ι 𝕜 →* (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
-  Unitary.linearIsometryEquiv.toMonoidHom.comp
-    (Unitary.map (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMonoidHom
+    unitaryGroup ι 𝕜 ≃* (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
+  (Unitary.mapEquiv (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMulEquiv.trans
+    Unitary.linearIsometryEquiv
 
 /-- The linear isometry of a unitary matrix acts by matrix-vector multiplication in Euclidean
 coordinates. -/
@@ -315,12 +315,10 @@ theorem UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere :
   simp [toLpLin_apply]
 
 /-- **The unitary matrix of a linear isometry** of `EuclideanSpace 𝕜 ι`, its matrix in the standard
-basis, as a group isomorphism. Its inverse is `Matrix.UnitaryGroup.toLinearIsometryEquiv`
-(`Matrix.UnitaryGroup.ofLinearIsometryEquiv_symm_apply`). -/
+basis, as a group isomorphism: the inverse of `Matrix.UnitaryGroup.toLinearIsometryEquiv`. -/
 noncomputable def UnitaryGroup.ofLinearIsometryEquiv :
     (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) ≃* unitaryGroup ι 𝕜 :=
-  ((Unitary.mapEquiv (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMulEquiv.trans
-    Unitary.linearIsometryEquiv).symm
+  UnitaryGroup.toLinearIsometryEquiv.symm
 
 /-- The unitary matrix of a linear isometry is the matrix of its continuous linear map. -/
 theorem UnitaryGroup.coe_ofLinearIsometryEquiv (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
@@ -329,25 +327,18 @@ theorem UnitaryGroup.coe_ofLinearIsometryEquiv (g : EuclideanSpace 𝕜 ι ≃�
         (g.toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
   (rfl)
 
-/-- The inverse of `Matrix.UnitaryGroup.ofLinearIsometryEquiv` is the linear isometry of a unitary
-matrix. -/
-@[simp]
-theorem UnitaryGroup.ofLinearIsometryEquiv_symm_apply (A : unitaryGroup ι 𝕜) :
-    UnitaryGroup.ofLinearIsometryEquiv.symm A = UnitaryGroup.toLinearIsometryEquiv A :=
-  (rfl)
-
 /-- The linear isometry of the unitary matrix of a linear isometry is the linear isometry. -/
 @[simp]
 theorem UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv
     (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
     UnitaryGroup.toLinearIsometryEquiv (UnitaryGroup.ofLinearIsometryEquiv g) = g :=
-  UnitaryGroup.ofLinearIsometryEquiv.symm_apply_apply g
+  UnitaryGroup.toLinearIsometryEquiv.apply_symm_apply g
 
 /-- The unitary matrix of the linear isometry of a unitary matrix is the matrix. -/
 @[simp]
 theorem UnitaryGroup.ofLinearIsometryEquiv_toLinearIsometryEquiv (A : unitaryGroup ι 𝕜) :
     UnitaryGroup.ofLinearIsometryEquiv (UnitaryGroup.toLinearIsometryEquiv A) = A :=
-  UnitaryGroup.ofLinearIsometryEquiv.apply_symm_apply A
+  UnitaryGroup.toLinearIsometryEquiv.symm_apply_apply A
 
 /-- The entry `(i, j)` of the unitary matrix of a linear isometry `g` is the coordinate `i` of the
 image under `g` of the standard basis vector `e_j`. -/
@@ -362,13 +353,13 @@ theorem UnitaryGroup.ofLinearIsometryEquiv_apply
 /-- The conversion from unitary matrices to linear isometries of Euclidean space is injective. -/
 theorem UnitaryGroup.toLinearIsometryEquiv_injective :
     Function.Injective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) :=
-  UnitaryGroup.ofLinearIsometryEquiv.symm.injective
+  UnitaryGroup.toLinearIsometryEquiv.injective
 
 /-- Every linear isometry of Euclidean space is the action of a unitary matrix, namely its matrix
 in the standard basis (`Matrix.UnitaryGroup.ofLinearIsometryEquiv`). -/
 theorem UnitaryGroup.toLinearIsometryEquiv_surjective :
     Function.Surjective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) :=
-  UnitaryGroup.ofLinearIsometryEquiv.symm.surjective
+  UnitaryGroup.toLinearIsometryEquiv.surjective
 
 /-- The unitary matrix of a continuous family of linear isometries, continuous in the operator-norm
 topology, depends continuously on the parameter. -/
