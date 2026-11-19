@@ -263,7 +263,10 @@ theorem Atlas.principalBundle (A : Atlas G proj)
   let := mulAction hproj
   refine ⟨fun e he ↦ ?_⟩
   obtain ⟨b, rfl⟩ := he.out
-  exact ⟨fun b' hb' p g ↦ hA b p.1 (by rwa [p.2]) g⟩
+  refine ⟨fun b' hb' p g ↦ ?_⟩
+  rw [Bundle.Trivialization.toMapFiber_baseSet, ← p.2] at hb'
+  simpa only [Bundle.Trivialization.toMapFiber_apply, totalSpaceHomeomorph_apply, coe_smul] using
+    hA b p.1 hb' g
 
 end MapFiber
 
