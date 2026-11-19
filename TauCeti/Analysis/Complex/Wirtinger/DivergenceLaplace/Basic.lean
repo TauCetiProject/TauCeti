@@ -171,7 +171,7 @@ theorem _root_.ContinuousLinearMap.integral_laplacian_smul_comp_eq_neg_integral_
       (integrable_fderiv_smul_of_locallyIntegrableOn hf φ 1).add
         (integrable_fderiv_smul_of_locallyIntegrableOn hg φ I)
     have e := congrArg L h
-    rw [map_neg, ← L.integral_comp_comm (integrable_laplacian_smul_of_locallyIntegrableOn hξ φ),
+    rw [map_neg, ← L.integral_comp_comm (φ.integrable_laplacian_smul hξ),
       ← L.integral_comp_comm hint] at e
     simpa only [map_add, map_smul] using e
   · simp only [integral_of_not_completeSpace hW, neg_zero]
