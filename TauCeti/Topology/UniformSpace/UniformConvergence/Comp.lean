@@ -39,7 +39,9 @@ Uniform convergence to a limit mapping `s` into a compact set with a neighborhoo
 values of the family on `s` eventually inside `W` (`TendstoUniformlyOn.eventually_mapsTo`).
 
 The file also records that a constant family converges uniformly
-(`TauCeti.tendstoUniformlyOn_const`), and that two families converging uniformly along the same
+(`TauCeti.tendstoUniformlyOn_const`), that uniform convergence along a mapped filter `map g l` is
+uniform convergence of the reindexed family `F ∘ g` along `l`
+(`TauCeti.tendstoUniformlyOn_map_iff`), and that two families converging uniformly along the same
 filter converge jointly (`TendstoUniformlyOn.prodMk_same`), which is the form needed to compose
 with maps of several variables.
 -/
@@ -88,6 +90,12 @@ namespace TauCeti
 theorem tendstoUniformlyOn_const (f : α → β) (p : Filter ι) (s : Set α) :
     TendstoUniformlyOn (fun _ ↦ f) f p s :=
   fun _ hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
+
+/-- A family converges uniformly along a mapped filter `map g l` exactly when the reindexed family
+`F ∘ g` converges uniformly along `l`. -/
+theorem tendstoUniformlyOn_map_iff {κ : Type*} {g : κ → ι} {l : Filter κ} :
+    TendstoUniformlyOn F f (map g l) s ↔ TendstoUniformlyOn (fun k ↦ F (g k)) f l s :=
+  forall₂_congr fun _ _ ↦ eventually_map
 
 end TauCeti
 
