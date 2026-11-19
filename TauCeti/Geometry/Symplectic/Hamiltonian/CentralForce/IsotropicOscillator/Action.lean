@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.RadialAction
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Radial
 public import Mathlib.Analysis.Calculus.Deriv.Abs
-public import Mathlib.Analysis.Calculus.Deriv.Prod
 
 /-!
 # Turning radii and action variables of the isotropic oscillator
