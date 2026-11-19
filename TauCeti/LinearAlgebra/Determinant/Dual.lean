@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Determinant.Line
 public import TauCeti.LinearAlgebra.Dual.Annihilator
 public import TauCeti.LinearAlgebra.Dual.Basis
 import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.TensorProduct.Dual
 
 /-!
 # Determinant lines of duals and of dual maps
@@ -224,11 +225,8 @@ Fredholm operator, whose kernel is the orthogonal complement of the range of `f`
 comparison `det f† ≃ (det f)^*` (`ContinuousLinearMap.detLineAdjointEquivDual`). -/
 def detLineEquivDualOfKerCoker (e₁ : ker g ≃ₗ[K] N ⧸ range f) (e₂ : (Q ⧸ range g) ≃ₗ[K] ker f) :
     g.detLine ≃ₗ[K] Dual K f.detLine :=
-  (TensorProduct.congr (LinearEquiv.detLineCongr e₁)
-      (LinearEquiv.detLineCongr e₂).symm.dualMap).trans <|
-    (TensorProduct.comm K _ _).trans <|
-      (TensorProduct.congr (LinearEquiv.refl K _) (evalEquiv K _)).trans
-        (dualDistribEquiv K _ _)
+  TensorProduct.congr (LinearEquiv.detLineCongr e₁) (LinearEquiv.detLineCongr e₂).symm.dualMap ≪≫ₗ
+    TensorProduct.dualFlipEquiv K _ _
 
 /-- `LinearMap.detLineEquivDualOfKerCoker` pairs `x ⊗ ψ` with `u ⊗ φ` to `φ (e₁ x) * ψ (e₂⁻¹ u)`. -/
 @[simp]
@@ -238,7 +236,10 @@ theorem detLineEquivDualOfKerCoker_tmul_tmul (e₁ : ker g ≃ₗ[K] N ⧸ range
     (φ : Dual K (TauCeti.detLine K (N ⧸ range f))) :
     detLineEquivDualOfKerCoker e₁ e₂ (x ⊗ₜ ψ) (u ⊗ₜ φ) =
       φ (LinearEquiv.detLineCongr e₁ x) * ψ (LinearEquiv.detLineCongr e₂.symm u) := by
-  simp [detLineEquivDualOfKerCoker]
+  simp only [detLineEquivDualOfKerCoker, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
+    TensorProduct.dualFlipEquiv_tmul_tmul, LinearEquiv.dualMap_apply,
+    LinearEquiv.detLineCongr_symm]
+  exact mul_comm _ _
 
 /-- **The pairing is symmetric.** Exchanging the roles of `f` and `g`, with the inverse
 identifications, pairs `det f` with `det g` by the same values. -/

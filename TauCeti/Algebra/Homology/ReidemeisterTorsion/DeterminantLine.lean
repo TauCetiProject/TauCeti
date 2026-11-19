@@ -8,9 +8,11 @@ module
 public import TauCeti.Algebra.Homology.ModuleCat.Exact
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic
 public import TauCeti.LinearAlgebra.Determinant.Exact
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.Fin
+import TauCeti.LinearAlgebra.TensorProduct.Dual
 import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
@@ -33,7 +35,8 @@ the second being Mathlib's `HomologicalComplex.HomologySequence.composableArrows
 `TauCeti.detLineFourTermEquiv` the first identifies `det C₀ ⊗ (det C₁)^*` with
 `det Z₀ ⊗ (det (C₁ / B₁))^*`, and the second identifies `det (C₁ / B₁) ⊗ (det Z₀)^*` with
 `det H₁ ⊗ (det H₀)^*`. The readout is the first isomorphism followed by the inverse transpose of
-the second, through the canonical isomorphisms `L ⊗ M^* ≃ (M ⊗ L^*)^*`.
+the second, through the canonical isomorphisms `L ⊗ M^* ≃ (M ⊗ L^*)^*`
+(`TensorProduct.dualFlipEquiv`).
 
 The readout is computed by Milnor's recipe for torsion. Choose bases `b₀` of `B₀` and `b₁` of
 `B₁`, lifts `s₁ ∈ C₁` of `b₀` through `d₁` and `s₀ ∈ C₀` of `b₁` through `d₀`, and cycles `y₀`,
@@ -83,32 +86,16 @@ namespace HomologicalComplex
 
 variable {K : Type*} [Field K]
 
-section Flip
-
-variable {L M : Type*} [AddCommGroup L] [Module K L] [AddCommGroup M] [Module K M]
-  [FiniteDimensional K L] [FiniteDimensional K M]
-
-variable (K L M) in
-/-- The canonical isomorphism `L ⊗ M^* ≃ (M ⊗ L^*)^*`, pairing `l ⊗ μ` with `m ⊗ θ` to
-`μ m * θ l`. -/
-private def tensorDualFlip : L ⊗[K] Dual K M ≃ₗ[K] Dual K (M ⊗[K] Dual K L) :=
-  TensorProduct.comm K L (Dual K M) ≪≫ₗ (evalEquiv K L).lTensor (Dual K M) ≪≫ₗ
-    dualDistribEquiv K M (Dual K L)
-
-private theorem tensorDualFlip_tmul_tmul (l : L) (μ : Dual K M) (m : M) (θ : Dual K L) :
-    tensorDualFlip K L M (l ⊗ₜ μ) (m ⊗ₜ θ) = μ m * θ l := by
-  simp [tensorDualFlip, mul_comm]
-
 /-- Transporting `x ⊗ ξQ` through the flips along an isomorphism `B : Q ⊗ Z^* ≃ H₁ ⊗ H₀^*` of
 tensor products of lines, from its values on `ωQ ⊗ φ'` with `ξQ ωQ = 1`. -/
-private theorem tensorDualFlip_symm_dualMap_tensorDualFlip_tmul {Z Q H₀ H₁ : Type*}
+private theorem dualFlipEquiv_symm_dualMap_dualFlipEquiv_tmul {Z Q H₀ H₁ : Type*}
     [AddCommGroup Z] [Module K Z] [AddCommGroup Q] [Module K Q] [AddCommGroup H₀] [Module K H₀]
     [AddCommGroup H₁] [Module K H₁] [FiniteDimensional K Z] [FiniteDimensional K Q]
     [FiniteDimensional K H₀] [FiniteDimensional K H₁] (hQ : finrank K Q = 1)
     (B : Q ⊗[K] Dual K Z ≃ₗ[K] H₁ ⊗[K] Dual K H₀) {x : Z} {ωQ : Q} {ξQ : Dual K Q}
     {η₀ : H₀} {η₁ : H₁} {ξ₀ : Dual K H₀} {ξ : Dual K H₁} (hξQ : ξQ ωQ = 1)
     (hB : ∀ φ', B (ωQ ⊗ₜ φ') = φ' x • (η₁ ⊗ₜ ξ₀)) (hξ₀ : ξ₀ η₀ = 1) (hξ : ξ η₁ = 1) :
-    (tensorDualFlip K H₀ H₁).symm (B.symm.dualMap (tensorDualFlip K Z Q (x ⊗ₜ ξQ))) =
+    (dualFlipEquiv K H₀ H₁).symm (B.symm.dualMap (dualFlipEquiv K Z Q (x ⊗ₜ ξQ))) =
       η₀ ⊗ₜ ξ := by
   have : Module.Invertible K Q := .of_finrank_eq_one hQ
   refine (LinearEquiv.symm_apply_eq _).2 (LinearMap.ext fun t ↦ ?_)
@@ -118,20 +105,22 @@ private theorem tensorDualFlip_symm_dualMap_tensorDualFlip_tmul {Z Q H₀ H₁ :
   | add w₁ w₂ h₁ h₂ => simp only [map_add, h₁, h₂]
   | tmul q φ' =>
     rw [← Module.Invertible.apply_smul_eq_self hξQ q]
-    simp only [← smul_tmul', map_smul, hB, tensorDualFlip_tmul_tmul, hξQ, hξ, hξ₀, smul_eq_mul,
+    simp only [← smul_tmul', map_smul, hB, dualFlipEquiv_tmul_tmul, hξQ, hξ, hξ₀, smul_eq_mul,
       mul_one, one_mul]
 
-end Flip
+/-! ### The two-periodic shape -/
 
-/-- Exterior products of two families renumbered along `Fin.cast` multiply to the exterior
-product of their concatenation. -/
-private theorem ιMulti_append_comp_cast {V : Type*} [AddCommGroup V] [Module K V]
-    {n₁ n₂ m₁ m₂ : ℕ} (x : Fin m₁ → V) (y : Fin m₂ → V) (h₁ : n₁ = m₁) (h₂ : n₂ = m₂) :
-    ExteriorAlgebra.ιMulti K (n₁ + n₂) (Fin.append (x ∘ Fin.cast h₁) (y ∘ Fin.cast h₂)) =
-      ExteriorAlgebra.ιMulti K m₁ x * ExteriorAlgebra.ιMulti K m₂ y := by
-  subst h₁ h₂
-  rw [ExteriorAlgebra.ιMulti_mul_ιMulti]
-  rfl
+private theorem up_prev_zero : (ComplexShape.up (ZMod 2)).prev 0 = 1 :=
+  (ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1)
+
+private theorem up_next_zero : (ComplexShape.up (ZMod 2)).next 0 = 1 :=
+  (ComplexShape.up _).next_eq' (zero_add 1)
+
+private theorem up_prev_one : (ComplexShape.up (ZMod 2)).prev 1 = 0 :=
+  (ComplexShape.up _).prev_eq' (zero_add 1)
+
+private theorem up_next_one : (ComplexShape.up (ZMod 2)).next 1 = 0 :=
+  (ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)
 
 variable (C : HomologicalComplex (ModuleCat K) (ComplexShape.up (ZMod 2)))
   [FiniteDimensional K (C.X 0)] [FiniteDimensional K (C.X 1)]
@@ -142,8 +131,7 @@ private def evenFourTermEquiv :
     detLine K (C.X 0) ⊗[K] Dual K (detLine K (C.X 1)) ≃ₗ[K]
       detLine K (C.cycles 0) ⊗[K] Dual K (detLine K (C.opcycles 1)) :=
   detLineFourTermEquiv (C.moduleCat_iCycles_injective 0)
-    (C.moduleCat_exact_iCycles_d ((ComplexShape.up _).next_eq' (zero_add 1)))
-    (C.moduleCat_exact_d_pOpcycles ((ComplexShape.up _).prev_eq' (zero_add 1)))
+    (C.moduleCat_exact_iCycles_d up_next_zero) (C.moduleCat_exact_d_pOpcycles up_prev_one)
     (C.moduleCat_pOpcycles_surjective 1)
 
 /-- The isomorphism `det (C₁ / B₁) ⊗ (det Z₀)^* ≃ det H₁ ⊗ (det H₀)^*` of the exact sequence
@@ -164,14 +152,14 @@ an acyclic complex it reads off the torsion (`parityDetLineEquiv_tmul_eq_parityT
 def parityDetLineEquiv :
     detLine K (C.X 0) ⊗[K] Dual K (detLine K (C.X 1)) ≃ₗ[K]
       detLine K (C.homology 0) ⊗[K] Dual K (detLine K (C.homology 1)) :=
-  evenFourTermEquiv C ≪≫ₗ tensorDualFlip K _ _ ≪≫ₗ (oddFourTermEquiv C).symm.dualMap ≪≫ₗ
-    (tensorDualFlip K _ _).symm
+  evenFourTermEquiv C ≪≫ₗ dualFlipEquiv K _ _ ≪≫ₗ (oddFourTermEquiv C).symm.dualMap ≪≫ₗ
+    (dualFlipEquiv K _ _).symm
 
 /-- The determinant readout as the composite of its four steps. -/
 private theorem parityDetLineEquiv_apply
     (t : detLine K (C.X 0) ⊗[K] Dual K (detLine K (C.X 1))) :
-    C.parityDetLineEquiv t = (tensorDualFlip K _ _).symm ((oddFourTermEquiv C).symm.dualMap
-      (tensorDualFlip K _ _ (evenFourTermEquiv C t))) :=
+    C.parityDetLineEquiv t = (dualFlipEquiv K _ _).symm ((oddFourTermEquiv C).symm.dualMap
+      (dualFlipEquiv K _ _ (evenFourTermEquiv C t))) :=
   rfl
 
 variable {C}
@@ -188,7 +176,7 @@ private theorem parityDetLineEquiv_tmul_of {β : detLine K (C.X 0)} {φ : Dual K
     (hξ : ξ η₁ = 1) :
     C.parityDetLineEquiv (β ⊗ₜ φ) = a • (η₀ ⊗ₜ ξ) := by
   simp only [parityDetLineEquiv_apply, hA, map_smul]
-  rw [tensorDualFlip_symm_dualMap_tensorDualFlip_tmul (finrank_detLine K _) _ hξQ hB hξ₀ hξ]
+  rw [dualFlipEquiv_symm_dualMap_dualFlipEquiv_tmul (finrank_detLine K _) _ hξQ hB hξ₀ hξ]
 
 /-! ### Dimensions -/
 
@@ -197,12 +185,9 @@ omit [FiniteDimensional K (C.X 1)] in
 private theorem finrank_cycles_zero :
     finrank K (C.cycles 0) = finrank K (LinearMap.range (C.d 1 0).hom) +
       finrank K (C.homology 0) := by
-  have h₁ := C.finrank_X_eq_finrank_range_add_finrank_homology_add (i := 1)
-    ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero (1 : ZMod 2)))
-    ((ComplexShape.up _).next_eq' (zero_add (1 : ZMod 2)))
-  have h₂ := (C.moduleCat_exact_iCycles_d ((ComplexShape.up _).next_eq' (zero_add 1))
-    ).rangeRestrict.finrank_eq_add (C.moduleCat_iCycles_injective 0)
-      (C.d 0 1).hom.surjective_rangeRestrict
+  have h₁ := C.finrank_X_eq_finrank_range_add_finrank_homology_add up_prev_zero up_next_zero
+  have h₂ := (C.moduleCat_exact_iCycles_d up_next_zero).rangeRestrict.finrank_eq_add
+    (C.moduleCat_iCycles_injective 0) (C.d 0 1).hom.surjective_rangeRestrict
   omega
 
 omit [FiniteDimensional K (C.X 0)] in
@@ -210,12 +195,9 @@ omit [FiniteDimensional K (C.X 0)] in
 private theorem finrank_opcycles_one :
     finrank K (C.opcycles 1) = finrank K (C.homology 1) +
       finrank K (LinearMap.range (C.d 1 0).hom) := by
-  have h₁ := C.finrank_X_eq_finrank_range_add_finrank_homology_add
-    ((ComplexShape.up _).prev_eq' (zero_add (1 : ZMod 2)))
-    ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero (1 : ZMod 2)))
-  have h₂ := (C.moduleCat_exact_d_pOpcycles ((ComplexShape.up _).prev_eq' (zero_add 1))
-    ).range_subtype.finrank_eq_add (Submodule.injective_subtype _)
-      (C.moduleCat_pOpcycles_surjective 1)
+  have h₁ := C.finrank_X_eq_finrank_range_add_finrank_homology_add up_prev_one up_next_one
+  have h₂ := (C.moduleCat_exact_d_pOpcycles up_prev_one).range_subtype.finrank_eq_add
+    (Submodule.injective_subtype _) (C.moduleCat_pOpcycles_surjective 1)
   omega
 
 omit [FiniteDimensional K (C.X 0)] in
@@ -244,18 +226,13 @@ private theorem iCycles_toCycles_apply (hs₁ : ∀ l, (C.d 1 0).hom (s₁ l) = 
   (C.moduleCat_iCycles_toCycles_apply 0 1 (s₁ l)).trans (hs₁ l)
 
 omit [FiniteDimensional K (C.X 0)] [FiniteDimensional K (C.X 1)] in
-/-- The image in `C₁ / B₁` of an odd cycle representing a homology class is the image of that
-class. -/
-private theorem pOpcycles_iCycles_apply (hy₁ : ∀ k, C.homologyπ 1 (y₁ k) = h₁ k) (k : Fin m₁) :
-    (C.pOpcycles 1).hom (C.iCycles 1 (y₁ k)) = (C.homologyι 1).hom (h₁ k) := by
-  rw [← hy₁ k]
-  exact (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (C.homology_π_ι 1)) (y₁ k)).symm
-
-omit [FiniteDimensional K (C.X 0)] [FiniteDimensional K (C.X 1)] in
-/-- The map `C₁ / B₁ → Z₀` sends the class of `x` to the boundary of `x`. -/
-private theorem opcyclesToCycles_pOpcycles_apply (x : C.X 1) :
-    (C.opcyclesToCycles 1 0).hom ((C.pOpcycles 1).hom x) = C.toCycles 1 0 x :=
-  LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (C.pOpcycles_opcyclesToCycles 1 0)) x
+/-- The images in `C₁ / B₁` of odd cycles representing homology classes are the images of those
+classes. -/
+private theorem pOpcycles_comp_iCycles (hy₁ : ∀ k, C.homologyπ 1 (y₁ k) = h₁ k) :
+    ((C.pOpcycles 1).hom ∘ fun k ↦ C.iCycles 1 (y₁ k)) = (C.homologyι 1).hom ∘ h₁ :=
+  funext fun k ↦ by
+    rw [Function.comp_apply, Function.comp_apply, ← hy₁ k]
+    exact (C.moduleCat_homologyι_homologyπ_apply 1 (y₁ k)).symm
 
 omit [FiniteDimensional K (C.X 0)] [FiniteDimensional K (C.X 1)] in
 /-- The images in `C₁ / B₁` of the odd cycles `y₁` and of the lifts `s₁` are linearly
@@ -267,11 +244,11 @@ private theorem linearIndependent_pOpcycles_comp_append (hs₁ : ∀ l, (C.d 1 0
     LinearIndependent.of_comp (C.iCycles 0).hom (by
       convert b₀.linearIndependent.map' _ (Submodule.ker_subtype _) using 1
       ext l
-      simp [opcyclesToCycles_pOpcycles_apply, iCycles_toCycles_apply hs₁])
+      simp [iCycles_toCycles_apply hs₁])
   have hcomp : (C.pOpcycles 1).hom ∘ Fin.append (fun k ↦ C.iCycles 1 (y₁ k)) s₁ =
       Fin.append ((C.homologyι 1).hom ∘ h₁) ((C.pOpcycles 1).hom ∘ s₁) := by
     ext i
-    induction i using Fin.addCases <;> simp [pOpcycles_iCycles_apply hy₁]
+    induction i using Fin.addCases <;> simp [← hy₁]
   rw [hcomp]
   refine TauCeti.linearIndependent_fin_append.2
     ⟨h₁.linearIndependent.map' _ (LinearMap.ker_eq_bot.2 (C.moduleCat_homologyι_injective 1)),
@@ -299,21 +276,26 @@ private theorem evenFourTermEquiv_tmul (hs₀ : ∀ l, (C.d 0 1).hom (s₀ l) = 
       Fin.append (fun k ↦ C.iCycles 1 (y₁ k)) s₁ ∘ Fin.cast hQ)) = 1) :
     evenFourTermEquiv C (β ⊗ₜ φ) = φ γ • (exteriorPower.ιMulti K _
       (Fin.append (fun l ↦ C.toCycles 1 0 (s₁ l)) y₀ ∘ Fin.cast hZ) ⊗ₜ ξQ) := by
+  have e₀ : (C.iCycles 0).hom ∘ Fin.append (fun l ↦ C.toCycles 1 0 (s₁ l)) y₀ =
+      Fin.append (fun l ↦ (b₀ l : C.X 0)) fun k ↦ C.iCycles 0 (y₀ k) := by
+    funext i
+    induction i using Fin.addCases <;> simp [iCycles_toCycles_apply hs₁]
+  have e₁ : (C.d 0 1).hom ∘ s₀ = fun l ↦ (b₁ l : C.X 1) := funext hs₀
   refine detLineFourTermEquiv_tmul_eq_smul_tmul _ _ _ _ _ (s₀ ∘ Fin.cast hq) _ ?_ ?_ φ hξQ
-  · refine hβ.trans ((ExteriorAlgebra.ιMulti_mul_ιMulti _ _).symm.trans
-      (Eq.trans ?_ (ιMulti_append_comp_cast
-        ((C.iCycles 0).hom ∘ Fin.append (fun l ↦ C.toCycles 1 0 (s₁ l)) y₀) s₀ hZ hq).symm))
-    rw [TauCeti.ExteriorAlgebra.ιMulti_comp_append, ← ExteriorAlgebra.ιMulti_mul_ιMulti]
-    congr 3
-    funext l
-    exact (iCycles_toCycles_apply hs₁ l).symm
-  · refine hγ.trans ((ExteriorAlgebra.ιMulti_mul_ιMulti _ _).symm.trans
-      (Eq.trans ?_ (ιMulti_append_comp_cast ((C.d 0 1).hom ∘ s₀)
-        (Fin.append (fun k ↦ C.iCycles 1 (y₁ k)) s₁) hq hQ).symm))
-    rw [← ExteriorAlgebra.ιMulti_mul_ιMulti, ← ExteriorAlgebra.ιMulti_mul_ιMulti, mul_assoc]
-    congr 3
-    funext l
-    exact (hs₀ l).symm
+  · calc (β : ExteriorAlgebra K (C.X 0))
+        = ExteriorAlgebra.ιMulti K (p + m₀) ((C.iCycles 0).hom ∘
+            Fin.append (fun l ↦ C.toCycles 1 0 (s₁ l)) y₀) * ExteriorAlgebra.ιMulti K q s₀ := by
+          rw [hβ, e₀, ExteriorAlgebra.ιMulti_mul_ιMulti]
+      _ = _ := (TauCeti.ExteriorAlgebra.ιMulti_append_comp_cast _ _ hZ hq).symm
+  · calc (γ : ExteriorAlgebra K (C.X 1))
+        = ExteriorAlgebra.ιMulti K q (fun l ↦ (b₁ l : C.X 1)) *
+            ExteriorAlgebra.ιMulti K (m₁ + p) (Fin.append (fun k ↦ C.iCycles 1 (y₁ k)) s₁) := by
+          rw [hγ]
+          simp only [← ExteriorAlgebra.ιMulti_mul_ιMulti, mul_assoc]
+      _ = ExteriorAlgebra.ιMulti K q ((C.d 0 1).hom ∘ s₀) *
+            ExteriorAlgebra.ιMulti K (m₁ + p) (Fin.append (fun k ↦ C.iCycles 1 (y₁ k)) s₁) := by
+          rw [e₁]
+      _ = _ := (TauCeti.ExteriorAlgebra.ιMulti_append_comp_cast _ _ hq hQ).symm
 
 /-- The value of the odd four-term isomorphism on the exterior products of the bracket
 families. -/
@@ -328,26 +310,28 @@ private theorem oddFourTermEquiv_tmul (hy₀ : ∀ k, C.homologyπ 0 (y₀ k) = 
         Fin.append (fun k ↦ C.iCycles 1 (y₁ k)) s₁ ∘ Fin.cast hQ) ⊗ₜ φ') =
       φ' (exteriorPower.ιMulti K _ (Fin.append (fun l ↦ C.toCycles 1 0 (s₁ l)) y₀ ∘
         Fin.cast hZ)) • (exteriorPower.ιMulti K _ (h₁ ∘ Fin.cast hm₁) ⊗ₜ ξ₀) := by
+  have e : ((C.opcyclesToCycles 1 0).hom ∘ (C.pOpcycles 1).hom ∘ s₁) =
+      fun l ↦ C.toCycles 1 0 (s₁ l) :=
+    funext fun l ↦ C.moduleCat_opcyclesToCycles_pOpcycles_apply 1 0 (s₁ l)
   refine detLineFourTermEquiv_tmul_eq_smul_tmul _ _ _ _ (h₁ ∘ Fin.cast hm₁)
     ((C.pOpcycles 1).hom ∘ s₁ ∘ Fin.cast hR) (y₀ ∘ Fin.cast hm₀) ?_ ?_ φ' ?_
   · rw [exteriorPower.ιMulti_apply_coe]
-    refine (TauCeti.ExteriorAlgebra.ιMulti_comp_cast hQ
-      ((C.pOpcycles 1).hom ∘ Fin.append (fun k ↦ C.iCycles 1 (y₁ k)) s₁)).trans
-      (Eq.trans ?_ (ιMulti_append_comp_cast ((C.homologyι 1).hom ∘ h₁)
-        ((C.pOpcycles 1).hom ∘ s₁) hm₁ hR).symm)
-    rw [TauCeti.ExteriorAlgebra.ιMulti_comp_append]
-    congr 2
-    funext k
-    exact pOpcycles_iCycles_apply hy₁ k
+    calc _ = ExteriorAlgebra.ιMulti K (m₁ + p)
+            ((C.pOpcycles 1).hom ∘ Fin.append (fun k ↦ C.iCycles 1 (y₁ k)) s₁) :=
+          TauCeti.ExteriorAlgebra.ιMulti_comp_cast hQ _
+      _ = ExteriorAlgebra.ιMulti K m₁ ((C.homologyι 1).hom ∘ h₁) *
+            ExteriorAlgebra.ιMulti K p ((C.pOpcycles 1).hom ∘ s₁) := by
+          rw [TauCeti.ExteriorAlgebra.ιMulti_comp_append, pOpcycles_comp_iCycles hy₁]
+      _ = _ := (TauCeti.ExteriorAlgebra.ιMulti_append_comp_cast _ _ hm₁ hR).symm
   · rw [exteriorPower.ιMulti_apply_coe]
-    refine (TauCeti.ExteriorAlgebra.ιMulti_comp_cast hZ
-      (Fin.append (fun l ↦ C.toCycles 1 0 (s₁ l)) y₀)).trans
-      (Eq.trans ?_ (ιMulti_append_comp_cast ((C.opcyclesToCycles 1 0).hom ∘
-        (C.pOpcycles 1).hom ∘ s₁) y₀ hR hm₀).symm)
-    rw [← ExteriorAlgebra.ιMulti_mul_ιMulti]
-    congr 2
-    funext l
-    exact (opcyclesToCycles_pOpcycles_apply (s₁ l)).symm
+    calc _ = ExteriorAlgebra.ιMulti K p (fun l ↦ C.toCycles 1 0 (s₁ l)) *
+            ExteriorAlgebra.ιMulti K m₀ y₀ := by
+          rw [TauCeti.ExteriorAlgebra.ιMulti_comp_cast, ExteriorAlgebra.ιMulti_mul_ιMulti]
+      _ = ExteriorAlgebra.ιMulti K p
+            ((C.opcyclesToCycles 1 0).hom ∘ (C.pOpcycles 1).hom ∘ s₁) *
+            ExteriorAlgebra.ιMulti K m₀ y₀ := by
+          rw [e]
+      _ = _ := (TauCeti.ExteriorAlgebra.ιMulti_append_comp_cast _ _ hR hm₀).symm
   · convert hξ₀ using 3
     funext k
     exact hy₀ (Fin.cast hm₀ k)
@@ -417,6 +401,22 @@ private theorem ιMulti_append_eq_torsionBracket_smul {n : ZMod 2 → ℕ}
     ← TauCeti.ExteriorAlgebra.ιMulti_comp_cast hn]
   exact congrArg Subtype.val ((c j).exteriorPower_ιMulti_eq_det_smul _)
 
+omit [FiniteDimensional K (C.X 0)] [FiniteDimensional K (C.X 1)] in
+/-- The bracket times the exterior product of the chain basis is the exterior product of the
+boundary basis, an empty family of homology representatives and the lifts. -/
+private theorem coe_torsionBracket_smul {n : ZMod 2 → ℕ} (c : ∀ i, Basis (Fin (n i)) K (C.X i))
+    {i j k : ZMod 2} (hi : (ComplexShape.up (ZMod 2)).prev j = i)
+    (hk : (ComplexShape.up (ZMod 2)).next j = k) (h : C.ExactAt j) {p q : ℕ}
+    (b : Basis (Fin p) K (LinearMap.range (C.d i j).hom))
+    (b' : Basis (Fin q) K (LinearMap.range (C.d j k).hom)) (s : Fin q → C.X j)
+    (hs : ∀ l, (C.d j k).hom (s l) = b' l) {ω : detLine K (C.X j)}
+    (hω : (ω : ExteriorAlgebra K (C.X j)) = ExteriorAlgebra.ιMulti K (n j) (c j)) :
+    ((torsionBracket c hi hk h b b' s hs • ω : detLine K (C.X j)) : ExteriorAlgebra K (C.X j)) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (Fin.append (fun l ↦ (b l : C.X j))
+        fun k : Fin 0 ↦ C.iCycles j (Fin.elim0 k)) s) := by
+  rw [Submodule.coe_smul, ← ιMulti_append_eq_torsionBracket_smul c hi hk h b b' s hs hω]
+  simp only [← ExteriorAlgebra.ιMulti_mul_ιMulti, ExteriorAlgebra.ιMulti_zero_apply, mul_one]
+
 /-- On an acyclic complex, the readout of the chain bases times the even bracket is the odd bracket
 times the readout of the empty homology bases. -/
 private theorem torsionBracket_smul_parityDetLineEquiv_tmul (h : C.Acyclic) {n : ZMod 2 → ℕ}
@@ -432,38 +432,17 @@ private theorem torsionBracket_smul_parityDetLineEquiv_tmul (h : C.Acyclic) {n :
     (hη₀ : (η₀ : ExteriorAlgebra K (C.homology 0)) = 1) {η₁ : detLine K (C.homology 1)}
     (hη₁ : (η₁ : ExteriorAlgebra K (C.homology 1)) = 1) {ξ : Dual K (detLine K (C.homology 1))}
     (hξ : ξ η₁ = 1) :
-    torsionBracket c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-        ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) b₀ b₁ s₀ hs₀ •
+    torsionBracket c up_prev_zero up_next_zero (h 0) b₀ b₁ s₀ hs₀ •
         C.parityDetLineEquiv (ω₀ ⊗ₜ ξ₁) =
-      torsionBracket c ((ComplexShape.up _).prev_eq' (zero_add 1))
-        ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1) b₁ b₀ s₁ hs₁ •
-        (η₀ ⊗ₜ ξ) := by
+      torsionBracket c up_prev_one up_next_one (h 1) b₁ b₀ s₁ hs₁ • (η₀ ⊗ₜ ξ) := by
   have : Subsingleton (C.homology 0) := ModuleCat.subsingleton_of_isZero (h 0).isZero_homology
   have : Subsingleton (C.homology 1) := ModuleCat.subsingleton_of_isZero (h 1).isZero_homology
-  have e₀ := ιMulti_append_eq_torsionBracket_smul c
-    ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-    ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) b₀ b₁ s₀ hs₀ hω₀
-  have e₁ := ιMulti_append_eq_torsionBracket_smul c ((ComplexShape.up _).prev_eq' (zero_add 1))
-    ((ComplexShape.up _).next_eq' (CharTwo.add_self_eq_zero 1)) (h 1) b₁ b₀ s₁ hs₁ hω₁
-  generalize torsionBracket c _ _ (h 0) b₀ b₁ s₀ hs₀ = B₀ at e₀ ⊢
-  generalize torsionBracket c _ _ (h 1) b₁ b₀ s₁ hs₁ = B₁ at e₁ ⊢
-  have hβ : ((B₀ • ω₀ : detLine K (C.X 0)) : ExteriorAlgebra K (C.X 0)) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (Fin.append (fun l ↦ (b₀ l : C.X 0))
-        fun k : Fin 0 ↦ C.iCycles 0 (Fin.elim0 k)) s₀) := by
-    rw [Submodule.coe_smul, ← e₀, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      ← ExteriorAlgebra.ιMulti_mul_ιMulti, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      ExteriorAlgebra.ιMulti_zero_apply, mul_one]
-  have hγ : ((B₁ • ω₁ : detLine K (C.X 1)) : ExteriorAlgebra K (C.X 1)) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (Fin.append (fun l ↦ (b₁ l : C.X 1))
-        fun k : Fin 0 ↦ C.iCycles 1 (Fin.elim0 k)) s₁) := by
-    rw [Submodule.coe_smul, ← e₁, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      ← ExteriorAlgebra.ιMulti_mul_ιMulti, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      ExteriorAlgebra.ιMulti_zero_apply, mul_one]
+  have hβ := coe_torsionBracket_smul c up_prev_zero up_next_zero (h 0) b₀ b₁ s₀ hs₀ hω₀
+  have hγ := coe_torsionBracket_smul c up_prev_one up_next_one (h 1) b₁ b₀ s₁ hs₁ hω₁
+  generalize torsionBracket c _ _ (h 0) b₀ b₁ s₀ hs₀ = B₀ at hβ ⊢
+  generalize torsionBracket c _ _ (h 1) b₁ b₀ s₁ hs₁ = B₁ at hγ ⊢
   have hξB₁ : ξ₁ (B₁ • ω₁) = B₁ := by rw [map_smul, hξ₁, smul_eq_mul, mul_one]
-  have t0 : (B₀ • ω₀) ⊗ₜ[K] ξ₁ = B₀ • (ω₀ ⊗ₜ[K] ξ₁) := (smul_tmul' _ _ _).symm
-  have t1 : C.parityDetLineEquiv (B₀ • (ω₀ ⊗ₜ[K] ξ₁)) = B₀ • C.parityDetLineEquiv (ω₀ ⊗ₜ ξ₁) :=
-    LinearEquiv.map_smul _ _ _
-  rw [← t1, ← t0]
+  rw [← map_smul, smul_tmul' B₀ ω₀ ξ₁]
   exact (parityDetLineEquiv_tmul (C := C) (h₀ := Basis.empty _) (h₁ := Basis.empty _)
     (y₀ := Fin.elim0) (y₁ := Fin.elim0) hs₀ hs₁ (fun k ↦ k.elim0) (fun k ↦ k.elim0) hβ hγ ξ₁
     (by rw [hη₀, ExteriorAlgebra.ιMulti_zero_apply])
@@ -495,8 +474,7 @@ theorem parityDetLineEquiv_tmul_eq_parityTorsion_smul (h : C.Acyclic) {n : ZMod 
     ⟨_, _, _, chosenBoundaryLift_spec C c 0 1⟩
   have key := torsionBracket_smul_parityDetLineEquiv_tmul h c b₀ b₁ s₀ hs₀ s₁ hs₁ hω₀ hω₁ hξ₁ hη₀
     hη₁ hξ
-  have hB₀ := torsionBracket_ne_zero c ((ComplexShape.up _).prev_eq' (CharTwo.add_self_eq_zero 1))
-    ((ComplexShape.up _).next_eq' (zero_add 1)) (h 0) b₀ b₁ s₀ hs₀
+  have hB₀ := torsionBracket_ne_zero c up_prev_zero up_next_zero (h 0) b₀ b₁ s₀ hs₀
   rw [parityTorsion_eq h b₀ b₁ s₀ hs₀ s₁ hs₁, mul_comm, ← smul_smul, eq_inv_smul_iff₀ hB₀]
   exact key
 

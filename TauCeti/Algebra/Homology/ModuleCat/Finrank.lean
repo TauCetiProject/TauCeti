@@ -25,7 +25,10 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 In a homological complex of vector spaces, a homology group has dimension at most that of the
 finite-dimensional term it is computed from (`HomologicalComplex.finrank_homology_le_finrank_X`),
 with equality, even for complexes of modules over any ring, when the differentials into and out of
-that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`).
+that degree vanish (`HomologicalComplex.finrank_homology_eq_finrank_X_of_d_eq_zero`). In general,
+the dimension of a finite-dimensional term is the sum of the dimensions of the boundaries, of the
+homology and of the image of the outgoing differential
+(`HomologicalComplex.finrank_X_eq_finrank_range_add_finrank_homology_add`).
 Bases of two terms of a complex joined by a bijective differential have the same size
 (`HomologicalComplex.card_eq_card_of_bijective_d`).
 
@@ -77,6 +80,19 @@ theorem finrank_homology_eq_finrank_X_of_d_eq_zero {R : Type*} [Ring R] {ι : Ty
     (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
     finrank R (K.homology i) = finrank R (K.X i) :=
   (K.XIsoHomologyOfDEqZero i h₁ h₂).toLinearEquiv.finrank_eq.symm
+
+/-- In a degree `j` between `i` and `k`, the dimension of a finite-dimensional term `Cⱼ` of a
+complex of vector spaces is the sum of the dimensions of the boundaries `Bⱼ`, of the homology `Hⱼ`
+and of the image of `Cⱼ` in `Cₖ`. -/
+theorem finrank_X_eq_finrank_range_add_finrank_homology_add {k : Type*} [DivisionRing k]
+    {ι : Type*} {c : ComplexShape ι} (C : HomologicalComplex (ModuleCat k) c) {i j l : ι}
+    (hi : c.prev j = i) (hl : c.next j = l) [Module.Finite k (C.X j)] :
+    finrank k (C.X j) = finrank k (LinearMap.range (C.d i j).hom) + finrank k (C.homology j) +
+      finrank k (LinearMap.range (C.d j l).hom) := by
+  have h₁ := (C.d j l).hom.finrank_range_add_finrank_ker
+  have h₂ := (C.exact_inclusion_moduleCatKerHomologyClass hl hi).finrank_eq_add
+    (Submodule.inclusion_injective _) (C.moduleCatKerHomologyClass_surjective hl)
+  omega
 
 variable {F : Type*} [Field F] {ι : Type*} {s : ComplexShape ι}
 

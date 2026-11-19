@@ -7,10 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
-import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Exact sequences of cycles, opcycles and homology of complexes of modules
@@ -30,25 +28,22 @@ by the differential `dᵢⱼ`. This file states them for the underlying linear m
 `Function.Exact`, injectivity and surjectivity, which is the form in which exact sequences of
 vector spaces are fed to the determinant lines of `TauCeti.LinearAlgebra.Determinant.Exact`.
 
+On elements, the class in the opcycles of a cycle is the image of its homology class, and the
+middle map sends the class of `x` to the cycle `dᵢⱼ x`
+(`HomologicalComplex.moduleCat_homologyι_homologyπ_apply`,
+`HomologicalComplex.moduleCat_opcyclesToCycles_pOpcycles_apply`).
+
 The cycles, opcycles and homology of a complex of finitely generated modules over a Noetherian
 ring are finitely generated (`HomologicalComplex.moduleFinite_cycles`,
-`HomologicalComplex.moduleFinite_opcycles`, `HomologicalComplex.moduleFinite_homology`). Over a
-field, the dimension of a term is the sum of the dimensions of the boundaries, of the homology and
-of the image of the outgoing differential
-(`HomologicalComplex.finrank_X_eq_finrank_range_add_finrank_homology_add`).
+`HomologicalComplex.moduleFinite_opcycles`, `HomologicalComplex.moduleFinite_homology`).
 
 ## Main results
 
 * `HomologicalComplex.moduleCat_exact_iCycles_d`: `Zᵢ → Kᵢ → Kⱼ` is exact.
 * `HomologicalComplex.moduleCat_exact_d_pOpcycles`: `Kᵢ → Kⱼ → Kⱼ / Bⱼ` is exact.
-* `HomologicalComplex.moduleCat_homologyι_injective`,
-  `HomologicalComplex.moduleCat_pOpcycles_surjective`: `Hᵢ → Kᵢ / Bᵢ` is injective and
-  `Kᵢ → Kᵢ / Bᵢ` is surjective.
 * `HomologicalComplex.moduleCat_exact_homologyι_opcyclesToCycles`,
   `HomologicalComplex.moduleCat_exact_opcyclesToCycles_homologyπ`: exactness of
   `Hᵢ → Kᵢ / Bᵢ → Zⱼ → Hⱼ` at its two middle terms.
-* `HomologicalComplex.finrank_X_eq_finrank_range_add_finrank_homology_add`:
-  `dim Kⱼ = dim Bⱼ + dim Hⱼ + dim (im dⱼₖ)`.
 -/
 
 public section
@@ -59,14 +54,6 @@ namespace HomologicalComplex
 
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   (K : HomologicalComplex (ModuleCat R) c)
-
-/-- The inclusion of the homology of a complex of modules into its opcycles is injective. -/
-lemma moduleCat_homologyι_injective (i : ι) : Function.Injective (K.homologyι i).hom :=
-  (ModuleCat.mono_iff_injective _).1 inferInstance
-
-/-- The projection of a term of a complex of modules onto its opcycles is surjective. -/
-lemma moduleCat_pOpcycles_surjective (i : ι) : Function.Surjective (K.pOpcycles i).hom :=
-  (ModuleCat.epi_iff_surjective _).1 inferInstance
 
 /-- The cycles of degree `i` are the kernel of the differential `dᵢⱼ`: the sequence
 `Zᵢ → Kᵢ → Kⱼ` is exact. -/
@@ -102,6 +89,19 @@ lemma moduleCat_exact_opcyclesToCycles_homologyπ {i j : ι} (hij : c.Rel i j) :
       (K.opcyclesToCycles_homologyπ i j))).1
     ((HomologySequence.composableArrows₃_exact K i j hij).exact 1)
 
+/-- The class in the opcycles of a cycle is the image of its homology class, on elements. -/
+@[simp]
+lemma moduleCat_homologyι_homologyπ_apply (i : ι) (z : K.cycles i) :
+    (K.homologyι i).hom ((K.homologyπ i).hom z) = (K.pOpcycles i).hom ((K.iCycles i).hom z) :=
+  LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (K.homology_π_ι i)) z
+
+/-- The map `Kᵢ / Bᵢ → Zⱼ` induced by the differential sends the class of `x` to the cycle
+`dᵢⱼ x`, on elements. -/
+@[simp]
+lemma moduleCat_opcyclesToCycles_pOpcycles_apply (i j : ι) (x : K.X i) :
+    (K.opcyclesToCycles i j).hom ((K.pOpcycles i).hom x) = (K.toCycles i j).hom x :=
+  LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (K.pOpcycles_opcyclesToCycles i j)) x
+
 /-- Over a Noetherian ring, the cycles of a finitely generated term of a complex are finitely
 generated. -/
 instance moduleFinite_cycles [IsNoetherianRing R] (i : ι) [Module.Finite R (K.X i)] :
@@ -117,18 +117,5 @@ instance moduleFinite_opcycles (i : ι) [Module.Finite R (K.X i)] :
 instance moduleFinite_homology (i : ι) [Module.Finite R (K.cycles i)] :
     Module.Finite R (K.homology i) :=
   .of_surjective (K.homologyπ i).hom (ModuleCat.epi_iff_surjective _ |>.1 inferInstance)
-
-/-- In a degree `j` between `i` and `k`, the dimension of a finite-dimensional term `Cⱼ` of a
-complex of vector spaces is the sum of the dimensions of the boundaries `Bⱼ`, of the homology `Hⱼ`
-and of the image of `Cⱼ` in `Cₖ`. -/
-theorem finrank_X_eq_finrank_range_add_finrank_homology_add {K : Type*} [Field K]
-    (C : HomologicalComplex (ModuleCat K) c) {i j k : ι} (hi : c.prev j = i) (hk : c.next j = k)
-    [FiniteDimensional K (C.X j)] :
-    Module.finrank K (C.X j) = Module.finrank K (LinearMap.range (C.d i j).hom) +
-      Module.finrank K (C.homology j) + Module.finrank K (LinearMap.range (C.d j k).hom) := by
-  have h₁ := (C.d j k).hom.finrank_range_add_finrank_ker
-  have h₂ := (C.exact_inclusion_moduleCatKerHomologyClass hk hi).finrank_eq_add
-    (Submodule.inclusion_injective _) (C.moduleCatKerHomologyClass_surjective hk)
-  omega
 
 end HomologicalComplex
