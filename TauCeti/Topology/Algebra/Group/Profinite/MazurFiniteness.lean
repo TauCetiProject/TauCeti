@@ -298,8 +298,8 @@ group has no nonzero continuous character to `ZMod p`, yet its open subgroup `�
 infinitely many, so it does not satisfy `Φ_p`. -/
 theorem subsingleton_continuousZModDual_and_not_mazurFiniteness_semidirectProduct_pi_zmod_inv
     (p : ℕ) [Fact (1 < p)] (hp : Odd p) :
-    letI : TopologicalSpace (Subgroup.zpowers (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))) := ⊥
-    letI : TopologicalSpace ((ℕ → Multiplicative (ZMod p)) ⋊[(Subgroup.zpowers
+    let : TopologicalSpace (Subgroup.zpowers (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))) := ⊥
+    let : TopologicalSpace ((ℕ → Multiplicative (ZMod p)) ⋊[(Subgroup.zpowers
         (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))).subtype]
         Subgroup.zpowers (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))) :=
       .induced SemidirectProduct.equivProd inferInstance
@@ -309,11 +309,7 @@ theorem subsingleton_continuousZModDual_and_not_mazurFiniteness_semidirectProduc
       ¬ MazurFiniteness p ((ℕ → Multiplicative (ZMod p)) ⋊[(Subgroup.zpowers
         (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))).subtype]
         Subgroup.zpowers (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))) := by
-  let : TopologicalSpace (Subgroup.zpowers (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))) := ⊥
-  let : TopologicalSpace ((ℕ → Multiplicative (ZMod p)) ⋊[(Subgroup.zpowers
-      (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))).subtype]
-      Subgroup.zpowers (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))) :=
-    .induced SemidirectProduct.equivProd inferInstance
+  intro _ _
   have : DiscreteTopology (Subgroup.zpowers (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))) := ⟨rfl⟩
   have he : Continuous (SemidirectProduct.equivProd (φ := (Subgroup.zpowers
       (MulEquiv.inv (ℕ → Multiplicative (ZMod p)))).subtype)) := continuous_induced_dom
