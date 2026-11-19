@@ -26,13 +26,13 @@ is the model of the classifying space of a topological groupoid built from the t
 
 This file constructs `TauCeti.fatRealization X` with its characteristic maps
 `TauCeti.fatRealization.ι X n : C(Xₙ × Δⁿ, ‖X‖)`, its universal property
-(`TauCeti.fatRealization.desc`), its quotient topology (`TauCeti.fatRealization.isOpen_iff`,
-`TauCeti.fatRealization.continuous_iff`) and its functoriality
-(`TauCeti.fatRealizationFunctor`). An augmentation `ε : X ⟶ const Z` induces the map
-`TauCeti.fatRealization.augment ε : ‖X‖ ⟶ Z` sending `[x, t]` to `ε x`. A family of maps
-`φ s : X ⟶ Y`, `s ∈ [0, 1]`, depending continuously on `s` in each level, induces a homotopy
-`TauCeti.fatRealization.homotopy` from `‖φ 0‖` to `‖φ 1‖`: since `[0, 1]` is locally compact, the
-product of `‖X‖` with `[0, 1]` is still a quotient of `Σ n, Xₙ × Δⁿ × [0, 1]`.
+(`TauCeti.fatRealization.desc`, and `TauCeti.fatRealization.lift` for its underlying set), its
+quotient topology (`TauCeti.fatRealization.isOpen_iff`, `TauCeti.fatRealization.continuous_iff`)
+and its functoriality (`TauCeti.fatRealizationFunctor`). An augmentation `ε : X ⟶ const Z`
+induces the map `TauCeti.fatRealization.augment ε : ‖X‖ ⟶ Z` sending `[x, t]` to `ε x`. A family
+of maps `φ s : X ⟶ Y`, `s ∈ [0, 1]`, depending continuously on `s` in each level, induces a
+homotopy `TauCeti.fatRealization.homotopy` from `‖φ 0‖` to `‖φ 1‖`: since `[0, 1]` is locally
+compact, the product of `‖X‖` with `[0, 1]` is still a quotient of `Σ n, Xₙ × Δⁿ × [0, 1]`.
 
 The main results are the open and closed restriction theorems. If `φ : Y ⟶ X` is levelwise an
 open (respectively closed) embedding and its image is closed under passing from a face back to the
@@ -148,6 +148,24 @@ theorem hom_ext {Z : TopCat} {g h : fatRealization X ⟶ Z}
   obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p
   exact H n x t
 
+section Lift
+
+variable {X} {Z : Sort*} (g : ∀ n, X.obj (op n) × toTop.{u}.obj n → Z)
+  (hg : ∀ ⦃m n : SemiSimplexCategory⦄ (f : m ⟶ n) (x : X.obj (op n)) (t : toTop.{u}.obj m),
+    g m (X.map f.op x, t) = g n (x, toTop.map f t))
+
+/-- The universal property of the underlying set of the fat realization: functions on the sets
+`Xₙ × Δⁿ` compatible with the face identifications descend to a function on `‖X‖`. -/
+def lift : fatRealization X → Z :=
+  Quot.lift (fun p ↦ g p.1 p.2) (by rintro _ _ ⟨f, x, t⟩; exact hg f x t)
+
+@[simp]
+theorem lift_ι (n : SemiSimplexCategory) (p : X.obj (op n) × toTop.{u}.obj n) :
+    lift g hg (ι X n p) = g n p :=
+  (rfl)
+
+end Lift
+
 section Desc
 
 variable {X} {Z : Type*} [TopologicalSpace Z] (g : ∀ n, C(X.obj (op n) × toTop.{u}.obj n, Z))
@@ -157,7 +175,7 @@ variable {X} {Z : Type*} [TopologicalSpace Z] (g : ∀ n, C(X.obj (op n) × toTo
 /-- The universal property of the fat realization: continuous maps `Xₙ × Δⁿ → Z` compatible with
 the face identifications descend to a continuous map `‖X‖ → Z`. -/
 def desc : C(fatRealization X, Z) where
-  toFun := Quot.lift (fun p ↦ g p.1 p.2) (by rintro _ _ ⟨f, x, t⟩; exact hg f x t)
+  toFun := lift (fun n ↦ g n) hg
   continuous_toFun := continuous_quot_lift _ (continuous_sigma fun n ↦ (g n).continuous)
 
 @[simp]

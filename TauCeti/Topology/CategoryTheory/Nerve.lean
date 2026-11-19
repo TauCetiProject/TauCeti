@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
-public import TauCeti.AlgebraicTopology.FatRealization
+public import TauCeti.AlgebraicTopology.FatRealization.Skeleton
 
 /-!
 # The topological nerve of a category and its fat classifying space
@@ -75,6 +75,31 @@ theorem continuous_iff {Y : Type*} [TopologicalSpace Y] {f : Y → ComposableArr
 theorem continuous_totalArrow (i j : Fin (n + 1)) (hij : i ≤ j) :
     Continuous fun F : ComposableArrows C n ↦ F.totalArrow i j hij :=
   continuous_iff.1 continuous_id i j hij
+
+/-- Strings of composable arrows form a `T1` space when the total arrows do. -/
+instance [T1Space (Quiver.Total C)] : T1Space (ComposableArrows C n) where
+  t1 F := by
+    have : ({F} : Set (ComposableArrows C n)) =
+        ⋂ (i) (j) (hij : i ≤ j), (fun G ↦ G.totalArrow i j hij) ⁻¹' {F.totalArrow i j hij} := by
+      ext G
+      simp only [Set.mem_singleton_iff, Set.mem_iInter, Set.mem_preimage]
+      exact ⟨by rintro rfl _ _ _; rfl, fun h ↦ ext_of_totalArrow h⟩
+    rw [this]
+    exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun hij ↦
+      isClosed_singleton.preimage (continuous_totalArrow i j hij)
+
+/-- Strings of composable arrows form a regular space when the total arrows do. -/
+instance [RegularSpace (Quiver.Total C)] : RegularSpace (ComposableArrows C n) :=
+  regularSpace_iInf fun _ ↦ regularSpace_iInf fun _ ↦ regularSpace_iInf fun _ ↦
+    regularSpace_induced _
+
+/-- Strings of composable arrows form a second-countable space when the total arrows do. -/
+instance [SecondCountableTopology (Quiver.Total C)] :
+    SecondCountableTopology (ComposableArrows C n) :=
+  TopologicalSpace.secondCountableTopology_iInf fun _ ↦
+    TopologicalSpace.secondCountableTopology_iInf fun _ ↦
+      TopologicalSpace.secondCountableTopology_iInf fun _ ↦
+        TopologicalSpace.secondCountableTopology_induced _ _ _
 
 /-- Reindexing strings of composable arrows along a functor of the indexing posets is
 continuous. -/
@@ -153,6 +178,42 @@ realization of its topological nerve, with degeneracies forgotten. -/
   fatRealization (SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C)
 
 variable {C}
+
+/-- The levels of the topological nerve of a category whose total arrows form a regular, `T1`,
+second-countable space are regular, `T1` and Lindelöf. -/
+private theorem fatClassifyingSpace.regularSpace_t1Space_lindelofSpace_obj
+    [RegularSpace (Quiver.Total C)] [T1Space (Quiver.Total C)]
+    [SecondCountableTopology (Quiver.Total C)] (n : SemiSimplexCategoryᵒᵖ) :
+    RegularSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) ∧
+      T1Space ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) ∧
+      LindelofSpace ((SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C).obj n) :=
+  -- The levels of the topological nerve are spaces of strings of composable arrows.
+  ⟨inferInstanceAs (RegularSpace (ComposableArrows C _)),
+    inferInstanceAs (T1Space (ComposableArrows C _)),
+    inferInstanceAs (LindelofSpace (ComposableArrows C _))⟩
+
+/-- **Paracompactness of fat classifying spaces.** The fat classifying space of a category whose
+total arrows form a regular, `T1`, second-countable space, such as a groupoid whose arrows form a
+second-countable Hausdorff manifold, is paracompact. -/
+instance fatClassifyingSpace.paracompactSpace [RegularSpace (Quiver.Total C)]
+    [T1Space (Quiver.Total C)] [SecondCountableTopology (Quiver.Total C)] :
+    ParacompactSpace (fatClassifyingSpace C) :=
+  have h := fatClassifyingSpace.regularSpace_t1Space_lindelofSpace_obj (C := C)
+  have := fun n ↦ (h n).1
+  have := fun n ↦ (h n).2.1
+  have := fun n ↦ (h n).2.2
+  fatRealization.paracompactSpace
+
+/-- The fat classifying space of a category whose total arrows form a regular, `T1`,
+second-countable space is normal and `T1`, in particular Hausdorff. -/
+instance fatClassifyingSpace.t4Space [RegularSpace (Quiver.Total C)]
+    [T1Space (Quiver.Total C)] [SecondCountableTopology (Quiver.Total C)] :
+    T4Space (fatClassifyingSpace C) :=
+  have h := fatClassifyingSpace.regularSpace_t1Space_lindelofSpace_obj (C := C)
+  have := fun n ↦ (h n).1
+  have := fun n ↦ (h n).2.1
+  have := fun n ↦ (h n).2.2
+  fatRealization.t4Space
 
 /-- Two maps out of the fat classifying space agree once they agree on every simplex. -/
 @[ext]
