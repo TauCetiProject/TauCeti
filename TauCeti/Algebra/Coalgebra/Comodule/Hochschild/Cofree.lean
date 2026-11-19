@@ -95,8 +95,8 @@ theorem hochschildExtraCodegeneracy_succ_tmul (n : ℕ)
     (x : hochschildCochains R H (N ⊗[R] H) (n + 1)) (h : H) :
     hochschildExtraCodegeneracy R H N (n + 1) (x ⊗ₜ[R] h) =
       (hochschildExtraCodegeneracy R H N n x ⊗ₜ[R] h :
-        hochschildCochains R H (N ⊗[R] H) (n + 1)) :=
-  (rfl)
+        hochschildCochains R H (N ⊗[R] H) (n + 1)) := by
+  rw [hochschildExtraCodegeneracy_succ, LinearMap.rTensor_tmul]
 
 end ExtraCodegeneracy
 
@@ -200,9 +200,9 @@ theorem hochschildExtraCodegeneracy_comp_hochschildDifferential_zero :
       ((TensorProduct.mk R N H).flip 1 ∘ₗ cofreeCounit R H N) x :=
     LinearMap.congr_fun (hochschildExtraCodegeneracy_zero_comp_hochschildCoface_last R H N) x
   simp only [LinearMap.comp_apply, LinearMap.id_apply] at h₀
-  rw [LinearMap.comp_apply, hochschildDifferential_apply, Fin.sum_univ_two, map_add, map_zsmul,
-    map_zsmul, h₀, h₁]
-  simp [sub_eq_add_neg]
+  -- `simp` does not apply `hochschildDifferential_apply` to the `ModuleCat` carriers of cochains.
+  rw [LinearMap.comp_apply, hochschildDifferential_apply]
+  simp [Fin.sum_univ_two, h₀, h₁, sub_eq_add_neg]
 
 /-- In positive degrees, the extra codegeneracy is a contracting homotopy of the Hochschild
 complex of the cofree comodule `N ⊗ H`. -/
@@ -216,13 +216,11 @@ theorem hochschildExtraCodegeneracy_comp_hochschildDifferential_succ (n : ℕ) :
   have h := fun i ↦ LinearMap.congr_fun
     (hochschildExtraCodegeneracy_comp_hochschildCoface_succ R H N n i) x
   simp only [LinearMap.comp_apply, LinearMap.id_apply] at h₀ h
-  rw [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    hochschildDifferential_apply, hochschildDifferential_apply, Fin.sum_univ_succ, map_add,
-    map_sum]
-  simp only [Fin.val_zero, pow_zero, one_smul, h₀, Fin.val_succ, LinearMap.id_apply]
-  rw [Finset.sum_congr rfl fun i _ ↦ map_zsmul (hochschildExtraCodegeneracy R H N (n + 1)) _ _]
-  simp only [h, pow_succ, mul_neg_one, neg_smul, Finset.sum_neg_distrib]
-  abel
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply]
+  -- As in degree zero, the differentials are unfolded by rewriting.
+  rw [hochschildDifferential_apply, hochschildDifferential_apply]
+  -- Split off only the coface `0` of degree `n + 1`, the coaction undone by `h₀`.
+  simp [Fin.sum_univ_succ (n := n + 2), h₀, h, pow_succ]
 
 /-- The map `N → N ⊗ H`, `x ↦ x ⊗ 1`, lands in the cocycles of degree zero of the Hochschild
 complex of `N ⊗ H`. -/
@@ -238,8 +236,8 @@ private theorem homotopy_comm_zero_apply (x : hochschildCochains R H (N ⊗[R] H
       (-hochschildExtraCodegeneracy R H N 0) (hochschildDifferential R H (N ⊗[R] H) 0 x) + x := by
   have h := LinearMap.congr_fun
     (hochschildExtraCodegeneracy_comp_hochschildDifferential_zero R H N) x
-  rw [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply] at h
-  rw [LinearMap.neg_apply, h]
+  simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply] at h
+  simp only [LinearMap.neg_apply, h]
   abel
 
 /-- The homotopy condition in positive degrees, on cochains. -/
@@ -250,10 +248,9 @@ private theorem homotopy_comm_succ_apply (n : ℕ) (x : hochschildCochains R H (
         hochschildDifferential R H (N ⊗[R] H) n ((-hochschildExtraCodegeneracy R H N n) x) + x := by
   have h := LinearMap.congr_fun
     (hochschildExtraCodegeneracy_comp_hochschildDifferential_succ R H N n) x
-  rw [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.id_apply] at h
-  rw [LinearMap.neg_apply, LinearMap.neg_apply, map_neg]
-  nth_rw 3 [← h]
-  abel
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply] at h
+  simp only [LinearMap.neg_apply, map_neg]
+  exact (sub_eq_zero.mpr h.symm).symm.trans (by abel)
 
 /-- The Hochschild complex of the cofree comodule `N ⊗ H` is homotopy equivalent to `N` placed in
 degree zero. The map to `N` applies the counit, `x ⊗ h ↦ ε(h) x`, and the map from `N` is
