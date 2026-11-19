@@ -48,7 +48,9 @@ along `x ↦ r x`. Since the unit sphere has area `4π`
 with its outward-normal orientation is `4π r` (`TauCeti.integralTopForm_smul_sphereAreaForm`). For
 `r > 0` this is the KKS area of the coadjoint sphere of radius `r`, not its Euclidean area `4π r²`:
 read on that sphere, the KKS form is `1 / r` times its Euclidean area form. For `r ≤ 0` the
-integral is a signed value.
+integral is a signed value. Its unsigned total Liouville measure `4π |r|` is computed in
+`TauCeti.Geometry.Symplectic.Manifold.Sphere.Area`
+(`TauCeti.liouvilleMeasure_smul_sphereAreaForm_univ`).
 
 ## Main definitions
 

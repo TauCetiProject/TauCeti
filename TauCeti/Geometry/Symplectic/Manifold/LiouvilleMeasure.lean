@@ -53,6 +53,7 @@ measure (`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`
 ## Main results
 
 * `TauCeti.SmoothTwoForm.liouvilleMeasure_apply_of_subset`: the Liouville measure in a chart.
+* `TauCeti.SmoothTwoForm.liouvilleMeasure_one`: on a surface it is the measure `|σ|` of `σ`.
 * `TauCeti.SmoothTwoForm.isLocallyFiniteMeasure_liouvilleMeasure`: it is locally finite.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isOpenPosMeasure_liouvilleMeasure`: for nondegenerate
   `σ` it is positive on nonempty open sets.
@@ -114,6 +115,11 @@ variable (σ n) in
 /-- The Liouville measure is the measure of the symplectic volume form. -/
 theorem liouvilleMeasure_def : σ.liouvilleMeasure n = RoughForm.measure (σ.volumeForm n).1 :=
   (rfl)
+
+/-- On a surface the Liouville measure of `σ` is the measure `|σ|` of the two-form itself. -/
+theorem liouvilleMeasure_one [Fact (finrank ℝ E = 2 * 1)] (σ : SmoothTwoForm I M) :
+    σ.liouvilleMeasure 1 = RoughForm.measure σ.1 := by
+  rw [liouvilleMeasure_def, volumeForm_one]
 
 /-- **The Liouville measure in coordinates.** The Liouville measure of a measurable subset of a
 chart source is the integral over its coordinate image of the absolute value of the coefficient of
