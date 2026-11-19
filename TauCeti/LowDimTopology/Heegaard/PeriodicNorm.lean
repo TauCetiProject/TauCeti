@@ -36,8 +36,8 @@ multiplicities of the boundary of `P` on the attaching curves.
 * **Strong admissibility.** If moreover the Maslov index at `x` is at most `C * ‖ν P‖` on
   periodic domains, with `C < 2 * D`, then the diagram is strongly admissible at `x`
   (`TauCeti.HeegaardRegionSystem.stronglyAdmissible_of_forall_exists_mul_norm_le`). Combining
-  the two, some `C` depending only on the diagram and `ν` makes every `D > C` force strong
-  admissibility at all generators at once
+  the two, some `C` depending only on the region system, the Euler characteristics `χ` and `ν`
+  makes every `D > C` force strong admissibility at all generators at once
   (`TauCeti.HeegaardRegionSystem.exists_forall_stronglyAdmissible_of_forall_exists_mul_norm_le`).
 
 The winding estimate `AddMonoidHom.exists_forall_exists_le_add_mul_abs_and_sub_mul_abs_le`
