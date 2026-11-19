@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Componentwise
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic.Basic
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Determinant.Cons
+import TauCeti.RingTheory.Artinian.EquivPi
 
 /-!
 # Cancelling a pair of generators of a based two-periodic complex
@@ -40,6 +42,47 @@ The proof changes the bases `c` by unitriangular matrices, which do not change t
 bases in which `C` is the direct sum of `D` and the elementary complex `z⁺ ↦ a • z⁻`. Its brackets
 are then those of `D`, times `a` in the degree of `z⁻` and times the sign of moving `z⁺` past the
 boundaries in its own degree.
+
+The same identity holds componentwise over a commutative ring `A`, such as a Novikov ring, where the
+torsion of a based two-periodic complex is read in a reduced Artinian ring `Q`, for instance the
+total quotient ring of `A`, through a ring homomorphism `f : A →+* Q`
+(`HomologicalComplex.componentwiseParityTorsion`). Suppose that `C` and `D` are based
+two-periodic complexes over `A` and that `φ : D ⟶ C` satisfies the hypotheses above over `A`. The
+coordinate base changes of `C`, `D` and `φ` to a field `K` along any `g : A →+* K` satisfy them over
+`K`, because the coordinate maps `C.X k → Kⁿ⁽ᵏ⁾` intertwine the differentials and the chain maps
+(`HomologicalComplex.matrixBaseChange_d_apply_semilinearMap`,
+`HomologicalComplex.matrixBaseChangeMap_f_apply_semilinearMap`). So in each residue field `Q ⧸ m`
+where the image of `a` is nonzero the torsions of the base changes differ by the image of `a`,
+inverted when `z⁺` is odd, and by a sign
+(`HomologicalComplex.mk_componentwiseParityTorsion_eq_of_cancel_one_zero`,
+`HomologicalComplex.mk_componentwiseParityTorsion_eq_of_cancel_zero_one`). When `f a` is a unit of
+`Q`, the componentwise torsions differ by `(f a)⁻¹`, respectively `f a`, and by an element `ε` of
+`Q` with `ε * ε = 1`
+(`HomologicalComplex.exists_componentwiseParityTorsion_eq_of_cancel_one_zero`,
+`HomologicalComplex.exists_componentwiseParityTorsion_eq_of_cancel_zero_one`). In each component
+where the complexes are acyclic, `ε` is necessarily `(-1) ^ q`, where `q` is the rank of the base
+change of `D.d i' i` there, so `ε` need not be a global sign; in the other components both
+torsions vanish and the identity does not constrain `ε`. This is the form of the birth/death
+identity for the torsion of a Floer–Novikov complex over a Novikov ring: at a death the entry `a`
+is `1 + b`, a unit of the Novikov ring, and the componentwise torsions of the complexes before
+and after the death differ by `(1 + b)^(±1)` up to the sign `(-1) ^ q` in every field component
+of the total quotient ring, including the components where both complexes are not acyclic and
+both torsions vanish.
+
+## Main results
+
+* `HomologicalComplex.acyclic_iff_of_cancel`, `HomologicalComplex.toMatrix_d_eq_of_cancel`:
+  cancellation preserves acyclicity, and the cancelled differential is the Schur complement.
+* `HomologicalComplex.parityTorsion_eq_of_cancel_one_zero`,
+  `HomologicalComplex.parityTorsion_eq_of_cancel_zero_one`: the torsion after cancelling a pair,
+  over a field.
+* `HomologicalComplex.acyclic_matrixBaseChange_iff_of_cancel`,
+  `HomologicalComplex.parityTorsion_matrixBaseChange_eq_of_cancel_one_zero`,
+  `HomologicalComplex.parityTorsion_matrixBaseChange_eq_of_cancel_zero_one`: the same for the
+  coordinate base changes to a field of complexes over a commutative ring.
+* `HomologicalComplex.mk_componentwiseParityTorsion_eq_of_cancel_one_zero`,
+  `HomologicalComplex.exists_componentwiseParityTorsion_eq_of_cancel_one_zero` and their
+  even-to-odd versions: the componentwise torsion after cancelling a pair.
 
 ## References
 
@@ -437,5 +480,198 @@ theorem parityTorsion_eq_of_cancel_zero_one
   obtain ⟨c', hc', hd', hdet⟩ := exists_adapted hφ hφ' ha (by decide : (0 : ZMod 2) + 1 = 1)
   rw [← parityTorsion_eq_of_block_zero_one hc' ha hd', parityTorsion_eq_mul_det c c', hdet, hdet]
   simp
+
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+section Componentwise
+
+/-! ### Cancellation over a commutative ring, in each field component -/
+
+variable {A : Type*} [CommRing A]
+  {C D : HomologicalComplex (ModuleCat A) (ComplexShape.up (ZMod 2))} {n : ZMod 2 → ℕ}
+  {c : ∀ k, Basis (Fin (n k + 1)) A (C.X k)} {e : ∀ k, Basis (Fin (n k)) A (D.X k)} {φ : D ⟶ C}
+
+section Field
+
+variable {K : Type*} [Field K] (g : A →+* K) {i i' : ZMod 2}
+  (hφ : ∀ l, (φ.f i).hom (e i l) - c i l.succ ∈ A ∙ c i 0)
+  (hφ' : ∀ l, (φ.f i').hom (e i' l) - c i' l.succ ∈ A ∙ (C.d i i').hom (c i 0))
+
+include hφ in
+/-- The first cancellation hypothesis passes to the coordinate base changes along `g`. -/
+private theorem matrixBaseChangeMap_sub_mem_span_basis (l : Fin (n i)) :
+    ((matrixBaseChangeMap c g e φ).f i).hom (D.matrixBaseChangeBasis e g i l) -
+        C.matrixBaseChangeBasis c g i l.succ ∈ K ∙ C.matrixBaseChangeBasis c g i 0 := by
+  rw [← (e i).semilinearMap_apply_self g _ l, matrixBaseChangeMap_f_apply_semilinearMap,
+    ← (c i).semilinearMap_apply_self g _ l.succ, ← (c i).semilinearMap_apply_self g _ 0,
+    ← map_sub]
+  obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 (hφ l)
+  exact Submodule.mem_span_singleton.2 ⟨g t, by rw [← ht, map_smulₛₗ]⟩
+
+include hφ' in
+/-- The second cancellation hypothesis passes to the coordinate base changes along `g`. -/
+private theorem matrixBaseChangeMap_sub_mem_span_d (l : Fin (n i')) :
+    ((matrixBaseChangeMap c g e φ).f i').hom (D.matrixBaseChangeBasis e g i' l) -
+        C.matrixBaseChangeBasis c g i' l.succ ∈
+      K ∙ ((C.matrixBaseChange c g).d i i').hom (C.matrixBaseChangeBasis c g i 0) := by
+  rw [← (e i').semilinearMap_apply_self g _ l, matrixBaseChangeMap_f_apply_semilinearMap,
+    ← (c i').semilinearMap_apply_self g _ l.succ, ← (c i).semilinearMap_apply_self g _ 0,
+    matrixBaseChange_d_apply_semilinearMap, ← map_sub]
+  obtain ⟨t, ht⟩ := Submodule.mem_span_singleton.1 (hφ' l)
+  exact Submodule.mem_span_singleton.2 ⟨g t, by rw [← ht, map_smulₛₗ]⟩
+
+/-- The entry of the matrix of the differential of the coordinate base change at the cancelled pair
+is the image under `g` of the corresponding entry for `C`. -/
+private theorem repr_matrixBaseChange_d_basis :
+    (C.matrixBaseChangeBasis c g i').repr
+        (((C.matrixBaseChange c g).d i i').hom (C.matrixBaseChangeBasis c g i 0)) 0 =
+      g ((c i').repr ((C.d i i').hom (c i 0)) 0) := by
+  rw [← (c i).semilinearMap_apply_self g _ 0, matrixBaseChange_d_apply_semilinearMap,
+    Basis.repr_semilinearMap_apply]
+
+include hφ hφ' in
+/-- **Cancellation preserves acyclicity in every field component.** Let `φ : D ⟶ C` satisfy the
+cancellation hypotheses of `HomologicalComplex.acyclic_iff_of_cancel` over the commutative ring
+`A`, and let `g : A →+* K` be a ring homomorphism into a field which does not kill the entry of the
+differential at the cancelled pair. Then the coordinate base changes of `C` and `D` along `g` are
+acyclic together. -/
+theorem acyclic_matrixBaseChange_iff_of_cancel
+    (ha : g ((c i').repr ((C.d i i').hom (c i 0)) 0) ≠ 0) :
+    (C.matrixBaseChange c g).Acyclic ↔ (D.matrixBaseChange e g).Acyclic :=
+  acyclic_iff_of_cancel (matrixBaseChangeMap_sub_mem_span_basis g hφ)
+    (matrixBaseChangeMap_sub_mem_span_d g hφ') (by rwa [repr_matrixBaseChange_d_basis])
+
+end Field
+
+section OneZero
+
+variable (hφ : ∀ l, (φ.f 1).hom (e 1 l) - c 1 l.succ ∈ A ∙ c 1 0)
+  (hφ' : ∀ l, (φ.f 0).hom (e 0 l) - c 0 l.succ ∈ A ∙ (C.d 1 0).hom (c 1 0))
+include hφ hφ'
+
+/-- **The torsion after cancelling a pair joined by the odd-to-even differential, over a ring.**
+Let `φ : D ⟶ C` satisfy the hypotheses of `HomologicalComplex.parityTorsion_eq_of_cancel_one_zero`
+over the commutative ring `A`, with `a` the entry of the matrix of `C.d 1 0` at the cancelled pair,
+and let `g : A →+* K` be a ring homomorphism into a field with `g a ≠ 0`. Then the torsions of the
+coordinate base changes along `g` satisfy `τ(C) = (-1) ^ q · (g a)⁻¹ · τ(D)`, where `q` is the
+dimension of the image of the base change of `D.d 0 1`. -/
+theorem parityTorsion_matrixBaseChange_eq_of_cancel_one_zero {K : Type*} [Field K] (g : A →+* K)
+    (ha : g ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0) ≠ 0) :
+    (C.matrixBaseChange c g).parityTorsion (C.matrixBaseChangeBasis c g) =
+      (-1) ^ finrank K (LinearMap.range ((D.matrixBaseChange e g).d 0 1).hom) *
+        (g ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0))⁻¹ *
+          (D.matrixBaseChange e g).parityTorsion (D.matrixBaseChangeBasis e g) := by
+  rw [← repr_matrixBaseChange_d_basis] at ha ⊢
+  exact parityTorsion_eq_of_cancel_one_zero (matrixBaseChangeMap_sub_mem_span_basis g hφ)
+    (matrixBaseChangeMap_sub_mem_span_d g hφ') ha
+
+variable {Q : Type*} [CommRing Q] [IsArtinianRing Q] [IsReduced Q] (f : A →+* Q)
+
+attribute [local instance] Ideal.Quotient.field
+
+/-- **The componentwise torsion after cancelling a pair joined by the odd-to-even differential.**
+Let `φ : D ⟶ C` satisfy the hypotheses of `HomologicalComplex.parityTorsion_eq_of_cancel_one_zero`
+over the commutative ring `A`, with `a` the entry of the matrix of `C.d 1 0` at the cancelled pair.
+In every residue field `Q ⧸ m` of the reduced Artinian ring `Q` where the image of `f a` is
+nonzero, the components of the componentwise torsions along `f` satisfy
+`τ(C) = (-1) ^ q · (f a)⁻¹ · τ(D)`, where `q` is the dimension of the image of the base change of
+`D.d 0 1` to `Q ⧸ m`. -/
+theorem mk_componentwiseParityTorsion_eq_of_cancel_one_zero (m : MaximalSpectrum Q)
+    (ha : Ideal.Quotient.mk m.asIdeal (f ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0)) ≠ 0) :
+    Ideal.Quotient.mk m.asIdeal (C.componentwiseParityTorsion c f) =
+      (-1) ^ finrank (Q ⧸ m.asIdeal) (LinearMap.range
+          ((D.matrixBaseChange e ((Ideal.Quotient.mk m.asIdeal).comp f)).d 0 1).hom) *
+        (Ideal.Quotient.mk m.asIdeal (f ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0)))⁻¹ *
+          Ideal.Quotient.mk m.asIdeal (D.componentwiseParityTorsion e f) := by
+  rw [mk_componentwiseParityTorsion, mk_componentwiseParityTorsion]
+  exact parityTorsion_matrixBaseChange_eq_of_cancel_one_zero hφ hφ' _ ha
+
+/-- **The componentwise torsion after cancelling a pair joined by the odd-to-even differential,
+in the whole reduced Artinian ring.** Let `φ : D ⟶ C` satisfy the hypotheses of
+`HomologicalComplex.parityTorsion_eq_of_cancel_one_zero` over the commutative ring `A`, and let the
+entry `a` of the matrix of `C.d 1 0` at the cancelled pair map to a unit of `Q`. Then
+`τ(C) = ε · (f a)⁻¹ · τ(D)` for the componentwise torsions along `f` and some `ε : Q` with
+`ε * ε = 1`, so that `ε` is `±1` in each residue field of `Q`. In each residue field where the
+complexes are acyclic, `HomologicalComplex.mk_componentwiseParityTorsion_eq_of_cancel_one_zero`
+forces this sign to be `(-1) ^ q`; in the other residue fields both torsions vanish and `ε` is
+unconstrained there. -/
+theorem exists_componentwiseParityTorsion_eq_of_cancel_one_zero
+    (ha : IsUnit (f ((c 0).repr ((C.d 1 0).hom (c 1 0)) 0))) :
+    ∃ ε : Q, ε * ε = 1 ∧
+      C.componentwiseParityTorsion c f = ε * ↑ha.unit⁻¹ * D.componentwiseParityTorsion e f := by
+  simp_rw [mul_assoc]
+  exact IsArtinianRing.exists_mul_self_eq_one_and_eq_mul _ fun m ↦
+    (mk_componentwiseParityTorsion_eq_of_cancel_one_zero hφ hφ' f m
+      (ha.map (Ideal.Quotient.mk m.asIdeal)).ne_zero).trans <| by
+        rw [mul_assoc, map_mul, map_units_inv, IsUnit.unit_spec]
+
+end OneZero
+
+section ZeroOne
+
+variable (hφ : ∀ l, (φ.f 0).hom (e 0 l) - c 0 l.succ ∈ A ∙ c 0 0)
+  (hφ' : ∀ l, (φ.f 1).hom (e 1 l) - c 1 l.succ ∈ A ∙ (C.d 0 1).hom (c 0 0))
+include hφ hφ'
+
+/-- **The torsion after cancelling a pair joined by the even-to-odd differential, over a ring.**
+Let `φ : D ⟶ C` satisfy the hypotheses of `HomologicalComplex.parityTorsion_eq_of_cancel_zero_one`
+over the commutative ring `A`, with `a` the entry of the matrix of `C.d 0 1` at the cancelled pair,
+and let `g : A →+* K` be a ring homomorphism into a field with `g a ≠ 0`. Then the torsions of the
+coordinate base changes along `g` satisfy `τ(C) = (-1) ^ q · g a · τ(D)`, where `q` is the
+dimension of the image of the base change of `D.d 1 0`. -/
+theorem parityTorsion_matrixBaseChange_eq_of_cancel_zero_one {K : Type*} [Field K] (g : A →+* K)
+    (ha : g ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0) ≠ 0) :
+    (C.matrixBaseChange c g).parityTorsion (C.matrixBaseChangeBasis c g) =
+      (-1) ^ finrank K (LinearMap.range ((D.matrixBaseChange e g).d 1 0).hom) *
+        g ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0) *
+          (D.matrixBaseChange e g).parityTorsion (D.matrixBaseChangeBasis e g) := by
+  rw [← repr_matrixBaseChange_d_basis] at ha ⊢
+  exact parityTorsion_eq_of_cancel_zero_one (matrixBaseChangeMap_sub_mem_span_basis g hφ)
+    (matrixBaseChangeMap_sub_mem_span_d g hφ') ha
+
+variable {Q : Type*} [CommRing Q] [IsArtinianRing Q] [IsReduced Q] (f : A →+* Q)
+
+attribute [local instance] Ideal.Quotient.field
+
+/-- **The componentwise torsion after cancelling a pair joined by the even-to-odd differential.**
+Let `φ : D ⟶ C` satisfy the hypotheses of `HomologicalComplex.parityTorsion_eq_of_cancel_zero_one`
+over the commutative ring `A`, with `a` the entry of the matrix of `C.d 0 1` at the cancelled pair.
+In every residue field `Q ⧸ m` of the reduced Artinian ring `Q` where the image of `f a` is
+nonzero, the components of the componentwise torsions along `f` satisfy
+`τ(C) = (-1) ^ q · f a · τ(D)`, where `q` is the dimension of the image of the base change of
+`D.d 1 0` to `Q ⧸ m`. -/
+theorem mk_componentwiseParityTorsion_eq_of_cancel_zero_one (m : MaximalSpectrum Q)
+    (ha : Ideal.Quotient.mk m.asIdeal (f ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0)) ≠ 0) :
+    Ideal.Quotient.mk m.asIdeal (C.componentwiseParityTorsion c f) =
+      (-1) ^ finrank (Q ⧸ m.asIdeal) (LinearMap.range
+          ((D.matrixBaseChange e ((Ideal.Quotient.mk m.asIdeal).comp f)).d 1 0).hom) *
+        Ideal.Quotient.mk m.asIdeal (f ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0)) *
+          Ideal.Quotient.mk m.asIdeal (D.componentwiseParityTorsion e f) := by
+  rw [mk_componentwiseParityTorsion, mk_componentwiseParityTorsion]
+  exact parityTorsion_matrixBaseChange_eq_of_cancel_zero_one hφ hφ' _ ha
+
+/-- **The componentwise torsion after cancelling a pair joined by the even-to-odd differential,
+in the whole reduced Artinian ring.** Let `φ : D ⟶ C` satisfy the hypotheses of
+`HomologicalComplex.parityTorsion_eq_of_cancel_zero_one` over the commutative ring `A`, and let the
+entry `a` of the matrix of `C.d 0 1` at the cancelled pair map to a unit of `Q`. Then
+`τ(C) = ε · f a · τ(D)` for the componentwise torsions along `f` and some `ε : Q` with
+`ε * ε = 1`, so that `ε` is `±1` in each residue field of `Q`. In each residue field where the
+complexes are acyclic, `HomologicalComplex.mk_componentwiseParityTorsion_eq_of_cancel_zero_one`
+forces this sign to be `(-1) ^ q`; in the other residue fields both torsions vanish and `ε` is
+unconstrained there. -/
+theorem exists_componentwiseParityTorsion_eq_of_cancel_zero_one
+    (ha : IsUnit (f ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0))) :
+    ∃ ε : Q, ε * ε = 1 ∧ C.componentwiseParityTorsion c f =
+      ε * f ((c 1).repr ((C.d 0 1).hom (c 0 0)) 0) * D.componentwiseParityTorsion e f := by
+  simp_rw [mul_assoc]
+  exact IsArtinianRing.exists_mul_self_eq_one_and_eq_mul _ fun m ↦
+    (mk_componentwiseParityTorsion_eq_of_cancel_zero_one hφ hφ' f m
+      (ha.map (Ideal.Quotient.mk m.asIdeal)).ne_zero).trans <| by rw [mul_assoc, map_mul]
+
+end ZeroOne
+
+end Componentwise
 
 end HomologicalComplex
