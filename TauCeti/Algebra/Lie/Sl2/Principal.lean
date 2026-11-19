@@ -162,12 +162,8 @@ theorem isSl2Triple_twoWeylVector_flip_sum [Nonempty H.root] {e f : b.support �
   lie_e_f := by
     classical
     -- for `i ≠ j` the difference `αᵢ - αⱼ` is not a root, so `⁅eᵢ, fⱼ⁆ = 0`
-    have hne : ∀ i j, j ≠ i → ⁅e i, f j⁆ = 0 := fun i j hji ↦ by
-      have hmem : ⁅e i, f j⁆ ∈ rootSpace H
-          (⇑((i : H.root) : Weight K H L) - ⇑((j : H.root) : Weight K H L)) := by
-        rw [sub_eq_add_neg, ← Weight.coe_neg]
-        exact mapsTo_toEnd_genWeightSpace_add_of_mem_rootSpace K L H L _ _ (he i) (hf j)
-      simpa [rootSpace_sub_eq_bot_of_base b hji.symm] using hmem
+    have hne : ∀ i j, j ≠ i → ⁅e i, f j⁆ = 0 := fun i j hji ↦
+      lie_eq_zero_of_mem_rootSpace_of_base b hji.symm (he i) (hf j)
     simp_rw [sum_lie, lie_sum]
     rw [Finset.sum_congr rfl fun i _ ↦ Finset.sum_eq_single i (fun j _ hji ↦ hne i j hji)
       (by simp)]
