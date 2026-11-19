@@ -10,6 +10,7 @@ public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Data.Fin.Rev
 
 /-!
 # Finite partial sums
@@ -28,7 +29,8 @@ This file contains basic facts about finite partial sums.
   telescope.
 * `TauCeti.eq_of_forall_prefixSum_eq`, `TauCeti.monotone_prefixSum`: a tuple is determined by its
   prefix sums, which are monotone in the length for nonnegative tuples.
-* `TauCeti.prefixSum_eq_sum_castLE`: up to `n`, prefix sums are sums over the first indices.
+* `TauCeti.prefixSum_eq_sum_castLE`, `TauCeti.prefixSum_comp_rev`: up to `n`, prefix sums are sums
+  over the first indices, and prefix sums of a reversed tuple are suffix sums.
 * `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
   partial sums over `range`, capped at `n`.
 * `TauCeti.map_prefixSum`, `TauCeti.prefixSum_smul`: additive monoid homomorphisms and
@@ -61,6 +63,10 @@ theorem prefixSum_def (k : ℕ) (x : Fin n → M) :
 
 @[simp]
 theorem prefixSum_zero (x : Fin n → M) : prefixSum 0 x = 0 := by
+  simp [prefixSum]
+
+@[simp]
+theorem prefixSum_zero_right (k : ℕ) : prefixSum k (0 : Fin n → M) = 0 := by
   simp [prefixSum]
 
 /-- Each further coordinate adds its value to the prefix sum. -/
@@ -110,6 +116,18 @@ theorem prefixSum_eq_sum_castLE {k : ℕ} (hk : k ≤ n) (x : Fin n → M) :
   ext i
   simp only [mem_filter, mem_univ, true_and, mem_map, Fin.castLEEmb_apply]
   exact ⟨fun hi ↦ ⟨⟨i, hi⟩, rfl⟩, fun ⟨j, hj⟩ ↦ hj ▸ j.isLt⟩
+
+/-- For `k ≤ n`, the prefix sum of length `k` of `i ↦ x i.rev` is the suffix sum over indices
+`n - k ≤ j`. -/
+theorem prefixSum_comp_rev {k : ℕ} (hk : k ≤ n) (x : Fin n → M) :
+    prefixSum k (fun i ↦ x i.rev) = ∑ j : Fin n with n - k ≤ j.val, x j := by
+  rw [prefixSum_def, sum_filter, sum_filter]
+  refine (sum_congr rfl fun i _ ↦ ?_).trans
+    (Equiv.sum_comp Fin.revPerm fun j : Fin n ↦ if n - k ≤ j.val then x j else 0)
+  simp only [Fin.revPerm_apply, Fin.val_rev]
+  by_cases hi : i.val < k
+  · rw [ite_eq_left hi, ite_eq_left (by omega)]
+  · rw [ite_eq_right hi, ite_eq_right (by have := i.isLt; omega)]
 
 /-- Capping the length of a prefix sum at `n` does not change it. -/
 @[simp]

@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Products
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Limits.Lattice
-public import Mathlib.Topology.Sheaves.Presheaf
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 public import TauCeti.Topology.Sheaves.Presheaf
