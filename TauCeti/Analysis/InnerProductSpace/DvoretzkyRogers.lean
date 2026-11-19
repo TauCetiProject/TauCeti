@@ -9,6 +9,8 @@ public import TauCeti.Analysis.InnerProductSpace.JohnEllipsoid
 
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Snoc
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # The Dvoretzky–Rogers lemma
@@ -68,17 +70,15 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSp
 omit [FiniteDimensional 𝕜 E] in
 /-- The contraction estimate behind `inv_two_pow_le_pow_of_forall_mem_orthogonal`: if `‖T‖ ≤ 1`
 and `‖T q‖ ≤ a ‖q‖` on `Kᗮ`, then `‖T p / 2 + T q / (2 a)‖ ≤ ‖p + q‖` for `p ∈ K` and `q ∈ Kᗮ`. -/
-private theorem norm_smul_add_smul_le (hT : ‖(T : E →L[𝕜] F)‖ ≤ 1) {K : Submodule 𝕜 E} {a : ℝ}
-    (ha : 0 < a) (h : ∀ q ∈ Kᗮ, ‖T q‖ ≤ a * ‖q‖) {p q : E} (hp : p ∈ K) (hq : q ∈ Kᗮ) :
+private theorem norm_smul_add_smul_le (hT : ‖(T : E →L[𝕜] F)‖ ≤ 1) {K : Submodule 𝕜 E}
+    [K.HasOrthogonalProjection] {a : ℝ} (ha : 0 < a) (h : ∀ q ∈ Kᗮ, ‖T q‖ ≤ a * ‖q‖) {p q : E}
+    (hp : p ∈ K) (hq : q ∈ Kᗮ) :
     ‖((2⁻¹ : ℝ) : 𝕜) • T p + (((2 * a)⁻¹ : ℝ) : 𝕜) • T q‖ ≤ ‖p + q‖ := by
   -- By Pythagoras both `‖p‖` and `‖q‖` are at most `‖p + q‖`.
-  have hx : ‖p + q‖ ^ 2 = ‖p‖ ^ 2 + ‖q‖ ^ 2 := by
-    rw [sq, sq, sq, norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (𝕜 := 𝕜)]
-    exact K.inner_right_of_mem_orthogonal hp hq
-  have hpx : ‖p‖ ≤ ‖p + q‖ := (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _)
-    two_ne_zero).1 (by nlinarith [sq_nonneg ‖q‖])
-  have hqx : ‖q‖ ≤ ‖p + q‖ := (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _)
-    two_ne_zero).1 (by nlinarith [sq_nonneg ‖p‖])
+  have hpx : ‖p‖ ≤ ‖p + q‖ :=
+    K.mem_iff_forall_mem_orthogonal_norm_le_norm_add.1 hp q hq
+  have hqx : ‖q‖ ≤ ‖p + q‖ := add_comm p q ▸
+    Kᗮ.mem_iff_forall_mem_orthogonal_norm_le_norm_add.1 hq p (K.le_orthogonal_orthogonal hp)
   have hTp : ‖T p‖ ≤ ‖p‖ := by
     simpa using (T : E →L[𝕜] F).le_of_opNorm_le hT p
   calc _ ≤ 2⁻¹ * ‖T p‖ + (2 * a)⁻¹ * ‖T q‖ := by
@@ -133,12 +133,16 @@ theorem inv_two_pow_le_pow_of_forall_mem_orthogonal (hT : T.IsMaxVolumeEllipsoid
   have hTS : (T.symm : F →L[𝕜] E).comp S = LinearMap.toContinuousLinearMap A := by
     rw [← ContinuousLinearMap.comp_assoc, T.coe_symm_comp_coe, ContinuousLinearMap.id_comp]
   have hkn : k ≤ n := K.finrank_le
-  have hnorm : ‖LinearMap.det A‖ = 2⁻¹ ^ n / a ^ (n - k) := by
-    rw [hdetA, ← Nat.add_sub_cancel' hkn]
-    simp [β, γ, abs_of_pos ha, pow_add, mul_pow, div_eq_mul_inv, mul_assoc]
+  have hnorm : ‖LinearMap.det A‖ * a ^ (n - k) = 2⁻¹ ^ n := by
+    obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le hkn
+    rw [hdetA, hm, Nat.add_sub_cancel_left]
+    simp only [β, γ, norm_mul, norm_pow, RCLike.norm_ofReal, abs_inv, abs_mul, abs_two,
+      abs_of_pos ha, mul_inv, mul_pow, inv_pow]
+    field_simp
     ring
-  rw [hTS, LinearMap.det_toContinuousLinearMap, hnorm] at hdet
-  rwa [div_le_one (by positivity)] at hdet
+  rw [hTS, LinearMap.det_toContinuousLinearMap] at hdet
+  rw [← hnorm]
+  exact mul_le_of_le_one_left (by positivity) hdet
 
 /-- **The norm in John's position is large on orthogonal complements.** If `T` is a maximal-volume
 ellipsoid on an `n`-dimensional inner product space `E` and `K` is a subspace of dimension `k < n`,
@@ -183,16 +187,11 @@ private theorem exists_orthonormal_inv_two_pow_le_norm_apply_pow (hT : T.IsMaxVo
     have hK : finrank 𝕜 K = k := by simp [K, finrank_span_eq_card hv.linearIndependent]
     obtain ⟨z, hzK, hz, hzT⟩ :=
       hT.exists_mem_orthogonal_inv_two_pow_le_norm_apply_pow K (by omega)
-    have hvz (i : Fin k) : ⟪v i, z⟫_𝕜 = 0 :=
-      K.inner_right_of_mem_orthogonal (subset_span (Set.mem_range_self i)) hzK
-    refine ⟨Fin.snoc v z, orthonormal_iff_ite.2 fun i j ↦ ?_, fun j ↦ ?_⟩
-    · induction i using Fin.lastCases <;> induction j using Fin.lastCases <;>
-        simp [Fin.snoc_castSucc, Fin.snoc_last, hz, hvz, (orthonormal_iff_ite.1 hv),
-          inner_self_eq_norm_sq_to_K, ← inner_conj_symm z, Fin.castSucc_ne_last,
-          (Fin.castSucc_ne_last _).symm]
-    · induction j using Fin.lastCases with
-      | last => simpa [hK] using hzT
-      | cast j => simpa using hvT j
+    refine ⟨Fin.snoc v z, hv.snoc hz fun i ↦
+      K.inner_right_of_mem_orthogonal (subset_span (Set.mem_range_self i)) hzK, fun j ↦ ?_⟩
+    induction j using Fin.lastCases with
+    | last => simpa [hK] using hzT
+    | cast j => simpa using hvT j
 
 /-- **The Dvoretzky–Rogers lemma.** If `T` is a maximal-volume ellipsoid on an `n`-dimensional inner
 product space `E`, then `E` has an orthonormal basis `b` with `2⁻ⁿ ≤ ‖T (b j)‖ ^ (n - j)` for every
@@ -215,12 +214,12 @@ theorem exists_orthonormalBasis_two_rpow_le_norm_apply (hT : T.IsMaxVolumeEllips
   obtain ⟨b, hb⟩ := hT.exists_orthonormalBasis_inv_two_pow_le_norm_apply_pow
   refine ⟨b, fun j ↦ ?_⟩
   have hm : (0 : ℝ) < (finrank 𝕜 E - j : ℕ) := Nat.cast_pos.2 (by omega)
+  have h2 : (2 : ℝ) ^ (-(finrank 𝕜 E : ℝ)) = 2⁻¹ ^ finrank 𝕜 E := by
+    rw [Real.rpow_neg zero_le_two, Real.rpow_natCast, inv_pow]
   -- Take `(n - j)`-th roots of `2⁻ⁿ ≤ ‖T (b j)‖ ^ (n - j)`.
-  have h := Real.rpow_le_rpow (by positivity) (hb j) (inv_nonneg.2 hm.le)
-  rw [Real.pow_rpow_inv_natCast (norm_nonneg _) (by omega)] at h
-  refine le_of_eq_of_le ?_ h
-  rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num), Real.inv_rpow zero_le_two,
-    ← Real.rpow_neg zero_le_two, ← neg_mul, ← div_eq_mul_inv]
+  rw [div_eq_mul_inv, Real.rpow_mul zero_le_two, h2,
+    Real.rpow_inv_le_iff_of_pos (by positivity) (norm_nonneg _) hm, Real.rpow_natCast]
+  exact hb j
 
 /-- **The Dvoretzky–Rogers lemma**, half-dimensional form: if `T` is a maximal-volume ellipsoid on
 an `n`-dimensional inner product space `E`, then `E` has an orthonormal basis `b` with
