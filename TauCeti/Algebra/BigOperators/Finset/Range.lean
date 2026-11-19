@@ -29,6 +29,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 
 ## Main results
 
+* `Finset.prod_range_ite_even`, `Finset.sum_range_ite_even`: keeping only the even-indexed factors
+  among the first `N` gives the first `(N + 1) / 2` values `g k` at the halved indices.
 * `sum_Ioo_eq_sum_range`: a sum over `Ioo 0 n` equals the sum over `range n` when the summand at
   `0` vanishes.
 * `Finset.sum_range_min_diag_flip`: reindex a three-variable truncated triangle as a slice of
@@ -114,6 +116,21 @@ theorem prod_range_two_mul_add_one {M : Type*} [CommMonoid M] (g : ℕ → M) (k
       prod_range_succ (fun j => g (2 * j)) (k + 1), prod_range_succ (fun j => g (2 * j + 1)) k,
       show 2 * k + 1 + 1 = 2 * (k + 1) by ring]
     ac_rfl
+
+/-- The product of the factors of even index `2k`, `k < (N + 1) / 2`, among the first `N`. -/
+@[to_additive /-- The sum of the terms of even index `2k`, `k < (N + 1) / 2`, among the first
+`N`. -/]
+theorem prod_range_ite_even {M : Type*} [CommMonoid M] (g : ℕ → M) (N : ℕ) :
+    ∏ j ∈ range N, (if Even j then g (j / 2) else 1) = ∏ k ∈ range ((N + 1) / 2), g k := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [prod_range_succ, ih]
+    rcases Nat.even_or_odd N with ⟨k, rfl⟩ | ⟨k, rfl⟩
+    · rw [ite_eq_left ⟨k, rfl⟩, show (k + k + 1 + 1) / 2 = (k + k + 1) / 2 + 1 by omega,
+        prod_range_succ, show (k + k) / 2 = (k + k + 1) / 2 by omega]
+    · rw [ite_eq_right (Nat.not_even_iff_odd.2 ⟨k, rfl⟩), mul_one,
+        show (2 * k + 1 + 1 + 1) / 2 = (2 * k + 1 + 1) / 2 by omega]
 
 /-- Restricting a product over `range n` to the indices below `x ≤ n`, by replacing the other
 factors with `1`, gives the product over `range x`. -/
