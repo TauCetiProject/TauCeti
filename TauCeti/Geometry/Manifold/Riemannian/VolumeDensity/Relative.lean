@@ -34,6 +34,12 @@ volume density of `g'` is `J` times that of `g`. No orientation is used. For a c
 `g' = f g` in real dimension `N`, `J = f ^ (N / 2)`, recovering
 `TauCeti.WithMetric.riemannianVolume_rescale`.
 
+For measures of oriented Riemannian volume forms, also import
+`TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure`. Rewrite both measures with
+`TauCeti.measure_riemannianVolumeForm`, then apply
+`Bundle.ContMDiffRiemannianMetric.riemannianVolume_eq_map_withDensity_relativeVolumeDensity`.
+This comparison allows arbitrary, independent choices of the two orientations.
+
 ## Main definitions
 
 * `Bundle.ContMDiffRiemannianMetric.relativeVolumeDensity`: the relative volume density of
