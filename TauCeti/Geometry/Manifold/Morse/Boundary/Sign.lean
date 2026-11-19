@@ -61,8 +61,9 @@ factors, and the velocity is carried to the velocity.
 The comparison map depends continuously on `y` along `W^u(p) ∩ W^s(q)`
 (`TauCeti.IsAdaptedPseudoGradient.continuousWithinAt_trajectoryComparison`), whatever the indices
 of `p` and `q`: near a point `y₀`, the unstable frame and the normal coordinates are both read at
-fixed times of linear flow, in the charts `φp ∘ Φ_{-T}` and `φq ∘ Φ_{T'}`. Consequently the sign
-is locally constant on `W^u(p) ∩ W^s(q)`, not only along each trajectory
+fixed times of linear flow, in the charts `φp ∘ Φ_{-T}` and `φq ∘ Φ_{T'}`. Consequently, near
+every point where the comparison map is an isomorphism, the sign is locally constant on
+`W^u(p) ∩ W^s(q)`, not only along each trajectory
 (`TauCeti.IsAdaptedPseudoGradient.eventually_trajectorySign_eq`). For critical points whose indices
 differ by more than one, the comparison maps are not isomorphisms, and their continuity is the
 input for orienting the spaces of trajectories coherently through them.
@@ -539,19 +540,19 @@ theorem eventually_trajectorySign_eq (hf : IsMorse 𝓘(ℝ, E) f) {y₀ : M}
   -- Both sides are the comparison map at `y₀`: `domRestrict` evaluates at `y₀`, and `f₀` is
   -- that map, made an equivalence.
   have hL₀ : (hX.flow.unstableSet p ∩ hX.flow.stableSet q).domRestrict
-      (hX.trajectoryComparison φp φq) ⟨y₀, hy₀⟩ = f₀ := rfl
+      (hX.trajectoryComparison φp φq) ⟨y₀, hy₀⟩ = f₀ :=
+    ContinuousLinearMap.ext fun v ↦ by simp [f₀, Set.domRestrict_apply]
   rw [← eventually_nhds_subtype_iff _ ⟨y₀, hy₀⟩]
   -- Near `y₀` the comparison maps stay isomorphisms, and transport `op` as at `y₀`.
   filter_upwards [op.eventually_map_eq_map_of_continuousAt hcard (fun _ ↦ hL) hL₀,
     hL.preimage_mem_nhds (hL₀ ▸ ContinuousLinearEquiv.nhds f₀)] with y hy ⟨g, hg⟩
-  -- `hg` holds by evaluating `domRestrict` at `y`.
-  have hgy : (g : _ →L[ℝ] _) = hX.trajectoryComparison φp φq y := hg
+  have hgy : (g : _ →L[ℝ] _) = hX.trajectoryComparison φp φq y := by
+    rw [hg, Set.domRestrict_apply]
   have hCb : Bijective (hX.trajectoryComparison φp φq y) := by
     rw [← hgy, ContinuousLinearEquiv.coe_coe]
     exact g.bijective
-  have hge : LinearEquiv.ofBijective _ hCb = g.toLinearEquiv := LinearEquiv.ext fun v ↦ by
-    rw [LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe, ← hgy,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
+  have hge : LinearEquiv.ofBijective _ hCb = g.toLinearEquiv :=
+    LinearEquiv.ext fun v ↦ by simp [← hgy]
   rw [trajectorySign_of_bijective hCb, trajectorySign_of_bijective hC, hge, hy g hg,
     LinearEquiv.toLinearEquiv_toContinuousLinearEquiv]
 
