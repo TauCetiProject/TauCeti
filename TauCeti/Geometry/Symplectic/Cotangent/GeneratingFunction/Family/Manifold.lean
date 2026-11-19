@@ -8,10 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue.ManifoldLevel
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.GeneratedMap
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
-import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Family.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -103,9 +103,8 @@ theorem familyFiberDeriv_apply_eq_neg_generatingTarget_snd_apply (x : M × A) (b
     TotalSpace.ext (proj_generatingTarget x) (heq_of_eq (generatingTarget_snd x))
   have h₂ : mvfderiv 𝓘(ℝ, A) (fun a ↦ S (x.1, a)) x.2 b = familyFiberDeriv S x b :=
     mvfderiv_eq_fderiv_apply _ _ b
-  rw [h]
-  -- The covector of `TotalSpace.mk' _ x.2 (-m)` evaluates to `-(m b)`.
-  exact (neg_neg _).symm.trans (congrArg Neg.neg (congrArg Neg.neg h₂.symm))
+  rw [h, ← h₂]
+  exact (neg_neg _).symm.trans (congrArg Neg.neg (neg_apply _ b).symm)
 
 variable [TopologicalSpace M] [ChartedSpace H M]
 
@@ -138,44 +137,10 @@ theorem mvfderiv_familyFiberDeriv_apply_apply [I.Boundaryless] [IsManifold I 2 M
   rw [hF.mvfderiv_prod_eq_add_apply, add_apply]
   congr 1
   · refine Eq.trans ?_ (mixedHessian_comp_swap_apply hS w.1 c)
-    rw [mixedHessian_def, ← hslice]
-    rfl
+    rw [mixedHessian_def, ← hslice, Prod.snd_swap]
   · exact congrArg (fun L : A →L[ℝ] ℝ ↦ L c) (mvfderiv_eq_fderiv_apply _ _ _)
 
 /-! ### Injectivity of the source projection along the fibre-critical set -/
-
-omit [TopologicalSpace M] [ChartedSpace H M] in
-/-- The linear algebra behind the injectivity of the source projection. Let `T` keep the first
-component and send `(0, b)` to `(0, H b)`, and let `D (u, b) = H(·)(u) + B b` with `B` symmetric.
-If `D` is onto, then `T` is injective on the kernel of `D`: a kernel vector `(0, b)` with
-`H b = 0` pairs to zero with every value `D v` of `D`. -/
-private theorem injOn_ker_of_forall_apply {T : E × A →L[ℝ] E × (E →L[ℝ] ℝ)}
-    {D : E × A →L[ℝ] A →L[ℝ] ℝ} {H : A →L[ℝ] E →L[ℝ] ℝ} {B : A →L[ℝ] A →L[ℝ] ℝ}
-    (hfst : ∀ w, (T w).1 = w.1) (hinr : ∀ b, T (0, b) = (0, H b)) (hB : ∀ b b', B b b' = B b' b)
-    (hD : ∀ w c, D w c = H c w.1 + B w.2 c) (hsurj : Surjective D) :
-    Set.InjOn T D.ker := by
-  -- It suffices to show that a kernel vector `w` with `T w = 0` vanishes.
-  suffices h : ∀ w ∈ D.ker, T w = 0 → w = 0 by
-    intro w hw w' hw' hww'
-    exact sub_eq_zero.mp (h (w - w') (D.ker.sub_mem hw hw') (by rw [map_sub, hww', sub_self]))
-  intro w hw hTw
-  have hw₁ : w.1 = 0 := by rw [← hfst, hTw, Prod.fst_zero]
-  have hw0 : w = (0, w.2) := Prod.ext hw₁ rfl
-  -- The image of `(0, b)` is `(0, H b)`, so `b = w.2` lies in the kernel of `H`.
-  have hH : H w.2 = 0 := by
-    have h := hinr w.2
-    rw [← hw0, hTw] at h
-    exact (congrArg Prod.snd h).symm
-  -- Since `w` lies in the kernel of `D`, the symmetric form `B` kills `b`.
-  have hBw (c : A) : B w.2 c = 0 := by
-    have h := hD w c
-    have hDw : D w = 0 := hw
-    rw [hDw, hw₁, map_zero, zero_add] at h
-    exact h.symm
-  -- Every value of `D` vanishes on `b`, and `D` is onto, so `b = 0`.
-  refine Prod.ext hw₁ (SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_)
-  obtain ⟨v, rfl⟩ := hsurj ℓ
-  rw [hD, hH, zero_apply, zero_add, hB, hBw]
 
 /-- **The source projection is injective on the tangent directions of the fibre-critical set.**
 If the generating family `S` is smooth and transverse at `x`, that is the differential of `∂_a S`
@@ -249,10 +214,13 @@ theorem range_mfderiv_coe_familyCriticalSet (z : {x : M × A // familyFiberDeriv
     BoundarylessManifold.isInteriorPoint hreg z
 
 omit [I.Boundaryless] in
-/-- The model space of the fibre-critical set has the dimension of the base manifold `M`. -/
+/-- The model space of the fibre-critical set has the dimension of the base manifold `M`, half
+that of the model space `E × E'` of `T*M`. -/
 private theorem finrank_familyCriticalSet_model :
-    finrank ℝ (Fin (finrank ℝ (E × A) - finrank ℝ (A →L[ℝ] ℝ)) → ℝ) = finrank ℝ E := by
-  rw [finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
+    2 * finrank ℝ (Fin (finrank ℝ (E × A) - finrank ℝ (A →L[ℝ] ℝ)) → ℝ) =
+      finrank ℝ (E × (E →L[ℝ] ℝ)) := by
+  rw [finrank_fin_fun, finrank_prod, finrank_prod, ContinuousLinearMap.dual_finrank_eq,
+    ContinuousLinearMap.dual_finrank_eq]
   omega
 
 /-- The source projection restricted to the fibre-critical set is smooth. -/
@@ -309,17 +277,18 @@ theorem mpullback_generatingSource_comp_coe_liouvilleForm :
       (mfderiv 𝓘(ℝ, Fin (finrank ℝ (E × A) - finrank ℝ (A →L[ℝ] ℝ)) → ℝ) (I.prod 𝓘(ℝ, A))
         Subtype.val z (v 0)).1 := by
     rw [mfderiv_comp z mdifferentiableAt_fst hcoez, mfderiv_fst]
-    rfl
+    exact (ContinuousLinearMap.comp_apply _ _ _).trans
+      (congrFun (ContinuousLinearMap.coe_fst' (R := ℝ)) _)
   -- On the fibre-critical set the derivative of `S` in the auxiliary variables vanishes.
   have hz₀ : mvfderiv 𝓘(ℝ, A) (fun a ↦ S (z.1.1, a)) z.1.2 = 0 := by
     ext b
     rw [mvfderiv_eq_fderiv_apply, ← familyFiberDeriv_def, z.2]
-    rfl
+    exact zero_apply _
   have hz : mvfderiv 𝓘(ℝ, A) (fun a ↦ S (z.1.1, a)) z.1.2
       (mfderiv 𝓘(ℝ, Fin (finrank ℝ (E × A) - finrank ℝ (A →L[ℝ] ℝ)) → ℝ) (I.prod 𝓘(ℝ, A))
         Subtype.val z (v 0)).2 = 0 := by
     rw [hz₀]
-    rfl
+    exact zero_apply _
   rw [mpullback_liouvilleForm_apply_of_proj_comp_eq
       (ψ := generatingSource I S ∘ Subtype.val) (g := Prod.fst ∘ Subtype.val)
       (fun _ ↦ proj_generatingSource _)
@@ -349,8 +318,7 @@ theorem isExactLagrangianMap_generatingSource_comp_coe :
     (injective_mfderiv_generatingSource_comp_coe hS hreg) ?_).mpr
     ⟨hS.comp (isSmoothEmbedding_coe_familyCriticalSet hS hreg).contMDiff,
       mpullback_generatingSource_comp_coe_liouvilleForm hS hreg⟩
-  rw [finrank_familyCriticalSet_model, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
-  ring
+  exact finrank_familyCriticalSet_model
 
 /-- **The fibre-critical set of a generating family is a Lagrangian immersion.** For a smooth
 generating family `S` on `M × A` for which `0` is a regular value of `∂_a S`, the fibre-critical
@@ -366,8 +334,7 @@ theorem isLagrangianImmersion_generatingSource_comp_coe :
   have hL := isExactLagrangianMap_generatingSource_comp_coe hS hreg
   refine ⟨(contMDiff_generatingSource_comp_coe hS hreg).isImmersion_of_injective_mfderiv (by simp)
     (injective_mfderiv_generatingSource_comp_coe hS hreg), hL.isLagrangianMap.isIsotropicMap, ?_⟩
-  rw [finrank_familyCriticalSet_model, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
-  ring
+  exact finrank_familyCriticalSet_model
 
 end CriticalSet
 
