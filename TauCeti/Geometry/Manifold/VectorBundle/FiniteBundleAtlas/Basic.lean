@@ -589,12 +589,9 @@ theorem contMDiff_smul_triv_symm {i : Fin A.n} {ψ : M → ℝ} (hψ : ContMDiff
     (hψi : tsupport ψ ⊆ A.dom i) {f : E → F} (hf : ContDiffOn ℝ n f (A.image i)) :
     ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) n
       fun x ↦ TotalSpace.mk' F x (ψ x • (A.triv i).symm x (f (A.chart i x))) := by
-  have hs : ContMDiffOn 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) n
-      (fun x ↦ TotalSpace.mk' F x ((A.triv i).symm x (f (A.chart i x)))) (A.dom i) := by
-    rw [(A.triv i).contMDiffOn_section_iff (A.isOpen_dom i) (A.dom_subset_baseSet i)]
-    refine (hf.contMDiffOn.comp (contMDiffOn_chart.mono (A.dom_subset_chart_source i))
-      fun x hx ↦ A.mem_image.2 ⟨x, hx, rfl⟩).congr fun x hx ↦ ?_
-    rw [(A.triv i).apply_mk_symm (A.dom_subset_baseSet i hx), Function.comp_apply]
+  have hs := (A.triv i).contMDiffOn_section_symm (A.isOpen_dom i) (A.dom_subset_baseSet i)
+    (hf.contMDiffOn.comp (contMDiffOn_chart.mono (A.dom_subset_chart_source i))
+      fun x hx ↦ A.mem_image.2 ⟨x, hx, rfl⟩)
   exact ContMDiffOn.smul_section_of_tsupport hψ.contMDiffOn (A.isOpen_dom i) hψi hs
 
 end FiniteBundleAtlas

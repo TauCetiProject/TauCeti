@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import TauCeti.Analysis.Sobolev.Wkp.SmoothMultiplication
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
 
 /-!
 # Multiplication by a smooth function on Sobolev sections
@@ -67,6 +68,8 @@ components of the section `x ↦ φ x • s x`
   multipliers; multipliers summing to `1`, such as a smooth partition of unity, decompose `w`.
 * `TauCeti.SobolevSection.lowerOrderL_contMDiffSMulL`: multiplication commutes with the inclusion
   `W^{k+1,p}(V) → W^{k,p}(V)`.
+* `TauCeti.SobolevSection.contMDiffSMulL_ofContMDiffSection`: multiplying the Sobolev section of a
+  `Cᵏ` section `s` by `φ` gives the Sobolev section of `x ↦ φ x • s x`.
 
 ## References
 
@@ -385,6 +388,19 @@ theorem lowerOrderL_contMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ �
     A.sectionChartData.lowerOrderL μ p k (contMDiffSMulL A μ p (k + 1) hφ w) =
       contMDiffSMulL A μ p k hφ (A.sectionChartData.lowerOrderL μ p k w) :=
   A.sectionChartData.lowerOrderL_contDiffOnSMulL μ p k _ _ _ _ _ w
+
+variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
+/-- Multiplying the Sobolev section of a `Cᵏ` section `s` by a smooth function `χ` gives the
+Sobolev section of the `Cᵏ` section `x ↦ χ x • s x`. -/
+@[simp]
+theorem contMDiffSMulL_ofContMDiffSection {χ : M → ℝ} (hχ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ χ)
+    (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) :
+    contMDiffSMulL A μ p k hχ (ofContMDiffSection A μ p k s) =
+      ofContMDiffSection A μ p k
+        ⟨fun x ↦ χ x • s x, (hχ.of_le (by exact_mod_cast le_top)).smul_section s.contMDiff⟩ :=
+  eq_of_ae_eq_coord
+    (chartValueL_contMDiffSMulL_ae_coord hχ (chartValueL_ofContMDiffSection_ae A μ p k s))
+    (chartValueL_ofContMDiffSection_ae A μ p k _)
 
 end SobolevSection
 
