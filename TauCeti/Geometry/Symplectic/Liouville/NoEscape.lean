@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Liouville.CylindricalEnd
 public import TauCeti.Geometry.Symplectic.Manifold.MaximumPrinciple
+import TauCeti.Analysis.Complex.HorizontalStrip
 
 /-!
 # No escape for `J`-holomorphic strips in a Liouville completion
@@ -133,16 +134,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} {W : Set M} {Z : (x : M) → TangentSpace I x}
   {L : Set M} {x : M} {v : TangentSpace I x}
 
-/-- The trajectory of the Liouville field through `x` is an integral curve near time `0`. -/
-private theorem isMIntegralCurveAt_flowOf (h : IsLiouvilleDomain ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (x : M) :
-    IsMIntegralCurveAt (fun t ↦ flowOf Z t x) Z 0 := by
-  have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
-  have hdom : {t | (t, x) ∈ flowDomain Z} ∈ 𝓝 (0 : ℝ) := by
-    simpa only [mem_flowDomain, ofPred_mem_eq] using
-      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp (mem_flowDomain_zero hZs x))
-  exact (isMIntegralCurveOn_flowOf hZs x).isMIntegralCurveAt hdom
-
 /-- **The Liouville primitive vanishes on isotropic sets swept out by the Liouville flow.** Let
 `L` be a set containing the Liouville trajectory through `x` for all small times, and suppose that
 `ω` vanishes on pairs of vectors of the tangent cone of `L` at `x`, as it does on the tangent
@@ -154,7 +145,8 @@ theorem apply_eq_zero_of_eventually_flowOf_mem (h : IsLiouvilleDomain ω α W)
     (hv : v ∈ mtangentConeAt I L x) : α.1 x ![v] = 0 := by
   -- The trajectory starts at `x`, so its velocity there is `Z x`.
   have hZx : Z x ∈ mtangentConeAt I L x := by
-    have hcone := (h.isMIntegralCurveAt_flowOf hZ x).mem_mtangentConeAt hL
+    have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
+    have hcone := (isMIntegralCurveAt_flowOf hZs (mem_flowDomain_zero hZs x)).mem_mtangentConeAt hL
     generalize hy : flowOf Z 0 x = y at hcone
     rw [flowOf_zero] at hy
     exact hy ▸ hcone
@@ -186,9 +178,10 @@ theorem apply_eq_zero_of_mem_mtangentConeAt (h : IsLiouvilleCompletion ω α W)
     (hiso : ∀ v ∈ mtangentConeAt I L x, ∀ w ∈ mtangentConeAt I L x, ω.eval₂ x v w = 0)
     (hv : v ∈ mtangentConeAt I L x) : α.1 x ![v] = 0 := by
   -- For small times the trajectory through `x` stays in `{r > R}`, hence in `L`.
+  have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
   have hcont : ContinuousAt (fun t ↦ liouvilleRadialCoordinate Z W (flowOf Z t x)) 0 :=
     (h.continuous_liouvilleRadialCoordinate hZ).continuousAt.comp
-      (h.toIsLiouvilleDomain.isMIntegralCurveAt_flowOf hZ x).continuousAt
+      (mdifferentiableAt_flowOf hZs (mem_flowDomain_zero hZs x)).continuousAt
   have hev : ∀ᶠ t in 𝓝 (0 : ℝ), R < liouvilleRadialCoordinate Z W (flowOf Z t x) :=
     hcont.eventually (lt_mem_nhds (by simpa only [flowOf_zero] using hx))
   exact h.toIsLiouvilleDomain.apply_eq_zero_of_eventually_flowOf_mem hZ

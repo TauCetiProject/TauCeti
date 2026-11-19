@@ -56,11 +56,6 @@ vanishes outside `{ρ ≤ R}` (`TauCeti.Pseudoholomorphic.comp_le_of_mapsTo_of_c
 Along the boundary lines `u` is only asked to have a derivative within the closed strip, as a
 solution smooth up to the boundary does.
 
-The hypothesis on the ends holds for strips whose ends converge, as those of finite-energy Floer
-strips converge to chords: if, as `s → ±∞`, the maps `t ↦ u (s + i t)` converge jointly in `s`
-and `t ∈ [0, 1]` to limits lying in an open set `U`, then `u` maps the ends `|ℜ z| ≥ T` into `U`
-for some `T` (`TauCeti.exists_forall_mem_of_tendsto_strip_ends`), by compactness of `[0, 1]`.
-
 These are the manifold forms of the statements in local coordinates in
 `TauCeti/Geometry/Symplectic/JHolomorphic/MaximumPrinciple.lean`. The curve need only be `C²` and
 solve the Cauchy--Riemann equation at the points which it maps into `{ρ > R}`, so the statements
@@ -85,8 +80,6 @@ for the naming).
 * `TauCeti.Pseudoholomorphic.comp_le_of_mapsTo_of_comp_le_strip_ends`: the same for a strip whose
   ends lie in `{ρ ≤ R}` and whose boundary lines are mapped into sets on whose tangent cones `α`
   vanishes outside `{ρ ≤ R}`, such as exact Lagrangians cylindrical at infinity.
-* `TauCeti.exists_forall_mem_of_tendsto_strip_ends`: a strip whose ends converge into an open set
-  maps its long ends into that set.
 
 ## References
 
@@ -387,45 +380,3 @@ theorem comp_le_of_mapsTo_of_comp_le_strip_ends {R T : ℝ} {L₀ L₁ : Set M}
       (htangent 1 ⟨zero_le_one, le_rfl⟩ L₁ hL₁ w hw (hDu w (.inr hw) hRw))
 
 end TauCeti.Pseudoholomorphic
-
-/-! ### Strips whose ends converge -/
-
-namespace TauCeti
-
-open Filter Topology Complex Set
-
-/-- **The ends of a strip converging into an open set.** Let `u` be a map from the strip
-`ℝ × [0, 1]` to a topological space, and suppose that as `s → -∞` and as `s → +∞` the maps
-`t ↦ u (s + i t)` converge to `x` and to `y`, jointly in `s` and `t ∈ [0, 1]`, as the ends of a
-strip converge to the chords at its ends. If an open set `U` contains `x t` and `y t` for every
-`t ∈ [0, 1]`, then `u` maps the two ends `|ℜ z| ≥ T` of the strip into `U`, for some `T`. -/
-theorem exists_forall_mem_of_tendsto_strip_ends {X : Type*} [TopologicalSpace X] {u : ℂ → X}
-    {x y : ℝ → X} {U : Set X} (hU : IsOpen U) (hx : ∀ t ∈ Icc (0 : ℝ) 1, x t ∈ U)
-    (hy : ∀ t ∈ Icc (0 : ℝ) 1, y t ∈ U)
-    (hux : ∀ t ∈ Icc (0 : ℝ) 1,
-      Tendsto (fun p : ℝ × ℝ ↦ u (p.1 + p.2 * I)) (atBot ×ˢ 𝓝[Icc 0 1] t) (𝓝 (x t)))
-    (huy : ∀ t ∈ Icc (0 : ℝ) 1,
-      Tendsto (fun p : ℝ × ℝ ↦ u (p.1 + p.2 * I)) (atTop ×ˢ 𝓝[Icc 0 1] t) (𝓝 (y t))) :
-    ∃ T, ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → u z ∈ U := by
-  -- Along either end, near each `t ∈ [0, 1]` the segments `s + i [0, 1]` eventually lie in `U`;
-  -- compactness of `[0, 1]` makes this uniform in `t`.
-  have hend (l : Filter ℝ) (c : ℝ → X) (hc : ∀ t ∈ Icc (0 : ℝ) 1, c t ∈ U)
-      (huc : ∀ t ∈ Icc (0 : ℝ) 1,
-        Tendsto (fun p : ℝ × ℝ ↦ u (p.1 + p.2 * I)) (l ×ˢ 𝓝[Icc 0 1] t) (𝓝 (c t))) :
-      ∀ᶠ s : ℝ in l, ∀ t ∈ Icc (0 : ℝ) 1, u (s + t * I) ∈ U := by
-    have key : {p : ℝ × ℝ | p.2 ∈ Icc (0 : ℝ) 1 → u (p.1 + p.2 * I) ∈ U} ∈
-        l ×ˢ 𝓝ˢ (Icc (0 : ℝ) 1) := by
-      refine isCompact_Icc.mem_prod_nhdsSet_of_forall fun t ht ↦ ?_
-      obtain ⟨A, hA, B, hB, hAB⟩ := mem_prod_iff.1 ((huc t ht).eventually (hU.mem_nhds (hc t ht)))
-      obtain ⟨V, hV, hVB⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hB
-      exact mem_of_superset (prod_mem_prod hA hV) fun p hp hp₂ ↦ hAB ⟨hp.1, hVB ⟨hp.2, hp₂⟩⟩
-    exact (Eventually.curry key).mono fun s hs t ht ↦ hs.self_of_nhdsSet t ht ht
-  obtain ⟨a, ha⟩ := eventually_atBot.1 (hend atBot x hx hux)
-  obtain ⟨b, hb⟩ := eventually_atTop.1 (hend atTop y hy huy)
-  refine ⟨max (-a) b, fun z hz hz₀ hz₁ ↦ ?_⟩
-  rw [← re_add_im z]
-  rcases le_abs'.1 hz with h | h
-  · exact ha z.re (by linarith [le_max_left (-a) b]) z.im ⟨hz₀, hz₁⟩
-  · exact hb z.re ((le_max_right _ _).trans h) z.im ⟨hz₀, hz₁⟩
-
-end TauCeti
