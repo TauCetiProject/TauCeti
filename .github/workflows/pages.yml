@@ -913,8 +913,7 @@ jobs:
   # that a GitHub hiccup costs a stale chart rather than a whole missed site publish. What was
   # missing is the other half. A warning annotation notifies nobody, so the PR-statistics step
   # failed on every run for two days, pipeline-health.json was never published at all, and every
-  # run was green. Running after `deploy` keeps the site publishing while making the run red, and
-  # a red scheduled run is what stuck_alerts.py's failing-scheduler detector watches for.
+  # run was green. Running after `deploy` keeps the site publishing while making the run red.
   # Data can go stale two independent ways, and this job reports both. A generator can fail, which
   # is what it was originally written for. Or every generator can succeed and the results never get
   # published, which is what happened across 2026-09-22: pipeline-health.json was derived cleanly on
