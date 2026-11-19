@@ -347,7 +347,8 @@ theorem insert_subdivisionBarycenter_mem_orderedBarycentricSubdivision
   rw [mem_orderedBarycentricSubdivision_iff] at hs ⊢
   have hle : ∀ w ∈ s, subdivisionFace K w ⊆ ρ.1 := fun w hw ↦ by
     obtain ⟨τ, hτ, rfl⟩ := hρ w hw
-    exact hτ.le
+    rw [subdivisionFace_subdivisionBarycenter]
+    exact SetLike.face_le_iff.mp hτ.le
   refine ⟨Finset.insert_nonempty _ _, fun p hp q hq ↦ ?_⟩
   rcases Finset.mem_insert.mp hp with rfl | hp <;> rcases Finset.mem_insert.mp hq with rfl | hq
   · exact Or.inl subset_rfl
