@@ -46,6 +46,11 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   `ψ₀ (2^{-j} ·)`.
 * `ContDiffBump.sum_littlewoodPaley_Ioc`: the telescoping partial sums.
 * `ContDiffBump.hasSum_littlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for `ξ ≠ 0`.
+* `ContDiffBump.exists_littlewoodPaley_mul_eq_zero`: finite overlap of the cutoffs, also between
+  the cutoffs of two bump functions, so that `ContDiffBump.exists_sum_sq_littlewoodPaley_le`:
+  `∑ⱼ ψⱼ ξ ²` is bounded uniformly in `ξ` and in the set of indices, and
+  `ContDiffBump.sum_Ico_littlewoodPaley_mul_littlewoodPaley`: the cutoffs with indices near `j`
+  sum to `1` on the support of `ψⱼ`.
 * `ContDiffBump.exists_littlewoodPaley_pos`: on a nontrivial space each cutoff `ψⱼ` takes a
   positive value.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
@@ -253,6 +258,82 @@ theorem hasSum_littlewoodPaley {ξ : E} (hξ : ξ ≠ 0) :
   obtain ⟨a, b, hab, hzero, hb, ha⟩ := φ.exists_Ioc_littlewoodPaley hξ
   have : HasSum (fun j ↦ φ.littlewoodPaley j ξ) _ := hasSum_sum_of_ne_finset_zero hzero
   rwa [φ.sum_littlewoodPaley_Ioc hab, hb, ha, sub_zero] at this
+
+/-- **Finite overlap of the dyadic cutoffs.** For two bump functions `φ` and `φ'`, there is `L` such
+that the cutoff `ψⱼ` of `φ` and the cutoff `ψ'ₖ` of `φ'` have disjoint supports whenever
+`j + L ≤ k`. For `φ' = φ` this is the finite overlap of a single family of cutoffs. -/
+theorem exists_littlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 : E)) :
+    ∃ L : ℕ, ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E,
+      φ.littlewoodPaley j ξ * φ'.littlewoodPaley k ξ = 0 := by
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ'.rIn) (one_lt_two (α := ℝ))
+  have hn' : φ.rOut ≤ 2 ^ n * φ'.rIn := ((div_lt_iff₀ φ'.rIn_pos).1 hn).le
+  refine ⟨n + 1, fun j k hjk ξ ↦ ?_⟩
+  rcases le_or_gt ‖ξ‖ (2 ^ (k - 1) * φ'.rIn) with hξ | hξ
+  · rw [φ'.littlewoodPaley_eq_zero_of_norm_le hξ, mul_zero]
+  · refine mul_eq_zero_of_left (φ.littlewoodPaley_eq_zero_of_le_norm (le_trans ?_ hξ.le)) _
+    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ'.rIn) :=
+          mul_le_mul_of_nonneg_left hn' (zpow_nonneg zero_le_two _)
+      _ = 2 ^ (j + n) * φ'.rIn := by rw [zpow_add₀ two_ne_zero, zpow_natCast, mul_assoc]
+      _ ≤ 2 ^ (k - 1) * φ'.rIn :=
+          mul_le_mul_of_nonneg_right (zpow_le_zpow_right₀ one_le_two (by push_cast at hjk; omega))
+            φ'.rIn_pos.le
+
+/-- **Bounded overlap of the dyadic cutoffs.** There is `L`, depending only on `φ`, such that at
+every `ξ` at most `L` cutoffs `ψⱼ` are nonzero, over any finite set of indices. -/
+theorem exists_card_filter_littlewoodPaley_ne_zero_le :
+    ∃ L : ℕ, ∀ (s : Finset ℤ) (ξ : E), (s.filter fun j ↦ φ.littlewoodPaley j ξ ≠ 0).card ≤ L := by
+  obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
+  refine ⟨L, fun s ξ ↦ ?_⟩
+  set t := s.filter fun j ↦ φ.littlewoodPaley j ξ ≠ 0
+  rcases t.eq_empty_or_nonempty with ht | ht
+  · simp [ht]
+  -- The nonzero cutoffs at `ξ` have indices in `[j₀, j₀ + L)`, where `j₀` is the least of them.
+  have hsub : t ⊆ Finset.Ico (t.min' ht) (t.min' ht + L) := fun j hj ↦ by
+    refine Finset.mem_Ico.2 ⟨t.min'_le j hj, lt_of_not_ge fun hjL ↦ ?_⟩
+    exact mul_ne_zero (Finset.mem_filter.1 (t.min'_mem ht)).2 (Finset.mem_filter.1 hj).2
+      (hL _ _ hjL ξ)
+  exact (Finset.card_le_card hsub).trans (by simp)
+
+/-- **Bounded sum of squares of the dyadic cutoffs.** There is `L`, depending only on `φ`, with
+`∑ⱼ ψⱼ ξ ² ≤ L` for every `ξ`, over any finite set of indices `j ∈ ℤ`. -/
+theorem exists_sum_sq_littlewoodPaley_le :
+    ∃ L : ℕ, ∀ (s : Finset ℤ) (ξ : E), ∑ j ∈ s, φ.littlewoodPaley j ξ ^ 2 ≤ L := by
+  obtain ⟨L, hL⟩ := φ.exists_card_filter_littlewoodPaley_ne_zero_le
+  refine ⟨L, fun s ξ ↦ ?_⟩
+  set t := s.filter fun j ↦ φ.littlewoodPaley j ξ ≠ 0
+  have hst : ∑ j ∈ t, φ.littlewoodPaley j ξ ^ 2 = ∑ j ∈ s, φ.littlewoodPaley j ξ ^ 2 :=
+    Finset.sum_filter_of_ne fun j _ h ↦ by simpa using h
+  rw [← hst]
+  calc ∑ j ∈ t, φ.littlewoodPaley j ξ ^ 2 ≤ ∑ _j ∈ t, (1 : ℝ) :=
+        Finset.sum_le_sum fun j _ ↦
+          (sq_le_one_iff_abs_le_one _).2 (φ.abs_littlewoodPaley_le_one j ξ)
+    _ = t.card := by simp
+    _ ≤ L := mod_cast hL s ξ
+
+/-- **The neighbouring cutoffs sum to `1` on the support of `ψⱼ`.** If the cutoffs whose indices
+differ by at least `L` have disjoint supports, then `(∑_{|k - j| < L} ψₖ) ψⱼ = ψⱼ`. -/
+theorem sum_Ico_littlewoodPaley_mul_littlewoodPaley {L : ℕ}
+    (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
+    (j : ℤ) (ξ : E) :
+    (∑ k ∈ Finset.Ico (j + 1 - L) (j + L), φ.littlewoodPaley k ξ) * φ.littlewoodPaley j ξ =
+      φ.littlewoodPaley j ξ := by
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · rw [φ.littlewoodPaley_eq_zero_of_norm_le
+      (by rw [norm_zero]; exact (mul_pos (zpow_pos two_pos _) φ.rIn_pos).le), mul_zero]
+  -- Multiply the partition of unity `∑ₖ ψₖ ξ = 1` by `ψⱼ ξ`: the terms with `k` at distance at
+  -- least `L` from `j` vanish.
+  have hsum := (φ.hasSum_littlewoodPaley hξ).mul_right (φ.littlewoodPaley j ξ)
+  rw [one_mul] at hsum
+  have hzero : ∀ k ∉ Finset.Ico (j + 1 - L) (j + L),
+      φ.littlewoodPaley k ξ * φ.littlewoodPaley j ξ = 0 := by
+    intro k hk
+    rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hk
+    rcases hk with hk | hk
+    · exact hL k j (by omega) ξ
+    · rw [mul_comm]
+      exact hL j k hk ξ
+  rw [Finset.sum_mul]
+  exact (hasSum_sum_of_ne_finset_zero hzero).unique hsum
 
 /-! ### The inhomogeneous partition -/
 
