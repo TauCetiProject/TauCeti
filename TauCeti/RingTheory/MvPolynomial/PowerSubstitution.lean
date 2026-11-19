@@ -271,6 +271,7 @@ theorem coe_powerSubstitutionEquivDegreeLT_apply {B : ℕ} (hB : 0 < B) (N : ℕ
 
 /-- The inverse of `powerSubstitutionEquivDegreeLT` reads the coefficient of `Z ^ μ 0 W ^ μ 1`,
 for `μ 0 < B`, off the coefficient of `X ^ (μ 0 + B * μ 1)`. -/
+@[simp]
 theorem coeff_powerSubstitutionEquivDegreeLT_symm_apply {B : ℕ} (hB : 0 < B) {N : ℕ}
     (f : Polynomial.degreeLT R N) {μ : Fin 2 →₀ ℕ} (hμ : μ 0 < B) :
     (((powerSubstitutionEquivDegreeLT hB N).symm f : MvPolynomial (Fin 2) R)).coeff μ =
@@ -279,6 +280,14 @@ theorem coeff_powerSubstitutionEquivDegreeLT_symm_apply {B : ℕ} (hB : 0 < B) {
   have hf : (f : Polynomial R) = powerSubstitution B (F : MvPolynomial (Fin 2) R) := by
     rw [← coe_powerSubstitutionEquivDegreeLT_apply hB, LinearEquiv.apply_symm_apply]
   rw [hf, coeff_powerSubstitution (degreeOf_lt_of_mem_restrictSupport F.2 hB fun _ h ↦ h.1) hμ]
+
+/-- The inverse of `powerSubstitutionEquivDegreeLT` has zero coefficient of `Z ^ μ 0 W ^ μ 1`
+for `B ≤ μ 0`, since such `μ` lie outside the weighted strip. -/
+@[simp]
+theorem coeff_powerSubstitutionEquivDegreeLT_symm_apply_of_le {B : ℕ} (hB : 0 < B) {N : ℕ}
+    (f : Polynomial.degreeLT R N) {μ : Fin 2 →₀ ℕ} (hμ : B ≤ μ 0) :
+    (((powerSubstitutionEquivDegreeLT hB N).symm f : MvPolynomial (Fin 2) R)).coeff μ = 0 :=
+  notMem_support_iff.mp fun h ↦ (((powerSubstitutionEquivDegreeLT hB N).symm f).2 h).1.not_ge hμ
 
 /-- When `(B : R) = 0`, differentiating `F(X, X ^ B)` in `X` suppresses the `W`-term
 `B · X ^ (B - 1) = 0` and computes `(∂_Z F)(X, X ^ B)`. -/
@@ -537,8 +546,6 @@ coefficient of `X ^ 3 = X ^ (1 + 2 * 1)` in `f`. -/
 example (f : Polynomial.degreeLT ℤ 4) :
     (((powerSubstitutionEquivDegreeLT two_pos 4).symm f : MvPolynomial (Fin 2) ℤ)).coeff
       (single 0 1 + single 1 1) = (f : Polynomial ℤ).coeff 3 := by
-  rw [coeff_powerSubstitutionEquivDegreeLT_symm_apply two_pos f
-    (μ := single 0 1 + single 1 1) (by simp)]
   simp
 
 end MvPolynomial
