@@ -49,6 +49,11 @@ places; those are not available over a general base.
   immersions.
 * the instance `(projectiveLineNormalization R u).Over (Spec R)`, given on each chart by the
   structure map of the integral closure.
+* `TauCeti.AlgebraicGeometry.projectiveLineNormalization.finiteChartSectionsEquiv`,
+  `TauCeti.AlgebraicGeometry.projectiveLineNormalization.infinityChartSectionsEquiv` and
+  `TauCeti.AlgebraicGeometry.projectiveLineNormalization.overlapChartSectionsEquiv`: the functions
+  on the two charts and on their intersection are the elements of `A₀`, `A∞` and `A₀∞`, compatibly
+  with the inclusions of `A₀` and `A∞` into `A₀∞`.
 * `TauCeti.AlgebraicGeometry.projectiveLineNormalization.functionFieldEquiv`: when `B` is a domain
   and the fraction field of `A₀`, the ring isomorphism of the function field with `B`.
 
@@ -280,6 +285,100 @@ theorem finiteChartSectionsEquiv_apply
     (a : Γ(projectiveLineNormalization R u, ιFinite R u ''ᵁ ⊤)) :
     finiteChartSectionsEquiv R u a = (Scheme.ΓSpecIso _).hom (((ιFinite R u).appIso ⊤).hom a) :=
   (rfl)
+
+/-- The chart at infinity is an affine open subscheme. -/
+theorem isAffineOpen_image_ιInfinity_top : IsAffineOpen (ιInfinity R u ''ᵁ ⊤) := by
+  rw [Scheme.Hom.image_top_eq_opensRange]
+  exact isAffineOpen_opensRange _
+
+/-- The functions on the chart at infinity are the elements of `A∞`. -/
+noncomputable def infinityChartSectionsEquiv :
+    Γ(projectiveLineNormalization R u, ιInfinity R u ''ᵁ ⊤) ≃+* infinityChart R u :=
+  ((ιInfinity R u).appIso ⊤ ≪≫ Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv
+
+/-- `TauCeti.AlgebraicGeometry.projectiveLineNormalization.infinityChartSectionsEquiv` restricts a
+function on the chart at infinity along the chart and reads it as an element of `A∞`. -/
+theorem infinityChartSectionsEquiv_apply
+    (a : Γ(projectiveLineNormalization R u, ιInfinity R u ''ᵁ ⊤)) :
+    infinityChartSectionsEquiv R u a =
+      (Scheme.ΓSpecIso _).hom (((ιInfinity R u).appIso ⊤).hom a) :=
+  (rfl)
+
+/-- The intersection of the two charts is the image of `Spec A₀∞`. -/
+private theorem image_specMap_infinityChartRestriction_comp_ιInfinity_top :
+    haveI := isOpenImmersion_specMap_infinityChartRestriction R u
+    (Spec.map (CommRingCat.ofHom (infinityChartRestriction R u).toRingHom) ≫ ιInfinity R u) ''ᵁ
+      ⊤ = ιFinite R u ''ᵁ ⊤ ⊓ ιInfinity R u ''ᵁ ⊤ := by
+  have := isOpenImmersion_specMap_finiteChartRestriction R u
+  have := isOpenImmersion_specMap_infinityChartRestriction R u
+  have hpre : ιInfinity R u ⁻¹ᵁ (ιFinite R u).opensRange =
+      (Spec.map (CommRingCat.ofHom (infinityChartRestriction R u).toRingHom)).opensRange :=
+    Scheme.preimage_opensRange_pushout_inl _ _
+  simp only [Scheme.Hom.image_top_eq_opensRange, Scheme.Hom.opensRange_comp, ← hpre,
+    Scheme.Hom.image_preimage_eq_opensRange_inf, inf_comm]
+
+/-- The functions on the intersection of the two charts are the elements of `A₀∞`. It is
+compatible with the chart restriction maps (`finiteChartRestriction_finiteChartSectionsEquiv` and
+`infinityChartRestriction_infinityChartSectionsEquiv`). -/
+noncomputable def overlapChartSectionsEquiv :
+    Γ(projectiveLineNormalization R u, ιFinite R u ''ᵁ ⊤ ⊓ ιInfinity R u ''ᵁ ⊤) ≃+*
+      overlapChart R u :=
+  haveI := isOpenImmersion_specMap_infinityChartRestriction R u
+  ((projectiveLineNormalization R u).presheaf.mapIso
+      (eqToIso (image_specMap_infinityChartRestriction_comp_ιInfinity_top R u)).op ≪≫
+    (Spec.map (CommRingCat.ofHom (infinityChartRestriction R u).toRingHom) ≫
+      ιInfinity R u).appIso ⊤ ≪≫ Scheme.ΓSpecIso _).commRingCatIsoToRingEquiv
+
+/-- Reading a function on an affine open chart `ι : Spec A ⟶ X` as an element of `A` and mapping
+it along `φ : A ⟶ A'` is the same as restricting it to the image `V` of `Spec A'` and reading it as
+an element of `A'`. -/
+private theorem ΓSpecIso_appIso_restrict {X : Scheme.{u}} {A A' : CommRingCat.{u}} (φ : A ⟶ A')
+    (ι : Spec A ⟶ X) (j : Spec A' ⟶ X) [IsOpenImmersion ι] [IsOpenImmersion (Spec.map φ)]
+    [IsOpenImmersion j] (h : Spec.map φ ≫ ι = j) {V : X.Opens} (hle : V ≤ ι ''ᵁ ⊤)
+    (hV : j ''ᵁ ⊤ = V) (a : Γ(X, ι ''ᵁ ⊤)) :
+    φ ((Scheme.ΓSpecIso A).hom ((ι.appIso ⊤).hom a)) =
+      (Scheme.ΓSpecIso A').hom ((j.appIso ⊤).hom
+        (X.presheaf.map (eqToHom hV).op (X.presheaf.map (homOfLE hle).op a))) := by
+  subst h hV
+  rw [← CommRingCat.comp_apply, ← CommRingCat.comp_apply, ← CommRingCat.comp_apply,
+    ← CommRingCat.comp_apply, ← CommRingCat.comp_apply]
+  congr 2
+  rw [← Scheme.ΓSpecIso_naturality, Scheme.Hom.comp_appIso]
+  simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, eqToIso.hom, Category.assoc,
+    ← Functor.map_comp_assoc]
+  rw [show (homOfLE hle).op ≫ (eqToHom rfl).op ≫ (eqToHom _).op =
+    (ι.opensFunctor.map (homOfLE le_top)).op from rfl]
+  -- Restricting along `ι` commutes with the inclusion of the image of `Spec A'` into `⊤`.
+  have := Scheme.Hom.appIso_hom_naturality ι (homOfLE (le_top : Spec.map φ ''ᵁ ⊤ ≤ ⊤)).op
+  rw [Quiver.Hom.unop_op] at this
+  rw [reassoc_of% this]
+  congr 1
+  rw [Scheme.Hom.appIso_hom', ← Category.assoc, Scheme.Hom.map_appLE, Scheme.Hom.appTop,
+    Scheme.Hom.app_eq_appLE]
+  rfl
+
+/-- On the intersection of the two charts, restricting a function on the finite chart and reading
+it in `A₀∞` agrees with reading it in `A₀` and including `A₀` into `A₀∞`. -/
+theorem finiteChartRestriction_finiteChartSectionsEquiv
+    (a : Γ(projectiveLineNormalization R u, ιFinite R u ''ᵁ ⊤)) :
+    finiteChartRestriction R u (finiteChartSectionsEquiv R u a) =
+      overlapChartSectionsEquiv R u
+        ((projectiveLineNormalization R u).presheaf.map (homOfLE inf_le_left).op a) := by
+  have := isOpenImmersion_specMap_finiteChartRestriction R u
+  have := isOpenImmersion_specMap_infinityChartRestriction R u
+  exact ΓSpecIso_appIso_restrict _ (ιFinite R u) _ (condition R u) inf_le_left
+    (image_specMap_infinityChartRestriction_comp_ιInfinity_top R u) a
+
+/-- On the intersection of the two charts, restricting a function on the chart at infinity and
+reading it in `A₀∞` agrees with reading it in `A∞` and including `A∞` into `A₀∞`. -/
+theorem infinityChartRestriction_infinityChartSectionsEquiv
+    (a : Γ(projectiveLineNormalization R u, ιInfinity R u ''ᵁ ⊤)) :
+    infinityChartRestriction R u (infinityChartSectionsEquiv R u a) =
+      overlapChartSectionsEquiv R u
+        ((projectiveLineNormalization R u).presheaf.map (homOfLE inf_le_right).op a) := by
+  have := isOpenImmersion_specMap_infinityChartRestriction R u
+  exact ΓSpecIso_appIso_restrict _ (ιInfinity R u) _ rfl inf_le_right
+    (image_specMap_infinityChartRestriction_comp_ιInfinity_top R u) a
 
 variable [IsDomain B] [IsFractionRing (finiteChart R u) B]
 

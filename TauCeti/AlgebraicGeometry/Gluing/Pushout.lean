@@ -44,17 +44,18 @@ instance [CompactSpace X] [CompactSpace Y] : CompactSpace ↑(pushout f g) := by
 
 section Integral
 
-/-- Gluing two reduced schemes along open immersions gives a reduced scheme: every stalk of the
-pushout is a stalk of one of the two charts. -/
+/-- Gluing two reduced schemes along open immersions gives a reduced scheme: the two charts form
+an open cover of the pushout by reduced schemes. -/
 instance isReduced_pushout [IsReduced X] [IsReduced Y] : IsReduced (pushout f g) := by
-  have (p : ↑(pushout f g)) : _root_.IsReduced ((pushout f g).presheaf.stalk p) := by
-    rcases (Set.ext_iff.mp (range_pushout_inl_union_range_pushout_inr f g) p).mpr trivial with
-      ⟨q, rfl⟩ | ⟨q, rfl⟩
-    · exact isReduced_of_injective _
-        (asIso ((pushout.inl f g).stalkMap q)).commRingCatIsoToRingEquiv.injective
-    · exact isReduced_of_injective _
-        (asIso ((pushout.inr f g).stalkMap q)).commRingCatIsoToRingEquiv.injective
-  exact isReduced_of_isReduced_stalk _
+  let 𝒰 : (pushout f g).OpenCover := Cover.mkOfCovers Bool (fun b ↦ b.rec Y X)
+    (fun b ↦ b.rec (pushout.inr f g) (pushout.inl f g)) (fun p ↦ by
+      rcases (Set.ext_iff.mp (range_pushout_inl_union_range_pushout_inr f g) p).mpr trivial with
+        ⟨q, rfl⟩ | ⟨q, rfl⟩
+      exacts [⟨true, q, rfl⟩, ⟨false, q, rfl⟩])
+    (fun b ↦ by cases b <;> dsimp <;> infer_instance)
+  have : ∀ b : 𝒰.I₀, IsReduced (𝒰.X b) := fun b ↦ by
+    cases b; exacts [‹IsReduced Y›, ‹IsReduced X›]
+  exact IsReduced.of_openCover _ 𝒰
 
 /-- Gluing two irreducible schemes along a nonempty common open gives an irreducible scheme. -/
 instance irreducibleSpace_pushout [IrreducibleSpace X] [IrreducibleSpace Y] [Nonempty U] :
