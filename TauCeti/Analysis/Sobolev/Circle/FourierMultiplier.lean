@@ -56,7 +56,7 @@ symbol of order `m` and `s + m = t`:
   `TauCeti.CircleSobolev.orthogonal_ker_fourierMultiplier`: kernel, range and the orthogonal
   complement of the kernel.
 * `TauCeti.CircleSobolev.isFredholm_fourierMultiplier`,
-  `TauCeti.CircleSobolev.index_fourierMultiplier`: the Fredholm property and the index.
+  `TauCeti.CircleSobolev.index_fourierMultiplier_eq_zero`: the Fredholm property and the index.
 * `TauCeti.CircleSobolev.exists_norm_le_add`: the elliptic estimate with a lower-order term.
 * `TauCeti.CircleSobolev.exists_norm_le_of_mem_supported_compl`,
   `TauCeti.CircleSobolev.exists_norm_le_of_mem_orthogonal_ker`: the estimate without it on the
@@ -365,12 +365,12 @@ theorem exists_norm_sub_indicator_le (hp : p =Θ[cofinite] weight m) (h : s + m 
     ∃ C, ∀ a : CircleSobolev t E,
       ‖a - indicator {n | p n = 0} a‖ ≤ C * ‖fourierMultiplier p hp.1 h.le a‖ := by
   obtain ⟨c, hc, hle⟩ := exists_pos_forall_le_norm_of_isBigO hp.2
+  have hw (n : ℤ) : weight t n = weight s n * weight m n := by rw [← h, weight_add]
   refine ⟨c⁻¹, fun a ↦ norm_le_of_forall_le fun n ↦ ?_⟩
   by_cases hn : p n = 0
   · simp [hn]
-  · rw [coeff_sub, Pi.sub_apply, coeff_indicator, Set.indicator_of_notMem hn, sub_zero,
-      coeff_fourierMultiplier, norm_smul, show weight t n = weight s n * weight m n by
-        rw [← h, weight_add]]
+  · simp only [coeff_sub, Pi.sub_apply, coeff_indicator, Set.mem_ofPred_eq, hn, not_false_eq_true,
+      Set.indicator_of_notMem, sub_zero, coeff_fourierMultiplier, norm_smul, hw]
     calc weight s n * weight m n * ‖a.coeff n‖
         = c⁻¹ * (weight s n * (c * weight m n) * ‖a.coeff n‖) := by field_simp
       _ ≤ c⁻¹ * (weight s n * ‖p n‖ * ‖a.coeff n‖) :=
@@ -383,15 +383,14 @@ theorem exists_norm_sub_indicator_le (hp : p =Θ[cofinite] weight m) (h : s + m 
 private theorem exists_norm_indicator_le {S : Set ℤ} (hS : S.Finite) (hr : r ≤ t) :
     ∃ K, 0 ≤ K ∧ ∀ a : CircleSobolev t E, ‖indicator S a‖ ≤ K * ‖inclusion hr a‖ := by
   obtain ⟨K, hK⟩ := (hS.image (weight (t - r))).bddAbove
+  have hw (n : ℤ) : weight t n = weight (t - r) n * weight r n := by
+    rw [← weight_add, sub_add_cancel]
   refine ⟨max K 0, le_max_right _ _, fun a ↦ norm_le_of_forall_le fun n ↦ ?_⟩
+  have h0 : 0 ≤ weight r n * ‖a.coeff n‖ := mul_nonneg (weight_nonneg r n) (norm_nonneg _)
   by_cases hn : n ∈ S
-  · rw [coeff_indicator, Set.indicator_of_mem hn, coeff_inclusion,
-      show weight t n = weight (t - r) n * weight r n by rw [← weight_add, sub_add_cancel],
-      mul_assoc]
-    exact mul_le_mul_of_nonneg_right ((hK ⟨n, hn, rfl⟩).trans (le_max_left _ _))
-      (mul_nonneg (weight_nonneg r n) (norm_nonneg _))
-  · rw [coeff_indicator, Set.indicator_of_notMem hn, norm_zero, mul_zero]
-    exact mul_nonneg (le_max_right _ _) (mul_nonneg (weight_nonneg r n) (norm_nonneg _))
+  · simp only [coeff_indicator, Set.indicator_of_mem hn, coeff_inclusion, hw, mul_assoc]
+    exact mul_le_mul_of_nonneg_right ((hK ⟨n, hn, rfl⟩).trans (le_max_left _ _)) h0
+  · simpa [hn] using mul_nonneg (le_max_right K 0) h0
 
 /-- **The elliptic estimate.** For an elliptic symbol `p` of order `m`, `s + m = t` and any
 `r ≤ t`, there is `C` with `‖a‖_{H^t} ≤ C (‖P a‖_{H^s} + ‖a‖_{H^r})` for every `a ∈ H^t`. -/
@@ -497,7 +496,7 @@ theorem isFredholm_fourierMultiplier [FiniteDimensional ℂ E] (hp : p =Θ[cofin
     (hasFiniteRange_neg_comp_indicator hp _)
 
 /-- A Fourier multiplier with an elliptic symbol has index zero. -/
-theorem index_fourierMultiplier [FiniteDimensional ℂ E] (hp : p =Θ[cofinite] weight m)
+theorem index_fourierMultiplier_eq_zero [FiniteDimensional ℂ E] (hp : p =Θ[cofinite] weight m)
     (h : s + m = t) :
     (fourierMultiplier p hp.1 h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E).index = 0 := by
   rw [fourierMultiplier_eq_sub hp h, sub_eq_add_neg,

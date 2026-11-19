@@ -11,8 +11,10 @@ public import TauCeti.Analysis.Sobolev.Circle.FourierMultiplier
 /-!
 # The Laplacian on the circle
 
-On the circle `AddCircle T` the nonnegative Laplacian `Δ = -∂²` multiplies the Fourier monomial
-`e^{2πinx/T}` by `(2πn/T)²` (`TauCeti.CircleSobolev.laplacianSymbol`); for `T = 2π` this is `n²`.
+On the circle `AddCircle T` the Laplacian `Δ = ∂²` multiplies the Fourier monomial
+`e^{2πinx/T}` by `-(2πn/T)²` (`TauCeti.CircleSobolev.laplacianSymbol`); for `T = 2π` this is
+`-n²`. This is the sign convention of Mathlib's `Laplacian.laplacian` and of
+`TauCeti.laplacianSymbol`.
 It is an elliptic Fourier multiplier of order `2`, so the elliptic theory of
 `TauCeti/Analysis/Sobolev/Circle/FourierMultiplier.lean` applies to it, and it shows what that
 theory does and does not give when the operator has a kernel.
@@ -23,25 +25,25 @@ theory does and does not give when the operator has a kernel.
   `Δ u = 1` has no solution.
 * Since `Δ 1 = 0` while `1 ≠ 0`, no estimate `‖a‖_{H^t} ≤ C ‖Δ a‖_{H^s}` holds on all of `H^t`;
   it does hold on the mean-zero elements.
-* The multiplier `G` with symbol `(2πn/T)⁻²` for `n ≠ 0` and `0` for `n = 0`, the Green operator
+* The multiplier `G` with symbol `-(2πn/T)⁻²` for `n ≠ 0` and `0` for `n = 0`, the Green operator
   (`TauCeti.CircleSobolev.greenOperator`), satisfies `Δ G = G Δ = 1 - Π₀`, where
   `Π₀ a = single 0 (a.coeff 0)` is the projection onto the constants.
-* `1 + Δ = 1 - ∂²` has no kernel: it multiplies `e^{2πinx/T}` by `1 + (2πn/T)²`, which does not
+* `1 - Δ = 1 - ∂²` has no kernel: it multiplies `e^{2πinx/T}` by `1 + (2πn/T)²`, which does not
   vanish even at `n = 0`, and it is an isomorphism `H^(s + 2) ≃ H^s` whose inverse divides by
-  this factor (`TauCeti.CircleSobolev.oneAddLaplacianEquiv`).
+  this factor (`TauCeti.CircleSobolev.oneSubLaplacianEquiv`).
 
 ## Main definitions
 
-* `TauCeti.CircleSobolev.laplacianSymbol T n = (2πn/T)²`.
-* `TauCeti.CircleSobolev.laplacian T h`: the Laplacian `-∂²` as a bounded operator `H^t → H^s`
+* `TauCeti.CircleSobolev.laplacianSymbol T n = -(2πn/T)²`.
+* `TauCeti.CircleSobolev.laplacian T h`: the Laplacian `∂²` as a bounded operator `H^t → H^s`
   for `s + 2 ≤ t`.
 * `TauCeti.CircleSobolev.greenOperator T h`: the Green operator `G : H^s → H^t` for `t ≤ s + 2`.
-* `TauCeti.CircleSobolev.oneAddLaplacianEquiv T h`: the isomorphism `1 - ∂² : H^t ≃ H^s` for
+* `TauCeti.CircleSobolev.oneSubLaplacianEquiv T h`: the isomorphism `1 - Δ : H^t ≃ H^s` for
   `s + 2 = t`.
 
 ## Main statements
 
-* `TauCeti.CircleSobolev.laplacian_eq_neg_derivative_comp_derivative`: `Δ = -∂ ∘ ∂`.
+* `TauCeti.CircleSobolev.laplacian_eq_derivative_comp_derivative`: `Δ = ∂ ∘ ∂`.
 * `TauCeti.CircleSobolev.laplacian_eq_zero_iff`, `TauCeti.CircleSobolev.mem_range_laplacian_iff`:
   the kernel is the constants and the range is the mean-zero elements.
 * `TauCeti.CircleSobolev.single_zero_notMem_range_laplacian`: `Δ u = 1` has no solution.
@@ -50,7 +52,7 @@ theory does and does not give when the operator has a kernel.
   lower-order term fails on `H^t`, and holds on the mean-zero elements.
 * `TauCeti.CircleSobolev.laplacian_greenOperator`,
   `TauCeti.CircleSobolev.greenOperator_laplacian`: `Δ G = G Δ = 1 - Π₀`.
-* `TauCeti.CircleSobolev.isFredholm_laplacian`, `TauCeti.CircleSobolev.index_laplacian`.
+* `TauCeti.CircleSobolev.isFredholm_laplacian`, `TauCeti.CircleSobolev.index_laplacian_eq_zero`.
 
 ## References
 
@@ -71,18 +73,18 @@ namespace CircleSobolev
 variable {s t : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 variable (T : ℝ) [hT : Fact (0 < T)]
 
-/-- The symbol `(2πn/T)²` of the nonnegative Laplacian `-∂²` on `AddCircle T`: the factor by
-which `-∂²` multiplies the Fourier monomial `e^{2πinx/T}`. -/
-def laplacianSymbol (n : ℤ) : ℂ := ((2 * π * n / T) ^ 2 : ℝ)
+/-- The symbol `-(2πn/T)²` of the Laplacian `∂²` on `AddCircle T`: the factor by which `∂²`
+multiplies the Fourier monomial `e^{2πinx/T}`. -/
+def laplacianSymbol (n : ℤ) : ℂ := (-(2 * π * n / T) ^ 2 : ℝ)
 
 omit hT in
-theorem laplacianSymbol_def (n : ℤ) : laplacianSymbol T n = ((2 * π * n / T) ^ 2 : ℝ) :=
+theorem laplacianSymbol_def (n : ℤ) : laplacianSymbol T n = (-(2 * π * n / T) ^ 2 : ℝ) :=
   (rfl)
 
 omit hT in
-/-- On the circle of length `2π` the Laplacian symbol is `n²`. -/
+/-- On the circle of length `2π` the Laplacian symbol is `-n²`. -/
 @[simp]
-theorem laplacianSymbol_two_pi (n : ℤ) : laplacianSymbol (2 * π) n = (n : ℂ) ^ 2 := by
+theorem laplacianSymbol_two_pi (n : ℤ) : laplacianSymbol (2 * π) n = -(n : ℂ) ^ 2 := by
   rw [laplacianSymbol_def, mul_div_cancel_left₀ _ (by positivity : (2 * π : ℝ) ≠ 0)]
   push_cast
   ring
@@ -98,19 +100,20 @@ theorem setOf_laplacianSymbol_eq_zero : {n | laplacianSymbol T n = 0} = {0} :=
 omit hT in
 private theorem norm_laplacianSymbol (n : ℤ) :
     ‖laplacianSymbol T n‖ = (2 * π / T) ^ 2 * |(n : ℝ)| ^ 2 := by
-  rw [laplacianSymbol_def, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _),
-    sq_abs]
+  rw [laplacianSymbol_def, Complex.norm_real, norm_neg, Real.norm_eq_abs,
+    abs_of_nonneg (sq_nonneg _), sq_abs]
   ring
 
 omit hT in
 /-- The norm of `1 + (2πn/T)²` is `1` plus the norm of the Laplacian symbol, since the symbol is a
-nonnegative real number. -/
-private theorem norm_one_add_laplacianSymbol (n : ℤ) :
-    ‖1 + laplacianSymbol T n‖ = 1 + ‖laplacianSymbol T n‖ := by
-  rw [laplacianSymbol_def, ← Complex.ofReal_one, ← Complex.ofReal_add, Complex.norm_real,
-    Complex.norm_real, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
+nonpositive real number. -/
+private theorem norm_one_sub_laplacianSymbol (n : ℤ) :
+    ‖1 - laplacianSymbol T n‖ = 1 + ‖laplacianSymbol T n‖ := by
+  rw [laplacianSymbol_def, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
+    Complex.norm_real, sub_neg_eq_add, norm_neg, Real.norm_of_nonneg (by positivity),
+    Real.norm_of_nonneg (by positivity)]
 
-/-- The Laplacian symbol is elliptic of order `2`: `(2πn/T)²` is comparable to `(1 + |n|)²` at
+/-- The Laplacian symbol is elliptic of order `2`: `-(2πn/T)²` is comparable to `(1 + |n|)²` at
 every frequency `n ≠ 0`. -/
 theorem isTheta_laplacianSymbol : laplacianSymbol T =Θ[cofinite] weight 2 := by
   have hk : 0 < 2 * π / T := div_pos (by positivity) hT.out
@@ -130,8 +133,8 @@ theorem isTheta_laplacianSymbol : laplacianSymbol T =Θ[cofinite] weight 2 := by
       field_simp [hk.ne', hT.out.ne']]
     nlinarith
 
-/-- The nonnegative Laplacian `Δ = -∂²` on the circle `AddCircle T`, as a bounded operator
-`H^t → H^s` for `s + 2 ≤ t`: it multiplies the `n`-th Fourier coefficient by `(2πn/T)²`. -/
+/-- The Laplacian `Δ = ∂²` on the circle `AddCircle T`, as a bounded operator `H^t → H^s` for
+`s + 2 ≤ t`: it multiplies the `n`-th Fourier coefficient by `-(2πn/T)²`. -/
 def laplacian (h : s + 2 ≤ t) : CircleSobolev t E →L[ℂ] CircleSobolev s E :=
   fourierMultiplier (laplacianSymbol T) (isTheta_laplacianSymbol T).1 h
 
@@ -145,17 +148,16 @@ theorem laplacian_single (h : s + 2 ≤ t) (n : ℤ) (x : E) :
     laplacian T h (single n x) = single n (laplacianSymbol T n • x) :=
   fourierMultiplier_single _ h n x
 
-/-- The Laplacian is minus the square of the derivative. -/
-theorem laplacian_eq_neg_derivative_comp_derivative {u : ℝ} (h₁ : s + 1 ≤ u) (h₂ : u + 1 ≤ t) :
+/-- The Laplacian is the square of the derivative. -/
+theorem laplacian_eq_derivative_comp_derivative {u : ℝ} (h₁ : s + 1 ≤ u) (h₂ : u + 1 ≤ t) :
     laplacian T (by linarith) =
-      -(derivative T h₁).comp (derivative T h₂ : CircleSobolev t E →L[ℂ] _) := by
+      (derivative T h₁).comp (derivative T h₂ : CircleSobolev t E →L[ℂ] _) := by
   refine ContinuousLinearMap.ext fun a ↦ CircleSobolev.ext (funext fun n ↦ ?_)
-  simp only [coeff_laplacian, FunLike.coe_neg, Pi.neg_apply,
-    ContinuousLinearMap.comp_apply, coeff_neg, coeff_derivative, smul_smul, ← neg_smul,
+  simp only [coeff_laplacian, ContinuousLinearMap.comp_apply, coeff_derivative, smul_smul,
     laplacianSymbol_def]
   congr 1
   push_cast
-  linear_combination (2 * (π : ℂ) * n / T) ^ 2 * Complex.I_sq
+  linear_combination -(2 * (π : ℂ) * n / T) ^ 2 * Complex.I_sq
 
 /-- The frequency projection onto the zero modes of the Laplacian is the projection onto the
 constants. -/
@@ -164,6 +166,12 @@ theorem indicator_setOf_laplacianSymbol_eq_zero (a : CircleSobolev s E) :
   rw [setOf_laplacianSymbol_eq_zero]
   exact CircleSobolev.ext (funext fun n ↦ by
     rcases eq_or_ne n 0 with rfl | hn <;> simp [*])
+
+/-- The elements supported off the zero modes of the Laplacian are the mean-zero elements. -/
+theorem mem_supported_compl_setOf_laplacianSymbol_eq_zero_iff (a : CircleSobolev s E) :
+    a ∈ supported s E {n | laplacianSymbol T n = 0}ᶜ ↔ a.coeff 0 = 0 := by
+  rw [setOf_laplacianSymbol_eq_zero, mem_supported']
+  simp
 
 /-- **The kernel of the Laplacian is the constants**: `Δ a = 0` exactly when every Fourier
 coefficient of `a` other than the zeroth one vanishes. -/
@@ -178,8 +186,7 @@ theorem laplacian_eq_zero_iff (h : s + 2 ≤ t) (a : CircleSobolev t E) :
 theorem mem_range_laplacian_iff (h : s + 2 = t) (b : CircleSobolev s E) :
     b ∈ (laplacian T h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E).range ↔ b.coeff 0 = 0 := by
   rw [laplacian, range_fourierMultiplier (isTheta_laplacianSymbol T) h,
-    setOf_laplacianSymbol_eq_zero, mem_supported']
-  simp
+    mem_supported_compl_setOf_laplacianSymbol_eq_zero_iff]
 
 /-- **`Δ u = 1` has no solution**: a nonzero constant is not in the range of the Laplacian,
 since it does not have mean zero. -/
@@ -200,14 +207,10 @@ theorem exists_norm_le_laplacian_of_coeff_zero_eq_zero (h : s + 2 = t) :
     ∃ C, ∀ a : CircleSobolev t E, a.coeff 0 = 0 → ‖a‖ ≤ C * ‖laplacian T h.le a‖ := by
   obtain ⟨C, hC⟩ :=
     exists_norm_le_of_mem_supported_compl (E := E) (isTheta_laplacianSymbol T) h
-  refine ⟨C, fun a ha ↦ hC a ?_⟩
-  rw [setOf_laplacianSymbol_eq_zero, mem_supported']
-  intro n hn
-  rw [Set.notMem_compl_iff, Set.mem_singleton_iff] at hn
-  rwa [hn]
+  exact ⟨C, fun a ha ↦ hC a ((mem_supported_compl_setOf_laplacianSymbol_eq_zero_iff T a).2 ha)⟩
 
 /-- **The Green operator of the Laplacian**, as a bounded operator `H^s → H^t` for `t ≤ s + 2`:
-the multiplier with symbol `(2πn/T)⁻²` for `n ≠ 0` and `0` for `n = 0`. -/
+the multiplier with symbol `-(2πn/T)⁻²` for `n ≠ 0` and `0` for `n = 0`. -/
 def greenOperator (h : t ≤ s + 2) : CircleSobolev s E →L[ℂ] CircleSobolev t E :=
   fourierMultiplier (fun n ↦ (laplacianSymbol T n)⁻¹) (isBigO_inv (isTheta_laplacianSymbol T).2)
     (by linarith)
@@ -240,17 +243,17 @@ theorem isFredholm_laplacian [FiniteDimensional ℂ E] (h : s + 2 = t) :
 
 /-- The Laplacian has index zero: its kernel and cokernel are both the constants. -/
 @[simp]
-theorem index_laplacian [FiniteDimensional ℂ E] (h : s + 2 = t) :
+theorem index_laplacian_eq_zero [FiniteDimensional ℂ E] (h : s + 2 = t) :
     (laplacian T h.le : CircleSobolev t E →L[ℂ] CircleSobolev s E).index = 0 :=
-  index_fourierMultiplier (isTheta_laplacianSymbol T) h
+  index_fourierMultiplier_eq_zero (isTheta_laplacianSymbol T) h
 
-/-! ### The operator `1 - ∂²` -/
+/-! ### The operator `1 - Δ = 1 - ∂²` -/
 
-/-- The symbol `1 + (2πn/T)²` of `1 + Δ = 1 - ∂²` is elliptic of order `2`. -/
-theorem isTheta_one_add_laplacianSymbol :
-    (fun n ↦ 1 + laplacianSymbol T n) =Θ[cofinite] weight 2 := by
-  have hnorm (n : ℤ) : ‖1 + laplacianSymbol T n‖ = 1 + (2 * π / T) ^ 2 * |(n : ℝ)| ^ 2 := by
-    rw [norm_one_add_laplacianSymbol, norm_laplacianSymbol]
+/-- The symbol `1 + (2πn/T)²` of `1 - Δ = 1 - ∂²` is elliptic of order `2`. -/
+theorem isTheta_one_sub_laplacianSymbol :
+    (fun n ↦ 1 - laplacianSymbol T n) =Θ[cofinite] weight 2 := by
+  have hnorm (n : ℤ) : ‖1 - laplacianSymbol T n‖ = 1 + (2 * π / T) ^ 2 * |(n : ℝ)| ^ 2 := by
+    rw [norm_one_sub_laplacianSymbol, norm_laplacianSymbol]
   refine ⟨IsBigO.of_bound (1 + (2 * π / T) ^ 2) (Eventually.of_forall fun n ↦ ?_),
     IsBigO.of_bound (2 * (1 + ((2 * π / T) ^ 2)⁻¹)) (Eventually.of_forall fun n ↦ ?_)⟩
   · rw [hnorm, norm_weight, weight_ofNat]
@@ -263,31 +266,32 @@ theorem isTheta_one_add_laplacianSymbol :
       mul_nonneg hk2.le (sq_nonneg |(n : ℝ)|)]
 
 omit hT in
-/-- The symbol `1 + (2πn/T)²` of `1 - ∂²` vanishes nowhere, not even at `n = 0`. -/
-theorem one_add_laplacianSymbol_ne_zero (n : ℤ) : 1 + laplacianSymbol T n ≠ 0 := by
-  rw [laplacianSymbol_def, ← Complex.ofReal_one, ← Complex.ofReal_add, Complex.ofReal_ne_zero]
+/-- The symbol `1 + (2πn/T)²` of `1 - Δ` vanishes nowhere, not even at `n = 0`. -/
+theorem one_sub_laplacianSymbol_ne_zero (n : ℤ) : 1 - laplacianSymbol T n ≠ 0 := by
+  rw [laplacianSymbol_def, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.ofReal_ne_zero,
+    sub_neg_eq_add]
   positivity
 
-/-- **`1 - ∂²` is an isomorphism** `H^t ≃ H^s` for `s + 2 = t`: it multiplies the `n`-th Fourier
+/-- **`1 - Δ` is an isomorphism** `H^t ≃ H^s` for `s + 2 = t`: it multiplies the `n`-th Fourier
 coefficient by `1 + (2πn/T)²` and its inverse, which gains two orders of regularity, divides by
 it. -/
-def oneAddLaplacianEquiv (h : s + 2 = t) : CircleSobolev t E ≃L[ℂ] CircleSobolev s E :=
-  fourierMultiplierEquiv (isTheta_one_add_laplacianSymbol T) (one_add_laplacianSymbol_ne_zero T) h
+def oneSubLaplacianEquiv (h : s + 2 = t) : CircleSobolev t E ≃L[ℂ] CircleSobolev s E :=
+  fourierMultiplierEquiv (isTheta_one_sub_laplacianSymbol T) (one_sub_laplacianSymbol_ne_zero T) h
 
 @[simp]
-theorem coeff_oneAddLaplacianEquiv (h : s + 2 = t) (a : CircleSobolev t E) (n : ℤ) :
-    (oneAddLaplacianEquiv T h a).coeff n = (1 + laplacianSymbol T n) • a.coeff n := by
-  simp [oneAddLaplacianEquiv]
+theorem coeff_oneSubLaplacianEquiv (h : s + 2 = t) (a : CircleSobolev t E) (n : ℤ) :
+    (oneSubLaplacianEquiv T h a).coeff n = (1 - laplacianSymbol T n) • a.coeff n := by
+  simp [oneSubLaplacianEquiv]
 
 @[simp]
-theorem coeff_oneAddLaplacianEquiv_symm (h : s + 2 = t) (b : CircleSobolev s E) (n : ℤ) :
-    ((oneAddLaplacianEquiv T h).symm b).coeff n = (1 + laplacianSymbol T n)⁻¹ • b.coeff n := by
-  simp [oneAddLaplacianEquiv]
+theorem coeff_oneSubLaplacianEquiv_symm (h : s + 2 = t) (b : CircleSobolev s E) (n : ℤ) :
+    ((oneSubLaplacianEquiv T h).symm b).coeff n = (1 - laplacianSymbol T n)⁻¹ • b.coeff n := by
+  simp [oneSubLaplacianEquiv]
 
-/-- `1 - ∂²` is the sum of the inclusion and the Laplacian. -/
-theorem oneAddLaplacianEquiv_apply (h : s + 2 = t) (a : CircleSobolev t E) :
-    oneAddLaplacianEquiv T h a = inclusion (by linarith) a + laplacian T h.le a :=
-  CircleSobolev.ext (funext fun n ↦ by simp [add_smul])
+/-- `1 - Δ` is the inclusion minus the Laplacian. -/
+theorem oneSubLaplacianEquiv_apply (h : s + 2 = t) (a : CircleSobolev t E) :
+    oneSubLaplacianEquiv T h a = inclusion (by linarith) a - laplacian T h.le a :=
+  CircleSobolev.ext (funext fun n ↦ by simp [sub_smul])
 
 end CircleSobolev
 
