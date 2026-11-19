@@ -386,7 +386,7 @@ example :
     · exact (DirichletCharacter.isPrimitive_def χ).mpr h
   refine ⟨χ, hχ, fun hinv ↦ ?_, hprim, ?_⟩
   · have horder : orderOf χ ≤ 2 :=
-      (isSelfInv_iff_isOfFinOrder_and_orderOf_le_two.mp (show IsSelfInv χ from hinv)).2
+      (isSelfInv_iff_isOfFinOrder_and_orderOf_le_two.mp (isSelfInv_iff.mpr hinv)).2
     norm_num [hχ] at horder
   · simpa using
       sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add
