@@ -101,10 +101,6 @@ private theorem one_sub_map_mulVec_intCast (A : Matrix ι ι ℤ) (k : ι → �
   rw [← map_one_sub]
   exact funext fun i ↦ ((Int.castRingHom ℝ).map_mulVec (1 - A) k i).symm
 
-/-- The determinant of an integer matrix is that of the real matrix with the same entries. -/
-private theorem det_map_intCast (A : Matrix ι ι ℤ) : (A.map ((↑) : ℤ → ℝ)).det = A.det := by
-  simpa using ((Int.castRingHom ℝ).map_det A).symm
-
 /-- **Fixed points through the covering map.** The point `[t]` of the torus is fixed by `A`
 exactly when every coordinate of `(1 - A) t` is an integer multiple of `p`. -/
 theorem generalLinearGroup_smul_coe_pi_eq_iff (A : GL ι ℤ) (t : ι → ℝ) :
@@ -154,7 +150,7 @@ variable {p}
 /-- For `det (1 - A) ≠ 0` the real matrix `1 - A` is invertible. -/
 private theorem isUnit_det_one_sub_map {A : GL ι ℤ} (hA : (1 - (A : Matrix ι ι ℤ)).det ≠ 0) :
     IsUnit (1 - (A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ)).det := by
-  rw [← map_one_sub, det_map_intCast, isUnit_iff_ne_zero]
+  rw [← map_one_sub, ← Int.cast_det, isUnit_iff_ne_zero]
   exact_mod_cast hA
 
 omit [Fact (0 < p)] in
@@ -293,7 +289,7 @@ theorem det_id_sub_fixedPointDerivative_generalLinearGroup_smul (A : GL ι ℤ)
   have hdet : LinearMap.det (LinearMap.id -
       Matrix.toLin' ((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ)) : (ι → ℝ) →ₗ[ℝ] ι → ℝ) =
       ((1 - (A : Matrix ι ι ℤ)).det : ℝ) := by
-    rw [← Matrix.toLin'_one, ← map_sub, LinearMap.det_toLin', ← map_one_sub, det_map_intCast]
+    rw [← Matrix.toLin'_one, ← map_sub, LinearMap.det_toLin', ← map_one_sub, ← Int.cast_det]
   rw [h]
   -- The tangent spaces of the torus are `ι → ℝ`.
   exact hdet
