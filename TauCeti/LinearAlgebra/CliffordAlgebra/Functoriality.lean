@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
 public import Mathlib.Basic.Real.Basic
@@ -43,8 +44,6 @@ Clifford algebra is faithful.
   `ℤ/2`-grading.
 * `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
   subalgebras, with coercion and generator-level transport equations.
-* `CliffordAlgebra.toProd_tmul`: the inverse map of `CliffordAlgebra.prodEquiv` sends `x ᵍ⊗ₜ y` to
-  the product of the images of `x` and `y` under the two summand inclusions.
 * `CliffordAlgebra.map_inl_injective` and `CliffordAlgebra.map_inr_injective` prove injectivity for
   left and right orthogonal summands.
 -/
@@ -375,15 +374,6 @@ private theorem gradedTensorIncludeLeft_injective
   have h := congrArg (GradedTensorProduct.auxEquiv K (evenOdd P₁) (evenOdd P₂)) hxy
   rw [auxEquiv_includeLeft, auxEquiv_includeLeft] at h
   exact (decomposeTensorEquiv P₁ P₂).injective h
-
-/-- `CliffordAlgebra.toProd` sends a pure tensor `x ᵍ⊗ₜ y` to the product of the images of `x`
-and `y` under the two summand inclusions. -/
-@[simp]
-theorem toProd_tmul (P₁ : QuadraticForm K N₁) (P₂ : QuadraticForm K N₂) (x : CliffordAlgebra P₁)
-    (y : CliffordAlgebra P₂) :
-    toProd P₁ P₂ (x ᵍ⊗ₜ y) =
-      map (QuadraticMap.Isometry.inl P₁ P₂) x * map (QuadraticMap.Isometry.inr P₁ P₂) y := by
-  rw [toProd, GradedTensorProduct.lift_tmul]
 
 /-- The Clifford-algebra map induced by the inclusion of the left summand of an orthogonal product
 is injective when the left Clifford algebra is flat and scalar action on the right Clifford algebra
