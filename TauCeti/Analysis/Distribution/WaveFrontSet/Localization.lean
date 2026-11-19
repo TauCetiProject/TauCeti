@@ -225,13 +225,7 @@ theorem exists_norm_localFourier_sub_le (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)
   obtain ⟨k, C, -, hC⟩ := exists_forall_norm_localFourier_le T (K := K) φ.tsupport_subset
   obtain ⟨R, hR⟩ := φ.hasCompactSupport.isCompact.isBounded.exists_norm_le
   -- A bound `S` for the derivatives of `φ` of order at most `k`.
-  choose S' hS' using fun i ↦ (φ.contDiff.continuous_iteratedFDeriv (m := i)
-    (by exact_mod_cast le_top)).bounded_above_of_compact_support
-      (φ.hasCompactSupport.iteratedFDeriv i)
-  set S := ∑ i ∈ Finset.range (k + 1), |S' i|
-  have hS : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i φ x‖ ≤ S := fun i hi x ↦
-    (hS' i x).trans ((le_abs_self _).trans (Finset.single_le_sum (fun j _ ↦ abs_nonneg (S' j))
-      (Finset.mem_range.2 (Nat.lt_succ_of_le hi))))
+  obtain ⟨S, hS0, hS⟩ := φ.hasCompactSupport.exists_bound_iteratedFDeriv φ.contDiff k
   set B := 2 * Real.pi * (1 + 2 * Real.pi) ^ k * (1 + |R|) * S
   refine ⟨C * B, k, fun η ζ hηζ ↦ ?_⟩
   set θ := ζ - η
