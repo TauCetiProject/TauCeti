@@ -18,6 +18,9 @@ If every element of a multiset `s` precedes every element of a multiset `t`, the
 lists the sorted elements of `s` followed by the sorted elements of `t`. This is how an ordered
 monomial over an ordered disjoint union of index sets splits into a product of ordered monomials
 over the two pieces.
+
+Sorting `a ::ₘ s` inserts `a` into the sorted list of `s` at its place. This is how a generator
+multiplied onto an ordered monomial moves into position.
 -/
 
 public section
@@ -45,5 +48,10 @@ theorem eq_sort_iff {l : List α} {s : Multiset α} :
     exact ⟨pairwise_sort _ _, sort_eq _ _⟩
   · rintro ⟨hl, rfl⟩
     exact (List.mergeSort_eq_self r hl).symm
+
+/-- Sorting a multiset with one more element inserts that element into the sorted list. -/
+theorem sort_cons_eq_orderedInsert (a : α) (s : Multiset α) :
+    (a ::ₘ s).sort r = (s.sort r).orderedInsert r a :=
+  Quot.inductionOn s fun l => by simp [List.mergeSort_eq_insertionSort]
 
 end Multiset

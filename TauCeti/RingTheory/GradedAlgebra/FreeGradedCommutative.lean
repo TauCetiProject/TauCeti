@@ -12,6 +12,9 @@ public import Mathlib.Data.Multiset.Sort
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.Algebra.CharP.Invertible
+public import TauCeti.Data.Finsupp.Multiset
+public import TauCeti.Data.Multiset.Sort
 
 /-!
 # Free graded-commutative algebras
@@ -43,6 +46,8 @@ algebra map out of it sends `e` to `u` and `e²` to `v` in the graded-commutativ
 
 ## Main results
 
+* `TauCeti.mul_self_eq_zero_of_negOnePow_odd`: when `2` is invertible, an element whose square is
+  fixed by the Koszul sign of an odd degree squares to zero.
 * `TauCeti.mul_standardMonomial`: a generator times a standard monomial is the Koszul sign times a
   standard monomial; `TauCeti.mul_standardMonomial_eq_zero`: it is zero when the generator
   squares to zero and already occurs.
@@ -71,6 +76,15 @@ public section
 namespace TauCeti
 
 open Finsupp
+
+/-- If `2` is invertible in the scalars, an element `a` with `a * a = (-1) ^ (n * n) • (a * a)`
+for an odd `n` squares to zero: in a graded-commutative algebra, every element of odd degree
+squares to zero. -/
+theorem mul_self_eq_zero_of_negOnePow_odd {K B : Type*} [Semiring K] [Invertible (2 : K)]
+    [Ring B] [Module K B] {a : B} {n : ℤ} (hn : Odd n)
+    (ha : a * a = (n * n).negOnePow • (a * a)) : a * a = 0 :=
+  eq_zero_of_eq_neg_of_invertible_two (R := K) <| by
+    rwa [Int.negOnePow_mul_self, Int.negOnePow_odd _ hn, Units.neg_smul, one_smul] at ha
 
 section Monomial
 
@@ -106,11 +120,9 @@ theorem standardMonomial_mem {x : ι → R} {M σ : Type*} [AddCommMonoid M] [Se
     {𝒜 : M → σ} [SetLike.GradedMonoid 𝒜] {deg : ι → M} (hx : ∀ i, x i ∈ 𝒜 (deg i)) (f : ι →₀ ℕ) :
     standardMonomial x f ∈ 𝒜 (weight deg f) := by
   have hw : ((Multiset.sort f.toMultiset).map deg).sum = weight deg f := by
-    rw [← Multiset.sum_coe, ← Multiset.map_coe, Multiset.sort_eq]
-    induction f using Finsupp.induction_linear with
-    | zero => simp
-    | add f g hf hg => simp [hf, hg]
-    | single a n => simp [Multiset.map_nsmul, Multiset.sum_nsmul, weight_single]
+    rw [← Multiset.sum_coe, ← Multiset.map_coe, Multiset.sort_eq, toMultiset_map, sum_toMultiset,
+      sum_mapDomain_index (h := fun a n => n • a) (fun _ => zero_smul ..) fun _ _ _ => add_smul ..,
+      weight_apply]
   rw [standardMonomial, ← hw]
   exact SetLike.list_prod_map_mem_graded _ deg x fun i _ => hx i
 
@@ -119,11 +131,8 @@ end Monoid
 /-- In a commutative monoid a standard monomial is the product of the powers `x i ^ f i`. -/
 theorem standardMonomial_eq_prod [CommMonoid R] (x : ι → R) (f : ι →₀ ℕ) :
     standardMonomial x f = f.prod fun i n => x i ^ n := by
-  rw [standardMonomial, ← Multiset.prod_coe, ← Multiset.map_coe, Multiset.sort_eq]
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f g hf hg => simp [hf, hg, prod_add_index', pow_add]
-  | single a n => simp [Multiset.map_nsmul, Multiset.prod_nsmul]
+  rw [standardMonomial, ← Multiset.prod_coe, ← Multiset.map_coe, Multiset.sort_eq, toMultiset_map,
+    prod_toMultiset, prod_mapDomain_index pow_zero pow_add]
 
 section Ring
 
@@ -146,7 +155,9 @@ private theorem mul_list_prod_map
       simp only [List.map_cons, List.prod_cons, List.orderedInsert_cons, hia, ite_false,
         List.filter_cons, hai, decide_true, ite_true, List.sum_cons]
       rw [← mul_assoc, hy, smul_mul_assoc, mul_assoc, ih hl.2, mul_smul_comm, smul_smul,
-        add_mul, Int.negOnePow_add, mul_comm (deg i : ℤ)]
+        ← Int.negOnePow_add]
+      congr 2
+      ring
 
 /-- Multiplying a standard monomial on the left by a generator `y i` reorders, with the Koszul
 sign of moving `y i` past the factors `y j`, `j < i`, into the standard monomial of
@@ -156,14 +167,9 @@ theorem mul_standardMonomial
     y i * standardMonomial y f =
       (((f.toMultiset.filter (· < i)).map fun j => (deg j : ℤ)).sum * deg i).negOnePow •
         standardMonomial y (f + single i 1) := by
-  have hf : f.toMultiset.filter (· < i) =
-      ((Multiset.sort f.toMultiset).filter (· < i) : List ι) := by
-    rw [← Multiset.filter_coe, Multiset.sort_eq]
-  have hs : ∀ s : Multiset ι, Multiset.sort (i ::ₘ s) = (Multiset.sort s).orderedInsert (· ≤ ·) i :=
-    fun s => Quotient.inductionOn s fun l => by simp [List.mergeSort_eq_insertionSort]
-  rw [standardMonomial, mul_list_prod_map hy i (Multiset.pairwise_sort _ _), hf,
-    Multiset.map_coe, Multiset.sum_coe, standardMonomial, toMultiset_add, toMultiset_single,
-    one_nsmul, add_comm, Multiset.singleton_add, hs]
+  rw [standardMonomial, mul_list_prod_map hy i (Multiset.pairwise_sort _ _), standardMonomial,
+    toMultiset_add_single_one, Multiset.sort_cons_eq_orderedInsert, ← Multiset.sum_coe,
+    ← Multiset.map_coe, ← Multiset.filter_coe, Multiset.sort_eq]
 
 /-- A generator whose square vanishes annihilates every standard monomial in which it occurs. -/
 theorem mul_standardMonomial_eq_zero
@@ -171,10 +177,8 @@ theorem mul_standardMonomial_eq_zero
     (hi : y i * y i = 0) {f : ι →₀ ℕ} (hf : f i ≠ 0) : y i * standardMonomial y f = 0 := by
   obtain ⟨g, rfl⟩ : ∃ g, f = g + single i 1 :=
     ⟨f - single i 1, (tsub_add_cancel_of_le (single_le_iff.2 (Nat.one_le_iff_ne_zero.2 hf))).symm⟩
-  have h := congrArg (fun a => (((g.toMultiset.filter (· < i)).map fun j => (deg j : ℤ)).sum *
-    deg i).negOnePow • a) (mul_standardMonomial hy i g)
-  simp only [smul_smul, Int.units_mul_self, one_smul] at h
-  rw [← h, mul_smul_comm, ← mul_assoc, hi, zero_mul, smul_zero]
+  rw [(smul_eq_iff_eq_inv_smul _).1 (mul_standardMonomial hy i g).symm, mul_smul_comm,
+    ← mul_assoc, hi, zero_mul, smul_zero]
 
 end Ring
 
@@ -302,23 +306,12 @@ namespace IsFreeGradedCommutative
 variable {K : Type*} [Field K] [NeZero (2 : K)] {A : Type*} [Ring A] [Algebra K A]
   {ι : Type*} [LinearOrder ι] {𝒜 : ℤ → Submodule K A} {x : ι → A} {deg : ι → ℕ}
 
-/-- Over a field of characteristic different from `2`, an element whose square is fixed by the
-sign of an odd degree squares to zero. -/
-private theorem mul_self_eq_zero_of_odd {B : Type*} [Ring B] [Module K B] {a : B} {n : ℕ}
-    (hn : Odd n) (ha : a * a = ((n : ℤ) * n).negOnePow • (a * a)) : a * a = 0 := by
-  rw [Int.negOnePow_mul_self, Int.negOnePow_odd _ (by exact_mod_cast hn), Units.neg_smul,
-    one_smul] at ha
-  have h : (2 : K) • (a * a) = 0 := by
-    rw [two_smul]
-    nth_rw 1 [ha]
-    exact neg_add_cancel _
-  rw [← inv_smul_smul₀ (two_ne_zero : (2 : K) ≠ 0) (a * a), h, smul_zero]
-
 /-- Over a field of characteristic different from `2`, a generator of odd degree of a free
 graded-commutative algebra squares to zero. -/
 theorem mul_self_eq_zero (hx : IsFreeGradedCommutative 𝒜 x deg) {i : ι} (hi : Odd (deg i)) :
     x i * x i = 0 :=
-  mul_self_eq_zero_of_odd (K := K) hi (hx.mul_comm i i)
+  letI := invertibleOfNonzero (two_ne_zero : (2 : K) ≠ 0)
+  mul_self_eq_zero_of_negOnePow_odd (K := K) hi.natCast (hx.mul_comm i i)
 
 variable {B : Type*} [Ring B] [Algebra K B] {b : ι → B}
 
@@ -333,15 +326,17 @@ private theorem constr_generator_mul (hx : IsFreeGradedCommutative 𝒜 x deg)
   simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, L, Module.Basis.constr_basis]
   rw [basis_apply]
   by_cases h : Odd (deg i) ∧ f.1 i ≠ 0
-  · rw [mul_standardMonomial_eq_zero hx.mul_comm (hx.mul_self_eq_zero h.1) h.2,
-      mul_standardMonomial_eq_zero hb (mul_self_eq_zero_of_odd (K := K) h.1 (hb i i)) h.2,
-      map_zero]
+  · let := invertibleOfNonzero (two_ne_zero : (2 : K) ≠ 0)
+    rw [mul_standardMonomial_eq_zero hx.mul_comm (hx.mul_self_eq_zero h.1) h.2,
+      mul_standardMonomial_eq_zero hb
+        (mul_self_eq_zero_of_negOnePow_odd (K := K) h.1.natCast (hb i i)) h.2, map_zero]
   · have hg : ∀ j, Odd (deg j) → f.1 j + single i 1 j ≤ 1 := fun j hj => by
       rcases eq_or_ne j i with rfl | hji
       · simpa using not_and_not_right.1 h hj
       · simpa [single_apply, hji.symm] using f.2 j hj
-    rw [mul_standardMonomial hx.mul_comm, mul_standardMonomial hb, Units.smul_def,
-      Units.smul_def, map_zsmul, ← basis_apply hx ⟨f.1 + single i 1, hg⟩, Module.Basis.constr_basis]
+    rw [mul_standardMonomial hx.mul_comm, mul_standardMonomial hb,
+      ← basis_apply hx ⟨f.1 + single i 1, hg⟩]
+    simp only [Units.smul_def, map_zsmul, Module.Basis.constr_basis]
 
 omit [NeZero (2 : K)] in
 private theorem constr_one (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B) :
@@ -387,12 +382,28 @@ noncomputable def lift (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
   .ofLinearMap (hx.basis.constr K fun f => standardMonomial b f.1) (constr_one hx b)
     (constr_mul hx hb)
 
+/-- `lift` sends each generator `x i` to `b i`. -/
 @[simp]
-theorem lift_apply (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
+theorem lift_x (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
     (hb : ∀ i j, b i * b j = ((deg i : ℤ) * deg j).negOnePow • (b j * b i)) (i : ι) :
     hx.lift b hb (x i) = b i := by
   rw [lift, AlgHom.ofLinearMap_apply, ← mul_one (x i), constr_generator_mul hx hb, constr_one,
     mul_one]
+
+/-- `lift` sends the family of generators `x` to the family `b`. -/
+@[simp]
+theorem lift_comp_x (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
+    (hb : ∀ i j, b i * b j = ((deg i : ℤ) * deg j).negOnePow • (b j * b i)) :
+    hx.lift b hb ∘ x = b :=
+  funext (hx.lift_x b hb)
+
+/-- `lift` sends each standard monomial in the `x i` to the same standard monomial in the
+`b i`. -/
+@[simp]
+theorem lift_standardMonomial (hx : IsFreeGradedCommutative 𝒜 x deg) (b : ι → B)
+    (hb : ∀ i j, b i * b j = ((deg i : ℤ) * deg j).negOnePow • (b j * b i)) (f : ι →₀ ℕ) :
+    hx.lift b hb (standardMonomial x f) = standardMonomial b f := by
+  rw [map_standardMonomial, lift_comp_x]
 
 /-- The universal property of the free graded-commutative algebra `ΛV`: over a field of
 characteristic different from `2`, for a graded-commutative algebra `(B, ℬ)` and elements
@@ -400,8 +411,8 @@ characteristic different from `2`, for a graded-commutative algebra `(B, ℬ)` a
 theorem existsUnique_algHom (hx : IsFreeGradedCommutative 𝒜 x deg) (ℬ : ℤ → Submodule K B)
     (hB : ∀ {p q : ℤ} {a b : B}, a ∈ ℬ p → b ∈ ℬ q → a * b = (p * q).negOnePow • (b * a))
     (b : ι → B) (hb : ∀ i, b i ∈ ℬ (deg i)) : ∃! φ : A →ₐ[K] B, ∀ i, φ (x i) = b i :=
-  ⟨hx.lift b fun i j => hB (hb i) (hb j), hx.lift_apply b _, fun φ hφ =>
-    hx.algHom_ext fun i => by rw [hφ, lift_apply]⟩
+  ⟨hx.lift b fun i j => hB (hb i) (hb j), hx.lift_x b _, fun φ hφ =>
+    hx.algHom_ext fun i => by rw [hφ, lift_x]⟩
 
 end IsFreeGradedCommutative
 
