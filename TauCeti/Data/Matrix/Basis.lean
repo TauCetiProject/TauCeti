@@ -78,6 +78,7 @@ public theorem Matrix.singleNonUnitalAlgHom_apply (R : Type*) {n α : Type*} [Mo
   (rfl)
 
 /-- The linear map underlying `Matrix.singleNonUnitalAlgHom R i` is `Matrix.singleLinearMap`. -/
+@[simp]
 public theorem Matrix.toLinearMap_singleNonUnitalAlgHom (R : Type*) {n α : Type*} [Semiring R]
     [NonUnitalNonAssocSemiring α] [Module R α] [DecidableEq n] [Fintype n] (i : n) :
     ((Matrix.singleNonUnitalAlgHom R i : α →ₙₐ[R] Matrix n n α) : α →ₗ[R] Matrix n n α) =

@@ -8,8 +8,7 @@ module
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
 public import TauCeti.RingTheory.HochschildCohomology.Complex
 import Mathlib.LinearAlgebra.Multilinear.Curry
-import Mathlib.Tactic.LinearCombination
-import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Data.Matrix.Basis
@@ -110,10 +109,6 @@ private theorem clampIndex_self {j : ℕ} (k : Fin (j + 1) → ι) :
     clampIndex k j = k (Fin.last j) := by
   simp [clampIndex, Fin.last]
 
-/-- Insert the index `c` at position `l` of a sequence of indices. -/
-private def natInsert (l : ℕ) (c : ι) (κ : ℕ → ι) (t : ℕ) : ι :=
-  if t < l then κ t else if t = l then c else κ (t - 1)
-
 private theorem clampIndex_insertNth {j : ℕ} (l : Fin (j + 2)) (c : ι) (k : Fin (j + 1) → ι)
     {t : ℕ} (ht : t ≤ j + 1) :
     clampIndex (l.insertNth c k) t = natInsert l c (clampIndex k) t := by
@@ -122,30 +117,7 @@ private theorem clampIndex_insertNth {j : ℕ} (l : Fin (j + 2)) (c : ι) (k : F
   rw [clampIndex]
   conv_lhs => rw [hk]
   rw [insertNth_comp_val]
-  simp only [ht', natInsert]
-
-/-- The `l`-th Hochschild face of a tuple `(g₀, …, gₘ)` indexed by `ℕ`. -/
-private def natFaceAt [Mul B] (m l : ℕ) (g : ℕ → B) : ℕ → B :=
-  if l < m then natContract l g else natContract 0 (natRotate m g)
-
-private theorem natFaceAt_of_lt [Mul B] {m l : ℕ} (h : l < m) (g : ℕ → B) :
-    natFaceAt m l g = natContract l g :=
-  ite_eq_left h
-
-private theorem natFaceAt_self [Mul B] (m : ℕ) (g : ℕ → B) :
-    natFaceAt m m g = natContract 0 (natRotate m g) :=
-  ite_eq_right (lt_irrefl m)
-
-private theorem hochschildFace_val [Mul B] {m : ℕ} (l : Fin (m + 2)) (g : ℕ → B) :
-    hochschildFace l (fun s : Fin (m + 2) ↦ g s) =
-      fun t : Fin (m + 1) ↦ natFaceAt (m + 1) l g t := by
-  induction l using Fin.lastCases with
-  | last =>
-    rw [hochschildFace_last_comp_val]
-    simp [natFaceAt]
-  | cast l =>
-    rw [hochschildFace_castSucc_comp_val]
-    simp [natFaceAt, l.2]
+  simp only [ht']
 
 variable [Monoid B] (x y : ι → B)
 
@@ -158,8 +130,9 @@ private theorem natContract_natHomotopy_natInsert {l j : ℕ} (hlj : l ≤ j) (c
       else natHomotopy x y j κ (natContract l g) t := by
   funext t
   rcases lt_trichotomy t l with h | rfl | h <;> rcases lt_trichotomy t (j + 1) with h' | h' | h' <;>
-    first | omega | simp (disch := omega) only [natContract_apply, natHomotopy, natLeft, natInsert,
-      ite_eq_left, ite_eq_right, ite_true, Nat.add_sub_cancel, Nat.sub_add_cancel, mul_assoc, h']
+    first | omega | simp (disch := omega) only [natContract_apply, natHomotopy, natLeft,
+      natInsert_apply, ite_eq_left, ite_eq_right, ite_true, Nat.add_sub_cancel, Nat.sub_add_cancel,
+      mul_assoc, h']
 
 /-- The face merging the last conjugated entry with the inserted entry removes its index. -/
 private theorem natContract_natHomotopy_natInsert_self {l : ℕ} (hl : 1 ≤ l) (c : ι) (κ : ℕ → ι)
@@ -169,9 +142,9 @@ private theorem natContract_natHomotopy_natInsert_self {l : ℕ} (hl : 1 ≤ l) 
       else natContract l (natHomotopy x y (l - 1) κ g) t := by
   funext t
   rcases lt_trichotomy t l with h | rfl | h <;>
-    first | omega | simp (disch := omega) only [natContract_apply, natHomotopy, natLeft, natInsert,
-      ite_eq_left, ite_eq_right, ite_true, Nat.add_sub_cancel, Nat.sub_add_cancel, mul_assoc,
-      mul_one]
+    first | omega | simp (disch := omega) only [natContract_apply, natHomotopy, natLeft,
+      natInsert_apply, ite_eq_left, ite_eq_right, ite_true, Nat.add_sub_cancel, Nat.sub_add_cancel,
+      mul_assoc, mul_one]
 
 /-- A face beyond the inserted entry of a homotopy tuple commutes with the homotopy. -/
 private theorem natContract_natHomotopy {l j : ℕ} (hjl : j + 1 < l) (κ : ℕ → ι) (g : ℕ → B) :
@@ -202,74 +175,6 @@ private theorem natContract_zero_natHomotopy_zero (κ : ℕ → ι) (g : ℕ →
 
 end NatTuple
 
-/-! ### Signs of presimplicial homotopies -/
-
-section Signs
-
-variable {M : Type*} [AddCommGroup M]
-
-private theorem neg_one_pow_succ_smul_add (m : ℕ) (a : M) :
-    (-1 : ℤ) ^ (m + 1) • a + (-1 : ℤ) ^ m • a = 0 := by
-  rw [pow_succ, mul_neg_one, neg_smul, neg_add_cancel]
-
-/-- The last column of the `D`-sum of a presimplicial homotopy cancels the last column of its
-`E`-sum, up to one term. -/
-private theorem sum_last_column (N : ℕ) (D E : ℕ → ℕ → M)
-    (hc : ∀ j, j ≤ N → D (N + 2) j = E j (N + 1)) :
-    ∑ j ∈ Finset.range (N + 1), (-1 : ℤ) ^ (N + 2 + j) • D (N + 2) j +
-      ∑ j ∈ Finset.range N, (-1 : ℤ) ^ (N + 1 + j) • E j (N + 1) = E N (N + 1) := by
-  have hs : ∑ j ∈ Finset.range N, ((-1 : ℤ) ^ (N + 2 + j) • D (N + 2) j +
-      (-1 : ℤ) ^ (N + 1 + j) • E j (N + 1)) = 0 := by
-    refine Finset.sum_eq_zero fun j hj ↦ ?_
-    rw [hc j (by simp at hj; omega), show N + 2 + j = N + 1 + j + 1 by omega]
-    exact neg_one_pow_succ_smul_add _ _
-  rw [Finset.sum_range_succ, hc N le_rfl, add_right_comm, ← Finset.sum_add_distrib, hs,
-    zero_add, Even.neg_one_pow ⟨N + 1, by omega⟩, one_smul]
-
-/-- The last row of the `D`-sum of a presimplicial homotopy cancels the last row of its `E`-sum,
-up to three terms. -/
-private theorem sum_last_row (N : ℕ) (D E : ℕ → ℕ → M) (ha : ∀ l, l < N + 1 → D l (N + 1) = E N l)
-    (hb : D (N + 1) (N + 1) = D (N + 1) N) :
-    ∑ l ∈ Finset.range (N + 3), (-1 : ℤ) ^ (l + (N + 1)) • D l (N + 1) +
-      ∑ l ∈ Finset.range (N + 2), (-1 : ℤ) ^ (l + N) • E N l =
-        D (N + 1) N - D (N + 2) (N + 1) - E N (N + 1) := by
-  have hs : ∑ l ∈ Finset.range (N + 1), (-1 : ℤ) ^ (l + (N + 1)) • D l (N + 1) +
-      ∑ l ∈ Finset.range (N + 1), (-1 : ℤ) ^ (l + N) • E N l = 0 := by
-    rw [← Finset.sum_add_distrib]
-    refine Finset.sum_eq_zero fun l hl ↦ ?_
-    rw [ha l (by simpa using hl), ← add_assoc]
-    exact neg_one_pow_succ_smul_add _ _
-  rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ (fun l ↦ _ • E N l), hb,
-    Even.neg_one_pow ⟨N + 1, rfl⟩, Odd.neg_one_pow ⟨N + 1, by omega⟩,
-    Odd.neg_one_pow ⟨N, by omega⟩, ← sub_eq_zero, ← hs]
-  simp only [one_smul, neg_smul]
-  abel
-
-/-- The sign bookkeeping of a presimplicial homotopy: if `D l j` (the `l`-th face after the
-`j`-th homotopy operator) and `E j l` (the `j`-th homotopy operator after the `l`-th face) satisfy
-the presimplicial homotopy identities, then the alternating double sums of `D` and `E` add up to
-`D 0 0 - D (N + 1) N`. -/
-private theorem sum_presimplicial_homotopy (N : ℕ) (D E : ℕ → ℕ → M)
-    (ha : ∀ l j, l < j → j ≤ N → D l j = E (j - 1) l)
-    (hb : ∀ l, 1 ≤ l → l ≤ N → D l l = D l (l - 1))
-    (hc : ∀ l j, j + 1 < l → l ≤ N + 1 → D l j = E j (l - 1)) :
-    ∑ j ∈ Finset.range (N + 1), ∑ l ∈ Finset.range (N + 2), (-1 : ℤ) ^ (l + j) • D l j +
-      ∑ j ∈ Finset.range N, ∑ l ∈ Finset.range (N + 1), (-1 : ℤ) ^ (l + j) • E j l =
-      D 0 0 - D (N + 1) N := by
-  induction N with
-  | zero => simp [Finset.sum_range_succ, sub_eq_add_neg]
-  | succ N ih =>
-    have ih := ih (fun l j h hj ↦ ha l j h (by omega)) (fun l h hl ↦ hb l h (by omega))
-      (fun l j h hl ↦ hc l j h (by omega))
-    have h₁ := sum_last_column N D E fun j hj ↦ hc (N + 2) j (by omega) le_rfl
-    have h₂ := sum_last_row N D E (fun l hl ↦ ha l (N + 1) hl le_rfl)
-      (hb (N + 1) (by omega) le_rfl)
-    rw [Finset.sum_range_succ_sum_range_succ _ (N + 1) (N + 2),
-      Finset.sum_range_succ_sum_range_succ (fun l j ↦ (-1 : ℤ) ^ (l + j) • E j l) N (N + 1)]
-    linear_combination (norm := abel) ih + h₁ + h₂
-
-end Signs
-
 /-! ### Frame conjugation and its homotopy to the identity -/
 
 section Frame
@@ -289,15 +194,9 @@ paths `p` of indices. When `∑ c, x c * y c = 1` it is homotopic to the identit
 -/
 noncomputable def frameCochainConjugation (n : ℕ) :
     MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M →ₗ[R]
-      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M where
-  toFun ψ := ∑ p : Fin (n + 1) → ι,
-    ψ.compLinearMap fun j ↦ LinearMap.mulLeftRight R (y (p j), x (p (finRotate (n + 1) j)))
-  map_add' ψ φ := by
-    ext a
-    simp [MultilinearMap.compLinearMap_apply, Finset.sum_add_distrib]
-  map_smul' c ψ := by
-    ext a
-    simp [MultilinearMap.compLinearMap_apply, Finset.smul_sum]
+      MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M :=
+  ∑ p : Fin (n + 1) → ι, MultilinearMap.compLinearMapₗ fun j ↦
+    LinearMap.mulLeftRight R (y (p j), x (p (finRotate (n + 1) j)))
 
 /-- The closed-path formula for frame conjugation. -/
 @[simp]
@@ -330,7 +229,7 @@ private theorem homotopyTerm_val {n : ℕ} (j : Fin (n + 1)) (k : Fin (j + 1) �
   congr 1
   funext t
   rw [insertNth_comp_val j.succ _ (fun s ↦ LinearMap.mulLeftRight R (homotopyPair x y k s) (g s))]
-  simp only [natHomotopy, homotopyPair, Fin.val_succ]
+  simp only [natInsert_apply, natHomotopy, homotopyPair, Fin.val_succ]
   split_ifs <;> first | rfl | omega | simp [clampIndex_self]
 
 omit [IsScalarTower R B B] [SMulCommClass R B B] in
@@ -415,21 +314,22 @@ omit [Fintype ι] in
 private theorem hochschildCoboundary_val (n : ℕ)
     (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ B) M) (g : ℕ → B) :
     hochschildCoboundary R B M n ψ (fun s ↦ g s) =
-      ∑ l ∈ Finset.range (n + 2), (-1 : ℤ) ^ l • ψ (fun t ↦ natFaceAt (n + 1) l g t) := by
+      ∑ l ∈ Finset.range (n + 2), (-1 : ℤ) ^ l • ψ (fun t ↦ natHochschildFace (n + 1) l g t) := by
   rw [hochschildCoboundary_apply]
-  simp only [hochschildFace_val]
+  simp only [hochschildFace_comp_val]
   exact Fin.sum_univ_eq_sum_range
-    (fun l ↦ (-1 : ℤ) ^ l • ψ (fun t : Fin (n + 1) ↦ natFaceAt (n + 1) l g t)) (n + 2)
+    (fun l ↦ (-1 : ℤ) ^ l • ψ (fun t : Fin (n + 1) ↦ natHochschildFace (n + 1) l g t)) (n + 2)
 
 /-- The sum over index tuples of `ψ` on the `l`-th face of the `j`-th homotopy tuple. -/
 private noncomputable def faceHomotopySum {m : ℕ}
     (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1) ↦ B) M) (g : ℕ → B) (l j : ℕ) : M :=
-  ∑ k : Fin (j + 1) → ι, ψ (fun t ↦ natFaceAt (m + 1) l (natHomotopy x y j (clampIndex k) g) t)
+  ∑ k : Fin (j + 1) → ι,
+    ψ (fun t ↦ natHochschildFace (m + 1) l (natHomotopy x y j (clampIndex k) g) t)
 
 /-- The sum over index tuples of `ψ` on the `j`-th homotopy tuple of the `l`-th face. -/
 private noncomputable def homotopyFaceSum {m : ℕ}
     (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1) ↦ B) M) (g : ℕ → B) (j l : ℕ) : M :=
-  ∑ k : Fin (j + 1) → ι, ψ (fun t ↦ natHomotopy x y j (clampIndex k) (natFaceAt m l g) t)
+  ∑ k : Fin (j + 1) → ι, ψ (fun t ↦ natHomotopy x y j (clampIndex k) (natHochschildFace m l g) t)
 
 private theorem frameCochainHomotopy_hochschildCoboundary_val (m : ℕ)
     (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1) ↦ B) M) (g : ℕ → B) :
@@ -482,7 +382,8 @@ private theorem faceHomotopySum_of_lt (hxy : ∑ c, x c * y c = 1) {m : ℕ}
     (hlj : l < j) (hjm : j ≤ m) :
     faceHomotopySum x y ψ g l j = homotopyFaceSum x y ψ g (j - 1) l := by
   obtain ⟨j, rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
-  simp (disch := omega) only [faceHomotopySum, homotopyFaceSum, Nat.add_sub_cancel, natFaceAt_of_lt]
+  simp (disch := omega) only [faceHomotopySum, homotopyFaceSum, Nat.add_sub_cancel,
+    natHochschildFace_of_lt]
   refine sum_natContract_natHomotopy_insertNth hxy ψ g ⟨l, by omega⟩ (by omega)
     (fun k ↦ natHomotopy x y j (clampIndex k) (natContract l g))
     (fun k ↦ natLeft y (clampIndex k) l * g l) (fun k ↦ g (l + 1) * x (clampIndex k l))
@@ -500,7 +401,7 @@ private theorem faceHomotopySum_self (hxy : ∑ c, x c * y c = 1) {m : ℕ}
     (hl : 1 ≤ l) (hlm : l ≤ m) :
     faceHomotopySum x y ψ g l l = faceHomotopySum x y ψ g l (l - 1) := by
   obtain ⟨l, rfl⟩ : ∃ l', l = l' + 1 := ⟨l - 1, by omega⟩
-  simp (disch := omega) only [faceHomotopySum, Nat.add_sub_cancel, natFaceAt_of_lt]
+  simp (disch := omega) only [faceHomotopySum, Nat.add_sub_cancel, natHochschildFace_of_lt]
   refine sum_natContract_natHomotopy_insertNth hxy ψ g (Fin.last (l + 1)) (by omega)
     (fun k ↦ natContract (l + 1) (natHomotopy x y l (clampIndex k) g))
     (fun k ↦ natLeft y (clampIndex k) (l + 1) * g (l + 1)) (fun _ ↦ 1) (fun k c ↦ ?_) fun k ↦ ?_
@@ -517,8 +418,8 @@ private theorem faceHomotopySum_of_add_one_lt {m : ℕ}
     faceHomotopySum x y ψ g l j = homotopyFaceSum x y ψ g j (l - 1) := by
   simp only [faceHomotopySum, homotopyFaceSum]
   rcases hlm.lt_or_eq with hlm | rfl
-  · simp (disch := omega) only [natFaceAt_of_lt, natContract_natHomotopy x y hjl]
-  · simp only [Nat.add_sub_cancel, natFaceAt_self,
+  · simp (disch := omega) only [natHochschildFace_of_lt, natContract_natHomotopy x y hjl]
+  · simp only [Nat.add_sub_cancel, natHochschildFace_self,
       natContract_zero_natRotate_natHomotopy x y (by omega : j < m)]
 
 omit [IsScalarTower R B B] [SMulCommClass R B B] in
@@ -526,7 +427,7 @@ omit [IsScalarTower R B B] [SMulCommClass R B B] in
 private theorem faceHomotopySum_zero_zero (hxy : ∑ c, x c * y c = 1) {m : ℕ}
     (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1) ↦ B) M) (g : ℕ → B) :
     faceHomotopySum x y ψ g 0 0 = ψ (fun t ↦ g t) := by
-  simp only [faceHomotopySum, natFaceAt_of_lt m.succ_pos]
+  simp only [faceHomotopySum, natHochschildFace_of_lt m.succ_pos]
   rw [← (Equiv.funUnique (Fin 1) ι).symm.sum_comp]
   have key (c : ι) : (fun t : Fin (m + 1) ↦ natContract 0 (natHomotopy x y 0
       (clampIndex ((Equiv.funUnique (Fin 1) ι).symm c)) g) t) =
@@ -543,7 +444,7 @@ private theorem faceHomotopySum_zero_zero (hxy : ∑ c, x c * y c = 1) {m : ℕ}
 private theorem faceHomotopySum_last {m : ℕ}
     (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin (m + 1) ↦ B) M) (g : ℕ → B) :
     faceHomotopySum x y ψ g (m + 1) m = frameCochainConjugation R M x y m ψ (fun t ↦ g t) := by
-  simp only [frameCochainConjugation_apply, faceHomotopySum, natFaceAt_self]
+  simp only [frameCochainConjugation_apply, faceHomotopySum, natHochschildFace_self]
   conv_rhs => rw [← (Equiv.arrowCongr (finRotate (m + 1)) (Equiv.refl ι)).sum_comp]
   refine Finset.sum_congr rfl fun k _ ↦ congrArg ψ (funext fun t ↦ ?_)
   simp only [Equiv.arrowCongr_apply, Equiv.coe_refl, Function.comp_apply, id,

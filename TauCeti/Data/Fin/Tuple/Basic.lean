@@ -74,8 +74,9 @@ once.
 * `TauCeti.contractNth_comp_val`: contracting two adjacent entries of a tuple read off a sequence
   indexed by `ℕ` is reading off the contracted sequence `TauCeti.natContract`.
 * `TauCeti.natRotate`: cyclic rotation of the first entries of a sequence indexed by `ℕ`.
+* `TauCeti.natInsert`: insertion of an entry into a sequence indexed by `ℕ`.
 * `TauCeti.insertNth_comp_val`: inserting an entry into a tuple read off a sequence indexed by `ℕ`
-  shifts the later entries by one.
+  is reading off the sequence with the entry inserted.
 -/
 
 public section
@@ -521,12 +522,40 @@ theorem natRotate_zero (n : ℕ) (b : ℕ → α) : natRotate n b 0 = b n :=
 theorem natRotate_succ (n : ℕ) (b : ℕ → α) (k : ℕ) : natRotate n b (k + 1) = b k :=
   ite_eq_right k.succ_ne_zero
 
-/-- Inserting an entry into a tuple read off a sequence indexed by `ℕ` keeps the entries before
-the insertion and shifts the later entries by one. -/
+/-- Insertion `(b₀, …, bᵢ₋₁, c, bᵢ, bᵢ₊₁, …)` of the entry `c` at position `i` of a sequence
+indexed by `ℕ`. On the first `m + 1` entries it is `Fin.insertNth` (`TauCeti.insertNth_comp_val`).
+-/
+def natInsert (i : ℕ) (c : α) (b : ℕ → α) (k : ℕ) : α :=
+  if k < i then b k else if k = i then c else b (k - 1)
+
+/-- The entries of the insertion `TauCeti.natInsert i c b`, by cases on the position. -/
+theorem natInsert_apply (i : ℕ) (c : α) (b : ℕ → α) (k : ℕ) :
+    natInsert i c b k = if k < i then b k else if k = i then c else b (k - 1) :=
+  (rfl)
+
+/-- Below the insertion position the insertion keeps the entries. -/
+@[simp]
+theorem natInsert_of_lt {i k : ℕ} (h : k < i) (c : α) (b : ℕ → α) : natInsert i c b k = b k := by
+  rw [natInsert_apply, ite_eq_left h]
+
+/-- At the insertion position the insertion is the inserted entry. -/
+@[simp]
+theorem natInsert_self (i : ℕ) (c : α) (b : ℕ → α) : natInsert i c b i = c := by
+  rw [natInsert_apply, ite_eq_right (lt_irrefl i), ite_eq_left rfl]
+
+/-- Beyond the insertion position the insertion shifts the entries by one. -/
+@[simp]
+theorem natInsert_of_gt {i k : ℕ} (h : i < k) (c : α) (b : ℕ → α) :
+    natInsert i c b k = b (k - 1) := by
+  rw [natInsert_apply, ite_eq_right (by omega), ite_eq_right (by omega)]
+
+/-- Inserting an entry into a tuple read off a sequence indexed by `ℕ` is reading off the
+sequence with the entry inserted. -/
 theorem insertNth_comp_val {m : ℕ} (p : Fin (m + 1)) (v : α) (f : ℕ → α) :
     p.insertNth (α := fun _ ↦ α) v (fun s : Fin m ↦ f s) =
-      fun t : Fin (m + 1) ↦ if (t : ℕ) < p then f t else if (t : ℕ) = p then v else f (t - 1) := by
+      fun t : Fin (m + 1) ↦ natInsert p v f t := by
   funext t
+  rw [natInsert_apply]
   cases t using Fin.succAboveCases p with
   | x => simp
   | p s =>

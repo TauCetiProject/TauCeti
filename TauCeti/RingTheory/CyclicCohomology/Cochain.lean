@@ -40,6 +40,7 @@ identities between faces and the cyclic rotation
 ## Main definitions
 
 * `TauCeti.hochschildFace`: the faces `dᵢ` on tuples.
+* `TauCeti.natHochschildFace`: the faces `dᵢ` on sequences indexed by `ℕ`.
 * `TauCeti.hochschildCoface`: the cofaces `φ ↦ φ ∘ dᵢ` on multilinear cochains.
 * `TauCeti.hochschildCoboundary`: the Hochschild coboundary `b`.
 * `TauCeti.cyclicCochains`: the submodule of cyclic cochains.
@@ -61,6 +62,8 @@ identities between faces and the cyclic rotation
 * `TauCeti.hochschildCoboundary_compLinearMap`: `b` commutes with pullback along a homomorphism.
 * `TauCeti.prod_hochschildFace`: over a commutative monoid the faces preserve the product of the
   entries.
+* `TauCeti.hochschildFace_comp_val`: on a tuple read off a sequence indexed by `ℕ`, the faces are
+  read off the faces `TauCeti.natHochschildFace` of the sequence.
 
 ## References
 
@@ -233,6 +236,32 @@ theorem hochschildFace_last_comp_val (b : ℕ → A) :
       fun k : Fin (n + 1) ↦ natContract 0 (natRotate (n + 1) b) k := by
   rw [hochschildFace_last_eq_contractNth, comp_finRotate_symm_comp_val, contractNth_comp_val,
     Fin.val_zero]
+
+/-- The `l`-th Hochschild face of the first `m + 1` entries of a sequence indexed by `ℕ`: the
+contraction of the entries `l` and `l + 1` for `l < m`, and otherwise the contraction of the first
+two entries of the rotated sequence. On tuples it is `TauCeti.hochschildFace`
+(`TauCeti.hochschildFace_comp_val`). -/
+def natHochschildFace (m l : ℕ) (b : ℕ → A) : ℕ → A :=
+  if l < m then natContract l b else natContract 0 (natRotate m b)
+
+/-- The `l`-th face for `l < m` contracts the entries `l` and `l + 1`. -/
+theorem natHochschildFace_of_lt {m l : ℕ} (h : l < m) (b : ℕ → A) :
+    natHochschildFace m l b = natContract l b :=
+  ite_eq_left h
+
+/-- The last face contracts the first two entries of the rotated sequence. -/
+theorem natHochschildFace_self (m : ℕ) (b : ℕ → A) :
+    natHochschildFace m m b = natContract 0 (natRotate m b) :=
+  ite_eq_right (lt_irrefl m)
+
+/-- A Hochschild face, on a tuple read off a sequence indexed by `ℕ`, is read off the face of the
+sequence. -/
+theorem hochschildFace_comp_val (l : Fin (n + 2)) (b : ℕ → A) :
+    hochschildFace l (fun k : Fin (n + 2) ↦ b k) =
+      fun k : Fin (n + 1) ↦ natHochschildFace (n + 1) l b k := by
+  induction l using Fin.lastCases with
+  | last => rw [hochschildFace_last_comp_val, Fin.val_last, natHochschildFace_self]
+  | cast l => rw [hochschildFace_castSucc_comp_val, Fin.val_castSucc, natHochschildFace_of_lt l.2]
 
 /-- The zeroth face of the rotated tuple `(aₙ₊₁, a₀, …, aₙ)` is the last face of `a`. -/
 theorem hochschildFace_zero_comp_finRotate_symm (a : Fin (n + 2) → A) :

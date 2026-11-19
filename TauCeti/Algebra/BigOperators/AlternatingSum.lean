@@ -13,6 +13,7 @@ public import Mathlib.Data.Int.Interval
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # Alternating sums
@@ -21,7 +22,8 @@ This file gives a telescoping formula for alternating sums of consecutive pairs 
 commutative group, the evaluation of the alternating triangular double sum
 `∑_{j = 0}^n ∑_{r ≤ j} (-1)^(j - r) = n / 2 + 1`, and the cancellation of alternating double sums
 whose terms satisfy the simplicial identity, which is the combinatorial core of `d ∘ d = 0` for
-alternating face map differentials. It also provides finite Euler sums for explicitly supported
+alternating face map differentials, together with the sign bookkeeping of a presimplicial
+homotopy `bH + Hb`. It also provides finite Euler sums for explicitly supported
 `ℤ`-graded families, including support independence, additivity, and translation of the grading.
 Finally, it relates the alternating sums `xₙ - xₙ₋₁ + ⋯ ± x₀`, which appear in the strong Morse
 inequalities, to the Euler sums `x₀ - x₁ + ⋯ ± xₙ` and to each other.
@@ -150,6 +152,66 @@ theorem sum_neg_one_pow_smul_sum_neg_one_pow_smul_eq_zero {G : Type*} [AddCommGr
       Fin.val_castLT, ← neg_smul]
     congr 1
     ring
+
+private theorem neg_one_pow_succ_smul_add (m : ℕ) (a : G) :
+    (-1 : ℤ) ^ (m + 1) • a + (-1 : ℤ) ^ m • a = 0 := by
+  rw [pow_succ, mul_neg_one, neg_smul, neg_add_cancel]
+
+/-- The last column of the `D`-sum of a presimplicial homotopy cancels the last column of its
+`E`-sum, up to one term. -/
+private theorem sum_last_column (N : ℕ) (D E : ℕ → ℕ → G)
+    (hc : ∀ j, j ≤ N → D (N + 2) j = E j (N + 1)) :
+    ∑ j ∈ Finset.range (N + 1), (-1 : ℤ) ^ (N + 2 + j) • D (N + 2) j +
+      ∑ j ∈ Finset.range N, (-1 : ℤ) ^ (N + 1 + j) • E j (N + 1) = E N (N + 1) := by
+  have hs : ∑ j ∈ Finset.range N, ((-1 : ℤ) ^ (N + 2 + j) • D (N + 2) j +
+      (-1 : ℤ) ^ (N + 1 + j) • E j (N + 1)) = 0 := by
+    refine Finset.sum_eq_zero fun j hj ↦ ?_
+    rw [hc j (by simp at hj; omega), show N + 2 + j = N + 1 + j + 1 by omega]
+    exact neg_one_pow_succ_smul_add _ _
+  rw [Finset.sum_range_succ, hc N le_rfl, add_right_comm, ← Finset.sum_add_distrib, hs,
+    zero_add, Even.neg_one_pow ⟨N + 1, by omega⟩, one_smul]
+
+/-- The last row of the `D`-sum of a presimplicial homotopy cancels the last row of its `E`-sum,
+up to three terms. -/
+private theorem sum_last_row (N : ℕ) (D E : ℕ → ℕ → G) (ha : ∀ l, l < N + 1 → D l (N + 1) = E N l)
+    (hb : D (N + 1) (N + 1) = D (N + 1) N) :
+    ∑ l ∈ Finset.range (N + 3), (-1 : ℤ) ^ (l + (N + 1)) • D l (N + 1) +
+      ∑ l ∈ Finset.range (N + 2), (-1 : ℤ) ^ (l + N) • E N l =
+        D (N + 1) N - D (N + 2) (N + 1) - E N (N + 1) := by
+  have hs : ∑ l ∈ Finset.range (N + 1), (-1 : ℤ) ^ (l + (N + 1)) • D l (N + 1) +
+      ∑ l ∈ Finset.range (N + 1), (-1 : ℤ) ^ (l + N) • E N l = 0 := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_eq_zero fun l hl ↦ ?_
+    rw [ha l (by simpa using hl), ← add_assoc]
+    exact neg_one_pow_succ_smul_add _ _
+  rw [Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_succ (fun l ↦ _ • E N l), hb,
+    Even.neg_one_pow ⟨N + 1, rfl⟩, Odd.neg_one_pow ⟨N + 1, by omega⟩,
+    Odd.neg_one_pow ⟨N, by omega⟩, ← sub_eq_zero, ← hs]
+  simp only [one_smul, neg_smul]
+  abel
+
+/-- The sign bookkeeping of a presimplicial homotopy: if `D l j` (the `l`-th face after the
+`j`-th homotopy operator) and `E j l` (the `j`-th homotopy operator after the `l`-th face) satisfy
+the presimplicial homotopy identities, then the alternating double sums of `D` and `E` add up to
+`D 0 0 - D (N + 1) N`. -/
+theorem sum_presimplicial_homotopy (N : ℕ) (D E : ℕ → ℕ → G)
+    (ha : ∀ l j, l < j → j ≤ N → D l j = E (j - 1) l)
+    (hb : ∀ l, 1 ≤ l → l ≤ N → D l l = D l (l - 1))
+    (hc : ∀ l j, j + 1 < l → l ≤ N + 1 → D l j = E j (l - 1)) :
+    ∑ j ∈ Finset.range (N + 1), ∑ l ∈ Finset.range (N + 2), (-1 : ℤ) ^ (l + j) • D l j +
+      ∑ j ∈ Finset.range N, ∑ l ∈ Finset.range (N + 1), (-1 : ℤ) ^ (l + j) • E j l =
+      D 0 0 - D (N + 1) N := by
+  induction N with
+  | zero => simp [Finset.sum_range_succ, sub_eq_add_neg]
+  | succ N ih =>
+    have ih := ih (fun l j h hj ↦ ha l j h (by omega)) (fun l h hl ↦ hb l h (by omega))
+      (fun l j h hl ↦ hc l j h (by omega))
+    have h₁ := sum_last_column N D E fun j hj ↦ hc (N + 2) j (by omega) le_rfl
+    have h₂ := sum_last_row N D E (fun l hl ↦ ha l (N + 1) hl le_rfl)
+      (hb (N + 1) (by omega) le_rfl)
+    rw [Finset.sum_range_succ_sum_range_succ _ (N + 1) (N + 2),
+      Finset.sum_range_succ_sum_range_succ (fun l j ↦ (-1 : ℤ) ^ (l + j) • E j l) N (N + 1)]
+    linear_combination (norm := abel) ih + h₁ + h₂
 
 /-- In any ring, the alternating triangular double sum `∑_{j = 0}^n ∑_{r ≤ j} (-1)^(j - r)` equals
 `n / 2 + 1`: the inner sum is `1` when `j` is even and `0` when `j` is odd. -/
