@@ -22,15 +22,9 @@ compatible sequence of jets comes from a power series. These are the coordinate-
 the presentation of the positive loop group `G(R⟦X⟧)` as the limit of the jet groups
 `G(R[X]/(X ^ N))`.
 
-The base change of `k[X]/(X ^ N)` to a `k`-algebra `R` is `R[X]/(X ^ N)`
-(`AdjoinRoot.tensorXPowAlgEquiv`), and `k[X]/(X ^ N)` is a finite free `k`-module, so the Weil
-restriction along it is defined.
-
 ## Main definitions
 
 * `PowerSeries.jet N`: the `R`-algebra map `R⟦X⟧ → R[X]/(X ^ N)`, `f ↦ trunc N f`.
-* `AdjoinRoot.tensorXPowAlgEquiv k R N`: the `k`-algebra isomorphism
-  `k[X]/(X ^ N) ⊗[k] R ≃ R[X]/(X ^ N)`.
 
 ## Main results
 
@@ -50,61 +44,7 @@ restriction along it is defined.
 
 public section
 
-open scoped Polynomial PowerSeries TensorProduct
-
-namespace AdjoinRoot
-
-variable {R : Type*} [CommRing R]
-
-/-- The truncated polynomial algebra `R[X]/(X ^ N)` is free over `R`, with basis the powers of the
-root below `N`. -/
-instance free_X_pow (N : ℕ) : Module.Free R (AdjoinRoot (Polynomial.X ^ N : R[X])) :=
-  (Polynomial.monic_X_pow N).free_adjoinRoot
-
-/-- The truncated polynomial algebra `R[X]/(X ^ N)` is a finite `R`-module. -/
-instance finite_X_pow (N : ℕ) : Module.Finite R (AdjoinRoot (Polynomial.X ^ N : R[X])) :=
-  (Polynomial.monic_X_pow N).finite_adjoinRoot
-
-section TensorProduct
-
-variable (k : Type*) [CommRing k] (R : Type*) [CommRing R] [Algebra k R] (N : ℕ)
-
-/-- **Base change of truncated polynomial algebras.** For a `k`-algebra `R`, the base change
-`k[X]/(X ^ N) ⊗[k] R` is `R[X]/(X ^ N)`; it sends `root ⊗ 1` to the root and `1 ⊗ r` to `r`. -/
-noncomputable def tensorXPowAlgEquiv :
-    AdjoinRoot (Polynomial.X ^ N : k[X]) ⊗[k] R ≃ₐ[k] AdjoinRoot (Polynomial.X ^ N : R[X]) :=
-  ((Algebra.TensorProduct.comm k _ R).trans
-      ((algebraTensorAlgEquiv R (Polynomial.X ^ N : k[X])).restrictScalars k)).trans
-    ((algEquivOfAssociated R _ (Polynomial.X ^ N : R[X]) (by simp)).restrictScalars k)
-
-variable {k R N}
-
-@[simp]
-theorem tensorXPowAlgEquiv_root_tmul_one :
-    tensorXPowAlgEquiv k R N (root (Polynomial.X ^ N : k[X]) ⊗ₜ 1) =
-      root (Polynomial.X ^ N : R[X]) := by
-  simp [tensorXPowAlgEquiv]
-
-@[simp]
-theorem tensorXPowAlgEquiv_one_tmul (r : R) :
-    tensorXPowAlgEquiv k R N (1 ⊗ₜ r) = of (Polynomial.X ^ N : R[X]) r := by
-  have h : r ⊗ₜ[k] (1 : AdjoinRoot (Polynomial.X ^ N : k[X])) = algebraMap R _ r := by
-    rw [Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
-  simp only [tensorXPowAlgEquiv, AlgEquiv.trans_apply, Algebra.TensorProduct.comm_tmul, h,
-    AlgEquiv.restrictScalars_apply, AlgEquiv.commutes]
-  rw [algebraMap_eq]
-
-/-- `AdjoinRoot.tensorXPowAlgEquiv` is natural in the `k`-algebra `R`: base change along
-`φ : R →ₐ[k] S` corresponds to the coefficientwise map `R[X]/(X ^ N) → S[X]/(X ^ N)`. -/
-theorem tensorXPowAlgEquiv_comp_map {S : Type*} [CommRing S] [Algebra k S] (φ : R →ₐ[k] S) :
-    (tensorXPowAlgEquiv k S N).toAlgHom.comp (Algebra.TensorProduct.map (AlgHom.id k _) φ) =
-      (mapAlgHom φ (Polynomial.X ^ N) (Polynomial.X ^ N) (by simp)).comp
-        (tensorXPowAlgEquiv k R N).toAlgHom := by
-  ext <;> simp
-
-end TensorProduct
-
-end AdjoinRoot
+open scoped Polynomial PowerSeries
 
 namespace PowerSeries
 
@@ -250,28 +190,5 @@ theorem map_jet {S : Type*} [CommRing S] (φ : R →+* S) (f : R⟦X⟧) :
     AdjoinRoot.map φ (Polynomial.X ^ N : R[X]) (Polynomial.X ^ N : S[X]) (by simp) (jet R N f) =
       jet S N (map φ f) := by
   rw [jet_apply, AdjoinRoot.map_mk, jet_apply, trunc_map]
-
-section ConstantCoeff
-
-variable (A : Type*) {S : Type*} [CommSemiring A] [Semiring S] [Algebra A S]
-
-/-- The constant coefficient `S⟦X⟧ → S`, that is, evaluation at `X = 0`, as a homomorphism of
-`A`-algebras. -/
-noncomputable def constantCoeffAlgHom : S⟦X⟧ →ₐ[A] S where
-  toRingHom := constantCoeff
-  commutes' a := by rw [RingHom.toFun_eq_coe, algebraMap_apply, constantCoeff_C]
-
-variable {A}
-
-@[simp]
-theorem constantCoeffAlgHom_apply (f : S⟦X⟧) : constantCoeffAlgHom A f = constantCoeff f := (rfl)
-
-/-- Evaluation at `X = 0` is a retraction of the inclusion of constants. -/
-@[simp]
-theorem constantCoeffAlgHom_comp_toAlgHom {S : Type*} [CommSemiring S] [Algebra A S] :
-    (constantCoeffAlgHom A).comp (IsScalarTower.toAlgHom A S S⟦X⟧) = AlgHom.id A S :=
-  AlgHom.ext fun s ↦ by simp
-
-end ConstantCoeff
 
 end PowerSeries

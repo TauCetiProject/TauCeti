@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.CongruenceSubgroup.Basic
 public import TauCeti.Algebra.HopfAlgebra.WeilRestriction
+public import TauCeti.RingTheory.PowerSeries.Basic
 public import TauCeti.RingTheory.PowerSeries.Jet
 import TauCeti.Algebra.Coalgebra.Convolution
 import TauCeti.RingTheory.PowerSeries.Ideal
@@ -17,7 +18,7 @@ import TauCeti.RingTheory.PowerSeries.Ideal
 Let `H` be a commutative Hopf algebra over a commutative ring `k`, the coordinate ring of an affine
 group `G`. For a commutative `k`-algebra `R`, the positive loop group is `L⁺G(R) = G(R⟦X⟧)`, the
 convolution group `WithConv (H →ₐ[k] R⟦X⟧)` of points of `H` in `R⟦X⟧`. This file presents it as
-a proalgebraic group, the inverse limit of the jet groups.
+the inverse limit of the jet groups, as affine group functors.
 
 The **jet group of level `N`** is the affine group `J_N G = Res_{k[X]/(X ^ N) / k} G`, the Weil
 restriction along `k[X]/(X ^ N)` of the base change of `G`. Its coordinate ring is the commutative
@@ -31,7 +32,8 @@ the `N`-th projection is the congruence subgroup `K_N(R)` of level `(X ^ N)`.
 Everything holds for every commutative `k`-algebra `R`, nonreduced ones included, and over any
 commutative ring `k`. When `H` is of finite type or smooth over `k`, so is each
 `jetHopfAlgebra k H N`, by the instances `WeilRestriction.instFiniteType` and
-`WeilRestriction.instSmooth`.
+`WeilRestriction.instSmooth`; so for `H` of finite type the jet groups are algebraic groups and
+this is the presentation of `L⁺G` as a proalgebraic group.
 
 ## Main definitions
 
@@ -71,8 +73,6 @@ open WithConv
 open scoped Polynomial PowerSeries TensorProduct
 
 namespace TauCeti.HopfAlgebra
-
-universe v
 
 variable (k : Type*) [CommRing k] (H : Type*) [CommRing H] [_root_.HopfAlgebra k H]
 
@@ -140,19 +140,6 @@ end Points
 
 section Truncation
 
--- A `k`-algebra map of commutative bialgebras whose pre-composition is multiplicative on points
--- with values in the tensor square of its target respects the comultiplications.
-private theorem map_comp_comulAlgHom_of_mul {A : Type*} {B : Type v} [CommRing A] [CommRing B]
-    [Bialgebra k A] [Bialgebra k B] (φ : A →ₐ[k] B)
-    (hmul : ∀ (T : Type v) [CommRing T] [Algebra k T] (f g : WithConv (B →ₐ[k] T)),
-      toConv ((f * g).ofConv.comp φ) = toConv (f.ofConv.comp φ) * toConv (g.ofConv.comp φ)) :
-    (Algebra.TensorProduct.map φ φ).comp (Bialgebra.comulAlgHom k A) =
-      (Bialgebra.comulAlgHom k B).comp φ := by
-  refine WithConv.toConv_injective ?_
-  rw [Bialgebra.toConv_comp_comulAlgHom, Algebra.TensorProduct.map_comp_includeLeft,
-    Algebra.TensorProduct.map_comp_includeRight, ← hmul, ← Bialgebra.comulPoint_eq_include_mul,
-    ofConv_toConv]
-
 variable {T : Type*} [CommRing T] [Algebra k T] (N : ℕ)
 
 -- The algebra map of the truncation `J_(N+1) G → J_N G`: by the Yoneda lemma, the map classifying
@@ -214,7 +201,8 @@ noncomputable def jetTruncation : jetHopfAlgebra k H N →ₐc[k] jetHopfAlgebra
       refine WithConv.toConv_injective ((jetPointsMulEquiv k H k N).injective ?_)
       simp only [← Bialgebra.ofConv_one_eq_counitAlgHom, jetPointsMulEquiv_comp_jetTruncationAlgHom,
         toConv_ofConv, map_one])
-    (map_comp_comulAlgHom_of_mul k _ fun _ _ _ _ _ ↦ toConv_comp_jetTruncationAlgHom_mul N)
+    (Bialgebra.map_comp_comulAlgHom_of_mul _ fun _ _ _ _ _ ↦
+      toConv_comp_jetTruncationAlgHom_mul N)
 
 variable {k H}
 
