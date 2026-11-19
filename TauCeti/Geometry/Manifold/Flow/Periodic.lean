@@ -69,6 +69,8 @@ isolated, fixed points is finite.
   return map.
 * `TauCeti.contractiblePeriodicSolutions X T`: the `T`-periodic solutions whose loop is
   null-homotopic.
+* `TauCeti.orbitLoop`: the based loop traced by a contractible `1`-periodic solution over one
+  period, null-homotopic relative to its base point (`TauCeti.orbitLoop_homotopic_refl`).
 
 ## Main results
 
@@ -210,6 +212,26 @@ theorem mem_contractiblePeriodicSolutions {γ : ℝ → M} :
 theorem contractiblePeriodicSolutions_subset :
     contractiblePeriodicSolutions X T ⊆ periodicSolutions X T :=
   fun _ hγ ↦ hγ.1
+
+/-- The **loop of a contractible `1`-periodic solution** `γ`: the loop `t ↦ γ t`, `t ∈ [0, 1]`,
+based at `γ 0`. -/
+def orbitLoop (γ : contractiblePeriodicSolutions X 1) : Path (γ.1 0) (γ.1 0) :=
+  (periodic_of_mem_periodicSolutions (contractiblePeriodicSolutions_subset γ.2)).loop
+    (continuous_of_mem_periodicSolutions (contractiblePeriodicSolutions_subset γ.2)) 0
+
+@[simp]
+theorem orbitLoop_apply (γ : contractiblePeriodicSolutions X 1) (t : unitInterval) :
+    orbitLoop γ t = γ.1 t := by
+  simp [orbitLoop]
+
+/-- The loop of a contractible `1`-periodic solution is null-homotopic relative to its base
+point. -/
+theorem orbitLoop_homotopic_refl (γ : contractiblePeriodicSolutions X 1) :
+    (orbitLoop γ).Homotopic (Path.refl (γ.1 0)) := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  have hγ := contractiblePeriodicSolutions_subset γ.2
+  exact ((periodic_of_mem_periodicSolutions hγ).exists_nullhomotopic_iff_loop_homotopic_refl
+    (continuous_of_mem_periodicSolutions hγ) 0).1 (mem_contractiblePeriodicSolutions.1 γ.2).2
 
 section Flow
 

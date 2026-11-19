@@ -23,12 +23,12 @@ taken by the completed modules `TauCeti.NovikovModule` and the product of class-
 `TauCeti.Geometry.Symplectic.Floer.Cap.Product`.
 
 * **The loop of an orbit.** A contractible `1`-periodic solution `x` traces the loop
-  `TauCeti.Floer.orbitLoop x : t ↦ x t`, `t ∈ [0, 1]`, based at `x 0`. It is null-homotopic
-  relative to its base point (`TauCeti.Floer.orbitLoop_homotopic_refl`), so it has raw caps, and
+  `TauCeti.orbitLoop x : t ↦ x t`, `t ∈ [0, 1]`, based at `x 0`. It is null-homotopic
+  relative to its base point (`TauCeti.orbitLoop_homotopic_refl`), so it has raw caps, and
   when `X` is `C^∞` it has a smooth based cap
   (`TauCeti.Floer.exists_isSmoothBasedCap_orbitLoop`): the orbit is `C^∞`
-  (`TauCeti.contMDiff_of_forall_hasMFDerivAt`) and every raw cap of a loop with a
-  smooth periodic extension has a smooth representative
+  (`TauCeti.contMDiff_of_contMDiff_of_forall_hasMFDerivAt_timeDependent`) and every raw cap of a
+  loop with a smooth periodic extension has a smooth representative
   (`TauCeti.Floer.exists_isSmoothBasedCap_iff`).
 * **Cap classes with the orientation of discs.** The raw caps of a loop are oriented from the loop
   to their centre, and the torsor `TauCeti.Floer.SphericalCapClass ω c γ` glues a class `B` at the
@@ -57,7 +57,6 @@ taken by the completed modules `TauCeti.NovikovModule` and the product of class-
 
 ## Main definitions
 
-* `TauCeti.Floer.orbitLoop`: the based loop of a contractible `1`-periodic solution.
 * `TauCeti.Floer.OrbitCapClass`: the cap classes of the orbit, with the orientation of discs.
 * `TauCeti.Floer.CappedOrbit`: the capped contractible orbits.
 * `TauCeti.Floer.CappedOrbit.action`: the capped action of a capped orbit.
@@ -96,25 +95,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-! ### The loop of a contractible orbit -/
 
-/-- The **loop of a contractible `1`-periodic solution** `x`: the loop `t ↦ x t`, `t ∈ [0, 1]`,
-based at `x 0`. -/
-def orbitLoop (x : contractiblePeriodicSolutions X 1) : Ω M (x.1 0) :=
-  (periodic_of_mem_periodicSolutions (contractiblePeriodicSolutions_subset x.2)).loop
-    (continuous_of_mem_periodicSolutions (contractiblePeriodicSolutions_subset x.2)) 0
-
-@[simp]
-theorem orbitLoop_apply (x : contractiblePeriodicSolutions X 1) (t : unitInterval) :
-    orbitLoop x t = x.1 t := by
-  simp [orbitLoop]
-
-/-- The loop of a contractible orbit is null-homotopic relative to its base point. -/
-theorem orbitLoop_homotopic_refl (x : contractiblePeriodicSolutions X 1) :
-    (orbitLoop x).Homotopic (Path.refl (x.1 0)) := by
-  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
-  have hx := contractiblePeriodicSolutions_subset x.2
-  exact ((periodic_of_mem_periodicSolutions hx).exists_nullhomotopic_iff_loop_homotopic_refl
-    (continuous_of_mem_periodicSolutions hx) 0).1 (mem_contractiblePeriodicSolutions.1 x.2).2
-
 instance (x : contractiblePeriodicSolutions X 1) : Nonempty (RawCap (orbitLoop x)) :=
   RawCap.nonempty_iff.2 (orbitLoop_homotopic_refl x)
 
@@ -126,7 +106,7 @@ theorem exists_isSmoothBasedCap_orbitLoop [FiniteDimensional ℝ E] [I.Boundaryl
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
     (x : contractiblePeriodicSolutions X 1) : ∃ u, IsSmoothBasedCap I (orbitLoop x) u :=
   exists_isSmoothBasedCap_iff.2 ⟨orbitLoop_homotopic_refl x, x.1,
-    contMDiff_of_forall_hasMFDerivAt (n := ⊤) le_top hX
+    contMDiff_of_contMDiff_of_forall_hasMFDerivAt_timeDependent (n := ⊤) le_top hX
       (mem_periodicSolutions.1 (contractiblePeriodicSolutions_subset x.2)).1,
     periodic_of_mem_periodicSolutions (contractiblePeriodicSolutions_subset x.2), fun t ↦ by simp⟩
 
@@ -228,6 +208,13 @@ theorem action_mk_homotopyClass {x : contractiblePeriodicSolutions X 1} {u : ℝ
   rw [action_def, Equiv.apply_symm_apply, SphericalCapClass.action_mk,
     ← RawCap.action_homotopyClass hσ hdσ Ham hu]
 
+/-- **Two capped orbits of the same orbit differ by a class of the period group**, and their
+actions by its area. -/
+theorem action_sub_action (x : contractiblePeriodicSolutions X 1) (q' q : OrbitCapClass ω c x) :
+    action hX hσ hdσ hω Ham ⟨x, q'⟩ - action hX hσ hdσ hω Ham ⟨x, q⟩ =
+      PeriodGroup.area _ _ (q' -ᵥ q) := by
+  rw [action_def, action_def, SphericalCapClass.action_sub_action, OrbitCapClass.vsub_def, map_neg]
+
 variable [PathConnectedSpace M]
 
 /-- **The recapping law.** Gluing a class `B` of the period group to the disc of a capped orbit
@@ -248,15 +235,6 @@ theorem action_vadd_eq_sub (x : contractiblePeriodicSolutions X 1) (B : Spherica
     action hX hσ hdσ hω Ham ⟨x, B +ᵥ q⟩ =
       action hX hσ hdσ hω Ham ⟨x, q⟩ - (-PeriodGroup.area _ _) B := by
   rw [action_vadd, AddMonoidHom.neg_apply, sub_neg_eq_add]
-
-/-- **Two capped orbits of the same orbit differ by a class of the period group**, and their
-actions by its area. -/
-theorem action_sub_action (x : contractiblePeriodicSolutions X 1) (q' q : OrbitCapClass ω c x) :
-    action hX hσ hdσ hω Ham ⟨x, q'⟩ - action hX hσ hdσ hω Ham ⟨x, q⟩ =
-      PeriodGroup.area _ _ (q' -ᵥ q) := by
-  have h := action_vadd hX hσ hdσ hω Ham x (q' -ᵥ q) q
-  rw [vsub_vadd] at h
-  linarith
 
 end CappedOrbit
 
