@@ -34,6 +34,7 @@ the argument is smooth on the whole punctured plane: near the negative real axis
 from the argument of `-z`.
 Since the argument is continuous on the slit plane and blind to positive real scaling,
 `arg (f x) → arg Q` as soon as some positive real multiple of `f x` tends to `Q ∈ slitPlane`.
+In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 
 ## Main results
 
@@ -73,6 +74,9 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
+* `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
+* `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
+  in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -343,6 +347,29 @@ theorem re_mul_exp_mul_I_pos_of_mem_uIcc {z : ℂ} {θ₁ θ₂ θ : ℝ}
   rw [← hshift θ, re_mul_exp_ofReal_mul_I_eq_norm_mul_cos]
   rcases Set.mem_uIcc.1 hθ with ⟨hl, hr⟩ | ⟨hl, hr⟩ <;>
     exact mul_pos (norm_pos_iff.2 hw0) (Real.cos_pos_of_mem_Ioo ⟨by linarith, by linarith⟩)
+
+/-- `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`. -/
+theorem im_zpow (z : ℂ) (m : ℤ) : (z ^ m).im = ‖z‖ ^ m * Real.sin (m * arg z) := by
+  conv_lhs => rw [← norm_mul_exp_arg_mul_I z]
+  rw [mul_zpow, ← exp_intCast_mul, ← ofReal_zpow, ← mul_assoc, ← ofReal_intCast, ← ofReal_mul,
+    im_ofReal_mul, exp_ofReal_mul_I_im]
+
+/-- `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)` for every `ξ`; both sides vanish at `ξ = 0`
+and `ξ = 1`. For `ξ` in the upper half-plane, `π - arg ξ + arg (1 - ξ)` is the angle at `ξ` of the
+triangle `0, 1, ξ`, so this is the sine of that angle. -/
+theorem sin_arg_sub_arg_one_sub (ξ : ℂ) :
+    Real.sin (arg ξ - arg (1 - ξ)) = ξ.im / (‖ξ‖ * ‖1 - ξ‖) := by
+  rcases eq_or_ne ξ 0 with rfl | h₀
+  · simp
+  rcases eq_or_ne ξ 1 with rfl | h₁
+  · simp
+  have h₁ : 1 - ξ ≠ 0 := sub_ne_zero.2 (Ne.symm h₁)
+  rw [Real.sin_sub, sin_arg, sin_arg, cos_arg h₀, cos_arg h₁]
+  have : ‖ξ‖ ≠ 0 := norm_ne_zero_iff.2 h₀
+  have : ‖1 - ξ‖ ≠ 0 := norm_ne_zero_iff.2 h₁
+  field_simp
+  simp
+  ring
 
 end Complex
 
