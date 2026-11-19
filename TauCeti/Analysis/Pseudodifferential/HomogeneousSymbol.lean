@@ -37,7 +37,9 @@ builds a homogeneous symbol from a function given only away from `ξ = 0`.
 The file develops:
 
 * the module structure on homogeneous symbols of a fixed degree, over every scalar ring acting
-  on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
+  on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), with the joint continuity of
+  straight lines `s ↦ (1 - s) a + s b` (`HomogeneousSymbol.continuousOn_coefficient_lineMap`),
+  and the pointwise
   composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
   `HomogeneousSymbol.id` of degree `0` as its unit;
 * the symbol `HomogeneousSymbol.ofLinear` of degree `1` given by a continuous real-linear function
@@ -252,6 +254,24 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
 theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → HomogeneousSymbol X E V W m) :
     (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient :=
   map_sum (AddMonoidHom.mk' coefficient coefficient_add) f s
+
+/-- The coefficient of a real affine combination `(1 - s) a + s b` of homogeneous symbols is the
+same combination of their coefficients. -/
+@[simp]
+theorem coefficient_lineMap (a b : HomogeneousSymbol X E V W m) (s : ℝ) (p : X × E) :
+    (AffineMap.lineMap a b s).coefficient p =
+      AffineMap.lineMap (a.coefficient p) (b.coefficient p) s := by
+  simp [AffineMap.lineMap_apply_module]
+
+/-- The straight line `s ↦ (1 - s) a + s b` between two homogeneous symbols is jointly continuous
+in the time and the point at every nonzero frequency. -/
+theorem continuousOn_coefficient_lineMap (a b : HomogeneousSymbol X E V W m) :
+    ContinuousOn (fun q : ℝ × X × E ↦ (AffineMap.lineMap a b q.1).coefficient q.2)
+      {q | q.2.2 ≠ 0} := by
+  simp only [coefficient_lineMap]
+  exact ContinuousOn.lineMap (a.continuousOn_coefficient.comp continuous_snd.continuousOn
+    fun _ hq ↦ hq) (b.continuousOn_coefficient.comp continuous_snd.continuousOn fun _ hq ↦ hq)
+    continuous_fst.continuousOn
 
 /-! ### Changing the degree -/
 
