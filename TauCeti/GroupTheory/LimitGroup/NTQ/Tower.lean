@@ -475,7 +475,7 @@ theorem map_gHom_t_eq_one_of_map_inr_of_eq_one [IsFreeGroup G] {M : Type*} [Grou
   have hz : ρ (CentralizerExt.t 0) ∈ centralizer {(inr (FreeGroup.of .unit) : GX G PUnit)} :=
     mem_centralizer_singleton_iff.2 <| by
       simpa using
-        ((CentralizerExt.commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map ρ).symm.eq
+        ((CentralizerExt.commute_of_t (mem_centralizer_singleton_iff.2 rfl) 0).map ρ).symm
   obtain ⟨k, hk⟩ := (IsFreeGroup.centralizer_singleton_eq_zpowers_self
     (isPrimitive_inr (by simp)).not_isProperPower).le hz
   rw [← hk, map_zpow, hψ, one_zpow]
