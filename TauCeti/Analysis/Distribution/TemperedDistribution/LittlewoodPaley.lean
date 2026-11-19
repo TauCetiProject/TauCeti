@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Convolution.Commutator
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Bernstein
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
@@ -116,6 +117,11 @@ blocks `Δⱼ u`.
   `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_succ`: their `Lʳ` norms grow like
   `2^{j n (1 - 1/r)}`; `ContDiffBump.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero`:
   each kernel `𝓕⁻ ψⱼ` is nonzero in every `Lʳ`.
+* `ContDiffBump.integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the
+  moments of real order `s` of the kernels `𝓕⁻ ψ_{j+1}` are `2^{-js}` times those of `𝓕⁻ ψ₁`.
+* `ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ_smul_apply_eq_zero`: the
+  kernels `𝓕⁻ ψ_{j+1}` annihilate every homogeneous polynomial, since `ψ_{j+1}` vanishes near the
+  origin.
 * `ContDiffBump.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ` and
   `ContDiffBump.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`: the
   `k`-th moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jk})`.
@@ -171,16 +177,40 @@ theorem coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
   rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
 
 /-- **The moments of the dyadic kernels scale with `j`.** Since `𝓕⁻ ψ_{j+1}` is the
-`L¹`-normalised dilate `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, its `k`-th moment
+`L¹`-normalised dilate `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, its moment of real order `s`,
+`∫ ‖x‖ ^ s ‖𝓕⁻ ψ_{j+1} x‖`, is `2^{-js}` times that of `𝓕⁻ ψ₁`. -/
+theorem integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (s : ℝ) (j : ℕ) :
+    ∫ x, ‖x‖ ^ s * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x‖ =
+      ((2 ^ j : ℝ) ^ s)⁻¹ *
+        ∫ x, ‖x‖ ^ s * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) x‖ := by
+  simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
+  rw [TauCeti.integral_norm_rpow_mul_norm_fourierInv_comp_smul
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) s (inv_ne_zero (pow_ne_zero _ two_ne_zero)),
+    abs_of_pos (by positivity), Real.inv_rpow (by positivity)]
+
+/-- **The moments of the dyadic kernels scale with `j`.** The `k`-th moment
 `∫ ‖x‖ ^ k ‖𝓕⁻ ψ_{j+1} x‖` is `2^{-jk}` times that of `𝓕⁻ ψ₁`. -/
 theorem integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (k j : ℕ) :
     ∫ x, ‖x‖ ^ k * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x‖ =
       ((2 ^ j) ^ k)⁻¹ *
         ∫ x, ‖x‖ ^ k * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) x‖ := by
-  simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
-  rw [TauCeti.integral_norm_pow_mul_norm_fourierInv_comp_smul
-    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) k (inv_ne_zero (pow_ne_zero _ two_ne_zero)),
-    abs_of_pos (by positivity), inv_pow]
+  simpa only [Real.rpow_natCast] using
+    φ.integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ k j
+
+/-- **The dyadic kernels have vanishing moments.** Since `ψ_{j+1}` vanishes near the origin, the
+kernel `𝓕⁻ ψ_{j+1}` annihilates every homogeneous polynomial: `∫ 𝓕⁻ ψ_{j+1} y • A (y, …, y) = 0`
+for every continuous multilinear map `A`. -/
+theorem integral_fourierInv_inhomogeneousLittlewoodPaley_succ_smul_apply_eq_zero (j : ℕ) {n : ℕ}
+    (A : E [×n]→L[ℝ] F) :
+    ∫ y, 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) y • A (fun _ ↦ y) = 0 := by
+  rw [← φ.coe_inhomogeneousLittlewoodPaleySchwartz, ← SchwartzMap.fourierInv_coe]
+  refine SchwartzMap.integral_smul_apply_eq_zero_of_iteratedFDeriv_fourier_eq_zero _ ?_ A
+  have h0 : (𝓕 ⇑(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz (j + 1)) : 𝓢(E, ℂ))) =ᶠ[𝓝 0] 0 := by
+    rw [← SchwartzMap.fourier_coe, FourierTransform.fourier_fourierInv_eq]
+    filter_upwards [Metric.closedBall_mem_nhds (0 : E) (mul_pos (pow_pos two_pos j) φ.rIn_pos)]
+      with ξ hξ
+    simp [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le (mem_closedBall_zero_iff.1 hξ)]
+  simpa using (h0.iteratedFDeriv ℝ n).eq_of_nhds
 
 /-- **The dyadic kernels are `L¹`-dilates of one another.** Since `ψ_{j+1} = ψ₁ (2^{-j} ·)`, the
 kernel `𝓕⁻ ψ_{j+1}` is `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, so it has the same `L¹` norm as
@@ -350,6 +380,22 @@ theorem littlewoodPaleyBlock_apply (j : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j u =
       fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) u :=
   (rfl)
+
+/-- **The Littlewood–Paley blocks are symmetric.** For a tempered distribution `u` and a Schwartz
+function `f`, `(Δⱼ u) f = u (Δⱼ f)`, where on the right `Δⱼ` is the Fourier multiplier by `ψⱼ` on
+Schwartz functions. This holds because `ψⱼ` is even. -/
+theorem littlewoodPaleyBlock_apply_apply (j : ℕ) (u : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
+    littlewoodPaleyBlock F φ j u f =
+      u (SchwartzMap.fourierMultiplierCLM ℂ
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) := by
+  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply_apply,
+    SchwartzMap.fourier_smulLeftCLM_fourierInv_eq
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
+  congr 3
+  funext ξ
+  rcases j with _ | j
+  · simp [φ.neg]
+  · simp [ContDiffBump.inhomogeneousLittlewoodPaley_succ_apply, smul_neg, φ.neg]
 
 /-- The partial sums of the Littlewood–Paley blocks are the low-pass truncations:
 `∑_{j ≤ N} Δⱼ = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/
