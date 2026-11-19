@@ -58,6 +58,9 @@ zero.
   vectors of the tangent representation.
 * `TauCeti.iUnion_fixedPointsOfFinrank`, `TauCeti.pairwise_disjoint_fixedPointsOfFinrank`: the
   sets `M^K_d` partition the fixed set.
+* `Diffeomorph.mfderiv_smul_mfderiv_of_mem_stabilizer`: the differential at `p` of a
+  diffeomorphism that is equivariant near `p` intertwines the actions of the stabilizer of `p` on
+  the tangent spaces at `p` and at `ψ p`; no smoothness of the actions is needed.
 * `Diffeomorph.map_fixedTangentSubspace`: the differential of a diffeomorphism that is
   equivariant near `p` carries the fixed tangent subspace at `p` onto that at `ψ p`.
 * `Diffeomorph.fixedTangentSubspaceEquiv`: this differential as a linear equivalence between the
@@ -179,8 +182,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The differential at a point `p` of a diffeomorphism that commutes with the action of every
 element of the stabilizer of `p` near `p` intertwines the actions of the stabilizer on the
 tangent spaces at `p` and at `ψ p`. -/
-private theorem mfderiv_smul_mfderiv_of_mem_stabilizer (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {k : K}
-    {p : M} (h : ψ ∘ (k • ·) =ᶠ[𝓝 p] (k • ·) ∘ ψ) (hk : k • p = p) (v : TangentSpace I p) :
+theorem mfderiv_smul_mfderiv_of_mem_stabilizer (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {k : K}
+    {p : M} (h : ψ ∘ (k • ·) =ᶠ[𝓝 p] (k • ·) ∘ ψ) (hk : k ∈ MulAction.stabilizer K p)
+    (v : TangentSpace I p) :
     mfderiv J J (k • ·) (ψ p) (mfderiv I J ψ p v) =
       mfderiv I J ψ p (mfderiv I I (k • ·) p v) := by
   rw [ψ.mfderiv_apply_mfderiv_of_comp_eventuallyEq hn h]
@@ -189,7 +193,7 @@ private theorem mfderiv_smul_mfderiv_of_mem_stabilizer (ψ : M ≃ₘ^n⟮I, J�
   have key (q : M) (hq : q = p) (u : TangentSpace I q) : mfderiv I J ψ q u = mfderiv I J ψ p u := by
     subst hq
     rfl
-  exact key _ hk _
+  exact key _ (MulAction.mem_stabilizer_iff.1 hk) _
 
 /-- **Naturality of the fixed tangent subspace.** The differential at `p` of a diffeomorphism
 that commutes near `p` with the action of every element of `K` carries the fixed tangent
@@ -200,7 +204,7 @@ theorem map_fixedTangentSubspace (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {p
         (ψ.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.toLinearMap =
       fixedTangentSubspace J K (ψ p) := by
   have hstab : MulAction.stabilizer K (ψ p) = MulAction.stabilizer K p :=
-    TauCeti.MulAction.stabilizer_apply_of_injective ψ.injective fun k ↦ (h k).self_of_nhds
+    TauCeti.MulAction.stabilizer_eq_of_injective ψ ψ.injective fun k ↦ (h k).self_of_nhds
   have hinj : Function.Injective (mfderiv I J ψ p) := (ψ.isInvertible_mfderiv hn).injective
   have hder : (ψ.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.toLinearMap =
       (mfderiv I J ψ p).toLinearMap :=
