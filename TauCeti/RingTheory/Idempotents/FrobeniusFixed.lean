@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.Algebra.CharP.Frobenius.Fixed
-public import TauCeti.Algebra.CharP.ProdSubZModCast
+public import TauCeti.Algebra.CharP.ZModCast
 public import TauCeti.RingTheory.Idempotents.Combination
 import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Tactic.LinearCombination
@@ -96,11 +96,6 @@ variable {R : Type*} [CommRing R] (p : ℕ) [hp : Fact p.Prime] [CharP R p]
 
 variable {p} {x : R}
 
-/-- Frobenius-fixed elements stay fixed after translation by a residue of `ZMod p`. -/
-private theorem sub_zmodCast_pow_char (hx : x ^ p = x) (i : ZMod p) :
-    (x - (i.cast : R)) ^ p = x - (i.cast : R) := by
-  rw [sub_pow_char, hx, ← ZMod.cast_pow', ZMod.pow_card]
-
 /-- For `x ^ p = x`, the element `x` acts on `frobeniusFixedIdempotent p x i` as the scalar `i`. -/
 theorem mul_frobeniusFixedIdempotent (hx : x ^ p = x) (i : ZMod p) :
     x * frobeniusFixedIdempotent p x i = (i.cast : R) * frobeniusFixedIdempotent p x i := by
@@ -161,7 +156,7 @@ theorem frobeniusFixedIdempotent_sum_zmodCast_mul {f : ZMod p → R}
 `ZMod p` is fixed by the `p`-power map. -/
 theorem sum_zmodCast_mul_pow_char {f : ZMod p → R} (hf : CompleteOrthogonalIdempotents f) :
     (∑ i : ZMod p, (i.cast : R) * f i) ^ p = ∑ i : ZMod p, (i.cast : R) * f i := by
-  simp_rw [hf.sum_mul_pow, ← ZMod.cast_pow', ZMod.pow_card]
+  simp_rw [hf.sum_mul_pow, zmodCast_pow_char]
 
 variable (R p) in
 /-- The elements of `R` fixed by the `p`-power map correspond to the complete families of
@@ -171,11 +166,11 @@ def frobeniusFixedIdempotentEquiv :
     frobeniusFixedSubring R p 1 ≃ {f : ZMod p → R // CompleteOrthogonalIdempotents f} where
   toFun x := ⟨frobeniusFixedIdempotent p (x : R),
     completeOrthogonalIdempotents_frobeniusFixedIdempotent
-      (by simpa using (mem_frobeniusFixedSubring.mp x.2))⟩
-  invFun f := ⟨∑ i : ZMod p, (i.cast : R) * f.1 i, mem_frobeniusFixedSubring.mpr
-    (by simpa using sum_zmodCast_mul_pow_char f.2)⟩
+      (mem_frobeniusFixedSubring_one.mp x.2)⟩
+  invFun f := ⟨∑ i : ZMod p, (i.cast : R) * f.1 i,
+    mem_frobeniusFixedSubring_one.mpr (sum_zmodCast_mul_pow_char f.2)⟩
   left_inv x := Subtype.ext <| sum_zmodCast_mul_frobeniusFixedIdempotent
-    (by simpa using (mem_frobeniusFixedSubring.mp x.2))
+    (mem_frobeniusFixedSubring_one.mp x.2)
   right_inv f := Subtype.ext <| frobeniusFixedIdempotent_sum_zmodCast_mul f.2
 
 @[simp]
@@ -205,7 +200,7 @@ theorem pow_char_eq_self_iff_mem_range_zmodCast
     have h1 := (hR _ (he.idem i)).resolve_left hi
     exact ⟨i, by simpa [h1] using (mul_frobeniusFixedIdempotent hx i).symm⟩
   · rintro ⟨i, rfl⟩
-    rw [← ZMod.cast_pow', ZMod.pow_card]
+    exact zmodCast_pow_char i
 
 /-- If `R` has no idempotents other than `0` and `1`, exactly `p` elements of `R` are fixed by the
 `p`-power map. -/
@@ -213,7 +208,7 @@ theorem natCard_frobeniusFixedSubring_one (hR : ∀ e : R, IsIdempotentElem e �
     Nat.card (frobeniusFixedSubring R p 1) = p := by
   have hset : (frobeniusFixedSubring R p 1 : Set R) = Set.range (ZMod.cast : ZMod p → R) := by
     ext x
-    simp [pow_char_eq_self_iff_mem_range_zmodCast hR]
+    rw [SetLike.mem_coe, mem_frobeniusFixedSubring_one, pow_char_eq_self_iff_mem_range_zmodCast hR]
   have hinj : Function.Injective (ZMod.cast : ZMod p → R) :=
     fun a b hab ↦ ZMod.castHom_injective R (by simpa using hab)
   rw [← SetLike.coe_sort_coe, hset, Nat.card_range_of_injective hinj, Nat.card_zmod]
