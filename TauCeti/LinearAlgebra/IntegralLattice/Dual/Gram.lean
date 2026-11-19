@@ -25,7 +25,7 @@ the integral basis hypothesis is what makes the change-of-basis determinant have
 
 ## Main results
 
-* `TauCeti.IntegralLattice.extendOfIsLattice_dualCarrierBasis`: the extended dual-carrier basis
+* `TauCeti.IntegralLattice.extendOfIsFullLattice_dualCarrierBasis`: the extended dual-carrier basis
   is the bilinear dual of the extended carrier basis.
 * `TauCeti.IntegralLattice.toMatrix_dualCarrierBasis`: the inverse Gram matrix identity.
 * `TauCeti.IntegralLattice.det_toMatrix_dualCarrier`: the reciprocal determinant in any
@@ -52,7 +52,7 @@ open Classical in
 /-- Extending the integral basis of the dual carrier gives the bilinear dual basis of the
 extended original carrier basis. -/
 @[simp]
-theorem extendOfIsLattice_dualCarrierBasis {ι : Type*} [Finite ι]
+theorem extendOfIsFullLattice_dualCarrierBasis {ι : Type*} [Finite ι]
     (b : Basis ι ℤ L) :
     (L.dualCarrierBasis b).extendOfIsFullLattice ℚ =
       L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ) := by
@@ -69,7 +69,7 @@ theorem toMatrix_dualCarrierBasis {ι : Type*} [Fintype ι] [DecidableEq ι]
   -- The dual-carrier basis uses classical equality on its index type.
   cases Subsingleton.elim ‹DecidableEq ι› (Classical.decEq ι)
   classical
-  rw [L.extendOfIsLattice_dualCarrierBasis,
+  rw [L.extendOfIsFullLattice_dualCarrierBasis,
     LinearMap.BilinForm.toMatrix_dualBasis L.form L.form_nondegenerate (b.extendOfIsFullLattice ℚ),
     ← L.map_gramMatrix b, ← Matrix.transpose_map, (L.isSymm_gramMatrix b).eq]
 

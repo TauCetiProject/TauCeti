@@ -169,12 +169,12 @@ instance isFullLattice_neighborKernel [NeZero p] (v : L) :
     rwa [smul_comm, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ,
       smul_inv_smul₀ (Nat.cast_ne_zero.mpr (NeZero.ne p))] at h
 
-private theorem isLattice_neighborCarrier [NeZero p] (v : L) :
+private theorem isFullLattice_neighborCarrier [NeZero p] (v : L) :
     (L.neighborKernel p v ⊔ ℤ ∙ ((p : ℚ)⁻¹ • (v : V))).IsFullLattice ℚ :=
   Submodule.IsFullLattice.of_le_of_fg ℚ le_sup_left
     ((Submodule.IsLattice.fg ℚ (L.neighborKernel p v)).sup (Submodule.fg_span_singleton _))
 
-attribute [local instance] isLattice_neighborCarrier
+attribute [local instance] isFullLattice_neighborCarrier
 
 variable {L p}
 

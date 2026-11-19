@@ -214,7 +214,7 @@ theorem level_dvd_iff_gramMatrix {ι : Type v} [Fintype ι] [DecidableEq ι] (b 
     simpa only [LinearMap.BilinForm.toMatrix_apply,
       algebraMap_int_eq, Int.coe_castRingHom] using h.symm
   rw [L.level_dvd_iff_of_dualCarrier_eq_span f (by
-    simpa only [f, L.extendOfIsLattice_dualCarrierBasis] using
+    simpa only [f, L.extendOfIsFullLattice_dualCarrierBasis] using
       L.dualCarrier_eq_span_dualBasis b) N]
   constructor
   · rintro ⟨hint, heven⟩

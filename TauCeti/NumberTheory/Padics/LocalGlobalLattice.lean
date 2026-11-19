@@ -347,7 +347,7 @@ private theorem one_tmul_smul_mem {X : ∀ p : Nat.Primes, Submodule ℤ_[p] (�
     exact hkN q (smul_mem _ _ (one_tmul_mem_padicLocalization hw))
 
 omit [N.IsFullLattice ℚ] in
-/-- The local step of `exists_isLattice_padicLocalization_eq`: every `y ∈ X p` has `D' p • y` of
+/-- The local step of `exists_isFullLattice_padicLocalization_eq`: every `y ∈ X p` has `D' p • y` of
 the form `1 ⊗ v + D' p • p ^ k p • t` with `t ∈ N_p` and `v ∈ V` such that `1 ⊗ v ∈ X q` at
 every prime `q`. -/
 private theorem exists_forall_one_tmul_mem_add
@@ -378,7 +378,7 @@ private theorem exists_forall_one_tmul_mem_add
 open scoped Pointwise in
 /-- The existence half of `Submodule.existsUnique_isFullLattice_padicLocalization_eq`: the lattice
 `M = {v ∈ V | 1 ⊗ v ∈ X p for every p}` has `M_p = X p` at every prime. -/
-private theorem exists_isLattice_padicLocalization_eq
+private theorem exists_isFullLattice_padicLocalization_eq
     (X : ∀ p : Nat.Primes, Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V)) [∀ p, (X p).IsFullLattice ℚ_[p]]
     (hX : ∀ᶠ p : Nat.Primes in cofinite, X p = N.padicLocalization p) :
     ∃ M : Submodule ℤ V, M.IsFullLattice ℚ ∧ ∀ p : Nat.Primes, M.padicLocalization p = X p := by
@@ -425,7 +425,7 @@ theorem existsUnique_isFullLattice_padicLocalization_eq
     (X : ∀ p : Nat.Primes, Submodule ℤ_[p] (ℚ_[p] ⊗[ℚ] V)) [∀ p, (X p).IsFullLattice ℚ_[p]]
     (hX : ∀ᶠ p : Nat.Primes in cofinite, X p = N.padicLocalization p) :
     ∃! M : Submodule ℤ V, M.IsFullLattice ℚ ∧ ∀ p : Nat.Primes, M.padicLocalization p = X p := by
-  refine existsUnique_of_exists_of_unique (exists_isLattice_padicLocalization_eq X hX) ?_
+  refine existsUnique_of_exists_of_unique (exists_isFullLattice_padicLocalization_eq X hX) ?_
   rintro M M' ⟨hM, hMX⟩ ⟨hM', hM'X⟩
   exact (eq_iff_forall_padicLocalization_eq M).mpr fun p ↦ (hMX p).trans (hM'X p).symm
 

@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Algebra.Monoid
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Monoid
 import TauCeti.Geometry.Manifold.VectorField.Related
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The Lie functor on smooth homomorphisms
@@ -421,9 +422,7 @@ theorem lieEquivOfIsLocalDiffeomorphAt_apply
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1)
     (X : LeftInvariantDerivation I G) :
     lieEquivOfIsLocalDiffeomorphAt φ hφ X = lieMap φ X := by
-  -- The coercion of `LieEquiv.ofBijective f _` is definitionally `f`, and Mathlib provides no
-  -- apply lemma for `LieEquiv.ofBijective`, so this holds by unfolding.
-  rfl
+  simp [lieEquivOfIsLocalDiffeomorphAt]
 
 /-- The Lie homomorphism underlying the equivalence induced by a local diffeomorphism is its Lie
 map. -/

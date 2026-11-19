@@ -128,7 +128,7 @@ theorem finiteDimensional (L : IntegralLattice V) : FiniteDimensional ℚ V :=
 space. -/
 theorem finrank_carrier (L : IntegralLattice V) :
     Module.finrank ℤ L = Module.finrank ℚ V :=
-  congr_arg Cardinal.toNat (Submodule.IsFullLattice.rank_eq ℚ L.carrier)
+  Submodule.IsFullLattice.finrank_eq ℚ L.carrier
 
 /-- The ambient space of an integral lattice of rank zero is trivial. -/
 theorem subsingleton_of_finrank_eq_zero {L : IntegralLattice V} (h : Module.finrank ℤ L = 0) :

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Quotient
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.Algebra.Lie.Abelian
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # Homomorphisms from quotients by Lie ideals
@@ -245,9 +246,7 @@ noncomputable def quotientEquivOfIsCompl : (L ⧸ I) ≃ₗ⁅R⁆ S :=
 @[simp]
 theorem quotientEquivOfIsCompl_symm_apply (x : S) :
     (I.quotientEquivOfIsCompl S h).symm x = LieSubmodule.Quotient.mk (x : L) := by
-  -- The coercion of `LieEquiv.ofBijective f _` is definitionally `f`, and Mathlib provides no
-  -- apply lemma for `LieEquiv.ofBijective`, so this holds by unfolding.
-  rfl
+  simp [quotientEquivOfIsCompl]
 
 /-- `LieIdeal.quotientEquivOfIsCompl` sends the class of `x : S` to `x`. -/
 @[simp]
