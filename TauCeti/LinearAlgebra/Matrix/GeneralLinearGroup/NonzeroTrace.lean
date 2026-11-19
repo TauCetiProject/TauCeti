@@ -118,8 +118,6 @@ theorem closure_setOfPred_trace_ne_zero_eq_top (H : Subgroup (GL (Fin 2) K))
     exact Group.isSolvable_of_comm fun a b ↦ hZ a (hNZ ▸ mem_top a) b
   · -- Modulo the scalars, every element outside the image of `N` is an involution.
     have hM : N.map (QuotientGroup.mk' Z) ≠ ⊤ := fun h ↦ hNZ (QuotientGroup.map_mk'_eq_top.mp h)
-    have : (N.map (QuotientGroup.mk' Z)).Normal :=
-      Normal.map inferInstance _ (QuotientGroup.mk'_surjective Z)
     have hQ : Group.IsSolvable (H ⧸ Z) :=
       Group.isSolvable_of_forall_notMem_mul_self_eq_one hM fun q hq ↦ by
         induction q using QuotientGroup.induction_on with
