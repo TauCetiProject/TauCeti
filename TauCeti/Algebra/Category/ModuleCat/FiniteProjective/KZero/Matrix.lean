@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.RingTheory.Morita.Matrix
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Rank
+import TauCeti.RingTheory.Semisimple.MatrixDivisionRing
 
 /-!
 # Projective `K₀` of a matrix ring
@@ -101,26 +102,13 @@ the column action of `Matrix ι ι R`. -/
 theorem matrixColumn_obj : (matrixColumn R ι).obj = ModuleCat.of (Matrix ι ι R) (ι → R) :=
   (rfl)
 
-/-- The regular `Matrix ι ι R`-module is the product of its columns. -/
-private def matrixColumnsEquiv :
-    Matrix ι ι R ≃ₗ[Matrix ι ι R] (ι → (matrixColumn R ι).obj) where
-  toFun := Matrix.col
-  invFun v := Matrix.of fun i j ↦ v j i
-  map_add' _ _ := rfl
-  map_smul' A M := funext fun j ↦ funext fun i ↦ by
-    -- The `j`-th column of `A * M` is `A` acting on the `j`-th column of `M`.
-    rw [RingHom.id_apply, smul_eq_mul, Matrix.col_apply, Matrix.mul_apply]
-    exact (Matrix.Module.smul_apply A (M.col j) i).symm
-  left_inv _ := rfl
-  right_inv _ := rfl
-
 /-- **The regular module of a matrix ring is a sum of columns.** In the split `K₀` of
 `Matrix ι ι R`, the class of the regular module is `card ι` times the class of the column
 module. -/
 theorem of_finiteProjectiveModulesRegular_matrix :
     SplitK0.of.{u} (finiteProjectiveModulesRegular (Matrix ι ι R)) =
       Fintype.card ι • SplitK0.of.{u} (matrixColumn R ι) := by
-  rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ ↦ matrixColumn R ι) (matrixColumnsEquiv R ι),
+  rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ ↦ matrixColumn R ι) (Matrix.linearEquivPi ι R),
     Finset.sum_const, Finset.card_univ]
 
 /-! ### The Morita isomorphism -/

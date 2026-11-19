@@ -118,7 +118,9 @@ theorem exists_zsmul_of_finiteProjectiveModulesRegular_eq
   SplitK0.surjective_of_forall_of_mem_range
     (f := zmultiplesHom (SplitK0.{u} (finiteProjectiveModules A).FullSubcategory)
       (SplitK0.of.{u} (finiteProjectiveModulesRegular A)))
-    (fun P ↦ have := h P; exists_zsmul_eq_of_isStablyFree A P) x
+    (fun P ↦ have := h P
+      let ⟨z, hz⟩ := exists_zsmul_eq_of_isStablyFree A P
+      AddMonoidHom.mem_range.2 ⟨z, by rw [zmultiplesHom_apply, hz]⟩) x
 
 variable [InvariantBasisNumber A]
   (h : ∀ P : (finiteProjectiveModules A).FullSubcategory, IsStablyFree A P.obj)
