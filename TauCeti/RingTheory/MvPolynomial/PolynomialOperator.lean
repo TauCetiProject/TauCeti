@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.RingTheory.MvPolynomial.BinaryMonomial
+import TauCeti.Algebra.Module.Rat
 
 /-!
 # The operators `X a ∂_b` on polynomials
@@ -46,6 +47,7 @@ exponentials of `t E` and `t F`. The `sl₂`-triple itself and the primitive vec
 * `TauCeti.lie_polynomialOperator`: the commutation relations of the elementary matrices.
 * `TauCeti.pow_polynomialOperator_X_pow`: for `a ≠ b`,
   `(X a ∂_b)ᵏ (X b ^ m) = m(m-1)⋯(m-k+1) X a ^ k X b ^ (m-k)`.
+* `TauCeti.pow_polynomialOperator_monomial`: for `a ≠ b`, the same formula on a monomial `r X^s`.
 * `TauCeti.polynomialAction_transvection`: the transvection `1 + t E_ab` acts as
   `∑ₖ tᵏ / k! (X a ∂_b)ᵏ`.
 * `TauCeti.pow_polynomialOperator_zero_one_polynomialMonomial`,
@@ -178,6 +180,16 @@ private theorem pow_polynomialOperator_mul_of_eq_zero {q : MvPolynomial σ R}
   | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, polynomialOperator_mul, hq, mul_zero,
       add_zero, mul_apply_eq_comp]
 
+/-- For `a ≠ b`, `(X a ∂_b)ᵏ` sends the monomial `r X^s` to
+`s_b(s_b-1)⋯(s_b-k+1) X a ^ k X b ^ (s_b - k) r X^(s - s_b e_b)`. -/
+theorem pow_polynomialOperator_monomial (hab : a ≠ b) (k : ℕ) (s : σ →₀ ℕ) (r : R) :
+    (polynomialOperator R a b ^ k) (monomial s r) =
+      ((s b).descFactorial k : R) • (X a ^ k * X b ^ (s b - k) * monomial (s.erase b) r) := by
+  have hkill : polynomialOperator R a b (monomial (s.erase b) r) = 0 := by
+    simp
+  rw [monomial_eq_X_pow_mul_monomial_erase b s r, pow_polynomialOperator_mul_of_eq_zero hkill,
+    pow_polynomialOperator_X_pow hab, smul_mul_assoc]
+
 end Power
 
 section Transvection
@@ -220,12 +232,6 @@ private theorem polynomialAction_transvection_monomial (t : R) (s : σ →₀ �
   rw [mul_pow, smul_eq_C_mul, map_mul, map_pow, map_natCast]
   ring
 
-/-- Over a `ℚ`-algebra, `k!` is cancelled by `(k! : ℚ)⁻¹`. -/
-private theorem inv_factorial_smul_factorial (R : Type*) [Ring R] [Algebra ℚ R] (k : ℕ) :
-    (k.factorial : ℚ)⁻¹ • (k.factorial : R) = 1 := by
-  rw [← map_natCast (algebraMap ℚ R), Algebra.algebraMap_eq_smul_one, smul_smul,
-    inv_mul_cancel₀ (by positivity), one_smul]
-
 /-- **The exponential formula for a transvection**: over a `ℚ`-algebra, for `a ≠ b` the
 transvection `1 + t E_ab` acts on a polynomial of degree at most `N` in `X b` as the finite
 exponential series `∑_{k ≤ N} tᵏ / k! (X a ∂_b)ᵏ`. -/
@@ -240,21 +246,21 @@ theorem polynomialAction_transvection [Algebra ℚ R] (hab : a ≠ b) (t : R) {N
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun s hs ↦ ?_
   have hsN : s b ≤ N := (monomial_le_degreeOf b hs).trans hp
-  have hmon := monomial_eq_X_pow_mul_monomial_erase b s (p.coeff s)
-  have hkill : polynomialOperator R a b (monomial (s.erase b) (p.coeff s)) = 0 := by
-    simp
+  -- The coefficient `tᵏ / k!` times the descending factorial is the binomial term.
+  have hcoef (k : ℕ) :
+      ((k.factorial : ℚ)⁻¹ • t ^ k) * ((s b).descFactorial k : R) =
+        ((s b).choose k : R) * t ^ k := by
+    rw [Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul, smul_mul_assoc, mul_left_comm,
+      inv_natCast_smul_natCast_mul k.factorial_ne_zero]
+    ring
   rw [polynomialAction_transvection_monomial, ← Finset.sum_range_add_sum_Ico _
     (Nat.succ_le_succ hsN), Finset.sum_eq_zero (s := Finset.Ico _ _), add_zero]
   · refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [hmon, pow_polynomialOperator_mul_of_eq_zero hkill, pow_polynomialOperator_X_pow hab,
-      smul_mul_assoc, smul_smul]
-    congr 1
-    rw [Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul, smul_mul_assoc,
-      mul_left_comm, ← smul_mul_assoc, inv_factorial_smul_factorial, one_mul, mul_comm]
+    rw [pow_polynomialOperator_monomial hab, smul_smul, hcoef]
   · intro k hk
-    rw [hmon, pow_polynomialOperator_mul_of_eq_zero hkill, pow_polynomialOperator_X_pow hab,
+    rw [pow_polynomialOperator_monomial hab,
       Nat.descFactorial_eq_zero_iff_lt.mpr (Finset.mem_Ico.mp hk).1, Nat.cast_zero, zero_smul,
-      zero_mul, smul_zero]
+      smul_zero]
 
 end Transvection
 
