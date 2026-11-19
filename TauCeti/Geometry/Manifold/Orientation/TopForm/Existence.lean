@@ -85,8 +85,8 @@ theorem exists_ofTopForm_eq (hk : finrank ℝ E = m) (o : Orientation I M (Fin m
   -- On a basis `b`, both tangent orientations at `x` are read off the sign of `φ x b`. So `b` is
   -- positive for one exactly when it is positive for the other, and otherwise both are
   -- `-b.orientation`. (`adjustToOrientation` would need `Nonempty (Fin m)`, failing for `m = 0`.)
-  let b := finBasisOfFinrankEq ℝ (TangentSpace I x) hk
-  have hcard : Fintype.card (Fin m) = finrank ℝ (TangentSpace I x) := by simpa using hk.symm
+  let b := finBasisOfFinrankEq ℝ (TangentSpace I x) ((finrank_tangentSpace (I := I) x).trans hk)
+  have hcard := (o.finrank_tangentSpace_eq x).symm
   have h := (orientation_eq_orientationAt_ofTopForm_iff hk (φ.isSmoothForm.of_le zero_le) h0
     b).trans (hφ x b)
   by_cases hb : b.orientation = o.orientationAt x
