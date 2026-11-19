@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Algebra.Group.Action.Pi
 public import Mathlib.Algebra.Group.Conj
+public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Fintype.Basic
@@ -238,19 +239,26 @@ theorem mk_eq_mk_iff {t t' : BranchTuple r G} :
   · rintro ⟨φ, hφ, h⟩
     exact ⟨⟨φ, hφ⟩, funext fun i ↦ (h i).symm⟩
 
+/-- Two branch tuples have the same Nielsen class exactly when an automorphism in `A` carries the
+first to the second. -/
+theorem mk_eq_mk_iff_smul {t t' : BranchTuple r G} :
+    (Quotient.mk'' t : NielsenClass A r) = Quotient.mk'' t' ↔ ∃ φ ∈ A, φ • t = t' := by
+  rw [eq_comm, Quotient.eq'', MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+  simp only [Subtype.exists, Subgroup.mk_smul, exists_prop]
+
 /-- Product one is an invariant of Nielsen classes. -/
 theorem product_eq_one_iff_of_mk_eq_mk {t t' : BranchTuple r G}
     (h : (Quotient.mk'' t : NielsenClass A r) = Quotient.mk'' t') :
     BranchTuple.product t = 1 ↔ BranchTuple.product t' = 1 := by
-  obtain ⟨φ, -, hφ⟩ := mk_eq_mk_iff.mp h
-  rw [show t' = φ • t from funext hφ, BranchTuple.product_smul_eq_one_iff]
+  obtain ⟨φ, -, rfl⟩ := mk_eq_mk_iff_smul.mp h
+  exact (BranchTuple.product_smul_eq_one_iff φ t).symm
 
 /-- Generation of `G` is an invariant of Nielsen classes. -/
 theorem generated_eq_top_iff_of_mk_eq_mk {t t' : BranchTuple r G}
     (h : (Quotient.mk'' t : NielsenClass A r) = Quotient.mk'' t') :
     BranchTuple.generated t = ⊤ ↔ BranchTuple.generated t' = ⊤ := by
-  obtain ⟨φ, -, hφ⟩ := mk_eq_mk_iff.mp h
-  rw [show t' = φ • t from funext hφ, BranchTuple.generated_smul_eq_top_iff]
+  obtain ⟨φ, -, rfl⟩ := mk_eq_mk_iff_smul.mp h
+  exact (BranchTuple.generated_smul_eq_top_iff φ t).symm
 
 end NielsenClass
 
@@ -275,8 +283,8 @@ classes. -/
 theorem classMultiset_eq_of_mk_eq_mk {t t' : BranchTuple r G}
     (h : (Quotient.mk'' t : InnerNielsenClass r G) = Quotient.mk'' t') :
     BranchTuple.classMultiset t = BranchTuple.classMultiset t' := by
-  obtain ⟨g, hg⟩ := mk_eq_mk_iff.mp h
-  rw [show t' = MulAut.conj g • t from funext hg, BranchTuple.classMultiset_conj_smul]
+  obtain ⟨-, ⟨g, rfl⟩, rfl⟩ := NielsenClass.mk_eq_mk_iff_smul.mp h
+  exact (BranchTuple.classMultiset_conj_smul g t).symm
 
 /-- In an abelian group, conjugation is trivial, so the inner Nielsen class of a branch tuple
 determines the tuple. Dividing by all automorphisms of the group can identify more tuples. -/
