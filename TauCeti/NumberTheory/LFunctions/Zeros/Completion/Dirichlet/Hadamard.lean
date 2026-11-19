@@ -37,7 +37,7 @@ of `TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard` gives:
   `(logDeriv Λ₀ 0).re = -∑' ρ, m_ρ * (1 / ρ).re`, so off the zeros one has
   `(logDeriv Λ₀ s).re = ∑' ρ, m_ρ * (1 / (s - ρ)).re` with no additive constant.
 * **The sum through `L'/L`**
-  (`DirichletCharacter.tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction`): for
+  (`DirichletCharacter.tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction_add`): for
   nonprincipal `χ`, the same sum equals
   `Re (L'/L)(s, χ) + ½ log N + Re (Γℝ'/Γℝ)(s + κ)`, where `κ` is the parity of `χ`,
   on the positive half-plane off the zeros.
@@ -250,7 +250,7 @@ open TauCeti.LFunctions
 /-- **The sum over zeros through `L'/L`.** On the positive half-plane, away from the zeros of
 `L(χ, ·)`, `∑_ρ m_ρ Re (1 / (s - ρ)) = Re (L'/L)(s, χ) + ½ log N + Re (Γℝ'/Γℝ)(s + κ)`, the sum
 running over all zeros of the entire completion with multiplicity. -/
-theorem tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction
+theorem tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction_add
     {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) (hne : χ ≠ 1) {s : ℂ}
     (hs : 0 < s.re) (hL : χ.LFunction s ≠ 0) :
     ∑' ρ : (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support,
@@ -260,8 +260,7 @@ theorem tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction
   have hΛ : (dirichletData χ hχ).entireCompletion s ≠ 0 :=
     (dirichletData_entireCompletion_eq_zero_iff χ hχ hne hs).not.mpr hL
   rw [← re_logDeriv_dirichletData_entireCompletion_eq_tsum χ hχ hΛ,
-    logDeriv_dirichletData_entireCompletion χ hχ hne hs hL, add_re, add_re, div_ofNat_re,
-    ofReal_re]
+    re_logDeriv_dirichletData_entireCompletion χ hχ hne hs hL]
   ring
 
 /-- **Finite retained-zero inequality.** For any primitive nonprincipal Dirichlet character `χ` of
@@ -290,8 +289,7 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunc
     rw [toNat_divisor_dirichletData_entireCompletion_eq_analyticOrderNatAt χ hχ hne (hS ρ hρ)]
   have hdecomp : (logDeriv (dirichletData χ hχ).entireCompletion σ).re =
       Real.log N / 2 + (logDeriv χ.gammaFactor σ).re + (logDeriv χ.LFunction σ).re := by
-    rw [logDeriv_dirichletData_entireCompletion χ hχ hne hσ0 hLσ, add_re, add_re,
-      div_ofNat_re, ofReal_re]
+    exact re_logDeriv_dirichletData_entireCompletion χ hχ hne hσ0 hLσ
   have hgamma : (logDeriv χ.gammaFactor σ).re ≤ TauCeti.gammaLogDerivBound :=
     (le_abs_self _).trans ((abs_re_le_norm _).trans (χ.norm_logDeriv_gammaFactor_ofReal_le hσ))
   linarith
@@ -387,7 +385,9 @@ example :
     · exact absurd (DirichletCharacter.eq_one_iff_conductor_eq_one.mpr h) hne
     · exact h
   refine ⟨χ, hχ, fun hinv ↦ ?_, hprim, ?_⟩
-  · have h2 : χ ^ 2 = 1 := by rw [sq]; nth_rw 1 [← hinv]; exact inv_mul_cancel χ
+  · have h2 : χ ^ 2 = 1 := by
+      rw [sq]
+      exact inv_eq_iff_mul_eq_one.mp hinv
     have := orderOf_dvd_of_pow_eq_one h2
     rw [hχ] at this
     exact absurd this (by norm_num)
