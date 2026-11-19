@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import TauCeti.Data.Bundle
@@ -41,7 +42,9 @@ Subtracting a potential `V : M → 𝕜` keeps a Lagrangian hyperregular and add
 Hamiltonian. A mechanical Lagrangian `½ g(v, v) - V(x)` with symmetric kinetic form `g` is
 hyperregular exactly when it is regular, that is when each `g x` is invertible onto the dual
 (`TauCeti.isHyperregularLagrangian_mechanicalLagrangian_iff`); in finite dimensions this holds for
-positive definite `g`. Its Hamiltonian is `H(p) = ½ p(g_x⁻¹ p) + V(x)` for a covector `p` at `x`
+positive definite `g` and for every smooth nondegenerate metric, of any signature
+(`TauCeti.Manifold.ContMDiffNondegenerateMetric.isHyperregularLagrangian_mechanicalLagrangian`).
+Its Hamiltonian is `H(p) = ½ p(g_x⁻¹ p) + V(x)` for a covector `p` at `x`
 (`TauCeti.IsHyperregularLagrangian.hamiltonian_mechanicalLagrangian`).
 
 ## Main declarations
@@ -323,6 +326,25 @@ theorem IsHyperregularLagrangian.hamiltonian_mechanicalLagrangian
   conv_lhs => rw [← hp, h.hamiltonian_legendreMap, lagrangianEnergy_mechanicalLagrangian]
   dsimp only
   rw [hinv.self_apply_inverse]
+
+namespace Manifold.ContMDiffNondegenerateMetric
+
+/-- The kinetic Lagrangian `v ↦ ½ g(v, v)` of a smooth metric is smooth. -/
+theorem contMDiff_mechanicalLagrangian [IsManifold I ∞ M]
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) :
+    ContMDiff I.tangent 𝓘(ℝ) ∞ (mechanicalLagrangian (⇑g) 0) :=
+  TauCeti.contMDiff_mechanicalLagrangian g.contMDiff contMDiff_const
+
+/-- **A nondegenerate metric gives a hyperregular mechanical Lagrangian.** On a finite-dimensional
+manifold, the Legendre map `v ↦ g(v, ·)` of `L(v) = ½ g(v, v) - V(x)` is a bijection `TM → T*M`,
+for every potential `V`. -/
+theorem isHyperregularLagrangian_mechanicalLagrangian [IsManifold I ∞ M] [FiniteDimensional ℝ E]
+    (g : ContMDiffNondegenerateMetric (I := I) (M := M)) (V : M → ℝ) :
+    IsHyperregularLagrangian (mechanicalLagrangian (⇑g) V) :=
+  (isHyperregularLagrangian_mechanicalLagrangian_iff g.apply_comm V).2 fun x ↦
+    ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm.2 (g.nondegenerate x)
+
+end Manifold.ContMDiffNondegenerateMetric
 
 end Mechanical
 
