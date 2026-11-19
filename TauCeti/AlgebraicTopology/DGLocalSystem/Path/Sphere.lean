@@ -138,6 +138,15 @@ closed unit ball of the sup norm. It collapses the boundary of the cube to the p
 def sphereCubeMap : C(Fin (m + 2) → I, Sph) :=
   (sphereBallMap h).comp (cubeHomeomorphClosedBall (Fin (m + 2)))
 
+/-- The cube map is the characteristic map of the single top cell, read through
+`TauCeti.cubeHomeomorphClosedBall`. -/
+private theorem sphereCubeMap_apply (d : Fin (m + 2) → I) :
+    letI := TopCat.sphereRelCWComplex h
+    letI := TopCat.uniqueCellSphereRelCWComplex h (n := m + 2) (by omega)
+    sphereCubeMap h d = sigmaCellMap (univ : Set Sph) (m + 2)
+      ⟨default, cubeHomeomorphClosedBall (Fin (m + 2)) d⟩ :=
+  rfl
+
 /-- The cube map collapses the boundary of the cube to the pole. -/
 theorem sphereCubeMap_of_mem_boundary {d : Fin (m + 2) → I}
     (hd : d ∈ Cube.boundary (Fin (m + 2))) : sphereCubeMap h d = spherePolePoint h :=
@@ -204,11 +213,11 @@ private def sphereCubePullbackHomeomorph :
       y.1.2.toMoorePath.target = sphereCubeMap h ((cubeHomeomorphClosedBall _).symm y.1.1.2) := by
     obtain ⟨⟨⟨i, v⟩, γ⟩, hy⟩ := y
     obtain rfl := Subsingleton.elim i default
-    simpa [sphereCubeMap, sphereBallMap, MoorePathFrom.endpoint_apply] using hy.symm
+    simpa [sphereCubeMap_apply, MoorePathFrom.endpoint_apply] using hy.symm
   have hto (x : MoorePathPullback (sphereCubeMap h) (spherePolePoint h)) :
       sigmaCellMap (univ : Set Sph) (m + 2) (ιc (cubeHomeomorphClosedBall _ x.1.1)) =
         TopCat.ofHom (MoorePathFrom.endpoint Sph (spherePolePoint h)) x.1.2 := by
-    simpa [sphereCubeMap, sphereBallMap, MoorePathFrom.endpoint_apply, ιc] using x.2.symm
+    simpa [sphereCubeMap_apply, MoorePathFrom.endpoint_apply, ιc] using x.2.symm
   { toFun x := ⟨(ιc (cubeHomeomorphClosedBall _ x.1.1), x.1.2), hto x⟩
     invFun y := ⟨((cubeHomeomorphClosedBall _).symm y.1.1.2, y.1.2), hinv y⟩
     left_inv x := by
@@ -340,18 +349,8 @@ private theorem boundary_leftAct_sphereAttachingCycle {q : ℕ}
           ((((normalizedCubicalChainComplex k).obj
             (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).iCycles (m + 1)).hom
               (sphereAttachingCycle h k))) := by
-  -- In positive degree `q = p + 1` the boundary of the cycle `z` vanishes.
-  have hz (p : ℕ) (hp : q = p + 1) :
-      NormalizedCubicalChain.boundary (MooreLoopSpace Sph (spherePolePoint h)) k p
-        (NormalizedCubicalChain.cast k hp ((((normalizedCubicalChainComplex k).obj
-          (TopCat.of (MooreLoopSpace Sph (spherePolePoint h)))).iCycles q).hom z)) = 0 := by
-    subst hp
-    exact (congrArg (NormalizedCubicalChain.boundary _ k p)
-      (NormalizedCubicalChain.cast_rfl k _)).trans
-        ((normalizedCubicalChainComplex_obj_d_apply
-          (TopCat.of (MooreLoopSpace Sph (spherePolePoint h))) p _).symm.trans
-            (moduleCat_d_iCycles_apply _ (p + 1) p z))
-  rw [NormalizedCubicalChain.boundary_leftAct_of_boundary_eq_zero _ hz,
+  rw [NormalizedCubicalChain.boundary_leftAct_of_boundary_eq_zero _
+      (NormalizedCubicalChain.boundary_cast_iCycles_eq_zero z),
     boundary_ofCube_spherePathCube h k, map_smul]
   exact congrArg _ ((NormalizedCubicalChain.map_leftAct
     (MoorePathFrom.ofLoop Sph (spherePolePoint h)) (MoorePathFrom.ofLoop_mul) _ _).symm.trans
