@@ -5,16 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Comma.Over.Basic
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.CategoryTheory.Monoidal.Grp.Basic
+import TauCeti.CategoryTheory.Comma.Over
 
 /-!
-# Monomorphisms of group objects over a base
+# Group objects over a base: monomorphisms and pullback functoriality
 
 A morphism of group objects in a slice category is a monomorphism whenever its underlying
-morphism in the original category is a monomorphism. This follows by reflecting monomorphisms
-through the two faithful forgetful functors. In particular, closed immersions of group schemes
-are monomorphisms without any affineness assumption.
+morphism in the original category is a monomorphism (`mono_of_mono_left`). This follows by
+reflecting monomorphisms through the two faithful forgetful functors. In particular, closed
+immersions of group schemes are monomorphisms without any affineness assumption.
+
+In a category `C` with pullbacks, the slice categories `Over X` are cartesian monoidal via
+`Over.cartesianMonoidalCategory`, and base change lifts to `(Over.pullback s).mapGrp`. This file
+also records the canonical functoriality isomorphisms of base change on `Grp (Over X)`:
+
+* `CategoryTheory.Grp.pullbackIdIso`: `(Over.pullback (𝟙 X)).mapGrp.obj G ≅ G`.
+* `CategoryTheory.Grp.pullbackCompIso`:
+  `(Over.pullback t).mapGrp.obj ((Over.pullback s).mapGrp.obj G) ≅`
+  `(Over.pullback (t ≫ s)).mapGrp.obj G`.
+* `CategoryTheory.Grp.pullbackCongrIso`:
+  `(Over.pullback s₁).mapGrp.obj G ≅ (Over.pullback s₂).mapGrp.obj G` for `s₁ = s₂`.
+* `CategoryTheory.Grp.pullbackOverlapIso`: the canonical overlap isomorphism on `Y ×_X Y` between
+  the two pullbacks of `(Over.pullback p).mapGrp.obj G` along `pullback.fst p p` and
+  `pullback.snd p p`, together with its first-projection formula `pullbackOverlapIso_hom_left_fst`.
 -/
 
 public section
@@ -29,5 +44,173 @@ instance (priority := 900) mono_of_mono_left {C : Type u} [Category.{v} C] {X : 
     [Mono f.hom.hom.left] : Mono f :=
   -- Forgetting inverses maps `f` to `f.hom` by definition.
   (Grp.forget₂Mon _).mono_of_mono_map (Mon.mono_of_mono_left f.hom)
+
+section Pullback
+
+open Limits
+
+attribute [local instance] Over.cartesianMonoidalCategory Over.braidedCategory
+
+variable {C : Type u} [Category.{v} C] [HasPullbacks C] {X Y : C}
+
+/-- The canonical isomorphism `(Over.pullback (𝟙 X)).mapGrp.obj G ≅ G` of group objects over `X`. -/
+noncomputable def pullbackIdIso (G : Grp (Over X)) :
+    (Over.pullback (𝟙 X)).mapGrp.obj G ≅ G :=
+  (Functor.mapGrpNatIso Over.pullbackId ≪≫ Functor.mapGrpIdIso).app G
+
+/-- The underlying morphism in `Over X` of `(pullbackIdIso G).hom` is
+`Over.pullbackId.hom.app G.X`. -/
+@[simp]
+theorem pullbackIdIso_hom_hom_hom (G : Grp (Over X)) :
+    (pullbackIdIso G).hom.hom.hom = Over.pullbackId.hom.app G.X := by
+  simp only [pullbackIdIso]
+  exact Category.comp_id _
+
+/-- The underlying morphism in `Over X` of `(pullbackIdIso G).inv` is
+`Over.pullbackId.inv.app G.X`. -/
+@[simp]
+theorem pullbackIdIso_inv_hom_hom (G : Grp (Over X)) :
+    (pullbackIdIso G).inv.hom.hom = Over.pullbackId.inv.app G.X := by
+  simp only [pullbackIdIso]
+  exact Category.id_comp _
+
+/-- Naturality of `pullbackIdIso`. -/
+@[reassoc]
+theorem pullbackIdIso_hom_naturality {G H : Grp (Over X)} (f : G ⟶ H) :
+    (Over.pullback (𝟙 X)).mapGrp.map f ≫ (pullbackIdIso H).hom = (pullbackIdIso G).hom ≫ f :=
+  (Functor.mapGrpNatIso Over.pullbackId ≪≫ Functor.mapGrpIdIso).hom.naturality f
+
+/-- The canonical isomorphism comparing iterated base change of a group object along `s : Y ⟶ X`
+and `t : Z ⟶ Y` with base change along `t ≫ s`. -/
+noncomputable def pullbackCompIso {Z : C} (t : Z ⟶ Y) (s : Y ⟶ X) (G : Grp (Over X)) :
+    (Over.pullback t).mapGrp.obj ((Over.pullback s).mapGrp.obj G) ≅
+      (Over.pullback (t ≫ s)).mapGrp.obj G :=
+  ((Functor.mapGrpNatIso (Over.pullbackComp t s) ≪≫ Functor.mapGrpCompIso).symm).app G
+
+/-- The underlying morphism in `Over Z` of `(pullbackCompIso t s G).hom` is
+`(Over.pullbackComp t s).inv.app G.X`. -/
+@[simp]
+theorem pullbackCompIso_hom_hom_hom {Z : C} (t : Z ⟶ Y) (s : Y ⟶ X) (G : Grp (Over X)) :
+    (pullbackCompIso t s G).hom.hom.hom = (Over.pullbackComp t s).inv.app G.X := by
+  simp only [pullbackCompIso]
+  exact Category.id_comp _
+
+/-- The underlying morphism in `Over Z` of `(pullbackCompIso t s G).inv` is
+`(Over.pullbackComp t s).hom.app G.X`. -/
+@[simp]
+theorem pullbackCompIso_inv_hom_hom {Z : C} (t : Z ⟶ Y) (s : Y ⟶ X) (G : Grp (Over X)) :
+    (pullbackCompIso t s G).inv.hom.hom = (Over.pullbackComp t s).hom.app G.X := by
+  simp only [pullbackCompIso]
+  exact Category.comp_id _
+
+/-- Naturality of `pullbackCompIso`. -/
+@[reassoc]
+theorem pullbackCompIso_hom_naturality {Z : C} (t : Z ⟶ Y) (s : Y ⟶ X)
+    {G H : Grp (Over X)} (f : G ⟶ H) :
+    (Over.pullback t).mapGrp.map ((Over.pullback s).mapGrp.map f) ≫ (pullbackCompIso t s H).hom =
+      (pullbackCompIso t s G).hom ≫ (Over.pullback (t ≫ s)).mapGrp.map f :=
+  ((Functor.mapGrpNatIso (Over.pullbackComp t s) ≪≫ Functor.mapGrpCompIso).symm).hom.naturality f
+
+/-- The canonical isomorphism between base changes of `G` along two equal morphisms `s₁ = s₂`. -/
+noncomputable def pullbackCongrIso {s₁ s₂ : Y ⟶ X} (h : s₁ = s₂) (G : Grp (Over X)) :
+    (Over.pullback s₁).mapGrp.obj G ≅ (Over.pullback s₂).mapGrp.obj G :=
+  eqToIso (by subst h; rfl)
+
+/-- `pullbackCongrIso` along reflexivity is the identity isomorphism. -/
+@[simp]
+theorem pullbackCongrIso_rfl (s : Y ⟶ X) (G : Grp (Over X)) :
+    pullbackCongrIso (rfl : s = s) G = Iso.refl _ :=
+  (rfl)
+
+/-- The underlying morphism in `Over Y` of `(pullbackCongrIso h G).hom` is `eqToHom`. -/
+@[simp]
+theorem pullbackCongrIso_hom_hom_hom {s₁ s₂ : Y ⟶ X} (h : s₁ = s₂) (G : Grp (Over X)) :
+    (pullbackCongrIso h G).hom.hom.hom =
+      eqToHom (congrArg (fun f ↦ (Over.pullback f).obj G.X) h) := by
+  subst h
+  simp only [pullbackCongrIso, eqToIso.hom, eqToHom_refl]
+  rfl
+
+/-- The underlying morphism in `Over Y` of `(pullbackCongrIso h G).inv` is `eqToHom`. -/
+@[simp]
+theorem pullbackCongrIso_inv_hom_hom {s₁ s₂ : Y ⟶ X} (h : s₁ = s₂) (G : Grp (Over X)) :
+    (pullbackCongrIso h G).inv.hom.hom =
+      eqToHom (congrArg (fun f ↦ (Over.pullback f).obj G.X) h.symm) := by
+  subst h
+  simp only [pullbackCongrIso, eqToIso.inv, eqToHom_refl]
+  rfl
+
+/-- Naturality of `pullbackCongrIso`. -/
+@[reassoc]
+theorem pullbackCongrIso_hom_naturality {s₁ s₂ : Y ⟶ X} (h : s₁ = s₂)
+    {G H : Grp (Over X)} (f : G ⟶ H) :
+    (Over.pullback s₁).mapGrp.map f ≫ (pullbackCongrIso h H).hom =
+      (pullbackCongrIso h G).hom ≫ (Over.pullback s₂).mapGrp.map f := by
+  subst h
+  simp
+
+/-- The canonical overlap isomorphism on `Y ×_X Y` between the two pullbacks of the base-changed
+group object `(Over.pullback p).mapGrp.obj G` along `pullback.fst p p` and `pullback.snd p p`. -/
+noncomputable def pullbackOverlapIso (p : Y ⟶ X) (G : Grp (Over X)) :
+    (Over.pullback (pullback.fst p p)).mapGrp.obj ((Over.pullback p).mapGrp.obj G) ≅
+      (Over.pullback (pullback.snd p p)).mapGrp.obj ((Over.pullback p).mapGrp.obj G) :=
+  pullbackCompIso (pullback.fst p p) p G ≪≫ pullbackCongrIso pullback.condition G ≪≫
+    (pullbackCompIso (pullback.snd p p) p G).symm
+
+/-- Unfolding `pullbackOverlapIso` in terms of `pullbackCompIso` and `pullbackCongrIso`. -/
+theorem pullbackOverlapIso_def (p : Y ⟶ X) (G : Grp (Over X)) :
+    pullbackOverlapIso p G =
+      pullbackCompIso (pullback.fst p p) p G ≪≫ pullbackCongrIso pullback.condition G ≪≫
+        (pullbackCompIso (pullback.snd p p) p G).symm :=
+  (rfl)
+
+/-- Naturality of `pullbackOverlapIso`. -/
+@[reassoc]
+theorem pullbackOverlapIso_hom_naturality (p : Y ⟶ X) {G H : Grp (Over X)} (f : G ⟶ H) :
+    (Over.pullback (pullback.fst p p)).mapGrp.map ((Over.pullback p).mapGrp.map f) ≫
+        (pullbackOverlapIso p H).hom =
+      (pullbackOverlapIso p G).hom ≫
+        (Over.pullback (pullback.snd p p)).mapGrp.map ((Over.pullback p).mapGrp.map f) := by
+  simp only [pullbackOverlapIso, Iso.trans_hom, Iso.symm_hom, Category.assoc,
+    pullbackCompIso_hom_naturality_assoc, pullbackCongrIso_hom_naturality_assoc]
+  congr 2
+  rw [Iso.comp_inv_eq, Category.assoc, pullbackCompIso_hom_naturality, Iso.inv_hom_id_assoc]
+
+/-- On underlying objects, `pullbackOverlapIso p G` sends `((g, y₁), (y₁, y₂))` in
+`(G ×_X Y) ×_Y (Y ×_X Y)` to `((g, y₂), (y₁, y₂))`: its first projection to `G ×_X Y` pairs the
+`G`-coordinate `g` with the second `Y`-coordinate `y₂`. -/
+@[reassoc]
+theorem pullbackOverlapIso_hom_left_fst (p : Y ⟶ X) (G : Grp (Over X)) :
+    (pullbackOverlapIso p G).hom.hom.hom.left ≫
+        pullback.fst ((Over.pullback p).obj G.X).hom (pullback.snd p p) =
+      pullback.lift
+        (pullback.fst ((Over.pullback p).obj G.X).hom (pullback.fst p p) ≫
+          pullback.fst G.X.hom p)
+        (pullback.snd ((Over.pullback p).obj G.X).hom (pullback.fst p p) ≫
+          pullback.snd p p)
+        (by
+          rw [Category.assoc, pullback.condition, ← Over.pullback_obj_hom p G.X,
+            pullback.condition_assoc, pullback.condition, Category.assoc]) := by
+  have hhom : (pullbackOverlapIso p G).hom.hom.hom =
+      (Over.pullbackComp (pullback.fst p p) p).inv.app G.X ≫
+        eqToHom (congrArg (fun f ↦ (Over.pullback f).obj G.X)
+          (pullback.condition (f := p) (g := p))) ≫
+        (Over.pullbackComp (pullback.snd p p) p).hom.app G.X := by
+    simp only [pullbackOverlapIso, Iso.trans_hom, Iso.symm_hom, Grp.comp', Mon.comp_hom',
+      pullbackCompIso_hom_hom_hom, pullbackCongrIso_hom_hom_hom, pullbackCompIso_inv_hom_hom]
+    rfl
+  have hleft : (pullbackOverlapIso p G).hom.hom.hom.left =
+      ((Over.pullbackComp (pullback.fst p p) p).inv.app G.X).left ≫
+        eqToHom (congrArg (fun f ↦ pullback G.X.hom f)
+          (pullback.condition (f := p) (g := p))) ≫
+        ((Over.pullbackComp (pullback.snd p p) p).hom.app G.X).left := by
+    refine (congrArg Over.Hom.left hhom).trans ?_
+    simp only [Over.comp_left, Over.eqToHom_left]
+    rfl
+  exact (congrArg (· ≫ pullback.fst ((Over.pullback p).obj G.X).hom (pullback.snd p p))
+    hleft).trans ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans
+      (Over.pullbackComp_inv_comp_eqToHom_comp_pullbackComp_hom_fst p G.X)))
+
+end Pullback
 
 end CategoryTheory.Grp

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+import TauCeti.CategoryTheory.Limits.Shapes.Pullback.EqToHom
 
 /-!
 # Isomorphisms and base change of objects over a base
@@ -22,7 +23,9 @@ Base change `Over.pullback f` along `f : T ⟶ S` sends a morphism `g : A ⟶ B`
 induced morphism `A ×_S T ⟶ B ×_S T`, which is the pullback of `g` along the projection
 `B ×_S T ⟶ B`. For `f : X ⟶ S` and `g : S' ⟶ S`, the two base changes of `X` to an object
 `T` over `S'` agree, `T ×_{S'} (S' ×_S X) ≅ T ×_S X` (`pullbackRightPullbackFstIso`), naturally in
-`T`.
+`T`. Iterated base change `Over.pullbackComp t s` along `s : Y ⟶ X` and `t : Z ⟶ Y` identifies the
+underlying pullback projections of `(A ×_X Y) ×_Y Z` and `A ×_X Z`, and hence describes the first
+projection of the canonical overlap identification on `Y ×_X Y` for `p : Y ⟶ X`.
 
 ## Main declarations
 
@@ -32,6 +35,14 @@ induced morphism `A ×_S T ⟶ B ×_S T`, which is the pullback of `g` along the
   pullback of it.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
   `T ×_S X ≅ T ×_{S'} (S' ×_S X)` is natural in `T` over `S'`.
+* `CategoryTheory.Over.pullbackComp_hom_app_left_fst_fst`,
+  `CategoryTheory.Over.pullbackComp_hom_app_left_fst_snd`,
+  `CategoryTheory.Over.pullbackComp_inv_app_left_fst`, and
+  `CategoryTheory.Over.pullbackComp_inv_app_left_snd`: projection identities for
+  `Over.pullbackComp`.
+* `CategoryTheory.Over.pullbackComp_inv_comp_eqToHom_comp_pullbackComp_hom_fst`: first projection
+  of the canonical overlap comparison on `Y ×_X Y` induced by `Over.pullbackComp` along
+  `pullback.fst p p` and `pullback.snd p p`.
 -/
 
 public section
@@ -73,6 +84,69 @@ theorem pullbackRightPullbackFstIso_inv_comp_pullback_map {C : Type u} [Category
   · apply pullback.hom_ext
     · simp
     · simp
+
+/-- Under `(Over.pullbackComp t s).hom`, the iterated first projection from `(A ×_X Y) ×_Y Z` to
+`A` is the first projection from `A ×_X Z`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_hom_app_left_fst_fst {C : Type u} [Category.{v} C] {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((Over.pullbackComp t s).hom.app A).left ≫
+        pullback.fst (pullback.snd A.hom s) t ≫ pullback.fst A.hom s =
+      pullback.fst A.hom (t ≫ s) := by
+  simp [Over.pullbackComp]
+
+/-- Under `(Over.pullbackComp t s).hom`, the `Y`-coordinate of the first projection from
+`(A ×_X Y) ×_Y Z` to `A ×_X Y` is the `Z`-coordinate of `A ×_X Z` mapped along `t`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_hom_app_left_fst_snd {C : Type u} [Category.{v} C] {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((Over.pullbackComp t s).hom.app A).left ≫
+        pullback.fst (pullback.snd A.hom s) t ≫ pullback.snd A.hom s =
+      pullback.snd A.hom (t ≫ s) ≫ t := by
+  simp [Over.pullbackComp]
+
+/-- Under `(Over.pullbackComp t s).inv`, the first projection from `A ×_X Z` to `A` is the
+iterated first projection from `(A ×_X Y) ×_Y Z`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_inv_app_left_fst {C : Type u} [Category.{v} C] {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((Over.pullbackComp t s).inv.app A).left ≫ pullback.fst A.hom (t ≫ s) =
+      pullback.fst (pullback.snd A.hom s) t ≫ pullback.fst A.hom s := by
+  simp [Over.pullbackComp]
+
+/-- Under `(Over.pullbackComp t s).inv`, the second projection from `A ×_X Z` to `Z` is the second
+projection from `(A ×_X Y) ×_Y Z`. -/
+@[reassoc (attr := simp)]
+theorem pullbackComp_inv_app_left_snd {C : Type u} [Category.{v} C] {X Y Z : C}
+    (t : Z ⟶ Y) (s : Y ⟶ X) [HasPullbacksAlong t] [HasPullbacksAlong s] (A : Over X) :
+    ((Over.pullbackComp t s).inv.app A).left ≫ pullback.snd A.hom (t ≫ s) =
+      pullback.snd (pullback.snd A.hom s) t := by
+  simp [Over.pullbackComp]
+
+/-- On underlying objects, the canonical overlap identification
+`(Over.pullback (pullback.fst p p)).obj ((Over.pullback p).obj A) ≅
+  (Over.pullback (pullback.snd p p)).obj ((Over.pullback p).obj A)`
+over `Y ×_X Y` sends `((a, y₁), (y₁, y₂))` to `((a, y₂), (y₁, y₂))`: its first projection to
+`A ×_X Y` pairs the `A`-coordinate `a` with the second `Y`-coordinate `y₂`. -/
+@[reassoc]
+theorem pullbackComp_inv_comp_eqToHom_comp_pullbackComp_hom_fst {C : Type u} [Category.{v} C]
+    [HasPullbacks C] {X Y : C} (p : Y ⟶ X) (A : Over X) :
+    ((Over.pullbackComp (pullback.fst p p) p).inv.app A).left ≫
+        eqToHom (congrArg (fun f ↦ Limits.pullback A.hom f)
+          (pullback.condition (f := p) (g := p))) ≫
+        ((Over.pullbackComp (pullback.snd p p) p).hom.app A).left ≫
+        pullback.fst ((Over.pullback p).obj A).hom (pullback.snd p p) =
+      pullback.lift
+        (pullback.fst ((Over.pullback p).obj A).hom (pullback.fst p p) ≫ pullback.fst A.hom p)
+        (pullback.snd ((Over.pullback p).obj A).hom (pullback.fst p p) ≫ pullback.snd p p)
+        (by
+          rw [Category.assoc, pullback.condition, ← Over.pullback_obj_hom p A,
+            pullback.condition_assoc, pullback.condition, Category.assoc]) := by
+  refine pullback.hom_ext ?_ ?_
+  · rw [pullback.lift_fst]
+    simp [eqToHom_comp_pullback_fst A.hom (pullback.condition (f := p) (g := p))]
+  · rw [pullback.lift_snd]
+    simp [eqToHom_comp_pullback_snd_assoc A.hom (pullback.condition (f := p) (g := p))]
 
 end Over
 
