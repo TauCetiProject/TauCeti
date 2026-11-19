@@ -32,12 +32,14 @@ Weyl-group element has integer coefficients, and its roots are closed under Galo
   corresponding reflection matrices.
 * `RootPairing.Base.ActsBy.orderOf_eq`: if `w` acts by `W`, then `orderOf w = orderOf W`.
 * `RootPairing.Base.exists_actsBy`: every element of the Weyl group acts by an integer matrix.
-* `RootPairing.Base.ActsBy.toMatrix_toWeightBasis` and
+* `RootPairing.Base.ActsBy.toMatrix_weylGroupRootRep` and
   `RootPairing.Base.ActsBy.charpoly_weylGroupRootRep`: for a root system, the integer matrix of `w`
   is its matrix on the weight space in the basis of simple roots, so the two have the same
   characteristic polynomial.
 * `RootPairing.Base.exists_charpoly_weylGroupRootRep_eq_map`: the characteristic polynomial of
   every Weyl-group element on the weight space of a root system has integer coefficients.
+* `RootPairing.Base.exists_charpoly_weylGroupRootRep_eq_map_rat`: over a `ℚ`-algebra, the same
+  characteristic polynomial has rational coefficients.
 * `RootPairing.Base.orderOf_wordProd_of_cartanMatrix_eq`: for a base whose Cartan matrix is `A` up
   to a relabelling `e`, the Coxeter element spelled in the order `e` has the order of
   `coxeterElement A`.
@@ -187,7 +189,7 @@ variable [P.IsRootSystem]
 omit [P.IsCrystallographic] in
 /-- If `w` acts by `W`, then `W`, read in `R`, is the matrix of `w` acting on the weight space in
 the basis of simple roots of the root system. -/
-theorem ActsBy.toMatrix_toWeightBasis {b : P.Base} {w : P.weylGroup}
+theorem ActsBy.toMatrix_weylGroupRootRep {b : P.Base} {w : P.weylGroup}
     {W : Matrix b.support b.support ℤ} (h : ActsBy b w W) :
     LinearMap.toMatrix b.toWeightBasis b.toWeightBasis (P.weylGroupRootRep w) =
       W.map (Int.castRingHom R) := by
@@ -205,7 +207,7 @@ space is the characteristic polynomial of `W`, with its coefficients cast to `R`
 theorem ActsBy.charpoly_weylGroupRootRep [Module.Free R M] [Module.Finite R M] {b : P.Base}
     {w : P.weylGroup} {W : Matrix b.support b.support ℤ} (h : ActsBy b w W) :
     (P.weylGroupRootRep w).charpoly = W.charpoly.map (Int.castRingHom R) := by
-  rw [← LinearMap.charpoly_toMatrix _ b.toWeightBasis, h.toMatrix_toWeightBasis,
+  rw [← LinearMap.charpoly_toMatrix _ b.toWeightBasis, h.toMatrix_weylGroupRootRep,
     Matrix.charpoly_map]
 
 omit [DecidableEq ι] in
@@ -218,6 +220,19 @@ theorem exists_charpoly_weylGroupRootRep_eq_map [Module.Free R M] [Module.Finite
   classical
   obtain ⟨W, hW⟩ := b.exists_actsBy w
   exact ⟨W.charpoly, (ActsBy.charpoly_weylGroupRootRep hW).symm⟩
+
+omit [DecidableEq ι] in
+/-- **The characteristic polynomials of the Weyl group are rational**: over a `ℚ`-algebra, every
+Weyl-group element of a crystallographic root system has a characteristic polynomial on the weight
+space with rational coefficients. -/
+theorem exists_charpoly_weylGroupRootRep_eq_map_rat [Algebra ℚ R] [Module.Free R M]
+    [Module.Finite R M] (b : P.Base) (w : P.weylGroup) :
+    ∃ q : Polynomial ℚ, q.map (algebraMap ℚ R) = (P.weylGroupRootRep w).charpoly := by
+  obtain ⟨p, hp⟩ := b.exists_charpoly_weylGroupRootRep_eq_map w
+  refine ⟨p.map (Int.castRingHom ℚ), ?_⟩
+  rw [Polynomial.map_map, ← hp]
+  congr 1
+  exact Subsingleton.elim _ _
 
 end RootSystem
 

@@ -71,15 +71,16 @@ variable {ι K M N κ : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K
   [FiniteDimensional K M] [AddCommGroup N] [Module K N] (P : RootPairing ι K M N)
   [Finite ι] [P.IsCrystallographic] [P.IsReduced] [P.IsRootSystem] [Fintype κ]
 
-omit [Finite ι] [P.IsReduced] in
-/-- The characteristic polynomial of a Weyl-group element has rational coefficients. -/
-private lemma exists_map_rat_eq_charpoly (b : P.Base) (w : P.weylGroup) :
-    ∃ q : ℚ[X], q.map (algebraMap ℚ K) = (P.weylGroupRootRep w).charpoly := by
-  obtain ⟨p, hp⟩ := b.exists_charpoly_weylGroupRootRep_eq_map w
-  refine ⟨p.map (Int.castRingHom ℚ), ?_⟩
-  rw [Polynomial.map_map, ← hp]
-  congr 1
-  exact Subsingleton.elim _ _
+omit [CharZero K] [FiniteDimensional K M] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+  [P.IsRootSystem] in
+/-- If there is a root, a regular weight with `w • x = ζ • x` is an eigenvector of `w` for the
+eigenvalue `ζ`. -/
+private lemma hasEigenvector_of_isRegularWeight [Nonempty ι] {w : P.weylGroup} {x : M} {ζ : K}
+    (hx : P.IsRegularWeight x) (hw : w • x = ζ • x) :
+    Module.End.HasEigenvector (P.weylGroupRootRep w) ζ x := by
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  refine Module.End.hasEigenvector_iff.mpr ⟨Module.End.mem_eigenspace_iff.mpr hw, fun h0 ↦ ?_⟩
+  exact (P.isRegularWeight_iff x).mp hx i (by rw [h0, map_zero])
 
 omit [FiniteDimensional K M] in
 /-- If a regular weight is an eigenvector of a Weyl-group element for a primitive `h`-th root of
@@ -87,21 +88,18 @@ unity, then `h` is positive, unless there are no roots at all. -/
 private lemma pos_or_finrank_eq_zero (b : P.Base) {w : P.weylGroup} {x : M} {ζ : K} {h : ℕ}
     (hx : P.IsRegularWeight x) (hw : w • x = ζ • x) (hζ : IsPrimitiveRoot ζ h) :
     0 < h ∨ Module.finrank K M = 0 := by
-  rcases isEmpty_or_nonempty ι with hι | hι
+  rcases isEmpty_or_nonempty ι with hι | _
   · -- With no roots, the roots span the zero subspace, which is the whole weight space.
     refine Or.inr ?_
     rw [← finrank_top, ← IsRootSystem.span_root_eq_top (P := P), Set.range_eq_empty,
       Submodule.span_empty, finrank_bot]
-  obtain ⟨i⟩ := hι
   refine Or.inl (Nat.pos_of_ne_zero fun h0 ↦ ?_)
   have : Finite P.weylGroup := P.finite_weylGroup_of_base b
-  have hx0 : x ≠ 0 := fun h0 ↦ (P.isRegularWeight_iff x).mp hx i (by rw [h0, map_zero])
   -- The eigenvalue is a root of unity of order dividing the order of `w`.
-  have hv : Module.End.HasEigenvector (P.weylGroupRootRep w) ζ x :=
-    Module.End.hasEigenvector_iff.mpr ⟨Module.End.mem_eigenspace_iff.mpr hw, hx0⟩
+  have hv := P.hasEigenvector_of_isRegularWeight hx hw
   have hpow := hv.pow_apply (orderOf w)
   rw [← map_pow, pow_orderOf_eq_one, map_one, one_apply_eq_self] at hpow
-  have hζn : ζ ^ orderOf w = 1 := smul_left_injective K hx0 (by simpa using hpow.symm)
+  have hζn : ζ ^ orderOf w = 1 := smul_left_injective K hv.2 (by simpa using hpow.symm)
   subst h0
   exact (orderOf_pos w).ne' (Nat.eq_zero_of_zero_dvd (hζ.dvd_of_pow_eq_one _ hζn))
 
@@ -141,7 +139,7 @@ theorem charpoly_weylGroupRootRep_of_isRegularWeight_of_isPrimitiveRoot (b : P.B
     (c := Units.mk0 ζ (hζ.ne_zero hh.ne')) hx hw
   rw [Units.val_inv_eq_inv_val, Units.val_mk0] at hc
   -- The characteristic polynomial is rational, so the primitive root can be changed.
-  obtain ⟨q, hq⟩ := P.exists_map_rat_eq_charpoly b w
+  obtain ⟨q, hq⟩ := b.exists_charpoly_weylGroupRootRep_eq_map_rat w
   rw [← hq] at hc ⊢
   exact hζ.inv.map_eq_prod_of_map_eq_prod hh hξ hc
 
@@ -161,14 +159,11 @@ theorem exists_degree_sub_one_eq_of_isRegularWeight_of_isPrimitiveRoot [Nonempty
     (hw : w • x = ζ • x) (hζ : IsPrimitiveRoot ζ h) (hd : ∀ k, d k - 1 < h)
     {a : ℕ} (ha : a < h) (hcop : a.Coprime h) : ∃ k, d k - 1 = a := by
   have : Fintype κ := Fintype.ofFinite κ
-  obtain ⟨i⟩ := ‹Nonempty ι›
-  have hx0 : x ≠ 0 := fun h0 ↦ (P.isRegularWeight_iff x).mp hx i (by rw [h0, map_zero])
-  obtain ⟨q, hq⟩ := P.exists_map_rat_eq_charpoly b w
+  obtain ⟨q, hq⟩ := b.exists_charpoly_weylGroupRootRep_eq_map_rat w
   -- The eigenvalue `ζ` is a root of the rational characteristic polynomial.
   have hroot : (q.map (algebraMap ℚ K)).IsRoot ζ := by
     rw [hq, ← Module.End.hasEigenvalue_iff_isRoot_charpoly]
-    exact Module.End.hasEigenvalue_of_hasEigenvector
-      (Module.End.hasEigenvector_iff.mpr ⟨Module.End.mem_eigenspace_iff.mpr hw, hx0⟩)
+    exact Module.End.hasEigenvalue_of_hasEigenvector (P.hasEigenvector_of_isRegularWeight hx hw)
   exact hζ.exists_eq_of_isRoot_of_map_eq_prod hζ hroot hd
     (hq.trans (P.charpoly_weylGroupRootRep_of_isRegularWeight_of_isPrimitiveRoot b hf hbij hx hw
       hζ hζ)) ha hcop
