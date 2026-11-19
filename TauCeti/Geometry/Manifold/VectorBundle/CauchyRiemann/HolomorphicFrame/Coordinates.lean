@@ -13,8 +13,8 @@ import TauCeti.Geometry.Manifold.Complex.Analytic
 
 The coordinates of a differentiable section in a holomorphic kernel frame are holomorphic
 exactly when the section is in the kernel of the original operator. The model fibre may be any
-rank-one
-complex model fibres and the original smooth bundle topology.
+rank-one complex normed space. The original total-space topology and real smooth structure of
+the bundle are retained.
 
 ## References
 
@@ -128,7 +128,8 @@ theorem contMDiffOn_coordChangeL_trivialization [FiniteDimensional ℂ E]
       map_smul,
       (hσ'.trivialization b' hU').continuousLinearMapAt_apply_of_mem (R := ℂ)
         (by simpa only [IsNonvanishingHolomorphicOn.baseSet_trivialization] using hx.2)]
-    rfl
+    simp only [Function.comp_apply, ContinuousLinearMap.smulRightL_apply_apply,
+      ContinuousLinearMap.smulRight_apply, LinearMap.coe_toContinuousLinearMap']
   · simpa only [IsNonvanishingHolomorphicOn.baseSet_trivialization] using hx
 
 end IsRealCauchyRiemannOperator

@@ -55,7 +55,8 @@ theorem eventually_contDiffAt_cauchyRiemannChartCoeff
   let a : Set M := (chartAt ℂ x₀).source ∩ (e.baseSet ∩ u)
   have ha : IsOpen a := (chartAt ℂ x₀).open_source.inter (e.open_baseSet.inter hu)
   have hs : ContMDiffOn 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% s) e.baseSet :=
-    e.contMDiffOn_localFrame ((Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ()
+    e.contMDiffOn_localFrame_baseSet_of_basis
+      ((Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ()
   have hDa := hD.contMDiffCovariantDerivativeOn_mono_of_isOpen hDs ha (fun _ hx ↦ hx.2.2)
   let eHom := trivializationAt (ℂ →L[ℝ] F)
     (fun x ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x₀

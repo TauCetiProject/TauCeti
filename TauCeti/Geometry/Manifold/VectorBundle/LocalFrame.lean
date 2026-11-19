@@ -194,7 +194,7 @@ variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' F]
 
 /-- A local frame formed using another scalar field is smooth for the given smooth bundle
 structure: its vectors still have constant coordinates in the same trivialization. -/
-theorem _root_.Bundle.Trivialization.contMDiffOn_localFrame
+theorem _root_.Bundle.Trivialization.contMDiffOn_localFrame_baseSet_of_basis
     {n : ℕ∞ω} [ContMDiffVectorBundle n F V I]
     (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (b' : Basis ι 𝕜' F) (i : ι) :
     ContMDiffOn I (I.prod 𝓘(𝕜, F)) n (T% (e.localFrame b' i)) e.baseSet := by
@@ -211,8 +211,8 @@ theorem _root_.Bundle.Trivialization.continuousLinearMapAt_localFrame_singleton
     (hx : x ∈ e.baseSet) :
     e.continuousLinearMapAt 𝕜 x
       (e.localFrame ((Basis.singleton Unit 𝕜).map c.symm.toLinearEquiv) () x) = c.symm 1 := by
-  rw [continuousLinearMapAt_localFrame _ hx, Basis.map_apply, Basis.singleton_apply]
-  rfl
+  rw [continuousLinearMapAt_localFrame _ hx, Basis.map_apply, Basis.singleton_apply,
+    ContinuousLinearEquiv.coe_toLinearEquiv]
 
 /-- The section with constant coordinates `v` in a trivialization `e` is differentiable at each
 point of the base set of `e`. -/

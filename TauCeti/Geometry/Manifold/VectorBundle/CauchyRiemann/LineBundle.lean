@@ -283,10 +283,17 @@ instance instContMDiffVectorBundleReal : ContMDiffVectorBundle ∞ F A.Fiber �
       Trivialization.isLinear_restrictScalars ℝ ℂ _
     let : (s'.isHolomorphic.trivialization b' s'.domain.isOpen).IsLinear ℝ :=
       Trivialization.isLinear_restrictScalars ℝ ℂ _
-    convert Trivialization.contMDiffOn_coordChangeL_of_mem_maximalAtlas
+    -- `Fiber` is the type copy `V` with `inferInstanceAs` copies of the fibre modules
+    -- and total-space topology. Elaborate the original-bundle statement first: elaborating
+    -- it against the goal would instead read the maximal atlas through `instFiberBundle`.
+    -- The statements agree after unfolding `Fiber`, `Frame.trivialization` and the copied
+    -- instances; the `IsLinear ℝ` witnesses agree by proof irrelevance. The real model
+    -- structures `NormedSpace.complexToReal` and
+    -- `instInnerProductSpaceRealComplex.toNormedSpace` also have the same scalar action.
+    have h := Trivialization.contMDiffOn_coordChangeL_of_mem_maximalAtlas
       (s.isHolomorphic.trivialization_mem_maximalAtlas b s.domain.isOpen)
       (s'.isHolomorphic.trivialization_mem_maximalAtlas b' s'.domain.isOpen)
-      using 1 <;> rfl
+    exact h
 
 /-- The identity on each original fibre, as a continuous complex-linear equivalence. -/
 def toOriginalFiberEquiv (x : M) : A.Fiber x ≃L[ℂ] V x :=

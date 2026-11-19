@@ -463,7 +463,8 @@ theorem exists_isNonvanishingHolomorphicOn (x₀ : M)
     rw [← e.continuousLinearMapAt_apply_of_mem (R := ℂ) hx, map_smul, hs1 x hx,
       ← map_smul, smul_eq_mul, mul_one]
   have hs_smooth : ContMDiffOn 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) ∞ (T% s) e.baseSet :=
-    e.contMDiffOn_localFrame ((Module.Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ()
+    e.contMDiffOn_localFrame_baseSet_of_basis
+      ((Module.Basis.singleton Unit ℂ).map b.symm.toLinearEquiv) ()
   -- A smooth solution `G` of `∂bar G = -B` near the chart point of `x₀`.
   obtain ⟨W₁, hW₁, hW₁o, hz₀W₁⟩ := eventually_nhds_iff.mp hB
   obtain ⟨G, hG, hGeq⟩ :=
