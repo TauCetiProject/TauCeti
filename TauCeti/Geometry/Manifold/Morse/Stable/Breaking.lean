@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
+public import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Dynamics.Flow.Breaking
 import TauCeti.Dynamics.Flow.ConnectingOrbit
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 
 /-!
 # Breaking of trajectories and finiteness of index-one trajectories on a compact manifold
@@ -56,16 +55,6 @@ ambient space.
   (respectively stable) manifold.
 * `IsAdaptedPseudoGradient.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet`
   and its time reversal: limits of trajectories break at a critical point.
-* `IsAdaptedPseudoGradient.FlowsTo`: a trajectory runs from one point to another.
-* `IsAdaptedPseudoGradient.lt_of_reflTransGen` and
-  `IsAdaptedPseudoGradient.eq_of_reflTransGen_of_reflTransGen`: `f` strictly decreases along
-  chains of trajectories, which therefore form a partial order.
-* `IsAdaptedPseudoGradient.eq_or_mfderiv_eq_zero_of_reflTransGen` and
-  `IsAdaptedPseudoGradient.finite_setOf_reflTransGen`: the points reached from `p` by chains of
-  trajectories are `p` and finitely many critical points.
-* `IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen`, in the namespace
-  `TauCeti.IsAdaptedPseudoGradient`: the Morse index strictly decreases along chains of
-  trajectories.
 * `IsMorseSmale.reflTransGen_of_mem_closure_unstableSet` and its time reversal
   `IsMorseSmale.reflTransGen_of_mem_closure_stableSet`, in the namespace
   `TauCeti.IsAdaptedPseudoGradient`: if the closure of `W^u(p)` meets `W^u(a)`, then a chain of
@@ -185,96 +174,6 @@ theorem exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet
     hX.exists_tendsto_mem_stableSet_of_tendsto_mem_unstableSet hf hy.2 hu
       (Frequently.of_forall fun n ↦ hSx.notMem_of_mem_left (huS n))
   exact ⟨z, ⟨mem_closure_of_tendsto hlim (Eventually.of_forall fun k ↦ hS _ (huS _)), hz⟩, hzx⟩
-
-/-- **A trajectory runs from `a` to `b`**: the unstable manifold `W^u(a)` meets the stable manifold
-`W^s(b)`. Its reflexive and transitive closure `Relation.ReflTransGen hX.FlowsTo` relates `a` to `b`
-when `b = a` or a finite chain of trajectories, broken at critical points, runs from `a` to `b`. -/
-def FlowsTo (a b : M) : Prop :=
-  (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty
-
-omit hX in
-/-- A trajectory runs from `a` to `b` exactly when `W^u(a) ∩ W^s(b)` is nonempty. -/
-theorem flowsTo_iff {hX : IsAdaptedPseudoGradient f X} {a b : M} :
-    hX.FlowsTo a b ↔ (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty :=
-  Iff.rfl
-
-omit hX in
-/-- **Points below `p` are critical.** A point reached from `p` by a chain of trajectories is `p`
-itself or a critical point of `f`, the forward limit of the last trajectory. -/
-theorem eq_or_mfderiv_eq_zero_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
-    (hpq : Relation.ReflTransGen hX.FlowsTo p q) :
-    q = p ∨ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 := by
-  rcases hpq.cases_tail with rfl | ⟨b, -, hbq⟩
-  · exact Or.inl rfl
-  · obtain ⟨y, -, hy⟩ := flowsTo_iff.1 hbq
-    exact Or.inr (hX.mfderiv_eq_zero_of_mem_stableSet hy)
-
-omit hX in
-/-- **Finitely many points lie below `p`.** For a Morse function on a compact manifold, the points
-reached from `p` by chains of trajectories form a finite set: besides `p` they are critical points
-of `f`. -/
-theorem finite_setOf_reflTransGen {hX : IsAdaptedPseudoGradient f X} (hf : IsMorse 𝓘(ℝ, E) f)
-    (p : M) :
-    {q | Relation.ReflTransGen hX.FlowsTo p q}.Finite := by
-  refine (hf.finite_criticalPoints.insert p).subset fun q hq ↦ ?_
-  rcases eq_or_mfderiv_eq_zero_of_reflTransGen hq with rfl | hq
-  · exact mem_insert _ _
-  · exact mem_insert_of_mem _ (mem_criticalPoints_iff_mfderiv_eq_zero.2 hq)
-
-omit hX in
-/-- **The function strictly decreases along chains of trajectories.** If a chain of trajectories
-runs from `p` to a different point `q`, then `f q < f p`. -/
-theorem lt_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
-    (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
-    f q < f p := by
-  suffices q = p ∨ f q < f p from this.resolve_left hqp
-  clear hqp
-  induction hpq with
-  | refl => exact Or.inl rfl
-  | @tail b c _ hbc ih =>
-    -- A trajectory from `b` to `c ≠ b` lies strictly between their critical values.
-    have hcb : c = b ∨ f c < f b := by
-      rcases eq_or_ne b c with rfl | hbc'
-      · exact Or.inl rfl
-      · obtain ⟨y, hy⟩ := flowsTo_iff.1 hbc
-        have hy := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hbc' hy
-        exact Or.inr (hy.1.trans hy.2)
-    rcases ih with rfl | ih
-    · exact hcb
-    · rcases hcb with rfl | hcb
-      · exact Or.inr ih
-      · exact Or.inr (hcb.trans ih)
-
-omit hX in
-/-- **Chains of trajectories form a partial order.** If chains of trajectories run from `p` to `q`
-and from `q` to `p`, then `p = q`. -/
-theorem eq_of_reflTransGen_of_reflTransGen {hX : IsAdaptedPseudoGradient f X} {p q : M}
-    (hpq : Relation.ReflTransGen hX.FlowsTo p q)
-    (hqp : Relation.ReflTransGen hX.FlowsTo q p) :
-    p = q := by
-  by_contra hne
-  exact (lt_of_reflTransGen hpq (Ne.symm hne)).asymm (lt_of_reflTransGen hqp hne)
-
-omit hX in
-/-- **The Morse index strictly decreases along chains of trajectories.** Under the Morse–Smale
-condition, if a chain of trajectories runs from `p` to a different point `q`, then
-`ind q < ind p`. -/
-theorem IsMorseSmale.manifoldMorseIndex_lt_of_reflTransGen {hX : IsAdaptedPseudoGradient f X}
-    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
-    (hpq : Relation.ReflTransGen hX.FlowsTo p q) (hqp : q ≠ p) :
-    manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p := by
-  suffices q = p ∨ manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f p from
-    this.resolve_left hqp
-  clear hqp
-  induction hpq with
-  | refl => exact Or.inl rfl
-  | @tail b c _ hbc ih =>
-    rcases eq_or_ne b c with rfl | hbc'
-    · exact ih
-    have hcb := h.manifoldMorseIndex_lt hf hbc' (flowsTo_iff.1 hbc)
-    rcases ih with rfl | ih
-    · exact Or.inr hcb
-    · exact Or.inr (hcb.trans ih)
 
 omit hX in
 /-- **The closure of `W^u(p)` meets only unstable manifolds below `p`.** Under the Morse–Smale

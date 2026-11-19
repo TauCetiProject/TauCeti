@@ -32,7 +32,7 @@ does the Morse index
 finitely many points lie below a given one
 (`TauCeti.IsAdaptedPseudoGradient.finite_setOf_reflTransGen`), all of them critical except
 possibly the point itself. These facts about chains are proved in
-`TauCeti.Geometry.Manifold.Morse.Stable.Breaking`. Consequently the closure of `W^u(p)` is a
+`TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice`. Consequently the closure of `W^u(p)` is a
 finite union of unstable manifolds, and what it adds to `W^u(p)` lies in the unstable manifolds
 of critical points of smaller index
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_unstableSet_diff_subset`). Since `W^u(q)`
