@@ -536,30 +536,15 @@ theorem mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ico {K : Set M} (hK :
     (hmaps : MapsTo (fun u ↦ timeDependentFlowOf X s u x)
       ({u | ((s, u), x) ∈ timeDependentFlowDomain X} ∩ Ico s b) K) :
     ((s, b), x) ∈ timeDependentFlowDomain X := by
-  have hW := contMDiff_timeDependentSuspensionField hX
-  set W := timeDependentSuspensionField X
-  have h0 : (0 : ℝ) ∈ maximalIntegralCurveInterval W (s, x) :=
-    zero_mem_maximalIntegralCurveInterval hW.contMDiffAt
-  by_contra hb
-  rw [mem_timeDependentFlowDomain, mem_flowDomain] at hb
-  -- The maximal interval contains `0` but not `b - s ≥ 0`, so `b - s` bounds it above.
-  have hub : b - s ∈ upperBounds (maximalIntegralCurveInterval W (s, x)) := fun τ hτ ↦ by
-    by_contra hlt
-    exact hb (ordConnected_maximalIntegralCurveInterval.out h0 hτ
-      ⟨by linarith, (not_le.1 hlt).le⟩)
-  have hlub := isLUB_csSup ⟨0, h0⟩ ⟨b - s, hub⟩
-  have hcb := csSup_le ⟨0, h0⟩ hub
-  obtain ⟨a, ha, hc0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hlub
-  -- Just before the supremum the curve is outside `[s, b] × K`, but it is defined there and the
-  -- hypothesis puts it inside.
-  have hC : IsCompact (Icc s b ×ˢ K) := isCompact_Icc.prod hK
-  obtain ⟨τ, hτ, hτK⟩ := (Filter.Eventually.and (Ioo_mem_nhdsLT hc0)
-    (eventually_notMem_nhdsLT_maximalIntegralCurve hW hlub hC)).exists
-  have hτI := hsub ⟨ha.trans hτ.1, hτ.2⟩
-  rw [maximalIntegralCurve_timeDependentSuspensionField hτI] at hτK
-  exact hτK ⟨⟨by linarith [hτ.1], by linarith [hτ.2]⟩,
-    hmaps ⟨mem_timeDependentFlowDomain_of_mem_maximalIntegralCurveInterval hτI,
-      by linarith [hτ.1], by linarith [hτ.2]⟩⟩
+  -- Apply the autonomous escape criterion to the suspension, confined to `[s, b] × K`.
+  rw [mem_timeDependentFlowDomain, mem_flowDomain]
+  refine mem_maximalIntegralCurveInterval_of_isCompact_of_mapsTo_Ico
+    (contMDiff_timeDependentSuspensionField hX) ((isCompact_Icc (a := s) (b := b)).prod hK)
+    (sub_nonneg.2 hsb) fun τ hτ ↦ ?_
+  rw [maximalIntegralCurve_timeDependentSuspensionField hτ.1]
+  exact ⟨⟨by linarith [hτ.2.1], by linarith [hτ.2.2]⟩,
+    hmaps ⟨mem_timeDependentFlowDomain_of_mem_maximalIntegralCurveInterval hτ.1,
+      by linarith [hτ.2.1], by linarith [hτ.2.2]⟩⟩
 
 /-- **The escape criterion, backwards in time.** If the solution of the time-dependent equation
 through `x` at time `s` lies in a fixed compact set `K` at every time of `(a, s]` at which it is
@@ -569,30 +554,15 @@ theorem mem_timeDependentFlowDomain_of_isCompact_of_mapsTo_Ioc {K : Set M} (hK :
     (hmaps : MapsTo (fun u ↦ timeDependentFlowOf X s u x)
       ({u | ((s, u), x) ∈ timeDependentFlowDomain X} ∩ Ioc a s) K) :
     ((s, a), x) ∈ timeDependentFlowDomain X := by
-  have hW := contMDiff_timeDependentSuspensionField hX
-  set W := timeDependentSuspensionField X
-  have h0 : (0 : ℝ) ∈ maximalIntegralCurveInterval W (s, x) :=
-    zero_mem_maximalIntegralCurveInterval hW.contMDiffAt
-  by_contra ha
-  rw [mem_timeDependentFlowDomain, mem_flowDomain] at ha
-  -- The maximal interval contains `0` but not `a - s ≤ 0`, so `a - s` bounds it below.
-  have hlb : a - s ∈ lowerBounds (maximalIntegralCurveInterval W (s, x)) := fun τ hτ ↦ by
-    by_contra hlt
-    exact ha (ordConnected_maximalIntegralCurveInterval.out hτ h0
-      ⟨(not_le.1 hlt).le, by linarith⟩)
-  have hglb := isGLB_csInf ⟨0, h0⟩ ⟨a - s, hlb⟩
-  have hca := le_csInf ⟨0, h0⟩ hlb
-  obtain ⟨b, hb, hc0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB hglb
-  -- Just after the infimum the curve is outside `[a, s] × K`, but it is defined there and the
-  -- hypothesis puts it inside.
-  have hC : IsCompact (Icc a s ×ˢ K) := isCompact_Icc.prod hK
-  obtain ⟨τ, hτ, hτK⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT hc0)
-    (eventually_notMem_nhdsGT_maximalIntegralCurve hW hglb hC)).exists
-  have hτI := hsub ⟨hτ.1, hτ.2.trans hb⟩
-  rw [maximalIntegralCurve_timeDependentSuspensionField hτI] at hτK
-  exact hτK ⟨⟨by linarith [hτ.1], by linarith [hτ.2]⟩,
-    hmaps ⟨mem_timeDependentFlowDomain_of_mem_maximalIntegralCurveInterval hτI,
-      by linarith [hτ.1], by linarith [hτ.2]⟩⟩
+  -- Apply the autonomous escape criterion to the suspension, confined to `[a, s] × K`.
+  rw [mem_timeDependentFlowDomain, mem_flowDomain]
+  refine mem_maximalIntegralCurveInterval_of_isCompact_of_mapsTo_Ioc
+    (contMDiff_timeDependentSuspensionField hX) ((isCompact_Icc (a := a) (b := s)).prod hK)
+    (sub_nonpos.2 has) fun τ hτ ↦ ?_
+  rw [maximalIntegralCurve_timeDependentSuspensionField hτ.1]
+  exact ⟨⟨by linarith [hτ.2.1], by linarith [hτ.2.2]⟩,
+    hmaps ⟨mem_timeDependentFlowDomain_of_mem_maximalIntegralCurveInterval hτ.1,
+      by linarith [hτ.2.1], by linarith [hτ.2.2]⟩⟩
 
 /-- **Existence through a time interval by compact containment.** If the solution of the
 time-dependent equation through `x` at time `s` lies in a fixed compact set at every time between
