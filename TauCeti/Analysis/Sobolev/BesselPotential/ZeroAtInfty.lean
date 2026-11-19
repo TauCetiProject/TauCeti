@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.ZeroAtInftyRepresentative
 
@@ -72,7 +74,7 @@ private def toZeroAtInftyₗ (hs : finrank ℝ E < 2 * s) : H^{s}(E, F) →ₗ[�
     (fun u v ↦ by simpa only [map_add] using Lp.coeFn_add (inclusionLp _ u) (inclusionLp _ v))
     (fun c u ↦ by simpa only [map_smul] using Lp.coeFn_smul c (inclusionLp _ u))
 
-private theorem inclusionLp_ae_eq_toZeroAtInftyₗ (h0 : 0 ≤ s) (hs : finrank ℝ E < 2 * s)
+private theorem coeFn_inclusionLp_ae_eq_toZeroAtInftyₗ (h0 : 0 ≤ s) (hs : finrank ℝ E < 2 * s)
     (u : H^{s}(E, F)) : inclusionLp h0 u =ᵐ[volume] toZeroAtInftyₗ hs u :=
   TauCeti.ae_eq_zeroAtInftyRepresentativeₗ (exists_inclusionLp_ae_eq h0 hs) _ _ u
 
@@ -101,16 +103,16 @@ def toZeroAtInfty (hs : finrank ℝ E < 2 * s) : H^{s}(E, F) →L[ℂ] C₀(E, F
       BoundedContinuousFunction.norm_le (by positivity)]
     intro x
     simpa using hbound u (toZeroAtInftyₗ hs u).continuous
-      (inclusionLp_ae_eq_toZeroAtInftyₗ h0 hs u) 0 le_rfl x
+      (coeFn_inclusionLp_ae_eq_toZeroAtInftyₗ h0 hs u) 0 le_rfl x
 
 section ZeroAtInfty
 
 variable {hs : finrank ℝ E < 2 * s}
 
 /-- The Sobolev embedding sends `u ∈ H^s` to a representative of the `L²` function `u`. -/
-theorem inclusionLp_ae_eq_toZeroAtInfty (h0 : 0 ≤ s) (u : H^{s}(E, F)) :
+theorem coeFn_inclusionLp_ae_eq_toZeroAtInfty (h0 : 0 ≤ s) (u : H^{s}(E, F)) :
     inclusionLp h0 u =ᵐ[volume] toZeroAtInfty hs u :=
-  inclusionLp_ae_eq_toZeroAtInftyₗ h0 hs u
+  coeFn_inclusionLp_ae_eq_toZeroAtInftyₗ h0 hs u
 
 /-- The Sobolev embedding of `u ∈ H^s` is the only function in `C₀` representing the `L²`
 function `u`. -/
@@ -125,7 +127,7 @@ theorem toDistr_apply_eq_integral_toZeroAtInfty (u : H^{s}(E, F)) (φ : 𝓢(E, 
   have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
   rw [← toTemperedDistribution_inclusionLp h0, Lp.toTemperedDistribution_apply]
   exact integral_congr_ae <|
-    (inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 u).mono fun x hx ↦ by simp only [hx]
+    (coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 u).mono fun x hx ↦ by simp only [hx]
 
 /-- The Sobolev embedding depends only on the underlying tempered distribution, not on the order
 of the Bessel-potential space it is taken in. -/
@@ -136,7 +138,7 @@ theorem toZeroAtInfty_congr {hr : finrank ℝ E < 2 * r} {u : H^{s}(E, F)} {v : 
   have huv : inclusionLp h0 u = inclusionLp hr0 v := by
     rw [inclusionLp_eq_iff, toTemperedDistribution_inclusionLp, h]
   rw [toZeroAtInfty_eq_iff h0, huv]
-  exact inclusionLp_ae_eq_toZeroAtInfty hr0 v
+  exact coeFn_inclusionLp_ae_eq_toZeroAtInfty hr0 v
 
 /-- The Sobolev embedding commutes with the inclusions `H^s ⊆ H^r`. -/
 theorem toZeroAtInfty_inclusion {hr : finrank ℝ E < 2 * r} (h : r ≤ s) (u : H^{s}(E, F)) :
@@ -149,8 +151,8 @@ theorem toZeroAtInfty_injective :
   have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
   intro u v huv
   refine inclusionLp_injective h0 (Lp.ext ?_)
-  filter_upwards [inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 u,
-    inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 v] with x hu hv
+  filter_upwards [coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 u,
+    coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 v] with x hu hv
   rw [hu, hv, huv]
 
 /-- On Schwartz functions the Sobolev embedding is the inclusion `𝓢(E, F) ⊆ C₀(E, F)`. -/
@@ -170,8 +172,10 @@ theorem toZeroAtInfty_smulLeftCLM_apply (φ : 𝓢(E, ℂ)) (u : H^{s}(E, F)) (x
   have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
   refine congrFun ((Continuous.ae_eq_iff_eq volume (map_continuous (toZeroAtInfty hs _))
     (φ.continuous.smul (map_continuous (toZeroAtInfty hs u)))).1 ?_) x
-  filter_upwards [inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 (smulLeftCLM s φ u),
-    inclusionLp_smulLeftCLM_ae_eq h0 φ u, inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 u]
+  filter_upwards [coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 (smulLeftCLM s φ u),
+    coeFn_inclusionLp_ae_eq_smul_of_toDistr_eq_smulLeftCLM h0 h0 φ.hasTemperateGrowth
+      (φ.norm_le_seminorm ℂ) (toDistr_smulLeftCLM s φ u),
+    coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 u]
     with y hφu hφ hu
   rw [Pi.smul_apply', ← hφu, hφ, hu]
 
@@ -189,7 +193,7 @@ theorem contDiff_toZeroAtInfty {k : ℕ} (hk : finrank ℝ E + 2 * k < 2 * s) (u
     ContDiff ℝ k (toZeroAtInfty (by linarith) u) := by
   have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul (E := E) (by linarith)
   exact MemSobolev.contDiff_of_ae_eq (by linarith) (memSobolev_inclusionLp h0 u)
-    (toZeroAtInfty _ u).continuous (inclusionLp_ae_eq_toZeroAtInfty h0 u)
+    (toZeroAtInfty _ u).continuous (coeFn_inclusionLp_ae_eq_toZeroAtInfty h0 u)
 
 /-- **The quantitative Sobolev embedding into `C^k`.** For `s > k + dim E / 2` there is a
 constant `C` such that the derivatives of order at most `k` of the Sobolev embedding of every
@@ -202,7 +206,7 @@ theorem exists_norm_iteratedFDeriv_toZeroAtInfty_le {k : ℕ}
   obtain ⟨C, hC, hbound⟩ := exists_norm_iteratedFDeriv_le_of_ae_eq (F := F) h0 (k := k)
     (by linarith)
   exact ⟨C, hC, fun u ↦ hbound u (toZeroAtInfty _ u).continuous
-    (inclusionLp_ae_eq_toZeroAtInfty h0 u)⟩
+    (coeFn_inclusionLp_ae_eq_toZeroAtInfty h0 u)⟩
 
 /-! ### The embedding into `C^k` functions with a fixed compact support -/
 
