@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.LinearAlgebra.Dimension.Finite
 import TauCeti.RingTheory.MvPolynomial.Box
 import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
@@ -52,10 +53,10 @@ example (R σ : Type*) [CommSemiring R] :
     restrictSupport R (∅ : Set (σ →₀ ℕ)) = ⊥ := by
   simp [restrictSupport_eq_span]
 
-/-- The rank-zero conclusion uses strong rank condition, hence excludes the zero ring. -/
-example (R σ : Type*) [CommSemiring R] [StrongRankCondition R] :
+/-- The empty-support space has rank zero over any nontrivial coefficient semiring. -/
+example (R σ : Type*) [CommSemiring R] [Nontrivial R] :
     Module.finrank R (restrictSupport R (∅ : Set (σ →₀ ℕ))) = 0 := by
-  simp [finrank_restrictSupport]
+  rw [restrictSupport_eq_span, Set.image_empty, Submodule.span_empty, finrank_bot]
 
 /-- Support in `{0}` characterizes constant polynomials. -/
 example (R σ : Type*) [CommSemiring R] (p : MvPolynomial σ R) :
