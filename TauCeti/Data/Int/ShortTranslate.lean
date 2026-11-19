@@ -13,6 +13,7 @@ import Mathlib.Data.Fintype.Order
 import Mathlib.Data.Set.Finite.Lemmas
 import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.Tactic.Linarith
+import TauCeti.Data.Int.AddMulPos
 
 /-!
 # Shortening a positive integer vector along a lattice
@@ -43,18 +44,6 @@ public section
 namespace Submodule
 
 variable {ι : Type*}
-
-private lemma exists_add_mul_pos_le [Finite ι] {v w : ι → ℤ} (hv : ∀ i, 0 < v i) {j : ι}
-    (hj : w j < 0) :
-    ∃ t : ℤ, ∃ i₀, w i₀ < 0 ∧ (∀ i, 0 < v i + t * w i) ∧ v i₀ + t * w i₀ ≤ -w i₀ := by
-  obtain ⟨i₀, hi₀ : w i₀ < 0, hmin⟩ := Set.exists_min_image {i | w i < 0}
-    (fun i => (v i - 1) / -w i) (Set.toFinite _) ⟨j, hj⟩
-  have ht : 0 ≤ (v i₀ - 1) / -w i₀ := Int.ediv_nonneg (by linarith [hv i₀]) (by linarith)
-  refine ⟨(v i₀ - 1) / -w i₀, i₀, hi₀, fun i => ?_, ?_⟩
-  · rcases lt_or_ge (w i) 0 with hi | hi
-    · nlinarith [hmin i hi, Int.ediv_mul_le (v i - 1) (by linarith : -w i ≠ 0)]
-    · nlinarith [hv i]
-  · nlinarith [Int.lt_ediv_add_one_mul_self (v i₀ - 1) (by linarith : 0 < -w i₀)]
 
 private lemma exists_bound_of_not_rigid [Finite ι] (L : Submodule ℤ (ι → ℤ)) :
     ∃ B : ℕ, ∀ R : Finset ι, ¬(∀ ψ ∈ L, (∀ i ∈ R, ψ i = 0) → ψ = 0) →
@@ -94,8 +83,8 @@ private lemma exists_rigid_short_translate_of_bound [Finite ι] {L : Submodule �
   -- Move along a witness `ψ` of non-rigidity as far as positivity allows: a coordinate `i₀`
   -- outside `R` becomes short, and the coordinates in `R` do not move.
   obtain ⟨ψ, hψL, hψR, ⟨j, hj⟩, hψB⟩ := hB R hrig
-  obtain ⟨t, i₀, hi₀, htpos, hti₀⟩ := exists_add_mul_pos_le (v := fun i => ℓ i + c * φ i)
-    (w := fun i => c * ψ i) hpos (j := j) (mul_neg_of_pos_of_neg (mod_cast hc) hj)
+  obtain ⟨t, i₀, hi₀, htpos, hti₀⟩ := Int.exists_add_mul_pos_le (v := fun i => ℓ i + c * φ i)
+    (w := fun i => c * ψ i) hpos (mul_neg_of_pos_of_neg (mod_cast hc) hj)
   have hi₀R : i₀ ∉ R := fun h => by simp [hψR i₀ h] at hi₀
   -- Recurse on the larger set `insert i₀ R`.
   refine ih (Finset.card_le_univ _) (Finset.ssubset_insert hi₀R) _
