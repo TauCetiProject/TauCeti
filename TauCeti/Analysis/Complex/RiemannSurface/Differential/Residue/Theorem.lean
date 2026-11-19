@@ -11,6 +11,7 @@ import TauCeti.Analysis.Complex.RiemannSurface.Differential.RealForm
 import TauCeti.Analysis.Complex.RiemannSurface.Differential.Residue.Integral
 import TauCeti.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Geometry.Manifold.Complex.Integration
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
@@ -37,7 +38,7 @@ such point `p` choose a closed coordinate disc, the discs pairwise disjoint, and
 over `X` of its exterior derivative vanishes, for the real and imaginary parts alike
 (`TauCeti.integralTopForm_mextDeriv_eq_zero`). This exterior derivative is supported in the discs,
 and in the disc about `p` it is `d((1 - χ_p) f dz)` with `ω = f dz`. Its integral there is a planar
-integral (`TauCeti.RiemannSurface.integralTopForm_orientationLift_eq_integral`), equal to
+integral (`TauCeti.integralTopForm_reindex_complexManifoldOrientation_eq_integral`), equal to
 `2πi · Res_p ω`
 (`TauCeti.RiemannSurface.OneForm.integral_extDeriv_one_sub_mul_coeff_smul_dzForm_eq_residue`).
 
@@ -184,7 +185,8 @@ theorem integralTopForm_smul_mapCoeff_mextDeriv_eq (L : ℂ →L[ℝ] ℝ)
     {θX : X → ℝ} (hθX : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) (⊤ : ℕ∞) θX)
     (hθXs : tsupport θX ⊆ (chartAt ℂ p).source)
     (hθXθ : ∀ z ∈ (chartAt ℂ p).target, θX ((chartAt ℂ p).symm z) = θ z) :
-    integralTopForm (Manifold.Orientation.mk (orientationLift (X := X)))
+    integralTopForm ((complexManifoldOrientation ℂ X).reindex
+        (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
       (fun x ↦ θX x • RoughForm.mapCoeff L (mextDeriv fun x ↦ ψ x • ω.toRoughForm x) x) =
       L (2 * π * I * ω.residue p) := by
   have hR : 0 < R := θ.rOut_pos.trans_le hθR
@@ -193,8 +195,8 @@ theorem integralTopForm_smul_mapCoeff_mextDeriv_eq (L : ℂ →L[ℝ] ℝ)
   have hD : IsSmoothForm 𝓘(ℝ, ℂ) 0
       (fun x ↦ θX x • RoughForm.mapCoeff L (mextDeriv fun x ↦ ψ x • ω.toRoughForm x) x) :=
     ((isSmoothForm_mextDeriv hα (n := 0) (by simp)).mapCoeff L).fun_smul (hθX.of_le (by simp))
-  rw [integralTopForm_orientationLift_eq_integral hD (isClosed_tsupport _).isCompact p
-      ((tsupport_smul_subset_left _ _).trans hθXs),
+  rw [integralTopForm_reindex_complexManifoldOrientation_eq_integral hD
+      (isClosed_tsupport _).isCompact p ((tsupport_smul_subset_left _ _).trans hθXs),
     integral_congr_ae (ae_of_all _ (indicator_inChartAt_smul_mapCoeff_mextDeriv L hsub hhol hχθ
       hθR (hψ.of_le (by simp)) hψω hψχ hθXθ)),
     integral_indicator measurableSet_closedBall,
@@ -275,38 +277,6 @@ theorem θ_rIn (p : X) : (d.θ p).rIn = d.R p / 2 :=
 theorem θ_rOut (p : X) : (d.θ p).rOut = d.R p :=
   SmoothBumpFunction.ofClosedBallSubset_rOut _ _ _ _
 
-/-- The cutoff about `p`, read in the preferred chart at `p`. -/
-def χc (p : X) : ContDiffBump (chartAt ℂ p p) where
-  rIn := d.R p / 4
-  rOut := d.R p / 2
-  rIn_pos := by linarith [d.R_pos p]
-  rIn_lt_rOut := by linarith [d.R_pos p]
-
-/-- The localizing bump about `p`, read in the preferred chart at `p`. -/
-def θc (p : X) : ContDiffBump (chartAt ℂ p p) where
-  rIn := d.R p / 2
-  rOut := d.R p
-  rIn_pos := by linarith [d.R_pos p]
-  rIn_lt_rOut := by linarith [d.R_pos p]
-
-theorem χc_rOut (p : X) : (d.χc p).rOut = d.R p / 2 := (rfl)
-
-theorem θc_rIn (p : X) : (d.θc p).rIn = d.R p / 2 := (rfl)
-
-theorem θc_rOut (p : X) : (d.θc p).rOut = d.R p := (rfl)
-
-theorem χ_symm (p : X) {z : ℂ} (hz : z ∈ (chartAt ℂ p).target) :
-    d.χ p ((chartAt ℂ p).symm z) = d.χc p z := by
-  rw [(d.χ p).apply_chartAt_symm hz, ContDiffBump.apply, ContDiffBump.apply, d.χ_rIn, d.χ_rOut,
-    TauCeti.extChartAt_model_apply_eq_chartAt_apply]
-  rfl
-
-theorem θ_symm (p : X) {z : ℂ} (hz : z ∈ (chartAt ℂ p).target) :
-    d.θ p ((chartAt ℂ p).symm z) = d.θc p z := by
-  rw [(d.θ p).apply_chartAt_symm hz, ContDiffBump.apply, ContDiffBump.apply, d.θ_rIn, d.θ_rOut,
-    TauCeti.extChartAt_model_apply_eq_chartAt_apply]
-  rfl
-
 /-- The global cutoff `1 - Σ_p χ_p`, vanishing near the points of `s`. -/
 def ψ (x : X) : ℝ :=
   1 - ∑ q ∈ s, d.χ q x
@@ -355,16 +325,17 @@ theorem ψ_eventuallyEq_zero {p : X} (hp : p ∈ s) : d.ψ =ᶠ[𝓝 p] 0 := by
   rw [d.ψ_eq hp hx, h1, Pi.one_apply, sub_self, Pi.zero_apply]
 
 theorem ψ_symm_eq {p : X} (hp : p ∈ s) {z : ℂ} (hz : z ∈ ball (chartAt ℂ p p) (d.R p)) :
-    d.ψ ((chartAt ℂ p).symm z) = 1 - d.χc p z := by
+    d.ψ ((chartAt ℂ p).symm z) = 1 - (d.χ p).toContDiffBump z := by
   have hzc := ball_subset_closedBall hz
   rw [d.ψ_eq hp (d.symm_image_subset p le_rfl ⟨z, hzc, rfl⟩),
-    d.χ_symm p (d.closedBall_subset_target p hzc)]
+    (d.χ p).apply_chartAt_symm (d.closedBall_subset_target p hzc)]
 
 theorem θ_eq_one {p : X} {x : X} (hx : x ∈ tsupport (d.χ p)) : d.θ p x = 1 := by
   obtain ⟨z, hz, rfl⟩ := (d.χ p).tsupport_subset_chartAt_symm_image_closedBall hx
   rw [d.χ_rOut] at hz
-  rw [d.θ_symm p (d.closedBall_half_subset_target p hz)]
-  exact (d.θc p).one_of_mem_closedBall (by rwa [θc_rIn])
+  rw [(d.θ p).apply_chartAt_symm (d.closedBall_half_subset_target p hz)]
+  exact (d.θ p).one_of_mem_closedBall (by
+    rwa [d.θ_rIn, TauCeti.extChartAt_model_apply_eq_chartAt_apply])
 
 variable {ω : OneForm X} (hs : ∀ x ∉ s, ω.HolomorphicAt x)
 include hs
@@ -426,19 +397,22 @@ theorem sum_residue_eq_zero_of_forall_notMem [CompactSpace X] [T2Space X]
         (RoughForm.mapCoeff L (mextDeriv fun x ↦ d.ψ x • ω.toRoughForm x)) :=
       (isSmoothForm_mextDeriv hα (n := 0) (by simp)).mapCoeff L
     have hStokes := integralTopForm_mextDeriv_eq_zero
-      (Manifold.Orientation.mk (orientationLift (X := X))) ((hα.mapCoeff L).of_le (by simp))
+      ((complexManifoldOrientation ℂ X).reindex
+        (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
+      ((hα.mapCoeff L).of_le (by simp))
       (isClosed_tsupport _).isCompact
     rw [mextDeriv_mapCoeff L (hα.of_le (by simp)), ← d.sum_θ_smul_mapCoeff_mextDeriv hs L,
       integralTopForm_sum _ _ _ fun p _ ↦ (hD.fun_smul ((d.θ p).contMDiff.of_le (by simp)))
         |>.integrableTopForm (isClosed_tsupport _).isCompact Complex.basisOneI] at hStokes
     rw [Finset.mul_sum, map_sum, ← hStokes]
     refine Finset.sum_congr rfl fun p hp ↦ (integralTopForm_smul_mapCoeff_mextDeriv_eq L
-      (χ := d.χc p) (θ := d.θc p)
+      (χ := (d.χ p).toContDiffBump) (θ := (d.θ p).toContDiffBump)
       (d.closedBall_subset_target p) (hω p) (fun y hy hyR hyp ↦
-        d.holomorphicAt_of_mem_disc hs hp hy hyR hyp) ((d.χc_rOut p).trans (d.θc_rIn p).symm).le
-      (d.θc_rOut p).le d.contMDiff_ψ
+        d.holomorphicAt_of_mem_disc hs hp hy hyR hyp) ((d.χ_rOut p).trans (d.θ_rIn p).symm).le
+      (d.θ_rOut p).le d.contMDiff_ψ
       (fun _ ↦ d.holomorphicAt_of_mem_tsupport_ψ hs) (fun z hz ↦ d.ψ_symm_eq hp hz)
-      (d.θ p).contMDiff (d.θ p).tsupport_subset_chartAt_source fun z hz ↦ d.θ_symm p hz).symm
+      (d.θ p).contMDiff (d.θ p).tsupport_subset_chartAt_source
+      fun z hz ↦ (d.θ p).apply_chartAt_symm hz).symm
   have h0 : 2 * π * I * ∑ p ∈ s, ω.residue p = 0 :=
     Complex.ext (by simpa using key reCLM) (by simpa using key imCLM)
   exact (mul_eq_zero.1 h0).resolve_left (by simp [Real.pi_ne_zero, I_ne_zero])

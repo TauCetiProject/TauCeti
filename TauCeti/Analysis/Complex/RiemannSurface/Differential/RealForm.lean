@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Complex
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Basic
 public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
-import TauCeti.Analysis.Green.Comparison.Area.Basic
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
@@ -65,9 +63,6 @@ The real structure on `X` is the one underlying its complex structure
   in a chart is `d((ψ f) dz)`.
 * `TauCeti.RiemannSurface.OneForm.mextDeriv_smul_toRoughForm_eq_zero`: it is closed where the
   cutoff is locally constant.
-* `TauCeti.RiemannSurface.integralTopForm_orientationLift_eq_integral`: the integral of a compactly
-  supported continuous top form inside a chart is the planar integral of its coefficient, for the
-  orientation `TauCeti.RiemannSurface.orientationLift` of the complex structure.
 
 ## References
 
@@ -238,41 +233,3 @@ theorem mextDeriv_smul_toRoughForm_eq_zero {c : ℝ} (hψ : ψ =ᶠ[𝓝 x] fun 
 end IsManifold
 
 end TauCeti.RiemannSurface.OneForm
-
-namespace TauCeti.RiemannSurface
-
-open Complex
-
-variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
-
-/-- The orientation lift of a Riemann surface given by its complex structure, indexed by `Fin 2`:
-every chart has sign `1` and the model orientation is the standard orientation of `ℂ`. -/
-abbrev orientationLift : Manifold.OrientationLift 𝓘(ℝ, ℂ) X (Fin 2) :=
-  Manifold.OrientationLift.ofHasGroupoid Complex.orientation (by simp)
-
-/-- The integral of a continuous top form with compact support inside the preferred chart at `p`
-is the planar integral of its coefficient on the basis `1, i` over the target of the chart. -/
-theorem integralTopForm_orientationLift_eq_integral {φ : RoughForm 𝓘(ℝ, ℂ) X ℝ 2}
-    (hφ : IsSmoothForm 𝓘(ℝ, ℂ) 0 φ) (hc : IsCompact (tsupport (α := ℂ [⋀^Fin 2]→L[ℝ] ℝ) φ))
-    (p : X) (hs : tsupport (α := ℂ [⋀^Fin 2]→L[ℝ] ℝ) φ ⊆ (chartAt ℂ p).source) :
-    integralTopForm (Manifold.Orientation.mk (orientationLift (X := X))) φ =
-      ∫ z, (chartAt ℂ p).target.indicator (fun z ↦ φ.inChartAt p z ![1, I]) z := by
-  have hσ : ∀ x : X, (orientationLift (X := X)).signAt p x = 1 := fun x ↦ by
-    by_cases hx : x ∈ (chartAt ℂ p).source
-    · rw [Manifold.OrientationLift.signAt_of_mem _ hx]
-      exact Manifold.OrientationLift.ofHasGroupoid_sign _ _ _ _
-    · exact Manifold.OrientationLift.signAt_of_notMem _ hx
-  rw [integralTopForm_eq_chartIntegral _ φ (hφ.integrableTopForm hc Complex.basisOneI) p
-      (by simpa only [extChartAt_source] using hs),
-    Manifold.OrientationLift.chartIntegral_eq_const_mul_unsigned _ φ Complex.basisOneI p 1
-      fun x _ ↦ hσ x,
-    Manifold.OrientationLift.ofHasGroupoid_modelOrientation, Complex.orientation,
-    _root_.Orientation.signBasis_orientation, Green.basisOneI_addHaar]
-  simp only [Units.val_one, Int.cast_one, one_mul, RoughForm.signedInChartAt_one,
-    Complex.coe_basisOneI, extChartAt_target, ModelWithCorners.range_eq_univ, inter_univ]
-  refine MeasureTheory.integral_congr_ae (MeasureTheory.ae_of_all _ fun z ↦ ?_)
-  by_cases hz : z ∈ (chartAt ℂ p).target
-  · simp [indicator_of_mem hz]
-  · simp [indicator_of_notMem hz]
-
-end TauCeti.RiemannSurface

@@ -157,6 +157,18 @@ theorem residuePairing_principalParts [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace
   rw [MeromorphicFunction.principalParts_apply, LocalPrincipalPart.residuePairing_mk,
     differentialSections.residue_toChartGerm_mul]
 
+/-- Away from the poles of a meromorphic function `f` and the support of `D`, the `1`-form `f ω`
+has residue `0` for every `ω ∈ H⁰(X, Ω_{-D})`: its residue there is the local residue pairing with
+the principal part of `f` at that point, which vanishes. -/
+theorem residue_finitePart_smul_toOneForm_eq_zero [IsManifold 𝓘(ℂ) 1 X] [ConnectedSpace X]
+    [CompactSpace X] (f : MeromorphicFunction X) (ω : differentialSections (-D) ⊤) {x : X}
+    (hf : f x ≠ ∞) (hD : D x = 0) :
+    (f.finitePart • differentialSections.toOneForm (-D) ω).residue x = 0 := by
+  have h := congrArg (fun μ ↦ LocalPrincipalPart.residuePairing D x μ ω)
+    (MeromorphicFunction.principalParts_apply_eq_zero (D := D) hf hD)
+  rwa [MeromorphicFunction.principalParts_apply, LocalPrincipalPart.residuePairing_mk,
+    differentialSections.residue_toChartGerm_mul, map_zero, LinearMap.zero_apply] at h
+
 /-- **The residue pairing vanishes on the principal parts of a meromorphic function.** On a compact
 connected Riemann surface, the residue pairing of the principal parts of a meromorphic function `f`
 relative to `D` with any `ω ∈ H⁰(X, Ω_{-D})` is `0`: by `residuePairing_principalParts` it is the
@@ -174,10 +186,8 @@ theorem residuePairing_principalParts_eq_zero [IsManifold 𝓘(ℂ) 1 X] [Connec
     OneForm.MeromorphicAt.smul (f.meromorphicAt_finitePart x)
       (differentialSections.isDifferentialSectionAt_toOneForm ω x).meromorphicAt) fun x hx ↦ ?_
   by_contra hxS
-  have h := residuePairing_principalParts f ω (insert x S)
-    (hf.trans (Finset.subset_insert x S)) (hD.trans (Finset.subset_insert x S))
-  rw [residuePairing_principalParts f ω S hf hD, Finset.sum_insert hxS, eq_comm, add_eq_right] at h
-  exact hx h
+  exact hx (residue_finitePart_smul_toOneForm_eq_zero f ω (fun h ↦ hxS (hf h))
+    (Finsupp.notMem_support_iff.1 fun h ↦ hxS (hD h)))
 
 /-- The residue pairing kills the principal parts of meromorphic functions, so it descends to the
 cokernel of `MeromorphicFunction.principalParts D`. -/
