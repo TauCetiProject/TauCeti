@@ -13,7 +13,13 @@ public import Mathlib.Analysis.Complex.Basic
 Complex conjugation is an isometry fixing the real axis (Mathlib's `Complex.dist_conj_conj`), so
 it maps every open or closed disc centred on the real axis to itself. Such discs are the natural
 domains for reflection across the real axis, for instance the even reflection
-`TauCeti.evenReflection`. Conjugation maps the real axis into itself
+`TauCeti.evenReflection`. A disc centred in the closed upper half-plane is not invariant, but
+its mirror image meets the closed upper half-plane inside the disc itself, since a point of the
+closed upper half-plane is at least as close to such a centre as to its mirror image
+(`TauCeti.dist_le_dist_conj_of_im_nonneg`, `TauCeti.mem_ball_of_conj_mem_ball_of_im_nonneg`).
+Any set becomes invariant under conjugation once its mirror image is added
+(`TauCeti.conj_mem_union_preimage_conj`).
+Conjugation maps the real axis into itself
 (`TauCeti.mapsTo_conj_setOf_im_eq_zero`), whereas the rotation `z ↦ I z` does not
 (`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`).
 
@@ -163,6 +169,43 @@ theorem conj_mem_ball_of_im_eq_zero (hx₀ : x₀.im = 0) (hz : z ∈ ball x₀ 
 theorem conj_mem_closedBall_of_im_eq_zero (hx₀ : x₀.im = 0) (hz : z ∈ closedBall x₀ r) :
     conj z ∈ closedBall x₀ r := by
   rwa [mem_closedBall, ← Complex.conj_eq_iff_im.2 hx₀, Complex.dist_conj_conj]
+
+/-- A point `w` of the closed upper half-plane is at least as close to a point `z` of the closed
+upper half-plane as to its mirror image `conj z`. -/
+theorem dist_le_dist_conj_of_im_nonneg {w : ℂ} (hw : 0 ≤ w.im) (hz : 0 ≤ z.im) :
+    dist w z ≤ dist w (conj z) := by
+  rw [Complex.dist_eq_re_im, Complex.dist_eq_re_im]
+  refine Real.sqrt_le_sqrt ?_
+  simp only [Complex.conj_re, Complex.conj_im]
+  nlinarith [mul_nonneg hw hz]
+
+/-- If the mirror image of a point `z` of the closed upper half-plane lies in an open disc centred
+in the closed upper half-plane, then so does `z`. -/
+theorem mem_ball_of_conj_mem_ball_of_im_nonneg (hx₀ : 0 ≤ x₀.im) (hz : 0 ≤ z.im)
+    (h : conj z ∈ ball x₀ r) : z ∈ ball x₀ r :=
+  (dist_le_dist_conj_of_im_nonneg hz hx₀).trans_lt (by rwa [← Complex.dist_conj_comm])
+
+/-- If the mirror image of a point `z` of the closed upper half-plane lies in a closed disc centred
+in the closed upper half-plane, then so does `z`. -/
+theorem mem_closedBall_of_conj_mem_closedBall_of_im_nonneg (hx₀ : 0 ≤ x₀.im) (hz : 0 ≤ z.im)
+    (h : conj z ∈ closedBall x₀ r) : z ∈ closedBall x₀ r :=
+  (dist_le_dist_conj_of_im_nonneg hz hx₀).trans (by rwa [← Complex.dist_conj_comm])
+
+/-- The union of a set `s` with its preimage under conjugation is invariant under conjugation. -/
+theorem conj_mem_union_preimage_conj {s : Set ℂ} (hz : z ∈ s ∪ conj ⁻¹' s) :
+    conj z ∈ s ∪ conj ⁻¹' s := by
+  simp only [Set.mem_union, Set.mem_preimage, Complex.conj_conj] at hz ⊢
+  exact hz.symm
+
+/-- A set `s` and its preimage under conjugation meet the closed upper half-plane in the same set,
+provided every point of the closed upper half-plane whose mirror image lies in `s` lies in `s`,
+as for discs centred in the closed upper half-plane
+(`TauCeti.mem_ball_of_conj_mem_ball_of_im_nonneg`). -/
+theorem setOfPred_le_im_inter_union_preimage_conj {s : Set ℂ}
+    (hs : ∀ z, 0 ≤ z.im → conj z ∈ s → z ∈ s) :
+    {z : ℂ | 0 ≤ z.im} ∩ (s ∪ conj ⁻¹' s) = {z : ℂ | 0 ≤ z.im} ∩ s :=
+  subset_antisymm (fun z ⟨hz, hzs⟩ ↦ ⟨hz, hzs.elim id (hs z hz)⟩)
+    (Set.inter_subset_inter_right _ Set.subset_union_left)
 
 /-- Complex conjugation maps the real axis into itself. -/
 theorem mapsTo_conj_setOf_im_eq_zero :
