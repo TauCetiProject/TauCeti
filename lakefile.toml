@@ -37,7 +37,11 @@ globs = ["TauCeti.*"]
 # scripts/lint-style.sh. Keep the option enabled for forward compatibility if Mathlib changes how
 # the command linter discovers library files.
 # Check unused local names inside tactic proofs as well as declaration parameters.
-leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.unusedVariables.analyzeTactics = true, weak.linter.style.longFile = 1500, weak.linter.style.longFileDefValue = 1500, weak.linter.style.header = true, warningAsError = true }
+#
+# `style.numericProjections` (new in Mathlib after v4.36.0) flags every `x.1`/`x.2` projection;
+# TauCeti has about 69,000 of them in 7,700 files. It stays off until they are cleaned up in
+# PRs small enough for the file cap. The `weak.` prefix keeps older Mathlib pins happy.
+leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.numericProjections = false, weak.linter.unusedVariables.analyzeTactics = true, weak.linter.style.longFile = 1500, weak.linter.style.longFileDefValue = 1500, weak.linter.style.header = true, warningAsError = true }
 
 
 # Human-owned governance: the axiom-allowlist audit (`lake exe axioms`). Inspects the
