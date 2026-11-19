@@ -50,6 +50,9 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   grows at most polynomially, with a degree and a constant that are uniform over the cutoffs
   supported in a fixed compact set with bounded derivatives
   (`Distribution.exists_forall_norm_localFourier_le`).
+* `Distribution.exists_compacts_cutoff_lattice`: around every point there are a compact set `K`, a
+  cutoff supported in `K` equal to one near the point, and a full lattice whose nonzero vectors
+  translate `K` off itself: the data of the Fourier expansions above.
 * `Distribution.exists_hasSum_localFourier_of_eq_mul`: the localized Fourier transform with
   cutoff `φ g` is a rapidly decreasing superposition of translates of the one with cutoff `φ`;
   `Distribution.hasSum_localFourier_ofSupportedIn` is the same formula for a cutoff `φ` supported
@@ -337,7 +340,7 @@ theorem hasSum_localFourier_ofSupportedIn [MeasurableSpace E] [BorelSpace E] (T 
 smaller neighbourhood `K₁` of the point, a smooth function supported in `K` equal to one on `K₁`,
 and a full lattice none of whose nonzero translates of `K` meet `K`: the data of a Fourier expansion
 of the cutoffs supported in `K₁`. -/
-private theorem exists_compacts_cutoff_lattice {x : E} (hx : x ∈ Ω) {U : Set E} (hU : U ∈ 𝓝 x) :
+theorem exists_compacts_cutoff_lattice {x : E} (hx : x ∈ Ω) {U : Set E} (hU : U ∈ 𝓝 x) :
     ∃ (K : Compacts E) (K₁ : Set E), (K : Set E) ⊆ U ∩ Ω ∧ K₁ ∈ 𝓝 x ∧ K₁ ⊆ K ∧
       (∃ χ : 𝓓_{K}(E, ℂ), ∀ y ∈ K₁, χ y = 1) ∧ ∃ (L : Submodule ℤ E) (_ : DiscreteTopology L)
         (_ : IsZLattice ℝ L), ∀ y ∈ K, ∀ ℓ : L, y + ℓ ∈ K → ℓ = 0 := by
