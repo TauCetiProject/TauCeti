@@ -38,8 +38,8 @@ commutes with the action of every `k ∈ K` near `p`, the chain rule gives
 differential `dψ_p` carries `V_p` onto `V_(ψ p)`
 (`Diffeomorph.map_fixedTangentSubspace`). A globally equivariant diffeomorphism therefore carries
 the fixed set, its parts `M^K_d` and the connected components of the fixed set onto those of `N`
-(`Diffeomorph.image_fixedPoints`, `Diffeomorph.image_fixedPointsOfFinrank`,
-`Diffeomorph.image_connectedComponentIn_fixedPoints`). No smoothness of the actions is used: where
+(`TauCeti.MulAction.image_fixedPoints_of_bijective`, `Diffeomorph.image_fixedPointsOfFinrank`,
+`Homeomorph.image_connectedComponentIn_fixedPoints`). No smoothness of the actions is used: where
 `k •` is not differentiable, the chain rule through a diffeomorphism still holds with both sides
 zero.
 
@@ -65,10 +65,10 @@ zero.
   equivariant near `p` carries the fixed tangent subspace at `p` onto that at `ψ p`.
 * `Diffeomorph.fixedTangentSubspaceEquiv`: this differential as a linear equivalence between the
   fixed tangent subspaces.
-* `Diffeomorph.image_fixedPoints`, `Diffeomorph.image_fixedPointsOfFinrank`,
-  `Diffeomorph.image_connectedComponentIn_fixedPoints`: an equivariant diffeomorphism carries the
-  fixed set, each part `M^K_d` and each connected component of the fixed set onto the
-  corresponding subset of the target.
+* `Homeomorph.image_connectedComponentIn_fixedPoints`: an equivariant homeomorphism carries each
+  connected component of the fixed set onto the connected component through the image point.
+* `Diffeomorph.image_fixedPointsOfFinrank`: an equivariant diffeomorphism carries each part
+  `M^K_d` of the fixed set onto the corresponding part of the target.
 -/
 
 public section
@@ -163,7 +163,21 @@ end FixedTangentSubspace
 
 end TauCeti
 
-/-! ### Naturality under equivariant diffeomorphisms -/
+/-! ### Naturality under equivariant homeomorphisms and diffeomorphisms -/
+
+namespace Homeomorph
+
+/-- An equivariant homeomorphism carries each connected component of the fixed set onto the
+connected component of the fixed set through the image point. -/
+theorem image_connectedComponentIn_fixedPoints {K M N : Type*} [Monoid K] [TopologicalSpace M]
+    [TopologicalSpace N] [MulAction K M] [MulAction K N] (ψ : M ≃ₜ N)
+    (hψ : ∀ (k : K) (x : M), ψ (k • x) = k • ψ x) {x : M} (hx : x ∈ MulAction.fixedPoints K M) :
+    ψ '' connectedComponentIn (MulAction.fixedPoints K M) x =
+      connectedComponentIn (MulAction.fixedPoints K N) (ψ x) := by
+  rw [← TauCeti.MulAction.image_fixedPoints_of_bijective ψ.bijective hψ]
+  exact ψ.image_connectedComponentIn hx
+
+end Homeomorph
 
 namespace Diffeomorph
 
@@ -255,18 +269,6 @@ section Equivariant
 
 variable (ψ : M ≃ₘ^n⟮I, J⟯ N) (hψ : ∀ (k : K) (x : M), ψ (k • x) = k • ψ x)
 include hψ
-
-/-- An equivariant diffeomorphism carries the fixed set onto the fixed set. -/
-theorem image_fixedPoints : ψ '' MulAction.fixedPoints K M = MulAction.fixedPoints K N :=
-  TauCeti.MulAction.image_fixedPoints_of_bijective (f := ψ) ⟨ψ.injective, ψ.surjective⟩ hψ
-
-/-- An equivariant diffeomorphism carries each connected component of the fixed set onto the
-connected component of the fixed set through the image point. -/
-theorem image_connectedComponentIn_fixedPoints {x : M} (hx : x ∈ MulAction.fixedPoints K M) :
-    ψ '' connectedComponentIn (MulAction.fixedPoints K M) x =
-      connectedComponentIn (MulAction.fixedPoints K N) (ψ x) := by
-  rw [← ψ.image_fixedPoints hψ]
-  exact ψ.toHomeomorph.image_connectedComponentIn hx
 
 /-- An equivariant diffeomorphism carries the part `M^K_d` of the fixed set, on which the fixed
 tangent subspaces have dimension `d`, onto the corresponding part `N^K_d`. -/
