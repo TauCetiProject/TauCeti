@@ -20,7 +20,7 @@ Let `S` be an `R`-algebra that is finitely presented as an `R`-module (for insta
 algebra over a noetherian ring, by `Module.finitePresentation_of_finite`). The values `ρ 1` of
 the linear functionals `ρ : S → R` form an ideal `I` of `R`, the range of evaluation at `1` on
 the dual, and `S` is split over `R` exactly when `I = R`
-(`TauCeti.splitAlgebra_iff_eval_surjective`). Because `Hom_R(S, R)` commutes with flat base
+(`TauCeti.splitAlgebra_iff_range_eval_eq_top`). Because `Hom_R(S, R)` commutes with flat base
 change for finitely presented `S` (`Module.FinitePresentation.isBaseChange_map`), the ideal
 attached to `R' ⊗[R] S` over a flat `R`-algebra `R'` is the extension `I R'`
 (`TauCeti.Module.Dual.range_eval_one_tmul`). Two consequences
@@ -63,7 +63,7 @@ theorem splitAlgebra_tensorProduct_iff_map_range_eval (R' : Type*) [CommRing R']
     [Module.Flat R R'] [Module.FinitePresentation R S] :
     SplitAlgebra R' (R' ⊗[R] S) ↔
       Ideal.map (algebraMap R R') (LinearMap.range (Module.Dual.eval R S 1)) = ⊤ := by
-  rw [splitAlgebra_iff_eval_surjective, ← LinearMap.range_eq_top, Algebra.TensorProduct.one_def,
+  rw [splitAlgebra_iff_range_eval_eq_top, Algebra.TensorProduct.one_def,
     Module.Dual.range_eval_one_tmul]
 
 /-- Splittings descend along faithfully flat maps: for a faithfully flat `R`-algebra `R'` and an
@@ -74,7 +74,7 @@ theorem splitAlgebra_tensorProduct_iff_of_faithfullyFlat (R' : Type*) [CommRing 
     SplitAlgebra R' (R' ⊗[R] S) ↔ SplitAlgebra R S := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.baseChange R'⟩
   rw [splitAlgebra_tensorProduct_iff_map_range_eval] at h
-  rw [splitAlgebra_iff_eval_surjective, ← LinearMap.range_eq_top,
+  rw [splitAlgebra_iff_range_eval_eq_top,
     ← Ideal.comap_map_eq_self_of_faithfullyFlat (B := R') (LinearMap.range _), h]
   exact Ideal.comap_top
 
@@ -86,7 +86,7 @@ theorem splitAlgebra_iff_localized_maximal [Module.FinitePresentation R S] :
       ∀ (m : Ideal R) [m.IsMaximal],
         SplitAlgebra (Localization.AtPrime m) (Localization.AtPrime m ⊗[R] S) := by
   refine ⟨fun h m _ ↦ h.baseChange _, fun h ↦ ?_⟩
-  rw [splitAlgebra_iff_eval_surjective, ← LinearMap.range_eq_top]
+  rw [splitAlgebra_iff_range_eval_eq_top]
   by_contra hI
   obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hI
   have := (splitAlgebra_tensorProduct_iff_map_range_eval (Localization.AtPrime m)).1 (h m)

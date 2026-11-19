@@ -35,6 +35,8 @@ maps and their detection at maximal ideals are in
 
 * `TauCeti.splitAlgebra_iff_eval_surjective`: `S` is split exactly when evaluation at `1` on the
   dual `Module.Dual R S` is surjective.
+* `TauCeti.splitAlgebra_iff_range_eval_eq_top`: `S` is split exactly when the ideal of values
+  `ρ 1` of functionals `ρ : S → R` is the unit ideal.
 * `TauCeti.SplitAlgebra.trans`: splittings compose along a tower `R → S → T`.
 * `TauCeti.SplitAlgebra.of_algHom`: if `T` is split over `R`, so is every `R`-algebra mapping to
   `T`.
@@ -91,6 +93,13 @@ theorem splitAlgebra_iff_eval_surjective :
   refine ⟨fun ⟨ρ, hρ⟩ r ↦ ⟨r • ρ, by simp [hρ]⟩, fun h ↦ ?_⟩
   obtain ⟨ρ, hρ⟩ := h 1
   exact ⟨ρ, by rwa [Module.Dual.eval_apply] at hρ⟩
+
+variable (R S) in
+/-- `S` is split over `R` exactly when the ideal of `R` formed by the values `ρ 1` of linear
+functionals `ρ : S → R`, the range of evaluation at `1` on the dual, is the unit ideal. -/
+theorem splitAlgebra_iff_range_eval_eq_top :
+    SplitAlgebra R S ↔ LinearMap.range (Module.Dual.eval R S 1) = ⊤ := by
+  rw [splitAlgebra_iff_eval_surjective, LinearMap.range_eq_top]
 
 variable (R) in
 /-- Every commutative semiring is split over itself, by the identity. -/
