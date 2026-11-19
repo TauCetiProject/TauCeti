@@ -417,27 +417,37 @@ theorem W1p.halfDiscFlatTrace_restrictL_ae (hp : p ≠ (∞ : ℝ≥0∞)) (hρr
   rw [heq]
   simpa only [h0, add_zero] using W1p.halfDiscFlatTrace_translate_ae hp hc u
 
+/-- Almost everywhere on the flat segment, for surface measure, is almost everywhere on
+`[-r, r]` along `t ↦ (0, t)`. -/
+private theorem ae_restrict_halfDiscFlatSegment_iff {P : WithLp 2 (ℝ × ℝ) → Prop} :
+    (∀ᵐ x ∂(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r), P x) ↔
+      ∀ᵐ t ∂volume.restrict (Icc (-r) r), P (WithLp.toLp 2 ((0 : ℝ), t)) := by
+  rw [euclideanHausdorffMeasure_restrict_halfDiscFlatSegment,
+    (WithLp.isometry_toLp_prodMk_left 2 (β := ℝ) (0 : ℝ)).isClosedEmbedding.measurableEmbedding
+      |>.ae_map_iff]
+
 /-- **Zero trace on a shifted half-disc.** If `|c| + ρ ≤ r`, the translate `x ↦ u (x + (0, c))`
-has zero trace on the flat segment of radius `ρ` exactly when the trace of `u` vanishes almost
-everywhere on the shifted subsegment `[c - ρ, c + ρ]` of the flat segment of radius `r`. -/
+has zero trace on the flat segment of radius `ρ` exactly when `t ↦ trace(u) (0, t)` vanishes
+almost everywhere for Lebesgue measure on the interval `[c - ρ, c + ρ]`. -/
 theorem W1p.translate_mem_halfDiscFlatTraceZeroSubmodule_iff (hp : p ≠ (∞ : ℝ≥0∞))
     (hc : |c| + ρ ≤ r) {u : W1p volume (halfDisc r) p} :
     W1p.translate (mapsTo_add_halfDisc hc) u ∈ W1p.halfDiscFlatTraceZeroSubmodule hp ρ ↔
-      ∀ᵐ x ∂(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict
-        ((· + WithLp.toLp 2 ((0 : ℝ), c)) '' halfDiscFlatSegment ρ),
-        W1p.halfDiscFlatTrace hp r u x = 0 := by
+      ∀ᵐ t ∂volume.restrict (Icc (c - ρ) (c + ρ)),
+        W1p.halfDiscFlatTrace hp r u (WithLp.toLp 2 ((0 : ℝ), t)) = 0 := by
   rw [W1p.mem_halfDiscFlatTraceZeroSubmodule_iff_halfDiscFlatTrace_ae_eq_zero,
-    ← Isometry.map_euclideanHausdorffMeasure_restrict
-      (isometry_add_right (WithLp.toLp 2 ((0 : ℝ), c))) (halfDiscFlatSegment ρ),
-    (measurableEmbedding_addRight _).ae_map_iff]
+    ae_restrict_halfDiscFlatSegment_iff]
+  have hinterval : (· + c) '' Icc (-ρ) ρ = Icc (c - ρ) (c + ρ) := by
+    rw [image_add_const_Icc, neg_add_eq_sub, add_comm ρ c]
+  rw [← hinterval, ← ((measurePreserving_add_right volume c).restrict_image_emb
+    (measurableEmbedding_addRight c) (Icc (-ρ) ρ)).map_eq,
+    (measurableEmbedding_addRight c).ae_map_iff]
   have htr := W1p.halfDiscFlatTrace_translate_ae hp hc u
-  constructor
-  · intro h
-    filter_upwards [htr, h] with x hx hx'
-    rw [← hx, hx']
-  · intro h
-    filter_upwards [htr, h] with x hx hx'
-    rw [hx, hx']
+  simp only [Filter.EventuallyEq] at htr
+  rw [ae_restrict_halfDiscFlatSegment_iff] at htr
+  apply Filter.eventually_congr
+  filter_upwards [htr] with t ht
+  rw [ht]
+  simp [← WithLp.toLp_add]
 
 /-- **Zero trace passes to shifted half-discs.** If `u` has zero trace on the flat segment of
 `halfDisc r` and `|c| + ρ ≤ r`, its translate `x ↦ u (x + (0, c))` has zero trace on the flat
@@ -466,15 +476,6 @@ theorem W1p.restrictL_mem_halfDiscFlatTraceZeroSubmodule (hp : p ≠ (∞ : ℝ�
 
 /-! ### From small half-discs to the whole flat segment -/
 
-/-- Almost everywhere on the flat segment, for surface measure, is almost everywhere on
-`[-r, r]` along `t ↦ (0, t)`. -/
-private theorem ae_restrict_halfDiscFlatSegment_iff {P : WithLp 2 (ℝ × ℝ) → Prop} :
-    (∀ᵐ x ∂(μHE[1] : Measure (WithLp 2 (ℝ × ℝ))).restrict (halfDiscFlatSegment r), P x) ↔
-      ∀ᵐ t ∂volume.restrict (Icc (-r) r), P (WithLp.toLp 2 ((0 : ℝ), t)) := by
-  rw [euclideanHausdorffMeasure_restrict_halfDiscFlatSegment,
-    (WithLp.isometry_toLp_prodMk_left 2 (β := ℝ) (0 : ℝ)).isClosedEmbedding.measurableEmbedding
-      |>.ae_map_iff]
-
 /-- **The zero-trace condition is local.** If every point of the open flat segment `(-r, r)`
 lies in a shifted subsegment `(c - ρ, c + ρ)`, with `|c| + ρ ≤ r`, on whose half-disc the
 translate `x ↦ u (x + (0, c))` has zero trace, then `u` has zero trace on the flat segment of
@@ -491,22 +492,7 @@ theorem W1p.mem_halfDiscFlatTraceZeroSubmodule_of_forall_translate (hp : p ≠ (
   have hpiece (t : Ioo (-r) r) : ∀ᵐ s ∂volume.restrict (Ioo (c t - ρ t) (c t + ρ t)),
       W1p.halfDiscFlatTrace hp r u (WithLp.toLp 2 ((0 : ℝ), s)) = 0 := by
     refine ae_restrict_of_ae_restrict_of_subset Ioo_subset_Icc_self ?_
-    have h := (W1p.translate_mem_halfDiscFlatTraceZeroSubmodule_iff hp (hc t t.2)).1 (hmem t t.2)
-    rw [← Isometry.map_euclideanHausdorffMeasure_restrict
-        (isometry_add_right (WithLp.toLp 2 ((0 : ℝ), c t))) (halfDiscFlatSegment (ρ t)),
-      (measurableEmbedding_addRight _).ae_map_iff,
-      ae_restrict_halfDiscFlatSegment_iff] at h
-    have hshift : ∀ᵐ s ∂volume.restrict (Icc (-ρ t) (ρ t)),
-        W1p.halfDiscFlatTrace hp r u (WithLp.toLp 2 ((0 : ℝ), s + c t)) = 0 := by
-      filter_upwards [h] with s hs
-      simpa [← WithLp.toLp_add] using hs
-    have hclosed : ∀ᵐ s ∂(volume.restrict (Icc (-ρ t) (ρ t))).map (· + c t),
-        W1p.halfDiscFlatTrace hp r u (WithLp.toLp 2 ((0 : ℝ), s)) = 0 :=
-      (measurableEmbedding_addRight (c t)).ae_map_iff.2 hshift
-    rw [((measurePreserving_add_right volume (c t)).restrict_image_emb
-      (measurableEmbedding_addRight _) _).map_eq, image_add_const_Icc,
-      neg_add_eq_sub, add_comm (ρ t) (c t)] at hclosed
-    exact hclosed
+    exact (W1p.translate_mem_halfDiscFlatTraceZeroSubmodule_iff hp (hc t t.2)).1 (hmem t t.2)
   -- Countably many of the subsegments cover `(-r, r)`.
   obtain ⟨T, hT, hTU⟩ := isOpen_iUnion_countable
     (fun t : Ioo (-r) r => Ioo (c t - ρ t) (c t + ρ t)) fun _ => isOpen_Ioo
