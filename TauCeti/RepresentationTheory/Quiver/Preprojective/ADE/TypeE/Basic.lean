@@ -144,13 +144,6 @@ private theorem exists_eq_eArm_of_eAdj (n : ℕ) {j : ℕ} (h : EAdj 3 j) : ∃ 
   · exact ⟨2, by simp [eArm]; omega⟩
   · exact ⟨1, by simp [eArm]; omega⟩
 
-/-- Adjacency in the Bourbaki-labelled `Eₙ` diagram. -/
-private theorem diagramGraph_E_adj {n : ℕ} (i j : Fin n) :
-    (diagramGraph (CartanMatrix.E n)).Adj i j ↔ EAdj i j := by
-  rw [diagramGraph_adj]
-  simp only [CartanMatrix.E, Matrix.of_apply, ne_eq, Fin.ext_iff, EAdj]
-  split_ifs <;> simp <;> omega
-
 /-- Every node other than the branch node lies on an arm. -/
 private theorem exists_eArm_eq (n : ℕ) {i : ℕ} (hi : i ≠ 3) : ∃ a p, 0 < p ∧ eArm n a p = i := by
   rcases Nat.lt_or_ge i 3 with h | h
