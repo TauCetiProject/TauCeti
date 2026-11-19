@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Sites.LocalProperties
-public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Map
+public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.PreTorsor
 
 /-!
 # Contracted products of torsors with sheaves of sets with an action
@@ -32,6 +31,12 @@ agree exactly when `(p', x') = g • (p, x)` for some `g`. As a consequence:
   extending the structure group has underlying sheaf `P ×^G G'`, where `G` acts on `G'` by
   `g • a = a * φ(g)⁻¹`.
 
+The torsor `Torsor.map φ P` is itself built here from the same quotient presheaf, specialised to
+`MulActionSheaf.mulRight φ`: it carries an action of `G'` by left multiplication on the second
+factor, and `p ↦ [p, 1]` is a `φ`-equivariant morphism `P → P ×^G G'` which is universal among
+`φ`-equivariant morphisms from `P` to `G'`-torsors. The induced map on `H¹` is in
+`NonabelianCohomology.Map`.
+
 ## Main declarations
 
 * `CategoryTheory.Sheaf.MulActionSheaf G`: a sheaf of sets with a left action of `G`, and the
@@ -48,14 +53,17 @@ agree exactly when `(p', x') = g • (p, x)` for some `g`. As a consequence:
   `X(U) ≃ (P ×^G X)(U)`, `x ↦ [p, x]`, for a section `p` of `P` over `U`.
 * `CategoryTheory.Sheaf.Torsor.contractedProductMk_eq_contractedProductMk_iff`: equality of
   classes.
-* `CategoryTheory.Sheaf.Torsor.isIso_of_bijective_app`: a morphism of sheaves of sets which is
-  bijective over every object over which `P` has a section is an isomorphism.
 * `CategoryTheory.Sheaf.Torsor.contractedProductIsoOfSection`,
   `CategoryTheory.Sheaf.Torsor.contractedProductTrivialIso`,
   `CategoryTheory.Sheaf.Torsor.contractedProductIsoOfSMulEqSelf` and
   `CategoryTheory.Sheaf.Torsor.contractedProductMulRightIso`: the identifications above.
 * `CategoryTheory.Sheaf.Torsor.contractedProductMap` and
   `CategoryTheory.Sheaf.Torsor.contractedProductFunctor P`: `X ↦ P ×^G X` as a functor.
+* `CategoryTheory.Sheaf.Torsor.map φ P`: the `G'`-torsor `P ×^G G'` obtained by extending the
+  structure group along `φ : G ⟶ G'`.
+* `CategoryTheory.Sheaf.Torsor.toMap φ P`: the `φ`-equivariant morphism `P → P ×^G G'`.
+* `CategoryTheory.Sheaf.Torsor.mapLift`: a `φ`-equivariant morphism `P → R` to a `G'`-torsor
+  induces a morphism of `G'`-torsors `P ×^G G' ⟶ R`; `Torsor.map_hom_ext` is its uniqueness.
 
 ## References
 
@@ -146,16 +154,6 @@ lemma mulRight_smul (φ : G ⟶ G') {U : Cᵒᵖ} (g : G.obj.obj U)
 end MulActionSheaf
 
 namespace Torsor
-
-/-- A morphism of sheaves of sets which is bijective on sections over every object over which a
-`G`-torsor `P` has a section is an isomorphism, because these objects cover the site. -/
-lemma isIso_of_bijective_app (P : Torsor G) {F F' : Sheaf J (Type w)} (f : F ⟶ F')
-    (hf : ∀ U : C, Nonempty (P.sheaf.obj.obj (op U)) → Function.Bijective (f.hom.app (op U))) :
-    IsIso f :=
-  Sheaf.isIso_of_coversTop P.coversTop fun i ↦ by
-    rw [← ObjectProperty.isIso_hom_iff, NatTrans.isIso_iff_isIso_app]
-    rintro ⟨V⟩
-    exact (isIso_iff_bijective _).2 (hf V.left ⟨P.sheaf.obj.map V.hom.op i.2.some⟩)
 
 variable (P : Torsor G) (X : MulActionSheaf G)
 
@@ -498,9 +496,141 @@ lemma contractedProductIsoOfSMulEqSelf_hom_hom_app_contractedProductMk
   contractedProductDesc_hom_app_contractedProductMk (P := P) (snd P.sheaf X.sheaf)
     (fun U g _ x ↦ hX U g x) p x
 
-variable (P) in
+end Torsor
+
+/-! ### Extending the structure group -/
+
+namespace Torsor
+
+variable (φ : G ⟶ G') (P : Torsor G)
+
+/-- The contracted product of `P` with `MulActionSheaf.mulRight φ` before sheafification, a
+`G'`-pretorsor under left multiplication on the second factor, `a • [p, b] = [p, a * b]`. -/
+private def contracted : PreTorsor G' where
+  presheaf := contractedPresheaf P (MulActionSheaf.mulRight φ)
+  mulAction U :=
+    { smul a := Quot.map (fun x : P.sheaf.obj.obj U × G'.obj.obj U ↦ (x.1, a * x.2)) (by
+        rintro x _ ⟨g, rfl⟩
+        exact ⟨g, Prod.ext rfl (mul_assoc a x.2 (φ.hom.app U g)⁻¹).symm⟩)
+      one_smul y := by
+        induction y using Quot.ind with | mk x => ?_
+        exact congrArg (Quot.mk _) (Prod.ext rfl (one_mul (M := G'.obj.obj U) x.2))
+      mul_smul a b y := by
+        induction y using Quot.ind with | mk x => ?_
+        exact congrArg (Quot.mk _) (Prod.ext rfl (mul_assoc a b x.2)) }
+  map_smul U V f a y := by
+    induction y using Quot.ind with | mk x => ?_
+    exact congrArg (Quot.mk _) (Prod.ext rfl (map_mul (G'.obj.map f).hom a x.2))
+  coversTop X := J.superset_covering (by
+    rintro Y a ⟨⟨V, ⟨p⟩⟩, ⟨b⟩⟩
+    exact ⟨⟨V, ⟨Quot.mk _ (p, (1 : G'.obj.obj (op V)))⟩⟩, ⟨b⟩⟩) (P.coversTop X)
+  bijective U := by
+    refine ⟨fun ⟨a, y⟩ ⟨b, y'⟩ h ↦ ?_, fun ⟨z, y⟩ ↦ ?_⟩
+    · obtain ⟨h₁, rfl⟩ := Prod.ext_iff.1 h
+      induction y using Quot.ind with | mk x => ?_
+      obtain ⟨p, (c : G'.obj.obj U)⟩ := x
+      have h₂ : a * c = b * c := (bijective_mk P _ p).1 h₁
+      exact Prod.ext (mul_right_cancel h₂) rfl
+    · induction y using Quot.ind with | mk x => ?_
+      obtain ⟨p, (b : G'.obj.obj U)⟩ := x
+      obtain ⟨(c : G'.obj.obj U), rfl⟩ := (bijective_mk P _ p).2 z
+      exact ⟨(c * b⁻¹, Quot.mk _ (p, b)),
+        Prod.ext (congrArg (Quot.mk _) (Prod.ext rfl (inv_mul_cancel_right c b))) rfl⟩
+
+/-- The map `p ↦ [p, 1]` from `P` to the contracted product before sheafification. -/
+private def toContracted : P.sheaf.obj ⟶ (contracted φ P).presheaf where
+  app U := ↾fun p ↦ Quot.mk _ (p, (1 : G'.obj.obj U))
+  naturality U V f := by
+    ext p
+    exact congrArg (Quot.mk _) (Prod.ext rfl (map_one (G'.obj.map f).hom).symm)
+
+/-- The map `p ↦ [p, 1]` is `φ`-equivariant: the classes of `(g • p, 1)` and `(p, φ(g))`
+agree. -/
+private lemma toContracted_smul {U : Cᵒᵖ} (g : G.obj.obj U) (p : P.sheaf.obj.obj U) :
+    (toContracted φ P).app U (g • p) = φ.hom.app U g • (toContracted φ P).app U p :=
+  (Quot.sound ⟨g, Prod.ext rfl
+    (show (1 : G'.obj.obj U) = φ.hom.app U g * 1 * (φ.hom.app U g)⁻¹ by simp)⟩).symm
+
+variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
+
+/-- The contracted product `P ×^G G'` of a `G`-torsor `P` along a morphism `φ : G ⟶ G'` of
+sheaves of groups: the `G'`-torsor obtained from `P` by extending its structure group along `φ`.
+Use `toMap`, `toMap_smul`, `mapLift`, `map_hom_ext` and `contractedProductMulRightIso` rather
+than unfolding it. -/
+def map : Torsor G' :=
+  (contracted φ P).sheafify
+
+/-- The morphism `P → P ×^G G'`, `p ↦ [p, 1]`. -/
+def toMap : P.sheaf ⟶ (P.map φ).sheaf :=
+  ObjectProperty.homMk (toContracted φ P ≫ (contracted φ P).toSheafify)
+
+/-- The morphism `P → P ×^G G'` is `φ`-equivariant. -/
+@[simp]
+lemma toMap_smul {U : Cᵒᵖ} (g : G.obj.obj U) (p : P.sheaf.obj.obj U) :
+    (P.toMap φ).hom.app U (g • p) = φ.hom.app U g • (P.toMap φ).hom.app U p :=
+  (congrArg ((contracted φ P).toSheafify.app U) (toContracted_smul φ P g p)).trans
+    ((contracted φ P).toSheafify_smul (φ.hom.app U g) _)
+
+variable {φ P}
+
+/-- Morphisms of `G'`-torsors out of `P ×^G G'` are determined by their composite with the
+morphism `P → P ×^G G'`. -/
+lemma map_hom_ext {R : Torsor G'} {f f' : P.map φ ⟶ R}
+    (h : P.toMap φ ≫ f.hom = P.toMap φ ≫ f'.hom) : f = f' := by
+  refine (contracted φ P).sheafify_hom_ext ?_
+  ext U y
+  induction y using Quot.ind with | mk x => ?_
+  obtain ⟨p, (a : G'.obj.obj U)⟩ := x
+  -- The class of `(p, a)` is `a • [p, 1]`, and `f`, `f'` agree on `[p, 1]`.
+  have hx : (Quot.mk _ (p, a) : (contracted φ P).presheaf.obj U) =
+      a • (toContracted φ P).app U p :=
+    congrArg (Quot.mk _) (Prod.ext rfl (mul_one a).symm)
+  have h' : f.hom.hom.app U ((P.toMap φ).hom.app U p) =
+      f'.hom.hom.app U ((P.toMap φ).hom.app U p) :=
+    congrArg (fun g ↦ g.hom.app U p) h
+  have key (g : P.map φ ⟶ R) :
+      ((contracted φ P).toSheafify ≫ g.hom.hom).app U (Quot.mk _ (p, a)) =
+        a • g.hom.hom.app U ((P.toMap φ).hom.app U p) :=
+    (congrArg (g.hom.hom.app U) ((congrArg _ hx).trans
+      ((contracted φ P).toSheafify_smul _ _))).trans (g.map_smul U _ _)
+  exact (key f).trans ((congrArg _ h').trans (key f').symm)
+
+/-- A `φ`-equivariant morphism `u : P → R` to a `G'`-torsor induces a morphism of `G'`-torsors
+`P ×^G G' ⟶ R`, sending `[p, a]` to `a • u p`. -/
+def mapLift {R : Torsor G'} (u : P.sheaf ⟶ R.sheaf)
+    (hu : ∀ (U : Cᵒᵖ) (g : G.obj.obj U) (p : P.sheaf.obj.obj U),
+      u.hom.app U (g • p) = φ.hom.app U g • u.hom.app U p) :
+    P.map φ ⟶ R :=
+  (contracted φ P).sheafifyLift
+    { app U := ↾Quot.lift (fun x : P.sheaf.obj.obj U × G'.obj.obj U ↦ x.2 • u.hom.app U x.1) (by
+        rintro ⟨p, (b : G'.obj.obj U)⟩ _ ⟨g, rfl⟩
+        change b • u.hom.app U p = (b * (φ.hom.app U g)⁻¹) • u.hom.app U (g • p)
+        rw [hu, mul_smul, inv_smul_smul])
+      naturality U V f := by
+        ext y
+        induction y using Quot.ind with | mk x => ?_
+        obtain ⟨p, (a : G'.obj.obj U)⟩ := x
+        exact ((R.map_smul f a (u.hom.app U p)).trans
+          (congrArg _ (NatTrans.naturality_apply u.hom f p).symm)).symm }
+    fun U a y ↦ by
+      induction y using Quot.ind with | mk x => ?_
+      obtain ⟨p, (b : G'.obj.obj U)⟩ := x
+      exact mul_smul a b (u.hom.app U p)
+
+/-- The morphism induced by a `φ`-equivariant `u : P → R` restricts to `u` along
+`P → P ×^G G'`. -/
+@[reassoc (attr := simp)]
+lemma toMap_mapLift {R : Torsor G'} (u : P.sheaf ⟶ R.sheaf)
+    (hu : ∀ (U : Cᵒᵖ) (g : G.obj.obj U) (p : P.sheaf.obj.obj U),
+      u.hom.app U (g • p) = φ.hom.app U g • u.hom.app U p) :
+    P.toMap φ ≫ (P.mapLift u hu).hom = u := by
+  ext U p
+  exact ((contracted φ P).sheafifyLift_hom_app_toSheafify _ _ _).trans (one_smul _ _)
+
+variable (φ P)
+
 /-- The `φ`-equivariant pairing `P × G' → Torsor.map φ P`, `(p, a) ↦ a • [p, 1]`. -/
-private def mulRightPairing (φ : G ⟶ G') :
+private def mulRightPairing :
     P.sheaf ⊗ (MulActionSheaf.mulRight φ).sheaf ⟶ (P.map φ).sheaf :=
   ObjectProperty.homMk
     { app U := ↾fun a : P.sheaf.obj.obj U × G'.obj.obj U ↦ a.2 • (P.toMap φ).hom.app U a.1
@@ -511,26 +641,25 @@ private def mulRightPairing (φ : G ⟶ G') :
 
 /-- The pairing `(p, a) ↦ a • [p, 1]` is invariant under `g • (p, a) = (g • p, a * φ(g)⁻¹)`:
 `(a * φ(g)⁻¹) • [g • p, 1] = (a * φ(g)⁻¹) • φ(g) • [p, 1] = a • [p, 1]`. -/
-private lemma mulRightPairing_smul (φ : G ⟶ G') (U : Cᵒᵖ) (g : G.obj.obj U)
+private lemma mulRightPairing_smul (U : Cᵒᵖ) (g : G.obj.obj U)
     (p : P.sheaf.obj.obj U) (a : (MulActionSheaf.mulRight φ).sheaf.obj.obj U) :
-    (mulRightPairing P φ).hom.app U (g • p, g • a) = (mulRightPairing P φ).hom.app U (p, a) :=
+    (mulRightPairing φ P).hom.app U (g • p, g • a) = (mulRightPairing φ P).hom.app U (p, a) :=
   ((congrArg (_ • ·) (toMap_smul φ P g p)).trans (mul_smul _ _ _).symm).trans
     (congrArg (· • (P.toMap φ).hom.app U p) (@inv_mul_cancel_right (G'.obj.obj U) _ a _))
 
-variable (P) in
 /-- Extending the structure group of `P` along `φ : G ⟶ G'` is contracting `P` with `G'`, on
 which `G` acts by `g • a = a * φ(g)⁻¹`: the underlying sheaf of `Torsor.map φ P` is
 `P ×^G G'`, by `[p, a] ↦ a • [p, 1]`. -/
-def contractedProductMulRightIso (φ : G ⟶ G') :
+def contractedProductMulRightIso :
     P.contractedProduct (MulActionSheaf.mulRight φ) ≅ (P.map φ).sheaf :=
-  letI f := contractedProductDesc _ (mulRightPairing_smul (P := P) φ)
+  letI f := contractedProductDesc _ (mulRightPairing_smul φ P)
   have : IsIso f :=
     isIso_of_bijective_app P _ fun U ⟨p⟩ ↦ by
       -- Composed with the bijection `a ↦ [p, a]`, the morphism is `a ↦ a • [p, 1]`, which is
       -- bijective because `Torsor.map φ P` is a `G'`-torsor.
       have h (a : G'.obj.obj (op U)) : f.hom.app _ (contractedProductObjEquiv p a) =
           a • (P.toMap φ).hom.app _ p :=
-        contractedProductDesc_hom_app_contractedProductMk _ (mulRightPairing_smul φ) p a
+        contractedProductDesc_hom_app_contractedProductMk _ (mulRightPairing_smul φ P) p a
       refine (Function.Bijective.of_comp_iff _
         (contractedProductObjEquiv (X := MulActionSheaf.mulRight φ) p).bijective).1
           ⟨fun a b hab ↦ (P.map φ).smul_left_injective ((P.toMap φ).hom.app _ p) ?_, fun q ↦ ?_⟩
@@ -539,14 +668,16 @@ def contractedProductMulRightIso (φ : G ⟶ G') :
         exact ⟨a, (h a).trans ha⟩
   asIso f
 
+variable {φ P}
+
 /-- The identification of `P ×^G G'` with `Torsor.map φ P` sends `[p, a]` to `a • [p, 1]`. -/
 @[simp]
-lemma contractedProductMulRightIso_hom_hom_app_contractedProductMk (φ : G ⟶ G') {U : Cᵒᵖ}
+lemma contractedProductMulRightIso_hom_hom_app_contractedProductMk {U : Cᵒᵖ}
     (p : P.sheaf.obj.obj U) (a : G'.obj.obj U) :
     (P.contractedProductMulRightIso φ).hom.hom.app U
         (contractedProductMk (X := MulActionSheaf.mulRight φ) p a) =
       a • (P.toMap φ).hom.app U p :=
-  contractedProductDesc_hom_app_contractedProductMk _ (mulRightPairing_smul φ) p a
+  contractedProductDesc_hom_app_contractedProductMk _ (mulRightPairing_smul φ P) p a
 
 end Torsor
 
