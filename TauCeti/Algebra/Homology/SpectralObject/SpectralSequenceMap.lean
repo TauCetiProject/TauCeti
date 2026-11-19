@@ -39,6 +39,8 @@ which is functorial in `φ`.
   next page.
 * `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_id`,
   `CategoryTheory.Abelian.SpectralObject.spectralSequenceMap_comp`: functoriality.
+* `CategoryTheory.Abelian.SpectralObject.isIso_spectralSequenceMap`: an isomorphism of spectral
+  objects induces an isomorphism of spectral sequences.
 * `spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom`: on the first page, identified
   with objects `H^n(f)`, the morphism is the component of `φ`.
 
@@ -277,6 +279,11 @@ lemma spectralSequenceMap_comp :
     spectralSequenceMap data (φ ≫ ψ) = spectralSequenceMap data φ ≫ spectralSequenceMap data ψ := by
   ext r hr : 2
   simp
+
+/-- An isomorphism of spectral objects induces an isomorphism of spectral sequences. -/
+instance isIso_spectralSequenceMap [IsIso φ] : IsIso (spectralSequenceMap data φ) :=
+  ⟨spectralSequenceMap data (inv φ), by rw [← spectralSequenceMap_comp]; simp,
+    by rw [← spectralSequenceMap_comp]; simp⟩
 
 section FirstPage
 

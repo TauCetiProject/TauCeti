@@ -53,12 +53,11 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
   have hε (n : ℕ) : 0 < ε n := lt_min hr (by positivity)
   let μ (n : ℕ) : ProbabilityMeasure ℝ :=
     ⟨stableSmallJumpRemainderMeasure α β (ε n) r,
-      isProbabilityMeasure_stableSmallJumpRemainderMeasure (hε n)⟩
+      isProbabilityMeasure_stableSmallJumpRemainderMeasure α β (ε n) r⟩
   have hsplit (n : ℕ) : (μ n : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r =
       stableCompensatedPoissonMeasure α β (ε n) :=
     (stableCompensatedPoissonMeasure_split α β (hε n) (min_le_left r _)).symm
   let large := stableCompensatedPoissonMeasure α β r
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have hlarge (t : ℝ) : charFun large t ≠ 0 := by
     rw [charFun_stableCompensatedPoissonMeasure hr]
     exact Complex.exp_ne_zero _
@@ -98,29 +97,25 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
   apply mul_right_cancel₀ (hlarge t)
   rw [← charFun_conv, ← charFun_conv, hσ, hconv]
 
-/-- A probability measure can be convolved with the compensated compound-Poisson law to give a
-stable law only for admissible skewness, since the stable measure is zero otherwise. -/
-theorem abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq {μ : ProbabilityMeasure ℝ}
-    (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
-    |β| ≤ 1 := by
-  by_contra hβ
-  have := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
-  have h : IsProbabilityMeasure ((μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r) :=
-    inferInstance
-  rw [hμ, stableMeasure_of_invalid (Or.inr (Or.inr (not_le.1 hβ)))] at h
-  simpa using h.measure_univ
-
 /-- The small-jump factor has the compensated Lévy exponent restricted to jumps of size at
 most the cutoff. The statement applies to any probability law satisfying the decomposition,
-without choosing a particular representative of the unique factor. -/
+without choosing a particular representative of the unique factor. The decomposition itself
+forces a valid shape and skewness, since the stable measure is zero otherwise; only shape two,
+where the Lévy measure vanishes, is excluded. -/
 theorem charFun_of_conv_stableCompensatedPoissonMeasure_eq
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hr : 0 < r)
+    (hα : α ≠ 2) (hr : 0 < r)
     {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0)
     (t : ℝ) :
     charFun μ t = Complex.exp (∫ x in {x : ℝ | |x| ≤ r},
       Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
         (t * sin x : ℝ) * Complex.I ∂stableLevyMeasure α β) := by
+  -- Invalid parameters would make the right-hand side the zero measure, not a probability law.
+  have hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1 := by
+    rw [← isProbabilityMeasure_stableMeasure_iff (s := 1) (m := 0), ← hμ]
+    infer_instance
+  have hα : α ∈ Ioo 0 2 := ⟨hv.1.1, lt_of_le_of_ne hv.1.2 hα⟩
+  have hβ := hv.2
   let ν := stableLevyMeasure α β
   let f := fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
     (t * sin x : ℝ) * Complex.I
@@ -131,7 +126,6 @@ theorem charFun_of_conv_stableCompensatedPoissonMeasure_eq
     have h := integral_add_compl hset hf
     simp only [compl_ofPred, not_le] at h
     exact h.trans (integral_exp_sub_one_sub_sin_stableLevyMeasure hα hβ t)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have heq := congrArg (fun η : Measure ℝ ↦ charFun η t) hμ
   rw [charFun_conv, charFun_stableCompensatedPoissonMeasure hr,
     charFun_stableMeasure ⟨hα.1, hα.2.le⟩ hβ] at heq

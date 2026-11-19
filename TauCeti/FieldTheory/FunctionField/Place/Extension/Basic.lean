@@ -572,6 +572,19 @@ theorem coe_algebraMap_integers (x : (P'.restrict k F).integers) :
     ((algebraMap (P'.restrict k F).integers P'.integers x : P'.integers) : F') =
       algebraMap F F' (x : F) := (rfl)
 
+section
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- The valuation-ring extension `𝒪_P ⊆ 𝒪_{P'}` forms a scalar tower inside `F'`. -/
+instance isScalarTower_restrict_integers_field :
+    IsScalarTower (P'.restrict k F).integers P'.integers F' :=
+  IsScalarTower.of_algebraMap_eq fun x ↦ by
+    rw [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F',
+      ValuationSubring.algebraMap_apply, ValuationSubring.algebraMap_apply, coe_algebraMap_integers]
+
+end
+
 /-- The valuation-ring algebra map is local, so it induces the residue-field extension used by
 `relativeDegree`. -/
 instance instIsLocalHomIntegers :

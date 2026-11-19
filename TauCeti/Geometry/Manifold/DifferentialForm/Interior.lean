@@ -278,6 +278,15 @@ theorem RoughForm.apply_eq_zero_of_interior_eq {ω : RoughForm I M F 2} {α : Ro
     (RoughForm.interior_eq_zero_of_interior_eq h)
   simpa only [RoughForm.interior_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] using h0
 
+/-- The interior product of a vector field `X` with a two-form `ω` vanishes exactly when
+`ω_x(X_x, w) = 0` for every point `x` and every tangent vector `w`. -/
+theorem RoughForm.interior_eq_zero_iff {ω : RoughForm I M F 2} {X : (x : M) → TangentSpace I x} :
+    ω.interior X = 0 ↔ ∀ x w, ω x ![X x, w] = 0 := by
+  refine ⟨fun h x w ↦ by simpa using congrArg (fun β : RoughForm I M F 1 ↦ β x ![w]) h,
+    fun h ↦ funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_⟩
+  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
+  simpa using h x w
+
 /-- Interior products by two vector fields anticommute. -/
 theorem RoughForm.interior_swap [IsTopologicalAddGroup F]
     (X Y : (x : M) → TangentSpace I x) (ω : RoughForm I M F (k + 2)) :
