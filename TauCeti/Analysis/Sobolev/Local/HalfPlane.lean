@@ -41,47 +41,6 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {k : ℕ}
 
-/-- The real coordinates `(im z, re z)` of `ℂ`, with the normal coordinate first, as used by the
-half-space extension. -/
-private def imReEquiv : ℂ ≃L[ℝ] ℝ × ℝ :=
-  Complex.equivRealProdCLM.trans (ContinuousLinearEquiv.prodComm ℝ ℝ ℝ)
-
-private theorem imReEquiv_apply (z : ℂ) : imReEquiv z = (z.im, z.re) :=
-  rfl
-
-private theorem im_imReEquiv_symm (w : ℝ × ℝ) : (imReEquiv.symm w).im = w.1 := by
-  obtain ⟨z, rfl⟩ := imReEquiv.surjective w
-  rw [ContinuousLinearEquiv.symm_apply_apply, imReEquiv_apply]
-
-/-- Near every point of a relatively open subset `Ω ∩ {z | 0 ≤ z.im}` of the closed upper
-half-plane, a `Cᵏ` map on it agrees with a map that is `Cᵏ` on an open neighbourhood of the
-point. At a point of the real axis the extension reflects across the axis. -/
-theorem exists_contDiffOn_eqOn_inter_setOf_im_nonneg {f : ℂ → F} {Ω : Set ℂ}
-    (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ k f (Ω ∩ {z | 0 ≤ z.im})) {x : ℂ}
-    (hx : x ∈ Ω ∩ {z | 0 ≤ z.im}) :
-    ∃ W : Set ℂ, IsOpen W ∧ x ∈ W ∧ ∃ g : ℂ → F, ContDiffOn ℝ k g W ∧
-      EqOn g f ((Ω ∩ {z | 0 ≤ z.im}) ∩ W) := by
-  rcases (show 0 ≤ x.im from hx.2).lt_or_eq with hpos | hzero
-  · exact ⟨Ω ∩ {z | 0 < z.im}, hΩ.inter (isOpen_lt continuous_const Complex.continuous_im),
-      ⟨hx.1, hpos⟩, f, hf.mono fun z hz ↦ ⟨hz.1, show 0 ≤ z.im from le_of_lt hz.2⟩, fun _ _ ↦ rfl⟩
-  · have hfe : ContDiffOn ℝ k (f ∘ imReEquiv.symm)
-        (HalfSpaceExtension.upperHalfSpace ℝ ∩ imReEquiv.symm ⁻¹' Ω) := by
-      refine hf.comp imReEquiv.symm.contDiff.contDiffOn fun w hw ↦ ⟨hw.2, ?_⟩
-      have h1 : 0 ≤ w.1 := HalfSpaceExtension.mem_upperHalfSpace.1 hw.1
-      simpa only [mem_ofPred_eq, im_imReEquiv_symm] using h1
-    have hxΩ : ((0 : ℝ), x.re) ∈ imReEquiv.symm ⁻¹' Ω := by
-      rw [mem_preimage, hzero, ← imReEquiv_apply, ContinuousLinearEquiv.symm_apply_apply]
-      exact hx.1
-    obtain ⟨g, hg, hgf⟩ := HalfSpaceExtension.exists_local_contDiff_extension_halfSpace k
-      (f ∘ imReEquiv.symm) (hΩ.preimage imReEquiv.symm.continuous) hfe x.re hxΩ
-    obtain ⟨T, hT, hTo, hxT⟩ := eventually_nhds_iff.1 hgf
-    refine ⟨imReEquiv ⁻¹' T, hTo.preimage imReEquiv.continuous, ?_, g ∘ imReEquiv,
-      (hg.comp imReEquiv.contDiff).contDiffOn, fun z hz ↦ ?_⟩
-    · rw [mem_preimage, imReEquiv_apply, ← hzero]
-      exact hxT
-    · have h := hT _ hz.2 (by simpa only [imReEquiv_apply] using (show 0 ≤ z.im from hz.1.2))
-      simpa only [Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply] using h
-
 section Product
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
@@ -136,6 +95,24 @@ theorem exists_contDiffOn_eqOn_inter_setOf_fst_im_nonneg [FiniteDimensional ℝ 
         hT _ hq.2 (by simpa only [imReProdEquiv_apply] using mem_ofPred.1 hq.1.2)
 
 end Product
+
+/-- Near every point of a relatively open subset `Ω ∩ {z | 0 ≤ z.im}` of the closed upper
+half-plane, a `Cᵏ` map on it agrees with a map that is `Cᵏ` on an open neighbourhood of the
+point. At a point of the real axis the extension reflects across the axis. This is the case
+`E = ℝ` of `TauCeti.exists_contDiffOn_eqOn_inter_setOf_fst_im_nonneg`, applied to `f ∘ Prod.fst`
+and restricted to `ℂ × {0}`. -/
+theorem exists_contDiffOn_eqOn_inter_setOf_im_nonneg {f : ℂ → F} {Ω : Set ℂ}
+    (hΩ : IsOpen Ω) (hf : ContDiffOn ℝ k f (Ω ∩ {z | 0 ≤ z.im})) {x : ℂ}
+    (hx : x ∈ Ω ∩ {z | 0 ≤ z.im}) :
+    ∃ W : Set ℂ, IsOpen W ∧ x ∈ W ∧ ∃ g : ℂ → F, ContDiffOn ℝ k g W ∧
+      EqOn g f ((Ω ∩ {z | 0 ≤ z.im}) ∩ W) := by
+  have hfst : ContDiffOn ℝ k (f ∘ Prod.fst) ((Ω ×ˢ (univ : Set ℝ)) ∩ {q | 0 ≤ q.1.im}) :=
+    hf.comp contDiffOn_fst fun q hq => ⟨hq.1.1, hq.2⟩
+  obtain ⟨T, hTo, hxT, G', hG', hGf⟩ := exists_contDiffOn_eqOn_inter_setOf_fst_im_nonneg
+    (hΩ.prod isOpen_univ) hfst (q₀ := (x, 0)) ⟨⟨hx.1, mem_univ _⟩, hx.2⟩
+  exact ⟨{z | (z, (0 : ℝ)) ∈ T}, hTo.preimage (continuous_id.prodMk continuous_const), hxT,
+    fun z => G' (z, 0), hG'.comp (contDiff_id.prodMk contDiff_const).contDiffOn fun _ hz => hz,
+    fun z hz => hGf ⟨⟨⟨hz.1.1, mem_univ _⟩, hz.1.2⟩, hz.2⟩⟩
 
 /-- A relatively open subset `Ω ∩ {z | 0 ≤ z.im}` of the closed upper half-plane, for an open
 `Ω`, is measurable. -/
