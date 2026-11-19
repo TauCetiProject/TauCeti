@@ -52,6 +52,9 @@ specialization to bundled smooth embeddings, used for geometric knot presentatio
 * `TauCeti.Diffeotopy.timeSlice_transDiffeomorph_eq_mul_mul_inv` and
   `final_transDiffeomorph_eq_mul_mul_inv`: conjugating a diffeotopy by a self-diffeomorphism `f`
   conjugates its time slices by `f` in the self-diffeomorphism group.
+* `TauCeti.Diffeotopy.comp_cylinderMap_of_semiconj`: a map intertwining two diffeotopies at every
+  time intertwines their motions on the cylinders; `semiconj_symm_timeSlice_transDiffeomorph`
+  is the instance `f⁻¹` for a conjugated diffeotopy.
 * `TauCeti.Diffeotopy.toAmbientIsotopy_final_apply`: forgetting smoothness preserves the final
   action.
 * `TauCeti.Diffeotopy.final_eq_of_homotopy`: diffeotopies whose motions are joined by a homotopy
@@ -266,6 +269,23 @@ theorem cylinderMap_comp_one : Φ.cylinderMap ∘ (fun x ↦ (x, (1 : I))) = Φ.
 theorem cylinderMap_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) :
     (Φ.transDiffeomorph f).cylinderMap = f ∘ Φ.cylinderMap ∘ Prod.map f.symm id :=
   funext fun p ↦ by simp
+
+/-- The inverse `f⁻¹` intertwines the conjugated diffeotopy `f ∘ φ_t ∘ f⁻¹` with `φ_t`. -/
+theorem semiconj_symm_timeSlice_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) (t : I) :
+    Function.Semiconj f.symm ((Φ.transDiffeomorph f).timeSlice t) (Φ.timeSlice t) :=
+  fun _ ↦ by
+    simp only [timeSlice_apply, transDiffeomorph_apply, _root_.Diffeomorph.symm_apply_apply]
+
+/-- If a map `g` intertwines two diffeotopies at every time, `g ∘ φ'_t = φ_t ∘ g`, then it
+intertwines their motions on the cylinders: `g ∘ Φ' = Φ ∘ (g × id)`. -/
+theorem comp_cylinderMap_of_semiconj {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {Φ' : Diffeotopy J' n M'} {g : M' → M}
+    (h : ∀ t, Function.Semiconj g (Φ'.timeSlice t) (Φ.timeSlice t)) :
+    g ∘ Φ'.cylinderMap = Φ.cylinderMap ∘ Prod.map g id :=
+  funext fun p ↦ by
+    simpa only [Function.comp_apply, cylinderMap_apply, Prod.map_fst, Prod.map_snd, id_eq,
+      timeSlice_apply] using h p.2 p.1
 
 /-- If the motion of `Φ` is joined to the motion of `Ψ` by a homotopy `G` that is stationary at the
 final time, then `Φ` and `Ψ` have the same final diffeomorphism. -/
