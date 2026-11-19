@@ -10,6 +10,7 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 public import TauCeti.Combinatorics.Hive.Basic
+import TauCeti.Combinatorics.Hive.Interpolation
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.Normed.Group.Constructions
 import Mathlib.Data.Fin.Rev
@@ -97,69 +98,13 @@ section Parallelogram
 
 variable {n : ℕ} {R : Type*} [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
 
-private theorem strip_parallelogram_le {f : Vertex n → R} (hf : IsRhombusConcave f)
-    (y₀ k z : ℕ) (h : (y₀ + k) + (z + 1) ≤ n) :
-    f (Vertex.ofYZ n y₀ z (by omega)) + f (Vertex.ofYZ n (y₀ + k) (z + 1) h) ≤
-      f (Vertex.ofYZ n (y₀ + k) z (by omega)) + f (Vertex.ofYZ n y₀ (z + 1) (by omega)) := by
-  induction k with
-  | zero =>
-    rw [show Vertex.ofYZ n (y₀ + 0) (z + 1) h = Vertex.ofYZ n y₀ (z + 1) (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨Nat.add_zero y₀, rfl⟩,
-      show Vertex.ofYZ n (y₀ + 0) z _ = Vertex.ofYZ n y₀ z (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨Nat.add_zero y₀, rfl⟩]
-  | succ m ih =>
-    have hprev := ih (by omega)
-    have hcell := (isRhombusConcave_def f).mp hf
-      (isRhombus_ofYZ_step (n := n) (y := y₀ + m) (z := z) (by omega))
-    rw [show Vertex.ofYZ n (y₀ + (m + 1)) z _ = Vertex.ofYZ n (y₀ + m + 1) z (by omega) from
-      Vertex.ofYZ_eq_iff.mpr ⟨by omega, rfl⟩,
-      show Vertex.ofYZ n (y₀ + (m + 1)) (z + 1) h = Vertex.ofYZ n (y₀ + m + 1) (z + 1) (by omega)
-        from Vertex.ofYZ_eq_iff.mpr ⟨by omega, rfl⟩]
-    refine le_of_add_le_add_right (a := f (Vertex.ofYZ n (y₀ + m) z (by omega)) +
-        f (Vertex.ofYZ n (y₀ + m) (z + 1) (by omega))) ?_
-    calc _ = (f (Vertex.ofYZ n y₀ z (by omega)) + f (Vertex.ofYZ n (y₀ + m) (z + 1) (by omega))) +
-          (f (Vertex.ofYZ n (y₀ + m) z (by omega)) +
-            f (Vertex.ofYZ n (y₀ + m + 1) (z + 1) (by omega))) := by abel
-      _ ≤ _ := add_le_add hprev hcell
-      _ = _ := by abel
-
-private theorem rect_parallelogram_le {f : Vertex n → R} (hf : IsRhombusConcave f)
-    (y₀ y₁ z₀ l : ℕ) (hy : y₀ ≤ y₁) (h : y₁ + (z₀ + l) ≤ n) :
-    f (Vertex.ofYZ n y₀ z₀ (by omega)) + f (Vertex.ofYZ n y₁ (z₀ + l) h) ≤
-      f (Vertex.ofYZ n y₁ z₀ (by omega)) + f (Vertex.ofYZ n y₀ (z₀ + l) (by omega)) := by
-  induction l with
-  | zero =>
-    rw [show Vertex.ofYZ n y₁ (z₀ + 0) h = Vertex.ofYZ n y₁ z₀ (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨rfl, Nat.add_zero z₀⟩,
-      show Vertex.ofYZ n y₀ (z₀ + 0) _ = Vertex.ofYZ n y₀ z₀ (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨rfl, Nat.add_zero z₀⟩, add_comm (f (Vertex.ofYZ n y₁ z₀ _))]
-  | succ m ih =>
-    have hprev := ih (by omega)
-    have hy01 : y₀ + (y₁ - y₀) = y₁ := Nat.add_sub_of_le hy
-    have hstrip := strip_parallelogram_le hf y₀ (y₁ - y₀) (z₀ + m) (by omega)
-    rw [show Vertex.ofYZ n (y₀ + (y₁ - y₀)) (z₀ + m + 1) _ = Vertex.ofYZ n y₁ (z₀ + (m + 1)) h from
-      Vertex.ofYZ_eq_iff.mpr ⟨hy01, by omega⟩,
-      show Vertex.ofYZ n (y₀ + (y₁ - y₀)) (z₀ + m) _ = Vertex.ofYZ n y₁ (z₀ + m) (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨hy01, rfl⟩,
-      show Vertex.ofYZ n y₀ (z₀ + m + 1) _ = Vertex.ofYZ n y₀ (z₀ + (m + 1)) (by omega) from
-        Vertex.ofYZ_eq_iff.mpr ⟨rfl, by omega⟩] at hstrip
-    refine le_of_add_le_add_right (a := f (Vertex.ofYZ n y₀ (z₀ + m) (by omega)) +
-        f (Vertex.ofYZ n y₁ (z₀ + m) (by omega))) ?_
-    calc _ = (f (Vertex.ofYZ n y₀ z₀ (by omega)) + f (Vertex.ofYZ n y₁ (z₀ + m) (by omega))) +
-          (f (Vertex.ofYZ n y₀ (z₀ + m) (by omega)) +
-            f (Vertex.ofYZ n y₁ (z₀ + (m + 1)) h)) := by abel
-      _ ≤ _ := add_le_add hprev hstrip
-      _ = _ := by abel
-
 /-- **Parallelogram inequality** for rhombus-concave functions on `[y₀, y₁] × [z₀, z₁]`. -/
 theorem IsRhombusConcave.parallelogram_le {f : Vertex n → R} (hf : IsRhombusConcave f)
     {y₀ y₁ z₀ z₁ : ℕ} (hy : y₀ ≤ y₁) (hz : z₀ ≤ z₁) (hsum : y₁ + z₁ ≤ n) :
     f (Vertex.ofYZ n y₀ z₀ (by omega)) + f (Vertex.ofYZ n y₁ z₁ hsum) ≤
       f (Vertex.ofYZ n y₁ z₀ (by omega)) + f (Vertex.ofYZ n y₀ z₁ (by omega)) := by
-  have h := rect_parallelogram_le hf y₀ y₁ z₀ (z₁ - z₀) hy (by omega)
-  rwa [Vertex.ofYZ_eq_iff.mpr ⟨rfl, Nat.add_sub_of_le hz⟩,
-    show Vertex.ofYZ n y₀ (z₀ + (z₁ - z₀)) _ = Vertex.ofYZ n y₀ z₁ (by omega) from
-      Vertex.ofYZ_eq_iff.mpr ⟨rfl, Nat.add_sub_of_le hz⟩] at h
+  refine hf.parallelogram_le_yzStep (k := 0) (s := y₁ - y₀) (t := z₁ - z₀) ?_ ?_ ?_ <;>
+    ext <;> simp [yzStep_def] <;> omega
 
 /-- Parallelogram inequality specialized to a normalized `Hive`. -/
 theorem parallelogram_le (h : Hive n R) {y₀ y₁ z₀ z₁ : ℕ} (hy : y₀ ≤ y₁) (hz : z₀ ≤ z₁)
