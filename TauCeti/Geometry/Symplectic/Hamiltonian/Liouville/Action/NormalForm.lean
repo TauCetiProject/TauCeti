@@ -38,8 +38,8 @@ for every period `p > 0` there are an open set `U ⊇ L`, an open set `D ⊆ ℝ
 * `Φ` pulls `ω` back to `σ` on `U`;
 * `F = h ∘ (actions of Φ)` on `U`, the actions being `TauCeti.CotangentBundle.torusActions`;
 * the Hamiltonian vector field of each `F_i` is `∑ j, (∂h_i / ∂I_j) ∂θ_j` in these coordinates:
-  the differential of `Φ` carries it to the image of `(∇h_i(I), 0)` under the action–angle
-  covering map `κ`
+  the differential of `Φ` carries it to the image of `(∇h_i(I), 0)` under the differential of
+  the action–angle covering map `κ` at `(θ, I)`
   (`TauCeti.CotangentBundle.mfderiv_hamiltonianVectorField_eq_mfderiv_actionAngleCover`).
 
 The map `Φ` is assembled from the local action-angle coordinates near `L`
@@ -345,7 +345,8 @@ injective on `U`, a local diffeomorphism at every point of `U`, maps `U` onto th
 actions `ξ(e_j)` lie in `D`, pulls the canonical symplectic form back to `σ` on `U`, and turns `F`
 into the function `h` of the actions. In these coordinates the Hamiltonian vector field of each
 `F_i` is `∑ j, (∂h_i / ∂I_j) ∂θ_j`: at `y ∈ U` with `Φ y = κ(θ, I)`, the differential of `Φ` carries
-it to the image of `(∇h_i(I), 0)` under the action–angle covering map `κ`. -/
+it to the image of `(∇h_i(I), 0)` under the differential at `(θ, I)` of the action–angle covering
+map `κ`. -/
 theorem exists_actionAngle (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ F)
     (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
     (hdim : 2 * Fintype.card ι = Module.finrank ℝ E) {x : M}
