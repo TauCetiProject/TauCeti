@@ -27,7 +27,8 @@ ring and the colimit of plus rings a ring of integral elements.
   (`TauCeti.Huber.DirectLimit.continuous_of_hasBasis`), and the union `L⁺` of the images of plus
   rings `Aᵢ⁺ ⊇ A₀ᵢ` is a ring of integral elements
   (`TauCeti.Huber.DirectLimit.isRingOfIntegralElements_of_hasBasis`). So `(L, L⁺)` is a Huber
-  pair and the `φᵢ` are morphisms of Huber pairs `(Aᵢ, Aᵢ⁺) → (L, L⁺)`.
+  pair and the `φᵢ` are continuous ring homomorphisms carrying `Aᵢ⁺` into `L⁺`; when the stages
+  are Huber rings, they are morphisms of Huber pairs `(Aᵢ, Aᵢ⁺) → (L, L⁺)`.
 * An ideal of definition contained in `ϖ L₀` consists of images of topologically nilpotent
   elements of the stages
   (`TauCeti.Huber.exists_isTopologicallyNilpotent_eq_of_mem_idealOfDefinition`): an element `ϖ c`
@@ -181,8 +182,9 @@ include hφt ht hA₀ hφA₀ hϖ hϖ' h in
 integrally closed in `Aᵢ`, consisting of power-bounded elements, containing `A₀ᵢ` and preserved by
 the transition maps, and let `L⁺ ⊆ L` be the union of their images. If `L` is the colimit of the
 `Aᵢ` and `L₀` the union of the images of the `A₀ᵢ`, then `L⁺` is a ring of integral elements of
-`L` for the `ϖ'`-adic topology, so `(L, L⁺)` is a Huber pair and the maps `φᵢ` are morphisms of
-Huber pairs `(Aᵢ, Aᵢ⁺) → (L, L⁺)`. -/
+`L` for the `ϖ'`-adic topology. So `(L, L⁺)` is a Huber pair, and the maps `φᵢ`, which are
+continuous by `continuous_of_hasBasis` and carry `Aᵢ⁺` into `L⁺`, are morphisms of Huber pairs
+`(Aᵢ, Aᵢ⁺) → (L, L⁺)` whenever the stages are Huber rings. -/
 theorem isRingOfIntegralElements_of_hasBasis [NonarchimedeanRing L]
     (hcover : ∀ x : L, ∃ i a, φ i a = x)
     (hker : ∀ i (a b : A i), φ i a = φ i b → ∃ j, ∃ h : i ≤ j, t i j h a = t i j h b)

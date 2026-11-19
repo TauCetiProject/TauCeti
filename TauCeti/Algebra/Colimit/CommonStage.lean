@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finset.Insert
+public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.DirectedInverseSystem
 
 /-!
@@ -49,18 +49,14 @@ theorem exists_lift_mem [Nonempty ι] [∀ i, Nonempty (A i)] (S : ∀ i, Set (A
     (hS : ∀ i j (h : i ≤ j), ∀ a ∈ S i, t i j h a ∈ S j) (X : Finset L)
     (hX : ∀ x ∈ X, ∃ i, ∃ a ∈ S i, φ i a = x) :
     ∃ i, ∃ g : L → A i, ∀ x ∈ X, g x ∈ S i ∧ φ i (g x) = x := by
-  classical
-  induction X using Finset.induction_on with
-  | empty => exact ⟨Classical.arbitrary ι, fun _ ↦ Classical.arbitrary _, by simp⟩
-  | insert a X _ ih =>
-    obtain ⟨i, g, hg⟩ := ih fun x hx ↦ hX x (Finset.mem_insert_of_mem hx)
-    obtain ⟨j, b, hb, rfl⟩ := hX a (Finset.mem_insert_self a X)
+  have hdir : Directed (· ⊆ ·) fun i ↦ φ i '' S i := fun i j ↦ by
     obtain ⟨k, hik, hjk⟩ := directed_of (· ≤ ·) i j
-    refine ⟨k, fun x ↦ if x = φ j b then t j k hjk b else t i k hik (g x), fun x hx ↦ ?_⟩
-    by_cases hxa : x = φ j b
-    · simpa only [hxa, ↓reduceIte, hφt, and_true] using hS j k hjk b hb
-    · obtain ⟨hgS, hgx⟩ := hg x ((Finset.mem_insert.mp hx).resolve_left hxa)
-      simpa only [hxa, ↓reduceIte, hφt, hgx, and_true] using hS i k hik _ hgS
+    refine ⟨k, ?_, ?_⟩ <;> rintro _ ⟨a, ha, rfl⟩
+    · exact ⟨t i k hik a, hS i k hik a ha, hφt i k hik a⟩
+    · exact ⟨t j k hjk a, hS j k hjk a ha, hφt j k hjk a⟩
+  obtain ⟨i, hi⟩ := hdir.exists_mem_subset_of_finset_subset_biUnion fun x hx ↦
+    Set.mem_iUnion.mpr (hX x hx)
+  exact ⟨i, Function.invFunOn (φ i) (S i), fun x hx ↦ Function.invFunOn_pos (hi hx)⟩
 
 include hφt in
 /-- Finitely many elements of the colimit lift to a common stage. -/
