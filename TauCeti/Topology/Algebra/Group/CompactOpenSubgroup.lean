@@ -363,14 +363,15 @@ the original one. -/
 @[simp]
 theorem mem_compactOpenSubgroupOrderIso (e : G ≃ₜ* H) (U : TauCeti.CompactOpenSubgroup G)
     {h : H} : h ∈ e.compactOpenSubgroupOrderIso U ↔ e.symm h ∈ U :=
-  Subgroup.mem_map_equiv
+  mem_mapCompactOpenSubgroup e U
 
 /-- An element lies in an inversely transported compact open subgroup exactly when its image lies
 in the original one. -/
 @[simp]
 theorem mem_compactOpenSubgroupOrderIso_symm (e : G ≃ₜ* H) (V : TauCeti.CompactOpenSubgroup H)
-    {g : G} : g ∈ e.compactOpenSubgroupOrderIso.symm V ↔ e g ∈ V :=
-  Subgroup.mem_map_equiv
+    {g : G} : g ∈ e.compactOpenSubgroupOrderIso.symm V ↔ e g ∈ V := by
+  rw [show e.compactOpenSubgroupOrderIso.symm V = mapCompactOpenSubgroup e.symm V from rfl,
+    mem_mapCompactOpenSubgroup, symm_symm]
 
 /-- The image of an element lies in a transported compact open subgroup exactly when the element
 lies in the original one. This is not marked `@[simp]`: `simp` already reaches `g ∈ U` through

@@ -64,11 +64,16 @@ namespace ContinuousAut
 /-- A continuous automorphism acts on compact open subgroups by taking images. -/
 instance : MulAction (ContinuousAut G) (CompactOpenSubgroup G) where
   smul φ U := φ.compactOpenSubgroupOrderIso U
-  one_smul U :=
-    CompactOpenSubgroup.ext fun _ ↦ ContinuousMulEquiv.mem_compactOpenSubgroupOrderIso _ U
-  mul_smul φ ψ U := CompactOpenSubgroup.ext fun _ ↦
-    ((φ * ψ).mem_compactOpenSubgroupOrderIso U).trans <|
-      (ψ.mem_compactOpenSubgroupOrderIso U).symm.trans (φ.mem_compactOpenSubgroupOrderIso _).symm
+  -- Each `•` is the `smul` field just given; `change` restates it as transport. Then `φ.symm`
+  -- is restated as `φ⁻¹` so that the group lemmas for `1` and `*` apply.
+  one_smul U := CompactOpenSubgroup.ext fun x ↦ by
+    change x ∈ (1 : ContinuousAut G).compactOpenSubgroupOrderIso U ↔ _
+    rw [ContinuousMulEquiv.mem_compactOpenSubgroupOrderIso, ← inv_apply, inv_one, one_apply]
+  mul_smul φ ψ U := CompactOpenSubgroup.ext fun x ↦ by
+    change x ∈ (φ * ψ).compactOpenSubgroupOrderIso U ↔
+      x ∈ φ.compactOpenSubgroupOrderIso (ψ.compactOpenSubgroupOrderIso U)
+    simp only [ContinuousMulEquiv.mem_compactOpenSubgroupOrderIso, ← inv_apply, mul_inv_rev,
+      mul_apply]
 
 /-- The action of a continuous automorphism on compact open subgroups is transport along it by
 `ContinuousMulEquiv.compactOpenSubgroupOrderIso`, so that order isomorphism API applies to it. -/
