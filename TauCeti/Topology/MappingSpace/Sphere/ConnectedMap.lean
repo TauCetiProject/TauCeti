@@ -62,7 +62,8 @@ theorem basedMapMap [NeZero k] (hf : f.IsNConnected (n + k)) (hx : f x = y)
     eY.toHomotopyEquiv.isWeakHomotopyEquivalence
     (i := BasedMap.mapContinuousMap f hx)
     (j := (g.iteratedLoopSpace k).toContinuousMap)
-    (ContinuousMap.ext fun φ ↦ basedMapSphereHomeomorphIteratedLoopSpace_map k g s₀ φ)).1 ?_
+    (ContinuousMap.ext fun φ ↦ by
+      simpa using basedMapSphereHomeomorphIteratedLoopSpace_map k g s₀ φ)).1 ?_
   exact iteratedLoopSpace (f := g) hf
 
 end ContinuousMap.IsNConnected

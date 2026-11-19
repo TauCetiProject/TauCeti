@@ -87,7 +87,7 @@ theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
 
 /-- The continuous map `Map_*(B, X) → Map_*(B, Y)` induced by a based map `g : X → Y`: the map
 `TauCeti.BasedMap.map` bundled with its continuity. -/
-@[expose] def mapContinuousMap (g : C(X, Y)) (hg : g x = y) :
+def mapContinuousMap (g : C(X, Y)) (hg : g x = y) :
     C(BasedMap B X b₀ x, BasedMap B Y b₀ y) :=
   ⟨map g hg, continuous_map g hg⟩
 
@@ -95,7 +95,7 @@ theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
 @[simp]
 theorem coe_mapContinuousMap (g : C(X, Y)) (hg : g x = y) :
     ⇑(mapContinuousMap (B := B) (b₀ := b₀) g hg) = map g hg :=
-  rfl
+  (rfl)
 
 end Map
 

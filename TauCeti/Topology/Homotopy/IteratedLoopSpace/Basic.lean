@@ -90,6 +90,7 @@ def loopSpace (f : Hom X Y) : Hom X.loopSpace Y.loopSpace where
   map_basepoint := f.toContinuousMap.loopMap_refl f.map_basepoint
 
 /-- The underlying continuous map of `Ω f` is the loop map `ContinuousMap.loopMap` of `f`. -/
+@[simp]
 theorem loopSpace_toContinuousMap (f : Hom X Y) :
     f.loopSpace.toContinuousMap = f.toContinuousMap.loopMap f.map_basepoint :=
   (rfl)
