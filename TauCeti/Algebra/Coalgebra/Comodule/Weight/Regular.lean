@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Decomposition
-import TauCeti.Algebra.Coalgebra.GroupLike.Map
 import TauCeti.Algebra.Coalgebra.Subcoalgebra.Map
 import TauCeti.Algebra.Coalgebra.Subcoalgebra.RegularSubcomodule
 
