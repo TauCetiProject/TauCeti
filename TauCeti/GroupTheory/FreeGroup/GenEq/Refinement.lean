@@ -11,21 +11,23 @@ import Mathlib.Data.Fin.VecNotation
 /-!
 # Refining a generalised equation: splitting items and adding bases
 
-Let `Ω` be a generalised equation over `F = F(A)` with `ρ` items. Two operations produce from `Ω` a
-generalised equation whose solutions give solutions of `Ω`.
+Let `Ω` be a generalised equation over `F = F(A)` with `ρ` items. This file defines two operations
+on `Ω`, cutting its items into pieces and adding new bases, and relates the points, solutions and
+section partitions of the result to those of `Ω`, under the conditions stated below.
 
 * *Splitting items* (`TauCeti.GenEq.splitItems`). An order embedding
   `bd : {0, …, ρ} ↪ {0, …, n}` of boundaries cuts the item `h_k` of `Ω` into the items
   `h'_{bd k}, …, h'_{bd (k+1) - 1}` of an equation with `n` items, the end-points of the bases and
   the boundary connections being moved along `bd`; a constant base goes to the last piece of its
   item, and the items before `bd 0` and from `bd ρ` on are free. When no constant item is cut, the
-  equations of the result are those of `Ω` with every item replaced by the word of its pieces, so
-  the points of its system are the tuples whose products over the pieces are points of `Ω*`
-  (`TauCeti.GenEq.mem_V_splitItems_iff`). When `bd` fixes the end boundaries, a solution of `Ω`
-  whose words are cut into nonempty pieces is a solution of the result
-  (`TauCeti.GenEq.Solution.splitItems`). For one cut this is the introduction of a boundary by the
-  elementary transformation ET5 of Makanin's process (Kharlampovich–Myasnikov, §5.1, second kind),
-  without the boundary connection that ET5 adds through the new boundary.
+  equations of the result are those of `Ω` with every item replaced by the word of its pieces
+  (`TauCeti.GenEq.equations_splitItems`), so the points of its system are the tuples whose
+  products over the pieces are points of `Ω*` (`TauCeti.GenEq.mem_V_splitItems_iff`). When `bd`
+  fixes the end boundaries, a solution of `Ω` whose words are cut into nonempty pieces is a
+  solution of the result (`TauCeti.GenEq.Solution.splitItems`). For one cut this is the
+  introduction of a boundary by the elementary transformation ET5 of Makanin's process
+  (Kharlampovich–Myasnikov, §5.1, second kind), without the boundary connection that ET5 adds
+  through the new boundary.
 * *Adding bases* (`TauCeti.GenEq.addBases`). New dual pairs of variable bases, indexed by a finite
   type with an involution, are added to those of `Ω`. The points of the result are the points of
   `Ω*` satisfying the new basic equations (`TauCeti.GenEq.mem_V_addBases_iff`), and a solution of
@@ -33,9 +35,8 @@ generalised equation whose solutions give solutions of `Ω`.
   (`TauCeti.GenEq.Solution.addBases`). The bases, constant bases and boundary connections of `Ω`
   are kept; `TauCeti.GenEq.ofBases` is the generalised equation given by such bases alone.
 
-Section partitions are transported: a partition of the closed sections of `Ω` can be redeclared on
-a set of closed sections (`TauCeti.GenEq.SectionPartition.withKind`), gives the pieces of an item
-the kind of the item when `bd` fixes the end boundaries
+Section partitions are transported: a partition of the closed sections of `Ω` gives the pieces of
+an item the kind of the item when `bd` fixes the end boundaries
 (`TauCeti.GenEq.SectionPartition.splitItems`), and survives the addition of bases all of whose
 items have one kind (`TauCeti.GenEq.SectionPartition.addBases`).
 
@@ -49,13 +50,20 @@ the parameters being cut and the pieces identified by new bases.
 * `TauCeti.GenEq.splitItems`, `TauCeti.GenEq.Solution.splitItems`: splitting items along an order
   embedding of boundaries, and the solution with cut words.
 * `TauCeti.GenEq.lastPiece`: the last piece of an item.
+* `TauCeti.GenEq.splitItemsWord`: a word in the items of `Ω` with every item replaced by the word
+  of its pieces.
 * `TauCeti.GenEq.addBases`, `TauCeti.GenEq.Solution.addBases`: adding variable bases, and a
   solution satisfying the new basic equations.
-* `TauCeti.GenEq.SectionPartition.withKind`, `TauCeti.GenEq.SectionPartition.splitItems`,
-  `TauCeti.GenEq.SectionPartition.addBases`: section partitions under these operations.
+* `TauCeti.GenEq.SectionPartition.splitItems`, `TauCeti.GenEq.SectionPartition.addBases`: section
+  partitions under these operations.
 
 ## Main results
 
+* `TauCeti.GenEq.equations_splitItems`, `TauCeti.GenEq.mem_equations_addBases_iff`: the equations
+  of the results, with the equation-by-equation forms `TauCeti.GenEq.basicEquation_splitItems`,
+  `TauCeti.GenEq.coeffEquation_splitItems`, `TauCeti.GenEq.boundaryEquation_splitItems` and
+  `TauCeti.GenEq.basicEquation_addBases_castAdd`, `TauCeti.GenEq.basicEquation_addBases_natAdd`,
+  `TauCeti.GenEq.coeffEquation_addBases`, `TauCeti.GenEq.boundaryEquation_addBases`.
 * `TauCeti.GenEq.mem_V_splitItems_iff`, `TauCeti.GenEq.mem_V_addBases_iff`: the points of the
   systems of the results.
 
@@ -130,48 +138,63 @@ theorem mem_constBases_splitItems {b : Fin n × (A × Bool)} :
   Finset.mem_map
 
 variable (Ω n bd) in
-/- The substitution of the word of its pieces for every item of `Ω`, on words in the items and the
-letters of `A`, without free reduction. -/
-private def splitItemsList (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
-    List ((Fin n ⊕ A) × Bool) :=
+/-- The word in the items of the split equation obtained from a word in the items of `Ω` and the
+letters of `A` by replacing every item `h_k` by the word `h'[bd k, bd (k + 1)]` of its pieces, and
+an inverse item by the formal inverse of that word, without free reduction; the letters of `A` are
+kept. -/
+def splitItemsWord (w : List ((Fin Ω.numItems ⊕ A) × Bool)) : List ((Fin n ⊕ A) × Bool) :=
   w.flatMap (FreeGroup.substituteLetter (Sum.elim
     (fun k ↦ (Ω.splitItems n bd).segment (bd k.castSucc) (bd k.succ) true)
     fun a ↦ [(Sum.inr a, true)]))
 
-private theorem splitItemsList_append (w w' : List ((Fin Ω.numItems ⊕ A) × Bool)) :
-    splitItemsList Ω n bd (w ++ w') = splitItemsList Ω n bd w ++ splitItemsList Ω n bd w' :=
+@[simp]
+theorem splitItemsWord_nil : splitItemsWord Ω n bd [] = [] :=
+  List.flatMap_nil
+
+/-- The word of pieces of a concatenation is the concatenation of the words of pieces. -/
+@[simp]
+theorem splitItemsWord_append (w w' : List ((Fin Ω.numItems ⊕ A) × Bool)) :
+    splitItemsWord Ω n bd (w ++ w') = splitItemsWord Ω n bd w ++ splitItemsWord Ω n bd w' :=
   List.flatMap_append
 
-private theorem splitItemsList_singleton (k : Fin Ω.numItems) :
-    splitItemsList Ω n bd [(Sum.inl k, true)] =
-      (Ω.splitItems n bd).segment (bd k.castSucc) (bd k.succ) true := by
-  simp [splitItemsList]
+/-- The item `h_k ^ ±1` becomes the word `h'[bd k, bd (k + 1)] ^ ±1` of its pieces. -/
+@[simp]
+theorem splitItemsWord_singleton_inl (k : Fin Ω.numItems) (s : Bool) :
+    splitItemsWord Ω n bd [(Sum.inl k, s)] =
+      (Ω.splitItems n bd).segment (bd k.castSucc) (bd k.succ) s := by
+  cases s <;> simp [splitItemsWord, segment_false]
+
+/-- A letter of `A^{±1}` is kept. -/
+@[simp]
+theorem splitItemsWord_singleton_inr (a : A) (s : Bool) :
+    splitItemsWord Ω n bd [(Sum.inr a, s)] = [(Sum.inr a, s)] := by
+  cases s <;> simp [splitItemsWord, FreeGroup.invRev]
 
 /- The word `h[i, j]` of `Ω` becomes, piece by piece, the word between the boundaries `bd i` and
 `bd j` of the split equation. -/
 private theorem segment_splitItems_true {i j : Fin (Ω.numItems + 1)} (hij : i ≤ j) :
     (Ω.splitItems n bd).segment (bd i) (bd j) true =
-      splitItemsList Ω n bd (Ω.segment i j true) := by
+      splitItemsWord Ω n bd (Ω.segment i j true) := by
   induction j using Fin.induction with
   | zero =>
     obtain rfl := le_antisymm hij (Fin.zero_le _)
-    simp [segment_eq_nil_of_le, splitItemsList]
+    simp [segment_eq_nil_of_le]
   | succ x ih =>
     rcases hij.lt_or_eq with h | rfl
     · have hx : i ≤ x.castSucc := Fin.le_castSucc_iff.2 h
       rw [← (Ω.splitItems n bd).segment_append (bd.monotone hx)
           (bd.strictMono x.castSucc_lt_succ).le (bd x.succ).is_le, ih hx,
-        ← Ω.segment_append hx x.castSucc_lt_succ.le x.succ.is_le, splitItemsList_append,
-        ← splitItemsList_singleton]
+        ← Ω.segment_append hx x.castSucc_lt_succ.le x.succ.is_le, splitItemsWord_append,
+        ← splitItemsWord_singleton_inl]
       simp
-    · simp [segment_eq_nil_of_le, splitItemsList]
+    · simp [segment_eq_nil_of_le]
 
-/- The word `h[i, j] ^ ±1` of `Ω` becomes, piece by piece, the word `h'[bd i, bd j] ^ ±1` of the
+/-- The word `h[i, j] ^ ±1` of `Ω` becomes, piece by piece, the word `h'[bd i, bd j] ^ ±1` of the
 split equation. -/
-private theorem segment_splitItems (i j : Fin (Ω.numItems + 1)) (s : Bool) :
-    (Ω.splitItems n bd).segment (bd i) (bd j) s = splitItemsList Ω n bd (Ω.segment i j s) := by
+theorem segment_splitItems (i j : Fin (Ω.numItems + 1)) (s : Bool) :
+    (Ω.splitItems n bd).segment (bd i) (bd j) s = splitItemsWord Ω n bd (Ω.segment i j s) := by
   have htrue : (Ω.splitItems n bd).segment (bd i) (bd j) true =
-      splitItemsList Ω n bd (Ω.segment i j true) := by
+      splitItemsWord Ω n bd (Ω.segment i j true) := by
     rcases le_or_gt i j with hij | hji
     · exact segment_splitItems_true hij
     · rw [Ω.segment_eq_nil_of_le (Fin.le_def.1 hji.le),
@@ -182,30 +205,34 @@ private theorem segment_splitItems (i j : Fin (Ω.numItems + 1)) (s : Bool) :
     exact (FreeGroup.flatMap_substituteLetter_invRev _ _).symm
   · exact htrue
 
-private theorem basicEquation_splitItems (μ : Fin Ω.numBases) :
+/-- The basic equation of a base of the split equation is that of `Ω` with every item replaced by
+the word of its pieces. -/
+theorem basicEquation_splitItems (μ : Fin Ω.numBases) :
     (Ω.splitItems n bd).basicEquation μ =
-      Prod.map (splitItemsList Ω n bd) (splitItemsList Ω n bd) (Ω.basicEquation μ) :=
+      Prod.map (splitItemsWord Ω n bd) (splitItemsWord Ω n bd) (Ω.basicEquation μ) :=
   Prod.ext (by simpa using segment_splitItems _ _ _) (by simpa using segment_splitItems _ _ _)
 
-private theorem coeffEquation_splitItems {b : Fin Ω.numItems × (A × Bool)}
+/-- If the item `h_k` of a constant base `(k, a)` is not cut, the coefficient equation of the
+constant base on its last piece is that of `Ω` with `h_k` replaced by its piece. -/
+theorem coeffEquation_splitItems {b : Fin Ω.numItems × (A × Bool)}
     (hb : (bd b.1.succ : ℕ) = bd b.1.castSucc + 1) :
     (Ω.splitItems n bd).coeffEquation (lastPiece Ω n bd b.1, b.2) =
-      Prod.map (splitItemsList Ω n bd) (splitItemsList Ω n bd) (Ω.coeffEquation b) := by
+      Prod.map (splitItemsWord Ω n bd) (splitItemsWord Ω n bd) (Ω.coeffEquation b) := by
   have h : (lastPiece Ω n bd b.1 : ℕ) = bd b.1.castSucc := by
     have := congrArg Fin.val (succ_lastPiece Ω n bd b.1)
     simp only [Fin.val_succ] at this
     lia
   obtain ⟨k, a, t⟩ := b
-  refine Prod.ext ?_ ?_
-  · simp only [coeffEquation_fst, Prod.map_fst, splitItemsList_singleton]
-    rw [← (Ω.splitItems n bd).segment_succ (lastPiece Ω n bd k) true, h, ← hb]
-  · cases t <;> simp [splitItemsList, FreeGroup.invRev]
+  refine Prod.ext ?_ (by simp)
+  simp only [coeffEquation_fst, Prod.map_fst, splitItemsWord_singleton_inl]
+  rw [← (Ω.splitItems n bd).segment_succ (lastPiece Ω n bd k) true, h, ← hb]
 
-private theorem boundaryEquation_splitItems
-    (c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)) :
-    (Ω.splitItems n bd).boundaryEquation (bd c.1, c.2.1, bd c.2.2) =
-      Prod.map (splitItemsList Ω n bd) (splitItemsList Ω n bd) (Ω.boundaryEquation c) := by
-  obtain ⟨p, μ, q⟩ := c
+/-- The boundary equation of a boundary connection `(bd p, μ, bd q)` of the split equation is that
+of `(p, μ, q)` in `Ω` with every item replaced by the word of its pieces. -/
+theorem boundaryEquation_splitItems (p : Fin (Ω.numItems + 1)) (μ : Fin Ω.numBases)
+    (q : Fin (Ω.numItems + 1)) :
+    (Ω.splitItems n bd).boundaryEquation (bd p, μ, bd q) =
+      Prod.map (splitItemsWord Ω n bd) (splitItemsWord Ω n bd) (Ω.boundaryEquation (p, μ, q)) := by
   refine Prod.ext (by simpa using segment_splitItems _ _ _) ?_
   by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
   · rw [Prod.map_snd, Ω.boundaryEquation_snd_of_sign_eq (c := (p, μ, q)) hs,
@@ -215,20 +242,20 @@ private theorem boundaryEquation_splitItems
       (Ω.splitItems n bd).boundaryEquation_snd_of_sign_ne (c := (_, μ, _)) hs]
     exact segment_splitItems _ _ _
 
-/- If no constant item is cut, the equations of the split equation are those of `Ω` with every item
-replaced by the word of its pieces. -/
-private theorem equations_splitItems
+/-- If no constant item is cut, the equations of the split equation are those of `Ω` with every
+item replaced by the word of its pieces. -/
+theorem equations_splitItems
     (hconst : ∀ b ∈ Ω.constBases, (bd b.1.succ : ℕ) = bd b.1.castSucc + 1) :
     (Ω.splitItems n bd).equations =
-      Prod.map (splitItemsList Ω n bd) (splitItemsList Ω n bd) '' Ω.equations := by
+      Prod.map (splitItemsWord Ω n bd) (splitItemsWord Ω n bd) '' Ω.equations := by
   refine Set.Subset.antisymm ((forall_mem_equations _).2 ⟨fun μ ↦ ⟨_,
     Ω.basicEquation_mem_equations μ, (basicEquation_splitItems (bd := bd) μ).symm⟩, fun b hb ↦ ?_,
     fun c hc ↦ ?_⟩) (Set.image_subset_iff.2 ((forall_mem_equations _).2 ⟨fun μ ↦ ?_,
-      fun b hb ↦ ?_, fun c hc ↦ ?_⟩))
+      fun b hb ↦ ?_, fun ⟨p, μ, q⟩ hc ↦ ?_⟩))
   · obtain ⟨b, hb', rfl⟩ := mem_constBases_splitItems.1 hb
     exact ⟨_, Ω.coeffEquation_mem_equations hb', (coeffEquation_splitItems (hconst b hb')).symm⟩
-  · obtain ⟨c, hc', rfl⟩ := Finset.mem_map.1 hc
-    exact ⟨_, Ω.boundaryEquation_mem_equations hc', (boundaryEquation_splitItems (bd := bd) c).symm⟩
+  · obtain ⟨⟨p, μ, q⟩, hc', rfl⟩ := Finset.mem_map.1 hc
+    exact ⟨_, Ω.boundaryEquation_mem_equations hc', (boundaryEquation_splitItems p μ q).symm⟩
   · rw [Set.mem_preimage, ← basicEquation_splitItems (bd := bd)]
     exact (Ω.splitItems n bd).basicEquation_mem_equations μ
   · rw [Set.mem_preimage, ← coeffEquation_splitItems (hconst b hb)]
@@ -236,15 +263,15 @@ private theorem equations_splitItems
   · rw [Set.mem_preimage, ← boundaryEquation_splitItems (bd := bd)]
     exact (Ω.splitItems n bd).boundaryEquation_mem_equations (Finset.mem_map_of_mem _ hc)
 
-/- Evaluating a word with every item replaced by the word of its pieces is evaluating the word at
+/-- Evaluating a word with every item replaced by the word of its pieces is evaluating the word at
 the products over the pieces. -/
-private theorem lift_mk_splitItemsList {H : Type*} [Group H] (ι : FreeGroup A →* H) (v : Fin n → H)
+theorem lift_mk_splitItemsWord {H : Type*} [Group H] (ι : FreeGroup A →* H) (v : Fin n → H)
     (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
-    FreeGroup.lift (Sum.elim v (ι ∘ FreeGroup.of)) (FreeGroup.mk (splitItemsList Ω n bd w)) =
+    FreeGroup.lift (Sum.elim v (ι ∘ FreeGroup.of)) (FreeGroup.mk (splitItemsWord Ω n bd w)) =
       FreeGroup.lift (Sum.elim (fun k ↦ FreeGroup.lift (Sum.elim v (ι ∘ FreeGroup.of))
         (FreeGroup.mk ((Ω.splitItems n bd).segment (bd k.castSucc) (bd k.succ) true)))
           (ι ∘ FreeGroup.of)) (FreeGroup.mk w) := by
-  rw [splitItemsList, FreeGroup.mk_flatMap_substituteLetter, ← MonoidHom.comp_apply]
+  rw [splitItemsWord, FreeGroup.mk_flatMap_substituteLetter, ← MonoidHom.comp_apply]
   congr 1
   refine FreeGroup.ext_hom _ _ fun x ↦ ?_
   rcases x with k | a <;> simp [FreeGroup.lift_mk]
@@ -260,36 +287,21 @@ theorem mem_V_splitItems_iff (hconst : ∀ b ∈ Ω.constBases, (bd b.1.succ : �
           V ι Ω.toSystem := by
   rw [mem_V_toSystem_iff, mem_V_toSystem_iff, equations_splitItems hconst, Set.forall_mem_image]
   refine forall₂_congr fun e _ ↦ ?_
-  rw [Prod.map_fst, Prod.map_snd, lift_mk_splitItemsList, lift_mk_splitItemsList]
+  rw [Prod.map_fst, Prod.map_snd, lift_mk_splitItemsWord, lift_mk_splitItemsWord]
 
-/- Substituting words for the items of the split equation into a word with every item replaced by
+/-- Substituting words for the items of the split equation into a word with every item replaced by
 the word of its pieces is substituting into the word itself, with the concatenated words of the
 pieces for the items. -/
-private theorem substituteVars_splitItemsList (W : Fin n → List (A × Bool))
+theorem substituteVars_splitItemsWord (W : Fin n → List (A × Bool))
     (w : List ((Fin Ω.numItems ⊕ A) × Bool)) :
-    substituteVars W (splitItemsList Ω n bd w) = substituteVars (fun k ↦
+    substituteVars W (splitItemsWord Ω n bd w) = substituteVars (fun k ↦
       substituteVars W ((Ω.splitItems n bd).segment (bd k.castSucc) (bd k.succ) true)) w := by
   induction w with
   | nil => rfl
   | cons x w ih =>
-    rw [← List.singleton_append, splitItemsList_append, FreeGroup.substituteVars_append,
+    rw [← List.singleton_append, splitItemsWord_append, FreeGroup.substituteVars_append,
       FreeGroup.substituteVars_append, ih]
-    obtain ⟨k | a, _ | _⟩ := x
-    · simp [splitItemsList, FreeGroup.substituteVars_invRev]
-    · simp [splitItemsList]
-    · simp [splitItemsList, FreeGroup.invRev]
-    · simp [splitItemsList]
-
-/- A word of items of a generalised equation is at most as long as the word obtained by substituting
-nonempty words. -/
-private theorem length_segment_le (Θ : GenEq A) {W : Fin Θ.numItems → List (A × Bool)}
-    (hne : ∀ k, W k ≠ []) (i j : ℕ) :
-    (Θ.segment i j true).length ≤ (substituteVars W (Θ.segment i j true)).length := by
-  rw [segment_true, FreeGroup.substituteVars_map_inl, List.length_flatMap, List.length_map]
-  refine (le_of_eq (by simp)).trans (List.length_le_sum_of_one_le _ ?_)
-  simp only [List.mem_map]
-  rintro _ ⟨k, -, rfl⟩
-  exact List.length_pos_iff.2 (hne k)
+    obtain ⟨k | a, _ | _⟩ := x <;> simp [segment_false, FreeGroup.substituteVars_invRev]
 
 /- A solution of `Ω` cut into nonempty pieces does not cut a constant item: its word has one
 letter. -/
@@ -301,7 +313,8 @@ private theorem succ_eq_of_mem_constBases (U : Ω.Solution) {W : Fin n → List 
   have e := U.subst_eq _ (Ω.coeffEquation_mem_equations hb)
   simp only [coeffEquation_fst, coeffEquation_snd, FreeGroup.substituteVars_singleton_inl,
     FreeGroup.substituteVars_singleton_inr] at e
-  have h := length_segment_le (Ω.splitItems n bd) hne (bd b.1.castSucc) (bd b.1.succ)
+  have h := FreeGroup.length_le_length_substituteVars (w := (Ω.splitItems n bd).segment
+    (bd b.1.castSucc) (bd b.1.succ) true) fun k _ _ ↦ hne k
   rw [hW, e, length_segment, min_eq_left (bd b.1.succ).is_le] at h
   have := bd.strictMono b.1.castSucc_lt_succ
   simp only [List.length_singleton, Fin.lt_def] at h this
@@ -317,7 +330,7 @@ private theorem forall_mem_equations_splitItems (U : Ω.Solution) {W : Fin n →
     ∀ e ∈ (Ω.splitItems n bd).equations, P (substituteVars W e.1) (substituteVars W e.2) := by
   rw [equations_splitItems fun b hb ↦ succ_eq_of_mem_constBases U hne hW hb, Set.forall_mem_image]
   intro e he
-  rw [Prod.map_fst, Prod.map_snd, substituteVars_splitItemsList, substituteVars_splitItemsList,
+  rw [Prod.map_fst, Prod.map_snd, substituteVars_splitItemsWord, substituteVars_splitItemsWord,
     funext hW]
   exact h e he
 
@@ -480,51 +493,56 @@ noncomputable abbrev addBases : GenEq A :=
 
 variable {Ω left right left_lt_right sign dual dual_involutive}
 
-/- The words `h[i, j] ^ ±1` of `Ω` with added bases are those of `Ω`. -/
-private theorem segment_addBases (i j : ℕ) (s : Bool) :
+/-- The words `h[i, j] ^ ±1` of `Ω` with added bases are those of `Ω`. -/
+@[simp]
+theorem segment_addBases (i j : ℕ) (s : Bool) :
     (Ω.addBases left right left_lt_right sign dual dual_involutive).segment i j s =
       Ω.segment i j s := by
   cases s <;> simp only [segment_false, segment_true]
 
-/- The basic equation of an old base of `Ω` with added bases is its basic equation in `Ω`. -/
-private theorem basicEquation_addBases_castAdd (μ : Fin Ω.numBases) :
+/-- The basic equation of an old base of `Ω` with added bases is its basic equation in `Ω`. -/
+@[simp]
+theorem basicEquation_addBases_castAdd (μ : Fin Ω.numBases) :
     letI := Fintype.ofFinite β
     (Ω.addBases left right left_lt_right sign dual dual_involutive).basicEquation
       (Fin.castAdd _ μ) = Ω.basicEquation μ :=
-  Prod.ext (by simp [segment_addBases]) (by simp [segment_addBases])
+  Prod.ext (by simp) (by simp)
 
-/- The basic equation of a new base `b` is
+/-- The basic equation of a new base `b` is
 `h[left b, right b] ^ sign b = h[left (dual b), right (dual b)] ^ sign (dual b)`. -/
-private theorem basicEquation_addBases_natAdd (b : β) :
+@[simp]
+theorem basicEquation_addBases_natAdd (b : β) :
     letI := Fintype.ofFinite β
     (Ω.addBases left right left_lt_right sign dual dual_involutive).basicEquation
       (Fin.natAdd _ (Fintype.equivFin β b)) =
         (Ω.segment (left b) (right b) (sign b),
           Ω.segment (left (dual b)) (right (dual b)) (sign (dual b))) :=
-  Prod.ext (by simp [segment_addBases]) (by simp [segment_addBases])
+  Prod.ext (by simp) (by simp)
 
-/- The coefficient equations of `Ω` with added bases are those of `Ω`. -/
-private theorem coeffEquation_addBases (b : Fin Ω.numItems × (A × Bool)) :
+/-- The coefficient equations of `Ω` with added bases are those of `Ω`. -/
+@[simp]
+theorem coeffEquation_addBases (b : Fin Ω.numItems × (A × Bool)) :
     (Ω.addBases left right left_lt_right sign dual dual_involutive).coeffEquation b =
       Ω.coeffEquation b :=
   Prod.ext (by simp) (by simp)
 
-/- The boundary equation of a connection of `Ω` is the same in `Ω` with added bases. -/
-private theorem boundaryEquation_addBases
-    (c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)) :
+/-- The boundary equation of a boundary connection `(p, μ, q)` of `Ω` is the same in `Ω` with added
+bases. -/
+@[simp]
+theorem boundaryEquation_addBases (p : Fin (Ω.numItems + 1)) (μ : Fin Ω.numBases)
+    (q : Fin (Ω.numItems + 1)) :
     letI := Fintype.ofFinite β
     (Ω.addBases left right left_lt_right sign dual dual_involutive).boundaryEquation
-      (c.1, Fin.castAdd _ c.2.1, c.2.2) = Ω.boundaryEquation c := by
+      (p, Fin.castAdd _ μ, q) = Ω.boundaryEquation (p, μ, q) := by
   let := Fintype.ofFinite β
-  obtain ⟨p, μ, q⟩ := c
-  refine Prod.ext (by simp [segment_addBases]) ?_
+  refine Prod.ext (by simp) ?_
   by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
   · rw [Ω.boundaryEquation_snd_of_sign_eq (c := (p, μ, q)) hs,
       boundaryEquation_snd_of_sign_eq _ (by simpa using hs)]
-    simp [segment_addBases]
+    simp
   · rw [Ω.boundaryEquation_snd_of_sign_ne (c := (p, μ, q)) hs,
       boundaryEquation_snd_of_sign_ne _ (by simpa using hs)]
-    simp [segment_addBases]
+    simp
 
 /-- The equations of `Ω` with added bases are those of `Ω` and the basic equations of the new
 bases. -/
@@ -543,9 +561,9 @@ theorem mem_equations_addBases_iff
         obtain ⟨b, rfl⟩ := (Fintype.equivFin β).surjective i
         exact Or.inr ⟨b, (basicEquation_addBases_natAdd ..).symm⟩
     · exact Or.inl (Or.inr (Or.inl ⟨b, hb, (coeffEquation_addBases ..).symm⟩))
-    · obtain ⟨c', hc', rfl⟩ := Finset.mem_image.1 hc
-      exact Or.inl (Or.inr (Or.inr ⟨c', hc', (boundaryEquation_addBases ..).symm⟩))
-  · rintro ((⟨μ, rfl⟩ | ⟨b, hb, rfl⟩ | ⟨c, hc, rfl⟩) | ⟨b, rfl⟩)
+    · obtain ⟨⟨p, μ, q⟩, hc', rfl⟩ := Finset.mem_image.1 hc
+      exact Or.inl (Or.inr (Or.inr ⟨_, hc', (boundaryEquation_addBases ..).symm⟩))
+  · rintro ((⟨μ, rfl⟩ | ⟨b, hb, rfl⟩ | ⟨⟨p, μ, q⟩, hc, rfl⟩) | ⟨b, rfl⟩)
     · exact Or.inl ⟨_, basicEquation_addBases_castAdd ..⟩
     · exact Or.inr (Or.inl ⟨b, hb, coeffEquation_addBases ..⟩)
     · exact Or.inr (Or.inr ⟨_, Finset.mem_image_of_mem _ hc, boundaryEquation_addBases ..⟩)
@@ -634,28 +652,6 @@ theorem SectionPartition.itemKind_addBases (P : Ω.SectionPartition)
 
 end AddBases
 
-/-! ### Redeclaring sections -/
-
-namespace SectionPartition
-
-variable {Ω : GenEq A}
-
-/-- The section partition `P` with the closed sections of a set `D` redeclared of kind `κ`. -/
-def withKind (P : Ω.SectionPartition) (D : Finset Ω.closedSections) (κ : SectionKind) :
-    Ω.SectionPartition :=
-  Ω.sectionPartitionEquiv.symm fun s ↦ if s ∈ D then κ else P.sectionKind s
-
-/-- An item of a redeclared section has the new kind; the other items keep theirs. -/
-@[simp]
-theorem itemKind_withKind (P : Ω.SectionPartition) (D : Finset Ω.closedSections) (κ : SectionKind)
-    (k : Fin Ω.numItems) :
-    (P.withKind D κ).itemKind k =
-      if (⟨Ω.closedSectionOfItem k, Ω.closedSectionOfItem_mem_closedSections k⟩ :
-        Ω.closedSections) ∈ D then κ else P.itemKind k := by
-  simp [withKind]
-
-end SectionPartition
-
 /-! ### Example -/
 
 /- The generalised equation `y = x` over `F(a, b)`, with `a = 0` and `b = 1`: the items `h₀ = y` and
@@ -727,12 +723,6 @@ example (P : equalExample.SectionPartition) :
     exact congrArg Q.itemKind (Fin.ext (by lia))
   · rw [mem_sectionItems] at hk hk'
     rw [hQ k hk.1, hQ k' hk'.1]
-
-/-- Redeclaring the closed section of `x` in `y = x` parametric makes `x` parametric. -/
-example (P : equalExample.SectionPartition) :
-    (P.withKind {⟨_, equalExample.closedSectionOfItem_mem_closedSections 1⟩}
-      .parametric).itemKind 1 = .parametric := by
-  simp
 
 end GenEq
 
