@@ -59,6 +59,9 @@ dimensions are finite.
   for the homology with local coefficients of a CW complex.
 * `TauCeti.finsum_finrank_twistedHomology_complexBasePair`: Euler--Poincaré with local
   coefficients for a finite relative CW complex.
+* `TauCeti.twistedHomologyIsoComplexBasePair` and
+  `TauCeti.finrank_twistedHomology_eq_complexBasePair`: the homology with local coefficients of a
+  CW complex is its homology relative to the empty subspace.
 * `TauCeti.finite_twistedHomology_of_finiteCWType`,
   `TauCeti.eventually_isZero_twistedHomology_of_finiteCWType` and
   `TauCeti.finsum_finrank_twistedHomology_of_finiteCWType`: the same for the homology with local
@@ -220,12 +223,24 @@ variable {R : Type u} [Ring R] (L : LocalCoefficientSystem.{u, w, max w v} R (To
 
 /-- The homology with local coefficients of a CW complex is its relative homology modulo the empty
 base. -/
-private def twistedHomologyIsoComplexBasePair (n : ℕ) :
+def twistedHomologyIsoComplexBasePair (n : ℕ) :
     L.twistedHomology n ≅ (complexBasePair C).twistedHomology L n :=
   -- Instance search does not see `L` as a system on `(complexBasePair C).fst`, so the instance
   -- is supplied explicitly.
   @asIso _ _ _ _ ((complexBasePair C).twistedHomologyπ L n)
     (TopPair.isIso_twistedHomologyπ_of_isEmpty (complexBasePair C) L n)
+
+@[simp]
+lemma twistedHomologyIsoComplexBasePair_hom (n : ℕ) :
+    (twistedHomologyIsoComplexBasePair C L n).hom = (complexBasePair C).twistedHomologyπ L n := by
+  rw [twistedHomologyIsoComplexBasePair]
+  exact @asIso_hom _ _ _ _ _ (TopPair.isIso_twistedHomologyπ_of_isEmpty (complexBasePair C) L n)
+
+/-- The homology with local coefficients of a CW complex has the dimension of its homology
+relative to the empty subspace. -/
+theorem finrank_twistedHomology_eq_complexBasePair (n : ℕ) :
+    finrank R (L.twistedHomology n) = finrank R ((complexBasePair C).twistedHomology L n) :=
+  (twistedHomologyIsoComplexBasePair C L n).toLinearEquiv.finrank_eq
 
 /-- Over a noetherian ring, with finitely generated fibres, the homology with local coefficients
 of a CW complex is finitely generated in each degree with finitely many cells. -/
@@ -250,7 +265,7 @@ theorem finsum_finrank_twistedHomology_of_finite_cwComplex [RelCWComplex.Finite 
     [DivisionRing k] (L : LocalCoefficientSystem.{u, w, max w v} k (TopCat.of C))
     [∀ x, Module.Finite k (L.obj x)] {r : ℕ} (hL : ∀ x, finrank k (L.obj x) = r) :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k (L.twistedHomology i) = r * cwEulerChar C := by
-  simp_rw [(twistedHomologyIsoComplexBasePair C L _).toLinearEquiv.finrank_eq]
+  simp_rw [finrank_twistedHomology_eq_complexBasePair C L]
   exact finsum_finrank_twistedHomology_complexBasePair C L hL
 
 end Absolute
