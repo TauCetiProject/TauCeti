@@ -89,16 +89,12 @@ theorem exists_abs_log_norm_gammaFactor_vertical_sub_le (a b : ℝ) :
   have hXC' : ∀ ν ∈ d.gammaC, |XC ν| + |ν.im| + 1 ≤ |s.im| := fun ν hν ↦ by
     linarith [hC'.2 ν hν, hR'.1]
   -- Away from the real line shifted by `-Im μ`, no factor takes the junk value `0`.
-  have him {μ : ℂ} (h : |μ.im| + 1 ≤ |s.im|) : (s + μ).im ≠ 0 := fun h0 ↦ by
-    rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
-    rw [h0, abs_neg] at h
-    linarith
-  have hRne : ∀ μ ∈ d.gammaR, Gammaℝ (s + μ) ≠ 0 := fun μ hμ h0 ↦ by
-    obtain ⟨n, hn⟩ := Gammaℝ_eq_zero_iff.1 h0
-    exact him (μ := μ) (by linarith [hXR' μ hμ, abs_nonneg (XR μ)]) (by simp [hn])
-  have hCne : ∀ ν ∈ d.gammaC, Gammaℂ (s + ν) ≠ 0 := fun ν hν h0 ↦ by
-    obtain ⟨n, hn⟩ := (Gammaℂ_eq_zero_iff _).1 h0
-    exact him (μ := ν) (by linarith [hXC' ν hν, abs_nonneg (XC ν)]) (by simp [hn])
+  have hRne : ∀ μ ∈ d.gammaR, Gammaℝ (s + μ) ≠ 0 := fun μ hμ ↦
+    Gammaℝ_ne_zero_of_im_ne_zero <| add_im_ne_zero_of_abs_im_lt <| by
+      linarith [hXR' μ hμ, abs_nonneg (XR μ)]
+  have hCne : ∀ ν ∈ d.gammaC, Gammaℂ (s + ν) ≠ 0 := fun ν hν ↦
+    Gammaℂ_ne_zero_of_im_ne_zero <| add_im_ne_zero_of_abs_im_lt <| by
+      linarith [hXC' ν hν, abs_nonneg (XC ν)]
   -- The logarithm of the modulus is the sum over the factors.
   have hlog : Real.log ‖d.gammaFactor s‖ =
       (d.gammaR.map fun μ ↦ Real.log ‖Gammaℝ (s + μ)‖).sum +

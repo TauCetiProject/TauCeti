@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 
 /-!
@@ -20,12 +20,12 @@ log ‖Γ_ℂ(σ + i t + μ)‖ = (σ + Re μ - 1/2) log |t| - π |t| / 2 + O(1)
 ```
 Both follow from Stirling's formula for `Γ` on vertical strips
 (`TauCeti.exists_abs_log_norm_Gamma_add_vertical_sub_le`) and the moduli of the exponential
-factors. They are the single-factor estimates whose sum over the shifts of an L-function's gamma
-factor gives the growth of that gamma factor on vertical strips.
+factors (`Complex.norm_Gammaℝ`, `Complex.norm_Gammaℂ`). They are the single-factor estimates
+whose sum over the shifts of an L-function's gamma factor gives the growth of that gamma factor on
+vertical strips.
 
 ## Main declarations
 
-* `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℂ`: the moduli of the two factors in terms of `‖Γ‖`.
 * `TauCeti.exists_abs_log_norm_Gammaℝ_add_vertical_sub_le`: the estimate for `Γ_ℝ(s + μ)`.
 * `TauCeti.exists_abs_log_norm_Gammaℂ_add_vertical_sub_le`: the estimate for `Γ_ℂ(s + μ)`.
 
@@ -39,21 +39,6 @@ factor gives the growth of that gamma factor on vertical strips.
 public section
 
 open Real Set
-
-namespace Complex
-
-/-- The modulus of the real archimedean gamma factor: `‖Γ_ℝ(s)‖ = π^(-Re s / 2) ‖Γ(s / 2)‖`. -/
-theorem norm_Gammaℝ (s : ℂ) : ‖Gammaℝ s‖ = π ^ (-s.re / 2) * ‖Gamma (s / 2)‖ := by
-  rw [Gammaℝ_def, norm_mul, norm_cpow_eq_rpow_re_of_pos pi_pos]
-  simp [neg_div]
-
-/-- The modulus of the complex archimedean gamma factor: `‖Γ_ℂ(s)‖ = 2 (2π)^(-Re s) ‖Γ(s)‖`. -/
-theorem norm_Gammaℂ (s : ℂ) : ‖Gammaℂ s‖ = 2 * (2 * π) ^ (-s.re) * ‖Gamma s‖ := by
-  have h2π : (2 * (π : ℂ)) = ((2 * π : ℝ) : ℂ) := by push_cast; ring
-  rw [Gammaℂ_def, norm_mul, norm_mul, h2π, norm_cpow_eq_rpow_re_of_pos (by positivity)]
-  simp
-
-end Complex
 
 namespace TauCeti
 
@@ -81,30 +66,22 @@ theorem exists_abs_log_norm_Gammaℝ_add_vertical_sub_le (a b : ℝ) (μ : ℂ) 
   simp only [div_ofNat_re] at hE
   -- The modulus of `Γ_ℝ(s + μ)` splits off the exponential factor.
   have hΓ : Complex.Gamma ((s + μ) / 2) ≠ 0 := by
-    refine Complex.Gamma_ne_zero fun m hm ↦ ?_
-    have him := congr_arg im hm
-    rw [div_ofNat_im, add_im, neg_im, natCast_im, neg_zero, div_eq_zero_iff] at him
-    have : |s.im| = |μ.im| := by
-      rw [eq_neg_of_add_eq_zero_left (him.resolve_right two_ne_zero), abs_neg]
-    linarith
+    refine Gamma_ne_zero_of_im_ne_zero ?_
+    rw [div_ofNat_im]
+    exact div_ne_zero (add_im_ne_zero_of_abs_im_lt (by linarith)) two_ne_zero
   have hlog : Real.log ‖Gammaℝ (s + μ)‖ =
       -((s.re + μ.re) / 2) * Real.log π + Real.log ‖Complex.Gamma ((s + μ) / 2)‖ := by
     rw [norm_Gammaℝ, Real.log_mul (by positivity) (norm_ne_zero_iff.2 hΓ),
       Real.log_rpow pi_pos, add_re, neg_div]
-  have hσ := abs_le.1 (abs_le_max_abs_abs hs.1 hs.2)
-  have hr := abs_le.1 (le_refl |μ.re|)
+  have hσμ : |s.re + μ.re| ≤ M + |μ.re| :=
+    (abs_add_le _ _).trans (by gcongr; exact abs_le_max_abs_abs hs.1 hs.2)
   have hπ : |(s.re + μ.re) / 2 * Real.log π| ≤ (M + |μ.re|) / 2 * |Real.log π| := by
-    rw [abs_mul]
+    rw [abs_mul, abs_div, abs_two]
     gcongr
-    rw [abs_div, abs_two]
-    gcongr
-    exact abs_le.2 ⟨by linarith, by linarith⟩
   have h2 : |(s.re + μ.re - 1) / 2 * Real.log 2| ≤ (M + |μ.re| + 1) / 2 * Real.log 2 := by
-    rw [abs_mul, abs_of_pos (Real.log_pos one_lt_two)]
+    rw [abs_mul, abs_div, abs_two, abs_of_pos (Real.log_pos one_lt_two)]
     gcongr
-    rw [abs_div, abs_two]
-    gcongr
-    exact abs_le.2 ⟨by linarith, by linarith⟩
+    exact abs_le.2 ⟨by linarith [abs_le.1 hσμ], by linarith [abs_le.1 hσμ]⟩
   have key : Real.log ‖Gammaℝ (s + μ)‖ -
         ((s.re + μ.re - 1) / 2 * Real.log |s.im| - π * |s.im| / 4) =
       (Real.log ‖Complex.Gamma ((s + μ) / 2)‖ -
@@ -132,24 +109,19 @@ theorem exists_abs_log_norm_Gammaℂ_add_vertical_sub_le (a b : ℝ) (μ : ℂ) 
     fun s hs ht ↦ ?_⟩
   have hE := h s hs ((le_max_left _ _).trans ht)
   have hτ : |μ.im| + 1 ≤ |s.im| := (le_max_right _ _).trans ht
-  have hΓ : Complex.Gamma (s + μ) ≠ 0 := by
-    refine Complex.Gamma_ne_zero fun m hm ↦ ?_
-    have him := congr_arg im hm
-    rw [add_im, neg_im, natCast_im, neg_zero] at him
-    have : |s.im| = |μ.im| := by rw [eq_neg_of_add_eq_zero_left him, abs_neg]
-    linarith
+  have hΓ : Complex.Gamma (s + μ) ≠ 0 :=
+    Gamma_ne_zero_of_im_ne_zero (add_im_ne_zero_of_abs_im_lt (by linarith))
   have hlog : Real.log ‖Gammaℂ (s + μ)‖ =
       Real.log 2 - (s.re + μ.re) * Real.log (2 * π) + Real.log ‖Complex.Gamma (s + μ)‖ := by
     rw [norm_Gammaℂ, Real.log_mul (by positivity) (norm_ne_zero_iff.2 hΓ),
       Real.log_mul two_ne_zero (by positivity), Real.log_rpow (by positivity), add_re]
     ring
-  have hσ := abs_le.1 (abs_le_max_abs_abs hs.1 hs.2)
-  have hr := abs_le.1 (le_refl |μ.re|)
+  have hσμ : |s.re + μ.re| ≤ M + |μ.re| :=
+    (abs_add_le _ _).trans (by gcongr; exact abs_le_max_abs_abs hs.1 hs.2)
   have hpos : 0 < Real.log (2 * π) := Real.log_pos (by linarith [two_le_pi])
   have h2π : |(s.re + μ.re) * Real.log (2 * π)| ≤ (M + |μ.re|) * Real.log (2 * π) := by
     rw [abs_mul, abs_of_pos hpos]
     gcongr
-    exact abs_le.2 ⟨by linarith, by linarith⟩
   have key : Real.log ‖Gammaℂ (s + μ)‖ -
         ((s.re + μ.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2) =
       (Real.log ‖Complex.Gamma (s + μ)‖ -

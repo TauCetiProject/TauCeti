@@ -222,8 +222,9 @@ theorem exists_abs_log_norm_Gamma_add_vertical_sub_le (a b : ℝ) (μ : ℂ) :
       exact Real.log_le_log hτ0 (by linarith [abs_le.1 hvabs])
     exact abs_le.2 ⟨by norm_num at h2; linarith, by norm_num at h2; linarith⟩
   have hcoef : |s.re + μ.re - 1 / 2| ≤ M + |μ.re| + 1 / 2 := by
-    have hσ := abs_le.1 (abs_le_max_abs_abs hs.1 hs.2)
-    exact abs_le.2 ⟨by linarith [neg_abs_le μ.re], by linarith [le_abs_self μ.re]⟩
+    have hσμ : |s.re + μ.re| ≤ M + |μ.re| :=
+      (abs_add_le _ _).trans (by gcongr; exact abs_le_max_abs_abs hs.1 hs.2)
+    exact abs_le.2 ⟨by linarith [abs_le.1 hσμ], by linarith [abs_le.1 hσμ]⟩
   have hprod :
       |(s.re + μ.re - 1 / 2) * (Real.log (|v|) - Real.log (|τ|))| ≤ M + |μ.re| + 1 / 2 := by
     rw [abs_mul]
