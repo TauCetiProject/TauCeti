@@ -203,12 +203,12 @@ theorem _root_.IsCompact.inter_preimage {Y : Type*} [TopologicalSpace Y] {C : Se
   rw [← Subtype.image_preimage_coe]
   exact (hK.preimage hΦ.domRestrict).isCompact.image continuous_subtype_val
 
-/-- **Solutions on an isolating open set are compact.** Let `Φ` be a continuous family of maps
-`X → Y` parametrized by a compact space `P`, and let `U` be an open set with compact closure on
-whose frontier no map of the family takes the value `y`. Then the solutions in `P × U` of
+/-- **Solutions on an isolating set are compact.** Let `Φ` be a continuous family of maps
+`X → Y` parametrized by a compact space `P`, and let `U` be a set with compact closure on whose
+frontier no map of the family takes the value `y`. Then the solutions in `P × U` of
 `Φ (p, x) = y` form a compact set. -/
 theorem isCompact_setOf_apply_eq_of_frontier {P Y : Type*} [TopologicalSpace P] [CompactSpace P]
-    [TopologicalSpace Y] [T1Space Y] {U : Set X} (hUo : IsOpen U) (hU : IsCompact (closure U))
+    [TopologicalSpace Y] [T1Space Y] {U : Set X} (hU : IsCompact (closure U))
     {Φ : P × X → Y} (hΦc : Continuous Φ) {y : Y} (hΦ : ∀ p, ∀ x ∈ frontier U, Φ (p, x) ≠ y) :
     IsCompact {z : P × U | Φ (z.1, z.2) = y} := by
   have hK : IsCompact ((univ : Set P) ×ˢ closure U ∩ Φ ⁻¹' {y}) :=
@@ -220,7 +220,7 @@ theorem isCompact_setOf_apply_eq_of_frontier {P Y : Type*} [TopologicalSpace P] 
     rintro ⟨p, x⟩ ⟨⟨-, hxc⟩, hxy⟩
     have hxU : x ∈ U := by
       by_contra hxU
-      exact hΦ p x ⟨hxc, by rwa [hUo.interior_eq]⟩ hxy
+      exact hΦ p x ⟨hxc, fun h ↦ hxU (interior_subset h)⟩ hxy
     exact ⟨(p, ⟨x, hxU⟩), rfl⟩
   convert (hj.isCompact_preimage_iff hsub).2 hK using 1
   ext ⟨p, x⟩

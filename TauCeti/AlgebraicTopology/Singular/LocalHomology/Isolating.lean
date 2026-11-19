@@ -118,7 +118,7 @@ theorem localDegree_restrict_eq_of_homotopy {U : Opens M} (hU : IsCompact (closu
     (H.compContinuousMap ⟨Subtype.val, continuous_subtype_val⟩).cast
       (by ext x; exact (f₀.restrict_apply U x).symm) (by ext x; exact (f₁.restrict_apply U x).symm)
   refine (o.comap U.isOpenEmbedding').localDegree_eq_of_homotopy_of_isCompact o' hE hF H' ?_
-  convert isCompact_setOf_apply_eq_of_frontier U.isOpen hU H.continuous hH using 1
+  convert isCompact_setOf_apply_eq_of_frontier hU H.continuous hH using 1
   ext ⟨t, x⟩
   simp [H']
 
