@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Category.Ring.Basic
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.RingHom.Flat
 import Mathlib.Algebra.Category.Ring.FilteredColimits
-import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
+import TauCeti.CategoryTheory.Limits.ConcreteCategory.Basic
 
 /-!
 # Filtered colimits and flatness
@@ -50,21 +50,6 @@ public section
 open CategoryTheory Limits
 
 universe u
-
-/-- Finitely many elements of the point of a colimit cocone of a filtered diagram in a concrete
-category come from a common stage. -/
-private theorem CategoryTheory.Limits.Concrete.isColimit_exists_rep_fin {C : Type*} [Category C]
-    {FC : C → C → Type*} {CC : C → Type*} [∀ X Y, FunLike (FC X Y) (CC X) (CC Y)]
-    [ConcreteCategory C FC] {J : Type*} [Category J] [IsFiltered J] (F : J ⥤ C)
-    [PreservesColimit F (forget C)] {c : Cocone F} (hc : IsColimit c) {l : ℕ}
-    (x : Fin l → ToType c.pt) :
-    ∃ (k : J) (y : Fin l → ToType (F.obj k)), ∀ i, c.ι.app k (y i) = x i := by
-  classical
-  choose j y hy using fun i => Concrete.isColimit_exists_rep F hc (x i)
-  let O : Finset J := Finset.univ.image j
-  have hO (i : Fin l) : j i ∈ O := Finset.mem_image_of_mem j (Finset.mem_univ i)
-  refine ⟨IsFiltered.sup O ∅, fun i => F.map (IsFiltered.toSup O ∅ (hO i)) (y i), fun i => ?_⟩
-  rw [← hy i, ← c.w (IsFiltered.toSup O ∅ (hO i)), ConcreteCategory.comp_apply]
 
 namespace Module.Flat
 
