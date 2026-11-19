@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Homotopy.HSpaces
 public import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
+public import TauCeti.Topology.PathSpace.Prepend
 
 /-!
 # Products of path classes in an H-space
@@ -41,6 +42,16 @@ constant loop. A path in `Ω X x` from a loop `γ` to the constant loop is a dis
 beside a sphere at the constant loop does not change the sphere. For a loop class `ℓ` at the
 constant loop, that is a sphere, `loopHmul ℓ p` places the sphere beside a homotopy of loops `p`:
 it glues the sphere to the cylinder `p`.
+
+Concatenation of paths is associative up to a homotopy `Path.transAssocHomotopy`, continuous in
+the three paths, with traces `Path.transAssoc γ₁ γ₂ γ₃` (in `TauCeti.Topology.PathSpace.Prepend`).
+On the loop space `Ω X x` these traces are natural for products of path classes
+(`HSpace.pathHmul_pathHmul_comp_transAssoc`), again by
+`FundamentalGroupoidFunctor.homotopicMapsNatIso`. For discs this says that placing three discs
+side by side does not depend on the bracketing, up to rebracketing their boundary loops. At the
+constant loop the associator is compatible with the transports along `e ⋀ e = e` and
+`(e ⋀ e) ⋀ e = e` (`HSpace.hmul_e_e_e`,
+`HSpace.transAssoc_refl_comp_pathHmul_id_eqToHom_comp_eqToHom`).
 
 ## References
 
@@ -81,6 +92,34 @@ theorem pathHmul_id (a b : Y) :
   rw [FundamentalGroupoid.id_eq_path_refl, FundamentalGroupoid.id_eq_path_refl,
     FundamentalGroupoid.id_eq_path_refl]
   exact congrArg Path.Homotopic.Quotient.mk (Path.ext rfl)
+
+/-- The neutral element multiplied by itself twice, `(e ⋀ e) ⋀ e`, is `e`. -/
+theorem hmul_e_e_e : (((e : Y) ⋀ e) ⋀ e) = e :=
+  (congrArg (· ⋀ e) hmul_e_e).trans hmul_e_e
+
+/-- The product of two transports along equalities of points is a transport. -/
+@[simp]
+theorem pathHmul_eqToHom {a₁ b₁ a₂ b₂ : Y} (h₁ : (⟨a₁⟩ : FundamentalGroupoid Y) = ⟨b₁⟩)
+    (h₂ : (⟨a₂⟩ : FundamentalGroupoid Y) = ⟨b₂⟩) :
+    pathHmul (eqToHom h₁) (eqToHom h₂) =
+      eqToHom (congrArg₂ (fun y₁ y₂ => FundamentalGroupoid.mk (y₁.as ⋀ y₂.as)) h₁ h₂) := by
+  cases h₁
+  cases h₂
+  simp only [eqToHom_refl, pathHmul_id]
+
+/-- The product of a transport along an equality of points with an identity is a transport. -/
+@[simp]
+theorem pathHmul_eqToHom_id {a b : Y} (h : (⟨a⟩ : FundamentalGroupoid Y) = ⟨b⟩) (c : Y) :
+    pathHmul (eqToHom h) (𝟙 (⟨c⟩ : FundamentalGroupoid Y)) =
+      eqToHom (congrArg (fun y => FundamentalGroupoid.mk (y.as ⋀ c)) h) := by
+  rw [← eqToHom_refl _ rfl, pathHmul_eqToHom]
+
+/-- The product of an identity with a transport along an equality of points is a transport. -/
+@[simp]
+theorem pathHmul_id_eqToHom (c : Y) {a b : Y} (h : (⟨a⟩ : FundamentalGroupoid Y) = ⟨b⟩) :
+    pathHmul (𝟙 (⟨c⟩ : FundamentalGroupoid Y)) (eqToHom h) =
+      eqToHom (congrArg (fun y => FundamentalGroupoid.mk (c ⋀ y.as)) h) := by
+  rw [← eqToHom_refl _ rfl, pathHmul_eqToHom]
 
 /-- **The product of path classes is functorial**: the product of two composites is the composite
 of the products. -/
@@ -261,5 +300,47 @@ theorem loopHmul_eq_comp_comp_inv_comp (ℓ : (⟨e⟩ : FundamentalGroupoid Y) 
     loopHmul ℓ p = D ≫ ℓ ≫ inv D ≫ p := by
   conv_lhs => rw [← IsIso.hom_inv_id_assoc D p]
   rw [← comp_loopHmul, loopHmul_eq_loop_comp]
+
+variable {X : Type*} [TopologicalSpace X] {x : X}
+
+/-- **Naturality of the associator of the loop space**: for path classes `pᵢ : γᵢ ⟶ γᵢ'` in the
+loop space, placing them side by side with either bracketing gives the same class, up to the
+associators of the endpoints. -/
+@[reassoc]
+theorem pathHmul_pathHmul_comp_transAssoc {γ₁ γ₂ γ₃ γ₁' γ₂' γ₃' : Path x x}
+    (p₁ : (⟨γ₁⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₁'⟩)
+    (p₂ : (⟨γ₂⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₂'⟩)
+    (p₃ : (⟨γ₃⟩ : FundamentalGroupoid (Path x x)) ⟶ ⟨γ₃'⟩) :
+    pathHmul (pathHmul p₁ p₂) p₃ ≫ Path.transAssoc γ₁' γ₂' γ₃' =
+      Path.transAssoc γ₁ γ₂ γ₃ ≫ pathHmul p₁ (pathHmul p₂ p₃) := by
+  have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso Path.transAssocHomotopy).naturality
+    (X := ⟨(γ₁, γ₂, γ₃)⟩) (Y := ⟨(γ₁', γ₂', γ₃')⟩)
+    (Path.Homotopic.prod p₁ (Path.Homotopic.prod p₂ p₃))
+  simp only [FundamentalGroupoidFunctor.homotopicMapsNatIso_app] at h
+  -- As in `HSpace.pathHmul_id_left_comp_evalAt_eHmul`, the images of the product class under the
+  -- two triple concatenations agree with the iterated products `pathHmul` definitionally only
+  -- once representatives are chosen.
+  induction p₁ using Path.Homotopic.Quotient.ind with | mk p₁ =>
+  induction p₂ using Path.Homotopic.Quotient.ind with | mk p₂ =>
+  induction p₃ using Path.Homotopic.Quotient.ind with | mk p₃ =>
+  rw [Path.transAssoc_def, Path.transAssoc_def]
+  exact h
+
+/-- At the constant loop `c`, the associator `(c ⋀ c) ⋀ c ⟶ c ⋀ (c ⋀ c)` followed by the
+transports `c ⋀ (c ⋀ c) ⟶ c ⋀ c ⟶ c` along `c ⋀ c = c` is the transport along
+`(c ⋀ c) ⋀ c = c`. -/
+theorem transAssoc_refl_comp_pathHmul_id_eqToHom_comp_eqToHom :
+    Path.transAssoc (Path.refl x) (Path.refl x) (Path.refl x) ≫
+        pathHmul (𝟙 (⟨Path.refl x⟩ : FundamentalGroupoid (Path x x)))
+          (eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e)) ≫
+        eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e) =
+      eqToHom (congrArg FundamentalGroupoid.mk hmul_e_e_e) := by
+  rw [Path.transAssoc_refl]
+  -- The goal is type-correct only after unfolding the H-space structure of the loop space, whose
+  -- neutral element `e` is `Path.refl x`, so rewriting with `pathHmul_id_eqToHom` finds no
+  -- instance and the remaining steps are terms.
+  exact (congrArg (eqToHom _ ≫ · ≫ eqToHom _)
+    (pathHmul_id_eqToHom _ (congrArg FundamentalGroupoid.mk hmul_e_e))).trans
+      ((congrArg (eqToHom _ ≫ ·) (eqToHom_trans _ _)).trans (eqToHom_trans _ _))
 
 end HSpace
