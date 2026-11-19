@@ -110,8 +110,8 @@ private theorem basisChangeEquiv_symm_toLinearMap (i : ι) :
         (((c' i).toMatrix (c i)).map φ) := by
   refine LinearMap.ext fun x ↦ (LinearEquiv.symm_apply_eq _).2 ?_
   rw [← LinearEquiv.coe_toLinearMap, basisChangeEquiv_toLinearMap, ← LinearMap.comp_apply,
-    ← Matrix.toLin_mul, ← Matrix.map_mul, Basis.toMatrix_mul_toMatrix_flip,
-    Matrix.map_one _ φ.map_zero φ.map_one, Matrix.toLin_one, LinearMap.id_apply]
+    ← Matrix.toLin_mul]
+  simp [← Matrix.map_mul]
 
 /-- In the bases `basisChangeBasis`, the matrices of the differentials of the coordinate base
 change of `(C, c)` are those of the coordinate base change of `(C, c')`. -/
@@ -121,21 +121,17 @@ private theorem toMatrix_basisChangeBasis_d (i j : ι) :
       (LinearMap.toMatrix (c' i) (c' j) (C.d i j).hom).map φ := by
   -- Both sides are the conjugate of the matrix of `d` in `c` by the matrix of `c'` in `c`: on the
   -- left as matrices of `basisChangeEquiv` and its inverse, on the right by `Basis.toMatrix`.
-  rw [basisChangeBasis, basisChangeBasis, LinearMap.toMatrix_map_left,
-    LinearMap.toMatrix_map_right, LinearMap.toMatrix_comp _ (C.matrixBaseChangeBasis c φ j),
-    LinearMap.toMatrix_comp _ (C.matrixBaseChangeBasis c φ i),
-    ← basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix (c' i) (c i) (c' j) (c j)]
-  simp only [toMatrix_matrixBaseChange_d, basisChangeEquiv_toLinearMap,
-    basisChangeEquiv_symm_toLinearMap, LinearMap.toMatrix_toLin, Matrix.map_mul, Matrix.mul_assoc]
+  simp [basisChangeBasis, LinearMap.toMatrix_map_left, LinearMap.toMatrix_map_right,
+    LinearMap.toMatrix_comp _ (C.matrixBaseChangeBasis c φ _), toMatrix_matrixBaseChange_d,
+    basisChangeEquiv_toLinearMap, basisChangeEquiv_symm_toLinearMap, ← Matrix.map_mul]
 
 /-- The determinant of `basisChangeBasis` with respect to the standard basis is the image under
 `φ` of the determinant of `c' i` with respect to `c i`. -/
 private theorem det_basisChangeBasis (i : ι) :
     (C.matrixBaseChangeBasis c φ i).det (basisChangeBasis φ c c' i) =
       φ ((c i).det (c' i)) := by
-  rw [basisChangeBasis, Basis.coe_map, ← LinearEquiv.coe_coe, Basis.det_comp, Basis.det_self,
-    mul_one, basisChangeEquiv_toLinearMap, LinearMap.det_toLin, Basis.det_apply, RingHom.map_det,
-    RingHom.mapMatrix_apply]
+  rw [basisChangeBasis, Basis.coe_map, ← LinearEquiv.coe_coe, Basis.det_comp]
+  simp [basisChangeEquiv_toLinearMap, Basis.det_apply, RingHom.map_det]
 
 /-- The basis-change formula for the torsion of a coordinate base change: replacing the bases
 `c i` of a based two-periodic complex `C` over a commutative ring `A` by `c' i` multiplies the
