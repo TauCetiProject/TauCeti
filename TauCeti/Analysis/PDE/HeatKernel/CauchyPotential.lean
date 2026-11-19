@@ -599,7 +599,7 @@ theorem norm_heatCauchyPotential_sub_heatCauchyPotential_le_of_holderWith_fderiv
       (hR b (sqrt_nonneg _) (le_max_right _ _))
     rw [sub_sub_sub_cancel_left, ← sub_smul, map_smul, norm_smul, norm_eq_abs,
       abs_sub_comm] at key
-    rw [show L y = (b - a) • g' x y from rfl]
+    simp only [L, smul_apply]
     refine key.trans_eq ?_
     rw [mul_rpow (by positivity) (norm_nonneg _), rpow_one_add' (norm_nonneg _) (by positivity)]
     ring
