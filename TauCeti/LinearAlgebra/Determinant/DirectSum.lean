@@ -712,6 +712,6 @@ theorem detLineProdMapEquiv_symm_tmul
           (detLineTensorDualProdEquiv K _ _ _ _ (y₁ ⊗ₜ y₂)) := by
   rw [LinearEquiv.symm_apply_eq, LinearEquiv.map_smul,
     detLineProdMapEquiv_congr_detLineTensorDualProdEquiv f g eA heA eD heD, smul_smul,
-    ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
+    ← pow_add, ← two_mul, (even_two_mul _).neg_one_pow, one_smul]
 
 end LinearMap

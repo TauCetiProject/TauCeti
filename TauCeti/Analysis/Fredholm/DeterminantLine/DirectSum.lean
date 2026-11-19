@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Chart
 public import TauCeti.LinearAlgebra.Determinant.DirectSum
+import TauCeti.Algebra.Ring.Parity
 
 /-!
 # Stabilization of direct sums of operators
@@ -24,7 +25,8 @@ trivializations.
 If `D₁.coprod D₂` and `D₁'.coprod D₂'` are onto, so is the stabilization
 `(D₁.prodMap D₁').coprod (D₂.prodMap D₂')` of the direct sum by the direct sum of the stabilizers
 (`ContinuousLinearMap.surjective_coprod_prodMap`), and its kernel is the product of the two
-stabilized kernels (`ContinuousLinearMap.kerCoprodProdMapEquiv`). The stabilization sequence
+stabilized kernels (`ContinuousLinearMap.kerCoprodProdMapEquiv`), both in
+`TauCeti.Analysis.Fredholm.Parametric`. The stabilization sequence
 `0 → ker D → ker (D.coprod D₂) → Λ → coker D → 0` of the direct sum is the product of the
 sequences of the summands, so the four-term product law `TauCeti.detLineFourTermEquiv_prodMap`
 computes its stabilization isomorphism. The result,
@@ -44,8 +46,6 @@ constant sign.
 
 ## Main results
 
-* `ContinuousLinearMap.kerCoprodProdMapEquiv`: the kernel of the stabilized direct sum is the
-  product of the stabilized kernels.
 * `ContinuousLinearMap.detLineStabilizationEquiv_prodMap`: the normalized stabilization
   isomorphism of a direct sum, through `LinearMap.detLineProdMapEquiv`.
 
@@ -75,45 +75,6 @@ variable {𝕜 E Λ F E' Λ' F' : Type*} [Field 𝕜] [AddCommGroup E] [Module �
   [AddCommGroup Λ'] [Module 𝕜 Λ'] [TopologicalSpace Λ'] [AddCommGroup F'] [Module 𝕜 F']
   [TopologicalSpace F'] [ContinuousAdd F']
   {D₁ : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {D₁' : E' →L[𝕜] F'} {D₂' : Λ' →L[𝕜] F'}
-
-omit [ContinuousAdd F] [ContinuousAdd F'] in
-/-- The kernel of a direct sum of operators with finite-dimensional kernels is
-finite-dimensional. -/
-instance finiteDimensional_ker_prodMap [FiniteDimensional 𝕜 D₁.ker]
-    [FiniteDimensional 𝕜 D₁'.ker] : FiniteDimensional 𝕜 (D₁.prodMap D₁').ker :=
-  ((LinearEquiv.ofEq _ _ (LinearMap.ker_prodMap (D₁ : E →ₗ[𝕜] F) (D₁' : E' →ₗ[𝕜] F'))).trans
-    (Submodule.prodEquiv _ _)).symm.finiteDimensional
-
-/-- The direct sum of two stabilized operators is the stabilization of the direct sum by the
-direct sum of the stabilizers: it is onto when both are. -/
-theorem surjective_coprod_prodMap (h : Function.Surjective (D₁.coprod D₂))
-    (h' : Function.Surjective (D₁'.coprod D₂')) :
-    Function.Surjective ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')) := by
-  rintro ⟨y, y'⟩
-  obtain ⟨⟨x, l⟩, hx⟩ := h y
-  obtain ⟨⟨x', l'⟩, hx'⟩ := h' y'
-  exact ⟨((x, x'), (l, l')), by simp_all⟩
-
-variable (D₁ D₂ D₁' D₂') in
-/-- **The stabilized kernel of a direct sum.** The kernel of the direct sum
-`(D₁.prodMap D₁').coprod (D₂.prodMap D₂')` of two stabilized operators is the product of the
-stabilized kernels, through `((x, l), (x', l')) ↦ ((x, x'), (l, l'))`. -/
-noncomputable def kerCoprodProdMapEquiv :
-    ((D₁.coprod D₂).ker × (D₁'.coprod D₂').ker) ≃ₗ[𝕜]
-      ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')).ker :=
-  (Submodule.prodEquiv _ _).symm.trans
-    ((LinearEquiv.prodProdProdComm 𝕜 E Λ E' Λ').ofSubmodules _ _ (by
-      ext ⟨⟨x, x'⟩, ⟨l, l'⟩⟩
-      simp [Submodule.mem_map_equiv, Prod.ext_iff]))
-
-/-- `ContinuousLinearMap.kerCoprodProdMapEquiv` sends `((x, l), (x', l'))` to
-`((x, x'), (l, l'))`. -/
-@[simp]
-theorem coe_kerCoprodProdMapEquiv_apply
-    (v : (D₁.coprod D₂).ker × (D₁'.coprod D₂').ker) :
-    (kerCoprodProdMapEquiv D₁ D₂ D₁' D₂' v : (E × E') × (Λ × Λ')) =
-      (((v.1 : E × Λ).1, (v.2 : E' × Λ').1), ((v.1 : E × Λ).2, (v.2 : E' × Λ').2)) :=
-  (rfl)
 
 variable [FiniteDimensional 𝕜 D₁.ker] [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 D₁'.ker]
   [FiniteDimensional 𝕜 Λ'] [FiniteDimensional 𝕜 (F ⧸ D₁.range)]
@@ -167,7 +128,7 @@ private theorem detLineCoprodEquiv_prodMap (h : Function.Surjective (D₁.coprod
   · refine LinearMap.ext fun v ↦ Subtype.ext ?_
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ContinuousLinearMap.coe_coe,
       kerCoprodHom_apply, LinearMap.prodMap_apply]
-    exact Prod.ext ((heA v).trans (by simp)) (by simp; rfl)
+    exact Prod.ext ((heA v).trans (by simp)) (by simp [Prod.mk_zero_zero])
   · exact LinearMap.ext fun v ↦ by simp
   · refine LinearMap.ext fun ⟨l, l'⟩ ↦ ?_
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.prodMap_apply,
@@ -222,8 +183,7 @@ theorem detLineStabilizationEquiv_prodMap
     ⟨((Submodule.quotEquivOfEq _ _ hR).trans (Submodule.quotientProdEquiv _ _)).symm,
       fun y y' ↦ (LinearEquiv.symm_apply_eq _).mpr (by
         rw [LinearEquiv.trans_apply, Submodule.mkQ_apply _ (y, y'), Submodule.quotEquivOfEq_mk,
-          Submodule.quotientProdEquiv_apply_mk]
-        rfl)⟩
+          Submodule.quotientProdEquiv_apply_mk, Submodule.mkQ_apply, Submodule.mkQ_apply])⟩
   have hsum := detLineCoprodEquiv_prodMap h h' eA heA eD heD x x'
   simp only [detLineStabilizationEquiv_apply, hsum, smul_smul, TensorProduct.smul_tmul_smul]
   have hsplit := LinearMap.detLineProdMapEquiv_symm_tmul (D₁ : E →ₗ[𝕜] F)
@@ -246,11 +206,11 @@ theorem detLineStabilizationEquiv_prodMap
     exact (Submodule.finrank_quotient_add_finrank _).symm
   rw [hc, Module.finrank_prod, hΛ, hΛ']
   simp only [← pow_add]
-  have key (a b m n : ℕ) (hab : a + 2 * m = b + 2 * n) : (-1 : 𝕜) ^ a = (-1) ^ b := by
-    simpa only [pow_add, pow_mul, neg_one_sq, one_pow, mul_one] using
-      congrArg ((-1 : 𝕜) ^ ·) hab
-  exact key _ _ (finrank 𝕜 (F ⧸ D₁.range) * finrank 𝕜 D₁'.ker)
-    (finrank 𝕜 (F ⧸ D₁.range) * finrank 𝕜 (parameterProj D₁' D₂').range) (by ring)
+  rw [← TauCeti.neg_one_pow_add_two_mul _ (finrank 𝕜 (F ⧸ D₁.range) * finrank 𝕜 D₁'.ker)]
+  conv_rhs => rw [← TauCeti.neg_one_pow_add_two_mul _
+    (finrank 𝕜 (F ⧸ D₁.range) * finrank 𝕜 (parameterProj D₁' D₂').range)]
+  congr 1
+  ring
 
 end Stabilization
 

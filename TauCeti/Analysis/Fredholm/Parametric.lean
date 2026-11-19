@@ -127,6 +127,10 @@ spaces or of the scalar field is required.
   `ContinuousLinearMap.surjective_mkQ_comp_parameterProj`: for `ι : Λ → Λ'` with `D₂' ∘ ι = D₂`,
   the short exact sequence `0 → ker (D₁.coprod D₂) → ker (D₁.coprod D₂') → Λ' ⧸ range ι → 0`
   when `ι` is injective and `D₁.coprod D₂` is onto.
+* `ContinuousLinearMap.surjective_coprod_prodMap` and
+  `ContinuousLinearMap.kerCoprodProdMapEquiv`: the direct sum of two stabilized operators is the
+  stabilization of the direct sum by the direct sum of the stabilizers, onto when both are, and
+  its kernel is the product of the two stabilized kernels.
 
 ## References
 
@@ -534,6 +538,71 @@ theorem surjective_mkQ_comp_parameterProj (hι : ∀ l, D₂' (ι l) = D₂ l)
 
 end ChangeOfParameters
 
+section DirectSum
+
+/-! ### Direct sums of stabilized operators -/
+
+variable {𝕜 : Type*} [Ring 𝕜]
+variable {E Λ F E' Λ' F' : Type*}
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ]
+variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
+variable [AddCommGroup E'] [Module 𝕜 E'] [TopologicalSpace E']
+variable [AddCommGroup Λ'] [Module 𝕜 Λ'] [TopologicalSpace Λ']
+variable [AddCommGroup F'] [Module 𝕜 F'] [TopologicalSpace F'] [ContinuousAdd F']
+variable {D₁ : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {D₁' : E' →L[𝕜] F'} {D₂' : Λ' →L[𝕜] F'}
+
+/-- The direct sum of two stabilized operators is the stabilization of the direct sum by the
+direct sum of the stabilizers: it is onto when both are. -/
+theorem surjective_coprod_prodMap (h : Function.Surjective (D₁.coprod D₂))
+    (h' : Function.Surjective (D₁'.coprod D₂')) :
+    Function.Surjective ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')) := by
+  rintro ⟨y, y'⟩
+  obtain ⟨⟨x, l⟩, hx⟩ := h y
+  obtain ⟨⟨x', l'⟩, hx'⟩ := h' y'
+  exact ⟨((x, x'), (l, l')), by simp_all⟩
+
+variable (D₁ D₂ D₁' D₂') in
+/-- **The stabilized kernel of a direct sum.** The kernel of the direct sum
+`(D₁.prodMap D₁').coprod (D₂.prodMap D₂')` of two stabilized operators is the product of the
+stabilized kernels, through `((x, l), (x', l')) ↦ ((x, x'), (l, l'))`. -/
+noncomputable def kerCoprodProdMapEquiv :
+    ((D₁.coprod D₂).ker × (D₁'.coprod D₂').ker) ≃ₗ[𝕜]
+      ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')).ker :=
+  (Submodule.prodEquiv _ _).symm.trans
+    ((LinearEquiv.prodProdProdComm 𝕜 E Λ E' Λ').ofSubmodules _ _ (by
+      ext ⟨⟨x, x'⟩, ⟨l, l'⟩⟩
+      simp [Submodule.mem_map_equiv, Prod.ext_iff]))
+
+/-- `ContinuousLinearMap.kerCoprodProdMapEquiv` sends `((x, l), (x', l'))` to
+`((x, x'), (l, l'))`. -/
+@[simp]
+theorem coe_kerCoprodProdMapEquiv_apply
+    (v : (D₁.coprod D₂).ker × (D₁'.coprod D₂').ker) :
+    (kerCoprodProdMapEquiv D₁ D₂ D₁' D₂' v : (E × E') × (Λ × Λ')) =
+      (((v.1 : E × Λ).1, (v.2 : E' × Λ').1), ((v.1 : E × Λ).2, (v.2 : E' × Λ').2)) :=
+  (rfl)
+
+/-- The first component of the inverse of `ContinuousLinearMap.kerCoprodProdMapEquiv`: it sends
+`((x, x'), (l, l'))` to `((x, l), (x', l'))`. -/
+@[simp]
+theorem coe_kerCoprodProdMapEquiv_symm_apply_fst
+    (w : ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')).ker) :
+    (((kerCoprodProdMapEquiv D₁ D₂ D₁' D₂').symm w).1 : E × Λ) =
+      ((w : (E × E') × (Λ × Λ')).1.1, (w : (E × E') × (Λ × Λ')).2.1) :=
+  (rfl)
+
+/-- The second component of the inverse of `ContinuousLinearMap.kerCoprodProdMapEquiv`: it sends
+`((x, x'), (l, l'))` to `((x, l), (x', l'))`. -/
+@[simp]
+theorem coe_kerCoprodProdMapEquiv_symm_apply_snd
+    (w : ((D₁.prodMap D₁').coprod (D₂.prodMap D₂')).ker) :
+    (((kerCoprodProdMapEquiv D₁ D₂ D₁' D₂').symm w).2 : E' × Λ') =
+      ((w : (E × E') × (Λ × Λ')).1.2, (w : (E × E') × (Λ × Λ')).2.2) :=
+  (rfl)
+
+end DirectSum
+
 section Dimension
 
 variable {𝕜 : Type*} [DivisionRing 𝕜]
@@ -556,6 +625,16 @@ theorem finiteDimensional_ker_coprod [FiniteDimensional 𝕜 D₁.ker]
   have : FiniteDimensional 𝕜 ((D₁.coprod D₂).ker ⧸ (parameterProj D₁ D₂).ker) :=
     (LinearMap.quotKerEquivRange (parameterProj D₁ D₂).toLinearMap).symm.finiteDimensional
   exact Module.Finite.of_submodule_quotient (parameterProj D₁ D₂).ker
+
+omit [ContinuousAdd F] in
+/-- The kernel of a direct sum of operators with finite-dimensional kernels is
+finite-dimensional. -/
+instance finiteDimensional_ker_prodMap {E' F' : Type*} [AddCommGroup E'] [Module 𝕜 E']
+    [TopologicalSpace E'] [AddCommGroup F'] [Module 𝕜 F'] [TopologicalSpace F']
+    {T : E →L[𝕜] F} {T' : E' →L[𝕜] F'} [FiniteDimensional 𝕜 T.ker] [FiniteDimensional 𝕜 T'.ker] :
+    FiniteDimensional 𝕜 (T.prodMap T').ker :=
+  ((LinearEquiv.ofEq _ _ (LinearMap.ker_prodMap (T : E →ₗ[𝕜] F) (T' : E' →ₗ[𝕜] F'))).trans
+    (Submodule.prodEquiv _ _)).symm.finiteDimensional
 
 /-- The cokernel of the parameter projection is finite dimensional as soon as that of `D₁` is;
 surjectivity of the total linearization is not needed. -/
