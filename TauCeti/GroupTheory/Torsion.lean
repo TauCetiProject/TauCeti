@@ -274,8 +274,6 @@ end TauCeti
 
 * `IsMulTorsion.exists_prime_orderOf_mem`: a nontrivial subgroup of a torsion group contains an
   element of prime order.
-* `isMulTorsionFree_iff_forall_not_prime_orderOf`: a group is torsion-free exactly when it has no
-  element of prime order.
 * `MonoidHom.injective_domRestrict_of_isMulTorsion`: a homomorphism with torsion-free kernel is
   injective on every torsion subgroup, in particular on every finite subgroup.
 -/
@@ -293,16 +291,6 @@ theorem IsMulTorsion.exists_prime_orderOf_mem (hG : IsMulTorsion G) {H : Subgrou
   obtain ⟨p, hp, hpg⟩ := Nat.exists_prime_and_dvd (orderOf_eq_one_iff.not.mpr hg)
   refine ⟨g ^ (orderOf g / p), H.pow_mem hgH _, ?_⟩
   rwa [orderOf_pow_orderOf_div (hG g).orderOf_pos.ne' hpg]
-
-/-- A group is torsion-free exactly when it has no element of prime order. -/
-@[to_additive /-- An additive group is torsion-free exactly when it has no element of prime
-additive order. -/]
-theorem isMulTorsionFree_iff_forall_not_prime_orderOf :
-    IsMulTorsionFree G ↔ ∀ g : G, ¬(orderOf g).Prime := by
-  refine ⟨fun _ g hg ↦ hg.one_lt.not_ge (IsMulTorsionFree.orderOf_le_one g), fun h ↦ ?_⟩
-  refine IsMulTorsionFree.of_not_isOfFinOrder fun g hg hfin ↦ ?_
-  obtain ⟨p, hp, hpg⟩ := Nat.exists_prime_and_dvd (orderOf_eq_one_iff.not.mpr hg)
-  exact h (g ^ (orderOf g / p)) (by rwa [orderOf_pow_orderOf_div hfin.orderOf_pos.ne' hpg])
 
 /-- **Injectivity on torsion subgroups.** A group homomorphism whose kernel is torsion-free is
 injective on every torsion subgroup: two elements with the same image differ by an element of the
