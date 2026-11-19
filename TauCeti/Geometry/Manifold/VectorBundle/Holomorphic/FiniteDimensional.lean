@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 import Mathlib.Topology.VectorBundle.FiniteDimensional
-import Mathlib.Analysis.Complex.Schwarz
+import TauCeti.Analysis.Complex.Schwarz
 import Mathlib.Topology.ContinuousMap.Compact
 import TauCeti.Geometry.Manifold.CoordinateBall
 
@@ -69,41 +69,6 @@ private def closedBallReading (hn : n ≠ 0)
   toFun z := chartReading e T s z
   continuous_toFun := ((differentiableOn_chartReading hn e he T s).continuousOn.mono h)
     |>.comp_continuous continuous_subtype_val (fun z ↦ z.2)
-
-private theorem norm_le_half_of_samples {f : ℂ → F} {c : ℂ} {r C M : ℝ}
-    (hr : 0 < r) (hC : 0 < C)
-    (hf : DifferentiableOn ℂ f (ball c (2 * r)))
-    (hb : ∀ z ∈ ball c (2 * r), ‖f z‖ ≤ C * M)
-    {P : Set ℂ} (hP : P ⊆ closedBall c r)
-    (hnet : closedBall c r ⊆ ⋃ w ∈ P, ball w (r / (4 * C)))
-    (hzero : ∀ w ∈ P, f w = 0) {z : ℂ} (hz : z ∈ closedBall c r) :
-    ‖f z‖ ≤ M / 2 := by
-  have hM : 0 ≤ M := nonneg_of_mul_nonneg_right
-    ((norm_nonneg (f c)).trans (hb c (mem_ball_self (by linarith)))) hC
-  by_cases hsmallC : C ≤ 1 / 2
-  · calc ‖f z‖ ≤ C * M := hb z (closedBall_subset_ball (by linarith) hz)
-         _ ≤ M / 2 := by nlinarith
-  obtain ⟨w, hw, hzw⟩ := mem_iUnion₂.mp (hnet hz)
-  have hwr : ∀ y ∈ ball w r, y ∈ ball c (2 * r) := by
-    intro y hy
-    have := (hP hw)
-    simp only [mem_ball, mem_closedBall] at *
-    calc dist y c ≤ dist y w + dist w c := dist_triangle _ _ _
-      _ < 2 * r := by linarith
-  have hε : r / (4 * C) ≤ r := by
-    apply (div_le_iff₀ (mul_pos (by norm_num) hC)).2
-    nlinarith
-  have hzw' : z ∈ ball w r := (ball_subset_ball hε) hzw
-  have hmaps : MapsTo f (ball w r) (closedBall (f w) (C * M)) := by
-    intro y hy
-    simpa [hzero w hw, mem_closedBall, dist_zero_right] using hb y (hwr y hy)
-  have h := Complex.dist_le_div_mul_dist_of_mapsTo_ball (hf.mono hwr) hmaps hzw'
-  rw [hzero w hw, dist_zero_right] at h
-  have hdist : dist z w ≤ r / (4 * C) := (mem_ball.mp hzw).le
-  calc ‖f z‖ ≤ C * M / r * dist z w := h
-    _ ≤ C * M / r * (r / (4 * C)) := by gcongr
-    _ = M / 4 := by field_simp
-    _ ≤ M / 2 := by linarith
 
 private structure NestedDiscs (ι : Type u) where
   e : ι → OpenPartialHomeomorph X ℂ
@@ -257,7 +222,7 @@ private theorem readingMap_injective [Finite ι] (A : NestedDiscs (F := F) (V :=
   apply LinearMap.ker_eq_bot'.mpr
   intro s hs
   ext x
-  change s x = 0
+  simp only [ContMDiffSection.coe_zero, Pi.zero_apply]
   obtain ⟨i, hx⟩ := A.cover x
   have heq : (A.T i).linearMapAt ℂ x (s x) = 0 := by
     apply norm_eq_zero.mp
@@ -294,7 +259,7 @@ private theorem exists_finset_eval_injective [Finite ι] (A : NestedDiscs (F := 
     intro i
     apply (ContinuousMap.norm_le _ (by positivity)).mpr
     intro z
-    exact norm_le_half_of_samples (A.radius_pos i) (zero_lt_one.trans_le hC)
+    exact TauCeti.norm_le_half_of_eq_zero_on_net
       ((differentiableOn_chartReading hn (A.e i) (A.chart_mem i) (A.T i) s).mono
         (ball_subset_closedBall.trans (A.valid i)))
       (fun z hz ↦ hbound s i z (ball_subset_closedBall hz)) (hP i) (hnet i) (hzero i) z.2

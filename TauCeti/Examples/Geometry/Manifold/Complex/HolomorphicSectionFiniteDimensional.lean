@@ -48,6 +48,13 @@ example : ∃ P : Finset Sphere,
       ContMDiffSection.evalLinearMap 𝓘(ℂ) ℂ ω (Trivial Sphere ℂ) x) :=
   ContMDiffSection.exists_finset_eval_injective_of_compactSpace (by simp)
 
+-- Finite determination also applies to an infinite-dimensional model of continuous functions.
+example : ∃ P : Finset Sphere,
+    Function.Injective (LinearMap.pi fun x : P ↦
+      ContMDiffSection.evalLinearMap 𝓘(ℂ) (C(Set.Icc (0 : ℝ) 1, ℂ)) ω
+        (Trivial Sphere (C(Set.Icc (0 : ℝ) 1, ℂ))) x) :=
+  ContMDiffSection.exists_finset_eval_injective_of_compactSpace (by simp)
+
 example : FiniteDimensional ℂ
     (holomorphicSectionCechCohomology 𝓘(ℂ) ℂ (Trivial Sphere ℂ) 0) := inferInstance
 
