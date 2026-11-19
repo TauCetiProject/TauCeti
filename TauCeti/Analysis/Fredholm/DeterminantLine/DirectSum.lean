@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fredholm.DeterminantLine.Chart
+public import TauCeti.Analysis.Fredholm.DeterminantLine.Basic
 public import TauCeti.LinearAlgebra.Determinant.DirectSum
 import TauCeti.Algebra.Ring.Parity
 
@@ -181,9 +181,7 @@ theorem detLineStabilizationEquiv_prodMap
       (F × F') ⧸ (D₁.prodMap D₁').range,
       ∀ y y', eD (D₁.range.mkQ y, D₁'.range.mkQ y') = (D₁.prodMap D₁').range.mkQ (y, y') :=
     ⟨((Submodule.quotEquivOfEq _ _ hR).trans (Submodule.quotientProdEquiv _ _)).symm,
-      fun y y' ↦ (LinearEquiv.symm_apply_eq _).mpr (by
-        rw [LinearEquiv.trans_apply, Submodule.mkQ_apply _ (y, y'), Submodule.quotEquivOfEq_mk,
-          Submodule.quotientProdEquiv_apply_mk, Submodule.mkQ_apply, Submodule.mkQ_apply])⟩
+      fun y y' ↦ (LinearEquiv.symm_apply_eq _).mpr (by simp [-ContinuousLinearMap.coe_prodMap])⟩
   have hsum := detLineCoprodEquiv_prodMap h h' eA heA eD heD x x'
   simp only [detLineStabilizationEquiv_apply, hsum, smul_smul, TensorProduct.smul_tmul_smul]
   have hsplit := LinearMap.detLineProdMapEquiv_symm_tmul (D₁ : E →ₗ[𝕜] F)

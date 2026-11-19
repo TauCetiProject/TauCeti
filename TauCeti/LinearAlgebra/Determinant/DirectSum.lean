@@ -663,12 +663,11 @@ theorem detLineProdMapEquiv_congr_detLineTensorDualProdEquiv
   have hD : ((Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
       (Submodule.quotientProdEquiv (range f) (range g))).symm.trans eD.symm =
       LinearEquiv.refl K _ := by
+    simp only [Submodule.mkQ_apply] at heD
     refine LinearEquiv.ext fun ⟨a, b⟩ ↦ ?_
     induction a using Submodule.Quotient.induction_on
     induction b using Submodule.Quotient.induction_on
-    rw [LinearEquiv.trans_apply, LinearEquiv.symm_apply_eq, LinearEquiv.refl_apply,
-      ← Submodule.mkQ_apply, ← Submodule.mkQ_apply, heD, LinearEquiv.symm_apply_eq]
-    simp
+    simp [LinearEquiv.symm_apply_eq, heD]
   induction y₁ using TensorProduct.inductionOn with
   | add x x' hx hx' => simp only [TensorProduct.add_tmul, map_add, hx, hx', smul_add]
   | tmul a₁ φ₁ =>
