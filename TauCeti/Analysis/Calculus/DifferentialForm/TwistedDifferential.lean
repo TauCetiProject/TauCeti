@@ -18,6 +18,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Comparison
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -47,8 +48,9 @@ differential of a real function `f` is the one-form `d^c_J f = -(1/2) df ∘ J`.
   `z ↦ y + Re z • n + Im z • J n`, the Laplacian of the restriction of `f` is
   `2 d d^c_J f (n, J n)`.
 * `TauCeti.AlmostComplexStructure.abs_le_add_mul_sq_div_two_of_abs_extDeriv_twistedDifferential_le`:
-  a `C²` function with `|d d^c_J f (n, J n)| ≤ C` that is at most `ε` in absolute value at
-  distance `R` from the base along the complex line of `n` is bounded by `ε + C R² / 2`.
+  for orthogonal `J` and a unit vector `n`, a `C²` function with `|d d^c_J f (n, J n)| ≤ C`
+  everywhere and `|f| ≤ ε` wherever the component of its argument along `span {n, J n}` has norm
+  at least `R` is bounded by `ε + C R² / 2`.
 * `TauCeti.AlmostComplexStructure.integral_twistedDifferential_wedge_eq`: integration by parts.
   For a compactly supported form `η` of complementary degree,
   `∫ d^c_J g ∧ η = (det J / 2) ∫ g d((-J)^* η)`, where `((-J)^* η)(x)(v₁, …, vₘ) =
@@ -309,19 +311,12 @@ vector `n`, the vectors `n` and `J n` are orthonormal, so `‖Re z • n + Im z 
 theorem norm_re_smul_add_im_smul (J : AlmostComplexStructure V)
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {n : V} (hn : ‖n‖ = 1) (z : ℂ) :
     ‖z.re • n + z.im • J n‖ = ‖z‖ := by
-  have hJn : ‖J n‖ = 1 := by
-    rw [← hn, ← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-      ← real_inner_self_eq_norm_sq, hJ]
-  -- `⟪n, J n⟫ = ⟪J n, J (J n)⟫ = -⟪J n, n⟫`, so `n ⊥ J n`.
-  have horth : ⟪n, J n⟫ = 0 := by
-    have h := hJ n (J n)
-    rw [J.apply_apply, inner_neg_right, real_inner_comm] at h
-    linarith
+  have hJn : ‖J n‖ = 1 := by rw [J.norm_apply hJ, hn]
+  have horth : ⟪n, J n⟫ = 0 := by rw [real_inner_comm, J.inner_apply_self hJ]
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), @norm_add_sq_real, norm_smul, norm_smul,
     real_inner_smul_left, real_inner_smul_right, horth, hn, hJn, Complex.sq_norm,
     Complex.normSq_apply, Real.norm_eq_abs, Real.norm_eq_abs]
-  ring_nf
-  rw [sq_abs, sq_abs]
+  linear_combination sq_abs z.re + sq_abs z.im
 
 /-- **The Laplacian along a `J`-complex line.** For a `C²` function `f`, a point `y` and a vector
 `n`, the restriction `z ↦ f (y + Re z • n + Im z • J n)` of `f` to the complex line through `y`
@@ -348,7 +343,9 @@ theorem laplacian_comp_add_re_smul_add_im_smul {E : Type*} [NormedAddCommGroup E
   beta_reduce
   rw [hD, hD, J.extDeriv_twistedDifferential_apply,
     J.apply_apply]
-  simp [hLz]
+  simp only [hLz, Complex.one_re, one_smul, Complex.one_im, zero_smul, add_zero, Complex.I_re,
+    Complex.I_im, zero_add, map_neg, sub_neg_eq_add, ne_eq, OfNat.ofNat_ne_zero,
+    not_false_eq_true, mul_inv_cancel_left₀]
   ring
 
 /-- **A bound along complex lines.** Let `J` be orthogonal, `n` a unit vector and `K` the complex
