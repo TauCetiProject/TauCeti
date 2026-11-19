@@ -492,6 +492,7 @@ functions `ℓ ∘ F`, for `ℓ` a linear functional on `G`, form a nondegenerat
 Hamiltonian endomorphisms generate a Cartan subalgebra of `sp(E, ω)`. For `G = ℝⁿ` these are the
 Hessians of the components of `F` (`TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_pi_iff`).
 -/
+@[mk_iff]
 structure IsNondegenerateRankZeroPoint (F : E → G) (x : E) : Prop where
   /-- The map is `C²` at the point. -/
   contDiffAt : ContDiffAt ℝ 2 F x

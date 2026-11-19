@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Contact.StableHamiltonian
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
@@ -35,8 +35,11 @@ where `Y` is the unique vector field in `ξ` with `dα(Y, w) = df(w) / f²` for 
 constant `c ≠ 0` this gives `R_(c α) = R_α / c`
 (`TauCeti.SmoothForm.IsContactForm.reebVectorField_smul`), and in particular `R_(-α) = -R_α`.
 
-All statements here are pointwise linear algebra at each point, applying
-`Module.Dual.reebVector` to the covector `α_x` and the bilinear form `dα_x`.
+The Reeb vector field is the characteristic vector field of the stable Hamiltonian structure
+`(α, dα)` (`TauCeti.SmoothForm.characteristicVectorField_mextDerivₗ`), so its basic equations are
+the special case `ω = dα` of those in `TauCeti.Geometry.Contact.StableHamiltonian`. The rescaling
+law is pointwise linear algebra at each point, applying `Module.Dual.reebVector` to the covector
+`α_x` and the bilinear form `dα_x`.
 
 ## Main declarations
 
@@ -73,11 +76,18 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- The **Reeb vector field** of a one-form `α`: at each point `x`, the tangent vector `R` with
 `α_x(R) = 1` and `dα_x(R, w) = 0` for every `w ∈ ker α_x`. For a contact form on a
 finite-dimensional manifold it exists and is unique
-(`TauCeti.SmoothForm.IsContactForm.eq_reebVectorField_iff`); it is the Reeb vector
-`Module.Dual.reebVector` of the covector `α_x` for the bilinear form `dα_x`. -/
+(`TauCeti.SmoothForm.IsContactForm.eq_reebVectorField_iff`); it is the characteristic vector
+field of the pair `(α, dα)`, the Reeb vector `Module.Dual.reebVector` of the covector `α_x` for
+the bilinear form `dα_x`. -/
 def reebVectorField (α : SmoothForm I M ℝ 1) (x : M) : TangentSpace I x :=
-  Module.Dual.reebVector (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
-    ((mextDerivₗ I 1 α).bilinFormAt x)
+  α.characteristicVectorField (mextDerivₗ I 1 α) x
+
+/-- The characteristic vector field of a one-form `α` and its exterior derivative is the Reeb
+vector field of `α`. -/
+@[simp]
+theorem characteristicVectorField_mextDerivₗ (α : SmoothForm I M ℝ 1) :
+    α.characteristicVectorField (mextDerivₗ I 1 α) = α.reebVectorField :=
+  (rfl)
 
 variable [FiniteDimensional ℝ E] {α : SmoothForm I M ℝ 1}
 
@@ -87,37 +97,33 @@ theorem IsContactForm.eq_reebVectorField_iff_kerDistribution (hα : α.IsContact
     {v : TangentSpace I x} :
     v = α.reebVectorField x ↔
       α.1 x ![v] = 1 ∧ ∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0 := by
-  rw [reebVectorField, (isContactForm_def.1 hα x).eq_reebVector_iff]
+  rw [reebVectorField, characteristicVectorField_def,
+    (isContactForm_def.1 hα x).eq_reebVector_iff]
   simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt]
 
 /-- A contact form takes the value `1` on its Reeb vector field. -/
 @[simp]
 theorem IsContactForm.apply_reebVectorField (hα : α.IsContactForm) (x : M) :
     α.1 x ![α.reebVectorField x] = 1 :=
-  (hα.eq_reebVectorField_iff_kerDistribution.1 rfl).1
+  apply_characteristicVectorField (isContactForm_def.1 hα x)
 
 /-- The Reeb vector field lies in the kernel of `dα`: `ι_(R_α) dα = 0`. -/
 @[simp]
 theorem IsContactForm.mextDeriv_reebVectorField_left (hα : α.IsContactForm) (x : M)
-    (w : TangentSpace I x) : mextDeriv α.1 x ![α.reebVectorField x, w] = 0 := by
-  have := (isContactForm_def.1 hα x).apply_reebVector_left (isAlt_bilinFormAt _ x) w
-  rwa [← mextDeriv_eq_bilinFormAt] at this
+    (w : TangentSpace I x) : mextDeriv α.1 x ![α.reebVectorField x, w] = 0 :=
+  hα.isStableHamiltonian.mextDeriv_characteristicVectorField_left x w
 
 /-- The Reeb vector field lies in the kernel of `dα`: `dα` vanishes when its second argument is
 the Reeb vector field. -/
 @[simp]
 theorem IsContactForm.mextDeriv_reebVectorField_right (hα : α.IsContactForm) (x : M)
-    (w : TangentSpace I x) : mextDeriv α.1 x ![w, α.reebVectorField x] = 0 := by
-  have := (isContactForm_def.1 hα x).apply_reebVector_right (isAlt_bilinFormAt _ x) w
-  rwa [← mextDeriv_eq_bilinFormAt] at this
+    (w : TangentSpace I x) : mextDeriv α.1 x ![w, α.reebVectorField x] = 0 :=
+  hα.isStableHamiltonian.mextDeriv_characteristicVectorField_right x w
 
 /-- The second Reeb equation as an identity of one-forms: `ι_(R_α) dα = 0`. -/
 theorem IsContactForm.interior_mextDeriv_reebVectorField (hα : α.IsContactForm) :
-    (mextDeriv α.1).interior α.reebVectorField = 0 := by
-  funext x
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, funext fun i ↦ by fin_cases i; rfl⟩
-  simpa using hα.mextDeriv_reebVectorField_left x w
+    (mextDeriv α.1).interior α.reebVectorField = 0 :=
+  hα.isStableHamiltonian.interior_mextDeriv_characteristicVectorField
 
 /-- **Characterization of the Reeb vector field**: `R_α(x)` is the unique tangent vector `v` with
 `α(v) = 1` and `ι_v dα = 0`. -/
@@ -125,30 +131,24 @@ theorem IsContactForm.eq_reebVectorField_iff (hα : α.IsContactForm) {x : M}
     {v : TangentSpace I x} :
     v = α.reebVectorField x ↔
       α.1 x ![v] = 1 ∧ ∀ w : TangentSpace I x, mextDeriv α.1 x ![v, w] = 0 := by
-  rw [hα.eq_reebVectorField_iff_kerDistribution]
-  refine and_congr_right fun _ ↦ ⟨fun h w ↦ ?_, fun h w _ ↦ h w⟩
-  have hv : v = α.reebVectorField x :=
-    hα.eq_reebVectorField_iff_kerDistribution.2 ⟨‹_›, h⟩
-  rw [hv]
-  exact hα.mextDeriv_reebVectorField_left x w
+  rw [reebVectorField, eq_characteristicVectorField_iff (isContactForm_def.1 hα x),
+    mextDerivₗ_apply]
 
 /-- The Reeb vector field of a contact form vanishes nowhere. -/
 theorem IsContactForm.reebVectorField_ne_zero (hα : α.IsContactForm) (x : M) :
     α.reebVectorField x ≠ 0 :=
-  (isContactForm_def.1 hα x).reebVector_ne_zero
+  characteristicVectorField_ne_zero (isContactForm_def.1 hα x)
 
 /-- The Reeb vector field is transverse to the contact distribution. -/
 theorem IsContactForm.reebVectorField_notMem_kerDistribution (hα : α.IsContactForm) (x : M) :
-    α.reebVectorField x ∉ α.kerDistribution x := by
-  rw [kerDistribution_def]
-  exact (isContactForm_def.1 hα x).reebVector_notMem_ker
+    α.reebVectorField x ∉ α.kerDistribution x :=
+  characteristicVectorField_notMem_kerDistribution (isContactForm_def.1 hα x)
 
 /-- The tangent space of a contact manifold splits as the contact hyperplane plus the Reeb line,
 `T_x M = ξ_x ⊕ ℝ R_α(x)`. -/
 theorem IsContactForm.isCompl_kerDistribution_span_reebVectorField (hα : α.IsContactForm)
-    (x : M) : IsCompl (α.kerDistribution x) (ℝ ∙ α.reebVectorField x) := by
-  rw [kerDistribution_def]
-  exact (isContactForm_def.1 hα x).isCompl_ker_span_reebVector
+    (x : M) : IsCompl (α.kerDistribution x) (ℝ ∙ α.reebVectorField x) :=
+  isCompl_kerDistribution_span_characteristicVectorField (isContactForm_def.1 hα x)
 
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
 function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in
@@ -178,7 +178,8 @@ theorem IsContactForm.reebVectorField_eq_inv_smul_add_iff (hα : α.IsContactFor
       (hf.mdifferentiableAt one_ne_zero) (α.mdifferentiableAt x), hw, ha,
       ContinuousLinearMap.coe_coe]
     ring
-  rw [reebVectorField, reebVectorField, hb,
+  rw [reebVectorField, reebVectorField, characteristicVectorField_def,
+    characteristicVectorField_def, hb,
     (isContactForm_def.1 hα x).reebVector_smul_eq_inv_smul_add_iff hdβ y]
   simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt]
   simp only [ContinuousLinearMap.coe_coe]
@@ -196,7 +197,8 @@ theorem IsContactForm.reebVectorField_smul (hα : α.IsContactForm) {c : ℝ} (h
     ext v w
     simp only [map_smul, bilinFormAt_apply, SmoothBundleForm.eval₂_apply, LinearMap.smul_apply,
       Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
-  rw [reebVectorField, reebVectorField, ha, hB, Module.Dual.reebVector_smul_bilinForm hc,
+  rw [reebVectorField, reebVectorField, characteristicVectorField_def,
+    characteristicVectorField_def, ha, hB, Module.Dual.reebVector_smul_bilinForm hc,
     (isContactForm_def.1 hα x).reebVector_smul hc]
 
 omit [FiniteDimensional ℝ E] in

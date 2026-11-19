@@ -149,7 +149,7 @@ theorem carrierEquivSpecialLinear_rankTwoUpperUnitaryRootHom (q : PrimePower)
     ((ofTwistedA 2 q hv).1.rankTwoUpperUnitaryRootHom a)
   simp only [ValidLieTypeIndex.coe_rankTwoUpperUnitaryRootHom,
     HeisenbergGroup.coe_toSpecialLinear] at h
-  simp only [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
+  simp only [SpecialLinearGroup.map_apply_coe,
     HeisenbergGroup.coe_toSpecialLinear]
   -- Normalize the numeric rank in the dependent matrix indices of finite-field descent.
   convert! h using 1
