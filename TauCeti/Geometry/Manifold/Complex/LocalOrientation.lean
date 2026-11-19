@@ -46,7 +46,7 @@ namespace TauCeti
 -- These private lemmas are a temporary copy of the identity-chart comparison of the open Tau Ceti
 -- pull request https://github.com/TauCetiProject/TauCeti/pull/37381, which adds them publicly to
 -- `TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Linear` as
--- `Orientation.localHomologyMap_linearIsometryEquiv_localOrientationOfOrientedChart_refl` and
+-- `LinearIsometryEquiv.localHomologyMap_localOrientationOfOrientedChart_refl` and
 -- `Orientation.localOrientation_eq_localOrientationOfOrientedChart_refl`. Once that lands, this
 -- section is to be deleted and its uses replaced by those lemmas.
 section IdentityChart
