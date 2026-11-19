@@ -110,8 +110,9 @@ estimates do not see the boundary.
   `⟪b, ∇u⟫ + c u` with `v`; `TauCeti.PDE.memLp_inner_gradient` and
   `TauCeti.PDE.memLp_lowerOrder`: `⟪b, ∇u⟫ ∈ L²(Ω)` and `⟪b, ∇u⟫ + c u ∈ L²(Ω)`.
 * `TauCeti.PDE.lowerOrderL`: the lower-order part `u ↦ ⟪b, ∇u⟫ + c u` as a bounded operator
-  `H¹(Ω) → L²(Ω)`, and `TauCeti.PDE.exists_energyFormH1_eq_add_inner`: on `H¹₀(Ω)` the energy
-  form is that of its principal part plus the `L²` pairing of a bounded operator with the value.
+  `H¹(Ω) → L²(Ω)`, and `TauCeti.PDE.energyFormH1_eq_principal_add_inner_lowerOrderL`: tested
+  against `H¹₀(Ω)`, the energy form is that of its principal part plus the `L²` pairing of
+  `TauCeti.PDE.lowerOrderL` with the value.
 * `TauCeti.PDE.energyFormH1_principal_eq_setIntegral_sub` and
   `TauCeti.PDE.exists_forcing_energyFormH1_principal_eq`: a weak equation with bounded
   lower-order coefficients gives a weak equation for its principal part with the `L²` forcing
@@ -975,9 +976,7 @@ theorem exists_forcing_energyFormH1_principal_eq {a : EuclideanSpace ℝ ι → 
 /-- The lower-order part `u ↦ ⟪b, ∇u⟫ + c u` of a divergence-form operator with bounded
 coefficients, as a bounded operator `H¹(Ω) → L²(Ω)`. Its values are characterised by
 `TauCeti.PDE.lowerOrderL_apply_ae`. -/
-def lowerOrderL (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
-    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
-    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma) :
+def lowerOrderL (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega)) :
     W1p mu Omega 2 →L[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
   LinearMap.mkContinuous
     { toFun u := (memLp_lowerOrder hb hc u).toLp _
@@ -1000,23 +999,30 @@ def lowerOrderL (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.res
         rw [h1, RingHom.id_apply, h2, Pi.smul_apply, h3, h4, W1p.gradient_smul, h5]
         simp only [Pi.smul_apply, smul_eq_mul, inner_smul_right]
         ring }
-    ((|beta| + |gamma|) * ‖(jetLpL : W1p mu Omega 2 →L[ℝ] _)‖) fun u => by
+    (((eLpNorm b ⊤ (mu.restrict Omega)).toReal + (eLpNorm c ⊤ (mu.restrict Omega)).toReal) *
+      ‖(jetLpL : W1p mu Omega 2 →L[ℝ] _)‖) fun u => by
       dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
       rw [mul_assoc]
       refine (Lp.norm_le_mul_norm_of_ae_le_mul ?_).trans
         (mul_le_mul_of_nonneg_left (jetLpL.le_opNorm u) (by positivity))
-      filter_upwards [(memLp_lowerOrder hb hc u).coeFn_toLp, jetLpL_apply_ae u, hb_bound,
-        hc_bound] with x h1 h2 hbx hcx
+      -- The coefficients are bounded almost everywhere by their `L^∞` norms.
+      filter_upwards [(memLp_lowerOrder hb hc u).coeFn_toLp, jetLpL_apply_ae u,
+        ae_le_eLpNormEssSup (f := b), ae_le_eLpNormEssSup (f := c)] with x h1 h2 hbx hcx
+      rw [← eLpNorm_exponent_top hb.aestronglyMeasurable] at hbx
+      rw [← eLpNorm_exponent_top hc.aestronglyMeasurable] at hcx
       rw [h1, h2, jetField_apply, Prod.norm_def, Real.norm_eq_abs]
       calc |⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x|
           ≤ ‖b x‖ * ‖W1p.gradient u x‖ + ‖c x‖ * ‖W1p.value u x‖ := by
             refine (abs_add_le _ _).trans (add_le_add (abs_real_inner_le_norm _ _) ?_)
             rw [abs_mul, Real.norm_eq_abs, Real.norm_eq_abs]
-        _ ≤ |beta| * ‖W1p.gradient u x‖ + |gamma| * ‖W1p.value u x‖ := by
+        _ ≤ (eLpNorm b ⊤ (mu.restrict Omega)).toReal * ‖W1p.gradient u x‖ +
+              (eLpNorm c ⊤ (mu.restrict Omega)).toReal * ‖W1p.value u x‖ := by
+            rw [← toReal_eNorm (b x), ← toReal_eNorm (c x)]
             gcongr
-            · exact hbx.trans (le_abs_self _)
-            · exact hcx.trans (le_abs_self _)
-        _ ≤ (|beta| + |gamma|) * max ‖W1p.value u x‖ ‖W1p.gradient u x‖ := by
+            exacts [hb.eLpNorm_ne_top, hc.eLpNorm_ne_top]
+        _ ≤ ((eLpNorm b ⊤ (mu.restrict Omega)).toReal +
+              (eLpNorm c ⊤ (mu.restrict Omega)).toReal) *
+                max ‖W1p.value u x‖ ‖W1p.gradient u x‖ := by
             rw [add_mul]
             gcongr
             · exact le_max_right _ _
@@ -1024,48 +1030,37 @@ def lowerOrderL (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.res
 
 /-- The lower-order operator is almost everywhere `⟪b, ∇u⟫ + c u`. -/
 theorem lowerOrderL_apply_ae (hb : MemLp b ⊤ (mu.restrict Omega))
-    (hc : MemLp c ⊤ (mu.restrict Omega)) (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
-    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma) (u : W1p mu Omega 2) :
-    lowerOrderL hb hc hb_bound hc_bound u =ᵐ[mu.restrict Omega]
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    lowerOrderL hb hc u =ᵐ[mu.restrict Omega]
       fun x => ⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x :=
   (memLp_lowerOrder hb hc u).coeFn_toLp
 
 /-- Paired with the value of a function in `H¹₀(Ω)`, the lower-order operator gives the
 lower-order terms of the energy form. -/
 theorem inner_lowerOrderL_valueL (hb : MemLp b ⊤ (mu.restrict Omega))
-    (hc : MemLp c ⊤ (mu.restrict Omega)) (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
-    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma) (u : W1p mu Omega 2)
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (u : W1p mu Omega 2)
     (v : W1p0 mu Omega 2) :
-    ⟪lowerOrderL hb hc hb_bound hc_bound u, W1p0.valueL v⟫_ℝ =
+    ⟪lowerOrderL hb hc u, W1p0.valueL v⟫_ℝ =
       ∫ x in Omega, (⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x) *
         W1p.value (v : W1p mu Omega 2) x ∂mu := by
   rw [MeasureTheory.L2.inner_def, W1p0.valueL_apply]
   refine integral_congr_ae ?_
-  filter_upwards [lowerOrderL_apply_ae hb hc hb_bound hc_bound u] with x hx
+  filter_upwards [lowerOrderL_apply_ae hb hc u] with x hx
   rw [hx, RCLike.inner_apply, conj_trivial, mul_comm]
 
 /-- **The lower-order terms as an `L²` pairing.** With an essentially bounded principal energy
-density and bounded measurable lower-order coefficients, there is a bounded
-`M : H¹₀(Ω) → L²(Ω)`, namely `u ↦ ⟪b, ∇u⟫ + c u` (`TauCeti.PDE.lowerOrderL`), with
-`a(v, w) = ∫_Ω ⟨∇w, a ∇v⟩ + ⟪M v, w⟫_{L²}` on `H¹₀(Ω)`. -/
-theorem exists_energyFormH1_eq_add_inner
+density and bounded lower-order coefficients, the energy form is that of its principal part plus
+the `L²` pairing of the lower-order operator `TauCeti.PDE.lowerOrderL` with the value of a
+function in `H¹₀(Ω)`:
+
+`a(u, v) = ∫_Ω ⟨∇v, a ∇u⟩ + ⟪⟪b, ∇u⟫ + c u, v⟫_{L²}`. -/
+theorem energyFormH1_eq_principal_add_inner_lowerOrderL
     (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
-    (hb : AEStronglyMeasurable b (mu.restrict Omega))
-    (hc : AEStronglyMeasurable c (mu.restrict Omega))
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
-    ∃ M : W1p0 mu Omega 2 →L[ℝ] Lp ℝ 2 (mu.restrict Omega), ∀ v w : W1p0 mu Omega 2,
-      energyFormH1 a b c (v : W1p mu Omega 2) (w : W1p mu Omega 2) =
-        energyFormH1 a 0 0 (v : W1p mu Omega 2) (w : W1p mu Omega 2) +
-          ⟪M v, W1p0.valueL w⟫_ℝ := by
-  have hb_ae : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta := ae_mem_restrict.mono hb_bound
-  have hc_ae : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma := ae_mem_restrict.mono hc_bound
-  have hbm : MemLp b ⊤ (mu.restrict Omega) := memLp_top_of_bound hb beta hb_ae
-  have hcm : MemLp c ⊤ (mu.restrict Omega) := memLp_top_of_bound hc gamma hc_ae
-  refine ⟨(lowerOrderL hbm hcm hb_ae hc_ae).comp (w1p0Submodule mu Omega 2).toSubmodule.subtypeL,
-    fun v w => ?_⟩
-  rw [energyFormH1_eq_principal_add_setIntegral ha hbm hcm, ContinuousLinearMap.comp_apply,
-    Submodule.subtypeL_apply, inner_lowerOrderL_valueL hbm hcm hb_ae hc_ae]
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    (u : W1p mu Omega 2) (v : W1p0 mu Omega 2) :
+    energyFormH1 a b c u (v : W1p mu Omega 2) =
+      energyFormH1 a 0 0 u (v : W1p mu Omega 2) + ⟪lowerOrderL hb hc u, W1p0.valueL v⟫_ℝ := by
+  rw [energyFormH1_eq_principal_add_setIntegral ha hb hc, inner_lowerOrderL_valueL hb hc]
 
 namespace UniformlyEllipticOn
 

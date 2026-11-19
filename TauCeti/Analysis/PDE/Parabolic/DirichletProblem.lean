@@ -86,7 +86,7 @@ When the coefficients do not depend on time and `a` is symmetric, a forcing in
 that is essentially bounded in `H¹₀(Ω)` (Evans, §7.1.3, Theorem 5). This is the abstract theorem
 `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm` for the
 symmetric coercive part `-∂ᵢ(aⁱʲ ∂ⱼ ·) + λ/2`; the lower-order terms `⟪b, ∇u⟫ + c u`, a bounded
-operator `H¹₀(Ω) → L²(Ω)` (`TauCeti.PDE.exists_energyFormH1_eq_add_inner`), and the mass shift
+operator `H¹₀(Ω) → L²(Ω)` (`TauCeti.PDE.lowerOrderL`), and the mass shift
 `λ/2 u` are moved into the `L²` forcing.
 
 ## Main declarations
@@ -422,6 +422,25 @@ private theorem le_energyFormH1_add_inner [DecidableEq ι]
   rw [← Submodule.norm_coe v, hn, hi]
   linarith
 
+/-- On `H¹₀(Ω)`, pointwise bounded measurable lower-order coefficients contribute the `L²`
+pairing of `TauCeti.PDE.lowerOrderL`, restricted to `H¹₀(Ω)`, with the value. -/
+private theorem exists_energyFormH1_eq_principal_add_inner
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (hb : AEStronglyMeasurable b (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
+    ∃ M : W1p0 mu Omega 2 →L[ℝ] Lp ℝ 2 (mu.restrict Omega), ∀ v w : W1p0 mu Omega 2,
+      energyFormH1 a b c (v : W1p mu Omega 2) (w : W1p mu Omega 2) =
+        energyFormH1 a 0 0 (v : W1p mu Omega 2) (w : W1p mu Omega 2) +
+          ⟪M v, W1p0.valueL w⟫_ℝ := by
+  have hbm : MemLp b ⊤ (mu.restrict Omega) := memLp_top_of_bound hb beta
+    (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hb_bound)
+  have hcm : MemLp c ⊤ (mu.restrict Omega) := memLp_top_of_bound hc gamma
+    (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hc_bound)
+  exact ⟨(lowerOrderL hbm hcm).comp (w1p0Submodule mu Omega 2).toSubmodule.subtypeL,
+    fun v w => energyFormH1_eq_principal_add_inner_lowerOrderL ha hbm hcm _ w⟩
+
 /-- **Time regularity for the parabolic Dirichlet problem** (Evans, §7.1.3, Theorem 5). Let the
 coefficients of `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` be independent of time, with `a` uniformly
 elliptic on `Ω` and symmetric almost everywhere, and `b`, `c` bounded and measurable. Let `u` be a
@@ -479,7 +498,7 @@ theorem exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm [Decidable
   have hcoer (v : W1p0 mu Omega 2) : lam / 2 * ‖v‖ ^ 2 ≤ A₀ v v :=
     (le_energyFormH1_add_inner ha hell v).trans_eq (hA₀ v v).symm
   -- The lower-order terms, moved into the `L²` forcing `g = F - (⟪b, ∇u⟫ + c u) + (λ/2) u`.
-  obtain ⟨M, hM⟩ := exists_energyFormH1_eq_add_inner hcoeff hb hc hb_bound hc_bound
+  obtain ⟨M, hM⟩ := exists_energyFormH1_eq_principal_add_inner hcoeff hb hc hb_bound hc_bound
   have hinj : Function.Injective (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) :=
     fun v w hvw => Subtype.ext (W1p.ext_value (by simpa only [W1p0.valueL_apply] using hvw))
   have : Fact ((2 : ENNReal) ≠ ⊤) := ⟨ENNReal.ofNat_ne_top⟩
