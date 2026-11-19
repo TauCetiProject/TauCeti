@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.Data.ZMod.QuotientRing
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.FiniteCyclic
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.Invariants
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Homology of a finite cyclic group with trivial coefficients
@@ -48,6 +50,8 @@ and `Hᵢ(G, ℤ) = 0` in positive even degree.
 * `Rep.FiniteCyclicGroup.subsingleton_groupHomology_trivial_of_even`: if multiplication by `|G|`
   is injective on `A`, then `Hᵢ(G, A)` vanishes in positive even degree; in particular
   `Hᵢ(G, ℤ) = 0` (`Rep.FiniteCyclicGroup.subsingleton_groupHomology_trivial_int_of_even`).
+* `Rep.FiniteCyclicGroup.finrank_groupHomology_trivial_of_isTorsionBy`: if `|G|` kills `A`, then
+  `Hᵢ(G, A)` has the same `finrank` as `A` in every degree.
 
 ## References
 
@@ -224,6 +228,25 @@ theorem subsingleton_groupHomology_trivial_int_of_even {G : Type} [Group G] [Fin
     Subsingleton (groupHomology (Rep.trivial ℤ G ℤ) i) :=
   subsingleton_groupHomology_trivial_of_even ℤ ℤ
     (IsSMulRegular.of_ne_zero (Nat.cast_ne_zero.2 Nat.card_pos.ne')) i hi
+
+/-- **The homology of a finite cyclic group with coefficients killed by its order.** If `G` is a
+finite cyclic group and `A` is a `k`-module with the trivial action on which multiplication by
+`|G|` vanishes, then `Hᵢ(G, A)` has the same `finrank` as `A` in every degree `i`. -/
+theorem finrank_groupHomology_trivial_of_isTorsionBy
+    (hA : Module.IsTorsionBy k A (Nat.card G : k)) (i : ℕ) :
+    Module.finrank k (groupHomology (Rep.trivial k G A) i) = Module.finrank k A := by
+  classical
+  have := Fintype.ofFinite G
+  let : CommGroup G := IsCyclic.commGroup
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
+  rcases Nat.even_or_odd i with hi | hi
+  · rcases eq_or_ne i 0 with rfl | hi₀
+    · exact (groupHomology.H0IsoOfIsTrivial (Rep.trivial k G A)).toLinearEquiv.finrank_eq
+    · have : NeZero i := ⟨hi₀⟩
+      rw [(groupHomologyTrivialLinearEquivEven k A g hg i hi).finrank_eq,
+        (Module.isTorsionBy_iff_torsionBy_eq_top _).1 hA, finrank_top]
+  · rw [(groupHomologyTrivialLinearEquivOdd k A g hg i hi).finrank_eq,
+      hA.quotSMulTopEquiv.finrank_eq]
 
 end IsCyclic
 
