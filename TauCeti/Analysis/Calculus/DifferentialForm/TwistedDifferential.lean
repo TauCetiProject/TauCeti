@@ -42,8 +42,6 @@ differential of a real function `f` is the one-form `d^c_J f = -(1/2) df ∘ J`.
 * `TauCeti.AlmostComplexStructure.sum_extDeriv_twistedDifferential_apply_eq_laplacian`: for an
   orthogonal `J` and an orthonormal basis `(eᵢ)`, `∑ᵢ d d^c_J f (eᵢ, J eᵢ) = Δ f`. For the
   standard structure on `ℂ` this is `d d^c f = (Δ f / 2) dx ∧ dy`.
-* `TauCeti.AlmostComplexStructure.norm_re_smul_add_im_smul`: for orthogonal `J` and a unit vector
-  `n`, the parametrization `z ↦ Re z • n + Im z • J n` of the complex line of `n` is isometric.
 * `TauCeti.AlmostComplexStructure.laplacian_comp_add_re_smul_add_im_smul`: along a `J`-complex line
   `z ↦ y + Re z • n + Im z • J n`, the Laplacian of the restriction of `f` is
   `2 d d^c_J f (n, J n)`.
@@ -304,18 +302,6 @@ theorem sum_extDeriv_twistedDifferential_apply_eq_laplacian (J : AlmostComplexSt
   rw [← Finset.mul_sum, Finset.sum_sub_distrib, ← hΔJ, hΔ]
   simp only [Finset.sum_neg_distrib]
   ring
-
-omit [FiniteDimensional ℝ V] in
-/-- **The complex line of a unit vector is isometric to `ℂ`.** For an orthogonal `J` and a unit
-vector `n`, the vectors `n` and `J n` are orthonormal, so `‖Re z • n + Im z • J n‖ = ‖z‖`. -/
-theorem norm_re_smul_add_im_smul (J : AlmostComplexStructure V)
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {n : V} (hn : ‖n‖ = 1) (z : ℂ) :
-    ‖z.re • n + z.im • J n‖ = ‖z‖ := by
-  have hJn : ‖J n‖ = 1 := by rw [J.norm_apply hJ, hn]
-  have horth : ⟪n, J n⟫ = 0 := by rw [real_inner_comm, J.inner_apply_self hJ]
-  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply]
-  simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, horth, hn, hJn,
-    ← sq]
 
 /-- **The Laplacian along a `J`-complex line.** For a `C²` function `f`, a point `y` and a vector
 `n`, the restriction `z ↦ f (y + Re z • n + Im z • J n)` of `f` to the complex line through `y`
