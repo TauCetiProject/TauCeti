@@ -100,8 +100,9 @@ theorem mk_sub_mem_normalTube_of_isMinOn {q : V} {y : M} (hf : MDifferentiableAt
   mem_normalTube.mpr ⟨sub_mem_normalSubspace_of_isLocalMin hf (hy.isLocalMin univ_mem),
     by rwa [← dist_eq_norm]⟩
 
-/-- If normal addition is injective on the normal vectors of length less than `ε`, then the base
-point `x` of such a normal vector `v` is the only nearest point of `f` to `f x + v`. -/
+/-- If normal addition is injective on the normal vectors of length less than `ε`, then every
+nearest point of `f` to the endpoint `f x + v` of such a normal vector `v` at `x` is the base
+point `x`. -/
 theorem eq_fst_of_isMinOn_dist_of_mem_normalTube (hf : MDifferentiable I 𝓘(ℝ, V) f)
     (hinj : InjOn (fun p : M × V => f p.1 + p.2) (normalTube I f ε)) {p : M × V}
     (hp : p ∈ normalTube I f ε) {y : M}
@@ -196,16 +197,14 @@ theorem exists_continuousOn_nearestPoint_retraction [Nonempty M]
   have hrange : range g = thickening ε (range f) := by
     rw [range_domRestrict, image_normalTube_eq_thickening hf hinj]
   obtain ⟨x₀⟩ := ‹Nonempty M›
-  have hzero : ∀ x, ((x, 0) : M × V) ∈ normalTube I f ε := fun x =>
-    mem_normalTube.mpr ⟨zero_mem _, by simpa using hε⟩
-  have : Nonempty (normalTube I f ε) := ⟨⟨(x₀, 0), hzero x₀⟩⟩
+  have : Nonempty (normalTube I f ε) := ⟨⟨(x₀, 0), mk_zero_mem_normalTube hε x₀⟩⟩
   -- The retraction is the base point of the inverse of the tube coordinates.
   set e := hemb.toOpenPartialHomeomorph g
   refine ⟨fun q => (e.symm q).val.1, ?_, fun x => ?_, fun q hq z => ?_⟩
   · refine (continuous_fst.comp continuous_subtype_val).comp_continuousOn
       (e.continuousOn_symm.mono ?_)
     rw [IsOpenEmbedding.toOpenPartialHomeomorph_target, hrange]
-  · have hx : g ⟨(x, 0), hzero x⟩ = f x := by simp [g]
+  · have hx : g ⟨(x, 0), mk_zero_mem_normalTube hε x⟩ = f x := by simp [g]
     simp only [e, ← hx, IsOpenEmbedding.toOpenPartialHomeomorph_left_inv]
   · have hq' : f (e.symm q).val.1 + (e.symm q).val.2 = q :=
       hemb.toOpenPartialHomeomorph_right_inv g (hrange ▸ hq)
@@ -233,7 +232,7 @@ theorem exists_contMDiffOn_nearestPoint_retraction [Nonempty M] [FiniteDimension
     fun q p hp hpq =>
       eq_fst_of_isMinOn_dist_of_mem_normalTube hd hinj hp (by rw [hpq]; exact hr q)
   have hrf : ∀ x, r (f x) = x := fun x =>
-    hbase (f x) (x, 0) (mem_normalTube.mpr ⟨zero_mem _, by simpa using hε⟩) (add_zero _)
+    hbase (f x) (x, 0) (mk_zero_mem_normalTube hε x) (add_zero _)
   -- Near each point of the image, `r` is a local `C^n` normal retraction.
   have hloc : ∀ x₀ : M, ∃ t : Set V, IsOpen t ∧ f x₀ ∈ t ∧ ContMDiffOn 𝓘(ℝ, V) I n r t := by
     intro x₀
