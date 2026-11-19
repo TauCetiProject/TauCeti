@@ -217,9 +217,10 @@ private theorem isNondegenerateRankZeroPoint_iff_comp_right_aux
       fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
     simpa using congr($h (e.symm v))
   -- At a critical point of `F`, the chain rule identifies the Hessians through `dφ_y`.
-  have hQ (h : mvfderiv I F (φ y) = 0) (ℓ : G →L[ℝ] ℝ) :=
-    toQuadraticMap_toBilinForm_criticalHessian_comp hφ e he hF (ℓ := ℓ)
-      (by rw [h, ContinuousLinearMap.comp_zero])
+  have hQ (h : mvfderiv I F (φ y) = 0) (ℓ : G →L[ℝ] ℝ) :
+      (criticalHessian I' (ℓ ∘ F ∘ φ) y).toBilinForm.toQuadraticMap =
+        (criticalHessian I (ℓ ∘ F) (φ y)).toBilinForm.toQuadraticMap.comp e.toLinearEquiv := by
+    rw [toQuadraticMap_toBilinForm_criticalHessian_comp hφ hF (by rw [h, ℓ.comp_zero]), ← he]; rfl
   have hsymp : SymplecticForm.IsSymplectomorphism η (hσ.symplecticFormAt (φ y)) e.toLinearEquiv :=
     SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ by simp [← hη, ← he]
   refine ⟨fun ⟨_, h, hfam⟩ ↦ ⟨hF, h0.1 h, ?_⟩, fun h ↦ ⟨hF.comp y hφ, h0.2 h.mvfderiv_eq_zero, ?_⟩⟩
