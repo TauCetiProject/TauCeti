@@ -240,8 +240,12 @@ end Trivialization
 
 section Character
 
-variable [ContinuousConstSMul G M] [T2Space M] {E : Type w} [NormedAddCommGroup E]
+variable [ContinuousConstSMul G M] {E : Type w} [NormedAddCommGroup E]
   [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {d : ℕ}
+
+section
+
+variable [T1Space M]
 
 /-- The integer by which an element of the stabilizer of `x` acts on `H_d(M, M ∖ {x}; ℤ)`. -/
 private def stabilizerScalar (hd : finrank ℝ E = d) (x : M) (h : stabilizer G x) : ℤ :=
@@ -329,11 +333,13 @@ theorem localHomologySMulIso_mul_hom_apply (hd : finrank ℝ E = d) {x y : M} (g
     (mem_stabilizer_iff.1 h.2) hg, ModuleCat.comp_apply,
     localHomologySMulIso_hom_apply_eq_zsmul hd h, map_zsmul]
 
+end
+
 /-- **The orientation character is constant on path components of the stabilizer.** Elements of
 the stabilizer of `x` joined by a path in the stabilizer act in the same way on local homology at
 `x`. In particular `χ` is trivial on a path-connected stabilizer. -/
-theorem isotropyOrientationCharacter_eq_of_joined [TopologicalSpace G] [ContinuousInv G]
-    [ContinuousSMul G M] (hd : finrank ℝ E = d) {x : M} {h h' : stabilizer G x}
+theorem isotropyOrientationCharacter_eq_of_joined [T2Space M] [TopologicalSpace G]
+    [ContinuousInv G] [ContinuousSMul G M] (hd : finrank ℝ E = d) {x : M} {h h' : stabilizer G x}
     (hJ : Joined h h') :
     isotropyOrientationCharacter hd x h = isotropyOrientationCharacter hd x h' := by
   -- The class of a path from `h` to `h'` in the stabilizer.
