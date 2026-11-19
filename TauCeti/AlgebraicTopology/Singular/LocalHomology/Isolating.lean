@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import Mathlib.Geometry.Manifold.HasGroupoid
 import Mathlib.Topology.Homotopy.Affine
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # The local degree on an isolating open set
@@ -22,8 +23,8 @@ Restricting `f` to `U`, with the orientation `o` restricted to `U`
 It counts, with orientation signs and multiplicities, the solutions in `U` of `f x = y`. This file
 develops the properties of this count under the hypothesis that `U` is *isolating*: the closure of
 `U` is compact and `f` does not take the value `y` on the frontier of `U`. Then the solutions of
-`f x = y` in `U` form a compact set (`TauCeti.isCompact_preimage_restrict_of_frontier`), and the
-count is stable:
+`f x = y` in `U` form a compact set, as do those of a homotopy which avoids `y` on the frontier
+(`TauCeti.isCompact_setOf_apply_eq_of_frontier`), and the count is stable:
 
 * **Homotopy invariance.** The count is unchanged along a homotopy which takes no value `y` on the
   frontier of `U` at any time
@@ -50,13 +51,9 @@ count is stable:
   the sign of the Jacobian (`TauCeti.HomologicalOrientation.localIndex_comap_eq_sign_det`), so the
   count is then `∑ sign det Df(x)`.
 
-This is the form in which finite-dimensional reductions of nonlinear elliptic equations are
-counted. A Fredholm section is reduced, on a compact window `U` of a finite-dimensional parameter
-space, to a map `F : U → ℝⁿ` whose zeros are the solutions; the window is isolating when the
-boundary infimum `b = inf_{∂U} ‖F‖` is positive. Perturbing the equation, for instance by a small
-curvature forcing and by small coefficients of a cut-down section, perturbs `F` by at most
-`b / 4 + b / 4 < b` on the frontier, so the perturbed zeros, counted with their orientation signs,
-have the same total as those of `F`.
+This is the form in which the solutions of finite-dimensional reductions of nonlinear elliptic
+equations are counted (Taubes): a positive boundary margin `b` on an isolating open set lets any
+perturbation with sup-norm below `b` on the frontier preserve the oriented count of solutions.
 
 ## Main results
 
@@ -93,26 +90,6 @@ open Module Set Topology TopologicalSpace unitInterval
 
 namespace TauCeti
 
-/-- On an open set `U` with compact closure, if `f` does not take the value `y` on the frontier of
-`U`, the solutions in `U` of `f x = y` form a compact set. -/
-theorem isCompact_preimage_restrict_of_frontier {M N : Type*} [TopologicalSpace M]
-    [TopologicalSpace N] [T1Space N] {U : Opens M} (hU : IsCompact (closure (U : Set M)))
-    {f : C(M, N)} {y : N} (hf : ∀ x ∈ frontier (U : Set M), f x ≠ y) :
-    IsCompact (f.restrict U ⁻¹' {y}) := by
-  have hK : IsCompact (closure (U : Set M) ∩ f ⁻¹' {y}) :=
-    hU.inter_right (isClosed_singleton.preimage f.continuous)
-  -- The solutions in the closure avoid the frontier, so they lie in `U`.
-  have hsub : closure (U : Set M) ∩ f ⁻¹' {y} ⊆ range (Subtype.val : U → M) := by
-    rintro x ⟨hxc, hxy⟩
-    rw [Subtype.range_coe]
-    by_contra hxU
-    exact hf x ⟨hxc, by rwa [U.isOpen.interior_eq]⟩ hxy
-  convert (U.isOpenEmbedding'.isInducing.isCompact_preimage_iff hsub).2 hK using 1
-  ext x
-  simp only [mem_preimage, mem_inter_iff, subset_closure x.2, true_and]
-  -- `f.restrict U x` is `f x` by definition, through the coercion of `U` to a set.
-  exact Iff.rfl
-
 namespace HomologicalOrientation
 
 variable {M E : Type} [TopologicalSpace M] [T2Space M]
@@ -139,21 +116,10 @@ theorem localDegree_restrict_eq_of_homotopy {U : Opens M} (hU : IsCompact (closu
   let H' : (f₀.restrict U).Homotopy (f₁.restrict U) :=
     H.compContinuousMap ⟨Subtype.val, continuous_subtype_val⟩
   refine (o.comap U.isOpenEmbedding').localDegree_eq_of_homotopy_of_isCompact o' hE hF H' ?_
-  let j : C(I × U, I × M) :=
-    (ContinuousMap.id I).prodMap ⟨Subtype.val, continuous_subtype_val⟩
-  have hj : IsInducing j := IsInducing.id.prodMap U.isOpenEmbedding'.isInducing
-  have hK : IsCompact ((univ : Set I) ×ˢ closure (U : Set M) ∩ H ⁻¹' {y}) :=
-    (isCompact_univ.prod hU).inter_right (isClosed_singleton.preimage H.continuous)
-  have hsub : (univ : Set I) ×ˢ closure (U : Set M) ∩ H ⁻¹' {y} ⊆ range j := by
-    rintro ⟨t, x⟩ ⟨⟨-, hxc⟩, hxy⟩
-    have hxU : x ∈ U := by
-      by_contra hxU
-      exact hH t x ⟨hxc, by rwa [U.isOpen.interior_eq]⟩ hxy
-    exact ⟨(t, ⟨x, hxU⟩), rfl⟩
-  convert (hj.isCompact_preimage_iff hsub).2 hK using 1
+  convert isCompact_setOf_apply_eq_of_frontier U.isOpen hU H.continuous hH using 1
   ext ⟨t, x⟩
-  simp only [mem_preimage, mem_inter_iff, mem_prod, mem_univ, true_and]
-  exact ⟨fun h ↦ ⟨subset_closure x.2, h⟩, fun h ↦ h.2⟩
+  -- `H' (t, x)` is `H (t, x)` by definition of `ContinuousMap.Homotopy.compContinuousMap`.
+  exact Iff.rfl
 
 include hF in
 /-- **Invariance along a path of parameters.** Let `Φ` be a continuous family of maps `M → N`
@@ -204,6 +170,8 @@ theorem localDegree_restrict_eq_of_le {U V : Opens M} (hVU : V ≤ U) {f : C(M, 
   -- Read `V` inside `U` through the inclusion, an open embedding.
   let ι : C(V, U) := ContinuousMap.inclusion hVU
   have hι : IsOpenEmbedding ι := Opens.isOpenEmbedding_of_le hVU
+  -- A solution `z` of `f.restrict U z = y` is a solution `f z = y` in `U`, by definition of
+  -- `ContinuousMap.restrict`.
   have hy : f.restrict U ⁻¹' {y} ⊆ range ι := fun z hz ↦
     ⟨⟨z, h ⟨hz, z.2⟩⟩, rfl⟩
   have key := (o.comap U.isOpenEmbedding').localDegree_comap_comp o' hE hF hι (f.restrict U) hy
@@ -219,7 +187,7 @@ theorem localDegree_restrict_eq_sum_localIndex {U : Opens M} {f : C(M, N)} {y : 
       ∑ x ∈ hy.toFinset, o.localIndex o' f x := by
   have hpre : f.restrict U ⁻¹' {y} = Subtype.val ⁻¹' (f ⁻¹' {y} ∩ U) := by
     ext x
-    simp only [mem_preimage, mem_inter_iff]
+    simp only [mem_preimage, mem_inter_iff, ContinuousMap.restrict_apply]
     exact ⟨fun h ↦ ⟨h, x.2⟩, fun h ↦ h.1⟩
   have hy' : (f.restrict U ⁻¹' {y}).Finite :=
     hpre ▸ hy.preimage Subtype.val_injective.injOn
@@ -259,9 +227,8 @@ theorem localDegree_restrict_eq_of_norm_sub_lt {U : Opens M}
   refine o.localDegree_restrict_eq_of_homotopy o' hE hF hU (.affine f g) fun t x hx hxy ↦ ?_
   -- At a solution `f x + t (g x - f x) = y`, the margin `‖f x - y‖ = t ‖g x - f x‖` is too small.
   have hft : f x - y = -((t : ℝ) • (g x - f x)) := by
-    rw [← hxy, ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module, smul_sub,
-      sub_smul, one_smul]
-    abel
+    simp only [ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module] at hxy
+    linear_combination (norm := module) hxy
   have hle : ‖f x - y‖ ≤ ‖g x - f x‖ := by
     rw [hft, norm_neg, norm_smul, Real.norm_of_nonneg t.2.1]
     exact mul_le_of_le_one_left (norm_nonneg _) t.2.2
