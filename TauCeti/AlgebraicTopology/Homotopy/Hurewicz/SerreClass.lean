@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.SerreClass.Torsion
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Torsion
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
+import TauCeti.AlgebraicTopology.EilenbergMacLane.SerreClass
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
 import TauCeti.AlgebraicTopology.Singular.Cubical.Based.Retraction
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
@@ -61,8 +62,6 @@ The converse direction, from homology to homotopy, and the comparison of `πₖ`
 * `TauCeti.prop_singularHomology_of_nConnectedCover`: one step down the Whitehead tower.
 * `TauCeti.prop_singularHomology_of_prop_homotopyGroup`: Serre's theorem, homotopy groups in `P`
   through degree `k` give homology in `P` through degree `k`.
-* `TauCeti.IsEilenbergMacLaneSpace.prop_singularHomology_of_one`: for a Serre class closed under
-  direct sums, Serre's axiom for `K(G, 1)` spaces gives it for all `K(G, n)` spaces.
 * `TauCeti.isAddTorsion_singularHomology_of_isMulTorsion_homotopyGroup`: torsion homotopy groups
   through degree `k` give torsion homology through degree `k`.
 
@@ -225,37 +224,6 @@ theorem prop_singularHomology_of_prop_homotopyGroup (k : ℕ)
     exact HomotopyGroup.pi1MulEquivFundamentalGroup.toEquiv.subsingleton
   exact prop_singularHomology_of_add P k hK k 0 y (by omega) h₁
     (fun j _ hjk ↦ hY j hjk) i hi0 hik
-
-/-! ### Eilenberg--Mac Lane spaces in all degrees -/
-
-/-- **Serre's axiom on Eilenberg--Mac Lane spaces, from degree one to all degrees.** Let `P` be a
-Serre class closed under direct sums and `G` a group such that every `K(G, 1)` space has its
-positive-degree integral homology in `P`. Then so does every `K(G, n + 1)` space. The induction
-runs through the based path fibration `K(G, n + 1) → E → K(G, n + 2)`, whose total space `E` is
-contractible. -/
-theorem IsEilenbergMacLaneSpace.prop_singularHomology_of_one
-    [∀ J : Type, P.IsClosedUnderColimitsOfShape (Discrete J)] {G : Type} [Group G]
-    (h₁ : ∀ (Z : Type) [TopologicalSpace Z] (z : Z), IsEilenbergMacLaneSpace G 1 Z z →
-      ∀ q, q ≠ 0 → P (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj
-        (ModuleCat.of ℤ ℤ)).obj (TopCat.of Z)))
-    (n : ℕ) {Z : Type} [TopologicalSpace Z] {z : Z} (hZ : IsEilenbergMacLaneSpace G (n + 1) Z z)
-    {q : ℕ} (hq : q ≠ 0) :
-    P (((singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj (ModuleCat.of ℤ ℤ)).obj
-      (TopCat.of Z)) := by
-  induction n generalizing Z z q with
-  | zero => exact h₁ Z z hZ q hq
-  | succ n ih =>
-    have := hZ.pathConnectedSpace
-    -- The based path fibration `E → Z`, sending a path ending at `z` to its starting point.
-    let p : TopCat.of (MappingPathFiber (ContinuousMap.id Z) z) ⟶ TopCat.of Z :=
-      TopCat.ofHom (MappingPathFiber.proj _ z)
-    have hp : TopCat.serreFibrations p :=
-      (MappingPathFiber.isHurewiczFibration_proj.{0} _ _).mem_serreFibrations
-    -- Every fibre is homotopy equivalent to the loop space, a `K(G, n + 1)` space.
-    have hfib (b : Z) := hZ.exists_fiber_mappingPathFiberProj (ContinuousMap.id Z) z b
-    exact TopCat.prop_singularHomology_of_contractibleSpace P P le_rfl hp hq
-      (fun b ↦ (hfib b).choose_spec.pathConnectedSpace)
-      (fun b q' hq' _ ↦ ih (hfib b).choose_spec hq')
 
 /-! ### Torsion homotopy groups -/
 
