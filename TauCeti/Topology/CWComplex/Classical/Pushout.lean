@@ -519,23 +519,8 @@ theorem exists_homotopyEquiv_relCWAdjunctionSpace (e : Z ≃ₕ Z') (C : Set X) 
         pushout.inr (relCWBaseInclusion C) (TopCat.ofHom (e.toFun.comp a)) (e z)) ∧
       ∀ z, E.symm (pushout.inr (relCWBaseInclusion C) (TopCat.ofHom (e.toFun.comp a)) z) =
         pushout.inr (relCWBaseInclusion C) (TopCat.ofHom a) (e.symm z) := by
-  have h := IsPushout.of_hasPushout (relCWBaseInclusion C) (TopCat.ofHom a)
-  have h' := IsPushout.of_hasPushout (relCWBaseInclusion C) (TopCat.ofHom (e.toFun.comp a))
-  have ha : TopCat.ofHom a ≫ TopCat.ofHom e.toFun = TopCat.ofHom (e.toFun.comp a) :=
-    (TopCat.ofHom_comp _ _).symm
-  -- The map of attachments which is `e` on `Z` and the identity on `C`.
-  let F : relCWAdjunctionSpace C a ⟶ relCWAdjunctionSpace C (e.toFun.comp a) :=
-    h.desc (pushout.inl _ _) (TopCat.ofHom e.toFun ≫ pushout.inr _ _) (by
-      rw [← Category.assoc, ha]
-      exact h'.w)
-  obtain ⟨G, hG, hFG, hGF⟩ := h.exists_homotopic_id_of_homotopic_id h'
-    (isEmbedding_relCWBaseInclusion C) (hasHomotopyExtensionProperty_range_relCWBaseInclusion C)
-    ha (g := TopCat.ofHom e.invFun)
-    (by simpa using e.left_inv) (by simpa using e.right_inv) (h.inl_desc _ _ _)
-    (h.inr_desc _ _ _)
-  refine ⟨⟨F.hom, G.hom, by rw [← TopCat.hom_comp]; exact hFG,
-    by rw [← TopCat.hom_comp]; exact hGF⟩, fun z ↦ ?_, fun z ↦ ?_⟩
-  · exact ConcreteCategory.congr_hom (h.inr_desc _ _ _) z
-  · exact ConcreteCategory.congr_hom hG z
+  have h := e.exists_homotopyEquiv_pushout _ (isEmbedding_relCWBaseInclusion C)
+    (hasHomotopyExtensionProperty_range_relCWBaseInclusion C) (TopCat.ofHom a)
+  rwa [← TopCat.ofHom_comp] at h
 
 end ContinuousMap.HomotopyEquiv
