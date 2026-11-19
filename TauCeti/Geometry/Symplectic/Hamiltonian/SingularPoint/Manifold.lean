@@ -26,12 +26,13 @@ subalgebra of its symplectic Lie algebra. At a critical point the transversal sp
 This file transfers the linear notion `TauCeti.SymplecticForm.IsNondegeneratePoint`, which lives on
 a symplectic vector space, to manifolds, and shows that it is intrinsic.
 
-* In the preferred chart at `x`, the notion is the linear one for the coordinate expression of `F`
-  and the value of `σ` at `x`
+* On a boundaryless manifold, in the preferred chart at `x`, the notion is the linear one for the
+  coordinate expression of `F` and the value of `σ` at `x`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isNondegeneratePoint_iff_comp_extChartAt_symm`).
-* It is invariant under symplectic changes of coordinates: if `φ : N → M` is `C²` at `y`, has
-  invertible differential there and pulls `σ` back to `τ` at `y`, then `y` is a nondegenerate
-  point of `F ∘ φ` for `τ` exactly when `φ y` is one of `F` for `σ`
+* It is invariant under symplectic changes of coordinates: for boundaryless manifolds `M` and
+  `N`, if `φ : N → M` is `C²` at `y`, has invertible differential there and pulls `σ` back to `τ`
+  at `y`, then for `F` which is `C²` at `φ y`, the point `y` is a nondegenerate point of `F ∘ φ`
+  for `τ` exactly when `φ y` is one of `F` for `σ`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isNondegeneratePoint_comp_right_iff`). The differential
   `dφ_y` is a linear symplectomorphism carrying `ker d(F ∘ φ)_y` onto `ker dF_(φ y)`, so it induces
   a symplectomorphism of transversal spaces
@@ -41,8 +42,9 @@ a symplectic vector space, to manifolds, and shows that it is intrinsic.
   Darboux chart, with the linear notion on the source
   (`TauCeti.SymplecticForm.isNondegeneratePoint_comp_right_iff`), so nondegeneracy may be checked
   in any symplectic coordinates.
-* It depends only on the germ of `F`, and at a critical point of `F` it is nondegeneracy of rank
-  zero (`IsNondegenerate.isNondegeneratePoint_iff_isNondegenerateRankZeroPoint`, in the namespace
+* It depends only on the germ of `F`, and on a boundaryless manifold, at a critical point of `F`
+  it is nondegeneracy of rank zero
+  (`IsNondegenerate.isNondegeneratePoint_iff_isNondegenerateRankZeroPoint`, in the namespace
   `TauCeti.SmoothTwoForm`).
 
 ## Main definitions
@@ -67,123 +69,6 @@ open Function Module Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti
-
-/-! ### Transversal nondegeneracy of a linear map and a family of quadratic forms -/
-
-namespace SymplecticForm
-
-variable {V V' G : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-  [FiniteDimensional ℝ V] [AddCommGroup V'] [Module ℝ V'] [TopologicalSpace V']
-  [FiniteDimensional ℝ V'] [NormedAddCommGroup G] [NormedSpace ℝ G]
-
-/-- The common content of the linear and the manifold notion of a nondegenerate point, for the
-differential `T` of the map and the Hessians `Q ℓ` of the functions `ℓ ∘ F`: the forms `Q ℓ` with
-`ℓ ∘ T = 0` descend to the reduced space of `ker T` and form a nondegenerate family there. -/
-private def IsTransversallyNondegenerate (ω₁ : SymplecticForm V) (T : V →L[ℝ] G)
-    (Q : (G →L[ℝ] ℝ) → QuadraticForm ℝ V) : Prop :=
-  ∃ hQ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ T.ker ⊓ ω₁.orthogonal T.ker, ∀ u ∈ T.ker,
-      QuadraticMap.polar (Q ℓ) w u = 0,
-    (ω₁.reduction T.ker).IsNondegenerateQuadraticFamily
-      fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦ ω₁.reducedQuadraticForm _ (Q ℓ.1) (hQ ℓ.1 ℓ.2)
-
-/-- The linear notion of a nondegenerate point, unbundled. -/
-private theorem isNondegeneratePoint_iff_isTransversallyNondegenerate {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {ω₁ : SymplecticForm E}
-    {F : E → G} {x : E} :
-    ω₁.IsNondegeneratePoint F x ↔ ContDiffAt ℝ 2 F x ∧
-      IsTransversallyNondegenerate ω₁ (fderiv ℝ F x)
-        fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ F) x :=
-  ⟨fun h ↦ ⟨h.1, h.2, h.3⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩⟩
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ V'] in
-/-- A functional kills the image of `T ∘ e` exactly when it kills the image of `T`. -/
-private theorem comp_comp_eq_zero_iff (e : V ≃L[ℝ] V') (T : V' →L[ℝ] G) (ℓ : G →L[ℝ] ℝ) :
-    ℓ.comp (T.comp (e : V →L[ℝ] V')) = 0 ↔ ℓ.comp T = 0 := by
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ by
-    rw [← ContinuousLinearMap.comp_assoc, h, ContinuousLinearMap.zero_comp]⟩
-  simpa using congr($h (e.symm v))
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ V'] in
-/-- `e` carries `ker (T ∘ e)` onto `ker T`. -/
-private theorem map_ker_comp (e : V ≃L[ℝ] V') (T : V' →L[ℝ] G) :
-    (T.comp (e : V →L[ℝ] V')).ker.map (e.toLinearEquiv : V →ₗ[ℝ] V') = T.ker := by
-  ext v'
-  rw [Submodule.mem_map_equiv]
-  simp
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ V'] in
-/-- The descent condition of a quadratic form `R` on `V'` along `ker T` holds exactly when it holds
-for its pullback `R ∘ e` along `ker (T ∘ e)`, for a linear symplectomorphism `e`: `e` carries
-`U ∩ U^ω₁` onto `U' ∩ U'^ω₂`, for `U = ker (T ∘ e)` and `U' = ker T`. -/
-private theorem forall_polar_comp_eq_zero_iff {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm V'}
-    (e : V ≃L[ℝ] V') (he : IsSymplectomorphism ω₁ ω₂ e.toLinearEquiv) (T : V' →L[ℝ] G)
-    (R : QuadraticForm ℝ V') :
-    (∀ w ∈ (T.comp (e : V →L[ℝ] V')).ker ⊓ ω₁.orthogonal (T.comp (e : V →L[ℝ] V')).ker,
-        ∀ u ∈ (T.comp (e : V →L[ℝ] V')).ker,
-          QuadraticMap.polar (R.comp (e.toLinearEquiv : V →ₗ[ℝ] V')) w u = 0) ↔
-      ∀ w ∈ T.ker ⊓ ω₂.orthogonal T.ker, ∀ u ∈ T.ker, QuadraticMap.polar R w u = 0 := by
-  have hker (v : V) : v ∈ (T.comp (e : V →L[ℝ] V')).ker ↔ e v ∈ T.ker := by simp
-  have horth (v : V) : v ∈ ω₁.orthogonal (T.comp (e : V →L[ℝ] V')).ker ↔
-      e v ∈ ω₂.orthogonal T.ker := by
-    rw [← map_ker_comp e T, ← he.map_orthogonal, Submodule.mem_map_equiv]
-    simp
-  simp only [Submodule.mem_inf, hker, horth]
-  constructor
-  · intro h w' hw' u' hu'
-    obtain ⟨w, rfl⟩ := e.surjective w'
-    obtain ⟨u, rfl⟩ := e.surjective u'
-    simpa [QuadraticMap.polar, map_add] using h w hw' u hu'
-  · intro h w hw u hu
-    simpa [QuadraticMap.polar, map_add] using h _ hw _ hu
-
-/-- **Transport of transversal nondegeneracy along a linear symplectomorphism.** Let
-`e : V ≃ V'` carry `ω₁` to `ω₂` and let `T : V' → G` be linear. If the forms `Q' ℓ` on `V` are the
-pullbacks along `e` of the forms `Q ℓ` on `V'` whenever `ℓ ∘ T = 0`, then `(T ∘ e, Q')` is
-transversally nondegenerate for `ω₁` exactly when `(T, Q)` is for `ω₂`: `e` carries `ker (T ∘ e)`
-onto `ker T` and induces a symplectomorphism of the reduced spaces through which the reduced
-forms correspond. -/
-private theorem isTransversallyNondegenerate_comp_iff {ω₁ : SymplecticForm V}
-    {ω₂ : SymplecticForm V'} (e : V ≃L[ℝ] V') (he : IsSymplectomorphism ω₁ ω₂ e.toLinearEquiv)
-    (T : V' →L[ℝ] G) {Q : (G →L[ℝ] ℝ) → QuadraticForm ℝ V'}
-    {Q' : (G →L[ℝ] ℝ) → QuadraticForm ℝ V}
-    (hQ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → Q' ℓ = (Q ℓ).comp (e.toLinearEquiv : V →ₗ[ℝ] V')) :
-    IsTransversallyNondegenerate ω₁ (T.comp (e : V →L[ℝ] V')) Q' ↔
-      IsTransversallyNondegenerate ω₂ T Q := by
-  have hdesc : (∀ ℓ : G →L[ℝ] ℝ, ℓ.comp (T.comp (e : V →L[ℝ] V')) = 0 →
-        ∀ w ∈ (T.comp (e : V →L[ℝ] V')).ker ⊓ ω₁.orthogonal (T.comp (e : V →L[ℝ] V')).ker,
-          ∀ u ∈ (T.comp (e : V →L[ℝ] V')).ker, QuadraticMap.polar (Q' ℓ) w u = 0) ↔
-      ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ T.ker ⊓ ω₂.orthogonal T.ker, ∀ u ∈ T.ker,
-        QuadraticMap.polar (Q ℓ) w u = 0 := by
-    refine forall_congr' fun ℓ ↦ ?_
-    rw [comp_comp_eq_zero_iff]
-    refine imp_congr_right fun hℓT ↦ ?_
-    rw [hQ ℓ hℓT]
-    exact forall_polar_comp_eq_zero_iff e he T (Q ℓ)
-  have hc := isSymplectomorphism_reducedSpaceCongr e.toLinearEquiv he (map_ker_comp e T)
-  -- Reindexing the functionals killing the image of `T ∘ e` by those killing the image of `T`.
-  let r : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ≃
-      {ℓ : G →L[ℝ] ℝ // ℓ.comp (T.comp (e : V →L[ℝ] V')) = 0} :=
-    Equiv.subtypeEquivRight fun ℓ ↦ (comp_comp_eq_zero_iff e T ℓ).symm
-  -- The reduced forms of the `Q' ℓ` are those of the `Q ℓ`, read through the induced map.
-  have key (hD : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → ∀ w ∈ T.ker ⊓ ω₂.orthogonal T.ker,
-      ∀ u ∈ T.ker, QuadraticMap.polar (Q ℓ) w u = 0) :
-      (ω₁.reduction (T.comp (e : V →L[ℝ] V')).ker).IsNondegenerateQuadraticFamily
-          (fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (T.comp (e : V →L[ℝ] V')) = 0} ↦
-            ω₁.reducedQuadraticForm _ (Q' ℓ.1) (hdesc.2 hD ℓ.1 ℓ.2)) ↔
-        (ω₂.reduction T.ker).IsNondegenerateQuadraticFamily
-          fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦
-            ω₂.reducedQuadraticForm _ (Q ℓ.1) (hD ℓ.1 ℓ.2) := by
-    rw [← isNondegenerateQuadraticFamily_comp_iff hc]
-    refine isNondegenerateQuadraticFamily_iff_of_span_eq (congrArg _ ?_)
-    refine (r.surjective.range_comp _).symm.trans (congrArg range (funext fun ℓ ↦ ?_))
-    rw [Function.comp_apply, reducedQuadraticForm_comp_reducedSpaceCongr
-      (hQe := (forall_polar_comp_eq_zero_iff e he T _).2 (hD ℓ.1 ℓ.2))]
-    congr 1
-    exact hQ ℓ.1 ℓ.2
-  exact ⟨fun ⟨h₁, h₂⟩ ↦ ⟨hdesc.1 h₁, (key (hdesc.1 h₁)).1 h₂⟩,
-    fun ⟨h₁, h₂⟩ ↦ ⟨hdesc.2 h₁, (key h₁).2 h₂⟩⟩
-
-end SymplecticForm
 
 /-! ### Nondegenerate points on manifolds -/
 
@@ -260,7 +145,7 @@ theorem isNondegeneratePoint_iff_comp_extChartAt_symm :
     funext fun ℓ ↦ by rw [toQuadraticMap_toBilinForm_criticalHessian, Function.comp_assoc]
   rw [isNondegeneratePoint_iff_isTransversallyNondegenerate, hQ,
     mvfderiv_eq_fderiv_comp_extChartAt_symm, contMDiffAt_iff_contDiffAt_comp_extChartAt_symm]
-  exact SymplecticForm.isNondegeneratePoint_iff_isTransversallyNondegenerate.symm
+  exact (SymplecticForm.isNondegeneratePoint_iff_of_fderiv_eq rfl).symm
 
 /-- **Comparison with rank zero.** On a boundaryless manifold, at a critical point of `F` the
 transversal space is the whole tangent space, and `x` is a nondegenerate point exactly when it is
@@ -354,12 +239,10 @@ theorem _root_.TauCeti.SymplecticForm.isNondegeneratePoint_comp_right_iff
       (criticalHessian 𝓘(ℝ, E') (ℓ ∘ F ∘ φ) y).toBilinForm.toQuadraticMap) =
       fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ (F ∘ φ)) y :=
     funext fun ℓ ↦ by
-      rw [toQuadraticMap_toBilinForm_criticalHessian]
-      simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
-        Function.comp_id, id_eq]
-      -- The two sides differ only in the instances on `TangentSpace 𝓘(ℝ, E') y` and on `E'`.
+      rw [criticalHessian_modelSpace, hessianQuadraticForm_def]
+      -- The two sides differ only in reading `E'` as `TangentSpace 𝓘(ℝ, E') y`.
       rfl
-  rw [SymplecticForm.isNondegeneratePoint_iff_isTransversallyNondegenerate, hT, hQ,
+  rw [SymplecticForm.isNondegeneratePoint_iff_of_fderiv_eq rfl, hT, hQ,
     contMDiffAt_iff_contDiffAt]
   -- The two sides differ only in the instances on `E'` and on `TangentSpace 𝓘(ℝ, E') y`.
   exact Iff.rfl
