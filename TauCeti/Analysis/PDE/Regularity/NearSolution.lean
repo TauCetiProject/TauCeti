@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -84,14 +85,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
 
 namespace PDE
 
-/-- `(1 + (βR/λ)²)ⁿ ≤ (1 + σ²)ⁿ` for a drift bound `0 ≤ β` with `βR ≤ σλ`: the bound by which a
-drift enters De Giorgi's local boundedness on a ball of radius `R`. -/
-theorem one_add_div_sq_pow_le {beta R lam σ : ℝ} (n : ℕ) (hbeta : 0 ≤ beta)
-    (hR : 0 ≤ R) (hlam : 0 < lam) (hβR : beta * R ≤ σ * lam) :
-    (1 + (beta * R / lam) ^ 2) ^ n ≤ (1 + σ ^ 2) ^ n := by
-  gcongr
-  exact (div_le_iff₀ hlam).2 hβR
-
 /-- **Local boundedness near a solution of the homogeneous equation with a drift.** Let `n ≥ 1`
 be the dimension and fix a bound `σ` for `βR/λ`. There is `D > 0`, depending only on `λ`, `Λ`,
 `σ`, `n` and the normalization of `mu`, such that the following holds. Let `a` be measurable and
@@ -143,7 +136,7 @@ theorem exists_ae_abs_value_le_mul_add_of_ae_abs_sub_le_drift [Nonempty ι] {lam
     simp only [D₀]
     gcongr ?_ * _ * _
     exact mul_le_mul_of_nonneg_left
-      (one_add_div_sq_pow_le _ hbeta hR.le h.pos hβR) hD₁.le
+      (Real.one_add_div_sq_pow_le _ hbeta hR.le h.pos hβR) hD₁.le
   -- `‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`.
   have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
