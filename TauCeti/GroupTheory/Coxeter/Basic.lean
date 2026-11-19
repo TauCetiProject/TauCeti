@@ -22,6 +22,8 @@ reflections are indexed by an empty type has a trivial group.
   yet known to satisfy it, so it cannot be routed through
   `CoxeterSystem.prod_alternatingWord_eq_mul_pow`, which evaluates only the simple reflections
   themselves. The evaluations at lengths `2` and `3` are special cases.
+* `TauCeti.pow_eq_one_of_prod_map_alternatingWord_eq`: two involutions satisfying a braid relation
+  of length `m` have product of order dividing `m`.
 * `TauCeti.reverse_alternatingWord`: reversing an alternating word swaps its two letters when
   its length is even, and leaves it unchanged when its length is odd.
 * `CoxeterSystem.subsingleton_of_isEmpty`: a Coxeter system of rank zero has a trivial group.
@@ -60,6 +62,35 @@ theorem prod_map_alternatingWord_two (f : B → N) (i i' : B) :
 theorem prod_map_alternatingWord_three (f : B → N) (i i' : B) :
     ((CoxeterSystem.alternatingWord i i' 3).map f).prod = f i' * f i * f i' := by
   simp [prod_map_alternatingWord, Nat.even_iff, mul_assoc]
+
+/-- If `f i` and `f j` are involutions satisfying the braid relation of length `m`, then
+`(f i * f j) ^ m = 1`. Thus a family of involutions satisfying the braid relations of a Coxeter
+matrix satisfies its Coxeter relations. -/
+theorem pow_eq_one_of_prod_map_alternatingWord_eq {G : Type*} [Group G] (f : B → G)
+    {i j : B} (hi : f i * f i = 1) (hj : f j * f j = 1) (m : ℕ)
+    (h : ((CoxeterSystem.alternatingWord i j m).map f).prod =
+      ((CoxeterSystem.alternatingWord j i m).map f).prod) :
+    (f i * f j) ^ m = 1 := by
+  have hji : f j * f i = (f i * f j)⁻¹ := by
+    rw [mul_inv_rev, inv_eq_of_mul_eq_one_right hi, inv_eq_of_mul_eq_one_right hj]
+  rw [prod_map_alternatingWord, prod_map_alternatingWord, hji, inv_pow] at h
+  obtain ⟨n, rfl | rfl⟩ := Nat.even_or_odd' m
+  · have hn : 2 * n / 2 = n := by omega
+    simp only [even_two_mul, ite_true, one_mul, hn] at h
+    rw [two_mul, pow_add]
+    nth_rw 2 [h]
+    exact mul_inv_cancel _
+  · have hn : (2 * n + 1) / 2 = n := by omega
+    have hodd : ¬ Even (2 * n + 1) := by simp [parity_simps]
+    simp only [hodd, ite_false, hn] at h
+    calc (f i * f j) ^ (2 * n + 1)
+        = (f i * f j) ^ n * f i * (f j * (f i * f j) ^ n) := by
+          rw [show 2 * n + 1 = n + 1 + n by omega, pow_add, pow_succ]
+          simp only [mul_assoc]
+      _ = (f i * f j) ^ n * (f i * f i) * ((f i * f j) ^ n)⁻¹ := by
+          rw [h]
+          simp only [mul_assoc]
+      _ = 1 := by rw [hi, mul_one, mul_inv_cancel]
 
 /-! ### Reversing alternating words -/
 
