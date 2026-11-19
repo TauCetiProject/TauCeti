@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
+public import Mathlib.MeasureTheory.MeasurableSpace.Prod
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.Compactness.SigmaCompact
 

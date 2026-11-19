@@ -109,8 +109,6 @@ theorem iSup_wordKer_Tor'_map_eq_top (N : ModuleCat.{u} A) {Y : ModuleCat.{u} A}
       (P.isoLeftDerivedObj F n).inv ≫
         (NatTrans.leftDerived ((tensoringRight _).map (φ i)) n).app N := by
     rw [P.leftDerived_app_eq _ n, Iso.inv_hom_id_assoc, HomologicalComplex.homologyFunctor_map]
-    -- The two sides agree after unfolding the local definitions `ψ i` and `F`.
-    rfl
   rw [Tor'_obj_map]
   -- `Tor'ₙ(N, Y)` is by definition (`Tor'_obj_obj`) the object `Lₙ(- ⊗ Y)(N)` of `key`, and
   -- composition in `ModuleCat` is composition of linear maps (`ModuleCat.hom_comp`).

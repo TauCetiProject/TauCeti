@@ -73,7 +73,7 @@ product form. -/
 def orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) : IntegralLattice (V × W) where
   carrier := L.carrier.prod M.carrier
   form := L.form.prod M.form
-  isLattice := inferInstance
+  isFullLattice := inferInstance
   isSymm := LinearMap.BilinForm.isSymm_prod_iff.mpr ⟨L.isSymm, M.isSymm⟩
   le_dual := by
     intro p hp

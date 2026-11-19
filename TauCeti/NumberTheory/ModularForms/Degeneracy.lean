@@ -836,7 +836,7 @@ theorem exists_eq_T_zpow_mul_conjScale_mul_T_zpow (l N : ℕ) (hlN : l ∣ N) (�
   refine Subtype.ext ?_
   rw [Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow,
     ModularGroup.coe_T_zpow, coe_conjScale]
-  simp only [hγ, Matrix.SpecialLinearGroup.coe_mk, Matrix.mul_fin_two, Matrix.of_apply,
+  simp only [hγ, Matrix.mul_fin_two, Matrix.of_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one]
   conv_lhs => rw [Matrix.eta_fin_two (γ' : Matrix (Fin 2) (Fin 2) ℤ)]
   congrm !![?_, ?_; ?_, ?_] <;> first | linear_combination hk | ring
