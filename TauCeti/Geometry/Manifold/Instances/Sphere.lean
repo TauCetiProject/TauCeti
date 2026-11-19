@@ -27,6 +27,7 @@ import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -502,7 +503,7 @@ instance instContMDiffSMul {n : ℕ∞ω} : ContMDiffSMul (𝓡 1) 𝓘(ℝ, V) 
 
 /-- Each element of the circle acts smoothly on every complex normed space. -/
 instance instContMDiffConstSMul {n : ℕ∞ω} : ContMDiffConstSMul 𝓘(ℝ, V) n Circle V :=
-  ⟨fun z ↦ ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) z⟩
+  ContMDiffSMul.contMDiffConstSMul (𝓡 1)
 
 end Circle
 
