@@ -33,10 +33,10 @@ develops the properties of this count under the hypothesis that `U` is *isolatin
   solutions (`TauCeti.HomologicalOrientation.localDegree_restrict_eq_of_joinedIn`). The solutions
   may move, appear and disappear in `U`, provided none crosses the frontier.
 * **Boundary-bounded perturbations (Rouché's principle).** When `N` is a finite-dimensional real
-  normed space, two maps `f` and `g` with `‖g x - f x‖ < ‖f x - y‖` on the frontier of `U` have the
-  same count (`TauCeti.HomologicalOrientation.localDegree_restrict_eq_of_norm_sub_lt`). Since the
-  frontier is compact, an isolating `U` has a positive boundary margin `b ≤ ‖f x - y‖`, and every
-  perturbation smaller than `b` on the frontier has the same count
+  normed space, two maps `f` and `g` with `‖g x - f x‖ < ‖f x - y‖ + ‖g x - y‖` on the frontier of
+  `U` have the same count (`TauCeti.HomologicalOrientation.localDegree_restrict_eq_of_norm_sub_lt`).
+  Since the frontier is compact, an isolating `U` has a positive boundary margin `b ≤ ‖f x - y‖`,
+  and every perturbation smaller than `b` on the frontier has the same count
   (`TauCeti.HomologicalOrientation.exists_pos_forall_localDegree_restrict_eq`).
 * **Existence.** A nonzero count forces a solution in `U`
   (`TauCeti.HomologicalOrientation.exists_mem_apply_eq_of_localDegree_restrict_ne_zero`).
@@ -114,12 +114,12 @@ theorem localDegree_restrict_eq_of_homotopy {U : Opens M} (hU : IsCompact (closu
   -- The restricted homotopy is `H` read on `I × U`; its solutions form a compact set, being those
   -- of `H` on the compact set `I × closure U`, which avoid the frontier.
   let H' : (f₀.restrict U).Homotopy (f₁.restrict U) :=
-    H.compContinuousMap ⟨Subtype.val, continuous_subtype_val⟩
+    (H.compContinuousMap ⟨Subtype.val, continuous_subtype_val⟩).cast
+      (by ext x; exact (f₀.restrict_apply U x).symm) (by ext x; exact (f₁.restrict_apply U x).symm)
   refine (o.comap U.isOpenEmbedding').localDegree_eq_of_homotopy_of_isCompact o' hE hF H' ?_
   convert isCompact_setOf_apply_eq_of_frontier U.isOpen hU H.continuous hH using 1
   ext ⟨t, x⟩
-  -- `H' (t, x)` is `H (t, x)` by definition of `ContinuousMap.Homotopy.compContinuousMap`.
-  exact Iff.rfl
+  simp [H']
 
 include hF in
 /-- **Invariance along a path of parameters.** Let `Φ` be a continuous family of maps `M → N`
@@ -217,21 +217,26 @@ variable {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensiona
 
 include hF in
 /-- **Rouché's principle.** Let `U` have compact closure, and let `f, g : M → F` satisfy
-`‖g x - f x‖ < ‖f x - y‖` on the frontier of `U`. Then `f` and `g` have the same local degree on
-`U` at `y`: the straight-line homotopy from `f` to `g` takes no value `y` on the frontier. -/
+`‖g x - f x‖ < ‖f x - y‖ + ‖g x - y‖` on the frontier of `U`. Then `f` and `g` have the same local
+degree on `U` at `y`: the straight-line homotopy from `f` to `g` takes no value `y` on the
+frontier. -/
 theorem localDegree_restrict_eq_of_norm_sub_lt {U : Opens M}
     (hU : IsCompact (closure (U : Set M))) {f g : C(M, F)} {y : F}
-    (hfg : ∀ x ∈ frontier (U : Set M), ‖g x - f x‖ < ‖f x - y‖) :
+    (hfg : ∀ x ∈ frontier (U : Set M), ‖g x - f x‖ < ‖f x - y‖ + ‖g x - y‖) :
     (o.comap U.isOpenEmbedding').localDegree o' hE (f.restrict U) y =
       (o.comap U.isOpenEmbedding').localDegree o' hE (g.restrict U) y := by
   refine o.localDegree_restrict_eq_of_homotopy o' hE hF hU (.affine f g) fun t x hx hxy ↦ ?_
-  -- At a solution `f x + t (g x - f x) = y`, the margin `‖f x - y‖ = t ‖g x - f x‖` is too small.
+  -- At a solution `f x + t (g x - f x) = y`, the margins `‖f x - y‖ = t ‖g x - f x‖` and
+  -- `‖g x - y‖ = (1 - t) ‖g x - f x‖` add up to only `‖g x - f x‖`.
+  simp only [ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module] at hxy
   have hft : f x - y = -((t : ℝ) • (g x - f x)) := by
-    simp only [ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module] at hxy
     linear_combination (norm := module) hxy
-  have hle : ‖f x - y‖ ≤ ‖g x - f x‖ := by
-    rw [hft, norm_neg, norm_smul, Real.norm_of_nonneg t.2.1]
-    exact mul_le_of_le_one_left (norm_nonneg _) t.2.2
+  have hgt : g x - y = (1 - (t : ℝ)) • (g x - f x) := by
+    linear_combination (norm := module) hxy
+  have hle : ‖f x - y‖ + ‖g x - y‖ ≤ ‖g x - f x‖ := by
+    rw [hft, hgt, norm_neg, norm_smul, norm_smul, Real.norm_of_nonneg t.2.1,
+      Real.norm_of_nonneg (sub_nonneg.2 t.2.2)]
+    exact (by ring : _ = _).le
   exact (hfg x hx).not_ge hle
 
 include hF in
@@ -251,7 +256,7 @@ theorem exists_pos_forall_localDegree_restrict_eq {U : Opens M}
   obtain ⟨b, hb, hbf⟩ := hfr.exists_forall_le' (f := fun x ↦ ‖f x - y‖) (by fun_prop)
     fun x hx ↦ norm_pos_iff.2 (sub_ne_zero.2 (hf x hx))
   exact ⟨b, hb, hbf, fun g hg ↦ (o.localDegree_restrict_eq_of_norm_sub_lt o' hE hF hU
-    fun x hx ↦ (hg x hx).trans_le (hbf x hx)).symm⟩
+    fun x hx ↦ lt_add_of_lt_of_nonneg ((hg x hx).trans_le (hbf x hx)) (norm_nonneg _)).symm⟩
 
 end Normed
 
