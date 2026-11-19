@@ -37,5 +37,5 @@ characteristic polynomial. -/
 theorem PowerBasis.norm_algebraMap_sub_gen (pb : PowerBasis R S) (r : R) :
     Algebra.norm R (algebraMap R S r - pb.gen) = (minpoly R pb.gen).eval r := by
   rw [Algebra.norm_eq_matrix_det pb.basis, map_sub, AlgHom.commutes, ← charpoly_leftMulMatrix,
-    Matrix.eval_charpoly, Matrix.algebraMap_eq_diagonal, Matrix.scalar_apply, Pi.algebraMap_def,
-    Algebra.algebraMap_self_apply]
+    Matrix.eval_charpoly]
+  simp [Matrix.algebraMap_eq_diagonal, Pi.algebraMap_def]

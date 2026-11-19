@@ -9,7 +9,9 @@ public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Eval
+import TauCeti.Data.ZMod.Units
 import TauCeti.FieldTheory.Minpoly
+import TauCeti.NumberTheory.Cyclotomic.Aut
 import TauCeti.NumberTheory.Cyclotomic.Basic
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.RingTheory.Norm.Basic
@@ -39,6 +41,8 @@ primitive `n`-th root of unity over a field where `Φ_n` is irreducible is `Φ_n
 
 ## Main results
 
+* `IsPrimitiveRoot.norm_one_sub_eq_eval_minpoly`: `N(1 - ζ)` is the value at `1` of the minimal
+  polynomial of `ζ`, for any cyclotomic extension.
 * `IsPrimitiveRoot.norm_one_sub_eq_eval_cyclotomic`, `IsPrimitiveRoot.norm_one_sub_of_prime`:
   `N(1 - ζ_n) = Φ_n(1)`, and `N(1 - ζ_ℓ) = ℓ` for every prime `ℓ`.
 * `IsPrimitiveRoot.minpoly_eq_X_pow_sub_C_of_dvd`,
@@ -69,16 +73,12 @@ section Conductor
 variable {K L : Type*} [Field K] [CommRing L] [IsDomain L] [Algebra K L] {n : ℕ} [NeZero n]
   {ζ : L}
 
-/-- The norm of `1 - ζ` is the value at `1` of the minimal polynomial of `ζ`. -/
-private theorem norm_one_sub_eq_eval_minpoly [IsCyclotomicExtension {n} K L]
+/-- The norm of `1 - ζ` for a primitive `n`-th root of unity `ζ` generating `L / K` is the value at
+`1` of the minimal polynomial of `ζ`. No irreducibility of `Φ_n` over `K` is needed. -/
+theorem norm_one_sub_eq_eval_minpoly [IsCyclotomicExtension {n} K L]
     (hζ : IsPrimitiveRoot ζ n) : Algebra.norm K (1 - ζ) = (minpoly K ζ).eval 1 := by
   have h := (hζ.powerBasis K).norm_algebraMap_sub_gen 1
   rwa [map_one, powerBasis_gen] at h
-
-/-- `[L : K]` is the degree of the minimal polynomial of `ζ` over `K`. -/
-private theorem finrank_eq_natDegree_minpoly [IsCyclotomicExtension {n} K L]
-    (hζ : IsPrimitiveRoot ζ n) : Module.finrank K L = (minpoly K ζ).natDegree := by
-  rw [(hζ.powerBasis K).finrank, powerBasis_dim]
 
 /-- The norm of `1 - ζ` for a primitive `n`-th root of unity `ζ` generating `L / K` is `Φ_n(1)`,
 when `Φ_n` is irreducible over `K`. Unlike Mathlib's
@@ -107,13 +107,6 @@ theorem norm_sub_one_of_prime {ℓ : ℕ} [hℓ : Fact ℓ.Prime] [IsCyclotomicE
 
 end Conductor
 
-/-- If `ζ` is a primitive `m * ℓ`-th root of unity and `η` maps to `ζ ^ ℓ`, then `η` is a
-primitive `m`-th root of unity. -/
-private theorem of_algebraMap_eq_pow {K L : Type*} [Field K] [CommRing L] [Nontrivial L]
-    [Algebra K L] {m ℓ : ℕ} [NeZero (m * ℓ)] {ζ : L} {η : K} (hζ : IsPrimitiveRoot ζ (m * ℓ))
-    (hη : algebraMap K L η = ζ ^ ℓ) : IsPrimitiveRoot η m :=
-  .of_map_of_injective (hη ▸ hζ.pow (NeZero.pos _) (mul_comm m ℓ)) (algebraMap K L).injective
-
 end IsPrimitiveRoot
 
 variable {F K L : Type*} [Field F] [Field K] [CommRing L] [IsDomain L] [Algebra F K] [Algebra F L]
@@ -141,13 +134,6 @@ private theorem exists_isPrimitiveRoot_algebraMap_eq_pow :
   obtain ⟨i, -, hi⟩ := hz.eq_pow_of_pow_eq_one (ξ := zeta (m * ℓ) F L ^ ℓ)
     (by rw [← pow_mul, mul_comm ℓ, hζ.pow_eq_one])
   exact ⟨_, _, hζ, by rw [map_pow, hi]⟩
-
-omit [NeZero m] [hℓ : Fact ℓ.Prime] in
-/-- `(ℓ⁻¹ : ZMod m).val` is an inverse of `ℓ` modulo `m`. -/
-private theorem mul_val_inv_modEq_one (hcop : ℓ.Coprime m) :
-    ℓ * ((ℓ : ZMod m)⁻¹).val ≡ 1 [MOD m] := by
-  rw [← ZMod.natCast_eq_natCast_iff, Nat.cast_mul, Nat.cast_one]
-  exact ZMod.mul_val_inv hcop
 
 end IsCyclotomicExtension
 
@@ -236,7 +222,7 @@ theorem finrank_eq_of_prime_not_dvd (hirr : Irreducible (cyclotomic (m * ℓ) F)
   obtain ⟨ζ, η, hζ, hη⟩ :=
     exists_isPrimitiveRoot_algebraMap_eq_pow (F := F) (K := K) (L := L) (m := m) (ℓ := ℓ)
   have h := congrArg natDegree (hζ.minpoly_mul_X_sub_C_of_not_dvd hirr hη hdvd
-    (mul_val_inv_modEq_one (hℓ.out.coprime_iff_not_dvd.2 hdvd)))
+    (ZMod.mul_val_inv_modEq_one (hℓ.out.coprime_iff_not_dvd.2 hdvd)))
   rw [natDegree_mul (minpoly.ne_zero (hζ.isIntegral (NeZero.pos _)).tower_top)
     (X_sub_C_ne_zero _), natDegree_X_sub_C, natDegree_X_pow_sub_C] at h
   rw [hζ.finrank_eq_natDegree_minpoly]
@@ -278,17 +264,6 @@ theorem norm_one_sub_eq_div_of_not_dvd (hirr : Irreducible (cyclotomic (m * ℓ)
   exact eq_div_of_mul_eq (sub_ne_zero.2 (hη'.ne_one hm).symm)
     (hζ.norm_one_sub_mul_one_sub_pow_of_not_dvd hirr hη hdvd hℓ')
 
-omit [hℓ : Fact ℓ.Prime] in
-/-- The inverse of the arithmetic Frobenius `σ_ℓ : ζ_m ↦ ζ_m ^ ℓ`, given by
-`IsCyclotomicExtension.autEquivPow`, raises `m`-th roots of unity to the power
-`(ℓ⁻¹ : ZMod m).val`. -/
-private theorem autEquivPow_symm_inv_unitOfCoprime_apply (h : Irreducible (cyclotomic m F))
-    (hcop : ℓ.Coprime m) {η : K} (hη : η ^ m = 1) :
-    (IsCyclotomicExtension.autEquivPow K h).symm (ZMod.unitOfCoprime ℓ hcop)⁻¹ η =
-      η ^ ((ℓ : ZMod m)⁻¹).val := by
-  rw [IsCyclotomicExtension.autEquivPow_apply_of_pow_eq_one K h _ hη, MulEquiv.apply_symm_apply,
-    ← ZMod.inv_coe_unit, ZMod.coe_unitOfCoprime]
-
 /-- **The distribution relation with the arithmetic Frobenius**: for a prime `ℓ` coprime to `m`,
 `N_{L/K}(1 - ζ_{mℓ}) * σ_ℓ⁻¹(1 - ζ_m) = 1 - ζ_m`, where `σ_ℓ ∈ Gal(F(μ_m)/F)` is the arithmetic
 Frobenius `ζ_m ↦ ζ_m ^ ℓ`, whose inverse is the image of `ℓ⁻¹ ∈ (ZMod m)ˣ` under
@@ -301,9 +276,10 @@ theorem norm_one_sub_mul_autEquivPow_symm_inv_apply
         (IsCyclotomicExtension.autEquivPow K h).symm (ZMod.unitOfCoprime ℓ hcop)⁻¹ (1 - η) =
       1 - η := by
   simp only [map_sub, map_one]
-  rw [autEquivPow_symm_inv_unitOfCoprime_apply h hcop (of_algebraMap_eq_pow hζ hη).pow_eq_one]
+  rw [IsCyclotomicExtension.autEquivPow_symm_inv_unitOfCoprime_apply F K h hcop
+    (of_algebraMap_eq_pow hζ hη).pow_eq_one]
   exact hζ.norm_one_sub_mul_one_sub_pow_of_not_dvd hirr hη (hℓ.out.coprime_iff_not_dvd.1 hcop)
-    (IsCyclotomicExtension.mul_val_inv_modEq_one hcop)
+    (ZMod.mul_val_inv_modEq_one hcop)
 
 /-- **The distribution relation for `ζ - 1` when `ℓ ∣ m`**:
 `N_{L/K}(ζ_{mℓ} - 1) = (-1) ^ (ℓ + 1) * (ζ_m - 1)`. For odd `ℓ` this is `ζ_m - 1`; for `ℓ = 2`

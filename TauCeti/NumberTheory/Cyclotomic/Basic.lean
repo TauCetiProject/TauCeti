@@ -14,7 +14,9 @@ If `C` is generated over `A` by roots of unity of orders in `S`, then it is also
 over any intermediate algebra `B`: `IsCyclotomicExtension.tower_top`. This is how a cyclotomic
 field `ℚ(μ_n)` becomes a cyclotomic extension of each of its cyclotomic subfields `ℚ(μ_m)`,
 `m ∣ n`, so that Mathlib's power bases and degree formulas for cyclotomic extensions apply to the
-relative extension `ℚ(μ_n) / ℚ(μ_m)`.
+relative extension `ℚ(μ_n) / ℚ(μ_m)`. In such a step, `IsPrimitiveRoot.of_algebraMap_eq_pow`
+recognizes a primitive `m`-th root of unity of the subfield as the `ℓ`-th power of a primitive
+`m * ℓ`-th root of unity of the top field.
 -/
 
 public section
@@ -34,3 +36,14 @@ theorem tower_top {S : Set ℕ} (A B C : Type*) [CommRing A] [CommRing B] [CommR
   exact hle (h.2 x)
 
 end IsCyclotomicExtension
+
+namespace IsPrimitiveRoot
+
+/-- If `ζ` is a primitive `m * ℓ`-th root of unity and `η` maps to `ζ ^ ℓ`, then `η` is a
+primitive `m`-th root of unity. -/
+theorem of_algebraMap_eq_pow {K L : Type*} [Field K] [CommRing L] [Nontrivial L]
+    [Algebra K L] {m ℓ : ℕ} [NeZero (m * ℓ)] {ζ : L} {η : K} (hζ : IsPrimitiveRoot ζ (m * ℓ))
+    (hη : algebraMap K L η = ζ ^ ℓ) : IsPrimitiveRoot η m :=
+  .of_map_of_injective (hη ▸ hζ.pow (NeZero.pos _) (mul_comm m ℓ)) (algebraMap K L).injective
+
+end IsPrimitiveRoot
