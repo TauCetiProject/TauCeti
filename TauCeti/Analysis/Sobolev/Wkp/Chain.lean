@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Sobolev.WeakDeriv.Chain
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 
 /-!
@@ -30,7 +31,6 @@ of `Wkp` converge.
   graph norm.
 * `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto_of_chain`: convergence in `Wkp` gives `Lᵖ`
   convergence of the fields of weak derivative chains of the values.
-* `TauCeti.Wkp.ae_eq_of_hasWeakFDerivOn_chain`: weak derivative chains of a function are unique.
 * `TauCeti.Wkp.exists_hasWeakFDerivOn_chain_of_locally`: weak derivative chains defined near every
   point glue to one on the whole domain.
 
@@ -202,23 +202,6 @@ theorem tendsto_eLpNorm_sub_of_tendsto_of_chain (n : ℕ) {α : Type*} {l : Filt
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h0 (fun _ => bot_le) hle
 
 omit [mu.IsAddHaarMeasure] in
-/-- **Weak derivative chains are unique.** Two chains of iterated weak gradients on `Ω` of the same
-function agree almost everywhere on `Ω`. -/
-theorem ae_eq_of_hasWeakFDerivOn_chain (n : ℕ) {f : E → ℝ}
-    {G H : (i : ℕ) → E → IteratedGradient E i}
-    (hG0 : HasWeakFDerivOn mu Omega f fun x => innerSL ℝ (G 0 x))
-    (hG : ∀ i < n, HasWeakFDerivOn mu Omega (G i) (G (i + 1)))
-    (hH0 : HasWeakFDerivOn mu Omega f fun x => innerSL ℝ (H 0 x))
-    (hH : ∀ i < n, HasWeakFDerivOn mu Omega (H i) (H (i + 1))) :
-    ∀ i ≤ n, G i =ᵐ[mu.restrict Omega] H i
-  | 0, _ => by
-    filter_upwards [hG0.ae_eq hH0] with x hx
-    exact innerSL_inj.1 hx
-  | i + 1, hi =>
-    ((hG i (by omega)).congr_ae
-      (ae_eq_of_hasWeakFDerivOn_chain n hG0 hG hH0 hH i (by omega))).ae_eq (hH i (by omega))
-
-omit [mu.IsAddHaarMeasure] in
 /-- **Weak derivative chains glue.** If every point of `Ω` has an open neighbourhood on which `f`
 has a chain `H 0, …, H n` of iterated weak gradients, then `f` has such a chain on all of `Ω`.
 The local chains need not agree anywhere: by uniqueness they agree almost everywhere on overlaps,
@@ -250,7 +233,7 @@ theorem exists_hasWeakFDerivOn_chain_of_locally (n : ℕ) {f : E → ℝ}
       obtain ⟨W, hxW, H, hH0, hH⟩ := h x hx
       have hle : W ⊓ Omega ≤ W := inf_le_left
       have hle' : W ⊓ Omega ≤ Omega := inf_le_right
-      have hGH := ae_eq_of_hasWeakFDerivOn_chain n (hG0.mono hle')
+      have hGH := ae_eq_of_iteratedGradient_chain n (hG0.mono hle')
         (fun i hi => (hG i hi).mono hle') (hH0.mono hle) (fun i hi => (hH i (by omega)).mono hle)
         n le_rfl
       exact ⟨W ⊓ Omega, ⟨hxW, hx⟩, _, ((hH n (by omega)).mono hle).congr_ae hGH.symm⟩
