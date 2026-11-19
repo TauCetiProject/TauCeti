@@ -231,6 +231,26 @@ lemma eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne [PathConnecte
     rw [singularCohomologyZeroEval_eq_of_joined (PathConnectedSpace.joined x x₀), map_smul,
       singularCohomologyZeroEval_singularCohomologyZeroOne, smul_eq_mul, mul_one]
 
+/-- **Degree-zero cohomology of a path-connected space**: the value at any point `x₀` is a
+`k`-linear equivalence `H⁰(X; k) ≃ k`, whose inverse sends `c` to `c` times the unit class. -/
+def singularCohomologyZeroEquiv [PathConnectedSpace X] (x₀ : X) :
+    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0 ≃ₗ[k] k where
+  toLinearMap := singularCohomologyZeroEval x₀
+  invFun c := c • X.singularCohomologyZeroOne
+  left_inv u := (eq_singularCohomologyZeroEval_smul_singularCohomologyZeroOne x₀ u).symm
+  right_inv c := by simp
+
+@[simp]
+lemma singularCohomologyZeroEquiv_apply [PathConnectedSpace X] (x₀ : X)
+    (u : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
+    singularCohomologyZeroEquiv x₀ u = singularCohomologyZeroEval x₀ u :=
+  (rfl)
+
+@[simp]
+lemma singularCohomologyZeroEquiv_symm_apply [PathConnectedSpace X] (x₀ : X) (c : k) :
+    (singularCohomologyZeroEquiv x₀).symm c = c • X.singularCohomologyZeroOne :=
+  (rfl)
+
 /-- Pulling back a degree-zero class along the constant map at `x` gives its value at `x` times
 the unit class. -/
 @[simp]
