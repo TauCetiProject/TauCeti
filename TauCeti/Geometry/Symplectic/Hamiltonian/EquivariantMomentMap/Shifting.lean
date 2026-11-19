@@ -14,15 +14,16 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
 # The shifting map of a moment map along a coadjoint orbit
 
 Let `μ : M → 𝔤*` be a moment map of an action on `(M, σ)` and let `ι : N → 𝔤*` be a map of a
-manifold `N` onto a coadjoint orbit `O`, such as the orbit map `G / G_c → 𝔤*`, `[g] ↦ Ad*_g c`.
+manifold `N` into a coadjoint orbit `O`, such as the orbit map `G / G_c → 𝔤*`, `[g] ↦ Ad*_g c`.
 The **shifting map** is
 
 `Ψ : M × N → 𝔤*`, `Ψ(x, n) = μ(x) - ι(n)`.
 
-Its zero level is the set of pairs `(x, n)` with `μ(x) = ι(n)`, a copy of `μ⁻¹(O)` when `ι` is
-injective. For an orbit with its coadjoint-orbit symplectic form reversed, `M × O⁻`, the map `Ψ` is
-the moment map of the diagonal action, and the reduced space of `M` at `c` is the reduced space of
-`M × O⁻` at zero: this is the shifting trick. As for the level sets of a moment map
+Its zero level is the set of pairs `(x, n)` with `μ(x) = ι(n)`, a copy of `μ⁻¹(ι(N))` when
+`ι` is injective, and of `μ⁻¹(O)` when `ι` is moreover onto `O`. For an orbit with its
+coadjoint-orbit symplectic form reversed, `M × O⁻`, the map `Ψ` is the moment map of the diagonal
+action, and the reduced space of `M` at `c` is the reduced space of `M × O⁻` at zero: this is the
+shifting trick. As for the level sets of a moment map
 (`TauCeti.SmoothTwoForm.IsMomentMap.isRegularPoint_iff_isotropy_eq_bot`), `Ψ` is read in a basis `b`
 of `𝔤`, as the map `(x, n) ↦ (μ(x)(b i) - ι(n)(b i))_i` to `ℝ^κ`.
 
@@ -37,8 +38,9 @@ This file proves the following.
 * Hence `Ψ⁻¹(0)` is an embedded submanifold of `M × N`. If the tangent images of `ι` are the tangent
   spaces `𝔤 · ι(n)` of the orbit, then the projection `Ψ⁻¹(0) → M`, `(x, n) ↦ x`, has tangent
   image `dμ⁻¹(𝔤 · μ(x)) = ker dμ_x + 𝔤 · x` at `(x, n)`, and it is a coisotropic map
-  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isCoisotropicMap_fst_sub`). So the preimage of a
-  coadjoint orbit of a regular value is coisotropic, whether or not the orbit is a point.
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isCoisotropicMap_fst_sub`). So the preimage
+  `μ⁻¹(ι(N))` of the part `ι(N)` of the coadjoint orbit of a regular value is coisotropic, whether
+  or not the orbit is a point; when `ι` is onto the orbit, this is the preimage of the whole orbit.
 
 ## References
 
@@ -81,7 +83,7 @@ theorem contMDiff_sub (h : σ.IsMomentMap a μ) (b : Basis κ ℝ 𝔤) {ι : N 
 
 /-- The derivative of the shifting map `(x, n) ↦ μ(x) - ι(n)`, read in a basis `b` of `𝔤`, is the
 difference of the derivatives of its two terms. -/
-private theorem mfderiv_sub_apply (h : σ.IsMomentMap a μ) (b : Basis κ ℝ 𝔤)
+theorem mfderiv_sub_apply (h : σ.IsMomentMap a μ) (b : Basis κ ℝ 𝔤)
     {ι : N → Module.Dual ℝ 𝔤} {x : M} {n : N}
     (hι : MDifferentiableAt J 𝓘(ℝ, κ → ℝ) (fun m i ↦ ι m (b i)) n)
     (v : TangentSpace I x) (w : TangentSpace J n) (i : κ) :
@@ -96,6 +98,10 @@ private theorem mfderiv_sub_apply (h : σ.IsMomentMap a μ) (b : Basis κ ℝ �
   rw [show (fun p : M × N ↦ fun i ↦ μ p.1 (b i) - ι p.2 (b i)) =
       (fun y i ↦ μ y (b i)) ∘ Prod.fst - (fun m i ↦ ι m (b i)) ∘ Prod.snd from rfl,
     hΨ.mfderiv]
+  -- `HasMFDerivAt.sub` types this derivative on `T_x M × T_n N` with values in the tangent space
+  -- of `κ → ℝ`, type synonyms of `TangentSpace (I.prod J) (x, n)` and `κ → ℝ`. So `sub_apply`,
+  -- `ContinuousLinearMap.fst` and `Pi.sub_apply` do not match syntactically (`rw` finds no
+  -- type-correct motive, and the synonym has no `IsSubApply` instance): evaluate by unfolding.
   rfl
 
 /-- **The shifting map is regular where the moment map is.** Let `ι : N → 𝔤*` have
@@ -114,7 +120,7 @@ theorem isRegularPoint_sub_of_surjective (h : σ.IsMomentMap a μ) (b : Basis κ
   obtain ⟨v, hv⟩ := hx (b.dualBasis.equivFun.symm y)
   refine ⟨(v, 0), funext fun i ↦ (h.mfderiv_sub_apply b hι v 0 i).trans ?_⟩
   -- The `ι`-term vanishes on the zero vector of `T_n N`, read as the zero of `κ → ℝ`.
-  rw [sub_eq_self.2 (by rw [map_zero]; rfl), h.mfderiv_components_apply, hv,
+  rw [sub_eq_self.2 (by rw [map_zero]; exact Pi.zero_apply i), h.mfderiv_components_apply, hv,
     ← Basis.dualBasis_equivFun]
   exact congrFun (b.dualBasis.equivFun.apply_symm_apply _) i
 
@@ -170,10 +176,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {κ : Type*} [Fintype κ] {c : Module.Dual ℝ (GroupLieAlgebra I G)}
   {ι : N → Module.Dual ℝ (GroupLieAlgebra I G)}
 
-/-- The tangent adjoint maps only need a `C¹` Lie group. -/
-local instance lieGroupOne : LieGroup I 1 G :=
-  LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness ℝ 3)
-    ((by norm_num : (1 : ℕ∞ω) ≤ 3).trans le_minSmoothness)
+attribute [local instance] lieGroupOne
 
 /-- **Zero is a regular value of the shifting map.** For a coadjoint-equivariant moment map of a
 Lie group action, let `c` be a regular value of `μ`, and let `ι : N → 𝔤*` take values in the
@@ -195,13 +198,15 @@ theorem isRegularValue_sub (h : σ.IsEquivariantMomentMap μ)
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [I'.Boundaryless] [J.Boundaryless]
   [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E''] [IsManifold J ∞ N]
 
-/-- **The preimage of a coadjoint orbit of a regular value is coisotropic.** For a nondegenerate
-form and a coadjoint-equivariant moment map of a Lie group action, let `c` be a regular value of
-`μ`, and let `ι : N → 𝔤*` be a smooth map into the coadjoint orbit of `c` whose tangent image at
-each `n` consists of the coordinates of the tangent space `𝔤 · ι(n)` of the orbit, such as the
-orbit map `G / G_c → 𝔤*`. Give the zero level of the shifting map `(x, n) ↦ μ(x) - ι(n)`, read in a
-basis of `𝔤`, its regular-fibre manifold structure. Then the projection `(x, n) ↦ x` of this
-zero level to `M`, whose image is the preimage `μ⁻¹(ι(N))`, is a coisotropic map. -/
+/-- **The preimage of a part of a coadjoint orbit of a regular value is coisotropic.** For a
+nondegenerate form and a coadjoint-equivariant moment map of a Lie group action, let `c` be a
+regular value of `μ`, and let `ι : N → 𝔤*` be a smooth map into the coadjoint orbit of `c` whose
+tangent image at each `n` consists of the coordinates of the tangent space `𝔤 · ι(n)` of the orbit,
+such as the orbit map `G / G_c → 𝔤*`. Give the zero level of the shifting map
+`(x, n) ↦ μ(x) - ι(n)`, read in a basis of `𝔤`, its regular-fibre manifold structure. Then the
+projection `(x, n) ↦ x` of this zero level to `M`, whose image is the preimage `μ⁻¹(ι(N))`, is a
+coisotropic map. The image is the preimage of the whole orbit when `ι` is onto it, as the orbit map
+is. -/
 theorem isCoisotropicMap_fst_sub (h : σ.IsEquivariantMomentMap μ) (hσ : σ.IsNondegenerate)
     (hreg : ∀ y, μ y = c → Function.Surjective (h.toIsMomentMap.differential y))
     (b : Basis κ ℝ (GroupLieAlgebra I G))
@@ -243,10 +248,12 @@ theorem isCoisotropicMap_fst_sub (h : σ.IsEquivariantMomentMap μ) (hσ : σ.Is
     refine ⟨(mfderiv _ (I'.prod J) Subtype.val z ξ).2, ?_⟩
     have hξ : mfderiv _ (I'.prod J) Subtype.val z ξ ∈
         (mfderiv (I'.prod J) 𝓘(ℝ, κ → ℝ) _ z.1).ker := hker z ▸ LinearMap.mem_range_self _ ξ
+    rw [LinearMap.mem_ker] at hξ
     exact fun i ↦ congrFun hξ i
   · rintro ⟨w, hw⟩
-    have hmem : ((v, w) : TangentSpace (I'.prod J) z.1) ∈
-        (mfderiv (I'.prod J) 𝓘(ℝ, κ → ℝ) _ z.1).ker := funext hw
+    have hw' : mfderiv (I'.prod J) 𝓘(ℝ, κ → ℝ)
+        (fun p : M × N ↦ fun i ↦ μ p.1 (b i) - ι p.2 (b i)) z.1 (v, w) = 0 := funext hw
+    have hmem := LinearMap.mem_ker.2 hw'
     rw [← hker z] at hmem
     obtain ⟨ξ, hξ⟩ := hmem
     exact ⟨ξ, congrArg Prod.fst hξ⟩
