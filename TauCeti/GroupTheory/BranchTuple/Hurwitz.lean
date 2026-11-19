@@ -138,10 +138,10 @@ theorem hurwitzMove_symm_apply_of_ne (i : Fin (r - 1)) (t : BranchTuple r G) {k 
 theorem hurwitzMove_mul_hurwitzMove_comm {i j : Fin (r - 1)}
     (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     hurwitzMove (G := G) i * hurwitzMove j = hurwitzMove j * hurwitzMove i := by
-  have hnd := nodup_strand_strandSucc_strand_strandSucc h
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil, not_or,
-    or_false, not_false_eq_true, and_true] at hnd
-  obtain ⟨⟨-, h₂, h₃⟩, ⟨h₄, h₅⟩, -⟩ := hnd
+  obtain ⟨h₂, h₃, h₄, h₅⟩ : strand i ≠ strand j ∧ strand i ≠ strandSucc j ∧
+      strandSucc i ≠ strand j ∧ strandSucc i ≠ strandSucc j := by
+    simp only [ne_eq, Fin.ext_iff, val_strand, val_strandSucc]
+    omega
   have ia : ∀ u : BranchTuple r G, hurwitzMove i u (strand j) = u (strand j) :=
     fun u ↦ hurwitzMove_apply_of_ne i u (Ne.symm h₂) (Ne.symm h₄)
   have ib : ∀ u : BranchTuple r G, hurwitzMove i u (strandSucc j) = u (strandSucc j) :=
