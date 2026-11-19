@@ -9,6 +9,7 @@ public import Mathlib.Algebra.CharP.Two
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Covering
+public import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The transfer sequence of a double cover in characteristic two
@@ -65,14 +66,6 @@ variable {E B : TopCat.{u}} {p : E ⟶ B} (hp : IsCoveringMap p) (R : Type u) [R
 
 variable {R} (hcard : ∀ b, Nat.card ↥(p ⁻¹' {b}) = 2)
 
-include hcard in
-/-- On a fibre with exactly two points `e ≠ e'`, a sum over the fibre is the sum of the values at
-`e` and `e'`. -/
-private theorem sum_eq_add {x : B} [Fintype (p ⁻¹' {x})] {e e' : p ⁻¹' {x}} (he' : e' ≠ e)
-    (g : p ⁻¹' {x} → R) : ∑ e'', g e'' = g e + g e' :=
-  Fintype.sum_eq_add e e' he'.symm fun _ h ↦
-    absurd (((Nat.card_eq_two_iff' e).1 (hcard x)).unique h.1 he') h.2
-
 variable [CharP R 2]
 
 include hcard in
@@ -85,13 +78,17 @@ theorem permutationLocalSystemTransfer_comp_augmentation_eq_zero :
   have := Fintype.ofFinite (p ⁻¹' {x.as})
   obtain ⟨e⟩ := (Nat.card_ne_zero.1 (hcard x.as ▸ two_ne_zero)).1
   obtain ⟨e', he'⟩ := ((Nat.card_eq_two_iff' e).1 (hcard x.as)).exists
-  rw [NatTrans.app_zero, ModuleCat.hom_zero, LinearMap.zero_apply, NatTrans.comp_app,
-    ModuleCat.hom_comp, LinearMap.comp_apply]
+  -- The fibre of the constant system is `R` only after unfolding the constant functor, so `simp`
+  -- cannot evaluate the composite as stated; `change` states it as the augmentation of the
+  -- transfer of `r`. For the same reason the coefficients of the transfer are rewritten with
+  -- fully applied instances of `permutationLocalSystemTransfer_app_hom_apply_apply`.
+  change ((hp.permutationLocalSystemAugmentation R).app x).hom
+    (((hp.permutationLocalSystemTransfer R hfin).app x).hom r) = 0
   -- The transfer has coefficient `r` at both sheets, which the augmentation adds up to `2 r = 0`.
   refine (hp.permutationLocalSystemAugmentation_app_apply_eq_sum R x _).trans ?_
-  rw [sum_eq_add hcard he']
-  refine (congrArg₂ (· + ·) (hp.permutationLocalSystemTransfer_app_hom_apply_apply R hfin x r e)
-    (hp.permutationLocalSystemTransfer_app_hom_apply_apply R hfin x r e')).trans ?_
+  simp only [Fintype.sum_eq_add_of_natCard_le_two (hcard x.as).le he',
+    hp.permutationLocalSystemTransfer_app_hom_apply_apply R hfin x r e,
+    hp.permutationLocalSystemTransfer_app_hom_apply_apply R hfin x r e']
   exact CharTwo.add_self_eq_zero (R := R) r
 
 include hcard in
@@ -116,7 +113,8 @@ theorem shortExact_permutationLocalSystemTransfer_augmentation :
     · rfl
     have hg' : ∑ e'', g e'' = 0 :=
       (hp.permutationLocalSystemAugmentation_app_apply_eq_sum R x g).symm.trans hg
-    rw [sum_eq_add hcard he', add_eq_zero_iff_eq_neg, CharTwo.neg_eq] at hg'
+    rw [Fintype.sum_eq_add_of_natCard_le_two (hcard x.as).le he'.symm, add_eq_zero_iff_eq_neg,
+      CharTwo.neg_eq] at hg'
     exact hg'
   · have h := congrArg (fun v : (p ⁻¹' {x.as}) →₀ R ↦ v e) hrs
     exact (hp.permutationLocalSystemTransfer_app_hom_apply_apply R hfin x r e).symm.trans
