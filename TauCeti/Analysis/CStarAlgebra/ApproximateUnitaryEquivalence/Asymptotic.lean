@@ -137,14 +137,12 @@ theorem postcomp [CStarAlgebra C] (h : AsymptoticallyUnitarilyEquivalent φ ψ)
     (ρ : B →⋆ₐ[ℂ] C) : AsymptoticallyUnitarilyEquivalent
       (ρ.toNonUnitalStarAlgHom.comp φ) (ρ.toNonUnitalStarAlgHom.comp ψ) := by
   obtain ⟨u, hu⟩ := h
-  -- The class-to-bundled star-monoid hom has no coercion simp lemma.
-  have hρ (b : B) : (StarMonoidHom.ofClass ρ) b = ρ b := rfl
   let w : C(unitary B, unitary C) :=
     ⟨Unitary.map (StarMonoidHom.ofClass ρ), continuous_induced_rng.2 <| by
-      simpa only [Function.comp_def, Unitary.coe_map, hρ] using
+      simpa only [Function.comp_def, Unitary.coe_map, StarMonoidHom.ofClass_coe] using
         (map_continuous ρ).comp continuous_subtype_val⟩
   refine ⟨w.comp u, fun a ↦ (((map_continuous ρ).tendsto (ψ a)).comp (hu a)).congr fun t ↦ ?_⟩
-  simp [w, hρ, map_star]
+  simp [w, map_star]
 
 /-- Unital postcomposition along a factorization `ρ ∘ ι = κ` carries asymptotic unitary
 equivalence of the composites with `ι` to asymptotic unitary equivalence of the composites
