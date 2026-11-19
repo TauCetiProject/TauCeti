@@ -13,6 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock
 public import TauCeti.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Analysis.Pseudodifferential.PolarDecomposition
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 
 /-!
 # The external product of two homogeneous symbols
@@ -233,30 +234,20 @@ theorem add_le_two_mul_lineMap {a b t : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (ht :
 
 /-- The convex combination `(1 - s) χ₀ + s χ₁` of two conic cutoffs, for `s ∈ [0, 1]`, is again a
 conic cutoff. These join `χ₀` (`ConicCutoff.lineMap_zero`) to `χ₁` (`ConicCutoff.lineMap_one`),
-and they express that the cut-off external product does not depend on the cutoff. -/
+and they join the cut-off external products for `χ₀` and `χ₁` through elliptic symbols, so the
+product is independent of the cutoff up to homotopy
+(`HomogeneousSymbol.continuousOn_coefficient_externalProduct_conicCutoffLineMap`). -/
 def lineMap (χ₀ χ₁ : ConicCutoff) (s : unitInterval) : ConicCutoff where
   toFun t := AffineMap.lineMap (χ₀ t) (χ₁ t) (s : ℝ)
-  contDiff' := by
-    simp only [AffineMap.lineMap_apply_module, smul_eq_mul]
-    exact (contDiff_const.mul χ₀.contDiff).add (contDiff_const.mul χ₁.contDiff)
+  contDiff' := ContDiff.lineMap χ₀.contDiff χ₁.contDiff contDiff_const
   eq_zero_of_le_one_div_four' t ht := by
     simp [χ₀.apply_eq_zero_of_le_one_div_four ht, χ₁.apply_eq_zero_of_le_one_div_four ht]
   eq_one_of_one_div_two_le' t ht := by
     simp [χ₀.apply_eq_one_of_one_div_two_le ht, χ₁.apply_eq_one_of_one_div_two_le ht]
-  nonneg' t := by
-    simp only [AffineMap.lineMap_apply_module, smul_eq_mul]
-    have := χ₀.nonneg t
-    have := χ₁.nonneg t
-    have := s.2.1
-    have := s.2.2
-    nlinarith
-  le_one' t := by
-    simp only [AffineMap.lineMap_apply_module, smul_eq_mul]
-    have := χ₀.le_one t
-    have := χ₁.le_one t
-    have := s.2.1
-    have := s.2.2
-    nlinarith
+  nonneg' t :=
+    ((convex_Icc (0 : ℝ) 1).lineMap_mem ⟨χ₀.nonneg t, χ₀.le_one t⟩ ⟨χ₁.nonneg t, χ₁.le_one t⟩ s.2).1
+  le_one' t :=
+    ((convex_Icc (0 : ℝ) 1).lineMap_mem ⟨χ₀.nonneg t, χ₀.le_one t⟩ ⟨χ₁.nonneg t, χ₁.le_one t⟩ s.2).2
 
 @[simp]
 theorem lineMap_apply (χ₀ χ₁ : ConicCutoff) (s : unitInterval) (t : ℝ) :
@@ -557,10 +548,7 @@ theorem continuousOn_externalProductHomotopy [ProperSpace E] [ProperSpace F]
         b.coefficient (q.2.1.2, q.2.2.2)) q :=
     (hc (fun p ↦ ‖p.2.2‖) (by fun_prop)).smul
       ((b.continuous_coefficient hm).comp (by fun_prop)).continuousAt
-  have hblock : Continuous fun AB : (V₀ →L[ℂ] V₁) × (W₀ →L[ℂ] W₁) ↦
-      externalProductBlock AB.1 AB.2 :=
-    (contDiff_externalProductBlock (n := 0)).continuous
-  exact hblock.continuousAt.comp (h₁.prodMk h₂)
+  exact continuous_externalProductBlock.continuousAt.comp (h₁.prodMk h₂)
 
 variable [CompleteSpace (V₀ ⊗[ℂ] W₀)] [CompleteSpace (V₁ ⊗[ℂ] W₁)] [CompleteSpace (V₁ ⊗[ℂ] W₀)]
   [CompleteSpace (V₀ ⊗[ℂ] W₁)] {a : HomogeneousSymbol X E V₀ V₁ m}
@@ -715,14 +703,12 @@ theorem continuousOn_coefficient_externalProduct_lineMap (χ : ConicCutoff)
     ContinuousOn (fun q : ℝ × (X × Y) × (E × F) ↦
       ((AffineMap.lineMap a a' q.1).externalProduct χ (AffineMap.lineMap b b' q.1)).coefficient
         q.2) {q | q.2.2 ≠ 0} := by
-  have hblock : Continuous fun AB : (V₀ →L[ℂ] V₁) × (W₀ →L[ℂ] W₁) ↦
-      externalProductBlock AB.1 AB.2 :=
-    (contDiff_externalProductBlock (n := 0)).continuous
   have h₁ := continuousOn_coefficient_lineMap (a.conicCutoffFst (Y := Y) (F := F) χ)
     (a'.conicCutoffFst χ)
   have h₂ := continuousOn_coefficient_lineMap (b.conicCutoffSnd (X := X) (E := E) χ)
     (b'.conicCutoffSnd χ)
-  refine (hblock.comp_continuousOn (h₁.prodMk h₂)).congr fun ⟨t, ⟨x, y⟩, ξ, η⟩ _ ↦ ?_
+  refine (continuous_externalProductBlock.comp_continuousOn (h₁.prodMk h₂)).congr
+    fun ⟨t, ⟨x, y⟩, ξ, η⟩ _ ↦ ?_
   simp only [Function.comp_apply, ← conicCutoffFst_lineMap, ← conicCutoffSnd_lineMap,
     coefficient_externalProduct, coefficient_conicCutoffFst, coefficient_conicCutoffSnd]
 
@@ -733,16 +719,14 @@ theorem continuousOn_coefficient_externalProduct_conicCutoffLineMap (χ₀ χ₁
     (a : HomogeneousSymbol X E V₀ V₁ m) (b : HomogeneousSymbol Y F W₀ W₁ m) :
     ContinuousOn (fun q : unitInterval × (X × Y) × (E × F) ↦
       (a.externalProduct (χ₀.lineMap χ₁ q.1) b).coefficient q.2) {q | q.2.2 ≠ 0} := by
-  have hblock : Continuous fun AB : (V₀ →L[ℂ] V₁) × (W₀ →L[ℂ] W₁) ↦
-      externalProductBlock AB.1 AB.2 :=
-    (contDiff_externalProductBlock (n := 0)).continuous
   have hc : Continuous fun q : unitInterval × (X × Y) × (E × F) ↦ ((q.1 : ℝ), q.2) := by
     fun_prop
   have h₁ := (continuousOn_coefficient_lineMap (a.conicCutoffFst (Y := Y) (F := F) χ₀)
     (a.conicCutoffFst χ₁)).comp (s := {q | q.2.2 ≠ 0}) hc.continuousOn fun _ hq ↦ hq
   have h₂ := (continuousOn_coefficient_lineMap (b.conicCutoffSnd (X := X) (E := E) χ₀)
     (b.conicCutoffSnd χ₁)).comp (s := {q | q.2.2 ≠ 0}) hc.continuousOn fun _ hq ↦ hq
-  refine (hblock.comp_continuousOn (h₁.prodMk h₂)).congr fun ⟨t, ⟨x, y⟩, ξ, η⟩ _ ↦ ?_
+  refine (continuous_externalProductBlock.comp_continuousOn (h₁.prodMk h₂)).congr
+    fun ⟨t, ⟨x, y⟩, ξ, η⟩ _ ↦ ?_
   simp only [Function.comp_apply, ← conicCutoffFst_conicCutoffLineMap,
     ← conicCutoffSnd_conicCutoffLineMap, coefficient_externalProduct, coefficient_conicCutoffFst,
     coefficient_conicCutoffSnd]

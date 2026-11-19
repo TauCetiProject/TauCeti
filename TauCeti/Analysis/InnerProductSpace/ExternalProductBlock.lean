@@ -89,7 +89,8 @@ restrictions of `P` and `Q` to pairs of finite-dimensional eigenspaces of `P†P
   Together with `ContinuousLinearMap.externalProductBlock_add` and
   `ContinuousLinearMap.externalProductBlock_ofReal_smul`, this makes the block a bounded real-linear
   function of the pair `(A, B)`. For complex Hilbert spaces it is therefore smooth over `ℝ`
-  (`ContinuousLinearMap.contDiff_externalProductBlock`).
+  (`ContinuousLinearMap.contDiff_externalProductBlock`), in particular continuous
+  (`ContinuousLinearMap.continuous_externalProductBlock`).
 
 ## References
 
@@ -536,6 +537,11 @@ theorem contDiff_externalProductBlock {n : WithTop ℕ∞} :
           exact externalProductBlock_ofReal_smul r AB.1 AB.2))
       ⟨4, by norm_num, fun AB ↦ (norm_externalProductBlock_le _ _).trans (by
         linarith [norm_fst_le AB, norm_snd_le AB])⟩)
+
+/-- The external product block is a continuous function of the pair of operators. -/
+theorem continuous_externalProductBlock :
+    Continuous fun AB : (V₀ →L[ℂ] V₁) × (W₀ →L[ℂ] W₁) ↦ externalProductBlock AB.1 AB.2 :=
+  (contDiff_externalProductBlock (n := 0)).continuous
 
 end Complex
 

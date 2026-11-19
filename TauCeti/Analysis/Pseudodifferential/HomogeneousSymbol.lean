@@ -262,11 +262,9 @@ theorem continuousOn_coefficient_lineMap (a b : HomogeneousSymbol X E V W m) :
     ContinuousOn (fun q : ℝ × X × E ↦ (AffineMap.lineMap a b q.1).coefficient q.2)
       {q | q.2.2 ≠ 0} := by
   simp only [coefficient_lineMap]
-  simp only [AffineMap.lineMap_apply_module]
-  exact ((continuous_const.sub continuous_fst).continuousOn.smul
-      (a.continuousOn_coefficient.comp continuous_snd.continuousOn fun _ hq ↦ hq)).add
-    (continuous_fst.continuousOn.smul
-      (b.continuousOn_coefficient.comp continuous_snd.continuousOn fun _ hq ↦ hq))
+  exact ContinuousOn.lineMap (a.continuousOn_coefficient.comp continuous_snd.continuousOn
+    fun _ hq ↦ hq) (b.continuousOn_coefficient.comp continuous_snd.continuousOn fun _ hq ↦ hq)
+    continuous_fst.continuousOn
 
 /-! ### Changing the degree -/
 
