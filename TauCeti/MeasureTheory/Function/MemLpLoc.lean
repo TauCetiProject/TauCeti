@@ -34,14 +34,14 @@ inside it, and with `1 ≤ p` a locally `Lᵖ` function agrees almost everywhere
 representative.
 
 Membership for `μ` passes to every measure bounded by a finite multiple of `μ`
-(`TauCeti.MemLpLoc.of_measure_le_smul`). Two additive Haar measures on a locally compact
-second-countable group are proportional, so the class does not depend on the choice of Haar
+(`TauCeti.MemLpLoc.of_measure_le_smul`). Two additive Haar measures on a locally compact group
+are proportional on every compact set, so the class does not depend on the choice of Haar
 measure (`TauCeti.memLpLoc_iff_of_isAddHaarMeasure`). Compact sets correspond under a
 homeomorphism, which carries the class for `μ` to the class for the image measure
 (`Homeomorph.memLpLoc_comp_iff`). Since the image of an additive Haar measure under a continuous
 linear equivalence is an additive Haar measure, a continuous linear equivalence `E ≃L[ℝ] E₁` onto
 a finite-dimensional space carries the class of `E₁` to that of `E` for any choice of Haar
-measures (`ContinuousLinearEquiv.memLpLoc_comp_iff`). Thus the class on a finite-dimensional
+measures (`ContinuousLinearEquiv.memLpLoc_comp_right_iff`). Thus the class on a finite-dimensional
 space needs no inner product or preferred basis.
 -/
 
@@ -67,7 +67,7 @@ def MemLpLoc (p : ℝ≥0∞) (U : Set X) (f : X → F) (μ : Measure X := by vo
 theorem memLpLoc_iff : MemLpLoc p U f μ ↔
     ∀ K : Set X, K ⊆ U → IsCompact K → MemLp f p (μ.restrict K) := Iff.rfl
 
-/-- Local integrability restricts to any smaller set. -/
+/-- Local `Lᵖ` membership restricts to any smaller set. -/
 theorem MemLpLoc.mono_set (hf : MemLpLoc p U f μ) (hVU : V ⊆ U) : MemLpLoc p V f μ :=
   fun K hK hc => hf K (hK.trans hVU) hc
 
@@ -139,9 +139,9 @@ theorem MemLpLoc.mono_exponent [IsFiniteMeasureOnCompacts μ] (hf : MemLpLoc p U
   have : IsFiniteMeasure (μ.restrict K) := ⟨by simpa using hc.measure_lt_top⟩
   exact (hf K hK hc).mono_exponent hqp
 
-/-- On a locally compact space, local `Lᵖ` membership on `U` is detected on the open subsets `W`
-whose closure is compact and contained in `U`: an `Lᵖ` function on `W` agreeing with `f` there
-suffices. -/
+/-- On a locally compact regular space, local `Lᵖ` membership on an open set `Ω` is detected on
+the open subsets `W` whose closure is compact and contained in `Ω`: an `Lᵖ` function on `W`
+agreeing with `f` there suffices. -/
 theorem memLpLoc_of_forall_opens [LocallyCompactSpace X] [RegularSpace X] {Ω : Opens X}
     (h : ∀ W : Opens X, IsCompact (closure (W : Set X)) → closure (W : Set X) ⊆ Ω →
       ∃ g : X → F, MemLp g p (μ.restrict (W : Set X)) ∧ g =ᵐ[μ.restrict W] f) :
@@ -331,16 +331,19 @@ end PreciseRepresentative
 section Haar
 
 variable {G F : Type*} [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-  [LocallyCompactSpace G] [SecondCountableTopology G] [MeasurableSpace G] [BorelSpace G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NormedAddCommGroup F] {p : ℝ≥0∞} {U : Set G} {f : G → F}
 
-/-- **Independence of the Haar measure.** Two additive Haar measures on a locally compact
-second-countable group are proportional, so they define the same local `Lᵖ` classes. -/
+/-- **Independence of the Haar measure.** Two additive Haar measures on a locally compact group
+are proportional on every compact set, so they define the same local `Lᵖ` classes. -/
 theorem memLpLoc_iff_of_isAddHaarMeasure (μ ν : Measure G) [μ.IsAddHaarMeasure]
     [ν.IsAddHaarMeasure] : MemLpLoc p U f μ ↔ MemLpLoc p U f ν := by
   have key : ∀ (μ ν : Measure G) [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure],
-      MemLpLoc p U f μ → MemLpLoc p U f ν := fun μ ν _ _ h =>
-    h.of_measure_le_smul ENNReal.coe_ne_top (Measure.isAddLeftInvariant_eq_smul ν μ).le
+      MemLpLoc p U f μ → MemLpLoc p U f ν := fun μ ν _ _ h K hKU hK =>
+    (h K hKU hK).of_measure_le_smul ENNReal.coe_ne_top <| le_of_eq <| Measure.ext fun s hs => by
+      rw [smul_apply, Measure.restrict_apply hs, Measure.restrict_apply hs]
+      exact Measure.measure_isAddInvariant_eq_smul_of_isCompact_closure ν μ
+        (hK.closure_of_subset Set.inter_subset_right)
   exact ⟨key μ ν, key ν μ⟩
 
 end Haar
@@ -380,7 +383,7 @@ variable {E E₁ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Measurable
 /-- **Linear changes of variables.** A continuous linear equivalence `e : E ≃L[ℝ] E₁` onto a
 finite-dimensional real normed space carries the local `Lᵖ` class of `U` in `E₁` to that of
 `e ⁻¹' U` in `E`, for any additive Haar measures on the two spaces. -/
-theorem ContinuousLinearEquiv.memLpLoc_comp_iff (e : E ≃L[ℝ] E₁) (μ : Measure E)
+theorem ContinuousLinearEquiv.memLpLoc_comp_right_iff (e : E ≃L[ℝ] E₁) (μ : Measure E)
     [μ.IsAddHaarMeasure] (ν : Measure E₁) [ν.IsAddHaarMeasure] :
     MemLpLoc p (e ⁻¹' U) (f ∘ e) μ ↔ MemLpLoc p U f ν := by
   rw [← memLpLoc_iff_of_isAddHaarMeasure (μ.map e) ν]
