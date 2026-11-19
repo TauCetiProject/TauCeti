@@ -37,7 +37,8 @@ and directly otherwise, since then `w` is a multiple of `u` and `r_w = r_u`. The
 the identity form a submonoid, which therefore contains every special orthogonal matrix.
 
 The special orthogonal group `SO(N)` acts on the unit sphere of `ℝᴺ` by matrix multiplication,
-through the linear isometry of a special orthogonal matrix, and this action is jointly continuous.
+through the linear isometry of a special orthogonal matrix, and this action is jointly continuous;
+the coordinates may be indexed by any finite type `ι`, with `N` its cardinality.
 
 Read through the action of orthogonal matrices on Euclidean space, two linear isometries of
 `EuclideanSpace ℝ ι` with the same determinant are joined by a path of linear isometries,
@@ -247,37 +248,38 @@ namespace Matrix.SpecialOrthogonalGroup
 
 open Metric
 
-variable {N : ℕ}
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The special orthogonal group `SO(N)` acts on the unit sphere of `ℝᴺ` by matrix multiplication,
-through the linear isometry `Matrix.UnitaryGroup.toLinearIsometryEquiv` of the matrix. -/
+through the linear isometry `Matrix.UnitaryGroup.toLinearIsometryEquiv` of the matrix. Here the
+coordinates are indexed by an arbitrary finite type `ι` with `N` elements. -/
 noncomputable instance instMulActionSphere :
-    MulAction (specialOrthogonalGroup (Fin N) ℝ) (sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :=
+    MulAction (specialOrthogonalGroup ι ℝ) (sphere (0 : EuclideanSpace ℝ ι) 1) :=
   MulAction.compHom _ (UnitaryGroup.toLinearIsometryEquiv.toMonoidHom.comp
     (Submonoid.inclusion fun _ hA ↦ hA.1 :
-      specialOrthogonalGroup (Fin N) ℝ →* unitaryGroup (Fin N) ℝ))
+      specialOrthogonalGroup ι ℝ →* unitaryGroup ι ℝ))
 
 /-- A special orthogonal matrix acts on the unit sphere as the linear isometry of the matrix, viewed
 in the unitary group through `Submonoid.inclusion`. -/
-theorem smul_sphere_def (A : specialOrthogonalGroup (Fin N) ℝ)
-    (x : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
+theorem smul_sphere_def (A : specialOrthogonalGroup ι ℝ)
+    (x : sphere (0 : EuclideanSpace ℝ ι) 1) :
     A • x = UnitaryGroup.toLinearIsometryEquiv
-      (Submonoid.inclusion (S := specialOrthogonalGroup (Fin N) ℝ)
-        (T := unitaryGroup (Fin N) ℝ) (fun _ hA ↦ hA.1) A) • x :=
+      (Submonoid.inclusion (S := specialOrthogonalGroup ι ℝ)
+        (T := unitaryGroup ι ℝ) (fun _ hA ↦ hA.1) A) • x :=
   (rfl)
 
 /-- A special orthogonal matrix acts on the unit sphere by matrix multiplication. -/
 @[simp]
-theorem coe_smul_sphere (A : specialOrthogonalGroup (Fin N) ℝ)
-    (x : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
-    ((A • x : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) : EuclideanSpace ℝ (Fin N)) =
+theorem coe_smul_sphere (A : specialOrthogonalGroup ι ℝ)
+    (x : sphere (0 : EuclideanSpace ℝ ι) 1) :
+    ((A • x : sphere (0 : EuclideanSpace ℝ ι) 1) : EuclideanSpace ℝ ι) =
       WithLp.toLp 2
-        ((A : Matrix (Fin N) (Fin N) ℝ) *ᵥ WithLp.ofLp (x : EuclideanSpace ℝ (Fin N))) :=
+        ((A : Matrix ι ι ℝ) *ᵥ WithLp.ofLp (x : EuclideanSpace ℝ ι)) :=
   (LinearIsometryEquiv.coe_smul_unitSphere _ x).trans (UnitaryGroup.toLinearIsometryEquiv_apply _ _)
 
 /-- The action of `SO(N)` on the unit sphere of `ℝᴺ` is jointly continuous. -/
-instance : ContinuousSMul (specialOrthogonalGroup (Fin N) ℝ)
-    (sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :=
+instance : ContinuousSMul (specialOrthogonalGroup ι ℝ)
+    (sphere (0 : EuclideanSpace ℝ ι) 1) :=
   ⟨UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere.comp
     (((continuous_subtype_val.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
 
