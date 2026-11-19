@@ -25,7 +25,8 @@ constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and s
 ball `B`, and that a continuous
 square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
 on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
-unions with disjoint sets.
+unions with disjoint sets, and turns a bound on the Lebesgue integral of a nonnegative function
+into integrability and a bound on its Bochner integral.
 
 ## Main statements
 
@@ -51,6 +52,9 @@ unions with disjoint sets.
 * `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
   over `A` is `ofReal` of the Bochner integral of `‖f‖ ^ 2`, and
   `MeasureTheory.setLIntegral_enorm_sq_le_ofReal` the corresponding bound.
+* `MeasureTheory.integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le`: a function nonnegative
+  on `Ω ⊆ S` whose Lebesgue integral over `S` is at most `ENNReal.ofReal E` is integrable on `Ω`
+  with Bochner integral at most `E`.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
@@ -299,6 +303,19 @@ theorem setLIntegral_enorm_sq_le_ofReal {α E : Type*} [MeasurableSpace α]
     (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) A ν) (h : ∫ x in A, ‖f x‖ ^ 2 ∂ν ≤ c) :
     ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν ≤ ENNReal.ofReal c :=
   (setLIntegral_enorm_sq_eq_ofReal_setIntegral hf).trans_le (ENNReal.ofReal_le_ofReal h)
+
+/-- Let `f` be almost everywhere strongly measurable and almost everywhere nonnegative on `Ω ⊆ S`.
+If the Lebesgue integral of `ENNReal.ofReal ∘ f` over `S` is at most `ENNReal.ofReal E` with
+`E ≥ 0`, then `f` is integrable on `Ω` and its Bochner integral over `Ω` is at most `E`. -/
+theorem integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le {α : Type*}
+    [MeasurableSpace α] {ν : Measure α} {S Ω : Set α} {f : α → ℝ}
+    (hf : AEStronglyMeasurable f (ν.restrict Ω)) (hf0 : 0 ≤ᵐ[ν.restrict Ω] f) (hΩS : Ω ⊆ S)
+    {E : ℝ} (hE0 : 0 ≤ E) (hE : ∫⁻ x in S, ENNReal.ofReal (f x) ∂ν ≤ ENNReal.ofReal E) :
+    IntegrableOn f Ω ν ∧ ∫ x in Ω, f x ∂ν ≤ E := by
+  have hlin := (lintegral_mono_set hΩS).trans hE
+  refine ⟨⟨hf, (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩, ?_⟩
+  rw [integral_eq_lintegral_of_nonneg_ae hf0 hf]
+  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
 
 variable {α : Type*} {m : MeasurableSpace α} {μ : Measure α} {E : Type*} [NormedAddCommGroup E]
   [NormedSpace ℝ E]

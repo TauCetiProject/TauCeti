@@ -11,6 +11,7 @@ import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -318,15 +319,10 @@ theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SmoothTwoForm I
     (hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z) {E : ℝ} (hE0 : 0 ≤ E)
     (hE : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
     IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
-      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
-  have hf0' := ae_restrict_of_forall_mem (μ := volume) hΩ hf0
-  have hlin := (lintegral_mono_set hΩS).trans hE
-  have hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ,
-      (hasFiniteIntegral_iff_ofReal hf0').2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0' hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E :=
+  integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ)
+    (ae_restrict_of_forall_mem hΩ hf0) hΩS hE0 hE
 
 end SmoothTwoForm
 
