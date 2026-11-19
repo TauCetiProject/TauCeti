@@ -110,10 +110,12 @@ private theorem integral_clm_eval_mul_one_sub_normSq_eq
   have h := integral_mul_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim
     (isZeroMultiplicity_iff.1 hD) (h := fun z ↦ L (P.eval z))
     (L.contDiff.comp (hP.restrict_scalars ℝ)) hΔ
-    ((L.isBigO_comp _ _).trans (isBigO_cocompact_eval_norm_pow_of_natDegree_le le_rfl))
+    ((L.isBigO_comp _ _).trans (Metric.cobounded_eq_cocompact (α := ℂ) ▸
+      isBigO_cobounded_eval_norm_pow_of_natDegree_le le_rfl))
     ((isBigO_of_le _ fun z ↦ (hfd z).trans_eq (Real.norm_of_nonneg (by positivity)).symm).trans
-      (((isBigO_refl _ _).const_mul_left ‖L‖).trans (isBigO_cocompact_eval_norm_pow_of_natDegree_le
-        ((natDegree_derivative_le P).trans (Nat.sub_le _ _))).norm_left))
+      (((isBigO_refl _ _).const_mul_left ‖L‖).trans (Metric.cobounded_eq_cocompact (α := ℂ) ▸
+        isBigO_cobounded_eval_norm_pow_of_natDegree_le
+          ((natDegree_derivative_le P).trans (Nat.sub_le _ _))).norm_left))
   -- The sum against the multiplicities of `D` is the sum over `D`.
   simp_rw [h, ← nsmul_eq_mul, Multiset.finsum_count_nsmul_eq_sum_map]
 
@@ -129,7 +131,8 @@ theorem integral_one_sub_normSq_smul_eval_eq
     (hD : IsZeroMultiplicity (sectionValue x) (D.count ·)) (P : ℂ[X]) :
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • P.eval z = 16 * π * (D.map fun z ↦ P.eval z).sum := by
   have hint := integrable_one_sub_normSq_smul_of_isBigO volume hp hq hsol hlim P.continuous
-    (isBigO_cocompact_eval_norm_pow_of_natDegree_le le_rfl)
+    (Metric.cobounded_eq_cocompact (α := ℂ) ▸
+      isBigO_cobounded_eval_norm_pow_of_natDegree_le le_rfl)
   have h16 : (16 * π * (D.map fun z ↦ P.eval z).sum : ℂ) =
       (16 * π : ℝ) • (D.map fun z ↦ P.eval z).sum := by
     rw [Complex.real_smul]
