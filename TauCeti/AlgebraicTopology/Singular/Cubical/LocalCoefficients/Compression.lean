@@ -888,6 +888,8 @@ theorem isZero_twistedHomology_ofSubset_of_relHomotopyGroup {R : Type u} [Ring R
       (m := j) hm
     exact ((TopPair.ofSubset A).twistedHomology_exact_relative L (j + 1) j).isZero_of_both_zeros
       hπ (((TopPair.ofSubset A).twistedHomology_exact_subspace L (j + 1) j).mono_g_iff.1
+        -- The goal's map is the `g` field of the short complex of the exact sequence, which
+        -- instance search does not reduce to the map of `this`, so the instance is passed by hand.
         (@IsIso.mono_of_iso _ _ _ _ _ this))
 
 end TauCeti

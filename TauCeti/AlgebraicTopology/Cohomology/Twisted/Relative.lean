@@ -47,10 +47,12 @@ Poincaré--Lefschetz duality, so the twisted theory, and not only the untwisted 
 * `TopPair.isZero_twistedCohomology_of_isZero_twistedHomology`: for a system with projective
   fibres, relative twisted cohomology vanishes up to the degree where relative twisted homology
   does, since the relative twisted chains are then projective.
-* `TopPair.homologyMap_twistedCochainComplexShortComplexMap_τ₂`,
-  `TopPair.homologyMap_twistedCochainComplexShortComplexMap_τ₃`: on cohomology, the components of
-  the morphism of cochain sequences induced by a map of pairs are the maps induced by its ambient
-  and subspace components, as needed for the five lemma.
+* `TopPair.homologyMap_twistedSubspaceCochainComplexMap`,
+  `TopPair.homologyMap_twistedCochainComplexShortComplexMap_τ₂`,
+  `TopPair.homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem`: on cohomology, the components
+  of the morphism of cochain sequences induced by a map of pairs are the maps induced by its ambient
+  and subspace components, up to the coefficient comparison on the subspaces, as needed for the
+  five lemma.
 * `TopPair.twistedCohomologyConstantIso`: for a constant system, relative twisted cohomology is
   ordinary relative singular cohomology.
 
@@ -472,16 +474,21 @@ lemma homologyMap_twistedCochainComplexShortComplexMap_τ₂ (n : ℕ) :
       LocalCoefficientSystem.twistedCohomologyMap k M (Hom.fst f) L n :=
   (rfl)
 
-/-- On cohomology, the subspace component of the morphism of twisted cochain sequences induced by
-a map of pairs `f` is the twisted cohomology map of `Hom.snd f`, followed by the coefficient
-comparison. -/
-lemma homologyMap_twistedCochainComplexShortComplexMap_τ₃ (n : ℕ) :
-    HomologicalComplex.homologyMap (twistedCochainComplexShortComplexMap k M f L).τ₃ n =
-      LocalCoefficientSystem.twistedCohomologyMap k M (Hom.snd f) (Q.subspaceSystem L) n ≫
-        LocalCoefficientSystem.twistedCohomologyCoefficientMap k M
-          (subspaceSystemPullbackIso f L).hom n := by
-  rw [twistedCochainComplexShortComplexMap_τ₃]
-  exact homologyMap_twistedSubspaceCochainComplexMap k M f L n
+/-- A property of morphisms of modules that respects isomorphisms holds for the map induced by a
+map of pairs on the twisted cohomology of the subspaces as soon as it holds for the map induced by
+the subspace component. -/
+lemma homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem
+    (Pr : MorphismProperty (ModuleCat.{max v w} k)) [Pr.RespectsIso] (n : ℕ)
+    (h : Pr (LocalCoefficientSystem.twistedCohomologyMap k M (Hom.snd f) (Q.subspaceSystem L) n)) :
+    Pr (HomologicalComplex.homologyMap (twistedCochainComplexShortComplexMap k M f L).τ₃ n) := by
+  -- Rewriting `τ₃` away first leaves a goal whose motive is not type-correct at instance
+  -- transparency, so the equation is restated for the `τ₃` component.
+  have e : HomologicalComplex.homologyMap (twistedCochainComplexShortComplexMap k M f L).τ₃ n = _ :=
+    homologyMap_twistedSubspaceCochainComplexMap k M f L n
+  rw [e, ← LocalCoefficientSystem.twistedCohomologyCoefficientIso_hom]
+  -- Instance search does not find `IsIso` for maps of these cohomology modules, so it is passed by
+  -- hand.
+  exact @MorphismProperty.RespectsIso.postcomp _ _ Pr _ _ _ _ _ (Iso.isIso_hom _) _ h
 
 /-- The map from relative to absolute twisted cohomology is natural in the pair. -/
 @[reassoc]

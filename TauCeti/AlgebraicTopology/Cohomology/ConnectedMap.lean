@@ -385,18 +385,6 @@ variable {P P' : TopPair.{v}} (f : P ⟶ P') {n : ℕ} {R : Type u} [Ring R] (k 
   [Linear k (ModuleCat.{v} R)] (M : ModuleCat.{v} R)
   (L : LocalCoefficientSystem.{u, v, v} R P'.fst)
 
-/-- A property of morphisms of modules that respects isomorphisms holds for the map induced by a
-map of pairs on the twisted cohomology of the subspaces as soon as it holds for the map induced by
-the subspace component. -/
-private theorem homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem
-    (Pr : MorphismProperty (ModuleCat.{v} k)) [Pr.RespectsIso] (j : ℕ)
-    (h : Pr (LocalCoefficientSystem.twistedCohomologyMap k M (Hom.snd f) (P'.subspaceSystem L) j)) :
-    Pr (HomologicalComplex.homologyMap (twistedCochainComplexShortComplexMap k M f L).τ₃ j) := by
-  rw [homologyMap_twistedCochainComplexShortComplexMap_τ₃, ← twistedCohomologyCoefficientIso_hom]
-  -- Instance search does not find `IsIso` for maps of these cohomology modules, so it is passed by
-  -- hand.
-  exact @MorphismProperty.RespectsIso.postcomp _ _ Pr _ _ _ _ _ (Iso.isIso_hom _) _ h
-
 variable [∀ y, Projective (L.obj y)]
 
 /-- **A map of pairs which is `n`-connected on the ambient spaces and `(n - 1)`-connected on the
@@ -418,12 +406,12 @@ theorem isIso_twistedCohomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNCo
       -- Instance search does not identify this map with the goal's, which is read off the short
       -- complex, so the instance is passed by hand.
       exact @IsIso.epi_of_iso _ _ _ _ _ this)
-    (fun j hj ↦ homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem f k M L
+    (fun j hj ↦ homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem k M f L
       (.isomorphisms _) j (hsnd.isIso_twistedCohomologyMap k M _ (by simp at hj; lia)))
     (by
       rw [homologyMap_twistedCochainComplexShortComplexMap_τ₂]
       exact hfst.isIso_twistedCohomologyMap k M L hm)
-    (homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem f k M L (.monomorphisms _) m
+    (homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem k M f L (.monomorphisms _) m
       (hsnd.mono_twistedCohomologyMap k M _ (by lia)))
   rwa [twistedCochainComplexShortComplexMap_τ₁] at h
 
@@ -445,7 +433,7 @@ theorem mono_twistedCohomologyMap_of_isNConnected (hfst : (Hom.fst f).hom.IsNCon
       -- Instance search does not identify this map with the goal's, which is read off the short
       -- complex, so the instance is passed by hand.
       exact @IsIso.epi_of_iso _ _ _ _ _ this)
-    (fun j hj ↦ homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem f k M L
+    (fun j hj ↦ homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem k M f L
       (.monomorphisms _) j (hsnd.mono_twistedCohomologyMap k M _ (by simp at hj; lia)))
     (by
       rw [homologyMap_twistedCochainComplexShortComplexMap_τ₂]
