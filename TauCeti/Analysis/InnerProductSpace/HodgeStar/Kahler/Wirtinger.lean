@@ -43,6 +43,8 @@ In the namespace `TauCeti.AlmostComplexStructure`, for an orthogonal `J`:
 * `norm_alternatingFormEquiv_kahlerForm`: the Kähler form has comass one on a nonzero space.
 * `isCalibratedFrame_alternatingFormEquiv_kahlerForm_iff`: its calibrated frames are the pairs
   `(v, J v)` with `‖v‖ = 1`.
+* `norm_ιMulti_two_eq_wedgeNorm_symplecticForm`: `‖v ∧ w‖` is the wedge norm of the canonical
+  symplectic form `J.symplecticForm hJ`.
 * `alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff`: for `v ≠ 0`, the equality
   `ω(v, w) = ‖v ∧ w‖` holds exactly when `w = a v + b J v` with `b ≥ 0`.
 
@@ -110,6 +112,14 @@ theorem norm_alternatingFormEquiv_kahlerForm [Nontrivial V] :
   exact (norm_alternatingFormEquiv_kahlerForm_le hJ).antisymm
     (isCalibratedFrame_alternatingFormEquiv_kahlerForm_of_norm_eq_one hJ hv).one_le_norm
 
+/-- The area `‖v ∧ w‖` of the parallelogram on `(v, w)` is the wedge norm
+`√(‖v‖² ‖w‖² - ⟪v, w⟫²)` of the canonical symplectic form `ω(x, y) = ⟪J x, y⟫`. -/
+theorem norm_ιMulti_two_eq_wedgeNorm_symplecticForm (v w : V) :
+    ‖ιMulti ℝ 2 ![v, w]‖ = (J.symplecticForm hJ).wedgeNorm J v w := by
+  rw [SymplecticForm.wedgeNorm_def, norm_eq_sqrt_real_inner, inner_ιMulti_two]
+  simp only [SymplecticForm.associatedBilinForm_apply, symplecticForm_apply, hJ,
+    real_inner_comm v w, sq]
+
 /-- **The equality case of Wirtinger's inequality**: for `v ≠ 0`, the Kähler form attains the area
 `‖v ∧ w‖` of the parallelogram on `(v, w)` exactly when `w = a v + b J v` with `b ≥ 0`. For
 linearly independent `v, w` this says that their plane is `J`-invariant and that `(v, w)` is
@@ -117,12 +127,8 @@ oriented like `(v, J v)`. -/
 theorem alternatingFormEquiv_kahlerForm_apply_eq_norm_ιMulti_iff {v w : V} (hv : v ≠ 0) :
     alternatingFormEquiv V 2 J.kahlerForm ![v, w] = ‖ιMulti ℝ 2 ![v, w]‖ ↔
       ∃ a b : ℝ, 0 ≤ b ∧ w = a • v + b • J v := by
-  have hnorm : ‖ιMulti ℝ 2 ![v, w]‖ = (J.symplecticForm hJ).wedgeNorm J v w := by
-    rw [SymplecticForm.wedgeNorm_def, norm_eq_sqrt_real_inner, inner_ιMulti_two]
-    simp only [SymplecticForm.associatedBilinForm_apply, symplecticForm_apply, hJ,
-      real_inner_comm v w, sq]
-  rw [alternatingFormEquiv_kahlerForm_apply hJ, hnorm, Matrix.cons_val_zero, Matrix.cons_val_one,
-    ← symplecticForm_apply hJ]
+  rw [alternatingFormEquiv_kahlerForm_apply hJ, norm_ιMulti_two_eq_wedgeNorm_symplecticForm hJ,
+    Matrix.cons_val_zero, Matrix.cons_val_one, ← symplecticForm_apply hJ]
   exact (symplecticForm_compatible hJ).apply_eq_wedgeNorm_iff hv w
 
 end TauCeti.AlmostComplexStructure
