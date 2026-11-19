@@ -57,10 +57,10 @@ The exponent `i(i-1)/2` is written `Nat.choose i 2`, so no division appears in t
 * `TauCeti.glnHeckePolynomial_pow_mul_comp` and
   `TauCeti.glnHeckePolynomial_pow_mul_eq_scaleRoots`: the twist formula, integrally and through
   `Polynomial.scaleRoots`.
-* `TauCeti.C_mul_glnHeckePolynomial_rev_comp`,
+* `TauCeti.coeff_glnHeckePolynomial_rev`, `TauCeti.C_mul_glnHeckePolynomial_rev_comp`,
   `TauCeti.C_coeff_zero_mul_glnHeckePolynomial_rev_mul_comp` and
-  `TauCeti.coeff_zero_mul_coeff_glnHeckePolynomial_rev_mul`: the inversion formula, integrally,
-  normalized, and coefficientwise.
+  `TauCeti.coeff_zero_mul_coeff_glnHeckePolynomial_rev_mul`: the inversion formula, integrally
+  (coefficientwise and as polynomials) and normalized (as polynomials and coefficientwise).
 
 ## References
 
@@ -258,6 +258,23 @@ theorem glnHeckePolynomial_pow_mul_eq_scaleRoots {q : A} {T : Fin (n + 1) → A}
     ring
   · rw [coeff_glnHeckePolynomial_of_lt q _ hk, coeff_glnHeckePolynomial_of_lt q _ hk, zero_mul]
 
+/-- **Inverting the Hecke operators**, coefficientwise: if `P'` is the Hecke polynomial with each
+`Tᵢ` replaced by `T_{n-i}`, then `(-1)^n q^{n(n-1)/2} · [X^i] P' = q^{(n-1)(n-i)} · [X^{n-i}] P`.
+This holds in every commutative ring, with no hypothesis on `q` or the `Tᵢ`. -/
+theorem coeff_glnHeckePolynomial_rev (q : A) (T : Fin (n + 1) → A) (i : Fin (n + 1)) :
+    (-1) ^ n * q ^ n.choose 2 * (glnHeckePolynomial n q fun i => T i.rev).coeff i =
+      q ^ ((n - 1) * (n - i)) * (glnHeckePolynomial n q T).coeff (n - i) := by
+  rw [coeff_glnHeckePolynomial_val, Fin.rev_rev, coeff_glnHeckePolynomial]
+  obtain ⟨m, hm⟩ : ∃ m, n = m + i := ⟨n - i, by omega⟩
+  rw [show n - i = m by omega]
+  have hq : q ^ n.choose 2 * q ^ m.choose 2 = q ^ ((n - 1) * m) * q ^ (i : ℕ).choose 2 := by
+    have := Nat.add_choose_two_add_choose_two (i : ℕ) m
+    rw [add_comm (i : ℕ) m, ← hm] at this
+    rw [← pow_add, ← pow_add, this]
+  have hs : (-1 : A) ^ n * (-1) ^ m = (-1) ^ (i : ℕ) :=
+    (congrArg (fun k => (-1 : A) ^ k * (-1) ^ m) hm).trans (neg_one_pow_add_mul_neg_one_pow m i)
+  linear_combination T i * (q ^ n.choose 2 * q ^ m.choose 2 * hs + (-1) ^ (i : ℕ) * hq)
+
 /-- **Inverting the Hecke operators**, integrally: replacing each `Tᵢ` by `T_{n-i}` and
 substituting `q^{n-1} X` for `X` turns the Hecke polynomial, after scaling by
 `(-1)^n q^{n(n-1)/2}`, into `q^{n(n-1)}` times its reflection `X^n P(1/X)`.  When `Tₙ` is a
@@ -271,21 +288,9 @@ theorem C_mul_glnHeckePolynomial_rev_comp (q : A) (T : Fin (n + 1) → A) :
     ((natDegree_C_mul_le _ _).trans
       (natDegree_reflect_le.trans (max_le le_rfl (natDegree_glnHeckePolynomial_le q T))))
     fun i => ?_
-  obtain ⟨m, hm⟩ : ∃ m, n = m + i := ⟨n - i, by omega⟩
-  rw [coeff_C_mul, comp_C_mul_X_coeff, coeff_glnHeckePolynomial_val, Fin.rev_rev, coeff_C_mul,
-    coeff_reflect, revAt_le i.is_le, coeff_glnHeckePolynomial,
-    show n - i = m by omega]
-  have hc : n.choose 2 + m.choose 2 = (n - 1) * m + (i : ℕ).choose 2 := by
-    have := Nat.add_choose_two_add_choose_two (i : ℕ) m
-    rwa [add_comm (i : ℕ) m, ← hm] at this
-  have hq : q ^ n.choose 2 * q ^ m.choose 2 * (q ^ (n - 1)) ^ (i : ℕ) =
-      q ^ (n * (n - 1)) * q ^ (i : ℕ).choose 2 := by
-    rw [← pow_mul, ← pow_add, ← pow_add, ← pow_add,
-      hc, add_right_comm, ← mul_add, ← hm, mul_comm]
-  have hs : (-1 : A) ^ n * (-1) ^ m = (-1) ^ (i : ℕ) :=
-    (congrArg (fun k => (-1 : A) ^ k * (-1) ^ m) hm).trans (neg_one_pow_add_mul_neg_one_pow m i)
-  linear_combination T i * (q ^ n.choose 2 * q ^ m.choose 2 * (q ^ (n - 1)) ^ (i : ℕ) * hs +
-    (-1) ^ (i : ℕ) * hq)
+  rw [coeff_C_mul, comp_C_mul_X_coeff, coeff_C_mul, coeff_reflect, revAt_le i.is_le, ← mul_assoc,
+    coeff_glnHeckePolynomial_rev, mul_right_comm, ← pow_mul, ← pow_add, ← mul_add,
+    Nat.sub_add_cancel i.is_le, mul_comm (n - 1) n]
 
 /-- **Inverting the Hecke operators**, normalized: if `u` inverts `Tₙ`, the generator rule
 `Tᵢ ↦ T_{n-i} / Tₙ` (the effect of `g ↦ g⁻¹` on spherical double cosets) turns the Hecke
@@ -312,19 +317,11 @@ theorem coeff_zero_mul_coeff_glnHeckePolynomial_rev_mul (q : A) {T : Fin (n + 1)
     (glnHeckePolynomial n q T).coeff 0 *
         (glnHeckePolynomial n q fun i => T i.rev * u).coeff (n - i) =
       q ^ ((n - 1) * i) * (glnHeckePolynomial n q T).coeff i := by
-  rw [coeff_zero_glnHeckePolynomial, coeff_glnHeckePolynomial, coeff_glnHeckePolynomial_val]
-  obtain ⟨m, hm⟩ : ∃ m, n = m + i := ⟨n - i, by omega⟩
-  rw [show n - i = m by omega]
-  have hq : q ^ n.choose 2 * q ^ (i : ℕ).choose 2 = q ^ ((n - 1) * i) * q ^ m.choose 2 := by
-    have := Nat.add_choose_two_add_choose_two m (i : ℕ)
-    rw [← hm] at this
-    rw [← pow_add, ← pow_add, this]
-  have hs : (-1 : A) ^ n * (-1) ^ (i : ℕ) = (-1) ^ m :=
-    (congrArg (fun k => (-1 : A) ^ k * (-1) ^ (i : ℕ)) (hm.trans (add_comm m i))).trans
-      (neg_one_pow_add_mul_neg_one_pow i m)
+  have h := coeff_glnHeckePolynomial_rev q T i.rev
+  rw [Fin.val_rev, Nat.add_sub_add_right, Nat.sub_sub_self i.is_le] at h
+  rw [glnHeckePolynomial_mul_const, coeff_mul_C, coeff_zero_glnHeckePolynomial]
   linear_combination
-    (-1) ^ n * (-1) ^ (i : ℕ) * q ^ n.choose 2 * q ^ (i : ℕ).choose 2 * T i.rev * hu +
-      T i.rev * (q ^ n.choose 2 * q ^ (i : ℕ).choose 2 * hs + (-1) ^ m * hq)
+    (-1) ^ n * q ^ n.choose 2 * (glnHeckePolynomial n q fun i => T i.rev).coeff (n - i) * hu + h
 
 end CommRing
 
