@@ -62,8 +62,10 @@ of `G`, equivalently the central extensions of `G` by `kˣ` up to equivalence.
 * `TauCeti.FactorSet.cohomologyClass_eq_zero_iff` and
   `TauCeti.FactorSet.nonempty_splitting_iff_cohomologyClass_eq_zero`: the class vanishes exactly
   for the coboundaries, equivalently for the factor sets whose extension splits.
-* `TauCeti.FactorSet.nsmul_cohomologyClass_eq_zero_iff`: `n` kills a factor-set class exactly
-  when the pointwise `n`-th power of the factor set is a multiplicative coboundary.
+* `TauCeti.FactorSet.nsmul_cohomologyClass_eq_zero_iff` and
+  `TauCeti.FactorSet.natCard_nsmul_cohomologyClass_eq_zero`: `n` kills a factor-set class exactly
+  when the pointwise `n`-th power of the factor set is a multiplicative coboundary; in particular
+  `Nat.card M` kills every factor-set class.
 * `TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero`: the exponent of `M` kills every
   factor-set class.
 * `TauCeti.FactorSet.exists_rescale_pow_eq_one`: with a surjective `n`-th power map for
@@ -164,12 +166,15 @@ theorem nsmul_cohomologyClass_eq_zero_iff (n : ℕ) :
   exact ⟨fun h ↦ isMulCoboundary₂_of_mem_coboundaries₂ _ h,
     fun h ↦ (coboundariesOfIsMulCoboundary₂ h).2⟩
 
+/-- The cardinality of the kernel `M` kills the cohomology class of any factor set in `H²(G, M)`
+(when `M` is infinite, `Nat.card M = 0` and the statement is trivial). -/
+theorem natCard_nsmul_cohomologyClass_eq_zero : Nat.card M • α.cohomologyClass = 0 :=
+  (α.nsmul_cohomologyClass_eq_zero_iff (Nat.card M)).2 ⟨1, fun _ _ ↦ by simp [pow_card_eq_one']⟩
+
 /-- **The exponent of the coefficient group kills the class of a factor set.** When `M` has
 unbounded exponent, `Monoid.exponent M = 0` and the statement is trivial. -/
-theorem exponent_nsmul_cohomologyClass_eq_zero :
-    Monoid.exponent M • α.cohomologyClass = 0 := by
-  rw [nsmul_cohomologyClass_eq_zero_iff]
-  exact ⟨1, fun _ _ ↦ by simp [Monoid.pow_exponent_eq_one]⟩
+theorem exponent_nsmul_cohomologyClass_eq_zero : Monoid.exponent M • α.cohomologyClass = 0 :=
+  (α.nsmul_cohomologyClass_eq_zero_iff _).2 ⟨1, fun _ _ ↦ by simp [Monoid.pow_exponent_eq_one]⟩
 
 end Class
 

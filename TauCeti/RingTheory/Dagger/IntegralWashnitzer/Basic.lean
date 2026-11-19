@@ -238,6 +238,19 @@ theorem norm_toWashnitzerAlgebra_le_one (f : intWashnitzerAlgebra σ R) :
     ‖toWashnitzerAlgebra σ R f‖ ≤ 1 :=
   mem_intWashnitzerAlgebra_iff_norm_le_one.1 (by rw [coe_toWashnitzerAlgebra]; exact f.2)
 
+/-- If every coefficient of `f ∈ R°⟨X⟩†` has norm less than one, then so does every product
+`f y` with `y ∈ R°⟨X⟩†`. -/
+theorem norm_coeff_mul_lt_one {f : intWashnitzerAlgebra σ R}
+    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ < 1) (y : intWashnitzerAlgebra σ R) :
+    ∀ t, ‖coeff t ((f * y : intWashnitzerAlgebra σ R) : MvPowerSeries σ R)‖ < 1 := by
+  have hf : ‖toWashnitzerAlgebra σ R f‖ < 1 := by
+    rw [washnitzerAlgebra.norm_lt_iff, coe_toWashnitzerAlgebra]
+    exact h
+  have hlt := (norm_mul_le _ _).trans_lt
+    ((mul_le_of_le_one_right (norm_nonneg _) (norm_toWashnitzerAlgebra_le_one y)).trans_lt hf)
+  rw [← map_mul, washnitzerAlgebra.norm_lt_iff, coe_toWashnitzerAlgebra] at hlt
+  exact hlt
+
 /-- A Gauss-norm-preserving ring isomorphism of Monsky–Washnitzer algebras restricts to their
 integral subrings. -/
 noncomputable def restrictRingEquiv {τ : Type*}
@@ -361,22 +374,8 @@ theorem mem_intWashnitzerAlgebra_iff_exists_norm_coeff_le_pow [Finite σ] {q : �
       _ ≤ q ^ j := mul_le_of_le_one_right (by positivity)
           ((div_le_one (by positivity)).2 (le_self_pow₀ hM hj.ne'))
   · rintro ⟨c, hc, h⟩
-    -- At the radius `ρ = q^{-1/c} > 1`, `‖aᵥ‖ ρ^{|ν|} ≤ q ^ j q ^ {-(j+1)} = q⁻¹`.
-    have hq : 1 < q⁻¹ := one_lt_inv_iff₀.2 ⟨hq0, hq1⟩
-    set ρ := q⁻¹ ^ ((c : ℝ)⁻¹)
-    have hρc : ρ ^ c = q⁻¹ := Real.rpow_inv_natCast_pow (inv_nonneg.2 hq0.le) hc.ne'
-    have hρ : 1 < ρ := Real.one_lt_rpow hq (by positivity)
-    refine ⟨⟨ρ, hρ, q⁻¹, fun t ↦ ?_⟩, fun t ↦ (h t).trans (pow_le_one₀ hq0.le hq1.le)⟩
-    rw [le_mul_inv_iff₀ (by positivity)]
-    calc ‖coeff t f‖ * ρ ^ t.degree ≤ q ^ (t.degree / c) * (ρ ^ c) ^ (t.degree / c + 1) := by
-          rw [← pow_mul]
-          gcongr
-          · exact h t
-          · exact hρ.le
-          · exact (Nat.lt_mul_div_succ _ hc).le
-      _ = q⁻¹ := by
-          rw [hρc, inv_pow, pow_succ]
-          field_simp
+    exact ⟨exists_norm_coeff_le_mul_inv_pow_of_le_pow hq0 hq1 hc h,
+      fun t ↦ (h t).trans (pow_le_one₀ hq0.le hq1.le)⟩
 
 end Defs
 
@@ -568,15 +567,7 @@ theorem mem_jacobson_bot_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K
       simp [a, ha] at this
   · intro h y
     -- The coefficients of `f y` have norm less than one, so `f y + 1` passes the unit test.
-    have hfy : ∀ t, ‖coeff t ((f * y : intWashnitzerAlgebra σ K) : MvPowerSeries σ K)‖ < 1 := by
-      have hf : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K f‖ < 1 :=
-        washnitzerAlgebra.norm_lt_iff.2 h
-      have hy : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K y‖ ≤ 1 :=
-        mem_intWashnitzerAlgebra_iff_norm_le_one.1 y.2
-      have hlt := (norm_mul_le _ _).trans_lt
-        ((mul_le_of_le_one_right (norm_nonneg _) hy).trans_lt hf)
-      rw [← map_mul] at hlt
-      exact washnitzerAlgebra.norm_lt_iff.1 hlt
+    have hfy := intWashnitzerAlgebra.norm_coeff_mul_lt_one h y
     refine isUnit_intWashnitzerAlgebra_iff.2 ⟨?_, fun t ht ↦ ?_⟩
     · have h0 := hfy 0
       rw [coeff_zero_eq_constantCoeff_apply] at h0

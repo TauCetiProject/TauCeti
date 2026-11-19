@@ -35,7 +35,7 @@ inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup, and for a s
 commutative semiring the `a`-torsion submodule is the kernel of left scalar multiplication
 `LinearMap.lsmul R M a`. Linear maps send torsion elements to torsion elements, so submodules and
 linear images of torsion modules are torsion, and the torsion submodule of `M × N` is the product
-of the torsion submodules.
+of the torsion submodules. A linear map into a torsion-free module vanishes on the torsion.
 
 ## Main definitions
 
@@ -56,6 +56,8 @@ of the torsion submodules.
 * `TauCeti.Submodule.comap_torsion_of_comp_eq_smul`: a linear map with a left inverse up to a
   nonzerodivisor reflects torsion.
 * `LinearMap.le_comap_torsion`: a linear map sends torsion elements to torsion elements.
+* `LinearMap.torsion_le_ker`: a linear map into a torsion-free module vanishes on the torsion
+  submodule.
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
 * `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
   submodules, linear images and products of torsion modules are torsion.
@@ -276,6 +278,22 @@ theorem torsionProdEquiv_symm_apply_coe
 end Submodule
 
 end TauCeti
+
+namespace LinearMap
+
+variable {R M N : Type*} [CommRing R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
+
+/-- A linear map into a torsion-free module vanishes on the torsion submodule. -/
+theorem torsion_le_ker [Module.IsTorsionFree R N] (f : M →ₗ[R] N) :
+    Submodule.torsion R M ≤ LinearMap.ker f := by
+  rintro x ⟨a, hax⟩
+  rw [LinearMap.mem_ker]
+  apply (isRegular_iff_mem_nonZeroDivisors.mpr a.2).isSMulRegular
+  dsimp only
+  rw [smul_zero, ← map_smul, ← Submonoid.smul_def, hax, map_zero]
+
+end LinearMap
 
 namespace Module.IsTorsion
 
