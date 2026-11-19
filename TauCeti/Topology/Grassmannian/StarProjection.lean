@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Analysis.CStarAlgebra.Basic
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Projection.Trace
 public import TauCeti.Topology.Grassmannian.Tautological
 
 /-!
@@ -135,10 +137,8 @@ theorem mem_grassmannian_iff_trace :
     P ∈ grassmannian 𝕜 E k ↔ IsStarProjection P ∧ LinearMap.trace 𝕜 E P = k := by
   rw [mem_grassmannian_iff_finrank]
   refine and_congr_right fun hP ↦ ?_
-  -- An idempotent is the projection onto its range along its kernel, of trace `finrank range`.
-  have hid : IsIdempotentElem (P : E →ₗ[𝕜] E) :=
-    ContinuousLinearMap.isIdempotentElem_toLinearMap_iff.mpr hP.isIdempotentElem
-  rw [(LinearMap.IsIdempotentElem.isProj_range _ hid).trace, Nat.cast_inj]
+  rw [(isStarProjection_iff_eq_starProjection_range.mp hP).2, Submodule.range_starProjection,
+    Submodule.trace_starProjection, Nat.cast_inj]
 
 /-- The trace of a point of `G(E, k)` is `k`. -/
 theorem trace_eq_of_mem_grassmannian (hP : P ∈ grassmannian 𝕜 E k) :
@@ -237,6 +237,15 @@ theorem coe_grassmannianOrthogonalHomeomorph (hkl : k + l = finrank 𝕜 E)
     (P : grassmannian 𝕜 E k) : (grassmannianOrthogonalHomeomorph hkl P : E →L[𝕜] E) = 1 - P :=
   (rfl)
 
+/-- The plane of the orthogonal complement `1 - P` is the orthogonal complement of the plane of
+`P`. -/
+theorem range_coe_grassmannianOrthogonalHomeomorph (hkl : k + l = finrank 𝕜 E)
+    (P : grassmannian 𝕜 E k) :
+    (grassmannianOrthogonalHomeomorph hkl P : E →L[𝕜] E).range = (P : E →L[𝕜] E).rangeᗮ := by
+  rw [coe_grassmannianOrthogonalHomeomorph, eq_starProjection_range_of_mem_grassmannian P.2,
+    ← Submodule.starProjection_orthogonal', Submodule.range_starProjection,
+    Submodule.range_starProjection]
+
 @[simp]
 theorem grassmannianOrthogonalHomeomorph_symm (hkl : k + l = finrank 𝕜 E) :
     (grassmannianOrthogonalHomeomorph hkl).symm =
@@ -280,17 +289,6 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
   {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
   {k : ℕ} {P : E →L[𝕜] E}
-
-/-- The range of the conjugate `U P U⁻¹` is the image under `U` of the range of `P`. -/
-@[simp]
-theorem range_conjStarAlgEquiv (U : E ≃ₗᵢ[𝕜] F) (P : E →L[𝕜] E) :
-    (U.conjStarAlgEquiv P).range = P.range.map (U.toLinearEquiv : E →ₗ[𝕜] F) := by
-  ext y
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨P (U.symm x), ⟨U.symm x, rfl⟩, rfl⟩
-  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
-    exact ⟨U x, by simp⟩
 
 /-- Conjugating a point of `G(E, k)` by a linear isometry equivalence `U : E ≃ₗᵢ[𝕜] F` gives a
 point of `G(F, k)`. -/

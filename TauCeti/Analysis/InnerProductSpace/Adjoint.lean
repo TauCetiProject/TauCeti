@@ -41,6 +41,8 @@ For a continuous linear equivalence between complete inner product spaces, the a
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
 with the adjoint of the inverse as inverse.
+Conjugating an operator `P` by a linear isometry equivalence `U` gives an operator whose range is
+the image under `U` of the range of `P` (`LinearIsometryEquiv.range_conjStarAlgEquiv`).
 For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
 preimages (`LinearIsometry.adjoint_apply_apply`).
 
@@ -531,6 +533,23 @@ theorem mem_range_cornerEmbedding_iff (e : E →ₗᵢ[𝕜] F) (T : F →L[𝕜
 end LinearIsometry
 
 end OperatorCorners
+
+namespace LinearIsometryEquiv
+
+variable [CompleteSpace E] [CompleteSpace F]
+
+/-- The range of the conjugate `U P U⁻¹` is the image under `U` of the range of `P`. -/
+@[simp]
+theorem range_conjStarAlgEquiv (U : E ≃ₗᵢ[𝕜] F) (P : E →L[𝕜] E) :
+    (U.conjStarAlgEquiv P).range = P.range.map (U.toLinearEquiv : E →ₗ[𝕜] F) := by
+  ext y
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨P (U.symm x), ⟨U.symm x, rfl⟩, rfl⟩
+  · rintro ⟨_, ⟨x, rfl⟩, rfl⟩
+    exact ⟨U x, by simp⟩
+
+end LinearIsometryEquiv
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
