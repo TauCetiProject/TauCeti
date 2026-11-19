@@ -130,6 +130,32 @@ theorem frameLoop_periodic {c : ℝ} (hΦ : Periodic Φ c) (hS : Periodic S c) :
     Periodic (frameLoop Φ S) c := fun t ↦ by
   simp only [frameLoop, hΦ t, hS t, hΦ.deriv t]
 
+/-- **Nondegeneracy in a path of frames.** Let `Θ(t) : E → V` be a differentiable one-periodic
+path of invertible frames from a finite-dimensional complex space, and let `S` be such that the only
+differentiable one-periodic loop in the kernel of the asymptotic operator `A ζ = J_t (ζ' - S_t ζ)`
+is zero. Then the loop operator `η ↦ η' - S' η` of the loop `S'` of `S` in the frames `Θ` is
+invertible from `H¹` to `H⁰`: `η' = S' η` exactly when `ζ = Θ η` solves `ζ' = S ζ`. -/
+theorem isInvertible_loopOperator_frameLoop {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [FiniteDimensional ℂ E] {Θ : ℝ → E →L[ℝ] V} {J : ℝ → AlmostComplexStructure V}
+    (hΘd : Differentiable ℝ Θ) (hΘp : Periodic Θ 1) (hΘinv : ∀ s, (Θ s).IsInvertible)
+    (hnd : ∀ ζ : ℝ → V, Differentiable ℝ ζ → Periodic ζ 1 →
+      (∀ t, asymptoticOperator J S ζ t = 0) → ζ = 0)
+    {S' : C(AddCircle (1 : ℝ), E →L[ℝ] E)} (hS' : ∀ t : ℝ, S' t = frameLoop Θ S t) :
+    (CircleSobolev.loopOperator 1 S').IsInvertible := by
+  refine (CircleSobolev.isInvertible_loopOperator_iff 1 S').2 fun η hη ↦ ?_
+  -- `ζ = Θ η` solves `ζ' = S ζ`, so it lies in the kernel of `A`.
+  set ζ : ℝ → V := fun s ↦ Θ s (η s) with hζ
+  have hζd (s : ℝ) : HasDerivAt ζ (S s (ζ s)) s := by
+    have h := (hΘd s).hasDerivAt.clm_apply (hη s)
+    rwa [hS', apply_frameLoop (hΘinv s), add_sub_cancel] at h
+  have hζp : Periodic ζ 1 := fun s ↦ by
+    simp only [hζ, hΘp s, AddCircle.coe_add_period]
+  have hζ0 : ζ = 0 := hnd ζ (fun s ↦ (hζd s).differentiableAt) hζp fun s ↦
+    (asymptoticOperator_eq_zero_iff (hζd s).differentiableAt).2 (hζd s)
+  ext x
+  obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective x
+  exact (hΘinv s).injective (by simpa [hζ] using congrFun hζ0 s)
+
 section UnitaryFrame
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
