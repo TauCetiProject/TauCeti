@@ -117,14 +117,6 @@ theorem eq_fst_of_isMinOn_dist_of_mem_normalTube (hf : MDifferentiable I 𝓘(�
 
 variable [CompactSpace M]
 
-/-- A continuous map from a compact nonempty space has a nearest point to every `q`. -/
-private theorem exists_isMinOn_dist {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
-    [Nonempty X] [PseudoMetricSpace Y] {g : X → Y} (hg : Continuous g) (q : Y) :
-    ∃ y, IsMinOn (fun z => dist q (g z)) univ y :=
-  let ⟨y, _, hy⟩ := isCompact_univ.exists_isMinOn univ_nonempty
-    (continuous_const.dist hg).continuousOn
-  ⟨y, hy⟩
-
 /-- If normal addition is injective on the normal vectors of length less than `ε`, the length of
 such a normal vector `v` at `x` is at most the distance from `f x + v` to any point of the
 image. -/
@@ -132,7 +124,8 @@ theorem norm_le_dist_add_of_mem_normalTube (hf : MDifferentiable I 𝓘(ℝ, V) 
     (hinj : InjOn (fun p : M × V => f p.1 + p.2) (normalTube I f ε)) {p : M × V}
     (hp : p ∈ normalTube I f ε) (z : M) : ‖p.2‖ ≤ dist (f p.1 + p.2) (f z) := by
   have : Nonempty M := ⟨p.1⟩
-  obtain ⟨y, hy⟩ := exists_isMinOn_dist hf.continuous (f p.1 + p.2)
+  obtain ⟨y, -, hy⟩ := isCompact_univ.exists_isMinOn univ_nonempty
+    ((continuous_const (y := f p.1 + p.2)).dist hf.continuous).continuousOn
   obtain rfl := eq_fst_of_isMinOn_dist_of_mem_normalTube hf hinj hp hy
   simpa [dist_eq_norm] using hy (mem_univ z)
 
@@ -165,7 +158,8 @@ theorem thickening_range_subset_image_normalTube (hf : MDifferentiable I 𝓘(�
   intro q hq
   obtain ⟨_, ⟨z, rfl⟩, hz⟩ := mem_thickening_iff.mp hq
   have : Nonempty M := ⟨z⟩
-  obtain ⟨y, hy⟩ := exists_isMinOn_dist hf.continuous q
+  obtain ⟨y, -, hy⟩ := isCompact_univ.exists_isMinOn univ_nonempty
+    ((continuous_const (y := q)).dist hf.continuous).continuousOn
   exact ⟨(y, q - f y),
     mk_sub_mem_normalTube_of_isMinOn (hf y) hy ((hy (mem_univ z)).trans_lt hz), by simp⟩
 
@@ -226,7 +220,8 @@ theorem exists_contMDiffOn_nearestPoint_retraction [Nonempty M] [FiniteDimension
   obtain ⟨x₁⟩ := ‹Nonempty M›
   have : FiniteDimensional ℝ E := finiteDimensional_of_injective_mfderiv (himm x₁)
   have hd : MDifferentiable I 𝓘(ℝ, V) f := hf.mdifferentiable (by simp)
-  choose r hr using exists_isMinOn_dist hf.continuous
+  choose r _ hr using fun q : V => isCompact_univ.exists_isMinOn univ_nonempty
+    ((continuous_const (y := q)).dist hf.continuous).continuousOn
   -- A nearest point to the endpoint of a short normal vector is its base point.
   have hbase : ∀ q (p : M × V), p ∈ normalTube I f ε → f p.1 + p.2 = q → r q = p.1 :=
     fun q p hp hpq =>
