@@ -161,16 +161,14 @@ theorem _root_.MeasureTheory.MemLp.tendsto_integral_norm_centeredTruncation_sq (
       atTop (𝓝 (∫ ω, ‖X ω‖ ^ 2 ∂P)) := by
   let hR (R : ℝ≥0) : MemLp (centeredTruncation X P R) 2 P :=
     hX.aestronglyMeasurable.memLp_centeredTruncation R
-  have hs : Tendsto (fun R : ℝ≥0 ↦
-      ‖hX.toLp X - (hR R).toLp (centeredTruncation X P R)‖ ^ 2) atTop (𝓝 0) := by
-    simpa only [← MemLp.toLp_sub, MemLp.norm_toLp_sq, Pi.sub_apply] using
-      hX.tendsto_integral_norm_sub_centeredTruncation_sq hmean
-  have hn := (Real.continuous_sqrt.tendsto 0).comp hs
-  simp only [Function.comp_def, Real.sqrt_sq_eq_abs, abs_norm, Real.sqrt_zero] at hn
-  have ht : Tendsto (fun R ↦ (hR R).toLp (centeredTruncation X P R)) atTop
-      (𝓝 (hX.toLp X)) :=
-    tendsto_iff_dist_tendsto_zero.mpr (by simpa only [dist_eq_norm, norm_sub_rev] using hn)
-  simpa only [MemLp.norm_toLp_sq] using ht.norm.pow 2
+  refine tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub hX hR ?_
+  have he (R : ℝ≥0) : eLpNorm (centeredTruncation X P R - X) 2 P =
+      ENNReal.ofReal √(∫ ω, ‖X ω - centeredTruncation X P R ω‖ ^ 2 ∂P) :=
+    (eLpNorm_sub_comm _ _ _ _).trans (hX.sub (hR R)).eLpNorm_two_eq_ofReal_sqrt_integral
+  simp_rw [he]
+  simpa only [Function.comp_def, Real.sqrt_zero, ENNReal.ofReal_zero] using
+    ((ENNReal.continuous_ofReal.comp Real.continuous_sqrt).tendsto 0).comp
+      (hX.tendsto_integral_norm_sub_centeredTruncation_sq hmean)
 
 end Hilbert
 
