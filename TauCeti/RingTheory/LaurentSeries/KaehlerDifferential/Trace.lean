@@ -252,33 +252,26 @@ theorem continuous_trace [TopologicalSpace L] [IsModuleTopology K⸨X⸩ L] :
 
 variable (K L) in
 /-- **The residue** `Res_L : Ω¹_cont(L/K) →ₗ[K] K` on continuous one-forms of a formally étale
-`K⸨X⸩`-algebra `L`, defined as the `t⁻¹`-coefficient of `Tr_{L/F} ω`. -/
-noncomputable def residue : ContinuousKaehlerDifferential K L →ₗ[K] K where
-  toFun ω := (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K L ω)).coeff (-1)
-  map_add' ω η := by simp
-  map_smul' c ω := by
-    rw [← IsScalarTower.algebraMap_smul K⸨X⸩ c ω, LinearMap.map_smul,
-      ContinuousLinearEquiv.map_smul, smul_eq_mul, laurentSeries_algebraMap_mul_eq_smul,
-      coeff_smul, RingHom.id_apply]
+`K⸨X⸩`-algebra `L`, defined as the residue `Res_F(Tr_{L/F} ω)` of the differential trace. -/
+noncomputable def residue : ContinuousKaehlerDifferential K L →ₗ[K] K :=
+  (TauCeti.ContinuousKaehlerDifferential.residue K).comp ((trace K L).restrictScalars K)
 
 /-- **`Res_L(ω) = Res_F(Tr_{L/F} ω)`.** -/
 theorem residue_apply (ω : ContinuousKaehlerDifferential K L) :
-    residue K L ω =
-      (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K (trace K L ω)).coeff (-1) :=
+    residue K L ω = TauCeti.ContinuousKaehlerDifferential.residue K (trace K L ω) :=
   (rfl)
 
 /-- In coordinates in `dt`, `Res_L(x dt)` is the `t⁻¹`-coefficient of `Tr_{L/F}(x)`. -/
 theorem residue_eq_coeff_neg_one_trace (ω : ContinuousKaehlerDifferential K L) :
     residue K L ω = (Algebra.trace K⸨X⸩ L (equivSelf K L ω)).coeff (-1) := by
-  rw [residue_apply, equivLaurentSeries_trace]
+  rw [residue_apply, TauCeti.ContinuousKaehlerDifferential.residue_apply, equivLaurentSeries_trace]
 
 @[simp]
 theorem residue_tensorEquiv (η : L ⊗[K⸨X⸩] TauCeti.ContinuousKaehlerDifferential K) :
     residue K L (tensorEquiv K L η) =
       TauCeti.ContinuousKaehlerDifferential.residueBaseChange L η := by
   rw [residue_apply, trace_tensorEquiv,
-    TauCeti.ContinuousKaehlerDifferential.residueBaseChange_apply,
-    TauCeti.ContinuousKaehlerDifferential.residue_apply]
+    TauCeti.ContinuousKaehlerDifferential.residueBaseChange_apply]
 
 @[simp]
 theorem residue_smul_map (x : L) (ω : TauCeti.ContinuousKaehlerDifferential K) :
@@ -291,9 +284,8 @@ theorem residue_smul_map (x : L) (ω : TauCeti.ContinuousKaehlerDifferential K) 
 @[simp]
 theorem residue_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
     residue K L (map K L ω) =
-      Module.finrank K⸨X⸩ L •
-        (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K ω).coeff (-1) := by
-  rw [residue_apply, trace_map, map_nsmul, coeff_nsmul, Pi.smul_apply]
+      Module.finrank K⸨X⸩ L • TauCeti.ContinuousKaehlerDifferential.residue K ω := by
+  rw [residue_apply, trace_map, map_nsmul]
 
 /-- Isomorphisms of formally étale `K⸨X⸩`-algebras preserve the residue. -/
 @[simp]
@@ -307,8 +299,7 @@ theorem residue_mapSemilinear_algEquiv {L' : Type*} [CommRing L'] [Algebra K⸨X
 @[simp]
 theorem residue_D (x : L) :
     residue K L (D K L x) = 0 := by
-  rw [residue_apply, trace_D, TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D,
-    _root_.LaurentSeries.coeff_neg_one_derivative]
+  rw [residue_apply, trace_D, TauCeti.ContinuousKaehlerDifferential.residue_D]
 
 /-- **Integration by parts for residues**: `Res_L(x d y) = -Res_L(y d x)`. -/
 theorem residue_smul_D (x y : L) :

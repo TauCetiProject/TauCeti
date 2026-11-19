@@ -213,7 +213,6 @@ theorem residue_eq_coeff_equivLevelContinuousKaehlerDifferential
         (Level.ContinuousKaehlerDifferential.equivLevel K d
           (equivLevelContinuousKaehlerDifferential K d ω))).coeff (-1) := by
   rw [residue_apply, ← trace_equivLevelContinuousKaehlerDifferential,
-    ← TauCeti.ContinuousKaehlerDifferential.residue_apply,
     Level.ContinuousKaehlerDifferential.residue_trace]
 
 /-- On a finite separable ramified level `Level K d` (`[NeZero ((d : ℕ) : K)]`), the intrinsic
@@ -442,7 +441,7 @@ theorem residue_eq_coeff_laurentDifferentialEquiv (e : L ≃ₐ[K⸨X⸩] Level 
         (Level.ContinuousKaehlerDifferential.equivLevel K d
           (e.laurentDifferentialEquiv ω))).coeff (-1) := by
   rw [Extension.ContinuousKaehlerDifferential.residue_apply, ← trace_laurentDifferentialEquiv e,
-    ← TauCeti.ContinuousKaehlerDifferential.residue_apply, residue_trace]
+    residue_trace]
 
 /-- When `L` carries the `K⸨X⸩`-module topology, `e.laurentDifferentialEquiv` upgrades to a
 continuous `K⸨X⸩`-linear equivalence with the valuation-topologized level one-forms. -/
