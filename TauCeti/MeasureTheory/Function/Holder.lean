@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Continuous
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.Analysis.InnerProductSpace.Continuous
 
 /-!
 # Hölder estimates for pointwise pairings
@@ -21,9 +22,8 @@ integration-by-parts arguments:
   `ContinuousLinearMap.memLp_of_bilin` to evaluation.
 * `MeasureTheory.MemLp.integrable_bilinear_apply`: more generally, an essentially bounded field of
   continuous bilinear maps applied to an `L^p` function and an `L^q` function is integrable.
-* `MeasureTheory.MemLp.integrable_inner`: the pointwise inner product of an `L^p` function and an
-  `L^q` function with `1/p + 1/q = 1` is integrable; in particular that of two square-integrable
-  functions.
+* `MeasureTheory.MemLp.integrable_inner_of_holderConjugate`: Hölder's inequality makes the
+  pointwise inner product `⟪h, g⟫` of `h ∈ L^q` and `g ∈ L^{q'}` integrable.
 * `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing
   `ContinuousLinearMap.lpPairing` of the multiplication of a complete normed algebra is the
   integral of the product.
@@ -83,16 +83,16 @@ namespace MeasureTheory
 
 open scoped InnerProductSpace
 
-variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {α 𝕜 H : Type*} [MeasurableSpace α] [RCLike 𝕜] [NormedAddCommGroup H]
+  [InnerProductSpace 𝕜 H] {μ : Measure α}
 
-/-- **Hölder's inequality for the inner product**: the pointwise inner product of `f ∈ Lᵖ` and
-`g ∈ L^q` with `1/p + 1/q = 1` is integrable. In particular the pointwise inner product of two
-square-integrable functions is integrable. -/
-theorem MemLp.integrable_inner {p q : ℝ≥0∞} [p.HolderTriple q 1] {f g : α → E}
-    (hf : MemLp f p μ) (hg : MemLp g q μ) : Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
-  memLp_one_iff_integrable.1 (hf.of_bilin (fun v w ↦ ⟪v, w⟫_𝕜) 1 hg continuous_inner
-    (ae_of_all _ fun x ↦ by simpa using nnNorm_inner_le_nnNorm (𝕜 := 𝕜) (f x) (g x)))
+/-- Hölder's inequality makes the pairing `x ↦ ⟪h x, g x⟫` integrable for `h ∈ L^q` and
+`g ∈ L^{q'}`. For `q = q' = 2` this is `MeasureTheory.MemLp.integrable_inner`. -/
+theorem MemLp.integrable_inner_of_holderConjugate {q q' : ℝ≥0∞} [q.HolderConjugate q']
+    {h g : α → H} (hh : MemLp h q μ) (hg : MemLp g q' μ) :
+    Integrable (fun x => ⟪h x, g x⟫_𝕜) μ :=
+  memLp_one_iff_integrable.1 <| hh.of_bilin (fun a b => ⟪a, b⟫_𝕜) 1 hg continuous_inner
+    (ae_of_all _ fun x => by simpa [← NNReal.coe_le_coe] using norm_inner_le_norm (h x) (g x))
 
 end MeasureTheory
 
