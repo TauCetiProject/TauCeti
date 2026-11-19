@@ -62,8 +62,8 @@ smoothness theorem `MeasureTheory.contDiff_convolution_left_of_dominated`. In ti
   `∂ₜ (K_t ⋆ φ) = K_t ⋆ Δ φ` for `C²` data `φ` with compact support.
 * `TauCeti.heatKernel_convolution_sub_eq_integral`: Duhamel's formula
   `(K_t ⋆ φ)(x) - φ(x) = ∫₀ᵗ (K_s ⋆ Δ φ)(x) ds` for such `φ`, when `F` is complete.
-* `TauCeti.stronglyMeasurable_heatKernel_convolution`: `(t, x) ↦ (K_t ⋆ g)(x)` is strongly
-  measurable for continuous `g`.
+* `TauCeti.stronglyMeasurable_heatKernel_convolution`: `(s, x) ↦ (K_{τ(s)} ⋆ f(s, ·))(x)` is
+  jointly strongly measurable for measurable `τ` and jointly measurable `f`.
 
 ## References
 
@@ -450,17 +450,19 @@ theorem heatKernel_convolution_sub_eq_integral [CompleteSpace F] {φ : E → F}
   · exact (hasDerivAt_heatKernel_convolution_of_hasCompactSupport hφ hc ht x).continuousAt.tendsto
       |>.mono_left nhdsWithin_le_nhds
 
-/-- The heat convolution of a continuous function is jointly strongly measurable in time
-and space. -/
-theorem stronglyMeasurable_heatKernel_convolution (hg : Continuous g) :
-    StronglyMeasurable fun z : ℝ × E => (heatKernel z.1 ⋆ g) z.2 := by
+/-- **Joint measurability of heat convolutions.** For a measurable time map `τ` and jointly
+measurable `f`, the function `(s, x) ↦ (K_{τ(s)} ⋆ f(s, ·))(x)` is jointly strongly measurable.
+No integrability of `f` is needed: where the convolution integral does not exist it is `0`. -/
+theorem stronglyMeasurable_heatKernel_convolution {τ : ℝ → ℝ} {f : ℝ → E → F}
+    (hτ : Measurable τ) (hf : StronglyMeasurable (Function.uncurry f)) :
+    StronglyMeasurable fun z : ℝ × E => (heatKernel (τ z.1) ⋆ f z.1) z.2 := by
   have hK : Measurable fun q : ℝ × E => heatKernel q.1 q.2 := by
     simp only [heatKernel_apply]
     fun_prop
   simp only [convolution_def, lsmul_apply]
   refine StronglyMeasurable.integral_prod_right
-    (f := fun (z : ℝ × E) (y : E) => heatKernel z.1 y • g (z.2 - y)) ?_
-  exact (hK.comp (measurable_fst.fst.prodMk measurable_snd)).stronglyMeasurable.smul
-    (hg.comp (continuous_fst.snd.sub continuous_snd)).stronglyMeasurable
+    (f := fun (z : ℝ × E) (y : E) => heatKernel (τ z.1) y • f z.1 (z.2 - y)) ?_
+  exact (hK.comp ((hτ.comp measurable_fst.fst).prodMk measurable_snd)).stronglyMeasurable.smul
+    (hf.comp_measurable (measurable_fst.fst.prodMk (measurable_fst.snd.sub measurable_snd)))
 
 end TauCeti
