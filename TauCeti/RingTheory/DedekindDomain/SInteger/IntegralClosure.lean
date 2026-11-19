@@ -148,8 +148,9 @@ theorem mem_integer_primesAbove_iff {x : L} :
     x ∈ (primesAbove R B S).integer L ↔ IsIntegral (S.integer K) x := by
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · -- the elements of `B` are integral over `R`, hence over `𝒪_{K,S}`
-    refine (Submodule.span_le (p := (integralClosure (S.integer K) L).toSubmodule).mpr ?_
-      (mem_span_of_mem_integer_primesAbove L S hx) :)
+    refine (mem_integralClosure_iff _ _).mp ((Subalgebra.mem_toSubmodule _).mp
+      (Submodule.span_le (p := (integralClosure (S.integer K) L).toSubmodule).mpr ?_
+        (mem_span_of_mem_integer_primesAbove L S hx)))
     rintro _ ⟨b, rfl⟩
     exact ((Algebra.IsIntegral.isIntegral (R := R) b).map (IsScalarTower.toAlgHom R B L)).tower_top
   -- `x` is integral over the integrally closed ring `𝒪_{L,T}`, whose fraction field is `L`
@@ -178,15 +179,15 @@ instance [Module.Finite R B] : Module.Finite (S.integer K) ((primesAbove R B S).
   let P := Submodule.span (S.integer K) (Set.range (algebraMap B L))
   have hspan : P = Submodule.span (S.integer K) (f '' s) := by
     rw [← Submodule.span_span_of_tower R, ← Submodule.map_span, hs, Submodule.map_top,
-      LinearMap.coe_range]
-    rfl
+      LinearMap.coe_range, AlgHom.coe_toLinearMap, IsScalarTower.coe_toAlgHom']
   have : IsNoetherian (S.integer K) P :=
     isNoetherian_of_fg_of_noetherian P (hspan ▸ Submodule.fg_span (s.finite_toSet.image f))
   -- the inclusion `𝒪_{L,T} → L` lands in that span
   let ι := (IsScalarTower.toAlgHom (S.integer K) ((primesAbove R B S).integer L) L).toLinearMap
   exact Module.Finite.of_injective
     (ι.codRestrict P fun y ↦ mem_span_of_mem_integer_primesAbove L S y.2)
-    fun _ _ h ↦ Subtype.ext (congrArg Subtype.val h :)
+    ((LinearMap.injective_codRestrict_iff _).mpr
+      (IsIntegralClosure.algebraMap_injective _ (S.integer K) L))
 
 /-- For a finite separable extension `L / K`, the `T`-integers of `L` are a finite module over the
 `S`-integers of `K`. -/
