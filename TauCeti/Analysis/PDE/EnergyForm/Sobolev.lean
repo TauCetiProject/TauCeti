@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Basic
 public import TauCeti.Analysis.PDE.EnergyForm.Integrated.Symmetry
 public import TauCeti.Analysis.PDE.EnergyForm.VariableLp
 public import TauCeti.Analysis.Sobolev.Poincare.W1p0
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
@@ -263,22 +264,12 @@ theorem memLp_energyIntegrand_of_memLp_top
         |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
     (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega)) :
     MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) := by
-  have hbs : eLpNormEssSup b (mu.restrict Omega) ≠ ⊤ :=
-    eLpNorm_exponent_top hb.aestronglyMeasurable ▸ hb.eLpNorm_ne_top
-  have hcs : eLpNormEssSup c (mu.restrict Omega) ≠ ⊤ :=
-    eLpNorm_exponent_top hc.aestronglyMeasurable ▸ hc.eLpNorm_ne_top
   refine memLp_top_of_bound (f := fun x => energyIntegrand (a x) (b x) (c x))
     (aestronglyMeasurable_energyIntegrand ha hb.aestronglyMeasurable hc.aestronglyMeasurable)
-    (Lam + (eLpNormEssSup b (mu.restrict Omega)).toReal +
-      (eLpNormEssSup c (mu.restrict Omega)).toReal) ?_
-  filter_upwards [ae_mem_restrict (mu := mu) (Omega := Omega),
-    ae_le_eLpNormEssSup (f := b) (μ := mu.restrict Omega),
-    ae_le_eLpNormEssSup (f := c) (μ := mu.restrict Omega)] with x hx hbx hcx
-  refine opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) ?_ ?_
-  · rw [← toReal_eNorm]
-    exact ENNReal.toReal_mono hbs hbx
-  · rw [← toReal_eNorm]
-    exact ENNReal.toReal_mono hcs hcx
+    (Lam + lpNorm b ⊤ (mu.restrict Omega) + lpNorm c ⊤ (mu.restrict Omega)) ?_
+  filter_upwards [ae_mem_restrict (mu := mu) (Omega := Omega), ae_le_lpNorm_exponent_top hb,
+    ae_le_lpNorm_exponent_top hc] with x hx hbx hcx
+  exact opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) hbx hcx
 
 /-- Constant principal coefficients without drift or mass define an essentially bounded field of
 pointwise energy forms. -/

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.FlatBoundary
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 import Mathlib.Analysis.Normed.Operator.Banach
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
@@ -448,15 +449,9 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_norm_value_of_contD
       ∃ w : Wkp mu Omega 2 2, Wkp.lowerOrder 1 w = u ∧
         ‖w‖ ≤ C * (‖W1p.value u‖ + ‖f‖) := by
   obtain ⟨C, hC⟩ := ha.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph hΩ hbdry hK hb hc
-  -- The essential suprema of `‖b‖` and `|c|` bound them almost everywhere on `Ω`.
-  set beta := (eLpNormEssSup b (mu.restrict Omega)).toReal
-  set gamma := (eLpNormEssSup c (mu.restrict Omega)).toReal
-  have hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta :=
-    ae_le_eLpNormEssSup.mono fun x hx => (toReal_eNorm (b x)) ▸ ENNReal.toReal_mono
-      (eLpNorm_exponent_top hb.aestronglyMeasurable ▸ hb.eLpNorm_ne_top) hx
-  have hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma :=
-    ae_le_eLpNormEssSup.mono fun x hx => (toReal_eNorm (c x)) ▸ ENNReal.toReal_mono
-      (eLpNorm_exponent_top hc.aestronglyMeasurable ▸ hc.eLpNorm_ne_top) hx
+  -- The `L^∞` norms of `b` and `c` bound them almost everywhere on `Ω`.
+  set beta := lpNorm b ⊤ (mu.restrict Omega)
+  set gamma := lpNorm c ⊤ (mu.restrict Omega)
   have hlam : 0 < lam := ha.pos
   set κ := lam / 2 + |gamma| + beta ^ 2 / (2 * lam)
   refine ⟨max C 0 * (1 + 2 / lam + 2 * κ / lam), fun {f u} hu0 hu => ?_⟩
@@ -467,7 +462,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_norm_value_of_contD
     ha.norm_le_of_isWeakSolutionDirichlet_of_norm_le (u := ⟨u, hu0⟩)
       (aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
         Omega.isOpen.measurableSet) hb.aestronglyMeasurable hc.aestronglyMeasurable
-      hb_bound hc_bound
+      (ae_le_lpNorm_exponent_top hb) (ae_le_lpNorm_exponent_top hc)
       ((isWeakSolutionDirichlet_iff f _).2 hu)
   calc ‖w‖ ≤ C * (‖u‖ + ‖f‖) := hwle
     _ ≤ max C 0 * (‖u‖ + ‖f‖) := by gcongr; exact le_max_left _ _
