@@ -215,13 +215,27 @@ theorem upperInclusion_mem_overlap (n : ℕ) (x : (cubeBoundaryPair.{u} n).snd) 
   rcases hi with hi | hi <;> rw [hi] <;> norm_num
 
 /-- The linear isometry matching the lower coordinate basis to the last-coordinate equator. -/
--- Transparency lets importers use `OrthonormalBasis.equiv_apply_basis` directly.
-@[expose] def equatorIsometry (n : ℕ) : (EuclideanSpace ℝ (ULift.{u} (Fin n))) ≃ₗᵢ[ℝ] ((ℝ ∙
+def equatorIsometry (n : ℕ) : (EuclideanSpace ℝ (ULift.{u} (Fin n))) ≃ₗᵢ[ℝ] ((ℝ ∙
   (lastPole n :
   (EuclideanSpace ℝ (ULift.{u} (Fin (n + 1))))))ᗮ) :=
   ((EuclideanSpace.basisFun (ULift.{u} (Fin n)) ℝ).reindex Equiv.ulift).equiv
     (((EuclideanSpace.basisFun (ULift.{u} (Fin (n + 1))) ℝ).reindex
     Equiv.ulift).orthogonalLast) (Equiv.refl _)
+
+/-- The equator isometry sends each lower coordinate basis vector to the corresponding
+equator basis vector. -/
+@[simp] theorem equatorIsometry_apply_basis (n : ℕ) (i : Fin n) :
+    equatorIsometry.{u} n (EuclideanSpace.single (ULift.up i) 1) =
+      ((EuclideanSpace.basisFun (ULift.{u} (Fin (n + 1))) ℝ).reindex
+        Equiv.ulift).orthogonalLast i := by
+  have h : equatorIsometry.{u} n
+      (((EuclideanSpace.basisFun (ULift.{u} (Fin n)) ℝ).reindex Equiv.ulift) i) =
+        ((EuclideanSpace.basisFun (ULift.{u} (Fin (n + 1))) ℝ).reindex
+          Equiv.ulift).orthogonalLast i := by
+    rw [equatorIsometry]
+    exact OrthonormalBasis.equiv_apply_basis _ _ _ i
+  simpa only [OrthonormalBasis.coe_reindex, Equiv.ulift_symm_apply, Function.comp_apply,
+    EuclideanSpace.basisFun_apply] using h
 
 /-- The upper boundary, read radially in the complement of the two poles. -/
 def upperOverlap (n : ℕ) :

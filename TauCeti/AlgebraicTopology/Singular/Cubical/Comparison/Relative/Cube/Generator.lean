@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cub
 public import TauCeti.AlgebraicTopology.Disk.CubeBoundary
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
 import Mathlib.Tactic.FunProp
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -812,8 +811,10 @@ private lemma equator_basis_naturality : redLowerMap k n ≫
       (reducedSingularHomologySphereIso (Coeff k) (stdBasis (n + 1))).hom :=
   reducedSingularHomologySphereIso_hom_naturality (Coeff k) (stdBasis (n + 1))
     (stdBasis (n + 2)).orthogonalLast (equatorIsometry (n + 1)).toLinearIsometry
-    (fun i ↦ OrthonormalBasis.equiv_apply_basis (stdBasis.{u} (n + 1))
-      (stdBasis.{u} (n + 2)).orthogonalLast (Equiv.refl _) i)
+    (fun i ↦ by
+      simp only [stdBasis, OrthonormalBasis.coe_reindex, Equiv.ulift_symm_apply,
+        Function.comp_apply, EuclideanSpace.basisFun_apply]
+      exact equatorIsometry_apply_basis.{u} (n + 1) i)
 
 private lemma cubeCoordinateValue_eq : cubeCoordinateValue k n =
     (reducedSingularHomologySphereIso (Coeff k) (stdBasis (n + 1))).hom (reducedCubeClass k n) := by
