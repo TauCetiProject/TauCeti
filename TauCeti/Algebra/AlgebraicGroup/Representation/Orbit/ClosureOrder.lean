@@ -169,13 +169,8 @@ theorem lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentati
   have heval (u : M) :
       SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) P =
         SymmetricAlgebra.lift (Module.Dual.eval k M u) p := by
-    have hF : (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1))).comp
-        (SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap) =
-        SymmetricAlgebra.lift (Module.Dual.eval k M u) := by
-      ext φ
-      simp
     exact (hPeval (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1))).toRingHom
-      (by simp)).trans (DFunLike.congr_fun hF p)
+      (by simp)).trans (SymmetricAlgebra.lift_eval_map_dualMap k (LinearMap.fst k M k) (u, 1) p)
   have hrange : Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
       (Module.isUnimodular_mk_one v)) ⊆ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ := by
     rintro _ ⟨x, rfl⟩
@@ -222,7 +217,7 @@ theorem mk_le_mk_iff_forall_lift_eval_eq_zero {v w : M} :
   have hD (u : M) (P : SymmetricAlgebra k (Module.Dual k (M × k))) :
       SymmetricAlgebra.lift (Module.Dual.eval k M u) (D P) =
         SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) P := by
-    rw [AlgHom.comp_apply, SymmetricAlgebra.lift_map_apply, AlgEquiv.toAlgHom_apply,
+    rw [AlgHom.comp_apply, SymmetricAlgebra.lift_eval_map_dualMap, AlgEquiv.toAlgHom_apply,
       SymmetricAlgebra.lift_translation]
     congr 1
     ext φ

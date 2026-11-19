@@ -87,21 +87,12 @@ theorem monotone_map (ψ : WithConv (K →ₐ[k] k) → WithConv (H →ₐ[k] k)
   intro O O' hle
   induction O using VectorOrbit.ind with | h w
   induction O' using VectorOrbit.ind with | h v
-  -- Pull polynomial functions on `M` back to `N` along `ℓ`.
-  have hpull (n : N) (p : SymmetricAlgebra k (Module.Dual k M)) :
-      SymmetricAlgebra.lift (Module.Dual.eval k N n) (SymmetricAlgebra.map k ℓ.dualMap p) =
-        SymmetricAlgebra.lift (Module.Dual.eval k M (ℓ n)) p := by
-    -- Evaluating `φ ∘ ℓ` at `n` is evaluating `φ` at `ℓ n`.
-    have heval : (Module.Dual.eval k N n).comp ℓ.dualMap = Module.Dual.eval k M (ℓ n) := by
-      ext φ
-      rw [LinearMap.comp_apply, Module.Dual.eval_apply, Module.Dual.eval_apply,
-        LinearMap.dualMap_apply]
-    rw [SymmetricAlgebra.lift_map_apply, heval]
   rw [map_mk, map_mk, mk_le_mk_iff_forall_lift_eval_eq_zero]
   intro p hp
-  rw [← hpull]
+  -- Pull the polynomial function `p` on `M` back to `N` along `ℓ`.
+  rw [← SymmetricAlgebra.lift_eval_map_dualMap k ℓ w]
   refine mk_le_mk_iff_forall_lift_eval_eq_zero.mp hle _ fun g ↦ ?_
-  rw [hpull, hℓ]
+  rw [SymmetricAlgebra.lift_eval_map_dualMap, hℓ]
   exact hp (ψ g)
 
 /-- **Orbits along a surjection on rational points.** If `ψ : G'(k) → G(k)` is surjective and
