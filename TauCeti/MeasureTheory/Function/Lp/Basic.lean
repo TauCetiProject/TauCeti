@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
 
 /-!
 # Sums, linear combinations, semilinear compositions, and `RCLike` coordinates in `Lᵖ`
@@ -23,9 +24,9 @@ transport almost-everywhere descriptions `⇑u =ᵐ[μ] g` of the summands, whic
 representatives of linear combinations.
 
 Mathlib composes `f : Lp E p μ` with `L : E →SL[σ] F` both as an element `L.compLp f` and through
-the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree. For
-`1 ≤ p`, lifting `ContinuousLinearMap.compLpL` to semilinear isometries gives
-`LinearIsometry.compLpₗᵢ`. Specializing `compLpₗᵢ` and `compLpL` to `RCLike.ofRealLI`,
+the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree, and
+that for `1 ≤ p` the postcomposition `LinearIsometry.compLpₗᵢ` by a semilinear isometry underlies
+`ContinuousLinearMap.compLpL`. Specializing `compLpₗᵢ` and `compLpL` to `RCLike.ofRealLI`,
 `RCLike.reCLM`, and `RCLike.imCLM` defines the scalar inclusion `MeasureTheory.Lp.ofRealLI` and the
 real and imaginary coordinate operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM`
 between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
@@ -39,7 +40,8 @@ between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
   `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
   `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
-* `LinearIsometry.compLpₗᵢ`: postcomposition of `Lp` classes by a semilinear isometry.
+* `LinearIsometry.toContinuousLinearMap_compLpₗᵢ`: postcomposition of `Lp` classes by a
+  semilinear isometry (`LinearIsometry.compLpₗᵢ`) underlies `ContinuousLinearMap.compLpL`.
 * `MeasureTheory.Lp.instUniqueZero`: `Unique (Lp E p (0 : Measure α))`.
 * `MeasureTheory.Lp.ofRealLI`, `MeasureTheory.Lp.reCLM`, `MeasureTheory.Lp.imCLM`: scalar inclusion
   and real/imaginary parts on `Lp 𝕜 p μ` for an `RCLike` field `𝕜`.
@@ -118,31 +120,17 @@ variable {α 𝕜₁ 𝕜₂ E F : Type*} {m : MeasurableSpace α}
   [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ]
   [NormedAddCommGroup E] [NormedSpace 𝕜₁ E] [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
 
-/-- Postcomposition of `Lᵖ` classes by a semilinear isometry is a semilinear isometry. -/
-def compLpₗᵢ (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : MeasureTheory.Measure α) (L : E →ₛₗᵢ[σ] F) :
-    MeasureTheory.Lp E p μ →ₛₗᵢ[σ] MeasureTheory.Lp F p μ where
-  toLinearMap := (L.toContinuousLinearMap.compLpL p μ).toLinearMap
-  norm_map' f := by
-    rw [MeasureTheory.Lp.norm_def, MeasureTheory.Lp.norm_def]
-    congr 1
-    refine MeasureTheory.eLpNorm_congr_norm_ae
-      (MeasureTheory.Lp.aestronglyMeasurable _) (MeasureTheory.Lp.aestronglyMeasurable f) ?_
-    filter_upwards [L.toContinuousLinearMap.coeFn_compLpL f] with x hx
-    rw [ContinuousLinearMap.coe_coe, hx, coe_toContinuousLinearMap, L.norm_map]
-
 /-- The continuous linear map underlying `LinearIsometry.compLpₗᵢ` is
 `ContinuousLinearMap.compLpL`. -/
 @[simp]
 theorem toContinuousLinearMap_compLpₗᵢ (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : MeasureTheory.Measure α)
     (L : E →ₛₗᵢ[σ] F) :
-    (L.compLpₗᵢ p μ).toContinuousLinearMap = L.toContinuousLinearMap.compLpL p μ :=
-  (rfl)
-
-/-- `LinearIsometry.compLpₗᵢ` acts almost everywhere pointwise. -/
-theorem coeFn_compLpₗᵢ (p : ℝ≥0∞) [Fact (1 ≤ p)] (μ : MeasureTheory.Measure α)
-    (L : E →ₛₗᵢ[σ] F) (f : MeasureTheory.Lp E p μ) :
-    L.compLpₗᵢ p μ f =ᵐ[μ] fun x ↦ L (f x) :=
-  L.toContinuousLinearMap.coeFn_compLpL f
+    (L.compLpₗᵢ p μ).toContinuousLinearMap = L.toContinuousLinearMap.compLpL p μ := by
+  ext1 f
+  refine MeasureTheory.Lp.ext ?_
+  filter_upwards [L.coeFn_compLpₗᵢ (p := p) (μ := μ) f,
+    L.toContinuousLinearMap.coeFn_compLpL (p := p) (μ := μ) f] with x h₁ h₂
+  rw [coe_toContinuousLinearMap, h₁, h₂, coe_toContinuousLinearMap]
 
 end LinearIsometry
 
@@ -176,7 +164,7 @@ variable {𝕜 p μ}
 /-- `Lp.ofRealLI` casts representatives from `ℝ` to `𝕜` almost everywhere. -/
 theorem coeFn_ofRealLI (f : Lp ℝ p μ) :
     ofRealLI 𝕜 p μ f =ᵐ[μ] fun x ↦ (f x : 𝕜) :=
-  (RCLike.ofRealLI : ℝ →ₗᵢ[ℝ] 𝕜).coeFn_compLpₗᵢ p μ f
+  (RCLike.ofRealLI : ℝ →ₗᵢ[ℝ] 𝕜).coeFn_compLpₗᵢ f
 
 /-- `Lp.reCLM` takes the real part almost everywhere. -/
 theorem coeFn_reCLM (f : Lp 𝕜 p μ) :
