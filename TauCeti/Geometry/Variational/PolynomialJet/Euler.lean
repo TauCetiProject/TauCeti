@@ -137,7 +137,7 @@ theorem pderiv_totalDeriv (i : ι) (a : α) (I : ι →₀ ℕ) (f : PolynomialJ
         have hJ : J + Finsupp.single i 1 ≠ I := fun h ↦ by simp [← h] at hI
         simp [Derivation.commutator_apply, pderiv_X, Pi.single_apply, apply_ite, hI, hJ]
       · obtain ⟨I, rfl⟩ : ∃ I', I = I' + Finsupp.single i 1 :=
-          ⟨_, (tsub_add_cancel_of_le (Finsupp.single_le_iff.2 (Nat.one_le_iff_ne_zero.2 hI))).symm⟩
+          ⟨_, (Finsupp.sub_add_single_one_cancel hI).symm⟩
         by_cases hb : b = a <;> by_cases hJ : J = I <;>
           simp [Derivation.commutator_apply, pderiv_X, Pi.single_apply, apply_ite, hb, hJ]
   have := congr($h f)
@@ -164,8 +164,7 @@ theorem iteratedTotalDeriv_zero :
 theorem iteratedTotalDeriv_add_single_one (I : ι →₀ ℕ) (i : ι) (p : PolynomialJet R ι α) :
     iteratedTotalDeriv (I + Finsupp.single i 1) p = totalDeriv i (iteratedTotalDeriv I p) := by
   classical
-  rw [iteratedTotalDeriv, Finsupp.coe_add, Finsupp.single_eq_pi_single,
-    multiIndexDeriv_add_single', mul_apply_eq_comp, Derivation.coeFn_coe, iteratedTotalDeriv]
+  simp [iteratedTotalDeriv, Finsupp.single_eq_pi_single, multiIndexDeriv_add_single']
 
 /-- Total derivatives commute with iterated total derivatives. -/
 theorem totalDeriv_iteratedTotalDeriv_comm (i : ι) (I : ι →₀ ℕ) (p : PolynomialJet R ι α) :
@@ -330,15 +329,13 @@ theorem euler_totalDeriv (a : α) (i : ι) (f : PolynomialJet R ι α) :
   set T : Finset (ι →₀ ℕ) := f.vars.preimage _ (injective_field a).injOn
   have hT : ∀ I ∉ T, pderiv (Sum.inr (a, I)) f = 0 := fun I hI ↦
     pderiv_eq_zero_of_notMem_vars (by simpa [T] using hI)
-  have hsub : ∀ I : ι →₀ ℕ, I i ≠ 0 → I - Finsupp.single i 1 + Finsupp.single i 1 = I :=
-    fun I hI ↦ tsub_add_cancel_of_le (Finsupp.single_le_iff.2 (Nat.one_le_iff_ne_zero.2 hI))
   -- the correction terms `∂f/∂uᵃ_(I-eᵢ)` live on the shifted index set `T + eᵢ`
   have hshift : ∀ I ∉ T.image (· + Finsupp.single i 1),
       (if I i = 0 then 0 else pderiv (Sum.inr (a, I - Finsupp.single i 1)) f) = 0 := by
     intro I hI
     split_ifs with h
     · rfl
-    · exact hT _ fun hmem ↦ hI (Finset.mem_image.2 ⟨_, hmem, hsub I h⟩)
+    · exact hT _ fun hmem ↦ hI (Finset.mem_image.2 ⟨_, hmem, Finsupp.sub_add_single_one_cancel h⟩)
   rw [euler_eq_sum a _ (T ∪ T.image (· + Finsupp.single i 1)) fun I hI ↦ by
     rw [Finset.mem_union, not_or] at hI
     rw [pderiv_totalDeriv, hT I hI.1, hshift I hI.2, map_zero, add_zero]]
