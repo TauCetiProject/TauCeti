@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import TauCeti.Analysis.Sobolev.Strip.Jet
+public import TauCeti.Analysis.Sobolev.Strip.Rellich
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Normed.Operator.Mul
@@ -50,7 +50,7 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   `ξ` (`TauCeti.HasWeakLineDerivOn`), which vanish where `ξ` does
   (`TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`).
 * **Rellich's theorem on the cylinder.** The value on a compact piece `[-T, T] × [0, 1]`
-  (`TauCeti.CylinderSobolev.restrictValue`) is a compact operator on `H1`
+  (`TauCeti.StripSobolev.restrictValue`) is a compact operator on `H1`
   (`TauCeti.CylinderSobolev.isCompactOperator_restrictValue_comp_subtypeL`). The proof cuts a test
   section off near `[-T, T] × [0, 1]`, bounds the result and its derivative in `L²(ℝ²)` by the
   `W^{1,2}` norm on the strip through periodicity in `t`, and applies the Fréchet–Kolmogorov
@@ -100,7 +100,7 @@ namespace TauCeti.CylinderSobolev
 
 open StripSobolev (stripMeasure jet jet_apply continuous_jet jet_add jet_smul
   jet_eq_zero_of_lt_abs memLp_jet_of_contDiff norm_le_norm_jet norm_fderiv_one_zero_le_norm_jet
-  norm_fderiv_zero_one_le_norm_jet)
+  norm_fderiv_zero_one_le_norm_jet restrictValue coeFn_restrictValue)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -502,20 +502,6 @@ private theorem cutoff_estimates (T : ℝ) : ∃ (χ : ℝ × ℝ → ℝ) (A : 
 
 /-! ### Compactness of the restriction to a compact piece of the cylinder -/
 
-/-- The value of an `L²` jet on the cylinder, restricted to the compact piece
-`[-T, T] × [0, 1]`. -/
-def restrictValue (T : ℝ) :
-    Lp (V × V × V) 2 stripMeasure →L[ℝ]
-      Lp V 2 (stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)) :=
-  (LpToLpRestrictCLM (ℝ × ℝ) V ℝ stripMeasure 2 (Icc (-T) T ×ˢ Icc 0 1)).comp
-    ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure)
-
-/-- The restricted value of an `L²` jet is represented by the first component of the jet. -/
-theorem coeFn_restrictValue (T : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
-    restrictValue T f =ᵐ[stripMeasure.restrict (Icc (-T) T ×ˢ Icc 0 1)] fun z ↦ (f z).1 :=
-  (LpToLpRestrictCLM_coeFn ℝ _ _).trans
-    (ae_restrict_of_ae ((ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f))
-
 /-- The cut-off test sections of jet norm at most `2` form a totally bounded subset of
 `L²(ℝ × ℝ, V)`, by the Fréchet–Kolmogorov criterion. -/
 private theorem totallyBounded_setOf_cutoff [FiniteDimensional ℝ V] {χ : ℝ × ℝ → ℝ} {A : ℝ}
@@ -526,49 +512,22 @@ private theorem totallyBounded_setOf_cutoff [FiniteDimensional ℝ V] {χ : ℝ 
         ENNReal.ofReal A * eLpNorm (jet ξ) 2 stripMeasure) :
     TotallyBounded {f : Lp V 2 (volume : Measure (ℝ × ℝ)) | ∃ ξ ∈ testSection V,
       eLpNorm (jet ξ) 2 stripMeasure ≤ 2 ∧ f =ᵐ[volume] fun z ↦ χ z • ξ z} := by
-  refine totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl (p := 2) (by norm_num)
-    hB ?_ (M := 4) (by norm_num) ?_ ?_
-  · rintro f ⟨ξ, -, -, hf⟩
-    filter_upwards [hf] with z hz hzB
-    rw [hz]
+  refine (totallyBounded_setOf_ae_eq_of_contDiff (p := 2) (by norm_num)
+    (S := {g | ∃ ξ ∈ testSection V, eLpNorm (jet ξ) 2 stripMeasure ≤ 2 ∧ g = fun z ↦ χ z • ξ z})
+    ?_ hB ?_ (M := 4) (A := ENNReal.ofReal A * 2) (by norm_num) (by finiteness) ?_ ?_).subset ?_
+  · rintro _ ⟨ξ, hξ, -, rfl⟩
+    exact (hest ξ hξ).1.of_le (by norm_num)
+  · rintro _ ⟨ξ, -, -, rfl⟩ z hz
     by_contra h
-    exact hzB (hχB z (left_ne_zero_of_smul h))
-  · rintro f ⟨ξ, hξ, hξ2, hf⟩
-    rw [eLpNorm_congr_ae hf]
+    exact hz (hχB z (left_ne_zero_of_smul h))
+  · rintro _ ⟨ξ, hξ, hξ2, rfl⟩
     calc _ ≤ 2 * eLpNorm (jet ξ) 2 stripMeasure := (hest ξ hξ).2.1
       _ ≤ 2 * 2 := by gcongr
       _ = 4 := by norm_num
-  · intro ε hε
-    obtain ⟨r, -, hrpos, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
-    have hr : 0 < r := ENNReal.ofReal_pos.1 hrpos
-    set A₀ := max A 0
-    refine ⟨r / (2 * A₀ + 1), by positivity, ?_⟩
-    rintro f ⟨ξ, hξ, hξ2, hf⟩ h hh
-    have hae : (fun z ↦ f (z + h) - f z) =ᵐ[volume]
-        fun z ↦ χ (z + h) • ξ (z + h) - χ z • ξ z :=
-      ((measurePreserving_add_right volume h).quasiMeasurePreserving.ae_eq_comp hf).sub hf
-    rw [eLpNorm_congr_ae hae]
-    calc _ ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) 2 volume :=
-          ((hest ξ hξ).1.of_le (by norm_num)).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv
-            (by norm_num) h
-      _ ≤ ENNReal.ofReal ‖h‖ * (ENNReal.ofReal A₀ * 2) := by
-          rw [ofReal_norm]
-          gcongr
-          calc _ ≤ ENNReal.ofReal A * eLpNorm (jet ξ) 2 stripMeasure := (hest ξ hξ).2.2
-            _ ≤ ENNReal.ofReal A₀ * 2 := by
-                gcongr
-                exact le_max_left _ _
-      _ = ENNReal.ofReal (‖h‖ * (2 * A₀)) := by
-          rw [ENNReal.ofReal_mul (norm_nonneg _), ENNReal.ofReal_mul (by norm_num),
-            ENNReal.ofReal_ofNat]
-          ring
-      _ ≤ ENNReal.ofReal r := by
-          refine ENNReal.ofReal_le_ofReal ?_
-          calc ‖h‖ * (2 * A₀) ≤ r / (2 * A₀ + 1) * (2 * A₀ + 1) := by
-                gcongr
-                linarith
-            _ = r := div_mul_cancel₀ _ (by positivity)
-      _ ≤ ε := hrε.le
+  · rintro _ ⟨ξ, hξ, hξ2, rfl⟩
+    exact (hest ξ hξ).2.2.trans (by gcongr)
+  · rintro f ⟨ξ, hξ, hξ2, hf⟩
+    exact ⟨_, ⟨ξ, hξ, hξ2, rfl⟩, hf⟩
 
 /-- An element of `H1` of norm less than `1` is a limit of jets of test sections of jet norm at
 most `2`. -/
