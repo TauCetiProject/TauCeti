@@ -361,9 +361,12 @@ theorem memLp_floerJetCoeff_sub_smul_fst (ω : SymplecticForm V) {H : ℝ → V 
   exact (mul_le_mul_of_nonneg_left (norm_fst_le ℝ V (V × V)) (norm_nonneg _)).trans
     ((mul_one _).trans_le (hB z.1))
 
-/-- The weighted semi-Fredholm estimate along a Floer trajectory, in the form consumed by
-Peetre's argument on the cylinder. -/
-private theorem exists_estimate_floerJetCoeff_sub_smul_fst (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+/-- **The weighted semi-Fredholm estimate along a Floer trajectory**, in the form
+`TauCeti.CylinderSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
+the estimate `exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_sub_smul_add` for the
+coefficient field of `D_u - c(s)` on jets. -/
+theorem exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst (ω : SymplecticForm V)
+    {H : ℝ → V → ℝ}
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {xm xp : ℝ → V} (hxm : Continuous xm)
     (hxp : Continuous xp) {J : ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
@@ -429,8 +432,8 @@ theorem finiteDimensional_ker_floerWeightedSobolevOperator (ω : SymplecticForm 
     FiniteDimensional ℝ (ω.floerWeightedSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
         u c).ker := by
-  obtain ⟨C, T, hest⟩ := exists_estimate_floerJetCoeff_sub_smul_fst ω hH hxm hxp hJ hJxm hJxp hu hJu
-    huxm huxp hδm hδp hc hcm hcp hdetm hdetp
+  obtain ⟨C, T, hest⟩ := ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst hH hxm hxp hJ
+    hJxm hJxp hu hJu huxm huxp hδm hδp hc hcm hcp hdetm hdetp
   obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
     (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
   exact finiteDimensional_ker_jetOperator_comp_subtypeL
@@ -464,8 +467,8 @@ theorem isClosed_range_floerWeightedSobolevOperator (ω : SymplecticForm V) {H :
     IsClosed ((ω.floerWeightedSobolevOperator
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2)
         u c).range : Set (Lp V 2 stripMeasure)) := by
-  obtain ⟨C, T, hest⟩ := exists_estimate_floerJetCoeff_sub_smul_fst ω hH hxm hxp hJ hJxm hJxp hu hJu
-    huxm huxp hδm hδp hc hcm hcp hdetm hdetp
+  obtain ⟨C, T, hest⟩ := ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst hH hxm hxp hJ
+    hJxm hJxp hu hJu huxm huxp hδm hδp hc hcm hcp hdetm hdetp
   obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hc
     (eventually_atBot.2 ⟨-R, hcm⟩) (eventually_atTop.2 ⟨R, hcp⟩)
   exact isClosed_range_jetOperator_comp_subtypeL
@@ -477,7 +480,8 @@ theorem isClosed_range_floerWeightedSobolevOperator (ω : SymplecticForm V) {H :
 `TauCeti.CylinderSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
 the estimate
 `TauCeti.SymplecticForm.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add`
-for the coefficient field of the linearized Floer operator on jets. -/
+for the coefficient field of the linearized Floer operator on jets. This is the case `c = 0` of
+`TauCeti.SymplecticForm.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst`. -/
 theorem exists_hasSemiFredholmEstimate_floerJetCoeff (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     {K : ℝ≥0}
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
@@ -500,11 +504,15 @@ theorem exists_hasSemiFredholmEstimate_floerJetCoeff (ω : SymplecticForm V) {H 
     ∃ C T : ℝ, HasSemiFredholmEstimate (ω.floerJetCoeff
       (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun w ↦ H w.2) u)
       C T := by
-  obtain ⟨C, -, T, hest⟩ := ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add
-    hX hH hxm hndm hxp hndp hJ hJxm hJxp hu hJu huxm huxp hδm hδp
-  refine ⟨C, T, hasSemiFredholmEstimate_iff.2 fun ξ hξ hper a b hab hvan ↦ ?_⟩
-  simpa only [floerJetCoeff_jet, stdComplexLineReal_eq, stdComplexLineImag_eq] using
-    hest hξ hper hab hvan
+  obtain ⟨C, T, hest⟩ := ω.exists_hasSemiFredholmEstimate_floerJetCoeff_sub_smul_fst hH
+    (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
+    (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) hJ hJxm hJxp hu hJu huxm huxp
+    hδm hδp continuous_const (R := 0) (δm := 0) (δp := 0) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+      hX hH hxm hndm _)
+    (ω.det_one_sub_dysonSeriesLeft_sub_zero_smul_ne_zero_of_isNondegenerateFixedPt
+      hX hH hxp hndp _)
+  exact ⟨C, T, by simpa only [zero_smul, sub_zero] using hest⟩
 
 /-- **The linearized Floer operator along a Floer trajectory has finite-dimensional kernel on
 `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
