@@ -13,12 +13,10 @@ import TauCeti.Probability.Independence.Map
 # Isotropic Gaussian vectors
 
 A vector with scalar covariance matrix is obtained by scaling and translating a standard
-Gaussian. Standardization and the law of a pair of orthogonal projections give the independent
-components used in Gaussian sampling and simultaneous inference.
-
-The transport uses `TauCeti.Probability.map_add_smul_multivariateGaussian`. Independence
-uses `ProbabilityTheory.HasLaw.iIndepFun_orthogonalProjectionOnto_stdGaussian` for the
-standardized vector.
+Gaussian. A nonzero scale allows standardization, and the squared length of a centered
+projection divided by the variance has chi-squared law with degrees of freedom equal to the
+dimension of the subspace. Projections onto two orthogonal subspaces are independent even
+at zero scale.
 -/
 
 public section
@@ -28,7 +26,9 @@ noncomputable section
 open MeasureTheory ProbabilityTheory
 open scoped NNReal
 
-namespace TauCeti.Probability
+namespace EuclideanSpace
+
+open TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -38,6 +38,7 @@ theorem multivariateGaussian_sq_smul_one_eq_map_stdGaussian
     (m : EuclideanSpace ℝ ι) (σ : ℝ) :
     multivariateGaussian m (σ ^ 2 • (1 : Matrix ι ι ℝ)) =
       (stdGaussian (EuclideanSpace ℝ ι)).map (fun z ↦ m + σ • z) := by
+  -- Specialize the affine Gaussian transport to the standard Gaussian.
   simpa only [multivariateGaussian_zero_one, smul_zero, add_zero] using
     (map_add_smul_multivariateGaussian 0 Matrix.PosSemidef.one m σ).symm
 
@@ -59,7 +60,7 @@ theorem map_pi_gaussianReal_eq_multivariateGaussian (m : EuclideanSpace ℝ ι) 
   rw [← Measure.pi_map_pi (fun _ ↦ by fun_prop), Measure.map_map (by fun_prop) (by fun_prop)]
   congr 1
 
-end TauCeti.Probability
+end EuclideanSpace
 
 namespace ProbabilityTheory
 
@@ -80,18 +81,6 @@ theorem HasLaw.strongDual_stdGaussian (hZ : HasLaw Z (stdGaussian E) P)
   refine (HasLaw.mk (by fun_prop) ?_).fun_comp hZ
   rw [IsGaussian.map_eq_gaussianReal, integral_strongDual_stdGaussian, variance_dual_stdGaussian]
 
-/-- Projections of a standard Gaussian onto two orthogonal subspaces are independent. -/
-theorem HasLaw.indepFun_orthogonalProjectionOnto_stdGaussian
-    (hZ : HasLaw Z (stdGaussian E) P) {K L : Submodule ℝ E} (hKL : K ⟂ L) :
-    IndepFun (fun ω ↦ K.orthogonalProjectionOnto (Z ω))
-      (fun ω ↦ L.orthogonalProjectionOnto (Z ω)) P := by
-  let V : Bool → Submodule ℝ E := fun b ↦ if b then L else K
-  have hV : Pairwise fun i j ↦ V i ⟂ V j := by
-    intro i j hij
-    cases i <;> cases j <;> simp_all [V, hKL.symm]
-  exact (hZ.iIndepFun_orthogonalProjectionOnto_stdGaussian V hV).indepFun
-    (i := false) (j := true) (by decide)
-
 end Standard
 
 section Isotropic
@@ -106,7 +95,7 @@ theorem HasLaw.standardize_multivariateGaussian_smul_one
     (hσ : σ ≠ 0) :
     HasLaw (fun ω ↦ σ⁻¹ • (Y ω - m)) (stdGaussian (EuclideanSpace ℝ ι)) P := by
   refine (HasLaw.mk (X := fun y : EuclideanSpace ℝ ι ↦ σ⁻¹ • (y - m)) (by fun_prop) ?_).fun_comp hY
-  rw [multivariateGaussian_sq_smul_one_eq_map_stdGaussian, Measure.map_map (by fun_prop)
+  rw [m.multivariateGaussian_sq_smul_one_eq_map_stdGaussian, Measure.map_map (by fun_prop)
     (by fun_prop)]
   have hcomp : (fun y : EuclideanSpace ℝ ι ↦ σ⁻¹ • (y - m)) ∘ (fun z ↦ m + σ • z) =
       id := by
@@ -136,7 +125,7 @@ theorem HasLaw.indepFun_orthogonalProjectionOnto_multivariateGaussian_smul_one
       (fun ω ↦ L.orthogonalProjectionOnto (Y ω)) P := by
   refine (indepFun_map_iff_comp hY.aemeasurable (f := K.orthogonalProjectionOnto)
     (g := L.orthogonalProjectionOnto) (by fun_prop) (by fun_prop)).1 ?_
-  rw [hY.map_eq, multivariateGaussian_sq_smul_one_eq_map_stdGaussian,
+  rw [hY.map_eq, m.multivariateGaussian_sq_smul_one_eq_map_stdGaussian,
     indepFun_map_iff_comp (by fun_prop) (by fun_prop) (by fun_prop)]
   have h := (HasLaw.id (μ := stdGaussian (EuclideanSpace ℝ ι)))
     |>.indepFun_orthogonalProjectionOnto_stdGaussian hKL

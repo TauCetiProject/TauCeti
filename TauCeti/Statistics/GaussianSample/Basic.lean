@@ -90,7 +90,7 @@ private theorem inner_ones (x : EuclideanSpace ℝ ι) :
   simp [PiLp.inner_apply, ones]
 
 /-- Orthogonal projection onto the constant vectors replaces each entry by the finite mean. -/
-theorem starProjection_span_const (x : EuclideanSpace ℝ ι) :
+theorem _root_.EuclideanSpace.starProjection_span_const (x : EuclideanSpace ℝ ι) :
     (ℝ ∙ WithLp.toLp 2 (fun _ ↦ 1)).starProjection x =
       finiteMean ℝ x.ofLp • WithLp.toLp 2 (fun _ ↦ 1) := by
   rw [Submodule.starProjection_singleton, inner_ones]
@@ -113,10 +113,11 @@ private theorem finrank_orthogonal_span_ones :
 
 /-- The squared norm of the projection perpendicular to the constants is the residual sum
 of squares. -/
-theorem norm_sq_starProjection_orthogonal_span_const (x : EuclideanSpace ℝ ι) :
+theorem _root_.EuclideanSpace.norm_sq_starProjection_orthogonal_span_const
+    (x : EuclideanSpace ℝ ι) :
     ‖(ℝ ∙ WithLp.toLp 2 (fun _ ↦ 1)).orthogonal.starProjection x‖ ^ 2 =
       residualSumSquares x.ofLp := by
-  rw [Submodule.starProjection_orthogonal_val, starProjection_span_const,
+  rw [Submodule.starProjection_orthogonal_val, EuclideanSpace.starProjection_span_const,
     EuclideanSpace.real_norm_sq_eq]
   simp [residualSumSquares]
 
@@ -131,7 +132,7 @@ private theorem finiteMean_span_projection (x : EuclideanSpace ℝ ι) :
   rcases isEmpty_or_nonempty ι with h | h
   · simp
   · have hc : (Fintype.card ι : ℝ) ≠ 0 := by positivity
-    rw [starProjection_span_const]
+    rw [EuclideanSpace.starProjection_span_const]
     simp [finiteMean_eq_inv_smul_sum, hc, mul_comm, mul_left_comm]
 
 end TauCeti
@@ -150,7 +151,7 @@ private theorem hasLaw_toLp_gaussianSample [DecidableEq ι]
         ((v : ℝ) • (1 : Matrix ι ι ℝ))) P := by
   refine (HasLaw.mk (X := WithLp.toLp 2) (by fun_prop) ?_).fun_comp hX
   simpa [ones] using
-    map_pi_gaussianReal_eq_multivariateGaussian (m • (ones : EuclideanSpace ℝ ι)) v
+    (m • (ones : EuclideanSpace ℝ ι)).map_pi_gaussianReal_eq_multivariateGaussian v
 
 /-- Standardizing the coordinates of a Gaussian sample gives a standard Gaussian vector. -/
 theorem HasLaw.standardize_gaussianSample
@@ -184,7 +185,7 @@ theorem HasLaw.indepFun_finiteMean_residuals_gaussianSample
         finiteMean_span_projection (WithLp.toLp 2 (X ω))
   · exact Filter.Eventually.of_forall fun ω ↦ by
       simp only [Function.comp_apply, ← Submodule.starProjection_apply,
-        Submodule.starProjection_orthogonal_val, K, starProjection_span_const,
+        Submodule.starProjection_orthogonal_val, K, EuclideanSpace.starProjection_span_const,
         WithLp.ofLp_sub, WithLp.ofLp_smul, Pi.sub_def, Pi.smul_apply, smul_eq_mul,
         mul_one, ones]
 
@@ -212,7 +213,7 @@ theorem HasLaw.residualSumSquares_div_gaussianSample
   have hm : m • (ones : EuclideanSpace ℝ ι) ∈ K :=
     K.smul_mem _ (Submodule.mem_span_singleton_self _)
   simp only [map_sub, Submodule.starProjection_orthogonal_apply_eq_zero hm, sub_zero,
-    K, norm_sq_starProjection_orthogonal_span_const]
+    K, EuclideanSpace.norm_sq_starProjection_orthogonal_span_const]
 
 /-- A Gaussian sample of at least two observations with positive variance has strictly
 positive residual sum of squares almost surely. -/
@@ -261,7 +262,7 @@ theorem HasLaw.studentizedMean_gaussianSample
     (hι : 2 ≤ Fintype.card ι) :
     HasLaw (fun ω ↦ studentizedMean m (X ω)) (studentTMeasure (Fintype.card ι - 1 : ℕ)) P := by
   have : Nonempty ι := Fintype.card_pos_iff.mp (by omega)
-  have hdf : (0 : ℝ) < (Fintype.card ι - 1 : ℕ) := by exact_mod_cast (show 0 < _ by omega)
+  have hdf : (0 : ℝ) < (Fintype.card ι - 1 : ℕ) := Nat.cast_pos.mpr (by omega)
   have hind := hX.indepFun_finiteMean_residualSumSquares_gaussianSample.comp
     (φ := fun x ↦ Real.sqrt (Fintype.card ι : ℝ) * (x - m) / Real.sqrt v)
     (ψ := fun s ↦ s / (v : ℝ)) (by fun_prop) (by fun_prop)
@@ -280,26 +281,3 @@ theorem HasLaw.studentizedMean_gaussianSample
   simp only [div_mul_cancel₀ _ hσ]
 
 end ProbabilityTheory
-
-namespace TauCeti
-
-open TauCeti.Probability
-
-/-- For a Gaussian sample of size at least two, the variance-normalized residual sum of
-squares is chi-squared, the sample mean and residual sum of squares are independent, and
-the studentized mean has Student's law. -/
-theorem gaussian_sample_mean_residual_laws (n : ℕ) (hn : 2 ≤ n) (m : ℝ) (v : ℝ≥0)
-    (hv : 0 < v) :
-    let P := Measure.pi (fun _ : Fin n ↦ gaussianReal m v)
-    P.map (fun x ↦ residualSumSquares x / v) = chiSquaredMeasure (n - 1 : ℕ) ∧
-      IndepFun (finiteMean ℝ) residualSumSquares P ∧
-      P.map (fun x ↦ Real.sqrt n * (finiteMean ℝ x - m) /
-        Real.sqrt (residualSumSquares x / (n - 1 : ℕ))) = studentTMeasure (n - 1 : ℕ) := by
-  dsimp
-  have h := HasLaw.id (μ := Measure.pi fun _ : Fin n ↦ gaussianReal m v)
-  refine ⟨?_, h.indepFun_finiteMean_residualSumSquares_gaussianSample, ?_⟩
-  · simpa only [Fintype.card_fin, id_eq] using (h.residualSumSquares_div_gaussianSample hv).map_eq
-  · simpa only [studentizedMean_def, Fintype.card_fin, id_eq] using
-      (h.studentizedMean_gaussianSample hv (by simpa only [Fintype.card_fin])).map_eq
-
-end TauCeti

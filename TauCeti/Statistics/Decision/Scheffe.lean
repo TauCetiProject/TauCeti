@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Distributions.FisherSnedecor.Gaussian
 public import TauCeti.Probability.Quantile
 import TauCeti.Analysis.InnerProductSpace.Projection.DualNorm
-import TauCeti.Probability.Distributions.FisherSnedecor.Cdf
+import TauCeti.Probability.Distributions.FisherSnedecor.Quantile
 
 /-!
 # Scheffé's simultaneous confidence intervals
@@ -62,23 +62,6 @@ private theorem scheffe_event_iff {f : ℝ} (hf : 0 ≤ f) (hSL : S ≤ L) (hm :
     Real.sq_sqrt (by positivity), div_le_iff₀ (div_pos hy hd'), div_le_iff₀ hr']
   rw [mul_comm _ (Module.finrank ℝ S : ℝ), ← mul_assoc]
 
-private theorem fisherSnedecor_quantile_spec {r d p : ℝ}
-    (hr : 0 < r) (hd : 0 < d) (hp : p ∈ Ico 0 1) :
-    let F := fisherSnedecorMeasure r d
-    0 ≤ F.quantile p ∧ cdf F (F.quantile p) = p := by
-  have := isProbabilityMeasure_fisherSnedecorMeasure hr hd
-  have : NullSingletonClass (fisherSnedecorMeasure r d) := by
-    rw [fisherSnedecorMeasure_eq_withDensity]
-    infer_instance
-  have hcdf : cdf (fisherSnedecorMeasure r d) 0 = 0 := by
-    simp only [cdf_fisherSnedecorMeasure_eq hr hd, le_refl, ite_true]
-  rcases hp.1.eq_or_lt with he | hp₀
-  · subst p
-    simp [Measure.quantile_of_nonpos, hcdf]
-  · have hlt : cdf (fisherSnedecorMeasure r d) 0 < p := by rwa [hcdf]
-    exact ⟨((Measure.lt_quantile_iff _ hp₀ hp.2).2 hlt).le,
-      Measure.cdf_quantile_of_noAtoms _ hp₀ hp.2⟩
-
 /-- Scheffé's intervals for all contrasts in `S` simultaneously cover their true values
 with probability `1 - α`. The model mean belongs to `L`, the residual degrees of freedom are
 `finrank ℝ Lᗮ`, and the contrast degrees of freedom are `finrank ℝ S`. -/
@@ -101,7 +84,7 @@ theorem measureReal_scheffe_event_eq_one_sub [DecidableEq ι] (hSL : S ≤ L) (h
   have hd' : (0 : ℝ) < d := by exact_mod_cast hd
   have hlevel : 1 - α ∈ Ico (0 : ℝ) 1 := ⟨sub_nonneg.mpr hα.2, sub_lt_self _ hα.1⟩
   obtain ⟨hf, hcdf⟩ : 0 ≤ f ∧ cdf F f = 1 - α :=
-    fisherSnedecor_quantile_spec hr' hd' hlevel
+    quantile_fisherSnedecorMeasure_spec hr' hd' hlevel
   have hY := HasLaw.id (μ := P)
   have hF := hY.fisherSnedecor_starProjection_ratio hσ
     ((Submodule.isOrtho_orthogonal_right L).mono_left hSL) hr hd
