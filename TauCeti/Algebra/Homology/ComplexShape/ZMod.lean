@@ -51,8 +51,9 @@ cyclic analogues of Mathlib's instance for `ComplexShape.up ℤ` and of
   and the `Subsingleton` instances: a tensor sign datum exists exactly when `2 ∣ n`, and it is
   unique.
 * `ComplexShape.totalComplexShapeSymmetryDownZMod`, `ComplexShape.totalComplexShapeSymmetryUpZMod`:
-  the Koszul symmetry signs, computed by `ComplexShape.σ_down_zmod_intCast` and
-  `ComplexShape.σ_up_zmod_intCast`.
+  the Koszul symmetry signs, computed by `ComplexShape.σ_down_zmod_eq_negOnePow`,
+  `ComplexShape.σ_up_zmod_eq_negOnePow` and, at integer classes, `ComplexShape.σ_down_zmod_intCast`
+  and `ComplexShape.σ_up_zmod_intCast`.
 -/
 
 public section
@@ -197,11 +198,13 @@ instance tensorSignsUpZMod : TensorSigns (up (ZMod n)) where
 
 /-- For even `n`, the sign of the tensor sign datum on `ComplexShape.down (ZMod n)` at `p` is
 `ZMod.negOnePow p`. -/
+@[simp]
 theorem ε_down_zmod_eq_negOnePow (p : ZMod n) : (down (ZMod n)).ε p = p.negOnePow := by
   rw [ε_down_zmod, ZMod.negOnePow_eq]
 
 /-- For even `n`, the sign of the tensor sign datum on `ComplexShape.up (ZMod n)` at `p` is
 `ZMod.negOnePow p`. -/
+@[simp]
 theorem ε_up_zmod_eq_negOnePow (p : ZMod n) : (up (ZMod n)).ε p = p.negOnePow := by
   rw [ε_up_zmod, ZMod.negOnePow_eq]
 
@@ -241,34 +244,50 @@ instance totalComplexShapeSymmetryUpZMod :
     dsimp
     rw [ε_up_zmod_eq_negOnePow, one_mul, mul_add, mul_one, ZMod.negOnePow_add]
 
+/-- For even `n`, the Koszul symmetry sign on `ComplexShape.down (ZMod n)` in bidegree `(p, q)` is
+`ZMod.negOnePow (p * q)`. The cast lemmas such as `ComplexShape.σ_down_zmod_intCast` have higher
+`simp` priority, so that `simp` reaches `Int.negOnePow (k * l)` rather than stopping at the sign
+of the product of the casts. -/
+@[simp]
+theorem σ_down_zmod_eq_negOnePow (p q : ZMod n) :
+    σ (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) p q = (p * q).negOnePow := by
+  rw [σ, totalComplexShapeSymmetryDownZMod_σ]
+
+/-- For even `n`, the Koszul symmetry sign on `ComplexShape.up (ZMod n)` in bidegree `(p, q)` is
+`ZMod.negOnePow (p * q)`. The cast lemmas such as `ComplexShape.σ_up_zmod_intCast` have higher
+`simp` priority, so that `simp` reaches `Int.negOnePow (k * l)` rather than stopping at the sign
+of the product of the casts. -/
+@[simp]
+theorem σ_up_zmod_eq_negOnePow (p q : ZMod n) :
+    σ (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) p q = (p * q).negOnePow := by
+  rw [σ, totalComplexShapeSymmetryUpZMod_σ]
+
 /-- The Koszul symmetry signs on `ComplexShape.down (ZMod n)` are symmetric in the two
 factors. -/
 instance : TotalComplexShapeSymmetrySymmetry (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) where
-  σ_symm p q := by
-    rw [σ, σ, totalComplexShapeSymmetryDownZMod_σ, totalComplexShapeSymmetryDownZMod_σ, mul_comm]
+  σ_symm p q := by rw [σ_down_zmod_eq_negOnePow, σ_down_zmod_eq_negOnePow, mul_comm]
 
 /-- The Koszul symmetry signs on `ComplexShape.up (ZMod n)` are symmetric in the two factors. -/
 instance : TotalComplexShapeSymmetrySymmetry (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) where
-  σ_symm p q := by
-    rw [σ, σ, totalComplexShapeSymmetryUpZMod_σ, totalComplexShapeSymmetryUpZMod_σ, mul_comm]
+  σ_symm p q := by rw [σ_up_zmod_eq_negOnePow, σ_up_zmod_eq_negOnePow, mul_comm]
 
 /-- The Koszul symmetry sign on `ComplexShape.down (ZMod n)` at the classes of integers `k` and
 `l` is `(-1)^(k * l)`. -/
-@[simp]
+@[simp high]
 theorem σ_down_zmod_intCast (k l : ℤ) :
     σ (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) k l = (k * l).negOnePow := by
-  rw [σ, totalComplexShapeSymmetryDownZMod_σ, ← Int.cast_mul, ZMod.negOnePow_intCast]
+  rw [σ_down_zmod_eq_negOnePow, ← Int.cast_mul, ZMod.negOnePow_intCast]
 
 /-- The Koszul symmetry sign on `ComplexShape.down (ZMod n)` at the classes of natural numbers `k`
 and `l` is `(-1)^(k * l)`. -/
-@[simp]
+@[simp high]
 theorem σ_down_zmod_natCast (k l : ℕ) :
     σ (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) k l = (-1) ^ (k * l) := by
-  rw [σ, totalComplexShapeSymmetryDownZMod_σ, ← Nat.cast_mul, ZMod.negOnePow_natCast]
+  rw [σ_down_zmod_eq_negOnePow, ← Nat.cast_mul, ZMod.negOnePow_natCast]
 
 /-- The Koszul symmetry sign on `ComplexShape.down (ZMod n)` at numerals `k` and `l` is
 `(-1)^(k * l)`. -/
-@[simp]
+@[simp high]
 theorem σ_down_zmod_ofNat (k l : ℕ) [k.AtLeastTwo] [l.AtLeastTwo] :
     σ (down (ZMod n)) (down (ZMod n)) (down (ZMod n)) (no_index (OfNat.ofNat k) : ZMod n)
       (no_index (OfNat.ofNat l) : ZMod n) = (-1) ^ ((OfNat.ofNat k : ℕ) * (OfNat.ofNat l : ℕ)) := by
@@ -285,21 +304,21 @@ theorem σ_down_zmod (p q : ZMod n) :
 
 /-- The Koszul symmetry sign on `ComplexShape.up (ZMod n)` at the classes of integers `k` and `l`
 is `(-1)^(k * l)`. -/
-@[simp]
+@[simp high]
 theorem σ_up_zmod_intCast (k l : ℤ) :
     σ (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) k l = (k * l).negOnePow := by
-  rw [σ, totalComplexShapeSymmetryUpZMod_σ, ← Int.cast_mul, ZMod.negOnePow_intCast]
+  rw [σ_up_zmod_eq_negOnePow, ← Int.cast_mul, ZMod.negOnePow_intCast]
 
 /-- The Koszul symmetry sign on `ComplexShape.up (ZMod n)` at the classes of natural numbers `k`
 and `l` is `(-1)^(k * l)`. -/
-@[simp]
+@[simp high]
 theorem σ_up_zmod_natCast (k l : ℕ) :
     σ (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) k l = (-1) ^ (k * l) := by
-  rw [σ, totalComplexShapeSymmetryUpZMod_σ, ← Nat.cast_mul, ZMod.negOnePow_natCast]
+  rw [σ_up_zmod_eq_negOnePow, ← Nat.cast_mul, ZMod.negOnePow_natCast]
 
 /-- The Koszul symmetry sign on `ComplexShape.up (ZMod n)` at numerals `k` and `l` is
 `(-1)^(k * l)`. -/
-@[simp]
+@[simp high]
 theorem σ_up_zmod_ofNat (k l : ℕ) [k.AtLeastTwo] [l.AtLeastTwo] :
     σ (up (ZMod n)) (up (ZMod n)) (up (ZMod n)) (no_index (OfNat.ofNat k) : ZMod n)
       (no_index (OfNat.ofNat l) : ZMod n) = (-1) ^ ((OfNat.ofNat k : ℕ) * (OfNat.ofNat l : ℕ)) := by
