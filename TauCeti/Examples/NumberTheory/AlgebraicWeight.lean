@@ -93,7 +93,7 @@ example (ι : Type*) (a : EmbeddingWeight ι 1) (c : ι → ι) (w : ℤ) :
 /-- The zero weight of `GL 4` has Hodge–Tate numbers `{0, 1, 2, 3}`. -/
 example : (0 : DominantWeight 4).hodgeMultiset = {0, 1, 2, 3} := by
   rw [DominantWeight.hodgeMultiset_zero]
-  rfl
+  decide
 
 /-- The unshifted entries of the zero weight of `GL 2` repeat, so the shift by `n - 1 - i` is
 needed for distinct Hodge–Tate numbers. -/
