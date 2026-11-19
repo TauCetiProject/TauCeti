@@ -364,15 +364,14 @@ theorem conleyZehnderIndex_sum {A B : GLSymplectic n ℝ} {A' B' : GLSymplectic 
         diagonalStraightening (n ⊕ m) * graphFrame ((((γ₁.prod γ₂).map continuous_sum) t :
           GL ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) _ ℝ) *
           ((fromBlocks O₁ 0 0 O₂).submatrix e e).map ((↑) : ℝ → ℂ) := by
-      rw [Path.map_coe, Function.comp_apply, Path.prod_coe, GLSymplectic.coe_sum,
-        graphFrame_symplecticSum, diagonalStraightening_sum, ← submatrix_map, fromBlocks_map,
-        submatrix_mul_equiv, submatrix_mul_equiv, fromBlocks_multiply, fromBlocks_multiply, hFdef]
-      simp [h₁, h₂, e]
+      -- Expand both sides into relabelled block-diagonal form, then substitute `h₁` and `h₂`.
+      simp [hFdef, graphFrame_symplecticSum, diagonalStraightening_sum, ← submatrix_map,
+        fromBlocks_map, submatrix_mul_equiv, fromBlocks_multiply, h₁, h₂, e]
     rw [hFt, realImage_mul_map_ofReal _ hO]
   rw [conleyZehnderIndex_eq_neg_maslovIndex _ ((γ₁.prod γ₂).map hF) hreal,
     Matrix.UnitaryGroup.maslovIndex_eq_of_coe_eq_submatrix
       (((γ₁.map continuous_graphUnitaryFrame).prod (γ₂.map continuous_graphUnitaryFrame)).map
-        Matrix.UnitaryGroup.continuous_sum) _ e fun t ↦ rfl,
+        Matrix.UnitaryGroup.continuous_sum) _ e fun t ↦ by simp [hFdef],
     Matrix.UnitaryGroup.maslovIndex_sum, conleyZehnderIndex, conleyZehnderIndex, neg_add]
 
 end Sum

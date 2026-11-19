@@ -26,7 +26,7 @@ multiplication by `i`. So in `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` the graph is the
 matrix `Matrix.graphFrame A`, whose columns are the images of the real basis vectors. That matrix
 is invertible when `A` is symplectic (`Matrix.isUnit_det_graphFrame`). The graph frame of a direct
 sum `Matrix.symplecticSum A B` is the block-diagonal sum of the graph frames, with the coordinates
-regrouped (`Matrix.graphFrame_symplecticSum`). Its Gram matrix is
+regrouped (`Matrix.graphFrame_symplecticSum`). The Gram matrix of `Matrix.graphFrame A` is
 `(1 + Aᵀ A) + i (J - Aᵀ J A)` (`Matrix.conjTranspose_graphFrame_mul_graphFrame`), so the graph of a
 symplectic matrix is Lagrangian for the symplectic form `Im ⟪·, ·⟫`
 (`Matrix.map_im_conjTranspose_graphFrame_mul_graphFrame`). The graphs
