@@ -51,6 +51,10 @@ minimum.
 * `TauCeti.exists_pow_two_mul_eq_pow_iff_obstructionThreshold_le` and
   `TauCeti.exists_pow_sub_one_eq_pow_iff_obstructionThreshold_lt`: the two-adic solvability
   criterion.
+* `TauCeti.torsionImageFiltration_map_le`,
+  `TauCeti.torsionImageFiltration_map_elementaryTwoQuotientCongr`,
+  `TauCeti.obstructionThreshold_map_le` and `TauCeti.obstructionThreshold_congr`: the filtration
+  and the threshold are compatible with homomorphisms and invariant under isomorphisms.
 * `TauCeti.obstructionThreshold_pi`: the threshold of a family is the maximum of the thresholds
   of its coordinates.
 * `TauCeti.torsionImageFiltration_eq_top_of_forall_pow_eq_one`,
@@ -249,6 +253,48 @@ theorem exists_pow_sub_one_eq_pow_iff_obstructionThreshold_lt (hA : IsMulTorsion
     exists_pow_two_mul_eq_pow_iff_obstructionThreshold_le hA b hr]
 
 end General
+
+section Functoriality
+
+variable {G H : Type*} [CommGroup G] [CommGroup H]
+
+/-- A homomorphism maps the filtration step `B_t` of `G` into the step `B_t` of `H`. -/
+theorem torsionImageFiltration_map_le (f : G →* H) (t : ℕ) :
+    (torsionImageFiltration G t).map (elementaryTwoQuotientMap f) ≤ torsionImageFiltration H t := by
+  rintro _ ⟨_, ⟨a, ha, rfl⟩, rfl⟩
+  exact ⟨f a, by rw [← map_pow, ha, map_one], (elementaryTwoQuotientMap_mk f a).symm⟩
+
+/-- A multiplicative equivalence identifies the torsion-image filtrations. -/
+theorem torsionImageFiltration_map_elementaryTwoQuotientCongr (e : G ≃* H) (t : ℕ) :
+    (torsionImageFiltration G t).map
+        (elementaryTwoQuotientCongr e : ElementaryTwoQuotient G →ₗ[ZMod 2] _) =
+      torsionImageFiltration H t := by
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨_, ⟨a, ha, rfl⟩, rfl⟩
+    exact ⟨e a, by rw [← map_pow, ha, map_one],
+      by rw [LinearEquiv.coe_coe, elementaryTwoQuotientCongr_mk]⟩
+  · rintro _ ⟨a, ha, rfl⟩
+    refine ⟨_, ⟨e.symm a, by rw [← map_pow, ha, map_one], rfl⟩, ?_⟩
+    rw [LinearEquiv.coe_coe, elementaryTwoQuotientCongr_mk, MulEquiv.apply_symm_apply]
+
+/-- In a torsion group, a homomorphism does not increase the obstruction threshold. -/
+theorem obstructionThreshold_map_le (hG : IsMulTorsion G) (f : G →* H) (b : G) :
+    obstructionThreshold (f b) ≤ obstructionThreshold b := by
+  refine obstructionThreshold_le_of_mem (torsionImageFiltration_map_le f _ ?_)
+  rw [← elementaryTwoQuotientMap_mk]
+  exact Submodule.mem_map_of_mem
+    (elementaryTwoQuotientMk_mem_torsionImageFiltration_obstructionThreshold hG b)
+
+/-- A multiplicative equivalence preserves the obstruction threshold. -/
+theorem obstructionThreshold_congr (e : G ≃* H) (b : G) :
+    obstructionThreshold (e b) = obstructionThreshold b := by
+  have h (t : ℕ) : elementaryTwoQuotientMk (e b) ∈ torsionImageFiltration H t ↔
+      elementaryTwoQuotientMk b ∈ torsionImageFiltration G t := by
+    rw [← elementaryTwoQuotientCongr_mk, ← torsionImageFiltration_map_elementaryTwoQuotientCongr e,
+      Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply]
+  simp only [obstructionThreshold, h]
+
+end Functoriality
 
 section Pi
 
