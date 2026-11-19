@@ -10,7 +10,7 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 public import TauCeti.Combinatorics.Hive.Basic
-import TauCeti.Combinatorics.Hive.Interpolation
+import TauCeti.Combinatorics.Hive.Concave
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.Analysis.Normed.Group.Constructions
 import Mathlib.Data.Fin.Rev
