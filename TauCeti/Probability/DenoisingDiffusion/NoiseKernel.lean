@@ -9,7 +9,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Kernel.Composition.Comp
 public import Mathlib.Probability.Kernel.Composition.Prod
 
-import Mathlib.MeasureTheory.Group.Convolution
+import TauCeti.MeasureTheory.Group.Convolution.Translation
 import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import TauCeti.Probability.Distributions.Gaussian.Sum
@@ -111,14 +111,11 @@ theorem noiseKernel_comp {a b : ℝ} (ha₁ : a ≤ 1) (hb₀ : 0 ≤ b) (hb₁ 
   set ν := (stdGaussian (EuclideanSpace ℝ ι)).map (fun e ↦ √(1 - b) • e)
   have hbind : (noiseKernel a x).bind (noiseKernel b) =
       (noiseKernel a x).map (fun y ↦ √b • y) ∗ ν := by
-    ext s hs
-    rw [Measure.bind_apply hs (Kernel.aemeasurable _), Measure.conv,
-      Measure.map_apply measurable_add hs, Measure.prod_apply (measurable_add hs),
-      lintegral_map (measurable_measure_prodMk_left (measurable_add hs)) (by fun_prop)]
-    refine lintegral_congr fun y ↦ ?_
-    rw [noiseKernel_apply_eq_map, Measure.map_apply (by fun_prop) hs,
-      Measure.map_apply (by fun_prop) (measurable_prodMk_left (measurable_add hs)),
-      Set.preimage_preimage, Set.preimage_preimage]
+    rw [← Measure.bind_map_add_eq_conv _ _ (by fun_prop)]
+    congr 1
+    funext y
+    rw [noiseKernel_apply_eq_map, Measure.map_map (by fun_prop) (by fun_prop)]
+    rfl
   have hν : ν = multivariateGaussian 0 ((1 - b) • 1) := by
     simpa only [zero_add, smul_zero, multivariateGaussian_zero_one,
       Real.sq_sqrt (sub_nonneg.2 hb₁)] using
