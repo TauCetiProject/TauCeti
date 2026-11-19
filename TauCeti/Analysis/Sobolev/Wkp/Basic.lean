@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.SeparableMeasure
 public import TauCeti.Analysis.Calculus.IteratedGradient.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Arbitrary-order weak Sobolev spaces
@@ -288,6 +289,17 @@ theorem value_smul (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
     value k (c • u) = c • value k u :=
   map_smul (valueL k) c u
 
+/-- The value of a sum of Sobolev functions is almost everywhere the sum of their values. -/
+theorem value_add_ae (k : ℕ) (u v : Wkp mu Omega p k) :
+    ⇑(value k (u + v)) =ᵐ[mu.restrict Omega] ⇑(value k u) + ⇑(value k v) := by
+  simpa only [value_add] using Lp.coeFn_add (value k u) (value k v)
+
+/-- The value of a scalar multiple of a Sobolev function is almost everywhere the scalar multiple
+of its value. -/
+theorem value_smul_ae (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
+    ⇑(value k (c • u)) =ᵐ[mu.restrict Omega] c • ⇑(value k u) := by
+  simpa only [value_smul] using Lp.coeFn_smul c (value k u)
+
 /-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
 theorem value_finsetSum_ae {κ : Type*} (k : ℕ) (s : Finset κ) (u : κ → Wkp mu Omega p k) :
     ∀ᵐ x ∂mu.restrict Omega, value k (∑ j ∈ s, u j) x = ∑ j ∈ s, value k (u j) x := by
@@ -329,6 +341,12 @@ theorem value_zero (u : Wkp mu Omega p 0) : value 0 u = u :=
 theorem value_succ (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     value (k + 1) u = value k (lowerOrder k u) :=
   (rfl)
+
+/-- Convergence in `W^{k,p}(Ω)` gives convergence of the values in `Lᵖ(Ω)`. -/
+theorem tendsto_value {α : Type*} {l : Filter α} {k : ℕ} {u : α → Wkp mu Omega p k}
+    {v : Wkp mu Omega p k} (h : Filter.Tendsto u l (nhds v)) :
+    Filter.Tendsto (fun i => value k (u i)) l (nhds (value k v)) :=
+  ((valueL k).continuous.tendsto v).comp h
 
 /-- If `u i → v` in `W^{k,p}(Ω)` along a filter `l` and the values of `u i` and `v` represent
 `f i` and `g` almost everywhere on `Ω`, then `f i → g` in `Lᵖ(Ω)` along `l`. -/
@@ -522,6 +540,11 @@ Successive uniqueness of weak derivatives determines every higher component. -/
 theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → u = v
   | 0, _, _, h => by simpa only [value_zero] using h
   | k + 1, _, _, h => ext_lowerOrder k (ext k (by simpa only [value_succ] using h))
+
+/-- On the whole space, a Sobolev function is determined by its value almost everywhere. -/
+theorem ext_ae {k : ℕ} {u v : Wkp mu ⊤ p k} (h : (value k u : E → ℝ) =ᵐ[mu] value k v) :
+    u = v :=
+  ext k (Lp.ext (by rwa [Filter.EventuallyEq, congrArg ae (Measure.restrict_coe_opens_top mu)]))
 
 /-- On an empty domain every Sobolev space is trivial. -/
 theorem subsingleton_of_eq_empty (k : ℕ) (h : (Omega : Set E) = ∅) :

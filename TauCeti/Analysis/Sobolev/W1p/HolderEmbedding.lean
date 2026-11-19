@@ -23,7 +23,7 @@ Hölder's inequality controls the average by its `Lᵖ` norm.
 
 * `TauCeti.W1p.morreyEmbedding`: Morrey's embedding as a continuous linear map into
   `TauCeti.HolderSpace`.
-* `TauCeti.W1p.norm_morreyRepresentative_le_embedding`,
+* `TauCeti.W1p.norm_morreyRepresentative_le_norm_morreyEmbedding`,
   `TauCeti.W1p.memLp_top_morreyRepresentative`: the canonical continuous representative is
   bounded by the norm of its Morrey embedding, hence essentially bounded.
 
@@ -210,7 +210,7 @@ theorem W1p.tendsto_enorm_morreyEmbedding_sub (hp : (finrank ℝ E : ℝ≥0) < 
   simpa only [Function.comp_def, eNorm_zero] using (continuous_eNorm.tendsto 0).comp hsub
 
 /-- The canonical Morrey representative is bounded by the norm of the Morrey embedding. -/
-theorem W1p.norm_morreyRepresentative_le_embedding
+theorem W1p.norm_morreyRepresentative_le_norm_morreyEmbedding
     (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
     ‖W1p.morreyRepresentative u hp x‖ ≤ ‖W1p.morreyEmbedding hp u‖ := by
   rw [← W1p.morreyEmbedding_apply_apply, ← HolderSpace.toBoundedContinuousFunction_apply]

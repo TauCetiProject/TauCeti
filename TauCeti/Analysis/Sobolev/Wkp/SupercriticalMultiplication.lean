@@ -79,28 +79,6 @@ omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAd
 private theorem ae_restrict_top : ae (mu.restrict ((⊤ : Opens E) : Set E)) = ae mu := by
   rw [Opens.coe_top, Measure.restrict_univ]
 
-/-- An element of `W^{k,p}(ℝⁿ)` is determined by its value almost everywhere. -/
-private theorem ext_ae {k : ℕ} {u w : Wkp mu ⊤ (p : ℝ≥0∞) k}
-    (h : (value k u : E → ℝ) =ᵐ[mu] value k w) : u = w :=
-  ext k (Lp.ext (by rwa [EventuallyEq, ae_restrict_top]))
-
-private theorem value_add_ae {k : ℕ} (u w : Wkp mu ⊤ (p : ℝ≥0∞) k) :
-    (value k (u + w) : E → ℝ) =ᵐ[mu] fun x => value k u x + value k w x := by
-  rw [EventuallyEq, ← ae_restrict_top]
-  exact value_add k u w ▸ Lp.coeFn_add (value k u) (value k w)
-
-private theorem value_smul_ae {k : ℕ} (c : ℝ) (u : Wkp mu ⊤ (p : ℝ≥0∞) k) :
-    (value k (c • u) : E → ℝ) =ᵐ[mu] fun x => c * value k u x := by
-  rw [EventuallyEq, ← ae_restrict_top]
-  exact value_smul k c u ▸ Lp.coeFn_smul c (value k u)
-
-/-- Convergence in `W^{k,p}(ℝⁿ)` gives convergence of the values in `Lᵖ`. -/
-private theorem tendsto_value {k : ℕ} {f : ℕ → Wkp mu ⊤ (p : ℝ≥0∞) k}
-    {y : Wkp mu ⊤ (p : ℝ≥0∞) k} (h : Tendsto f atTop (𝓝 y)) :
-    Tendsto (fun n => value k (f n)) atTop (𝓝 (value k y)) := by
-  have h' := ((valueL (mu := mu) (Omega := ⊤) (p := (p : ℝ≥0∞)) k).continuous.tendsto y).comp h
-  simpa only [Function.comp_def, valueL_apply] using h'
-
 /-- A positive-order Sobolev function on `ℝⁿ`, `n < p`, is represented by the Morrey
 representative of its first-order part. -/
 private theorem value_ae_eq_morreyRepresentative (hp : (finrank ℝ E : ℝ≥0) < p) {k : ℕ}
@@ -116,7 +94,7 @@ private theorem norm_morreyRepresentative_firstOrder_le (hp : (finrank ℝ E : �
       ‖(W1p.morreyEmbedding (mu := mu) hp).comp (firstOrderL k)‖ * ‖u‖ := by
   calc ‖W1p.morreyRepresentative (firstOrder k u) hp x‖
       ≤ ‖W1p.morreyEmbedding hp (firstOrder k u)‖ :=
-        W1p.norm_morreyRepresentative_le_embedding hp _ x
+        W1p.norm_morreyRepresentative_le_norm_morreyEmbedding hp _ x
     _ = ‖(W1p.morreyEmbedding hp).comp (firstOrderL k) u‖ := by
         rw [ContinuousLinearMap.comp_apply, firstOrderL_apply]
     _ ≤ _ := ContinuousLinearMap.le_opNorm _ _
@@ -190,9 +168,9 @@ theorem exists_value_ae_eq_mul (hp : (finrank ℝ E : ℝ≥0) < p) {i j m : ℕ
       obtain ⟨w₁, hw₁⟩ := ih (by omega) (by omega) (lineDerivL e i u) v
       obtain ⟨w₂, hw₂⟩ := ih (i := m) (m := i) (by omega) (by omega) (lineDerivL e m v) u
       refine ⟨w₁ + w₂, (hasWeakLineDerivOn_value_mul hp u v e).congr_ae_deriv ?_⟩
-      rw [EventuallyEq, ae_restrict_top]
-      filter_upwards [hw₁, hw₂, value_add_ae w₁ w₂] with x h₁ h₂ h₃
-      rw [h₃, h₁, h₂, mul_comm (value m (lineDerivL e m v) x)]
+      filter_upwards [ae_restrict_of_ae hw₁, ae_restrict_of_ae hw₂, value_add_ae j w₁ w₂]
+        with x h₁ h₂ h₃
+      rw [h₃, Pi.add_apply, h₁, h₂, mul_comm (value m (lineDerivL e m v) x)]
     choose d hd using hd
     obtain ⟨w, hw⟩ := exists_value_ae_eq_of_forall_hasWeakLineDerivOn j
       (memLp_value_mul hp u v) d hd
@@ -228,16 +206,31 @@ private theorem mulAux_add_right (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
     (u v w : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) :
     mulAux hp k u (v + w) = mulAux hp k u v + mulAux hp k u w := by
   refine ((eq_mulAux_iff hp).2 ?_).symm
-  filter_upwards [value_add_ae (mulAux hp k u v) (mulAux hp k u w), value_mulAux hp k u v,
-    value_mulAux hp k u w, value_add_ae v w] with x h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄, mul_add]
+  filter_upwards [ae_restrict_top.ge (value_add_ae (k + 1) (mulAux hp k u v) (mulAux hp k u w)),
+    value_mulAux hp k u v, value_mulAux hp k u w, ae_restrict_top.ge (value_add_ae (k + 1) v w)]
+    with x h₁ h₂ h₃ h₄
+  rw [h₁, Pi.add_apply, h₂, h₃, h₄, Pi.add_apply, mul_add]
 
 private theorem mulAux_smul_right (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ) (c : ℝ)
     (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) : mulAux hp k u (c • v) = c • mulAux hp k u v := by
   refine ((eq_mulAux_iff hp).2 ?_).symm
-  filter_upwards [value_smul_ae c (mulAux hp k u v), value_mulAux hp k u v,
-    value_smul_ae c v] with x h₁ h₂ h₃
-  rw [h₁, h₂, h₃, mul_left_comm]
+  filter_upwards [ae_restrict_top.ge (value_smul_ae (k + 1) c (mulAux hp k u v)),
+    value_mulAux hp k u v, ae_restrict_top.ge (value_smul_ae (k + 1) c v)] with x h₁ h₂ h₃
+  rw [h₁, Pi.smul_apply, h₂, h₃, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_left_comm]
+
+private theorem mulAux_sub_right (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
+    (u v w : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) :
+    mulAux hp k u (v - w) = mulAux hp k u v - mulAux hp k u w :=
+  eq_sub_of_add_eq (by rw [← mulAux_add_right, sub_add_cancel])
+
+private theorem mulAux_add_left (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
+    (u v w : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) :
+    mulAux hp k (u + v) w = mulAux hp k u w + mulAux hp k v w := by
+  rw [mulAux_comm, mulAux_add_right, mulAux_comm hp k w, mulAux_comm hp k w]
+
+private theorem mulAux_smul_left (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ) (c : ℝ)
+    (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) : mulAux hp k (c • u) v = c • mulAux hp k u v := by
+  rw [mulAux_comm, mulAux_smul_right, mulAux_comm hp k v]
 
 /-- The value of the product `u v` is bounded in `Lᵖ` by `C ‖u‖ ‖v‖`: the Morrey representative
 of `u` is bounded by a multiple of `‖u‖`. -/
@@ -253,6 +246,22 @@ private theorem norm_value_mulAux_le (hp : (finrank ℝ E : ℝ≥0) < p) (k : �
   filter_upwards [value_mulAux hp k u v, value_ae_eq_morreyRepresentative hp u] with x h₁ h₂
   rw [h₁, h₂, smul_eq_mul]
 
+/-- If `v n → x` in `W^{k+1,p}(ℝⁿ)`, then the values of the products `u (v n)` converge in `Lᵖ`
+to the value of `u x`. -/
+private theorem tendsto_value_mulAux (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
+    (u : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) {v : ℕ → Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)}
+    {x : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)} (hv : Tendsto v atTop (𝓝 x)) :
+    Tendsto (fun n => value (k + 1) (mulAux hp k u (v n))) atTop
+      (𝓝 (value (k + 1) (mulAux hp k u x))) := by
+  set C := ‖(W1p.morreyEmbedding (mu := mu) hp).comp (firstOrderL k)‖ * ‖u‖
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hlim : Tendsto (fun n => C * ‖v n - x‖) atTop (𝓝 (C * 0)) :=
+    (tendsto_iff_norm_sub_tendsto_zero.1 hv).const_mul _
+  rw [mul_zero] at hlim
+  refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
+  rw [← value_sub, ← mulAux_sub_right]
+  exact norm_value_mulAux_le hp k u _
+
 /-- Multiplication by `u`, as a linear map on `W^{k+1,p}(ℝⁿ)`. -/
 private def mulLeftₗ (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ) (u : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) :
     Wkp mu ⊤ (p : ℝ≥0∞) (k + 1) →ₗ[ℝ] Wkp mu ⊤ (p : ℝ≥0∞) (k + 1) where
@@ -264,22 +273,13 @@ private def mulLeftₗ (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ) (u : Wkp m
 theorem: the value of the product depends continuously on the value of `v`. -/
 private def mulLeftL (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ) (u : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) :
     Wkp mu ⊤ (p : ℝ≥0∞) (k + 1) →L[ℝ] Wkp mu ⊤ (p : ℝ≥0∞) (k + 1) :=
-  ContinuousLinearMap.ofSeqClosedGraph (g := mulLeftₗ hp k u) fun v x y hv hy => by
-    set C := ‖(W1p.morreyEmbedding (mu := mu) hp).comp (firstOrderL k)‖ * ‖u‖
-    have hval : Tendsto (fun n => value (k + 1) (mulLeftₗ hp k u (v n))) atTop
-        (𝓝 (value (k + 1) (mulLeftₗ hp k u x))) := by
-      rw [tendsto_iff_norm_sub_tendsto_zero]
-      have hlim : Tendsto (fun n => C * ‖v n - x‖) atTop (𝓝 (C * 0)) :=
-        (tendsto_iff_norm_sub_tendsto_zero.1 hv).const_mul _
-      rw [mul_zero] at hlim
-      refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
-      rw [← value_sub, ← map_sub]
-      exact norm_value_mulAux_le hp k u _
-    exact ext (k + 1) (tendsto_nhds_unique (tendsto_value hy) hval)
+  ContinuousLinearMap.ofSeqClosedGraph (g := mulLeftₗ hp k u) fun _ _ _ hv hy =>
+    ext (k + 1) (tendsto_nhds_unique (tendsto_value hy) (tendsto_value_mulAux hp k u hv))
 
 private theorem mulLeftL_apply (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
-    (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) : mulLeftL hp k u v = mulAux hp k u v :=
-  (rfl)
+    (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) : mulLeftL hp k u v = mulAux hp k u v := by
+  rw [mulLeftL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, mulLeftₗ, LinearMap.coe_mk,
+    AddHom.coe_mk]
 
 /-- Multiplication on `W^{k+1,p}(ℝⁿ)`, as a linear map into continuous linear maps. -/
 private def mulₗ (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ) :
@@ -287,15 +287,13 @@ private def mulₗ (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ) :
       Wkp mu ⊤ (p : ℝ≥0∞) (k + 1) →L[ℝ] Wkp mu ⊤ (p : ℝ≥0∞) (k + 1) where
   toFun := mulLeftL hp k
   map_add' u u' := ContinuousLinearMap.ext fun v => by
-    rw [add_apply, mulLeftL_apply, mulLeftL_apply, mulLeftL_apply,
-      mulAux_comm, mulAux_add_right, mulAux_comm hp k v, mulAux_comm hp k v]
+    rw [add_apply, mulLeftL_apply, mulLeftL_apply, mulLeftL_apply, mulAux_add_left]
   map_smul' c u := ContinuousLinearMap.ext fun v => by
-    rw [RingHom.id_apply, smul_apply, mulLeftL_apply, mulLeftL_apply,
-      mulAux_comm, mulAux_smul_right, mulAux_comm hp k v]
+    rw [RingHom.id_apply, smul_apply, mulLeftL_apply, mulLeftL_apply, mulAux_smul_left]
 
 private theorem mulₗ_apply_apply (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
-    (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) : mulₗ hp k u v = mulAux hp k u v :=
-  (rfl)
+    (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) : mulₗ hp k u v = mulAux hp k u v := by
+  rw [mulₗ, LinearMap.coe_mk, AddHom.coe_mk, mulLeftL_apply]
 
 /-- **Multiplication in `W^{k+1,p}(ℝⁿ)` for `p > n`**, as a bounded bilinear map. The value of
 `mulL hp k u v` is the pointwise product of the values of `u` and `v`
@@ -311,23 +309,13 @@ def mulL (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ) :
         hT).congr fun n => ?_)
       rw [Function.comp_apply, Function.comp_apply, ContinuousLinearMap.apply_apply,
         mulₗ_apply_apply]
-    · -- The value of `u n * v - x * v = (u n - x) * v` is at most `C ‖u n - x‖ ‖v‖`.
+    · -- Multiplication by `v` is continuous, so `u n * v → x * v`.
       rw [mulₗ_apply_apply]
-      set C := ‖(W1p.morreyEmbedding (mu := mu) hp).comp (firstOrderL k)‖
-      rw [tendsto_iff_norm_sub_tendsto_zero]
-      have hlim : Tendsto (fun n => C * ‖u n - x‖ * ‖v‖) atTop (𝓝 (C * 0 * ‖v‖)) :=
-        ((tendsto_iff_norm_sub_tendsto_zero.1 hu).const_mul _).mul_const _
-      rw [mul_zero, zero_mul] at hlim
-      refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
-      have hsub : mulAux hp k (u n) v - mulAux hp k x v = mulAux hp k (u n - x) v := by
-        rw [mulAux_comm, mulAux_comm hp k x, mulAux_comm hp k (u n - x)]
-        exact (map_sub (mulLeftₗ hp k v) (u n) x).symm
-      rw [← value_sub, hsub]
-      exact norm_value_mulAux_le hp k _ v
+      simpa only [mulAux_comm hp k v] using tendsto_value_mulAux hp k v hu
 
 private theorem mulL_apply_apply (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
-    (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) : mulL hp k u v = mulAux hp k u v :=
-  (rfl)
+    (u v : Wkp mu ⊤ (p : ℝ≥0∞) (k + 1)) : mulL hp k u v = mulAux hp k u v := by
+  rw [mulL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, mulₗ_apply_apply]
 
 /-- The value of the product `mulL hp k u v` is the pointwise product of the values. -/
 theorem value_mulL_ae (hp : (finrank ℝ E : ℝ≥0) < p) (k : ℕ)
