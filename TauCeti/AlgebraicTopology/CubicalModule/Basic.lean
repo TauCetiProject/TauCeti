@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplex
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Data.Fin.Parity
+import TauCeti.Algebra.Category.ModuleCat.OfHom
 import TauCeti.Data.Fin.FaceSwap
 
 /-!
@@ -246,10 +247,7 @@ complex. -/
   obj A := A.complex
   map φ := ChainComplex.ofHom (fun n ↦ ModuleCat.ofHom (φ.f n)) fun n ↦ by
     rw [complex_d, complex_d]
-    -- `rw [← ModuleCat.ofHom_comp]` cannot match because the objects of `complex` agree with
-    -- `ModuleCat.of R (A.X n)` only up to unfolding, so `ofHom_comp` is applied as a term.
-    exact (ModuleCat.ofHom_comp _ _).symm.trans
-      ((congr_arg ModuleCat.ofHom (φ.boundary_comp_f n)).trans (ModuleCat.ofHom_comp _ _))
+    exact ModuleCat.ofHom_comp_ofHom_eq_of_comp_eq (φ.boundary_comp_f n)
 
 @[simp]
 theorem complexFunctor_obj : complexFunctor.obj A = A.complex :=
