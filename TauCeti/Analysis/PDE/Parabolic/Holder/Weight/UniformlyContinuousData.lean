@@ -1,0 +1,221 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.PDE.Parabolic.Holder.UniformlyContinuousData
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight.Solvability
+
+/-!
+# The weighted Cauchy problem with uniformly continuous initial data
+
+On `ℝⁿ = EuclideanSpace ℝ ι` and a time slab `ℝⁿ × [0, T]`, let
+
+`P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u`
+
+have coefficients in `C_b^{α,α/2}`, `0 < α < 1`, with `a` uniformly elliptic, and let `w = exp ℓ` be
+a positive time-independent weight whose logarithm `ℓ` is `C²` with bounded `α`-Hölder partial
+derivatives `∂ᵢℓ` and `∂ᵢ∂ⱼℓ`; `ℓ` itself may be unbounded. This file solves the Cauchy problem
+`P u = w f`, `u(·, 0) = w g` for `f ∈ C_b^{α,α/2}` and initial data `g` that are only bounded and
+uniformly continuous, so that the initial values `w g` are measured in the weighted uniform norm
+`‖u(·, 0) / w‖_∞`.
+
+Writing `u = w V`, the conjugation identity `P (w V) = w P_w V`
+(`TauCeti.ParabolicC2HolderSpace.exp_mul_euclideanParabolicOperatorL_eq`) reduces the problem to
+the Cauchy problem `P_w V = f`, `V(·, 0) = g` for an operator of the same type, with the same
+principal coefficients and the lower-order coefficients `b_w`, `c_w`
+(`TauCeti.ParabolicC2HolderSpace.euclideanWeightedFirstOrderCoeff`,
+`TauCeti.ParabolicC2HolderSpace.euclideanWeightedZerothOrderCoeff`). Its solution for uniformly
+continuous initial data is the extended solution operator
+`TauCeti.ParabolicC2HolderSpace.euclideanCauchySolutionBUC`, and the solution of the weighted
+problem is
+
+`u(x, t) = exp (ℓ x) V(x, t)`, with `V = euclideanCauchySolutionBUC … a b_w c_w … (f, g)`.
+
+The results below describe `u` through the original operator `P`:
+
+* **Approximation by classical solutions.** If `u'` is a classical solution of `P u' = w f`,
+  `u'(·, 0) = w g'` in the weighted class `u' / w ∈ C_b^{2+α,1+α/2}`, with `g'` a bounded
+  `C^{2,α}` function uniformly within `δ` of `g`, then
+  `|u(x, t) - u'(x, t)| ≤ w(x) exp (‖c_w‖ T) (1 + T) δ`. Since `C_b^{2,α}` is dense in the
+  uniformly continuous functions, `u` is the limit in the weighted uniform norm of the classical
+  weighted solutions with approximating initial data, and this property determines `u`.
+* **Agreement.** For `g ∈ C_b^{2,α}`, `u` is itself the classical weighted solution.
+* **The initial trace.** `u(x, 0) = w(x) g(x)` and `u(·, t) / w → g` uniformly on `ℝⁿ` as
+  `t → 0⁺`: the initial datum is attained in the weighted uniform norm.
+* **The maximum principle.** If `c_w ≤ γ` with `0 ≤ γ`, `|f| ≤ K` and `|g| ≤ M`, then
+  `|u(x, t)| ≤ w(x) exp (γ t) (M + t K)`. The sign condition is on `c_w`, not on `c`.
+
+## Main declarations
+
+All declarations are in the `TauCeti.ParabolicC2HolderSpace` namespace.
+
+* `abs_sub_le_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the comparison with classical
+  weighted solutions.
+* `derivWithin_sub_eq_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the solution is classical
+  for initial data in `C_b^{2,α}`.
+* `apply_zero_of_eq_exp_mul_euclideanCauchySolutionBUC` and
+  `tendstoUniformly_exp_neg_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the initial trace in the
+  weighted uniform norm.
+* `abs_le_exp_mul_exp_mul_mul_add_mul_of_eq_exp_mul_euclideanCauchySolutionBUC`: the maximum
+  principle in the weighted uniform norm.
+
+## References
+
+* A. Friedman, *Partial Differential Equations of Parabolic Type*, Chapter 2 (the substitution
+  `u = w v` by a positive weight).
+* A. Lunardi, *Linear and nonlinear diffusion problems*, Cortona lecture notes, 2004, Chapter 4
+  (solutions with continuous initial data as limits of solutions with smooth data).
+-/
+
+public section
+
+namespace TauCeti.ParabolicC2HolderSpace
+
+open Set Filter ParabolicSpaceTime Real BoundedContinuousFunction
+open CkHolderSpace (toBUC toBUC_apply)
+open scoped NNReal Topology
+
+variable {α : ℝ≥0} {ι : Type*} [Fintype ι] [DecidableEq ι] {T : ℝ≥0}
+  (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+  {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+  {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+  {c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+  (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+    lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+  {dℓ : ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ}
+  {d2ℓ : ι → ι → HolderSpace α (EuclideanSpace ℝ ι) ℝ} {ℓ : EuclideanSpace ℝ ι → ℝ}
+
+/-- **Comparison with classical weighted solutions.** Let `w = exp ℓ` be a spatial weight as in
+`eq_euclideanInitialDataCLE_symm_iff_exp_mul`, let `f ∈ C_b^{α,α/2}` and let `g` be bounded and
+uniformly continuous. Let `u = exp ℓ * V`, where `V` is the extended solution of the conjugated
+problem `P_w V = f`, `V(·, 0) = g`. Let `u' = exp ℓ * v` with `v ∈ C_b^{2+α,1+α/2}` be a classical
+solution of `P u' = exp ℓ * f`, `u'(·, 0) = exp ℓ * g'`, where `g' ∈ C_b^{2,α}` satisfies
+`|g - g'| ≤ δ`. Then `|u(x, t) - u'(x, t)| ≤ exp (ℓ x) exp (‖c_w‖ T) (1 + T) δ`. -/
+theorem abs_sub_le_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC (hℓ : ContDiff ℝ 2 ℓ)
+    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = d2ℓ i j x)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
+      euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s))
+    (g' : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) {δ : ℝ}
+    (hg' : ∀ x, |(g : EuclideanSpace ℝ ι →ᵇ ℝ) x - g' x| ≤ δ)
+    (v : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT) {u' : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu' : ∀ y (s : Icc (0 : ℝ) T), u' y s = exp (ℓ y) * v (slabMk y s))
+    (hP : ∀ (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T), derivWithin (u' x) (Icc 0 T) t -
+      (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u' y t) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+        ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u' y t) x (EuclideanSpace.single i 1) +
+        c (slabMk x t) * u' x t) = exp (ℓ x) * f (slabMk x t))
+    (hinit : ∀ x, u' x 0 = exp (ℓ x) * g' x) (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T) :
+    |u x t - u' x t| ≤ exp (ℓ x) *
+      (Real.exp (‖euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ‖ * T) * (1 + T) * δ) := by
+  set V := euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+    (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha
+  -- The classical solution `u'` is `exp ℓ` times the classical solution of the conjugated problem.
+  have hv := (eq_euclideanInitialDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ hd2ℓ v hu' f
+    g').2 ⟨hP, hinit⟩
+  have hδ : 0 ≤ δ := (abs_nonneg _).trans (hg' 0)
+  have hnorm : ‖g - toBUC g'‖ ≤ δ := by
+    rw [← ClosedSubmodule.norm_coe]
+    refine (norm_le hδ).2 fun y ↦ ?_
+    have hy := hg' y
+    rwa [← toBUC_apply, ← Real.norm_eq_abs, ← _root_.sub_apply] at hy
+  -- By linearity, `V (f, g) - v` is the extended solution with data `(0, g - g')`.
+  have hsub : V (f, g) - valueL v = V (0, g - toBUC g') := by
+    rw [hv, ← euclideanCauchySolutionBUC_toBUC, ← map_sub, Prod.mk_sub_mk, sub_self]
+  have hn := norm_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT
+    (b := euclideanWeightedFirstOrderCoeff a b dℓ)
+    (c := euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (0, g - toBUC g')
+  rw [Prod.norm_def, norm_zero, max_eq_right (norm_nonneg _), ← hsub] at hn
+  rw [hu x t, hu' x t, ← mul_sub, abs_mul, abs_of_pos (exp_pos _)]
+  refine mul_le_mul_of_nonneg_left ?_ (exp_pos _).le
+  calc |V (f, g) (slabMk x t) - v (slabMk x t)| = ‖(V (f, g) - valueL v) (slabMk x t)‖ := by
+        rw [Real.norm_eq_abs, _root_.sub_apply, valueL_apply]
+    _ ≤ ‖V (f, g) - valueL v‖ := norm_coe_le_norm _ _
+    _ ≤ _ := hn.trans (mul_le_mul_of_nonneg_left hnorm (by positivity))
+
+/-- **Agreement with the classical weighted solution.** If the initial datum `g` of
+`abs_sub_le_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC` is a bounded `C^{2,α}` function `g'`,
+then `u = exp ℓ * V` is a classical solution of `P u = exp ℓ * f`. -/
+theorem derivWithin_sub_eq_exp_mul_of_eq_exp_mul_euclideanCauchySolutionBUC (hℓ : ContDiff ℝ 2 ℓ)
+    (hdℓ : ∀ i x, fderiv ℝ ℓ x (EuclideanSpace.single i 1) = dℓ i x)
+    (hd2ℓ : ∀ i j x, fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) = d2ℓ i j x)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
+      euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s))
+    (g' : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ)
+    (hg' : ∀ x, (g : EuclideanSpace ℝ ι →ᵇ ℝ) x = g' x)
+    (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T) :
+    derivWithin (u x) (Icc 0 T) t -
+      (∑ i, ∑ j, a i j (slabMk x t) * fderiv ℝ (fderiv ℝ fun y ↦ u y t) x
+          (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+        ∑ i, b i (slabMk x t) * fderiv ℝ (fun y ↦ u y t) x (EuclideanSpace.single i 1) +
+        c (slabMk x t) * u x t) = exp (ℓ x) * f (slabMk x t) := by
+  have hu' (y : EuclideanSpace ℝ ι) (s : Icc (0 : ℝ) T) : u y s = exp (ℓ y) *
+      (euclideanInitialDataCLE hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha).symm (f, g') (slabMk y s) := by
+    rw [hu, euclideanCauchySolutionBUC_apply_of_ckHolderSpace hα₀ hα₁ hT ha f g g' hg',
+      valueL_apply]
+  exact ((eq_euclideanInitialDataCLE_symm_iff_exp_mul hα₀ hα₁ hT b c ha hℓ hdℓ hd2ℓ _ hu' f
+    g').1 rfl).1 x t
+
+/-- **The initial condition.** The solution `u = exp ℓ * V` of the weighted problem takes the
+initial values `exp ℓ * g`. -/
+theorem apply_zero_of_eq_exp_mul_euclideanCauchySolutionBUC
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
+      euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s))
+    (x : EuclideanSpace ℝ ι) : u x 0 = exp (ℓ x) * (g : EuclideanSpace ℝ ι →ᵇ ℝ) x := by
+  rw [← euclideanCauchySolutionBUC_apply_slabMk_zero hα₀ hα₁ hT ha f g x]
+  exact hu x ⟨0, left_mem_Icc.2 hT.le⟩
+
+/-- **Attainment of the initial datum in the weighted uniform norm.** As `t → 0⁺`, the solution
+`u = exp ℓ * V` of the weighted problem satisfies `u(·, t) / exp ℓ → g` uniformly on `ℝⁿ`. -/
+theorem tendstoUniformly_exp_neg_mul_of_eq_exp_mul_euclideanCauchySolutionBUC
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
+      euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s)) :
+    TendstoUniformly (fun (t : Icc (0 : ℝ) T) (x : EuclideanSpace ℝ ι) ↦ exp (-ℓ x) * u x t)
+      (fun x ↦ (g : EuclideanSpace ℝ ι →ᵇ ℝ) x) (𝓝 ⟨0, left_mem_Icc.2 hT.le⟩) := by
+  have h : (fun (t : Icc (0 : ℝ) T) (x : EuclideanSpace ℝ ι) ↦ exp (-ℓ x) * u x t) =
+      fun t x ↦ euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk x t) := by
+    funext t x
+    rw [hu, ← mul_assoc, ← exp_add, neg_add_cancel, exp_zero, one_mul]
+  rw [h]
+  exact tendstoUniformly_euclideanCauchySolutionBUC hα₀ hα₁ hT ha f g
+
+/-- **The maximum principle in the weighted uniform norm.** Let the conjugated zeroth-order
+coefficient satisfy `c_w ≤ γ` with `0 ≤ γ`. If `|f| ≤ K` and `|g| ≤ M`, so that the data of the
+weighted problem satisfy `|P u| ≤ K exp ℓ` and `|u(·, 0)| ≤ M exp ℓ`, then the solution
+`u = exp ℓ * V` satisfies `|u(x, t)| ≤ exp (ℓ x) exp (γ t) (M + t K)`. -/
+theorem abs_le_exp_mul_exp_mul_mul_add_mul_of_eq_exp_mul_euclideanCauchySolutionBUC {γ M K : ℝ}
+    (hc : ∀ p, euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ p ≤ γ) (hγ : 0 ≤ γ)
+    (f : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (g : uniformContinuousSubmodule ℝ (EuclideanSpace ℝ ι) ℝ) (hf : ∀ p, |f p| ≤ K)
+    (hg : ∀ x, |(g : EuclideanSpace ℝ ι →ᵇ ℝ) x| ≤ M) {u : EuclideanSpace ℝ ι → ℝ → ℝ}
+    (hu : ∀ y (s : Icc (0 : ℝ) T), u y s = exp (ℓ y) *
+      euclideanCauchySolutionBUC hα₀ hα₁ hT a (euclideanWeightedFirstOrderCoeff a b dℓ)
+        (euclideanWeightedZerothOrderCoeff a b c dℓ d2ℓ) ha (f, g) (slabMk y s))
+    (x : EuclideanSpace ℝ ι) (t : Icc (0 : ℝ) T) :
+    |u x t| ≤ exp (ℓ x) * (exp (γ * t) * (M + t * K)) := by
+  have h := abs_euclideanCauchySolutionBUC_apply_le hα₀ hα₁ hT
+    (b := euclideanWeightedFirstOrderCoeff a b dℓ) ha hc hγ f g hf hg (slabMk x t)
+  rw [slabTime_slabMk] at h
+  rw [hu, abs_mul, abs_of_pos (exp_pos _)]
+  exact mul_le_mul_of_nonneg_left h (exp_pos _).le
+
+end TauCeti.ParabolicC2HolderSpace
