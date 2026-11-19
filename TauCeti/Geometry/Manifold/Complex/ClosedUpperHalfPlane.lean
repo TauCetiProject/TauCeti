@@ -365,11 +365,9 @@ theorem ClosedUpperHalfPlane.toHomeomorph_euclideanHalfSpaceDiffeomorph (n : ℕ
 theorem ClosedUpperHalfPlane.isManifold_euclideanHalfSpace {n : ℕ∞ω} (M : Type*)
     [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
     [IsManifold closedUpperHalfPlaneModel n M] :
-    letI := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-    letI := ChartedSpace.comp (EuclideanHalfSpace 2) ClosedUpperHalfPlane M
-    IsManifold (𝓡∂ 2) n M := by
-  have h := (euclideanHalfSpaceDiffeomorph n).isManifold_chartedSpaceComp M
-  rwa [toHomeomorph_euclideanHalfSpaceDiffeomorph] at h
+    letI := (euclideanHalfSpaceDiffeomorph n).chartedSpaceComp M
+    IsManifold (𝓡∂ 2) n M :=
+  (euclideanHalfSpaceDiffeomorph n).isManifold_chartedSpaceComp M
 
 namespace ClosedUpperHalfPlane
 

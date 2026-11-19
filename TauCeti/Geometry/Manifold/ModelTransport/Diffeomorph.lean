@@ -13,11 +13,12 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 
 Let `Φ : H ≃ₘ^n⟮I, I'⟯ H'` be a `C^n` diffeomorphism between two model spaces. Conjugating a
 `C^n` chart change of `H` by `Φ` gives a `C^n` chart change of `H'`
-(`Diffeomorph.symm_trans_trans_mem_contDiffGroupoid`). Consequently, a `C^n` manifold modelled on
-`I` is a `C^n` manifold modelled on `I'` for the composite charts `ChartedSpace.comp H' H M`, where
-`H` carries the single chart `Φ` (`Diffeomorph.isManifold_chartedSpaceComp`). These composite
-charts are packaged as `Diffeomorph.chartedSpaceComp`, whose chart at a point is the chart of `M`
-followed by `Φ` (`Diffeomorph.chartAt_chartedSpaceComp`).
+(`Diffeomorph.symm_trans_trans_mem_contDiffGroupoid`). Following every chart of a charted space `M`
+on `H` with `Φ` gives charts of `M` on `H'` (`Diffeomorph.chartedSpaceComp`), whose chart at a
+point is the chart of `M` followed by `Φ` (`Diffeomorph.chartAt_chartedSpaceComp`). Consequently,
+a `C^n` manifold modelled on `I` is a `C^n` manifold modelled on `I'` for these charts
+(`Diffeomorph.isManifold_chartedSpaceComp`), and the identity of `M` is a `C^n` diffeomorphism
+between the two atlases (`Diffeomorph.chartedSpaceCompDiffeomorph`).
 
 For instance, a model with corners described as a subset of `ℂ` can be compared with Mathlib's
 native half-spaces in this way.
@@ -39,7 +40,7 @@ namespace Diffeomorph
 /-- The charts of `M` modelled on `H'` obtained by following each chart of `M` with a
 diffeomorphism of models `Φ`: the composite charts `ChartedSpace.comp H' H M`, where `H` carries
 the single chart `Φ`. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 def chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] : ChartedSpace H' M :=
   letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
@@ -78,13 +79,12 @@ theorem symm_trans_trans_mem_contDiffGroupoid (Φ : H ≃ₘ^n⟮I, I'⟯ H')
     · simp [OpenPartialHomeomorph.coe_trans_symm]
     · simpa [OpenPartialHomeomorph.trans_target] using hv
 
-/-- A `C^n` manifold modelled on `I` is a `C^n` manifold modelled on `I'` for the composite
-charts `ChartedSpace.comp H' H M`, when `H` carries the single chart given by a `C^n`
-diffeomorphism of models `Φ`. -/
+/-- A `C^n` manifold modelled on `I` is a `C^n` manifold modelled on `I'` for the charts
+`Φ.chartedSpaceComp M` obtained by following its charts with a `C^n` diffeomorphism of models
+`Φ`. -/
 theorem isManifold_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I n M] :
-    letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
-    letI := ChartedSpace.comp H' H M
+    letI := Φ.chartedSpaceComp M
     IsManifold I' n M := by
   let := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
   let := ChartedSpace.comp H' H M
@@ -95,5 +95,41 @@ theorem isManifold_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) 
   rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_assoc,
     ← OpenPartialHomeomorph.trans_assoc c.symm]
   exact Φ.symm_trans_trans_mem_contDiffGroupoid (HasGroupoid.compatible hc hc')
+
+/-- The identity of a `C^n` manifold `M` modelled on `I` is a `C^n` diffeomorphism from the charts
+`Φ.chartedSpaceComp M`, modelled on `I'`, to the charts of `M`. -/
+def chartedSpaceCompDiffeomorph (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I n M] :
+    letI := Φ.chartedSpaceComp M
+    M ≃ₘ^n⟮I', I⟯ M :=
+  letI := Φ.chartedSpaceComp M
+  haveI := Φ.isManifold_chartedSpaceComp M
+  { toEquiv := Equiv.refl M
+    contMDiff_toFun := fun x ↦ by
+      -- Near `x`, the identity is the new chart at `x`, then `Φ⁻¹`, then the old chart inverse.
+      have hc := chartAt_chartedSpaceComp Φ x
+      have h : ContMDiffOn I' I n ((chartAt H x).symm ∘ Φ.symm ∘ chartAt H' x)
+          (chartAt H' x).source :=
+        contMDiffOn_chart_symm.comp (Φ.symm.contMDiff.comp_contMDiffOn contMDiffOn_chart)
+          fun y hy ↦ by simpa [hc] using (chartAt H x).map_source (by simpa [hc] using hy)
+      refine (h.congr fun y hy ↦ ?_).contMDiffAt (chart_source_mem_nhds H' x)
+      simpa [hc] using ((chartAt H x).left_inv (by simpa [hc] using hy)).symm
+    contMDiff_invFun := fun x ↦ by
+      -- Near `x`, the identity is the old chart at `x`, then `Φ`, then the new chart inverse.
+      have hc := chartAt_chartedSpaceComp Φ x
+      have h : ContMDiffOn I I' n ((chartAt H' x).symm ∘ Φ ∘ chartAt H x)
+          (chartAt H x).source :=
+        contMDiffOn_chart_symm.comp (Φ.contMDiff.comp_contMDiffOn contMDiffOn_chart)
+          fun y hy ↦ by simpa [hc] using (chartAt H x).map_source hy
+      refine (h.congr fun y hy ↦ ?_).contMDiffAt (chart_source_mem_nhds H x)
+      simpa [hc] using ((chartAt H x).left_inv hy).symm }
+
+/-- The diffeomorphism `Φ.chartedSpaceCompDiffeomorph M` is the identity of `M`. -/
+@[simp]
+theorem coe_chartedSpaceCompDiffeomorph (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I n M] :
+    letI := Φ.chartedSpaceComp M
+    ⇑(Φ.chartedSpaceCompDiffeomorph M) = id :=
+  (rfl)
 
 end Diffeomorph
