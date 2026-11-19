@@ -124,26 +124,6 @@ private theorem snd_gaugeJetL
   -- `L.compLpL p μ f` is `L.compLp f` by definition of `ContinuousLinearMap.compLpL`.
   rfl
 
-/-- **The product rule for a path of the weak-derivative graph.** For `Φ` that is `C¹` on `Omega`
-with `L∞` class `ΦL`, the product `Φ u` has weak derivative `Φ u' + Φ' u`. -/
-private theorem hasWeakLineDerivOn_holder_prev (hΦ : ContDiffOn ℝ 1 Φ Omega)
-    (hΦL : ΦL =ᵐ[mu.restrict Omega] Φ)
-    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
-    HasWeakLineDerivOn mu Omega
-      (⇑((ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p ΦL
-        (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u)))
-      (fun s ↦ Φ s (weakFDeriv (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u s 1) +
-        deriv Φ s (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u s)) 1 := by
-  let base := ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))
-  have hx : HasWeakLineDerivOn mu Omega (⇑(prev base u))
-      (fun s ↦ weakFDeriv base u s 1) 1 := by
-    simpa only [base, ContinuousLinearMap.id_apply] using
-      (hasWeakFDerivOn_base_prev base u).hasWeakLineDerivOn 1
-  refine (hx.contDiffOn_clm_apply_of_ne_zero hΦ one_ne_zero).congr_ae ?_
-  filter_upwards [(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).coeFn_holder (r := p) ΦL (prev base u),
-    hΦL] with s hs hΦs
-  rw [hs, hΦs, ContinuousLinearMap.id_apply]
-
 private theorem gaugeJetL_mem (hΦ : ContDiffOn ℝ 1 Φ Omega) (hΦL : ΦL =ᵐ[mu.restrict Omega] Φ)
     (hΦ'L : Φ'L =ᵐ[mu.restrict Omega] deriv Φ)
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
@@ -222,18 +202,27 @@ theorem trajectoryOperator_gaugeL (hΦ : ContDiffOn ℝ 1 Φ Omega)
     (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
     trajectoryOperator A (gaugeL hΦ hΦL hΦ'L u) =
       (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p ΦL (trajectoryOperator B u) := by
-  rw [trajectoryOperator_eq_iff_hasWeakLineDerivOn, prev_gaugeL]
-  refine (hasWeakLineDerivOn_holder_prev hΦ hΦL u).congr_ae_deriv ?_
-  filter_upwards [(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).coeFn_holder (r := p) ΦL
-      (trajectoryOperator B u),
-    (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).coeFn_holder (r := p) ΦL
-      (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u),
-    trajectoryOperator_apply_ae B u, hΦL, hAB] with s h₁ h₂ hB hΦs hABs
-  have hcomp := congrArg
-    (fun T : F →L[ℝ] F ↦ T (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u s)) hABs
+  let base := ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))
+  let H := ContinuousLinearMap.id ℝ (F →L[ℝ] F)
+  let ev := ContinuousLinearMap.apply ℝ F (1 : ℝ)
+  let lift := (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap
+  -- The weak derivative of `Φ u` is the one recorded by `weakFDeriv_gaugeL`.
+  have hA := trajectoryOperator_apply_ae A (gaugeL hΦ hΦL hΦ'L u)
+  rw [weakFDeriv_gaugeL, prev_gaugeL] at hA
+  apply Lp.ext
+  filter_upwards [hA, H.coeFn_holder (r := p) ΦL (trajectoryOperator B u),
+    trajectoryOperator_apply_ae B u,
+    lift.coeFn_compLp (H.holder p Φ'L (prev base u) +
+      H.holder p ΦL (ev.compLp (weakFDeriv base u))),
+    Lp.coeFn_add (H.holder p Φ'L (prev base u)) (H.holder p ΦL (ev.compLp (weakFDeriv base u))),
+    H.coeFn_holder (r := p) Φ'L (prev base u),
+    H.coeFn_holder (r := p) ΦL (ev.compLp (weakFDeriv base u)),
+    ev.coeFn_compLp (weakFDeriv base u), H.coeFn_holder (r := p) ΦL (prev base u), hΦL, hΦ'L,
+    hAB] with s hAs h₁ hBs hl hsum h₂ h₃ h₄ h₅ hΦs hΦ's hABs
+  have hcomp := congrArg (fun T : F →L[ℝ] F ↦ T (prev base u s)) hABs
   simp only [ContinuousLinearMap.comp_apply, add_apply] at hcomp
-  rw [h₁, h₂, hB, hΦs]
-  simp only [ContinuousLinearMap.id_apply, map_add, hcomp]
+  rw [hAs, h₁, hBs, hl, hsum, Pi.add_apply, h₂, h₃, h₄, h₅, hΦs, hΦ's]
+  simp [H, lift, ev, base, hcomp]
   abel
 
 omit [FiniteDimensional ℝ F] [mu.IsAddHaarMeasure] in
@@ -307,6 +296,13 @@ private theorem invDerivL_ae_eq (hΦ : ContDiffOn ℝ 1 Φ Omega)
     ((hd.clm_inverse_of_completeSpace hinv).congr_of_eventuallyEq hΨ).deriv, hΨs',
     ContinuousLinearMap.compL_apply, ContinuousLinearMap.compL_apply]
 
+/-- The pointwise inverse `Ψ` of a `C¹` path `Φ` is `C¹` on `Omega`. -/
+private theorem contDiffOn_of_comp_eq_id (hΦ : ContDiffOn ℝ 1 Φ Omega)
+    (hΨΦ : ∀ s ∈ (Omega : Set ℝ), Ψ s ∘L Φ s = ContinuousLinearMap.id ℝ F) :
+    ContDiffOn ℝ 1 Ψ Omega :=
+  (hΦ.clm_inverse fun _ hs ↦ (isInvertible_and_inverse_eq hΨΦ hs).1).congr
+    fun _ hs ↦ (isInvertible_and_inverse_eq hΨΦ hs).2.symm
+
 /-- **Multiplication by an invertible `C¹` path of operators** as a continuous linear
 automorphism of the weak-derivative graph over `Lᵖ`, with inverse the multiplication by the
 pointwise inverse `Ψ`. Only the `L∞` class `ΨL` of `Ψ` is needed: `Ψ` is then `C¹` with the
@@ -317,9 +313,7 @@ def gaugeEquiv (hΦ : ContDiffOn ℝ 1 Φ Omega) (hΦL : ΦL =ᵐ[mu.restrict Om
     WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) ≃L[ℝ]
       WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) :=
   ContinuousLinearEquiv.equivOfInverse (gaugeL hΦ hΦL hΦ'L)
-    (gaugeL ((hΦ.clm_inverse fun _ hs ↦ (isInvertible_and_inverse_eq hΨΦ hs).1).congr
-      fun _ hs ↦ (isInvertible_and_inverse_eq hΨΦ hs).2.symm)
-      hΨL (invDerivL_ae_eq hΦ hΦ'L hΨL hΨΦ))
+    (gaugeL (contDiffOn_of_comp_eq_id hΦ hΨΦ) hΨL (invDerivL_ae_eq hΦ hΦ'L hΨL hΨΦ))
     (gaugeL_gaugeL_of_comp_eq_id hΦ hΦL hΦ'L _ hΨL _ hΨΦ)
     (gaugeL_gaugeL_of_comp_eq_id _ hΨL _ hΦ hΦL hΦ'L (comp_eq_id_of_comp_eq_id hΨΦ))
 
@@ -344,9 +338,7 @@ theorem prev_gaugeEquiv_symm_apply (hΦ : ContDiffOn ℝ 1 Φ Omega)
         ((gaugeEquiv hΦ hΦL hΦ'L hΨL hΨΦ).symm u) =
       (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p ΨL
         (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u) :=
-  prev_gaugeL ((hΦ.clm_inverse fun _ hs ↦ (isInvertible_and_inverse_eq hΨΦ hs).1).congr
-      fun _ hs ↦ (isInvertible_and_inverse_eq hΨΦ hs).2.symm)
-    hΨL (invDerivL_ae_eq hΦ hΦ'L hΨL hΨΦ) u
+  prev_gaugeL (contDiffOn_of_comp_eq_id hΦ hΨΦ) hΨL (invDerivL_ae_eq hΦ hΦ'L hΨL hΨΦ) u
 
 section Invertible
 
@@ -374,15 +366,28 @@ theorem trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm :
   -- The right side is the composite applied to `u`, by definition.
   rfl
 
+/-- `D_A = Φ ∘ D_B ∘ Φ⁻¹`, with multiplication by `Φ` on `Lᵖ` written as the equivalence
+`MeasureTheory.Lp.pointwiseApplyEquiv`. -/
+private theorem trajectoryOperator_eq_pointwiseApplyEquiv_comp :
+    trajectoryOperator (p := p) A =
+      (Lp.pointwiseApplyEquiv p (ae_comp_eq_id hΦL hΨL hΨΦ)
+          (ae_comp_eq_id hΨL hΦL (comp_eq_id_of_comp_eq_id hΨΦ)) :
+          Lp F p (mu.restrict Omega) →L[ℝ] Lp F p (mu.restrict Omega)) ∘L
+        trajectoryOperator B ∘L
+          ((gaugeEquiv (p := p) hΦ hΦL hΦ'L hΨL hΨΦ).symm :
+            WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) →L[ℝ]
+              WeakDerivStep mu Omega p
+                (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) := by
+  rw [Lp.coe_pointwiseApplyEquiv]
+  exact trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm hΦ hΦL hΦ'L hΨL hΨΦ hAB
+
 /-- **The kernel under a change of trivialization**: the kernel of `D_A` is the image of the
 kernel of `D_B` under multiplication by `Φ`. -/
 theorem ker_trajectoryOperator_eq_map_gaugeL :
     LinearMap.ker (trajectoryOperator (p := p) A).toLinearMap =
       (LinearMap.ker (trajectoryOperator (p := p) B).toLinearMap).map
         (gaugeL (p := p) hΦ hΦL hΦ'L).toLinearMap := by
-  rw [trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm hΦ hΦL hΦ'L hΨL hΨΦ hAB,
-    ← Lp.coe_pointwiseApplyEquiv (p := p) (ae_comp_eq_id hΦL hΨL hΨΦ)
-      (ae_comp_eq_id hΨL hΦL (comp_eq_id_of_comp_eq_id hΨΦ)),
+  rw [trajectoryOperator_eq_pointwiseApplyEquiv_comp hΦ hΦL hΦ'L hΨL hΨΦ hAB,
     ContinuousLinearMap.toLinearMap_comp,
     ContinuousLinearMap.toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
     ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearEquiv.ker_comp,
@@ -394,18 +399,14 @@ theorem ker_trajectoryOperator_eq_map_gaugeL :
 when `D_B` is. -/
 theorem isFredholm_trajectoryOperator_iff_of_gauge :
     (trajectoryOperator (p := p) A).IsFredholm ↔ (trajectoryOperator (p := p) B).IsFredholm := by
-  rw [trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm hΦ hΦL hΦ'L hΨL hΨΦ hAB,
-    ← Lp.coe_pointwiseApplyEquiv (p := p) (ae_comp_eq_id hΦL hΨL hΨΦ)
-      (ae_comp_eq_id hΨL hΦL (comp_eq_id_of_comp_eq_id hΨΦ)),
+  rw [trajectoryOperator_eq_pointwiseApplyEquiv_comp hΦ hΦL hΦ'L hΨL hΨΦ hAB,
     ContinuousLinearMap.isFredholm_equiv_comp,
     ContinuousLinearMap.isFredholm_comp_equiv]
 
 /-- **The index does not depend on the trivialization**: `D_A` and `D_B` have the same index. -/
 theorem index_trajectoryOperator_eq_of_gauge :
     (trajectoryOperator (p := p) A).index = (trajectoryOperator (p := p) B).index := by
-  rw [trajectoryOperator_eq_holderL_comp_gaugeEquiv_symm hΦ hΦL hΦ'L hΨL hΨΦ hAB,
-    ← Lp.coe_pointwiseApplyEquiv (p := p) (ae_comp_eq_id hΦL hΨL hΨΦ)
-      (ae_comp_eq_id hΨL hΦL (comp_eq_id_of_comp_eq_id hΨΦ)),
+  rw [trajectoryOperator_eq_pointwiseApplyEquiv_comp hΦ hΦL hΦ'L hΨL hΨΦ hAB,
     ContinuousLinearMap.toLinearMap_comp,
     ContinuousLinearMap.toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
     ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap, LinearMap.index_equiv_comp,
