@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.PosDef
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
@@ -39,6 +40,9 @@ the Loewner order: if `0 ≤ A ≤ B` and `u` is a unit eigenvector of `A` with 
 then `a ⟪u, B⁻¹ u⟫ ≤ 1`. This bound underlies the trace inequality `Tr (A log A) ≤ Tr (A log B)`
 for `0 ≤ A ≤ B`.
 
+Over `ℝ`, where the conjugate transpose is the transpose, the spectral theorem diagonalizes a
+symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻¹ = Oᵀ`.
+
 ## Main results
 
 * `Matrix.IsHermitian.apply_eq_sum_eigenvalues` — the entrywise spectral expansion
@@ -64,6 +68,8 @@ for `0 ≤ A ≤ B`.
   eigenvector of `A` with nonzero eigenvalue.
 * `Matrix.PosSemidef.eigenvalues_mul_sum_inv_mul_le_one` — if `0 ≤ A ≤ B`, a unit eigenvector `u`
   of `A` with eigenvalue `a` satisfies `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse of `B`.
+* `Matrix.IsSymm.exists_orthogonal_diagonal` — a real symmetric matrix is `O * diagonal d * O⁻¹`
+  for an invertible `O` with `O⁻¹ = Oᵀ`.
 
 ## References
 
@@ -309,3 +315,27 @@ theorem filter_map_eigenvalues_conjTranspose_mul_self (A : Matrix ι κ 𝕜) :
     simp +contextual [Multiset.mem_replicate]
 
 end Matrix
+
+namespace Matrix.IsSymm
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **Orthogonal diagonalization.** A real symmetric matrix is `O * diagonal d * O⁻¹` for an
+invertible `O` with `O⁻¹ = Oᵀ`; one can take for `O` the eigenvector unitary and for `d` the
+eigenvalues. -/
+theorem exists_orthogonal_diagonal {X : Matrix ι ι ℝ} (hX : X.IsSymm) :
+    ∃ (O : GL ι ℝ) (d : ι → ℝ), ((O⁻¹ : GL ι ℝ) : Matrix ι ι ℝ) = (O : Matrix ι ι ℝ)ᵀ ∧
+      X = O * diagonal d * ((O⁻¹ : GL ι ℝ) : Matrix ι ι ℝ) := by
+  have hH : X.IsHermitian := by
+    rw [IsHermitian, conjTranspose_eq_transpose_of_trivial]
+    exact hX
+  have hstar : star (hH.eigenvectorUnitary : Matrix ι ι ℝ) =
+      (hH.eigenvectorUnitary : Matrix ι ι ℝ)ᵀ :=
+    conjTranspose_eq_transpose_of_trivial _
+  refine ⟨⟨hH.eigenvectorUnitary, (hH.eigenvectorUnitary : Matrix ι ι ℝ)ᵀ,
+    hstar ▸ Unitary.coe_mul_star_self _, hstar ▸ Unitary.coe_star_mul_self _⟩,
+    hH.eigenvalues, rfl, ?_⟩
+  conv_lhs => rw [hH.spectral_theorem]
+  simp [Unitary.conjStarAlgAut_apply, hstar]
+
+end Matrix.IsSymm

@@ -10,11 +10,13 @@ public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
-import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.Analysis.SpecialFunctions.Exponential
-import Mathlib.LinearAlgebra.Matrix.AbsoluteValue
 import Mathlib.Analysis.Normed.Ring.Units
+import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Dynamic subgroups of a real matrix
@@ -32,20 +34,22 @@ bounded family of constant determinant is bounded by the adjugate formula. The u
 subgroups lie in the parabolic one and meet trivially, and the unipotent subgroup is normal in
 the parabolic one, since a bounded family times a family tending to `0` tends to `0`.
 
-For symmetric `X` the file proves the Langlands decomposition of the dynamic parabolic subgroup.
+For symmetric `X` the file proves the Levi decomposition of the dynamic parabolic subgroup.
 In an orthonormal eigenbasis of `X` with eigenvalues `d`, entry `(i, j)` of the conjugate family
 is `e^{t (d j - d i)}` times that of `g`. So the dynamic parabolic subgroup is block upper
 triangular, the unipotent one block unipotent and the Levi one block diagonal, and the first two
 are closed when `G` is. The parabolic subgroup meets its image under `θ g = (g⁻¹)ᵀ` in the Levi
 subgroup when `G` is `θ`-stable. When `G` is moreover normalized by every `exp (t • X)`, every
 element of the parabolic subgroup is uniquely `l * u` with `l` in the Levi and `u` in the
-unipotent subgroup, `l` being the limit of the conjugate family.
+unipotent subgroup. For every `X`, the conjugates of such a product `l * u` tend to `l`.
 
 For `GL₂(ℝ)` and `X = diag(1, 0)` the conjugates of `((a, b), (c, d))` are
 `((a, e^{-t} b), (e^t c, d))`, so the three subgroups are the upper triangular, the upper
 unitriangular and the diagonal groups. They are the Lie-group counterparts of the dynamic
 parabolic, unipotent and Levi subgroups of a cocharacter of an algebraic group, and the matrix
-form of the Langlands decomposition of the parabolic subgroups of a real reductive group.
+form of the Levi decomposition `P = L ⋉ N` of the parabolic subgroups of a real reductive group.
+Knapp's Langlands decomposition `P = MAN` further splits the Levi factor `L` as `MA`; that split
+is not made here.
 
 ## Main definitions
 
@@ -57,11 +61,13 @@ form of the Langlands decomposition of the parabolic subgroups of a real reducti
 * `Subgroup.mul_mul_inv_mem_dynamicUnipotent`, `Subgroup.normal_dynamicUnipotent_subgroupOf`:
   the unipotent subgroup is normal in the parabolic one.
 * `Subgroup.dynamicLevi_inf_dynamicUnipotent`: the Levi and unipotent subgroups meet trivially.
+* `Subgroup.tendsto_dynamicLevi_mul_dynamicUnipotent`: the conjugates of `l * u`, with `l` Levi and
+  `u` unipotent, tend to `l`.
 * `Subgroup.isClosed_dynamicLevi`, `Subgroup.isClosed_dynamicParabolic`,
   `Subgroup.isClosed_dynamicUnipotent`: closedness, the last two for symmetric `X`.
 * `Subgroup.dynamicParabolic_inf_map_inverseTranspose`: for symmetric `X` and `θ`-stable `G`, the
   parabolic subgroup meets its `θ`-image in the Levi subgroup.
-* `Subgroup.existsUnique_dynamicLevi_mul_dynamicUnipotent`: the Langlands decomposition `l * u`.
+* `Subgroup.existsUnique_dynamicLevi_mul_dynamicUnipotent`: the Levi decomposition `l * u`.
 
 ## References
 
@@ -127,36 +133,13 @@ private lemma tendsto_matrix_iff {F : ℝ → Matrix m m ℝ} {L : Matrix m m �
 private def BddFlow (X A : Matrix m m ℝ) : Prop :=
   ∃ C : ℝ, ∀ t : ℝ, 0 ≤ t → ∀ i j, |flow X A t i j| ≤ C
 
-omit [DecidableEq m] in
-private lemma abs_mul_apply_le {A B : Matrix m m ℝ} {C D : ℝ} (hA : ∀ i j, |A i j| ≤ C)
-    (hB : ∀ i j, |B i j| ≤ D) (i j : m) : |(A * B) i j| ≤ Fintype.card m * (C * D) := by
-  rw [Matrix.mul_apply]
-  calc |∑ k, A i k * B k j| ≤ ∑ k, |A i k * B k j| := Finset.abs_sum_le_sum_abs _ _
-    _ ≤ ∑ _k : m, C * D := Finset.sum_le_sum fun k _ ↦ by
-        rw [abs_mul]
-        exact mul_le_mul (hA i k) (hB k j) (abs_nonneg _) ((abs_nonneg _).trans (hA i k))
-    _ = _ := by simp
-
-private lemma abs_adjugate_apply_le {A : Matrix m m ℝ} {C : ℝ} (hA : ∀ i j, |A i j| ≤ C)
-    (i j : m) :
-    |adjugate A i j| ≤ (Fintype.card m).factorial * max C 1 ^ Fintype.card m := by
-  rw [adjugate_apply]
-  have := Matrix.det_le (abv := AbsoluteValue.abs) (x := max C 1)
-    (A := A.updateRow j (Pi.single i 1)) fun k l ↦ by
-      rw [updateRow_apply]
-      split_ifs
-      · rw [Pi.single_apply]
-        split_ifs <;> simp
-      · exact (hA k l).trans (le_max_left _ _)
-  simpa [nsmul_eq_mul] using this
-
 private lemma bddFlow_mul {X A B : Matrix m m ℝ} (hA : BddFlow X A) (hB : BddFlow X B) :
     BddFlow X (A * B) := by
   obtain ⟨C, hC⟩ := hA
   obtain ⟨D, hD⟩ := hB
   refine ⟨Fintype.card m * (C * D), fun t ht i j ↦ ?_⟩
   rw [flow_mul]
-  exact abs_mul_apply_le (hC t ht) (hD t ht) i j
+  exact Matrix.abs_mul_apply_le (hC t ht) (hD t ht) i j
 
 private lemma bddFlow_one (X : Matrix m m ℝ) : BddFlow X 1 := by
   refine ⟨1, fun t _ i j ↦ ?_⟩
@@ -170,25 +153,18 @@ private lemma bddFlow_inv {X : Matrix m m ℝ} {g : GL m ℝ} (hg : BddFlow X g)
     ((Fintype.card m).factorial * max C 1 ^ Fintype.card m), fun t ht i j ↦ ?_⟩
   rw [flow_inv, inv_def, det_flow, Matrix.smul_apply, smul_eq_mul, Ring.inverse_eq_inv', abs_mul,
     abs_inv]
-  exact mul_le_mul_of_nonneg_left (abs_adjugate_apply_le (hC t ht) i j) (by positivity)
+  exact mul_le_mul_of_nonneg_left (Matrix.abs_adjugate_apply_le (hC t ht) i j) (by positivity)
 
 section Norm
 
 open scoped Matrix.Norms.Operator
 
-omit [Fintype m] [DecidableEq m] in
-/-- A continuous matrix family with a limit at `+∞` is entrywise bounded on `[0, ∞)`. -/
-private lemma exists_abs_apply_le_of_tendsto [Finite m] {F : ℝ → Matrix m m ℝ}
-    {L : Matrix m m ℝ} (hc : Continuous F) (hF : Tendsto F atTop (𝓝 L)) :
-    ∃ C : ℝ, ∀ t : ℝ, 0 ≤ t → ∀ i j, |F t i j| ≤ C := by
-  have := Fintype.ofFinite m
-  obtain ⟨T, hT⟩ := eventually_atTop.1 (hF.norm.eventually (gt_mem_nhds (lt_add_one ‖L‖)))
-  obtain ⟨C, hC⟩ := (isCompact_Icc (a := 0) (b := T)).exists_bound_of_continuousOn
-    hc.continuousOn
-  refine ⟨max C (‖L‖ + 1), fun t ht i j ↦ (norm_apply_le_linfty_opNorm (F t) i j).trans ?_⟩
-  rcases le_total t T with htT | htT
-  · exact (hC t ⟨ht, htT⟩).trans (le_max_left _ _)
-  · exact (hT t htT).le.trans (le_max_right _ _)
+/-- Conjugates with a limit at `+∞` are entrywise bounded for `t ≥ 0`. -/
+private lemma bddFlow_of_tendsto {X A L : Matrix m m ℝ} (h : Tendsto (flow X A) atTop (𝓝 L)) :
+    BddFlow X A := by
+  obtain ⟨C, hC⟩ :=
+    TauCeti.exists_forall_ge_norm_le_of_tendsto (continuous_flow X A).continuousOn h
+  exact ⟨C, fun t ht i j ↦ (norm_apply_le_linfty_opNorm (flow X A t) i j).trans (hC t ht)⟩
 
 end Norm
 
@@ -236,8 +212,7 @@ end Bounds
 /-- The **dynamic parabolic subgroup** of `X` in `G`: the `g ∈ G` whose conjugates
 `exp (-t • X) * g * exp (t • X)`, `t ≥ 0`, are bounded entrywise. -/
 def dynamicParabolic (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) : Subgroup (GL m ℝ) where
-  carrier := {g | g ∈ G ∧ ∃ C : ℝ, ∀ t : ℝ, 0 ≤ t → ∀ i j,
-    |(exp ((-t) • X) * (g : Matrix m m ℝ) * exp (t • X)) i j| ≤ C}
+  carrier := {g | g ∈ G ∧ BddFlow X g}
   mul_mem' {g h} hg hh := ⟨G.mul_mem hg.1 hh.1, by
     rw [Units.val_mul]
     exact bddFlow_mul hg.2 hh.2⟩
@@ -247,8 +222,7 @@ def dynamicParabolic (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) : Subgroup (
 /-- The **dynamic unipotent subgroup** of `X` in `G`: the `g ∈ G` whose conjugates
 `exp (-t • X) * g * exp (t • X)` tend to `1` as `t → +∞`. -/
 def dynamicUnipotent (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) : Subgroup (GL m ℝ) where
-  carrier := {g | g ∈ G ∧
-    Tendsto (fun t : ℝ ↦ exp ((-t) • X) * (g : Matrix m m ℝ) * exp (t • X)) atTop (𝓝 1)}
+  carrier := {g | g ∈ G ∧ Tendsto (flow X g) atTop (𝓝 1)}
   mul_mem' {g h} hg hh := ⟨G.mul_mem hg.1 hh.1, by
     rw [Units.val_mul, ← one_mul (1 : Matrix m m ℝ)]
     exact (hg.2.mul hh.2).congr fun t ↦ (flow_mul X g h t).symm⟩
@@ -268,6 +242,8 @@ def dynamicLevi (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) : Subgroup (GL m 
 
 variable {G : Subgroup (GL m ℝ)} {X : Matrix m m ℝ} {g : GL m ℝ}
 
+-- The carriers are stated with the private `BddFlow` and `flow`; these two restatements are the
+-- only places that unfold them to the explicit conjugates `exp (-t • X) * g * exp (t • X)`.
 theorem mem_dynamicParabolic : g ∈ G.dynamicParabolic X ↔ g ∈ G ∧ ∃ C : ℝ, ∀ t : ℝ, 0 ≤ t →
     ∀ i j, |(exp ((-t) • X) * (g : Matrix m m ℝ) * exp (t • X)) i j| ≤ C :=
   Iff.rfl
@@ -291,17 +267,18 @@ theorem dynamicUnipotent_le (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) :
 theorem dynamicLevi_le (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) : G.dynamicLevi X ≤ G :=
   fun _ hg ↦ hg.1
 
-/-- An element whose conjugates converge has bounded conjugates. -/
+/-- The dynamic unipotent subgroup lies in the dynamic parabolic subgroup: conjugates that
+converge are bounded. -/
 theorem dynamicUnipotent_le_dynamicParabolic (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) :
     G.dynamicUnipotent X ≤ G.dynamicParabolic X :=
-  fun _ hg ↦ ⟨hg.1, exists_abs_apply_le_of_tendsto (continuous_flow X _) hg.2⟩
+  fun _ hg ↦ ⟨hg.1, bddFlow_of_tendsto hg.2⟩
 
-/-- An element commuting with `X` has constant conjugates. -/
+/-- The dynamic Levi subgroup lies in the dynamic parabolic subgroup: an element commuting with
+`X` has constant conjugates. -/
 theorem dynamicLevi_le_dynamicParabolic (G : Subgroup (GL m ℝ)) (X : Matrix m m ℝ) :
-    G.dynamicLevi X ≤ G.dynamicParabolic X := by
-  intro g hg
-  exact ⟨hg.1, exists_abs_apply_le_of_tendsto (continuous_flow X _)
-    (tendsto_const_nhds.congr fun t ↦ (flow_of_commute hg.2 t).symm)⟩
+    G.dynamicLevi X ≤ G.dynamicParabolic X :=
+  fun _ hg ↦ ⟨hg.1,
+    bddFlow_of_tendsto (tendsto_const_nhds.congr fun t ↦ (flow_of_commute hg.2 t).symm)⟩
 
 /-- The dynamic unipotent subgroup is normal in the dynamic parabolic subgroup: conjugating a
 family tending to `1` by a bounded family of bounded inverse gives a family tending to `1`. -/
@@ -339,6 +316,19 @@ theorem dynamicLevi_inf_dynamicUnipotent (G : Subgroup (GL m ℝ)) (X : Matrix m
   have h : Tendsto (fun _ : ℝ ↦ (g : Matrix m m ℝ)) atTop (𝓝 1) := hflow ▸ hg.2.2
   exact Units.ext (tendsto_const_nhds_iff.1 h)
 
+/-- If `l` lies in the dynamic Levi and `u` in the dynamic unipotent subgroup, the conjugates
+`exp (-t • X) * (l * u) * exp (t • X)` tend to `l` as `t → +∞`. So the Levi factor of an element
+of the dynamic parabolic subgroup, as in `existsUnique_dynamicLevi_mul_dynamicUnipotent`, is the
+limit of its conjugates. -/
+theorem tendsto_dynamicLevi_mul_dynamicUnipotent {l u : GL m ℝ} (hl : l ∈ G.dynamicLevi X)
+    (hu : u ∈ G.dynamicUnipotent X) :
+    Tendsto (fun t : ℝ ↦ exp ((-t) • X) * ((l * u : GL m ℝ) : Matrix m m ℝ) * exp (t • X)) atTop
+      (𝓝 (l : Matrix m m ℝ)) := by
+  have h := (tendsto_const_nhds (x := (l : Matrix m m ℝ))).mul hu.2
+  rw [Matrix.mul_one] at h
+  refine h.congr fun t ↦ ?_
+  rw [← flow_of_commute hl.2 t, ← flow_mul, ← Units.val_mul, flow]
+
 /-- The dynamic Levi subgroup of a closed subgroup is closed. -/
 theorem isClosed_dynamicLevi (hG : IsClosed (G : Set (GL m ℝ))) (X : Matrix m m ℝ) :
     IsClosed (G.dynamicLevi X : Set (GL m ℝ)) :=
@@ -349,34 +339,17 @@ theorem isClosed_dynamicLevi (hG : IsClosed (G : Set (GL m ℝ))) (X : Matrix m 
 
 section Symmetric
 
-/-- A real symmetric matrix is `O * diagonal d * O⁻¹` for an invertible `O` with `O⁻¹ = Oᵀ`. -/
-private lemma exists_orthogonal_diagonal {X : Matrix m m ℝ} (hX : X.IsSymm) :
-    ∃ (O : GL m ℝ) (d : m → ℝ), ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) = (O : Matrix m m ℝ)ᵀ ∧
-      X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) := by
-  have hH : X.IsHermitian := by
-    rw [IsHermitian, conjTranspose_eq_transpose_of_trivial]
-    exact hX
-  have hstar : star (hH.eigenvectorUnitary : Matrix m m ℝ) =
-      (hH.eigenvectorUnitary : Matrix m m ℝ)ᵀ :=
-    conjTranspose_eq_transpose_of_trivial _
-  refine ⟨⟨hH.eigenvectorUnitary, (hH.eigenvectorUnitary : Matrix m m ℝ)ᵀ,
-    hstar ▸ Unitary.coe_mul_star_self _, hstar ▸ Unitary.coe_star_mul_self _⟩,
-    hH.eigenvalues, rfl, ?_⟩
-  conv_lhs => rw [hH.spectral_theorem]
-  simp [Unitary.conjStarAlgAut_apply, hstar]
-
 variable {O : GL m ℝ} {d : m → ℝ}
-
-private lemma exp_smul_eq_conj (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ))
-    (s : ℝ) : exp (s • X) = O * exp (s • diagonal d) * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) := by
-  rw [hX, ← Matrix.smul_mul, ← Matrix.mul_smul, Matrix.exp_units_conj]
 
 /-- The conjugates of `A` under `X` are those of `O⁻¹ * A * O` under `diagonal d`, read back. -/
 private lemma flow_diagonal_eq (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ))
     (A : Matrix m m ℝ) (t : ℝ) :
     flow (diagonal d) (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * A * O) t =
       ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * flow X A t * O := by
-  simp only [flow, exp_smul_eq_conj hX, Matrix.mul_assoc, Units.inv_mul, Units.inv_mul_cancel_left,
+  have hexp (s : ℝ) :
+      exp (s • X) = O * exp (s • diagonal d) * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) := by
+    rw [hX, ← Matrix.smul_mul, ← Matrix.mul_smul, Matrix.exp_units_conj]
+  simp only [flow, hexp, Matrix.mul_assoc, Units.inv_mul, Units.inv_mul_cancel_left,
     Matrix.mul_one]
 
 private lemma flow_eq_conj (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ))
@@ -387,11 +360,8 @@ private lemma flow_eq_conj (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Mat
   simp only [Matrix.mul_assoc, Units.mul_inv_cancel_left, Units.mul_inv, Matrix.mul_one]
 
 private lemma flow_diagonal_apply (d : m → ℝ) (B : Matrix m m ℝ) (t : ℝ) (i j : m) :
-    flow (diagonal d) B t i j = Real.exp (t * (d j - d i)) * B i j := by
-  simp only [flow, ← diagonal_smul, Matrix.exp_diagonal, diagonal_mul, mul_diagonal, Pi.coe_exp,
-    Pi.smul_apply, smul_eq_mul, ← Real.exp_eq_exp_ℝ]
-  rw [mul_comm, ← mul_assoc, ← Real.exp_add]
-  ring_nf
+    flow (diagonal d) B t i j = Real.exp (t * (d j - d i)) * B i j :=
+  exp_neg_smul_diagonal_mul_mul_exp_smul_diagonal_apply d B t i j
 
 omit [Fintype m] [DecidableEq m] in
 private lemma exists_abs_apply_le_const [Finite m] (P : Matrix m m ℝ) :
@@ -481,17 +451,6 @@ private lemma bddFlow_diagonal_iff (B : Matrix m m ℝ) :
 private def diagonalPart (d : m → ℝ) (B : Matrix m m ℝ) : Matrix m m ℝ :=
   of fun i j ↦ if d i = d j then B i j else 0
 
-/-- A matrix supported on the diagonal blocks of the level sets of `d` commutes with
-`diagonal d`. The converse is `TauCeti.apply_eq_zero_of_commute_diagonal`. -/
-private lemma commute_diagonal_of_forall {B : Matrix m m ℝ} (h : ∀ i j, d i ≠ d j → B i j = 0) :
-    Commute B (diagonal d) := by
-  rw [commute_iff_eq, ← Matrix.ext_iff]
-  intro i j
-  rw [mul_diagonal, diagonal_mul]
-  by_cases hij : d i = d j
-  · rw [hij, mul_comm]
-  · rw [h i j hij, zero_mul, mul_zero]
-
 private lemma tendsto_flow_diagonal {B : Matrix m m ℝ} (h : ∀ i j, d i < d j → B i j = 0) :
     Tendsto (flow (diagonal d) B) atTop (𝓝 (diagonalPart d B)) := by
   rw [tendsto_matrix_iff]
@@ -534,7 +493,7 @@ private lemma exists_mem_dynamicLevi_tendsto_flow (hG : IsClosed (G : Set (GL m 
     (hGX : ∀ t : ℝ, ∀ g ∈ G, ∃ h ∈ G, (h : Matrix m m ℝ) = exp ((-t) • X) * g * exp (t • X))
     {g : GL m ℝ} (hg : g ∈ G.dynamicParabolic X) :
     ∃ l ∈ G.dynamicLevi X, Tendsto (flow X g) atTop (𝓝 (l : Matrix m m ℝ)) := by
-  obtain ⟨O, d, -, hXd⟩ := exists_orthogonal_diagonal hX
+  obtain ⟨O, d, -, hXd⟩ := hX.exists_orthogonal_diagonal
   set Oi : Matrix m m ℝ := ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)
   have hB := (bddFlow_diagonal_iff _).1 ((bddFlow_iff_diagonal hXd _).1 hg.2)
   -- The limit is the block-diagonal part of `g` in an eigenbasis of `X`, read back.
@@ -563,7 +522,17 @@ private lemma exists_mem_dynamicLevi_tendsto_flow (hG : IsClosed (G : Set (GL m 
     rwa [show F t = h from Units.ext (by simp [F, he])]
   · rw [IsUnit.unit_spec, commute_iff_diagonal hXd]
     simp only [L, Oi, Matrix.mul_assoc, Units.inv_mul_cancel_left, Units.inv_mul, Matrix.mul_one]
-    exact commute_diagonal_of_forall fun i j hij ↦ by simp [diagonalPart, hij]
+    exact (TauCeti.commute_diagonal_of_apply_eq_zero fun i j hij ↦ by
+      simp [diagonalPart, hij]).symm
+
+/-- The `g` whose conjugate `P * g * Q` has prescribed entries `c i j` at the positions with
+`p i j` form a closed set. -/
+private lemma isClosed_iInter_apply_eq (P Q : Matrix m m ℝ) (p : m → m → Prop)
+    (c : m → m → ℝ) :
+    IsClosed (⋂ i, ⋂ j, {g : GL m ℝ | p i j → (P * g * Q) i j = c i j}) :=
+  isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_imp isOpen_const
+    (isClosed_eq (((continuous_const.mul Units.continuous_val).mul continuous_const).matrix_elem
+      i j) continuous_const)
 
 end Symmetric
 
@@ -574,23 +543,21 @@ orthonormal eigenbasis of `X`, with eigenvalues `d`, it is cut out by the vanish
 entries `(i, j)` with `d i < d j`. -/
 theorem isClosed_dynamicParabolic (hG : IsClosed (G : Set (GL m ℝ))) (hX : X.IsSymm) :
     IsClosed (G.dynamicParabolic X : Set (GL m ℝ)) := by
-  obtain ⟨O, d, -, hXd⟩ := exists_orthogonal_diagonal hX
+  obtain ⟨O, d, -, hXd⟩ := hX.exists_orthogonal_diagonal
   have : (G.dynamicParabolic X : Set (GL m ℝ)) = (G : Set (GL m ℝ)) ∩ ⋂ i, ⋂ j,
       {g | d i < d j → (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * g * O) i j = 0} := by
     ext g
     simp only [SetLike.mem_coe, Set.mem_inter_iff, Set.mem_iInter, Set.mem_ofPred_eq]
     exact and_congr_right fun _ ↦ (bddFlow_iff_diagonal hXd g).trans (bddFlow_diagonal_iff _)
   rw [this]
-  exact hG.inter (isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_imp isOpen_const
-    (isClosed_eq (((continuous_const.mul Units.continuous_val).mul continuous_const).matrix_elem
-      i j) continuous_const))
+  exact hG.inter (isClosed_iInter_apply_eq _ _ _ _)
 
 /-- For symmetric `X` the dynamic unipotent subgroup of a closed subgroup is closed. In an
 orthonormal eigenbasis of `X`, with eigenvalues `d`, it is cut out by the equations
 `g i j = δ i j` for `d i ≤ d j`. -/
 theorem isClosed_dynamicUnipotent (hG : IsClosed (G : Set (GL m ℝ))) (hX : X.IsSymm) :
     IsClosed (G.dynamicUnipotent X : Set (GL m ℝ)) := by
-  obtain ⟨O, d, -, hXd⟩ := exists_orthogonal_diagonal hX
+  obtain ⟨O, d, -, hXd⟩ := hX.exists_orthogonal_diagonal
   have : (G.dynamicUnipotent X : Set (GL m ℝ)) = (G : Set (GL m ℝ)) ∩ ⋂ i, ⋂ j,
       {g | d i ≤ d j → (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * g * O) i j =
         (1 : Matrix m m ℝ) i j} := by
@@ -601,9 +568,7 @@ theorem isClosed_dynamicUnipotent (hG : IsClosed (G : Set (GL m ℝ))) (hX : X.I
     rw [Matrix.mul_one, Units.inv_mul] at h
     exact h.trans (tendsto_flow_diagonal_one_iff _)
   rw [this]
-  exact hG.inter (isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_imp isOpen_const
-    (isClosed_eq (((continuous_const.mul Units.continuous_val).mul continuous_const).matrix_elem
-      i j) continuous_const))
+  exact hG.inter (isClosed_iInter_apply_eq _ _ _ _)
 
 /-- For symmetric `X` and `G` stable under the inverse transpose `θ g = (g⁻¹)ᵀ`, the dynamic
 parabolic subgroup meets its image under `θ` exactly in the dynamic Levi subgroup. -/
@@ -616,14 +581,15 @@ theorem dynamicParabolic_inf_map_inverseTranspose
   · intro g hg
     obtain ⟨hgQ, hgθ⟩ := mem_inf.1 hg
     rw [mem_map_equiv, GeneralLinearGroup.inverseTranspose_symm] at hgθ
-    obtain ⟨O, d, hOt, hXd⟩ := exists_orthogonal_diagonal hX
+    obtain ⟨O, d, hOt, hXd⟩ := hX.exists_orthogonal_diagonal
     -- In the eigenbasis, `g⁻¹` and its transpose both vanish below the eigenvalue order.
     have h1 := (bddFlow_diagonal_iff _).1
       ((bddFlow_iff_diagonal hXd _).1 ((G.dynamicParabolic X).inv_mem hgQ).2)
     have h2 := (bddFlow_diagonal_iff _).1 ((bddFlow_iff_diagonal hXd _).1 hgθ.2)
     rw [GeneralLinearGroup.coe_inverseTranspose, hOt] at h2
     have hc : Commute ((g⁻¹ : GL m ℝ) : Matrix m m ℝ) X := by
-      refine (commute_iff_diagonal hXd _).2 (commute_diagonal_of_forall fun i j hij ↦ ?_)
+      refine (commute_iff_diagonal hXd _).2
+        (TauCeti.commute_diagonal_of_apply_eq_zero fun i j hij ↦ ?_).symm
       rcases hij.lt_or_gt with h | h
       · exact h1 i j h
       · have e : (O : Matrix m m ℝ)ᵀ * ((g⁻¹ : GL m ℝ) : Matrix m m ℝ)ᵀ * (O : Matrix m m ℝ) =
@@ -638,11 +604,11 @@ theorem dynamicParabolic_inf_map_inverseTranspose
     rw [GeneralLinearGroup.coe_inverseTranspose, commute_iff_eq, ← hX.eq, ← transpose_mul,
       ← transpose_mul, hc.eq]
 
-/-- **The Langlands decomposition of the dynamic parabolic subgroup.** Let `X` be symmetric and
-let `G` be closed and normalized by every `exp (t • X)`. Then every element of the dynamic
-parabolic subgroup of `X` is uniquely `l * u` with `l` in the dynamic Levi subgroup and `u` in the
-dynamic unipotent subgroup. The factor `l` is the limit of the conjugates
-`exp (-t • X) * g * exp (t • X)` as `t → +∞`. -/
+/-- **The Levi decomposition of the dynamic parabolic subgroup.** Let `X` be symmetric and let
+`G` be closed and normalized by every `exp (t • X)`. Then every element of the dynamic parabolic
+subgroup of `X` is uniquely `l * u` with `l` in the dynamic Levi subgroup and `u` in the dynamic
+unipotent subgroup. By `tendsto_dynamicLevi_mul_dynamicUnipotent`, the factor `l` is the limit of
+the conjugates `exp (-t • X) * g * exp (t • X)` as `t → +∞`. -/
 theorem existsUnique_dynamicLevi_mul_dynamicUnipotent (hG : IsClosed (G : Set (GL m ℝ)))
     (hX : X.IsSymm)
     (hGX : ∀ t : ℝ, ∀ g ∈ G, ∃ h ∈ G, (h : Matrix m m ℝ) = exp ((-t) • X) * g * exp (t • X))
