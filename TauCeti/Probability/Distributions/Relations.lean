@@ -31,7 +31,10 @@ formula acquires the default value that an empty family would force on a `Finset
 (`Finset.sup'_le_iff`), and `x` is below the minimum exactly when it is below every member
 (`Finset.lt_inf'_iff`). Independence turns each of those intersections into the product of the
 corresponding marginal probabilities. The minimum is then read off its complementary event,
-which is why its formula has an outer subtraction.
+which is why its formula has an outer subtraction. Only the order enters these identities, so the
+tail probabilities `measure_setOf_max_le_indep` and `measure_setOf_lt_min_indep`, and their
+identically distributed forms, hold for families valued in any sup-semilattice, respectively
+linear order, with closed lower rays `Iic x` and measurable open sets.
 
 `cdf_min_iid` specialises to the exponential family as `hasLaw_min_iid_expMeasure`: the minimum
 of `d` i.i.d. exponentials of rate `r` is exponential of rate `d * r`.
@@ -60,12 +63,18 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fintype ι] [Nonempty ι] {P : Measure Ω}
-  {μ : Measure ℝ} {μs : ι → Measure ℝ} {X : ι → Ω → ℝ}
 
-/-- The maximum of a finite independent family is at most `x` with probability equal to the
-product of the marginal lower-tail probabilities. -/
-theorem measure_setOf_max_le_indep (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
+section Order
+
+/-! ### Tail probabilities in an ordered space -/
+
+variable {α : Type*} [TopologicalSpace α] [MeasurableSpace α] [OpensMeasurableSpace α]
+  {μ : Measure α} {μs : ι → Measure α} {X : ι → Ω → α}
+
+/-- The maximum of a finite independent family in a sup-semilattice is at most `x` with
+probability equal to the product of the marginal lower-tail probabilities. -/
+theorem measure_setOf_max_le_indep [SemilatticeSup α] [ClosedIicTopology α]
+    (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : α) :
     P {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x} =
       ∏ i, μs i (Iic x) := by
   -- The maximum is at most `x` exactly when every member is.
@@ -79,10 +88,10 @@ theorem measure_setOf_max_le_indep (hindep : iIndepFun X P)
   exact Finset.prod_congr rfl fun i _ =>
     (hlaw i).measure_eq (p := fun y => y ≤ x) measurableSet_Iic
 
-/-- The minimum of a finite independent family exceeds `x` with probability equal to the product
-of the marginal upper-tail probabilities. -/
-theorem measure_setOf_lt_min_indep (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
+/-- The minimum of a finite independent family in a linear order exceeds `x` with probability
+equal to the product of the marginal upper-tail probabilities. -/
+theorem measure_setOf_lt_min_indep [LinearOrder α] [ClosedIicTopology α]
+    (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : α) :
     P {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω} =
       ∏ i, μs i (Ioi x) := by
   -- The minimum exceeds `x` exactly when every member does.
@@ -95,6 +104,30 @@ theorem measure_setOf_lt_min_indep (hindep : iIndepFun X P)
       fun i _ => measurableSet_Ioi]
   exact Finset.prod_congr rfl fun i _ =>
     (hlaw i).measure_eq (p := fun y => x < y) measurableSet_Ioi
+
+/-- The maximum of an independent identically distributed finite family is at most `x` with
+probability the `Fintype.card ι`-th power of the common lower-tail probability. -/
+theorem measure_setOf_max_le_iid [SemilatticeSup α] [ClosedIicTopology α]
+    (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (x : α) :
+    P {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x}
+      = μ (Iic x) ^ Fintype.card ι := by
+  simpa [Finset.card_univ] using
+    measure_setOf_max_le_indep (μs := fun _ : ι => μ) hindep hlaw x
+
+/-- The minimum of an independent identically distributed finite family exceeds `x` with
+probability the `Fintype.card ι`-th power of the common upper-tail probability. -/
+theorem measure_setOf_lt_min_iid [LinearOrder α] [ClosedIicTopology α]
+    (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (x : α) :
+    P {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω}
+      = μ (Ioi x) ^ Fintype.card ι := by
+  simpa [Finset.card_univ] using
+    measure_setOf_lt_min_indep (μs := fun _ : ι => μ) hindep hlaw x
+
+end Order
+
+/-! ### Real-valued families -/
+
+variable {μ : Measure ℝ} {μs : ι → Measure ℝ} {X : ι → Ω → ℝ}
 
 /-- The real-valued lower-tail formula for the maximum of a finite independent family. -/
 theorem measureReal_setOf_max_le_indep
@@ -131,22 +164,6 @@ theorem measureReal_setOf_min_le_indep
   rw [← measureReal_setOf_lt_min_indep hindep hlaw x,
     ← probReal_compl_eq_one_sub₀ (nullMeasurableSet_lt aemeasurable_const hmin)]
   simp only [compl_ofPred, not_lt]
-
-/-- The maximum of an independent identically distributed finite family is at most `x` with
-probability the `Fintype.card ι`-th power of the common lower-tail probability. -/
-theorem measure_setOf_max_le_iid (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
-    P {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x}
-      = μ (Iic x) ^ Fintype.card ι := by
-  simpa [Finset.card_univ] using
-    measure_setOf_max_le_indep (μs := fun _ : ι => μ) hindep hlaw x
-
-/-- The minimum of an independent identically distributed finite family exceeds `x` with
-probability the `Fintype.card ι`-th power of the common upper-tail probability. -/
-theorem measure_setOf_lt_min_iid (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
-    P {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω}
-      = μ (Ioi x) ^ Fintype.card ι := by
-  simpa [Finset.card_univ] using
-    measure_setOf_lt_min_indep (μs := fun _ : ι => μ) hindep hlaw x
 
 /-- The real-valued form of `TauCeti.Probability.measure_setOf_max_le_iid`: the maximum of `d`
 independent identically distributed variables has cumulative distribution function
@@ -202,8 +219,7 @@ theorem cdf_min_indep (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs 
 
 /-- The law of the maximum of `d` independent identically distributed variables, in cumulative
 distribution function form. -/
-theorem cdf_max_iid (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
+theorem cdf_max_iid (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) x
       = cdf μ x ^ Fintype.card ι := by
   simpa [Finset.card_univ] using
@@ -211,8 +227,7 @@ theorem cdf_max_iid (hindep : iIndepFun X P)
 
 /-- The law of the minimum of `d` independent identically distributed variables, in cumulative
 distribution function form. -/
-theorem cdf_min_iid (hindep : iIndepFun X P)
-    (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
+theorem cdf_min_iid (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) μ P) (x : ℝ) :
     cdf (P.map fun ω => Finset.univ.inf' Finset.univ_nonempty fun i => X i ω) x
       = 1 - (1 - cdf μ x) ^ Fintype.card ι := by
   simpa [Finset.card_univ] using
