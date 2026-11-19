@@ -317,7 +317,8 @@ private theorem barnesGPrefactor_add_one (z : ℂ) :
   have hpow : (2 * π : ℂ) ^ ((z + 1 - 1) / 2) =
       (2 * π : ℂ) ^ (1 / 2 : ℂ) * (2 * π : ℂ) ^ ((z - 1) / 2) := by
     rw [← Complex.cpow_add _ _ two_pi_ne_zero]
-    ring_nf
+    congr 1
+    ring
   have hexp : Complex.exp (-((z + 1 - 1) * (z + 1)) / 2 -
         eulerMascheroniConstant * (z + 1 - 1) ^ 2 / 2) =
       Complex.exp (-z - eulerMascheroniConstant * (z - 1 / 2)) *
@@ -385,7 +386,7 @@ theorem analyticOrderAt_barnesG_neg_natCast (n : ℕ) :
   · exact (Differentiable.mul (by fun_prop) hQ).analyticAt _
   · simp only [ne_eq, mul_eq_zero, barnesGPrefactor_ne_zero, Complex.exp_ne_zero, or_false,
       pow_eq_zero_iff (Nat.succ_ne_zero n), one_div, inv_eq_zero, hn, false_or]
-    simpa [sub_eq_add_neg, add_comm] using hQne
+    exact hQne
   · have hgm : Multipliable (Function.update (barnesGFactor · (z - 1)) n 1) := by
       have h := (hasProdUniformlyOn_of_norm_sub_one_le hg (fun k ↦ (hgd k).continuous)
         Bornology.isBounded_singleton).hasProd (Set.mem_singleton (z - 1))
@@ -443,7 +444,7 @@ private theorem two_pi_cpow_one_half : (2 * π : ℂ) ^ (1 / 2 : ℂ) = (√2 : 
   rw [show (√2 : ℂ) * √π = ((√(2 * π) : ℝ) : ℂ) by rw [Real.sqrt_mul zero_le_two]; push_cast; ring,
     Real.sqrt_eq_rpow, Complex.ofReal_cpow (by positivity)]
   push_cast
-  ring_nf
+  congr 1
 
 /-- `n ^ w = n ^ (w - 1/2) √n` for a positive integer `n`, with the power written through the
 logarithm. -/
@@ -454,10 +455,16 @@ private theorem natCast_cpow_eq_exp_mul_sqrt {n : ℕ} (hn : n ≠ 0) (w : ℂ) 
     rw [Real.sqrt_eq_rpow, Real.rpow_def_of_pos hnr, Complex.ofReal_exp, Complex.ofReal_mul,
       Complex.natCast_log]
     push_cast
-    ring_nf
+    rw [mul_one_div]
   rw [Complex.cpow_def_of_ne_zero (Nat.cast_ne_zero.mpr hn), hsq, ← Complex.exp_add]
   congr 1
   ring
+
+/-- The Pochhammer symbol `w (w + 1) ⋯ (w + n - 1)` does not vanish away from the nonpositive
+integers. -/
+private theorem prod_range_add_ne_zero {w : ℂ} (hw : ∀ m : ℕ, w ≠ -m) (n : ℕ) :
+    ∏ j ∈ Finset.range n, (w + j) ≠ 0 :=
+  Finset.prod_ne_zero_iff.mpr fun j _ h ↦ hw j (eq_neg_of_add_eq_zero_left h)
 
 /-- The exponentials in `barnesG_ratio_eq`: the Euler-limit, harmonic-limit and `n ^ (w - 1/2)`
 factors on the right combine to the prefactor ratio, the harmonic factor and `e^n`. -/
@@ -483,8 +490,7 @@ private theorem barnesG_ratio_eq {w : ℂ} (hw : ∀ m : ℕ, w ≠ -m) {n : ℕ
           ((harmonic n - Real.log n - eulerMascheroniConstant : ℝ) : ℂ)) *
         ((√π / Stirling.stirlingSeq n : ℝ) : ℂ) * (GammaSeq w n * ((w + n) / n)) := by
   have hn' : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hD : ∏ j ∈ Finset.range n, (w + j) ≠ 0 :=
-    Finset.prod_ne_zero_iff.mpr fun j _ h ↦ hw j (eq_neg_of_add_eq_zero_left h)
+  have hD := prod_range_add_ne_zero hw n
   have hwn : w + n ≠ 0 := fun h ↦ hw n (eq_neg_of_add_eq_zero_left h)
   have hfac : (n ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr n.factorial_ne_zero
   have h2n : ((√(2 * n) : ℝ) : ℂ) = √2 * √(n : ℝ) := by
@@ -557,8 +563,6 @@ private theorem tendsto_barnesG_ratio {w : ℂ} (hw : ∀ m : ℕ, w ≠ -m) :
 /-- The recurrence `G(z + 1) = Γ(z) G(z)` away from the nonpositive integers. -/
 private theorem barnesG_add_one_of_ne_neg_natCast {z : ℂ} (hz : ∀ m : ℕ, z ≠ -m) :
     barnesG (z + 1) = Gamma z * barnesG z := by
-  have hD : ∀ n : ℕ, ∏ j ∈ Finset.range n, (z + j) ≠ 0 := fun n ↦
-    Finset.prod_ne_zero_iff.mpr fun j _ h ↦ hz j (eq_neg_of_add_eq_zero_left h)
   have hlim₁ : Tendsto (fun n : ℕ ↦
       barnesGPrefactor (z + 1) * ∏ k ∈ Finset.range n, barnesGFactor k z) atTop
       (𝓝 (barnesG (z + 1))) := by
@@ -568,7 +572,7 @@ private theorem barnesG_add_one_of_ne_neg_natCast {z : ℂ} (hz : ∀ m : ℕ, z
     ((hasProd_barnesGFactor (z - 1)).tendsto_prod_nat.const_mul (barnesGPrefactor z))
   rw [← barnesG_eq_barnesGPrefactor_mul] at hlim₀
   refine tendsto_nhds_unique hlim₁ (hlim₀.congr fun n ↦ ?_)
-  rw [barnesGPrefactor_add_one, div_mul_eq_mul_div, div_eq_iff (hD n)]
+  rw [barnesGPrefactor_add_one, div_mul_eq_mul_div, div_eq_iff (prod_range_add_ne_zero hz n)]
   linear_combination -(2 * π : ℂ) ^ (1 / 2 : ℂ) *
     Complex.exp (-z - eulerMascheroniConstant * (z - 1 / 2)) * barnesGPrefactor z *
       prod_add_mul_prod_barnesGFactor z n
@@ -680,28 +684,34 @@ private theorem hasDerivAt_tprod_barnesGFactor_zero :
 /-- The prefactor of `G` has derivative `log(2π)/2 - 1/2` at one. -/
 private theorem hasDerivAt_barnesGPrefactor_one :
     HasDerivAt barnesGPrefactor (Real.log (2 * π) / 2 - 1 / 2 : ℝ) 1 := by
+  -- Both factors of the prefactor equal one at one.
+  have hpow1 : (2 * π : ℂ) ^ (((1 : ℂ) - 1) / 2) = 1 := by
+    rw [sub_self, zero_div, cpow_zero]
+  have hexp1 : Complex.exp (-(((1 : ℂ) - 1) * 1) / 2 -
+      eulerMascheroniConstant * ((1 : ℂ) - 1) ^ 2 / 2) = 1 := by
+    simp
   have hpow : HasDerivAt (fun z : ℂ ↦ (2 * π : ℂ) ^ ((z - 1) / 2))
-      ((2 * π : ℂ) ^ (((1 : ℂ) - 1) / 2) * Complex.log (2 * π) * (1 / 2)) 1 :=
-    (((hasDerivAt_id (1 : ℂ)).sub_const 1).div_const 2).const_cpow (Or.inl two_pi_ne_zero)
+      (Complex.log (2 * π) / 2) 1 := by
+    convert (((hasDerivAt_id' (1 : ℂ)).sub_const 1).div_const 2).const_cpow
+      (Or.inl two_pi_ne_zero) using 1
+    rw [hpow1, one_mul, mul_one_div]
   have hexp : HasDerivAt (fun z : ℂ ↦
-      Complex.exp (-((z - 1) * z) / 2 - eulerMascheroniConstant * (z - 1) ^ 2 / 2))
-      (Complex.exp (-(((1 : ℂ) - 1) * 1) / 2 - eulerMascheroniConstant * ((1 : ℂ) - 1) ^ 2 / 2) *
-        (-(1 * 1 + (1 - 1) * 1) / 2 - eulerMascheroniConstant * (2 * (1 - 1) * 1) / 2)) 1 := by
-    refine HasDerivAt.cexp ?_
+      Complex.exp (-((z - 1) * z) / 2 - eulerMascheroniConstant * (z - 1) ^ 2 / 2)) (-1 / 2) 1 := by
     have h1 := ((hasDerivAt_id (1 : ℂ)).sub_const 1).mul (hasDerivAt_id (1 : ℂ))
     have h2 := (((hasDerivAt_id (1 : ℂ)).sub_const 1).pow 2).const_mul
       (eulerMascheroniConstant : ℂ)
-    convert (h1.neg.div_const 2).sub (h2.div_const 2) using 1
+    convert ((h1.neg.div_const 2).sub (h2.div_const 2)).cexp using 1
     · ext z
       simp
     · simp
-  convert hpow.mul hexp using 1
-  · rfl
   have hlog : Complex.log (2 * π) = Real.log (2 * π) := by
     rw [Complex.ofReal_log two_pi_pos.le]
     push_cast
     ring
-  simp [hlog]
+  convert hpow.mul hexp using 1
+  · rfl
+  rw [hpow1, hexp1, hlog]
+  push_cast
   ring
 
 /-- The derivative of the Barnes G-function at one is `log(2π)/2 - 1/2`. Substituting Mathlib's
