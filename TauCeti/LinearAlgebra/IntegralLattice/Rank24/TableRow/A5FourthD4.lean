@@ -93,8 +93,11 @@ theorem a5FourthD4BlockRotation_def :
 
 /-- The inverse of the rotation of the marked block is the cycle `1 ↦ 3 ↦ 2 ↦ 1`. -/
 theorem a5FourthD4BlockRotation_symm_eq :
-    a5FourthD4BlockRotation.symm = (c[1, 3, 2] : Equiv.Perm (Fin 5)) :=
-  Equiv.ext <| by decide
+    a5FourthD4BlockRotation.symm = (c[1, 3, 2] : Equiv.Perm (Fin 5)) := by
+  rw [a5FourthD4BlockRotation_def]
+  -- Cycle notation reduces to List.formPerm, and this row has five components.
+  exact (List.formPerm_reverse [(1 : Fin 5), 2, 3]).symm.trans
+    (List.formPerm_rotate [(3 : Fin 5), 2, 1] (by decide) 2).symm
 
 /-- The rotation of the marked block fixes position `0`. -/
 @[simp]
@@ -210,12 +213,17 @@ theorem ofFn_comp_a5FourthD4BlockRotation_symm {α : Type*}
 /-- The cube of the block rotation is the identity. -/
 @[simp]
 theorem a5FourthD4BlockRotation_pow_three : a5FourthD4BlockRotation ^ 3 = 1 := by
-  decide
+  rw [a5FourthD4BlockRotation_def]
+  -- Cycle notation reduces to List.formPerm, and this row has five components.
+  exact List.formPerm_pow_length_eq_one_of_nodup (l := [(1 : Fin 5), 2, 3]) (by decide)
 
 /-- The rotation of the marked block has order three. -/
 @[simp]
-theorem orderOf_a5FourthD4BlockRotation : orderOf a5FourthD4BlockRotation = 3 :=
-  orderOf_eq_prime (by decide) (by decide)
+theorem orderOf_a5FourthD4BlockRotation : orderOf a5FourthD4BlockRotation = 3 := by
+  refine orderOf_eq_prime a5FourthD4BlockRotation_pow_three fun h ↦ ?_
+  have hx := Equiv.congr_fun h ⟨1, by decide⟩
+  rw [a5FourthD4BlockRotation_apply_mk_one, Equiv.Perm.one_apply] at hx
+  exact absurd (congrArg Fin.val hx) (by decide)
 
 private theorem finSumPerm_finRotate_apply_castAdd_castAdd :
     Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate 3)) 1
@@ -288,7 +296,8 @@ theorem a5FourthD4BlockRotation_notMem_glueSymmetries :
     (piGlueAlphabetCongr_mem_glueSubgroup_iff _ hg w₀).mpr (hH hw₀)
   have hue : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType u =
       [3, 0, 0, 3, 1] := by
-    rw [encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD, ← he₀]
+    rw [encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD, ← he₀,
+      ofFn_comp_a5FourthD4BlockRotation (fun i ↦ [3, 3, 0, 0, 1].getD i 0)]
     decide
   have hsum : encodeGlueWord a5FourthD4.componentType a5FourthD4.isSimplyLaced_componentType
       (u + w₁) = [0, 0, 0, 0, 2] := by
@@ -307,22 +316,13 @@ theorem a5FourthD4BlockRotation_notMem_glueSymmetries :
 @[simp]
 theorem zpowers_a5FourthD4BlockRotation_inf_glueSymmetries_eq_bot :
     Subgroup.zpowers a5FourthD4BlockRotation ⊓ a5FourthD4.glueSymmetries = ⊥ := by
-  refine (Subgroup.eq_bot_iff_forall _).mpr fun x hx ↦ ?_
-  obtain ⟨hxρ, hxS⟩ := Subgroup.mem_inf.mp hx
-  obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp hxρ
-  rw [← zpow_mod_orderOf, orderOf_a5FourthD4BlockRotation] at hxS ⊢
-  obtain h | h | h : k % ((3 : ℕ) : ℤ) = 0 ∨ k % ((3 : ℕ) : ℤ) = 1 ∨ k % ((3 : ℕ) : ℤ) = 2 := by
-    omega
-  · rw [h, zpow_zero]
-  · rw [h, zpow_one] at hxS
-    exact absurd hxS a5FourthD4BlockRotation_notMem_glueSymmetries
-  · -- The square generates the same cyclic group as the rotation.
-    rw [h] at hxS
-    refine absurd ?_ a5FourthD4BlockRotation_notMem_glueSymmetries
-    have hsq : a5FourthD4BlockRotation = (a5FourthD4BlockRotation ^ (2 : ℤ)) ^ (2 : ℤ) := by
-      decide
-    rw [hsq]
-    exact zpow_mem hxS 2
+  have : Fact (Nat.card (Subgroup.zpowers a5FourthD4BlockRotation)).Prime :=
+    ⟨by rw [Nat.card_zpowers, orderOf_a5FourthD4BlockRotation]; decide⟩
+  obtain h | h := (a5FourthD4.glueSymmetries.subgroupOf
+    (Subgroup.zpowers a5FourthD4BlockRotation)).eq_bot_or_eq_top_of_prime_card
+  · exact (Subgroup.subgroupOf_eq_bot.mp h).symm.eq_bot
+  · exact absurd (Subgroup.zpowers_le.mp (Subgroup.subgroupOf_eq_top.mp h))
+      a5FourthD4BlockRotation_notMem_glueSymmetries
 
 /-! ### Triality on the `D₄` component -/
 
@@ -633,7 +633,8 @@ theorem orderOf_a5FourthD4TrialityIsometry : orderOf a5FourthD4TrialityIsometry 
   have hx := congrFun (congrFun (DFunLike.congr_fun h
     fun (k : Fin a5FourthD4.components.length) (_ : Fin (a5FourthD4.componentType k).rank) ↦
       if (k : ℕ) = 1 then (1 : ℚ) else 0) ⟨2, by decide⟩) ⟨0, by decide⟩
-  rw [a5FourthD4TrialityIsometry_apply_of_ne _ (by decide), Isometry.one_apply] at hx
+  rw [a5FourthD4TrialityIsometry_apply_of_ne _ (by decide), Isometry.one_apply,
+    a5FourthD4BlockRotation_symm_apply_mk_two] at hx
   revert hx
   decide
 

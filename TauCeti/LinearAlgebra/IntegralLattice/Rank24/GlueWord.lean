@@ -155,6 +155,10 @@ theorem encodeGlueWord_piGlueAlphabetCongr_eq_ofFn {m : ℕ} {s : Fin m → Dynk
     rw [DynkinType.piGlueAlphabetCongr_apply]
     exact DynkinType.val_glueLabelEquiv_symm_ofEq (h k) _ _ _)
 
+private theorem getD_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
+    (encodeGlueWord t ht w).getD i 0 = (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
+  rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
+
 /-- **Digits of a reindexed glue word, read off its digit list**: the image of a glue word `w`
 under `TauCeti.DynkinType.piGlueAlphabetCongr` along `σ : Fin m ≃ Fin n` has in position `k` the
 entry of the digit list of `w` in position `σ k`. -/
@@ -166,7 +170,7 @@ theorem encodeGlueWord_piGlueAlphabetCongr_eq_ofFn_getD {m : ℕ} {s : Fin m →
   rw [encodeGlueWord_piGlueAlphabetCongr_eq_ofFn]
   congr 1
   funext k
-  rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
+  exact (getD_encodeGlueWord t ht w (σ k)).symm
 
 /-- **Digits are unchanged by passing to an equal family of components**: if the components
 `s k` over `Fin m` are the components `t k` over `Fin n` read along `m = n`, then a glue word and
@@ -275,10 +279,6 @@ theorem glueWordAdd_def (l l' : List ℕ) :
 theorem glueWordMinimum_def (l : List ℕ) :
     glueWordMinimum t l = ∑ i : Fin n, (t i).glueLabelMinimum (l.getD i 0) :=
   (rfl)
-
-private theorem getD_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) (i : Fin n) :
-    (encodeGlueWord t ht w).getD i 0 = (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
-  rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord]
 
 /-- **The digit word of a sum of glue words is the label-wise sum of their digit words.** -/
 @[simp]
