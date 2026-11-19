@@ -20,9 +20,10 @@ over a finite field of characteristic `p`, and the Artin–Schreier sheaves buil
 exactly this condition to make the orthogonality relations and Fourier inversion hold over an
 arbitrary coefficient ring, not just a domain.
 
-Nontriviality is the wrong condition outside local rings: on `ZMod 7 × ZMod 7` the character with
-`ψ 1 = (2, 1)` is nontrivial, but `ψ 1 - 1 = (1, 0)` is not a unit and the character sum is
-`(0, 3) ≠ 0`. Over a local ring in which `p` is invertible, the two conditions agree.
+Nontriviality is the wrong condition outside local rings: the character of `ZMod 3` with values in
+`ZMod 7 × ZMod 7` and `ψ 1 = (2, 1)` is nontrivial, but `ψ 1 - 1 = (1, 0)` is not a unit and the
+character sum is `(0, 3) ≠ 0`. Over a local ring in which `p` is invertible, the two conditions
+agree.
 
 ## Main definitions and results
 
@@ -46,9 +47,9 @@ Nontriviality is the wrong condition outside local rings: on `ZMod 7 × ZMod 7` 
   `y = 0` and `0` elsewhere.
 * `AddChar.IsNondegenerate.sum_trace_mul`: orthogonality over a finite field `k` of characteristic
   `p`, `∑ x, ψ (Tr (x * y))` is `#k` at `y = 0` and `0` elsewhere.
-* `AddChar.IsNondegenerate.bijective_mulShift`: if `Spec Λ` is connected, every additive
+* `AddChar.IsNondegenerate.mulShift_bijective`: if `Spec Λ` is connected, every additive
   character of `ZMod p` with values in `Λ` is `a ↦ ψ (c * a)` for a unique `c`.
-* `AddChar.IsNondegenerate.bijective_mulShift_compAddMonoidHom_trace`: if `Spec Λ` is connected,
+* `AddChar.IsNondegenerate.mulShift_compAddMonoidHom_trace_bijective`: if `Spec Λ` is connected,
   every additive character of `k` with values in `Λ` is `x ↦ ψ (Tr (c * x))` for a unique `c`.
 
 When `Λ` is a domain, Mathlib's `AddChar.sum_mulShift` and Tau Ceti's
@@ -177,8 +178,8 @@ theorem IsNondegenerate.isPrimitive [Nontrivial Λ] (hψ : ψ.IsNondegenerate) :
   fun _ ha h ↦ hψ.apply_ne_one ha (by simpa using DFunLike.congr_fun h 1)
 
 /-- **Orthogonality** on `ZMod p` for a nondegenerate character: `∑ x, ψ (x * y)` is `p` at
-`y = 0` and vanishes elsewhere. This is Mathlib's `AddChar.sum_mulShift` without the domain
-hypothesis. -/
+`y = 0` and vanishes elsewhere. This is the `ZMod p` analogue of Mathlib's `AddChar.sum_mulShift`,
+with its `IsDomain` and `IsPrimitive` hypotheses replaced by nondegeneracy. -/
 theorem IsNondegenerate.sum_mulShift (hψ : ψ.IsNondegenerate) (y : ZMod p) :
     ∑ x, ψ (x * y) = if y = 0 then (p : Λ) else 0 := by
   split_ifs with hy
@@ -227,11 +228,7 @@ section FiniteField
 
 variable (k : Type*) [Field k] [Algebra (ZMod p) k]
 
-/-- A ring with connected, hence nonempty, prime spectrum is nontrivial. -/
-private theorem nontrivial_of_connectedSpace [ConnectedSpace (PrimeSpectrum Λ)] : Nontrivial Λ :=
-  PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
-
-attribute [local instance] nontrivial_of_connectedSpace
+attribute [local instance] TauCeti.nontrivial_of_connectedSpace_primeSpectrum
 
 /-- **Orthogonality** for a nondegenerate character over a finite field `k` of characteristic `p`:
 `∑ x, ψ (Tr (x * y))` is `#k` at `y = 0` and vanishes elsewhere. -/
@@ -299,7 +296,7 @@ private theorem IsNondegenerate.exists_apply_eq [ConnectedSpace (PrimeSpectrum �
 
 /-- **Classification of additive characters of `ZMod p`.** If `Spec Λ` is connected, every
 additive character of `ZMod p` with values in `Λ` is `a ↦ ψ (c * a)` for a unique `c`. -/
-theorem IsNondegenerate.bijective_mulShift [ConnectedSpace (PrimeSpectrum Λ)]
+theorem IsNondegenerate.mulShift_bijective [ConnectedSpace (PrimeSpectrum Λ)]
     (hψ : ψ.IsNondegenerate) : Function.Bijective ψ.mulShift := by
   refine ⟨to_mulShift_inj_of_isPrimitive hψ.isPrimitive, fun χ ↦ ?_⟩
   obtain ⟨c, hc⟩ := hψ.exists_apply_eq χ
@@ -312,7 +309,7 @@ theorem IsNondegenerate.bijective_mulShift [ConnectedSpace (PrimeSpectrum Λ)]
 /-- **Classification of additive characters of a finite field.** If `Spec Λ` is connected, every
 additive character of a finite field `k` of characteristic `p` with values in `Λ` is
 `x ↦ ψ (Tr (c * x))` for a unique `c ∈ k`. -/
-theorem IsNondegenerate.bijective_mulShift_compAddMonoidHom_trace [Finite k]
+theorem IsNondegenerate.mulShift_compAddMonoidHom_trace_bijective [Finite k]
     [ConnectedSpace (PrimeSpectrum Λ)] (hψ : ψ.IsNondegenerate) :
     Function.Bijective (ψ.compAddMonoidHom (Algebra.trace (ZMod p) k).toAddMonoidHom).mulShift := by
   refine ⟨to_mulShift_inj_of_isPrimitive (hψ.isPrimitive_compAddMonoidHom_trace k), fun χ ↦ ?_⟩
