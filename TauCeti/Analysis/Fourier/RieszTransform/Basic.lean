@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.HessianMultiplier
 public import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Riesz transforms
@@ -25,7 +26,7 @@ dimension one, `R₁` is the Hilbert transform, with symbol `-i sign ξ`. The sy
 The symbol is bounded by `‖v‖` and homogeneous of degree `0`; for `v ≠ 0` it is discontinuous at
 the origin. Hence:
 
-* `R_v` is bounded on `L²` with `‖R_v‖ ≤ ‖v‖`, and skew-adjoint: `R_v† = -R_v`.
+* `R_v` is bounded on `L²` with `‖R_v‖ = ‖v‖`, and skew-adjoint: `R_v† = -R_v`.
 * `R_v R_w = -T_{m_{v,w}}`, where `T_{m_{v,w}} = ∂_v ∂_w Δ⁻¹` is the Hessian multiplier with
   symbol `⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²` (`TauCeti.hessianSymbolLp`). On Schwartz functions this is the
   classical identity `∂_v ∂_w u = -R_v R_w Δu`, through which `Lᵖ` bounds for the Riesz transforms
@@ -42,7 +43,7 @@ identified in `TauCeti.Analysis.Fourier.RieszTransform.Kernel`.
 
 * `TauCeti.rieszSymbol`, `TauCeti.rieszSymbolLp`: the symbol and its class in `L^∞`.
 * `TauCeti.rieszTransform`: the Riesz transform `R_v` on `L²(E, F)`.
-* `TauCeti.norm_rieszTransform_le`, `TauCeti.adjoint_rieszTransform`: `‖R_v‖ ≤ ‖v‖` and
+* `TauCeti.norm_rieszTransform`, `TauCeti.adjoint_rieszTransform`: `‖R_v‖ = ‖v‖` and
   `R_v† = -R_v`.
 * `TauCeti.rieszTransform_compL_rieszTransform`: `R_v R_w = -T_{m_{v,w}}`.
 * `TauCeti.sum_rieszTransform_compL_rieszTransform`,
@@ -115,6 +116,13 @@ theorem norm_rieszSymbol_le (v ξ : E) : ‖rieszSymbol v ξ‖ ≤ ‖v‖ := b
   · simp
   · rw [div_le_iff₀ (norm_pos_iff.2 hξ), mul_comm]
     exact abs_real_inner_le_norm _ _
+
+/-- In the direction `ξ = v` the symbol attains its bound `‖v‖`. -/
+@[simp]
+theorem norm_rieszSymbol_self (v : E) : ‖rieszSymbol v v‖ = ‖v‖ := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  simp [rieszSymbol, sq, hv]
 
 /-- The symbol is purely imaginary. -/
 @[simp]
@@ -209,6 +217,16 @@ theorem norm_rieszSymbolLp_le (v : E) : ‖rieszSymbolLp v‖ ≤ ‖v‖ := by
   rw [hξ]
   exact norm_rieszSymbol_le v ξ
 
+/-- The `L^∞` norm of the Riesz symbol is exactly `‖v‖`. -/
+@[simp]
+theorem norm_rieszSymbolLp (v : E) : ‖rieszSymbolLp v‖ = ‖v‖ := by
+  refine (norm_rieszSymbolLp_le v).antisymm ?_
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  -- The symbol is continuous at `ξ = v`, where its modulus is `‖v‖`.
+  simpa using Lp.norm_le_norm_top_of_ae_eq_of_continuousAt (coeFn_rieszSymbolLp v)
+    ((contDiffOn_rieszSymbol v).continuousOn.continuousAt (isOpen_compl_singleton.mem_nhds hv))
+
 /-! ### The Riesz transform on `L²` -/
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
@@ -257,6 +275,13 @@ theorem rieszTransform_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι
 /-- **Plancherel bound** for the Riesz transform: `‖R_v‖ ≤ ‖v‖`. -/
 theorem norm_rieszTransform_le (v : E) : ‖rieszTransform (E := E) F v‖ ≤ ‖v‖ :=
   (Lp.norm_fourierMultiplierCLM_le _).trans (norm_rieszSymbolLp_le v)
+
+/-- The Riesz transform in the direction `v` has operator norm exactly `‖v‖` on `L²(E, F)` for
+nonzero `F`. In particular the classical Riesz transforms `Rⱼ = R_{eⱼ}` along an orthonormal basis
+have norm `1`. -/
+@[simp]
+theorem norm_rieszTransform [Nontrivial F] (v : E) : ‖rieszTransform (E := E) F v‖ = ‖v‖ := by
+  rw [rieszTransform_def, Lp.norm_fourierMultiplierCLM, norm_rieszSymbolLp]
 
 /-- The Riesz transform is skew-adjoint: `R_v† = -R_v`. -/
 theorem adjoint_rieszTransform (v : E) :
