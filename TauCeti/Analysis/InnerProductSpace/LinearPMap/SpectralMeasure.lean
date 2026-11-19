@@ -38,7 +38,8 @@ set of real resolvent points.
 * `LinearPMap.cayley_spectralPVM_proj_singleton_one`,
   `LinearPMap.cayley_diagMeasure_singleton_one`: the spectral measure of the Cayley transform
   does not charge `1`.
-* `IsSelfAdjoint.integral_spectralPVM_eq_resolvent`: `∫ (z - s)⁻¹ dP_A(s) = (z - A)⁻¹`.
+* `IsSelfAdjoint.integral_spectralPVM_eq_resolvent`,
+  `IsSelfAdjoint.integral_spectralPVM_resolventSymbol`: `∫ (z - s)⁻¹ dP_A(s) = (z - A)⁻¹`.
 * `IsSelfAdjoint.inner_resolvent_self_eq_integral`: the resolvent formula
   `⟪ξ, (z - A)⁻¹ ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)`.
 * `IsSelfAdjoint.commute_spectralPVM_proj_resolvent`,
@@ -189,27 +190,21 @@ theorem integral_spectralPVM_eq_resolvent (hA : IsSelfAdjoint A) {z : ℂ} (hz :
   rw [hx, ← mul_apply_eq_comp, ← map_mul, hgp, map_sub, map_one, hw, ← hv.1, hU]
   simp
 
-/-- For nonreal `z`, the function `s ↦ (z - s)⁻¹` on `ℝ` as a bounded Borel symbol: it is bounded
-by `|Im z|⁻¹`. -/
-private def resolventSymbol (z : ℂ) (hz : z.im ≠ 0) : BoundedBorelFunction ℝ :=
-  BoundedBorelFunction.ofFunction (fun s : ℝ => (z - s)⁻¹) (by fun_prop) <| by
-    refine ⟨|z.im|⁻¹, by positivity, fun s => ?_⟩
-    rw [norm_inv]
-    refine inv_anti₀ (abs_pos.2 hz) ?_
-    simpa using abs_im_le_norm (z - s)
-
-private theorem resolventSymbol_apply (z : ℂ) (hz : z.im ≠ 0) (s : ℝ) :
-    resolventSymbol z hz s = (z - s)⁻¹ :=
-  BoundedBorelFunction.ofFunction_apply _ _ _ s
+/-- **The resolvent is a spectral integral.** For nonreal `z`, the spectral integral of the
+resolvent symbol `s ↦ (z - s)⁻¹` (`BoundedBorelFunction.resolventSymbol`) is the resolvent
+`(z - A)⁻¹`. -/
+theorem integral_spectralPVM_resolventSymbol (hA : IsSelfAdjoint A) {z : ℂ} (hz : z.im ≠ 0) :
+    (A.spectralPVM hA).integral (BoundedBorelFunction.resolventSymbol z hz) = A.resolvent z :=
+  hA.integral_spectralPVM_eq_resolvent hz _ (BoundedBorelFunction.resolventSymbol_apply z hz)
 
 /-- **The resolvent formula.** For nonreal `z`, the diagonal matrix elements of the resolvent
 are the Cauchy–Stieltjes transforms of the diagonal spectral measures:
 `⟪ξ, (z - A)⁻¹ ξ⟫ = ∫ (z - s)⁻¹ dμ_ξ(s)`. -/
 theorem inner_resolvent_self_eq_integral (hA : IsSelfAdjoint A) {z : ℂ} (hz : z.im ≠ 0)
     (ξ : H) : ⟪ξ, A.resolvent z ξ⟫_ℂ = ∫ s, (z - s)⁻¹ ∂((A.spectralPVM hA).diag ξ) := by
-  rw [← hA.integral_spectralPVM_eq_resolvent hz _ (resolventSymbol_apply z hz),
+  rw [← hA.integral_spectralPVM_resolventSymbol hz,
     ← ProjValMeasure.integral_diag_eq_inner_integral]
-  simp only [resolventSymbol_apply]
+  simp only [BoundedBorelFunction.resolventSymbol_apply]
 
 /-! ### Spectral projections, resolvents and the domain -/
 
@@ -217,8 +212,7 @@ theorem inner_resolvent_self_eq_integral (hA : IsSelfAdjoint A) {z : ℂ} (hz : 
 private theorem commute_spectralPVM_proj_resolvent_of_im_ne_zero (hA : IsSelfAdjoint A)
     {B : Set ℝ} (hB : MeasurableSet B) {z : ℂ} (hz : z.im ≠ 0) :
     Commute ((A.spectralPVM hA).proj B hB) (A.resolvent z) := by
-  rw [← hA.integral_spectralPVM_eq_resolvent hz _ (resolventSymbol_apply z hz),
-    ← ProjValMeasure.integral_indicator]
+  rw [← hA.integral_spectralPVM_resolventSymbol hz, ← ProjValMeasure.integral_indicator]
   exact (Commute.all _ _).map _
 
 /-- Every spectral projection of `A` maps the domain of `A` into itself. -/
