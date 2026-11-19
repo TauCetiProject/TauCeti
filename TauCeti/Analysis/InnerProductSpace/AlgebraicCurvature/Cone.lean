@@ -13,15 +13,17 @@ import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 /-!
 # Basic cones of algebraic curvature tensors
 
-On a finite-dimensional real inner product space `V`, the curvature conditions preserved by the
-reaction ODE `dR/dt = Q(R)` of the Ricci flow cut out closed convex cones in the space
-`algebraicCurvatureSubmodule V` of algebraic curvature tensors. Writing `R` for the bivector
-operator `curvatureEndomorphism r` of `r`, this file defines, as `ProperCone ℝ` objects:
+On a finite-dimensional real inner product space `V`, the basic curvature-positivity conditions,
+which appear as curvature hypotheses in the convergence theorems of Hamilton and Böhm–Wilking for
+the Ricci flow, cut out closed convex cones in the space `algebraicCurvatureSubmodule V` of
+algebraic curvature tensors. Writing `R` for the bivector operator `curvatureEndomorphism r` of
+`r`, this file defines, as `ProperCone ℝ` objects:
 
 * `nonnegCurvatureOperatorCone V`: `⟪R ω, ω⟫ ≥ 0` for every bivector `ω`;
 * `twoNonnegCurvatureOperatorCone V`: `⟪R ω₁, ω₁⟫ + ⟪R ω₂, ω₂⟫ ≥ 0` for every orthonormal pair of
   bivectors, that is, the two smallest eigenvalues of `R` have nonnegative sum;
-* `nonnegSectionalCurvatureCone V`: `r(u, v, u, v) ≥ 0` for all `u, v`;
+* `nonnegSectionalCurvatureCone V`: `r(u, v, u, v) ≥ 0` for all `u, v` (this one needs no inner
+  product, and is defined over any real normed space `V`);
 * `nonnegRicciCone V`: `Ric(u, u) ≥ 0` for all `u`;
 * `nonnegScalarCone V`: `Scal ≥ 0`.
 
@@ -62,9 +64,10 @@ along every linear isometric embedding.
   `TauCeti.FourTensor.nonnegRicciCone_le_nonnegScalarCone`: the inclusions.
 * `TauCeti.FourTensor.comap_algebraicCurvaturePullback_nonnegCurvatureOperatorCone` and its
   analogues for the other four cones: orthogonal invariance.
-* `TauCeti.FourTensor.eq_zero_of_mem_nonnegCurvatureOperatorCone_of_neg_mem` and
-  `TauCeti.FourTensor.eq_zero_of_mem_nonnegSectionalCurvatureCone_of_neg_mem`: these two cones are
-  salient.
+* `TauCeti.FourTensor.salient_nonnegCurvatureOperatorCone` and
+  `TauCeti.FourTensor.salient_nonnegSectionalCurvatureCone`: these two cones are salient.
+* `TauCeti.FourTensor.comap_algebraicCurvaturePullback_eq_of_comp_eq_id`: a cone is invariant under
+  pullback along an invertible map once pullback along the map and along its inverse preserve it.
 
 ## References
 
@@ -83,6 +86,83 @@ open scoped RealInnerProductSpace
 noncomputable section
 
 namespace TauCeti.FourTensor
+
+section NormedSpace
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W]
+
+/-! ### Invariance under invertible pullbacks -/
+
+/-- A cone `C` on `V` is the preimage of a cone `D` on `W` under pullback along `f : W →L[ℝ] V` as
+soon as `f` has a right inverse `g`, pullback along `f` maps `C` into `D`, and pullback along `g`
+maps `D` into `C`. -/
+theorem comap_algebraicCurvaturePullback_eq_of_comp_eq_id {f : W →L[ℝ] V} {g : V →L[ℝ] W}
+    (hfg : f.comp g = .id ℝ V) {C : ProperCone ℝ (algebraicCurvatureSubmodule V)}
+    {D : ProperCone ℝ (algebraicCurvatureSubmodule W)}
+    (hf : ∀ r ∈ C, algebraicCurvaturePullback f r ∈ D)
+    (hg : ∀ r ∈ D, algebraicCurvaturePullback g r ∈ C) :
+    D.comap (algebraicCurvaturePullback f) = C := by
+  ext r
+  refine ⟨fun h ↦ ?_, hf r⟩
+  rw [← algebraicCurvaturePullback_algebraicCurvaturePullback_of_comp_eq_id hfg r]
+  exact hg _ h
+
+/-! ### The sectional curvature cone -/
+
+variable (V) in
+/-- The cone of algebraic curvature tensors with nonnegative sectional curvature:
+`r(u, v, u, v) ≥ 0` for all `u, v`. -/
+def nonnegSectionalCurvatureCone : ProperCone ℝ (algebraicCurvatureSubmodule V) :=
+  ⨅ (u : V) (v : V), (ProperCone.positive ℝ ℝ).comap
+    ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin 4 ↦ V) ℝ ![u, v, u, v]).comp
+      (algebraicCurvatureSubmodule V).subtypeL)
+
+@[simp]
+theorem mem_nonnegSectionalCurvatureCone {r : algebraicCurvatureSubmodule V} :
+    r ∈ nonnegSectionalCurvatureCone V ↔ ∀ u v, 0 ≤ r.1 ![u, v, u, v] := by
+  simp [nonnegSectionalCurvatureCone]
+
+/-- The nonnegative-sectional-curvature cone is salient: it contains no line through the origin,
+since an algebraic curvature tensor is determined by its sectional values. -/
+theorem eq_zero_of_mem_nonnegSectionalCurvatureCone_of_neg_mem
+    {r : algebraicCurvatureSubmodule V} (hr : r ∈ nonnegSectionalCurvatureCone V)
+    (hr' : -r ∈ nonnegSectionalCurvatureCone V) : r = 0 := by
+  have h₁ := mem_nonnegSectionalCurvatureCone.mp hr
+  have h₂ := mem_nonnegSectionalCurvatureCone.mp hr'
+  refine Subtype.ext ((mem_algebraicCurvatureSubmodule.mp r.2).eq_of_apply_self_eq
+    (mem_algebraicCurvatureSubmodule.mp (algebraicCurvatureSubmodule V).zero_mem) fun u v ↦ ?_)
+  have := h₂ u v
+  simp only [NegMemClass.coe_neg, neg_apply] at this
+  simp only [Submodule.coe_zero, zero_apply]
+  exact le_antisymm (by linarith) (h₁ u v)
+
+/-- The nonnegative-sectional-curvature cone is salient. -/
+theorem salient_nonnegSectionalCurvatureCone :
+    ConvexCone.Salient (R := ℝ) (G := algebraicCurvatureSubmodule V)
+      (nonnegSectionalCurvatureCone V : ConvexCone ℝ _) :=
+  fun _ hr hr₀ hr' ↦ hr₀ (eq_zero_of_mem_nonnegSectionalCurvatureCone_of_neg_mem hr hr')
+
+/-- Pullback along any continuous linear map preserves nonnegativity of sectional curvature. -/
+theorem algebraicCurvaturePullback_mem_nonnegSectionalCurvatureCone (f : W →L[ℝ] V)
+    {r : algebraicCurvatureSubmodule V} (hr : r ∈ nonnegSectionalCurvatureCone V) :
+    algebraicCurvaturePullback f r ∈ nonnegSectionalCurvatureCone W :=
+  mem_nonnegSectionalCurvatureCone.mpr fun u v ↦ by
+    rw [coe_algebraicCurvaturePullback, compContinuousLinearMap_apply_vec]
+    exact mem_nonnegSectionalCurvatureCone.mp hr _ _
+
+/-- Nonnegativity of sectional curvature is invariant under every continuous linear equivalence,
+in particular under the orthogonal group. -/
+theorem comap_algebraicCurvaturePullback_nonnegSectionalCurvatureCone (e : W ≃L[ℝ] V) :
+    (nonnegSectionalCurvatureCone W).comap (algebraicCurvaturePullback (e : W →L[ℝ] V)) =
+      nonnegSectionalCurvatureCone V :=
+  comap_algebraicCurvaturePullback_eq_of_comp_eq_id (g := (e.symm : V →L[ℝ] W)) (by ext; simp)
+    (fun _ ↦ algebraicCurvaturePullback_mem_nonnegSectionalCurvatureCone _)
+    (fun _ ↦ algebraicCurvaturePullback_mem_nonnegSectionalCurvatureCone _)
+
+end NormedSpace
+
+section InnerProductSpace
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
@@ -128,20 +208,6 @@ theorem mem_twoNonnegCurvatureOperatorCone {r : algebraicCurvatureSubmodule V} :
     r ∈ twoNonnegCurvatureOperatorCone V ↔ ∀ ω₁ ω₂, Orthonormal ℝ ![ω₁, ω₂] →
       0 ≤ ⟪curvatureEndomorphism r.1 ω₁, ω₁⟫ + ⟪curvatureEndomorphism r.1 ω₂, ω₂⟫ := by
   simp [twoNonnegCurvatureOperatorCone, curvatureOperatorEvalL_apply]
-
-variable (V) in
-/-- The cone of algebraic curvature tensors with nonnegative sectional curvature:
-`r(u, v, u, v) ≥ 0` for all `u, v`. -/
-def nonnegSectionalCurvatureCone : ProperCone ℝ (algebraicCurvatureSubmodule V) :=
-  ⨅ (u : V) (v : V), (ProperCone.positive ℝ ℝ).comap
-    ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin 4 ↦ V) ℝ ![u, v, u, v]).comp
-      (algebraicCurvatureSubmodule V).subtypeL)
-
-omit [FiniteDimensional ℝ V] in
-@[simp]
-theorem mem_nonnegSectionalCurvatureCone {r : algebraicCurvatureSubmodule V} :
-    r ∈ nonnegSectionalCurvatureCone V ↔ ∀ u v, 0 ≤ r.1 ![u, v, u, v] := by
-  simp [nonnegSectionalCurvatureCone]
 
 variable (V) in
 /-- The cone of algebraic curvature tensors with nonnegative Ricci contraction:
@@ -280,20 +346,11 @@ theorem eq_zero_of_mem_nonnegCurvatureOperatorCone_of_neg_mem {r : algebraicCurv
   simp only [NegMemClass.coe_neg, map_neg, LinearMap.neg_apply, inner_neg_left] at this
   exact le_antisymm (by linarith) (h₁ ω)
 
-omit [FiniteDimensional ℝ V] in
-/-- The nonnegative-sectional-curvature cone is salient: it contains no line through the origin,
-since an algebraic curvature tensor is determined by its sectional values. -/
-theorem eq_zero_of_mem_nonnegSectionalCurvatureCone_of_neg_mem
-    {r : algebraicCurvatureSubmodule V} (hr : r ∈ nonnegSectionalCurvatureCone V)
-    (hr' : -r ∈ nonnegSectionalCurvatureCone V) : r = 0 := by
-  have h₁ := mem_nonnegSectionalCurvatureCone.mp hr
-  have h₂ := mem_nonnegSectionalCurvatureCone.mp hr'
-  refine Subtype.ext ((mem_algebraicCurvatureSubmodule.mp r.2).eq_of_apply_self_eq
-    (mem_algebraicCurvatureSubmodule.mp (algebraicCurvatureSubmodule V).zero_mem) fun u v ↦ ?_)
-  have := h₂ u v
-  simp only [NegMemClass.coe_neg, neg_apply] at this
-  simp only [Submodule.coe_zero, zero_apply]
-  exact le_antisymm (by linarith) (h₁ u v)
+/-- The nonnegative-curvature-operator cone is salient. -/
+theorem salient_nonnegCurvatureOperatorCone :
+    ConvexCone.Salient (R := ℝ) (G := algebraicCurvatureSubmodule V)
+      (nonnegCurvatureOperatorCone V : ConvexCone ℝ _) :=
+  fun _ hr hr₀ hr' ↦ hr₀ (eq_zero_of_mem_nonnegCurvatureOperatorCone_of_neg_mem hr hr')
 
 /-! ### Orthogonal invariance -/
 
@@ -321,52 +378,25 @@ theorem algebraicCurvaturePullback_mem_twoNonnegCurvatureOperatorCone (f : W →
     ext i
     fin_cases i <;> simp [F]
 
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] in
-/-- Pullback along any continuous linear map preserves nonnegativity of sectional curvature. -/
-theorem algebraicCurvaturePullback_mem_nonnegSectionalCurvatureCone (f : W →L[ℝ] V)
-    {r : algebraicCurvatureSubmodule V} (hr : r ∈ nonnegSectionalCurvatureCone V) :
-    algebraicCurvaturePullback f r ∈ nonnegSectionalCurvatureCone W :=
-  mem_nonnegSectionalCurvatureCone.mpr fun u v ↦ by
-    rw [coe_algebraicCurvaturePullback, compContinuousLinearMap_apply_vec]
-    exact mem_nonnegSectionalCurvatureCone.mp hr _ _
-
 /-- Nonnegativity of the curvature operator is invariant under every continuous linear
 equivalence, in particular under the orthogonal group. -/
 theorem comap_algebraicCurvaturePullback_nonnegCurvatureOperatorCone (e : W ≃L[ℝ] V) :
     (nonnegCurvatureOperatorCone W).comap (algebraicCurvaturePullback (e : W →L[ℝ] V)) =
-      nonnegCurvatureOperatorCone V := by
-  ext r
-  refine ⟨fun h ↦ ?_, algebraicCurvaturePullback_mem_nonnegCurvatureOperatorCone _⟩
-  rw [← algebraicCurvaturePullback_algebraicCurvaturePullback_of_comp_eq_id
-    (f := (e : W →L[ℝ] V)) (g := (e.symm : V →L[ℝ] W))
-    (by ext; simp) r]
-  exact algebraicCurvaturePullback_mem_nonnegCurvatureOperatorCone _ h
+      nonnegCurvatureOperatorCone V :=
+  comap_algebraicCurvaturePullback_eq_of_comp_eq_id (g := (e.symm : V →L[ℝ] W)) (by ext; simp)
+    (fun _ ↦ algebraicCurvaturePullback_mem_nonnegCurvatureOperatorCone _)
+    (fun _ ↦ algebraicCurvaturePullback_mem_nonnegCurvatureOperatorCone _)
 
 /-- The 2-nonnegative-curvature-operator cone is invariant under linear isometric
 equivalences. -/
 theorem comap_algebraicCurvaturePullback_twoNonnegCurvatureOperatorCone (e : W ≃ₗᵢ[ℝ] V) :
     (twoNonnegCurvatureOperatorCone W).comap
         (algebraicCurvaturePullback e.toLinearIsometry.toContinuousLinearMap) =
-      twoNonnegCurvatureOperatorCone V := by
-  ext r
-  refine ⟨fun h ↦ ?_, algebraicCurvaturePullback_mem_twoNonnegCurvatureOperatorCone _⟩
-  rw [← algebraicCurvaturePullback_algebraicCurvaturePullback_of_comp_eq_id
-    (f := e.toLinearIsometry.toContinuousLinearMap)
-    (g := e.symm.toLinearIsometry.toContinuousLinearMap) (by ext; simp) r]
-  exact algebraicCurvaturePullback_mem_twoNonnegCurvatureOperatorCone _ h
-
-omit [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] in
-/-- Nonnegativity of sectional curvature is invariant under every continuous linear equivalence,
-in particular under the orthogonal group. -/
-theorem comap_algebraicCurvaturePullback_nonnegSectionalCurvatureCone (e : W ≃L[ℝ] V) :
-    (nonnegSectionalCurvatureCone W).comap (algebraicCurvaturePullback (e : W →L[ℝ] V)) =
-      nonnegSectionalCurvatureCone V := by
-  ext r
-  refine ⟨fun h ↦ ?_, algebraicCurvaturePullback_mem_nonnegSectionalCurvatureCone _⟩
-  rw [← algebraicCurvaturePullback_algebraicCurvaturePullback_of_comp_eq_id
-    (f := (e : W →L[ℝ] V)) (g := (e.symm : V →L[ℝ] W))
-    (by ext; simp) r]
-  exact algebraicCurvaturePullback_mem_nonnegSectionalCurvatureCone _ h
+      twoNonnegCurvatureOperatorCone V :=
+  comap_algebraicCurvaturePullback_eq_of_comp_eq_id
+    (g := e.symm.toLinearIsometry.toContinuousLinearMap) (by ext; simp)
+    (fun _ ↦ algebraicCurvaturePullback_mem_twoNonnegCurvatureOperatorCone _)
+    (fun _ ↦ algebraicCurvaturePullback_mem_twoNonnegCurvatureOperatorCone _)
 
 /-- The nonnegative-Ricci cone is invariant under linear isometric equivalences. -/
 theorem comap_algebraicCurvaturePullback_nonnegRicciCone (e : W ≃ₗᵢ[ℝ] V) :
@@ -386,5 +416,7 @@ theorem comap_algebraicCurvaturePullback_nonnegScalarCone (e : W ≃ₗᵢ[ℝ] 
   ext r
   simp only [ProperCone.mem_comap, mem_nonnegScalarCone, coe_algebraicCurvaturePullback,
     scalar_compContinuousLinearMap_linearIsometryEquiv]
+
+end InnerProductSpace
 
 end TauCeti.FourTensor
