@@ -194,6 +194,11 @@ private noncomputable def automorphySubgroup (s : ℂ → ℂ) : AddSubgroup (�
     apply mul_left_cancel₀ hne
     rw [← hs, ← mul_assoc, ← h0, one_mul]
 
+private theorem mem_automorphySubgroup {s : ℂ → ℂ} {p : ℤ × ℤ} :
+    p ∈ automorphySubgroup (k := k) (τ := τ) (α := α) (β := β) s ↔
+      ∀ z, s (z + p.1 + p.2 * τ) = thetaFactor k τ α β p.1 p.2 z * s z :=
+  Iff.rfl
+
 /-- **Sections of the theta line.** A function satisfies the automorphy law
 `s (z + m + nτ) = e_(m,n)(z) s z` for every lattice vector exactly when it satisfies it for the
 generators: `s (z + 1) = exp (2πiα) s z` and `s (z + τ) = exp (2πiβ - πikτ - 2πikz) s z`. -/
@@ -204,13 +209,13 @@ theorem forall_add_eq_thetaFactor_mul_iff {s : ℂ → ℂ} :
   refine ⟨fun h ↦ ⟨fun z ↦ by simpa using h 1 0 z, fun z ↦ by simpa using h 0 1 z⟩, ?_⟩
   rintro ⟨h1, hτ⟩ m n
   have h10 : ((1, 0) : ℤ × ℤ) ∈ automorphySubgroup (k := k) (τ := τ) (α := α) (β := β) s :=
-    fun z ↦ by simpa using h1 z
+    mem_automorphySubgroup.mpr fun z ↦ by simpa using h1 z
   have h01 : ((0, 1) : ℤ × ℤ) ∈ automorphySubgroup (k := k) (τ := τ) (α := α) (β := β) s :=
-    fun z ↦ by simpa using hτ z
+    mem_automorphySubgroup.mpr fun z ↦ by simpa using hτ z
   have hmn : ((m, n) : ℤ × ℤ) = m • ((1, 0) : ℤ × ℤ) + n • ((0, 1) : ℤ × ℤ) := by simp
   have h := add_mem (zsmul_mem h10 m) (zsmul_mem h01 n)
   rw [← hmn] at h
-  exact h
+  exact mem_automorphySubgroup.mp h
 
 /-- The **Hermitian metric** `h(z) = exp (-2πk (Im z)² / Im τ)` of the level-`k` theta line on
 `ℂ / (ℤ + τℤ)`, in the trivialization of its pull-back to `ℂ`. -/
@@ -298,23 +303,22 @@ theorem thetaConnectionForm_def (z : ℂ) :
     thetaConnectionForm k τ z = 2 * π * I * k * z.im / τ.im :=
   (rfl)
 
+/-- The imaginary part, as a map `ℂ → ℂ`, is `ℝ`-linear, so it is its own derivative. -/
+private theorem fderiv_ofReal_im (z : ℂ) :
+    fderiv ℝ (fun w : ℂ ↦ (w.im : ℂ)) z = ofRealCLM.comp imCLM :=
+  (ofRealCLM.comp imCLM).hasFDerivAt.fderiv
+
 /-- The Wirtinger derivative of the imaginary part: `∂ Im = -i/2`. -/
 theorem wirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
     wirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = -I / 2 := by
-  have hd : HasFDerivAt (fun w : ℂ ↦ (w.im : ℂ)) (ofRealCLM.comp imCLM) z :=
-    (ofRealCLM.comp imCLM).hasFDerivAt
-  rw [wirtingerDeriv_apply, hd.fderiv]
-  simp
-  ring
+  rw [wirtingerDeriv_apply, fderiv_ofReal_im]
+  simp [div_eq_inv_mul]
 
 /-- The conjugate Wirtinger derivative of the imaginary part: `∂bar Im = i/2`. -/
 theorem conjWirtingerDeriv_apply_one_ofReal_im (z : ℂ) :
     conjWirtingerDeriv (fun w : ℂ ↦ (w.im : ℂ)) z 1 = I / 2 := by
-  have hd : HasFDerivAt (fun w : ℂ ↦ (w.im : ℂ)) (ofRealCLM.comp imCLM) z :=
-    (ofRealCLM.comp imCLM).hasFDerivAt
-  rw [conjWirtingerDeriv_apply, hd.fderiv]
-  simp
-  ring
+  rw [conjWirtingerDeriv_apply, fderiv_ofReal_im]
+  simp [div_eq_inv_mul]
 
 /-- **The Chern connection form**: `∂ log h = A`, where `h` is the theta metric. -/
 theorem wirtingerDeriv_apply_one_log_thetaMetric (z : ℂ) :
