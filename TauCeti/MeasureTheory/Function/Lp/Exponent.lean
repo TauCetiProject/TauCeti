@@ -31,6 +31,8 @@ continuous linear map, which does not change the underlying almost everywhere eq
   bound `ν(univ) ^ (1/p - 1/q)` on the operator norm.
 * `MeasureTheory.Lp.ofExponentLEL_self`, `MeasureTheory.Lp.ofExponentLEL_ofExponentLEL`: the
   identity at `p = q` and transitivity.
+* `ContinuousLinearMap.compLpL_ofExponentLEL`: the inclusion commutes with postcomposition by a
+  continuous linear map.
 
 ## References
 
@@ -119,5 +121,15 @@ end NormedRing
 theorem opNorm_ofExponentLEL_le [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F] (hpq : p ≤ q) :
     ‖ofExponentLEL (ν := ν) 𝕜 F hpq‖ ≤ (ν Set.univ ^ (1 / p.toReal - 1 / q.toReal)).toReal :=
   LinearMap.mkContinuous_norm_le _ ENNReal.toReal_nonneg _
+
+/-- Lowering the exponent commutes with postcomposition by a continuous (semi)linear map. -/
+theorem _root_.ContinuousLinearMap.compLpL_ofExponentLEL {𝕜' E : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedSpace 𝕜' F] {σ : 𝕜 →+* 𝕜'} [RingHomIsometric σ] (L : E →SL[σ] F)
+    (hpq : p ≤ q) (f : Lp E q ν) :
+    L.compLpL p ν (ofExponentLEL 𝕜 E hpq f) = ofExponentLEL 𝕜' F hpq (L.compLpL q ν f) := by
+  ext1
+  filter_upwards [L.coeFn_compLpL (ofExponentLEL 𝕜 E hpq f), L.coeFn_compLpL f] with x hp hq
+  rw [hp, coeFn_ofExponentLEL, coeFn_ofExponentLEL, hq]
 
 end MeasureTheory.Lp

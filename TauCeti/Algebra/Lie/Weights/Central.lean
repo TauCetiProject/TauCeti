@@ -290,13 +290,12 @@ theorem centralWeight_eq_of_ne_zero {f : M →ₗ⁅K,L⁆ N} (hf : f ≠ 0) :
 
 end Transfer
 
-section Descent
+section DescentOfScalars
 
 variable (K : Type u) [CommRing K] (L : Type v) [LieRing L] [LieAlgebra K L]
-variable (M : Type w) [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+variable (M : Type w) [AddCommGroup M] [Module K M] [LieRingModule L M]
 variable [LieModule.IsIrreducible K L M]
 
-omit [LieModule K L M] in
 /-- **Irreducibility descends to a subalgebra complementing a centre that acts by scalars.** If
 `L' ⊔ center K L` is all of `L` as a subspace and every central element acts by a scalar, then a
 submodule for `L'` is already a submodule for `L`, since the missing central directions only
@@ -323,7 +322,7 @@ theorem isIrreducible_of_sup_center_eq_top_of_forall_exists_lie_eq_smul (L' : Li
     hP <| (LieSubmodule.toSubmodule_eq_bot P).1 (congrArg LieSubmodule.toSubmodule hbot)
   exact (LieSubmodule.toSubmodule_eq_top P).1 (congrArg LieSubmodule.toSubmodule hP')
 
-end Descent
+end DescentOfScalars
 
 section Descent
 

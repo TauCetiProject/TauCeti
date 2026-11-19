@@ -71,11 +71,15 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   commute with complex scalar multiplication.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
-* `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a finite sum of real-differentiable functions.
+* `TauCeti.conjWirtingerDeriv_fun_sub`, `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a
+  pointwise difference and of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_comp`: the chain rule `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g` after a
   holomorphic map `φ`.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
+* `TauCeti.conjWirtingerDeriv_finsetProd`, `TauCeti.norm_conjWirtingerDeriv_finsetProd_le`: the
+  Leibniz rule for a finite product, and the consequence that bounds
+  `‖\bar∂ (f i)(x)‖ ≤ K |f i (x)|` on the factors give `‖\bar∂ (∏ f i)(x)‖ ≤ #s K |∏ f i (x)|`.
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
   one-variable conjugate Wirtinger derivative of the restriction of `g` to the complex line
   `t ↦ x + t • v`.
@@ -254,6 +258,14 @@ theorem conjWirtingerDeriv_sub {g₁ g₂ : V → W} {x : V} (h₁ : Differentia
   ext v
   simp only [conjWirtingerDeriv_apply, fderiv_sub h₁ h₂, sub_apply]
   module
+
+/-- The conjugate Wirtinger derivative commutes with pointwise subtraction of real-differentiable
+functions. -/
+theorem conjWirtingerDeriv_fun_sub {g₁ g₂ : V → W} {x : V} (h₁ : DifferentiableAt ℝ g₁ x)
+    (h₂ : DifferentiableAt ℝ g₂ x) :
+    conjWirtingerDeriv (fun y ↦ g₁ y - g₂ y) x =
+      conjWirtingerDeriv g₁ x - conjWirtingerDeriv g₂ x :=
+  conjWirtingerDeriv_sub h₁ h₂
 
 /-- The conjugate Wirtinger derivative commutes with multiplication by a complex constant. -/
 theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
@@ -452,6 +464,34 @@ theorem conjWirtingerDeriv_fun_pow (hf : DifferentiableAt ℝ f x) (n : ℕ) :
   simp only [conjWirtingerDeriv_apply, fderiv_fun_pow n hf, nsmul_eq_mul, smul_apply,
     smul_eq_mul]
   ring
+
+/-- **The Leibniz rule for a finite product**:
+`\bar∂ (∏_{i ∈ s} f i) = ∑_{i ∈ s} (∏_{j ∈ s ∖ i} f j) \bar∂ (f i)`. -/
+theorem conjWirtingerDeriv_finsetProd {ι : Type*} [DecidableEq ι] {s : Finset ι}
+    {f : ι → V → ℂ} (hf : ∀ i ∈ s, DifferentiableAt ℝ (f i) x) :
+    conjWirtingerDeriv (fun y ↦ ∏ i ∈ s, f i y) x =
+      ∑ i ∈ s, (∏ j ∈ s.erase i, f j x) • conjWirtingerDeriv (f i) x :=
+  conjWirtingerDeriv_eq_sum_smul (fderiv_finsetProd hf)
+
+/-- **Logarithmic derivative bound for a finite product.** If every factor satisfies
+`‖\bar∂ (f i)(x)‖ ≤ K |f i (x)|`, then the product satisfies
+`‖\bar∂ (∏ f i)(x)‖ ≤ #s K |∏ f i (x)|`. -/
+theorem norm_conjWirtingerDeriv_finsetProd_le {ι : Type*} {s : Finset ι} {f : ι → V → ℂ}
+    (hf : ∀ i ∈ s, DifferentiableAt ℝ (f i) x) {K : ℝ}
+    (hK : ∀ i ∈ s, ‖conjWirtingerDeriv (f i) x‖ ≤ K * ‖f i x‖) :
+    ‖conjWirtingerDeriv (fun y ↦ ∏ i ∈ s, f i y) x‖ ≤ (s.card * K) * ‖∏ i ∈ s, f i x‖ := by
+  classical
+  rw [conjWirtingerDeriv_finsetProd hf]
+  calc ‖∑ i ∈ s, (∏ j ∈ s.erase i, f j x) • conjWirtingerDeriv (f i) x‖
+      ≤ ∑ i ∈ s, ‖(∏ j ∈ s.erase i, f j x) • conjWirtingerDeriv (f i) x‖ := norm_sum_le _ _
+    _ ≤ ∑ _i ∈ s, K * ‖∏ i ∈ s, f i x‖ := by
+      refine Finset.sum_le_sum fun i hi ↦ ?_
+      rw [norm_smul, ← Finset.prod_erase_mul s (fun j ↦ f j x) hi, norm_mul]
+      calc ‖∏ j ∈ s.erase i, f j x‖ * ‖conjWirtingerDeriv (f i) x‖
+          ≤ ‖∏ j ∈ s.erase i, f j x‖ * (K * ‖f i x‖) := by gcongr; exact hK i hi
+        _ = K * (‖∏ j ∈ s.erase i, f j x‖ * ‖f i x‖) := by ring
+    _ = (s.card * K) * ‖∏ i ∈ s, f i x‖ := by
+      rw [Finset.sum_const, nsmul_eq_mul, mul_assoc]
 
 end Mul
 

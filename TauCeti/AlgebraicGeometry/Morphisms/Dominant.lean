@@ -63,6 +63,8 @@ the generic point, and a dominant one by its pullback of rational functions.
 * `AlgebraicGeometry.Scheme.Hom.ext_of_functionFieldMap_eq`: dominant morphisms from a reduced
   irreducible scheme to a separated scheme agree as soon as their pullbacks of rational functions
   agree.
+* `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap_of_isOpenImmersion`: along a dominant open
+  immersion of irreducible schemes, `functionFieldMap` is an isomorphism.
 
 ## References
 
@@ -236,6 +238,16 @@ theorem ext_of_functionFieldMap_eq (S : Scheme.{u}) [X.Over S] [Y.Over S] [IsRed
     (h : f.functionFieldMap = g.functionFieldMap) : f = g := by
   refine ext_of_isDominant_of_isSeparated' S (X.fromSpecStalk (genericPoint X)) ?_
   rw [← SpecMap_functionFieldMap_fromSpecStalk, ← SpecMap_functionFieldMap_fromSpecStalk, h]
+
+/-- Along a dominant open immersion `f : X ⟶ Y` of irreducible schemes, pullback of rational
+functions `f.functionFieldMap` is an isomorphism. -/
+instance isIso_functionFieldMap_of_isOpenImmersion (f : X ⟶ Y) [IsOpenImmersion f] [IsDominant f] :
+    IsIso f.functionFieldMap := by
+  unfold functionFieldMap
+  have : IsIso (Y.presheaf.stalkSpecializes
+      (specializes_of_eq f.genericPoint_eq_of_isDominant)) :=
+    (Y.presheaf.stalkCongr (Inseparable.of_eq f.genericPoint_eq_of_isDominant.symm)).isIso_hom
+  infer_instance
 
 end Scheme.Hom
 
