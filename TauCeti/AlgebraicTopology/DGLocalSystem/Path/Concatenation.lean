@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Bimodule
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Augmentation
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Pairing
 public import TauCeti.Algebra.Homology.DG.Bimodule.QuasiIso
 public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Associator

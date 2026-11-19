@@ -36,10 +36,10 @@ an *open* embedding, which a subgroup's need not be.
 
 * `NonarchimedeanGroup.exists_openSubgroup_subset_of_isOpenMap`, and its additive form
   `NonarchimedeanAddGroup.exists_openAddSubgroup_subset_of_isOpenMap`.
-* `Subgroup.instNonarchimedeanGroup` and `Subring.instNonarchimedeanRing`: a subgroup of a
-  nonarchimedean group, and a subring of a nonarchimedean ring, are nonarchimedean in the subspace
-  topology. These are what put a nonarchimedean structure on the ring of definition of a rational
-  localisation.
+* `Subgroup.instNonarchimedeanGroup`, `OpenSubgroup.instNonarchimedeanGroup`, and
+  `Subring.instNonarchimedeanRing`: a subgroup or open subgroup of a nonarchimedean group, and a
+  subring of a nonarchimedean ring, are nonarchimedean in the subspace topology. These are what put
+  a nonarchimedean structure on the ring of definition of a rational localisation.
 * `NonarchimedeanGroup.nonarchimedean_of_isOpenMap`, and its additive form
   `NonarchimedeanAddGroup.nonarchimedean_of_isOpenMap`.
 -/
@@ -106,6 +106,13 @@ instance Subgroup.instNonarchimedeanGroup {G : Type*} [Group G] [TopologicalSpac
     obtain ⟨W, hW, hWU⟩ := (mem_nhds_subtype _ _ _).mp hU
     obtain ⟨V, hV⟩ := NonarchimedeanGroup.is_nonarchimedean W hW
     exact ⟨V.comap H.subtype continuous_subtype_val, fun _ hx ↦ hWU (hV hx)⟩
+
+/-- An open subgroup of a nonarchimedean group is nonarchimedean in the subspace topology. -/
+@[to_additive /-- An open additive subgroup of a nonarchimedean additive group is nonarchimedean in
+the subspace topology. -/]
+instance OpenSubgroup.instNonarchimedeanGroup {G : Type*} [Group G] [TopologicalSpace G]
+    [NonarchimedeanGroup G] (U : OpenSubgroup G) : NonarchimedeanGroup U :=
+  inferInstanceAs (NonarchimedeanGroup U.toSubgroup)
 
 /-- **A subring of a nonarchimedean ring is nonarchimedean** in the subspace topology. -/
 instance Subring.instNonarchimedeanRing {R : Type*} [Ring R] [TopologicalSpace R]

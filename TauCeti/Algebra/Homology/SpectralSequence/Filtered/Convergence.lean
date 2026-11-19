@@ -52,9 +52,7 @@ noncomputable def filtrationAbutmentIso (n : ℤ) :
     (spectralObject (filtrationFunctor F hF)).abutment n ≅ K.homology n :=
   spectralObjectHIsoCokernel _ _ n ≪≫ HomologicalComplex.homologyMapIso
     (cokernelIsoOfEq (filtrationFunctor_map_bot F hF ⊤) ≪≫ cokernelZeroIsoTarget ≪≫
-      filtrationFunctorObjIso F hF ⊤ ≪≫
-      eqToIso (congrArg (fun S : Subobject K => (S : CochainComplex C ℤ))
-        (filtrationEInt_top F)) ≪≫ asIso (⊤ : Subobject K).arrow) n
+      asIso (filtrationFunctorArrow F hF ⊤)) n
 
 /-- The isomorphism `filtrationAbutmentIso` is induced by the map from the cokernel of
 `F_⊥ ⟶ K`, which is zero, to `K`. -/
