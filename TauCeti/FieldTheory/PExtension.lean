@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Relrank
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Finrank
+public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.NumberTheory.PNumber
 
 /-!
@@ -140,10 +141,9 @@ theorem IsPExtension.tower_top (h : IsPExtension P K M) : IsPExtension P L M := 
   let G := adjoin L₀ (F : Set M)
   have : FiniteDimensional L₀ G := Module.finite_of_finrank_pos (heq ▸ finrank_pos)
   have : FiniteDimensional K G := .trans K L₀ G
-  -- `G.restrictScalars K` has the same carrier as `G`.
-  have : FiniteDimensional K (G.restrictScalars K) := inferInstanceAs (FiniteDimensional K G)
-  refine heq ▸ (h.isPNumber_finrank (G.restrictScalars K)).of_dvd ?_
-  exact Dvd.intro_left _ (finrank_mul_finrank K L₀ G)
+  have hG : IsPNumber P (finrank K G) :=
+    isPNumber_finrank_of_algEquiv (restrictScalarsAlgEquiv K G).symm (h.isPNumber_finrank _)
+  exact heq ▸ hG.of_dvd (Dvd.intro_left _ (finrank_mul_finrank K L₀ G))
 
 /-- If `L / K` and `M / L` are `P`-extensions, then so is `M / K`. -/
 theorem IsPExtension.trans (h₁ : IsPExtension P K L) (h₂ : IsPExtension P L M) :
@@ -162,7 +162,8 @@ theorem IsPExtension.trans (h₁ : IsPExtension P K L) (h₂ : IsPExtension P L 
     rw [← finrank_mul_finrank K L₀ G, heq]
     exact (h₁.isPNumber_finrank L₀).mul (h₂.isPNumber_finrank (adjoin L (F : Set M)))
   have hle : F ≤ G.restrictScalars K := fun x hx ↦ subset_adjoin L₀ _ hx
-  exact hG.of_dvd (Dvd.intro _ (finrank_bot_mul_relfinrank hle))
+  exact hG.of_dvd (Dvd.intro _ ((finrank_bot_mul_relfinrank hle).trans
+    (restrictScalarsAlgEquiv K G).toLinearEquiv.finrank_eq))
 
 /-- **Tower law for `P`-extensions.** For a tower `M / L / K`, `M / K` is a `P`-extension exactly
 when `M / L` and `L / K` are. -/
