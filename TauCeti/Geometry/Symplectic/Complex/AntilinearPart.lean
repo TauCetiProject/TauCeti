@@ -131,9 +131,8 @@ theorem sum_norm_sq_complexAntilinearPart {ι : Type*} [Fintype ι] {J : AlmostC
     have hJ₁ : ⟪J g₁, e i⟫ = -(L (J (e i))).re := by rw [inner_apply_left hJ, h₁]
     have hJ₂ : ⟪J p, e i⟫ = -(L (J (e i))).im := by rw [inner_apply_left hJ, h₂]
     rw [complexAntilinearPart_apply_eq, Complex.sq_norm, Complex.normSq_apply]
-    simp only [inner_add_left, inner_sub_left, h₁, h₂, hJ₁, hJ₂, div_re, div_im, add_re,
-      add_im, mul_re, mul_im, I_re, I_im]
-    norm_num
+    simp only [inner_add_left, inner_sub_left, h₁, h₂, hJ₁, hJ₂, div_ofNat_re, div_ofNat_im,
+      add_re, add_im, mul_re, mul_im, I_re, I_im]
     ring
   rw [hsum, e.sum_sq_inner_left, e.sum_sq_inner_left, hd', norm_neg, norm_apply hJ]
   ring
@@ -177,19 +176,12 @@ theorem two_mul_norm_sq_mul_sub_le_sum_sq_re {ι : Type*} [Fintype ι]
   -- Write `g₁ = d - J p` and expand in the inner products `⟪d, J p⟫` and `⟪d, p⟫`.
   have hg₁ : g₁ = d - J p := (add_sub_cancel_right g₁ (J p)).symm
   have hpJp : ⟪J p, p⟫ = 0 := inner_apply_self hJ p
-  have hJpJp : ⟪J p, J p⟫ = ‖p‖ ^ 2 := by rw [hJ, real_inner_self_eq_norm_sq]
   have hnorm₁ : ‖g₁‖ ^ 2 = ‖d‖ ^ 2 - 2 * ⟪d, J p⟫ + ‖p‖ ^ 2 := by
-    rw [hg₁, ← real_inner_self_eq_norm_sq]
-    simp only [inner_sub_left, inner_sub_right]
-    rw [hJpJp, real_inner_self_eq_norm_sq, real_inner_comm d (J p)]
-    ring
+    rw [hg₁, norm_sub_sq_real, norm_apply hJ]
   have hnorm₂ : ‖a.re • g₁ + a.im • p‖ ^ 2 = a.re ^ 2 * ‖d‖ ^ 2 +
       (a.re ^ 2 + a.im ^ 2) * ‖p‖ ^ 2 - 2 * a.re ^ 2 * ⟪d, J p⟫ + 2 * a.re * a.im * ⟪d, p⟫ := by
-    rw [hg₁, ← real_inner_self_eq_norm_sq]
-    simp only [inner_add_left, inner_add_right, inner_sub_left, inner_sub_right,
-      real_inner_smul_left, real_inner_smul_right]
-    rw [hJpJp, hpJp, real_inner_comm (J p) p, hpJp, real_inner_comm d (J p),
-      real_inner_comm d p, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq]
+    simp only [hg₁, norm_add_sq_real, norm_smul, mul_pow, norm_sub_sq_real, norm_apply hJ,
+      real_inner_smul_left, real_inner_smul_right, inner_sub_left, hpJp, Real.norm_eq_abs, sq_abs]
     ring
   rw [hnorm₁, hnorm₂]
   exact two_mul_mul_sub_le hε (by positivity) (by positivity) (inner_sq_add_inner_sq_le hJ d p)
