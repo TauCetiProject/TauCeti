@@ -20,7 +20,7 @@ For a module `M` over a commutative ring `R`, the **antisymmetric tensor cokerne
 `TauCeti.antisymSquare R M` is the quotient of `M ⊗[R] M` by the image of `1 + τ`, where `τ` is
 the flip `a ⊗ b ↦ b ⊗ a`; the class of `a ⊗ b` is written `a ∧ b`. It is the target of the
 boundary map `[x] ↦ x ∧ (1 - x)` on the pre-Bloch group of a field `F`, taken with `R = ℤ` and
-`M = Additive Fˣ` (Weibel's `∧̃²`).
+`M = Additive Fˣ` (Weibel's antisymmetric square).
 
 In `antisymSquare R M` the wedge is skew, `a ∧ b + b ∧ a = 0`, but the diagonal classes `a ∧ a`
 need not vanish: they satisfy only `2 • (a ∧ a) = 0`. So `antisymSquare R M` is neither the
