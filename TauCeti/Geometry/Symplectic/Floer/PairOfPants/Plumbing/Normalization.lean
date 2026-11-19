@@ -104,13 +104,6 @@ private theorem plumbedPerturbation_add_const_fun (Ha Hb : Puncture → ℝ → 
   rw [plumbedPerturbation_add_const, add_apply,
     plumbedPerturbation_const_target ca cb q L _ x y]
 
-/-- Continuous periodic normalizations are bounded, uniformly in the target point. -/
-private theorem exists_forall_abs_le {c : Puncture → ℝ → ℝ} (hc : ∀ r, Periodic (c r) 1)
-    (hcs : ∀ r, ContDiff ℝ 1 (c r)) : ∃ B : Puncture → ℝ, ∀ r t (_ : M), |c r t| ≤ B r := by
-  choose B hB using fun r ↦ isBounded_iff_forall_norm_le.1
-    ((hc r).isBounded_of_continuous one_ne_zero (hcs r).continuous)
-  exact ⟨B, fun r t _ ↦ hB r _ (mem_range_self t)⟩
-
 end Floer
 
 /-! ### Symplectic vector spaces: the Floer equation and the curvature of a normalization -/
@@ -195,8 +188,8 @@ theorem setIntegral_hamiltonianCurvature_plumbedPerturbation_const (ω : Symplec
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
       (∑ r ∈ Finset.univ.erase inf, ∫ t in (0 : ℝ)..1, ca r t) +
         ∑ r ∈ Finset.univ.erase q, r.endSign * ∫ t in (0 : ℝ)..1, cb r t := by
-  obtain ⟨Ba, hBa⟩ := exists_forall_abs_le (M := V) hca hcas
-  obtain ⟨Bb, hBb⟩ := exists_forall_abs_le (M := V) hcb hcbs
+  obtain ⟨Ba, hBa⟩ := exists_forall_abs_le_of_periodic hca fun r ↦ (hcas r).continuous
+  obtain ⟨Bb, hBb⟩ := exists_forall_abs_le_of_periodic hcb fun r ↦ (hcbs r).continuous
   -- Along the constant map `0`, the energy density and the area density vanish.
   have hE : ω.constSmooth.floerEnergyDensity
       (fun z x ↦ plumbedPerturbation (fun r t (_ : V) ↦ ca r t) (fun r t (_ : V) ↦ cb r t) q L
@@ -217,7 +210,8 @@ theorem setIntegral_hamiltonianCurvature_plumbedPerturbation_const (ω : Symplec
   have h := (isNondegenerate_constSmooth ω).integral_floerEnergyDensity_plumbedPerturbation hq
     (fun r t ↦ funext fun _ ↦ hca r t) (fun r t ↦ funext fun _ ↦ hcb r t)
     (fun r ↦ (hcas r).contMDiff.comp contMDiff_fst)
-    (fun r ↦ (hcbs r).contMDiff.comp contMDiff_fst) (by simp only [hc]) hL hBa hBb
+    (fun r ↦ (hcbs r).contMDiff.comp contMDiff_fst) (by simp only [hc]) hL
+    (fun r t _ ↦ hBa r t) (fun r t _ ↦ hBb r t)
     (u := fun _ ↦ (0 : V)) contMDiffOn_const (xa := fun _ _ ↦ 0) (xb := fun _ _ ↦ 0)
     (fun _ _ _ ↦ tendsto_const_nhds) (fun _ _ _ ↦ tendsto_const_nhds)
     (by rw [hE]; exact integrableOn_zero) (by rw [hA]; exact integrableOn_zero)
@@ -445,12 +439,13 @@ theorem setIntegral_hamiltonianCurvature_plumbedPerturbation_add_const (ω : Smo
       {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
-    obtain ⟨Ba, hBa⟩ := exists_forall_abs_le (M := M) hca hcas
-    obtain ⟨Bb, hBb⟩ := exists_forall_abs_le (M := M) hcb hcbs
+    obtain ⟨Ba, hBa⟩ := exists_forall_abs_le_of_periodic hca fun r ↦ (hcas r).continuous
+    obtain ⟨Bb, hBb⟩ := exists_forall_abs_le_of_periodic hcb fun r ↦ (hcbs r).continuous
     exact (ω.integrableOn_hamiltonianCurvature_plumbedPerturbation hq
       (fun r t ↦ funext fun _ ↦ hca r t) (fun r t ↦ funext fun _ ↦ hcb r t)
       (fun r ↦ (hcas r).contMDiff.comp contMDiff_fst)
-      (fun r ↦ (hcbs r).contMDiff.comp contMDiff_fst) (by simp only [hc]) hL hBa hBb
+      (fun r ↦ (hcbs r).contMDiff.comp contMDiff_fst) (by simp only [hc]) hL
+      (fun r t _ ↦ hBa r t) (fun r t _ ↦ hBb r t)
       (u := fun _ ↦ u 0) continuousOn_const).congr_fun
       (fun z _ ↦ ω.hamiltonianCurvature_plumbedPerturbation_const_target ca cb q L z (u 0) (u z))
       hm

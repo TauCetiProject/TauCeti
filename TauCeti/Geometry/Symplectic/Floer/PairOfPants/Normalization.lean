@@ -99,16 +99,6 @@ private theorem periodic_const_target (hc : ∀ q, Periodic (c q) 1) (q : Punctu
     Periodic (fun t (_ : M) ↦ c q t) 1 :=
   fun t ↦ funext fun _ ↦ hc q t
 
-/-- Continuous periodic normalizations `c_q` are bounded. -/
-private theorem exists_forall_abs_le (hc : ∀ q, Periodic (c q) 1)
-    (hcs : ∀ q, ContDiff ℝ 1 (c q)) : ∃ B : Puncture → ℝ, ∀ q t, |c q t| ≤ B q := by
-  have hb : ∀ q, ∃ B, ∀ t, |c q t| ≤ B := fun q ↦ by
-    obtain ⟨B, hB⟩ := isBounded_iff_forall_norm_le.1
-      ((hc q).isBounded_of_continuous one_ne_zero (hcs q).continuous)
-    exact ⟨B, fun t ↦ hB _ (mem_range_self t)⟩
-  choose B hB using hb
-  exact ⟨B, hB⟩
-
 end Floer
 
 /-! ### Symplectic vector spaces: the Floer equation and the curvature of a normalization -/
@@ -189,7 +179,7 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const (ω : Sym
         (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : V) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
       ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, c q t := by
-  obtain ⟨B, hB⟩ := exists_forall_abs_le hc hcs
+  obtain ⟨B, hB⟩ := exists_forall_abs_le_of_periodic hc fun q ↦ (hcs q).continuous
   -- Along the constant map `0`, the energy density and the area density vanish.
   have hE : ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : V) ↦ c q t)
