@@ -16,11 +16,6 @@ dominant chamber sends no positive root to a negative root, so its inversion set
 element with an empty inversion set is the identity, such an element is the identity: the Weyl
 group acts freely on the interior of the dominant chamber.
 
-When the coefficient ring `K` is not ordered but the simple coroots take positive values in an
-ordered subring `S`, as for weights of a complex root system on which the simple coroots take
-positive real values, every coroot still takes a nonzero value of `S`, so such weights are
-regular.
-
 ## Main results
 
 * `TauCeti.mapsTo_posRoots_of_smul_mem_dominantChamber`: such an element maps positive roots to
@@ -30,10 +25,6 @@ regular.
 * `TauCeti.eq_one_of_smul_mem_dominantChamber`: such an element is the identity.
 * `TauCeti.eq_one_of_smul_eq_self_of_mem_openDominantChamber`: the Weyl group acts freely on the
   interior of the dominant chamber.
-* `TauCeti.exists_pos_coroot'_eq_of_mem_posRoots`, `TauCeti.exists_neg_coroot'_eq_of_mem_negRoots`
-  and `TauCeti.exists_ne_zero_coroot'_eq`: if the simple coroots take positive values of an ordered
-  subring `S` on a weight, every positive, negative, or arbitrary coroot takes a positive, negative,
-  or nonzero value of `S` there.
 
 ## References
 
@@ -58,53 +49,6 @@ namespace TauCeti
 open RootPairing
 
 universe u v w x
-
-/-! ### Weights positive on the simple coroots with respect to an ordered subring -/
-
-section Ordered
-
-variable {ι K M N S : Type*} [CommRing K] [AddCommGroup M] [Module K M] [AddCommGroup N]
-  [Module K N] (P : _root_.RootPairing ι K M N) (b : P.Base) [CharZero K] [IsDomain K] [Finite ι]
-  [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced] [CommRing S] [PartialOrder S]
-  [IsStrictOrderedRing S] [Algebra S K] {x : M}
-
-/-- If every simple coroot takes a positive value of the ordered subring `S` on `x`, so does
-every positive coroot. -/
-theorem exists_pos_coroot'_eq_of_mem_posRoots
-    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = algebraMap S K t) {i : ι}
-    (hi : i ∈ posRoots P b) : ∃ t : S, 0 < t ∧ P.coroot' i x = algebraMap S K t := by
-  obtain ⟨f, ⟨j, hj, hfj⟩, hsum⟩ := exists_coroot'_eq_sum_nat_of_mem_posRoots P b hi
-  choose! t ht hxt using hx
-  refine ⟨∑ k ∈ b.support, (f k : S) * t k, Finset.sum_pos'
-    (fun k hk ↦ by positivity [(ht k hk).le])
-    ⟨j, hj, mul_pos (by exact_mod_cast Nat.pos_of_ne_zero hfj) (ht j hj)⟩, ?_⟩
-  rw [hsum, LinearMap.sum_apply, map_sum]
-  refine Finset.sum_congr rfl fun k hk ↦ ?_
-  rw [LinearMap.smul_apply, hxt k hk, map_mul, map_natCast, smul_eq_mul]
-
-/-- If every simple coroot takes a positive value of `S` on `x`, every negative coroot takes a
-negative value of `S` on `x`. -/
-theorem exists_neg_coroot'_eq_of_mem_negRoots
-    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = algebraMap S K t) {i : ι}
-    (hi : i ∈ negRoots P b) : ∃ t : S, t < 0 ∧ P.coroot' i x = algebraMap S K t := by
-  obtain ⟨t, ht, hxt⟩ := exists_pos_coroot'_eq_of_mem_posRoots P b hx
-    ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).2 hi)
-  refine ⟨-t, neg_neg_of_pos ht, ?_⟩
-  rw [coroot'_reflectionPerm_self, LinearMap.neg_apply, neg_eq_iff_eq_neg] at hxt
-  rw [hxt, map_neg]
-
-/-- If every simple coroot takes a positive value of `S` on `x`, every coroot takes a nonzero
-value of `S` on `x`. -/
-theorem exists_ne_zero_coroot'_eq
-    (hx : ∀ j ∈ b.support, ∃ t : S, 0 < t ∧ P.coroot' j x = algebraMap S K t) (i : ι) :
-    ∃ t : S, t ≠ 0 ∧ P.coroot' i x = algebraMap S K t := by
-  rcases mem_posRoots_or_mem_negRoots P b i with hi | hi
-  · obtain ⟨t, ht, hxt⟩ := exists_pos_coroot'_eq_of_mem_posRoots P b hx hi
-    exact ⟨t, ht.ne', hxt⟩
-  · obtain ⟨t, ht, hxt⟩ := exists_neg_coroot'_eq_of_mem_negRoots P b hx hi
-    exact ⟨t, ht.ne, hxt⟩
-
-end Ordered
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]

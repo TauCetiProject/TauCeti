@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.GroupTheory.Coxeter.Bipartite
-public import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
+public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Bipartite
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import Mathlib.Algebra.QuadraticDiscriminant
@@ -252,7 +252,7 @@ private theorem isRegularWeight_one_add_smul_colorPart_add_smul
   refine (P.isRegularWeight_iff _).2 fun i ↦ ?_
   -- The values `p` and `q` of the coroot on `u₀` and `u₁` are real, and `p + q ≠ 0`.
   obtain ⟨t, ht, hxt⟩ :=
-    exists_ne_zero_coroot'_eq P b (exists_pos_coroot'_colorPart_add hy hy0 hκ) i
+    exists_ne_zero_coroot'_eq P b (algebraMap ℝ K) (exists_pos_coroot'_colorPart_add hy hy0 hκ) i
   rw [map_add, coroot'_colorPart_eq, coroot'_colorPart_eq, ← map_add] at hxt
   have hpq := (algebraMap ℝ K).injective hxt
   rw [map_add, map_smul, map_smul, coroot'_colorPart_eq, coroot'_colorPart_eq, smul_eq_mul,
@@ -308,13 +308,10 @@ private theorem pow_eq_one_of_pow_eq_one
       rw [this, smul_sub, h1, smul_comm, hg₀]
     rw [smul_comm] at h4
     exact smul_right_injective M ((map_ne_zero _).2 (sub_ne_zero.2 hκ2.ne')) h4
-  refine P.eq_one_of_isRegularWeight_of_smul_eq b (x := u₀ + u₁)
-    ((P.isRegularWeight_iff _).2 fun i ↦ ?_)
+  exact P.eq_one_of_isRegularWeight_of_smul_eq b
+    (isRegularWeight_of_forall_exists_pos_coroot'_eq P b _ (algebraMap ℝ K).injective
+      (exists_pos_coroot'_colorPart_add hy hy0 hκ))
     (by rw [smul_add, hg₀, hg₁])
-  obtain ⟨t, ht, hxt⟩ :=
-    exists_ne_zero_coroot'_eq P b (exists_pos_coroot'_colorPart_add hy hy0 hκ) i
-  rw [hxt]
-  exact (map_ne_zero _).2 ht
 
 end Plane
 
@@ -350,10 +347,8 @@ private theorem exists_isRegularWeight_smul_eq_of_subsingleton
       bipartiteCoxeterElement_smul_colorPart_false hy]
     simp only [sub_self, map_zero]
     module
-  have hreg : P.IsRegularWeight x := (P.isRegularWeight_iff x).2 fun i ↦ by
-    obtain ⟨t, ht, hxt⟩ := exists_ne_zero_coroot'_eq P b hx i
-    rw [hxt]
-    exact (map_ne_zero _).2 ht
+  have hreg : P.IsRegularWeight x :=
+    isRegularWeight_of_forall_exists_pos_coroot'_eq P b _ (algebraMap ℝ K).injective hx
   obtain ⟨j₀⟩ := ‹Nonempty ι›
   have hx0 : x ≠ 0 := fun h ↦ (P.isRegularWeight_iff x).1 hreg j₀ (by rw [h, map_zero])
   exact ⟨x, -1, hreg, hgx, isPrimitiveRoot_orderOf_of_smul_eq hx0 hgx fun l hl ↦
