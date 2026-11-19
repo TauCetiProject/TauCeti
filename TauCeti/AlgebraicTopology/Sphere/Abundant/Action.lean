@@ -12,6 +12,7 @@ import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FirstHomology
 import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Hurewicz
+import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 import TauCeti.Topology.MappingSpace.Sphere.PathComponent

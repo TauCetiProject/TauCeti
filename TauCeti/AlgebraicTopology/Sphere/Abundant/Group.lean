@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Quaternion
 import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
+import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Topology.MappingSpace.Sphere.PathComponent
 

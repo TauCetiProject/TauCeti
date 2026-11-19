@@ -29,6 +29,11 @@ through the product with a point, whose homology vanishes in positive degrees. F
 every class of `H₂(S¹ × Y; k)` in the image of `[S¹] × H₁(Y; k)` maps to zero in `H₂(Y; k)`, so
 every class pulled back from `Y` along the projection vanishes on it.
 
+For arbitrary module coefficients `R` and `S`, the cross product
+`Hᵢ(X; R) ⊗ Hⱼ(Y; S) ⟶ Hₙ(X × Y; R ⊗ S)` is natural for maps of both factors on pure tensors,
+`(f × g)_*(α × β) = f_* α × g_* β` (`TauCeti.homologyMap_prodMap_singularHomologyCross_tmul`),
+and additive in the second factor (`TauCeti.singularHomologyCross_tmul_sub`).
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.B (the homology cross product).
@@ -155,3 +160,47 @@ theorem singularHomologyMap_fst_singularHomologyCrossBilinear_eq_zero {A B : Typ
     hc, map_zero, map_zero]
 
 end TopCat
+
+namespace TauCeti
+
+section ModuleCoefficients
+
+variable {k : Type w} [CommRing k] (R S : ModuleCat.{w} k) {Y : Type w} [TopologicalSpace Y]
+
+/-- **Naturality of the cross product**, on pure tensors: for maps `f : X → X'` and `g : Y → Y'`,
+`(f × g)_*(α × β) = f_* α × g_* β`. -/
+theorem homologyMap_prodMap_singularHomologyCross_tmul {X X' Y' : Type w} [TopologicalSpace X]
+    [TopologicalSpace X'] [TopologicalSpace Y'] (f : C(X, X')) (g : C(Y, Y')) {i j n : ℕ}
+    (h : i + j = n) (α : ((TopCat.toSSet.obj (TopCat.of X)).homology R i : ModuleCat.{w} k))
+    (β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (f.prodMap g))) (R ⊗ S) n).hom
+        ((TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) =
+      (TopCat.singularHomologyCross (TopCat.of X') (TopCat.of Y') R S i j n h).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R i).hom α ⊗ₜ
+          (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) S j).hom β) := by
+  -- Both maps send `(x, y)` to `(f x, g y)`.
+  have hfg : TopCat.ofHom f ⊗ₘ TopCat.ofHom g = TopCat.ofHom (f.prodMap g) :=
+    TopCat.ext fun _ ↦ rfl
+  have := congrArg (fun φ ↦ φ.hom (α ⊗ₜ β))
+    (TopCat.singularHomologyCross_naturality (TopCat.ofHom f) (TopCat.ofHom g) R S i j n h)
+  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply, hfg,
+    ModuleCat.hom_tensorHom] at this
+  -- `this` is the claim up to the action of `f_* ⊗ₘ g_*` on a pure tensor and the functor maps as
+  -- `SSet.homologyMap`; these cannot be rewritten in `this`, whose classes are typed by the objects
+  -- of the homology functor rather than by `SSet.homology`.
+  exact this.symm
+
+/-- The cross product is additive in the second factor: `α × (β - β') = α × β - α × β'`. -/
+theorem singularHomologyCross_tmul_sub {X : Type w} [TopologicalSpace X] {i j n : ℕ}
+    (h : i + j = n) (α : ((TopCat.toSSet.obj (TopCat.of X)).homology R i : ModuleCat.{w} k))
+    (β β' : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
+    (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ (β - β')) =
+      (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β) -
+        (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β') :=
+  -- The tensor product of `ModuleCat` is not syntactically `TensorProduct`, so `simp` does not
+  -- apply `TensorProduct.tmul_sub` here.
+  (congrArg _ (TensorProduct.tmul_sub _ _ _)).trans (map_sub _ _ _)
+
+end ModuleCoefficients
+
+end TauCeti

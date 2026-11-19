@@ -47,10 +47,8 @@ needed for the statements below.
   `p⁻¹(b) × Y`, and localizing a cross product `α × β` at it is the relative cross product of the
   localization of `α` with `β` (`TauCeti.fiberLocalization_singularHomologyCross_tmul`); the
   relative cross product is natural for maps of local homology in the first factor
-  (`TauCeti.singularHomologyCrossRel_localHomologyMap_tmul`), and the absolute one is natural for
-  maps of both factors (`TauCeti.homologyMap_prodMap_singularHomologyCross_tmul`) and additive in
-  the second (`TauCeti.singularHomologyCross_tmul_sub`). So if `α × β` lives over the fundamental
-  class, so does `α`
+  (`TauCeti.singularHomologyCrossRel_localHomologyMap_tmul`). So if `α × β` lives over the
+  fundamental class, so does `α`
   (`TauCeti.LivesOverFundamentalClass.of_singularHomologyCross`), and `β ≠ 0`
   (`TauCeti.LivesOverFundamentalClass.right_ne_zero_of_singularHomologyCross`). When the relative
   cross product is injective, for instance over a field by the relative Künneth theorem, and the
@@ -358,40 +356,6 @@ theorem singularHomologyCrossRel_localHomologyMap_tmul {X X' : Type w} [Topologi
   exact (congrArg (fun x ↦ (TopCat.singularHomologyCrossRel (TopCat.of X') (TopCat.of Y) Tᶜ
     R S i j n hn).hom (x ⊗ₜ b)) (ConcreteCategory.congr_hom (localHomologyMap_def R f h i) a)).trans
     (ConcreteCategory.congr_hom hnat (a ⊗ₜ b))
-
-/-- **Naturality of the cross product**, on pure tensors: for maps `f : X → X'` and `g : Y → Y'`,
-`(f × g)_*(α × β) = f_* α × g_* β`. -/
-theorem homologyMap_prodMap_singularHomologyCross_tmul {X X' Y' : Type w} [TopologicalSpace X]
-    [TopologicalSpace X'] [TopologicalSpace Y'] (f : C(X, X')) (g : C(Y, Y')) {i j n : ℕ}
-    (h : i + j = n) (α : ((TopCat.toSSet.obj (TopCat.of X)).homology R i : ModuleCat.{w} k))
-    (β : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
-    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (f.prodMap g))) (R ⊗ S) n).hom
-        ((TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β)) =
-      (TopCat.singularHomologyCross (TopCat.of X') (TopCat.of Y') R S i j n h).hom
-        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R i).hom α ⊗ₜ
-          (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) S j).hom β) := by
-  -- Both maps send `(x, y)` to `(f x, g y)`.
-  have hfg : TopCat.ofHom f ⊗ₘ TopCat.ofHom g = TopCat.ofHom (f.prodMap g) :=
-    TopCat.ext fun _ ↦ rfl
-  have := congrArg (fun φ ↦ φ.hom (α ⊗ₜ β))
-    (TopCat.singularHomologyCross_naturality (TopCat.ofHom f) (TopCat.ofHom g) R S i j n h)
-  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply, hfg,
-    ModuleCat.hom_tensorHom] at this
-  -- `this` is the claim up to the action of `f_* ⊗ₘ g_*` on a pure tensor and the functor maps as
-  -- `SSet.homologyMap`; these cannot be rewritten in `this`, whose classes are typed by the objects
-  -- of the homology functor rather than by `SSet.homology`.
-  exact this.symm
-
-/-- The cross product is additive in the second factor: `α × (β - β') = α × β - α × β'`. -/
-theorem singularHomologyCross_tmul_sub {X : Type w} [TopologicalSpace X] {i j n : ℕ}
-    (h : i + j = n) (α : ((TopCat.toSSet.obj (TopCat.of X)).homology R i : ModuleCat.{w} k))
-    (β β' : ((TopCat.toSSet.obj (TopCat.of Y)).homology S j : ModuleCat.{w} k)) :
-    (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ (β - β')) =
-      (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β) -
-        (TopCat.singularHomologyCross (TopCat.of X) (TopCat.of Y) R S i j n h).hom (α ⊗ₜ β') :=
-  -- The tensor product of `ModuleCat` is not syntactically `TensorProduct`, so `simp` does not
-  -- apply `TensorProduct.tmul_sub` here.
-  (congrArg _ (TensorProduct.tmul_sub _ _ _)).trans (map_sub _ _ _)
 
 /-- If the cross product `α × β ∈ Hₙ(E × Y; R ⊗ S)` lives over the fundamental class at `b` for
 `p ∘ fst : E × Y → M`, then `α` lives over the fundamental class at `b` for `p`. -/
