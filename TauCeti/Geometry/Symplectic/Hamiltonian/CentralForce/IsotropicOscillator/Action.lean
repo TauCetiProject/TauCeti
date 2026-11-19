@@ -281,25 +281,26 @@ theorem effectivePotential_isotropicOscillator_le_iff (hm : 0 < m) (hν : 0 < ν
   rw [key, sub_mul_sub_nonpos_iff _ (pow_le_pow_left₀ h₁ hle 2), mem_Icc,
     pow_le_pow_iff_left₀ h₁ hr.le two_ne_zero, pow_le_pow_iff_left₀ hr.le h₂ two_ne_zero]
 
+/-- At the circular energy `ν |ℓ|` the radicand of both turning radii is `|ℓ| / (m ν)`. -/
+private theorem isotropicOscillator_circular_div (m ν ℓ : ℝ) :
+    ν * |ℓ| / (m * ν ^ 2) = |ℓ| / (m * ν) := by
+  rcases eq_or_ne ν 0 with rfl | hν
+  · simp
+  · field_simp
+
 /-- At the circular energy `ν |ℓ|` the periapsis is the circular radius `√(|ℓ| / (m ν))`. -/
 @[simp]
 theorem isotropicOscillatorPeriapsisRadius_circular :
     isotropicOscillatorPeriapsisRadius m ν ℓ (ν * |ℓ|) = √(|ℓ| / (m * ν)) := by
   rw [isotropicOscillatorPeriapsisRadius_def, isotropicOscillator_discriminant_circular, sqrt_zero,
-    sub_zero]
-  rcases eq_or_ne ν 0 with rfl | hν
-  · simp
-  · rw [mul_comm ν, sq, ← mul_assoc, mul_div_mul_right _ _ hν]
+    sub_zero, isotropicOscillator_circular_div]
 
 /-- At the circular energy the apoapsis is the circular radius too. -/
 @[simp]
 theorem isotropicOscillatorApoapsisRadius_circular :
     isotropicOscillatorApoapsisRadius m ν ℓ (ν * |ℓ|) = √(|ℓ| / (m * ν)) := by
   rw [isotropicOscillatorApoapsisRadius_def, isotropicOscillator_discriminant_circular, sqrt_zero,
-    add_zero]
-  rcases eq_or_ne ν 0 with rfl | hν
-  · simp
-  · rw [mul_comm ν, sq, ← mul_assoc, mul_div_mul_right _ _ hν]
+    add_zero, isotropicOscillator_circular_div]
 
 /-- **The radial action of the isotropic oscillator on its whole energy domain.** For `m > 0`,
 `ν > 0`, `ℓ ≠ 0` and `E ≥ ν |ℓ|`, the radial action between the constructed turning radii is
@@ -312,10 +313,8 @@ theorem isotropicOscillator_radialAction_turningRadii (hm : 0 < m) (hν : 0 < ν
       (E / ν - |ℓ|) / 2 := by
   rcases hmin.eq_or_lt with rfl | hmin
   · rw [isotropicOscillatorPeriapsisRadius_circular, isotropicOscillatorApoapsisRadius_circular,
-      radialAction_def,
-      intervalIntegral.integral_same, mul_zero]
-    field_simp
-    ring
+      radialAction_def]
+    simp [hν.ne']
   have h₁ := isotropicOscillatorPeriapsisRadius_pos hm hν hℓ hmin.le
   have h₂ := h₁.trans (isotropicOscillatorPeriapsisRadius_lt_apoapsisRadius hm hν hmin)
   have hturn (r : ℝ) (hr : 0 < r)
