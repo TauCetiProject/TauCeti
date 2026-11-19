@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
+public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Sections
 public import TauCeti.Algebra.Group.Action.Pow
@@ -44,6 +45,12 @@ a high power of an ample line bundle: on projective space, sections of `F` over 
   quasi-compact open vanishing on `X_s` is killed by tensoring with a power of `s`.
 * `AlgebraicGeometry.Scheme.Modules.exists_map_eq_tmulRight_tensorPowSection`: on a quasi-compact
   quasi-separated open, `t ⊗ sⁿ` extends from `X_s` for every section `t` over `X_s` and large `n`.
+* `AlgebraicGeometry.Scheme.Modules.isInvertible_tensorObj` and
+  `AlgebraicGeometry.Scheme.Modules.isInvertible_tensorPow`: monoidal tensor products and tensor
+  powers of invertible sheaves are invertible.
+* `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_tensorPowSection_zero` and
+  `AlgebraicGeometry.Scheme.Modules.nonvanishingLocus_tensorPowSection`: the nonvanishing locus of
+  `s⁰` is `U`, and the nonvanishing locus of `sⁿ` equals `X_s` for every `n > 0`.
 
 ## References
 
@@ -230,6 +237,85 @@ theorem exists_map_eq_tmulRight_tensorPowSection [F.IsQuasicoherent] {U : X.Open
   simp only [y'', F.map_smul, map_pow, hy', smul_smul, ← pow_add]
   rw [add_comm M N, ← tmulRight_tensorPowSection_smul, hs i]
   simp only [← Functor.map_comp_apply, ← op_comp, homOfLE_comp]
+
+/-! ### Invertibility and nonvanishing loci of tensor powers -/
+
+/-- The monoidal tensor product of two invertible sheaves on a scheme is invertible. -/
+instance isInvertible_tensorObj (M N : X.Modules)
+    [hM : TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M]
+    [hN : TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X N] :
+    TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X (M ⊗ N) :=
+  let A : TauCeti.AlgebraicGeometry.InvertibleSheaf X := ⟨M, hM⟩
+  let B : TauCeti.AlgebraicGeometry.InvertibleSheaf X := ⟨N, hN⟩
+  TauCeti.SheafOfModules.IsInvertible.of_iso (R := X.ringCatSheaf)
+    (TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorProductObjIso A B)
+
+/-- Every tensor power `Lⁿ = TauCeti.tensorPow L n` of an invertible sheaf `L` is invertible. -/
+instance isInvertible_tensorPow (M : X.Modules)
+    [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X M] (n : ℕ) :
+    TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X (tensorPow M n) := by
+  induction n with
+  | zero => exact TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_tensorUnit X
+  | succ n ih => exact isInvertible_tensorObj M (tensorPow M n)
+
+/-- If a section `e` of an invertible sheaf `L` vanishes nowhere on `U`, then `eⁿ` vanishes
+nowhere on `U` for every `n`. -/
+theorem le_nonvanishingLocus_tensorPowSection {U : X.Opens} (e : Γ(L, U))
+    (h : U ≤ L.nonvanishingLocus e) (n : ℕ) :
+    U ≤ (tensorPow L n).nonvanishingLocus (tensorPowSection e n) := by
+  rw [le_nonvanishingLocus_iff _ (𝟙 U)]
+  intro W i
+  rw [Category.comp_id]
+  exact bijective_smul_tensorPowSection e
+    (fun W' j ↦ by simpa only [Category.comp_id] using (le_nonvanishingLocus_iff e (𝟙 U)).mp h W' j)
+    n W i
+
+omit [TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X L] in
+/-- The zeroth tensor power of a section over `U` is `1`, so it vanishes nowhere on `U`. -/
+theorem nonvanishingLocus_tensorPowSection_zero {U : X.Opens} (s : Γ(L, U)) :
+    (tensorPow L 0).nonvanishingLocus (tensorPowSection s 0) = U := by
+  refine le_antisymm (nonvanishingLocus_le _) ?_
+  rw [le_nonvanishingLocus_iff _ (𝟙 U)]
+  intro W i
+  rw [Category.comp_id, tensorPowSection_zero]
+  have hfun : (fun r : Γ(X, W) ↦ r • (tensorPow L 0).presheaf.map i.op (1 : Γ(X, U))) = id := by
+    funext r
+    -- On sections of the unit `𝒪_X`, the scalar action is multiplication of functions.
+    exact (congrArg (r • ·) (map_one (X.presheaf.map i.op).hom)).trans (mul_one r)
+  rw [hfun]
+  exact Function.bijective_id
+
+/-- **The nonvanishing locus of a positive tensor power of a section.** For an invertible sheaf `L`
+and a section `s` over `U`, the nonvanishing locus of `sⁿ` in `Lⁿ` equals that of `s` whenever
+`n > 0`. -/
+@[simp]
+theorem nonvanishingLocus_tensorPowSection {U : X.Opens} (s : Γ(L, U)) {n : ℕ} (hn : 0 < n) :
+    (tensorPow L n).nonvanishingLocus (tensorPowSection s n) = L.nonvanishingLocus s := by
+  ext x
+  by_cases hxU : x ∈ U
+  · obtain ⟨V, t, hxV⟩ := exists_mem_trivialization L x
+    let W := U ⊓ V
+    have hxW : x ∈ W := ⟨hxU, hxV⟩
+    let i : W ⟶ U := homOfLE inf_le_left
+    let j : W ⟶ V := homOfLE inf_le_right
+    let e : Γ(L, W) := L.presheaf.map j.op (trivializationGenerator L t)
+    have hWe : W ≤ L.nonvanishingLocus e := by
+      rw [nonvanishingLocus_map, nonvanishingLocus_trivializationGenerator]
+      exact le_inf le_rfl inf_le_right
+    obtain ⟨f, hf⟩ := surjective_smul_of_le_nonvanishingLocus hWe (L.presheaf.map i.op s)
+    have h1 : W ⊓ (tensorPow L n).nonvanishingLocus (tensorPowSection s n) = X.basicOpen f := by
+      rw [← nonvanishingLocus_map i, map_tensorPowSection, ← hf, tensorPowSection_smul,
+        nonvanishingLocus_smul, X.basicOpen_pow f hn]
+      exact inf_eq_left.mpr
+        ((X.basicOpen_le f).trans (le_nonvanishingLocus_tensorPowSection e hWe n))
+    have h2 : W ⊓ L.nonvanishingLocus s = X.basicOpen f :=
+      (basicOpen_eq_inf_nonvanishingLocus i s hWe hf).symm
+    have heq : W ⊓ (tensorPow L n).nonvanishingLocus (tensorPowSection s n) =
+        W ⊓ L.nonvanishingLocus s := h1.trans h2.symm
+    have hmem := congrArg (fun O : X.Opens ↦ x ∈ O) heq
+    simpa [Opens.mem_inf, hxW] using iff_of_eq hmem
+  · exact iff_of_false (fun h ↦ hxU (nonvanishingLocus_le _ h))
+      (fun h ↦ hxU (nonvanishingLocus_le _ h))
 
 end
 
