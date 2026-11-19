@@ -134,8 +134,7 @@ theorem toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id (m : �
       ∑ i ∈ s, SchwartzMap.smulLeftCLM V (β i) (∂^{v i} w) := by
     ext x
     rw [Symbol.quantizeUniformCLM_apply]
-    simp only [a, coefficient_toSymbol_ofDifferentialSymbol,
-      quantizeSchwartzValue_differentialSymbol, sum_apply]
+    simp only [a, quantizeSchwartzValue_ofDifferentialSymbol, sum_apply]
     refine Finset.sum_congr rfl fun i hi ↦ ?_
     rw [SchwartzMap.smulLeftCLM_apply_apply (hgr i hi)]
     simp

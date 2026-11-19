@@ -266,10 +266,8 @@ private theorem memSobolev_cutoffTempered_of_memSobolev_two (hp : 1 < p) (hp_top
     (hr : TemperedDistribution.MemSobolev r 2 (T.cutoffTempered χ)) :
     TemperedDistribution.MemSobolev (-(2 * k)) p (T.cutoffTempered φ) := by
   rw [← smulLeftCLM_cutoffTempered T h]
-  have hφS : ⇑(φ.hasCompactSupport.toSchwartzMap φ.contDiff) = φ :=
-    funext (φ.hasCompactSupport.toSchwartzMap_toFun φ.contDiff)
-  simpa [hφS] using hr.memSobolev_neg_two_mul_smulLeftCLM hp hp_top hk
-    (φ.hasCompactSupport.toSchwartzMap φ.contDiff)
+  simpa [TestFunction.coe_toSchwartzMapCLM] using
+    hr.memSobolev_neg_two_mul_smulLeftCLM hp hp_top hk (TestFunction.toSchwartzMapCLM ℂ φ)
 
 /-- A cutoff `χ` equal to `1` on an open `V ⊇ K`, for a compact `K ⊆ Ω`, with `χ T ∈ H^r` and an
 index `k` with `n < 2 (r + 2k)`. -/
