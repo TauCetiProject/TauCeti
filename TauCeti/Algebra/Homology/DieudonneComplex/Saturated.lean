@@ -116,20 +116,20 @@ lemma V_F_apply {n : ℤ} (x : M.X n) : (hM.V n).hom ((M.F n).hom x) = p • x :
 lemma injective_V (n : ℤ) : Function.Injective (hM.V n).hom := fun x y hxy ↦
   hM.isSMulRegular n (by beta_reduce; rw [← F_V_apply hM x, hxy, F_V_apply])
 
-/-- `F d V = d`. -/
+/-- `F d V = d`. This holds for the differential between any two degrees. -/
 @[simp]
-lemma F_d_V_apply {n : ℤ} (x : M.X n) :
-    (M.F (n + 1)).hom ((M.d n (n + 1)).hom ((hM.V n).hom x)) = (M.d n (n + 1)).hom x :=
-  hM.isSMulRegular (n + 1) (by beta_reduce; rw [← M.d_F, F_V_apply, map_nsmul])
+lemma F_d_V_apply {i j : ℤ} (x : M.X i) :
+    (M.F j).hom ((M.d i j).hom ((hM.V i).hom x)) = (M.d i j).hom x := by
+  obtain rfl | h := eq_or_ne (i + 1) j
+  · exact hM.isSMulRegular (i + 1) (by beta_reduce; rw [← M.d_F, F_V_apply, map_nsmul])
+  · simp [M.shape i j h]
 
 /-- `V d = p d V`: the Verschiebung commutes with the differential only up to a factor of
 `p`. This holds for the differential between any two degrees. -/
 lemma V_d_apply {i j : ℤ} (x : M.X i) :
     (hM.V j).hom ((M.d i j).hom x) = p • (M.d i j).hom ((hM.V i).hom x) := by
-  obtain rfl | h := eq_or_ne (i + 1) j
-  · conv_lhs => rw [← hM.F_d_V_apply x]
-    exact hM.V_F_apply _
-  · simp [M.shape i j h]
+  conv_lhs => rw [← hM.F_d_V_apply x]
+  exact hM.V_F_apply _
 
 end IsSaturated
 
@@ -212,9 +212,7 @@ lemma V_iterate_succ_F_apply {n : ℤ} (r : ℕ) (x : M.X n) :
 lemma F_d_V_iterate_succ_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
     (M.F j).hom ((M.d i j).hom ((⇑(hM.V i).hom)^[r + 1] x)) =
       (M.d i j).hom ((⇑(hM.V i).hom)^[r] x) := by
-  obtain rfl | h := eq_or_ne (i + 1) j
-  · rw [Function.iterate_succ_apply', F_d_V_apply]
-  · simp [M.shape i j h]
+  rw [Function.iterate_succ_apply', F_d_V_apply]
 
 /-- `Fʳ (d (Vʳ x)) = d x`, for the differential between any two degrees. -/
 @[simp]

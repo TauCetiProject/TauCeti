@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DieudonneComplex.Verschiebung.Filtration
+import Mathlib.Tactic.Abel
 
 /-!
 # The finite Verschiebung quotients of a saturated Dieudonné complex
@@ -295,9 +296,7 @@ lemma verschiebungQuotientF_d_verschiebungQuotientV_apply (r : ℕ) {i j : ℤ}
         (((hM.verschiebungQuotient (r + 1)).d i j).hom ((hM.verschiebungQuotientV r i).hom y)) =
       ((hM.verschiebungQuotient r).d i j).hom y := by
   obtain ⟨x, rfl⟩ := hM.toVerschiebungQuotient_f_surjective r i y
-  obtain rfl | h := eq_or_ne (i + 1) j
-  · simp
-  · simp [M.shape i j h]
+  simp
 
 /-- `F V = p` on the finite quotients. -/
 @[simp]
@@ -356,7 +355,8 @@ lemma mem_range_verschiebungQuotientF {r : ℕ} {n : ℤ} {y : (hM.verschiebungQ
     obtain ⟨x', hx'⟩ :=
       (hM.mem_range_F_iff (x := x + (⇑(hM.V n).hom)^[r + 1] b)).2
         ⟨w - (⇑(hM.V (n + 1)).hom)^[r] a', by
-          rw [map_add, smul_sub, eq_sub_iff_add_eq'.2 hab, sub_right_comm, add_sub_cancel]⟩
+          rw [map_add, smul_sub, ← eq_sub_iff_add_eq.1 hab]
+          abel⟩
     refine ⟨((hM.toVerschiebungQuotient (r + 2)).f n).hom x', ?_⟩
     rw [verschiebungQuotientF_apply, hx', toVerschiebungQuotient_f_apply_eq_iff,
       add_sub_cancel_left]
