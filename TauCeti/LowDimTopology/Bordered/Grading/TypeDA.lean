@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Matrix.Grading
 public import TauCeti.LowDimTopology.Bordered.TypeDA
 import TauCeti.Algebra.Group.Action.Pow
-import TauCeti.LinearAlgebra.Multilinear.Span
+import Mathlib.Tactic.Group
 
 /-!
 # Gradings of type `DA` bimodules and of their box tensor products with type `D` structures
@@ -194,9 +194,10 @@ theorem IsGraded.boxCoeff_mem_homogeneousMatrices (hP : P.IsGraded Ag Bg gr l)
   refine finsum_induction (· ∈ _) (zero_mem _) (fun _ _ ↦ add_mem) fun k ↦ ?_
   rw [N.lift_iteratedCoeff, Matrix.sum_apply]
   refine Submodule.sum_mem _ fun r hr ↦ ?_
-  rw [Finset.mem_filter] at hr
+  obtain ⟨-, hr0, hrk⟩ := Finset.mem_filter.mp hr
   -- The coefficients along the path `r` are sums of homogeneous elements; by multilinearity it
   -- suffices to treat homogeneous coefficients.
+  rw [← Matrix.entryLinearMap_apply R B p.1 q.1 (P.coeff k _), ← LinearMap.compMultilinearMap_apply]
   refine MultilinearMap.map_mem_of_mem_homogeneousMatrices
     ((Matrix.entryLinearMap R B p.1 q.1).compMultilinearMap (P.coeff k)) (F := fun _ ↦ N.coeff)
     (fun _ ↦ hN) r fun g a hg ha ↦ ?_
@@ -207,15 +208,15 @@ theorem IsGraded.boxCoeff_mem_homogeneousMatrices (hP : P.IsGraded Ag Bg gr l)
   -- The degrees along the path multiply to `l_A ^ k`, which `π` turns into `l ^ k`, and
   -- `δ¹_{k+1}` contributes `l ^ (1 - k)`.
   have hpow (j : ℕ) (u : U) (t : T) : π u ((lA : GA) ^ j • t) = l ^ j • π u t := by
-    induction j with
-    | zero => simp
-    | succ j ih => rw [pow_succ', mul_smul, hπl, ih, ← mul_smul, ← pow_succ']
+    simpa only [smul_iterate] using
+      (show Function.Semiconj (π u) ((lA : GA) • ·) (l • ·) from hπl u).iterate_right j t
   have hpath : (List.ofFn g).prod • grN (r (Fin.last k)) =
       (lA : GA) ^ k • grN (r 0) :=
     prod_ofFn_smul_eq_pow_smul (fun i ↦ Subgroup.mem_center_iff.mp lA.2 (g i))
       (a := fun j ↦ grN (r j)) hg
-  rw [← hπB, hh, hπB, hπA, ← hr.2.2, hpath, hpow, smul_smul, ← zpow_natCast, ← zpow_add,
-    sub_add_cancel, zpow_one, hr.2.1]
+  rw [← hπB, hh, hπB, hπA, ← hrk, hpath, hpow, smul_smul, ← hr0]
+  congr 1
+  group
 
 end BoxTypeD
 

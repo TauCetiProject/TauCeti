@@ -108,7 +108,11 @@ theorem prod_ofFn_smul_eq_pow_smul {M α : Type*} [Monoid M] [MulAction M α] {n
     have ih' := ih (g := fun i ↦ g i.succ) (a := fun i ↦ a i.succ) (fun i ↦ hl i.succ)
       fun i ↦ by rw [Fin.succ_castSucc]; exact h i.succ
     rw [Fin.succ_last] at ih'
-    rw [List.ofFn_succ, List.prod_cons, mul_smul, ih', ← mul_smul, ((hl 0).pow_right n).eq,
-      mul_smul, h 0, Fin.castSucc_zero, ← mul_smul, ← pow_succ]
+    simp only [List.ofFn_succ, List.prod_cons, mul_smul, ih']
+    calc g 0 • l ^ n • a (Fin.succ 0)
+        = l ^ n • g 0 • a (Fin.succ 0) := by
+          rw [← mul_smul, ((hl 0).pow_right n).eq, mul_smul]
+      _ = l ^ n • l • a 0 := by rw [h 0, Fin.castSucc_zero]
+      _ = l ^ (n + 1) • a 0 := by rw [← mul_smul, pow_succ]
 
 end TauCeti

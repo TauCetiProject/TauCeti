@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Multilinear.Span
 public import TauCeti.LowDimTopology.Bordered.Grading.Basic
 public import TauCeti.LowDimTopology.Bordered.TypeA
 import Mathlib.Tactic.Group
