@@ -49,7 +49,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.exists_norm_localFourier_le`: the localized Fourier transform of a distribution
   grows at most polynomially, with a degree and a constant that are uniform over the cutoffs
   supported in a fixed compact set with bounded derivatives
-  (`Distribution.exists_forall_norm_localFourier_le`).
+  (`Distribution.exists_forall_norm_localFourier_le`); it is moreover Lipschitz with a
+  polynomially growing constant (`Distribution.exists_norm_localFourier_sub_le`).
 * `Distribution.exists_hasSum_localFourier_of_eq_mul`: the localized Fourier transform with
   cutoff `φ g` is a rapidly decreasing superposition of translates of the one with cutoff `φ`;
   `Distribution.hasSum_localFourier_ofSupportedIn` is the same formula for a cutoff `φ` supported
@@ -185,6 +186,88 @@ theorem exists_norm_localFourier_le (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
   simp only [φK] at h
   exact h.trans (Finset.le_sup (f := ContDiffMapSupportedIn.seminorm ℂ E ℂ ⊤ K)
     (Finset.mem_Iic.2 hi) φK)
+
+omit [FiniteDimensional ℝ E] in
+/-- Leibniz's rule for the derivatives of `(1 - e_θ) f`, where `e_θ = fourierAtom θ`: if the
+derivatives of `f` of order at most `i` at `x` are bounded by `S`, and `‖θ‖ ≤ 1`, the derivative
+of order `i` of `(1 - e_θ) f` at `x` is at most `2π (1 + 2π) ^ i (1 + ‖x‖) S ‖θ‖`. -/
+private theorem norm_iteratedFDeriv_one_sub_fourierAtom_mul_le {f : E → ℂ}
+    (hf : ContDiff ℝ ∞ f) {θ : E} (hθ : ‖θ‖ ≤ 1) (x : E) {i : ℕ} {S : ℝ}
+    (hS : ∀ m ≤ i, ‖iteratedFDeriv ℝ m f x‖ ≤ S) :
+    ‖iteratedFDeriv ℝ i (fun y ↦ (1 - TauCeti.fourierAtom θ y) * f y) x‖ ≤
+      2 * Real.pi * (1 + 2 * Real.pi) ^ i * (1 + ‖x‖) * S * ‖θ‖ := by
+  refine (norm_iteratedFDeriv_mul_le (contDiff_const.sub (TauCeti.contDiff_fourierAtom θ)) hf x
+    (by exact_mod_cast le_top)).trans ?_
+  calc ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) *
+        ‖iteratedFDeriv ℝ j (fun y ↦ 1 - TauCeti.fourierAtom θ y) x‖ *
+          ‖iteratedFDeriv ℝ (i - j) f x‖
+      ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) *
+          ((2 * Real.pi) ^ (j + 1) * (1 + ‖x‖) * ‖θ‖) * S := by
+        gcongr with j _
+        · exact TauCeti.norm_iteratedFDeriv_one_sub_fourierAtom_le hθ x j
+        · exact hS _ (Nat.sub_le i j)
+    _ = 2 * Real.pi * (1 + ‖x‖) * S * ‖θ‖ * ∑ j ∈ Finset.range (i + 1),
+          (2 * Real.pi) ^ j * 1 ^ (i - j) * (i.choose j : ℝ) := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        ring
+    _ = _ := by
+        rw [← add_pow, add_comm (2 * Real.pi)]
+        ring
+
+omit [FiniteDimensional ℝ E] in
+/-- **The localized Fourier transform is Lipschitz with polynomially growing constant.** For a
+complex distribution `T` and a complex test function `φ` there are `A` and `k` with
+`‖T (φ e_η) - T (φ e_ζ)‖ ≤ A (1 + ‖η‖) ^ k ‖η - ζ‖` whenever `‖η - ζ‖ ≤ 1`. Indeed
+`φ e_η - φ e_ζ = (1 - e_(ζ - η)) φ e_η`, and the derivatives of the cutoff `(1 - e_(ζ - η)) φ`
+are `O(‖η - ζ‖)`. -/
+theorem exists_norm_localFourier_sub_le (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    ∃ (A : ℝ) (k : ℕ), ∀ η ζ : E, ‖η - ζ‖ ≤ 1 →
+      ‖T.localFourier φ η - T.localFourier φ ζ‖ ≤ A * (1 + ‖η‖) ^ k * ‖η - ζ‖ := by
+  let K : Compacts E := ⟨tsupport φ, φ.hasCompactSupport⟩
+  obtain ⟨k, C, -, hC⟩ := exists_forall_norm_localFourier_le T (K := K) φ.tsupport_subset
+  obtain ⟨R, hR⟩ := φ.hasCompactSupport.isCompact.isBounded.exists_norm_le
+  -- A bound `S` for the derivatives of `φ` of order at most `k`.
+  obtain ⟨S, hS0, hS⟩ := φ.hasCompactSupport.exists_bound_iteratedFDeriv φ.contDiff k
+  set B := 2 * Real.pi * (1 + 2 * Real.pi) ^ k * (1 + |R|) * S
+  refine ⟨C * B, k, fun η ζ hηζ ↦ ?_⟩
+  set θ := ζ - η
+  have hθ : ‖θ‖ = ‖η - ζ‖ := norm_sub_rev _ _
+  -- The difference of the localized transforms is the one with cutoff `ψ = (1 - e_θ) φ`.
+  let ψ : 𝓓(Ω, ℂ) := bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
+    ((contDiff_const (c := (1 : ℂ))).sub (TauCeti.contDiff_fourierAtom θ)) φ
+  have hψ : (ψ : E → ℂ) = fun x ↦ (1 - TauCeti.fourierAtom θ x) * φ x := by
+    ext x
+    simp [ψ, bilinLeftCLM_apply, mul_comm]
+  have hdiff : T.localFourier φ η - T.localFourier φ ζ = T.localFourier ψ η := by
+    rw [localFourier_def, localFourier_def, localFourier_def, ← map_sub]
+    congr 1
+    ext x
+    have hζ : ζ = η + θ := by simp [θ]
+    simp only [FunLike.coe_sub, Pi.sub_apply, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply',
+      ψ, hζ, TauCeti.fourierAtom_add_left]
+    ring
+  have hsupp : tsupport ψ ⊆ K := by
+    rw [hψ]
+    exact tsupport_mul_subset_right
+  -- The derivatives of `ψ` of order at most `k` are at most `B ‖θ‖`.
+  have hψder : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i ψ x‖ ≤ B * ‖θ‖ := by
+    intro i hi x
+    by_cases hx : x ∈ tsupport φ
+    · rw [hψ]
+      refine (norm_iteratedFDeriv_one_sub_fourierAtom_mul_le φ.contDiff (hθ ▸ hηζ) x
+        fun m hm ↦ hS m (hm.trans hi) x).trans ?_
+      have hpow : (1 + 2 * Real.pi) ^ i ≤ (1 + 2 * Real.pi) ^ k :=
+        pow_le_pow_right₀ (by linarith [Real.pi_pos]) hi
+      have hxR : 1 + ‖x‖ ≤ 1 + |R| := by linarith [hR x hx, le_abs_self R]
+      simp only [B]
+      gcongr
+    · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (hsupp (tsupport_iteratedFDeriv_subset i h)),
+        norm_zero]
+      positivity
+  rw [hdiff]
+  calc ‖T.localFourier ψ η‖ ≤ C * (B * ‖θ‖) * (1 + ‖η‖) ^ k := hC ψ hsupp _ hψder η
+    _ = _ := by rw [hθ]; ring
 
 /-- **The localized Fourier transform of a smooth multiple.** If the cutoff `ψ` is `φ g` with `g`
 smooth on `Ω`, then there are a subgroup `L` of `E` and rapidly decreasing coefficients `a : L → ℂ`
