@@ -29,6 +29,22 @@ namespace Convexity.StdSimplex
 
 variable {X : Type*}
 
+/-- Regard the nonnegative weights of a real probability vector as elements of `ℝ≥0`. -/
+noncomputable def toNNReal (p : StdSimplex ℝ X) : StdSimplex ℝ≥0 X where
+  weights := p.weights.mapRange Real.toNNReal Real.toNNReal_zero
+  nonneg _ := bot_le
+  total := by
+    rw [Finsupp.sum_mapRange_index (fun _ ↦ rfl)]
+    apply NNReal.coe_injective
+    simpa only [Finsupp.sum, NNReal.coe_sum, NNReal.coe_one,
+      Real.coe_toNNReal _ (p.weights_nonneg _)] using p.total
+
+/-- The coordinates of a probability vector are preserved by passage to nonnegative reals. -/
+@[simp]
+theorem coe_weights_toNNReal (p : StdSimplex ℝ X) (i : X) :
+    (p.toNNReal.weights i : ℝ) = p.weights i := by
+  simp [toNNReal, Real.toNNReal_of_nonneg (p.weights_nonneg _)]
+
 /-- The weights of a point of a standard simplex over `ℝ≥0`, cast to `ℝ`, sum to `1`. -/
 theorem sum_coe_weights [Fintype X] (p : StdSimplex ℝ≥0 X) : ∑ i, (p.weights i : ℝ) = 1 := by
   exact_mod_cast p.total_of_fintype
