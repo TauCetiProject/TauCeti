@@ -201,6 +201,7 @@ theorem isEmbedding_toMoorePathFrom :
         exact toMoorePath_toMoorePathFrom ω)
 
 /-- Reading loops as paths turns the product of loops into the left action of loops on paths. -/
+@[simp]
 theorem toMoorePathFrom_mul (ω ω' : MooreLoopSpace X b) :
     toMoorePathFrom (ω * ω') = ω • toMoorePathFrom ω' :=
   MoorePathFrom.ext (by simp [toMoorePath_mul])

@@ -125,10 +125,12 @@ def sphereTopCellPaths : C(Fin (n + 1) → I, MoorePath (sphere (0 : EuclideanSp
     (mem_closedBall_self zero_le_one)) (mem_closedBall_self zero_le_one) (sphereTopCellBall h)
       (sphereTopCellCenterPath h)).comp (cubeHomeomorphClosedBall (Fin (n + 1)))
 
+@[simp]
 theorem source_sphereTopCellPaths (d : Fin (n + 1) → I) :
     (sphereTopCellPaths h d).source = spherePolePoint h :=
   MoorePathPullback.source_radialPaths _ _ _ _ _
 
+@[simp]
 theorem target_sphereTopCellPaths (d : Fin (n + 1) → I) :
     (sphereTopCellPaths h d).target = sphereTopCellCube h d :=
   MoorePathPullback.target_radialPaths _ _ _ _ _
