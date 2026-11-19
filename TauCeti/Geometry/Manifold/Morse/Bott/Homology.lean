@@ -56,8 +56,9 @@ homology in every degree
 file does not use, identifies the homology of the Thom pair with the homology of the base `B`,
 shifted by the rank of `V` and with coefficients twisted by the orientation of `V`. The points of
 `D_ρ(V)` sent into `M_{c-ε}` are those of `S_ρ(V)`
-(`TauCeti.apply_le_sub_iff_mem_gaugeSphereBundle`); the cohomological forms of these statements,
-with the Thom isomorphism in cohomology applied to them, are in
+(`TauCeti.apply_le_sub_iff_mem_gaugeSphereBundle`), and the base `B` is compact
+(`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`); the cohomological forms of these
+statements, with the Thom isomorphism in cohomology applied to them, are in
 `TauCeti.Geometry.Manifold.Morse.Bott.Cohomology`.
 
 ## Main results
@@ -284,6 +285,23 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   {V : B → Type u} [∀ b, AddCommGroup (V b)] [∀ b, Module ℝ (V b)] [∀ b, TopologicalSpace (V b)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
   {ρ : TotalSpace F V → ℝ} {g : TotalSpace F V → M}
+
+omit [T2Space M] [NormedSpace ℝ F] [VectorBundle ℝ F V] in
+/-- **The critical submanifold of a Morse–Bott level is compact.** Let `g` restrict to a closed
+embedding of the disc bundle `D_ρ(V)` of a fibre gauge `ρ` on a bundle `V → B` onto the negative
+disc bundle `{x ∈ W | t x = 0, s x ≤ ε}` of the quadratic normal form `f = c - s + t`, with
+`{x ∈ W | s x + 2 t x ≤ 2ε}` compact. Then the base `B` is compact: `g` carries the disc bundle
+onto a closed subset of that compact set, and the disc bundle contains the zero section. -/
+theorem compactSpace_of_isClosedEmbedding_gaugeDiscBundle (hε : 0 ≤ ε)
+    (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) (hρ : IsFiberGauge ρ)
+    (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
+    (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε}) : CompactSpace B := by
+  have hcpt : IsCompact (g '' gaugeDiscBundle ρ) :=
+    hK.of_isClosed_subset (range_domRestrict g _ ▸ hg.isClosed_range)
+      (hgD ▸ fun x ⟨hxW, htx, hsx⟩ ↦ ⟨hxW, by linarith⟩)
+  have : CompactSpace (gaugeDiscBundle ρ) := isCompact_univ_iff.1 <| by
+    simpa [preimage_eq_univ_iff.2 (range_domRestrict g _).le] using hg.isCompact_preimage hcpt
+  exact hρ.compactSpace_of_compactSpace_gaugeDiscBundle
 
 /-- **The relative homology across a Morse–Bott critical level is that of the disc-sphere pair of
 the negative bundle.** Let `f` be smooth, with the quadratic normal form `f = c - s + t` on a tube

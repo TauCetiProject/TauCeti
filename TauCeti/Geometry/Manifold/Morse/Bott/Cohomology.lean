@@ -49,7 +49,8 @@ non-orientable negative bundle and a ring in which `-1 ≠ 1` the cohomology of 
 twisted by the orientation of `V`, which this file does not treat.
 
 The base `B` is compact, since `g` embeds the disc bundle, which contains the zero section, as a
-closed subset of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`; the Thom isomorphism is used over a
+closed subset of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`
+(`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`); the Thom isomorphism is used over a
 compact base (`TauCeti.IsThomClass.bijective_thomMap`). That theorem needs rank at least `2`, and
 rank `0`, the case of a family of local minima, is
 `TauCeti.IsThomClass.bijective_thomMap_of_finrank_eq_zero`; this is why rank `1` is excluded.
@@ -155,25 +156,6 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair
   exact ⟨asIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N) ψ n) ≪≫
     (asIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
       (gaugeDiscSpherePairMap hρ) n)).symm⟩
-
-omit [T2Space M] [NormedSpace ℝ F] [VectorBundle ℝ F V] in
-/-- The base of a vector bundle whose disc bundle parametrizes the negative disc bundle of the
-quadratic normal form `f = c - s + t` is compact: `g` carries the disc bundle onto a closed subset
-of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`, and the disc bundle contains the zero section. -/
-private theorem compactSpace_of_isClosedEmbedding_gaugeDiscBundle (hε : 0 ≤ ε)
-    (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) (hρ : IsFiberGauge ρ)
-    (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
-    (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε}) : CompactSpace B := by
-  have hcpt : IsCompact (g '' gaugeDiscBundle ρ) :=
-    hK.of_isClosed_subset (range_domRestrict g _ ▸ hg.isClosed_range)
-      (hgD ▸ fun x ⟨hxW, htx, hsx⟩ ↦ ⟨hxW, by linarith⟩)
-  have : CompactSpace (gaugeDiscBundle ρ) := isCompact_univ_iff.1 <| by
-    simpa [preimage_eq_univ_iff.2 (range_domRestrict g _).le] using hg.isCompact_preimage hcpt
-  -- The projection maps the disc bundle onto the base, through the zero section.
-  exact Function.Surjective.compactSpace (f := fun v : gaugeDiscBundle ρ ↦ v.1.proj)
-    ((FiberBundle.continuous_proj F V).comp continuous_subtype_val) fun b ↦
-      ⟨⟨zeroSection F V b, mem_gaugeDiscBundle.2
-        ((hρ.eq_zero_of_snd_eq_zero (zeroSection_snd F V b)).trans_le zero_le_one)⟩, rfl⟩
 
 variable [FiniteDimensional ℝ F]
 
