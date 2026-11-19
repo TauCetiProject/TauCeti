@@ -351,6 +351,7 @@ theorem coe_padicPrimeUnit : (padicPrimeUnit p : ℚ_[p]) = p :=
   (rfl)
 
 /-- The unit `p` of `ℚ_[p]` has normalized valuation one. -/
+@[simp]
 theorem normalizedValuation_padicPrimeUnit :
     normalizedValuation ℚ_[p] (padicPrimeUnit p) = .ofAdd 1 :=
   (isUniformizer_def _).1 (Padic.isUniformizer_natCast_self p)

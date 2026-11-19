@@ -155,10 +155,9 @@ theorem padicUnits_hom_ext {M : Type*} [Monoid M] {f g : ℚ_[p]ˣ →* M}
   exact congr_arg₂ (· ^ _ * ·) (Units.ext hp) (Units.ext (hu _))
 
 /-- On `ℚ_p` the unramified character `μ_a` sends `p` to `a`. -/
-@[simp high]
 theorem unramifiedCharacter_padicPrimeUnit {G : Type*} [Group G] [TopologicalSpace G]
     (a : G) : unramifiedCharacter ℚ_[p] a (padicPrimeUnit p) = a := by
-  rw [unramifiedCharacter_apply, normalizedValuation_padicPrimeUnit, toAdd_ofAdd, zpow_one]
+  simp
 
 end TauCeti
 

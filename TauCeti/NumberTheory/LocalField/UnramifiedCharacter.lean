@@ -34,7 +34,8 @@ geometric Frobenius to `λ`.
 
 * `TauCeti.unramifiedCharacter_apply_of_isUniformizer`: `μ_a` sends every uniformizer to `a`.
 * `TauCeti.unramifiedCharacter_apply_of_valuation_eq_one`: `μ_a` is trivial on `U(K,0)`.
-* `TauCeti.unramifiedCharacter_mul`: `μ_{ab} = μ_a μ_b` for a commutative group `G`.
+* `TauCeti.unramifiedCharacter_mul`, `TauCeti.unramifiedCharacter_inv`: `μ_{ab} = μ_a μ_b` and
+  `μ_{a⁻¹} = (μ_a)⁻¹` for a commutative group `G`.
 * `TauCeti.apply_eq_unramifiedCharacter_of_isUniformizer`: a homomorphism trivial on `U(K,0)` is
   the unramified character of its value at a uniformizer.
 * `TauCeti.exists_eq_unramifiedCharacter_iff`: a continuous character is unramified exactly when
@@ -100,6 +101,14 @@ theorem unramifiedCharacter_mul {G : Type*} [CommGroup G] [TopologicalSpace G]
     unramifiedCharacter K (a * b) = unramifiedCharacter K a * unramifiedCharacter K b := by
   ext x
   simp [mul_zpow]
+
+/-- **Unramified characters invert.** For a commutative topological group `G`,
+`μ_{a⁻¹} = (μ_a)⁻¹`. -/
+@[simp]
+theorem unramifiedCharacter_inv {G : Type*} [CommGroup G] [TopologicalSpace G]
+    [IsTopologicalGroup G] (a : G) :
+    unramifiedCharacter K a⁻¹ = (unramifiedCharacter K a)⁻¹ := by
+  rw [eq_inv_iff_mul_eq_one, ← unramifiedCharacter_mul, inv_mul_cancel, unramifiedCharacter_one]
 
 /-- **Characterization of unramified characters.** A homomorphism `δ : Kˣ → G` that is trivial
 on the units `U(K,0)` of the valuation ring agrees with the unramified character of its value at
