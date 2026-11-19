@@ -960,20 +960,21 @@ namespace ContDiffBump
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The space-time cut-off `(t, x) ↦ χ (s • x) * φ (t, x)` of a function vanishing outside the time
-interval `(a, b)` has compact support, for every scale `s > 0`. -/
+interval `(a, b)` has compact support, for every nonzero scale `s`. -/
 theorem hasCompactSupport_cutoff_mul [FiniteDimensional ℝ E] {a b : ℝ} {φ : ℝ × E → ℝ}
-    (χ : ContDiffBump (0 : E)) {s : ℝ} (hs : 0 < s)
+    (χ : ContDiffBump (0 : E)) {s : ℝ} (hs : s ≠ 0)
     (hzero : ∀ q : ℝ × E, q.1 ∉ Ioo a b → φ q = 0) :
     HasCompactSupport fun q : ℝ × E ↦ χ (s • q.2) * φ q := by
+  have hs' : 0 < ‖s‖ := norm_pos_iff.2 hs
   refine HasCompactSupport.intro ((isCompact_Icc (a := a) (b := b)).prod
-    (isCompact_closedBall (0 : E) (χ.rOut / s))) fun q hq ↦ ?_
+    (isCompact_closedBall (0 : E) (χ.rOut / ‖s‖))) fun q hq ↦ ?_
   by_cases ht : q.1 ∈ Icc a b
-  · have hx : χ.rOut / s < ‖q.2‖ := by
+  · have hx : χ.rOut / ‖s‖ < ‖q.2‖ := by
       by_contra hle
       exact hq ⟨ht, by simpa using not_lt.1 hle⟩
     have : χ (s • q.2) = 0 := χ.zero_of_le_dist <| by
-      rw [dist_zero_right, norm_smul, Real.norm_of_nonneg hs.le]
-      exact ((div_lt_iff₀ hs).1 hx).le.trans_eq (mul_comm _ _)
+      rw [dist_zero_right, norm_smul]
+      exact ((div_lt_iff₀ hs').1 hx).le.trans_eq (mul_comm _ _)
     simp [this]
   · simp [hzero q fun h ↦ ht (Ioo_subset_Icc_self h)]
 

@@ -188,7 +188,7 @@ theorem integral_integral_fderiv_eq_zero_of_norm_fderiv_le (h : IsContinuityEqua
   let ψ (n : ℕ) : ℝ × E → ℝ := fun q ↦ χ (s n • q.2) * φ q
   have hψ (n : ℕ) : ContDiff ℝ 1 (ψ n) := (χ.contDiff.comp (contDiff_snd.const_smul (s n))).mul hφ
   have hψc (n : ℕ) : HasCompactSupport (ψ n) :=
-    χ.hasCompactSupport_cutoff_mul (hs0 n) fun q hq ↦ hzero hq
+    χ.hasCompactSupport_cutoff_mul (hs0 n).ne' fun q hq ↦ hzero hq
   have hψs (n : ℕ) : tsupport (ψ n) ⊆ Ioo a b ×ˢ univ := tsupport_mul_subset_right.trans hφs
   have hderiv (n : ℕ) (q : ℝ × E) (w : E) : fderiv ℝ (ψ n) q (1, w) =
       χ (s n • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s n • q.2) (s n • w) :=
