@@ -92,23 +92,20 @@ noncomputable def root (n : ℕ) : padicCyclotomicField p Ω n :=
 @[simp]
 theorem coe_root (n : ℕ) : (root p Ω n : Ω) = compatibleCyclotomicRoot p Ω n := (rfl)
 
+local instance : NeZero (p : Ω) := NeZero.nat_of_injective (algebraMap ℚ_[p] Ω).injective
+
 variable [IsAlgClosed Ω]
 
 /-- The chosen root `ζ n` is a primitive `p ^ (n + 1)`-th root of unity in `ℚ_p(ρ n)`. -/
-theorem isPrimitiveRoot_root (n : ℕ) : IsPrimitiveRoot (root p Ω n) (p ^ (n + 1)) := by
-  have : NeZero (p : Ω) := NeZero.nat_of_injective (algebraMap ℚ_[p] Ω).injective
-  exact (isPrimitiveRoot_compatibleCyclotomicRoot n).of_map_of_injective
+theorem isPrimitiveRoot_root (n : ℕ) : IsPrimitiveRoot (root p Ω n) (p ^ (n + 1)) :=
+  (isPrimitiveRoot_compatibleCyclotomicRoot n).of_map_of_injective
     (f := (padicCyclotomicField p Ω n).val) Subtype.val_injective
 
 /-- The level `ℚ_p(ρ n)` is a `p ^ (n + 1)`-th cyclotomic extension of `ℚ_p`. -/
 instance isCyclotomicExtension (n : ℕ) :
-    IsCyclotomicExtension {p ^ (n + 1)} ℚ_[p] (padicCyclotomicField p Ω n) := by
-  have : NeZero (p : Ω) := NeZero.nat_of_injective (algebraMap ℚ_[p] Ω).injective
-  have hρ := isPrimitiveRoot_compatibleCyclotomicRoot (K := Ω) (p := p) n
-  have e := IntermediateField.adjoin_simple_toSubalgebra_of_isAlgebraic
-    ((hρ.isIntegral (pow_pos (Fact.out : p.Prime).pos _)).tower_top (A := ℚ_[p])).isAlgebraic
-  -- The subalgebra underlying `ℚ_p(ρ n)` is `ℚ_p[ρ n]`, and both have the same carrier type.
-  exact (isCyclotomicExtension_singleton_iff_eq_adjoin _ _ hρ).mpr e
+    IsCyclotomicExtension {p ^ (n + 1)} ℚ_[p] (padicCyclotomicField p Ω n) :=
+  (IntermediateField.isCyclotomicExtension_singleton_iff_eq_adjoin _ _ _ _
+    (isPrimitiveRoot_compatibleCyclotomicRoot (K := Ω) n)).mpr rfl
 
 instance finiteDimensional (n : ℕ) : FiniteDimensional ℚ_[p] (padicCyclotomicField p Ω n) :=
   IsCyclotomicExtension.finiteDimensional {p ^ (n + 1)} ℚ_[p] _
@@ -151,11 +148,12 @@ instance finiteDimensional_succ (n : ℕ) :
   Module.Finite.of_restrictScalars_finite ℚ_[p] _ _
 
 /-- The image of `ζ n` in the next level is `ζ (n + 1) ^ p`. -/
+@[simp]
 theorem algebraMap_root (n : ℕ) :
     algebraMap (padicCyclotomicField p Ω n) (padicCyclotomicField p Ω (n + 1)) (root p Ω n) =
       root p Ω (n + 1) ^ p := by
   ext
-  simp [compatibleCyclotomicRoot_succ_pow]
+  simp
 
 /-- The relative degree `[ℚ_p(ρ (n + 1)) : ℚ_p(ρ n)] = p`. -/
 theorem finrank_succ (n : ℕ) :
@@ -170,13 +168,8 @@ theorem finrank_succ (n : ℕ) :
 /-- The next root `ζ (n + 1)` generates `ℚ_p(ρ (n + 1))` as an algebra over `ℚ_p(ρ n)`. -/
 theorem adjoin_root_succ_eq_top (n : ℕ) :
     Algebra.adjoin (padicCyclotomicField p Ω n) {root p Ω (n + 1)} = ⊤ := by
-  have h := IsCyclotomicExtension.adjoin_primitive_root_eq_top (A := ℚ_[p])
-    (isPrimitiveRoot_root p Ω (n + 1))
-  refine eq_top_iff.mpr fun x _ ↦ ?_
-  have hx : x ∈ Algebra.adjoin ℚ_[p] {root p Ω (n + 1)} := h ▸ Algebra.mem_top
-  exact Algebra.adjoin_le
-    (S := (Algebra.adjoin (padicCyclotomicField p Ω n) {root p Ω (n + 1)}).restrictScalars ℚ_[p])
-    (Set.singleton_subset_iff.mpr (Algebra.self_mem_adjoin_singleton _ _)) hx
+  rw [← Algebra.adjoin_adjoin_of_tower ℚ_[p], IsCyclotomicExtension.adjoin_primitive_root_eq_top
+    (isPrimitiveRoot_root p Ω (n + 1)), Algebra.coe_top, Algebra.adjoin_univ]
 
 /-- The power basis `1, ζ (n + 1), …, ζ (n + 1) ^ (p - 1)` of `ℚ_p(ρ (n + 1))` over
 `ℚ_p(ρ n)`. -/
@@ -199,7 +192,7 @@ theorem minpoly_root_succ (n : ℕ) :
   have hmonic := monic_X_pow_sub_C (root p Ω n) (Fact.out : p.Prime).ne_zero
   refine (eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) hmonic
     (minpoly.dvd _ _ ?_) ?_).symm
-  · simp [algebraMap_root]
+  · simp
   · rw [natDegree_X_pow_sub_C, ← relativePowerBasis_gen, PowerBasis.natDegree_minpoly,
       relativePowerBasis_dim]
 

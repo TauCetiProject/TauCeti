@@ -75,6 +75,17 @@ noncomputable def compatibleCyclotomicRoot (p : ℕ) (M : Type*) [CommMonoid M] 
 
 variable {p : ℕ}
 
+/-- The level-zero root is the chosen primitive `p`-th root of unity. -/
+theorem compatibleCyclotomicRoot_zero (M : Type*) [CommMonoid M] :
+    compatibleCyclotomicRoot p M 0 = Classical.epsilon fun z : M => IsPrimitiveRoot z p :=
+  (rfl)
+
+/-- The root at level `n + 1` is the chosen `p`-th root of the root at level `n`. -/
+theorem compatibleCyclotomicRoot_succ (M : Type*) [CommMonoid M] (n : ℕ) :
+    compatibleCyclotomicRoot p M (n + 1) =
+      Classical.epsilon fun w : M => w ^ p = compatibleCyclotomicRoot p M n :=
+  (rfl)
+
 /-- The chosen level-zero root is a primitive `p`-th root of unity whenever one exists. -/
 theorem isPrimitiveRoot_compatibleCyclotomicRoot_zero {M : Type*} [CommMonoid M]
     [HasEnoughRootsOfUnity M p] : IsPrimitiveRoot (compatibleCyclotomicRoot p M 0) p := by
@@ -89,6 +100,7 @@ theorem compatibleCyclotomicRoot_two_zero {R : Type*} [CommRing R] [NoZeroDiviso
 variable {K : Type*} [Field K] [IsAlgClosed K]
 
 /-- Consecutive chosen roots are compatible: `ρ (n + 1) ^ p = ρ n`. -/
+@[simp]
 theorem compatibleCyclotomicRoot_succ_pow [NeZero p] (n : ℕ) :
     compatibleCyclotomicRoot p K (n + 1) ^ p = compatibleCyclotomicRoot p K n := by
   rw [compatibleCyclotomicRoot]
