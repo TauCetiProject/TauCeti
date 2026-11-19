@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
+public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Lebesgue
 public import TauCeti.Analysis.Normed.Interpolation.Lebesgue
 import Mathlib.Analysis.Complex.Hadamard
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
@@ -15,7 +16,7 @@ import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
-# The complex interpolation space of the Lebesgue couple lies in `Lᵖ`
+# The complex interpolation space of the Lebesgue couple is `Lᵖ`
 
 Let `1 ≤ p₀, p₁ ≤ ∞`, `0 < θ < 1` and `1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`, on a
 σ-finite measure space, for functions with values in a complex inner product space `E`. Every
@@ -24,8 +25,11 @@ element `u` of the complex interpolation space `[L^{p₀}, L^{p₁}]_θ` is a fu
 inclusion `[L^{p₀}, L^{p₁}]_θ ⊆ Lᵖ` of Bergh–Löfström, Theorem 5.1.1.
 `TauCeti.CompatibleCouple.ComplexMethodSpace.lebesgueToLp` is the resulting continuous linear
 map, of norm at most one, lying over the embeddings of both spaces into `L¹ + L^∞`.
+Together with the reverse inclusion `TauCeti.CompatibleCouple.lpToLebesgueComplexMethod` it gives
+Calderón's identity `[L^{p₀}, L^{p₁}]_θ = Lᵖ` with equal norms, as the linear isometric equivalence
+`TauCeti.CompatibleCouple.lebesgueComplexMethodEquiv`.
 
-The proof is by duality. By
+The proof of the inclusion is by duality. By
 `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_simpleFunc_le` it
 suffices to bound the pairing `∫ ⟪g, u⟫` by `‖u‖_θ ‖g‖_{p'}` for integrable simple functions `g`,
 where `p'` is the conjugate exponent. Write `p₀'` and `p₁'` for the conjugates of `p₀` and `p₁`,
@@ -49,11 +53,15 @@ constantly `1`.
 * `TauCeti.CompatibleCouple.ComplexMethodSpace.lebesgueToLp`: the inclusion
   `[L^{p₀}, L^{p₁}]_θ → Lᵖ`, with `ofLp_lebesgueToLp`, `norm_lebesgueToLp_le`,
   `opNorm_lebesgueToLp_le` and `lebesgueToLp_injective`.
+* `TauCeti.CompatibleCouple.lebesgueComplexMethodEquiv`: the isometric identification
+  `[L^{p₀}, L^{p₁}]_θ ≃ₗᵢ[ℂ] Lᵖ`, whose inverse is `lpToLebesgueComplexMethod`.
 
 ## References
 
 * J. Bergh and J. Löfström, *Interpolation Spaces. An Introduction*, Grundlehren 223,
   Springer, 1976, §5.1 (Theorem 5.1.1).
+* A.-P. Calderón, *Intermediate spaces and interpolation, the complex method*, Studia Math. 24
+  (1964), 113–190.
 -/
 
 public noncomputable section
@@ -465,5 +473,65 @@ theorem lebesgueToLp_injective :
     rw [← ofLp_lebesgueToLp hθ hp hp_top, huv, ofLp_lebesgueToLp]
 
 end ComplexMethodSpace
+
+/-! ### The identification `[L^{p₀}, L^{p₁}]_θ = Lᵖ` -/
+
+section Equiv
+
+variable [CompleteSpace E] [SigmaFinite μ] {p₀ p₁ p : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)]
+  [Fact (1 ≤ p)] {θ : ℝ} (hθ : θ ∈ Ioo (0 : ℝ) 1)
+  (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hp_top : p ≠ ∞)
+
+/-- The inclusion `[L^{p₀}, L^{p₁}]_θ → Lᵖ` is a left inverse of the inclusion
+`Lᵖ → [L^{p₀}, L^{p₁}]_θ`. -/
+@[simp]
+theorem ComplexMethodSpace.lebesgueToLp_lpToLebesgueComplexMethod (f : Lp E p μ) :
+    ComplexMethodSpace.lebesgueToLp hθ hp hp_top
+        (lpToLebesgueComplexMethod (Ioo_subset_Icc_self hθ) hp hp_top f) = f :=
+  L1AddLinfty.ofLp_injective (by
+    rw [ComplexMethodSpace.ofLp_lebesgueToLp, sumSpaceEmbed_toSum_lpToLebesgueComplexMethod])
+
+/-- The inclusion `Lᵖ → [L^{p₀}, L^{p₁}]_θ` is a left inverse of the inclusion
+`[L^{p₀}, L^{p₁}]_θ → Lᵖ`. -/
+@[simp]
+theorem lpToLebesgueComplexMethod_lebesgueToLp
+    (u : (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ) :
+    lpToLebesgueComplexMethod (Ioo_subset_Icc_self hθ) hp hp_top
+        (ComplexMethodSpace.lebesgueToLp hθ hp hp_top u) = u :=
+  ComplexMethodSpace.toSum_injective <| (lebesgue ℂ E μ p₀ p₁).sumSpace_ext <| by
+    rw [sumSpaceEmbed_toSum_lpToLebesgueComplexMethod, ComplexMethodSpace.ofLp_lebesgueToLp]
+
+/-- **Complex interpolation of Lebesgue spaces** (Calderón; Bergh–Löfström, Theorem 5.1.1). On a
+σ-finite measure space, for `1 ≤ p₀, p₁ ≤ ∞`, `0 < θ < 1` and the interpolated exponent
+`1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`, the complex interpolation space of the Lebesgue
+couple of functions with values in a complex Hilbert space is `Lᵖ`, with equal norms:
+`[L^{p₀}, L^{p₁}]_θ ≃ₗᵢ[ℂ] Lᵖ`. The identification and its inverse are the inclusions
+`ComplexMethodSpace.lebesgueToLp` and `lpToLebesgueComplexMethod`, which lie over the embeddings
+of both spaces into `L¹ + L^∞`. -/
+def lebesgueComplexMethodEquiv :
+    (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ] Lp E p μ where
+  toLinearEquiv := LinearEquiv.ofLinearMap
+    (ComplexMethodSpace.lebesgueToLp hθ hp hp_top : _ →L[ℂ] Lp E p μ).toLinearMap
+    (lpToLebesgueComplexMethod (Ioo_subset_Icc_self hθ) hp hp_top :
+      Lp E p μ →L[ℂ] _).toLinearMap
+    (LinearMap.ext <| ComplexMethodSpace.lebesgueToLp_lpToLebesgueComplexMethod hθ hp hp_top)
+    (LinearMap.ext <| lpToLebesgueComplexMethod_lebesgueToLp hθ hp hp_top)
+  norm_map' u := by
+    refine le_antisymm (ComplexMethodSpace.norm_lebesgueToLp_le hθ hp hp_top u) ?_
+    conv_lhs => rw [← lpToLebesgueComplexMethod_lebesgueToLp hθ hp hp_top u]
+    exact norm_lpToLebesgueComplexMethod_le _ hp hp_top _
+
+@[simp]
+theorem lebesgueComplexMethodEquiv_apply (u : (lebesgue ℂ E μ p₀ p₁).ComplexMethodSpace θ) :
+    lebesgueComplexMethodEquiv hθ hp hp_top u = ComplexMethodSpace.lebesgueToLp hθ hp hp_top u :=
+  (rfl)
+
+@[simp]
+theorem lebesgueComplexMethodEquiv_symm_apply (f : Lp E p μ) :
+    (lebesgueComplexMethodEquiv hθ hp hp_top).symm f =
+      lpToLebesgueComplexMethod (Ioo_subset_Icc_self hθ) hp hp_top f :=
+  (rfl)
+
+end Equiv
 
 end TauCeti.CompatibleCouple
