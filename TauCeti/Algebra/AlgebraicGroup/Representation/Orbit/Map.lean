@@ -91,8 +91,12 @@ theorem monotone_map (ψ : WithConv (K →ₐ[k] k) → WithConv (H →ₐ[k] k)
   have hpull (n : N) (p : SymmetricAlgebra k (Module.Dual k M)) :
       SymmetricAlgebra.lift (Module.Dual.eval k N n) (SymmetricAlgebra.map k ℓ.dualMap p) =
         SymmetricAlgebra.lift (Module.Dual.eval k M (ℓ n)) p := by
-    rw [← AlgHom.comp_apply, SymmetricAlgebra.lift_comp_map]
-    congr 2
+    -- Evaluating `φ ∘ ℓ` at `n` is evaluating `φ` at `ℓ n`.
+    have heval : (Module.Dual.eval k N n).comp ℓ.dualMap = Module.Dual.eval k M (ℓ n) := by
+      ext φ
+      rw [LinearMap.comp_apply, Module.Dual.eval_apply, Module.Dual.eval_apply,
+        LinearMap.dualMap_apply]
+    rw [SymmetricAlgebra.lift_map_apply, heval]
   rw [map_mk, map_mk, mk_le_mk_iff_forall_lift_eval_eq_zero]
   intro p hp
   rw [← hpull]

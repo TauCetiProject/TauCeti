@@ -194,10 +194,7 @@ theorem lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentati
       (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ :=
     closure_minimal hrange (Proj.basicOpen 𝒜 P).isOpen.isClosed_compl (mk_le_mk_iff.mp h)
   rw [Set.mem_compl_iff, SetLike.mem_coe, Proj.mem_basicOpen, not_not] at hw_mem
-  have h1 : (1 : WithConv (H →ₐ[k] k)).ofConv = Bialgebra.counitAlgHom k H := by
-    ext
-    simp [AlgHom.convOne_def]
-  rw [← h1] at hw_mem
+  rw [← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom] at hw_mem
   have h0 := (mem_projectiveOrbitMap_kernelPoint_iff ((w, 1) : M × k)
     (Module.isUnimodular_mk_one w) 1 hP).mp hw_mem
   simpa [heval] using h0
@@ -229,9 +226,6 @@ theorem mk_le_mk_iff_forall_lift_eval_eq_zero {v w : M} :
       ext φ
       simpa [D] using (map_add φ (u, 0) (0, 1)).symm
     exact DFunLike.congr_fun hcomp P
-  have h1 : (1 : WithConv (H →ₐ[k] k)).ofConv = Bialgebra.counitAlgHom k H := by
-    ext
-    simp [AlgHom.convOne_def]
   -- Otherwise a homogeneous basic open set around the line through `(w, 1)` avoids the orbit.
   rw [mk_le_mk_iff]
   by_contra hw
@@ -253,7 +247,7 @@ theorem mk_le_mk_iff_forall_lift_eval_eq_zero {v w : M} :
     exact (le_iSup _ i).trans hf hn (subset_closure (Set.mem_range_self _))
   have hwP := (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((w, 1) : M × k)
     (Module.isUnimodular_mk_one w) 1 hP).mpr (by simpa [hD] using h _ hvanish)
-  rw [h1] at hwP
+  rw [TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom] at hwP
   exact hi hwP
 
 end VectorOrbit
