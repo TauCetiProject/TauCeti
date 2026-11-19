@@ -42,7 +42,7 @@ a doubly (twisted) periodic map are used.
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
 * `TauCeti.integrableOn_setIntegral_slice`,
   `TauCeti.setIntegral_setIntegral_slice_eq_setIntegral_rect`: Fubini's theorem over the vertical
-  segments `{s} × [a₂, b₂]` of a rectangle.
+  slices `{r} × t` of a product set `s × t`, in particular of a rectangle.
 * `TauCeti.exists_mem_Icc_mul_setIntegral_slice_le_setIntegral_rect`: some vertical segment
   carries at most the average integral.
 * `TauCeti.setIntegral_rect_le_mul_of_forall_setIntegral_le`: an inequality between the integrals
@@ -179,23 +179,23 @@ theorem setIntegral_Icc_prod_le_of_comp_add_le {f M : ℝ × ℝ → ℝ} {c d L
   rw [← he.integrableOn_comp_preimage hemb, hpre] at hfi
   exact setIntegral_mono_on hfi hMi (measurableSet_Icc.prod hI) hfM
 
-/-- **Fubini on a rectangle: the slices are integrable.** If `f` is integrable over the rectangle
-`[a₁, b₁] × [a₂, b₂]`, then its integrals over the vertical segments `{s} × [a₂, b₂]` are integrable
-in `s` over `[a₁, b₁]`. -/
-theorem integrableOn_setIntegral_slice {f : ℝ × ℝ → E}
-    (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) :
-    IntegrableOn (fun s ↦ ∫ t in Icc a₂ b₂, f (s, t)) (Icc a₁ b₁) := by
-  have h : Integrable f ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
+/-- **Fubini on a product set: the slices are integrable.** If `f` is integrable over the product
+`s × t` of two subsets of `ℝ`, then its integrals over the vertical slices `{r} × t` are integrable
+in `r` over `s`. -/
+theorem integrableOn_setIntegral_slice {f : ℝ × ℝ → E} {s t : Set ℝ}
+    (hf : IntegrableOn f (s ×ˢ t)) :
+    IntegrableOn (fun r ↦ ∫ τ in t, f (r, τ)) s := by
+  have h : Integrable f ((volume.restrict s).prod (volume.restrict t)) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
     exact hf
   exact h.integral_prod_left
 
-/-- **Fubini on a rectangle.** If `f` is integrable over the rectangle `[a₁, b₁] × [a₂, b₂]`, then
-the integral over `[a₁, b₁]` of its integrals over the vertical segments `{s} × [a₂, b₂]` is its
-integral over the rectangle. -/
-theorem setIntegral_setIntegral_slice_eq_setIntegral_rect {f : ℝ × ℝ → E}
-    (hf : IntegrableOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) :
-    ∫ s in Icc a₁ b₁, ∫ t in Icc a₂ b₂, f (s, t) = ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, f z := by
+/-- **Fubini on a product set.** If `f` is integrable over the product `s × t` of two subsets of
+`ℝ`, then the integral over `s` of its integrals over the vertical slices `{r} × t` is its integral
+over `s × t`. -/
+theorem setIntegral_setIntegral_slice_eq_setIntegral_rect {f : ℝ × ℝ → E} {s t : Set ℝ}
+    (hf : IntegrableOn f (s ×ˢ t)) :
+    ∫ r in s, ∫ τ in t, f (r, τ) = ∫ z in s ×ˢ t, f z := by
   rw [Measure.volume_eq_prod] at hf ⊢
   exact (setIntegral_prod f hf).symm
 
