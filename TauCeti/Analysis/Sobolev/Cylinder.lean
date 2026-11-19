@@ -360,10 +360,10 @@ private theorem integral_smul_add_eq_zero_of_mem_H1 {x : Lp (V × V × V) 2 stri
     simp only [Λ, add_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.lpPairing_eq_integral]
     congr 1 <;> refine integral_congr_ae ?_
-    · filter_upwards [hφ₂.coeFn_toLp, P.coeFn_compLpL f] with z h₁ h₂
+    · filter_upwards [hφ₂.coeFn_toLp, P.coeFn_compLp f] with z h₁ h₂
       simp [B, h₁, h₂]
     · filter_upwards [hφe.coeFn_toLp,
-        (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f] with z h₁ h₂
+        (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLp f] with z h₁ h₂
       simp [B, h₁, h₂]
   -- `Λ` vanishes on the jets of test sections, hence on their closure `H1`.
   have hrange : Set.range (jetₗ V) ⊆ {f | Λ f = 0} := by

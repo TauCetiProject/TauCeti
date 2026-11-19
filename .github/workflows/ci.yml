@@ -31,7 +31,7 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
-  # Infrastructure regression suites run separately in infrastructure-tests.yml.
+  # Infrastructure regression suites run in TauCetiTools checks.yml.
   build:
     # Publish fresh dot-notation context before library execution. GitHub's hosted
     # pool can queue this serialized publisher behind hours of ordinary PR work.
