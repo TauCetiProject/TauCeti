@@ -213,8 +213,9 @@ theorem exists_riemannianEDist_le_mul_exp_neg_maximalIntegralCurve_neg_mgradient
         (-v) ≤ ENNReal.ofReal (C * Real.exp (-t)) := by
   set γ := maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x
   set R := (1 + sphereHeight v x) / (1 - sphereHeight v x)
+  have hp := isManifoldNondegenerateCriticalPoint_sphereHeight_neg (n := n) v
   obtain ⟨K, hK0, hK⟩ := exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
-    (isManifoldNondegenerateCriticalPoint_sphereHeight_neg v)
+    hp.mem_criticalPoints hp.exists_mul_abs_sub_le_norm_mgradient_sq
     (tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight hx)
     (contMDiff_sphereHeight (n := n) v)
   refine ⟨K * √(2 * R), ?_⟩
