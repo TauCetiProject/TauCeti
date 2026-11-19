@@ -40,9 +40,10 @@ The slice through `x` is then `v ↦ e.symm v` on the `H`-invariant open set of 
 `v ∈ U`, and its restriction to `G × U` descends to `G ×_H U`. Outside `e.target` the values of
 `e.symm` need not respect the action of `H`. Its differential at `(1, 0)` is `(ξ, v) ↦ ξ_M(x) + v`
 (`TauCeti.mfderiv_smul_slice_apply`), which is onto `T_x M` with kernel `𝔤_x × 0` for any slice
-along a complement of `𝔤 · x` (`TauCeti.surjective_mfderiv_smul_slice`,
-`TauCeti.mfderiv_smul_slice_eq_zero_iff`). These are the inputs of the slice
-theorem `G ×_H B ≅ G • S` for a small invariant ball `B ⊆ V`, which is not proved here.
+along a complement of `𝔤 · x` (`TauCeti.surjective_mfderiv_smul_slice` and
+`TauCeti.mfderiv_smul_slice_eq_zero_iff`, in the module on transverse slices). These are the
+inputs of the slice theorem `G ×_H B ≅ G • S` for a small invariant ball `B ⊆ V`, which is not
+proved here.
 
 ## Main results
 
@@ -50,8 +51,6 @@ theorem `G ×_H B ≅ G • S` for a small invariant ball `B ⊆ V`, which is no
   point with compact stabilizer has a complement invariant under the stabilizer.
 * `TauCeti.exists_equivariant_contMDiff_chart_of_isCompact_stabilizer`: a smooth chart at such
   a point in which the stabilizer acts by its tangent representation.
-* `TauCeti.surjective_mfderiv_smul_slice`, `TauCeti.mfderiv_smul_slice_eq_zero_iff`: the
-  differential of the slice map along a complement of `𝔤 · x` is onto, with kernel `𝔤_x × 0`.
 * `TauCeti.exists_equivariant_slice_of_isCompact_stabilizer`: the equivariant linear slice and
   the differential of its slice map.
 * `ProperSMul.exists_equivariant_slice`: the same at every point of a proper smooth action.
@@ -148,72 +147,6 @@ theorem exists_equivariant_contMDiff_chart_of_isCompact_stabilizer [FiniteDimens
   obtain ⟨h₁, h₂⟩ := hequiv ⟨g, hg⟩ z hz
   exact ⟨h₁, h₂.trans (by rw [hσ]; rfl)⟩
 
-section SliceDifferential
-
-variable [CompleteSpace E] [CompleteSpace E'] {x : M} {V : Submodule ℝ E'} {σ : V → M}
-
-/-- The differential of the slice map along a linear slice, as `(ξ, v) ↦ ξ_M(x) + ι v` for the
-inclusion `ι` of `V` into `T_x M`. -/
-private theorem mfderiv_smul_slice_eq_coprod (ι : V →ₗ[ℝ] TangentSpace I' x)
-    (hι : ∀ v, ι v = (v : E')) (hσd : MDifferentiableAt 𝓘(ℝ, V) I' σ 0) (hσ0 : σ 0 = x)
-    (hσL : ∀ v : V, mfderiv 𝓘(ℝ, V) I' σ 0 v = (v : E')) :
-    ⇑(mfderiv (I.prod 𝓘(ℝ, V)) I' (fun p : G × V ↦ p.1 • σ p.2) (1, 0)) =
-      ⇑(((InfinitesimalAction.fundamental I G I' M).eval x).coprod ι) := by
-  have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
-  refine funext fun p : GroupLieAlgebra I G × V ↦ ?_
-  refine (mfderiv_smul_slice_apply hσd p.1 p.2).trans ?_
-  rw [hσL, hσ0, LinearMap.coprod_apply, InfinitesimalAction.eval_apply,
-    InfinitesimalAction.fundamental_apply, hι]
-
-/-- **Linear slices are transverse.** Let `V` be a complement of the orbit tangent space `𝔤 · x`
-and `σ : V → M` a slice through `σ 0 = x` with derivative the inclusion of `V` at `0`. Then the
-slice map `(g, v) ↦ g • σ v` has surjective differential at `(1, 0)`. -/
-theorem surjective_mfderiv_smul_slice
-    (hV : IsCompl ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) V)
-    (hσd : MDifferentiableAt 𝓘(ℝ, V) I' σ 0) (hσ0 : σ 0 = x)
-    (hσL : ∀ v : V, mfderiv 𝓘(ℝ, V) I' σ 0 v = (v : E')) :
-    Surjective (mfderiv (I.prod 𝓘(ℝ, V)) I' (fun p : G × V ↦ p.1 • σ p.2) (1, 0)) := by
-  let ι : V →ₗ[ℝ] TangentSpace I' x := V.subtype
-  have hrange : LinearMap.range (((InfinitesimalAction.fundamental I G I' M).eval x).coprod ι) =
-      ⊤ := by
-    rw [LinearMap.range_coprod, ← InfinitesimalAction.orbitTangent_eq_range,
-      show LinearMap.range ι = V from Submodule.range_subtype V]
-    exact hV.sup_eq_top
-  intro w
-  obtain ⟨p, hp⟩ := LinearMap.range_eq_top.mp hrange w
-  exact ⟨p, (congrFun (mfderiv_smul_slice_eq_coprod (I := I) (G := G) ι (fun _ ↦ rfl) hσd hσ0
-    hσL) p).trans hp⟩
-
-/-- **The kernel of the differential of a slice map.** Let `V` be a complement of the orbit
-tangent space `𝔤 · x` and `σ : V → M` a slice through `σ 0 = x` with derivative the inclusion of
-`V` at `0`. Then the differential of `(g, v) ↦ g • σ v` at `(1, 0)` vanishes exactly on
-`𝔤_x × 0`, where `𝔤_x` is the isotropy algebra. -/
-theorem mfderiv_smul_slice_eq_zero_iff
-    (hV : IsCompl ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) V)
-    (hσd : MDifferentiableAt 𝓘(ℝ, V) I' σ 0) (hσ0 : σ 0 = x)
-    (hσL : ∀ v : V, mfderiv 𝓘(ℝ, V) I' σ 0 v = (v : E')) (ξ : GroupLieAlgebra I G) (v : V) :
-    mfderiv (I.prod 𝓘(ℝ, V)) I' (fun p : G × V ↦ p.1 • σ p.2) (1, 0) (ξ, v) = 0 ↔
-      ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x ∧ v = 0 := by
-  let ι : V →ₗ[ℝ] TangentSpace I' x := V.subtype
-  have hι : LinearMap.range ι = V := Submodule.range_subtype V
-  have hdisj : Disjoint (LinearMap.range ((InfinitesimalAction.fundamental I G I' M).eval x))
-      (LinearMap.range ι) := by
-    rw [← InfinitesimalAction.orbitTangent_eq_range, hι]
-    exact hV.disjoint
-  have hker : LinearMap.ker (((InfinitesimalAction.fundamental I G I' M).eval x).coprod ι) =
-      (LinearMap.ker ((InfinitesimalAction.fundamental I G I' M).eval x)).prod ⊥ := by
-    rw [LinearMap.ker_coprod_of_disjoint_range _ _ hdisj]
-    congr 1
-    exact Submodule.ker_subtype V
-  rw [congrFun (mfderiv_smul_slice_eq_coprod (I := I) (G := G) ι (fun _ ↦ rfl) hσd hσ0 hσL)
-    (ξ, v)]
-  refine (LinearMap.mem_ker (f := ((InfinitesimalAction.fundamental I G I' M).eval x).coprod ι)
-    (y := (ξ, v))).symm.trans ?_
-  rw [hker, Submodule.mem_prod, Submodule.mem_bot, LinearMap.mem_ker,
-    InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.eval_apply]
-
-end SliceDifferential
-
 variable (I) in
 /-- **Equivariant linear slices at points with compact stabilizer.** Let the stabilizer `G_x` of
 `x` be compact. There are a complement `V` of the orbit tangent space `𝔤 · x` in `T_x M` and a
@@ -227,8 +160,10 @@ that:
   `(1, 0)`, which is onto `T_x M` and vanishes exactly on `𝔤_x × 0`.
 
 Equivariance gives `Ψ (g * h⁻¹, dh_x v) = Ψ (g, v)` for `h ∈ G_x` and `v` in the `G_x`-invariant
-set `U = {v ∈ V | v ∈ e.target}`, so `Ψ` restricted to `G × U` descends to `G ×_{G_x} U`, where its
-differential at the class of `(1, 0)` is bijective. -/
+set `U = {v ∈ V | v ∈ e.target}`, so `Ψ` restricted to `G × U` descends to `G ×_{G_x} U`. The
+surjectivity and kernel statements are the inputs for proving that the descended map has bijective
+differential at the class of `(1, 0)`; that quotient and its differential are not constructed
+here. -/
 theorem exists_equivariant_slice_of_isCompact_stabilizer [FiniteDimensional ℝ E]
     [FiniteDimensional ℝ E'] [I'.Boundaryless] {x : M} (hx : IsCompact (stabilizer G x : Set G)) :
     ∃ (V : Submodule ℝ E') (e : OpenPartialHomeomorph M E'),
@@ -274,7 +209,8 @@ theorem exists_equivariant_slice_of_isCompact_stabilizer [FiniteDimensional ℝ 
     exact h.trans (hL v)
   have hσ0 : σ 0 = x := by simp [hσ, hsymm0]
   refine ⟨V, e, hV, hxe, hex, he, hes, hderiv, hequiv, hVinv, fun g hg v hv ↦ ?_, hσL,
-    surjective_mfderiv_smul_slice hV hσd hσ0 hσL, mfderiv_smul_slice_eq_zero_iff hV hσd hσ0 hσL⟩
+    surjective_mfderiv_smul_slice hV.sup_eq_top hσd hσ0 hσL,
+    mfderiv_smul_slice_eq_zero_iff hV.disjoint hσd hσ0 hσL⟩
   -- The chart intertwines `g` with `dg_x`, so `e.symm` does too.
   obtain ⟨h₁, h₂⟩ := hequiv g hg (e.symm v) (e.map_target hv)
   rw [e.right_inv hv] at h₂
