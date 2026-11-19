@@ -131,6 +131,22 @@ def zeroOneFormLinearEquiv {G : Type*} [AddCommGroup G] [Module ℝ G] [Module �
     ext z
     simp [f, g]
 
+/-- The coordinate comparison evaluates a form on the chosen tangent coordinates. -/
+@[simp] theorem zeroOneFormLinearEquiv_apply {G : Type*} [AddCommGroup G] [Module ℝ G]
+    [Module ℂ G] [IsScalarTower ℝ ℂ G] (x : M) (φ : G ≃ₗ[ℝ] TangentSpace I x)
+    (hφ : ∀ z, φ (Complex.I • z) = -(j x (φ z)))
+    (η : j.zeroOneFormSubmodule (V := V) x) (z : G) :
+    j.zeroOneFormLinearEquiv x φ hφ η z = η.1 (φ z) := by
+  simp [zeroOneFormLinearEquiv]
+
+/-- The inverse coordinate comparison evaluates a complex-linear map in inverse coordinates. -/
+@[simp] theorem zeroOneFormLinearEquiv_symm_apply {G : Type*} [AddCommGroup G] [Module ℝ G]
+    [Module ℂ G] [IsScalarTower ℝ ℂ G] (x : M) (φ : G ≃ₗ[ℝ] TangentSpace I x)
+    (hφ : ∀ z, φ (Complex.I • z) = -(j x (φ z))) (L : G →ₗ[ℂ] V x)
+    (v : TangentSpace I x) :
+    ((j.zeroOneFormLinearEquiv x φ hφ).symm L).1 v = L (φ.symm v) := by
+  simp [zeroOneFormLinearEquiv]
+
 omit [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [VectorBundle ℝ F V] in
 /-- The complex rank of the actual `(0,1)`-range is half the real base dimension times the
 complex coefficient rank. This includes zero-dimensional models and zero-rank coefficients. -/
