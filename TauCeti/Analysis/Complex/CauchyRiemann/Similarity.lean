@@ -48,7 +48,10 @@ smooth solution vanishing to infinite order, and nowhere else, whose coefficient
 for no `p ≥ 1`.
 
 Classical solutions, of class `C¹` with a measurable, locally bounded coefficient, are the special
-case `p = ∞` (`TauCeti.exists_similarity_of_contDiffOn` and its consequences).
+case `p = ∞` (`TauCeti.exists_similarity_of_contDiffOn` and its consequences). A `C¹` map
+satisfying only the differential inequality `‖∂ₛη + i ∂ₜη‖ ≤ M ‖η‖`, with `M` locally bounded
+above, is such a solution for a rank-one coefficient, and so factors too
+(`TauCeti.hasSimilarityFactorizationAt_of_norm_le`).
 
 A scalar function need not be given with its equation: a `C¹` function `f : ℂ → ℂ` with
 `‖\bar∂ f‖ ≤ K ‖f‖` for a locally bounded `K` solves `\bar∂ f = a f` for the bounded coefficient
@@ -90,6 +93,8 @@ holomorphic by Weyl's lemma, and `ξ = Ψ⁻¹ σ`.
 * `TauCeti.exists_similarity_of_contDiffOn`, `TauCeti.hasSimilarityFactorizationAt_of_contDiffOn`,
   `TauCeti.eqOn_zero_of_contDiffOn_of_forall_isBigO` and
   `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn`: the same for classical solutions.
+* `TauCeti.hasSimilarityFactorizationAt_of_norm_le`: the factorization for a classical solution
+  of the differential inequality `‖∂ₛη + i ∂ₜη‖ ≤ M ‖η‖` with `M` locally bounded above.
 * `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le`: isolated zeros of a
   scalar `C¹` function satisfying `‖\bar∂ f‖ ≤ K ‖f‖` that is not identically zero on a connected
   open set.
@@ -621,6 +626,43 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn (hΩ : IsOpen Ω)
   exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc hξ.continuousOn
     (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_contDiffOn hΩ hξ hCm hCb heq hz) hne
 
+/-- **The similarity principle for a differential inequality.** Let `η` be of class `C¹` on an
+open set `Ω ⊆ ℂ`, with values in a finite-dimensional complex inner product space, and satisfy
+`‖∂ₛη + i ∂ₜη‖ ≤ M ‖η‖` on `Ω` for a function `M` bounded above near every point of `Ω`. Then
+`η` solves `∂ₛη + i ∂ₜη + C η = 0` for the rank-one coefficient
+`C = -(∂ₛη + i ∂ₜη) η* / ‖η‖²` (`TauCeti.rankOneDivNormSq`), which is measurable and locally
+bounded, so `η` has a similarity factorization at every point of `Ω`. -/
+theorem hasSimilarityFactorizationAt_of_norm_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℂ E] [FiniteDimensional ℂ E] {η : ℂ → E} {M : ℂ → ℝ} (hΩ : IsOpen Ω)
+    (hη : ContDiffOn ℝ 1 η Ω) (hM : ∀ z ∈ Ω, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
+    (hle : ∀ z ∈ Ω, ‖fderiv ℝ η z 1 + I • fderiv ℝ η z I‖ ≤ M z * ‖η z‖) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ Ω) : HasSimilarityFactorizationAt η z₀ := by
+  set g : ℂ → E := fun z ↦ -(fderiv ℝ η z 1 + I • fderiv ℝ η z I) with hg
+  set R : ℂ → E →L[ℝ] E := fun z ↦ (rankOneDivNormSq ℂ (g z) (η z)).restrictScalars ℝ with hR
+  have hDη : ContinuousOn (fderiv ℝ η) Ω := hη.continuousOn_fderiv_of_isOpen hΩ le_rfl
+  have hgc : ContinuousOn g Ω := ((hDη.clm_apply continuousOn_const).add
+    (continuousOn_const.smul (hDη.clm_apply continuousOn_const))).neg
+  refine hasSimilarityFactorizationAt_of_contDiffOn (C := R) hΩ hη ?_ (fun z hz ↦ ?_)
+    (fun z hz ↦ ?_) hz₀
+  · exact (ContinuousLinearMap.restrictScalarsL ℂ E E ℝ ℂ).continuous.comp_aestronglyMeasurable
+      ((hgc.aestronglyMeasurable hΩ.measurableSet).rankOneDivNormSq
+        (hη.continuousOn.aestronglyMeasurable hΩ.measurableSet))
+  · -- `‖R w‖ = ‖g w‖ / ‖η w‖ ≤ M w`
+    obtain ⟨K, hK⟩ := hM z hz
+    refine ⟨max K 0, ?_⟩
+    filter_upwards [hΩ.mem_nhds hz, hK] with w hw hKw
+    rw [hR, ContinuousLinearMap.norm_restrictScalars, norm_rankOneDivNormSq, hg, norm_neg]
+    refine div_le_of_le_mul₀ (norm_nonneg _) (le_max_right _ _) ((hle w hw).trans ?_)
+    gcongr
+    exact hKw.trans (le_max_left _ _)
+  · -- `R η = g`, also at the zeros of `η`, where `g` vanishes
+    by_cases h0 : η z = 0
+    · have hg0 := hle z hz
+      rw [h0, norm_zero, mul_zero, norm_le_zero_iff] at hg0
+      rw [h0, map_zero, add_zero, hg0]
+    · rw [hR, ContinuousLinearMap.coe_restrictScalars', rankOneDivNormSq_apply_self _ h0, hg,
+        add_neg_cancel]
+
 /-- **Isolated zeros under a differential inequality.** On a connected open set `Ω ⊆ ℂ`, a
 function `f : ℂ → ℂ` of class `C¹` with `‖\bar∂ f(z)‖ ≤ K(z) ‖f(z)‖` on `Ω`, for a locally bounded
 `K`, that is not identically zero on `Ω` has isolated zeros. -/
@@ -629,47 +671,15 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le (hΩ : 
     (hK : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, K w ≤ M)
     (hfK : ∀ z ∈ Ω, ‖conjWirtingerDeriv f z‖ ≤ K z * ‖f z‖) (hne : ∃ z ∈ Ω, f z ≠ 0) :
     {z | f z ≠ 0} ∈ codiscreteWithin Ω := by
-  -- `f` solves `∂ₛ f + i ∂ₜ f + a f = 0` with `a = -2 \bar∂ f(1) / f`, which is `0` where `f`
-  -- vanishes and bounded by `2 K` elsewhere.
-  set a : ℂ → ℂ := fun z ↦ -(2 * conjWirtingerDeriv f z 1 / f z) with ha
-  have hone : ∀ z, ‖conjWirtingerDeriv f z 1‖ ≤ ‖conjWirtingerDeriv f z‖ := fun z ↦ by
-    simpa using (conjWirtingerDeriv f z).le_opNorm 1
-  have ha_le : ∀ z ∈ Ω, ‖a z‖ ≤ 2 * max (K z) 0 := by
-    intro z hz
-    by_cases h0 : f z = 0
-    · simp only [ha, h0, div_zero, neg_zero, norm_zero]
-      positivity
-    · rw [ha, norm_neg, norm_div, norm_mul, div_le_iff₀ (norm_pos_iff.2 h0), Complex.norm_two,
-        mul_assoc]
-      gcongr
-      exact (hone z).trans ((hfK z hz).trans (by gcongr; exact le_max_left _ _))
-  have hCm : AEStronglyMeasurable (fun z ↦ a z • ContinuousLinearMap.id ℝ ℂ)
-      (volume.restrict Ω) := by
-    have h1 : Measurable fun z ↦ conjWirtingerDeriv f z 1 := by
-      simp_rw [conjWirtingerDeriv_apply]
-      exact ((measurable_fderiv_apply_const ℝ f 1).add
-        ((measurable_fderiv_apply_const ℝ f (I • (1 : ℂ))).const_smul I)).const_smul (2 : ℂ)⁻¹
-    have h2 : AEMeasurable f (volume.restrict Ω) :=
-      (hf.continuousOn.aestronglyMeasurable hΩ.measurableSet).aemeasurable
-    exact (((h1.aemeasurable.const_mul 2).div h2).neg.aestronglyMeasurable).smul_const _
-  have hCb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖a w • ContinuousLinearMap.id ℝ ℂ‖ ≤ M := by
-    intro z hz
-    obtain ⟨M, hM⟩ := hK z hz
-    refine ⟨2 * max M 0, ?_⟩
-    filter_upwards [hΩ.mem_nhds hz, hM] with w hw hwM
-    calc ‖a w • ContinuousLinearMap.id ℝ ℂ‖ ≤ ‖a w‖ :=
-          ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ by simp
-      _ ≤ 2 * max M 0 := (ha_le w hw).trans (by gcongr)
-  refine setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn hΩ hΩc hf hCm hCb (fun z hz ↦ ?_) hne
-  have hfz : (a z • ContinuousLinearMap.id ℝ ℂ) (f z) = a z * f z := by simp
-  rw [fderiv_apply_one_add_I_smul_fderiv_apply_I, hfz, smul_eq_mul, ha]
-  by_cases h0 : f z = 0
-  · have h := hfK z hz
-    rw [h0, norm_zero, mul_zero] at h
-    rw [norm_le_zero_iff.1 ((hone z).trans h), h0]
-    simp
-  · field_simp
-    ring
+  -- `‖∂ₛ f + i ∂ₜ f‖ = 2 ‖\bar∂ f(1)‖ ≤ 2 K ‖f‖`, so `f` has similarity factorizations
+  refine setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc
+    hf.continuousOn (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_norm_le (M := fun w ↦ 2 * K w)
+      hΩ hf (fun z hz ↦ ?_) (fun z hz ↦ ?_) hz) hne
+  · obtain ⟨M, hM⟩ := hK z hz
+    exact ⟨2 * M, hM.mono fun w hw ↦ by gcongr⟩
+  · rw [fderiv_apply_one_add_I_smul_fderiv_apply_I, norm_smul, Complex.norm_two, mul_assoc]
+    gcongr
+    exact ((conjWirtingerDeriv f z).le_opNorm 1).trans (by simpa using hfK z hz)
 
 end Classical
 
