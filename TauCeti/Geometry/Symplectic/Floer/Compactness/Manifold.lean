@@ -143,10 +143,9 @@ theorem inChartAt_apply_almostComplexInChartAt (ω : SmoothTwoForm I M) {y : E}
       SmoothBundleForm.eval₂ ω ((extChartAt I α).symm y)
         ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)
         (J z ((extChartAt I α).symm y)
-          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)) := by
-  simpa only [associatedBilinFormInChartAt, comp_apply, flip_apply, compL_apply,
-    ContinuousAlternatingMap.flatL_apply_apply] using
-    ω.associatedBilinFormInChartAt_apply J z hy a a
+          ((trivializationAt E (TangentSpace I) α).symmL ℝ ((extChartAt I α).symm y) a)) :=
+  (ω.associatedBilinFormInChartAt_apply_eq_inChartAt J (z, y) a a).symm.trans
+    (ω.associatedBilinFormInChartAt_apply J z hy a a)
 
 /-- **The Floer energy density in a chart.** Let `u` be differentiable at `z`, with `u z` in the
 source of the chart at `α`, and solve the Floer equation for `J(z, u z)` at `z`. Then its energy
@@ -249,11 +248,10 @@ theorem IsNondegenerate.exists_forall_norm_fderiv_extChartAt_comp_sq_le
   have hbase {y : E} (hy : y ∈ e.target) : e.symm y ∈ T.baseSet :=
     TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hy
   -- In the chart, `ω(·, J ·)` is the bilinear form `b`, continuous and positive on `D × K`.
-  set b := ω.associatedBilinFormInChartAt α J with hb_def
+  set b := ω.associatedBilinFormInChartAt α J
   have hb_apply (p : (ℝ × ℝ) × E) (a : E) : b p a a = RoughForm.inChartAt (ω : RoughForm I M ℝ 2)
-      α p.2 ![a, Floer.almostComplexInChartAt I α J p a] := by
-    simp only [hb_def, associatedBilinFormInChartAt, comp_apply, flip_apply, compL_apply,
-      ContinuousAlternatingMap.flatL_apply_apply]
+      α p.2 ![a, Floer.almostComplexInChartAt I α J p a] :=
+    ω.associatedBilinFormInChartAt_apply_eq_inChartAt J p a a
   have hb : ∀ p ∈ D ×ˢ K, ∀ a, b p a a = SmoothBundleForm.eval₂ ω (e.symm p.2)
       (T.symmL ℝ (e.symm p.2) a) (J p.1 (e.symm p.2) (T.symmL ℝ (e.symm p.2) a)) :=
     fun p hp a ↦ ω.associatedBilinFormInChartAt_apply J p.1 (hKα hp.2) a a
