@@ -30,6 +30,10 @@ assumed. For complex Hilbert spaces `E` and `F`, together with the norm-path cla
 `ContinuousLinearMap.nonempty_path_iff_index_eq`, the index is then a bijection from the path
 components of the Fredholm operators `E → F` onto `ℤ`.
 
+The Fredholm and index computations for the shift, and the passage to every integer through powers
+and adjoints, follow the forward shift on Hardy space in `TauCeti.Analysis.Fourier.Hardy.Index`,
+which is the case `b = c = hardyBasis`, `f = Nat.succ` of the lemmas here.
+
 ## Main declarations
 
 * `HilbertBasis.isFredholm_linearIsometryOfOrthonormal_comp`: the isometry `b i ↦ c (f i)` is
@@ -58,16 +62,22 @@ variable {ι κ 𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerPro
   [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
   (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) {f : ι → κ} (hf : Function.Injective f)
 
+omit [CompleteSpace F] in
+/-- The span of finitely many vectors is complemented by its orthogonal complement. -/
+private theorem isCompl_orthogonal_span_of_finite {s : Set F} (hs : s.Finite) :
+    IsCompl (Submodule.span 𝕜 s) (Submodule.span 𝕜 s)ᗮ :=
+  have : FiniteDimensional 𝕜 (Submodule.span 𝕜 s) := FiniteDimensional.span_of_finite 𝕜 hs
+  Submodule.isCompl_orthogonal _
+
 /-- The isometry `b i ↦ c (f i)` along an injection `f` of the index types of two Hilbert bases is
 a Fredholm operator when `f` misses only finitely many indices. -/
 theorem isFredholm_linearIsometryOfOrthonormal_comp (hfin : (Set.range f)ᶜ.Finite) :
     (b.linearIsometryOfOrthonormal (c.orthonormal.comp f hf)).toContinuousLinearMap.IsFredholm := by
-  have : FiniteDimensional 𝕜 (Submodule.span 𝕜 (c '' (Set.range f)ᶜ)) :=
-    FiniteDimensional.span_of_finite 𝕜 (hfin.image _)
   refine (b.linearIsometryOfOrthonormal _).isometry.isClosedEmbedding.isFredholm ?_
   rw [LinearIsometry.toLinearMap_toContinuousLinearMap,
     range_linearIsometryOfOrthonormal_comp b c hf]
-  exact (Submodule.fg_span (hfin.image _)).cofg_of_isCompl (Submodule.isCompl_orthogonal _)
+  exact (Submodule.fg_span (hfin.image _)).cofg_of_isCompl
+    (isCompl_orthogonal_span_of_finite (hfin.image _))
 
 omit [CompleteSpace E] in
 /-- The isometry `b i ↦ c (f i)` along an injection `f` of the index types of two Hilbert bases
@@ -76,8 +86,6 @@ range is the orthogonal complement of the basis vectors `c j` with `j ∉ Set.ra
 theorem index_linearIsometryOfOrthonormal_comp (hfin : (Set.range f)ᶜ.Finite) :
     (b.linearIsometryOfOrthonormal (c.orthonormal.comp f hf)).toContinuousLinearMap.index =
       -((Set.range f)ᶜ.ncard : ℤ) := by
-  have : FiniteDimensional 𝕜 (Submodule.span 𝕜 (c '' (Set.range f)ᶜ)) :=
-    FiniteDimensional.span_of_finite 𝕜 (hfin.image _)
   have hK : finrank 𝕜 (Submodule.span 𝕜 (c '' (Set.range f)ᶜ)) = (Set.range f)ᶜ.ncard := by
     have : Fintype ↥(Set.range f)ᶜ := hfin.fintype
     rw [Set.image_eq_range]
@@ -86,7 +94,8 @@ theorem index_linearIsometryOfOrthonormal_comp (hfin : (Set.range f)ᶜ.Finite) 
     rw [Set.ncard_eq_toFinset_card', Set.toFinset_card]
   rw [ContinuousLinearMap.index_of_injective _ (b.linearIsometryOfOrthonormal _).injective,
     LinearIsometry.toLinearMap_toContinuousLinearMap, range_linearIsometryOfOrthonormal_comp b c hf,
-    (Submodule.quotientEquivOfIsCompl _ _ (Submodule.isCompl_orthogonal _).symm).finrank_eq, hK]
+    (Submodule.quotientEquivOfIsCompl _ _
+      (isCompl_orthogonal_span_of_finite (hfin.image _)).symm).finrank_eq, hK]
 
 end HilbertBasis
 

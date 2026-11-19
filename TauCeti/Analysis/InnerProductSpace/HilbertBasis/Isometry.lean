@@ -47,10 +47,16 @@ orthonormal family in a complete space: `x ↦ ∑ᵢ ⟪b i, x⟫ • v i`. -/
 protected def linearIsometryOfOrthonormal : E →ₗᵢ[𝕜] F :=
   hv.orthogonalFamily.linearIsometry.comp b.repr.toLinearIsometry
 
+/-- The isometry `b i ↦ v i` takes the `ℓ²` coordinates of `x` in `b` and sums them against `v`. -/
+theorem linearIsometryOfOrthonormal_apply (x : E) :
+    b.linearIsometryOfOrthonormal hv x = hv.orthogonalFamily.linearIsometry (b.repr x) := by
+  rw [HilbertBasis.linearIsometryOfOrthonormal]
+  rfl
+
 /-- The isometry `b i ↦ v i` is the sum `∑ᵢ ⟪b i, x⟫ • v i`. -/
 theorem hasSum_linearIsometryOfOrthonormal (x : E) :
     HasSum (fun i ↦ ⟪b i, x⟫_𝕜 • v i) (b.linearIsometryOfOrthonormal hv x) := by
-  simpa [HilbertBasis.linearIsometryOfOrthonormal, b.repr_apply_apply] using
+  simpa [linearIsometryOfOrthonormal_apply, b.repr_apply_apply] using
     hv.orthogonalFamily.hasSum_linearIsometry (b.repr x)
 
 /-- The isometry `b i ↦ v i` sends `b i` to `v i`. -/
@@ -58,7 +64,7 @@ theorem hasSum_linearIsometryOfOrthonormal (x : E) :
 theorem linearIsometryOfOrthonormal_apply_self (i : ι) :
     b.linearIsometryOfOrthonormal hv (b i) = v i := by
   classical
-  simp [HilbertBasis.linearIsometryOfOrthonormal, b.repr_self]
+  simp [linearIsometryOfOrthonormal_apply, b.repr_self]
 
 /-- A continuous linear map sending each `b i` to `v i` is the isometry `b i ↦ v i`. -/
 theorem eq_linearIsometryOfOrthonormal {T : E →L[𝕜] F} (hT : ∀ i, T (b i) = v i) :
