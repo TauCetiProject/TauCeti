@@ -25,8 +25,8 @@ multiplication by `i`. So in `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}` the graph is the
 `Matrix.realImage` of the real points `TauCeti.realSubspace` of `ℂ^{n ⊕ n}` under the complex
 matrix `Matrix.graphFrame A`, whose columns are the images of the real basis vectors. That matrix
 is invertible when `A` is symplectic (`Matrix.isUnit_det_graphFrame`). The graph frame of a direct
-sum `Matrix.symplecticSum A B` is the block-diagonal sum of the graph frames, with the coordinates
-regrouped (`Matrix.graphFrame_symplecticSum`). The Gram matrix of `Matrix.graphFrame A` is
+sum `Matrix.symplecticSum A B` is the symplectic direct sum of the graph frames
+(`Matrix.graphFrame_symplecticSum`). The Gram matrix of `Matrix.graphFrame A` is
 `(1 + Aᵀ A) + i (J - Aᵀ J A)` (`Matrix.conjTranspose_graphFrame_mul_graphFrame`), so the graph of a
 symplectic matrix is Lagrangian for the symplectic form `Im ⟪·, ·⟫`
 (`Matrix.map_im_conjTranspose_graphFrame_mul_graphFrame`). The graphs
@@ -192,14 +192,14 @@ theorem continuous_graphFrame : Continuous (graphFrame : Matrix (n ⊕ n) (n ⊕
   fun_prop
 
 omit [Fintype n] in
-/-- **The graph frame of a direct sum** is the block-diagonal sum of the graph frames, read in the
-coordinates `(n ⊕ m) ⊕ (n ⊕ m)` through `Equiv.sumSumSumComm`, both for the coordinates of
-`ℂ^{n ⊕ n} × ℂ^{m ⊕ m}` and for the real coordinates of `ℝ^{n ⊕ n} × ℝ^{m ⊕ m}`. -/
+/-- **The graph frame of a direct sum** is the symplectic direct sum of the graph frames: the
+block-diagonal sum read in the coordinates `(n ⊕ m) ⊕ (n ⊕ m)` through `Equiv.sumSumSumComm`, both
+for the coordinates of `ℂ^{n ⊕ n} × ℂ^{m ⊕ m}` and for the real coordinates of
+`ℝ^{n ⊕ n} × ℝ^{m ⊕ m}`. -/
+@[simp]
 theorem graphFrame_symplecticSum {m : Type*} [DecidableEq m] (A : Matrix (n ⊕ n) (n ⊕ n) ℝ)
     (B : Matrix (m ⊕ m) (m ⊕ m) ℝ) :
-    graphFrame (symplecticSum A B) =
-      (fromBlocks (graphFrame A) 0 0 (graphFrame B)).submatrix (Equiv.sumSumSumComm n m n m)
-        (Equiv.sumSumSumComm n m n m) := by
+    graphFrame (symplecticSum A B) = symplecticSum (graphFrame A) (graphFrame B) := by
   ext ((i | i) | (i | i)) ((j | j) | (j | j)) <;>
     simp [graphFrame, symplecticSum_def, Equiv.sumSumSumComm, Matrix.one_apply, toBlocks₁₁,
       toBlocks₁₂, toBlocks₂₁, toBlocks₂₂]

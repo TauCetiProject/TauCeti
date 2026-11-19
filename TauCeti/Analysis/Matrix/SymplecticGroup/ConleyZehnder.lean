@@ -46,8 +46,8 @@ of sign under reversal.
 It is additive under direct sums (`TauCeti.GLSymplectic.conleyZehnderIndex_sum`): the graph of
 `A ⊕ B` is the product of the graphs of `A` and `B`, and the diagonal is the product of the
 diagonals. In coordinates, the graph frame and the diagonal straightening of a direct sum are the
-block-diagonal sums of those of the summands, with the coordinates regrouped by
-`Equiv.sumSumSumComm` (`Matrix.graphFrame_symplecticSum`, `TauCeti.diagonalStraightening_sum`), and
+symplectic direct sums `Matrix.symplecticSum` of those of the summands
+(`Matrix.graphFrame_symplecticSum`, `TauCeti.diagonalStraightening_sum`), and
 the Maslov index of paths of unitary frames is additive under block sums and unchanged by this
 relabelling of the coordinates.
 
@@ -184,15 +184,14 @@ theorem realImage_diagonalStraightening_mul_graphFrame_one :
   rw [diagonalStraightening_mul_graphFrame_one, realImage_map_ofReal isUnit_sqrt_two_smul_one]
 
 omit [Fintype n] in
-/-- The diagonal straightening of `ℂ^{n ⊕ m} × ℂ^{n ⊕ m}` is the block-diagonal sum of the
-straightenings of `ℂⁿ × ℂⁿ` and `ℂᵐ × ℂᵐ`, read in the coordinates `(n ⊕ m) ⊕ (n ⊕ m)` through
-`Equiv.sumSumSumComm`. -/
+/-- The diagonal straightening of `ℂ^{n ⊕ m} × ℂ^{n ⊕ m}` is the symplectic direct sum of the
+straightenings of `ℂⁿ × ℂⁿ` and `ℂᵐ × ℂᵐ`: the block-diagonal sum read in the coordinates
+`(n ⊕ m) ⊕ (n ⊕ m)` through `Equiv.sumSumSumComm`. -/
 theorem diagonalStraightening_sum {m : Type*} [DecidableEq m] :
     diagonalStraightening (n ⊕ m) =
-      (fromBlocks (diagonalStraightening n) 0 0 (diagonalStraightening m)).submatrix
-        (Equiv.sumSumSumComm n m n m) (Equiv.sumSumSumComm n m n m) := by
+      symplecticSum (diagonalStraightening n) (diagonalStraightening m) := by
   ext ((i | i) | (i | i)) ((j | j) | (j | j)) <;>
-    simp [diagonalStraightening_def, Equiv.sumSumSumComm, Matrix.one_apply]
+    simp [diagonalStraightening_def, symplecticSum_def, Equiv.sumSumSumComm, Matrix.one_apply]
 
 namespace GLSymplectic
 
@@ -357,9 +356,12 @@ theorem conleyZehnderIndex_sum {A B : GLSymplectic n ℝ} {A' B' : GLSymplectic 
         diagonalStraightening (n ⊕ m) * graphFrame ((((γ₁.prod γ₂).map continuous_sum) t :
           GL ((n ⊕ m) ⊕ (n ⊕ m)) ℝ) : Matrix ((n ⊕ m) ⊕ (n ⊕ m)) _ ℝ) *
           ((fromBlocks O₁ 0 0 O₂).submatrix e e).map ((↑) : ℝ → ℂ) := by
-      -- Expand both sides into relabelled block-diagonal form, then substitute `h₁` and `h₂`.
-      simp [hFdef, graphFrame_symplecticSum, diagonalStraightening_sum, ← submatrix_map,
-        fromBlocks_map, submatrix_mul_equiv, fromBlocks_multiply, h₁, h₂, e]
+      -- Push the graph frame and the straightening inside the direct sums, expand both sides
+      -- into relabelled block-diagonal form, then substitute `h₁` and `h₂`.
+      simp only [hFdef, Path.map_coe, Function.comp_apply, Path.prod_coe, GLSymplectic.coe_sum,
+        graphFrame_symplecticSum, diagonalStraightening_sum]
+      simp [symplecticSum_def, ← submatrix_map, fromBlocks_map, submatrix_mul_equiv,
+        fromBlocks_multiply, h₁, h₂, e]
     rw [hFt, realImage_mul_map_ofReal _ hO]
   rw [conleyZehnderIndex_eq_neg_maslovIndex _ ((γ₁.prod γ₂).map hF) hreal,
     Matrix.UnitaryGroup.maslovIndex_eq_of_coe_eq_submatrix
