@@ -44,7 +44,8 @@ place of `M`.
   value of `∂_a S`, and `Σ_S` is a regular fibre. With the atlas of
   `TauCeti.regularFiberChartedSpace`
   (`TauCeti.CotangentBundle.familyCriticalSetChartedSpace`) it is a smooth manifold of dimension
-  `dim M`, embedded in `M × A` with tangent spaces the kernels of the differential of `∂_a S`
+  `dim M` (`TauCeti.CotangentBundle.finrank_familyCriticalSet_model`), embedded in `M × A` with
+  tangent spaces the kernels of the differential of `∂_a S`
   (`TauCeti.CotangentBundle.isManifold_familyCriticalSet`,
   `TauCeti.CotangentBundle.isSmoothEmbedding_coe_familyCriticalSet`,
   `TauCeti.CotangentBundle.range_mfderiv_coe_familyCriticalSet`).
@@ -94,6 +95,13 @@ theorem familyFiberDeriv_def (S : M × A → ℝ) (x : M × A) :
     familyFiberDeriv S x = fderiv ℝ (fun a ↦ S (x.1, a)) x.2 :=
   (rfl)
 
+/-- The fibre derivative at `x` evaluated at `b` is the derivative of `S` along the slice through
+`x`, in the direction `b`. -/
+@[simp]
+theorem familyFiberDeriv_apply (S : M × A → ℝ) (x : M × A) (b : A) :
+    familyFiberDeriv S x b = fderiv ℝ (fun a ↦ S (x.1, a)) x.2 b :=
+  (rfl)
+
 /-- The fibre derivative is minus the covector of the target projection of the relation generated
 by `S`. So the fibre-critical points are those whose target covector vanishes. -/
 theorem familyFiberDeriv_apply_eq_neg_generatingTarget_snd_apply (x : M × A) (b : A) :
@@ -104,6 +112,8 @@ theorem familyFiberDeriv_apply_eq_neg_generatingTarget_snd_apply (x : M × A) (b
   have h₂ : mvfderiv 𝓘(ℝ, A) (fun a ↦ S (x.1, a)) x.2 b = familyFiberDeriv S x b :=
     mvfderiv_eq_fderiv_apply _ _ b
   rw [h, ← h₂]
+  -- The covector acts on the tangent space at `x.2` while `b : A`, so `rw [neg_apply]` and
+  -- `simp` find no instance of the pattern; `neg_apply _ b` elaborates `b` at the tangent type.
   exact (neg_neg _).symm.trans (congrArg Neg.neg (neg_apply _ b).symm)
 
 variable [TopologicalSpace M] [ChartedSpace H M]
@@ -214,13 +224,20 @@ theorem range_mfderiv_coe_familyCriticalSet (z : {x : M × A // familyFiberDeriv
     BoundarylessManifold.isInteriorPoint hreg z
 
 omit [I.Boundaryless] in
-/-- The model space of the fibre-critical set has the dimension of the base manifold `M`, half
-that of the model space `E × E'` of `T*M`. -/
-private theorem finrank_familyCriticalSet_model :
+/-- The model space of the fibre-critical set has the dimension of the model space `E` of the base
+manifold `M`. -/
+theorem finrank_familyCriticalSet_model :
+    finrank ℝ (Fin (finrank ℝ (E × A) - finrank ℝ (A →L[ℝ] ℝ)) → ℝ) = finrank ℝ E := by
+  rw [finrank_fin_fun, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
+  omega
+
+omit [I.Boundaryless] in
+/-- The model space of the fibre-critical set has half the dimension of the model space `E × E'`
+of `T*M`. -/
+private theorem two_mul_finrank_familyCriticalSet_model :
     2 * finrank ℝ (Fin (finrank ℝ (E × A) - finrank ℝ (A →L[ℝ] ℝ)) → ℝ) =
       finrank ℝ (E × (E →L[ℝ] ℝ)) := by
-  rw [finrank_fin_fun, finrank_prod, finrank_prod, ContinuousLinearMap.dual_finrank_eq,
-    ContinuousLinearMap.dual_finrank_eq]
+  rw [finrank_familyCriticalSet_model, finrank_prod, ContinuousLinearMap.dual_finrank_eq]
   omega
 
 /-- The source projection restricted to the fibre-critical set is smooth. -/
@@ -277,6 +294,8 @@ theorem mpullback_generatingSource_comp_coe_liouvilleForm :
       (mfderiv 𝓘(ℝ, Fin (finrank ℝ (E × A) - finrank ℝ (A →L[ℝ] ℝ)) → ℝ) (I.prod 𝓘(ℝ, A))
         Subtype.val z (v 0)).1 := by
     rw [mfderiv_comp z mdifferentiableAt_fst hcoez, mfderiv_fst]
+    -- `fst` is typed on `T_z₁M × T_z₂A` but composed with a map into `T_z(M × A)`, so
+    -- `rw [comp_apply]` and `simp` fail; the term below elaborates against both types.
     exact (ContinuousLinearMap.comp_apply _ _ _).trans
       (congrFun (ContinuousLinearMap.coe_fst' (R := ℝ)) _)
   -- On the fibre-critical set the derivative of `S` in the auxiliary variables vanishes.
@@ -289,6 +308,8 @@ theorem mpullback_generatingSource_comp_coe_liouvilleForm :
         Subtype.val z (v 0)).2 = 0 := by
     rw [hz₀]
     exact zero_apply _
+  -- The covector of `ι_S z` lives over `(ι_S z).proj`, not syntactically `z.1.1`, so
+  -- `rw [generatingSource_snd]` is ill-typed; apply that equation pointwise instead.
   rw [mpullback_liouvilleForm_apply_of_proj_comp_eq
       (ψ := generatingSource I S ∘ Subtype.val) (g := Prod.fst ∘ Subtype.val)
       (fun _ ↦ proj_generatingSource _)
@@ -318,7 +339,7 @@ theorem isExactLagrangianMap_generatingSource_comp_coe :
     (injective_mfderiv_generatingSource_comp_coe hS hreg) ?_).mpr
     ⟨hS.comp (isSmoothEmbedding_coe_familyCriticalSet hS hreg).contMDiff,
       mpullback_generatingSource_comp_coe_liouvilleForm hS hreg⟩
-  exact finrank_familyCriticalSet_model
+  exact two_mul_finrank_familyCriticalSet_model
 
 /-- **The fibre-critical set of a generating family is a Lagrangian immersion.** For a smooth
 generating family `S` on `M × A` for which `0` is a regular value of `∂_a S`, the fibre-critical
@@ -334,7 +355,7 @@ theorem isLagrangianImmersion_generatingSource_comp_coe :
   have hL := isExactLagrangianMap_generatingSource_comp_coe hS hreg
   refine ⟨(contMDiff_generatingSource_comp_coe hS hreg).isImmersion_of_injective_mfderiv (by simp)
     (injective_mfderiv_generatingSource_comp_coe hS hreg), hL.isLagrangianMap.isIsotropicMap, ?_⟩
-  exact finrank_familyCriticalSet_model
+  exact two_mul_finrank_familyCriticalSet_model
 
 end CriticalSet
 
