@@ -29,7 +29,7 @@ With this rule the wedge product descends to closed and exact forms, which is wh
 cohomology a ring.
 
 For a smooth function `f`, the rule reads `d (f φ) = df ∧ φ + f dφ`
-(`TauCeti.SmoothForm.mextDerivₗ_funSMulₗ_apply`), so the commutator `[d, f] = df ∧ ·` is
+(`TauCeti.SmoothForm.mextDerivₗ_funSMulₗ`), so the commutator `[d, f] = df ∧ ·` is
 fibrewise and `d` has order one: `[[d, f], g] = 0`
 (`TauCeti.SmoothForm.mextDerivₗ_lie_lie_funSMulₗ_eq_zero`).
 
@@ -267,6 +267,22 @@ theorem mextDerivₗ_funSMulₗ_apply [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ�
         f x * (mextDerivₗ I k φ).1 x v := by
   simp only [mextDerivₗ_apply, coe_funSMulₗ]
   exact mextDeriv_fun_smul (f.contMDiff.mdifferentiableAt (by simp)) (φ.mdifferentiableAt x) v
+
+/-- The Leibniz rule `d (f φ) = df ∧ φ + f dφ` for a smooth function `f` times a smooth form `φ`,
+as an identity of smooth forms. The degree `0 + 1 + k` of `df ∧ φ` is identified with `k + 1` by
+`LinearEquiv.cast`. -/
+theorem mextDerivₗ_funSMulₗ [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M ℝ k) :
+    mextDerivₗ I k (funSMulₗ f φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+          (show 0 + 1 + k = k + 1 by omega)
+          (SmoothForm.wedge (mextDerivₗ I 0 (ofFunction f)) φ) +
+        funSMulₗ f (mextDerivₗ I k φ) := by
+  apply Subtype.ext
+  ext x v
+  rw [mextDerivₗ_funSMulₗ_apply, Submodule.coe_add, Pi.add_apply,
+    ContinuousAlternatingMap.add_apply, cast_apply, coe_wedge, coe_funSMulₗ,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  simp only [mextDerivₗ_apply, coe_ofFunction]
 
 /-- **The exterior derivative has order one**: its double commutator with multiplication by
 smooth functions `f` and `g` vanishes, `[[d, f], g] = 0`. Since `d` changes the degree, the
