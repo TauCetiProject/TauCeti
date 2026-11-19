@@ -42,8 +42,8 @@ distribution `T` on an open set of `ℝⁿ` is microlocally `H^s` at `(x, ξ)`, 
 `Op(a) (φ T)` is `H^{s - m}` in an open cone around `ξ`
 (`Distribution.IsMicrolocallySobolevAt.exists_nhds_cone_forall_memLp_quantizeSobolev`).
 
-Removing the cutoff gives the order shift of the `H^s` wave front set itself: for `u ∈ H^t`,
-viewed as a distribution on an open set `Ω ⊆ ℝⁿ`,
+Removing the cutoff gives the order shift of the `H^s` wave front set itself: for a scalar symbol
+`a` and `u ∈ H^t(ℝⁿ, ℂ)`, viewed as a distribution on an open set `Ω ⊆ ℝⁿ`,
 
 `WF_{s - m}(Op(a) u) ⊆ WF_s(u)`
 
@@ -474,7 +474,8 @@ variable {n : ℕ} {m : ℝ} {Ω : Opens (CoordinateSpace n)} {a : Symbol n ℂ 
 /-- **Pseudodifferential operators lose their order microlocally.** Let `a` be a scalar symbol of
 order `m` with compact spatial support and `u ∈ H^t`. If `u`, as a distribution on an open set
 `Ω ⊆ ℝⁿ`, is microlocally `H^s` at `(x, ξ)`, then `Op(a) u` is microlocally `H^{s - m}` at
-`(x, ξ)`. No regularity of `u` away from `x`, or in other directions, is needed. -/
+`(x, ξ)`. No `H^s` regularity of `u` away from `x`, or in other directions, is needed;
+`u ∈ H^t` for some `t` suffices. -/
 theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantizeSobolev
     (ha : a.HasCompactSpatialSupport) {s t : ℝ} {u : H^{t}(CoordinateSpace n, ℂ)}
     {x ξ : CoordinateSpace n}
@@ -532,8 +533,8 @@ theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantize
   rw [← map_add, add_sub_cancel]
 
 /-- **The order shift of the `H^s` wave front set.** A scalar pseudodifferential operator of order
-`m` with compact spatial support does not enlarge the `H^s` wave front set at the cost of `m`
-orders: for `u ∈ H^t` and every real `s`, as distributions on an open set `Ω ⊆ ℝⁿ`,
+`m` with compact spatial support shifts the `H^s` wave front set by at most `m` orders: for
+`u ∈ H^t` and every real `s`, as distributions on an open set `Ω ⊆ ℝⁿ`,
 
 `WF_{s - m}(Op(a) u) ⊆ WF_s(u)`. -/
 theorem HasCompactSpatialSupport.sobolevWaveFrontSet_toDistribution_quantizeSobolev_subset
