@@ -9,9 +9,10 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.RingTheory.Polynomial.ScaleRoots
 public import Mathlib.RingTheory.Polynomial.Vieta
 
-import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Qify
+import TauCeti.Algebra.Polynomial.Coeff.Basic
+import TauCeti.Algebra.Ring.Parity
+import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # The integral Hecke polynomial of `GL n`
@@ -176,12 +177,6 @@ theorem glnHeckePolynomial_add (q : A) (T T' : Fin (n + 1) → A) :
   simp only [glnHeckePolynomial_def, Pi.add_apply, mul_add, C_add, add_mul,
     Finset.sum_add_distrib]
 
-/-- Two polynomials of degree at most `n` are equal once their coefficients agree at every
-index `i : Fin (n + 1)`, the indexing of the Hecke operators. -/
-private theorem eq_of_natDegree_le_of_coeff_fin_eq {p r : A[X]} (hp : p.natDegree ≤ n)
-    (hr : r.natDegree ≤ n) (h : ∀ i : Fin (n + 1), p.coeff i = r.coeff i) : p = r :=
-  (ext_iff_natDegree_le hp hr).2 fun k hk => h ⟨k, Nat.lt_succ_of_le hk⟩
-
 /-- Scaling all Hecke operators on the right by `c` scales the Hecke polynomial by `c`. -/
 theorem glnHeckePolynomial_mul_const (q c : A) (T : Fin (n + 1) → A) :
     glnHeckePolynomial n q (fun i => T i * c) = glnHeckePolynomial n q T * C c := by
@@ -213,15 +208,6 @@ section CommRing
 
 variable {A : Type*} [CommRing A] {n : ℕ}
 
-/-- The exponent bookkeeping of the Satake factorization: `i(i-1) + i(n-i) = i(n-1)`. -/
-private theorem two_mul_choose_two_add_mul_sub {i : ℕ} (hi : i ≤ n) :
-    2 * i.choose 2 + i * (n - i) = (n - 1) * i := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · simp [Nat.le_zero.mp hi]
-  qify [hi, hn]
-  push_cast [Nat.cast_choose_two]
-  ring
-
 /-- **Satake factorization of the Hecke polynomial.**  For `q = s²` and parameters
 `z₁, …, zₙ`, the Satake substitution `Tᵢ = s^{i(n-i)} eᵢ(z)` (with `eᵢ` the `i`-th elementary
 symmetric function) turns the Hecke polynomial into `∏ⱼ (X - s^{n-1} zⱼ)`.  The identity holds
@@ -237,7 +223,7 @@ theorem glnHeckePolynomial_pow_mul_esymm (s : A) (z : Fin n → A) :
   simp only [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin]
   rw [Finset.sum_range, glnHeckePolynomial_def]
   refine Fintype.sum_congr _ _ fun i => ?_
-  have hexp := two_mul_choose_two_add_mul_sub i.is_le
+  have hexp := Nat.two_mul_choose_two_add_mul_sub i.is_le
   rw [show (Finset.univ.val.map fun j => s ^ (n - 1) * z j) =
       (Finset.univ.val.map z).map (s ^ (n - 1) • ·) by
         simp only [Multiset.map_map, Function.comp_def, smul_eq_mul],
@@ -272,23 +258,6 @@ theorem glnHeckePolynomial_pow_mul_eq_scaleRoots {q : A} {T : Fin (n + 1) → A}
     ring
   · rw [coeff_glnHeckePolynomial_of_lt q _ hk, coeff_glnHeckePolynomial_of_lt q _ hk, zero_mul]
 
-/-- The exponent bookkeeping of the inversion formula, for `n = m + i`:
-`n(n-1)/2 + i(i-1)/2 = (n-1)i + m(m-1)/2`. -/
-private theorem choose_two_add_choose_two {m i : ℕ} (hn : n = m + i) :
-    n.choose 2 + i.choose 2 = (n - 1) * i + m.choose 2 := by
-  subst hn
-  rcases Nat.eq_zero_or_pos (m + i) with h | h
-  · simp [Nat.eq_zero_of_add_eq_zero_left h, Nat.eq_zero_of_add_eq_zero_right h]
-  qify [h]
-  push_cast [Nat.cast_choose_two]
-  ring
-
-/-- The sign bookkeeping of the inversion formula, for `n = m + i`:
-`(-1)^n (-1)^m = (-1)^i`. -/
-private theorem neg_one_pow_mul_neg_one_pow {m i : ℕ} (hn : n = m + i) :
-    (-1 : A) ^ n * (-1) ^ m = (-1) ^ i := by
-  rw [hn, pow_add, mul_right_comm, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
-
 /-- **Inverting the Hecke operators**, integrally: replacing each `Tᵢ` by `T_{n-i}` and
 substituting `q^{n-1} X` for `X` turns the Hecke polynomial, after scaling by
 `(-1)^n q^{n(n-1)/2}`, into `q^{n(n-1)}` times its reflection `X^n P(1/X)`.  When `Tₙ` is a
@@ -306,13 +275,15 @@ theorem C_mul_glnHeckePolynomial_rev_comp (q : A) (T : Fin (n + 1) → A) :
   rw [coeff_C_mul, comp_C_mul_X_coeff, coeff_glnHeckePolynomial_val, Fin.rev_rev, coeff_C_mul,
     coeff_reflect, revAt_le i.is_le, coeff_glnHeckePolynomial,
     show n - i = m by omega]
+  have hc : n.choose 2 + m.choose 2 = (n - 1) * m + (i : ℕ).choose 2 := by
+    have := Nat.add_choose_two_add_choose_two (i : ℕ) m
+    rwa [add_comm (i : ℕ) m, ← hm] at this
   have hq : q ^ n.choose 2 * q ^ m.choose 2 * (q ^ (n - 1)) ^ (i : ℕ) =
       q ^ (n * (n - 1)) * q ^ (i : ℕ).choose 2 := by
     rw [← pow_mul, ← pow_add, ← pow_add, ← pow_add,
-      choose_two_add_choose_two (hm.trans (add_comm m i)), add_right_comm, ← mul_add, ← hm,
-      mul_comm]
+      hc, add_right_comm, ← mul_add, ← hm, mul_comm]
   have hs : (-1 : A) ^ n * (-1) ^ m = (-1) ^ (i : ℕ) :=
-    neg_one_pow_mul_neg_one_pow hm
+    (congrArg (fun k => (-1 : A) ^ k * (-1) ^ m) hm).trans (neg_one_pow_add_mul_neg_one_pow m i)
   linear_combination T i * (q ^ n.choose 2 * q ^ m.choose 2 * (q ^ (n - 1)) ^ (i : ℕ) * hs +
     (-1) ^ (i : ℕ) * hq)
 
@@ -345,9 +316,12 @@ theorem coeff_zero_mul_coeff_glnHeckePolynomial_rev_mul (q : A) {T : Fin (n + 1)
   obtain ⟨m, hm⟩ : ∃ m, n = m + i := ⟨n - i, by omega⟩
   rw [show n - i = m by omega]
   have hq : q ^ n.choose 2 * q ^ (i : ℕ).choose 2 = q ^ ((n - 1) * i) * q ^ m.choose 2 := by
-    rw [← pow_add, ← pow_add, choose_two_add_choose_two hm]
+    have := Nat.add_choose_two_add_choose_two m (i : ℕ)
+    rw [← hm] at this
+    rw [← pow_add, ← pow_add, this]
   have hs : (-1 : A) ^ n * (-1) ^ (i : ℕ) = (-1) ^ m :=
-    neg_one_pow_mul_neg_one_pow (hm.trans (add_comm m i))
+    (congrArg (fun k => (-1 : A) ^ k * (-1) ^ (i : ℕ)) (hm.trans (add_comm m i))).trans
+      (neg_one_pow_add_mul_neg_one_pow i m)
   linear_combination
     (-1) ^ n * (-1) ^ (i : ℕ) * q ^ n.choose 2 * q ^ (i : ℕ).choose 2 * T i.rev * hu +
       T i.rev * (q ^ n.choose 2 * q ^ (i : ℕ).choose 2 * hs + (-1) ^ m * hq)
