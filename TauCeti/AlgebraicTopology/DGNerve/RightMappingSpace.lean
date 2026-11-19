@@ -443,8 +443,8 @@ private theorem chainVal_insert (f : Coherences R obj) {a : Fin (n + 1)}
     chainVal hX hY f (insert a T) d = twist #T • lastCol hX hY f a T d := by
   have ha : a ∉ T := fun h ↦ notMem_Ioi_self (hT h)
   rw [chainVal, dite_eq_left (insert_nonempty a T)]
-  simp only [min'_insert_of_subset_Ioi hT, erase_insert ha, card_insert_of_notMem ha,
-    Nat.add_sub_cancel]
+  simp only [min'_insert_of_forall_le fun _ hb ↦ (mem_Ioi.1 (hT hb)).le, erase_insert ha,
+    card_insert_of_notMem ha, Nat.add_sub_cancel]
 
 private theorem chainVal_empty (f : Coherences R obj) (d : ℤ) : chainVal hX hY f ∅ d = 0 :=
   dite_eq_right (by simp)
@@ -453,7 +453,8 @@ private theorem chainVal_eq_zero_of_ne (f : Coherences R obj) {J : Finset (Fin (
     {d : ℤ} (h : d + #J ≠ 1) : chainVal hX hY f J d = 0 := by
   rcases J.eq_empty_or_nonempty with rfl | hJ
   · exact chainVal_empty hX hY f d
-  · obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+  · obtain ⟨i, S, hS, rfl⟩ := hJ.exists_forall_lt_insert_eq
+    replace hS : S ⊆ Ioi i := fun x hx ↦ mem_Ioi.2 (hS x hx)
     have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
     rw [chainVal_insert hX hY f hS, lastCol_eq_zero hX hY f (by
       rw [card_insert_of_notMem hi] at h; push_cast at h; omega), smul_zero]
@@ -489,7 +490,8 @@ private noncomputable def toChainMap (σ : Simplex R C (n + 1))
     change dgDifferential R d (chainVal hX hY σ.coh J d) = _
     rcases J.eq_empty_or_nonempty with rfl | hJ
     · simp [chainVal_empty]
-    obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+    obtain ⟨i, S, hS, rfl⟩ := hJ.exists_forall_lt_insert_eq
+    replace hS : S ⊆ Ioi i := fun x hx ↦ mem_Ioi.2 (hS x hx)
     have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
     by_cases hd : d + #S = 0
     · have hd' : d + #(S.map Fin.castSuccEmb) = 0 := by rwa [card_map]
@@ -603,7 +605,8 @@ private theorem chainVal_psiCoh (g : (dgHomComplex R X Y).SimplexChainMap n)
     chainVal psiObj_castSucc psiObj_last (psiCoh g) J d = g.val J d := by
   rcases J.eq_empty_or_nonempty with rfl | hJ
   · rw [chainVal_empty, g.val_empty']
-  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_forall_lt_insert_eq
+  replace hS : S ⊆ Ioi i := fun x hx ↦ mem_Ioi.2 (hS x hx)
   have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
   rw [chainVal_insert _ _ _ hS]
   by_cases hd : d + #S = 0
@@ -704,7 +707,8 @@ private theorem chainVal_map {m : ℕ} (σ : Simplex R C (n + 1))
   rw [CochainComplex.SimplexChainMap.map_val, toChainMap_val]
   rcases J.eq_empty_or_nonempty with rfl | hJ
   · rw [chainVal_empty, image_empty, chainVal_empty, ite_self]
-  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_subset_Ioi_insert_eq
+  obtain ⟨i, S, hS, rfl⟩ := hJ.exists_forall_lt_insert_eq
+  replace hS : S ⊆ Ioi i := fun x hx ↦ mem_Ioi.2 (hS x hx)
   have hi : i ∉ S := fun h ↦ notMem_Ioi_self (hS h)
   rw [chainVal_insert hX' hY' _ hS]
   by_cases hd : d + #S = 0
