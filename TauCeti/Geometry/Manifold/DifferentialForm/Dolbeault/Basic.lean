@@ -431,8 +431,7 @@ theorem delBar_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I 
 theorem delBar_apply_eq_zero_iff_dbarFunction_eq_zero (f : SmoothForm I M F 0) (x : M) :
     (J.delBar f).1 x = 0 ↔ J.dbarFunction (fun y ↦ f.1 y 0) x = 0 := by
   rw [ContinuousAlternatingMap.eq_zero_iff_forall_apply_fin_one, ContinuousLinearMap.ext_iff]
-  simp only [delBar_apply_apply_eq_dbarFunction]
-  rfl
+  simp only [delBar_apply_apply_eq_dbarFunction, zero_apply]
 
 /-- `∂bar f` vanishes at a point exactly when the differential of `f` there is complex linear
 for `J`: `df(J v) = i df(v)`. -/

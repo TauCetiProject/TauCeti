@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Trivial
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The operator `∂bar + ξbar dzbar` on functions over a planar domain
@@ -116,9 +117,8 @@ theorem not_isComplexLinearOperator_dbarFunction_add_conjSMulDzbar [Nonempty U] 
   have hσ : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (fun _ : U ↦ (1 : ℂ)) x :=
     mdifferentiableAt_const
   -- A complex linear operator is its own complex linear part, which is `∂bar` here.
-  have h₁ := (h.sectionComplexLinearPart_eq (by
-    simpa only [mdifferentiableAt_section, Trivial.fiberBundle_trivializationAt',
-      Trivial.trivialization_apply] using hσ)).symm.trans
+  have h₁ := (h.sectionComplexLinearPart_eq
+    (Trivial.mdifferentiableAt_section_iff.2 hσ)).symm.trans
     (sectionComplexLinearPart_dbarFunction_add_conjSMulDzbar _ x)
   have h₂ : conjSMulDzbar x (1 : ℂ) = 0 := add_eq_left.1 h₁
   have h₃ : conjSMulDzbar x (1 : ℂ) (1 : ℂ) = 0 := by

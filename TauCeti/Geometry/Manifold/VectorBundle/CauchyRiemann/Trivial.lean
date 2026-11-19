@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trivial
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The operators `∂bar` and `∂` on functions over an almost complex manifold
@@ -118,8 +119,7 @@ theorem dbarFunction_eq_zero_iff (σ : M → F) (x : M) :
     rw [hv.resolve_left (by norm_num), smul_neg, smul_smul, Complex.I_mul_I, neg_one_smul,
       _root_.neg_neg]
   · rw [j.dbarFunction_apply σ x v, h, smul_smul, Complex.I_mul_I, neg_one_smul, add_neg_cancel,
-      smul_zero]
-    rfl
+      smul_zero, zero_apply]
 
 /-- At a point where `σ` is differentiable, `∂bar σ` vanishes exactly when `σ` is
 pseudoholomorphic there, for the almost complex structure of the complex normed space `F`. -/
@@ -202,8 +202,7 @@ theorem isComplexLinearOperator_dbarFunction :
   rw [dbarFunction_eq_zeroOnePart_trivial]
   refine (CovariantDerivative.trivial (I := I) (M := M) F).isCovariantDerivativeOnUniv
     |>.isComplexLinearOperator_zeroOnePart j fun σ x hσ ↦ ?_
-  simp only [mdifferentiableAt_section, Trivial.fiberBundle_trivializationAt',
-    Trivial.trivialization_apply] at hσ
+  rw [Trivial.mdifferentiableAt_section_iff] at hσ
   simp only [CovariantDerivative.trivial_apply]
   exact mvfderiv_const_smul hσ Complex.I
 
@@ -289,8 +288,7 @@ theorem delFunction_sub {σ τ : M → F} {x : M} (hσ : MDifferentiableAt I �
 theorem isComplexLinearOperator_delFunction :
     IsComplexLinearOperator F (V := Bundle.Trivial M F) j.delFunction where
   add hσ hσ' := by
-    simp only [mdifferentiableAt_section, Trivial.fiberBundle_trivializationAt',
-      Trivial.trivialization_apply] at hσ hσ'
+    rw [Trivial.mdifferentiableAt_section_iff] at hσ hσ'
     exact j.delFunction_add hσ hσ'
   smul_const a _ _ _ := j.delFunction_const_smul a _ _
   complex_I_smul _ := j.delFunction_const_smul Complex.I _ _
