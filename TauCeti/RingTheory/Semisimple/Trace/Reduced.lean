@@ -119,8 +119,8 @@ noncomputable def idealTrace (c : Submodule B B) : B →ₗ[R] R where
 variable {R}
 
 /-- `TauCeti.Algebra.idealTrace R c b` is the trace of left multiplication by `b` on `c`. -/
-theorem idealTrace_apply (c : Submodule B B) (b : B) :
-    idealTrace R c b = LinearMap.trace R (c.restrictScalars R)
+theorem _root_.Submodule.idealTrace_apply (c : Submodule B B) (b : B) :
+    TauCeti.Algebra.idealTrace R c b = LinearMap.trace R (c.restrictScalars R)
       ((Algebra.lmul R B b).restrict fun _ hx ↦ c.smul_mem b hx) :=
   (rfl)
 
@@ -130,12 +130,12 @@ theorem idealTrace_top (b : B) :
     idealTrace R (⊤ : Submodule B B) b = LinearMap.trace R B (Algebra.lmul R B b) := by
   let e : ((⊤ : Submodule B B).restrictScalars R) ≃ₗ[R] B :=
     (LinearEquiv.ofEq _ _ (Submodule.restrictScalars_top R B B)).trans Submodule.topEquiv
-  rw [idealTrace_apply, ← LinearMap.trace_conj' _ e]
+  rw [Submodule.idealTrace_apply, ← LinearMap.trace_conj' _ e]
   congr 1
 
 /-- Cyclicity of `TauCeti.Algebra.idealTrace`: it takes the same value on `a * b` and `b * a`. -/
-theorem idealTrace_mul_comm (c : Submodule B B) (a b : B) :
-    idealTrace R c (a * b) = idealTrace R c (b * a) := by
+theorem _root_.Submodule.idealTrace_mul_comm (c : Submodule B B) (a b : B) :
+    TauCeti.Algebra.idealTrace R c (a * b) = TauCeti.Algebra.idealTrace R c (b * a) := by
   have hmul : ∀ x y : B, ((Algebra.lmul R B (x * y)).restrict fun _ hz ↦ c.smul_mem (x * y) hz :
       c.restrictScalars R →ₗ[R] c.restrictScalars R) =
       ((Algebra.lmul R B x).restrict fun _ hz ↦ c.smul_mem x hz) *
@@ -143,7 +143,7 @@ theorem idealTrace_mul_comm (c : Submodule B B) (a b : B) :
     intro x y
     ext
     simp [mul_assoc]
-  rw [idealTrace_apply, idealTrace_apply, hmul, hmul, LinearMap.trace_mul_comm]
+  rw [c.idealTrace_apply, c.idealTrace_apply, hmul, hmul, LinearMap.trace_mul_comm]
 
 /-- The trace of left multiplication by an element `b` of an isotypic component `c` vanishes on
 every other isotypic component. -/
@@ -154,7 +154,7 @@ theorem idealTrace_eq_zero_of_mem_isotypicComponents {c c' : Submodule B B}
       c'.restrictScalars R →ₗ[R] c'.restrictScalars R) = 0 := by
     ext x
     simpa using mul_eq_zero_of_mem_isotypicComponents hc hc' hne hb x.2
-  rw [idealTrace_apply, h0, map_zero]
+  rw [c'.idealTrace_apply, h0, map_zero]
 
 end IdealTrace
 
@@ -197,7 +197,7 @@ variable {F}
 theorem reducedTrace_mul_comm (a b : B) : reducedTrace F B (a * b) = reducedTrace F B (b * a) :=
   finsum_mem_induction (fun T : B →ₗ[F] F ↦ T (a * b) = T (b * a)) rfl
     (fun _ _ h₁ h₂ ↦ by simp [h₁, h₂])
-    (fun c _ ↦ by simp [idealTrace_mul_comm])
+    (fun c _ ↦ by simp [Submodule.idealTrace_mul_comm])
 
 section Semisimple
 
