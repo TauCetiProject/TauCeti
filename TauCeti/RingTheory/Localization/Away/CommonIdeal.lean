@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # Localizing away from an element of a common ideal
@@ -35,8 +35,6 @@ trivially.
   every element of `ker f`.
 * `IsLocalization.Away.map_injective_of_ker_inf_eq_bot`: the map `A_t → B_{f t}` is injective
   when `ker f ∩ I = 0`.
-* `IsLocalization.Away.map_eq`, `IsLocalization.Away.map_mk'`: the values of the map
-  `A_t → B_{f t}` on `[a]` and on fractions `a / s`.
 * `IsLocalization.Away.map_surjective_of_coe_map_subset_range`: it is surjective when every
   element of the ideal `I.map f` lies in the image of `f`.
 * `IsLocalization.Away.map_bijective_of_mem_ideal`: under both conditions it is bijective.
@@ -68,22 +66,9 @@ namespace IsLocalization.Away
 
 section Semiring
 
-variable {A B : Type*} [CommSemiring A] [CommSemiring B] (f : A →+* B) (t : A)
+variable {A B : Type*} [CommSemiring A] [CommSemiring B] {f : A →+* B} {t : A} {I : Ideal A}
 variable (S Q : Type*) [CommSemiring S] [CommSemiring Q] [Algebra A S] [Algebra B Q]
   [IsLocalization.Away t S] [IsLocalization.Away (f t) Q]
-
-/-- The map `A_t → B_{f t}` sends `[a]` to `[f a]`. -/
-@[simp]
-theorem map_eq (a : A) : map S Q f t (algebraMap A S a) = algebraMap B Q (f a) :=
-  IsLocalization.map_eq _ _
-
-/-- The map `A_t → B_{f t}` sends the fraction `a / s` to `f a / f s`. -/
-theorem map_mk' (a : A) (s : Submonoid.powers t) :
-    map S Q f t (mk' S a s) =
-      mk' Q (f a) ⟨f s, Submonoid.map_powers f t ▸ Submonoid.mem_map_of_mem f s.2⟩ :=
-  IsLocalization.map_mk' _ _ _
-
-variable {f t} {I : Ideal A}
 
 /-- If every element of the ideal `I.map f` lies in the image of `f` and `t ∈ I`, then
 `A_t → B_{f t}` is surjective. This holds in particular when `f(I)` is already the ideal

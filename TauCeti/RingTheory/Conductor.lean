@@ -154,9 +154,8 @@ theorem conductor_toSubring_adjoin_singleton (R : Type*) [CommRing R] [Algebra R
 /-- The image in `B` of the contracted conductor is the ambient conductor itself, not just the
 ideal it generates. -/
 theorem image_comap_subtype_conductor :
-    A.subtype '' (A.conductor.comap A.subtype) = A.conductor := by
-  ext b
-  exact ⟨fun ⟨_, ha, hab⟩ ↦ hab ▸ ha, fun hb ↦ ⟨⟨b, conductor_subset hb⟩, hb, rfl⟩⟩
+    A.subtype '' (A.conductor.comap A.subtype) = A.conductor :=
+  Set.image_preimage_eq_of_subset fun b hb ↦ ⟨⟨b, conductor_subset hb⟩, rfl⟩
 
 /-- Extending the contracted conductor back to `B` recovers the ambient conductor. -/
 theorem map_comap_subtype_conductor :
