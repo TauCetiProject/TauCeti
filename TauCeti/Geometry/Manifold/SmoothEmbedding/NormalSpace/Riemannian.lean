@@ -19,9 +19,6 @@ intrinsic normal class has a unique representative orthogonal to the tangent spa
 embedded submanifold. This identifies the intrinsic normal space with the orthogonal complement
 of the embedded tangent space, as the complement representatives
 (`TauCeti.SmoothEmbedding.complementRepresentative`) of the orthogonal complement.
-In the other direction, the orthogonal normal space `TauCeti.orthogonalNormalSpace` at `x` maps to
-the normal space by `w ↦ [w]` (`TauCeti.SmoothEmbedding.orthogonalNormalSpaceEquiv`), an
-isomorphism that preserves the quotient norm below.
 
 The metric also induces a quotient norm on each normal space
 (`TauCeti.SmoothEmbedding.normalSpaceNormedAddCommGroup`), whose topology is the quotient topology.
@@ -196,47 +193,5 @@ abbrev normalSpaceNormedSpace (f : SmoothEmbedding I J n M N) (x : M) (hn : n �
     NormedSpace ℝ (f.NormalSpace x hn) :=
   letI := f.normalSpaceNormedAddCommGroup x hn
   { Submodule.Quotient.normedSpace (f.tangentRange x hn) ℝ with toModule := inferInstance }
-
-/-- For a smooth embedding, the orthogonal normal space at `x` is isomorphic to the intrinsic normal
-space `T_{f x} N ⧸ range df_x` by `w ↦ [w]`; the inverse takes orthogonal representatives
-(`TauCeti.SmoothEmbedding.orthogonalNormalSpaceEquiv_symm_apply`). -/
-def orthogonalNormalSpaceEquiv (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
-    orthogonalNormalSpace I J f x ≃L[ℝ] f.NormalSpace x hn :=
-  orthogonalNormalSpaceEquivQuotient f x
-
-/-- The comparison takes a normal vector to its normal class. -/
-@[simp]
-theorem orthogonalNormalSpaceEquiv_apply (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (w : orthogonalNormalSpace I J f x) :
-    f.orthogonalNormalSpaceEquiv x hn w = f.normalClass x hn w := by
-  rw [normalClass_def]
-  exact orthogonalNormalSpaceEquivQuotient_apply (I := I) (f : M → N) x w
-
-/-- The inverse comparison takes the normal class of an ambient vector to its orthogonal projection
-onto the normal space. -/
-@[simp]
-theorem orthogonalNormalSpaceEquiv_symm_normalClass (f : SmoothEmbedding I J n M N) (x : M)
-    (hn : n ≠ 0) (v : TangentSpace J (f x)) :
-    (f.orthogonalNormalSpaceEquiv x hn).symm (f.normalClass x hn v) =
-      (orthogonalNormalSpace I J f x).orthogonalProjectionOnto v := by
-  rw [normalClass_def]
-  exact orthogonalNormalSpaceEquivQuotient_symm_mk (I := I) (f : M → N) x v
-
-/-- The inverse comparison takes a normal class to its orthogonal representative. -/
-theorem orthogonalNormalSpaceEquiv_symm_apply (f : SmoothEmbedding I J n M N) (x : M)
-    (hn : n ≠ 0) (v : f.NormalSpace x hn) :
-    ((f.orthogonalNormalSpaceEquiv x hn).symm v : TangentSpace J (f x)) =
-      f.normalRepresentative x hn v := by
-  obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn v
-  rw [normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace,
-    orthogonalNormalSpaceEquiv_symm_normalClass, Submodule.coe_orthogonalProjectionOnto_apply]
-
-/-- The quotient norm (`TauCeti.SmoothEmbedding.normalSpaceNormedAddCommGroup`) of the normal class
-of a normal vector is its norm. -/
-theorem norm_orthogonalNormalSpaceEquiv (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (w : orthogonalNormalSpace I J f x) :
-    letI := f.normalSpaceNormedAddCommGroup x hn
-    ‖f.orthogonalNormalSpaceEquiv x hn w‖ = ‖(w : TangentSpace J (f x))‖ :=
-  norm_orthogonalNormalSpaceEquivQuotient (f : M → N) x w
 
 end TauCeti.SmoothEmbedding
