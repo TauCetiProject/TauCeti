@@ -173,12 +173,7 @@ theorem IsSymplectomorphism.map_hamiltonianFlow {W : Type*} [NormedAddCommGroup 
   -- The image under `e` of an orbit for `G ∘ e` solves Hamilton's equation for `G`.
   have hγ (s : ℝ) : HasDerivAt (fun s ↦ e (ω₁.hamiltonianFlow (G ∘ e) hX₁ s x))
       (ω₂.hamiltonianVectorField G (e (ω₁.hamiltonianFlow (G ∘ e) hX₁ s x))) s := by
-    have hv := he.map_hamiltonianVectorField (G ∘ e) (ω₁.hamiltonianFlow (G ∘ e) hX₁ s x)
-    have hG : (G ∘ e) ∘ e.symm = G := by
-      funext y
-      simp
-    rw [hG] at hv
-    rw [← hv]
+    rw [← e.apply_symm_apply (ω₂.hamiltonianVectorField G _), ← he.hamiltonianVectorField_comp]
     exact ((e.toContinuousLinearEquiv : V →L[ℝ] W).hasFDerivAt.comp_hasDerivAt s
       (ω₁.hasDerivAt_hamiltonianFlow (G ∘ e) hX₁ x s))
   have h := eq_flowOfLipschitz hX₂ hγ t
