@@ -21,16 +21,16 @@ import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 # The distribution relation for `1 - ζ`
 
 Let `K = F(μ_m) ⊆ L = F(μ_{mℓ})` be cyclotomic extensions of a field `F` over which `Φ_{mℓ}` is
-irreducible (for instance `F = ℚ`), with `ℓ` prime. Let `ζ ∈ L` be a primitive `mℓ`-th root of
-unity and `η ∈ K` with `η = ζ ^ ℓ`, a primitive `m`-th root of unity. This file computes the
-minimal polynomial of `ζ` over `K` and the relative norm of `1 - ζ`:
+irreducible (for instance `F = ℚ`). Let `ζ ∈ L` be a primitive `mℓ`-th root of unity and `η ∈ K`
+with `η = ζ ^ ℓ`, a primitive `m`-th root of unity. This file computes the minimal polynomial of
+`ζ` over `K` and the relative norm of `1 - ζ`:
 
-* if `ℓ ∣ m`, then `[L : K] = ℓ`, the minimal polynomial is `X ^ ℓ - η`, and
-  `N_{L/K}(1 - ζ) = 1 - η`;
-* if `ℓ ∤ m` and `ℓ * ℓ' ≡ 1 [MOD m]`, then `[L : K] = ℓ - 1`, the minimal polynomial times
-  `X - η ^ ℓ'` is `X ^ ℓ - η`, and `N_{L/K}(1 - ζ) * (1 - η ^ ℓ') = 1 - η`. Here `η ^ ℓ'` is the
-  image of `η` under the inverse of the arithmetic Frobenius `σ_ℓ : η ↦ η ^ ℓ`, so the relation
-  reads `N_{L/K}(1 - ζ) = (1 - η) ^ (1 - σ_ℓ⁻¹)` for `m > 1`.
+* if `ℓ ∣ m` (for any `ℓ`, not necessarily prime), then `[L : K] = ℓ`, the minimal polynomial
+  is `X ^ ℓ - η`, and `N_{L/K}(1 - ζ) = 1 - η`;
+* if `ℓ` is prime, `ℓ ∤ m` and `ℓ * ℓ' ≡ 1 [MOD m]`, then `[L : K] = ℓ - 1`, the minimal
+  polynomial times `X - η ^ ℓ'` is `X ^ ℓ - η`, and `N_{L/K}(1 - ζ) * (1 - η ^ ℓ') = 1 - η`.
+  Here `η ^ ℓ'` is the image of `η` under the inverse of the arithmetic Frobenius
+  `σ_ℓ : η ↦ η ^ ℓ`, so the relation reads `N_{L/K}(1 - ζ) = (1 - η) ^ (1 - σ_ℓ⁻¹)` for `m > 1`.
 
 These are the norm relations satisfied by the cyclotomic numbers `1 - ζ_n`, the starting point
 of the Euler system of cyclotomic units. The relations hold for every prime `ℓ`, including
@@ -49,7 +49,7 @@ primitive `n`-th root of unity over a field where `Φ_n` is irreducible is `Φ_n
 * `IsPrimitiveRoot.minpoly_eq_X_pow_sub_C_of_dvd`,
   `IsPrimitiveRoot.minpoly_mul_X_sub_C_of_not_dvd`: the minimal polynomial of `ζ_{mℓ}` over
   `F(μ_m)`.
-* `IsCyclotomicExtension.finrank_eq_of_prime_dvd`,
+* `IsCyclotomicExtension.finrank_eq_of_dvd`,
   `IsCyclotomicExtension.finrank_eq_of_prime_not_dvd`: `[F(μ_{mℓ}) : F(μ_m)]`.
 * `IsPrimitiveRoot.norm_one_sub_of_dvd`, `IsPrimitiveRoot.norm_one_sub_mul_one_sub_pow_of_not_dvd`
   and `IsPrimitiveRoot.norm_one_sub_eq_div_of_not_dvd`: the distribution relation.
@@ -111,13 +111,14 @@ end Conductor
 end IsPrimitiveRoot
 
 variable {F K L : Type*} [Field F] [Field K] [CommRing L] [IsDomain L] [Algebra F K] [Algebra F L]
-  [Algebra K L] [IsScalarTower F K L] {m ℓ : ℕ} [NeZero m] [hℓ : Fact ℓ.Prime]
+  [Algebra K L] [IsScalarTower F K L] {m ℓ : ℕ} [NeZero m]
   [IsCyclotomicExtension {m} F K] [IsCyclotomicExtension {m * ℓ} F L]
 
 namespace IsCyclotomicExtension
 
 /-- The degree bound `φ(mℓ) ≤ φ(m) [L : K]`, from `[L : F] = φ(mℓ)` and `[K : F] ≤ φ(m)`. -/
-private theorem totient_mul_le_totient_mul_finrank (hirr : Irreducible (cyclotomic (m * ℓ) F)) :
+private theorem totient_mul_le_totient_mul_finrank [NeZero ℓ]
+    (hirr : Irreducible (cyclotomic (m * ℓ) F)) :
     (m * ℓ).totient ≤ m.totient * Module.finrank K L := by
   have : IsCyclotomicExtension {m * ℓ} K L := tower_top F K L
   have := finiteDimensional {m} F K
@@ -128,7 +129,7 @@ private theorem totient_mul_le_totient_mul_finrank (hirr : Irreducible (cyclotom
 include F in
 omit [IsScalarTower F K L] in
 /-- A primitive `m * ℓ`-th root of unity of `L` whose `ℓ`-th power comes from `K`. -/
-private theorem exists_isPrimitiveRoot_algebraMap_eq_pow :
+private theorem exists_isPrimitiveRoot_algebraMap_eq_pow [NeZero ℓ] :
     ∃ ζ : L, ∃ η : K, IsPrimitiveRoot ζ (m * ℓ) ∧ algebraMap K L η = ζ ^ ℓ := by
   have hζ := zeta_spec (m * ℓ) F L
   have hz := (zeta_spec m F K).map_of_injective (algebraMap K L).injective
@@ -142,23 +143,27 @@ namespace IsPrimitiveRoot
 
 variable {ζ : L} {η : K}
 
-/-- **The minimal polynomial of a cyclotomic step when `ℓ ∣ m`.** If the prime `ℓ` divides `m`,
-then the minimal polynomial of `ζ = ζ_{mℓ}` over `K = F(μ_m)` is `X ^ ℓ - η`, where `η = ζ ^ ℓ`.
--/
+/-- **The minimal polynomial of a cyclotomic step when `ℓ ∣ m`.** If `ℓ` divides `m`, then the
+minimal polynomial of `ζ = ζ_{mℓ}` over `K = F(μ_m)` is `X ^ ℓ - η`, where `η = ζ ^ ℓ`. -/
 theorem minpoly_eq_X_pow_sub_C_of_dvd (hirr : Irreducible (cyclotomic (m * ℓ) F))
     (hζ : IsPrimitiveRoot ζ (m * ℓ)) (hη : algebraMap K L η = ζ ^ ℓ) (hdvd : ℓ ∣ m) :
     minpoly K ζ = X ^ ℓ - C η := by
+  have hℓ : 0 < ℓ := Nat.pos_of_dvd_of_pos hdvd (NeZero.pos m)
+  have : NeZero ℓ := ⟨hℓ.ne'⟩
   have : IsCyclotomicExtension {m * ℓ} K L := IsCyclotomicExtension.tower_top F K L
-  refine TauCeti.Algebra.minpoly_eq_X_pow_sub_C_of_pow_eq_of_natDegree_eq hℓ.out.ne_zero hη.symm
+  refine TauCeti.Algebra.minpoly_eq_X_pow_sub_C_of_pow_eq_of_natDegree_eq hℓ.ne' hη.symm
     (le_antisymm ?_ ?_)
   · -- `ζ` is a root of `X ^ ℓ - η`.
-    simpa using natDegree_le_of_dvd (minpoly.dvd K ζ (by simp [hη]))
-      (X_pow_sub_C_ne_zero hℓ.out.pos η)
+    simpa using natDegree_le_of_dvd (minpoly.dvd K ζ (by simp [hη])) (X_pow_sub_C_ne_zero hℓ η)
   · -- The degree count `φ(mℓ) = ℓ φ(m) ≤ φ(m) [L : K]` gives `ℓ ≤ [L : K] = deg (minpoly K ζ)`.
     have h := IsCyclotomicExtension.totient_mul_le_totient_mul_finrank (K := K) (L := L) hirr
     rw [mul_comm m ℓ, Nat.totient_mul_of_dvd hdvd, mul_comm ℓ,
       hζ.finrank_eq_natDegree_minpoly] at h
     exact Nat.le_of_mul_le_mul_left h (Nat.totient_pos.2 (NeZero.pos m))
+
+section Prime
+
+variable [hℓ : Fact ℓ.Prime]
 
 /-- **The minimal polynomial of a cyclotomic step when `ℓ ∤ m`.** If the prime `ℓ` does not divide
 `m` and `ℓ * ℓ' ≡ 1 [MOD m]`, then `η ^ ℓ'` is the `ℓ`-th root of `η = ζ ^ ℓ` of order dividing
@@ -199,21 +204,28 @@ theorem minpoly_mul_X_sub_C_of_not_dvd (hirr : Irreducible (cyclotomic (m * ℓ)
     (minpoly.monic (hζ.isIntegral (NeZero.pos _)).tower_top) hgmon (minpoly.dvd K ζ hgζ) hdeg,
     mul_comm, hg]
 
+end Prime
+
 end IsPrimitiveRoot
 
 namespace IsCyclotomicExtension
 
 variable (K L)
 
-/-- **The degree of a cyclotomic step when `ℓ ∣ m`**: `[F(μ_{mℓ}) : F(μ_m)] = ℓ` for a prime
-`ℓ` dividing `m`, when `Φ_{mℓ}` is irreducible over `F`. -/
-theorem finrank_eq_of_prime_dvd (hirr : Irreducible (cyclotomic (m * ℓ) F)) (hdvd : ℓ ∣ m) :
+/-- **The degree of a cyclotomic step when `ℓ ∣ m`**: `[F(μ_{mℓ}) : F(μ_m)] = ℓ` for every `ℓ`
+dividing `m`, when `Φ_{mℓ}` is irreducible over `F`. -/
+theorem finrank_eq_of_dvd (hirr : Irreducible (cyclotomic (m * ℓ) F)) (hdvd : ℓ ∣ m) :
     Module.finrank K L = ℓ := by
+  have : NeZero ℓ := ⟨(Nat.pos_of_dvd_of_pos hdvd (NeZero.pos m)).ne'⟩
   have : IsCyclotomicExtension {m * ℓ} K L := tower_top F K L
   obtain ⟨ζ, η, hζ, hη⟩ :=
     exists_isPrimitiveRoot_algebraMap_eq_pow (F := F) (K := K) (L := L) (m := m) (ℓ := ℓ)
   rw [hζ.finrank_eq_natDegree_minpoly, hζ.minpoly_eq_X_pow_sub_C_of_dvd hirr hη hdvd,
     natDegree_X_pow_sub_C]
+
+section Prime
+
+variable [hℓ : Fact ℓ.Prime]
 
 /-- **The degree of a cyclotomic step when `ℓ ∤ m`**: `[F(μ_{mℓ}) : F(μ_m)] = ℓ - 1` for a prime
 `ℓ` not dividing `m`, when `Φ_{mℓ}` is irreducible over `F`. -/
@@ -229,6 +241,8 @@ theorem finrank_eq_of_prime_not_dvd (hirr : Irreducible (cyclotomic (m * ℓ) F)
   rw [hζ.finrank_eq_natDegree_minpoly]
   omega
 
+end Prime
+
 end IsCyclotomicExtension
 
 namespace IsPrimitiveRoot
@@ -239,9 +253,27 @@ variable {ζ : L} {η : K}
 theorem norm_one_sub_of_dvd (hirr : Irreducible (cyclotomic (m * ℓ) F))
     (hζ : IsPrimitiveRoot ζ (m * ℓ)) (hη : algebraMap K L η = ζ ^ ℓ) (hdvd : ℓ ∣ m) :
     Algebra.norm K (1 - ζ) = 1 - η := by
+  have : NeZero ℓ := ⟨(Nat.pos_of_dvd_of_pos hdvd (NeZero.pos m)).ne'⟩
   have : IsCyclotomicExtension {m * ℓ} K L := IsCyclotomicExtension.tower_top F K L
   rw [hζ.norm_one_sub_eq_eval_minpoly, hζ.minpoly_eq_X_pow_sub_C_of_dvd hirr hη hdvd]
   simp
+
+/-- **The distribution relation for `ζ - 1` when `ℓ ∣ m`**:
+`N_{L/K}(ζ_{mℓ} - 1) = (-1) ^ (ℓ + 1) * (ζ_m - 1)`. For odd `ℓ` this is `ζ_m - 1`; for even `ℓ`
+the sign is `-1`. -/
+theorem norm_sub_one_of_dvd (hirr : Irreducible (cyclotomic (m * ℓ) F))
+    (hζ : IsPrimitiveRoot ζ (m * ℓ)) (hη : algebraMap K L η = ζ ^ ℓ) (hdvd : ℓ ∣ m) :
+    Algebra.norm K (ζ - 1) = (-1) ^ (ℓ + 1) * (η - 1) := by
+  have : NeZero ℓ := ⟨(Nat.pos_of_dvd_of_pos hdvd (NeZero.pos m)).ne'⟩
+  have : IsCyclotomicExtension {m * ℓ} K L := IsCyclotomicExtension.tower_top F K L
+  have := IsCyclotomicExtension.finiteDimensional {m * ℓ} K L
+  rw [← neg_sub, Algebra.norm_neg, IsCyclotomicExtension.finrank_eq_of_dvd K L hirr hdvd,
+    hζ.norm_one_sub_of_dvd hirr hη hdvd]
+  ring
+
+section Prime
+
+variable [hℓ : Fact ℓ.Prime]
 
 /-- **The distribution relation when `ℓ ∤ m`**: `N_{L/K}(1 - ζ_{mℓ}) * (1 - ζ_m ^ ℓ') = 1 - ζ_m`
 when `ℓ * ℓ' ≡ 1 [MOD m]`. For `m = 1` both sides vanish. -/
@@ -268,7 +300,7 @@ theorem norm_one_sub_eq_div_of_not_dvd (hirr : Irreducible (cyclotomic (m * ℓ)
 /-- **The distribution relation with the arithmetic Frobenius**: for a prime `ℓ` coprime to `m`,
 `N_{L/K}(1 - ζ_{mℓ}) * σ_ℓ⁻¹(1 - ζ_m) = 1 - ζ_m`, where `σ_ℓ ∈ Gal(F(μ_m)/F)` is the arithmetic
 Frobenius `ζ_m ↦ ζ_m ^ ℓ`, whose inverse is the image of `ℓ⁻¹ ∈ (ZMod m)ˣ` under
-`IsCyclotomicExtension.autEquivPow`. Multiplicatively,
+`(IsCyclotomicExtension.autEquivPow K h).symm`. Multiplicatively,
 `N_{L/K}(1 - ζ_{mℓ}) = (1 - ζ_m) ^ (1 - σ_ℓ⁻¹)`. -/
 theorem norm_one_sub_mul_autEquivPow_symm_inv_apply
     (hirr : Irreducible (cyclotomic (m * ℓ) F)) (hζ : IsPrimitiveRoot ζ (m * ℓ))
@@ -281,18 +313,6 @@ theorem norm_one_sub_mul_autEquivPow_symm_inv_apply
     (of_algebraMap_eq_pow hζ hη).pow_eq_one]
   exact hζ.norm_one_sub_mul_one_sub_pow_of_not_dvd hirr hη (hℓ.out.coprime_iff_not_dvd.1 hcop)
     (ZMod.mul_val_inv_modEq_one hcop)
-
-/-- **The distribution relation for `ζ - 1` when `ℓ ∣ m`**:
-`N_{L/K}(ζ_{mℓ} - 1) = (-1) ^ (ℓ + 1) * (ζ_m - 1)`. For odd `ℓ` this is `ζ_m - 1`; for `ℓ = 2`
-the sign is `-1`. -/
-theorem norm_sub_one_of_dvd (hirr : Irreducible (cyclotomic (m * ℓ) F))
-    (hζ : IsPrimitiveRoot ζ (m * ℓ)) (hη : algebraMap K L η = ζ ^ ℓ) (hdvd : ℓ ∣ m) :
-    Algebra.norm K (ζ - 1) = (-1) ^ (ℓ + 1) * (η - 1) := by
-  have : IsCyclotomicExtension {m * ℓ} K L := IsCyclotomicExtension.tower_top F K L
-  have := IsCyclotomicExtension.finiteDimensional {m * ℓ} K L
-  rw [← neg_sub, Algebra.norm_neg, IsCyclotomicExtension.finrank_eq_of_prime_dvd K L hirr hdvd,
-    hζ.norm_one_sub_of_dvd hirr hη hdvd]
-  ring
 
 /-- **The distribution relation for `ζ - 1` when `ℓ ∤ m`**:
 `N_{L/K}(ζ_{mℓ} - 1) * (ζ_m ^ ℓ' - 1) = (-1) ^ (ℓ - 1) * (ζ_m - 1)` when `ℓ * ℓ' ≡ 1 [MOD m]`.
@@ -307,6 +327,8 @@ theorem norm_sub_one_mul_pow_sub_one_of_not_dvd (hirr : Irreducible (cyclotomic 
     IsCyclotomicExtension.finrank_eq_of_prime_not_dvd K L hirr hdvd]
   linear_combination (-(-1) ^ (ℓ - 1) : K) *
     hζ.norm_one_sub_mul_one_sub_pow_of_not_dvd hirr hη hdvd hℓ'
+
+end Prime
 
 end IsPrimitiveRoot
 

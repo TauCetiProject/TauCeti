@@ -76,7 +76,7 @@ theorem card_aut_eq_totient (h : Irreducible (cyclotomic n K)) :
     ZMod.card_units_eq_totient]
 
 /-- The inverse of the arithmetic Frobenius `σ_ℓ : x ↦ x ^ ℓ`, the image of
-`(ZMod.unitOfCoprime ℓ hcop)⁻¹` under `IsCyclotomicExtension.autEquivPow`, raises `n`-th roots of
+`(ZMod.unitOfCoprime ℓ hcop)⁻¹` under `(autEquivPow L h).symm`, raises `n`-th roots of
 unity to the power `(ℓ⁻¹ : ZMod n).val`. -/
 theorem autEquivPow_symm_inv_unitOfCoprime_apply [NeZero n] (h : Irreducible (cyclotomic n K))
     {ℓ : ℕ} (hcop : ℓ.Coprime n) {x : L} (hx : x ^ n = 1) :
