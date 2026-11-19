@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.DifferentialForm.Squared
@@ -17,7 +18,9 @@ module also characterizes it by vanishing of the exterior derivatives of the cha
 (and hence of ordinary `extDeriv` on the interior of any chart target,
 `TauCeti.SmoothForm.IsClosed.extDeriv_inChartAt_eq_zero`).
 It also restates closedness through the bundled derivative `mextDerivₗ` and shows that
-exterior derivatives are closed.
+exterior derivatives are closed, as is a one-form equal to a constant multiple of a differential
+(`TauCeti.SmoothForm.isClosed_of_degreeOneEquiv_eq_smul_mfderiv`, with the coordinate form
+`TauCeti.SmoothForm.isClosed_of_degreeOneEquiv_eq_mul_mfderiv_apply`).
 The degree-two specialization in `TwoForm.Closed` supplies a constant-form convenience theorem.
 Since pullback commutes with the exterior derivative, smooth pullback sends closed forms to closed
 forms (`TauCeti.SmoothForm.IsClosed.mpullback`).
@@ -175,6 +178,36 @@ theorem isClosed_iff_mextDerivₗ_eq_zero (form : SmoothForm I M F k) :
 theorem isClosed_mextDerivₗ (form : SmoothForm I M F k) :
     (mextDerivₗ I k form).IsClosed := by
   rw [isClosed_def, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv]
+
+/-- A one-form whose values are a constant multiple `c • df` of the differential of a smooth
+function `f` is closed. -/
+theorem isClosed_of_degreeOneEquiv_eq_smul_mfderiv {φ : SmoothForm I M F 1} {f : M → F}
+    (hf : ContMDiff I 𝓘(ℝ, F) ∞ f) {c : ℝ}
+    (h : ∀ x v, degreeOneEquiv φ x v = c • mfderiv I 𝓘(ℝ, F) f x v) : φ.IsClosed := by
+  let g : C^∞⟮I, M; 𝓘(ℝ, F), F⟯ := ⟨f, hf⟩
+  -- `φ = c • d f`, compared as sections of the cotangent bundle.
+  have hφ : φ = c • mextDerivₗ I 0 (ofFunction g) := by
+    refine degreeOneEquiv.injective (ContMDiffSection.ext fun x ↦ ?_)
+    ext v
+    rw [map_smul, ContMDiffSection.coe_smul, Pi.smul_apply, smul_apply,
+      degreeOneEquiv_mextDerivₗ, ofFunction_apply_zero, ContMDiffMap.coeFn_mk,
+      mvfderiv_apply_eq_mfderiv_apply]
+    exact h x v
+  rw [hφ]
+  exact (isClosed_mextDerivₗ _).smul c
+
+/-- A real one-form whose values are a constant multiple `c * d(a_i)` of the differential of a
+coordinate of a smooth map `a : M → ℝ^ι` is closed. -/
+theorem isClosed_of_degreeOneEquiv_eq_mul_mfderiv_apply {ι : Type*} [Fintype ι]
+    {φ : SmoothForm I M ℝ 1} {a : M → ι → ℝ} (ha : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ a) {c : ℝ} {i : ι}
+    (h : ∀ x v, degreeOneEquiv φ x v = c * mfderiv I 𝓘(ℝ, ι → ℝ) a x v i) : φ.IsClosed :=
+  isClosed_of_degreeOneEquiv_eq_smul_mfderiv
+    ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff.comp ha) fun x v ↦ by
+      rw [h, ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).hasMFDerivAt.comp x
+        ((ha x).mdifferentiableAt (by simp)).hasMFDerivAt).mfderiv]
+      -- The value `(proj i ∘ da_x) v` is the coordinate `da_x v i`, and the scalar multiplication
+      -- on `TangentSpace 𝓘(ℝ, ℝ) _ = ℝ` is multiplication, so the two sides agree by definition.
+      rfl
 
 section Pullback
 
