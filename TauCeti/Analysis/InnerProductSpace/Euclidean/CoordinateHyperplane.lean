@@ -43,6 +43,7 @@ theorem isOpen_setOf_apply_neg {ι : Type*} (i : ι) : IsOpen {y : EuclideanSpac
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- Pairing with the coordinate vector `eᵢ` reads off the `i`-th coordinate. -/
+@[simp]
 theorem real_inner_single_one_right (y : EuclideanSpace ℝ ι) (i : ι) :
     ⟪y, single i (1 : ℝ)⟫ = y i := by
   simp [inner_single_right]

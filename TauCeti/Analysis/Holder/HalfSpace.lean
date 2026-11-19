@@ -121,16 +121,23 @@ theorem holderOnWith_of_norm_fderiv_le_mul_rpow (hv : ‖v‖ = 1) {α : ℝ≥0
     exact h.trans h5
   push Not at hx2 hy2
   -- Both points are close to the hyperplane: pass through their feet.
+  -- The foot `z - ⟪z, v⟫ v` is the orthogonal projection of `z` onto `(ℝ ∙ v)ᗮ`.
+  have hproj : ∀ z, z - ⟪z, v⟫ • v = z - (ℝ ∙ v).starProjection z := fun z ↦ by
+    rw [Submodule.starProjection_unit_singleton ℝ hv, real_inner_comm]
+  have hfoot0 : ∀ z, ⟪z - ⟪z, v⟫ • v, v⟫ = 0 := fun z ↦ by
+    rw [hproj, ← Submodule.mem_orthogonal_singleton_iff_inner_left]
+    exact Submodule.sub_starProjection_mem_orthogonal z
   set x' := x - ⟪x, v⟫ • v
   set y' := y - ⟪y, v⟫ • v
-  have hx'H : x' ∈ {x ∈ S | ⟪x, v⟫ = 0} := ⟨hfoot x hx, inner_sub_inner_smul_self_eq_zero hv x⟩
-  have hy'H : y' ∈ {x ∈ S | ⟪x, v⟫ = 0} := ⟨hfoot y hy, inner_sub_inner_smul_self_eq_zero hv y⟩
+  have hx'H : x' ∈ {x ∈ S | ⟪x, v⟫ = 0} := ⟨hfoot x hx, hfoot0 x⟩
+  have hy'H : y' ∈ {x ∈ S | ⟪x, v⟫ = 0} := ⟨hfoot y hy, hfoot0 y⟩
   have hx'y' : dist x' y' ≤ d := by
-    have : x' - y' = (x - y) - ⟪x - y, v⟫ • v := by
+    have : x' - y' = (ℝ ∙ v)ᗮ.starProjection (x - y) := by
+      rw [Submodule.starProjection_orthogonal_val, ← hproj]
       simp only [x', y', inner_sub_left, sub_smul]
       abel
     rw [dist_eq_norm, this]
-    exact (norm_sub_inner_smul_le hv _).trans_eq (dist_eq_norm x y).symm
+    exact (Submodule.norm_starProjection_apply_le _ _).trans_eq (dist_eq_norm x y).symm
   have h2d : ∀ t : ℝ, 0 ≤ t → t ≤ 2 * d → t ^ (α : ℝ) ≤ 2 * d ^ (α : ℝ) := by
     intro t ht0 ht
     calc t ^ (α : ℝ) ≤ (2 * d) ^ (α : ℝ) := Real.rpow_le_rpow ht0 ht α.2

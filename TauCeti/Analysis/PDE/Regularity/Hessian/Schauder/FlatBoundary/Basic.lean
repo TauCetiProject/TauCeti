@@ -14,7 +14,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 /-!
 # Schauder regularity up to a flat boundary for Poisson's equation
 
-Let `0 < α < 1`, and let `u` be a `C²` function on an open set `U ⊆ ℝ^{n+1}` that vanishes on the
+Let `0 ≤ α < 1`, and let `u` be a `C²` function on an open set `U ⊆ ℝ^{n+1}` that vanishes on the
 hyperplane `y 0 = 0` and whose Laplacian is `α`-Hölder up to the hyperplane from the closed
 half-space `0 ≤ y 0`. This file proves that the second derivatives of `u` are then `α`-Hölder up to
 the hyperplane as well: every point of `U` in the closed half-space has a neighbourhood `T` with
@@ -24,7 +24,8 @@ hyperplane this is the interior Schauder regularity
 `TauCeti.PDE.exists_mem_nhds_holderOnWith_iteratedFDeriv_two_of_laplacian`. At the hyperplane it is
 the regularity of solutions of Poisson's equation with zero Dirichlet data on a flat boundary, the
 model case of the Schauder theory up to the boundary that the global estimate on `C^{2,α}`
-domains is built from.
+domains is built from. For `α = 0` the statement is the boundedness of the continuous `D²u` near
+each point; the argument below is for `0 < α`.
 
 ## The argument
 
@@ -35,8 +36,8 @@ derivative jumps by `2 Δu`. The proof first removes this jump with an explicit 
   `α`-Hölder function on the whole hyperplane, and let `h = P[g]` be its Poisson integral in the
   half-space (`TauCeti.halfSpacePoissonIntegral`). The corrector `P = (y₀² / 2) h` vanishes on the
   hyperplane together with its first derivatives, and its second derivative tends to
-  `g e₀* ⊗ e₀*` there. The derivatives of the Poisson integral of Hölder data blow up like
-  `‖D^k h‖ ≤ C y₀^(α - k)` (`TauCeti.exists_norm_iteratedFDeriv_halfSpacePoissonIntegral_le`),
+  `g e₀* ⊗ e₀*` there from above. The derivatives of the Poisson integral of Hölder data blow up
+  like `‖D^k h‖ ≤ C y₀^(α - k)` (`TauCeti.exists_norm_iteratedFDeriv_halfSpacePoissonIntegral_le`),
   so the Leibniz rule gives `‖D³P‖ = O(y₀^(α - 1))` and
   `‖D²P - g(y') e₀* ⊗ e₀*‖ = O(y₀^α)`, `y'` the foot of `y`. Hence `D²P` and `ΔP`, extended to
   the hyperplane by `g e₀* ⊗ e₀*` and `g`, are `α`-Hölder up to the hyperplane
@@ -73,6 +74,7 @@ public section
 noncomputable section
 
 open InnerProductSpace Laplacian Metric Set Filter Topology
+open Submodule (orthogonalProjectionOnto)
 open scoped NNReal RealInnerProductSpace
 
 namespace TauCeti
@@ -224,7 +226,7 @@ private theorem tendsto_corrector_nhdsWithin {α : ℝ≥0} (hα : 0 < α) (hα1
       (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 0) ∧
     Tendsto (fun z : E ↦ if 0 < z 0 then
         fderiv ℝ (fderiv ℝ (corrector g)) z -
-          g (halfSpaceFoot v₀ z) • ContinuousLinearMap.smulRight ℓ₀ ℓ₀ else 0)
+          g (orthogonalProjectionOnto V z) • ContinuousLinearMap.smulRight ℓ₀ ℓ₀ else 0)
       (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 0) := by
   obtain ⟨C, hC, hP⟩ := exists_corrector_bounds hα hα1 hgb hgH
   have hev : ∀ᶠ z in 𝓝[{z : E | 0 ≤ z 0}] p, 0 ≤ z 0 := self_mem_nhdsWithin
@@ -305,10 +307,11 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
     {Mg : ℝ} {Kg : ℝ≥0} (hgb : ∀ y, |g y| ≤ Mg) (hgH : HolderWith Kg α g) {U : Set E}
     (hU : IsOpen U) {u : E → ℝ} (hu : ContDiffOn ℝ 2 u U) (h0 : ∀ y ∈ U, y 0 = 0 → u y = 0)
     {x : E} (hx : x 0 = 0) {r : ℝ} (hrU : ball x r ⊆ U)
-    (hΔ : ∀ y ∈ ball x r, y 0 = 0 → Δ u y = g (halfSpaceFoot v₀ y)) :
+    (hΔ : ∀ y ∈ ball x r, y 0 = 0 → Δ u y = g (orthogonalProjectionOnto V y)) :
     ContDiffOn ℝ 2 (oddRemainder u g) (ball x r) ∧ ∀ y ∈ ball x r, y 0 = 0 →
       iteratedFDeriv ℝ 2 (oddRemainder u g) y =
-        iteratedFDeriv ℝ 2 u y - g (halfSpaceFoot v₀ y) • iteratedFDeriv ℝ 2 halfSq y := by
+        iteratedFDeriv ℝ 2 u y -
+          g (orthogonalProjectionOnto V y) • iteratedFDeriv ℝ 2 halfSq y := by
   obtain ⟨_, -, hP⟩ := exists_corrector_bounds hα hα1 hgb hgH
   have hlimP := fun (p : E) (hp0 : p 0 = 0) ↦ tendsto_corrector_nhdsWithin hα hα1 hgb hgH hp0
   set B := ball x r
@@ -353,7 +356,7 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
     if 0 < z 0 then fderiv ℝ w z else if z 0 = 0 then fderiv ℝ u z else -pre (fderiv ℝ w (ρ z))
   set F₂ : E → E →L[ℝ] E →L[ℝ] ℝ := fun z ↦
     if 0 < z 0 then fderiv ℝ (fderiv ℝ w) z
-    else if z 0 = 0 then fderiv ℝ (fderiv ℝ u) z - g (halfSpaceFoot v₀ z) • Q₀'
+    else if z 0 = 0 then fderiv ℝ (fderiv ℝ u) z - g (orthogonalProjectionOnto V z) • Q₀'
     else -(pre.comp (fderiv ℝ (fderiv ℝ w) (ρ z))).comp Rℓ
   have hℓ : (ℓ₀ : E →L[ℝ] ℝ) ≠ 0 := fun h ↦ by
     have := congrArg (fun L : E →L[ℝ] ℝ ↦ L e₀) h
@@ -362,7 +365,8 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
   have hF₂p : ∀ z : E, 0 < z 0 → F₂ z = fderiv ℝ (fderiv ℝ w) z := fun z hz ↦ by simp [F₂, hz]
   have hF₁0 : ∀ z : E, z 0 = 0 → F₁ z = fderiv ℝ u z := fun z hz ↦ by simp [F₁, hz]
   have hF₂0 : ∀ z : E, z 0 = 0 →
-      F₂ z = fderiv ℝ (fderiv ℝ u) z - g (halfSpaceFoot v₀ z) • Q₀' := fun z hz ↦ by simp [F₂, hz]
+      F₂ z = fderiv ℝ (fderiv ℝ u) z - g (orthogonalProjectionOnto V z) • Q₀' := fun z hz ↦ by
+    simp [F₂, hz]
   have hF₁n : ∀ z : E, z 0 < 0 → F₁ z = -pre (fderiv ℝ w (ρ z)) := fun z hz ↦ by
     simp [F₁, hz.ne, not_lt.2 hz.le]
   have hF₂n : ∀ z : E, z 0 < 0 →
@@ -371,7 +375,7 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
   -- The corrector and its first two derivatives are negligible at the hyperplane.
   set D₁ : E → E →L[ℝ] ℝ := fun z ↦ if 0 < z 0 then fderiv ℝ P z else 0
   set D₂ : E → E →L[ℝ] E →L[ℝ] ℝ := fun z ↦
-    if 0 < z 0 then fderiv ℝ (fderiv ℝ P) z - g (halfSpaceFoot v₀ z) • Q₀' else 0
+    if 0 < z 0 then fderiv ℝ (fderiv ℝ P) z - g (orthogonalProjectionOnto V z) • Q₀' else 0
   -- Continuity from above at a point of the hyperplane.
   have habove : ∀ p ∈ B, p 0 = 0 →
       ContinuousWithinAt (oddRemainder u g) {z | 0 ≤ z 0} p ∧
@@ -385,8 +389,8 @@ private theorem contDiffOn_oddRemainder {α : ℝ≥0} (hα : 0 < α) (hα1 : α
       (hu2.fderiv_right (m := 0) (by norm_num)).continuousAt
     have hffu : ContinuousAt (fderiv ℝ (fderiv ℝ u)) p :=
       ((hu2.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuousAt
-    have hgf : ContinuousAt (fun z ↦ g (halfSpaceFoot v₀ z)) p :=
-      ((hgH.continuous hα).comp (continuous_halfSpaceFoot v₀)).continuousAt
+    have hgf : ContinuousAt (fun z ↦ g (orthogonalProjectionOnto V z)) p :=
+      ((hgH.continuous hα).comp (orthogonalProjectionOnto V).continuous).continuousAt
     have hP0 : P p = 0 := corrector_eq_zero g hp0
     refine ⟨?_, ?_, ?_⟩
     · have hw : Tendsto w (𝓝[{z : E | 0 ≤ z 0}] p) (𝓝 (u p - 0)) :=
@@ -504,7 +508,7 @@ private theorem exists_boundaryData {α : ℝ≥0} {u : E → ℝ} {x : E} (hx :
     (hr : 0 < r) {T : Set E} (hrT : closedBall x r ⊆ T) {K₀ : ℝ≥0}
     (hK₀ : HolderOnWith K₀ α (Δ u) (T ∩ {y | 0 ≤ y 0})) :
     ∃ g : V → ℝ, ∃ Mg : ℝ, ∃ Kg : ℝ≥0, (∀ y, |g y| ≤ Mg) ∧ HolderWith Kg α g ∧
-      ∀ y ∈ closedBall x r, y 0 = 0 → g (halfSpaceFoot v₀ y) = Δ u y := by
+      ∀ y ∈ closedBall x r, y 0 = 0 → g (orthogonalProjectionOnto V y) = Δ u y := by
   set p₀ : V := ⟨x, (mem_hyperplane_iff x).2 hx⟩
   set q : V → E := fun y ↦ ((p₀ + radialRetraction r (y - p₀) : V) : E)
   have hqx : ∀ y, dist (q y) x ≤ r := fun y ↦ by
@@ -531,12 +535,12 @@ private theorem exists_boundaryData {α : ℝ≥0} {u : E → ℝ} {x : E} (hx :
     rw [mul_one] at h
     exact holderOnWith_univ.1 h
   · simp only [q]
-    have hyx : ‖(halfSpaceFoot v₀ y : V) - p₀‖ ≤ r := by
+    have hyx : ‖(orthogonalProjectionOnto V y : V) - p₀‖ ≤ r := by
       rw [← Submodule.norm_coe, Submodule.coe_sub,
-        coe_halfSpaceFoot_unitNormal_of_apply_eq_zero hy0, ← dist_eq_norm]
+        coe_orthogonalProjectionOnto_hyperplane_of_apply_eq_zero hy0, ← dist_eq_norm]
       exact hy
     rw [radialRetraction_of_norm_le hyx, add_sub_cancel,
-      coe_halfSpaceFoot_unitNormal_of_apply_eq_zero hy0]
+      coe_orthogonalProjectionOnto_hyperplane_of_apply_eq_zero hy0]
 
 /-- **The boundary case.** At a point `x` of the hyperplane, a `C²` function vanishing on the
 hyperplane whose Laplacian is `α`-Hölder up to it near `x` has `α`-Hölder second derivatives up to
@@ -550,7 +554,7 @@ private theorem exists_mem_nhds_holderOnWith_of_apply_zero_eq_zero {α : ℝ≥0
   obtain ⟨g, Mg, Kg, hgb, hgH, hgΔ⟩ :=
     exists_boundaryData hx0 hr (hrUT.trans inter_subset_right) hK₀
   have hBU : ball x r ⊆ U := ball_subset_closedBall.trans (hrUT.trans inter_subset_left)
-  have hΔg : ∀ y ∈ ball x r, y 0 = 0 → Δ u y = g (halfSpaceFoot v₀ y) := fun y hy hy0 ↦
+  have hΔg : ∀ y ∈ ball x r, y 0 = 0 → Δ u y = g (orthogonalProjectionOnto V y) := fun y hy hy0 ↦
     (hgΔ y (ball_subset_closedBall hy) hy0).symm
   obtain ⟨hC2, hhess⟩ := contDiffOn_oddRemainder hα hα1 hgb hgH hU hu h0 hx0 hBU hΔg
   obtain ⟨KΨ, hΨ⟩ := exists_holderOnWith_correctorHessian hα hα1 hgb hgH hx0 (r / 2)
@@ -578,7 +582,7 @@ private theorem exists_mem_nhds_holderOnWith_of_apply_zero_eq_zero {α : ℝ≥0
       ⟨(hrUT (closedBall_subset_closedBall (by linarith) hy.1)).2, hy.2⟩).sub hψ
   have hφ0 : ∀ y ∈ closedBall x (r / 2), y 0 = 0 → Δ u y - L (Ψ y) = 0 := by
     intro y hy hy0
-    have : L (Ψ y) = g (halfSpaceFoot v₀ y) := by
+    have : L (Ψ y) = g (orthogonalProjectionOnto V y) := by
       rw [show Ψ y = _ from correctorHessian_of_apply_eq_zero g hy0, map_smul, ← hL,
         laplacian_halfSq, smul_eq_mul, mul_one]
     rw [this, hgΔ y (closedBall_subset_closedBall (by linarith) hy) hy0, sub_self]
@@ -644,19 +648,29 @@ private theorem exists_mem_nhds_holderOnWith_of_apply_zero_eq_zero {α : ℝ≥0
   · rw [Pi.add_apply, hhess y hyB hy0.symm]
     rw [show Ψ y = _ from correctorHessian_of_apply_eq_zero g hy0.symm, sub_add_cancel]
 
-/-- **`C^{2,α}` regularity up to a flat boundary for Poisson's equation.** Let `0 < α < 1`, let
+/-- **`C^{2,α}` regularity up to a flat boundary for Poisson's equation.** Let `0 ≤ α < 1`, let
 `u` be `C²` on an open set `U ⊆ ℝ^{n+1}` and vanish on the hyperplane `y 0 = 0`, and suppose that
 `Δu` is `α`-Hölder up to the hyperplane near each point of `U` in the closed half-space
 `0 ≤ y 0`. Then so is `D²u`: every point of `U` in the closed half-space has a neighbourhood `T`
 such that `D²u` is `α`-Hölder on `T ∩ {y | 0 ≤ y 0}`. Only the values of `u` on the closed
 half-space enter the hypotheses on `Δu` and the conclusion. -/
 theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_two_inter_of_laplacian {α : ℝ≥0}
-    (hα : 0 < α) (hα1 : α < 1) {U : Set E} {u : E → ℝ} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
+    (hα1 : α < 1) {U : Set E} {u : E → ℝ} (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
     (h0 : ∀ y ∈ U, y 0 = 0 → u y = 0)
     (hΔ : ∀ y ∈ U, 0 ≤ y 0 → ∃ T ∈ 𝓝 y, ∃ K : ℝ≥0,
       HolderOnWith K α (Δ u) (T ∩ {z | 0 ≤ z 0}))
     {x : E} (hx : x ∈ U) (hx0 : 0 ≤ x 0) :
     ∃ T ∈ 𝓝 x, ∃ K : ℝ≥0, HolderOnWith K α (iteratedFDeriv ℝ 2 u) (T ∩ {z | 0 ≤ z 0}) := by
+  -- For `α = 0` the Hölder condition is boundedness of `D²u`, which holds near `x` by continuity.
+  rcases eq_or_ne α 0 with rfl | hα0
+  · have hc : ContinuousAt (iteratedFDeriv ℝ 2 u) x :=
+      (ContinuousOn.continuousOn_iteratedFDeriv hu hU (by norm_num)).continuousAt (hU.mem_nhds hx)
+    refine ⟨_, hc.preimage_mem_nhds (ball_mem_nhds _ one_pos), 2,
+      (HolderOnWith.of_dist_le fun a ha b hb ↦ ?_).mono inter_subset_left⟩
+    simp only [NNReal.coe_zero, Real.rpow_zero, mul_one, NNReal.coe_ofNat]
+    linarith [dist_triangle_right (iteratedFDeriv ℝ 2 u a) (iteratedFDeriv ℝ 2 u b)
+      (iteratedFDeriv ℝ 2 u x), mem_ball.1 ha, mem_ball.1 hb]
+  have hα : 0 < α := pos_iff_ne_zero.2 hα0
   rcases hx0.lt_or_eq with hx0 | hx0
   · -- Above the hyperplane this is the interior estimate.
     have hΩ := EuclideanSpace.isOpen_setOf_pos_apply (0 : Fin (n + 1))

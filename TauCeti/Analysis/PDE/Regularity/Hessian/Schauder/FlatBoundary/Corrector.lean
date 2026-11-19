@@ -24,7 +24,8 @@ of `ℝ^{n+1}` for solutions of Poisson's equation with zero Dirichlet data ther
 `P = halfSq · P[g]`, `halfSq y = y₀² / 2` (`TauCeti.PDE.FlatBoundary.corrector`).
 
 It vanishes on the hyperplane together with its first derivatives, its Laplacian tends to `g`
-there, and its second derivative tends to `g D²halfSq = g e₀* ⊗ e₀*`. Quantitatively, at height
+there from the half-space `0 < y 0`, and so does its second derivative to
+`g D²halfSq = g e₀* ⊗ e₀*`. Quantitatively, at height
 `t = y 0 > 0` (`TauCeti.PDE.FlatBoundary.exists_corrector_bounds`),
 
 `|P y| = O(t²)`, `‖DP y‖ = O(t^(α + 1) + t)`, `‖D²P y - g(y') D²halfSq‖ = O(t^α)`,
@@ -57,6 +58,7 @@ public section
 noncomputable section
 
 open InnerProductSpace Laplacian Metric Set Filter Topology
+open Submodule (orthogonalProjectionOnto)
 open scoped NNReal RealInnerProductSpace
 namespace TauCeti
 
@@ -285,15 +287,16 @@ theorem inner_unitNormal (y : E) : ⟪((v₀ : {w : E // ‖w‖ = 1}) : E), y�
 theorem mem_hyperplane_iff (y : E) : y ∈ V ↔ y 0 = 0 := by
   rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_unitNormal]
 
-/-- The foot of `y` on the hyperplane is `y - y₀ e₀`. -/
-@[simp]
-theorem coe_halfSpaceFoot_unitNormal (y : E) : (halfSpaceFoot v₀ y : E) = y - y 0 • e₀ := by
-  rw [coe_halfSpaceFoot, inner_unitNormal, coe_unitNormal]
+/-- The orthogonal projection of `y` onto the hyperplane, its foot, is `y - y₀ e₀`. -/
+theorem coe_orthogonalProjectionOnto_hyperplane (y : E) :
+    (orthogonalProjectionOnto V y : E) = y - y 0 • e₀ := by
+  rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
+    Submodule.starProjection_unit_singleton ℝ v₀.2, inner_unitNormal, coe_unitNormal]
 
 /-- A point of the hyperplane is its own foot. -/
-theorem coe_halfSpaceFoot_unitNormal_of_apply_eq_zero {y : E} (hy : y 0 = 0) :
-    (halfSpaceFoot v₀ y : E) = y :=
-  coe_halfSpaceFoot_of_inner_eq_zero v₀ (by rwa [inner_unitNormal])
+theorem coe_orthogonalProjectionOnto_hyperplane_of_apply_eq_zero {y : E} (hy : y 0 = 0) :
+    (orthogonalProjectionOnto V y : E) = y := by
+  rw [coe_orthogonalProjectionOnto_hyperplane, hy, zero_smul, sub_zero]
 
 /-- The corrector `halfSq · P[g]`: it vanishes on the hyperplane together with its first
 derivatives, while its second derivative tends to `g e₀* ⊗ e₀*` at the hyperplane from the
@@ -319,8 +322,8 @@ theorem exists_corrector_bounds {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {g
       ContDiffAt ℝ ⊤ (corrector g) y ∧
       |corrector g y| ≤ C * y 0 ^ 2 ∧
       ‖iteratedFDeriv ℝ 1 (corrector g) y‖ ≤ C * (y 0 ^ ((α : ℝ) + 1) + y 0) ∧
-      ‖iteratedFDeriv ℝ 2 (corrector g) y - g (halfSpaceFoot v₀ y) • iteratedFDeriv ℝ 2 halfSq y‖ ≤
-        C * y 0 ^ (α : ℝ) ∧
+      ‖iteratedFDeriv ℝ 2 (corrector g) y -
+          g (orthogonalProjectionOnto V y) • iteratedFDeriv ℝ 2 halfSq y‖ ≤ C * y 0 ^ (α : ℝ) ∧
       ‖iteratedFDeriv ℝ 3 (corrector g) y‖ ≤ C * y 0 ^ ((α : ℝ) - 1) := by
   obtain ⟨A, hA, hdev⟩ := exists_abs_halfSpacePoissonIntegral_sub_le v₀ hα hα1
   obtain ⟨C₁, hC₁, hD₁⟩ := exists_norm_iteratedFDeriv_halfSpacePoissonIntegral_le v₀ hα hα1 1
@@ -335,7 +338,7 @@ theorem exists_corrector_bounds {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {g
   refine ⟨13 * B + 2 * B₀ + Mg, by positivity, fun y hy ↦ ?_⟩
   set t := y 0
   set h := halfSpacePoissonIntegral v₀ g
-  set c := g (halfSpaceFoot v₀ y)
+  set c := g (orthogonalProjectionOnto V y)
   have hharm := harmonicOnNhd_halfSpacePoissonIntegral v₀ hgm hgb
   have hcd : ∀ z : E, 0 < z 0 → ContDiffAt ℝ ⊤ h z := fun z hz ↦
     (InnerProductSpace.HarmonicAt.analyticAt
@@ -343,8 +346,9 @@ theorem exists_corrector_bounds {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {g
   have hf3 : ContDiffOn ℝ 3 h {z : E | 0 < z 0} := fun z hz ↦
     ((hcd z hz).of_le le_top).contDiffWithinAt
   have h₀ : |h y - c| ≤ B₀ * t ^ (α : ℝ) := by
-    have := hdev hgb hgH (by rwa [inner_unitNormal]) (halfSpaceFoot v₀ y)
-    rw [norm_sub_halfSpaceFoot v₀ (by rw [inner_unitNormal]; exact hy.le), inner_unitNormal]
+    have := hdev hgb hgH (by rwa [inner_unitNormal]) (orthogonalProjectionOnto V y)
+    rw [coe_orthogonalProjectionOnto_hyperplane, sub_sub_cancel, norm_smul,
+      Real.norm_of_nonneg hy.le, show ‖e₀‖ = 1 by simp, mul_one, inner_unitNormal]
       at this
     calc |h y - c| ≤ Kg * (A * t ^ (α : ℝ) + t ^ (α : ℝ)) := this
       _ = B₀ * t ^ (α : ℝ) := by ring
@@ -418,7 +422,7 @@ its boundary value `g(y') D²halfSq`. -/
 def correctorHessian (g : V → ℝ) (y : E) :
     ContinuousMultilinearMap ℝ (fun _ : Fin 2 ↦ E) ℝ :=
   if 0 < y 0 then iteratedFDeriv ℝ 2 (corrector g) y
-  else g (halfSpaceFoot v₀ y) • iteratedFDeriv ℝ 2 halfSq y
+  else g (orthogonalProjectionOnto V y) • iteratedFDeriv ℝ 2 halfSq y
 
 @[simp]
 theorem correctorHessian_of_pos (g : V → ℝ) {y : E} (hy : 0 < y 0) :
@@ -426,7 +430,7 @@ theorem correctorHessian_of_pos (g : V → ℝ) {y : E} (hy : 0 < y 0) :
   simp only [correctorHessian, hy, ↓reduceIte]
 
 theorem correctorHessian_of_apply_eq_zero (g : V → ℝ) {y : E} (hy : y 0 = 0) :
-    correctorHessian g y = g (halfSpaceFoot v₀ y) • iteratedFDeriv ℝ 2 halfSq y := by
+    correctorHessian g y = g (orthogonalProjectionOnto V y) • iteratedFDeriv ℝ 2 halfSq y := by
   simp only [correctorHessian, hy, lt_irrefl, ↓reduceIte]
 
 /-- **The extended Hessian of the corrector is Hölder up to the hyperplane.** On every closed
@@ -445,8 +449,8 @@ theorem exists_holderOnWith_correctorHessian {α : ℝ≥0} (hα : 0 < α) (hα1
     rw [hK]
     linarith [NNReal.coe_nonneg Kg]
   have hinner : ∀ z : E, ⟪z, e₀⟫ = z 0 := fun z ↦ EuclideanSpace.real_inner_single_one_right z 0
-  have hfootE : ∀ y : E, y - ⟪y, e₀⟫ • e₀ = (halfSpaceFoot v₀ y : E) := fun y ↦ by
-    rw [hinner, coe_halfSpaceFoot_unitNormal]
+  have hfootE : ∀ y : E, y - ⟪y, e₀⟫ • e₀ = (orthogonalProjectionOnto V y : E) := fun y ↦ by
+    rw [hinner, coe_orthogonalProjectionOnto_hyperplane]
   have he₀ : ‖e₀‖ = 1 := by simp
   refine ⟨5 * K, ?_⟩
   refine holderOnWith_of_norm_fderiv_le_mul_rpow he₀ hα1.le
@@ -455,13 +459,11 @@ theorem exists_holderOnWith_correctorHessian {α : ℝ≥0} (hα : 0 < α) (hα1
   · -- The foot of a point of the half-ball lies in the half-ball.
     intro y hy
     rw [hfootE]
-    refine ⟨?_, by simp [coe_halfSpaceFoot_unitNormal]⟩
-    rw [mem_closedBall, dist_eq_norm, coe_halfSpaceFoot_unitNormal]
-    have : y - y 0 • e₀ - x = (y - x) - ⟪y - x, e₀⟫ • e₀ := by
-      rw [hinner]
-      simp [hx, sub_sub, add_comm]
-    rw [this]
-    exact (norm_sub_inner_smul_le he₀ _).trans hy.1
+    refine ⟨?_, by rw [coe_orthogonalProjectionOnto_hyperplane]; simp⟩
+    rw [mem_closedBall, dist_eq_norm,
+      ← coe_orthogonalProjectionOnto_hyperplane_of_apply_eq_zero hx, ← Submodule.coe_sub,
+      ← map_sub, Submodule.norm_coe]
+    exact (Submodule.norm_orthogonalProjectionOnto_apply_le _ _).trans hy.1
   · intro y _ hy0
     rw [hinner] at hy0
     obtain ⟨hcd, -, -, -, h3⟩ := hP y hy0
@@ -477,14 +479,17 @@ theorem exists_holderOnWith_correctorHessian {α : ℝ≥0} (hα : 0 < α) (hα1
     rw [hfootE, hinner]
     by_cases hy0 : 0 < y 0
     · obtain ⟨-, -, -, h2, -⟩ := hP y hy0
-      have hf0 : ¬ 0 < (halfSpaceFoot v₀ y : E) 0 := by simp [coe_halfSpaceFoot_unitNormal]
-      simp only [correctorHessian, hy0, hf0, ↓reduceIte, halfSpaceFoot_halfSpaceFoot,
-        iteratedFDeriv_two_halfSq_eq_iteratedFDeriv_two_halfSq (halfSpaceFoot v₀ y : E) y]
+      have hf0 : ¬ 0 < (orthogonalProjectionOnto V y : E) 0 := by
+        rw [coe_orthogonalProjectionOnto_hyperplane]
+        simp
+      simp only [correctorHessian, hy0, hf0, ↓reduceIte,
+        Submodule.orthogonalProjectionOnto_mem_subspace_eq_self,
+        iteratedFDeriv_two_halfSq_eq_iteratedFDeriv_two_halfSq (orthogonalProjectionOnto V y : E) y]
       exact h2.trans (mul_le_mul_of_nonneg_right hCK (Real.rpow_nonneg hy0.le _))
     · have hy0' : y 0 = 0 := le_antisymm (not_lt.1 hy0) (by
         rcases ‹y ∈ S› with ⟨-, h⟩
         exact h)
-      rw [coe_halfSpaceFoot_unitNormal_of_apply_eq_zero hy0', sub_self, norm_zero]
+      rw [coe_orthogonalProjectionOnto_hyperplane_of_apply_eq_zero hy0', sub_self, norm_zero]
       positivity
   · -- On the hyperplane the extended Hessian is `g D²halfSq`.
     refine HolderOnWith.of_dist_le fun y hy y' hy' ↦ ?_
@@ -492,15 +497,16 @@ theorem exists_holderOnWith_correctorHessian {α : ℝ≥0} (hα : 0 < α) (hα1
     have hy0' : y' 0 = 0 := by rw [← hinner]; exact hy'.2
     simp only [correctorHessian, hy0, hy0', lt_irrefl, ↓reduceIte]
     rw [iteratedFDeriv_two_halfSq_eq_iteratedFDeriv_two_halfSq y' y, dist_eq_norm,
-      ← sub_smul (g (halfSpaceFoot v₀ y)) (g (halfSpaceFoot v₀ y'))
+      ← sub_smul (g (orthogonalProjectionOnto V y)) (g (orthogonalProjectionOnto V y'))
         (iteratedFDeriv ℝ 2 halfSq y), norm_smul]
-    have hgd : ‖g (halfSpaceFoot v₀ y) - g (halfSpaceFoot v₀ y')‖ ≤
+    have hgd : ‖g (orthogonalProjectionOnto V y) - g (orthogonalProjectionOnto V y')‖ ≤
         Kg * dist y y' ^ (α : ℝ) := by
-      have := hgH.dist_le (halfSpaceFoot v₀ y) (halfSpaceFoot v₀ y')
-      rwa [Subtype.dist_eq, coe_halfSpaceFoot_unitNormal_of_apply_eq_zero hy0,
-        coe_halfSpaceFoot_unitNormal_of_apply_eq_zero hy0',
-        dist_eq_norm (g (halfSpaceFoot v₀ y))] at this
-    calc ‖g (halfSpaceFoot v₀ y) - g (halfSpaceFoot v₀ y')‖ * ‖iteratedFDeriv ℝ 2 halfSq y‖
+      have := hgH.dist_le (orthogonalProjectionOnto V y) (orthogonalProjectionOnto V y')
+      rwa [Subtype.dist_eq, coe_orthogonalProjectionOnto_hyperplane_of_apply_eq_zero hy0,
+        coe_orthogonalProjectionOnto_hyperplane_of_apply_eq_zero hy0',
+        dist_eq_norm (g (orthogonalProjectionOnto V y))] at this
+    calc ‖g (orthogonalProjectionOnto V y) - g (orthogonalProjectionOnto V y')‖ *
+          ‖iteratedFDeriv ℝ 2 halfSq y‖
         ≤ Kg * dist y y' ^ (α : ℝ) * 1 :=
           mul_le_mul hgd (norm_iteratedFDeriv_two_halfSq_le y) (norm_nonneg _) (by positivity)
       _ ≤ (K : ℝ) * dist y y' ^ (α : ℝ) := by
