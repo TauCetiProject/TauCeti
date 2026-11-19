@@ -239,21 +239,7 @@ theorem detLineCoprodTensorEquiv_detLineCongr (e : (E × Λ') ≃ₗ[𝕜] E × 
       TensorProduct.congr (LinearEquiv.refl 𝕜 _) eΛ.detLineCongr
         (detLineCoprodTensorEquiv D₁ D₂' t) := by
   have hD' (p : E × Λ') : D₁.coprod D₂ (e p) = D₁.coprod D₂' p := LinearMap.congr_fun hD p
-  -- `LinearMap.detLineCongr` is the tensor product of the transports along the isomorphisms of
-  -- kernels and cokernels induced by `e`.
-  have hcongr : LinearMap.detLineCongr _ e (LinearEquiv.refl 𝕜 F) hD t =
-      TensorProduct.congr
-        (e.ofSubmodules _ _ (LinearMap.map_ker_eq_ker_of_comp_eq _ e.surjective
-          (LinearEquiv.refl 𝕜 F).injective hD)).detLineCongr
-        (Submodule.Quotient.equiv _ _ (LinearEquiv.refl 𝕜 F)
-          (LinearMap.map_range_eq_range_of_comp_eq _ e.surjective hD)).detLineCongr.symm.dualMap
-        t := by
-    induction t using TensorProduct.inductionOn with
-    | add t₁ t₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-    | tmul a φ =>
-      rw [LinearMap.detLineCongr_tmul, TensorProduct.congr_tmul]
-      exact congrArg _ (LinearMap.ext fun z ↦ (LinearEquiv.dualMap_apply _ φ z).symm)
-  rw [hcongr]
+  rw [LinearMap.detLineCongr_eq_tensorProductCongr]
   refine detLineCoprodTensorEquiv_congr eΛ _ _ (fun x ↦ Subtype.ext ?_) (fun p ↦ ?_)
     (fun l ↦ ?_) (fun z ↦ ?_) t
   · simp [kerCoprodHom_apply, heE]

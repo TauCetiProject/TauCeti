@@ -81,6 +81,8 @@ the linear algebra itself is standard.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
   dimension one (for an infinite-dimensional kernel or cokernel, by the `finrank = 0`
   convention).
+* `LinearMap.detLineCongr_eq_tensorProductCongr`: transport along a commuting square is the
+  tensor product of the transports along the induced isomorphisms of kernels and cokernels.
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
 * `LinearMap.detLineCongr_apply_eq_det_smul`: automorphisms of source and target act on the
@@ -403,6 +405,19 @@ theorem detLineCongr_tmul (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M �
           (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)) x ⊗ₜ
         (φ ∘ₗ (LinearEquiv.detLineCongr (Submodule.Quotient.equiv _ _ e₂
           (f.map_range_eq_range_of_comp_eq e₁.surjective h))).symm.toLinearMap) :=
+  (rfl)
+
+/-- Transport along a commuting square is the tensor product of the transport along the induced
+isomorphism of kernels and the dual of the inverse transport along the induced isomorphism of
+cokernels. -/
+theorem detLineCongr_eq_tensorProductCongr (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M')
+    (e₂ : N ≃ₗ[R] N') (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) :
+    f.detLineCongr e₁ e₂ h =
+      TensorProduct.congr
+        (e₁.ofSubmodules _ _
+          (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)).detLineCongr
+        (Submodule.Quotient.equiv _ _ e₂
+          (f.map_range_eq_range_of_comp_eq e₁.surjective h)).detLineCongr.symm.dualMap :=
   (rfl)
 
 /-- Transport along the identity square is the identity. -/
