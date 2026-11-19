@@ -13,7 +13,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.Distance
 
 If a Riemannian metric `g` uniformly dominates the given tangent norms on `M`, the
 identification `ofWithMetric : WithMetric g → M` is Lipschitz for Riemannian extended distance.
-When `M` is complete for that distance, the copy carrying `g` is complete as well.
+When `M` is complete for that distance, the copy carrying `g` is complete as well. Symmetrically,
+if the given tangent norms dominate `g`, then `toWithMetric g` is Lipschitz, and if `g` is a
+constant multiple `C²` of the given squared norms, the Riemannian extended distance of the copy is
+exactly `C` times that of `M` (`TauCeti.WithMetric.riemannianEDist_toWithMetric_eq_mul`).
 Extended distances allow points in distinct connected components to be infinitely far apart.
 
 The carrier and tangent-norm comparison are provided by `TauCeti.WithMetric`.
@@ -47,6 +50,36 @@ theorem riemannianEDist_ofWithMetric_le_mul {C : ℝ≥0} (hC0 : C ≠ 0)
   Manifold.riemannianEDist_le_mul contMDiff_ofWithMetric hC0
     (fun x v ↦ norm_mfderiv_ofWithMetric_le_mul
       (hg x.ofWithMetric (mfderiv I I ofWithMetric x v))) x y
+
+/-- If `g` is bounded by `C²` times the given squared tangent norms, passing to the copy carrying
+`g` increases Riemannian extended distance by at most the positive factor `C`. -/
+theorem riemannianEDist_toWithMetric_le_mul {C : ℝ≥0} (hC0 : C ≠ 0)
+    (hg : ∀ x (v : TangentSpace I x), g.inner x v v ≤ (C : ℝ) ^ 2 * ‖v‖ ^ 2) (x y : M) :
+    riemannianEDist I (toWithMetric g x) (toWithMetric g y) ≤ C * riemannianEDist I x y := by
+  refine Manifold.riemannianEDist_le_mul contMDiff_toWithMetric hC0 (fun x v ↦ ?_) x y
+  have h : ‖mfderiv I I (toWithMetric g) x v‖ ^ 2 ≤ ((C : ℝ) * ‖v‖) ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, inner_def, mfderiv_ofWithMetric_mfderiv_toWithMetric,
+      mul_pow]
+    exact hg x v
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (mul_nonneg C.coe_nonneg (norm_nonneg _))
+    two_ne_zero).1 h
+
+/-- If `g` is `C²` times the given squared tangent norms, for a positive constant `C`, then the
+Riemannian extended distance of the copy carrying `g` is `C` times that of `M`. For instance,
+rescaling a metric by a constant `c > 0` multiplies its Riemannian distance by `√c`. -/
+theorem riemannianEDist_toWithMetric_eq_mul {C : ℝ≥0} (hC0 : C ≠ 0)
+    (hg : ∀ x (v : TangentSpace I x), g.inner x v v = (C : ℝ) ^ 2 * ‖v‖ ^ 2) (x y : M) :
+    riemannianEDist I (toWithMetric g x) (toWithMetric g y) = C * riemannianEDist I x y := by
+  refine le_antisymm (riemannianEDist_toWithMetric_le_mul hC0 (fun x v ↦ (hg x v).le) x y) ?_
+  -- The reverse inequality is the comparison along `ofWithMetric`, with the factor `C⁻¹`.
+  have hle := riemannianEDist_ofWithMetric_le_mul (g := g) (inv_ne_zero hC0) (fun x v ↦ by
+    rw [hg, NNReal.coe_inv, ← mul_assoc, ← mul_pow, inv_mul_cancel₀ (NNReal.coe_ne_zero.2 hC0),
+      one_pow, one_mul]) (toWithMetric g x) (toWithMetric g y)
+  rw [ofWithMetric_toWithMetric, ofWithMetric_toWithMetric] at hle
+  calc (C : ℝ≥0∞) * riemannianEDist I x y
+      ≤ C * (C⁻¹ * riemannianEDist I (toWithMetric g x) (toWithMetric g y)) := by gcongr
+    _ = riemannianEDist I (toWithMetric g x) (toWithMetric g y) := by
+      rw [← mul_assoc, ← ENNReal.coe_mul, mul_inv_cancel₀ hC0, ENNReal.coe_one, one_mul]
 
 end Intrinsic
 
