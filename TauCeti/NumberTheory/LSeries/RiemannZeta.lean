@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.LSeries.SumCoeff
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
-import Mathlib.NumberTheory.LSeries.Dirichlet
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.BigOperators.Intervals
