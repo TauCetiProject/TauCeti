@@ -32,7 +32,8 @@ theorem HasFDerivAt.eq_zero_of_eventually_const {𝕜 H E : Type*}
 
 /-- The derivative within any set vanishes outside the topological support. No uniqueness
 hypothesis on differentiation within the set is required. -/
-theorem fderivWithin_of_notMem_tsupport (𝕜 : Type*) {E F : Type*} [NontriviallyNormedField 𝕜]
+theorem TauCeti.fderivWithin_of_notMem_tsupport (𝕜 : Type*) {E F : Type*}
+    [NontriviallyNormedField 𝕜]
     [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
     [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
     {f : E → F} {s : Set E} {x : E} (h : x ∉ tsupport f) :

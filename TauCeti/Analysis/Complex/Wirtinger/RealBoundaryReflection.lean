@@ -497,9 +497,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {Ω : Opens ℂ}
 private theorem measurableSet_im_pos : MeasurableSet {z : ℂ | 0 < z.im} :=
   measurableSet_lt measurable_const Complex.measurable_im
 
-private theorem measurableSet_im_nonneg' : MeasurableSet {z : ℂ | 0 ≤ z.im} :=
-  measurableSet_le measurable_const Complex.measurable_im
-
 /-- `Ω ∩ {0 ≤ im}` is a neighbourhood of every point of `Ω` off the real axis in the upper
 half-plane. -/
 private theorem inter_im_nonneg_mem_nhds {z : ℂ} (hz : z ∈ (Ω : Set ℂ)) (hz' : 0 < z.im) :
@@ -516,10 +513,10 @@ private theorem integrableOn_im_nonneg_of_continuousOn (χ : 𝓓(Ω, ℂ)) {h :
     (h0 : ∀ z, z ∉ tsupport (χ : ℂ → ℂ) → h z = 0) :
     IntegrableOn h {z : ℂ | 0 ≤ z.im} := by
   have hK : IsCompact (tsupport (χ : ℂ → ℂ) ∩ {z : ℂ | 0 ≤ z.im}) :=
-    χ.hasCompactSupport.isCompact.inter_right (isClosed_le continuous_const Complex.continuous_im)
+    χ.hasCompactSupport.isCompact.inter_right isClosed_im_nonneg
   have hKΩ : tsupport (χ : ℂ → ℂ) ∩ {z : ℂ | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} :=
     fun z hz ↦ ⟨χ.tsupport_subset hz.1, hz.2⟩
-  exact ((hh.mono hKΩ).integrableOn_compact hK).of_forall_sdiff_eq_zero measurableSet_im_nonneg'
+  exact ((hh.mono hKΩ).integrableOn_compact hK).of_forall_sdiff_eq_zero measurableSet_im_nonneg
     fun z hz ↦ h0 z fun h ↦ hz.2 ⟨h, hz.1⟩
 
 section ClassicalSolution
@@ -540,10 +537,6 @@ private theorem contDiffOn_smul (χ : 𝓓(Ω, ℂ)) :
         fun h ↦ hzΩ (χ.tsupport_subset h)] with w hw
       simp [hw]
     exact (contDiffAt_const.congr_of_eventuallyEq h0).contDiffWithinAt
-
-private theorem hasCompactSupport_smul (χ : 𝓓(Ω, ℂ)) :
-    HasCompactSupport (fun z ↦ χ z • ξ z) :=
-  χ.hasCompactSupport.smul_right
 
 include hξ hη in
 /-- Off the real axis, the integrand of the weak equation is the Cauchy–Riemann operator of the
@@ -585,7 +578,7 @@ theorem setIntegral_im_nonneg_lineDeriv_add_I_mul_smul_eq (χ : 𝓓(Ω, ℂ)) :
   · simp only [integral_of_not_completeSpace hF, smul_zero, sub_zero]
   set f : ℂ → F := fun z ↦ χ z • ξ z
   have hf := contDiffOn_smul hξ χ
-  have hfc : HasCompactSupport f := hasCompactSupport_smul χ
+  have hfc : HasCompactSupport f := χ.hasCompactSupport.smul_right
   have h1 := integrableOn_im_pos_fderiv_apply_of_contDiffOn hf hfc 1
   have hI := integrableOn_im_pos_fderiv_apply_of_contDiffOn hf hfc I
   have hL : IntegrableOn
@@ -626,7 +619,7 @@ theorem hasWeakConjWirtingerDerivRealBoundaryOn_of_contDiffOn
     (hreal : ∀ x : ℝ, (x : ℂ) ∈ (Ω : Set ℂ) → star (ξ x) = ξ x) :
     HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η := by
   have hm : MeasurableSet ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
-    Ω.isOpen.measurableSet.inter measurableSet_im_nonneg'
+    Ω.isOpen.measurableSet.inter measurableSet_im_nonneg
   have hD := hξ.continuousOn_fderivWithin
     (by rw [inter_comm]; exact (uniqueDiffOn_setOfPred_le_im 0).inter Ω.isOpen) le_rfl
   have hηc : ContinuousOn
