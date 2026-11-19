@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 public import TauCeti.Analysis.Variational.BoundedSublevels
 public import TauCeti.Topology.Semicontinuity.Sequential
-public import Mathlib.Topology.Algebra.Order.Archimedean
-public import Mathlib.Topology.Order.IsLUB
 
 /-!
 # The direct method along weakly convergent sequences
@@ -56,28 +54,6 @@ public section
 open Set Filter Topology Bornology NormedSpace
 
 namespace TauCeti
-
-/-- Every real function on a nonempty set admits a minimizing sequence of points of the set: its
-values are eventually below every number exceeding a value of the function on the set. -/
-theorem exists_seq_forall_gt_eventually_lt {X : Type*} {E : X → ℝ} {S : Set X}
-    (hS : S.Nonempty) :
-    ∃ u : ℕ → X, (∀ n, u n ∈ S) ∧ ∀ v ∈ S, ∀ c > E v, ∀ᶠ n in atTop, E (u n) < c := by
-  by_cases hbdd : BddBelow (E '' S)
-  · -- The values converge to the infimum, which lies below every value.
-    obtain ⟨w, -, hw, hwS⟩ := exists_seq_tendsto_sInf (hS.image E) hbdd
-    choose u hu hEu using hwS
-    refine ⟨u, hu, fun v hv c hc ↦ ?_⟩
-    simpa only [hEu] using
-      hw.eventually (Iio_mem_nhds ((csInf_le hbdd (mem_image_of_mem E hv)).trans_lt hc))
-  · -- The values tend to `-∞`.
-    have hlt (n : ℕ) : ∃ x ∈ S, E x < -n := by
-      obtain ⟨_, ⟨x, hx, rfl⟩, hlt⟩ := not_bddBelow_iff.1 hbdd (-n)
-      exact ⟨x, hx, hlt⟩
-    choose u hu hEu using hlt
-    have hbot : Tendsto (fun n ↦ E (u n)) atTop atBot :=
-      tendsto_atBot_mono (fun n ↦ (hEu n).le)
-        (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
-    exact ⟨u, hu, fun _ _ c _ ↦ hbot.eventually_lt_atBot c⟩
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 

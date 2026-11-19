@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import Mathlib.Order.LiminfLimsup
 public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.Topology.Sequences
@@ -24,8 +25,9 @@ along weakly convergent minimizing sequences and only needs the sequential notio
 
 A sequence is minimizing for `f` on a set `t` when its values are eventually below every number
 exceeding a value of `f` on `t`; for real values this holds when they converge to the infimum of
-`f` on `t`, or tend to `-∞`. A limit in `s` of a minimizing sequence of points of `s` minimizes a
-sequentially lower semicontinuous function on `t`
+`f` on `t`, or tend to `-∞`, and minimizing sequences of points of a nonempty `t` always exist
+(`TauCeti.exists_seq_forall_gt_eventually_lt`). A limit in `s` of a minimizing sequence of points
+of `s` minimizes a sequentially lower semicontinuous function on `t`
 (`TauCeti.SeqLowerSemicontinuousOn.isMinOn_of_tendsto`).
 
 ## Main declarations
@@ -38,6 +40,7 @@ sequentially lower semicontinuous function on `t`
   of the values.
 * `TauCeti.SeqLowerSemicontinuousOn.isMinOn_of_tendsto`: limits of minimizing sequences are
   minimizers.
+* `TauCeti.exists_seq_forall_gt_eventually_lt`: real functions admit minimizing sequences.
 -/
 
 public section
@@ -136,5 +139,27 @@ theorem seqLowerSemicontinuousOn_iff_lowerSemicontinuousOn [FrechetUrysohnSpace 
     {f : α → β} {s : Set α} : SeqLowerSemicontinuousOn f s ↔ LowerSemicontinuousOn f s :=
   ⟨SeqLowerSemicontinuousOn.lowerSemicontinuousOn,
     LowerSemicontinuousOn.seqLowerSemicontinuousOn⟩
+
+/-- Every real function on a nonempty set admits a minimizing sequence of points of the set: its
+values are eventually below every number exceeding a value of the function on the set. -/
+theorem exists_seq_forall_gt_eventually_lt {X : Type*} {E : X → ℝ} {S : Set X}
+    (hS : S.Nonempty) :
+    ∃ u : ℕ → X, (∀ n, u n ∈ S) ∧ ∀ v ∈ S, ∀ c > E v, ∀ᶠ n in atTop, E (u n) < c := by
+  by_cases hbdd : BddBelow (E '' S)
+  · -- The values converge to the infimum, which lies below every value.
+    obtain ⟨w, -, hw, hwS⟩ := exists_seq_tendsto_sInf (hS.image E) hbdd
+    choose u hu hEu using hwS
+    refine ⟨u, hu, fun v hv c hc ↦ ?_⟩
+    simpa only [hEu] using
+      hw.eventually (Iio_mem_nhds ((csInf_le hbdd (mem_image_of_mem E hv)).trans_lt hc))
+  · -- The values tend to `-∞`.
+    have hlt (n : ℕ) : ∃ x ∈ S, E x < -n := by
+      obtain ⟨_, ⟨x, hx, rfl⟩, hlt⟩ := not_bddBelow_iff.1 hbdd (-n)
+      exact ⟨x, hx, hlt⟩
+    choose u hu hEu using hlt
+    have hbot : Tendsto (fun n ↦ E (u n)) atTop atBot :=
+      tendsto_atBot_mono (fun n ↦ (hEu n).le)
+        (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
+    exact ⟨u, hu, fun _ _ c _ ↦ hbot.eventually_lt_atBot c⟩
 
 end TauCeti
