@@ -7,13 +7,15 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 
 /-!
 # Scheme-theoretic images
 
 This file contains general results about Mathlib's scheme-theoretic image construction.
 For a quasi-compact morphism the map onto its scheme-theoretic image is
-scheme-theoretically dominant. In particular, a reduced source gives a reduced image.
+scheme-theoretically dominant. In particular, a reduced source gives a reduced image, and an
+integral source gives an integral image.
 When the topological image is closed, the factorization is surjective on points.
 
 ## Main declarations
@@ -77,6 +79,12 @@ instance isSchemeTheoreticallyDominant_toImage : IsSchemeTheoreticallyDominant f
 /-- The scheme-theoretic image of a quasi-compact morphism from a reduced scheme is reduced. -/
 instance isReduced_image [IsReduced X] : IsReduced f.image :=
   IsSchemeTheoreticallyDominant.isReduced f.toImage
+
+/-- The scheme-theoretic image of a quasi-compact morphism from an integral scheme is integral: it
+is reduced, and irreducible since the generic point of the source is dense in it. -/
+instance isIntegral_image [IsIntegral X] : IsIntegral f.image :=
+  have := f.toImage.irreducibleSpace_of_isDominant
+  isIntegral_of_irreducibleSpace_of_isReduced _
 
 /-- If a quasi-compact morphism has closed topological image, its map to the
 scheme-theoretic image is surjective. -/

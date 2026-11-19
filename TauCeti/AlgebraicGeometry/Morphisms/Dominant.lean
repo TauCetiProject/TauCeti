@@ -38,6 +38,8 @@ the generic point, and a dominant one by its pullback of rational functions.
 * `AlgebraicGeometry.IsDominant.pullback_fst_of_isOpenMap`: base change of a dominant morphism
   along a morphism with open underlying map (for instance an étale morphism) is dominant, without
   reducedness or irreducibility assumptions.
+* `AlgebraicGeometry.isDominant_of_isOpenImmersion`: an open immersion from a nonempty scheme
+  into an irreducible scheme is dominant.
 * `AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_isDominant`: a dominant morphism of
   irreducible schemes sends the generic point to the generic point.
 * `AlgebraicGeometry.isDominant_iff_genericPoint_eq`: conversely, a morphism of irreducible
@@ -96,6 +98,12 @@ theorem Scheme.Hom.irreducibleSpace_of_isDominant {X Y : Scheme.{u}} [Irreducibl
       (IrreducibleSpace.isIrreducible_univ X).image f f.continuous.continuousOn
   refine (irreducibleSpace_def Y).mpr ?_
   simpa only [Set.top_eq_univ, f.denseRange.closure_eq] using himage.closure
+
+/-- An open immersion from a nonempty scheme into an irreducible scheme is dominant: its image is a
+nonempty open subset of an irreducible space, hence dense. -/
+instance (priority := 100) isDominant_of_isOpenImmersion {X Y : Scheme.{u}} [Nonempty X]
+    [IrreducibleSpace Y] (f : X ⟶ Y) [IsOpenImmersion f] : IsDominant f :=
+  ⟨f.isOpenEmbedding.isOpen_range.dense (Set.range_nonempty _)⟩
 
 /-- The preimage of a nonempty open under a dominant morphism is nonempty. -/
 instance Scheme.Hom.nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X ⟶ Y)
