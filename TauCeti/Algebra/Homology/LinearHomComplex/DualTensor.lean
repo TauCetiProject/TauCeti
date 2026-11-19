@@ -24,10 +24,10 @@ constructs the **dual-tensor comparison**
 
 which sends `b ⊗ φ`, for `b ∈ Bᵖ` and `φ ∈ (A∨)^q`, to the cochain `a ↦ φ(a) • b` of degree
 `p + q`. No sign enters: in the Koszul convention, `φ` already stands next to its argument. It is
-the complex-level form of Mathlib's contraction `dualTensorHom`, and it is the identification
-through which a functional on an external kernel `A ⊗ B∨` with values in `R`, such as a count of
-rigid solutions of a Fredholm problem from `A` to `B` weighted by orientations, is read as an
-operator from `A` to `B`.
+the complex-level form of Mathlib's contraction `dualTensorHom`. Reading a functional on an
+external kernel `A ⊗ B∨` as an operator from `A` to `B` ends with this map; it must first be
+preceded by the identification of `(A ⊗ B∨)∨` with `B∨∨ ⊗ A∨` and the inverse of the bidual map
+on `B`, neither of which is in this file.
 
 The comparison is built from structure that already exists rather than by hand:
 
@@ -127,18 +127,23 @@ noncomputable def linearHomComplexFromTensorUnitIso (K : CochainComplex (ModuleC
 
 /-- The isomorphism `linearHomComplexFromTensorUnitIso` evaluates a cochain of degree `n` at
 `1`. -/
+@[simp]
 lemma linearHomComplexFromTensorUnitIso_hom_f_apply (K : CochainComplex (ModuleCat.{v} R) ℤ) (n : ℤ)
-    (z : (linearHomComplex R (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) K).X n) :
-    ((linearHomComplexFromTensorUnitIso R K).hom.f n).hom z =
+    (z : ModuleCat.of R (Cochain (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) K n)) :
+    (dsimp% only [linearHomComplex_X]
+      ModuleCat.Hom.hom ((linearHomComplexFromTensorUnitIso R K).hom.f n) z) =
       cochainFromTensorUnitLinearEquiv R K n z :=
   (rfl)
 
 /-- The inverse of `linearHomComplexFromTensorUnitIso` sends `x ∈ Kⁿ` to the cochain
 `r ↦ r • x`. -/
+@[simp]
 lemma linearHomComplexFromTensorUnitIso_inv_f_apply (K : CochainComplex (ModuleCat.{v} R) ℤ) (n : ℤ)
     (x : K.X n) :
-    ((linearHomComplexFromTensorUnitIso R K).inv.f n).hom x =
-      (cochainFromTensorUnitLinearEquiv R K n).symm x :=
+    (dsimp% only [linearHomComplex_X]
+      ModuleCat.Hom.hom ((linearHomComplexFromTensorUnitIso R K).inv.f n) x) =
+      ((cochainFromTensorUnitLinearEquiv R K n).symm x :
+        ModuleCat.of R (Cochain (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) K n)) :=
   (rfl)
 
 /-- Evaluation at `1` is natural in the target complex. -/
@@ -202,17 +207,18 @@ lemma linearHomComplexDualTensor_ιTensorObj_tmul (A B : CochainComplex (ModuleC
 
 /-- The dual-tensor comparison of `b ⊗ φ`, for `b ∈ Bᵖ` and `φ` of degree `q`, has as component
 on `Aⁱ` with `i + q = 0` the map `a ↦ φ(a) • b`. -/
+@[simp]
 lemma linearHomComplexDualTensor_ιTensorObj_tmul_v (A B : CochainComplex (ModuleCat.{v} R) ℤ)
     {p q n : ℤ} (h : p + q = n) (b : B.X p)
     (φ : ModuleCat.of R (Cochain A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) q)) {i : ℤ}
     (hi : i + q = 0) :
     (dsimp% only [linearHomComplex_X]
-      ModuleCat.Hom.hom
-        (HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h ≫
-          (linearHomComplexDualTensor R A B).f n) (b ⊗ₜ φ) :
+      ModuleCat.Hom.hom ((linearHomComplexDualTensor R A B).f n)
+        ((HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom (b ⊗ₜ φ)) :
         ModuleCat.of R (Cochain A B n)).v i p (by omega) =
       Cochain.toSingleEquiv hi φ ≫ ModuleCat.ofHom (LinearMap.toSpanSingleton R (B.X p) b) := by
-  rw [linearHomComplexDualTensor_ιTensorObj_tmul, Cochain.comp_v _ _ _ i 0 p hi (zero_add p),
+  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
+    linearHomComplexDualTensor_ιTensorObj_tmul, Cochain.comp_v _ _ _ i 0 p hi (zero_add p),
     cochainFromTensorUnitLinearEquiv_symm_apply, Cochain.fromSingleMk_v,
     Cochain.toSingleEquiv_apply, Category.assoc]
   -- The tensor unit of `ModuleCat R` is `ModuleCat.of R R`, but the two single complexes are
@@ -221,16 +227,17 @@ lemma linearHomComplexDualTensor_ιTensorObj_tmul_v (A B : CochainComplex (Modul
 
 /-- The dual-tensor comparison of `b ⊗ φ`, for `φ` of degree `q`, vanishes on `Aⁱ` unless
 `i + q = 0`. -/
+@[simp]
 lemma linearHomComplexDualTensor_ιTensorObj_tmul_v_eq_zero
     (A B : CochainComplex (ModuleCat.{v} R) ℤ) {p q n : ℤ} (h : p + q = n) (b : B.X p)
     (φ : ModuleCat.of R (Cochain A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) q)) {i j : ℤ}
     (hij : i + n = j) (hi : i + q ≠ 0) :
     (dsimp% only [linearHomComplex_X]
-      ModuleCat.Hom.hom
-        (HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h ≫
-          (linearHomComplexDualTensor R A B).f n) (b ⊗ₜ φ) :
+      ModuleCat.Hom.hom ((linearHomComplexDualTensor R A B).f n)
+        ((HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom (b ⊗ₜ φ)) :
         ModuleCat.of R (Cochain A B n)).v i j hij = 0 := by
-  rw [linearHomComplexDualTensor_ιTensorObj_tmul, Cochain.comp_v _ _ _ i (i + q) j rfl (by omega),
+  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
+    linearHomComplexDualTensor_ιTensorObj_tmul, Cochain.comp_v _ _ _ i (i + q) j rfl (by omega),
     cochainFromTensorUnitLinearEquiv_symm_apply,
     Cochain.fromSingleMk_v_eq_zero _ _ _ _ _ hi, Limits.comp_zero]
 
@@ -263,32 +270,19 @@ private noncomputable def cochainToTensorUnitLinearEquiv {i q : ℤ} (hi : i + q
     Cochain A (𝟙_ (CochainComplex (ModuleCat.{v} R) ℤ)) q ≃ₗ[R] Module.Dual R (A.X i) :=
   (Cochain.toSingleLinearEquiv hi).trans ModuleCat.homLinearEquiv
 
-/-- The component on `Aⁱ` of a cochain of degree `n` from `A` to `B`, as a linear map. -/
-private noncomputable def cochainVLinearMap (n i j : ℤ) (hij : i + n = j) :
-    Cochain A B n →ₗ[R] (A.X i →ₗ[R] B.X j) where
-  toFun z := (z.v i j hij).hom
-  map_add' _ _ := by simp
-  map_smul' _ _ := by simp
-
-private lemma cochainVLinearMap_apply {n i j : ℤ} (hij : i + n = j) (z : Cochain A B n) :
-    cochainVLinearMap A B n i j hij z = (z.v i j hij).hom :=
-  (rfl)
-
 /-- On a summand `Bᵖ ⊗ Hom(A, R[0])^q`, the component on `Aⁱ` with `i + q = 0` of the dual-tensor
 comparison is Mathlib's contraction `dualTensorHom`, after identifying `Hom(A, R[0])^q` with the
 dual of `Aⁱ`. -/
-private lemma cochainVLinearMap_linearHomComplexDualTensor {p q n : ℤ} (h : p + q = n) {i : ℤ}
+private lemma vLinearMap_linearHomComplexDualTensor {p q n : ℤ} (h : p + q = n) {i : ℤ}
     (hi : i + q = 0) (t : ↑(B.X p) ⊗[R] ↑((linearHomComplex R A (𝟙_ _)).X q)) :
-    cochainVLinearMap A B n i p (by omega) (((linearHomComplexDualTensor R A B).f n).hom
+    Cochain.vLinearMap A B n i p (by omega) (((linearHomComplexDualTensor R A B).f n).hom
         ((HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom t)) =
       dualTensorHom R (A.X i) (B.X p) (TensorProduct.comm R _ _
         (TensorProduct.map LinearMap.id (cochainToTensorUnitLinearEquiv A hi).toLinearMap t)) := by
   induction t using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul b φ =>
-    rw [← LinearMap.comp_apply ((linearHomComplexDualTensor R A B).f n).hom, ← ModuleCat.hom_comp,
-      cochainVLinearMap_apply,
-      linearHomComplexDualTensor_ιTensorObj_tmul_v A B h b φ hi]
+    rw [Cochain.vLinearMap_apply, linearHomComplexDualTensor_ιTensorObj_tmul_v A B h b φ hi]
     ext a
     simp only [TensorProduct.map_tmul, LinearMap.id_coe, id_eq, LinearEquiv.coe_coe,
       TensorProduct.comm_tmul, dualTensorHom_apply, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
@@ -299,20 +293,19 @@ private lemma cochainVLinearMap_linearHomComplexDualTensor {p q n : ℤ} (h : p 
 
 /-- On a summand `Bᵖ ⊗ Hom(A, R[0])^q`, the dual-tensor comparison vanishes on `Aⁱ` unless
 `i + q = 0`. -/
-private lemma cochainVLinearMap_linearHomComplexDualTensor_eq_zero {p q n : ℤ} (h : p + q = n)
+private lemma vLinearMap_linearHomComplexDualTensor_eq_zero {p q n : ℤ} (h : p + q = n)
     {i j : ℤ} (hij : i + n = j) (hi : i + q ≠ 0)
     (t : ↑(B.X p) ⊗[R] ↑((linearHomComplex R A (𝟙_ _)).X q)) :
-    cochainVLinearMap A B n i j hij (((linearHomComplexDualTensor R A B).f n).hom
+    Cochain.vLinearMap A B n i j hij (((linearHomComplexDualTensor R A B).f n).hom
         ((HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom t)) = 0 := by
   induction t using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy, add_zero]
   | tmul b φ =>
-    rw [← LinearMap.comp_apply ((linearHomComplexDualTensor R A B).f n).hom, ← ModuleCat.hom_comp,
-      cochainVLinearMap_apply,
+    rw [Cochain.vLinearMap_apply,
       linearHomComplexDualTensor_ιTensorObj_tmul_v_eq_zero A B h b φ hij hi, ModuleCat.hom_zero]
 
-private lemma cochainVLinearMap_eq_zero_of_isZero {n i j : ℤ} (hij : i + n = j)
-    (hA : IsZero (A.X i)) (z : Cochain A B n) : cochainVLinearMap A B n i j hij z = 0 := by
+private lemma vLinearMap_eq_zero_of_isZero {n i j : ℤ} (hij : i + n = j)
+    (hA : IsZero (A.X i)) (z : Cochain A B n) : Cochain.vLinearMap A B n i j hij z = 0 := by
   have : Subsingleton (A.X i) := ModuleCat.subsingleton_of_isZero hA
   ext a
   rw [Subsingleton.elim a 0, map_zero, LinearMap.zero_apply]
@@ -326,12 +319,12 @@ private noncomputable def dualTensorSummandEquiv {p q i : ℤ} (hi : i + q = 0) 
   (TensorProduct.congr (LinearEquiv.refl R _) (cochainToTensorUnitLinearEquiv A hi)).trans
     ((TensorProduct.comm R _ _).trans (dualTensorHomEquiv R (A.X i) (B.X p)))
 
-private lemma cochainVLinearMap_linearHomComplexDualTensor_eq {p q n : ℤ} (h : p + q = n) {i : ℤ}
+private lemma vLinearMap_linearHomComplexDualTensor_eq {p q n : ℤ} (h : p + q = n) {i : ℤ}
     (hi : i + q = 0) (t : ↑(B.X p) ⊗[R] ↑((linearHomComplex R A (𝟙_ _)).X q)) :
-    cochainVLinearMap A B n i p (by omega) (((linearHomComplexDualTensor R A B).f n).hom
+    Cochain.vLinearMap A B n i p (by omega) (((linearHomComplexDualTensor R A B).f n).hom
         ((HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom t)) =
       dualTensorSummandEquiv A B hi t :=
-  cochainVLinearMap_linearHomComplexDualTensor A B h hi t
+  vLinearMap_linearHomComplexDualTensor A B h hi t
 
 /-- The inverse of the dual-tensor comparison in degree `n`, when `Aⁱ` vanishes for `i ∉ S`: the
 component of a cochain on `Aⁱ` is sent back to the summand `Bⁱ⁺ⁿ ⊗ Hom(A, R[0])⁻ⁱ`. -/
@@ -339,7 +332,7 @@ private noncomputable def dualTensorInv (S : Finset ℤ) (n : ℤ) :
     Cochain A B n →ₗ[R] (B ⊗ linearHomComplex R A (𝟙_ _)).X n :=
   ∑ i ∈ S, (HomologicalComplex.ιTensorObj B (linearHomComplex R A _) (i + n) (-i) n
       (by omega)).hom ∘ₗ (dualTensorSummandEquiv A B (add_neg_cancel i)).symm.toLinearMap ∘ₗ
-    cochainVLinearMap A B n i (i + n) rfl
+    Cochain.vLinearMap A B n i (i + n) rfl
 
 /-- The inverse undoes the dual-tensor comparison on every summand. -/
 private lemma dualTensorInv_linearHomComplexDualTensor (S : Finset ℤ)
@@ -351,38 +344,38 @@ private lemma dualTensorInv_linearHomComplexDualTensor (S : Finset ℤ)
   have key (i : ℤ) (hi : i + q = 0) :
       (HomologicalComplex.ιTensorObj B (linearHomComplex R A _) (i + n) (-i) n (by omega)).hom
           ((dualTensorSummandEquiv A B (add_neg_cancel i)).symm
-            (cochainVLinearMap A B n i (i + n) rfl (((linearHomComplexDualTensor R A B).f n).hom
+            (Cochain.vLinearMap A B n i (i + n) rfl (((linearHomComplexDualTensor R A B).f n).hom
               ((HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom t)))) =
         (HomologicalComplex.ιTensorObj B (linearHomComplex R A _) p q n h).hom t := by
     obtain rfl : q = -i := by omega
     obtain rfl : p = i + n := by omega
-    rw [cochainVLinearMap_linearHomComplexDualTensor_eq A B h hi, LinearEquiv.symm_apply_apply]
+    rw [vLinearMap_linearHomComplexDualTensor_eq A B h hi, LinearEquiv.symm_apply_apply]
   rw [dualTensorInv, LinearMap.sum_apply, Finset.sum_eq_single (-q)]
   · exact key (-q) (neg_add_cancel q)
   · intro i _ hiq
     rw [LinearMap.comp_apply, LinearMap.comp_apply,
-      cochainVLinearMap_linearHomComplexDualTensor_eq_zero A B h rfl (by omega), map_zero,
+      vLinearMap_linearHomComplexDualTensor_eq_zero A B h rfl (by omega), map_zero,
       map_zero]
   · intro hq
     rw [LinearMap.comp_apply, LinearMap.comp_apply,
-      cochainVLinearMap_eq_zero_of_isZero A B rfl (hS _ hq), map_zero, map_zero]
+      vLinearMap_eq_zero_of_isZero A B rfl (hS _ hq), map_zero, map_zero]
 
 /-- The dual-tensor comparison undoes the inverse on every cochain. -/
 private lemma linearHomComplexDualTensor_dualTensorInv (S : Finset ℤ)
     (hS : ∀ i ∉ S, IsZero (A.X i)) (n : ℤ) (z : Cochain A B n) :
     ((linearHomComplexDualTensor R A B).f n).hom (dualTensorInv A B S n z) = z := by
   refine Cochain.ext _ _ fun i j hij => ModuleCat.hom_ext ?_
-  rw [← cochainVLinearMap_apply, ← cochainVLinearMap_apply]
+  rw [← Cochain.vLinearMap_apply, ← Cochain.vLinearMap_apply]
   obtain rfl : j = i + n := hij.symm
   rw [dualTensorInv, LinearMap.sum_apply, map_sum, map_sum, Finset.sum_eq_single i]
   · rw [LinearMap.comp_apply, LinearMap.comp_apply,
-      cochainVLinearMap_linearHomComplexDualTensor_eq A B _ (add_neg_cancel i),
+      vLinearMap_linearHomComplexDualTensor_eq A B _ (add_neg_cancel i),
       LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
   · intro k _ hki
     rw [LinearMap.comp_apply, LinearMap.comp_apply,
-      cochainVLinearMap_linearHomComplexDualTensor_eq_zero A B _ rfl (by omega)]
+      vLinearMap_linearHomComplexDualTensor_eq_zero A B _ rfl (by omega)]
   · intro hi
-    exact cochainVLinearMap_eq_zero_of_isZero A B rfl (hS _ hi) _
+    exact vLinearMap_eq_zero_of_isZero A B rfl (hS _ hi) _
 
 end Isomorphism
 
