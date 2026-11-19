@@ -28,7 +28,8 @@ finite measures
 
 ## References
 
-* P. Mattila, *Geometry of Sets and Measures in Euclidean Spaces*, Theorem 6.9.
+* P. Mattila, *Geometry of Sets and Measures in Euclidean Spaces*, Chapter 1 (weak convergence
+  of Radon measures and the limit superior bound on compact sets).
 -/
 
 public section
