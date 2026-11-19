@@ -275,7 +275,8 @@ theorem exists_contDiff_hasCompactSupport_tendsto_eLpNorm_fderiv
       Tendsto ε atTop (𝓝 0) ∧
       ∀ n, eLpNorm (fderiv ℝ (g n)) 1 μ ≤ eLpNorm (fderiv ℝ u) 1 μ + ε n := by
   obtain ⟨g, hg, hval, hlim⟩ := exists_contDiff_hasCompactSupport_tendsto_eLpNorm_sub_fderiv_sub
-    (μ := μ) ENNReal.one_ne_top hu le_rfl (memLp_one_iff_integrable.2 hi) htop.lt_top
+    (μ := μ) ENNReal.one_ne_top hu le_rfl (memLp_one_iff_integrable.2 hi)
+    (memLp_iff.2 htop.lt_top)
   refine ⟨g, _, fun n => (hg n).1, fun n => (hg n).2, hval, hlim, fun n => ?_⟩
   rw [add_comm]
   simpa using eLpNorm_add_le (μ := μ)
