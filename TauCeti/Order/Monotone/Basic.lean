@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Subsingleton
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Order.Monotone.Defs
 
 /-!
 # Monotonicity on sets: point updates and two-sided minima
+
+No function is both strictly monotone and strictly antitone on a set with two points
+(`Set.Nontrivial.not_strictMonoOn_and_strictAntiOn`).
 
 Redefining a function at a single point `a` keeps it strictly monotone on a set `s` as long as
 the new value lies strictly between the values at the points of `s` on either side of `a`
@@ -23,6 +27,8 @@ strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAnti
 
 ## Main results
 
+* `Set.Nontrivial.not_strictMonoOn_and_strictAntiOn`: no function is both strictly monotone and
+  strictly antitone on a set with two points.
 * `StrictMonoOn.update`: a function strictly monotone on `s \ {a}`, updated at `a` to a value
   above its values before `a` and below its values after `a`, is strictly monotone on `s`.
 * `TauCeti.le_of_antitoneOn_monotoneOn`: if `f` is antitone on `s ∩ Iic a` and monotone on
@@ -34,6 +40,16 @@ strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAnti
 public section
 
 open Function Set
+
+/-- A function is not both strictly monotone and strictly antitone on a set with two points. -/
+theorem Set.Nontrivial.not_strictMonoOn_and_strictAntiOn {α β : Type*} [LinearOrder α]
+    [Preorder β] {f : α → β} {s : Set α} (hs : s.Nontrivial) :
+    ¬(StrictMonoOn f s ∧ StrictAntiOn f s) := by
+  rintro ⟨hm, ha⟩
+  obtain ⟨x, hx, y, hy, hxy⟩ := hs
+  rcases hxy.lt_or_gt with h | h
+  · exact lt_asymm (hm hx hy h) (ha hx hy h)
+  · exact lt_asymm (hm hy hx h) (ha hy hx h)
 
 /-- Updating a function at `a` keeps it strictly monotone on `s`, provided it is strictly
 monotone on `s` away from `a` and the new value `b` lies above the values at points of `s` before
