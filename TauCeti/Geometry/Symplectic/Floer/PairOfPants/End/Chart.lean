@@ -106,7 +106,7 @@ apply to all three ends.
 * `TauCeti.Floer.isComplexLinearMap_fderiv_positiveEndChart`,
   `TauCeti.Floer.det_fderiv_positiveEndChart_pos`, `TauCeti.Floer.injOn_positiveEndChart`,
   `TauCeti.Floer.positiveEndChart_add_one`: the positive end chart is holomorphic, orientation
-  preserving, injective on the bands `ℝ × (t₀, t₀ + 1)` and `1`-periodic in `t`.
+  preserving, injective on every band `ℝ × [t₀, t₀ + 1)` and `1`-periodic in `t`.
 * `TauCeti.Floer.positiveEndChart_endSign_mul_endCoord`,
   `TauCeti.Floer.exists_endCoord_positiveEndChart`: the signed end coordinates
   `(±Re ζ_q, ±Im ζ_q)` invert the positive end chart, up to an integer shift of the angular
@@ -764,6 +764,13 @@ theorem contDiff_positiveEndChart (q : Puncture) (n : WithTop ℕ∞) :
     ContDiff ℝ n (positiveEndChart q) :=
   (contDiff_endChart q n).comp (contDiff_const_smul q.endSign)
 
+/-- The derivative at `z` of the translate `z ↦ φ'_q(z + c)` of the positive end chart is the
+derivative of the positive end chart at `z + c`. -/
+theorem hasFDerivAt_positiveEndChart_add (q : Puncture) (c z : ℝ × ℝ) :
+    HasFDerivAt (fun z ↦ positiveEndChart q (z + c)) (fderiv ℝ (positiveEndChart q) (z + c)) z :=
+  ((contDiff_positiveEndChart q 1).differentiable one_ne_zero _).hasFDerivAt.comp z
+    ((hasFDerivAt_id z).add_const c)
+
 /-- The positive end charts are holomorphic. -/
 theorem isComplexLinearMap_fderiv_positiveEndChart (q : Puncture) (z : ℝ × ℝ) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
@@ -814,21 +821,23 @@ theorem exists_endCoord_positiveEndChart (q : Puncture) (y : ℝ × ℝ) :
   · exact ⟨k, by simp [h]⟩
   · exact ⟨-k, by simp [h, add_comm]⟩
 
-/-- The positive end chart is injective on every open band `ℝ × (t₀, t₀ + 1)` of angular width
-one. -/
+/-- The positive end chart is injective on every band `ℝ × [t₀, t₀ + 1)` of angular width one. -/
 theorem injOn_positiveEndChart (q : Puncture) (t₀ : ℝ) :
-    InjOn (positiveEndChart q) (univ ×ˢ Ioo t₀ (t₀ + 1)) := by
+    InjOn (positiveEndChart q) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
   intro a ha b hb hab
-  -- The reflection `v ↦ ±v` moves the band `ℝ × (t₀, t₀ + 1)` into a band of width one.
-  obtain ⟨t₁, ht₁⟩ : ∃ t₁ : ℝ, ∀ c : ℝ × ℝ, c ∈ univ ×ˢ Ioo t₀ (t₀ + 1) →
-      q.endSign • c ∈ univ ×ˢ Ico t₁ (t₁ + 1) := by
-    rcases q.endSign_eq_one_or_eq_neg_one with h | h
-    · refine ⟨t₀, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
-        simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
-    · refine ⟨-t₀ - 1, fun c hc ↦ ⟨mem_univ _, ?_, ?_⟩⟩ <;>
-        simp only [h, Prod.smul_snd, smul_eq_mul] <;> linarith [hc.2.1, hc.2.2]
-  exact smul_right_injective _ q.endSign_ne_zero
-    (injOn_endChart_univ_prod_Ico q t₁ (ht₁ a ha) (ht₁ b hb) hab)
+  -- The reflection `v ↦ ±v` keeps the angular coordinates within distance one of each other, so
+  -- both reflected points lie in the band of width one starting at the smaller of them.
+  have hd : |q.endSign * a.2 - q.endSign * b.2| < 1 := by
+    rw [← mul_sub, abs_mul, abs_endSign, one_mul, abs_sub_lt_iff]
+    constructor <;> linarith [ha.2.1, ha.2.2, hb.2.1, hb.2.2]
+  obtain ⟨hab₁, hab₂⟩ := abs_sub_lt_iff.1 hd
+  refine smul_right_injective _ q.endSign_ne_zero (injOn_endChart_univ_prod_Ico q
+    (min (q.endSign * a.2) (q.endSign * b.2)) ⟨mem_univ _, ?_, ?_⟩ ⟨mem_univ _, ?_, ?_⟩ hab) <;>
+    simp only [Prod.smul_snd, smul_eq_mul]
+  · exact min_le_left _ _
+  · rcases min_cases (q.endSign * a.2) (q.endSign * b.2) with h | h <;> linarith [h.1]
+  · exact min_le_right _ _
+  · rcases min_cases (q.endSign * a.2) (q.endSign * b.2) with h | h <;> linarith [h.1]
 
 /-! ### Coordinates of the positive end chart -/
 
