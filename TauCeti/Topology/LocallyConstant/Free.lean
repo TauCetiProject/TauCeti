@@ -30,8 +30,9 @@ For a profinite set `S`, Nöbeling's theorem (`LocallyConstant.freeOfProfinite`)
 a free `Λ`-module for every commutative ring `Λ`; in particular tensoring with it is exact. This
 is the coefficient module of compactly supported cohomology along a projection `Y × S → Y`, and
 its `Λ`-linear dual is the module of `Λ`-valued distributions on `S`. When `S` is finite and
-discrete, `C⁰(S, Λ) = Λ^S` has rank the cardinality of `S`; for a nontrivial ring `Λ`,
-`C⁰(S, Λ)` is finitely generated only when `S` is finite.
+discrete and `Λ` is nontrivial (more generally, has the strong rank condition),
+`C⁰(S, Λ) = Λ^S` has rank the cardinality of `S`; for a nontrivial ring `Λ`, `C⁰(S, Λ)` is
+finitely generated only when `S` is finite.
 
 ## Main definitions and results
 
@@ -40,8 +41,8 @@ discrete, `C⁰(S, Λ) = Λ^S` has rank the cardinality of `S`; for a nontrivial
 * `TauCeti.locallyConstantScalarRight`: for compact `X`, this map is a linear equivalence.
 * `TauCeti.instModuleFreeLocallyConstant`: `LocallyConstant S Λ` is a free `Λ`-module for a
   profinite set `S` and a commutative ring `Λ`.
-* `TauCeti.finrank_locallyConstant_eq_natCard`: on a finite discrete space the rank is the
-  number of points.
+* `TauCeti.finrank_locallyConstant_eq_natCard`: on a finite discrete space the rank over a ring
+  with the strong rank condition is the number of points.
 * `TauCeti.finite_locallyConstant_self_iff`: for a profinite set `S`, `LocallyConstant S Λ` is
   finitely generated exactly when `Λ` is the zero ring or `S` is finite.
 
@@ -171,7 +172,8 @@ instance instModuleFreeLocallyConstant (Λ : Type*) [CommRing Λ] (S : Type*) [T
   .of_equiv (locallyConstantScalarRight ℤ Λ Λ S)
 
 /-- On a finite discrete space `S`, `LocallyConstant S Λ = Λ ^ S` has rank the number of points
-of `S`. -/
+of `S`, for a ring `Λ` with the strong rank condition (for instance any nontrivial commutative
+ring). -/
 theorem finrank_locallyConstant_eq_natCard (Λ : Type*) [Ring Λ] [StrongRankCondition Λ]
     (S : Type*) [TopologicalSpace S] [DiscreteTopology S] [Finite S] :
     Module.finrank Λ (LocallyConstant S Λ) = Nat.card S := by
