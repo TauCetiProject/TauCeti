@@ -36,6 +36,8 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
+* `Complex.hasDerivAt_regularizedHGFun_zero_singleton` — differentiating `₀F₁(; b; ·)` raises its
+  parameter by one, for complex `b` and `z`.
 -/
 
 public section
@@ -203,5 +205,23 @@ theorem hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re (b y : ℝ) :
     calc (n : ℝ) * |z| ^ (n - 1) * ((n ! : ℝ)⁻¹ * |(Real.Gamma (b + n))⁻¹|)
         ≤ n * R ^ (n - 1) * ((n ! : ℝ)⁻¹ * C) := by gcongr
       _ = C * (n * R ^ (n - 1) / n !) := by ring
+
+/-- Differentiating `₀F₁(; b; ·)` raises its parameter by one:
+`d/dz ₀F₁(; b; z) = ₀F₁(; b + 1; z)`. -/
+theorem hasDerivAt_regularizedHGFun_zero_singleton (b z : ℂ) :
+    HasDerivAt (regularizedHGFun 0 {b}) (regularizedHGFun 0 {b + 1} z) z := by
+  have hd := (analyticAt_regularizedHGFun_zero (b := {b}) z).differentiableAt.hasDerivAt
+  convert hd using 1
+  refine (hasSum_regularizedHGFun (a := 0) (b := {b + 1}) (by simp) z).unique ?_
+  convert hasSum_deriv_regularizedHGFun (a := 0) (b := {b}) (by simp) z using 1
+  funext n
+  simp only [regularizedHGFunCoeff_zero_singleton, Nat.factorial_succ, Nat.cast_mul,
+    Nat.cast_succ, mul_inv_rev]
+  have hn : (n + 1 : ℂ) ≠ 0 := by exact_mod_cast n.succ_ne_zero
+  -- Regroup the Gamma argument `b + (n + 1)` of the differentiated series as the argument
+  -- `(b + 1) + n` of the series of `₀F₁(; b + 1; ·)`.
+  have hb : b + (n + 1) = b + 1 + n := by ring
+  rw [hb]
+  field_simp
 
 end Complex
