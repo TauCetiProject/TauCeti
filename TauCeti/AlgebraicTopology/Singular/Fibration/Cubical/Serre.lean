@@ -35,10 +35,14 @@ The comparison identifies more than the pages: it is an isomorphism from the Ser
 onto the cubical Serre spectral object (`TauCeti.TopCat.cubicalSerreSpectralObject`,
 `TauCeti.TopCat.serreSpectralObjectIsoCubical`), so the abutment and its filtration are computed by
 cubical chains too. For a Serre fibration, the abutment and the first page are then read in
-normalized cubical singular homology of the total space and of the fibres, both for the base
-change along any map `g : B' ⟶ B`
-(`TauCeti.TopCat.serreSpectralObjectPullbackAbutmentIsoCubical`,
-`TauCeti.TopCat.serreSpectralSequencePullbackFirstPageXIsoSigmaCubical`) and over an arbitrary base
+normalized cubical singular homology of the total space and of the fibres. On the abutment, the
+isomorphism of spectral objects is the comparison map in homology
+(`TauCeti.TopCat.serreSpectralObjectIsoCubical_hom_app_chainFiltrationAbutmentIso_hom`). For the
+base change along a map `g : B' ⟶ B`, the first page is read in cubical homology of the fibres for
+every `g` (`TauCeti.TopCat.serreSpectralSequencePullbackFirstPageXIsoSigmaCubical`), and the
+abutment in cubical homology of `E` when `g` is a weak homotopy equivalence
+(`TauCeti.TopCat.serreSpectralObjectPullbackAbutmentIsoCubical`); the same holds over an arbitrary
+base
 through its CW approximation (`TauCeti.TopCat.arbitraryBaseSerreAbutmentIsoCubical`,
 `TauCeti.TopCat.arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigmaCubical`).
 
@@ -118,6 +122,21 @@ lemma serreSpectralObjectIsoCubical_hom (C : Set B) {D : Set B} [RelCWComplex C 
         (monotone_preimageSkeleton (C := C) p) (monotone_preimageSkeleton (C := C) p) (𝟙 E)
         fun _ _ hx ↦ hx) :=
   singularCubicalSpectralObjectIso_hom _ _
+
+/-- **The Serre comparison on the abutment.** In degree `-n`, through the abutment isomorphisms
+`TauCeti.chainFiltrationAbutmentIso` with simplicial and with normalized cubical homology of `E`,
+`TauCeti.TopCat.serreSpectralObjectIsoCubical` is the map `Hₙ(E; R) ⟶ H^□ₙ(E; R)` induced by the
+comparison `TauCeti.singularToCubical`. -/
+@[reassoc (attr := simp)]
+lemma serreSpectralObjectIsoCubical_hom_app_chainFiltrationAbutmentIso_hom (C : Set B)
+    {D : Set B} [RelCWComplex C D] (p : E ⟶ B) (R : Type u) [Ring R] (n : ℕ) :
+    ((serreSpectralObjectIsoCubical C p R).hom.hom (-n)).app
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (chainFiltrationAbutmentIso (normalizedCubicalChainComplex R)
+          (monotone_preimageSkeleton (C := C) p) n).hom =
+      (chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton (C := C) p) n).hom ≫
+        HomologicalComplex.homologyMap ((singularToCubical R).app E) n :=
+  singularCubicalSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom _ _ n
 
 end SpectralObject
 

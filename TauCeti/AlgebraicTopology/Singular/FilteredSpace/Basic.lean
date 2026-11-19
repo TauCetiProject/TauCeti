@@ -346,6 +346,29 @@ lemma chainFiltrationSpectralObjectIso_hom [∀ Z, QuasiIso (α.app Z)] :
       CochainComplex.spectralObjectMap (chainFiltrationMap α hX hX (𝟙 Y) fun _ _ hx ↦ hx) := by
   rw [chainFiltrationSpectralObjectIso, asIso_hom]
 
+/-- **The spectral-object comparison on the abutment.** Through the abutment isomorphisms
+`TauCeti.chainFiltrationAbutmentIso`, the isomorphism
+`TauCeti.chainFiltrationSpectralObjectIso α hX` is, on the abutment in degree `-n`, the map
+`Hₙ(F Y) ⟶ Hₙ(G Y)` induced by `α`. -/
+@[reassoc (attr := simp)]
+lemma chainFiltrationSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom
+    [∀ Z, QuasiIso (α.app Z)] (n : ℕ) :
+    ((chainFiltrationSpectralObjectIso α hX).hom.hom (-n)).app
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (chainFiltrationAbutmentIso G hX n).hom =
+      (chainFiltrationAbutmentIso F hX n).hom ≫ HomologicalComplex.homologyMap (α.app Y) n := by
+  rw [chainFiltrationSpectralObjectIso_hom]
+  -- `chainFiltrationMap` is `CochainComplex.filtrationFunctorMap` of the extended chain map.
+  refine
+    (CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom_assoc
+    (hF := monotone_chainFiltration F hX) (hG := monotone_chainFiltration G hX) _
+    (factors_chainFiltration α (𝟙 Y) fun _ _ hx ↦ hx) (-n)
+    (extendHomologyIso (G.obj Y) ComplexShape.embeddingDownNat rfl).hom).trans ?_
+  rw [CategoryTheory.Functor.map_id, Category.id_comp]
+  exact ((CochainComplex.filtrationAbutmentIso _ _ _).hom ≫=
+    extendHomologyIso_hom_naturality (α.app Y) ComplexShape.embeddingDownNat (j := n) rfl).trans
+      (Category.assoc _ _ _).symm
+
 /-- The identity of a filtered space induces the identity of its filtered chains. -/
 @[simp]
 lemma chainFiltrationMap_id (h : ∀ q, Set.MapsTo (𝟙 Y : Y ⟶ Y) (X q) (X q)) :

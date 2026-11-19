@@ -45,7 +45,8 @@ Serre spectral sequence on cubical chains.
 * `TauCeti.singularToCubicalSpectralSequenceMap k hX`: the induced morphism of spectral
   sequences.
 * `TauCeti.singularCubicalSpectralObjectIso k hX`: the isomorphism of the spectral objects of the
-  simplicial and cubical filtrations.
+  simplicial and cubical filtrations; on the abutment it is the comparison map in homology
+  (`TauCeti.singularCubicalSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom`).
 
 ## Main results
 
@@ -160,5 +161,17 @@ lemma singularCubicalSpectralObjectIso_hom :
       CochainComplex.spectralObjectMap
         (chainFiltrationMap (singularToCubical k) hX hX (𝟙 Y) fun _ _ hx ↦ hx) :=
   chainFiltrationSpectralObjectIso_hom _ _
+
+/-- On the abutment in degree `-n`, through the abutment isomorphisms with simplicial and
+cubical homology, `TauCeti.singularCubicalSpectralObjectIso` is the map `Hₙ(Y) ⟶ H^□ₙ(Y)` induced by
+the comparison `TauCeti.singularToCubical`. -/
+@[reassoc (attr := simp)]
+lemma singularCubicalSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom (n : ℕ) :
+    ((singularCubicalSpectralObjectIso k hX).hom.hom (-n)).app
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (chainFiltrationAbutmentIso (normalizedCubicalChainComplex k) hX n).hom =
+      (chainFiltrationAbutmentIso (singularChains k) hX n).hom ≫
+        HomologicalComplex.homologyMap ((singularToCubical k).app Y) n :=
+  chainFiltrationSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom _ _ n
 
 end TauCeti

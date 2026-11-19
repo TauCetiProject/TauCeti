@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DerivedCategory.MappingCone
 public import TauCeti.Algebra.Homology.SpectralObject.Basic
 public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 
 /-!
@@ -129,6 +130,22 @@ lemma filtrationFunctorMap_app_comp (f : K ⟶ L) (hf : ∀ n, (G n).Factors ((F
         (filtrationEInt G a).arrow =
       (filtrationFunctorObjIso F hF a).hom ≫ (filtrationEInt F a).arrow ≫ f := by
   simp [filtrationFunctorMap]
+
+/-- **Naturality of the abutment.** Through `filtrationAbutmentIso`, the morphism of spectral
+objects induced by a morphism of filtered complexes `f` is, on the abutment, the map induced by
+`f` in cohomology. -/
+@[reassoc (attr := simp)]
+lemma spectralObjectMap_filtrationFunctorMap_hom_app_filtrationAbutmentIso_hom (f : K ⟶ L)
+    (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f)) (n : ℤ) :
+    ((spectralObjectMap (filtrationFunctorMap hF hG f hf)).hom n).app
+        (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫ (filtrationAbutmentIso G hG n).hom =
+      (filtrationAbutmentIso F hF n).hom ≫ HomologicalComplex.homologyMap f n := by
+  rw [filtrationAbutmentIso_hom, filtrationAbutmentIso_hom,
+    reassoc_of% spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom, Category.assoc,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
+  congr 2
+  refine coequalizer.hom_ext ?_
+  simp [filtrationFunctorArrow]
 
 /-- `filtrationFunctorMap` only depends on the morphism of complexes. -/
 lemma filtrationFunctorMap_congr {f f' : K ⟶ L} (e : f = f')
