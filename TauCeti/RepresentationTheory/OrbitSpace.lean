@@ -75,7 +75,7 @@ theorem orbitRel_apply {v w : V} : ρ.orbitRel v w ↔ ∃ g : G, ρ g w = v :=
 the second to the first. -/
 theorem orbitRel_mk_eq_mk_iff {v w : V} :
     Quotient.mk ρ.orbitRel v = Quotient.mk ρ.orbitRel w ↔ ∃ g : G, ρ g w = v :=
-  Quotient.eq
+  Quotient.eq.trans ρ.orbitRel_apply
 
 /-- The vector `ρ g v` has the class of `v` in the orbit space. -/
 @[simp]

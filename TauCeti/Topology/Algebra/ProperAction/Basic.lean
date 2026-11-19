@@ -93,7 +93,8 @@ theorem isProperMap_quotientMk_of_compactSpace : IsProperMap (Quotient.mk (orbit
   induction y using Quotient.inductionOn with | h x => ?_
   convert isCompact_range (continuous_smul.comp (Continuous.prodMk_left (X := G) x))
   ext w
-  exact Quotient.eq
+  simp only [Set.mem_preimage, Set.mem_singleton_iff, Quotient.eq, orbitRel_apply, mem_orbit_iff,
+    Set.mem_range, Function.comp_apply]
 
 end MulAction
 
