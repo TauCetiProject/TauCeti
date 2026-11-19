@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.CategoryTheory.Preadditive.Endomorphism
 
 /-!
 # The category of finite isocrystals
@@ -34,6 +35,8 @@ map again, while multiplying by an arbitrary scalar from `L` does not. So the mo
 * `TauCeti.FiniteIsocrystal.isoMk`: an isomorphism from an intertwining linear equivalence.
 * `TauCeti.FiniteIsocrystal.pi`: the isocrystal on a finite product, with coordinatewise
   Frobenius, and `TauCeti.FiniteIsocrystal.isBilimitBicone`, which shows that it is a biproduct.
+* `TauCeti.FiniteIsocrystal.biproductIsoPi`: the chosen biproduct of a finite family is isomorphic
+  to `TauCeti.FiniteIsocrystal.pi`.
 * `TauCeti.FiniteIsocrystal.endRingHom`: the embedding of the endomorphism `E`-algebra into the
   `L`-linear endomorphisms; its range consists of the Frobenius-intertwining endomorphisms.
 
@@ -250,20 +253,17 @@ instance : AddCommGroup (D ⟶ D') :=
   Function.Injective.addCommGroup Hom.hom hom_injective rfl (fun _ _ => rfl) (fun _ => rfl)
     (fun _ _ => rfl) (fun _ _ => rfl) (fun _ _ => rfl)
 
-/-- The underlying linear map, as an additive homomorphism of morphism groups. -/
-def homAddMonoidHom (D D' : FiniteIsocrystal.{u} σ) : (D ⟶ D') →+ (D →ₗ[L] D') where
-  toFun := Hom.hom
-  map_zero' := (rfl)
-  map_add' _ _ := (rfl)
+instance : Preadditive (FiniteIsocrystal.{u} σ) where
+  add_comp _ _ _ _ _ _ := hom_ext (LinearMap.comp_add _ _ _)
+  comp_add _ _ _ _ _ _ := hom_ext (LinearMap.add_comp _ _ _)
+
+instance : (forget₂ (FiniteIsocrystal.{u} σ) (ModuleCat.{u} L)).Additive where
 
 @[simp]
 theorem hom_sum {ι : Type*} (s : Finset ι) (f : ι → (D ⟶ D')) :
     (∑ i ∈ s, f i).hom = ∑ i ∈ s, (f i).hom :=
-  map_sum (homAddMonoidHom D D') f s
-
-instance : Preadditive (FiniteIsocrystal.{u} σ) where
-  add_comp _ _ _ _ _ _ := hom_ext (LinearMap.comp_add _ _ _)
-  comp_add _ _ _ _ _ _ := hom_ext (LinearMap.add_comp _ _ _)
+  map_sum (ModuleCat.homAddEquiv.toAddMonoidHom.comp
+    (forget₂ (FiniteIsocrystal σ) (ModuleCat L)).mapAddHom) f s
 
 instance : Module E (D ⟶ D') where
   one_smul _ := by ext; simp
@@ -277,15 +277,13 @@ instance : Linear E (FiniteIsocrystal.{u} σ) where
   smul_comp _ _ _ _ _ _ := by ext; simp
   comp_smul _ _ _ _ _ _ := by ext; simp
 
-instance : (forget₂ (FiniteIsocrystal.{u} σ) (ModuleCat.{u} L)).Additive where
-
 /-! ### Zero objects -/
 
 /-- A finite isocrystal is a zero object iff its underlying space is zero. -/
 theorem isZero_iff_subsingleton (D : FiniteIsocrystal.{u} σ) : IsZero D ↔ Subsingleton D := by
   rw [IsZero.iff_id_eq_zero]
   refine ⟨fun h => ⟨fun x y => ?_⟩, fun _ => hom_ext (LinearMap.ext fun _ => Subsingleton.elim _ _)⟩
-  have h' : ∀ z : D, z = 0 := fun z => congrArg (fun f : D ⟶ D => f.hom z) h
+  have h' : ∀ z : D, z = 0 := fun z => by simpa using congrArg (fun f : D ⟶ D => f.hom z) h
   rw [h' x, h' y]
 
 /-! ### Finite biproducts -/
@@ -351,39 +349,69 @@ def bicone [DecidableEq ι] : Bicone D where
 
 /-- The direct sum `pi D` is a biproduct of the finite family `D`. -/
 def isBilimitBicone [Fintype ι] [DecidableEq ι] : (bicone D).IsBilimit :=
-  isBilimitOfTotal _ <| hom_ext <| LinearMap.ext fun x => by
-    rw [hom_sum, LinearMap.sum_apply]
-    exact Finset.univ_sum_single x
+  isBilimitOfTotal _ <| show ∑ i, piπ D i ≫ piι D i = 𝟙 (pi D) from
+    hom_ext <| LinearMap.ext fun x => by simpa using Finset.univ_sum_single x
 
 end Pi
 
 instance : HasFiniteBiproducts (FiniteIsocrystal.{u} σ) :=
   ⟨fun _ => ⟨fun D => .mk ⟨bicone.{0} D, isBilimitBicone.{0} D⟩⟩⟩
 
+section BiproductIsoPi
+
+variable {J : Type} [Fintype J] [DecidableEq J] (D : J → FiniteIsocrystal.{u} σ)
+
+/-- The chosen biproduct of a finite family of finite isocrystals is isomorphic to `pi D`. -/
+noncomputable def biproductIsoPi : ⨁ D ≅ pi D where
+  hom := biproduct.desc (piι D)
+  inv := biproduct.lift (piπ D)
+  hom_inv_id := (biproduct.uniqueUpToIso D (isBilimitBicone.{0} D)).inv_hom_id
+  inv_hom_id := (biproduct.uniqueUpToIso D (isBilimitBicone.{0} D)).hom_inv_id
+
+@[reassoc (attr := simp)]
+theorem ι_comp_biproductIsoPi_hom (j : J) :
+    biproduct.ι D j ≫ (biproductIsoPi D).hom = piι D j := by
+  simp [biproductIsoPi]
+
+@[reassoc (attr := simp)]
+theorem biproductIsoPi_inv_comp_π (j : J) :
+    (biproductIsoPi D).inv ≫ biproduct.π D j = piπ D j := by
+  simp [biproductIsoPi]
+
+@[reassoc (attr := simp)]
+theorem piι_comp_biproductIsoPi_inv (j : J) :
+    piι D j ≫ (biproductIsoPi D).inv = biproduct.ι D j := by
+  rw [← ι_comp_biproductIsoPi_hom, Category.assoc, Iso.hom_inv_id, Category.comp_id]
+
+@[reassoc (attr := simp)]
+theorem biproductIsoPi_hom_comp_piπ (j : J) :
+    (biproductIsoPi D).hom ≫ piπ D j = biproduct.π D j := by
+  rw [← biproductIsoPi_inv_comp_π, Iso.hom_inv_id_assoc]
+
+end BiproductIsoPi
+
 /-! ### Endomorphisms -/
 
 /-- The embedding of the endomorphism ring of a finite isocrystal into the `L`-linear
 endomorphisms of its underlying vector space. Its image is the subring of endomorphisms commuting
 with the Frobenius (`mem_range_endRingHom`). -/
-def endRingHom (D : FiniteIsocrystal.{u} σ) : End D →+* Module.End L D where
-  toFun f := f.asHom.hom
-  map_one' := (rfl)
-  map_mul' _ _ := (rfl)
-  map_zero' := (rfl)
-  map_add' _ _ := (rfl)
+def endRingHom (D : FiniteIsocrystal.{u} σ) : End D →+* Module.End L D :=
+  (ModuleCat.endRingEquiv ((forget₂ (FiniteIsocrystal σ) (ModuleCat L)).obj D)).toRingHom.comp
+    ((forget₂ (FiniteIsocrystal σ) (ModuleCat L)).mapEndRingHom D)
 
 @[simp]
 theorem endRingHom_apply (D : FiniteIsocrystal.{u} σ) (f : End D) :
-    D.endRingHom f = f.asHom.hom := (rfl)
+    D.endRingHom f = f.asHom.hom := by
+  simp [endRingHom]
 
 theorem endRingHom_injective (D : FiniteIsocrystal.{u} σ) : Function.Injective D.endRingHom :=
-  fun _ _ h => End.ext (hom_ext h)
+  fun _ _ h => End.ext (hom_ext (by simpa using h))
 
 /-- The endomorphisms of a finite isocrystal are exactly the linear endomorphisms commuting with
 the Frobenius. -/
 theorem mem_range_endRingHom (D : FiniteIsocrystal.{u} σ) (f : Module.End L D) :
     f ∈ D.endRingHom.range ↔ ∀ x, f (D.frobenius x) = D.frobenius (f x) :=
-  ⟨by rintro ⟨g, rfl⟩; exact g.asHom.hom_frobenius, fun hf => ⟨.of (ofHom f hf), rfl⟩⟩
+  ⟨by rintro ⟨g, rfl⟩; simp, fun hf => ⟨.of (ofHom f hf), by simp⟩⟩
 
 /-- The `E`-algebra structure on the endomorphism ring is multiplication by the scalars of `E`,
 viewed in `L`. -/
