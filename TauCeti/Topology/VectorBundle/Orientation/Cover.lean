@@ -367,6 +367,12 @@ theorem ncard_fiber (hι : Fintype.card ι = finrank ℝ F) (b : B) :
     exact (eq_or_eq_deck hι (q.property.trans hp.symm)).resolve_left
       fun h ↦ hq (Subtype.ext h)
 
+/-- The fibres of the orientation double cover of a bundle of rank `card ι` are finite: they have
+two points. -/
+theorem finite_fiber (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι)).Finite :=
+  Set.finite_of_ncard_ne_zero (by rw [ncard_fiber hι]; exact two_ne_zero)
+
 /-- Over a preconnected base, a clopen subset of the orientation double cover that is invariant
 under the deck involution is empty or the whole cover, provided `ι` has cardinality the rank of
 the bundle. -/
