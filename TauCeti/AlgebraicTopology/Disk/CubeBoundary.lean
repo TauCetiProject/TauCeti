@@ -174,7 +174,8 @@ lemma upperInclusion_down (n : ℕ) (x : (cubeBoundaryPair.{u} n).snd) :
   rfl
 
 /-- The last pole has final coordinate one. -/
-@[simp] lemma lastPole_apply_last (n : ℕ) : (lastPole.{u} n : (EuclideanSpace ℝ (ULift.{u} (Fin (n + 1)))))
+@[simp] lemma lastPole_apply_last (n : ℕ) : (lastPole.{u} n : (EuclideanSpace ℝ (ULift.{u} (Fin (n +
+  1)))))
   (ULift.up (Fin.last n)) = 1 := by
   simp [lastPole, OrthonormalBasis.reindex_apply, EuclideanSpace.basisFun_apply]
 
@@ -185,7 +186,7 @@ lemma radialMap_mem_overlap_of_apply_castSucc_ne_half (n : ℕ) (x : (cubeBounda
     radialMap (n + 1) x ∈
       ({lastPole n}ᶜ ∩ {-lastPole n}ᶜ : Set (sphere (0 : EuclideanSpace ℝ (ULift.{u} (Fin (n + 1))))
         1)) := by
-  obtain ⟨a, ha, hc⟩ := radialMap_coordinates x
+  obtain ⟨_, _, hc⟩ := radialMap_coordinates x
   constructor
   · intro he
     apply hi

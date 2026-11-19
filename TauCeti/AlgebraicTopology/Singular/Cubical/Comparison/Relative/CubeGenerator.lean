@@ -223,7 +223,7 @@ private lemma fullBoundary_faces (n : ℕ) : fullBoundary k n =
   -- Normalize the pair ambient space and the native boundary index `n + 1 + 1`.
   erw [TopPair.cubicalBoundaryChainOfCube_def]
   apply Finset.sum_congr rfl
-  intro i hi
+  intro i _
   apply congrArg (fun z : NormalizedCubicalChain (B.{u} (n + 2)) k (n + 1) ↦ (-1 : k) ^ (i : ℕ) • z)
   exact congrArg₂ (fun a b : NormalizedCubicalChain (B.{u} (n + 2)) k (n + 1) ↦ a - b)
     (congrArg (fun c : SingularCube (B.{u} (n + 2)) (n + 1) ↦ NormalizedCubicalChain.ofCube _ k c)
