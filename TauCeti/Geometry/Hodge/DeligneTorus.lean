@@ -86,10 +86,10 @@ is through the character `(-p, -q) = (-p, p - n)`. -/
 noncomputable def complexDeligneAction (hs : HodgeStructureOn W ω n) :
     WithConv (DeligneTorus.S →ₐ[ℝ] ℂ) →* Module.End ℂ W where
   toFun f := hs.pieceSMul fun p ↦ characterGroup ℂ (.ofAdd (-p, p - n)) f
-  map_one' := (hs.eq_pieceSMul _ 1 fun p x _ ↦ by simp).symm
-  map_mul' f g := (hs.eq_pieceSMul _ _ fun p x hx ↦ by
-    rw [mul_apply_eq_comp, hs.pieceSMul_apply_of_mem _ hx, map_smul,
-      hs.pieceSMul_apply_of_mem _ hx, smul_smul, map_mul, Units.val_mul, mul_comm]).symm
+  map_one' := by simp only [map_one, Units.val_one]; exact hs.pieceSMul_one
+  map_mul' f g := by
+    simp only [map_mul, Units.val_mul]
+    exact hs.pieceSMul_mul _ _
 
 /-- `h_ℂ(f)` is `pieceSMul` of the characters `(-p, p - n)` evaluated at `f`. -/
 theorem complexDeligneAction_apply (hs : HodgeStructureOn W ω n)
@@ -244,8 +244,8 @@ theorem tateTwist_complexDeligneAction (hs : HodgeStructureOn W ω n) (m : ℤ)
   have hpair : (-p, p - (n - 2 * m)) = (m, m) + (-(p + m), p + m - n) := by
     ext <;> simp only [Prod.fst_add, Prod.snd_add] <;> ring
   rw [(hs.tateTwist m).complexDeligneAction_apply_of_mem _ hx, LinearMap.smul_apply,
-    hs.complexDeligneAction_apply_of_mem _ hx', hpair, ofAdd_add, map_mul, MonoidHom.mul_apply,
-    Units.val_mul, mul_smul]
+    hs.complexDeligneAction_apply_of_mem _ hx', hpair, characterGroup_add_apply, Units.val_mul,
+    mul_smul]
 
 /-- **Tate twists on real points**: the real point `z` acts on the `m`-th Tate twist as on the
 original structure, multiplied by `|z|^{2m}`, the `m`-th power of the norm. -/
@@ -270,11 +270,9 @@ theorem dual_complexDeligneAction (hs : HodgeStructureOn W ω n)
   · subst ha
     congr 1
     rw [map_inv (characterGroup ℂ (.ofAdd (- -p, -p - n))) f]
-    have hpair : (-p, p - -n) + (- -p, -p - n) = 0 := by
-      ext <;> simp only [Prod.fst_add, Prod.snd_add, Prod.fst_zero, Prod.snd_zero] <;> ring
-    congr 1
-    rw [eq_inv_iff_mul_eq_one, ← MonoidHom.mul_apply, ← map_mul, ← ofAdd_add, hpair,
-      ofAdd_zero, map_one, MonoidHom.one_apply]
+    have hpair : (-p, p - -n) = -(- -p, -p - n) := by
+      ext <;> simp only [Prod.fst_neg, Prod.snd_neg] <;> ring
+    rw [hpair, characterGroup_neg_apply]
   · rw [hs.apply_eq_zero_of_mem_piece_of_ne hu hφ ha, smul_zero, smul_zero]
 
 section TensorProduct
@@ -301,8 +299,7 @@ theorem tensorProduct_complexDeligneAction (hs₁ : HodgeStructureOn W₁ ω₁ 
       rw [(hs₁.tensorProduct hs₂).complexDeligneAction_apply_of_mem _
           (hs₁.tmul_mem_tensorProduct hs₂ hx hy), TensorProduct.map_tmul,
         hs₁.complexDeligneAction_apply_of_mem _ hx, hs₂.complexDeligneAction_apply_of_mem _ hy,
-        hpair, ofAdd_add, map_mul, MonoidHom.mul_apply, Units.val_mul,
-        TensorProduct.smul_tmul_smul]
+        hpair, characterGroup_add_apply, Units.val_mul, TensorProduct.smul_tmul_smul]
     · rw [TensorProduct.tmul_add, map_add, map_add, hy, hy']
   · rw [TensorProduct.add_tmul, map_add, map_add, hx, hx']
 

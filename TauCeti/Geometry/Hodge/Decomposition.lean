@@ -332,14 +332,26 @@ noncomputable def pieceSMul (hs : HodgeStructureOn W ω n) (c : ℤ → ℂ) : W
 theorem pieceSMul_apply_of_mem (hs : HodgeStructureOn W ω n) (c : ℤ → ℂ) {p : ℤ} {x : W}
     (hx : x ∈ hs.piece p) : hs.pieceSMul c x = c p • x := by
   rw [pieceSMul, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    hs.decomposition_apply_of_mem hx, DirectSum.toModule_lof]
-  rfl
+    hs.decomposition_apply_of_mem hx, DirectSum.toModule_lof, LinearMap.smul_apply,
+    Submodule.subtype_apply]
 
 /-- `pieceSMul c` is the only additive map acting on each Hodge component `H^{p,n-p}` by
 `c p`. -/
 theorem eq_pieceSMul (hs : HodgeStructureOn W ω n) (c : ℤ → ℂ) (f : W →ₗ[ℂ] W)
     (hf : ∀ p, ∀ x ∈ hs.piece p, f x = c p • x) : f = hs.pieceSMul c :=
   hs.addHom_ext_of_piece fun p x hx ↦ by rw [hf p x hx, hs.pieceSMul_apply_of_mem c hx]
+
+/-- `pieceSMul` of the constant scalar `1` is the identity. -/
+@[simp]
+theorem pieceSMul_one (hs : HodgeStructureOn W ω n) : hs.pieceSMul 1 = 1 :=
+  (hs.eq_pieceSMul 1 1 fun _ _ _ ↦ by rw [Pi.one_apply, one_smul, one_apply_eq_self]).symm
+
+/-- `pieceSMul` turns pointwise products of scalars into composition. -/
+theorem pieceSMul_mul (hs : HodgeStructureOn W ω n) (c d : ℤ → ℂ) :
+    hs.pieceSMul (c * d) = hs.pieceSMul c * hs.pieceSMul d :=
+  (hs.eq_pieceSMul _ _ fun p x hx ↦ by
+    rw [mul_apply_eq_comp, hs.pieceSMul_apply_of_mem d hx, map_smul,
+      hs.pieceSMul_apply_of_mem c hx, smul_smul, Pi.mul_apply, mul_comm (d p)]).symm
 
 /-- The projection to the Hodge component `H^{q,n-q}` turns `pieceSMul c` into the scalar
 `c q`. -/
