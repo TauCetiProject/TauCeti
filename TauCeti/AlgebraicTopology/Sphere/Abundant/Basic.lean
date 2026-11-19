@@ -47,7 +47,10 @@ connected oriented `n`-manifolds, where it is the source's definition. Coefficie
 integers, written `ULift ℤ` as for the integral fundamental classes of
 `TauCeti.HomologicalOrientation`. Witnesses are built as cross products of integral classes, with
 coefficients `ℤ ⊗ ℤ` identified with `ℤ` (`TauCeti.uliftIntTensorIso`), from classes of the double
-loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedMap`).
+loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedMap`). The
+identification of coefficients commutes with continuous maps
+(`TauCeti.homologyMap_uliftIntTensorIso_hom_apply`), and so does homology with commuting squares
+of continuous maps (`TauCeti.homologyMap_homologyMap_apply_of_comp_eq`).
 
 ## Main definitions
 
@@ -79,6 +82,8 @@ loop space carried to `Map_*(S², Q)` (`TauCeti.doubleLoopSpaceHomologyIsoBasedM
 public section
 
 noncomputable section
+
+universe w v
 
 open CategoryTheory MonoidalCategory
 open scoped Topology Topology.Homotopy TensorProduct
@@ -209,11 +214,56 @@ def uliftIntTensorIso :
 @[simp]
 theorem uliftIntTensorIso_hom_tmul (a b : ℤ) :
     uliftIntTensorIso.hom.hom (ULift.up a ⊗ₜ[ℤ] ULift.up b) = ULift.up (a * b) := by
-  rw [uliftIntTensorIso, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, tensorIso_hom,
-    ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-    ModuleCat.hom_tensorHom, TensorProduct.map_tmul, uliftIntIso_hom_apply, uliftIntIso_hom_apply]
-  -- `ModuleCat.of ℤ ℤ` is the tensor unit, on which the left unitor multiplies.
-  rw [ModuleCat.MonoidalCategory.leftUnitor_hom_apply, uliftIntIso_inv_apply, smul_eq_mul]
+  simp only [uliftIntTensorIso, Iso.trans_hom, Iso.symm_hom, tensorIso_hom, ModuleCat.hom_comp,
+    LinearMap.comp_apply, ModuleCat.hom_tensorHom]
+  -- `ModuleCat.of ℤ ℤ` is the tensor unit, on which the left unitor multiplies. The tensor product
+  -- and the unit of `ModuleCat` are not syntactically `TensorProduct` and `ℤ`, so `simp` does not
+  -- apply the remaining steps.
+  rw [TensorProduct.map_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
+    uliftIntIso_hom_apply, uliftIntIso_hom_apply, uliftIntIso_inv_apply, smul_eq_mul]
+
+/-- A commuting square `ρ ∘ Φ = Φ' ∘ γ` of continuous maps commutes on homology, on elements:
+`ρ_* (Φ_* x) = Φ'_* (γ_* x)`. -/
+theorem homologyMap_homologyMap_apply_of_comp_eq {k : Type v} [Ring k] (M : ModuleCat.{w} k)
+    {X X' Z Z' : Type w} [TopologicalSpace X] [TopologicalSpace X'] [TopologicalSpace Z]
+    [TopologicalSpace Z'] {Φ : C(X, Z)} {ρ : C(Z, Z')} {γ : C(X, X')} {Φ' : C(X', Z')}
+    (h : ρ.comp Φ = Φ'.comp γ) {m : ℕ}
+    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology M m : ModuleCat.{w} k)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) M m).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ)) M m).hom x) =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ')) M m).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) M m).hom x) := by
+  simp only [← ConcreteCategory.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp,
+    ← TopCat.ofHom_comp, h]
+
+/-- The identification `TauCeti.uliftIntTensorIso` of the coefficients `ℤ ⊗ ℤ` with `ℤ` commutes
+with the map induced on homology by a continuous map: this is the naturality of
+`AlgebraicTopology.singularHomologyFunctor` in the coefficients, on elements. -/
+theorem homologyMap_uliftIntTensorIso_hom_apply {X Y : Type} [TopologicalSpace X]
+    [TopologicalSpace Y] (f : C(X, Y)) {m : ℕ}
+    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) m : ModuleCat.{0} ℤ)) :
+    (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of Y))) m).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f))
+          (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) m).hom x) =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) (ModuleCat.of ℤ (ULift.{0} ℤ)) m).hom
+        ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+          uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of X))) m).hom x) := by
+  -- The naturality square of `singularHomologyFunctor`, read through its definition as the
+  -- homology of `TopCat.toSSet`.
+  have h : HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+      uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of X))) m ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) (ModuleCat.of ℤ (ULift.{0} ℤ)) m =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f))
+          (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) m ≫
+        HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+          uliftIntTensorIso.hom).app (TopCat.toSSet.obj (TopCat.of Y))) m :=
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) m).map
+      uliftIntTensorIso.hom).naturality (TopCat.ofHom f)).symm
+  have hx := ConcreteCategory.congr_hom h x
+  simp only [ConcreteCategory.comp_apply] at hx
+  exact hx.symm
 
 /-- The integral homology of the double loop space `Ω²Q` at `x` is that of the based mapping space
 `Map_*(S², Q)` of maps sending the north pole to `x`, with the coefficients `ULift ℤ` of

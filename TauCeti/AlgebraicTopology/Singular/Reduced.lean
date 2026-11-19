@@ -151,6 +151,7 @@ lemma singularHomology₀Section_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (x 
 
 /-- With coefficients in a module, a continuous map sends the class of a point on a coefficient
 `r` to the class of its image on `r`. -/
+@[simp]
 theorem homologyMap_singularHomology₀Section_apply {k : Type v} [Ring k] {M : ModuleCat.{w} k}
     {X Y : TopCat.{w}} (f : X ⟶ Y) (x : X) (r : M) :
     (SSet.homologyMap (TopCat.toSSet.map f) M 0).hom ((singularHomology₀Section M x).hom r) =
