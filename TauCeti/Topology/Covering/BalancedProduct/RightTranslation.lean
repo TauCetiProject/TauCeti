@@ -181,6 +181,13 @@ theorem mk_toRightTranslation_mul (g : G) (h : K) (z : Z) :
   rw [Subgroup.RightTranslation.smul_toRightTranslation, mul_inv_cancel_right, inv_smul_smul] at h₁
   exact h₁.symm
 
+/-- The quotient class of `x : K.RightTranslation × Z` is the class `[g, z]` with `g` the
+underlying element of `x.1` in `G`. -/
+theorem quotientMk_eq_mk_toRightTranslation (x : K.RightTranslation × Z) :
+    Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) x =
+      mk K (K.toRightTranslation (K.toRightTranslation.symm x.1)) x.2 := by
+  rw [Equiv.apply_symm_apply]
+
 /-- Every point of `G ×_K Z` is a class `[g, z]`. -/
 @[elab_as_elim]
 theorem induction_on_toRightTranslation {p : BalancedProduct K K.RightTranslation Z → Prop}
