@@ -128,6 +128,12 @@ lemma ofSubset_map (B : Set X) :
 lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
   Subtype.range_coe
 
+/-- The ambient space of the pair `(T, B)` is `T`, so it is compact when `T` is. It is stated
+for `TopCat.of T`, so that instance search finds it for a concrete space `T`. -/
+instance compactSpace_ofSubset_fst {T : Type u} [TopologicalSpace T] [CompactSpace T]
+    (A : Set (TopCat.of T)) : CompactSpace (ofSubset A).fst :=
+  ‹CompactSpace T›
+
 /-- The embedding of the pair `(X, B)` is an isomorphism when `B` is all of `X`. -/
 lemma isIso_ofSubset_map_of_eq_univ (h : B = Set.univ) : IsIso (ofSubset B).map := by
   refine TopCat.isIso_of_bijective_of_isOpenMap _ ⟨Subtype.val_injective, fun y ↦ ?_⟩
