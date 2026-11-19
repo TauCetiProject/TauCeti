@@ -68,8 +68,9 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `TauCeti.UpperHalfPlane.cuspFunction_map₂_eventuallyEq`,
   `TauCeti.UpperHalfPlane.cuspFunction_qParam_pow_mul_eventuallyEq` and
   `TauCeti.UpperHalfPlane.qExpansion_congr`: cusp functions off `q = 0`.
-* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_mul` and its companions: meromorphy at `0`
-  of cusp functions under the field operations.
+* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_mul`,
+  `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_qParam_pow_mul_iff` and their companions:
+  meromorphy at `0` of cusp functions under the field operations and `q`-parameter twists.
 * `TauCeti.UpperHalfPlane.cuspFunction_pow` and `TauCeti.UpperHalfPlane.qExpansion_pow`: powers of
   functions with analytic cusp functions.
 * `TauCeti.UpperHalfPlane.qExpansion_qParam` and `TauCeti.UpperHalfPlane.qExpansion_qParam_pow`:
@@ -348,6 +349,23 @@ theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (h : ℝ) (m : ℕ) :
   have hq := analyticAt_cuspFunction_qParam h
   rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m, cuspFunction_pow hq.continuousAt m]
   exact hq.pow m
+
+/-- Twisting `f` by a power of the `q`-parameter preserves meromorphy of the cusp function at
+`0`. -/
+@[simp]
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_qParam_pow_mul_iff {k : ℕ} {f : ℍ → ℂ} :
+    MeromorphicAt (cuspFunction h fun τ ↦ Function.Periodic.qParam h τ ^ k * f τ) 0 ↔
+      MeromorphicAt (cuspFunction h f) 0 := by
+  refine ⟨fun hk ↦ ?_, fun hf ↦
+    meromorphicAt_cuspFunction_mul (analyticAt_cuspFunction_qParam_pow h k).meromorphicAt hf⟩
+  rcases le_or_gt h 0 with hh | hh
+  · exact (analyticAt_const.congr
+      (cuspFunction_eventuallyEq_const_of_nonpos hh f).symm).meromorphicAt
+  refine ((analyticAt_id.pow k).meromorphicAt.inv.mul hk).congr ?_
+  filter_upwards [cuspFunction_qParam_pow_mul_eventuallyEq hh k f,
+    self_mem_nhdsWithin] with q h₁ hq
+  simp only [Pi.mul_apply, Pi.inv_apply, Pi.pow_apply, id_eq, h₁,
+    inv_mul_cancel_left₀ (pow_ne_zero k hq)]
 
 /-- The `q`-expansion of the `m`-th power of the `q`-parameter is `X ^ m`. -/
 @[simp]

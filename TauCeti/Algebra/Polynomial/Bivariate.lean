@@ -17,6 +17,7 @@ with coefficient maps and evaluation.
 ## Main results
 
 * `Polynomial.aevalAeval_eq_eval₂`: `φ(x, y) = eval₂ (aeval x) y φ`.
+* `Polynomial.aeval_eval_X`: evaluating `p.eval X` at `z` agrees with `aevalAeval z z p`.
 -/
 
 public section
@@ -32,6 +33,14 @@ theorem aevalAeval_eq_eval₂ {R A : Type*} [CommSemiring R] [CommSemiring A] [A
   induction p using Polynomial.induction_on' with
   | add p q hp hq => simp only [map_add, hp, hq, eval₂_add]
   | monomial n a => simp [← C_mul_X_pow_eq_monomial]
+
+/-- Evaluating `p.eval X` at `z` agrees with evaluating the bivariate polynomial `p` at `(z, z)`. -/
+@[simp]
+theorem aeval_eval_X {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    (z : A) (p : R[X][Y]) : aeval z (p.eval X) = aevalAeval z z p := by
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq => simp [eval_add, hp, hq]
+  | monomial k a => simp [← C_mul_X_pow_eq_monomial]
 
 /-- The bivariate-to-multivariate equivalence commutes with coefficient maps. -/
 @[simp]

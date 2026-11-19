@@ -39,6 +39,8 @@ lies in the `SL(2, ℤ)`-orbit of `i`, `6` when it lies in that of `ρ`, and `2`
   `a z² + b z + c` vanishes.
 * `TauCeti.BinaryQuadraticForm.root_smul`: `root (γ • f) = γ • root f`.
 * `TauCeti.BinaryQuadraticForm.root_injective`: for fixed `D`, a form is determined by its root.
+* `TauCeti.BinaryQuadraticForm.eq_of_root_eq_of_isPrimitive`: a primitive form is determined by
+  its root across all discriminants.
 * `TauCeti.BinaryQuadraticForm.normSq_root`: `|root f|² = c / a`.
 * `TauCeti.BinaryQuadraticForm.stabilizer_root`: the stabiliser of `root f` in `SL(2, ℤ)` is
   the stabiliser of `f`.
@@ -128,6 +130,35 @@ theorem normSq_root (f : posDef D) : Complex.normSq (root f) = f.1.c / f.1.a := 
   rw [Complex.normSq_apply, coe_re, coe_im, re_root, im_root]
   field_simp
   linear_combination hD + Real.sq_sqrt D.cast_nonneg
+
+/-- **A point of `ℍ` is the root of at most one primitive positive definite form** (across all
+discriminants). If `f ∈ posDef D` and `g ∈ posDef D'` are primitive with `root f = root g`, then
+their underlying forms coincide. -/
+theorem eq_of_root_eq_of_isPrimitive {D' : ℕ} [NeZero D'] {f : posDef D} {g : posDef D'}
+    (hf : f.1.IsPrimitive) (hg : g.1.IsPrimitive) (h : root f = root g) :
+    f.1 = g.1 := by
+  obtain ⟨-, hfa⟩ := mem_posDef.1 f.2
+  obtain ⟨-, hga⟩ := mem_posDef.1 g.2
+  have hfaR : (f.1.a : ℝ) ≠ 0 := Int.cast_ne_zero.2 hfa.ne'
+  have hgaR : (g.1.a : ℝ) ≠ 0 := Int.cast_ne_zero.2 hga.ne'
+  have hre : (g.1.a : ℝ) * f.1.b = (f.1.a : ℝ) * g.1.b := by
+    have h₁ := congrArg UpperHalfPlane.re h
+    rw [re_root, re_root] at h₁
+    field_simp at h₁
+    linarith
+  have hnorm : (g.1.a : ℝ) * f.1.c = (f.1.a : ℝ) * g.1.c := by
+    have h₂ := congrArg (fun z : ℍ ↦ Complex.normSq (z : ℂ)) h
+    rw [normSq_root, normSq_root] at h₂
+    field_simp at h₂
+    linarith
+  have hsmul : g.1.a • f.1 = f.1.a • g.1 := by
+    ext <;> simp only [smul_a', smul_b', smul_c', smul_eq_mul]
+    · exact mul_comm _ _
+    · exact_mod_cast hre
+    · exact_mod_cast hnorm
+  have hprim := congrArg primPart hsmul
+  rwa [primPart_smul_of_isPrimitive _ _ hf, primPart_smul_of_isPrimitive _ _ hg,
+    Int.sign_eq_one_of_pos hga, Int.sign_eq_one_of_pos hfa, one_smul, one_smul] at hprim
 
 /-- The stabiliser of the root of `f` in `SL(2, ℤ)` is the stabiliser of `f`. -/
 @[simp]
