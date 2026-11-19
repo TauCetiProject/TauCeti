@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
-public import Mathlib.MeasureTheory.Function.SpecialFunctions.RCLike
 public import TauCeti.Analysis.Complex.UnitDisc.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Normed.Field.Lemmas
@@ -68,8 +67,7 @@ half-plane. The open-half-plane restriction, centred at an arbitrary point of `�
 * `Complex.invCayley`: the inverse transform `w ↦ i (1 + w) / (1 - w)` read as a real number,
   which inverts the transform on the real line (`Complex.invCayley_sub_I_div_add_I`) and agrees
   with the complex expression on the unit circle (`Complex.ofReal_invCayley`), where it is
-  `w ↦ -Im w / (1 - Re w)` (`Complex.invCayley_eq_neg_im_div`); it is measurable
-  (`Complex.measurable_invCayley`).
+  `w ↦ -Im w / (1 - Re w)` (`Complex.invCayley_eq_neg_im_div`).
 
 ## References
 
@@ -505,11 +503,5 @@ theorem invCayley_eq_neg_im_div {w : ℂ} (hw : ‖w‖ = 1) : invCayley w = -w.
     simp [this, show w.re = 1 by linarith]
   · field_simp
     linear_combination w.im * hre
-
-/-- The inverse Cayley map is measurable. -/
-@[fun_prop]
-theorem measurable_invCayley : Measurable invCayley := by
-  rw [show invCayley = fun w => (I * (1 + w) / (1 - w)).re from funext invCayley_apply]
-  fun_prop
 
 end Complex

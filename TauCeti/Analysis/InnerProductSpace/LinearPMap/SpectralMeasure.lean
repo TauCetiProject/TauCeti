@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+public import TauCeti.MeasureTheory.Function.SpecialFunctions.Cayley
 
 /-!
 # The spectral measure of an unbounded self-adjoint operator
