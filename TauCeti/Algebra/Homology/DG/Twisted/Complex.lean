@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Cocycle
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 public import TauCeti.Algebra.Homology.GradedCochainComplex
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
@@ -47,6 +48,8 @@ Right modules are represented as left modules over `Aᵐᵒᵖ`, so `α · a` is
 ## Main results
 
 * `TauCeti.twistedDifferential_single`: the formula on a homogeneous elementary tensor.
+* `TauCeti.twistedDifferential_trivialGrading_apply`: for coefficients concentrated in degree `0`
+  with zero differential, `D` is the matrix action `(D f) y = Σ_x op (m x y) • f x`.
 * `TauCeti.twistedDifferential_mem_twistedTotalGrading`: `D` raises the total degree by one.
 * `TauCeti.twistedDifferential_sq_zero`: `D ∘ D = 0` under the twisting equation, and
   `TauCeti.TwistingCocycle.twistedDifferential_sq_zero` for a twisting cocycle.
@@ -237,6 +240,15 @@ theorem twistedDifferential_single_apply [DecidableEq P] (x z : P) {q : ℤ} {α
       (Pi.single x (dM α) : P → M) z + q.negOnePow • (op (m x z) • α) := by
   rw [twistedDifferential_single m dM x hα, Pi.add_apply, Finset.sum_apply]
   simp [Pi.single_apply]
+
+/-- **Coefficients in degree zero.** For coefficients concentrated in degree `0` with zero
+differential, the Koszul twist is the identity, and the twisted differential is the matrix action
+`(D f) y = Σ_x op (m x y) • f x`. -/
+theorem twistedDifferential_trivialGrading_apply (f : P → M) (y : P) :
+    twistedDifferential m (trivialGrading R M) 0 f y = ∑ x, op (m x y) • f x := by
+  have hε (α : M) : (InternalGrading.ofDecomposition (trivialGrading R M)).koszulTwist 1 α = α := by
+    simpa using koszulTwist_one_eq_negOnePow_smul (q := 0) (by simp : α ∈ trivialGrading R M 0)
+  simp [twistedDifferential_apply, hε]
 
 end Differential
 
