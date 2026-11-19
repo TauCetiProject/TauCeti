@@ -237,6 +237,12 @@ theorem ext {ν μ : InhomogeneousTerm j J}
   ext q v
   exact h q v
 
+/-- Two forcing terms are equal when their readings in the tangent spaces agree. -/
+theorem ext_tangentHom {ν μ : InhomogeneousTerm j J}
+    (h : ∀ q v, ν.val.tangentHom q v = μ.val.tangentHom q v) : ν = μ :=
+  ext fun q v ↦ (DomainDependentHomSection.tangentHom_apply _ q v).symm.trans
+    ((h q v).trans (DomainDependentHomSection.tangentHom_apply _ q v))
+
 /-- The pointwise antilinearity of a native inhomogeneous term. -/
 theorem isComplexAntilinear (ν : InhomogeneousTerm j J) (q : P × M) :
     IsComplexAntilinear (j.horizontalEndomorphism (I := I) (M := M) q).toLinearMap
