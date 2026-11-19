@@ -236,6 +236,12 @@ theorem W1p.norm_restrictL_le (hU : U ≤ Omega) (u : W1p mu Omega p) :
     ‖W1p.restrictL hU u‖ ≤ ‖u‖ :=
   Sobolev1JetLp.norm_restrictL_le hU (u : Sobolev1JetLp mu Omega p)
 
+/-- Restriction does not increase the `Lᵖ` norm of the weak gradient. -/
+theorem W1p.norm_gradient_restrictL_le (hU : U ≤ Omega) (u : W1p mu Omega p) :
+    ‖W1p.gradient (W1p.restrictL hU u)‖ ≤ ‖W1p.gradient u‖ := by
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (W1p.gradient_restrictL_ae hU u)]
+  exact W1p.toReal_eLpNorm_gradient_mono u (SetLike.coe_subset_coe.mpr hU) subset_rfl
+
 /-- The restriction operator has norm at most one. -/
 theorem W1p.norm_restrictL_le_one (hU : U ≤ Omega) :
     ‖W1p.restrictL (mu := mu) (p := p) hU‖ ≤ 1 :=
