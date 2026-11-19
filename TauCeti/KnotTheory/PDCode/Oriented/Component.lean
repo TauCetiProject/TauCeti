@@ -139,6 +139,24 @@ def crossingComponentOfHalfEdge (h : Fin (4 * n)) : D.CrossingComponent :=
 
 end HalfEdge
 
+/-- A function of half-edges that is constant along arcs and through crossings descends to the
+crossing-bearing components. -/
+def CrossingComponent.lift {D : OrientedPDCode n} {α : Sort*} (f : Fin (4 * n) → α)
+    (hturn : ∀ x, f (D.crossingTurn x) = f x) (hedge : ∀ x, f (D.edgePair.val x) = f x) :
+    D.CrossingComponent → α :=
+  Quotient.lift (fun x ↦ f x.val) fun _ _ hxy ↦
+    hxy.apply_eq_of_apply_eq (f := fun x ↦ f x.val) fun x ↦ by
+      simp only [componentPermOutgoing_apply, PDCode.componentPerm_apply, hturn, hedge]
+
+/-- The lift of a half-edge function takes the component of a half-edge to its value there. -/
+@[simp] theorem CrossingComponent.lift_crossingComponentOfHalfEdge {D : OrientedPDCode n}
+    {α : Sort*} (f : Fin (4 * n) → α) (hturn : ∀ x, f (D.crossingTurn x) = f x)
+    (hedge : ∀ x, f (D.edgePair.val x) = f x) (x : Fin (4 * n)) :
+    CrossingComponent.lift f hturn hedge (D.crossingComponentOfHalfEdge x) = f x := by
+  cases hx : D.orientation x with
+  | true => rw [crossingComponentOfHalfEdge_of_outgoing D x hx]; rfl
+  | false => rw [crossingComponentOfHalfEdge_of_incoming D x hx]; exact hedge x
+
 /-- The number of crossing-bearing component classes is the native crossing-component count. -/
 @[simp] theorem card_crossingComponent (D : OrientedPDCode n) :
     Nat.card D.CrossingComponent = D.toPDCode.crossingComponentCount := by
