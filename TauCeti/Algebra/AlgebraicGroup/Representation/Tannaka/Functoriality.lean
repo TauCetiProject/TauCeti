@@ -359,11 +359,11 @@ theorem tensorAutRestrict_comp [U₁.LaxMonoidal] [NatTrans.IsMonoidal e₁.hom]
 
 end Laws
 
-section Points
+section PointEnd
 
 variable {R : Type u} [CommSemiring R]
-variable {H₁ : Type v} [Semiring H₁] [HopfAlgebra R H₁]
-variable {H₂ : Type w} [Semiring H₂] [HopfAlgebra R H₂]
+variable {H₁ : Type v} [Semiring H₁] [Bialgebra R H₁]
+variable {H₂ : Type w} [Semiring H₂] [Bialgebra R H₂]
 variable (U : FGComoduleCat.{u, v, u} R H₁ ⥤ FGComoduleCat.{u, w, u} R H₂)
 variable (e : U ⋙ forget₂ (FGComoduleCat.{u, w, u} R H₂) (SemimoduleCat.{u} R) ≅
     forget₂ (FGComoduleCat.{u, v, u} R H₁) (SemimoduleCat.{u} R))
@@ -393,6 +393,18 @@ theorem baseChange_comp_endOfPoint_of_coact (ψ : H₁ →ₐc[R] H₂)
           using hψ x }
   have h := Comodule.baseChange_comp_endOfPoint (A := A) f g
   rwa [Comodule.endOfPoint_corestrict] at h
+
+end PointEnd
+
+section Points
+
+variable {R : Type u} [CommSemiring R]
+variable {H₁ : Type v} [Semiring H₁] [HopfAlgebra R H₁]
+variable {H₂ : Type w} [Semiring H₂] [HopfAlgebra R H₂]
+variable (U : FGComoduleCat.{u, v, u} R H₁ ⥤ FGComoduleCat.{u, w, u} R H₂)
+variable (e : U ⋙ forget₂ (FGComoduleCat.{u, w, u} R H₂) (SemimoduleCat.{u} R) ≅
+    forget₂ (FGComoduleCat.{u, v, u} R H₁) (SemimoduleCat.{u} R))
+variable (A : Type u) [CommSemiring A] [Algebra R A]
 
 /-- If every fibre comparison `e_M` is a comodule map from `U M` to `M` with coaction pushed
 forward along `ψ`, then restriction along `U` acts on points by precomposition with `ψ`. -/
