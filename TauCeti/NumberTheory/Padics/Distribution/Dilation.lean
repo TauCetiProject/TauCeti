@@ -27,18 +27,19 @@ On the analytic stage `LA_h(E)`, multiplication by `a` maps the disc of `b` into
 where `a b.val = d.val + pʰ s` is the disc decomposition of `PadicInt.discHomeomorph`. In the disc
 coordinates, `a (b.val + pʰ w) = d.val + pʰ (s + a w)`, so a series `∑ₙ c(d, n) vⁿ` on the disc of
 `d` becomes `∑ₙ c(d, n) (s + a w)ⁿ`, whose coefficient of `wʲ` is
-`∑ₙ (n choose j) sⁿ⁻ʲ aʲ • c(d, n)`. These coefficients are again a null family, and the
-resulting map `TauCeti.AnalyticStage.compMulLeft` does not increase norms. Re-expanding twice
-along affine substitutions is re-expanding once along their composite; this gives the evaluation
-formula, compatibility with the transitions between levels, and the composition law
+`∑ₙ (n choose j) sⁿ⁻ʲ aʲ • c(d, n)`. This is the affine re-expansion
+`TauCeti.AnalyticStage.reexpand` that also defines the transitions between levels, so these
+coefficients are again a null family, and the resulting map `TauCeti.AnalyticStage.compMulLeft`
+does not increase norms. Re-expanding twice along affine substitutions is re-expanding once along
+their composite (`TauCeti.AnalyticStage.reexpand_reexpand`); this gives the evaluation formula,
+compatibility with the transitions between levels, and the composition law
 `(a a')^* = a'^* ∘ a^*`, all on coefficients, so that no torsion-freeness of `E` is needed.
 
-The Amice formula rests on the dilation formula for Mahler functions, `PadicInt.mahler_mul`:
-`(a x choose n) = ∑_{m ≤ n} c_{n,m} (x choose m)`, where `c_{n,m}` is the coefficient of `Tⁿ` in
-`((1 + T) ^ a - 1) ^ m`. It is the coefficientwise form of the corresponding identity for the
-Dirac measure at `x`. On the stage of a level `h` with `n < pʰ`, Amice's polynomials on each disc
-are binomial polynomials, and the Mahler identity becomes a polynomial identity in the disc
-coordinate.
+The Amice formula rests on the dilation formula for Mahler functions, `PadicInt.mahler_mul` of
+`TauCeti.NumberTheory.Padics.Measure.Dilation`: `(a x choose n) = ∑_{m ≤ n} c_{n,m} (x choose m)`,
+where `c_{n,m}` is the coefficient of `Tⁿ` in `((1 + T) ^ a - 1) ^ m`. On the stage of a level `h`
+with `n < pʰ`, Amice's polynomials on each disc are binomial polynomials, and the Mahler identity
+becomes a polynomial identity in the disc coordinate.
 
 ## Main definitions
 
@@ -50,7 +51,6 @@ coordinate.
 
 ## Main results
 
-* `PadicInt.mahler_mul`: the Mahler expansion of `x ↦ (a x choose n)`.
 * `TauCeti.AnalyticStage.eval_compMulLeft`, `TauCeti.LocallyAnalytic.eval_compMulLeft`: dilation
   evaluates to `x ↦ f(a x)`.
 * `TauCeti.AnalyticStage.transition_compMulLeft`: dilation commutes with raising the level.
@@ -63,6 +63,8 @@ coordinate.
 * `TauCeti.LocallyAnalyticDistribution.amiceTransform_mapMulLeft`:
   `A_{a_* μ}(T) = A_μ((1 + T) ^ a - 1)`.
 * `TauCeti.LocallyAnalyticDistribution.amiceTransform_phi`: `A_{φ μ}(T) = A_μ((1 + T) ^ p - 1)`.
+* `TauCeti.LocallyAnalyticDistribution.amiceTransform_mapMulLeft_zero`: `A_{0_* μ}` is the
+  constant series `μ(1)`.
 
 ## References
 
@@ -75,152 +77,11 @@ public section
 open Filter Topology
 open scoped ZeroAtInfty Polynomial
 
-namespace PadicInt
-
-variable {p : ℕ} [Fact p.Prime]
-
-/-- **Mahler functions of a dilation.** For `a ∈ ℤ_p`, the function `x ↦ (a x choose n)` is the
-integral combination `∑_{k ≤ n} c_{n,k} (x choose k)`, where `c_{n,k}` is the coefficient of `Tⁿ`
-in `((1 + T) ^ a - 1) ^ k`. This is the coefficientwise form of
-`(1 + T) ^ (a x) = ((1 + T) ^ a) ^ x = ∑ₖ (x choose k) ((1 + T) ^ a - 1) ^ k`. -/
-theorem mahler_mul (a x : ℤ_[p]) (n : ℕ) :
-    mahler n (a * x) = ∑ k ∈ Finset.range (n + 1),
-      PowerSeries.coeff n ((PowerSeries.binomialSeries ℤ_[p] a - 1) ^ k) * mahler k x := by
-  have h := congrArg (PowerSeries.coeff n)
-    (AbstractMeasure.amiceTransform_map_mulLeft (AbstractMeasure.dirac ℤ_[p] x) a)
-  rw [PowerSeries.coeff_subst_eq_sum_range _ (by simp) n] at h
-  simpa [AbstractMeasure.coeff_amiceTransform, mahler_apply, mul_comm] using h
-
-end PadicInt
-
 namespace TauCeti
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
 namespace AnalyticStage
-
-/-! ### Affine re-expansion of coefficient sequences -/
-
-section Reexpansion
-
-open Polynomial
-
-/-- The coefficient `(n choose j) sⁿ⁻ʲ tʲ` of `vʲ` in `(s + t v)ⁿ`. -/
-private noncomputable def reexpandScalar (s t : ℤ_[p]) (n j : ℕ) : ℤ_[p] :=
-  (n.choose j : ℤ_[p]) * s ^ (n - j) * t ^ j
-
-private theorem reexpandScalar_of_lt (s t : ℤ_[p]) {n j : ℕ} (hnj : n < j) :
-    reexpandScalar s t n j = 0 := by
-  simp [reexpandScalar, Nat.choose_eq_zero_of_lt hnj]
-
-/-- The coefficients of `(C s + C t X)ⁿ` are the re-expansion scalars. -/
-private theorem coeff_C_add_C_mul_X_pow (s t : ℤ_[p]) (n j : ℕ) :
-    ((C s + C t * X) ^ n).coeff j = reexpandScalar s t n j := by
-  have hcomp : (C s + C t * X) ^ n = ((X + C s) ^ n).comp (C t * X) := by
-    rw [pow_comp, add_comp, X_comp, C_comp, add_comm]
-  rw [hcomp, comp_C_mul_X_coeff, coeff_X_add_C_pow, reexpandScalar]
-  ring
-
-/-- Substituting `s + t X` into a polynomial of degree below `N` re-expands its coefficients. -/
-private theorem coeff_comp_C_add_C_mul_X (P : ℤ_[p][X]) {N : ℕ} (hP : P.natDegree < N)
-    (s t : ℤ_[p]) (j : ℕ) :
-    (P.comp (C s + C t * X)).coeff j =
-      ∑ k ∈ Finset.range N, P.coeff k * reexpandScalar s t k j := by
-  conv_lhs => rw [P.as_sum_range' N hP]
-  simp [sum_comp, coeff_C_add_C_mul_X_pow]
-
-/-- Re-expanding twice is re-expanding once: `s₁ + t₁ (s₂ + t₂ u) = (s₁ + t₁ s₂) + t₁ t₂ u`. -/
-private theorem sum_reexpandScalar_mul (s₁ t₁ s₂ t₂ : ℤ_[p]) (n j : ℕ) :
-    ∑ m ∈ Finset.range (n + 1), reexpandScalar s₂ t₂ m j * reexpandScalar s₁ t₁ n m =
-      reexpandScalar (s₁ + t₁ * s₂) (t₁ * t₂) n j := by
-  have hdeg : ((C s₁ + C t₁ * X) ^ n).natDegree < n + 1 := by
-    refine Nat.lt_succ_of_le ((natDegree_pow_le_of_le n ?_).trans (mul_one n).le)
-    rw [add_comm]
-    exact natDegree_linear_le
-  have hcomp : ((C s₁ + C t₁ * X) ^ n).comp (C s₂ + C t₂ * X) =
-      (C (s₁ + t₁ * s₂) + C (t₁ * t₂) * X) ^ n := by
-    simp only [pow_comp, add_comp, mul_comp, C_comp, X_comp, map_add, map_mul]
-    ring
-  have h := coeff_comp_C_add_C_mul_X _ hdeg s₂ t₂ j
-  rw [hcomp, coeff_C_add_C_mul_X_pow] at h
-  rw [h]
-  exact Finset.sum_congr rfl fun m _ ↦ by rw [coeff_C_add_C_mul_X_pow, mul_comm]
-
-variable {E : Type*} [NormedAddCommGroup E] [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E]
-
-/-- The coefficients of `∑ₙ (s + t v)ⁿ • cₙ` in powers of `v`. -/
-private noncomputable def reexpand (s t : ℤ_[p]) (c : ℕ → E) (j : ℕ) : E :=
-  ∑' n, reexpandScalar s t n j • c n
-
-omit [IsBoundedSMul ℤ_[p] E] in
-/-- Re-expanding the coefficients of a polynomial is substituting `s + t X` into it. -/
-private theorem reexpand_coeff_smul (P : ℤ_[p][X]) (s t : ℤ_[p]) (e : E) (j : ℕ) :
-    reexpand s t (fun k ↦ P.coeff k • e) j = (P.comp (C s + C t * X)).coeff j • e := by
-  rw [coeff_comp_C_add_C_mul_X P (Nat.lt_succ_self _) s t j, Finset.sum_smul, reexpand]
-  refine (tsum_eq_sum fun k hk ↦ ?_).trans
-    (Finset.sum_congr rfl fun k _ ↦ by rw [smul_smul, mul_comm])
-  rw [Finset.mem_range, not_lt] at hk
-  simp [coeff_eq_zero_of_natDegree_lt (Nat.lt_of_succ_le hk)]
-
-private theorem norm_smul_le_norm (r : ℤ_[p]) (e : E) : ‖r • e‖ ≤ ‖e‖ :=
-  (norm_smul_le r e).trans (mul_le_of_le_one_left (norm_nonneg e) (PadicInt.norm_le_one r))
-
-/-- A coefficient of a re-expansion is bounded by the coefficients of the same or higher degree. -/
-private theorem norm_reexpand_le [IsUltrametricDist E] (s t : ℤ_[p]) {c : ℕ → E} {C : ℝ}
-    (hC : 0 ≤ C) {j : ℕ} (hc : ∀ n, j ≤ n → ‖c n‖ ≤ C) : ‖reexpand s t c j‖ ≤ C :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hC fun n ↦ by
-    rcases lt_or_ge n j with hn | hn
-    · simpa [reexpandScalar_of_lt s t hn] using hC
-    · exact (norm_smul_le_norm _ _).trans (hc n hn)
-
-variable [IsUltrametricDist E] [CompleteSpace E]
-
-private theorem summable_smul_of_tendsto {c : ℕ → E} (hc : Tendsto c cofinite (𝓝 0))
-    (r : ℕ → ℤ_[p]) : Summable fun n ↦ r n • c n :=
-  NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
-    squeeze_zero_norm (fun _ ↦ norm_smul_le_norm _ _) (tendsto_zero_iff_norm_tendsto_zero.mp hc)
-
-/-- **Composition of re-expansions.** Re-expanding `∑ₙ (s₁ + t₁ v)ⁿ • cₙ` along
-`v = s₂ + t₂ u` is the re-expansion along `s₁ + t₁ (s₂ + t₂ u)`. -/
-private theorem reexpand_reexpand {c : ℕ → E} (hc : Tendsto c cofinite (𝓝 0))
-    (s₁ t₁ s₂ t₂ : ℤ_[p]) (j : ℕ) :
-    reexpand s₂ t₂ (reexpand s₁ t₁ c) j = reexpand (s₁ + t₁ * s₂) (t₁ * t₂) c j := by
-  set f : ℕ → ℕ → E := fun m n ↦ (reexpandScalar s₂ t₂ m j * reexpandScalar s₁ t₁ n m) • c n
-  -- The term `(m, n)` vanishes unless `m ≤ n`, so it is bounded by `‖c (max m n)‖`.
-  have hmax : Tendsto (fun x : ℕ × ℕ ↦ max x.1 x.2) cofinite cofinite :=
-    Tendsto.cofinite_of_finite_preimage_singleton fun k ↦
-      ((Set.finite_Iic k).prod (Set.finite_Iic k)).subset fun x hx ↦ by
-        simp only [Set.mem_preimage, Set.mem_singleton_iff] at hx
-        subst hx
-        exact ⟨Set.mem_Iic.mpr (le_max_left _ _), Set.mem_Iic.mpr (le_max_right _ _)⟩
-  have hf : Summable (Function.uncurry f) := by
-    refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| squeeze_zero_norm
-      (a := fun x ↦ ‖c (max x.1 x.2)‖) (fun x ↦ ?_)
-      ((tendsto_zero_iff_norm_tendsto_zero.mp hc).comp hmax)
-    rcases le_or_gt x.1 x.2 with hx | hx
-    · simpa [f, Function.uncurry, max_eq_right hx] using norm_smul_le_norm _ (c x.2)
-    · simp [f, Function.uncurry, reexpandScalar_of_lt s₁ t₁ hx]
-  calc reexpand s₂ t₂ (reexpand s₁ t₁ c) j = ∑' m, ∑' n, f m n := by
-        refine tsum_congr fun m ↦ ?_
-        simp only [reexpand, f, mul_smul]
-        exact ((summable_smul_of_tendsto hc _).tsum_const_smul _).symm
-    _ = ∑' n, ∑' m, f m n := hf.tsum_comm.symm
-    _ = reexpand (s₁ + t₁ * s₂) (t₁ * t₂) c j := by
-        refine tsum_congr fun n ↦ ?_
-        rw [← sum_reexpandScalar_mul, Finset.sum_smul]
-        refine tsum_eq_sum fun m hm ↦ ?_
-        rw [Finset.mem_range, not_lt] at hm
-        simp [f, reexpandScalar_of_lt s₁ t₁ (Nat.lt_of_succ_le hm)]
-
-/-- Summing a re-expansion against the powers of `w` evaluates the original series at
-`s + t w`. -/
-private theorem tsum_pow_smul_reexpand {c : ℕ → E} (hc : Tendsto c cofinite (𝓝 0))
-    (s t w : ℤ_[p]) :
-    ∑' j, w ^ j • reexpand s t c j = ∑' n, (s + t * w) ^ n • c n := by
-  have h := reexpand_reexpand hc s t w 0 0
-  simpa [reexpand, reexpandScalar] using h
-
-end Reexpansion
 
 /-! ### Dilation on an analytic stage -/
 
@@ -244,11 +105,6 @@ vector `c`: writing `a b.val = d.val + pʰ s`, they re-expand the series of `f` 
 private noncomputable def compMulLeftCoeff (a : ℤ_[p]) (c : AnalyticStage p h E)
     (i : ZMod (p ^ h) × ℕ) : E :=
   reexpand (mulDisc a i.1).2 a (fun n ↦ c ((mulDisc a i.1).1, n)) i.2
-
-omit hp [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] in
-private theorem tendsto_apply_mk (c : AnalyticStage p h E) (b : ZMod (p ^ h)) :
-    Tendsto (fun n ↦ c (b, n)) cofinite (𝓝 0) :=
-  c.tendsto_cofinite.comp (Prod.mk_right_injective b).tendsto_cofinite
 
 private theorem norm_compMulLeftCoeff_le (a : ℤ_[p]) (c : AnalyticStage p h E)
     (i : ZMod (p ^ h) × ℕ) : ‖compMulLeftCoeff a c i‖ ≤ ‖c‖ :=
@@ -286,13 +142,12 @@ noncomputable def compMulLeft (a : ℤ_[p]) : AnalyticStage p h E →L[S] Analyt
         ext i
         simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, compMulLeftCoeff, reexpand,
           FunLike.coe_add, Pi.add_apply, smul_add]
-        exact (summable_smul_of_tendsto (tendsto_apply_mk c _) _).tsum_add
-          (summable_smul_of_tendsto (tendsto_apply_mk d _) _)
+        exact (summable_smul_apply c _ _).tsum_add (summable_smul_apply d _ _)
       map_smul' s c := by
         ext i
         simp only [ZeroAtInftyContinuousMap.coe_mkOfDiscrete, compMulLeftCoeff, reexpand,
           FunLike.coe_smul, Pi.smul_apply, RingHom.id_apply, smul_comm _ s]
-        exact (summable_smul_of_tendsto (tendsto_apply_mk c _) _).tsum_const_smul s }
+        exact (summable_smul_apply c _ _).tsum_const_smul s }
   { L with
     cont := AddMonoidHomClass.continuous_of_bound L 1 fun c ↦ by
       rw [one_mul]
@@ -586,8 +441,10 @@ theorem amiceTransform_mapMulLeft (a : ℤ_[p]) (μ : LocallyAnalyticDistributio
   rw [coeff_amiceTransform, coe_mapMulLeft_apply, compMulLeft_mahlerTerm, map_sum,
     PowerSeries.coeff_subst_eq_sum_range _ (by simp) n]
   refine Finset.sum_congr rfl fun m _ ↦ ?_
-  rw [hmap, ← map_pow, PowerSeries.coeff_map, coeff_amiceTransform, Algebra.smul_def,
-    ← smul_eq_mul, mahlerTerm_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm]
+  -- Make the `ℤ_p`-coefficient a `K`-scalar and pull it out of the Mahler term and of `μ`.
+  rw [hmap, ← map_pow, PowerSeries.coeff_map, coeff_amiceTransform, algebra_compatible_smul K,
+    mahlerTerm_smul, map_smul]
+  exact mul_comm _ _
 
 /-- Pushforwards along dilations commute. -/
 theorem mapMulLeft_comm (a a' : ℤ_[p]) (μ : LocallyAnalyticDistribution p K) :
@@ -623,9 +480,10 @@ theorem phi_mapMulLeft (a : ℤ_[p]) (μ : LocallyAnalyticDistribution p K) :
     phi p K (mapMulLeft a μ) = mapMulLeft a (phi p K μ) := by
   rw [phi_eq_mapMulLeft, mapMulLeft_comm]
 
--- Dilation by zero sends a distribution to its total mass at zero: its Amice transform is the
--- constant series `μ(1)`.
-example (μ : LocallyAnalyticDistribution p K) :
+/-- Dilation by zero sends a distribution to its total mass at zero: its Amice transform is the
+constant series `μ(1)`. -/
+@[simp]
+theorem amiceTransform_mapMulLeft_zero (μ : LocallyAnalyticDistribution p K) :
     amiceTransform (mapMulLeft 0 μ) =
       PowerSeries.C (PowerSeries.constantCoeff (amiceTransform μ)) := by
   rw [amiceTransform_mapMulLeft]
