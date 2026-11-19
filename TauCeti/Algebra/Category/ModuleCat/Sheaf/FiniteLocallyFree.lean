@@ -73,6 +73,9 @@ open _root_.SheafOfModules
 
 variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
 variable [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
+
+section
+
 variable [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
 variable {R : Sheaf J CommRingCat.{u}}
 
@@ -170,14 +173,15 @@ theorem _root_.SheafOfModules.GeneratingSections.exists_isIso_π_isFiniteType
 
 end GeneratingSections
 
+end
+
 section LocallyFree
 
-variable [HasPullbacks C]
+variable {R : Sheaf J CommRingCat.{u}} [HasPullbacks C]
   [∀ X, HasSheafify (J.over X) AddCommGrpCat.{u}]
   [∀ X, (J.over X).WEqualsLocallyBijective AddCommGrpCat.{u}]
   (M : SheafOfModules.{u} (ringCatSheaf R))
 
-omit [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}] in
 /-- A locally free sheaf of modules of finite type admits locally free data with finite local
 bases. -/
 theorem _root_.SheafOfModules.IsLocallyFree.exists_isLocallyFreeData_isFiniteType
@@ -203,7 +207,6 @@ theorem _root_.SheafOfModules.IsLocallyFree.exists_isLocallyFreeData_isFiniteTyp
   exact ⟨{ I := r.I, X := r.X, coversTop := r.coversTop, generators := ρ },
     ⟨fun i ↦ (hρ i).1⟩, ⟨fun i ↦ (hρ i).2⟩⟩
 
-omit [HasWeakSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}] in
 /-- A sheaf of modules is finite locally free, that is, locally free and finitely presented, if
 and only if it admits locally free data with finite local bases. -/
 theorem _root_.SheafOfModules.isFiniteLocallyFree_iff_exists_isLocallyFreeData_isFiniteType :

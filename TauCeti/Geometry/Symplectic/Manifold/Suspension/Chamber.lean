@@ -28,7 +28,7 @@ written `e = a v + c t` modulo torsion, and `q = a + 1 - g`. The determinant lin
 `Spinᶜ` structure has class `l = 2e - κ`, and the real dimension of its moduli space is
 `d(e) = e · e - κ · e`. This file proves the numerical identities
 
-`l = 2q v + 2c t` (modulo torsion),  `d(e) = 2cq`,  `l · [Ω] = 2(q + L c)`,
+`l = 2q v + 2c t` (modulo torsion),  `d(e) = 2cq`,  `l · t = 2q`,  `l · [Ω] = 2(q + L c)`,
 
 and that `l · [Ω]` has the sign of `c` when `c ≠ 0` and `d(e) ≥ 0`. In the Seiberg–Witten wall
 coordinate `w = -2π l · [ω_g]`, where `ω_g` is a positive multiple of the self-dual harmonic form
@@ -42,15 +42,18 @@ Every class `x = a v + c t` (modulo torsion) also has even square `x · x = 2ac`
 square `-1`.
 
 The statements are about an arbitrary `ℤ`-valued bilinear form `B` on an abelian group `H`,
-playing the role of the intersection form on `H²(X; ℤ)`. Torsion is retained: the classes `e`
-and `κ` are only assumed to agree with their coordinate expressions up to elements of finite
-order, which every `ℤ`-valued bilinear form annihilates.
+playing the role of the intersection form on `H²(X; ℤ)`. The statements take any `Module ℤ H`
+instance, such as the one on a cohomology group, which agrees with the default
+`AddCommGroup.toIntModule` only propositionally. Torsion is retained: the classes `e` and `κ` are
+only assumed to agree with their coordinate expressions up to elements of finite order, which
+every `ℤ`-valued bilinear form annihilates.
 
 ## Main results
 
 * `TauCeti.SmoothMappingTorus.isOfFinAddOrder_two_smul_sub_sub`: `l = 2q v + 2c t` modulo
   torsion.
 * `TauCeti.SmoothMappingTorus.apply_self_sub_apply_canonical_eq`: `d(e) = 2cq`.
+* `TauCeti.SmoothMappingTorus.apply_two_smul_sub_right_eq`: `l · t = 2q`.
 * `TauCeti.SmoothMappingTorus.apply_two_smul_sub_add_mul_apply_eq`: `l · [Ω] = 2(q + L c)`.
 * `TauCeti.SmoothMappingTorus.sign_apply_two_smul_sub_add_mul_apply`: for `c ≠ 0`,
   `d(e) ≥ 0` and `L > 0`, the sign of `l · [Ω]` is the sign of `c`.
@@ -70,8 +73,9 @@ namespace TauCeti
 
 namespace SmoothMappingTorus
 
-variable {H : Type*} [AddCommGroup H] {B : BilinForm ℤ H} {v t e κ : H} {a c g : ℤ}
+variable {H : Type*} [AddCommGroup H] [Module ℤ H] {B : BilinForm ℤ H} {v t e κ : H} {a c g : ℤ}
 
+omit [Module ℤ H] in
 /-- The determinant class `l = 2e - κ` of the label `e = a v + c t` is `2q v + 2c t` modulo
 torsion, where `κ = (2g - 2) v` and `q = a + 1 - g`. -/
 theorem isOfFinAddOrder_two_smul_sub_sub (he : IsOfFinAddOrder (e - (a • v + c • t)))
@@ -95,6 +99,16 @@ theorem apply_self_sub_apply_canonical_eq (hv : B v v = 0) (ht : B t t = 0) (hvt
   simp only [map_add, map_zsmul, LinearMap.smul_apply, smul_eq_mul, hv, hvt]
   ring
 
+/-- The pairing of the determinant class `l = 2e - κ` with `t` is `l · t = 2q`, where
+`e = a v + c t`, `κ = (2g - 2) v` and `q = a + 1 - g`. Only `t · t = 0` and `v · t = 1` are
+needed. -/
+theorem apply_two_smul_sub_right_eq (ht : B t t = 0) (hvt : B v t = 1)
+    (he : IsOfFinAddOrder (e - (a • v + c • t))) (hκ : IsOfFinAddOrder (κ - (2 * g - 2) • v)) :
+    B ((2 : ℤ) • e - κ) t = 2 * (a + 1 - g) := by
+  rw [B.apply_eq_apply_of_isOfFinAddOrder_sub_left (isOfFinAddOrder_two_smul_sub_sub he hκ)]
+  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, ht, hvt]
+  ring
+
 /-- The pairing of the determinant class `l = 2e - κ` with `[Ω] = t + L v` is `2(q + L c)`,
 where `e = a v + c t`, `κ = (2g - 2) v` and `q = a + 1 - g`. The coefficient `L` lies in any
 commutative ring, typically `ℝ`. -/
@@ -103,11 +117,9 @@ theorem apply_two_smul_sub_add_mul_apply_eq {R : Type*} [CommRing R] (hv : B v v
     (he : IsOfFinAddOrder (e - (a • v + c • t))) (hκ : IsOfFinAddOrder (κ - (2 * g - 2) • v))
     (L : R) :
     (B ((2 : ℤ) • e - κ) t : R) + L * B ((2 : ℤ) • e - κ) v = 2 * ((a + 1 - g : ℤ) + L * c) := by
-  have hl := isOfFinAddOrder_two_smul_sub_sub he hκ
-  rw [B.apply_eq_apply_of_isOfFinAddOrder_sub_left hl,
-    B.apply_eq_apply_of_isOfFinAddOrder_sub_left hl]
-  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hv, ht,
-    hvt, htv]
+  rw [apply_two_smul_sub_right_eq ht hvt he hκ,
+    B.apply_eq_apply_of_isOfFinAddOrder_sub_left (isOfFinAddOrder_two_smul_sub_sub he hκ)]
+  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hv, htv]
   push_cast
   ring
 
