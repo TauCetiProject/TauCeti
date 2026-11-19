@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
 
@@ -33,6 +34,8 @@ case `p = ∞`. The exponent `-n/p'` is sharp, so the negative regularity of a p
 * `TemperedDistribution.memBesov_delta_zero_iff`: the exact Besov regularity of `δ₀`.
 * `TemperedDistribution.memBesov_delta_zero`: `δ₀ ∈ B^{-n/p'}_{p,∞}`, in every dimension; at
   `p = ∞` this is `δ₀ ∈ 𝒞^{-n} = B^{-n}_{∞,∞}`.
+* `TemperedDistribution.not_tendsto_rpow_mul_norm_block_delta_zero`: in `B^{-n/p'}_{p,∞}` the
+  weighted blocks of `δ₀` do not tend to `0`, so `δ₀` is not in the little Besov space.
 
 ## References
 
@@ -69,6 +72,14 @@ private theorem toLp_fourierInv_ae_eq (j : ℕ) (p : ℝ≥0∞) :
       𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
   filter_upwards [(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).coeFn_toLp p] with x hx
   rw [hx, φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz]
+
+/-- For `1 ≤ p ≤ ∞`, the first dyadic block `Δ₁ δ₀ = 𝓕⁻ ψ₁` has positive `Lᵖ` norm. -/
+private theorem norm_toLp_fourierInv_one_pos [Nontrivial E] (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    0 < ‖(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz 1)).toLp p (volume : Measure E)‖ := by
+  refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
+  rw [eLpNorm_congr_ae (toLp_fourierInv_ae_eq φ 1 p)]
+  exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero 1
+    (zero_lt_one.trans_le Fact.out).ne'
 
 variable {φ}
 
@@ -107,11 +118,7 @@ theorem memBesov_delta_zero_iff [Nontrivial E] {s : ℝ} {p q : ℝ≥0∞} [Fac
     fun j ↦ (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p
   have hfae (j : ℕ) : f j =ᵐ[volume] 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
     toLp_fourierInv_ae_eq φ j p
-  have hc : 0 < ‖f 1‖ := by
-    refine ENNReal.toReal_pos ?_ (Lp.eLpNorm_ne_top _)
-    rw [eLpNorm_congr_ae (hfae 1)]
-    exact φ.eLpNorm_fourierInv_inhomogeneousLittlewoodPaley_ne_zero 1
-      (zero_lt_one.trans_le Fact.out).ne'
+  have hc : 0 < ‖f 1‖ := norm_toLp_fourierInv_one_pos φ p
   rw [memBesov_iff_memℓp (f := f) (littlewoodPaleyBlock_delta_zero_eq_toLp φ · p),
     ← TauCeti.memℓp_nat_add_iff 1]
   simp_rw [rpow_mul_norm_succ_eq hfae]
@@ -135,5 +142,31 @@ theorem memBesov_delta_zero (p : ℝ≥0∞) [Fact (1 ≤ p)] :
   simp_rw [rpow_mul_norm_succ_eq (toLp_fourierInv_ae_eq φ · p), neg_add_cancel, Real.rpow_zero,
     one_pow, mul_one]
   exact memℓp_infty (by rw [Set.range_const]; exact bddAbove_singleton)
+
+open Filter Topology in
+/-- **At the critical order the weighted blocks of `δ₀` do not vanish at high frequency.** On a
+real inner product space of dimension `n ≥ 1`, for `1 ≤ p ≤ ∞`, the weighted block norms
+`2^{-jn/p'} ‖Δⱼ δ₀‖_p` of `δ₀ ∈ B^{-n/p'}_{p,∞}` are a positive constant for `j ≥ 1`, so they do
+not tend to `0`. Hence `δ₀` does not lie in the little Besov space `b^{-n/p'}_{p,∞}`. -/
+theorem not_tendsto_rpow_mul_norm_block_delta_zero [Nontrivial E] (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    ¬Tendsto (fun j : ℕ ↦ 2 ^ (-(finrank ℝ E * (1 - p.toReal⁻¹)) * j) *
+      ‖(memBesov_delta_zero φ p).toBesovSpace.block j‖) atTop (𝓝 0) := by
+  set f : ℕ → Lp ℂ p (volume : Measure E) :=
+    fun j ↦ (𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)).toLp p
+  have hb (j : ℕ) : (memBesov_delta_zero φ p).toBesovSpace.block j = f j :=
+    Lp.toTemperedDistribution_injective <| by
+      simp only [TauCeti.BesovSpace.coe_block, MemBesov.toDistr_toBesovSpace]
+      exact littlewoodPaleyBlock_delta_zero_eq_toLp φ j p
+  have hc : 0 < ‖f 1‖ := norm_toLp_fourierInv_one_pos φ p
+  -- From `j = 1` on, the weighted block norms are the positive constant `2^{-n/p'} ‖Δ₁ δ₀‖_p`.
+  have hconst (j : ℕ) : (2 : ℝ) ^ (-(finrank ℝ E * (1 - p.toReal⁻¹)) * (j + 1 : ℕ)) *
+      ‖(memBesov_delta_zero φ p).toBesovSpace.block (j + 1)‖ =
+        2 ^ (-(finrank ℝ E * (1 - p.toReal⁻¹))) * ‖f 1‖ := by
+    rw [hb, rpow_mul_norm_succ_eq (toLp_fourierInv_ae_eq φ · p), neg_add_cancel, Real.rpow_zero,
+      one_pow, mul_one]
+  intro h
+  rw [← tendsto_add_atTop_iff_nat 1] at h
+  simp only [hconst] at h
+  exact (mul_pos (Real.rpow_pos_of_pos two_pos _) hc).ne' (tendsto_nhds_unique tendsto_const_nhds h)
 
 end TemperedDistribution
