@@ -14,9 +14,17 @@ A `C^n` Riemannian metric on a vector bundle is in particular a `C^m` Riemannian
 `m ≤ n`. This lets a metric built with more regularity than needed, such as an analytic model
 metric, be used by results stated for smooth metrics.
 
+In a `C^n` Riemannian bundle the squared fibre norm is a `C^n` function on the total space, the
+smooth counterpart of `TauCeti.continuous_norm_bundle`.
+
 ## Main definitions
 
 * `Bundle.ContMDiffRiemannianMetric.ofLE`: a `C^n` metric regarded as a `C^m` metric, `m ≤ n`.
+
+## Main results
+
+* `TauCeti.contMDiff_norm_sq_bundle`: the squared fibre norm `z ↦ ‖z.2‖²` is `C^n` on the total
+  space of a `C^n` Riemannian bundle.
 -/
 
 public section
@@ -75,3 +83,25 @@ theorem norm_sq [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul
   exact norm_sq_eq_re_inner (𝕜 := ℝ) v
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
+variable
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} {n : ℕ∞ω}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [∀ b, InnerProductSpace ℝ (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [IsContMDiffRiemannianBundle IB n F E]
+
+variable (IB n F E) in
+/-- In a `C^n` Riemannian bundle, the squared fibre norm is a `C^n` function on the total
+space. -/
+theorem contMDiff_norm_sq_bundle :
+    ContMDiff (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ) n fun z : TotalSpace F E ↦ ‖z.2‖ ^ 2 := by
+  have hid : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F)) n
+      fun z : TotalSpace F E ↦ (⟨z.proj, z.2⟩ : TotalSpace F E) := contMDiff_id
+  simpa only [real_inner_self_eq_norm_sq] using hid.inner_bundle hid
+
+end TauCeti
