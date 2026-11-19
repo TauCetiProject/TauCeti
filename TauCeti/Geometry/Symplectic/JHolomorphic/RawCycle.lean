@@ -32,12 +32,13 @@ every curve of `s` satisfies adjunction and the index bound of a regular `J`
   (`TauCeti.isCanonicalCycle_of_linearCombination_eq`), and its curves are embedded
   (`TauCeti.singularity_eq_zero_of_linearCombination_eq`);
 * every subcycle `a ≤ l` of a positive cycle `l` in the canonical class, such as `C_A ≤ C_A + C_B`,
-  has virtual dimension zero (`TauCeti.apply_canonical_eq_apply_self_of_le`) and pairs to `0` or
-  `-1` with every curve of negative square (`TauCeti.apply_eq_zero_or_eq_neg_one_of_le`), which
-  is an exceptional sphere by adjunction;
+  has virtual dimension zero (`TauCeti.apply_canonical_eq_apply_self_of_le_of_linearCombination_eq`)
+  and pairs to `0` or `-1` with every curve of negative square
+  (`TauCeti.apply_eq_zero_or_eq_neg_one_of_le_of_linearCombination_eq`), which is an exceptional
+  sphere by adjunction;
 * the class of such a subcycle is represented by a configuration of embedded curves which are
   pairwise compatible as soon as homologically disjoint curves are
-  (`TauCeti.mem_compatibleConfigurations_of_le`); repeated curves are tori
+  (`TauCeti.mem_compatibleConfigurations_of_le_of_linearCombination_eq`); repeated curves are tori
   (`TauCeti.genus_eq_one_of_one_lt_of_linearCombination_eq`);
 * in particular, if the classes `e` and `κ - e` are represented by positive cycles of simple
   curves, then `e` is good (`TauCeti.neg_one_le_apply_of_linearCombination_add_eq`).
@@ -66,14 +67,6 @@ namespace TauCeti
 variable {ι H : Type*} [AddCommGroup H] {B : BilinForm ℤ H} {κ : H} {cls : ι → H} {s : Set ι}
   {g δ : ι → ℕ} {l a : ι →₀ ℕ}
 
-/-- The class of a cycle `a` whose support lies in that of `l` is the sum over the support of
-`l`. -/
-private theorem linearCombination_eq_sum_support (ha : a ≤ l) :
-    Finsupp.linearCombination ℕ cls a = ∑ c : l.support, a c • cls c := by
-  rw [Finset.sum_coe_sort l.support (fun c ↦ a c • cls c)]
-  exact Finsupp.linearCombination_apply_of_mem_supported ℕ
-    ((Finsupp.mem_supported ℕ a).2 (Finsupp.support_mono ha))
-
 variable (hpos : ∀ c ∈ s, ∀ d ∈ s, c ≠ d → 0 ≤ B (cls c) (cls d))
   (hreg : ∀ c ∈ s, IsRegularSimpleCurve B κ (cls c) (g c) (δ c))
   (hs : ↑l.support ⊆ s) (hl : Finsupp.linearCombination ℕ cls l = κ)
@@ -88,7 +81,8 @@ theorem isCanonicalCycle_of_linearCombination_eq :
   isCanonicalCycle_of_isRegularSimpleCurve (g := fun c ↦ g c) (δ := fun c ↦ δ c)
     (fun c ↦ Nat.pos_of_ne_zero (Finsupp.mem_support_iff.1 c.2))
     (fun {c d} hcd ↦ hpos c (hs c.2) d (hs d.2) (Subtype.coe_ne_coe.2 hcd))
-    (fun c ↦ hreg c (hs c.2)) (by rw [← linearCombination_eq_sum_support le_rfl, hl])
+    (fun c ↦ hreg c (hs c.2))
+    (by rw [← Finsupp.linearCombination_eq_sum_coe_of_support_subset subset_rfl, hl])
 
 /-- The curves of a positive cycle in the canonical class are embedded. -/
 theorem singularity_eq_zero_of_linearCombination_eq {c : ι} (hc : c ∈ l.support) : δ c = 0 :=
@@ -106,20 +100,20 @@ theorem genus_eq_one_of_one_lt_of_linearCombination_eq {c : ι} (hc : 1 < l c) :
 
 /-- Every subcycle `a ≤ l` of a positive cycle in the canonical class has virtual dimension zero:
 `κ · e = e · e` for its class `e`. -/
-theorem apply_canonical_eq_apply_self_of_le (ha : a ≤ l) :
+theorem apply_canonical_eq_apply_self_of_le_of_linearCombination_eq (ha : a ≤ l) :
     B κ (Finsupp.linearCombination ℕ cls a) =
       B (Finsupp.linearCombination ℕ cls a) (Finsupp.linearCombination ℕ cls a) := by
-  rw [linearCombination_eq_sum_support ha]
+  rw [Finsupp.linearCombination_eq_sum_coe_of_support_subset (Finsupp.support_mono ha)]
   exact (isCanonicalCycle_of_linearCombination_eq hpos hreg hs hl).apply_canonical_sum_eq_apply_self
     hB fun c ↦ ha c
 
 /-- Every subcycle `a ≤ l` of a positive cycle in the canonical class pairs to `0` or `-1` with
 every curve `S` of `s` of negative square, which is an exceptional sphere. -/
-theorem apply_eq_zero_or_eq_neg_one_of_le (ha : a ≤ l) {S : ι} (hS : S ∈ s)
-    (hSS : B (cls S) (cls S) < 0) :
+theorem apply_eq_zero_or_eq_neg_one_of_le_of_linearCombination_eq (ha : a ≤ l) {S : ι}
+    (hS : S ∈ s) (hSS : B (cls S) (cls S) < 0) :
     B (Finsupp.linearCombination ℕ cls a) (cls S) = 0 ∨
       B (Finsupp.linearCombination ℕ cls a) (cls S) = -1 := by
-  rw [linearCombination_eq_sum_support ha]
+  rw [Finsupp.linearCombination_eq_sum_coe_of_support_subset (Finsupp.support_mono ha)]
   refine (isCanonicalCycle_of_linearCombination_eq hpos hreg hs hl).apply_sum_eq_zero_or_eq_neg_one
     hB (fun c ↦ ha c) (by rw [(hreg S hS).apply_canonical_eq_neg_one_of_apply_self_neg hSS]; simp)
     fun c ↦ ?_
@@ -129,15 +123,16 @@ theorem apply_eq_zero_or_eq_neg_one_of_le (ha : a ≤ l) {S : ι} (hS : S ∈ s)
 
 /-- Every subcycle `a ≤ l` of a positive cycle in the canonical class pairs to at least `-1` with
 every exceptional sphere of `s`: its class is good. -/
-theorem neg_one_le_apply_of_le (ha : a ≤ l) {S : ι} (hS : S ∈ s) (hSS : B (cls S) (cls S) < 0) :
-    -1 ≤ B (Finsupp.linearCombination ℕ cls a) (cls S) := by
-  rcases apply_eq_zero_or_eq_neg_one_of_le hpos hreg hs hl hB ha hS hSS with h | h <;> omega
+theorem neg_one_le_apply_of_le_of_linearCombination_eq (ha : a ≤ l) {S : ι} (hS : S ∈ s)
+    (hSS : B (cls S) (cls S) < 0) : -1 ≤ B (Finsupp.linearCombination ℕ cls a) (cls S) := by
+  rcases apply_eq_zero_or_eq_neg_one_of_le_of_linearCombination_eq hpos hreg hs hl hB ha hS hSS
+    with h | h <;> omega
 
 /-- The class of a subcycle `a ≤ l` of a positive cycle in the canonical class is represented by a
 configuration of embedded curves of `s` (`TauCeti.compatibleConfigurations`), for every
 compatibility relation `r` that holds between homologically disjoint curves, such as
 disjointness of the images under positivity of intersections. -/
-theorem mem_compatibleConfigurations_of_le {r : ι → ι → Prop}
+theorem mem_compatibleConfigurations_of_le_of_linearCombination_eq {r : ι → ι → Prop}
     (hr : ∀ c ∈ s, ∀ d ∈ s, c ≠ d → B (cls c) (cls d) = 0 → r c d) (ha : a ≤ l) :
     a ∈ compatibleConfigurations r cls {c ∈ s | δ c = 0} (Finsupp.linearCombination ℕ cls a) := by
   have hcan := isCanonicalCycle_of_linearCombination_eq hpos hreg hs hl
@@ -159,8 +154,8 @@ theorem neg_one_le_apply_of_linearCombination_add_eq {b : ι →₀ ℕ} (ha : �
     (hS : S ∈ s) (hSS : B (cls S) (cls S) < 0) :
     -1 ≤ B (Finsupp.linearCombination ℕ cls a) (cls S) := by
   classical
-  refine neg_one_le_apply_of_le (l := a + b) hpos hreg ?_ (by rw [map_add, hab]) hB le_self_add hS
-    hSS
+  refine neg_one_le_apply_of_le_of_linearCombination_eq (l := a + b) hpos hreg ?_
+    (by rw [map_add, hab]) hB le_self_add hS hSS
   exact (Finset.coe_subset.2 Finsupp.support_add).trans (by simpa using ⟨ha, hb⟩)
 
 end TauCeti

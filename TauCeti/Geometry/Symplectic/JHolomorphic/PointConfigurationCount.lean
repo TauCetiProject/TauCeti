@@ -272,7 +272,8 @@ theorem pointConfigurationCount_eq_zero_of_apply_lt_neg_one {S : ι}
     pointConfigurationCount r cls pts w s A = 0 := by
   rw [pointConfigurationCount_def]
   exact finsum_mem_eq_zero_of_forall_eq_zero fun _ hl ↦
-    prod_eq_zero_of_apply_lt_neg_one hpos hS hw hA (pointConfigurations_subset hl)
+    prod_eq_zero_of_mem_compatibleConfigurations_of_apply_lt_neg_one hpos hS hw hA
+      (pointConfigurations_subset hl)
 
 end BadClass
 
