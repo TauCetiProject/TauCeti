@@ -363,6 +363,11 @@ theorem endChart_add_one (q : Puncture) (s t : ℝ) :
   rw [endChart_mk, endChart_mk]
   exact congrArg Complex.equivRealProdCLM (by exact_mod_cast q.periodic_cylindricalEndLift s t)
 
+/-- A map read in the end chart is `1`-periodic in the angular coordinate. -/
+theorem periodic_comp_endChart {α : Type*} (q : Puncture) (f : ℝ × ℝ → α) (s : ℝ) :
+    Periodic (fun t ↦ (f ∘ endChart q) (s, t)) 1 := fun t ↦ by
+  simp only [comp_apply, endChart_add_one]
+
 /-- In complex coordinates the end chart is the end lift. -/
 @[simp]
 theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
@@ -544,16 +549,22 @@ period. -/
 theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) :=
   (injOn_endChart_univ_prod_Ico q (-1 / 2)).mono (prod_mono (subset_univ _) (by norm_num))
 
+/-- Every point other than the center of the end `q` is the image under the end chart of its end
+coordinate on `q`, in real coordinates. -/
+theorem endChart_equivRealProdCLM_endCoord {q : Puncture} {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
+    endChart q (Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z))) = z := by
+  rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply, q.cylindricalEndLift_endCoord hz,
+    ContinuousLinearEquiv.apply_symm_apply]
+
 /-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
 image of a point of that end's strip. -/
 theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
     {q : Puncture} (hq : 1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
     z ∈ endChart q '' endStrip q := by
   refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
-    ⟨by simpa using hq, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
-  rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-    q.cylindricalEndLift_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
-    ContinuousLinearEquiv.apply_symm_apply]
+    ⟨by simpa using hq, by simpa using q.im_endCoord_mem_Ico _⟩,
+    endChart_equivRealProdCLM_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)⟩
 
 /-- Every point other than the center of the end `q` is the image under the end chart of the
 point `(s, t)` whose longitudinal coordinate `s` is that of the end at the point and whose angular
