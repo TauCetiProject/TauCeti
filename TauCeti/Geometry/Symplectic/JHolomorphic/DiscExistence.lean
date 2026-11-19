@@ -1168,6 +1168,20 @@ private theorem rescale_props {ξ : F} {t μ : ℝ} (ht : 0 < t) (hμ : 0 < μ) 
 
 
 
+/-- A map of class `C²` at `0` is differentiable with Lipschitz derivative on a closed ball
+about `0`. -/
+private theorem exists_closedBall_differentiableAt_lipschitz {E G : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup G] [NormedSpace ℝ G] {f : E → G}
+    (hf : ContDiffAt ℝ 2 f 0) :
+    ∃ r > 0, ∃ K : ℝ≥0, (∀ x ∈ closedBall (0 : E) r, DifferentiableAt ℝ f x) ∧
+      ∀ x ∈ closedBall (0 : E) r, ∀ y ∈ closedBall (0 : E) r,
+        ‖fderiv ℝ f x - fderiv ℝ f y‖ ≤ K * ‖x - y‖ := by
+  obtain ⟨K, t₀, ht₀, hK⟩ := (hf.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
+  obtain ⟨r, hr, hrf⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp
+    ((hf.eventually (by simp)).and ht₀)
+  exact ⟨r, hr, K, fun x hx ↦ (hrf hx).1.differentiableAt (by norm_num), fun x hx y hy ↦ by
+    simpa [dist_eq_norm] using hK.dist_le_mul x (hrf hx).2 y (hrf hy).2⟩
+
 omit [FiniteDimensional ℂ F] in
 /-- Rescaling the argument of a map `J` whose derivative is `K`-Lipschitz on the ball of radius
 `r` makes its derivative and the Lipschitz constant of its derivative as small as required on
@@ -1223,14 +1237,7 @@ theorem exists_fderiv_one_add_apply_fderiv_I_eq_zero_of_contDiffAt {J : F → F 
       ∀ z ∈ ball (0 : ℂ) ε, fderiv ℝ u z 1 + J (u z) (fderiv ℝ u z I) = 0 := by
   obtain ⟨η, hη, hdisc⟩ := exists_pos_forall_exists_fderiv_one_add_apply_fderiv_I_eq_zero (F := F)
   -- Near `0`, `J` is differentiable and `DJ` is Lipschitz, hence bounded.
-  obtain ⟨K, t₀, ht₀, hK⟩ := (hJ.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
-  obtain ⟨r, hr, hrJ⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp
-    ((hJ.eventually (by simp)).and ht₀)
-  have hd : ∀ x ∈ closedBall (0 : F) r, DifferentiableAt ℝ J x := fun x hx ↦
-    (hrJ hx).1.differentiableAt (by norm_num)
-  have hL : ∀ x ∈ closedBall (0 : F) r, ∀ y ∈ closedBall (0 : F) r,
-      ‖fderiv ℝ J x - fderiv ℝ J y‖ ≤ K * ‖x - y‖ := fun x hx y hy ↦ by
-    simpa [dist_eq_norm] using hK.dist_le_mul x (hrJ hx).2 y (hrJ hy).2
+  obtain ⟨r, hr, K, hd, hL⟩ := exists_closedBall_differentiableAt_lipschitz hJ
   obtain ⟨t, ht, -, hdt, hAt, hLt⟩ := exists_rescale hη hr hd hL
   set μ := (‖ξ‖ + 1)⁻¹
   have hμ : 0 < μ := by positivity
@@ -1301,14 +1308,6 @@ private theorem apply_one_add_apply_apply_I_eq_zero {A : F →L[ℝ] F} (hAA : �
   rw [← hq, hAA, add_neg_cancel]
 
 omit [FiniteDimensional ℂ F] in
-private theorem isUnit_two_smul_lsmul_I :
-    IsUnit ((2 : ℝ) • (ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F)) := by
-  refine ⟨⟨(2 : ℝ) • (ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F),
-    (-(2 : ℝ)⁻¹) • (ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F), ?_, ?_⟩, rfl⟩ <;>
-  · ext v
-    simp [smul_smul]
-
-omit [FiniteDimensional ℂ F] in
 /-- The Beltrami form of the Cauchy–Riemann equation for a real multiple `L = s M` of a map `M`
 solving it. -/
 private theorem apply_one_add_apply_apply_I_eq_zero_of_eq_smul {A : F →L[ℝ] F}
@@ -1341,8 +1340,10 @@ private theorem exists_neg_cayleyCoord_local {J : F → F →L[ℝ] F} (hJ : Con
     simp [hJ0]
   -- `Q` is `C²` near `0`, since `i + J(0) = 2 i` is invertible.
   have hU : IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J 0) := by
-    rw [hI0, ← two_smul ℝ (ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F)]
-    exact isUnit_two_smul_lsmul_I
+    have h2 := (IsUnit.mk0 (2 : ℝ) two_ne_zero).map (algebraMap ℝ (F →L[ℝ] F))
+    rw [map_ofNat] at h2
+    rw [hI0, ← two_mul]
+    exact isUnit_two_mul_of_mul_self_eq_neg_one h2 lsmul_I_mul_self
   have hAC : ContDiffAt ℝ 2 (fun x ↦ ContinuousLinearMap.lsmul ℝ ℂ I + J x) 0 :=
     contDiffAt_const.add hJ
   have hinv : ContDiffAt ℝ 2 Ring.inverse (ContinuousLinearMap.lsmul ℝ ℂ I + J 0) :=
@@ -1352,13 +1353,14 @@ private theorem exists_neg_cayleyCoord_local {J : F → F →L[ℝ] F} (hJ : Con
     exact ((contDiffAt_const.sub hJ).mul (hinv.comp 0 hAC)).neg
   have hunit : ∀ᶠ x in 𝓝 0, IsUnit (ContinuousLinearMap.lsmul ℝ ℂ I + J x) :=
     hAC.continuousAt.eventually (Units.isOpen.mem_nhds hU)
-  obtain ⟨K, t₀, ht₀, hK⟩ := (hQC.fderiv_right (m := 1) (by norm_num)).exists_lipschitzOnWith
-  obtain ⟨r, hr, hrQ⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp
-    (((hQC.eventually (by simp)).and ht₀).and (hJJ.and hunit))
-  refine ⟨r, hr, K, by rw [hI0, cayleyCoord_self, neg_zero],
-    fun x hx ↦ (hrQ hx).1.1.differentiableAt (by norm_num), fun x hx y hy ↦ ?_,
-    fun x hx ↦ (hrQ hx).2⟩
-  simpa [dist_eq_norm] using hK.dist_le_mul x (hrQ hx).1.2 y (hrQ hy).1.2
+  obtain ⟨r₁, hr₁, K, hd, hL⟩ := exists_closedBall_differentiableAt_lipschitz hQC
+  obtain ⟨r₂, hr₂, hr₂J⟩ := Metric.nhds_basis_closedBall.eventually_iff.mp (hJJ.and hunit)
+  have h₁ : closedBall (0 : F) (min r₁ r₂) ⊆ closedBall 0 r₁ :=
+    closedBall_subset_closedBall (min_le_left _ _)
+  have h₂ : closedBall (0 : F) (min r₁ r₂) ⊆ closedBall 0 r₂ :=
+    closedBall_subset_closedBall (min_le_right _ _)
+  exact ⟨min r₁ r₂, lt_min hr₁ hr₂, K, by rw [hI0, cayleyCoord_self, neg_zero],
+    fun x hx ↦ hd x (h₁ hx), fun x hx y hy ↦ hL x (h₁ hx) y (h₁ hy), fun x hx ↦ hr₂J (h₂ hx)⟩
 
 /-- **A rotation-equivariant family of `J`-holomorphic discs with prescribed first jets.** Let
 `J : F → (F →L[ℝ] F)` be of class `C²` near `0`, with `J(0) v = i v` and `J(x)² = -1` near `0`, as

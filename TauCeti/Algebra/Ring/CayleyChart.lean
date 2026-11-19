@@ -149,7 +149,7 @@ lemma one_add_mul_add_cayleyParam (hη' : η * j = -(j * η)) (hη : IsUnit (1 +
   noncomm_ring
 
 /-- For a square root `j` of `-1` in a ring in which `2` is a unit, `2 * j` is a unit. -/
-private lemma isUnit_two_mul_of_mul_self_eq_neg_one (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
+lemma isUnit_two_mul_of_mul_self_eq_neg_one (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
     IsUnit (2 * j) :=
   h2.mul (isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one))
 
