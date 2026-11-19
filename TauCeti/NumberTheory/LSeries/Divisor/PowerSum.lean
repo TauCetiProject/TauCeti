@@ -163,13 +163,15 @@ theorem abscissaOfAbsConv_sigmaC (ν : ℂ) :
 example : sigmaC 1 6 = 12 ∧ sigmaC 1 6 = (ArithmeticFunction.sigma 1 6 : ℂ) := by
   have h : sigmaC 1 6 = (ArithmeticFunction.sigma 1 6 : ℂ) := by
     simpa using congrArg (· 6) (sigmaC_natCast 1)
+  have hdiv : Nat.divisors 6 = {1, 2, 3, 6} := by decide
   refine ⟨h.trans ?_, h⟩
-  rw [ArithmeticFunction.sigma_apply, show Nat.divisors 6 = {1, 2, 3, 6} by decide]
+  rw [ArithmeticFunction.sigma_apply, hdiv]
   norm_num
 
 /-- `σ_{-1}(6) = 1 + 1/2 + 1/3 + 1/6 = 2 = σ_1(6) / 6`. -/
 example : sigmaC (-1) 6 = 2 := by
-  rw [sigmaC_apply, show Nat.divisors 6 = {1, 2, 3, 6} by decide]
+  have hdiv : Nat.divisors 6 = {1, 2, 3, 6} := by decide
+  rw [sigmaC_apply, hdiv]
   norm_num [Complex.cpow_neg_one]
 
 /-- The abscissa is `max(1, 1 + Re ν)`, not `1 + Re ν`: for `ν = -2` it is `1`, since
