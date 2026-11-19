@@ -89,8 +89,8 @@ example :
   ext i j
   fin_cases i; fin_cases j <;> simp [col, eval_monomial]
 
-/-- Reducing that integer point and matrix modulo `3` gives `[1, 0]`. The calculation uses
-the coefficient-map identity for the full jet matrix before reindexing its columns. -/
+/-- Reducing coefficients and the point modulo `3` commutes with forming the jet matrix.
+The integer row `[1, 3]` becomes `[1, 0]`. -/
 example :
     let s : Finset (Fin 1 →₀ ℕ) := {0, single 0 1}
     let col (j : Fin 2) : (s : Set (Fin 1 →₀ ℕ)) :=
@@ -101,8 +101,12 @@ example :
   intro s col
   rw [jetMatrix_map]
   ext i j
-  fin_cases i; fin_cases j <;> norm_num [col, eval_monomial]
-  decide
+  fin_cases i
+  fin_cases j
+  · simp [col]
+  · calc
+      _ = (3 : ZMod 3) := by norm_num [col, eval_monomial]
+      _ = 0 := rfl
 
 /-- Reducing the coefficient-supported polynomial `X` and its evaluation at `3` commute;
 its value in `ℤ / (3)` is zero. -/
@@ -118,9 +122,9 @@ example :
   rw [jetEval_mapRestrictSupport]
   ext i
   simp only [Function.comp_apply, jetEval_apply, basisRestrictSupport_apply_coe]
-  simp only [hasseDeriv_zero, Fin.isValue, LinearMap.id_coe, id_eq, eval_monomial, pow_zero,
-    prod_single_index, pow_one, one_mul, eq_intCast, Int.cast_ofNat, Pi.zero_apply, col]
-  exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
+  simpa [col, eval_monomial] using
+    (Ideal.Quotient.eq_zero_iff_mem.mpr
+      (Ideal.subset_span (Set.mem_singleton (3 : ℤ))))
 
 /-- With no points, every supported polynomial maps to the unique empty vector. -/
 example (R σ : Type*) [CommSemiring R] (s : Set (σ →₀ ℕ))
