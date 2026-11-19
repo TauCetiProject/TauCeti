@@ -23,10 +23,12 @@ Every state of a unital C⋆-subalgebra extends to a state of the ambient C⋆-a
   subalgebra `S` of `A` (containing the unit of `A`) is the restriction of a state of `A`.
 * `TauCeti.isExtreme_stateSpace_inter_preimage_pullbackFunctional`: the states of `B` restricting
   along a star homomorphism `f : A → B` to a pure state of `A` form a face of the state space of
-  `B`, which is weak-* compact by `TauCeti.isCompact_stateSpace_inter_preimage`.
+  `B`; neither `A`, `B` nor `f` need be unital. When `B` is unital this face is weak-* compact, by
+  `TauCeti.isCompact_stateSpace_inter_preimage`.
 * `TauCeti.surjOn_pullbackFunctional_extremePoints_stateSpace` and
-  `StarSubalgebra.exists_mem_extremePoints_stateSpace_forall_apply_coe_eq`: every pure state
-  extends to a pure state.
+  `StarSubalgebra.exists_mem_extremePoints_stateSpace_forall_apply_coe_eq`: along an injective
+  unital star homomorphism of unital C⋆-algebras, and in particular for a closed unital star
+  subalgebra, every pure state extends to a pure state.
 
 The proof takes a norm-preserving Hahn–Banach extension of the state along `f`, by
 `LinearIsometry.exists_extension_norm_eq`, and reads off that it is a state from its value `1` at
@@ -34,8 +36,9 @@ the unit, by `TauCeti.mem_stateSpace_iff_norm_eq_one_and_map_one`. The extension
 an injective star homomorphism of C⋆-algebras is isometric. An extension of a state need not be
 pure, multiplicative or unique.
 
-A pure state `φ` of `A` has a pure extension: restriction is a continuous affine map sending the
-weak-* compact state space of `B` onto that of `A`, so by Mathlib's `surjOn_extremePoints_image`
+For an injective unital star homomorphism `f : A → B` of unital C⋆-algebras, a pure state `φ` of
+`A` has a pure extension: restriction is a continuous affine map sending the weak-* compact state
+space of `B` onto that of `A`, so by Mathlib's `surjOn_extremePoints_image`
 (a consequence of the Krein–Milman lemma) every extreme point of the image is the image of an
 extreme point. Equivalently, the extensions of `φ` form a nonempty weak-* compact face of the
 state space of `B`, whose extreme points are extreme points of the whole state space.
