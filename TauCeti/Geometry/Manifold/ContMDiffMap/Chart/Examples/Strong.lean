@@ -102,14 +102,13 @@ theorem setOf_forall_abs_sub_lt_exp_neg_sq_notMem_nhds_manifoldWeakWhitney
       @nhds _ manifoldWeakWhitneyTopology f := by
   intro hS
   -- The perturbations `f + δ` tend to `f` in the weak topology as `δ → 0`.
-  have hcont : Continuous fun δ : ℝ ↦ f + δ • (const 1 : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯) :=
-    continuous_const.add (continuous_id.smul continuous_const)
-  have ht : Tendsto (fun δ : ℝ ↦ f + δ • (const 1 : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯)) (𝓝[≠] 0) (𝓝 f) := by
-    simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
+  have hcont : Continuous fun δ : ℝ ↦ f + (const δ : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯) :=
+    continuous_const.add continuous_const_manifoldWeakWhitney
+  have h0 : f + (const 0 : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯) = f :=
+    ContMDiffMap.ext fun x ↦ sub_eq_zero.mp (add_const_apply_sub f 0 x)
+  have ht : Tendsto (fun δ : ℝ ↦ f + (const δ : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯)) (𝓝[≠] 0) (𝓝 f) := by
+    simpa only [h0] using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
   obtain ⟨δ, hδ, hδ0⟩ := ((ht.eventually hS).and self_mem_nhdsWithin).exists
-  have hconst : δ • (const 1 : C^n⟮𝓘(ℝ), ℝ; 𝓘(ℝ), ℝ⟯) = const δ :=
-    ContMDiffMap.ext fun _ ↦ by simp [const_apply]
-  rw [hconst] at hδ
   exact hδ0 ((add_const_mem_setOf_forall_abs_sub_lt_exp_neg_sq_iff f δ).mp hδ)
 
 /-- The functions within `exp (-x²)` of `f` on `[-1, 1]` form a weak neighbourhood of `f`. -/

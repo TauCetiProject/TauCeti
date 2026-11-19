@@ -558,8 +558,9 @@ theorem hasBasis_nhds_manifoldStrongWhitney_finite [CompactSpace M]
 
 /-- **On a compact manifold the constant maps depend continuously on their value** in the strong
 Whitney topology, which there is the weak one (`ContMDiffMap.continuous_const_manifoldWeakWhitney`).
-On a noncompact manifold this fails: some strong neighbourhood of `0` contains no nonzero constant
-map (`ContMDiffMap.manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology`). -/
+On a noncompact σ-compact, weakly locally compact manifold with nontrivial `F` this fails: some
+strong neighbourhood of `0` contains no nonzero constant map
+(`ContMDiffMap.manifoldStrongWhitneyTopology_ne_manifoldWeakWhitneyTopology`). -/
 theorem continuous_const_manifoldStrongWhitney [CompactSpace M] :
     Continuous fun v : F ↦ (const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯) := by
   rw [manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology]
@@ -578,10 +579,9 @@ theorem isHomeomorph_eval_manifoldStrongWhitney [Unique M] :
       left_inv := hconst
       right_inv := fun v ↦ const_apply v default
       -- Evaluation is weak Whitney continuous, and the strong topology is finer.
-      continuous_toFun := @Continuous.comp _ _ _ manifoldStrongWhitneyTopology
-        manifoldWeakWhitneyTopology _ _root_.id _
+      continuous_toFun := continuous_le_dom
+        manifoldStrongWhitneyTopology_le_manifoldWeakWhitneyTopology
         (continuous_eval_const_manifoldWeakWhitney default)
-        (continuous_id_of_le manifoldStrongWhitneyTopology_le_manifoldWeakWhitneyTopology)
       continuous_invFun := continuous_const_manifoldStrongWhitney }
   exact e.isHomeomorph
 
