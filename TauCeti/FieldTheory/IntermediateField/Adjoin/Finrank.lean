@@ -113,7 +113,7 @@ theorem exists_finiteDimensional_finrank_adjoin_eq [Algebra.IsAlgebraic K L]
     rw [hb.coe_toFinset, hspan]
     exact Submodule.subset_span x.2
   choose c hcx using hc
-  have : Finite s := hs
+  have : Finite s := hs.to_subtype
   let L₀ := adjoin K (Set.range fun p : s × hb.toFinset ↦ c p.1 p.2)
   have hL₀ : FiniteDimensional K L₀ :=
     finiteDimensional_adjoin fun x _ ↦ Algebra.IsIntegral.isIntegral x

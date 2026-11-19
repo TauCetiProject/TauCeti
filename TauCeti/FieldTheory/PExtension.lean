@@ -28,6 +28,7 @@ valued fields is stated for such fields.
   `P`-number degree;
 * `TauCeti.isPExtension_iff_isPNumber_finrank`: a finite extension is a `P`-extension exactly when
   its degree is a `P`-number;
+* `TauCeti.IsPExtension.mono`: enlarging `P` preserves `P`-extensions;
 * `TauCeti.IsPExtension.of_algHom`, `TauCeti.isPExtension_congr`: subextensions of `P`-extensions
   are `P`-extensions, and the notion is invariant under `K`-algebra isomorphism;
 * `TauCeti.isPExtension_tower_iff`: for a tower `M / L / K`, `M / K` is a `P`-extension exactly
@@ -58,6 +59,11 @@ structure IsPExtension : Prop where
     IsPNumber P (finrank K E)
 
 variable {P K L} {M : Type*} [Field M]
+
+/-- Enlarging `P` preserves `P`-extensions. -/
+theorem IsPExtension.mono {Q : Set ℕ} (hPQ : P ⊆ Q) (h : IsPExtension P K L) :
+    IsPExtension Q K L :=
+  ⟨h.isAlgebraic, fun E _ ↦ (h.isPNumber_finrank E).mono hPQ⟩
 
 /-- A finite extension is a `P`-extension exactly when its degree is a `P`-number. -/
 theorem isPExtension_iff_isPNumber_finrank [FiniteDimensional K L] :
@@ -134,7 +140,8 @@ theorem IsPExtension.tower_top (h : IsPExtension P K M) : IsPExtension P L M := 
   let G := adjoin L₀ (F : Set M)
   have : FiniteDimensional L₀ G := Module.finite_of_finrank_pos (heq ▸ finrank_pos)
   have : FiniteDimensional K G := .trans K L₀ G
-  have : FiniteDimensional K (G.restrictScalars K) := this
+  -- `G.restrictScalars K` has the same carrier as `G`.
+  have : FiniteDimensional K (G.restrictScalars K) := inferInstanceAs (FiniteDimensional K G)
   refine heq ▸ (h.isPNumber_finrank (G.restrictScalars K)).of_dvd ?_
   exact Dvd.intro_left _ (finrank_mul_finrank K L₀ G)
 

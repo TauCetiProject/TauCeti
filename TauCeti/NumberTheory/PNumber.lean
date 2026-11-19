@@ -23,6 +23,7 @@ notion in which Temkin's tameness theorem for `p`-closed valued fields is stated
 
 * `TauCeti.IsPNumber P n`: `n` is positive and all its prime divisors lie in `P`;
 * `TauCeti.isPNumber_mul_iff`: a product is a `P`-number exactly when both factors are;
+* `TauCeti.isPNumber_pow_iff`: a power `n ^ k` is a `P`-number exactly when `k = 0` or `n` is;
 * `TauCeti.IsPNumber.of_dvd`: divisors of `P`-numbers are `P`-numbers;
 * `TauCeti.isPNumber_singleton_iff`: for a prime `p`, the `{p}`-numbers are the powers of `p`;
 * `TauCeti.isPNumber_inter_setOf_prime_iff`: only the primes of `P` matter;
@@ -85,10 +86,18 @@ if a factor is zero, both sides fail. -/
 theorem isPNumber_mul_iff : IsPNumber P (a * b) ↔ IsPNumber P a ∧ IsPNumber P b :=
   ⟨fun h ↦ ⟨h.of_dvd (dvd_mul_right a b), h.of_dvd (dvd_mul_left b a)⟩, fun h ↦ h.1.mul h.2⟩
 
-theorem IsPNumber.pow (h : IsPNumber P n) (k : ℕ) : IsPNumber P (n ^ k) := by
-  induction k with
-  | zero => simp
-  | succ k ih => simpa [pow_succ] using ih.mul h
+/-- A power `n ^ k` is a `P`-number exactly when `k = 0` or `n` is a `P`-number. -/
+@[simp]
+theorem isPNumber_pow_iff {k : ℕ} : IsPNumber P (n ^ k) ↔ k = 0 ∨ IsPNumber P n := by
+  refine ⟨fun h ↦ or_iff_not_imp_left.2 fun hk ↦ h.of_dvd (dvd_pow_self n hk), ?_⟩
+  rintro (rfl | h)
+  · simp
+  · induction k with
+    | zero => simp
+    | succ k ih => rw [pow_succ]; exact ih.mul h
+
+theorem IsPNumber.pow (h : IsPNumber P n) (k : ℕ) : IsPNumber P (n ^ k) :=
+  isPNumber_pow_iff.2 (.inr h)
 
 /-- Enlarging `P` preserves `P`-numbers. -/
 theorem IsPNumber.mono (hPQ : P ⊆ Q) (h : IsPNumber P n) : IsPNumber Q n :=
