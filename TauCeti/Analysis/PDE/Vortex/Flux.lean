@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import TauCeti.Analysis.PDE.Vortex.Decay
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.Zeros
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Algebra.BigOperators.Finprod
@@ -21,6 +22,7 @@ import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.PDE.Vortex.Divisor
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The flux of a plane vortex
@@ -42,12 +44,21 @@ Newtonian kernel `TauCeti.planarNewtonianKernel`, a fundamental solution of `-Δ
 these singular terms leaves a `C²` function (`TauCeti.exists_contDiff_eq_of_eventuallyEq_nhdsNE`)
 to which Green's second identity applies.
 
-Testing this identity against dilated cutoffs `χ_R`, the left side tends to zero because
-`log |α|² → 0` at infinity while `∫ |Δ χ_R|` stays bounded. This gives the flux identity
+Testing this identity against `χ_R h`, for dilated cutoffs `χ_R` and a smooth harmonic weight `h`
+such that `h` and `Dh` are `O(|z|ᵏ)`, the left side tends to zero: `Δ(χ_R h)` lives on the annulus
+`R ≤ |z| ≤ 2R`, where it is `O(Rᵏ⁻¹)`, while `log |α|²` decays exponentially there
+(`TauCeti.tendsto_integral_laplacian_mul_smul_of_tendsto_cocompact`). This gives the moments of the
+modulus defect against harmonic weights,
+
+`∫ h (1 - |α|²) = 16π ∑_z n_z h(z)`
+
+(`TauCeti.Vortex.integral_mul_one_sub_normSq_eq_mul_finsum`), and for `h = 1` the flux identity
 
 `∫ (1 - |α|²) = 16π ∑_z n_z`
 
-(`TauCeti.Vortex.integral_one_sub_normSq_eq_mul_finsum`). Since the curvature equation is
+(`TauCeti.Vortex.integral_one_sub_normSq_eq_mul_finsum`). The integrals converge because
+`1 - |α|²` decays exponentially, faster than every polynomial weight
+(`TauCeti.Vortex.integrable_one_sub_normSq_smul_of_isBigO`). Since the curvature equation is
 `∂₁ b₂ - ∂₂ b₁ = -(1 - |α|²) / 8` and `iF_a = -(∂₁ b₂ - ∂₂ b₁) ds ∧ dt`, the total flux
 `(2π)⁻¹ ∫ iF_a` is the number of zeros of `α`, counted with multiplicity
 (`TauCeti.Vortex.integral_curvature_eq_neg_mul_finsum`).
@@ -79,10 +90,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti.Vortex
-
-open Complex Filter Metric MeasureTheory Set Topology InnerProductSpace Laplacian
+open Asymptotics Complex Filter Metric MeasureTheory Set Topology InnerProductSpace Laplacian
 open scoped Distributions ContDiff Real
+
+namespace TauCeti.Vortex
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -250,28 +261,171 @@ theorem integral_laplacian_mul_log_normSq
     hKint, hsum]
   ring
 
-/-- The distributional identity for `Δ log |α|²`, tested against a smooth compactly supported
-cutoff `χ` that equals `1` at every zero of `α`:
-`∫ Δχ log |α|² = ∫ χ (|α|² - 1) / 4 + 4π ∑ᶠ z, n z`. -/
+/-- The distributional identity for `Δ log |α|²`, tested against `χ h` for a smooth compactly
+supported cutoff `χ` that equals `1` at every zero of `α` and a smooth weight `h`:
+`∫ Δ(χ h) log |α|² = ∫ χ h (|α|² - 1) / 4 + 4π ∑ᶠ z, n z h(z)`. -/
 theorem integral_laplacian_mul_log_normSq_of_eq_one
     (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) (hfin : {z | sectionValue x z = 0}.Finite) {n : ℂ → ℕ}
     (hn : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w)
-    {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
-    (hχ1 : ∀ z, sectionValue x z = 0 → χ z = 1) :
-    ∫ z, Δ χ z * Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) =
-      (∫ z, χ z * ((4 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 4)) + 4 * π * ∑ᶠ z, (n z : ℝ) := by
+    {χ h : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχ1 : ∀ z, sectionValue x z = 0 → χ z = 1) (hh : ContDiff ℝ ∞ h) :
+    ∫ z, Δ (fun w ↦ χ w * h w) z * Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) =
+      (∫ z, χ z * h z * ((4 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 4)) +
+        4 * π * ∑ᶠ z, (n z : ℝ) * h z := by
   have h := integral_laplacian_mul_log_normSq hb₁ hb₂ hp hq hsol hfin hn
-    ⟨χ, hχ, hχc, subset_univ _⟩
+    ⟨fun w ↦ χ w * h w, hχ.mul hh, hχc.mul_right, subset_univ _⟩
   simp only [TestFunction.coe_mk] at h
   rw [h]
   congr 2
   refine finsum_congr fun z ↦ ?_
   by_cases hz : sectionValue x z = 0
-  · rw [hχ1 z hz, mul_one]
+  · rw [hχ1 z hz, one_mul]
   · simp [eq_zero_of_sectionValue_ne_zero hn hz]
+
+/-! ### Moments against harmonic weights -/
+
+/-- Off a large disc, `|log |α|²| ≤ 2 (1 - |α|²)` for a vortex with `|α| → 1` at infinity. -/
+private theorem eventually_abs_log_normSq_le
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∀ᶠ z in cocompact ℂ, |Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))| ≤
+      2 * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) := by
+  filter_upwards [hlim.eventually (le_mem_nhds (by norm_num : (1 / 2 : ℝ) < 1))] with z hs₂
+  set s := 4 * (x z 2 ^ 2 + x z 3 ^ 2)
+  have hs₁ : s ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim z
+  have hs₀ : 0 < s := by linarith
+  -- `|log s| = log s⁻¹ ≤ s⁻¹ - 1 = (1 - s) / s ≤ 2 (1 - s)`.
+  rw [abs_of_nonpos (Real.log_nonpos hs₀.le hs₁), ← Real.log_inv]
+  have h := Real.log_le_sub_one_of_pos (inv_pos.2 hs₀)
+  have h' : s⁻¹ - 1 ≤ 2 * (1 - s) := by
+    rw [inv_eq_one_div, div_sub_one hs₀.ne', div_le_iff₀ hs₀]
+    nlinarith
+  linarith
+
+/-- The modulus defect `1 - |α|²` of a vortex beats every polynomial weight: `‖z‖ʲ (1 - |α|²)` is
+`O(exp (-‖z‖ / 8))` at infinity. -/
+private theorem isBigO_norm_pow_mul_one_sub_normSq
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (j : ℕ) :
+    (fun z ↦ ‖z‖ ^ j * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2))) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(1 / 8 * ‖z‖)) := by
+  obtain ⟨K₀, hK₀⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim
+    (by norm_num : (1 / 4 : ℝ) < 1 / 2)
+  have hdef : (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(1 / 4 * ‖z‖)) := by
+    refine .of_bound K₀ (.of_forall fun z ↦ ?_)
+    rw [Real.norm_of_nonneg (sub_nonneg.2 (normSq_le_one_of_tendsto hp hq hsol hlim z)),
+      Real.norm_of_nonneg (Real.exp_pos _).le]
+    exact hK₀ z
+  have hpow : (fun z : ℂ ↦ ‖z‖ ^ j) =O[cocompact ℂ] fun z ↦ Real.exp (1 / 8 * ‖z‖) :=
+    ((isLittleO_pow_exp_pos_mul_atTop j (by norm_num : (0 : ℝ) < 1 / 8)).comp_tendsto
+      tendsto_norm_cocompact_atTop).isBigO
+  refine (hpow.mul hdef).congr_right fun z ↦ ?_
+  rw [← Real.exp_add]
+  ring_nf
+
+/-- **Integrability of polynomial moments of the modulus defect.** For a `C²` vortex on the whole
+plane whose section satisfies `|α| → 1` at infinity, the modulus defect `1 - |α|²` against a
+continuous weight `g` with `g = O(‖z‖ᵏ)` at infinity is integrable. -/
+theorem integrable_one_sub_normSq_smul_of_isBigO {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {g : ℂ → E}
+    (hg : Continuous g) {k : ℕ} (hgk : g =O[cocompact ℂ] fun z ↦ ‖z‖ ^ k) :
+    Integrable fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z := by
+  have hdec : (fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z) =O[cocompact ℂ]
+      fun z ↦ Real.exp (-(1 / 8 * ‖z‖)) := by
+    refine ((isBigO_refl (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) _).smul hgk).trans ?_
+    simpa only [smul_eq_mul, mul_comm] using
+      isBigO_norm_pow_mul_one_sub_normSq hp hq hsol hlim k
+  have hc : Continuous fun z ↦ (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) • g z :=
+    (continuous_const.sub (contDiff_normSq hp hq).continuous).smul hg
+  exact memLp_one_iff_integrable.1 (hc.memLp_of_isBigO_exp_neg_mul_norm (by norm_num) hdec 1)
+
+/-- `‖z‖ʲ log |α|² → 0` at infinity for a vortex with `|α| → 1` at infinity. -/
+private theorem tendsto_norm_pow_smul_log_normSq
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) (j : ℕ) :
+    Tendsto (fun z ↦ ‖z‖ ^ j • Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) (cocompact ℂ) (𝓝 0) := by
+  refine IsBigO.trans_tendsto ?_ (Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp
+    (tendsto_norm_cocompact_atTop.const_mul_atTop (by norm_num : (0 : ℝ) < 1 / 8))))
+  refine (IsBigO.of_bound 2 ?_).trans (isBigO_norm_pow_mul_one_sub_normSq hp hq hsol hlim j)
+  filter_upwards [eventually_abs_log_normSq_le hp hq hsol hlim] with z hz
+  have h₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
+    sub_nonneg.2 (normSq_le_one_of_tendsto hp hq hsol hlim z)
+  rw [smul_eq_mul, norm_mul, norm_pow, norm_norm, Real.norm_eq_abs,
+    Real.norm_of_nonneg (by positivity)]
+  calc ‖z‖ ^ j * |Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))|
+      ≤ ‖z‖ ^ j * (2 * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2))) := by gcongr
+    _ = 2 * (‖z‖ ^ j * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2))) := by ring
+
+/-- **The moments of a plane vortex against a harmonic weight.** Let `x` be a `C²` vortex on the
+whole plane whose section satisfies `|α| → 1` at infinity, with zero multiplicities `n`. Let `h` be
+a smooth harmonic function such that `h` and its derivative are `O(‖z‖ᵏ)` at infinity. Then the
+modulus defect `1 - |α|²` has the same moment against `h` as `16π` times the counting measure of
+the zeros: `∫ h (1 - |α|²) = 16π ∑ᶠ z, n z h(z)`. For `h = 1` this is the flux identity
+`TauCeti.Vortex.integral_one_sub_normSq_eq_mul_finsum`. -/
+theorem integral_mul_one_sub_normSq_eq_mul_finsum
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {n : ℂ → ℕ}
+    (hn : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w) {h : ℂ → ℝ} (hh : ContDiff ℝ ∞ h)
+    (hΔ : Δ h = 0) {k : ℕ} (hhk : h =O[cocompact ℂ] fun z ↦ ‖z‖ ^ k)
+    (hdhk : fderiv ℝ h =O[cocompact ℂ] fun z ↦ ‖z‖ ^ k) :
+    ∫ z, h z * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * ∑ᶠ z, (n z : ℝ) * h z := by
+  have hfin : {z | sectionValue x z = 0}.Finite :=
+    finite_setOfPred_sectionValue_eq_zero (k := 2) (by norm_num) hb₁ hb₂
+      (hp.differentiable (by norm_num)) (hq.differentiable (by norm_num))
+      (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hlim
+  set N := ∑ᶠ z, (n z : ℝ) * h z
+  set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2) with hs
+  set F : ℂ → ℝ := fun z ↦ (s z - 1) / 4 with hF
+  -- The weighted defect is integrable.
+  have hhF : Integrable fun z ↦ h z * F z := by
+    refine ((integrable_one_sub_normSq_smul_of_isBigO hp hq hsol hlim hh.continuous hhk).const_mul
+      (-1 / 4)).congr (.of_forall fun z ↦ ?_)
+    simp only [hF, hs, smul_eq_mul]
+    ring
+  -- Dilated cutoffs `χ_m`, equal to `1` on a disc of radius `R m` containing every zero.
+  obtain ⟨Cχ, hCχ⟩ := exists_forall_contDiff_cutoff_ball_norm_laplacian_le (E := ℂ)
+  obtain ⟨R₀, hR₀⟩ := hfin.isBounded.subset_closedBall 0
+  set R : ℕ → ℝ := fun m ↦ m + (max R₀ 0 + 1) with hR
+  have hRpos : ∀ m, 0 < R m := fun m ↦ by positivity
+  have hRm : ∀ m : ℕ, (m : ℝ) ≤ R m := fun m ↦ by simp only [hR]; linarith [le_max_right R₀ 0]
+  have hR₀m : ∀ m, R₀ < R m := fun m ↦ by
+    simp only [hR]; linarith [le_max_left R₀ 0, (Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
+  choose χ hχ hχc hχ1 hχ0 hχD hχΔ hχI using fun m ↦ hCχ (R m) (hRpos m)
+  -- The distributional identity tested against `χ_m h`.
+  have hid : ∀ m, ∫ z, Δ (fun w ↦ χ m w * h w) z * Real.log (s z) =
+      (∫ z, χ m z • (h z * F z)) + 4 * π * N := fun m ↦ by
+    rw [integral_laplacian_mul_log_normSq_of_eq_one hb₁ hb₂ hp hq hsol hfin hn (hχ m) (hχc m)
+      (fun z hz ↦ (hχ1 m z ((mem_closedBall_zero_iff.mp (hR₀ hz)).trans_lt (hR₀m m))).self_of_nhds)
+      hh]
+    congr 1
+    exact integral_congr_ae (.of_forall fun z ↦ by simp only [hF, smul_eq_mul]; ring)
+  -- As `m → ∞` the left side tends to `0` and the right side to `∫ h F + 4π N`.
+  have hRt : Tendsto R atTop atTop := tendsto_atTop_mono hRm tendsto_natCast_atTop_atTop
+  have hA : Tendsto (fun m ↦ ∫ z, Δ (fun w ↦ χ m w * h w) z * Real.log (s z)) atTop (𝓝 0) := by
+    simpa only [smul_eq_mul] using tendsto_integral_laplacian_mul_smul_of_tendsto_cocompact
+      volume Complex.finrank_real_complex hRt (fun m ↦ (hχ m).of_le (by simp)) hχ1 hχ0 hχD hχΔ
+      (hh.of_le (by simp)) hΔ hhk hdhk (tendsto_norm_pow_smul_log_normSq hp hq hsol hlim (k + 1))
+  have hB : Tendsto (fun m ↦ ∫ z, χ m z • (h z * F z)) atTop (𝓝 (∫ z, h z * F z)) :=
+    tendsto_integral_smul_of_eq_one_ball hRt (fun m ↦ (hχ m).continuous.aestronglyMeasurable)
+      (fun m z hz ↦ (hχ1 m z hz).self_of_nhds) hχI hhF
+  have hzero := tendsto_nhds_unique (by simpa only [hid] using hB.add_const (4 * π * N)) hA
+  have h4 : ∀ z, h z * (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = -4 * (h z * F z) := fun z ↦ by
+    simp only [hF, hs]
+    ring
+  rw [integral_congr_ae (.of_forall h4), integral_const_mul]
+  linarith
 
 /-- **The flux identity for a plane vortex.** Let `x` be a `C²` vortex on the whole plane whose
 section satisfies `|α| → 1` at infinity, and let `n z` be the multiplicity of the zero `z` of
@@ -285,55 +439,12 @@ theorem integral_one_sub_normSq_eq_mul_finsum
     (hn : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w) :
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * ∑ᶠ z, (n z : ℝ) := by
-  -- Test the distributional scalar equation against dilated cutoffs `χ_m`. The left side tends
-  -- to `0` and the right side to `∫ (|α|² - 1) / 4 + 4π ∑ n_z`.
-  have hfin : {z | sectionValue x z = 0}.Finite :=
-    finite_setOfPred_sectionValue_eq_zero (k := 2) (by norm_num) hb₁ hb₂
-      (hp.differentiable (by norm_num)) (hq.differentiable (by norm_num))
-      (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hlim
-  set N := ∑ᶠ z, (n z : ℝ)
-  set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2) with hs
-  set F : ℂ → ℝ := fun z ↦ (s z - 1) / 4 with hF
-  have hFint : Integrable F := by
-    refine ((integrable_one_sub_normSq volume hp hq hsol hlim).div_const 4).neg.congr
-      (.of_forall fun z ↦ ?_)
-    simp only [hF, hs, Pi.neg_apply]
-    ring
-  -- Dilated cutoffs `χ_m`, equal to `1` on a disc of radius `R m` containing every zero.
-  obtain ⟨C, hC⟩ := exists_forall_contDiff_cutoff_ball_norm_laplacian_le (E := ℂ)
-  obtain ⟨R₀, hR₀⟩ := hfin.isBounded.subset_closedBall 0
-  set R : ℕ → ℝ := fun m ↦ m + (max R₀ 0 + 1) with hR
-  have hRpos : ∀ m, 0 < R m := fun m ↦ by positivity
-  have hRm : ∀ m : ℕ, (m : ℝ) ≤ R m := fun m ↦ by simp only [hR]; linarith [le_max_right R₀ 0]
-  choose χ hχ hχc hχ1 hχ0 _ hχΔ hχI using fun m ↦ hC (R m) (hRpos m)
-  have hid : ∀ m, ∫ z, Δ (χ m) z * Real.log (s z) = (∫ z, χ m z * F z) + 4 * π * N :=
-    fun m ↦ integral_laplacian_mul_log_normSq_of_eq_one hb₁ hb₂ hp hq hsol hfin hn (hχ m) (hχc m)
-      fun z hz ↦ (hχ1 m z (by
-        have := mem_closedBall_zero_iff.mp (hR₀ hz)
-        simp only [hR]
-        linarith [le_max_left R₀ 0, (Nat.cast_nonneg m : (0 : ℝ) ≤ m)])).self_of_nhds
-  have hRt : Tendsto R atTop atTop := tendsto_atTop_mono hRm tendsto_natCast_atTop_atTop
-  -- The cutoff integrals of the right side converge to `∫ F`.
-  have hB : Tendsto (fun m ↦ ∫ z, χ m z * F z) atTop (𝓝 (∫ z, F z)) :=
-    tendsto_integral_smul_of_eq_one_ball hRt (fun m ↦ (hχ m).continuous.aestronglyMeasurable)
-      (fun m z hz ↦ (hχ1 m z hz).self_of_nhds) hχI hFint
-  -- The left side tends to zero, because `log |α|² → 0` while `∫ |Δ χ_m|` stays bounded.
-  have hL : Tendsto (fun z ↦ Real.log (s z)) (cocompact ℂ) (𝓝 0) := by
-    have h := (Real.continuousAt_log one_ne_zero).tendsto.comp hlim
-    rwa [Real.log_one] at h
-  have hA : Tendsto (fun m ↦ ∫ z, Δ (χ m) z * Real.log (s z)) atTop (𝓝 0) :=
-    tendsto_integral_laplacian_smul_of_tendsto_cocompact volume Complex.finrank_real_complex hRt
-      hχ1 hχ0 hχΔ hL
-  have hlimit : Tendsto (fun m ↦ ∫ z, Δ (χ m) z * Real.log (s z)) atTop
-      (𝓝 ((∫ z, F z) + 4 * π * N)) := by
-    simp_rw [hid]
-    exact hB.add_const _
-  have hzero := tendsto_nhds_unique hlimit hA
-  have h4 : ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) = -4 * F z := fun z ↦ by
-    simp only [hF, hs]
-    ring
-  rw [integral_congr_ae (.of_forall h4), integral_const_mul]
-  linarith
+  have hd : fderiv ℝ (fun _ : ℂ ↦ (1 : ℝ)) =O[cocompact ℂ] fun z ↦ ‖z‖ ^ 0 := by
+    rw [fderiv_fun_const]
+    exact isBigO_zero _ _
+  simpa using integral_mul_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim hn
+    (h := fun _ ↦ 1) contDiff_const laplacian_const
+    ((isBigO_refl (fun _ : ℂ ↦ (1 : ℝ)) _).congr_right fun z ↦ (pow_zero _).symm) hd
 
 /-- **The total flux of a plane vortex is the number of its zeros.** Let `x` be a `C²` vortex on
 the whole plane whose section satisfies `|α| → 1` at infinity, and let `n z` be the multiplicity
