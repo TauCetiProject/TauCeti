@@ -429,9 +429,8 @@ theorem smulLeftCLM_quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) (
 theorem quantizeUniformCLM_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W) :
     quantizeUniformCLM (const T) (isUniform_const T) =
       SchwartzMap.postcompCLM (E := CoordinateSpace n) T := by
-  have hT : (const T : Symbol n V W 0).coefficient = fun _ ↦ T := funext (coefficient_const T)
   ext u x
-  simpa [hT] using quantizeSchwartzValue_comp_fst (fun _ ↦ T) u x
+  exact quantizeSchwartzValue_const T u x
 
 /-! ### The Fourier profile of the right quantization -/
 

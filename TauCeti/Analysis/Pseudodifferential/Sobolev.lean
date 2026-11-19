@@ -1146,14 +1146,9 @@ theorem quantizeSobolev_ofSpatial_smul {ψ : 𝓢(CoordinateSpace n, ℂ)} (hψ 
       BesselPotentialSpace.inclusion (by simp) ∘L BesselPotentialSpace.smulLeftCLM s ψ := by
   refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun u ↦
     BesselPotentialSpace.ext ?_
-  have hc : (ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) hψ).coefficient =
-      fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V :=
-    funext (coefficient_ofSpatial _ hψ)
-  have hq (x : CoordinateSpace n) :
-      quantizeSchwartzValue (fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V) u x = ψ x • u x := by
-    simpa using quantizeSchwartzValue_comp_fst (fun y ↦ ψ y • ContinuousLinearMap.id ℂ V) u x
   ext φ
-  simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc, hq,
+  simp only [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    quantizeSchwartzValue_ofSpatial, _root_.smul_apply, ContinuousLinearMap.id_apply,
     ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
     BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     smulLeftCLM_toTemperedDistributionCLM_eq, SchwartzMap.toTemperedDistributionCLM_apply_apply,

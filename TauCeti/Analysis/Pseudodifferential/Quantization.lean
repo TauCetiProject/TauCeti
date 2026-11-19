@@ -955,8 +955,8 @@ theorem quantizeSchwartzValue_ofSpatial [CompleteSpace V] [CompleteSpace W]
 theorem quantizeSchwartzValue_const [CompleteSpace V] [CompleteSpace W] (T : V →L[ℂ] W)
     (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue (const T : Symbol n V W 0).coefficient u x = T (u x) := by
-  have hc : (const T : Symbol n V W 0).coefficient = fun _ ↦ T := funext (coefficient_const T)
-  rw [hc, quantizeSchwartzValue_comp_fst (fun _ ↦ T)]
+  rw [quantizeSchwartzValue_congr_left (b := (ofSpatial (fun _ ↦ T) contDiff_const).coefficient)
+    (fun _ ↦ by simp) u, quantizeSchwartzValue_ofSpatial]
 
 /-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
 `(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/
