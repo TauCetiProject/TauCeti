@@ -42,19 +42,19 @@ theorem constantSection_apply (F : Type*) [NormedAddCommGroup F] [NormedSpace �
     (n : ℕ∞ω) (a : F) (x : ℝ) : constantSection F n a x = a := by
   rfl
 
-private def realFrames (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F] :
+private def realFrames (F : Type*) [TopologicalSpace F] :
     Unit → Trivialization F (π F (Bundle.Trivial ℝ F)) :=
   fun _ ↦ trivializationAt F (Bundle.Trivial ℝ F) 0
 
-private instance realFramesAtlas (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (i : Unit) : MemTrivializationAtlas (realFrames F i) := by
+private instance realFramesAtlas (F : Type*) [TopologicalSpace F] (i : Unit) :
+    MemTrivializationAtlas (realFrames F i) := by
   dsimp only [realFrames]
   infer_instance
 
 private def realDomains : Unit → Opens ℝ := fun _ ↦ ⊤
 
-private theorem realDomains_subset (F : Type*) [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (i : Unit) : (realDomains i : Set ℝ) ⊆ (realFrames F i).baseSet := by
+private theorem realDomains_subset (F : Type*) [TopologicalSpace F] (i : Unit) :
+    (realDomains i : Set ℝ) ⊆ (realFrames F i).baseSet := by
   simp [realDomains, realFrames, Bundle.Trivial.fiberBundle_trivializationAt']
 
 /-- For these examples the original sections use the chosen global trivial frame. -/
