@@ -85,6 +85,12 @@ def twistInvCoeff (k : ℤ) (s : OnePoint 𝕜 → 𝕜) (w : 𝕜) : 𝕜 :=
 theorem twistInvCoeff_zero (k : ℤ) (s : OnePoint 𝕜 → 𝕜) : twistInvCoeff k s 0 = s ∞ := by
   simp [twistInvCoeff, invChart_symm_zero]
 
+/-- The inverted coordinate of the zero section vanishes. -/
+@[simp]
+theorem twistInvCoeff_zero_section (k : ℤ) : twistInvCoeff k (0 : OnePoint 𝕜 → 𝕜) = 0 := by
+  funext w
+  simp [twistInvCoeff]
+
 theorem twistInvCoeff_of_ne_zero (k : ℤ) (s : OnePoint 𝕜 → 𝕜) {w : 𝕜} (hw : w ≠ 0) :
     twistInvCoeff k s w = w ^ k * s (w⁻¹ : 𝕜) := by
   rw [twistInvCoeff, invChart_symm_of_ne_zero hw, twistTransition_coe_infty, affineChart_coe,
