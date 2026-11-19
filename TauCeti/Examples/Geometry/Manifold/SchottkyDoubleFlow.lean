@@ -184,7 +184,8 @@ section EmptyOriginal
 local instance emptyOriginalChartedSpace : ChartedSpace B PEmpty.{u + 1} :=
   ChartedSpace.empty B PEmpty.{u + 1}
 
-local instance : HasGroupoid PEmpty.{u + 1} borderedHolomorphicGroupoid where
+local instance instHasGroupoidEmptyOriginal :
+    HasGroupoid PEmpty.{u + 1} borderedHolomorphicGroupoid where
   compatible {e} _ he _ := by
     have : e ∈ (∅ : Set (OpenPartialHomeomorph PEmpty B)) := he
     exact this.elim
@@ -234,7 +235,7 @@ end EmptyOriginal
 
 section EmptySeamOriginal
 
-local instance : Nonempty (borderedInterior B) :=
+local instance instNonemptyHalfPlaneInterior : Nonempty (borderedInterior B) :=
   ⟨⟨⟨Complex.I, by simp⟩, ClosedUpperHalfPlane.mem_borderedInterior_iff.mpr (by simp)⟩⟩
 
 local instance openRealManifold : IsManifold J 1 (SchottkyDouble (borderedInterior B)) :=
@@ -283,7 +284,7 @@ end EmptySeamOriginal
 
 section DisconnectedOriginal
 
-local instance : Nonempty B := ⟨ClosedUpperHalfPlane.ofReal 0⟩
+local instance instNonemptyHalfPlane : Nonempty B := ⟨ClosedUpperHalfPlane.ofReal 0⟩
 
 local instance sumBorderedHolomorphic : HasGroupoid (B ⊕ B) borderedHolomorphicGroupoid where
   compatible {e} e' he he' := by
