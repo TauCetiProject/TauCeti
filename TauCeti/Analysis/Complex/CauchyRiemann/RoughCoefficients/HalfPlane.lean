@@ -50,10 +50,6 @@ imposes nothing.
   null subsets of `Ω ∩ {0 ≤ t}` (`TauCeti.isWeakCRSolutionHalf_congr_ae`).
 * `TauCeti.IsWeakCRSolutionHalf.isWeakCRSolution`: a weak solution up to the boundary is a weak
   solution of the interior equation on the open upper part `Ω ∩ {0 < t}`.
-* `TauCeti.integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn`: for `C¹` data with
-  `DJ = fderiv ℝ J`, the pairing `⟪D* φ, ξ⟫` is integrable on the half-plane. Green's formula
-  `∫_{0<t} ⟪D* φ, ξ⟫ = ∫_{0<t} ⟪φ, ∂_s ξ + J ∂_t ξ + S ξ⟫ + ∫_ℝ ⟪φ(s), J(s) ξ(s)⟫ ds` is
-  `TauCeti.setIntegral_im_pos_inner_crFormalAdjoint`.
 * `TauCeti.isWeakCRSolutionHalf_of_contDiffOn`: for `C¹` coefficients `J` with `DJ = fderiv ℝ J`
   and continuous `S`, a `C¹` field `ξ` solving the equation classically on `Ω ∩ {0 < t}`, with
   `⟪Λ, J(s) ξ(s)⟫ = 0` for real `s ∈ Ω`, is a weak solution;
@@ -293,25 +289,6 @@ theorem isWeakCRSolutionHalf_congr_ae
     (and_congr ⟨fun h => h.congr hη, fun h => h.congr hη.symm⟩ Iff.rfl)
 
 /-! ### Classical solutions -/
-
-/-- For `C¹` data with `DJ = fderiv ℝ J`, the pairing of the formal adjoint of a compactly
-supported `C¹` field `φ` with `ξ` is integrable on the upper half-plane. -/
-theorem integrableOn_im_pos_inner_crFormalAdjoint_of_contDiffOn {φ ξ : ℂ → V} {U : Set ℂ}
-    (hφ : ContDiff ℝ 1 φ) (hφc : HasCompactSupport φ) (hU : IsOpen U) (hξ : ContDiffOn ℝ 1 ξ U)
-    (hJ : ContDiffOn ℝ 1 J U) (hS : ContinuousOn S U) (hφU : tsupport φ ⊆ U) :
-    IntegrableOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) {z : ℂ | 0 < z.im} := by
-  have hdφ := hφ.continuous_fderiv one_ne_zero
-  have hdJ := hJ.continuousOn_fderiv_of_isOpen hU le_rfl
-  have hc : ContinuousOn (fun z => ⟪crFormalAdjoint J (fderiv ℝ J) S φ z, ξ z⟫_ℝ) U := by
-    simp only [inner_crFormalAdjoint]
-    exact ((((hdφ.clm_apply continuous_const).continuousOn.inner hξ.continuousOn).neg.sub
-      ((hdφ.clm_apply continuous_const).continuousOn.inner
-        (hJ.continuousOn.clm_apply hξ.continuousOn))).sub
-      (hφ.continuous.continuousOn.inner
-        ((hdJ.clm_apply continuousOn_const).clm_apply hξ.continuousOn))).add
-      (hφ.continuous.continuousOn.inner (hS.clm_apply hξ.continuousOn))
-  exact (((hc.mono hφU).integrableOn_compact hφc).integrable_of_forall_notMem_eq_zero
-    fun z hz => by simp [crFormalAdjoint_of_notMem_tsupport hz]).integrableOn
 
 /-- **Classical solutions are weak solutions up to the boundary.** Let `J` be `C¹` on `Ω`, with
 `DJ = fderiv ℝ J`, and `S` continuous on `Ω`. If `ξ` is `C¹` on `Ω`, solves
