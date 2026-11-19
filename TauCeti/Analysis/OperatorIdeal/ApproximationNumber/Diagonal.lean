@@ -20,7 +20,10 @@ antitone `ℕ → ℝ≥0` sequence defines an `ℓ^∞` sequence (`lp.ofAntiton
 has those approximation numbers (`lp.exists_singularValue_diagonalCLM_eq`). For coefficients in
 any order and on any index type, if all coefficients outside a set of at most `n` indices have
 norm at most `C`, then the approximation number at index `n` is at most `C`
-(`lp.singularValue_diagonalCLM_le`).
+(`lp.singularValue_diagonalCLM_le`). Dually, if all coefficients on a set of more than `n`
+indices have norm at least `c`, then it is at least `c` (`lp.le_singularValue_diagonalCLM`),
+since the diagonal operator has a left inverse of norm at most `c⁻¹` on the span of the
+corresponding coordinate vectors.
 
 The general compactness theorem `lp.isCompactOperator_diagonalCLM` in the multiplier module
 shows that, over a locally compact scalar field, coefficients tending to zero give a
@@ -49,35 +52,34 @@ theorem singularValue_diagonalCLM_le (d : ℓ^∞(ι, 𝕜)) {n : ℕ} {s : Fins
     ((rank_diagonalTruncation_le d s).trans (by exact_mod_cast hs))).trans ?_
   exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le d s C.2 fun i hi ↦ hC i hi
 
+/-- **Lower bound for a diagonal operator.** If all coefficients on a set of more than `n`
+indices have norm at least `c`, then the approximation number at index `n` is at least `c`. -/
+theorem le_singularValue_diagonalCLM (d : ℓ^∞(ι, 𝕜)) {n : ℕ} {s : Finset ι} (hs : n < s.card)
+    {c : ℝ≥0} (hc : ∀ i ∈ s, c ≤ ‖d i‖₊) : c ≤ (diagonalCLM (p := p) d).singularValue n := by
+  rcases eq_zero_or_pos c with h | h
+  · exact h ▸ zero_le
+  obtain ⟨M, B, hM, hB, hBDA⟩ := exists_comp_diagonalCLM_comp_subtypeL_eq_id (p := p) d s h hc
+  have h1 : 1 ≤ ‖B‖₊ * (diagonalCLM (p := p) d).singularValue n * ‖M.subtypeL‖₊ := by
+    simpa [hBDA, hM, hs] using B.singularValue_comp_comp_le (diagonalCLM d) M.subtypeL n
+  have hBA : c * ‖B‖₊ * ‖M.subtypeL‖₊ ≤ 1 :=
+    (mul_le_of_le_one_right' (by exact_mod_cast Submodule.norm_subtypeL_le M)).trans hB
+  calc
+    c = c * 1 := (mul_one c).symm
+    _ ≤ c * (‖B‖₊ * (diagonalCLM (p := p) d).singularValue n * ‖M.subtypeL‖₊) := by gcongr
+    _ = c * ‖B‖₊ * ‖M.subtypeL‖₊ * (diagonalCLM (p := p) d).singularValue n := by ring
+    _ ≤ (diagonalCLM (p := p) d).singularValue n := mul_le_of_le_one_left' hBA
+
 /-- The approximation numbers of a diagonal operator with decreasing coefficient magnitudes
 are exactly those magnitudes. No convergence-to-zero assumption is needed. -/
 @[simp]
 theorem singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
     (hd : Antitone fun i ↦ ‖d i‖) (n : ℕ) :
     (diagonalCLM (p := p) d).singularValue n = ‖d n‖₊ := by
-  have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   refine le_antisymm ?_ ?_
   · exact singularValue_diagonalCLM_le d (Finset.card_range n).le fun i hi ↦
       hd (by simpa using hi)
-  · let v : Fin (n + 1) → ℓ^p(ℕ, 𝕜) := fun i ↦ lp.single p (i : ℕ) 1
-    have hv : LinearIndependent 𝕜 v := by
-      exact (linearIndependent_single_one (p := p) (𝕜 := 𝕜)).comp _ Fin.val_injective
-    have hsupp : ∀ x ∈ Submodule.span 𝕜 (Set.range v), ∀ i, n < i → x i = 0 := by
-      intro x hx i hi
-      exact apply_eq_zero_of_mem_span_single (fun j : Fin (n + 1) ↦ (j : ℕ)) hx
-        (by
-          rintro ⟨j, hj⟩
-          simp only at hj
-          omega)
-    exact_mod_cast (diagonalCLM (p := p) d).le_singularValue_of_linearIndependent hv (fun x hx ↦ by
-      calc
-        ‖d n‖ * ‖x‖ = ‖d n • x‖ := (norm_smul _ _).symm
-        _ ≤ ‖diagonalCLM d x‖ := by
-          refine norm_mono hp fun i ↦ ?_
-          rcases le_or_gt i n with hi | hi
-          · simpa [norm_mul] using
-              mul_le_mul_of_nonneg_right (hd hi) (norm_nonneg (x i))
-          · simp [hsupp x hx i hi])
+  · exact le_singularValue_diagonalCLM d (s := Finset.range (n + 1)) (by simp) fun i hi ↦
+      hd (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi))
 
 /-- The approximation numbers of a diagonal operator tend to zero when its coefficient
 magnitudes do. -/

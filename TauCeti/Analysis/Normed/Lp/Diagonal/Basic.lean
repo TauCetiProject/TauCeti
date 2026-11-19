@@ -267,8 +267,9 @@ theorem exists_comp_diagonalCLM_comp_subtypeL_eq_id (d : ℓ^∞(ι, 𝕜)) (s :
         rw [he i hi, norm_inv]
         exact inv_anti₀ hc' (by exact_mod_cast hd i hi)
     have hB : ‖B‖ ≤ (c : ℝ)⁻¹ :=
-      ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦
-        ((diagonalTruncation (p := p) e s).le_opNorm x).trans (by gcongr)
+      ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ by
+        rw [← Submodule.norm_coe, ContinuousLinearMap.coe_codRestrict_apply]
+        exact ((diagonalTruncation (p := p) e s).le_opNorm x).trans (by gcongr)
     rw [← NNReal.coe_le_coe, NNReal.coe_mul, coe_nnNorm, NNReal.coe_one]
     calc
       (c : ℝ) * ‖B‖ ≤ c * (c : ℝ)⁻¹ := by gcongr
