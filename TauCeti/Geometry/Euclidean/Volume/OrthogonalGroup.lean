@@ -172,14 +172,9 @@ private theorem measurable_sphereSection :
         (EuclideanSpace.single j (1 : ℝ)) /
         ‖EuclideanSpace.single (Fin.last n) (1 : ℝ) - u‖ ^ 2 :=
     (hw.inner continuous_const).measurable.div (hw.norm.pow 2).measurable
-  simp only [sphereSection, Matrix.UnitaryGroup.coe_ofLinearIsometryEquiv,
-    ContinuousLinearMap.toEuclideanCLM_symm_eq_toMatrix, LinearMap.toMatrix_apply,
-    ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, OrthonormalBasis.coe_toBasis,
-    OrthonormalBasis.coe_toBasis_repr_apply, EuclideanSpace.basisFun_repr,
-    EuclideanSpace.basisFun_apply, sphereReflection, Submodule.reflection_orthogonal_apply,
-    Submodule.reflection_singleton_apply, PiLp.neg_apply, PiLp.sub_apply, PiLp.smul_apply,
-    smul_eq_mul]
+  simp only [sphereSection, Matrix.UnitaryGroup.ofLinearIsometryEquiv_apply, sphereReflection,
+    Submodule.reflection_orthogonal_apply, Submodule.reflection_singleton_apply, PiLp.neg_apply,
+    PiLp.sub_apply, PiLp.smul_apply, smul_eq_mul]
   fun_prop
 
 /-- The trivialization map `Sⁿ × O(n) → O(n + 1)`, `(u, h) ↦ s(u) h`. -/

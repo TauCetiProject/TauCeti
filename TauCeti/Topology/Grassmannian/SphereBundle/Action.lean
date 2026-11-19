@@ -77,9 +77,8 @@ first coordinate vector. -/
 theorem specialOrthogonalSphereMap_eq_smul {n : ℕ} (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
     specialOrthogonalSphereMap n A = A • specialOrthogonalSphereMap n 1 :=
   Subtype.ext <| by
-    rw [SpecialOrthogonalGroup.coe_smul_sphere, coe_specialOrthogonalSphereMap,
-      coe_specialOrthogonalSphereMap, WithLp.ofLp_toLp, OneMemClass.coe_one, ← mulVec_single_one,
-      ← mulVec_single_one, one_mulVec]
+    simp [SpecialOrthogonalGroup.coe_smul_sphere, coe_specialOrthogonalSphereMap,
+      ← col_mul_eq_mulVec_col]
 
 /-- **The stabilizers of `SO(N)` on the sphere are path connected.** For a point `x₀` of the unit
 sphere of `ℝᴺ`, the special orthogonal matrices fixing `x₀` form a path-connected set: for `N ≥ 2`

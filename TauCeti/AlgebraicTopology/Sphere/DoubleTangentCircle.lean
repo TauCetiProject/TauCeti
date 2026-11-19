@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.Sphere.TangentCircle
 public import TauCeti.AlgebraicTopology.Sphere.TwoFieldFamily
 import TauCeti.Algebra.Group.ZMultiples
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.LoopSpace
 import TauCeti.Topology.MappingSpace.Sphere.Basic
 
@@ -40,7 +41,10 @@ fibre over one point.
 The main result is Proposition 6.21 of the same paper, for `n ≥ 3`: the map `σ : Σ → Ω²Sⁿ`
 induces an isomorphism `σ_* : H_{n-2}(Σ; ℤ) ≅ H_{n-2}(Ω²Sⁿ; ℤ)`
 (`TauCeti.isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop`). Both groups are infinite
-cyclic, so `σ_*` sends the fundamental class of `Σ` to a generator of `H_{n-2}(Ω²Sⁿ; ℤ)`.
+cyclic, so `σ_*` sends the fundamental class of `Σ` to a generator of `H_{n-2}(Ω²Sⁿ; ℤ)`. In
+particular, at every point `x` of `Sⁿ`, the group `H_{n-2}(Map_*(S², Sⁿ); ℤ)` of based maps
+`(S², north) → (Sⁿ, x)` has an element of infinite order
+(`TauCeti.exists_not_isOfFinAddOrder_homology_basedMap_sphere`).
 
 The same holds for the fibres of the fibred family. Over a point `x` of `Sⁿ`, the fibre `Σₓ` is the
 equator through `x` orthogonal to `v x` in the unit sphere of `(u x)⊥`, and on the square the
@@ -67,6 +71,8 @@ class of `σ ∘ c` generates `H_{n-2}(Ω²Sⁿ; ℤ)`, while that of `c` genera
 * `TauCeti.tangentCircleDoubleLoop hu hv p`: the family `σ : Σ → Ω_p Ω_p Sⁿ` of Example 6.20.
 * `TauCeti.isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop`: `σ_*` is an isomorphism
   `H_{n-2}(Σ; ℤ) ≅ H_{n-2}(Ω²Sⁿ; ℤ)`.
+* `TauCeti.exists_not_isOfFinAddOrder_homology_basedMap_sphere`: `H_{n-2}(Map_*(S², Sⁿ); ℤ)` has
+  an element of infinite order, for `n ≥ 3`.
 * `TauCeti.isIso_singularHomologyFunctor_map_twoFieldSphereFamilyFiber`: over every point `x`, the
   restriction `Σₓ → Map_*(S², Sⁿ)` of the family of two-spheres of two orthonormal tangent fields
   is an isomorphism on `H_{n-2}(-; ℤ)`.
@@ -270,6 +276,70 @@ theorem isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop {m : ℕ}
   have hγ := (HomotopyGroup.isIso_hurewicz_loopSpace_iff_bijective_zmultiplesHom (hΩ _) γ).2 hγgen
   rw [GenLoop.hurewicz_map] at hγ
   exact IsIso.of_isIso_comp_left (GenLoop.hurewicz R c) _
+
+/-- **`H_{n-2}(Map_*(S², Sⁿ); ℤ)` has an element of infinite order**, for the unit sphere `Sⁿ` of
+an `(n + 1)`-dimensional real inner product space with `n ≥ 3`, at every base point `x`. It is the
+image of a generator of `H_{n-2}(S^{n-2}; ℤ)` under the double loops of
+Barraud–Damian–Humilière–Oancea, Example 6.20, through three orthonormal vectors `x`, `u`, `v`
+(`TauCeti.tangentCircleDoubleLoop`), which induce an isomorphism on `H_{n-2}`. -/
+theorem exists_not_isOfFinAddOrder_homology_basedMap_sphere {m : ℕ}
+    (hE : Module.finrank ℝ E = m + 4) (x : sphere (0 : E) 1) :
+    ∃ α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north
+      x))).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) (m + 1) : ModuleCat.{0} ℤ),
+      ¬IsOfFinAddOrder α := by
+  classical
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
+  -- Unit vectors `u ⊥ x` and `v ⊥ x, u`; then `x` lies on the equator `Σ` of the unit sphere of
+  -- `u⊥` orthogonal to `v`.
+  obtain ⟨u, hu, hxu⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
+    {(x : E)} (by rw [Finset.card_singleton, hE]; omega)
+  obtain ⟨v, hv, hxv⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
+    {(x : E), u} (Finset.card_le_two.trans_lt (by omega))
+  have hux : ⟪u, (x : E)⟫ = 0 := by
+    rw [real_inner_comm]
+    exact hxu _ (Finset.mem_singleton_self _)
+  let v' : (ℝ ∙ u)ᗮ := ⟨v, Submodule.mem_orthogonal_singleton_iff_inner_right.2 (hxv u (by simp))⟩
+  have hv' : ‖v'‖ = 1 := hv
+  let p₀ : sphereEquator v' :=
+    ⟨⟨⟨x, Submodule.mem_orthogonal_singleton_iff_inner_right.2 hux⟩, by simp⟩,
+      mem_sphereEquator.2 (hxv (x : E) (by simp))⟩
+  have hV : Module.finrank ℝ (ℝ ∙ u)ᗮ = m + 3 := by
+    have : Fact (Module.finrank ℝ E = m + 3 + 1) := ⟨hE⟩
+    exact Submodule.finrank_orthogonal_span_singleton (norm_ne_zero_iff.1 (hu ▸ one_ne_zero))
+  -- The Hurewicz class of a generalized loop of `Σ` that is a homeomorphism off the boundary of
+  -- its cube generates `H_{m+1}(Σ; ℤ)`.
+  let R := ModuleCat.of ℤ ℤ
+  obtain ⟨c, hcs, hci⟩ := exists_genLoop_sphereEquator
+    (norm_ne_zero_iff.1 (hv' ▸ one_ne_zero)) (k := m + 1) hV p₀
+  have hcs' : Function.Surjective c := fun q ↦ by
+    by_cases hq : q = p₀
+    · exact ⟨0, hq ▸ GenLoop.boundary c 0 ⟨0, Or.inl rfl⟩⟩
+    · exact hcs q hq
+  have : IsIso (GenLoop.hurewicz R c) := GenLoop.isIso_hurewicz_of_bijective_toSphere R
+    ⟨(GenLoop.injective_toSphere_iff c).2 hci, (GenLoop.surjective_toSphere_iff c).2 hcs'⟩
+  have := isIso_singularHomologyFunctor_map_tangentCircleDoubleLoop hE hu hv' p₀
+  -- The double loops are based at `x`, and read as based maps `(S², north) → (Sⁿ, x)`.
+  set a := (orthogonalSphereToEquator u (p₀ : sphere (0 : (ℝ ∙ u)ᗮ) 1) : sphere (0 : E) 1)
+  have ha : a = x := Subtype.ext (by simp [a, p₀])
+  let Φ : Ω (Ω (sphere (0 : E) 1) a) (Path.refl a) ≃ₜ
+      BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x :=
+    (BasedTopologicalSpace.basedMapSphereHomeomorphIteratedLoopSpace 2
+      ⟨sphere (0 : E) 1, a⟩ Sphere2.north).symm.trans
+        ((Homeomorph.refl _).subtype fun f ↦ by rw [ha]; rfl)
+  -- So `ℤ ≅ H_{m+1}(Map_*(S², Sⁿ); ℤ)`, through the coefficients `ULift ℤ ≅ ℤ`.
+  let e : R ≅ ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north
+      x))).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) (m + 1) : ModuleCat.{0} ℤ) :=
+    asIso (GenLoop.hurewicz R c ≫ ((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).obj R).map
+      (TopCat.ofHom (tangentCircleDoubleLoop hu hv' p₀))) ≪≫
+    ((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).mapIso
+      (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso.symm).app _ ≪≫
+    ((singularHomologyFunctor (ModuleCat.{0} ℤ) (m + 1)).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).mapIso (TopCat.isoOfHomeo Φ)
+  refine ⟨e.hom.hom (1 : ℤ), fun h ↦ ?_⟩
+  obtain ⟨k, hk, hk0⟩ := isOfFinAddOrder_iff_zsmul_eq_zero.1 h
+  rw [← map_zsmul, ← map_zero e.hom.hom] at hk0
+  have hinj : Function.Injective e.hom.hom := (ModuleCat.mono_iff_injective _).1 inferInstance
+  exact hk (by simpa using hinj hk0)
 
 end DoubleLoop
 

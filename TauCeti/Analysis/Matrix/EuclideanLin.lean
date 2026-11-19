@@ -283,31 +283,6 @@ theorem UnitaryGroup.toLinearIsometryEquiv_inv_apply (A : unitaryGroup ι 𝕜)
     UnitaryGroup.toLinearIsometryEquiv A⁻¹ x = (UnitaryGroup.toLinearIsometryEquiv A).symm x := by
   rw [map_inv, LinearIsometryEquiv.coe_inv]
 
-/-- The conversion from unitary matrices to linear isometries of Euclidean space is injective. -/
-theorem UnitaryGroup.toLinearIsometryEquiv_injective :
-    Function.Injective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
-  intro A B h
-  apply Subtype.ext
-  apply toEuclideanLin.injective
-  exact LinearMap.ext fun x ↦ by
-    simpa only [UnitaryGroup.toLinearIsometryEquiv_apply, toLpLin_apply] using
-      LinearIsometryEquiv.congr_fun h x
-
-/-- Every linear isometry of Euclidean space is the action of a unitary matrix, namely its matrix
-in the standard basis. -/
-theorem UnitaryGroup.toLinearIsometryEquiv_surjective :
-    Function.Surjective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
-  intro g
-  set B := toEuclideanLin.symm g.toLinearIsometry.toLinearMap with hBdef
-  have hB : toEuclideanLin B = g.toLinearIsometry.toLinearMap :=
-    toEuclideanLin.apply_symm_apply _
-  have hmem : B ∈ unitaryGroup ι 𝕜 := by
-    rw [hBdef, toEuclideanLin_eq_toLin_orthonormal]
-    exact g.toMatrix_mem_unitaryGroup (EuclideanSpace.basisFun ι 𝕜) (EuclideanSpace.basisFun ι 𝕜)
-  refine ⟨⟨B, hmem⟩, LinearIsometryEquiv.ext fun x ↦ ?_⟩
-  rw [UnitaryGroup.toLinearIsometryEquiv_apply]
-  exact LinearMap.congr_fun hB x
-
 /-- The linear isometry of a unitary matrix has the determinant of the matrix. -/
 @[simp]
 theorem UnitaryGroup.det_toLinearIsometryEquiv (A : unitaryGroup ι 𝕜) :
@@ -344,21 +319,8 @@ basis, as a group isomorphism. Its inverse is `Matrix.UnitaryGroup.toLinearIsome
 (`Matrix.UnitaryGroup.ofLinearIsometryEquiv_symm_apply`). -/
 noncomputable def UnitaryGroup.ofLinearIsometryEquiv :
     (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) ≃* unitaryGroup ι 𝕜 :=
-  MulEquiv.symm
-    { UnitaryGroup.toLinearIsometryEquiv with
-      invFun g := ⟨(toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm
-          (g.toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι),
-        mem_unitaryGroup_iff_inner_toEuclideanCLM.2 fun x y ↦ by
-          simp only [StarAlgEquiv.apply_symm_apply, LinearIsometryEquiv.coe_coe'',
-            LinearIsometryEquiv.inner_map_map]⟩
-      left_inv A := Subtype.ext <| by
-        rw [← StarAlgEquiv.symm_apply_apply (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) A]
-        congr 1
-      right_inv g := LinearIsometryEquiv.ext fun x ↦ by
-        have h := congr($(StarAlgEquiv.apply_symm_apply (toEuclideanCLM (n := ι) (𝕜 := 𝕜))
-          (g.toContinuousLinearEquiv : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) x)
-        rw [toEuclideanCLM_apply] at h
-        exact h }
+  ((Unitary.mapEquiv (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMulEquiv.trans
+    Unitary.linearIsometryEquiv).symm
 
 /-- The unitary matrix of a linear isometry is the matrix of its continuous linear map. -/
 theorem UnitaryGroup.coe_ofLinearIsometryEquiv (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :
@@ -386,6 +348,27 @@ theorem UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv
 theorem UnitaryGroup.ofLinearIsometryEquiv_toLinearIsometryEquiv (A : unitaryGroup ι 𝕜) :
     UnitaryGroup.ofLinearIsometryEquiv (UnitaryGroup.toLinearIsometryEquiv A) = A :=
   UnitaryGroup.ofLinearIsometryEquiv.apply_symm_apply A
+
+/-- The entry `(i, j)` of the unitary matrix of a linear isometry `g` is the coordinate `i` of the
+image under `g` of the standard basis vector `e_j`. -/
+@[simp]
+theorem UnitaryGroup.ofLinearIsometryEquiv_apply
+    (g : EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) (i j : ι) :
+    (UnitaryGroup.ofLinearIsometryEquiv g : Matrix ι ι 𝕜) i j =
+      g (EuclideanSpace.single j 1) i := by
+  conv_rhs => rw [← UnitaryGroup.toLinearIsometryEquiv_ofLinearIsometryEquiv g]
+  rw [UnitaryGroup.toLinearIsometryEquiv_single, PiLp.toLp_apply, col_apply]
+
+/-- The conversion from unitary matrices to linear isometries of Euclidean space is injective. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_injective :
+    Function.Injective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) :=
+  UnitaryGroup.ofLinearIsometryEquiv.symm.injective
+
+/-- Every linear isometry of Euclidean space is the action of a unitary matrix, namely its matrix
+in the standard basis (`Matrix.UnitaryGroup.ofLinearIsometryEquiv`). -/
+theorem UnitaryGroup.toLinearIsometryEquiv_surjective :
+    Function.Surjective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) :=
+  UnitaryGroup.ofLinearIsometryEquiv.symm.surjective
 
 /-- The unitary matrix of a continuous family of linear isometries, continuous in the operator-norm
 topology, depends continuously on the parameter. -/
