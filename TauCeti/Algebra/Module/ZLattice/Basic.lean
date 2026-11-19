@@ -168,14 +168,14 @@ theorem exists_isAddFundamentalDomain_convex_le_measure [FiniteDimensional ℝ E
     ZSpan.convex_fundamentalDomain b, ZSpan.fundamentalDomain_isBounded b, ?_⟩
   have himage : ZSpan.fundamentalDomain b = L • T₀ := by
     rw [← ZSpan.map_fundamentalDomain, ← Set.image_smul]
-    rfl
+    simp only [LinearEquiv.smulOfNeZero_apply, T₀]
   have hLn : L ≤ L ^ finrank ℝ E := le_self_pow₀ hL Module.finrank_pos.ne'
-  rw [himage, Measure.addHaar_smul, ← ofReal_measureReal hT₀fin,
-    ← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_toReal hM,
-    abs_of_nonneg (by positivity)]
-  refine ENNReal.ofReal_le_ofReal ?_
+  have hLn₀ : (0 : ℝ) ≤ L ^ finrank ℝ E := by positivity
   have h1 : M.toReal / μ.real T₀ ≤ L := le_max_right _ _
   rw [div_le_iff₀ hv] at h1
+  -- Compare the real parts: `M ≤ L ^ n μ(T₀)`.
+  rw [himage, Measure.addHaar_smul, ← ENNReal.toReal_le_toReal hM (by finiteness)]
+  simp only [ENNReal.toReal_mul, ← measureReal_def, abs_of_nonneg hLn₀, ENNReal.toReal_ofReal hLn₀]
   nlinarith
 
 /-- A point of `ℝ^ι` lies in the standard lattice `ℤ^ι` exactly when it is the vector of

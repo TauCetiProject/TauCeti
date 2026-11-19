@@ -43,7 +43,8 @@ one `c > 0`, depending only on `m`, serves every smooth vortex with the degree-`
 over the whole noncompact moduli space `Sym^m ℂ`, including divisors whose zeros collide or move
 apart in clusters. The vacuum gap alone does not give this: the potential `P` vanishes at the
 zeros wherever they are. By the lower bound `|α|² ≥ ∏ ‖z - a‖² / (‖z - a‖² + C)` in terms of the
-zeros (`TauCeti.Vortex.exists_mem_mul_norm_sub_sq_lt`), the potential `2 P` is at least `1/4` off
+zeros (`TauCeti.Vortex.prod_div_le_normSq`), a point where `|α|²` is small lies near a zero
+(`TauCeti.Vortex.exists_mem_mul_norm_sub_sq_lt`), so the potential `2 P` is at least `1/4` off
 the union of the discs of a fixed radius `ρ`, depending only on `m`, about the `m` zeros. This
 union has measure at most `m` times that of a disc of radius `ρ` wherever the zeros are, and the
 Poincaré inequality for Schrödinger forms has a constant depending only on such a measure bound
@@ -159,6 +160,14 @@ private theorem integral_le_integral_norm_sq_gaugeFixedAdjoint (hx : ContDiff �
     le_inner_gaugeFixedOperator_gaugeFixedAdjoint_add_laplacian
       (hx.differentiable one_ne_zero z) hη.contDiffAt (hsol z)
 
+/-- The potential `2 P = 2 (x₂² + x₃²)` of the connection components of a continuous field is
+continuous. -/
+private theorem continuous_connectionPotential (hx : Continuous x) :
+    Continuous fun z ↦ 2 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+  have : Continuous fun z ↦ x z 2 := by fun_prop
+  have : Continuous fun z ↦ x z 3 := by fun_prop
+  fun_prop
+
 /-- The spectral gap of `L_x L_x*` from a Poincaré inequality for the Schrödinger form of the
 potential `2 P = 2 (x₂² + x₃²)` of the connection components: if that form is bounded below by
 `c ∫ u²`, then `min (c / 2) (1 / 8) ∫ |η|² ≤ ∫ |L_x* η|²`. -/
@@ -169,9 +178,7 @@ private theorem min_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
         ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ + ∫ z, 2 * (x z 2 ^ 2 + x z 3 ^ 2) * ‖u z‖ ^ 2 ∂μ)
     (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
     min (c / 2) (1 / 8) * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hPc : Continuous fun z ↦ 2 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    have := hxi 2; have := hxi 3; fun_prop
+  have hPc := continuous_connectionPotential hx.continuous
   have hu (i : Fin 4) : ContDiff ℝ 2 fun w ↦ η w i :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hη :)
   have huc (i : Fin 4) : HasCompactSupport fun w ↦ η w i :=
@@ -229,9 +236,7 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
       c * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
   -- The connection components see the potential `2 P ≥ 1/4` outside a disc.
   obtain ⟨R, -, hR⟩ := exists_exterior_lt_mass hlim (by norm_num : (1 : ℝ) / 8 < 1 / 4)
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hPc : Continuous fun z ↦ 2 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    have := hxi 2; have := hxi 3; fun_prop
+  have hPc := continuous_connectionPotential hx.continuous
   obtain ⟨c, hc, hgap⟩ :=
     exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
       (μ := μ) (F := ℝ) hPc.locallyIntegrable (ae_of_all _ fun z ↦ by positivity)
@@ -262,9 +267,7 @@ theorem exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdj
       (ENNReal.mul_ne_top (ENNReal.natCast_ne_top m) measure_ball_lt_top.ne)
   refine ⟨min (c / 2) (1 / 8), by positivity, fun x D hx hsol hframe hD η hη hηc ↦ ?_⟩
   have hm : Multiset.card D = m := hD.card_eq_of_tendsto_mul_inv_pow hframe
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hPc : Continuous fun z ↦ 2 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    have := hxi 2; have := hxi 3; fun_prop
+  have hPc := continuous_connectionPotential hx.continuous
   refine min_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (hx.of_le (by simp)) hsol
     (fun u hu huc ↦ hgap _ (⋃ a ∈ D.toFinset, Metric.ball a ρ) hPc.locallyIntegrable
       (ae_of_all _ fun z ↦ by positivity) ?_ (ae_of_all _ fun z hz ↦ ?_) u hu huc) hη hηc

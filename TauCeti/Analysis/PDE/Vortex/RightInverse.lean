@@ -37,9 +37,10 @@ solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kerne
 `Q f` is the weak solution of least norm, and `Q` is the right inverse `L_x* (L_x L_x*)⁻¹` on the
 `L²`-orthogonal complement of the weak kernel. At an actual vortex with `|α| → 1`, the spectral
 gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
-bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`). Since
-that gap is uniform over the smooth vortices of a given degree `m`, so is the bound on `Q`: one
-constant, depending only on `m`, bounds the norm of `Q` over the whole moduli space `Sym^m ℂ`
+bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`). The
+uniform gap `exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` over
+the smooth vortices of a given degree `m` gives the same for the bound on `Q`: one constant,
+depending only on `m`, bounds the norm of `Q` over the whole moduli space `Sym^m ℂ`
 (`exists_forall_exists_continuousLinearMap_norm_le_integral_inner_gaugeFixedAdjoint_eq`).
 
 At such a vortex `Q` also respects exponential decay. With `ρ = √(1 + |z|²)` and `|c| < 1/2`,

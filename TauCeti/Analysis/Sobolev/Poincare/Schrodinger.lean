@@ -98,12 +98,12 @@ positive measure, and let `P` be almost everywhere nonnegative and almost everyw
 
 `a ∫_Ω ‖u‖² ≤ a K ∫_Ω ‖Du‖² + 8 ∫_Ω P ‖u‖²`
 
-for every `C¹` map `u` with `P ‖u‖²` integrable. The constants depend on `Ω` only through its
+for every `C¹` map `u` with `P ‖u‖²` integrable on `Ω`. The constants depend on `Ω` only through its
 measure and diameter, and on `B` only through the bound on its measure. -/
 theorem mul_setIntegral_norm_sq_le_of_convex {P : E → ℝ} {B Ω : Set E} {a : ℝ} (ha : 0 < a)
     (hΩc : Convex ℝ Ω) (hΩb : Bornology.IsBounded Ω) (hΩ₀ : μ Ω ≠ 0) (hB : 2 * μ B ≤ μ Ω)
     (hP₀ : ∀ᵐ z ∂μ, 0 ≤ P z) (haP : ∀ᵐ z ∂μ, z ∉ B → a ≤ P z) {u : E → F}
-    (hu : ContDiff ℝ 1 u) (hPu : Integrable (fun z ↦ P z * ‖u z‖ ^ 2) μ) :
+    (hu : ContDiff ℝ 1 u) (hPu : IntegrableOn (fun z ↦ P z * ‖u z‖ ^ 2) Ω μ) :
     a * ∫ z in Ω, ‖u z‖ ^ 2 ∂μ ≤
       a * (10 * (2 * (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1)) / μ.real Ω) ^ 2) *
           ∫ z in Ω, ‖fderiv ℝ u z‖ ^ 2 ∂μ +
@@ -142,8 +142,8 @@ theorem mul_setIntegral_norm_sq_le_of_convex {P : E → ℝ} {B Ω : Set E} {a :
     have hUS : IntegrableOn (fun z ↦ ‖u z‖ ^ 2) S μ :=
       ((hu.continuous.norm.pow 2).continuousOn.integrableOn_compact
         hΩb.isCompact_closure).mono_set (hSΩ.trans subset_closure)
-    refine (setIntegral_mono_on_ae₀ (hUS.const_mul a) hPu.integrableOn hS ?_).trans
-      (setIntegral_mono_set hPu.integrableOn
+    refine (setIntegral_mono_on_ae₀ (hUS.const_mul a) (hPu.mono_set hSΩ) hS ?_).trans
+      (setIntegral_mono_set hPu
         (ae_restrict_of_ae (hP₀.mono fun z hz ↦ by positivity)) (.of_forall hSΩ))
     filter_upwards [haP] with z hz hzS
     exact mul_le_mul_of_nonneg_right (hz fun hB ↦ hzS.2 (subset_toMeasurable μ B hB))
@@ -196,6 +196,12 @@ theorem exists_pos_forall_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_in
   -- constant `K`; summing over the tiles gives it on `E`.
   set f : E → ℝ := fun z ↦ a * ‖u z‖ ^ 2 - (a * K * ‖fderiv ℝ u z‖ ^ 2 + 8 * (P z * ‖u z‖ ^ 2))
     with hf
+  -- The integral of `f` against any measure `ν ≤ μ`, split into its three pieces.
+  have hfν (ν : Measure E) (hν : ν ≤ μ) : ∫ z, f z ∂ν = a * ∫ z, ‖u z‖ ^ 2 ∂ν -
+      (a * K * ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂ν + 8 * ∫ z, P z * ‖u z‖ ^ 2 ∂ν) := by
+    rw [hf, integral_sub ((hI.const_mul a).mono_measure hν) (hR.mono_measure hν),
+      integral_add ((hD.const_mul (a * K)).mono_measure hν) ((hQ.const_mul 8).mono_measure hν),
+      integral_const_mul, integral_const_mul, integral_const_mul]
   have htile (g : G) : ∫ z in g +ᵥ T, f z ∂μ ≤ 0 := by
     -- The tile `g +ᵥ T` is the translate of `T` by the vector `g`.
     have hgT : g +ᵥ T = (g : E) +ᵥ T := rfl
@@ -203,17 +209,13 @@ theorem exists_pos_forall_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_in
     have hμr : μ.real ((g : E) +ᵥ T) = μ.real T := by simp [measureReal_def, hμ]
     have h := mul_setIntegral_norm_sq_le_of_convex (μ := μ) ha (hTc.vadd (g : E))
       (hTb.vadd (g : E)) (by rwa [hμ]) (by rw [hμ]; exact (mul_le_mul_right hBM 2).trans hTM)
-      hP₀ haP hu hQ
+      hP₀ haP hu hQ.integrableOn
     rw [diam_vadd, hμr, ← hK] at h
-    rw [hgT, hf, integral_sub (hI.const_mul a).integrableOn hR.integrableOn,
-      integral_add (hD.const_mul (a * K)).integrableOn (hQ.const_mul 8).integrableOn,
-      integral_const_mul, integral_const_mul, integral_const_mul]
+    rw [hgT, hfν _ Measure.restrict_le_self]
     linarith
-  have hsum : ∫ z, f z ∂μ ≤ 0 := by
-    rw [hT.integral_eq_tsum f ((hI.const_mul a).sub hR)]
-    exact tsum_nonpos htile
-  rw [hf, integral_sub (hI.const_mul a) hR, integral_add (hD.const_mul (a * K)) (hQ.const_mul 8),
-    integral_const_mul, integral_const_mul, integral_const_mul] at hsum
+  have hsum : ∫ z, f z ∂μ ≤ 0 :=
+    (hT.integral_eq_tsum f ((hI.const_mul a).sub hR)).trans_le (tsum_nonpos htile)
+  rw [hfν μ le_rfl] at hsum
   have hD₀ : 0 ≤ ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ := integral_nonneg fun _ ↦ by positivity
   have hQ₀ : 0 ≤ ∫ z, P z * ‖u z‖ ^ 2 ∂μ :=
     integral_nonneg_of_ae (hP₀.mono fun z hz ↦ by positivity)
