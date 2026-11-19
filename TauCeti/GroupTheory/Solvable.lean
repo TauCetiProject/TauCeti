@@ -14,6 +14,7 @@ import Mathlib.Data.SetLike.Fintype
 import Mathlib.GroupTheory.QuotientGroup.Simple
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.Order.Atoms.Finite
+import Mathlib.Tactic.Group
 import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
@@ -27,7 +28,8 @@ that solvability is invariant under isomorphism, and the characterization of sol
 direct products via the two surjective projections and the converse product instance, that a
 nontrivial finite solvable group has a normal subgroup of prime index, and that in a perfect group
 a normal subgroup supplemented by a solvable subgroup, or by a subgroup normalizing a solvable
-subgroup whose conjugates generate the group, is the whole group.
+subgroup whose conjugates generate the group, is the whole group. Finally, a group is solvable
+when every element outside some proper normal subgroup squares to one.
 
 The identity formulation is useful when a group is represented by an affine scheme: an identity
 between derived words can be checked on a schematically dense family of points, while the
@@ -46,6 +48,8 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
 * `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer`: in a perfect group, a normal
   subgroup supplemented by a subgroup normalizing a solvable subgroup whose conjugates generate the
   group is the whole group.
+* `Group.isSolvable_of_forall_notMem_mul_self_eq_one`: a group with a proper normal subgroup
+  outside which every element squares to one is solvable.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
 * `TauCeti.map_derivedWord`: derived words commute with group homomorphisms.
@@ -138,6 +142,35 @@ theorem _root_.Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer {G : T
     (QuotientGroup.map_mk'_eq_top.mp ?_)
   rw [eq_top_iff, ← Subgroup.map_top_of_surjective _ hπ, ← hU, Subgroup.map_normalClosure _ _ hπ]
   exact Subgroup.normalClosure_le_normal (Subgroup.coe_map _ U).ge
+
+/-- A group with a proper normal subgroup `M` such that every element outside `M` squares to one
+is solvable. Conjugation by any element outside `M` inverts `M`, so `M` is commutative, and every
+element of `G ⧸ M` squares to one, so the quotient is commutative as well. -/
+theorem _root_.Group.isSolvable_of_forall_notMem_mul_self_eq_one {G : Type*} [Group G]
+    {M : Subgroup G} [M.Normal] (hM : M ≠ ⊤) (h : ∀ x ∉ M, x * x = 1) :
+    Group.IsSolvable G := by
+  obtain ⟨x, hx⟩ : ∃ x, x ∉ M := by
+    by_contra! hall
+    exact hM (eq_top_iff.mpr fun y _ ↦ hall y)
+  have hxx := h x hx
+  have hinv : ∀ m ∈ M, x * m * x = m⁻¹ := fun m hm ↦ by
+    have hxm : x * m ∉ M := fun hxm ↦ hx (by simpa using M.mul_mem hxm (M.inv_mem hm))
+    exact eq_inv_of_mul_eq_one_left (by simpa only [mul_assoc] using h _ hxm)
+  have hsq : ∀ q : G ⧸ M, q * q = 1 := fun q ↦ by
+    induction q using QuotientGroup.induction_on with
+    | H g =>
+      by_cases hg : g ∈ M
+      · rw [(QuotientGroup.eq_one_iff g).mpr hg, one_mul]
+      · rw [← QuotientGroup.mk_mul, h g hg, QuotientGroup.mk_one]
+  rw [Group.isSolvable_iff_subgroup_quotient M]
+  refine ⟨Group.isSolvable_of_comm fun a b ↦ Subtype.ext ?_, Group.isSolvable_of_comm fun a b ↦ ?_⟩
+  · have key : ((a : G) * b)⁻¹ = (a : G)⁻¹ * (b : G)⁻¹ := by
+      rw [← hinv _ (M.mul_mem a.2 b.2), ← hinv _ a.2, ← hinv _ b.2]
+      calc x * (a * b) * x = x * a * (x * x) * b * x := by rw [hxx]; group
+        _ = x * a * x * (x * b * x) := by group
+    simpa [mul_inv_rev] using congrArg (·⁻¹) key
+  · rw [← inv_eq_of_mul_eq_one_right (hsq (a * b)), mul_inv_rev,
+      inv_eq_of_mul_eq_one_right (hsq a), inv_eq_of_mul_eq_one_right (hsq b)]
 
 universe u v
 
