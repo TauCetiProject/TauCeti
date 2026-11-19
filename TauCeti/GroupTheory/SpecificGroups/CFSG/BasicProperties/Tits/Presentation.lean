@@ -31,7 +31,7 @@ words that `PresentedGroup` consumes.
 The six entries follow the constructor `G<x,y>` of the ATLAS Magma source `TF42G1-P1.M`, whose
 SHA-256 digest is `0034b6420e38051a82dc9742dae521c23e63657ae42da36f2180816986ac78f6` and whose
 later assignments `a := x; b := y` fix the generator order. In particular the last relator is the
-sixth power of the ten-letter word `abababababb⁻¹`, written there letter by letter; the ATLAS page
+sixth power of the ten-letter word `ababababab⁻¹`, written there letter by letter; the ATLAS page
 prints it as `((ab)⁴ab⁻¹)⁶`. The source records the length `143` of the presentation, which is the
 total length of the compiled relators (`TauCeti.TitsGroup.presentation_totalLength`).
 
@@ -139,7 +139,7 @@ theorem presentation_transcribed :
         -- [a,bab]⁴
         .pow (.comm (.inv (.gen ⟨0, by simp⟩))
           (.inv (.gen ⟨1, by simp⟩ ⬝ .gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩))) 4,
-        -- (abababababb⁻¹)⁶
+        -- (ababababab⁻¹)⁶
         .pow (.gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩ ⬝ .gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩ ⬝
           .gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩ ⬝ .gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩ ⬝
           .gen ⟨0, by simp⟩ ⬝ .inv (.gen ⟨1, by simp⟩)) 6 ] := by
