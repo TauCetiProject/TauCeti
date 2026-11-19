@@ -37,6 +37,8 @@ equivalent, it does not depend on the choice of the norm of `V`.
   Cayley transform is the rational expression `-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹`.
 * `TauCeti.SymplecticForm.Tames.eventually_of_continuousAt`: tameness is an open condition along
   families that are continuous in the operator norm.
+* `TauCeti.SymplecticForm.tames_of_mul_norm_sq_le`: a uniform lower bound `c ‖v‖² ≤ ω(v, J v)`
+  with `c > 0` makes `J` tame.
 * `TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`: along a family
   of tame structures continuous on a compact set, the forms `ω(·, J ·)` are uniformly equivalent
   to the square of the norm.
@@ -115,6 +117,14 @@ theorem Tames.eventually_of_continuousAt {X : Type*} [TopologicalSpace X] {ω : 
       fun v hv => by simpa [ωc] using h v hv)
   filter_upwards [hJ.eventually hA] with y hy v hv
   simpa [ωc] using hy v hv
+
+omit [FiniteDimensional ℝ V] in
+/-- A uniform lower bound `c ‖v‖² ≤ ω(v, J v)` with `c > 0` makes `J` tame. Conversely, a family
+of tame structures that is continuous on a compact set satisfies such a bound uniformly
+(`TauCeti.SymplecticForm.exists_pos_forall_mul_norm_sq_le_associatedBilinForm`). -/
+theorem tames_of_mul_norm_sq_le {ω : SymplecticForm V} {J : AlmostComplexStructure V} {c : ℝ}
+    (hc : 0 < c) (h : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v)) : ω.Tames J :=
+  fun v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (h v)
 
 /-- **Uniform equivalence of tame metrics.** If a family of complex structures `J_x` is continuous
 in the operator norm on a compact set `K` and `ω`-tame there, the forms `g_x = ω(·, J_x ·)` are
