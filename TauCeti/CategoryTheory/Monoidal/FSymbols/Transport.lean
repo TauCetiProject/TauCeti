@@ -28,7 +28,8 @@ F-symbols and R-symbols can be transported in two independent directions.
 
 ## Main definitions
 
-* `TauCeti.FusionRules.Equiv N N'`: isomorphisms of fusion rules, with `refl`, `symm` and `trans`.
+* `TauCeti.FusionRules.Equiv N N'`: isomorphisms of fusion rules, with `refl`, `symm` and `trans`
+  and their groupoid laws.
 * `TauCeti.FusionRules.Equiv.finCongr`, `TauCeti.FusionRules.Equiv.leftCongr` and
   `TauCeti.FusionRules.Equiv.rightCongr`: the identifications of index types induced by an
   isomorphism of fusion rules.
@@ -38,8 +39,9 @@ F-symbols and R-symbols can be transported in two independent directions.
 ## Main results
 
 * `TauCeti.FSymbols.reindex_F_leftCongr`: the entry of the relabeled F-matrix at `σa, σb, σc, σd`
-  is the original entry at `a, b, c, d`; `TauCeti.RSymbols.reindex_R_finCongr` is the same for
-  R-matrices.
+  is the original entry at `a, b, c, d`; `TauCeti.FSymbols.reindex_Finv_rightCongr`,
+  `TauCeti.RSymbols.reindex_R_finCongr` and `TauCeti.RSymbols.reindex_Rinv_finCongr` are the same
+  for inverse F-matrices, R-matrices and inverse R-matrices.
 * Functoriality: `TauCeti.FSymbols.reindex_refl`, `TauCeti.FSymbols.reindex_reindex`,
   `TauCeti.FSymbols.map_id`, `TauCeti.FSymbols.map_map`, and the corresponding statements for
   R-symbols, phrased through their R-matrices since their types depend on the F-symbols.
@@ -93,6 +95,9 @@ theorem coe_toEquiv (σ : N.Equiv N') : ⇑σ.toEquiv = σ := (rfl)
 theorem ext {σ τ : N.Equiv N'} (h : ∀ a, σ a = τ a) : σ = τ :=
   DFunLike.ext _ _ h
 
+theorem toEquiv_injective : Function.Injective (toEquiv : N.Equiv N' → ι ≃ ι') :=
+  fun _ _ h ↦ ext (_root_.Equiv.ext_iff.mp h)
+
 @[simp]
 theorem map_unit (σ : N.Equiv N') : σ N.unit = N'.unit :=
   σ.map_unit'
@@ -112,6 +117,9 @@ protected def refl : N.Equiv N where
 @[simp]
 theorem refl_apply (a : ι) : Equiv.refl N a = a := (rfl)
 
+@[simp]
+theorem toEquiv_refl : (Equiv.refl N).toEquiv = _root_.Equiv.refl ι := (rfl)
+
 /-- The inverse of an isomorphism of fusion rules. -/
 @[symm]
 protected def symm (σ : N.Equiv N') : N'.Equiv N where
@@ -124,6 +132,9 @@ protected def symm (σ : N.Equiv N') : N'.Equiv N where
 theorem coe_toEquiv_symm (σ : N.Equiv N') : ⇑σ.toEquiv.symm = σ.symm := (rfl)
 
 @[simp]
+theorem toEquiv_symm (σ : N.Equiv N') : σ.symm.toEquiv = σ.toEquiv.symm := (rfl)
+
+@[simp]
 theorem apply_symm_apply (σ : N.Equiv N') (a : ι') : σ (σ.symm a) = a :=
   σ.toEquiv.apply_symm_apply a
 
@@ -134,6 +145,9 @@ theorem symm_apply_apply (σ : N.Equiv N') (a : ι) : σ.symm (σ a) = a :=
 @[simp]
 theorem symm_symm (σ : N.Equiv N') : σ.symm.symm = σ := (rfl)
 
+@[simp]
+theorem symm_refl : (Equiv.refl N).symm = Equiv.refl N := (rfl)
+
 /-- The composite of two isomorphisms of fusion rules. -/
 @[trans]
 protected def trans (σ : N.Equiv N') (τ : N'.Equiv N'') : N.Equiv N'' where
@@ -143,6 +157,20 @@ protected def trans (σ : N.Equiv N') (τ : N'.Equiv N'') : N.Equiv N'' where
 
 @[simp]
 theorem trans_apply (σ : N.Equiv N') (τ : N'.Equiv N'') (a : ι) : σ.trans τ a = τ (σ a) := (rfl)
+
+@[simp]
+theorem toEquiv_trans (σ : N.Equiv N') (τ : N'.Equiv N'') :
+    (σ.trans τ).toEquiv = σ.toEquiv.trans τ.toEquiv := (rfl)
+
+@[simp]
+theorem refl_trans (σ : N.Equiv N') : (Equiv.refl N).trans σ = σ := (rfl)
+
+@[simp]
+theorem trans_refl (σ : N.Equiv N') : σ.trans (Equiv.refl N') = σ := (rfl)
+
+@[simp]
+theorem trans_assoc {ι''' : Type*} {N''' : FusionRules ι'''} (σ : N.Equiv N') (τ : N'.Equiv N'')
+    (ρ : N''.Equiv N''') : (σ.trans τ).trans ρ = σ.trans (τ.trans ρ) := (rfl)
 
 @[simp]
 theorem self_trans_symm (σ : N.Equiv N') : σ.trans σ.symm = Equiv.refl N :=
@@ -203,6 +231,31 @@ end Equiv
 
 end FusionRules
 
+section sum
+
+variable {M : Type*} [AddCommMonoid M]
+
+/-- A double sum is invariant under reindexing both summation indices. -/
+private theorem sum_equiv₂ {X X' Y Y' : Type*} [Fintype X] [Fintype X'] [Fintype Y] [Fintype Y']
+    (eX : X ≃ X') (eY : Y ≃ Y') {f : X → Y → M} {g : X' → Y' → M}
+    (h : ∀ x y, f x y = g (eX x) (eY y)) :
+    ∑ x, ∑ y, f x y = ∑ x, ∑ y, g x y :=
+  Fintype.sum_equiv eX _ _ fun x ↦ Fintype.sum_equiv eY _ _ fun y ↦ h x y
+
+/-- A sum over `t` of a triple sum over types depending on `t` is invariant under reindexing all
+four summation indices. -/
+private theorem sum_equiv₄ {α α' : Type*} [Fintype α] [Fintype α'] {X Y Z : α → Type*}
+    {X' Y' Z' : α' → Type*} [∀ t, Fintype (X t)] [∀ t, Fintype (Y t)] [∀ t, Fintype (Z t)]
+    [∀ t, Fintype (X' t)] [∀ t, Fintype (Y' t)] [∀ t, Fintype (Z' t)] (e : α ≃ α')
+    (eX : ∀ t, X t ≃ X' (e t)) (eY : ∀ t, Y t ≃ Y' (e t)) (eZ : ∀ t, Z t ≃ Z' (e t))
+    {f : ∀ t, X t → Y t → Z t → M} {g : ∀ t, X' t → Y' t → Z' t → M}
+    (h : ∀ t x y z, f t x y z = g (e t) (eX t x) (eY t y) (eZ t z)) :
+    ∑ t, ∑ x, ∑ y, ∑ z, f t x y z = ∑ t, ∑ x, ∑ y, ∑ z, g t x y z :=
+  Fintype.sum_equiv e _ _ fun t ↦ Fintype.sum_equiv (eX t) _ _ fun x ↦
+    sum_equiv₂ (eY t) (eZ t) (h t x)
+
+end sum
+
 namespace FSymbols
 
 variable {ι : Type u} {ι' : Type u'} {ι'' : Type u''} [Fintype ι] [DecidableEq ι] [Fintype ι']
@@ -230,6 +283,18 @@ private theorem F_congr (P : FSymbols R N) {a b c d e f a' b' c' d' e' f' : ι}
   subst ha hb hc hd he hf
   rw [Fin.ext hi, Fin.ext hj, Fin.ext hk, Fin.ext hl]
 
+/-- Entries of the inverse F-matrices agree when their outer indices are equal and their inner
+indices have equal values. -/
+private theorem Finv_congr (P : FSymbols R N) {a b c d e f a' b' c' d' e' f' : ι}
+    (ha : a = a') (hb : b = b') (hc : c = c') (hd : d = d') (he : e = e') (hf : f = f')
+    {i : Fin (N.N a b e)} {j : Fin (N.N e c d)} {k : Fin (N.N b c f)} {l : Fin (N.N a f d)}
+    {i' : Fin (N.N a' b' e')} {j' : Fin (N.N e' c' d')} {k' : Fin (N.N b' c' f')}
+    {l' : Fin (N.N a' f' d')} (hi : (i : ℕ) = i') (hj : (j : ℕ) = j') (hk : (k : ℕ) = k')
+    (hl : (l : ℕ) = l') :
+    P.Finv a b c d ⟨f, k, l⟩ ⟨e, i, j⟩ = P.Finv a' b' c' d' ⟨f', k', l'⟩ ⟨e', i', j'⟩ := by
+  subst ha hb hc hd he hf
+  rw [Fin.ext hi, Fin.ext hj, Fin.ext hk, Fin.ext hl]
+
 /-- **Relabeling** of F-symbols along an isomorphism of fusion rules `σ : N.Equiv N'`: the entry
 of `F^{abc}_d` for `N'` is the entry of the original F-matrix at `σ⁻¹ a, σ⁻¹ b, σ⁻¹ c, σ⁻¹ d`. -/
 def reindex (σ : N.Equiv N') (P : FSymbols R N) : FSymbols R N' where
@@ -250,10 +315,8 @@ def reindex (σ : N.Equiv N') (P : FSymbols R N) : FSymbols R N' where
     -- index sets of the fusion spaces.
     convert h using 1
     · exact Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦ rfl
-    · exact Fintype.sum_equiv σ.symm.toEquiv _ _ fun t ↦
-        Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦
-          Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦
-            Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦ rfl
+    · exact sum_equiv₄ σ.symm.toEquiv (fun _ ↦ σ.symm.finCongr _ _ _)
+        (fun _ ↦ σ.symm.finCongr _ _ _) (fun _ ↦ σ.symm.finCongr _ _ _) fun _ _ _ _ ↦ rfl
   triangle a c d j l := by
     simp only [Matrix.submatrix_apply, FusionRules.Equiv.leftCongr_mk,
       FusionRules.Equiv.rightCongr_mk]
@@ -279,6 +342,17 @@ theorem reindex_F_leftCongr (σ : N.Equiv N') (P : FSymbols R N) {a b c d : ι}
   obtain ⟨e, i, j⟩ := x
   obtain ⟨f, k, l⟩ := y
   exact P.F_congr (σ.symm_apply_apply a) (σ.symm_apply_apply b) (σ.symm_apply_apply c)
+    (σ.symm_apply_apply d) (σ.symm_apply_apply e) (σ.symm_apply_apply f) rfl rfl rfl rfl
+
+/-- The relabeled inverse F-matrix at `σ a, σ b, σ c, σ d` is the original inverse F-matrix at
+`a, b, c, d`, with rows and columns identified along `σ`. -/
+theorem reindex_Finv_rightCongr (σ : N.Equiv N') (P : FSymbols R N) {a b c d : ι}
+    (y : N.Right a b c d) (x : N.Left a b c d) :
+    (P.reindex σ).Finv (σ a) (σ b) (σ c) (σ d) (σ.rightCongr a b c d y) (σ.leftCongr a b c d x) =
+      P.Finv a b c d y x := by
+  obtain ⟨e, i, j⟩ := x
+  obtain ⟨f, k, l⟩ := y
+  exact P.Finv_congr (σ.symm_apply_apply a) (σ.symm_apply_apply b) (σ.symm_apply_apply c)
     (σ.symm_apply_apply d) (σ.symm_apply_apply e) (σ.symm_apply_apply f) rfl rfl rfl rfl
 
 /-- Relabeling along the identity does nothing. -/
@@ -388,12 +462,9 @@ def reindex (σ : N.Equiv N') (Q : RSymbols P) : RSymbols (P.reindex σ) where
     -- Both sides are the sums of `h`, reindexed along `σ⁻¹` and the identifications of the
     -- index sets of the fusion spaces.
     convert h using 1
-    · exact Fintype.sum_equiv σ.symm.toEquiv _ _ fun _ ↦
-        Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦
-          Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦
-            Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦ rfl
-    · exact Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦
-        Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦ rfl
+    · exact sum_equiv₄ σ.symm.toEquiv (fun _ ↦ σ.symm.finCongr _ _ _)
+        (fun _ ↦ σ.symm.finCongr _ _ _) (fun _ ↦ σ.symm.finCongr _ _ _) fun _ _ _ _ ↦ rfl
+    · exact sum_equiv₂ (σ.symm.finCongr _ _ _) (σ.symm.finCongr _ _ _) fun _ _ ↦ rfl
   hexagon_reverse a b c d f g k l n o := by
     have h := Q.hexagon_reverse (σ.symm a) (σ.symm b) (σ.symm c) (σ.symm d) (σ.symm f)
       (σ.symm g) (σ.symm.finCongr _ _ _ k) (σ.symm.finCongr _ _ _ l) (σ.symm.finCongr _ _ _ n)
@@ -402,12 +473,9 @@ def reindex (σ : N.Equiv N') (Q : RSymbols P) : RSymbols (P.reindex σ) where
       FusionRules.Equiv.rightCongr_mk]
     -- As for the forward hexagon.
     convert h using 1
-    · exact Fintype.sum_equiv σ.symm.toEquiv _ _ fun _ ↦
-        Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦
-          Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦
-            Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦ rfl
-    · exact Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦
-        Fintype.sum_equiv (σ.symm.finCongr _ _ _) _ _ fun _ ↦ rfl
+    · exact sum_equiv₄ σ.symm.toEquiv (fun _ ↦ σ.symm.finCongr _ _ _)
+        (fun _ ↦ σ.symm.finCongr _ _ _) (fun _ ↦ σ.symm.finCongr _ _ _) fun _ _ _ _ ↦ rfl
+    · exact sum_equiv₂ (σ.symm.finCongr _ _ _) (σ.symm.finCongr _ _ _) fun _ _ ↦ rfl
 
 @[simp]
 theorem reindex_R (σ : N.Equiv N') (Q : RSymbols P) (a b c : ι') :
@@ -434,6 +502,23 @@ theorem reindex_R_finCongr (σ : N.Equiv N') (Q : RSymbols P) {a b c : ι} (i : 
     (j : Fin (N.N b a c)) :
     (Q.reindex σ).R (σ a) (σ b) (σ c) (σ.finCongr a b c i) (σ.finCongr b a c j) = Q.R a b c i j :=
   Q.R_congr (σ.symm_apply_apply a) (σ.symm_apply_apply b) (σ.symm_apply_apply c) rfl rfl
+
+/-- Entries of the inverse R-matrices agree when their outer indices are equal and their inner
+indices have equal values. -/
+private theorem Rinv_congr (Q : RSymbols P) {a b c a' b' c' : ι} (ha : a = a') (hb : b = b')
+    (hc : c = c') {i : Fin (N.N b a c)} {j : Fin (N.N a b c)} {i' : Fin (N.N b' a' c')}
+    {j' : Fin (N.N a' b' c')} (hi : (i : ℕ) = i') (hj : (j : ℕ) = j') :
+    Q.Rinv a b c i j = Q.Rinv a' b' c' i' j' := by
+  subst ha hb hc
+  rw [Fin.ext hi, Fin.ext hj]
+
+/-- The relabeled inverse R-matrix at `σ a, σ b, σ c` is the original inverse R-matrix at
+`a, b, c`, with rows and columns identified along `σ`. -/
+theorem reindex_Rinv_finCongr (σ : N.Equiv N') (Q : RSymbols P) {a b c : ι}
+    (i : Fin (N.N b a c)) (j : Fin (N.N a b c)) :
+    (Q.reindex σ).Rinv (σ a) (σ b) (σ c) (σ.finCongr b a c i) (σ.finCongr a b c j) =
+      Q.Rinv a b c i j :=
+  Q.Rinv_congr (σ.symm_apply_apply a) (σ.symm_apply_apply b) (σ.symm_apply_apply c) rfl rfl
 
 /-- Relabeling R-symbols along the identity does not change the R-matrices. -/
 theorem reindex_refl_R (Q : RSymbols P) : (Q.reindex (FusionRules.Equiv.refl N)).R = Q.R := by
