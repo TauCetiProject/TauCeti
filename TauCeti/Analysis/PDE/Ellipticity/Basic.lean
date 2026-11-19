@@ -18,6 +18,7 @@ public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Topology.MetricSpace.Lipschitz
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.Normed.Field.Lipschitz
@@ -94,6 +95,8 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.continuousOn_of_continuousOn_matrixBilinearForm` and
   `TauCeti.PDE.continuous_of_continuous_matrixBilinearForm`: a coefficient field whose
   bilinear forms vary continuously is continuous.
+* `TauCeti.PDE.aestronglyMeasurable_of_continuousOn_matrixBilinearForm`: such a coefficient
+  field is almost everywhere strongly measurable on a measurable set.
 * `TauCeti.PDE.UniformlyEllipticOn.smul_add_one_sub_smul`: interpolating a uniformly elliptic
   field on `Ω` with one on the whole space through a cutoff supported in `Ω` gives a uniformly
   elliptic field on the whole space.
@@ -284,6 +287,15 @@ lemma continuousOn_of_continuousOn_matrixBilinearForm {s : Set X} {a : X → Mat
 lemma continuous_of_continuous_matrixBilinearForm {a : X → Matrix n n ℝ}
     (ha : Continuous fun x => matrixBilinearForm (a x)) : Continuous a :=
   continuousOn_univ.1 (continuousOn_of_continuousOn_matrixBilinearForm ha.continuousOn)
+
+/-- A coefficient field whose matrix bilinear forms vary continuously on a measurable set is
+almost everywhere strongly measurable on that set. -/
+lemma aestronglyMeasurable_of_continuousOn_matrixBilinearForm [MeasurableSpace X]
+    [OpensMeasurableSpace X] {μ : MeasureTheory.Measure X} {s : Set X} {a : X → Matrix n n ℝ}
+    (ha : ContinuousOn (fun x => matrixBilinearForm (a x)) s) (hs : MeasurableSet s) :
+    MeasureTheory.AEStronglyMeasurable a (μ.restrict s) :=
+  ContinuousOn.aestronglyMeasurable (β := n → n → ℝ)
+    (continuousOn_of_continuousOn_matrixBilinearForm ha) hs
 
 end Continuity
 

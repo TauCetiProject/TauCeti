@@ -58,14 +58,15 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
   (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn`), cover
   the compact closure, and the local second derivatives glue (`TauCeti.Wkp.exists_glue`).
 * **The estimate.** The pairs `(u, f)` of a weak solution `u ∈ H¹₀(Ω)` of `L u = f` and its
-  datum `f ∈ L²(Ω)` form a closed subspace of `H¹(Ω) × L²(Ω)`, and so do the pairs `(w, f)` with
+  datum `f ∈ L²(Ω)` form a closed subspace of `H¹(Ω) × L²(Ω)` (`TauCeti.PDE.dirichletGraph`,
+  `TauCeti.PDE.isClosed_dirichletGraph`), and so do the pairs `(w, f)` with
   `w ∈ W^{2,2}(Ω)` whose first-order part solves `L u = f`. Forgetting the second derivatives maps
   the second space continuously onto the first, by the regularity theorem, so the open mapping
   theorem (`ContinuousLinearMap.exists_preimage_norm_le`) bounds `‖w‖_{W^{2,2}}` by
-  `C (‖u‖_{H¹} + ‖f‖_{L²})`. Gårding's inequality
-  (`TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self_norm_of_norm_le`) applied to the
-  equation tested against `u` bounds `‖u‖_{H¹}` by `‖u‖_{L²}` and `‖f‖_{L²}`. The constant is not
-  explicit; as in Evans's theorem, it depends only on `Ω` and the coefficients.
+  `C (‖u‖_{H¹} + ‖f‖_{L²})`. Gårding's inequality applied to the equation tested against `u`
+  bounds `‖u‖_{H¹}` by `‖u‖_{L²}` and `‖f‖_{L²}`
+  (`TauCeti.PDE.UniformlyEllipticOn.norm_le_of_isWeakSolutionDirichlet_of_norm_le`). The
+  constant is not explicit; as in Evans's theorem, it depends only on `Ω` and the coefficients.
 
 ## Main declarations
 
@@ -345,41 +346,6 @@ private noncomputable local instance instNormedAddCommGroupW1pTwo :
 private noncomputable local instance instNormedSpaceW1pTwo :
     NormedSpace ℝ (W1p mu Omega 2) := inferInstance
 
-/-- The graph of the weak Dirichlet problem: the pairs `(u, f)` with `u ∈ H¹₀(Ω)` a weak solution
-of `L u = f` for `f ∈ L²(Ω)`. -/
-private def dirichletGraph
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
-    Submodule ℝ (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega)) where
-  carrier := {p | p.1 ∈ w1p0Submodule mu Omega 2 ∧
-    ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v}
-  add_mem' {p q} hp hq := ⟨add_mem hp.1 hq.1, fun v => by
-    simp only [Prod.fst_add, Prod.snd_add, map_add, add_apply, hp.2 v,
-      hq.2 v, dirichletForcing_apply, inner_add_left]⟩
-  zero_mem' := ⟨zero_mem _, fun v => by simp⟩
-  smul_mem' r p hp := ⟨SMulMemClass.smul_mem r hp.1, fun v => by
-    simp only [Prod.smul_fst, Prod.smul_snd, map_smul, smul_apply, hp.2 v,
-      dirichletForcing_apply, real_inner_smul_left, smul_eq_mul]⟩
-
-private theorem coe_dirichletGraph
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
-    (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) =
-      {p | p.1 ∈ w1p0Submodule mu Omega 2} ∩
-        {p | ∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff p.1 v = dirichletForcing p.2 v} :=
-  (rfl)
-
-/-- The graph of the weak Dirichlet problem is closed in `H¹(Ω) × L²(Ω)`. -/
-private theorem isClosed_dirichletGraph
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
-    IsClosed (dirichletGraph hcoeff : Set (W1p mu Omega 2 × Lp ℝ 2 (mu.restrict Omega))) := by
-  rw [coe_dirichletGraph]
-  refine ((w1p0Submodule mu Omega 2).isClosed.preimage
-    (continuous_fst (X := W1p mu Omega 2) (Y := Lp ℝ 2 (mu.restrict Omega)))).inter ?_
-  simp only [ofPred_forall]
-  refine isClosed_iInter fun v => isClosed_eq ?_ ?_
-  · exact ((energyFormH1L hcoeff).continuous.comp continuous_fst).clm_apply continuous_const
-  · simp only [dirichletForcing_apply]
-    exact continuous_snd.inner continuous_const
-
 variable [DecidableEq ι]
 
 /-- **The global `H²` estimate up to a `C²` boundary, in terms of the `H¹` norm.** Under the
@@ -407,15 +373,16 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph
       ∃ w : Wkp mu Omega 2 2, Wkp.lowerOrder 1 w = u ∧ ‖w‖ ≤ C * (‖u‖ + ‖f‖) := by
   -- The coefficients are essentially bounded, so the energy form is a continuous bilinear form.
   have hameas : AEStronglyMeasurable a (mu.restrict Omega) :=
-    ContinuousOn.aestronglyMeasurable (β := ι → ι → ℝ)
-      (continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn) Omega.isOpen.measurableSet
+    aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
+      Omega.isOpen.measurableSet
   have hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega) :=
     memLp_energyIntegrand_of_memLp_top ha.upper_nonneg hameas (fun _ hx => ha.upper_bound hx) hb hc
   have hweak {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2} :
-      (∀ v : W1p0 mu Omega 2, energyFormH1L hcoeff u v = dirichletForcing f v) ↔
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+        dirichletForcing f v) ↔
         ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
           ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-    simp only [energyFormH1L_apply, dirichletForcing_apply_eq_setIntegral]
+    simp only [dirichletForcing_apply_eq_setIntegral]
   -- The map `(w, f) ↦ (w', f)`, where `w'` is the first-order part of `w`, from the closed
   -- subspace of solutions in `W^{2,2}(Ω) × L²(Ω)` onto the graph of the Dirichlet problem.
   let X := dirichletGraph hcoeff
@@ -436,15 +403,17 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_of_contDiff_graph
   -- By the qualitative regularity theorem it is surjective, so the open mapping theorem bounds
   -- a preimage.
   have hsurj : Function.Surjective π := by
-    rintro ⟨⟨u, f⟩, hu0, hu⟩
+    rintro ⟨⟨u, f⟩, hX⟩
+    obtain ⟨hu0, hu⟩ := (mem_dirichletGraph_iff hcoeff).1 hX
     obtain ⟨w, hw⟩ := ha.exists_lowerOrder_eq_of_contDiff_graph hΩ hbdry hK hb hc hu0
       (hweak.1 hu)
     have hPwf : P (w, f) = (u, f) := (hP (w, f)).trans (Prod.ext hw rfl)
-    have hmem : P (w, f) ∈ X := hPwf ▸ ⟨hu0, hu⟩
+    have hmem : P (w, f) ∈ X := hPwf ▸ hX
     exact ⟨⟨(w, f), Submodule.mem_comap.2 hmem⟩, Subtype.ext ((hπ _).trans hPwf)⟩
   obtain ⟨C, hC, hpre⟩ := π.exists_preimage_norm_le hsurj
   refine ⟨C, fun {f u} hu0 hu => ?_⟩
-  obtain ⟨⟨⟨w, g⟩, hq⟩, hwg, hnorm⟩ := hpre ⟨(u, f), hu0, hweak.2 hu⟩
+  obtain ⟨⟨⟨w, g⟩, hq⟩, hwg, hnorm⟩ :=
+    hpre ⟨(u, f), (mem_dirichletGraph_iff hcoeff).2 ⟨hu0, hweak.2 hu⟩⟩
   have hw : P (w, g) = (u, f) := (hπ _).symm.trans (congrArg Subtype.val hwg)
   rw [hP] at hw
   refine ⟨w, (Prod.ext_iff.1 hw).1, ?_⟩
@@ -493,46 +462,29 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_and_norm_le_norm_value_of_contD
     (memLp_top_of_bound hb beta (hmem.mono hb_bound))
     (memLp_top_of_bound hc gamma (hmem.mono hc_bound))
   have hlam : 0 < lam := ha.pos
-  set κ := lam / 2 + |gamma| + beta ^ 2 / (2 * lam) with hκ_def
-  have hκ : 0 ≤ κ := by positivity
+  set κ := lam / 2 + |gamma| + beta ^ 2 / (2 * lam)
   refine ⟨max C 0 * (1 + 2 / lam + 2 * κ / lam), fun {f u} hu0 hu => ?_⟩
   obtain ⟨w, hw, hwle⟩ := hC hu0 hu
   refine ⟨w, hw, ?_⟩
   -- Gårding's inequality and the equation tested against `u` itself bound `‖u‖_{H¹}`.
-  have hameas : AEStronglyMeasurable a (mu.restrict Omega) :=
-    ContinuousOn.aestronglyMeasurable (β := ι → ι → ℝ)
-      (continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn) Omega.isOpen.measurableSet
-  have hgar := ha.garding_energyFormH1_self_norm_of_norm_le hameas hb hc hb_bound hc_bound u
-  have heq : energyFormH1 a b c u u = ⟪f, W1p.value u⟫_ℝ := by
-    have h := hu ⟨u, hu0⟩
-    rw [← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply] at h
-    exact h
-  have hinner : ⟪f, W1p.value u⟫_ℝ ≤ ‖f‖ * ‖u‖ :=
-    (real_inner_le_norm _ _).trans
-      (mul_le_mul_of_nonneg_left (W1p.norm_value_le u) (norm_nonneg f))
-  -- Since `‖u‖_{L²} ≤ ‖u‖_{H¹}`, this is `λ ‖u‖² / 2 ≤ (‖f‖ + κ ‖u‖_{L²}) ‖u‖`; divide by `‖u‖`.
-  have hV := W1p.norm_value_le u
-  have hkey : lam / 2 * ‖u‖ ^ 2 ≤ (‖f‖ + κ * ‖W1p.value u‖) * ‖u‖ := by
-    have hγ : lam / 2 + gamma + beta ^ 2 / (2 * lam) ≤ κ := by
-      rw [hκ_def]
-      linarith [le_abs_self gamma]
-    nlinarith [mul_le_mul_of_nonneg_left hV (mul_nonneg hκ (norm_nonneg (W1p.value u))),
-      sq_nonneg ‖W1p.value u‖]
-  have hu_le : ‖u‖ ≤ 2 / lam * ‖f‖ + 2 * κ / lam * ‖W1p.value u‖ := by
-    rw [div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div, le_div_iff₀ hlam]
-    rcases (norm_nonneg u).eq_or_lt with hu | hu
-    · rw [← hu, zero_mul]
-      positivity
-    · nlinarith
+  have hu_le : ‖u‖ ≤ 2 / lam * (‖f‖ + κ * ‖W1p.value u‖) :=
+    ha.norm_le_of_isWeakSolutionDirichlet_of_norm_le (u := ⟨u, hu0⟩)
+      (aestronglyMeasurable_of_continuousOn_matrixBilinearForm hK.continuousOn
+        Omega.isOpen.measurableSet) hb hc hb_bound hc_bound
+      ((isWeakSolutionDirichlet_iff f _).2 hu)
   calc ‖w‖ ≤ C * (‖u‖ + ‖f‖) := hwle
     _ ≤ max C 0 * (‖u‖ + ‖f‖) := by gcongr; exact le_max_left _ _
-    _ ≤ max C 0 * (2 / lam * ‖f‖ + 2 * κ / lam * ‖W1p.value u‖ + ‖f‖) := by gcongr
+    _ ≤ max C 0 * (2 / lam * (‖f‖ + κ * ‖W1p.value u‖) + ‖f‖) := by gcongr
     _ ≤ max C 0 * (1 + 2 / lam + 2 * κ / lam) * (‖W1p.value u‖ + ‖f‖) := by
       rw [mul_assoc]
       gcongr
       have h1 : 0 ≤ (1 + 2 / lam) * ‖W1p.value u‖ := by positivity
       have h2 : 0 ≤ 2 * κ / lam * ‖f‖ := by positivity
-      nlinarith
+      have hexp : (1 + 2 / lam + 2 * κ / lam) * (‖W1p.value u‖ + ‖f‖) =
+          2 / lam * (‖f‖ + κ * ‖W1p.value u‖) + ‖f‖ +
+            ((1 + 2 / lam) * ‖W1p.value u‖ + 2 * κ / lam * ‖f‖) := by
+        ring
+      linarith
 
 end Estimate
 
