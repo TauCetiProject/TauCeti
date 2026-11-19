@@ -21,9 +21,9 @@ directly are the *convex chart domains*
 
 for a point `x`, a convex open set `C ⊆ E` and `C ∩ range I ⊆ (extChartAt I x).target`. The
 extended chart at `x` maps such a `U` bijectively onto `C ∩ range I`
-(`TauCeti.extChartAt_image_eq_inter_range`), which is convex because
-`range I` is (`ModelWithCorners.convex_range`), so for instance it contracts onto any of its
-points along straight lines in the chart. These sets do not form an intersection-stable
+(`TauCeti.extChartAt_image_eq_inter_range` in `TauCeti.Geometry.Manifold.ExtChartAt`), which is
+convex because `range I` is (`ModelWithCorners.convex_range`), so for instance it contracts onto
+any of its points along straight lines in the chart. These sets do not form an intersection-stable
 family, since the intersection of convex domains in two different charts need not be convex in
 either chart.
 
@@ -49,8 +49,6 @@ satisfies them (`Manifold.locallyCompact_of_finiteDimensional`,
 
 ## Main results
 
-* `TauCeti.extChartAt_image_eq_inter_range`: the extended chart maps a convex chart domain onto
-  `C ∩ range I`.
 * `TauCeti.mayerVietoris_induction_subset_chartAt_source`: induction over the convex chart
   domains of one chart proves a property for every open subset of its source.
 * `TauCeti.mayerVietoris_induction_extChartAt`: induction over all convex chart domains proves a
@@ -73,18 +71,6 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-omit [NormedSpace ℝ E] in
-/-- The extended chart at `x` maps the chart domain `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C`,
-for a set `C ⊆ E` with `C ∩ range I` inside the target of the extended chart, onto `C ∩ range I`.
-For convex `C` this is a convex set. -/
-theorem extChartAt_image_eq_inter_range {x : M} {C : Set E}
-    (hC : C ∩ range I ⊆ (extChartAt I x).target) :
-    extChartAt I x '' ((chartAt H x).source ∩ extChartAt I x ⁻¹' C) = C ∩ range I := by
-  rw [← extChartAt_source I, ← (extChartAt I x).symm_image_target_inter_eq',
-    (extChartAt I x).image_symm_image_of_subset_target inter_subset_left]
-  exact Subset.antisymm (fun e he ↦ ⟨he.2, extChartAt_target_subset_range x he.1⟩)
-    fun e he ↦ ⟨hC he, he.1⟩
 
 /-- **Mayer–Vietoris induction in one chart.** Let `x` be a point of a charted space `M` over a
 locally compact model space `E`. A property of open subsets of `M` holds on every open subset of

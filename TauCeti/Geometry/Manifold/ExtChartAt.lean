@@ -42,6 +42,10 @@ function itself, read in the chart of `M` (`TauCeti.comp_extChartAt_symm_prodMk_
 `TauCeti.comp_extChartAt_symm_prodMk_right`), and local independence of the last coordinate
 passes to coordinate expressions (`TauCeti.eventually_comp_extChartAt_symm_eq`).
 
+The extended chart at `x` maps a chart domain `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C`
+onto `C ∩ range I` whenever the latter lies in the chart target
+(`TauCeti.extChartAt_image_eq_inter_range`); for convex `C` this image is convex.
+
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
 without differentiability assumptions, and they take values in the range of the model; for a
 boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
@@ -68,6 +72,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   preferred extended chart is the preferred chart.
 * `TauCeti.comp_extChartAt_symm_comp_extChartAt_eventuallyEq`: a chart representative
   composed with its chart agrees locally with the original function.
+* `TauCeti.extChartAt_image_eq_inter_range`: the extended chart maps a chart domain
+  `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C` onto `C ∩ range I`.
 * `ModelWithCorners.tendsto_extChartAt_nhdsNE`, `ModelWithCorners.tendsto_extChartAt_symm_nhdsNE`:
   punctured neighbourhoods at a point and at its extended chart image map into one another (the
   inverse direction for a boundaryless model).
@@ -274,6 +280,17 @@ theorem mem_extChartAt_source_and_mem_of_mem_preimage {x y : M} {s : Set E}
   rw [extChartAt_source]
   exact ⟨hy.1, hy.2, extChartAt_target_subset_range x ((extChartAt I x).map_source
     (by rw [extChartAt_source]; exact hy.1))⟩
+
+/-- The extended chart at `x` maps the chart domain `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C`,
+for a set `C ⊆ E` with `C ∩ range I` inside the target of the extended chart, onto `C ∩ range I`.
+For convex `C` this is a convex set. -/
+theorem extChartAt_image_eq_inter_range {x : M} {C : Set E}
+    (hC : C ∩ Set.range I ⊆ (extChartAt I x).target) :
+    extChartAt I x '' ((chartAt H x).source ∩ extChartAt I x ⁻¹' C) = C ∩ Set.range I := by
+  rw [← extChartAt_source I, ← (extChartAt I x).symm_image_target_inter_eq',
+    (extChartAt I x).image_symm_image_of_subset_target Set.inter_subset_left]
+  exact Set.Subset.antisymm (fun e he ↦ ⟨he.2, extChartAt_target_subset_range x he.1⟩)
+    fun e he ↦ ⟨hC he, he.1⟩
 
 /-- Changing extended coordinates transports the coordinate image of a subset of the overlap
 onto its image in the second chart. No differentiability assumption is needed. -/

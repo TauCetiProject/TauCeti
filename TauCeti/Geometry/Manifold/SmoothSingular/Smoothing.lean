@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.HasExactLimitsOfShape
 public import TauCeti.Geometry.Manifold.SmoothSingular.Contractible
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.MayerVietoris
 import TauCeti.Geometry.Manifold.SmoothSingular.Additivity
