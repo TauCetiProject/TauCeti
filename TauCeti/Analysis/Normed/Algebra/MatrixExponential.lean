@@ -318,7 +318,8 @@ theorem exp_neg_smul_diagonal_mul_mul_exp_smul_diagonal_apply (d : m → ℝ) (B
   simp only [← diagonal_smul, exp_diagonal, diagonal_mul, mul_diagonal, Pi.coe_exp,
     Pi.smul_apply, smul_eq_mul, ← Real.exp_eq_exp_ℝ]
   rw [mul_comm, ← mul_assoc, ← Real.exp_add]
-  ring_nf
+  congr 2
+  ring
 
 namespace IsHermitian
 

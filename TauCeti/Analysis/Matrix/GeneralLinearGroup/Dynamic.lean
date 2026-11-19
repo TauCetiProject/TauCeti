@@ -15,8 +15,10 @@ import Mathlib.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Dynamic subgroups of a real matrix
@@ -38,9 +40,9 @@ For symmetric `X` the file proves the Levi decomposition of the dynamic paraboli
 In an orthonormal eigenbasis of `X` with eigenvalues `d`, entry `(i, j)` of the conjugate family
 is `e^{t (d j - d i)}` times that of `g`. So the dynamic parabolic subgroup is block upper
 triangular, the unipotent one block unipotent and the Levi one block diagonal, and the first two
-are closed when `G` is. The parabolic subgroup meets its image under `θ g = (g⁻¹)ᵀ` in the Levi
-subgroup when `G` is `θ`-stable. When `G` is moreover normalized by every `exp (t • X)`, every
-element of the parabolic subgroup is uniquely `l * u` with `l` in the Levi and `u` in the
+are closed when `G` is. When `G` is `θ`-stable, the parabolic subgroup meets its image under
+`θ g = (g⁻¹)ᵀ` in the Levi subgroup. When `G` is closed and normalized by every `exp (t • X)`,
+every element of the parabolic subgroup is uniquely `l * u` with `l` in the Levi and `u` in the
 unipotent subgroup. For every `X`, the conjugates of such a product `l * u` tend to `l`.
 
 For `GL₂(ℝ)` and `X = diag(1, 0)` the conjugates of `((a, b), (c, d))` are
@@ -124,11 +126,6 @@ end Flow
 
 section Bounds
 
-omit [Fintype m] [DecidableEq m] in
-private lemma tendsto_matrix_iff {F : ℝ → Matrix m m ℝ} {L : Matrix m m ℝ} :
-    Tendsto F atTop (𝓝 L) ↔ ∀ i j, Tendsto (fun t ↦ F t i j) atTop (𝓝 (L i j)) :=
-  (tendsto_pi_nhds (A := fun _ : m ↦ m → ℝ)).trans (forall_congr' fun _ ↦ tendsto_pi_nhds)
-
 /-- `A` has entrywise bounded conjugates for `t ≥ 0`. -/
 private def BddFlow (X A : Matrix m m ℝ) : Prop :=
   ∃ C : ℝ, ∀ t : ℝ, 0 ≤ t → ∀ i j, |flow X A t i j| ≤ C
@@ -151,8 +148,8 @@ private lemma bddFlow_inv {X : Matrix m m ℝ} {g : GL m ℝ} (hg : BddFlow X g)
   obtain ⟨C, hC⟩ := hg
   refine ⟨|(g : Matrix m m ℝ).det|⁻¹ *
     ((Fintype.card m).factorial * max C 1 ^ Fintype.card m), fun t ht i j ↦ ?_⟩
-  rw [flow_inv, inv_def, det_flow, Matrix.smul_apply, smul_eq_mul, Ring.inverse_eq_inv', abs_mul,
-    abs_inv]
+  rw [flow_inv, inv_def, det_flow]
+  simp only [Matrix.smul_apply, smul_eq_mul, Ring.inverse_eq_inv', abs_mul, abs_inv]
   exact mul_le_mul_of_nonneg_left (Matrix.abs_adjugate_apply_le (hC t ht) i j) (by positivity)
 
 section Norm
@@ -178,7 +175,7 @@ private lemma isBoundedUnder_of_bddFlow {X A : Matrix m m ℝ} (hA : BddFlow X A
 private lemma tendsto_flow_mul_zero {X A : Matrix m m ℝ} (hA : BddFlow X A)
     {H : ℝ → Matrix m m ℝ} (hH : Tendsto H atTop (𝓝 0)) :
     Tendsto (fun t ↦ flow X A t * H t) atTop (𝓝 0) := by
-  rw [tendsto_matrix_iff] at hH ⊢
+  rw [Matrix.tendsto_iff_tendsto_apply] at hH ⊢
   intro i j
   simpa only [Matrix.mul_apply, Matrix.zero_apply, Finset.sum_const_zero] using
     tendsto_finsetSum _ fun k _ ↦
@@ -188,7 +185,7 @@ private lemma tendsto_flow_mul_zero {X A : Matrix m m ℝ} (hA : BddFlow X A)
 private lemma tendsto_mul_flow_zero {X A : Matrix m m ℝ} (hA : BddFlow X A)
     {H : ℝ → Matrix m m ℝ} (hH : Tendsto H atTop (𝓝 0)) :
     Tendsto (fun t ↦ H t * flow X A t) atTop (𝓝 0) := by
-  rw [tendsto_matrix_iff] at hH ⊢
+  rw [Matrix.tendsto_iff_tendsto_apply] at hH ⊢
   intro i j
   simpa only [Matrix.mul_apply, Matrix.zero_apply, Finset.sum_const_zero] using
     tendsto_finsetSum _ fun k _ ↦
@@ -244,10 +241,12 @@ variable {G : Subgroup (GL m ℝ)} {X : Matrix m m ℝ} {g : GL m ℝ}
 
 -- The carriers are stated with the private `BddFlow` and `flow`; these two restatements are the
 -- only places that unfold them to the explicit conjugates `exp (-t • X) * g * exp (t • X)`.
+@[simp]
 theorem mem_dynamicParabolic : g ∈ G.dynamicParabolic X ↔ g ∈ G ∧ ∃ C : ℝ, ∀ t : ℝ, 0 ≤ t →
     ∀ i j, |(exp ((-t) • X) * (g : Matrix m m ℝ) * exp (t • X)) i j| ≤ C :=
   Iff.rfl
 
+@[simp]
 theorem mem_dynamicUnipotent : g ∈ G.dynamicUnipotent X ↔ g ∈ G ∧
     Tendsto (fun t : ℝ ↦ exp ((-t) • X) * (g : Matrix m m ℝ) * exp (t • X)) atTop (𝓝 1) :=
   Iff.rfl
@@ -341,54 +340,52 @@ section Symmetric
 
 variable {O : GL m ℝ} {d : m → ℝ}
 
+/-- Conjugating by `O⁻¹` undoes conjugating by `O`. -/
+private lemma inv_conj_conj (O : GL m ℝ) (A : Matrix m m ℝ) :
+    ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * (O * A * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)) * O = A := by
+  simp only [Matrix.mul_assoc, Units.inv_mul_cancel_left, Units.inv_mul, Matrix.mul_one]
+
+/-- Conjugating by `O` undoes conjugating by `O⁻¹`. -/
+private lemma conj_inv_conj (O : GL m ℝ) (A : Matrix m m ℝ) :
+    O * (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * A * O) * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) = A := by
+  simp only [Matrix.mul_assoc, Units.mul_inv_cancel_left, Units.mul_inv, Matrix.mul_one]
+
+/-- The conjugates of `A` under `X` are those of `O⁻¹ * A * O` under `diagonal d`, conjugated
+by `O`. -/
+private lemma flow_eq_conj (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ))
+    (A : Matrix m m ℝ) (t : ℝ) :
+    flow X A t = O * flow (diagonal d) (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * A * O) t *
+      ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) := by
+  have hexp (s : ℝ) :
+      exp (s • X) = O * exp (s • diagonal d) * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) := by
+    rw [hX, ← Matrix.smul_mul, ← Matrix.mul_smul, Matrix.exp_units_conj]
+  simp only [flow, hexp, Matrix.mul_assoc]
+
 /-- The conjugates of `A` under `X` are those of `O⁻¹ * A * O` under `diagonal d`, read back. -/
 private lemma flow_diagonal_eq (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ))
     (A : Matrix m m ℝ) (t : ℝ) :
     flow (diagonal d) (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * A * O) t =
       ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * flow X A t * O := by
-  have hexp (s : ℝ) :
-      exp (s • X) = O * exp (s • diagonal d) * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) := by
-    rw [hX, ← Matrix.smul_mul, ← Matrix.mul_smul, Matrix.exp_units_conj]
-  simp only [flow, hexp, Matrix.mul_assoc, Units.inv_mul, Units.inv_mul_cancel_left,
-    Matrix.mul_one]
-
-private lemma flow_eq_conj (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ))
-    (A : Matrix m m ℝ) (t : ℝ) :
-    flow X A t = O * flow (diagonal d) (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * A * O) t *
-      ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) := by
-  rw [flow_diagonal_eq hX]
-  simp only [Matrix.mul_assoc, Units.mul_inv_cancel_left, Units.mul_inv, Matrix.mul_one]
+  rw [flow_eq_conj hX, inv_conj_conj]
 
 private lemma flow_diagonal_apply (d : m → ℝ) (B : Matrix m m ℝ) (t : ℝ) (i j : m) :
     flow (diagonal d) B t i j = Real.exp (t * (d j - d i)) * B i j :=
   exp_neg_smul_diagonal_mul_mul_exp_smul_diagonal_apply d B t i j
 
-omit [Fintype m] [DecidableEq m] in
-private lemma exists_abs_apply_le_const [Finite m] (P : Matrix m m ℝ) :
-    ∃ c, ∀ i j, |P i j| ≤ c := by
-  obtain ⟨c, hc⟩ := Finite.exists_le fun p : m × m ↦ |P p.1 p.2|
-  exact ⟨c, fun i j ↦ hc (i, j)⟩
-
-omit [DecidableEq m] in
-/-- Fixed left and right factors preserve the entrywise boundedness of a family. -/
-private lemma exists_abs_mul_mul_apply_le {F : ℝ → Matrix m m ℝ} (P Q : Matrix m m ℝ)
-    (hF : ∃ C, ∀ t : ℝ, 0 ≤ t → ∀ i j, |F t i j| ≤ C) :
-    ∃ C, ∀ t : ℝ, 0 ≤ t → ∀ i j, |(P * F t * Q) i j| ≤ C := by
-  obtain ⟨C, hC⟩ := hF
-  obtain ⟨p, hp⟩ := exists_abs_apply_le_const P
-  obtain ⟨q, hq⟩ := exists_abs_apply_le_const Q
-  exact ⟨_, fun t ht ↦ abs_mul_apply_le (abs_mul_apply_le hp (hC t ht)) hq⟩
-
 private lemma bddFlow_iff_diagonal (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ))
     (A : Matrix m m ℝ) :
     BddFlow X A ↔ BddFlow (diagonal d) (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * A * O) := by
+  -- Bounds for `t ≥ 0` are bounds on the family indexed by `Set.Ici 0`.
   constructor
-  · intro h
-    obtain ⟨C, hC⟩ := exists_abs_mul_mul_apply_le ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) O h
-    exact ⟨C, fun t ht i j ↦ by rw [flow_diagonal_eq hX]; exact hC t ht i j⟩
-  · intro h
-    obtain ⟨C, hC⟩ := exists_abs_mul_mul_apply_le O ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) h
-    exact ⟨C, fun t ht i j ↦ by rw [flow_eq_conj hX]; exact hC t ht i j⟩
+  · rintro ⟨C, hC⟩
+    obtain ⟨C', hC'⟩ := Matrix.exists_abs_mul_mul_apply_le (F := fun t : Set.Ici (0 : ℝ) ↦
+      flow X A t) ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) (O : Matrix m m ℝ) ⟨C, fun t ↦ hC t t.2⟩
+    exact ⟨C', fun t ht i j ↦ by rw [flow_diagonal_eq hX]; exact hC' ⟨t, ht⟩ i j⟩
+  · rintro ⟨C, hC⟩
+    obtain ⟨C', hC'⟩ := Matrix.exists_abs_mul_mul_apply_le (F := fun t : Set.Ici (0 : ℝ) ↦
+      flow (diagonal d) (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * A * O) t) (O : Matrix m m ℝ)
+      ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) ⟨C, fun t ↦ hC t t.2⟩
+    exact ⟨C', fun t ht i j ↦ by rw [flow_eq_conj hX]; exact hC' ⟨t, ht⟩ i j⟩
 
 private lemma tendsto_flow_iff_diagonal
     (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)) (A L : Matrix m m ℝ) :
@@ -398,45 +395,31 @@ private lemma tendsto_flow_iff_diagonal
   rw [show flow (diagonal d) (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * A * O) =
     fun t ↦ ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * flow X A t * O from funext (flow_diagonal_eq hX A)]
   refine ⟨fun h ↦ (tendsto_const_nhds.mul h).mul tendsto_const_nhds, fun h ↦ ?_⟩
-  simpa only [Matrix.mul_assoc, Units.mul_inv_cancel_left, Units.mul_inv, Matrix.mul_one] using
+  simpa only [conj_inv_conj] using
     (tendsto_const_nhds (x := (O : Matrix m m ℝ))).mul h |>.mul
       (tendsto_const_nhds (x := ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)))
 
 private lemma commute_iff_diagonal (hX : X = O * diagonal d * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ))
     (A : Matrix m m ℝ) :
     Commute A X ↔ Commute (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * A * O) (diagonal d) := by
-  simp only [commute_iff_eq, hX]
-  constructor
-  · intro h
-    have := congrArg (fun M ↦ ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * M * O) h
-    simpa only [Matrix.mul_assoc, Units.inv_mul_cancel_left, Units.inv_mul, Matrix.mul_one]
-      using this
-  · intro h
-    have := congrArg (fun M ↦ (O : Matrix m m ℝ) * M * ((O⁻¹ : GL m ℝ) : Matrix m m ℝ)) h
-    simpa only [Matrix.mul_assoc, Units.mul_inv_cancel_left, Units.mul_inv, Matrix.mul_one]
-      using this
-
-/-- A real exponential `e^{ta}` with `a > 0` times `b ≠ 0` is unbounded as `t → +∞`. -/
-private lemma eq_zero_of_eventually_abs_exp_mul_le {a b C : ℝ} (ha : 0 < a)
-    (h : ∀ᶠ t in atTop, |Real.exp (t * a) * b| ≤ C) : b = 0 := by
-  by_contra hb
-  have hT : Tendsto (fun t ↦ |Real.exp (t * a) * b|) atTop atTop := by
-    simp only [abs_mul, Real.abs_exp]
-    exact (Real.tendsto_exp_atTop.comp (tendsto_id.atTop_mul_const ha)).atTop_mul_const
-      (abs_pos.2 hb)
-  obtain ⟨t, h1, h2⟩ := (h.and (hT.eventually_gt_atTop C)).exists
-  exact (h2.trans_le h1).false
+  -- Conjugation by `O⁻¹` is multiplicative and injective.
+  have hmul (B C : Matrix m m ℝ) :
+      ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * B * O * (((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * C * O) =
+        ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * (B * C) * O := by
+    simp only [Matrix.mul_assoc, Units.mul_inv_cancel_left]
+  rw [show diagonal d = ((O⁻¹ : GL m ℝ) : Matrix m m ℝ) * X * O by rw [hX, inv_conj_conj],
+    commute_iff_eq, commute_iff_eq, hmul, hmul, Units.mul_left_inj, Units.mul_right_inj]
 
 private lemma bddFlow_diagonal_iff (B : Matrix m m ℝ) :
     BddFlow (diagonal d) B ↔ ∀ i j, d i < d j → B i j = 0 := by
   constructor
   · rintro ⟨C, hC⟩ i j hij
-    refine eq_zero_of_eventually_abs_exp_mul_le (C := C) (sub_pos.2 hij)
+    refine TauCeti.eq_zero_of_eventually_abs_exp_mul_le (C := C) (sub_pos.2 hij)
       (eventually_atTop.2 ⟨0, fun t ht ↦ ?_⟩)
     rw [← flow_diagonal_apply]
     exact hC t ht i j
   · intro h
-    obtain ⟨c, hc⟩ := exists_abs_apply_le_const B
+    obtain ⟨c, hc⟩ := Matrix.exists_abs_apply_le B
     refine ⟨c, fun t ht i j ↦ ?_⟩
     rw [flow_diagonal_apply, abs_mul, Real.abs_exp]
     rcases lt_or_ge (d i) (d j) with hij | hij
@@ -453,7 +436,7 @@ private def diagonalPart (d : m → ℝ) (B : Matrix m m ℝ) : Matrix m m ℝ :
 
 private lemma tendsto_flow_diagonal {B : Matrix m m ℝ} (h : ∀ i j, d i < d j → B i j = 0) :
     Tendsto (flow (diagonal d) B) atTop (𝓝 (diagonalPart d B)) := by
-  rw [tendsto_matrix_iff]
+  rw [Matrix.tendsto_iff_tendsto_apply]
   intro i j
   simp only [flow_diagonal_apply, diagonalPart, of_apply]
   rcases lt_trichotomy (d i) (d j) with hij | hij | hij
@@ -468,11 +451,11 @@ private lemma tendsto_flow_diagonal_one_iff (B : Matrix m m ℝ) :
       ∀ i j, d i ≤ d j → B i j = (1 : Matrix m m ℝ) i j := by
   constructor
   · intro hB i j hij
-    have hij' := tendsto_matrix_iff.1 hB i j
+    have hij' := Matrix.tendsto_iff_tendsto_apply.1 hB i j
     simp only [flow_diagonal_apply] at hij'
     rcases hij.lt_or_eq with hlt | heq
     · rw [Matrix.one_apply_ne fun e ↦ hlt.ne (congrArg d e)]
-      exact eq_zero_of_eventually_abs_exp_mul_le (sub_pos.2 hlt)
+      exact TauCeti.eq_zero_of_eventually_abs_exp_mul_le (sub_pos.2 hlt)
         ((hij'.abs.eventually (gt_mem_nhds (lt_add_one _))).mono fun t ht ↦ ht.le)
     · simp only [heq, sub_self, mul_zero, Real.exp_zero, one_mul] at hij'
       exact tendsto_nhds_unique tendsto_const_nhds hij'
@@ -500,8 +483,7 @@ private lemma exists_mem_dynamicLevi_tendsto_flow (hG : IsClosed (G : Set (GL m 
   set L : Matrix m m ℝ := O * diagonalPart d (Oi * g * O) * Oi
   have hlim : Tendsto (flow X g) atTop (𝓝 L) := by
     rw [tendsto_flow_iff_diagonal hXd]
-    simpa only [L, Oi, Matrix.mul_assoc, Units.inv_mul_cancel_left, Units.inv_mul,
-      Matrix.mul_one] using tendsto_flow_diagonal hB
+    simpa only [L, Oi, inv_conj_conj] using tendsto_flow_diagonal hB
   -- The conjugates all have determinant `det g`, so the limit is invertible.
   have hdet : L.det = (g : Matrix m m ℝ).det := by
     have h := (continuous_id.matrix_det.tendsto L).comp hlim
@@ -521,7 +503,7 @@ private lemma exists_mem_dynamicLevi_tendsto_flow (hG : IsClosed (G : Set (GL m 
     obtain ⟨h, hh, he⟩ := hGX t g hg.1
     rwa [show F t = h from Units.ext (by simp [F, he])]
   · rw [IsUnit.unit_spec, commute_iff_diagonal hXd]
-    simp only [L, Oi, Matrix.mul_assoc, Units.inv_mul_cancel_left, Units.inv_mul, Matrix.mul_one]
+    simp only [L, Oi, inv_conj_conj]
     exact (TauCeti.commute_diagonal_of_apply_eq_zero fun i j hij ↦ by
       simp [diagonalPart, hij]).symm
 
