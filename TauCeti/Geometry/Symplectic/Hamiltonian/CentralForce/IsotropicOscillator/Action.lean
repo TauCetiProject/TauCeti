@@ -178,8 +178,7 @@ theorem isotropicOscillatorApoapsisRadius_nonneg (m ν ℓ E : ℝ) :
 radius `0`. -/
 theorem isotropicOscillatorPeriapsisRadius_zero (m ν : ℝ) (hE : 0 ≤ E) :
     isotropicOscillatorPeriapsisRadius m ν 0 E = 0 := by
-  rw [isotropicOscillatorPeriapsisRadius_def, zero_pow two_ne_zero, mul_zero, sub_zero,
-    sqrt_sq hE, sub_self, zero_div, sqrt_zero]
+  simp [isotropicOscillatorPeriapsisRadius_def, sqrt_sq hE]
 
 /-- For nonzero angular momentum the periapsis radius is positive: the orbit avoids collision. -/
 theorem isotropicOscillatorPeriapsisRadius_pos (hm : 0 < m) (hν : 0 < ν) (hℓ : ℓ ≠ 0)
