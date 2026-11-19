@@ -15,7 +15,8 @@ For a character pairing `(v, w) ↦ ψ (L v w)` and an additive subgroup `U` of 
 proves that the annihilator `U.characterAnnihilator ψ L` is closed when each `ψ (L u ·)` is
 continuous, and open when `U` is compact, `ψ` is circle-valued and the pairing is jointly
 continuous. At a finite place of a local field this makes the annihilator of a compact open
-lattice compact open, and it is what makes the Fourier transform of a compactly supported function
+lattice open and closed (its compactness also needs a nondegenerate pairing and is not proved
+here), and it is what makes the Fourier transform of a compactly supported function
 locally constant.
 
 The openness argument is the classical one. If `w₀` lies in the annihilator, the open set of

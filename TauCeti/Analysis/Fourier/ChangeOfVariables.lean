@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Fourier.CharacterAnnihilator
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
@@ -210,10 +211,9 @@ theorem support_fourier_comp_sub_const (f : E → F) (a : E) :
 /-- **Modulation**: multiplying by the character `𝐞 ⟪·, c⟫` translates the Fourier transform,
 `𝓕 (𝐞 ⟪·, c⟫ • f) ζ = 𝓕 f (ζ - c)`. -/
 theorem fourier_fourierChar_smul (f : E → F) (c ζ : E) :
-    𝓕 (fun y ↦ 𝐞 ⟪y, c⟫ • f y) ζ = 𝓕 f (ζ - c) := by
-  simp only [Real.fourier_eq]
-  congr 1 with y
-  rw [smul_smul, ← AddChar.map_add_eq_mul, inner_sub_right, neg_sub, neg_add_eq_sub]
+    𝓕 (fun y ↦ 𝐞 ⟪y, c⟫ • f y) ζ = 𝓕 f (ζ - c) :=
+  -- On functions, `𝓕` is the Fourier integral for the pairing `innerₗ E`.
+  congrFun (VectorFourier.fourierIntegral_char_smul 𝐞 volume (innerₗ E) f c) ζ
 
 /-- The Fourier transform of a scalar function times a constant vector:
 `𝓕 (f · • v) w = 𝓕 f w • v`. -/

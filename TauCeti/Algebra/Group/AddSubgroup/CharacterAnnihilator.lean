@@ -42,9 +42,10 @@ nondegeneracy enters this file; the codomain `M` of the character is an arbitrar
   second variable pulls the annihilator back along that map.
 * `AddSubgroup.mem_characterAnnihilator_zmultiples`: the annihilator of the multiples of `v` is
   the set where `ψ (L v ·)` is trivial.
-* `AddSubgroup.le_characterAnnihilator_iff`, `AddSubgroup.le_characterAnnihilator_flip`: the
-  annihilators for `L` and for the transposed pairing `L.flip` form a Galois connection, so each
-  subgroup lies in its double annihilator.
+* `AddSubgroup.le_characterAnnihilator_iff`,
+  `AddSubgroup.le_characterAnnihilator_characterAnnihilator_flip`: the annihilators for `L` and
+  for the transposed pairing `L.flip` form a Galois connection, so each subgroup lies in its
+  double annihilator.
 -/
 
 public section
@@ -108,19 +109,21 @@ theorem characterAnnihilator_compl₂ (U : AddSubgroup V) (ψ : AddChar R M)
   ext w
   simp
 
-/-- The annihilator of the multiples of `v` is the set where `ψ (L v ·)` is trivial. -/
+/-- The annihilator of the multiples of `v` is the set where `ψ (L v ·)` is trivial. This is
+tagged `simp high` so that it fires before the general `mem_characterAnnihilator`. -/
+@[simp high]
 theorem mem_characterAnnihilator_zmultiples {v : V} :
     w ∈ (zmultiples v).characterAnnihilator ψ L ↔ ψ (L v w) = 1 := by
   refine ⟨fun h ↦ h v (mem_zmultiples v), fun h ↦ ?_⟩
   have hnat (n : ℕ) : ψ (L (n • v) w) = 1 := by
     rw [map_nsmul, LinearMap.smul_apply, AddChar.map_nsmul_eq_pow, h, one_pow]
-  rintro _ ⟨k, rfl⟩
-  cases k with
-  | ofNat n => simpa using hnat n
-  | negSucc n =>
-    beta_reduce
-    rw [negSucc_zsmul]
-    refine ψ.map_eq_one_of_add_eq_zero (hnat (n + 1)) ?_
+  intro u hu
+  -- Write `u = n • v` or `u = -(n • v)`; the negative multiple cancels against `n • v`.
+  obtain ⟨n, rfl | rfl⟩ : ∃ n : ℕ, u = n • v ∨ u = -(n • v) := by
+    obtain ⟨k, rfl⟩ := mem_zmultiples_iff.mp hu
+    obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg k <;> exact ⟨n, by simp⟩
+  · exact hnat n
+  · refine ψ.map_eq_one_of_add_eq_zero (hnat n) ?_
     rw [← LinearMap.add_apply, ← map_add, neg_add_cancel, map_zero, LinearMap.zero_apply]
 
 /-- A subgroup `A` of `W` lies in the annihilator of `U` for `L` exactly when `U` lies in the
@@ -131,7 +134,7 @@ theorem le_characterAnnihilator_iff {A : AddSubgroup W} :
 
 /-- Every subgroup lies in its double annihilator, taken first for `L` and then for the
 transposed pairing `L.flip`. -/
-theorem le_characterAnnihilator_flip (U : AddSubgroup V) (ψ : AddChar R M)
+theorem le_characterAnnihilator_characterAnnihilator_flip (U : AddSubgroup V) (ψ : AddChar R M)
     (L : V →ₗ[R] W →ₗ[R] R) :
     U ≤ (U.characterAnnihilator ψ L).characterAnnihilator ψ L.flip :=
   le_characterAnnihilator_iff.mp le_rfl

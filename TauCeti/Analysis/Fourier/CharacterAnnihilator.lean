@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.Algebra.Ring.Periodic
 public import TauCeti.Topology.Algebra.Group.CharacterAnnihilator
 
 /-!
@@ -59,12 +60,6 @@ open MeasureTheory Function Set
 
 namespace VectorFourier
 
-/-- The indicator of a subgroup is periodic along the subgroup. -/
-private lemma periodic_indicator_addSubgroup {V E : Type*} [AddGroup V] [Zero E]
-    {U : AddSubgroup V} (c : E) {u : V} (hu : u ∈ U) :
-    Periodic ((U : Set V).indicator fun _ ↦ c) u := fun v ↦
-  indicator_const_eq_indicator_const (by simp [U.add_mem_cancel_right hu])
-
 variable {R V W E : Type*} [CommRing R] [AddCommGroup V] [Module R V] [MeasurableSpace V]
   [AddCommGroup W] [Module R W] [NormedAddCommGroup E] [NormedSpace ℂ E]
   (ψ : AddChar R Circle) (μ : Measure V) (L : V →ₗ[R] W →ₗ[R] R)
@@ -112,12 +107,12 @@ theorem fourierIntegral_indicator_addSubgroup {U : AddSubgroup V}
     -- On `U` the phase `ψ (-L v w)` is trivial, so the integrand is the indicator itself.
     congr 1 with v
     by_cases hv : v ∈ U
-    · rw [indicator_of_mem hv, AddChar.map_neg_eq_inv,
-        AddSubgroup.mem_characterAnnihilator.mp hw v hv, inv_one, one_smul]
+    · rw [indicator_of_mem hv, ← LinearMap.neg_apply, ← map_neg,
+        AddSubgroup.mem_characterAnnihilator.mp hw _ (neg_mem hv), one_smul]
     · rw [indicator_of_notMem hv, smul_zero]
   · rw [indicator_of_notMem hw]
-    exact notMem_support.mp fun h ↦ hw
-      (support_fourierIntegral_subset ψ μ L (fun _ hu ↦ periodic_indicator_addSubgroup c hu) h)
+    exact notMem_support.mp fun h ↦ hw <| support_fourierIntegral_subset ψ μ L
+      (fun _ ↦ Periodic.indicator_addSubgroup fun _ ↦ rfl) h
 
 /-- **Fourier transform of a coset indicator.** The transform of `v ↦ 1_U (v - a) · c`, the
 indicator of the coset `a + U`, is the subgroup formula multiplied by the phase `ψ (-L a w)`. -/
@@ -146,12 +141,12 @@ the annihilator of `U` is a period of the Fourier transform of `f`. No invarianc
 needed. -/
 theorem periodic_fourierIntegral {f : V → E} {U : AddSubgroup V} (hf : support f ⊆ U) {a : W}
     (ha : a ∈ U.characterAnnihilator ψ L) : Periodic (fourierIntegral ψ μ L f) a := fun w ↦ by
-  simp only [fourierIntegral]
-  congr 1 with v
-  by_cases hv : v ∈ U
-  · rw [map_add, neg_add, AddChar.map_add_eq_mul, AddChar.map_neg_eq_inv ψ (L v a),
-      AddSubgroup.mem_characterAnnihilator.mp ha v hv, inv_one, mul_one]
-  · rw [notMem_support.mp fun h ↦ hv (hf h), smul_zero, smul_zero]
+  -- Modulation by `ψ (L · a)` fixes `f`: the phase is trivial on `U` and `f` vanishes off `U`.
+  have hmod : (fun v ↦ ψ (L v a) • f v) = f := funext fun v ↦ by
+    by_cases hv : v ∈ U
+    · rw [AddSubgroup.mem_characterAnnihilator.mp ha v hv, one_smul]
+    · rw [notMem_support.mp fun h ↦ hv (hf h), smul_zero]
+  simpa [hmod] using congrFun (fourierIntegral_char_smul ψ μ L f a) (w + a)
 
 /-- **Local constancy of the Fourier transform.** For a jointly continuous pairing, the Fourier
 transform of a function supported in a compact additive subgroup is locally constant. No
@@ -188,7 +183,7 @@ theorem fourierIntegral_fourierIntegral_indicator_addSubgroup [MeasurableAdd V]
     fourierIntegral ψ ν L.flip (fourierIntegral ψ μ L ((U : Set V).indicator fun _ ↦ c)) =
       (U : Set V).indicator fun _ ↦ c := by
   rw [fourierIntegral_indicator_addSubgroup ψ μ L hU, fourierIntegral_indicator_addSubgroup ψ ν
-    L.flip hA, le_antisymm hdual (U.le_characterAnnihilator_flip ψ L), smul_smul, mul_comm, hvol,
-    one_smul]
+    L.flip hA, le_antisymm hdual (U.le_characterAnnihilator_characterAnnihilator_flip ψ L),
+    smul_smul, mul_comm, hvol, one_smul]
 
 end VectorFourier
