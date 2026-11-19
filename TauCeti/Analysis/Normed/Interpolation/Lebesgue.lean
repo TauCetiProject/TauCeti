@@ -97,10 +97,9 @@ theorem lebesgue_sumSpaceEmbed_fstToSum_add_sndToSum_eq_ofLp_iff {p : ℝ≥0∞
     (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed
         ((lebesgue 𝕜 E μ p₀ p₁).fstToSum f₀ + (lebesgue 𝕜 E μ p₀ p₁).sndToSum f₁) =
       L1AddLinfty.ofLp g ↔ ⇑f₀ + ⇑f₁ =ᵐ[μ] ⇑g := by
-  rw [← (L1AddLinfty.toAEEqFun_injective (𝕜 := 𝕜)).eq_iff, map_add, map_add,
-    sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁,
-    L1AddLinfty.toAEEqFun_ofLp, L1AddLinfty.toAEEqFun_ofLp, L1AddLinfty.toAEEqFun_ofLp]
-  exact AEEqFun.ext_iff.trans (AEEqFun.coeFn_add (f₀ : α →ₘ[μ] E) f₁).congr_left
+  simp only [← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, map_add, sumSpaceEmbed_fstToSum,
+    sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
+  exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff 𝕜
 
 /-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions: the embedding of
 the sum space of the former into `L¹ + L^∞` sends `g + h` to `g + h`. -/
