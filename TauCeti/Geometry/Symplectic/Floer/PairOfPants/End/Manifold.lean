@@ -149,11 +149,10 @@ theorem mem_periodicSolutions_positiveEndHamiltonian_iff {q : Puncture} {x : ℝ
 
 /-- Beyond `a ≥ max T₀ 0`, `u ∘ φ'_q` is a `C¹`, `1`-periodic, `B`-valued, finite-energy solution
 of the coordinate half-cylinder Floer equation for `H'_q`. -/
-private theorem positiveEndChart_halfCylinder
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+private theorem positiveEndChart_halfCylinder (q : Puncture)
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (hH : Periodic (H q) 1) (hHs : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
     {B : Set M} {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
     (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B)
@@ -165,7 +164,7 @@ private theorem positiveEndChart_halfCylinder
     (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
-    {q : Puncture} {a : ℝ} (ha₀ : 0 ≤ a) (haT : T₀ ≤ a) :
+    {a : ℝ} (ha₀ : 0 ≤ a) (haT : T₀ ≤ a) :
     ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (fun w ↦ u (positiveEndChart q w)) (Ioi a ×ˢ univ) ∧
       (∀ s, a < s → Periodic (fun t ↦ u (positiveEndChart q (s, t))) 1) ∧
       (∀ s, a < s → ∀ t, u (positiveEndChart q (s, t)) ∈ B) ∧
@@ -177,15 +176,15 @@ private theorem positiveEndChart_halfCylinder
                 (u (positiveEndChart q z))) = 0) ∧
       ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
         (fun w ↦ positiveEndHamiltonian H q w.2) (fun w ↦ u (positiveEndChart q w)) z) ≠ ⊤ := by
-  have hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t) := fun q t ↦
-    ((hHs q).comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero
+  have hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t) := fun t ↦
+    (hHs.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero
   have hmem (z : ℝ × ℝ) (hz : a < z.1) : positiveEndChart q z ∈ thricePuncturedSphereReal :=
     positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hz)
   refine ⟨hu.comp (contDiff_positiveEndChart q 1).contMDiff.contMDiffOn fun z hz ↦ hmem z hz.1,
     fun _ _ _ ↦ by simp only [positiveEndChart_add_one],
     fun s hs t ↦ huB _ (hmem (s, t) hs), fun z hz ↦ ?_,
-    ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le hKH hH hHd
-      (hu.mdifferentiableOn one_ne_zero) q ha₀ haT)⟩
+    ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le q hKH hH hHd
+      (hu.mdifferentiableOn one_ne_zero) ha₀ haT)⟩
   have hS := hmem z hz.1
   have hcl := isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart hKH hH hHd
     (haT.trans hz.1.le)
@@ -229,20 +228,20 @@ namespace IsNondegenerate
 /-! #### Breaking off periodic orbits along sequences -/
 
 /-- **A finite-energy Floer pair of pants in a manifold breaks off an orbit at each end.** Let `ω`
-be a nondegenerate two-form on a manifold `M`, let `K` be equal to `H_q(t) dt` beyond `T₀` on each
-end `q`, for `1`-periodic `C¹` Hamiltonians `H_q`, and let `u` be `C¹` on `S`, with image in a
+be a nondegenerate two-form on a manifold `M`, let `K` be equal to `H_q(t) dt` beyond `T₀` on an
+end `q`, for a `1`-periodic `C¹` Hamiltonian `H_q`, and let `u` be `C¹` on `S`, with image in a
 compact set `B`, solving the Floer equation `(du - X_K)^{0,1} = 0` on `S`. Let `e : M → F` be a
 `C¹` map into a finite-dimensional normed space, injective on `B` and with injective differential
 at the points of `B`, and suppose that the almost complex structures are uniformly tame with
 respect to `e`: `c ‖d e v‖² ≤ ω(v, J z v)` with `c > 0`. If the energy of `u` over `S` is finite,
-then at each end `q` there are a `1`-periodic orbit `y` of the Hamiltonian vector field of `H_q`
+then at the end `q` there are a `1`-periodic orbit `y` of the Hamiltonian vector field of `H_q`
 in `B` and `s_n → ∞` such that the loops `t ↦ u(φ_q(±s_n, t))`, with the sign of the end,
 converge to `y`, pointwise in `M` and uniformly after applying `e`. -/
 theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact
-    (hω : ω.IsNondegenerate)
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    (hω : ω.IsNondegenerate) (q : Puncture)
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (hH : Periodic (H q) 1) (hHs : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
     (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B) (he_inj : InjOn e B)
     (hde : ∀ p ∈ B, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
@@ -256,17 +255,18 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCom
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
     (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) (q : Puncture) :
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
     ∃ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1, (∀ t, y t ∈ B) ∧
       ∃ σ : ℕ → ℝ, Tendsto σ atTop atTop ∧
         TendstoUniformly (fun n t ↦ e (u (endChart q (q.endSign * σ n, t)))) (e ∘ y) atTop ∧
         ∀ t, Tendsto (fun n ↦ u (endChart q (q.endSign * σ n, t))) atTop (𝓝 (y t)) := by
   obtain ⟨hu', hper', huB', hfloer', hE'⟩ :=
-    positiveEndChart_halfCylinder hKH hH hHs hu huB hfloer hE (le_max_right T₀ 0) (le_max_left T₀ 0)
+    positiveEndChart_halfCylinder q hKH hH hHs hu huB hfloer hE (le_max_right T₀ 0)
+      (le_max_left T₀ 0)
   obtain ⟨x, hx, hxB, σ, -, hσ, hconv, hpt, -⟩ :=
     hω.exists_mem_periodicSolutions_tendstoUniformly_of_floer_of_isCompact
-      (contMDiff_uncurry_positiveEndHamiltonian (hHs q))
-      (periodic_positiveEndHamiltonian (hH q)) he hB he_inj hde hu' hper' huB'
+      (contMDiff_uncurry_positiveEndHamiltonian hHs)
+      (periodic_positiveEndHamiltonian hH) he hB he_inj hde hu' hper' huB'
       (fun z ↦ J (positiveEndChart q z)) hc
       (fun z hz v ↦ hJc _ (positiveEndChart_mem_thricePuncturedSphereReal
         ((le_max_right T₀ 0).trans_lt hz.1)) v) hfloer' hE'
@@ -276,19 +276,19 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCom
 
 /-- **A finite-energy Floer pair of pants in a closed manifold breaks off an orbit at each end.**
 Let `ω` be a nondegenerate two-form on a compact manifold `M`, let `K` be equal to `H_q(t) dt`
-beyond `T₀` on each end `q`, for `1`-periodic `C¹` Hamiltonians `H_q`, and let `u` be `C¹` on `S`,
+beyond `T₀` on an end `q`, for a `1`-periodic `C¹` Hamiltonian `H_q`, and let `u` be `C¹` on `S`,
 solving the Floer equation `(du - X_K)^{0,1} = 0` on `S`. Let `e : M → F` be a `C¹` injective map
 with injective differential into a finite-dimensional normed space, and suppose that the almost
 complex structures are uniformly tame with respect to `e`: `c ‖d e v‖² ≤ ω(v, J z v)` with
-`c > 0`. If the energy of `u` over `S` is finite, then at each end `q` there are a `1`-periodic
+`c > 0`. If the energy of `u` over `S` is finite, then at the end `q` there are a `1`-periodic
 orbit `y` of the Hamiltonian vector field of `H_q` and `s_n → ∞` such that the loops
 `t ↦ u(φ_q(±s_n, t))`, with the sign of the end, converge to `y`, pointwise in `M` and uniformly
 after applying `e`. -/
 theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer
-    [CompactSpace M] (hω : ω.IsNondegenerate)
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+    [CompactSpace M] (hω : ω.IsNondegenerate) (q : Puncture)
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (hH : Periodic (H q) 1) (hHs : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
     (he : ContMDiff I 𝓘(ℝ, F) 1 e) (he_inj : Injective e)
     (hde : ∀ p, Injective (mvfderiv I e p)) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
@@ -301,14 +301,14 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z).toLinearMap)
     (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) (q : Puncture) :
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤) :
     ∃ y ∈ periodicSolutions (fun t ↦ ω.hamiltonianVectorField (H q t)) 1,
       ∃ σ : ℕ → ℝ, Tendsto σ atTop atTop ∧
         TendstoUniformly (fun n t ↦ e (u (endChart q (q.endSign * σ n, t)))) (e ∘ y) atTop ∧
         ∀ t, Tendsto (fun n ↦ u (endChart q (q.endSign * σ n, t))) atTop (𝓝 (y t)) := by
   obtain ⟨y, hy, -, h⟩ :=
-    hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact hKH hH hHs he
-      isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu (fun _ _ ↦ mem_univ _) J hc hJc hfloer hE q
+    hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isCompact q hKH hH hHs
+      he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu (fun _ _ ↦ mem_univ _) J hc hJc hfloer hE
   exact ⟨y, hy, h⟩
 
 /-! #### Convergence of the ends to isolated and nondegenerate orbits -/
@@ -360,7 +360,7 @@ theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_atTop_of_floer_of
   have hab {z : ℝ × ℝ} (hz : z ∈ Ioi a ×ˢ Icc 0 1) : z ∈ Ioi b ×ˢ Icc 0 1 :=
     ⟨(le_max_right _ _).trans_lt hz.1, hz.2⟩
   obtain ⟨hu', hper', huB', hfloer', hE'⟩ :=
-    positiveEndChart_halfCylinder hKH hH hHs hu huB hfloer hE ha₀ haT
+    positiveEndChart_halfCylinder q (hKH q) (hH q) (hHs q) hu huB hfloer hE ha₀ haT
   -- Time reversal fixes `t = 0`, so isolation at `0` transfers from `H_q` to `H'_q`.
   have hiso' : ∀ x ∈ periodicSolutions
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) 1, (∀ t, x t ∈ B) →
