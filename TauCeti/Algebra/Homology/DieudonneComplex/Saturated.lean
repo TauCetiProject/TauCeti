@@ -123,11 +123,13 @@ lemma F_d_V_apply {n : ℤ} (x : M.X n) :
   hM.isSMulRegular (n + 1) (by beta_reduce; rw [← M.d_F, F_V_apply, map_nsmul])
 
 /-- `V d = p d V`: the Verschiebung commutes with the differential only up to a factor of
-`p`. -/
-lemma V_d_apply {n : ℤ} (x : M.X n) :
-    (hM.V (n + 1)).hom ((M.d n (n + 1)).hom x) = p • (M.d n (n + 1)).hom ((hM.V n).hom x) := by
-  conv_lhs => rw [← hM.F_d_V_apply x]
-  exact hM.V_F_apply _
+`p`. This holds for the differential between any two degrees. -/
+lemma V_d_apply {i j : ℤ} (x : M.X i) :
+    (hM.V j).hom ((M.d i j).hom x) = p • (M.d i j).hom ((hM.V i).hom x) := by
+  obtain rfl | h := eq_or_ne (i + 1) j
+  · conv_lhs => rw [← hM.F_d_V_apply x]
+    exact hM.V_F_apply _
+  · simp [M.shape i j h]
 
 end IsSaturated
 
@@ -201,6 +203,7 @@ lemma mem_range_F_iterate_of_d_eq_zero {n : ℤ} (r : ℕ) {x : M.X n}
 section Iterate
 
 /-- `Vʳ⁺¹ (F x) = p • Vʳ x`. -/
+@[simp]
 lemma V_iterate_succ_F_apply {n : ℤ} (r : ℕ) (x : M.X n) :
     (⇑(hM.V n).hom)^[r + 1] ((M.F n).hom x) = p • (⇑(hM.V n).hom)^[r] x := by
   rw [Function.iterate_succ_apply, V_F_apply, iterate_map_nsmul]
@@ -214,6 +217,7 @@ lemma F_d_V_iterate_succ_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
   · simp [M.shape i j h]
 
 /-- `Fʳ (d (Vʳ x)) = d x`, for the differential between any two degrees. -/
+@[simp]
 lemma F_iterate_d_V_iterate_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
     (⇑(M.F j).hom)^[r] ((M.d i j).hom ((⇑(hM.V i).hom)^[r] x)) = (M.d i j).hom x := by
   induction r with
@@ -224,9 +228,7 @@ lemma F_iterate_d_V_iterate_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
 lemma V_d_V_iterate_apply {i j : ℤ} (r : ℕ) (x : M.X i) :
     (hM.V j).hom ((M.d i j).hom ((⇑(hM.V i).hom)^[r] x)) =
       p • (M.d i j).hom ((⇑(hM.V i).hom)^[r + 1] x) := by
-  obtain rfl | h := eq_or_ne (i + 1) j
-  · rw [V_d_apply, Function.iterate_succ_apply']
-  · simp [M.shape i j h]
+  rw [V_d_apply, Function.iterate_succ_apply']
 
 end Iterate
 

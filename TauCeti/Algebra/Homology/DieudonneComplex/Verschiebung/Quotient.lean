@@ -21,9 +21,9 @@ truncated Witt vectors.) These complexes come with
   induced by `F` and `V` on `M`;
 * the maps `W_r(f) : W_r(M) → W_r(N)` induced by morphisms `f : M → N`.
 
-They satisfy `FV = VF = p`, `d F = p F d`, `V d = p d V`, `F` and `V` commute with `R`, the
-kernel of `R` is the `p`-torsion, a class whose differential is divisible by `p` lies in the
-image of `F`, and `pʳ` kills `W_r(M)`. These are the identities of a strict Dieudonné tower
+They satisfy `FV = VF = p`, `d F = p F d`, `V d = p d V`, `F d V = d`, `F` and `V` commute with
+`R`, the kernel of `R` is the `p`-torsion, a class whose differential is divisible by `p` lies in
+the image of `F`, and `pʳ` kills `W_r(M)`. These are the identities of a strict Dieudonné tower
 `⋯ → W_2(M) → W_1(M) → W_0(M) = 0` (Bhatt–Lurie–Mathew, Definition 2.6.1), from which the strict
 completion of `M` is built; for the saturated de Rham–Witt complex of an `𝔽_p`-algebra the
 `W_r(M)` are the de Rham–Witt complexes of finite level.
@@ -285,8 +285,19 @@ lemma verschiebungQuotientV_verschiebungQuotient_d_apply (r : ℕ) {i j : ℤ}
     (hM.verschiebungQuotientV r j).hom (((hM.verschiebungQuotient r).d i j).hom y) =
       p • ((hM.verschiebungQuotient (r + 1)).d i j).hom ((hM.verschiebungQuotientV r i).hom y) := by
   obtain ⟨x, rfl⟩ := hM.toVerschiebungQuotient_f_surjective r i y
-  simpa [← map_nsmul] using congrArg ((hM.toVerschiebungQuotient (r + 1)).f j).hom
-    (hM.V_d_V_iterate_apply 0 x)
+  simp [V_d_apply, ← map_nsmul]
+
+/-- `F d V = d` on the finite quotients. -/
+@[simp]
+lemma verschiebungQuotientF_d_verschiebungQuotientV_apply (r : ℕ) {i j : ℤ}
+    (y : (hM.verschiebungQuotient r).X i) :
+    (hM.verschiebungQuotientF r j).hom
+        (((hM.verschiebungQuotient (r + 1)).d i j).hom ((hM.verschiebungQuotientV r i).hom y)) =
+      ((hM.verschiebungQuotient r).d i j).hom y := by
+  obtain ⟨x, rfl⟩ := hM.toVerschiebungQuotient_f_surjective r i y
+  obtain rfl | h := eq_or_ne (i + 1) j
+  · simp
+  · simp [M.shape i j h]
 
 /-- `F V = p` on the finite quotients. -/
 @[simp]
