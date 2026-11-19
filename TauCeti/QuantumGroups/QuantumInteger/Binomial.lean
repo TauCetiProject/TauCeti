@@ -49,8 +49,11 @@ comparisons of quantum divided-power relations at opposite parameters.
   `[n choose k]_{-q} = (-1)^{k(n-k)} [n choose k]_q`.
 * `TauCeti.quantumBinomial_one_right`: `[n choose 1]_q = [n]_q` when `q - q⁻¹ ≠ 0`.
 * `TauCeti.quantumBinomial_one`: the classical specialization `[n choose k]_1 = n.choose k`.
+* `TauCeti.quantumBinomial_zero_left`: specialization `[n choose k]_0` at `q = 0`.
 * `TauCeti.add_pow_of_mul_eq_smul_mul`: the `q`-binomial theorem for `y x = q² x y` with
   `q ≠ 0`.
+* `TauCeti.mul_pow_of_mul_eq_smul_mul`: power law `(a * b)^r = c^(r.choose 2) • (a^r * b^r)` for
+  `b * a = c • (a * b)`.
 * `TauCeti.coeff_prod_range_one_add_C_mul_X`: Cauchy's binomial theorem in coefficient form, the
   coefficient of `X ^ k` in `∏_{j < n} (1 + q^(2j) X)` is `q^(k(n-1)) [n choose k]_q`.
 
@@ -151,6 +154,20 @@ binomial coefficients. -/
     cases k with
     | zero => simp
     | succ k => simp [quantumBinomial_succ_succ, ih, Nat.choose_succ_succ]
+
+/-- Over a semifield, `[n choose k]_0` is `1` when `k = 0` or `k = n`, and `0` otherwise. -/
+theorem quantumBinomial_zero_left (n k : ℕ) :
+    quantumBinomial (0 : K) n k = if k = 0 ∨ k = n then 1 else 0 := by
+  induction n generalizing k with
+  | zero => cases k <;> simp
+  | succ n ih => cases k with
+    | zero => simp
+    | succ k =>
+      rw [quantumBinomial_succ_succ, ih, inv_zero, zero_pow k.succ_ne_zero, zero_mul, add_zero]
+      rcases lt_trichotomy k n with h | rfl | h
+      · simp [zero_pow (by omega : n - k ≠ 0), h.ne]
+      · simp
+      · simp [Nat.sub_eq_zero_of_le h.le, h.ne']; omega
 
 open Polynomial in
 /-- **Cauchy's binomial theorem**, in coefficient form: for `q ≠ 0`, the coefficient of `X ^ k`
@@ -367,5 +384,21 @@ theorem add_pow_of_mul_eq_smul_mul {A : Type*} [Semiring A] [Algebra K A] {q : K
       intro k hk
       rw [Nat.add_sub_add_right, ← add_smul,
         ← pow_mul_quantumBinomial_add_pow_mul_quantumBinomial hq (Nat.lt_succ_iff.mp hk), add_comm]
+
+/-- Power of a `q`-commuting product: if `b * a = c • (a * b)`, then
+`(a * b) ^ r = c ^ r.choose 2 • (a ^ r * b ^ r)`. -/
+theorem mul_pow_of_mul_eq_smul_mul {K A : Type*} [CommSemiring K] [Semiring A] [Algebra K A]
+    {a b : A} {c : K} (h : b * a = c • (a * b)) (r : ℕ) :
+    (a * b) ^ r = c ^ r.choose 2 • (a ^ r * b ^ r) := by
+  have hpow (m : ℕ) : b ^ m * a = c ^ m • (a * b ^ m) := by
+    have hba : SemiconjBy a (c • b) b := by rw [SemiconjBy, mul_smul_comm, h]
+    rw [← (hba.pow_right m).eq, smul_pow, mul_smul_comm]
+  induction r with
+  | zero => simp
+  | succ r ih =>
+    rw [pow_succ, ih, smul_mul_assoc, mul_assoc (a ^ r), ← mul_assoc (b ^ r), hpow]
+    simp only [smul_mul_assoc, mul_smul_comm, smul_smul, ← mul_assoc, ← pow_add]
+    rw [← pow_succ, mul_assoc (a ^ _), ← pow_succ, Nat.choose_succ_succ, Nat.choose_one_right,
+      add_comm]
 
 end TauCeti
