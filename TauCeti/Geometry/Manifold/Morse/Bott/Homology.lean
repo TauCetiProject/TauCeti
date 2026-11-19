@@ -54,12 +54,12 @@ homology in every degree
 `Hₙ(M_{c+ε}, M_{c-ε})` is the relative homology `Hₙ(V, V₀)` of the Thom pair of `V`
 (`TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`). The Thom isomorphism, which this
 file does not use, identifies the homology of the Thom pair with the homology of the base `B`,
-shifted by the rank of `V` and with coefficients twisted by the orientation of `V`. The points of
-`D_ρ(V)` sent into `M_{c-ε}` are those of `S_ρ(V)`
-(`TauCeti.apply_le_sub_iff_mem_gaugeSphereBundle`), and the base `B` is compact
-(`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`); the cohomological forms of these
-statements, with the Thom isomorphism in cohomology applied to them, are in
-`TauCeti.Geometry.Manifold.Morse.Bott.Cohomology`.
+shifted by the rank of `V` and with coefficients twisted by the orientation of `V`. The negative
+disc bundle lies in `M_c` (`TauCeti.apply_le_of_mem_negativeDiscBundle`), the points of `D_ρ(V)`
+sent into `M_{c-ε}` are those of `S_ρ(V)` (`TauCeti.apply_le_sub_iff_mem_gaugeSphereBundle`),
+and the base `B` is compact (`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`); the
+cohomological forms of these statements, with the Thom isomorphism in cohomology applied to them,
+are in `TauCeti.Geometry.Manifold.Morse.Bott.Cohomology`.
 
 ## Main results
 
@@ -254,6 +254,13 @@ section SphereBundle
 variable {M F : Type*} {B : Type u} {V : B → Type u} {f s t : M → ℝ} {c ε : ℝ} {W : Set M}
   {ρ : TotalSpace F V → ℝ} {g : TotalSpace F V → M}
 
+/-- **The negative disc bundle lies below the critical level.** If `f = c - s + t` on a set `W`
+with `s ≥ 0` there, then `f ≤ c` on the negative disc bundle `{x ∈ W | t x = 0, s x ≤ ε}`. -/
+theorem apply_le_of_mem_negativeDiscBundle (hf : ∀ x ∈ W, f x = c - s x + t x)
+    (hs₀ : ∀ x ∈ W, 0 ≤ s x) {x : M} (hx : x ∈ {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε}) : f x ≤ c := by
+  rw [hf x hx.1, hx.2.1]
+  linarith [hs₀ x hx.1]
+
 /-- **The sphere bundle is the part of the negative disc bundle in the lower sublevel.** Let
 `f = c - s + t` on a set `W`, and let `g` be injective on the disc bundle `D_ρ(V)` of a function
 `ρ` on the total space of a bundle, carrying it onto the negative disc bundle
@@ -335,13 +342,11 @@ theorem exists_isIso_singularHomologyMap_sublevelPair_of_negativeDiscBundle
         IsIso (TopPair.singularHomologyMap ψ R n) := by
   obtain ⟨r, -, ⟨G⟩⟩ := exists_sublevel_union_negativeDiscBundle_deformation hfs hW hs ht hs₀ ht₀
     hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit
-  refine exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle hρ
+  exact exists_isIso_singularHomologyMap_of_homotopyRel_attach_discBundle hρ
     (sublevel_mono f (by linarith)) (isClosed_le hfs.continuous continuous_const) hg hgD
-    (fun x ⟨hxW, htx, _⟩ ↦ ?_) (fun v hv ↦ ?_) r G
-  · -- On the negative disc bundle `f = c - s ≤ c`.
-    rw [mem_ofPred_eq, hf x hxW, htx]
-    linarith [hs₀ x hxW]
-  · exact apply_le_sub_iff_mem_gaugeSphereBundle hf (injOn_iff_injective.2 hg.injective) hgD hgS hv
+    (fun x hx ↦ (apply_le_of_mem_negativeDiscBundle hf hs₀ hx).trans (by linarith))
+    (fun v hv ↦ apply_le_sub_iff_mem_gaugeSphereBundle hf (injOn_iff_injective.2 hg.injective) hgD
+      hgS hv) r G
 
 /-- **The relative homology across a Morse–Bott critical level is that of the Thom pair of the
 negative bundle.** Under the hypotheses of

@@ -114,14 +114,11 @@ theorem exists_isIso_singularCohomologyMap_sublevelPair_of_negativeDiscBundle
         IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N) ψ n) := by
   obtain ⟨r, -, ⟨G⟩⟩ := exists_sublevel_union_negativeDiscBundle_deformation hfs hW hs ht hs₀ ht₀
     hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit
-  refine exists_isIso_singularCohomologyMap_of_homotopyRel_attach_discBundle hρ
+  exact exists_isIso_singularCohomologyMap_of_homotopyRel_attach_discBundle hρ
     (sublevel_mono f (by linarith)) (isClosed_le hfs.continuous continuous_const) hg hgD
-    (fun x ⟨hxW, htx, _⟩ ↦ ?_)
+    (fun x hx ↦ (apply_le_of_mem_negativeDiscBundle hf hs₀ hx).trans (by linarith))
     (fun v hv ↦ apply_le_sub_iff_mem_gaugeSphereBundle hf (injOn_iff_injective.2 hg.injective) hgD
       hgS hv) r G
-  -- On the negative disc bundle `f = c - s ≤ c`.
-  rw [mem_ofPred_eq, hf x hxW, htx]
-  linarith [hs₀ x hxW]
 
 /-- **The relative cohomology across a Morse–Bott critical level is that of the Thom pair of the
 negative bundle.** Under the hypotheses of
