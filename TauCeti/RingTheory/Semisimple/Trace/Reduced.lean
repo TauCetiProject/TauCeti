@@ -9,13 +9,13 @@ public import TauCeti.Algebra.CentralSimple.BaseChange
 public import TauCeti.LinearAlgebra.Trace.RestrictScalars
 public import TauCeti.RingTheory.Semisimple.CenterDimension
 
-
 import Mathlib.Algebra.DirectSum.LinearMap
 import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 import TauCeti.LinearAlgebra.Trace.Basic
+import TauCeti.RingTheory.SimpleModule.Isotypic
 
 /-!
 # The reduced trace of a semisimple algebra
@@ -40,7 +40,9 @@ In characteristic `0`, the case of the definition, each `d_c` is invertible in `
 ## Main definitions
 
 * `TauCeti.Algebra.idealTrace F c`: the trace over `F` of left multiplication on a left ideal `c`.
-* `TauCeti.Algebra.idealDeg F c`: the square root of the dimension of `c` over `Z(B) ∩ c`.
+* `TauCeti.Algebra.idealDeg F c`: the natural square root of `dim_F c / dim_F (c ∩ Z(B))`. For an
+  isotypic component `c` of a finite-dimensional semisimple algebra it is the degree of `c` over
+  its centre `Z(B) ∩ c`.
 * `TauCeti.Algebra.reducedTrace F B`: the reduced trace `Trd_{B/F}`.
 
 ## Main results
@@ -49,18 +51,23 @@ In characteristic `0`, the case of the definition, each `d_c` is invertible in `
 * `TauCeti.Algebra.reducedTrace_eq_trace_reducedTrace`: on a simple algebra `B` central over a
   field `Z` finite over `F`, `Trd_{B/F} = Tr_{Z/F} ∘ Trd_{B/Z}`.
 * `TauCeti.Algebra.reducedTrace_eq_inv_deg_mul_trace`: on a central simple algebra `A`,
-  `Trd_{A/F}(a) = (deg A)⁻¹ · tr_F(L_a)`, and in characteristic `0`,
-  `TauCeti.Algebra.trace_lmul_eq_deg_mul_reducedTrace`: `tr_F(L_a) = deg A · Trd_{A/F}(a)`.
-* `TauCeti.Algebra.trace_lmul_eq_idealDeg_mul_reducedTrace`: on a semisimple algebra in
-  characteristic `0`, for `b` in a simple factor `c`, `tr_F(L_b) = d_c · Trd_{B/F}(b)`, with
-  `d_c > 0` by `TauCeti.Algebra.idealDeg_pos`.
-* `TauCeti.Algebra.reducedTrace_matrix`: in characteristic `0`, the reduced trace of `M_n(F)` is
-  the matrix trace.
+  `Trd_{A/F}(a) = (deg A)⁻¹ · tr_F(L_a)`, and when `deg A` is nonzero in `F`,
+  `TauCeti.Algebra.trace_lmul_eq_deg_mul_reducedTrace_of_ne_zero`:
+  `tr_F(L_a) = deg A · Trd_{A/F}(a)` (`TauCeti.Algebra.trace_lmul_eq_deg_mul_reducedTrace` in
+  characteristic `0`).
+* `TauCeti.Algebra.trace_lmul_eq_idealDeg_mul_reducedTrace_of_ne_zero`: on a semisimple algebra,
+  for `b` in a simple factor `c` with `d_c` nonzero in `F`, `tr_F(L_b) = d_c · Trd_{B/F}(b)`
+  (`TauCeti.Algebra.trace_lmul_eq_idealDeg_mul_reducedTrace` in characteristic `0`, where
+  `d_c > 0` by `TauCeti.Algebra.idealDeg_pos`).
+* `Matrix.reducedTrace_eq_trace_of_ne_zero`: the reduced trace of `M_n(F)` is the matrix trace
+  when `n` is nonzero in `F`, and `Matrix.reducedTrace_eq_trace` in characteristic `0`.
 * `TauCeti.Algebra.reducedTrace_field`: the reduced trace of a finite field extension `E / F` is
   the field trace `Algebra.trace F E`.
 * `TauCeti.Algebra.reducedTrace_baseChange_tmul`: for a central simple `A`, the reduced trace of
-  `L ⊗[F] A` over `L` extends that of `A`, and `TauCeti.Algebra.reducedTrace_eq_trace_of_algEquiv`
-  computes `Trd_{A/F}(a)` as the matrix trace of `1 ⊗ a` in any splitting `L ⊗[F] A ≃ M_n(L)`.
+  `L ⊗[F] A` over `L` extends that of `A`, and
+  `AlgEquiv.algebraMap_reducedTrace_eq_trace_of_ne_zero` computes `Trd_{A/F}(a)` as the matrix
+  trace of `1 ⊗ a` in any splitting `L ⊗[F] A ≃ M_n(L)` with `n` nonzero in `F`
+  (`AlgEquiv.algebraMap_reducedTrace_eq_trace` in characteristic `0`).
 
 ## Implementation notes
 
@@ -118,6 +125,7 @@ theorem idealTrace_apply (c : Submodule B B) (b : B) :
   (rfl)
 
 /-- On the whole algebra, `TauCeti.Algebra.idealTrace` is the regular trace. -/
+@[simp]
 theorem idealTrace_top (b : B) :
     idealTrace R (⊤ : Submodule B B) b = LinearMap.trace R B (Algebra.lmul R B b) := by
   let e : ((⊤ : Submodule B B).restrictScalars R) ≃ₗ[R] B :=
@@ -137,23 +145,6 @@ theorem idealTrace_mul_comm (c : Submodule B B) (a b : B) :
     simp [mul_assoc]
   rw [idealTrace_apply, idealTrace_apply, hmul, hmul, LinearMap.trace_mul_comm]
 
-/-- The isotypic components of `B` as a left `B`-module are independent over `R`. -/
-theorem iSupIndep_isotypicComponents_restrictScalars :
-    iSupIndep fun c : isotypicComponents B B ↦ c.1.restrictScalars R := by
-  intro c
-  simpa only [← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
-    using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents B B) c
-
-/-- Left multiplication by an element `b` of an isotypic component `c` kills every other
-isotypic component `c'`: `b c' ⊆ c ∩ c' = 0`, since `c` is a two-sided ideal. -/
-theorem mul_eq_zero_of_mem_isotypicComponents {c c' : Submodule B B}
-    (hc : c ∈ isotypicComponents B B) (hc' : c' ∈ isotypicComponents B B) (hne : c' ≠ c)
-    {b x : B} (hb : b ∈ c) (hx : x ∈ c') : b * x = 0 := by
-  have := isTwoSided_of_mem_isotypicComponents hc
-  have hdisj : Disjoint c' c :=
-    (sSupIndep_isotypicComponents B B).pairwiseDisjoint hc' hc hne
-  exact (Submodule.disjoint_def.mp hdisj) _ (c'.smul_mem b hx) (Ideal.mul_mem_right x c hb)
-
 /-- The trace of left multiplication by an element `b` of an isotypic component `c` vanishes on
 every other isotypic component. -/
 theorem idealTrace_eq_zero_of_mem_isotypicComponents {c c' : Submodule B B}
@@ -171,10 +162,11 @@ section Field
 
 variable (F : Type*) [Field F] {B : Type*} [Ring B] [Algebra F B]
 
-/-- The **degree** of a left ideal `c` over its centre: the square root of the dimension of `c`
-over `Z(B) ∩ c`. For an isotypic component `c` of a finite-dimensional semisimple algebra,
-`c` is a simple algebra with centre `Z(B) ∩ c` and this is its degree in the sense of
-`TauCeti.Algebra.deg` (`TauCeti.Algebra.idealDeg_top`). -/
+/-- The natural square root of `dim_F c / dim_F (c ∩ Z(B))` for a left ideal `c` of `B`. For an
+isotypic component `c` of a finite-dimensional semisimple algebra, `c` is a simple algebra with
+centre `Z(B) ∩ c` and this is its **degree** over that centre, in the sense of
+`TauCeti.Algebra.deg` (`TauCeti.Algebra.idealDeg_top`). For other left ideals it is only this
+number. -/
 noncomputable def idealDeg (c : Submodule B B) : ℕ :=
   Nat.sqrt (finrank F (c.restrictScalars F) /
     finrank F ↥(c.restrictScalars F ⊓ Subalgebra.toSubmodule (Subalgebra.center F B)))
@@ -233,7 +225,7 @@ theorem trace_lmul_eq_sum_idealTrace (b : B) :
   let _ : Fintype (isotypicComponents B B) := Fintype.ofFinite _
   have hint : DirectSum.IsInternal fun c : isotypicComponents B B ↦ c.1.restrictScalars F :=
     DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-      iSupIndep_isotypicComponents_restrictScalars <| by
+      (iSupIndep_isotypicComponents_restrictScalars F) <| by
         rw [← Submodule.restrictScalars_iSup, ← sSup_eq_iSup', sSup_isotypicComponents,
           Submodule.restrictScalars_top]
   rw [← finsum_set_coe_eq_finsum_mem, finsum_eq_sum_of_fintype,
@@ -273,58 +265,34 @@ theorem idealDeg_pos {c : Submodule B B} (hc : c ∈ isotypicComponents B B) : 0
   rw [idealDeg_def, Nat.sqrt_pos, Nat.div_pos_iff]
   exact ⟨hpos, Submodule.finrank_mono inf_le_left⟩
 
+/-- For `b` in an isotypic component `c` of a finite-dimensional semisimple algebra whose degree
+`idealDeg F c` is nonzero in `F`, the trace of left multiplication by `b` is `idealDeg F c` times
+the reduced trace of `b`. -/
+theorem trace_lmul_eq_idealDeg_mul_reducedTrace_of_ne_zero {c : Submodule B B}
+    (hc : c ∈ isotypicComponents B B) (hdeg : (idealDeg F c : F) ≠ 0) {b : B} (hb : b ∈ c) :
+    LinearMap.trace F B (Algebra.lmul F B b) = idealDeg F c * reducedTrace F B b := by
+  rw [reducedTrace_eq_of_mem hc hb, ← mul_assoc, mul_inv_cancel₀ hdeg, one_mul]
+
 /-- **The regular trace is a positive multiple of the reduced trace on each simple factor.** For
 `b` in an isotypic component `c` of a finite-dimensional semisimple algebra in characteristic `0`,
 the trace of left multiplication by `b` is `idealDeg F c` times the reduced trace of `b`. -/
 theorem trace_lmul_eq_idealDeg_mul_reducedTrace [CharZero F] {c : Submodule B B}
     (hc : c ∈ isotypicComponents B B) {b : B} (hb : b ∈ c) :
-    LinearMap.trace F B (Algebra.lmul F B b) = idealDeg F c * reducedTrace F B b := by
-  rw [reducedTrace_eq_of_mem hc hb, ← mul_assoc, mul_inv_cancel₀ (by exact_mod_cast
-    (idealDeg_pos hc).ne'), one_mul]
+    LinearMap.trace F B (Algebra.lmul F B b) = idealDeg F c * reducedTrace F B b :=
+  trace_lmul_eq_idealDeg_mul_reducedTrace_of_ne_zero hc (by exact_mod_cast (idealDeg_pos hc).ne')
+    hb
 
 end Semisimple
 
 /-! ### Simple and central simple algebras -/
-
-/-- The only isotypic component of a nonzero isotypic module is the whole module. -/
-theorem isotypicComponents_eq_singleton_top {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
-    [IsSemisimpleModule R M] [Nontrivial M] (h : IsIsotypic R M) :
-    isotypicComponents R M = {⊤} := by
-  ext m
-  refine ⟨?_, ?_⟩
-  · rintro ⟨S, _, rfl⟩
-    exact isotypicComponent_eq_top_iff.mpr (h S)
-  · rintro rfl
-    obtain ⟨S, -, _⟩ :=
-      (IsSemisimpleModule.eq_bot_or_exists_simple_le (⊤ : Submodule R M)).resolve_left top_ne_bot
-    exact ⟨S, inferInstance, (isotypicComponent_eq_top_iff.mpr (h S)).symm⟩
 
 /-- On a simple Artinian algebra the reduced trace is `(idealDeg F ⊤)⁻¹` times the regular
 trace. -/
 theorem reducedTrace_of_isSimpleRing [IsSimpleRing B] [IsArtinianRing B] (b : B) :
     reducedTrace F B b =
       (idealDeg F (⊤ : Submodule B B) : F)⁻¹ * LinearMap.trace F B (Algebra.lmul F B b) := by
-  rw [reducedTrace_def, isotypicComponents_eq_singleton_top (IsSimpleRing.isIsotypic B B),
+  rw [reducedTrace_def, (IsSimpleRing.isIsotypic B B).isotypicComponents_eq_singleton_top,
     finsum_mem_singleton, LinearMap.smul_apply, idealTrace_top, smul_eq_mul]
-
-variable (F) in
-/-- A central simple algebra `B` over a field `Z` has centre `Z`: for any subfield `F` of `Z`,
-the centre of `B` over `F` has the dimension of `Z` over `F`. -/
-theorem finrank_center_eq_of_isCentral (Z : Type*) [Field Z] [Algebra F Z] [Algebra Z B]
-    [IsScalarTower F Z B] [Algebra.IsCentral Z B] [Nontrivial B] :
-    finrank F (Subalgebra.center F B) = finrank F Z := by
-  let f : Z →ₗ[F] Subalgebra.center F B :=
-    { toFun z := ⟨algebraMap Z B z,
-        Subalgebra.mem_center_iff.mpr fun y ↦ (Algebra.commutes z y).symm⟩
-      map_add' x y := by ext; simp
-      map_smul' r x := by ext; simp [Algebra.smul_def, IsScalarTower.algebraMap_apply F Z B] }
-  have hf : Function.Bijective f := by
-    refine ⟨fun x y h ↦ (algebraMap Z B).injective (congrArg Subtype.val h), fun x ↦ ?_⟩
-    have hx : (x : B) ∈ Subalgebra.center Z B := Subalgebra.mem_center_iff.mpr
-      (Subalgebra.mem_center_iff.mp x.2)
-    obtain ⟨z, hz⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hx)
-    exact ⟨z, Subtype.ext hz⟩
-  exact (LinearEquiv.ofBijective f hf).finrank_eq.symm
 
 /-- On a simple algebra `B` central over a field `Z` finite over `F`, `idealDeg F ⊤` is the degree
 of `B` over `Z`. -/
@@ -365,6 +333,7 @@ theorem reducedTrace_eq_trace_reducedTrace (Z : Type*) [Field Z] [Algebra F Z] [
     ← Algebra.smul_def, map_smul, smul_eq_mul]
 
 /-- The reduced trace of a field extension `E / F` is the field trace. -/
+@[simp]
 theorem reducedTrace_field (E : Type*) [Field E] [Algebra F E] (x : E) :
     reducedTrace F E x = Algebra.trace F E x := by
   by_cases hE : FiniteDimensional F E
@@ -376,12 +345,17 @@ theorem reducedTrace_field (E : Type*) [Field E] [Algebra F E] (x : E) :
 
 variable [Algebra.IsCentral F B] [IsSimpleRing B] [FiniteDimensional F B]
 
+/-- On a central simple algebra whose degree is nonzero in `F`, the regular trace is the degree
+times the reduced trace. -/
+theorem trace_lmul_eq_deg_mul_reducedTrace_of_ne_zero (hdeg : (deg F B : F) ≠ 0) (b : B) :
+    LinearMap.trace F B (Algebra.lmul F B b) = deg F B * reducedTrace F B b := by
+  rw [reducedTrace_eq_inv_deg_mul_trace, ← mul_assoc, mul_inv_cancel₀ hdeg, one_mul]
+
 /-- On a central simple algebra in characteristic `0`, the regular trace is the degree times the
 reduced trace. -/
 theorem trace_lmul_eq_deg_mul_reducedTrace [CharZero F] (b : B) :
-    LinearMap.trace F B (Algebra.lmul F B b) = deg F B * reducedTrace F B b := by
-  rw [reducedTrace_eq_inv_deg_mul_trace, ← mul_assoc,
-    mul_inv_cancel₀ (by exact_mod_cast deg_ne_zero F B), one_mul]
+    LinearMap.trace F B (Algebra.lmul F B b) = deg F B * reducedTrace F B b :=
+  trace_lmul_eq_deg_mul_reducedTrace_of_ne_zero (by exact_mod_cast deg_ne_zero F B) b
 
 /-- The reduced trace of `1` in a central simple algebra is its degree. -/
 @[simp]
@@ -399,9 +373,11 @@ theorem reducedTrace_algebraMap (r : F) :
   rw [Algebra.algebraMap_eq_smul_one, map_smul, reducedTrace_one, smul_eq_mul, mul_comm]
 
 /-- An algebra isomorphism of central simple algebras preserves the reduced trace. -/
-theorem reducedTrace_algEquiv {B' : Type*} [Ring B'] [Algebra F B'] (e : B ≃ₐ[F] B') (b : B) :
+theorem _root_.AlgEquiv.reducedTrace_apply {B' : Type*} [Ring B'] [Algebra F B'] (e : B ≃ₐ[F] B')
+    (b : B) :
     reducedTrace F B' (e b) = reducedTrace F B b := by
   have : IsSimpleRing B' := IsSimpleRing.of_ringEquiv e.toRingEquiv inferInstance
+  -- `Algebra.IsCentral.of_algEquiv` needs `B` and `B'` in the same universe.
   have : Algebra.IsCentral F B' := ⟨fun x hx ↦ by
     obtain ⟨r, hr⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out (K := F) (D := B)
       (Subalgebra.mem_center_iff.mpr fun y ↦ by
@@ -428,27 +404,51 @@ end Field
 
 section Matrix
 
-variable {F : Type*} [Field F] [CharZero F]
+variable {F : Type*} [Field F]
 
-/-- **The reduced trace of a matrix algebra is the matrix trace.** -/
-theorem reducedTrace_matrix {n : Type*} [Fintype n] [DecidableEq n] (M : Matrix n n F) :
+/-- **The reduced trace of a matrix algebra is the matrix trace**, for `n × n` matrices with `n`
+nonzero in `F`. -/
+theorem _root_.Matrix.reducedTrace_eq_trace_of_ne_zero {n : Type*} [Fintype n] [DecidableEq n]
+    (hn : (Fintype.card n : F) ≠ 0) (M : Matrix n n F) :
     reducedTrace F (Matrix n n F) M = M.trace := by
-  obtain hn | hn := isEmpty_or_nonempty n
-  · rw [Subsingleton.elim M 0, map_zero, Matrix.trace_zero]
+  have : Nonempty n := Fintype.card_pos_iff.mp (Nat.pos_of_ne_zero fun h ↦ hn (by simp [h]))
   have hdeg : deg F (Matrix n n F) = Fintype.card n :=
     deg_eq_of_finrank_eq_sq (by rw [Module.finrank_matrix, Module.finrank_self, mul_one, sq])
   have hl : Algebra.lmul F (Matrix n n F) M = LinearMap.mulLeft F M := rfl
   rw [reducedTrace_eq_inv_deg_mul_trace, hdeg, hl, Matrix.trace_mulLeft, ← mul_assoc,
-    inv_mul_cancel₀ (by simp), one_mul]
+    inv_mul_cancel₀ hn, one_mul]
+
+/-- **The reduced trace of a matrix algebra is the matrix trace**, in characteristic `0`. -/
+@[simp]
+theorem _root_.Matrix.reducedTrace_eq_trace [CharZero F] {n : Type*} [Fintype n] [DecidableEq n]
+    (M : Matrix n n F) : reducedTrace F (Matrix n n F) M = M.trace := by
+  obtain hn | hn := isEmpty_or_nonempty n
+  · rw [Subsingleton.elim M 0, map_zero, Matrix.trace_zero]
+  exact M.reducedTrace_eq_trace_of_ne_zero (by simp)
 
 /-- **The reduced trace via a splitting field.** If `L ⊗[F] A ≃ M_n(L)` over `L` for a central
-simple algebra `A`, then `Trd_{A/F}(a)` is the matrix trace of the image of `1 ⊗ a`. -/
-theorem reducedTrace_eq_trace_of_algEquiv {A : Type*} [Ring A] [Algebra F A]
-    [Algebra.IsCentral F A] [IsSimpleRing A] [FiniteDimensional F A] {L : Type*} [Field L]
-    [Algebra F L] {n : Type*} [Fintype n] [DecidableEq n] (e : L ⊗[F] A ≃ₐ[L] Matrix n n L)
-    (a : A) : algebraMap F L (reducedTrace F A a) = (e (1 ⊗ₜ a)).trace := by
+simple algebra `A`, with `n` nonzero in `F`, then `Trd_{A/F}(a)` is the matrix trace of the image
+of `1 ⊗ a`. -/
+theorem _root_.AlgEquiv.algebraMap_reducedTrace_eq_trace_of_ne_zero {A : Type*} [Ring A]
+    [Algebra F A] [Algebra.IsCentral F A] [IsSimpleRing A] [FiniteDimensional F A] {L : Type*}
+    [Field L] [Algebra F L] {n : Type*} [Fintype n] [DecidableEq n]
+    (e : L ⊗[F] A ≃ₐ[L] Matrix n n L) (hn : (Fintype.card n : F) ≠ 0) (a : A) :
+    algebraMap F L (reducedTrace F A a) = (e (1 ⊗ₜ a)).trace := by
+  have hn' : (Fintype.card n : L) ≠ 0 := by
+    rwa [← map_natCast (algebraMap F L), map_ne_zero]
+  rw [← reducedTrace_baseChange_tmul, ← e.reducedTrace_apply,
+    Matrix.reducedTrace_eq_trace_of_ne_zero hn']
+
+/-- **The reduced trace via a splitting field**, in characteristic `0`. If `L ⊗[F] A ≃ M_n(L)`
+over `L` for a central simple algebra `A`, then `Trd_{A/F}(a)` is the matrix trace of the image of
+`1 ⊗ a`. -/
+theorem _root_.AlgEquiv.algebraMap_reducedTrace_eq_trace [CharZero F] {A : Type*} [Ring A]
+    [Algebra F A] [Algebra.IsCentral F A] [IsSimpleRing A] [FiniteDimensional F A] {L : Type*}
+    [Field L] [Algebra F L] {n : Type*} [Fintype n] [DecidableEq n]
+    (e : L ⊗[F] A ≃ₐ[L] Matrix n n L) (a : A) :
+    algebraMap F L (reducedTrace F A a) = (e (1 ⊗ₜ a)).trace := by
   have : CharZero L := charZero_of_injective_algebraMap (algebraMap F L).injective
-  rw [← reducedTrace_baseChange_tmul, ← reducedTrace_algEquiv e, reducedTrace_matrix]
+  rw [← reducedTrace_baseChange_tmul, ← e.reducedTrace_apply, Matrix.reducedTrace_eq_trace]
 
 end Matrix
 
