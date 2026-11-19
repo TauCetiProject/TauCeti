@@ -33,14 +33,14 @@ compact subset of `M` at all times has a complete suspension, and then every tim
 diffeomorphism of `M`, with inverse the time map in the opposite direction.
 
 A solution can fail to exist up to a finite time `b` only by leaving every compact subset of `M`
-before `b`. This is the **escape criterion**, proved by applying the autonomous escape lemma
-`eventually_notMem_nhdsLT_maximalIntegralCurve` to the suspension and to the compact set
-`[s, b] × K`: the maximal integral curve of the suspension runs at unit speed in the clock
-coordinate. On a noncompact manifold a solution of an equation as simple as `y' = y²` on `ℝ` reaches
-infinity in finite time, and compact containment of the solution is the hypothesis under which its
-existence through a given time interval, for instance `[0, 1]` in Moser's argument, can be
-asserted. A field vanishing outside a fixed compact set keeps every solution in a compact set, so
-its suspension is complete.
+before `b`. This is the **escape criterion**, proved by applying the autonomous escape criteria
+`mem_maximalIntegralCurveInterval_of_isCompact_of_mapsTo_Ico` and `_Ioc` to the suspension and to
+the compact set `[s, b] × K`: the maximal integral curve of the suspension runs at unit speed in
+the clock coordinate. On a noncompact manifold a solution of an equation as simple as `y' = y²`
+on `ℝ` reaches infinity in finite time, and compact containment of the solution is the hypothesis
+under which its existence through a given time interval, for instance `[0, 1]` in Moser's
+argument, can be asserted. A field vanishing outside a fixed compact set keeps every solution in a
+compact set, so its suspension is complete.
 
 Compactly supported time-dependent fields are the input to the isotopy extension theorem: the
 velocity of a moving compact submanifold, extended to a compactly supported field on the ambient
