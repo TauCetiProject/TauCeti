@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
-public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Data.ZMod.QuotientGroup
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -146,14 +146,6 @@ units. The shifts `A(d)` and `A(e)` of the graded module `A` are graded-isomorph
 abbrev ShiftClassGroup {ι A σ : Type*} [AddCommGroup ι] [Monoid A] [SetLike σ A] (𝒜 : ι → σ) :
     Type _ :=
   ι ⧸ homogeneousUnitDegrees 𝒜
-
-/-- `ℤ` modulo the multiples of `a` is `ZMod |a|`, sending the class of `n` to `n mod |a|`. -/
-@[simp]
-theorem _root_.Int.quotientZMultiplesEquivZMod_mk (a n : ℤ) :
-    Int.quotientZMultiplesEquivZMod a n = n :=
-  -- Both quotient equivalences composed in `Int.quotientZMultiplesEquivZMod` are induced by maps
-  -- on representatives, the last of which is the cast `ℤ → ZMod |a|`.
-  rfl
 
 /-- If the degrees of the homogeneous units of a `ℤ`-graded ring are the multiples of `e`, then the
 shift class group is `ZMod |e|`. -/

@@ -107,10 +107,17 @@ open scoped LaurentPolynomial
 degree `w`, the degrees of the homogeneous units are the multiples of `w` (by
 `homogeneousUnitDegrees_gradeBy`), so the shift class group is `ZMod |w|`. This is the graded ring
 of `𝔾_m` acting on itself by `s • x = s ^ w * x`. -/
-noncomputable abbrev shiftClassGroupLaurentPolynomialEquiv (R : Type*) [CommSemiring R]
+noncomputable def shiftClassGroupLaurentPolynomialEquiv (R : Type*) [CommSemiring R]
     [Nontrivial R] (w : ℤ) :
     ShiftClassGroup (gradeBy R (zmultiplesHom ℤ w) : ℤ → Submodule R R[T;T⁻¹]) ≃+
       ZMod w.natAbs :=
   ShiftClassGroup.equivZMod (by simp)
+
+/-- The identification of the shift classes of `R[T;T⁻¹]` with `ZMod |w|` sends the class of a
+shift `d` to `d mod |w|`. -/
+@[simp]
+theorem shiftClassGroupLaurentPolynomialEquiv_mk (R : Type*) [CommSemiring R] [Nontrivial R]
+    (w d : ℤ) : shiftClassGroupLaurentPolynomialEquiv R w d = d :=
+  ShiftClassGroup.equivZMod_mk _ d
 
 end TauCeti
