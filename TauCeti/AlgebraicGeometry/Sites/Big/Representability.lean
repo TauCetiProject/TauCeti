@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.RelativeGluing
 public import Mathlib.AlgebraicGeometry.Sites.BigZariski
 public import TauCeti.AlgebraicGeometry.Cover.Directed
 public import TauCeti.CategoryTheory.Adjunction.Representable
+public import TauCeti.CategoryTheory.Comma.Over
 public import TauCeti.CategoryTheory.Sites.Over
 
 /-!
@@ -78,25 +79,15 @@ private theorem map_map_univ {i : 𝒰.I₀} {T : Over (𝒰.X i)} (b : T ⟶ Y 
     F.map ((Over.map (𝒰.f i)).map b).op (univ e i) = (e i).homEquiv b :=
   ((e i).homEquiv_eq b).symm
 
-/-- A scheme `T` over `S` together with a lift `c` of its structure morphism through `𝒰.f i`
-is the image of the scheme `c` over `𝒰.X i`. -/
-private def mapObjIso {i : 𝒰.I₀} {T : Over S} (c : T.left ⟶ 𝒰.X i)
-    (hc : c ≫ 𝒰.f i = T.hom) : (Over.map (𝒰.f i)).obj (Over.mk c) ≅ T :=
-  Over.isoMk (Iso.refl _) (by simp [hc])
-
-/-- Pulling back along an isomorphism and then along its inverse is the identity. -/
-private theorem map_inv_map_hom {T T' : Over S} (ι : T ≅ T') (ζ : F.obj (op T')) :
-    F.map ι.inv.op (F.map ι.hom.op ζ) = ζ := by
-  simp [← F.map_comp_apply, ← op_comp]
-
 /-- Over a scheme `T` lying over `𝒰.X i`, every element of `F` is pulled back from the universal
 element along a morphism to `Y i`. -/
 private theorem exists_map_univ {i : 𝒰.I₀} {T : Over S} (c : T.left ⟶ 𝒰.X i)
     (hc : c ≫ 𝒰.f i = T.hom) (ζ : F.obj (op T)) :
     ∃ a : T ⟶ (Over.map (𝒰.f i)).obj (Y i), F.map a.op (univ e i) = ζ := by
-  let ι := mapObjIso c hc
+  let ι := Over.mapObjMkIso c hc
   refine ⟨ι.inv ≫ (Over.map (𝒰.f i)).map ((e i).homEquiv.symm (F.map ι.hom.op ζ)), ?_⟩
-  simp only [op_comp, F.map_comp_apply, map_map_univ, Equiv.apply_symm_apply, map_inv_map_hom]
+  simp only [op_comp, F.map_comp_apply, map_map_univ, Equiv.apply_symm_apply]
+  exact (F.mapIso ι.op).hom_inv_id_apply ζ
 
 /-- Morphisms to `Y i` are determined by the pullback of the universal element. -/
 private theorem map_univ_injective {i : 𝒰.I₀} {T : Over S}
@@ -106,7 +97,7 @@ private theorem map_univ_injective {i : 𝒰.I₀} {T : Over S}
   have hb : b.left ≫ (Y i).hom = a.left ≫ (Y i).hom := by
     rw [← cancel_mono (𝒰.f i), Category.assoc, ha]
     simpa using Over.w b
-  let ι := mapObjIso _ ha
+  let ι := Over.mapObjMkIso _ ha
   have key (m : T ⟶ (Over.map (𝒰.f i)).obj (Y i))
       (hm : m.left ≫ (Y i).hom = a.left ≫ (Y i).hom) : F.map m.op (univ e i) =
         F.map ι.inv.op ((e i).homEquiv (Over.homMk m.left hm : Over.mk _ ⟶ Y i)) := by
