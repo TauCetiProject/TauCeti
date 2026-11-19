@@ -5,10 +5,9 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Analysis.Convex.FiniteMean
+public import TauCeti.Analysis.InnerProductSpace.Projection.Constant
 public import TauCeti.Probability.Distributions.Gaussian.Isotropic
 public import TauCeti.Probability.Distributions.StudentT.ChiSquared
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Sample mean and residuals of a Gaussian sample
@@ -85,32 +84,6 @@ theorem measurable_studentizedMean (m : ℝ) : Measurable (studentizedMean m : (
 
 private abbrev ones : EuclideanSpace ℝ ι := WithLp.toLp 2 (fun _ ↦ 1)
 
-private theorem inner_ones (x : EuclideanSpace ℝ ι) :
-    ⟪ones, x⟫ = ∑ i, x i := by
-  simp [PiLp.inner_apply, ones]
-
-/-- Orthogonal projection onto the constant vectors replaces each entry by the finite mean. -/
-theorem _root_.EuclideanSpace.starProjection_span_const (x : EuclideanSpace ℝ ι) :
-    (ℝ ∙ WithLp.toLp 2 (fun _ ↦ 1)).starProjection x =
-      finiteMean ℝ x.ofLp • WithLp.toLp 2 (fun _ ↦ 1) := by
-  rw [Submodule.starProjection_singleton, inner_ones]
-  simp [finiteMean_eq_inv_smul_sum, EuclideanSpace.real_norm_sq_eq, div_eq_mul_inv, mul_comm]
-
-private theorem finrank_orthogonal_span_ones :
-    Module.finrank ℝ (ℝ ∙ (ones : EuclideanSpace ℝ ι))ᗮ = Fintype.card ι - 1 := by
-  rcases isEmpty_or_nonempty ι with h | h
-  · have he := (ℝ ∙ (ones : EuclideanSpace ℝ ι)).finrank_add_finrank_orthogonal
-    rw [finrank_euclideanSpace, Fintype.card_of_isEmpty] at he
-    simp only [Fintype.card_of_isEmpty]
-    omega
-  · have hv : (ones : EuclideanSpace ℝ ι) ≠ 0 := by
-      obtain ⟨i⟩ := h
-      intro he
-      have := congrArg (fun (x : EuclideanSpace ℝ ι) ↦ x i) he
-      simp at this
-    simpa only [finrank_euclideanSpace] using
-      Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one (𝕜 := ℝ) hv
-
 /-- The squared norm of the projection perpendicular to the constants is the residual sum
 of squares. -/
 theorem _root_.EuclideanSpace.norm_sq_starProjection_orthogonal_span_const
@@ -120,20 +93,6 @@ theorem _root_.EuclideanSpace.norm_sq_starProjection_orthogonal_span_const
   rw [Submodule.starProjection_orthogonal_val, EuclideanSpace.starProjection_span_const,
     EuclideanSpace.real_norm_sq_eq]
   simp [residualSumSquares]
-
-private theorem norm_ones :
-    ‖(ones : EuclideanSpace ℝ ι)‖ = Real.sqrt (Fintype.card ι : ℝ) := by
-  rw [EuclideanSpace.norm_eq]
-  simp
-
-private theorem finiteMean_span_projection (x : EuclideanSpace ℝ ι) :
-    finiteMean ℝ ((ℝ ∙ (ones : EuclideanSpace ℝ ι)).starProjection x).ofLp =
-      finiteMean ℝ x.ofLp := by
-  rcases isEmpty_or_nonempty ι with h | h
-  · simp
-  · have hc : (Fintype.card ι : ℝ) ≠ 0 := by positivity
-    rw [EuclideanSpace.starProjection_span_const]
-    simp [finiteMean_eq_inv_smul_sum, hc, mul_comm, mul_left_comm]
 
 end TauCeti
 
@@ -182,7 +141,7 @@ theorem HasLaw.indepFun_finiteMean_residuals_gaussianSample
     (ψ := fun y : Kᗮ ↦ (y : EuclideanSpace ℝ ι).ofLp) (by fun_prop) (by fun_prop)).congr ?_ ?_
   · exact Filter.Eventually.of_forall fun ω ↦ by
       simpa only [Function.comp_apply, Submodule.starProjection_apply, WithLp.ofLp_toLp, K] using
-        finiteMean_span_projection (WithLp.toLp 2 (X ω))
+        EuclideanSpace.finiteMean_starProjection_span_const (WithLp.toLp 2 (X ω))
   · exact Filter.Eventually.of_forall fun ω ↦ by
       simp only [Function.comp_apply, ← Submodule.starProjection_apply,
         Submodule.starProjection_orthogonal_val, K, EuclideanSpace.starProjection_span_const,
@@ -208,7 +167,7 @@ theorem HasLaw.residualSumSquares_div_gaussianSample
   have hσ := Real.sq_sqrt (NNReal.coe_nonneg (r := v))
   rw [← hσ] at h
   have hSS := h.norm_sq_starProjection_sub_div_multivariateGaussian_smul_one (by positivity) Kᗮ
-  rw [finrank_orthogonal_span_ones, hσ] at hSS
+  rw [EuclideanSpace.finrank_orthogonal_span_const, hσ] at hSS
   refine hSS.congr (Filter.Eventually.of_forall fun ω ↦ ?_)
   have hm : m • (ones : EuclideanSpace ℝ ι) ∈ K :=
     K.smul_mem _ (Submodule.mem_span_singleton_self _)
@@ -239,8 +198,11 @@ theorem HasLaw.standardized_finiteMean_gaussianSample [Nonempty ι]
   have hc : c ≠ 0 := by positivity
   have hc₀ : 0 ≤ c := by positivity
   let u : EuclideanSpace ℝ ι := c⁻¹ • ones
+  have hnorm : ‖(ones : EuclideanSpace ℝ ι)‖ = c := by
+    simpa [ones, c, Real.sqrt_eq_rpow, ← Function.const_def] using
+      (PiLp.norm_toLp_const (ι := ι) (p := 2) (by simp) (1 : ℝ))
   have hu : ‖u‖ = 1 := by
-    simp only [u, norm_smul, norm_ones, Real.norm_eq_abs, abs_of_nonneg (inv_nonneg.mpr hc₀)]
+    simp only [u, norm_smul, hnorm, Real.norm_eq_abs, abs_of_nonneg (inv_nonneg.mpr hc₀)]
     exact inv_mul_cancel₀ hc
   have hZ := hX.standardize_gaussianSample hv |>.strongDual_stdGaussian (innerSL ℝ u)
   rw [innerSL_apply_norm, hu] at hZ
@@ -252,8 +214,8 @@ theorem HasLaw.standardized_finiteMean_gaussianSample [Nonempty ι]
   have hcsq : c ^ 2 = (Fintype.card ι : ℝ) := Real.sq_sqrt (by positivity)
   have hcard : c⁻¹ * (Fintype.card ι : ℝ) = c := by
     rw [← hcsq, pow_two, ← mul_assoc, inv_mul_cancel₀ hc, one_mul]
-  simp only [u, real_inner_smul_left, inner_ones, ← Finset.sum_div, hsum,
-    ← mul_div_assoc, ← mul_assoc, hcard, c]
+  simp only [u, ones, real_inner_smul_left, EuclideanSpace.inner_const_one_left, ← Finset.sum_div,
+    hsum, ← mul_div_assoc, ← mul_assoc, hcard, c]
 
 /-- Student's statistic from a Gaussian sample of size at least two has the Student law
 with one fewer degree of freedom. -/
