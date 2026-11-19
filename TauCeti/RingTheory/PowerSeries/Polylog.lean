@@ -122,10 +122,7 @@ theorem eq_rationalPolylogSeries_iff {f : ℚ⟦X⟧} {k : ℤ} :
 /-- **Weight zero**: `q_0 = ∑_{n ≥ 1} Xⁿ = X / (1 - X)`. -/
 theorem rationalPolylogSeries_zero : rationalPolylogSeries 0 = X * (1 - X)⁻¹ := by
   rw [eq_mul_inv_iff_mul_eq (by simp)]
-  ext (_ | n)
-  · simp
-  · simp [mul_sub, coeff_succ_mul_X, coeff_X]
-    split_ifs <;> simp_all
+  ext (_ | _ | n) <;> simp [mul_sub, coeff_succ_mul_X, coeff_X]
 
 /-- **Weight minus one**: `q_{-1} = ∑_{n ≥ 1} n Xⁿ = X / (1 - X)²`. -/
 theorem rationalPolylogSeries_neg_one :
