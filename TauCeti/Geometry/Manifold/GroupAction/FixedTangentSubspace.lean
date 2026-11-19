@@ -5,7 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import Mathlib.Topology.Connected.Basic
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
+import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # The fixed tangent subspace of a group action
@@ -27,6 +32,17 @@ fixed set. No metric, topology on `K` or smoothness of the action is needed for 
 definitions; for a group of isometries the sets `M^K_d` are embedded submanifolds
 (`TauCeti.exists_isSmoothEmbedding_fixedPointsOfFinrank`).
 
+These objects are natural under equivariant diffeomorphisms. If a diffeomorphism `ψ : M → N`
+commutes with the action of every `k ∈ K` near `p`, the chain rule gives
+`d(k •)_(ψ p) ∘ dψ_p = dψ_(k • p) ∘ d(k •)_p`, and `ψ` preserves the stabilizer of `p`; so the
+differential `dψ_p` carries `V_p` onto `V_(ψ p)`
+(`Diffeomorph.map_fixedTangentSubspace`). A globally equivariant diffeomorphism therefore carries
+the fixed set, its parts `M^K_d` and the connected components of the fixed set onto those of `N`
+(`Diffeomorph.image_fixedPoints`, `Diffeomorph.image_fixedPointsOfFinrank`,
+`Diffeomorph.image_connectedComponentIn_fixedPoints`). No smoothness of the actions is used: where
+`k •` is not differentiable, the chain rule through a diffeomorphism still holds with both sides
+zero.
+
 ## Main definitions
 
 * `TauCeti.fixedTangentSubspace I K p`: the tangent vectors at `p` fixed by the differential of
@@ -42,6 +58,14 @@ definitions; for a group of isometries the sets `M^K_d` are embedded submanifold
   vectors of the tangent representation.
 * `TauCeti.iUnion_fixedPointsOfFinrank`, `TauCeti.pairwise_disjoint_fixedPointsOfFinrank`: the
   sets `M^K_d` partition the fixed set.
+* `Diffeomorph.map_fixedTangentSubspace`: the differential of a diffeomorphism that is
+  equivariant near `p` carries the fixed tangent subspace at `p` onto that at `ψ p`.
+* `Diffeomorph.fixedTangentSubspaceEquiv`: this differential as a linear equivalence between the
+  fixed tangent subspaces.
+* `Diffeomorph.image_fixedPoints`, `Diffeomorph.image_fixedPointsOfFinrank`,
+  `Diffeomorph.image_connectedComponentIn_fixedPoints`: an equivariant diffeomorphism carries the
+  fixed set, each part `M^K_d` and each connected component of the fixed set onto the
+  corresponding subset of the target.
 -/
 
 public section
@@ -135,3 +159,134 @@ theorem pairwise_disjoint_fixedPointsOfFinrank :
 end FixedTangentSubspace
 
 end TauCeti
+
+/-! ### Naturality under equivariant diffeomorphisms -/
+
+namespace Diffeomorph
+
+open TauCeti Filter
+open scoped ContDiff Manifold Topology
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  {K : Type*} [Group K]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction K M]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [MulAction K N]
+  {n : ℕ∞ω}
+
+/-- **Chain rule for an equivariant diffeomorphism.** If `ψ` commutes with the action of `k`
+near `p`, then `d(k •)_(ψ p) ∘ dψ_p = dψ_(k • p) ∘ d(k •)_p`. No differentiability of the
+actions is assumed. -/
+theorem mfderiv_smul_mfderiv_of_eventuallyEq (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {k : K} {p : M}
+    (h : ψ ∘ (k • ·) =ᶠ[𝓝 p] (k • ·) ∘ ψ) (v : TangentSpace I p) :
+    mfderiv J J (k • ·) (ψ p) (mfderiv I J ψ p v) =
+      mfderiv I J ψ (k • p) (mfderiv I I (k • ·) p v) := by
+  have h₁ := ψ.mfderiv_diffeomorph_comp (K := I) hn (k • ·) p
+  have h₂ := ψ.mfderiv_comp_diffeomorph (K := J) hn (fun y : N ↦ k • y) p
+  have h₃ := congrArg (· v) (h.mfderiv_eq (I := I) (I' := J))
+  simp only [h₁, h₂, ContinuousLinearMap.comp_apply] at h₃
+  exact h₃.symm
+
+/-- The differential at a point `p` of a diffeomorphism that commutes with the action of every
+element of the stabilizer of `p` near `p` intertwines the actions of the stabilizer on the
+tangent spaces at `p` and at `ψ p`. -/
+private theorem mfderiv_smul_mfderiv_of_mem_stabilizer (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {k : K}
+    {p : M} (h : ψ ∘ (k • ·) =ᶠ[𝓝 p] (k • ·) ∘ ψ) (hk : k • p = p) (v : TangentSpace I p) :
+    mfderiv J J (k • ·) (ψ p) (mfderiv I J ψ p v) =
+      mfderiv I J ψ p (mfderiv I I (k • ·) p v) := by
+  rw [ψ.mfderiv_smul_mfderiv_of_eventuallyEq hn h]
+  -- The differentials of `ψ` at `k • p` and at `p` agree once `k • p = p`; the tangent spaces at
+  -- both points are the model space, so the vector can be fed to either.
+  have key (q : M) (hq : q = p) (u : TangentSpace I q) : mfderiv I J ψ q u = mfderiv I J ψ p u := by
+    subst hq
+    rfl
+  exact key _ hk _
+
+/-- **Naturality of the fixed tangent subspace.** The differential at `p` of a diffeomorphism
+that commutes near `p` with the action of every element of `K` carries the fixed tangent
+subspace at `p` onto the fixed tangent subspace at `ψ p`. -/
+theorem map_fixedTangentSubspace (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {p : M}
+    (h : ∀ k : K, ψ ∘ (k • ·) =ᶠ[𝓝 p] (k • ·) ∘ ψ) :
+    (fixedTangentSubspace I K p).map
+        (ψ.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.toLinearMap =
+      fixedTangentSubspace J K (ψ p) := by
+  have hstab : MulAction.stabilizer K (ψ p) = MulAction.stabilizer K p :=
+    TauCeti.MulAction.stabilizer_apply_of_injective ψ.injective fun k ↦ (h k).self_of_nhds
+  have hinj : Function.Injective (mfderiv I J ψ p) := (ψ.isInvertible_mfderiv hn).injective
+  have hder : (ψ.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.toLinearMap =
+      (mfderiv I J ψ p).toLinearMap :=
+    congrArg ContinuousLinearMap.toLinearMap (ψ.mfderivToContinuousLinearEquiv_coe hn)
+  ext w
+  simp only [hder, Submodule.mem_map, ContinuousLinearMap.coe_coe, mem_fixedTangentSubspace, hstab]
+  constructor
+  · rintro ⟨v, hv, rfl⟩ k hk
+    rw [ψ.mfderiv_smul_mfderiv_of_mem_stabilizer hn (h k) hk, hv k hk]
+  · intro hw
+    obtain ⟨v, rfl⟩ := (ψ.isInvertible_mfderiv hn).surjective w
+    refine ⟨v, fun k hk ↦ hinj ?_, rfl⟩
+    rw [← ψ.mfderiv_smul_mfderiv_of_mem_stabilizer hn (h k) hk, hw k hk]
+
+/-- The differential at `p` of a diffeomorphism that commutes near `p` with the action of every
+element of `K`, as a linear equivalence between the fixed tangent subspaces at `p` and at
+`ψ p`. -/
+def fixedTangentSubspaceEquiv (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {p : M}
+    (h : ∀ k : K, ψ ∘ (k • ·) =ᶠ[𝓝 p] (k • ·) ∘ ψ) :
+    fixedTangentSubspace I K p ≃ₗ[ℝ] fixedTangentSubspace J K (ψ p) :=
+  ((ψ.mfderivToContinuousLinearEquiv hn p).toLinearEquiv.submoduleMap _).trans
+    (LinearEquiv.ofEq _ _ (ψ.map_fixedTangentSubspace hn h))
+
+@[simp]
+theorem coe_fixedTangentSubspaceEquiv_apply (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {p : M}
+    (h : ∀ k : K, ψ ∘ (k • ·) =ᶠ[𝓝 p] (k • ·) ∘ ψ) (v : fixedTangentSubspace I K p) :
+    (ψ.fixedTangentSubspaceEquiv hn h v : TangentSpace J (ψ p)) = mfderiv I J ψ p v := by
+  rw [← ψ.mfderivToContinuousLinearEquiv_coe hn]
+  rfl
+
+/-- A diffeomorphism that commutes near `p` with the action of every element of `K` preserves the
+dimension of the fixed tangent subspace at `p`. -/
+theorem finrank_fixedTangentSubspace (ψ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {p : M}
+    (h : ∀ k : K, ψ ∘ (k • ·) =ᶠ[𝓝 p] (k • ·) ∘ ψ) :
+    Module.finrank ℝ (fixedTangentSubspace J K (ψ p)) =
+      Module.finrank ℝ (fixedTangentSubspace I K p) := by
+  rw [← ψ.map_fixedTangentSubspace hn h, LinearEquiv.finrank_map_eq]
+
+section Equivariant
+
+variable (ψ : M ≃ₘ^n⟮I, J⟯ N) (hψ : ∀ (k : K) (x : M), ψ (k • x) = k • ψ x)
+include hψ
+
+/-- An equivariant diffeomorphism carries the fixed set onto the fixed set. -/
+theorem image_fixedPoints : ψ '' MulAction.fixedPoints K M = MulAction.fixedPoints K N :=
+  TauCeti.MulAction.image_fixedPoints_of_bijective (f := ψ) ⟨ψ.injective, ψ.surjective⟩ hψ
+
+/-- An equivariant diffeomorphism carries each connected component of the fixed set onto the
+connected component of the fixed set through the image point. -/
+theorem image_connectedComponentIn_fixedPoints {x : M} (hx : x ∈ MulAction.fixedPoints K M) :
+    ψ '' connectedComponentIn (MulAction.fixedPoints K M) x =
+      connectedComponentIn (MulAction.fixedPoints K N) (ψ x) := by
+  rw [← ψ.image_fixedPoints hψ]
+  exact ψ.toHomeomorph.image_connectedComponentIn hx
+
+/-- An equivariant diffeomorphism sends a point to a fixed point with a fixed tangent subspace of
+dimension `d` exactly when the point is such a fixed point. -/
+theorem apply_mem_fixedPointsOfFinrank_iff (hn : n ≠ 0) {d : ℕ} {x : M} :
+    ψ x ∈ fixedPointsOfFinrank J K N d ↔ x ∈ fixedPointsOfFinrank I K M d := by
+  rw [mem_fixedPointsOfFinrank, mem_fixedPointsOfFinrank,
+    TauCeti.MulAction.apply_mem_fixedPoints_iff_of_injective (f := ψ) ψ.injective (hψ · x),
+    ψ.finrank_fixedTangentSubspace hn fun k ↦ .of_forall fun y ↦ hψ k y]
+
+/-- An equivariant diffeomorphism carries the part `M^K_d` of the fixed set, on which the fixed
+tangent subspaces have dimension `d`, onto the corresponding part `N^K_d`. -/
+theorem image_fixedPointsOfFinrank (hn : n ≠ 0) (d : ℕ) :
+    ψ '' fixedPointsOfFinrank I K M d = fixedPointsOfFinrank J K N d := by
+  ext y
+  refine ⟨?_, fun hy ↦ ⟨ψ.symm y, ?_, ψ.apply_symm_apply y⟩⟩
+  · rintro ⟨x, hx, rfl⟩
+    exact (ψ.apply_mem_fixedPointsOfFinrank_iff hψ hn).2 hx
+  · rwa [← ψ.apply_mem_fixedPointsOfFinrank_iff hψ hn, ψ.apply_symm_apply]
+
+end Equivariant
+
+end Diffeomorph
