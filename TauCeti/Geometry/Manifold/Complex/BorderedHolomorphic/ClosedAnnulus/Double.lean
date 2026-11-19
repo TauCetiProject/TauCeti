@@ -134,6 +134,8 @@ private def doubleLog (z : closedAnnulus r₁ r₂) : ℂ :=
 omit hr₁₂ in
 private theorem exp_I_mul_doubleLog (z : closedAnnulus r₁ r₂) :
     exp (I * doubleLog z) = (z : ℂ) / r₁ := by
+  -- Multiplication by `I` cancels the `-I` in the normalized logarithm, putting the argument
+  -- into the form required by `exp_log`.
   rw [show I * doubleLog z = log ((z : ℂ) / r₁) by simp [doubleLog, ← mul_assoc]]
   exact exp_log (div_ne_zero
     (norm_pos_iff.mp (hr₁.out.trans_le (closedAnnulus.le_norm_coe z)))
@@ -155,8 +157,10 @@ def doubleFirstSheet (r₁ r₂ : ℝ) [Fact (0 < r₁)] [Fact (r₁ < r₂)] :
         (norm_pos_iff.mp ((Fact.out : 0 < r₁).trans_le (closedAnnulus.le_norm_coe z)))
         (ofReal_ne_zero.mpr (Fact.out : 0 < r₁).ne')
 
-private theorem doubleFirstSheet_apply (z : closedAnnulus r₁ r₂) :
-    doubleFirstSheet r₁ r₂ z = Quotient.mk _ (doubleLog z) := rfl
+/-- The first-sheet map is the class of its normalized principal logarithm in the period torus. -/
+@[simp]
+theorem doubleFirstSheet_apply (z : closedAnnulus r₁ r₂) :
+    doubleFirstSheet r₁ r₂ z = Quotient.mk _ (-I * log ((z : ℂ) / r₁)) := (rfl)
 
 omit hr₁₂ in
 private theorem doubleLog_im (z : closedAnnulus r₁ r₂) :
@@ -185,7 +189,7 @@ private theorem doubleFirstSheet_eq_conjugation_of_boundary (z : closedAnnulus r
     (hz : z ∈ (borderedInterior (closedAnnulus r₁ r₂) : Set _)ᶜ) :
     doubleFirstSheet r₁ r₂ z = doubleTorusConjugation r₁ r₂ (doubleFirstSheet r₁ r₂ z) := by
   rw [compl_borderedInterior, DoubleAlong.mem_annulusBoundary] at hz
-  simp only [doubleFirstSheet_apply, doubleTorusConjugation_mk]
+  simp only [doubleFirstSheet_apply, ← doubleLog.eq_1, doubleTorusConjugation_mk]
   apply (doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_mk_iff.mpr
   rw [mem_doublePeriodLattice_iff]
   rcases hz with hz | hz
@@ -240,6 +244,7 @@ private theorem doubleLog_eq_of_re_im {x y : closedAnnulus r₁ r₂} {m : ℤ}
 
 private theorem doubleFirstSheet_injective : Function.Injective (doubleFirstSheet r₁ r₂) := by
   intro x y h
+  simp only [doubleFirstSheet_apply, ← doubleLog.eq_1] at h
   have hL : 0 < Real.log (r₂ / r₁) := Real.log_pos ((one_lt_div hr₁.out).2 hr₁₂.out)
   obtain ⟨m, hre, him⟩ := doublePeriod_eq_im_cases
     ⟨(doubleLog_im_bounds x).1, (doubleLog_im_bounds x).2.trans hL.le⟩
@@ -256,7 +261,7 @@ private theorem doubleFirstSheet_eq_conjugation_iff {x y : closedAnnulus r₁ r�
   constructor
   · intro h
     have hL : 0 < Real.log (r₂ / r₁) := Real.log_pos ((one_lt_div hr₁.out).2 hr₁₂.out)
-    simp only [doubleFirstSheet_apply, doubleTorusConjugation_mk] at h
+    simp only [doubleFirstSheet_apply, ← doubleLog.eq_1, doubleTorusConjugation_mk] at h
     have hv : -Real.log (r₂ / r₁) ≤ (conj (doubleLog y)).im ∧
         (conj (doubleLog y)).im ≤ Real.log (r₂ / r₁) := by
       simp only [conj_im]
@@ -301,7 +306,6 @@ theorem doubleTorusMap_inl (z : closedAnnulus r₁ r₂) :
     doubleTorusMap r₁ r₂ (DoubleAlong.inl _ z) =
       Quotient.mk _ (-I * log ((z : ℂ) / r₁)) := by
   rw [doubleTorusMap, DoubleAlong.desc_inl, doubleFirstSheet_apply]
-  rfl
 
 /-- On the second sheet the map is the conjugate logarithmic coordinate modulo the lattice. -/
 @[simp]
@@ -310,7 +314,6 @@ theorem doubleTorusMap_inr (z : closedAnnulus r₁ r₂) :
       Quotient.mk _ (conj (-I * log ((z : ℂ) / r₁))) := by
   rw [doubleTorusMap, DoubleAlong.desc_inr, ContinuousMap.comp_apply, doubleFirstSheet_apply,
     doubleTorusConjugation_mk]
-  rfl
 
 /-- The sheet exchange is carried to the actual conjugation of the quotient torus. -/
 theorem doubleTorusMap_swap (z : SchottkyDouble (closedAnnulus r₁ r₂)) :
@@ -356,7 +359,7 @@ private theorem doubleFirstSheet_innerChart_symm (ζ : ℂ) (hζ : ‖ζ‖ = 1)
     mem_doublePeriodLattice_iff.mpr ⟨1, 0, by simp⟩
   have heζ : exp (I * (arg ζ : ℂ)) = ζ := by
     simpa [hζ, mul_comm] using norm_mul_exp_arg_mul_I ζ
-  rw [doubleFirstSheet_apply]
+  rw [doubleFirstSheet_apply, ← doubleLog]
   apply (doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_of_exp_I_mul_eq hperiod
   rw [exp_I_mul_doubleLog, coe_innerChart_symm_apply hw, mul_sub, exp_sub, heζ,
     neg_mul, exp_neg]
@@ -371,9 +374,11 @@ private theorem doubleFirstSheet_outerChart_symm (ζ : ℂ) (hζ : ‖ζ‖ = 1)
     mem_doublePeriodLattice_iff.mpr ⟨1, 0, by simp⟩
   have heζ : exp (I * (arg ζ : ℂ)) = ζ := by
     simpa [hζ, mul_comm] using norm_mul_exp_arg_mul_I ζ
-  rw [doubleFirstSheet_apply]
+  rw [doubleFirstSheet_apply, ← doubleLog]
   apply (doublePeriodLattice r₁ r₂).orbitRelQuotient_mk_eq_of_exp_I_mul_eq hperiod
   rw [exp_I_mul_doubleLog, coe_outerChart_symm_apply hw]
+  -- Distribute `I` over the affine outer lift and use `I² = -1`; the resulting three terms
+  -- exponentiate to the angular, chart and radial factors in the inverse-chart formula.
   rw [show I * ((arg ζ : ℂ) + w - I * Real.log (r₂ / r₁)) =
     I * (arg ζ : ℂ) + I * w + (Real.log (r₂ / r₁) : ℂ) by
       linear_combination -I_mul_I * (Real.log (r₂ / r₁) : ℂ)]
@@ -442,7 +447,7 @@ private theorem isLocalDiffeomorphAt_doubleTorusMap_of_lift
     (AddAction.orbitRel.Quotient (doublePeriodLattice r₁ r₂) ℂ) hq
   apply hcomp.congr_of_eventuallyEq
   filter_upwards [e.open_source.mem_nhds hx] with y hy
-  change doubleTorusMap r₁ r₂ y = Quotient.mk _ (Diffeomorph.smulAdd ω a b ha (e y))
+  simp only [Function.comp_apply]
   rw [Diffeomorph.smulAdd_apply, smul_eq_mul]
   exact (congrArg (doubleTorusMap r₁ r₂) (e.left_inv hy).symm).trans
     (hf (e y) (e.map_source hy))
@@ -469,6 +474,7 @@ theorem isLocalDiffeomorph_doubleTorusMap :
     simp only [hin] at hreal hx hmax
     apply isLocalDiffeomorphAt_doubleTorusMap_of_lift _ hmax (-1) (arg ζ) (by norm_num) hx
     intro w hw
+    -- The affine constructor writes `a * w + b`; the inner chart formula writes `arg ζ - w`.
     rw [show (-1 : ℂ) * w + (arg ζ : ℂ) = (arg ζ : ℂ) - w by ring]
     exact hlift hreal hw
   · have hlift := doubleTorusMap_comp_outerChart_symm (r₁ := r₁) (r₂ := r₂) ζ hζ
@@ -477,6 +483,7 @@ theorem isLocalDiffeomorph_doubleTorusMap :
     apply isLocalDiffeomorphAt_doubleTorusMap_of_lift _ hmax 1
       ((arg ζ : ℂ) - I * Real.log (r₂ / r₁)) one_ne_zero hx
     intro w hw
+    -- Reassociate the affine constructor's constant term to match the outer chart formula.
     rw [show (1 : ℂ) * w + ((arg ζ : ℂ) - I * Real.log (r₂ / r₁)) =
       (arg ζ : ℂ) + w - I * Real.log (r₂ / r₁) by ring]
     exact hlift hreal hw
@@ -520,7 +527,7 @@ theorem doubleTorusDiffeomorph_inl (z : closedAnnulus r₁ r₂) :
       Quotient.mk (AddAction.orbitRel (doublePeriodLattice r₁ r₂) ℂ)
         ((arg (z : ℂ) : ℂ) - I * Real.log (‖(z : ℂ)‖ / r₁)) := by
   rw [doubleTorusDiffeomorph_apply, doubleTorusMap_inl]
-  exact congrArg (Quotient.mk _) (doubleLog_eq_arg_sub_log_norm z)
+  simpa only [doubleLog] using congrArg (Quotient.mk _) (doubleLog_eq_arg_sub_log_norm z)
 
 /-- The second-sheet formula is the conjugate polar logarithmic coordinate. -/
 @[simp]
@@ -529,7 +536,8 @@ theorem doubleTorusDiffeomorph_inr (z : closedAnnulus r₁ r₂) :
       Quotient.mk (AddAction.orbitRel (doublePeriodLattice r₁ r₂) ℂ)
         (conj ((arg (z : ℂ) : ℂ) - I * Real.log (‖(z : ℂ)‖ / r₁))) := by
   rw [doubleTorusDiffeomorph_apply, doubleTorusMap_inr]
-  exact congrArg (fun w ↦ Quotient.mk _ (conj w)) (doubleLog_eq_arg_sub_log_norm z)
+  simpa only [doubleLog] using
+    congrArg (fun w ↦ Quotient.mk _ (conj w)) (doubleLog_eq_arg_sub_log_norm z)
 
 /-- The biholomorphism intertwines sheet exchange with complex conjugation on the torus. -/
 theorem doubleTorusDiffeomorph_swap (z : SchottkyDouble (closedAnnulus r₁ r₂)) :
@@ -560,7 +568,7 @@ theorem doubleTorusCircle_apply (ρ : Icc r₁ r₂) (ζ : Circle) :
     doubleTorusCircle (r₁ := r₁) (r₂ := r₂) ρ ζ =
       Quotient.mk (AddAction.orbitRel (doublePeriodLattice r₁ r₂) ℂ)
         ((arg (ζ : ℂ) : ℂ) - I * Real.log ((ρ : ℝ) / r₁)) := by
-  change doubleTorusDiffeomorph r₁ r₂ (DoubleAlong.inl _ _) = _
+  simp only [doubleTorusCircle, ContinuousMap.coe_mk]
   rw [doubleTorusDiffeomorph_inl, coe_closedAnnulusHomeomorph_symm_apply]
   have hρ : 0 < (ρ : ℝ) := hr₁.out.trans_le ρ.property.1
   simp [Complex.real_smul, arg_real_mul _ hρ, Circle.norm_coe, abs_of_pos hρ]
@@ -572,16 +580,15 @@ private theorem range_doubleTorusCircle (ρ : Icc r₁ r₂) :
   ext q
   constructor
   · rintro ⟨ζ, rfl⟩
-    refine ⟨(closedAnnulusHomeomorph hr₁.out).symm (ζ, ρ), ?_, rfl⟩
-    change ‖((closedAnnulusHomeomorph hr₁.out).symm (ζ, ρ) : ℂ)‖ = (ρ : ℝ)
-    rw [← coe_closedAnnulusHomeomorph_apply_snd hr₁.out,
-      (closedAnnulusHomeomorph hr₁.out).apply_symm_apply]
+    refine ⟨(closedAnnulusHomeomorph hr₁.out).symm (ζ, ρ), ?_, ?_⟩
+    · rw [mem_ofPred_eq, ← coe_closedAnnulusHomeomorph_apply_snd hr₁.out,
+        (closedAnnulusHomeomorph hr₁.out).apply_symm_apply]
+    · simp only [doubleTorusCircle, ContinuousMap.coe_mk]
   · rintro ⟨z, hz, rfl⟩
     refine ⟨(closedAnnulusHomeomorph hr₁.out z).1, ?_⟩
     have hs : (closedAnnulusHomeomorph hr₁.out z).2 = ρ :=
       Subtype.ext ((coe_closedAnnulusHomeomorph_apply_snd hr₁.out z).trans hz)
-    change doubleTorusDiffeomorph r₁ r₂ (DoubleAlong.inl _
-      ((closedAnnulusHomeomorph hr₁.out).symm (_, ρ))) = _
+    simp only [doubleTorusCircle, ContinuousMap.coe_mk]
     rw [← hs, Prod.mk.eta, (closedAnnulusHomeomorph hr₁.out).symm_apply_apply]
 
 /-- The fixed locus of quotient conjugation consists exactly of the two embedded circles
@@ -594,11 +601,12 @@ theorem fixed_locus_doubleTorusConjugation :
   ext q
   constructor
   · intro hq
+    rw [mem_ofPred_eq] at hq
     obtain ⟨p, rfl⟩ := (doubleTorusDiffeomorph r₁ r₂).surjective q
     have hp : DoubleAlong.swap _ p = p := (doubleTorusDiffeomorph r₁ r₂).injective
       ((doubleTorusDiffeomorph_swap p).trans hq)
     have hm : p ∈ DoubleAlong.inl _ '' (borderedInterior (closedAnnulus r₁ r₂) : Set _)ᶜ := by
-      rw [← DoubleAlong.fixed_locus]
+      rw [← DoubleAlong.fixed_locus, mem_ofPred_eq]
       exact hp
     obtain ⟨z, hz, rfl⟩ := hm
     rw [compl_borderedInterior, DoubleAlong.mem_annulusBoundary] at hz
@@ -610,8 +618,7 @@ theorem fixed_locus_doubleTorusConjugation :
       have hb : z ∈ (borderedInterior (closedAnnulus r₁ r₂) : Set _)ᶜ := by
         rw [compl_borderedInterior, DoubleAlong.mem_annulusBoundary]
         first | exact Or.inl hz | exact Or.inr hz
-      change doubleTorusConjugation r₁ r₂ (doubleTorusDiffeomorph r₁ r₂
-        (DoubleAlong.inl _ z)) = doubleTorusDiffeomorph r₁ r₂ (DoubleAlong.inl _ z)
+      simp only [mem_ofPred_eq]
       rw [← doubleTorusDiffeomorph_swap, DoubleAlong.swap_inl,
         ← (DoubleAlong.inl_eq_inr_iff _).2 ⟨rfl, hb⟩]
 
@@ -629,8 +636,9 @@ theorem disjoint_doubleTorus_boundary_circles :
 /-- The analytic annulus double has finite CW type by the native topological double comparison. -/
 instance instFiniteCWTypeSchottkyDouble :
     FiniteCWType (SchottkyDouble (closedAnnulus r₁ r₂)) := by
-  change FiniteCWType
-    (DoubleAlong (borderedInterior (closedAnnulus r₁ r₂) : Set (closedAnnulus r₁ r₂))ᶜ)
+  -- The seam equality is propositional. Unfold the double so `rw` abstracts the seam in
+  -- its type and quotient topology together; class congruence for `simp` holds the type fixed.
+  unfold SchottkyDouble
   rw [compl_borderedInterior]
   exact DoubleAlong.finiteCWType_annulusDouble hr₁.out hr₁₂.out
 
@@ -639,10 +647,11 @@ annulus-double comparison with `Circle × Circle`. -/
 theorem eulerChar_schottkyDouble :
     eulerChar (SchottkyDouble (closedAnnulus r₁ r₂)) = 0 := by
   let := DoubleAlong.finiteCWType_annulusDouble hr₁.out hr₁₂.out
+  -- Compare the quotient topologies along the same seam equality, then use the existing
+  -- homeomorphism invariance of Euler characteristic.
   let e : SchottkyDouble (closedAnnulus r₁ r₂) ≃ₜ
       DoubleAlong (DoubleAlong.annulusBoundary r₁ r₂) := by
-    change DoubleAlong (borderedInterior (closedAnnulus r₁ r₂) :
-      Set (closedAnnulus r₁ r₂))ᶜ ≃ₜ DoubleAlong (DoubleAlong.annulusBoundary r₁ r₂)
+    unfold SchottkyDouble
     rw [compl_borderedInterior]
     exact Homeomorph.refl _
   rw [e.eulerChar_eq]
