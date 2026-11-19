@@ -153,13 +153,7 @@ derivative at `f x`, then `g ∘ f` and `f` have the same rank at `x`. -/
 theorem mfderivRank_comp_of_injective {g : N → P}
     (hf : MDifferentiableAt I J f x) (hinj : Injective (mfderiv J K g (f x))) :
     mfderivRank I K (g ∘ f) x = mfderivRank I J f x := by
-  -- If `g` were not differentiable at `f x` its derivative would be `0`, and injectivity would
-  -- force the model space of `J` to be a subsingleton, where every map is differentiable.
-  have hg : MDifferentiableAt J K g (f x) := by
-    by_contra hg
-    have : Subsingleton E' :=
-      ⟨fun a b ↦ hinj (by rw [mfderiv_zero_of_not_mdifferentiableAt hg]; rfl)⟩
-    exact hg (mdifferentiable_of_subsingleton (f x))
+  have hg := mdifferentiableAt_of_mfderiv_injective hinj
   rw [mfderivRank_def, mfderivRank_def, mfderiv_comp x hg hf, ContinuousLinearMap.toLinearMap_comp]
   simpa using LinearMap.finrank_range_comp_comp _ (mfderiv I J f x).toLinearMap LinearMap.id hinj
     surjective_id
