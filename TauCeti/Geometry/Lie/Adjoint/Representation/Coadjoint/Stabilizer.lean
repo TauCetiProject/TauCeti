@@ -45,6 +45,9 @@ The computation of the Lie algebra rests on the derivative of the curve
 
 * `TauCeti.Lie.mem_stabilizer_coadjointRepresentation_iff`: `g ∈ G_ν` exactly when
   `ν (Ad_g ξ) = ν ξ` for every `ξ`.
+* `TauCeti.Lie.stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation`: for a
+  nondegenerate `Ad`-invariant bilinear form `b`, the coadjoint stabilizer of `b(X, ·)` is the
+  adjoint stabilizer of `X`.
 * `TauCeti.Lie.isClosed_stabilizer_coadjointRepresentation`: `G_ν` is closed.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_stabilizer_coadjointRepresentation`: `G_ν` is an embedded Lie
   subgroup.
@@ -83,6 +86,33 @@ theorem mem_stabilizer_coadjointRepresentation_iff {g : G} :
       ∀ ξ : GroupLieAlgebra I G, ν (adjointContinuousLinearMap (I := I) g ξ) = ν ξ := by
   rw [← Subgroup.inv_mem_iff, Representation.mem_stabilizer, LinearMap.ext_iff]
   simp only [coadjointRepresentation_apply, inv_inv]
+
+/-- **Coadjoint stabilizers are adjoint stabilizers for an invariant form.** If `b` is a
+nondegenerate bilinear form on the Lie algebra invariant under the adjoint action, the coadjoint
+stabilizer of `b(X, ·)` is the adjoint stabilizer of `X`. -/
+theorem stabilizer_coadjointRepresentation_eq_stabilizer_adjointRepresentation
+    {b : GroupLieAlgebra I G →L[𝕜] GroupLieAlgebra I G →L[𝕜] 𝕜}
+    (hb : ∀ a, (∀ c, b a c = 0) → a = 0)
+    (hinv : ∀ (g : G) (a c : GroupLieAlgebra I G),
+      b (adjointContinuousLinearMap (I := I) g a) (adjointContinuousLinearMap (I := I) g c) = b a c)
+    (X : GroupLieAlgebra I G) :
+    (coadjointRepresentation 𝕜 I G).stabilizer (b X : Module.Dual 𝕜 (GroupLieAlgebra I G)) =
+      (adjointRepresentation 𝕜 I G).stabilizer X := by
+  ext g
+  rw [mem_stabilizer_coadjointRepresentation_iff, ← Subgroup.inv_mem_iff,
+    Representation.mem_stabilizer, adjointRepresentation_apply]
+  -- By invariance `b(X, Ad_g c) = b(Ad_{g⁻¹} X, c)`, so by nondegeneracy `b(X, ·) ∘ Ad_g = b(X, ·)`
+  -- exactly when `Ad_{g⁻¹} X = X`.
+  have hAd (c : GroupLieAlgebra I G) :
+      b X (adjointContinuousLinearMap (I := I) g c) =
+        b (adjointContinuousLinearMap (I := I) g⁻¹ X) c := by
+    rw [← hinv g⁻¹ X]
+    congr 1
+    rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
+      adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+  simp only [ContinuousLinearMap.coe_coe, hAd]
+  refine ⟨fun h ↦ sub_eq_zero.1 (hb _ fun c ↦ ?_), fun h c ↦ by rw [h]⟩
+  rw [map_sub, sub_apply, h c, sub_self]
 
 end General
 
