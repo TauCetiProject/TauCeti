@@ -38,6 +38,7 @@ cone of frequencies.
 
 ## Main results
 
+* `IsOpen.exists_cone_exists_smul_mem`: the open cone over an open set containing `ξ`.
 * `IsOpen.exists_cone_closedBall_subset`: an open cone `Γ` containing `ξ` contains a smaller open
   cone `Γ'` containing `ξ` such that `closedBall η (c * ‖η‖) ⊆ Γ` for every `η ∈ Γ'`.
 * `TauCeti.exists_one_add_norm_pow_mul_norm_le_of_hasSum`: decay of order `N` on `Γ'` of a
@@ -69,6 +70,19 @@ namespace IsOpen
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
+/-- The cone over an open set: if `V` is open and contains `ξ`, there is an open set `Γ`
+containing `ξ` and closed under multiplication by positive reals, every element of which is
+rescaled by some `t > 0` into `V`. -/
+theorem exists_cone_exists_smul_mem {V : Set E} (hV : IsOpen V) {ξ : E} (hξ : ξ ∈ V) :
+    ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧ (∀ t : ℝ, 0 < t → ∀ η ∈ Γ, t • η ∈ Γ) ∧
+      ∀ η ∈ Γ, ∃ t : ℝ, 0 < t ∧ t • η ∈ V := by
+  set Γ : Set E := ⋃ t ∈ Ioi (0 : ℝ), (t • ·) ⁻¹' V
+  have hmem {η : E} : η ∈ Γ ↔ ∃ t : ℝ, 0 < t ∧ t • η ∈ V := by simp [Γ]
+  refine ⟨Γ, isOpen_biUnion fun t _ ↦ hV.preimage (continuous_const_smul t),
+    hmem.2 ⟨1, one_pos, by simpa using hξ⟩, fun s hs η hη ↦ ?_, fun η ↦ hmem.1⟩
+  obtain ⟨t, ht, htη⟩ := hmem.1 hη
+  exact hmem.2 ⟨t / s, div_pos ht hs, by rwa [smul_smul, div_mul_cancel₀ _ hs.ne']⟩
+
 /-- An open set `Γ` closed under multiplication by positive reals contains, around each of its
 points `ξ`, a smaller open set `Γ'` closed under multiplication by positive reals such that, for
 some `c > 0`, the closed ball of radius `c ‖η‖` about every `η ∈ Γ'` lies in `Γ`. -/
@@ -78,37 +92,33 @@ theorem exists_cone_closedBall_subset {Γ : Set E} (hΓ : IsOpen Γ)
       ∃ c > 0, ∀ η ∈ Γ', closedBall η (c * ‖η‖) ⊆ Γ := by
   obtain ⟨r, hr, hball⟩ := isOpen_iff.1 hΓ ξ hξ
   -- `Γ'` is the cone over the ball of radius `r / 2` about `ξ`.
-  set Γ' : Set E := ⋃ t ∈ Ioi (0 : ℝ), (t • ·) ⁻¹' ball ξ (r / 2)
-  have hmem {η : E} : η ∈ Γ' ↔ ∃ t : ℝ, 0 < t ∧ dist (t • η) ξ < r / 2 := by
-    simp [Γ']
-  refine ⟨Γ', isOpen_biUnion fun t _ ↦ isOpen_ball.preimage (continuous_const_smul t),
-    hmem.2 ⟨1, one_pos, by simpa using half_pos hr⟩, fun s hs η hη ↦ ?_,
-    r / (2 * ‖ξ‖ + r), by positivity, fun η hη ζ hζ ↦ ?_⟩
-  · obtain ⟨t, ht, htη⟩ := hmem.1 hη
-    exact hmem.2 ⟨t / s, div_pos ht hs, by rwa [smul_smul, div_mul_cancel₀ _ hs.ne']⟩
-  · obtain ⟨t, ht, htη⟩ := hmem.1 hη
-    -- Rescaled by `t`, the point `ζ` is within `r` of `ξ`, since `t ‖η‖ < ‖ξ‖ + r / 2`.
-    have hnorm : t * ‖η‖ < ‖ξ‖ + r / 2 := by
-      have h := norm_le_norm_add_norm_sub' (t • η) ξ
-      rw [norm_smul, Real.norm_of_nonneg ht.le, ← dist_eq_norm] at h
-      linarith
-    have hζη : t * dist ζ η ≤ r / (2 * ‖ξ‖ + r) * (t * ‖η‖) := by
-      rw [mem_closedBall] at hζ
-      nlinarith
-    have hr' : r / (2 * ‖ξ‖ + r) * (‖ξ‖ + r / 2) = r / 2 := by
-      field_simp
-    have htζ : t • ζ ∈ Γ := by
-      refine hball (mem_ball.2 ?_)
-      calc dist (t • ζ) ξ ≤ dist (t • ζ) (t • η) + dist (t • η) ξ := dist_triangle _ _ _
-        _ = t * dist ζ η + dist (t • η) ξ := by
-          rw [dist_smul₀, Real.norm_of_nonneg ht.le]
-        _ < r / 2 + r / 2 := by
-          refine add_lt_add_of_le_of_lt ?_ htη
-          calc t * dist ζ η ≤ r / (2 * ‖ξ‖ + r) * (t * ‖η‖) := hζη
-            _ ≤ r / (2 * ‖ξ‖ + r) * (‖ξ‖ + r / 2) := by gcongr
-            _ = r / 2 := hr'
-        _ = r := add_halves r
-    simpa [smul_smul, inv_mul_cancel₀ ht.ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htζ
+  obtain ⟨Γ', hΓ'o, hξ', hcone', hmem⟩ :=
+    exists_cone_exists_smul_mem (isOpen_ball (x := ξ)) (mem_ball_self (half_pos hr))
+  refine ⟨Γ', hΓ'o, hξ', hcone', r / (2 * ‖ξ‖ + r), by positivity, fun η hη ζ hζ ↦ ?_⟩
+  obtain ⟨t, ht, htη⟩ := hmem η hη
+  rw [mem_ball] at htη
+  -- Rescaled by `t`, the point `ζ` is within `r` of `ξ`, since `t ‖η‖ < ‖ξ‖ + r / 2`.
+  have hnorm : t * ‖η‖ < ‖ξ‖ + r / 2 := by
+    have h := norm_le_norm_add_norm_sub' (t • η) ξ
+    rw [norm_smul, Real.norm_of_nonneg ht.le, ← dist_eq_norm] at h
+    linarith
+  have hζη : t * dist ζ η ≤ r / (2 * ‖ξ‖ + r) * (t * ‖η‖) := by
+    rw [mem_closedBall] at hζ
+    nlinarith
+  have hr' : r / (2 * ‖ξ‖ + r) * (‖ξ‖ + r / 2) = r / 2 := by
+    field_simp
+  have htζ : t • ζ ∈ Γ := by
+    refine hball (mem_ball.2 ?_)
+    calc dist (t • ζ) ξ ≤ dist (t • ζ) (t • η) + dist (t • η) ξ := dist_triangle _ _ _
+      _ = t * dist ζ η + dist (t • η) ξ := by
+        rw [dist_smul₀, Real.norm_of_nonneg ht.le]
+      _ < r / 2 + r / 2 := by
+        refine add_lt_add_of_le_of_lt ?_ htη
+        calc t * dist ζ η ≤ r / (2 * ‖ξ‖ + r) * (t * ‖η‖) := hζη
+          _ ≤ r / (2 * ‖ξ‖ + r) * (‖ξ‖ + r / 2) := by gcongr
+          _ = r / 2 := hr'
+      _ = r := add_halves r
+  simpa [smul_smul, inv_mul_cancel₀ ht.ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htζ
 
 end IsOpen
 
