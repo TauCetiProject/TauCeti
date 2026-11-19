@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.LocalInverse
 import TauCeti.Geometry.Manifold.Immersion.ShapeOperator
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # Nearest points in a Euclidean tubular neighbourhood
@@ -25,7 +26,7 @@ length less than `ε`, as it is for a compact embedded submanifold and small `ε
 neighbourhood theorem `TauCeti.exists_isOpenEmbedding_normalTube`. A nearest point `f y` to
 `q = f x + v`, with `v` normal at `x` and `‖v‖ < ε`, satisfies `‖q - f y‖ ≤ ‖v‖ < ε`, so
 `q - f y` is also a normal vector of length less than `ε`, at `y`
-(`TauCeti.mk_sub_mem_normalTube_of_isMinOn`), and injectivity forces `y = x`. Hence, for a
+(`TauCeti.mk_sub_mem_normalTube_of_isLocalMin`), and injectivity forces `y = x`. Hence, for a
 compact `M`:
 
 * `f x` is the unique nearest point of `f` to `f x + v`
@@ -35,8 +36,8 @@ compact `M`:
 * the tube is the metric neighbourhood of radius `ε` of the image
   (`TauCeti.image_normalTube_eq_thickening`); the inclusion of that neighbourhood in the tube
   holds without any injectivity (`TauCeti.thickening_range_subset_image_normalTube`);
-* when normal addition is an open embedding of the tube, sending a point of the neighbourhood to
-  its nearest point of `M` is a retraction, continuous on the neighbourhood
+* sending a point of the neighbourhood to its nearest point of `M` is a retraction, continuous on
+  the neighbourhood since its graph is closed
   (`TauCeti.exists_continuousOn_nearestPoint_retraction`);
 * when `f` is a `C^(n + 1)` immersion, `n ≥ 1`, this retraction is `C^n` on a smaller
   neighbourhood of the image, where it agrees with the local normal retractions
@@ -92,13 +93,12 @@ section Tube
 
 variable {ε : ℝ}
 
-/-- If `f y` is a nearest point of `f` to `q`, at distance less than `ε`, then the displacement
-`q - f y` is a normal vector at `y` of length less than `ε`. -/
-theorem mk_sub_mem_normalTube_of_isMinOn {q : V} {y : M} (hf : MDifferentiableAt I 𝓘(ℝ, V) f y)
-    (hy : IsMinOn (fun z => dist q (f z)) univ y) (h : dist q (f y) < ε) :
-    (y, q - f y) ∈ normalTube I f ε :=
-  mem_normalTube.mpr ⟨sub_mem_normalSubspace_of_isLocalMin hf (hy.isLocalMin univ_mem),
-    by rwa [← dist_eq_norm]⟩
+/-- If `f y` is, locally in `y`, a nearest point of `f` to `q`, at distance less than `ε`, then the
+displacement `q - f y` is a normal vector at `y` of length less than `ε`. -/
+theorem mk_sub_mem_normalTube_of_isLocalMin {q : V} {y : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, V) f y) (hy : IsLocalMin (fun z => dist q (f z)) y)
+    (h : dist q (f y) < ε) : (y, q - f y) ∈ normalTube I f ε :=
+  mem_normalTube.mpr ⟨sub_mem_normalSubspace_of_isLocalMin hf hy, by rwa [← dist_eq_norm]⟩
 
 /-- If normal addition is injective on the normal vectors of length less than `ε`, then every
 nearest point of `f` to the endpoint `f x + v` of such a normal vector `v` at `x` is the base
@@ -113,7 +113,8 @@ theorem eq_fst_of_isMinOn_dist_of_mem_normalTube (hf : MDifferentiable I 𝓘(�
       _ = ‖p.2‖ := by simp [q, dist_eq_norm]
       _ < ε := (mem_normalTube.mp hp).2
   exact congrArg Prod.fst
-    (hinj (mk_sub_mem_normalTube_of_isMinOn (hf y) hy hlt) hp (by simp [q]))
+    (hinj (mk_sub_mem_normalTube_of_isLocalMin (hf y) (hy.isLocalMin univ_mem) hlt) hp
+      (by simp [q]))
 
 variable [CompactSpace M]
 
@@ -124,8 +125,7 @@ theorem norm_le_dist_add_of_mem_normalTube (hf : MDifferentiable I 𝓘(ℝ, V) 
     (hinj : InjOn (fun p : M × V => f p.1 + p.2) (normalTube I f ε)) {p : M × V}
     (hp : p ∈ normalTube I f ε) (z : M) : ‖p.2‖ ≤ dist (f p.1 + p.2) (f z) := by
   have : Nonempty M := ⟨p.1⟩
-  obtain ⟨y, -, hy⟩ := isCompact_univ.exists_isMinOn univ_nonempty
-    ((continuous_const (y := f p.1 + p.2)).dist hf.continuous).continuousOn
+  obtain ⟨y, hy⟩ := hf.continuous.exists_isMinOn_dist (f p.1 + p.2)
   obtain rfl := eq_fst_of_isMinOn_dist_of_mem_normalTube hf hinj hp hy
   simpa [dist_eq_norm] using hy (mem_univ z)
 
@@ -158,10 +158,9 @@ theorem thickening_range_subset_image_normalTube (hf : MDifferentiable I 𝓘(�
   intro q hq
   obtain ⟨_, ⟨z, rfl⟩, hz⟩ := mem_thickening_iff.mp hq
   have : Nonempty M := ⟨z⟩
-  obtain ⟨y, -, hy⟩ := isCompact_univ.exists_isMinOn univ_nonempty
-    ((continuous_const (y := q)).dist hf.continuous).continuousOn
-  exact ⟨(y, q - f y),
-    mk_sub_mem_normalTube_of_isMinOn (hf y) hy ((hy (mem_univ z)).trans_lt hz), by simp⟩
+  obtain ⟨y, hy⟩ := hf.continuous.exists_isMinOn_dist q
+  exact ⟨(y, q - f y), mk_sub_mem_normalTube_of_isLocalMin (hf y) (hy.isLocalMin univ_mem)
+    ((hy (mem_univ z)).trans_lt hz), by simp⟩
 
 /-- If normal addition is injective on the normal vectors of length less than `ε`, it maps them
 onto the `ε`-neighbourhood of the image of `f`. -/
@@ -174,35 +173,41 @@ theorem image_normalTube_eq_thickening (hf : MDifferentiable I 𝓘(ℝ, V) f)
     infDist_add_eq_norm_of_mem_normalTube hf hinj hp]
   exact (mem_normalTube.mp hp).2
 
-/-- **The nearest-point retraction.** If normal addition is an open embedding of the normal
-vectors of length less than `ε > 0`, there is a retraction `r` of `V` onto `M`, continuous on the
+/-- **The nearest-point retraction.** If normal addition is injective on the normal vectors of
+length less than `ε > 0`, there is a retraction `r` of `V` onto `M`, continuous on the
 `ε`-neighbourhood of the image of `f`, which sends each point `q` of that neighbourhood to its
 unique nearest point. By `TauCeti.sub_mem_normalSubspace_of_isLocalMin`, the displacement
 `q - f (r q)` is then normal at `r q`. -/
 theorem exists_continuousOn_nearestPoint_retraction [Nonempty M]
     (hf : MDifferentiable I 𝓘(ℝ, V) f) (hε : 0 < ε)
-    (hemb : IsOpenEmbedding ((normalTube I f ε).domRestrict fun p : M × V => f p.1 + p.2)) :
+    (hinj : InjOn (fun p : M × V => f p.1 + p.2) (normalTube I f ε)) :
     ∃ r : V → M, ContinuousOn r (thickening ε (range f)) ∧ (∀ x, r (f x) = x) ∧
       ∀ q ∈ thickening ε (range f), ∀ z,
         IsMinOn (fun w => dist q (f w)) univ z ↔ z = r q := by
-  set g := (normalTube I f ε).domRestrict fun p : M × V => f p.1 + p.2
-  have hinj : InjOn (fun p : M × V => f p.1 + p.2) (normalTube I f ε) :=
-    injOn_iff_injective.mpr hemb.injective
-  have hrange : range g = thickening ε (range f) := by
-    rw [range_domRestrict, image_normalTube_eq_thickening hf hinj]
-  obtain ⟨x₀⟩ := ‹Nonempty M›
-  have : Nonempty (normalTube I f ε) := ⟨⟨(x₀, 0), mk_zero_mem_normalTube hε x₀⟩⟩
-  -- The retraction is the base point of the inverse of the tube coordinates.
-  set e := hemb.toOpenPartialHomeomorph g
-  refine ⟨fun q => (e.symm q).val.1, ?_, fun x => ?_, fun q hq z => ?_⟩
-  · refine (continuous_fst.comp continuous_subtype_val).comp_continuousOn
-      (e.continuousOn_symm.mono ?_)
-    rw [IsOpenEmbedding.toOpenPartialHomeomorph_target, hrange]
-  · have hx : g ⟨(x, 0), mk_zero_mem_normalTube hε x⟩ = f x := by simp [g]
-    simp only [e, ← hx, IsOpenEmbedding.toOpenPartialHomeomorph_left_inv]
-  · have hq' : g (e.symm q) = q := hemb.toOpenPartialHomeomorph_right_inv g (hrange ▸ hq)
-    simp only [g, domRestrict_apply] at hq'
-    simpa only [hq'] using isMinOn_dist_add_iff_of_mem_normalTube hf hinj (e.symm q).2 (z := z)
+  choose r hr using hf.continuous.exists_isMinOn_dist
+  -- On the neighbourhood, every point is the endpoint of a short normal vector, whose base point
+  -- is its unique nearest point.
+  have hmin : ∀ q ∈ thickening ε (range f), ∀ z,
+      IsMinOn (fun w => dist q (f w)) univ z ↔ z = r q := by
+    intro q hq z
+    obtain ⟨p, hp, rfl⟩ := thickening_range_subset_image_normalTube hf hq
+    rw [isMinOn_dist_add_iff_of_mem_normalTube hf hinj hp,
+      (isMinOn_dist_add_iff_of_mem_normalTube hf hinj hp).mp (hr _)]
+  refine ⟨r, ?_, fun x => ?_, hmin⟩
+  · -- The graph of `r` on the neighbourhood is the closed set of pairs `(q, z)` for which `f z`
+    -- is a nearest point to `q`, and `M` is compact.
+    rw [continuousOn_iff_continuous_domRestrict]
+    refine continuous_of_isClosed_graph ?_
+    have hgraph : ((thickening ε (range f)).domRestrict r).graph =
+        ⋂ w, {p : thickening ε (range f) × M | dist p.1.1 (f p.2) ≤ dist p.1.1 (f w)} := by
+      ext ⟨⟨q, hq⟩, z⟩
+      simp [Function.mem_graph, eq_comm (a := r q), ← hmin q hq z, isMinOn_iff]
+    rw [hgraph]
+    exact isClosed_iInter fun w => isClosed_le
+      ((continuous_subtype_val.comp continuous_fst).dist (hf.continuous.comp continuous_snd))
+      ((continuous_subtype_val.comp continuous_fst).dist continuous_const)
+  · exact ((hmin (f x) (self_subset_thickening hε _ (mem_range_self x)) x).mp
+      fun w _ => by simp).symm
 
 /-- **The nearest-point retraction is smooth.** Let `f` be a `C^(n + 1)` immersion of a compact
 manifold, `n ≥ 1`, for which normal addition is injective on the normal vectors of length less
@@ -220,8 +225,7 @@ theorem exists_contMDiffOn_nearestPoint_retraction [Nonempty M] [FiniteDimension
   obtain ⟨x₁⟩ := ‹Nonempty M›
   have : FiniteDimensional ℝ E := finiteDimensional_of_injective_mfderiv (himm x₁)
   have hd : MDifferentiable I 𝓘(ℝ, V) f := hf.mdifferentiable (by simp)
-  choose r _ hr using fun q : V => isCompact_univ.exists_isMinOn univ_nonempty
-    ((continuous_const (y := q)).dist hf.continuous).continuousOn
+  choose r hr using hf.continuous.exists_isMinOn_dist
   -- A nearest point to the endpoint of a short normal vector is its base point.
   have hbase : ∀ q (p : M × V), p ∈ normalTube I f ε → f p.1 + p.2 = q → r q = p.1 :=
     fun q p hp hpq =>
