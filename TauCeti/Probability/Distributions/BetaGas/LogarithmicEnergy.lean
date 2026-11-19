@@ -10,6 +10,7 @@ public import TauCeti.Probability.LargeDeviations.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
 import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.Data.EReal.Operations
@@ -126,10 +127,20 @@ theorem logarithmicConfinement_def (V : ℝ → ℝ) (x : ℝ) :
     logarithmicConfinement V x = V x / 2 - Real.log (1 + |x|) :=
   (rfl)
 
-theorem continuous_logarithmicConfinement {V : ℝ → ℝ} (hV : Continuous V) :
-    Continuous (logarithmicConfinement V) := by
+private theorem continuous_log_one_add_abs : Continuous (fun x : ℝ ↦ Real.log (1 + |x|)) := by
   have hpos (x : ℝ) : 0 < 1 + |x| := by positivity
-  exact (hV.div_const 2).sub ((continuous_const.add continuous_abs).log fun x ↦ (hpos x).ne')
+  exact (continuous_const.add continuous_abs).log fun x ↦ (hpos x).ne'
+
+theorem continuous_logarithmicConfinement {V : ℝ → ℝ} (hV : Continuous V) :
+    Continuous (logarithmicConfinement V) :=
+  (hV.div_const 2).sub continuous_log_one_add_abs
+
+/-- A lower semicontinuous potential gives a lower semicontinuous confinement term. -/
+theorem lowerSemicontinuous_logarithmicConfinement {V : ℝ → ℝ} (hV : LowerSemicontinuous V) :
+    LowerSemicontinuous (logarithmicConfinement V) := by
+  have hhalf : LowerSemicontinuous (fun x ↦ V x / 2) :=
+    (continuous_id.div_const 2).comp_lowerSemicontinuous hV (monotone_id.div_const (by norm_num))
+  exact hhalf.add continuous_log_one_add_abs.neg.lowerSemicontinuous
 
 /-- A measurable potential gives a measurable confinement term. -/
 theorem measurable_logarithmicConfinement {V : ℝ → ℝ} (hV : Measurable V) :
@@ -199,18 +210,10 @@ theorem tendsto_logarithmicConfinement_sq_div_two :
 theorem bddBelow_range_logarithmicConfinement {V : ℝ → ℝ} (hV : LowerSemicontinuous V)
     (hconf : Tendsto (logarithmicConfinement V) (cocompact ℝ) atTop) :
     BddBelow (range (logarithmicConfinement V)) := by
-  have hhalf : LowerSemicontinuous (fun x ↦ V x / 2) :=
-    (continuous_id.div_const 2).comp_lowerSemicontinuous hV
-      (fun _ _ h ↦ div_le_div_of_nonneg_right h (by norm_num))
-  have hpos (x : ℝ) : 0 < 1 + |x| := by positivity
-  have hlog : Continuous (fun x : ℝ ↦ Real.log (1 + |x|)) :=
-    (continuous_const.add continuous_abs).log fun x ↦ (hpos x).ne'
-  have h : LowerSemicontinuous (logarithmicConfinement V) :=
-    hhalf.add hlog.neg.lowerSemicontinuous
   obtain ⟨K, hK, hle⟩ := mem_cocompact.mp
     (hconf.eventually_ge_atTop (logarithmicConfinement V 0))
   obtain ⟨x, _, hx⟩ := LowerSemicontinuousOn.exists_isMinOn (insert_nonempty 0 K)
-    (hK.insert 0) (h.lowerSemicontinuousOn _)
+    (hK.insert 0) ((lowerSemicontinuous_logarithmicConfinement hV).lowerSemicontinuousOn _)
   refine ⟨logarithmicConfinement V x, ?_⟩
   rintro _ ⟨y, rfl⟩
   by_cases hy : y ∈ K
@@ -418,13 +421,9 @@ theorem logarithmicEnergy_eq_integral_sub {V : ℝ → ℝ} (μ : ProbabilityMea
   simp only [integral_const, probReal_univ, one_smul, sub_add_cancel, F]
   have hi₁' : Integrable (fun z : ℝ × ℝ ↦ V z.1) ν := hi₁
   have hi₂' : Integrable (fun z : ℝ × ℝ ↦ V z.2) ν := hi₂
-  have h₁ : (∫ z : ℝ × ℝ, V z.1 ∂ν) = ∫ x, V x ∂μ.toMeasure :=
-    (integral_map hs₁.measurable.aemeasurable
-      (hs₁.map_eq.symm ▸ hV.aestronglyMeasurable)).symm.trans (by rw [hs₁.map_eq])
-  have h₂ : (∫ z : ℝ × ℝ, V z.2 ∂ν) = ∫ x, V x ∂μ.toMeasure :=
-    (integral_map hs₂.measurable.aemeasurable
-      (hs₂.map_eq.symm ▸ hV.aestronglyMeasurable)).symm.trans (by rw [hs₂.map_eq])
-  rw [integral_sub hhalf hlog, integral_div, integral_add hi₁' hi₂', h₁, h₂]
+  rw [integral_sub hhalf hlog, integral_div, integral_add hi₁' hi₂']
+  simp only [ν, ProbabilityMeasure.toMeasure_prod, integral_fun_fst, integral_fun_snd,
+    probReal_univ, one_smul]
   congr 1
   ring
 
