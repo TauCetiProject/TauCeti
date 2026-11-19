@@ -28,12 +28,11 @@ inequality applies beyond real characters. All bounds use the existing absolute 
 
 * `DirichletCharacter.tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction`: the direct
   real-part identity in terms of `L'/L`.
-* `DirichletCharacter.analyticOrderNatAt_div_sub_le_logDeriv`: the real-zero inequality with
-  its full multiplicity.
-* `DirichletCharacter.two_div_sub_le_logDeriv_of_analyticOrderNatAt_eq_two`: the double-zero
-  specialization.
-* `TauCeti.LFunctions.exists_quartic_dirichletCharacter_five_logDeriv`: a primitive nonreal
-  character satisfying the finite retained-zero inequality at `σ = 2`.
+
+The real-zero bound with its full multiplicity is
+`DirichletCharacter.analyticOrderNatAt_LFunction_div_sub_le_re_logDeriv_LFunction_add` in
+`Hadamard.lean`. The examples below check the factor two for a double zero and construct an
+actual primitive nonreal quartic character modulo `5`.
 
 ## References
 
@@ -67,25 +66,12 @@ theorem tsum_divisor_mul_re_one_div_sub_eq_re_logDeriv_LFunction (hne : χ ≠ 1
     ofReal_re]
   ring
 
-/-- **A real zero with its multiplicity.** For a nonprincipal primitive character `χ` modulo `q`,
-real `0 < β` and `1 ≤ σ ≤ 2`, `m_β / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log q + C_Γ`, where `m_β` is the
-analytic order of `L(χ, ·)` at `β`. -/
-theorem analyticOrderNatAt_div_sub_le_logDeriv (hne : χ ≠ 1) {β σ : ℝ} (hβ : 0 < β)
-    (hσ₁ : 1 ≤ σ) (hσ₂ : σ ≤ 2) :
-    (analyticOrderNatAt χ.LFunction β : ℝ) / (σ - β) ≤
-      (logDeriv χ.LFunction σ).re + Real.log N / 2 + gammaLogDerivBound := by
-  have h := χ.sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add
-    hχ hne {(β : ℂ)}
-    (by simpa only [Finset.mem_singleton, forall_eq, ofReal_re] using hβ) ⟨hσ₁, hσ₂⟩
-  rwa [Finset.sum_singleton, ← ofReal_sub, one_div, ← ofReal_inv, ofReal_re,
-    ← div_eq_mul_inv] at h
-
 /-- A double real zero `β` contributes `2 / (σ - β)`: weighting every zero by `1` would halve
 it. -/
-theorem two_div_sub_le_logDeriv_of_analyticOrderNatAt_eq_two (hne : χ ≠ 1) {β σ : ℝ}
+example (hne : χ ≠ 1) {β σ : ℝ}
     (hβ : 0 < β) (h₂ : analyticOrderNatAt χ.LFunction β = 2) (hσ₁ : 1 ≤ σ) (hσ₂ : σ ≤ 2) :
     2 / (σ - β) ≤ (logDeriv χ.LFunction σ).re + Real.log N / 2 + gammaLogDerivBound := by
-  have h := analyticOrderNatAt_div_sub_le_logDeriv χ hχ hne hβ hσ₁ hσ₂
+  have h := analyticOrderNatAt_LFunction_div_sub_le_re_logDeriv_LFunction_add χ hχ hne hβ hσ₁ hσ₂
   rwa [h₂, Nat.cast_ofNat] at h
 
 end DirichletCharacter
@@ -98,7 +84,7 @@ open _root_.DirichletCharacter
 `χ⁻¹ ≠ χ`, and with `S = ∅` at `σ = 2` the finite-sum inequality reads
 `0 ≤ Re (L'/L)(2, χ) + ½ log 5 + C_Γ`. A statement restricted to real characters would say
 nothing here. -/
-theorem exists_quartic_dirichletCharacter_five_logDeriv :
+example :
     ∃ χ : DirichletCharacter ℂ 5, orderOf χ = 4 ∧ χ⁻¹ ≠ χ ∧ χ.IsPrimitive ∧
       0 ≤ (logDeriv χ.LFunction 2).re + Real.log 5 / 2 + gammaLogDerivBound := by
   have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩

@@ -37,7 +37,8 @@ of `TauCeti.NumberTheory.LFunctions.Zeros.Completion.Hadamard` gives:
   `(logDeriv Λ₀ 0).re = -∑' ρ, m_ρ * (1 / ρ).re`, so off the zeros one has
   `(logDeriv Λ₀ s).re = ∑' ρ, m_ρ * (1 / (s - ρ)).re` with no additive constant.
 * **Retained-zero inequalities** (in `namespace DirichletCharacter`,
-  `sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add` and
+  `sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add`,
+  `analyticOrderNatAt_LFunction_div_sub_le_re_logDeriv_LFunction_add`, and
   `one_div_sub_le_re_logDeriv_LFunction_add`): for nonprincipal primitive `χ ≠ 1` and `σ ∈ [1, 2]`,
   every zero summand `m_ρ * Re (1 / (σ - ρ))` is nonnegative and the archimedean logarithmic
   derivative is bounded in norm by `TauCeti.gammaLogDerivBound` (`C_Γ`), so discarding all zeros
@@ -273,6 +274,21 @@ theorem sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunc
     (le_abs_self _).trans ((abs_re_le_norm _).trans (χ.norm_logDeriv_gammaFactor_ofReal_le hσ))
   linarith
 
+/-- **A real zero with its multiplicity.** For a nonprincipal primitive character `χ` modulo `q`,
+real `0 < β` and `1 ≤ σ ≤ 2`, `m_β / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log q + C_Γ`, where `m_β` is the
+analytic order of `L(χ, ·)` at `β`. -/
+theorem analyticOrderNatAt_LFunction_div_sub_le_re_logDeriv_LFunction_add
+    {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) (hne : χ ≠ 1)
+    {β σ : ℝ} (hβ : 0 < β)
+    (hσ₁ : 1 ≤ σ) (hσ₂ : σ ≤ 2) :
+    (analyticOrderNatAt χ.LFunction β : ℝ) / (σ - β) ≤
+      (logDeriv χ.LFunction σ).re + Real.log N / 2 + TauCeti.gammaLogDerivBound := by
+  have h := χ.sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add
+    hχ hne {(β : ℂ)}
+    (by simpa only [Finset.mem_singleton, forall_eq, ofReal_re] using hβ) ⟨hσ₁, hσ₂⟩
+  rwa [Finset.sum_singleton, ← ofReal_sub, one_div, ← ofReal_inv, ofReal_re,
+    ← div_eq_mul_inv] at h
+
 /-- **One-zero inequality.** For any primitive nonprincipal Dirichlet character `χ` of conductor
 `N` (real or complex), any real zero `0 < β` of `L(·, χ)`, and any `σ ∈ [1, 2]`,
 `1 / (σ - β) ≤ Re (L'/L)(σ, χ) + ½ log N + TauCeti.gammaLogDerivBound`. -/
@@ -294,17 +310,15 @@ theorem one_div_sub_le_re_logDeriv_LFunction_add {N : ℕ} [NeZero N] (χ : Diri
     rw [Nat.one_le_iff_ne_zero, ← Nat.cast_ne_zero (R := ℕ∞),
       Nat.cast_analyticOrderNatAt hne_top]
     exact haL.analyticOrderAt_ne_zero.mpr hzero
-  have hre_sub : (1 / ((σ : ℂ) - (β : ℂ))).re = 1 / (σ - β) := by
-    rw [← ofReal_sub, ← ofReal_one, ← ofReal_div, ofReal_re]
   have hsingle :=
-    χ.sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add hχ hne
-      {(β : ℂ)} (fun ρ hρ ↦ by rw [Finset.mem_singleton.mp hρ]; exact hβre) hσ
-  rw [Finset.sum_singleton, hre_sub] at hsingle
+    χ.analyticOrderNatAt_LFunction_div_sub_le_re_logDeriv_LFunction_add hχ hne hβ hσ.1 hσ.2
   have hmult : 1 * (1 / (σ - β)) ≤
       (analyticOrderNatAt χ.LFunction β : ℝ) * (1 / (σ - β)) := by
     refine mul_le_mul_of_nonneg_right ?_ (div_nonneg zero_le_one hσβ.le)
     exact_mod_cast hm_pos
-  linarith
+  have hle : 1 / (σ - β) ≤ (analyticOrderNatAt χ.LFunction β : ℝ) / (σ - β) := by
+    simpa only [one_mul, one_div, ← div_eq_mul_inv] using hmult
+  exact hle.trans hsingle
 
 /-! ### Example -/
 
