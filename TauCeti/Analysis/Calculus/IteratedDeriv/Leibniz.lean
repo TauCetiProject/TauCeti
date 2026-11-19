@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
-# Leibniz's rule at a zero of a power
+# Leibniz's rule at a zero of a power, and for continuous bilinear maps
 
 The `n`-th derivative of `z ↦ (z - a) ^ n • h z` at `a` is `n! • h a`: in Leibniz's rule every
 other term differentiates `(z - a) ^ n` fewer than `n` times and so vanishes at `a`. If an
@@ -19,11 +20,20 @@ analytic function `f` factors as `f z = (z - a) ^ n • h z` (for instance throu
 More generally, multiplying by `(z - a) ^ p` shifts the Taylor coefficients at `a` up by `p`
 without changing them.
 
+For a continuous bilinear map `B` and functions `f` and `g` that are `Cⁿ` at a point (within a
+set with unique derivatives), Leibniz's rule
+`(B (f ·) (g ·))⁽ⁿ⁾ = ∑ᵢ (n choose i) B f⁽ⁱ⁾ g⁽ⁿ⁻ⁱ⁾` holds there. Taking `B` to be
+`ContinuousLinearMap.compL` gives the rule for pointwise compositions of continuous linear maps.
+
 ## Main results
 
 * `TauCeti.iteratedDeriv_pow_sub_smul_self`: the identity above.
 * `TauCeti.inv_factorial_smul_iteratedDeriv_pow_sub_smul`: the `(p + i)`-th Taylor coefficient of
   `z ↦ (z - a) ^ p • h z` at `a` is the `i`-th Taylor coefficient of `h`.
+* `ContinuousLinearMap.iteratedDerivWithin_of_bilinear`: Leibniz's rule within a set for a
+  continuous bilinear map.
+* `ContinuousLinearMap.iteratedDeriv_of_bilinear`: the same rule for the plain iterated
+  derivative.
 -/
 
 public section
@@ -87,3 +97,59 @@ theorem inv_factorial_smul_iteratedDeriv_pow_sub_smul [CharZero 𝕜] (p i : ℕ
   field_simp
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+section Bilinear
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **Leibniz's rule for a continuous bilinear map** within a set. If `f` and `g` are `Cⁿ` at `x`
+within a set `s` with unique derivatives, the `n`-th derivative within `s` at `x` of
+`y ↦ B (f y) (g y)` is `∑ᵢ (n choose i) B (f⁽ⁱ⁾ x) (g⁽ⁿ⁻ⁱ⁾ x)`. -/
+theorem iteratedDerivWithin_of_bilinear (B : E →L[𝕜] F →L[𝕜] G) {s : Set 𝕜} {f : 𝕜 → E}
+    {g : 𝕜 → F} {n : ℕ} {x : 𝕜} (hx : x ∈ s) (h : UniqueDiffOn 𝕜 s)
+    (hf : ContDiffWithinAt 𝕜 n f s x) (hg : ContDiffWithinAt 𝕜 n g s x) :
+    iteratedDerivWithin n (fun y ↦ B (f y) (g y)) s x =
+      ∑ i ∈ Finset.range (n + 1),
+        n.choose i • B (iteratedDerivWithin i f s x) (iteratedDerivWithin (n - i) g s x) := by
+  induction n generalizing f g with
+  | zero => simp
+  | succ n ih =>
+    have hf' : ContDiffWithinAt 𝕜 n (derivWithin f s) s x := hf.derivWithin h le_rfl hx
+    have hg' : ContDiffWithinAt 𝕜 n (derivWithin g s) s x := hg.derivWithin h le_rfl hx
+    have hle : (n : WithTop ℕ∞) ≤ (n + 1 : ℕ) := by norm_cast; omega
+    -- Near `x` within `s`, the derivative of `y ↦ B (f y) (g y)` is given by the product rule.
+    rw [iteratedDerivWithin_succ', Filter.EventuallyEq.iteratedDerivWithin_eq_of_nhds_insert
+        (g := (fun y ↦ B (derivWithin f s y) (g y)) + fun y ↦ B (f y) (derivWithin g s y))]
+    · have hB {u : 𝕜 → E} {v : 𝕜 → F} (hu : ContDiffWithinAt 𝕜 n u s x)
+          (hv : ContDiffWithinAt 𝕜 n v s x) : ContDiffWithinAt 𝕜 n (fun y ↦ B (u y) (v y)) s x :=
+        (B.contDiff.comp_contDiffWithinAt hu).clm_apply hv
+      rw [iteratedDerivWithin_add hx h (hB hf' (hg.of_le hle)) (hB (hf.of_le hle) hg'),
+        ih hf' (hg.of_le hle), ih (hf.of_le hle) hg']
+      simp only [← iteratedDerivWithin_succ']
+      refine Eq.trans ?_ (Finset.sum_choose_succ_nsmul
+        (fun i k ↦ B (iteratedDerivWithin i f s x) (iteratedDerivWithin k g s x)) n).symm
+      rw [add_comm]
+      congr 1
+      refine Finset.sum_congr rfl fun i hi ↦ ?_
+      rw [Finset.mem_range] at hi
+      rw [show n - i + 1 = n + 1 - i by omega]
+    · filter_upwards [hf.eventually (by simp), hg.eventually (by simp)] with y hfy hgy
+      rw [Pi.add_apply, derivWithin_of_bilinear (hfy.differentiableWithinAt (by simp))
+        (hgy.differentiableWithinAt (by simp)), add_comm]
+
+/-- **Leibniz's rule for a continuous bilinear map.** If `f` and `g` are `Cⁿ` at `x`, the `n`-th
+derivative at `x` of `y ↦ B (f y) (g y)` is `∑ᵢ (n choose i) B (f⁽ⁱ⁾ x) (g⁽ⁿ⁻ⁱ⁾ x)`. -/
+theorem iteratedDeriv_of_bilinear (B : E →L[𝕜] F →L[𝕜] G) {f : 𝕜 → E} {g : 𝕜 → F} {n : ℕ}
+    {x : 𝕜} (hf : ContDiffAt 𝕜 n f x) (hg : ContDiffAt 𝕜 n g x) :
+    iteratedDeriv n (fun y ↦ B (f y) (g y)) x =
+      ∑ i ∈ Finset.range (n + 1),
+        n.choose i • B (iteratedDeriv i f x) (iteratedDeriv (n - i) g x) := by
+  simpa only [iteratedDerivWithin_univ] using B.iteratedDerivWithin_of_bilinear (Set.mem_univ x)
+    uniqueDiffOn_univ hf.contDiffWithinAt hg.contDiffWithinAt
+
+end Bilinear
+
+end ContinuousLinearMap
