@@ -93,9 +93,7 @@ private theorem norm_smul_add_smul_le (hT : ‖(T : E →L[𝕜] F)‖ ≤ 1) {K
 
 /-- **Volume bound for the norm on an orthogonal complement.** Let `T` be a maximal-volume
 ellipsoid on an `n`-dimensional inner product space `E` and `K` a subspace of dimension `k`. If
-`‖T q‖ ≤ a ‖q‖` for every `q ⊥ K`, then `2⁻ⁿ ≤ a ^ (n - k)`: the map
-`p + q ↦ T (p / 2 + q / (2 a))`, for `p ∈ K` and `q ∈ Kᗮ`, is a contraction whose determinant
-relative to `T` is `2⁻ⁿ a⁻⁽ⁿ⁻ᵏ⁾`. -/
+`‖T q‖ ≤ a ‖q‖` for every `q ⊥ K`, then `2⁻ⁿ ≤ a ^ (n - k)`. -/
 theorem inv_two_pow_le_pow_of_forall_mem_orthogonal (hT : T.IsMaxVolumeEllipsoid)
     (K : Submodule 𝕜 E) {a : ℝ} (h : ∀ q ∈ Kᗮ, ‖T q‖ ≤ a * ‖q‖) :
     (2⁻¹ : ℝ) ^ finrank 𝕜 E ≤ a ^ (finrank 𝕜 E - finrank 𝕜 K) := by
@@ -135,12 +133,12 @@ theorem inv_two_pow_le_pow_of_forall_mem_orthogonal (hT : T.IsMaxVolumeEllipsoid
   have hTS : (T.symm : F →L[𝕜] E).comp S = LinearMap.toContinuousLinearMap A := by
     rw [← ContinuousLinearMap.comp_assoc, T.coe_symm_comp_coe, ContinuousLinearMap.id_comp]
   have hkn : k ≤ n := K.finrank_le
-  rw [hTS, ContinuousLinearMap.det, LinearMap.coe_toContinuousLinearMap, hdetA, norm_mul,
-    norm_pow, norm_pow, RCLike.norm_ofReal, RCLike.norm_ofReal,
-    abs_of_pos (by positivity : (0 : ℝ) < 2⁻¹), abs_of_pos (by positivity : 0 < (2 * a)⁻¹),
-    mul_inv, mul_pow, ← mul_assoc, ← pow_add, show k + (n - k) = n by omega, inv_pow a,
-    mul_inv_le_iff₀ (by positivity), one_mul] at hdet
-  exact hdet
+  have hnorm : ‖LinearMap.det A‖ = 2⁻¹ ^ n / a ^ (n - k) := by
+    rw [hdetA, ← Nat.add_sub_cancel' hkn]
+    simp [β, γ, abs_of_pos ha, pow_add, mul_pow, div_eq_mul_inv, mul_assoc]
+    ring
+  rw [hTS, LinearMap.det_toContinuousLinearMap, hnorm] at hdet
+  rwa [div_le_one (by positivity)] at hdet
 
 /-- **The norm in John's position is large on orthogonal complements.** If `T` is a maximal-volume
 ellipsoid on an `n`-dimensional inner product space `E` and `K` is a subspace of dimension `k < n`,
@@ -219,9 +217,10 @@ theorem exists_orthonormalBasis_two_rpow_le_norm_apply (hT : T.IsMaxVolumeEllips
   have hm : (0 : ℝ) < (finrank 𝕜 E - j : ℕ) := Nat.cast_pos.2 (by omega)
   -- Take `(n - j)`-th roots of `2⁻ⁿ ≤ ‖T (b j)‖ ^ (n - j)`.
   have h := Real.rpow_le_rpow (by positivity) (hb j) (inv_nonneg.2 hm.le)
-  rwa [← Real.rpow_natCast ‖T (b j)‖, ← Real.rpow_mul (norm_nonneg _), mul_inv_cancel₀ hm.ne',
-    Real.rpow_one, ← Real.rpow_natCast, ← Real.rpow_mul (by norm_num), Real.inv_rpow zero_le_two,
-    ← Real.rpow_neg zero_le_two, ← neg_mul, ← div_eq_mul_inv] at h
+  rw [Real.pow_rpow_inv_natCast (norm_nonneg _) (by omega)] at h
+  refine le_of_eq_of_le ?_ h
+  rw [← Real.rpow_natCast, ← Real.rpow_mul (by norm_num), Real.inv_rpow zero_le_two,
+    ← Real.rpow_neg zero_le_two, ← neg_mul, ← div_eq_mul_inv]
 
 /-- **The Dvoretzky–Rogers lemma**, half-dimensional form: if `T` is a maximal-volume ellipsoid on
 an `n`-dimensional inner product space `E`, then `E` has an orthonormal basis `b` with

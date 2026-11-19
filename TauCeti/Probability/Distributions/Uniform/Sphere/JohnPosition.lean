@@ -20,8 +20,8 @@ therefore at least `√(log m / m) / 128`, by the Gaussian lower bound for spher
 `TauCeti.Probability.Distributions.Uniform.Sphere.Norm`.
 
 This is the lower bound on `θ_Y = ∫ ‖x‖ dσ(x)` used in the proof of Dvoretzky's theorem: a
-random `k`-dimensional subspace of `Y` is close to Euclidean once `k` is a small multiple of
-`m θ_Y²`, which by this bound is at least a constant multiple of `log m`.
+random `k`-dimensional subspace of `Y` is close to Euclidean for every `k` up to a small multiple
+of `m θ_Y²`, which by this bound is at least a constant multiple of `log m`.
 
 ## Main declarations
 
