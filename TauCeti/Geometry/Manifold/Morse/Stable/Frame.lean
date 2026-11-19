@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Derivative
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import TauCeti.Geometry.Manifold.TangentCone.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 
@@ -800,20 +801,13 @@ private theorem mvfderiv_comp_unstableFrame_eq {F : Type*} [NormedAddCommGroup F
   have hey : e y = φ.toChart (hX.flow (-T) y) := by rw [hecoe, Function.comp_apply]
   have hg' : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, F) (g ∘ e.symm) (e y) :=
     mdifferentiableAt_iff_differentiableAt.2 (hey ▸ hg)
-  have hmv : mvfderiv 𝓘(ℝ, E) g y = mvfderiv 𝓘(ℝ, E) ((g ∘ e.symm) ∘ e) y := by
-    simp only [mvfderiv, hloc.mfderiv_eq]
-    -- The `rfl` identifies the two `NormedSpace.fromTangentSpace` factors and drops the
-    -- `tangentSpaceCast` from `mfderiv_eq`: both are identities of `F`, at base points
-    -- `g y = ((g ∘ e.symm) ∘ e) y`.
-    rfl
   ext c : 1
   have hL : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e y (hX.unstableFrame φ y c) =
       Real.exp (-T) • φ.negativeExtend c := by
     rw [hecoe]
     exact hX.mfderiv_unstableFrame hφ hT c
-  rw [ContinuousLinearMap.comp_apply, hmv, mvfderiv_comp_apply y hg' hd, hL, hey,
-    mvfderiv_eq_fderiv]
-  -- `NormedSpace.fromTangentSpace` is the identity of `E`.
+  rw [ContinuousLinearMap.comp_apply, hloc.mvfderiv_eq, mvfderiv_comp_apply y hg' hd,
+    mvfderiv_eq_fderiv_apply, hL, hey]
   exact (fderiv ℝ (g ∘ e.symm) _).map_smul _ _
 
 /-- **The unstable frame is continuous along the unstable manifold.** For a function `g` which is

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Morse.Stable.ChartChange
 public import TauCeti.LinearAlgebra.Orientation.Prod
 import TauCeti.Analysis.Normed.Module.Orientation
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.LinearAlgebra.Ray
 
@@ -505,14 +506,16 @@ theorem continuousWithinAt_trajectoryComparison (hf : IsMorse 𝓘(ℝ, E) f) {y
         (inter_subset_left (t := hX.flow.stableSet q)))
   have h₂ : ContinuousWithinAt (fun y ↦ (hX.stableNormal φq y).comp (hX.unstableFrame φp y))
       (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y₀ := by
-    -- `mvfderiv` of a map into `E` is its `mfderiv`, as `NormedSpace.fromTangentSpace` is the
-    -- identity of `E`.
     refine hCh.congr_of_eventuallyEq ?_ ?_
     · filter_upwards [nhdsWithin_le_nhds hT, self_mem_nhdsWithin] with y hyT hy
       ext v : 1
-      exact stableNormal_apply hφq (hyT hy.2) _
+      simp only [C, ContinuousLinearMap.comp_apply, smul_apply,
+        LinearMap.coe_toContinuousLinearMap', stableNormal_apply hφq (hyT hy.2)]
+      rw [mvfderiv_apply_eq_mfderiv_apply]
     · ext v : 1
-      exact stableNormal_apply hφq hT₀ _
+      simp only [C, ContinuousLinearMap.comp_apply, smul_apply,
+        LinearMap.coe_toContinuousLinearMap', stableNormal_apply hφq hT₀]
+      rw [mvfderiv_apply_eq_mfderiv_apply]
   exact (ContinuousLinearMap.prodₗᵢ ℝ).continuous.continuousAt.comp_continuousWithinAt
     (h₁.prodMk h₂)
 
