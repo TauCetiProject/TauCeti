@@ -205,6 +205,17 @@ theorem hasLaw_matrixBrownian_sub (hB : ∀ ij, IsPreBrownianReal (B ij) P)
   exact hasLaw_gaussianEnsemble β (fun ij ↦ hdist ▸ (hB ij).hasLaw_sub t s)
     (hindep.comp (fun _ f ↦ f t - f s) fun _ ↦ by fun_prop)
 
+/-- **The law of an increment**, through the ensemble law. With independent pre-Brownian
+coordinates, for `s ≤ t` the increment of matrix Brownian motion over `[s, t]` has the law
+`gaussianEnsembleLaw β n` of the GOE (`β = 1`) or GUE (`β ≠ 1`), scaled by `√(t - s)`. -/
+theorem hasLaw_matrixBrownian_sub_gaussianEnsembleLaw (hB : ∀ ij, IsPreBrownianReal (B ij) P)
+    (hindep : iIndepFun (fun ij ω t ↦ B ij t ω) P) {s t : ℝ≥0} (hst : s ≤ t) :
+    HasLaw (fun ω ↦ matrixBrownian β n H₀ B t ω - matrixBrownian β n H₀ B s ω)
+      ((gaussianEnsembleLaw β n).map (√(t - s : ℝ≥0) • ·)) P := by
+  rw [gaussianEnsembleLaw_def, Measure.map_map (by fun_prop) measurable_gaussianEnsemble,
+    Function.comp_def]
+  exact hasLaw_matrixBrownian_sub hB hindep hst
+
 /-- **Brownian scaling in law.** With independent pre-Brownian coordinates, matrix Brownian motion
 from `0` at time `c t` has the law of `√c` times matrix Brownian motion from `0` at time `t`. -/
 theorem identDistrib_matrixBrownian_mul (hB : ∀ ij, IsPreBrownianReal (B ij) P)
@@ -290,11 +301,7 @@ theorem identDistrib_linearMap_matrixBrownian (hB : ∀ ij, IsPreBrownianReal (B
   have hlaw (s t : ℝ≥0) (hst : s ≤ t) : IdentDistrib
       (fun ω ↦ L (matrixBrownian β n 0 B t ω) - L (matrixBrownian β n 0 B s ω))
       (fun ω ↦ matrixBrownian β n 0 B t ω - matrixBrownian β n 0 B s ω) P P := by
-    have hinc := hasLaw_matrixBrownian_sub (β := β) (H₀ := 0) hB hindep hst
-    rw [show (fun x ↦ √(t - s : ℝ≥0) • gaussianEnsemble β n x) =
-        (√(t - s : ℝ≥0) • ·) ∘ gaussianEnsemble β n from rfl,
-      ← Measure.map_map (by fun_prop) measurable_gaussianEnsemble,
-      ← gaussianEnsembleLaw_def] at hinc
+    have hinc := hasLaw_matrixBrownian_sub_gaussianEnsembleLaw (β := β) (H₀ := 0) hB hindep hst
     have hLinc : HasLaw L ((gaussianEnsembleLaw β n).map (√(t - s : ℝ≥0) • ·))
         ((gaussianEnsembleLaw β n).map (√(t - s : ℝ≥0) • ·)) := by
       refine ⟨hLm.aemeasurable, ?_⟩
