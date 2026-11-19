@@ -149,7 +149,7 @@ closure are. -/
 theorem KummerCoeff.ext {x y : KummerCoeff K n}
     (h : ((x.toMul : (SeparableClosure K)ˣ) : SeparableClosure K) =
       ((y.toMul : (SeparableClosure K)ˣ) : SeparableClosure K)) : x = y :=
-  Additive.toMul.injective <| Subtype.ext <| Units.ext h
+  Additive.toMul.injective <| rootsOfUnity.coe_injective h
 
 /-- **`μₙ` is a discrete `G_K`-module**: the stabilizer of a root of unity is the stabilizer of
 the underlying unit of `Kˢ`, which is open. -/
