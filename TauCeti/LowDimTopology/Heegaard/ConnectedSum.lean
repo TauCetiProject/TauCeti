@@ -312,7 +312,7 @@ variable [Fintype Point] [DecidableEq Region] [Fintype Region] (r₀ : Region)
 /-- The Maslov index of a domain `D` of the connected sum is that of its pullback `D ∘ f` to the
 diagram with an added basepoint, where `f` joins the lens to `r₀`, minus `2 D(r₀)`: the tube
 lowers the Euler characteristic of `r₀` and the lens together by two. -/
-theorem maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint (χ : Region → ℤ)
+theorem maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint_sub (χ : Region → ℤ)
     (x y : (H.addBasepoint r₀).Generator) (D : Region ⊕ Fin 2 → ℤ) :
     (H.sumCircleTimesSphere r₀).maslovIndex (sumCircleTimesSphereEuler χ r₀) x y D =
       (H.addBasepoint r₀).maslovIndex (addBasepointEuler χ r₀) x y
@@ -334,7 +334,7 @@ theorem maslovIndex_sumCircleTimesSphere (χ : Region → ℤ) (x y : H.Generato
         (H.addBasepointGenerator r₀ x i) (H.addBasepointGenerator r₀ y j) D =
       H.maslovIndex χ x y (D ∘ Sum.inl) + D (Sum.inr 0) + D (Sum.inr 1) -
         2 * D (Sum.inl r₀) := by
-  rw [maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint, maslovIndex_addBasepoint]
+  rw [maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint_sub, maslovIndex_addBasepoint]
   simp only [comp_apply, sumCircleTimesSphereRegion_inl, sumCircleTimesSphereRegion_inr_zero,
     sumCircleTimesSphereRegion_inr_one, sumCircleTimesSphereRegion_inr_two]
   -- The pullback restricted to the old regions is the restriction of `D`.
@@ -359,7 +359,7 @@ theorem mem_hatDomains_sumCircleTimesSphere_iff (hr₀ : r₀ ∈ Set.range H.ba
     (sumCircleTimesSphereRegion_surjective r₀).forall
   obtain ⟨z₀, rfl⟩ := hr₀
   rw [mem_hatDomains_iff, mem_hatDomains_iff, isDomainBetween_mapRegion_iff, hnonneg,
-    maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint]
+    maslovIndex_sumCircleTimesSphere_eq_maslovIndex_addBasepoint_sub]
   simp only [addBasepoint_basepoint, Sum.forall, Sum.elim_inl, Sum.elim_inr, comp_apply,
     sumCircleTimesSphereRegion_inl, sumCircleTimesSphereRegion_inr_two, forall_const]
   constructor
