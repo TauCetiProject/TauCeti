@@ -124,7 +124,7 @@ variable {HB B' : Type*} [TopologicalSpace HB] [TopologicalSpace B'] [ChartedSpa
 variable (𝕜) in
 /-- A `C^n` section over `𝕜'`, for a boundaryless base model `IB`, is a `C^n` section for the
 scalar restriction `IB.restrictScalars 𝕜`. For instance, a holomorphic section is smooth. -/
-@[expose] def restrictScalars (s : ContMDiffSection IB F n E') :
+def restrictScalars (s : ContMDiffSection IB F n E') :
     ContMDiffSection (IB.restrictScalars 𝕜) F n E' where
   toFun := s
   contMDiff_toFun := by
@@ -133,6 +133,6 @@ scalar restriction `IB.restrictScalars 𝕜`. For instance, a holomorphic sectio
 
 @[simp]
 theorem coe_restrictScalars (s : ContMDiffSection IB F n E') : ⇑(s.restrictScalars 𝕜) = s :=
-  rfl
+  (rfl)
 
 end ContMDiffSection
