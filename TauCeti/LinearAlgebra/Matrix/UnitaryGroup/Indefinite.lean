@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The indefinite unitary group `U(p, q)`
@@ -118,16 +119,23 @@ theorem mem_indefiniteUnitaryGroup_iff_forall_dotProduct {g : GL (p ⊕ q) R} :
   ext i j
   simpa [Pi.single_star, mulVec_single] using h (Pi.single i 1) (Pi.single j 1)
 
+/-- A matrix `M` with `star M * J * M = J` has left inverse `J * star M * J`. -/
+theorem indefiniteDiagonal_mul_star_mul_indefiniteDiagonal_mul_eq_one
+    {M : Matrix (p ⊕ q) (p ⊕ q) R}
+    (hM : star M * indefiniteDiagonal p q R * M = indefiniteDiagonal p q R) :
+    indefiniteDiagonal p q R * star M * indefiniteDiagonal p q R * M = 1 := by
+  rw [Matrix.mul_assoc _ (indefiniteDiagonal p q R), Matrix.mul_assoc, ← Matrix.mul_assoc _ _ M,
+    hM, indefiniteDiagonal_mul_indefiniteDiagonal]
+
 /-- **The inverse of an element of `U(p, q)`** is `J * star g * J`. -/
 theorem coe_inv_of_mem_indefiniteUnitaryGroup {g : GL (p ⊕ q) R}
     (hg : g ∈ indefiniteUnitaryGroup p q R) :
     ((g⁻¹ : GL (p ⊕ q) R) : Matrix (p ⊕ q) (p ⊕ q) R) =
       indefiniteDiagonal p q R * star (g : Matrix (p ⊕ q) (p ⊕ q) R) *
-        indefiniteDiagonal p q R := by
-  refine Units.inv_eq_of_mul_eq_one_left ?_
-  rw [Matrix.mul_assoc _ (indefiniteDiagonal p q R), Matrix.mul_assoc,
-    ← Matrix.mul_assoc (star (g : Matrix (p ⊕ q) (p ⊕ q) R)),
-    mem_indefiniteUnitaryGroup_iff.mp hg, indefiniteDiagonal_mul_indefiniteDiagonal]
+        indefiniteDiagonal p q R :=
+  Units.inv_eq_of_mul_eq_one_left <|
+    indefiniteDiagonal_mul_star_mul_indefiniteDiagonal_mul_eq_one
+      (mem_indefiniteUnitaryGroup_iff.mp hg)
 
 /-- **`U(p, q)` is stable under the conjugate transpose**, hence under `g ↦ (star g)⁻¹`. -/
 @[simp]
@@ -155,11 +163,8 @@ theorem det_of_mem_indefiniteUnitaryGroup {g : GL (p ⊕ q) R}
   have h := congrArg det (mem_indefiniteUnitaryGroup_iff.mp hg)
   rw [det_mul, det_mul, star_eq_conjTranspose, det_conjTranspose] at h
   rw [Unitary.mem_iff_star_mul_self]
-  calc star (g : Matrix (p ⊕ q) (p ⊕ q) R).det * (g : Matrix (p ⊕ q) (p ⊕ q) R).det
-      = star (g : Matrix (p ⊕ q) (p ⊕ q) R).det * (indefiniteDiagonal p q R).det *
-          (g : Matrix (p ⊕ q) (p ⊕ q) R).det * (indefiniteDiagonal p q R).det := by
-        rw [mul_right_comm _ (indefiniteDiagonal p q R).det, mul_assoc _ _ _, hJ, mul_one]
-    _ = 1 := by rw [h, hJ]
+  linear_combination (indefiniteDiagonal p q R).det * h +
+    (1 - star (g : Matrix (p ⊕ q) (p ⊕ q) R).det * (g : Matrix (p ⊕ q) (p ⊕ q) R).det) * hJ
 
 /-- A diagonal matrix `diag(d)` satisfies `star (diag d) * J * diag d = J` exactly when every
 diagonal entry is unitary. -/
@@ -185,9 +190,7 @@ invertible, with inverse `J * star M * J`. -/
 def mk (M : Matrix (p ⊕ q) (p ⊕ q) R)
     (hM : star M * indefiniteDiagonal p q R * M = indefiniteDiagonal p q R) :
     indefiniteUnitaryGroup p q R :=
-  have h : indefiniteDiagonal p q R * star M * indefiniteDiagonal p q R * M = 1 := by
-    rw [Matrix.mul_assoc _ (indefiniteDiagonal p q R), Matrix.mul_assoc, ← Matrix.mul_assoc _ _ M,
-      hM, indefiniteDiagonal_mul_indefiniteDiagonal]
+  have h := indefiniteDiagonal_mul_star_mul_indefiniteDiagonal_mul_eq_one hM
   ⟨⟨M, _, mul_eq_one_comm.mp h, h⟩, hM⟩
 
 @[simp]
