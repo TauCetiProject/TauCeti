@@ -13,6 +13,7 @@ import Mathlib.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Bochner.Fourier.Nonneg
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
@@ -565,6 +566,13 @@ open scoped NNReal ENNReal SchwartzMap
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The heat symbol `exp(-4π² t ‖ξ‖²)` has temperate growth. -/
+private theorem hasTemperateGrowth_heatSymbol (t : ℝ≥0) :
+    (fun ξ : E ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)).HasTemperateGrowth :=
+  Complex.hasTemperateGrowth_ofReal.comp
+    (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))
+
 /-- On a tempered distribution `u` whose Fourier transform vanishes off the closed ball of radius
 `R`, `e^{tΔ} u - u` is the Fourier multiplier by `χ (exp(-4π² t ‖ξ‖²) - 1)`, for every Schwartz
 `χ` equal to one near that ball. -/
@@ -576,8 +584,7 @@ private theorem heatSemigroup_sub_eq_fourierMultiplierCLM {χ : 𝓢(E, ℂ)} {R
         ⇑(SchwartzMap.smulLeftCLM ℂ (fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) χ -
           χ) u := by
   set h : E → ℂ := fun ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)
-  have hh : h.HasTemperateGrowth := Complex.hasTemperateGrowth_ofReal.comp
-    (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))
+  have hh : h.HasTemperateGrowth := hasTemperateGrowth_heatSymbol t
   have hσ : ⇑(SchwartzMap.smulLeftCLM ℂ h χ - χ) = ⇑χ * h - ⇑χ := by
     funext ξ
     simp [SchwartzMap.smulLeftCLM_apply_apply hh, mul_comm]
@@ -593,7 +600,7 @@ private theorem heatSemigroup_sub_eq_fourierMultiplierCLM {χ : 𝓢(E, ℂ)} {R
 variable [CompleteSpace F]
 
 /-- **The heat flow of band-limited functions tends to the identity, uniformly.** For every `R`
-there is a function `c` of time, depending only on `R` and `E`, with `c t → 0` as `t → 0`, such
+there is a function `c` of time, independent of `p`, `t` and `f`, with `c t → 0` as `t → 0`, such
 that for every `1 ≤ p ≤ ∞`, every `t ≥ 0` and every `f ∈ Lᵖ` whose Fourier transform vanishes
 outside the closed ball of radius `R`, `e^{tΔ} f - f` is an `Lᵖ` function `g` with
 `‖g‖_p ≤ c t ‖f‖_p`. This includes `p = ∞`, where the heat semigroup is not strongly continuous on
@@ -605,22 +612,14 @@ theorem exists_heatSemigroup_sub_eq_and_norm_le_of_isVanishingOn_fourier (R : �
       ∃ g : Lp F p (volume : Measure E),
         TemperedDistribution.heatSemigroup E F t (f : 𝓢'(E, F)) - f = g ∧ ‖g‖ ≤ c t * ‖f‖ := by
   -- A smooth cutoff `χ`, equal to one near the closed ball, reproduces `f`.
-  obtain ⟨χ₀, hχ₀, -, hχ₀1, hχ₀c, -⟩ :=
-    (isCompact_closedBall (0 : E) R).exists_contDiff_cutoff isOpen_univ (Set.subset_univ _)
-  let χ : 𝓢(E, ℂ) := HasCompactSupport.toSchwartzMap (f := fun ξ ↦ (χ₀ ξ : ℂ))
-    (hχ₀c.comp_left Complex.ofReal_zero) (Complex.ofRealCLM.contDiff.comp hχ₀)
-  have hχ : ∀ ξ, χ ξ = χ₀ ξ := fun ξ ↦ HasCompactSupport.toSchwartzMap_toFun _ _ ξ
-  have hχ1 : tsupport (⇑χ - 1) ⊆ (closedBall 0 R)ᶜ := by
-    have hsub : Function.support (⇑χ - 1) ⊆ (interior (χ₀ ⁻¹' {1}))ᶜ := fun ξ hξ hint ↦ by
-      have hξ1 : χ₀ ξ = 1 := interior_subset hint
-      exact hξ (by simp [hχ, hξ1])
-    exact (closure_minimal hsub isOpen_interior.isClosed_compl).trans
-      (Set.compl_subset_compl.2 hχ₀1)
+  obtain ⟨χ, -, -, hχ⟩ :=
+    (isCompact_closedBall (0 : E) R).exists_schwartzMap_cutoff isOpen_univ (Set.subset_univ _)
+  have hχ1 : tsupport (⇑χ - 1) ⊆ (closedBall 0 R)ᶜ := fun ξ hξ hξR ↦
+    notMem_tsupport_iff_eventuallyEq.2
+      ((eventually_nhdsSet_iff_forall.1 hχ ξ hξR).mono fun η hη ↦ by simp [hη]) hξ
   -- The heat symbol at time `t`.
   set h : ℝ≥0 → E → ℂ := fun t ξ ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)
-  have hh (t : ℝ≥0) : (h t).HasTemperateGrowth :=
-    Complex.hasTemperateGrowth_ofReal.comp
-      (Function.hasTemperateGrowth_exp_neg_mul_norm_sq (by positivity))
+  have hh (t : ℝ≥0) : (h t).HasTemperateGrowth := hasTemperateGrowth_heatSymbol t
   -- The kernel `κ = 𝓕⁻ χ` of the reproducing multiplier, as an `L¹` function. The kernel of the
   -- multiplier `χ e^{tΔ}` is its heat flow `e^{tΔ} κ`.
   have hp1 : (1 : ℝ≥0∞) ≠ ∞ := ENNReal.one_ne_top

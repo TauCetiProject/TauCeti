@@ -384,11 +384,11 @@ theorem norm_block_heatSemigroup_le (t : ℝ≥0) (u : BesovSpace F φ s p q) (j
   rwa [← Lp.toTemperedDistribution_injective ((coe_block_heatSemigroup t u j).trans hg)] at hgn
 
 variable (F φ) in
-/-- **The heat flow of a single block tends to the block**, at a rate depending only on the
-block index: for every `j` there is a function `c` of time with `c t → 0` as `t → 0` and
-`‖Δⱼ (e^{tΔ} u - u)‖_p ≤ c t ‖Δⱼ u‖_p` for every `u` in every Besov space `B^s_{p,q}`. The
-block `Δⱼ u` has frequencies in the ball of radius `2^j φ.rOut`, on which the heat flow tends to
-the identity uniformly. -/
+/-- **The heat flow of a single block tends to the block**, at a rate depending on the block
+index `j` (and on `φ`) but uniform in `s`, `p`, `q` and `u`: for every `j` there is a function `c`
+of time with `c t → 0` as `t → 0` and `‖Δⱼ (e^{tΔ} u - u)‖_p ≤ c t ‖Δⱼ u‖_p` for every `u` in
+every Besov space `B^s_{p,q}`. The block `Δⱼ u` has frequencies in the ball of radius
+`2^j φ.rOut`, on which the heat flow tends to the identity uniformly. -/
 theorem exists_tendsto_and_norm_block_heatSemigroup_sub_le (j : ℕ) :
     ∃ c : ℝ≥0 → ℝ, Tendsto c (𝓝 0) (𝓝 0) ∧ ∀ {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
       [Fact (1 ≤ q)] (t : ℝ≥0) (u : BesovSpace F φ s p q),
@@ -415,13 +415,22 @@ private theorem rpow_mul_norm_block_heatSemigroup_sub_le (t : ℝ≥0) (u : Beso
   gcongr
   exact (norm_sub_le _ _).trans (by gcongr; exact norm_block_heatSemigroup_le t u j)
 
+/-- Each weighted block of `e^{tΔ} u - u` tends to `0` as `t → 0`. -/
+private theorem tendsto_rpow_mul_norm_block_heatSemigroup_sub (u : BesovSpace F φ s p q)
+    (j : ℕ) :
+    Tendsto (fun t ↦ 2 ^ (s * j) * ‖(heatSemigroup F φ s p q t u - u).block j‖) (𝓝 0)
+      (𝓝 0) := by
+  obtain ⟨c, hc, hcu⟩ := exists_tendsto_and_norm_block_heatSemigroup_sub_le F φ j
+  refine squeeze_zero (fun t ↦ by positivity)
+    (fun t ↦ mul_le_mul_of_nonneg_left (hcu t u) (by positivity)) ?_
+  simpa using (hc.mul_const ‖u.block j‖).const_mul (2 ^ (s * j))
+
 /-- **Strong continuity of the heat semigroup on `B^s_{p,q}`, `q < ∞`.** For every
 `u ∈ B^s_{p,q}` with `q < ∞`, `e^{tΔ} u → u` in `B^s_{p,q}` as `t → 0`. This holds for every
 `1 ≤ p ≤ ∞`, including the case `p = ∞`, where the heat semigroup is not strongly continuous on
 `L^∞`. -/
 theorem tendsto_heatSemigroup (hq : q ≠ ⊤) (u : BesovSpace F φ s p q) :
     Tendsto (fun t ↦ heatSemigroup F φ s p q t u) (𝓝 0) (𝓝 u) := by
-  choose c hc hcu using exists_tendsto_and_norm_block_heatSemigroup_sub_le F φ
   have hq0 : 0 < q.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq
   rw [tendsto_iff_norm_sub_tendsto_zero]
   simp_rw [norm_eq_tsum_rpow hq]
@@ -432,11 +441,7 @@ theorem tendsto_heatSemigroup (hq : q ≠ ⊤) (u : BesovSpace F φ s p q) :
     refine tendsto_tsum_of_dominated_convergence (bound := fun j ↦
       2 ^ q.toReal * (2 ^ (s * j) * ‖u.block j‖) ^ q.toReal)
       ((hasSum_norm hq u).summable.mul_left _) (fun j ↦ ?_) (.of_forall fun t j ↦ ?_)
-    · have hcj : Tendsto (fun t ↦ 2 ^ (s * j) * (c j t * ‖u.block j‖)) (𝓝 0) (𝓝 0) := by
-        simpa using ((hc j).mul_const ‖u.block j‖).const_mul (2 ^ (s * j))
-      have h := (squeeze_zero (fun t ↦ by positivity)
-        (fun t ↦ mul_le_mul_of_nonneg_left (hcu j t u) (by positivity)) hcj).rpow_const
-        (Or.inr hq0.le)
+    · have h := (tendsto_rpow_mul_norm_block_heatSemigroup_sub u j).rpow_const (Or.inr hq0.le)
       rwa [Real.zero_rpow hq0.ne'] at h
     · rw [Real.norm_of_nonneg (by positivity), ← Real.mul_rpow zero_le_two (by positivity)]
       exact Real.rpow_le_rpow (by positivity) (rpow_mul_norm_block_heatSemigroup_sub_le t u j)
@@ -489,24 +494,20 @@ tends to `u`: the high blocks are small uniformly in time, and each low block co
 private theorem tendsto_heatSemigroup_of_tendsto_rpow_mul_norm_block {u : BesovSpace F φ s p ∞}
     (ha : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)) :
     Tendsto (fun t ↦ heatSemigroup F φ s p ∞ t u) (𝓝 0) (𝓝 u) := by
-  choose c hc hcu using exists_tendsto_and_norm_block_heatSemigroup_sub_le F φ
   refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
   -- High blocks are small for every `t`, and the finitely many low blocks converge.
   obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 ha (ε / 4) (by positivity)
   have hlow : ∀ᶠ t in 𝓝 (0 : ℝ≥0), ∀ j ∈ Finset.range N,
-      2 ^ (s * j) * (c j t * ‖u.block j‖) < ε / 2 := by
-    refine (Finset.range N).eventually_all.2 fun j _ ↦ ?_
-    have hcj : Tendsto (fun t ↦ 2 ^ (s * j) * (c j t * ‖u.block j‖)) (𝓝 0) (𝓝 0) := by
-      simpa using ((hc j).mul_const ‖u.block j‖).const_mul (2 ^ (s * j))
-    exact hcj.eventually (gt_mem_nhds (half_pos hε))
+      2 ^ (s * j) * ‖(heatSemigroup F φ s p ∞ t u - u).block j‖ < ε / 2 :=
+    (Finset.range N).eventually_all.2 fun j _ ↦
+      (tendsto_rpow_mul_norm_block_heatSemigroup_sub u j).eventually (gt_mem_nhds (half_pos hε))
   filter_upwards [hlow] with t ht
   rw [dist_eq_norm]
   refine lt_of_le_of_lt ?_ (half_lt_self hε)
   rw [norm_eq_ciSup]
   refine ciSup_le fun j ↦ ?_
   rcases lt_or_ge j N with hj | hj
-  · exact (mul_le_mul_of_nonneg_left (hcu j t u) (by positivity)).trans
-      (ht j (Finset.mem_range.2 hj)).le
+  · exact (ht j (Finset.mem_range.2 hj)).le
   · have hNj := hN j hj
     rw [Real.dist_eq, sub_zero, abs_of_nonneg (by positivity)] at hNj
     linarith [rpow_mul_norm_block_heatSemigroup_sub_le t u j]
