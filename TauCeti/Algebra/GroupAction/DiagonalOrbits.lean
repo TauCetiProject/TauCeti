@@ -90,12 +90,15 @@ end TauCeti.MulAction
 
 namespace TauCeti
 
-/-- **A diagonal action is free when it is free on the first factor**: an element of `G` fixing a
-pair fixes its first coordinate. -/
-@[to_additive /-- **A diagonal additive action is free when it is free on the first factor.** -/]
-instance isCancelSMul_prod {G X Y : Type*} [Group G] [MulAction G X] [MulAction G Y]
-    [IsCancelSMul G X] : IsCancelSMul G (X × Y) where
-  left_cancel' g _ _ h := smul_left_cancel g h
+/-- **A diagonal action is free when it is free on the first factor** and left-cancellative on
+the second, as every group action is: an element of `G` fixing a pair fixes its first coordinate.
+-/
+@[to_additive /-- **A diagonal additive action is free when it is free on the first factor** and
+left-cancellative on the second. -/]
+instance isCancelSMul_prod {G X Y : Type*} [SMul G X] [SMul G Y] [IsCancelSMul G X]
+    [IsLeftCancelSMul G Y] : IsCancelSMul G (X × Y) where
+  left_cancel' g _ _ h := Prod.ext (IsCancelSMul.left_cancel g _ _ (congrArg Prod.fst h))
+    (IsLeftCancelSMul.left_cancel g _ _ (congrArg Prod.snd h))
   right_cancel' g g' x hx := IsCancelSMul.right_cancel g g' x.1 (congrArg Prod.fst hx)
 
 end TauCeti
