@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.AdjMatrix
-public import Mathlib.Combinatorics.SimpleGraph.Hasse
 public import TauCeti.Combinatorics.PlanarMatching.Counting
+public import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
 
 /-!
 # Walk counts on a path graph
@@ -39,31 +39,16 @@ the upper boundary can affect the count at `v`. -/
 private theorem sum_neighborFinset_pathGraph_halfCount {N n : ℕ}
     (v : Fin (N + 1)) (hn : n + v < 2 * N + 1) :
     ∑ u ∈ (pathGraph (N + 1)).neighborFinset v, halfCount n u = halfCount (n + 1) v := by
-  rw [neighborFinset_eq_filter, sum_filter]
-  simp only [pathGraph_adj]
-  rw [Fin.sum_univ_eq_sum_range
-    (fun j ↦ if v.val + 1 = j ∨ j + 1 = v.val then halfCount n j else 0)]
-  have h (j : ℕ) :
-      (if v.val + 1 = j ∨ j + 1 = v.val then halfCount n j else 0) =
-        (if v.val + 1 = j then halfCount n j else 0) +
-          (if j + 1 = v.val then halfCount n j else 0) := by
-    split_ifs <;> omega
-  simp_rw [h]
-  rw [sum_add_distrib, sum_ite_eq]
-  have hu : (if v.val + 1 ∈ range (N + 1) then halfCount n (v.val + 1) else 0) =
-      halfCount n (v.val + 1) := by
-    split_ifs with hv
+  rw [sum_neighborFinset_pathGraph (fun u ↦ halfCount n u) v]
+  have hhi : (if h : (v : ℕ) + 1 < N + 1 then halfCount n (⟨(v : ℕ) + 1, h⟩ : Fin (N + 1))
+      else 0) = halfCount n (v + 1) := by
+    split_ifs with h
     · rfl
-    · symm
-      apply halfCount_eq_zero_of_lt
-      simp only [mem_range, not_lt] at hv
-      omega
-  rw [hu]
+    · exact (halfCount_eq_zero_of_lt (by omega)).symm
+  rw [hhi]
   obtain ⟨_ | k, hk⟩ := v
   · simp [halfCount_succ_zero]
-  · simp only [Nat.add_right_cancel_iff]
-    rw [sum_ite_eq', ite_eq_left (mem_range.mpr (by omega)), halfCount_succ_succ]
-    simpa only [Nat.add_assoc, Nat.reduceAdd] using add_comm (halfCount n (k + 2)) (halfCount n k)
+  · simp [halfCount_succ_succ]
 
 /-- The ballot formula for the entries of a path adjacency-matrix power starting at zero.
 The bound ensures that a walk cannot cross the upper boundary and return to `v`. -/
