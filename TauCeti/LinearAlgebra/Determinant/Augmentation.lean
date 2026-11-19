@@ -23,7 +23,7 @@ canonical isomorphism
 
 `det f ≃ det (f.prod g) ⊗ det V`
 
-(`LinearMap.detLineProdEquiv`). Since `det V` is a line, orientations of any two of `det f`,
+(`LinearMap.detLineEquivProd`). Since `det V` is a line, orientations of any two of `det f`,
 `det (f.prod g)` and `V` orient the third.
 
 The typical instance is a Fredholm operator `f`, the linearization of a moduli problem, augmented by
@@ -40,7 +40,7 @@ counted.
 ## Main declarations
 
 * `LinearMap.detLineFstEquiv`: the determinant line of the projection `N × V → N` is `det V`.
-* `LinearMap.detLineProdEquiv`: the isomorphism `det f ≃ det (f.prod g) ⊗ det V`.
+* `LinearMap.detLineEquivProd`: the isomorphism `det f ≃ det (f.prod g) ⊗ det V`.
 * `LinearMap.detLineEquivOfBijectiveProd`: for bijective `f.prod g`, the isomorphism
   `det f ≃ det V`, with its value `LinearMap.coe_detLineEquivOfBijectiveProd_tmul`.
 
@@ -139,14 +139,14 @@ and cokernel and `g : M → V` with `V` finite-dimensional, the canonical isomor
 
 It is the composition law `LinearMap.detLineCompEquiv` for `f = fst ∘ (f.prod g)`, followed by the
 identification `LinearMap.detLineFstEquiv` of the determinant line of the projection
-`fst : N × V → N` with `det V` (`LinearMap.detLineProdEquiv_def`). -/
-def detLineProdEquiv : f.detLine ≃ₗ[K] (f.prod g).detLine ⊗[K] TauCeti.detLine K V :=
+`fst : N × V → N` with `det V` (`LinearMap.detLineEquivProd_def`). -/
+def detLineEquivProd : f.detLine ≃ₗ[K] (f.prod g).detLine ⊗[K] TauCeti.detLine K V :=
   -- `fst ∘ₗ f.prod g` is `f` by definition: `LinearMap.fst_prod` is proved by `rfl`.
   (f.prod g).detLineCompEquiv (fst K N V) ≪≫ₗ
     TensorProduct.congr (LinearEquiv.refl K _) (detLineFstEquiv K N V)
 
-theorem detLineProdEquiv_def :
-    f.detLineProdEquiv g = (f.prod g).detLineCompEquiv (fst K N V) ≪≫ₗ
+theorem detLineEquivProd_def :
+    f.detLineEquivProd g = (f.prod g).detLineCompEquiv (fst K N V) ≪≫ₗ
       TensorProduct.congr (LinearEquiv.refl K _) (detLineFstEquiv K N V) :=
   (rfl)
 
@@ -159,7 +159,7 @@ section Bijective
 variable (f : M →ₗ[K] N) (g : M →ₗ[K] V)
 
 /-- **The determinant line of a bijective augmented map.** When `f.prod g` is bijective, its
-determinant line is `K` (`LinearMap.detLineEquivOfBijective`), and `LinearMap.detLineProdEquiv`
+determinant line is `K` (`LinearMap.detLineEquivOfBijective`), and `LinearMap.detLineEquivProd`
 becomes an isomorphism `det f ≃ det V`. In this case `g` maps the kernel of `f` isomorphically
 onto `V` and `f` is onto, so the kernel and cokernel of `f` are finite-dimensional, and the
 isomorphism sends `u₁ ∧ ⋯ ∧ uₙ ⊗ φ` to `g u₁ ∧ ⋯ ∧ g uₙ` up to the value of `φ` on the generator of
@@ -168,7 +168,7 @@ def detLineEquivOfBijectiveProd [FiniteDimensional K V] (h : Function.Bijective 
     f.detLine ≃ₗ[K] TauCeti.detLine K V :=
   have := finite_ker_of_injective_prod h.1
   have := subsingleton_quotient_range_of_surjective_prod h.2
-  f.detLineProdEquiv g ≪≫ₗ
+  f.detLineEquivProd g ≪≫ₗ
     TensorProduct.congr (detLineEquivOfBijective h) (LinearEquiv.refl K _) ≪≫ₗ
     TensorProduct.lid K _
 
