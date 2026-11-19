@@ -80,7 +80,7 @@ theorem contMDiff_apply
 /-- Adding a `C^n` endomorphism-valued one-form preserves the regularity of a connection.
 The model fibre need not have finite dimension. -/
 theorem ContMDiffCovariantDerivative.addOneForm
-    (cov : CovariantDerivative I F V) (hcov : ContMDiffCovariantDerivative cov n)
+    {cov : CovariantDerivative I F V} (hcov : ContMDiffCovariantDerivative cov n)
     {A : Π x : M, V x →L[𝕜] TangentSpace I x →L[𝕜] V x}
     (hA : ContMDiff I (I.prod 𝓘(𝕜, F →L[𝕜] E →L[𝕜] F)) n
       (fun x ↦ TotalSpace.mk' (F →L[𝕜] E →L[𝕜] F)

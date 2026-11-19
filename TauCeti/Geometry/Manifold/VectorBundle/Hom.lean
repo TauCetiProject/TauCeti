@@ -137,7 +137,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 omit [ContMDiffVectorBundle ∞ F V I] [ContMDiffVectorBundle ∞ G W I] in
 /-- A hom-bundle section with finite-dimensional source fibres is `C^n` on a set as soon as its
 evaluation on every globally `C^m` section, for `n ≤ m ≤ ∞`, is `C^n` there. -/
-theorem contMDiffOn_hom_of_forall_contMDiff {n : ℕ∞ω} {m : ℕ∞} (hn : n ≤ m)
+theorem contMDiffOn_hom_of_forall_contMDiff {n m : ℕ∞ω} (hn : n ≤ m) (hm : m ≤ ∞)
     [ContMDiffVectorBundle m F V I]
     [ContMDiffVectorBundle n G W I] {u : Set M} {A : Π x : M, V x →L[ℝ] W x}
     (hA : ∀ s : Π x : M, V x, CMDiff m (T% s) →
@@ -151,7 +151,7 @@ theorem contMDiffOn_hom_of_forall_contMDiff {n : ℕ∞ω} {m : ℕ∞} (hn : n 
   let b := Module.Basis.ofVectorSpace ℝ F
   have := FiniteDimensional.fintypeBasisIndex b
   obtain ⟨s, hs, hse⟩ :=
-    e.exists_contMDiff_eventuallyEq_localFrame (I := I) (n := m) b
+    e.exists_contMDiff_eventuallyEq_localFrame (I := I) (n := m) b hm
       (mem_baseSet_trivializationAt F V x)
   obtain ⟨t, ht, hto, hxt⟩ := eventually_nhds_iff.1 (Filter.eventually_all.2 hse)
   refine ⟨t ∩ (e.baseSet ∩ e'.baseSet), hto.inter (e.open_baseSet.inter e'.open_baseSet),
@@ -171,7 +171,7 @@ theorem contMDiff_hom_iff (A : Π x : M, V x →L[ℝ] W x) :
       ∀ s : Π x : M, V x, CMDiff ∞ (T% s) →
         ContMDiff I (I.prod 𝓘(ℝ, G)) ∞ (fun x ↦ TotalSpace.mk' G x (A x (s x))) :=
   ⟨fun hA _ hs ↦ hA.clm_bundle_apply hs, fun hA ↦ contMDiffOn_univ.1
-    (contMDiffOn_hom_of_forall_contMDiff le_rfl fun s hs ↦ (hA s hs).contMDiffOn)⟩
+    (contMDiffOn_hom_of_forall_contMDiff le_rfl le_rfl fun s hs ↦ (hA s hs).contMDiffOn)⟩
 
 omit [ContMDiffVectorBundle ∞ G W I] in
 /-- Multiplying a `C^n` hom-bundle section with finite-dimensional source fibres by a constant
@@ -186,7 +186,7 @@ theorem contMDiffOn_hom_const_smul {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     ContMDiffOn I (I.prod 𝓘(ℝ, F →L[ℝ] G)) n
       (fun y ↦ TotalSpace.mk' (F →L[ℝ] G) y ((c • A) y)) u := by
   have : ContMDiffVectorBundle n F V I := .of_le hn
-  refine contMDiffOn_hom_of_forall_contMDiff hn fun s hs ↦ ?_
+  refine contMDiffOn_hom_of_forall_contMDiff hn le_rfl fun s hs ↦ ?_
   exact ContMDiffOn.smul_totalSpace (a := fun _ ↦ c) contMDiffOn_const
     (hA.clm_bundle_apply ((hs.of_le hn).contMDiffOn))
 

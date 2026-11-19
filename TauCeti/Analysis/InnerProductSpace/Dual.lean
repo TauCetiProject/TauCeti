@@ -74,6 +74,17 @@ public section
 
 namespace InnerProductSpace
 
+/-- The real Riesz map to the continuous dual is invertible on every Hilbert space. -/
+theorem isInvertible_innerSL {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] :
+    (innerSL ℝ (E := E)).IsInvertible := by
+  have h : innerSL ℝ (E := E) =
+      (toDual ℝ E).toContinuousLinearEquiv.toContinuousLinearMap := by
+    ext u v
+    simp [innerSL_apply_apply ℝ, toDual_apply_apply]
+  rw [h]
+  exact ContinuousLinearMap.isInvertible_equiv
+
 /-- The Riesz operator of the reference inner product is the identity. -/
 @[simp]
 theorem continuousLinearMapOfBilin_innerSL {E : Type*} [NormedAddCommGroup E]

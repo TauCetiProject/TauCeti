@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Metric-compatible connections on real vector bundles
@@ -32,7 +33,8 @@ dimension zero and empty bases are included.
 * `CovariantDerivative.metricCompatible`: correction of an arbitrary native connection.
 * `CovariantDerivative.isMetricCompatible_metricCompatible`: metric compatibility.
 * `CovariantDerivative.IsMetricCompatible.metricCompatible_eq`: exact fixedness.
-* `CovariantDerivative.ContMDiffCovariantDerivative.metricCompatible`: finite-order regularity.
+* `CovariantDerivative.ContMDiffCovariantDerivative.metricCompatible`: preservation of
+  `C^n` regularity for every `n : ℕ∞`, including smoothness.
 * `CovariantDerivative.exists_contMDiffCovariantDerivative_isMetricCompatible`: existence.
 
 ## References
@@ -77,32 +79,29 @@ theorem contMDiff_derivMetricTensor_apply [FiniteDimensional ℝ E] [T2Space M]
     .of_le (show (n : ℕ∞ω) ≤ n + 1 from le_self_add)
   have : IsContMDiffRiemannianBundle I n F V :=
     .of_le (show (n : ℕ∞ω) ≤ n + 1 from le_self_add)
-  have : ContMDiffVectorBundle (↑(n + 1) : ℕ∞ω) F V I := by simpa using
-    (inferInstance : ContMDiffVectorBundle (n + 1) F V I)
   apply contMDiffOn_univ.1
-  apply TauCeti.Manifold.contMDiffOn_hom_of_forall_contMDiff (m := n + 1) (by simp)
+  apply TauCeti.Manifold.contMDiffOn_hom_of_forall_contMDiff
+    (m := (n : ℕ∞ω) + 1) le_self_add (by simp)
   intro τ hτ
-  have hσ' := hσ
-  have hτ' : CMDiff (n + 1) (T% τ) := by simpa using hτ
   have hcovσ := contMDiffOn_univ.1 (ContMDiffCovariantDerivative.contMDiff.contMDiff
-    (cov := cov) hσ'.contMDiffOn)
+    (cov := cov) hσ.contMDiffOn)
   have hcovτ := contMDiffOn_univ.1 (ContMDiffCovariantDerivative.contMDiff.contMDiff
-    (cov := cov) hτ'.contMDiffOn)
+    (cov := cov) hτ.contMDiffOn)
   have hσdual : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) n
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] ℝ) x (innerSL ℝ (σ x))) := fun x ↦ by
-    simpa only [contMDiffWithinAt_univ] using ((hσ'.of_le le_self_add) x).innerSL_bundle
+    simpa only [contMDiffWithinAt_univ] using ((hσ.of_le le_self_add) x).innerSL_bundle
   have hτdual : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] ℝ)) n
       (fun x ↦ TotalSpace.mk' (F →L[ℝ] ℝ) x (innerSL ℝ (τ x))) := fun x ↦ by
-    simpa only [contMDiffWithinAt_univ] using ((hτ'.of_le le_self_add) x).innerSL_bundle
-  have h := (hσ'.inner_bundle hτ').contMDiff_totalSpaceMk_mvfderiv
+    simpa only [contMDiffWithinAt_univ] using ((hτ.of_le le_self_add) x).innerSL_bundle
+  have h := (hσ.inner_bundle hτ).contMDiff_totalSpaceMk_mvfderiv
     |>.sub_section (hτdual.clm_bundle_comp hcovσ)
     |>.sub_section (hσdual.clm_bundle_comp hcovτ)
   refine h.contMDiffOn.congr fun x _ ↦ ?_
   congr 1
   ext X
   -- The explicit constant tangent field fixes the unbundled direction in the native formula.
-  erw [cov.derivMetricTensor_apply (X := fun _ ↦ X) x (hσ'.mdifferentiableAt (by simp))
-    (hτ'.mdifferentiableAt (by simp))]
+  erw [cov.derivMetricTensor_apply (X := fun _ ↦ X) x (hσ.mdifferentiableAt (by simp))
+    (hτ.mdifferentiableAt (by simp))]
   simp only [Pi.sub_apply, sub_apply, ContinuousLinearMap.comp_apply]
   -- Align the metric-induced scalar/module projections in the two Riesz evaluations.
   erw [innerSL_apply_apply, innerSL_apply_apply]
@@ -127,23 +126,31 @@ def metricCorrection (cov : CovariantDerivative I F V) (x : M) :
           smul_apply, RingHom.id_apply, smul_smul]
         rw [mul_comm] }
 
+/-- Evaluate the raised metric defect on a fibre vector, leaving the tangent direction free. -/
+theorem metricCorrection_apply (cov : CovariantDerivative I F V) (x : M) (u : V x) :
+    let _ : IsNormableSpace ℝ (TangentSpace I x) :=
+      inferInstanceAs (IsNormableSpace ℝ E)
+    cov.metricCorrection x u = (2 : ℝ)⁻¹ •
+      ((innerSL ℝ (E := V x)).inverse.comp (cov.derivMetricTensor x u).flip) := by
+  intro _tangentNormable
+  rfl
+
 /-- The metric correction represents half of the metric defect. -/
+@[simp]
 theorem inner_metricCorrection (cov : CovariantDerivative I F V) (x : M)
     (u v : V x) (X : TangentSpace I x) :
     inner ℝ (cov.metricCorrection x u X) v = (2 : ℝ)⁻¹ * cov.derivMetricTensor x u v X := by
   let := VectorBundle.finiteDimensional ℝ F V x
   let : IsNormableSpace ℝ (TangentSpace I x) := inferInstanceAs (IsNormableSpace ℝ E)
-  have hinv : (innerSL ℝ (E := V x)).IsInvertible :=
-    InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner one_ne_zero
-      (fun u v ↦ by erw [innerSL_apply_apply]; exact (one_mul _).symm)
-  simp only [metricCorrection, LinearMap.coe_toContinuousLinearMap',
-    LinearMap.coe_mk, AddHom.coe_mk, smul_apply, ContinuousLinearMap.comp_apply,
-    real_inner_smul_left]
+  have hinv := InnerProductSpace.isInvertible_innerSL (E := V x)
+  rw [metricCorrection_apply]
+  simp only [smul_apply, ContinuousLinearMap.comp_apply, real_inner_smul_left]
   congr 1
   exact congrArg (fun φ ↦ φ v) (hinv.self_apply_inverse ((cov.derivMetricTensor x u).flip X))
 
 
-/-- Correct a connection by the symmetric part of its metric defect. -/
+/-- Correct a connection by adding half its metric defect, with one fibre slot raised by the
+metric (`metricCorrection`). -/
 def metricCompatible (cov : CovariantDerivative I F V) : CovariantDerivative I F V :=
   cov.addOneForm cov.metricCorrection
 
@@ -162,6 +169,8 @@ theorem isMetricCompatible_metricCompatible (cov : CovariantDerivative I F V) :
   have hsymm := cov.derivBilinearTensor_apply_comm
     (b := fun y ↦ innerSL ℝ (E := V y))
     (fun y a b ↦ by
+      -- The metric-induced module projections are definitionally equal to the ambient ones;
+      -- `erw` unfolds those projections so the generic Riesz evaluation lemma matches.
       erw [innerSL_apply_apply, innerSL_apply_apply]
       exact (real_inner_comm a b).symm) u v
   rw [cov.derivBilinearTensor_eq_derivMetricTensor (fun _ _ _ ↦ rfl)] at hsymm
@@ -205,42 +214,40 @@ theorem contMDiff_metricCorrection [FiniteDimensional ℝ E] [T2Space M]
     .of_le (show (n : ℕ∞ω) ≤ n + 1 from le_self_add)
   have : IsContMDiffRiemannianBundle I n F V :=
     .of_le (show (n : ℕ∞ω) ≤ n + 1 from le_self_add)
-  have : ContMDiffVectorBundle (↑(n + 1) : ℕ∞ω) F V I := by simpa using
-    (inferInstance : ContMDiffVectorBundle (n + 1) F V I)
   let : ∀ x : M, IsNormableSpace ℝ (TangentSpace I x) := fun x ↦
     (VectorBundle.continuousLinearEquivAt ℝ E (TangentSpace I) x).isNormableSpace
   apply contMDiffOn_univ.1
-  apply TauCeti.Manifold.contMDiffOn_hom_of_forall_contMDiff (m := n + 1) (by simp)
+  apply TauCeti.Manifold.contMDiffOn_hom_of_forall_contMDiff
+    (m := (n : ℕ∞ω) + 1) le_self_add (by simp)
   intro σ hσ
-  have hB := cov.contMDiff_derivMetricTensor_apply (n := n) (by simpa using hσ)
+  have hB := cov.contMDiff_derivMetricTensor_apply (n := n) hσ
   have hflip := fun x ↦ (hB x).clm_bundle_flip
   have hinv := IsContMDiffRiemannianBundle.contMDiff_innerSL_inverse
     (I := I) (F := F) (V := V) (n := n)
   have h := (hinv.clm_bundle_comp hflip).const_smul_section (a := (2 : ℝ)⁻¹)
-  exact h.contMDiffOn.congr fun _ _ ↦ rfl
+  exact h.contMDiffOn.congr fun x _ ↦
+    congrArg (TotalSpace.mk' (E →L[ℝ] F) x) (cov.metricCorrection_apply x (σ x)).symm
 
 omit [ContMDiffVectorBundle 1 F V I] [IsContMDiffRiemannianBundle I 1 F V] in
 /-- Correcting a `C^n` connection using a `C^(n+1)` metric preserves its order of regularity,
 including continuity and smoothness. -/
-theorem ContMDiffCovariantDerivative.metricCompatible [FiniteDimensional ℝ E] [T2Space M]
-    [IsManifold I ∞ M] {n : ℕ∞}
+instance ContMDiffCovariantDerivative.metricCompatible [FiniteDimensional ℝ E] [T2Space M]
+    [IsManifold I ∞ M] {n : ℕ∞ω} [ENat.LEInfty n]
     [ContMDiffVectorBundle (n + 1) F V I] [IsContMDiffRiemannianBundle I (n + 1) F V]
-    (cov : CovariantDerivative I F V) (hcov : ContMDiffCovariantDerivative cov n) :
+    {cov : CovariantDerivative I F V} [hcov : ContMDiffCovariantDerivative cov n] :
     let _ : ContMDiffVectorBundle 1 F V I :=
       .of_le (show (1 : ℕ∞ω) ≤ n + 1 from le_add_self)
     let _ : IsContMDiffRiemannianBundle I 1 F V :=
       .of_le (show (1 : ℕ∞ω) ≤ n + 1 from le_add_self)
     ContMDiffCovariantDerivative cov.metricCompatible n := by
   intro bundleOne metricOne
-  let := hcov
-  have : ContMDiffVectorBundle n F V I :=
-    .of_le (show (n : ℕ∞ω) ≤ n + 1 from le_self_add)
-  exact hcov.addOneForm cov cov.contMDiff_metricCorrection
+  lift n to ℕ∞ using ENat.LEInfty.ne_top n
+  exact hcov.addOneForm cov.contMDiff_metricCorrection
 
 omit [ContMDiffVectorBundle 1 F V I] [IsContMDiffRiemannianBundle I 1 F V] in
-/-- Every finite-rank real vector bundle with a `C^k` metric over a finite-dimensional,
+/-- Every finite-rank real `C^k` vector bundle with a `C^k` metric over a finite-dimensional,
 σ-compact Hausdorff smooth manifold admits a `C^n` metric-compatible connection if `n+1≤k`.
-This includes continuous connections and smooth connections, with arbitrary zero ranks. -/
+This includes continuous and smooth connections, and rank zero. -/
 theorem exists_contMDiffCovariantDerivative_isMetricCompatible
     [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
     {n : ℕ∞} {k : ℕ∞ω} [ContMDiffVectorBundle k F V I]
@@ -253,6 +260,6 @@ theorem exists_contMDiffCovariantDerivative_isMetricCompatible
   have : ContMDiffVectorBundle (n + 1) F V I := .of_le hk
   have : IsContMDiffRiemannianBundle I (n + 1) F V := .of_le hk
   obtain ⟨cov, hcov⟩ := exists_contMDiffCovariantDerivative (I := I) (F := F) (V := V) hk
-  exact ⟨cov.metricCompatible, hcov.metricCompatible cov, cov.isMetricCompatible_metricCompatible⟩
+  exact ⟨cov.metricCompatible, inferInstance, cov.isMetricCompatible_metricCompatible⟩
 
 end CovariantDerivative

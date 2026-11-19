@@ -49,6 +49,8 @@ theorem IsContMDiffRiemannianBundle.contMDiff_innerSL {n : ℕ∞ω}
   intro x
   congr 1
   ext u v
+  -- `erw` unfolds the metric-induced module projections on the fibre, allowing the generic
+  -- Riesz evaluation lemma to match the ambient bundle structures.
   erw [innerSL_apply_apply]
   exact heq x u v
 
@@ -63,8 +65,7 @@ theorem IsContMDiffRiemannianBundle.contMDiff_innerSL_inverse {n : ℕ∞ω}
   apply IsContMDiffRiemannianBundle.contMDiff_innerSL.clm_bundle_inverse
   intro x
   let := VectorBundle.finiteDimensional ℝ F V x
-  exact InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner one_ne_zero
-    (fun u v ↦ by erw [innerSL_apply_apply]; exact (one_mul _).symm)
+  exact InnerProductSpace.isInvertible_innerSL
 
 /-- Metric duality preserves regularity along an arbitrary base map. -/
 theorem ContMDiffWithinAt.innerSL_bundle {n : ℕ∞ω}

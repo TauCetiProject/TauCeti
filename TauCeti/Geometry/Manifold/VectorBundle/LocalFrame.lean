@@ -279,16 +279,16 @@ theorem exists_contMDiff_eventuallyEq_localFrame
     {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
     [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
-    [FiberBundle G W] [VectorBundle ℝ G W] {n : ℕ∞} [ContMDiffVectorBundle n G W I]
+    [FiberBundle G W] [VectorBundle ℝ G W] {n : ℕ∞ω} [ContMDiffVectorBundle n G W I]
     {ι : Type*} (e : Trivialization G (π G W)) [MemTrivializationAtlas e] (b : Basis ι ℝ G)
-    {x : M} (hx : x ∈ e.baseSet) :
+    {x : M} (hn : n ≤ ∞) (hx : x ∈ e.baseSet) :
     ∃ F : ι → Π y : M, W y, (∀ i, CMDiff n (T% (F i))) ∧
       ∀ i, ∀ᶠ y in nhds x, F i y = e.localFrame b i y := by
   -- Cut the frame off by a smooth bump function equal to one near `x`, supported in `e.baseSet`.
   have hnhds : e.baseSet ∈ nhds x := e.open_baseSet.mem_nhds hx
   obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
   refine ⟨fun i ↦ (ρ : M → ℝ) • e.localFrame b i, fun i ↦ ?_, fun i ↦ ?_⟩
-  · exact (ρ.contMDiff.of_le (by exact_mod_cast le_top : (n : ℕ∞ω) ≤ ∞)).contMDiffOn
+  · exact (ρ.contMDiff.of_le hn).contMDiffOn
       |>.smul_section_of_tsupport e.open_baseSet hρ
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
