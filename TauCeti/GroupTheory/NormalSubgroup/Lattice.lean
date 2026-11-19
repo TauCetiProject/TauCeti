@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import Mathlib.GroupTheory.Subgroup.Simple
 public import Mathlib.Order.CompleteSublattice
+public import TauCeti.Algebra.Group.Subgroup.ModularLaw
 
 /-!
 # The lattice of normal subgroups
@@ -34,8 +34,6 @@ subgroups with simple quotient.
 
 ## Main results
 
-* `Subgroup.sup_inf_assoc_of_le_of_normal`: Dedekind's modular law `(A ⊔ B) ⊓ C = A ⊔ (B ⊓ C)` in
-  `Subgroup G` for `A ≤ C` and normal `B`.
 * `TauCeti.NormalSubgroup.instIsModularLattice`: the normal subgroups form a modular lattice.
 * `TauCeti.NormalSubgroup.isAtom_iff_isMinimalNormal`: the atoms of `NormalSubgroup G` are the
   minimal normal subgroups.
@@ -45,7 +43,7 @@ subgroups with simple quotient.
 
 public section
 
-open Subgroup Pointwise
+open Subgroup
 
 variable {G : Type*} [Group G]
 
@@ -57,19 +55,6 @@ def Subgroup.IsMinimalNormal (N : Subgroup G) : Prop :=
 theorem Subgroup.isMinimalNormal_iff {N : Subgroup G} :
     N.IsMinimalNormal ↔ N.Normal ∧ N ≠ ⊥ ∧ ∀ M ≤ N, M.Normal → M = ⊥ ∨ M = N :=
   Iff.rfl
-
-/-- **Dedekind's modular law** in `Subgroup G`, for a normal middle term: if `A ≤ C` and `B` is
-normal, then `(A ⊔ B) ⊓ C = A ⊔ (B ⊓ C)`. -/
-@[to_additive /-- **Dedekind's modular law** in `AddSubgroup G`, for a normal middle term: if
-`A ≤ C` and `B` is normal, then `(A ⊔ B) ⊓ C = A ⊔ (B ⊓ C)`. -/]
-theorem Subgroup.sup_inf_assoc_of_le_of_normal {A C : Subgroup G} (B : Subgroup G) [B.Normal]
-    (h : A ≤ C) : (A ⊔ B) ⊓ C = A ⊔ (B ⊓ C) := by
-  refine le_antisymm (fun x hx ↦ ?_)
-    (le_inf (sup_le_sup_left inf_le_left _) (sup_le h inf_le_right))
-  have hx' : x ∈ (A : Set G) * B ∩ C := ⟨mul_normal A B ▸ hx.1, hx.2⟩
-  rw [← mul_inf_assoc A B C h] at hx'
-  obtain ⟨a, ha, b, hb, rfl⟩ := hx'
-  exact mul_mem_sup ha hb
 
 namespace TauCeti
 
