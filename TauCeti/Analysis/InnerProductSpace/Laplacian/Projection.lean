@@ -16,11 +16,13 @@ For a subspace `K` of a finite-dimensional real inner product space with orthogo
 `P = K.starProjection`, the Laplacian of `y ↦ ‖P y‖²` is the constant `2 dim K`. For `K = ⊤` this
 is `TauCeti.laplacian_norm_sq`. Since `dim K + dim Kᗮ = dim E`, the quadratic polynomial
 `dim K ‖P_{Kᗮ} y‖² - dim Kᗮ ‖P_K y‖²` is therefore harmonic, which makes it a barrier for
-maximum principles adapted to an orthogonal splitting of `E`.
+maximum principles adapted to an orthogonal splitting of `E`. For the line `K = ℝ v`, this gives
+the Laplacian `2 ‖v‖²` of the squared linear functional `⟪v, ·⟫²`.
 
 ## Main results
 
 * `Submodule.laplacian_norm_starProjection_sq`: `Δ ‖P_K y‖² = 2 dim K`.
+* `TauCeti.laplacian_inner_sq`: `Δ ⟪v, y⟫² = 2 ‖v‖²`.
 -/
 
 public section
@@ -60,3 +62,31 @@ theorem laplacian_norm_starProjection_sq (K : Submodule ℝ E) (x : E) :
   simp_rw [hsq, ← htr, hproj.trace]
 
 end Submodule
+
+namespace TauCeti
+
+open InnerProductSpace Laplacian
+open scoped RealInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- The Laplacian of the square of the linear functional `⟪v, ·⟫` is `2 ‖v‖²`: up to the factor
+`‖v‖²`, it is the squared norm of the orthogonal projection onto the line `ℝ v`. -/
+@[simp]
+theorem laplacian_inner_sq (v x : E) : Δ (fun y : E ↦ ⟪v, y⟫ ^ 2) x = 2 * ‖v‖ ^ 2 := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  set P := (ℝ ∙ v).starProjection
+  -- `P y = (⟪v, y⟫ / ‖v‖²) v`, so `⟪v, y⟫² = ‖v‖² ‖P y‖²`.
+  have h : (fun y : E ↦ ⟪v, y⟫ ^ 2) = (‖v‖ ^ 2) • fun y ↦ ‖P y‖ ^ 2 := by
+    funext y
+    have hv' : ‖v‖ ≠ 0 := norm_ne_zero_iff.2 hv
+    simp [P, Submodule.starProjection_singleton, norm_smul]
+    field_simp
+    simp [sq_abs]
+  rw [h, laplacian_smul _ (P.contDiff.norm_sq ℝ).contDiffAt,
+    Submodule.laplacian_norm_starProjection_sq, finrank_span_singleton hv, smul_eq_mul]
+  push_cast
+  ring
+
+end TauCeti

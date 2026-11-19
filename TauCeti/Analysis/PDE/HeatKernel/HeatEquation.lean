@@ -230,7 +230,7 @@ theorem iteratedFDeriv_heatKernel_convolution_eq_smul_integral (ht : 0 < t)
       rw [inv_sqrt_pow_eq_rpow ht.le]
       push_cast
       ring_nf
-    rw [iteratedFDeriv_heatKernel_eq_rpow_smul ht, hpow, ← inv_sqrt_eq_rpow,
+    rw [iteratedFDeriv_heatKernel_eq_rpow_smul ht.le, hpow, ← inv_sqrt_eq_rpow,
       hφ_def]
     ext v
     simp [smul_inv_smul₀ hst.ne', mul_smul]
