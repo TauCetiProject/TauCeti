@@ -5,26 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Length
 import Mathlib.LinearAlgebra.Quotient.Pi
+import TauCeti.RingTheory.Ideal.Operations.Pi
 import TauCeti.RingTheory.Length
 
 /-!
 # Lengths of the quotients `M ⧸ I • N`
 
-For an ideal `I` of a ring `A`, the quotients `M ⧸ I • N` are the layers of the `I`-adic
-filtration of an `A`-module `M`. This file records how their lengths behave: `M ⧸ I • N` is
-filtered by `N ⧸ I • N` and `M ⧸ N`, the length of `M ⧸ I • M` is invariant under linear
-equivalence, and it is additive over finite products, since there `I • ⊤` is the product of the
-`I • ⊤` of the factors. Applied to `N = I ^ k • ⊤`, the first fact computes the length of the
-graded piece `I ^ k M ⧸ I ^ (k + 1) M` from the lengths of `M ⧸ I ^ k M`.
+For an ideal `I` of a ring `A` and a submodule `N` of an `A`-module `M`, this file records how
+the lengths of the quotients `M ⧸ I • N` behave: `M ⧸ I • N` is filtered by `N ⧸ I • N` and
+`M ⧸ N`, the length of `M ⧸ I • M` is invariant under linear equivalence, and it is additive over
+finite products, since there `I • ⊤` is the product of the `I • ⊤` of the factors
+(`Submodule.smul_top_eq_pi`). For `N = I ^ k • ⊤`, the quotient `M ⧸ I • N` is the truncation
+`M ⧸ I ^ (k + 1) M` of the `I`-adic filtration, and the first fact computes the length of the
+graded piece `I ^ k M ⧸ I ^ (k + 1) M` from the lengths of these truncations.
 
 ## Main results
 
-* `Submodule.smul_top_eq_pi`: in a finite product of modules, `I • ⊤` is the product of the
-  `I • ⊤` of the factors.
 * `TauCeti.length_quotient_smul_eq_length_quotient_smul_top_add`: `M ⧸ I • N` is filtered by
   `N ⧸ I • N` and `M ⧸ N`.
 * `TauCeti.length_quotient_smul_top_congr`: the length of `M ⧸ I • M` is a linear-equivalence
@@ -34,25 +33,6 @@ graded piece `I ^ k M ⧸ I ^ (k + 1) M` from the lengths of `M ⧸ I ^ k M`.
 -/
 
 public section
-
-namespace Submodule
-
-variable {R ι : Type*} [Semiring R] {M : ι → Type*} [∀ i, AddCommMonoid (M i)]
-  [∀ i, Module R (M i)]
-
-/-- In a finite product, the ideal multiple `I • ⊤` is the product of the ideal multiples
-`I • ⊤` of the factors. -/
-theorem smul_top_eq_pi [Finite ι] (I : Ideal R) :
-    I • (⊤ : Submodule R (∀ i, M i)) = pi Set.univ fun i ↦ I • (⊤ : Submodule R (M i)) := by
-  classical
-  have := Fintype.ofFinite ι
-  refine le_antisymm (smul_le.mpr fun r hr x _ ↦ mem_pi.mpr fun i _ ↦ smul_mem_smul hr mem_top)
-    fun x hx ↦ ?_
-  rw [← Finset.univ_sum_single x]
-  exact sum_mem fun i _ ↦ smul_top_le_comap_smul_top I (LinearMap.single R M i)
-    ((mem_pi (p := fun i ↦ I • (⊤ : Submodule R (M i)))).mp hx i (Set.mem_univ i))
-
-end Submodule
 
 namespace TauCeti
 
