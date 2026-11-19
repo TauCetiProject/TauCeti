@@ -271,19 +271,10 @@ that the cutoff `ψⱼ` of `φ` and the cutoff `ψ'ₖ` of `φ'` have disjoint s
 `j + L ≤ k`. For `φ' = φ` this is the finite overlap of a single family of cutoffs. -/
 theorem exists_littlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 : E)) :
     ∃ L : ℕ, ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E,
-      φ.littlewoodPaley j ξ * φ'.littlewoodPaley k ξ = 0 := by
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ'.rIn) (one_lt_two (α := ℝ))
-  have hn' : φ.rOut ≤ 2 ^ n * φ'.rIn := ((div_lt_iff₀ φ'.rIn_pos).1 hn).le
-  refine ⟨n + 1, fun j k hjk ξ ↦ ?_⟩
-  rcases le_or_gt ‖ξ‖ (2 ^ (k - 1) * φ'.rIn) with hξ | hξ
-  · rw [φ'.littlewoodPaley_eq_zero_of_norm_le hξ, mul_zero]
-  · refine mul_eq_zero_of_left (φ.littlewoodPaley_eq_zero_of_le_norm (le_trans ?_ hξ.le)) _
-    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ'.rIn) :=
-          mul_le_mul_of_nonneg_left hn' (zpow_nonneg zero_le_two _)
-      _ = 2 ^ (j + n) * φ'.rIn := by rw [zpow_add₀ two_ne_zero, zpow_natCast, mul_assoc]
-      _ ≤ 2 ^ (k - 1) * φ'.rIn :=
-          mul_le_mul_of_nonneg_right (zpow_le_zpow_right₀ one_le_two (by push_cast at hjk; omega))
-            φ'.rIn_pos.le
+      φ.littlewoodPaley j ξ * φ'.littlewoodPaley k ξ = 0 :=
+  exists_mul_eq_zero_of_dyadic_support (e := id) (e' := id) (ρ := norm) φ'.rIn_pos
+    (fun _ _ ↦ φ.littlewoodPaley_eq_zero_of_le_norm)
+    (fun _ _ ↦ φ'.littlewoodPaley_eq_zero_of_norm_le)
 
 /-- **Bounded overlap of the dyadic cutoffs.** There is `L`, depending only on `φ`, such that at
 every `ξ` at most `L` cutoffs `ψⱼ` are nonzero, over any finite set of indices. -/
@@ -492,19 +483,15 @@ whenever `j + L ≤ k`. For `φ' = φ` this is the finite overlap of a single pa
 theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 : E)) :
     ∃ L : ℕ, ∀ j k : ℕ, j + L ≤ k → ∀ ξ : E,
       φ.inhomogeneousLittlewoodPaley j ξ * φ'.inhomogeneousLittlewoodPaley k ξ = 0 := by
-  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ'.rIn) (one_lt_two (α := ℝ))
-  have hn' : φ.rOut ≤ 2 ^ n * φ'.rIn := ((div_lt_iff₀ φ'.rIn_pos).1 hn).le
-  refine ⟨n + 1, fun j k hjk ξ ↦ ?_⟩
+  -- Label `ψⱼ` by `j` and `ψ'ₖ₊₁` by `k + 1`; only `ψ'₀ = φ'` does not vanish near the origin.
+  obtain ⟨L, hL⟩ := exists_mul_eq_zero_of_dyadic_support (e := Nat.cast)
+    (e' := fun k : ℕ ↦ (k : ℤ) + 1) (ψ' := fun k ↦ φ'.inhomogeneousLittlewoodPaley (k + 1))
+    (ρ := norm) φ'.rIn_pos
+    (fun _ _ h ↦ φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm (by simpa using h))
+    (fun _ _ h ↦ φ'.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le (by simpa using h))
+  refine ⟨L + 1, fun j k hjk ξ ↦ ?_⟩
   obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := Nat.exists_eq_add_one.2 (by omega)
-  rcases le_or_gt ‖ξ‖ (2 ^ k * φ'.rIn) with hξ | hξ
-  · rw [φ'.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hξ, mul_zero]
-  · refine mul_eq_zero_of_left (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm ?_) _
-    refine le_trans ?_ hξ.le
-    calc (2 : ℝ) ^ j * φ.rOut ≤ 2 ^ j * (2 ^ n * φ'.rIn) :=
-          mul_le_mul_of_nonneg_left hn' (pow_nonneg zero_le_two _)
-      _ = 2 ^ (j + n) * φ'.rIn := by rw [pow_add, mul_assoc]
-      _ ≤ 2 ^ k * φ'.rIn :=
-          mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ'.rIn_pos.le
+  exact hL j k (by omega) ξ
 
 /-- The **enlarged Littlewood–Paley cutoff** `Ψⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
 pieces of the inhomogeneous partition whose indices are within `L` of `j`. It is supported in the

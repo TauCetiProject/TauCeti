@@ -791,11 +791,7 @@ theorem tendsto_sum_fourierMultiplierCLM_littlewoodPaley [Nontrivial V]
       simp only [Finset.mem_Icc, Finset.mem_Ioc]
       omega
     rw [hIcc, φ.sum_littlewoodPaley_Ioc (by omega)]
-    have := φ.nonneg (x := ((2 : ℝ) ^ (N : ℤ))⁻¹ • ξ)
-    have := φ.le_one (x := ((2 : ℝ) ^ (N : ℤ))⁻¹ • ξ)
-    have := φ.nonneg (x := ((2 : ℝ) ^ (-(N : ℤ) - 1))⁻¹ • ξ)
-    have := φ.le_one (x := ((2 : ℝ) ^ (-(N : ℤ) - 1))⁻¹ • ξ)
-    exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+    exact abs_sub_le_of_nonneg_of_le φ.nonneg φ.le_one φ.nonneg φ.le_one
   · have hmono : Monotone fun N : ℕ ↦ Finset.Icc (-(N : ℤ)) N := fun a b hab j hj ↦ by
       simp only [Finset.mem_Icc] at hj ⊢
       omega
@@ -901,11 +897,14 @@ theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow_l
   · -- On the zero space every cutoff vanishes at the only point `0`, so every block is `0`.
     refine ⟨0, fun m hm f ↦ ?_⟩
     rw [ENNReal.coe_zero, zero_mul, nonpos_iff_eq_zero]
-    have h0 : ∀ j, Lp.fourierMultiplierCLM F (m j) f = 0 := fun j ↦ by
+    have h0 : ∀ j, Lp.fourierMultiplierCLM F (m j) f =ᵐ[volume] 0 := fun j ↦ by
       rw [ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero (hm j), zero_apply]
-    have hS : (fun x ↦ (∑' j : ℤ, ‖Lp.fourierMultiplierCLM F (m j) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) = 0 :=
-      funext fun x ↦ by simp [h0]
-    rw [hS, eLpNorm_zero]
+      exact Lp.coeFn_zero _ _ _
+    have hS : (fun x ↦ (∑' j : ℤ, ‖Lp.fourierMultiplierCLM F (m j) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ))
+        =ᵐ[volume] 0 := by
+      filter_upwards [ae_all_iff.2 h0] with x hx
+      simp [hx]
+    rw [eLpNorm_congr_ae hS, eLpNorm_zero]
   obtain ⟨e, hP⟩ := isDyadic_littlewoodPaley φ
   exact exists_eLpNorm_tsum_le hP hp hp_top
 
