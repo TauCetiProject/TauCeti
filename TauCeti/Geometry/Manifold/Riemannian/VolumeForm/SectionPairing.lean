@@ -145,11 +145,11 @@ theorem l2Pairing_neg_right (ξ η : ∀ x, V x) : h.l2Pairing o ξ (-η) = -h.l
 and the integral of top forms. -/
 @[simp]
 theorem l2Pairing_neg_orientation (ξ η : ∀ x, V x) : h.l2Pairing (-o) ξ η = h.l2Pairing o ξ η := by
-  rw [l2Pairing, l2Pairing, integralTopForm_neg, riemannianVolumeForm_neg]
-  simp only [Pi.neg_apply, smul_neg]
-  rw [show (fun x ↦ -(h.inner x (ξ x) (η x) • riemannianVolumeForm o x)) =
-      (-1 : ℝ) • fun x ↦ h.inner x (ξ x) (η x) • riemannianVolumeForm o x by
-    funext x; exact (neg_one_smul ℝ _).symm, integralTopForm_smul, neg_one_mul, neg_neg]
+  rw [l2Pairing, l2Pairing, integralTopForm_neg, neg_eq_iff_eq_neg, ← neg_one_mul,
+    ← integralTopForm_smul, neg_one_smul]
+  congr 1
+  funext x
+  simp only [riemannianVolumeForm_neg, Pi.neg_apply, smul_neg]
 
 /-- The integrand `h(ξ, η) vol` of the pairing vanishes outside the support of the first
 section. -/
