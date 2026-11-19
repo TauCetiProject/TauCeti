@@ -27,6 +27,8 @@ manifold-derivative API.
 * `TauCeti.mfderiv_comp_const_add_smul_apply`: the chain rule for the affine reparametrization
   `w ↦ c + ε • w` of a map from a normed space, `d(u(c + ε •))_w = ε • du_(c + ε • w)`, with no
   differentiability hypothesis.
+* `TauCeti.finiteDimensional_of_injective_mfderiv`: a map into a finite-dimensional manifold
+  whose differential is injective at some point has a finite-dimensional source model.
 -/
 
 public section
@@ -123,5 +125,15 @@ theorem mfderiv_comp_const_add_smul_apply (u : F → M) (c w : F) (ε : 𝕜) (v
     exact hu (by simpa [Function.comp_def, smul_smul, hε] using h'.comp (c + ε • w) hψ)
   rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
   exact (smul_zero ε).symm
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [FiniteDimensional 𝕜 E']
+  [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] in
+/-- A map into a finite-dimensional manifold whose differential is injective at some point has a
+finite-dimensional model space. -/
+theorem finiteDimensional_of_injective_mfderiv {f : M → N}
+    (hinj : Function.Injective (mfderiv I J f x)) : FiniteDimensional 𝕜 E := by
+  have : FiniteDimensional 𝕜 (TangentSpace I x) :=
+    Module.Finite.of_injective (mfderiv I J f x).toLinearMap hinj
+  exact (tangentSpaceCastModel I x).toLinearEquiv.finiteDimensional
 
 end TauCeti

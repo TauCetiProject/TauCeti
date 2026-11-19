@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 
 /-!
 # Products of Fredholm operators
@@ -24,9 +25,13 @@ and cokernels and is provided by `TauCeti.Topology.Algebra.Module.ContinuousLine
 * `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
 * `ContinuousLinearMap.isFredholm_prodMap_iff`: conversely, a product is Fredholm only if both
   factors are.
+* `ContinuousLinearMap.isFredholm_withLpProdMap_iff`: the same for the block sum on an `L^p`
+  product.
 -/
 
 public section
+
+open scoped ENNReal
 
 namespace ContinuousLinearMap
 
@@ -112,5 +117,12 @@ lemma IsFredholm.of_prodMap_right (h : IsFredholm (T.prodMap S)) : IsFredholm S 
 @[simp]
 lemma isFredholm_prodMap_iff : IsFredholm (T.prodMap S) ↔ IsFredholm T ∧ IsFredholm S :=
   ⟨fun h ↦ ⟨h.of_prodMap_left, h.of_prodMap_right⟩, fun h ↦ h.1.prodMap h.2⟩
+
+/-- An `L^p` block sum of operators is Fredholm if and only if both blocks are. -/
+@[simp]
+lemma isFredholm_withLpProdMap_iff {p : ℝ≥0∞} :
+    IsFredholm (T.withLpProdMap p S) ↔ IsFredholm T ∧ IsFredholm S := by
+  rw [isFredholm_iff_of_comp_eq (S := T.prodMap S) (WithLp.prodContinuousLinearEquiv p K E₁ E₂)
+    (WithLp.prodContinuousLinearEquiv p K F₁ F₂) (by ext x <;> simp), isFredholm_prodMap_iff]
 
 end ContinuousLinearMap

@@ -157,6 +157,13 @@ theorem amenable_iff_exists_boundedContinuousFunction_mean :
     rw [Mean.isLeftInvariant_iff_boundedContinuousFunction]
     simpa using hm
 
+/-- A topological group which is a homomorphic image of an amenable discrete group is amenable,
+for every group topology on the target. -/
+theorem Amenable.of_surjective [Amenable G] {H : Type*} [Group H]
+    [TopologicalSpace H] [IsTopologicalGroup H] (φ : G →* H) (hφ : Function.Surjective φ) :
+    Amenable H :=
+  .of_denseRange ⟨φ, continuous_of_discreteTopology⟩ hφ.denseRange
+
 end Discrete
 
 /-- An abstract group which is amenable with the discrete topology is amenable with any

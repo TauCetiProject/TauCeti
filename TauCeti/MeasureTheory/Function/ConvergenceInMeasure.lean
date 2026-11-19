@@ -22,7 +22,9 @@ uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
 Convergence in mean square also implies convergence in measure, with integrability of the
-squared deviations required only eventually along the filter.
+squared deviations required only eventually along the filter. In the other direction,
+Chebyshev-type bounds with an auxiliary truncation level give measures tending to zero, and real
+functions tending to zero in measure have upper tails of measure tending to zero.
 
 Pairing preserves convergence in measure along arbitrary filters and for arbitrary measures.
 On finite measure spaces, continuous transformations preserve convergence along arbitrary
@@ -33,6 +35,9 @@ measurable.
 
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
+* `Topology.IsInducing.tendsto_measure_notMem_nhds_iff`: convergence in measure to a constant
+  can be checked on a family of metric-valued tests inducing the topology, even when the
+  measure spaces vary with the index.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_edist`: the `edist`
   form, for an `ℝ≥0∞`-valued rate and a target with an extended distance.
 * `TauCeti.tendstoInMeasure_of_tendsto_measure_rate_lt_dist`: the `dist`
@@ -42,6 +47,10 @@ measurable.
   `μ {x | dist (f i x) (g x) ≤ rate i} → 1`; here null-measurability of the
   good events (eventually along the filter) is genuinely needed, since an outer
   measure can assign full measure to both a set and its complement.
+* `TauCeti.tendsto_measure_of_le_ofReal_div_sq_add`: a measure bounded by `δ / ε²` plus a
+  term tending to zero for every `δ > 0` tends to zero.
+* `TauCeti.tendsto_measure_lt_of_tendstoInMeasure`: real functions tending to zero in measure
+  have upper tails of measure tending to zero.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
@@ -123,6 +132,50 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
   filter_upwards [hmeas] with i hi
   rw [← prob_compl_eq_one_sub₀ hi, Set.compl_ofPred]
   simp_rw [not_le]
+
+/-- If, for every `δ > 0`, the measure of `A k` is at most `δ / ε²` plus a term `B δ k` tending to
+zero along `l`, then the measure of `A k` tends to zero. This is how Chebyshev-type estimates
+with an auxiliary truncation level `δ` are turned into convergence in probability. -/
+theorem tendsto_measure_of_le_ofReal_div_sq_add {A : ι → Set α} {B : ℝ → ι → ℝ≥0∞} {ε : ℝ}
+    (htail : ∀ δ > 0, Tendsto (B δ) l (𝓝 0))
+    (hbound : ∀ δ > 0, ∀ k, μ (A k) ≤ ENNReal.ofReal (δ / ε ^ 2) + B δ k) :
+    Tendsto (fun k ↦ μ (A k)) l (𝓝 0) := by
+  -- For `ε = 0` the bound is `B 1 k` itself.
+  by_cases hε : ε = 0
+  · refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (htail 1 one_pos)
+      (fun _ ↦ zero_le) fun k ↦ ?_
+    simpa [hε] using hbound 1 one_pos k
+  refine ENNReal.tendsto_nhds_zero.2 fun c hc ↦ ?_
+  by_cases hctop : c = ∞
+  · simp [hctop]
+  have hcpos : 0 < c.toReal := ENNReal.toReal_pos hc.ne' hctop
+  let δ := c.toReal * ε ^ 2 / 2
+  have hδ : 0 < δ := by positivity
+  have hhalf : 0 < ENNReal.ofReal (c.toReal / 2) := by positivity
+  filter_upwards [ENNReal.tendsto_nhds_zero.1 (htail δ hδ) _ hhalf] with k hk
+  have hquot : δ / ε ^ 2 = c.toReal / 2 := by
+    dsimp [δ]
+    field_simp
+  calc
+    μ (A k) ≤ ENNReal.ofReal (δ / ε ^ 2) + B δ k := hbound δ hδ k
+    _ ≤ ENNReal.ofReal (c.toReal / 2) + ENNReal.ofReal (c.toReal / 2) := by
+      rw [hquot]
+      exact add_le_add le_rfl hk
+    _ = c := by
+      rw [← ENNReal.ofReal_add (by positivity) (by positivity), add_halves,
+        ENNReal.ofReal_toReal hctop]
+
+/-- If real functions `f i` tend to zero in measure, then for every `δ > 0` the measure of the
+upper tail `{x | δ < f i x}` tends to zero. -/
+theorem tendsto_measure_lt_of_tendstoInMeasure {f : ι → α → ℝ}
+    (hf : TendstoInMeasure μ f l fun _ ↦ 0) {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun i ↦ μ {x | δ < f i x}) l (𝓝 0) := by
+  have htail := (tendstoInMeasure_iff_norm.1 hf) δ hδ
+  simp only [sub_zero, Real.norm_eq_abs] at htail
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds htail
+    (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ by
+      simp only [Set.mem_ofPred_eq] at hx ⊢
+      exact hx.le.trans (le_abs_self _)
 
 end TauCeti
 
@@ -222,3 +275,48 @@ theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
   exact TauCeti.meas_ge_le_integral_norm_sq_div_sq hk hε
 
 end MeasureTheory
+
+namespace Topology.IsInducing
+
+open Filter MeasureTheory Set
+open scoped Topology
+
+/-- For a family of tests inducing the topology, convergence in measure to a constant is
+equivalent to convergence of each test. The sample spaces and measures may vary, and the
+filter is arbitrary. No measurability is needed because the statement uses outer measures. -/
+theorem tendsto_measure_notMem_nhds_iff {X J E ι : Type*} [TopologicalSpace X]
+    [PseudoMetricSpace E] {T : X → J → E} (hT : IsInducing T)
+    {Ω : ι → Type*} [∀ i, MeasurableSpace (Ω i)] (P : (i : ι) → Measure (Ω i))
+    (Y : (i : ι) → Ω i → X) (l : Filter ι) (x : X) :
+    (∀ U ∈ 𝓝 x, Tendsto (fun i ↦ P i {ω | Y i ω ∉ U}) l (𝓝 0)) ↔
+      ∀ j ε, 0 < ε →
+        Tendsto (fun i ↦ P i {ω | ε ≤ dist (T (Y i ω) j) (T x j)}) l (𝓝 0) := by
+  classical
+  constructor
+  · intro h j ε hε
+    have hU : {y | dist (T y j) (T x j) < ε} ∈ 𝓝 x :=
+      ((continuous_apply j).comp hT.continuous).continuousAt.preimage_mem_nhds
+        (Metric.ball_mem_nhds _ hε)
+    simpa only [mem_ofPred_eq, not_lt] using h _ hU
+  · intro h U hU
+    rw [hT.nhds_eq_comap] at hU
+    obtain ⟨V, hV, hVU⟩ := mem_comap.1 hU
+    rw [nhds_pi, Filter.mem_pi'] at hV
+    obtain ⟨s, W, hW, hWV⟩ := hV
+    choose δ hδ hδW using fun j ↦ Metric.mem_nhds_iff.1 (hW j)
+    have hlim : Tendsto
+        (fun i ↦ ∑ j ∈ s, P i {ω | δ j ≤ dist (T (Y i ω) j) (T x j)}) l (𝓝 0) := by
+      simpa using tendsto_finsetSum s (fun j _ ↦ h j (δ j) (hδ j))
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
+      (fun _ ↦ zero_le) fun i ↦ ?_
+    refine (measure_mono ?_).trans (measure_biUnion_finset_le s _)
+    intro ω hω
+    simp only [mem_iUnion, mem_ofPred_eq]
+    by_contra! hgood
+    apply hω
+    apply hVU
+    apply hWV
+    intro j hj
+    exact hδW j (hgood j hj)
+
+end Topology.IsInducing

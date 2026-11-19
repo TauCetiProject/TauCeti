@@ -86,6 +86,9 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   section whose coordinates its chart data are.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
   a measure that is finite on compact sets.
+* `TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq`: continuous linear maps
+  into the chartwise Sobolev spaces whose values are those of the components of a Sobolev section
+  assemble into a continuous linear map between spaces of Sobolev sections keeping the section.
 * `TauCeti.SectionChartData.chartValueL_ae_eq_smul`: multiplying the chart-`i` components of a
   tuple by a scalar function multiplies its chart data by that function.
 
@@ -487,6 +490,32 @@ theorem eq_of_chartValueL_ae_eq {w w' : C.sobolevSections μ p k}
     w = w' := by
   obtain ⟨s, hs⟩ := C.exists_section μ p k w'
   exact eq_of_ae_eq_coord (fun i ↦ (h i).trans (hs i)) hs
+
+variable {C μ p k} {q : ℝ≥0∞} [Fact (1 ≤ q)] {k' : ℕ} in
+/-- **Maps into Sobolev sections from their components.** If continuous linear maps `Φ i m` from
+the Sobolev sections of order `k` and exponent `p` to `W^{k',q}(C.image i)` have, almost everywhere,
+the values of the components `w i m`, then there is a continuous linear map into the Sobolev
+sections of order `k'` and exponent `q` whose chart data are those of `w`: it keeps the underlying
+section. -/
+theorem exists_continuousLinearMap_chartValueL_ae_eq
+    (Φ : ∀ (i : Fin C.n) (_ : Fin (finrank ℝ F)),
+      C.sobolevSections μ p k →L[ℝ] Wkp μ (C.image i) q k')
+    (hΦ : ∀ i m w, Wkp.value k' (Φ i m w) =ᵐ[μ.restrict (C.image i)]
+      Wkp.value k ((w : C.SobolevData μ p k) i m)) :
+    ∃ T : C.sobolevSections μ p k →L[ℝ] C.sobolevSections μ q k',
+      ∀ w i, C.chartValueL μ q k' i (T w) =ᵐ[μ.restrict (C.image i)] C.chartValueL μ p k i w := by
+  -- The chart data of the assembled tuple are those of `w`, component by component.
+  have hchart (w : C.sobolevSections μ p k) (i : Fin C.n) :
+      C.chartValueL μ q k' i (fun i m ↦ Φ i m w) =ᵐ[μ.restrict (C.image i)]
+        C.chartValueL μ p k i w := by
+    filter_upwards [C.chartValueL_apply_ae μ q k' i (fun i m ↦ Φ i m w),
+      C.chartValueL_apply_ae μ p k i w, ae_all_iff.2 (hΦ i · w)] with y hq hp hm
+    rw [hq, hp]
+    exact Finset.sum_congr rfl fun m _ ↦ by rw [hm m]
+  refine ⟨(ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi (Φ i)).codRestrict
+    (C.sobolevSections μ q k') fun w ↦ ?_, fun w i ↦ hchart w i⟩
+  obtain ⟨s, hs⟩ := C.exists_section μ p k w
+  exact (C.mem_sobolevSections_iff μ q k').2 ⟨s, fun i ↦ (hchart w i).trans (hs i)⟩
 
 /-- The norm of an element of the Sobolev sections, the maximum of its component norms, is at most
 any sum of bounds for the component norms. -/

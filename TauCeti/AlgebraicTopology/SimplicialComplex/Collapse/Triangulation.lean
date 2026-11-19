@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.PL
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Sequence
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Map
+import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
 
 /-!
 # Collapsible triangulations of polyhedra
@@ -58,32 +59,14 @@ theorem HasCollapsibleTriangulation.changeUniverse (h : HasCollapsibleTriangulat
     HasCollapsibleTriangulation.{w} K := by
   classical
   obtain ⟨ν, A, hKA, hA⟩ := hasCollapsibleTriangulation_iff.mp h
-  let V := hA.finite_faces.toFinset.biUnion id
-  have hV : ∀ σ ∈ A, σ ⊆ V := by
-    intro σ hσ v hv
-    exact Finset.mem_biUnion.mpr ⟨σ, hA.finite_faces.mem_toFinset.mpr hσ, hv⟩
-  let B : PreAbstractSimplicialComplex V :=
-    { faces := {σ | σ.image Subtype.val ∈ A}
-      isRelLowerSet_faces := fun {_} hσ =>
-        ⟨Finset.image_nonempty.mp (A.isRelLowerSet_faces hσ).1,
-          fun _ hτσ hτ => (A.isRelLowerSet_faces hσ).2
-            (Finset.image_mono _ hτσ) (hτ.image _)⟩ }
-  let i : V ↪ ν := Function.Embedding.subtype (· ∈ V)
-  have hBA : B.map i = A := by
-    apply SetLike.ext
-    intro σ
-    constructor
-    · rintro ⟨τ, hτ, rfl⟩
-      exact hτ
-    · intro hσ
-      have heq : (σ.subtype (· ∈ V)).image Subtype.val = σ := by
-        simpa only [Finset.map_eq_image, Function.Embedding.coe_subtype] using
-          Finset.subtype_map_of_mem (hV σ hσ)
-      have hτ : (σ.subtype (· ∈ V)).image Subtype.val ∈ A := heq.symm ▸ hσ
-      exact mem_map_iff.mpr ⟨σ.subtype (· ∈ V), hτ, heq⟩
+  let V := faceUnion hA.finite_faces
+  let B := A.restrict (V : Set ν)
+  let i : (V : Set ν) ↪ ν := Function.Embedding.subtype (· ∈ (V : Set ν))
+  have hBA : B.map i = A :=
+    map_val_restrict fun _ hσ => Finset.coe_subset.mpr (subset_faceUnion hA.finite_faces hσ)
   have hB : Collapsible B :=
     (Collapsible.map_iff_of_injective i i.injective).mp (hBA.symm ▸ hA)
-  let e : V ↪ ULift.{w} (Fin V.card) :=
+  let e : (V : Set ν) ↪ ULift.{w} (Fin V.card) :=
     (Finset.equivFin V).toEmbedding.trans (Equiv.ulift.symm.toEmbedding)
   have hAB : PLHomeomorphic A B :=
     hBA ▸ (PLHomeomorphic.relabeling B i).symm

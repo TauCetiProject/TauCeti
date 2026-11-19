@@ -45,6 +45,7 @@ original edges.
 * `Graph.isRegularOfDegree_iff_incidenceCount_eq`: with finite incidence sets, regularity is a
   condition on incidence counts.
 * `Graph.isRegularOfDegree_ofSimpleGraph_iff`: regularity agrees with Mathlib's for simple graphs.
+* `Graph.Iso.isRegularOfDegree_iff`: isomorphic multigraphs are regular of the same degree.
 * `Graph.IsBipartition.exists_isRegularCompletion`: a finite bipartite multigraph whose degrees are
   at most `k` has a `k`-regular bipartite completion.
 
@@ -59,7 +60,7 @@ public section
 open Finset
 open scoped Graph
 
-universe u v w
+universe u v w u' v'
 
 namespace Graph
 
@@ -99,6 +100,16 @@ theorem isRegularOfDegree_ofSimpleGraph_iff {H : SimpleGraph α} [H.LocallyFinit
   rw [vertexSet_ofSimpleGraph, incidenceSet_ofSimpleGraph,
     ← (Set.toFinite (H.incidenceSet x)).cast_ncard_eq, SimpleGraph.ncard_incidenceSet]
   simp
+
+/-- Isomorphic multigraphs are regular of the same degree. -/
+theorem Iso.isRegularOfDegree_iff {α' : Type u'} {β' : Type v'} {H : Graph α' β'} (f : Iso G H)
+    (k : ℕ) : H.IsRegularOfDegree k ↔ G.IsRegularOfDegree k := by
+  rw [isRegularOfDegree_def, isRegularOfDegree_def]
+  refine ⟨fun h x hx ↦ ?_, fun h y hy ↦ ?_⟩
+  · rw [← f.encard_incidenceSet_vertexEquiv ⟨x, hx⟩]
+    exact h _ (f.vertexEquiv _).2
+  · simpa using (f.encard_incidenceSet_vertexEquiv (f.vertexEquiv.symm ⟨y, hy⟩)).trans
+      (h _ (Subtype.prop _))
 
 /-! ### Regular bipartite completions -/
 
