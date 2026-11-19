@@ -7,16 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
-public import TauCeti.Analysis.Complex.Euclidean.Plane
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.FlatTrace
 public import TauCeti.Analysis.Sobolev.Local.HalfPlane
+public import TauCeti.Analysis.Sobolev.Local.W1p.HalfDisc
 public import TauCeti.Analysis.Sobolev.Local.Morrey.HalfDisc
-public import TauCeti.Analysis.Sobolev.Local.Norm
-public import TauCeti.Analysis.Sobolev.Local.W1p
-public import TauCeti.Analysis.Sobolev.Local.Wkp.HalfDisc
-public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import Mathlib.Analysis.LocallyConvex.Separation
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Boundary values on the real axis of local Sobolev maps on half-discs
@@ -25,8 +20,8 @@ Let `U = Ω ∩ {0 ≤ im}` be a relatively open subset of the closed upper half
 `u : ℂ → V` lie in the half-disc class `TauCeti.MemWkpLoc p U 1`, `1 ≤ p < ∞`. The totally real
 boundary condition `u(s) ∈ L` for real `s ∈ U`, with `L` a closed real subspace of `V` (for instance
 `ℝⁿ ⊆ ℂⁿ`), is a pointwise condition only when `u` has a representative continuous up to the real
-axis, as it does for `p > 2`. For `p ≤ 2` it is a condition on traces. This file states it through
-the trace on the flat segment of the model half-disc,
+axis, as it does for `p > 2` when `V` is finite-dimensional. For `p ≤ 2` it is a condition on
+traces. This file states it through the trace on the flat segment of the model half-disc,
 `TauCeti.W1p.halfDiscFlatTraceZeroSubmodule`.
 
 For a real point `x` the affine isometry `TauCeti.halfDiscChart x`, `z ↦ (im (z - x), re (z - x))`,
@@ -46,7 +41,7 @@ Both conditions pass to smaller sets and only depend on the almost-everywhere cl
 subsets of `U` (`TauCeti.HasRealAxisTraceIn.of_tendsto`), which is how a boundary condition
 survives a limit. For a representative continuous up to the real axis the condition is the
 pointwise condition (`TauCeti.MemWkpLoc.hasRealAxisTraceIn_iff_of_continuousOn`), and for `p > 2`
-the representative `TauCeti.halfPlanePreciseRepresentative` is such a representative
+with finite-dimensional `V`, `TauCeti.halfPlanePreciseRepresentative` is continuous up to the axis
 (`TauCeti.MemWkpLoc.hasRealAxisTraceIn_iff_halfPlanePreciseRepresentative`). For `L = ker A` the
 condition can be checked on the coordinates of `A ∘ u` in one basis
 (`TauCeti.hasRealAxisTraceIn_ker_iff_forall_coord`); for `ℝⁿ ⊆ ℂⁿ` these are the imaginary parts
@@ -54,10 +49,7 @@ of the components (`TauCeti.hasRealAxisTraceIn_ker_im_iff`).
 
 ## Main declarations
 
-* `TauCeti.halfDiscChart`: the chart taking `D_r(x) ∩ {0 < im}` to `TauCeti.halfDisc r`.
 * `TauCeti.HasZeroRealAxisTrace`, `TauCeti.HasRealAxisTraceIn`: the boundary conditions.
-* `TauCeti.MemWkpLoc.exists_w1p_halfDisc`: a member of `MemWkpLoc p U 1` is represented in
-  `W^{1,p}(halfDisc r)` on every admissible half-disc.
 * `TauCeti.HasRealAxisTraceIn.mono`, `TauCeti.HasRealAxisTraceIn.congr_ae`,
   `TauCeti.HasRealAxisTraceIn.add`, `TauCeti.HasRealAxisTraceIn.const_smul`: the structure.
 * `TauCeti.MemWkpLoc.hasRealAxisTraceIn_iff_of_continuousOn`,
@@ -84,93 +76,6 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
-/-! ### The chart at a real point -/
-
-/-- The chart at `x ∈ ℂ` for the model half-disc: the affine isometry
-`z ↦ (im (z - x), re (z - x))` from `ℂ` to `WithLp 2 (ℝ × ℝ)`, whose first coordinate is the
-normal coordinate of `TauCeti.halfDisc`. For real `x` it takes `D_r(x) ∩ {0 < im}` onto
-`TauCeti.halfDisc r` (`TauCeti.halfDiscChart_symm_preimage`). -/
-def halfDiscChart (x : ℂ) : ℂ ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × ℝ) :=
-  (AffineIsometryEquiv.vaddConst ℝ x).symm.trans
-    Complex.equivRealProdL2Swap.toAffineIsometryEquiv
-
-/-- The chart in coordinates. -/
-@[simp]
-theorem halfDiscChart_apply (x z : ℂ) :
-    halfDiscChart x z = WithLp.toLp 2 ((z - x).im, (z - x).re) := by
-  simp [halfDiscChart]
-
-/-- The inverse chart in coordinates. -/
-@[simp]
-theorem halfDiscChart_symm_apply (x : ℂ) (w : WithLp 2 (ℝ × ℝ)) :
-    (halfDiscChart x).symm w = ⟨w.snd, w.fst⟩ + x := by
-  rw [AffineIsometryEquiv.symm_apply_eq, halfDiscChart_apply]
-  cases w
-  simp
-
-/-- The chart at `x` sends `x` to the origin. -/
-theorem halfDiscChart_self (x : ℂ) : halfDiscChart x x = 0 := by
-  simp only [halfDiscChart_apply, sub_self, Complex.zero_im, Complex.zero_re]
-  rfl
-
-private theorem norm_halfDiscChart_symm_sub (x : ℂ) (w : WithLp 2 (ℝ × ℝ)) :
-    ‖(halfDiscChart x).symm w - x‖ = ‖w‖ := by
-  rw [halfDiscChart_symm_apply, add_sub_cancel_right, ← Complex.equivRealProdL2Swap_symm_apply,
-    LinearIsometryEquiv.norm_map]
-
-private theorem im_halfDiscChart_symm {x : ℂ} (hx : x.im = 0) (w : WithLp 2 (ℝ × ℝ)) :
-    ((halfDiscChart x).symm w).im = w.fst := by
-  simp [hx]
-
-/-- The upper half-disc `D_r(x) ∩ {0 < im}` about a real point `x`, as an open set. -/
-abbrev upperHalfDisc (x : ℂ) (r : ℝ) : Opens ℂ :=
-  Opens.upperHalf ⟨ball x r, isOpen_ball⟩
-
-/-- For real `x` the chart pulls the upper half-disc `D_r(x) ∩ {0 < im}` back to the model
-half-disc `TauCeti.halfDisc r`. -/
-theorem halfDiscChart_symm_preimage {x : ℂ} (hx : x.im = 0) (r : ℝ) :
-    (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) = (halfDiscChart x).symm ⁻¹' (upperHalfDisc x r) := by
-  ext w
-  simp only [SetLike.mem_coe, mem_halfDisc, mem_preimage, Opens.mem_upperHalf, Opens.mem_mk,
-    mem_ball, dist_eq_norm, norm_halfDiscChart_symm_sub, im_halfDiscChart_symm hx]
-
-/-- The chart maps the closed model half-disc into `closedBall x r ∩ {0 ≤ im}`. -/
-private theorem halfDiscChart_symm_mapsTo_closure {x : ℂ} (hx : x.im = 0) {r : ℝ} (hr : 0 < r) :
-    MapsTo (halfDiscChart x).symm (closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ))))
-      (closedBall x r ∩ {z | 0 ≤ z.im}) := by
-  intro w hw
-  rw [closure_halfDisc hr] at hw
-  exact ⟨by rw [mem_closedBall, dist_eq_norm, norm_halfDiscChart_symm_sub]
-            exact mem_closedBall_zero_iff.1 hw.1,
-    by rw [mem_ofPred_eq, im_halfDiscChart_symm hx]; exact hw.2⟩
-
-/-- The chart maps the flat segment into the real points of `closedBall x r`. -/
-private theorem halfDiscChart_symm_mapsTo_flatSegment {x : ℂ} (hx : x.im = 0) {r : ℝ} :
-    MapsTo (halfDiscChart x).symm (halfDiscFlatSegment r) (closedBall x r ∩ {z | z.im = 0}) :=
-  fun w hw => ⟨by rw [mem_closedBall, dist_eq_norm, norm_halfDiscChart_symm_sub]
-                  exact (mem_halfDiscFlatSegment.1 hw).1,
-    by rw [mem_ofPred_eq, im_halfDiscChart_symm hx]; exact (mem_halfDiscFlatSegment.1 hw).2⟩
-
-/-- Almost-everywhere equality on `U` transports to the model half-disc of an admissible
-half-disc. -/
-private theorem ae_eq_comp_halfDiscChart_symm {β : Type*} {U : Set ℂ} {x : ℂ} (hx : x.im = 0)
-    {r : ℝ} (hxr : (upperHalfDisc x r : Set ℂ) ⊆ U) {f g : ℂ → β}
-    (hfg : f =ᵐ[volume.restrict U] g) :
-    (fun w => f ((halfDiscChart x).symm w)) =ᵐ[volume.restrict (halfDisc r : Set _)]
-      fun w => g ((halfDiscChart x).symm w) := by
-  have hmp : MeasurePreserving (halfDiscChart x).symm (volume.restrict (halfDisc r : Set _))
-      (volume.restrict (upperHalfDisc x r : Set ℂ)) := by
-    rw [halfDiscChart_symm_preimage hx r]
-    exact (halfDiscChart x).symm.measurePreserving.restrict_preimage
-      (upperHalfDisc x r).isOpen.measurableSet
-  exact hmp.quasiMeasurePreserving.ae_eq_comp (ae_restrict_of_ae_restrict_of_subset hxr hfg)
-
-/-- The open upper half-disc lies in the closed one. -/
-private theorem upperHalfDisc_subset (x : ℂ) (r : ℝ) :
-    (upperHalfDisc x r : Set ℂ) ⊆ closedBall x r ∩ {z | 0 ≤ z.im} :=
-  fun _ hz => ⟨ball_subset_closedBall (Opens.mem_upperHalf.1 hz).1,
-    le_of_lt (Opens.mem_upperHalf.1 hz).2⟩
-
 /-! ### Zero trace of a real function -/
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
@@ -185,6 +90,15 @@ def HasZeroRealAxisTrace (U : Set ℂ) (f : ℂ → ℝ) : Prop :=
     ∃ v ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r,
       W1p.value v =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))]
         fun w => f ((halfDiscChart x).symm w)
+
+/-- The defining witnesses of zero real-axis trace, without unfolding the predicate. -/
+theorem hasZeroRealAxisTrace_def (U : Set ℂ) (f : ℂ → ℝ) :
+    HasZeroRealAxisTrace hp U f ↔
+      ∀ x : ℂ, x.im = 0 → ∀ r : ℝ, 0 < r → closedBall x r ∩ {z | 0 ≤ z.im} ⊆ U →
+        ∃ v ∈ W1p.halfDiscFlatTraceZeroSubmodule hp r,
+          W1p.value v =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))]
+            fun w => f ((halfDiscChart x).symm w) :=
+  Iff.rfl
 
 variable {hp} {U U' : Set ℂ} {f g : ℂ → ℝ}
 
@@ -213,6 +127,7 @@ theorem HasZeroRealAxisTrace.congr_ae (h : HasZeroRealAxisTrace hp U f)
     hvf.trans (ae_eq_comp_halfDiscChart_symm hx ((upperHalfDisc_subset x r).trans hxr) hfg)⟩
 
 /-- The zero function has zero trace. -/
+@[simp]
 theorem hasZeroRealAxisTrace_zero : HasZeroRealAxisTrace hp U 0 := fun _ _ r _ _ =>
   ⟨0, zero_mem _, by
     rw [W1p.value_zero]
@@ -248,55 +163,11 @@ theorem HasZeroRealAxisTrace.sum {ι : Type*} {s : Finset ι} {f : ι → ℂ �
     HasZeroRealAxisTrace hp U (∑ i ∈ s, f i) := by
   classical
   induction s using Finset.induction_on with
-  | empty => simpa using hasZeroRealAxisTrace_zero
+  | empty => simp
   | insert i s hi ih =>
     rw [Finset.sum_insert hi]
     exact (hf i (Finset.mem_insert_self i s)).add
       (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
-
-/-! ### Existence of the transported Sobolev function -/
-
-/-- **A half-disc Sobolev function is Sobolev on every admissible model half-disc.** If
-`f ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` is real, `x` is real and `closedBall x r ∩ {0 ≤ im} ⊆ Ω`,
-then the transported function `f ∘ (TauCeti.halfDiscChart x)⁻¹` is represented by an element of
-`W^{1,p}(halfDisc r)`. -/
-theorem MemWkpLoc.exists_w1p_halfDisc {Ω : Opens ℂ}
-    (hf : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 f) {x : ℂ} (hx : x.im = 0) {r : ℝ}
-    (hxr : closedBall x r ∩ {z | 0 ≤ z.im} ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :
-    ∃ v : W1p volume (halfDisc r) p,
-      W1p.value v =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))]
-        fun w => f ((halfDiscChart x).symm w) := by
-  -- Enlarge `Ω` by the open lower half-plane, which does not change `Ω ∩ {0 ≤ im}`.
-  let Ω' : Opens ℂ := Ω ⊔ ⟨{z | z.im < 0}, isOpen_lt Complex.continuous_im continuous_const⟩
-  have hΩ' : (Ω' : Set ℂ) ∩ {z | 0 ≤ z.im} = (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := by
-    ext z
-    simp only [Ω', Opens.coe_sup, mem_inter_iff, mem_union, SetLike.mem_coe, Opens.mem_mk,
-      mem_ofPred_eq]
-    constructor
-    · rintro ⟨hz | hz, hz'⟩
-      · exact ⟨hz, hz'⟩
-      · exact absurd hz' (not_le.2 hz)
-    · exact fun hz => ⟨Or.inl hz.1, hz.2⟩
-  have hsub : closure (ball x r) ⊆ (Ω' : Set ℂ) := by
-    intro z hz
-    replace hz := closure_ball_subset_closedBall hz
-    rcases le_or_gt 0 z.im with h0 | h0
-    · exact Or.inl (hxr ⟨hz, h0⟩).1
-    · exact Or.inr h0
-  rw [← hΩ'] at hf
-  obtain ⟨v, hv⟩ := hf.exists_wkp_upperHalf (W := ⟨ball x r, isOpen_ball⟩)
-    ((isCompact_closedBall x r).of_isClosed_subset isClosed_closure closure_ball_subset_closedBall)
-    hsub
-  rw [Wkp.value_one] at hv
-  refine ⟨W1p.compAffineIsometryEquivL (halfDiscChart x).symm
-    (halfDiscChart_symm_preimage hx r) v, ?_⟩
-  refine (W1p.value_compAffineIsometryEquivL_ae _ _ v).trans ?_
-  have hmp : MeasurePreserving (halfDiscChart x).symm (volume.restrict (halfDisc r : Set _))
-      (volume.restrict (upperHalfDisc x r : Set ℂ)) := by
-    rw [halfDiscChart_symm_preimage hx r]
-    exact (halfDiscChart x).symm.measurePreserving.restrict_preimage
-      (upperHalfDisc x r).isOpen.measurableSet
-  exact hmp.quasiMeasurePreserving.ae_eq_comp hv
 
 /-! ### The pointwise reading for a continuous representative -/
 
@@ -338,21 +209,6 @@ theorem MemWkpLoc.hasZeroRealAxisTrace_iff_of_continuousOn {Ω : Opens ℂ}
     exact h _ (hxr ⟨hy₁, le_of_eq hy₂.symm⟩).1 hy₂
 
 /-! ### Closedness under `W^{1,p}` limits -/
-
-/-- A real function of finite `W^{1,p}` norm on the upper half-disc `D_r(x) ∩ {0 < im}` about a real
-point is represented on the model half-disc by an element of no larger norm. -/
-private theorem exists_w1p_halfDisc_enorm_le {x : ℂ} (hx : x.im = 0) {r : ℝ}
-    (hfin : eLpNormWkp p (upperHalfDisc x r) 1 f ≠ ∞) :
-    ∃ w : W1p volume (halfDisc r) p,
-      W1p.value w =ᵐ[volume.restrict (halfDisc r : Set (WithLp 2 (ℝ × ℝ)))]
-        (fun y => f ((halfDiscChart x).symm y)) ∧
-      ‖w‖ₑ ≤ eLpNormWkp p (upperHalfDisc x r) 1 f := by
-  obtain ⟨w, hw, hwn⟩ := exists_w1p_enorm_le_eLpNormWkp hfin
-  refine ⟨W1p.compAffineIsometryEquivL (halfDiscChart x).symm (halfDiscChart_symm_preimage hx r) w,
-    (W1p.value_compAffineIsometryEquivL_ae _ _ w).trans
-      (ae_eq_comp_halfDiscChart_symm hx subset_rfl hw), le_trans ?_ hwn⟩
-  rw [← ofReal_norm, ← ofReal_norm]
-  exact ENNReal.ofReal_le_ofReal (W1p.norm_compAffineIsometryEquivL_le _ _ w)
 
 /-- **The zero-trace condition is closed under `W^{1,p}_loc` limits up to the real axis.** If real
 functions `fs n` have zero trace on the real axis inside `U` and converge to `f` in `W^{1,p}(K)` for
@@ -419,6 +275,13 @@ for real `s` (`TauCeti.hasRealAxisTraceIn_ker_im_iff`). -/
 def HasRealAxisTraceIn (U : Set ℂ) (L : ClosedSubmodule ℝ V) (u : ℂ → V) : Prop :=
   ∀ ℓ : V →L[ℝ] ℝ, (∀ y ∈ L, ℓ y = 0) → HasZeroRealAxisTrace hp U fun z => ℓ (u z)
 
+/-- The annihilator characterization of real-axis boundary values, without unfolding. -/
+theorem hasRealAxisTraceIn_def (U : Set ℂ) (L : ClosedSubmodule ℝ V) (u : ℂ → V) :
+    HasRealAxisTraceIn hp U L u ↔
+      ∀ ℓ : V →L[ℝ] ℝ, (∀ y ∈ L, ℓ y = 0) →
+        HasZeroRealAxisTrace hp U fun z => ℓ (u z) :=
+  Iff.rfl
+
 /-- The boundary condition passes to smaller sets. -/
 theorem HasRealAxisTraceIn.mono (h : HasRealAxisTraceIn hp U' L u) (hUU' : U ⊆ U') :
     HasRealAxisTraceIn hp U L u :=
@@ -430,6 +293,7 @@ theorem HasRealAxisTraceIn.congr_ae (h : HasRealAxisTraceIn hp U L u)
   fun ℓ hℓ => (h ℓ hℓ).congr_ae (huu'.fun_comp ℓ)
 
 /-- The zero map has boundary values in every closed subspace. -/
+@[simp]
 theorem hasRealAxisTraceIn_zero : HasRealAxisTraceIn hp U L (0 : ℂ → V) := fun ℓ _ => by
   convert (hasZeroRealAxisTrace_zero : HasZeroRealAxisTrace hp U 0) using 1
   funext z
@@ -450,18 +314,21 @@ theorem HasRealAxisTraceIn.const_smul (h : HasRealAxisTraceIn hp U L u) (c : ℝ
   simp
 
 /-- Every map has its boundary values in the whole space. -/
+@[simp]
 theorem hasRealAxisTraceIn_top : HasRealAxisTraceIn hp U ⊤ u := fun ℓ hℓ => by
   have : (fun z => ℓ (u z)) = 0 := funext fun z => hℓ _ ClosedSubmodule.mem_top
   rw [this]
   exact hasZeroRealAxisTrace_zero
 
 /-- For real functions and `L = 0`, the boundary condition is the zero-trace condition. -/
+@[simp]
 theorem hasRealAxisTraceIn_bot_iff {f : ℂ → ℝ} :
     HasRealAxisTraceIn hp U ⊥ f ↔ HasZeroRealAxisTrace hp U f := by
   refine ⟨fun h => h (ContinuousLinearMap.id ℝ ℝ) fun y hy => by simpa using hy,
     fun h ℓ _ => ?_⟩
   have : (fun z => ℓ (f z)) = ℓ 1 • f := funext fun z => by
-    rw [Pi.smul_apply, smul_eq_mul, mul_comm, ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
+    simpa only [Pi.smul_apply, smul_eq_mul, mul_one, mul_comm] using
+      (map_smul ℓ (f z) (1 : ℝ))
   rw [this]
   exact h.const_smul _
 
@@ -472,11 +339,13 @@ theorem hasRealAxisTraceIn_ker_iff [FiniteDimensional ℝ W] (A : V →L[ℝ] W)
     HasRealAxisTraceIn hp U ((⊥ : ClosedSubmodule ℝ W).comap A) u ↔
       HasRealAxisTraceIn hp U ⊥ fun z => A (u z) := by
   refine ⟨fun h μ _ => h (μ.comp A) fun y hy => by
-    rw [ContinuousLinearMap.comp_apply, show A y = 0 from LinearMap.mem_ker.1 hy, map_zero],
+    have hy0 : A y = 0 := ClosedSubmodule.mem_bot.1 (ClosedSubmodule.mem_comap.1 hy)
+    simp only [ContinuousLinearMap.comp_apply, hy0, map_zero],
     fun h ℓ hℓ => ?_⟩
   -- A functional vanishing on `ker A` factors through `A`.
   have hmem : (ℓ : V →ₗ[ℝ] ℝ) ∈ (LinearMap.ker (A : V →ₗ[ℝ] W)).dualAnnihilator :=
-    (Submodule.mem_dualAnnihilator _).2 fun y hy => hℓ y hy
+    (Submodule.mem_dualAnnihilator _).2 fun y hy => hℓ y
+      (ClosedSubmodule.mem_comap.2 (ClosedSubmodule.mem_bot.2 (LinearMap.mem_ker.1 hy)))
   rw [← LinearMap.range_dualMap_eq_dualAnnihilator_ker] at hmem
   obtain ⟨μ, hμ⟩ := hmem
   have hfun : (fun z => ℓ (u z)) = fun z => LinearMap.toContinuousLinearMap μ (A (u z)) :=
