@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.DiophantineApproximation.ContinuedFractions.Basic
 public import TauCeti.NumberTheory.Real.GoldenRatio
 
