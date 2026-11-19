@@ -39,7 +39,7 @@ boundary lines, preserves the order of first coordinates and pulls `a dx ∧ dy`
 
 * the conjugate `Φ ∘ F ∘ Φ⁻¹` (`TauCeti.IsPoincareBirkhoffLift.conj`) is a Poincaré–Birkhoff
   lift for the constant density `1`
-  (`TauCeti.IsPoincareBirkhoffLift.conj_stripDensityNormalization`);
+  (`TauCeti.IsPoincareBirkhoffLift.isPoincareBirkhoffLift_one_conj`);
 * `Φ` maps the fixed points of `F` in `[0, 1) × (0, 1)` bijectively onto those of the conjugate
   (`TauCeti.IsPoincareBirkhoffLift.bijOn_stripDensityNormalization_fixedPoints`).
 
@@ -130,6 +130,27 @@ theorem coe_conj_symm (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 
   rw [conj, OpenPartialHomeomorph.coe_trans_symm, OpenPartialHomeomorph.coe_trans_symm,
     OpenPartialHomeomorph.symm_symm, coe_stripDensityNormalizationOpenPartialHomeomorph]
 
+/-- The source of the conjugate `Φ ∘ F ∘ Φ⁻¹`: the points of the target of `Φ` which `Φ⁻¹` sends
+into the source of `F`, and then `F` into the source of `Φ`. -/
+theorem conj_source (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) :
+    (hF.conj hρ₁).source =
+      (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).target ∩
+        (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm ⁻¹'
+          (F.source ∩ F ⁻¹' stripDensityNormalizationSource ρ) := by
+  rw [conj, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.trans_source,
+    OpenPartialHomeomorph.symm_source, stripDensityNormalizationOpenPartialHomeomorph_source]
+
+/-- The target of the conjugate `Φ ∘ F ∘ Φ⁻¹`: the points of the target of `Φ` which `Φ⁻¹` sends
+into the target of `F`, and then `F⁻¹` into the source of `Φ`. -/
+theorem conj_target (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) :
+    (hF.conj hρ₁).target =
+      (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).target ∩
+        (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hF.density_pos).symm ⁻¹'
+          (F.target ∩ F.symm ⁻¹' stripDensityNormalizationSource ρ) := by
+  rw [conj, OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.trans_target,
+    OpenPartialHomeomorph.symm_target, stripDensityNormalizationOpenPartialHomeomorph_source,
+    OpenPartialHomeomorph.coe_trans_symm, preimage_comp, preimage_inter, inter_assoc]
+
 /-- On a boundary line `y = c` preserved by `F` and by `Φ`, where `Φ(x, c) = (u(x), c)`, the
 conjugate `Φ ∘ F ∘ Φ⁻¹` sends `(u(x), c)` to `(u(X), c)`, where `F(x, c) = (X, c)`. -/
 private theorem conj_apply_mk (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ) {c : ℝ}
@@ -182,20 +203,18 @@ private theorem contDiffOn_conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : Con
     contDiffOn_stripDensityNormalizationOpenPartialHomeomorph_symm hρ₁ hF.density_pos hρ
   constructor
   · -- The conjugate is `Φ ∘ (F ∘ Φ⁻¹)`, with `Φ` smooth on the plane.
-    rw [coe_conj, conj, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.symm_source]
+    rw [coe_conj, conj_source]
     exact hΦ.comp_contDiffOn (hF.contDiffOn.comp (hΦsymm.mono inter_subset_left)
       fun q hq ↦ hq.2.1)
   · -- The inverse of the conjugate is `Φ ∘ (F⁻¹ ∘ Φ⁻¹)`.
-    rw [coe_conj_symm, conj, OpenPartialHomeomorph.trans_target,
-      OpenPartialHomeomorph.trans_target]
-    exact hΦ.comp_contDiffOn (hF.contDiffOn_symm.comp
-      (hΦsymm.mono (inter_subset_left.trans inter_subset_left)) fun q hq ↦ hq.1.2)
+    rw [coe_conj_symm, conj_target]
+    exact hΦ.comp_contDiffOn (hF.contDiffOn_symm.comp (hΦsymm.mono inter_subset_left)
+      fun q hq ↦ hq.2.1)
 
 /-- **Reduction to the standard area form.** Conjugating a Poincaré–Birkhoff lift for a density
 `ρ`, smooth on the plane, by the density normalization `Φ` of `ρ` gives a Poincaré–Birkhoff lift
 `Φ ∘ F ∘ Φ⁻¹` for the constant density `1`. -/
-theorem conj_stripDensityNormalization (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ)
+theorem isPoincareBirkhoffLift_one_conj (hF : IsPoincareBirkhoffLift ρ F) (hρ₁ : ContDiff ℝ 1 ρ)
     (hρ : ContDiff ℝ ∞ ρ) :
     IsPoincareBirkhoffLift (fun _ ↦ 1) (hF.conj hρ₁) := by
   have hc := hρ₁.continuous.continuousOn (s := univ ×ˢ Icc 0 1)
@@ -233,13 +252,10 @@ theorem conj_stripDensityNormalization (hF : IsPoincareBirkhoffLift ρ F) (hρ�
       snd_apply_mk_one := fun x' ↦ by obtain ⟨x, rfl⟩ := hsurj x'; rw [h1]
       lt_fst_apply_mk_one := fun x' ↦ by
         obtain ⟨x, rfl⟩ := hsurj x'; rw [h1]; exact hu (hF.lt_fst_apply_mk_one x) }
-  · rw [conj, OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.trans_source,
-      OpenPartialHomeomorph.symm_source, stripDensityNormalizationOpenPartialHomeomorph_source]
+  · rw [conj_source]
     exact ⟨hT hq, hF.subset_source (hsymm hq), hS (hF.mapsTo (hsymm hq))⟩
-  · rw [conj, OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.trans_target,
-      OpenPartialHomeomorph.symm_target, stripDensityNormalizationOpenPartialHomeomorph_source,
-      mem_inter_iff, mem_preimage, OpenPartialHomeomorph.coe_trans_symm, comp_apply]
-    exact ⟨⟨hT hq, hF.subset_target (hsymm hq)⟩, hS (hF.mapsTo_symm (hsymm hq))⟩
+  · rw [conj_target]
+    exact ⟨hT hq, hF.subset_target (hsymm hq), hS (hF.mapsTo_symm (hsymm hq))⟩
 
 /-- **Fixed points under the reduction.** The density normalization `Φ` maps the fixed points of a
 Poincaré–Birkhoff lift `F` in the fundamental domain `[0, 1) × (0, 1)` bijectively onto the fixed
@@ -280,7 +296,7 @@ theorem exists_ne_fixedPoints_of_forall_one (hF : IsPoincareBirkhoffLift ρ F)
     ∃ p ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1, ∃ q ∈ Ico (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1,
       p ≠ q ∧ F p = p ∧ F q = q := by
   have hρ₁ : ContDiff ℝ 1 ρ := hρ.of_le (by simp)
-  obtain ⟨p, hp, q, hq, hpq, hpG, hqG⟩ := h _ (hF.conj_stripDensityNormalization hρ₁ hρ)
+  obtain ⟨p, hp, q, hq, hpq, hpG, hqG⟩ := h _ (hF.isPoincareBirkhoffLift_one_conj hρ₁ hρ)
   have hbij := hF.bijOn_stripDensityNormalization_fixedPoints hρ₁
   obtain ⟨p', ⟨hp'F, hp'⟩, rfl⟩ := hbij.surjOn ⟨hpG, hp⟩
   obtain ⟨q', ⟨hq'F, hq'⟩, rfl⟩ := hbij.surjOn ⟨hqG, hq⟩

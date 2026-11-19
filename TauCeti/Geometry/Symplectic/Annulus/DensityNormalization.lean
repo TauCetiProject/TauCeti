@@ -590,18 +590,18 @@ variable {hρ₁ : ContDiff ℝ 1 ρ} {hpos : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, 
 theorem stripDensityNormalizationOpenPartialHomeomorph_symm_apply_apply {p : ℝ × ℝ}
     (hp : p ∈ stripDensityNormalizationSource ρ) :
     (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).symm
-      (stripDensityNormalization ρ p) = p :=
-  (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).left_inv hp
+      (stripDensityNormalization ρ p) = p := by
+  simpa only [coe_stripDensityNormalizationOpenPartialHomeomorph] using
+    (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).left_inv hp
 
 /-- For a density positive and `1`-periodic on the strip, the strip lies in the target of the
 normalization. -/
 theorem univ_prod_Icc_subset_stripDensityNormalizationOpenPartialHomeomorph_target
     (hper : ∀ x, ∀ y ∈ Icc (0 : ℝ) 1, ρ (x + 1, y) = ρ (x, y)) :
-    univ ×ˢ Icc (0 : ℝ) 1 ⊆ (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).target :=
-  fun _ hq ↦
-    have ⟨_, hp, hpq⟩ := (bijOn_stripDensityNormalization hρ₁.continuous.continuousOn hper
-      hpos).surjOn hq
-    hpq ▸ ⟨_, univ_prod_Icc_subset_stripDensityNormalizationSource hpos hp, rfl⟩
+    univ ×ˢ Icc (0 : ℝ) 1 ⊆ (stripDensityNormalizationOpenPartialHomeomorph hρ₁ hpos).target := by
+  rw [stripDensityNormalizationOpenPartialHomeomorph_target]
+  exact (bijOn_stripDensityNormalization hρ₁.continuous.continuousOn hper hpos).surjOn.mono
+    (univ_prod_Icc_subset_stripDensityNormalizationSource hpos) subset_rfl
 
 /-- For a density positive and `1`-periodic on the strip, the inverse of the normalization maps the
 strip into itself. -/
