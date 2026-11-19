@@ -39,7 +39,7 @@ not by `2`, and the first Witt coordinate of `4` is `0`.
 * `WittVector.IsDistinguished.p_pow_dvd_of_p_pow_succ_dvd_mul`: if `p ^ (n + 1) ∣ ξ g`, then
   `p ^ n ∣ g`.
 * `WittVector.IsDistinguished.dvd_p_mul_of_dvd_p_pow_mul`: if `ξ ∣ p ^ n f`, then `ξ ∣ p f`.
-* `WittVector.IsDistinguished.natCast_mul_eq_zero_of_pow_mul_eq_zero`: in `𝕎 S ⧸ (ξ)`, if
+* `WittVector.IsDistinguished.p_mul_eq_zero_of_p_pow_mul_eq_zero`: in `𝕎 S ⧸ (ξ)`, if
   `p ^ n x = 0`, then `p x = 0`.
 * `WittVector.IsDistinguished.torsion'_powers_eq_torsionBy`: the `p`-power torsion of
   `𝕎 S ⧸ (ξ)` is its `p`-torsion.
@@ -56,7 +56,6 @@ public section
 namespace WittVector
 
 open Ideal
-open scoped nonZeroDivisors
 
 variable {p : ℕ} [hp : Fact p.Prime] {S : Type*} [CommRing S] [CharP S p] [PerfectRing S p]
   {ξ : WittVector p S}
@@ -94,10 +93,10 @@ theorem p_pow_dvd_of_p_pow_succ_dvd_mul (hξ : ξ.IsDistinguished) {g : 𝕎 S} 
   | succ n ih =>
     obtain ⟨g, rfl⟩ := hξ.p_dvd_of_p_sq_dvd_mul ((pow_dvd_pow _ (by omega)).trans h)
     -- Cancel `p` from `p ^ (n + 2) ∣ ξ (p g)`: it is a nonzerodivisor of `𝕎 S`.
-    have hp₀ : (p : 𝕎 S) ∈ (𝕎 S)⁰ := mem_nonZeroDivisors_iff_right.mpr eq_zero_of_p_mul_eq_zero
     obtain ⟨c, hc⟩ := h
     rw [pow_succ']
-    refine mul_dvd_mul_left _ (ih ⟨c, (mul_cancel_left_mem_nonZeroDivisors hp₀).mp ?_⟩)
+    refine mul_dvd_mul_left _
+      (ih ⟨c, (mul_cancel_left_mem_nonZeroDivisors p_mem_nonZeroDivisors).mp ?_⟩)
     linear_combination hc
 
 /-- **`p`-power torsion modulo a distinguished element.** Over a perfect ring of characteristic
@@ -114,22 +113,19 @@ theorem dvd_p_mul_of_dvd_p_pow_mul (hξ : ξ.IsDistinguished) {f : 𝕎 S} {n : 
     obtain ⟨g, hg⟩ := h
     obtain ⟨c, rfl⟩ := hξ.p_pow_dvd_of_p_pow_succ_dvd_mul ⟨f, hg.symm⟩
     -- Cancel `p ^ n` from `p ^ (n + 1) f = ξ (p ^ n c)`.
-    have hp₀ : (p : 𝕎 S) ∈ (𝕎 S)⁰ := mem_nonZeroDivisors_iff_right.mpr eq_zero_of_p_mul_eq_zero
-    refine ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem hp₀ n)).mp ?_⟩
+    refine ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem p_mem_nonZeroDivisors n)).mp ?_⟩
     linear_combination hg
 
 /-- **The `p`-power torsion of `𝕎 S ⧸ (ξ)` is killed by `p`.** Over a perfect ring `S` of
 characteristic `p`, let `ξ` be distinguished. If `p ^ n x = 0` in `𝕎 S ⧸ (ξ)`, then `p x = 0`
 (Bhatt–Morrow–Scholze, *Topological Hochschild homology and integral p-adic Hodge theory*,
 Proposition 4.19(3)). -/
-theorem natCast_mul_eq_zero_of_pow_mul_eq_zero (hξ : ξ.IsDistinguished)
+theorem p_mul_eq_zero_of_p_pow_mul_eq_zero (hξ : ξ.IsDistinguished)
     {x : 𝕎 S ⧸ span {ξ}} {n : ℕ} (h : (p : 𝕎 S ⧸ span {ξ}) ^ n * x = 0) :
     (p : 𝕎 S ⧸ span {ξ}) * x = 0 := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rw [← map_natCast (Ideal.Quotient.mk (span {ξ})) p, ← map_pow, ← map_mul,
-    Ideal.Quotient.eq_zero_iff_mem, mem_span_singleton] at h
-  rw [← map_natCast (Ideal.Quotient.mk (span {ξ})) p, ← map_mul, Ideal.Quotient.eq_zero_iff_mem,
-    mem_span_singleton]
+  simp only [← map_natCast (Ideal.Quotient.mk (span {ξ})) p, ← map_pow, ← map_mul,
+    Ideal.Quotient.eq_zero_iff_dvd] at h ⊢
   exact hξ.dvd_p_mul_of_dvd_p_pow_mul h
 
 /-- **The `p`-power torsion of `𝕎 S ⧸ (ξ)` is its `p`-torsion.** Over a perfect ring `S` of
@@ -141,7 +137,7 @@ theorem torsion'_powers_eq_torsionBy (hξ : ξ.IsDistinguished) :
       Submodule.torsionBy (𝕎 S ⧸ span {ξ}) (𝕎 S ⧸ span {ξ}) (p : 𝕎 S ⧸ span {ξ}) := by
   ext x
   simp only [Submodule.mem_torsion'_iff, Submodule.mem_torsionBy_iff, smul_eq_mul]
-  refine ⟨fun ⟨⟨_, n, rfl⟩, hx⟩ ↦ hξ.natCast_mul_eq_zero_of_pow_mul_eq_zero hx,
+  refine ⟨fun ⟨⟨_, n, rfl⟩, hx⟩ ↦ hξ.p_mul_eq_zero_of_p_pow_mul_eq_zero hx,
     fun hx ↦ ⟨⟨p, 1, pow_one _⟩, hx⟩⟩
 
 end IsDistinguished
