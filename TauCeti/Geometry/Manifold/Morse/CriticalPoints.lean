@@ -24,6 +24,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
+import TauCeti.Geometry.Manifold.ModelWithCorners.Perfect
 import TauCeti.Geometry.Manifold.RegularValue.Open
 import TauCeti.Topology.Instances.Real.SeparatingGrid
 
@@ -56,7 +57,10 @@ Restricting `f` to an open subset `U` keeps exactly the critical points lying in
 critical count is additive over a finite partition of `M` into open sets, such as its connected
 components. On a compact boundaryless manifold of positive dimension every component carries at
 least two critical points of a continuous function, so a continuous function with fewer than four
-critical points lives on a preconnected manifold. In dimension zero every point is critical.
+critical points lives on a preconnected manifold. In dimension zero every point is critical, so
+the count is the number of points: `1` on a point and `0` on the empty manifold. Every point is a
+critical point of a constant function, so on a nonempty manifold of positive dimension a constant
+function has infinitely many critical points.
 
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
@@ -70,6 +74,7 @@ polynomial in the Morse inequalities.
   on boundaryless manifolds `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`,
   on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`, and on the real line
   `TauCeti.mem_criticalPoints_iff_deriv_eq_zero`.
+* `TauCeti.criticalPoints_const`: every point is a critical point of a constant function.
 * `TauCeti.criticalPoints_pow`: the only critical point of `y ↦ yᵐ` on the real line, `m ≥ 2`,
   is `0`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
@@ -120,6 +125,10 @@ polynomial in the Morse inequalities.
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
+* `TauCeti.totalCriticalCount_of_isEmpty`, `TauCeti.totalCriticalCount_of_subsingleton`,
+  `TauCeti.totalCriticalCount_const` and `TauCeti.totalCriticalCount_const_eq_top`: the count on
+  the empty manifold, in dimension zero and for a constant function, which is `⊤` on a nonempty
+  manifold of positive dimension.
 * `TauCeti.IsMorse.criticalPointsIndexNegEquiv`: the critical points of `-f` of index `j` are those
   of `f` of index `dim M - j`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
@@ -219,6 +228,11 @@ theorem isRegularValue_iff_notMem_image_criticalPoints {c : ℝ} :
   simp only [isRegularValue_iff, isRegularPoint_iff_notMem_criticalPoints, mem_image,
     not_exists, not_and]
   tauto
+
+/-- Every point is a critical point of a constant function. -/
+@[simp]
+theorem criticalPoints_const (c : ℝ) : criticalPoints I (fun _ : M ↦ c) = univ :=
+  eq_univ_of_forall fun _ ↦ mem_criticalPoints.2 (mvfderiv_const c)
 
 /-- On a manifold modelled on a zero-dimensional space every point is critical. -/
 @[simp]
@@ -969,6 +983,34 @@ theorem natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount (j : �
   rw [Nat.card_congr (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ criticalPoints I f)
     (manifoldMorseIndex I f · = j)), criticalCount_def, ← ncard_def]
   exact Nat.card_coe_set_eq {x | x ∈ criticalPoints I f ∧ manifoldMorseIndex I f x = j}
+
+/-- A function on the empty manifold has no critical points. -/
+@[simp]
+theorem totalCriticalCount_of_isEmpty [IsEmpty M] : totalCriticalCount I f = 0 := by
+  rw [totalCriticalCount_def, eq_empty_of_isEmpty (criticalPoints I f), encard_empty]
+
+/-- On a manifold modelled on a zero-dimensional space every point is critical, so the number of
+critical points of any function is the number of points; on a single point it is `1`. -/
+theorem totalCriticalCount_of_subsingleton [Subsingleton E] :
+    totalCriticalCount I f = ENat.card M := by
+  rw [totalCriticalCount_def, criticalPoints_eq_univ_of_subsingleton, encard_univ]
+
+/-- The number of critical points of a constant function is the number of points. -/
+theorem totalCriticalCount_const (c : ℝ) :
+    totalCriticalCount I (fun _ : M ↦ c) = ENat.card M := by
+  rw [totalCriticalCount_def, criticalPoints_const, encard_univ]
+
+/-- **A constant function has infinitely many critical points** on a nonempty manifold of positive
+dimension, such as the circle: its critical count is `⊤`, not a junk natural number. -/
+theorem totalCriticalCount_const_eq_top [Nontrivial E] [Nonempty M] (c : ℝ) :
+    totalCriticalCount I (fun _ : M ↦ c) = ⊤ := by
+  -- `M` is a `T1` space without isolated points, so every neighbourhood of a point is infinite.
+  have := I.perfectSpace M
+  have : T1Space H := I.isClosedEmbedding.isEmbedding.t1Space
+  have := ChartedSpace.t1Space H M
+  obtain ⟨x⟩ := ‹Nonempty M›
+  rw [totalCriticalCount_def, criticalPoints_const, encard_eq_top_iff]
+  exact infinite_of_mem_nhds x univ_mem
 
 /-- A function and its negation have the same number of critical points. -/
 @[simp]
