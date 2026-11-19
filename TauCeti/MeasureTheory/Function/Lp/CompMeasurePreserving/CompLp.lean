@@ -35,8 +35,9 @@ namespace MeasureTheory
 namespace Lp
 
 variable {α β E F 𝕜 : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α}
-  {μb : Measure β} {p : ℝ≥0∞} [Fact (1 ≤ p)] [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : α → β} {g : β → α}
+  {μb : Measure β} {p : ℝ≥0∞} [Fact (1 ≤ p)] [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
+  [IsBoundedSMul 𝕜 E] [NormedAddCommGroup F] [Module 𝕜 F] [IsBoundedSMul 𝕜 F] {f : α → β}
+  {g : β → α}
 
 /-- Precomposition by a measure-preserving map commutes with pointwise composition with a linear
 isometry equivalence of the values. -/
