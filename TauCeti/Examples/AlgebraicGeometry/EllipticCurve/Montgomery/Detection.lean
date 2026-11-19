@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Detection
 import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.Double
 import TauCeti.NumberTheory.LcmUpto
+import TauCeti.Examples.AlgebraicGeometry.EllipticCurve.Montgomery.CurveX3AddX
 
 /-!
 # Examples of Montgomery stage-1 detection
@@ -31,30 +32,22 @@ public section
 
 namespace TauCeti.Montgomery
 
-open WeierstrassCurve
+open WeierstrassCurve TauCeti.Examples.Montgomery.CurveX3AddX
 
 local instance detectionPrimeFive : Fact (Nat.Prime 5) := ⟨by decide⟩
 local instance detectionPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
-private theorem nonsingular_one_three :
-    (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 3 := by
-  simp only [Affine.nonsingular_iff, Affine.equation_iff, model_a₁, model_a₂, model_a₃,
-    model_a₄, model_a₆]
-  decide
+private theorem pointOneThreeSeven_double :
+    pointOneThreeSeven + pointOneThreeSeven = twoTorsionPoint 0 (by decide) :=
+  (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_three_seven).mpr (by decide)
 
-private noncomputable def pointSeven : (model (0 : ZMod 7) 1).toAffine.Point :=
-  .some 1 3 nonsingular_one_three
-
-private theorem pointSeven_double : pointSeven + pointSeven = twoTorsionPoint 0 (by decide) :=
-  (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_three).mpr (by decide)
-
-private theorem four_pointSeven : (4 : ℕ) • pointSeven = 0 := by
+private theorem four_pointOneThreeSeven : (4 : ℕ) • pointOneThreeSeven = 0 := by
   have h4 : (4 : ℕ) = 2 * 2 := rfl
-  simp only [h4, mul_nsmul, two_nsmul, pointSeven_double, twoTorsionPoint_add_self]
+  simp only [h4, mul_nsmul, two_nsmul, pointOneThreeSeven_double, twoTorsionPoint_add_self]
 
-private theorem addOrderOf_pointSeven : addOrderOf pointSeven = 4 := by
-  refine addOrderOf_eq_prime_pow (p := 2) (n := 1) ?_ four_pointSeven
-  rw [pow_one, two_nsmul, pointSeven_double]
+private theorem addOrderOf_pointOneThreeSeven : addOrderOf pointOneThreeSeven = 4 := by
+  refine addOrderOf_eq_prime_pow (p := 2) (n := 1) ?_ four_pointOneThreeSeven
+  rw [pow_one, two_nsmul, pointOneThreeSeven_double]
   exact twoTorsionPoint_ne_zero 0 (by decide)
 
 -- Modulo 5, (21, 25) represents infinity (1, 0); modulo 7 it reduces to (0, 4).
@@ -88,10 +81,10 @@ example : 1 < Nat.gcd (25 : ZMod 35).val 35 ∧ Nat.gcd (25 : ZMod 35).val 35 < 
 
 -- Over ZMod 7, (1, 3) has order 4: its only prime divisor is 2 ≤ 3, yet neither M(2) = 2 nor
 -- M(3) = 6 annihilates it, whereas M(4) = 12 does.
-example : ¬ addOrderOf pointSeven ∣ Nat.lcmUpto 2 ∧
-    ¬ addOrderOf pointSeven ∣ Nat.lcmUpto 3 ∧
-    addOrderOf pointSeven ∣ Nat.lcmUpto 4 := by
-  rw [addOrderOf_pointSeven]
+example : ¬ addOrderOf pointOneThreeSeven ∣ Nat.lcmUpto 2 ∧
+    ¬ addOrderOf pointOneThreeSeven ∣ Nat.lcmUpto 3 ∧
+    addOrderOf pointOneThreeSeven ∣ Nat.lcmUpto 4 := by
+  rw [addOrderOf_pointOneThreeSeven]
   decide
 
 -- Modulo 5, (21, 25) is already infinity (1, 0); modulo 7 it reduces to (0, 4), representing the
