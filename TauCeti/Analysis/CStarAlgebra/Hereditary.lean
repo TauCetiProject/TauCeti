@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Ideal
+public import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import Mathlib.Analysis.CStarAlgebra.SpecialFunctions.PosPart
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
@@ -68,6 +69,11 @@ in `B`. -/
 def IsHereditary (B : NonUnitalStarSubalgebra R A) : Prop :=
   ∀ ⦃a b : A⦄, 0 ≤ a → a ≤ b → b ∈ B → a ∈ B
 
+/-- Unfolding rule for heredity, usable from other modules to prove or use `B.IsHereditary`. -/
+theorem isHereditary_iff {B : NonUnitalStarSubalgebra R A} :
+    B.IsHereditary ↔ ∀ ⦃a b : A⦄, 0 ≤ a → a ≤ b → b ∈ B → a ∈ B :=
+  Iff.rfl
+
 /-- Elimination rule for heredity: `0 ≤ a ≤ b` with `b ∈ B` gives `a ∈ B`. -/
 theorem IsHereditary.mem_of_nonneg_of_le {B : NonUnitalStarSubalgebra R A} (hB : B.IsHereditary)
     {a b : A} (ha : 0 ≤ a) (hab : a ≤ b) (hb : b ∈ B) : a ∈ B :=
@@ -121,11 +127,10 @@ omit [PartialOrder A] [StarOrderedRing A] in
 /-- If `x * e → x` and `e * x → x` along a proper filter of contractions `e ∈ B` with
 `e * x * e ∈ B`, then `x` lies in the closed star subalgebra `B`. -/
 private theorem mem_of_tendsto_mul {x : A} (hBc : IsClosed (B : Set A)) {l : Filter A} [l.NeBot]
-    (hlB : ∀ᶠ e in l, e ∈ B ∧ ‖e‖ ≤ 1) (hmul : ∀ e ∈ B, e * x * e ∈ B)
+    (hlB : ∀ᶠ e in l, e ∈ B) (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) (hmul : ∀ e ∈ B, e * x * e ∈ B)
     (hr : Tendsto (x * ·) l (𝓝 x)) (hl : Tendsto (· * x) l (𝓝 x)) : x ∈ B := by
   -- `e * x * e = (e * x - x) * e + (x * e - x) + x`, and `e` stays bounded.
-  have hbdd : IsBoundedUnder (· ≤ ·) l ((‖·‖) ∘ id) :=
-    isBoundedUnder_of_eventually_le (hlB.mono fun _ he ↦ he.2)
+  have hbdd : IsBoundedUnder (· ≤ ·) l ((‖·‖) ∘ id) := isBoundedUnder_of_eventually_le hnorm
   have h₁ : Tendsto (fun e ↦ (e * x - x) * e) l (𝓝 0) :=
     (tendsto_sub_nhds_zero_iff.mpr hl).zero_mul_isBoundedUnder_le hbdd
   have h₂ : Tendsto (fun e ↦ x * e - x) l (𝓝 0) := tendsto_sub_nhds_zero_iff.mpr hr
@@ -134,27 +139,22 @@ private theorem mem_of_tendsto_mul {x : A} (hBc : IsClosed (B : Set A)) {l : Fil
     · ext e
       noncomm_ring
     · simp
-  exact hBc.mem_of_tendsto hlim (hlB.mono fun e he ↦ hmul e he.1)
+  exact hBc.mem_of_tendsto hlim (hlB.mono hmul)
 
 /-- A closed star subalgebra `B` of a C⋆-algebra with `B * A * B ⊆ B` is hereditary. -/
 theorem isHereditary_of_mul_mul_mem (hBc : IsClosed (B : Set A))
     (h : ∀ b ∈ B, ∀ x : A, ∀ c ∈ B, b * x * c ∈ B) : B.IsHereditary := by
   intro a b ha hab hb
   obtain ⟨y, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp ha
-  obtain ⟨l, _, hlB, hl⟩ := NonUnitalStarSubalgebra.exists_approximateUnit hBc
-  have hsa : ∀ᶠ e in l, IsSelfAdjoint e ∧ ‖e‖ ≤ 1 :=
-    hlB.mono fun _ he ↦ ⟨.of_nonneg he.2.1, he.2.2⟩
+  obtain ⟨l, _, hlB, -, hsa, hnorm, hl⟩ := NonUnitalStarSubalgebra.exists_approximateUnit hBc
   -- A right approximate unit for `b` is one for `y`, hence for `star y * y` on both sides.
   have hr : Tendsto (star y * y * ·) l (𝓝 (star y * y)) := by
     simpa only [mul_assoc] using
-      (TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le hsa hab (hl b hb).1).const_mul (star y)
+      (TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le hsa hnorm hab
+        (hl b hb).1).const_mul (star y)
   have hl' : Tendsto (· * (star y * y)) l (𝓝 (star y * y)) := by
-    refine ((continuous_star.tendsto _).comp hr).congr' ?_ |>.trans (by
-      rw [star_mul, star_star])
-    filter_upwards [hsa] with e he
-    simp [mul_assoc, he.1.star_eq]
-  exact mem_of_tendsto_mul hBc (hlB.mono fun _ he ↦ ⟨he.1, he.2.2⟩) (fun e he ↦ h e he _ e he)
-    hr hl'
+    simpa only [star_mul, star_star] using TauCeti.tendsto_mul_star_of_tendsto_mul hsa hr
+  exact mem_of_tendsto_mul hBc hlB hnorm (fun e he ↦ h e he _ e he) hr hl'
 
 /-- A closed star subalgebra `B` of a C⋆-algebra is hereditary if and only if
 `B * A * B ⊆ B`. -/
@@ -164,22 +164,19 @@ theorem isHereditary_iff_mul_mul_mem (hBc : IsClosed (B : Set A)) :
 
 /-- In a closed hereditary star subalgebra `B`, an element `x` with `star x * x ∈ B` and
 `x * star x ∈ B` lies in `B`. -/
-theorem IsHereditary.mem_of_star_mul_self_mem (hB : B.IsHereditary) (hBc : IsClosed (B : Set A))
-    {x : A} (h₁ : star x * x ∈ B) (h₂ : x * star x ∈ B) : x ∈ B := by
-  obtain ⟨l, _, hlB, hl⟩ := NonUnitalStarSubalgebra.exists_approximateUnit hBc
-  have hsa : ∀ᶠ e in l, IsSelfAdjoint e ∧ ‖e‖ ≤ 1 :=
-    hlB.mono fun _ he ↦ ⟨.of_nonneg he.2.1, he.2.2⟩
-  have hr := TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le hsa le_rfl (hl _ h₁).1
-  have hr' := TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le (y := star x) hsa
+theorem IsHereditary.mem_of_star_mul_self_mem_of_mul_star_self_mem (hB : B.IsHereditary)
+    (hBc : IsClosed (B : Set A)) {x : A} (h₁ : star x * x ∈ B) (h₂ : x * star x ∈ B) : x ∈ B := by
+  obtain ⟨l, _, hlB, -, hsa, hnorm, hl⟩ := NonUnitalStarSubalgebra.exists_approximateUnit hBc
+  have hr := TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le hsa hnorm le_rfl (hl _ h₁).1
+  have hr' := TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le (y := star x) hsa hnorm
     (by rw [star_star]) (hl _ h₂).1
   have hl' : Tendsto (· * x) l (𝓝 x) := by
-    refine ((continuous_star.tendsto _).comp hr').congr' ?_ |>.trans (by rw [star_star])
-    filter_upwards [hsa] with e he
-    simp [he.1.star_eq]
-  exact mem_of_tendsto_mul hBc (hlB.mono fun _ he ↦ ⟨he.1, he.2.2⟩)
-    (fun e he ↦ hB.mul_mul_mem he x he) hr hl'
+    simpa only [star_star] using TauCeti.tendsto_mul_star_of_tendsto_mul hsa hr'
+  exact mem_of_tendsto_mul hBc hlB hnorm (fun e he ↦ hB.mul_mul_mem he x he) hr hl'
 
-/-- The closed left ideal `{x | star x * x ∈ B}` of a hereditary star subalgebra `B`. -/
+/-- The left ideal `{x | star x * x ∈ B}` of a hereditary star subalgebra `B`, as a complex
+subspace. It absorbs left multiplication (`IsHereditary.mul_mem_leftIdeal`) and is closed when `B`
+is (`IsHereditary.isClosed_leftIdeal`). -/
 def IsHereditary.leftIdeal (hB : B.IsHereditary) : Submodule ℂ A where
   carrier := {x | star x * x ∈ B}
   add_mem' {x y} hx hy := by
@@ -222,11 +219,11 @@ theorem IsHereditary.isClosed_leftIdeal (hB : B.IsHereditary) (hBc : IsClosed (B
 
 /-- A closed hereditary star subalgebra `B` consists of the `x` with `x` and `star x` in the left
 ideal `{x | star x * x ∈ B}`. -/
-theorem IsHereditary.mem_iff_mem_leftIdeal (hB : B.IsHereditary) (hBc : IsClosed (B : Set A))
-    {x : A} : x ∈ B ↔ x ∈ hB.leftIdeal ∧ star x ∈ hB.leftIdeal := by
+theorem IsHereditary.mem_iff_mem_leftIdeal_and_star_mem_leftIdeal (hB : B.IsHereditary)
+    (hBc : IsClosed (B : Set A)) {x : A} : x ∈ B ↔ x ∈ hB.leftIdeal ∧ star x ∈ hB.leftIdeal := by
   simp only [mem_leftIdeal, star_star]
   exact ⟨fun hx ↦ ⟨mul_mem (star_mem hx) hx, mul_mem hx (star_mem hx)⟩,
-    fun h ↦ hB.mem_of_star_mul_self_mem hBc h.1 h.2⟩
+    fun h ↦ hB.mem_of_star_mul_self_mem_of_mul_star_self_mem hBc h.1 h.2⟩
 
 /-- `B ↦ {x | star x * x ∈ B}` is monotone. -/
 theorem IsHereditary.leftIdeal_mono {B' : NonUnitalStarSubalgebra ℂ A} (hB : B.IsHereditary)
@@ -237,35 +234,8 @@ end NonUnitalStarSubalgebra
 
 namespace Submodule
 
-variable {A : Type*} [NonUnitalCStarAlgebra A]
-
-/-- For a left ideal `L` of a C⋆-algebra, the star subalgebra `L ∩ star L`. -/
-def interStar (L : Submodule ℂ A) (hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L) :
-    NonUnitalStarSubalgebra ℂ A where
-  carrier := {x | x ∈ L ∧ star x ∈ L}
-  add_mem' hx hy := ⟨L.add_mem hx.1 hy.1, by rw [star_add]; exact L.add_mem hx.2 hy.2⟩
-  zero_mem' := ⟨L.zero_mem, by rw [star_zero]; exact L.zero_mem⟩
-  mul_mem' {x _} _ hy := ⟨hL x hy.1, by rw [star_mul]; exact hL _ ‹x ∈ L ∧ star x ∈ L›.2⟩
-  smul_mem' c _ hx := ⟨L.smul_mem c hx.1, by rw [star_smul]; exact L.smul_mem _ hx.2⟩
-  star_mem' hx := ⟨hx.2, by rw [star_star]; exact hx.1⟩
-
-variable {L : Submodule ℂ A} {hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L}
-
-/-- Membership in `L ∩ star L`. -/
-@[simp]
-theorem mem_interStar {x : A} : x ∈ L.interStar hL ↔ x ∈ L ∧ star x ∈ L :=
-  Iff.rfl
-
-/-- For a closed left ideal `L`, the star subalgebra `L ∩ star L` is closed. -/
-theorem isClosed_interStar (hLc : IsClosed (L : Set A)) : IsClosed (L.interStar hL : Set A) :=
-  hLc.inter (hLc.preimage continuous_star)
-
-/-- `L ↦ L ∩ star L` is monotone. -/
-theorem interStar_mono {L' : Submodule ℂ A} {hL' : ∀ (a : A) {x : A}, x ∈ L' → a * x ∈ L'}
-    (h : L ≤ L') : L.interStar hL ≤ L'.interStar hL' :=
-  fun _ hx ↦ ⟨h hx.1, h hx.2⟩
-
-variable [PartialOrder A] [StarOrderedRing A]
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {L : Submodule ℂ A} {hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L}
 
 /-- For a closed left ideal `L`, the star subalgebra `L ∩ star L` is hereditary. -/
 theorem isHereditary_interStar (hLc : IsClosed (L : Set A)) : (L.interStar hL).IsHereditary := by
@@ -282,13 +252,12 @@ theorem leftIdeal_interStar (hLc : IsClosed (L : Set A)) :
   rw [NonUnitalStarSubalgebra.IsHereditary.mem_leftIdeal, mem_interStar, star_mul, star_star,
     and_self]
   refine ⟨fun hx ↦ ?_, fun hx ↦ hL _ hx⟩
-  obtain ⟨l, _, hlB, hl⟩ :=
+  obtain ⟨l, _, hlB, -, hsa, hnorm, hl⟩ :=
     NonUnitalStarSubalgebra.exists_approximateUnit (B := L.interStar hL) (isClosed_interStar hLc)
   -- Along an approximate unit `e` of `L ∩ star L`, `x * e → x` and `x * e ∈ L`.
-  have hr := TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le
-    (hlB.mono fun _ he ↦ ⟨.of_nonneg he.2.1, he.2.2⟩) le_rfl
+  have hr := TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le hsa hnorm le_rfl
     (hl _ ⟨hx, by rw [star_mul, star_star]; exact hx⟩).1
-  exact hLc.mem_of_tendsto hr (hlB.mono fun e he ↦ hL x he.1.1)
+  exact hLc.mem_of_tendsto hr (hlB.mono fun e he ↦ hL x he.1)
 
 /-- A closed hereditary star subalgebra `B` is recovered from its left ideal as
 `{x | star x * x ∈ B} ∩ star {x | star x * x ∈ B}`. -/
@@ -296,7 +265,7 @@ theorem _root_.NonUnitalStarSubalgebra.IsHereditary.interStar_leftIdeal
     {B : NonUnitalStarSubalgebra ℂ A} (hB : B.IsHereditary) (hBc : IsClosed (B : Set A)) :
     hB.leftIdeal.interStar (fun a _ hx ↦ hB.mul_mem_leftIdeal a hx) = B := by
   ext x
-  rw [mem_interStar, hB.mem_iff_mem_leftIdeal hBc]
+  rw [mem_interStar, hB.mem_iff_mem_leftIdeal_and_star_mem_leftIdeal hBc]
 
 end Submodule
 

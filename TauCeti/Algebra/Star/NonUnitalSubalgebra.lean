@@ -1,0 +1,55 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Star.NonUnitalSubalgebra
+
+/-!
+# The star subalgebra `L ∩ star L` of a left ideal
+
+For a submodule `L` of a star algebra `A` that absorbs left multiplication by elements of `A`
+(a left ideal), the elements `x` with `x ∈ L` and `star x ∈ L` form a star subalgebra
+`Submodule.interStar L hL`: it is closed under multiplication since
+`x * y ∈ L` by left absorption and `star (x * y) = star y * star x ∈ L`. In a C⋆-algebra this is
+the hereditary C⋆-subalgebra attached to a closed left ideal.
+
+## Main declarations
+
+* `Submodule.interStar`: the star subalgebra `L ∩ star L` of a left ideal `L`.
+* `Submodule.mem_interStar` and `Submodule.interStar_mono`: its membership criterion and
+  monotonicity in `L`.
+-/
+
+public section
+
+namespace Submodule
+
+variable {R A : Type*} [CommSemiring R] [Star R] [NonUnitalNonAssocSemiring A] [StarRing A]
+  [Module R A] [StarModule R A]
+
+/-- For a left ideal `L`, the star subalgebra `L ∩ star L`. -/
+@[expose] def interStar (L : Submodule R A) (hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L) :
+    NonUnitalStarSubalgebra R A where
+  carrier := {x | x ∈ L ∧ star x ∈ L}
+  add_mem' hx hy := ⟨L.add_mem hx.1 hy.1, by rw [star_add]; exact L.add_mem hx.2 hy.2⟩
+  zero_mem' := ⟨L.zero_mem, by rw [star_zero]; exact L.zero_mem⟩
+  mul_mem' {x _} _ hy := ⟨hL x hy.1, by rw [star_mul]; exact hL _ ‹x ∈ L ∧ star x ∈ L›.2⟩
+  smul_mem' c _ hx := ⟨L.smul_mem c hx.1, by rw [star_smul]; exact L.smul_mem _ hx.2⟩
+  star_mem' hx := ⟨hx.2, by rw [star_star]; exact hx.1⟩
+
+variable {L : Submodule R A} {hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L}
+
+/-- Membership in `L ∩ star L`. -/
+@[simp]
+theorem mem_interStar {x : A} : x ∈ L.interStar hL ↔ x ∈ L ∧ star x ∈ L :=
+  Iff.rfl
+
+/-- `L ↦ L ∩ star L` is monotone. -/
+theorem interStar_mono {L' : Submodule R A} {hL' : ∀ (a : A) {x : A}, x ∈ L' → a * x ∈ L'}
+    (h : L ≤ L') : L.interStar hL ≤ L'.interStar hL' :=
+  fun _ hx ↦ ⟨h hx.1, h hx.2⟩
+
+end Submodule

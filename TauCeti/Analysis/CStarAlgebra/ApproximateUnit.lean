@@ -27,18 +27,18 @@ Since an increasing approximate unit eventually lies in the closed unit ball, th
 `e * α_r(b) → α_r(b)` uniformly along a compact set of group elements `r` for a continuous action
 `α`, as needed for approximate units of twisted convolution algebras.
 
-`TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le` is the estimate for a positive contraction `e`
-that drives the approximate-unit argument showing that closed two-sided ideals are self-adjoint:
-`‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. Its companion
-`TauCeti.CStarAlgebra.norm_sub_mul_sq_le`, `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`,
-drives the proof of the C⋆-identity on the quotient by a closed two-sided ideal.
+For a positive contraction `e`, the estimate `TauCeti.CStarAlgebra.norm_sub_mul_sq_le`,
+`‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`, drives the proof of the C⋆-identity on the
+quotient by a closed two-sided ideal.
 
 `TauCeti.CStarAlgebra.norm_sub_mul_sq_le_of_star_mul_self_le` compares an element `y` with a
 dominating `b ≥ star y * y`: `‖y - y * e‖ ^ 2 ≤ 2 * ‖b - b * e‖` for a self-adjoint contraction
 `e`. Hence a right approximate unit for `b` is one for `y`,
-`TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le`. Every closed star subalgebra carries an
-approximate unit of positive contractions, `NonUnitalStarSubalgebra.exists_approximateUnit`; these
-facts drive the theory of hereditary C⋆-subalgebras.
+`TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le`, and taking adjoints along self-adjoint `e`
+turns `y * e → y` into `e * star y → star y`, `TauCeti.tendsto_mul_star_of_tendsto_mul`. Every
+closed star subalgebra carries an approximate unit of positive contractions,
+`NonUnitalStarSubalgebra.exists_approximateUnit`. These facts show that closed two-sided ideals are
+self-adjoint and drive the theory of hereditary C⋆-subalgebras.
 -/
 
 public section
@@ -121,43 +121,21 @@ end Map
 
 end Filter.IsIncreasingApproximateUnit
 
+namespace TauCeti
+
+/-- Along a filter of self-adjoint elements, `z * e → z` implies `e * star z → star z`. -/
+theorem tendsto_mul_star_of_tendsto_mul {R : Type*} [Mul R] [StarMul R] [TopologicalSpace R]
+    [ContinuousStar R] {l : Filter R} {z : R} (he : ∀ᶠ e in l, IsSelfAdjoint e)
+    (hz : Tendsto (z * ·) l (𝓝 z)) : Tendsto (· * star z) l (𝓝 (star z)) :=
+  hz.star.congr' (he.mono fun _ he ↦ by rw [star_mul, he.star_eq])
+
+end TauCeti
+
 namespace TauCeti.CStarAlgebra
 
 open Unitization
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- For a positive contraction `e` in a nonunital C⋆-algebra and any `a`, the C⋆-identity in the
-unitization gives `‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. -/
-theorem norm_mul_star_sub_star_sq_le {e : A} (he₀ : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) (a : A) :
-    ‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖ := by
-  have he_icc : (e : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
-    CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr ⟨he₀, he₁⟩
-  have h1_icc : 1 - (e : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
-    Set.sub_mem_Icc_zero_iff_right.mpr he_icc
-  obtain ⟨h1_nonneg, h1_norm⟩ := CStarAlgebra.mem_Icc_iff_norm_le_one.mp h1_icc
-  have h1_star : star (1 - (e : A⁺¹)) = 1 - (e : A⁺¹) :=
-    (IsSelfAdjoint.of_nonneg h1_nonneg).star_eq
-  let b : A⁺¹ := (1 - (e : A⁺¹)) * star (a : A⁺¹)
-  have hb_norm : ‖e * star a - star a‖ = ‖b‖ := by
-    rw [norm_sub_rev, ← Unitization.norm_inr (𝕜 := ℂ), Unitization.inr_sub,
-      Unitization.inr_mul, Unitization.inr_star]
-    congr 1
-    dsimp only [b]
-    rw [sub_mul, one_mul]
-  have hb_mul : b * star b = ((star a * a - e * (star a * a) : A) : A⁺¹) * (1 - (e : A⁺¹)) := by
-    simp only [b, star_mul, star_star, h1_star, Unitization.inr_sub, Unitization.inr_mul,
-      Unitization.inr_star]
-    noncomm_ring
-  calc
-    ‖e * star a - star a‖ ^ 2 = ‖b‖ ^ 2 := by rw [hb_norm]
-    _ = ‖b * star b‖ := by rw [sq, ← CStarRing.norm_self_mul_star]
-    _ = ‖((star a * a - e * (star a * a) : A) : A⁺¹) * (1 - (e : A⁺¹))‖ := by rw [hb_mul]
-    _ ≤ ‖((star a * a - e * (star a * a) : A) : A⁺¹)‖ * ‖1 - (e : A⁺¹)‖ := norm_mul_le _ _
-    _ ≤ ‖star a * a - e * (star a * a)‖ * 1 := by
-      rw [Unitization.norm_inr]
-      exact mul_le_mul_of_nonneg_left h1_norm (norm_nonneg _)
-    _ = ‖star a * a - e * (star a * a)‖ := mul_one _
 
 /-- For a positive contraction `e` in a nonunital C⋆-algebra and any `a` and `z`, the C⋆-identity in
 the unitization applied to `a * (1 - e)` gives `‖a - a * e‖ ^ 2 ≤ ‖star a * a + z‖ + ‖z - z * e‖`.
@@ -216,16 +194,16 @@ theorem norm_sub_mul_sq_le_of_star_mul_self_le {e y b : A} (he : IsSelfAdjoint e
 /-- Along a filter of self-adjoint contractions, a right approximate unit for `b` is a right
 approximate unit for every `y` with `star y * y ≤ b`. -/
 theorem tendsto_mul_of_star_mul_self_le {l : Filter A} {y b : A}
-    (he : ∀ᶠ e in l, IsSelfAdjoint e ∧ ‖e‖ ≤ 1) (hyb : star y * y ≤ b)
+    (he : ∀ᶠ e in l, IsSelfAdjoint e) (he₁ : ∀ᶠ e in l, ‖e‖ ≤ 1) (hyb : star y * y ≤ b)
     (hb : Tendsto (b * ·) l (𝓝 b)) : Tendsto (y * ·) l (𝓝 y) := by
   rw [tendsto_iff_norm_sub_tendsto_zero] at hb ⊢
   have hs : Tendsto (fun e ↦ √(2 * ‖b * e - b‖)) l (𝓝 0) := by
     simpa only [Function.comp_def, mul_zero, Real.sqrt_zero] using
       (Real.continuous_sqrt.tendsto 0).comp ((hb.const_mul 2).trans (by rw [mul_zero]))
   refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ hs
-  filter_upwards [he] with e he
+  filter_upwards [he, he₁] with e he he₁
   rw [norm_sub_rev, norm_sub_rev (b * e)]
-  exact Real.le_sqrt_of_sq_le (norm_sub_mul_sq_le_of_star_mul_self_le he.1 he.2 hyb)
+  exact Real.le_sqrt_of_sq_le (norm_sub_mul_sq_le_of_star_mul_self_le he he₁ hyb)
 
 end TauCeti.CStarAlgebra
 
@@ -233,20 +211,22 @@ namespace NonUnitalStarSubalgebra
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- A closed star subalgebra `B` of a C⋆-algebra has an approximate unit of positive contractions:
-a proper filter on `A` that eventually lies in `B`, along which `b * e → b` and `e * b → b` for
-every `b ∈ B`. -/
+/-- A closed star subalgebra `B` of a C⋆-algebra has an approximate unit of positive (hence
+self-adjoint) contractions: a proper filter on `A` that eventually lies in `B`, along which
+`b * e → b` and `e * b → b` for every `b ∈ B`. -/
 theorem exists_approximateUnit {B : NonUnitalStarSubalgebra ℂ A} (hB : IsClosed (B : Set A)) :
-    ∃ l : Filter A, l.NeBot ∧ (∀ᶠ e in l, e ∈ B ∧ 0 ≤ e ∧ ‖e‖ ≤ 1) ∧
+    ∃ l : Filter A, l.NeBot ∧ (∀ᶠ e in l, e ∈ B) ∧ (∀ᶠ e in l, 0 ≤ e) ∧
+      (∀ᶠ e in l, IsSelfAdjoint e) ∧ (∀ᶠ e in l, ‖e‖ ≤ 1) ∧
       ∀ b ∈ B, Tendsto (b * ·) l (𝓝 b) ∧ Tendsto (· * b) l (𝓝 b) := by
   let _ : NonUnitalCStarAlgebra B := nonUnitalCStarAlgebra B (h_closed := hB)
   have _ : StarOrderedRing B := Subtype.starOrderedRing B (hs := hB)
   have hl := CStarAlgebra.increasingApproximateUnit B
   have := hl.neBot
-  refine ⟨(CStarAlgebra.approximateUnit B).map (↑), inferInstance,
-    eventually_map.mpr <|
-      (hl.eventually_nonneg.and hl.eventually_norm).mono fun e he ↦ ⟨e.2, he.1, he.2⟩,
-    fun b hb ↦ ⟨?_, ?_⟩⟩
+  have hpos : ∀ᶠ e in (CStarAlgebra.approximateUnit B).map ((↑) : B → A), 0 ≤ e :=
+    eventually_map.mpr <| hl.eventually_nonneg.mono fun _ he ↦ he
+  refine ⟨_, inferInstance, eventually_map.mpr <| .of_forall fun e ↦ e.2, hpos,
+    hpos.mono fun _ ↦ IsSelfAdjoint.of_nonneg,
+    eventually_map.mpr <| hl.eventually_norm.mono fun _ he ↦ he, fun b hb ↦ ⟨?_, ?_⟩⟩
   · simpa only [tendsto_map'_iff, Function.comp_def, NonUnitalStarSubalgebra.coe_mul] using
       (continuous_subtype_val.tendsto _).comp (hl.tendsto_mul_left ⟨b, hb⟩)
   · simpa only [tendsto_map'_iff, Function.comp_def, NonUnitalStarSubalgebra.coe_mul] using
