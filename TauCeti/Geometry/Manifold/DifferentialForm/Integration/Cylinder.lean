@@ -188,24 +188,10 @@ theorem rectangleIntegral_comp_prodMap_id_one_sub (φ : RoughForm I M F 2) {u : 
   refine intervalIntegral.integral_congr fun s _ ↦ ?_
   -- The derivative of `Prod.map id (1 - ·)` sends `(0, 1)` to `-(0, 1)`, so the integrand at
   -- `(s, t)` is minus the integrand of `u` at `(s, 1 - t)`.
-  let A : ℝ × ℝ →L[ℝ] ℝ × ℝ := (ContinuousLinearMap.id ℝ ℝ).prodMap (-ContinuousLinearMap.id ℝ ℝ)
   have hpt (t : ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ Prod.map id fun t ↦ 1 - t) φ (s, t)
       ![(1, 0), (0, 1)] = -mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, 1 - t) ![(1, 0), (0, 1)] := by
-    have hL : HasFDerivAt (Prod.map id fun t : ℝ ↦ 1 - t) A (s, t) :=
-      (hasFDerivAt_id s).prodMap (s, t) ((hasFDerivAt_id t).const_sub 1)
-    have hv : (A ∘ ![(1, 0), (0, 1)]) =
-        Function.update ![((1 : ℝ), (0 : ℝ)), (0, 1)] 1 ((-1 : ℝ) • ((0 : ℝ), (1 : ℝ))) := by
-      funext i
-      fin_cases i <;> simp [A]
-    rw [mpullback_comp_apply_of_hasFDerivAt hL (hu _)]
-    -- Read the pullback as a flat form on the plane, whose tangent spaces are `ℝ × ℝ` itself.
-    let ψ : ℝ × ℝ → (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ
-    refine (((ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans
-      (congrArg _ hv)).trans ((ψ (s, 1 - t)).map_update_smul _ _ _ _)).trans ?_
-    rw [neg_one_smul]
-    congr 2
-    funext i
-    fin_cases i <;> rfl
+    simpa using mpullback_comp_prodMap_apply φ (hasDerivAt_id s)
+      ((hasDerivAt_id t).const_sub 1) (hu _)
   simp_rw [hpt, intervalIntegral.integral_neg,
     intervalIntegral.integral_comp_sub_left (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t)
       ![(1, 0), (0, 1)]) 1, sub_self, sub_zero]
