@@ -18,7 +18,8 @@ order `120` is divisible by `5` but not by `25`, and to their subgroups.
 The file also records that `p` times the number of Sylow `p`-subgroups divides the order of the
 group whenever `p` does. When `p ^ 2` does not divide the order, any two elements of order `p`
 generate conjugate subgroups. More generally, every element of prime-power order is conjugate
-to an element of any chosen Sylow subgroup for that prime.
+to an element of any chosen Sylow subgroup for that prime. For `p = 2`: when `4` does not
+divide the order, all elements of order `2` are conjugate and so form a single conjugacy class.
 
 ## Main results
 
@@ -31,6 +32,10 @@ to an element of any chosen Sylow subgroup for that prime.
 * `TauCeti.exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd`: if `p ^ 2` does not divide the order of
   the group, some conjugate of an element of order `p` is a power of any other element of
   order `p`.
+* `TauCeti.isConj_of_orderOf_eq_two_of_not_four_dvd`: if `4` does not divide the order of the
+  group, any two elements of order `2` are conjugate.
+* `TauCeti.carrier_mk_eq_setOf_orderOf_eq_two`: if `4` does not divide the order of the group,
+  the elements of order `2` form a single conjugacy class.
 -/
 
 public section

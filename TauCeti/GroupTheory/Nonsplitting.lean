@@ -38,7 +38,10 @@ the length of the tuples.
 * `ConjClasses.isNonsplitting_iff`: the formulation in which `c ∩ H` is empty or one class of `H`.
 * `ConjClasses.IsNonsplitting.isNonsplitting_mk_subgroup`: if `c ∩ H` is nonempty and generates
   `H`, it is a nonsplitting class of `H`.
-* `ConjClasses.isNonsplitting_map_mulEquiv_iff`: group isomorphisms preserve the property.
+* `ConjClasses.IsNonsplitting.map_of_surjective`: surjective group homomorphisms preserve the
+  property.
+* `ConjClasses.isNonsplitting_map_mulEquiv_iff`: group isomorphisms preserve and reflect the
+  property.
 * `ConjClasses.IsNonsplitting.eq_of_commute`: two commuting members of a nonsplitting class are
   equal.
 * `TauCeti.isNonsplitting_mk_iff_of_orderOf_eq_two`: in a group of order not divisible by `4`, in
@@ -128,25 +131,26 @@ theorem IsNonsplitting.isNonsplitting_mk_subgroup (hc : c.IsNonsplitting) {H : S
     obtain ⟨w, hwK, rfl⟩ := Subgroup.mem_map.mp hz
     exact ⟨w, hwK, Subtype.ext hzxy⟩
 
-/-- A group isomorphism carries a nonsplitting class to a nonsplitting class. -/
-theorem IsNonsplitting.map_mulEquiv (hc : c.IsNonsplitting) (e : G ≃* G') :
-    (c.map (e : G →* G')).IsNonsplitting := by
-  have hcar := carrier_map_of_surjective (f := (e : G →* G')) e.surjective c
+/-- A surjective group homomorphism carries a nonsplitting class to a nonsplitting class. In
+particular the image of a nonsplitting class in a quotient group is nonsplitting. -/
+theorem IsNonsplitting.map_of_surjective (hc : c.IsNonsplitting) {f : G →* G'}
+    (hf : Function.Surjective f) : (c.map f).IsNonsplitting := by
+  have hcar := carrier_map_of_surjective hf c
   refine ⟨?_, fun {H g h} hg hh hgH hhH => ?_⟩
   · rw [hcar, ← MonoidHom.map_closure, hc.closure_carrier_eq_top,
-      Subgroup.map_top_of_surjective _ e.surjective]
+      Subgroup.map_top_of_surjective _ hf]
   · rw [hcar] at hg hh
     obtain ⟨g₀, hg₀, rfl⟩ := hg
     obtain ⟨h₀, hh₀, rfl⟩ := hh
-    obtain ⟨x, hx, rfl⟩ := hc.exists_mem_conj_eq (H := H.comap (e : G →* G')) hg₀ hh₀ hgH hhH
-    exact ⟨e x, hx, by simp⟩
+    obtain ⟨x, hx, rfl⟩ := hc.exists_mem_conj_eq (H := H.comap f) hg₀ hh₀ hgH hhH
+    exact ⟨f x, hx, by simp⟩
 
 /-- A class is nonsplitting exactly when its image under a group isomorphism is. -/
 @[simp]
 theorem isNonsplitting_map_mulEquiv_iff (e : G ≃* G') :
     (c.map (e : G →* G')).IsNonsplitting ↔ c.IsNonsplitting := by
-  refine ⟨fun hc => ?_, fun hc => hc.map_mulEquiv e⟩
-  convert hc.map_mulEquiv e.symm
+  refine ⟨fun hc => ?_, fun hc => hc.map_of_surjective e.surjective⟩
+  convert hc.map_of_surjective (f := (e.symm : G' →* G)) e.symm.surjective
   obtain ⟨g, rfl⟩ := mk_surjective c
   simp
 
