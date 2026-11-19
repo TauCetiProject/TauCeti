@@ -12,6 +12,7 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Polynomial.ContinuityOfRoots.Basic
 import TauCeti.Topology.Algebra.Polynomial.Basic
+import TauCeti.Topology.Algebra.Polynomial.Root.Extension
 
 /-!
 # Roots and factorizations at a puncture
@@ -20,9 +21,9 @@ Let `F y` be complex polynomials whose coefficients are continuous at a point `c
 degree exactly `d` near `c`, a root of `F y`, continuous on a punctured ball about `c` in a real
 normed space of dimension greater than one, converges at `c` to a root of `F c`
 (`TauCeti.Polynomial.exists_isRoot_tendsto_of_continuousOn`): near `c` the roots of `F y` lie close
-to the finitely many roots of `F c` (`Polynomial.eventually_rel_roots_norm_sub_lt`), and the
-connected punctured ball cannot be split between two of them
-(`TauCeti.exists_mem_tendsto_of_forall_eventually_exists_dist_lt`). If `F y` has degree at most
+to the roots of `F c` (`Polynomial.eventually_rel_roots_norm_sub_lt`), so the root is bounded there,
+and the cluster set at `c` of a bounded root over the connected punctured balls is a single root
+of `F c` (`TauCeti.subsingleton_clusterSetOn_of_polynomial_root`). If `F y` has degree at most
 `d` near `c`, a splitting of `F y` into `d` linear factors with roots continuous at `c` passes to
 the limit (`TauCeti.Polynomial.eq_prod_X_sub_C_of_continuousAt`).
 -/
@@ -44,18 +45,47 @@ theorem exists_isRoot_tendsto_of_continuousOn {E : Type*} [NormedAddCommGroup E]
     (hv : ContinuousOn v (ball c δ \ {c})) (hroot : ∀ z ∈ ball c δ \ {c}, (F z).IsRoot (v z)) :
     ∃ w, (F c).IsRoot w ∧ Tendsto v (𝓝[≠] c) (𝓝 w) := by
   classical
-  -- near `c`, every root of `F y` lies close to a root of `F c`
-  have hclose (ε : ℝ) (hε : 0 < ε) :
-      ∀ᶠ z in 𝓝[≠] c, ∃ s ∈ (F c).roots.toFinset, dist (v z) s < ε := by
-    filter_upwards [nhdsWithin_le_nhds (eventually_rel_roots_norm_sub_lt hF hdeg hε),
-      nhdsWithin_le_nhds hdeg, self_mem_nhdsWithin, nhdsWithin_le_nhds (ball_mem_nhds c hδ)] with
-      z hrel hzd hzc hzb
-    have hvz : v z ∈ (F z).roots :=
-      (mem_roots (ne_zero_of_coe_le_degree hzd.ge)).2 (hroot z ⟨hzb, hzc⟩)
+  -- near `c`, every root of `F y` lies within `1` of a root of `F c`
+  obtain ⟨ε, hε, hnear⟩ :=
+    eventually_nhds_iff_ball.1 ((eventually_rel_roots_norm_sub_lt hF hdeg one_pos).and hdeg)
+  obtain ⟨δ', hδ', hδ'δ, hδ'ε⟩ : ∃ δ', 0 < δ' ∧ δ' ≤ δ ∧ δ' ≤ ε :=
+    ⟨min δ ε, lt_min hδ hε, min_le_left _ _, min_le_right _ _⟩
+  have hU : ball c δ' \ {c} ⊆ ball c δ \ {c} := sdiff_subset_sdiff_left (ball_subset_ball hδ'δ)
+  have hroot' (z) (hz : z ∈ ball c δ' \ {c}) : (F z).eval (v z) = 0 := hroot z (hU hz)
+  have hbdd : Bornology.IsBounded (v '' (ball c δ' \ {c})) := by
+    refine ((F c).roots.toFinset.finite_toSet.isBounded.thickening (δ := 1)).subset ?_
+    rintro _ ⟨z, hz, rfl⟩
+    obtain ⟨hrel, hzd⟩ := hnear z (ball_subset_ball hδ'ε hz.1)
+    have hvz : v z ∈ (F z).roots := (mem_roots (ne_zero_of_coe_le_degree hzd.ge)).2 (hroot' z hz)
     obtain ⟨s, hs, hsv⟩ := Multiset.exists_mem_of_rel_of_mem (Multiset.rel_flip.2 hrel) hvz
-    exact ⟨s, Multiset.mem_toFinset.2 hs, by rwa [dist_eq_norm, norm_sub_rev]⟩
-  obtain ⟨w, hw, hlim⟩ := exists_mem_tendsto_of_forall_eventually_exists_dist_lt hE hδ hv hclose
-  exact ⟨w, isRoot_of_mem_roots (Multiset.mem_toFinset.1 hw), hlim⟩
+    exact mem_thickening_iff.2 ⟨s, Multiset.mem_toFinset.2 hs, by rwa [dist_eq_norm, norm_sub_rev]⟩
+  -- the punctured balls about `c` are connected, so the cluster set of `v` at `c` is too
+  have hconn : IsPreconnectedApproachAt (ball c δ' \ {c}) c :=
+    isPreconnectedApproachAt_of_isPreconnected_inter_ball hδ' fun r hr hrδ' => by
+      rw [show ball c δ' \ {c} ∩ ball c r = ball c r \ {c} from Set.ext fun z =>
+        ⟨fun h => ⟨h.2, h.1.2⟩, fun h => ⟨⟨ball_subset_ball hrδ' h.1, h.2⟩, h.1⟩⟩]
+      exact (isPathConnected_ball_sdiff_singleton hE c hr).isConnected.isPreconnected
+  have hUc : 𝓝[ball c δ' \ {c}] c = 𝓝[≠] c := by
+    rw [sdiff_eq, nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (ball_mem_nhds c hδ'))]
+  have : Nontrivial E := rank_pos_iff_nontrivial.1 (zero_lt_one.trans hE)
+  have hc : c ∈ closure (ball c δ' \ {c}) :=
+    mem_closure_iff_nhdsWithin_neBot.2 (hUc ▸ inferInstance)
+  -- evaluation is jointly continuous at `c`, so the cluster values are among the roots of `F c`
+  have hdeg' : ∀ᶠ y in 𝓝 c, (F y).natDegree ≤ d :=
+    hdeg.mono fun y hy => natDegree_le_of_degree_le hy.le
+  have hp (t : ℂ) :
+      ContinuousWithinAt (fun z : E × ℂ ↦ (F z.1).eval z.2) ((ball c δ' \ {c}) ×ˢ univ) (c, t) :=
+    (continuousAt_eval (fun i hi => (hF i hi).fst')
+      ((continuousAt_fst (p := (c, t))).tendsto.eventually hdeg')
+      continuousAt_snd).continuousWithinAt
+  have hsub := subsingleton_clusterSetOn_of_polynomial_root hp hroot'
+    (ne_zero_of_coe_le_degree hdeg.self_of_nhds.ge)
+    (isConnected_clusterSetOn_of_isBounded (hv.mono hU) hbdd hc hconn).isPreconnected
+  obtain ⟨w, hw⟩ := exists_tendsto_of_clusterSetOn_subsingleton hbdd.isCompact_closure
+    (fun y hy => subset_closure (mem_image_of_mem v hy)) hc hsub
+  refine ⟨w, eval_eq_zero_of_mem_clusterSetOn (hp w) hroot' ?_, hUc ▸ hw⟩
+  rw [clusterSetOn_eq_singleton_of_tendsto hc hw]
+  exact mem_singleton w
 
 /-- **Splitting passes to the limit.** Let `F y` be complex polynomials of degree at most `d` near
 `c`, with coefficients continuous at `c`, that split into linear factors `X - u_i(y)` on a
