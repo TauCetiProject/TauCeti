@@ -131,11 +131,23 @@ def cubeLevelPoint (G : X → (ι → I) → ℝ) (x : X) (a : ι → I) : ι �
   open scoped Classical in
   if h : ∃ τ ∈ Icc (-1 : ℝ) 1, G x (clampShift a τ) = 0 then clampShift a h.choose else a
 
+/-- If some clamped shift `clampShift a τ` with `τ ∈ [-1, 1]` is a zero of `G x`, the level point
+of `a` is the chosen such shift. -/
+lemma cubeLevelPoint_of_exists (h : ∃ τ ∈ Icc (-1 : ℝ) 1, G x (clampShift a τ) = 0) :
+    cubeLevelPoint G x a = clampShift a h.choose := by
+  rw [cubeLevelPoint, dite_eq_left h]
+
+/-- If no clamped shift `clampShift a τ` with `τ ∈ [-1, 1]` is a zero of `G x`, the level point
+of `a` is `a` itself. -/
+lemma cubeLevelPoint_of_not_exists (h : ¬∃ τ ∈ Icc (-1 : ℝ) 1, G x (clampShift a τ) = 0) :
+    cubeLevelPoint G x a = a := by
+  rw [cubeLevelPoint, dite_eq_right h]
+
 lemma exists_cubeLevelPoint_eq_clampShift (G : X → (ι → I) → ℝ) (x : X) (a : ι → I) :
     ∃ τ ∈ Icc (-1 : ℝ) 1, cubeLevelPoint G x a = clampShift a τ := by
   by_cases h : ∃ τ ∈ Icc (-1 : ℝ) 1, G x (clampShift a τ) = 0
-  · exact ⟨h.choose, h.choose_spec.1, by rw [cubeLevelPoint, dite_eq_left h]⟩
-  · exact ⟨0, ⟨by norm_num, by norm_num⟩, by rw [cubeLevelPoint, dite_eq_right h, clampShift_zero]⟩
+  · exact ⟨h.choose, h.choose_spec.1, cubeLevelPoint_of_exists h⟩
+  · exact ⟨0, ⟨by norm_num, by norm_num⟩, by rw [cubeLevelPoint_of_not_exists h, clampShift_zero]⟩
 
 /-- A strictly increasing function on the cube vanishes on at most one clamped diagonal shift
 of `a`. -/
@@ -153,7 +165,7 @@ theorem cubeLevelPoint_eq_of_apply_clampShift_eq_zero (hmono : StrictMono (G x))
     (h : G x (clampShift a τ) = 0) : cubeLevelPoint G x a = clampShift a τ := by
   obtain ⟨τ', hτ', hτ'eq⟩ := exists_mem_Icc_clampShift_eq a τ
   have hex : ∃ τ ∈ Icc (-1 : ℝ) 1, G x (clampShift a τ) = 0 := ⟨τ', hτ', hτ'eq ▸ h⟩
-  rw [cubeLevelPoint, dite_eq_left hex]
+  rw [cubeLevelPoint_of_exists hex]
   exact clampShift_eq_of_apply_eq_zero hmono hex.choose_spec.2 h
 
 /-- A point of the zero level set of a strictly increasing `G x` is its own level point. -/
@@ -171,7 +183,7 @@ theorem apply_cubeLevelPoint_eq_zero (hG : Continuous (G x)) (h₀ : G x 0 ≤ 0
     ⟨by simpa [clampShift_of_le_neg_one a le_rfl] using h₀,
       by simpa [clampShift_of_one_le a le_rfl] using h₁⟩
   have hex : ∃ τ ∈ Icc (-1 : ℝ) 1, G x (clampShift a τ) = 0 := ⟨τ, hτ, h⟩
-  rw [cubeLevelPoint, dite_eq_left hex]
+  rw [cubeLevelPoint_of_exists hex]
   exact hex.choose_spec.2
 
 /-- The level point of `a` is the unique clamped diagonal shift of `a` on which `G x` vanishes. -/
@@ -419,7 +431,13 @@ def cubeLevelSetFiberHomotopyEquiv :
   comp_toFun := rfl
   comp_invFun := rfl
   left_inv := ⟨{ (cubeLevelSetHomotopy hG hmono h₀ h₁).toHomotopy.symm with
-    prop' t := ContinuousMap.ext fun p ↦ cubeLevelSetHomotopy_apply_fst hG hmono h₀ h₁ (σ t) p }⟩
+    prop' t := ContinuousMap.ext fun p ↦ by
+      -- `prop'` states the time-`t` map as an anonymous `ContinuousMap`; rewrite it to the
+      -- reversed homotopy at time `σ t` and apply `cubeLevelSetHomotopy_apply_fst`.
+      simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, ContinuousMap.toFun_eq_coe,
+        ContinuousMap.Homotopy.coe_toContinuousMap, ContinuousMap.Homotopy.symm_apply,
+        ContinuousMap.HomotopyWith.coe_toHomotopy, cubeLevelSetProj_apply,
+        cubeLevelSetHomotopy_apply_fst] }⟩
   right_inv := .refl _ rfl
 
 @[simp]
