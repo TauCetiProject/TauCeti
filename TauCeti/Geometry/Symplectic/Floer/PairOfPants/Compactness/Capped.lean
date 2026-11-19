@@ -270,10 +270,9 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
     exact hω.tames_iff.1 (h₀.tames_cappedAlmostComplex J hJ _ _ w) x
   have hWt : IsOpen (W ∩ univ ×ˢ (univ ×ˢ φ.target)) :=
     hW.inter (isOpen_univ.prod (isOpen_univ.prod φ.open_target))
-  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (univ ×ˢ φ.target) := by
-    intro q hq
-    obtain ⟨x, hx, hxq⟩ := hq.2.2
-    exact ⟨hCDKW hq, trivial, trivial, hxq ▸ φ.toPartialEquiv.map_source (hKφ hx)⟩
+  have hDKW : C ×ˢ (D ×ˢ (φ '' K)) ⊆ W ∩ univ ×ˢ (univ ×ˢ φ.target) :=
+    subset_inter hCDKW (prod_mono (subset_univ _)
+      (prod_mono (subset_univ _) (φ.toPartialEquiv.mapsTo.mono_left hKφ).image_subset))
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
     φ (Ks := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x 1)
     (Kt := fun R z x ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) x Complex.I)
