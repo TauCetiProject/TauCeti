@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Subgroup.Closed
+public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
-public import TauCeti.Topology.Algebra.Group.Subgroup
 import TauCeti.Geometry.Lie.AutomaticSmoothness
 import TauCeti.Geometry.Manifold.Submersion.Basic
 
@@ -42,11 +43,10 @@ that it does not clash with the diagonal action of `K` on `G × B`.
 ## Main definitions and results
 
 * `TauCeti.TwistedProduct K B`: the twisted product `G ×_K B`, with classes
-  `TauCeti.TwistedProduct.mk K g b`.
+  `TauCeti.TwistedProduct.mk K g b`; maps out of it are `TauCeti.TwistedProduct.lift f hf` for
+  `f : G → B → X` with `f (g * k⁻¹) (k • b) = f g b`.
 * `TauCeti.TwistedProduct.instProperSMulPairs`, `TauCeti.TwistedProduct.instIsCancelSMulPairs`:
   the action of a closed subgroup `K` on `G × B` is proper and free.
-* `TauCeti.Lie.isClosed_of_lieGroup`: a subgroup of a Lie group which is a finite-dimensional
-  manifold for the subspace topology is closed.
 * `TauCeti.TwistedProduct.chartedSpace`: the smooth structure of `G ×_K B` from the quotient
   manifold theorem, for which `TauCeti.TwistedProduct.isSubmersion_mk` makes the projection
   from `G × B` a smooth submersion.
@@ -65,7 +65,7 @@ that it does not clash with the diagonal action of `K` on `G × B`.
 * J. J. Duistermaat and J. A. C. Kolk, *Lie Groups*, Springer, 2000, Section 2.4.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -92,12 +92,12 @@ def Pairs.toProd (p : Pairs G B) : G × B := p
 /-- The pair underlying `Pairs.mk g b` is `(g, b)`. -/
 @[simp]
 theorem Pairs.toProd_mk (g : G) (b : B) : (Pairs.mk g b : Pairs G B).toProd = (g, b) :=
-  rfl
+  (rfl)
 
 /-- A point of `Pairs G B` is the `Pairs.mk` of its underlying pair. -/
 @[simp]
 theorem Pairs.mk_toProd (p : Pairs G B) : Pairs.mk p.toProd.1 p.toProd.2 = p :=
-  rfl
+  (rfl)
 
 /-- Points of `Pairs G B` with the same underlying pair are equal. -/
 theorem Pairs.ext {p q : Pairs G B} (h : p.toProd = q.toProd) : p = q :=
@@ -133,27 +133,25 @@ end Structure
 
 variable [Group G] {K : Subgroup G} [MulAction K B]
 
-/-- The action `k • (g, b) = (g * k⁻¹, k • b)` of `K` on pairs. -/
-instance instMulActionPairs : MulAction K (Pairs G B) where
+/-- The scalar multiplication `k • (g, b) = (g * k⁻¹, k • b)` of `K` on pairs. -/
+instance instSMulPairs : SMul K (Pairs G B) where
   smul k p := Pairs.mk (p.toProd.1 * (k : G)⁻¹) (k • p.toProd.2)
-  one_smul p := by
-    change Pairs.mk (p.toProd.1 * ((1 : K) : G)⁻¹) ((1 : K) • p.toProd.2) = p
-    simp
-  mul_smul k k' p := by
-    change Pairs.mk (p.toProd.1 * ((k * k' : K) : G)⁻¹) ((k * k') • p.toProd.2) =
-      Pairs.mk (p.toProd.1 * (k' : G)⁻¹ * (k : G)⁻¹) (k • k' • p.toProd.2)
-    simp [mul_assoc, mul_smul]
 
 /-- `k • (g, b) = (g * k⁻¹, k • b)`. -/
 theorem Pairs.smul_mk (k : K) (g : G) (b : B) :
     k • (Pairs.mk g b : Pairs G B) = Pairs.mk (g * (k : G)⁻¹) (k • b) :=
-  rfl
+  (rfl)
 
 /-- The pair underlying `k • p` is `(g * k⁻¹, k • b)` for `p` the pair `(g, b)`. -/
 @[simp]
 theorem Pairs.toProd_smul (k : K) (p : Pairs G B) :
     (k • p).toProd = (p.toProd.1 * (k : G)⁻¹, k • p.toProd.2) :=
-  rfl
+  (rfl)
+
+/-- The action `k • (g, b) = (g * k⁻¹, k • b)` of `K` on pairs. -/
+instance instMulActionPairs : MulAction K (Pairs G B) where
+  one_smul p := Pairs.ext (by simp)
+  mul_smul k k' p := Pairs.ext (by simp [mul_assoc, mul_smul])
 
 /-- The action of `K` on pairs is free. -/
 instance instIsCancelSMulPairs : IsCancelSMul K (Pairs G B) where
@@ -211,24 +209,49 @@ theorem mk_eq_mk_iff {g g' : G} {b b' : B} :
 theorem mk_mul_smul (g : G) (k : K) (b : B) : mk K (g * k) b = mk K g (k • b) :=
   mk_eq_mk_iff.2 ⟨k, by simp, rfl⟩
 
-/-- The left action `g • [g', b] = [g * g', b]` of `G` on `G ×_K B`. -/
-instance instMulAction : MulAction G (TwistedProduct K B) where
-  smul g := Quotient.map' (fun p : Pairs G B ↦ Pairs.mk (g * p.toProd.1) p.toProd.2)
-    fun p q h ↦ by
-      obtain ⟨k, rfl⟩ := h
-      exact ⟨k, by simp [Pairs.smul_mk, mul_assoc]⟩
-  one_smul x := ind (motive := fun x ↦ Quotient.map' _ _ x = x) (fun g b ↦ by
-    change mk K (1 * g) b = mk K g b
-    rw [one_mul]) x
-  mul_smul g g' x := ind (motive := fun x ↦ Quotient.map' _ _ x = Quotient.map' _ _
-    (Quotient.map' _ _ x)) (fun g'' b ↦ by
-      change mk K (g * g' * g'') b = mk K (g * (g' * g'')) b
-      rw [mul_assoc]) x
+/-- **Maps out of `G ×_K B`.** A map `f : G → B → X` with `f (g * k⁻¹) (k • b) = f g b` for
+`k : K` descends to the map `[g, b] ↦ f g b` on the twisted product. -/
+def lift {X : Sort*} (f : G → B → X) (hf : ∀ (k : K) g b, f (g * (k : G)⁻¹) (k • b) = f g b) :
+    TwistedProduct K B → X :=
+  Quotient.lift (fun p : Pairs G B ↦ f p.toProd.1 p.toProd.2) fun _ _ ⟨k, hk⟩ ↦ by
+    rw [← hk, Pairs.toProd_smul]
+    exact hf k _ _
+
+/-- The descended map sends `[g, b]` to `f g b`. -/
+@[simp]
+theorem lift_mk {X : Sort*} (f : G → B → X)
+    (hf : ∀ (k : K) g b, f (g * (k : G)⁻¹) (k • b) = f g b) (g : G) (b : B) :
+    lift f hf (mk K g b) = f g b :=
+  (rfl)
+
+/-- Maps out of `G ×_K B` agreeing on every class `[g, b]` are equal. -/
+theorem hom_ext {X : Sort*} {φ ψ : TwistedProduct K B → X}
+    (h : ∀ g b, φ (mk K g b) = ψ (mk K g b)) : φ = ψ :=
+  funext fun x ↦ ind (motive := fun x ↦ φ x = ψ x) h x
+
+/-- **Uniqueness of the descended map.** A map `φ` out of `G ×_K B` with `φ [g, b] = f g b` is
+`lift f hf`. -/
+theorem lift_unique {X : Sort*} (f : G → B → X)
+    (hf : ∀ (k : K) g b, f (g * (k : G)⁻¹) (k • b) = f g b) {φ : TwistedProduct K B → X}
+    (h : ∀ g b, φ (mk K g b) = f g b) : φ = lift f hf :=
+  hom_ext fun g b ↦ (h g b).trans (lift_mk f hf g b).symm
+
+/-- The scalar multiplication `g • [g', b] = [g * g', b]` of `G` on `G ×_K B`. -/
+instance instSMul : SMul G (TwistedProduct K B) where
+  smul g := lift (fun g' b ↦ mk K (g * g') b) fun k g' b ↦ by
+    rw [← mul_assoc, mk_eq_mk_iff]
+    exact ⟨k⁻¹, by simp [mul_assoc], by simp⟩
 
 /-- `g • [g', b] = [g * g', b]`. -/
 @[simp]
 theorem smul_mk (g g' : G) (b : B) : g • mk K g' b = mk K (g * g') b :=
-  rfl
+  (rfl)
+
+/-- The left action `g • [g', b] = [g * g', b]` of `G` on `G ×_K B`. -/
+instance instMulAction : MulAction G (TwistedProduct K B) where
+  one_smul x := ind (motive := fun x ↦ (1 : G) • x = x) (fun g b ↦ by rw [smul_mk, one_mul]) x
+  mul_smul g g' x := ind (motive := fun x ↦ (g * g') • x = g • g' • x)
+    (fun g'' b ↦ by rw [smul_mk, smul_mk, smul_mk, mul_assoc]) x
 
 /-- The projection `[g, b] ↦ [g]` of `G ×_K B` onto the orbit space `G ×_K pt` of the right
 action of `K` on `G` by multiplication, the space of cosets `gK`. -/
@@ -240,7 +263,7 @@ def proj : TwistedProduct K B → TwistedProduct K Unit :=
 /-- The projection sends `[g, b]` to `[g]`. -/
 @[simp]
 theorem proj_mk (g : G) (b : B) : proj (mk K g b) = mk K g () :=
-  rfl
+  (rfl)
 
 /-- The projection is `G`-equivariant. -/
 theorem proj_smul (g : G) (x : TwistedProduct K B) : proj (g • x) = g • proj x :=
@@ -252,16 +275,14 @@ def zeroSection {b₀ : B} (hb₀ : b₀ ∈ MulAction.fixedPoints K B) :
     TwistedProduct K Unit → TwistedProduct K B :=
   Quotient.map' (fun p : Pairs G Unit ↦ Pairs.mk p.toProd.1 b₀) fun p q h ↦ by
     obtain ⟨k, rfl⟩ := h
-    exact ⟨k, by
-      change Pairs.mk (q.toProd.1 * (k : G)⁻¹) (k • b₀) = Pairs.mk (q.toProd.1 * (k : G)⁻¹) b₀
-      rw [hb₀ k]⟩
+    exact ⟨k, by simp only [Pairs.smul_mk, Pairs.toProd_smul, hb₀ k]⟩
 
 variable {b₀ : B} (hb₀ : b₀ ∈ MulAction.fixedPoints K B)
 
 /-- The zero section sends `[g]` to `[g, b₀]`. -/
 @[simp]
 theorem zeroSection_mk (g : G) (u : Unit) : zeroSection hb₀ (mk K g u) = mk K g b₀ :=
-  rfl
+  (rfl)
 
 /-- The zero section is a section of the projection. -/
 theorem proj_zeroSection : LeftInverse proj (zeroSection hb₀) :=
@@ -291,6 +312,8 @@ proper. Along an ultrafilter on which `(g * k⁻¹, g)` converges, `k = (g * k�
 in `G`, and its limit lies in `K` because `K` is closed. -/
 instance instProperSMulPairs [IsTopologicalGroup G] [hK : IsClosed (K : Set G)]
     [ContinuousSMul K B] [T2Space B] : ProperSMul K (Pairs G B) := by
+  -- `Pairs G B` is `G × B` with its product topology, and `k • (g, b)` is `(g * k⁻¹, k • b)`
+  -- by definition (`Pairs.toProd_smul`), so the action map is this map of products.
   have hcont : Continuous fun p : K × Pairs G B ↦ p.1 • p.2 :=
     show Continuous fun p : K × (G × B) ↦ (p.2.1 * (p.1 : G)⁻¹, p.1 • p.2.2) by fun_prop
   refine properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨⟨hcont⟩, fun 𝒰 x₁ x₂ h ↦ ?_⟩
@@ -320,13 +343,6 @@ variable {EK : Type*} [NormedAddCommGroup EK] [NormedSpace ℝ EK]
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB}
 
-/-- The trivial action on the one-point space is smooth. -/
-instance instContMDiffSMulUnit {M : Type*} [TopologicalSpace M] [ChartedSpace HK M] [SMul M Unit]
-    {n : ℕ∞ω} : ContMDiffSMul IK 𝓘(ℝ, Unit) n M Unit :=
-  ⟨by
-    rw [show (fun p : M × Unit ↦ p.1 • p.2) = fun _ ↦ () from Subsingleton.elim _ _]
-    exact contMDiff_const⟩
-
 variable [TopologicalSpace G] [ChartedSpace HG G] [ChartedSpace HK K]
   [TopologicalSpace B] [ChartedSpace HB B]
 
@@ -338,23 +354,12 @@ instance instContMDiffSMulPairs [FiniteDimensional ℝ EG] [FiniteDimensional �
   contMDiff_smul := by
     have hι : ContMDiff IK IG ∞ (Subtype.val : K → G) :=
       Lie.contMDiff_of_continuous_monoidHom K.subtype continuous_subtype_val
+    -- `Pairs G B` is the product manifold `G × B`, and `k • (g, b)` is `(g * k⁻¹, k • b)` by
+    -- definition (`Pairs.toProd_smul`), so the action map is this map of products.
     exact show ContMDiff (IK.prod (IG.prod IB)) (IG.prod IB) ∞
         (fun p : K × (G × B) ↦ (p.2.1 * (p.1 : G)⁻¹, p.1 • p.2.2)) from
       (contMDiff_snd.fst.mul (hι.comp contMDiff_fst).inv).prodMk
         (contMDiff_fst.smul contMDiff_snd.snd)
-
-variable (IK IG) in
-include IK in
-/-- A subgroup of a Lie group which, for the subspace topology, is a manifold modelled on a
-finite-dimensional space is closed, being locally compact. This applies to a subgroup which is a
-finite-dimensional Lie group for the subspace topology. -/
-theorem _root_.TauCeti.Lie.isClosed_of_lieGroup [FiniteDimensional ℝ EK] [LieGroup IG ∞ G] :
-    IsClosed (K : Set G) :=
-  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup IG ∞
-  let _ : T2Space G := IG.t2Space_of_lieGroup ∞
-  let _ : LocallyCompactSpace HK := IK.locallyCompactSpace
-  let _ : LocallyCompactSpace K := ChartedSpace.locallyCompactSpace HK K
-  K.isClosed_of_weaklyLocallyCompactSpace
 
 variable [FiniteDimensional ℝ EK] [LieGroup IK ∞ K]
   [FiniteDimensional ℝ EG] [IG.Boundaryless] [LieGroup IG ∞ G]
