@@ -285,7 +285,7 @@ private theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × �
   have hζN : N < ζ.1 := by
     by_contra! h
     exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
-  rw [sobolevDensity_congr (hzero ζ hζN), sobolevDensity_zero]
+  rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
 
 omit [FiniteDimensional ℝ V] in
 /-- **The end piece.** Beyond `R₀ + 1` on the end `q`, a section agrees with its cut-off `β_q ξ`,
@@ -301,7 +301,7 @@ private theorem setIntegral_sobolevDensity_le_endCutoff {R₀ : ℝ} (hR₀ : 0 
   calc _ = ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1,
         sobolevDensity ((fun z ↦ endCutoff R₀ q z • ξ z) ∘ positiveEndChart q) ζ := by
         refine setIntegral_congr_fun (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-        refine (sobolevDensity_congr ?_).symm
+        refine (sobolevDensity_congr_of_eventuallyEq ?_).symm
         filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ.1] with ζ' hζ'
         simp only [Function.comp_apply]
         rw [endCutoff_eq_one (q := q)

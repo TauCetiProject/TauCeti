@@ -297,7 +297,7 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
           (prod_mono (fun s hs ↦ lt_of_lt_of_le (by linarith) hs.1) subset_rfl) fun ζ hζ ↦ ?_
         have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hvan
           fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
-        rw [sobolevDensity_congr h, sobolevDensity_zero]
+        rw [sobolevDensity_congr_of_eventuallyEq h, sobolevDensity_zero]
     -- The cylinder estimate `hest` is stated with the density written out.
     _ ≤ C₁ * ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
           (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)

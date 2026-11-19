@@ -22,8 +22,8 @@ semi-Fredholm estimates of the linearized Floer operator control.
 
 * `TauCeti.Floer.sobolevDensity_nonneg`: the density is nonnegative.
 * `TauCeti.Floer.continuous_sobolevDensity`: the density of a `C¹` map is continuous.
-* `TauCeti.Floer.sobolevDensity_congr`: the density at `z` depends only on the germ of the map
-  at `z`.
+* `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
+  germ of the map at `z`.
 -/
 
 public section
@@ -62,7 +62,8 @@ theorem continuous_sobolevDensity {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 
   fun_prop
 
 /-- Two maps that agree near `z` have the same energy density at `z`. -/
-theorem sobolevDensity_congr {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ} (h : ξ =ᶠ[𝓝 z] η) :
+theorem sobolevDensity_congr_of_eventuallyEq {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (h : ξ =ᶠ[𝓝 z] η) :
     sobolevDensity ξ z = sobolevDensity η z := by
   rw [sobolevDensity_apply, sobolevDensity_apply, h.fderiv_eq, h.eq_of_nhds]
 
