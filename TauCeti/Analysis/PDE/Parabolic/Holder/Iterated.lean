@@ -531,7 +531,7 @@ private theorem iteratedDerivWithin_toFun (f : ParabolicCkHolderSpace k α E F h
     simp only [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab.le hs]
 
 /-- The recorded spatial derivatives of `D_t^r u` form a Taylor series up to order `k - 2 r`. -/
-private theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) (r : ℕ)
+theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) (r : ℕ)
     (t : Icc a b) :
     HasFTaylorSeriesUpTo ((k - 2 * r : ℕ) : WithTop ℕ∞)
       (fun y ↦ (mixedDerivL r 0 f (slabMk y t)).curry0)
