@@ -68,6 +68,10 @@ empty manifold, where both groups vanish
   map.
 * `TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_dualityMap`: naturality along open
   embeddings.
+* `TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_inclusion'_dualityMap` and
+  `TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_toTopCat_map_dualityMap`: its
+  instances for an open subset of `M` and for nested open subsets, with the restricted
+  orientations.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_of_cofinal`: the duality map is bijective
   if capping is bijective along cofinally many compact sets.
 
@@ -312,6 +316,37 @@ theorem compactSupportCohomologyExtend_dualityMap {j : C(U, M)} (hj : IsOpenEmbe
   -- definition (`Compacts.coe_map` is `rfl`). Since the set also occurs in the type of `β`, `rw`
   -- cannot change one into the other, but `exact` identifies them.
   exact (congrArg _ hμ.symm).trans this.symm
+
+/-- **Naturality of the duality map for an open subset**: for an open `W ⊆ M`, oriented by the
+restriction of `o`, extending compactly supported classes from `W` to `M` and then applying the
+duality map of `M` is applying the duality map of `W` and then pushing forward along the
+inclusion. -/
+@[reassoc]
+theorem compactSupportCohomologyExtend_inclusion'_dualityMap (W : Opens (TopCat.of M)) (p q : ℕ)
+    (h : p + q = n) :
+    TopCat.compactSupportCohomologyExtend W.isOpenEmbedding p ≫ o.dualityMap hn L p q h =
+      (o.comap W.isOpenEmbedding).dualityMap hn L p q h ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+          (Opens.inclusion' W) :=
+  o.compactSupportCohomologyExtend_dualityMap hn L (j := (Opens.inclusion' W).hom)
+    W.isOpenEmbedding p q h
+
+/-- **Naturality of the duality map for nested open subsets**: for opens `V ⊆ W` of `M`, oriented
+by the restrictions of `o`, extending compactly supported classes from `V` to `W` along the
+inclusion `f : V ⟶ W` intertwines the duality maps of `V` and `W` with the pushforward along
+`f`. -/
+@[reassoc]
+theorem compactSupportCohomologyExtend_toTopCat_map_dualityMap {V W : Opens (TopCat.of M)}
+    (f : V ⟶ W) (p q : ℕ) (h : p + q = n) :
+    TopCat.compactSupportCohomologyExtend (Opens.isOpenEmbedding_toTopCat_map f) p ≫
+        (o.comap W.isOpenEmbedding).dualityMap hn L p q h =
+      (o.comap V.isOpenEmbedding).dualityMap hn L p q h ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+          ((Opens.toTopCat (TopCat.of M)).map f) := by
+  have := (o.comap W.isOpenEmbedding).compactSupportCohomologyExtend_dualityMap hn L
+    (j := ((Opens.toTopCat (TopCat.of M)).map f).hom)
+    (Opens.isOpenEmbedding_toTopCat_map f) p q h
+  rwa [comap_comap_toTopCat_map] at this
 
 variable {j : C(U, M)} (hj : IsOpenEmbedding j) {p q : ℕ} (h : p + q = n)
 
