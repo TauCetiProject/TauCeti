@@ -318,7 +318,7 @@ theorem one_sub_sq_le_div_add_mul_exp [Nontrivial E] {a b da db q : E → ℝ} {
     ring
   have hsub : ∀ x ∈ ball z R, (fun _ ↦ θ * r / 4) x * u x - 304 * C ^ 2 / θ ^ 2 ≤ Δ u x := by
     intro x hx
-    have hΔ := (hcd x hx).laplacian_log (hpos x (ball_subset_closedBall hx))
+    have hΔ := (hcd x hx).laplacian_log (hpos x (ball_subset_closedBall hx)).ne'
     rw [hu, ← Pi.neg_def, laplacian_neg]
     simp only [Pi.neg_apply, hΔ, neg_sub]
     exact mul_neg_log_sub_le_div_sub_div hr hC hθ hθ1 (hθa x (ball_subset_closedBall hx)) (hW x hx)

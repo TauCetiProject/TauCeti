@@ -30,8 +30,8 @@ for every `ε > 0`,
 `2 |a|² ((1 - ε) |L|² - (2 + 18 / ε) |∂bar L|²) ≤ ∑ᵢ (2 Re (conj a · L eᵢ))²`
 
 (`TauCeti.AlmostComplexStructure.two_mul_norm_sq_mul_sub_le_sum_sq_re`). The defect is bounded by
-`‖d‖` through Bessel's inequality for the orthogonal pair `p`, `J p`
-(`TauCeti.AlmostComplexStructure.inner_sq_add_inner_sq_le`).
+`‖d‖` through Cauchy–Schwarz for the Hermitian metric of `J`, applied to the orthogonal pair
+`p`, `J p` (`TauCeti.AlmostComplexStructure.inner_sq_add_inner_sq_le`).
 
 ## Main results
 

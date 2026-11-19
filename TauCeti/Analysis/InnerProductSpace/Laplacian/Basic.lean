@@ -58,7 +58,7 @@ the squared norm, its chain-rule generalization `ContDiff.laplacian_comp_norm_sq
 functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
 `ContDiffAt.laplacian_fun_smul` for products with a scalar function, the chain rule
 `ContDiffAt.laplacian_comp` for a real function of a scalar function and its instance
-`ContDiffAt.laplacian_log` for the logarithm of a positive function, the companion rule
+`ContDiffAt.laplacian_log` for the logarithm of a nonvanishing function, the companion rule
 `ContDiffAt.laplacian_norm_sq` for the squared norm of a vector-valued function, the commutation
 `ContDiffAt.laplacian_fderiv` of the Laplacian with the derivative and its iterate
 `ContDiff.laplacian_iteratedFDeriv`, and the locality
@@ -103,8 +103,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `ContDiffAt.laplacian_fun_mul`: the Leibniz rule `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf`.
 * `ContDiffAt.laplacian_comp`: the chain rule `Δ (F ∘ q) = F''(q) ‖∇q‖² + F'(q) Δq` for a real
   function `F` of a scalar function `q`.
-* `ContDiffAt.laplacian_log`: `Δ (log s) = Δs / s - ‖∇s‖² / s²` for a positive scalar function
-  `s`.
+* `ContDiffAt.laplacian_log`: `Δ (log s) = Δs / s - ‖∇s‖² / s²` for a nonvanishing scalar
+  function `s`.
 * `ContDiffAt.laplacian_fun_smul`: its vector-valued form
   `Δ (f • g) = f • Δg + 2 Dg(∇f) + Δf • g`.
 * `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
@@ -591,11 +591,11 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
 
 open Gradient in
 /-- **The Laplacian of a logarithm.** For a scalar function `s` twice differentiable at `x` with
-`s x > 0`, `Δ (log s) = Δs / s - ‖∇s‖² / s²` at `x`. -/
+`s x ≠ 0`, `Δ (log s) = Δs / s - ‖∇s‖² / s²` at `x`. -/
 theorem _root_.ContDiffAt.laplacian_log {s : E → ℝ} {x : E} (hs : ContDiffAt ℝ 2 s x)
-    (hpos : 0 < s x) :
+    (hs0 : s x ≠ 0) :
     Δ (fun y ↦ Real.log (s y)) x = Δ s x / s x - ‖∇ s x‖ ^ 2 / s x ^ 2 := by
-  have h := (Real.contDiffAt_log.mpr hpos.ne').laplacian_comp hs
+  have h := (Real.contDiffAt_log.mpr hs0).laplacian_comp hs
   rw [Real.deriv_log', deriv_inv, Function.comp_def] at h
   rw [h]
   field_simp
