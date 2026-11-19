@@ -36,6 +36,7 @@ When `f` is the constant radius `r`, the box coincides with `Metric.closedBall (
   balls of radii `f w` at the real and complex places.
 * `NumberField.mixedEmbedding.coe_convexBodyLTFactor`: the coercion of `convexBodyLTFactor K` to `ℝ`
   is `2 ^ nrRealPlaces K * π ^ nrComplexPlaces K`.
+* `NumberField.mixedEmbedding.two_le_convexBodyLTFactor`: `convexBodyLTFactor K` is at least `2`.
 * `NumberField.mixedEmbedding.volume_setOf_forall_normAtPlace_le` and
   `NumberField.mixedEmbedding.volume_real_setOf_forall_normAtPlace_le`: its `ℝ≥0∞`-valued volume
   (unconditionally, since `ENNReal.ofReal` vanishes on negative radii) and its `ℝ`-valued volume for
@@ -89,6 +90,20 @@ variable [NumberField K]
 theorem coe_convexBodyLTFactor :
     (convexBodyLTFactor K : ℝ) = 2 ^ nrRealPlaces K * Real.pi ^ nrComplexPlaces K := by
   simp [convexBodyLTFactor]
+
+variable (K) in
+/-- `convexBodyLTFactor K` is at least `2`, because `K` has an infinite place and `2 ≤ π`. -/
+theorem two_le_convexBodyLTFactor : 2 ≤ convexBodyLTFactor K := by
+  rw [← NNReal.coe_le_coe, coe_convexBodyLTFactor, NNReal.coe_ofNat]
+  have hcard : 1 ≤ nrRealPlaces K + nrComplexPlaces K := by
+    rw [← card_eq_nrRealPlaces_add_nrComplexPlaces]
+    exact Fintype.card_pos
+  calc (2 : ℝ) = 2 ^ 1 := (pow_one _).symm
+    _ ≤ 2 ^ (nrRealPlaces K + nrComplexPlaces K) := pow_le_pow_right₀ one_le_two hcard
+    _ = 2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K := pow_add _ _ _
+    _ ≤ 2 ^ nrRealPlaces K * Real.pi ^ nrComplexPlaces K := by
+      gcongr
+      exact Real.two_le_pi
 
 -- Adapted from `NumberField.mixedEmbedding.convexBodyLT_volume` in Mathlib.
 open scoped Classical in
