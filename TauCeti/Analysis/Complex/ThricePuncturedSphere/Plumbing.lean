@@ -516,6 +516,20 @@ open TauCeti.Complex (realChart realChart_apply realChart_injective contDiff_rea
 
 variable {q : Puncture} {L : ℝ}
 
+/-- In real coordinates, the map `ζ ↦ (ζ - c_q) / ψ'` undoes the plumbing map `ψ`. -/
+theorem leftInverse_realChart_plumbingMap (q : Puncture) (L : ℝ) :
+    Function.LeftInverse (realChart fun ζ ↦ (ζ - q.endCenter) / q.plumbingFactor L)
+      (realChart (q.plumbingMap L)) := fun z ↦ by
+  rw [realChart_apply, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+    plumbingMap_sub_endCenter_div_plumbingFactor, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- In real coordinates, the plumbing map `ψ` undoes the map `ζ ↦ (ζ - c_q) / ψ'`. -/
+theorem rightInverse_realChart_plumbingMap (q : Puncture) (L : ℝ) :
+    Function.RightInverse (realChart fun ζ ↦ (ζ - q.endCenter) / q.plumbingFactor L)
+      (realChart (q.plumbingMap L)) := fun z ↦ by
+  rw [realChart_apply, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+    plumbingMap_sub_endCenter_div, ContinuousLinearEquiv.apply_symm_apply]
+
 /-- The plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, in real coordinates, is open. -/
 theorem isOpen_plumbedSphere (q : Puncture) (L : ℝ) :
     IsOpen {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧

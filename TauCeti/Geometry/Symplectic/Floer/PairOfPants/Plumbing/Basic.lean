@@ -451,16 +451,14 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (ω : Smooth
     · exact Or.inr (by simp [N, ← h₁])
     by_cases hle : (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2
     · exact Or.inl (Or.inl ⟨h₀, hle⟩)
-    refine Or.inl (Or.inr ⟨Complex.equivRealProdCLM
-      ((Complex.equivRealProdCLM.symm z - q.endCenter) / q.plumbingFactor L), ?_, ?_⟩)
-    · refine ⟨?_, ?_, ?_⟩ <;> rw [ContinuousLinearEquiv.symm_apply_apply]
+    refine Or.inl (Or.inr ⟨realChart (fun ζ ↦ (ζ - q.endCenter) / q.plumbingFactor L) z, ?_, ?_⟩)
+    · refine ⟨?_, ?_, ?_⟩ <;> rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
       · exact q.sub_endCenter_div_plumbingFactor_ne_zero L h₀
       · intro h
         exact h₁ (by rw [← h, plumbingMap_sub_endCenter_div])
       · rw [re_endCoord_inf_sub_endCenter_div q L h₀]
         linarith
-    · rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-        plumbingMap_sub_endCenter_div, ContinuousLinearEquiv.apply_symm_apply]
+    · exact rightInverse_realChart_plumbingMap q L z
   have hN : volume N = 0 := by
     rw [Measure.volume_eq_prod]
     exact (Set.toFinite N).measure_zero _
