@@ -15,6 +15,8 @@ Over a seminormed commutative ring `R`, which need not be a field, an `R`-biline
 scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`). For an
 `R`-algebra `S`, such a bound on the action makes the structure map bounded
 (`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`).
+The evaluation action of bounded operators on a seminormed space is bounded
+(`ContinuousLinearMap.isBoundedSMul_apply`).
 
 A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`, tends
 to `(a, 0)` at `(a, 0)` (`ContinuousAt.tendsto_prodMk_clm_apply`).
@@ -45,6 +47,13 @@ theorem TauCeti.continuousSMul_of_norm_smul_le {M : Type*} [SeminormedAddCommGro
     [Module R M]
     (h : ∃ C : ℝ≥0, ∀ (r : R) (m : M), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) : ContinuousSMul R M :=
   h.elim fun C hC ↦ ⟨(LinearMap.lsmul R M).continuous₂_of_bound C hC⟩
+
+/-- The action of bounded operators on a seminormed space by evaluation is bounded:
+`‖f v‖ ≤ ‖f‖ * ‖v‖`. In particular it is jointly continuous, and so are the actions of the units
+and of submonoids such as the unitary group. -/
+instance ContinuousLinearMap.isBoundedSMul_apply {𝕜 V : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] : IsBoundedSMul (V →L[𝕜] V) V :=
+  .of_norm_smul_le ContinuousLinearMap.le_opNorm
 
 /-- If the action of `R` on an `R`-algebra `S` is bounded, `‖r • s‖ ≤ C * ‖r‖ * ‖s‖`, then so is
 the structure map: `‖algebraMap R S r‖ ≤ C * ‖1‖ * ‖r‖`. -/
