@@ -14,8 +14,9 @@ public import Mathlib.SetTheory.Cardinal.NatCard
 # Isomorphism classes of finite groups
 
 Invariants of a finite group such as its multiset of chief factors or of composition factors
-record finite groups only up to isomorphism, and those groups typically live in various universes
-(subquotients of the group at hand). This file provides the common target of such invariants:
+record finite groups only up to isomorphism, and need a target type that does not depend on the
+universe of the group at hand, so that invariants of groups in different universes can be
+compared. This file provides the common target of such invariants:
 `TauCeti.IsoClass`, the set of isomorphism classes of objects of Mathlib's category `FiniteGrp` of
 finite groups in `Type`, together with `TauCeti.IsoClass.mk`, which sends a finite group in any
 universe to its class through a copy of it on `Fin (Nat.card H)`.

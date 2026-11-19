@@ -15,9 +15,10 @@ public import TauCeti.GroupTheory.NormalSubgroup.Lattice
 /-!
 # Chief series and the Jordan–Hölder theorem for chief factors
 
-A **chief series** of a group `G` is a maximal chain of normal subgroups of `G`, that is, a
-composition series in the modular lattice `TauCeti.NormalSubgroup G` of normal subgroups: each
-term is a normal subgroup of `G` covered, among normal subgroups of `G`, by the next. Its
+Here a **chief series** of a group `G` is a composition series in the modular lattice
+`TauCeti.NormalSubgroup G` of normal subgroups: a finite chain of normal subgroups of `G` in which
+each term is covered, among normal subgroups of `G`, by the next. Its first and last terms are
+arbitrary; chief series in the usual sense are those with `s.head = ⊥` and `s.last = ⊤`. Its
 **chief factors** are the successive quotients. For a finite group, `TauCeti.chiefFactors s` is
 the multiset of their isomorphism classes, as elements of `TauCeti.IsoClass`.
 
